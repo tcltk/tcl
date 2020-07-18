@@ -889,17 +889,6 @@ proc ::safe::AliasGlob {slave args} {
 		set virtualdir [lindex $args [incr at]]
 		incr at
 	    }
-	    pkgIndex.tcl {
-		if {$AutoPathSync} {
-		    # Oops, this is globbing a subdirectory in regular package
-		    # search. That is not wanted. Abort, handler does catch
-		    # already (because glob was not defined before). See
-		    # package.tcl, lines 484ff in tclPkgUnknown.
-		    return -code error "unknown command glob"
-		} else {
-		    break
-		}
-	    }
 	    -* {
 		Log $slave "Safe base rejecting glob option '$opt'"
 		return -code error "Safe base rejecting glob option '$opt'"
@@ -924,7 +913,18 @@ proc ::safe::AliasGlob {slave args} {
 	    if {$got(-nocomplain)} return
 	    return -code error "permission denied"
 	}
-	lappend cmd -directory $dir
+	if {$got(--)} {
+	    set cmd [linsert $cmd end-1 -directory $dir]
+	} else {
+	    lappend cmd -directory $dir
+	}
+    } else {
+	# The code after this "if ... else" block would conspire to return with
+	# no results in this case, if it were allowed to proceed.  Instead,
+	# return now and reduce the number of cases to be considered later.
+	Log $slave {option -directory must be supplied}
+	if {$got(-nocomplain)} return
+	return -code error "permission denied"
     }
 
     # Apply the -join semantics ourselves (hence -join not copied to $cmd)
@@ -932,16 +932,21 @@ proc ::safe::AliasGlob {slave args} {
 	set args [lreplace $args $at end [join [lrange $args $at end] "/"]]
     }
 
-    # Process remaining pattern arguments
+    # Process the pattern arguments.  If we've done a join there is only one
+    # pattern argument.
+
     set firstPattern [llength $cmd]
     foreach opt [lrange $args $at end] {
 	if {![regexp $dirPartRE $opt -> thedir thefile]} {
 	    set thedir .
-	} elseif {[string match ~* $thedir]} {
-	    set thedir ./$thedir
+	    # The *.tm search comes here.
 	}
-	if {$thedir eq "*" &&
-		($thefile eq "pkgIndex.tcl" || $thefile eq "*.tm")} {
+	# "Special" treatment for (joined) argument {*/pkgIndex.tcl}.
+	# Do the expansion of "*" here, and filter out any directories that are
+	# not in the access path.  The outcome is to lappend to cmd a path of
+	# the form $virtualdir/subdir/pkgIndex.tcl for each subdirectory subdir,
+	# after removing any subdir that are not in the access path.
+	if {($thedir eq "*") && ($thefile eq "pkgIndex.tcl")} {
 	    set mapped 0
 	    foreach d [glob -directory [TranslatePath $slave $virtualdir] \
 			   -types d -tails *] {
@@ -953,7 +958,25 @@ proc ::safe::AliasGlob {slave args} {
 		}
 	    }
 	    if {$mapped} continue
+	    # Don't [continue] if */pkgIndex.tcl has no matches in the access
+	    # path.  The pattern will now receive the same treatment as a
+	    # "non-special" pattern (and will fail because it includes a "*" in
+	    # the directory name).
 	}
+	# Any directory pattern that is not an exact (i.e. non-glob) match to a
+	# directory in the access path will be rejected here.
+	# - Rejections include any directory pattern that has glob matching
+	#   patterns "*", "?", backslashes, braces or square brackets, (UNLESS
+	#   it corresponds to a genuine directory name AND that directory is in
+	#   the access path).
+	# - The only "special matching characters" that remain in patterns for
+	#   processing by glob are in the filename tail.
+	# - [file join $anything ~${foo}] is ~${foo}, which is not an exact
+	#   match to any directory in the access path.  Hence directory patterns
+	#   that begin with "~" are rejected here.  Tests safe-16.[5-8] check
+	#   that "file join" remains as required and does not expand ~${foo}.
+	# - Bug [3529949] relates to unwanted expansion of ~${foo} and this is
+	#   how the present code avoids the bug.  All tests safe-16.* relate.
 	try {
 	    DirInAccessPath $slave [TranslatePath $slave \
 		    [file join $virtualdir $thedir]]
@@ -971,8 +994,17 @@ proc ::safe::AliasGlob {slave args} {
 	return
     }
     try {
+	# >>>>>>>>>> HERE'S THE CALL TO SAFE INTERP GLOB <<<<<<<<<<
+	# - Pattern arguments added to cmd have NOT been translated from tokens.
+	#   Only the virtualdir is translated (to dir).
+	# - In the pkgIndex.tcl case, there is no "*" in the pattern arguments,
+	#   which are a list of names each with tail pkgIndex.tcl.  The purpose
+	#   of the call to glob is to remove the names for which the file does
+	#   not exist.
 	set entries [::interp invokehidden $slave glob {*}$cmd]
     } on error msg {
+	# This is the only place that a call with -nocomplain and no invalid
+	# "dash-options" can return an error.
 	Log $slave $msg
 	return -code error "script error"
     }
