@@ -831,8 +831,7 @@ proc ::safe::AliasGlob {slave args} {
 	} elseif {[string match ~* $thedir]} {
 	    set thedir ./$thedir
 	}
-	if {$thedir eq "*" &&
-		($thefile eq "pkgIndex.tcl" || $thefile eq "*.tm")} {
+	if {($thedir eq "*") && ($thefile eq "pkgIndex.tcl")} {
 	    set mapped 0
 	    foreach d [glob -directory [TranslatePath $slave $virtualdir] \
 			   -types d -tails *] {
