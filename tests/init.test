@@ -19,16 +19,16 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 catch {namespace delete {*}[namespace children :: test_ns_*]}
 
 test init-0.1 {no error on initialization phase (init.tcl)} -setup {
-    interp create slave
+    interp create child
 } -body {
-    slave eval {
+    child eval {
 	list [set v [info exists ::errorInfo]] \
 		[if {$v} {set ::errorInfo}] \
 	     [set v [info exists ::errorCode]] \
 		[if {$v} {set ::errorCode}]
     }
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result {0 {} 0 {}}
 
 # Six cases - white box testing
@@ -68,11 +68,11 @@ test init-1.8 {auto_qualify - multiple colons 2} {
 } foo
 
 
-# we use a sub interp and auto_reset and double the tests because there is 2
+# we use a child interp and auto_reset and double the tests because there is 2
 # places where auto_loading occur (before loading the indexes files and after)
 
 set testInterp [interp create]
-tcltest::loadIntoSlaveInterpreter $testInterp {*}$argv
+tcltest::loadIntoChildInterpreter $testInterp {*}$argv
 interp eval $testInterp {
     namespace import -force ::tcltest::*
     auto_reset

@@ -16,10 +16,10 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
-# Do all this in a slave interp to avoid garbaging the
+# Do all this in a child interp to avoid garbaging the
 # package list
 set i [interp create]
-tcltest::loadIntoSlaveInterpreter $i {*}$argv
+tcltest::loadIntoChildInterpreter $i {*}$argv
 
 interp eval $i {
 namespace import -force ::tcltest::*
