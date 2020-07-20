@@ -19,11 +19,26 @@ int
 int
 \fBTcl_MakeSafe\fR(\fIinterp\fR)
 .sp
+.VS "TIP 581"
+Tcl_Interp *
+\fBTcl_CreateChild\fR(\fIinterp, name, isSafe\fR)
+.VE "TIP 581"
+.sp
 Tcl_Interp *
 \fBTcl_CreateChild\fR(\fIinterp, name, isSafe\fR)
 .sp
+.VS "TIP 581"
 Tcl_Interp *
 \fBTcl_GetChild\fR(\fIinterp, name\fR)
+.VE "TIP 581"
+.sp
+Tcl_Interp *
+\fBTcl_GetChild\fR(\fIinterp, name\fR)
+.sp
+.VS "TIP 581"
+Tcl_Interp *
+\fBTcl_GetParent\fR(\fIinterp\fR)
+.VE "TIP 581"
 .sp
 Tcl_Interp *
 \fBTcl_GetParent\fR(\fIinterp\fR)
@@ -133,6 +148,10 @@ child in which Tcl code has access only to set of Tcl commands defined as
 see the manual entry for the Tcl \fBinterp\fR command for details.
 If the creation of the new child interpreter failed, \fBNULL\fR is returned.
 .PP
+.VS "TIP 581"
+\fBTcl_CreateChild\fR is a synonym for \fBTcl_CreateSlave\fR.
+.VE "TIP 581"
+.PP
 \fBTcl_IsSafe\fR returns \fB1\fR if \fIinterp\fR is
 .QW safe
 (was created with the \fBTCL_SAFE_INTERPRETER\fR flag specified),
@@ -153,6 +172,10 @@ may be a better choice, since it creates interpreters in a known-safe state.
 \fBTcl_GetChild\fR returns a pointer to a child interpreter of
 \fIinterp\fR. The child interpreter is identified by \fIname\fR.
 If no such child interpreter exists, \fBNULL\fR is returned.
+.PP
+.VS "TIP 581"
+\fBTcl_GetChild\fR is a synonym for \fBTcl_GetSlave\fR.
+.VE "TIP 581"
 .PP
 \fBTcl_GetParent\fR returns a pointer to the parent interpreter of
 \fIinterp\fR. If \fIinterp\fR has no parent (it is a

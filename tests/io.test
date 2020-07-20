@@ -6719,7 +6719,7 @@ test io-49.5 {testing crlf reading, leftover cr disgorgment} {
     set l
 } [list 7 a\rb\rc 7 {} 7 1]
 
-test io-50.1 {testing handler deletion} {testchannelevent} {
+test io-50.1 {testing handler deletion} {testchannelevent nonPortable} {
     file delete $path(test1)
     set f [open $path(test1) w]
     close $f
@@ -6735,7 +6735,7 @@ test io-50.1 {testing handler deletion} {testchannelevent} {
     close $f
     set z
 } called
-test io-50.2 {testing handler deletion with multiple handlers} {testchannelevent} {
+test io-50.2 {testing handler deletion with multiple handlers} {testchannelevent nonPortable} {
     file delete $path(test1)
     set f [open $path(test1) w]
     close $f
@@ -6753,7 +6753,7 @@ test io-50.2 {testing handler deletion with multiple handlers} {testchannelevent
     string compare [string tolower $z] \
 	[list [list called delhandler $f 0] [list called delhandler $f 1]]
 } 0
-test io-50.3 {testing handler deletion with multiple handlers} {testchannelevent} {
+test io-50.3 {testing handler deletion with multiple handlers} {testchannelevent nonPortable} {
     file delete $path(test1)
     set f [open $path(test1) w]
     close $f
@@ -6779,7 +6779,7 @@ test io-50.3 {testing handler deletion with multiple handlers} {testchannelevent
 	[list [list delhandler $f 0 called] \
 	      [list delhandler $f 0 deleted myself]]
 } 0
-test io-50.4 {testing handler deletion vs reentrant calls} {testchannelevent} {
+test io-50.4 {testing handler deletion vs reentrant calls} {testchannelevent nonPortable} {
     file delete $path(test1)
     set f [open $path(test1) w]
     close $f
@@ -6801,10 +6801,9 @@ test io-50.4 {testing handler deletion vs reentrant calls} {testchannelevent} {
     variable z ""
     update
     close $f
-    string compare [string tolower $z] \
-	{{delrecursive calling recursive} {delrecursive deleting recursive}}
-} 0
-test io-50.5 {testing handler deletion vs reentrant calls} {testchannelevent} {
+    set z
+} {{delrecursive calling recursive} {delrecursive deleting recursive}}
+test io-50.5 {testing handler deletion vs reentrant calls} {testchannelevent nonPortable} {
     file delete $path(test1)
     set f [open $path(test1) w]
     close $f
@@ -6834,11 +6833,10 @@ test io-50.5 {testing handler deletion vs reentrant calls} {testchannelevent} {
     set u toplevel
     update
     close $f
-    string compare [string tolower $z] \
-	[list {del calling recursive} {del deleted notcalled} \
-	      {del deleted myself} {del after update}]
-} 0
-test io-50.6 {testing handler deletion vs reentrant calls} {testchannelevent} {
+    set z	
+} [list {del calling recursive} {del deleted notcalled} \
+	{del deleted myself} {del after update}]
+test io-50.6 {testing handler deletion vs reentrant calls} {testchannelevent nonPortable} {
     file delete $path(test1)
     set f [open $path(test1) w]
     close $f
@@ -6876,11 +6874,10 @@ test io-50.6 {testing handler deletion vs reentrant calls} {testchannelevent} {
     set u toplevel
     update
     close $f
-    string compare [string tolower $z] \
-	[list {first called} {first called not toplevel} \
-	      {second called, first time} {second called, second time} \
-	      {first after update}]
-} 0
+    set z
+} [list {first called} {first called not toplevel} \
+	{second called, first time} {second called, second time} \
+	{first after update}]
 
 test io-51.1 {Test old socket deletion on Macintosh} {socket} {
     set x 0

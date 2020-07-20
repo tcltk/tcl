@@ -3976,4 +3976,5 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_CreateChild Tcl_CreateSlave
 #define Tcl_GetChild Tcl_GetSlave
 #define Tcl_GetParent Tcl_GetMaster
+
 #endif /* _TCLDECLS */

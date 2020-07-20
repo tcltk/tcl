@@ -59,7 +59,7 @@ test init-1.8 {auto_qualify - multiple colons 2} {
     auto_qualify :::foo ::bar
 } foo
 
-# We use a sub-interp and auto_reset and double the tests because there is 2
+# We use a child interp and auto_reset and double the tests because there is 2
 # places where auto_loading occur (before loading the indexes files and after)
 
 set testInterp [interp create]
