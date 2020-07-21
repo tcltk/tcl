@@ -4,6 +4,17 @@
 # using safe interpreters. Sourcing this file into tcl runs the tests and
 # generates output for errors. No output means no errors were found.
 #
+# The package http 1.0 is convenient for testing package loading, but will soon
+# be removed.
+# - Tests that use http are replaced here with tests that use example packages
+#   provided in subdirectory auto0 of the tests directory, which are independent
+#   of any changes made to the packages provided with Tcl itself.
+#   - These are tests 7.1 7.2 7.4 9.11 9.13
+#   - Tests 5.* test the example packages themselves before they
+#     are used to test Safe Base interpreters.
+# - Alternative tests using stock packages of Tcl 8.6 are in file
+#   safe-stock86.test.
+#
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
@@ -85,6 +96,8 @@ test safe-2.2 {creating interpreters, should have no aliases} -setup {
     a aliases
 } -cleanup {
     safe::interpDelete a
+    # This (ab)use of safe::interpDelete to delete non-Safe-Base interpreters
+    # is regrettable and should be removed at the next major revision.
 } -result ""
 test safe-2.3 {creating safe interpreters, should have no unexpected aliases} -setup {
     catch {safe::interpDelete a}
@@ -134,6 +147,8 @@ test safe-4.1 {safe::interpDelete} -setup {
 } -body {
     interp create a
     safe::interpDelete a
+    # This (ab)use of safe::interpDelete to delete non-Safe-Base interpreters
+    # is regrettable and should be removed at the next major revision.
 } -result ""
 test safe-4.2 {safe::interpDelete, indirectly} -setup {
     catch {safe::interpDelete a}
@@ -141,6 +156,8 @@ test safe-4.2 {safe::interpDelete, indirectly} -setup {
     interp create a
     a alias exit safe::interpDelete a
     a eval exit
+    # This (ab)use of safe::interpDelete to delete non-Safe-Base interpreters
+    # is regrettable and should be removed at the next major revision.
 } -result ""
 test safe-4.5 {safe::interpDelete} -setup {
     catch {safe::interpDelete a}
@@ -157,17 +174,119 @@ test safe-4.6 {safe::interpDelete, indirectly} -setup {
     a eval exit
 } -result ""
 
-# The following test checks whether the definition of tcl_endOfWord can be
-# obtained from auto_loading.
+# The old test "safe-5.1" has been moved to "safe-stock86-9.8".
+# A replacement test using example files is "safe-9.8".
+# Tests 5.* test the example files before using them to test safe interpreters.
 
-test safe-5.1 {test auto-loading in safe interpreters} -setup {
-    catch {safe::interpDelete a}
-    safe::interpCreate a
+test safe-5.1 {example tclIndex commands, test in master interpreter} -setup {
+    set tmpAutoPath $::auto_path
+    lappend ::auto_path [file join $TestsDir auto0 auto1] [file join $TestsDir auto0 auto2]
 } -body {
-    interp eval a {tcl_endOfWord "" 0}
+    # Try to load the commands.
+    set code3 [catch report1 msg3]
+    set code4 [catch report2 msg4]
+    list $code3 $msg3 $code4 $msg4
 } -cleanup {
-    safe::interpDelete a
-} -result -1
+    catch {rename report1 {}}
+    catch {rename report2 {}}
+    set ::auto_path $tmpAutoPath
+    auto_reset
+} -match glob -result {0 ok1 0 ok2}
+test safe-5.2 {example tclIndex commands, negative test in master interpreter} -setup {
+    set tmpAutoPath $::auto_path
+    lappend ::auto_path [file join $TestsDir auto0]
+} -body {
+    # Try to load the commands.
+    set code3 [catch report1 msg3]
+    set code4 [catch report2 msg4]
+    list $code3 $msg3 $code4 $msg4
+} -cleanup {
+    catch {rename report1 {}}
+    catch {rename report2 {}}
+    set ::auto_path $tmpAutoPath
+    auto_reset
+} -match glob -result {1 {invalid command name "report1"} 1 {invalid command name "report2"}}
+test safe-5.3 {example pkgIndex.tcl packages, test in master interpreter, child directories} -setup {
+    set tmpAutoPath $::auto_path
+    lappend ::auto_path [file join $TestsDir auto0]
+} -body {
+    # Try to load the packages and run a command from each one.
+    set code3 [catch {package require SafeTestPackage1} msg3]
+    set code4 [catch {package require SafeTestPackage2} msg4]
+    set code5 [catch HeresPackage1 msg5]
+    set code6 [catch HeresPackage2 msg6]
+    list $code3 $msg3 $code4 $msg4 $code5 $msg5 $code6 $msg6
+} -cleanup {
+    set ::auto_path $tmpAutoPath
+    catch {package forget SafeTestPackage1}
+    catch {package forget SafeTestPackage2}
+    catch {rename HeresPackage1 {}}
+    catch {rename HeresPackage2 {}}
+} -match glob -result {0 1.2.3 0 2.3.4 0 OK1 0 OK2}
+test safe-5.4 {example pkgIndex.tcl packages, test in master interpreter, main directories} -setup {
+    set tmpAutoPath $::auto_path
+    lappend ::auto_path [file join $TestsDir auto0 auto1] \
+                        [file join $TestsDir auto0 auto2]
+} -body {
+    # Try to load the packages and run a command from each one.
+    set code3 [catch {package require SafeTestPackage1} msg3]
+    set code4 [catch {package require SafeTestPackage2} msg4]
+    set code5 [catch HeresPackage1 msg5]
+    set code6 [catch HeresPackage2 msg6]
+    list $code3 $msg3 $code4 $msg4 $code5 $msg5 $code6 $msg6
+} -cleanup {
+    set ::auto_path $tmpAutoPath
+    catch {package forget SafeTestPackage1}
+    catch {package forget SafeTestPackage2}
+    catch {rename HeresPackage1 {}}
+    catch {rename HeresPackage2 {}}
+} -match glob -result {0 1.2.3 0 2.3.4 0 OK1 0 OK2}
+test safe-5.5 {example modules packages, test in master interpreter, replace path} -setup {
+    set oldTm [tcl::tm::path list]
+    foreach path $oldTm {
+        tcl::tm::path remove $path
+    }
+    tcl::tm::path add [file join $TestsDir auto0 modules]
+} -body {
+    # Try to load the modules and run a command from each one.
+    set code0 [catch {package require test0} msg0]
+    set code1 [catch {package require mod1::test1} msg1]
+    set code2 [catch {package require mod2::test2} msg2]
+    set out0  [test0::try0]
+    set out1  [mod1::test1::try1]
+    set out2  [mod2::test2::try2]
+    list $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $out0 $out1 $out2
+} -cleanup {
+    tcl::tm::path remove [file join $TestsDir auto0 modules]
+    foreach path [lreverse $oldTm] {
+        tcl::tm::path add $path
+    }
+    catch {package forget test0}
+    catch {package forget mod1::test1}
+    catch {package forget mod2::test2}
+    catch {namespace delete ::test0}
+    catch {namespace delete ::mod1}
+} -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
+test safe-5.6 {example modules packages, test in master interpreter, append to path} -setup {
+    tcl::tm::path add [file join $TestsDir auto0 modules]
+} -body {
+    # Try to load the modules and run a command from each one.
+    set code0 [catch {package require test0} msg0]
+    set code1 [catch {package require mod1::test1} msg1]
+    set code2 [catch {package require mod2::test2} msg2]
+    set out0  [test0::try0]
+    set out1  [mod1::test1::try1]
+    set out2  [mod2::test2::try2]
+    list $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $out0 $out1 $out2
+} -cleanup {
+    tcl::tm::path remove [file join $TestsDir auto0 modules]
+    catch {package forget test0}
+    catch {package forget mod1::test1}
+    catch {package forget mod2::test2}
+    catch {namespace delete ::test0}
+    catch {namespace delete ::mod1}
+} -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
+
 
 # test safe interps 'information leak'
 proc SafeEval {script} {
@@ -199,117 +318,6 @@ rename SafeEval {}
 # More test should be added to check that hostname, nameofexecutable, aren't
 # leaking infos, but they still do...
 
-# Tests 7.0* test the example files before using them to test safe interpreters.
-
-test safe-7.0a {example tclIndex commands, test in master interpreter} -setup {
-    set tmpAutoPath $::auto_path
-    lappend ::auto_path [file join $TestsDir auto0 auto1] [file join $TestsDir auto0 auto2]
-} -body {
-    # Try to load the commands.
-    set code3 [catch report1 msg3]
-    set code4 [catch report2 msg4]
-    list $code3 $msg3 $code4 $msg4
-} -cleanup {
-    catch {rename report1 {}}
-    catch {rename report2 {}}
-    set ::auto_path $tmpAutoPath
-    auto_reset
-} -match glob -result {0 ok1 0 ok2}
-test safe-7.0b {example tclIndex commands, negative test in master interpreter} -setup {
-    set tmpAutoPath $::auto_path
-    lappend ::auto_path [file join $TestsDir auto0]
-} -body {
-    # Try to load the commands.
-    set code3 [catch report1 msg3]
-    set code4 [catch report2 msg4]
-    list $code3 $msg3 $code4 $msg4
-} -cleanup {
-    catch {rename report1 {}}
-    catch {rename report2 {}}
-    set ::auto_path $tmpAutoPath
-    auto_reset
-} -match glob -result {1 {invalid command name "report1"} 1 {invalid command name "report2"}}
-test safe-7.0c {example pkgIndex.tcl packages, test in master interpreter, child directories} -setup {
-    set tmpAutoPath $::auto_path
-    lappend ::auto_path [file join $TestsDir auto0]
-} -body {
-    # Try to load the packages and run a command from each one.
-    set code3 [catch {package require SafeTestPackage1} msg3]
-    set code4 [catch {package require SafeTestPackage2} msg4]
-    set code5 [catch HeresPackage1 msg5]
-    set code6 [catch HeresPackage2 msg6]
-    list $code3 $msg3 $code4 $msg4 $code5 $msg5 $code6 $msg6
-} -cleanup {
-    set ::auto_path $tmpAutoPath
-    catch {package forget SafeTestPackage1}
-    catch {package forget SafeTestPackage2}
-    catch {rename HeresPackage1 {}}
-    catch {rename HeresPackage2 {}}
-} -match glob -result {0 1.2.3 0 2.3.4 0 OK1 0 OK2}
-test safe-7.0d {example pkgIndex.tcl packages, test in master interpreter, main directories} -setup {
-    set tmpAutoPath $::auto_path
-    lappend ::auto_path [file join $TestsDir auto0 auto1] \
-                        [file join $TestsDir auto0 auto2]
-} -body {
-    # Try to load the packages and run a command from each one.
-    set code3 [catch {package require SafeTestPackage1} msg3]
-    set code4 [catch {package require SafeTestPackage2} msg4]
-    set code5 [catch HeresPackage1 msg5]
-    set code6 [catch HeresPackage2 msg6]
-    list $code3 $msg3 $code4 $msg4 $code5 $msg5 $code6 $msg6
-} -cleanup {
-    set ::auto_path $tmpAutoPath
-    catch {package forget SafeTestPackage1}
-    catch {package forget SafeTestPackage2}
-    catch {rename HeresPackage1 {}}
-    catch {rename HeresPackage2 {}}
-} -match glob -result {0 1.2.3 0 2.3.4 0 OK1 0 OK2}
-test safe-7.0e {example modules packages, test in master interpreter, replace path} -setup {
-    set oldTm [tcl::tm::path list]
-    foreach path $oldTm {
-        tcl::tm::path remove $path
-    }
-    tcl::tm::path add [file join $TestsDir auto0 modules]
-} -body {
-    # Try to load the modules and run a command from each one.
-    set code0 [catch {package require test0} msg0]
-    set code1 [catch {package require mod1::test1} msg1]
-    set code2 [catch {package require mod2::test2} msg2]
-    set out0  [test0::try0]
-    set out1  [mod1::test1::try1]
-    set out2  [mod2::test2::try2]
-    list $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $out0 $out1 $out2
-} -cleanup {
-    tcl::tm::path remove [file join $TestsDir auto0 modules]
-    foreach path [lreverse $oldTm] {
-        tcl::tm::path add $path
-    }
-    catch {package forget test0}
-    catch {package forget mod1::test1}
-    catch {package forget mod2::test2}
-    catch {namespace delete ::test0}
-    catch {namespace delete ::mod1}
-} -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
-test safe-7.0f {example modules packages, test in master interpreter, append to path} -setup {
-    tcl::tm::path add [file join $TestsDir auto0 modules]
-} -body {
-    # Try to load the modules and run a command from each one.
-    set code0 [catch {package require test0} msg0]
-    set code1 [catch {package require mod1::test1} msg1]
-    set code2 [catch {package require mod2::test2} msg2]
-    set out0  [test0::try0]
-    set out1  [mod1::test1::try1]
-    set out2  [mod2::test2::try2]
-    list $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $out0 $out1 $out2
-} -cleanup {
-    tcl::tm::path remove [file join $TestsDir auto0 modules]
-    catch {package forget test0}
-    catch {package forget mod1::test1}
-    catch {package forget mod2::test2}
-    catch {namespace delete ::test0}
-    catch {namespace delete ::mod1}
-} -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
-
 # high level general test
 # Use example packages not http1.0
 test safe-7.1 {tests that everything works at high level with conventional AutoPathSync} -setup {
@@ -337,18 +345,6 @@ test safe-7.1 {tests that everything works at high level with conventional AutoP
         safe::setAutoPathSync $SyncVal_TMP
     }
 } -match glob -result 1.2.3
-# high level general test
-test safe-7.1http {tests that everything works at high level, uses http 2} -body {
-    set i [safe::interpCreate]
-    # no error shall occur:
-    # (because the default access_path shall include 1st level sub dirs so
-    #  package require in a slave works like in the master)
-    set v [interp eval $i {package require http 2}]
-    # no error shall occur:
-    interp eval $i {http::config}
-    safe::interpDelete $i
-    set v
-} -match glob -result 2.*
 test safe-7.2 {tests specific path and interpFind/AddToAccessPath with conventional AutoPathSync} -setup {
     # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
@@ -381,21 +377,6 @@ test safe-7.2 {tests specific path and interpFind/AddToAccessPath with conventio
 } -match glob -result {{$p(:0:)} {$p(:*:)} {$p(:*:)} --\
         1 {can't find package SafeTestPackage1} --\
         {TCLLIB */dummy/unixlike/test/path TESTSDIR/auto0} -- {}}
-test safe-7.2http {tests specific path and interpFind/AddToAccessPath, uses http1.0} -body {
-    set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
-    # should not add anything (p0)
-    set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p1
-    set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
-    set confA [safe::interpConfigure $i]
-    set mappA [mapList $PathMapp [dict get $confA -accessPath]]
-    # an error shall occur (http is not anymore in the secure 0-level
-    # provided deep path)
-    list $token1 $token2 -- \
-	    [catch {interp eval $i {package require http 1}} msg] $msg -- \
-	    $mappA -- [safe::interpDelete $i]
-} -match glob -result {{$p(:0:)} {$p(:*:)} -- 1 {can't find package http 1} --\
-        {TCLLIB */dummy/unixlike/test/path} -- {}}
 test safe-7.3 {check that safe subinterpreters work} {
     set g [interp slaves]
     if {$g ne {}} {
@@ -410,6 +391,23 @@ test safe-7.3 {check that safe subinterpreters work} {
     list $g $h [interp eval $j {join {o k} ""}] [safe::interpDelete $i] \
             [interp exists $j] [info vars ::safe::S*]
 } {{} {} ok {} 0 {}}
+test safe-7.3.1 {check that safe subinterpreters work with namespace names} -setup {
+} -body {
+    set g [interp slaves]
+    if {$g ne {}} {
+        append g { -- residue of an earlier test}
+    }
+    set h [info vars ::safe::S*]
+    if {$h ne {}} {
+        append h { -- residue of an earlier test}
+    }
+    set i [safe::interpCreate foo::bar]
+    set j [safe::interpCreate [list $i hello::world]]
+    list $g $h [interp eval $j {join {o k} ""}] \
+            [foo::bar eval {hello::world eval {join {o k} ""}}] \
+            [safe::interpDelete $i] \
+            [interp exists $j] [info vars ::safe::S*]
+} -match glob -result {{} {} ok ok {} 0 {}}
 test safe-7.4 {tests specific path and positive search with conventional AutoPathSync} -setup {
     # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
@@ -440,19 +438,6 @@ test safe-7.4 {tests specific path and positive search with conventional AutoPat
     }
 } -match glob -result {{$p(:0:)} {$p(:*:)} -- 0 1.2.3 --\
         {TCLLIB * TESTSDIR/auto0/auto1} -- {}}
-test safe-7.4http {tests specific path and positive search, uses http1.0} -body {
-    set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
-    # should not add anything (p0)
-    set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p1
-    set token2 [safe::interpAddToAccessPath $i [file join [info library] http1.0]]
-    set confA [safe::interpConfigure $i]
-    set mappA [mapList $PathMapp [dict get $confA -accessPath]]
-    # this time, unlike test safe-7.2, http should be found
-    list $token1 $token2 -- \
-	    [catch {interp eval $i {package require http 1}} msg] $msg -- \
-	    $mappA -- [safe::interpDelete $i]
-} -match glob -result {{$p(:0:)} {$p(:*:)} -- 0 1.0 -- {TCLLIB *TCLLIB/http1.0} -- {}}
 test safe-7.5 {tests positive and negative module loading with conventional AutoPathSync} -setup {
     # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
@@ -729,7 +714,27 @@ test safe-9.7 {interpConfigure widget like behaviour (demystified)} -body {
         {-accessPath *} {-nested 1} {-statics 0} {-deleteHook {foo bar}}\
         {-accessPath * -statics 1 -nested 1 -deleteHook {foo bar}}\
         {-accessPath * -statics 0 -nested 0 -deleteHook toto}}
-test safe-9.8 {interpConfigure change the access path; tclIndex commands unaffected by token rearrangement (dummy test of doreset)} -setup {
+test safe-9.8 {test autoloading commands indexed in tclIndex files} -setup {
+} -body {
+    set i [safe::interpCreate -accessPath [list $tcl_library \
+                                            [file join $TestsDir auto0 auto1] \
+                                            [file join $TestsDir auto0 auto2]]]
+    # Inspect.
+    set confA [safe::interpConfigure $i]
+    set mappA [mapList $PathMapp [dict get $confA -accessPath]]
+    set path1 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto1]]
+    set path2 [::safe::interpFindInAccessPath $i [file join $TestsDir auto0 auto2]]
+
+    # Load and run the commands.
+    set code1 [catch {interp eval $i {report1}} msg1]
+    set code2 [catch {interp eval $i {report2}} msg2]
+
+    list $path1 $path2 -- $code1 $msg1 $code2 $msg2 -- $mappA
+} -cleanup {
+    safe::interpDelete $i
+} -match glob -result {{$p(:1:)} {$p(:2:)} -- 0 ok1 0 ok2 --\
+        {TCLLIB TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2*}}
+test safe-9.9 {interpConfigure change the access path; tclIndex commands unaffected by token rearrangement (dummy test of doreset)} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
                                             [file join $TestsDir auto0 auto1] \
@@ -768,7 +773,7 @@ test safe-9.8 {interpConfigure change the access path; tclIndex commands unaffec
 } -match glob -result {{$p(:1:)} {$p(:2:)} -- {$p(:2:)} {$p(:1:)} -- 0 ok1 0 ok2 --\
         {TCLLIB TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2*} --\
         {TCLLIB TESTSDIR/auto0/auto2 TESTSDIR/auto0/auto1*}}
-test safe-9.9 {interpConfigure change the access path; tclIndex commands unaffected by token rearrangement (actual test of doreset)} -setup {
+test safe-9.10 {interpConfigure change the access path; tclIndex commands unaffected by token rearrangement (actual test of doreset)} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
                                             [file join $TestsDir auto0 auto1] \
@@ -806,7 +811,7 @@ test safe-9.9 {interpConfigure change the access path; tclIndex commands unaffec
         0 ok1 0 ok2 --\
         {TCLLIB TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2*} --\
         {TCLLIB TESTSDIR/auto0/auto2 TESTSDIR/auto0/auto1*}}
-test safe-9.10 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement} -setup {
+test safe-9.11 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement} -setup {
 } -body {
     # For complete correspondence to safe-9.10opt, include auto0 in access path.
     set i [safe::interpCreate -accessPath [list $tcl_library \
@@ -850,7 +855,7 @@ test safe-9.10 {interpConfigure change the access path; pkgIndex.tcl packages un
         {TCLLIB TESTSDIR/auto0 TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2*} --\
         {TCLLIB TESTSDIR/auto0 TESTSDIR/auto0/auto2 TESTSDIR/auto0/auto1*} --\
         0 OK1 0 OK2}
-test safe-9.11 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, 9.10 without path auto0} -setup {
+test safe-9.12 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, 9.10 without path auto0} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
                                             [file join $TestsDir auto0 auto1] \
@@ -890,7 +895,7 @@ test safe-9.11 {interpConfigure change the access path; pkgIndex.tcl packages un
         {TCLLIB TESTSDIR/auto0/auto1 TESTSDIR/auto0/auto2*} --\
         {TCLLIB TESTSDIR/auto0/auto2 TESTSDIR/auto0/auto1*} --\
         0 OK1 0 OK2}
-test safe-9.12 {interpConfigure change the access path; pkgIndex.tcl packages fail if directory de-listed} -setup {
+test safe-9.13 {interpConfigure change the access path; pkgIndex.tcl packages fail if directory de-listed} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
                                             [file join $TestsDir auto0 auto1] \
@@ -1518,7 +1523,7 @@ test safe-13.7 {mimic the glob call by tclPkgUnknown in a safe interpreter [Bug 
     safe::interpDelete $i
     removeDirectory $testdir
 } -result {EXPECTED/deletemetoo/pkgIndex.tcl}
-test safe-13.7a {mimic the glob call by tclPkgUnknown in a safe interpreter with multiple subdirectories} -setup {
+test safe-13.7.1 {mimic the glob call by tclPkgUnknown in a safe interpreter with multiple subdirectories} -setup {
     set i [safe::interpCreate]
     buildEnvironment2 pkgIndex.tcl
 } -body {
