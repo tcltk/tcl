@@ -529,7 +529,7 @@ static const TclIntStubs tclIntStubs = {
     TclResetRewriteEnsemble, /* 247 */
     TclCopyChannel, /* 248 */
     TclDoubleDigits, /* 249 */
-    TclSetSlaveCancelFlags, /* 250 */
+    TclSetChildCancelFlags, /* 250 */
     TclRegisterLiteral, /* 251 */
     TclPtrGetVar, /* 252 */
     TclPtrSetVar, /* 253 */

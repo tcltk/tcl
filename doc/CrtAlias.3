@@ -158,12 +158,12 @@ If no such slave interpreter exists, \fBNULL\fR is returned.
 \fIinterp\fR. If \fIinterp\fR has no master (it is a
 top-level interpreter) then \fBNULL\fR is returned.
 .PP
-\fBTcl_GetInterpPath\fR stores in the result of \fIaskingInterp\fR
-the relative path between \fIaskingInterp\fR and \fIslaveInterp\fR;
-\fIslaveInterp\fR must be a slave of \fIaskingInterp\fR. If the computation
+\fBTcl_GetInterpPath\fR stores in the result of \fIinterp\fR
+the relative path between \fIinterp\fR and \fIslaveInterp\fR;
+\fIslaveInterp\fR must be a slave of \fIinterp\fR. If the computation
 of the relative path succeeds, \fBTCL_OK\fR is returned, else
 \fBTCL_ERROR\fR is returned and an error message is stored as the
-result of \fIaskingInterp\fR.
+result of \fIinterp\fR.
 .PP
 \fBTcl_CreateAlias\fR creates a command named \fIslaveCmd\fR in
 \fIslaveInterp\fR that when invoked, will cause the command \fItargetCmd\fR
