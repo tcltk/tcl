@@ -72,11 +72,19 @@ See the \fBOPTIONS\fR section below for a description of the
 optional arguments.
 If the \fIslave\fR argument is omitted, a name will be generated.
 \fB::safe::interpCreate\fR always returns the interpreter name.
+.sp
+The interpreter name \fIslave\fR may include namespace separators,
+but may not have leading or trailing namespace separators, or excess
+colon characters in namespace separators.  The interpreter name is
+qualified relative to the global namespace ::, not the namespace in which
+the \fB::safe::interpCreate\fR command is evaluated.
 .TP
 \fB::safe::interpInit\fR \fIslave\fR ?\fIoptions...\fR?
 This command is similar to \fBinterpCreate\fR except it that does not
 create the safe interpreter. \fIslave\fR must have been created by some
-other means, like \fBinterp create\fR \fB\-safe\fR.
+other means, like \fBinterp create\fR \fB\-safe\fR.  The interpreter
+name \fIslave\fR may include namespace separators, subject to the same
+restrictions as for \fBinterpCreate\fR.
 .TP
 \fB::safe::interpConfigure\fR \fIslave\fR ?\fIoptions...\fR?
 If no \fIoptions\fR are given, returns the settings for all options for the
