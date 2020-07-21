@@ -968,12 +968,15 @@ proc ::safe::AliasSource {slave args} {
 	return -code error "permission denied"
     }
 
-    # do the checks on the filename :
+    # Check that the filename exists and is readable.  If it is not, deliver
+    # this -errorcode so that caller in tclPkgUnknown does not write a message
+    # to tclLog.  Has no effect on other callers of ::source, which are in
+    # "package ifneeded" scripts.
     if {[catch {
 	CheckFileName $slave $realfile
     } msg]} {
 	Log $slave "$realfile:$msg"
-	return -code error $msg
+	return -code error -errorcode {POSIX EACCES} $msg
     }
 
     # Passed all the tests, lets source it. Note that we do this all manually
