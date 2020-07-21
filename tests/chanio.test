@@ -6372,7 +6372,7 @@ test chan-io-49.5 {testing crlf reading, leftover cr disgorgment} -setup {
 
 test chan-io-50.1 {testing handler deletion} -setup {
     file delete $path(test1)
-} -constraints {testchannelevent nonPortable} -body {
+} -constraints testchannelevent -body {
     set f [open $path(test1) w]
     chan close $f
     set f [open $path(test1) r]
@@ -6382,7 +6382,7 @@ test chan-io-50.1 {testing handler deletion} -setup {
     }]
     variable z not_called
     update
-    return $z
+    set z
 } -cleanup {
     chan close $f
 } -result called
@@ -6390,7 +6390,7 @@ test chan-io-50.2 {testing handler deletion with multiple handlers} -setup {
     file delete $path(test1)
     chan close [open $path(test1) w]
     set z ""
-} -constraints {testchannelevent nonPortable} -body {
+} -constraints testchannelevent -body {
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code [list delhandler $f 1]]
     testchannelevent $f add readable [namespace code [list delhandler $f 0]]
@@ -6409,7 +6409,7 @@ test chan-io-50.3 {testing handler deletion with multiple handlers} -setup {
     file delete $path(test1)
     chan close [open $path(test1) w]
     set z ""
-} -constraints {testchannelevent nonPortable} -body {
+} -constraints testchannelevent -body {
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code [list notcalled $f 1]]
     testchannelevent $f add readable [namespace code [list delhandler $f 0]]
@@ -6435,7 +6435,7 @@ test chan-io-50.4 {testing handler deletion vs reentrant calls} -setup {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan close $f
-} -constraints {testchannelevent nonPortable} -body {
+} -constraints testchannelevent -body {
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code {
 	if {$u eq "recursive"} {
@@ -6450,7 +6450,7 @@ test chan-io-50.4 {testing handler deletion vs reentrant calls} -setup {
     variable u toplevel
     variable z ""
     update
-    return $z
+    set z
 } -cleanup {
     chan close $f
 } -result {{delrecursive calling recursive} {delrecursive deleting recursive}}
@@ -6458,7 +6458,7 @@ test chan-io-50.5 {testing handler deletion vs reentrant calls} -setup {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan close $f
-} -constraints {testchannelevent nonPortable} -body {
+} -constraints testchannelevent -body {
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code [list notcalled $f]]
     testchannelevent $f add readable [namespace code [list del $f]]
@@ -6484,7 +6484,7 @@ test chan-io-50.5 {testing handler deletion vs reentrant calls} -setup {
     set z ""
     set u toplevel
     update
-    return $z
+    set z
 } -cleanup {
     chan close $f
 } -result [list {del calling recursive} {del deleted notcalled} \
@@ -6493,7 +6493,7 @@ test chan-io-50.6 {testing handler deletion vs reentrant calls} -setup {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan close $f
-} -constraints {testchannelevent nonPortable} -body {
+} -constraints testchannelevent -body {
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code [list second $f]]
     testchannelevent $f add readable [namespace code [list first $f]]
@@ -6527,7 +6527,7 @@ test chan-io-50.6 {testing handler deletion vs reentrant calls} -setup {
     set z ""
     set u toplevel
     update
-    return $z
+    set z
 } -cleanup {
     chan close $f
 } -result [list {first called} {first called not toplevel} \
