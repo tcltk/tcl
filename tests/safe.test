@@ -94,6 +94,8 @@ test safe-2.2 {creating interpreters, should have no aliases} -setup {
     a aliases
 } -cleanup {
     safe::interpDelete a
+    # This (ab)use of safe::interpDelete to delete non-Safe-Base interpreters
+    # is regrettable and should be removed at the next major revision.
 } -result ""
 test safe-2.3 {creating safe interpreters, should have no unexpected aliases} -setup {
     catch {safe::interpDelete a}
@@ -143,6 +145,8 @@ test safe-4.1 {safe::interpDelete} -setup {
 } -body {
     interp create a
     safe::interpDelete a
+    # This (ab)use of safe::interpDelete to delete non-Safe-Base interpreters
+    # is regrettable and should be removed at the next major revision.
 } -result ""
 test safe-4.2 {safe::interpDelete, indirectly} -setup {
     catch {safe::interpDelete a}
@@ -150,6 +154,8 @@ test safe-4.2 {safe::interpDelete, indirectly} -setup {
     interp create a
     a alias exit safe::interpDelete a
     a eval exit
+    # This (ab)use of safe::interpDelete to delete non-Safe-Base interpreters
+    # is regrettable and should be removed at the next major revision.
 } -result ""
 test safe-4.5 {safe::interpDelete} -setup {
     catch {safe::interpDelete a}

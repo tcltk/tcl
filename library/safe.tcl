@@ -444,6 +444,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 #    Search for a real directory and returns its virtual Id (including the
 #    "$")
 proc ::safe::interpFindInAccessPath {slave path} {
+    CheckInterp $slave
     namespace upvar ::safe [VarName $slave] state
 
     if {![dict exists $state(access_path,remap) $path]} {
@@ -460,6 +461,7 @@ proc ::safe::interpFindInAccessPath {slave path} {
 proc ::safe::interpAddToAccessPath {slave path} {
     # first check if the directory is already in there
     # (inlined interpFindInAccessPath).
+    CheckInterp $slave
     namespace upvar ::safe [VarName $slave] state
 
     if {[dict exists $state(access_path,remap) $path]} {
@@ -591,11 +593,15 @@ proc ::safe::AddSubDirs {pathList} {
 }
 
 # This procedure deletes a safe slave managed by Safe Tcl and cleans up
-# associated state:
+# associated state.
+# - The command will also delete non-Safe-Base interpreters.
+# - This is regrettable, but to avoid breaking existing code this should be
+#   amended at the next major revision by uncommenting "CheckInterp".
 
 proc ::safe::interpDelete {slave} {
     Log $slave "About to delete" NOTICE
 
+    # CheckInterp $slave
     namespace upvar ::safe [VarName $slave] state
 
     # When an interpreter is deleted with [interp delete], any sub-interpreters
