@@ -27,7 +27,7 @@ testConstraint exec [llength [info commands exec]]
 test event-1.1 {Tcl_CreateFileHandler, reading} -setup {
     testfilehandler close
     set result ""
-} -constraints {testfilehandler} -body {
+} -constraints {testfilehandler nonPortable} -body {
     testfilehandler create 0 readable off
     testfilehandler clear 0
     testfilehandler oneevent
