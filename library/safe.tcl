@@ -79,6 +79,7 @@ proc ::safe::InterpNested {} {
 # Interface/entry point function and front end for "Create"
 proc ::safe::interpCreate {args} {
     set Args [::tcl::OptKeyParse ::safe::interpCreate $args]
+    RejectExcessColons $slave
     InterpCreate $slave $accessPath \
 	[InterpStatics] [InterpNested] $deleteHook
 }
@@ -88,13 +89,14 @@ proc ::safe::interpInit {args} {
     if {![::interp exists $slave]} {
 	return -code error "\"$slave\" is not an interpreter"
     }
+    RejectExcessColons $slave
     InterpInit $slave $accessPath \
 	[InterpStatics] [InterpNested] $deleteHook
 }
 
 # Check that the given slave is "one of us"
 proc ::safe::CheckInterp {slave} {
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
     if {![info exists state] || ![::interp exists $slave]} {
 	return -code error \
 	    "\"$slave\" is not an interpreter managed by ::safe::"
@@ -123,7 +125,7 @@ proc ::safe::interpConfigure {args} {
 	    # checks for the "-help" option.
 	    set Args [::tcl::OptKeyParse ::safe::interpIC $args]
 	    CheckInterp $slave
-	    namespace upvar ::safe S$slave state
+	    namespace upvar ::safe [VarName $slave] state
 
 	    return [join [list \
 		[list -accessPath $state(access_path)] \
@@ -146,7 +148,7 @@ proc ::safe::interpConfigure {args} {
 		return -code error [::tcl::OptFlagUsage $desc $arg]
 	    }
 	    CheckInterp $slave
-	    namespace upvar ::safe S$slave state
+	    namespace upvar ::safe [VarName $slave] state
 
 	    set item [::tcl::OptCurDesc $desc]
 	    set name [::tcl::OptName $item]
@@ -187,7 +189,7 @@ proc ::safe::interpConfigure {args} {
 	    # create did
 	    set Args [::tcl::OptKeyParse ::safe::interpIC $args]
 	    CheckInterp $slave
-	    namespace upvar ::safe S$slave state
+	    namespace upvar ::safe [VarName $slave] state
 
 	    # Get the current (and not the default) values of whatever has
 	    # not been given:
@@ -284,8 +286,10 @@ proc ::safe::InterpCreate {
 			   deletehook
 		       } {
     # Create the slave.
+    # If evaluated in ::safe, the interpreter command for foo is ::foo;
+    # but for foo::bar is safe::foo::bar.  So evaluate in :: instead.
     if {$slave ne ""} {
-	::interp create -safe $slave
+	namespace eval :: [list ::interp create -safe $slave]
     } else {
 	# empty argument: generate slave name
 	set slave [::interp create -safe]
@@ -338,7 +342,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     Log $slave "Setting accessPath=($access_path) staticsok=$staticsok\
 		nestedok=$nestedok deletehook=($deletehook)" NOTICE
 
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
 
     # clear old autopath if it existed
     # build new one
@@ -440,7 +444,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 #    Search for a real directory and returns its virtual Id (including the
 #    "$")
 proc ::safe::interpFindInAccessPath {slave path} {
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
 
     if {![dict exists $state(access_path,remap) $path]} {
 	return -code error "$path not found in access path"
@@ -456,7 +460,7 @@ proc ::safe::interpFindInAccessPath {slave path} {
 proc ::safe::interpAddToAccessPath {slave path} {
     # first check if the directory is already in there
     # (inlined interpFindInAccessPath).
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
 
     if {[dict exists $state(access_path,remap) $path]} {
 	return [dict get $state(access_path,remap) $path]
@@ -555,7 +559,7 @@ proc ::safe::InterpInit {
 
     # Sync the paths used to search for Tcl modules. This can be done only
     # now, after tm.tcl was loaded.
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
     if {[llength $state(tm_path_slave)] > 0} {
 	::interp eval $slave [list \
 		::tcl::tm::add {*}[lreverse $state(tm_path_slave)]]
@@ -592,7 +596,7 @@ proc ::safe::AddSubDirs {pathList} {
 proc ::safe::interpDelete {slave} {
     Log $slave "About to delete" NOTICE
 
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
 
     # When an interpreter is deleted with [interp delete], any sub-interpreters
     # are deleted automatically, but this leaves behind their data in the Safe
@@ -600,7 +604,7 @@ proc ::safe::interpDelete {slave} {
     # Safe Base sub-interpreter, so each one is deleted cleanly and not by
     # the automatic mechanism built into [interp delete].
     foreach sub [interp slaves $slave] {
-        if {[info exists ::safe::S[list $slave $sub]]} {
+        if {[info exists ::safe::[VarName [list $slave $sub]]]} {
             ::safe::interpDelete [list $slave $sub]
         }
     }
@@ -675,7 +679,7 @@ proc ::safe::setLogCmd {args} {
 # tcl_library to the first token of the virtual path.
 #
 proc ::safe::SyncAccessPath {slave} {
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
 
     set slave_access_path $state(access_path,slave)
     ::interp eval $slave [list set auto_path $slave_access_path]
@@ -702,7 +706,7 @@ proc ::safe::PathToken {n} {
 # translate virtual path into real path
 #
 proc ::safe::TranslatePath {slave path} {
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
 
     # somehow strip the namespaces 'functionality' out (the danger is that
     # we would strip valid macintosh "../" queries... :
@@ -1021,7 +1025,7 @@ proc ::safe::AliasLoad {slave file args} {
     # package name (can be empty if file is not).
     set package [lindex $args 0]
 
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
 
     # Determine where to load. load use a relative interp path and {}
     # means self, so we can directly and safely use passed arg.
@@ -1083,7 +1087,7 @@ proc ::safe::AliasLoad {slave file args} {
 # the security here relies on "file dirname" answering the proper
 # result... needs checking ?
 proc ::safe::FileInAccessPath {slave file} {
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
     set access_path $state(access_path)
 
     if {[file isdirectory $file]} {
@@ -1095,14 +1099,14 @@ proc ::safe::FileInAccessPath {slave file} {
     # potential pathname anomalies.
     set norm_parent [file normalize $parent]
 
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
     if {$norm_parent ni $state(access_path,norm)} {
 	return -code error "\"$file\": not in access_path"
     }
 }
 
 proc ::safe::DirInAccessPath {slave dir} {
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
     set access_path $state(access_path)
 
     if {[file isfile $dir]} {
@@ -1113,7 +1117,7 @@ proc ::safe::DirInAccessPath {slave dir} {
     # potential pathname anomalies.
     set norm_dir [file normalize $dir]
 
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
     if {$norm_dir ni $state(access_path,norm)} {
 	return -code error "\"$dir\": not in access_path"
     }
@@ -1152,6 +1156,58 @@ proc ::safe::AliasEncoding {slave option args} {
 
 proc ::safe::AliasExeName {slave} {
     return ""
+}
+
+# ------------------------------------------------------------------------------
+# Using Interpreter Names with Namespace Qualifiers
+# ------------------------------------------------------------------------------
+# (1) We wish to preserve compatibility with existing code, in which Safe Base
+#     interpreter names have no namespace qualifiers.
+# (2) safe::interpCreate and the rest of the Safe Base previously could not
+#     accept namespace qualifiers in an interpreter name.
+# (3) The interp command will accept namespace qualifiers in an interpreter
+#     name, but accepts distinct interpreters that will have the same command
+#     name (e.g. foo, ::foo, and :::foo) (bug 66c2e8c974).
+# (4) To satisfy these constraints, Safe Base interpreter names will be fully
+#     qualified namespace names with no excess colons and with the leading "::"
+#     omitted.
+# (5) Trailing "::" implies a namespace tail {}, which interp reads as {{}}.
+#     Reject such names.
+# (6) We could:
+#     (a) EITHER reject usable but non-compliant names (e.g. excess colons) in
+#         interpCreate, interpInit;
+#     (b) OR accept such names and then translate to a compliant name in every
+#         command.
+#     The problem with (b) is that the user will expect to use the name with the
+#     interp command and will find that it is not recognised.
+#     E.g "interpCreate ::foo" creates interpreter "foo", and the user's name
+#     "::foo" works with all the Safe Base commands, but "interp eval ::foo"
+#     fails.
+#     So we choose (a).
+# (7) The command
+#         namespace upvar ::safe S$slave state
+#     becomes
+#         namespace upvar ::safe [VarName $slave] state
+# ------------------------------------------------------------------------------
+
+proc ::safe::RejectExcessColons {slave} {
+    set stripped [regsub -all -- {:::*} $slave ::]
+    if {[string range $stripped end-1 end] eq {::}} {
+        return -code error {interpreter name must not end in "::"}
+    }
+    if {$stripped ne $slave} {
+        set msg {interpreter name has excess colons in namespace separators}
+        return -code error $msg
+    }
+    if {[string range $stripped 0 1] eq {::}} {
+        return -code error {interpreter name must not begin "::"}
+    }
+    return
+}
+
+proc ::safe::VarName {slave} {
+    # return S$slave
+    return S[string map {:: @N @ @A} $slave]
 }
 
 proc ::safe::Setup {} {
