@@ -6897,7 +6897,7 @@ test io-50.5 {testing handler deletion vs reentrant calls} {testchannelevent non
     set u toplevel
     update
     close $f
-    set z	
+    set z
 } [list {del calling recursive} {del deleted notcalled} \
 	{del deleted myself} {del after update}]
 test io-50.6 {testing handler deletion vs reentrant calls} {testchannelevent nonPortable} {
