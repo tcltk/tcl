@@ -377,12 +377,6 @@ Returns a Tcl list of the names of all the child interpreters associated
 with the interpreter identified by \fIpath\fR. If \fIpath\fR is omitted,
 the invoking interpreter is used.
 .TP
-.VS "TIP 581"
-\fBinterp\fR \fBchildren\fR ?\fIpath\fR?
-.
-Synonym for . \fBinterp\fR \fBslaves\fR ?\fIpath\fR?
-.VE "TIP 581"
-.TP
 \fBinterp\fR \fBtarget\fR \fIpath alias\fR
 .
 Returns a Tcl list describing the target interpreter for an alias. The
