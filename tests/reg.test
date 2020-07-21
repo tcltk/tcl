@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
 }
 

@@ -2161,7 +2161,7 @@ Tcl_GetMaster(
 /*
  *----------------------------------------------------------------------
  *
- * TclSetSlaveCancelFlags --
+ * TclSetChildCancelFlags --
  *
  *	This function marks all slave interpreters belonging to a given
  *	interpreter as being canceled or not canceled, depending on the
@@ -2177,7 +2177,7 @@ Tcl_GetMaster(
  */
 
 void
-TclSetSlaveCancelFlags(
+TclSetChildCancelFlags(
     Tcl_Interp *interp,		/* Set cancel flags of this interpreter. */
     int flags,			/* Collection of OR-ed bits that control
 				 * the cancellation of the script. Only
@@ -2220,7 +2220,7 @@ TclSetSlaveCancelFlags(
 	 * interpreter.
 	 */
 
-	TclSetSlaveCancelFlags((Tcl_Interp *) iPtr, flags, force);
+	TclSetChildCancelFlags((Tcl_Interp *) iPtr, flags, force);
     }
 }
 
@@ -2250,23 +2250,23 @@ TclSetSlaveCancelFlags(
 
 int
 Tcl_GetInterpPath(
-    Tcl_Interp *askingInterp,	/* Interpreter to start search from. */
+    Tcl_Interp *interp,	/* Interpreter to start search from. */
     Tcl_Interp *targetInterp)	/* Interpreter to find. */
 {
     InterpInfo *iiPtr;
 
-    if (targetInterp == askingInterp) {
-	Tcl_SetObjResult(askingInterp, Tcl_NewObj());
+    if (targetInterp == interp) {
+	Tcl_SetObjResult(interp, Tcl_NewObj());
 	return TCL_OK;
     }
     if (targetInterp == NULL) {
 	return TCL_ERROR;
     }
     iiPtr = (InterpInfo *) ((Interp *) targetInterp)->interpInfo;
-    if (Tcl_GetInterpPath(askingInterp, iiPtr->slave.masterInterp) != TCL_OK){
+    if (Tcl_GetInterpPath(interp, iiPtr->slave.masterInterp) != TCL_OK){
 	return TCL_ERROR;
     }
-    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(askingInterp),
+    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
 	    Tcl_NewStringObj((const char *)Tcl_GetHashKey(&iiPtr->master.slaveTable,
 		    iiPtr->slave.slaveEntryPtr), -1));
     return TCL_OK;
@@ -2874,7 +2874,7 @@ SlaveEval(
      * function for that particular Tcl_Interp.
      */
 
-    TclSetSlaveCancelFlags(slaveInterp, 0, 0);
+    TclSetChildCancelFlags(slaveInterp, 0, 0);
 
     Tcl_Preserve(slaveInterp);
     Tcl_AllowExceptions(slaveInterp);
