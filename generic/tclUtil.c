@@ -3995,8 +3995,8 @@ TclGetProcessGlobalValue(
 
 	if (pgvPtr->encoding != current) {
 	    /*
-	     * The system encoding has changed since the master string value
-	     * was saved. Convert the master value to be based on the new
+	     * The system encoding has changed since the global string value
+	     * was saved. Convert the global value to be based on the new
 	     * system encoding.
 	     */
 
