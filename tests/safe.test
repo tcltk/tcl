@@ -93,6 +93,8 @@ test safe-2.2 {creating interpreters, should have no aliases} -setup {
     a aliases
 } -cleanup {
     safe::interpDelete a
+    # This (ab)use of safe::interpDelete to delete non-Safe-Base interpreters
+    # is regrettable and should be removed at the next major revision.
 } -result ""
 test safe-2.3 {creating safe interpreters, should have no unexpected aliases} -setup {
     catch {safe::interpDelete a}
@@ -142,6 +144,8 @@ test safe-4.1 {safe::interpDelete} -setup {
 } -body {
     interp create a
     safe::interpDelete a
+    # This (ab)use of safe::interpDelete to delete non-Safe-Base interpreters
+    # is regrettable and should be removed at the next major revision.
 } -result ""
 test safe-4.2 {safe::interpDelete, indirectly} -setup {
     catch {safe::interpDelete a}
@@ -149,6 +153,8 @@ test safe-4.2 {safe::interpDelete, indirectly} -setup {
     interp create a
     a alias exit safe::interpDelete a
     a eval exit
+    # This (ab)use of safe::interpDelete to delete non-Safe-Base interpreters
+    # is regrettable and should be removed at the next major revision.
 } -result ""
 test safe-4.5 {safe::interpDelete} -setup {
     catch {safe::interpDelete a}
@@ -361,6 +367,23 @@ test safe-7.3 {check that safe subinterpreters work} {
     list $g $h [interp eval $j {join {o k} ""}] [safe::interpDelete $i] \
             [interp exists $j] [info vars ::safe::S*]
 } {{} {} ok {} 0 {}}
+test safe-7.3.1 {check that safe subinterpreters work with namespace names} -setup {
+} -body {
+    set g [interp slaves]
+    if {$g ne {}} {
+        append g { -- residue of an earlier test}
+    }
+    set h [info vars ::safe::S*]
+    if {$h ne {}} {
+        append h { -- residue of an earlier test}
+    }
+    set i [safe::interpCreate foo::bar]
+    set j [safe::interpCreate [list $i hello::world]]
+    list $g $h [interp eval $j {join {o k} ""}] \
+            [foo::bar eval {hello::world eval {join {o k} ""}}] \
+            [safe::interpDelete $i] \
+            [interp exists $j] [info vars ::safe::S*]
+} -match glob -result {{} {} ok ok {} 0 {}}
 test safe-7.4 {tests specific path and positive search} -setup {
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
