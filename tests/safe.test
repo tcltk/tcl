@@ -285,7 +285,6 @@ test safe-5.6 {example modules packages, test in master interpreter, append to p
     catch {namespace delete ::mod1}
 } -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
 
-
 # test safe interps 'information leak'
 proc SafeEval {script} {
     # Helper procedure that ensures the safe interp is cleaned up even if
@@ -317,7 +316,7 @@ rename SafeEval {}
 # leaking infos, but they still do...
 
 # high level general test
-# Use example packages not http1.0
+# Use example packages not http1.0 etc
 test safe-7.1 {tests that everything works at high level} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $TestsDir auto0]
@@ -1012,7 +1011,7 @@ test safe-9.22 {interpConfigure change the access path; check module loading; st
     set out1  [interp eval $i {mod1::test1::try1}]
     set out2  [interp eval $i {mod2::test2::try2}]
 
-    list [lsort [list $path0 $path1 $path2]] -- $modsA --\
+    list [lsort [list $path0 $path1 $path2]] -- $modsA -- \
             [lsort [list $path3 $path4 $path5]] -- $modsB -- \
             $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $sortA -- $sortB -- \
             $out0 $out1 $out2
@@ -1079,7 +1078,7 @@ test safe-9.23 {interpConfigure change the access path; check module loading; st
     set out1  [interp eval $i {mod1::test1::try1}]
     set out2  [interp eval $i {mod2::test2::try2}]
 
-    list [lsort [list $path0 $path1 $path2]] -- $modsA --\
+    list [lsort [list $path0 $path1 $path2]] -- $modsA -- \
             [lsort [list $path3 $path4 $path5]] -- $modsB -- \
             $code0 $msg0 $code1 $msg1 $code2 $msg2 -- $sortA -- $sortB -- \
             $out0 $out1 $out2
@@ -1543,7 +1542,7 @@ test safe-15.1 {safe file ensemble does not surprise code} -setup {
     unset -nocomplain msg
     interp delete $i
 } -result {1 {a b c} 1 {a b c} 1 {invalid command name "file"} 1 0 {a b c} 1 {not allowed to invoke subcommand isdirectory of file}}
-test safe-15.1.1 {safe file ensemble does not surprise code} -setup {
+test safe-15.2 {safe file ensemble does not surprise code} -setup {
     set i [interp create -safe]
 } -body {
     set result [expr {"file" in [interp hidden $i]}]
@@ -1659,12 +1658,11 @@ test safe-16.8 {Bug 3529949: defang ~user in paths used by AliasGlob (2)} -setup
     unset user
 } -result {~USER}
 
+# cleanup
 set ::auto_path $SaveAutoPath
 unset SaveAutoPath TestsDir PathMapp
 rename mapList {}
 rename mapAndSortList {}
-
-# cleanup
 ::tcltest::cleanupTests
 return
 
