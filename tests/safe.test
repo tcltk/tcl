@@ -286,7 +286,6 @@ test safe-5.6 {example modules packages, test in master interpreter, append to p
     catch {namespace delete ::mod1}
 } -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
 
-
 # test safe interps 'information leak'
 proc SafeEval {script} {
     # Helper procedure that ensures the safe interp is cleaned up even if
@@ -318,16 +317,13 @@ rename SafeEval {}
 # leaking infos, but they still do...
 
 # high level general test
-# Use example packages not tcl8.x/opt
+# Use example packages not http1.0 etc
 test safe-7.1 {tests that everything works at high level with conventional AutoPathSync} -setup {
-    # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
         safe::setAutoPathSync 1
     }
-
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $TestsDir auto0]
     set i [safe::interpCreate]
@@ -347,9 +343,7 @@ test safe-7.1 {tests that everything works at high level with conventional AutoP
     }
 } -match glob -result 1.2.3
 test safe-7.2 {tests specific path and interpFind/AddToAccessPath with conventional AutoPathSync} -setup {
-    # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
         safe::setAutoPathSync 1
@@ -410,9 +404,7 @@ test safe-7.3.1 {check that safe subinterpreters work with namespace names} -set
             [interp exists $j] [info vars ::safe::S*]
 } -match glob -result {{} {} ok ok {} 0 {}}
 test safe-7.4 {tests specific path and positive search with conventional AutoPathSync} -setup {
-    # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
         safe::setAutoPathSync 1
@@ -440,33 +432,30 @@ test safe-7.4 {tests specific path and positive search with conventional AutoPat
 } -match glob -result {{$p(:0:)} {$p(:*:)} -- 0 1.2.3 --\
         {TCLLIB * TESTSDIR/auto0/auto1} -- {}}
 test safe-7.5 {tests positive and negative module loading with conventional AutoPathSync} -setup {
-    # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
         safe::setAutoPathSync 1
     }
-
+    tcl::tm::path add [file join $TestsDir auto0 modules]
     set i [safe::interpCreate]
-
+    tcl::tm::path remove [file join $TestsDir auto0 modules]
     interp eval $i {
-        package forget platform::shell
-        package forget platform
-        catch {namespace delete ::platform}
+        package forget mod1::test1
+        catch {namespace delete ::mod1}
     }
 } -body {
     # Should raise an error (module ancestor directory issue)
-    set code1 [catch {interp eval $i {package require shell}} msg1]
+    set code1 [catch {interp eval $i {package require test1}} msg1]
     # Should not raise an error
-    set code2 [catch {interp eval $i {package require platform::shell}} msg2]
+    set code2 [catch {interp eval $i {package require mod1::test1}} msg2]
     return [list $code1 $msg1 $code2]
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
         safe::setAutoPathSync $SyncVal_TMP
     }
-} -result {1 {can't find package shell} 0}
+} -result {1 {can't find package test1} 0}
 
 # test source control on file name
 test safe-8.1 {safe source control on file} -setup {
@@ -857,7 +846,6 @@ test safe-9.11 {interpConfigure change the access path; pkgIndex.tcl packages un
                                            [file join $TestsDir auto0] \
                                            [file join $TestsDir auto0 auto2] \
                                            [file join $TestsDir auto0 auto1]]
-
     # Inspect.
     set confB [safe::interpConfigure $i]
     set mappB [mapList $PathMapp [dict get $confB -accessPath]]
@@ -1801,7 +1789,7 @@ test safe-16.8 {Bug 3529949: defang ~user in paths used by AliasGlob (2)} -setup
 } -result {~USER}
 
 ### 17. The first element in a slave's ::auto_path and access path must be [info library].
-
+### Merge back to no-TIP safe.test
 test safe-17.1 {Check that first element of slave auto_path (and access path) is Tcl Library} -setup {
     set lib1        [info library]
     set lib2        [file dirname $lib1]
@@ -1841,18 +1829,14 @@ test safe-17.2 {Check that first element of slave auto_path (and access path) is
 } -result [list [info library] [info library]]
 
 ### 18. Tests for AutoSyncDefined without conventional AutoPathSync, i.e. with AutoPathSync off.
-
 test safe-18.1 {cf. safe-7.1 - tests that everything works at high level without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
-    # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
         safe::setAutoPathSync 0
     } else {
         error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
     }
-
     # Without AutoPathSync, we need a more complete auto_path,
     # because the slave will use the same value.
     set lib1        [info library]
@@ -1877,9 +1861,7 @@ test safe-18.1 {cf. safe-7.1 - tests that everything works at high level without
     }
 } -match glob -result 1.2.3
 test safe-18.2 {cf. safe-7.2 - tests specific path and interpFind/AddToAccessPath without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
-    # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
         safe::setAutoPathSync 0
@@ -1913,22 +1895,17 @@ test safe-18.2 {cf. safe-7.2 - tests specific path and interpFind/AddToAccessPat
                             $TestsDir/auto0]}\
         -statics 0 -nested 1 -deleteHook {} -autoPath [list $tcl_library]} {}"
 test safe-18.3 {Check that default auto_path is the same as in the master interpreter without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
-    # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
         safe::setAutoPathSync 0
     } else {
         error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
     }
-
     set i [safe::interpCreate]
-
 } -body {
     # This file's header sets auto_path to a single directory [info library],
     # which is the one required by Safe Base to be present & first in the list.
-
     set ap {}
     foreach token [$i eval set ::auto_path] {
         lappend ap [dict get [set ::safe::S${i}(access_path,map)] $token]
@@ -1941,9 +1918,7 @@ test safe-18.3 {Check that default auto_path is the same as in the master interp
     }
 } -result $::auto_path
 test safe-18.4 {cf. safe-7.4 - tests specific path and positive search and auto_path without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
-    # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
         safe::setAutoPathSync 0
@@ -1986,40 +1961,35 @@ test safe-18.4 {cf. safe-7.4 - tests specific path and positive search and auto_
         -statics 0 -nested 1 -deleteHook {}\
         -autoPath {[list $tcl_library $TestsDir/auto0]}} {}"
 test safe-18.5 {cf. safe-7.5 - tests positive and negative module loading without conventional AutoPathSync} -setup {
-    # All ::safe commands are loaded at start of file.
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
         safe::setAutoPathSync 0
     } else {
         error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
     }
-
+    tcl::tm::path add [file join $TestsDir auto0 modules]
     set i [safe::interpCreate]
-
+    tcl::tm::path remove [file join $TestsDir auto0 modules]
     interp eval $i {
-        package forget platform::shell
-        package forget platform
-        catch {namespace delete ::platform}
+        package forget mod1::test1
+        catch {namespace delete ::mod1}
     }
 } -body {
     # Should raise an error (tests module ancestor directory rule)
-    set code1 [catch {interp eval $i {package require shell}} msg1]
+    set code1 [catch {interp eval $i {package require test1}} msg1]
     # Should not raise an error
-    set code2 [catch {interp eval $i {package require platform::shell}} msg2]
+    set code2 [catch {interp eval $i {package require mod1::test1}} msg2]
     return [list $code1 $msg1 $code2]
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
         safe::setAutoPathSync $SyncVal_TMP
     }
-} -result {1 {can't find package shell} 0}
-
-
+} -result {1 {can't find package test1} 0}
 
 ### 19. Test tokenization of directories available to a slave.
-
+### Merge back to no-TIP safe.test
 test safe-19.1 {Check that each directory of the default auto_path is a valid token} -setup {
     set i [safe::interpCreate]
 } -body {
@@ -2053,12 +2023,12 @@ test safe-19.2 {Check that each directory of the module path is a valid token} -
 } -cleanup {
     safe::interpDelete $i
 } -result {}
-
+
+# cleanup
 set ::auto_path $SaveAutoPath
 unset SaveAutoPath TestsDir PathMapp
 rename mapList {}
 rename mapAndSortList {}
-# cleanup
 ::tcltest::cleanupTests
 return
 
