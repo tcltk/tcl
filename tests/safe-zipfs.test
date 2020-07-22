@@ -170,7 +170,7 @@ test safe-zipfs-5.6 {example modules packages, test in master interpreter, appen
 } -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
 
 # high level general test
-# Use zipped example packages not tcl8.x/opt
+# Use zipped example packages not http1.0 etc
 test safe-zipfs-7.1 {tests that everything works at high level; zipfs} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $ZipMountPoint auto0]
@@ -715,12 +715,12 @@ test safe-zipfs-9.24 {interpConfigure change the access path; check module loadi
         res0 res1 res2}
 # See comments on lsort after test safe-zipfs-9.20.
 
+# cleanup
 set ::auto_path $SaveAutoPath
 zipfs unmount ${ZipMountPoint}
 unset SaveAutoPath TestsDir ZipMountPoint PathMapp
 rename mapList {}
 rename mapAndSortList {}
-# cleanup
 ::tcltest::cleanupTests
 return
 
