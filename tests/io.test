@@ -6719,8 +6719,9 @@ test io-49.5 {testing crlf reading, leftover cr disgorgment} {
     set l
 } [list 7 a\rb\rc 7 {} 7 1]
 
-test io-50.1 {testing handler deletion} testchannelevent {
+test io-50.1 {testing handler deletion} -constraints testchannelevent -setup {
     file delete $path(test1)
+} -body {
     set f [open $path(test1) w]
     close $f
     set f [open $path(test1) r]
@@ -6732,11 +6733,13 @@ test io-50.1 {testing handler deletion} testchannelevent {
     }
     set z not_called
     update
-    close $f
     set z
-} called
-test io-50.2 {testing handler deletion with multiple handlers} testchannelevent {
+} -cleanup {
+    close $f
+} -result called
+test io-50.2 {testing handler deletion with multiple handlers} -constraints testchannelevent -setup {
     file delete $path(test1)
+} -body {
     set f [open $path(test1) w]
     close $f
     set f [open $path(test1) r]
@@ -6749,12 +6752,14 @@ test io-50.2 {testing handler deletion with multiple handlers} testchannelevent 
     }
     set z ""
     update
-    close $f
     string compare [string tolower $z] \
 	[list [list called delhandler $f 0] [list called delhandler $f 1]]
-} 0
-test io-50.3 {testing handler deletion with multiple handlers} testchannelevent {
+} -cleanup {
+    close $f
+} -result 0
+test io-50.3 {testing handler deletion with multiple handlers} -constraints testchannelevent -setup {
     file delete $path(test1)
+} -body {
     set f [open $path(test1) w]
     close $f
     set f [open $path(test1) r]
@@ -6774,13 +6779,15 @@ test io-50.3 {testing handler deletion with multiple handlers} testchannelevent 
     }
     set z ""
     update
-    close $f
     string compare [string tolower $z] \
 	[list [list delhandler $f 0 called] \
 	      [list delhandler $f 0 deleted myself]]
-} 0
-test io-50.4 {testing handler deletion vs reentrant calls} testchannelevent {
+} -cleanup {
+    close $f
+} -result 0
+test io-50.4 {testing handler deletion vs reentrant calls} -constraints testchannelevent -setup {
     file delete $path(test1)
+} -body {
     set f [open $path(test1) w]
     close $f
     set f [open $path(test1) r]
@@ -6800,11 +6807,13 @@ test io-50.4 {testing handler deletion vs reentrant calls} testchannelevent {
     variable u toplevel
     variable z ""
     update
-    close $f
     set z
-} {{delrecursive calling recursive} {delrecursive deleting recursive}}
-test io-50.5 {testing handler deletion vs reentrant calls} testchannelevent {
+} -cleanup {
+    close $f
+} -result {{delrecursive calling recursive} {delrecursive deleting recursive}}
+test io-50.5 {testing handler deletion vs reentrant calls} -constraints testchannelevent -setup {
     file delete $path(test1)
+} -body {
     set f [open $path(test1) w]
     close $f
     set f [open $path(test1) r]
@@ -6834,10 +6843,12 @@ test io-50.5 {testing handler deletion vs reentrant calls} testchannelevent {
     update
     close $f
     set z
-} [list {del calling recursive} {del deleted notcalled} \
+} -cleanup {
+} -result [list {del calling recursive} {del deleted notcalled} \
 	{del deleted myself} {del after update}]
-test io-50.6 {testing handler deletion vs reentrant calls} testchannelevent {
+test io-50.6 {testing handler deletion vs reentrant calls} -constraints testchannelevent -setup {
     file delete $path(test1)
+} -body {
     set f [open $path(test1) w]
     close $f
     set f [open $path(test1) r]
@@ -6873,9 +6884,10 @@ test io-50.6 {testing handler deletion vs reentrant calls} testchannelevent {
     set z ""
     set u toplevel
     update
-    close $f
     set z
-} [list {first called} {first called not toplevel} \
+} -cleanup {
+    close $f
+} -result [list {first called} {first called not toplevel} \
 	{second called, first time} {second called, second time} \
 	{first after update}]
 
