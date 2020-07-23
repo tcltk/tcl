@@ -2327,7 +2327,7 @@ test safe-19.11 {interpConfigure change the access path; pkgIndex.tcl packages u
                                            [file join $TestsDir auto0 auto2] \
                                            [file join $TestsDir auto0 auto1]] \
                               -autoPath [list $tcl_library \
-                                            [file join $TestsDir auto0]]]
+                                            [file join $TestsDir auto0]]
     # Inspect.
     set confB [safe::interpConfigure $i]
     set mappB [mapList $PathMapp [dict get $confB -accessPath]]
