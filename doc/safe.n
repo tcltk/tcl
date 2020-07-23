@@ -401,14 +401,18 @@ to call \fB::safe::interpCreate\fR or \fB::safe::interpInit\fR without the
 option set to the
 empty list), which will give the safe interpreter the same access as the
 master interpreter to packages, modules, and autoloader files.  With
-"Sync Mode" off, the ::auto_path will be set to a tokenized form of the master's
-::auto_path.
+"Sync Mode" off, the Safe Base will set the value of \fB\-autoPath\fR to the
+master's ::auto_path, and will set the slave's ::auto_path to a tokenized form
+of the master's ::auto_path.
 .PP
 With "Sync Mode" off, if a value is specified for \fB\-autoPath\fR, even the empty
 list, in a call to \fB::safe::interpCreate\fR, \fB::safe::interpInit\fR, or
 \fB::safe::interpConfigure\fR, it will be tokenized and used as the safe
 interpreter's ::auto_path.  Any directories that do not also belong to the
-access path cannot be tokenized and will be silently ignored.
+access path cannot be tokenized and will be silently ignored.  However, the
+value of \fB\-autoPath\fR will remain as specified, and will be used to
+re-tokenize the slave's ::auto_path if \fB::safe::interpConfigure\fR is called
+to change the value of \fB\-accessPath\fR.
 .PP
 With "Sync Mode" off, if the access path is reset to the values in the
 master interpreter by calling \fB::safe::interpConfigure\fR with arguments

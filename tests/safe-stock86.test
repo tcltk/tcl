@@ -52,8 +52,17 @@ catch {safe::interpConfigure}
 testConstraint TcltestPackage [expr {![catch {package require Tcltest}]}]
 testConstraint AutoSyncDefined 1
 
-# high level general test
-test safe-stock86-7.1 {tests that everything works at high level, uses http 2} -body {
+###  7. Test the use of ::auto_path for loading commands (via tclIndex files)
+###     and non-module packages (via pkgIndex.tcl files).
+###     Corresponding tests with Sync Mode off are 17.*
+
+test safe-stock86-7.1 {positive non-module package require, uses http 2, Sync Mode on} -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    if {$SyncExists} {
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 1
+    }
+} -body {
     set i [safe::interpCreate]
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
@@ -63,8 +72,19 @@ test safe-stock86-7.1 {tests that everything works at high level, uses http 2} -
     interp eval $i {http::config}
     safe::interpDelete $i
     set v
+} -cleanup {
+    catch {safe::interpDelete $i}
+    if {$SyncExists} {
+        safe::setAutoPathSync $SyncVal_TMP
+    }
 } -match glob -result 2.*
-test safe-stock86-7.2 {tests specific path and interpFind/AddToAccessPath, uses http1.0} -body {
+test safe-stock86-7.2 {negative non-module package require with specific path and interpAddToAccessPath, uses http1.0, Sync Mode on} -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    if {$SyncExists} {
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 1
+    }
+} -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
@@ -77,9 +97,20 @@ test safe-stock86-7.2 {tests specific path and interpFind/AddToAccessPath, uses 
     list $token1 $token2 -- \
 	    [catch {interp eval $i {package require http 1}} msg] $msg -- \
 	    $mappA -- [safe::interpDelete $i]
+} -cleanup {
+    catch {safe::interpDelete $i}
+    if {$SyncExists} {
+        safe::setAutoPathSync $SyncVal_TMP
+    }
 } -match glob -result {{$p(:0:)} {$p(:*:)} -- 1 {can't find package http 1} --\
         {TCLLIB */dummy/unixlike/test/path} -- {}}
-test safe-stock86-7.4 {tests specific path and positive search, uses http1.0} -body {
+test safe-stock86-7.4 {positive non-module package require with specific path and interpAddToAccessPath, uses http1.0, Sync Mode on} -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    if {$SyncExists} {
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 1
+    }
+} -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
@@ -91,8 +122,13 @@ test safe-stock86-7.4 {tests specific path and positive search, uses http1.0} -b
     list $token1 $token2 -- \
 	    [catch {interp eval $i {package require http 1}} msg] $msg -- \
 	    $mappA -- [safe::interpDelete $i]
+} -cleanup {
+    catch {safe::interpDelete $i}
+    if {$SyncExists} {
+        safe::setAutoPathSync $SyncVal_TMP
+    }
 } -match glob -result {{$p(:0:)} {$p(:*:)} -- 0 1.0 -- {TCLLIB *TCLLIB/http1.0} -- {}}
-test safe-stock86-7.5 {tests positive and negative module loading with conventional AutoPathSync} -setup {
+test safe-stock86-7.5 {positive and negative module package require, including ancestor directory issue, uses platform::shell, Sync Mode on} -setup {
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
@@ -120,27 +156,35 @@ test safe-stock86-7.5 {tests positive and negative module loading with conventio
 
 # The following test checks whether the definition of tcl_endOfWord can be
 # obtained from auto_loading.  It was previously test "safe-5.1".
-test safe-stock86-9.8 {test auto-loading in safe interpreters, was test 5.1} -setup {
+test safe-stock86-9.8 {autoloading commands indexed in tclIndex files, was test 5.1, Sync Mode on} -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    if {$SyncExists} {
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 1
+    }
     catch {safe::interpDelete a}
     safe::interpCreate a
 } -body {
     interp eval a {tcl_endOfWord "" 0}
 } -cleanup {
     safe::interpDelete a
+    if {$SyncExists} {
+        safe::setAutoPathSync $SyncVal_TMP
+    }
 } -result -1
 
-### 18. Tests for AutoSyncDefined without conventional AutoPathSync, i.e. with AutoPathSync off.
-test safe-stock86-18.1 {cf. safe-stock86-7.1 - tests that everything works at high level without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
-    # All ::safe commands are loaded at start of file.
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+### 17. Test the use of ::auto_path for loading commands (via tclIndex files)
+###     and non-module packages (via pkgIndex.tcl files).
+###     Corresponding tests with Sync Mode on are 7.*
 
+test safe-stock86-17.1 {cf. safe-7.1 - positive non-module package require, Sync Mode off} -constraints AutoSyncDefined -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
         safe::setAutoPathSync 0
     } else {
         error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
     }
-
     # Without AutoPathSync, we need a more complete auto_path,
     # because the slave will use the same value.
     set lib1        [info library]
@@ -164,10 +208,8 @@ test safe-stock86-18.1 {cf. safe-stock86-7.1 - tests that everything works at hi
         safe::setAutoPathSync $SyncVal_TMP
     }
 } -result 1.0
-test safe-stock86-18.2 {cf. safe-stock86-7.2 - tests specific path and interpFind/AddToAccessPath without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
-    # All ::safe commands are loaded at start of file.
+test safe-stock86-17.2 {cf. safe-7.2 - negative non-module package require with specific path and interpAddToAccessPath, Sync Mode off} -constraints AutoSyncDefined -setup {
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
         safe::setAutoPathSync 0
@@ -189,14 +231,13 @@ test safe-stock86-18.2 {cf. safe-stock86-7.2 - tests specific path and interpFin
 	    [safe::interpConfigure $i]\
 	    [safe::interpDelete $i]
 } -cleanup {
+    catch {safe::interpDelete $i}
     if {$SyncExists} {
         safe::setAutoPathSync $SyncVal_TMP
     }
-} -match glob -result "{} {\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {} -autoPath [list $tcl_library]} {}"
-test safe-stock86-18.4 {cf. safe-stock86-7.4 - tests specific path and positive search and auto_path without conventional AutoPathSync} -constraints AutoSyncDefined -setup {
-    # All ::safe commands are loaded at start of file.
+} -match glob -result "{} {\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {} -autoPath {}} {}"
+test safe-stock86-17.4 {cf. safe-7.4 - positive non-module package require with specific path and interpAddToAccessPath, Sync Mode off} -constraints AutoSyncDefined -setup {
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
         safe::setAutoPathSync 0
@@ -220,17 +261,18 @@ test safe-stock86-18.4 {cf. safe-stock86-7.4 - tests specific path and positive 
     # should not have been changed by Safe Base:
     set auto2 [interp eval $i {set ::auto_path}]
 
-    # This time, unlike test safe-stock86-18.2 and the try above, http 1.0 should be found:
+    # This time, unlike test safe-stock86-17.2 and the try above, http 1.0 should be found:
     list $auto1 $auto2 $token1 $token2 \
 	    [catch {interp eval $i {package require http 1}} msg] $msg \
 	    [safe::interpConfigure $i]\
 	    [safe::interpDelete $i]
 } -cleanup {
+    catch {safe::interpDelete $i}
     if {$SyncExists} {
 	safe::setAutoPathSync $SyncVal_TMP
     }
-} -match glob -result "{} {{\$p(:0:)}} {\$p(:0:)} {\$p(:*:)} 0 1.0 {-accessPath {[list $tcl_library *$tcl_library/http1.0]} -statics 0 -nested 1 -deleteHook {} -autoPath [list $tcl_library]} {}"
-test safe-stock86-18.5 {cf. safe-stock86-7.5 - tests positive and negative module loading without conventional AutoPathSync} -setup {
+} -match glob -result "{} {{\$p(:0:)}} {\$p(:0:)} {\$p(:*:)} 0 1.0 {-accessPath {[list $tcl_library *$tcl_library/http1.0]} -statics 0 -nested 1 -deleteHook {} -autoPath {}} {}"
+test safe-stock86-17.5 {cf. safe-7.5 - positive and negative module package require, including ancestor directory issue, Sync Mode off} -setup {
     set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setAutoPathSync]
