@@ -1371,7 +1371,7 @@ proc ::safe::Setup {} {
 
 # Accessor method for ::safe::AutoPathSync
 # Usage: ::safe::setAutoPathSync ?newValue?
-# Respond to changes by calling Setup again, precerving any
+# Respond to changes by calling Setup again, preserving any
 # caller-defined logging.  This allows complete equivalence with
 # prior Safe Base behavior if AutoPathSync is true.
 #
