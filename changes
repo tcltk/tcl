@@ -8986,6 +8986,15 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2020-03-28 (bug)[8edfcedfa0] binary encode base64 explodes multi-byte wrapchars (dgp)
 
-2020-03-31 (bug)[b8e82d293b] accepted -maxlen value breaks uuencode round trip (dgp)
+2020-03-28 (bug)[ffeb20] [binary decode base64] ignore invalid chars (dgp)
+See RFC 2045
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2020-03-31 (bug)[b8e82d] some -maxlen values break uuencode round trip (dgp)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2020-04-09 (bug)[085913] Tcl_DStringAppendElement # quoting precision (dgp)
+        *** POTENTIAL INCOMPATIBILITY ***
+
 
 - Released 8.6.11, Aug ??, 2020 - details at http://core.tcl-lang.org/tcl/ -
