@@ -889,7 +889,7 @@ test safe-zipfs-18.2 {cf. safe-zipfs-7.2 - tests specific path and interpFind/Ad
         {-accessPath {[list $tcl_library \
                             */dummy/unixlike/test/path \
                             $ZipMountPoint/auto0]}\
-        -statics 0 -nested 1 -deleteHook {} -autoPath [list $tcl_library]} {}"
+        -statics 0 -nested 1 -deleteHook {} -autoPath {}} {}"
 test safe-zipfs-18.4 {cf. safe-zipfs-7.4 - tests specific path and positive search and auto_path without conventional AutoPathSync; zipfs} -constraints AutoSyncDefined -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
@@ -904,6 +904,7 @@ test safe-zipfs-18.4 {cf. safe-zipfs-7.4 - tests specific path and positive sear
     # should not have been set by Safe Base:
     set auto1 [interp eval $i {set ::auto_path}]
 
+    # This will differ from the value -autoPath {}
     interp eval $i {set ::auto_path [list {$p(:0:)}]}
 
     # should not add anything (p0)
@@ -918,6 +919,7 @@ test safe-zipfs-18.4 {cf. safe-zipfs-7.4 - tests specific path and positive sear
     # should not have been changed by Safe Base:
     set auto2 [interp eval $i {set ::auto_path}]
 
+    # This will differ from the value -autoPath {}
     set auto3 [interp eval $i [list set ::auto_path [list {$p(:0:)} $token2]]]
 
     # This time, unlike test safe-zipfs-18.2 and the try above, SafeTestPackage1 should be found:
@@ -932,7 +934,7 @@ test safe-zipfs-18.4 {cf. safe-zipfs-7.4 - tests specific path and positive sear
 } -match glob -result "{} {{\$p(:0:)}} {\$p(:0:)} {\$p(:*:)} {\$p(:*:)} 0 1.2.3\
         {-accessPath {[list $tcl_library *$ZipMountPoint/auto0 $ZipMountPoint/auto0/auto1]}\
         -statics 0 -nested 1 -deleteHook {}\
-        -autoPath {[list $tcl_library $ZipMountPoint/auto0]}} {}"
+        -autoPath {}} {}"
 
 # cleanup
 set ::auto_path $SaveAutoPath

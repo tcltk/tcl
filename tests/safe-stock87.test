@@ -353,6 +353,7 @@ test safe-stock87-18.2 {cf. safe-stock87-7.2opt - tests specific path and interp
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     set auto1 [interp eval $i {set ::auto_path}]
+    # This will differ from the value -autoPath {}
     interp eval $i {set ::auto_path [list {$p(:0:)}]}
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
@@ -370,7 +371,7 @@ test safe-stock87-18.2 {cf. safe-stock87-7.2opt - tests specific path and interp
     }
 } -match glob -result "{} {\$p(:0:)} {\$p(:*:)} 1 {$pkgOptErrMsg}\
         {-accessPath {[list $tcl_library */dummy/unixlike/test/path]}\
-        -statics 0 -nested 1 -deleteHook {} -autoPath [list $tcl_library]} {}"
+        -statics 0 -nested 1 -deleteHook {} -autoPath {}} {}"
 test safe-stock87-18.4 {cf. safe-stock87-7.4opt - tests specific path and positive search and auto_path without conventional AutoPathSync, use pkg opt} -constraints AutoSyncDefined -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
@@ -385,6 +386,7 @@ test safe-stock87-18.4 {cf. safe-stock87-7.4opt - tests specific path and positi
     # should not have been set by Safe Base:
     set auto1 [interp eval $i {set ::auto_path}]
 
+    # This will differ from the value -autoPath {}
     interp eval $i {set ::auto_path [list {$p(:0:)}]}
 
     # should not add anything (p0)
@@ -407,7 +409,7 @@ test safe-stock87-18.4 {cf. safe-stock87-7.4opt - tests specific path and positi
     }
 } -match glob -result "{} {{\$p(:0:)}} {\$p(:0:)} {\$p(:*:)} 0 0.4.*\
         {-accessPath {[list $tcl_library *$tcl_library/$pkgOptDir]}\
-        -statics 0 -nested 1 -deleteHook {} -autoPath [list $tcl_library]} {}"
+        -statics 0 -nested 1 -deleteHook {} -autoPath {}} {}"
 test safe-stock87-18.5 {cf. safe-stock87-7.5 - tests positive and negative module loading without conventional AutoPathSync} -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {

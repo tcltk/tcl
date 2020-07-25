@@ -147,8 +147,7 @@ proc ::safe::interpConfigure {args} {
 	        [list -deleteHook $state(cleanupHook)] \
 	    ]
 	    if {!$AutoPathSync} {
-	        set SLAP [DetokPath $slave [$slave eval set ::auto_path]]
-	        lappend TMP [list -autoPath $SLAP]
+	        lappend TMP [list -autoPath $state(auto_path)]
 	    }
 	    return [join $TMP]
 	}
@@ -179,8 +178,7 @@ proc ::safe::interpConfigure {args} {
 		    if {$AutoPathSync} {
 		        return -code error "unknown flag $name (bug)"
 		    } else {
-		        set SLAP [DetokPath $slave [$slave eval set ::auto_path]]
-		        return [list -autoPath $SLAP]
+		        return [list -autoPath $state(auto_path)]
 		    }
 		}
 		-statics    {
@@ -227,8 +225,7 @@ proc ::safe::interpConfigure {args} {
 		set doreset 1
 	    }
 	    if {(!$AutoPathSync) && (![::tcl::OptProcArgGiven -autoPath])} {
-		set SLAP [DetokPath $slave [$slave eval set ::auto_path]]
-		set autoPath $SLAP
+		set autoPath $state(auto_path)
 	    } elseif {$AutoPathSync} {
 		set autoPath {}
 	    } else {
@@ -487,6 +484,10 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook au
     set state(staticsok)         $staticsok
     set state(nestedok)          $nestedok
     set state(cleanupHook)       $deletehook
+
+    if {!$AutoPathSync} {
+        set state(auto_path)     $raw_auto_path
+    }
 
     SyncAccessPath $slave
     return
@@ -1437,13 +1438,20 @@ namespace eval ::safe {
     # access_path,slave : Ditto, as the path tokens as seen by the slave.
     # access_path,map   : dict ( token -> path )
     # access_path,remap : dict ( path -> token )
+    # auto_path         : List of paths requested by the caller as slave's ::auto_path.
     # tm_path_slave     : List of TM root directories, as tokens seen by the slave.
     # staticsok         : Value of option -statics
     # nestedok          : Value of option -nested
     # cleanupHook       : Value of option -deleteHook
     #
-    # Because the slave can change its value of ::auto_path, the value of
-    # option -autoPath is not stored in the array but must be obtained from
+    # In principle, the slave can change its value of ::auto_path -
+    # - a package might add a path (that is already in the access path) for
+    #   access to tclIndex files;
+    # - the script might remove some elements of the auto_path.
+    # However, this is really the business of the master, and the auto_path will
+    # be reset whenever the token mapping changes (i.e. when option -accessPath is
+    # used to change the access path).
+    # -autoPath is now stored in the array and is no longer obtained from
     # the slave.
 }
 
