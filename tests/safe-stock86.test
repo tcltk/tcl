@@ -57,10 +57,10 @@ testConstraint AutoSyncDefined 1
 ###     Corresponding tests with Sync Mode off are 17.*
 
 test safe-stock86-7.1 {positive non-module package require, uses http 2, Sync Mode on} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
 } -body {
     set i [safe::interpCreate]
@@ -75,14 +75,14 @@ test safe-stock86-7.1 {positive non-module package require, uses http 2, Sync Mo
 } -cleanup {
     catch {safe::interpDelete $i}
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result 2.*
 test safe-stock86-7.2 {negative non-module package require with specific path and interpAddToAccessPath, uses http1.0, Sync Mode on} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
@@ -100,15 +100,15 @@ test safe-stock86-7.2 {negative non-module package require with specific path an
 } -cleanup {
     catch {safe::interpDelete $i}
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{$p(:0:)} {$p(:*:)} -- 1 {can't find package http 1} --\
         {TCLLIB */dummy/unixlike/test/path} -- {}}
 test safe-stock86-7.4 {positive non-module package require with specific path and interpAddToAccessPath, uses http1.0, Sync Mode on} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
@@ -125,14 +125,14 @@ test safe-stock86-7.4 {positive non-module package require with specific path an
 } -cleanup {
     catch {safe::interpDelete $i}
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{$p(:0:)} {$p(:*:)} -- 0 1.0 -- {TCLLIB *TCLLIB/http1.0} -- {}}
 test safe-stock86-7.5 {positive and negative module package require, including ancestor directory issue, uses platform::shell, Sync Mode on} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
     set i [safe::interpCreate]
     interp eval $i {
@@ -150,17 +150,17 @@ test safe-stock86-7.5 {positive and negative module package require, including a
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -result {1 {can't find package shell} 0}
 
 # The following test checks whether the definition of tcl_endOfWord can be
 # obtained from auto_loading.  It was previously test "safe-5.1".
 test safe-stock86-9.8 {autoloading commands indexed in tclIndex files, was test 5.1, Sync Mode on} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
     catch {safe::interpDelete a}
     safe::interpCreate a
@@ -169,7 +169,7 @@ test safe-stock86-9.8 {autoloading commands indexed in tclIndex files, was test 
 } -cleanup {
     safe::interpDelete a
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -result -1
 
@@ -178,12 +178,12 @@ test safe-stock86-9.8 {autoloading commands indexed in tclIndex files, was test 
 ###     Corresponding tests with Sync Mode on are 7.*
 
 test safe-stock86-17.1 {cf. safe-7.1 - positive non-module package require, Sync Mode off} -constraints AutoSyncDefined -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 0
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 0
     } else {
-        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
+        error {This test is meaningful only if the command ::safe::setSyncMode is defined}
     }
     # Without AutoPathSync, we need a more complete auto_path,
     # because the slave will use the same value.
@@ -205,16 +205,16 @@ test safe-stock86-17.1 {cf. safe-7.1 - positive non-module package require, Sync
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -result 1.0
 test safe-stock86-17.2 {cf. safe-7.2 - negative non-module package require with specific path and interpAddToAccessPath, Sync Mode off} -constraints AutoSyncDefined -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 0
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 0
     } else {
-        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
+        error {This test is meaningful only if the command ::safe::setSyncMode is defined}
     }
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
@@ -233,16 +233,16 @@ test safe-stock86-17.2 {cf. safe-7.2 - negative non-module package require with 
 } -cleanup {
     catch {safe::interpDelete $i}
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result "{} {\$p(:0:)} {\$p(:*:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library */dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {} -autoPath {}} {}"
 test safe-stock86-17.4 {cf. safe-7.4 - positive non-module package require with specific path and interpAddToAccessPath, Sync Mode off} -constraints AutoSyncDefined -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 0
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 0
     } else {
-        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
+        error {This test is meaningful only if the command ::safe::setSyncMode is defined}
     }
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
@@ -269,16 +269,16 @@ test safe-stock86-17.4 {cf. safe-7.4 - positive non-module package require with 
 } -cleanup {
     catch {safe::interpDelete $i}
     if {$SyncExists} {
-	safe::setAutoPathSync $SyncVal_TMP
+	safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result "{} {{\$p(:0:)}} {\$p(:0:)} {\$p(:*:)} 0 1.0 {-accessPath {[list $tcl_library *$tcl_library/http1.0]} -statics 0 -nested 1 -deleteHook {} -autoPath {}} {}"
 test safe-stock86-17.5 {cf. safe-7.5 - positive and negative module package require, including ancestor directory issue, Sync Mode off} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 0
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 0
     } else {
-        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
+        error {This test is meaningful only if the command ::safe::setSyncMode is defined}
     }
     set i [safe::interpCreate]
     interp eval $i {
@@ -295,7 +295,7 @@ test safe-stock86-17.5 {cf. safe-7.5 - positive and negative module package requ
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -result {1 {can't find package shell} 0}
 
