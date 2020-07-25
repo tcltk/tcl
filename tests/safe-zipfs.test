@@ -174,10 +174,10 @@ test safe-zipfs-5.6 {example modules packages, test in master interpreter, appen
 # high level general test
 # Use zipped example packages not http1.0 etc
 test safe-zipfs-7.1 {tests that everything works at high level with conventional AutoPathSync; zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $ZipMountPoint auto0]
@@ -194,14 +194,14 @@ test safe-zipfs-7.1 {tests that everything works at high level with conventional
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result 1.2.3
 test safe-zipfs-7.2 {tests specific path and interpFind/AddToAccessPath with conventional AutoPathSync; zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     } else {
         set SyncVal_TMP 1
     }
@@ -222,16 +222,16 @@ test safe-zipfs-7.2 {tests specific path and interpFind/AddToAccessPath with con
             $mappA -- [safe::interpDelete $i]
 } -cleanup {
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{$p(:0:)} {$p(:*:)} {$p(:*:)} --\
         1 {can't find package SafeTestPackage1} --\
         {TCLLIB */dummy/unixlike/test/path ZIPDIR/auto0} -- {}}
 test safe-zipfs-7.4 {tests specific path and positive search with conventional AutoPathSync; zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     } else {
         set SyncVal_TMP 1
     }
@@ -251,16 +251,16 @@ test safe-zipfs-7.4 {tests specific path and positive search with conventional A
     # other than the first and last in the access path.
 } -cleanup {
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{$p(:0:)} {$p(:*:)} -- 0 1.2.3 --\
         {TCLLIB * ZIPDIR/auto0/auto1} -- {}}
 
 test safe-zipfs-9.9 {interpConfigure change the access path; tclIndex commands unaffected by token rearrangement (dummy test of doreset) with conventional AutoPathSync; zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
@@ -298,16 +298,16 @@ test safe-zipfs-9.9 {interpConfigure change the access path; tclIndex commands u
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{$p(:1:)} {$p(:2:)} -- {$p(:2:)} {$p(:1:)} -- 0 ok1 0 ok2 --\
         {TCLLIB ZIPDIR/auto0/auto1 ZIPDIR/auto0/auto2*} --\
         {TCLLIB ZIPDIR/auto0/auto2 ZIPDIR/auto0/auto1*}}
 test safe-zipfs-9.10 {interpConfigure change the access path; tclIndex commands unaffected by token rearrangement (actual test of doreset) with conventional AutoPathSync; zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
@@ -343,17 +343,17 @@ test safe-zipfs-9.10 {interpConfigure change the access path; tclIndex commands 
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{$p(:1:)} {$p(:2:)} -- {$p(:2:)} {$p(:1:)} --\
         0 ok1 0 ok2 --\
         {TCLLIB ZIPDIR/auto0/auto1 ZIPDIR/auto0/auto2*} --\
         {TCLLIB ZIPDIR/auto0/auto2 ZIPDIR/auto0/auto1*}}
 test safe-zipfs-9.11 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement with conventional AutoPathSync; zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
 } -body {
     # For complete correspondence to safe-stock87-9.11, include auto0 in access path.
@@ -395,17 +395,17 @@ test safe-zipfs-9.11 {interpConfigure change the access path; pkgIndex.tcl packa
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{$p(:2:)} {$p(:3:)} -- {$p(:3:)} {$p(:2:)} -- 0 1.2.3 0 2.3.4 --\
         {TCLLIB ZIPDIR/auto0 ZIPDIR/auto0/auto1 ZIPDIR/auto0/auto2*} --\
         {TCLLIB ZIPDIR/auto0 ZIPDIR/auto0/auto2 ZIPDIR/auto0/auto1*} --\
         0 OK1 0 OK2}
 test safe-zipfs-9.12 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, 9.10 without path auto0 with conventional AutoPathSync; zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
@@ -441,7 +441,7 @@ test safe-zipfs-9.12 {interpConfigure change the access path; pkgIndex.tcl packa
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{$p(:1:)} {$p(:2:)} -- {$p(:2:)} {$p(:1:)} --\
         0 1.2.3 0 2.3.4 --\
@@ -449,10 +449,10 @@ test safe-zipfs-9.12 {interpConfigure change the access path; pkgIndex.tcl packa
         {TCLLIB ZIPDIR/auto0/auto2 ZIPDIR/auto0/auto1*} --\
         0 OK1 0 OK2}
 test safe-zipfs-9.13 {interpConfigure change the access path; pkgIndex.tcl packages fail if directory de-listed, with conventional AutoPathSync; zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
@@ -485,16 +485,16 @@ test safe-zipfs-9.13 {interpConfigure change the access path; pkgIndex.tcl packa
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{$p(:1:)} {$p(:2:)} -- 1 {* not found in access path} --\
         1 {* not found in access path} -- 1 1 --\
         {TCLLIB ZIPDIR/auto0/auto1 ZIPDIR/auto0/auto2*} -- {TCLLIB*}}
 test safe-zipfs-9.20 {check module loading, with conventional AutoPathSync; zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
@@ -529,7 +529,7 @@ test safe-zipfs-9.20 {check module loading, with conventional AutoPathSync; zipf
     }
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{{$p(:1:)} {$p(:2:)} {$p(:3:)}} -- {{$p(:1:)}} --\
         0 0.5 0 1.0 0 2.0 --\
@@ -545,10 +545,10 @@ test safe-zipfs-9.20 {check module loading, with conventional AutoPathSync; zipf
 #   comparing with expected results.  The test is therefore not totally strict,
 #   but will notice missing or surplus directories.
 test safe-zipfs-9.21 {interpConfigure change the access path; check module loading, with conventional AutoPathSync; stale data case 1; zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
@@ -603,7 +603,7 @@ test safe-zipfs-9.21 {interpConfigure change the access path; check module loadi
     }
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{{$p(:1:)} {$p(:2:)} {$p(:3:)}} -- {{$p(:1:)}} --\
         {{$p(:3:)} {$p(:4:)} {$p(:5:)}} -- {{$p(:3:)}} --\
@@ -615,10 +615,10 @@ test safe-zipfs-9.21 {interpConfigure change the access path; check module loadi
         res0 res1 res2}
 # See comments on lsort after test safe-zipfs-9.20.
 test safe-zipfs-9.22 {interpConfigure change the access path; check module loading, with conventional AutoPathSync; stale data case 0; zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
@@ -668,7 +668,7 @@ test safe-zipfs-9.22 {interpConfigure change the access path; check module loadi
     }
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{{$p(:1:)} {$p(:2:)} {$p(:3:)}} -- {{$p(:1:)}} --\
         {{$p(:3:)} {$p(:4:)} {$p(:5:)}} -- {{$p(:3:)}} --\
@@ -680,10 +680,10 @@ test safe-zipfs-9.22 {interpConfigure change the access path; check module loadi
         res0 res1 res2}
 # See comments on lsort after test safe-zipfs-9.20.
 test safe-zipfs-9.23 {interpConfigure change the access path; check module loading, with conventional AutoPathSync; stale data case 3; zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
@@ -743,7 +743,7 @@ test safe-zipfs-9.23 {interpConfigure change the access path; check module loadi
     }
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{{$p(:1:)} {$p(:2:)} {$p(:3:)}} -- {{$p(:1:)}} --\
         {{$p(:3:)} {$p(:4:)} {$p(:5:)}} -- {{$p(:3:)}} --\
@@ -755,10 +755,10 @@ test safe-zipfs-9.23 {interpConfigure change the access path; check module loadi
         res0 res1 res2}
 # See comments on lsort after test safe-zipfs-9.20.
 test safe-zipfs-9.24 {interpConfigure change the access path; check module loading, with conventional AutoPathSync; stale data case 2 (worst case); zipfs} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 1
     }
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
@@ -813,7 +813,7 @@ test safe-zipfs-9.24 {interpConfigure change the access path; check module loadi
     }
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result {{{$p(:1:)} {$p(:2:)} {$p(:3:)}} -- {{$p(:1:)}} --\
         {{$p(:3:)} {$p(:4:)} {$p(:5:)}} -- {{$p(:3:)}} --\
@@ -826,12 +826,12 @@ test safe-zipfs-9.24 {interpConfigure change the access path; check module loadi
 # See comments on lsort after test safe-zipfs-9.20.
 
 test safe-zipfs-18.1 {cf. safe-zipfs-7.1 - tests that everything works at high level without conventional AutoPathSync; zipfs} -constraints AutoSyncDefined -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 0
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 0
     } else {
-        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
+        error {This test is meaningful only if the command ::safe::setSyncMode is defined}
     }
     # Without AutoPathSync, we need a more complete auto_path,
     # because the slave will use the same value.
@@ -853,16 +853,16 @@ test safe-zipfs-18.1 {cf. safe-zipfs-7.1 - tests that everything works at high l
 } -cleanup {
     safe::interpDelete $i
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result 1.2.3
 test safe-zipfs-18.2 {cf. safe-zipfs-7.2 - tests specific path and interpFind/AddToAccessPath without conventional AutoPathSync; zipfs} -constraints AutoSyncDefined -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 0
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 0
     } else {
-        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
+        error {This test is meaningful only if the command ::safe::setSyncMode is defined}
     }
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
@@ -882,7 +882,7 @@ test safe-zipfs-18.2 {cf. safe-zipfs-7.2 - tests specific path and interpFind/Ad
 	    [safe::interpDelete $i]
 } -cleanup {
     if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
+        safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result "{} {\$p(:0:)} {\$p(:*:)} {\$p(:*:)}\
         1 {can't find package SafeTestPackage1}\
@@ -891,12 +891,12 @@ test safe-zipfs-18.2 {cf. safe-zipfs-7.2 - tests specific path and interpFind/Ad
                             $ZipMountPoint/auto0]}\
         -statics 0 -nested 1 -deleteHook {} -autoPath [list $tcl_library]} {}"
 test safe-zipfs-18.4 {cf. safe-zipfs-7.4 - tests specific path and positive search and auto_path without conventional AutoPathSync; zipfs} -constraints AutoSyncDefined -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 0
+        set SyncVal_TMP [safe::setSyncMode]
+        safe::setSyncMode 0
     } else {
-        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
+        error {This test is meaningful only if the command ::safe::setSyncMode is defined}
     }
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
@@ -927,7 +927,7 @@ test safe-zipfs-18.4 {cf. safe-zipfs-7.4 - tests specific path and positive sear
 	    [safe::interpDelete $i]
 } -cleanup {
     if {$SyncExists} {
-	safe::setAutoPathSync $SyncVal_TMP
+	safe::setSyncMode $SyncVal_TMP
     }
 } -match glob -result "{} {{\$p(:0:)}} {\$p(:0:)} {\$p(:*:)} {\$p(:*:)} 0 1.2.3\
         {-accessPath {[list $tcl_library *$ZipMountPoint/auto0 $ZipMountPoint/auto0/auto1]}\

@@ -349,7 +349,7 @@ proc ::safe::InterpCreate {
 #
 #    It is the caller's responsibility, if it supplies a non-empty value for
 #    access_path, to make the first directory in the path suitable for use as
-#    tcl_library, and (if ![setAutoPathSync]), to set the slave's ::auto_path.
+#    tcl_library, and (if ![setSyncMode]), to set the slave's ::auto_path.
 
 proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook autoPath withAutoPath} {
     global auto_path
@@ -422,9 +422,9 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook au
 
     # Set the slave auto_path to a tokenized raw_auto_path.
     # Silently ignore any directories that are not in the access path.
-    # If [setAutoPathSync], SyncAccessPath will overwrite this value with the
+    # If [setSyncMode], SyncAccessPath will overwrite this value with the
     # full access path.
-    # If ![setAutoPathSync], Safe Base code will not change this value.
+    # If ![setSyncMode], Safe Base code will not change this value.
     set tokens_auto_path {}
     foreach dir $raw_auto_path {
 	if {[dict exists $remap_access_path $dir]} {
@@ -1355,7 +1355,7 @@ proc ::safe::Setup {} {
 }
 
 # Accessor method for ::safe::AutoPathSync
-# Usage: ::safe::setAutoPathSync ?newValue?
+# Usage: ::safe::setSyncMode ?newValue?
 # Respond to changes by calling Setup again, preserving any
 # caller-defined logging.  This allows complete equivalence with
 # prior Safe Base behavior if AutoPathSync is true.
@@ -1368,7 +1368,7 @@ proc ::safe::Setup {} {
 # (The initialization of AutoPathSync at the end of this file is acceptable
 #  because Setup has not yet been called.)
 
-proc ::safe::setAutoPathSync {args} {
+proc ::safe::setSyncMode {args} {
     variable AutoPathSync
 
     if {[llength $args] == 0} {
@@ -1391,7 +1391,7 @@ proc ::safe::setAutoPathSync {args} {
             setLogCmd $TmpLog
         }
     } else {
-        set msg {wrong # args: should be "safe::setAutoPathSync ?newValue?"}
+        set msg {wrong # args: should be "safe::setSyncMode ?newValue?"}
         return -code error $msg
     }
 

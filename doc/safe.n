@@ -23,7 +23,7 @@ safe \- Creating and manipulating safe interpreters
 .sp
 \fB::safe::interpFindInAccessPath\fR \fIslave\fR \fIdirectory\fR
 .sp
-\fB::safe::setAutoPathSync\fR ?\fInewValue\fR?
+\fB::safe::setSyncMode\fR ?\fInewValue\fR?
 .sp
 \fB::safe::setLogCmd\fR ?\fIcmd arg...\fR?
 .SS OPTIONS
@@ -151,7 +151,7 @@ $slave eval [list set tk_library \e
 .CE
 .RE
 .TP
-\fB::safe::setAutoPathSync\fR ?\fInewValue\fR?
+\fB::safe::setSyncMode\fR ?\fInewValue\fR?
 This command is used to get or set the "Sync Mode" of the Safe Base.
 When an argument is supplied, the command returns an error if the argument
 is not a boolean value, or if any Safe Base interpreters exist.  Typically
@@ -392,7 +392,7 @@ of the ::auto_path and access path ("Sync Mode" on) is still the default.
 However, the Safe Base offers the option of limiting the safe interpreter's
 ::auto_path to the much shorter list of directories that is necessary for
 it to perform its function ("Sync Mode" off).  Use the command
-\fB::safe::setAutoPathSync\fR to choose the mode before creating any Safe
+\fB::safe::setSyncMode\fR to choose the mode before creating any Safe
 Base interpreters.
 .PP
 In either mode, the most convenient way to initialize a safe interpreter is
