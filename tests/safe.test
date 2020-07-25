@@ -1726,6 +1726,118 @@ test safe-14.1 {Check that module path is the same as in the master interpreter 
 } -cleanup {
     safe::interpDelete $i
 } -result [::tcl::tm::path list]
+test safe-14.2 {Check that first element of slave auto_path (and access path) is Tcl Library, Sync Mode on} -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    if {$SyncExists} {
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 1
+    }
+
+    set lib1        [info library]
+    set lib2        [file dirname $lib1]
+    set ::auto_TMP  $::auto_path
+    set ::auto_path [list $lib1 $lib2]
+
+    set i [safe::interpCreate]
+} -body {
+    set autoList {}
+    set token [lindex [$i eval set ::auto_path] 0]
+    set auto0 [dict get [set ::safe::S${i}(access_path,map)] $token]
+    set accessList [lindex [safe::interpConfigure $i -accessPath] 1]
+    return [list [lindex $accessList 0] $auto0]
+} -cleanup {
+    set ::auto_path $::auto_TMP
+    safe::interpDelete $i
+    if {$SyncExists} {
+        safe::setAutoPathSync $SyncVal_TMP
+    }
+} -result [list [info library] [info library]]
+test safe-14.2.1 {Check that first element of slave auto_path (and access path) is Tcl Library, Sync Mode off} -constraints AutoSyncDefined -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    if {$SyncExists} {
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 0
+    } else {
+        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
+    }
+
+    set lib1        [info library]
+    set lib2        [file dirname $lib1]
+    set ::auto_TMP  $::auto_path
+    set ::auto_path [list $lib1 $lib2]
+
+    set i [safe::interpCreate]
+} -body {
+    set autoList {}
+    set token [lindex [$i eval set ::auto_path] 0]
+    set auto0 [dict get [set ::safe::S${i}(access_path,map)] $token]
+    set accessList [lindex [safe::interpConfigure $i -accessPath] 1]
+    return [list [lindex $accessList 0] $auto0]
+} -cleanup {
+    set ::auto_path $::auto_TMP
+    safe::interpDelete $i
+    if {$SyncExists} {
+        safe::setAutoPathSync $SyncVal_TMP
+    }
+} -result [list [info library] [info library]]
+test safe-14.3 {Check that first element of slave auto_path (and access path) is Tcl Library, even if not true for master, Sync Mode on} -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    if {$SyncExists} {
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 1
+    }
+
+    set lib1        [info library]
+    set lib2        [file dirname $lib1]
+    set ::auto_TMP  $::auto_path
+    set ::auto_path [list $lib2 $lib1]
+    # Unexpected order, should be reversed in the slave
+
+    set i [safe::interpCreate]
+} -body {
+    set autoList {}
+    set token [lindex [$i eval set ::auto_path] 0]
+    set auto0 [dict get [set ::safe::S${i}(access_path,map)] $token]
+    set accessList [lindex [safe::interpConfigure $i -accessPath] 1]
+
+    return [list [lindex $accessList 0] $auto0]
+} -cleanup {
+    set ::auto_path $::auto_TMP
+    safe::interpDelete $i
+    if {$SyncExists} {
+        safe::setAutoPathSync $SyncVal_TMP
+    }
+} -result [list [info library] [info library]]
+test safe-14.3.1 {Check that first element of slave auto_path (and access path) is Tcl Library, even if not true for master, Sync Mode off} -constraints AutoSyncDefined -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    if {$SyncExists} {
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 0
+    } else {
+        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
+    }
+
+    set lib1        [info library]
+    set lib2        [file dirname $lib1]
+    set ::auto_TMP  $::auto_path
+    set ::auto_path [list $lib2 $lib1]
+    # Unexpected order, should be reversed in the slave
+
+    set i [safe::interpCreate]
+} -body {
+    set autoList {}
+    set token [lindex [$i eval set ::auto_path] 0]
+    set auto0 [dict get [set ::safe::S${i}(access_path,map)] $token]
+    set accessList [lindex [safe::interpConfigure $i -accessPath] 1]
+
+    return [list [lindex $accessList 0] $auto0]
+} -cleanup {
+    set ::auto_path $::auto_TMP
+    safe::interpDelete $i
+    if {$SyncExists} {
+        safe::setAutoPathSync $SyncVal_TMP
+    }
+} -result [list [info library] [info library]]
 
 ### 15. Safe file ensemble.
 
@@ -1863,121 +1975,6 @@ test safe-16.8 {Bug 3529949: defang ~user in paths used by AliasGlob (2)} -setup
     safe::interpDelete $i
     unset user
 } -result {~USER}
-
-### 14.x move above.
-
-test safe-14.2 {Check that first element of slave auto_path (and access path) is Tcl Library, Sync Mode on} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-    if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
-    }
-
-    set lib1        [info library]
-    set lib2        [file dirname $lib1]
-    set ::auto_TMP  $::auto_path
-    set ::auto_path [list $lib1 $lib2]
-
-    set i [safe::interpCreate]
-} -body {
-    set autoList {}
-    set token [lindex [$i eval set ::auto_path] 0]
-    set auto0 [dict get [set ::safe::S${i}(access_path,map)] $token]
-    set accessList [lindex [safe::interpConfigure $i -accessPath] 1]
-    return [list [lindex $accessList 0] $auto0]
-} -cleanup {
-    set ::auto_path $::auto_TMP
-    safe::interpDelete $i
-    if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
-    }
-} -result [list [info library] [info library]]
-test safe-14.2.1 {Check that first element of slave auto_path (and access path) is Tcl Library, Sync Mode off} -constraints AutoSyncDefined -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-    if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 0
-    } else {
-        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
-    }
-
-    set lib1        [info library]
-    set lib2        [file dirname $lib1]
-    set ::auto_TMP  $::auto_path
-    set ::auto_path [list $lib1 $lib2]
-
-    set i [safe::interpCreate]
-} -body {
-    set autoList {}
-    set token [lindex [$i eval set ::auto_path] 0]
-    set auto0 [dict get [set ::safe::S${i}(access_path,map)] $token]
-    set accessList [lindex [safe::interpConfigure $i -accessPath] 1]
-    return [list [lindex $accessList 0] $auto0]
-} -cleanup {
-    set ::auto_path $::auto_TMP
-    safe::interpDelete $i
-    if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
-    }
-} -result [list [info library] [info library]]
-test safe-14.3 {Check that first element of slave auto_path (and access path) is Tcl Library, even if not true for master, Sync Mode on} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-    if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
-    }
-
-    set lib1        [info library]
-    set lib2        [file dirname $lib1]
-    set ::auto_TMP  $::auto_path
-    set ::auto_path [list $lib2 $lib1]
-    # Unexpected order, should be reversed in the slave
-
-    set i [safe::interpCreate]
-} -body {
-    set autoList {}
-    set token [lindex [$i eval set ::auto_path] 0]
-    set auto0 [dict get [set ::safe::S${i}(access_path,map)] $token]
-    set accessList [lindex [safe::interpConfigure $i -accessPath] 1]
-
-    return [list [lindex $accessList 0] $auto0]
-} -cleanup {
-    set ::auto_path $::auto_TMP
-    safe::interpDelete $i
-    if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
-    }
-} -result [list [info library] [info library]]
-test safe-14.3.1 {Check that first element of slave auto_path (and access path) is Tcl Library, even if not true for master, Sync Mode off} -constraints AutoSyncDefined -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-    if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 0
-    } else {
-        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
-    }
-
-    set lib1        [info library]
-    set lib2        [file dirname $lib1]
-    set ::auto_TMP  $::auto_path
-    set ::auto_path [list $lib2 $lib1]
-    # Unexpected order, should be reversed in the slave
-
-    set i [safe::interpCreate]
-} -body {
-    set autoList {}
-    set token [lindex [$i eval set ::auto_path] 0]
-    set auto0 [dict get [set ::safe::S${i}(access_path,map)] $token]
-    set accessList [lindex [safe::interpConfigure $i -accessPath] 1]
-
-    return [list [lindex $accessList 0] $auto0]
-} -cleanup {
-    set ::auto_path $::auto_TMP
-    safe::interpDelete $i
-    if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
-    }
-} -result [list [info library] [info library]]
 
 ### 17. Test the use of ::auto_path for loading commands (via tclIndex files)
 ###     and non-module packages (via pkgIndex.tcl files).
@@ -2141,6 +2138,109 @@ test safe-17.5 {cf. safe-7.5 - positive and negative module package require, inc
         safe::setAutoPathSync $SyncVal_TMP
     }
 } -result {1 {can't find package test1} 0}
+
+### 18. Test tokenization of directories available to a slave.
+
+test safe-18.1 {Check that each directory of the default auto_path is a valid token, Sync Mode on} -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    if {$SyncExists} {
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 1
+    }
+    set i [safe::interpCreate]
+} -body {
+    set badTokens {}
+    foreach dir [$i eval {set ::auto_path}] {
+        if {[regexp {^\$p\(:[0-9]+:\)$} $dir]} {
+            # Match - OK - token has expected form
+        } else {
+            # No match - possibly an ordinary path has not been tokenized
+            lappend badTokens $dir
+        }
+    }
+    set badTokens
+} -cleanup {
+    safe::interpDelete $i
+    if {$SyncExists} {
+        safe::setAutoPathSync $SyncVal_TMP
+    }
+} -result {}
+test safe-18.1.1 {Check that each directory of the default auto_path is a valid token, Sync Mode off} -constraints AutoSyncDefined -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    if {$SyncExists} {
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 0
+    } else {
+        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
+    }
+    set i [safe::interpCreate]
+} -body {
+    set badTokens {}
+    foreach dir [$i eval {set ::auto_path}] {
+        if {[regexp {^\$p\(:[0-9]+:\)$} $dir]} {
+            # Match - OK - token has expected form
+        } else {
+            # No match - possibly an ordinary path has not been tokenized
+            lappend badTokens $dir
+        }
+    }
+    set badTokens
+} -cleanup {
+    safe::interpDelete $i
+    if {$SyncExists} {
+        safe::setAutoPathSync $SyncVal_TMP
+    }
+} -result {}
+test safe-18.2 {Check that each directory of the module path is a valid token, Sync Mode on} -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    if {$SyncExists} {
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 1
+    }
+    set i [safe::interpCreate]
+} -body {
+    set badTokens {}
+    foreach dir [$i eval {::tcl::tm::path list}] {
+        if {[regexp {^\$p\(:[0-9]+:\)$} $dir]} {
+            # Match - OK - token has expected form
+        } else {
+            # No match - possibly an ordinary path has not been tokenized
+            lappend badTokens $dir
+        }
+    }
+    set badTokens
+} -cleanup {
+    safe::interpDelete $i
+    if {$SyncExists} {
+        safe::setAutoPathSync $SyncVal_TMP
+    }
+} -result {}
+test safe-18.2.1 {Check that each directory of the module path is a valid token, Sync Mode off} -constraints AutoSyncDefined -setup {
+    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
+    if {$SyncExists} {
+        set SyncVal_TMP [safe::setAutoPathSync]
+        safe::setAutoPathSync 0
+    } else {
+        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
+    }
+    set i [safe::interpCreate]
+} -body {
+    set badTokens {}
+    foreach dir [$i eval {::tcl::tm::path list}] {
+        if {[regexp {^\$p\(:[0-9]+:\)$} $dir]} {
+            # Match - OK - token has expected form
+        } else {
+            # No match - possibly an ordinary path has not been tokenized
+            lappend badTokens $dir
+        }
+    }
+    set badTokens
+} -cleanup {
+    safe::interpDelete $i
+    if {$SyncExists} {
+        safe::setAutoPathSync $SyncVal_TMP
+    }
+} -result {}
 
 ### 19. Assorted options, including changes to option values.
 ###     Mostly these are changes to access path, auto_path, module path.
@@ -2788,109 +2888,6 @@ test safe-19.24 {interpConfigure change the access path; check module loading, S
          TESTSDIR/auto0/modules/mod1 TESTSDIR/auto0/modules/mod2} --\
         res0 res1 res2}
 # See comments on lsort after test safe-9.20.
-
-### 18. Test tokenization of directories available to a slave.
-
-test safe-18.1 {Check that each directory of the default auto_path is a valid token, Sync Mode on} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-    if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
-    }
-    set i [safe::interpCreate]
-} -body {
-    set badTokens {}
-    foreach dir [$i eval {set ::auto_path}] {
-        if {[regexp {^\$p\(:[0-9]+:\)$} $dir]} {
-            # Match - OK - token has expected form
-        } else {
-            # No match - possibly an ordinary path has not been tokenized
-            lappend badTokens $dir
-        }
-    }
-    set badTokens
-} -cleanup {
-    safe::interpDelete $i
-    if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
-    }
-} -result {}
-test safe-18.1.1 {Check that each directory of the default auto_path is a valid token, Sync Mode off} -constraints AutoSyncDefined -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-    if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 0
-    } else {
-        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
-    }
-    set i [safe::interpCreate]
-} -body {
-    set badTokens {}
-    foreach dir [$i eval {set ::auto_path}] {
-        if {[regexp {^\$p\(:[0-9]+:\)$} $dir]} {
-            # Match - OK - token has expected form
-        } else {
-            # No match - possibly an ordinary path has not been tokenized
-            lappend badTokens $dir
-        }
-    }
-    set badTokens
-} -cleanup {
-    safe::interpDelete $i
-    if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
-    }
-} -result {}
-test safe-18.2 {Check that each directory of the module path is a valid token, Sync Mode on} -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-    if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 1
-    }
-    set i [safe::interpCreate]
-} -body {
-    set badTokens {}
-    foreach dir [$i eval {::tcl::tm::path list}] {
-        if {[regexp {^\$p\(:[0-9]+:\)$} $dir]} {
-            # Match - OK - token has expected form
-        } else {
-            # No match - possibly an ordinary path has not been tokenized
-            lappend badTokens $dir
-        }
-    }
-    set badTokens
-} -cleanup {
-    safe::interpDelete $i
-    if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
-    }
-} -result {}
-test safe-18.2.1 {Check that each directory of the module path is a valid token, Sync Mode off} -constraints AutoSyncDefined -setup {
-    set SyncExists [expr {[info commands ::safe::setAutoPathSync] ne {}}]
-    if {$SyncExists} {
-        set SyncVal_TMP [safe::setAutoPathSync]
-        safe::setAutoPathSync 0
-    } else {
-        error {This test is meaningful only if the command ::safe::setAutoPathSync is defined}
-    }
-    set i [safe::interpCreate]
-} -body {
-    set badTokens {}
-    foreach dir [$i eval {::tcl::tm::path list}] {
-        if {[regexp {^\$p\(:[0-9]+:\)$} $dir]} {
-            # Match - OK - token has expected form
-        } else {
-            # No match - possibly an ordinary path has not been tokenized
-            lappend badTokens $dir
-        }
-    }
-    set badTokens
-} -cleanup {
-    safe::interpDelete $i
-    if {$SyncExists} {
-        safe::setAutoPathSync $SyncVal_TMP
-    }
-} -result {}
 
 # cleanup
 set ::auto_path $SaveAutoPath
