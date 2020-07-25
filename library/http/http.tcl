@@ -2698,18 +2698,18 @@ proc http::Event {sock token} {
 			    if {$tmpHeader in {close keep-alive}} {
 				# The common cases, continue.
 			    } elseif {[string first , $tmpHeader] == -1} {
-			        # Not a comma-separated list, not "close",
-			        # therefore "keep-alive".
-			        set tmpHeader keep-alive
+				# Not a comma-separated list, not "close",
+				# therefore "keep-alive".
+				set tmpHeader keep-alive
 			    } else {
-			        set tmpHeader keep-alive
-			        set tmpCsl [split $tmpHeader ,]
-			        # Optional whitespace either side of separator.
-			        foreach el $tmpCsl {
-			            if {[string trim $el] eq {close}} {
+				set tmpHeader keep-alive
+				set tmpCsl [split $tmpHeader ,]
+				# Optional whitespace either side of separator.
+				foreach el $tmpCsl {
+				    if {[string trim $el] eq {close}} {
 					set tmpHeader close
 					break
-			            }
+				    }
 			        }
 			    }
 			    set state(connection) $tmpHeader
