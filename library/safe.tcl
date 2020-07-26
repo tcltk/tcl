@@ -501,7 +501,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook au
 #    nonsense in both the slave and the master.
 #
 proc ::safe::DetokPath {slave tokenPath} {
-    namespace upvar ::safe S$slave state
+    namespace upvar ::safe [VarName $slave] state
 
     set slavePath {}
     foreach token $tokenPath {
