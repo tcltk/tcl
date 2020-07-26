@@ -871,8 +871,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done;
-	@echo "Installing package http 2.9.2 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/9.0/http-2.9.2.tm";
+	@echo "Installing package http 2.9.3 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/9.0/http-2.9.3.tm";
 	@echo "Installing package opt 0.4.7";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \

@@ -11,7 +11,7 @@
 package require tcltest 2
 namespace import -force ::tcltest::*
 
-package require http 2.8
+package require http 2.9
 
 set sourcedir [file normalize [file dirname [info script]]]
 source [file join $sourcedir httpTest.tcl]
