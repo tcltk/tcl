@@ -10,7 +10,7 @@
 package require tcltest 2
 namespace import -force ::tcltest::*
 
-package require http 2.8
+package require http 2.9
 
 # start the server
 variable httpd_output
@@ -58,6 +58,20 @@ proc meta {tok {key ""}} {
         }
     }
     return $meta
+}
+
+proc state {tok {key ""}} {
+    upvar 1 $tok state
+    if {$key ne ""} {
+        if {[array names state -exact $key] ne {}} {
+            return $state($key)
+        } else {
+            return ""
+        }
+    }
+    set res [array get state]
+    dict set res body <elided>
+    return $res
 }
 
 proc check_crc {tok args} {
@@ -240,6 +254,29 @@ test http11-1.12 "normal,identity,chunked" -setup {
     http::cleanup $tok
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok {} chunked}
+
+test http11-1.13 "normal, 1.1 and keepalive as server default, no zip" -setup {
+    variable httpd [create_httpd]
+    set zipTmp [http::config -zip]
+    http::config -zip 0
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?transfer= \
+                 -protocol 1.1 -keepalive 1 -timeout 10000]
+    http::wait $tok
+    set res1 [list [http::status $tok] [http::code $tok] [check_crc $tok] \
+        [meta $tok connection] [meta $tok transfer-encoding] [state $tok reusing] [state $tok connection]]
+    set toj [http::geturl http://localhost:$httpd_port/testdoc.html?transfer= \
+                 -protocol 1.1 -keepalive 1 -timeout 10000]
+    http::wait $toj
+    set res2 [list [http::status $toj] [http::code $toj] [check_crc $toj] \
+        [meta $toj connection] [meta $toj transfer-encoding] [state $toj reusing] [state $toj connection]]
+    concat $res1 -- $res2
+} -cleanup {
+    http::cleanup $tok
+    http::cleanup $toj
+    halt_httpd
+    http::config -zip $zipTmp
+} -result {ok {HTTP/1.1 200 OK} ok {} {} 0 keep-alive -- ok {HTTP/1.1 200 OK} ok {} {} 1 keep-alive}
 
 # -------------------------------------------------------------------------
 
