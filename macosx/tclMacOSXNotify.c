@@ -20,12 +20,10 @@
  * OSSpinLock, and the OSSpinLock was deprecated.
  */
 
-#if 0
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 101200
 #define USE_OS_UNFAIR_LOCK
 #include <os/lock.h>
 #undef TCL_MAC_DEBUG_NOTIFIER
-#endif
 #endif
 
 #ifdef HAVE_COREFOUNDATION	/* Traditional unix select-based notifier is

@@ -5946,7 +5946,9 @@ test io-44.4 {FileEventProc procedure: eror in write event} -constraints {
     catch {close $f2}
     catch {close $f3}
 } -result {bad-write {}}
-test io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpipe fileevent} {
+test io-44.5 {FileEventProc procedure: end of file} -constraints {
+    stdio unixExecs openpipe fileevent
+} -body {
     set f4 [open "|[list [interpreter] $path(cat) << foo]" r]
     fileevent $f4 readable [namespace code {
 	if {[gets $f4 line] < 0} {
@@ -5959,9 +5961,10 @@ test io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpipe fi
     variable x initial
     vwait [namespace which -variable x]
     vwait [namespace which -variable x]
-    close $f4
     set x
-} {initial foo eof}
+} -cleanup {
+    close $f4
+} -result {initial foo eof}
 
 close $f
 makeFile "foo bar" foo
@@ -6841,9 +6844,9 @@ test io-50.5 {testing handler deletion vs reentrant calls} -constraints testchan
     set z ""
     set u toplevel
     update
-    close $f
     set z
 } -cleanup {
+    close $f
 } -result [list {del calling recursive} {del deleted notcalled} \
 	{del deleted myself} {del after update}]
 test io-50.6 {testing handler deletion vs reentrant calls} -constraints testchannelevent -setup {

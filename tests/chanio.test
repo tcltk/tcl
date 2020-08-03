@@ -5642,7 +5642,9 @@ test chan-io-44.4 {FileEventProc procedure: eror in write event} -setup {
     catch {chan close $f2}
     catch {chan close $f3}
 } -result {bad-write {}}
-test chan-io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpipe fileevent} {
+test chan-io-44.5 {FileEventProc procedure: end of file} -constraints {
+    stdio unixExecs openpipe fileevent
+} -body {
     set f4 [openpipe r $path(cat) << foo]
     chan event $f4 readable [namespace code {
 	if {[chan gets $f4 line] < 0} {
@@ -5655,9 +5657,10 @@ test chan-io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpi
     variable x initial
     vwait [namespace which -variable x]
     vwait [namespace which -variable x]
-    chan close $f4
     set x
-} {initial foo eof}
+} -cleanup {
+    chan close $f4
+} -result {initial foo eof}
 
 chan close $f
 makeFile "foo bar" foo
