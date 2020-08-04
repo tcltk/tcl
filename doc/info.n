@@ -64,7 +64,7 @@ instance of \fBoo::object\fR or one of its subclasses.
 that represents an instance of \fBoo::object\fR or one of its subclasses.
 .IP \fBproc\fR
 \fIcommandName\fR was created by \fBproc\fR.
-.IP \fBslave\fR
+.IP \fBinterp\fR
 \fIcommandName\fR was created by \fBinterp create\fR.
 .IP \fBzlibStream\fR
 \fIcommandName\fR was created by \fBzlib stream\fR.
