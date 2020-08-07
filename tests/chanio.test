@@ -6526,16 +6526,13 @@ test chan-io-50.6 {testing handler deletion vs reentrant calls} -setup {
     }
     set z ""
     set u toplevel
-    # Testing why this test fails on Travis:
-    # The test appears to assume that select will not detect the
-    # new file until update is called.
-    lappend z "1"
+    # This test assume that select will not detect the new open file
+    # until the update command runs.  This is not guaranteed, but it
+    # seems to help if we make sure that the calls to testchannelevent
+    # immediately follow the call to open.
     set f [open $path(test1) r]
-    lappend z "2"
     testchannelevent $f add readable [namespace code [list second $f]]
-    lappend z "3"
     testchannelevent $f add readable [namespace code [list first $f]]
-    lappend z "update"
     update
     set z
 } -cleanup {

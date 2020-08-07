@@ -6725,16 +6725,17 @@ test io-49.5 {testing crlf reading, leftover cr disgorgment} {
 test io-50.1 {testing handler deletion} -constraints testchannelevent -setup {
     file delete $path(test1)
 } -body {
-    set f [open $path(test1) w]
-    close $f
-    set f [open $path(test1) r]
-    testchannelevent $f add readable [namespace code [list delhandler $f]]
     proc delhandler {f} {
 	variable z
 	set z called
 	testchannelevent $f delete 0
     }
+    set f [open $path(test1) w]
+    close $f
     set z not_called
+    update
+    set f [open $path(test1) r]
+    testchannelevent $f add readable [namespace code [list delhandler $f]]
     update
     set z
 } -cleanup {
