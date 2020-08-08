@@ -6761,7 +6761,9 @@ test io-50.2 {testing handler deletion with multiple handlers} -constraints test
     testchannelevent $f add readable [namespace code [list delhandler $f 1]]
     testchannelevent $f add readable [namespace code [list delhandler $f 0]]
     testservicemode 1
-    update
+    set timer [after 50 lappend z timeout]
+    vwait z
+    after cancel $timer
     set z
 } -cleanup {
     close $f
