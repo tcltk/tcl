@@ -6394,14 +6394,16 @@ test chan-io-50.2 {testing handler deletion with multiple handlers} -setup {
     chan close [open $path(test1) w]
     set z ""
 } -constraints testchannelevent -body {
-    set f [open $path(test1) r]
-    testchannelevent $f add readable [namespace code [list delhandler $f 1]]
-    testchannelevent $f add readable [namespace code [list delhandler $f 0]]
     proc delhandler {f i} {
 	variable z
 	lappend z "called delhandler $f $i"
 	testchannelevent $f delete 0
     }
+    testservicemode 0
+    set f [open $path(test1) r]
+    testchannelevent $f add readable [namespace code [list delhandler $f 1]]
+    testchannelevent $f add readable [namespace code [list delhandler $f 0]]
+    testservicemode 1
     update
     string equal $z \
 	[list [list called delhandler $f 0] [list called delhandler $f 1]]
@@ -6411,11 +6413,8 @@ test chan-io-50.2 {testing handler deletion with multiple handlers} -setup {
 test chan-io-50.3 {testing handler deletion with multiple handlers} -setup {
     file delete $path(test1)
     chan close [open $path(test1) w]
-    set z ""
+    update
 } -constraints testchannelevent -body {
-    set f [open $path(test1) r]
-    testchannelevent $f add readable [namespace code [list notcalled $f 1]]
-    testchannelevent $f add readable [namespace code [list delhandler $f 0]]
     proc notcalled {f i} {
 	variable z
 	lappend z "notcalled was called!! $f $i"
@@ -6427,6 +6426,12 @@ test chan-io-50.3 {testing handler deletion with multiple handlers} -setup {
 	testchannelevent $f delete 0
 	lappend z "delhandler $f $i deleted myself"
     }
+    set z ""
+    testservicemode 0
+    set f [open $path(test1) r]
+    testchannelevent $f add readable [namespace code [list notcalled $f 1]]
+    testchannelevent $f add readable [namespace code [list delhandler $f 0]]
+    testservicemode 1
     update
     string equal $z \
 	[list [list delhandler $f 0 called] \
@@ -6438,6 +6443,7 @@ test chan-io-50.4 {testing handler deletion vs reentrant calls} -setup {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan close $f
+    update
 } -constraints testchannelevent -body {
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code {
@@ -6456,15 +6462,14 @@ test chan-io-50.4 {testing handler deletion vs reentrant calls} -setup {
     set z
 } -cleanup {
     chan close $f
+    update
 } -result {{delrecursive calling recursive} {delrecursive deleting recursive}}
 test chan-io-50.5 {testing handler deletion vs reentrant calls} -setup {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan close $f
+    update
 } -constraints testchannelevent -body {
-    set f [open $path(test1) r]
-    testchannelevent $f add readable [namespace code [list notcalled $f]]
-    testchannelevent $f add readable [namespace code [list del $f]]
     proc notcalled {f} {
 	variable z
 	lappend z "notcalled was called!! $f"
@@ -6480,22 +6485,31 @@ test chan-io-50.5 {testing handler deletion vs reentrant calls} -setup {
 	} else {
 	    set u recursive
 	    lappend z "del calling recursive"
+	    set mode [test servicemode 1]
 	    update
+	    test servicemode $mode
 	    lappend z "del after update"
 	}
     }
     set z ""
     set u toplevel
+    testservicemode 0
+    set f [open $path(test1) r]
+    testchannelevent $f add readable [namespace code [list notcalled $f]]
+    testservicemode 1
+    testchannelevent $f add readable [namespace code [list del $f]]
     update
     set z
 } -cleanup {
     chan close $f
+    update
 } -result [list {del calling recursive} {del deleted notcalled} \
 	       {del deleted myself} {del after update}]
 test chan-io-50.6 {testing handler deletion vs reentrant calls} -setup {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan close $f
+    update
 } -constraints testchannelevent -body {
     proc first {f} {
 	variable u
@@ -6503,7 +6517,9 @@ test chan-io-50.6 {testing handler deletion vs reentrant calls} -setup {
 	if {$u eq "toplevel"} {
 	    lappend z "first called"
 	    set u first
+	    set mode [testservicemode 1]
 	    update
+	    testservicemode $mode
 	    lappend z "first after update"
 	} else {
 	    lappend z "first called not toplevel"
@@ -6526,13 +6542,11 @@ test chan-io-50.6 {testing handler deletion vs reentrant calls} -setup {
     }
     set z ""
     set u toplevel
-    # This test assume that select will not detect the new open file
-    # until the update command runs.  This is not guaranteed, but it
-    # seems to help if we make sure that the calls to testchannelevent
-    # immediately follow the call to open.
+    testservicemode 0
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code [list second $f]]
     testchannelevent $f add readable [namespace code [list first $f]]
+    testservicemode 1
     update
     set z
 } -cleanup {
