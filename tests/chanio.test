@@ -6399,12 +6399,15 @@ test chan-io-50.2 {testing handler deletion with multiple handlers} -setup {
 	lappend z "called delhandler $f $i"
 	testchannelevent $f delete 0
     }
+    set z ""
+    set timer [after 50 lappend z timeout]
     testservicemode 0
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code [list delhandler $f 1]]
     testchannelevent $f add readable [namespace code [list delhandler $f 0]]
     testservicemode 1
-    update
+    vwait z
+    after cancel $timer
     string equal $z \
 	[list [list called delhandler $f 0] [list called delhandler $f 1]]
 } -cleanup {
@@ -6413,7 +6416,6 @@ test chan-io-50.2 {testing handler deletion with multiple handlers} -setup {
 test chan-io-50.3 {testing handler deletion with multiple handlers} -setup {
     file delete $path(test1)
     chan close [open $path(test1) w]
-    update
 } -constraints testchannelevent -body {
     proc notcalled {f i} {
 	variable z
@@ -6427,12 +6429,14 @@ test chan-io-50.3 {testing handler deletion with multiple handlers} -setup {
 	lappend z "delhandler $f $i deleted myself"
     }
     set z ""
+    set timer [after 50 lappend z timeout]
     testservicemode 0
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code [list notcalled $f 1]]
     testchannelevent $f add readable [namespace code [list delhandler $f 0]]
     testservicemode 1
-    update
+    vwait z
+    after cancel $timer
     string equal $z \
 	[list [list delhandler $f 0 called] \
 	      [list delhandler $f 0 deleted myself]]
@@ -6443,7 +6447,6 @@ test chan-io-50.4 {testing handler deletion vs reentrant calls} -setup {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan close $f
-    update
 } -constraints testchannelevent -body {
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code {
@@ -6458,7 +6461,9 @@ test chan-io-50.4 {testing handler deletion vs reentrant calls} -setup {
     }]
     variable u toplevel
     variable z ""
-    update
+    set timer [after 50 lappend z timeout]
+    vwait z
+    after cancel $timer
     set z
 } -cleanup {
     chan close $f
@@ -6485,20 +6490,24 @@ test chan-io-50.5 {testing handler deletion vs reentrant calls} -setup {
 	} else {
 	    set u recursive
 	    lappend z "del calling recursive"
+	    set timer [after 50 lappend z timeout]
 	    set mode [test servicemode 1]
-	    update
+	    vwait z
+	    after cancel $timer
 	    test servicemode $mode
 	    lappend z "del after update"
 	}
     }
     set z ""
     set u toplevel
+    set timer [after 50 lappend z timeout]
     testservicemode 0
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code [list notcalled $f]]
-    testservicemode 1
     testchannelevent $f add readable [namespace code [list del $f]]
-    update
+    testservicemode 1
+    vwait z
+    after cancel $timer
     set z
 } -cleanup {
     chan close $f
@@ -6509,16 +6518,17 @@ test chan-io-50.6 {testing handler deletion vs reentrant calls} -setup {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan close $f
-    update
 } -constraints testchannelevent -body {
     proc first {f} {
 	variable u
 	variable z
 	if {$u eq "toplevel"} {
 	    lappend z "first called"
-	    set u first
 	    set mode [testservicemode 1]
-	    update
+	    set timer [after 50 lappend z timeout]
+	    set u first
+	    vwait z
+	    after cancel $timer
 	    testservicemode $mode
 	    lappend z "first after update"
 	} else {
@@ -6542,12 +6552,14 @@ test chan-io-50.6 {testing handler deletion vs reentrant calls} -setup {
     }
     set z ""
     set u toplevel
+    set timer [after 50 lappend z timeout]
     testservicemode 0
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code [list second $f]]
     testchannelevent $f add readable [namespace code [list first $f]]
     testservicemode 1
-    update
+    vwait z
+    after cancel $timer
     set z
 } -cleanup {
     chan close $f
