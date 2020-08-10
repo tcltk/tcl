@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.9.3
+package provide http 2.9.4
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -983,6 +983,18 @@ proc http::geturl {url args} {
 	set state(-pipeline) $http(-pipeline)
     }
 
+    # We cannot handle chunked encodings with -handler, so force HTTP/1.0
+    # until we can manage this.
+    if {[info exists state(-handler)]} {
+	set state(-protocol) 1.0
+    }
+
+    # RFC 7320 A.1 - HTTP/1.0 Keep-Alive is problematic. We do not support it.
+    if {$state(-protocol) eq "1.0"} {
+	set state(connection) close
+	set state(-keepalive) 0
+    }
+
     # See if we are supposed to use a previously opened channel.
     # - In principle, ANY call to http::geturl could use a previously opened
     #   channel if it is available - the "Connection: keep-alive" header is a
@@ -1355,11 +1367,6 @@ proc http::Connected {token proto phost srvurl} {
     if {[info exists state(-method)] && ($state(-method) ne "")} {
 	set how $state(-method)
     }
-    # We cannot handle chunked encodings with -handler, so force HTTP/1.0
-    # until we can manage this.
-    if {[info exists state(-handler)]} {
-	set state(-protocol) 1.0
-    }
     set accept_types_seen 0
 
     Log ^B$tk begin sending request - token $token
@@ -1382,7 +1389,7 @@ proc http::Connected {token proto phost srvurl} {
 	    puts $sock "Host: $host:$port"
 	}
 	puts $sock "User-Agent: $http(-useragent)"
-	if {($state(-protocol) >= 1.0) && $state(-keepalive)} {
+	if {($state(-protocol) > 1.0) && $state(-keepalive)} {
 	    # Send this header, because a 1.1 server is not compelled to treat
 	    # this as the default.
 	    puts $sock "Connection: keep-alive"
@@ -1390,9 +1397,17 @@ proc http::Connected {token proto phost srvurl} {
 	if {($state(-protocol) > 1.0) && !$state(-keepalive)} {
 	    puts $sock "Connection: close" ;# RFC2616 sec 8.1.2.1
 	}
-	if {[info exists phost] && ($phost ne "") && $state(-keepalive)} {
-	    puts $sock "Proxy-Connection: Keep-Alive"
+	if {($state(-protocol) < 1.1)} {
+	    # RFC7230 A.1
+	    # Some server implementations of HTTP/1.0 have a faulty
+	    # implementation of RFC 2068 Keep-Alive.
+	    # Don't leave this to chance.
+	    # For HTTP/1.0 we have already "set state(connection) close"
+	    # and "state(-keepalive) 0".
+	    puts $sock "Connection: close"
 	}
+	# RFC7230 A.1 - "clients are encouraged not to send the
+	# Proxy-Connection header field in any requests"
 	set accept_encoding_seen 0
 	set content_type_seen 0
 	dict for {key value} $state(-headers) {
@@ -2739,15 +2754,16 @@ proc http::Event {sock token} {
 				# therefore "keep-alive".
 				set tmpHeader keep-alive
 			    } else {
-				set tmpHeader keep-alive
+				set tmpResult keep-alive
 				set tmpCsl [split $tmpHeader ,]
 				# Optional whitespace either side of separator.
 				foreach el $tmpCsl {
 				    if {[string trim $el] eq {close}} {
-					set tmpHeader close
+					set tmpResult close
 					break
 				    }
 			        }
+			        set tmpHeader $tmpResult
 			    }
 			    set state(connection) $tmpHeader
 			}
