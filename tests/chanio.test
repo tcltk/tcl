@@ -5733,6 +5733,7 @@ test chan-io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileeven
     set timer [after 10 lappend x timeout]
     testfevent cmd $script
     vwait x
+    after cancel $timer
     testfevent cmd {chan close $f}
     list [testfevent cmd {set x}] [testfevent cmd {info commands after}]
 } {{f triggered: foo bar} after}
