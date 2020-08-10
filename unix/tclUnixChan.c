@@ -2378,7 +2378,7 @@ CreateSocket(
     const char *errorMsg = NULL;
 
     sock = -1;
-    if (!CreateSocketAddress(&sockaddr, host, port, 0, &errorMsg)) {
+    if (!CreateSocketAddress(&sockaddr, host, port, server, &errorMsg)) {
 	goto addressError;
     }
     if ((myaddr != NULL || myport != 0) &&
