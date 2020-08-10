@@ -5731,9 +5731,9 @@ test chan-io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileeven
 	    chan event $f readable {}
 	}]
     }
+    set timer [after 10 lappend x timeout]
     testfevent cmd $script
-    after 1	;# We must delay because Windows takes a little time to notice
-    update
+    vwait x
     testfevent cmd {chan close $f}
     list [testfevent cmd {set x}] [testfevent cmd {info commands after}]
 } {{f triggered: foo bar} after}
