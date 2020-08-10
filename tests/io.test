@@ -6036,6 +6036,7 @@ test io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileevent} {
     set timer [after 10 lappend x timeout]
     testfevent cmd $script
     vwait x
+    after cancel $timer
     testfevent cmd {close $f}
     list [testfevent cmd {set x}] [testfevent cmd {info commands after}]
 } {{f triggered: foo bar} after}
