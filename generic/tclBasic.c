@@ -3268,7 +3268,7 @@ Tcl_DeleteCommandFromToken(
      * TclNRExecuteByteCode looks up the command in the command hashtable).
      */
 
-    cmdPtr->flags |= CMD_IS_DELETED;
+    cmdPtr->flags |= CMD_DEAD;
     TclCleanupCommandMacro(cmdPtr);
     return 0;
 }
