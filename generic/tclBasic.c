@@ -3268,7 +3268,6 @@ Tcl_DeleteCommandFromToken(
      * TclNRExecuteByteCode looks up the command in the command hashtable).
      */
 
-    cmdPtr->flags |= CMD_IS_DELETED;
     TclCleanupCommandMacro(cmdPtr);
     return 0;
 }
@@ -4332,13 +4331,9 @@ EvalObjvCore(
          * Caller gave it to us.
          */
 
-	if (!(preCmdPtr->flags & CMD_DEAD)) {
-	    /*
-             * So long as it exists, use it.
-             */
-
-	    cmdPtr = preCmdPtr;
-	} else if (flags & TCL_EVAL_NORESOLVE) {
+	if ( (flags & TCL_EVAL_NORESOLVE)
+	  && (preCmdPtr->flags & CMD_IS_DELETED)
+	) {
 	    /*
 	     * When it's been deleted, and we're told not to attempt resolving
 	     * it ourselves, all we can do is raise an error.
@@ -4349,6 +4344,7 @@ EvalObjvCore(
 	    Tcl_SetErrorCode(interp, "TCL", "EVAL", "DELETEDCOMMAND", NULL);
 	    return TCL_ERROR;
 	}
+	cmdPtr = preCmdPtr;
     }
     if (cmdPtr == NULL) {
 	cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
