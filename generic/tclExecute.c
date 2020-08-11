@@ -2838,7 +2838,7 @@ TEBCresume(
 	    for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
 		bytes = TclGetStringFromObj(*currPtr, &length);
 		if (bytes != NULL) {
-		    memcpy(p, bytes, (size_t) length);
+		    memcpy(p, bytes, length);
 		    p += length;
 		}
 	    }
@@ -2873,7 +2873,7 @@ TEBCresume(
 	    for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
 		if ((*currPtr)->bytes != tclEmptyStringRep) {
 		    bytes = (char *) Tcl_GetByteArrayFromObj(*currPtr,&length);
-		    memcpy(p, bytes, (size_t) length);
+		    memcpy(p, bytes, length);
 		    p += length;
 		}
 	    }

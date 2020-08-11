@@ -2288,7 +2288,7 @@ StringReptCmd(
 	return TCL_ERROR;
     }
     for (index = 0; index < count; index++) {
-	memcpy(string2 + (length1 * index), string1, (size_t) length1);
+	memcpy(string2 + (length1 * index), string1, length1);
     }
     string2[length2] = '\0';
 
@@ -2850,7 +2850,7 @@ TclStringCmp(
 	 * The comparison function should compare up to the minimum byte
 	 * length only.
 	 */
-	match = memCmpFn(s1, s2, (size_t) length);
+	match = memCmpFn(s1, s2, length);
     }
     if ((match == 0) && (reqlength > length)) {
 	match = s1len - s2len;

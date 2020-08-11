@@ -623,7 +623,7 @@ Tcl_DbCkfree(
     Tcl_MutexLock(ckallocMutexPtr);
     ValidateMemory(memp, file, line, TRUE);
     if (init_malloced_bodies) {
-	memset(ptr, GUARD_VALUE, (size_t) memp->length);
+	memset(ptr, GUARD_VALUE, memp->length);
     }
 
     total_frees++;
@@ -693,7 +693,7 @@ Tcl_DbCkrealloc(
 	copySize = memp->length;
     }
     newPtr = Tcl_DbCkalloc(size, file, line);
-    memcpy(newPtr, ptr, (size_t) copySize);
+    memcpy(newPtr, ptr, copySize);
     Tcl_DbCkfree(ptr, file, line);
     return newPtr;
 }
@@ -727,7 +727,7 @@ Tcl_AttemptDbCkrealloc(
     if (newPtr == NULL) {
 	return NULL;
     }
-    memcpy(newPtr, ptr, (size_t) copySize);
+    memcpy(newPtr, ptr, copySize);
     Tcl_DbCkfree(ptr, file, line);
     return newPtr;
 }
