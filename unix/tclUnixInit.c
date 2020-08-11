@@ -546,8 +546,8 @@ TclpInitLibraryPath(
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     str = Tcl_GetStringFromObj(pathPtr, lengthPtr);
-    *valuePtr = (char *)ckalloc((*lengthPtr) + 1);
-    memcpy(*valuePtr, str, (size_t)(*lengthPtr)+1);
+    *valuePtr = (char *)ckalloc(*lengthPtr + 1);
+    memcpy(*valuePtr, str, *lengthPtr + 1);
     Tcl_DecrRefCount(pathPtr);
 }
 

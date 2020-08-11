@@ -654,7 +654,7 @@ SetOSTypeFromAny(
 	OSType osType;
 	char bytes[4] = {'\0','\0','\0','\0'};
 
-	memcpy(bytes, Tcl_DStringValue(&ds), (size_t)Tcl_DStringLength(&ds));
+	memcpy(bytes, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
 	osType = (OSType) bytes[0] << 24 |
 		 (OSType) bytes[1] << 16 |
 		 (OSType) bytes[2] <<  8 |
