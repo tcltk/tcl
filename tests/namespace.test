@@ -3379,6 +3379,33 @@ test namespace-57.0 {
 } -result success
 
 
+test namespace-58.0 {
+    TclNREvalObjv should not interrelate the TCL_EVAL_NORESOLVE flag and the
+    CMD_IS_DEAD flag
+
+    see 29e8848eb976
+} -body {
+    proc p1 {} {
+	return success
+    }
+
+    proc ondelete {oldname newname args} {
+	variable res
+	interp hide {} p1
+	catch {
+	    interp invokehidden {} p1
+	} res
+    }
+
+    trace add command p1 delete ondelete
+    rename p1 {}
+    return $res
+} -cleanup {
+    rename p1 {}
+    unset res
+} -result success
+
+
 
 
 # cleanup
