@@ -911,8 +911,8 @@ LinkTraceProc(
 	    return (char *) "wrong size of char* value";
 	}
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.aryPtr, value, (size_t) valueLength);
-	    memcpy(linkPtr->addr, value, (size_t) valueLength);
+	    memcpy(linkPtr->lastValue.aryPtr, value, valueLength);
+	    memcpy(linkPtr->addr, value, valueLength);
 	} else {
 	    linkPtr->lastValue.c = '\0';
 	    LinkedVar(char) = linkPtr->lastValue.c;
@@ -925,8 +925,8 @@ LinkTraceProc(
 	    return (char *) "wrong size of binary value";
 	}
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.aryPtr, value, (size_t) valueLength);
-	    memcpy(linkPtr->addr, value, (size_t) valueLength);
+	    memcpy(linkPtr->lastValue.aryPtr, value, valueLength);
+	    memcpy(linkPtr->addr, value, valueLength);
 	} else {
 	    linkPtr->lastValue.uc = (unsigned char) *value;
 	    LinkedVar(unsigned char) = linkPtr->lastValue.uc;
