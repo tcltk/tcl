@@ -3268,6 +3268,7 @@ Tcl_DeleteCommandFromToken(
      * TclNRExecuteByteCode looks up the command in the command hashtable).
      */
 
+    cmdPtr->flags |= CMD_DEAD;
     TclCleanupCommandMacro(cmdPtr);
     return 0;
 }
@@ -4138,7 +4139,7 @@ Tcl_CancelEval(
     if (resultObjPtr != NULL) {
 	result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
 	cancelInfo->result = ckrealloc(cancelInfo->result,cancelInfo->length);
-	memcpy(cancelInfo->result, result, (size_t) cancelInfo->length);
+	memcpy(cancelInfo->result, result, cancelInfo->length);
 	TclDecrRefCount(resultObjPtr);	/* Discard their result object. */
     } else {
 	cancelInfo->result = NULL;
@@ -4331,7 +4332,7 @@ EvalObjvCore(
          * Caller gave it to us.
          */
 
-	if (!(preCmdPtr->flags & CMD_IS_DELETED)) {
+	if (!(preCmdPtr->flags & CMD_DEAD)) {
 	    /*
              * So long as it exists, use it.
              */

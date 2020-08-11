@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.9.2
+package provide http 2.9.3
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -721,7 +721,7 @@ proc http::geturl {url args} {
 	body		{}
 	status		""
 	http		""
-	connection	close
+	connection	keep-alive
     }
     set state(-keepalive) $defaultKeepalive
     set state(-strict) $strict
@@ -1037,7 +1037,7 @@ proc http::geturl {url args} {
 
 	    }
 	    # Do not automatically close the connection socket.
-	    set state(connection) {}
+	    set state(connection) keep-alive
 	}
     }
 
@@ -2688,8 +2688,31 @@ proc http::Event {sock token} {
 			}
 			proxy-connection -
 			connection {
-			    set state(connection) \
-				    [string trim [string tolower $value]]
+			    set tmpHeader [string trim [string tolower $value]]
+			    # RFC 7230 Section 6.1 states that a comma-separated
+			    # list is an acceptable value.  According to
+			    # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Connection
+			    # any comma-separated list implies keep-alive, but I
+			    # don't see this in the RFC so we'll play safe and
+			    # scan any list for "close".
+			    if {$tmpHeader in {close keep-alive}} {
+				# The common cases, continue.
+			    } elseif {[string first , $tmpHeader] == -1} {
+				# Not a comma-separated list, not "close",
+				# therefore "keep-alive".
+				set tmpHeader keep-alive
+			    } else {
+				set tmpHeader keep-alive
+				set tmpCsl [split $tmpHeader ,]
+				# Optional whitespace either side of separator.
+				foreach el $tmpCsl {
+				    if {[string trim $el] eq {close}} {
+					set tmpHeader close
+					break
+				    }
+			        }
+			    }
+			    set state(connection) $tmpHeader
 			}
 		    }
 		    lappend state(meta) $key [string trim $value]

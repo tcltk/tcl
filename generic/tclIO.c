@@ -4314,7 +4314,7 @@ Write(
 	     * that we need to stick at the beginning of this buffer.
 	     */
 
-	    memcpy(InsertPoint(bufPtr), safe, (size_t) saved);
+	    memcpy(InsertPoint(bufPtr), safe, saved);
 	    bufPtr->nextAdded += saved;
 	    saved = 0;
 	}
@@ -4711,7 +4711,7 @@ Tcl_GetsObj(
 		    gs.rawRead -= rawRead;
 		    gs.bytesWrote--;
 		    gs.charsWrote--;
-		    memmove(dst, dst + 1, (size_t) (dstEnd - dst));
+		    memmove(dst, dst + 1, dstEnd - dst);
 		    dstEnd--;
 		}
 	    }
@@ -10475,7 +10475,7 @@ Tcl_IsChannelExisting(
 	}
 
 	if ((*chanName == *name) &&
-		(memcmp(name, chanName, (size_t) chanNameLen + 1) == 0)) {
+		(memcmp(name, chanName, chanNameLen + 1) == 0)) {
 	    return 1;
 	}
     }
