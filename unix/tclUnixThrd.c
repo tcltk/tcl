@@ -89,7 +89,7 @@ TclpThreadCreate(
 
 #ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
     if (stackSize != TCL_THREAD_STACK_DEFAULT) {
-	pthread_attr_setstacksize(&attr, (size_t) stackSize);
+	pthread_attr_setstacksize(&attr, stackSize);
 #ifdef TCL_THREAD_STACK_MIN
     } else {
 	/*
@@ -114,8 +114,8 @@ TclpThreadCreate(
     }
 #endif /* HAVE_PTHREAD_ATTR_SETSTACKSIZE */
 
-    if (! (flags & TCL_THREAD_JOINABLE)) {
-	pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_DETACHED);
+    if (!(flags & TCL_THREAD_JOINABLE)) {
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     }
 
     if (pthread_create(&theThread, &attr,
@@ -252,7 +252,7 @@ TclpInitLock(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpFinalizeLock
+ * TclFinalizeLock
  *
  *	This procedure is used to destroy all private resources used in this
  *	file.
@@ -334,7 +334,6 @@ TclpGlobalLock(void)
     pthread_mutex_lock(&globalLock);
 #endif
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -427,7 +426,7 @@ Tcl_MutexLock(
 	     * Double inside global lock check to avoid a race condition.
 	     */
 
-	    pmutexPtr = ckalloc(sizeof(pthread_mutex_t));
+	    pmutexPtr = (pthread_mutex_t *)ckalloc(sizeof(pthread_mutex_t));
 	    pthread_mutex_init(pmutexPtr, NULL);
 	    *mutexPtr = (Tcl_Mutex)pmutexPtr;
 	    TclRememberMutex(mutexPtr);
@@ -537,7 +536,7 @@ Tcl_ConditionWait(
 	 */
 
 	if (*condPtr == NULL) {
-	    pcondPtr = ckalloc(sizeof(pthread_cond_t));
+	    pcondPtr = (pthread_cond_t *)ckalloc(sizeof(pthread_cond_t));
 	    pthread_cond_init(pcondPtr, NULL);
 	    *condPtr = (Tcl_Condition) pcondPtr;
 	    TclRememberCondition(condPtr);
@@ -588,11 +587,12 @@ Tcl_ConditionNotify(
     Tcl_Condition *condPtr)
 {
     pthread_cond_t *pcondPtr = *((pthread_cond_t **)condPtr);
+
     if (pcondPtr != NULL) {
 	pthread_cond_broadcast(pcondPtr);
     } else {
 	/*
-	 * Noone has used the condition variable, so there are no waiters.
+	 * No-one has used the condition variable, so there are no waiters.
 	 */
     }
 }
@@ -683,18 +683,18 @@ TclpInetNtoa(
 static volatile int initialized = 0;
 static pthread_key_t key;
 
-typedef struct allocMutex {
+typedef struct {
     Tcl_Mutex tlock;
     pthread_mutex_t plock;
-} allocMutex;
+} AllocMutex;
 
 Tcl_Mutex *
 TclpNewAllocMutex(void)
 {
-    struct allocMutex *lockPtr;
-    register pthread_mutex_t *plockPtr;
+    AllocMutex *lockPtr;
+    pthread_mutex_t *plockPtr;
 
-    lockPtr = malloc(sizeof(struct allocMutex));
+    lockPtr = (AllocMutex *)malloc(sizeof(AllocMutex));
     if (lockPtr == NULL) {
 	Tcl_Panic("could not allocate lock");
     }
@@ -708,7 +708,8 @@ void
 TclpFreeAllocMutex(
     Tcl_Mutex *mutex)		/* The alloc mutex to free. */
 {
-    allocMutex* lockPtr = (allocMutex*) mutex;
+    AllocMutex *lockPtr = (AllocMutex *)mutex;
+
     if (!lockPtr) {
 	return;
     }
@@ -767,7 +768,7 @@ TclpThreadCreateKey(void)
 {
     pthread_key_t *ptkeyPtr;
 
-    ptkeyPtr = TclpSysAlloc(sizeof *ptkeyPtr, 0);
+    ptkeyPtr = (pthread_key_t *)TclpSysAlloc(sizeof(pthread_key_t), 0);
     if (NULL == ptkeyPtr) {
 	Tcl_Panic("unable to allocate thread key!");
     }
@@ -783,7 +784,7 @@ void
 TclpThreadDeleteKey(
     void *keyPtr)
 {
-    pthread_key_t *ptkeyPtr = keyPtr;
+    pthread_key_t *ptkeyPtr = (pthread_key_t *)keyPtr;
 
     if (pthread_key_delete(*ptkeyPtr)) {
 	Tcl_Panic("unable to delete key!");
@@ -797,7 +798,7 @@ TclpThreadSetGlobalTSD(
     void *tsdKeyPtr,
     void *ptr)
 {
-    pthread_key_t *ptkeyPtr = tsdKeyPtr;
+    pthread_key_t *ptkeyPtr = (pthread_key_t *)tsdKeyPtr;
 
     if (pthread_setspecific(*ptkeyPtr, ptr)) {
 	Tcl_Panic("unable to set global TSD value");
@@ -808,7 +809,7 @@ void *
 TclpThreadGetGlobalTSD(
     void *tsdKeyPtr)
 {
-    pthread_key_t *ptkeyPtr = tsdKeyPtr;
+    pthread_key_t *ptkeyPtr = (pthread_key_t *)tsdKeyPtr;
 
     return pthread_getspecific(*ptkeyPtr);
 }
