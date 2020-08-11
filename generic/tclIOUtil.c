@@ -4085,7 +4085,7 @@ TclFSNonnativePathType(
 		    if (pathLen < len) {
 			continue;
 		    }
-		    if (strncmp(strVol, path, (size_t) len) == 0) {
+		    if (strncmp(strVol, path, len) == 0) {
 			type = TCL_PATH_ABSOLUTE;
 			if (filesystemPtrPtr != NULL) {
 			    *filesystemPtrPtr = fsRecPtr->fsPtr;

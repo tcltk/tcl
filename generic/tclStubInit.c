@@ -319,7 +319,7 @@ mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
     if (maxlen < 0) {
 	return MP_VAL;
     }
-    return TclBN_mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
+    return TclBN_mp_to_radix(a, str, maxlen, NULL, radix);
 }
 
 #define TclSetStartupScriptPath setStartupScriptPath

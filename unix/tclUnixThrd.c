@@ -178,14 +178,14 @@ static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * initLock is used to serialize initialization and finalization of Tcl. It
- * cannot use any dyamically allocated storage.
+ * cannot use any dynamically allocated storage.
  */
 
 static pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * allocLock is used by Tcl's version of malloc for synchronization. For
- * obvious reasons, cannot use any dyamically allocated storage.
+ * obvious reasons, cannot use any dynamically allocated storage.
  */
 
 static PMutex allocLock;
@@ -236,7 +236,7 @@ TclpThreadCreate(
 
 #ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
     if (stackSize != TCL_THREAD_STACK_DEFAULT) {
-	pthread_attr_setstacksize(&attr, (size_t) stackSize);
+	pthread_attr_setstacksize(&attr, stackSize);
 #ifdef TCL_THREAD_STACK_MIN
     } else {
 	/*
@@ -266,12 +266,12 @@ TclpThreadCreate(
     }
 
     if (pthread_create(&theThread, &attr,
-	    (void * (*)(void *))(void *)proc, (void *) clientData) &&
+	    (void * (*)(void *))(void *)proc, (void *)clientData) &&
 	    pthread_create(&theThread, NULL,
-		    (void * (*)(void *))(void *)proc, (void *) clientData)) {
+		    (void * (*)(void *))(void *)proc, (void *)clientData)) {
 	result = TCL_ERROR;
     } else {
-	*idPtr = (Tcl_ThreadId) theThread;
+	*idPtr = (Tcl_ThreadId)theThread;
 	result = TCL_OK;
     }
     pthread_attr_destroy(&attr);
@@ -515,7 +515,7 @@ TclpGlobalUnlock(void)
  * Tcl_GetAllocMutex
  *
  *	This procedure returns a pointer to a statically initialized mutex for
- *	use by the memory allocator. The alloctor must use this lock, because
+ *	use by the memory allocator. The allocator must use this lock, because
  *	all other locks are allocated...
  *
  * Results:
@@ -694,8 +694,8 @@ Tcl_ConditionWait(
 	}
 	pthread_mutex_unlock(&globalLock);
     }
-    pmutexPtr = *((PMutex **) mutexPtr);
-    pcondPtr = *((pthread_cond_t **) condPtr);
+    pmutexPtr = *((PMutex **)mutexPtr);
+    pcondPtr = *((pthread_cond_t **)condPtr);
     if (timePtr == NULL) {
 	PCondWait(pcondPtr, pmutexPtr);
     } else {
@@ -737,7 +737,7 @@ void
 Tcl_ConditionNotify(
     Tcl_Condition *condPtr)
 {
-    pthread_cond_t *pcondPtr = *((pthread_cond_t **) condPtr);
+    pthread_cond_t *pcondPtr = *((pthread_cond_t **)condPtr);
 
     if (pcondPtr != NULL) {
 	pthread_cond_broadcast(pcondPtr);
@@ -771,7 +771,7 @@ void
 TclpFinalizeCondition(
     Tcl_Condition *condPtr)
 {
-    pthread_cond_t *pcondPtr = *(pthread_cond_t **) condPtr;
+    pthread_cond_t *pcondPtr = *(pthread_cond_t **)condPtr;
 
     if (pcondPtr != NULL) {
 	pthread_cond_destroy(pcondPtr);
@@ -860,7 +860,7 @@ void
 TclpFreeAllocMutex(
     Tcl_Mutex *mutex)		/* The alloc mutex to free. */
 {
-    AllocMutex *lockPtr = (AllocMutex *) mutex;
+    AllocMutex *lockPtr = (AllocMutex *)mutex;
 
     if (!lockPtr) {
 	return;
@@ -958,7 +958,7 @@ void *
 TclpThreadGetGlobalTSD(
     void *tsdKeyPtr)
 {
-    pthread_key_t *ptkeyPtr = (pthread_key_t*)tsdKeyPtr;
+    pthread_key_t *ptkeyPtr = (pthread_key_t *)tsdKeyPtr;
 
     return pthread_getspecific(*ptkeyPtr);
 }
