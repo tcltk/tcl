@@ -27,12 +27,13 @@ testConstraint exec [llength [info commands exec]]
 test event-1.1 {Tcl_CreateFileHandler, reading} -setup {
     testfilehandler close
     set result ""
-} -constraints {testfilehandler} -body {
+} -constraints testfilehandler -body {
     testfilehandler create 0 readable off
     testfilehandler clear 0
     testfilehandler oneevent
     lappend result [testfilehandler counts 0]
     testfilehandler fillpartial 0
+    update idletasks
     testfilehandler oneevent
     lappend result [testfilehandler counts 0]
     testfilehandler oneevent
@@ -595,16 +596,16 @@ test event-11.7 {Bug 16828b3744} {
 test event-11.8 {Bug 16828b3744} -setup {
     oo::class create A {
 	variable continue
-    
+
 	method start {} {
            after idle [self] destroy
-        
+
            set continue 0
            vwait [namespace current]::continue
 	}
 	destructor {
            set continue 1
-	}	
+	}
     }
 } -body {
     [A new] start
