@@ -2447,16 +2447,16 @@ test info-40.9 {info cmdtype: imports} -setup {
     rename ::testinfocmdtype::bar {}
     namespace delete ::testinfocmdtype::foo
 } -result import
-test info-40.10 {info cmdtype: slaves} -setup {
+test info-40.10 {info cmdtype: interps} -setup {
     apply {i {
-	rename $i ::testinfocmdtype::slave
-	variable ::testinfocmdtype::slave $i
+	rename $i ::testinfocmdtype::child
+	variable ::testinfocmdtype::child $i
     }} [interp create]
 } -body {
-    info cmdtype ::testinfocmdtype::slave
+    info cmdtype ::testinfocmdtype::child
 } -cleanup {
-    interp delete $::testinfocmdtype::slave
-} -result slave
+    interp delete $::testinfocmdtype::child
+} -result interp
 test info-40.11 {info cmdtype: objects} -setup {
     apply {{} {
 	oo::object create obj
@@ -2518,7 +2518,7 @@ test info-40.16 {info cmdtype: dynamic behavior} -setup {
 	catch {rename bar {}}
     }
 } -result {0 1 ::testinfocmdtype::foo {} ::testinfocmdtype::bar 1 0}
-test info-40.17 {info cmdtype: aliases in slave interpreters} -setup {
+test info-40.17 {info cmdtype: aliases in child interpreters} -setup {
     set i [interp create]
 } -body {
     $i alias foo gorp
@@ -2528,7 +2528,7 @@ test info-40.17 {info cmdtype: aliases in slave interpreters} -setup {
 } -cleanup {
     interp delete $i
 } -result alias
-test info-40.18 {info cmdtype: aliases in slave interpreters} -setup {
+test info-40.18 {info cmdtype: aliases in child interpreters} -setup {
     set safe [interp create -safe]
 } -body {
     $safe alias foo gorp
@@ -2538,7 +2538,7 @@ test info-40.18 {info cmdtype: aliases in slave interpreters} -setup {
 } -returnCodes error -cleanup {
     interp delete $safe
 } -result {not allowed to invoke subcommand cmdtype of info}
-test info-40.19 {info cmdtype: aliases in slave interpreters} -setup {
+test info-40.19 {info cmdtype: aliases in child interpreters} -setup {
     set safe [interp create -safe]
 } -body {
     set inner [interp create [list $safe bar]]
@@ -2551,7 +2551,7 @@ test info-40.19 {info cmdtype: aliases in slave interpreters} -setup {
 } -returnCodes error -cleanup {
     interp delete $safe
 } -result {not allowed to invoke subcommand cmdtype of info}
-test info-40.20 {info cmdtype: aliases in slave interpreters} -setup {
+test info-40.20 {info cmdtype: aliases in child interpreters} -setup {
     set safe [interp create -safe]
 } -body {
     $safe eval {
