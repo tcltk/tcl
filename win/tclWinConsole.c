@@ -1527,14 +1527,11 @@ ConsoleSetOptionProc(
 	} else {
 	    infoPtr->flags |= CONSOLE_RESET;
 	}
-	return TCL_OK;
+    } else if (len > 0) {
+	return Tcl_BadChannelOption(interp, optionName,
+		(infoPtr->flags & CONSOLE_READ_OPS) ? "inputmode" : "");
     }
-
-    if (infoPtr->flags & CONSOLE_READ_OPS) {
-	return Tcl_BadChannelOption(interp, optionName, "inputmode");
-    } else {
-	return Tcl_BadChannelOption(interp, optionName, "");
-    }
+    return TCL_OK;
 }
 
 /*
