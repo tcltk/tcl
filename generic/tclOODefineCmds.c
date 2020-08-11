@@ -1845,10 +1845,10 @@ TclOODefineExportObjCmd(
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
-	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *) objv[i],
+	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *)objv[i],
 		    &isNew);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char*) objv[i],
+	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *)objv[i],
 		    &isNew);
 	}
 
@@ -2158,10 +2158,10 @@ TclOODefineUnexportObjCmd(
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
-	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *) objv[i],
+	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *)objv[i],
 		    &isNew);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char*) objv[i],
+	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *)objv[i],
 		    &isNew);
 	}
 

@@ -913,7 +913,7 @@ AddSimpleChainToCallContext(
 		    flags | TRAVERSED_MIXIN, filterDecl);
 	}
 	if (oPtr->methodsPtr && !blockedUnexported) {
-	    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char*) methodNameObj);
+	    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *)methodNameObj);
 	    if (hPtr != NULL) {
 		mPtr = (Method *)Tcl_GetHashValue(hPtr);
 		if (!IS_PRIVATE(mPtr)) {
