@@ -3340,9 +3340,7 @@ test namespace-56.5 {Bug 8b9854c3d8} -setup {
 
 
 test namespace-57.0 {
-    an imported alias should be usable in the deletion trace for the alias
-
-    see 29e8848eb976
+    an imported alias should be usable in the deletion trace for the alias, bug [29e8848eb976]
 } -body {
     variable res {}
     namespace eval ns2 {
@@ -3379,11 +3377,8 @@ test namespace-57.0 {
 } -result success
 
 
-test namespace-58.0 {
-    TclNREvalObjv should not interrelate the TCL_EVAL_NORESOLVE flag and the
-    CMD_IS_DEAD flag
-
-    see 29e8848eb976
+test namespace-57.1 {
+    invocation of deleting command in trace is prohibited, bug [29e8848eb976]
 } -body {
     proc p1 {} {
 	return success
@@ -3401,9 +3396,9 @@ test namespace-58.0 {
     rename p1 {}
     return $res
 } -cleanup {
-    rename p1 {}
+    catch { rename p1 {} }
     unset res
-} -result success
+} -result "attempt to invoke a deleted command"
 
 
 
