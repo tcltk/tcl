@@ -201,7 +201,7 @@ TclpGetPwNam(
 	if (tsdPtr->pbuflen < 1) {
 	    tsdPtr->pbuflen = 1024;
 	}
-	tsdPtr->pbuf = (char *)Tcl_Alloc(tsdPtr->pbuflen);
+	tsdPtr->pbuf = (char *)ckalloc(tsdPtr->pbuflen);
 	Tcl_CreateThreadExitHandler(FreePwBuf, NULL);
     }
     while (1) {
@@ -214,7 +214,7 @@ TclpGetPwNam(
 	    return NULL;
 	}
 	tsdPtr->pbuflen *= 2;
-	tsdPtr->pbuf = (char *)Tcl_Realloc(tsdPtr->pbuf, tsdPtr->pbuflen);
+	tsdPtr->pbuf = (char *)ckrealloc(tsdPtr->pbuf, tsdPtr->pbuflen);
     }
     return (pwPtr != NULL ? &tsdPtr->pwd : NULL);
 
@@ -281,7 +281,7 @@ TclpGetPwUid(
 	if (tsdPtr->pbuflen < 1) {
 	    tsdPtr->pbuflen = 1024;
 	}
-	tsdPtr->pbuf = (char *)Tcl_Alloc(tsdPtr->pbuflen);
+	tsdPtr->pbuf = (char *)ckalloc(tsdPtr->pbuflen);
 	Tcl_CreateThreadExitHandler(FreePwBuf, NULL);
     }
     while (1) {
@@ -294,7 +294,7 @@ TclpGetPwUid(
 	    return NULL;
 	}
 	tsdPtr->pbuflen *= 2;
-	tsdPtr->pbuf = (char *)Tcl_Realloc(tsdPtr->pbuf, tsdPtr->pbuflen);
+	tsdPtr->pbuf = (char *)ckrealloc(tsdPtr->pbuf, tsdPtr->pbuflen);
     }
     return (pwPtr != NULL ? &tsdPtr->pwd : NULL);
 
