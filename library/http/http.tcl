@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.9.4
+package provide http 2.9.5
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -1683,8 +1683,50 @@ proc http::ReceiveResponse {token} {
     Log ^D$tk begin receiving response - token $token
 
     coroutine ${token}EventCoroutine http::Event $sock $token
-    fileevent $sock readable ${token}EventCoroutine
+    if {[info exists state(-handler)] || [info exists state(-progress)]} {
+        fileevent $sock readable [list http::EventGateway $sock $token]
+    } else {
+        fileevent $sock readable ${token}EventCoroutine
+    }
+    return
 }
+
+
+# http::EventGateway
+#
+#	Bug [c2dc1da315].
+#	- Recursive launch of the coroutine can occur if a -handler or -progress
+#	  callback is used, and the callback command enters the event loop.
+#	- To prevent this, the fileevent "binding" is disabled while the
+#	  coroutine is in flight.
+#	- If a recursive call occurs despite these precautions, it is not
+#	  trapped and discarded here, because it is better to report it as a
+#	  bug.
+#	- Although this solution is believed to be sufficiently general, it is
+#	  used only if -handler or -progress is specified.  In other cases,
+#	  the coroutine is called directly.
+
+proc http::EventGateway {sock token} {
+    variable $token
+    upvar 0 $token state
+    fileevent $sock readable {}
+    catch {${token}EventCoroutine} res opts
+    if {[info commands ${token}EventCoroutine] ne {}} {
+        # The coroutine can be deleted by completion (a non-yield return), by
+        # http::Finish (when there is a premature end to the transaction), by
+        # http::reset or http::cleanup, or if the caller set option -channel
+        # but not option -handler: in the last case reading from the socket is
+        # now managed by commands ::http::Copy*, http::ReceiveChunked, and
+        # http::make-transformation-chunked.
+        #
+        # Catch in case the coroutine has closed the socket.
+        catch {fileevent $sock readable [list http::EventGateway $sock $token]}
+    }
+
+    # If there was an error, re-throw it.
+    return -options $opts $res
+}
+
 
 # http::NextPipelinedWrite
 #
