@@ -3664,6 +3664,13 @@ test interp-38.8 {interp debug basic setup} -body {
 } -returnCodes {
     error
 } -result {wrong # args: should be "interp debug path ?-frame ?bool??"}
+
+test interp-39.0 {
+	no segmentation fault when a command is deleted
+} -body {
+} -cleanup {
+} -result 1
+
 
 # cleanup
 unset -nocomplain hidden_cmds

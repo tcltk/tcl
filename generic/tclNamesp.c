@@ -959,7 +959,7 @@ Tcl_DeleteNamespace(
     /*
      * If the namespace has associated ensemble commands, delete them first.
      * This leaves the actual contents of the namespace alone (unless they are
-     * linked ensemble commands, of course). Note that this code is actually
+     * linked ensemble commands, of course). This code is
      * reentrant so command delete traces won't purturb things badly.
      */
 
@@ -1770,7 +1770,9 @@ DoImport(
 		TclInvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
 		DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
+	cmdPtr->refCount++;
 	dataPtr->selfPtr = (Command *) importedCmd;
+	dataPtr->selfPtr->refCount++;
 	dataPtr->selfPtr->compileProc = cmdPtr->compileProc;
 	Tcl_DStringFree(&ds);
 
@@ -1781,6 +1783,7 @@ DoImport(
 
 	refPtr = (ImportRef *)ckalloc(sizeof(ImportRef));
 	refPtr->importedCmdPtr = (Command *) importedCmd;
+	refPtr->importedCmdPtr->refCount++;
 	refPtr->nextPtr = cmdPtr->importRefPtr;
 	cmdPtr->importRefPtr = refPtr;
     } else {
@@ -2076,7 +2079,9 @@ DeleteImportedCmd(
 	    } else {
 		prevPtr->nextPtr = refPtr->nextPtr;
 	    }
+	    TclCleanupCommandMacro(refPtr->importedCmdPtr);
 	    ckfree(refPtr);
+	    TclCleanupCommandMacro(selfPtr)
 	    ckfree(dataPtr);
 	    return;
 	}
