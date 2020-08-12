@@ -215,6 +215,7 @@ Tcl_ProcObjCmd(
      */
 
     procPtr->cmdPtr = (Command *) cmd;
+    procPtr->cmdPtr->refCount++;
 
     /*
      * TIP #280: Remember the line the procedure body is starting on. In a
@@ -2153,6 +2154,12 @@ TclProcCleanupProc(
 	}
 	ckfree(localPtr);
 	localPtr = nextPtr;
+    }
+    /*
+     * TclOOMethod.c:clOOMakeProcMethod sets cmdPtr to NULL
+     */
+    if (procPtr->cmdPtr) {
+	TclCleanupCommandMacro(procPtr->cmdPtr);
     }
     ckfree(procPtr);
 
