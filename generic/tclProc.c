@@ -2694,9 +2694,10 @@ TclNRApplyObjCmd(
     extraPtr->efi.fields[0].clientData = lambdaPtr;
     extraPtr->cmd.clientData = &extraPtr->efi;
 
+    procPtr->refCount++;
     result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
-	TclNRAddCallback(interp, ApplyNR2, extraPtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, ApplyNR2, extraPtr, procPtr, NULL, NULL);
 	result = TclNRInterpProcCore(interp, objv[1], 2, &MakeLambdaError);
     }
     return result;
@@ -2709,6 +2710,11 @@ ApplyNR2(
     int result)
 {
     ApplyExtraData *extraPtr = (ApplyExtraData *)data[0];
+    Proc *procPtr = (Proc *)data[1];
+    procPtr->cmdPtr = NULL;
+    if (procPtr->refCount-- <= 1) {
+	TclProcCleanupProc(procPtr);
+    }
 
     TclStackFree(interp, extraPtr);
     return result;
