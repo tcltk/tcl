@@ -471,6 +471,11 @@ TclCreateProc(
 	procPtr = (Proc *)ckalloc(sizeof(Proc));
 	procPtr->iPtr = iPtr;
 	procPtr->refCount = 1;
+	/* if cmdPtr isn't initialized to NULL here
+	 * tclOOMethod.c:PushMethodCallFrame stores and attempts to use an
+	 * invalid value in fdPtr->oldCmdPtr
+	 */
+	procPtr->cmdPtr = NULL;
 	procPtr->bodyPtr = bodyPtr;
 	procPtr->numArgs = 0;	/* Actual argument count is set below. */
 	procPtr->numCompiledLocals = 0;
