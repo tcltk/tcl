@@ -87,7 +87,7 @@ MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 int
 main(
     int argc,			/* Number of command-line arguments. */
-    TCL_UNUSED(char **))
+    char **argv1)
 {
     TCHAR **argv;
     TCHAR *p;
@@ -112,6 +112,7 @@ _tmain(
      * Get our args from the c-runtime. Ignore command line.
      */
 
+    (void)argv1;
     setargv(&argc, &argv);
 #endif
 

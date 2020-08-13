@@ -22,7 +22,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.2
+    variable Version 2.5.3
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -811,14 +811,14 @@ namespace eval tcltest {
     trace add variable Option(-errfile) write \
 	    [namespace code {errorChannel $Option(-errfile) ;#}]
 
-    proc loadIntoSlaveInterpreter {slave args} {
+    proc loadIntoChildInterpreter {child args} {
 	variable Version
-	interp eval $slave [package ifneeded tcltest $Version]
-	interp eval $slave "tcltest::configure {*}{$args}"
-	interp alias $slave ::tcltest::ReportToMaster \
-	    {} ::tcltest::ReportedFromSlave
+	interp eval $child [package ifneeded tcltest $Version]
+	interp eval $child "tcltest::configure {*}{$args}"
+	interp alias $child ::tcltest::ReportToParent \
+	    {} ::tcltest::ReportedFromChild
     }
-    proc ReportedFromSlave {total passed skipped failed because newfiles} {
+    proc ReportedFromChild {total passed skipped failed because newfiles} {
 	variable numTests
 	variable skippedBecause
 	variable createdNewFiles
@@ -2462,8 +2462,8 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
     set testFileName [file tail [info script]]
 
     # Hook to handle reporting to a parent interpreter
-    if {[llength [info commands [namespace current]::ReportToMaster]]} {
-	ReportToMaster $numTests(Total) $numTests(Passed) $numTests(Skipped) \
+    if {[llength [info commands [namespace current]::ReportToParent]]} {
+	ReportToParent $numTests(Total) $numTests(Passed) $numTests(Skipped) \
 	    $numTests(Failed) [array get skippedBecause] \
 	    [array get createdNewFiles]
 	set testSingleFile false
@@ -3107,11 +3107,12 @@ proc tcltest::removeFile {name {directory ""}} {
     set fullName [file join $directory $name]
     DebugPuts 3 "[lindex [info level 0] 0]: removing $fullName"
     set idx [lsearch -exact $filesMade $fullName]
-    set filesMade [lreplace $filesMade $idx $idx]
     if {$idx == -1} {
 	DebugDo 1 {
 	    Warn "removeFile removing \"$fullName\":\n  not created by makeFile"
 	}
+    } else {
+	set filesMade [lreplace $filesMade $idx $idx]
     }
     if {![file isfile $fullName]} {
 	DebugDo 1 {

@@ -1,7 +1,15 @@
-sudo: false
 language: c
-
-matrix:
+addons:
+  apt:
+    packages:
+      - binutils-mingw-w64-i686
+      - binutils-mingw-w64-x86-64
+      - gcc-mingw-w64
+      - gcc-mingw-w64-base
+      - gcc-mingw-w64-i686
+      - gcc-mingw-w64-x86-64
+      - gcc-multilib
+jobs:
   include:
 # Testing on Linux with various compilers
     - name: "Linux/GCC/Shared"
@@ -38,6 +46,13 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
+    - name: "Linux/GCC/Mem-Debug"
+      os: linux
+      dist: bionic
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="--enable-symbols=mem"
 # C++ build.
     - name: "Linux/G++/Shared"
       os: linux
@@ -104,15 +119,17 @@ matrix:
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
-# Testing on Mac, various styles
-    - name: "macOS/Xcode 11.3/Shared/Unix-like"
-      os: osx
-      osx_image: xcode11.3
+    - name: "Linux/Clang/Mem-Debug"
+      os: linux
+      dist: bionic
+      compiler: clang
       env:
         - BUILD_DIR=unix
-    - name: "macOS/Xcode 11.3/Shared"
+        - CFGOPT="--enable-symbols=mem"
+# Testing on Mac, various styles
+    - name: "macOS/Clang/Xcode 11.5/Shared"
       os: osx
-      osx_image: xcode11.3
+      osx_image: xcode11.5
       env:
         - BUILD_DIR=macosx
       install: []
@@ -120,63 +137,65 @@ matrix:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
+    - name: "macOS/Clang/Xcode 11.5/Shared/Unix-like"
+      os: osx
+      osx_image: xcode11.5
+      env:
+        - BUILD_DIR=unix
+    - name: "macOS/Clang/Xcode 11.5/Shared/libtommath"
+      os: osx
+      osx_image: xcode11.5
+      env:
+        - BUILD_DIR=macosx
+      install: []
+      script: *mactest
       addons:
         homebrew:
           packages:
             - libtommath
-    - name: "macOS/Xcode 11/Shared"
+    - name: "macOS/Clang++/Xcode 11.5/Shared"
+      os: osx
+      osx_image: xcode11.5
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="CC=clang++ --enable-framework CFLAGS=-Dregister=dont+use+register CPPFLAGS=-D__private_extern__=extern"
+      script:
+        - make all tcltest
+# Older MacOS versions
+    - name: "macOS/Clang/Xcode 11/Shared"
       os: osx
       osx_image: xcode11
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS/Xcode 10/Shared"
+    - name: "macOS/Clang/Xcode 10/Shared"
       os: osx
       osx_image: xcode10.3
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-      addons:
-        homebrew:
-          packages:
-            - libtommath
-    - name: "macOS/Xcode 9/Shared"
+    - name: "macOS/Clang/Xcode 9/Shared"
       os: osx
-      osx_image: xcode9
+      osx_image: xcode9.2
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-      addons:
-        homebrew:
-          packages:
-            - libtommath
-    - name: "macOS/Xcode 8/Shared"
+    - name: "macOS/Clang/Xcode 8/Shared"
       os: osx
-      osx_image: xcode8
+      osx_image: xcode8.3
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-      addons:
-        homebrew:
-          packages:
-            - libtommath
 # Test with mingw-w64 cross-compile
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows/GCC/Shared/no test"
       os: linux
       dist: bionic
       compiler: x86_64-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-x86-64
-            - gcc-mingw-w64
       env:
         - BUILD_DIR=win
         - CFGOPT="--host=x86_64-w64-mingw32 --enable-64bit"
@@ -191,14 +210,6 @@ matrix:
       os: linux
       dist: bionic
       compiler: i686-w64-mingw32-gcc
-      addons:
-        apt:
-          packages:
-            - gcc-mingw-w64-base
-            - binutils-mingw-w64-i686
-            - gcc-mingw-w64-i686
-            - gcc-mingw-w64
-            - gcc-multilib
       env:
         - BUILD_DIR=win
         - CFGOPT=--host=i686-w64-mingw32
@@ -244,6 +255,15 @@ matrix:
       script:
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=symbols' '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=symbols' '-f' makefile.vc test
+    - name: "Windows/MSVC/Mem-Debug"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'STATS=memdbg' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'STATS=memdbg' '-f' makefile.vc test
 # Test on Windows with MSVC native (32-bit)
     - name: "Windows/MSVC-x86/Shared"
       os: windows
@@ -281,6 +301,15 @@ matrix:
       script:
         - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=symbols' '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=symbols' '-f' makefile.vc test
+    - name: "Windows/MSVC-x86/Mem-Debug"
+      os: windows
+      compiler: cl
+      env: *vcenv
+      before_install: *vcpreinst
+      install: []
+      script:
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'STATS=memdbg' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'STATS=memdbg' '-f' makefile.vc test
 # Test on Windows with GCC native
     - name: "Windows/GCC/Shared"
       os: windows
@@ -328,6 +357,13 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit --enable-symbols"
       before_install: *makepreinst
+    - name: "Windows/GCC/Mem-Debug"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-64bit --enable-symbols=mem"
+      before_install: *makepreinst
 # Test on Windows with GCC native (32-bit)
     - name: "Windows/GCC-x86/Shared"
       os: windows
@@ -372,12 +408,30 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-symbols"
       before_install: *makepreinst
+    - name: "Windows/GCC-x86/Mem-Debug"
+      os: windows
+      compiler: gcc
+      env:
+        - BUILD_DIR=win
+        - CFGOPT="--enable-symbols=mem"
+      before_install: *makepreinst
+# "make dist" only
+    - name: "Linux: make dist"
+      os: linux
+      dist: bionic
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+      script:
+        - make dist
 before_install:
   - cd ${BUILD_DIR}
 install:
-  - ./configure ${CFGOPT} --prefix=$HOME || (cat config.log && exit 1)
+  - mkdir "$HOME/install dir"
+  - ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
 before_script:
   - export ERROR_ON_FAILURES=1
 script:
   - make all tcltest
   - make test
+  - make install

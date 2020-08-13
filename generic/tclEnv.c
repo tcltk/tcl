@@ -45,7 +45,7 @@ static struct {
 				 * need to track this in case another
 				 * subsystem swaps around the environ array
 				 * like we do. */
-    int ourEnvironSize;		/* Non-zero means that the environ array was
+    size_t ourEnvironSize;		/* Non-zero means that the environ array was
 				 * malloced and has this many total entries
 				 * allocated to it (not all may be in use at
 				 * once). Zero means that the environment
@@ -126,6 +126,17 @@ TclSetupEnv(
     varPtr = TclObjLookupVarEx(interp, varNamePtr, NULL, TCL_GLOBAL_ONLY,
 	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
     TclFindArrayPtrElements(varPtr, &namesHash);
+
+#if defined(_WIN32)
+    if (tenviron == NULL) {
+	/*
+	 * When we are started from main(), the _wenviron array could
+	 * be NULL and will be initialized by the first _wgetenv() call.
+	 */
+
+	(void) _wgetenv(L"WINDIR");
+    }
+#endif
 
     /*
      * Go through the environment array and transfer its values into Tcl. At

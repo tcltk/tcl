@@ -593,7 +593,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #undef mp_iseven
 #undef mp_isodd
 #define mp_iseven(a) (!mp_isodd(a))
-#define mp_isodd(a)  (((a)->used != 0 && (((a)->dp[0] & 1) != 0)) ? MP_YES : MP_NO)
+#define mp_isodd(a)  (((a)->used != 0) && (((a)->dp[0] & 1) != 0))
 #undef mp_sqr
 #define mp_sqr(a,b) mp_mul(a,a,b)
 

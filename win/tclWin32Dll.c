@@ -152,7 +152,7 @@ DllMain(
  *----------------------------------------------------------------------
  */
 
-HINSTANCE
+void *
 TclWinGetTclInstance(void)
 {
     return hInstance;
@@ -412,7 +412,7 @@ TclWinDriveLetterForVolMountPoint(
      */
 
     dlPtr2 = (MountPointMap *)Tcl_Alloc(sizeof(MountPointMap));
-    dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep((ClientData) mountPoint);
+    dlPtr2->volumeName = (WCHAR *)TclNativeDupInternalRep((void *)mountPoint);
     dlPtr2->driveLetter = -1;
     dlPtr2->nextPtr = driveLetterLookup;
     driveLetterLookup = dlPtr2;
@@ -469,7 +469,7 @@ TclWinCPUID(
 	"movl	%%eax,		0x0(%%edi)"	"\n\t"
 	"movl	%%ebx,		0x4(%%edi)"	"\n\t"
 	"movl	%%ecx,		0x8(%%edi)"	"\n\t"
-	"movl	%%edx,		0xc(%%edi)"	"\n\t"
+	"movl	%%edx,		0xC(%%edi)"	"\n\t"
 
 	:
 	/* No outputs */
@@ -501,7 +501,7 @@ TclWinCPUID(
 	"leal	1f,		%%eax"		"\n\t"
 	"movl	%%eax,		0x4(%%edx)"	"\n\t" /* handler */
 	"movl	%%ebp,		0x8(%%edx)"	"\n\t" /* ebp */
-	"movl	%%esp,		0xc(%%edx)"	"\n\t" /* esp */
+	"movl	%%esp,		0xC(%%edx)"	"\n\t" /* esp */
 	"movl	%[error],	0x10(%%edx)"	"\n\t" /* status */
 
 	/*
@@ -521,7 +521,7 @@ TclWinCPUID(
 	"movl	%%eax,		0x0(%%edi)"	"\n\t"
 	"movl	%%ebx,		0x4(%%edi)"	"\n\t"
 	"movl	%%ecx,		0x8(%%edi)"	"\n\t"
-	"movl	%%edx,		0xc(%%edi)"	"\n\t"
+	"movl	%%edx,		0xC(%%edi)"	"\n\t"
 
 	/*
 	 * Come here on a normal exit. Recover the TCLEXCEPTION_REGISTRATION and
@@ -548,7 +548,7 @@ TclWinCPUID(
 	 */
 
 	"2:"					"\t"
-	"movl	0xc(%%edx),	%%esp"		"\n\t"
+	"movl	0xC(%%edx),	%%esp"		"\n\t"
 	"movl	0x8(%%edx),	%%ebp"		"\n\t"
 	"movl	0x0(%%edx),	%%eax"		"\n\t"
 	"movl	%%eax,		%%fs:0"		"\n\t"

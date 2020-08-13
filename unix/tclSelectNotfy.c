@@ -216,11 +216,12 @@ extern "C" {
 typedef struct {
     void *hwnd;			/* Messaging window. */
     unsigned int *message;	/* Message payload. */
-    int wParam;			/* Event-specific "word" parameter. */
-    int lParam;			/* Event-specific "long" parameter. */
+    size_t wParam;			/* Event-specific "word" parameter. */
+    size_t lParam;			/* Event-specific "long" parameter. */
     int time;			/* Event timestamp. */
     int x;			/* Event location (where meaningful). */
     int y;
+    int lPrivate;
 } MSG;
 
 typedef struct {
@@ -232,7 +233,7 @@ typedef struct {
     void *hIcon;
     void *hCursor;
     void *hbrBackground;
-    void *lpszMenuName;
+    const void *lpszMenuName;
     const void *lpszClassName;
 } WNDCLASSW;
 
@@ -243,14 +244,14 @@ extern void __stdcall	CloseHandle(void *);
 extern void *__stdcall	CreateEventW(void *, unsigned char, unsigned char,
 			    void *);
 extern void *__stdcall	CreateWindowExW(void *, const void *, const void *,
-			    DWORD, int, int, int, int, void *, void *, void *,
+			    unsigned int, int, int, int, int, void *, void *, void *,
 			    void *);
-extern DWORD __stdcall	DefWindowProcW(void *, int, void *, void *);
+extern unsigned int __stdcall	DefWindowProcW(void *, int, void *, void *);
 extern unsigned char __stdcall	DestroyWindow(void *);
 extern int __stdcall	DispatchMessageW(const MSG *);
 extern unsigned char __stdcall	GetMessageW(MSG *, void *, int, int);
-extern void __stdcall	MsgWaitForMultipleObjects(DWORD, void *,
-			    unsigned char, DWORD, DWORD);
+extern void __stdcall	MsgWaitForMultipleObjects(unsigned int, void *,
+			    unsigned char, unsigned int, unsigned int);
 extern unsigned char __stdcall	PeekMessageW(MSG *, void *, int, int, int);
 extern unsigned char __stdcall	PostMessageW(void *, unsigned int, void *,
 				    void *);
@@ -264,7 +265,7 @@ extern unsigned char __stdcall	TranslateMessage(const MSG *);
  */
 
 static const wchar_t className[] = L"TclNotifier";
-static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
+static unsigned int __stdcall	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
 #ifdef __cplusplus
 }
@@ -322,7 +323,7 @@ Tcl_InitNotifier(void)
 	    RegisterClassW(&clazz);
 	    tsdPtr->hwnd = CreateWindowExW(NULL, clazz.lpszClassName,
 		    clazz.lpszClassName, 0, 0, 0, 0, 0, NULL, NULL,
-		    TclWinGetTclInstance(), NULL);
+		    clazz.hInstance, NULL);
 	    tsdPtr->event = CreateEventW(NULL, 1 /* manual */,
 		    0 /* !signaled */, NULL);
 #else
@@ -598,7 +599,7 @@ Tcl_DeleteFileHandler(
 
 #if defined(__CYGWIN__)
 
-static DWORD __stdcall
+static unsigned int __stdcall
 NotifierProc(
     void *hwnd,
     unsigned int message,
@@ -649,6 +650,7 @@ Tcl_WaitForEvent(
 	FileHandler *filePtr;
 	int mask;
 	Tcl_Time vTime;
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 #if TCL_THREADS
 	int waitForFiles;
 #   ifdef __CYGWIN__
@@ -664,7 +666,6 @@ Tcl_WaitForEvent(
 	struct timeval timeout, *timeoutPtr;
 	int numFound;
 #endif /* TCL_THREADS */
-	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	/*
 	 * Set up the timeout structure. Note that if there are no events to
@@ -769,7 +770,7 @@ Tcl_WaitForEvent(
 	if (!tsdPtr->eventReady) {
 #ifdef __CYGWIN__
 	    if (!PeekMessageW(&msg, NULL, 0, 0, 0)) {
-		DWORD timeout;
+		unsigned int timeout;
 
 		if (timePtr) {
 		    timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
@@ -804,12 +805,12 @@ Tcl_WaitForEvent(
 	     * Retrieve and dispatch the message.
 	     */
 
-	    DWORD result = GetMessageW(&msg, NULL, 0, 0);
+	    unsigned int result = GetMessageW(&msg, NULL, 0, 0);
 
 	    if (result == 0) {
 		PostQuitMessage(msg.wParam);
 		/* What to do here? */
-	    } else if (result != (DWORD) -1) {
+	    } else if (result != (unsigned int) -1) {
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
 	    }

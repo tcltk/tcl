@@ -152,14 +152,14 @@ namespace eval ::tcl::idna {
 	    # Increase delta enough to advance the decoder's <n,i> state to
 	    # <m,0>, but guard against overflow:
 
-	    if {$m-$n > (0xffffffff-$delta)/($h+1)} {
+	    if {$m-$n > (0xFFFFFFFF-$delta)/($h+1)} {
 		throw {PUNYCODE OVERFLOW} "overflow in delta computation"
 	    }
 	    incr delta [expr {($m-$n) * ($h+1)}]
 	    set n $m
 
 	    foreach ch $in {
-		if {$ch < $n && ([incr delta] & 0xffffffff) == 0} {
+		if {$ch < $n && ([incr delta] & 0xFFFFFFFF) == 0} {
 		    throw {PUNYCODE OVERFLOW} "overflow in delta computation"
 		}
 
@@ -251,7 +251,7 @@ namespace eval ::tcl::idna {
 		    set first 0
 		    break
 		}
-		if {[set w [expr {$w * ($base - $t)}]] > 0x7fffffff} {
+		if {[set w [expr {$w * ($base - $t)}]] > 0x7FFFFFFF} {
 		    throw {PUNYCODE OVERFLOW} \
 			"excessively large integer computed in digit decode"
 		}
@@ -261,11 +261,11 @@ namespace eval ::tcl::idna {
 	    # i was supposed to wrap around from out+1 to 0, incrementing n
 	    # each time, so we'll fix that now:
 
-	    if {[incr n [expr {$i / $out}]] > 0x7fffffff} {
+	    if {[incr n [expr {$i / $out}]] > 0x7FFFFFFF} {
 		throw {PUNYCODE OVERFLOW} \
 		    "excessively large integer computed in character choice"
 	    } elseif {$n > $max_codepoint} {
-		if {$n >= 0x00d800 && $n < 0x00e000} {
+		if {$n >= 0x00D800 && $n < 0x00E000} {
 		    # Bare surrogate?!
 		    throw {PUNYCODE NON_BMP} \
 			[format "unsupported character U+%06x" $n]

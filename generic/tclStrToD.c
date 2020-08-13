@@ -50,7 +50,7 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
 
 #define _FPU_GETCW(cw)	__asm__ __volatile__ ("fnstcw %0" : "=m" (*&cw))
 #define _FPU_SETCW(cw)	__asm__ __volatile__ ("fldcw %0" : : "m" (*&cw))
-#   define FPU_IEEE_ROUNDING	0x027f
+#   define FPU_IEEE_ROUNDING	0x027F
 #   define ADJUST_FPU_CONTROL_WORD
 #define TCL_IEEE_DOUBLE_ROUNDING \
     fpu_control_t roundTo53Bits = FPU_IEEE_ROUNDING;	\
@@ -99,10 +99,10 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
  */
 
 #ifdef __hppa
-#   define NAN_START	0x7ff4
+#   define NAN_START	0x7FF4
 #   define NAN_MASK	(((Tcl_WideUInt) 1) << 50)
 #else
-#   define NAN_START	0x7ff8
+#   define NAN_START	0x7FF8
 #   define NAN_MASK	(((Tcl_WideUInt) 1) << 51)
 #endif
 
@@ -124,23 +124,23 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
 #define SIGN_BIT 	0x80000000
 				/* Mask for the sign bit in the first word of
 				 * a double. */
-#define EXP_MASK	0x7ff00000
+#define EXP_MASK	0x7FF00000
 				/* Mask for the exponent field in the first
 				 * word of a double. */
 #define EXP_SHIFT	20	/* Shift count to make the exponent an
 				 * integer. */
 #define HIDDEN_BIT	(((Tcl_WideUInt) 0x00100000) << 32)
 				/* Hidden 1 bit for the significand. */
-#define HI_ORDER_SIG_MASK 0x000fffff
+#define HI_ORDER_SIG_MASK 0x000FFFFF
 				/* Mask for the high-order part of the
 				 * significand in the first word of a
 				 * double. */
 #define SIG_MASK	(((Tcl_WideUInt) HI_ORDER_SIG_MASK << 32) \
-			| 0xffffffff)
+			| 0xFFFFFFFF)
 				/* Mask for the 52-bit significand. */
 #define FP_PRECISION	53	/* Number of bits of significand plus the
 				 * hidden bit. */
-#define EXPONENT_BIAS	0x3ff	/* Bias of the exponent 0. */
+#define EXPONENT_BIAS	0x3FF	/* Bias of the exponent 0. */
 
 /*
  * Derived quantities.
@@ -534,6 +534,8 @@ TclParseNumber(
 				 * to avoid a compiler warning. */
     int shift = 0;		/* Amount to shift when accumulating binary */
     mp_err err = MP_OKAY;
+    int under = 0;              /* Flag trailing '_' as error if true once
+				 * number is accepted. */
 
 #define ALL_BITS	((Tcl_WideUInt)-1)
 #define MOST_BITS	(ALL_BITS >> 1)
@@ -575,7 +577,7 @@ TclParseNumber(
 	     * I, N, and whitespace.
 	     */
 
-	    if (TclIsSpaceProc(c)) {
+	    if (TclIsSpaceProcM(c)) {
 		if (flags & TCL_PARSE_NO_WHITESPACE) {
 		    goto endgame;
 		}
@@ -642,7 +644,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == 'x' || c == 'X') {
-		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY)) {
+		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY) || under) {
 		    goto endgame;
 		}
 		state = ZERO_X;
@@ -655,7 +657,7 @@ TclParseNumber(
 		goto zeroo;
 	    }
 	    if (c == 'b' || c == 'B') {
-		if (flags & TCL_PARSE_OCTAL_ONLY) {
+		if ((flags & TCL_PARSE_OCTAL_ONLY) || under) {
 		    goto endgame;
 		}
 		state = ZERO_B;
@@ -665,10 +667,16 @@ TclParseNumber(
 		goto zerob;
 	    }
 	    if (c == 'o' || c == 'O') {
+		if (under) {
+		    goto endgame;
+		}
 		state = ZERO_O;
 		break;
 	    }
 	    if (c == 'd' || c == 'D') {
+		if (under) {
+		    goto endgame;
+		}
 		state = ZERO_D;
 		break;
 	    }
@@ -689,9 +697,11 @@ TclParseNumber(
 	zeroo:
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = OCTAL;
 		break;
 	    } else if (c >= '1' && c <= '7') {
+		under = 0;
 		if (objPtr != NULL) {
 		    shift = 3 * (numTrailZeros + 1);
 		    significandOverflow = AccumulateDecimalDigit(
@@ -741,6 +751,10 @@ TclParseNumber(
 		numTrailZeros = 0;
 		state = OCTAL;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    }
 	    goto endgame;
 
@@ -760,14 +774,22 @@ TclParseNumber(
 	zerox:
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = HEXADECIMAL;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
+		under = 0;
 		d = (c-'0');
 	    } else if (c >= 'A' && c <= 'F') {
+		under = 0;
 		d = (c-'A'+10);
 	    } else if (c >= 'a' && c <= 'f') {
+		under = 0;
 		d = (c-'a'+10);
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    } else {
 		goto endgame;
 	    }
@@ -813,8 +835,13 @@ TclParseNumber(
 	zerob:
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = BINARY;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    } else if (c != '1') {
 		goto endgame;
 	    }
@@ -853,10 +880,17 @@ TclParseNumber(
 
 	case ZERO_D:
 	    if (c == '0') {
+		under = 0;
 		numTrailZeros++;
 	    } else if ( ! isdigit(UCHAR(c))) {
+                if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                    /* Ignore numeric "white space" */
+                    under = 1;
+                    break;
+                }
 		goto endgame;
 	    }
+	    under = 0;
 	    state = DECIMAL;
 	    flags |= TCL_PARSE_INTEGER_ONLY;
 	    /* FALLTHROUGH */
@@ -873,6 +907,7 @@ TclParseNumber(
 	    acceptLen = len;
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = DECIMAL;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
@@ -884,14 +919,21 @@ TclParseNumber(
 		}
 		numSigDigs += numTrailZeros+1;
 		numTrailZeros = 0;
+		under = 0;
 		state = DECIMAL;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    } else if (flags & TCL_PARSE_INTEGER_ONLY) {
 		goto endgame;
 	    } else if (c == '.') {
+		under = 0;
 		state = FRACTION;
 		break;
 	    } else if (c == 'E' || c == 'e') {
+		under = 0;
 		state = EXPONENT_START;
 		break;
 	    }
@@ -917,6 +959,7 @@ TclParseNumber(
 	    if (c == '0') {
 		numDigitsAfterDp++;
 		numTrailZeros++;
+		under = 0;
 		state = FRACTION;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
@@ -933,8 +976,13 @@ TclParseNumber(
 		    numSigDigs = 1;
 		}
 		numTrailZeros = 0;
+		under = 0;
 		state = FRACTION;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    }
 	    goto endgame;
 
@@ -946,10 +994,12 @@ TclParseNumber(
 	     */
 
 	    if (c == '+') {
+		under = 0;
 		state = EXPONENT_SIGNUM;
 		break;
 	    } else if (c == '-') {
 		exponentSignum = 1;
+		under = 0;
 		state = EXPONENT_SIGNUM;
 		break;
 	    }
@@ -963,8 +1013,13 @@ TclParseNumber(
 
 	    if (isdigit(UCHAR(c))) {
 		exponent = c - '0';
+		under = 0;
 		state = EXPONENT;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    }
 	    goto endgame;
 
@@ -983,8 +1038,13 @@ TclParseNumber(
 		} else {
 		    exponent = LONG_MAX;
 		}
+		under = 0;
 		state = EXPONENT;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    }
 	    goto endgame;
 
@@ -995,12 +1055,14 @@ TclParseNumber(
 
 	case sI:
 	    if (c == 'n' || c == 'N') {
+		under = 0;
 		state = sIN;
 		break;
 	    }
 	    goto endgame;
 	case sIN:
 	    if (c == 'f' || c == 'F') {
+		under = 0;
 		state = sINF;
 		break;
 	    }
@@ -1009,6 +1071,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
+            under = 0;
 	    if (c == 'i' || c == 'I') {
 		state = sINFI;
 		break;
@@ -1016,24 +1079,28 @@ TclParseNumber(
 	    goto endgame;
 	case sINFI:
 	    if (c == 'n' || c == 'N') {
+		under = 0;
 		state = sINFIN;
 		break;
 	    }
 	    goto endgame;
 	case sINFIN:
 	    if (c == 'i' || c == 'I') {
+		under = 0;
 		state = sINFINI;
 		break;
 	    }
 	    goto endgame;
 	case sINFINI:
 	    if (c == 't' || c == 'T') {
+		under = 0;
 		state = sINFINIT;
 		break;
 	    }
 	    goto endgame;
 	case sINFINIT:
 	    if (c == 'y' || c == 'Y') {
+		under = 0;
 		state = sINFINITY;
 		break;
 	    }
@@ -1045,12 +1112,14 @@ TclParseNumber(
 #ifdef IEEE_FLOATING_POINT
 	case sN:
 	    if (c == 'a' || c == 'A') {
+		under = 0;
 		state = sNA;
 		break;
 	    }
 	    goto endgame;
 	case sNA:
 	    if (c == 'n' || c == 'N') {
+		under = 0;
 		state = sNAN;
 		break;
 	    }
@@ -1060,6 +1129,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == '(') {
+		under = 0;
 		state = sNANPAREN;
 		break;
 	    }
@@ -1070,12 +1140,14 @@ TclParseNumber(
 	     */
 	case sNANHEX:
 	    if (c == ')') {
+		under = 0;
 		state = sNANFINISH;
 		break;
 	    }
 	    /* FALLTHROUGH */
 	case sNANPAREN:
-	    if (TclIsSpaceProc(c)) {
+	    if (TclIsSpaceProcM(c)) {
+		under = 0;
 		break;
 	    }
 	    if (numSigDigs < 13) {
@@ -1090,6 +1162,7 @@ TclParseNumber(
 		}
 		numSigDigs++;
 		significandWide = (significandWide << 4) + d;
+		under = 0;
 		state = sNANHEX;
 		break;
 	    }
@@ -1102,6 +1175,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    goto endgame;
+
 	}
 	p++;
 	len--;
@@ -1120,16 +1194,19 @@ TclParseNumber(
     } else {
 	/*
 	 * Back up to the last accepting state in the lexer.
+	 * If the last char seen is the numeric whitespace character '_',
+	 * backup to that.
 	 */
 
-	p = acceptPoint;
-	len = acceptLen;
+	p = under ? acceptPoint-1 : acceptPoint;
+	len = under ? acceptLen-1 : acceptLen;
+
 	if (!(flags & TCL_PARSE_NO_WHITESPACE)) {
 	    /*
 	     * Accept trailing whitespace.
 	     */
 
-	    while (len != 0 && TclIsSpaceProc(*p)) {
+	    while (len != 0 && TclIsSpaceProcM(*p)) {
 		p++;
 		len--;
 	    }
@@ -2100,16 +2177,16 @@ NormalizeRightward(
     int rv = 0;
     Tcl_WideUInt w = *wPtr;
 
-    if (!(w & (Tcl_WideUInt) 0xffffffff)) {
+    if (!(w & (Tcl_WideUInt) 0xFFFFFFFF)) {
 	w >>= 32; rv += 32;
     }
-    if (!(w & (Tcl_WideUInt) 0xffff)) {
+    if (!(w & (Tcl_WideUInt) 0xFFFF)) {
 	w >>= 16; rv += 16;
     }
-    if (!(w & (Tcl_WideUInt) 0xff)) {
+    if (!(w & (Tcl_WideUInt) 0xFF)) {
 	w >>= 8; rv += 8;
     }
-    if (!(w & (Tcl_WideUInt) 0xf)) {
+    if (!(w & (Tcl_WideUInt) 0xF)) {
 	w >>= 4; rv += 4;
     }
     if (!(w & 0x3)) {
@@ -2143,21 +2220,21 @@ RequiredPrecision(
     int rv;
     unsigned long wi;
 
-    if (w & ((Tcl_WideUInt) 0xffffffff << 32)) {
+    if (w & ((Tcl_WideUInt) 0xFFFFFFFF << 32)) {
 	wi = (unsigned long) (w >> 32); rv = 32;
     } else {
 	wi = (unsigned long) w; rv = 0;
     }
-    if (wi & 0xffff0000) {
+    if (wi & 0xFFFF0000) {
 	wi >>= 16; rv += 16;
     }
-    if (wi & 0xff00) {
+    if (wi & 0xFF00) {
 	wi >>= 8; rv += 8;
     }
-    if (wi & 0xf0) {
+    if (wi & 0xF0) {
 	wi >>= 4; rv += 4;
     }
-    if (wi & 0xc) {
+    if (wi & 0xC) {
 	wi >>= 2; rv += 2;
     }
     if (wi & 0x2) {
@@ -2595,7 +2672,7 @@ AdjustRange(
 	 * The number must be reduced to bring it into range.
 	 */
 
-	ds = tens[k & 0xf];
+	ds = tens[k & 0xF];
 	j = k >> 4;
 	if (j & BLETCH) {
 	    j &= (BLETCH-1);
@@ -2616,7 +2693,7 @@ AdjustRange(
 	 * The number must be increased to bring it into range.
 	 */
 
-	d *= tens[j1 & 0xf];
+	d *= tens[j1 & 0xF];
 	i = 0;
 	for (j = j1>>4; j; j>>=1) {
 	    if (j & 1) {
@@ -4559,9 +4636,9 @@ TclInitDoubleConversion(void)
 #ifdef IEEE_FLOATING_POINT
     bitwhack.dv = 1.000000238418579;
 				/* 3ff0 0000 4000 0000 */
-    if ((bitwhack.iv >> 32) == 0x3ff00000) {
+    if ((bitwhack.iv >> 32) == 0x3FF00000) {
 	n770_fp = 0;
-    } else if ((bitwhack.iv & 0xffffffff) == 0x3ff00000) {
+    } else if ((bitwhack.iv & 0xFFFFFFFF) == 0x3FF00000) {
 	n770_fp = 1;
     } else {
 	Tcl_Panic("unknown floating point word order on this machine");
@@ -5015,7 +5092,7 @@ Pow10TimesFrExp(
 	 * Multiply by 10**exponent.
 	 */
 
-	retval = frexp(retval * pow10vals[exponent & 0xf], &j);
+	retval = frexp(retval * pow10vals[exponent & 0xF], &j);
 	expt += j;
 	for (i=4; i<9; ++i) {
 	    if (exponent & (1<<i)) {
@@ -5028,7 +5105,7 @@ Pow10TimesFrExp(
 	 * Divide by 10**-exponent.
 	 */
 
-	retval = frexp(retval / pow10vals[(-exponent) & 0xf], &j);
+	retval = frexp(retval / pow10vals[(-exponent) & 0xF], &j);
 	expt += j;
 	for (i=4; i<9; ++i) {
 	    if ((-exponent) & (1<<i)) {
@@ -5144,7 +5221,7 @@ static Tcl_WideUInt
 Nokia770Twiddle(
     Tcl_WideUInt w)		/* Number to transpose. */
 {
-    return (((w >> 32) & 0xffffffff) | (w << 32));
+    return (((w >> 32) & 0xFFFFFFFF) | (w << 32));
 }
 #endif
 

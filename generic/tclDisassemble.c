@@ -832,7 +832,7 @@ UpdateStringOfInstName(
 
     if (inst > LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
-	TclOOM(dst, TCL_INTEGER_SPACE + 5);
+	TclOOM(dst, (size_t)TCL_INTEGER_SPACE + 5);
         sprintf(dst, "inst_%" TCL_Z_MODIFIER "u", inst);
 	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
     } else {
@@ -861,7 +861,6 @@ PrintSourceToObj(
 {
     const char *p;
     int i = 0, len;
-    Tcl_UniChar ch = 0;
 
     if (stringPtr == NULL) {
 	Tcl_AppendToObj(appendObj, "\"\"", -1);
@@ -871,9 +870,10 @@ PrintSourceToObj(
     Tcl_AppendToObj(appendObj, "\"", -1);
     p = stringPtr;
     for (;  (*p != '\0') && (i < maxChars);  p+=len) {
+	int ucs4;
 
-	len = TclUtfToUniChar(p, &ch);
-	switch (ch) {
+	len = TclUtfToUCS4(p, &ucs4);
+	switch (ucs4) {
 	case '"':
 	    Tcl_AppendToObj(appendObj, "\\\"", -1);
 	    i += 2;
@@ -899,28 +899,14 @@ PrintSourceToObj(
 	    i += 2;
 	    continue;
 	default:
-#if TCL_UTF_MAX > 3
-	    if (ch > 0xffff) {
-		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", ch);
+	    if (ucs4 > 0xFFFF) {
+		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", ucs4);
 		i += 10;
-	    } else
-#else
-	    /* If len == 0, this means we have a char > 0xffff, resulting in
-	     * TclUtfToUniChar producing a surrogate pair. We want to output
-	     * this pair as a single Unicode character.
-	     */
-	    if (len == 0) {
-		int upper = ((ch & 0x3ff) + 1) << 10;
-		len = TclUtfToUniChar(p, &ch);
-		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", upper + (ch & 0x3ff));
-		i += 10;
-	    } else
-#endif
-	    if (ch < 0x20 || ch >= 0x7f) {
-		Tcl_AppendPrintfToObj(appendObj, "\\u%04x", ch);
+	    } else if (ucs4 < 0x20 || ucs4 >= 0x7F) {
+		Tcl_AppendPrintfToObj(appendObj, "\\u%04x", ucs4);
 		i += 6;
 	    } else {
-		Tcl_AppendPrintfToObj(appendObj, "%c", ch);
+		Tcl_AppendPrintfToObj(appendObj, "%c", ucs4);
 		i++;
 	    }
 	    continue;
@@ -1208,10 +1194,10 @@ DisassembleByteCodeAsDicts(
 	 */
 
 	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptfrom", -1),
-		Tcl_NewIntObj(Tcl_NumUtfChars(codePtr->source,
+		Tcl_NewWideIntObj(Tcl_NumUtfChars(codePtr->source,
 			sourceOffset)));
 	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptto", -1),
-		Tcl_NewIntObj(Tcl_NumUtfChars(codePtr->source,
+		Tcl_NewWideIntObj(Tcl_NumUtfChars(codePtr->source,
 			sourceOffset + sourceLength - 1)));
 	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("script", -1),
 		Tcl_NewStringObj(codePtr->source+sourceOffset, sourceLength));

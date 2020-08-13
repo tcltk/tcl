@@ -2073,6 +2073,22 @@ TEBCresume(
     if (!pc) {
 	/* bytecode is starting from scratch */
 	pc = codePtr->codeStart;
+
+	/*
+	 * Reset the interp's result to avoid possible duplications of large
+	 * objects [3c6e47363e], [781585], [804681], This can happen by start
+	 * also in nested compiled blocks (enclosed in parent cycle).
+	 * See else branch below for opposite handling by continuation/resume.
+	 */
+
+	objPtr = iPtr->objResultPtr;
+	if (objPtr->refCount > 1) {
+	    TclDecrRefCount(objPtr);
+	    TclNewObj(objPtr);
+	    Tcl_IncrRefCount(objPtr);
+	    iPtr->objResultPtr = objPtr;
+	}
+
 	goto cleanup0;
     } else {
         /* resume from invocation */
@@ -2112,7 +2128,7 @@ TEBCresume(
 		objc, cmdNameBuf), Tcl_GetObjResult(interp));
 
 	/*
-	 * Reset the interp's result to avoid possible duplications of large
+	 * Obtain and reset interp's result to avoid possible duplications of
 	 * objects [Bug 781585]. We do not call Tcl_ResetResult to avoid any
 	 * side effects caused by the resetting of errorInfo and errorCode
 	 * [Bug 804681], which are not needed here. We chose instead to
@@ -3477,7 +3493,7 @@ TEBCresume(
     case INST_INCR_SCALAR_STK_IMM:
     case INST_INCR_STK_IMM:
 	increment = TclGetInt1AtPtr(pc+1);
-	incrPtr = Tcl_NewIntObj(increment);
+	TclNewIntObj(incrPtr, increment);
 	Tcl_IncrRefCount(incrPtr);
 	pcAdjustment = 2;
 
@@ -3512,7 +3528,7 @@ TEBCresume(
     case INST_INCR_ARRAY1_IMM:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	increment = TclGetInt1AtPtr(pc+2);
-	incrPtr = Tcl_NewIntObj(increment);
+	TclNewIntObj(incrPtr, increment);
 	Tcl_IncrRefCount(incrPtr);
 	pcAdjustment = 3;
 
@@ -5312,19 +5328,17 @@ TEBCresume(
 	NEXT_INST_V(1, 3, 1);
 
     case INST_STR_FIND:
-	slength = TclStringFirst(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
+	objResultPtr = TclStringFirst(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
 
-	TRACE(("%.20s %.20s => %" TCL_LL_MODIFIER "d\n",
-		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), TclWideIntFromSize(slength)));
-	objResultPtr = TclNewWideIntObjFromSize(slength);
+	TRACE(("%.20s %.20s => %d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_FIND_LAST:
-	slength = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, TCL_INDEX_END);
+	objResultPtr = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, INT_MAX - 1);
 
-	TRACE(("%.20s %.20s => %" TCL_LL_MODIFIER "d\n",
-		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), TclWideIntFromSize(slength)));
-	objResultPtr = TclNewWideIntObjFromSize(slength);
+	TRACE(("%.20s %.20s => %d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_CLASS:
@@ -5335,9 +5349,11 @@ TEBCresume(
 	ustring1 = TclGetUnicodeFromObj(valuePtr, &slength);
 	match = 1;
 	if (slength > 0) {
+	    int ch;
 	    end = ustring1 + slength;
-	    for (p=ustring1 ; p<end ; p++) {
-		if (!tclStringClassTable[opnd].comparator(*p)) {
+	    for (p=ustring1 ; p<end ; ) {
+		p += TclUniCharToUCS4(p, &ch);
+		if (!tclStringClassTable[opnd].comparator(ch)) {
 		    match = 0;
 		    break;
 		}
@@ -6633,7 +6649,7 @@ TEBCresume(
 	    if (valuePtr == NULL) {
 		Tcl_DictObjPut(NULL, dictPtr, OBJ_AT_TOS,Tcl_NewIntObj(opnd));
 	    } else {
-		value2Ptr = Tcl_NewIntObj(opnd);
+		TclNewIntObj(value2Ptr, opnd);
 		Tcl_IncrRefCount(value2Ptr);
 		if (Tcl_IsShared(valuePtr)) {
 		    valuePtr = Tcl_DuplicateObj(valuePtr);
@@ -8105,7 +8121,7 @@ ExecuteExtendedBinaryMathOp(
 
 	/*
 	 * We refuse to accept exponent arguments that exceed one mp_digit
-	 * which means the max exponent value is 2**28-1 = 0x0fffffff =
+	 * which means the max exponent value is 2**28-1 = 0x0FFFFFFF =
 	 * 268435455, which fits into a signed 32 bit int which is within the
 	 * range of the long int type. This means any numeric Tcl_Obj value
 	 * not using TCL_NUMBER_INT type must hold a value larger than we

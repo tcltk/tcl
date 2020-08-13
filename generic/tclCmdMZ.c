@@ -195,7 +195,7 @@ Tcl_RegexpObjCmd(
 	    if (++i >= objc) {
 		goto endOfForLoop;
 	    }
-	    if (TclGetIntForIndexM(interp, objv[i], TCL_INDEX_START, &temp) != TCL_OK) {
+	    if (TclGetIntForIndexM(interp, objv[i], WIDE_MAX - 1, &temp) != TCL_OK) {
 		goto optionError;
 	    }
 	    if (startIndex) {
@@ -551,7 +551,7 @@ Tcl_RegsubObjCmd(
 	    if (++idx >= (size_t)objc) {
 		goto endOfForLoop;
 	    }
-	    if (TclGetIntForIndexM(interp, objv[idx], TCL_INDEX_START, &temp) != TCL_OK) {
+	    if (TclGetIntForIndexM(interp, objv[idx], WIDE_MAX - 1, &temp) != TCL_OK) {
 		goto optionError;
 	    }
 	    if (startIndex) {
@@ -1175,7 +1175,7 @@ Tcl_SplitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch = 0;
+    int ch = 0;
     int len;
     const char *splitChars;
     const char *stringPtr;
@@ -1218,23 +1218,8 @@ Tcl_SplitObjCmd(
 	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 
 	for ( ; stringPtr < end; stringPtr += len) {
-	    int fullchar;
-	    len = TclUtfToUniChar(stringPtr, &ch);
-	    fullchar = ch;
-
-#if TCL_UTF_MAX <= 3
-	    if ((ch >= 0xD800) && (len < 3)) {
-		len += TclUtfToUniChar(stringPtr + len, &ch);
-		fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
-	    }
-#endif
-
-	    /*
-	     * Assume Tcl_UniChar is an integral type...
-	     */
-
-	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(fullchar),
-		    &isNew);
+	    len = TclUtfToUCS4(stringPtr, &ch);
+	    hPtr = Tcl_CreateHashEntry(&charReuseTable, INT2PTR(ch), &isNew);
 	    if (isNew) {
 		TclNewStringObj(objPtr, stringPtr, len);
 
@@ -1269,7 +1254,7 @@ Tcl_SplitObjCmd(
     } else {
 	const char *element, *p, *splitEnd;
 	size_t splitLen;
-	Tcl_UniChar splitChar = 0;
+	int splitChar;
 
 	/*
 	 * Normal case: split on any of a given set of characters. Discard
@@ -1279,9 +1264,9 @@ Tcl_SplitObjCmd(
 	splitEnd = splitChars + splitCharLen;
 
 	for (element = stringPtr; stringPtr < end; stringPtr += len) {
-	    len = TclUtfToUniChar(stringPtr, &ch);
+	    len = TclUtfToUCS4(stringPtr, &ch);
 	    for (p = splitChars; p < splitEnd; p += splitLen) {
-		splitLen = TclUtfToUniChar(p, &splitChar);
+		splitLen = TclUtfToUCS4(p, &splitChar);
 		if (ch == splitChar) {
 		    TclNewStringObj(objPtr, element, stringPtr - element);
 		    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
@@ -1338,8 +1323,7 @@ StringFirstCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, TclNewWideIntObjFromSize(TclStringFirst(objv[1],
-	    objv[2], start)));
+    Tcl_SetObjResult(interp, TclStringFirst(objv[1], objv[2], start));
     return TCL_OK;
 }
 
@@ -1383,8 +1367,7 @@ StringLastCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, TclNewWideIntObjFromSize(TclStringLast(objv[1],
-	    objv[2], last)));
+    Tcl_SetObjResult(interp, TclStringLast(objv[1], objv[2], last));
     return TCL_OK;
 }
 
@@ -1442,7 +1425,7 @@ StringIndexCmd(
 	 */
 
 	if (TclIsPureByteArray(objv[1])) {
-	    unsigned char uch = (unsigned char) ch;
+	    unsigned char uch = UCHAR(ch);
 
 	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
 	} else {
@@ -1541,7 +1524,6 @@ StringIsCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *string1, *end, *stop;
-    Tcl_UniChar ch = 0;
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
     int i, result = 1, strict = 0, index, length3;
     size_t failat = 0;
@@ -1866,7 +1848,7 @@ StringIsCmd(
 		     * if it is the first "element" that has the failure.
 		     */
 
-		    while (TclIsSpaceProc(*p)) {
+		    while (TclIsSpaceProcM(*p)) {
 			p++;
 		    }
 		    TclNewStringObj(tmpStr, string1, p-string1);
@@ -1911,16 +1893,10 @@ StringIsCmd(
 	}
 	end = string1 + length1;
 	for (; string1 < end; string1 += length2, failat++) {
-	    int fullchar;
-	    length2 = TclUtfToUniChar(string1, &ch);
-	    fullchar = ch;
-#if TCL_UTF_MAX <= 3
-	    if ((ch >= 0xD800) && (length2 < 3)) {
-	    	length2 += TclUtfToUniChar(string1 + length2, &ch);
-	    	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
-	    }
-#endif
-	    if (!chcomp(fullchar)) {
+	    int ucs4;
+
+	    length2 = TclUtfToUCS4(string1, &ucs4);
+	    if (!chcomp(ucs4)) {
 		result = 0;
 		break;
 	    }
@@ -2509,9 +2485,7 @@ StringRevCmd(
  * StringStartCmd --
  *
  *	This procedure is invoked to process the "string wordstart" Tcl
- *	command. See the user documentation for details on what it does. Note
- *	that this command only functions correctly on properly formed Tcl UTF
- *	strings.
+ *	command. See the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -2529,7 +2503,7 @@ StringStartCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch = 0;
+    int ch;
     const char *p, *string;
     size_t numChars, length, cur, index;
 
@@ -2550,12 +2524,22 @@ StringStartCmd(
     cur = 0;
     if (index + 1 > 1) {
 	p = Tcl_UtfAtIndex(string, index);
+
+	TclUtfToUCS4(p, &ch);
 	for (cur = index; cur != TCL_INDEX_NONE; cur--) {
-	    TclUtfToUniChar(p, &ch);
+	    int delta = 0;
+	    const char *next;
+
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;
 	    }
-	    p = Tcl_UtfPrev(p, string);
+
+	    next = TclUtfPrev(p, string);
+	    do {
+		next += delta;
+		delta = TclUtfToUCS4(next, &ch);
+	    } while (next + delta < p);
+	    p = next;
 	}
 	if (cur != index) {
 	    cur += 1;
@@ -2571,8 +2555,7 @@ StringStartCmd(
  * StringEndCmd --
  *
  *	This procedure is invoked to process the "string wordend" Tcl command.
- *	See the user documentation for details on what it does. Note that this
- *	command only functions correctly on properly formed Tcl UTF strings.
+ *	See the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -2590,7 +2573,7 @@ StringEndCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch = 0;
+    int ch;
     const char *p, *end, *string;
     size_t length, numChars, cur, index;
 
@@ -2612,7 +2595,7 @@ StringEndCmd(
 	p = Tcl_UtfAtIndex(string, index);
 	end = string+length;
 	for (cur = index; p < end; cur++) {
-	    p += TclUtfToUniChar(p, &ch);
+	    p += TclUtfToUCS4(p, &ch);
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;
 	    }
@@ -4339,7 +4322,7 @@ Tcl_TimeRateObjCmd(
 	     */
 
 	    measureOverhead = 0;
-	    Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
 	    return TCL_OK;
 	}
 

@@ -14,7 +14,8 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-#if !defined(_WIN64)
+#if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT)
+/* See [Bug 3354324]: file mtime sets wrong time */
 #   define __MINGW_USE_VC2005_COMPAT
 #endif
 #if defined(_MSC_VER) && defined(_WIN64) && !defined(STATIC_BUILD) \
@@ -48,7 +49,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 /*
  * Ask for the winsock function typedefs, also.
  */
-#define INCL_WINSOCK_API_TYPEDEFS   1
+#ifndef INCL_WINSOCK_API_TYPEDEFS
+#   define INCL_WINSOCK_API_TYPEDEFS   1
+#endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #ifdef HAVE_WSPIAPI_H
@@ -313,7 +316,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 #ifndef WTERMSIG
-#   define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7f)
+#   define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7F)
 #endif
 
 #ifndef WIFSTOPPED
@@ -321,7 +324,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 #ifndef WSTOPSIG
-#   define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xff)
+#   define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 /*
@@ -485,6 +488,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #if defined(_MSC_VER)
 #   pragma warning(disable:4146)
 #   pragma warning(disable:4244)
+#if !defined(_WIN64)
+#   pragma warning(disable:4305)
+#endif
 #   if _MSC_VER >= 1400
 #	pragma warning(disable:4267)
 #	pragma warning(disable:4996)

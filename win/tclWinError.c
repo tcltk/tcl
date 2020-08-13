@@ -349,11 +349,11 @@ static const unsigned char wsaErrorTable[] = {
 
 void
 TclWinConvertError(
-    DWORD errCode)		/* Win32 error code. */
+    int errCode)		/* Win32 error code. */
 {
-    if (errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
+    if ((unsigned)errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
 	errCode -= WSAEWOULDBLOCK;
-	if (errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
+	if ((unsigned)errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
 	    Tcl_SetErrno(errorTable[1]);
 	} else {
 	    Tcl_SetErrno(wsaErrorTable[errCode]);

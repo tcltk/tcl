@@ -20,7 +20,11 @@
 #   define USE_TCL_STUBS
 #endif
 #include "tclInt.h"
-#include "tclTomMath.h"
+#ifdef TCL_WITH_EXTERNAL_TOMMATH
+#   include "tommath.h"
+#else
+#   include "tclTomMath.h"
+#endif
 #include "tclOO.h"
 #include <math.h>
 
@@ -47,7 +51,6 @@ DLLEXPORT int		Tcltest_SafeInit(Tcl_Interp *interp);
 
 static Tcl_DString delString;
 static Tcl_Interp *delInterp;
-static const Tcl_ObjType *properByteArrayType;
 
 /*
  * One of the following structures exists for each asynchronous handler
@@ -309,7 +312,7 @@ static Tcl_FSNormalizePathProc TestReportNormalizePath;
 static Tcl_FSPathInFilesystemProc TestReportInFilesystem;
 static Tcl_FSFreeInternalRepProc TestReportFreeInternalRep;
 static Tcl_FSDupInternalRepProc TestReportDupInternalRep;
-
+static Tcl_CmdProc TestServiceModeCmd;
 static Tcl_FSStatProc SimpleStat;
 static Tcl_FSAccessProc SimpleAccess;
 static Tcl_FSOpenFileChannelProc SimpleOpenFileChannel;
@@ -317,6 +320,8 @@ static Tcl_FSListVolumesProc SimpleListVolumes;
 static Tcl_FSPathInFilesystemProc SimplePathInFilesystem;
 static Tcl_Obj *	SimpleRedirect(Tcl_Obj *pathPtr);
 static Tcl_FSMatchInDirectoryProc SimpleMatchInDirectory;
+static Tcl_ObjCmdProc	TestUtfNextCmd;
+static Tcl_ObjCmdProc	TestUtfPrevCmd;
 static Tcl_ObjCmdProc	TestNumUtfCharsCmd;
 static Tcl_ObjCmdProc	TestFindFirstCmd;
 static Tcl_ObjCmdProc	TestFindLastCmd;
@@ -445,9 +450,11 @@ Tcltest_Init(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
+#ifndef TCL_WITH_EXTERNAL_TOMMATH
     if (Tcl_TomMath_InitStubs(interp, "8.5-") == NULL) {
 	return TCL_ERROR;
     }
+#endif
     if (Tcl_OOInitStubs(interp) == NULL) {
 	return TCL_ERROR;
     }
@@ -456,11 +463,6 @@ Tcltest_Init(
     if (Tcl_PkgProvideEx(interp, "Tcltest", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-
-    objPtr = Tcl_NewStringObj("abc", 3);
-    (void)Tcl_GetByteArrayFromObj(objPtr, &index);
-    properByteArrayType = objPtr->typePtr;
-    Tcl_DecrRefCount(objPtr);
 
     /*
      * Create additional commands and math functions for testing Tcl.
@@ -571,6 +573,8 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
 	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testservicemode", TestServiceModeCmd,
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetassocdata", TestsetassocdataCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetnoerr", TestsetCmd,
@@ -583,6 +587,10 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testsetobjerrorcode",
 	    TestsetobjerrorcodeCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testutfnext",
+	    TestUtfNextCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testutfprev",
+	    TestUtfPrevCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testnumutfchars",
 	    TestNumUtfCharsCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindfirst",
@@ -1519,7 +1527,7 @@ TestdelCmd(
 	return TCL_ERROR;
     }
 
-    dPtr = (DelCmd*)Tcl_Alloc(sizeof(DelCmd));
+    dPtr = (DelCmd *)Tcl_Alloc(sizeof(DelCmd));
     dPtr->interp = interp;
     dPtr->deleteCmd = (char *)Tcl_Alloc(strlen(argv[3]) + 1);
     strcpy(dPtr->deleteCmd, argv[3]);
@@ -1548,7 +1556,7 @@ static void
 DelDeleteProc(
     void *clientData)	/* String command to evaluate. */
 {
-    DelCmd *dPtr = (DelCmd *) clientData;
+    DelCmd *dPtr = (DelCmd *)clientData;
 
     Tcl_EvalEx(dPtr->interp, dPtr->deleteCmd, -1, 0);
     Tcl_ResetResult(dPtr->interp);
@@ -1753,7 +1761,7 @@ TestdstringCmd(
 	    strcpy(s, "This is a malloc-ed string");
 	    Tcl_SetResult(interp, s, TCL_DYNAMIC);
 	} else if (strcmp(argv[2], "special") == 0) {
-	    char *s = (char*)Tcl_Alloc(100) + 16;
+	    char *s = (char *)Tcl_Alloc(100) + 16;
 	    strcpy(s, "This is a specially-allocated string");
 	    Tcl_SetResult(interp, s, SpecialFree);
 	} else {
@@ -2737,7 +2745,7 @@ TestlinkCmd(
     static unsigned char ucharVar = 130;
     static short shortVar = 3000;
     static unsigned short ushortVar = 60000;
-    static unsigned int uintVar = 0xbeeffeed;
+    static unsigned int uintVar = 0xBEEFFEED;
     static long longVar = 123456789L;
     static unsigned long ulongVar = 3456789012UL;
     static float floatVar = 4.5;
@@ -5064,16 +5072,16 @@ TestbytestringObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int n = 0;
+    size_t n = 0;
     const char *p;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytearray");
 	return TCL_ERROR;
     }
-    p = (const char *)Tcl_GetByteArrayFromObj(objv[1], &n);
-    if ((p == NULL) || !Tcl_FetchIntRep(objv[1], properByteArrayType)) {
-	Tcl_AppendResult(interp, "testbytestring expects bytes", NULL);
+
+    p = (const char *)TclGetBytesFromObj(interp, objv[1], &n);
+    if (p == NULL) {
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
@@ -6157,6 +6165,54 @@ TestSocketCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TestServiceModeCmd --
+ *
+ *	This procedure implements the "testservicemode" command which gets or
+ *      sets the current Tcl ServiceMode.  There are several tests which open
+ *      a file and assign various handlers to it.  For these tests to be
+ *      deterministic it is important that file events not be processed until
+ *      all of the handlers are in place.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	May change the ServiceMode setting.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestServiceModeCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int argc,			/* Number of arguments. */
+    const char **argv)		/* Argument strings. */
+{
+    int newmode, oldmode;
+    if (argc > 2) {
+        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                         " ?newmode?\"", NULL);
+        return TCL_ERROR;
+    }
+    oldmode = (Tcl_GetServiceMode() != TCL_SERVICE_NONE);
+    if (argc == 2) {
+        if (Tcl_GetInt(interp, argv[1], &newmode) == TCL_ERROR) {
+            return TCL_ERROR;
+        }
+        if (newmode == 0) {
+            Tcl_SetServiceMode(TCL_SERVICE_NONE);
+        } else {
+            Tcl_SetServiceMode(TCL_SERVICE_ALL);
+        }
+    }
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(oldmode));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestWrongNumArgsObjCmd --
  *
  *	Test the Tcl_WrongNumArgs function.
@@ -6382,11 +6438,6 @@ TestReport(
     if (interp == NULL) {
 	/* This is bad, but not much we can do about it */
     } else {
-	/*
-	 * No idea why I decided to program this up using the old string-based
-	 * API, but there you go. We should convert it to objects.
-	 */
-
 	Tcl_Obj *savedResult;
 	Tcl_DString ds;
 
@@ -6813,6 +6864,109 @@ SimpleListVolumes(void)
 }
 
 /*
+ * Used to check operations of Tcl_UtfNext.
+ *
+ * Usage: testutfnext -bytestring $bytes
+ */
+
+static int
+TestUtfNextCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    size_t numBytes;
+    char *bytes;
+    const char *result, *first;
+    char buffer[32];
+    static const char tobetested[] = "A\xA0\xC0\xC1\xC2\xD0\xE0\xE8\xF2\xF7\xF8\xFE\xFF";
+    const char *p = tobetested;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-bytestring? bytes");
+	return TCL_ERROR;
+    }
+	bytes = Tcl_GetString(objv[1]);
+	numBytes = objv[1]->length;
+
+    if (numBytes > (int)sizeof(buffer) - 4) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"\"testutfnext\" can only handle %d bytes",
+		(int)sizeof(buffer) - 4));
+	return TCL_ERROR;
+    }
+
+    memcpy(buffer + 1, bytes, numBytes);
+    buffer[0] = buffer[numBytes + 1] = buffer[numBytes + 2] = buffer[numBytes + 3] = '\xA0';
+
+    first = result = Tcl_UtfNext(buffer + 1);
+    while ((buffer[0] = *p++) != '\0') {
+	/* Run Tcl_UtfNext with many more possible bytes at src[-1], all should give the same result */
+	result = Tcl_UtfNext(buffer + 1);
+	if (first != result) {
+	    Tcl_AppendResult(interp, "Tcl_UtfNext is not supposed to read src[-1]", NULL);
+	    return TCL_ERROR;
+	}
+    }
+    p = tobetested;
+    while ((buffer[numBytes + 1] = *p++) != '\0') {
+	/* Run Tcl_UtfNext with many more possible bytes at src[end], all should give the same result */
+	result = Tcl_UtfNext(buffer + 1);
+	if (first != result) {
+	    first = buffer;
+	    break;
+	}
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(first - buffer - 1));
+
+    return TCL_OK;
+}
+/*
+ * Used to check operations of Tcl_UtfPrev.
+ *
+ * Usage: testutfprev $bytes $offset
+ */
+
+static int
+TestUtfPrevCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    size_t numBytes, offset;
+    char *bytes;
+    const char *result;
+
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?offset?");
+	return TCL_ERROR;
+    }
+
+    bytes = Tcl_GetString(objv[1]);
+    numBytes = objv[1]->length;
+
+    if (objc == 3) {
+	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
+	    return TCL_ERROR;
+	}
+	if (offset == TCL_INDEX_NONE) {
+	    offset = 0;
+	}
+	if (offset > numBytes) {
+	    offset = numBytes;
+	}
+    } else {
+	offset = numBytes;
+    }
+    result = TclUtfPrev(bytes + offset, bytes);
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result - bytes));
+    return TCL_OK;
+}
+
+/*
  * Used to check correct string-length determining in Tcl_NumUtfChars
  */
 
@@ -6824,13 +6978,20 @@ TestNumUtfCharsCmd(
     Tcl_Obj *const objv[])
 {
     if (objc > 1) {
-	int len = -1;
+	size_t len, limit = TCL_INDEX_NONE;
+	const char *bytes = Tcl_GetString(objv[1]);
+	size_t numBytes = objv[1]->length;
 
 	if (objc > 2) {
-	    (void) Tcl_GetIntFromObj(interp, objv[2], &len);
+	    if (Tcl_GetIntForIndex(interp, objv[2], numBytes, &limit) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (limit > numBytes + 1) {
+		limit = numBytes + 1;
+	    }
 	}
-	len = Tcl_NumUtfChars(Tcl_GetString(objv[1]), len);
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));
+	len = Tcl_NumUtfChars(bytes, limit);
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(len));
     }
     return TCL_OK;
 }

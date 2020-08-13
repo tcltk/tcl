@@ -49,7 +49,7 @@ proc _test_out_total {} {
     return
   }
 
-  set mintm 0x7fffffff
+  set mintm 0x7FFFFFFF
   set maxtm 0
   set nettm 0
   set wtm 0

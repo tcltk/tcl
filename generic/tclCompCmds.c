@@ -126,9 +126,9 @@ TclCompileAppendCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int isScalar, localIndex, numWords, i;
-    DefineLineInformation;	/* TIP #280 */
 
     /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
@@ -572,10 +572,10 @@ TclCompileCatchCmd(
     TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;	/* TIP #280 */
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
     int resultIndex, optsIndex, range, dropScript = 0;
-    DefineLineInformation;	/* TIP #280 */
     int depth = TclGetStackDepth(envPtr);
 
     /*
@@ -1004,9 +1004,9 @@ TclCompileDictSetCmd(
     TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
     int i, dictVarIndex;
-    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;
 
     /*
@@ -1130,9 +1130,9 @@ TclCompileDictGetCmd(
     TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
     int i;
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * There must be at least two arguments after the command (the single-arg
@@ -1166,9 +1166,9 @@ TclCompileDictGetWithDefaultCmd(
     TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
     int i;
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * There must be at least three arguments after the command.
@@ -1197,9 +1197,9 @@ TclCompileDictExistsCmd(
     TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
     int i;
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * There must be at least two arguments after the command (the single-arg
@@ -1234,8 +1234,8 @@ TclCompileDictUnsetCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Tcl_Token *tokenPtr;
     DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
     int i, dictVarIndex;
 
     /*
@@ -2350,12 +2350,12 @@ TclCompileErrorCmd(
     TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
     /*
      * General syntax: [error message ?errorInfo? ?errorCode?]
      */
-
-    Tcl_Token *tokenPtr;
-    DefineLineInformation;	/* TIP #280 */
 
     if (parsePtr->numWords < 2 || parsePtr->numWords > 4) {
 	return TCL_ERROR;
@@ -2467,11 +2467,11 @@ TclCompileForCmd(
     TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
     JumpFixup jumpEvalCondFixup;
     int bodyCodeOffset, nextCodeOffset, jumpDist;
     int bodyRange, nextRange;
-    DefineLineInformation;	/* TIP #280 */
 
     if (parsePtr->numWords != 5) {
 	return TCL_ERROR;
@@ -2679,6 +2679,7 @@ CompileEachloopCmd(
     int collect)		/* Select collecting or accumulating mode
 				 * (TCL_EACH_*) */
 {
+    DefineLineInformation;	/* TIP #280 */
     Proc *procPtr = envPtr->procPtr;
     ForeachInfo *infoPtr=NULL;	/* Points to the structure describing this
 				 * foreach command. Stored in a AuxData
@@ -2688,7 +2689,6 @@ CompileEachloopCmd(
     int jumpBackOffset, infoIndex, range;
     int numWords, numLists, i, j, code = TCL_OK;
     Tcl_Obj *varListObj = NULL;
-    DefineLineInformation;	/* TIP #280 */
 
     /*
      * If the foreach command isn't in a procedure, don't compile it inline:
@@ -3453,10 +3453,10 @@ TclPushVarName(
 	    /*
 	     * last char is ')' => potential array reference.
 	     */
-	    last = Tcl_UtfPrev(name + nameLen, name);
+	    last = &name[nameLen-1];
 
 	    if (*last == ')') {
-		for (p = name;  p < last;  p = Tcl_UtfNext(p)) {
+		for (p = name;  p < last;  p++) {
 		    if (*p == '(') {
 			elName = p + 1;
 			elNameLen = last - elName;
@@ -3484,15 +3484,14 @@ TclPushVarName(
     } else if (interp && ((n = varTokenPtr->numComponents) > 1)
 	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
 	    && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
-	    && (*((p = varTokenPtr[n].start + varTokenPtr[n].size)-1) == ')')
-	    && (*Tcl_UtfPrev(p, varTokenPtr[n].start) == ')')) {
+	    && (*(varTokenPtr[n].start + varTokenPtr[n].size - 1) == ')')) {
 	/*
 	 * Check for parentheses inside first token.
 	 */
 
 	simpleVarName = 0;
 	for (p = varTokenPtr[1].start,
-	     last = p + varTokenPtr[1].size;  p < last;  p = Tcl_UtfNext(p)) {
+	     last = p + varTokenPtr[1].size;  p < last;  p++) {
 	    if (*p == '(') {
 		simpleVarName = 1;
 		break;
@@ -3560,7 +3559,7 @@ TclPushVarName(
 
 	int hasNsQualifiers = 0;
 
-	for (p = name, last = p + nameLen-1;  p < last;  p = Tcl_UtfNext(p)) {
+	for (p = name, last = p + nameLen-1;  p < last;  p++) {
 	    if ((*p == ':') && (*(p+1) == ':')) {
 		hasNsQualifiers = 1;
 		break;

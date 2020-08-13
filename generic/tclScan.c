@@ -876,14 +876,7 @@ Tcl_ScanObjCmd(
 	     * Scan a single Unicode character.
 	     */
 
-	    offset = TclUtfToUniChar(string, &sch);
-	    i = (int)sch;
-#if TCL_UTF_MAX <= 3
-	    if ((sch >= 0xD800) && (offset < 3)) {
-		offset += TclUtfToUniChar(string+offset, &sch);
-		i = (((i<<10) & 0x0FFC00) + 0x10000) + (sch & 0x3FF);
-	    }
-#endif
+	    offset = TclUtfToUCS4(string, &i);
 	    string += offset;
 	    if (!(flags & SCAN_SUPPRESS)) {
 		objPtr = Tcl_NewWideIntObj(i);
@@ -903,7 +896,7 @@ Tcl_ScanObjCmd(
 		width = ~0;
 	    }
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
-		    &end, TCL_PARSE_INTEGER_ONLY | parseFlag)) {
+		&end, TCL_PARSE_INTEGER_ONLY | TCL_PARSE_NO_UNDERSCORE | parseFlag)) {
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {
@@ -1005,7 +998,7 @@ Tcl_ScanObjCmd(
 		width = ~0;
 	    }
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
-		    &end, TCL_PARSE_DECIMAL_ONLY | TCL_PARSE_NO_WHITESPACE)) {
+		    &end, TCL_PARSE_DECIMAL_ONLY | TCL_PARSE_NO_WHITESPACE | TCL_PARSE_NO_UNDERSCORE)) {
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {

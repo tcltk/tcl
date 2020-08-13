@@ -116,6 +116,8 @@ The indicated return value also becomes the new value of \fIx\fR
 \fBlset\fR x {2 1} j
       \fI\(-> {a b c} {d e f} {g j i}\fR
 \fBlset\fR x {2 3} j
+      \fI\(-> {a b c} {d e f} {g h i j}\fR
+\fBlset\fR x {2 4} j
       \fI\(-> list index out of range\fR
 .CE
 .PP

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -32,6 +32,7 @@ testConstraint testobj [expr {[info commands testobj] ne {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
 testConstraint fullutf [expr {[string length \U010000] == 1}]
+testConstraint testbytestring   [llength [info commands testbytestring]]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -776,7 +777,7 @@ test string-6.80.$noComp {string is wordchar, true} {
     run {string is wordchar abc_123}
 } 1
 test string-6.81.$noComp {string is wordchar, unicode true} {
-    run {string is wordchar abc\xFCab\xDCAB\u5001}
+    run {string is wordchar abc\xFCab\xDCAB\u5001\U1D7CA}
 } 1
 test string-6.82.$noComp {string is wordchar, false} {
     list [run {string is wordchar -fail var abcd.ef}] $var
@@ -1813,6 +1814,34 @@ test string-20.5.$noComp {string trimright} {
 test string-20.6.$noComp {string trimright, unicode default} {
     run {string trimright ABC\u1361\x85\x00\xA0\u1680\u180E\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u2028\u2029\u202F\u205F\u3000}
 } ABC\u1361
+test string-20.7.$noComp {string trim on not valid utf-8 sequence (consider NTS as continuation char), bug [c61818e4c9]} {testbytestring} {
+    set result {}
+    set a [testbytestring \xC0\x80\xA0]
+    set b foo$a
+    set m [list \x00 U \xA0 V [testbytestring \xA0] W]
+    lappend result [string map $m $b]
+    lappend result [string map $m [run {string trimright $b x}]]
+    lappend result [string map $m [run {string trimright $b \x00}]]
+    lappend result [string map $m [run {string trimleft $b fox}]]
+    lappend result [string map $m [run {string trimleft $b fo\x00}]]
+    lappend result [string map $m [run {string trim $b fox}]]
+    lappend result [string map $m [run {string trim $b fo\x00}]]
+} [list {*}[lrepeat 3 fooUV] {*}[lrepeat 2 UV V]]
+test string-20.8.$noComp {[c61818e4c9] [string trimright] fails when UtfPrev is ok} {testbytestring} {
+    set result {}
+    set a [testbytestring \xE8\xA0]
+    set b foo$a
+    set m [list \xE8 U \xA0 V [testbytestring \xE8] W [testbytestring \xA0] X]]
+    lappend result [string map $m $b]
+    lappend result [string map $m [run {string trimright $b x}]]
+    lappend result [string map $m [run {string trimright $b \xE8}]]
+    lappend result [string map $m [run {string trimright $b [testbytestring \xE8]}]]
+    lappend result [string map $m [run {string trimright $b \xA0}]]
+    lappend result [string map $m [run {string trimright $b [testbytestring \xA0]}]]
+    lappend result [string map $m [run {string trimright $b \xE8\xA0}]]
+    lappend result [string map $m [run {string trimright $b [testbytestring \xE8\xA0]}]]
+    lappend result [string map $m [run {string trimright $b \u0000}]]
+} [list {*}[lrepeat 4 fooUV] {*}[lrepeat 2 fooU] {*}[lrepeat 2 foo] fooUV]
 
 test string-21.1.$noComp {string wordend} -body {
     list [catch {run {string wordend a}} msg] $msg
@@ -1856,6 +1885,12 @@ test string-21.13.$noComp {string wordend, unicode} -body {
 test string-21.14.$noComp {string wordend, unicode} -body {
     run {string wordend "\uC700\uC700 abc" 8}
 } -result 6
+test string-21.15.$noComp {string wordend, unicode} -body {
+    run {string wordend "\U1D7CA\U1D7CA abc" 0}
+} -result 2
+test string-21.16.$noComp {string wordend, unicode} -constraints fullutf -body {
+    run {string wordend "\U1D7CA\U1D7CA abc" 10}
+} -result 6
 
 test string-22.1.$noComp {string wordstart} -body {
     list [catch {run {string word a}} msg] $msg
@@ -1895,6 +1930,17 @@ test string-22.12.$noComp {string wordstart, unicode} -body {
 } -result 10
 test string-22.13.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\uC700\uC700 abc" 8}
+} -result 3
+test string-22.14.$noComp {string wordstart, invalid UTF-8} -constraints testbytestring -body {
+    # See Bug c61818e4c9
+    set demo [testbytestring "abc def\xE0\xA9ghi"]
+    run {string index $demo [string wordstart $demo 10]}
+} -result g
+test string-22.15.$noComp {string wordstart, unicode} -body {
+    run {string wordstart "\U1D7CA\U1D7CA abc" 0}
+} -result 0
+test string-22.16.$noComp {string wordstart, unicode} -constraints fullutf -body {
+    run {string wordstart "\U1D7CA\U1D7CA abc" 10}
 } -result 3
 
 test string-23.0.$noComp {string is boolean, Bug 1187123} testindexobj {

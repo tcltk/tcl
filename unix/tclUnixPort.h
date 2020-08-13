@@ -86,16 +86,12 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 
 #ifdef __CYGWIN__
-
 #ifdef __cplusplus
 extern "C" {
 #endif
     /* Make some symbols available without including <windows.h> */
-#   define DWORD unsigned int
 #   define CP_UTF8 65001
 #   define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
-#   define HANDLE void *
-#   define HINSTANCE void *
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
     typedef unsigned short WCHAR;
@@ -114,15 +110,9 @@ extern "C" {
     __declspec(dllimport) extern __stdcall int GetLastError(void);
     __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
     __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
-
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
 #ifdef __clang__
 #pragma clang diagnostic pop
-#endif
-/* On Cygwin, the environment is imported from the Cygwin DLL. */
-#ifndef __x86_64__
-#   define environ __cygwin_environ
-    extern char **__cygwin_environ;
 #endif
 #   define timezone _timezone
     extern int TclOSstat(const char *name, void *statBuf);
@@ -131,11 +121,11 @@ extern "C" {
 }
 #endif
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
-#   define TclOSstat		stat64
-#   define TclOSlstat		lstat64
+#   define TclOSstat(name, buf) stat64(name, (struct stat64 *)buf)
+#   define TclOSlstat(name,buf) lstat64(name, (struct stat64 *)buf)
 #else
-#   define TclOSstat		stat
-#   define TclOSlstat		lstat
+#   define TclOSstat(name, buf) stat(name, (struct stat *)buf)
+#   define TclOSlstat(name, buf) lstat(name, (struct stat *)buf)
 #endif
 
 /*

@@ -15,7 +15,7 @@ set auto_index(::auto_mkindex_parser::init) [list ::tcl::Pkg::source [file join 
 set auto_index(::auto_mkindex_parser::cleanup) [list ::tcl::Pkg::source [file join $dir auto.tcl]]
 set auto_index(::auto_mkindex_parser::mkindex) [list ::tcl::Pkg::source [file join $dir auto.tcl]]
 set auto_index(::auto_mkindex_parser::hook) [list ::tcl::Pkg::source [file join $dir auto.tcl]]
-set auto_index(::auto_mkindex_parser::slavehook) [list ::tcl::Pkg::source [file join $dir auto.tcl]]
+set auto_index(::auto_mkindex_parser::childhook) [list ::tcl::Pkg::source [file join $dir auto.tcl]]
 set auto_index(::auto_mkindex_parser::command) [list ::tcl::Pkg::source [file join $dir auto.tcl]]
 set auto_index(::auto_mkindex_parser::commandInit) [list ::tcl::Pkg::source [file join $dir auto.tcl]]
 set auto_index(::auto_mkindex_parser::fullname) [list ::tcl::Pkg::source [file join $dir auto.tcl]]

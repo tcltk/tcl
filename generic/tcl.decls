@@ -601,7 +601,7 @@ declare 162 {
     const char *Tcl_GetHostName(void)
 }
 declare 163 {
-    int Tcl_GetInterpPath(Tcl_Interp *askInterp, Tcl_Interp *slaveInterp)
+    int Tcl_GetInterpPath(Tcl_Interp *interp, Tcl_Interp *slaveInterp)
 }
 declare 164 {
     Tcl_Interp *Tcl_GetMaster(Tcl_Interp *interp)
@@ -614,7 +614,7 @@ declare 166 {
 }
 
 # Tcl_GetOpenFile is only available on unix, but it is a part of the old
-# generic interface, so we inlcude it here for compatibility reasons.
+# generic interface, so we include it here for compatibility reasons.
 
 declare 167 unix {
     int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID, int forWriting,
@@ -2493,11 +2493,12 @@ interface tclPlat
 ################################
 # Mac OS X specific functions
 
-declare 0 macosx {
-    int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
-	    const char *bundleName, int hasResourceFile,
-	    size_t maxPathLen, char *libraryPath)
-}
+# Removed in 9.0
+#declare 0 macosx {
+#    int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
+#	    const char *bundleName, int hasResourceFile,
+#	    size_t maxPathLen, char *libraryPath)
+#}
 declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,

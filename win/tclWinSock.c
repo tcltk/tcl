@@ -368,7 +368,7 @@ InitializeHostName(
     Tcl_DString ds;
 
     Tcl_DStringInit(&ds);
-    if (GetComputerNameExW(ComputerNameDnsFullyQualified, wbuf, &length) != 0) {
+    if (GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, wbuf, &length) != 0) {
 	/*
 	 * Convert string from native to UTF then change to lowercase.
 	 */
@@ -2485,7 +2485,7 @@ InitSockets(void)
 	windowClass.style = 0;
 	windowClass.cbClsExtra = 0;
 	windowClass.cbWndExtra = 0;
-	windowClass.hInstance = TclWinGetTclInstance();
+	windowClass.hInstance = (HINSTANCE)TclWinGetTclInstance();
 	windowClass.hbrBackground = NULL;
 	windowClass.lpszMenuName = NULL;
 	windowClass.lpszClassName = className;
@@ -2616,7 +2616,7 @@ SocketExitHandler(
      */
 
     TclpFinalizeSockets();
-    UnregisterClassW(className, TclWinGetTclInstance());
+    UnregisterClassW(className, (HINSTANCE)TclWinGetTclInstance());
     initialized = 0;
     Tcl_MutexUnlock(&socketMutex);
 }

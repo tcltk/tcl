@@ -5039,7 +5039,7 @@ fi
 	CFLAGS_OPTIMIZE=-O2
 	CFLAGS_WARNING="-Wall -Wextra -Wwrite-strings -Wpointer-arith"
 	case "${CC}" in
-	    *++)
+	    *++|*++-*)
 		;;
 	    *)
 		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -Wdeclaration-after-statement"
@@ -5312,7 +5312,7 @@ fi
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	CYGWIN_*)
-	    SHLIB_CFLAGS=""
+	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
 	    DL_OBJS="tclLoadDl.o"
@@ -5525,7 +5525,7 @@ fi
 			    SHLIB_LD='${CC} -shared'
 			    if test $doRpath = yes; then :
 
-				CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+				CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
 fi
 			    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 			    ;;
@@ -5615,7 +5615,7 @@ esac
 
 	    if test $doRpath = yes; then :
 
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
 		LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
 fi
 	    ;;
@@ -5633,7 +5633,7 @@ esac
 
 	    if test $doRpath = yes; then :
 
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
 		LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
 fi
 	    if test "$GCC" = yes; then :
@@ -5670,7 +5670,7 @@ esac
 
 	    if test $doRpath = yes; then :
 
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
 		LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
 fi
 
@@ -5695,7 +5695,7 @@ fi
 fi
 	    ;;
 	Linux*|GNU*|NetBSD-Debian)
-	    SHLIB_CFLAGS="-fPIC"
+	    SHLIB_CFLAGS="-fPIC -fno-common"
 	    SHLIB_SUFFIX=".so"
 
 	    CFLAGS_OPTIMIZE="-O2"
@@ -5710,7 +5710,7 @@ fi
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    if test $doRpath = yes; then :
 
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
 fi
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    if test "`uname -m`" = "alpha"; then :
@@ -5777,8 +5777,8 @@ fi
 	    LD_FLAGS="-Wl,--export-dynamic"
 	    if test $doRpath = yes; then :
 
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
+		LD_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
 fi
 	    ;;
 	OpenBSD-*)
@@ -5797,7 +5797,7 @@ fi
 	    DL_LIBS=""
 	    if test $doRpath = yes; then :
 
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
 fi
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
@@ -5821,7 +5821,7 @@ fi
 	    LDFLAGS="$LDFLAGS -export-dynamic"
 	    if test $doRpath = yes; then :
 
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
 fi
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    # The -pthread needs to go in the CFLAGS, not LIBS
@@ -5831,7 +5831,6 @@ fi
 	    ;;
 	DragonFly-*|FreeBSD-*)
 	    # This configuration from FreeBSD Ports.
-	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
 	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,-soname,\$@"
 	    SHLIB_SUFFIX=".so"
@@ -5839,8 +5838,8 @@ fi
 	    DL_LIBS=""
 	    if test $doRpath = yes; then :
 
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
+		LD_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
 fi
 	    # The -pthread needs to go in the LDFLAGS, not LIBS
 	    LIBS=`echo $LIBS | sed s/-pthread//`
@@ -6192,7 +6191,7 @@ fi
 	    DL_LIBS=""
 	    if test $doRpath = yes; then :
 
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
 		LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
 fi
 	    if test "$GCC" = yes; then :
@@ -6219,7 +6218,6 @@ fi
 	QNX-6*)
 	    # QNX RTP
 	    # This may work for all QNX, but it was only reported for v6.
-	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="ld -Bshareable -x"
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
@@ -6563,9 +6561,12 @@ fi
 	    AIX-*) ;;
 	    BSD/OS*) ;;
 	    CYGWIN_*) ;;
-	    IRIX*) ;;
-	    NetBSD-*|DragonFly-*|FreeBSD-*|OpenBSD-*) ;;
+	    HP_UX*) ;;
 	    Darwin-*) ;;
+	    IRIX*) ;;
+	    Linux*|GNU*) ;;
+	    NetBSD-*|OpenBSD-*) ;;
+	    OSF1-V*) ;;
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
 	esac
@@ -8894,8 +8895,10 @@ else
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <string.h>
 int main() {
-    extern int strstr();
     exit(strstr("\0test", "test") ? 1 : 0);
 }
 _ACEOF
@@ -8953,8 +8956,10 @@ else
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <string.h>
 int main() {
-    extern int strtoul();
     char *term, *string = "0";
     exit(strtoul(string,&term,0) != 0 || term != string+1);
 }
@@ -9511,6 +9516,7 @@ else
 /* end confdefs.h.  */
 
 	#include <stdlib.h>
+	#include <string.h>
 	#define OURVAR "havecopy=yes"
 	int main (int argc, char *argv[])
 	{
@@ -10461,7 +10467,7 @@ $as_echo "#define TCL_FRAMEWORK 1" >>confdefs.h
     PRIVATE_INCLUDE_DIR="${libdir}/PrivateHeaders"
     HTML_DIR="${libdir}/Resources/Documentation/Reference/Tcl"
     EXTRA_INSTALL="install-private-headers html-tcl"
-    EXTRA_BUILD_HTML='@ln -fs contents.htm "$(HTML_INSTALL_DIR)"/TclTOC.html'
+    EXTRA_BUILD_HTML='@ln -fs contents.htm "$(HTML_INSTALL_DIR)/TclTOC.html"'
     EXTRA_INSTALL_BINARIES='@echo "Installing Info.plist to $(LIB_INSTALL_DIR)/Resources/" && $(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)/Resources" && $(INSTALL_DATA) Tcl-Info.plist "$(LIB_INSTALL_DIR)/Resources/Info.plist"'
     EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Installing license.terms to $(LIB_INSTALL_DIR)/Resources/" && $(INSTALL_DATA) "$(TOP_DIR)/license.terms" "$(LIB_INSTALL_DIR)/Resources"'
     EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Finalizing Tcl.framework" && rm -f "$(LIB_INSTALL_DIR)/../Current" && ln -s "$(VERSION)" "$(LIB_INSTALL_DIR)/../Current" && for f in "$(LIB_FILE)" tclConfig.sh Resources Headers PrivateHeaders; do rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/Current/$$f" "$(LIB_INSTALL_DIR)/../.."; done && f="$(STUB_LIB_FILE)" && rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/$(VERSION)/$$f" "$(LIB_INSTALL_DIR)/../.."'
@@ -10504,9 +10510,9 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     test -z "$TCL_MODULE_PATH"  && \
 	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl"
 elif test "$prefix/lib" != "$libdir"; then
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${libdir} ${prefix}/lib ${TCL_PACKAGE_PATH}"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="{${libdir}} {${prefix}/lib} ${TCL_PACKAGE_PATH}"
 else
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${prefix}/lib ${TCL_PACKAGE_PATH}"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="{${prefix}/lib} ${TCL_PACKAGE_PATH}"
 fi
 
 #--------------------------------------------------------------------
@@ -10519,7 +10525,7 @@ fi
 #
 eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
 eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
-eval "TCL_STUB_LIB_DIR=${libdir}"
+eval "TCL_STUB_LIB_DIR=\"${libdir}\""
 
 if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
     TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}"
