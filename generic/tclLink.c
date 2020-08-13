@@ -1296,7 +1296,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.iPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.iPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
@@ -1348,7 +1348,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.cPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.cPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
@@ -1361,7 +1361,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.ucPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.ucPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
@@ -1374,7 +1374,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.sPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.sPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
@@ -1387,7 +1387,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.usPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.usPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
