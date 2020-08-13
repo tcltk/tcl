@@ -4322,7 +4322,7 @@ Tcl_TimeRateObjCmd(
 	     */
 
 	    measureOverhead = 0;
-	    Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
 	    return TCL_OK;
 	}
 

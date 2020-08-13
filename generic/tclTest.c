@@ -312,7 +312,7 @@ static Tcl_FSNormalizePathProc TestReportNormalizePath;
 static Tcl_FSPathInFilesystemProc TestReportInFilesystem;
 static Tcl_FSFreeInternalRepProc TestReportFreeInternalRep;
 static Tcl_FSDupInternalRepProc TestReportDupInternalRep;
-
+static Tcl_CmdProc TestServiceModeCmd;
 static Tcl_FSStatProc SimpleStat;
 static Tcl_FSAccessProc SimpleAccess;
 static Tcl_FSOpenFileChannelProc SimpleOpenFileChannel;
@@ -572,6 +572,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
+	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testservicemode", TestServiceModeCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetassocdata", TestsetassocdataCmd,
 	    NULL, NULL);
@@ -1759,7 +1761,7 @@ TestdstringCmd(
 	    strcpy(s, "This is a malloc-ed string");
 	    Tcl_SetResult(interp, s, TCL_DYNAMIC);
 	} else if (strcmp(argv[2], "special") == 0) {
-	    char *s = (char*)Tcl_Alloc(100) + 16;
+	    char *s = (char *)Tcl_Alloc(100) + 16;
 	    strcpy(s, "This is a specially-allocated string");
 	    Tcl_SetResult(interp, s, SpecialFree);
 	} else {
@@ -6160,6 +6162,54 @@ TestSocketCmd(
     return TCL_ERROR;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestServiceModeCmd --
+ *
+ *	This procedure implements the "testservicemode" command which gets or
+ *      sets the current Tcl ServiceMode.  There are several tests which open
+ *      a file and assign various handlers to it.  For these tests to be
+ *      deterministic it is important that file events not be processed until
+ *      all of the handlers are in place.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	May change the ServiceMode setting.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestServiceModeCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int argc,			/* Number of arguments. */
+    const char **argv)		/* Argument strings. */
+{
+    int newmode, oldmode;
+    if (argc > 2) {
+        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                         " ?newmode?\"", NULL);
+        return TCL_ERROR;
+    }
+    oldmode = (Tcl_GetServiceMode() != TCL_SERVICE_NONE);
+    if (argc == 2) {
+        if (Tcl_GetInt(interp, argv[1], &newmode) == TCL_ERROR) {
+            return TCL_ERROR;
+        }
+        if (newmode == 0) {
+            Tcl_SetServiceMode(TCL_SERVICE_NONE);
+        } else {
+            Tcl_SetServiceMode(TCL_SERVICE_ALL);
+        }
+    }
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(oldmode));
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *

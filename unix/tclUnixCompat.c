@@ -382,7 +382,7 @@ TclpGetGrNam(
 	if (tsdPtr->gbuflen < 1) {
 	    tsdPtr->gbuflen = 1024;
 	}
-	tsdPtr->gbuf = (char*)Tcl_Alloc(tsdPtr->gbuflen);
+	tsdPtr->gbuf = (char *)Tcl_Alloc(tsdPtr->gbuflen);
 	Tcl_CreateThreadExitHandler(FreeGrBuf, NULL);
     }
     while (1) {
@@ -462,7 +462,7 @@ TclpGetGrGid(
 	if (tsdPtr->gbuflen < 1) {
 	    tsdPtr->gbuflen = 1024;
 	}
-	tsdPtr->gbuf = (char*)Tcl_Alloc(tsdPtr->gbuflen);
+	tsdPtr->gbuf = (char *)Tcl_Alloc(tsdPtr->gbuflen);
 	Tcl_CreateThreadExitHandler(FreeGrBuf, NULL);
     }
     while (1) {
@@ -901,7 +901,7 @@ CopyArray(
 	return -1;
     }
 
-    newBuffer = (char **) buf;
+    newBuffer = (char **)buf;
     p = buf + len;
 
     for (j = 0; j < i; j++) {
