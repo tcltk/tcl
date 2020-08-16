@@ -3547,6 +3547,19 @@ Tcl_DeleteCommandFromToken(
 	iPtr->compileEpoch++;
     }
 
+    if (!(cmdPtr->flags & CMD_REDEF_IN_PROGRESS)) {
+	/*
+	 * Delete any imports of this routine before deleting this routine itself.
+	 * See issue 688fcc7082fa.
+	 */
+	for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
+		refPtr = nextRefPtr) {
+	    nextRefPtr = refPtr->nextPtr;
+	    importCmd = (Tcl_Command) refPtr->importedCmdPtr;
+	    Tcl_DeleteCommandFromToken(interp, importCmd);
+	}
+    }
+
     if (cmdPtr->deleteProc != NULL) {
 	/*
 	 * Delete the command's client data. If this was an imported command
@@ -3564,20 +3577,6 @@ Tcl_DeleteCommandFromToken(
 	 */
 
 	cmdPtr->deleteProc(cmdPtr->deleteData);
-    }
-
-    /*
-     * If this command was imported into other namespaces, then imported
-     * commands were created that refer back to this command. Delete these
-     * imported commands now.
-     */
-    if (!(cmdPtr->flags & CMD_REDEF_IN_PROGRESS)) {
-	for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
-		refPtr = nextRefPtr) {
-	    nextRefPtr = refPtr->nextPtr;
-	    importCmd = (Tcl_Command) refPtr->importedCmdPtr;
-	    Tcl_DeleteCommandFromToken(interp, importCmd);
-	}
     }
 
     /*
