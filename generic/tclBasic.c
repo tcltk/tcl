@@ -2757,10 +2757,13 @@ TclCreateObjCommandInNs(
 	TclInvalidateNsPath(nsPtr);
     }
     cmdPtr = (Command *)ckalloc(sizeof(Command));
+    cmdPtr->refCount = 1;
+
     Tcl_SetHashValue(hPtr, cmdPtr);
+	cmdPtr->refCount++;
+
     cmdPtr->hPtr = hPtr;
     cmdPtr->nsPtr = nsPtr;
-    cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
     cmdPtr->objProc = proc;

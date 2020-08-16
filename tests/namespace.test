@@ -535,6 +535,26 @@ test namespace-10.9 {Tcl_ForgetImport: Bug 560297} -setup {
     namespace delete origin link link2 my
 } -returnCodes error -match glob -result *
 
+
+test namespace-10.10 {
+	reference counting of target of imported command
+
+	should not produce a memory error in Tcl built with -DPURIFY
+	--enable-symbols
+} -body {
+    namespace eval test_ns_export {
+	namespace export cmd1
+	proc cmd1 args {}
+    }
+    namespace eval test_ns_import {
+	namespace import [namespace parent]::test_ns_export::cmd1
+    }
+    proc test_ns_export::cmd1 args {}
+    catch {namespace delete {*}[namespace children :: test_ns_export]}
+    return success
+} -result success
+
+
 test namespace-11.1 {TclGetOriginalCommand, check if not imported cmd} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -body {
