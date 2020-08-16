@@ -1365,7 +1365,7 @@ ReflectInput(
 
     Tcl_Preserve(rcPtr);
 
-    toReadObj = Tcl_NewIntObj(toRead);
+    TclNewIntObj(toReadObj, toRead);
     Tcl_IncrRefCount(toReadObj);
 
     if (InvokeTclMethod(rcPtr, METH_READ, toReadObj, NULL, &resObj)!=TCL_OK) {
@@ -3047,8 +3047,10 @@ ForwardProc(
     }
 
     case ForwardedInput: {
-	Tcl_Obj *toReadObj = Tcl_NewIntObj(paramPtr->input.toRead);
-        Tcl_IncrRefCount(toReadObj);
+	Tcl_Obj *toReadObj;
+
+	TclNewIntObj(toReadObj, paramPtr->input.toRead);
+	Tcl_IncrRefCount(toReadObj);
 
         Tcl_Preserve(rcPtr);
 	if (InvokeTclMethod(rcPtr, METH_READ, toReadObj, NULL, &resObj)!=TCL_OK){
