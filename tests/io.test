@@ -6918,7 +6918,7 @@ test io-50.6 {testing handler deletion vs reentrant calls} -constraints {testcha
     testservicemode 1
     update
     if {!$done} {
-	set $timer2 [after 200 lappend done timeout]
+	set timer2 [after 200 set done 1]
 	vwait done
 	after cancel $timer2
     }
