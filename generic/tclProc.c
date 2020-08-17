@@ -215,6 +215,7 @@ Tcl_ProcObjCmd(
      */
 
     procPtr->cmdPtr = (Command *) cmd;
+    procPtr->cmdPtr->refCount++;
 
     /*
      * TIP #280: Remember the line the procedure body is starting on. In a
@@ -470,6 +471,11 @@ TclCreateProc(
 	procPtr = (Proc *)ckalloc(sizeof(Proc));
 	procPtr->iPtr = iPtr;
 	procPtr->refCount = 1;
+	/* if cmdPtr isn't initialized to NULL here
+	 * tclOOMethod.c:PushMethodCallFrame stores and attempts to use an
+	 * invalid value in fdPtr->oldCmdPtr
+	 */
+	procPtr->cmdPtr = NULL;
 	procPtr->bodyPtr = bodyPtr;
 	procPtr->numArgs = 0;	/* Actual argument count is set below. */
 	procPtr->numCompiledLocals = 0;
@@ -2154,6 +2160,12 @@ TclProcCleanupProc(
 	ckfree(localPtr);
 	localPtr = nextPtr;
     }
+    /*
+     * TclOOMethod.c:clOOMakeProcMethod sets cmdPtr to NULL
+     */
+    if (procPtr->cmdPtr) {
+	TclCleanupCommandMacro(procPtr->cmdPtr);
+    }
     ckfree(procPtr);
 
     /*
@@ -2687,9 +2699,10 @@ TclNRApplyObjCmd(
     extraPtr->efi.fields[0].clientData = lambdaPtr;
     extraPtr->cmd.clientData = &extraPtr->efi;
 
+    procPtr->refCount++;
     result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
-	TclNRAddCallback(interp, ApplyNR2, extraPtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, ApplyNR2, extraPtr, procPtr, NULL, NULL);
 	result = TclNRInterpProcCore(interp, objv[1], 2, &MakeLambdaError);
     }
     return result;
@@ -2702,6 +2715,11 @@ ApplyNR2(
     int result)
 {
     ApplyExtraData *extraPtr = (ApplyExtraData *)data[0];
+    Proc *procPtr = (Proc *)data[1];
+    procPtr->cmdPtr = NULL;
+    if (procPtr->refCount-- <= 1) {
+	TclProcCleanupProc(procPtr);
+    }
 
     TclStackFree(interp, extraPtr);
     return result;
