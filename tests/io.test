@@ -6920,7 +6920,7 @@ test io-50.6 {testing handler deletion vs reentrant calls} -constraints {testcha
     if {!$done} {
 	set $timer2 [after 200 lappend done timeout]
 	vwait done
-	after cancel timer2
+	after cancel $timer2
     }
     set z
 } -cleanup {
