@@ -1038,7 +1038,7 @@ SerialOutputProc(
 	    infoPtr->writeBufLen = toWrite;
 	    infoPtr->writeBuf = ckalloc(toWrite);
 	}
-	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
+	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(infoPtr->evWritable);
 	TclPipeThreadSignal(&infoPtr->writeTI);
