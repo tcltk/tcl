@@ -277,7 +277,7 @@ InitializeHostName(
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     *lengthPtr = strlen(native);
     *valuePtr = ckalloc(*lengthPtr + 1);
-    memcpy(*valuePtr, native, (size_t)(*lengthPtr) + 1);
+    memcpy(*valuePtr, native, *lengthPtr + 1);
 }
 
 /*

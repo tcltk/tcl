@@ -2059,25 +2059,25 @@ ParseBoolean(
 	/*
 	 * Checking the 'y' is redundant, but makes the code clearer.
 	 */
-	if (strncmp(lowerCase, "yes", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "yes", length) == 0) {
 	    newBool = 1;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 'n':
-	if (strncmp(lowerCase, "no", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "no", length) == 0) {
 	    newBool = 0;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 't':
-	if (strncmp(lowerCase, "true", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "true", length) == 0) {
 	    newBool = 1;
 	    goto goodBoolean;
 	}
 	return TCL_ERROR;
     case 'f':
-	if (strncmp(lowerCase, "false", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "false", length) == 0) {
 	    newBool = 0;
 	    goto goodBoolean;
 	}
@@ -2086,10 +2086,10 @@ ParseBoolean(
 	if (length < 2) {
 	    return TCL_ERROR;
 	}
-	if (strncmp(lowerCase, "on", (size_t) length) == 0) {
+	if (strncmp(lowerCase, "on", length) == 0) {
 	    newBool = 1;
 	    goto goodBoolean;
-	} else if (strncmp(lowerCase, "off", (size_t) length) == 0) {
+	} else if (strncmp(lowerCase, "off", length) == 0) {
 	    newBool = 0;
 	    goto goodBoolean;
 	}
