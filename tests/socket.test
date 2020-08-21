@@ -199,6 +199,8 @@ if {[testConstraint doTestsWithRemoteServer]} {
     }
 }
 
+testConstraint notOSX [string compare $::tcl_platform(os) Darwin]
+
 test socket-1.1 {arg parsing for socket command} {socket} {
     list [catch {socket -server} msg] $msg
 } {1 {no argument given for -server option}}
@@ -816,7 +818,7 @@ test socket-4.2 {byte order problems, socket numbers, htons} {socket} {
 } ok
 
 test socket-5.1 {byte order problems, socket numbers, htons} \
-	{socket unix notRoot} {
+	{socket unix notRoot notOSX} {
     set x {couldn't open socket: not owner}
     if {![catch {socket -server dodo 0x1} msg]} {
         set x {htons problem, should be disallowed, are you running as SU?}
@@ -833,7 +835,7 @@ test socket-5.2 {byte order problems, socket numbers, htons} {socket} {
     set x
 } {couldn't open socket: port number too high}
 test socket-5.3 {byte order problems, socket numbers, htons} \
-	{socket unix notRoot} {
+	{socket unix notRoot notOSX} {
     set x {couldn't open socket: not owner}
     if {![catch {socket -server dodo 21} msg]} {
 	set x {htons problem, should be disallowed, are you running as SU?}
