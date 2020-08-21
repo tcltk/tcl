@@ -1978,16 +1978,8 @@ FileTruncateProc(
     FileState *fsPtr = (FileState *)instanceData;
     int result;
 
-#ifdef HAVE_TYPE_OFF64_T
-    /*
-     * We assume this goes with the type for now...
-     */
-
-    result = ftruncate64(fsPtr->fd, (off64_t) length);
-#else
     result = ftruncate(fsPtr->fd, (off_t) length);
-#endif
-    if (result) {
+   if (result) {
 	return errno;
     }
     return 0;

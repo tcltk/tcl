@@ -56,34 +56,16 @@
  *---------------------------------------------------------------------------
  */
 
-#ifdef HAVE_STRUCT_DIRENT64
-typedef struct dirent64		Tcl_DirEntry;
-#   define TclOSreaddir		readdir64
-#else
 typedef struct dirent		Tcl_DirEntry;
 #   define TclOSreaddir		readdir
-#endif
-#ifdef HAVE_DIR64
-typedef DIR64			TclDIR;
-#   define TclOSopendir		opendir64
-#   define TclOSrewinddir	rewinddir64
-#   define TclOSclosedir	closedir64
-#else
 typedef DIR			TclDIR;
 #   define TclOSopendir		opendir
 #   define TclOSrewinddir	rewinddir
 #   define TclOSclosedir	closedir
-#endif
 
-#ifdef HAVE_TYPE_OFF64_T
-typedef off64_t		Tcl_SeekOffset;
-#   define TclOSseek		lseek64
-#   define TclOSopen		open64
-#else
 typedef off_t		Tcl_SeekOffset;
 #   define TclOSseek		lseek
 #   define TclOSopen		open
-#endif
 
 #ifdef __CYGWIN__
 #ifdef __cplusplus
@@ -120,9 +102,6 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
-#   define TclOSstat(name, buf) stat64(name, (struct stat64 *)buf)
-#   define TclOSlstat(name,buf) lstat64(name, (struct stat64 *)buf)
 #else
 #   define TclOSstat(name, buf) stat(name, (struct stat *)buf)
 #   define TclOSlstat(name, buf) lstat(name, (struct stat *)buf)

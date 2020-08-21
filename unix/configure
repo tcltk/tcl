@@ -6850,97 +6850,50 @@ $as_echo "#define _ISOC99_SOURCE 1" >>confdefs.h
     fi
 
 
-    if ${tcl_cv_flag__largefile64_source+:} false; then :
+    if ${tcl_cv_flag__largefile_source+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <sys/stat.h>
+#include <stdio.h>
 int
 main ()
 {
-struct stat64 buf; int i = stat64("/", &buf);
+char *p = (char *)fseeko;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  tcl_cv_flag__largefile64_source=no
+  tcl_cv_flag__largefile_source=no
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#define _LARGEFILE64_SOURCE 1
-#include <sys/stat.h>
+#define _LARGEFILE_SOURCE 1
+#include <stdio.h>
 int
 main ()
 {
-struct stat64 buf; int i = stat64("/", &buf);
+char *p = (char *)fseeko;
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  tcl_cv_flag__largefile64_source=yes
+  tcl_cv_flag__largefile_source=yes
 else
-  tcl_cv_flag__largefile64_source=no
+  tcl_cv_flag__largefile_source=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 
-    if test "x${tcl_cv_flag__largefile64_source}" = "xyes" ; then
+    if test "x${tcl_cv_flag__largefile_source}" = "xyes" ; then
 
-$as_echo "#define _LARGEFILE64_SOURCE 1" >>confdefs.h
+$as_echo "#define _LARGEFILE_SOURCE 1" >>confdefs.h
 
-	tcl_flags="$tcl_flags _LARGEFILE64_SOURCE"
-    fi
-
-
-    if ${tcl_cv_flag__largefile_source64+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/stat.h>
-int
-main ()
-{
-char *p = (char *)open64;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  tcl_cv_flag__largefile_source64=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#define _LARGEFILE_SOURCE64 1
-#include <sys/stat.h>
-int
-main ()
-{
-char *p = (char *)open64;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  tcl_cv_flag__largefile_source64=yes
-else
-  tcl_cv_flag__largefile_source64=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-    if test "x${tcl_cv_flag__largefile_source64}" = "xyes" ; then
-
-$as_echo "#define _LARGEFILE_SOURCE64 1" >>confdefs.h
-
-	tcl_flags="$tcl_flags _LARGEFILE_SOURCE64"
+	tcl_flags="$tcl_flags _LARGEFILE_SOURCE"
     fi
 
     if test "x${tcl_flags}" = "x" ; then
@@ -7014,158 +6967,6 @@ _ACEOF
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${tcl_cv_type_64bit}" >&5
 $as_echo "${tcl_cv_type_64bit}" >&6; }
-
-	# Now check for auxiliary declarations
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for struct dirent64" >&5
-$as_echo_n "checking for struct dirent64... " >&6; }
-if ${tcl_cv_struct_dirent64+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/types.h>
-#include <dirent.h>
-int
-main ()
-{
-struct dirent64 p;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  tcl_cv_struct_dirent64=yes
-else
-  tcl_cv_struct_dirent64=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_struct_dirent64" >&5
-$as_echo "$tcl_cv_struct_dirent64" >&6; }
-	if test "x${tcl_cv_struct_dirent64}" = "xyes" ; then
-
-$as_echo "#define HAVE_STRUCT_DIRENT64 1" >>confdefs.h
-
-	fi
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIR64" >&5
-$as_echo_n "checking for DIR64... " >&6; }
-if ${tcl_cv_DIR64+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/types.h>
-#include <dirent.h>
-int
-main ()
-{
-struct dirent64 *p; DIR64 d = opendir64(".");
-            p = readdir64(d); rewinddir64(d); closedir64(d);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  tcl_cv_DIR64=yes
-else
-  tcl_cv_DIR64=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_DIR64" >&5
-$as_echo "$tcl_cv_DIR64" >&6; }
-	if test "x${tcl_cv_DIR64}" = "xyes" ; then
-
-$as_echo "#define HAVE_DIR64 1" >>confdefs.h
-
-	fi
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for struct stat64" >&5
-$as_echo_n "checking for struct stat64... " >&6; }
-if ${tcl_cv_struct_stat64+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/stat.h>
-int
-main ()
-{
-struct stat64 p;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  tcl_cv_struct_stat64=yes
-else
-  tcl_cv_struct_stat64=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_struct_stat64" >&5
-$as_echo "$tcl_cv_struct_stat64" >&6; }
-	if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
-
-$as_echo "#define HAVE_STRUCT_STAT64 1" >>confdefs.h
-
-	fi
-
-	for ac_func in open64 lseek64
-do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
-_ACEOF
-
-fi
-done
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for off64_t" >&5
-$as_echo_n "checking for off64_t... " >&6; }
-	if ${tcl_cv_type_off64_t+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/types.h>
-int
-main ()
-{
-off64_t offset;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  tcl_cv_type_off64_t=yes
-else
-  tcl_cv_type_off64_t=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-			if test "x${tcl_cv_type_off64_t}" = "xyes" && \
-	        test "x${ac_cv_func_lseek64}" = "xyes" && \
-	        test "x${ac_cv_func_open64}" = "xyes" ; then
-
-$as_echo "#define HAVE_TYPE_OFF64_T 1" >>confdefs.h
-
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	else
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	fi
     fi
 
 

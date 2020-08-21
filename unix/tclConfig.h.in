@@ -49,9 +49,6 @@
    to 0 if you don't. */
 #undef HAVE_DECL_PTHREAD_MUTEX_RECURSIVE
 
-/* Is 'DIR64' in <sys/types.h>? */
-#undef HAVE_DIR64
-
 /* Is eventfd(2) supported? */
 #undef HAVE_EVENTFD
 
@@ -154,9 +151,6 @@
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
 
-/* Define to 1 if you have the `lseek64' function. */
-#undef HAVE_LSEEK64
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -177,9 +171,6 @@
 
 /* Do we have <net/errno.h>? */
 #undef HAVE_NET_ERRNO_H
-
-/* Define to 1 if you have the `open64' function. */
-#undef HAVE_OPEN64
 
 /* Define to 1 if you have the `opendir' function. */
 #undef HAVE_OPENDIR
@@ -220,9 +211,6 @@
 /* Define to 1 if the system has the type `struct addrinfo'. */
 #undef HAVE_STRUCT_ADDRINFO
 
-/* Is 'struct dirent64' in <sys/types.h>? */
-#undef HAVE_STRUCT_DIRENT64
-
 /* Define to 1 if the system has the type `struct in6_addr'. */
 #undef HAVE_STRUCT_IN6_ADDR
 
@@ -231,9 +219,6 @@
 
 /* Define to 1 if the system has the type `struct sockaddr_storage'. */
 #undef HAVE_STRUCT_SOCKADDR_STORAGE
-
-/* Is 'struct stat64' in <sys/stat.h>? */
-#undef HAVE_STRUCT_STAT64
 
 /* Define to 1 if `st_blksize' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
@@ -285,9 +270,6 @@
 
 /* Should we use the tm_tzadj field of struct tm? */
 #undef HAVE_TM_TZADJ
-
-/* Is off64_t in <sys/types.h>? */
-#undef HAVE_TYPE_OFF64_T
 
 /* Do we have the uintptr_t type? */
 #undef HAVE_UINTPTR_T
@@ -484,11 +466,8 @@
 /* Add the _ISOC99_SOURCE flag when building */
 #undef _ISOC99_SOURCE
 
-/* Add the _LARGEFILE64_SOURCE flag when building */
-#undef _LARGEFILE64_SOURCE
-
-/* Add the _LARGEFILE_SOURCE64 flag when building */
-#undef _LARGEFILE_SOURCE64
+/* Add the _LARGEFILE_SOURCE flag when building */
+#undef _LARGEFILE_SOURCE
 
 /* # needed in sys/socket.h Should OS/390 do the right thing with sockets? */
 #undef _OE_SOCKETS
