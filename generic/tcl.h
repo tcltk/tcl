@@ -325,6 +325,8 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	struct {long long tv_sec;} st_mtim;
 	struct {long long tv_sec;} st_ctim;
     } Tcl_StatBuf;
+#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
+    typedef struct stat64 Tcl_StatBuf;
 #else
     typedef struct stat Tcl_StatBuf;
 #endif
