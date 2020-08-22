@@ -1,4 +1,3 @@
-sudo: false
 language: c
 addons:
   apt:
@@ -10,11 +9,7 @@ addons:
       - gcc-mingw-w64-i686
       - gcc-mingw-w64-x86-64
       - gcc-multilib
-  homebrew:
-    packages:
-      - libtommath
-    update: true
-matrix:
+jobs:
   include:
 # Testing on Linux with various compilers
     - name: "Linux/GCC/Shared"
