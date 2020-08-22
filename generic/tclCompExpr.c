@@ -164,6 +164,8 @@ enum Marks {
 				 * "=" is encountered.  */
 #define INVALID		5	/* A parse error. Used when any punctuation
 				 * appears that's not a supported operator. */
+#define COMMENT		6	/* Comment. Lasts to end of line or end of
+				 * expression, whichever comes first. */
 
 /* Leaf lexemes */
 
@@ -462,7 +464,7 @@ static const unsigned char Lexeme[] = {
 	INVALID		/* FS */,	INVALID		/* GS */,
 	INVALID		/* RS */,	INVALID		/* US */,
 	INVALID		/* SPACE */,	0		/* ! or != */,
-	QUOTED		/* " */,	INVALID		/* # */,
+	QUOTED		/* " */,	0		/* # */,
 	VARIABLE	/* $ */,	MOD		/* % */,
 	0		/* & or && */,	INVALID		/* ' */,
 	OPEN_PAREN	/* ( */,	CLOSE_PAREN	/* ) */,
@@ -708,6 +710,10 @@ ParseExpr(
 	    int b;
 
 	    switch (lexeme) {
+	    case COMMENT:
+		start += scanned;
+		numBytes -= scanned;
+		continue;
 	    case INVALID:
 		msg = Tcl_ObjPrintf("invalid character \"%.*s\"",
 			scanned, start);
@@ -1892,7 +1898,7 @@ ParseLexeme(
 				   storage, if non-NULL. */
 {
     const char *end;
-    int scanned;
+    int scanned, size;
     Tcl_UniChar ch = 0;
     Tcl_Obj *literal = NULL;
     unsigned char byte;
@@ -1907,6 +1913,16 @@ ParseLexeme(
 	return 1;
     }
     switch (byte) {
+    case '#':
+	/*
+	 * Scan forward over the comment contents.
+	 */
+	for (size = 0; byte != '\n' && byte != 0 && size < numBytes; size++) {
+	    byte = UCHAR(start[size]);
+	}
+	*lexemePtr = COMMENT;
+	return size - (byte == '\n');
+
     case '*':
 	if ((numBytes > 1) && (start[1] == '*')) {
 	    *lexemePtr = EXPON;
