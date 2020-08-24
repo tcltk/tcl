@@ -676,9 +676,10 @@ ParseExpr(
 	    OpNode *newPtr = NULL;
 
 	    do {
-	      if (size <= UINT_MAX/sizeof(OpNode)) {
-		newPtr = (OpNode *)attemptckrealloc(nodes, size * sizeof(OpNode));
-	      }
+		if (size <= UINT_MAX/sizeof(OpNode)) {
+		    newPtr = (OpNode *) attemptckrealloc(nodes,
+			    size * sizeof(OpNode));
+		}
 	    } while ((newPtr == NULL)
 		    && ((size -= (size - nodesUsed) / 2) > nodesUsed));
 	    if (newPtr == NULL) {
@@ -748,6 +749,32 @@ ParseExpr(
 		} else if (Tcl_GetBooleanFromObj(NULL,literal,&b) == TCL_OK) {
 		    lexeme = BOOLEAN;
 		} else {
+		    /*
+		     * Tricky case: see test expr-62.10
+		     */
+		    
+		    int scanned2 = scanned;
+		    do {
+			scanned2 += TclParseAllWhiteSpace(
+				start + scanned2, numBytes - scanned2);
+			scanned2 += ParseLexeme(
+				start + scanned2, numBytes - scanned2, &lexeme,
+				NULL);
+		    } while (lexeme == COMMENT);
+		    if (lexeme == OPEN_PAREN) {
+			/*
+			 * Actually a function call, but with obscuring
+			 * comments.  Skip to the start of the parentheses.
+			 * Note that we assume that open parentheses are one
+			 * byte long.
+			 */
+
+			lexeme = FUNCTION;
+			Tcl_ListObjAppendElement(NULL, funcList, literal);
+			scanned = scanned2 - 1;
+			break;
+		    }
+
 		    Tcl_DecrRefCount(literal);
 		    msg = Tcl_ObjPrintf("invalid bareword \"%.*s%s\"",
 			    (scanned < limit) ? scanned : limit - 3, start,
