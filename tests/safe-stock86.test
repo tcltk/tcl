@@ -2,8 +2,8 @@
 #
 # This file contains tests for safe Tcl that were previously in the file
 # safe.test, and use files and packages of stock Tcl 8.6 to perform the tests.
-# These files may be changed or disappear in future revisions of Tcl, for
-# example package http 1.0 will be removed from Tcl 8.7.
+# These files may be changed or disappear in future revisions of Tcl,
+# for example package http 1.0 will be removed from Tcl 8.7.
 #
 # The tests are replaced in safe.tcl with tests that use files provided in the
 # tests directory.  Test numbering is for comparison with similar tests in
