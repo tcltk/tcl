@@ -7418,6 +7418,17 @@ test expr-62.4 {TIP 582: comments don't hide line breaks} -setup {
 } -cleanup {
     rename getline ""
 } -result 5
+test expr-62.5 {TIP 582: comments don't splice tokens} {
+    set a False
+    expr {$a#don't splice
+ne#don't splice
+false}
+} 1
+test expr-62.6 {TIP 582: comments don't splice tokens} {
+    expr {0x2#don't splice
+ne#don't splice
+2}
+} 1
 
 # cleanup
 unset -nocomplain a
