@@ -7429,6 +7429,22 @@ test expr-62.6 {TIP 582: comments don't splice tokens} {
 ne#don't splice
 2}
 } 1
+test expr-62.7 {TIP 582: comments can go inside function calls} {
+    expr {max(1,# comment
+	      2)}
+} 2
+test expr-62.8 {TIP 582: comments can go inside function calls} {
+    expr {max(1# comment
+	      ,2)}
+} 2
+test expr-62.9 {TIP 582: comments can go inside function calls} {
+    expr {max(# comment
+	      1,2)}
+} 2
+test expr-62.10 {TIP 582: comments can go inside function calls} {
+    expr {max# comment
+	     (1,2)}
+} 2
 
 # cleanup
 unset -nocomplain a
