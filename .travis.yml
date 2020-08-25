@@ -75,7 +75,7 @@ jobs:
         - BUILD_DIR=unix
     - name: "Linux/GCC 6/Shared"
       os: linux
-      dist: focal
+      dist: bionic
       compiler: gcc-6
       addons:
         apt:
@@ -87,7 +87,7 @@ jobs:
         - BUILD_DIR=unix
     - name: "Linux/GCC 5/Shared"
       os: linux
-      dist: focal
+      dist: bionic
       compiler: gcc-5
       addons:
         apt:
