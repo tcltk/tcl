@@ -6379,12 +6379,16 @@ test chan-io-50.1 {testing handler deletion} -setup {
     set f [open $path(test1) w]
     chan close $f
     set f [open $path(test1) r]
+    variable z not_called
+    set timer [after 50 lappend z timeout]
+    testservicemode 0
     testchannelevent $f add readable [namespace code {
 	variable z called
 	testchannelevent $f delete 0
     }]
-    variable z not_called
-    update
+    testservicemode 1
+    vwait z
+    after cancel $timer
     set z
 } -cleanup {
     chan close $f
