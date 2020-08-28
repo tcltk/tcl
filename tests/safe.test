@@ -1368,7 +1368,7 @@ test safe-10.1 {testing statics loading} -constraints TcltestPackage -setup {
     interp eval $i {load {} Safepkg1}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure}
+} -result {load of binary library for package Safepkg1 failed: can't use package in a safe interpreter: no Safepkg1_SafeInit procedure}
 test safe-10.1.1 {testing statics loading} -constraints TcltestPackage -setup {
     set i [safe::interpCreate]
 } -body {
@@ -1377,7 +1377,7 @@ test safe-10.1.1 {testing statics loading} -constraints TcltestPackage -setup {
 } -returnCodes ok -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
-} -result {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure
+} -result {load of binary library for package Safepkg1 failed: can't use package in a safe interpreter: no Safepkg1_SafeInit procedure
     invoked from within
 "load {} Safepkg1"
     invoked from within
@@ -1400,7 +1400,7 @@ test safe-10.4 {testing nested statics loading / -nestedloadok} -constraints Tcl
     interp eval $i {interp create x; load {} Safepkg1 x}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure}
+} -result {load of binary library for package Safepkg1 failed: can't use package in a safe interpreter: no Safepkg1_SafeInit procedure}
 test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints TcltestPackage -body {
     set i [safe::interpCreate -nestedloadok]
     catch {interp eval $i {interp create x; load {} Safepkg1 x}} m o
@@ -1408,7 +1408,7 @@ test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints T
 } -returnCodes ok -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
-} -result {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure
+} -result {load of binary library for package Safepkg1 failed: can't use package in a safe interpreter: no Safepkg1_SafeInit procedure
     invoked from within
 "load {} Safepkg1 x"
     invoked from within
