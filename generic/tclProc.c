@@ -2410,6 +2410,12 @@ FreeLambdaInternalRep(
     assert(procPtr != NULL);
 
     if (procPtr->refCount-- <= 1) {
+	/* 
+	 * procPtr->cmdPtr was not allocated but instead synthesized by
+	 * TclNRApplyObjCmd.  Tell TclProcCleanupProc() not to send it through
+	 * the standard cleanup routine.
+	*/
+	procPtr->cmdPtr = NULL;
 	TclProcCleanupProc(procPtr);
     }
     TclDecrRefCount(nsObjPtr);
