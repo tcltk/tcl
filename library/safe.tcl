@@ -1170,7 +1170,7 @@ proc ::safe::AliasLoad {slave file args} {
 	return [::interp invokehidden $slave load $file $package $target]
     } on error msg {
 	# Some packages return no error message.
-	set msg0 "Load of binary library for package $package failed"
+	set msg0 "load of binary library for package $package failed"
 	if {$msg eq {}} {
 	    set msg $msg0
 	} else {
