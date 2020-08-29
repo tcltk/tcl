@@ -3664,43 +3664,6 @@ test interp-38.8 {interp debug basic setup} -body {
 } -returnCodes {
     error
 } -result {wrong # args: should be "interp debug path ?-frame ?bool??"}
-
-test interp-39.0 {
-	no segmentation fault when a command is deleted
-} -body {
-	variable res {}
-
-	proc p1 args {
-		return success
-	}
-	namespace eval ns1 {
-		namespace export *
-	}
-	interp alias {} [namespace current]::ns1::p2 {} [namespace current]::p1
-	namespace eval ns2 {
-		namespace import [namespace parent]::ns1::p2
-	}
-	proc ondelete {oldname newname op} {
-		variable res
-		namespace delete ns1
-		catch {
-			ns1::p2
-		}  res
-	}
-
-	trace add command ns2::p2 delete [namespace which ondelete]
-	rename ns2::p2 {}
-	rename p1 {}
-	if {
-		[string match {*invalid command name*ns1::p2*} $res]
-	} {
-		return 1
-	} else {
-		return $res
-	}
-} -cleanup {
-} -result 1
-
 
 # cleanup
 unset -nocomplain hidden_cmds

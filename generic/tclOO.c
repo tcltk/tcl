@@ -723,7 +723,6 @@ AllocObject(
     }
     oPtr->command = TclCreateObjCommandInNs(interp, nameStr,
 	(Tcl_Namespace *)nsPtr, TclOOPublicObjectCmd, oPtr, NULL);
-    ((Command *)oPtr->command)->refCount++;
 
     /*
      * Add the NRE command and trace directly. While this breaks a number of
@@ -741,11 +740,9 @@ AllocObject(
 
     oPtr->myCommand = TclNRCreateCommandInNs(interp, "my", oPtr->namespacePtr,
 	    TclOOPrivateObjectCmd, PrivateNRObjectCmd, oPtr, MyDeleted);
-    ((Command *)oPtr->myCommand)->refCount++;
     oPtr->myclassCommand = TclNRCreateCommandInNs(interp, "myclass",
 	    oPtr->namespacePtr, TclOOMyClassObjCmd, MyClassNRObjCmd, oPtr,
             MyClassDeleted);
-    ((Command *)oPtr->myclassCommand)->refCount++;
     return oPtr;
 }
 
@@ -789,7 +786,7 @@ MyDeleted(
 				 * squelched. */
 {
     Object *oPtr = (Object *)clientData;
-    TclCleanupCommandMacro((Command *)oPtr->myCommand);
+
     oPtr->myCommand = NULL;
 }
 
@@ -798,7 +795,6 @@ MyClassDeleted(
     ClientData clientData)
 {
     Object *oPtr = (Object *)clientData;
-    TclCleanupCommandMacro((Command *)oPtr->myclassCommand);
     oPtr->myclassCommand = NULL;
 }
 
@@ -843,7 +839,6 @@ ObjectRenamedTrace(
     if (!Destructing(oPtr)) {
 	Tcl_DeleteNamespace(oPtr->namespacePtr);
     }
-    TclCleanupCommandMacro((Command *)oPtr->command);
     oPtr->command = NULL;
     TclOODecrRefCount(oPtr);
     return;

@@ -965,10 +965,9 @@ Tcl_CreateInterp(void)
 		cmdInfoPtr->name, &isNew);
 	if (isNew) {
 	    cmdPtr = (Command *)ckalloc(sizeof(Command));
-	    cmdPtr->refCount = 1;
 	    cmdPtr->hPtr = hPtr;
-	    cmdPtr->refCount++;
 	    cmdPtr->nsPtr = iPtr->globalNsPtr;
+	    cmdPtr->refCount = 1;
 	    cmdPtr->cmdEpoch = 0;
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
 	    cmdPtr->proc = TclInvokeObjectCommand;
@@ -2513,11 +2512,10 @@ Tcl_CreateCommand(
 	TclInvalidateNsPath(nsPtr);
     }
     cmdPtr = (Command *)ckalloc(sizeof(Command));
-    cmdPtr->refCount = 1;
     Tcl_SetHashValue(hPtr, cmdPtr);
     cmdPtr->hPtr = hPtr;
-    cmdPtr->refCount++;
     cmdPtr->nsPtr = nsPtr;
+    cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
     cmdPtr->objProc = TclInvokeStringCommand;
@@ -2759,13 +2757,10 @@ TclCreateObjCommandInNs(
 	TclInvalidateNsPath(nsPtr);
     }
     cmdPtr = (Command *)ckalloc(sizeof(Command));
-    cmdPtr->refCount = 1;
-
     Tcl_SetHashValue(hPtr, cmdPtr);
-    cmdPtr->refCount++;
-
     cmdPtr->hPtr = hPtr;
     cmdPtr->nsPtr = nsPtr;
+    cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
     cmdPtr->objProc = proc;
@@ -2790,11 +2785,6 @@ TclCreateObjCommandInNs(
 	    Command *refCmdPtr = oldRefPtr->importedCmdPtr;
 
 	    dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
-	    /* to be paranoid, incrment cmdPtr->refcount before decremnting
-	     * dataPtr->realCmdPtr->refCount
-	     */
-	    cmdPtr->refCount++;
-	    TclCleanupCommandMacro(dataPtr->realCmdPtr);
 	    dataPtr->realCmdPtr = cmdPtr;
 	    oldRefPtr = oldRefPtr->nextPtr;
 	}
@@ -3485,7 +3475,6 @@ Tcl_DeleteCommandFromToken(
 
 	if (cmdPtr->hPtr != NULL) {
 	    Tcl_DeleteHashEntry(cmdPtr->hPtr);
-	    TclCleanupCommandMacro(cmdPtr);
 	    cmdPtr->hPtr = NULL;
 	}
 
@@ -3599,7 +3588,6 @@ Tcl_DeleteCommandFromToken(
 
     if (cmdPtr->hPtr != NULL) {
 	Tcl_DeleteHashEntry(cmdPtr->hPtr);
-	TclCleanupCommandMacro(cmdPtr);
 	cmdPtr->hPtr = NULL;
 
 	/*
