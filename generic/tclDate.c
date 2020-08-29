@@ -2501,12 +2501,12 @@ TclDateerror(
     Tcl_AppendToObj(infoPtr->messages, infoPtr->separatrix, -1);
     Tcl_AppendToObj(infoPtr->messages, s, -1);
     Tcl_AppendToObj(infoPtr->messages, " (characters ", -1);
-    t = Tcl_NewIntObj(location->first_column);
+    TclNewIntObj(t, location->first_column);
     Tcl_IncrRefCount(t);
     Tcl_AppendObjToObj(infoPtr->messages, t);
     Tcl_DecrRefCount(t);
     Tcl_AppendToObj(infoPtr->messages, "-", -1);
-    t = Tcl_NewIntObj(location->last_column);
+    TclNewIntObj(t, location->last_column);
     Tcl_IncrRefCount(t);
     Tcl_AppendObjToObj(infoPtr->messages, t);
     Tcl_DecrRefCount(t);

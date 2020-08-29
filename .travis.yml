@@ -1,4 +1,3 @@
-sudo: false
 language: c
 addons:
   apt:
@@ -10,50 +9,46 @@ addons:
       - gcc-mingw-w64-i686
       - gcc-mingw-w64-x86-64
       - gcc-multilib
-  homebrew:
-    packages:
-      - libtommath
-    update: true
-matrix:
+jobs:
   include:
 # Testing on Linux with various compilers
     - name: "Linux/GCC/Shared"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
     - name: "Linux/GCC/Shared: UTF_MAX=4"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_UTF_MAX=4
     - name: "Linux/GCC/Shared: NO_DEPRECATED"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
         - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
     - name: "Linux/GCC/Static"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - CFGOPT="--disable-shared"
         - BUILD_DIR=unix
     - name: "Linux/GCC/Debug"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
     - name: "Linux/GCC/Mem-Debug"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
@@ -61,7 +56,7 @@ matrix:
 # C++ build.
     - name: "Linux/G++/Shared"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: g++
       env:
         - BUILD_DIR=unix
@@ -69,7 +64,7 @@ matrix:
 # Older versions of GCC...
     - name: "Linux/GCC 7/Shared"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc-7
       addons:
         apt:
@@ -106,7 +101,7 @@ matrix:
 # Clang
     - name: "Linux/Clang/Shared"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: clang
       env:
         - BUILD_DIR=unix
@@ -119,21 +114,21 @@ matrix:
         - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
     - name: "Linux/Clang/Static"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: clang
       env:
         - CFGOPT="--disable-shared"
         - BUILD_DIR=unix
     - name: "Linux/Clang/Debug"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: clang
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
     - name: "Linux/Clang/Mem-Debug"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: clang
       env:
         - BUILD_DIR=unix
@@ -154,6 +149,17 @@ matrix:
       osx_image: xcode11.5
       env:
         - BUILD_DIR=unix
+    - name: "macOS/Clang/Xcode 11.5/Shared/libtommath"
+      os: osx
+      osx_image: xcode11.5
+      env:
+        - BUILD_DIR=macosx
+      install: []
+      script: *mactest
+      addons:
+        homebrew:
+          packages:
+            - libtommath
     - name: "macOS/Clang++/Xcode 11.5/Shared"
       os: osx
       osx_image: xcode11.5
@@ -177,10 +183,6 @@ matrix:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-      addons:
-        homebrew:
-          packages:
-            - libtommath
     - name: "macOS/Clang/Xcode 9/Shared"
       os: osx
       osx_image: xcode9.2
@@ -188,10 +190,6 @@ matrix:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-      addons:
-        homebrew:
-          packages:
-            - libtommath
     - name: "macOS/Clang/Xcode 8/Shared"
       os: osx
       osx_image: xcode8.3
@@ -199,15 +197,11 @@ matrix:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-      addons:
-        homebrew:
-          packages:
-            - libtommath
 # Test with mingw-w64 cross-compile
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows/GCC/Shared/no test"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: x86_64-w64-mingw32-gcc
       env:
         - BUILD_DIR=win
@@ -221,7 +215,7 @@ matrix:
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-32/GCC/Shared/no test"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: i686-w64-mingw32-gcc
       env:
         - BUILD_DIR=win
@@ -449,7 +443,7 @@ matrix:
 # "make dist" only
     - name: "Linux: make dist"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix

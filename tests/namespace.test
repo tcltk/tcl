@@ -535,6 +535,51 @@ test namespace-10.9 {Tcl_ForgetImport: Bug 560297} -setup {
     namespace delete origin link link2 my
 } -returnCodes error -match glob -result *
 
+
+test namespace-10.10 {
+	reference counting of target of imported command
+
+	should not produce a memory error in Tcl built with -DPURIFY
+	--enable-symbols
+} -body {
+    namespace eval test_ns_export {
+	namespace export cmd1
+	proc cmd1 args {}
+    }
+    namespace eval test_ns_import {
+	namespace import [namespace parent]::test_ns_export::cmd1
+    }
+    proc test_ns_export::cmd1 args {}
+    namespace delete test_ns_export
+    return success
+} -result success
+
+
+test namespace-10.11 {
+    when a routine is replaced, the new routine becomes the target for any
+    imports of the old routine
+} -body {
+    namespace eval ns1 {
+	namespace export * 
+
+	proc p1 {} {
+	    return failure
+	}
+    }
+
+    namespace eval ns2 {
+	namespace import [namespace parent]::ns1::p1
+    }
+    proc ns1::p1 {} {
+	return success
+    }
+    set res [ns2::p1]
+    rename ns1::p1 {}
+    return $res
+} -result success
+
+
+
 test namespace-11.1 {TclGetOriginalCommand, check if not imported cmd} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
 } -body {
@@ -3336,6 +3381,49 @@ test namespace-56.5 {Bug 8b9854c3d8} -setup {
 } -cleanup {
     namespace delete namespace-56.5
 } -result 1
+
+
+
+test namespace-57.0 {
+    an imported alias should be usable in the deletion trace for the alias
+
+    see 29e8848eb976
+} -body {
+    variable res {}
+    namespace eval ns2 {
+	namespace export *
+	proc p1 {oldname newname op} {
+	    return success
+	}
+
+	interp alias {} [namespace current]::p2 {} [namespace which p1]
+    }
+
+
+    namespace eval ns3 {
+	namespace import ::ns2::p2
+    }
+
+
+    set ondelete [list apply [list {oldname newname op} {
+	variable res
+	catch {
+		ns3::p2 $oldname $newname $op
+	} cres
+	lappend res $cres
+    } [namespace current]]]
+
+
+    trace add command ::ns2::p2 delete $ondelete
+    rename ns2::p2 {}
+    return $res
+} -cleanup {
+    unset res 
+    namespace delete ns2
+    namespace delete ns3
+} -result success
+
+
 
 
 # cleanup

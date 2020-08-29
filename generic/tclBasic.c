@@ -965,9 +965,10 @@ Tcl_CreateInterp(void)
 		cmdInfoPtr->name, &isNew);
 	if (isNew) {
 	    cmdPtr = (Command *)ckalloc(sizeof(Command));
-	    cmdPtr->hPtr = hPtr;
-	    cmdPtr->nsPtr = iPtr->globalNsPtr;
 	    cmdPtr->refCount = 1;
+	    cmdPtr->hPtr = hPtr;
+	    cmdPtr->refCount++;
+	    cmdPtr->nsPtr = iPtr->globalNsPtr;
 	    cmdPtr->cmdEpoch = 0;
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
 	    cmdPtr->proc = TclInvokeObjectCommand;
@@ -2512,10 +2513,11 @@ Tcl_CreateCommand(
 	TclInvalidateNsPath(nsPtr);
     }
     cmdPtr = (Command *)ckalloc(sizeof(Command));
+    cmdPtr->refCount = 1;
     Tcl_SetHashValue(hPtr, cmdPtr);
     cmdPtr->hPtr = hPtr;
+    cmdPtr->refCount++;
     cmdPtr->nsPtr = nsPtr;
-    cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
     cmdPtr->objProc = TclInvokeStringCommand;
@@ -2757,10 +2759,13 @@ TclCreateObjCommandInNs(
 	TclInvalidateNsPath(nsPtr);
     }
     cmdPtr = (Command *)ckalloc(sizeof(Command));
+    cmdPtr->refCount = 1;
+
     Tcl_SetHashValue(hPtr, cmdPtr);
+    cmdPtr->refCount++;
+
     cmdPtr->hPtr = hPtr;
     cmdPtr->nsPtr = nsPtr;
-    cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
     cmdPtr->objProc = proc;
@@ -2785,6 +2790,11 @@ TclCreateObjCommandInNs(
 	    Command *refCmdPtr = oldRefPtr->importedCmdPtr;
 
 	    dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
+	    /* to be paranoid, incrment cmdPtr->refcount before decremnting
+	     * dataPtr->realCmdPtr->refCount
+	     */
+	    cmdPtr->refCount++;
+	    TclCleanupCommandMacro(dataPtr->realCmdPtr);
 	    dataPtr->realCmdPtr = cmdPtr;
 	    oldRefPtr = oldRefPtr->nextPtr;
 	}
@@ -3475,6 +3485,7 @@ Tcl_DeleteCommandFromToken(
 
 	if (cmdPtr->hPtr != NULL) {
 	    Tcl_DeleteHashEntry(cmdPtr->hPtr);
+	    TclCleanupCommandMacro(cmdPtr);
 	    cmdPtr->hPtr = NULL;
 	}
 
@@ -3547,6 +3558,19 @@ Tcl_DeleteCommandFromToken(
 	iPtr->compileEpoch++;
     }
 
+    if (!(cmdPtr->flags & CMD_REDEF_IN_PROGRESS)) {
+	/*
+	 * Delete any imports of this routine before deleting this routine itself.
+	 * See issue 688fcc7082fa.
+	 */
+	for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
+		refPtr = nextRefPtr) {
+	    nextRefPtr = refPtr->nextPtr;
+	    importCmd = (Tcl_Command) refPtr->importedCmdPtr;
+	    Tcl_DeleteCommandFromToken(interp, importCmd);
+	}
+    }
+
     if (cmdPtr->deleteProc != NULL) {
 	/*
 	 * Delete the command's client data. If this was an imported command
@@ -3567,20 +3591,6 @@ Tcl_DeleteCommandFromToken(
     }
 
     /*
-     * If this command was imported into other namespaces, then imported
-     * commands were created that refer back to this command. Delete these
-     * imported commands now.
-     */
-    if (!(cmdPtr->flags & CMD_REDEF_IN_PROGRESS)) {
-	for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
-		refPtr = nextRefPtr) {
-	    nextRefPtr = refPtr->nextPtr;
-	    importCmd = (Tcl_Command) refPtr->importedCmdPtr;
-	    Tcl_DeleteCommandFromToken(interp, importCmd);
-	}
-    }
-
-    /*
      * Don't use hPtr to delete the hash entry here, because it's possible
      * that the deletion callback renamed the command. Instead, use
      * cmdPtr->hptr, and make sure that no-one else has already deleted the
@@ -3589,6 +3599,7 @@ Tcl_DeleteCommandFromToken(
 
     if (cmdPtr->hPtr != NULL) {
 	Tcl_DeleteHashEntry(cmdPtr->hPtr);
+	TclCleanupCommandMacro(cmdPtr);
 	cmdPtr->hPtr = NULL;
 
 	/*
@@ -3617,6 +3628,7 @@ Tcl_DeleteCommandFromToken(
      * TclNRExecuteByteCode looks up the command in the command hashtable).
      */
 
+    cmdPtr->flags |= CMD_DEAD;
     TclCleanupCommandMacro(cmdPtr);
     return 0;
 }
@@ -4686,7 +4698,7 @@ EvalObjvCore(
          * Caller gave it to us.
          */
 
-	if (!(preCmdPtr->flags & CMD_IS_DELETED)) {
+	if (!(preCmdPtr->flags & CMD_DEAD)) {
 	    /*
              * So long as it exists, use it.
              */
