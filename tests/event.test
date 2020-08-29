@@ -23,16 +23,18 @@ testConstraint testfilehandler [llength [info commands testfilehandler]]
 testConstraint testexithandler [llength [info commands testexithandler]]
 testConstraint testfilewait [llength [info commands testfilewait]]
 testConstraint exec [llength [info commands exec]]
-
+testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
+
 test event-1.1 {Tcl_CreateFileHandler, reading} -setup {
     testfilehandler close
     set result ""
-} -constraints {testfilehandler nonPortable} -body {
+} -constraints {testfilehandler notOSX} -body {
     testfilehandler create 0 readable off
     testfilehandler clear 0
     testfilehandler oneevent
     lappend result [testfilehandler counts 0]
     testfilehandler fillpartial 0
+    update idletasks
     testfilehandler oneevent
     lappend result [testfilehandler counts 0]
     testfilehandler oneevent
