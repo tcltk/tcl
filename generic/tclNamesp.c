@@ -12,7 +12,6 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2002-2005 Donal K. Fellows.
  * Copyright (c) 2006 Neil Madden.
- * Copyright (c) 2018-2020 Nathan Coulter
  * Contributions from Don Porter, NIST, 2007. (not subject to US copyright)
  *
  * Originally implemented by
@@ -960,7 +959,7 @@ Tcl_DeleteNamespace(
     /*
      * If the namespace has associated ensemble commands, delete them first.
      * This leaves the actual contents of the namespace alone (unless they are
-     * linked ensemble commands, of course). This code is
+     * linked ensemble commands, of course). Note that this code is actually
      * reentrant so command delete traces won't purturb things badly.
      */
 
@@ -1771,9 +1770,7 @@ DoImport(
 		TclInvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
 		DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
-	cmdPtr->refCount++;
 	dataPtr->selfPtr = (Command *) importedCmd;
-	dataPtr->selfPtr->refCount++;
 	dataPtr->selfPtr->compileProc = cmdPtr->compileProc;
 	Tcl_DStringFree(&ds);
 
@@ -1784,7 +1781,6 @@ DoImport(
 
 	refPtr = (ImportRef *)ckalloc(sizeof(ImportRef));
 	refPtr->importedCmdPtr = (Command *) importedCmd;
-	refPtr->importedCmdPtr->refCount++;
 	refPtr->nextPtr = cmdPtr->importRefPtr;
 	cmdPtr->importRefPtr = refPtr;
     } else {
@@ -1952,11 +1948,17 @@ Tcl_ForgetImport(
  *
  * TclGetOriginalCommand --
  *
- *	Returns the routine that an imported routine references, traversing any
- *	intermediate imported routines to find the origin routine. Returns NULL
- *	if the given routine is not imported.
+ *	An imported command is created in an namespace when a "real" command
+ *	is imported from another namespace. If the specified command is an
+ *	imported command, this function returns the original command it refers
+ *	to.
  *
  * Results:
+ *	If the command was imported into a sequence of namespaces a, b,...,n
+ *	where each successive namespace just imports the command from the
+ *	previous namespace, this function returns the Tcl_Command token in the
+ *	first namespace, a. Otherwise, if the specified command is not an
+ *	imported command, the function returns NULL.
  *
  * Side effects:
  *	None.
@@ -1966,7 +1968,8 @@ Tcl_ForgetImport(
 
 Tcl_Command
 TclGetOriginalCommand(
-    Tcl_Command command)	/* A routine to find the original routine for */
+    Tcl_Command command)	/* The imported command for which the original
+				 * command should be returned. */
 {
     Command *cmdPtr = (Command *) command;
     ImportedCmdData *dataPtr;
@@ -2073,10 +2076,7 @@ DeleteImportedCmd(
 	    } else {
 		prevPtr->nextPtr = refPtr->nextPtr;
 	    }
-	    TclCleanupCommandMacro(refPtr->importedCmdPtr);
 	    ckfree(refPtr);
-	    TclCleanupCommandMacro(selfPtr);
-	    TclCleanupCommandMacro(realCmdPtr);
 	    ckfree(dataPtr);
 	    return;
 	}
