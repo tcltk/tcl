@@ -291,6 +291,9 @@ proc getPort sock {
     lindex [fconfigure $sock -sockname] 2
 }
 
+# Some tests in this file are known to hang *occasionally* on OSX; stop the
+# worst offenders.
+testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
 
 # ----------------------------------------------------------------------
 

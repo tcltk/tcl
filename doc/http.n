@@ -259,6 +259,10 @@ proc httpHandlerCallback {socket token} {
     return $nbytes
 }
 .CE
+.PP
+The \fBhttp::geturl\fR code for the \fB-handler\fR option is not compatible with either compression or chunked transfer-encoding.  If \fB-handler\fR is specified, then to work around these issues \fBhttp::geturl\fR will reduce the HTTP protocol to 1.0, and override the \fB-zip\fR option (i.e. it will not send the header "\fBAccept-Encoding: gzip,deflate,compress\fR").
+.PP
+If options \fB-handler\fR and \fB-channel\fR are used together, the handler is responsible for copying the data from the HTTP socket to the specified channel.  The name of the channel is available to the handler as element \fB-channel\fR of the token array.
 .RE
 .TP
 \fB\-headers\fR \fIkeyvaluelist\fR

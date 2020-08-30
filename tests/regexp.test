@@ -192,6 +192,17 @@ test regexp-3.7 {getting substrings back from regexp} {
     set foo 1; set f2 1; set f3 1; set f4 1
     list [regexp -indices (a)(b)?(c) xacy foo f2 f3 f4] $foo $f2 $f3 $f4
 } {1 {1 2} {1 1} {-1 -1} {2 2}}
+test regexp-3.8a {-indices by multi-byte utf-8} {
+    regexp -inline -indices {(\w+)-(\w+)} \
+	"gr\u00FC\u00DF-\u043F\u0440\u0438\u0432\u0435\u0442"
+} {{0 10} {0 3} {5 10}}
+test regexp-3.8b {-indices by multi-byte utf-8, from -start position} {
+    list\
+	[regexp -inline -indices -start 3 {(\w+)-(\w+)} \
+	"gr\u00FC\u00DF-\u043F\u0440\u0438\u0432\u0435\u0442"] \
+	[regexp -inline -indices -start 4 {(\w+)-(\w+)} \
+	"gr\u00FC\u00DF-\u043F\u0440\u0438\u0432\u0435\u0442"]
+} {{{3 10} {3 3} {5 10}} {}}
 
 test regexp-4.1 {-nocase option to regexp} {
     regexp -nocase foo abcFOo
