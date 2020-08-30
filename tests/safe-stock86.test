@@ -78,7 +78,8 @@ test safe-stock86-7.2 {tests specific path and interpFind/AddToAccessPath, uses 
 	    $mappA -- [safe::interpDelete $i]
 } -match glob -result {{$p(:0:)} {$p(:*:)} -- 1 {can't find package http 1} --\
         {TCLLIB */dummy/unixlike/test/path} -- {}}
-test safe-stock86-7.4 {tests specific path and positive search, uses http1.0} -body {
+# Disable because http 1 is no longer present in the Tcl 8.7 distribution.
+test safe-stock86-7.4 {tests specific path and positive search, uses http1.0} -constraints nonPortable -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
