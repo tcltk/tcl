@@ -4,16 +4,15 @@
 # using safe interpreters. Sourcing this file into tcl runs the tests and
 # generates output for errors. No output means no errors were found.
 #
-# The package http 1.0 is convenient for testing package loading, but will soon
-# be removed.
-# - Tests that use http are replaced here with tests that use example packages
+# The defunct package http 1.0 was convenient for testing package loading.
+# - Tests that used http are replaced here with tests that use example packages
 #   provided in subdirectory auto0 of the tests directory, which are independent
 #   of any changes made to the packages provided with Tcl itself.
 #   - These are tests 7.1 7.2 7.4 9.11 9.13
 #   - Tests 5.* test the example packages themselves before they
 #     are used to test Safe Base interpreters.
-# - Alternative tests using stock packages of Tcl 8.6 are in file
-#   safe-stock86.test.
+# - Alternative tests using stock packages of Tcl 8.7 are in file
+#   safe-stock87.test.
 #
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
@@ -172,7 +171,7 @@ test safe-4.6 {safe::interpDelete, indirectly} -setup {
     a eval exit
 } -result ""
 
-# The old test "safe-5.1" has been moved to "safe-stock86-9.8".
+# The old test "safe-5.1" has been moved to "safe-stock87-9.8".
 # A replacement test using example files is "safe-9.8".
 # Tests 5.* test the example files before using them to test safe interpreters.
 
