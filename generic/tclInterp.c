@@ -611,7 +611,7 @@ NRInterpCmd(
     int index;
     static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"cancel",
-	"create",	"debug",	"delete",
+	"children",	"create",	"debug",	"delete",
 	"eval",		"exists",	"expose",
 	"hide",		"hidden",	"issafe",
 	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
@@ -620,7 +620,7 @@ NRInterpCmd(
     };
     enum option {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CANCEL,
-	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
+	OPT_CHILDREN,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,
 	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,
 	OPT_INVOKEHID,	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,
@@ -1008,6 +1008,7 @@ NRInterpCmd(
 	    return TCL_ERROR;
 	}
 	return SlaveRecursionLimit(interp, slaveInterp, objc - 3, objv + 3);
+    case OPT_CHILDREN:
     case OPT_SLAVES: {
 	InterpInfo *iiPtr;
 	Tcl_Obj *resultPtr;
@@ -1981,7 +1982,7 @@ AliasObjCmdDeleteProc(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CreateSlave --
+ * Tcl_CreateChild --
  *
  *	Creates a slave interpreter. The slavePath argument denotes the name
  *	of the new slave relative to the current interpreter; the slave is a
@@ -2002,7 +2003,7 @@ AliasObjCmdDeleteProc(
  */
 
 Tcl_Interp *
-Tcl_CreateSlave(
+Tcl_CreateChild(
     Tcl_Interp *interp,		/* Interpreter to start search at. */
     const char *slavePath,	/* Name of slave to create. */
     int isSafe)			/* Should new slave be "safe" ? */
@@ -2020,7 +2021,7 @@ Tcl_CreateSlave(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetSlave --
+ * Tcl_GetChild --
  *
  *	Finds a slave interpreter by its path name.
  *
@@ -2034,7 +2035,7 @@ Tcl_CreateSlave(
  */
 
 Tcl_Interp *
-Tcl_GetSlave(
+Tcl_GetChild(
     Tcl_Interp *interp,		/* Interpreter to start search from. */
     const char *slavePath)	/* Path of slave to find. */
 {
@@ -2051,7 +2052,7 @@ Tcl_GetSlave(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetMaster --
+ * Tcl_GetParent --
  *
  *	Finds the master interpreter of a slave interpreter.
  *
@@ -2065,7 +2066,7 @@ Tcl_GetSlave(
  */
 
 Tcl_Interp *
-Tcl_GetMaster(
+Tcl_GetParent(
     Tcl_Interp *interp)		/* Get the master of this interpreter. */
 {
     Slave *slavePtr;		/* Slave record of this interpreter. */
@@ -2080,7 +2081,7 @@ Tcl_GetMaster(
 /*
  *----------------------------------------------------------------------
  *
- * TclSetSlaveCancelFlags --
+ * TclSetChildCancelFlags --
  *
  *	This function marks all slave interpreters belonging to a given
  *	interpreter as being canceled or not canceled, depending on the
@@ -2096,7 +2097,7 @@ Tcl_GetMaster(
  */
 
 void
-TclSetSlaveCancelFlags(
+TclSetChildCancelFlags(
     Tcl_Interp *interp,		/* Set cancel flags of this interpreter. */
     int flags,			/* Collection of OR-ed bits that control
 				 * the cancellation of the script. Only
@@ -2139,7 +2140,7 @@ TclSetSlaveCancelFlags(
 	 * interpreter.
 	 */
 
-	TclSetSlaveCancelFlags((Tcl_Interp *) iPtr, flags, force);
+	TclSetChildCancelFlags((Tcl_Interp *) iPtr, flags, force);
     }
 }
 
@@ -2793,7 +2794,7 @@ SlaveEval(
      * function for that particular Tcl_Interp.
      */
 
-    TclSetSlaveCancelFlags(slaveInterp, 0, 0);
+    TclSetChildCancelFlags(slaveInterp, 0, 0);
 
     Tcl_Preserve(slaveInterp);
     Tcl_AllowExceptions(slaveInterp);

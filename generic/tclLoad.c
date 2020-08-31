@@ -198,7 +198,7 @@ Tcl_LoadObjCmd(
     if (objc == 4) {
 	const char *slaveIntName = Tcl_GetString(objv[3]);
 
-	target = Tcl_GetSlave(interp, slaveIntName);
+	target = Tcl_GetChild(interp, slaveIntName);
 	if (target == NULL) {
 	    code = TCL_ERROR;
 	    goto done;
@@ -621,7 +621,7 @@ Tcl_UnloadObjCmd(
     if (objc - i == 3) {
 	const char *slaveIntName = Tcl_GetString(objv[i + 2]);
 
-	target = Tcl_GetSlave(interp, slaveIntName);
+	target = Tcl_GetChild(interp, slaveIntName);
 	if (target == NULL) {
 	    return TCL_ERROR;
 	}
@@ -1068,7 +1068,7 @@ TclGetLoadedPackages(
      * interpreter.
      */
 
-    target = Tcl_GetSlave(interp, targetName);
+    target = Tcl_GetChild(interp, targetName);
     if (target == NULL) {
 	return TCL_ERROR;
     }

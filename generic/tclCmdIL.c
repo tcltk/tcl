@@ -1054,7 +1054,7 @@ InfoErrorStackCmd(
 
     target = interp;
     if (objc == 2) {
-	target = Tcl_GetSlave(interp, Tcl_GetString(objv[1]));
+	target = Tcl_GetChild(interp, Tcl_GetString(objv[1]));
 	if (target == NULL) {
 	    return TCL_ERROR;
 	}
