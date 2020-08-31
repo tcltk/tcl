@@ -3304,7 +3304,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 	return
     }
 
-    # Since an unsafe interp uses the [clock] command in the master, this code
+    # Since an unsafe interp uses the [clock] command in the parent, this code
     # is security sensitive.  Make sure that the path name cannot escape the
     # given directory.
 
@@ -3344,7 +3344,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 proc ::tcl::clock::LoadZoneinfoFile { fileName } {
     variable ZoneinfoPaths
 
-    # Since an unsafe interp uses the [clock] command in the master, this code
+    # Since an unsafe interp uses the [clock] command in the parent, this code
     # is security sensitive.  Make sure that the path name cannot escape the
     # given directory.
 
