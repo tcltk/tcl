@@ -25,7 +25,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
-foreach i [interp slaves] {
+foreach i [interp children] {
     interp delete $i
 }
 
@@ -56,7 +56,7 @@ test safe-stock86-7.1 {tests that everything works at high level, uses http 2} -
     set i [safe::interpCreate]
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
-    #  package require in a slave works like in the master)
+    #  package require in a slave works like in the parent)
     set v [interp eval $i {package require http 2}]
     # no error shall occur:
     interp eval $i {http::config}
