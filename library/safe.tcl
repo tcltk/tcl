@@ -2,7 +2,7 @@
 #
 # This file provide a safe loading/sourcing mechanism for safe interpreters.
 # It implements a virtual path mecanism to hide the real pathnames from the
-# slave. It runs in a master interpreter and sets up data structure and
+# slave. It runs in a parent interpreter and sets up data structure and
 # aliases that will be invoked when used from a slave interpreter.
 #
 # See the safe.n man page for details.
@@ -20,7 +20,7 @@
 #
 
 # Needed utilities package
-package require opt 0.4.7
+package require opt 0.4.8
 
 # Create the safe namespace
 namespace eval ::safe {
@@ -270,7 +270,7 @@ proc ::safe::interpConfigure {args} {
 # Optional Arguments :
 # + slave name : if empty, generated name will be used
 # + access_path: path list controlling where load/source can occur,
-#                if empty: the master auto_path will be used.
+#                if empty: the parent auto_path will be used.
 # + staticsok  : flag, if 0 :no static package can be loaded (load {} Xxx)
 #                      if 1 :static packages are ok.
 # + nestedok: flag, if 0 :no loading to sub-sub interps (load xx xx sub)
@@ -302,7 +302,7 @@ proc ::safe::InterpCreate {
 #
 # InterpSetConfig (was setAccessPath) :
 #    Sets up slave virtual auto_path and corresponding structure within
-#    the master. Also sets the tcl_library in the slave to be the first
+#    the parent. Also sets the tcl_library in the slave to be the first
 #    directory in the path.
 #    NB: If you change the path after the slave has been initialized you
 #    probably need to call "auto_reset" in the slave in order that it gets
@@ -665,7 +665,7 @@ proc ::safe::setLogCmd {args} {
 # ------------------- END OF PUBLIC METHODS ------------
 
 #
-# Sets the slave auto_path to the master recorded value.  Also sets
+# Sets the slave auto_path to the parent recorded value.  Also sets
 # tcl_library to the first token of the virtual path.
 #
 proc ::safe::SyncAccessPath {slave} {
@@ -1079,7 +1079,7 @@ proc ::safe::AliasLoad {slave file args} {
 }
 
 # FileInAccessPath raises an error if the file is not found in the list of
-# directories contained in the (master side recorded) slave's access path.
+# directories contained in the (parent side recorded) slave's access path.
 
 # the security here relies on "file dirname" answering the proper
 # result... needs checking ?
