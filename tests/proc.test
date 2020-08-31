@@ -299,28 +299,54 @@ test proc-4.7 {TclCreateProc, procbody obj, inconsistent arg default value} -bod
     catch {rename p ""}
     catch {rename t ""}
 } -result {procedure "t": formal parameter "z" has default value inconsistent with precompiled body}
-test proc-4.8 {TclCreateProc, procbody obj, no leak on multiple iterations} -setup {
-    proc getbytes {} {
-	set lines [split [memory info] "\n"]
-	lindex $lines 3 3
+
+
+try [string map {
+    @procpx@ {
+	proc px x {
+	    set y [string tolower $x]
+	    return $x:$y
+	}
+	px x
     }
-    proc px x {
-	set y [string tolower $x]
-	return "$x:$y"
+    @cleanup@ {
+	unset -nocomplain end i tmp leakedBytes
     }
-    px x
-} -constraints {procbodytest memory} -body {
-    set end [getbytes]
-    for {set i 0} {$i < 5} {incr i} {
-	procbodytest::proc tx x px
-	set tmp $end
-	set end [getbytes]
-    }
-    set leakedBytes [expr {$end - $tmp}]
-} -cleanup {
-    rename getbytes {}
-    unset -nocomplain end i tmp leakedBytes
-} -result 0
+} {
+
+	test proc-4.8 {TclCreateProc, procbody obj, no leak on multiple iterations} -setup {
+	    proc getbytes {} {
+		set lines [split [memory info] \n]
+		lindex $lines 3 3
+	    }
+	    @procpx@
+	} -constraints {procbodytest memory} -body {
+	    set end [getbytes]
+	    for {set i 0} {$i < 5} {incr i} {
+		procbodytest::proc tx x px
+		set tmp $end
+		set end [getbytes]
+	    }
+	    set leakedBytes [expr {$end - $tmp}]
+	} -cleanup {
+	    rename getbytes {}
+	    @cleanup@
+	} -result 0
+
+
+	test proc-4.8.1 {
+	same as 4.8 but without the memory constraint so that valgrind can look
+		for leaks in tclTestProcBodyObj.c itself
+	} -setup {
+	    @procpx@
+	} -constraints procbodytest -body {
+		procbodytest::proc tx x px
+	    return 0
+	} -cleanup {
+	    @cleanup@
+	} -result 0
+}]
+
 test proc-4.9 {[39fed4dae5] Valid Tcl_PkgPresent return} procbodytest {
     procbodytest::check
 } 1

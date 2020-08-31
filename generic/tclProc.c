@@ -70,7 +70,7 @@ const Tcl_ObjType tclProcBodyType = {
 #define ProcSetIntRep(objPtr, procPtr)					\
     do {								\
 	Tcl_ObjIntRep ir;						\
-	(procPtr)->refCount++;						\
+	TclProcIncrRefCount((procPtr));					\
 	ir.twoPtrValue.ptr1 = (procPtr);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
 	Tcl_StoreIntRep((objPtr), &tclProcBodyType, &ir);		\
@@ -113,6 +113,7 @@ static const Tcl_ObjType lambdaType = {
     SetLambdaFromAny		/* setFromAnyProc */
 };
 
+
 #define LambdaSetIntRep(objPtr, procPtr, nsObjPtr)			\
     do {								\
 	Tcl_ObjIntRep ir;						\
@@ -121,6 +122,7 @@ static const Tcl_ObjType lambdaType = {
 	Tcl_IncrRefCount((nsObjPtr));					\
 	Tcl_StoreIntRep((objPtr), &lambdaType, &ir);			\
     } while (0)
+
 
 #define LambdaGetIntRep(objPtr, procPtr, nsObjPtr)			\
     do {								\
@@ -192,6 +194,10 @@ Tcl_ProcObjCmd(
 	return TCL_ERROR;
     }
 
+
+
+
+
     /*
      * Create the data structure to represent the procedure.
      */
@@ -214,8 +220,11 @@ Tcl_ProcObjCmd(
      * namespace if the proc was renamed into a different namespace.
      */
 
+    ((Command *)cmd)->refCount++;
+    if (procPtr->cmdPtr != NULL) {
+	TclCleanupCommandMacro(procPtr->cmdPtr)
+    }
     procPtr->cmdPtr = (Command *) cmd;
-    procPtr->cmdPtr->refCount++;
 
     /*
      * TIP #280: Remember the line the procedure body is starting on. In a
@@ -313,8 +322,8 @@ Tcl_ProcObjCmd(
     }
 
     /*
-     * Optimize for no-op procs: if the body is not precompiled (like a TclPro
-     * procbody), and the argument list is just "args" and the body is empty,
+     * Optimize for no-op procs: If the body is not precompiled, e.g like a TclPro
+     * procbody, the argument list is just "args", and the body is empty,
      * define a compileProc to compile a no-op.
      *
      * Notes:
@@ -414,7 +423,7 @@ TclCreateProc(
     if (procPtr != NULL) {
 	/*
 	 * Because the body is a TclProProcBody, the actual body is already
-	 * compiled, and it is not shared with anyone else, so it's OK not to
+	 * compiled not shared with anyone else, it's OK not to
 	 * unshare it (as a matter of fact, it is bad to unshare it, because
 	 * there may be no source code).
 	 *
@@ -425,7 +434,13 @@ TclCreateProc(
 	 */
 
 	procPtr->iPtr = iPtr;
+
+	/*
+	 * procPtr->cmdPtr is not incremented here because the caller provides
+	 * their own cmdPtr.
+	 */
 	procPtr->refCount++;
+
 	precompiled = 1;
     } else {
 	/*
@@ -581,7 +596,7 @@ TclCreateProc(
 	     * (its value was kept the same as pre VarReform to simplify
 	     * tbcload's processing of older byetcodes).
 	     *
-	     * The only other flag vlaue that is important to retrieve from
+	     * The only other flag value that is important to retrieve from
 	     * precompiled procs is VAR_TEMPORARY (also unchanged). It is
 	     * needed later when retrieving the variable names.
 	     */
@@ -672,7 +687,7 @@ TclCreateProc(
 
   procError:
     if (precompiled) {
-	procPtr->refCount--;
+	TclProcDecrRefCount(procPtr);
     } else {
 	Tcl_DecrRefCount(bodyPtr);
 	while (procPtr->firstLocalPtr != NULL) {
@@ -1769,7 +1784,7 @@ TclNRInterpProcCore(
      * Invoke the commands in the procedure's body.
      */
 
-    procPtr->refCount++;
+    TclProcIncrRefCount(procPtr);
     ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
     TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
@@ -1795,9 +1810,7 @@ InterpProcNR2(
 	TCL_DTRACE_PROC_RETURN(l < iPtr->varFramePtr->objc ?
 		TclGetString(iPtr->varFramePtr->objv[l]) : NULL, result);
     }
-    if (procPtr->refCount-- <= 1) {
-	TclProcCleanupProc(procPtr);
-    }
+    TclProcDecrRefCount(procPtr);
 
     /*
      * Free the stack-allocated compiled locals and CallFrame. It is important
@@ -2103,10 +2116,8 @@ TclProcDeleteProc(
     ClientData clientData)	/* Procedure to be deleted. */
 {
     Proc *procPtr = (Proc *)clientData;
-
-    if (procPtr->refCount-- <= 1) {
-	TclProcCleanupProc(procPtr);
-    }
+    TclProcDecrRefCount(procPtr);
+    return;
 }
 
 /*
@@ -2283,8 +2294,8 @@ TclGetObjInterpProc(void)
  *	Returns a pointer to a newly allocated Tcl_Obj, NULL on error.
  *
  * Side effects:
- *	The reference count in the ByteCode attached to the Proc is bumped up
- *	by one, since the internal rep stores a pointer to it.
+ *	The reference count in the procPtr is bumped up
+ *	by one since the internal rep stores a pointer to it.
  *
  *----------------------------------------------------------------------
  */
@@ -2362,10 +2373,7 @@ ProcBodyFree(
     Proc *procPtr;
 
     ProcGetIntRep(objPtr, procPtr);
-
-    if (procPtr->refCount-- <= 1) {
-	TclProcCleanupProc(procPtr);
-    }
+    TclProcDecrRefCount(procPtr);
 }
 
 /*
@@ -2393,8 +2401,7 @@ DupLambdaInternalRep(
     LambdaGetIntRep(srcPtr, procPtr, nsObjPtr);
     assert(procPtr != NULL);
 
-    procPtr->refCount++;
-
+    TclProcIncrRefCount(procPtr);
     LambdaSetIntRep(copyPtr, procPtr, nsObjPtr);
 }
 
@@ -2705,7 +2712,7 @@ TclNRApplyObjCmd(
     extraPtr->efi.fields[0].clientData = lambdaPtr;
     extraPtr->cmd.clientData = &extraPtr->efi;
 
-    procPtr->refCount++;
+    TclProcIncrRefCount(procPtr);
     result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
 	TclNRAddCallback(interp, ApplyNR2, extraPtr, procPtr, NULL, NULL);
@@ -2723,9 +2730,7 @@ ApplyNR2(
     ApplyExtraData *extraPtr = (ApplyExtraData *)data[0];
     Proc *procPtr = (Proc *)data[1];
     procPtr->cmdPtr = NULL;
-    if (procPtr->refCount-- <= 1) {
-	TclProcCleanupProc(procPtr);
-    }
+    TclProcDecrRefCount(procPtr);
 
     TclStackFree(interp, extraPtr);
     return result;
