@@ -593,7 +593,7 @@ proc ::safe::interpDelete {slave} {
     # Base. To clean up properly, we call safe::interpDelete recursively on each
     # Safe Base sub-interpreter, so each one is deleted cleanly and not by
     # the automatic mechanism built into [interp delete].
-    foreach sub [interp slaves $slave] {
+    foreach sub [interp children $slave] {
         if {[info exists ::safe::[VarName [list $slave $sub]]]} {
             ::safe::interpDelete [list $slave $sub]
         }

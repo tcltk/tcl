@@ -20,7 +20,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-foreach i [interp slaves] {
+foreach i [interp children] {
     interp delete $i
 }
 

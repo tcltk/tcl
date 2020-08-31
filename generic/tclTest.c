@@ -1521,7 +1521,7 @@ TestdelCmd(
 	return TCL_ERROR;
     }
 
-    slave = Tcl_GetSlave(interp, argv[1]);
+    slave = Tcl_GetChild(interp, argv[1]);
     if (slave == NULL) {
 	return TCL_ERROR;
     }
@@ -2702,7 +2702,7 @@ TestinterpdeleteCmd(
 		" path\"", NULL);
 	return TCL_ERROR;
     }
-    slaveToDelete = Tcl_GetSlave(interp, argv[1]);
+    slaveToDelete = Tcl_GetChild(interp, argv[1]);
     if (slaveToDelete == NULL) {
 	return TCL_ERROR;
     }
@@ -7937,7 +7937,7 @@ TestInterpResolverCmd(
 	return TCL_ERROR;
     }
     if (objc == 3) {
-	interp = Tcl_GetSlave(interp, Tcl_GetString(objv[2]));
+	interp = Tcl_GetChild(interp, Tcl_GetString(objv[2]));
 	if (interp == NULL) {
 	    Tcl_AppendResult(interp, "provided interpreter not found", NULL);
 	    return TCL_ERROR;

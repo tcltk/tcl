@@ -27,7 +27,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-foreach i [interp slaves] {
+foreach i [interp children] {
     interp delete $i
 }
 
@@ -353,7 +353,7 @@ test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -setup {
         1 {can't find package SafeTestPackage1} --\
         {TCLLIB */dummy/unixlike/test/path TESTSDIR/auto0} -- {}}
 test safe-7.3 {check that safe subinterpreters work} {
-    set g [interp slaves]
+    set g [interp children]
     if {$g ne {}} {
         append g { -- residue of an earlier test}
     }
@@ -368,7 +368,7 @@ test safe-7.3 {check that safe subinterpreters work} {
 } {{} {} ok {} 0 {}}
 test safe-7.3.1 {check that safe subinterpreters work with namespace names} -setup {
 } -body {
-    set g [interp slaves]
+    set g [interp children]
     if {$g ne {}} {
         append g { -- residue of an earlier test}
     }
