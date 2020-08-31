@@ -263,7 +263,7 @@ TclClockInit(
     };
 
     /*
-     * Safe interps get [::clock] as alias to a master, so do not need their
+     * Safe interps get [::clock] as alias to a parent, so do not need their
      * own copies of the support routines.
      */
 

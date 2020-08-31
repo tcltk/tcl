@@ -4321,7 +4321,7 @@ TclResetCancellation(
  * Tcl_Canceled --
  *
  *	Check if the script in progress has been canceled, i.e.,
- *	Tcl_CancelEval was called for this interpreter or any of its master
+ *	Tcl_CancelEval was called for this interpreter or any of its parent
  *	interpreters.
  *
  * Results:
