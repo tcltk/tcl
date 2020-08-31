@@ -377,7 +377,7 @@ proc auto_mkindex_parser::mkindex {file} {
 # auto_mkindex_parser::hook command
 #
 # Registers a Tcl command to evaluate when initializing the slave interpreter
-# used by the mkindex parser.  The command is evaluated in the master
+# used by the mkindex parser.  The command is evaluated in the parent
 # interpreter, and can use the variable auto_mkindex_parser::parser to get to
 # the slave
 
