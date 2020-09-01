@@ -3854,9 +3854,11 @@ GetEndOffsetFromObj(
 			 */
 
 			Tcl_Obj *sum;
+			Tcl_Interp *compute = Tcl_CreateInterp();
 
 		    extreme:
-			Tcl_ExprObj(interp, objPtr, &sum);
+			Tcl_ExprObj(compute, objPtr, &sum);
+			Tcl_DeleteInterp(compute);
 			TclGetNumberFromObj(NULL, sum, &cd, &numType);
 
 			if (numType == TCL_NUMBER_INT) {
