@@ -2805,7 +2805,7 @@ proc http::Event {sock token} {
 					break
 				    }
 			        }
-			        set tmpHeader $tmpResult
+				set tmpHeader $tmpResult
 			    }
 			    set state(connection) $tmpHeader
 			}
