@@ -1508,15 +1508,15 @@ TestdelCmd(
     const char **argv)		/* Argument strings. */
 {
     DelCmd *dPtr;
-    Tcl_Interp *slave;
+    Tcl_Interp *child;
 
     if (argc != 4) {
 	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
 	return TCL_ERROR;
     }
 
-    slave = Tcl_GetChild(interp, argv[1]);
-    if (slave == NULL) {
+    child = Tcl_GetChild(interp, argv[1]);
+    if (child == NULL) {
 	return TCL_ERROR;
     }
 
@@ -1525,7 +1525,7 @@ TestdelCmd(
     dPtr->deleteCmd = (char *)ckalloc(strlen(argv[3]) + 1);
     strcpy(dPtr->deleteCmd, argv[3]);
 
-    Tcl_CreateCommand(slave, argv[2], DelCmdProc, (ClientData) dPtr,
+    Tcl_CreateCommand(child, argv[2], DelCmdProc, (ClientData) dPtr,
 	    DelDeleteProc);
     return TCL_OK;
 }
@@ -2691,18 +2691,18 @@ TestinterpdeleteCmd(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-    Tcl_Interp *slaveToDelete;
+    Tcl_Interp *childToDelete;
 
     if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		" path\"", NULL);
 	return TCL_ERROR;
     }
-    slaveToDelete = Tcl_GetChild(interp, argv[1]);
-    if (slaveToDelete == NULL) {
+    childToDelete = Tcl_GetChild(interp, argv[1]);
+    if (childToDelete == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_DeleteInterp(slaveToDelete);
+    Tcl_DeleteInterp(childToDelete);
     return TCL_OK;
 }
 

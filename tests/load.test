@@ -103,7 +103,7 @@ test load-3.1 {error in _Init procedure, same interpreter} \
 "if 44 {open non_existent}"
     invoked from within
 "load [file join $testDir pkge$ext] pkge"} {POSIX ENOENT {no such file or directory}}}
-test load-3.2 {error in _Init procedure, slave interpreter} \
+test load-3.2 {error in _Init procedure, child interpreter} \
 	[list $dll $loaded] {
     catch {interp delete x}
     interp create x
