@@ -1040,15 +1040,15 @@ test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
 } -result 0
 test var-22.1 {leak in localVarName intrep: Bug 80304238ac} -setup {
     proc doit {} {
-	interp create slave
-	slave eval {
+	interp create child
+	child eval {
 	    proc doit script {
 		eval $script
 		set foo bar
 	    }
 	    doit {foreach foo baz {}}
 	}
-	interp delete slave
+	interp delete child
     }
 } -constraints memory -body {
     set end [getbytes]

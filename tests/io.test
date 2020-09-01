@@ -8758,16 +8758,16 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     set fn [makeFile {} io-74.1]
     set rfd [open $fn r]
     testobj freeallvars
-    interp create slave
+    interp create child
 } -constraints testobj -body {
     teststringobj set 1 [string range $rfd 0 end]
     read [teststringobj get 1]
     testobj duplicate 1 2
-    interp transfer {} $rfd slave
+    interp transfer {} $rfd child
     catch {read [teststringobj get 1]}
     read [teststringobj get 2]
 } -cleanup {
-    interp delete slave
+    interp delete child
     testobj freeallvars
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}

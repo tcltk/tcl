@@ -133,7 +133,7 @@ static const Tcl_MethodType classConstructor = {
 };
 
 /*
- * Scripted parts of TclOO. First, the master script (cannot be outside this
+ * Scripted parts of TclOO. First, the main script (cannot be outside this
  * file).
  */
 
@@ -258,7 +258,7 @@ TclOOInit(
     }
 
     return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
-	    (ClientData) &tclOOStubs);
+	    (void *) &tclOOStubs);
 }
 
 /*
@@ -566,7 +566,7 @@ DeletedHelpersNamespace(
 
 static void
 KillFoundation(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp)	/* The interpreter containing the OO system
 			 * foundation. */
 {

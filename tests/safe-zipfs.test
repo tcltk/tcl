@@ -179,7 +179,7 @@ test safe-zipfs-7.1 {tests that everything works at high level; zipfs} -setup {
 } -body {
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
-    #  package require in a slave works like in the parent)
+    #  package require in a child works like in the parent)
     set v [interp eval $i {package require SafeTestPackage1}]
     # no error shall occur:
     interp eval $i {HeresPackage1}
@@ -458,7 +458,7 @@ test safe-zipfs-9.20 {check module loading; zipfs} -setup {
         {TCLLIB ZIPDIR/auto0/modules ZIPDIR/auto0/modules/mod1\
          ZIPDIR/auto0/modules/mod2} -- res0 res1 res2}
 # - The command safe::InterpSetConfig adds the parent's [tcl::tm::list] in
-#   tokenized form to the slave's access path, and then adds all the
+#   tokenized form to the child's access path, and then adds all the
 #   descendants, discovered recursively by using glob.
 # - The order of the directories in the list returned by glob is system-dependent,
 #   and therefore this is true also for (a) the order of token assignment to

@@ -19,7 +19,7 @@ if {[catch {package require http 2} version]} {
 	catch {puts "Cannot load http 2.* package"}
 	return
     } else {
-	catch {puts "Running http 2.* tests in slave interp"}
+	catch {puts "Running http 2.* tests in child interp"}
 	set interp [interp create http2]
 	$interp eval [list set http2 "running"]
 	$interp eval [list set argv $argv]
