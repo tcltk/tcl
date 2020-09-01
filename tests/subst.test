@@ -282,18 +282,18 @@ test subst-13.1 {Bug 3081065} -setup {
 	demo name2
     } subst13.tcl]
 } -body {
-    interp create slave
-    slave eval [list source $script]
-    interp delete slave
-    interp create slave
-    slave eval {
+    interp create child
+    child eval [list source $script]
+    interp delete child
+    interp create child
+    child eval {
 	set count 400
 	while {[incr count -1]} {
 	    lappend bloat [expr {rand()}]
 	}
     }
-    slave eval [list source $script]
-    interp delete slave
+    child eval [list source $script]
+    interp delete child
 } -cleanup {
     removeFile subst13.tcl
 }

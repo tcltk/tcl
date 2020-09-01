@@ -35,7 +35,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-foreach i [interp slaves] {
+foreach i [interp children] {
     interp delete $i
 }
 
@@ -114,7 +114,7 @@ test safe-stock87-7.1 {tests that everything works at high level, uses pkg opt} 
 } -body {
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
-    #  package require in a slave works like in the master)
+    #  package require in a child works like in the parent)
     set v [interp eval $i {package require opt}]
     # no error shall occur:
     interp eval $i {::tcl::Lempty {a list}}
@@ -127,7 +127,7 @@ test safe-stock87-7.2 {tests specific path and interpFind/AddToAccessPath, uses 
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p* (not p1 if master has a module path)
+    # should add as p* (not p1 if parent has a module path)
     set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
     # an error shall occur (opt is not anymore in the secure 0-level
     # provided deep path)
@@ -144,7 +144,7 @@ test safe-stock87-7.4 {tests specific path and positive search, uses pkg opt} -s
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p* (not p1 if master has a module path)
+    # should add as p* (not p1 if parent has a module path)
     set token2 [safe::interpAddToAccessPath $i [file join [info library] $pkgOptDir]]
     set confA [safe::interpConfigure $i]
     set mappA [mapList $PathMapp [dict get $confA -accessPath]]
