@@ -14,34 +14,34 @@ jobs:
 # Testing on Linux with various compilers
     - name: "Linux/GCC/Shared"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
     - name: "Linux/GCC/Shared: UTF_MAX=3"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
         - CFGOPT="CFLAGS=-DTCL_UTF_MAX=3"
     - name: "Linux/GCC/Static"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - CFGOPT="--disable-shared"
         - BUILD_DIR=unix
     - name: "Linux/GCC/Debug"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
     - name: "Linux/GCC/Mem-Debug"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
@@ -49,7 +49,7 @@ jobs:
 # C++ build.
     - name: "Linux/G++/Shared"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: g++
       env:
         - BUILD_DIR=unix
@@ -57,7 +57,7 @@ jobs:
 # Older versions of GCC...
     - name: "Linux/GCC 7/Shared"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc-7
       addons:
         apt:
@@ -94,27 +94,27 @@ jobs:
 # Clang
     - name: "Linux/Clang/Shared"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: clang
       env:
         - BUILD_DIR=unix
     - name: "Linux/Clang/Static"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: clang
       env:
         - CFGOPT="--disable-shared"
         - BUILD_DIR=unix
     - name: "Linux/Clang/Debug"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: clang
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
     - name: "Linux/Clang/Mem-Debug"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: clang
       env:
         - BUILD_DIR=unix
@@ -187,7 +187,7 @@ jobs:
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows/GCC/Shared/no test"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: x86_64-w64-mingw32-gcc
       env:
         - BUILD_DIR=win
@@ -201,7 +201,7 @@ jobs:
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-32/GCC/Shared/no test"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: i686-w64-mingw32-gcc
       env:
         - BUILD_DIR=win
@@ -379,7 +379,7 @@ jobs:
 # "make dist" only
     - name: "Linux: make dist"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix

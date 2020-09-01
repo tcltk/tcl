@@ -17,7 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 # the package we are going to test
-package require opt 0.4.7
+package require opt 0.4.8
 
 # we are using implementation specifics to test the package
 

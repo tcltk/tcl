@@ -6935,7 +6935,7 @@ test io-50.5 {testing handler deletion vs reentrant calls} -constraints {testcha
 } -cleanup {
     close $f
 } -result [list {del calling recursive} {del deleted notcalled} \
-	{del deleted myself} {del after recursive}]
+	       {del deleted myself} {del after recursive}]
 test io-50.6 {testing handler deletion vs reentrant calls} -constraints {testchannelevent testservicemode} -setup {
     file delete $path(test1)
 } -body {
@@ -6944,6 +6944,7 @@ test io-50.6 {testing handler deletion vs reentrant calls} -constraints {testcha
     proc first {f} {
 	variable u
 	variable z
+	variable done
 	if {"$u" == "toplevel"} {
 	    lappend z "first called"
 	    set u first
@@ -6951,6 +6952,7 @@ test io-50.6 {testing handler deletion vs reentrant calls} -constraints {testcha
 	    vwait z
 	    after cancel $timer
 	    lappend z "first after toplevel"
+	    set done 1
 	} else {
 	    lappend z "first called not toplevel"
 	}
@@ -6972,19 +6974,24 @@ test io-50.6 {testing handler deletion vs reentrant calls} -constraints {testcha
     }
     set z ""
     set u toplevel
+    set done 0
     testservicemode 0
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code [list second $f]]
     testchannelevent $f add readable [namespace code [list first $f]]
     testservicemode 1
     update
+    if {!$done} {
+	set timer2 [after 200 set done 1]
+	vwait done
+	after cancel $timer2
+    }
     set z
 } -cleanup {
     close $f
 } -result [list {first called} {first called not toplevel} \
 	{second called, first time} {second called, second time} \
 	{first after toplevel}]
-
 test io-51.1 {Test old socket deletion on Macintosh} {socket} {
     set x 0
     set result ""
@@ -8751,16 +8758,16 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     set fn [makeFile {} io-74.1]
     set rfd [open $fn r]
     testobj freeallvars
-    interp create slave
+    interp create child
 } -constraints testobj -body {
     teststringobj set 1 [string range $rfd 0 end]
     read [teststringobj get 1]
     testobj duplicate 1 2
-    interp transfer {} $rfd slave
+    interp transfer {} $rfd child
     catch {read [teststringobj get 1]}
     read [teststringobj get 2]
 } -cleanup {
-    interp delete slave
+    interp delete child
     testobj freeallvars
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}

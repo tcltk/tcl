@@ -4094,7 +4094,7 @@ MODULE_SCOPE int TclUniCharCaseMatch(const Tcl_UniChar *uniStr,
 MODULE_SCOPE Tcl_ObjCmdProc TclEnsembleImplementationCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclAliasObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclLocalAliasObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclSlaveObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclChildObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclInvokeImportedCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclOOPublicObjectCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclOOPrivateObjectCmd;

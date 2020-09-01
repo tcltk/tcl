@@ -2197,11 +2197,11 @@ foo {if {[catch {bar}]} {
 	}} 2 error leavestep
 foo foo 0 error leave}}
 
-test trace-28.4 {exec traces in slave with 'return -code error'} {
-    interp create slave
-    interp alias slave traceExecute {} traceExecute
+test trace-28.4 {exec traces in child with 'return -code error'} {
+    interp create child
+    interp alias child traceExecute {} traceExecute
     set info {}
-    set res [interp eval slave {
+    set res [interp eval child {
 	set info {}
 	set res {}
 
@@ -2229,7 +2229,7 @@ test trace-28.4 {exec traces in slave with 'return -code error'} {
 
 	list $res
     }]
-    interp delete slave
+    interp delete child
     lappend res [join $info \n]
 } {{error error} {foo foo enter
 foo {if {[catch {bar}]} {

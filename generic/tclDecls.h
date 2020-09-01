@@ -255,13 +255,13 @@ TCLAPI size_t		Tcl_ConvertElement(const char *src, char *dst,
 TCLAPI size_t		Tcl_ConvertCountedElement(const char *src,
 				size_t length, char *dst, int flags);
 /* 86 */
-TCLAPI int		Tcl_CreateAlias(Tcl_Interp *slave,
-				const char *slaveCmd, Tcl_Interp *target,
+TCLAPI int		Tcl_CreateAlias(Tcl_Interp *childInterp,
+				const char *childCmd, Tcl_Interp *target,
 				const char *targetCmd, int argc,
 				const char *const *argv);
 /* 87 */
-TCLAPI int		Tcl_CreateAliasObj(Tcl_Interp *slave,
-				const char *slaveCmd, Tcl_Interp *target,
+TCLAPI int		Tcl_CreateAliasObj(Tcl_Interp *childInterp,
+				const char *childCmd, Tcl_Interp *target,
 				const char *targetCmd, int objc,
 				Tcl_Obj *const objv[]);
 /* 88 */
@@ -295,8 +295,8 @@ TCLAPI Tcl_Command	Tcl_CreateObjCommand(Tcl_Interp *interp,
 				void *clientData,
 				Tcl_CmdDeleteProc *deleteProc);
 /* 97 */
-TCLAPI Tcl_Interp *	Tcl_CreateSlave(Tcl_Interp *interp,
-				const char *slaveName, int isSafe);
+TCLAPI Tcl_Interp *	Tcl_CreateChild(Tcl_Interp *interp, const char *name,
+				int isSafe);
 /* 98 */
 TCLAPI Tcl_TimerToken	Tcl_CreateTimerHandler(int milliseconds,
 				Tcl_TimerProc *proc, void *clientData);
@@ -424,13 +424,13 @@ TCLAPI int		Tcl_Flush(Tcl_Channel chan);
 /* Slot 147 is reserved */
 /* 148 */
 TCLAPI int		Tcl_GetAlias(Tcl_Interp *interp,
-				const char *slaveCmd,
+				const char *childCmd,
 				Tcl_Interp **targetInterpPtr,
 				const char **targetCmdPtr, int *argcPtr,
 				const char ***argvPtr);
 /* 149 */
 TCLAPI int		Tcl_GetAliasObj(Tcl_Interp *interp,
-				const char *slaveCmd,
+				const char *childCmd,
 				Tcl_Interp **targetInterpPtr,
 				const char **targetCmdPtr, int *objcPtr,
 				Tcl_Obj ***objv);
@@ -470,9 +470,9 @@ TCLAPI int		Tcl_GetErrno(void);
 TCLAPI const char *	Tcl_GetHostName(void);
 /* 163 */
 TCLAPI int		Tcl_GetInterpPath(Tcl_Interp *interp,
-				Tcl_Interp *slaveInterp);
+				Tcl_Interp *childInterp);
 /* 164 */
-TCLAPI Tcl_Interp *	Tcl_GetMaster(Tcl_Interp *interp);
+TCLAPI Tcl_Interp *	Tcl_GetParent(Tcl_Interp *interp);
 /* 165 */
 TCLAPI const char *	Tcl_GetNameOfExecutable(void);
 /* 166 */
@@ -498,8 +498,7 @@ TCLAPI size_t		Tcl_GetsObj(Tcl_Channel chan, Tcl_Obj *objPtr);
 /* 171 */
 TCLAPI int		Tcl_GetServiceMode(void);
 /* 172 */
-TCLAPI Tcl_Interp *	Tcl_GetSlave(Tcl_Interp *interp,
-				const char *slaveName);
+TCLAPI Tcl_Interp *	Tcl_GetChild(Tcl_Interp *interp, const char *name);
 /* 173 */
 TCLAPI Tcl_Channel	Tcl_GetStdChannel(int type);
 /* Slot 174 is reserved */
@@ -1854,8 +1853,8 @@ typedef struct TclStubs {
     char * (*tcl_Concat) (int argc, const char *const *argv); /* 83 */
     size_t (*tcl_ConvertElement) (const char *src, char *dst, int flags); /* 84 */
     size_t (*tcl_ConvertCountedElement) (const char *src, size_t length, char *dst, int flags); /* 85 */
-    int (*tcl_CreateAlias) (Tcl_Interp *slave, const char *slaveCmd, Tcl_Interp *target, const char *targetCmd, int argc, const char *const *argv); /* 86 */
-    int (*tcl_CreateAliasObj) (Tcl_Interp *slave, const char *slaveCmd, Tcl_Interp *target, const char *targetCmd, int objc, Tcl_Obj *const objv[]); /* 87 */
+    int (*tcl_CreateAlias) (Tcl_Interp *childInterp, const char *childCmd, Tcl_Interp *target, const char *targetCmd, int argc, const char *const *argv); /* 86 */
+    int (*tcl_CreateAliasObj) (Tcl_Interp *childInterp, const char *childCmd, Tcl_Interp *target, const char *targetCmd, int objc, Tcl_Obj *const objv[]); /* 87 */
     Tcl_Channel (*tcl_CreateChannel) (const Tcl_ChannelType *typePtr, const char *chanName, void *instanceData, int mask); /* 88 */
     void (*tcl_CreateChannelHandler) (Tcl_Channel chan, int mask, Tcl_ChannelProc *proc, void *clientData); /* 89 */
     void (*tcl_CreateCloseHandler) (Tcl_Channel chan, Tcl_CloseProc *proc, void *clientData); /* 90 */
@@ -1865,7 +1864,7 @@ typedef struct TclStubs {
     Tcl_Interp * (*tcl_CreateInterp) (void); /* 94 */
     void (*reserved95)(void);
     Tcl_Command (*tcl_CreateObjCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc *proc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 96 */
-    Tcl_Interp * (*tcl_CreateSlave) (Tcl_Interp *interp, const char *slaveName, int isSafe); /* 97 */
+    Tcl_Interp * (*tcl_CreateChild) (Tcl_Interp *interp, const char *name, int isSafe); /* 97 */
     Tcl_TimerToken (*tcl_CreateTimerHandler) (int milliseconds, Tcl_TimerProc *proc, void *clientData); /* 98 */
     Tcl_Trace (*tcl_CreateTrace) (Tcl_Interp *interp, int level, Tcl_CmdTraceProc *proc, void *clientData); /* 99 */
     void (*tcl_DeleteAssocData) (Tcl_Interp *interp, const char *name); /* 100 */
@@ -1916,8 +1915,8 @@ typedef struct TclStubs {
     Tcl_HashEntry * (*tcl_FirstHashEntry) (Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr); /* 145 */
     int (*tcl_Flush) (Tcl_Channel chan); /* 146 */
     void (*reserved147)(void);
-    int (*tcl_GetAlias) (Tcl_Interp *interp, const char *slaveCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *argcPtr, const char ***argvPtr); /* 148 */
-    int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *slaveCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objv); /* 149 */
+    int (*tcl_GetAlias) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *argcPtr, const char ***argvPtr); /* 148 */
+    int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objv); /* 149 */
     void * (*tcl_GetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc **procPtr); /* 150 */
     Tcl_Channel (*tcl_GetChannel) (Tcl_Interp *interp, const char *chanName, int *modePtr); /* 151 */
     int (*tcl_GetChannelBufferSize) (Tcl_Channel chan); /* 152 */
@@ -1931,8 +1930,8 @@ typedef struct TclStubs {
     const char * (*tcl_GetCommandName) (Tcl_Interp *interp, Tcl_Command command); /* 160 */
     int (*tcl_GetErrno) (void); /* 161 */
     const char * (*tcl_GetHostName) (void); /* 162 */
-    int (*tcl_GetInterpPath) (Tcl_Interp *interp, Tcl_Interp *slaveInterp); /* 163 */
-    Tcl_Interp * (*tcl_GetMaster) (Tcl_Interp *interp); /* 164 */
+    int (*tcl_GetInterpPath) (Tcl_Interp *interp, Tcl_Interp *childInterp); /* 163 */
+    Tcl_Interp * (*tcl_GetParent) (Tcl_Interp *interp); /* 164 */
     const char * (*tcl_GetNameOfExecutable) (void); /* 165 */
     Tcl_Obj * (*tcl_GetObjResult) (Tcl_Interp *interp); /* 166 */
 #if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
@@ -1948,7 +1947,7 @@ typedef struct TclStubs {
     size_t (*tcl_Gets) (Tcl_Channel chan, Tcl_DString *dsPtr); /* 169 */
     size_t (*tcl_GetsObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 170 */
     int (*tcl_GetServiceMode) (void); /* 171 */
-    Tcl_Interp * (*tcl_GetSlave) (Tcl_Interp *interp, const char *slaveName); /* 172 */
+    Tcl_Interp * (*tcl_GetChild) (Tcl_Interp *interp, const char *name); /* 172 */
     Tcl_Channel (*tcl_GetStdChannel) (int type); /* 173 */
     void (*reserved174)(void);
     void (*reserved175)(void);
@@ -2630,8 +2629,8 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 95 is reserved */
 #define Tcl_CreateObjCommand \
 	(tclStubsPtr->tcl_CreateObjCommand) /* 96 */
-#define Tcl_CreateSlave \
-	(tclStubsPtr->tcl_CreateSlave) /* 97 */
+#define Tcl_CreateChild \
+	(tclStubsPtr->tcl_CreateChild) /* 97 */
 #define Tcl_CreateTimerHandler \
 	(tclStubsPtr->tcl_CreateTimerHandler) /* 98 */
 #define Tcl_CreateTrace \
@@ -2760,8 +2759,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetHostName) /* 162 */
 #define Tcl_GetInterpPath \
 	(tclStubsPtr->tcl_GetInterpPath) /* 163 */
-#define Tcl_GetMaster \
-	(tclStubsPtr->tcl_GetMaster) /* 164 */
+#define Tcl_GetParent \
+	(tclStubsPtr->tcl_GetParent) /* 164 */
 #define Tcl_GetNameOfExecutable \
 	(tclStubsPtr->tcl_GetNameOfExecutable) /* 165 */
 #define Tcl_GetObjResult \
@@ -2782,8 +2781,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetsObj) /* 170 */
 #define Tcl_GetServiceMode \
 	(tclStubsPtr->tcl_GetServiceMode) /* 171 */
-#define Tcl_GetSlave \
-	(tclStubsPtr->tcl_GetSlave) /* 172 */
+#define Tcl_GetChild \
+	(tclStubsPtr->tcl_GetChild) /* 172 */
 #define Tcl_GetStdChannel \
 	(tclStubsPtr->tcl_GetStdChannel) /* 173 */
 /* Slot 174 is reserved */
@@ -3920,5 +3919,8 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfCharComplete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
 	    ? ((length) >= TCL_UTF_MAX) : tclStubsPtr->tcl_UtfCharComplete((src), (length)))
 #endif
+#define Tcl_CreateSlave Tcl_CreateChild
+#define Tcl_GetSlave Tcl_GetChild
+#define Tcl_GetMaster Tcl_GetParent
 
 #endif /* _TCLDECLS */
