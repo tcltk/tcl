@@ -22,7 +22,7 @@ if {[catch {package require http 1.0}]} {
 	::tcltest::cleanupTests
 	return
     } else {
-	catch {puts "Running http 1.0 tests in slave interp"}
+	catch {puts "Running http 1.0 tests in child interp"}
 	set interp [interp create httpold]
 	$interp eval [list set httpold "running"]
 	$interp eval [list set argv $argv]

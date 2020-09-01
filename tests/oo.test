@@ -142,7 +142,7 @@ test oo-1.4 {basic test of OO functionality} -body {
     oo::object create {}
 } -returnCodes 1 -result {object name must not be empty}
 test oo-1.4.1 {fully-qualified nested name} -body {
-    oo::object create ::one::two::three 
+    oo::object create ::one::two::three
 } -result {::one::two::three}
 test oo-1.4.2 {automatic command name has same name as namespace} -body {
     set obj [oo::object new]
@@ -306,19 +306,19 @@ test oo-1.18.2 {Bug 75b8433707: memory leak in oo-1.18} -setup {
     rename test-oo-1.18 {}
 } -result 0
 test oo-1.18.3 {Bug 21c144f0f5} -setup {
-    interp create slave
+    interp create child
 } -body {
-    slave eval {
+    child eval {
 	oo::define [oo::class create foo] superclass oo::class
 	oo::class destroy
     }
 } -cleanup {
-    interp delete slave
+    interp delete child
 }
 test oo-1.18.4 {correct handling of cleanup in superclass set error} -setup {
-    interp create slave
+    interp create child
 } -body {
-    slave eval {
+    child eval {
 	oo::class create A
 	oo::class create B {
 	    superclass oo::class
@@ -330,12 +330,12 @@ test oo-1.18.4 {correct handling of cleanup in superclass set error} -setup {
 	[B create C] create d
     }
 } -returnCodes error -cleanup {
-    interp delete slave
+    interp delete child
 } -result {class should only be a direct superclass once}
 test oo-1.18.5 {correct handling of cleanup in superclass set error} -setup {
-    interp create slave
+    interp create child
 } -body {
-    slave eval {
+    child eval {
 	oo::class create A
 	oo::class create B {
 	    superclass oo::class
@@ -347,7 +347,7 @@ test oo-1.18.5 {correct handling of cleanup in superclass set error} -setup {
 	[B create C {B C}] create d
     }
 } -returnCodes error -cleanup {
-    interp delete slave
+    interp delete child
 } -result {attempt to form circular dependency graph}
 test oo-1.19 {basic test of OO functionality: teardown order} -body {
     oo::object create o
@@ -2291,7 +2291,7 @@ test oo-15.10 {variable binding must not bleed through oo::copy} -setup {
 } -body {
     set obj1 [FooClass new]
     oo::objdefine $obj1 {
-	variable var 
+	variable var
 	method m {} {
 	    set var foo
 	}
@@ -2340,7 +2340,7 @@ test oo-15.13.1 {
 } -cleanup {
     Cls destroy
     Cls2 destroy
-} -result done 
+} -result done
 test oo-15.13.2 {OO: object cloning with target NS} -setup {
     oo::class create Super
     oo::class create Cls {superclass Super}
@@ -2368,7 +2368,7 @@ test oo-15.15 {method cloning must ensure that there is a string representation 
 } -body {
     cls create foo
     oo::objdefine foo {
-	method m1 {} [string map {a b} {return hello}] 
+	method m1 {} [string map {a b} {return hello}]
     }
     [oo::copy foo] m1
 } -cleanup {
@@ -3029,7 +3029,7 @@ test oo-20.10 {OO: variable and varname methods refer to same things} -setup {
 test oo-20.11 {OO: variable mustn't crash when recursing} -body {
     oo::class create A {
 	constructor {name} {
-	    my variable np_name 
+	    my variable np_name
 	    set np_name $name
 	}
 	method copy {nm} {
@@ -3044,7 +3044,7 @@ test oo-20.11 {OO: variable mustn't crash when recursing} -body {
 			lappend objs [$ref copy {}]
 		    }
 		    $cpy prop $var $objs
-		} else { 
+		} else {
 		    $cpy prop $var $val
 		}
 	    }
@@ -4181,7 +4181,7 @@ test oo-35.6 {
     return done
 } -cleanup {
     rename obj {}
-} -result done 
+} -result done
 
 
 
