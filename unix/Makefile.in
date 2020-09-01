@@ -2208,9 +2208,9 @@ rpm: all
 	-rm -rf RPMS THIS.TCL.SPEC
 
 #
-# Target to create a proper Tcl distribution from information in the master
-# source directory. DISTDIR must be defined to indicate where to put the
-# distribution. DISTDIR must be an absolute path name.
+# Target to create a proper Tcl distribution from information in the
+# source directory. DISTDIR must be defined to indicate where to put
+# the distribution. DISTDIR must be an absolute path name.
 #
 
 DISTROOT = /tmp/dist
