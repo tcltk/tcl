@@ -832,6 +832,135 @@ test http11-3.9 "close,identity no -handler but with -progress progressPause ent
 } -result {ok {HTTP/1.1 200 OK} ok close {} {} 0 0 0}
 
 
+# http11-3.4
+# This test is a blatant attempt to confuse the client by instructing the server
+# to send neither "Connection: close" nor "Content-Length" when in non-chunked
+# mode.
+# The client has no way to know the response-body is complete unless the
+# server signals this by closing the connection.
+# In an HTTP/1.1 response the absence of "Connection: close" means
+# "Connection: keep-alive", i.e. the server will keep the connection
+# open.  In HTTP/1.0 this is not the case, and this is a test that
+# the Tcl client assumes "Connection: close" by default in HTTP/1.0.
+test http11-3.4 "-handler,close,identity; HTTP/1.0 server does not send Connection: close header or Content-Length" -setup {
+    variable httpd [create_httpd]
+    set testdata ""
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1&nosendclose=any \
+                 -timeout 10000 -handler [namespace code [list handler testdata]]]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
+        [meta $tok connection] [meta $tok content-encoding] \
+        [meta $tok transfer-encoding] \
+        [expr {[file size testdoc.html]-[string length $testdata]}]
+} -cleanup {
+    http::cleanup $tok
+    unset -nocomplain testdata
+    halt_httpd
+} -result {ok {HTTP/1.0 200 OK} ok {} {} {} 0}
+
+# It is not forbidden for a handler to enter the event loop.
+test http11-3.5 "-handler,close,identity as http11-3.0 but handlerPause enters event loop" -setup {
+    variable httpd [create_httpd]
+    set testdata ""
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 10000 -handler [namespace code [list handlerPause testdata]]]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
+        [meta $tok connection] [meta $tok content-encoding] \
+        [meta $tok transfer-encoding] \
+        [expr {[file size testdoc.html]-[string length $testdata]}]
+} -cleanup {
+    http::cleanup $tok
+    unset -nocomplain testdata ::WaitHere
+    halt_httpd
+} -result {ok {HTTP/1.0 200 OK} ok close {} {} 0}
+
+test http11-3.6 "-handler,close,identity as http11-3.0 but with -progress" -setup {
+    variable httpd [create_httpd]
+    set testdata ""
+    set logdata ""
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 10000 -handler [namespace code [list handler testdata]] \
+                 -progress [namespace code [list progress logdata]]]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
+        [meta $tok connection] [meta $tok content-encoding] \
+        [meta $tok transfer-encoding] \
+        [expr {[file size testdoc.html]-[string length $testdata]}] \
+        [expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
+        [expr {[lindex $logdata 0] - [string length $testdata]}]
+} -cleanup {
+    http::cleanup $tok
+    unset -nocomplain testdata logdata ::WaitHere
+    halt_httpd
+} -result {ok {HTTP/1.0 200 OK} ok close {} {} 0 0 0}
+
+test http11-3.7 "-handler,close,identity as http11-3.0 but with -progress progressPause enters event loop" -setup {
+    variable httpd [create_httpd]
+    set testdata ""
+    set logdata ""
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 10000 -handler [namespace code [list handler testdata]] \
+                 -progress [namespace code [list progressPause logdata]]]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok $testdata]\
+        [meta $tok connection] [meta $tok content-encoding] \
+        [meta $tok transfer-encoding] \
+        [expr {[file size testdoc.html]-[string length $testdata]}] \
+        [expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
+        [expr {[lindex $logdata 0] - [string length $testdata]}]
+} -cleanup {
+    http::cleanup $tok
+    unset -nocomplain testdata logdata ::WaitHere
+    halt_httpd
+} -result {ok {HTTP/1.0 200 OK} ok close {} {} 0 0 0}
+
+test http11-3.8 "close,identity no -handler but with -progress" -setup {
+    variable httpd [create_httpd]
+    set logdata ""
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 10000 \
+                 -progress [namespace code [list progress logdata]] \
+                 -headers {accept-encoding {}}]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok]\
+        [meta $tok connection] [meta $tok content-encoding] \
+        [meta $tok transfer-encoding] \
+        [expr {[file size testdoc.html]-[string length [http::data $tok]]}] \
+        [expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
+        [expr {[lindex $logdata 0] - [string length [http::data $tok]]}]
+} -cleanup {
+    http::cleanup $tok
+    unset -nocomplain logdata ::WaitHere
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close {} {} 0 0 0}
+
+test http11-3.9 "close,identity no -handler but with -progress progressPause enters event loop" -setup {
+    variable httpd [create_httpd]
+    set logdata ""
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
+                 -timeout 10000 \
+                 -progress [namespace code [list progressPause logdata]] \
+                 -headers {accept-encoding {}}]
+    http::wait $tok
+    list [http::status $tok] [http::code $tok] [check_crc $tok]\
+        [meta $tok connection] [meta $tok content-encoding] \
+        [meta $tok transfer-encoding] \
+        [expr {[file size testdoc.html]-[string length [http::data $tok]]}] \
+        [expr {[lindex $logdata 0] - [lindex $logdata 1]}] \
+        [expr {[lindex $logdata 0] - [string length [http::data $tok]]}]
+} -cleanup {
+    http::cleanup $tok
+    unset -nocomplain logdata ::WaitHere
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close {} {} 0 0 0}
+
 test http11-4.0 "normal post request" -setup {
     variable httpd [create_httpd]
 } -body {

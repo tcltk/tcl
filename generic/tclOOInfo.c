@@ -114,7 +114,7 @@ TclOOInitInfo(
     TclMakeEnsemble(interp, "::oo::InfoClass", infoClassCmds);
 
     /*
-     * Install into the master [info] ensemble.
+     * Install into the [info] ensemble.
      */
 
     infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
@@ -171,7 +171,7 @@ GetClassFromObj(
 
 static int
 InfoObjectClassCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -228,7 +228,7 @@ InfoObjectClassCmd(
 
 static int
 InfoObjectDefnCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -302,7 +302,7 @@ InfoObjectDefnCmd(
 
 static int
 InfoObjectFiltersCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -341,7 +341,7 @@ InfoObjectFiltersCmd(
 
 static int
 InfoObjectForwardCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -398,7 +398,7 @@ InfoObjectForwardCmd(
 
 static int
 InfoObjectIsACmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -517,7 +517,7 @@ InfoObjectIsACmd(
 
 static int
 InfoObjectMethodsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -637,7 +637,7 @@ InfoObjectMethodsCmd(
 
 static int
 InfoObjectMethodTypeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -694,7 +694,7 @@ InfoObjectMethodTypeCmd(
 
 static int
 InfoObjectMixinsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -737,7 +737,7 @@ InfoObjectMixinsCmd(
 
 static int
 InfoObjectIdCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -769,7 +769,7 @@ InfoObjectIdCmd(
 
 static int
 InfoObjectNsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -802,7 +802,7 @@ InfoObjectNsCmd(
 
 static int
 InfoObjectVariablesCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -856,7 +856,7 @@ InfoObjectVariablesCmd(
 
 static int
 InfoObjectVarsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -917,7 +917,7 @@ InfoObjectVarsCmd(
 
 static int
 InfoClassConstrCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -978,7 +978,7 @@ InfoClassConstrCmd(
 
 static int
 InfoClassDefnCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1046,7 +1046,7 @@ InfoClassDefnCmd(
 
 static int
 InfoClassDefnNsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1096,7 +1096,7 @@ InfoClassDefnNsCmd(
 
 static int
 InfoClassDestrCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1140,7 +1140,7 @@ InfoClassDestrCmd(
 
 static int
 InfoClassFiltersCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1178,7 +1178,7 @@ InfoClassFiltersCmd(
 
 static int
 InfoClassForwardCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1229,7 +1229,7 @@ InfoClassForwardCmd(
 
 static int
 InfoClassInstancesCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1277,7 +1277,7 @@ InfoClassInstancesCmd(
 
 static int
 InfoClassMethodsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1393,7 +1393,7 @@ InfoClassMethodsCmd(
 
 static int
 InfoClassMethodTypeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1445,7 +1445,7 @@ InfoClassMethodTypeCmd(
 
 static int
 InfoClassMixinsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1487,7 +1487,7 @@ InfoClassMixinsCmd(
 
 static int
 InfoClassSubsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1542,7 +1542,7 @@ InfoClassSubsCmd(
 
 static int
 InfoClassSupersCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1581,7 +1581,7 @@ InfoClassSupersCmd(
 
 static int
 InfoClassVariablesCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1635,7 +1635,7 @@ InfoClassVariablesCmd(
 
 static int
 InfoObjectCallCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1681,7 +1681,7 @@ InfoObjectCallCmd(
 
 static int
 InfoClassCallCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])

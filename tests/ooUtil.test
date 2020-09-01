@@ -153,7 +153,7 @@ test ooUtil-1.8 {TIP 478: classmethod in child interp} -setup {
 	oo::class create Table {
 	    superclass ActiveRecord
 	}
-	# This is confirming that this is not the master interpreter
+	# This is confirming that this is not the parent interpreter
 	list [Table find foo bar] [info globals childinterp]
     }
 } -cleanup {

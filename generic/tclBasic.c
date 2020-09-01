@@ -684,7 +684,7 @@ Tcl_CreateInterp(void)
         TclRegisterCommandTypeName(TclEnsembleImplementationCmd, "ensemble");
         TclRegisterCommandTypeName(TclAliasObjCmd, "alias");
         TclRegisterCommandTypeName(TclLocalAliasObjCmd, "alias");
-        TclRegisterCommandTypeName(TclSlaveObjCmd, "interp");
+        TclRegisterCommandTypeName(TclChildObjCmd, "interp");
         TclRegisterCommandTypeName(TclInvokeImportedCmd, "import");
         TclRegisterCommandTypeName(TclOOPublicObjectCmd, "object");
         TclRegisterCommandTypeName(TclOOPrivateObjectCmd, "privateObject");
@@ -3792,7 +3792,7 @@ CancelEvalProc(
 	    TclSetCancelFlags(iPtr, cancelInfo->flags | CANCELED);
 
 	    /*
-	     * Now, we must set the script cancellation flags on all the slave
+	     * Now, we must set the script cancellation flags on all the child
 	     * interpreters belonging to this one.
 	     */
 
@@ -4321,7 +4321,7 @@ TclResetCancellation(
  * Tcl_Canceled --
  *
  *	Check if the script in progress has been canceled, i.e.,
- *	Tcl_CancelEval was called for this interpreter or any of its master
+ *	Tcl_CancelEval was called for this interpreter or any of its parent
  *	interpreters.
  *
  * Results:
@@ -5407,7 +5407,7 @@ TclEvalEx(
 				 * the embedded command, which is refered to
 				 * by 'script'. The 'clNextOuter' refers to
 				 * the current entry in the table of
-				 * continuation lines in this "master script",
+				 * continuation lines in this "main script",
 				 * and the character offsets are relative to
 				 * the 'outerScript' as well.
 				 *
@@ -7029,7 +7029,7 @@ TclObjInvoke(
 
 int
 TclNRInvoke(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -7511,7 +7511,7 @@ Tcl_GetVersion(
 
 static int
 ExprCeilFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7551,7 +7551,7 @@ ExprCeilFunc(
 
 static int
 ExprFloorFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7591,7 +7591,7 @@ ExprFloorFunc(
 
 static int
 ExprIsqrtFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute. */
     int objc,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter list. */
@@ -7697,7 +7697,7 @@ ExprIsqrtFunc(
 
 static int
 ExprSqrtFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7865,7 +7865,7 @@ ExprBinaryFunc(
 
 static int
 ExprAbsFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7964,7 +7964,7 @@ ExprAbsFunc(
 
 static int
 ExprBoolFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7985,7 +7985,7 @@ ExprBoolFunc(
 
 static int
 ExprDoubleFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8012,7 +8012,7 @@ ExprDoubleFunc(
 
 static int
 ExprIntFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8068,7 +8068,7 @@ ExprIntFunc(
 
 static int
 ExprWideFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8089,7 +8089,7 @@ ExprWideFunc(
  */
 static int
 ExprMaxMinFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8129,7 +8129,7 @@ ExprMaxMinFunc(
 
 static int
 ExprMaxFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8140,7 +8140,7 @@ ExprMaxFunc(
 
 static int
 ExprMinFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8151,7 +8151,7 @@ ExprMinFunc(
 
 static int
 ExprRandFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8244,7 +8244,7 @@ ExprRandFunc(
 
 static int
 ExprRoundFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8323,7 +8323,7 @@ ExprRoundFunc(
 
 static int
 ExprSrandFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8512,7 +8512,7 @@ ClassifyDouble(
 
 static int
 ExprIsFiniteFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8543,7 +8543,7 @@ ExprIsFiniteFunc(
 
 static int
 ExprIsInfinityFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8573,7 +8573,7 @@ ExprIsInfinityFunc(
 
 static int
 ExprIsNaNFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8603,7 +8603,7 @@ ExprIsNaNFunc(
 
 static int
 ExprIsNormalFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8633,7 +8633,7 @@ ExprIsNormalFunc(
 
 static int
 ExprIsSubnormalFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8663,7 +8663,7 @@ ExprIsSubnormalFunc(
 
 static int
 ExprIsUnorderedFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8704,7 +8704,7 @@ ExprIsUnorderedFunc(
 
 static int
 FloatClassifyObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8813,7 +8813,7 @@ MathFuncWrongNumArgs(
 
 static int
 DTraceObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     TCL_UNUSED(Tcl_Interp *),
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -9197,7 +9197,7 @@ TclSetTailcall(
 
 int
 TclNRTailcallObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -9390,7 +9390,7 @@ TclNRYieldObjCmd(
 
 int
 TclNRYieldToObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -9700,7 +9700,7 @@ TclNREvalList(
 
 static int
 CoroTypeObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -9790,7 +9790,7 @@ GetCoroutineFromObj(
 
 static int
 TclNRCoroInjectObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -9835,7 +9835,7 @@ TclNRCoroInjectObjCmd(
 
 static int
 TclNRCoroProbeObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -10028,7 +10028,7 @@ InjectHandlerPostCall(
 
 static int
 NRInjectObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -10137,7 +10137,7 @@ TclNRInterpCoroutine(
 
 int
 TclNRCoroutineObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -10270,7 +10270,7 @@ TclNRCoroutineObjCmd(
 
 int
 TclInfoCoroutineCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
