@@ -3565,28 +3565,28 @@ test interp-36.3 {interp bgerror syntax} -setup {
 } -cleanup {
     interp delete child
 } -returnCodes error -result {wrong # args: should be "child bgerror ?cmdPrefix?"}
-test interp-36.4 {SlaveBgerror syntax} -setup {
+test interp-36.4 {ChildBgerror syntax} -setup {
     interp create child
 } -body {
     child bgerror \{
 } -cleanup {
     interp delete child
 } -returnCodes error -result {cmdPrefix must be list of length >= 1}
-test interp-36.5 {SlaveBgerror syntax} -setup {
+test interp-36.5 {ChildBgerror syntax} -setup {
     interp create child
 } -body {
     child bgerror {}
 } -cleanup {
     interp delete child
 } -returnCodes error -result {cmdPrefix must be list of length >= 1}
-test interp-36.6 {SlaveBgerror returns handler} -setup {
+test interp-36.6 {ChildBgerror returns handler} -setup {
     interp create child
 } -body {
     child bgerror {foo bar soom}
 } -cleanup {
     interp delete child
 } -result {foo bar soom}
-test interp-36.7 {SlaveBgerror sets error handler of child [1999035]} -setup {
+test interp-36.7 {ChildBgerror sets error handler of child [1999035]} -setup {
     interp create child
     child alias handler handler
     child bgerror handler

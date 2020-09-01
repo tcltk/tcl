@@ -2142,7 +2142,7 @@ InfoCmdTypeCmd(
     }
 
     /*
-     * There's one special case: safe slave interpreters can't see aliases as
+     * There's one special case: safe child interpreters can't see aliases as
      * aliases as they're part of the security mechanisms.
      */
 
