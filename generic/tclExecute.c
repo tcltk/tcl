@@ -5298,10 +5298,13 @@ TEBCresume(
 	 */
 
 	length = Tcl_GetCharLength(valuePtr);
+	DECACHE_STACK_INFO();
 	if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
+	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+	CACHE_STACK_INFO();
 
 	if ((index < 0) || (index >= length)) {
 	    TclNewObj(objResultPtr);
