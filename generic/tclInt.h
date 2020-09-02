@@ -4983,7 +4983,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     
 
 #define TclRoutineHasName(cmdPtr) \
-    (cmdPtr)->hPtr != NULL
+    ((cmdPtr)->hPtr != NULL)
 
 /*
  *----------------------------------------------------------------
