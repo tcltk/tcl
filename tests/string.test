@@ -1506,6 +1506,20 @@ test string-12.22.$noComp {string range, shimmering binary/index} {
 test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} utf16 {
     run {list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]}
 } [list \U100000 {} b]
+test string-12.24.$noComp {bignum index arithmetic} -setup {
+    proc demo {i j} {string range fubar $i $j}
+} -cleanup {
+    rename demo {}
+} -body {
+    demo 2 0+0x10000000000000000
+} -result bar
+test string-12.25.$noComp {bignum index arithmetic} -setup {
+    proc demo {i j} {string range fubar $i $j}
+} -cleanup {
+    rename demo {}
+} -body {
+    demo 0x10000000000000000-0xffffffffffffffff 3
+} -result uba
 
 test string-13.1.$noComp {string repeat} {
     list [catch {run {string repeat}} msg] $msg
