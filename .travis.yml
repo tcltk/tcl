@@ -119,9 +119,9 @@ jobs:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols=mem"
 # Testing on Mac, various styles
-    - name: "macOS/Xcode 11.5/Shared"
+    - name: "macOS/Xcode 11.7/Shared"
       os: osx
-      osx_image: xcode11.5
+      osx_image: xcode11.7
       env:
         - BUILD_DIR=macosx
       install: []
@@ -129,9 +129,9 @@ jobs:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
-    - name: "macOS/Xcode 11.5/Shared/Unix-like"
+    - name: "macOS/Xcode 11.7/Shared/Unix-like"
       os: osx
-      osx_image: xcode11.5
+      osx_image: xcode11.7
       env:
         - BUILD_DIR=unix
 # Older MacOS versions
