@@ -1834,7 +1834,7 @@ CompileCmdLiteral(
     bytes = TclGetStringFromObj(cmdObj, &numBytes);
     cmdLitIdx = TclRegisterLiteral(envPtr, bytes, numBytes, extraLiteralFlags);
 
-    if (cmdPtr) {
+    if (cmdPtr && TclRoutineHasName(cmdPtr)) {
 	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
     }
     TclEmitPush(cmdLitIdx, envPtr);
