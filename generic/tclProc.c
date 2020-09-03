@@ -222,7 +222,7 @@ Tcl_ProcObjCmd(
 
     ((Command *)cmd)->refCount++;
     if (procPtr->cmdPtr != NULL) {
-	TclCleanupCommandMacro(procPtr->cmdPtr)
+	TclCleanupCommandMacro(procPtr->cmdPtr);
     }
     procPtr->cmdPtr = (Command *) cmd;
 
