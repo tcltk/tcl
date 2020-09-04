@@ -8,8 +8,10 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 
-package require tcltest 2
-namespace import ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 
 set fullPkgPath [makeDirectory pkg]
 
