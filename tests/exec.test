@@ -14,8 +14,10 @@
 # There is no point in running Valgrind on cases where [exec] forks but then
 # fails and the child process doesn't go through full cleanup.
 
-package require tcltest 2
-namespace import -force ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 
 package require tcltests
 

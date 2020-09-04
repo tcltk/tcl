@@ -10,7 +10,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     #tcltest::configure -verbose {pass start}
     namespace import -force ::tcltest::*
 }
@@ -43,7 +43,7 @@ proc createChildProcess {ddeServerName args} {
         # DDE child server -
         #
 	if {"::tcltest" ni [namespace children]} {
-	    package require tcltest
+	    package require tcltest 2.5
 	    namespace import -force ::tcltest::*
 	}
 
