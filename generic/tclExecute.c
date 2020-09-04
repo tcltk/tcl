@@ -5444,14 +5444,17 @@ TEBCresume(
 	endIdx = Tcl_GetCharLength(valuePtr) - 1;
 	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
+	DECACHE_STACK_INFO();
 	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, endIdx,
 		    &fromIdx) != TCL_OK
 	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, endIdx,
 		    &toIdx) != TCL_OK) {
+	    CACHE_STACK_INFO();
 	    TclDecrRefCount(value3Ptr);
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+	CACHE_STACK_INFO();
 	TclDecrRefCount(OBJ_AT_TOS);
 	(void) POP_OBJECT();
 	TclDecrRefCount(OBJ_AT_TOS);
