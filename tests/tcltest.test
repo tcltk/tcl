@@ -17,9 +17,9 @@
 # interfere with the [test] doing the testing.
 #
 
-if {[catch {package require tcltest 2.1}]} {
-    puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
-    return
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
 }
 
 namespace eval ::tcltest::test {
@@ -27,7 +27,7 @@ namespace eval ::tcltest::test {
 namespace import ::tcltest::*
 
 makeFile {
-    package require tcltest
+    package require tcltest 2.5
     namespace import ::tcltest::test
     test a-1.0 {test a} {
 	list 0
@@ -340,7 +340,7 @@ test tcltest-5.5 {InitConstraints: list of built-in constraints} \
 
 # -outfile, -errfile, [outputChannel], [outputFile], [errorChannel], [errorFile]
 set printerror [makeFile {
-    package require tcltest
+    package require tcltest 2.5
     namespace import ::tcltest::*
     puts [outputChannel] "a test"
     ::tcltest::PrintError "a really short string"
@@ -510,7 +510,7 @@ removeFile test.tcl
 # directory tests
 
 set a [makeFile {
-    package require tcltest
+    package require tcltest 2.5
     tcltest::makeFile {} a.tmp
     puts [tcltest::outputChannel] "testdir: [tcltest::testsDirectory]"
     exit
@@ -796,7 +796,7 @@ test tcltest-9.5 {GetMatchingFiles: Bug 1119798} -setup {
 
 # -preservecore, [preserveCore]
 set mc [makeFile {
-    package require tcltest
+    package require tcltest 2.5
     namespace import ::tcltest::test
     test makecore {make a core file} {
 	set f [open core w]
@@ -847,7 +847,7 @@ removeFile makecore.tcl
 
 # -load, -loadfile, [loadScript], [loadFile]
 set contents {
-    package require tcltest
+    package require tcltest 2.5
     namespace import tcltest::*
     puts [outputChannel] $::tcltest::loadScript
     exit
@@ -943,7 +943,7 @@ makeFile {
 } single2.test $spd
 
 set allfile [makeFile {
-    package require tcltest
+    package require tcltest 2.5
     namespace import tcltest::*
     testsDirectory [file join [temporaryDirectory] singleprocdir]
     runAllTests
@@ -1000,25 +1000,25 @@ set dtd1 [makeDirectory dirtestdir2.1 $dtd]
 set dtd2 [makeDirectory dirtestdir2.2 $dtd]
 set dtd3 [makeDirectory dirtestdir2.3 $dtd]
 makeFile {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force tcltest::*
     testsDirectory [file join [temporaryDirectory] dirtestdir]
     runAllTests
 } all.tcl $dtd
 makeFile {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force tcltest::*
     testsDirectory [file join [temporaryDirectory] dirtestdir dirtestdir2.1]
     runAllTests
 } all.tcl $dtd1
 makeFile {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force tcltest::*
     testsDirectory [file join [temporaryDirectory]  dirtestdir dirtestdir2.2]
     runAllTests
 } all.tcl $dtd2
 makeFile {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force tcltest::*
     testsDirectory [file join [temporaryDirectory] dirtestdir dirtestdir2.3]
     runAllTests
@@ -1386,7 +1386,7 @@ test tcltest-21.12 {
 
 set atd [makeDirectory alltestdir]
 makeFile {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force tcltest::*
     testsDirectory [file join [temporaryDirectory] alltestdir]
     runAllTests
@@ -1398,7 +1398,7 @@ makeFile {
     error "throw an error"
 } error.test $atd
 makeFile {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force tcltest::*
     test foo-1.1 {foo} {
 	-body { return 1 }
@@ -1797,7 +1797,7 @@ test tcltest-25.3 {
 
 test tcltest-26.1 {Bug/RFE 1017151} -setup {
     makeFile {
-	package require tcltest
+	package require tcltest 2.5
 	set ::errorInfo "Should never see this"
 	tcltest::test tcltest-26.1.0 {
 	    no errorInfo when only return code mismatch
@@ -1817,7 +1817,7 @@ test tcltest-26.1 {Bug/RFE 1017151} -setup {
 
 test tcltest-26.2 {Bug/RFE 1017151} -setup {
     makeFile {
-	package require tcltest
+	package require tcltest 2.5
 	set ::errorInfo "Should never see this"
 	tcltest::test tcltest-26.2.0 {do not mask body errorInfo} -body {
 	    error "body error"
