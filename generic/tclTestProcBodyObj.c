@@ -213,7 +213,7 @@ ProcBodyTestInitInternal(
  *	proc a {x} {return $x}
  *	a 123
  *	procbodytest::proc b {x} a
- *  Note the call to "a 123", which is necessary so that the Proc pointer
+ *  The call to "a 123" is necessary so that the Proc pointer
  *  for "a" is filled in by the internal compiler; this is a hack.
  *
  * Results:

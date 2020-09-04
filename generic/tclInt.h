@@ -4985,6 +4985,17 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #define TclRoutineHasName(cmdPtr) \
     ((cmdPtr)->hPtr != NULL)
 
+
+#define TclProcDecrRefCount(procPtr) \
+    if ((procPtr)->refCount-- <= 1) { \
+	TclProcCleanupProc(procPtr); \
+    }
+
+
+#define TclProcIncrRefCount(procPtr) \
+    (procPtr)->refCount++;
+
+
 /*
  *----------------------------------------------------------------
  * Inline versions of Tcl_LimitReady() and Tcl_LimitExceeded to limit number
