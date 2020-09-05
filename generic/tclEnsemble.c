@@ -3161,7 +3161,7 @@ TclCompileEnsemble(
     }
 
     /*
-     * Now that the mapping process is done we actually try to compile.
+     * Now we've done the mapping process, can now actually try to compile.
      * If there is a subcommand compiler and that successfully produces code,
      * we'll use that. Otherwise, we fall back to generating opcodes to do the
      * invoke at runtime.
@@ -3261,9 +3261,9 @@ TclAttemptCompileProc(
 
     /*
      * Advance parsePtr->tokenPtr so that it points at the last subcommand.
-     * This will be wrong but it will not matter, and it will put the
-     * tokens for the arguments in the right place without the need to
-     * allocate a synthetic Tcl_Parse struct or copy tokens around.
+     * This will be wrong, but it will not matter, and it will put the
+     * tokens for the arguments in the right place without the needed to
+     * allocate a synthetic Tcl_Parse struct, or copy tokens around.
      */
 
     for (i = 0; i < depth - 1; i++) {

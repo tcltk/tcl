@@ -4667,7 +4667,7 @@ SetCmdNameFromAny(
      * report the failure to find the command as an error.
      */
 
-    if (cmdPtr == NULL || !TclRoutineHasName(cmdPtr)) {
+    if (cmdPtr == NULL) {
 	return TCL_ERROR;
     }
 
