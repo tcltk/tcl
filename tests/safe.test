@@ -901,7 +901,7 @@ test safe-9.20 {check module loading} -setup {
         {TCLLIB TESTSDIR/auto0/modules TESTSDIR/auto0/modules/mod1\
          TESTSDIR/auto0/modules/mod2} -- res0 res1 res2}
 # - The command safe::InterpSetConfig adds the parent's [tcl::tm::list] in
-#   tokenized form to the slave's access path, and then adds all the
+#   tokenized form to the child's access path, and then adds all the
 #   descendants, discovered recursively by using glob.
 # - The order of the directories in the list returned by glob is system-dependent,
 #   and therefore this is true also for (a) the order of token assignment to

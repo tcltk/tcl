@@ -136,17 +136,17 @@ interpreter. The return value for those procedures that return an \fBint\fR
 is either \fBTCL_OK\fR or \fBTCL_ERROR\fR. If \fBTCL_ERROR\fR is returned
 then the interpreter's result contains an error message.
 .PP
-\fBTcl_CreateSlave\fR creates a new interpreter as a slave of \fIinterp\fR.
-It also creates a slave command named \fIslaveName\fR in \fIinterp\fR which
-allows \fIinterp\fR to manipulate the new slave.
-If \fIisSafe\fR is zero, the command creates a trusted slave in which Tcl
+\fBTcl_CreateSlave\fR creates a new interpreter as a child of \fIinterp\fR.
+It also creates a child command named \fIchildName\fR in \fIinterp\fR which
+allows \fIinterp\fR to manipulate the new child.
+If \fIisSafe\fR is zero, the command creates a trusted child in which Tcl
 code has access to all the Tcl commands.
 If it is \fB1\fR, the command creates a
 .QW safe
-slave in which Tcl code has access only to set of Tcl commands defined as
+child in which Tcl code has access only to set of Tcl commands defined as
 .QW "Safe Tcl" ;
 see the manual entry for the Tcl \fBinterp\fR command for details.
-If the creation of the new slave interpreter failed, \fBNULL\fR is returned.
+If the creation of the new child interpreter failed, \fBNULL\fR is returned.
 .PP
 .VS "TIP 581"
 \fBTcl_CreateChild\fR is a synonym for \fBTcl_CreateSlave\fR.
@@ -169,9 +169,9 @@ Callers will want to take care with their use of \fBTcl_MakeSafe\fR
 to avoid false claims of safety.  For many situations, \fBTcl_CreateSlave\fR
 may be a better choice, since it creates interpreters in a known-safe state.
 .PP
-\fBTcl_GetSlave\fR returns a pointer to a slave interpreter of
-\fIinterp\fR. The slave interpreter is identified by \fIslaveName\fR.
-If no such slave interpreter exists, \fBNULL\fR is returned.
+\fBTcl_GetSlave\fR returns a pointer to a child interpreter of
+\fIinterp\fR. The child interpreter is identified by \fIchildName\fR.
+If no such child interpreter exists, \fBNULL\fR is returned.
 .PP
 .VS "TIP 581"
 \fBTcl_GetChild\fR is a synonym for \fBTcl_GetSlave\fR.
@@ -187,7 +187,7 @@ top-level interpreter) then \fBNULL\fR is returned.
 .PP
 \fBTcl_GetInterpPath\fR stores in the result of \fIinterp\fR
 the relative path between \fIinterp\fR and \fIchildInterp\fR;
-\fIchildInterp\fR must be a slave of \fIinterp\fR. If the computation
+\fIchildInterp\fR must be a child of \fIinterp\fR. If the computation
 of the relative path succeeds, \fBTCL_OK\fR is returned, else
 \fBTCL_ERROR\fR is returned and an error message is stored as the
 result of \fIinterp\fR.
@@ -260,4 +260,4 @@ interp
 
 .SH KEYWORDS
 alias, command, exposed commands, hidden commands, interpreter, invoke,
-master, slave
+parent, child

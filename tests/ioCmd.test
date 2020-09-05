@@ -2109,13 +2109,13 @@ test iocmd-32.2 {delete interp of reflected chan} {
     # Bug 3034840
     # Run this test in an interp with memory debugging to panic
     # on the double free
-    interp create slave
-    slave eval {
+    interp create child
+    child eval {
         proc no-op args {}
         proc driver {sub args} {return {initialize finalize watch read}}
         chan event [chan create read driver] readable no-op
     }
-    interp delete slave
+    interp delete child
 } {}
 
 # ### ### ### ######### ######### #########
