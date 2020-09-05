@@ -4912,7 +4912,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #define TclCleanupCommandMacro(cmdPtr) \
     if ((cmdPtr)->refCount-- <= 1) { \
-	ckfree(cmdPtr);\
+	Tcl_Free(cmdPtr);\
     }
 
 /*
