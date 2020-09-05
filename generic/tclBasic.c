@@ -2790,11 +2790,6 @@ TclCreateObjCommandInNs(
 	    Command *refCmdPtr = oldRefPtr->importedCmdPtr;
 
 	    dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
-	    /* to be paranoid, incrment cmdPtr->refcount before decremnting
-	     * dataPtr->realCmdPtr->refCount
-	     */
-	    cmdPtr->refCount++;
-	    TclCleanupCommandMacro(dataPtr->realCmdPtr);
 	    dataPtr->realCmdPtr = cmdPtr;
 	    oldRefPtr = oldRefPtr->nextPtr;
 	}
@@ -3384,7 +3379,7 @@ Tcl_GetCommandFullName(
      * separator, and the command name.
      */
 
-    if ((cmdPtr != NULL) && TclRoutineHasName(cmdPtr)) {
+    if (cmdPtr != NULL) {
 	if (cmdPtr->nsPtr != NULL) {
 	    Tcl_AppendToObj(objPtr, cmdPtr->nsPtr->fullName, -1);
 	    if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
@@ -3474,7 +3469,7 @@ Tcl_DeleteCommandFromToken(
      * and skip nested deletes.
      */
 
-    if (cmdPtr->flags & CMD_DYING) {
+    if (cmdPtr->flags & CMD_IS_DELETED) {
 	/*
 	 * Another deletion is already in progress. Remove the hash table
 	 * entry now, but don't invoke a callback or free the command
@@ -3507,7 +3502,7 @@ Tcl_DeleteCommandFromToken(
      * be ignored.
      */
 
-    cmdPtr->flags |= CMD_DYING;
+    cmdPtr->flags |= CMD_IS_DELETED;
 
     /*
      * Call trace functions for the command being deleted. Then delete its
@@ -3537,7 +3532,7 @@ Tcl_DeleteCommandFromToken(
     }
 
     /*
-     * The list of commands exported from the namespace might have changed.
+     * The list of command exported from the namespace might have changed.
      * However, we do not need to recompute this just yet; next time we need
      * the info will be soon enough.
      */
@@ -3673,7 +3668,7 @@ CallCommandTraces(
 	 * While a rename trace is active, we will not process any more rename
 	 * traces; while a delete trace is active we will never reach here -
 	 * because Tcl_DeleteCommandFromToken checks for the condition
-	 * (cmdPtr->flags & CMD_DYING) and returns immediately when a
+	 * (cmdPtr->flags & CMD_IS_DELETED) and returns immediately when a
 	 * command deletion is in progress. For all other traces, delete
 	 * traces will not be invoked but a call to TraceCommandProc will
 	 * ensure that tracePtr->clientData is freed whenever the command
@@ -5226,7 +5221,7 @@ TEOV_RunLeaveTraces(
     int length;
     const char *command = TclGetStringFromObj(commandPtr, &length);
 
-    if (!(cmdPtr->flags & CMD_DYING)) {
+    if (!(cmdPtr->flags & CMD_IS_DELETED)) {
 	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES) {
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
@@ -6472,7 +6467,7 @@ TclNREvalObjEx(
 	/*
 	 * Shimmer protection! Always pass an unshared obj. The caller could
 	 * incr the refCount of objPtr AFTER calling us! To be completely safe
-	 * we always make a copy. The callback takes care of the refCounts for
+	 * we always make a copy. The callback takes care od the refCounts for
 	 * both listPtr and objPtr.
 	 *
 	 * TODO: Create a test to demo this need, or eliminate it.
@@ -9525,7 +9520,7 @@ NRCoroutineCallerCallback(
     SAVE_CONTEXT(corPtr->running);
     RESTORE_CONTEXT(corPtr->caller);
 
-    if (cmdPtr->flags & CMD_DYING) {
+    if (cmdPtr->flags & CMD_IS_DELETED) {
 	/*
 	 * The command was deleted while it was running: wind down the
 	 * execEnv, this will do the complete cleanup. RewindCoroutine will
@@ -10294,7 +10289,7 @@ TclInfoCoroutineCmd(
 	return TCL_ERROR;
     }
 
-    if (corPtr && !(corPtr->cmdPtr->flags & CMD_DYING)) {
+    if (corPtr && !(corPtr->cmdPtr->flags & CMD_IS_DELETED)) {
 	Tcl_Obj *namePtr;
 
 	TclNewObj(namePtr);
