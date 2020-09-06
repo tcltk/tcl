@@ -311,7 +311,7 @@ HandleBgErrors(
 
 int
 TclDefaultBgErrorHandlerObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1046,7 +1046,7 @@ Tcl_InitSubsystems(void)
 	     * implementation of self-initializing locks.
 	     */
 
-	    TclInitThreadStorage();     /* Creates master hash table for
+	    TclInitThreadStorage();     /* Creates hash table for
 					 * thread local storage */
 #if USE_TCLALLOC
 	    TclInitAlloc();		/* Process wide mutex init */
@@ -1163,7 +1163,7 @@ Tcl_Finalize(void)
     TclFinalizeFilesystem();
 
     /*
-     * Undo all Tcl_ObjType registrations, and reset the master list of free
+     * Undo all Tcl_ObjType registrations, and reset the global list of free
      * Tcl_Obj's. After this returns, no more Tcl_Obj's should be allocated or
      * freed.
      *
@@ -1398,7 +1398,7 @@ TclInThreadExit(void)
 
 int
 Tcl_VwaitObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1494,7 +1494,7 @@ VwaitVarProc(
 
 int
 Tcl_UpdateObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

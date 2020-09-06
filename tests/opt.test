@@ -12,12 +12,12 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 # the package we are going to test
-package require opt 0.4.7
+package require opt 0.4.8
 
 # we are using implementation specifics to test the package
 
