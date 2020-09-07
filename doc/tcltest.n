@@ -1145,7 +1145,7 @@ Here is a sketch of a sample test file illustrating those points:
 .RS
 .PP
 .CS
-package require tcltest 2.2
+package require tcltest 2.5
 eval \fB::tcltest::configure\fR $argv
 package require example
 namespace eval ::example::test {
@@ -1179,8 +1179,8 @@ Here is a sketch of a sample test suite main script:
 .RS
 .PP
 .CS
-package require Tcl 8.4
-package require tcltest 2.2
+package require Tcl 8.6
+package require tcltest 2.5
 package require example
 \fB::tcltest::configure\fR -testdir \e
         [file dirname [file normalize [info script]]]

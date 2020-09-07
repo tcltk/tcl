@@ -15,7 +15,7 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -980,7 +980,7 @@ test execute-8.5 {Bug 2038069} -setup {
 test execute-8.6 {Compile epoch bump in global level (bug [fa6bf38d07])} -setup {
     interp create child
     child eval {
-	package require tcltest
+	package require tcltest 2.5
 	catch [list package require -exact Tcltest [info patchlevel]]
 	::tcltest::loadTestedCommands
 	if {[namespace which -command testbumpinterpepoch] eq ""} {
@@ -1013,7 +1013,7 @@ test execute-8.6 {Compile epoch bump in global level (bug [fa6bf38d07])} -setup 
 test execute-8.7 {Compile epoch bump in global level (bug [fa6bf38d07]), exception case} -setup {
     interp create child
     child eval {
-	package require tcltest
+	package require tcltest 2.5
 	catch [list package require -exact Tcltest [info patchlevel]]
 	::tcltest::loadTestedCommands
 	if {[namespace which -command testbumpinterpepoch] eq ""} {
