@@ -3931,8 +3931,10 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfCharComplete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
 	    ? ((length) >= TCL_UTF_MAX) : tclStubsPtr->tcl_UtfCharComplete((src), (length)))
 #endif
-#define Tcl_CreateSlave Tcl_CreateChild
-#define Tcl_GetSlave Tcl_GetChild
-#define Tcl_GetMaster Tcl_GetParent
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_CreateSlave Tcl_CreateChild
+#   define Tcl_GetSlave Tcl_GetChild
+#   define Tcl_GetMaster Tcl_GetParent
+#endif
 
 #endif /* _TCLDECLS */
