@@ -4254,7 +4254,7 @@ TEBCresume(
 	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
 
 	TclNewObj(objResultPtr);
-	if (corPtr && !(corPtr->cmdPtr->flags & CMD_IS_DELETED)) {
+	if (corPtr && !(corPtr->cmdPtr->flags & CMD_DYING)) {
 	    Tcl_GetCommandFullName(interp, (Tcl_Command) corPtr->cmdPtr,
 		    objResultPtr);
 	}
@@ -4314,6 +4314,18 @@ TEBCresume(
 	TRACE(("\"%.30s\" => ", O2S(OBJ_AT_TOS)));
 	cmd = Tcl_GetCommandFromObj(interp, OBJ_AT_TOS);
 	if (cmd == NULL) {
+	    goto instOriginError;
+	}
+	origCmd = TclGetOriginalCommand(cmd);
+	if (origCmd == NULL) {
+	    origCmd = cmd;
+	}
+
+	TclNewObj(objResultPtr);
+	Tcl_GetCommandFullName(interp, origCmd, objResultPtr);
+	if (TclCheckEmptyString(objResultPtr) == TCL_EMPTYSTRING_YES ) {
+	    Tcl_DecrRefCount(objResultPtr);
+	    instOriginError:
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "invalid command name \"%s\"", TclGetString(OBJ_AT_TOS)));
 	    DECACHE_STACK_INFO();
@@ -4323,12 +4335,6 @@ TEBCresume(
 	    TRACE_APPEND(("ERROR: not command\n"));
 	    goto gotError;
 	}
-	origCmd = TclGetOriginalCommand(cmd);
-	if (origCmd == NULL) {
-	    origCmd = cmd;
-	}
-	TclNewObj(objResultPtr);
-	Tcl_GetCommandFullName(interp, origCmd, objResultPtr);
 	TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_TOS)));
 	NEXT_INST_F(1, 1, 1);
     }
