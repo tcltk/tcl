@@ -479,6 +479,8 @@ proc genStubs::makeDecl {name decl index} {
     if {[info exists stubs($name,deprecated,$index)]} {
 	append text "[string toupper $libraryName]_DEPRECATED(\"$stubs($name,deprecated,$index)\")\n"
 	set line "$rtype"
+    } elseif {[string range $rtype end-5 end] eq "MP_WUR"} {
+	set line "$scspec [string trim [string range $rtype 0 end-6]]"
     } else {
 	set line "$scspec $rtype"
     }
@@ -550,6 +552,9 @@ proc genStubs::makeDecl {name decl index} {
 	    append line ")"
 	}
     }
+    if {[string range $rtype end-5 end] eq "MP_WUR"} {
+	append line " MP_WUR"
+    }
     return "$text$line;\n"
 }
 
@@ -613,6 +618,8 @@ proc genStubs::makeSlot {name decl index} {
 	append text [string trim [string range $rtype 0 end-9]] " (__stdcall *" $lfname ") "
     } elseif {[string range $rtype 0 11] eq "TCL_NORETURN"} {
 	append text "TCL_NORETURN1 " [string trim [string range $rtype 12 end]] " (*" $lfname ") "
+    } elseif {[string range $rtype end-5 end] eq "MP_WUR"} {
+	append text [string trim [string range $rtype 0 end-6]] " (*" $lfname ") "
     } else {
 	append text $rtype " (*" $lfname ") "
     }
@@ -650,6 +657,9 @@ proc genStubs::makeSlot {name decl index} {
 	}
     }
 
+    if {[string range $rtype end-5 end] eq "MP_WUR"} {
+	append text " MP_WUR"
+    }
     append text "; /* $index */\n"
     return $text
 }
