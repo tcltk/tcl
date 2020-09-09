@@ -1,4 +1,4 @@
-# safe-stock86.test --
+# safe-stock.test --
 #
 # This file contains tests for safe Tcl that were previously in the file
 # safe.test, and use files and packages of stock Tcl 8.6 to perform the tests.
@@ -44,13 +44,8 @@ proc mapList {map listIn} {
 # thus un-autoindexed) APIs in this test result arguments:
 catch {safe::interpConfigure}
 
-# testing that nested and statics do what is advertised (we use a static
-# package - Tcltest - but it might be absent if we're in standard tclsh)
-
-testConstraint TcltestPackage [expr {![catch {package require Tcltest}]}]
-
 # high level general test
-test safe-stock86-7.1 {tests that everything works at high level, uses http 2} -body {
+test safe-stock-7.1 {tests that everything works at high level, uses http 2} -body {
     set i [safe::interpCreate]
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
@@ -61,7 +56,7 @@ test safe-stock86-7.1 {tests that everything works at high level, uses http 2} -
     safe::interpDelete $i
     set v
 } -match glob -result 2.*
-test safe-stock86-7.2 {tests specific path and interpFind/AddToAccessPath, uses http1.0} -body {
+test safe-stock-7.2 {tests specific path and interpFind/AddToAccessPath, uses http1.0} -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
@@ -76,7 +71,7 @@ test safe-stock86-7.2 {tests specific path and interpFind/AddToAccessPath, uses 
 	    $mappA -- [safe::interpDelete $i]
 } -match glob -result {{$p(:0:)} {$p(:*:)} -- 1 {can't find package http 1} --\
         {TCLLIB */dummy/unixlike/test/path} -- {}}
-test safe-stock86-7.4 {tests specific path and positive search, uses http1.0} -body {
+test safe-stock-7.4 {tests specific path and positive search, uses http1.0} -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
@@ -84,7 +79,7 @@ test safe-stock86-7.4 {tests specific path and positive search, uses http1.0} -b
     set token2 [safe::interpAddToAccessPath $i [file join [info library] http1.0]]
     set confA [safe::interpConfigure $i]
     set mappA [mapList $PathMapp [dict get $confA -accessPath]]
-    # this time, unlike test safe-stock86-7.2, http should be found
+    # this time, unlike test safe-stock-7.2, http should be found
     list $token1 $token2 -- \
 	    [catch {interp eval $i {package require http 1}} msg] $msg -- \
 	    $mappA -- [safe::interpDelete $i]
@@ -92,7 +87,7 @@ test safe-stock86-7.4 {tests specific path and positive search, uses http1.0} -b
 
 # The following test checks whether the definition of tcl_endOfWord can be
 # obtained from auto_loading.  It was previously test "safe-5.1".
-test safe-stock86-9.8 {test auto-loading in safe interpreters, was test 5.1} -setup {
+test safe-stock-9.8 {test auto-loading in safe interpreters, was test 5.1} -setup {
     catch {safe::interpDelete a}
     safe::interpCreate a
 } -body {
