@@ -1991,7 +1991,7 @@ LoadEscapeEncoding(
 	Tcl_DStringFree(&lineString);
     }
 
-    size = sizeof(EscapeEncodingData) - sizeof(EscapeSubTable)
+    size = offsetof(EscapeEncodingData, subTables)
 	    + Tcl_DStringLength(&escapeData);
     dataPtr = (EscapeEncodingData *)Tcl_Alloc(size);
     dataPtr->initLen = strlen(init);
