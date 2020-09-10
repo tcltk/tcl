@@ -2039,7 +2039,7 @@ LoadEscapeEncoding(
 	Tcl_DStringFree(&lineString);
     }
 
-    size = sizeof(EscapeEncodingData) - sizeof(EscapeSubTable)
+    size = TclOffset(EscapeEncodingData, subTables)
 	    + Tcl_DStringLength(&escapeData);
     dataPtr = (EscapeEncodingData *)ckalloc(size);
     dataPtr->initLen = strlen(init);
