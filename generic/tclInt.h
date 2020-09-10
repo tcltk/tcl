@@ -4935,7 +4935,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  * Computes number of bytes from beginning of structure to a given field.
  */
 
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && !defined(BUILD_tcl)
 #   define TclOffset(type, field) ((int) offsetof(type, field))
 #endif
 /* Workaround for platforms missing offsetof(), e.g. VC++ 6.0 */

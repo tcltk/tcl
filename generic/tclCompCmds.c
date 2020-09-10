@@ -390,9 +390,9 @@ TclCompileArraySetCmd(
     keyVar = AnonymousLocal(envPtr);
     valVar = AnonymousLocal(envPtr);
 
-    infoPtr = (ForeachInfo *)ckalloc(sizeof(ForeachInfo));
+    infoPtr = (ForeachInfo *)ckalloc(offsetof(ForeachInfo, varLists) + sizeof(ForeachVarList *));
     infoPtr->numLists = 1;
-    infoPtr->varLists[0] = (ForeachVarList *)ckalloc(sizeof(ForeachVarList) + sizeof(int));
+    infoPtr->varLists[0] = (ForeachVarList *)ckalloc(offsetof(ForeachVarList, varIndexes) + 2 * sizeof(int));
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
     infoPtr->varLists[0]->varIndexes[1] = valVar;
@@ -1789,7 +1789,7 @@ TclCompileDictUpdateCmd(
      * that are to be used.
      */
 
-    duiPtr = (DictUpdateInfo *)ckalloc(sizeof(DictUpdateInfo) + sizeof(int) * (numVars - 1));
+    duiPtr = (DictUpdateInfo *)ckalloc(offsetof(DictUpdateInfo, varIndices) + sizeof(int) * numVars);
     duiPtr->length = numVars;
     keyTokenPtrs = (Tcl_Token **)TclStackAlloc(interp, sizeof(Tcl_Token *) * numVars);
     tokenPtr = TokenAfter(dictVarTokenPtr);
@@ -2271,7 +2271,7 @@ DupDictUpdateInfo(
     size_t len;
 
     dui1Ptr = (DictUpdateInfo *)clientData;
-    len = sizeof(DictUpdateInfo) + sizeof(int) * (dui1Ptr->length - 1);
+    len = offsetof(DictUpdateInfo, varIndices) + sizeof(int) * dui1Ptr->length;
     dui2Ptr = (DictUpdateInfo *)ckalloc(len);
     memcpy(dui2Ptr, dui1Ptr, len);
     return dui2Ptr;
@@ -2721,8 +2721,8 @@ CompileEachloopCmd(
      */
 
     numLists = (numWords - 2)/2;
-    infoPtr = (ForeachInfo *)ckalloc(sizeof(ForeachInfo)
-	    + (numLists - 1) * sizeof(ForeachVarList *));
+    infoPtr = (ForeachInfo *)ckalloc(offsetof(ForeachInfo, varLists)
+	    + numLists * sizeof(ForeachVarList *));
     infoPtr->numLists = 0;	/* Count this up as we go */
 
     /*
@@ -2755,8 +2755,8 @@ CompileEachloopCmd(
 	    goto done;
 	}
 
-	varListPtr = (ForeachVarList *)ckalloc(sizeof(ForeachVarList)
-		+ (numVars - 1) * sizeof(int));
+	varListPtr = (ForeachVarList *)ckalloc(offsetof(ForeachVarList, varIndexes)
+		+ numVars * sizeof(int));
 	varListPtr->numVars = numVars;
 	infoPtr->varLists[i/2] = varListPtr;
 	infoPtr->numLists++;
@@ -2891,7 +2891,7 @@ DupForeachInfo(
     ForeachVarList *srcListPtr, *dupListPtr;
     int numVars, i, j, numLists = srcPtr->numLists;
 
-    dupPtr = (ForeachInfo *)ckalloc(sizeof(ForeachInfo)
+    dupPtr = (ForeachInfo *)ckalloc(offsetof(ForeachInfo, varLists)
 	    + numLists * sizeof(ForeachVarList *));
     dupPtr->numLists = numLists;
     dupPtr->firstValueTemp = srcPtr->firstValueTemp;
@@ -2900,7 +2900,7 @@ DupForeachInfo(
     for (i = 0;  i < numLists;  i++) {
 	srcListPtr = srcPtr->varLists[i];
 	numVars = srcListPtr->numVars;
-	dupListPtr = (ForeachVarList *)ckalloc(sizeof(ForeachVarList)
+	dupListPtr = (ForeachVarList *)ckalloc(offsetof(ForeachVarList, varIndexes)
 		+ numVars * sizeof(int));
 	dupListPtr->numVars = numVars;
 	for (j = 0;  j < numVars;  j++) {
