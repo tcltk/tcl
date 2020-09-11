@@ -245,7 +245,7 @@ proc unknown args {
 		set errInfo [string range $errInfo 0 $last-1]
 		set tail "\"$cinfo\""
 		set last [string last $tail $errInfo]
-		if {$last + [string length $tail] != [string length $errInfo]} {
+		if {$last < 0 || $last + [string length $tail] != [string length $errInfo]} {
 		    return -code error -errorcode $errCode \
 			    -errorinfo $errInfo $msg
 		}
@@ -742,7 +742,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    }
 	}
     } else {
-	if {[string first $nsrc $ndest] != -1} {
+	if {[string first $nsrc $ndest] >= 0} {
 	    set srclen [expr {[llength [file split $nsrc]] - 1}]
 	    set ndest [lindex [file split $ndest] $srclen]
 	    if {$ndest eq [file tail $nsrc]} {
