@@ -318,7 +318,7 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook} {
 	# Make sure that tcl_library is in auto_path and at the first
 	# position (needed by setAccessPath)
 	set where [lsearch -exact $access_path [info library]]
-	if {$where == -1} {
+	if {$where < 0} {
 	    # not found, add it.
 	    set access_path [linsert $access_path 0 [info library]]
 	    Log $child "tcl_library was not in auto_path,\
