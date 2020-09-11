@@ -153,7 +153,7 @@ proc httpTest::TestOverlaps {someResults n term msg badTrans notPiped} {
         set myStart   [lsearch -exact $someResults [list B $i]]
         set myEnd     [lsearch -exact $someResults [list $term $i]]
 
-        if {($myStart == -1 || $myEnd == -1)} {
+        if {($myStart < 0 || $myEnd < 0)} {
             set res "Cannot find positions of transaction $i"
 	    append msg $res \n
 	    Puts $res

@@ -274,7 +274,7 @@ typedef struct {
 				 * array. */
     size_t allocated;		/* The amount of space actually allocated
 				 * minus 1 byte. */
-    unsigned char bytes[1];	/* The array of bytes. The actual size of this
+    unsigned char bytes[TCLFLEXARRAY];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
 				 * above. */
 } ByteArray;
