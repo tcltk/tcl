@@ -3835,7 +3835,7 @@ Tcl_LsearchObjCmd(
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(index));
+	    Tcl_SetObjResult(interp, TclNewWideIntObjFromSize((size_t)index));
 	}
     } else if (index < 0) {
 	/*
