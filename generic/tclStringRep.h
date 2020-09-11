@@ -59,7 +59,7 @@ typedef struct {
 				 * space allocated for the unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has
 				 * a Unicode representation. */
-    Tcl_UniChar unicode[1];	/* The array of Unicode chars. The actual size
+    Tcl_UniChar unicode[TCLFLEXARRAY];	/* The array of Unicode chars. The actual size
 				 * of this field depends on the 'maxChars'
 				 * field above. */
 } String;
