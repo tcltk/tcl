@@ -531,7 +531,7 @@ proc http::CloseSocket {s {token {}}} {
     } else {
 	set map [array get socketMapping]
 	set ndx [lsearch -exact $map $s]
-	if {$ndx != -1} {
+	if {$ndx >= 0} {
 	    incr ndx -1
 	    set connId [lindex $map $ndx]
 	}
