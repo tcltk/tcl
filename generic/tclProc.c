@@ -600,7 +600,7 @@ TclCreateProc(
 	     */
 
 	    localPtr = (CompiledLocal *)ckalloc(
-		    TclOffset(CompiledLocal, name) + fieldValues[0]->length +1);
+		    TclOffset(CompiledLocal, name) + fieldValues[0]->length + 1);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -1305,8 +1305,8 @@ InitLocalCache(
      * for future calls.
      */
 
-    localCachePtr = ckalloc(sizeof(LocalCache)
-	    + (localCt - 1) * sizeof(Tcl_Obj *)
+    localCachePtr = (LocalCache *)ckalloc(TclOffset(LocalCache, varName0)
+	    + localCt * sizeof(Tcl_Obj *)
 	    + numArgs * sizeof(Var));
 
     namePtr = &localCachePtr->varName0;
@@ -2499,12 +2499,12 @@ SetLambdaFromAny(
 		 * location (line of 2nd list element).
 		 */
 
-		cfPtr = ckalloc(sizeof(CmdFrame));
+		cfPtr = (CmdFrame *)ckalloc(sizeof(CmdFrame));
 		TclListLines(objPtr, contextPtr->line[1], 2, buf, NULL);
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;
-		cfPtr->line = ckalloc(sizeof(int));
+		cfPtr->line = (int *)ckalloc(sizeof(int));
 		cfPtr->line[0] = buf[1];
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;

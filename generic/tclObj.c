@@ -145,12 +145,12 @@ typedef struct PendingObjData {
 #define ObjDeletionUnlock(contextPtr)	((contextPtr)->deletionCount--)
 #define ObjDeletePending(contextPtr)	((contextPtr)->deletionCount > 0)
 #define ObjOnStack(contextPtr)		((contextPtr)->deletionStack != NULL)
-#define PushObjToDelete(contextPtr,objPtr) \
+#define PushObjToDelete(contextPtr,objPtr)                              \
     /* The string rep is already invalidated so we can use the bytes value \
      * for our pointer chain: push onto the head of the stack. */       \
     (objPtr)->bytes = (char *) ((contextPtr)->deletionStack);           \
     (contextPtr)->deletionStack = (objPtr)
-#define PopObjToDelete(contextPtr,objPtrVar) \
+#define PopObjToDelete(contextPtr,objPtrVar)                            \
     (objPtrVar) = (contextPtr)->deletionStack;                          \
     (contextPtr)->deletionStack = (Tcl_Obj *) (objPtrVar)->bytes
 
@@ -168,7 +168,7 @@ static __thread PendingObjData pendingObjData;
 #else
 static Tcl_ThreadDataKey pendingObjDataKey;
 #define ObjInitDeletionContext(contextPtr) \
-    PendingObjData *const contextPtr =                                  \
+    PendingObjData *const contextPtr =     \
 	    Tcl_GetThreadData(&pendingObjDataKey, sizeof(PendingObjData))
 #endif
 
@@ -177,27 +177,27 @@ static Tcl_ThreadDataKey pendingObjDataKey;
  */
 
 #define PACK_BIGNUM(bignum, objPtr) \
-    if ((bignum).used > 0x7FFF) {                                       \
-	mp_int *temp = (void *) ckalloc((unsigned) sizeof(mp_int));     \
+    if ((bignum).used > 0x7FFF) {                                   \
+	mp_int *temp = (mp_int *)ckalloc(sizeof(mp_int));               \
 	*temp = bignum;                                                 \
-	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                 \
-	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1); \
-    } else {                                                            \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                  \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1);           \
+    } else {                                                        \
 	if ((bignum).alloc > 0x7FFF) {                                  \
 	    mp_shrink(&(bignum));                                       \
 	}                                                               \
-	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (bignum).dp; \
-	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR( ((bignum).sign << 30) \
-		| ((bignum).alloc << 15) | ((bignum).used));            \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *)(bignum).dp;   \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(((bignum).sign << 30) \
+		| ((bignum).alloc << 15) | ((bignum).used));                \
     }
 
 #define UNPACK_BIGNUM(objPtr, bignum) \
-    if ((objPtr)->internalRep.twoPtrValue.ptr2 == INT2PTR(-1)) { \
-	(bignum) = *((mp_int *) ((objPtr)->internalRep.twoPtrValue.ptr1)); \
+    if ((objPtr)->internalRep.twoPtrValue.ptr2 == INT2PTR(-1)) {        \
+	(bignum) = *((mp_int *) ((objPtr)->internalRep.twoPtrValue.ptr1));  \
     } else {                                                            \
-	(bignum).dp = (objPtr)->internalRep.twoPtrValue.ptr1;          \
+	(bignum).dp = (objPtr)->internalRep.twoPtrValue.ptr1;               \
 	(bignum).sign = PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) >> 30; \
-	(bignum).alloc =                                                \
+	(bignum).alloc =                                                    \
 		(PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) >> 15) & 0x7FFF; \
 	(bignum).used = PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) & 0x7FFF; \
     }
@@ -541,7 +541,7 @@ TclGetContLineTable(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->lineCLPtr) {
-	tsdPtr->lineCLPtr = ckalloc(sizeof(Tcl_HashTable));
+	tsdPtr->lineCLPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(tsdPtr->lineCLPtr, TCL_ONE_WORD_KEYS);
 	Tcl_CreateThreadExitHandler(TclThreadFinalizeContLines,NULL);
     }
@@ -576,7 +576,7 @@ TclContinuationsEnter(
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
 	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = ckalloc(sizeof(ContLineLoc) + num*sizeof(int));
+    ContLineLoc *clLocPtr = (ContLineLoc *)ckalloc(TclOffset(ContLineLoc, loc) + (num + 1) *sizeof(int));
 
     if (!newEntry) {
 	/*
@@ -1079,7 +1079,7 @@ TclDbInitNewObj(
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (tsdPtr->objThreadMap == NULL) {
-	    tsdPtr->objThreadMap = ckalloc(sizeof(Tcl_HashTable));
+	    tsdPtr->objThreadMap = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 	    Tcl_InitHashTable(tsdPtr->objThreadMap, TCL_ONE_WORD_KEYS);
 	}
 	tablePtr = tsdPtr->objThreadMap;
@@ -1092,7 +1092,7 @@ TclDbInitNewObj(
 	 * Record the debugging information.
 	 */
 
-	objData = ckalloc(sizeof(ObjData));
+	objData = (ObjData *)ckalloc(sizeof(ObjData));
 	objData->objPtr = objPtr;
 	objData->file = file;
 	objData->line = line;
@@ -1251,7 +1251,7 @@ TclAllocateFreeObjects(void)
      * Purify apparently can't figure that out, and fires a false alarm.
      */
 
-    basePtr = ckalloc(bytesToAlloc);
+    basePtr = (char *)ckalloc(bytesToAlloc);
 
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
@@ -2373,7 +2373,7 @@ UpdateStringOfDouble(
     Tcl_PrintDouble(NULL, objPtr->internalRep.doubleValue, buffer);
     len = strlen(buffer);
 
-    objPtr->bytes = ckalloc(len + 1);
+    objPtr->bytes = (char *)ckalloc(len + 1);
     memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
     objPtr->length = len;
 }
@@ -2573,7 +2573,7 @@ UpdateStringOfInt(
 
     len = TclFormatInt(buffer, objPtr->internalRep.longValue);
 
-    objPtr->bytes = ckalloc(len + 1);
+    objPtr->bytes = (char *)ckalloc(len + 1);
     memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
     objPtr->length = len;
 }
@@ -2877,7 +2877,7 @@ UpdateStringOfWideInt(
 
     sprintf(buffer, "%" TCL_LL_MODIFIER "d", wideVal);
     len = strlen(buffer);
-    objPtr->bytes = ckalloc(len + 1);
+    objPtr->bytes = (char *)ckalloc(len + 1);
     memcpy(objPtr->bytes, buffer, len + 1);
     objPtr->length = len;
 }
@@ -3269,7 +3269,7 @@ UpdateStringOfBignum(
 
 	Tcl_Panic("UpdateStringOfBignum: string length limit exceeded");
     }
-    stringVal = ckalloc(size);
+    stringVal = (char *)ckalloc(size);
     status = mp_to_radix(&bignumVal, stringVal, size, NULL, 10);
     if (status != MP_OKAY) {
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");
@@ -3942,8 +3942,8 @@ AllocObjEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
-    Tcl_Obj *objPtr = keyPtr;
-    Tcl_HashEntry *hPtr = ckalloc(sizeof(Tcl_HashEntry));
+    Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
+    Tcl_HashEntry *hPtr = (Tcl_HashEntry *)ckalloc(sizeof(Tcl_HashEntry));
 
     hPtr->key.objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
@@ -4236,7 +4236,7 @@ TclSetCmdNameObj(
     }
 
     cmdPtr->refCount++;
-    resPtr = ckalloc(sizeof(ResolvedCmdName));
+    resPtr = (ResolvedCmdName *)ckalloc(sizeof(ResolvedCmdName));
     resPtr->cmdPtr = cmdPtr;
     resPtr->cmdEpoch = cmdPtr->cmdEpoch;
     resPtr->refCount = 1;
@@ -4422,7 +4422,7 @@ SetCmdNameFromAny(
 	    }
 	} else {
 	    TclFreeIntRep(objPtr);
-	    resPtr = ckalloc(sizeof(ResolvedCmdName));
+	    resPtr = (ResolvedCmdName *)ckalloc(sizeof(ResolvedCmdName));
 	    resPtr->refCount = 1;
 	    objPtr->internalRep.twoPtrValue.ptr1 = resPtr;
 	    objPtr->internalRep.twoPtrValue.ptr2 = NULL;

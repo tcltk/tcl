@@ -199,7 +199,7 @@ typedef struct ByteArray {
 				 * array. */
     int allocated;		/* The amount of space actually allocated
 				 * minus 1 byte. */
-    unsigned char bytes[1];	/* The array of bytes. The actual size of this
+    unsigned char bytes[TCLFLEXARRAY];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
 				 * above. */
 } ByteArray;
@@ -334,7 +334,7 @@ Tcl_SetByteArrayObj(
     if (length < 0) {
 	length = 0;
     }
-    byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
 
@@ -460,7 +460,7 @@ SetByteArrayFromAny(
 	src = TclGetStringFromObj(objPtr, &length);
 	srcEnd = src + length;
 
-	byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+	byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
 	for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
 	    src += TclUtfToUniChar(src, &ch);
 	    *dst++ = UCHAR(ch);
@@ -529,7 +529,7 @@ DupByteArrayInternalRep(
     srcArrayPtr = GET_BYTEARRAY(srcPtr);
     length = srcArrayPtr->used;
 
-    copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
     memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
@@ -588,7 +588,7 @@ UpdateStringOfByteArray(
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
-    dst = ckalloc(size + 1);
+    dst = (char *)ckalloc(size + 1);
     objPtr->bytes = dst;
     objPtr->length = size;
 
