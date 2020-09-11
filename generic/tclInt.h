@@ -1461,7 +1461,7 @@ typedef struct ExecStack {
     Tcl_Obj **markerPtr;
     Tcl_Obj **endPtr;
     Tcl_Obj **tosPtr;
-    Tcl_Obj *stackWords[1];
+    Tcl_Obj *stackWords[TCLFLEXARRAY];
 } ExecStack;
 
 /*
@@ -4986,7 +4986,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	}					    \
 	(location) = (cmdPtr);			    \
     } while (0)
-    
+
 
 #define TclRoutineHasName(cmdPtr) \
     ((cmdPtr)->hPtr != NULL)

@@ -1770,7 +1770,7 @@ DoImport(
 		TclInvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
 		DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
-	/* corresponding decrement is in DeleteImportedCmd */ 
+	/* corresponding decrement is in DeleteImportedCmd */
 	cmdPtr->refCount++;
 	dataPtr->selfPtr = (Command *) importedCmd;
 	dataPtr->selfPtr->compileProc = cmdPtr->compileProc;
@@ -3906,7 +3906,7 @@ NamespaceOriginCmd(
     origCmd = TclGetOriginalCommand(cmd);
     if (origCmd == NULL) {
 	origCmd = cmd;
-    } 
+    }
     TclNewObj(resultPtr);
     Tcl_GetCommandFullName(interp, origCmd, resultPtr);
     if (TclCheckEmptyString(resultPtr) == TCL_EMPTYSTRING_YES ) {
