@@ -384,7 +384,7 @@ proc MakeFiles {dirname} {
         set f [open $filename w]
         close $f
         file stat $filename stat
-        if {[set n [lsearch -exact -integer $inodes $stat(ino)]] != -1} {
+        if {[set n [lsearch -exact -integer $inodes $stat(ino)]] >= 0} {
             return [list [file join $dirname Test$n] $filename]
         }
         lappend inodes $stat(ino)
