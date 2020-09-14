@@ -123,7 +123,7 @@ typedef struct Target {
  *
  * NB: the flags field in the interp structure, used with SAFE_INTERP mask
  * denotes whether the interpreter is safe or not. Safe interpreters have
- * restricted functionality, can only create safe child interpreters and can
+ * restricted functionality, can only create safe interpreters and can
  * only load safe extensions.
  */
 
@@ -3294,7 +3294,7 @@ Tcl_MakeSafe(
      */
 
     /*
-     * No env array in a safe child.
+     * No env array in a safe interpreter.
      */
 
     Tcl_UnsetVar2(interp, "env", NULL, TCL_GLOBAL_ONLY);
