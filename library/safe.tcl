@@ -260,7 +260,7 @@ proc ::safe::interpConfigure {args} {
 #
 # safe::InterpCreate : doing the real job
 #
-# This procedure creates a safe child and initializes it with the safe
+# This procedure creates a safe interpreter and initializes it with the safe
 # base aliases.
 # NB: child name must be simple alphanumeric string, no spaces, no (), no
 # {},...  {because the state array is stored as part of the name}
@@ -578,7 +578,7 @@ proc ::safe::AddSubDirs {pathList} {
     return $res
 }
 
-# This procedure deletes a safe child managed by Safe Tcl and cleans up
+# This procedure deletes a safe interpreter managed by Safe Tcl and cleans up
 # associated state.
 # - The command will also delete non-Safe-Base interpreters.
 # - This is regrettable, but to avoid breaking existing code this should be
