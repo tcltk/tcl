@@ -2996,7 +2996,7 @@ TclFindCompiledLocal(
 		char *localName = localPtr->name;
 
 		if ((nameBytes == localPtr->nameLength) &&
-			(strncmp(name,localName,(unsigned)nameBytes) == 0)) {
+			(strncmp(name, localName, nameBytes) == 0)) {
 		    return i;
 		}
 	    }
