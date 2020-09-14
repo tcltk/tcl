@@ -544,7 +544,7 @@ proc http::CloseSocket {s {token {}}} {
     } else {
 	set map [array get socketMapping]
 	set ndx [lsearch -exact $map $s]
-	if {$ndx != -1} {
+	if {$ndx >= 0} {
 	    incr ndx -1
 	    set connId [lindex $map $ndx]
 	}
@@ -2791,7 +2791,7 @@ proc http::Event {sock token} {
 			    # scan any list for "close".
 			    if {$tmpHeader in {close keep-alive}} {
 				# The common cases, continue.
-			    } elseif {[string first , $tmpHeader] == -1} {
+			    } elseif {[string first , $tmpHeader] < 0} {
 				# Not a comma-separated list, not "close",
 				# therefore "keep-alive".
 				set tmpHeader keep-alive

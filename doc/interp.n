@@ -659,9 +659,9 @@ including itself.
 .SH "ALIAS INVOCATION"
 .PP
 The alias mechanism has been carefully designed so that it can
-be used safely when an untrusted script is executing
-in a safe child and the target of the alias is a trusted
-parent.  The most important thing in guaranteeing safety is to
+be used safely in an untrusted script which is being executed in a
+safe interpreter even if the target of the alias is not a safe
+interpreter.  The most important thing in guaranteeing safety is to
 ensure that information passed from the child to the parent is
 never evaluated or substituted in the parent;  if this were to
 occur, it would enable an evil script in the child to invoke
@@ -743,7 +743,7 @@ To help avoid this problem, no substitutions or evaluations are
 applied to arguments of \fBinterp invokehidden\fR.
 .PP
 Safe interpreters are not allowed to invoke hidden commands in themselves
-or in their descendants. This prevents safe children from gaining access to
+or in their descendants. This prevents them from gaining access to
 hidden functionality in themselves or their descendants.
 .PP
 The set of hidden commands in an interpreter can be manipulated by a trusted

@@ -260,7 +260,7 @@ proc ::safe::interpConfigure {args} {
 #
 # safe::InterpCreate : doing the real job
 #
-# This procedure creates a safe child and initializes it with the safe
+# This procedure creates a safe interpreter and initializes it with the safe
 # base aliases.
 # NB: child name must be simple alphanumeric string, no spaces, no (), no
 # {},...  {because the state array is stored as part of the name}
@@ -318,7 +318,7 @@ proc ::safe::InterpSetConfig {child access_path staticsok nestedok deletehook} {
 	# Make sure that tcl_library is in auto_path and at the first
 	# position (needed by setAccessPath)
 	set where [lsearch -exact $access_path [info library]]
-	if {$where == -1} {
+	if {$where < 0} {
 	    # not found, add it.
 	    set access_path [linsert $access_path 0 [info library]]
 	    Log $child "tcl_library was not in auto_path,\
@@ -576,7 +576,7 @@ proc ::safe::AddSubDirs {pathList} {
     return $res
 }
 
-# This procedure deletes a safe child managed by Safe Tcl and cleans up
+# This procedure deletes a safe interpreter managed by Safe Tcl and cleans up
 # associated state.
 # - The command will also delete non-Safe-Base interpreters.
 # - This is regrettable, but to avoid breaking existing code this should be
@@ -1133,8 +1133,8 @@ proc ::safe::BadSubcommand {child command subcommand args} {
 # interpreters.
 proc ::safe::AliasEncodingSystem {child args} {
     try {
-	# Must not pass extra arguments; safe childs may not set the system
-	# encoding but they may read it.
+	# Must not pass extra arguments; safe interpreters may not set the
+	# system encoding but they may read it.
 	if {[llength $args]} {
 	    return -code error -errorcode {TCL WRONGARGS} \
 		"wrong # args: should be \"encoding system\""
