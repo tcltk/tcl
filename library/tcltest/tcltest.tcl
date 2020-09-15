@@ -640,7 +640,7 @@ namespace eval tcltest {
 
     proc IsVerbose {level} {
 	variable Option
-	return [expr {[lsearch -exact $Option(-verbose) $level] != -1}]
+	return [expr {[lsearch -exact $Option(-verbose) $level] >= 0}]
     }
 
     # Default verbosity is to show bodies of failed tests
@@ -3107,7 +3107,7 @@ proc tcltest::removeFile {name {directory ""}} {
     set fullName [file join $directory $name]
     DebugPuts 3 "[lindex [info level 0] 0]: removing $fullName"
     set idx [lsearch -exact $filesMade $fullName]
-    if {$idx == -1} {
+    if {$idx < 0} {
 	DebugDo 1 {
 	    Warn "removeFile removing \"$fullName\":\n  not created by makeFile"
 	}
@@ -3184,7 +3184,7 @@ proc tcltest::removeDirectory {name {directory ""}} {
     DebugPuts 3 "[lindex [info level 0] 0]: deleting $fullName"
     set idx [lsearch -exact $filesMade $fullName]
     set filesMade [lreplace $filesMade $idx $idx]
-    if {$idx == -1} {
+    if {$idx < 0} {
 	DebugDo 1 {
 	    Warn "removeDirectory removing \"$fullName\":\n  not created\
 		    by makeDirectory"

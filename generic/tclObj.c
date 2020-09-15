@@ -145,12 +145,12 @@ typedef struct PendingObjData {
 #define ObjDeletionUnlock(contextPtr)	((contextPtr)->deletionCount--)
 #define ObjDeletePending(contextPtr)	((contextPtr)->deletionCount > 0)
 #define ObjOnStack(contextPtr)		((contextPtr)->deletionStack != NULL)
-#define PushObjToDelete(contextPtr,objPtr) \
+#define PushObjToDelete(contextPtr,objPtr)                              \
     /* The string rep is already invalidated so we can use the bytes value \
      * for our pointer chain: push onto the head of the stack. */       \
     (objPtr)->bytes = (char *) ((contextPtr)->deletionStack);           \
     (contextPtr)->deletionStack = (objPtr)
-#define PopObjToDelete(contextPtr,objPtrVar) \
+#define PopObjToDelete(contextPtr,objPtrVar)                            \
     (objPtrVar) = (contextPtr)->deletionStack;                          \
     (contextPtr)->deletionStack = (Tcl_Obj *) (objPtrVar)->bytes
 
@@ -168,7 +168,7 @@ static __thread PendingObjData pendingObjData;
 #else
 static Tcl_ThreadDataKey pendingObjDataKey;
 #define ObjInitDeletionContext(contextPtr) \
-    PendingObjData *const contextPtr =                                  \
+    PendingObjData *const contextPtr =     \
 	    (PendingObjData *)Tcl_GetThreadData(&pendingObjDataKey, sizeof(PendingObjData))
 #endif
 
@@ -177,15 +177,15 @@ static Tcl_ThreadDataKey pendingObjDataKey;
  */
 
 #define PACK_BIGNUM(bignum, objPtr) \
-    if ((bignum).used > 0x7FFF) {                                       \
-	mp_int *temp = (mp_int *) ckalloc(sizeof(mp_int));     \
+    if ((bignum).used > 0x7FFF) {                                   \
+	mp_int *temp = (mp_int *)ckalloc(sizeof(mp_int));               \
 	*temp = bignum;                                                 \
-	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                 \
-	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1); \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                  \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1);           \
     } else if (((bignum).alloc <= 0x7FFF) || (mp_shrink(&(bignum))) == MP_OKAY) { \
-	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (bignum).dp; \
-	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR( ((bignum).sign << 30) \
-		| ((bignum).alloc << 15) | ((bignum).used));            \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *)(bignum).dp;   \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(((bignum).sign << 30) \
+		| ((bignum).alloc << 15) | ((bignum).used));                \
     }
 
 /*
@@ -567,7 +567,7 @@ TclContinuationsEnter(
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
 	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = (ContLineLoc *)ckalloc(sizeof(ContLineLoc) + num*sizeof(int));
+    ContLineLoc *clLocPtr = (ContLineLoc *)ckalloc(offsetof(ContLineLoc, loc) + (num + 1) *sizeof(int));
 
     if (!newEntry) {
 	/*
@@ -4667,7 +4667,7 @@ SetCmdNameFromAny(
      * report the failure to find the command as an error.
      */
 
-    if (cmdPtr == NULL) {
+    if (cmdPtr == NULL || !TclRoutineHasName(cmdPtr)) {
 	return TCL_ERROR;
     }
 

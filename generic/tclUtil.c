@@ -3817,7 +3817,7 @@ GetEndOffsetFromObj(
 		    if ((t1 == TCL_NUMBER_INT) && (t2 == TCL_NUMBER_INT)) {
 			/* Both are wide, do wide-integer math */
 			if (*opPtr == '-') {
-			    if ((w2 == WIDE_MIN) && (interp != NULL)) {
+			    if (w2 == WIDE_MIN) {
 				goto extreme;
 			    }
 			    w2 = -w2;
@@ -3839,13 +3839,6 @@ GetEndOffsetFromObj(
 				offset = WIDE_MIN;
 			    }
 			}
-		    } else if (interp == NULL) {
-			/*
-			 * We use an interp to do bignum index calculations.
-			 * If we don't get one, call all indices with bignums errors,
-			 * and rely on callers to handle it.
-			 */
-			goto parseError;
 		    } else {
 			/*
 			 * At least one is big, do bignum math. Little reason to
@@ -3854,11 +3847,13 @@ GetEndOffsetFromObj(
 			 */
 
 			Tcl_Obj *sum;
-			Tcl_Interp *compute = Tcl_CreateInterp();
 
 		    extreme:
-			Tcl_ExprObj(compute, objPtr, &sum);
-			Tcl_DeleteInterp(compute);
+			{
+			    Tcl_Interp *compute = Tcl_CreateInterp();
+			    Tcl_ExprObj(compute, objPtr, &sum);
+			    Tcl_DeleteInterp(compute);
+			}
 			TclGetNumberFromObj(NULL, sum, &cd, &numType);
 
 			if (numType == TCL_NUMBER_INT) {

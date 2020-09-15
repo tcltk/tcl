@@ -12,8 +12,10 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2
-namespace import -force ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 testConstraint memory [llength [info commands memory]]
 
 ::tcltest::loadTestedCommands
@@ -179,21 +181,21 @@ test namespace-7.6 {recursive Tcl_DeleteNamespace, no active call frames in ns} 
     namespace delete test_ns_2
 } {}
 test namespace-7.7 {Bug 1655305} -setup {
-    interp create slave
+    interp create child
     # Can't invoke through the ensemble, since deleting the global namespace
     # (indirectly, via deleting ::tcl) deletes the ensemble.
-    slave eval {rename ::tcl::info::commands ::infocommands}
-    slave hide infocommands
-    slave eval {
+    child eval {rename ::tcl::info::commands ::infocommands}
+    child hide infocommands
+    child eval {
 	proc foo {} {
 	    namespace delete ::
 	}
     }
 } -body {
-    slave eval foo
-    slave invokehidden infocommands
+    child eval foo
+    child invokehidden infocommands
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result {}
 
 test namespace-7.8 {Bug ba1419303b4c} -setup {
@@ -269,28 +271,28 @@ test namespace-8.4 {TclTeardownNamespace, cmds imported from deleted ns go away}
          [info commands test_ns_import::*]
 } [list [lsort {::test_ns_import::p ::test_ns_import::cmd1 ::test_ns_import::cmd2}] {} ::test_ns_import::p]
 test namespace-8.5 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
-    interp create slave
-    slave eval {trace add execution error leave {namespace delete :: ;#}}
-    catch {slave eval error foo bar baz}
-    interp delete slave
+    interp create child
+    child eval {trace add execution error leave {namespace delete :: ;#}}
+    catch {child eval error foo bar baz}
+    interp delete child
     set ::errorInfo
 } {bar
     invoked from within
-"slave eval error foo bar baz"}
+"child eval error foo bar baz"}
 test namespace-8.6 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
-    interp create slave
-    slave eval {trace add variable errorCode write {namespace delete :: ;#}}
-    catch {slave eval error foo bar baz}
-    interp delete slave
+    interp create child
+    child eval {trace add variable errorCode write {namespace delete :: ;#}}
+    catch {child eval error foo bar baz}
+    interp delete child
     set ::errorInfo
 } {bar
     invoked from within
-"slave eval error foo bar baz"}
+"child eval error foo bar baz"}
 test namespace-8.7 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
-    interp create slave
-    slave eval {trace add execution error leave {namespace delete :: ;#}}
-    catch {slave eval error foo bar baz}
-    interp delete slave
+    interp create child
+    child eval {trace add execution error leave {namespace delete :: ;#}}
+    catch {child eval error foo bar baz}
+    interp delete child
     set ::errorCode
 } baz
 
@@ -2797,9 +2799,9 @@ test namespace-51.15 {namespace resolution path control} -body {
     namespace delete ::test_ns_2
 }
 test namespace-51.16 {Bug 1566526} {
-    interp create slave
-    slave eval namespace eval demo namespace path ::
-    interp delete slave
+    interp create child
+    child eval namespace eval demo namespace path ::
+    interp delete child
 } {}
 test namespace-51.17 {resolution epoch handling: Bug 2898722} -setup {
     set result {}
@@ -3000,19 +3002,19 @@ test namespace-52.11 {unknown: with TCL_EVAL_INVOKE} -setup {
 	}
     }
     catch {rename ::noSuchCommand {}}
-    set ::slave [interp create]
+    set ::child [interp create]
 } -body {
-    $::slave alias bar noSuchCommand
+    $::child alias bar noSuchCommand
     namespace eval test_ns_1 {
 	namespace unknown unknown
 	proc unknown args {
 	    return FAIL
 	}
-	$::slave eval bar
+	$::child eval bar
     }
 } -cleanup {
-    interp delete $::slave
-    unset ::slave
+    interp delete $::child
+    unset ::child
     namespace delete test_ns_1
     rename ::unknown {}
     rename unknown.save ::unknown
@@ -3373,7 +3375,7 @@ test namespace-57.0 {
     rename ns2::p2 {}
     return $res
 } -cleanup {
-    unset res 
+    unset res
     namespace delete ns2
     namespace delete ns3
 } -result success
