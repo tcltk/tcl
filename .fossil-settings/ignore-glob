@@ -32,7 +32,7 @@ libtommath/pretty.build
 libtommath/tommath.src
 libtommath/*.log
 libtommath/*.pdf
-libtommath/gen.pl
+libtommath/*.pl
 libtommath/*.sh
 libtommath/doc/*
 libtommath/tombc/*

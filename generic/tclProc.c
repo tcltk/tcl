@@ -632,7 +632,8 @@ TclCreateProc(
 	     * local variables for the argument.
 	     */
 
-	    localPtr = (CompiledLocal *)ckalloc(offsetof(CompiledLocal, name) + fieldValues[0]->length +1);
+	    localPtr = (CompiledLocal *)ckalloc(
+		    offsetof(CompiledLocal, name) + fieldValues[0]->length + 1);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -1313,8 +1314,8 @@ InitLocalCache(
      * for future calls.
      */
 
-    localCachePtr = (LocalCache *)ckalloc(sizeof(LocalCache)
-	    + (localCt - 1) * sizeof(Tcl_Obj *)
+    localCachePtr = (LocalCache *)ckalloc(offsetof(LocalCache, varName0)
+	    + localCt * sizeof(Tcl_Obj *)
 	    + numArgs * sizeof(Var));
 
     namePtr = &localCachePtr->varName0;

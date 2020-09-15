@@ -905,8 +905,9 @@ SelectPackageFinal(
 	    }
 	}
     } else if (result != TCL_ERROR) {
-	Tcl_Obj *codePtr = Tcl_NewIntObj(result);
+	Tcl_Obj *codePtr;
 
+	TclNewIntObj(codePtr, result);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"attempt to provide package %s %s failed:"
 		" bad return code: %s",

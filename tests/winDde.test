@@ -10,8 +10,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
-    #tcltest::configure -verbose {pass start}
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -43,7 +42,7 @@ proc createChildProcess {ddeServerName args} {
         # DDE child server -
         #
 	if {"::tcltest" ni [namespace children]} {
-	    package require tcltest
+	    package require tcltest 2.5
 	    namespace import -force ::tcltest::*
 	}
 
@@ -279,19 +278,19 @@ test winDde-6.6 {DDE remote servername collision force} -constraints {dde stdio}
 
 # -------------------------------------------------------------------------
 
-test winDde-7.1 {Load DDE in slave interpreter} -constraints dde -setup {
-    interp create slave
+test winDde-7.1 {Load DDE in child interpreter} -constraints dde -setup {
+    interp create child
 } -body {
-    slave eval [list load $::ddelib Dde]
-    slave eval [list dde servername -- dde-interp-7.1]
+    child eval [list load $::ddelib Dde]
+    child eval [list dde servername -- dde-interp-7.1]
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result {dde-interp-7.1}
-test winDde-7.2 {DDE slave cleanup} -constraints dde -setup {
-    interp create slave
-    slave eval [list load $::ddelib Dde]
-    slave eval [list dde servername -- dde-interp-7.5]
-    interp delete slave
+test winDde-7.2 {DDE child cleanup} -constraints dde -setup {
+    interp create child
+    child eval [list load $::ddelib Dde]
+    child eval [list dde servername -- dde-interp-7.5]
+    interp delete child
 } -body {
     dde services TclEval {}
     set s [dde services TclEval {}]
@@ -300,128 +299,128 @@ test winDde-7.2 {DDE slave cleanup} -constraints dde -setup {
 	set s
     }
 } -result {}
-test winDde-7.3 {DDE present in slave interp} -constraints dde -setup {
-    interp create slave
-    slave eval [list load $::ddelib Dde]
-    slave eval [list dde servername -- dde-interp-7.3]
+test winDde-7.3 {DDE present in child interp} -constraints dde -setup {
+    interp create child
+    child eval [list load $::ddelib Dde]
+    child eval [list dde servername -- dde-interp-7.3]
 } -body {
     dde services TclEval dde-interp-7.3
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result {{TclEval dde-interp-7.3}}
 test winDde-7.4 {interp name collision with -force} -constraints dde -setup {
-    interp create slave
-    slave eval [list load $::ddelib Dde]
-    slave eval [list dde servername -- dde-interp-7.4]
+    interp create child
+    child eval [list load $::ddelib Dde]
+    child eval [list dde servername -- dde-interp-7.4]
 } -body {
     dde servername -force -- dde-interp-7.4
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result {dde-interp-7.4}
 test winDde-7.5 {interp name collision without -force} -constraints dde -setup {
-    interp create slave
-    slave eval [list load $::ddelib Dde]
-    slave eval [list dde servername -- dde-interp-7.5]
+    interp create child
+    child eval [list load $::ddelib Dde]
+    child eval [list dde servername -- dde-interp-7.5]
 } -body {
     dde servername -- dde-interp-7.5
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result "dde-interp-7.5 #2"
 
 # -------------------------------------------------------------------------
 
 test winDde-8.1 {Safe DDE load} -constraints dde -setup {
-    interp create -safe slave
-    slave invokehidden load $::ddelib Dde
+    interp create -safe child
+    child invokehidden load $::ddelib Dde
 } -body {
-    slave eval dde servername slave
+    child eval dde servername child
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -returnCodes error -result {invalid command name "dde"}
 test winDde-8.2 {Safe DDE set servername} -constraints dde -setup {
-    interp create -safe slave
-    slave invokehidden load $::ddelib Dde
+    interp create -safe child
+    child invokehidden load $::ddelib Dde
 } -body {
-    slave invokehidden dde servername slave
-} -cleanup {interp delete slave} -result {slave}
+    child invokehidden dde servername child
+} -cleanup {interp delete child} -result {child}
 test winDde-8.3 {Safe DDE check handler required for eval} -constraints dde -setup {
-    interp create -safe slave
-    slave invokehidden load $::ddelib Dde
-    slave invokehidden dde servername slave
+    interp create -safe child
+    child invokehidden load $::ddelib Dde
+    child invokehidden dde servername child
 } -body {
-    catch {dde eval slave set a 1} msg
-} -cleanup {interp delete slave} -result {1}
+    catch {dde eval child set a 1} msg
+} -cleanup {interp delete child} -result {1}
 test winDde-8.4 {Safe DDE check that execute is denied} -constraints dde -setup {
-    interp create -safe slave
-    slave invokehidden load $::ddelib Dde
-    slave invokehidden dde servername slave
+    interp create -safe child
+    child invokehidden load $::ddelib Dde
+    child invokehidden dde servername child
 } -body {
-    slave eval set a 1
-    dde execute TclEval slave {set a 2}
-    slave eval set a
-} -cleanup {interp delete slave} -result 1
+    child eval set a 1
+    dde execute TclEval child {set a 2}
+    child eval set a
+} -cleanup {interp delete child} -result 1
 test winDde-8.5 {Safe DDE check that request is denied} -constraints dde -setup {
-    interp create -safe slave
-    slave invokehidden load $::ddelib Dde
-    slave invokehidden dde servername slave
+    interp create -safe child
+    child invokehidden load $::ddelib Dde
+    child invokehidden dde servername child
 } -body {
-    slave eval set a 1
-    dde request TclEval slave a
+    child eval set a 1
+    dde request TclEval child a
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -returnCodes error -result {remote server cannot handle this command}
 test winDde-8.6 {Safe DDE assign handler procedure} -constraints dde -setup {
-    interp create -safe slave
-    slave invokehidden load $::ddelib Dde
-    slave eval {proc DDEACCEPT {cmd} {set ::DDECMD $cmd}}
+    interp create -safe child
+    child invokehidden load $::ddelib Dde
+    child eval {proc DDEACCEPT {cmd} {set ::DDECMD $cmd}}
 } -body {
-    slave invokehidden dde servername -handler DDEACCEPT slave
-} -cleanup {interp delete slave} -result slave
+    child invokehidden dde servername -handler DDEACCEPT child
+} -cleanup {interp delete child} -result child
 test winDde-8.7 {Safe DDE check simple command} -constraints dde -setup {
-    interp create -safe slave
-    slave invokehidden load $::ddelib Dde
-    slave eval {proc DDEACCEPT {cmd} {set ::DDECMD $cmd}}
-    slave invokehidden dde servername -handler DDEACCEPT slave
+    interp create -safe child
+    child invokehidden load $::ddelib Dde
+    child eval {proc DDEACCEPT {cmd} {set ::DDECMD $cmd}}
+    child invokehidden dde servername -handler DDEACCEPT child
 } -body {
-    dde eval slave set x 1
-} -cleanup {interp delete slave} -result {set x 1}
+    dde eval child set x 1
+} -cleanup {interp delete child} -result {set x 1}
 test winDde-8.8 {Safe DDE check non-list command} -constraints dde -setup {
-    interp create -safe slave
-    slave invokehidden load $::ddelib Dde
-    slave eval {proc DDEACCEPT {cmd} {set ::DDECMD $cmd}}
-    slave invokehidden dde servername -handler DDEACCEPT slave
+    interp create -safe child
+    child invokehidden load $::ddelib Dde
+    child eval {proc DDEACCEPT {cmd} {set ::DDECMD $cmd}}
+    child invokehidden dde servername -handler DDEACCEPT child
 } -body {
     set s "c:\\Program Files\\Microsoft Visual Studio\\"
-    dde eval slave $s
-    string equal [slave eval set DDECMD] $s
-} -cleanup {interp delete slave} -result 1
+    dde eval child $s
+    string equal [child eval set DDECMD] $s
+} -cleanup {interp delete child} -result 1
 test winDde-8.9 {Safe DDE check command evaluation} -constraints dde -setup {
-    interp create -safe slave
-    slave invokehidden load $::ddelib Dde
-    slave eval {proc DDEACCEPT {cmd} {set ::DDECMD [uplevel \#0 $cmd]}}
-    slave invokehidden dde servername -handler DDEACCEPT slave
+    interp create -safe child
+    child invokehidden load $::ddelib Dde
+    child eval {proc DDEACCEPT {cmd} {set ::DDECMD [uplevel \#0 $cmd]}}
+    child invokehidden dde servername -handler DDEACCEPT child
 } -body {
-    dde eval slave set \xe1 1
-    slave eval set \xe1
-} -cleanup {interp delete slave} -result 1
+    dde eval child set \xe1 1
+    child eval set \xe1
+} -cleanup {interp delete child} -result 1
 test winDde-8.10 {Safe DDE check command evaluation (2)} -constraints dde -setup {
-    interp create -safe slave
-    slave invokehidden load $::ddelib Dde
-    slave eval {proc DDEACCEPT {cmd} {set ::DDECMD [uplevel \#0 $cmd]}}
-    slave invokehidden dde servername -handler DDEACCEPT slave
+    interp create -safe child
+    child invokehidden load $::ddelib Dde
+    child eval {proc DDEACCEPT {cmd} {set ::DDECMD [uplevel \#0 $cmd]}}
+    child invokehidden dde servername -handler DDEACCEPT child
 } -body {
-    dde eval slave [list set x 1]
-    slave eval set x
-} -cleanup {interp delete slave} -result 1
+    dde eval child [list set x 1]
+    child eval set x
+} -cleanup {interp delete child} -result 1
 test winDde-8.11 {Safe DDE check command evaluation (3)} -constraints dde -setup {
-    interp create -safe slave
-    slave invokehidden load $::ddelib Dde
-    slave eval {proc DDEACCEPT {cmd} {set ::DDECMD [uplevel \#0 $cmd]}}
-    slave invokehidden dde servername -handler DDEACCEPT slave
+    interp create -safe child
+    child invokehidden load $::ddelib Dde
+    child eval {proc DDEACCEPT {cmd} {set ::DDECMD [uplevel \#0 $cmd]}}
+    child invokehidden dde servername -handler DDEACCEPT child
 } -body {
-    dde eval slave [list [list set x 1]]
-    slave eval set x
-} -cleanup {interp delete slave} -returnCodes error -result {invalid command name "set x 1"}
+    dde eval child [list [list set x 1]]
+    child eval set x
+} -cleanup {interp delete child} -returnCodes error -result {invalid command name "set x 1"}
 
 # -------------------------------------------------------------------------
 
@@ -481,7 +480,7 @@ test winDde-9.4 {External safe DDE check null data passing} -constraints {dde st
 # -------------------------------------------------------------------------
 
 #cleanup
-#catch {interp delete $slave};           # ensure we clean up the slave.
+#catch {interp delete $child};           # ensure we clean up the child.
 file delete -force $::scriptName
 ::tcltest::cleanupTests
 return

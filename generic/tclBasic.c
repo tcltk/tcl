@@ -685,7 +685,7 @@ Tcl_CreateInterp(void)
         TclRegisterCommandTypeName(TclEnsembleImplementationCmd, "ensemble");
         TclRegisterCommandTypeName(TclAliasObjCmd, "alias");
         TclRegisterCommandTypeName(TclLocalAliasObjCmd, "alias");
-        TclRegisterCommandTypeName(TclSlaveObjCmd, "slave");
+        TclRegisterCommandTypeName(TclChildObjCmd, "interp");
         TclRegisterCommandTypeName(TclInvokeImportedCmd, "import");
         TclRegisterCommandTypeName(TclOOPublicObjectCmd, "object");
         TclRegisterCommandTypeName(TclOOPrivateObjectCmd, "privateObject");
@@ -2844,6 +2844,8 @@ TclCreateObjCommandInNs(
 	    Command *refCmdPtr = oldRefPtr->importedCmdPtr;
 
 	    dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
+	    cmdPtr->refCount++;
+	    TclCleanupCommandMacro(dataPtr->realCmdPtr);
 	    dataPtr->realCmdPtr = cmdPtr;
 	    oldRefPtr = oldRefPtr->nextPtr;
 	}
@@ -3433,7 +3435,7 @@ Tcl_GetCommandFullName(
      * separator, and the command name.
      */
 
-    if (cmdPtr != NULL) {
+    if ((cmdPtr != NULL) && TclRoutineHasName(cmdPtr)) {
 	if (cmdPtr->nsPtr != NULL) {
 	    Tcl_AppendToObj(objPtr, cmdPtr->nsPtr->fullName, -1);
 	    if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
@@ -3523,7 +3525,7 @@ Tcl_DeleteCommandFromToken(
      * and skip nested deletes.
      */
 
-    if (cmdPtr->flags & CMD_IS_DELETED) {
+    if (cmdPtr->flags & CMD_DYING) {
 	/*
 	 * Another deletion is already in progress. Remove the hash table
 	 * entry now, but don't invoke a callback or free the command
@@ -3555,7 +3557,7 @@ Tcl_DeleteCommandFromToken(
      * be ignored.
      */
 
-    cmdPtr->flags |= CMD_IS_DELETED;
+    cmdPtr->flags |= CMD_DYING;
 
     /*
      * Call trace functions for the command being deleted. Then delete its
@@ -3585,7 +3587,7 @@ Tcl_DeleteCommandFromToken(
     }
 
     /*
-     * The list of command exported from the namespace might have changed.
+     * The list of commands exported from the namespace might have changed.
      * However, we do not need to recompute this just yet; next time we need
      * the info will be soon enough.
      */
@@ -3606,6 +3608,19 @@ Tcl_DeleteCommandFromToken(
 	iPtr->compileEpoch++;
     }
 
+    if (!(cmdPtr->flags & CMD_REDEF_IN_PROGRESS)) {
+	/*
+	 * Delete any imports of this routine before deleting this routine itself.
+	 * See issue 688fcc7082fa.
+	 */
+	for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
+		refPtr = nextRefPtr) {
+	    nextRefPtr = refPtr->nextPtr;
+	    importCmd = (Tcl_Command) refPtr->importedCmdPtr;
+	    Tcl_DeleteCommandFromToken(interp, importCmd);
+	}
+    }
+
     if (cmdPtr->deleteProc != NULL) {
 	/*
 	 * Delete the command's client data. If this was an imported command
@@ -3623,20 +3638,6 @@ Tcl_DeleteCommandFromToken(
 	 */
 
 	cmdPtr->deleteProc(cmdPtr->deleteData);
-    }
-
-    /*
-     * If this command was imported into other namespaces, then imported
-     * commands were created that refer back to this command. Delete these
-     * imported commands now.
-     */
-    if (!(cmdPtr->flags & CMD_REDEF_IN_PROGRESS)) {
-	for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
-		refPtr = nextRefPtr) {
-	    nextRefPtr = refPtr->nextPtr;
-	    importCmd = (Tcl_Command) refPtr->importedCmdPtr;
-	    Tcl_DeleteCommandFromToken(interp, importCmd);
-	}
     }
 
     /*
@@ -3676,6 +3677,7 @@ Tcl_DeleteCommandFromToken(
      * TclNRExecuteByteCode looks up the command in the command hashtable).
      */
 
+    cmdPtr->flags |= CMD_DEAD;
     TclCleanupCommandMacro(cmdPtr);
     return 0;
 }
@@ -3720,7 +3722,7 @@ CallCommandTraces(
 	 * While a rename trace is active, we will not process any more rename
 	 * traces; while a delete trace is active we will never reach here -
 	 * because Tcl_DeleteCommandFromToken checks for the condition
-	 * (cmdPtr->flags & CMD_IS_DELETED) and returns immediately when a
+	 * (cmdPtr->flags & CMD_DYING) and returns immediately when a
 	 * command deletion is in progress. For all other traces, delete
 	 * traces will not be invoked but a call to TraceCommandProc will
 	 * ensure that tracePtr->clientData is freed whenever the command
@@ -3851,11 +3853,11 @@ CancelEvalProc(
 	    TclSetCancelFlags(iPtr, cancelInfo->flags | CANCELED);
 
 	    /*
-	     * Now, we must set the script cancellation flags on all the slave
+	     * Now, we must set the script cancellation flags on all the child
 	     * interpreters belonging to this one.
 	     */
 
-	    TclSetSlaveCancelFlags((Tcl_Interp *) iPtr,
+	    TclSetChildCancelFlags((Tcl_Interp *) iPtr,
 		    cancelInfo->flags | CANCELED, 0);
 
 	    /*
@@ -4380,7 +4382,7 @@ TclResetCancellation(
  * Tcl_Canceled --
  *
  *	Check if the script in progress has been canceled, i.e.,
- *	Tcl_CancelEval was called for this interpreter or any of its master
+ *	Tcl_CancelEval was called for this interpreter or any of its parent
  *	interpreters.
  *
  * Results:
@@ -4745,7 +4747,7 @@ EvalObjvCore(
          * Caller gave it to us.
          */
 
-	if (!(preCmdPtr->flags & CMD_IS_DELETED)) {
+	if (!(preCmdPtr->flags & CMD_DEAD)) {
 	    /*
              * So long as it exists, use it.
              */
@@ -5273,7 +5275,7 @@ TEOV_RunLeaveTraces(
     int length;
     const char *command = TclGetStringFromObj(commandPtr, &length);
 
-    if (!(cmdPtr->flags & CMD_IS_DELETED)) {
+    if (!(cmdPtr->flags & CMD_DYING)) {
 	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES) {
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
@@ -5466,7 +5468,7 @@ TclEvalEx(
 				 * the embedded command, which is refered to
 				 * by 'script'. The 'clNextOuter' refers to
 				 * the current entry in the table of
-				 * continuation lines in this "master script",
+				 * continuation lines in this "main script",
 				 * and the character offsets are relative to
 				 * the 'outerScript' as well.
 				 *
@@ -6519,7 +6521,7 @@ TclNREvalObjEx(
 	/*
 	 * Shimmer protection! Always pass an unshared obj. The caller could
 	 * incr the refCount of objPtr AFTER calling us! To be completely safe
-	 * we always make a copy. The callback takes care od the refCounts for
+	 * we always make a copy. The callback takes care of the refCounts for
 	 * both listPtr and objPtr.
 	 *
 	 * TODO: Create a test to demo this need, or eliminate it.
@@ -7088,7 +7090,7 @@ TclObjInvoke(
 
 int
 TclNRInvoke(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -7570,7 +7572,7 @@ Tcl_GetVersion(
 
 static int
 ExprCeilFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7610,7 +7612,7 @@ ExprCeilFunc(
 
 static int
 ExprFloorFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7650,7 +7652,7 @@ ExprFloorFunc(
 
 static int
 ExprIsqrtFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute. */
     int objc,			/* Actual parameter count. */
     Tcl_Obj *const *objv)	/* Actual parameter list. */
@@ -7756,7 +7758,7 @@ ExprIsqrtFunc(
 
 static int
 ExprSqrtFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -7924,7 +7926,7 @@ ExprBinaryFunc(
 
 static int
 ExprAbsFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8023,7 +8025,7 @@ ExprAbsFunc(
 
 static int
 ExprBoolFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8044,7 +8046,7 @@ ExprBoolFunc(
 
 static int
 ExprDoubleFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8071,7 +8073,7 @@ ExprDoubleFunc(
 
 static int
 ExprIntFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8127,7 +8129,7 @@ ExprIntFunc(
 
 static int
 ExprWideFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8148,7 +8150,7 @@ ExprWideFunc(
  */
 static int
 ExprMaxMinFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8188,7 +8190,7 @@ ExprMaxMinFunc(
 
 static int
 ExprMaxFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8199,7 +8201,7 @@ ExprMaxFunc(
 
 static int
 ExprMinFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8210,7 +8212,7 @@ ExprMinFunc(
 
 static int
 ExprRandFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8303,7 +8305,7 @@ ExprRandFunc(
 
 static int
 ExprRoundFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8382,7 +8384,7 @@ ExprRoundFunc(
 
 static int
 ExprSrandFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count. */
@@ -8571,7 +8573,7 @@ ClassifyDouble(
 
 static int
 ExprIsFiniteFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8602,7 +8604,7 @@ ExprIsFiniteFunc(
 
 static int
 ExprIsInfinityFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8632,7 +8634,7 @@ ExprIsInfinityFunc(
 
 static int
 ExprIsNaNFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8662,7 +8664,7 @@ ExprIsNaNFunc(
 
 static int
 ExprIsNormalFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8692,7 +8694,7 @@ ExprIsNormalFunc(
 
 static int
 ExprIsSubnormalFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8722,7 +8724,7 @@ ExprIsSubnormalFunc(
 
 static int
 ExprIsUnorderedFunc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8763,7 +8765,7 @@ ExprIsUnorderedFunc(
 
 static int
 FloatClassifyObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
@@ -8872,7 +8874,7 @@ MathFuncWrongNumArgs(
 
 static int
 DTraceObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     TCL_UNUSED(Tcl_Interp *),
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -9256,7 +9258,7 @@ TclSetTailcall(
 
 int
 TclNRTailcallObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -9449,7 +9451,7 @@ TclNRYieldObjCmd(
 
 int
 TclNRYieldToObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -9572,7 +9574,7 @@ NRCoroutineCallerCallback(
     SAVE_CONTEXT(corPtr->running);
     RESTORE_CONTEXT(corPtr->caller);
 
-    if (cmdPtr->flags & CMD_IS_DELETED) {
+    if (cmdPtr->flags & CMD_DYING) {
 	/*
 	 * The command was deleted while it was running: wind down the
 	 * execEnv, this will do the complete cleanup. RewindCoroutine will
@@ -9759,7 +9761,7 @@ TclNREvalList(
 
 static int
 CoroTypeObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -9849,7 +9851,7 @@ GetCoroutineFromObj(
 
 static int
 TclNRCoroInjectObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -9894,7 +9896,7 @@ TclNRCoroInjectObjCmd(
 
 static int
 TclNRCoroProbeObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -10087,7 +10089,7 @@ InjectHandlerPostCall(
 
 static int
 NRInjectObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -10196,7 +10198,7 @@ TclNRInterpCoroutine(
 
 int
 TclNRCoroutineObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -10329,7 +10331,7 @@ TclNRCoroutineObjCmd(
 
 int
 TclInfoCoroutineCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -10341,7 +10343,7 @@ TclInfoCoroutineCmd(
 	return TCL_ERROR;
     }
 
-    if (corPtr && !(corPtr->cmdPtr->flags & CMD_IS_DELETED)) {
+    if (corPtr && !(corPtr->cmdPtr->flags & CMD_DYING)) {
 	Tcl_Obj *namePtr;
 
 	TclNewObj(namePtr);

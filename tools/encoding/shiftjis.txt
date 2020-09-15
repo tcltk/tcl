@@ -47,7 +47,7 @@
 #	There is an alternative order some people might be preferred,
 #		where all the entries are in order of the top (or only) byte.
 #		This alternate order can be generated from the one given here
-#		by a simple sort.  
+#		by a simple sort.
 #
 #   The kanji mappings are a normative part of ISO/IEC 10646.  The
 #       non-kanji mappings are provisional, pending definition of
