@@ -403,9 +403,9 @@ TclCompileArraySetCmd(
     keyVar = AnonymousLocal(envPtr);
     valVar = AnonymousLocal(envPtr);
 
-    infoPtr = ckalloc(sizeof(ForeachInfo));
+    infoPtr = ckalloc(TclOffset(ForeachInfo, varLists) + sizeof(ForeachVarList *));
     infoPtr->numLists = 1;
-    infoPtr->varLists[0] = ckalloc(sizeof(ForeachVarList) + sizeof(int));
+    infoPtr->varLists[0] = ckalloc(TclOffset(ForeachVarList, varIndexes) + 2 * sizeof(int));
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
     infoPtr->varLists[0]->varIndexes[1] = valVar;
@@ -1776,7 +1776,7 @@ TclCompileDictUpdateCmd(
      * that are to be used.
      */
 
-    duiPtr = ckalloc(sizeof(DictUpdateInfo) + sizeof(int) * (numVars - 1));
+    duiPtr = ckalloc(TclOffset(DictUpdateInfo, varIndices) + sizeof(int) * numVars);
     duiPtr->length = numVars;
     keyTokenPtrs = TclStackAlloc(interp, sizeof(Tcl_Token *) * numVars);
     tokenPtr = TokenAfter(dictVarTokenPtr);
@@ -2258,7 +2258,7 @@ DupDictUpdateInfo(
     unsigned len;
 
     dui1Ptr = clientData;
-    len = sizeof(DictUpdateInfo) + sizeof(int) * (dui1Ptr->length - 1);
+    len = TclOffset(DictUpdateInfo, varIndices) + sizeof(int) * dui1Ptr->length;
     dui2Ptr = ckalloc(len);
     memcpy(dui2Ptr, dui1Ptr, len);
     return dui2Ptr;
@@ -2712,8 +2712,8 @@ CompileEachloopCmd(
      */
 
     numLists = (numWords - 2)/2;
-    infoPtr = ckalloc(sizeof(ForeachInfo)
-	    + (numLists - 1) * sizeof(ForeachVarList *));
+    infoPtr = ckalloc(TclOffset(ForeachInfo, varLists)
+	    + numLists * sizeof(ForeachVarList *));
     infoPtr->numLists = 0;	/* Count this up as we go */
 
     /*
@@ -2746,8 +2746,8 @@ CompileEachloopCmd(
 	    goto done;
 	}
 
-	varListPtr = ckalloc(sizeof(ForeachVarList)
-		+ (numVars - 1) * sizeof(int));
+	varListPtr = ckalloc(TclOffset(ForeachVarList, varIndexes)
+		+ numVars * sizeof(int));
 	varListPtr->numVars = numVars;
 	infoPtr->varLists[i/2] = varListPtr;
 	infoPtr->numLists++;
@@ -2882,7 +2882,7 @@ DupForeachInfo(
     ForeachVarList *srcListPtr, *dupListPtr;
     int numVars, i, j, numLists = srcPtr->numLists;
 
-    dupPtr = ckalloc(sizeof(ForeachInfo)
+    dupPtr = ckalloc(TclOffset(ForeachInfo, varLists)
 	    + numLists * sizeof(ForeachVarList *));
     dupPtr->numLists = numLists;
     dupPtr->firstValueTemp = srcPtr->firstValueTemp;
@@ -2891,7 +2891,7 @@ DupForeachInfo(
     for (i = 0;  i < numLists;  i++) {
 	srcListPtr = srcPtr->varLists[i];
 	numVars = srcListPtr->numVars;
-	dupListPtr = ckalloc(sizeof(ForeachVarList)
+	dupListPtr = ckalloc(TclOffset(ForeachVarList, varIndexes)
 		+ numVars * sizeof(int));
 	dupListPtr->numVars = numVars;
 	for (j = 0;  j < numVars;  j++) {

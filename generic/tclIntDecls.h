@@ -1422,4 +1422,6 @@ extern const TclIntStubs *tclIntStubsPtr;
 #undef TclCopyChannelOld
 #undef TclSockMinimumBuffersOld
 
+#define TclSetChildCancelFlags TclSetSlaveCancelFlags
+
 #endif /* _TCLINTDECLS */

@@ -914,8 +914,8 @@ TclCreateExecEnv(
 				 * [sizeof(Tcl_Obj*)] */
 {
     ExecEnv *eePtr = ckalloc(sizeof(ExecEnv));
-    ExecStack *esPtr = ckalloc(sizeof(ExecStack)
-	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
+    ExecStack *esPtr = ckalloc(TclOffset(ExecStack, stackWords)
+	    + size * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
     TclNewBooleanObj(eePtr->constants[0], 0);
@@ -1180,7 +1180,7 @@ GrowEvaluationStack(
     newElems = needed;
 #endif
 
-    newBytes = sizeof(ExecStack) + (newElems-1) * sizeof(Tcl_Obj *);
+    newBytes = TclOffset(ExecStack, stackWords) + newElems * sizeof(Tcl_Obj *);
 
     oldPtr = esPtr;
     esPtr = ckalloc(newBytes);
@@ -2838,7 +2838,7 @@ TEBCresume(
 	    for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
 		bytes = TclGetStringFromObj(*currPtr, &length);
 		if (bytes != NULL) {
-		    memcpy(p, bytes, (size_t) length);
+		    memcpy(p, bytes, length);
 		    p += length;
 		}
 	    }
@@ -2873,7 +2873,7 @@ TEBCresume(
 	    for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
 		if ((*currPtr)->bytes != tclEmptyStringRep) {
 		    bytes = (char *) Tcl_GetByteArrayFromObj(*currPtr,&length);
-		    memcpy(p, bytes, (size_t) length);
+		    memcpy(p, bytes, length);
 		    p += length;
 		}
 	    }

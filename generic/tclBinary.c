@@ -199,7 +199,7 @@ typedef struct ByteArray {
 				 * array. */
     int allocated;		/* The amount of space actually allocated
 				 * minus 1 byte. */
-    unsigned char bytes[1];	/* The array of bytes. The actual size of this
+    unsigned char bytes[TCLFLEXARRAY];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
 				 * above. */
 } ByteArray;
@@ -334,12 +334,12 @@ Tcl_SetByteArrayObj(
     if (length < 0) {
 	length = 0;
     }
-    byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
 
     if ((bytes != NULL) && (length > 0)) {
-	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
+	memcpy(byteArrayPtr->bytes, bytes, length);
     }
     objPtr->typePtr = &tclByteArrayType;
     SET_BYTEARRAY(objPtr, byteArrayPtr);
@@ -460,7 +460,7 @@ SetByteArrayFromAny(
 	src = TclGetStringFromObj(objPtr, &length);
 	srcEnd = src + length;
 
-	byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+	byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
 	for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
 	    src += TclUtfToUniChar(src, &ch);
 	    *dst++ = UCHAR(ch);
@@ -529,10 +529,10 @@ DupByteArrayInternalRep(
     srcArrayPtr = GET_BYTEARRAY(srcPtr);
     length = srcArrayPtr->used;
 
-    copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
-    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
     SET_BYTEARRAY(copyPtr, copyArrayPtr);
 
     copyPtr->typePtr = &tclByteArrayType;
@@ -588,12 +588,12 @@ UpdateStringOfByteArray(
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
-    dst = ckalloc(size + 1);
+    dst = (char *)ckalloc(size + 1);
     objPtr->bytes = dst;
     objPtr->length = size;
 
     if (size == length) {
-	memcpy(dst, src, (size_t) size);
+	memcpy(dst, src, size);
 	dst[size] = '\0';
     } else {
 	for (i = 0; i < length; i++) {
@@ -945,7 +945,7 @@ BinaryFormatCmd(
 
     resultPtr = Tcl_NewObj();
     buffer = Tcl_SetByteArrayLength(resultPtr, length);
-    memset(buffer, 0, (size_t) length);
+    memset(buffer, 0, length);
 
     /*
      * Pack the data into the result object. Note that we can skip the error
@@ -982,10 +982,10 @@ BinaryFormatCmd(
 		count = 1;
 	    }
 	    if (length >= count) {
-		memcpy(cursor, bytes, (size_t) count);
+		memcpy(cursor, bytes, count);
 	    } else {
-		memcpy(cursor, bytes, (size_t) length);
-		memset(cursor + length, pad, (size_t) (count - length));
+		memcpy(cursor, bytes, length);
+		memset(cursor + length, pad, count - length);
 	    }
 	    cursor += count;
 	    break;
@@ -1174,7 +1174,7 @@ BinaryFormatCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    memset(cursor, 0, (size_t) count);
+	    memset(cursor, 0, count);
 	    cursor += count;
 	    break;
 	case 'X':

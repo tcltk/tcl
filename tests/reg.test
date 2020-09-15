@@ -9,8 +9,8 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
 }
 
 ::tcltest::loadTestedCommands
@@ -49,9 +49,9 @@ catch [list package require -exact Tcltest [info patchlevel]]
 # subexpressions, checking where empty substrings are located,
 # etc. should be done using expectIndices and expectPartial.
 
-# The flag characters are complex and a bit eclectic.  Generally speaking, 
+# The flag characters are complex and a bit eclectic.  Generally speaking,
 # lowercase letters are compile options, uppercase are expected re_info
-# bits, and nonalphabetics are match options, controls for how the test is 
+# bits, and nonalphabetics are match options, controls for how the test is
 # run, or testing options.  The one small surprise is that AREs are the
 # default, and you must explicitly request lesser flavors of RE.  The flags
 # are as follows.  It is admitted that some are not very mnemonic.
@@ -287,7 +287,7 @@ namespace eval RETest {
 	set infoflags [TestInfoFlags $flags]
 	set ccmd [list testregexp -about {*}$f $re]
 	set nsub [expr {[llength $args] - 1}]
-	if {$nsub == -1} {
+	if {$nsub < 0} {
 	    # didn't tell us number of subexps
 	    set ccmd "lreplace \[$ccmd\] 0 0"
 	    set info [list $infoflags]
@@ -311,7 +311,7 @@ namespace eval RETest {
     # match expected (full fanciness)
     # expectIndices testno flags re target mat submat ...
     proc expectIndices {args} {
-	MatchExpected -indices {*}$args 
+	MatchExpected -indices {*}$args
     }
 
     # partial match expected
