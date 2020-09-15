@@ -4,11 +4,11 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_CreateSlave 3 7.6 Tcl "Tcl Library Procedures"
+.TH Tcl_CreateAlias 3 7.6 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
-Tcl_IsSafe, Tcl_MakeSafe, Tcl_CreateSlave, Tcl_GetSlave, Tcl_GetMaster, Tcl_GetInterpPath, Tcl_CreateAlias, Tcl_CreateAliasObj, Tcl_GetAlias, Tcl_GetAliasObj, Tcl_ExposeCommand, Tcl_HideCommand \- manage multiple Tcl interpreters, aliases and hidden commands
+Tcl_IsSafe, Tcl_MakeSafe, Tcl_CreateChild, Tcl_GetChild, Tcl_GetParent, Tcl_GetInterpPath, Tcl_CreateAlias, Tcl_CreateAliasObj, Tcl_GetAlias, Tcl_GetAliasObj, Tcl_ExposeCommand, Tcl_HideCommand \- manage multiple Tcl interpreters, aliases and hidden commands
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -20,31 +20,31 @@ int
 \fBTcl_MakeSafe\fR(\fIinterp\fR)
 .sp
 Tcl_Interp *
-\fBTcl_CreateSlave\fR(\fIinterp, slaveName, isSafe\fR)
+\fBTcl_CreateChild\fR(\fIinterp, name, isSafe\fR)
 .sp
 Tcl_Interp *
-\fBTcl_GetSlave\fR(\fIinterp, slaveName\fR)
+\fBTcl_GetChild\fR(\fIinterp, name\fR)
 .sp
 Tcl_Interp *
-\fBTcl_GetMaster\fR(\fIinterp\fR)
+\fBTcl_GetParent\fR(\fIinterp\fR)
 .sp
 int
-\fBTcl_GetInterpPath\fR(\fIaskingInterp, slaveInterp\fR)
+\fBTcl_GetInterpPath\fR(\fIinterp, childInterp\fR)
 .sp
 int
-\fBTcl_CreateAlias\fR(\fIslaveInterp, slaveCmd, targetInterp, targetCmd,
+\fBTcl_CreateAlias\fR(\fIchildInterp, childCmd, targetInterp, targetCmd,
                 argc, argv\fR)
 .sp
 int
-\fBTcl_CreateAliasObj\fR(\fIslaveInterp, slaveCmd, targetInterp, targetCmd,
+\fBTcl_CreateAliasObj\fR(\fIchildInterp, childCmd, targetInterp, targetCmd,
                    objc, objv\fR)
 .sp
 int
-\fBTcl_GetAlias\fR(\fIinterp, slaveCmd, targetInterpPtr, targetCmdPtr,
+\fBTcl_GetAlias\fR(\fIinterp, childCmd, targetInterpPtr, targetCmdPtr,
              argcPtr, argvPtr\fR)
 .sp
 int
-\fBTcl_GetAliasObj\fR(\fIinterp, slaveCmd, targetInterpPtr, targetCmdPtr,
+\fBTcl_GetAliasObj\fR(\fIinterp, childCmd, targetInterpPtr, targetCmdPtr,
                 objcPtr, objvPtr\fR)
 .sp
 int
@@ -56,17 +56,17 @@ int
 .AS "const char *const" **targetInterpPtr out
 .AP Tcl_Interp *interp in
 Interpreter in which to execute the specified command.
-.AP "const char" *slaveName in
-Name of slave interpreter to create or manipulate.
+.AP "const char" *name in
+Name of child interpreter to create or manipulate.
 .AP int isSafe in
 If non-zero, a
 .QW safe
-slave that is suitable for running untrusted code
-is created, otherwise a trusted slave is created.
-.AP Tcl_Interp *slaveInterp in
+child that is suitable for running untrusted code
+is created, otherwise a trusted child is created.
+.AP Tcl_Interp *childInterp in
 Interpreter to use for creating the source command for an alias (see
 below).
-.AP "const char" *slaveCmd in
+.AP "const char" *childCmd in
 Name of source command for alias.
 .AP Tcl_Interp *targetInterp in
 Interpreter that contains the target command for an alias.
@@ -121,17 +121,17 @@ interpreter. The return value for those procedures that return an \fBint\fR
 is either \fBTCL_OK\fR or \fBTCL_ERROR\fR. If \fBTCL_ERROR\fR is returned
 then the interpreter's result contains an error message.
 .PP
-\fBTcl_CreateSlave\fR creates a new interpreter as a slave of \fIinterp\fR.
-It also creates a slave command named \fIslaveName\fR in \fIinterp\fR which
-allows \fIinterp\fR to manipulate the new slave.
-If \fIisSafe\fR is zero, the command creates a trusted slave in which Tcl
+\fBTcl_CreateChild\fR creates a new interpreter as a child of \fIinterp\fR.
+It also creates a child command named \fIname\fR in \fIinterp\fR which
+allows \fIinterp\fR to manipulate the new child.
+If \fIisSafe\fR is zero, the command creates a trusted child in which Tcl
 code has access to all the Tcl commands.
 If it is \fB1\fR, the command creates a
 .QW safe
-slave in which Tcl code has access only to set of Tcl commands defined as
+child in which Tcl code has access only to set of Tcl commands defined as
 .QW "Safe Tcl" ;
 see the manual entry for the Tcl \fBinterp\fR command for details.
-If the creation of the new slave interpreter failed, \fBNULL\fR is returned.
+If the creation of the new child interpreter failed, \fBNULL\fR is returned.
 .PP
 \fBTcl_IsSafe\fR returns \fB1\fR if \fIinterp\fR is
 .QW safe
@@ -147,34 +147,34 @@ from \fIinterp\fR.  However, it cannot know what parts of an extension
 or application are safe and does not make any attempt to remove those
 parts, so safety is not guaranteed after calling \fBTcl_MakeSafe\fR.
 Callers will want to take care with their use of \fBTcl_MakeSafe\fR
-to avoid false claims of safety.  For many situations, \fBTcl_CreateSlave\fR
+to avoid false claims of safety.  For many situations, \fBTcl_CreateChild\fR
 may be a better choice, since it creates interpreters in a known-safe state.
 .PP
-\fBTcl_GetSlave\fR returns a pointer to a slave interpreter of
-\fIinterp\fR. The slave interpreter is identified by \fIslaveName\fR.
-If no such slave interpreter exists, \fBNULL\fR is returned.
+\fBTcl_GetChild\fR returns a pointer to a child interpreter of
+\fIinterp\fR. The child interpreter is identified by \fIname\fR.
+If no such child interpreter exists, \fBNULL\fR is returned.
 .PP
-\fBTcl_GetMaster\fR returns a pointer to the master interpreter of
-\fIinterp\fR. If \fIinterp\fR has no master (it is a
+\fBTcl_GetParent\fR returns a pointer to the parent interpreter of
+\fIinterp\fR. If \fIinterp\fR has no parent (it is a
 top-level interpreter) then \fBNULL\fR is returned.
 .PP
-\fBTcl_GetInterpPath\fR stores in the result of \fIaskingInterp\fR
-the relative path between \fIaskingInterp\fR and \fIslaveInterp\fR;
-\fIslaveInterp\fR must be a slave of \fIaskingInterp\fR. If the computation
+\fBTcl_GetInterpPath\fR stores in the result of \fIinterp\fR
+the relative path between \fIinterp\fR and \fIchildInterp\fR;
+\fIchildInterp\fR must be a child of \fIinterp\fR. If the computation
 of the relative path succeeds, \fBTCL_OK\fR is returned, else
 \fBTCL_ERROR\fR is returned and an error message is stored as the
-result of \fIaskingInterp\fR.
+result of \fIinterp\fR.
 .PP
-\fBTcl_CreateAlias\fR creates a command named \fIslaveCmd\fR in
-\fIslaveInterp\fR that when invoked, will cause the command \fItargetCmd\fR
+\fBTcl_CreateAlias\fR creates a command named \fIchildCmd\fR in
+\fIchildInterp\fR that when invoked, will cause the command \fItargetCmd\fR
 to be invoked in \fItargetInterp\fR. The arguments specified by the strings
 contained in \fIargv\fR are always prepended to any arguments supplied in the
-invocation of \fIslaveCmd\fR and passed to \fItargetCmd\fR.
+invocation of \fIchildCmd\fR and passed to \fItargetCmd\fR.
 This operation returns \fBTCL_OK\fR if it succeeds, or \fBTCL_ERROR\fR if
 it fails; in that case, an error message is left in the value result
-of \fIslaveInterp\fR.
+of \fIchildInterp\fR.
 Note that there are no restrictions on the ancestry relationship (as
-created by \fBTcl_CreateSlave\fR) between \fIslaveInterp\fR and
+created by \fBTcl_CreateChild\fR) between \fIchildInterp\fR and
 \fItargetInterp\fR. Any two interpreters can be used, without any
 restrictions on how they are related.
 .PP
@@ -233,4 +233,4 @@ interp
 
 .SH KEYWORDS
 alias, command, exposed commands, hidden commands, interpreter, invoke,
-master, slave
+parent, child

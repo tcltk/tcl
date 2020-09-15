@@ -988,7 +988,7 @@ TclpSetVariables(
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or TCL_IO_FAILURE if there is no such entry. The integer at *lengthPtr is
+ *	"name", or TCL_INDEX_NONE if there is no such entry. The integer at *lengthPtr is
  *	filled in with the length of name (if a matching entry is found) or
  *	the length of the environ array (if no matching entry is found).
  *
@@ -1007,7 +1007,7 @@ TclpFindVariable(
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    size_t i, result = TCL_IO_FAILURE;
+    size_t i, result = TCL_INDEX_NONE;
     const char *env, *p1, *p2;
     Tcl_DString envString;
 

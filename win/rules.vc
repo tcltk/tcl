@@ -514,7 +514,7 @@ CFG_ENCODING	= \"cp1252\"
 # information about supported compiler options etc.
 #
 # Tcl itself will always use the nmakehlp.c program which is
-# in its own source. This is the "master" copy and kept updated.
+# in its own source. It will be kept updated there.
 #
 # Extensions built against an installed Tcl will use the installed
 # copy of Tcl's nmakehlp.c if there is one and their own version
@@ -730,11 +730,8 @@ MSVCRT		= 0
 !else
 !if [nmakehlp -f $(OPTS) "msvcrt"]
 !message *** Doing msvcrt
-MSVCRT		= 1
 !else
-!if !$(STATIC_BUILD)
-MSVCRT		= 1
-!else
+!if $(STATIC_BUILD)
 MSVCRT		= 0
 !endif
 !endif
@@ -743,17 +740,12 @@ MSVCRT		= 0
 !if [nmakehlp -f $(OPTS) "staticpkg"] && $(STATIC_BUILD)
 !message *** Doing staticpkg
 TCL_USE_STATIC_PACKAGES	= 1
-!else
-TCL_USE_STATIC_PACKAGES	= 0
 !endif
 
 !if [nmakehlp -f $(OPTS) "nothreads"]
 !message *** Compile explicitly for non-threaded tcl
 TCL_THREADS = 0
 USE_THREAD_ALLOC= 0
-!else
-TCL_THREADS    = 1
-USE_THREAD_ALLOC= 1
 !endif
 
 !if "$(TCL_MAJOR_VERSION)" == "8"
@@ -1051,7 +1043,7 @@ BUILDDIRTOP =$(BUILDDIRTOP)_$(MACHINE)
 BUILDDIRTOP =$(BUILDDIRTOP)_VC$(VCVER)
 !endif
 
-!if !$(DEBUG) || $(DEBUG) && $(UNCHECKED)
+!if !$(DEBUG) || $(TCL_VERSION) > 86 || $(DEBUG) && $(UNCHECKED)
 SUFX	    = $(SUFX:g=)
 !endif
 
@@ -1682,7 +1674,7 @@ default-shell: default-setup $(PROJECT)
 !ifdef RCFILE
 
 # Note: don't use $** in below rule because there may be other dependencies
-# and only the "master" rc must be passed to the resource compiler
+# and only the "main" rc must be passed to the resource compiler
 $(TMP_DIR)\$(PROJECT).res: $(RCDIR)\$(PROJECT).rc
 	$(RESCMD) $(RCDIR)\$(PROJECT).rc
 
@@ -1736,7 +1728,7 @@ DISABLE_IMPLICIT_RULES = 0
 
 !if !$(DISABLE_IMPLICIT_RULES)
 # Implicit rule definitions - only for building library objects. For stubs and
-# main application, the master makefile should define explicit rules.
+# main application, the makefile should define explicit rules.
 
 {$(ROOT)}.c{$(TMP_DIR)}.obj::
 	$(CCPKGCMD) @<<

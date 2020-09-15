@@ -13,7 +13,7 @@
 .SH NAME
 http \- Client-side implementation of the HTTP/1.1 protocol
 .SH SYNOPSIS
-\fBpackage require http\fI ?\fB2.8\fR?
+\fBpackage require http\fI ?\fB2.9\fR?
 .\" See Also -useragent option documentation in body!
 .sp
 \fB::http::config\fR ?\fI\-option value\fR ...?
@@ -170,7 +170,7 @@ throwing an error processing non-latin-1 characters.
 The value of the User-Agent header in the HTTP request.  In an unsafe
 interpreter, the default value depends upon the operating system, and
 the version numbers of \fBhttp\fR and \fBTcl\fR, and is (for example)
-.QW "\fBMozilla/5.0 (Windows; U; Windows NT 10.0) http/2.8.12 Tcl/8.6.8\fR" .
+.QW "\fBMozilla/5.0 (Windows; U; Windows NT 10.0) http/2.9.0 Tcl/8.6.9\fR" .
 A safe interpreter cannot determine its operating system, and so the default
 in a safe interpreter is to use a Windows 10 value with the current version
 numbers of \fBhttp\fR and \fBTcl\fR.
@@ -259,6 +259,10 @@ proc httpHandlerCallback {socket token} {
     return $nbytes
 }
 .CE
+.PP
+The \fBhttp::geturl\fR code for the \fB-handler\fR option is not compatible with either compression or chunked transfer-encoding.  If \fB-handler\fR is specified, then to work around these issues \fBhttp::geturl\fR will reduce the HTTP protocol to 1.0, and override the \fB-zip\fR option (i.e. it will not send the header "\fBAccept-Encoding: gzip,deflate,compress\fR").
+.PP
+If options \fB-handler\fR and \fB-channel\fR are used together, the handler is responsible for copying the data from the HTTP socket to the specified channel.  The name of the channel is available to the handler as element \fB-channel\fR of the token array.
 .RE
 .TP
 \fB\-headers\fR \fIkeyvaluelist\fR

@@ -274,7 +274,7 @@ typedef struct {
 				 * array. */
     size_t allocated;		/* The amount of space actually allocated
 				 * minus 1 byte. */
-    unsigned char bytes[1];	/* The array of bytes. The actual size of this
+    unsigned char bytes[TCLFLEXARRAY];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
 				 * above. */
 } ByteArray;
@@ -524,7 +524,7 @@ Tcl_GetByteArrayFromObj(
 	baPtr = GET_BYTEARRAY(irPtr);
 	bytes = baPtr->bytes;
 	numBytes = baPtr->used;
-    } 
+    }
 
     /* Macro TclGetByteArrayFromObj passes NULL for lengthPtr as
      * a trick to get around changing size. */
@@ -842,7 +842,7 @@ TclAppendBytesToByteArray(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
     }
-    if (len == TCL_AUTO_LENGTH) {
+    if (len == TCL_INDEX_NONE) {
 	Tcl_Panic("%s must be called with definite number of bytes to append",
 		"TclAppendBytesToByteArray");
     }
@@ -2843,7 +2843,7 @@ BinaryEncodeUu(
     unsigned char *data, *start, *cursor;
     int rawLength, n, i, bits, index;
     int lineLength = 61;
-    const unsigned char SingleNewline[] = { (unsigned char) '\n' };
+    const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
     size_t j, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR };

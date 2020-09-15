@@ -669,7 +669,6 @@ EXTRA_CFLAGS
 CFG_TCL_EXPORT_FILE_SUFFIX
 CFG_TCL_UNSHARED_LIB_SUFFIX
 CFG_TCL_SHARED_LIB_SUFFIX
-TCL_DBGX
 TCL_BIN_DIR
 TCL_SRC_DIR
 TCL_DLL_FILE
@@ -4161,7 +4160,7 @@ $as_echo_n "checking compiler flags... " >&6; }
 $as_echo "using static flags" >&6; }
 	    runtime=
 	    LIBRARIES="\${STATIC_LIBRARIES}"
-	    EXESUFFIX="s\${DBGX}.exe"
+	    EXESUFFIX="s.exe"
 	else
 	    # dynamic
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: using shared flags" >&5
@@ -4176,7 +4175,7 @@ $as_echo "using shared flags" >&6; }
 	    runtime=
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 
-	    EXESUFFIX="\${DBGX}.exe"
+	    EXESUFFIX=".exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
 	# Link with gcc since ld does not link to default libs like
@@ -4187,9 +4186,9 @@ $as_echo "using shared flags" >&6; }
 	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\$@)"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
-	DLLSUFFIX="\${DBGX}.dll"
-	LIBSUFFIX="\${DBGX}.a"
-	LIBFLAGSUFFIX="\${DBGX}"
+	DLLSUFFIX=".dll"
+	LIBSUFFIX=".a"
+	LIBFLAGSUFFIX=""
 	SHLIB_SUFFIX=.dll
 
 	EXTRA_CFLAGS="${extra_cflags}"
@@ -4279,7 +4278,7 @@ $as_echo "   Using 64-bit $MACHINE mode" >&6; }
 $as_echo "using static flags" >&6; }
 	    runtime=-MT
 	    LIBRARIES="\${STATIC_LIBRARIES}"
-	    EXESUFFIX="s\${DBGX}.exe"
+	    EXESUFFIX="s.exe"
 	else
 	    # dynamic
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: using shared flags" >&5
@@ -4287,7 +4286,7 @@ $as_echo "using shared flags" >&6; }
 	    runtime=-MD
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 	    LIBRARIES="\${SHARED_LIBRARIES}"
-	    EXESUFFIX="\${DBGX}.exe"
+	    EXESUFFIX=".exe"
 	    case "x`echo \${VisualStudioVersion}`" in
 		x1[4-9]*)
 		    lflags="${lflags} -nodefaultlib:libucrt.lib"
@@ -4299,9 +4298,9 @@ $as_echo "using shared flags" >&6; }
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -out:\$@"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
-	DLLSUFFIX="\${DBGX}.dll"
-	LIBSUFFIX="\${DBGX}.lib"
-	LIBFLAGSUFFIX="\${DBGX}"
+	DLLSUFFIX=".dll"
+	LIBSUFFIX=".lib"
+	LIBFLAGSUFFIX=""
 
 	if test "$do64bit" != "no" ; then
 	    case "$do64bit" in
@@ -5155,7 +5154,6 @@ fi
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
-	DBGX=""
 
 $as_echo "#define NDEBUG 1" >>confdefs.h
 
@@ -5167,7 +5165,6 @@ $as_echo "no" >&6; }
     else
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
-	DBGX=g
 	if test "$tcl_ok" = "yes"; then
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (standard debugging)" >&5
 $as_echo "yes (standard debugging)" >&6; }
@@ -5201,8 +5198,6 @@ $as_echo "enabled $tcl_ok debugging" >&6; }
 	fi
     fi
 
-
-TCL_DBGX=${DBGX}
 
 #--------------------------------------------------------------------
 # Embed the manifest if we can determine how
@@ -5269,10 +5264,6 @@ TCL_SHARED_BUILD=${SHARED_BUILD}
 # Perform final evaluations of variables with possible substitutions.
 #--------------------------------------------------------------------
 
-TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
-TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
-TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
-
 eval "TCL_SRC_DIR=\"`cd $srcdir/..; $CYGPATH $(pwd)`\""
 
 eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
@@ -5291,11 +5282,9 @@ eval "TCL_LIB_SPEC=\"-L${libdir} -ltcl${VER}${FLAGSUFFIX}\""
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
 
-
-eval "DLLSUFFIX=${DLLSUFFIX}"
-eval "LIBPREFIX=${LIBPREFIX}"
-eval "LIBSUFFIX=${LIBSUFFIX}"
-eval "EXESUFFIX=${EXESUFFIX}"
+TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
+TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
+TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
 
 CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}
 CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}
@@ -5307,17 +5296,9 @@ CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 #--------------------------------------------------------------------
 
 if test ${SHARED_BUILD} = 0 ; then
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
-    fi
+    RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
 else
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES=""
-    fi
+    RC_DEFINES=""
 fi
 
 #--------------------------------------------------------------------
@@ -5360,7 +5341,6 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 # empty on win
-
 
 
 

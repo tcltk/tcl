@@ -116,7 +116,7 @@ typedef struct {
 				 * entry in this array is 1, otherwise it is
 				 * 0. */
     int numSubTables;		/* Length of following array. */
-    EscapeSubTable subTables[1];/* Information about each EscapeSubTable used
+    EscapeSubTable subTables[TCLFLEXARRAY];/* Information about each EscapeSubTable used
 				 * by this encoding type. The actual size is
 				 * as large as necessary to hold all
 				 * EscapeSubTables. */
@@ -1071,7 +1071,7 @@ Tcl_ExternalToUtfDString(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_AUTO_LENGTH) {
+    } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = encodingPtr->lengthProc(src);
     }
 
@@ -1161,7 +1161,7 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_AUTO_LENGTH) {
+    } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = encodingPtr->lengthProc(src);
     }
     if (statePtr == NULL) {
@@ -1261,7 +1261,7 @@ Tcl_UtfToExternalDString(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_AUTO_LENGTH) {
+    } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
@@ -1350,7 +1350,7 @@ Tcl_UtfToExternal(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_AUTO_LENGTH) {
+    } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
     if (statePtr == NULL) {
@@ -1991,7 +1991,7 @@ LoadEscapeEncoding(
 	Tcl_DStringFree(&lineString);
     }
 
-    size = sizeof(EscapeEncodingData) - sizeof(EscapeSubTable)
+    size = offsetof(EscapeEncodingData, subTables)
 	    + Tcl_DStringLength(&escapeData);
     dataPtr = (EscapeEncodingData *)Tcl_Alloc(size);
     dataPtr->initLen = strlen(init);
@@ -2238,7 +2238,7 @@ UtfToUtfProc(
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
     int result, numChars, charLimit = INT_MAX;
-    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
+    int *chPtr = (int *) statePtr;
 
     if (flags & TCL_ENCODING_START) {
     	*statePtr = 0;
@@ -2259,7 +2259,7 @@ UtfToUtfProc(
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	if ((src > srcClose) && (!TclUCS4Complete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -2287,23 +2287,23 @@ UtfToUtfProc(
 
 	    *dst++ = 0;
 	    src += 2;
-	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
+	} else if (!TclUCS4Complete(src, srcEnd - src)) {
 	    /*
-	     * Always check before using TclUtfToUniChar. Not doing can so
+	     * Always check before using TclUtfToUCS4. Not doing can so
 	     * cause it run beyond the end of the buffer! If we happen such an
 	     * incomplete char its bytes are made to represent themselves.
 	     */
 
-	    *chPtr = (unsigned char) *src;
+	    *chPtr = UCHAR(*src);
 	    src += 1;
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	} else {
-	    src += TclUtfToUniChar(src, chPtr);
+	    src += TclUtfToUCS4(src, chPtr);
 	    if ((*chPtr | 0x7FF) == 0xDFFF) {
 		/* A surrogate character is detected, handle especially */
-		Tcl_UniChar low = *chPtr;
-		size_t len = (src <= srcEnd-3) ? Tcl_UtfToUniChar(src, &low) : 0;
-		if (((low | 0x3FF) != 0xDFFF) || (*chPtr & 0x400)) {
+		int low = *chPtr;
+		size_t len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
+		if (((low & ~0x3FF) != 0xDC00) || (*chPtr & 0x400)) {
 			*dst++ = (char) (((*chPtr >> 12) | 0xE0) & 0xEF);
 			*dst++ = (char) (((*chPtr >> 6) | 0x80) & 0xBF);
 			*dst++ = (char) ((*chPtr | 0x80) & 0xBF);
@@ -2494,11 +2494,6 @@ UtfToUtf16Proc(
 	    break;
 	}
 	src += TclUtfToUniChar(src, chPtr);
-
-	/*
-	 * Need to handle this in a way that won't cause misalignment by
-	 * casting dst to a Tcl_UniChar. [Bug 1122671]
-	 */
 
 	if (clientData) {
 #if TCL_UTF_MAX > 3
