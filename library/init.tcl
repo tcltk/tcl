@@ -40,41 +40,46 @@ package require -exact Tcl 8.7a4
 # tcl_pkgPath, which is set by the platform-specific initialization routines
 #	On UNIX it is compiled in
 #       On Windows, it is not used
+#
+# (Ticket 41c9857bdd) In a safe interpreter, this file does not set
+# ::auto_path (other than to {} if it is undefined). The caller, typically
+# a Safe Base command, is responsible for setting ::auto_path.
 
 if {![info exists auto_path]} {
-    if {[info exists env(TCLLIBPATH)]} {
+    if {[info exists env(TCLLIBPATH)] && (![interp issafe])} {
 	set auto_path $env(TCLLIBPATH)
     } else {
 	set auto_path ""
     }
 }
 namespace eval tcl {
-    variable Dir
-    foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
-	if {$Dir ni $::auto_path} {
-	    lappend ::auto_path $Dir
-	}
-    }
-    set Dir [file join [file dirname [file dirname \
-	    [info nameofexecutable]]] lib]
-    if {$Dir ni $::auto_path} {
-	lappend ::auto_path $Dir
-    }
-    if {[info exists ::tcl_pkgPath]} { catch {
-	foreach Dir $::tcl_pkgPath {
+    if {![interp issafe]} {
+	variable Dir
+	foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
 	    if {$Dir ni $::auto_path} {
 		lappend ::auto_path $Dir
 	    }
 	}
-    }}
+	set Dir [file join [file dirname [file dirname \
+		[info nameofexecutable]]] lib]
+	if {$Dir ni $::auto_path} {
+	    lappend ::auto_path $Dir
+	}
+	if {[info exists ::tcl_pkgPath]} { catch {
+	    foreach Dir $::tcl_pkgPath {
+		if {$Dir ni $::auto_path} {
+		    lappend ::auto_path $Dir
+		}
+	    }
+	}}
 
-    if {![interp issafe]} {
-        variable Path [encoding dirs]
-        set Dir [file join $::tcl_library encoding]
-        if {$Dir ni $Path} {
+	variable Path [encoding dirs]
+	set Dir [file join $::tcl_library encoding]
+	if {$Dir ni $Path} {
 	    lappend Path $Dir
 	    encoding dirs $Path
-        }
+	}
+	unset Dir Path
     }
 }
 
@@ -240,7 +245,7 @@ proc unknown args {
 		set errInfo [string range $errInfo 0 $last-1]
 		set tail "\"$cinfo\""
 		set last [string last $tail $errInfo]
-		if {$last + [string length $tail] != [string length $errInfo]} {
+		if {$last < 0 || $last + [string length $tail] != [string length $errInfo]} {
 		    return -code error -errorcode $errCode \
 			    -errorinfo $errInfo $msg
 		}
@@ -737,7 +742,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    }
 	}
     } else {
-	if {[string first $nsrc $ndest] != -1} {
+	if {[string first $nsrc $ndest] >= 0} {
 	    set srclen [expr {[llength [file split $nsrc]] - 1}]
 	    set ndest [lindex [file split $ndest] $srclen]
 	    if {$ndest eq [file tail $nsrc]} {

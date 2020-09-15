@@ -5,9 +5,9 @@ apply {{dir} {
   set ::test [info script]
   set isafe [interp issafe]
   foreach {safe package version file} {
-    0 http            2.9.1 {http http.tcl}
-    1 msgcat          1.7.0  {msgcat msgcat.tcl}
-    1 opt             0.4.7  {opt optparse.tcl}
+    0 http            2.9.5  {http http.tcl}
+    1 msgcat          1.7.1  {msgcat msgcat.tcl}
+    1 opt             0.4.8  {opt optparse.tcl}
     0 cookiejar       0.2.0  {cookiejar cookiejar.tcl}
     0 tcl::idna       1.0.1  {cookiejar idna.tcl}
     0 platform        1.0.14 {platform platform.tcl}

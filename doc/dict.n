@@ -28,7 +28,7 @@ writing the resulting dictionary value back to that variable.
 Non-existent keys are treated as if they map to an empty string. The
 updated dictionary value is returned.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the appending operation.
 .VE TIP508
@@ -142,7 +142,7 @@ are treated as if they map to 0. It is an error to increment a value
 for an existing key if that value is not an integer. The updated
 dictionary value is returned.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the incrementing operation.
 .VE TIP508
@@ -172,7 +172,7 @@ there to be no items to append to the list. It is an error for the
 value that the key maps to to not be representable as a list. The
 updated dictionary value is returned.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the list-appending operation.
 .VE TIP508
@@ -234,7 +234,7 @@ containing a mapping from the given key to the given value. When
 multiple keys are present, this operation creates or updates a chain
 of nested dictionaries. The updated dictionary value is returned.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the value insert/update operation.
 .VE TIP508
@@ -254,7 +254,7 @@ must be specified, but the last key on the key-path need not exist.
 All other components on the path must exist. The updated dictionary
 value is returned.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the value remove operation.
 .VE TIP508
@@ -274,7 +274,7 @@ or some other kind of exceptional exit. The result of \fBdict
 update\fR is (unless some kind of error occurs) the result of the
 evaluation of \fIbody\fR.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the update operation.
 .VE TIP508
@@ -313,7 +313,7 @@ dictionaries no longer exists. The result of \fBdict with\fR is
 (unless some kind of error occurs) the result of the evaluation of
 \fIbody\fR.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the updating operation.
 .VE TIP508

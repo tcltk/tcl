@@ -319,7 +319,7 @@ mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
     if (maxlen < 0) {
 	return MP_VAL;
     }
-    return TclBN_mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
+    return TclBN_mp_to_radix(a, str, maxlen, NULL, radix);
 }
 
 #define TclSetStartupScriptPath setStartupScriptPath
@@ -974,7 +974,7 @@ static const TclIntStubs tclIntStubs = {
     TclResetRewriteEnsemble, /* 247 */
     TclCopyChannel, /* 248 */
     TclDoubleDigits, /* 249 */
-    TclSetSlaveCancelFlags, /* 250 */
+    TclSetChildCancelFlags, /* 250 */
     TclRegisterLiteral, /* 251 */
     TclPtrGetVar, /* 252 */
     TclPtrSetVar, /* 253 */
@@ -1312,7 +1312,7 @@ const TclStubs tclStubs = {
     Tcl_CreateInterp, /* 94 */
     Tcl_CreateMathFunc, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
-    Tcl_CreateSlave, /* 97 */
+    Tcl_CreateChild, /* 97 */
     Tcl_CreateTimerHandler, /* 98 */
     Tcl_CreateTrace, /* 99 */
     Tcl_DeleteAssocData, /* 100 */
@@ -1379,7 +1379,7 @@ const TclStubs tclStubs = {
     Tcl_GetErrno, /* 161 */
     Tcl_GetHostName, /* 162 */
     Tcl_GetInterpPath, /* 163 */
-    Tcl_GetMaster, /* 164 */
+    Tcl_GetParent, /* 164 */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
 #if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
@@ -1395,7 +1395,7 @@ const TclStubs tclStubs = {
     Tcl_Gets, /* 169 */
     Tcl_GetsObj, /* 170 */
     Tcl_GetServiceMode, /* 171 */
-    Tcl_GetSlave, /* 172 */
+    Tcl_GetChild, /* 172 */
     Tcl_GetStdChannel, /* 173 */
     Tcl_GetStringResult, /* 174 */
     Tcl_GetVar, /* 175 */

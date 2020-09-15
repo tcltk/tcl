@@ -968,7 +968,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	CFLAGS_OPTIMIZE=-O2
 	CFLAGS_WARNING="-Wall -Wextra -Wwrite-strings -Wpointer-arith"
 	case "${CC}" in
-	    *++)
+	    *++|*++-*)
 		;;
 	    *)
 		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -Wdeclaration-after-statement"
@@ -1084,7 +1084,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	CYGWIN_*)
-	    SHLIB_CFLAGS=""
+	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
 	    DL_OBJS="tclLoadDl.o"
@@ -1269,7 +1269,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ])
 	    ;;
 	Linux*|GNU*|NetBSD-Debian)
-	    SHLIB_CFLAGS="-fPIC"
+	    SHLIB_CFLAGS="-fPIC -fno-common"
 	    SHLIB_SUFFIX=".so"
 
 	    CFLAGS_OPTIMIZE="-O2"
@@ -1364,7 +1364,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ;;
 	DragonFly-*|FreeBSD-*)
 	    # This configuration from FreeBSD Ports.
-	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
 	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,-soname,\$[@]"
 	    SHLIB_SUFFIX=".so"
@@ -1558,7 +1557,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	QNX-6*)
 	    # QNX RTP
 	    # This may work for all QNX, but it was only reported for v6.
-	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="ld -Bshareable -x"
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
@@ -1786,9 +1784,12 @@ dnl # preprocessing tests use only CPPFLAGS.
 	    AIX-*) ;;
 	    BSD/OS*) ;;
 	    CYGWIN_*) ;;
-	    IRIX*) ;;
-	    NetBSD-*|DragonFly-*|FreeBSD-*|OpenBSD-*) ;;
+	    HP_UX*) ;;
 	    Darwin-*) ;;
+	    IRIX*) ;;
+	    Linux*|GNU*) ;;
+	    NetBSD-*|OpenBSD-*) ;;
+	    OSF1-V*) ;;
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
 	esac])
@@ -2476,7 +2477,10 @@ AC_DEFUN([SC_TCL_CHECK_BROKEN_FUNC],[
     AC_CHECK_FUNC($1, tcl_ok=1, tcl_ok=0)
     if test ["$tcl_ok"] = 1; then
 	AC_CACHE_CHECK([proper ]$1[ implementation], [tcl_cv_]$1[_unbroken],
-	    AC_TRY_RUN([[int main() {]$2[}]],[tcl_cv_]$1[_unbroken]=ok,
+	    AC_TRY_RUN([[
+#include <stdlib.h>
+#include <string.h>
+int main() {]$2[}]],[tcl_cv_]$1[_unbroken]=ok,
 		[tcl_cv_]$1[_unbroken]=broken,[tcl_cv_]$1[_unbroken]=unknown))
 	if test ["$tcl_cv_]$1[_unbroken"] = "ok"; then
 	    tcl_ok=1

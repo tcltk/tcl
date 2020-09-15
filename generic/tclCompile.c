@@ -848,7 +848,7 @@ TclSetByteCodeFromAny(
      * faster code in some cases, and more compact code in more.
      */
 
-    if (Tcl_GetMaster(interp) == NULL &&
+    if (Tcl_GetParent(interp) == NULL &&
 	    !Tcl_LimitTypeEnabled(interp, TCL_LIMIT_COMMANDS|TCL_LIMIT_TIME)
 	    && IsCompactibleCompileEnv(&compEnv)) {
 	TclFreeCompileEnv(&compEnv);
@@ -1834,7 +1834,7 @@ CompileCmdLiteral(
     bytes = TclGetStringFromObj(cmdObj, &numBytes);
     cmdLitIdx = TclRegisterLiteral(envPtr, bytes, numBytes, extraLiteralFlags);
 
-    if (cmdPtr) {
+    if (cmdPtr && TclRoutineHasName(cmdPtr)) {
 	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
     }
     TclEmitPush(cmdLitIdx, envPtr);
@@ -1848,8 +1848,8 @@ TclCompileInvocation(
     int numWords,
     CompileEnv *envPtr)
 {
-    int wordIdx = 0, depth = TclGetStackDepth(envPtr);
     DefineLineInformation;
+    int wordIdx = 0, depth = TclGetStackDepth(envPtr);
 
     if (cmdObj) {
 	CompileCmdLiteral(interp, cmdObj, envPtr);
@@ -1892,8 +1892,8 @@ CompileExpanded(
     int numWords,
     CompileEnv *envPtr)
 {
-    int wordIdx = 0;
     DefineLineInformation;
+    int wordIdx = 0;
     int depth = TclGetStackDepth(envPtr);
 
     StartExpanding(envPtr);
@@ -1951,8 +1951,8 @@ CompileCmdCompileProc(
     Command *cmdPtr,
     CompileEnv *envPtr)
 {
-    int unwind = 0, incrOffset = -1;
     DefineLineInformation;
+    int unwind = 0, incrOffset = -1;
     int depth = TclGetStackDepth(envPtr);
 
     /*

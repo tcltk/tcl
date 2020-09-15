@@ -973,11 +973,14 @@ typedef struct Tcl_DString {
 #define TCL_DONT_QUOTE_HASH	8
 
 /*
- * Flag that may be passed to Tcl_GetIndexFromObj to force it to disallow
- * abbreviated strings.
+ * Flags that may be passed to Tcl_GetIndexFromObj.
+ * TCL_EXACT disallows abbreviated strings.
+ * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
+ *      a table that will not live long enough to make it worthwhile.
  */
 
-#define TCL_EXACT	1
+#define TCL_EXACT		1
+#define TCL_INDEX_TEMP_TABLE	2
 
 /*
  *----------------------------------------------------------------------------
@@ -2114,8 +2117,8 @@ typedef struct Tcl_EncodingType {
  * The maximum number of bytes that are necessary to represent a single
  * Unicode character in UTF-8. The valid values are 3 and 4
  * (or perhaps 1 if we want to support a non-unicode enabled core). If 3,
- * then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If > 3,
- * then Tcl_UniChar must be 4-bytes in size (UCS-4). At this time UCS-2 mode
+ * then Tcl_UniChar must be 2-bytes in size (UTF-16) (the default). If > 3,
+ * then Tcl_UniChar must be 4-bytes in size (UCS-4). At this time UTF-16 mode
  * is the default and recommended mode.
  */
 

@@ -126,7 +126,7 @@ TclThreadDataKeyGet(
  *	Keep a list of (mutexes/condition variable/data key) used during
  *	finalization.
  *
- *	Assume master lock is held.
+ *	Assume global lock is held.
  *
  * Results:
  *	None.
@@ -187,7 +187,7 @@ RememberSyncObject(
  * ForgetSyncObject
  *
  *	Remove a single object from the list.
- *	Assume master lock is held.
+ *	Assume global lock is held.
  *
  * Results:
  *	None.
@@ -219,7 +219,7 @@ ForgetSyncObject(
  * TclRememberMutex
  *
  *	Keep a list of mutexes used during finalization.
- *	Assume master lock is held.
+ *	Assume global lock is held.
  *
  * Results:
  *	None.
@@ -262,9 +262,9 @@ Tcl_MutexFinalize(
 #if TCL_THREADS
     TclpFinalizeMutex(mutexPtr);
 #endif
-    TclpMasterLock();
+    TclpGlobalLock();
     ForgetSyncObject(mutexPtr, &mutexRecord);
-    TclpMasterUnlock();
+    TclpGlobalUnlock();
 }
 
 /*
@@ -273,7 +273,7 @@ Tcl_MutexFinalize(
  * TclRememberCondition
  *
  *	Keep a list of condition variables used during finalization.
- *	Assume master lock is held.
+ *	Assume global lock is held.
  *
  * Results:
  *	None.
@@ -316,9 +316,9 @@ Tcl_ConditionFinalize(
 #if TCL_THREADS
     TclpFinalizeCondition(condPtr);
 #endif
-    TclpMasterLock();
+    TclpGlobalLock();
     ForgetSyncObject(condPtr, &condRecord);
-    TclpMasterUnlock();
+    TclpGlobalUnlock();
 }
 
 /*
@@ -382,7 +382,7 @@ TclFinalizeSynchronization(void)
     Tcl_Mutex *mutexPtr;
     Tcl_Condition *condPtr;
 
-    TclpMasterLock();
+    TclpGlobalLock();
 #endif
 
     /*
@@ -404,7 +404,7 @@ TclFinalizeSynchronization(void)
 
 #if TCL_THREADS
     /*
-     * Call thread storage master cleanup.
+     * Call thread storage global cleanup.
      */
 
     TclFinalizeThreadStorage();
@@ -435,7 +435,7 @@ TclFinalizeSynchronization(void)
     condRecord.max = 0;
     condRecord.num = 0;
 
-    TclpMasterUnlock();
+    TclpGlobalUnlock();
 #endif /* TCL_THREADS */
 }
 

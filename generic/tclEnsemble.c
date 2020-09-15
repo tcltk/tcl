@@ -2906,6 +2906,7 @@ TclCompileEnsemble(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     Tcl_Obj *mapObj, *subcmdObj, *targetCmdObj, *listObj, **elems;
     Tcl_Obj *replaced = Tcl_NewObj(), *replacement;
@@ -2915,7 +2916,6 @@ TclCompileEnsemble(
     int ourResult = TCL_ERROR;
     unsigned numBytes;
     const char *word;
-    DefineLineInformation;
 
     Tcl_IncrRefCount(replaced);
     if (parsePtr->numWords < depth + 1) {
@@ -3161,7 +3161,7 @@ TclCompileEnsemble(
     }
 
     /*
-     * Now we've done the mapping process, can now actually try to compile.
+     * Now that the mapping process is done we actually try to compile.
      * If there is a subcommand compiler and that successfully produces code,
      * we'll use that. Otherwise, we fall back to generating opcodes to do the
      * invoke at runtime.
@@ -3244,6 +3244,7 @@ TclAttemptCompileProc(
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;
     int result, i;
     Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
     int savedStackDepth = envPtr->currStackDepth;
@@ -3253,7 +3254,6 @@ TclAttemptCompileProc(
 #ifdef TCL_COMPILE_DEBUG
     int savedExceptDepth = envPtr->exceptDepth;
 #endif
-    DefineLineInformation;
 
     if (cmdPtr->compileProc == NULL) {
 	return TCL_ERROR;
@@ -3261,9 +3261,9 @@ TclAttemptCompileProc(
 
     /*
      * Advance parsePtr->tokenPtr so that it points at the last subcommand.
-     * This will be wrong, but it will not matter, and it will put the
-     * tokens for the arguments in the right place without the needed to
-     * allocate a synthetic Tcl_Parse struct, or copy tokens around.
+     * This will be wrong but it will not matter, and it will put the
+     * tokens for the arguments in the right place without the need to
+     * allocate a synthetic Tcl_Parse struct or copy tokens around.
      */
 
     for (i = 0; i < depth - 1; i++) {
@@ -3377,11 +3377,11 @@ CompileToInvokedCommand(
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;
     Tcl_Token *tokPtr;
     Tcl_Obj *objPtr, **words;
     const char *bytes;
     int i, numWords, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
-    DefineLineInformation;
 
     /*
      * Push the words of the command. Take care; the command words may be

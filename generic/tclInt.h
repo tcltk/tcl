@@ -925,6 +925,12 @@ typedef struct VarInHash {
  *----------------------------------------------------------------
  */
 
+#if defined(__GNUC__) && (__GNUC__ > 2)
+#   define TCLFLEXARRAY 0
+#else
+#   define TCLFLEXARRAY 1
+#endif
+
 /*
  * Forward declaration to prevent an error when the forward reference to
  * Command is encountered in the Proc and ImportRef types declared below.
@@ -968,7 +974,7 @@ typedef struct CompiledLocal {
 				 * is marked by a unique tag during
 				 * compilation, and that same tag is used to
 				 * find the variable at runtime. */
-    char name[1];		/* Name of the local variable starts here. If
+    char name[TCLFLEXARRAY];		/* Name of the local variable starts here. If
 				 * the name is NULL, this will just be '\0'.
 				 * The actual size of this field will be large
 				 * enough to hold the name. MUST BE THE LAST
@@ -1306,7 +1312,7 @@ typedef struct CFWordBC {
 typedef struct ContLineLoc {
     int num;			/* Number of entries in loc, not counting the
 				 * final -1 marker entry. */
-    int loc[1];			/* Table of locations, as character offsets.
+    int loc[TCLFLEXARRAY];/* Table of locations, as character offsets.
 				 * The table is allocated as part of the
 				 * structure, extending behind the nominal end
 				 * of the structure. An entry containing the
@@ -1455,7 +1461,7 @@ typedef struct ExecStack {
     Tcl_Obj **markerPtr;
     Tcl_Obj **endPtr;
     Tcl_Obj **tosPtr;
-    Tcl_Obj *stackWords[1];
+    Tcl_Obj *stackWords[TCLFLEXARRAY];
 } ExecStack;
 
 /*
@@ -1707,18 +1713,18 @@ typedef struct Command {
 /*
  * Flag bits for commands.
  *
- * CMD_IS_DELETED -		Means that the command is in the process of
+ * CMD_DYING -			If 1 the command is in the process of
  *				being deleted (its deleteProc is currently
  *				executing). Other attempts to delete the
  *				command should be ignored.
- * CMD_TRACE_ACTIVE -		1 means that trace processing is currently
+ * CMD_TRACE_ACTIVE -		If 1 the trace processing is currently
  *				underway for a rename/delete change. See the
  *				two flags below for which is currently being
  *				processed.
- * CMD_HAS_EXEC_TRACES -	1 means that this command has at least one
+ * CMD_HAS_EXEC_TRACES -	If 1 means that this command has at least one
  *				execution trace (as opposed to simple
  *				delete/rename traces) in its tracePtr list.
- * CMD_COMPILES_EXPANDED -	1 means that this command has a compiler that
+ * CMD_COMPILES_EXPANDED -	If 1 this command has a compiler that
  *				can handle expansion (provided it is not the
  *				first word).
  * TCL_TRACE_RENAME -		A rename trace is in progress. Further
@@ -1728,12 +1734,13 @@ typedef struct Command {
  * (these last two flags are defined in tcl.h)
  */
 
-#define CMD_IS_DELETED		    0x01
+#define CMD_DYING		    0x01
 #define CMD_TRACE_ACTIVE	    0x02
 #define CMD_HAS_EXEC_TRACES	    0x04
 #define CMD_COMPILES_EXPANDED	    0x08
 #define CMD_REDEF_IN_PROGRESS	    0x10
 #define CMD_VIA_RESOLVER	    0x20
+#define CMD_DEAD                    0x40
 
 
 /*
@@ -1856,7 +1863,7 @@ typedef struct Interp {
 				 * of hidden commands on a per-interp
 				 * basis. */
     void *interpInfo;	/* Information used by tclInterp.c to keep
-				 * track of master/slave interps on a
+				 * track of parent/child interps on a
 				 * per-interp basis. */
     union {
 	void (*optimizer)(void *envPtr);
@@ -2146,7 +2153,7 @@ typedef struct Interp {
      *  (c) are accessed very often (e.g., at each command call)
      *
      * Note that these are the same for all interps in the same thread. They
-     * just have to be initialised for the thread's master interp, slaves
+     * just have to be initialised for the thread's parent interp, children
      * inherit the value.
      *
      * They are used by the macros defined below.
@@ -2522,10 +2529,9 @@ typedef struct List {
 	    ? ((*(intPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
-    (((objPtr)->typePtr == &tclIntType \
-	    && (objPtr)->internalRep.wideValue <= (Tcl_WideInt)(INT_MAX)) \
-	    ? ((*(idxPtr) = ((objPtr)->internalRep.wideValue >= 0) \
-	    ? (int)(objPtr)->internalRep.wideValue : TCL_INDEX_NONE), TCL_OK) \
+    ((((objPtr)->typePtr == &tclIntType) && ((objPtr)->internalRep.wideValue >= 0) \
+	    && ((Tcl_WideUInt)(objPtr)->internalRep.wideValue <= (Tcl_WideUInt)(endValue + 1))) \
+	    ? ((*(idxPtr) = (int)(objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
 /*
@@ -2606,15 +2612,6 @@ typedef struct TclFileAttrProcs {
 } TclFileAttrProcs;
 
 /*
- * Private flag value which controls Tcl_GetIndexFromObj*() routines
- * to instruct them not to cache lookups because the table will not
- * live long enough to make it worthwhile.  Must not clash with public
- * flag value TCL_EXACT.
- */
-
-#define INDEX_TEMP_TABLE 2
-
-/*
  * Opaque handle used in pipeline routines to encapsulate platform-dependent
  * state.
  */
@@ -2670,20 +2667,20 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, unsigned int *leng
 /*
  * A ProcessGlobalValue struct exists for each internal value in Tcl that is
  * to be shared among several threads. Each thread sees a (Tcl_Obj) copy of
- * the value, and the master is kept as a counted string, with epoch and mutex
- * control. Each ProcessGlobalValue struct should be a static variable in some
- * file.
+ * the value, and the gobal value is kept as a counted string, with epoch and
+ * mutex control. Each ProcessGlobalValue struct should be a static variable in
+ * some file.
  */
 
 typedef struct ProcessGlobalValue {
     unsigned int epoch;		/* Epoch counter to detect changes in the
-				 * master value. */
-    unsigned int numBytes;	/* Length of the master string. */
-    char *value;		/* The master string value. */
-    Tcl_Encoding encoding;	/* system encoding when master string was
+				 * global value. */
+    unsigned int numBytes;	/* Length of the global string. */
+    char *value;		/* The global string value. */
+    Tcl_Encoding encoding;	/* system encoding when global string was
 				 * initialized. */
     TclInitProcessGlobalValueProc *proc;
-    				/* A procedure to initialize the master string
+    				/* A procedure to initialize the global string
 				 * copy when a "get" request comes in before
 				 * any "set" request has been received. */
     Tcl_Mutex mutex;		/* Enforce orderly access from multiple
@@ -2714,6 +2711,8 @@ typedef struct ProcessGlobalValue {
 				/* Reject leading/trailing whitespace. */
 #define TCL_PARSE_BINARY_ONLY	64
 				/* Parse binary even without prefix. */
+#define TCL_PARSE_NO_UNDERSCORE	128
+				/* Reject underscore digit separator */
 
 /*
  *----------------------------------------------------------------------
@@ -3156,8 +3155,8 @@ MODULE_SCOPE void	TclpInitLock(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
 MODULE_SCOPE void	TclpInitUnlock(void);
 MODULE_SCOPE Tcl_Obj *	TclpObjListVolumes(void);
-MODULE_SCOPE void	TclpMasterLock(void);
-MODULE_SCOPE void	TclpMasterUnlock(void);
+MODULE_SCOPE void	TclpGlobalLock(void);
+MODULE_SCOPE void	TclpGlobalUnlock(void);
 MODULE_SCOPE int	TclpMatchFiles(Tcl_Interp *interp, char *separators,
 			    Tcl_DString *dirPtr, char *pattern, char *tail);
 MODULE_SCOPE int	TclpObjNormalizePath(Tcl_Interp *interp,
@@ -3252,8 +3251,16 @@ MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCount(int ch);
 #if TCL_UTF_MAX > 3
 #   define TclUtfToUCS4 Tcl_UtfToUniChar
+#   define TclUniCharToUCS4(src, ptr) (*ptr = *(src),1)
+#   define TclUCS4Complete Tcl_UtfCharComplete
+#   define TclChar16Complete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
+	    ? ((length) >= 3) : Tcl_UtfCharComplete((src), (length)))
 #else
-   MODULE_SCOPE int	TclUtfToUCS4(const char *src, int *ucs4Ptr);
+    MODULE_SCOPE int	TclUtfToUCS4(const char *src, int *ucs4Ptr);
+    MODULE_SCOPE int	TclUniCharToUCS4(const Tcl_UniChar *src, int *ucs4Ptr);
+#   define TclUCS4Complete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
+	    ? ((length) >= 4) : Tcl_UtfCharComplete((src), (length)))
+#   define TclChar16Complete Tcl_UtfCharComplete
 #endif
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
@@ -3296,8 +3303,8 @@ MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
-MODULE_SCOPE void	TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
-MODULE_SCOPE void *	TclpThreadGetMasterTSD(void *tsdKeyPtr);
+MODULE_SCOPE void	TclpThreadSetGlobalTSD(void *tsdKeyPtr, void *ptr);
+MODULE_SCOPE void *	TclpThreadGetGlobalTSD(void *tsdKeyPtr);
 MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
 			    const char *msg, int length);
 /* Tip 430 */
@@ -4165,7 +4172,7 @@ MODULE_SCOPE int	TclFullFinalizationRequested(void);
 MODULE_SCOPE Tcl_ObjCmdProc TclEnsembleImplementationCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclAliasObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclLocalAliasObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclSlaveObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclChildObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclInvokeImportedCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclOOPublicObjectCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclOOPrivateObjectCmd;
@@ -4655,8 +4662,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 #if TCL_UTF_MAX > 3
 #define TclUtfToUniChar(str, chPtr) \
-	((((unsigned char) *(str)) < 0x80) ?		\
-	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
+	(((UCHAR(*(str))) < 0x80) ?		\
+	    ((*(chPtr) = UCHAR(*(str))), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
 #else
 #define TclUtfToUniChar(str, chPtr) \
@@ -4693,9 +4700,6 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	(((src) < (start) + 2) ? (start) : \
 	((unsigned char) *((src) - 1)) < 0x80 ? (src) - 1 : \
 	Tcl_UtfPrev(src, start))
-
-#define TclUtfNext(src)	\
-	((((unsigned char) *(src)) < 0x80) ? (src) + 1 : Tcl_UtfNext(src))
 
 /*
  *----------------------------------------------------------------
@@ -4928,7 +4932,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  * Computes number of bytes from beginning of structure to a given field.
  */
 
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && !defined(BUILD_tcl)
 #   define TclOffset(type, field) ((int) offsetof(type, field))
 #endif
 /* Workaround for platforms missing offsetof(), e.g. VC++ 6.0 */
@@ -4953,10 +4957,30 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  * the internal stubs, but the core can use the macro instead.
  */
 
-#define TclCleanupCommandMacro(cmdPtr) \
-    if ((cmdPtr)->refCount-- <= 1) { \
-	ckfree(cmdPtr);\
-    }
+#define TclCleanupCommandMacro(cmdPtr)		\
+    do {					\
+	if ((cmdPtr)->refCount-- <= 1) {	\
+	    ckfree(cmdPtr);			\
+	}					\
+    } while (0)
+
+
+/*
+ * inside this routine crement refCount first incase cmdPtr is replacing itself
+ */
+#define TclRoutineAssign(location, cmdPtr)	    \
+    do {					    \
+	(cmdPtr)->refCount++;			    \
+	if ((location) != NULL			    \
+	    && (location--) <= 1) {		    \
+	    ckfree(((location)));		    \
+	}					    \
+	(location) = (cmdPtr);			    \
+    } while (0)
+
+
+#define TclRoutineHasName(cmdPtr) \
+    ((cmdPtr)->hPtr != NULL)
 
 /*
  *----------------------------------------------------------------

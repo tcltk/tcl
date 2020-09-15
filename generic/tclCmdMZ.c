@@ -195,7 +195,7 @@ Tcl_RegexpObjCmd(
 	    if (++i >= objc) {
 		goto endOfForLoop;
 	    }
-	    if (TclGetIntForIndexM(interp, objv[i], 0, &temp) != TCL_OK) {
+	    if (TclGetIntForIndexM(interp, objv[i], INT_MAX - 1, &temp) != TCL_OK) {
 		goto optionError;
 	    }
 	    if (startIndex) {
@@ -550,7 +550,7 @@ Tcl_RegsubObjCmd(
 	    if (++idx >= objc) {
 		goto endOfForLoop;
 	    }
-	    if (TclGetIntForIndexM(interp, objv[idx], 0, &temp) != TCL_OK) {
+	    if (TclGetIntForIndexM(interp, objv[idx], INT_MAX - 1, &temp) != TCL_OK) {
 		goto optionError;
 	    }
 	    if (startIndex) {
@@ -1424,7 +1424,7 @@ StringIndexCmd(
 	 */
 
 	if (TclIsPureByteArray(objv[1])) {
-	    unsigned char uch = (unsigned char) ch;
+	    unsigned char uch = UCHAR(ch);
 
 	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
 	} else {
@@ -4311,7 +4311,7 @@ Tcl_TimeRateObjCmd(
 	     */
 
 	    measureOverhead = 0;
-	    Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
 	    return TCL_OK;
 	}
 
