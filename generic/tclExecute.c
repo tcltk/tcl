@@ -4653,13 +4653,19 @@ TEBCresume(
 	 */
 
 	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& !TclHasIntRep(value2Ptr, &tclListType)
-		&& (TclGetIntForIndexM(NULL, value2Ptr, objc-1,
-			&index) == TCL_OK)) {
-	    TclDecrRefCount(value2Ptr);
-	    tosPtr--;
-	    pcAdjustment = 1;
-	    goto lindexFastPath;
+		&& !TclHasIntRep(value2Ptr, &tclListType)) {
+	    int code;
+
+	    DECACHE_STACK_INFO();
+	    code = TclGetIntForIndexM(interp, value2Ptr, objc-1, &index);
+	    CACHE_STACK_INFO();
+	    if (code == TCL_OK) {
+		TclDecrRefCount(value2Ptr);
+		tosPtr--;
+		pcAdjustment = 1;
+		goto lindexFastPath;
+	    }
+	    Tcl_ResetResult(interp);
 	}
 
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
@@ -5094,10 +5100,13 @@ TEBCresume(
 	 */
 
 	slength = Tcl_GetCharLength(valuePtr);
+	DECACHE_STACK_INFO();
 	if (TclGetIntForIndexM(interp, value2Ptr, slength-1, &index)!=TCL_OK) {
+	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+	CACHE_STACK_INFO();
 
 	if (index >= slength) {
 	    TclNewObj(objResultPtr);
@@ -5134,13 +5143,21 @@ TEBCresume(
 	TRACE(("\"%.20s\" %.20s %.20s =>",
 		O2S(OBJ_AT_DEPTH(2)), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
 	slength = Tcl_GetCharLength(OBJ_AT_DEPTH(2)) - 1;
+
+	DECACHE_STACK_INFO();
 	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, slength,
-		    &fromIdx) != TCL_OK
-	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, slength,
-		    &toIdx) != TCL_OK) {
+		    &fromIdx) != TCL_OK) {
+	    CACHE_STACK_INFO();
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+	if (TclGetIntForIndexM(interp, OBJ_AT_TOS, slength,
+		    &toIdx) != TCL_OK) {
+	    CACHE_STACK_INFO();
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	CACHE_STACK_INFO();
 
 	if (fromIdx == TCL_INDEX_NONE) {
 	    fromIdx = TCL_INDEX_START;
@@ -5223,14 +5240,17 @@ TEBCresume(
 	slength = Tcl_GetCharLength(valuePtr) - 1;
 	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
+	DECACHE_STACK_INFO();
 	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, slength,
 		    &fromIdx) != TCL_OK
 	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, slength,
 		    &toIdx) != TCL_OK) {
+	    CACHE_STACK_INFO();
 	    TclDecrRefCount(value3Ptr);
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
+	CACHE_STACK_INFO();
 	TclDecrRefCount(OBJ_AT_TOS);
 	(void) POP_OBJECT();
 	TclDecrRefCount(OBJ_AT_TOS);
