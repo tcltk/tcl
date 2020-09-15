@@ -2697,7 +2697,7 @@ Tcl_FSGetCwd(
 		 * always be in the 'else' branch below which is simpler.
 		 */
 
-		ClientData cd = (ClientData) Tcl_FSGetNativePath(norm);
+		void *cd = (void *) Tcl_FSGetNativePath(norm);
 
 		FsUpdateCwd(norm, TclNativeDupInternalRep(cd));
 		Tcl_DecrRefCount(norm);
@@ -4085,7 +4085,7 @@ TclFSNonnativePathType(
 		    if (pathLen < len) {
 			continue;
 		    }
-		    if (strncmp(strVol, path, (size_t) len) == 0) {
+		    if (strncmp(strVol, path, len) == 0) {
 			type = TCL_PATH_ABSOLUTE;
 			if (filesystemPtrPtr != NULL) {
 			    *filesystemPtrPtr = fsRecPtr->fsPtr;
@@ -4488,7 +4488,7 @@ Tcl_FSGetFileSystemForPath(
 	return NULL;
     }
 
-    /* Start with an up-to-date copy of the master filesystem. */
+    /* Start with an up-to-date copy of the filesystem. */
     fsRecPtr = FsGetFirstFilesystem();
     Claim();
 

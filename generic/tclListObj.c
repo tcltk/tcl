@@ -1091,7 +1091,7 @@ Tcl_ListObjReplace(
 	if ((numAfterLast > 0) && (shift != 0)) {
 	    Tcl_Obj **src = elemPtrs + start;
 
-	    memmove(src+shift, src, (size_t) numAfterLast * sizeof(Tcl_Obj*));
+	    memmove(src+shift, src, numAfterLast * sizeof(Tcl_Obj*));
 	}
     } else {
 	/*
@@ -1263,7 +1263,7 @@ TclLindexList(
 
     ListGetIntRep(argPtr, listRepPtr);
     if ((listRepPtr == NULL)
-	    && TclGetIntForIndexM(NULL , argPtr, 0, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL , argPtr, INT_MAX - 1, &index) == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
 	 */
@@ -1373,7 +1373,7 @@ TclLindexFlat(
 		 */
 
 		while (++i < indexCount) {
-		    if (TclGetIntForIndexM(interp, indexArray[i], -1, &index)
+		    if (TclGetIntForIndexM(interp, indexArray[i], INT_MAX - 1, &index)
 			!= TCL_OK) {
 			Tcl_DecrRefCount(sublistCopy);
 			return NULL;
@@ -1444,7 +1444,7 @@ TclLsetList(
 
     ListGetIntRep(indexArgPtr, listRepPtr);
     if (listRepPtr == NULL
-	    && TclGetIntForIndexM(NULL, indexArgPtr, 0, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL, indexArgPtr, INT_MAX - 1, &index) == TCL_OK) {
 	/*
 	 * indexArgPtr designates a single index.
 	 */

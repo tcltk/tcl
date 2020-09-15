@@ -12,8 +12,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -31,7 +31,7 @@ proc makeShared {s} {uplevel 1 [list lappend copy $s]; return $s}
 testConstraint testobj [expr {[info commands testobj] ne {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
-testConstraint tip389 [expr {[string length \U010000] == 2}]
+testConstraint utf16 [expr {[string length \U010000] == 2}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
 
 # Used for constraining memory leak tests
@@ -506,7 +506,7 @@ test string-5.19.$noComp {string index, bytearray object out of bounds} {
 test string-5.20.$noComp {string index, bytearray object out of bounds} -body {
     run {string index [binary format I* {0x50515253 0x52}] 20}
 } -result {}
-test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints {tip389} -body {
+test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints utf16 -body {
     run {list [string index a\U100000b 1] [string index a\U100000b 2] [string index a\U100000b 3]}
 } -result [list \U100000 {} b]
 
@@ -777,7 +777,7 @@ test string-6.80.$noComp {string is wordchar, true} {
     run {string is wordchar abc_123}
 } 1
 test string-6.81.$noComp {string is wordchar, unicode true} {
-    run {string is wordchar abc\xFCab\xDCAB\u5001}
+    run {string is wordchar abc\xFCab\xDCAB\u5001\U1D7CA}
 } 1
 test string-6.82.$noComp {string is wordchar, false} {
     list [run {string is wordchar -fail var abcd.ef}] $var
@@ -1503,9 +1503,23 @@ test string-12.22.$noComp {string range, shimmering binary/index} {
     binary scan $s a* x
     run {string range $s $s end}
 } 000000001
-test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} tip389 {
+test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} utf16 {
     run {list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]}
 } [list \U100000 {} b]
+test string-12.24.$noComp {bignum index arithmetic} -setup {
+    proc demo {i j} {string range fubar $i $j}
+} -cleanup {
+    rename demo {}
+} -body {
+    demo 2 0+0x10000000000000000
+} -result bar
+test string-12.25.$noComp {bignum index arithmetic} -setup {
+    proc demo {i j} {string range fubar $i $j}
+} -cleanup {
+    rename demo {}
+} -body {
+    demo 0x10000000000000000-0xffffffffffffffff 3
+} -result uba
 
 test string-13.1.$noComp {string repeat} {
     list [catch {run {string repeat}} msg] $msg
@@ -1651,6 +1665,9 @@ test stringComp-14.24.$noComp {Bug 1af8de570511} {
 test stringComp-14.25.$noComp {} {
     string length [string replace [string repeat a\xFE 2] 3 end {}]
 } 3
+test stringComp-14.26.$noComp {} {
+    run {string replace abcd 0x10000000000000000-0xffffffffffffffff 2 e}
+} aed
 
 test string-15.1.$noComp {string tolower too few args} {
     list [catch {run {string tolower}} msg] $msg
@@ -1744,7 +1761,7 @@ test string-17.7.$noComp {string totitle, unicode} {
 test string-17.8.$noComp {string totitle, compiled} {
     lindex [run {string totitle [list aa bb [list cc]]}] 0
 } Aa
-test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} tip389 {
+test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} utf16 {
     run {list [string totitle a\U118c0c 1 1] [string totitle a\U118c0c 2 2] \
 	[string totitle a\U118c0c 3 3]}
 } [list a\U118a0c a\U118c0C a\U118c0C]
@@ -1888,7 +1905,7 @@ test string-21.14.$noComp {string wordend, unicode} -body {
 test string-21.15.$noComp {string wordend, unicode} -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 0}
 } -result 2
-test string-21.16.$noComp {string wordend, unicode} -constraints tip389 -body {
+test string-21.16.$noComp {string wordend, unicode} -constraints utf16 -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
 } -result 8
 
@@ -1939,7 +1956,7 @@ test string-22.14.$noComp {string wordstart, invalid UTF-8} -constraints testbyt
 test string-22.15.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 0}
 } -result 0
-test string-22.16.$noComp {string wordstart, unicode} -constraints tip389 -body {
+test string-22.16.$noComp {string wordstart, unicode} -constraints utf16 -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 10}
 } -result 5
 

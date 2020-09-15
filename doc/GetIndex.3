@@ -27,19 +27,22 @@ Interpreter to use for error reporting; if NULL, then no message is
 provided on errors.
 .AP Tcl_Obj *objPtr in/out
 The string value of this value is used to search through \fItablePtr\fR.
-The internal representation is modified to hold the index of the matching
+If the \fBTCL_INDEX_TEMP_TABLE\fR flag is not specified,
+the internal representation is modified to hold the index of the matching
 table entry.
 .AP "const char *const" *tablePtr in
 An array of null-terminated strings.  The end of the array is marked
 by a NULL string pointer.
-Note that references to the \fItablePtr\fR may be retained in the
+Note that, unless the \fBTCL_INDEX_TEMP_TABLE\fR flag is specified,
+references to the \fItablePtr\fR may be retained in the
 internal representation of \fIobjPtr\fR, so this should represent the
 address of a statically-allocated array.
 .AP "const void" *structTablePtr in
 An array of arbitrary type, typically some \fBstruct\fR type.
 The first member of the structure must be a null-terminated string.
 The size of the structure is given by \fIoffset\fR.
-Note that references to the \fIstructTablePtr\fR may be retained in the
+Note that, unless the \fBTCL_INDEX_TEMP_TABLE\fR flag is specified,
+references to the \fIstructTablePtr\fR may be retained in the
 internal representation of \fIobjPtr\fR, so this should represent the
 address of a statically-allocated array of structures.
 .AP int offset in
@@ -50,7 +53,8 @@ Null-terminated string describing what is being looked up, such as
 \fBoption\fR.  This string is included in error messages.
 .AP int flags in
 OR-ed combination of bits providing additional information for
-operation.  The only bit that is currently defined is \fBTCL_EXACT\fR.
+operation.  The only bits that are currently defined are \fBTCL_EXACT\fR
+and \fBTCL_INDEX_TEMP_TABLE\fR.
 .AP int *indexPtr out
 The index of the string in \fItablePtr\fR that matches the value of
 \fIobjPtr\fR is returned here.
@@ -76,7 +80,8 @@ error message to indicate what was being looked up.  For example,
 if \fImsg\fR is \fBoption\fR the error message will have a form like
 .QW "\fBbad option \N'34'firt\N'34': must be first, second, or third\fR" .
 .PP
-If \fBTcl_GetIndexFromObj\fR completes successfully it modifies the
+If the \fBTCL_INDEX_TEMP_TABLE\fR was not specified, when
+\fBTcl_GetIndexFromObj\fR completes successfully it modifies the
 internal representation of \fIobjPtr\fR to hold the address of
 the table and the index of the matching entry.  If \fBTcl_GetIndexFromObj\fR
 is invoked again with the same \fIobjPtr\fR and \fItablePtr\fR
@@ -84,7 +89,9 @@ arguments (e.g. during a reinvocation of a Tcl command), it returns
 the matching index immediately without having to redo the lookup
 operation.  Note: \fBTcl_GetIndexFromObj\fR assumes that the entries
 in \fItablePtr\fR are static: they must not change between
-invocations.  If the value of \fIobjPtr\fR is the empty string,
+invocations.  This caching mechanism can be disallowed by specifying
+the \fBTCL_INDEX_TEMP_TABLE\fR flag.
+If the value of \fIobjPtr\fR is the empty string,
 \fBTcl_GetIndexFromObj\fR will treat it as a non-matching value
 and return \fBTCL_ERROR\fR.
 .PP

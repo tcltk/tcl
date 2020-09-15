@@ -544,7 +544,7 @@ TclCreateProc(
 	 */
 
 	argnamei = argname;
-	argnamelast = Tcl_UtfPrev(argname + nameLength, argname);
+	argnamelast = (nameLength > 0) ? (argname + nameLength - 1) : argname;
 	while (argnamei < argnamelast) {
 	    if (*argnamei == '(') {
 		if (*argnamelast == ')') { /* We have an array element. */
@@ -565,7 +565,7 @@ TclCreateProc(
 			"FORMALARGUMENTFORMAT", NULL);
 		goto procError;
 	    }
-	    argnamei = Tcl_UtfNext(argnamei);
+	    argnamei++;
 	}
 
 	if (precompiled) {
@@ -632,7 +632,8 @@ TclCreateProc(
 	     * local variables for the argument.
 	     */
 
-	    localPtr = (CompiledLocal *)ckalloc(offsetof(CompiledLocal, name) + fieldValues[0]->length +1);
+	    localPtr = (CompiledLocal *)ckalloc(
+		    offsetof(CompiledLocal, name) + fieldValues[0]->length + 1);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -1313,8 +1314,8 @@ InitLocalCache(
      * for future calls.
      */
 
-    localCachePtr = (LocalCache *)ckalloc(sizeof(LocalCache)
-	    + (localCt - 1) * sizeof(Tcl_Obj *)
+    localCachePtr = (LocalCache *)ckalloc(offsetof(LocalCache, varName0)
+	    + localCt * sizeof(Tcl_Obj *)
 	    + numArgs * sizeof(Var));
 
     namePtr = &localCachePtr->varName0;

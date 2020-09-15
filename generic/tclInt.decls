@@ -893,7 +893,7 @@ declare 227 {
 #  Used to be needed for TclOO-extension; unneeded now that TclOO is in the
 #  core and NRE-enabled
 #  declare 228 {
-#      int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
+#      int TclObjInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
 #             int skip, ProcErrorProc *errorProc)
 #  }
 declare 229 {
@@ -990,7 +990,7 @@ declare 249 {
 }
 # TIP #285: Script cancellation support.
 declare 250 {
-    void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
+    void TclSetChildCancelFlags(Tcl_Interp *interp, int flags, int force)
 }
 
 # Allow extensions for optimization

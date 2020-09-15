@@ -274,7 +274,7 @@ typedef struct ByteArray {
 				 * array. */
     unsigned int allocated;	/* The amount of space actually allocated
 				 * minus 1 byte. */
-    unsigned char bytes[1];	/* The array of bytes. The actual size of this
+    unsigned char bytes[TCLFLEXARRAY];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
 				 * above. */
 } ByteArray;
@@ -2841,7 +2841,7 @@ BinaryEncodeUu(
     unsigned char *data, *start, *cursor;
     int offset, count, rawLength, n, i, j, bits, index;
     int lineLength = 61;
-    const unsigned char SingleNewline[] = { (unsigned char) '\n' };
+    const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
     int wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
