@@ -63,13 +63,13 @@ typedef struct {
 				 * space allocated for the unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has
 				 * a Unicode representation. */
-    Tcl_UniChar unicode[1];	/* The array of Unicode chars. The actual size
+    Tcl_UniChar unicode[TCLFLEXARRAY];	/* The array of Unicode chars. The actual size
 				 * of this field depends on the 'maxChars'
 				 * field above. */
 } String;
 
 #define STRING_SIZE(numChars) \
-    (sizeof(String) + ((numChars) * sizeof(Tcl_UniChar)))
+    (offsetof(String, unicode) + ((numChars + 1) * sizeof(Tcl_UniChar)))
 #define stringAttemptAlloc(numChars) \
     (String *) Tcl_AttemptAlloc(STRING_SIZE(numChars))
 #define stringAlloc(numChars) \

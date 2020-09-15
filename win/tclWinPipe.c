@@ -851,7 +851,7 @@ TclpCloseFile(
  * Results:
  *	Returns the process id for the child process. If the pid was not known
  *	by Tcl, either because the pid was not created by Tcl or the child
- *	process has already been reaped, TCL_IO_FAILURE is returned.
+ *	process has already been reaped, TCL_INDEX_NONE is returned.
  *
  * Side effects:
  *	None.
@@ -875,7 +875,7 @@ TclpGetPid(
 	}
     }
     Tcl_MutexUnlock(&pipeMutex);
-    return TCL_IO_FAILURE;
+    return TCL_INDEX_NONE;
 }
 
 /*

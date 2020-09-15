@@ -1026,7 +1026,7 @@ InfoErrorStackCmd(
 
     target = interp;
     if (objc == 2) {
-	target = Tcl_GetSlave(interp, TclGetString(objv[1]));
+	target = Tcl_GetChild(interp, TclGetString(objv[1]));
 	if (target == NULL) {
 	    return TCL_ERROR;
 	}
@@ -2142,7 +2142,7 @@ InfoCmdTypeCmd(
     }
 
     /*
-     * There's one special case: safe slave interpreters can't see aliases as
+     * There's one special case: safe child interpreters can't see aliases as
      * aliases as they're part of the security mechanisms.
      */
 
@@ -3835,7 +3835,7 @@ Tcl_LsearchObjCmd(
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(index));
+	    Tcl_SetObjResult(interp, TclNewWideIntObjFromSize((size_t)index));
 	}
     } else if (index < 0) {
 	/*

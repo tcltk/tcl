@@ -8,7 +8,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -739,6 +739,9 @@ test util-9.57 {Tcl_GetIntForIndex} {
 test util-9.58 {Tcl_GetIntForIndex} -body {
     string index abcd end--0x8000000000000000
 } -result {}
+test util-9.59 {Tcl_GetIntForIndex} {
+    string index abcd 0-0x10000000000000000
+} {}
 
 test util-10.1 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
     convertDouble 0x0000000000000000

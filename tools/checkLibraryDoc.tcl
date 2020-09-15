@@ -67,6 +67,7 @@ set StructList {
     Tk_GeomMgr \
     Tk_Image \
     Tk_ImageMaster \
+    Tk_ImageModel \
     Tk_ImageType \
     Tk_Item \
     Tk_ItemType \
