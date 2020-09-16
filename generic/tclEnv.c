@@ -127,6 +127,17 @@ TclSetupEnv(
 	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
     TclFindArrayPtrElements(varPtr, &namesHash);
 
+#if defined(_WIN32)
+    if (tenviron == NULL) {
+	/*
+	 * When we are started from main(), the _wenviron array could
+	 * be NULL and will be initialized by the first _wgetenv() call.
+	 */
+
+	(void) _wgetenv(L"WINDIR");
+    }
+#endif
+
     /*
      * Go through the environment array and transfer its values into Tcl. At
      * the same time, remove those elements we add/update from the hash table

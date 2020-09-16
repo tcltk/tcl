@@ -23,10 +23,6 @@ TCL_CC='@CC@'
 # -D flags for use with the C compiler.
 TCL_DEFS='@DEFS@'
 
-# If TCL was built with debugging symbols, generated libraries contain
-# this string at the end of the library name (before the extension).
-TCL_DBGX=@TCL_DBGX@
-
 # Default flags used in an optimized and debuggable build, respectively.
 TCL_CFLAGS_DEBUG='@CFLAGS_DEBUG@'
 TCL_CFLAGS_OPTIMIZE='@CFLAGS_OPTIMIZE@'

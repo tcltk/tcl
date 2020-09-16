@@ -610,7 +610,7 @@ TclpLoadMemory(
 
 	    if ((size_t) codeSize >= sizeof(struct fat_header) +
 		    fh_nfat_arch * sizeof(struct fat_arch)) {
-		void *fatarchs = (char*)buffer + sizeof(struct fat_header);
+		void *fatarchs = (char *)buffer + sizeof(struct fat_header);
 		const NXArchInfo *arch = NXGetLocalArchInfo();
 		struct fat_arch *fa;
 

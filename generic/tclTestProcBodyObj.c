@@ -228,7 +228,7 @@ ProcBodyTestInitInternal(
 
 static int
 ProcBodyTestProcObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
@@ -327,7 +327,7 @@ ProcBodyTestProcObjCmd(
 
 static int
 ProcBodyTestCheckObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */

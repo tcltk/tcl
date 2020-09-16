@@ -4012,7 +4012,7 @@ Tcl_Write(
 	return TCL_IO_FAILURE;
     }
 
-    if (srcLen == TCL_AUTO_LENGTH) {
+    if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
     if (WriteBytes(chanPtr, src, srcLen) == -1) {
@@ -4062,7 +4062,7 @@ Tcl_WriteRaw(
 	return TCL_IO_FAILURE;
     }
 
-    if (srcLen == TCL_AUTO_LENGTH) {
+    if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
 
@@ -4121,7 +4121,7 @@ Tcl_WriteChars(
 
     chanPtr = statePtr->topChanPtr;
 
-    if (len == TCL_AUTO_LENGTH) {
+    if (len == TCL_INDEX_NONE) {
 	len = strlen(src);
     }
     if (statePtr->encoding) {
@@ -7675,7 +7675,7 @@ Tcl_BadChannelOption(
 	}
 	Tcl_ResetResult(interp);
 	errObj = Tcl_ObjPrintf("bad option \"%s\": should be one of ",
-                optionName);
+                optionName ? optionName : "");
 	argc--;
 	for (i = 0; i < argc; i++) {
 	    Tcl_AppendPrintfToObj(errObj, "-%s, ", argv[i]);
@@ -9641,7 +9641,7 @@ CopyData(
 	 * unsuitable for updating totals and toRead.
 	 */
 
-	if (sizeb == TCL_AUTO_LENGTH) {
+	if (sizeb == TCL_INDEX_NONE) {
 	writeError:
 	    if (interp) {
 		TclNewObj(errObj);

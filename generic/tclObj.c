@@ -145,12 +145,12 @@ typedef struct PendingObjData {
 #define ObjDeletionUnlock(contextPtr)	((contextPtr)->deletionCount--)
 #define ObjDeletePending(contextPtr)	((contextPtr)->deletionCount > 0)
 #define ObjOnStack(contextPtr)		((contextPtr)->deletionStack != NULL)
-#define PushObjToDelete(contextPtr,objPtr) \
+#define PushObjToDelete(contextPtr,objPtr)                              \
     /* The string rep is already invalidated so we can use the bytes value \
      * for our pointer chain: push onto the head of the stack. */       \
     (objPtr)->bytes = (char *) ((contextPtr)->deletionStack);           \
     (contextPtr)->deletionStack = (objPtr)
-#define PopObjToDelete(contextPtr,objPtrVar) \
+#define PopObjToDelete(contextPtr,objPtrVar)                            \
     (objPtrVar) = (contextPtr)->deletionStack;                          \
     (contextPtr)->deletionStack = (Tcl_Obj *) (objPtrVar)->bytes
 
@@ -168,7 +168,7 @@ static __thread PendingObjData pendingObjData;
 #else
 static Tcl_ThreadDataKey pendingObjDataKey;
 #define ObjInitDeletionContext(contextPtr) \
-    PendingObjData *const contextPtr =                                  \
+    PendingObjData *const contextPtr =     \
 	    (PendingObjData *)Tcl_GetThreadData(&pendingObjDataKey, sizeof(PendingObjData))
 #endif
 
@@ -177,11 +177,11 @@ static Tcl_ThreadDataKey pendingObjDataKey;
  */
 
 #define PACK_BIGNUM(bignum, objPtr) \
-    if ((bignum).used > 0x7FFF) {                                       \
-	mp_int *temp = (mp_int *) Tcl_Alloc(sizeof(mp_int));     \
+    if ((bignum).used > 0x7FFF) {                                   \
+	mp_int *temp = (mp_int *)Tcl_Alloc(sizeof(mp_int));               \
 	*temp = bignum;                                                 \
-	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                 \
-	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1); \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                  \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1);           \
     } else if (((bignum).alloc <= 0x7FFF) || (mp_shrink(&(bignum))) == MP_OKAY) { \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = (bignum).dp;           \
 	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR( ((bignum).sign << 30) \
@@ -532,7 +532,7 @@ TclContinuationsEnter(
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
 	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = (ContLineLoc *)Tcl_Alloc(sizeof(ContLineLoc) + num*sizeof(int));
+    ContLineLoc *clLocPtr = (ContLineLoc *)Tcl_Alloc(offsetof(ContLineLoc, loc) + (num + 1) *sizeof(int));
 
     if (!newEntry) {
 	/*
@@ -1308,16 +1308,16 @@ TclFreeObj(
      * sure we do not accept a second free when falling from 0 to -1.
      * Skip that possibility so any double free will trigger the panic.
      */
-    objPtr->refCount = TCL_AUTO_LENGTH;
+    objPtr->refCount = TCL_INDEX_NONE;
 
     /*
      * Invalidate the string rep first so we can use the bytes value for our
      * pointer chain, and signal an obj deletion (as opposed to shimmering)
-     * with 'length == TCL_AUTO_LENGTH'.
+     * with 'length == TCL_INDEX_NONE'.
      */
 
     TclInvalidateStringRep(objPtr);
-    objPtr->length = TCL_AUTO_LENGTH;
+    objPtr->length = TCL_INDEX_NONE;
 
     if (ObjDeletePending(context)) {
 	PushObjToDelete(context, objPtr);
@@ -1385,7 +1385,7 @@ TclFreeObj(
      */
 
     TclInvalidateStringRep(objPtr);
-    objPtr->length = TCL_AUTO_LENGTH;
+    objPtr->length = TCL_INDEX_NONE;
 
     if (!objPtr->typePtr || !objPtr->typePtr->freeIntRepProc) {
 	/*
@@ -1487,7 +1487,7 @@ int
 TclObjBeingDeleted(
     Tcl_Obj *objPtr)
 {
-    return (objPtr->length == TCL_AUTO_LENGTH);
+    return (objPtr->length == TCL_INDEX_NONE);
 }
 
 /*
@@ -1606,7 +1606,7 @@ Tcl_GetString(
 		    objPtr->typePtr->name);
 	}
 	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL || objPtr->length == TCL_AUTO_LENGTH
+	if (objPtr->bytes == NULL || objPtr->length == TCL_INDEX_NONE
 		|| objPtr->bytes[objPtr->length] != '\0') {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to create a valid string rep",
@@ -1665,7 +1665,7 @@ Tcl_GetStringFromObj(
 		    objPtr->typePtr->name);
 	}
 	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL || objPtr->length == TCL_AUTO_LENGTH
+	if (objPtr->bytes == NULL || objPtr->length == TCL_INDEX_NONE
 		|| objPtr->bytes[objPtr->length] != '\0') {
 	    Tcl_Panic("UpdateStringProc for type '%s' "
 		    "failed to create a valid string rep",
@@ -4222,7 +4222,7 @@ SetCmdNameFromAny(
      * report the failure to find the command as an error.
      */
 
-    if (cmdPtr == NULL) {
+    if (cmdPtr == NULL || !TclRoutineHasName(cmdPtr)) {
 	return TCL_ERROR;
     }
 

@@ -195,7 +195,7 @@ TclCreateLiteral(
      * Is it in the interpreter's global literal table?
      */
 
-    if (hash == TCL_AUTO_LENGTH) {
+    if (hash == TCL_INDEX_NONE) {
 	hash = HashString(bytes, length);
     }
     globalHash = (hash & globalTablePtr->mask);
@@ -229,7 +229,7 @@ TclCreateLiteral(
 		if (flags & LITERAL_ON_HEAP) {
 		    Tcl_Free((void *)bytes);
 		}
-		if (globalPtr->refCount != TCL_AUTO_LENGTH) {
+		if (globalPtr->refCount != TCL_INDEX_NONE) {
 		    globalPtr->refCount++;
 		}
 		return objPtr;
@@ -412,7 +412,7 @@ TclRegisterLiteral(
     int isNew;
     Namespace *nsPtr;
 
-    if (length == TCL_AUTO_LENGTH) {
+    if (length == TCL_INDEX_NONE) {
 	length = (bytes ? strlen(bytes) : 0);
     }
     hash = HashString(bytes, length);
@@ -628,7 +628,7 @@ TclAddLiteralObj(
     lPtr = &envPtr->literalArrayPtr[objIndex];
     lPtr->objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
-    lPtr->refCount = TCL_AUTO_LENGTH;	/* i.e., unused */
+    lPtr->refCount = TCL_INDEX_NONE;	/* i.e., unused */
     lPtr->nextPtr = NULL;
 
     if (litPtrPtr) {
@@ -851,7 +851,7 @@ TclReleaseLiteral(
 	     * literal table entry (decrement the ref count of the object).
 	     */
 
-	    if ((entryPtr->refCount != TCL_AUTO_LENGTH) && (entryPtr->refCount-- <= 1)) {
+	    if ((entryPtr->refCount != TCL_INDEX_NONE) && (entryPtr->refCount-- <= 1)) {
 		if (prevPtr == NULL) {
 		    globalTablePtr->buckets[index] = entryPtr->nextPtr;
 		} else {
@@ -1175,7 +1175,7 @@ TclVerifyLocalLiteralTable(
 	for (localPtr=localTablePtr->buckets[i] ; localPtr!=NULL;
 		localPtr=localPtr->nextPtr) {
 	    count++;
-	    if (localPtr->refCount != TCL_AUTO_LENGTH) {
+	    if (localPtr->refCount != TCL_INDEX_NONE) {
 		bytes = TclGetStringFromObj(localPtr->objPtr, &length);
 		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "u",
 			"TclVerifyLocalLiteralTable",
