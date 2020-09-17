@@ -229,7 +229,7 @@ InitializeHostName(
     struct hostent *hp;
 
     memset(&u, (int) 0, sizeof(struct utsname));
-    if (uname(&u) > -1) {				/* INTL: Native. */
+    if (uname(&u) >= 0) {				/* INTL: Native. */
         hp = TclpGetHostByName(u.nodename);		/* INTL: Native. */
 	if (hp == NULL) {
 	    /*
@@ -277,7 +277,7 @@ InitializeHostName(
     char buffer[256];
 #    endif
 
-    if (gethostname(buffer, sizeof(buffer)) > -1) {	/* INTL: Native. */
+    if (gethostname(buffer, sizeof(buffer)) >= 0) {	/* INTL: Native. */
 	native = buffer;
     }
 #endif /* NO_UNAME */
@@ -542,7 +542,7 @@ TcpInputProc(
 	return -1;
     }
     bytesRead = recv(statePtr->fds.fd, buf, bufSize, 0);
-    if (bytesRead > -1) {
+    if (bytesRead >= 0) {
 	return bytesRead;
     }
     if (errno == ECONNRESET) {
@@ -593,7 +593,7 @@ TcpOutputProc(
     }
     written = send(statePtr->fds.fd, buf, toWrite, 0);
 
-    if (written > -1) {
+    if (written >= 0) {
 	return written;
     }
     *errorCodePtr = errno;
