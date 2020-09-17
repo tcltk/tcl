@@ -1040,9 +1040,9 @@ install-libraries: libraries
 	@for i in $(TOP_DIR)/library/cookiejar/*.gz; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	done
-	@echo "Installing package http 2.9.5 as a Tcl Module"
+	@echo "Installing package http 2.10.0a1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/http-2.9.5.tm"
+		"$(MODULE_INSTALL_DIR)/9.0/http-2.10.0a1.tm"
 	@echo "Installing package opt 0.4.7"
 	@for i in $(TOP_DIR)/library/opt/*.tcl; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/opt0.4"; \

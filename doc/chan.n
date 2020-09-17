@@ -772,7 +772,7 @@ set offset 0
 \fI# Search for string "FOOBAR" in the file\fR
 while {[\fBchan gets\fR $f line] >= 0} {
     set idx [string first FOOBAR $line]
-    if {$idx > -1} {
+    if {$idx >= 0} {
         \fI# Found it; rewrite line\fR
 
         \fBchan seek\fR $f [expr {$offset + $idx}]
