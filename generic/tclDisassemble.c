@@ -284,7 +284,7 @@ DisassembleByteCodeObj(
     PrintSourceToObj(bufferObj, codePtr->source,
 	    TclMin(codePtr->numSrcBytes, 55));
     GetLocationInformation(codePtr->procPtr, &fileObj, &line);
-    if (line > -1 && fileObj != NULL) {
+    if (line >= 0 && fileObj != NULL) {
 	Tcl_AppendPrintfToObj(bufferObj, "\n  File \"%s\" Line %d",
 		Tcl_GetString(fileObj), line);
     }
@@ -1237,7 +1237,7 @@ DisassembleByteCodeAsDicts(
 	    Tcl_NewIntObj(codePtr->maxStackDepth));
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exceptdepth", -1),
 	    Tcl_NewIntObj(codePtr->maxExceptDepth));
-    if (line > -1) {
+    if (line >= 0) {
 	Tcl_DictObjPut(NULL, description,
 		Tcl_NewStringObj("initiallinenumber", -1),
 		Tcl_NewIntObj(line));

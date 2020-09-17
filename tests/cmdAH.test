@@ -261,7 +261,7 @@ test cmdAH-6.3 {Tcl_FileObjCmd: volumes} -constraints unix -body {
 test cmdAH-6.4 {Tcl_FileObjCmd: volumes} -constraints win -body {
     set volumeList [string tolower [file volumes]]
     set element [lsearch -exact $volumeList "c:/"]
-    list [expr {$element>-1}] [glob -nocomplain [lindex $volumeList $element]*]
+    list [expr {$element>=0}] [glob -nocomplain [lindex $volumeList $element]*]
 } -match glob -result {1 *}
 
 # attributes
