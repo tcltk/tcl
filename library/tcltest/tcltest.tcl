@@ -2798,7 +2798,6 @@ proc tcltest::runAllTests { {shell ""} } {
     variable numTests
     variable failFiles
     variable DefaultValue
-    set failFilesAccum {}
 
     FillFilesExisted
     if {[llength [info level 0]] == 1} {
@@ -2854,8 +2853,18 @@ proc tcltest::runAllTests { {shell ""} } {
 	flush [outputChannel]
 
 	if {[singleProcess]} {
-	    incr numTestFiles
-	    uplevel 1 [list ::source $file]
+	    if {[catch {
+		incr numTestFiles
+		uplevel 1 [list ::source $file]
+	    } msg]} {
+		puts [outputChannel] "Test file error: $msg"
+		# append the name of the test to a list to be reported
+		# later
+		lappend testFileFailures $file
+	    }
+	    if {$numTests(Failed) > 0} {
+		set failFilesSet 1
+	    }
 	} else {
 	    # Pass along our configuration to the child processes.
 	    # EXCEPT for the -outfile, because the parent process
@@ -2888,7 +2897,7 @@ proc tcltest::runAllTests { {shell ""} } {
 			}
 			if {$Failed > 0} {
 			    lappend failFiles $testFile
-			    lappend failFilesAccum $testFile
+			    set failFilesSet 1
 			}
 		    } elseif {[regexp [join {
 			    {^Number of tests skipped }
@@ -2935,7 +2944,7 @@ proc tcltest::runAllTests { {shell ""} } {
 	puts [outputChannel] ""
 	puts [outputChannel] [string repeat ~ 44]
     }
-    return [expr {[info exists testFileFailures] || [llength $failFilesAccum]}]
+    return [expr {[info exists testFileFailures] || [info exists failFilesSet]}]
 }
 
 #####################################################################

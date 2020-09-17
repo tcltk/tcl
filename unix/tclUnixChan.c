@@ -283,7 +283,7 @@ FileInputProc(
      */
 
     bytesRead = read(fsPtr->fd, buf, (size_t) toRead);
-    if (bytesRead > -1) {
+    if (bytesRead >= 0) {
 	return bytesRead;
     }
     *errorCodePtr = errno;
@@ -330,7 +330,7 @@ FileOutputProc(
 	return 0;
     }
     written = write(fsPtr->fd, buf, (size_t) toWrite);
-    if (written > -1) {
+    if (written >= 0) {
 	return written;
     }
     *errorCodePtr = errno;

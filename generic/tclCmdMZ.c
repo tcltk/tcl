@@ -357,7 +357,7 @@ Tcl_RegexpObjCmd(
 
 	    objc = info.nsubs + 1;
 	    if (all <= 1) {
-		resultPtr = Tcl_NewObj();
+		TclNewObj(resultPtr);
 	    }
 	}
 	for (i = 0; i < objc; i++) {
@@ -389,8 +389,8 @@ Tcl_RegexpObjCmd(
 		    end = -1;
 		}
 
-		objs[0] = Tcl_NewWideIntObj(start);
-		objs[1] = Tcl_NewWideIntObj(end);
+		TclNewIntObj(objs[0], start);
+		TclNewIntObj(objs[1], end);
 
 		newPtr = Tcl_NewListObj(2, objs);
 	    } else {
@@ -399,7 +399,7 @@ Tcl_RegexpObjCmd(
 			    offset + info.matches[i].start,
 			    offset + info.matches[i].end - 1);
 		} else {
-		    newPtr = Tcl_NewObj();
+		    TclNewObj(newPtr);
 		}
 	    }
 	    if (doinline) {
@@ -788,7 +788,7 @@ Tcl_RegsubObjCmd(
 		    args[idx + numParts] = Tcl_NewUnicodeObj(
 			    wstring + offset + subStart, subEnd - subStart);
 		} else {
-		    args[idx + numParts] = Tcl_NewObj();
+		    TclNewObj(args[idx + numParts]);
 		}
 		Tcl_IncrRefCount(args[idx + numParts]);
 	    }
@@ -1194,7 +1194,7 @@ Tcl_SplitObjCmd(
 
     stringPtr = TclGetStringFromObj(objv[1], &stringLen);
     end = stringPtr + stringLen;
-    listPtr = Tcl_NewObj();
+    TclNewObj(listPtr);
 
     if (stringLen == 0) {
 	/*
@@ -1906,10 +1906,11 @@ StringIsCmd(
      */
 
  str_is_done:
-    if ((result == 0) && (failVarObj != NULL) &&
-	Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(failat),
-		TCL_LEAVE_ERR_MSG) == NULL) {
-	return TCL_ERROR;
+    if ((result == 0) && (failVarObj != NULL)) {
+	TclNewIntObj(objPtr, failat);
+	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, objPtr, TCL_LEAVE_ERR_MSG) == NULL) {
+	    return TCL_ERROR;
+	}
     }
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
     return TCL_OK;
@@ -2501,6 +2502,7 @@ StringStartCmd(
     int ch;
     const char *p, *string;
     int cur, index, length, numChars;
+    Tcl_Obj *obj;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string index");
@@ -2540,7 +2542,8 @@ StringStartCmd(
 	    cur += 1;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cur));
+    TclNewIntObj(obj, cur);
+    Tcl_SetObjResult(interp, obj);
     return TCL_OK;
 }
 
@@ -2571,6 +2574,7 @@ StringEndCmd(
     int ch;
     const char *p, *end, *string;
     int cur, index, length, numChars;
+    Tcl_Obj *obj;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string index");
@@ -2601,7 +2605,8 @@ StringEndCmd(
     } else {
 	cur = numChars;
     }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(cur));
+    TclNewIntObj(obj, cur);
+    Tcl_SetObjResult(interp, obj);
     return TCL_OK;
 }
 
@@ -3770,10 +3775,11 @@ TclNRSwitchObjCmd(
 		Tcl_Obj *rangeObjAry[2];
 
 		if (info.matches[j].end > 0) {
-		    rangeObjAry[0] = Tcl_NewWideIntObj(info.matches[j].start);
-		    rangeObjAry[1] = Tcl_NewWideIntObj(info.matches[j].end-1);
+		    TclNewIntObj(rangeObjAry[0], info.matches[j].start);
+		    TclNewIntObj(rangeObjAry[1], info.matches[j].end-1);
 		} else {
-		    rangeObjAry[0] = rangeObjAry[1] = Tcl_NewWideIntObj(-1);
+		    TclNewIntObj(rangeObjAry[1], -1);
+		    rangeObjAry[0] = rangeObjAry[1];
 		}
 
 		/*
@@ -4714,7 +4720,7 @@ TclNRTryObjCmd(
 	return TCL_ERROR;
     }
     bodyObj = objv[1];
-    handlersObj = Tcl_NewObj();
+    TclNewObj(handlersObj);
     bodyShared = 0;
     haveHandlers = 0;
     for (i=2 ; i<objc ; i++) {

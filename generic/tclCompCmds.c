@@ -298,7 +298,7 @@ TclCompileArraySetCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     dataTokenPtr = TokenAfter(varTokenPtr);
-    literalObj = Tcl_NewObj();
+    TclNewObj(literalObj);
     isDataLiteral = TclWordKnownAtCompileTime(dataTokenPtr, literalObj);
     isDataValid = (isDataLiteral
 	    && Tcl_ListObjLength(NULL, literalObj, &len) == TCL_OK);
@@ -875,10 +875,10 @@ TclCompileConcatCmd(
      * implement with a simple push.
      */
 
-    listObj = Tcl_NewObj();
+    TclNewObj(listObj);
     for (i = 1, tokenPtr = parsePtr->tokenPtr; i < parsePtr->numWords; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
-	objPtr = Tcl_NewObj();
+	TclNewObj(objPtr);
 	if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	    Tcl_DecrRefCount(objPtr);
 	    Tcl_DecrRefCount(listObj);
@@ -1301,10 +1301,10 @@ TclCompileDictCreateCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    dictObj = Tcl_NewObj();
+    TclNewObj(dictObj);
     Tcl_IncrRefCount(dictObj);
     for (i=1 ; i<parsePtr->numWords ; i+=2) {
-	keyObj = Tcl_NewObj();
+	TclNewObj(keyObj);
 	Tcl_IncrRefCount(keyObj);
 	if (!TclWordKnownAtCompileTime(tokenPtr, keyObj)) {
 	    Tcl_DecrRefCount(keyObj);
@@ -1312,7 +1312,7 @@ TclCompileDictCreateCmd(
 	    goto nonConstant;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
-	valueObj = Tcl_NewObj();
+	TclNewObj(valueObj);
 	Tcl_IncrRefCount(valueObj);
 	if (!TclWordKnownAtCompileTime(tokenPtr, valueObj)) {
 	    Tcl_DecrRefCount(keyObj);
@@ -2311,11 +2311,12 @@ DisassembleDictUpdateInfo(
 {
     DictUpdateInfo *duiPtr = (DictUpdateInfo *)clientData;
     int i;
-    Tcl_Obj *variables = Tcl_NewObj();
+    Tcl_Obj *variables;
 
+    TclNewObj(variables);
     for (i=0 ; i<duiPtr->length ; i++) {
 	Tcl_ListObjAppendElement(NULL, variables,
-		Tcl_NewIntObj(duiPtr->varIndices[i]));
+		Tcl_NewWideIntObj(duiPtr->varIndices[i]));
     }
     Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("variables", -1),
 	    variables);
@@ -2731,7 +2732,7 @@ CompileEachloopCmd(
      * a scalar, or if any var list needs substitutions.
      */
 
-    varListObj = Tcl_NewObj();
+    TclNewObj(varListObj);
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
@@ -3050,10 +3051,10 @@ DisassembleForeachInfo(
      * Data stores.
      */
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	Tcl_ListObjAppendElement(NULL, objPtr,
-		Tcl_NewIntObj(infoPtr->firstValueTemp + i));
+		Tcl_NewWideIntObj(infoPtr->firstValueTemp + i));
     }
     Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("data", -1), objPtr);
 
@@ -3062,19 +3063,19 @@ DisassembleForeachInfo(
      */
 
     Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("loop", -1),
-	   Tcl_NewIntObj(infoPtr->loopCtTemp));
+	   Tcl_NewWideIntObj(infoPtr->loopCtTemp));
 
     /*
      * Assignment targets.
      */
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     for (i=0 ; i<infoPtr->numLists ; i++) {
-	innerPtr = Tcl_NewObj();
+	TclNewObj(innerPtr);
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    Tcl_ListObjAppendElement(NULL, innerPtr,
-		    Tcl_NewIntObj(varsPtr->varIndexes[j]));
+		    Tcl_NewWideIntObj(varsPtr->varIndexes[j]));
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
@@ -3098,19 +3099,19 @@ DisassembleNewForeachInfo(
      */
 
     Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("jumpOffset", -1),
-	   Tcl_NewIntObj(infoPtr->loopCtTemp));
+	   Tcl_NewWideIntObj(infoPtr->loopCtTemp));
 
     /*
      * Assignment targets.
      */
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     for (i=0 ; i<infoPtr->numLists ; i++) {
-	innerPtr = Tcl_NewObj();
+	TclNewObj(innerPtr);
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    Tcl_ListObjAppendElement(NULL, innerPtr,
-		    Tcl_NewIntObj(varsPtr->varIndexes[j]));
+		    Tcl_NewWideIntObj(varsPtr->varIndexes[j]));
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
     }
@@ -3163,7 +3164,7 @@ TclCompileFormatCmd(
      * a case we can handle by compiling to a constant.
      */
 
-    formatObj = Tcl_NewObj();
+    TclNewObj(formatObj);
     Tcl_IncrRefCount(formatObj);
     tokenPtr = TokenAfter(tokenPtr);
     if (!TclWordKnownAtCompileTime(tokenPtr, formatObj)) {
@@ -3174,7 +3175,7 @@ TclCompileFormatCmd(
     objv = (Tcl_Obj **)ckalloc((parsePtr->numWords-2) * sizeof(Tcl_Obj *));
     for (i=0 ; i+2 < parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
-	objv[i] = Tcl_NewObj();
+	TclNewObj(objv[i]);
 	Tcl_IncrRefCount(objv[i]);
 	if (!TclWordKnownAtCompileTime(tokenPtr, objv[i])) {
 	    goto checkForStringConcatCase;
@@ -3266,7 +3267,7 @@ TclCompileFormatCmd(
     start = Tcl_GetString(formatObj);
 				/* The start of the currently-scanned literal
 				 * in the format string. */
-    tmpObj = Tcl_NewObj();	/* The buffer used to accumulate the literal
+    TclNewObj(tmpObj);	/* The buffer used to accumulate the literal
 				 * being built. */
     for (bytes = start ; *bytes ; bytes++) {
 	if (*bytes == '%') {
@@ -3284,7 +3285,7 @@ TclCompileFormatCmd(
 		if (len > 0) {
 		    PushLiteral(envPtr, b, len);
 		    Tcl_DecrRefCount(tmpObj);
-		    tmpObj = Tcl_NewObj();
+		    TclNewObj(tmpObj);
 		    i++;
 		}
 

@@ -3238,7 +3238,7 @@ ZipFSTclLibraryObjCmd(
 	Tcl_Obj *pResult = TclZipfs_TclLibrary();
 
 	if (!pResult) {
-	    pResult = Tcl_NewObj();
+	    TclNewObj(pResult);
 	}
 	Tcl_SetObjResult(interp, pResult);
     }
