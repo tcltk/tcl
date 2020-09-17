@@ -2133,7 +2133,7 @@ Tcl_AppendFormatToObj(
 		if (l == (long) 0) gotHash = 0;
 	    }
 
-	    segment = Tcl_NewObj();
+	    TclNewObj(segment);
 	    allocSegment = 1;
 	    segmentLimit = INT_MAX;
 	    Tcl_IncrRefCount(segment);
@@ -2308,7 +2308,7 @@ Tcl_AppendFormatToObj(
 		if (numDigits == 0) {
 		    numDigits = 1;
 		}
-		pure = Tcl_NewObj();
+		TclNewObj(pure);
 		Tcl_SetObjLength(pure, (int) numDigits);
 		bytes = TclGetString(pure);
 		toAppend = length = (int) numDigits;
@@ -2429,7 +2429,7 @@ Tcl_AppendFormatToObj(
 	    *p++ = (char) ch;
 	    *p = '\0';
 
-	    segment = Tcl_NewObj();
+	    TclNewObj(segment);
 	    allocSegment = 1;
 	    if (!Tcl_AttemptSetObjLength(segment, length)) {
 		msg = overflow;
@@ -3314,7 +3314,7 @@ TclStringCat(
 	    /* assert ( length > start ) */
 	    TclFreeIntRep(objResultPtr);
 	} else {
-	    objResultPtr = Tcl_NewObj();	/* PANIC? */
+	    TclNewObj(objResultPtr);	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
@@ -3561,7 +3561,7 @@ TclStringFirst(
     int lh, ln = Tcl_GetCharLength(needle);
     Tcl_Obj *result;
     int value = -1;
-	Tcl_UniChar *check, *end, *uh, *un;
+    Tcl_UniChar *check, *end, *uh, *un;
 
     if (start < 0) {
 	start = 0;
@@ -3668,7 +3668,7 @@ TclStringLast(
     int lh, ln = Tcl_GetCharLength(needle);
     Tcl_Obj *result;
     int value = -1;
-	Tcl_UniChar *check, *uh, *un;
+    Tcl_UniChar *check, *uh, *un;
 
     if (ln == 0) {
 	/*
@@ -3830,7 +3830,7 @@ TclStringReverse(
 	char *to, *from = objPtr->bytes;
 
 	if (!inPlace || Tcl_IsShared(objPtr)) {
-	    objPtr = Tcl_NewObj();
+	    TclNewObj(objPtr);
 	    Tcl_SetObjLength(objPtr, numBytes);
 	}
 	to = objPtr->bytes;

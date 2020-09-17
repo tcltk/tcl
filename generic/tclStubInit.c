@@ -450,7 +450,7 @@ void *TclWinGetTclInstance()
 int
 TclpGetPid(Tcl_Pid pid)
 {
-    return (int) (size_t) pid;
+    return (int)(size_t)pid;
 }
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
