@@ -691,7 +691,7 @@ InfoCommandsCmd(
 	if (entryPtr != NULL) {
 	    if (specificNsInPattern) {
 		cmd = (Tcl_Command)Tcl_GetHashValue(entryPtr);
-		elemObjPtr = Tcl_NewObj();
+		TclNewObj(elemObjPtr);
 		Tcl_GetCommandFullName(interp, cmd, elemObjPtr);
 	    } else {
 		cmdName = (const char *)Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
@@ -742,7 +742,7 @@ InfoCommandsCmd(
 		    || Tcl_StringMatch(cmdName, simplePattern)) {
 		if (specificNsInPattern) {
 		    cmd = (Tcl_Command)Tcl_GetHashValue(entryPtr);
-		    elemObjPtr = Tcl_NewObj();
+		    TclNewObj(elemObjPtr);
 		    Tcl_GetCommandFullName(interp, cmd, elemObjPtr);
 		} else {
 		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
@@ -969,8 +969,9 @@ InfoDefaultCmd(
 		}
 		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(1));
 	    } else {
-		Tcl_Obj *nullObjPtr = Tcl_NewObj();
+		Tcl_Obj *nullObjPtr;
 
+		TclNewObj(nullObjPtr);
 		valueObjPtr = Tcl_ObjSetVar2(interp, objv[3], NULL,
 			nullObjPtr, TCL_LEAVE_ERR_MSG);
 		if (valueObjPtr == NULL) {
@@ -1885,7 +1886,7 @@ InfoProcsCmd(
 	    } else {
 	    simpleProcOK:
 		if (specificNsInPattern) {
-		    elemObjPtr = Tcl_NewObj();
+		    TclNewObj(elemObjPtr);
 		    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
 			    elemObjPtr);
 		} else {
@@ -1906,15 +1907,15 @@ InfoProcsCmd(
 
 		if (!TclIsProc(cmdPtr)) {
 		    realCmdPtr = (Command *)
-			    TclGetOriginalCommand((Tcl_Command) cmdPtr);
+			    TclGetOriginalCommand((Tcl_Command)cmdPtr);
 		    if (realCmdPtr != NULL && TclIsProc(realCmdPtr)) {
 			goto procOK;
 		    }
 		} else {
 		procOK:
 		    if (specificNsInPattern) {
-			elemObjPtr = Tcl_NewObj();
-			Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
+			TclNewObj(elemObjPtr);
+			Tcl_GetCommandFullName(interp, (Tcl_Command)cmdPtr,
 				elemObjPtr);
 		    } else {
 			elemObjPtr = Tcl_NewStringObj(cmdName, -1);
@@ -2142,7 +2143,7 @@ InfoCmdTypeCmd(
     }
 
     /*
-     * There's one special case: safe child interpreters can't see aliases as
+     * There's one special case: safe interpreters can't see aliases as
      * aliases as they're part of the security mechanisms.
      */
 
@@ -2217,7 +2218,7 @@ Tcl_JoinObjCmd(
     } else {
 	int i;
 
-	resObjPtr = Tcl_NewObj();
+	TclNewObj(resObjPtr);
 	for (i = 0;  i < listLen;  i++) {
 	    if (i > 0) {
 
@@ -3513,7 +3514,8 @@ Tcl_LsearchObjCmd(
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
-		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-1));
+		TclNewIntObj(itemPtr, -1);
+		Tcl_SetObjResult(interp, itemPtr);
 	    }
 	    goto done;
 	}
@@ -3802,10 +3804,11 @@ Tcl_LsearchObjCmd(
 	    } else if (returnSubindices) {
 		int j;
 
-		itemPtr = Tcl_NewWideIntObj(i+groupOffset);
+		TclNewIntObj(itemPtr, i+groupOffset);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
-		    Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewWideIntObj(
-			    TclIndexDecode(sortInfo.indexv[j], listc)));
+		    Tcl_Obj *elObj;
+		    TclNewIntObj(elObj, TclIndexDecode(sortInfo.indexv[j], listc));
+		    Tcl_ListObjAppendElement(interp, itemPtr, elObj);
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 	    } else {
@@ -3824,14 +3827,17 @@ Tcl_LsearchObjCmd(
 	if (returnSubindices) {
 	    int j;
 
-	    itemPtr = Tcl_NewWideIntObj(index+groupOffset);
+	    TclNewIntObj(itemPtr, index+groupOffset);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		Tcl_ListObjAppendElement(interp, itemPtr, Tcl_NewWideIntObj(
-			TclIndexDecode(sortInfo.indexv[j], listc)));
+		Tcl_Obj *elObj;
+		TclNewIntObj(elObj, TclIndexDecode(sortInfo.indexv[j], listc));
+		Tcl_ListObjAppendElement(interp, itemPtr, elObj);
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(index));
+		Tcl_Obj *elObj;
+		TclNewIntObj(elObj, index);
+	    Tcl_SetObjResult(interp, elObj);
 	}
     } else if (index < 0) {
 	/*
@@ -4414,7 +4420,7 @@ Tcl_LsortObjCmd(
 		idx = elementPtr->payload.index;
 		for (j = 0; j < groupSize; j++) {
 		    if (indices) {
-			objPtr = Tcl_NewWideIntObj(idx + j - groupOffset);
+			TclNewIntObj(objPtr, idx + j - groupOffset);
 			newArray[i++] = objPtr;
 			Tcl_IncrRefCount(objPtr);
 		    } else {
@@ -4426,7 +4432,7 @@ Tcl_LsortObjCmd(
 	    }
 	} else if (indices) {
 	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
-		objPtr = Tcl_NewWideIntObj(elementPtr->payload.index);
+		TclNewIntObj(objPtr, elementPtr->payload.index);
 		newArray[i++] = objPtr;
 		Tcl_IncrRefCount(objPtr);
 	    }
