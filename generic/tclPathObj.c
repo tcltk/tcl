@@ -720,7 +720,7 @@ TclPathPart(
 		    (Tcl_FSGetPathType(pathPtr) == TCL_PATH_RELATIVE))) {
 		Tcl_ListObjIndex(NULL, splitPtr, splitElements-1, &resultPtr);
 	    } else {
-		resultPtr = Tcl_NewObj();
+		TclNewObj(resultPtr);
 	    }
 	} else {
 	    /*
@@ -758,7 +758,7 @@ GetExtension(
     tail = TclGetString(pathPtr);
     extension = TclGetExtension(tail);
     if (extension == NULL) {
-	ret = Tcl_NewObj();
+	TclNewObj(ret);
     } else {
 	ret = Tcl_NewStringObj(extension, -1);
     }
@@ -1035,7 +1035,7 @@ TclJoinPath(
 
     noQuickReturn:
 	if (res == NULL) {
-	    res = Tcl_NewObj();
+	    TclNewObj(res);
 	}
 	ptr = TclGetStringFromObj(res, &length);
 
@@ -1271,7 +1271,7 @@ TclNewFSPathObj(
 	return pathPtr;
     }
 
-    pathPtr = Tcl_NewObj();
+    TclNewObj(pathPtr);
     fsPathPtr = (FsPath *)Tcl_Alloc(sizeof(FsPath));
 
     /*

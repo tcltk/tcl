@@ -394,7 +394,7 @@ TclOONewProcMethod(
 
     if (argsObj == NULL) {
 	argsLen = -1;
-	argsObj = Tcl_NewObj();
+	TclNewObj(argsObj);
 	Tcl_IncrRefCount(argsObj);
 	procName = "<destructor>";
     } else if (Tcl_ListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
@@ -1316,12 +1316,13 @@ CloneProcedureMethod(
      * Copy the argument list.
      */
 
-    argsObj = Tcl_NewObj();
+    TclNewObj(argsObj);
     for (localPtr=pmPtr->procPtr->firstLocalPtr; localPtr!=NULL;
 	    localPtr=localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
-	    Tcl_Obj *argObj = Tcl_NewObj();
+	    Tcl_Obj *argObj;
 
+	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
 		    Tcl_NewStringObj(localPtr->name, -1));
 	    if (localPtr->defValuePtr != NULL) {

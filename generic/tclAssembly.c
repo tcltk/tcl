@@ -2096,8 +2096,9 @@ GetNextOperand(
 				 * with \-substitutions done. */
 {
     Tcl_Interp* interp = (Tcl_Interp*) assemEnvPtr->envPtr->iPtr;
-    Tcl_Obj* operandObj = Tcl_NewObj();
+    Tcl_Obj* operandObj;
 
+    TclNewObj(operandObj);
     if (!TclWordKnownAtCompileTime(*tokenPtrPtr, operandObj)) {
 	Tcl_DecrRefCount(operandObj);
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {

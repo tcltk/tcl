@@ -10981,7 +10981,7 @@ FixLevelCode(
 	if (0 == strcmp(TclGetString(lv[i]), "-level")) {
 	    if (newlevel >= 0) {
 		lvn[j++] = lv[i];
-		lvn[j++] = Tcl_NewIntObj(newlevel);
+		lvn[j++] = Tcl_NewWideIntObj(newlevel);
 		newlevel = -1;
 		lignore = 1;
 		continue;
@@ -10991,7 +10991,7 @@ FixLevelCode(
 	} else if (0 == strcmp(TclGetString(lv[i]), "-code")) {
 	    if (newcode >= 0) {
 		lvn[j++] = lv[i];
-		lvn[j++] = Tcl_NewIntObj(newcode);
+		lvn[j++] = Tcl_NewWideIntObj(newcode);
 		newcode = -1;
 		cignore = 1;
 		continue;

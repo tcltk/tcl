@@ -354,7 +354,7 @@ ConvertErrorToList(
 	return Tcl_NewListObj(4, objv);
     case Z_NEED_DICT:
 	TclNewLiteralStringObj(objv[2], "NEED_DICT");
-	objv[3] = Tcl_NewWideIntObj((Tcl_WideInt) adler);
+	TclNewIntObj(objv[3], (Tcl_WideInt)adler);
 	return Tcl_NewListObj(4, objv);
 
 	/*
@@ -2171,7 +2171,7 @@ ZlibCmd(
 		break;
 	    case 1:
 		headerVarObj = objv[i+1];
-		headerDictObj = Tcl_NewObj();
+		TclNewObj(headerDictObj);
 		break;
 	    }
 	}
@@ -3496,8 +3496,9 @@ ZlibTransformGetOption(
 
     if ((cd->flags & IN_HEADER) && ((optionName == NULL) ||
 	    (strcmp(optionName, "-header") == 0))) {
-	Tcl_Obj *tmpObj = Tcl_NewObj();
+	Tcl_Obj *tmpObj;
 
+	TclNewObj(tmpObj);
 	ExtractHeader(&cd->inHeader.header, tmpObj);
 	if (optionName == NULL) {
 	    Tcl_DStringAppendElement(dsPtr, "-header");
