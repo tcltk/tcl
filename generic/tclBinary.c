@@ -609,7 +609,7 @@ MakeByteArray(
     Tcl_Obj *objPtr,
     size_t limit,
     int demandProper,
-    ByteArray **byteArrayPtrPtr) 
+    ByteArray **byteArrayPtrPtr)
 {
     size_t length;
     const char *src = TclGetStringFromObj(objPtr, &length);
@@ -622,8 +622,8 @@ MakeByteArray(
     int proper = 1;
 
     for (; src < srcEnd && dst < dstEnd; ) {
-	Tcl_UniChar ch;
-	int count = TclUtfToUniChar(src, &ch);
+	int ch;
+	int count = TclUtfToUCS4(src, &ch);
 
 	if (ch > 255) {
 	    proper = 0;
