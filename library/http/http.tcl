@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.9.5
+package provide http 2.10.0a1
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -3244,7 +3244,7 @@ proc http::BlockingGets {sock} {
     while 1 {
 	set count [gets $sock line]
 	set eof [eof $sock]
-	if {$count > -1 || $eof} {
+	if {$count >= 0 || $eof} {
 	    return $line
 	} else {
 	    yield
