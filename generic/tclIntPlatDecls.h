@@ -602,7 +602,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #   endif /* TCL_NO_DEPRECATED */
 #else
 #   undef TclpGetPid
-#   define TclpGetPid(pid) ((unsigned long) (pid))
+#   define TclpGetPid(pid) ((int)(size_t)(pid))
 #endif
 
 #endif /* _TCLINTPLATDECLS */

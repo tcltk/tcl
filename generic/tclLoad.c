@@ -1073,7 +1073,7 @@ TclGetLoadedPackagesEx(
     Tcl_Obj *resultObj, *pkgDesc[2];
 
     if (targetName == NULL) {
-	resultObj = Tcl_NewObj();
+	TclNewObj(resultObj);
 	Tcl_MutexLock(&packageMutex);
 	for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
 		pkgPtr = pkgPtr->nextPtr) {
@@ -1119,7 +1119,7 @@ TclGetLoadedPackagesEx(
      * interpreter.
      */
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	pkgPtr = ipPtr->pkgPtr;
 	pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);
