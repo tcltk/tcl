@@ -194,7 +194,7 @@ void *TclWinGetTclInstance()
 size_t
 TclpGetPid(Tcl_Pid pid)
 {
-    return (size_t) pid;
+    return (size_t)pid;
 }
 
 #if defined(TCL_WIDE_INT_IS_LONG)

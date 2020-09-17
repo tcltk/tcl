@@ -564,7 +564,7 @@ PrefixMatchObjCmd(
 	}
 	Tcl_ListObjAppendElement(interp, errorPtr,
 		Tcl_NewStringObj("-code", 5));
-	Tcl_ListObjAppendElement(interp, errorPtr, Tcl_NewIntObj(result));
+	Tcl_ListObjAppendElement(interp, errorPtr, Tcl_NewWideIntObj(result));
 
 	return Tcl_SetReturnOptions(interp, errorPtr);
     }

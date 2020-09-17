@@ -2028,7 +2028,7 @@ DictSizeCmd(
     }
     result = Tcl_DictObjSize(interp, objv[1], &size);
     if (result == TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(size));
     }
     return result;
 }
@@ -2203,7 +2203,7 @@ DictIncrCmd(
 		Tcl_DictObjPut(NULL, dictPtr, objv[2], objv[3]);
 	    }
 	} else {
-	    Tcl_DictObjPut(NULL, dictPtr, objv[2], Tcl_NewIntObj(1));
+	    Tcl_DictObjPut(NULL, dictPtr, objv[2], Tcl_NewWideIntObj(1));
 	}
     } else {
 	/*
@@ -2217,7 +2217,7 @@ DictIncrCmd(
 	if (objc == 4) {
 	    code = TclIncrObj(interp, valuePtr, objv[3]);
 	} else {
-	    Tcl_Obj *incrPtr = Tcl_NewIntObj(1);
+	    Tcl_Obj *incrPtr = Tcl_NewWideIntObj(1);
 
 	    Tcl_IncrRefCount(incrPtr);
 	    code = TclIncrObj(interp, valuePtr, incrPtr);
