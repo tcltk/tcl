@@ -299,18 +299,13 @@ These variables are only used in the \fBtcl_endOfWord\fR,
 This variable contains a regular expression that is used by routines
 like \fBtcl_endOfWord\fR to identify whether a character is part of a
 word or not.  If the pattern matches a character, the character is
-considered to be a non-word character.  On Windows platforms, spaces,
-tabs, and newlines are considered non-word characters.  Under Unix,
-everything but numbers, letters and underscores are considered
-non-word characters.
+considered to be a non-word character. The default is "\\W".
 .TP
 \fBtcl_wordchars\fR
 This variable contains a regular expression that is used by routines
 like \fBtcl_endOfWord\fR to identify whether a character is part of a
 word or not.  If the pattern matches a character, the character is
-considered to be a word character.  On Windows platforms, words are
-comprised of any character that is not a space, tab, or newline.  Under
-Unix, words are comprised of numbers, letters or underscores.
+considered to be a word character. The default is "\\w".
 .SH "SEE ALSO"
 env(n), info(n), re_syntax(n)
 .SH KEYWORDS

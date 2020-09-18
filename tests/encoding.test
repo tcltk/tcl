@@ -292,7 +292,7 @@ test encoding-12.2 {LoadTableEncoding: single-byte encoding} {
     append x [encoding convertfrom iso8859-3 ab\xD5g]
 } "ab\xd5gab\u120g"
 test encoding-12.3 {LoadTableEncoding: multi-byte encoding} {
-    set x [encoding convertto shiftjis ab\u4E4Eg] 
+    set x [encoding convertto shiftjis ab\u4E4Eg]
     append x [encoding convertfrom shiftjis ab\x8c\xc1g]
 } "ab\x8c\xc1gab\u4e4eg"
 test encoding-12.4 {LoadTableEncoding: double-byte encoding} {
@@ -391,7 +391,12 @@ test encoding-15.15 {UtfToUtfProc low surrogate character output} {
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {1 3 eda882}
-test encoding-15.16 {UtfToUtfProc emoji character output} {
+test encoding-15.16 {UtfToUtfProc: Invalid 4-byte UTF-8, see [ed29806ba]} {
+    set x \xF0\xA0\xA1\xC2
+    set y [encoding convertfrom utf-8 \xF0\xA0\xA1\xC2]
+    list [string length $x] $y
+} "4 \xF0\xA0\xA1\xC2"
+test encoding-15.17 {UtfToUtfProc emoji character output} {
     set x \U1F602
     set y [encoding convertto utf-8 \U1F602]
     binary scan $y H* z

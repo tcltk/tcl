@@ -1338,7 +1338,7 @@ TclParseBackslash(
 	    /*
 	     * Keep only the last byte (2 hex digits).
 	     */
-	    result = (unsigned char) result;
+	    result = UCHAR(result);
 	}
 	break;
     case 'u':
@@ -1348,13 +1348,13 @@ TclParseBackslash(
 	     * No hexdigits -> This is just "u".
 	     */
 	    result = 'u';
-	} else if (((result & 0xDC00) == 0xD800) && (count == 6)
+	} else if (((result & 0xFC00) == 0xD800) && (count == 6)
 		    && (p[5] == '\\') && (p[6] == 'u') && (numBytes >= 10)) {
 	    /* If high surrogate is immediately followed by a low surrogate
 	     * escape, combine them into one character. */
 	    int low;
 	    int count2 = ParseHex(p+7, 4, &low);
-	    if ((count2 == 4) && ((low & 0xDC00) == 0xDC00)) {
+	    if ((count2 == 4) && ((low & 0xFC00) == 0xDC00)) {
 		result = ((result & 0x3FF)<<10 | (low & 0x3FF)) + 0x10000;
 		count += count2 + 2;
 	    }

@@ -20,7 +20,11 @@
 #   define USE_TCL_STUBS
 #endif
 #include "tclInt.h"
-#include "tclTomMath.h"
+#ifdef TCL_WITH_EXTERNAL_TOMMATH
+#   include "tommath.h"
+#else
+#   include "tclTomMath.h"
+#endif
 #include "tclOO.h"
 #include <math.h>
 
@@ -447,9 +451,11 @@ Tcltest_Init(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
+#ifndef TCL_WITH_EXTERNAL_TOMMATH
     if (Tcl_TomMath_InitStubs(interp, "8.5-") == NULL) {
 	return TCL_ERROR;
     }
+#endif
     if (Tcl_OOInitStubs(interp) == NULL) {
 	return TCL_ERROR;
     }
@@ -6873,38 +6879,42 @@ TestUtfNextCmd(
     char *bytes;
     const char *result, *first;
     char buffer[32];
-    static const char tobetested[] = "\xFF\xFE\xF4\xF2\xF0\xEF\xE8\xE3\xE2\xE1\xE0\xC2\xC1\xC0\x82";
+    static const char tobetested[] = "A\xA0\xC0\xC1\xC2\xD0\xE0\xE8\xF2\xF7\xF8\xFE\xFF";
     const char *p = tobetested;
 
-    if (objc != 3 || strcmp(Tcl_GetString(objv[1]), "-bytestring")) {
-	if (objc != 2) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "?-bytestring? bytes");
-	    return TCL_ERROR;
-	}
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-bytestring? bytes");
+	return TCL_ERROR;
+    }
 	bytes = Tcl_GetString(objv[1]);
 	numBytes = objv[1]->length;
-    } else {
-	bytes = (char *) TclGetBytesFromObj(interp, objv[2], &numBytes);
-	if (bytes == NULL) {
-	    return TCL_ERROR;
-	}
-    }
 
-    if (numBytes > (int)sizeof(buffer)-2) {
-	Tcl_AppendResult(interp, "\"testutfnext\" can only handle 30 bytes", NULL);
+    if (numBytes > (int)sizeof(buffer) - 4) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"\"testutfnext\" can only handle %d bytes",
+		(int)sizeof(buffer) - 4));
 	return TCL_ERROR;
     }
 
     memcpy(buffer + 1, bytes, numBytes);
-    buffer[0] = buffer[numBytes + 1] = '\x00';
+    buffer[0] = buffer[numBytes + 1] = buffer[numBytes + 2] = buffer[numBytes + 3] = '\xA0';
 
-    first = result = TclUtfNext(buffer + 1);
+    first = result = Tcl_UtfNext(buffer + 1);
     while ((buffer[0] = *p++) != '\0') {
 	/* Run Tcl_UtfNext with many more possible bytes at src[-1], all should give the same result */
-	result = TclUtfNext(buffer + 1);
+	result = Tcl_UtfNext(buffer + 1);
 	if (first != result) {
 	    Tcl_AppendResult(interp, "Tcl_UtfNext is not supposed to read src[-1]", NULL);
 	    return TCL_ERROR;
+	}
+    }
+    p = tobetested;
+    while ((buffer[numBytes + 1] = *p++) != '\0') {
+	/* Run Tcl_UtfNext with many more possible bytes at src[end], all should give the same result */
+	result = Tcl_UtfNext(buffer + 1);
+	if (first != result) {
+	    first = buffer;
+	    break;
 	}
     }
 
@@ -6928,17 +6938,14 @@ TestUtfPrevCmd(
     size_t numBytes, offset;
     char *bytes;
     const char *result;
-    Tcl_Obj *copy;
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "bytes ?offset?");
 	return TCL_ERROR;
     }
 
-    bytes = (char *) TclGetBytesFromObj(interp, objv[1], &numBytes);
-    if (bytes == NULL) {
-	return TCL_ERROR;
-    }
+    bytes = Tcl_GetString(objv[1]);
+    numBytes = objv[1]->length;
 
     if (objc == 3) {
 	if (TCL_OK != Tcl_GetIntForIndex(interp, objv[2], numBytes, &offset)) {
@@ -6953,14 +6960,8 @@ TestUtfPrevCmd(
     } else {
 	offset = numBytes;
     }
-    copy = Tcl_DuplicateObj(objv[1]);
-    bytes = (char *) Tcl_SetByteArrayLength(copy, numBytes+1);
-    bytes[numBytes] = '\0';
-
     result = TclUtfPrev(bytes + offset, bytes);
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result - bytes));
-
-    Tcl_DecrRefCount(copy);
     return TCL_OK;
 }
 

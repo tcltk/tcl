@@ -3930,7 +3930,7 @@ extern const TclStubs *tclStubsPtr;
 #if defined(USE_TCL_STUBS) && (TCL_UTF_MAX <= 3)
 #   undef Tcl_UtfCharComplete
 #   define Tcl_UtfCharComplete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
-	    ? TCL_UTF_MAX : tclStubsPtr->tcl_UtfCharComplete((src), (length)))
+	    ? ((length) >= TCL_UTF_MAX) : tclStubsPtr->tcl_UtfCharComplete((src), (length)))
 #endif
 
 #endif /* _TCLDECLS */

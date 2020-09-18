@@ -524,7 +524,7 @@ Tcl_GetByteArrayFromObj(
 	baPtr = GET_BYTEARRAY(irPtr);
 	bytes = baPtr->bytes;
 	numBytes = baPtr->used;
-    } 
+    }
 
     /* Macro TclGetByteArrayFromObj passes NULL for lengthPtr as
      * a trick to get around changing size. */
@@ -2843,7 +2843,7 @@ BinaryEncodeUu(
     unsigned char *data, *start, *cursor;
     int rawLength, n, i, bits, index;
     int lineLength = 61;
-    const unsigned char SingleNewline[] = { (unsigned char) '\n' };
+    const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
     size_t j, offset, count = 0, wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR };

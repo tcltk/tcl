@@ -2861,6 +2861,7 @@ TclCompileEnsemble(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     Tcl_Obj *mapObj, *subcmdObj, *targetCmdObj, *listObj, **elems;
     Tcl_Obj *replaced = Tcl_NewObj(), *replacement;
@@ -2870,7 +2871,6 @@ TclCompileEnsemble(
     int ourResult = TCL_ERROR;
     size_t numBytes;
     const char *word;
-    DefineLineInformation;
 
     Tcl_IncrRefCount(replaced);
     if (parsePtr->numWords < depth + 1) {
@@ -3199,6 +3199,7 @@ TclAttemptCompileProc(
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;
     int result, i;
     Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
     int savedStackDepth = envPtr->currStackDepth;
@@ -3208,7 +3209,6 @@ TclAttemptCompileProc(
 #ifdef TCL_COMPILE_DEBUG
     int savedExceptDepth = envPtr->exceptDepth;
 #endif
-    DefineLineInformation;
 
     if (cmdPtr->compileProc == NULL) {
 	return TCL_ERROR;
@@ -3324,12 +3324,12 @@ CompileToInvokedCommand(
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;
     Tcl_Token *tokPtr;
     Tcl_Obj *objPtr, **words;
     const char *bytes;
     int i, numWords, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
     size_t length;
-    DefineLineInformation;
 
     /*
      * Push the words of the command. Take care; the command words may be

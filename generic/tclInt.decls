@@ -921,7 +921,7 @@ declare 227 {
 #  Used to be needed for TclOO-extension; unneeded now that TclOO is in the
 #  core and NRE-enabled
 #  declare 228 {
-#      int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
+#      int TclObjInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
 #             int skip, ProcErrorProc *errorProc)
 #  }
 declare 229 {

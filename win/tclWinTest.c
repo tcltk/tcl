@@ -13,7 +13,11 @@
 #   define USE_TCL_STUBS
 #endif
 #include "tclInt.h"
-#include "tclTomMath.h"
+#ifdef TCL_WITH_EXTERNAL_TOMMATH
+#   include "tommath.h"
+#else
+#   include "tclTomMath.h"
+#endif
 
 /*
  * For TestplatformChmod on Windows

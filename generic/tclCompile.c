@@ -1849,9 +1849,9 @@ TclCompileInvocation(
     size_t numWords,
     CompileEnv *envPtr)
 {
+    DefineLineInformation;
     size_t wordIdx = 0;
     int depth = TclGetStackDepth(envPtr);
-    DefineLineInformation;
 
     if (cmdObj) {
 	CompileCmdLiteral(interp, cmdObj, envPtr);
@@ -1957,8 +1957,8 @@ CompileCmdCompileProc(
     Command *cmdPtr,
     CompileEnv *envPtr)
 {
-    int unwind = 0, incrOffset = -1;
     Tcl_Parse parse;
+    int unwind = 0, incrOffset = -1;
     int depth = TclGetStackDepth(envPtr);
     DefineLineInformation;
 

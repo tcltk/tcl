@@ -1805,8 +1805,9 @@ TclTrim(
 	/* If we did not trim the whole string, it starts with a character
 	 * that we will not trim. Skip over it. */
 	if (numBytes > 0) {
+	    int ch;
 	    const char *first = bytes + trimLeft;
-	    bytes = TclUtfNext(first);
+	    bytes += TclUtfToUCS4(first, &ch);
 	    numBytes -= (bytes - first);
 
 	    if (numBytes > 0) {
@@ -2068,7 +2069,7 @@ Tcl_StringCaseMatch(
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
     int p, charLen;
-    Tcl_UniChar ch1 = 0, ch2 = 0;
+    int ch1 = 0, ch2 = 0;
 
     while (1) {
 	p = *pattern;
@@ -2109,10 +2110,10 @@ Tcl_StringCaseMatch(
 	     */
 
 	    if (UCHAR(*pattern) < 0x80) {
-		ch2 = (Tcl_UniChar)
+		ch2 = (int)
 			(nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
 	    } else {
-		Tcl_UtfToUniChar(pattern, &ch2);
+		TclUtfToUCS4(pattern, &ch2);
 		if (nocase) {
 		    ch2 = Tcl_UniCharToLower(ch2);
 		}
@@ -2128,7 +2129,7 @@ Tcl_StringCaseMatch(
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
 			while (*str) {
-			    charLen = TclUtfToUniChar(str, &ch1);
+			    charLen = TclUtfToUCS4(str, &ch1);
 			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
 				break;
 			    }
@@ -2142,7 +2143,7 @@ Tcl_StringCaseMatch(
 			 */
 
 			while (*str) {
-			    charLen = TclUtfToUniChar(str, &ch1);
+			    charLen = TclUtfToUCS4(str, &ch1);
 			    if (ch2 == ch1) {
 				break;
 			    }
@@ -2156,7 +2157,7 @@ Tcl_StringCaseMatch(
 		if (*str == '\0') {
 		    return 0;
 		}
-		str += TclUtfToUniChar(str, &ch1);
+		str += TclUtfToUCS4(str, &ch1);
 	    }
 	}
 
@@ -2167,7 +2168,7 @@ Tcl_StringCaseMatch(
 
 	if (p == '?') {
 	    pattern++;
-	    str += TclUtfToUniChar(str, &ch1);
+	    str += TclUtfToUCS4(str, &ch1);
 	    continue;
 	}
 
@@ -2178,15 +2179,15 @@ Tcl_StringCaseMatch(
 	 */
 
 	if (p == '[') {
-	    Tcl_UniChar startChar = 0, endChar = 0;
+	    int startChar = 0, endChar = 0;
 
 	    pattern++;
 	    if (UCHAR(*str) < 0x80) {
-		ch1 = (Tcl_UniChar)
+		ch1 = (int)
 			(nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
 		str++;
 	    } else {
-		str += Tcl_UtfToUniChar(str, &ch1);
+		str += TclUtfToUCS4(str, &ch1);
 		if (nocase) {
 		    ch1 = Tcl_UniCharToLower(ch1);
 		}
@@ -2196,11 +2197,11 @@ Tcl_StringCaseMatch(
 		    return 0;
 		}
 		if (UCHAR(*pattern) < 0x80) {
-		    startChar = (Tcl_UniChar) (nocase
+		    startChar = (int) (nocase
 			    ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
 		    pattern++;
 		} else {
-		    pattern += Tcl_UtfToUniChar(pattern, &startChar);
+		    pattern += TclUtfToUCS4(pattern, &startChar);
 		    if (nocase) {
 			startChar = Tcl_UniCharToLower(startChar);
 		    }
@@ -2211,11 +2212,11 @@ Tcl_StringCaseMatch(
 			return 0;
 		    }
 		    if (UCHAR(*pattern) < 0x80) {
-			endChar = (Tcl_UniChar) (nocase
+			endChar = (int) (nocase
 				? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
 			pattern++;
 		    } else {
-			pattern += Tcl_UtfToUniChar(pattern, &endChar);
+			pattern += TclUtfToUCS4(pattern, &endChar);
 			if (nocase) {
 			    endChar = Tcl_UniCharToLower(endChar);
 			}
@@ -2263,8 +2264,8 @@ Tcl_StringCaseMatch(
 	 * each string match.
 	 */
 
-	str += TclUtfToUniChar(str, &ch1);
-	pattern += TclUtfToUniChar(pattern, &ch2);
+	str += TclUtfToUCS4(str, &ch1);
+	pattern += TclUtfToUCS4(pattern, &ch2);
 	if (nocase) {
 	    if (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2)) {
 		return 0;

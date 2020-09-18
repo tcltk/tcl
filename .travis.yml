@@ -132,9 +132,9 @@ matrix:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols=mem"
 # Testing on Mac, various styles
-    - name: "macOS/Xcode 11.4/Shared"
+    - name: "macOS/Clang/Xcode 11.5/Shared"
       os: osx
-      osx_image: xcode11.4
+      osx_image: xcode11.5
       env:
         - BUILD_DIR=macosx
       install: []
@@ -142,20 +142,28 @@ matrix:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
-    - name: "macOS/Xcode 11.4/Shared/Unix-like"
+    - name: "macOS/Clang/Xcode 11.5/Shared/Unix-like"
       os: osx
-      osx_image: xcode11.4
+      osx_image: xcode11.5
       env:
         - BUILD_DIR=unix
+    - name: "macOS/Clang++/Xcode 11.5/Shared"
+      os: osx
+      osx_image: xcode11.5
+      env:
+        - BUILD_DIR=unix
+        - CFGOPT="CC=clang++ --enable-framework CFLAGS=-Dregister=dont+use+register CPPFLAGS=-D__private_extern__=extern"
+      script:
+        - make all tcltest
 # Older MacOS versions
-    - name: "macOS/Xcode 11/Shared"
+    - name: "macOS/Clang/Xcode 11/Shared"
       os: osx
       osx_image: xcode11
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS/Xcode 10/Shared"
+    - name: "macOS/Clang/Xcode 10/Shared"
       os: osx
       osx_image: xcode10.3
       env:
@@ -166,7 +174,7 @@ matrix:
         homebrew:
           packages:
             - libtommath
-    - name: "macOS/Xcode 9/Shared"
+    - name: "macOS/Clang/Xcode 9/Shared"
       os: osx
       osx_image: xcode9.2
       env:
@@ -177,7 +185,7 @@ matrix:
         homebrew:
           packages:
             - libtommath
-    - name: "macOS/Xcode 8/Shared"
+    - name: "macOS/Clang/Xcode 8/Shared"
       os: osx
       osx_image: xcode8.3
       env:
