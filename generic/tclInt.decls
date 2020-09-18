@@ -1021,7 +1021,7 @@ declare 249 {
 }
 # TIP #285: Script cancellation support.
 declare 250 {
-    void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
+    void TclSetChildCancelFlags(Tcl_Interp *interp, int flags, int force)
 }
 
 # Allow extensions for optimization

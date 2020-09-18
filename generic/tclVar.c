@@ -2227,7 +2227,7 @@ TclPtrIncrObjVarIdx(
 	VarHashRefCount(varPtr)--;
     }
     if (varValuePtr == NULL) {
-	varValuePtr = Tcl_NewIntObj(0);
+	TclNewIntObj(varValuePtr, 0);
     }
     if (Tcl_IsShared(varValuePtr)) {
 	/* Copy on write */

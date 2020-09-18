@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_CreateSlave 3 7.6 Tcl "Tcl Library Procedures"
+.TH Tcl_CreateAlias 3 7.6 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
@@ -20,16 +20,16 @@ int
 \fBTcl_MakeSafe\fR(\fIinterp\fR)
 .sp
 Tcl_Interp *
-\fBTcl_CreateSlave\fR(\fIinterp, slaveName, isSafe\fR)
+\fBTcl_CreateSlave\fR(\fIinterp, name, isSafe\fR)
 .sp
 Tcl_Interp *
-\fBTcl_GetSlave\fR(\fIinterp, slaveName\fR)
+\fBTcl_GetSlave\fR(\fIinterp, name\fR)
 .sp
 Tcl_Interp *
 \fBTcl_GetMaster\fR(\fIinterp\fR)
 .sp
 int
-\fBTcl_GetInterpPath\fR(\fIaskingInterp, slaveInterp\fR)
+\fBTcl_GetInterpPath\fR(\fIinterp, slaveInterp\fR)
 .sp
 int
 \fBTcl_CreateAlias\fR(\fIslaveInterp, slaveCmd, targetInterp, targetCmd,
@@ -56,7 +56,7 @@ int
 .AS "const char *const" **targetInterpPtr out
 .AP Tcl_Interp *interp in
 Interpreter in which to execute the specified command.
-.AP "const char" *slaveName in
+.AP "const char" *name in
 Name of slave interpreter to create or manipulate.
 .AP int isSafe in
 If non-zero, a
@@ -158,12 +158,12 @@ If no such slave interpreter exists, \fBNULL\fR is returned.
 \fIinterp\fR. If \fIinterp\fR has no master (it is a
 top-level interpreter) then \fBNULL\fR is returned.
 .PP
-\fBTcl_GetInterpPath\fR stores in the result of \fIaskingInterp\fR
-the relative path between \fIaskingInterp\fR and \fIslaveInterp\fR;
-\fIslaveInterp\fR must be a slave of \fIaskingInterp\fR. If the computation
+\fBTcl_GetInterpPath\fR stores in the result of \fIinterp\fR
+the relative path between \fIinterp\fR and \fIslaveInterp\fR;
+\fIslaveInterp\fR must be a slave of \fIinterp\fR. If the computation
 of the relative path succeeds, \fBTCL_OK\fR is returned, else
 \fBTCL_ERROR\fR is returned and an error message is stored as the
-result of \fIaskingInterp\fR.
+result of \fIinterp\fR.
 .PP
 \fBTcl_CreateAlias\fR creates a command named \fIslaveCmd\fR in
 \fIslaveInterp\fR that when invoked, will cause the command \fItargetCmd\fR
