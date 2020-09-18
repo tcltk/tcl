@@ -1835,7 +1835,7 @@ Tcl_ParseExpr(
     Tcl_Parse *exprParsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions. */
 
-    if (numBytes == TCL_AUTO_LENGTH) {
+    if (numBytes == TCL_INDEX_NONE) {
 	numBytes = (start ? strlen(start) : 0);
     }
 

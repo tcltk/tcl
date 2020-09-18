@@ -1345,7 +1345,7 @@ Tcl_ZlibStreamGet(
     }
 
     if (zshPtr->mode == TCL_ZLIB_STREAM_INFLATE) {
-	if (count == TCL_AUTO_LENGTH) {
+	if (count == TCL_INDEX_NONE) {
 	    /*
 	     * The only safe thing to do is restict to 65k. We might cause a
 	     * panic for out of memory if we just kept growing the buffer.
@@ -1502,7 +1502,7 @@ Tcl_ZlibStreamGet(
 	}
     } else {
 	Tcl_ListObjLength(NULL, zshPtr->outData, &listLen);
-	if (count == TCL_AUTO_LENGTH) {
+	if (count == TCL_INDEX_NONE) {
 	    count = 0;
 	    for (i=0; i<listLen; i++) {
 		Tcl_ListObjIndex(NULL, zshPtr->outData, i, &itemObj);

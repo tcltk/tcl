@@ -536,7 +536,7 @@ TclParseNumber(
     mp_err err = MP_OKAY;
     int under = 0;              /* Flag trailing '_' as error if true once
 				 * number is accepted. */
-    
+
 #define ALL_BITS	((Tcl_WideUInt)-1)
 #define MOST_BITS	(ALL_BITS >> 1)
 
@@ -1193,7 +1193,7 @@ TclParseNumber(
 	}
     } else {
 	/*
-	 * Back up to the last accepting state in the lexer.  
+	 * Back up to the last accepting state in the lexer.
 	 * If the last char seen is the numeric whitespace character '_',
 	 * backup to that.
 	 */

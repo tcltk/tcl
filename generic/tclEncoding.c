@@ -1071,7 +1071,7 @@ Tcl_ExternalToUtfDString(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_AUTO_LENGTH) {
+    } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = encodingPtr->lengthProc(src);
     }
 
@@ -1161,7 +1161,7 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_AUTO_LENGTH) {
+    } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = encodingPtr->lengthProc(src);
     }
     if (statePtr == NULL) {
@@ -1261,7 +1261,7 @@ Tcl_UtfToExternalDString(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_AUTO_LENGTH) {
+    } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
@@ -1350,7 +1350,7 @@ Tcl_UtfToExternal(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_AUTO_LENGTH) {
+    } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
     if (statePtr == NULL) {

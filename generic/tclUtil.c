@@ -392,7 +392,7 @@ TclMaxListLength(
 {
     size_t count = 0;
 
-    if ((numBytes == 0) || ((numBytes == TCL_AUTO_LENGTH) && (*bytes == '\0'))) {
+    if ((numBytes == 0) || ((numBytes == TCL_INDEX_NONE) && (*bytes == '\0'))) {
 	/* Empty string case - quick exit */
 	goto done;
     }
@@ -408,7 +408,7 @@ TclMaxListLength(
      */
 
     while (numBytes) {
-	if ((numBytes == TCL_AUTO_LENGTH) && (*bytes == '\0')) {
+	if ((numBytes == TCL_INDEX_NONE) && (*bytes == '\0')) {
 	    break;
 	}
 	if (TclIsSpaceProcM(*bytes)) {
@@ -419,9 +419,9 @@ TclMaxListLength(
 	    count++;
 	    do {
 		bytes++;
-		numBytes -= (numBytes != TCL_AUTO_LENGTH);
+		numBytes -= (numBytes != TCL_INDEX_NONE);
 	    } while (numBytes && TclIsSpaceProcM(*bytes));
-	    if ((numBytes == 0) || ((numBytes == TCL_AUTO_LENGTH) && (*bytes == '\0'))) {
+	    if ((numBytes == 0) || ((numBytes == TCL_INDEX_NONE) && (*bytes == '\0'))) {
 		break;
 	    }
 
@@ -430,7 +430,7 @@ TclMaxListLength(
 	     */
 	}
 	bytes++;
-	numBytes -= (numBytes != TCL_AUTO_LENGTH);
+	numBytes -= (numBytes != TCL_INDEX_NONE);
     }
 
     /*
@@ -1032,7 +1032,7 @@ TclScanElement(
     int braceCount = 0;		/* Count of all braces '{' '}' seen. */
 #endif /* COMPAT */
 
-    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == TCL_AUTO_LENGTH))) {
+    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == TCL_INDEX_NONE))) {
 	/*
 	 * Empty string element must be brace quoted.
 	 */
@@ -1115,7 +1115,7 @@ TclScanElement(
 	    break;
 	case '\\':	/* TYPE_SUBS */
 	    extra++;				/* Escape '\' => '\\' */
-	    if ((length == 1) || ((length == TCL_AUTO_LENGTH) && (p[1] == '\0'))) {
+	    if ((length == 1) || ((length == TCL_INDEX_NONE) && (p[1] == '\0'))) {
 		/*
 		 * Final backslash. Cannot format with brace quoting.
 		 */
@@ -1146,7 +1146,7 @@ TclScanElement(
 #endif /* COMPAT */
 	    break;
 	case '\0':	/* TYPE_SUBS */
-	    if (length == TCL_AUTO_LENGTH) {
+	    if (length == TCL_INDEX_NONE) {
 		goto endOfString;
 	    }
 	    /* TODO: Panic on improper encoding? */
@@ -1395,7 +1395,7 @@ TclConvertElement(
      * No matter what the caller demands, empty string must be braced!
      */
 
-    if ((src == NULL) || (length == 0) || (*src == '\0' && length == TCL_AUTO_LENGTH)) {
+    if ((src == NULL) || (length == 0) || (*src == '\0' && length == TCL_INDEX_NONE)) {
 	p[0] = '{';
 	p[1] = '}';
 	return 2;
@@ -1422,7 +1422,7 @@ TclConvertElement(
      */
 
     if (conversion == CONVERT_NONE) {
-	if (length == TCL_AUTO_LENGTH) {
+	if (length == TCL_INDEX_NONE) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1441,7 +1441,7 @@ TclConvertElement(
     if (conversion == CONVERT_BRACE) {
 	*p = '{';
 	p++;
-	if (length == TCL_AUTO_LENGTH) {
+	if (length == TCL_INDEX_NONE) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1514,7 +1514,7 @@ TclConvertElement(
 	    p++;
 	    continue;
 	case '\0':
-	    if (length == TCL_AUTO_LENGTH) {
+	    if (length == TCL_INDEX_NONE) {
 		return (size_t)(p - dst);
 	    }
 
@@ -2560,14 +2560,14 @@ char *
 Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
     const char *bytes,		/* String to append. If length is
-				 * TCL_AUTO_LENGTH then this must be null-terminated. */
+				 * TCL_INDEX_NONE then this must be null-terminated. */
     size_t length)			/* Number of bytes from "bytes" to append. If
-				 * TCL_AUTO_LENGTH, then append all of bytes, up to null
+				 * TCL_INDEX_NONE, then append all of bytes, up to null
 				 * at end. */
 {
     size_t newSize;
 
-    if (length == TCL_AUTO_LENGTH) {
+    if (length == TCL_INDEX_NONE) {
 	length = strlen(bytes);
     }
     newSize = length + dsPtr->length;

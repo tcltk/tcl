@@ -204,9 +204,25 @@ CreateLiteral(
      * Is it in the interpreter's global literal table?
      */
 
-    if (length == TCL_AUTO_LENGTH) {
+    if (length == TCL_INDEX_NONE) {
 	length = strlen(bytes);
     }
+
+    /*
+     * If the literal is a command name, avoid sharing it across namespaces,
+     * and try not to share it with non-cmd literals. Note that FQ command
+     * names can be shared, so that we register the namespace as the
+     * interp's global NS.
+     */
+
+    if ((flags & LITERAL_CMD_NAME)) {
+	if ((length >= 2) && (bytes[0] == ':') && (bytes[1] == ':')) {
+	    nsPtr = iPtr->globalNsPtr;
+	} else {
+	    nsPtr = iPtr->varFramePtr->nsPtr;
+	}
+    }
+
     globalHash = (HashString(bytes, length) & globalTablePtr->mask);
     for (globalPtr=globalTablePtr->buckets[globalHash] ; globalPtr!=NULL;
 	    globalPtr = globalPtr->nextPtr) {
@@ -238,7 +254,7 @@ CreateLiteral(
 		if (globalPtrPtr) {
 		    *globalPtrPtr = globalPtr;
 		} else {
-		    if (globalPtr->refCount != TCL_AUTO_LENGTH) {
+		    if (globalPtr->refCount != TCL_INDEX_NONE) {
 			globalPtr->refCount++;
 		    }
 #ifdef TCL_COMPILE_DEBUG
@@ -412,7 +428,7 @@ TclRegisterLiteral(
 				 * create an object in CompileEnv's object
 				 * array. */
     size_t length,		/* Number of bytes in the string. If
-				 * TCL_AUTO_LENGTH, the string consists of
+				 * TCL_INDEX_NONE, the string consists of
 				 * all bytes up to the first null character. */
     int flags)			/* If LITERAL_ON_HEAP then the caller already
 				 * malloc'd bytes and ownership is passed to
@@ -427,21 +443,6 @@ TclRegisterLiteral(
     LiteralEntry *globalPtr;
     Tcl_HashEntry *hePtr;
     int objIndex, globalNew, isNew = 0;
-
-    /*
-     * If the literal is a command name, avoid sharing it across namespaces,
-     * and try not to share it with non-cmd literals. Note that FQ command
-     * names can be shared, so that we register the namespace as the
-     * interp's global NS.
-     */
-
-    if ((flags & LITERAL_CMD_NAME)) {
-	if ((length >= 2) && (bytes[0] == ':') && (bytes[1] == ':')) {
-	    nsPtr = iPtr->globalNsPtr;
-	} else {
-	    nsPtr = iPtr->varFramePtr->nsPtr;
-	}
-    }
 
     objPtr = CreateLiteral(iPtr, bytes, length, &globalNew, nsPtr,
 	    flags, &globalPtr);
@@ -716,7 +717,7 @@ TclReleaseLiteral(
 	     * literal table entry (decrement the ref count of the object).
 	     */
 
-	    if ((entryPtr->refCount != TCL_AUTO_LENGTH) && (entryPtr->refCount-- <= 1)) {
+	    if ((entryPtr->refCount != TCL_INDEX_NONE) && (entryPtr->refCount-- <= 1)) {
 		if (prevPtr == NULL) {
 		    globalTablePtr->buckets[index] = entryPtr->nextPtr;
 		} else {

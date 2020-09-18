@@ -455,7 +455,9 @@ TclParseScript(
     Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
     Tcl_Token *result;
 
-    if (numBytes == TCL_AUTO_LENGTH) {
+    assert( script );	/* Caller must pass a valid pointer to string */
+
+    if (numBytes == TCL_INDEX_NONE) {
 	numBytes = strlen(script);
     }
     TclParseInit(NULL, script, numBytes, parsePtr);
@@ -697,6 +699,12 @@ TclParseCommand(
     const char *commandStart;
     int numWords = 0;
 
+    if (numBytes == TCL_INDEX_NONE && start) {
+	numBytes = strlen(start);
+    }
+    if (!append) {
+	TclParseInit(interp, start, numBytes, parsePtr);
+    }
     if ((start == NULL) && (numBytes != 0)) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -704,16 +712,10 @@ TclParseCommand(
 	}
 	return TCL_ERROR;
     }
-    if (numBytes == TCL_AUTO_LENGTH) {
-	numBytes = strlen(start);
-    }
-    if (!append) {
-	TclParseInit(interp, start, numBytes, parsePtr);
-    }
-	parsePtr->commentStart = NULL;
-	parsePtr->commentSize = 0;
-	parsePtr->commandStart = NULL;
-	parsePtr->commandSize = 0;
+    parsePtr->commentStart = NULL;
+    parsePtr->commentSize = 0;
+    parsePtr->commandStart = NULL;
+    parsePtr->commandSize = 0;
     if (nested != 0) {
 	terminators = TYPE_COMMAND_END | TYPE_CLOSE_BRACK;
     } else {
@@ -1898,15 +1900,14 @@ TclParseVarName(
     unsigned array;
     int append = (flags & PARSE_APPEND);
 
-    if ((numBytes == 0) || (start == NULL)) {
-	return TCL_ERROR;
-    }
-    if (numBytes == TCL_AUTO_LENGTH) {
+    if (numBytes == TCL_INDEX_NONE && start) {
 	numBytes = strlen(start);
     }
-
     if (!append) {
 	TclParseInit(interp, start, numBytes, parsePtr);
+    }
+    if ((numBytes == 0) || (start == NULL)) {
+	return TCL_ERROR;
     }
 
     /*
@@ -2209,15 +2210,14 @@ ParseBraces(
     size_t length;
     int append = (flags & PARSE_APPEND);
 
-    if ((numBytes == 0) || (start == NULL)) {
-	return TCL_ERROR;
-    }
-    if (numBytes == TCL_AUTO_LENGTH) {
+    if (numBytes == TCL_INDEX_NONE && start) {
 	numBytes = strlen(start);
     }
-
     if (!append) {
 	TclParseInit(interp, start, numBytes, parsePtr);
+    }
+    if ((numBytes == 0) || (start == NULL)) {
+	return TCL_ERROR;
     }
 
     src = start;
@@ -2428,15 +2428,14 @@ TclParseQuotedString(
 {
     int append = (flags & PARSE_APPEND);
 
-    if ((numBytes == 0) || (start == NULL)) {
-	return TCL_ERROR;
-    }
-    if (numBytes == TCL_AUTO_LENGTH) {
+    if (numBytes == TCL_INDEX_NONE && start) {
 	numBytes = strlen(start);
     }
-
     if (!append) {
 	TclParseInit(interp, start, numBytes, parsePtr);
+    }
+    if ((numBytes == 0) || (start == NULL)) {
+	return TCL_ERROR;
     }
 
     if (TCL_OK != ParseTokens(start+1, numBytes-1, TYPE_QUOTE,

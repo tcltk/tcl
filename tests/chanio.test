@@ -2724,7 +2724,7 @@ test chan-io-29.31 {Tcl_WriteChars, background flush} -setup {
 	set result ok
     }
     # allow a little time for the background process to chan close.
-    # otherwise, the following test fails on the [file delete $path(output)
+    # otherwise, the following test fails on the [file delete $path(output)]
     # on Windows because a process still has the file open.
     after 100 set v 1; vwait v
     return $result

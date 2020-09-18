@@ -1520,7 +1520,7 @@ typedef struct LiteralEntry {
 				 * table, the number of ByteCode structures
 				 * that share the literal object; the literal
 				 * entry can be freed when refCount drops to
-				 * 0. If in a local literal table, TCL_AUTO_LENGTH. */
+				 * 0. If in a local literal table, TCL_INDEX_NONE. */
     Namespace *nsPtr;		/* Namespace in which this literal is used. We
 				 * try to avoid sharing literal non-FQ command
 				 * names among different namespaces to reduce
@@ -4327,7 +4327,7 @@ MODULE_SCOPE size_t	TclIndexDecode(int encoded, size_t endValue);
 /*
  * Invalidate the string rep first so we can use the bytes value for our
  * pointer chain, and signal an obj deletion (as opposed to shimmering) with
- * 'length == TCL_AUTO_LENGTH'.
+ * 'length == TCL_INDEX_NONE'.
  * Use empty 'if ; else' to handle use in unbraced outer if/else conditions.
  */
 
@@ -4339,7 +4339,7 @@ MODULE_SCOPE size_t	TclIndexDecode(int encoded, size_t endValue);
 		    && ((objPtr)->bytes != &tclEmptyString)) { \
 		Tcl_Free((objPtr)->bytes); \
 	    } \
-	    (objPtr)->length = TCL_AUTO_LENGTH; \
+	    (objPtr)->length = TCL_INDEX_NONE; \
 	    TclFreeObjStorage(objPtr); \
 	    TclIncrObjsFreed(); \
 	} else { \
