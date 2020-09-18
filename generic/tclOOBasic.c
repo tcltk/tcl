@@ -831,7 +831,7 @@ TclOO_Object_VarName(
      * (including traversing variable links), convert back to a name.
      */
 
-    varNamePtr = Tcl_NewObj();
+    TclNewObj(varNamePtr);
     if (aryVar != NULL) {
 	Tcl_GetVariableFullName(interp, (Tcl_Var) aryVar, varNamePtr);
 
