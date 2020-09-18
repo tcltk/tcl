@@ -526,7 +526,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #if !defined(_WIN32)
 #   undef TclpGetPid
-#   define TclpGetPid(pid) ((size_t) (pid))
+#   define TclpGetPid(pid) ((size_t)(pid))
 #endif
 
 #endif /* _TCLINTPLATDECLS */

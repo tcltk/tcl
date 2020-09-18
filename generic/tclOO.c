@@ -3035,7 +3035,7 @@ TclOOObjectName(
     if (oPtr->cachedNameObj) {
 	return oPtr->cachedNameObj;
     }
-    namePtr = Tcl_NewObj();
+    TclNewObj(namePtr);
     Tcl_GetCommandFullName(interp, oPtr->command, namePtr);
     Tcl_IncrRefCount(namePtr);
     oPtr->cachedNameObj = namePtr;

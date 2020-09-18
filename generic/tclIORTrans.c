@@ -1211,7 +1211,7 @@ ReflectInput(
 	}
 	if (Tcl_IsShared(bufObj)) {
 	    Tcl_DecrRefCount(bufObj);
-	    bufObj = Tcl_NewObj();
+	    TclNewObj(bufObj);
 	    Tcl_IncrRefCount(bufObj);
 	}
 	Tcl_SetByteArrayLength(bufObj, 0);
