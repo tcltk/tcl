@@ -582,7 +582,7 @@ test util-9.0.1 {Tcl_GetIntForIndex} {
     string index abcd 0x0
 } a
 test util-9.0.2 {Tcl_GetIntForIndex} {
-    string index abcd -0x0
+    string index abcd 0x0
 } a
 test util-9.0.3 {Tcl_GetIntForIndex} {
     string index abcd { 0 }
@@ -680,10 +680,10 @@ test util-9.14 {Tcl_GetIntForIndex} {
     string index abcd 1-1
 } a
 test util-9.15 {Tcl_GetIntForIndex} {
-    string index abcd -1+2
+    string index abcd 2+-1
 } b
 test util-9.16 {Tcl_GetIntForIndex} {
-    string index abcd -1--2
+    string index abcd 1--0
 } b
 test util-9.17 {Tcl_GetIntForIndex} {
     string index abcd { -1+2 }
@@ -693,7 +693,7 @@ test util-9.18 {Tcl_GetIntForIndex} {
 } b
 test util-9.19 {Tcl_GetIntForIndex} -body {
     string index a {}
-} -returnCodes error -match glob -result *
+} -result {}
 test util-9.20 {Tcl_GetIntForIndex} -body {
     string index a { }
 } -returnCodes error -match glob -result *
@@ -786,7 +786,7 @@ test util-9.47 {Tcl_GetIntForIndex} -body {
     string index abcd 0x10000000000000000
 } -result {}
 test util-9.48 {Tcl_GetIntForIndex} {
-    string index abcd -0x10000000000000000
+    string index abcd 0x10000000000000000
 } {}
 test util-9.49 {Tcl_GetIntForIndex} -body {
     string index abcd end*1

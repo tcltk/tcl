@@ -805,7 +805,7 @@ test cmdIL-8.4 {lremove command: no indices} -body {
     lremove {a b c}
 } -result {a b c}
 test cmdIL-8.5 {lremove command: before start} -body {
-    lremove {a b c} -1
+    lremove {a b c} {}
 } -result {a b c}
 test cmdIL-8.6 {lremove command: after end} -body {
     lremove {a b c} 3

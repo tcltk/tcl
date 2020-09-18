@@ -40,13 +40,13 @@ test lrange-1.6 {range of list elements} {
     lrange {a {bcd e {f g {}}} l14 l15 d} 10 11
 } {}
 test lrange-1.7 {range of list elements} {
-    lrange {a b c d e} -1 2
+    lrange {a b c d e} {} 2
 } {a b c}
 test lrange-1.8 {range of list elements} {
-    lrange {a b c d e} -2 -1
+    lrange {a b c d e} {} {}
 } {}
 test lrange-1.9 {range of list elements} {
-    lrange {a b c d e} -2 end
+    lrange {a b c d e} {} end
 } {a b c d e}
 test lrange-1.10 {range of list elements} {
     lrange "a b\{c d" 1 2
@@ -96,17 +96,17 @@ test lrange-3.1 {Bug 3588366: end-offsets before start} {
     }} {1 2 3 4 5}
 } {}
 test lrange-3.2 {compiled with static indices out of range, negative} {
-    list [lrange {a b c} -1 -2] [lrange {a b c} -2 -1] [lrange {a b c} -3 -2] [lrange {a b c} -2 -3]
+    list [lrange {a b c} {} {}] [lrange {a b c} {} {}] [lrange {a b c} {} {}] [lrange {a b c} {} {}]
 } [lrepeat 4 {}]
 test lrange-3.3 {compiled with calculated indices out of range, negative constant} {
-    list [lrange {a b c} 0-1 -1-1] [lrange {a b c} -2+0 0-1] [lrange {a b c} -2-1 -2+1] [lrange {a b c} -2+1 -2-1]
+    list [lrange {a b c} 0-1 0-2] [lrange {a b c} 1-3 0-1] [lrange {a b c} 1-4 1+-2] [lrange {a b c} 1+-2 1-4]
 } [lrepeat 4 {}]
 test lrange-3.4 {compiled with calculated indices out of range, after end} -body {
     list [lrange {a b c} end+1 end+2] [lrange {a b c} end+2 end+1] [lrange {a b c} end+2 end+3] [lrange {a b c} end+3 end+2]
 } -result [lrepeat 4 {}]
 
 test lrange-3.5 {compiled with calculated indices, start out of range (negative)} {
-    list [lrange {a b c} -1 1] [lrange {a b c} -1+0 end-1] [lrange {a b c} -2 1] [lrange {a b c} -2+0 0+1]
+    list [lrange {a b c} {} 1] [lrange {a b c} 0+-1 end-1] [lrange {a b c} {} 1] [lrange {a b c} 0+-2 0+1]
 } [lrepeat 4 {a b}]
 test lrange-3.6 {compiled with calculated indices, end out of range (after end)} {
     list [lrange {a b c} 1 end+1] [lrange {a b c} 1+0 2+1] [lrange {a b c} 1 end+1] [lrange {a b c} end-1 3+1]
@@ -124,13 +124,13 @@ test lrange-3.7b {not compiled on empty not canonical list (with static and dyna
 # following 4 tests could cause a segfault on empty non-lists with tclEmptyStringRep
 # (as before the fix [58c46e74b931d3a1]):
 test lrange-3.7a.2 {compiled on empty not list object, 2nd regression test, bug [cc1e91552c]} {
-    list [lrange {} 0 1] [lrange [lindex a -1] 0 1] [lrange [set a {}] 0 1] \
-	 [lrange {} 0-1 end+1] [lrange [lindex a -1] 0-1 end+1] [lrange $a 0-1 end+1]
+    list [lrange {} 0 1] [lrange [lindex a {}] 0 1] [lrange [set a {}] 0 1] \
+	 [lrange {} 0-1 end+1] [lrange [lindex a {}] 0-1 end+1] [lrange $a 0-1 end+1]
 } [lrepeat 6 {}]
 test lrange-3.7b.2 {not compiled on empty not list object, 2nd regression test, bug [cc1e91552c]} -body {
     set cmd lrange
-    list [$cmd {} 0 1] [$cmd [lindex a -1] 0 1] [$cmd [set a {}] 0 1] \
-	 [$cmd {} 0-1 end+1] [$cmd [lindex a -1] 0-1 end+1] [$cmd $a 0-1 end+1]
+    list [$cmd {} 0 1] [$cmd [lindex a {}] 0 1] [$cmd [set a {}] 0 1] \
+	 [$cmd {} 0-1 end+1] [$cmd [lindex a {}] 0-1 end+1] [$cmd $a 0-1 end+1]
 } -result [lrepeat 6 {}]
 test lrange-3.7c.2 {compiled on empty pure bytes object, 2nd regression test, bug [cc1e91552c]} -constraints {
     testpurebytesobj

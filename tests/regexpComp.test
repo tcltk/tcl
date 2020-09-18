@@ -667,7 +667,7 @@ test regexpComp-14.3 {CompileRegexp: regexp cache, empty regexp and empty cache}
 
 test regexpComp-15.1 {regexp -start} -body {
     unset -nocomplain x
-    list [regexp -start -10 {\d} 1abc2de3 x] $x
+    list [regexp -start {} {\d} 1abc2de3 x] $x
 } -result {1 1}
 test regexpComp-15.2 {regexp -start} -body {
     unset -nocomplain x
@@ -695,7 +695,7 @@ test regexpComp-16.1 {regsub -start} -body {
 } -result {4 a1b/2c/3d/4e/5}
 test regexpComp-16.2 {regsub -start} -body {
     unset -nocomplain x
-    list [regsub -all -start -25 {z} hello {/&} x] $x
+    list [regsub -all -start {} {z} hello {/&} x] $x
 } -result {0 hello}
 test regexpComp-16.3 {regsub -start} -body {
     unset -nocomplain x

@@ -3647,6 +3647,15 @@ GetWideForIndex(
     ClientData cd;
     int code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
 
+#ifdef TCL_NO_DEPRECATED
+    if (Tcl_GetString(objPtr)[0] == '-') {
+	if (interp) {
+	    Tcl_AppendResult(interp, "index \"", Tcl_GetString(objPtr),
+		    "\" out of range", NULL);
+	}
+	return TCL_ERROR;
+    }
+#endif
     if (code == TCL_OK) {
 	if (numType == TCL_NUMBER_INT) {
 	    /* objPtr holds an integer in the signed wide range */
@@ -3768,9 +3777,14 @@ GetEndOffsetFromObj(
 	if (*bytes != 'e') {
 	    int numType;
 	    const char *opPtr;
-	    int length, t1 = 0, t2 = 0;
+	    int t1 = 0, t2 = 0;
 
 	    /* Value doesn't start with "e" */
+
+	    if (length == 0) {
+		offset = WIDE_MIN;
+		goto parseOK;
+	    }
 
 	    /* If we reach here, the string rep of objPtr exists. */
 

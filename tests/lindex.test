@@ -20,7 +20,7 @@ if {"::tcltest" ni [namespace children]} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-set minus -
+set none {}
 testConstraint testevalex [llength [info commands testevalex]]
 
 # Tests of Tcl_LindexObjCmd, NOT COMPILED
@@ -52,7 +52,7 @@ test lindex-2.4 {malformed index list} testevalex {
 # Indices that are integers or convertible to integers
 
 test lindex-3.1 {integer -1} -constraints testevalex -body {
-    set x ${minus}1
+    set x ${none}${none}
     list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } -result {{} {}}
 test lindex-3.2 {integer 0} -constraints testevalex -body {
@@ -72,7 +72,7 @@ test lindex-3.5 {bad octal} -constraints testevalex -body {
     list [catch { testevalex {lindex {a b c} $x} } result] $result
 } -match glob -result {1 {*invalid octal number*}}
 test lindex-3.6 {bad octal} -constraints testevalex -body {
-    set x -0o9
+    set x 0o9
     list [catch { testevalex {lindex {a b c} $x} } result] $result
 } -match glob -result {1 {*invalid octal number*}}
 test lindex-3.7 {indexes don't shimmer wide ints} -body {
@@ -80,10 +80,10 @@ test lindex-3.7 {indexes don't shimmer wide ints} -body {
     list $x [lindex {1 2 3} $x] [incr x] [incr x]
 } -result {2147483646 {} 2147483647 2147483648}
 test lindex-3.8 {compiled with static indices out of range, negative} -body {
-    list [lindex {a b c} -1] [lindex {a b c} -2] [lindex {a b c} -3]
+    list [lindex {a b c} {}] [lindex {a b c} {}] [lindex {a b c} {}]
 } -result [lrepeat 3 {}]
 test lindex-3.9 {compiled with calculated indices out of range, negative constant} -body {
-    list [lindex {a b c} -1-1] [lindex {a b c} -2+0] [lindex {a b c} -2+1]
+    list [lindex {a b c} 0-2] [lindex {a b c} 1-3] [lindex {a b c} 2-4]
 } -result [lrepeat 3 {}]
 test lindex-3.10 {compiled with calculated indices out of range, after end} -body {
     list [lindex {a b c} end+1] [lindex {a b c} end+2] [lindex {a b c} end+3]
@@ -243,8 +243,8 @@ test lindex-10.4 {malformed index list} {
 
 # Indices that are integers or convertible to integers
 
-test lindex-11.1 {integer -1} {
-    set x ${minus}1
+test lindex-11.1 {index {}} {
+    set x ${none}${none}
     catch {
 	list [lindex {a b c} $x] [lindex {a b c} $x]
     } result
@@ -276,7 +276,7 @@ test lindex-11.5 {bad octal} -body {
     list [catch { lindex {a b c} $x } result] $result
 } -match glob -result {1 {*invalid octal number*}}
 test lindex-11.6 {bad octal} -body {
-    set x -0o9
+    set x 0o9
     list [catch { lindex {a b c} $x } result] $result
 } -match glob -result {1 {*invalid octal number*}}
 
