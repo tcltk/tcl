@@ -3905,7 +3905,7 @@ TestregexpObjCmd(
 
 	    varName = Tcl_GetString(objv[2]);
 	    TclRegExpRangeUniChar(regExpr, -1, &start, &end);
-	    sprintf(resinfo, "%" TCL_LL_MODIFIER "d %" TCL_LL_MODIFIER "d", TclWideIntFromSize(start), TclWideIntFromSize(end-1));
+	    sprintf(resinfo, "%d %d", (int)start, (int)(end-1));
 	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
@@ -3919,7 +3919,7 @@ TestregexpObjCmd(
 
 	    Tcl_RegExpGetInfo(regExpr, &info);
 	    varName = Tcl_GetString(objv[2]);
-	    sprintf(resinfo, "%" TCL_LL_MODIFIER "d", TclWideIntFromSize(info.extendStart));
+	    sprintf(resinfo, "%d", (int)info.extendStart);
 	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
@@ -3967,8 +3967,8 @@ TestregexpObjCmd(
 		end--;
 	    }
 
-	    objs[0] = TclNewWideIntObjFromSize(start);
-	    objs[1] = TclNewWideIntObjFromSize(end);
+	    objs[0] = Tcl_NewIntObj(start);
+	    objs[1] = Tcl_NewIntObj(end);
 
 	    newPtr = Tcl_NewListObj(2, objs);
 	} else {

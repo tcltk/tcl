@@ -676,7 +676,7 @@ TclRegAbout(
      */
 
     TclNewObj(resultObj);
-    TclNewIntObj(infoObj, regexpPtr->re.re_nsub);
+    TclNewIndexObj(infoObj, regexpPtr->re.re_nsub);
     Tcl_ListObjAppendElement(NULL, resultObj, infoObj);
 
     /*
