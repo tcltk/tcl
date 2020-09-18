@@ -3778,17 +3778,18 @@ TclNRSwitchObjCmd(
 		if (info.matches[j].end > 0) {
 		    TclNewIndexObj(rangeObjAry[0], info.matches[j].start);
 		    TclNewIndexObj(rangeObjAry[1], info.matches[j].end-1);
+		    Tcl_ListObjAppendElement(NULL, indicesObj,
+			    Tcl_NewListObj(2, rangeObjAry));
 		} else {
-		    TclNewIndexObj(rangeObjAry[1], -1);
-		    rangeObjAry[0] = rangeObjAry[1];
+		    TclNewIndexObj(rangeObjAry[0], -1);
+		    Tcl_ListObjAppendElement(NULL, indicesObj,
+			    rangeObjAry[0]);
 		}
 
 		/*
 		 * Never fails; the object is always clean at this point.
 		 */
 
-		Tcl_ListObjAppendElement(NULL, indicesObj,
-			Tcl_NewListObj(2, rangeObjAry));
 	    }
 
 	    if (matchVarObj != NULL) {
