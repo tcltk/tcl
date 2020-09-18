@@ -1836,11 +1836,13 @@ Tcl_ParseExpr(
 {
     int code;
     OpNode *opTree = NULL;	/* Will point to the tree of operators. */
-    Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals. */
-    Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names. */
+    Tcl_Obj *litList;	/* List to hold the literals. */
+    Tcl_Obj *funcList;	/* List to hold the functon names. */
     Tcl_Parse *exprParsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions. */
 
+    TclNewObj(litList);
+    TclNewObj(funcList);
     if (numBytes < 0) {
 	numBytes = (start ? strlen(start) : 0);
     }
@@ -2040,7 +2042,7 @@ ParseLexeme(
 	break;
     }
 
-    literal = Tcl_NewObj();
+    TclNewObj(literal);
     if (TclParseNumber(NULL, literal, NULL, start, numBytes, &end,
 	    TCL_PARSE_NO_WHITESPACE) == TCL_OK) {
 	if (end < start + numBytes && !TclIsBareword(*end)) {
@@ -2154,12 +2156,15 @@ TclCompileExpr(
     int optimize)		/* 0 for one-off expressions. */
 {
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
-    Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
-    Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names*/
+    Tcl_Obj *litList;		/* List to hold the literals */
+    Tcl_Obj *funcList;		/* List to hold the functon names*/
     Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions */
+    int code;
 
-    int code = ParseExpr(interp, script, numBytes, &opTree, litList,
+    TclNewObj(litList);
+    TclNewObj(funcList);
+    code = ParseExpr(interp, script, numBytes, &opTree, litList,
 	    funcList, parsePtr, 0 /* parseOnly */);
 
     if (code == TCL_OK) {
@@ -2711,7 +2716,7 @@ TclVariadicOpCmd(
     int code;
 
     if (objc < 2) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(occdPtr->i.identity));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(occdPtr->i.identity));
 	return TCL_OK;
     }
 
@@ -2725,7 +2730,7 @@ TclVariadicOpCmd(
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
 
 	if (lexeme == EXPON) {
-	    litObjv[1] = Tcl_NewIntObj(occdPtr->i.identity);
+	    TclNewIntObj(litObjv[1], occdPtr->i.identity);
 	    Tcl_IncrRefCount(litObjv[1]);
 	    decrMe = 1;
 	    litObjv[0] = objv[1];
@@ -2741,7 +2746,7 @@ TclVariadicOpCmd(
 	    if (lexeme == DIVIDE) {
 		litObjv[0] = Tcl_NewDoubleObj(1.0);
 	    } else {
-		litObjv[0] = Tcl_NewIntObj(occdPtr->i.identity);
+		TclNewIntObj(litObjv[0], occdPtr->i.identity);
 	    }
 	    Tcl_IncrRefCount(litObjv[0]);
 	    litObjv[1] = objv[1];

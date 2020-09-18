@@ -640,7 +640,7 @@ namespace eval tcltest {
 
     proc IsVerbose {level} {
 	variable Option
-	return [expr {[lsearch -exact $Option(-verbose) $level] != -1}]
+	return [expr {[lsearch -exact $Option(-verbose) $level] >= 0}]
     }
 
     # Default verbosity is to show bodies of failed tests
@@ -811,14 +811,14 @@ namespace eval tcltest {
     trace add variable Option(-errfile) write \
 	    [namespace code {errorChannel $Option(-errfile) ;#}]
 
-    proc loadIntoSlaveInterpreter {slave args} {
+    proc loadIntoChildInterpreter {child args} {
 	variable Version
-	interp eval $slave [package ifneeded tcltest $Version]
-	interp eval $slave "tcltest::configure {*}{$args}"
-	interp alias $slave ::tcltest::ReportToMaster \
-	    {} ::tcltest::ReportedFromSlave
+	interp eval $child [package ifneeded tcltest $Version]
+	interp eval $child "tcltest::configure {*}{$args}"
+	interp alias $child ::tcltest::ReportToParent \
+	    {} ::tcltest::ReportedFromChild
     }
-    proc ReportedFromSlave {total passed skipped failed because newfiles} {
+    proc ReportedFromChild {total passed skipped failed because newfiles} {
 	variable numTests
 	variable skippedBecause
 	variable createdNewFiles
@@ -2462,8 +2462,8 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
     set testFileName [file tail [info script]]
 
     # Hook to handle reporting to a parent interpreter
-    if {[llength [info commands [namespace current]::ReportToMaster]]} {
-	ReportToMaster $numTests(Total) $numTests(Passed) $numTests(Skipped) \
+    if {[llength [info commands [namespace current]::ReportToParent]]} {
+	ReportToParent $numTests(Total) $numTests(Passed) $numTests(Skipped) \
 	    $numTests(Failed) [array get skippedBecause] \
 	    [array get createdNewFiles]
 	set testSingleFile false
@@ -2798,7 +2798,6 @@ proc tcltest::runAllTests { {shell ""} } {
     variable numTests
     variable failFiles
     variable DefaultValue
-    set failFilesAccum {}
 
     FillFilesExisted
     if {[llength [info level 0]] == 1} {
@@ -2854,8 +2853,18 @@ proc tcltest::runAllTests { {shell ""} } {
 	flush [outputChannel]
 
 	if {[singleProcess]} {
-	    incr numTestFiles
-	    uplevel 1 [list ::source $file]
+	    if {[catch {
+		incr numTestFiles
+		uplevel 1 [list ::source $file]
+	    } msg]} {
+		puts [outputChannel] "Test file error: $msg"
+		# append the name of the test to a list to be reported
+		# later
+		lappend testFileFailures $file
+	    }
+	    if {$numTests(Failed) > 0} {
+		set failFilesSet 1
+	    }
 	} else {
 	    # Pass along our configuration to the child processes.
 	    # EXCEPT for the -outfile, because the parent process
@@ -2888,7 +2897,7 @@ proc tcltest::runAllTests { {shell ""} } {
 			}
 			if {$Failed > 0} {
 			    lappend failFiles $testFile
-			    lappend failFilesAccum $testFile
+			    set failFilesSet 1
 			}
 		    } elseif {[regexp [join {
 			    {^Number of tests skipped }
@@ -2935,7 +2944,7 @@ proc tcltest::runAllTests { {shell ""} } {
 	puts [outputChannel] ""
 	puts [outputChannel] [string repeat ~ 44]
     }
-    return [expr {[info exists testFileFailures] || [llength $failFilesAccum]}]
+    return [expr {[info exists testFileFailures] || [info exists failFilesSet]}]
 }
 
 #####################################################################
@@ -3107,7 +3116,7 @@ proc tcltest::removeFile {name {directory ""}} {
     set fullName [file join $directory $name]
     DebugPuts 3 "[lindex [info level 0] 0]: removing $fullName"
     set idx [lsearch -exact $filesMade $fullName]
-    if {$idx == -1} {
+    if {$idx < 0} {
 	DebugDo 1 {
 	    Warn "removeFile removing \"$fullName\":\n  not created by makeFile"
 	}
@@ -3184,7 +3193,7 @@ proc tcltest::removeDirectory {name {directory ""}} {
     DebugPuts 3 "[lindex [info level 0] 0]: deleting $fullName"
     set idx [lsearch -exact $filesMade $fullName]
     set filesMade [lreplace $filesMade $idx $idx]
-    if {$idx == -1} {
+    if {$idx < 0} {
 	DebugDo 1 {
 	    Warn "removeDirectory removing \"$fullName\":\n  not created\
 		    by makeDirectory"

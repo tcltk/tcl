@@ -32,7 +32,7 @@ int
 \fBTcl_GetIntFromObj\fR(\fIinterp, objPtr, intPtr\fR)
 .sp
 int
-\fBTcl_GetIntForIndex\fR(\fIinterp, objPtr, endValue, flags, intPtr\fR)
+\fBTcl_GetIntForIndex\fR(\fIinterp, objPtr, endValue, intPtr\fR)
 .sp
 int
 \fBTcl_GetLongFromObj\fR(\fIinterp, objPtr, longPtr\fR)
@@ -60,9 +60,6 @@ int
 .AS Tcl_WideInt doubleValue in/out
 .AP int endValue in
 \fBTcl_GetIntForIndex\fR will return this when the input value is "end".
-.AP int flags in
-\fBTcl_GetIntForIndex\fR will behave more strict when flags is not 0. Any
-combination of TCL_INDEX_ERROR, TCL_INDEX_NOMIN or TCL_INDEX_NOMAX is accepted.
 .AP int intValue in
 Integer value used to initialize or set a Tcl value.
 .AP long longValue in

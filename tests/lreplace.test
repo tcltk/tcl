@@ -12,10 +12,9 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
-testConstraint nodep [info exists tcl_precision]
 
 test lreplace-1.1 {lreplace command} {
     lreplace {1 2 3 4 5} 0 0 a
@@ -120,13 +119,13 @@ test lreplace-2.2 {lreplace errors} -body {
 } -result {1 {wrong # args: should be "lreplace list first last ?element ...?"}}
 test lreplace-2.3 {lreplace errors} -body {
     list [catch {lreplace x a 10} msg] $msg
-} -result {1 {bad index "a": must be integer?[+-]integer?, end?[+-]integer? or none}}
+} -result {1 {bad index "a": must be integer?[+-]integer? or end?[+-]integer?}}
 test lreplace-2.4 {lreplace errors} -body {
     list [catch {lreplace x 10 x} msg] $msg
-} -result {1 {bad index "x": must be integer?[+-]integer?, end?[+-]integer? or none}}
+} -result {1 {bad index "x": must be integer?[+-]integer? or end?[+-]integer?}}
 test lreplace-2.5 {lreplace errors} -body {
     list [catch {lreplace x 10 1x} msg] $msg
-} -result {1 {bad index "1x": must be integer?[+-]integer?, end?[+-]integer? or none}}
+} -result {1 {bad index "1x": must be integer?[+-]integer? or end?[+-]integer?}}
 test lreplace-2.6 {lreplace errors} -body {
     list [catch {lreplace x 3 2} msg] $msg
 } -result {0 x}
@@ -218,7 +217,7 @@ test lreplace-5.2 {compiled lreplace: Bug 47ac84309b} {
 apply {{} {
     set lss     {{} {a} {a b c} {a b c d}}
     set ins     {{} A {A B}}
-    set idxs    {none -1 0 1 2 3 end-3 end-2 end-1 end end+1}
+    set idxs    {-2 -1 0 1 2 3 end-3 end-2 end-1 end end+1 end+2}
     set lreplace lreplace
 
     foreach ls $lss {

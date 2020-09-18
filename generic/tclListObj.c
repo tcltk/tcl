@@ -479,7 +479,9 @@ TclListObjRange(
 	toIdx = listLen-1;
     }
     if (fromIdx > toIdx) {
-	return Tcl_NewObj();
+	Tcl_Obj *obj;
+	TclNewObj(obj);
+	return obj;
     }
 
     newLen = toIdx - fromIdx + 1;
@@ -1091,7 +1093,7 @@ Tcl_ListObjReplace(
 	if ((numAfterLast > 0) && (shift != 0)) {
 	    Tcl_Obj **src = elemPtrs + start;
 
-	    memmove(src+shift, src, (size_t) numAfterLast * sizeof(Tcl_Obj*));
+	    memmove(src+shift, src, numAfterLast * sizeof(Tcl_Obj*));
 	}
     } else {
 	/*
@@ -1263,7 +1265,7 @@ TclLindexList(
 
     ListGetIntRep(argPtr, listRepPtr);
     if ((listRepPtr == NULL)
-	    && TclGetIntForIndexM(NULL , argPtr, INT_MAX - 1, TCL_INDEX_ERROR, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL , argPtr, INT_MAX - 1, &index) == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
 	 */
@@ -1365,7 +1367,7 @@ TclLindexFlat(
 	TclListObjGetElements(NULL, sublistCopy, &listLen, &elemPtrs);
 
 	if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
-		TCL_INDEX_ERROR, &index) == TCL_OK) {
+		&index) == TCL_OK) {
 	    if (index<0 || index>=listLen) {
 		/*
 		 * Index is out of range. Break out of loop with empty result.
@@ -1373,13 +1375,13 @@ TclLindexFlat(
 		 */
 
 		while (++i < indexCount) {
-		    if (TclGetIntForIndexM(interp, indexArray[i], INT_MAX - 1, TCL_INDEX_ERROR, &index)
+		    if (TclGetIntForIndexM(interp, indexArray[i], INT_MAX - 1, &index)
 			!= TCL_OK) {
 			Tcl_DecrRefCount(sublistCopy);
 			return NULL;
 		    }
 		}
-		listPtr = Tcl_NewObj();
+		TclNewObj(listPtr);
 	    } else {
 		/*
 		 * Extract the pointer to the appropriate element.
@@ -1439,13 +1441,12 @@ TclLsetList(
     /*
      * Determine whether the index arg designates a list or a single index.
      * We have to be careful about the order of the checks to avoid repeated
-     * shimmering; see TIP #22 and #23 for details. Don't allow "" as single
-     * index here, since it cannot be distinguished from an empty list.
+     * shimmering; see TIP #22 and #23 for details.
      */
 
     ListGetIntRep(indexArgPtr, listRepPtr);
-    if (listRepPtr == NULL && Tcl_GetString(indexArgPtr)[0]
-	    && TclGetIntForIndexM(NULL, indexArgPtr, INT_MAX - 1, TCL_INDEX_ERROR, &index) == TCL_OK) {
+    if (listRepPtr == NULL
+	    && TclGetIntForIndexM(NULL, indexArgPtr, INT_MAX - 1, &index) == TCL_OK) {
 	/*
 	 * indexArgPtr designates a single index.
 	 */
@@ -1592,7 +1593,7 @@ TclLsetFlat(
 	 * post-increments, avoid '*indexArray++' here.
 	 */
 
-	if (TclGetIntForIndexM(interp, *indexArray, elemCount - 1, TCL_INDEX_ERROR, &index)
+	if (TclGetIntForIndexM(interp, *indexArray, elemCount - 1, &index)
 		!= TCL_OK)  {
 	    /* ...the index we're trying to use isn't an index at all. */
 	    result = TCL_ERROR;
@@ -1624,7 +1625,7 @@ TclLsetFlat(
 	if (--indexCount) {
 	    parentList = subListPtr;
 	    if (index == elemCount) {
-		subListPtr = Tcl_NewObj();
+		TclNewObj(subListPtr);
 	    } else {
 		subListPtr = elemPtrs[index];
 	    }

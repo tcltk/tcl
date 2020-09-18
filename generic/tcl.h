@@ -559,14 +559,6 @@ typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
 #define	TCL_REG_NOTEOL	0002	/* End of string does not match $. */
 
 /*
- * Flags values passed to Tcl_GetIntForIndex().
- */
-
-#define	TCL_INDEX_ERROR	0x100	/* Generate "out of range" errors when index < 0 */
-#define	TCL_INDEX_NOMIN	0x200	/* Convert values < 0 to 0 (or generate error for this) */
-#define	TCL_INDEX_NOMAX	0x400	/* Convert values > end to end (or generate error for this) */
-
-/*
  * Structures filled in by Tcl_RegExpInfo. Note that all offset values are
  * relative to the start of the match string, not the beginning of the entire
  * string.
@@ -981,11 +973,14 @@ typedef struct Tcl_DString {
 #define TCL_DONT_QUOTE_HASH	8
 
 /*
- * Flag that may be passed to Tcl_GetIndexFromObj to force it to disallow
- * abbreviated strings.
+ * Flags that may be passed to Tcl_GetIndexFromObj.
+ * TCL_EXACT disallows abbreviated strings.
+ * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
+ *      a table that will not live long enough to make it worthwhile.
  */
 
-#define TCL_EXACT	1
+#define TCL_EXACT		1
+#define TCL_INDEX_TEMP_TABLE	2
 
 /*
  *----------------------------------------------------------------------------

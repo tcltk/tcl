@@ -205,7 +205,7 @@ TclThread_Init(
 
 static int
 ThreadObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -293,7 +293,7 @@ ThreadObjCmd(
 	    script = Tcl_GetStringFromObj(objv[2], &len);
 
 	    if ((len > 1) && (script[0] == '-') && (script[1] == 'j') &&
-		    (0 == strncmp(script, "-joinable", (size_t) len))) {
+		    (0 == strncmp(script, "-joinable", len))) {
 		joinable = 1;
 		script = "testthread wait";	/* Just enter event loop */
 	    } else {
@@ -310,7 +310,7 @@ ThreadObjCmd(
 
 	    script = Tcl_GetStringFromObj(objv[2], &len);
 	    joinable = ((len > 1) && (script[0] == '-') && (script[1] == 'j')
-		    && (0 == strncmp(script, "-joinable", (size_t) len)));
+		    && (0 == strncmp(script, "-joinable", len)));
 	    script = Tcl_GetString(objv[3]);
 	} else {
 	    Tcl_WrongNumArgs(interp, 2, objv, "?-joinable? ?script?");
@@ -413,7 +413,7 @@ ThreadObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 		Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT)));
 	return TCL_OK;
     }
@@ -1105,7 +1105,7 @@ ThreadFreeProc(
 static int
 ThreadDeleteEvent(
     Tcl_Event *eventPtr,	/* Really ThreadEvent */
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     if (eventPtr->proc == ThreadEventProc) {
 	ckfree(((ThreadEvent *) eventPtr)->script);

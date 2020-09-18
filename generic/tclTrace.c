@@ -183,7 +183,7 @@ typedef struct {
 
 int
 Tcl_TraceObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -276,7 +276,7 @@ Tcl_TraceObjCmd(
 	    return TCL_ERROR;
 	}
 
-	opsList = Tcl_NewObj();
+	TclNewObj(opsList);
 	Tcl_IncrRefCount(opsList);
 	flagOps = TclGetStringFromObj(objv[3], &numFlags);
 	if (numFlags == 0) {
@@ -320,7 +320,7 @@ Tcl_TraceObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "name");
 	    return TCL_ERROR;
 	}
-	resultListPtr = Tcl_NewObj();
+	TclNewObj(resultListPtr);
 	name = Tcl_GetString(objv[2]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
@@ -965,7 +965,7 @@ TraceVariableObjCmd(
 	    return TCL_ERROR;
 	}
 
-	resultListPtr = Tcl_NewObj();
+	TclNewObj(resultListPtr);
 	name = Tcl_GetString(objv[3]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
 	    Tcl_Obj *opObjPtr, *eachTraceObjPtr, *elemObjPtr;
@@ -1848,7 +1848,7 @@ TraceExecutionProc(
 		 * Append result code.
 		 */
 
-		resultCode = Tcl_NewIntObj(code);
+		TclNewIntObj(resultCode, code);
 		resultCodeStr = Tcl_GetString(resultCode);
 		Tcl_DStringAppendElement(&cmd, resultCodeStr);
 		Tcl_DecrRefCount(resultCode);
@@ -1976,7 +1976,7 @@ TraceVarProc(
     int rewind = ((Interp *)interp)->execEnvPtr->rewind;
 
     /*
-     * We might call Tcl_Eval() below, and that might evaluate [trace vdelete]
+     * We might call Tcl_EvalEx() below, and that might evaluate [trace vdelete]
      * which might try to free tvarPtr. We want to use tvarPtr until the end
      * of this function, so we use Tcl_Preserve() and Tcl_Release() to be sure
      * it is not freed while we still need it.

@@ -34,7 +34,7 @@ typedef struct {
     Tcl_UniChar end;
 } Range;
 
-typedef struct CharSet {
+typedef struct {
     int exclude;		/* 1 if this is an exclusion set. */
     int nchars;
     Tcl_UniChar *chars;
@@ -1068,7 +1068,7 @@ Tcl_ScanObjCmd(
 	 * Here no vars were specified, we want a list returned (inline scan)
 	 */
 
-	objPtr = Tcl_NewObj();
+	TclNewObj(objPtr);
 	for (i = 0; i < totalVars; i++) {
 	    if (objs[i] != NULL) {
 		Tcl_ListObjAppendElement(NULL, objPtr, objs[i]);
@@ -1089,12 +1089,12 @@ Tcl_ScanObjCmd(
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
-		objPtr = Tcl_NewWideIntObj(-1);
+		TclNewIndexObj(objPtr, -1);
 	    } else {
 		if (objPtr) {
 		    Tcl_SetListObj(objPtr, 0, NULL);
 		} else {
-		    objPtr = Tcl_NewObj();
+		    TclNewObj(objPtr);
 		}
 	    }
 	} else if (numVars) {

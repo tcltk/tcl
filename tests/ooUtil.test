@@ -10,8 +10,8 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 package require TclOO 1.0.3
-package require tcltest 2
-if {"::tcltest" in [namespace children]} {
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -153,13 +153,13 @@ test ooUtil-1.8 {TIP 478: classmethod in child interp} -setup {
 	oo::class create Table {
 	    superclass ActiveRecord
 	}
-	# This is confirming that this is not the master interpreter
+	# This is confirming that this is not the parent interpreter
 	list [Table find foo bar] [info globals childinterp]
     }
 } -cleanup {
     interp delete $childinterp
 } -result {{::Table called with arguments: foo bar} {}}
-test ooUtil-1.9 {TIP 478: classmethod in safe child interp} -setup {
+test ooUtil-1.9 {TIP 478: classmethod in safe interp} -setup {
     set safeinterp [interp create -safe]
 } -body {
     $safeinterp eval {

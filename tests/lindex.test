@@ -13,16 +13,15 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-set non non
+set minus -
 testConstraint testevalex [llength [info commands testevalex]]
-testConstraint nodep [info exists tcl_precision]
 
 # Tests of Tcl_LindexObjCmd, NOT COMPILED
 
@@ -48,12 +47,12 @@ test lindex-2.3 {multiple indices in list} testevalex {
 test lindex-2.4 {malformed index list} testevalex {
     set x \{
     list [catch { testevalex {lindex {a b c} $x} } result] $result
-} {1 bad\ index\ \"\{\":\ must\ be\ integer?\[+-\]integer?,\ end?\[+-\]integer?\ or\ none}
+} {1 bad\ index\ \"\{\":\ must\ be\ integer?\[+-\]integer?\ or\ end?\[+-\]integer?}
 
 # Indices that are integers or convertible to integers
 
 test lindex-3.1 {integer -1} -constraints testevalex -body {
-    set x ${non}e
+    set x ${minus}1
     list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } -result {{} {}}
 test lindex-3.2 {integer 0} -constraints testevalex -body {
@@ -80,13 +79,13 @@ test lindex-3.7 {indexes don't shimmer wide ints} -body {
     set x [expr {(wide(1)<<31) - 2}]
     list $x [lindex {1 2 3} $x] [incr x] [incr x]
 } -result {2147483646 {} 2147483647 2147483648}
-test lindex-3.8 {compiled with static indices out of range, negative} -constraints nodep -body {
+test lindex-3.8 {compiled with static indices out of range, negative} -body {
     list [lindex {a b c} -1] [lindex {a b c} -2] [lindex {a b c} -3]
 } -result [lrepeat 3 {}]
-test lindex-3.9 {compiled with calculated indices out of range, negative constant} -constraints nodep -body {
+test lindex-3.9 {compiled with calculated indices out of range, negative constant} -body {
     list [lindex {a b c} -1-1] [lindex {a b c} -2+0] [lindex {a b c} -2+1]
 } -result [lrepeat 3 {}]
-test lindex-3.10 {compiled with calculated indices out of range, after end} -constraints nodep -body {
+test lindex-3.10 {compiled with calculated indices out of range, after end} -body {
     list [lindex {a b c} end+1] [lindex {a b c} end+2] [lindex {a b c} end+3]
 } -result [lrepeat 3 {}]
 
@@ -123,7 +122,7 @@ test lindex-4.7 {bad octal} -constraints testevalex -body {
 test lindex-4.8 {bad integer, not octal} testevalex {
     set x end-0a2
     list [catch { testevalex {lindex {a b c} $x} } result] $result
-} {1 {bad index "end-0a2": must be integer?[+-]integer?, end?[+-]integer? or none}}
+} {1 {bad index "end-0a2": must be integer?[+-]integer? or end?[+-]integer?}}
 test lindex-4.9 {obsolete test} testevalex {
     set x end
     list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
@@ -131,11 +130,11 @@ test lindex-4.9 {obsolete test} testevalex {
 test lindex-4.10 {incomplete end-} testevalex {
     set x end-
     list [catch { testevalex {lindex {a b c} $x} } result] $result
-} {1 {bad index "end-": must be integer?[+-]integer?, end?[+-]integer? or none}}
+} {1 {bad index "end-": must be integer?[+-]integer? or end?[+-]integer?}}
 
 test lindex-5.1 {bad second index} testevalex {
     list [catch { testevalex {lindex {a b c} 0 0a2} } result] $result
-} {1 {bad index "0a2": must be integer?[+-]integer?, end?[+-]integer? or none}}
+} {1 {bad index "0a2": must be integer?[+-]integer? or end?[+-]integer?}}
 test lindex-5.2 {good second index} testevalex {
     testevalex {lindex {{a b c} {d e f} {g h i}} 1 2}
 } f
@@ -240,12 +239,12 @@ test lindex-10.3 {multiple indices in list} {
 test lindex-10.4 {malformed index list} {
     set x \{
     list [catch { lindex {a b c} $x } result] $result
-} {1 bad\ index\ \"\{\":\ must\ be\ integer?\[+-\]integer?,\ end?\[+-\]integer?\ or\ none}
+} {1 bad\ index\ \"\{\":\ must\ be\ integer?\[+-\]integer?\ or\ end?\[+-\]integer?}
 
 # Indices that are integers or convertible to integers
 
 test lindex-11.1 {integer -1} {
-    set x ${non}e
+    set x ${minus}1
     catch {
 	list [lindex {a b c} $x] [lindex {a b c} $x]
     } result
@@ -329,7 +328,7 @@ test lindex-12.7 {bad octal} -body {
 test lindex-12.8 {bad integer, not octal} {
     set x end-0a2
     list [catch { lindex {a b c} $x } result] $result
-} {1 {bad index "end-0a2": must be integer?[+-]integer?, end?[+-]integer? or none}}
+} {1 {bad index "end-0a2": must be integer?[+-]integer? or end?[+-]integer?}}
 test lindex-12.9 {obsolete test} {
     set x end
     catch {
@@ -340,11 +339,11 @@ test lindex-12.9 {obsolete test} {
 test lindex-12.10 {incomplete end-} {
     set x end-
     list [catch { lindex {a b c} $x } result] $result
-} {1 {bad index "end-": must be integer?[+-]integer?, end?[+-]integer? or none}}
+} {1 {bad index "end-": must be integer?[+-]integer? or end?[+-]integer?}}
 
 test lindex-13.1 {bad second index} {
     list [catch { lindex {a b c} 0 0a2 } result] $result
-} {1 {bad index "0a2": must be integer?[+-]integer?, end?[+-]integer? or none}}
+} {1 {bad index "0a2": must be integer?[+-]integer? or end?[+-]integer?}}
 test lindex-13.2 {good second index} {
     catch {
 	lindex {{a b c} {d e f} {g h i}} 1 2
@@ -450,7 +449,15 @@ test lindex-17.1 {Bug 1718580} -body {
     lindex a end foo
 } -match glob -result {bad index "foo"*} -returnCodes 1
 
-catch { unset non }
+test lindex-18.0 {nested bytecode execution} -setup {
+    proc demo {i} {lindex {a b c} $i}
+} -body {
+    demo 0+0x10000000000000000
+} -cleanup {
+    rename demo {}
+}
+
+catch { unset minus }
 
 # cleanup
 ::tcltest::cleanupTests

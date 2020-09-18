@@ -9,9 +9,10 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
@@ -63,7 +64,7 @@ test cmdIL-1.11 {Tcl_LsortObjCmd procedure, -index option} -body {
 } -returnCodes error -result {"-index" option must be followed by list index}
 test cmdIL-1.12 {Tcl_LsortObjCmd procedure, -index option} -body {
     lsort -index foo {1 3 2 5}
-} -returnCodes error -result {bad index "foo": must be integer?[+-]integer?, end?[+-]integer? or none}
+} -returnCodes error -result {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?}
 test cmdIL-1.13 {Tcl_LsortObjCmd procedure, -index option} {
     lsort -index end -integer {{2 25} {10 20 50 100} {3 16 42} 1}
 } {1 {2 25} {3 16 42} {10 20 50 100}}
@@ -799,7 +800,7 @@ test cmdIL-8.2 {lremove command: error path} -returnCodes error -body {
 } -result {list element in braces followed by "{}" instead of space}
 test cmdIL-8.3 {lremove command: error path} -returnCodes error -body {
     lremove {a b c} gorp
-} -result {bad index "gorp": must be integer?[+-]integer?, end?[+-]integer? or none}
+} -result {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}
 test cmdIL-8.4 {lremove command: no indices} -body {
     lremove {a b c}
 } -result {a b c}

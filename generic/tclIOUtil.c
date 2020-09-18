@@ -1734,7 +1734,7 @@ Tcl_FSEvalFileEx(
 	}
     }
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
 
     /*
@@ -1870,7 +1870,7 @@ TclNREvalFile(
 	}
     }
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
 
     /*
@@ -2697,7 +2697,7 @@ Tcl_FSGetCwd(
 		 * always be in the 'else' branch below which is simpler.
 		 */
 
-		ClientData cd = (ClientData) Tcl_FSGetNativePath(norm);
+		void *cd = (void *) Tcl_FSGetNativePath(norm);
 
 		FsUpdateCwd(norm, TclNativeDupInternalRep(cd));
 		Tcl_DecrRefCount(norm);
@@ -3765,7 +3765,7 @@ Tcl_Obj *
 Tcl_FSListVolumes(void)
 {
     FilesystemRecord *fsRecPtr;
-    Tcl_Obj *resultPtr = Tcl_NewObj();
+    Tcl_Obj *resultPtr;
 
     /*
      * Call each "listVolumes" function of each registered filesystem in
@@ -3773,6 +3773,7 @@ Tcl_FSListVolumes(void)
      * has succeeded.
      */
 
+    TclNewObj(resultPtr);
     fsRecPtr = FsGetFirstFilesystem();
     Claim();
     while (fsRecPtr != NULL) {
@@ -3832,7 +3833,7 @@ FsListMounts(
 	if (fsRecPtr->fsPtr != &tclNativeFilesystem &&
 		fsRecPtr->fsPtr->matchInDirectoryProc != NULL) {
 	    if (resultPtr == NULL) {
-		resultPtr = Tcl_NewObj();
+		TclNewObj(resultPtr);
 	    }
 	    fsRecPtr->fsPtr->matchInDirectoryProc(NULL, resultPtr, pathPtr,
 		    pattern, &mountsOnly);
@@ -3903,7 +3904,7 @@ Tcl_FSSplitPath(
      * For example, 'ftp://' is a valid drive name.
      */
 
-    result = Tcl_NewObj();
+    TclNewObj(result);
     p = Tcl_GetString(pathPtr);
     Tcl_ListObjAppendElement(NULL, result,
 	    Tcl_NewStringObj(p, driveNameLength));
@@ -4085,7 +4086,7 @@ TclFSNonnativePathType(
 		    if (pathLen < len) {
 			continue;
 		    }
-		    if (strncmp(strVol, path, (size_t) len) == 0) {
+		    if (strncmp(strVol, path, len) == 0) {
 			type = TCL_PATH_ABSOLUTE;
 			if (filesystemPtrPtr != NULL) {
 			    *filesystemPtrPtr = fsRecPtr->fsPtr;
@@ -4488,7 +4489,7 @@ Tcl_FSGetFileSystemForPath(
 	return NULL;
     }
 
-    /* Start with an up-to-date copy of the master filesystem. */
+    /* Start with an up-to-date copy of the filesystem. */
     fsRecPtr = FsGetFirstFilesystem();
     Claim();
 

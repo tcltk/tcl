@@ -241,7 +241,7 @@ TclCompileStringCatCmd(
     folded = NULL;
     wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     for (i = 1; i < numWords; i++) {
-	obj = Tcl_NewObj();
+	TclNewObj(obj);
 	if (TclWordKnownAtCompileTime(wordTokenPtr, obj)) {
 	    if (folded) {
 		Tcl_AppendObjToObj(folded, obj);
@@ -506,16 +506,16 @@ TclCompileStringIsCmd(
     static const char *const isClasses[] = {
 	"alnum",	"alpha",	"ascii",	"control",
 	"boolean",	"dict", "digit",	"double",	"entier",
-	"false",	"graph",	"index",	"integer",	"list",
-	"lower",	"none",	"print",	"punct",	"space",
+	"false",	"graph",	"integer",	"list",
+	"lower",	"print",	"punct",	"space",
 	"true",		"upper",	"wideinteger",	"wordchar",
 	"xdigit",	NULL
     };
     enum isClasses {
 	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
 	STR_IS_BOOL,	STR_IS_DICT, STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_ENTIER,
-	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INDEX,	STR_IS_INT,	STR_IS_LIST,
-	STR_IS_LOWER,	STR_IS_NONE,	STR_IS_PRINT,	STR_IS_PUNCT,	STR_IS_SPACE,
+	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,	STR_IS_LIST,
+	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,	STR_IS_SPACE,
 	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_WIDE,	STR_IS_WORD,
 	STR_IS_XDIGIT
     };
@@ -526,7 +526,7 @@ TclCompileStringIsCmd(
     if (parsePtr->numWords < 3 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
     }
-    isClass = Tcl_NewObj();
+    TclNewObj(isClass);
     if (!TclWordKnownAtCompileTime(tokenPtr, isClass)) {
 	Tcl_DecrRefCount(isClass);
 	return TCL_ERROR;
@@ -711,11 +711,6 @@ TclCompileStringIsCmd(
 	return TCL_OK;
     }
 
-    case STR_IS_INDEX:
-    case STR_IS_NONE:
-	/* Not implemented yet */
-	return TCL_ERROR;
-	break;
     case STR_IS_INT:
     case STR_IS_WIDE:
     case STR_IS_ENTIER:
@@ -935,7 +930,7 @@ TclCompileStringMapCmd(
     }
     mapTokenPtr = TokenAfter(parsePtr->tokenPtr);
     stringTokenPtr = TokenAfter(mapTokenPtr);
-    mapObj = Tcl_NewObj();
+    TclNewObj(mapObj);
     Tcl_IncrRefCount(mapObj);
     if (!TclWordKnownAtCompileTime(mapTokenPtr, mapObj)) {
 	Tcl_DecrRefCount(mapObj);
@@ -1466,7 +1461,7 @@ TclCompileSubstCmd(
     objv = (Tcl_Obj **)TclStackAlloc(interp, /*numArgs*/ numOpts * sizeof(Tcl_Obj *));
 
     for (objc = 0; objc < /*numArgs*/ numOpts; objc++) {
-	objv[objc] = Tcl_NewObj();
+	TclNewObj(objv[objc]);
 	Tcl_IncrRefCount(objv[objc]);
 	if (!TclWordKnownAtCompileTime(wordTokenPtr, objv[objc])) {
 	    objc++;
@@ -2615,18 +2610,19 @@ DisassembleJumptableInfo(
     TCL_UNUSED(unsigned int))
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
-    Tcl_Obj *mapping = Tcl_NewObj();
+    Tcl_Obj *mapping;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     const char *keyPtr;
-    int offset;
+    size_t offset;
 
+    TclNewObj(mapping);
     hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
 	keyPtr = (const char *)Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 	Tcl_DictObjPut(NULL, mapping, Tcl_NewStringObj(keyPtr, -1),
-		Tcl_NewIntObj(offset));
+		Tcl_NewWideIntObj(offset));
     }
     Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("mapping", -1), mapping);
 }
@@ -3628,8 +3624,9 @@ TclCompileUnsetCmd(
      */
 
     for (i=1,varTokenPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
-	Tcl_Obj *leadingWord = Tcl_NewObj();
+	Tcl_Obj *leadingWord;
 
+	TclNewObj(leadingWord);
 	varTokenPtr = TokenAfter(varTokenPtr);
 	if (!TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
 	    TclDecrRefCount(leadingWord);

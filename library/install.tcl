@@ -104,7 +104,7 @@ proc ::practcl::_pkgindex_directory {path} {
     }
     if {![regexp "package.*ifneeded" $thisline]} {
       # This package index contains arbitrary code
-      # source instead of trying to add it to the master
+      # source instead of trying to add it to the main
       # package index
       if {$trace} { puts "[file dirname $pkgidxfile] Arbitrary code $thisline" }
       return {source [file join $dir pkgIndex.tcl]}

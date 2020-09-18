@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -206,20 +206,20 @@ test scan-4.13 {Tcl_ScanObjCmd, width specifiers} {
 } {5 abc 123 456.0 789 012}
 test scan-4.14 {Tcl_ScanObjCmd, underflow} {
     set x {}
-    list [scan {a} {a%d} x] $x
-} {-1 {}}
+    list [expr {[scan {a} {a%d} x]<0}] $x
+} {1 {}}
 test scan-4.15 {Tcl_ScanObjCmd, underflow} {
     set x {}
-    list [scan {} {a%d} x] $x
-} {-1 {}}
+    list [expr {[scan {} {a%d} x]<0}] $x
+} {1 {}}
 test scan-4.16 {Tcl_ScanObjCmd, underflow} {
     set x {}
     list [scan {ab} {a%d} x] $x
 } {0 {}}
 test scan-4.17 {Tcl_ScanObjCmd, underflow} {
     set x {}
-    list [scan {a   } {a%d} x] $x
-} {-1 {}}
+    list [expr {[scan {a   } {a%d} x]<0}] $x
+} {1 {}}
 test scan-4.18 {Tcl_ScanObjCmd, skipping whitespace} {
     list [scan {  b} {%c%s} x y] $x $y
 } {2 32 b}
@@ -348,8 +348,8 @@ test scan-4.43 {Tcl_ScanObjCmd, integer scanning, odd cases} -setup {
 test scan-4.44 {Tcl_ScanObjCmd, integer scanning, odd cases} -setup {
     set x {}
 } -body {
-    list [scan {+} {%i} x] $x
-} -result {-1 {}}
+    list [expr {[scan {+} {%i} x]<0}] $x
+} -result {1 {}}
 test scan-4.45 {Tcl_ScanObjCmd, integer scanning, odd cases} -setup {
     set x {}
 } -body {
@@ -395,8 +395,8 @@ test scan-4.54 {Tcl_ScanObjCmd, float scanning} {
 test scan-4.55 {Tcl_ScanObjCmd, odd cases} -setup {
     set x {}
 } -body {
-    list [scan {+} %f x] $x
-} -result {-1 {}}
+    list [expr {[scan {+} %f x]<0}] $x
+} -result {1 {}}
 test scan-4.56 {Tcl_ScanObjCmd, odd cases} -setup {
     set x {}
 } -body {

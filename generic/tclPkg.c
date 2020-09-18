@@ -285,7 +285,7 @@ TclPkgFileSeen(
 	Tcl_Obj *list;
 
 	if (isNew) {
-	    list = Tcl_NewObj();
+	    TclNewObj(list);
 	    Tcl_SetHashValue(entry, list);
 	    Tcl_IncrRefCount(list);
 	} else {
@@ -905,8 +905,9 @@ SelectPackageFinal(
 	    }
 	}
     } else if (result != TCL_ERROR) {
-	Tcl_Obj *codePtr = Tcl_NewIntObj(result);
+	Tcl_Obj *codePtr;
 
+	TclNewIntObj(codePtr, result);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"attempt to provide package %s %s failed:"
 		" bad return code: %s",
@@ -1240,7 +1241,7 @@ TclNRPackageObjCmd(
 	} else {
 	    Tcl_Obj *resultObj;
 
-	    resultObj = Tcl_NewObj();
+	    TclNewObj(resultObj);
 	    tablePtr = &iPtr->packageTable;
 	    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
 		    hPtr = Tcl_NextHashEntry(&search)) {
@@ -1480,7 +1481,7 @@ TclNRPackageObjCmd(
 	 */
 
 	Tcl_SetObjResult(interp,
-		Tcl_NewIntObj(CompareVersions(iva, ivb, NULL)));
+		Tcl_NewWideIntObj(CompareVersions(iva, ivb, NULL)));
 	ckfree(iva);
 	ckfree(ivb);
 	break;
@@ -1489,8 +1490,9 @@ TclNRPackageObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "package");
 	    return TCL_ERROR;
 	} else {
-	    Tcl_Obj *resultObj = Tcl_NewObj();
+	    Tcl_Obj *resultObj;
 
+	    TclNewObj(resultObj);
 	    argv2 = TclGetString(objv[2]);
 	    hPtr = Tcl_FindHashEntry(&iPtr->packageTable, argv2);
 	    if (hPtr != NULL) {

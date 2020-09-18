@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -20,7 +20,6 @@ if {"::tcltest" ni [namespace children]} {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testpurebytesobj [llength [info commands testpurebytesobj]]
-testConstraint nodep [info exists tcl_precision]
 
 test lrange-1.1 {range of list elements} {
     lrange {a b c d} 1 2
@@ -43,10 +42,10 @@ test lrange-1.6 {range of list elements} {
 test lrange-1.7 {range of list elements} {
     lrange {a b c d e} -1 2
 } {a b c}
-test lrange-1.8 {range of list elements} nodep {
+test lrange-1.8 {range of list elements} {
     lrange {a b c d e} -2 -1
 } {}
-test lrange-1.9 {range of list elements} nodep {
+test lrange-1.9 {range of list elements} {
     lrange {a b c d e} -2 end
 } {a b c d e}
 test lrange-1.10 {range of list elements} {
@@ -80,10 +79,10 @@ test lrange-2.2 {error conditions} {
 } {1 {wrong # args: should be "lrange list first last"}}
 test lrange-2.3 {error conditions} {
     list [catch {lrange a b 6} msg] $msg
-} {1 {bad index "b": must be integer?[+-]integer?, end?[+-]integer? or none}}
+} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
 test lrange-2.4 {error conditions} {
     list [catch {lrange a 0 enigma} msg] $msg
-} {1 {bad index "enigma": must be integer?[+-]integer?, end?[+-]integer? or none}}
+} {1 {bad index "enigma": must be integer?[+-]integer? or end?[+-]integer?}}
 test lrange-2.5 {error conditions} {
     list [catch {lrange "a \{b c" 3 4} msg] $msg
 } {1 {unmatched open brace in list}}
@@ -96,57 +95,51 @@ test lrange-3.1 {Bug 3588366: end-offsets before start} {
 	lrange $l 0 end-5
     }} {1 2 3 4 5}
 } {}
-test lrange-3.2 {compiled with static indices out of range, negative} nodep {
+test lrange-3.2 {compiled with static indices out of range, negative} {
     list [lrange {a b c} -1 -2] [lrange {a b c} -2 -1] [lrange {a b c} -3 -2] [lrange {a b c} -2 -3]
 } [lrepeat 4 {}]
-test lrange-3.3 {compiled with calculated indices out of range, negative constant} nodep {
+test lrange-3.3 {compiled with calculated indices out of range, negative constant} {
     list [lrange {a b c} 0-1 -1-1] [lrange {a b c} -2+0 0-1] [lrange {a b c} -2-1 -2+1] [lrange {a b c} -2+1 -2-1]
 } [lrepeat 4 {}]
-test lrange-3.4 {compiled with calculated indices out of range, after end} -constraints nodep -body {
+test lrange-3.4 {compiled with calculated indices out of range, after end} -body {
     list [lrange {a b c} end+1 end+2] [lrange {a b c} end+2 end+1] [lrange {a b c} end+2 end+3] [lrange {a b c} end+3 end+2]
 } -result [lrepeat 4 {}]
 
-test lrange-3.5 {compiled with calculated indices, start out of range (negative)} nodep {
+test lrange-3.5 {compiled with calculated indices, start out of range (negative)} {
     list [lrange {a b c} -1 1] [lrange {a b c} -1+0 end-1] [lrange {a b c} -2 1] [lrange {a b c} -2+0 0+1]
 } [lrepeat 4 {a b}]
 test lrange-3.6 {compiled with calculated indices, end out of range (after end)} {
     list [lrange {a b c} 1 end+1] [lrange {a b c} 1+0 2+1] [lrange {a b c} 1 end+1] [lrange {a b c} end-1 3+1]
 } [lrepeat 4 {b c}]
 
-test lrange-3.7a {compiled on empty not canonical list (with static and dynamic indices), regression test, bug [cc1e91552c]} nodep {
+test lrange-3.7a {compiled on empty not canonical list (with static and dynamic indices), regression test, bug [cc1e91552c]} {
     list [lrange { } 0 1] [lrange [format %c 32] 0 1] [lrange [set a { }] 0 1] \
 	 [lrange { } 0-1 end+1] [lrange [format %c 32] 0-1 end+1] [lrange $a 0-1 end+1]
 } [lrepeat 6 {}]
-test lrange-3.7b {not compiled on empty not canonical list (with static and dynamic indices), regression test, bug [cc1e91552c]} -constraints {
-    nodep
-} -body {
+test lrange-3.7b {not compiled on empty not canonical list (with static and dynamic indices), regression test, bug [cc1e91552c]} -body {
     set cmd lrange
     list [$cmd { } 0 1] [$cmd [format %c 32] 0 1] [$cmd [set a { }] 0 1] \
 	 [$cmd { } 0-1 end+1] [$cmd [format %c 32] 0-1 end+1] [$cmd $a 0-1 end+1]
 } -result [lrepeat 6 {}]
 # following 4 tests could cause a segfault on empty non-lists with tclEmptyStringRep
 # (as before the fix [58c46e74b931d3a1]):
-test lrange-3.7a.2 {compiled on empty not list object, 2nd regression test, bug [cc1e91552c]} -constraints {
-    nodep
-} -body {
+test lrange-3.7a.2 {compiled on empty not list object, 2nd regression test, bug [cc1e91552c]} {
     list [lrange {} 0 1] [lrange [lindex a -1] 0 1] [lrange [set a {}] 0 1] \
 	 [lrange {} 0-1 end+1] [lrange [lindex a -1] 0-1 end+1] [lrange $a 0-1 end+1]
-} -result [lrepeat 6 {}]
-test lrange-3.7b.2 {not compiled on empty not list object, 2nd regression test, bug [cc1e91552c]} -constraints {
-    nodep
-} -body {
+} [lrepeat 6 {}]
+test lrange-3.7b.2 {not compiled on empty not list object, 2nd regression test, bug [cc1e91552c]} -body {
     set cmd lrange
     list [$cmd {} 0 1] [$cmd [lindex a -1] 0 1] [$cmd [set a {}] 0 1] \
 	 [$cmd {} 0-1 end+1] [$cmd [lindex a -1] 0-1 end+1] [$cmd $a 0-1 end+1]
 } -result [lrepeat 6 {}]
 test lrange-3.7c.2 {compiled on empty pure bytes object, 2nd regression test, bug [cc1e91552c]} -constraints {
-    testpurebytesobj nodep
+    testpurebytesobj
 } -body {
     list [lrange [testpurebytesobj] 0 1] [lrange [testpurebytesobj { }] 0 1] [lrange [set a [testpurebytesobj {}]] 0 1] \
 	 [lrange [testpurebytesobj] 0-1 end+1] [lrange [testpurebytesobj { }] 0-1 end+1] [lrange $a 0-1 end+1]
 } -result [lrepeat 6 {}]
 test lrange-3.7d.2 {not compiled on empty pure bytes object, 2nd regression test, bug [cc1e91552c]} -constraints {
-    testpurebytesobj nodep
+    testpurebytesobj
 } -body {
     set cmd lrange
     list [$cmd [testpurebytesobj] 0 1] [$cmd [testpurebytesobj { }] 0 1] [$cmd [set a [testpurebytesobj {}]] 0 1] \
@@ -219,7 +212,7 @@ test lrange-4.4 {lrange pure promise} -body {
 # not whether any of them is correct.
 apply {{} {
     set lss     {{} {a} {a b c} {a b c d}}
-    set idxs    {none -1 0 1 2 3 end-3 end-2 end-1 end end+1}
+    set idxs    {-2 -1 0 1 2 3 end-3 end-2 end-1 end end+1 end+2}
     set lrange  lrange
 
     foreach ls $lss {

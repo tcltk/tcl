@@ -319,7 +319,7 @@ mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
     if (maxlen < 0) {
 	return MP_VAL;
     }
-    return TclBN_mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
+    return TclBN_mp_to_radix(a, str, maxlen, NULL, radix);
 }
 
 #define TclSetStartupScriptPath setStartupScriptPath
@@ -450,7 +450,7 @@ void *TclWinGetTclInstance()
 int
 TclpGetPid(Tcl_Pid pid)
 {
-    return (int) (size_t) pid;
+    return (int)(size_t)pid;
 }
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
@@ -663,6 +663,7 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclBackgroundException Tcl_BackgroundException
 #   define TclSetStartupScript Tcl_SetStartupScript
 #   define TclGetStartupScript Tcl_GetStartupScript
+#   define TclGetIntForIndex Tcl_GetIntForIndex
 #   define TclCreateNamespace Tcl_CreateNamespace
 #   define TclDeleteNamespace Tcl_DeleteNamespace
 #   define TclAppendExportList Tcl_AppendExportList
@@ -677,16 +678,6 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclGetCommandFullName Tcl_GetCommandFullName
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
-
-#   define TclGetIntForIndex GetIntForIndex
-static int TclGetIntForIndex(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr,
-    int endValue,
-	int *indexPtr)
-{
-    return Tcl_GetIntForIndex(interp, objPtr, endValue, 0, indexPtr);
-}
 
 static int
 seekOld(
@@ -983,7 +974,7 @@ static const TclIntStubs tclIntStubs = {
     TclResetRewriteEnsemble, /* 247 */
     TclCopyChannel, /* 248 */
     TclDoubleDigits, /* 249 */
-    TclSetSlaveCancelFlags, /* 250 */
+    TclSetChildCancelFlags, /* 250 */
     TclRegisterLiteral, /* 251 */
     TclPtrGetVar, /* 252 */
     TclPtrSetVar, /* 253 */
@@ -1321,7 +1312,7 @@ const TclStubs tclStubs = {
     Tcl_CreateInterp, /* 94 */
     Tcl_CreateMathFunc, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
-    Tcl_CreateSlave, /* 97 */
+    Tcl_CreateChild, /* 97 */
     Tcl_CreateTimerHandler, /* 98 */
     Tcl_CreateTrace, /* 99 */
     Tcl_DeleteAssocData, /* 100 */
@@ -1388,7 +1379,7 @@ const TclStubs tclStubs = {
     Tcl_GetErrno, /* 161 */
     Tcl_GetHostName, /* 162 */
     Tcl_GetInterpPath, /* 163 */
-    Tcl_GetMaster, /* 164 */
+    Tcl_GetParent, /* 164 */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
 #if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
@@ -1404,7 +1395,7 @@ const TclStubs tclStubs = {
     Tcl_Gets, /* 169 */
     Tcl_GetsObj, /* 170 */
     Tcl_GetServiceMode, /* 171 */
-    Tcl_GetSlave, /* 172 */
+    Tcl_GetChild, /* 172 */
     Tcl_GetStdChannel, /* 173 */
     Tcl_GetStringResult, /* 174 */
     Tcl_GetVar, /* 175 */

@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -46,7 +46,7 @@ test lpop-1.6 {error conditions} -returnCodes error -body {
 test lpop-1.7 {error conditions} -returnCodes error -body {
     set l "x y"
     lpop l {}
-} -match glob -result {index "" out of range}
+} -match glob -result {bad index *}
 test lpop-1.8 {error conditions} -returnCodes error -body {
     set l "x y"
     lpop l 0 0 0 0 1

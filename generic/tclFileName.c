@@ -598,7 +598,7 @@ Tcl_SplitPath(
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
 	str = TclGetStringFromObj(eltPtr, &len);
-	memcpy(p, str, len+1);
+	memcpy(p, str, len + 1);
 	p += len+1;
     }
 
@@ -644,12 +644,13 @@ SplitUnixPath(
 {
     int length;
     const char *origPath = path, *elementStart;
-    Tcl_Obj *result = Tcl_NewObj();
+    Tcl_Obj *result;
 
     /*
      * Deal with the root directory as a special case.
      */
 
+    TclNewObj(result);
     if (*path == '/') {
 	Tcl_Obj *rootElt;
 	++path;
@@ -735,9 +736,10 @@ SplitWinPath(
     const char *p, *elementStart;
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
     Tcl_DString buf;
-    Tcl_Obj *result = Tcl_NewObj();
+    Tcl_Obj *result;
     Tcl_DStringInit(&buf);
 
+    TclNewObj(result);
     p = ExtractWinRoot(path, &buf, 0, &type);
 
     /*
@@ -977,7 +979,7 @@ Tcl_JoinPath(
     Tcl_DString *resultPtr)	/* Pointer to previously initialized DString */
 {
     int i, len;
-    Tcl_Obj *listObj = Tcl_NewObj();
+    Tcl_Obj *listObj;
     Tcl_Obj *resultObj;
     const char *resultStr;
 
@@ -985,6 +987,7 @@ Tcl_JoinPath(
      * Build the list of paths.
      */
 
+    TclNewObj(listObj);
     for (i = 0; i < argc; i++) {
 	Tcl_ListObjAppendElement(NULL, listObj,
 		Tcl_NewStringObj(argv[i], -1));
@@ -2445,7 +2448,7 @@ DoGlob(
 		int len;
 		const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
-		if (strchr(separators, joined[len-1]) == NULL) {
+		if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
 		}
 	    }
@@ -2482,7 +2485,7 @@ DoGlob(
 	    int len;
 	    const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
-	    if (strchr(separators, joined[len-1]) == NULL) {
+	    if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		if (Tcl_FSGetPathType(pathPtr) != TCL_PATH_VOLUME_RELATIVE) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
 		}

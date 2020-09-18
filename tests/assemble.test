@@ -31,7 +31,6 @@ proc fillTables {} {
     return $s
 }
 
-testConstraint nodep [info exists tcl_precision]
 testConstraint memory [llength [info commands memory]]
 if {[testConstraint memory]} {
     proc getbytes {} {
@@ -1560,10 +1559,10 @@ test assemble-15.6 {listIndexImm} -body {
 test assemble-15.7 {listIndexImm} -body {
     assemble {push {a b c}; listIndexImm end}
 } -result c
-test assemble-15.8 {listIndexImm} -constraints nodep -body {
+test assemble-15.8 {listIndexImm} -body {
     assemble {push {a b c}; listIndexImm end+2}
 } -result {}
-test assemble-15.9 {listIndexImm} -constraints nodep -body {
+test assemble-15.9 {listIndexImm} -body {
     assemble {push {a b c}; listIndexImm -1-1}
 } -result {}
 

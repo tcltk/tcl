@@ -8,7 +8,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -23,7 +23,7 @@ testConstraint testdoubledigits [llength [info commands testdoubledigits]]
 testConstraint testprint [llength [info commands testprint]]
 
 testConstraint precision [expr {![catch {set saved_precision $::tcl_precision}]}]
-testConstraint nodep [info exists tcl_precision]
+
 
 # Big test for correct ordering of data in [expr]
 
@@ -692,7 +692,7 @@ test util-9.18 {Tcl_GetIntForIndex} {
     string index abcd { -1--2 }
 } b
 test util-9.19 {Tcl_GetIntForIndex} -body {
-    string index a _
+    string index a {}
 } -returnCodes error -match glob -result *
 test util-9.20 {Tcl_GetIntForIndex} -body {
     string index a { }
@@ -775,17 +775,17 @@ test util-9.43 {Tcl_GetIntForIndex} -body {
 test util-9.44 {Tcl_GetIntForIndex} -body {
     string index a 0+1000000000000
 } -result {}
-test util-9.45 {Tcl_GetIntForIndex} -constraints nodep -body {
+test util-9.45 {Tcl_GetIntForIndex} -body {
     string index abcd end+2305843009213693950
 } -result {}
-test util-9.46 {Tcl_GetIntForIndex} -constraints nodep -body {
+test util-9.46 {Tcl_GetIntForIndex} -body {
     string index abcd end+4294967294
 } -result {}
 # TIP 502
 test util-9.47 {Tcl_GetIntForIndex} -body {
     string index abcd 0x10000000000000000
 } -result {}
-test util-9.48 {Tcl_GetIntForIndex} nodep {
+test util-9.48 {Tcl_GetIntForIndex} {
     string index abcd -0x10000000000000000
 } {}
 test util-9.49 {Tcl_GetIntForIndex} -body {
@@ -815,9 +815,12 @@ test util-9.56 {Tcl_GetIntForIndex} -body {
 test util-9.57 {Tcl_GetIntForIndex} {
     string index abcd end+-0x10000000000000000
 } {}
-test util-9.58 {Tcl_GetIntForIndex} -constraints nodep -body {
+test util-9.58 {Tcl_GetIntForIndex} -body {
     string index abcd end--0x8000000000000000
 } -result {}
+test util-9.59 {Tcl_GetIntForIndex} {
+    string index abcd 0-0x10000000000000000
+} {}
 
 test util-10.1 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
     convertDouble 0x0000000000000000
