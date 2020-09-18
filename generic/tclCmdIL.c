@@ -3518,7 +3518,8 @@ Tcl_LsearchObjCmd(
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
-		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-1));
+		TclNewIndexObj(itemPtr, -1);
+		Tcl_SetObjResult(interp, itemPtr);
 	    }
 	    goto done;
 	}
@@ -3648,7 +3649,7 @@ Tcl_LsearchObjCmd(
 		 * our first match might not be the first occurrence.
 		 * Consider: 0 0 0 1 1 1 2 2 2
 		 *
-		 * To maintain consistancy with standard lsearch semantics, we
+		 * To maintain consistency with standard lsearch semantics, we
 		 * must find the leftmost occurrence of the pattern in the
 		 * list. Thus we don't just stop searching here. This
 		 * variation means that a search always makes log n
@@ -3806,10 +3807,12 @@ Tcl_LsearchObjCmd(
 	    } else if (returnSubindices) {
 		int j;
 
-		itemPtr = TclNewWideIntObjFromSize(i+groupOffset);
+		TclNewIndexObj(itemPtr, i+groupOffset);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
-		    Tcl_ListObjAppendElement(interp, itemPtr, TclNewWideIntObjFromSize(
-			    TclIndexDecode(sortInfo.indexv[j], listc)));
+		    Tcl_Obj *elObj;
+		    size_t elValue = TclIndexDecode(sortInfo.indexv[j], listc);
+		    TclNewIndexObj(elObj, elValue);
+		    Tcl_ListObjAppendElement(interp, itemPtr, elObj);
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 	    } else {
@@ -3828,14 +3831,18 @@ Tcl_LsearchObjCmd(
 	if (returnSubindices) {
 	    int j;
 
-	    itemPtr = TclNewWideIntObjFromSize(index+groupOffset);
+	    TclNewIndexObj(itemPtr, index+groupOffset);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		Tcl_ListObjAppendElement(interp, itemPtr, TclNewWideIntObjFromSize(
-			TclIndexDecode(sortInfo.indexv[j], listc)));
+		Tcl_Obj *elObj;
+		size_t elValue = TclIndexDecode(sortInfo.indexv[j], listc);
+		TclNewIndexObj(elObj, elValue);
+		Tcl_ListObjAppendElement(interp, itemPtr, elObj);
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {
-	    Tcl_SetObjResult(interp, TclNewWideIntObjFromSize((size_t)index));
+		Tcl_Obj *elObj;
+		TclNewIndexObj(elObj, index);
+	    Tcl_SetObjResult(interp, elObj);
 	}
     } else if (index < 0) {
 	/*
@@ -4421,7 +4428,7 @@ Tcl_LsortObjCmd(
 		idx = elementPtr->payload.index;
 		for (j = 0; j < groupSize; j++) {
 		    if (indices) {
-			objPtr = TclNewWideIntObjFromSize(idx + j - groupOffset);
+			TclNewIndexObj(objPtr, idx + j - groupOffset);
 			newArray[i++] = objPtr;
 			Tcl_IncrRefCount(objPtr);
 		    } else {
@@ -4433,7 +4440,7 @@ Tcl_LsortObjCmd(
 	    }
 	} else if (indices) {
 	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
-		objPtr = TclNewWideIntObjFromSize(elementPtr->payload.index);
+		TclNewIndexObj(objPtr, elementPtr->payload.index);
 		newArray[i++] = objPtr;
 		Tcl_IncrRefCount(objPtr);
 	    }

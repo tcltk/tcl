@@ -3456,6 +3456,7 @@ TclStringFirst(
     size_t lh = 0, ln = Tcl_GetCharLength(needle);
     size_t value = TCL_INDEX_NONE;
     Tcl_UniChar *check, *end, *uh, *un;
+    Tcl_Obj *obj;
 
     if (start == TCL_INDEX_NONE) {
 	start = 0;
@@ -3531,7 +3532,8 @@ TclStringFirst(
 	}
     }
   firstEnd:
-    return TclNewWideIntObjFromSize(value);
+    TclNewIndexObj(obj, value);
+    return obj;
 }
 
 /*
@@ -3561,6 +3563,7 @@ TclStringLast(
     size_t lh = 0, ln = Tcl_GetCharLength(needle);
     size_t value = TCL_INDEX_NONE;
     Tcl_UniChar *check, *uh, *un;
+    Tcl_Obj *obj;
 
     if (ln == 0) {
 	/*
@@ -3616,7 +3619,8 @@ TclStringLast(
 	check--;
     }
   lastEnd:
-    return TclNewWideIntObjFromSize(value);
+    TclNewIndexObj(obj, value);
+    return obj;
 }
 
 /*
