@@ -27,7 +27,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-foreach i [interp slaves] {
+foreach i [interp children] {
     interp delete $i
 }
 
@@ -62,16 +62,16 @@ testConstraint TcltestPackage [expr {![catch {package require Tcltest}]}]
 
 test safe-1.1 {safe::interpConfigure syntax} -returnCodes error -body {
     safe::interpConfigure
-} -result {no value given for parameter "slave" (use -help for full usage) :
-    slave name () name of the slave}
+} -result {no value given for parameter "child" (use -help for full usage) :
+    child name () name of the child}
 test safe-1.2 {safe::interpCreate syntax} -returnCodes error -body {
     safe::interpCreate -help
 } -result {Usage information:
     Var/FlagName  Type     Value   Help
     ------------  ----     -----   ----
     (-help                         gives this help)
-    ?slave?       name     ()      name of the slave (optional)
-    -accessPath   list     ()      access path for the slave
+    ?child?       name     ()      name of the child (optional)
+    -accessPath   list     ()      access path for the child
     -noStatics    boolflag (false) prevent loading of statically linked pkgs
     -statics      boolean  (true)  loading of statically linked pkgs
     -nestedLoadOk boolflag (false) allow nested loading
@@ -80,7 +80,7 @@ test safe-1.2 {safe::interpCreate syntax} -returnCodes error -body {
 test safe-1.3 {safe::interpInit syntax} -returnCodes error -body {
     safe::interpInit -noStatics
 } -result {bad value "-noStatics" for parameter
-    slave name () name of the slave}
+    child name () name of the child}
 
 test safe-2.1 {creating interpreters, should have no aliases} emptyTest {
     # Disabled this test.  It tests nothing sensible.  [Bug 999612]
@@ -175,7 +175,7 @@ test safe-4.6 {safe::interpDelete, indirectly} -setup {
 # A replacement test using example files is "safe-9.8".
 # Tests 5.* test the example files before using them to test safe interpreters.
 
-test safe-5.1 {example tclIndex commands, test in master interpreter} -setup {
+test safe-5.1 {example tclIndex commands, test in parent interpreter} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $TestsDir auto0 auto1] [file join $TestsDir auto0 auto2]
 } -body {
@@ -189,7 +189,7 @@ test safe-5.1 {example tclIndex commands, test in master interpreter} -setup {
     set ::auto_path $tmpAutoPath
     auto_reset
 } -match glob -result {0 ok1 0 ok2}
-test safe-5.2 {example tclIndex commands, negative test in master interpreter} -setup {
+test safe-5.2 {example tclIndex commands, negative test in parent interpreter} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $TestsDir auto0]
 } -body {
@@ -203,7 +203,7 @@ test safe-5.2 {example tclIndex commands, negative test in master interpreter} -
     set ::auto_path $tmpAutoPath
     auto_reset
 } -match glob -result {1 {invalid command name "report1"} 1 {invalid command name "report2"}}
-test safe-5.3 {example pkgIndex.tcl packages, test in master interpreter, child directories} -setup {
+test safe-5.3 {example pkgIndex.tcl packages, test in parent interpreter, child directories} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $TestsDir auto0]
 } -body {
@@ -220,7 +220,7 @@ test safe-5.3 {example pkgIndex.tcl packages, test in master interpreter, child 
     catch {rename HeresPackage1 {}}
     catch {rename HeresPackage2 {}}
 } -match glob -result {0 1.2.3 0 2.3.4 0 OK1 0 OK2}
-test safe-5.4 {example pkgIndex.tcl packages, test in master interpreter, main directories} -setup {
+test safe-5.4 {example pkgIndex.tcl packages, test in parent interpreter, main directories} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $TestsDir auto0 auto1] \
                         [file join $TestsDir auto0 auto2]
@@ -238,7 +238,7 @@ test safe-5.4 {example pkgIndex.tcl packages, test in master interpreter, main d
     catch {rename HeresPackage1 {}}
     catch {rename HeresPackage2 {}}
 } -match glob -result {0 1.2.3 0 2.3.4 0 OK1 0 OK2}
-test safe-5.5 {example modules packages, test in master interpreter, replace path} -setup {
+test safe-5.5 {example modules packages, test in parent interpreter, replace path} -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
@@ -264,7 +264,7 @@ test safe-5.5 {example modules packages, test in master interpreter, replace pat
     catch {namespace delete ::test0}
     catch {namespace delete ::mod1}
 } -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
-test safe-5.6 {example modules packages, test in master interpreter, append to path} -setup {
+test safe-5.6 {example modules packages, test in parent interpreter, append to path} -setup {
     tcl::tm::path add [file join $TestsDir auto0 modules]
 } -body {
     # Try to load the modules and run a command from each one.
@@ -324,7 +324,7 @@ test safe-7.1 {tests that everything works at high level} -setup {
 } -body {
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
-    #  package require in a slave works like in the master)
+    #  package require in a child works like in the parent)
     set v [interp eval $i {package require SafeTestPackage1}]
     # no error shall occur:
     interp eval $i {HeresPackage1}
@@ -337,9 +337,9 @@ test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -setup {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p* (not p1 if master has a module path)
+    # should add as p* (not p1 if parent has a module path)
     set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
-    # should add as p* (not p2 if master has a module path)
+    # should add as p* (not p2 if parent has a module path)
     set token3 [safe::interpAddToAccessPath $i [file join $TestsDir auto0]]
     set confA [safe::interpConfigure $i]
     set mappA [mapList $PathMapp [dict get $confA -accessPath]]
@@ -353,7 +353,7 @@ test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -setup {
         1 {can't find package SafeTestPackage1} --\
         {TCLLIB */dummy/unixlike/test/path TESTSDIR/auto0} -- {}}
 test safe-7.3 {check that safe subinterpreters work} {
-    set g [interp slaves]
+    set g [interp children]
     if {$g ne {}} {
         append g { -- residue of an earlier test}
     }
@@ -368,7 +368,7 @@ test safe-7.3 {check that safe subinterpreters work} {
 } {{} {} ok {} 0 {}}
 test safe-7.3.1 {check that safe subinterpreters work with namespace names} -setup {
 } -body {
-    set g [interp slaves]
+    set g [interp children]
     if {$g ne {}} {
         append g { -- residue of an earlier test}
     }
@@ -388,7 +388,7 @@ test safe-7.4 {tests specific path and positive search} -setup {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p* (not p1 if master has a module path)
+    # should add as p* (not p1 if parent has a module path)
     set token2 [safe::interpAddToAccessPath $i [file join $TestsDir auto0 auto1]]
     set confA [safe::interpConfigure $i]
     set mappA [mapList $PathMapp [dict get $confA -accessPath]]
@@ -438,7 +438,7 @@ test safe-8.3 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result {1 {permission denied} {{ERROR for slave a : ".": is a directory}}}
+} -result {1 {permission denied} {{ERROR for child a : ".": is a directory}}}
 test safe-8.4 {safe source control on file} -setup {
     set i "a"
     catch {safe::interpDelete $i}
@@ -454,7 +454,7 @@ test safe-8.4 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result {1 {permission denied} {{ERROR for slave a : "/abc/def": not in access_path}}}
+} -result {1 {permission denied} {{ERROR for child a : "/abc/def": not in access_path}}}
 test safe-8.5 {safe source control on file} -setup {
     set i "a"
     catch {safe::interpDelete $i}
@@ -474,7 +474,7 @@ test safe-8.5 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] blah]:no such file or directory"]]
+} -result [list 1 {no such file or directory} [list "ERROR for child a : [file join [info library] blah]:no such file or directory"]]
 test safe-8.6 {safe source control on file} -setup {
     set i "a"
     catch {safe::interpDelete $i}
@@ -492,7 +492,7 @@ test safe-8.6 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] blah.tcl]:no such file or directory"]]
+} -result [list 1 {no such file or directory} [list "ERROR for child a : [file join [info library] blah.tcl]:no such file or directory"]]
 test safe-8.7 {safe source control on file} -setup {
     set i "a"
     catch {safe::interpDelete $i}
@@ -512,7 +512,7 @@ test safe-8.7 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] xxxxxxxxxxx.tcl]:no such file or directory"]]
+} -result [list 1 {no such file or directory} [list "ERROR for child a : [file join [info library] xxxxxxxxxxx.tcl]:no such file or directory"]]
 test safe-8.8 {safe source forbids -rsrc} emptyTest {
     # Disabled this test.  It was only useful for long unsupported
     # Mac OS 9 systems. [Bug 860a9f1945]
@@ -590,7 +590,7 @@ test safe-9.2 {safe interps' error in deleteHook} -setup {
     catch {rename testDelHook {}}
     rename safe-test-log {}
     unset i log res
-} -result {{} {arg1 arg2 a} {{NOTICE for slave a : About to delete} {ERROR for slave a : Delete hook error (being catched)} {NOTICE for slave a : Deleted}}}
+} -result {{} {arg1 arg2 a} {{NOTICE for child a : About to delete} {ERROR for child a : Delete hook error (being catched)} {NOTICE for child a : Deleted}}}
 test safe-9.3 {dual specification of statics} -returnCodes error -body {
     safe::interpCreate -stat true -nostat
 } -result {conflicting values given for -statics and -noStatics}
@@ -901,8 +901,8 @@ test safe-9.20 {check module loading} -setup {
         0 0.5 0 1.0 0 2.0 --\
         {TCLLIB TESTSDIR/auto0/modules TESTSDIR/auto0/modules/mod1\
          TESTSDIR/auto0/modules/mod2} -- res0 res1 res2}
-# - The command safe::InterpSetConfig adds the master's [tcl::tm::list] in
-#   tokenized form to the slave's access path, and then adds all the
+# - The command safe::InterpSetConfig adds the parent's [tcl::tm::list] in
+#   tokenized form to the child's access path, and then adds all the
 #   descendants, discovered recursively by using glob.
 # - The order of the directories in the list returned by glob is system-dependent,
 #   and therefore this is true also for (a) the order of token assignment to
@@ -1509,7 +1509,7 @@ rename buildEnvironment {}
 rename buildEnvironment2 {}
 
 #### Test for the module path
-test safe-14.1 {Check that module path is the same as in the master interpreter [Bug 2964715]} -setup {
+test safe-14.1 {Check that module path is the same as in the parent interpreter [Bug 2964715]} -setup {
     set i [safe::interpCreate]
 } -body {
     set tm {}

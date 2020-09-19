@@ -20,7 +20,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-foreach i [interp slaves] {
+foreach i [interp children] {
     interp delete $i
 }
 
@@ -60,7 +60,7 @@ testConstraint TcltestPackage [expr {![catch {package require Tcltest}]}]
 
 # Tests 5.* test the example files before using them to test safe interpreters.
 
-test safe-zipfs-5.1 {example tclIndex commands, test in master interpreter; zipfs} -setup {
+test safe-zipfs-5.1 {example tclIndex commands, test in parent interpreter; zipfs} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $ZipMountPoint auto0 auto1] [file join $ZipMountPoint auto0 auto2]
 } -body {
@@ -74,7 +74,7 @@ test safe-zipfs-5.1 {example tclIndex commands, test in master interpreter; zipf
     set ::auto_path $tmpAutoPath
     auto_reset
 } -match glob -result {0 ok1 0 ok2}
-test safe-zipfs-5.2 {example tclIndex commands, negative test in master interpreter; zipfs} -setup {
+test safe-zipfs-5.2 {example tclIndex commands, negative test in parent interpreter; zipfs} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $ZipMountPoint auto0]
 } -body {
@@ -88,7 +88,7 @@ test safe-zipfs-5.2 {example tclIndex commands, negative test in master interpre
     set ::auto_path $tmpAutoPath
     auto_reset
 } -match glob -result {1 {invalid command name "report1"} 1 {invalid command name "report2"}}
-test safe-zipfs-5.3 {example pkgIndex.tcl packages, test in master interpreter, child directories; zipfs} -setup {
+test safe-zipfs-5.3 {example pkgIndex.tcl packages, test in parent interpreter, child directories; zipfs} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $ZipMountPoint auto0]
 } -body {
@@ -105,7 +105,7 @@ test safe-zipfs-5.3 {example pkgIndex.tcl packages, test in master interpreter, 
     catch {rename HeresPackage1 {}}
     catch {rename HeresPackage2 {}}
 } -match glob -result {0 1.2.3 0 2.3.4 0 OK1 0 OK2}
-test safe-zipfs-5.4 {example pkgIndex.tcl packages, test in master interpreter, main directories; zipfs} -setup {
+test safe-zipfs-5.4 {example pkgIndex.tcl packages, test in parent interpreter, main directories; zipfs} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $ZipMountPoint auto0 auto1] \
                         [file join $ZipMountPoint auto0 auto2]
@@ -123,7 +123,7 @@ test safe-zipfs-5.4 {example pkgIndex.tcl packages, test in master interpreter, 
     catch {rename HeresPackage1 {}}
     catch {rename HeresPackage2 {}}
 } -match glob -result {0 1.2.3 0 2.3.4 0 OK1 0 OK2}
-test safe-zipfs-5.5 {example modules packages, test in master interpreter, replace path; zipfs} -setup {
+test safe-zipfs-5.5 {example modules packages, test in parent interpreter, replace path; zipfs} -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
@@ -149,7 +149,7 @@ test safe-zipfs-5.5 {example modules packages, test in master interpreter, repla
     catch {namespace delete ::test0}
     catch {namespace delete ::mod1}
 } -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
-test safe-zipfs-5.6 {example modules packages, test in master interpreter, append to path; zipfs} -setup {
+test safe-zipfs-5.6 {example modules packages, test in parent interpreter, append to path; zipfs} -setup {
     tcl::tm::path add [file join $ZipMountPoint auto0 modules]
 } -body {
     # Try to load the modules and run a command from each one.
@@ -179,7 +179,7 @@ test safe-zipfs-7.1 {tests that everything works at high level; zipfs} -setup {
 } -body {
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
-    #  package require in a slave works like in the master)
+    #  package require in a child works like in the parent)
     set v [interp eval $i {package require SafeTestPackage1}]
     # no error shall occur:
     interp eval $i {HeresPackage1}
@@ -192,9 +192,9 @@ test safe-zipfs-7.2 {tests specific path and interpFind/AddToAccessPath; zipfs} 
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p* (not p1 if master has a module path)
+    # should add as p* (not p1 if parent has a module path)
     set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
-    # should add as p* (not p2 if master has a module path)
+    # should add as p* (not p2 if parent has a module path)
     set token3 [safe::interpAddToAccessPath $i [file join $ZipMountPoint auto0]]
     set confA [safe::interpConfigure $i]
     set mappA [mapList $PathMapp [dict get $confA -accessPath]]
@@ -212,7 +212,7 @@ test safe-zipfs-7.4 {tests specific path and positive search; zipfs} -setup {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p* (not p1 if master has a module path)
+    # should add as p* (not p1 if parent has a module path)
     set token2 [safe::interpAddToAccessPath $i [file join $ZipMountPoint auto0 auto1]]
     set confA [safe::interpConfigure $i]
     set mappA [mapList $PathMapp [dict get $confA -accessPath]]
@@ -457,8 +457,8 @@ test safe-zipfs-9.20 {check module loading; zipfs} -setup {
         0 0.5 0 1.0 0 2.0 --\
         {TCLLIB ZIPDIR/auto0/modules ZIPDIR/auto0/modules/mod1\
          ZIPDIR/auto0/modules/mod2} -- res0 res1 res2}
-# - The command safe::InterpSetConfig adds the master's [tcl::tm::list] in
-#   tokenized form to the slave's access path, and then adds all the
+# - The command safe::InterpSetConfig adds the parent's [tcl::tm::list] in
+#   tokenized form to the child's access path, and then adds all the
 #   descendants, discovered recursively by using glob.
 # - The order of the directories in the list returned by glob is system-dependent,
 #   and therefore this is true also for (a) the order of token assignment to
