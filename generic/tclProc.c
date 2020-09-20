@@ -905,7 +905,6 @@ TclNRUplevelObjCmd(
     Interp *iPtr = (Interp *) interp;
     CmdFrame *invoker = NULL;
     int word = 0;
-    int havelevel = 0;
     int result;
     CallFrame *savedVarFramePtr, *framePtr;
     Tcl_Obj *objPtr;
@@ -919,7 +918,7 @@ TclNRUplevelObjCmd(
     uplevelSyntax:
 	Tcl_WrongNumArgs(interp, 1, objv, "?level? command ?arg ...?");
 	return TCL_ERROR;
-    } else if (objc == 2) {
+    } else if (!TclHasStringRep(objv[1]) && objc == 2) {
 	int status ,llength;
 	status = Tcl_ListObjLength(interp, objv[1], &llength);
 	if (status == TCL_OK && llength > 1) {
@@ -929,28 +928,27 @@ TclNRUplevelObjCmd(
 	    if (result == -1) {
 		return TCL_ERROR;
 	    }
-	    havelevel = 1;
 	    objc -= 1;
 	    objv += 1;
+	    goto havelevel;
 	}
     }
 
-    if (!havelevel) {
-	/*
-	 * Find the level to use for executing the command.
-	 */
+    /*
+     * Find the level to use for executing the command.
+     */
 
-	result = TclObjGetFrame(interp, objv[1], &framePtr);
-	if (result == -1) {
-	    return TCL_ERROR;
-	}
-	objc -= result + 1;
-	if (objc == 0) {
-	    goto uplevelSyntax;
-	}
-	objv += result + 1;
+    result = TclObjGetFrame(interp, objv[1], &framePtr);
+    if (result == -1) {
+	return TCL_ERROR;
     }
+    objc -= result + 1;
+    if (objc == 0) {
+	goto uplevelSyntax;
+    }
+    objv += result + 1;
 
+    havelevel:
 
     /*
      * Modify the interpreter state to execute in the given frame.
