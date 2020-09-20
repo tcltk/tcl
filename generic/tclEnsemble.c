@@ -2864,7 +2864,7 @@ TclCompileEnsemble(
     DefineLineInformation;
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     Tcl_Obj *mapObj, *subcmdObj, *targetCmdObj, *listObj, **elems;
-    Tcl_Obj *replaced = Tcl_NewObj(), *replacement;
+    Tcl_Obj *replaced, *replacement;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
     Command *oldCmdPtr = cmdPtr, *newCmdPtr;
     int len, result, flags = 0, i, depth = 1, invokeAnyway = 0;
@@ -2872,6 +2872,7 @@ TclCompileEnsemble(
     size_t numBytes;
     const char *word;
 
+    TclNewObj(replaced);
     Tcl_IncrRefCount(replaced);
     if (parsePtr->numWords < depth + 1) {
 	goto failed;
@@ -3368,7 +3369,7 @@ CompileToInvokedCommand(
      * the implementation.
      */
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
     bytes = TclGetStringFromObj(objPtr, &length);
     if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_VIA_RESOLVER)) {
@@ -3407,8 +3408,9 @@ CompileBasicNArgCommand(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Tcl_Obj *objPtr = Tcl_NewObj();
+    Tcl_Obj *objPtr;
 
+    TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
     (void) TclCompileInvocation(interp, parsePtr->tokenPtr, objPtr,

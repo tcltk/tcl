@@ -444,7 +444,9 @@ TclListObjRange(
 	toIdx = listLen-1;
     }
     if (fromIdx + 1 > toIdx + 1) {
-	return Tcl_NewObj();
+	Tcl_Obj *obj;
+	TclNewObj(obj);
+	return obj;
     }
 
     newLen = toIdx - fromIdx + 1;
@@ -1356,7 +1358,7 @@ TclLindexFlat(
 			return NULL;
 		    }
 		}
-		listPtr = Tcl_NewObj();
+		TclNewObj(listPtr);
 	    } else {
 		/*
 		 * Extract the pointer to the appropriate element.
@@ -1597,7 +1599,7 @@ TclLsetFlat(
 	if (--indexCount) {
 	    parentList = subListPtr;
 	    if (index == (size_t)elemCount) {
-		subListPtr = Tcl_NewObj();
+		TclNewObj(subListPtr);
 	    } else {
 		subListPtr = elemPtrs[index];
 	    }

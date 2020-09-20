@@ -1747,7 +1747,7 @@ TclWordKnownAtCompileTime(
     }
     tokenPtr++;
     if (valuePtr != NULL) {
-	tempPtr = Tcl_NewObj();
+	TclNewObj(tempPtr);
 	Tcl_IncrRefCount(tempPtr);
     }
     while (numComponents--) {
@@ -2064,7 +2064,7 @@ CompileCommandTokens(
     int commandSize = tokenPtr->size;
 
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
-    Tcl_Obj *cmdObj = Tcl_NewObj();
+    Tcl_Obj *cmdObj;
     Command *cmdPtr = NULL;
     CmdLocation *cmdLocPtr = NULL;
     int code = TCL_ERROR;
@@ -2079,6 +2079,7 @@ CompileCommandTokens(
 
     /* Pre-Compile */
 
+    TclNewObj(cmdObj);
     tokenPtr++;
     envPtr->numCommands++;
     cmdLocPtr = EnterCmdStartData(envPtr, commandStart - envPtr->source,

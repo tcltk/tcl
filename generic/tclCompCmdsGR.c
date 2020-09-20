@@ -54,9 +54,10 @@ TclGetIndexFromToken(
     size_t after,
     int *indexPtr)
 {
-    Tcl_Obj *tmpObj = Tcl_NewObj();
+    Tcl_Obj *tmpObj;
     int result = TCL_ERROR;
 
+    TclNewObj(tmpObj);
     if (TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
 	result = TclIndexEncode(NULL, tmpObj, before, after, indexPtr);
     }
@@ -591,7 +592,7 @@ TclCompileInfoCommandsCmd(
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
     if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	goto notCompilable;
@@ -1162,9 +1163,9 @@ TclCompileListCmd(
 
     numWords = parsePtr->numWords;
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    listObj = Tcl_NewObj();
+    TclNewObj(listObj);
     for (i = 1; i < numWords && listObj != NULL; i++) {
-	objPtr = Tcl_NewObj();
+	TclNewObj(objPtr);
 	if (TclWordKnownAtCompileTime(valueTokenPtr, objPtr)) {
 	    (void) Tcl_ListObjAppendElement(NULL, listObj, objPtr);
 	} else {
@@ -2259,7 +2260,7 @@ TclCompileRegsubCmd(
 
     Tcl_DStringInit(&pattern);
     tokenPtr = TokenAfter(tokenPtr);
-    patternObj = Tcl_NewObj();
+    TclNewObj(patternObj);
     if (!TclWordKnownAtCompileTime(tokenPtr, patternObj)) {
 	goto done;
     }
@@ -2270,7 +2271,7 @@ TclCompileRegsubCmd(
 	}
 	tokenPtr = TokenAfter(tokenPtr);
 	Tcl_DecrRefCount(patternObj);
-	patternObj = Tcl_NewObj();
+	TclNewObj(patternObj);
 	if (!TclWordKnownAtCompileTime(tokenPtr, patternObj)) {
 	    goto done;
 	}
@@ -2285,7 +2286,7 @@ TclCompileRegsubCmd(
 
     stringTokenPtr = TokenAfter(tokenPtr);
     tokenPtr = TokenAfter(stringTokenPtr);
-    replacementObj = Tcl_NewObj();
+    TclNewObj(replacementObj);
     if (!TclWordKnownAtCompileTime(tokenPtr, replacementObj)) {
 	goto done;
     }
@@ -2435,7 +2436,7 @@ TclCompileReturnCmd(
      */
 
     for (objc = 0; objc < numOptionWords; objc++) {
-	objv[objc] = Tcl_NewObj();
+	TclNewObj(objv[objc]);
 	Tcl_IncrRefCount(objv[objc]);
 	if (!TclWordKnownAtCompileTime(wordTokenPtr, objv[objc])) {
 	    /*
@@ -2654,7 +2655,7 @@ TclCompileUpvarCmd(
      * Push the frame index if it is known at compile time
      */
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	CallFrame *framePtr;
