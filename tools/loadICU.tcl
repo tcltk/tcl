@@ -588,7 +588,7 @@ proc backslashify { string } {
     set retval {}
     foreach char [split $string {}] {
 	scan $char %c ccode
-	if { $ccode >= 0x0020 && $ccode < 0x007F && $char ne "\""
+	if { $ccode >= 0x20 && $ccode < 0x7F && $char ne "\""
 	     && $char ne "\{" && $char ne "\}" && $char ne "\["
 	     && $char ne "\]" && $char ne "\\" && $char ne "\$" } {
 	    append retval $char
