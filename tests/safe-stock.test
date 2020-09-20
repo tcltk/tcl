@@ -1,4 +1,4 @@
-# safe-stock87.test --
+# safe-stock.test --
 #
 # This file contains tests for safe Tcl that were previously in the file
 # safe.test, and use files and packages of stock Tcl 8.7 to perform the tests.
@@ -13,7 +13,7 @@
 # No output means no errors were found.
 #
 # The defunct package http 1.0 was convenient for testing package loading.
-# - This file, safe-stock87.test, uses packages opt and (from cookiejar)
+# - This file, safe-stock.test, uses packages opt and (from cookiejar)
 #   tcl::idna to provide alternative tests based on stock Tcl packages.
 #   - These are tests 7.1 7.2 7.4 9.11 9.13
 #   - Tests 7.[124], 9.1[13] use "package require opt".
@@ -28,10 +28,8 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.5-
-
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -103,13 +101,8 @@ proc mapAndSortList {map listIn} {
 # thus un-autoindexed) APIs in this test result arguments:
 catch {safe::interpConfigure}
 
-# testing that nested and statics do what is advertised (we use a static
-# package - Tcltest - but it might be absent if we're in standard tclsh)
-
-testConstraint TcltestPackage [expr {![catch {package require Tcltest}]}]
-
 # high level general test
-test safe-stock87-7.1 {tests that everything works at high level, uses pkg opt} -setup {
+test safe-stock-7.1 {tests that everything works at high level, uses pkg opt} -setup {
     set i [safe::interpCreate]
 } -body {
     # no error shall occur:
@@ -122,7 +115,7 @@ test safe-stock87-7.1 {tests that everything works at high level, uses pkg opt} 
 } -cleanup {
     safe::interpDelete $i
 } -match glob -result 0.4.*
-test safe-stock87-7.2 {tests specific path and interpFind/AddToAccessPath, uses pkg opt} -setup {
+test safe-stock-7.2 {tests specific path and interpFind/AddToAccessPath, uses pkg opt} -setup {
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
@@ -139,7 +132,7 @@ test safe-stock87-7.2 {tests specific path and interpFind/AddToAccessPath, uses 
 } -cleanup {
 } -match glob -result "{\$p(:0:)} {\$p(:*:)} -- 1 {$pkgOptErrMsg} --\
         {TCLLIB */dummy/unixlike/test/path} -- {}"
-test safe-stock87-7.4 {tests specific path and positive search, uses pkg opt} -setup {
+test safe-stock-7.4 {tests specific path and positive search, uses pkg opt} -setup {
 } -body {
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
@@ -148,7 +141,7 @@ test safe-stock87-7.4 {tests specific path and positive search, uses pkg opt} -s
     set token2 [safe::interpAddToAccessPath $i [file join [info library] $pkgOptDir]]
     set confA [safe::interpConfigure $i]
     set mappA [mapList $PathMapp [dict get $confA -accessPath]]
-    # this time, unlike test safe-stock87-7.2, opt should be found
+    # this time, unlike test safe-stock-7.2, opt should be found
     list $token1 $token2 -- \
             [catch {interp eval $i {package require opt}} msg] $msg -- \
             $mappA -- [safe::interpDelete $i]
@@ -160,7 +153,7 @@ test safe-stock87-7.4 {tests specific path and positive search, uses pkg opt} -s
 
 # The following test checks whether the definition of tcl_endOfWord can be
 # obtained from auto_loading.  It was previously test "safe-5.1".
-test safe-stock87-9.8 {test auto-loading in safe interpreters, was safe-5.1} -setup {
+test safe-stock-9.8 {test auto-loading in safe interpreters, was safe-5.1} -setup {
     catch {safe::interpDelete a}
     safe::interpCreate a
 } -body {
@@ -168,7 +161,7 @@ test safe-stock87-9.8 {test auto-loading in safe interpreters, was safe-5.1} -se
 } -cleanup {
     safe::interpDelete a
 } -result -1
-test safe-stock87-9.11 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, uses pkg opt and tcl::idna} -setup {
+test safe-stock-9.11 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, uses pkg opt and tcl::idna} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
                                             [file join $tcl_library $pkgOptDir] \
@@ -207,7 +200,7 @@ test safe-stock87-9.11 {interpConfigure change the access path; pkgIndex.tcl pac
         {TCLLIB TCLLIB/OPTDIR TCLLIB/JARDIR*} --\
         {TCLLIB TCLLIB/JARDIR TCLLIB/OPTDIR*} --\
         0 0 0 example.com}
-test safe-stock87-9.13 {interpConfigure change the access path; pkgIndex.tcl packages fail if directory de-listed, uses pkg opt and tcl::idna} -setup {
+test safe-stock-9.13 {interpConfigure change the access path; pkgIndex.tcl packages fail if directory de-listed, uses pkg opt and tcl::idna} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
                                             [file join $tcl_library $pkgOptDir] \

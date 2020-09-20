@@ -147,7 +147,7 @@ GetIndexFromObjList(
     tablePtr[objc] = NULL;
 
     result = Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr,
-	    sizeof(char *), msg, flags | INDEX_TEMP_TABLE, indexPtr);
+	    sizeof(char *), msg, flags | TCL_INDEX_TEMP_TABLE, indexPtr);
 
     Tcl_Free((void *)tablePtr);
 
@@ -211,7 +211,7 @@ Tcl_GetIndexFromObjStruct(
      * See if there is a valid cached result from a previous lookup.
      */
 
-    if (!(flags & INDEX_TEMP_TABLE)) {
+    if (!(flags & TCL_INDEX_TEMP_TABLE)) {
     irPtr = TclFetchIntRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
@@ -275,7 +275,7 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (!(flags & INDEX_TEMP_TABLE)) {
+    if (!(flags & TCL_INDEX_TEMP_TABLE)) {
     irPtr = TclFetchIntRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;

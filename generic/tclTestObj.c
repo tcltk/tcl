@@ -619,7 +619,7 @@ TestindexobjCmd(
     argv[objc-4] = NULL;
 
     result = Tcl_GetIndexFromObj((setError? interp : NULL), objv[3],
-	    argv, "token", INDEX_TEMP_TABLE|(allowAbbrev? 0 : TCL_EXACT),
+	    argv, "token", TCL_INDEX_TEMP_TABLE|(allowAbbrev? 0 : TCL_EXACT),
 	    &index);
     Tcl_Free((void *)argv);
     if (result == TCL_OK) {

@@ -61,7 +61,7 @@
 # using the remote server are not performed.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -248,7 +248,7 @@ if {$doTestsWithRemoteServer} {
 # Some tests are run only if we are doing testing against a remote server.
 testConstraint doTestsWithRemoteServer $doTestsWithRemoteServer
 if {!$doTestsWithRemoteServer} {
-    if {[string first s $::tcltest::verbose] != -1} {
+    if {[string first s $::tcltest::verbose] >= 0} {
     	puts "Skipping tests with remote server. See tests/socket.test for"
 	puts "information on how to run remote server."
 	puts "Reason for not doing remote tests: $noRemoteTestReason"

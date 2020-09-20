@@ -123,7 +123,7 @@ typedef struct Target {
  *
  * NB: the flags field in the interp structure, used with SAFE_INTERP mask
  * denotes whether the interpreter is safe or not. Safe interpreters have
- * restricted functionality, can only create safe child interpreters and can
+ * restricted functionality, can only create safe interpreters and can
  * only load safe extensions.
  */
 
@@ -624,7 +624,10 @@ NRInterpCmd(
 	"eval",		"exists",	"expose",
 	"hide",		"hidden",	"issafe",
 	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
-	"slaves",	"share",	"target",	"transfer",
+#ifndef TCL_NO_DEPRECATED
+	"slaves",
+#endif
+	"share",	"target",	"transfer",
 	NULL
     };
     enum option {
@@ -633,7 +636,10 @@ NRInterpCmd(
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,
 	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,
 	OPT_INVOKEHID,	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,
-	OPT_SLAVES,	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
+#ifndef TCL_NO_DEPRECATED
+	OPT_SLAVES,
+#endif
+	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
     };
 
     if (objc < 2) {
@@ -1017,8 +1023,10 @@ NRInterpCmd(
 	    return TCL_ERROR;
 	}
 	return ChildRecursionLimit(interp, childInterp, objc - 3, objv + 3);
-    case OPT_CHILDREN:
-    case OPT_SLAVES: {
+#ifndef TCL_NO_DEPRECATED
+    case OPT_SLAVES:
+#endif
+    case OPT_CHILDREN: {
 	InterpInfo *iiPtr;
 	Tcl_Obj *resultPtr;
 	Tcl_HashEntry *hPtr;
@@ -3286,7 +3294,7 @@ Tcl_MakeSafe(
      */
 
     /*
-     * No env array in a safe child.
+     * No env array in a safe interpreter.
      */
 
     Tcl_UnsetVar2(interp, "env", NULL, TCL_GLOBAL_ONLY);

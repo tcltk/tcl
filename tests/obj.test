@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -34,7 +34,7 @@ test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} tes
 	string
     } {
         set first [string first $t [testobj types]]
-        set r [expr {$r && ($first != -1)}]
+        set r [expr {$r && ($first >= 0)}]
     }
     set result $r
 } {1}

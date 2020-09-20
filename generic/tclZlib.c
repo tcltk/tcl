@@ -2712,21 +2712,21 @@ ZlibStreamAddCmd(
 
 	switch ((enum addOptions) index) {
 	case ao_flush: /* -flush */
-	    if (flush > -1) {
+	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_SYNC_FLUSH;
 	    }
 	    break;
 	case ao_fullflush: /* -fullflush */
-	    if (flush > -1) {
+	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_FULL_FLUSH;
 	    }
 	    break;
 	case ao_finalize: /* -finalize */
-	    if (flush > -1) {
+	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_FINISH;
@@ -2839,21 +2839,21 @@ ZlibStreamPutCmd(
 
 	switch ((enum putOptions) index) {
 	case po_flush: /* -flush */
-	    if (flush > -1) {
+	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_SYNC_FLUSH;
 	    }
 	    break;
 	case po_fullflush: /* -fullflush */
-	    if (flush > -1) {
+	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_FULL_FLUSH;
 	    }
 	    break;
 	case po_finalize: /* -finalize */
-	    if (flush > -1) {
+	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_FINISH;
