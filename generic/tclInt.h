@@ -4369,15 +4369,18 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInvalidateStringRep(objPtr) \
-    if (objPtr->bytes != NULL) { \
-	if (objPtr->bytes != tclEmptyStringRep) { \
-	    ckfree((char *) objPtr->bytes); \
+    do { \
+	Tcl_Obj *_isobjPtr = (Tcl_Obj *)(objPtr); \
+	if (_isobjPtr->bytes != NULL) { \
+	    if (_isobjPtr->bytes != tclEmptyStringRep) { \
+		ckfree((char *)_isobjPtr->bytes); \
+	    } \
+	    _isobjPtr->bytes = NULL; \
 	} \
-	objPtr->bytes = NULL; \
-    }
+    } while (0)
 
 #define TclHasStringRep(objPtr) \
-    (objPtr->bytes != NULL)
+    ((objPtr)->bytes != NULL)
 
 /*
  *----------------------------------------------------------------
