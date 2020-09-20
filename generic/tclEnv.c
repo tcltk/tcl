@@ -772,7 +772,7 @@ TclFinalizeEnvironment(void)
 
     if (env.cache) {
 #ifdef PURIFY
-	int i;
+	size_t i;
 	for (i = 0; i < env.cacheSize; i++) {
 	    Tcl_Free(env.cache[i]);
 	}
