@@ -4518,12 +4518,15 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInvalidateStringRep(objPtr) \
-    if ((objPtr)->bytes != NULL) { \
-	if ((objPtr)->bytes != &tclEmptyString) { \
-	    ckfree((objPtr)->bytes); \
+    do { \
+	Tcl_Obj *_isobjPtr = (Tcl_Obj *)(objPtr); \
+	if (_isobjPtr->bytes != NULL) { \
+	    if (_isobjPtr->bytes != &tclEmptyString) { \
+		ckfree((char *)_isobjPtr->bytes); \
+	    } \
+	    _isobjPtr->bytes = NULL; \
 	} \
-	(objPtr)->bytes = NULL; \
-    }
+    } while (0)
 
 /*
  * These form part of the native filesystem support. They are needed here
@@ -4550,7 +4553,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  *----------------------------------------------------------------
  */
 
-#define TclHasStringRep(objPtr) ((objPtr)->bytes != NULL)
+#define TclHasStringRep(objPtr) \
+    ((objPtr)->bytes != NULL)
 
 /*
  *----------------------------------------------------------------
