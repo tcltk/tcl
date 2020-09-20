@@ -4376,6 +4376,9 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	objPtr->bytes = NULL; \
     }
 
+#define TclHasStringRep(objPtr) \
+    (objPtr->bytes != NULL)
+
 /*
  *----------------------------------------------------------------
  * Macros used by the Tcl core to grow Tcl_Token arrays. They use the same
