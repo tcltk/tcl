@@ -4915,6 +4915,17 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
+#define TclNewIndexObj(objPtr, w) \
+    do {						\
+	TclIncrObjsAllocated();				\
+	TclAllocObjStorage(objPtr);			\
+	(objPtr)->refCount = 0;				\
+	(objPtr)->bytes = NULL;				\
+	(objPtr)->internalRep.wideValue = (Tcl_WideInt)((w) + 1) - 1;	\
+	(objPtr)->typePtr = &tclIntType;		\
+	TCL_DTRACE_OBJ_CREATE(objPtr);			\
+    } while (0)
+
 #define TclNewDoubleObj(objPtr, d) \
     do {							\
 	TclIncrObjsAllocated();					\
@@ -4939,6 +4950,9 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #else /* TCL_MEM_DEBUG */
 #define TclNewIntObj(objPtr, w) \
     (objPtr) = Tcl_NewWideIntObj(w)
+
+#define TclNewIndexObj(objPtr, w) \
+    (objPtr) = Tcl_NewWideIntObj((Tcl_WideInt)((w) + 1) - 1)
 
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)
@@ -5125,21 +5139,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	TclDecrRefCount(_objPtr);					\
     } while (0)
 #endif   /* TCL_MEM_DEBUG */
-
-/*
- * Macros to convert size_t to wide-int (and wide-int object) considering
- * platform-related negative value ((size_t)-1), if wide-int and size_t
- * have different dimensions (e. g. 32-bit platform).
- */
-
-#if (!defined(TCL_WIDE_INT_IS_LONG) || (LONG_MAX > UINT_MAX)) && (SIZE_MAX <= UINT_MAX)
-#   define TclWideIntFromSize(value)	(((Tcl_WideInt)(((size_t)(value))+1))-1)
-#   define TclNewWideIntObjFromSize(value) \
-	Tcl_NewWideIntObj(TclWideIntFromSize(value))
-#else
-#   define TclWideIntFromSize(value)	((Tcl_WideInt)(value))
-#   define TclNewWideIntObjFromSize Tcl_NewWideIntObj
-#endif
 
 /*
  * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
