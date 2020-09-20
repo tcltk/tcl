@@ -3242,8 +3242,8 @@ proc tcltest::viewFile {name {directory ""}} {
 #    procedures that are supposed to accept strings with embedded NULL
 #    bytes.
 # 2. Confirm that a string result has a certain pattern of bytes, for
-#    instance to confirm that "\xe0\0" in a Tcl script is stored
-#    internally in UTF-8 as the sequence of bytes "\xc3\xa0\xc0\x80".
+#    instance to confirm that "\xE0\0" in a Tcl script is stored
+#    internally in UTF-8 as the sequence of bytes "\xC3\xA0\xC0\x80".
 #
 # Generally, it's a bad idea to examine the bytes in a Tcl string or to
 # construct improperly formed strings in this manner, because it involves
