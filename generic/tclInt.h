@@ -4377,7 +4377,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
     }
 
 #define TclHasStringRep(objPtr) \
-    objPtr->bytes != NULL
+    (objPtr->bytes != NULL)
 
 /*
  *----------------------------------------------------------------
