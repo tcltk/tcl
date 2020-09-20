@@ -894,7 +894,7 @@ lexescape(
 	 * Ugly heuristic (first test is "exactly 1 digit?")
 	 */
 
-	if (v->now - save == 0 || ((int) c > 0 && (int)c <= v->nsubexp)) {
+	if (v->now - save == 0 || ((int) c > 0 && (size_t)c <= v->nsubexp)) {
 	    NOTE(REG_UBACKREF);
 	    RETV(BACKREF, (chr)c);
 	}
