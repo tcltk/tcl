@@ -68,7 +68,7 @@ proc uni::getGroup {value} {
     variable groups
 
     set gIndex [lsearch -exact $groups $value]
-    if {$gIndex == -1} {
+    if {$gIndex < 0} {
 	set gIndex [llength $groups]
 	lappend groups $value
     }
@@ -81,7 +81,7 @@ proc uni::addPage {info} {
     variable shift
 
     set pIndex [lsearch -exact $pages $info]
-    if {$pIndex == -1} {
+    if {$pIndex < 0} {
 	set pIndex [llength $pages]
 	lappend pages $info
     }

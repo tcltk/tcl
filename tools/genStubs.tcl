@@ -382,7 +382,7 @@ proc genStubs::parseDecl {decl} {
 	return
     }
     set rtype [string trim $rtype]
-    if {$args == ""} {
+    if {$args eq ""} {
 	return [list $rtype $fname {}]
     }
     foreach arg [split $args ,] {
@@ -430,14 +430,14 @@ proc genStubs::parseDecl {decl} {
 
 proc genStubs::parseArg {arg} {
     if {![regexp {^(.+[ ][*]*)([^][ *]+)(\[\])?$} $arg all type name array]} {
-	if {$arg == "void"} {
+	if {$arg eq "void"} {
 	    return $arg
 	} else {
 	    return
 	}
     }
     set result [list [string trim $type] $name]
-    if {$array != ""} {
+    if {$array ne ""} {
 	lappend result $array
     }
     return $result
@@ -460,7 +460,7 @@ proc genStubs::makeDecl {name decl index} {
     lassign $decl rtype fname args
 
     append text "/* $index */\n"
-    if {$rtype != "void"} {
+    if {$rtype ne "void"} {
 	regsub -all void $rtype VOID rtype
     }
     set line "$scspec $rtype"
@@ -640,7 +640,7 @@ proc genStubs::makeSlot {name decl index} {
 #	Returns the formatted declaration string.
 
 proc genStubs::makeInit {name decl index} {
-    if {[lindex $decl 2] == ""} {
+    if {[lindex $decl 2] eq ""} {
 	append text "    &" [lindex $decl 1] ", /* " $index " */\n"
     } else {
 	append text "    " [lindex $decl 1] ", /* " $index " */\n"
@@ -982,7 +982,7 @@ proc genStubs::emitHeader {name} {
     set capName [string toupper [string index $name 0]]
     append capName [string range $name 1 end]
 
-    if {$epoch != ""} {
+    if {$epoch ne ""} {
 	set CAPName [string toupper $name]
 	append text "\n"
 	append text "#define ${CAPName}_STUBS_EPOCH $epoch\n"

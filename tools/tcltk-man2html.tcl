@@ -1427,7 +1427,7 @@ proc output-directive {line} {
 }
 ##
 ## merge copyright listings
-## 
+##
 proc merge-copyrights {l1 l2} {
     set merge {}
     set re1 {^Copyright +(?:\(c\)|\\\(co|&copy;) +(\w.*?)(?:all rights reserved)?(?:\. )*$}
