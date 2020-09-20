@@ -205,11 +205,11 @@ struct vars {
     int cflags;			/* copy of compile flags */
     int lasttype;		/* type of previous token */
     int nexttype;		/* type of next token */
-    int nextvalue;		/* value (if any) of next token */
+    size_t nextvalue;		/* value (if any) of next token */
     int lexcon;			/* lexical context type (see lex.c) */
-    int nsubexp;		/* subexpression count */
+    size_t nsubexp;		/* subexpression count */
     struct subre **subs;	/* subRE pointer vector */
-    int nsubs;			/* length of vector */
+    size_t nsubs;		/* length of vector */
     struct subre *sub10[10];	/* initial vector, enough for most */
     struct nfa *nfa;		/* the NFA */
     struct colormap *cm;	/* character color map */
@@ -222,7 +222,7 @@ struct vars {
     struct cvec *cv;		/* interface cvec */
     struct cvec *cv2;		/* utility cvec */
     struct subre *lacons;	/* lookahead-constraint vector */
-    int nlacons;		/* size of lacons */
+    size_t nlacons;		/* size of lacons */
     size_t spaceused;		/* approx. space used for compilation */
 };
 
@@ -287,7 +287,7 @@ compile(
 {
     AllocVars(v);
     struct guts *g;
-    int i, j;
+    size_t i, j;
     FILE *debug = (flags&REG_PROGRESS) ? stdout : NULL;
 #define	CNOERR()	{ if (ISERR()) return freev(v, v->err); }
 
@@ -410,7 +410,7 @@ compile(
     assert(v->nlacons == 0 || v->lacons != NULL);
     for (i = 1; i < v->nlacons; i++) {
 	if (debug != NULL) {
-	    fprintf(debug, "\n\n\n========= LA%d ==========\n", i);
+	    fprintf(debug, "\n\n\n========= LA%" TCL_Z_MODIFIER "d ==========\n", i);
 	}
 	nfanode(v, &v->lacons[i], debug);
     }
@@ -474,7 +474,7 @@ moresubs(
     size_t wanted)			/* want enough room for this one */
 {
     struct subre **p;
-    int n;
+    size_t n;
 
     assert(wanted > 0 && wanted >= v->nsubs);
     n = wanted * 3 / 2 + 1;
@@ -794,7 +794,7 @@ parseqatom(
     struct subre *t;
     int cap;			/* capturing parens? */
     int pos;			/* positive lookahead? */
-    int subno;			/* capturing-parens or backref number */
+    size_t subno;		/* capturing-parens or backref number */
     int atomtype;
     int qprefer;		/* quantifier short/long preference */
     int f;
