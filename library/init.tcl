@@ -442,6 +442,7 @@ proc auto_load_index {} {
 	    continue
 	} else {
 	    set error [catch {
+		fconfigure $f -eofchar \032
 		set id [gets $f]
 		if {$id eq "# Tcl autoload index file, version 2.0"} {
 		    eval [read $f]
