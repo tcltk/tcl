@@ -2445,14 +2445,14 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 AC_DEFUN([SC_TCL_CFG_ENCODING], [
     AC_ARG_WITH(encoding,
 	AC_HELP_STRING([--with-encoding],
-	    [encoding for configuration values (default: iso8859-1)]),
+	    [encoding for configuration values (default: utf-8)]),
 	with_tcencoding=${withval})
 
     if test x"${with_tcencoding}" != x ; then
 	AC_DEFINE_UNQUOTED(TCL_CFGVAL_ENCODING,"${with_tcencoding}",
 	    [What encoding should be used for embedded configuration info?])
     else
-	AC_DEFINE(TCL_CFGVAL_ENCODING,"iso8859-1",
+	AC_DEFINE(TCL_CFGVAL_ENCODING,"utf-8",
 	    [What encoding should be used for embedded configuration info?])
     fi
 ])

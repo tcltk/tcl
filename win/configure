@@ -3747,8 +3747,7 @@ fi
 _ACEOF
 
     else
-	# Default encoding on windows is not "iso8859-1"
-	$as_echo "#define TCL_CFGVAL_ENCODING \"cp1252\"" >>confdefs.h
+	$as_echo "#define TCL_CFGVAL_ENCODING \"utf-8\"" >>confdefs.h
 
     fi
 
