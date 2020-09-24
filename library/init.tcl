@@ -112,7 +112,7 @@ if {[interp issafe]} {
 	foreach cmd {add format scan} {
 	    proc ::tcl::clock::$cmd args {
 		variable TclLibDir
-		source -encoding utf-8 [file join $TclLibDir clock.tcl]
+		source [file join $TclLibDir clock.tcl]
 		return [uplevel 1 [info level 0]]
 	    }
 	}
@@ -442,7 +442,7 @@ proc auto_load_index {} {
 	    continue
 	} else {
 	    set error [catch {
-		fconfigure $f -encoding utf-8 -eofchar \032
+		fconfigure $f -eofchar \032
 		set id [gets $f]
 		if {$id eq "# Tcl autoload index file, version 2.0"} {
 		    eval [read $f]
