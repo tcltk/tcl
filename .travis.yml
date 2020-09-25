@@ -112,9 +112,9 @@ jobs:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols=mem"
 # Testing on Mac, various styles
-    - name: "macOS/Xcode 11.7/Shared"
+    - name: "macOS/Xcode 12/Shared"
       os: osx
-      osx_image: xcode11.7
+      osx_image: xcode12
       env:
         - BUILD_DIR=macosx
       install: []
@@ -122,34 +122,42 @@ jobs:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
-    - name: "macOS/Xcode 11.7/Shared/Unix-like"
+    - name: "macOS/Xcode 12/Shared/Unix-like"
       os: osx
-      osx_image: xcode11.7
+      osx_image: xcode12
       env:
         - BUILD_DIR=unix
-# Older MacOS versions
-    - name: "macOS/Xcode 11/Shared"
+# Newer MacOS versions
+    - name: "macOS 10.15/Xcode 12/Universal Apps/Shared"
       os: osx
-      osx_image: xcode11
+      osx_image: xcode12u
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS/Xcode 10/Shared"
+# Older MacOS versions
+    - name: "macOS 10.15/Xcode 11/Shared"
+      os: osx
+      osx_image: xcode11.7
+      env:
+        - BUILD_DIR=macosx
+      install: []
+      script: *mactest
+    - name: "macOS 10.14/Xcode 10/Shared"
       os: osx
       osx_image: xcode10.3
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS/Xcode 9/Shared"
+    - name: "macOS 10.13/Xcode 9/Shared"
       os: osx
-      osx_image: xcode9.2
+      osx_image: xcode9.4
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS/Xcode 8/Shared"
+    - name: "macOS 10.12/Xcode 8/Shared"
       os: osx
       osx_image: xcode8.3
       env:
