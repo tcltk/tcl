@@ -1723,7 +1723,7 @@ Tcl_FSEvalFileEx(
 
     /*
      * If the encoding is specified, set the channel to that encoding.
-     * Otherwise use utf-8.
+     * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
     if (encodingName == NULL) {
@@ -1859,7 +1859,7 @@ TclNREvalFile(
 
     /*
      * If the encoding is specified, set the channel to that encoding.
-     * Otherwise use utf-8.
+     * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
     if (encodingName == NULL) {
