@@ -47,7 +47,7 @@ A leading BOM (Byte order mark) contained in the file is ignored for unicode enc
 .PP
 The \fB\-encoding\fR option is used to specify the encoding of
 the data stored in \fIfileName\fR.  When the \fB\-encoding\fR option
-is omitted, the system encoding is assumed.
+is omitted, the utf-8 encoding is assumed.
 .SH EXAMPLE
 .PP
 Run the script in the file \fBfoo.tcl\fR and then the script in the
