@@ -309,7 +309,7 @@ test uplevel-7.3 {var access, LVT in upper level} -setup {
 test uplevel-8.0 {
     string representation isn't generated when there is only one argument
 } -body {
-    set res {} 
+    set res {}
     set script [list lindex 5]
     lappend res [apply {script {
 	uplevel $script
