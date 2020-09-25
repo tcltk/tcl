@@ -9739,9 +9739,6 @@ done
 $as_echo "#define USE_VFORK 1" >>confdefs.h
 
 
-$as_echo "#define TCL_DEFAULT_ENCODING \"utf-8\"" >>confdefs.h
-
-
 $as_echo "#define TCL_LOAD_FROM_MEMORY 1" >>confdefs.h
 
 
