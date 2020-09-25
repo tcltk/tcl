@@ -153,8 +153,8 @@ test winDde-3.5 {DDE request locally} -constraints dde -body {
     dde request -binary TclEval self \xe1
 } -result "foo\x00"
 # Set variable a to A with diaeresis (unicode C4) by relying on the fact
-# that utf8 is sent (e.g. "c3 84" on the wire)
-test winDde-3.6 {DDE request utf8} -constraints dde -body {
+# that utf-8 is sent (e.g. "c3 84" on the wire)
+test winDde-3.6 {DDE request utf-8} -constraints dde -body {
     set \xe1 "not set"
     dde execute TclEval self "set \xe1 \xc4"
     scan [set \xe1] %c
