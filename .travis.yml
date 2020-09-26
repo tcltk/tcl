@@ -120,9 +120,9 @@ jobs:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols=mem"
 # Testing on Mac, various styles
-    - name: "macOS/Clang/Xcode 11.7/Shared"
+    - name: "macOS/Clang/Xcode 12/Shared"
       os: osx
-      osx_image: xcode11.7
+      osx_image: xcode12
       env:
         - BUILD_DIR=macosx
       install: []
@@ -130,14 +130,14 @@ jobs:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
-    - name: "macOS/Clang/Xcode 11.7/Shared/Unix-like"
+    - name: "macOS/Clang/Xcode 12/Shared/Unix-like"
       os: osx
-      osx_image: xcode11.7
+      osx_image: xcode112
       env:
         - BUILD_DIR=unix
-    - name: "macOS/Clang/Xcode 11.7/Shared/libtommath"
+    - name: "macOS/Clang/Xcode 12/Shared/libtommath"
       os: osx
-      osx_image: xcode11.7
+      osx_image: xcode12
       env:
         - BUILD_DIR=macosx
       install: []
@@ -146,18 +146,26 @@ jobs:
         homebrew:
           packages:
             - libtommath
-    - name: "macOS/Clang++/Xcode 11.7/Shared"
+    - name: "macOS/Clang++/Xcode 12/Shared"
       os: osx
-      osx_image: xcode11.7
+      osx_image: xcode12
       env:
         - BUILD_DIR=unix
         - CFGOPT="CC=clang++ --enable-framework CFLAGS=-Dregister=dont+use+register CPPFLAGS=-D__private_extern__=extern"
       script:
         - make all tcltest
+# Newer MacOS versions
+    - name: "macOS/Clang/Xcode 12/Universal Apps/Shared"
+      os: osx
+      osx_image: xcode12u
+      env:
+        - BUILD_DIR=macosx
+      install: []
+      script: *mactest
 # Older MacOS versions
     - name: "macOS/Clang/Xcode 11/Shared"
       os: osx
-      osx_image: xcode11
+      osx_image: xcode11.7
       env:
         - BUILD_DIR=macosx
       install: []
@@ -171,7 +179,7 @@ jobs:
       script: *mactest
     - name: "macOS/Clang/Xcode 9/Shared"
       os: osx
-      osx_image: xcode9.2
+      osx_image: xcode9.4
       env:
         - BUILD_DIR=macosx
       install: []
