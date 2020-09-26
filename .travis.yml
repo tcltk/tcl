@@ -128,7 +128,7 @@ jobs:
       env:
         - BUILD_DIR=unix
 # Newer MacOS versions
-    - name: "macOS 10.15/Xcode 12/Universal Apps/Shared"
+    - name: "macOS/Xcode 12/Universal Apps/Shared"
       os: osx
       osx_image: xcode12u
       env:
@@ -136,28 +136,28 @@ jobs:
       install: []
       script: *mactest
 # Older MacOS versions
-    - name: "macOS 10.15/Xcode 11/Shared"
+    - name: "macOS/Xcode 11/Shared"
       os: osx
       osx_image: xcode11.7
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS 10.14/Xcode 10/Shared"
+    - name: "macOS/Xcode 10/Shared"
       os: osx
       osx_image: xcode10.3
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS 10.13/Xcode 9/Shared"
+    - name: "macOS/Xcode 9/Shared"
       os: osx
       osx_image: xcode9.4
       env:
         - BUILD_DIR=macosx
       install: []
       script: *mactest
-    - name: "macOS 10.12/Xcode 8/Shared"
+    - name: "macOS/Xcode 8/Shared"
       os: osx
       osx_image: xcode8.3
       env:
