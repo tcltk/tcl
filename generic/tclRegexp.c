@@ -676,9 +676,9 @@ TclRegAbout(
      * well and Tcl has other limits that constrain things as well...
      */
 
-    resultObj = Tcl_NewObj();
-    Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewWideIntObj((Tcl_WideInt) regexpPtr->re.re_nsub));
+    TclNewObj(resultObj);
+    TclNewIntObj(infoObj, regexpPtr->re.re_nsub);
+    Tcl_ListObjAppendElement(NULL, resultObj, infoObj);
 
     /*
      * Now append a list of all the bit-flags set for the RE.

@@ -687,7 +687,7 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 tclBasic.${OBJEXT}: tclBasic.c tclUuid.h
 
 $(TOP_DIR)/manifest.uuid:
-	printf "git." >$(TOP_DIR)/manifest.uuid
+	printf "git-" >$(TOP_DIR)/manifest.uuid
 	git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid
 
 tclUuid.h:	$(TOP_DIR)/manifest.uuid

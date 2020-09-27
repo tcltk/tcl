@@ -89,6 +89,7 @@
 #endif
 
 static Tcl_Config const cfg[] = {
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
     {"debug",			CFG_DEBUG},
     {"threaded",		CFG_THREADED},
     {"profiled",		CFG_PROFILED},
@@ -97,6 +98,7 @@ static Tcl_Config const cfg[] = {
     {"mem_debug",		CFG_MEMDEBUG},
     {"compile_debug",		CFG_COMPILE_DEBUG},
     {"compile_stats",		CFG_COMPILE_STATS},
+#endif
 
     /* Runtime paths to various stuff */
 

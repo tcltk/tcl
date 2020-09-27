@@ -469,12 +469,13 @@ FillEncodingFileMap(void)
 	 */
 
 	int j, numFiles;
-	Tcl_Obj *directory, *matchFileList = Tcl_NewObj();
+	Tcl_Obj *directory, *matchFileList;
 	Tcl_Obj **filev;
 	Tcl_GlobTypeData readableFiles = {
 	    TCL_GLOB_TYPE_FILE, TCL_GLOB_PERM_R, NULL, NULL
 	};
 
+	TclNewObj(matchFileList);
 	Tcl_ListObjIndex(NULL, searchPath, i, &directory);
 	Tcl_IncrRefCount(directory);
 	Tcl_IncrRefCount(matchFileList);
@@ -915,10 +916,11 @@ Tcl_GetEncodingNames(
     Tcl_HashTable table;
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
-    Tcl_Obj *map, *name, *result = Tcl_NewObj();
+    Tcl_Obj *map, *name, *result;
     Tcl_DictSearch mapSearch;
     int dummy, done = 0;
 
+    TclNewObj(result);
     Tcl_InitObjHashTable(&table);
 
     /*

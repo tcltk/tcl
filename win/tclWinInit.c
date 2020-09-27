@@ -549,7 +549,8 @@ TclpSetVariables(
 		TCL_GLOBAL_ONLY);
     }
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+
     /*
      * The existence of the "debug" element of the tcl_platform array
      * indicates that this particular Tcl shell has been compiled with debug

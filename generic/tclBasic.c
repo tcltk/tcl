@@ -709,7 +709,7 @@ Tcl_CreateInterp(void)
 #endif
     iPtr->freeProc = NULL;
     iPtr->errorLine = 0;
-    iPtr->objResultPtr = Tcl_NewObj();
+    TclNewObj(iPtr->objResultPtr);
     Tcl_IncrRefCount(iPtr->objResultPtr);
     iPtr->handle = TclHandleCreate(iPtr);
     iPtr->globalNsPtr = NULL;
@@ -797,8 +797,7 @@ Tcl_CreateInterp(void)
     iPtr->activeInterpTracePtr = NULL;
     iPtr->assocData = NULL;
     iPtr->execEnvPtr = NULL;	/* Set after namespaces initialized. */
-    iPtr->emptyObjPtr = Tcl_NewObj();
-				/* Another empty object. */
+    TclNewObj(iPtr->emptyObjPtr); /* Another empty object. */
     Tcl_IncrRefCount(iPtr->emptyObjPtr);
 #ifndef TCL_NO_DEPRECATED
     iPtr->resultSpace[0] = 0;
@@ -864,7 +863,7 @@ Tcl_CreateInterp(void)
      * TIP #285, Script cancellation support.
      */
 
-    iPtr->asyncCancelMsg = Tcl_NewObj();
+    TclNewObj(iPtr->asyncCancelMsg);
 
     cancelInfo = (CancelInfo *)ckalloc(sizeof(CancelInfo));
     cancelInfo->interp = interp;
@@ -1160,7 +1159,7 @@ Tcl_CreateInterp(void)
 #endif /* !TCL_NO_DEPRECATED */
     TclpSetVariables(interp);
 
-#if TCL_THREADS
+#if TCL_THREADS && !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
     /*
      * The existence of the "threaded" element of the tcl_platform array
      * indicates that this particular Tcl shell has been compiled with threads
@@ -1184,18 +1183,18 @@ Tcl_CreateInterp(void)
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL
 	    "+" STRINGIFY(TCL_VERSION_UUID)
-#ifdef TCL_COMPILE_DEBUG
-	    ".compiledebug"
-#endif
-#ifdef TCL_COMPILE_STATS
-	    ".compilestats"
-#endif
 #if defined(__clang__) && defined(__clang_major__)
 	    ".clang-" STRINGIFY(__clang_major__)
 #if __clang_minor__ < 10
 	    "0"
 #endif
 	    STRINGIFY(__clang_minor__)
+#endif
+#ifdef TCL_COMPILE_DEBUG
+	    ".compiledebug"
+#endif
+#ifdef TCL_COMPILE_STATS
+	    ".compilestats"
 #endif
 #ifndef NDEBUG
 	    ".debug"
@@ -3049,7 +3048,7 @@ TclRenameCommand(
     }
 
     cmdNsPtr = cmdPtr->nsPtr;
-    oldFullName = Tcl_NewObj();
+    TclNewObj(oldFullName);
     Tcl_IncrRefCount(oldFullName);
     Tcl_GetCommandFullName(interp, cmd, oldFullName);
 
@@ -4102,7 +4101,7 @@ OldMathFuncProc(
     if (funcResult.type == TCL_INT) {
 	TclNewIntObj(valuePtr, funcResult.intValue);
     } else if (funcResult.type == TCL_WIDE_INT) {
-	valuePtr = Tcl_NewWideIntObj(funcResult.wideValue);
+	TclNewIntObj(valuePtr, funcResult.wideValue);
     } else {
 	return CheckDoubleResult(interp, funcResult.doubleValue);
     }
@@ -4261,7 +4260,7 @@ Tcl_ListMathFuncs(
     if (TCL_OK == Tcl_EvalObjEx(interp, script, 0)) {
 	result = Tcl_DuplicateObj(Tcl_GetObjResult(interp));
     } else {
-	result = Tcl_NewObj();
+	TclNewObj(result);
     }
     Tcl_DecrRefCount(script);
     Tcl_RestoreInterpState(interp, state);
@@ -10020,7 +10019,7 @@ InjectHandler(
              * I don't think this is reachable...
              */
 
-            Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewIntObj(nargs));
+            Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewWideIntObj(nargs));
         }
         Tcl_ListObjAppendElement(NULL, listPtr, Tcl_GetObjResult(interp));
     }

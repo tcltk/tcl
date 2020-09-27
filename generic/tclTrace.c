@@ -276,7 +276,7 @@ Tcl_TraceObjCmd(
 	    return TCL_ERROR;
 	}
 
-	opsList = Tcl_NewObj();
+	TclNewObj(opsList);
 	Tcl_IncrRefCount(opsList);
 	flagOps = TclGetStringFromObj(objv[3], &numFlags);
 	if (numFlags == 0) {
@@ -320,7 +320,7 @@ Tcl_TraceObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "name");
 	    return TCL_ERROR;
 	}
-	resultListPtr = Tcl_NewObj();
+	TclNewObj(resultListPtr);
 	name = Tcl_GetString(objv[2]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
@@ -965,7 +965,7 @@ TraceVariableObjCmd(
 	    return TCL_ERROR;
 	}
 
-	resultListPtr = Tcl_NewObj();
+	TclNewObj(resultListPtr);
 	name = Tcl_GetString(objv[3]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
 	    Tcl_Obj *opObjPtr, *eachTraceObjPtr, *elemObjPtr;
