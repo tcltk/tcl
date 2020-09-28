@@ -6218,8 +6218,8 @@ TEBCresume(
 	if (TclHasIntRep(valuePtr,  &tclBooleanType)) {
 	    objResultPtr = TCONST(1);
 	} else {
-	    int result = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
-	    objResultPtr = TCONST(result);
+	    int res = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
+	    objResultPtr = TCONST(res);
 	}
 	TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(valuePtr)), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
@@ -6249,7 +6249,7 @@ TEBCresume(
 
     {
 	ForeachInfo *infoPtr;
-	Tcl_Obj *listPtr, **elements, *tmpPtr;
+	Tcl_Obj *listPtr, **elements;
 	ForeachVarList *varListPtr;
 	int numLists, listLen, numVars;
 	int listTmpDepth;

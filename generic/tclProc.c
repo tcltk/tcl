@@ -910,7 +910,7 @@ TclNRUplevelObjCmd(
     Tcl_Obj *objPtr;
 
     if (objc < 2) {
-    /* to do 
+    /* to do
     *    simplify things by interpreting the argument as a command when there
     *    is only one argument.  This requires a TIP since currently a single
     *    argument is interpreted as a level indicator if possible.

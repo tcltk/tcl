@@ -1075,7 +1075,6 @@ TclpMatchInDirectory(
 	do {
 	    const char *utfname;
 	    int checkDrive = 0, isDrive;
-	    DWORD attr;
 
 	    native = data.cFileName;
 	    attr = data.dwFileAttributes;
@@ -1426,7 +1425,6 @@ TclpGetUserHome(
     int rc = 0;
     const char *domain;
     WCHAR *wName, *wHomeDir, *wDomain;
-    WCHAR buf[MAX_PATH];
 
     Tcl_DStringInit(bufferPtr);
 
@@ -1492,6 +1490,7 @@ TclpGetUserHome(
 		size = lstrlenW(wHomeDir);
 		Tcl_WCharToUtfDString(wHomeDir, size, bufferPtr);
 	    } else {
+		WCHAR buf[MAX_PATH];
 		/*
 		 * User exists but has no home dir. Return
 		 * "{GetProfilesDirectory}/<user>".
@@ -2798,7 +2797,6 @@ TclpObjNormalizePath(
 	     * Not the end of the string.
 	     */
 
-	    char *path;
 	    Tcl_Obj *tmpPathPtr;
 	    size_t length;
 

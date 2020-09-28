@@ -1,6 +1,8 @@
 language: c
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
       - binutils-mingw-w64-i686
       - binutils-mingw-w64-x86-64
@@ -11,7 +13,7 @@ addons:
       - gcc-multilib
 jobs:
   include:
-# Testing on Linux with various compilers
+# Testing on Linux GCC
     - name: "Linux/GCC/Shared"
       os: linux
       dist: focal
@@ -61,29 +63,15 @@ jobs:
       env:
         - BUILD_DIR=unix
         - CFGOPT="CC=g++ CFLAGS=-Dregister=dont+use+register"
-# Older versions of GCC...
-    - name: "Linux/GCC 7/Shared"
+# Newer/Older versions of GCC
+    - name: "Linux/GCC 10/Shared"
       os: linux
       dist: focal
-      compiler: gcc-7
+      compiler: gcc-10
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
           packages:
-            - g++-7
-      env:
-        - BUILD_DIR=unix
-    - name: "Linux/GCC 6/Shared"
-      os: linux
-      dist: bionic
-      compiler: gcc-6
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
+            - g++-10
       env:
         - BUILD_DIR=unix
     - name: "Linux/GCC 5/Shared"
@@ -92,13 +80,11 @@ jobs:
       compiler: gcc-5
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
           packages:
             - g++-5
       env:
         - BUILD_DIR=unix
-# Clang
+# Testing on Linux Clang
     - name: "Linux/Clang/Shared"
       os: linux
       dist: focal
@@ -127,9 +113,9 @@ jobs:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols=mem"
 # Testing on Mac, various styles
-    - name: "macOS/Clang/Xcode 11.7/Shared"
+    - name: "macOS/Clang/Xcode 12/Shared"
       os: osx
-      osx_image: xcode11.7
+      osx_image: xcode12
       env:
         - BUILD_DIR=macosx
       install: []
@@ -137,14 +123,14 @@ jobs:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
-    - name: "macOS/Clang/Xcode 11.7/Shared/Unix-like"
+    - name: "macOS/Clang/Xcode 12/Shared/Unix-like"
       os: osx
-      osx_image: xcode11.7
+      osx_image: xcode112
       env:
         - BUILD_DIR=unix
-    - name: "macOS/Clang/Xcode 11.7/Shared/libtommath"
+    - name: "macOS/Clang/Xcode 12/Shared/libtommath"
       os: osx
-      osx_image: xcode11.7
+      osx_image: xcode12
       env:
         - BUILD_DIR=macosx
       install: []
@@ -153,18 +139,26 @@ jobs:
         homebrew:
           packages:
             - libtommath
-    - name: "macOS/Clang++/Xcode 11.7/Shared"
+    - name: "macOS/Clang++/Xcode 12/Shared"
       os: osx
-      osx_image: xcode11.7
+      osx_image: xcode12
       env:
         - BUILD_DIR=unix
         - CFGOPT="CC=clang++ --enable-framework CFLAGS=-Dregister=dont+use+register CPPFLAGS=-D__private_extern__=extern"
       script:
         - make all tcltest
+# Newer MacOS versions
+    - name: "macOS/Clang/Xcode 12/Universal Apps/Shared"
+      os: osx
+      osx_image: xcode12u
+      env:
+        - BUILD_DIR=macosx
+      install: []
+      script: *mactest
 # Older MacOS versions
     - name: "macOS/Clang/Xcode 11/Shared"
       os: osx
-      osx_image: xcode11
+      osx_image: xcode11.7
       env:
         - BUILD_DIR=macosx
       install: []
@@ -178,7 +172,7 @@ jobs:
       script: *mactest
     - name: "macOS/Clang/Xcode 9/Shared"
       os: osx
-      osx_image: xcode9.2
+      osx_image: xcode9.4
       env:
         - BUILD_DIR=macosx
       install: []
@@ -432,6 +426,6 @@ install:
 before_script:
   - export ERROR_ON_FAILURES=1
 script:
-  - make all tcltest
+  - make all tcltest || echo "Something wrong, maybe a hickup, let's try again"
   - make test
   - make install
