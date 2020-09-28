@@ -2464,7 +2464,7 @@ CompileExprTree(
 		size_t length;
 		const char *bytes = TclGetStringFromObj(literal, &length);
 		int idx = TclRegisterLiteral(envPtr, bytes, length, 0);
-		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, index);
+		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, idx);
 
 		if ((objPtr->typePtr == NULL) && (literal->typePtr != NULL)) {
 		    /*
