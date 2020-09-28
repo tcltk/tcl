@@ -351,7 +351,7 @@
 
 	* mac/tclMacFile.c: fixed bug in permission checking code
 
-	* mac/tclMacLoad.c: corrected utf8 handling, comparison of package
+	* mac/tclMacLoad.c: corrected utf-8 handling, comparison of package
 	names to code fragment names changed to only match on the length of
 	package name, this allows for fragment names with version numbers
 	appended.
