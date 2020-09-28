@@ -7398,8 +7398,6 @@ TestconcatobjCmd(
 		"\n\t* (e) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
-	int len;
-
 	result = TCL_ERROR;
 	Tcl_AppendResult(interp, "\n\t* (e) concatObj is not a new obj ",
 		NULL);
@@ -7430,8 +7428,6 @@ TestconcatobjCmd(
 		"\n\t* (f) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
-	int len;
-
 	result = TCL_ERROR;
 	Tcl_AppendResult(interp, "\n\t* (f) concatObj is not a new obj ",
 		NULL);
@@ -7463,8 +7459,6 @@ TestconcatobjCmd(
 		"\n\t* (g) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
-	int len;
-
 	result = TCL_ERROR;
 	Tcl_AppendResult(interp, "\n\t* (g) concatObj is not a new obj ",
 		NULL);
@@ -7559,7 +7553,7 @@ static int
 InterpCmdResolver(
     Tcl_Interp *interp,
     const char *name,
-    Tcl_Namespace *context,
+    Tcl_Namespace *dummy,
     int flags,
     Tcl_Command *rPtr)
 {
@@ -7569,6 +7563,7 @@ InterpCmdResolver(
             varFramePtr->procPtr : NULL;
     Namespace *callerNsPtr = varFramePtr->nsPtr;
     Tcl_Command resolvedCmdPtr = NULL;
+    (void)dummy;
 
     /*
      * Just do something special on a cmd literal "z" in two cases:

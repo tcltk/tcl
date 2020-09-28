@@ -1137,9 +1137,10 @@ TclNRPackageObjCmd(
 	    Tcl_NRAddCallback(interp, PkgRequireCore, (void *)argv3, INT2PTR(newobjc), newObjvPtr, NULL);
 	    return TCL_OK;
 	} else {
-	    int i, newobjc = objc-3;
 	    Tcl_Obj *const *newobjv = objv + 3;
-	    if (CheckAllRequirements(interp, objc-3, objv+3) != TCL_OK) {
+	    newobjc = objc - 3;
+
+	    if (CheckAllRequirements(interp, objc - 3, objv + 3) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    objvListPtr = Tcl_NewListObj(0, NULL);

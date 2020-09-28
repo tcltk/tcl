@@ -3231,7 +3231,7 @@ TclpOpenTemporaryFile(
 	Tcl_DStringFree(&buf);
     } else {
 	const WCHAR *baseStr = L"TCL";
-	int length = 3 * sizeof(WCHAR);
+	length = 3 * sizeof(WCHAR);
 
 	memcpy(namePtr, baseStr, length);
 	namePtr += length;

@@ -100,11 +100,11 @@ foreach {tname tbody tresult tcode} {
     {unicode} {string compare \334 \u00fc} -1 {}
     {unicode} {string compare \334\334\334\374\374 \334\334\334\334\334} 1 {}
     {high bit} {
-	# This test will fail if the underlying comparaison
+	# This test will fail if the underlying comparison
 	# is using signed chars instead of unsigned chars.
 	# (like SunOS's default memcmp thus the compat/memcmp.c)
 	string compare "\x80" "@"
-	# Nb this tests works also in utf8 space because \x80 is
+	# Nb this tests works also in utf-8 space because \x80 is
 	# translated into a 2 or more bytelength but whose first byte has
 	# the high bit set.
     } {1} {}
