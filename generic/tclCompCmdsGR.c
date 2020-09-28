@@ -875,7 +875,7 @@ TclCompileLappendCmd(
      */
 
     if (numWords > 2) {
-	Tcl_Token *valueTokenPtr = TokenAfter(varTokenPtr);
+	valueTokenPtr = TokenAfter(varTokenPtr);
 
 	CompileWord(envPtr, valueTokenPtr, interp, 2);
     }
