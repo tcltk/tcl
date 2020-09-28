@@ -2463,8 +2463,8 @@ CompileExprTree(
 	    if (optimize) {
 		size_t length;
 		const char *bytes = TclGetStringFromObj(literal, &length);
-		int index = TclRegisterLiteral(envPtr, bytes, length, 0);
-		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, index);
+		int idx = TclRegisterLiteral(envPtr, bytes, length, 0);
+		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, idx);
 
 		if ((objPtr->typePtr == NULL) && (literal->typePtr != NULL)) {
 		    /*
@@ -2484,7 +2484,7 @@ CompileExprTree(
 		    objPtr->internalRep = literal->internalRep;
 		    literal->typePtr = NULL;
 		}
-		TclEmitPush(index, envPtr);
+		TclEmitPush(idx, envPtr);
 	    } else {
 		/*
 		 * When optimize==0, we know the expression is a one-off and
@@ -2510,7 +2510,7 @@ CompileExprTree(
 
 		if (ExecConstantExprTree(interp, nodes, next, litObjvPtr)
 			== TCL_OK) {
-		    int index;
+		    int idx;
 		    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
 
 		    /*
@@ -2524,8 +2524,8 @@ CompileExprTree(
 			const char *bytes
 				= TclGetStringFromObj(objPtr, &numBytes);
 
-			index = TclRegisterLiteral(envPtr, bytes, numBytes, 0);
-			tableValue = TclFetchLiteral(envPtr, index);
+			idx = TclRegisterLiteral(envPtr, bytes, numBytes, 0);
+			tableValue = TclFetchLiteral(envPtr, idx);
 			if ((tableValue->typePtr == NULL) &&
 				(objPtr->typePtr != NULL)) {
 			    /*
@@ -2537,9 +2537,9 @@ CompileExprTree(
 			    objPtr->typePtr = NULL;
 			}
 		    } else {
-			index = TclAddLiteralObj(envPtr, objPtr, NULL);
+			idx = TclAddLiteralObj(envPtr, objPtr, NULL);
 		    }
-		    TclEmitPush(index, envPtr);
+		    TclEmitPush(idx, envPtr);
 		} else {
 		    TclCompileSyntaxError(interp, envPtr);
 		}

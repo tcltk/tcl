@@ -937,16 +937,16 @@ Tcl_ScanObjCmd(
 	    } else if (flags & SCAN_BIG) {
 		if (flags & SCAN_UNSIGNED) {
 		    mp_int big;
-		    int code = Tcl_GetBignumFromObj(interp, objPtr, &big);
+		    int res = Tcl_GetBignumFromObj(interp, objPtr, &big);
 
-		    if (code == TCL_OK) {
+		    if (res == TCL_OK) {
 			if (mp_isneg(&big)) {
-			    code = TCL_ERROR;
+			    res = TCL_ERROR;
 			}
 			mp_clear(&big);
 		    }
 
-		    if (code == TCL_ERROR) {
+		    if (res == TCL_ERROR) {
 			if (objs != NULL) {
 			    Tcl_Free(objs);
 			}

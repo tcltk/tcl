@@ -2339,10 +2339,10 @@ Tcl_AppendFormatToObj(
 		goto errorMsg;
 	    }
 	    if (ch == 'A') {
-		char *p = TclGetString(segment) + 1;
-		*p = 'x';
-		p = strchr(p, 'P');
-		if (p) *p = 'p';
+		char *q = TclGetString(segment) + 1;
+		*q = 'x';
+		q = strchr(q, 'P');
+		if (q) *q = 'p';
 	    }
 	    break;
 	}
@@ -3455,7 +3455,7 @@ TclStringFirst(
 {
     size_t lh = 0, ln = Tcl_GetCharLength(needle);
     size_t value = TCL_INDEX_NONE;
-    Tcl_UniChar *check, *end, *uh, *un;
+    Tcl_UniChar *checkStr, *endStr, *uh, *un;
     Tcl_Obj *obj;
 
     if (start == TCL_INDEX_NONE) {
@@ -3522,12 +3522,12 @@ TclStringFirst(
 	/* Don't start the loop if there cannot be a valid answer */
 	goto firstEnd;
     }
-    end = uh + lh;
+    endStr = uh + lh;
 
-    for (check = uh + start; check + ln <= end; check++) {
-	if ((*check == *un) && (0 ==
-		memcmp(check + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
-	    value =  (check - uh);
+    for (checkStr = uh + start; checkStr + ln <= endStr; checkStr++) {
+	if ((*checkStr == *un) && (0 ==
+		memcmp(checkStr + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
+	    value =  (checkStr - uh);
 	    goto firstEnd;
 	}
     }
@@ -3562,7 +3562,7 @@ TclStringLast(
 {
     size_t lh = 0, ln = Tcl_GetCharLength(needle);
     size_t value = TCL_INDEX_NONE;
-    Tcl_UniChar *check, *uh, *un;
+    Tcl_UniChar *checkStr, *uh, *un;
     Tcl_Obj *obj;
 
     if (ln == 0) {
@@ -3609,14 +3609,14 @@ TclStringLast(
 	/* Don't start the loop if there cannot be a valid answer */
 	goto lastEnd;
     }
-    check = uh + last + 1 - ln;
-    while (check >= uh) {
-	if ((*check == un[0])
-		&& (0 == memcmp(check+1, un+1, (ln-1)*sizeof(Tcl_UniChar)))) {
-	    value = (check - uh);
+    checkStr = uh + last + 1 - ln;
+    while (checkStr >= uh) {
+	if ((*checkStr == un[0])
+		&& (0 == memcmp(checkStr+1, un+1, (ln-1)*sizeof(Tcl_UniChar)))) {
+	    value = (checkStr - uh);
 	    goto lastEnd;
 	}
-	check--;
+	checkStr--;
     }
   lastEnd:
     TclNewIndexObj(obj, value);

@@ -397,7 +397,7 @@ test util-6.6 {Tcl_PrintDouble - make sure there's a decimal point} {
 } {x3e+98}
 
 # This test always succeeded in the C locale anyway...
-test util-8.1 {TclNeedSpace - correct UTF8 handling} {
+test util-8.1 {TclNeedSpace - correct utf-8 handling} {
     # Bug 411825
     # Note that this test relies on the fact that
     # [interp target] calls on Tcl_AppendElement()
@@ -411,7 +411,7 @@ test util-8.1 {TclNeedSpace - correct UTF8 handling} {
     interp delete \u5420
     set result
 } "\u5420 foo"
-test util-8.2 {TclNeedSpace - correct UTF8 handling} testdstring {
+test util-8.2 {TclNeedSpace - correct utf-8 handling} testdstring {
     # Bug 411825
     # This tests the same bug as the previous test, but
     # should be more future-proof, as the DString
@@ -421,14 +421,14 @@ test util-8.2 {TclNeedSpace - correct UTF8 handling} testdstring {
     testdstring element foo
     llength [testdstring get]
 } 2
-test util-8.3 {TclNeedSpace - correct UTF8 handling} testdstring {
+test util-8.3 {TclNeedSpace - correct utf-8 handling} testdstring {
     # Bug 411825 - new variant reported by Dossy Shiobara
     testdstring free
     testdstring append \u00A0 -1
     testdstring element foo
     llength [testdstring get]
 } 2
-test util-8.4 {TclNeedSpace - correct UTF8 handling} testdstring {
+test util-8.4 {TclNeedSpace - correct utf-8 handling} testdstring {
     # Another bug uncovered while fixing 411825
     testdstring free
     testdstring append {\ } -1
@@ -436,13 +436,13 @@ test util-8.4 {TclNeedSpace - correct UTF8 handling} testdstring {
     testdstring element foo
     llength [testdstring get]
 } 2
-test util-8.5 {TclNeedSpace - correct UTF8 handling} testdstring {
+test util-8.5 {TclNeedSpace - correct utf-8 handling} testdstring {
     testdstring free
     testdstring append {\\ } -1
     testdstring element foo
     list [llength [testdstring get]] [string length [testdstring get]]
 } {2 6}
-test util-8.6 {TclNeedSpace - correct UTF8 handling} testdstring {
+test util-8.6 {TclNeedSpace - correct utf-8 handling} testdstring {
     testdstring free
     testdstring append {\\ } -1
     testdstring append \{ -1
