@@ -14,7 +14,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-testConstraint debug [::tcl::pkgconfig get debug]
+testConstraint debug [expr {"debug" in [split [package provide Tcl] .]}]
 testConstraint dde 0
 if {[testConstraint win]} {
     if {![catch {
