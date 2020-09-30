@@ -746,6 +746,7 @@ proc http::geturl {url args} {
 	-strict		boolean
 	-timeout	integer
 	-validate	boolean
+	-headers	dict
     }
     set state(charset)	$defaultCharset
     set options {
