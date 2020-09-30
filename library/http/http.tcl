@@ -746,7 +746,7 @@ proc http::geturl {url args} {
 	-strict		boolean
 	-timeout	integer
 	-validate	boolean
-	-headers	list
+	-headers	dict
     }
     set state(charset)	$defaultCharset
     set options {
@@ -761,9 +761,8 @@ proc http::geturl {url args} {
 	if {[regexp -- $pat $flag]} {
 	    # Validate numbers
 	    if {
-		([info exists type($flag)] &&
-		![string is $type($flag) -strict $value]) ||
-		$flag eq "-headers" && [llength $value] %2 != 0
+		[info exists type($flag)] &&
+		![string is $type($flag) -strict $value]
 	    } {
 		unset $token
 		return -code error \
