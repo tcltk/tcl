@@ -760,9 +760,8 @@ proc http::geturl {url args} {
     foreach {flag value} $args {
 	if {[regexp -- $pat $flag]} {
 	    # Validate numbers
-	    if {
-		[info exists type($flag)] &&
-		![string is $type($flag) -strict $value]
+	    if {($flag eq "-headers") ? [catch {dict size $value}] :
+		([info exists type($flag)] && ![string is $type($flag) -strict $value])
 	    } {
 		unset $token
 		return -code error \
