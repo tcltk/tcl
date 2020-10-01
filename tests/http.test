@@ -444,6 +444,9 @@ test http-3.33 {http::geturl application/xml is text} -body {
 } -cleanup {
     catch { http::cleanup $token }
 } -result {test 4660 /test}
+test http-3.34 {http::geturl -headers not a dict} -returnCodes error -body {
+    http::geturl http://test/t -headers NoDict
+} -result {Bad value for -headers (NoDict), must be dict}
 
 test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]

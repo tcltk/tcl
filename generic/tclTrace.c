@@ -1177,7 +1177,7 @@ Tcl_UntraceCommand(
     CommandTrace *tracePtr;
     CommandTrace *prevPtr;
     Command *cmdPtr;
-    Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *)interp;
     ActiveCommandTrace *activePtr;
     int hasExecTraces = 0;
 
@@ -1252,7 +1252,6 @@ Tcl_UntraceCommand(
 	 */
 
 	if (cmdPtr->compileProc != NULL) {
-	    Interp *iPtr = (Interp *) interp;
 	    iPtr->compileEpoch++;
 	}
     }
