@@ -54,9 +54,9 @@ proc mapAndSortList {map listIn} {
 catch {safe::interpConfigure}
 
 # testing that nested and statics do what is advertised (we use a static
-# package - Tcltest - but it might be absent if we're in standard tclsh)
+# package - tcl::test - but it might be absent if we're in standard tclsh)
 
-testConstraint TcltestPackage [expr {![catch {package require Tcltest}]}]
+testConstraint tcl::test [expr {![catch {package require tcl::test}]}]
 
 test safe-1.1 {safe::interpConfigure syntax} -returnCodes error -body {
     safe::interpConfigure
@@ -1158,14 +1158,14 @@ test safe-9.24 {interpConfigure change the access path; check module loading; st
 # See comments on lsort after test safe-9.20.
 
 catch {teststaticpkg Safepkg1 0 0}
-test safe-10.1 {testing statics loading} -constraints TcltestPackage -setup {
+test safe-10.1 {testing statics loading} -constraints tcl::test -setup {
     set i [safe::interpCreate]
 } -body {
     interp eval $i {load {} Safepkg1}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
 } -result {load of binary library for package Safepkg1 failed: can't use package in a safe interpreter: no Safepkg1_SafeInit procedure}
-test safe-10.1.1 {testing statics loading} -constraints TcltestPackage -setup {
+test safe-10.1.1 {testing statics loading} -constraints tcl::test -setup {
     set i [safe::interpCreate]
 } -body {
     catch {interp eval $i {load {} Safepkg1}} m o
@@ -1178,7 +1178,7 @@ test safe-10.1.1 {testing statics loading} -constraints TcltestPackage -setup {
 "load {} Safepkg1"
     invoked from within
 "interp eval $i {load {} Safepkg1}"}
-test safe-10.2 {testing statics loading / -nostatics} -constraints TcltestPackage -body {
+test safe-10.2 {testing statics loading / -nostatics} -constraints tcl::test -body {
     set i [safe::interpCreate -nostatics]
     interp eval $i {load {} Safepkg1}
 } -returnCodes error -cleanup {
@@ -1186,18 +1186,18 @@ test safe-10.2 {testing statics loading / -nostatics} -constraints TcltestPackag
 } -result {permission denied (static package)}
 test safe-10.3 {testing nested statics loading / no nested by default} -setup {
     set i [safe::interpCreate]
-} -constraints TcltestPackage -body {
+} -constraints tcl::test -body {
     interp eval $i {interp create x; load {} Safepkg1 x}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
 } -result {permission denied (nested load)}
-test safe-10.4 {testing nested statics loading / -nestedloadok} -constraints TcltestPackage -body {
+test safe-10.4 {testing nested statics loading / -nestedloadok} -constraints tcl::test -body {
     set i [safe::interpCreate -nestedloadok]
     interp eval $i {interp create x; load {} Safepkg1 x}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
 } -result {load of binary library for package Safepkg1 failed: can't use package in a safe interpreter: no Safepkg1_SafeInit procedure}
-test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints TcltestPackage -body {
+test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints tcl::test -body {
     set i [safe::interpCreate -nestedloadok]
     catch {interp eval $i {interp create x; load {} Safepkg1 x}} m o
     dict get $o -errorinfo

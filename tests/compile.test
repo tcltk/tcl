@@ -18,7 +18,7 @@ if {"::tcltest" ni [namespace children]} {
 
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint exec       [llength [info commands exec]]
 testConstraint memory     [llength [info commands memory]]
@@ -500,7 +500,7 @@ test compile-13.2 {TclCompileScript: testing expected nested scripts compilation
     # with 1500 (1000 in debug) nested scripts (bodies). If you get SO/SF exceptions on some low-stack
     # boxes or systems, please don't decrease it (either provide a constraint)
     ti eval {foreach cmd {eval "if 1" try catch} {
-	set c [gencode [expr {"debug" ni [split [package provide Tcl] .] ? 1500 : 1000}] $cmd]
+	set c [gencode [expr {"debug" ni [split [package provide tcl] .] ? 1500 : 1000}] $cmd]
 	if 1 $c
     }}
     ti eval {set result}

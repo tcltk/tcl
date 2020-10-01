@@ -1181,7 +1181,8 @@ Tcl_CreateInterp(void)
      * TIP #???: Append build information "+<UUID>.<tag1>.<tag2>...."
      */
 
-    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL
+    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
+    Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL
 	    "+" STRINGIFY(TCL_VERSION_UUID)
 #if defined(__clang__) && defined(__clang_major__)
 	    ".clang-" STRINGIFY(__clang_major__)

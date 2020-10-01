@@ -17,7 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testobj [llength [info commands testobj]]
 testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]

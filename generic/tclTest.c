@@ -26,6 +26,7 @@
 #   include "tclTomMath.h"
 #endif
 #include "tclOO.h"
+#include "tclUuid.h"
 #include <math.h>
 
 /*
@@ -436,6 +437,11 @@ static const Tcl_Filesystem simpleFilesystem = {
  *----------------------------------------------------------------------
  */
 
+#ifndef STRINGIFY
+#  define STRINGIFY(x) STRINGIFY1(x)
+#  define STRINGIFY1(x) #x
+#endif
+
 int
 Tcltest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
@@ -459,10 +465,64 @@ Tcltest_Init(
 	return TCL_ERROR;
     }
     /* TIP #268: Full patchlevel instead of just major.minor */
+    /* TIP #???: Append build information "+<UUID>.<tag1>.<tag2>...." */
 
-    if (Tcl_PkgProvideEx(interp, "Tcltest", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
+    if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL
+	    "+" STRINGIFY(TCL_VERSION_UUID)
+#if defined(__clang__) && defined(__clang_major__)
+	    ".clang-" STRINGIFY(__clang_major__)
+#if __clang_minor__ < 10
+	    "0"
+#endif
+	    STRINGIFY(__clang_minor__)
+#endif
+#ifdef TCL_COMPILE_DEBUG
+	    ".compiledebug"
+#endif
+#ifdef TCL_COMPILE_STATS
+	    ".compilestats"
+#endif
+#ifndef NDEBUG
+	    ".debug"
+#endif
+#if !defined(__clang__) && defined(__GNUC__)
+	    ".gcc-" STRINGIFY(__GNUC__)
+#if __GNUC_MINOR__ < 10
+	    "0"
+#endif
+	    STRINGIFY(__GNUC_MINOR__)
+#endif
+#ifdef TCL_MEM_DEBUG
+	    ".memdebug"
+#endif
+#if defined(_MSC_VER)
+	    ".msvc-" STRINGIFY(_MSC_VER)
+#endif
+#ifdef USE_NMAKE
+	    ".nmake"
+#endif
+#ifdef TCL_NO_DEPRECATED
+	    ".no-deprecate"
+#endif
+#ifndef TCL_THREADS
+	    ".no-thread"
+#endif
+#ifndef TCL_CFG_OPTIMIZED
+	    ".no-optimize"
+#endif
+#ifdef TCL_CFG_PROFILED
+	    ".profiled"
+#endif
+#ifdef STATIC_BUILD
+	    ".static"
+#endif
+#if TCL_UTF_MAX < 4
+	    ".utf16"
+#endif
+	    , NULL) == TCL_ERROR) {
 	return TCL_ERROR;
     }
+
 
     /*
      * Create additional commands and math functions for testing Tcl.
