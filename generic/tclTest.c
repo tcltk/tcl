@@ -3206,7 +3206,7 @@ TestlinkarrayCmd(
     static const char *LinkOption[] = {
         "update", "remove", "create", NULL
     };
-    enum LinkOption { LINK_UPDATE, LINK_REMOVE, LINK_CREATE };
+    enum LinkOptionEnum { LINK_UPDATE, LINK_REMOVE, LINK_CREATE };
     static const char *LinkType[] = {
 	"char", "uchar", "short", "ushort", "int", "uint", "long", "ulong",
 	"wide", "uwide", "float", "double", "string", "char*", "binary", NULL
@@ -3231,7 +3231,7 @@ TestlinkarrayCmd(
 	    &optionIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch ((enum LinkOption) optionIndex) {
+    switch ((enum LinkOptionEnum) optionIndex) {
     case LINK_UPDATE:
 	for (i=2; i<objc; i++) {
 	    Tcl_UpdateLinkedVar(interp, Tcl_GetString(objv[i]));
@@ -3797,7 +3797,7 @@ TestregexpObjCmd(
 	"-xflags",
 	"--",		NULL
     };
-    enum options {
+    enum optionsEnum {
 	REGEXP_INDICES, REGEXP_NOCASE,	REGEXP_ABOUT,	REGEXP_EXPANDED,
 	REGEXP_MULTI,	REGEXP_NOCROSS,	REGEXP_NEWL,
 	REGEXP_XFLAGS,
@@ -3822,7 +3822,7 @@ TestregexpObjCmd(
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum options) index) {
+	switch ((enum optionsEnum) index) {
 	case REGEXP_INDICES:
 	    indices = 1;
 	    break;

@@ -472,7 +472,7 @@ ProcessStatusObjCmd(
     static const char *const switches[] = {
 	"-wait", "--", NULL
     };
-    enum switches {
+    enum switchesEnum {
 	STATUS_WAIT, STATUS_LAST
     };
 
@@ -485,7 +485,7 @@ ProcessStatusObjCmd(
 	    return TCL_ERROR;
 	}
 	++objv; --objc;
-	if (STATUS_WAIT == (enum switches) index) {
+	if (STATUS_WAIT == (enum switchesEnum) index) {
 	    options = 0;
 	} else {
 	    break;
