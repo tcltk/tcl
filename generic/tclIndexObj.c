@@ -484,7 +484,7 @@ PrefixMatchObjCmd(
     static const char *const matchOptions[] = {
 	"-error", "-exact", "-message", NULL
     };
-    enum matchOptions {
+    enum matchOptionsEnum {
 	PRFMATCH_ERROR, PRFMATCH_EXACT, PRFMATCH_MESSAGE
     };
 
@@ -498,7 +498,7 @@ PrefixMatchObjCmd(
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum matchOptions) index) {
+	switch ((enum matchOptionsEnum) index) {
 	case PRFMATCH_EXACT:
 	    flags |= TCL_EXACT;
 	    break;
