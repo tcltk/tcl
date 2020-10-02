@@ -792,7 +792,7 @@ Tcl_AfterObjCmd(
     static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
     };
-    enum afterSubCmds {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
+    enum afterSubCmdsEnum {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (objc < 2) {
