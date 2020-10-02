@@ -621,30 +621,41 @@ NRInterpCmd(
     static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"cancel",
 	"children",	"create",	"debug",	"delete",
+	"eval",		"exists",	"expose",	"hide",
+	"hidden",	"issafe",	"invokehidden",
+	"limit",	"marktrusted",	"recursionlimit",
+	"share",	"slaves",	"target",	"transfer",
+	NULL
+    };
+    static const char *const optionsNoSlaves[] = {
+	"alias",	"aliases",	"bgerror",	"cancel",
+	"children",	"create",	"debug",	"delete",
 	"eval",		"exists",	"expose",
 	"hide",		"hidden",	"issafe",
 	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
-	"slaves",	"share",	"target",	"transfer",
-	NULL
+	"share",	"target",	"transfer",	NULL
     };
     enum option {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CANCEL,
 	OPT_CHILDREN,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
-	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,
-	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,
-	OPT_INVOKEHID,	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,
-	OPT_SLAVES,	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
+	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
+	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,
+	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,
+	OPT_SHARE,	OPT_SLAVES,	OPT_TARGET,	OPT_TRANSFER
     };
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(NULL, objv[1], options,
+	    "option", 0, &index) != TCL_OK) {
+	/* Don't report the "slaves" option as possibility */
+	Tcl_GetIndexFromObj(interp, objv[1], optionsNoSlaves,
+		"option", 0, &index);
 	return TCL_ERROR;
     }
-    switch ((enum option) index) {
+    switch ((enum option)index) {
     case OPT_ALIAS: {
 	Tcl_Interp *parentInterp;
 
