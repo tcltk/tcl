@@ -1237,7 +1237,7 @@ Tcl_GlobObjCmd(
 	"-directory", "-join", "-nocomplain", "-path", "-tails",
 	"-types", "--", NULL
     };
-    enum options {
+    enum globOptionsEnum {
 	GLOB_DIR, GLOB_JOIN, GLOB_NOCOMPLAIN, GLOB_PATH, GLOB_TAILS,
 	GLOB_TYPE, GLOB_LAST
     };
@@ -1270,7 +1270,7 @@ Tcl_GlobObjCmd(
 	    }
 	}
 
-	switch (index) {
+	switch ((enum globOptionsEnum) index) {
 	case GLOB_NOCOMPLAIN:			/* -nocomplain */
 	    globFlags |= TCL_GLOBMODE_NO_COMPLAIN;
 	    break;
