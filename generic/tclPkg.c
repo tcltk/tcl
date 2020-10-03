@@ -1032,7 +1032,7 @@ TclNRPackageObjCmd(
 	"present", "provide", "require",  "unknown", "vcompare",
 	"versions", "vsatisfies", NULL
     };
-    enum pkgOptions {
+    enum pkgOptionsEnum {
 	PKG_FILES,  PKG_FORGET,  PKG_IFNEEDED, PKG_NAMES,   PKG_PREFER,
 	PKG_PRESENT, PKG_PROVIDE, PKG_REQUIRE,  PKG_UNKNOWN, PKG_VCOMPARE,
 	PKG_VERSIONS, PKG_VSATISFIES
@@ -1058,7 +1058,7 @@ TclNRPackageObjCmd(
 	    &optionIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch ((enum pkgOptions) optionIndex) {
+    switch ((enum pkgOptionsEnum) optionIndex) {
     case PKG_FILES: {
 	PkgFiles *pkgFiles;
 

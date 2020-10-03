@@ -3160,7 +3160,7 @@ Tcl_LsearchObjCmd(
 	"-real",    "-regexp",  "-sorted",     "-start", "-stride",
 	"-subindices", NULL
     };
-    enum options {
+    enum lsearchoptions {
 	LSEARCH_ALL, LSEARCH_ASCII, LSEARCH_BISECT, LSEARCH_DECREASING,
 	LSEARCH_DICTIONARY, LSEARCH_EXACT, LSEARCH_GLOB, LSEARCH_INCREASING,
 	LSEARCH_INDEX, LSEARCH_INLINE, LSEARCH_INTEGER, LSEARCH_NOCASE,
@@ -3208,7 +3208,7 @@ Tcl_LsearchObjCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	switch ((enum options) index) {
+	switch ((enum lsearchoptions) index) {
 	case LSEARCH_ALL:		/* -all */
 	    allMatches = 1;
 	    break;
