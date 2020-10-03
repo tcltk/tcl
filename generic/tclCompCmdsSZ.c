@@ -511,7 +511,7 @@ TclCompileStringIsCmd(
 	"true",		"upper",	"wideinteger",	"wordchar",
 	"xdigit",	NULL
     };
-    enum isClasses {
+    enum isClassesEnum {
 	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
 	STR_IS_BOOL,	STR_IS_DICT, STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_ENTIER,
 	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,	STR_IS_LIST,
@@ -575,7 +575,7 @@ TclCompileStringIsCmd(
 
     CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
 
-    switch ((enum isClasses) t) {
+    switch ((enum isClassesEnum) t) {
     case STR_IS_ALNUM:
 	strClassType = STR_CLASS_ALNUM;
 	goto compileStrClass;

@@ -202,7 +202,7 @@ Tcl_TraceObjCmd(
 	NULL
     };
     /* 'OLD' options are pre-Tcl-8.4 style */
-    enum traceOptions {
+    enum traceOptionsEnum {
 	TRACE_ADD, TRACE_INFO, TRACE_REMOVE,
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
 	TRACE_OLD_VARIABLE, TRACE_OLD_VDELETE, TRACE_OLD_VINFO
@@ -218,7 +218,7 @@ Tcl_TraceObjCmd(
 	    &optionIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch ((enum traceOptions) optionIndex) {
+    switch ((enum traceOptionsEnum) optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
 	/*
