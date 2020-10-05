@@ -768,8 +768,8 @@ $(TMP_DIR)\tclBasic.obj: $(GENERICDIR)\tclBasic.c $(TMP_DIR)\tclUuid.h
 	$(cc32) $(pkgcflags) -I$(TMP_DIR) \
 	    -Fo$@ $(GENERICDIR)\tclBasic.c
 
-$(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
-	$(cc32) $(appcflags) -Fo$@ $?
+$(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c $(TMP_DIR)\tclUuid.h
+	$(cc32) $(appcflags) -I$(TMP_DIR) -Fo$@ $?
 
 $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 	$(cc32) $(appcflags) -Fo$@ $?

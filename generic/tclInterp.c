@@ -635,7 +635,7 @@ NRInterpCmd(
 	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
 	"share",	"target",	"transfer",	NULL
     };
-    enum option {
+    enum interpOptionEnum {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CANCEL,
 	OPT_CHILDREN,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
@@ -655,7 +655,7 @@ NRInterpCmd(
 		"option", 0, &index);
 	return TCL_ERROR;
     }
-    switch ((enum option)index) {
+    switch ((enum interpOptionEnum)index) {
     case OPT_ALIAS: {
 	Tcl_Interp *parentInterp;
 
@@ -708,7 +708,7 @@ NRInterpCmd(
 	static const char *const cancelOptions[] = {
 	    "-unwind",	"--",	NULL
 	};
-	enum option {
+	enum optionCancelEnum {
 	    OPT_UNWIND,	OPT_LAST
 	};
 
@@ -723,7 +723,7 @@ NRInterpCmd(
 		return TCL_ERROR;
 	    }
 
-	    switch ((enum option) index) {
+	    switch ((enum optionCancelEnum) index) {
 	    case OPT_UNWIND:
 		/*
 		 * The evaluation stack in the target interp is to be unwound.
@@ -2562,7 +2562,7 @@ NRChildCmd(
 	"issafe",	"invokehidden",	"limit",	"marktrusted",
 	"recursionlimit", NULL
     };
-    enum options {
+    enum childCmdOptionsEnum {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_DEBUG,
 	OPT_EVAL,	OPT_EXPOSE,	OPT_HIDE,	OPT_HIDDEN,
 	OPT_ISSAFE,	OPT_INVOKEHIDDEN, OPT_LIMIT,	OPT_MARKTRUSTED,
@@ -2582,7 +2582,7 @@ NRChildCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum options) index) {
+    switch ((enum childCmdOptionsEnum) index) {
     case OPT_ALIAS:
 	if (objc > 2) {
 	    if (objc == 3) {
