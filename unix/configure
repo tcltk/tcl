@@ -8639,7 +8639,7 @@ else
 int
 main ()
 {
-struct tm tm; tm.tm_gmtoff;
+struct tm tm; (void)tm.tm_gmtoff;
   ;
   return 0;
 }
