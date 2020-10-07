@@ -2132,7 +2132,7 @@ AC_DEFUN([SC_TIME_HANDLER], [
     fi
 
     AC_CACHE_CHECK([tm_gmtoff in struct tm], tcl_cv_member_tm_gmtoff, [
-	AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_gmtoff;],
+	AC_TRY_COMPILE([#include <time.h>], [struct tm tm; (void)tm.tm_gmtoff;],
 	    tcl_cv_member_tm_gmtoff=yes, tcl_cv_member_tm_gmtoff=no)])
     if test $tcl_cv_member_tm_gmtoff = yes ; then
 	AC_DEFINE(HAVE_TM_GMTOFF, 1, [Should we use the tm_gmtoff field of struct tm?])
