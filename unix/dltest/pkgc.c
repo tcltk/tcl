@@ -48,6 +48,7 @@ Pkgc_SubObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int first, second;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "num num");
@@ -85,6 +86,10 @@ Pkgc_UnsafeObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+    (void)objc;
+    (void)objv;
+
     Tcl_SetObjResult(interp, Tcl_NewStringObj("unsafe command invoked", -1));
     return TCL_OK;
 }
