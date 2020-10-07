@@ -114,7 +114,7 @@ jobs:
 # Testing on Mac, various styles
     - name: "macOS/Xcode 12/Shared"
       os: osx
-      osx_image: xcode12
+      osx_image: xcode12.2
       env:
         - BUILD_DIR=macosx
       install: []
@@ -124,7 +124,7 @@ jobs:
         - make test styles=develop
     - name: "macOS/Xcode 12/Shared/Unix-like"
       os: osx
-      osx_image: xcode12
+      osx_image: xcode12.2
       env:
         - BUILD_DIR=unix
 # Newer MacOS versions
@@ -320,6 +320,7 @@ jobs:
         - CFGOPT="--enable-threads --enable-symbols=mem"
       before_install: *makepreinst
 before_install:
+  - touch generic/tclStubInit.c
   - cd ${BUILD_DIR}
 install:
   - ./configure ${CFGOPT} --prefix=$HOME || (cat config.log && exit 1)
