@@ -1083,6 +1083,12 @@ test filename-11.48 {Tcl_GlobCmd} -returnCodes error -body {
 test filename-11.49 {Tcl_GlobCmd} -returnCodes error -body {
     glob -types abcde -path foo -join * *
 } -result {bad argument to "-types": abcde}
+test filename-11.50 {Tcl_GlobCmd} -returnCodes error -body {
+    glob -path hello -path salut *
+} -result {"-path" may only be used once}
+test filename-11.51 {Tcl_GlobCmd} -returnCodes error -body {
+    glob -dir hello -dir salut *
+} -result {"-directory" may only be used once}
 
 file rename $horribleglobname globTest
 file delete -force $tildeglobname
