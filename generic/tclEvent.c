@@ -1045,7 +1045,7 @@ TclInitSubsystems(void)
 
 	    TclInitThreadStorage();     /* Creates hash table for
 					 * thread local storage */
-#if USE_TCLALLOC
+#if defined(USE_TCLALLOC) && USE_TCLALLOC
 	    TclInitAlloc();		/* Process wide mutex init */
 #endif
 #ifdef TCL_MEM_DEBUG
