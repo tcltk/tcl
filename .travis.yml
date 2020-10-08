@@ -107,7 +107,7 @@ jobs:
 # Testing on Mac, various styles
     - name: "macOS/Xcode 12/Shared"
       os: osx
-      osx_image: xcode12
+      osx_image: xcode12.2
       env:
         - BUILD_DIR=macosx
       install: []
@@ -117,9 +117,10 @@ jobs:
         - make test styles=develop
     - name: "macOS/Xcode 12/Shared/Unix-like"
       os: osx
-      osx_image: xcode12
+      osx_image: xcode12.2
       env:
         - BUILD_DIR=unix
+        - CFGOPT="--enable-dtrace"
 # Newer MacOS versions
     - name: "macOS/Xcode 12/Universal Apps/Shared"
       os: osx
@@ -360,6 +361,7 @@ jobs:
       script:
         - make dist
 before_install:
+  - touch generic/tclStubInit.c generic/tclOOStubInit.c
   - cd ${BUILD_DIR}
 install:
   - mkdir "$HOME/install dir"
