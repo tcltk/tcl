@@ -161,7 +161,7 @@ typedef struct PendingObjData {
 static PendingObjData pendingObjData;
 #define ObjInitDeletionContext(contextPtr) \
     PendingObjData *const contextPtr = &pendingObjData
-#elif HAVE_FAST_TSD
+#elif defined(HAVE_FAST_TSD)
 static __thread PendingObjData pendingObjData;
 #define ObjInitDeletionContext(contextPtr) \
     PendingObjData *const contextPtr = &pendingObjData
