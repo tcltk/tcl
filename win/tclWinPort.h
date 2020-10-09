@@ -297,7 +297,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * defined in header files above.
  */
 
-#if TCL_UNION_WAIT
+#ifdef TCL_UNION_WAIT
 #   define WAIT_STATUS_TYPE union wait
 #else
 #   define WAIT_STATUS_TYPE int
@@ -439,10 +439,10 @@ typedef DWORD_PTR * PDWORD_PTR;
  * Define pid_t and uid_t if they're not already defined.
  */
 
-#if ! TCL_PID_T
+#if !defined(TCL_PID_T)
 #   define pid_t int
 #endif /* !TCL_PID_T */
-#if ! TCL_UID_T
+#if !defined(TCL_UID_T)
 #   define uid_t int
 #endif /* !TCL_UID_T */
 
