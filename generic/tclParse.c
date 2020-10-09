@@ -119,7 +119,7 @@ const char tclCharTypeTable[] = {
  * Prototypes for local functions defined in this file:
  */
 
-static inline int	CommandComplete(const char *script, size_t numBytes);
+static int	CommandComplete(const char *script, size_t numBytes);
 static size_t		ParseComment(const char *src, size_t numBytes,
 			    Tcl_Parse *parsePtr);
 static int		ParseTokens(const char *src, size_t numBytes, int mask,
@@ -2398,7 +2398,7 @@ TclSubstTokens(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static int
 CommandComplete(
     const char *script,		/* Script to check. */
     size_t numBytes)		/* Number of bytes in script. */
