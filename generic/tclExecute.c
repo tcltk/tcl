@@ -2093,7 +2093,7 @@ TclExecuteByteCode(
 	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
 	TRACE_WITH_OBJ(("%u => ", TclGetInt1AtPtr(pc+1)), OBJ_AT_TOS);
 	pc += 2;
-#if !TCL_COMPILE_DEBUG
+#if !defined(TCL_COMPILE_DEBUG)
 	/*
 	 * Runtime peephole optimisation: check if we are pushing again.
 	 */
@@ -2124,7 +2124,7 @@ TclExecuteByteCode(
 	 */
 
 	pc++;
-#if !TCL_COMPILE_DEBUG
+#if !defined(TCL_COMPILE_DEBUG)
 	if (*pc == INST_START_CMD) {
 	    TCL_DTRACE_INST_NEXT();
 	    goto instStartCmdPeephole;
@@ -2134,7 +2134,7 @@ TclExecuteByteCode(
     }
 
     case INST_START_CMD:
-#if !TCL_COMPILE_DEBUG
+#if !defined(TCL_COMPILE_DEBUG)
     instStartCmdPeephole:
 #endif
 	/*
@@ -2265,7 +2265,7 @@ TclExecuteByteCode(
 	    /* TODO: convert panic to error ? */
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
-#if !TCL_COMPILE_DEBUG
+#if !defined(TCL_COMPILE_DEBUG)
 	if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
 	    TclFreeIntRep(objResultPtr);
 	    objResultPtr->typePtr = NULL;
@@ -2280,7 +2280,7 @@ TclExecuteByteCode(
 	    objResultPtr->bytes = p;
 	    objResultPtr->length = length + appendLen;
 	    currPtr = &OBJ_AT_DEPTH(opnd - 1);
-#if !TCL_COMPILE_DEBUG
+#if !defined(TCL_COMPILE_DEBUG)
 	}
 #endif
 
@@ -7233,7 +7233,7 @@ TclExecuteByteCode(
 	Tcl_Obj *valuePtr;
 	const char *bytes;
 	int length;
-#if TCL_COMPILE_DEBUG
+#ifdef TCL_COMPILE_DEBUG
 	int opnd;
 #endif
 
@@ -7244,7 +7244,7 @@ TclExecuteByteCode(
 	 */
 
     processExceptionReturn:
-#if TCL_COMPILE_DEBUG
+#ifdef TCL_COMPILE_DEBUG
 	switch (*pc) {
 	case INST_INVOKE_STK1:
 	    opnd = TclGetUInt1AtPtr(pc+1);
@@ -7302,7 +7302,7 @@ TclExecuteByteCode(
 			rangePtr->codeOffset, rangePtr->continueOffset));
 		NEXT_INST_F(0, 0, 0);
 	    }
-#if TCL_COMPILE_DEBUG
+#ifdef TCL_COMPILE_DEBUG
 	} else if (traceInstructions) {
 	    if ((result != TCL_ERROR) && (result != TCL_RETURN)) {
 		Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
