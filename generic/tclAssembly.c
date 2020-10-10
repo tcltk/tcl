@@ -131,7 +131,7 @@ enum BasicBlockFlags {
  * Source instruction type recognized by the assembler.
  */
 
-typedef enum TalInstType {
+typedef enum {
     ASSEM_1BYTE,		/* Fixed arity, 1-byte instruction */
     ASSEM_BEGIN_CATCH,		/* Begin catch: one 4-byte jump offset to be
 				 * converted to appropriate exception
@@ -144,8 +144,6 @@ typedef enum TalInstType {
 				 * be strictly positive, consumes N, produces
 				 * 1 */
     ASSEM_DICT_GET,		/* 'dict get' and related - consumes N+1
-				 * operands, produces 1, N > 0 */
-    ASSEM_DICT_GET_DEF,		/* 'dict getwithdefault' - consumes N+2
 				 * operands, produces 1, N > 0 */
     ASSEM_DICT_SET,		/* specifies key count and LVT index, consumes
 				 * N+1 operands, produces 1, N > 0 */
@@ -189,8 +187,10 @@ typedef enum TalInstType {
 				 * produces N */
     ASSEM_SINT1,		/* One 1-byte signed-integer operand
 				 * (INCR_STK_IMM) */
-    ASSEM_SINT4_LVT4		/* Signed 4-byte integer operand followed by
+    ASSEM_SINT4_LVT4,		/* Signed 4-byte integer operand followed by
 				 * LVT entry.  Fixed arity */
+    ASSEM_DICT_GET_DEF		/* 'dict getwithdefault' - consumes N+2
+				 * operands, produces 1, N > 0 */
 } TalInstType;
 
 /*
@@ -1264,7 +1264,7 @@ AssembleOneLine(
     Tcl_Obj* instNameObj;	/* Name of the instruction */
     int tblIdx;			/* Index in TalInstructionTable of the
 				 * instruction */
-    enum TalInstType instType;	/* Type of the instruction */
+    TalInstType instType;	/* Type of the instruction */
     Tcl_Obj* operand1Obj = NULL;
 				/* First operand to the instruction */
     const char* operand1;	/* String rep of the operand */
