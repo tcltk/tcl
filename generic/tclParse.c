@@ -134,7 +134,7 @@ static const char *parseErrorMsg[] = {
  * Prototypes for local functions defined in this file:
  */
 
-static inline int	CommandComplete(const char *script, size_t numBytes);
+static int	CommandComplete(const char *script, size_t numBytes);
 static int		ParseBraces(Tcl_Interp *interp, const char *start,
 			    size_t numBytes, Tcl_Parse *parsePtr, int flags,
 			    const char **termPtr);
@@ -2885,7 +2885,7 @@ TclSubstTokens(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static int
 CommandComplete(
     const char *script,		/* Script to check. */
     size_t numBytes)		/* Number of bytes in script. */

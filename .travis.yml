@@ -115,7 +115,7 @@ jobs:
 # Testing on Mac, various styles
     - name: "macOS/Clang/Xcode 12/Shared"
       os: osx
-      osx_image: xcode12
+      osx_image: xcode12.2
       env:
         - BUILD_DIR=macosx
       install: []
@@ -125,12 +125,13 @@ jobs:
         - make test styles=develop
     - name: "macOS/Clang/Xcode 12/Shared/Unix-like"
       os: osx
-      osx_image: xcode112
+      osx_image: xcode12.2
       env:
         - BUILD_DIR=unix
+        - CFGOPT="--enable-dtrace"
     - name: "macOS/Clang/Xcode 12/Shared/libtommath"
       os: osx
-      osx_image: xcode12
+      osx_image: xcode12.2
       env:
         - BUILD_DIR=macosx
       install: []
@@ -141,10 +142,10 @@ jobs:
             - libtommath
     - name: "macOS/Clang++/Xcode 12/Shared"
       os: osx
-      osx_image: xcode12
+      osx_image: xcode12.2
       env:
         - BUILD_DIR=unix
-        - CFGOPT="CC=clang++ --enable-framework CFLAGS=-Dregister=dont+use+register CPPFLAGS=-D__private_extern__=extern"
+        - CFGOPT="CC=clang++ --enable-framework --enable-dtrace CFLAGS=-Dregister=dont+use+register CPPFLAGS=-D__private_extern__=extern"
       script:
         - make all tcltest
 # Newer MacOS versions
@@ -419,6 +420,7 @@ jobs:
       script:
         - make dist
 before_install:
+  - touch generic/tclStubInit.c generic/tclOOStubInit.c generic/tclOOScript.h
   - cd ${BUILD_DIR}
 install:
   - mkdir "$HOME/install dir"
