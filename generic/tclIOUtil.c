@@ -3244,7 +3244,7 @@ Tcl_LoadFile(
     }
 
     if (fsPtr->loadFileProc != NULL) {
-	int retVal = ((Tcl_FSLoadFileProc2 *)(void *)(fsPtr->loadFileProc))
+	retVal = ((Tcl_FSLoadFileProc2 *)(void *)(fsPtr->loadFileProc))
 		(interp, pathPtr, handlePtr, &unloadProcPtr, flags);
 
 	if (retVal == TCL_OK) {
@@ -4209,7 +4209,7 @@ TclFSNonnativePathType(
 		    if (pathLen < len) {
 			continue;
 		    }
-		    if (strncmp(strVol, path, (size_t) len) == 0) {
+		    if (strncmp(strVol, path, len) == 0) {
 			type = TCL_PATH_ABSOLUTE;
 			if (filesystemPtrPtr != NULL) {
 			    *filesystemPtrPtr = fsRecPtr->fsPtr;
@@ -4619,7 +4619,7 @@ Tcl_FSGetFileSystemForPath(
     /*
      * Check if the filesystem has changed in some way since this object's
      * internal representation was calculated. Before doing that, assure we
-     * have the most up-to-date copy of the master filesystem. This is
+     * have the most up-to-date copy of the first filesystem. This is
      * accomplished by the FsGetFirstFilesystem() call.
      */
 

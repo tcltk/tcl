@@ -132,7 +132,7 @@ static const Tcl_MethodType classConstructor = {
 };
 
 /*
- * Scripted parts of TclOO. First, the master script (cannot be outside this
+ * Scripted parts of TclOO. First, the main script (cannot be outside this
  * file).
  */
 

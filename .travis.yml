@@ -1,7 +1,8 @@
-sudo: false
 language: c
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
       - binutils-mingw-w64-i686
       - binutils-mingw-w64-x86-64
@@ -10,77 +11,59 @@ addons:
       - gcc-mingw-w64-i686
       - gcc-mingw-w64-x86-64
       - gcc-multilib
-  homebrew:
-    packages:
-      - libtommath
-    update: true
-matrix:
+jobs:
   include:
-# Testing on Linux with various compilers
+# Testing on Linux GCC
     - name: "Linux/GCC/Shared"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
     - name: "Linux/GCC/Shared: UTF_MAX=4"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_UTF_MAX=4
     - name: "Linux/GCC/Shared: UTF_MAX=6"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
         - CFGOPT=CFLAGS=-DTCL_UTF_MAX=6
     - name: "Linux/GCC/Static"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - CFGOPT="--disable-shared"
         - BUILD_DIR=unix
     - name: "Linux/GCC/Debug"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
     - name: "Linux/GCC/Mem-Debug"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: gcc
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols=mem"
-# Older versions of GCC...
-    - name: "Linux/GCC 7/Shared"
+# Newer/Older versions of GCC
+    - name: "Linux/GCC 10/Shared"
       os: linux
-      dist: bionic
-      compiler: gcc-7
+      dist: focal
+      compiler: gcc-10
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
           packages:
-            - g++-7
-      env:
-        - BUILD_DIR=unix
-    - name: "Linux/GCC 6/Shared"
-      os: linux
-      dist: bionic
-      compiler: gcc-6
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
+            - g++-10
       env:
         - BUILD_DIR=unix
     - name: "Linux/GCC 5/Shared"
@@ -89,44 +72,42 @@ matrix:
       compiler: gcc-5
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
           packages:
             - g++-5
       env:
         - BUILD_DIR=unix
-# Clang
+# Testing on Linux Clang
     - name: "Linux/Clang/Shared"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: clang
       env:
         - BUILD_DIR=unix
     - name: "Linux/Clang/Static"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: clang
       env:
         - CFGOPT="--disable-shared"
         - BUILD_DIR=unix
     - name: "Linux/Clang/Debug"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: clang
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols"
     - name: "Linux/Clang/Mem-Debug"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: clang
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols=mem"
 # Testing on Mac, various styles
-    - name: "macOS/Xcode 11.5/Shared"
+    - name: "macOS/Xcode 12/Shared"
       os: osx
-      osx_image: xcode11.5
+      osx_image: xcode12.2
       env:
         - BUILD_DIR=macosx
       install: []
@@ -134,15 +115,24 @@ matrix:
         - make all
         # The styles=develop avoids some weird problems on OSX
         - make test styles=develop
-    - name: "macOS/Xcode 11.5/Shared/Unix-like"
+    - name: "macOS/Xcode 12/Shared/Unix-like"
       os: osx
-      osx_image: xcode11.5
+      osx_image: xcode12.2
       env:
         - BUILD_DIR=unix
+        - CFGOPT="--enable-dtrace"
+# Newer MacOS versions
+    - name: "macOS/Xcode 12/Universal Apps/Shared"
+      os: osx
+      osx_image: xcode12u
+      env:
+        - BUILD_DIR=macosx
+      install: []
+      script: *mactest
 # Older MacOS versions
     - name: "macOS/Xcode 11/Shared"
       os: osx
-      osx_image: xcode11
+      osx_image: xcode11.7
       env:
         - BUILD_DIR=macosx
       install: []
@@ -156,7 +146,7 @@ matrix:
       script: *mactest
     - name: "macOS/Xcode 9/Shared"
       os: osx
-      osx_image: xcode9.2
+      osx_image: xcode9.4
       env:
         - BUILD_DIR=macosx
       install: []
@@ -172,7 +162,7 @@ matrix:
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows/GCC/Shared/no test"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: x86_64-w64-mingw32-gcc
       env:
         - BUILD_DIR=win
@@ -186,7 +176,7 @@ matrix:
 # Doesn't run tests because wine is only an imperfect Windows emulation
     - name: "Linux-cross-Windows-32/GCC/Shared/no test"
       os: linux
-      dist: bionic
+      dist: focal
       compiler: i686-w64-mingw32-gcc
       env:
         - BUILD_DIR=win
@@ -361,7 +351,17 @@ matrix:
         - BUILD_DIR=win
         - CFGOPT="--enable-symbols=mem"
       before_install: *makepreinst
+# "make dist" only
+    - name: "Linux: make dist"
+      os: linux
+      dist: focal
+      compiler: gcc
+      env:
+        - BUILD_DIR=unix
+      script:
+        - make dist
 before_install:
+  - touch generic/tclStubInit.c generic/tclOOStubInit.c
   - cd ${BUILD_DIR}
 install:
   - mkdir "$HOME/install dir"
@@ -369,6 +369,6 @@ install:
 before_script:
   - export ERROR_ON_FAILURES=1
 script:
-  - make all tcltest
+  - make all tcltest || echo "Something wrong, maybe a hickup, let's try again"
   - make test
   - make install

@@ -1231,7 +1231,7 @@ StringFirstCmd(
      */
 
     if (needleLen > 0 && needleLen <= haystackLen) {
-	register Tcl_UniChar *p, *end;
+	Tcl_UniChar *p, *end;
 
 	end = haystackStr + haystackLen - needleLen + 1;
 	for (p = haystackStr;  p < end;  p++) {
@@ -1712,7 +1712,7 @@ StringIsCmd(
 
 	    const char *elemStart, *nextElem;
 	    int lenRemain, elemSize;
-	    register const char *p;
+	    const char *p;
 
 	    string1 = TclGetStringFromObj(objPtr, &length1);
 	    end = string1 + length1;
@@ -2035,7 +2035,7 @@ StringMapCmd(
 			(Tcl_UniCharToLower(*ustring1) == u2lc[index/2]))) &&
 			/* Restrict max compare length. */
 			(end-ustring1 >= length2) && ((length2 == 1) ||
-			!strCmpFn(ustring2, ustring1, (unsigned) length2))) {
+			!strCmpFn(ustring2, ustring1, length2))) {
 		    if (p != ustring1) {
 			/*
 			 * Put the skipped chars onto the result first.
@@ -2272,7 +2272,7 @@ StringReptCmd(
      * Include space for the NUL.
      */
 
-    string2 = attemptckalloc((unsigned) length2 + 1);
+    string2 = attemptckalloc(length2 + 1);
     if (string2 == NULL) {
 	/*
 	 * Alloc failed. Note that in this case we try to do an error message
@@ -2288,7 +2288,7 @@ StringReptCmd(
 	return TCL_ERROR;
     }
     for (index = 0; index < count; index++) {
-	memcpy(string2 + (length1 * index), string1, (size_t) length1);
+	memcpy(string2 + (length1 * index), string1, length1);
     }
     string2[length2] = '\0';
 
@@ -2850,7 +2850,7 @@ TclStringCmp(
 	 * The comparison function should compare up to the minimum byte
 	 * length only.
 	 */
-	match = memCmpFn(s1, s2, (size_t) length);
+	match = memCmpFn(s1, s2, length);
     }
     if ((match == 0) && (reqlength > length)) {
 	match = s1len - s2len;
@@ -4185,9 +4185,9 @@ Tcl_TimeObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr;
     Tcl_Obj *objs[4];
-    register int i, result;
+    int i, result;
     int count;
     double totalMicroSec;
 #ifndef TCL_WIDE_CLICKS
@@ -4286,8 +4286,8 @@ Tcl_TimeRateObjCmd(
     static double measureOverhead = 0;
 				/* global measure-overhead */
     double overhead = -1;	/* given measure-overhead */
-    register Tcl_Obj *objPtr;
-    register int result, i;
+    Tcl_Obj *objPtr;
+    int result, i;
     Tcl_Obj *calibrate = NULL, *direct = NULL;
     TclWideMUInt count = 0;	/* Holds repetition count */
     Tcl_WideInt maxms = WIDE_MIN;
@@ -4301,7 +4301,7 @@ Tcl_TimeRateObjCmd(
 				 * zero (i.e., never < 1) */
     unsigned short factor = 50;	/* Factor (4..50) limiting threshold to avoid
 				 * growth of execution time. */
-    register Tcl_WideInt start, middle, stop;
+    Tcl_WideInt start, middle, stop;
 #ifndef TCL_WIDE_CLICKS
     Tcl_Time now;
 #endif /* !TCL_WIDE_CLICKS */

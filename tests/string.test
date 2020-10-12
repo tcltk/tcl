@@ -12,8 +12,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -71,11 +71,11 @@ test string-2.11 {string compare, unicode} {
     string compare ab\u7266 ab\u7267
 } -1
 test string-2.12 {string compare, high bit} {
-    # This test will fail if the underlying comparaison
+    # This test will fail if the underlying comparison
     # is using signed chars instead of unsigned chars.
     # (like SunOS's default memcmp thus the compat/memcmp.c)
     string compare "\x80" "@"
-    # Nb this tests works also in utf8 space because \x80 is
+    # Nb this tests works also in utf-8 space because \x80 is
     # translated into a 2 or more bytelength but whose first byte has
     # the high bit set.
 } 1
@@ -2034,7 +2034,7 @@ test string-28.12 {tcl::prefix longest} {
     tcl::prefix longest {apa {} appa} {}
 } {}
 test string-28.13 {tcl::prefix longest} {
-    # Test UTF8 handling
+    # Test utf-8 handling
     tcl::prefix longest {ax\x90 bep ax\x91} a
 } ax
 

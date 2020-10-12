@@ -60,8 +60,11 @@
 # listening at port 2048. If all fails, a message is printed and the tests
 # using the remote server are not performed.
 
-package require tcltest 2
-namespace import -force ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
 ::tcltest::loadTestedCommands
 
 if {[expr {[info exists ::env(TRAVIS_OSX_IMAGE)] && [string match xcode* $::env(TRAVIS_OSX_IMAGE)]}]} {
@@ -234,7 +237,7 @@ if {$doTestsWithRemoteServer} {
 # Some tests are run only if we are doing testing against a remote server.
 testConstraint doTestsWithRemoteServer $doTestsWithRemoteServer
 if {!$doTestsWithRemoteServer} {
-    if {[string first s $::tcltest::verbose] != -1} {
+    if {[string first s $::tcltest::verbose] >= 0} {
     	puts "Skipping tests with remote server. See tests/socket.test for"
 	puts "information on how to run remote server."
 	puts "Reason for not doing remote tests: $noRemoteTestReason"
@@ -904,7 +907,7 @@ test socket_$af-5.1 {byte order problems, socket numbers, htons} -body {
         return {htons problem, should be disallowed, are you running as SU?}
     }
     return {couldn't open socket: not owner}
-} -constraints [list socket supported_$af unix notRoot] -result {couldn't open socket: not owner}
+} -constraints [list socket supported_$af unix notRoot notOSX] -result {couldn't open socket: not owner}
 test socket_$af-5.2 {byte order problems, socket numbers, htons} -body {
     if {![catch {socket -server dodo 0x10000} msg]} {
 	close $msg
@@ -918,7 +921,7 @@ test socket_$af-5.3 {byte order problems, socket numbers, htons} -body {
 	return {htons problem, should be disallowed, are you running as SU?}
     }
     return {couldn't open socket: not owner}
-} -constraints [list socket supported_$af unix notRoot] -result {couldn't open socket: not owner}
+} -constraints [list socket supported_$af unix notRoot notOSX] -result {couldn't open socket: not owner}
 
 test socket_$af-6.1 {accept callback error} -constraints [list socket supported_$af stdio] -setup {
     proc myHandler {msg options} {
@@ -1835,12 +1838,12 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
       }
     }
     tcltest::DebugPuts 1 "== test \[$::localhost\]:$port $testmode =="
-    set ::master [thread::id]
-    # helper thread creating async connection and initiating transfer (detach) to master:
+    set ::parent [thread::id]
+    # helper thread creating async connection and initiating transfer (detach) to parent:
     set ::helper [thread::create]
     thread::send -async $::helper [list \
-      lassign [list $::master $::localhost $port $testmode] \
-                     ::master ::localhost ::port ::testmode
+      lassign [list $::parent $::localhost $port $testmode] \
+                     ::parent ::localhost ::port ::testmode
     ]
     thread::send -async $::helper {
       set ::helper [thread::id]
@@ -1849,29 +1852,29 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
         if {"helper-writable" in $::testmode} {;# to test both sides during connect
           fileevent $fd writable [list apply {{fd} {
             if {[thread::id] ne $::helper} {
-              thread::send -async $::master {set ::count "ERROR: invalid thread, $::helper is expecting"}
+              thread::send -async $::parent {set ::count "ERROR: invalid thread, $::helper is expecting"}
               close $fd
               return
             }
           }} $fd]
         };#
         thread::detach $fd
-        thread::send -async $::master [list transf_master $fd {*}$args]
+        thread::send -async $::parent [list transf_parent $fd {*}$args]
       }
       iteration first
     }
-    # master proc commiting transfer attempt (attach) and checking acquire was successful:
-    proc transf_master {fd args} {
+    # parent proc commiting transfer attempt (attach) and checking acquire was successful:
+    proc transf_parent {fd args} {
       tcltest::DebugPuts 1 "** trma / $::count ** $args **"
       thread::attach $fd
-      if {"master-close" in $::testmode} {;# to test close during connect
+      if {"parent-close" in $::testmode} {;# to test close during connect
         set ::count $::count
         close $fd
         return
       };#
       fileevent $fd writable [list apply {{fd} {
-        if {[thread::id] ne $::master} {
-          thread::send -async $::master {set ::count "ERROR: invalid thread, $::master is expecting"}
+        if {[thread::id] ne $::parent} {
+          thread::send -async $::parent {set ::count "ERROR: invalid thread, $::parent is expecting"}
           close $fd
           return
         }
@@ -1899,7 +1902,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
     if {$srvsock ne {}} {close $srvsock}
     if {[info exists ::helper]} {thread::release -wait $::helper}
     tcltest::DebugPuts 1 "== stop / $::count =="
-    unset -nocomplain ::count ::testmode ::master ::helper
+    unset -nocomplain ::count ::testmode ::parent ::helper
   }
 }
 test socket_$af-13.2.tr1 {Testing socket transfer between threads during async connect} -body {
@@ -1909,12 +1912,12 @@ test socket_$af-13.2.tr2 {Testing socket transfer between threads during async c
     transf_test {transfer helper-writable} 100
 } -result 100 -constraints [list socket supported_$af thread]
 test socket_$af-13.2.cl1 {Testing socket transfer between threads during async connect} -body {
-    transf_test {master-close} 100
+    transf_test {parent-close} 100
 } -result 100 -constraints [list socket supported_$af thread]
 test socket_$af-13.2.cl2 {Testing socket transfer between threads during async connect} -body {
-    transf_test {master-close helper-writable} 100
+    transf_test {parent-close helper-writable} 100
 } -result 100 -constraints [list socket supported_$af thread]
-catch {rename transf_master {}}
+catch {rename transf_parent {}}
 rename transf_test {}
 
 # ----------------------------------------------------------------------

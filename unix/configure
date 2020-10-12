@@ -14030,7 +14030,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-struct tm tm; tm.tm_gmtoff;
+struct tm tm; (void)tm.tm_gmtoff;
   ;
   return 0;
 }
@@ -14922,8 +14922,10 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <string.h>
 int main() {
-    extern int strstr();
     exit(strstr("\0test", "test") ? 1 : 0);
 }
 _ACEOF
@@ -15089,8 +15091,10 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <string.h>
 int main() {
-    extern int strtoul();
     char *term, *string = "0";
     exit(strtoul(string,&term,0) != 0 || term != string+1);
 }
@@ -16462,6 +16466,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
 	#include <stdlib.h>
+	#include <string.h>
 	#define OURVAR "havecopy=yes"
 	int main (int argc, char *argv[])
 	{

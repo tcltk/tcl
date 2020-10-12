@@ -914,8 +914,8 @@ TclCreateExecEnv(
 				 * [sizeof(Tcl_Obj*)] */
 {
     ExecEnv *eePtr = ckalloc(sizeof(ExecEnv));
-    ExecStack *esPtr = ckalloc(sizeof(ExecStack)
-	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
+    ExecStack *esPtr = ckalloc(TclOffset(ExecStack, stackWords)
+	    + size * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
     TclNewBooleanObj(eePtr->constants[0], 0);
@@ -1180,7 +1180,7 @@ GrowEvaluationStack(
     newElems = needed;
 #endif
 
-    newBytes = sizeof(ExecStack) + (newElems-1) * sizeof(Tcl_Obj *);
+    newBytes = TclOffset(ExecStack, stackWords) + newElems * sizeof(Tcl_Obj *);
 
     oldPtr = esPtr;
     esPtr = ckalloc(newBytes);
@@ -1407,7 +1407,7 @@ int
 Tcl_ExprObj(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr,	/* Points to Tcl object containing expression
+    Tcl_Obj *objPtr,	/* Points to Tcl object containing expression
 				 * to evaluate. */
     Tcl_Obj **resultPtrPtr)	/* Where the Tcl_Obj* that is the expression
 				 * result is stored if no errors occur. */
@@ -1526,7 +1526,7 @@ CompileExprObj(
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
-    register ByteCode *codePtr = NULL;
+    ByteCode *codePtr = NULL;
 				/* Tcl Internal type of bytecode. Initialized
 				 * to avoid compiler warning. */
 
@@ -1680,8 +1680,8 @@ TclCompileObj(
     const CmdFrame *invoker,
     int word)
 {
-    register Interp *iPtr = (Interp *) interp;
-    register ByteCode *codePtr;	/* Tcl Internal type of bytecode. */
+    Interp *iPtr = (Interp *) interp;
+    ByteCode *codePtr;	/* Tcl Internal type of bytecode. */
     Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
     /*
@@ -2214,6 +2214,22 @@ TEBCresume(
     if (!pc) {
 	/* bytecode is starting from scratch */
 	pc = codePtr->codeStart;
+
+	/*
+	 * Reset the interp's result to avoid possible duplications of large
+	 * objects [3c6e47363e], [781585], [804681], This can happen by start
+	 * also in nested compiled blocks (enclosed in parent cycle).
+	 * See else branch below for opposite handling by continuation/resume.
+	 */
+
+	objPtr = iPtr->objResultPtr;
+	if (objPtr->refCount > 1) {
+	    TclDecrRefCount(objPtr);
+	    TclNewObj(objPtr);
+	    Tcl_IncrRefCount(objPtr);
+	    iPtr->objResultPtr = objPtr;
+	}
+
 	goto cleanup0;
     } else {
         /* resume from invocation */
@@ -2253,7 +2269,7 @@ TEBCresume(
 		objc, cmdNameBuf), Tcl_GetObjResult(interp));
 
 	/*
-	 * Reset the interp's result to avoid possible duplications of large
+	 * Obtain and reset interp's result to avoid possible duplications of
 	 * objects [Bug 781585]. We do not call Tcl_ResetResult to avoid any
 	 * side effects caused by the resetting of errorInfo and errorCode
 	 * [Bug 804681], which are not needed here. We chose instead to
@@ -2822,7 +2838,7 @@ TEBCresume(
 	    for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
 		bytes = TclGetStringFromObj(*currPtr, &length);
 		if (bytes != NULL) {
-		    memcpy(p, bytes, (size_t) length);
+		    memcpy(p, bytes, length);
 		    p += length;
 		}
 	    }
@@ -2857,7 +2873,7 @@ TEBCresume(
 	    for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
 		if ((*currPtr)->bytes != tclEmptyStringRep) {
 		    bytes = (char *) Tcl_GetByteArrayFromObj(*currPtr,&length);
-		    memcpy(p, bytes, (size_t) length);
+		    memcpy(p, bytes, length);
 		    p += length;
 		}
 	    }
@@ -6790,8 +6806,8 @@ TEBCresume(
 	if (valuePtr->typePtr == &tclBooleanType) {
 	    objResultPtr = TCONST(1);
 	} else {
-	    int result = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
-	    objResultPtr = TCONST(result);
+	    int res = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
+	    objResultPtr = TCONST(res);
 	}
 	TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(valuePtr)), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
@@ -6984,7 +7000,7 @@ TEBCresume(
     }
     {
 	ForeachInfo *infoPtr;
-	Tcl_Obj *listPtr, **elements, *tmpPtr;
+	Tcl_Obj *listPtr, **elements;
 	ForeachVarList *varListPtr;
 	int numLists, iterMax, listLen, numVars;
 	int iterTmp, iterNum, listTmpDepth;
@@ -7270,8 +7286,8 @@ TEBCresume(
 
     case INST_DICT_GET:
     case INST_DICT_EXISTS: {
-	register Tcl_Interp *interp2 = interp;
-	register int found;
+	Tcl_Interp *interp2 = interp;
+	int found;
 
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => ", opnd));
@@ -9583,7 +9599,7 @@ TclCompareTwoNumbers(
 
 static void
 PrintByteCodeInfo(
-    register ByteCode *codePtr)	/* The bytecode whose summary is printed to
+    ByteCode *codePtr)	/* The bytecode whose summary is printed to
 				 * stdout. */
 {
     Proc *procPtr = codePtr->procPtr;
@@ -9647,7 +9663,7 @@ PrintByteCodeInfo(
 #ifdef TCL_COMPILE_DEBUG
 static void
 ValidatePcAndStackTop(
-    register ByteCode *codePtr,	/* The bytecode whose summary is printed to
+    ByteCode *codePtr,	/* The bytecode whose summary is printed to
 				 * stdout. */
     const unsigned char *pc,	/* Points to first byte of a bytecode
 				 * instruction. The program counter. */
@@ -9890,7 +9906,7 @@ GetSrcInfoForPc(
 				 * of the command containing the pc should
 				 * be stored. */
 {
-    register int pcOffset = (pc - codePtr->codeStart);
+    int pcOffset = (pc - codePtr->codeStart);
     int numCmds = codePtr->numCommands;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
@@ -10043,9 +10059,9 @@ GetExceptRangeForPc(
 {
     ExceptionRange *rangeArrayPtr;
     int numRanges = codePtr->numExceptRanges;
-    register ExceptionRange *rangePtr;
+    ExceptionRange *rangePtr;
     int pcOffset = pc - codePtr->codeStart;
-    register int start;
+    int start;
 
     if (numRanges == 0) {
 	return NULL;
@@ -10177,11 +10193,11 @@ TclExprFloatError(
 
 int
 TclLog2(
-    register int value)		/* The integer for which to compute the log
+    int value)		/* The integer for which to compute the log
 				 * base 2. */
 {
-    register int n = value;
-    register int result = 0;
+    int n = value;
+    int result = 0;
 
     while (n > 1) {
 	n = n >> 1;

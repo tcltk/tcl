@@ -2317,7 +2317,7 @@ PipeOutputProc(
 	    infoPtr->writeBufLen = toWrite;
 	    infoPtr->writeBuf = ckalloc(toWrite);
 	}
-	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
+	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(infoPtr->writable);
 	TclPipeThreadSignal(&infoPtr->writeTI);
@@ -3231,7 +3231,7 @@ TclpOpenTemporaryFile(
 	Tcl_DStringFree(&buf);
     } else {
 	const WCHAR *baseStr = L"TCL";
-	int length = 3 * sizeof(WCHAR);
+	length = 3 * sizeof(WCHAR);
 
 	memcpy(namePtr, baseStr, length);
 	namePtr += length;

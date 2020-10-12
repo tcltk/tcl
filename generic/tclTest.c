@@ -307,7 +307,7 @@ static Tcl_FSNormalizePathProc TestReportNormalizePath;
 static Tcl_FSPathInFilesystemProc TestReportInFilesystem;
 static Tcl_FSFreeInternalRepProc TestReportFreeInternalRep;
 static Tcl_FSDupInternalRepProc TestReportDupInternalRep;
-
+static Tcl_CmdProc TestServiceModeCmd;
 static Tcl_FSStatProc SimpleStat;
 static Tcl_FSAccessProc SimpleAccess;
 static Tcl_FSOpenFileChannelProc SimpleOpenFileChannel;
@@ -560,6 +560,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
+	    NULL, NULL);
+    Tcl_CreateCommand(interp, "testservicemode", TestServiceModeCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetassocdata", TestsetassocdataCmd,
 	    NULL, NULL);
@@ -1506,15 +1508,15 @@ TestdelCmd(
     const char **argv)		/* Argument strings. */
 {
     DelCmd *dPtr;
-    Tcl_Interp *slave;
+    Tcl_Interp *child;
 
     if (argc != 4) {
 	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
 	return TCL_ERROR;
     }
 
-    slave = Tcl_GetSlave(interp, argv[1]);
-    if (slave == NULL) {
+    child = Tcl_GetChild(interp, argv[1]);
+    if (child == NULL) {
 	return TCL_ERROR;
     }
 
@@ -1523,7 +1525,7 @@ TestdelCmd(
     dPtr->deleteCmd = (char *)ckalloc(strlen(argv[3]) + 1);
     strcpy(dPtr->deleteCmd, argv[3]);
 
-    Tcl_CreateCommand(slave, argv[2], DelCmdProc, (ClientData) dPtr,
+    Tcl_CreateCommand(child, argv[2], DelCmdProc, (ClientData) dPtr,
 	    DelDeleteProc);
     return TCL_OK;
 }
@@ -1863,11 +1865,11 @@ TestencodingObjCmd(
 
 	string = Tcl_GetStringFromObj(objv[3], &length);
 	encodingPtr->toUtfCmd = (char *)ckalloc(length + 1);
-	memcpy(encodingPtr->toUtfCmd, string, (unsigned) length + 1);
+	memcpy(encodingPtr->toUtfCmd, string, length + 1);
 
 	string = Tcl_GetStringFromObj(objv[4], &length);
 	encodingPtr->fromUtfCmd = (char *)ckalloc(length + 1);
-	memcpy(encodingPtr->fromUtfCmd, string, (unsigned) (length + 1));
+	memcpy(encodingPtr->fromUtfCmd, string, length + 1);
 
 	string = Tcl_GetStringFromObj(objv[2], &length);
 
@@ -1916,7 +1918,7 @@ EncodingToUtfProc(
     if (len > dstLen) {
 	len = dstLen;
     }
-    memcpy(dst, Tcl_GetStringResult(encodingPtr->interp), (unsigned) len);
+    memcpy(dst, Tcl_GetStringResult(encodingPtr->interp), len);
     Tcl_ResetResult(encodingPtr->interp);
 
     *srcReadPtr = srcLen;
@@ -1948,7 +1950,7 @@ EncodingFromUtfProc(
     if (len > dstLen) {
 	len = dstLen;
     }
-    memcpy(dst, Tcl_GetStringResult(encodingPtr->interp), (unsigned) len);
+    memcpy(dst, Tcl_GetStringResult(encodingPtr->interp), len);
     Tcl_ResetResult(encodingPtr->interp);
 
     *srcReadPtr = srcLen;
@@ -2689,18 +2691,18 @@ TestinterpdeleteCmd(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-    Tcl_Interp *slaveToDelete;
+    Tcl_Interp *childToDelete;
 
     if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		" path\"", NULL);
 	return TCL_ERROR;
     }
-    slaveToDelete = Tcl_GetSlave(interp, argv[1]);
-    if (slaveToDelete == NULL) {
+    childToDelete = Tcl_GetChild(interp, argv[1]);
+    if (childToDelete == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_DeleteInterp(slaveToDelete);
+    Tcl_DeleteInterp(childToDelete);
     return TCL_OK;
 }
 
@@ -5877,7 +5879,7 @@ TestChannelEventCmd(
 
     cmd = argv[2];
     len = strlen(cmd);
-    if ((cmd[0] == 'a') && (strncmp(cmd, "add", (unsigned) len) == 0)) {
+    if ((cmd[0] == 'a') && (strncmp(cmd, "add", len) == 0)) {
 	if (argc != 5) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName add eventSpec script\"", NULL);
@@ -5912,7 +5914,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if ((cmd[0] == 'd') && (strncmp(cmd, "delete", (unsigned) len) == 0)) {
+    if ((cmd[0] == 'd') && (strncmp(cmd, "delete", len) == 0)) {
 	if (argc != 4) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName delete index\"", NULL);
@@ -5958,7 +5960,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if ((cmd[0] == 'l') && (strncmp(cmd, "list", (unsigned) len) == 0)) {
+    if ((cmd[0] == 'l') && (strncmp(cmd, "list", len) == 0)) {
 	if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName list\"", NULL);
@@ -5981,7 +5983,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if ((cmd[0] == 'r') && (strncmp(cmd, "removeall", (unsigned) len) == 0)) {
+    if ((cmd[0] == 'r') && (strncmp(cmd, "removeall", len) == 0)) {
 	if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName removeall\"", NULL);
@@ -6000,7 +6002,7 @@ TestChannelEventCmd(
 	return TCL_OK;
     }
 
-    if	((cmd[0] == 's') && (strncmp(cmd, "set", (unsigned) len) == 0)) {
+    if	((cmd[0] == 's') && (strncmp(cmd, "set", len) == 0)) {
 	if (argc != 5) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		    " channelName delete index event\"", NULL);
@@ -6046,6 +6048,54 @@ TestChannelEventCmd(
     return TCL_ERROR;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestServiceModeCmd --
+ *
+ *	This procedure implements the "testservicemode" command which gets or
+ *      sets the current Tcl ServiceMode.  There are several tests which open
+ *      a file and assign various handlers to it.  For these tests to be
+ *      deterministic it is important that file events not be processed until
+ *      all of the handlers are in place.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	May change the ServiceMode setting.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestServiceModeCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int argc,			/* Number of arguments. */
+    const char **argv)		/* Argument strings. */
+{
+    int newmode, oldmode;
+    if (argc > 2) {
+        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                         " ?newmode?\"", NULL);
+        return TCL_ERROR;
+    }
+    oldmode = (Tcl_GetServiceMode() != TCL_SERVICE_NONE);
+    if (argc == 2) {
+        if (Tcl_GetInt(interp, argv[1], &newmode) == TCL_ERROR) {
+            return TCL_ERROR;
+        }
+        if (newmode == 0) {
+            Tcl_SetServiceMode(TCL_SERVICE_NONE);
+        } else {
+            Tcl_SetServiceMode(TCL_SERVICE_ALL);
+        }
+    }
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(oldmode));
+    return TCL_OK;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7348,8 +7398,6 @@ TestconcatobjCmd(
 		"\n\t* (e) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
-	int len;
-
 	result = TCL_ERROR;
 	Tcl_AppendResult(interp, "\n\t* (e) concatObj is not a new obj ",
 		NULL);
@@ -7380,8 +7428,6 @@ TestconcatobjCmd(
 		"\n\t* (f) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
-	int len;
-
 	result = TCL_ERROR;
 	Tcl_AppendResult(interp, "\n\t* (f) concatObj is not a new obj ",
 		NULL);
@@ -7413,8 +7459,6 @@ TestconcatobjCmd(
 		"\n\t* (g) concatObj does not have refCount 0", NULL);
     }
     if (concatPtr == tmpPtr) {
-	int len;
-
 	result = TCL_ERROR;
 	Tcl_AppendResult(interp, "\n\t* (g) concatObj is not a new obj ",
 		NULL);
@@ -7509,7 +7553,7 @@ static int
 InterpCmdResolver(
     Tcl_Interp *interp,
     const char *name,
-    Tcl_Namespace *context,
+    Tcl_Namespace *dummy,
     int flags,
     Tcl_Command *rPtr)
 {
@@ -7519,6 +7563,7 @@ InterpCmdResolver(
             varFramePtr->procPtr : NULL;
     Namespace *callerNsPtr = varFramePtr->nsPtr;
     Tcl_Command resolvedCmdPtr = NULL;
+    (void)dummy;
 
     /*
      * Just do something special on a cmd literal "z" in two cases:
@@ -7731,7 +7776,7 @@ TestInterpResolverCmd(
 	return TCL_ERROR;
     }
     if (objc == 3) {
-	interp = Tcl_GetSlave(interp, Tcl_GetString(objv[2]));
+	interp = Tcl_GetChild(interp, Tcl_GetString(objv[2]));
 	if (interp == NULL) {
 	    Tcl_AppendResult(interp, "provided interpreter not found", NULL);
 	    return TCL_ERROR;

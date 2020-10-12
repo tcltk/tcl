@@ -2339,7 +2339,7 @@ AC_DEFUN([SC_TIME_HANDLER], [
     fi
 
     AC_CACHE_CHECK([tm_gmtoff in struct tm], tcl_cv_member_tm_gmtoff, [
-	AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_gmtoff;],
+	AC_TRY_COMPILE([#include <time.h>], [struct tm tm; (void)tm.tm_gmtoff;],
 	    tcl_cv_member_tm_gmtoff=yes, tcl_cv_member_tm_gmtoff=no)])
     if test $tcl_cv_member_tm_gmtoff = yes ; then
 	AC_DEFINE(HAVE_TM_GMTOFF, 1, [Should we use the tm_gmtoff field of struct tm?])
@@ -2628,7 +2628,10 @@ AC_DEFUN([SC_TCL_CHECK_BROKEN_FUNC],[
     AC_CHECK_FUNC($1, tcl_ok=1, tcl_ok=0)
     if test ["$tcl_ok"] = 1; then
 	AC_CACHE_CHECK([proper ]$1[ implementation], [tcl_cv_]$1[_unbroken],
-	    AC_TRY_RUN([[int main() {]$2[}]],[tcl_cv_]$1[_unbroken]=ok,
+	    AC_TRY_RUN([[
+#include <stdlib.h>
+#include <string.h>
+int main() {]$2[}]],[tcl_cv_]$1[_unbroken]=ok,
 		[tcl_cv_]$1[_unbroken]=broken,[tcl_cv_]$1[_unbroken]=unknown))
 	if test ["$tcl_cv_]$1[_unbroken"] = "ok"; then
 	    tcl_ok=1
