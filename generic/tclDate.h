@@ -320,7 +320,7 @@ typedef struct ClockClientData {
     Tcl_Obj *prevSetupTimeZoneUnnorm;
     Tcl_Obj *prevSetupTimeZone;
     Tcl_Obj *prevSetupTZData;
-    
+
     Tcl_Obj *defaultLocale;
     Tcl_Obj *defaultLocaleDict;
     Tcl_Obj *currentLocale;
@@ -404,7 +404,7 @@ struct ClockScanToken {
 
 #define MIN_FMT_RESULT_BLOCK_ALLOC 80
 #define MIN_FMT_RESULT_BLOCK_DELTA 0
-/* Maximal permitted threshold (buffer size > result size) in percent, 
+/* Maximal permitted threshold (buffer size > result size) in percent,
  * to directly return the buffer without reallocate */
 #define MAX_FMT_RESULT_THRESHOLD   2
 
@@ -472,11 +472,11 @@ struct ClockFmtScnStorage {
 #endif
 };
 
-/* 
+/*
  * Clock macros.
  */
 
-/* 
+/*
  * Extracts Julian day and seconds of the day from posix seconds (tm).
  */
 #define ClockExtractJDAndSODFromSeconds(jd, sod, tm) \

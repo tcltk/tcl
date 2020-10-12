@@ -901,7 +901,7 @@ TclDatelex(
 	tokStart = yyInput;
 
 	if (isdigit(UCHAR(c = *yyInput))) { /* INTL: digit */
-	    
+
 	    /*
 	     * Convert the string into a number; count the number of digits.
 	     */
@@ -963,12 +963,12 @@ TclDatelex(
 	    yyInput--;
 	    location->last_column = yyInput - info->dateStart - 1;
 	    ret = LookupWord(yylvalPtr, buff);
-	    /* 
+	    /*
 	     * lookahead:
 	     *	for spaces to consider word boundaries (for instance
 	     *	literal T in isodateTisotimeZ is not a TZ, but Z is UTC);
 	     *	for +/- digit, to differentiate between "GMT+1000 day" and "GMT +1000 day";
-	     * bypass spaces after token (but ignore by TZ+OFFS), because should 
+	     * bypass spaces after token (but ignore by TZ+OFFS), because should
 	     * recognize next SP token, if TZ only.
 	     */
 	    if (ret == tZONE || ret == tDAYZONE) {

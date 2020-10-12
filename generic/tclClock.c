@@ -240,7 +240,7 @@ TclClockInit(
     data->validMinYear = INT_MIN;
     data->validMaxYear = INT_MAX;
     /* corresponds max of JDN in sqlite - 9999-12-31 23:59:59 per default */
-    data->maxJDN = 5373484.499999994; 
+    data->maxJDN = 5373484.499999994;
 
     data->systemTimeZone = NULL;
     data->systemSetupTZData = NULL;
@@ -341,7 +341,7 @@ ClockConfigureClear(
     data->prevUsedLocaleDict = NULL;
 
     Tcl_UnsetObjRef(data->lastBase.timezoneObj);
-    
+
     Tcl_UnsetObjRef(data->lastTZOffsCache[0].timezoneObj);
     Tcl_UnsetObjRef(data->lastTZOffsCache[0].tzName);
     Tcl_UnsetObjRef(data->lastTZOffsCache[1].timezoneObj);
@@ -1950,7 +1950,7 @@ ConvertLocalToUTC(
 	return TCL_OK;
 
     } else {
-	Tcl_WideInt rangesVal[2];   	
+	Tcl_WideInt rangesVal[2];
 
 	if (ConvertLocalToUTCUsingTable(interp, fields, rowc, rowv,
 		rangesVal) != TCL_OK) {
@@ -1985,8 +1985,8 @@ ConvertLocalToUTC(
     dstHole:
 	#if 0
 	printf("given local-time is outside the time-zone (in DST-hole): "
-		"%d - offs %d => %d <= %d < %d\n", 
-		(int)fields->localSeconds, fields->tzOffset, 
+		"%d - offs %d => %d <= %d < %d\n",
+		(int)fields->localSeconds, fields->tzOffset,
 		(int)ltzoc->rangesVal[0], (int)seconds, (int)ltzoc->rangesVal[1]);
 	#endif
 	/* because we don't know real TZ (we're outsize), just invalidate local
@@ -2246,7 +2246,7 @@ ConvertUTCToLocal(
 
 	/* we cannot cache (ranges unknown yet) */
     } else {
-	Tcl_WideInt rangesVal[2];   	
+	Tcl_WideInt rangesVal[2];
 
 	if (ConvertUTCToLocalUsingTable(interp, fields, rowc, rowv,
 		rangesVal) != TCL_OK) {
@@ -2707,7 +2707,7 @@ GetMonthDay(
     int month;
     const int *dipm = daysInPriorMonths[IsGregorianLeapYear(fields)];
 
-    /* 
+    /*
      * Estimate month by calculating `dayOfYear / (365/12)`
      */
     month = (day*12) / dipm[12];
@@ -3330,7 +3330,7 @@ ClockParseFmtScnArgs(
 	}
 	/* if already specified */
 	if (saw & (1 << optionIndex)) {
-	    if ( !(flags & CLC_SCN_ARGS) 
+	    if ( !(flags & CLC_SCN_ARGS)
 	       && optionIndex == CLC_ARGS_BASE) {
 		goto badOptionMsg;
 	    }
@@ -3442,7 +3442,7 @@ ClockParseFmtScnArgs(
 	}
 	/*
 	 * Seconds could be an unsigned number that overflowed. Make sure
-	 * that it isn't. Additionally it may be too complex to calculate 
+	 * that it isn't. Additionally it may be too complex to calculate
 	 * julianday etc (forwards/backwards) by too large/small values, thus
 	 * just let accept a bit shorter values to avoid overflow.
 	 * Note the year is currently an integer, thus avoid to overflow it also.
@@ -3753,7 +3753,7 @@ ClockScanCommit(
     }
 
     if (info->flags & (CLF_ASSEMBLE_SECONDS|CLF_LOCALSEC)) {
-	if (ConvertLocalToUTC(opts->clientData, opts->interp, &yydate, 
+	if (ConvertLocalToUTC(opts->clientData, opts->interp, &yydate,
 		opts->timezoneObj, GREGORIAN_CHANGE_DATE) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3796,7 +3796,7 @@ ClockValidDate(
     #if 0
     printf("yyMonth %d, yyDay %d, yyDayOfYear %d, yyHour %d, yyMinutes %d, yySeconds %d, "
 	   "yySecondOfDay %d, sec %d, daySec %d, tzOffset %d\n",
-	  yyMonth, yyDay, yydate.dayOfYear, yyHour, yyMinutes, yySeconds, 
+	  yyMonth, yyDay, yydate.dayOfYear, yyHour, yyMinutes, yySeconds,
 	  yySecondOfDay, (int)yydate.localSeconds, (int)(yydate.localSeconds % SECONDS_PER_DAY),
 	  yydate.tzOffset);
     #endif
@@ -3814,7 +3814,7 @@ ClockValidDate(
 	    }
 	}
 	if (info->flags & CLF_YEAR) {
-	    if ( yyYear < dataPtr->validMinYear 
+	    if ( yyYear < dataPtr->validMinYear
 	      || yyYear > dataPtr->validMaxYear ) {
 		errMsg = "invalid year"; errCode = "year"; goto error;
 	    }
@@ -3839,7 +3839,7 @@ ClockValidDate(
 	if ( yyDay < 1 || yyDay > 31 ) {
 	    errMsg = "invalid day"; errCode = "day"; goto error;
 	}
-	else 
+	else
 	if ( (info->flags & CLF_MONTH) ) {
 	    const int *h = hath[IsGregorianLeapYear(&yydate)];
 	    if ( yyDay > h[yyMonth-1] ) {
@@ -3886,7 +3886,7 @@ ClockValidDate(
 	return TCL_OK;
     }
 
-    /* 
+    /*
      * Further tests expected ready calculated julianDay (inclusive relative),
      * and time-zone conversion (local to UTC time).
      */
@@ -3895,14 +3895,14 @@ ClockValidDate(
     /* time, regarding the modifications by the time-zone (looks for given time
      * in between DST-time hole, so does not exist in this time-zone) */
     if (info->flags & CLF_TIME) {
-	/* 
-	 * we don't need to do the backwards time-conversion (UTC to local) and 
-	 * compare results, because the after conversion (local to UTC) we 
+	/*
+	 * we don't need to do the backwards time-conversion (UTC to local) and
+	 * compare results, because the after conversion (local to UTC) we
 	 * should have valid localSeconds (was not invalidated to TCL_INV_SECONDS),
 	 * so if it was invalidated - invalid time, outside the time-zone (in DST-hole)
 	 */
 	if ( yydate.localSeconds == TCL_INV_SECONDS ) {
-	    errMsg = "invalid time (does not exist in this time-zone)"; 
+	    errMsg = "invalid time (does not exist in this time-zone)";
 	    errCode = "out-of-time"; goto error;
 	}
     }
@@ -4017,7 +4017,7 @@ ClockFreeScan(
 	info->flags |= CLF_ASSEMBLE_SECONDS;
     }
 
-    /* 
+    /*
      * For freescan apply validation rules (stage 1) before mixed with
      * relative time (otherwise always valid recalculated date & time).
      */
@@ -4596,7 +4596,7 @@ ClockSafeCatchCmd(
 
     /* original catch */
     ret = Tcl_CatchObjCmd(NULL, interp, objc, objv);
-	
+
     if (ret == TCL_ERROR) {
 	Tcl_DiscardInterpState((Tcl_InterpState)statePtr);
 	return TCL_ERROR;
