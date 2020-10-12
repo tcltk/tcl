@@ -1073,7 +1073,7 @@ TclNRPackageObjCmd(
 	"present", "provide", "require",  "unknown", "vcompare",
 	"versions", "vsatisfies", NULL
     };
-    enum pkgOptions {
+    enum pkgOptionsEnum {
 	PKG_FILES,  PKG_FORGET,  PKG_IFNEEDED, PKG_NAMES,   PKG_PREFER,
 	PKG_PRESENT, PKG_PROVIDE, PKG_REQUIRE,  PKG_UNKNOWN, PKG_VCOMPARE,
 	PKG_VERSIONS, PKG_VSATISFIES
@@ -1099,7 +1099,7 @@ TclNRPackageObjCmd(
 	    &optionIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch ((enum pkgOptions) optionIndex) {
+    switch ((enum pkgOptionsEnum) optionIndex) {
     case PKG_FILES: {
 	PkgFiles *pkgFiles;
 
@@ -1368,9 +1368,9 @@ TclNRPackageObjCmd(
 		    newObjvPtr, NULL);
 	    return TCL_OK;
 	} else {
-	    int i, newobjc = objc-3;
 	    Tcl_Obj *const *newobjv = objv + 3;
 
+	    newobjc = objc - 3;
 	    if (CheckAllRequirements(interp, objc-3, objv+3) != TCL_OK) {
 		return TCL_ERROR;
 	    }

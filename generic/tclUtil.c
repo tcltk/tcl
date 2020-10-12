@@ -3799,7 +3799,7 @@ GetEndOffsetFromObj(
 	     * Quick scan to see if multi-value list is even possible.
 	     * This relies on TclGetString() returning a NUL-terminated string.
 	     */
-	    if ((TclMaxListLength(TclGetString(objPtr), -1, NULL) > 1)
+	    if ((TclMaxListLength(bytes, -1, NULL) > 1)
 
 		    /* If it's possible, do the full list parse. */
 	            && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length))

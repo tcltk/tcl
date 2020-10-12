@@ -587,7 +587,8 @@ Tcl_SplitPath(
      * plus the argv pointers and the terminating NULL pointer.
      */
 
-    *argvPtr = (const char **)ckalloc((((*argcPtr) + 1) * sizeof(char *)) + size);
+    *argvPtr = (const char **)ckalloc(
+	    ((((*argcPtr) + 1) * sizeof(char *)) + size));
 
     /*
      * Position p after the last argv pointer and copy the contents of the
@@ -1237,7 +1238,7 @@ Tcl_GlobObjCmd(
 	"-directory", "-join", "-nocomplain", "-path", "-tails",
 	"-types", "--", NULL
     };
-    enum options {
+    enum globOptionsEnum {
 	GLOB_DIR, GLOB_JOIN, GLOB_NOCOMPLAIN, GLOB_PATH, GLOB_TAILS,
 	GLOB_TYPE, GLOB_LAST
     };
@@ -1270,7 +1271,7 @@ Tcl_GlobObjCmd(
 	    }
 	}
 
-	switch (index) {
+	switch ((enum globOptionsEnum) index) {
 	case GLOB_NOCOMPLAIN:			/* -nocomplain */
 	    globFlags |= TCL_GLOBMODE_NO_COMPLAIN;
 	    break;
@@ -1283,7 +1284,10 @@ Tcl_GlobObjCmd(
 	    }
 	    if (dir != PATH_NONE) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-directory\" cannot be used with \"-path\"", -1));
+			dir == PATH_DIR
+			    ? "\"-directory\" may only be used once"
+			    : "\"-directory\" cannot be used with \"-path\"",
+			-1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 			"BADOPTIONCOMBINATION", NULL);
 		return TCL_ERROR;
@@ -1308,7 +1312,10 @@ Tcl_GlobObjCmd(
 	    }
 	    if (dir != PATH_NONE) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-path\" cannot be used with \"-directory\"", -1));
+			dir == PATH_GENERAL
+			    ? "\"-path\" may only be used once"
+			    : "\"-path\" cannot be used with \"-dictionary\"",
+			-1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 			"BADOPTIONCOMBINATION", NULL);
 		return TCL_ERROR;

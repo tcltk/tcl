@@ -43,7 +43,7 @@
 #   define _tcscmp strcmp
 #endif
 
-static inline Tcl_Obj *
+static Tcl_Obj *
 NewNativeObj(
     TCHAR *string)
 {
@@ -53,7 +53,7 @@ NewNativeObj(
     Tcl_DStringInit(&ds);
     Tcl_WCharToUtfDString(string, -1, &ds);
 #else
-    Tcl_ExternalToUtfDString(NULL, (char *) string, -1, &ds);
+    Tcl_ExternalToUtfDString(NULL, (char *)string, -1, &ds);
 #endif
     return TclDStringToObj(&ds);
 }
