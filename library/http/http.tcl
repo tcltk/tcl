@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.9.5
+package provide http 2.10.0a1
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -746,6 +746,7 @@ proc http::geturl {url args} {
 	-strict		boolean
 	-timeout	integer
 	-validate	boolean
+	-headers	dict
     }
     set state(charset)	$defaultCharset
     set options {
@@ -759,9 +760,8 @@ proc http::geturl {url args} {
     foreach {flag value} $args {
 	if {[regexp -- $pat $flag]} {
 	    # Validate numbers
-	    if {
-		[info exists type($flag)] &&
-		![string is $type($flag) -strict $value]
+	    if {($flag eq "-headers") ? [catch {dict size $value}] :
+		([info exists type($flag)] && ![string is $type($flag) -strict $value])
 	    } {
 		unset $token
 		return -code error \
@@ -3244,7 +3244,7 @@ proc http::BlockingGets {sock} {
     while 1 {
 	set count [gets $sock line]
 	set eof [eof $sock]
-	if {$count > -1 || $eof} {
+	if {$count >= 0 || $eof} {
 	    return $line
 	} else {
 	    yield

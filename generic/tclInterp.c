@@ -608,36 +608,48 @@ NRInterpCmd(
     static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"cancel",
 	"children",	"create",	"debug",	"delete",
-	"eval",		"exists",	"expose",
-	"hide",		"hidden",	"issafe",
-	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
+	"eval",		"exists",	"expose",	"hide",
+	"hidden",	"issafe",	"invokehidden",
+	"limit",	"marktrusted",	"recursionlimit",
+	"share",
 #ifndef TCL_NO_DEPRECATED
 	"slaves",
 #endif
+	"target",	"transfer",	NULL
+    };
+    static const char *const optionsNoSlaves[] = {
+	"alias",	"aliases",	"bgerror",	"cancel",
+	"children",	"create",	"debug",	"delete",
+	"eval",		"exists",	"expose",
+	"hide",		"hidden",	"issafe",
+	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
 	"share",	"target",	"transfer",
 	NULL
     };
-    enum option {
+    enum interpOptionEnum {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CANCEL,
 	OPT_CHILDREN,	OPT_CREATE,	OPT_DEBUG,	OPT_DELETE,
-	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,
-	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,
-	OPT_INVOKEHID,	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,
+	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
+	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,
+	OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT, OPT_SHARE,
 #ifndef TCL_NO_DEPRECATED
 	OPT_SLAVES,
 #endif
-	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
+	OPT_TARGET,	OPT_TRANSFER
     };
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(NULL, objv[1], options,
+	    "option", 0, &index) != TCL_OK) {
+	/* Don't report the "slaves" option as possibility */
+	Tcl_GetIndexFromObj(interp, objv[1], optionsNoSlaves,
+		"option", 0, &index);
 	return TCL_ERROR;
     }
-    switch ((enum option) index) {
+    switch ((enum interpOptionEnum)index) {
     case OPT_ALIAS: {
 	Tcl_Interp *parentInterp;
 
@@ -690,7 +702,7 @@ NRInterpCmd(
 	static const char *const cancelOptions[] = {
 	    "-unwind",	"--",	NULL
 	};
-	enum option {
+	enum optionCancelEnum {
 	    OPT_UNWIND,	OPT_LAST
 	};
 
@@ -705,7 +717,7 @@ NRInterpCmd(
 		return TCL_ERROR;
 	    }
 
-	    switch ((enum option) index) {
+	    switch ((enum optionCancelEnum) index) {
 	    case OPT_UNWIND:
 		/*
 		 * The evaluation stack in the target interp is to be unwound.
@@ -1025,7 +1037,7 @@ NRInterpCmd(
 	    return TCL_ERROR;
 	}
 	iiPtr = (InterpInfo *) ((Interp *) childInterp)->interpInfo;
-	resultPtr = Tcl_NewObj();
+	TclNewObj(resultPtr);
 	hPtr = Tcl_FirstHashEntry(&iiPtr->parent.childTable, &hashSearch);
 	for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
 	    string = (char *)Tcl_GetHashKey(&iiPtr->parent.childTable, hPtr);
@@ -1752,10 +1764,11 @@ AliasList(
 {
     Tcl_HashEntry *entryPtr;
     Tcl_HashSearch hashSearch;
-    Tcl_Obj *resultPtr = Tcl_NewObj();
+    Tcl_Obj *resultPtr;
     Alias *aliasPtr;
     Child *childPtr;
 
+    TclNewObj(resultPtr);
     childPtr = &((InterpInfo *) ((Interp *) childInterp)->interpInfo)->child;
 
     entryPtr = Tcl_FirstHashEntry(&childPtr->aliasTable, &hashSearch);
@@ -2545,7 +2558,7 @@ NRChildCmd(
 	"issafe",	"invokehidden",	"limit",	"marktrusted",
 	"recursionlimit", NULL
     };
-    enum options {
+    enum childCmdOptionsEnum {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_DEBUG,
 	OPT_EVAL,	OPT_EXPOSE,	OPT_HIDE,	OPT_HIDDEN,
 	OPT_ISSAFE,	OPT_INVOKEHIDDEN, OPT_LIMIT,	OPT_MARKTRUSTED,
@@ -2565,7 +2578,7 @@ NRChildCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum options) index) {
+    switch ((enum childCmdOptionsEnum) index) {
     case OPT_ALIAS:
 	if (objc > 2) {
 	    if (objc == 3) {
@@ -2801,7 +2814,7 @@ ChildDebugCmd(
 
     iPtr = (Interp *) childInterp;
     if (objc == 0) {
-	resultPtr = Tcl_NewObj();
+	TclNewObj(resultPtr);
 	Tcl_ListObjAppendElement(NULL, resultPtr,
 		Tcl_NewStringObj("-frame", -1));
 	Tcl_ListObjAppendElement(NULL, resultPtr,
@@ -3070,11 +3083,12 @@ ChildHidden(
     Tcl_Interp *interp,		/* Interp for data return. */
     Tcl_Interp *childInterp)	/* Interp whose hidden commands to query. */
 {
-    Tcl_Obj *listObjPtr = Tcl_NewObj();	/* Local object pointer. */
+    Tcl_Obj *listObjPtr;		/* Local object pointer. */
     Tcl_HashTable *hTblPtr;		/* For local searches. */
     Tcl_HashEntry *hPtr;		/* For local searches. */
     Tcl_HashSearch hSearch;		/* For local searches. */
 
+    TclNewObj(listObjPtr);
     hTblPtr = ((Interp *) childInterp)->hiddenCmdTablePtr;
     if (hTblPtr != NULL) {
 	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);

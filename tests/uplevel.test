@@ -304,7 +304,24 @@ test uplevel-7.3 {var access, LVT in upper level} -setup {
     rename foo {}
     rename moo {}
 } -result {3 3 3}
+
+
+test uplevel-8.0 {
+    string representation isn't generated when there is only one argument
+} -body {
+    set res {}
+    set script [list lindex 5]
+    lappend res [apply {script {
+	uplevel $script
+    }} $script]
+    lappend res [string match {value is a list *no string representation*} [
+	::tcl::unsupported::representation $script]]
+} -cleanup {
+    unset script
+    unset res
+} -result {5 1}
 
+
 # cleanup
 ::tcltest::cleanupTests
 return

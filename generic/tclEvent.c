@@ -1037,7 +1037,7 @@ Tcl_InitSubsystems(void)
 
 	    TclInitThreadStorage();     /* Creates hash table for
 					 * thread local storage */
-#if USE_TCLALLOC
+#if defined(USE_TCLALLOC) && USE_TCLALLOC
 	    TclInitAlloc();		/* Process wide mutex init */
 #endif
 #if TCL_THREADS && defined(USE_THREAD_ALLOC)
@@ -1491,7 +1491,7 @@ Tcl_UpdateObjCmd(
     int optionIndex;
     int flags = 0;		/* Initialized to avoid compiler warning. */
     static const char *const updateOptions[] = {"idletasks", NULL};
-    enum updateOptions {OPT_IDLETASKS};
+    enum updateOptionsEnum {OPT_IDLETASKS};
 
     if (objc == 1) {
 	flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
@@ -1500,7 +1500,7 @@ Tcl_UpdateObjCmd(
 		"option", 0, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum updateOptions) optionIndex) {
+	switch ((enum updateOptionsEnum) optionIndex) {
 	case OPT_IDLETASKS:
 	    flags = TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS|TCL_DONT_WAIT;
 	    break;

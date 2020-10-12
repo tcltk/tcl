@@ -301,7 +301,7 @@ Tcl_GetsObjCmd(
     }
 
     TclChannelPreserve(chan);
-    linePtr = Tcl_NewObj();
+    TclNewObj(linePtr);
     lineLen = Tcl_GetsObj(chan, linePtr);
     if (lineLen < 0) {
 	if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
@@ -330,7 +330,7 @@ Tcl_GetsObjCmd(
 	    code = TCL_ERROR;
 	    goto done;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(lineLen));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(lineLen));
     } else {
 	Tcl_SetObjResult(interp, linePtr);
     }
@@ -426,7 +426,7 @@ Tcl_ReadObjCmd(
 	}
     }
 
-    resultPtr = Tcl_NewObj();
+    TclNewObj(resultPtr);
     Tcl_IncrRefCount(resultPtr);
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
@@ -861,7 +861,7 @@ Tcl_ExecObjCmd(
     static const char *const options[] = {
 	"-ignorestderr", "-keepnewline", "--", NULL
     };
-    enum options {
+    enum execOptionsEnum {
 	EXEC_IGNORESTDERR, EXEC_KEEPNEWLINE, EXEC_LAST
     };
 
@@ -948,7 +948,7 @@ Tcl_ExecObjCmd(
 	return TCL_OK;
     }
 
-    resultPtr = Tcl_NewObj();
+    TclNewObj(resultPtr);
     if (Tcl_GetChannelHandle(chan, TCL_READABLE, NULL) == TCL_OK) {
 	if (Tcl_ReadChars(chan, resultPtr, -1, 0) == TCL_IO_FAILURE) {
 	    /*
@@ -1336,7 +1336,7 @@ AcceptCallbackProc(
 	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewStringObj(
 		Tcl_GetChannelName(chan), -1));
 	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewStringObj(address, -1));
-	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewIntObj(port));
+	Tcl_ListObjAppendElement(NULL, objv[1], Tcl_NewWideIntObj(port));
 
 	script = Tcl_ConcatObj(2, objv);
 	Tcl_IncrRefCount(script);
@@ -1443,7 +1443,7 @@ Tcl_SocketObjCmd(
 	"-async", "-myaddr", "-myport", "-reuseaddr", "-reuseport", "-server",
 	NULL
     };
-    enum socketOptions {
+    enum socketOptionsEnum {
 	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_REUSEADDR, SKT_REUSEPORT,
 	SKT_SERVER
     };
@@ -1468,7 +1468,7 @@ Tcl_SocketObjCmd(
 		TCL_EXACT, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum socketOptions) optionIndex) {
+	switch ((enum socketOptionsEnum) optionIndex) {
 	case SKT_ASYNC:
 	    if (server == 1) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -1779,7 +1779,7 @@ ChanPendingObjCmd(
     Tcl_Channel chan;
     int index, mode;
     static const char *const options[] = {"input", "output", NULL};
-    enum options {PENDING_INPUT, PENDING_OUTPUT};
+    enum pendingOptionsEnum {PENDING_INPUT, PENDING_OUTPUT};
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode channelId");
@@ -1795,19 +1795,19 @@ ChanPendingObjCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum options) index) {
+    switch ((enum pendingOptionsEnum) index) {
     case PENDING_INPUT:
 	if (!(mode & TCL_READABLE)) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-1));
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_InputBuffered(chan)));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_InputBuffered(chan)));
 	}
 	break;
     case PENDING_OUTPUT:
 	if (!(mode & TCL_WRITABLE)) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-1));
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_OutputBuffered(chan)));
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_OutputBuffered(chan)));
 	}
 	break;
     }
@@ -1927,7 +1927,7 @@ ChanPipeObjCmd(
     channelNames[0] = Tcl_GetChannelName(rchan);
     channelNames[1] = Tcl_GetChannelName(wchan);
 
-    resultPtr = Tcl_NewObj();
+    TclNewObj(resultPtr);
     Tcl_ListObjAppendElement(NULL, resultPtr,
 	    Tcl_NewStringObj(channelNames[0], -1));
     Tcl_ListObjAppendElement(NULL, resultPtr,

@@ -937,16 +937,16 @@ Tcl_ScanObjCmd(
 	    } else if (flags & SCAN_BIG) {
 		if (flags & SCAN_UNSIGNED) {
 		    mp_int big;
-		    int code = Tcl_GetBignumFromObj(interp, objPtr, &big);
+		    int res = Tcl_GetBignumFromObj(interp, objPtr, &big);
 
-		    if (code == TCL_OK) {
+		    if (res == TCL_OK) {
 			if (mp_isneg(&big)) {
-			    code = TCL_ERROR;
+			    res = TCL_ERROR;
 			}
 			mp_clear(&big);
 		    }
 
-		    if (code == TCL_ERROR) {
+		    if (res == TCL_ERROR) {
 			if (objs != NULL) {
 			    Tcl_Free(objs);
 			}
@@ -1068,7 +1068,7 @@ Tcl_ScanObjCmd(
 	 * Here no vars were specified, we want a list returned (inline scan)
 	 */
 
-	objPtr = Tcl_NewObj();
+	TclNewObj(objPtr);
 	for (i = 0; i < totalVars; i++) {
 	    if (objs[i] != NULL) {
 		Tcl_ListObjAppendElement(NULL, objPtr, objs[i]);
@@ -1089,12 +1089,12 @@ Tcl_ScanObjCmd(
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
-		objPtr = Tcl_NewWideIntObj(-1);
+		TclNewIndexObj(objPtr, -1);
 	    } else {
 		if (objPtr) {
 		    Tcl_SetListObj(objPtr, 0, NULL);
 		} else {
-		    objPtr = Tcl_NewObj();
+		    TclNewObj(objPtr);
 		}
 	    }
 	} else if (numVars) {

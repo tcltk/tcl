@@ -105,7 +105,6 @@ proc main {} {
     if {($len != 2) && ($len != 3)} {
 	puts "usage: $argv0 pkgName pkgDir \[outFile\]"
 	puts "   pkgName == Tcl,Tk"
-	puts "   pkgDir  == /home/surles/cvs/tcl9.0"
 	exit 1
     }
 

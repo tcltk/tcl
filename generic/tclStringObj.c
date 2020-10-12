@@ -2036,7 +2036,7 @@ Tcl_AppendFormatToObj(
 		if (l == (long) 0) gotHash = 0;
 	    }
 
-	    segment = Tcl_NewObj();
+	    TclNewObj(segment);
 	    allocSegment = 1;
 	    segmentLimit = INT_MAX;
 	    Tcl_IncrRefCount(segment);
@@ -2204,7 +2204,7 @@ Tcl_AppendFormatToObj(
 		if (numDigits == 0) {
 		    numDigits = 1;
 		}
-		pure = Tcl_NewObj();
+		TclNewObj(pure);
 		Tcl_SetObjLength(pure, numDigits);
 		bytes = TclGetString(pure);
 		toAppend = length = numDigits;
@@ -2325,7 +2325,7 @@ Tcl_AppendFormatToObj(
 	    *p++ = (char) ch;
 	    *p = '\0';
 
-	    segment = Tcl_NewObj();
+	    TclNewObj(segment);
 	    allocSegment = 1;
 	    if (!Tcl_AttemptSetObjLength(segment, length)) {
 		msg = overflow;
@@ -2339,10 +2339,10 @@ Tcl_AppendFormatToObj(
 		goto errorMsg;
 	    }
 	    if (ch == 'A') {
-		char *p = TclGetString(segment) + 1;
-		*p = 'x';
-		p = strchr(p, 'P');
-		if (p) *p = 'p';
+		char *q = TclGetString(segment) + 1;
+		*q = 'x';
+		q = strchr(q, 'P');
+		if (q) *q = 'p';
 	    }
 	    break;
 	}
@@ -3208,7 +3208,7 @@ TclStringCat(
 	    /* assert ( length > start ) */
 	    TclFreeIntRep(objResultPtr);
 	} else {
-	    objResultPtr = Tcl_NewObj();	/* PANIC? */
+	    TclNewObj(objResultPtr);	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
@@ -3455,7 +3455,8 @@ TclStringFirst(
 {
     size_t lh = 0, ln = Tcl_GetCharLength(needle);
     size_t value = TCL_INDEX_NONE;
-	Tcl_UniChar *check, *end, *uh, *un;
+    Tcl_UniChar *checkStr, *endStr, *uh, *un;
+    Tcl_Obj *obj;
 
     if (start == TCL_INDEX_NONE) {
 	start = 0;
@@ -3521,17 +3522,18 @@ TclStringFirst(
 	/* Don't start the loop if there cannot be a valid answer */
 	goto firstEnd;
     }
-    end = uh + lh;
+    endStr = uh + lh;
 
-    for (check = uh + start; check + ln <= end; check++) {
-	if ((*check == *un) && (0 ==
-		memcmp(check + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
-	    value =  (check - uh);
+    for (checkStr = uh + start; checkStr + ln <= endStr; checkStr++) {
+	if ((*checkStr == *un) && (0 ==
+		memcmp(checkStr + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
+	    value =  (checkStr - uh);
 	    goto firstEnd;
 	}
     }
   firstEnd:
-    return TclNewWideIntObjFromSize(value);
+    TclNewIndexObj(obj, value);
+    return obj;
 }
 
 /*
@@ -3560,7 +3562,8 @@ TclStringLast(
 {
     size_t lh = 0, ln = Tcl_GetCharLength(needle);
     size_t value = TCL_INDEX_NONE;
-	Tcl_UniChar *check, *uh, *un;
+    Tcl_UniChar *checkStr, *uh, *un;
+    Tcl_Obj *obj;
 
     if (ln == 0) {
 	/*
@@ -3606,17 +3609,18 @@ TclStringLast(
 	/* Don't start the loop if there cannot be a valid answer */
 	goto lastEnd;
     }
-    check = uh + last + 1 - ln;
-    while (check >= uh) {
-	if ((*check == un[0])
-		&& (0 == memcmp(check+1, un+1, (ln-1)*sizeof(Tcl_UniChar)))) {
-	    value = (check - uh);
+    checkStr = uh + last + 1 - ln;
+    while (checkStr >= uh) {
+	if ((*checkStr == un[0])
+		&& (0 == memcmp(checkStr+1, un+1, (ln-1)*sizeof(Tcl_UniChar)))) {
+	    value = (checkStr - uh);
 	    goto lastEnd;
 	}
-	check--;
+	checkStr--;
     }
   lastEnd:
-    return TclNewWideIntObjFromSize(value);
+    TclNewIndexObj(obj, value);
+    return obj;
 }
 
 /*
@@ -3721,7 +3725,7 @@ TclStringReverse(
 	char *to, *from = objPtr->bytes;
 
 	if (!inPlace || Tcl_IsShared(objPtr)) {
-	    objPtr = Tcl_NewObj();
+	    TclNewObj(objPtr);
 	    Tcl_SetObjLength(objPtr, numBytes);
 	}
 	to = objPtr->bytes;

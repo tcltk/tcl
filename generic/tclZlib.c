@@ -354,7 +354,7 @@ ConvertErrorToList(
 	return Tcl_NewListObj(4, objv);
     case Z_NEED_DICT:
 	TclNewLiteralStringObj(objv[2], "NEED_DICT");
-	objv[3] = Tcl_NewWideIntObj((Tcl_WideInt) adler);
+	TclNewIntObj(objv[3], (Tcl_WideInt)adler);
 	return Tcl_NewListObj(4, objv);
 
 	/*
@@ -2171,7 +2171,7 @@ ZlibCmd(
 		break;
 	    case 1:
 		headerVarObj = objv[i+1];
-		headerDictObj = Tcl_NewObj();
+		TclNewObj(headerDictObj);
 		break;
 	    }
 	}
@@ -2407,7 +2407,7 @@ ZlibPushSubcmd(
 	"-dictionary", "-header", "-level", "-limit", NULL
     };
     const char *const *pushOptions = pushDecompressOptions;
-    enum pushOptions {poDictionary, poHeader, poLevel, poLimit};
+    enum pushOptionsEnum {poDictionary, poHeader, poLevel, poLimit};
     Tcl_Obj *headerObj = NULL, *compDictObj = NULL;
     int limit = DEFAULT_BUFFER_SIZE, dummy;
 
@@ -2489,7 +2489,7 @@ ZlibPushSubcmd(
 	    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 	    return TCL_ERROR;
 	}
-	switch ((enum pushOptions) option) {
+	switch ((enum pushOptionsEnum) option) {
 	case poHeader:
 	    headerObj = objv[i];
 	    if (Tcl_DictObjSize(interp, headerObj, &dummy) != TCL_OK) {
@@ -2712,21 +2712,21 @@ ZlibStreamAddCmd(
 
 	switch ((enum addOptions) index) {
 	case ao_flush: /* -flush */
-	    if (flush > -1) {
+	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_SYNC_FLUSH;
 	    }
 	    break;
 	case ao_fullflush: /* -fullflush */
-	    if (flush > -1) {
+	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_FULL_FLUSH;
 	    }
 	    break;
 	case ao_finalize: /* -finalize */
-	    if (flush > -1) {
+	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_FINISH;
@@ -2839,21 +2839,21 @@ ZlibStreamPutCmd(
 
 	switch ((enum putOptions) index) {
 	case po_flush: /* -flush */
-	    if (flush > -1) {
+	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_SYNC_FLUSH;
 	    }
 	    break;
 	case po_fullflush: /* -fullflush */
-	    if (flush > -1) {
+	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_FULL_FLUSH;
 	    }
 	    break;
 	case po_finalize: /* -finalize */
-	    if (flush > -1) {
+	    if (flush >= 0) {
 		flush = -2;
 	    } else {
 		flush = Z_FINISH;
@@ -3496,8 +3496,9 @@ ZlibTransformGetOption(
 
     if ((cd->flags & IN_HEADER) && ((optionName == NULL) ||
 	    (strcmp(optionName, "-header") == 0))) {
-	Tcl_Obj *tmpObj = Tcl_NewObj();
+	Tcl_Obj *tmpObj;
 
+	TclNewObj(tmpObj);
 	ExtractHeader(&cd->inHeader.header, tmpObj);
 	if (optionName == NULL) {
 	    Tcl_DStringAppendElement(dsPtr, "-header");

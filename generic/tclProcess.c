@@ -222,7 +222,7 @@ WaitProcessStatus(
      * Get process status.
      */
 
-    if (pid == (Tcl_Pid) -1) {
+    if (pid == (Tcl_Pid)-1) {
 	/*
 	 * POSIX errName msg
 	 */
@@ -371,7 +371,7 @@ BuildProcessStatusObj(
 	 * Normal exit, return TCL_OK.
 	 */
 
-	return Tcl_NewIntObj(TCL_OK);
+	return Tcl_NewWideIntObj(TCL_OK);
     }
 
     /*
@@ -427,7 +427,7 @@ ProcessListObjCmd(
 	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
 	info = (ProcessInfo *) Tcl_GetHashValue(entry);
 	Tcl_ListObjAppendElement(interp, list,
-		Tcl_NewIntObj(info->resolvedPid));
+		Tcl_NewWideIntObj(info->resolvedPid));
     }
     Tcl_MutexUnlock(&infoTablesMutex);
     Tcl_SetObjResult(interp, list);
@@ -472,7 +472,7 @@ ProcessStatusObjCmd(
     static const char *const switches[] = {
 	"-wait", "--", NULL
     };
-    enum switches {
+    enum switchesEnum {
 	STATUS_WAIT, STATUS_LAST
     };
 
@@ -485,7 +485,7 @@ ProcessStatusObjCmd(
 	    return TCL_ERROR;
 	}
 	++objv; --objc;
-	if (STATUS_WAIT == (enum switches) index) {
+	if (STATUS_WAIT == (enum switchesEnum) index) {
 	    options = 0;
 	} else {
 	    break;
@@ -523,7 +523,7 @@ ProcessStatusObjCmd(
 		 * Add to result.
 		 */
 
-		Tcl_DictObjPut(interp, dict, Tcl_NewIntObj(info->resolvedPid),
+		Tcl_DictObjPut(interp, dict, Tcl_NewWideIntObj(info->resolvedPid),
 			BuildProcessStatusObj(info));
 	    }
 	}
@@ -573,7 +573,7 @@ ProcessStatusObjCmd(
 		 * Add to result.
 		 */
 
-		Tcl_DictObjPut(interp, dict, Tcl_NewIntObj(info->resolvedPid),
+		Tcl_DictObjPut(interp, dict, Tcl_NewWideIntObj(info->resolvedPid),
 			BuildProcessStatusObj(info));
 	    }
 	}
@@ -834,7 +834,7 @@ TclProcessCreated(
      * Allocate and initialize info structure.
      */
 
-    info = (ProcessInfo *) Tcl_Alloc(sizeof(ProcessInfo));
+    info = (ProcessInfo *)Tcl_Alloc(sizeof(ProcessInfo));
     InitProcessInfo(info, pid, resolvedPid);
 
     /*

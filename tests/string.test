@@ -131,11 +131,11 @@ test string-2.11.3.$noComp {string compare, unicode} {
     run {string compare \334\334\334\374\374 \334\334\334\334\334}
 } 1
 test string-2.12.$noComp {string compare, high bit} {
-    # This test will fail if the underlying comparaison
+    # This test will fail if the underlying comparison
     # is using signed chars instead of unsigned chars.
     # (like SunOS's default memcmp thus the compat/memcmp.c)
     run {string compare "\x80" "@"}
-    # Nb this tests works also in utf8 space because \x80 is
+    # Nb this tests works also in utf-8 space because \x80 is
     # translated into a 2 or more bytelength but whose first byte has
     # the high bit set.
 } 1
@@ -1665,6 +1665,9 @@ test stringComp-14.24.$noComp {Bug 1af8de570511} {
 test stringComp-14.25.$noComp {} {
     string length [string replace [string repeat a\xFE 2] 3 end {}]
 } 3
+test stringComp-14.26.$noComp {} {
+    run {string replace abcd 0x10000000000000000-0xffffffffffffffff 2 e}
+} aed
 
 test string-15.1.$noComp {string tolower too few args} {
     list [catch {run {string tolower}} msg] $msg
@@ -2312,7 +2315,7 @@ test string-28.12.$noComp {tcl::prefix longest} {
     tcl::prefix longest {apa {} appa} {}
 } {}
 test string-28.13.$noComp {tcl::prefix longest} {
-    # Test UTF8 handling
+    # Test utf-8 handling
     tcl::prefix longest {ax\x90 bep ax\x91} a
 } ax
 
