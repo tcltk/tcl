@@ -444,7 +444,9 @@ TclListObjRange(
 	toIdx = listLen-1;
     }
     if (fromIdx + 1 > toIdx + 1) {
-	return Tcl_NewObj();
+	Tcl_Obj *obj;
+	TclNewObj(obj);
+	return obj;
     }
 
     newLen = toIdx - fromIdx + 1;
@@ -1244,7 +1246,7 @@ TclLindexList(
 
     ListGetIntRep(argPtr, listRepPtr);
     if ((listRepPtr == NULL)
-	    && TclGetIntForIndexM(NULL , argPtr, WIDE_MAX - 1, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL , argPtr, (size_t)WIDE_MAX - 1, &index) == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
 	 */
@@ -1350,13 +1352,13 @@ TclLindexFlat(
 		 */
 
 		while (++i < indexCount) {
-		    if (TclGetIntForIndexM(interp, indexArray[i], WIDE_MAX - 1, &index)
+		    if (TclGetIntForIndexM(interp, indexArray[i], (size_t)WIDE_MAX - 1, &index)
 			!= TCL_OK) {
 			Tcl_DecrRefCount(sublistCopy);
 			return NULL;
 		    }
 		}
-		listPtr = Tcl_NewObj();
+		TclNewObj(listPtr);
 	    } else {
 		/*
 		 * Extract the pointer to the appropriate element.
@@ -1414,7 +1416,7 @@ TclLsetList(
 
     ListGetIntRep(indexArgPtr, listRepPtr);
     if (listRepPtr == NULL
-	    && TclGetIntForIndexM(NULL, indexArgPtr, WIDE_MAX - 1, &index) == TCL_OK) {
+	    && TclGetIntForIndexM(NULL, indexArgPtr, (size_t)WIDE_MAX - 1, &index) == TCL_OK) {
 	/*
 	 * indexArgPtr designates a single index.
 	 */
@@ -1597,7 +1599,7 @@ TclLsetFlat(
 	if (--indexCount) {
 	    parentList = subListPtr;
 	    if (index == (size_t)elemCount) {
-		subListPtr = Tcl_NewObj();
+		TclNewObj(subListPtr);
 	    } else {
 		subListPtr = elemPtrs[index];
 	    }

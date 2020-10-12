@@ -1290,7 +1290,7 @@ TclFinalizeMemorySubsystem(void)
     Tcl_MutexUnlock(ckallocMutexPtr);
 #endif
 
-#if USE_TCLALLOC
+#if defined(USE_TCLALLOC) && USE_TCLALLOC
     TclFinalizeAllocSubsystem();
 #endif
 }

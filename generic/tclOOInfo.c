@@ -206,11 +206,11 @@ InfoObjectClassCmd(
 		continue;
 	    }
 	    if (TclOOIsReachable(o2clsPtr, mixinPtr)) {
-		Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(1));
 		return TCL_OK;
 	    }
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 		TclOOIsReachable(o2clsPtr, oPtr->selfCls)));
 	return TCL_OK;
     }
@@ -270,13 +270,13 @@ InfoObjectDefnCmd(
 	return TCL_ERROR;
     }
 
-    resultObjs[0] = Tcl_NewObj();
+    TclNewObj(resultObjs[0]);
     for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
 	    localPtr=localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
 	    Tcl_Obj *argObj;
 
-	    argObj = Tcl_NewObj();
+	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
 		    Tcl_NewStringObj(localPtr->name, -1));
 	    if (localPtr->defValuePtr != NULL) {
@@ -320,7 +320,7 @@ InfoObjectFiltersCmd(
     if (oPtr == NULL) {
 	return TCL_ERROR;
     }
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
 
     FOREACH(filterObj, oPtr->filters) {
 	Tcl_ListObjAppendElement(NULL, resultObj, filterObj);
@@ -601,7 +601,7 @@ InfoObjectMethodsCmd(
 	}
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     if (recurse) {
 	const char **names;
 	int i, numNames = TclOOGetSortedMethodList(oPtr, NULL, NULL, flag,
@@ -713,7 +713,7 @@ InfoObjectMixinsCmd(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(mixinPtr, oPtr->mixins) {
 	if (!mixinPtr) {
 	    continue;
@@ -753,7 +753,7 @@ InfoObjectIdCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(oPtr->creationEpoch));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(oPtr->creationEpoch));
     return TCL_OK;
 }
 
@@ -826,7 +826,7 @@ InfoObjectVariablesCmd(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     if (isPrivate) {
 	PrivateVariableMapping *privatePtr;
 
@@ -878,7 +878,7 @@ InfoObjectVarsCmd(
     if (objc == 3) {
 	pattern = TclGetString(objv[2]);
     }
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
 
     /*
      * Extract the information we need from the object's namespace's table of
@@ -946,13 +946,13 @@ InfoClassConstrCmd(
 	return TCL_ERROR;
     }
 
-    resultObjs[0] = Tcl_NewObj();
+    TclNewObj(resultObjs[0]);
     for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
 	    localPtr=localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
 	    Tcl_Obj *argObj;
 
-	    argObj = Tcl_NewObj();
+	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
 		    Tcl_NewStringObj(localPtr->name, -1));
 	    if (localPtr->defValuePtr != NULL) {
@@ -1014,13 +1014,13 @@ InfoClassDefnCmd(
 	return TCL_ERROR;
     }
 
-    resultObjs[0] = Tcl_NewObj();
+    TclNewObj(resultObjs[0]);
     for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
 	    localPtr=localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
 	    Tcl_Obj *argObj;
 
-	    argObj = Tcl_NewObj();
+	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
 		    Tcl_NewStringObj(localPtr->name, -1));
 	    if (localPtr->defValuePtr != NULL) {
@@ -1158,7 +1158,7 @@ InfoClassFiltersCmd(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(filterObj, clsPtr->filters) {
 	Tcl_ListObjAppendElement(NULL, resultObj, filterObj);
     }
@@ -1252,7 +1252,7 @@ InfoClassInstancesCmd(
 	pattern = TclGetString(objv[2]);
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(oPtr, clsPtr->instances) {
 	Tcl_Obj *tmpObj = TclOOObjectName(interp, oPtr);
 
@@ -1356,7 +1356,7 @@ InfoClassMethodsCmd(
 	}
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     if (recurse) {
 	const char **names;
 	int i, numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
@@ -1463,7 +1463,7 @@ InfoClassMixinsCmd(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(mixinPtr, clsPtr->mixins) {
 	if (!mixinPtr) {
 	    continue;
@@ -1509,7 +1509,7 @@ InfoClassSubsCmd(
 	pattern = TclGetString(objv[2]);
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(subclassPtr, clsPtr->subclasses) {
 	Tcl_Obj *tmpObj = TclOOObjectName(interp, subclassPtr->thisPtr);
 
@@ -1560,7 +1560,7 @@ InfoClassSupersCmd(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(superPtr, clsPtr->superclasses) {
 	Tcl_ListObjAppendElement(NULL, resultObj,
 		TclOOObjectName(interp, superPtr->thisPtr));
@@ -1605,7 +1605,7 @@ InfoClassVariablesCmd(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     if (isPrivate) {
 	PrivateVariableMapping *privatePtr;
 

@@ -1979,7 +1979,7 @@ Tcl_ConcatObj(
 	    }
 	}
 	if (!resPtr) {
-	    resPtr = Tcl_NewObj();
+	    TclNewObj(resPtr);
 	}
 	return resPtr;
     }
@@ -3457,7 +3457,7 @@ GetEndOffsetFromObj(
 	if (*bytes != 'e') {
 	    int numType;
 	    const char *opPtr;
-	    int length, t1 = 0, t2 = 0;
+	    int len, t1 = 0, t2 = 0;
 
 	    /* Value doesn't start with "e" */
 
@@ -3474,11 +3474,11 @@ GetEndOffsetFromObj(
 	     * Quick scan to see if multi-value list is even possible.
 	     * This relies on TclGetString() returning a NUL-terminated string.
 	     */
-	    if ((TclMaxListLength(TclGetString(objPtr), -1, NULL) > 1)
+	    if ((TclMaxListLength(bytes, -1, NULL) > 1)
 
 		    /* If it's possible, do the full list parse. */
-	            && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length))
-	            && (length > 1)) {
+	            && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &len))
+	            && (len > 1)) {
 	        goto parseError;
 	    }
 

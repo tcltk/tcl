@@ -409,6 +409,7 @@ proc pkg_mkIndex {args} {
     }
 
     set f [open [file join $dir pkgIndex.tcl] w]
+    fconfigure $f -translation lf
     puts $f $index
     close $f
 }
