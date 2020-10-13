@@ -1580,7 +1580,7 @@ ReflectSeekWide(
 
     Tcl_Preserve(rcPtr);
 
-    offObj  = Tcl_NewWideIntObj(offset);
+    TclNewIntObj(offObj, offset);
     baseObj = Tcl_NewStringObj(
             (seekMode == SEEK_SET) ? "start" :
             (seekMode == SEEK_CUR) ? "current" : "end", -1);
@@ -3021,7 +3021,7 @@ ForwardProc(
 	TclNewIntObj(toReadObj, paramPtr->input.toRead);
 	Tcl_IncrRefCount(toReadObj);
 
-        Tcl_Preserve(rcPtr);
+	Tcl_Preserve(rcPtr);
 	if (InvokeTclMethod(rcPtr, METH_READ, toReadObj, NULL, &resObj)!=TCL_OK){
 	    int code = ErrnoReturn(rcPtr, resObj);
 
@@ -3096,7 +3096,9 @@ ForwardProc(
     }
 
     case ForwardedSeek: {
-	Tcl_Obj *offObj = Tcl_NewWideIntObj(paramPtr->seek.offset);
+	Tcl_Obj *offObj;
+
+	TclNewIntObj(offObj, paramPtr->seek.offset);
 	Tcl_Obj *baseObj = Tcl_NewStringObj(
                 (paramPtr->seek.seekMode==SEEK_SET) ? "start" :
                 (paramPtr->seek.seekMode==SEEK_CUR) ? "current" : "end", -1);
