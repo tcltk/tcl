@@ -2133,7 +2133,7 @@ ZlibCmd(
 		break;
 	    case 1:
 		headerVarObj = objv[i+1];
-		headerDictObj = Tcl_NewObj();
+		TclNewObj(headerDictObj);
 		break;
 	    }
 	}
@@ -3432,8 +3432,9 @@ ZlibTransformGetOption(
 
     if ((cd->flags & IN_HEADER) && ((optionName == NULL) ||
 	    (strcmp(optionName, "-header") == 0))) {
-	Tcl_Obj *tmpObj = Tcl_NewObj();
+	Tcl_Obj *tmpObj;
 
+	TclNewObj(tmpObj);
 	ExtractHeader(&cd->inHeader.header, tmpObj);
 	if (optionName == NULL) {
 	    Tcl_DStringAppendElement(dsPtr, "-header");

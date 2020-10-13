@@ -473,7 +473,7 @@ TclpInitLibraryPath(
     const char *str;
     Tcl_DString buffer;
 
-    pathPtr = Tcl_NewObj();
+    TclNewObj(pathPtr);
 
     /*
      * Look for the library relative to the TCL_LIBRARY env variable. If the
