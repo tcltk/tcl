@@ -614,7 +614,7 @@ test util-9.18 {Tcl_GetIntForIndex} {
 } b
 test util-9.19 {Tcl_GetIntForIndex} -body {
     string index a {}
-} -returnCodes error -match glob -result *
+} -result {}
 test util-9.20 {Tcl_GetIntForIndex} -body {
     string index a { }
 } -returnCodes error -match glob -result *

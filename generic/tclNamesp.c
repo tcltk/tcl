@@ -154,6 +154,10 @@ static const Tcl_ObjType nsNameType = {
  * "namespace" command.
  */
 
+/* Those two cannot be compiled due to invalid handling of "" index */
+#define TclCompileNamespaceQualifiersCmd NULL
+#define TclCompileNamespaceTailCmd NULL
+
 static const EnsembleImplMap defaultNamespaceMap[] = {
     {"children",   NamespaceChildrenCmd, TclCompileBasic0To2ArgCmd, NULL, NULL, 0},
     {"code",	   NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, NULL, 0},

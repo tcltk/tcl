@@ -2694,6 +2694,7 @@ MODULE_SCOPE const Tcl_ObjType tclBooleanType;
 MODULE_SCOPE const Tcl_ObjType tclByteArrayType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType tclDoubleType;
+MODULE_SCOPE const Tcl_ObjType tclEndOffsetType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
 MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
@@ -4820,8 +4821,8 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	TclAllocObjStorage(objPtr);			\
 	(objPtr)->refCount = 0;				\
 	(objPtr)->bytes = NULL;				\
-	(objPtr)->internalRep.wideValue = (Tcl_WideInt)((w) + 1) - 1;	\
-	(objPtr)->typePtr = &tclIntType;		\
+	(objPtr)->internalRep.wideValue = (Tcl_WideInt)(((w) == TCL_INDEX_NONE) ? WIDE_MIN : (w));	\
+	(objPtr)->typePtr = ((w) == TCL_INDEX_NONE) ? &tclEndOffsetType : &tclIntType;		\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
@@ -4851,7 +4852,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     (objPtr) = Tcl_NewWideIntObj(w)
 
 #define TclNewIndexObj(objPtr, w) \
-    (objPtr) = Tcl_NewWideIntObj((Tcl_WideInt)((w) + 1) - 1)
+    (objPtr) = (w == TCL_INDEX_NONE) ? Tcl_NewObj() : Tcl_NewWideIntObj(w)
 
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)

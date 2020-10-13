@@ -569,7 +569,7 @@ test switch-12.8 {-indexvar and matched empty strings} {
 } {{0 2} {3 2}}
 test switch-12.9 {-indexvar and unmatched strings} {
     switch -regexp -indexvar x -- abcdef ^...(x)? {return $x}
-} {{0 2} {-1 -1}}
+} {{0 2} {}}
 
 test switch-13.1 {-indexvar -matchvar combinations} {
     switch -regexp -indexvar x -matchvar y abc {

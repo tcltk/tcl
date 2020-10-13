@@ -54,7 +54,7 @@ namespace eval ::tcl {
 # tcl_wordBreakAfter --
 #
 # This procedure returns the index of the first word boundary after the
-# starting point in the given string, or -1 if there are no more boundaries in
+# starting point in the given string, or "" if there are no more boundaries in
 # the given string. The index returned refers to the first character of the
 # pair that comprises a boundary.
 #
@@ -64,7 +64,7 @@ namespace eval ::tcl {
 
 proc tcl_wordBreakAfter {str start} {
     variable ::tcl::WordBreakRE
-    set result {-1 -1}
+    set result {}
     regexp -indices -start $start -- $WordBreakRE(after) $str result
     return [lindex $result 1]
 }
@@ -72,7 +72,7 @@ proc tcl_wordBreakAfter {str start} {
 # tcl_wordBreakBefore --
 #
 # This procedure returns the index of the first word boundary before the
-# starting point in the given string, or -1 if there are no more boundaries in
+# starting point in the given string, or " if there are no more boundaries in
 # the given string. The index returned refers to the second character of the
 # pair that comprises a boundary.
 #
@@ -82,7 +82,7 @@ proc tcl_wordBreakAfter {str start} {
 
 proc tcl_wordBreakBefore {str start} {
     variable ::tcl::WordBreakRE
-    set result {-1 -1}
+    set result {}
     regexp -indices -- $WordBreakRE(before) [string range $str 0 $start] result
     return [lindex $result 1]
 }
@@ -92,7 +92,7 @@ proc tcl_wordBreakBefore {str start} {
 # This procedure returns the index of the first end-of-word location after a
 # starting index in the given string. An end-of-word location is defined to be
 # the first whitespace character following the first non-whitespace character
-# after the starting point. Returns -1 if there are no more words after the
+# after the starting point. Returns "" if there are no more words after the
 # starting point.
 #
 # Arguments:
@@ -101,7 +101,7 @@ proc tcl_wordBreakBefore {str start} {
 
 proc tcl_endOfWord {str start} {
     variable ::tcl::WordBreakRE
-    set result {-1 -1}
+    set result {}
     regexp -indices -start $start -- $WordBreakRE(end) $str result
     return [lindex $result 1]
 }
@@ -110,7 +110,7 @@ proc tcl_endOfWord {str start} {
 #
 # This procedure returns the index of the first start-of-word location after a
 # starting index in the given string. A start-of-word location is defined to
-# be a non-whitespace character following a whitespace character. Returns -1
+# be a non-whitespace character following a whitespace character. Returns ""
 # if there are no more start-of-word locations after the starting point.
 #
 # Arguments:
@@ -119,7 +119,7 @@ proc tcl_endOfWord {str start} {
 
 proc tcl_startOfNextWord {str start} {
     variable ::tcl::WordBreakRE
-    set result {-1 -1}
+    set result {}
     regexp -indices -start $start -- $WordBreakRE(next) $str result
     return [lindex $result 1]
 }
@@ -135,7 +135,7 @@ proc tcl_startOfNextWord {str start} {
 
 proc tcl_startOfPreviousWord {str start} {
     variable ::tcl::WordBreakRE
-    set word {-1 -1}
+    set word {}
     if {$start > 0} {
 	regexp -indices -- $WordBreakRE(previous) [string range $str 0 $start-1] \
 		result word

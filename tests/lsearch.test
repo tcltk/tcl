@@ -21,8 +21,8 @@ test lsearch-1.1 {lsearch command} {
     lsearch $x 123
 } 2
 test lsearch-1.2 {lsearch command} {
-    lsearch $x 3456
-} -1
+    expr {[lsearch $x 3456]<0}
+} 1
 test lsearch-1.3 {lsearch command} {
     lsearch $x *5
 } 4
@@ -37,11 +37,11 @@ test lsearch-2.2 {search modes} {
     lsearch -exact {b.x ^bc xy bcx} ^bc
 } 1
 test lsearch-2.3 {search modes} {
-    lsearch -exact {foo bar cat} ba
-} -1
+    expr {[lsearch -exact {foo bar cat} ba]<0}
+} 1
 test lsearch-2.4 {search modes} {
-    lsearch -exact {foo bar cat} bart
-} -1
+    expr {[lsearch -exact {foo bar cat} bart]<0}
+} 1
 test lsearch-2.5 {search modes} {
     lsearch -exact {foo bar cat} bar
 } 1
@@ -293,8 +293,8 @@ test lsearch-10.1 {offset searching} {
     lsearch -start 2 {a b c a b c} a
 } 3
 test lsearch-10.2 {offset searching} {
-    lsearch -start 2 {a b c d e f} a
-} -1
+    expr {[lsearch -start 2 {a b c d e f} a]<0}
+} 1
 test lsearch-10.3 {offset searching} {
     lsearch -start end-4 {a b c a b c} a
 } 3
@@ -310,15 +310,15 @@ test lsearch-10.6 {binary search with offset} {
 	lappend res [lsearch -integer -start 2 -sorted $increasingIntegers $i]
     }
     set res
-} [concat -1 -1 [lrange $increasingIntegers 2 end]]
+} [concat {{}} {{}} [lrange $increasingIntegers 2 end]]
 test lsearch-10.7 {offset searching with an empty list} {
     # Stop bug #694232 from reocurring
-    lsearch -start 0 {} x
-} -1
+    expr {[lsearch -start 0 {} x]<0}
+} 1
 test lsearch-10.8 {offset searching past the end of the list} {
     # Stop [Bug 1374778] from reoccurring
-    lsearch -start 10 {a b c} c
-} -1
+    expr {[lsearch -start 10 {a b c} c]<0}
+} 1
 test lsearch-10.9 {offset searching past the end of the list} {
     # Stop [Bug 1374778] from reoccurring
     lsearch -start 10 -all {a b c} c
@@ -332,8 +332,8 @@ test lsearch-11.1 {negated searches} {
     lsearch -not {a a a b a a a} a
 } 3
 test lsearch-11.2 {negated searches} {
-    lsearch -not {a a a a a a a} a
-} -1
+    expr {[lsearch -not {a a a a a a a} a]<0}
+} 1
 
 test lsearch-12.1 {return values instead of indices} {
     lsearch -glob -inline {a1 b2 c3 d4} c*
@@ -514,7 +514,7 @@ test lsearch-22.1 {lsearch -bisect} -setup {
 	lappend res [lsearch -bisect -integer {1 4 5 7 9 15} $i]
     }
     return $res
-} -result {-1 0 2 2 3 3 5 5}
+} -result {{} 0 2 2 3 3 5 5}
 test lsearch-22.2 {lsearch -bisect, last of equals} -setup {
     set res {}
 } -body {
@@ -530,7 +530,7 @@ test lsearch-22.3 {lsearch -bisect decreasing order} -setup {
 	lappend res [lsearch -bisect -integer -decreasing {15 9 7 5 4 1} $i]
     }
     return $res
-} -result {5 5 3 2 2 1 0 -1}
+} -result {5 5 3 2 2 1 0 {}}
 test lsearch-22.4 {lsearch -bisect, last of equals, decreasing} -setup {
     set res {}
 } -body {
@@ -565,14 +565,14 @@ test lsearch-23.5 {lsearch -stride option, errors} -body {
 } -result 0
 
 test lsearch-24.1 {lsearch -stride option} -body {
-    lsearch -stride 2 {a b c d e f g h} d
-} -result -1
+    expr {[lsearch -stride 2 {a b c d e f g h} d]<0}
+} -result 1
 test lsearch-24.2 {lsearch -stride option} -body {
     lsearch -stride 2 {a b c d e f g h} e
 } -result 4
 test lsearch-24.3 {lsearch -stride option} -body {
-    lsearch -stride 3 {a b c d e f g h i} e
-} -result -1
+    expr {[lsearch -stride 3 {a b c d e f g h i} e]<0}
+} -result 1
 test lsearch-24.4 {lsearch -stride option} -body {
     # Result points first in group
     lsearch -stride 3 -index 1 {a b c d e f g h i} e
@@ -665,20 +665,20 @@ test lsearch-28.1 {lsearch -sorted with -stride} -body {
     lsearch -sorted -stride 2 {5 3 7 8 9 2} 5
 } -result 0
 test lsearch-28.2 {lsearch -sorted with -stride} -body {
-    lsearch -sorted -stride 2 {5 3 7 8 9 2} 3
-} -result -1
+    expr {[lsearch -sorted -stride 2 {5 3 7 8 9 2} 3]<0}
+} -result 1
 test lsearch-28.3 {lsearch -sorted with -stride} -body {
     lsearch -sorted -stride 2 {5 3 7 8 9 2} 7
 } -result 2
 test lsearch-28.4 {lsearch -sorted with -stride} -body {
-    lsearch -sorted -stride 2 {5 3 7 8 9 2} 8
-} -result -1
+    expr {[lsearch -sorted -stride 2 {5 3 7 8 9 2} 8]<0}
+} -result 1
 test lsearch-28.5 {lsearch -sorted with -stride} -body {
     lsearch -sorted -stride 2 {5 3 7 8 9 2} 9
 } -result 4
 test lsearch-28.6 {lsearch -sorted with -stride} -body {
-    lsearch -sorted -stride 2 {5 3 7 8 9 2} 2
-} -result -1
+    expr {[lsearch -sorted -stride 2 {5 3 7 8 9 2} 2]<0}
+} -result 1
 test lsearch-28.7 {lsearch -sorted with -stride} -body {
     lsearch -sorted -stride 2 -index 0 -subindices {5 3 7 8 9 2} 9
 } -result 4

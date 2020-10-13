@@ -669,12 +669,6 @@ TclRegAbout(
 
     Tcl_ResetResult(interp);
 
-    /*
-     * Assume that there will never be more than INT_MAX subexpressions. This
-     * is a pretty reasonable assumption; the RE engine doesn't scale _that_
-     * well and Tcl has other limits that constrain things as well...
-     */
-
     TclNewObj(resultObj);
     TclNewIndexObj(infoObj, regexpPtr->re.re_nsub);
     Tcl_ListObjAppendElement(NULL, resultObj, infoObj);

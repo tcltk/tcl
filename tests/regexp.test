@@ -187,11 +187,11 @@ test regexp-3.5 {-indices option to regexp} {
 test regexp-3.6 {getting substrings back from regexp} {
     set foo 2; set f2 2; set f3 2; set f4 2
     list [regexp -indices (a)(b)? xay foo f2 f3 f4] $foo $f2 $f3 $f4
-} {1 {1 1} {1 1} {-1 -1} {-1 -1}}
+} {1 {1 1} {1 1} {} {}}
 test regexp-3.7 {getting substrings back from regexp} {
     set foo 1; set f2 1; set f3 1; set f4 1
     list [regexp -indices (a)(b)?(c) xacy foo f2 f3 f4] $foo $f2 $f3 $f4
-} {1 {1 2} {1 1} {-1 -1} {2 2}}
+} {1 {1 2} {1 1} {} {2 2}}
 test regexp-3.8a {-indices by multi-byte utf-8} {
     regexp -inline -indices {(\w+)-(\w+)} \
 	"gr\u00FC\u00DF-\u043F\u0440\u0438\u0432\u0435\u0442"
@@ -752,7 +752,7 @@ test regexp-18.11 {regexp -all} {
 } {a}
 test regexp-18.12 {regexp -all -inline -indices} {
     regexp -all -inline -indices a(b(c)d|e(f)g)h abcdhaefgh
-} {{0 4} {1 3} {2 2} {-1 -1} {5 9} {6 8} {-1 -1} {7 7}}
+} {{0 4} {1 3} {2 2} {} {5 9} {6 8} {} {7 7}}
 
 test regexp-19.1 {regsub null replacement} {
     regsub -all {@} {@hel@lo@} "\0a\0" result
@@ -815,7 +815,7 @@ test regexp-21.12 {multiple matches handle newlines} {
 } "\#\n\#\n\#"
 test regexp-21.13 {multiple matches handle newlines} {
     regexp -all -inline -indices -line -- ^ "a\nb\nc"
-} {{0 -1} {2 1} {4 3}}
+} {{0 {}} {2 1} {4 3}}
 test regexp-21.14 {regsub works with empty string} {
     regsub -- ^ {} &
 } {}
@@ -912,28 +912,28 @@ test regexp-23.1 {regexp -all and -line} {
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
-} {{{0 -1}} {{0 -1}} {{0 -1}}}
+} {{{0 {}}} {{0 {}}} {{0 {}}}}
 test regexp-23.2 {regexp -all and -line} {
     set string "\n"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
-} {{{0 -1}} {{0 -1}} {{0 -1}}}
+} {{{0 {}}} {{0 {}}} {{0 {}}}}
 test regexp-23.3 {regexp -all and -line} {
     set string "\n\n"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
-} {{{0 -1} {1 0}} {{0 -1} {1 0}} {{0 -1} {1 0}}}
+} {{{0 {}} {1 0}} {{0 {}} {1 0}} {{0 {}} {1 0}}}
 test regexp-23.4 {regexp -all and -line} {
     set string "a"
     list \
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
-} {{{0 -1}} {{0 0}} {{1 0}}}
+} {{{0 {}}} {{0 0}} {{1 0}}}
 test regexp-23.5 {regexp -all and -line} {knownBug} {
     set string "a\n"
     list \
@@ -947,7 +947,7 @@ test regexp-23.6 {regexp -all and -line} {
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
-} {{{0 -1} {1 0}} {{0 -1} {1 1}} {{0 -1} {2 1}}}
+} {{{0 {}} {1 0}} {{0 {}} {1 1}} {{0 {}} {2 1}}}
 test regexp-23.7 {regexp -all and -line} {knownBug} {
     set string "ab\n"
     list \
@@ -961,7 +961,7 @@ test regexp-23.8 {regexp -all and -line} {
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
-} {{{0 -1} {2 1}} {{0 0} {2 2}} {{1 0} {3 2}}}
+} {{{0 {}} {2 1}} {{0 0} {2 2}} {{1 0} {3 2}}}
 test regexp-23.9 {regexp -all and -line} {knownBug} {
     set string "a\nb\n"
     list \
@@ -975,7 +975,7 @@ test regexp-23.10 {regexp -all and -line} {
 	[regexp -all -inline -indices -line -- {^} $string] \
 	[regexp -all -inline -indices -line -- {^.*$} $string] \
 	[regexp -all -inline -indices -line -- {$} $string]
-} {{{0 -1} {2 1} {4 3}} {{0 0} {2 2} {4 4}} {{1 0} {3 2} {5 4}}}
+} {{{0 {}} {2 1} {4 3}} {{0 0} {2 2} {4 4}} {{1 0} {3 2} {5 4}}}
 test regexp-23.11 {regexp -all and -line} {
     regexp -all -inline -indices -line -- {b} "abb\nb"
 } {{1 1} {2 2} {4 4}}

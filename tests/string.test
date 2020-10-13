@@ -388,8 +388,8 @@ test string-4.7.$noComp {string first} {
     run {string first xxx x123xx345xxx789xxx012}
 } 9
 test string-4.8.$noComp {string first} {
-    run {string first "" x123xx345xxx789xxx012}
-} -1
+    run {expr {[string first "" x123xx345xxx789xxx012]<0}}
+} 1
 test string-4.9.$noComp {string first, unicode} {
     run {string first x abc\u7266x}
 } 4
@@ -400,8 +400,8 @@ test string-4.11.$noComp {string first, start index} {
     run {string first \u7266 abc\u7266x 3}
 } 3
 test string-4.12.$noComp {string first, start index} -body {
-    run {string first \u7266 abc\u7266x 4}
-} -result -1
+    run {expr {[string first \u7266 abc\u7266x 4]<0}}
+} -result 1
 test string-4.13.$noComp {string first, start index} -body {
     run {string first \u7266 abc\u7266x end-2}
 } -result 3
@@ -423,8 +423,8 @@ test string-4.16.$noComp {string first, normal string vs pure unicode string} -b
 	[string first $m $s]}
 } -result {{string 1} {string 0} 2}
 test string-4.17.$noComp {string first, corner case} -body {
-    run {string first a aaa 4294967295}
-} -result {-1}
+    run {expr {[string first a aaa 4294967295]<0}}
+} -result 1
 test string-4.18.$noComp {string first, corner case} -body {
     run {string first a aaa -1}
 } -result {0}
@@ -435,11 +435,11 @@ test string-4.20.$noComp {string last, corner case} -body {
     run {string last a aaa 4294967295}
 } -result {2}
 test string-4.21.$noComp {string last, corner case} -body {
-    run {string last a aaa -1}
-} -result {-1}
-test string-4.22.$noComp {string last, corner case} {
-    run {string last a aaa end-5}
-} {-1}
+    run {expr {[string last a aaa -1]<0}}
+} -result 1
+test string-4.22.$noComp {string last, corner case} -body {
+    run {expr {[string last a aaa end-5]<0}}
+} -result 1
 
 test string-5.1.$noComp {string index} {
     list [catch {run {string index}} msg] $msg
@@ -864,8 +864,8 @@ test string-6.101.$noComp {string is wideinteger, false} {
     list [run {string is wideinteger -fail var 123abc}] $var
 } {0 3}
 test string-6.102.$noComp {string is wideinteger, false on overflow} {
-    list [run {string is wideinteger -fail var +[largest_int]0}] $var
-} {0 -1}
+    list [run {string is wideinteger -fail var +[largest_int]0}] [expr {$var<0}]
+} {0 1}
 test string-6.103.$noComp {string is wideinteger, false} {
     list [run {string is wideinteger -fail var [expr double(1)]}] $var
 } {0 1}
@@ -1007,8 +1007,8 @@ test string-7.11.$noComp {string last, start index} {
     run {string last \u7266 abc\u7266x 3}
 } 3
 test string-7.12.$noComp {string last, start index} {
-    run {string last \u7266 abc\u7266x 2}
-} -1
+    run {expr {[string last \u7266 abc\u7266x 2]<0}}
+} 1
 test string-7.13.$noComp {string last, start index} {
     ## Constrain to last 'a' should work
     run {string last ba badbad end-1}
@@ -1018,8 +1018,8 @@ test string-7.14.$noComp {string last, start index} {
     run {string last ba badbad end-2}
 } 0
 test string-7.15.$noComp {string last, start index} {
-    run {string last \334a \334ad\334ad 0}
-} -1
+    run {expr {[string last \334a \334ad\334ad 0]<0}}
+} 1
 test string-7.16.$noComp {string last, start index} {
     run {string last \334a \334ad\334ad end-1}
 } 3
@@ -2513,9 +2513,9 @@ test string-32.9.$noComp {string is dict} {
     list [string is dict -failindex x {a b c d}] $x
 } {1 {}}
 test string-32.9a.$noComp {string is dict} {
-    set x {}
-    list [string is dict -failindex x {a b c}] $x
-} {0 -1}
+    set x 0
+    list [string is dict -failindex x {a b c}] [expr {$x<0}]
+} {0 1}
 test string-32.10.$noComp {string is dict} {
     set x {}
     list [string is dict -failindex x "a \{b c d"] $x

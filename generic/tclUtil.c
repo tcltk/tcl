@@ -117,16 +117,27 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  * performance optimization in Tcl_GetIntForIndex. The internal rep is
  * stored directly in the wideValue, so no memory management is required
  * for it. This is a caching intrep, keeping the result of a parse
- * around. This type is only created from a pre-existing string, so an
- * updateStringProc will never be called and need not exist. The type
- * is unregistered, so has no need of a setFromAnyProc either.
+ * around. The type is unregistered, so has no need of a setFromAnyProc.
  */
 
-static const Tcl_ObjType endOffsetType = {
+static void
+UpdateStringOfIndex(
+    Tcl_Obj *objPtr)	/* Index object whose string rep to update. */
+{
+    /* The only situation that the string rep can be missing is when it
+     * represents TCL_INDEX_NONE. In all other situations, the string
+     * rep is never thrown away. See TclNewIndexObj() */
+	if ((objPtr)->internalRep.wideValue != WIDE_MIN) {
+		Tcl_Panic("String rep of \"end-offset\" lost");
+	}
+	TclInitStringRep(objPtr, NULL, 0);
+}
+
+const Tcl_ObjType tclEndOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
-    NULL,				/* updateStringProc */
+    UpdateStringOfIndex,		/* updateStringProc */
     NULL				/* setFromAnyProc */
 };
 
@@ -3449,7 +3460,7 @@ GetEndOffsetFromObj(
     Tcl_WideInt offset = -1;	/* Offset in the "end-offset" expression - 1 */
     ClientData cd;
 
-    while ((irPtr = TclFetchIntRep(objPtr, &endOffsetType)) == NULL) {
+    while ((irPtr = TclFetchIntRep(objPtr, &tclEndOffsetType)) == NULL) {
 	Tcl_ObjIntRep ir;
 	size_t length;
 	const char *bytes = TclGetStringFromObj(objPtr, &length);
@@ -3460,6 +3471,11 @@ GetEndOffsetFromObj(
 	    int len, t1 = 0, t2 = 0;
 
 	    /* Value doesn't start with "e" */
+
+	    if (length == 0) {
+		offset = WIDE_MIN;
+		goto parseOK;
+	    }
 
 	    /* If we reach here, the string rep of objPtr exists. */
 
@@ -3635,7 +3651,7 @@ GetEndOffsetFromObj(
     parseOK:
 	/* Success. Store the new internal rep. */
 	ir.wideValue = offset;
-	Tcl_StoreIntRep(objPtr, &endOffsetType, &ir);
+	Tcl_StoreIntRep(objPtr, &tclEndOffsetType, &ir);
     }
 
     offset = irPtr->wideValue;
@@ -3739,7 +3755,7 @@ TclIndexEncode(
     int idx;
 
     if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &endOffsetType);
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &tclEndOffsetType);
 	if (irPtr && irPtr->wideValue >= 0) {
 	    /* "int[+-]int" syntax, works the same here as "int" */
 	    irPtr = NULL;

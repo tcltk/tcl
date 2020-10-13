@@ -3841,7 +3841,7 @@ Tcl_LsearchObjCmd(
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {
 		Tcl_Obj *elObj;
-		TclNewIndexObj(elObj, index);
+		TclNewIndexObj(elObj, (size_t)index);
 	    Tcl_SetObjResult(interp, elObj);
 	}
     } else if (index < 0) {
