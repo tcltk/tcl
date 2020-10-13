@@ -36,7 +36,7 @@
 set olsonFiles {
     africa antarctica asia australasia
     backward etcetera europe northamerica
-    pacificnew southamerica systemv
+    southamerica
 }
 
 # Define the year at which the DST information will stop.
