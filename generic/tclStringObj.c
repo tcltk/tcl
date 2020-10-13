@@ -2209,7 +2209,7 @@ Tcl_AppendFormatToObj(
 		isNegative = (l < (long) 0);
 	    }
 
-	    segment = Tcl_NewObj();
+	    TclNewObj(segment);
 	    allocSegment = 1;
 	    segmentLimit = INT_MAX;
 	    Tcl_IncrRefCount(segment);
@@ -2249,7 +2249,7 @@ Tcl_AppendFormatToObj(
 		const char *bytes;
 
 		if (useShort) {
-		    pure = Tcl_NewIntObj((int) s);
+		    TclNewIntObj(pure, (int) s);
 #ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
 		    pure = Tcl_NewWideIntObj(w);
@@ -2378,7 +2378,7 @@ Tcl_AppendFormatToObj(
 		if ((numDigits == 0) && !((ch == 'o') && gotHash)) {
 		    numDigits = 1;
 		}
-		pure = Tcl_NewObj();
+		TclNewObj(pure);
 		Tcl_SetObjLength(pure, (int) numDigits);
 		bytes = TclGetString(pure);
 		toAppend = length = (int) numDigits;
@@ -2497,7 +2497,7 @@ Tcl_AppendFormatToObj(
 	    *p++ = (char) ch;
 	    *p = '\0';
 
-	    segment = Tcl_NewObj();
+	    TclNewObj(segment);
 	    allocSegment = 1;
 	    if (!Tcl_AttemptSetObjLength(segment, length)) {
 		msg = overflow;
@@ -2605,8 +2605,9 @@ Tcl_Format(
     Tcl_Obj *const objv[])
 {
     int result;
-    Tcl_Obj *objPtr = Tcl_NewObj();
+    Tcl_Obj *objPtr;
 
+    TclNewObj(objPtr);
     result = Tcl_AppendFormatToObj(interp, objPtr, format, objc, objv);
     if (result != TCL_OK) {
 	Tcl_DecrRefCount(objPtr);
@@ -2634,9 +2635,10 @@ AppendPrintfToObjVA(
     va_list argList)
 {
     int code, objc;
-    Tcl_Obj **objv, *list = Tcl_NewObj();
+    Tcl_Obj **objv, *list;
     const char *p;
 
+    TclNewObj(list);
     p = format;
     Tcl_IncrRefCount(list);
     while (*p != '\0') {
@@ -2808,8 +2810,9 @@ Tcl_ObjPrintf(
     ...)
 {
     va_list argList;
-    Tcl_Obj *objPtr = Tcl_NewObj();
+    Tcl_Obj *objPtr;
 
+    TclNewObj(objPtr);
     va_start(argList, format);
     AppendPrintfToObjVA(objPtr, format, argList);
     va_end(argList);
@@ -2948,7 +2951,7 @@ TclStringReverse(
 	char *to, *from = objPtr->bytes;
 
 	if (Tcl_IsShared(objPtr)) {
-	    objPtr = Tcl_NewObj();
+	    TclNewObj(objPtr);
 	    Tcl_SetObjLength(objPtr, numBytes);
 	}
 	to = objPtr->bytes;

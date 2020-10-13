@@ -2783,7 +2783,7 @@ Tcl_PidObjCmd(
 	}
 
 	pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
-	resultPtr = Tcl_NewObj();
+	TclNewObj(resultPtr);
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(/*interp*/ NULL, resultPtr,
 		    Tcl_NewWideIntObj((unsigned)

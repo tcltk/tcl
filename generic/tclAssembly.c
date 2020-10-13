@@ -803,7 +803,7 @@ TclNRAssembleObjCmd(
 	Tcl_AddErrorInfo(interp, "\n    (\"");
 	Tcl_AppendObjToErrorInfo(interp, objv[0]);
 	Tcl_AddErrorInfo(interp, "\" body, line ");
-	backtrace = Tcl_NewIntObj(Tcl_GetErrorLine(interp));
+	TclNewIntObj(backtrace, Tcl_GetErrorLine(interp));
 	Tcl_AppendObjToErrorInfo(interp, backtrace);
 	Tcl_AddErrorInfo(interp, ")");
 	return TCL_ERROR;
@@ -2089,8 +2089,9 @@ GetNextOperand(
 				 * with \-substitutions done. */
 {
     Tcl_Interp* interp = (Tcl_Interp*) assemEnvPtr->envPtr->iPtr;
-    Tcl_Obj* operandObj = Tcl_NewObj();
+    Tcl_Obj* operandObj;
 
+    TclNewObj(operandObj);
     if (!TclWordKnownAtCompileTime(*tokenPtrPtr, operandObj)) {
 	Tcl_DecrRefCount(operandObj);
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
@@ -4260,7 +4261,7 @@ AddBasicBlockRangeToErrorInfo(
     Tcl_Obj* lineNo;		/* Line number in the source */
 
     Tcl_AddErrorInfo(interp, "\n    in assembly code between lines ");
-    lineNo = Tcl_NewIntObj(bbPtr->startLine);
+    TclNewIntObj(lineNo, bbPtr->startLine);
     Tcl_IncrRefCount(lineNo);
     Tcl_AppendObjToErrorInfo(interp, lineNo);
     Tcl_AddErrorInfo(interp, " and ");

@@ -1227,7 +1227,7 @@ TclLindexFlat(
 			return NULL;
 		    }
 		}
-		listPtr = Tcl_NewObj();
+		TclNewObj(listPtr);
 	    } else {
 		/*
 		 * Extract the pointer to the appropriate element.
@@ -1458,7 +1458,7 @@ TclLsetFlat(
 	if (--indexCount) {
 	    parentList = subListPtr;
 	    if (index == elemCount) {
-		subListPtr = Tcl_NewObj();
+		TclNewObj(subListPtr);
 	    } else {
 		subListPtr = elemPtrs[index];
 	    }
