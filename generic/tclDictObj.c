@@ -2226,8 +2226,9 @@ DictIncrCmd(
 	if (objc == 4) {
 	    code = TclIncrObj(interp, valuePtr, objv[3]);
 	} else {
-	    Tcl_Obj *incrPtr = Tcl_NewWideIntObj(1);
+	    Tcl_Obj *incrPtr;
 
+	    TclNewIntObj(incrPtr, 1);
 	    Tcl_IncrRefCount(incrPtr);
 	    code = TclIncrObj(interp, valuePtr, incrPtr);
 	    TclDecrRefCount(incrPtr);
