@@ -194,7 +194,7 @@ TclpInitLibraryPath(
     char installLib[LIBRARY_SIZE];
     const char *bytes;
 
-    pathPtr = Tcl_NewObj();
+    TclNewObj(pathPtr);
 
     /*
      * Initialize the substring used when locating the script library. The

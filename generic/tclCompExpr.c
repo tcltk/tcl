@@ -2689,7 +2689,7 @@ TclVariadicOpCmd(
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
 
 	if (lexeme == EXPON) {
-	    litObjv[1] = Tcl_NewIntObj(occdPtr->i.identity);
+	    TclNewIntObj(litObjv[1], occdPtr->i.identity);
 	    Tcl_IncrRefCount(litObjv[1]);
 	    decrMe = 1;
 	    litObjv[0] = objv[1];
@@ -2705,7 +2705,7 @@ TclVariadicOpCmd(
 	    if (lexeme == DIVIDE) {
 		litObjv[0] = Tcl_NewDoubleObj(1.0);
 	    } else {
-		litObjv[0] = Tcl_NewIntObj(occdPtr->i.identity);
+		TclNewIntObj(litObjv[0], occdPtr->i.identity);
 	    }
 	    Tcl_IncrRefCount(litObjv[0]);
 	    litObjv[1] = objv[1];
