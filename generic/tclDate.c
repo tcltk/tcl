@@ -2501,12 +2501,12 @@ TclDateerror(
     Tcl_AppendToObj(infoPtr->messages, infoPtr->separatrix, -1);
     Tcl_AppendToObj(infoPtr->messages, s, -1);
     Tcl_AppendToObj(infoPtr->messages, " (characters ", -1);
-    t = Tcl_NewIntObj(location->first_column);
+    TclNewIntObj(t, location->first_column);
     Tcl_IncrRefCount(t);
     Tcl_AppendObjToObj(infoPtr->messages, t);
     Tcl_DecrRefCount(t);
     Tcl_AppendToObj(infoPtr->messages, "-", -1);
-    t = Tcl_NewIntObj(location->last_column);
+    TclNewIntObj(t, location->last_column);
     Tcl_IncrRefCount(t);
     Tcl_AppendObjToObj(infoPtr->messages, t);
     Tcl_DecrRefCount(t);
@@ -2788,7 +2788,7 @@ TclClockOldscanObjCmd(
     yyHaveRel = 0;
     yyRelMonth = 0; yyRelDay = 0; yyRelSeconds = 0; yyRelPointer = NULL;
 
-    dateInfo.messages = Tcl_NewObj();
+    TclNewObj(dateInfo.messages);
     dateInfo.separatrix = "";
     Tcl_IncrRefCount(dateInfo.messages);
 
@@ -2845,8 +2845,8 @@ TclClockOldscanObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_NewObj();
-    resultElement = Tcl_NewObj();
+    TclNewObj(result);
+    TclNewObj(resultElement);
     if (yyHaveDate) {
 	Tcl_ListObjAppendElement(interp, resultElement,
 		Tcl_NewIntObj((int) yyYear));
@@ -2864,7 +2864,7 @@ TclClockOldscanObjCmd(
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewObj());
     }
 
-    resultElement = Tcl_NewObj();
+    TclNewObj(resultElement);
     if (yyHaveZone) {
 	Tcl_ListObjAppendElement(interp, resultElement,
 		Tcl_NewIntObj((int) -yyTimezone));
@@ -2873,7 +2873,7 @@ TclClockOldscanObjCmd(
     }
     Tcl_ListObjAppendElement(interp, result, resultElement);
 
-    resultElement = Tcl_NewObj();
+    TclNewObj(resultElement);
     if (yyHaveRel) {
 	Tcl_ListObjAppendElement(interp, resultElement,
 		Tcl_NewIntObj((int) yyRelMonth));
@@ -2884,7 +2884,7 @@ TclClockOldscanObjCmd(
     }
     Tcl_ListObjAppendElement(interp, result, resultElement);
 
-    resultElement = Tcl_NewObj();
+    TclNewObj(resultElement);
     if (yyHaveDay && !yyHaveDate) {
 	Tcl_ListObjAppendElement(interp, resultElement,
 		Tcl_NewIntObj((int) yyDayOrdinal));
@@ -2893,7 +2893,7 @@ TclClockOldscanObjCmd(
     }
     Tcl_ListObjAppendElement(interp, result, resultElement);
 
-    resultElement = Tcl_NewObj();
+    TclNewObj(resultElement);
     if (yyHaveOrdinalMonth) {
 	Tcl_ListObjAppendElement(interp, resultElement,
 		Tcl_NewIntObj((int) yyMonthOrdinal));
