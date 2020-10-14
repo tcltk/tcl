@@ -70,7 +70,7 @@ namespace eval makeHeader {
 
 	set from [lsearch -glob $data $BEGIN]
 	set to [lsearch -glob $data $END]
-	if {$from == -1 || $to == -1 || $from >= $to} {
+	if {$from < 0 || $to < 0 || $from >= $to} {
 	    throw BAD "not a template"
 	}
 

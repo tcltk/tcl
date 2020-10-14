@@ -1560,7 +1560,7 @@ GetWinFileAttributes(
 	}
     }
 
-    *attributePtrPtr = Tcl_NewWideIntObj(attr != 0);
+    TclNewIntObj(*attributePtrPtr, attr != 0);
     return TCL_OK;
 }
 
@@ -1926,7 +1926,7 @@ TclpObjListVolumes(void)
     int i;
     char *p;
 
-    resultPtr = Tcl_NewObj();
+    TclNewObj(resultPtr);
 
     /*
      * On Win32s:

@@ -2133,7 +2133,7 @@ Tcl_AppendFormatToObj(
 		if (l == (long) 0) gotHash = 0;
 	    }
 
-	    segment = Tcl_NewObj();
+	    TclNewObj(segment);
 	    allocSegment = 1;
 	    segmentLimit = INT_MAX;
 	    Tcl_IncrRefCount(segment);
@@ -2178,15 +2178,15 @@ Tcl_AppendFormatToObj(
 		const char *bytes;
 
 		if (useShort) {
-		    pure = Tcl_NewWideIntObj(s);
+		    TclNewIntObj(pure, s);
 #ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
-		    pure = Tcl_NewWideIntObj(w);
+		    TclNewIntObj(pure, w);
 #endif
 		} else if (useBig) {
 		    pure = Tcl_NewBignumObj(&big);
 		} else {
-		    pure = Tcl_NewWideIntObj(l);
+		    TclNewIntObj(pure, l);
 		}
 		Tcl_IncrRefCount(pure);
 		bytes = TclGetStringFromObj(pure, &length);
@@ -2308,7 +2308,7 @@ Tcl_AppendFormatToObj(
 		if (numDigits == 0) {
 		    numDigits = 1;
 		}
-		pure = Tcl_NewObj();
+		TclNewObj(pure);
 		Tcl_SetObjLength(pure, (int) numDigits);
 		bytes = TclGetString(pure);
 		toAppend = length = (int) numDigits;
@@ -2429,7 +2429,7 @@ Tcl_AppendFormatToObj(
 	    *p++ = (char) ch;
 	    *p = '\0';
 
-	    segment = Tcl_NewObj();
+	    TclNewObj(segment);
 	    allocSegment = 1;
 	    if (!Tcl_AttemptSetObjLength(segment, length)) {
 		msg = overflow;
@@ -2443,10 +2443,10 @@ Tcl_AppendFormatToObj(
 		goto errorMsg;
 	    }
 	    if (ch == 'A') {
-		char *p = TclGetString(segment) + 1;
-		*p = 'x';
-		p = strchr(p, 'P');
-		if (p) *p = 'p';
+		char *q = TclGetString(segment) + 1;
+		*q = 'x';
+		q = strchr(q, 'P');
+		if (q) *q = 'p';
 	    }
 	    break;
 	}
@@ -2543,8 +2543,9 @@ Tcl_Format(
     Tcl_Obj *const objv[])
 {
     int result;
-    Tcl_Obj *objPtr = Tcl_NewObj();
+    Tcl_Obj *objPtr;
 
+    TclNewObj(objPtr);
     result = Tcl_AppendFormatToObj(interp, objPtr, format, objc, objv);
     if (result != TCL_OK) {
 	Tcl_DecrRefCount(objPtr);
@@ -2572,9 +2573,10 @@ AppendPrintfToObjVA(
     va_list argList)
 {
     int code, objc;
-    Tcl_Obj **objv, *list = Tcl_NewObj();
+    Tcl_Obj **objv, *list;
     const char *p;
 
+    TclNewObj(list);
     p = format;
     Tcl_IncrRefCount(list);
     while (*p != '\0') {
@@ -2788,8 +2790,9 @@ Tcl_ObjPrintf(
     ...)
 {
     va_list argList;
-    Tcl_Obj *objPtr = Tcl_NewObj();
+    Tcl_Obj *objPtr;
 
+    TclNewObj(objPtr);
     va_start(argList, format);
     AppendPrintfToObjVA(objPtr, format, argList);
     va_end(argList);
@@ -3314,7 +3317,7 @@ TclStringCat(
 	    /* assert ( length > start ) */
 	    TclFreeIntRep(objResultPtr);
 	} else {
-	    objResultPtr = Tcl_NewObj();	/* PANIC? */
+	    TclNewObj(objResultPtr);	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
@@ -3410,7 +3413,7 @@ TclStringCmp(
 	    if (nocase) {
 		s1 = (char *) Tcl_GetUnicodeFromObj(value1Ptr, &s1len);
 		s2 = (char *) Tcl_GetUnicodeFromObj(value2Ptr, &s2len);
-		memCmpFn = (memCmpFn_t)Tcl_UniCharNcasecmp;
+		memCmpFn = (memCmpFn_t)(void *)Tcl_UniCharNcasecmp;
 	    } else {
 		s1len = Tcl_GetCharLength(value1Ptr);
 		s2len = Tcl_GetCharLength(value2Ptr);
@@ -3435,7 +3438,7 @@ TclStringCmp(
 			s1len *= sizeof(Tcl_UniChar);
 			s2len *= sizeof(Tcl_UniChar);
 		    } else {
-			memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
+			memCmpFn = (memCmpFn_t)(void *)Tcl_UniCharNcmp;
 		    }
 		}
 	    }
@@ -3493,11 +3496,11 @@ TclStringCmp(
 		 */
 
 		if ((reqlength < 0) && !nocase) {
-		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
+		    memCmpFn = (memCmpFn_t)(void *)TclpUtfNcmp2;
 		} else {
 		    s1len = Tcl_NumUtfChars(s1, s1len);
 		    s2len = Tcl_NumUtfChars(s2, s2len);
-		    memCmpFn = (memCmpFn_t)
+		    memCmpFn = (memCmpFn_t)(void *)
 			    (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
 		}
 	    }
@@ -3523,7 +3526,7 @@ TclStringCmp(
 	     * length only.
 	     */
 
-	    match = memCmpFn(s1, s2, (size_t) length);
+	    match = memCmpFn(s1, s2, length);
 	}
 	if ((match == 0) && (reqlength > length)) {
 	    match = s1len - s2len;
@@ -3561,7 +3564,7 @@ TclStringFirst(
     int lh, ln = Tcl_GetCharLength(needle);
     Tcl_Obj *result;
     int value = -1;
-	Tcl_UniChar *check, *end, *uh, *un;
+    Tcl_UniChar *checkStr, *endStr, *uh, *un;
 
     if (start < 0) {
 	start = 0;
@@ -3627,12 +3630,12 @@ TclStringFirst(
 	/* Don't start the loop if there cannot be a valid answer */
 	goto firstEnd;
     }
-    end = uh + lh;
+    endStr = uh + lh;
 
-    for (check = uh + start; check + ln <= end; check++) {
-	if ((*check == *un) && (0 ==
-		memcmp(check + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
-	    value =  (check - uh);
+    for (checkStr = uh + start; checkStr + ln <= endStr; checkStr++) {
+	if ((*checkStr == *un) && (0 ==
+		memcmp(checkStr + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
+	    value =  (checkStr - uh);
 	    goto firstEnd;
 	}
     }
@@ -3668,7 +3671,7 @@ TclStringLast(
     int lh, ln = Tcl_GetCharLength(needle);
     Tcl_Obj *result;
     int value = -1;
-	Tcl_UniChar *check, *uh, *un;
+    Tcl_UniChar *checkStr, *uh, *un;
 
     if (ln == 0) {
 	/*
@@ -3714,14 +3717,14 @@ TclStringLast(
 	/* Don't start the loop if there cannot be a valid answer */
 	goto lastEnd;
     }
-    check = uh + last + 1 - ln;
-    while (check >= uh) {
-	if ((*check == un[0])
-		&& (0 == memcmp(check+1, un+1, (ln-1)*sizeof(Tcl_UniChar)))) {
-	    value = (check - uh);
+    checkStr = uh + last + 1 - ln;
+    while (checkStr >= uh) {
+	if ((*checkStr == un[0])
+		&& (0 == memcmp(checkStr+1, un+1, (ln-1)*sizeof(Tcl_UniChar)))) {
+	    value = (checkStr - uh);
 	    goto lastEnd;
 	}
-	check--;
+	checkStr--;
     }
   lastEnd:
     TclNewIntObj(result, value);
@@ -3830,7 +3833,7 @@ TclStringReverse(
 	char *to, *from = objPtr->bytes;
 
 	if (!inPlace || Tcl_IsShared(objPtr)) {
-	    objPtr = Tcl_NewObj();
+	    TclNewObj(objPtr);
 	    Tcl_SetObjLength(objPtr, numBytes);
 	}
 	to = objPtr->bytes;

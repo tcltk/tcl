@@ -10,8 +10,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -109,6 +109,12 @@ test get-3.4 {Tcl_GetDouble with iffy numbers} testdoubleobj {
 	set x
     }
 } {0.0 0.0 0.0 0.0 0.0 7.0 {expected floating-point number but got "- 0"} 0.0 10.0 2.0}
+test get-3.5 {tcl_GetInt with numeric whitespace (i.e. '_')} testgetint {
+    lmap x {0_0 " 1_0" "0_2 " " 3_3 " 14__23__32___4 " 0x_a " " 0_07 " " 0o_1_0 " " 0_b1_0 " _33 42_ 0_x15 0_o17 0_d19 } {
+	catch {testgetint $x} x
+	set x
+    }
+} {0 10 2 33 1423324 10 7 8 {expected integer but got " 0_b1_0 "} {expected integer but got "_33"} {expected integer but got "42_"} {expected integer but got "0_x15"} {expected integer but got "0_o17"} {expected integer but got "0_d19"}}
 
 # cleanup
 ::tcltest::cleanupTests

@@ -9,8 +9,9 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
@@ -287,7 +288,7 @@ namespace eval RETest {
 	set infoflags [TestInfoFlags $flags]
 	set ccmd [list testregexp -about {*}$f $re]
 	set nsub [expr {[llength $args] - 1}]
-	if {$nsub == -1} {
+	if {$nsub < 0} {
 	    # didn't tell us number of subexps
 	    set ccmd "lreplace \[$ccmd\] 0 0"
 	    set info [list $infoflags]

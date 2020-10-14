@@ -115,7 +115,7 @@ static void		LoadCleanupProc(ClientData clientData,
 
 int
 Tcl_LoadObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -137,7 +137,7 @@ Tcl_LoadObjCmd(
     static const char *const options[] = {
 	"-global",		"-lazy",		"--",	NULL
     };
-    enum options {
+    enum loadOptionsEnum {
 	LOAD_GLOBAL,	LOAD_LAZY,	LOAD_LAST
     };
 
@@ -150,9 +150,9 @@ Tcl_LoadObjCmd(
 	    return TCL_ERROR;
 	}
 	++objv; --objc;
-	if (LOAD_GLOBAL == (enum options) index) {
+	if (LOAD_GLOBAL == (enum loadOptionsEnum) index) {
 	    flags |= TCL_LOAD_GLOBAL;
-	} else if (LOAD_LAZY == (enum options) index) {
+	} else if (LOAD_LAZY == (enum loadOptionsEnum) index) {
 	    flags |= TCL_LOAD_LAZY;
 	} else {
 		break;
@@ -196,9 +196,9 @@ Tcl_LoadObjCmd(
 
     target = interp;
     if (objc == 4) {
-	const char *slaveIntName = Tcl_GetString(objv[3]);
+	const char *childIntName = Tcl_GetString(objv[3]);
 
-	target = Tcl_GetSlave(interp, slaveIntName);
+	target = Tcl_GetChild(interp, childIntName);
 	if (target == NULL) {
 	    code = TCL_ERROR;
 	    goto done;
@@ -542,7 +542,7 @@ Tcl_LoadObjCmd(
 
 int
 Tcl_UnloadObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -559,7 +559,7 @@ Tcl_UnloadObjCmd(
     static const char *const options[] = {
 	"-nocomplain", "-keeplibrary", "--", NULL
     };
-    enum options {
+    enum unloadOptionsEnum {
 	UNLOAD_NOCOMPLAIN, UNLOAD_KEEPLIB, UNLOAD_LAST
     };
 
@@ -584,7 +584,7 @@ Tcl_UnloadObjCmd(
 		break;
 	    }
 	}
-	switch (index) {
+	switch ((enum unloadOptionsEnum)index) {
 	case UNLOAD_NOCOMPLAIN:		/* -nocomplain */
 	    complain = 0;
 	    break;
@@ -632,9 +632,9 @@ Tcl_UnloadObjCmd(
 
     target = interp;
     if (objc - i == 3) {
-	const char *slaveIntName = Tcl_GetString(objv[i + 2]);
+	const char *childIntName = Tcl_GetString(objv[i + 2]);
 
-	target = Tcl_GetSlave(interp, slaveIntName);
+	target = Tcl_GetChild(interp, childIntName);
 	if (target == NULL) {
 	    return TCL_ERROR;
 	}
@@ -1073,7 +1073,7 @@ TclGetLoadedPackagesEx(
     Tcl_Obj *resultObj, *pkgDesc[2];
 
     if (targetName == NULL) {
-	resultObj = Tcl_NewObj();
+	TclNewObj(resultObj);
 	Tcl_MutexLock(&packageMutex);
 	for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
 		pkgPtr = pkgPtr->nextPtr) {
@@ -1087,7 +1087,7 @@ TclGetLoadedPackagesEx(
 	return TCL_OK;
     }
 
-    target = Tcl_GetSlave(interp, targetName);
+    target = Tcl_GetChild(interp, targetName);
     if (target == NULL) {
 	return TCL_ERROR;
     }
@@ -1119,7 +1119,7 @@ TclGetLoadedPackagesEx(
      * interpreter.
      */
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	pkgPtr = ipPtr->pkgPtr;
 	pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);

@@ -1,7 +1,7 @@
 # all.tcl --
 #
 # This file contains a top-level script to run all of the Tcl
-# tests.  Execute it by invoking "source all.test" when running tcltest
+# tests.  Execute it by invoking "source all.tcl" when running tcltest
 # in this directory.
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
