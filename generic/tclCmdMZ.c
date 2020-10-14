@@ -4550,7 +4550,8 @@ Tcl_TimeRateObjCmd(
 #endif /* TCL_WIDE_CLICKS */
 
 	if (!count) {		/* no iterations - avoid divide by zero */
-	    objs[0] = objs[2] = objs[4] = Tcl_NewWideIntObj(0);
+	    TclNewIntObj(objs[4], 0);
+	    objs[0] = objs[2] = objs[4];
 	    goto retRes;
 	}
 
@@ -4591,7 +4592,7 @@ Tcl_TimeRateObjCmd(
 
 	val = usec / count;		/* microsecs per iteration */
 	if (val >= 1000000) {
-	    objs[0] = Tcl_NewWideIntObj(val);
+	    TclNewIntObj(objs[0], val);
 	} else {
 	    if (val < 10) {
 		digits = 6;
@@ -4607,7 +4608,7 @@ Tcl_TimeRateObjCmd(
 	    objs[0] = Tcl_ObjPrintf("%.*f", digits, ((double) usec)/count);
 	}
 
-	objs[2] = Tcl_NewWideIntObj(count); /* iterations */
+	TclNewIntObj(objs[2], count); /* iterations */
 
 	/*
 	 * Calculate speed as rate (count) per sec
@@ -4629,7 +4630,7 @@ Tcl_TimeRateObjCmd(
 		objs[4] = Tcl_ObjPrintf("%.*f",
 			digits, ((double) (count * 1000000)) / usec);
 	    } else {
-		objs[4] = Tcl_NewWideIntObj(val);
+		TclNewIntObj(objs[4], val);
 	    }
 	} else {
 	    objs[4] = Tcl_NewWideIntObj((count / usec) * 1000000);
@@ -4644,7 +4645,7 @@ Tcl_TimeRateObjCmd(
 	    if (usec >= 1) {
 		objs[6] = Tcl_ObjPrintf("%.3f", (double)usec / 1000);
 	    } else {
-		objs[6] = Tcl_NewWideIntObj(0);
+		TclNewIntObj(objs[6], 0);
 	    }
 	    TclNewLiteralStringObj(objs[7], "net-ms");
 	}

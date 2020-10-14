@@ -2178,15 +2178,15 @@ Tcl_AppendFormatToObj(
 		const char *bytes;
 
 		if (useShort) {
-		    pure = Tcl_NewWideIntObj(s);
+		    TclNewIntObj(pure, s);
 #ifndef TCL_WIDE_INT_IS_LONG
 		} else if (useWide) {
-		    pure = Tcl_NewWideIntObj(w);
+		    TclNewIntObj(pure, w);
 #endif
 		} else if (useBig) {
 		    pure = Tcl_NewBignumObj(&big);
 		} else {
-		    pure = Tcl_NewWideIntObj(l);
+		    TclNewIntObj(pure, l);
 		}
 		Tcl_IncrRefCount(pure);
 		bytes = TclGetStringFromObj(pure, &length);
@@ -2543,8 +2543,9 @@ Tcl_Format(
     Tcl_Obj *const objv[])
 {
     int result;
-    Tcl_Obj *objPtr = Tcl_NewObj();
+    Tcl_Obj *objPtr;
 
+    TclNewObj(objPtr);
     result = Tcl_AppendFormatToObj(interp, objPtr, format, objc, objv);
     if (result != TCL_OK) {
 	Tcl_DecrRefCount(objPtr);
@@ -2572,9 +2573,10 @@ AppendPrintfToObjVA(
     va_list argList)
 {
     int code, objc;
-    Tcl_Obj **objv, *list = Tcl_NewObj();
+    Tcl_Obj **objv, *list;
     const char *p;
 
+    TclNewObj(list);
     p = format;
     Tcl_IncrRefCount(list);
     while (*p != '\0') {
@@ -2788,8 +2790,9 @@ Tcl_ObjPrintf(
     ...)
 {
     va_list argList;
-    Tcl_Obj *objPtr = Tcl_NewObj();
+    Tcl_Obj *objPtr;
 
+    TclNewObj(objPtr);
     va_start(argList, format);
     AppendPrintfToObjVA(objPtr, format, argList);
     va_end(argList);
@@ -3410,7 +3413,7 @@ TclStringCmp(
 	    if (nocase) {
 		s1 = (char *) Tcl_GetUnicodeFromObj(value1Ptr, &s1len);
 		s2 = (char *) Tcl_GetUnicodeFromObj(value2Ptr, &s2len);
-		memCmpFn = (memCmpFn_t)Tcl_UniCharNcasecmp;
+		memCmpFn = (memCmpFn_t)(void *)Tcl_UniCharNcasecmp;
 	    } else {
 		s1len = Tcl_GetCharLength(value1Ptr);
 		s2len = Tcl_GetCharLength(value2Ptr);
@@ -3435,7 +3438,7 @@ TclStringCmp(
 			s1len *= sizeof(Tcl_UniChar);
 			s2len *= sizeof(Tcl_UniChar);
 		    } else {
-			memCmpFn = (memCmpFn_t) Tcl_UniCharNcmp;
+			memCmpFn = (memCmpFn_t)(void *)Tcl_UniCharNcmp;
 		    }
 		}
 	    }
@@ -3493,11 +3496,11 @@ TclStringCmp(
 		 */
 
 		if ((reqlength < 0) && !nocase) {
-		    memCmpFn = (memCmpFn_t) TclpUtfNcmp2;
+		    memCmpFn = (memCmpFn_t)(void *)TclpUtfNcmp2;
 		} else {
 		    s1len = Tcl_NumUtfChars(s1, s1len);
 		    s2len = Tcl_NumUtfChars(s2, s2len);
-		    memCmpFn = (memCmpFn_t)
+		    memCmpFn = (memCmpFn_t)(void *)
 			    (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
 		}
 	    }

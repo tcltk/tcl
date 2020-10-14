@@ -4485,13 +4485,13 @@ ZipFSFileAttrsGetProc(
     }
     switch (index) {
     case 0:
-	*objPtrRef = Tcl_NewWideIntObj(z->numBytes);
+	TclNewIntObj(*objPtrRef, z->numBytes);
 	break;
     case 1:
-	*objPtrRef = Tcl_NewWideIntObj(z->numCompressedBytes);
+	TclNewIntObj(*objPtrRef, z->numCompressedBytes);
 	break;
     case 2:
-	*objPtrRef = Tcl_NewWideIntObj(z->offset);
+	TclNewIntObj(*objPtrRef, z->offset);
 	break;
     case 3:
 	*objPtrRef = Tcl_NewStringObj(z->zipFilePtr->mountPoint,
