@@ -1441,11 +1441,12 @@ TclLsetList(
     /*
      * Determine whether the index arg designates a list or a single index.
      * We have to be careful about the order of the checks to avoid repeated
-     * shimmering; see TIP #22 and #23 for details.
+     * shimmering; see TIP #22 and #23 for details. Don't allow "" as single
+     * index here, since it cannot be distinguished from an empty list.
      */
 
     ListGetIntRep(indexArgPtr, listRepPtr);
-    if (listRepPtr == NULL
+    if (listRepPtr == NULL && Tcl_GetString(indexArgPtr)[0]
 	    && TclGetIntForIndexM(NULL, indexArgPtr, INT_MAX - 1, &index) == TCL_OK) {
 	/*
 	 * indexArgPtr designates a single index.

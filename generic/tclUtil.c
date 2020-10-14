@@ -3761,6 +3761,11 @@ GetEndOffsetFromObj(
 
 	    /* Value doesn't start with "e" */
 
+	    if (length == 0) {
+		offset = WIDE_MIN;
+		goto parseOK;
+	    }
+
 	    /* If we reach here, the string rep of objPtr exists. */
 
 	    /*
