@@ -525,9 +525,9 @@ Tcl_ObjType ClockFmtObjType = {
     (*((Tcl_Obj **)&(objPtr)->internalRep.twoPtrValue.ptr2))
 
 static void
-ClockFmtObj_DupInternalRep(srcPtr, copyPtr)
-    Tcl_Obj *srcPtr;
-    Tcl_Obj *copyPtr;
+ClockFmtObj_DupInternalRep(
+    Tcl_Obj *srcPtr,
+    Tcl_Obj *copyPtr)
 {
     ClockFmtScnStorage *fss = ObjClockFmtScn(srcPtr);
 
@@ -556,8 +556,8 @@ ClockFmtObj_DupInternalRep(srcPtr, copyPtr)
 }
 
 static void
-ClockFmtObj_FreeInternalRep(objPtr)
-    Tcl_Obj *objPtr;
+ClockFmtObj_FreeInternalRep(
+    Tcl_Obj *objPtr)
 {
     ClockFmtScnStorage *fss = ObjClockFmtScn(objPtr);
     if (fss != NULL) {
@@ -584,9 +584,9 @@ ClockFmtObj_FreeInternalRep(objPtr)
 };
 
 static int
-ClockFmtObj_SetFromAny(interp, objPtr)
-    Tcl_Interp *interp;
-    Tcl_Obj    *objPtr;
+ClockFmtObj_SetFromAny(
+    Tcl_Interp *interp,
+    Tcl_Obj    *objPtr)
 {
     /* validate string representation before free old internal representation */
     (void)interp;
@@ -605,8 +605,8 @@ ClockFmtObj_SetFromAny(interp, objPtr)
 };
 
 static void
-ClockFmtObj_UpdateString(objPtr)
-    Tcl_Obj  *objPtr;
+ClockFmtObj_UpdateString(
+    Tcl_Obj  *objPtr)
 {
     const char *name = "UNKNOWN";
     int	  len;
@@ -1980,9 +1980,9 @@ EstimateTokenCount(
     return ++tokcnt;
 }
 
-#define AllocTokenInChain(tok, chain, tokCnt) \
+#define AllocTokenInChain(tok, chain, tokCnt, type) \
     if (++(tok) >= (chain) + (tokCnt)) { \
-	chain = ckrealloc((char *)(chain), \
+	chain = (type)ckrealloc((char *)(chain), \
 	    (tokCnt + CLOCK_MIN_TOK_CHAIN_BLOCK_SIZE) * sizeof(*(tok))); \
 	if ((chain) == NULL) { goto done; }; \
 	(tok) = (chain) + (tokCnt); \
@@ -2048,7 +2048,7 @@ ClockGetOrParseScanFormat(
 		    tok->map = &ScnWordTokenMap;
 		    tok->tokWord.start = p;
 		    tok->tokWord.end = p+1;
-		    AllocTokenInChain(tok, scnTok, fss->scnTokC); tokCnt++;
+		    AllocTokenInChain(tok, scnTok, fss->scnTokC, ClockScanToken *); tokCnt++;
 		    p++;
 		    continue;
 		break;
@@ -2109,7 +2109,7 @@ ClockGetOrParseScanFormat(
 		}
 
 		/* next token */
-		AllocTokenInChain(tok, scnTok, fss->scnTokC); tokCnt++;
+		AllocTokenInChain(tok, scnTok, fss->scnTokC, ClockScanToken *); tokCnt++;
 		p++;
 		continue;
 	    }
@@ -2125,7 +2125,7 @@ ClockGetOrParseScanFormat(
 		/* increase space count used in format */
 		fss->scnSpaceCount++;
 		/* next token */
-		AllocTokenInChain(tok, scnTok, fss->scnTokC); tokCnt++;
+		AllocTokenInChain(tok, scnTok, fss->scnTokC, ClockScanToken *); tokCnt++;
 		continue;
 	    }
 word_tok:
@@ -2138,7 +2138,7 @@ word_tok:
 		if (wordTok == tok) {
 		    wordTok->tokWord.start = p;
 		    wordTok->map = &ScnWordTokenMap;
-		    AllocTokenInChain(tok, scnTok, fss->scnTokC); tokCnt++;
+		    AllocTokenInChain(tok, scnTok, fss->scnTokC, ClockScanToken *); tokCnt++;
 		}
 		if (isspace(UCHAR(*p))) {
 		    fss->scnSpaceCount++;
@@ -3092,7 +3092,7 @@ ClockGetOrParseFmtFormat(
 		    tok->map = &FmtWordTokenMap;
 		    tok->tokWord.start = p;
 		    tok->tokWord.end = p+1;
-		    AllocTokenInChain(tok, fmtTok, fss->fmtTokC); tokCnt++;
+		    AllocTokenInChain(tok, fmtTok, fss->fmtTokC, ClockFormatToken *); tokCnt++;
 		    p++;
 		    continue;
 		break;
@@ -3130,7 +3130,7 @@ ClockGetOrParseFmtFormat(
 		tok->map = &fmtMap[cp - mapIndex];
 		tok->tokWord.start = p;
 		/* next token */
-		AllocTokenInChain(tok, fmtTok, fss->fmtTokC); tokCnt++;
+		AllocTokenInChain(tok, fmtTok, fss->fmtTokC, ClockFormatToken *); tokCnt++;
 		p++;
 		continue;
 	    }
@@ -3145,7 +3145,7 @@ word_tok:
 		if (wordTok == tok) {
 		    wordTok->tokWord.start = p;
 		    wordTok->map = &FmtWordTokenMap;
-		    AllocTokenInChain(tok, fmtTok, fss->fmtTokC); tokCnt++;
+		    AllocTokenInChain(tok, fmtTok, fss->fmtTokC, ClockFormatToken *); tokCnt++;
 		}
 		p = Tcl_UtfNext(p);
 		wordTok->tokWord.end = p;

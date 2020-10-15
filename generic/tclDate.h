@@ -148,6 +148,8 @@ typedef enum ClockMsgCtLiteral {
  * Structure containing the fields used in [clock format] and [clock scan]
  */
 
+typedef enum {BCE=1, CE=0} ERA_ENUM;
+
 typedef struct TclDateFields {
 
     /* Cacheable fields:	 */
@@ -159,7 +161,7 @@ typedef struct TclDateFields {
     int tzOffset;		/* Time zone offset in seconds east of
 				 * Greenwich */
     Tcl_WideInt julianDay;	/* Julian Day Number in local time zone */
-    enum {BCE=1, CE=0} era;	/* Era */
+    ERA_ENUM era;		/* Era */
     int gregorian;		/* Flag == 1 if the date is Gregorian */
     int year;			/* Year of the era */
     int dayOfYear;		/* Day of the year (1 January == 1) */
@@ -183,6 +185,14 @@ typedef struct TclDateFields {
     TclOffset(TclDateFields, tzName)
 
 /*
+ * Meridian: am, pm, or 24-hour style.
+ */
+
+typedef enum _MERIDIAN {
+    MERam, MERpm, MER24
+} MERIDIAN;
+
+/*
  * Structure contains return parsed fields.
  */
 
@@ -196,7 +206,7 @@ typedef struct DateInfo {
     int		flags;		/* Signals parts of date/time get found */
     int		errFlags;	/* Signals error (part of date/time found twice) */
 
-    int dateMeridian;
+    MERIDIAN dateMeridian;
 
     int dateTimezone;
     int dateDSTmode;
@@ -347,14 +357,6 @@ typedef struct ClockClientData {
 
 #define ClockDefaultYearCentury 2000
 #define ClockDefaultCenturySwitch 38
-
-/*
- * Meridian: am, pm, or 24-hour style.
- */
-
-typedef enum _MERIDIAN {
-    MERam, MERpm, MER24
-} MERIDIAN;
 
 /*
  * Clock scan and format facilities.
