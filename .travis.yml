@@ -420,6 +420,7 @@ jobs:
       script:
         - make dist
 before_install:
+  - rm -rf tests/safe-stock8*.test
   - touch generic/tclStubInit.c generic/tclOOStubInit.c generic/tclOOScript.h
   - cd ${BUILD_DIR}
 install:
