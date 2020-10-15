@@ -238,7 +238,7 @@ TclStrIdxTreeBuildFromList(
 
     /* create lowercase reflection of the list keys */
 
-    lwrv = ckalloc(sizeof(Tcl_Obj*) * lstc);
+    lwrv = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj*) * lstc);
     if (lwrv == NULL) {
 	return TCL_ERROR;
     }
@@ -287,7 +287,7 @@ TclStrIdxTreeBuildFromList(
 		 * but don't split by fulfilled child of found item ( ii->iii->iiii ) */
 		if (foundItem->length != (f - s)) {
 		    /* first split found item (insert one between parent and found + new one) */
-		    item = ckalloc(sizeof(*item));
+		    item = (TclStrIdx *)ckalloc(sizeof(TclStrIdx));
 		    if (item == NULL) {
 			goto done;
 		    }
@@ -305,7 +305,7 @@ TclStrIdxTreeBuildFromList(
 	    }
 	}
 	/* append item at end of found parent */
-	item = ckalloc(sizeof(*item));
+	item = (TclStrIdx *)ckalloc(sizeof(TclStrIdx));
 	if (item == NULL) {
 	    goto done;
 	}
