@@ -58,7 +58,7 @@ kernel call) between a child interpreter and its parent.
 See \fBALIAS INVOCATION\fR, below, for more details
 on how the alias mechanism works.
 .PP
-A qualified interpreter name is a proper Tcl lists containing a subset of its
+A qualified interpreter name is a proper Tcl list containing a subset of its
 ancestors in the interpreter hierarchy, terminated by the string naming the
 interpreter in its immediate parent. Interpreter names are relative to the
 interpreter in which they are used. For example, if
