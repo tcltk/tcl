@@ -415,9 +415,6 @@ _INSTALLDIR=$(_INSTALLDIR)\lib
 # NATIVE_ARCH - set to IX86 or AMD64 for the host machine
 # MACHINE - same as $(ARCH) - legacy
 # _VC_MANIFEST_EMBED_{DLL,EXE} - commands for embedding a manifest if needed
-# CFG_ENCODING - set to an character encoding.
-#   TBD - this is passed to compiler as TCL_CFGVAL_ENCODING but can't
-#   see where it is used
 
 cc32		= $(CC)   # built-in default.
 link32		= link
@@ -501,10 +498,6 @@ NATIVE_ARCH=AMD64
 !if $(VCVERSION) >= 1400
 _VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
 _VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
-!endif
-
-!ifndef CFG_ENCODING
-CFG_ENCODING	= \"cp1252\"
 !endif
 
 ################################################################
@@ -1297,7 +1290,7 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 # baselibs - minimum Windows libraries required. Parent makefile can
 #    define PRJ_LIBS before including rules.rc if additional libs are needed
 
-OPTDEFINES	= /DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) /DSTDC_HEADERS
+OPTDEFINES	= /DSTDC_HEADERS
 !if $(VCVERSION) >= 1600
 OPTDEFINES	= $(OPTDEFINES) /DHAVE_STDINT_H=1
 !else
