@@ -866,7 +866,6 @@ SHELL_ENV =	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@} \
 		TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"
 
 ${TCLTEST_EXE}: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${BUILD_DLTEST}
-	rm -rf $(TOP_DIR)/tests/safe-stock86.test
 	$(MAKE) tcltest-real LIB_RUNTIME_DIR="`pwd`"
 
 tcltest-real:

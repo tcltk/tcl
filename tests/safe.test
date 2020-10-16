@@ -12,7 +12,7 @@
 #   - Tests 5.* test the example packages themselves before they
 #     are used to test Safe Base interpreters.
 # - Alternative tests using stock packages of Tcl 8.7 are in file
-#   safe-stock87.test.
+#   safe-stock.test.
 #
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
@@ -169,7 +169,7 @@ test safe-4.6 {safe::interpDelete, indirectly} -setup {
     a eval exit
 } -result ""
 
-# The old test "safe-5.1" has been moved to "safe-stock87-9.8".
+# The old test "safe-5.1" has been moved to "safe-stock-9.8".
 # A replacement test using example files is "safe-9.8".
 # Tests 5.* test the example files before using them to test safe interpreters.
 

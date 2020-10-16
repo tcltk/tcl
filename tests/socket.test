@@ -72,6 +72,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 if {[expr {[info exists ::env(TRAVIS_OSX_IMAGE)] && [string match xcode* $::env(TRAVIS_OSX_IMAGE)]}]} {
     return
 }
+testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
 
 # Some tests require the Thread package or exec command
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
@@ -734,7 +735,7 @@ test socket_$af-2.12 {} [list socket stdio supported_$af] {
     close $f
     set ::done
 } 0
-test socket_$af-2.13 {Bug 1758a0b603} {socket stdio} {
+test socket_$af-2.13 {Bug 1758a0b603} {socket stdio notWine} {
     file delete $path(script)
     set f [open $path(script) w]
     puts $f {
@@ -1543,7 +1544,7 @@ test socket_$af-11.11 {testing spurious events} -setup {
     after cancel $timer
     sendCommand {close $server}
 } -result {0 2690 1}
-test socket_$af-11.12 {testing EOF stickyness} -constraints [list socket supported_$af doTestsWithRemoteServer] -setup {
+test socket_$af-11.12 {testing EOF stickyness} -constraints [list socket supported_$af doTestsWithRemoteServer notWine] -setup {
     set counter 0
     set done 0
     set port [sendCommand {
@@ -2101,7 +2102,7 @@ test socket-14.4 {[socket -async] and both, readdable and writable fileevents} \
     } -result {{} bye}
 # FIXME: we should also have an IPv6 counterpart of this
 test socket-14.5 {[socket -async] which fails before any connect() can be made} \
-    -constraints {socket supported_inet} \
+    -constraints {socket supported_inet notWine} \
     -body {
         # address from rfc5737
         socket -async -myaddr 192.0.2.42 127.0.0.1 [randport]
@@ -2436,7 +2437,7 @@ test socket-14.12 {[socket -async] background progress triggered by [fconfigure 
     } -result {connection refused}
 
 test socket-14.13 {testing writable event when quick failure} \
-    -constraints {socket win supported_inet} \
+    -constraints {socket win supported_inet notWine} \
     -body {
     # Test for bug 336441ed59 where a quick background fail was ignored
 
@@ -2520,7 +2521,7 @@ test socket-14.18 {bug c6ed4acfd8: running async socket connect made other conne
     } -result {}
 
 test socket-14.19 {tip 456 -- introduce the -reuseport option} \
-    -constraints {socket} \
+    -constraints {socket notWine} \
     -body {
         proc accept {channel address port} {}
         set port [randport]

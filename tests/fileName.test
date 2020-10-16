@@ -31,6 +31,7 @@ if {[testConstraint win]} {
     testConstraint symbolicLinkFile 0
     testConstraint sharedCdrive [expr {![catch {cd //[info hostname]/c}]}]
 }
+testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
 # This match compares the first two words of the result. If the wanted result
 # is "equal", then this is successful if the words are equal. If the wanted
 # result is "not equal", then this is successful if the words are different.
@@ -789,7 +790,7 @@ test filename-11.17 {Tcl_GlobCmd} {unix} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]
-test filename-11.17.1 {Tcl_GlobCmd} {win} {
+test filename-11.17.1 {Tcl_GlobCmd} {win notWine} {
     lsort [glob -directory $globname *]
 } [lsort [list [file join $globname a1] [file join $globname a2]\
 	[file join $globname .1]\
@@ -800,7 +801,7 @@ test filename-11.17.1 {Tcl_GlobCmd} {win} {
 	[file join $globname y1.c] [file join $globname z1.c]]]
 test filename-11.17.2 {Tcl_GlobCmd} -setup {
     set dir [pwd]
-} -constraints {notRoot linkDirectory} -body {
+} -constraints {notRoot linkDirectory notWine} -body {
     cd $globname
     file link -symbolic link a1
     cd $dir
@@ -813,7 +814,7 @@ test filename-11.17.2 {Tcl_GlobCmd} -setup {
 # Simpler version of the above test to illustrate a given bug.
 test filename-11.17.3 {Tcl_GlobCmd} -setup {
     set dir [pwd]
-} -constraints {notRoot linkDirectory} -body {
+} -constraints {notRoot linkDirectory notWine} -body {
     cd $globname
     file link -symbolic link a1
     cd $dir
@@ -828,7 +829,7 @@ test filename-11.17.3 {Tcl_GlobCmd} -setup {
 # Make sure the bugfix isn't too simple. We don't want to break 'glob -type l'
 test filename-11.17.4 {Tcl_GlobCmd} -setup {
     set dir [pwd]
-} -constraints {notRoot linkDirectory} -body {
+} -constraints {notRoot linkDirectory notWine} -body {
     cd $globname
     file link -symbolic link a1
     cd $dir
@@ -846,7 +847,7 @@ test filename-11.17.6 {Tcl_GlobCmd} {
 	[list "weird name.c" x,z1.c x1.c y1.c z1.c]]]
 test filename-11.17.7 {Tcl_GlobCmd: broken link and glob -l} -setup {
     set dir [pwd]
-} -constraints {linkDirectory} -body {
+} -constraints {linkDirectory notWine} -body {
     cd $globname
     file mkdir nonexistent
     file link -symbolic link nonexistent
@@ -878,7 +879,7 @@ test filename-11.18 {Tcl_GlobCmd} {unix} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]
-test filename-11.18.1 {Tcl_GlobCmd} {win} {
+test filename-11.18.1 {Tcl_GlobCmd} {win notWine} {
     lsort [glob -path $globname/ *]
 } [lsort [list [file join $globname a1] [file join $globname a2]\
 	[file join $globname .1]\
@@ -895,7 +896,7 @@ test filename-11.19 {Tcl_GlobCmd} {unix} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]
-test filename-11.19.1 {Tcl_GlobCmd} {win} {
+test filename-11.19.1 {Tcl_GlobCmd} {win notWine} {
     lsort [glob -join -path [string range $globname 0 5] * *]
 } [lsort [list [file join $globname a1] [file join $globname a2]\
 	[file join $globname .1]\
@@ -904,7 +905,7 @@ test filename-11.19.1 {Tcl_GlobCmd} {win} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]
-test filename-11.20 {Tcl_GlobCmd} {
+test filename-11.20 {Tcl_GlobCmd} notWine {
     lsort [glob -type d -dir $globname *]
 } [lsort [list [file join $globname a1]\
 	[file join $globname a2]\
@@ -934,7 +935,7 @@ test filename-11.22 {Tcl_GlobCmd} {unix} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]
-test filename-11.22.1 {Tcl_GlobCmd} {win} {
+test filename-11.22.1 {Tcl_GlobCmd} {win notWine} {
     lsort [glob -dir $globname *]
 } [lsort [list [file join $globname a1] [file join $globname a2]\
 	[file join $globname .1]\
@@ -951,7 +952,7 @@ test filename-11.23 {Tcl_GlobCmd} {unix} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]
-test filename-11.23.1 {Tcl_GlobCmd} {win} {
+test filename-11.23.1 {Tcl_GlobCmd} {win notWine} {
     lsort [glob -path $globname/ *]
 } [lsort [list [file join $globname a1] [file join $globname a2]\
 	[file join $globname .1]\
@@ -968,7 +969,7 @@ test filename-11.24 {Tcl_GlobCmd} {unix} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]
-test filename-11.24.1 {Tcl_GlobCmd} {win} {
+test filename-11.24.1 {Tcl_GlobCmd} {win notWine} {
     lsort [glob -join -path [string range $globname 0 5] * *]
 } [lsort [list [file join $globname a1] [file join $globname a2]\
 	[file join $globname .1]\
@@ -977,17 +978,17 @@ test filename-11.24.1 {Tcl_GlobCmd} {win} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]
-test filename-11.25 {Tcl_GlobCmd} {
+test filename-11.25 {Tcl_GlobCmd} notWine {
     lsort [glob -type d -dir $globname *]
 } [lsort [list [file join $globname a1]\
 	[file join $globname a2]\
 	[file join $globname a3]]]
-test filename-11.25.1 {Tcl_GlobCmd} {
+test filename-11.25.1 {Tcl_GlobCmd} notWine {
     lsort [glob -type {d r} -dir $globname *]
 } [lsort [list [file join $globname a1]\
 	[file join $globname a2]\
 	[file join $globname a3]]]
-test filename-11.25.2 {Tcl_GlobCmd} {
+test filename-11.25.2 {Tcl_GlobCmd} notWine {
     lsort [glob -type {d r w} -dir $globname *]
 } [lsort [list [file join $globname a1]\
 	[file join $globname a2]\
@@ -1231,10 +1232,10 @@ test filename-14.5 {asterisks, question marks, and brackets} -setup {
 test filename-14.7 {asterisks, question marks, and brackets} {unix} {
     lsort [glob globTest/*]
 } {globTest/a1 globTest/a2 globTest/a3 {globTest/weird name.c} globTest/x,z1.c globTest/x1.c globTest/y1.c globTest/z1.c}
-test filename-14.7.1 {asterisks, question marks, and brackets} {win} {
+test filename-14.7.1 {asterisks, question marks, and brackets} {win notWine} {
     lsort [glob globTest/*]
 } {globTest/.1 globTest/a1 globTest/a2 globTest/a3 {globTest/weird name.c} globTest/x,z1.c globTest/x1.c globTest/y1.c globTest/z1.c}
-test filename-14.9 {asterisks, question marks, and brackets} {unixOrWin} {
+test filename-14.9 {asterisks, question marks, and brackets} {unixOrWin notWine} {
     lsort [glob globTest/.*]
 } {globTest/. globTest/.. globTest/.1}
 test filename-14.11 {asterisks, question marks, and brackets} {unixOrWin} {
@@ -1243,7 +1244,7 @@ test filename-14.11 {asterisks, question marks, and brackets} {unixOrWin} {
 test filename-14.13 {asterisks, question marks, and brackets} {unixOrWin} {
     lsort [glob {globTest/[xyab]1.*}]
 } {globTest/x1.c globTest/y1.c}
-test filename-14.15 {asterisks, question marks, and brackets} {unixOrWin} {
+test filename-14.15 {asterisks, question marks, and brackets} {unixOrWin notWine} {
     lsort [glob globTest/*/]
 } {globTest/a1/ globTest/a2/ globTest/a3/}
 test filename-14.17 {asterisks, question marks, and brackets} -setup {
@@ -1283,7 +1284,7 @@ test filename-14.25 {type specific globbing} {unix} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]
-test filename-14.25.1 {type specific globbing} {win} {
+test filename-14.25.1 {type specific globbing} {win notWine} {
     lsort [glob -dir globTest -types f *]
 } [lsort [list \
 	[file join $globname .1]\

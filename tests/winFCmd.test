@@ -29,6 +29,7 @@ testConstraint cdrom 0
 testConstraint exdev 0
 testConstraint longFileNames 0
 testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
 
 proc createfile {file {string a}} {
     set f [open $file w]
@@ -132,25 +133,25 @@ test winFCmd-1.1 {TclpRenameFile: errno: EACCES} -body {
 } -constraints {win cdrom testfile} -returnCodes error -result EACCES
 test winFCmd-1.2 {TclpRenameFile: errno: EEXIST} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notWine} -body {
     file mkdir td1/td2/td3
     file mkdir td2
     testfile mv td2 td1/td2
 } -returnCodes error -result EEXIST
 test winFCmd-1.3 {TclpRenameFile: errno: EINVAL} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notWine} -body {
     testfile mv / td1
 } -returnCodes error -result EINVAL
 test winFCmd-1.4 {TclpRenameFile: errno: EINVAL} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notWine} -body {
     file mkdir td1
     testfile mv td1 td1/td2
 } -returnCodes error -result EINVAL
 test winFCmd-1.5 {TclpRenameFile: errno: EISDIR} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notWine} -body {
     file mkdir td1
     createfile tf1
     testfile mv tf1 td1
@@ -255,7 +256,7 @@ test winFCmd-1.22 {TclpRenameFile: long dst} -setup {
 } -returnCodes error -result ENAMETOOLONG
 test winFCmd-1.23 {TclpRenameFile: move dir into self} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notWine} -body {
     file mkdir td1
     testfile mv [pwd]/td1 td1/td2
 } -returnCodes error -result EINVAL
@@ -300,21 +301,21 @@ test winFCmd-1.29 {TclpRenameFile: src is dir} -setup {
 } -returnCodes error -result ENOTDIR
 test winFCmd-1.30 {TclpRenameFile: dst is dir} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notWine} -body {
     file mkdir td1
     file mkdir td2/td2
     testfile mv td1 td2
 } -returnCodes error -result EEXIST
 test winFCmd-1.31 {TclpRenameFile: TclpRemoveDirectory fails} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notWine} -body {
     file mkdir td1
     file mkdir td2/td2
     testfile mv td1 td2
 } -returnCodes error -result EEXIST
 test winFCmd-1.32 {TclpRenameFile: TclpRemoveDirectory succeeds} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notWine} -body {
     file mkdir td1/td2
     file mkdir td2
     testfile mv td1 td2
@@ -343,7 +344,7 @@ test winFCmd-1.34 {TclpRenameFile: src is dir, dst is not} -setup {
 } -returnCodes error -result ENOTDIR
 test winFCmd-1.35 {TclpRenameFile: src is not dir, dst is} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notWine} -body {
     file mkdir td1
     createfile tf1
     testfile mv tf1 td1
@@ -394,7 +395,7 @@ proc MakeFiles {dirname} {
 
 test winFCmd-1.38 {TclpRenameFile: check rename of conflicting inodes} -setup {
     cleanup
-} -constraints {win winNonZeroInodes knownMsvcBug} -body {
+} -constraints {win winNonZeroInodes knownMsvcBug notWine} -body {
     file mkdir td1
     foreach {a b} [MakeFiles td1] break
     file rename -force $a $b
@@ -639,7 +640,7 @@ test winFCmd-5.1 {TclpCopyDirectory: calls TraverseWinTree} -setup {
 
 test winFCmd-6.1 {TclpRemoveDirectory: errno: EACCES} -setup {
     cleanup
-} -constraints {winVista testfile testchmod knownMsvcBug} -body {
+} -constraints {winVista testfile testchmod knownMsvcBug notWine} -body {
     file mkdir td1
     testchmod 0 td1
     testfile rmdir td1
@@ -693,7 +694,7 @@ test winFCmd-6.8 {TclpRemoveDirectory: RemoveDirectory fails} -setup {
 } -result {1 {tf1 ENOTDIR}}
 test winFCmd-6.9 {TclpRemoveDirectory: errno == EACCES} -setup {
     cleanup
-} -constraints {winVista testfile testchmod knownMsvcBug} -body {
+} -constraints {winVista testfile testchmod knownMsvcBug notWine} -body {
     file mkdir td1
     testchmod 0 td1
     testfile rmdir td1
@@ -704,14 +705,14 @@ test winFCmd-6.9 {TclpRemoveDirectory: errno == EACCES} -setup {
 } -result {td1 EACCES}
 test winFCmd-6.11 {TclpRemoveDirectory: attr == -1} -setup {
     cleanup
-} -constraints {win testfile} -body {
+} -constraints {win testfile notWine} -body {
     testfile rmdir /
     # WinXP returns EEXIST, WinNT seems to return EACCES.  No policy
     # decision has been made as to which is correct.
 } -returnCodes error -match regexp -result {^/ E(ACCES|EXIST)$}
 test winFCmd-6.13 {TclpRemoveDirectory: write-protected} -setup {
     cleanup
-} -constraints {winVista testfile testchmod knownMsvcBug} -body {
+} -constraints {winVista testfile testchmod knownMsvcBug notWine} -body {
     file mkdir td1
     testchmod 0 td1
     testfile rmdir td1
@@ -940,7 +941,7 @@ test winFCmd-9.1 {TraversalDelete: DOTREE_F} -setup {
 } -result {}
 test winFCmd-9.3 {TraversalDelete: DOTREE_PRED} -setup {
     cleanup
-} -constraints {winVista testfile testchmod knownMsvcBug} -body {
+} -constraints {winVista testfile testchmod knownMsvcBug notWine} -body {
     file mkdir td1/td2
     testchmod 0 td1
     testfile rmdir -force td1
@@ -1129,7 +1130,7 @@ test winFCmd-15.2 {SetWinFileAttributes - archive} -constraints {win} -setup {
 } -cleanup {
     cleanup
 } -result {{} 1}
-test winFCmd-15.3 {SetWinFileAttributes - archive} -constraints {win} -setup {
+test winFCmd-15.3 {SetWinFileAttributes - archive} -constraints {win notWine} -setup {
     cleanup
 } -body {
     createfile td1 {}
@@ -1137,7 +1138,7 @@ test winFCmd-15.3 {SetWinFileAttributes - archive} -constraints {win} -setup {
 } -cleanup {
     cleanup
 } -result {{} 0}
-test winFCmd-15.4 {SetWinFileAttributes - hidden} -constraints {win} -setup {
+test winFCmd-15.4 {SetWinFileAttributes - hidden} -constraints {win notWine} -setup {
     cleanup
 } -body {
     createfile td1 {}
@@ -1170,7 +1171,7 @@ test winFCmd-15.7 {SetWinFileAttributes - readonly} -setup {
 } -cleanup {
     cleanup
 } -result {{} 0}
-test winFCmd-15.8 {SetWinFileAttributes - system} -constraints {win} -setup {
+test winFCmd-15.8 {SetWinFileAttributes - system} -constraints {win notWine} -setup {
     cleanup
 } -body {
     createfile td1 {}
