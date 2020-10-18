@@ -3518,7 +3518,7 @@ Tcl_LsearchObjCmd(
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
-		TclNewIndexObj(itemPtr, -1);
+		TclNewIndexObj(itemPtr, TCL_INDEX_NONE);
 		Tcl_SetObjResult(interp, itemPtr);
 	    }
 	    goto done;
