@@ -3792,7 +3792,7 @@ TclNRSwitchObjCmd(
 		    Tcl_ListObjAppendElement(NULL, indicesObj,
 			    Tcl_NewListObj(2, rangeObjAry));
 		} else {
-		    TclNewIndexObj(rangeObjAry[0], -1);
+		    TclNewObj(rangeObjAry[0]);
 		    Tcl_ListObjAppendElement(NULL, indicesObj,
 			    rangeObjAry[0]);
 		}
