@@ -1089,7 +1089,7 @@ Tcl_ScanObjCmd(
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
-		TclNewIndexObj(objPtr, -1);
+		TclNewIndexObj(objPtr, TCL_INDEX_NONE);
 	    } else {
 		if (objPtr) {
 		    Tcl_SetListObj(objPtr, 0, NULL);
