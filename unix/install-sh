@@ -109,7 +109,7 @@ Options:
   -m MODE       $chmodprog installed files to MODE.
   -o USER       $chownprog installed files to USER.
   -s            $stripprog installed files.
-  -S            $stripprog installed files.
+  -S OPTION     $stripprog installed files using OPTION.
   -t DIRECTORY  install into DIRECTORY.
   -T            report an error if DSTFILE is a directory.
 
