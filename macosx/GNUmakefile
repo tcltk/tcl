@@ -76,7 +76,7 @@ space			:= ${empty} ${empty}
 objdir			= $(subst ${space},\ ,${OBJ_DIR})
 
 develop_make_args	:= BUILD_STYLE=Development CONFIGURE_ARGS=--enable-symbols
-deploy_make_args	:= BUILD_STYLE=Deployment INSTALL_TARGET=install-strip \
+deploy_make_args	:= BUILD_STYLE=Deployment INSTALL_TARGET=install \
 			   EXTRA_CFLAGS=-DNDEBUG
 embedded_make_args	:= EMBEDDED_BUILD=1
 install_make_args	:= INSTALL_BUILD=1
