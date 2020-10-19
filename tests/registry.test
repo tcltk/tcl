@@ -24,6 +24,7 @@ if {[testConstraint win]} {
 	testConstraint reg 1
     }
 }
+testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
 
 # determine the current locale
 testConstraint english [expr {
@@ -673,10 +674,10 @@ test registry-12.2 {BroadcastValue} -constraints {win reg} -body {
 test registry-12.3 {BroadcastValue} -constraints {win reg} -body {
     registry broadcast "" - 500
 } -returnCodes error -result "wrong # args: should be \"registry broadcast keyName ?-timeout milliseconds?\""
-test registry-12.4 {BroadcastValue} -constraints {win reg} -body {
+test registry-12.4 {BroadcastValue} -constraints {win reg notWine} -body {
     registry broadcast {Environment}
 } -result {1 0}
-test registry-12.5 {BroadcastValue} -constraints {win reg} -body {
+test registry-12.5 {BroadcastValue} -constraints {win reg notWine} -body {
     registry b {}
 } -result {1 0}
 

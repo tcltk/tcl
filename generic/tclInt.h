@@ -4851,7 +4851,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     (objPtr) = Tcl_NewWideIntObj(w)
 
 #define TclNewIndexObj(objPtr, w) \
-    (objPtr) = Tcl_NewWideIntObj((Tcl_WideInt)((w) + 1) - 1)
+    (objPtr) = (w == TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideIntObj(w)
 
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)

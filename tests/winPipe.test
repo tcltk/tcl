@@ -28,6 +28,9 @@ set org_pwd [pwd]
 set bindir [file join $org_pwd [file dirname [info nameofexecutable]]]
 set cat32 [file join $bindir cat32.exe]
 
+testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
+
+
 # several test-cases here expect current directory == [temporaryDirectory]:
 cd [temporaryDirectory]
 
@@ -197,7 +200,7 @@ test winpipe-4.1 {Tcl_WaitPid} {win exec cat32} {
     vwait x
     list $result $x [contents $path(stderr)]
 } "{$big} 1 stderr32"
-test winpipe-4.2 {Tcl_WaitPid: return of exception codes, SIGFPE} {win exec testexcept} {
+test winpipe-4.2 {Tcl_WaitPid: return of exception codes, SIGFPE} {win exec testexcept notWine} {
     set f [open "|[list [interpreter]]" w+]
     set pid [pid $f]
     puts $f "load $::tcltestlib Tcltest"
@@ -205,7 +208,7 @@ test winpipe-4.2 {Tcl_WaitPid: return of exception codes, SIGFPE} {win exec test
     set status [catch {close $f}]
     list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
 } {1 1 SIGFPE}
-test winpipe-4.3 {Tcl_WaitPid: return of exception codes, SIGSEGV} {win exec testexcept} {
+test winpipe-4.3 {Tcl_WaitPid: return of exception codes, SIGSEGV} {win exec testexcept notWine} {
     set f [open "|[list [interpreter]]" w+]
     set pid [pid $f]
     puts $f "load $::tcltestlib Tcltest"
@@ -213,7 +216,7 @@ test winpipe-4.3 {Tcl_WaitPid: return of exception codes, SIGSEGV} {win exec tes
     set status [catch {close $f}]
     list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
 } {1 1 SIGSEGV}
-test winpipe-4.4 {Tcl_WaitPid: return of exception codes, SIGILL} {win exec testexcept} {
+test winpipe-4.4 {Tcl_WaitPid: return of exception codes, SIGILL} {win exec testexcept notWine} {
     set f [open "|[list [interpreter]]" w+]
     set pid [pid $f]
     puts $f "load $::tcltestlib Tcltest"
@@ -221,7 +224,7 @@ test winpipe-4.4 {Tcl_WaitPid: return of exception codes, SIGILL} {win exec test
     set status [catch {close $f}]
     list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
 } {1 1 SIGILL}
-test winpipe-4.5 {Tcl_WaitPid: return of exception codes, SIGINT} {win exec testexcept} {
+test winpipe-4.5 {Tcl_WaitPid: return of exception codes, SIGINT} {win exec testexcept notWine} {
     set f [open "|[list [interpreter]]" w+]
     set pid [pid $f]
     puts $f "load $::tcltestlib Tcltest"
@@ -519,7 +522,7 @@ test winpipe-8.2 {BuildCommandLine/parse_cmdline pass-thru: check injection on s
 } -result {}
 
 test winpipe-8.3 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (jointly)} \
--constraints {win exec} -body {
+-constraints {win exec notWine} -body {
     _testExecArgs 0 \
 	[list START     {*}$injectList END] \
 	[list "START\"" {*}$injectList END] \
@@ -528,7 +531,7 @@ test winpipe-8.3 {BuildCommandLine/parse_cmdline pass-thru: check injection on s
 } -result {}
 
 test winpipe-8.4 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (command/jointly args)} \
--constraints {win exec} -body {
+-constraints {win exec notWine} -body {
     _testExecArgs 2 \
 	[list START     {*}$injectList END] \
 	[list "START\"" {*}$injectList END] \
@@ -537,7 +540,7 @@ test winpipe-8.4 {BuildCommandLine/parse_cmdline pass-thru: check injection on s
 } -result {}
 
 test winpipe-8.5 {BuildCommandLine/parse_cmdline pass-thru: check injection on special meta-chars (random mix)} \
--constraints {win exec} -body {
+-constraints {win exec notWine} -body {
     set lst {}
     set maps {
 	{\&|^<>!()%}
