@@ -114,10 +114,6 @@
 #	TESTPAT=<file>
 #		Reads the tests requested to be run from this file.
 #
-#	CFG_ENCODING=encoding
-#		name of encoding for configuration information. Defaults
-#		to cp1252
-#
 # Examples:
 #       c:\tcl_src\win\>nmake -f makefile.vc release
 #       c:\tcl_src\win\>nmake -f makefile.vc test

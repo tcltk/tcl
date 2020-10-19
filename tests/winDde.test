@@ -24,6 +24,7 @@ if {[testConstraint win]} {
 	testConstraint dde 1
     }
 }
+testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
 
 
 # -------------------------------------------------------------------------
@@ -161,7 +162,7 @@ test winDde-3.6 {DDE request utf-8} -constraints dde -body {
 } -result 196
 # Set variable a to A with diaeresis (unicode C4) using binary execute
 # and compose utf-8 (e.g. "c3 84" ) manualy
-test winDde-3.7 {DDE request binary} -constraints dde -body {
+test winDde-3.7 {DDE request binary} -constraints {dde notWine} -body {
     set \xe1 "not set"
     dde execute -binary TclEval self [list set \xc3\xa1 \xc3\x84\x00]
     scan [set \xe1] %c
