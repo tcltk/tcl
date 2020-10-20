@@ -150,6 +150,9 @@ install-${PROJECT}: build-${PROJECT}
 ifeq (${EMBEDDED_BUILD}_${INSTALL_ROOT},1_)
 	@echo "Cannot install-embedded with empty INSTALL_ROOT !" && false
 endif
+ifeq (${SUBFRAMEWORK}_${DYLIB_INSTALL_DIR},1_)
+	@echo "Cannot install-subframework with empty DYLIB_INSTALL_DIR !" && false
+endif
 ifeq (${EMBEDDED_BUILD},1)
 	@rm -rf "${INSTALL_ROOT}${LIBDIR}/Tcl.framework"
 endif
