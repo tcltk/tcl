@@ -33,23 +33,33 @@ MODULE_SCOPE void *tclStubsHandle;
  */
 
 static const char PROCNAME[][24] = {
-	"_Tcl_InitSubsystems",
-	"_Tcl_FindExecutable",
-	"_Tcl_SetPanicProc",
-	"_TclZipfs_AppHook"
+    "_Tcl_InitSubsystems",
+    "_Tcl_FindExecutable",
+    "_Tcl_SetPanicProc",
+    "_TclZipfs_AppHook",
+    "_Tcl_StaticPackage",
+    "_Tcl_MainEx",
+    "_Tcl_MainExW"
 };
 
-MODULE_SCOPE const char *
-TclStubCall(int index, void *arg1, void *arg2)
+MODULE_SCOPE const void *nullVersionProc(void) {
+	return NULL;
+}
+
+static const char CANNOTCALL[] = "Cannot call %s from stubbed extension\n";
+static const char CANNOTFIND[] = "Cannot find %s: %s\n";
+
+MODULE_SCOPE void *
+TclStubCall(int index, void *arg1)
 {
-    static void *stubFn[] = {NULL,NULL,NULL,NULL};
-    static const char *version = NULL;
+    static void *stubFn[] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+    const char *(*versionProc)(void) = (const char *(*)(void))nullVersionProc;
 
     if (tclStubsHandle == (void *)-1) {
 	if (index == 2 && arg1 != NULL) {
-	    ((Tcl_PanicProc *)arg1)("Cannot call %s from stubbed extension\n", PROCNAME[index] + 1);
+	    ((Tcl_PanicProc *)arg1)(CANNOTCALL, PROCNAME[index] + 1);
 	} else {
-	    fprintf(stderr, "Cannot call %s from stubbed extension\n", PROCNAME[index] + 1);
+	    fprintf(stderr, CANNOTCALL, PROCNAME[index] + 1);
 	    abort();
 	}
     }
@@ -58,9 +68,9 @@ TclStubCall(int index, void *arg1, void *arg2)
 	    tclStubsHandle = dlopen(TCL_DLL_FILE, RTLD_NOW|RTLD_LOCAL);
 	    if (!tclStubsHandle) {
 		if (index == 2 && arg1 != NULL) {
-		    ((Tcl_PanicProc *)arg1)("Cannot find " TCL_DLL_FILE ": %s\n", dlerror());
+		    ((Tcl_PanicProc *)arg1)(CANNOTFIND, TCL_DLL_FILE, dlerror());
 		} else {
-		    fprintf(stderr, "Cannot find " TCL_DLL_FILE ": %s\n", dlerror());
+		    fprintf(stderr, CANNOTFIND, TCL_DLL_FILE, dlerror());
 		    abort();
 		}
 	    }
@@ -70,10 +80,10 @@ TclStubCall(int index, void *arg1, void *arg2)
 		stubFn[index] = dlsym(tclStubsHandle, PROCNAME[index]);
 	}
 	if (stubFn[index]) {
-	    version = ((const char *(*)(void *,void *))stubFn[index])(arg1, arg2);
+	    versionProc = ((const char *(*)(void))stubFn[index]);
 	}
     }
-    return version;
+    return versionProc;
 }
 
 /*

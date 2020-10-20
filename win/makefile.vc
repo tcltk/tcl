@@ -420,8 +420,6 @@ TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
 	$(TMP_DIR)\tclStubCall.obj \
-	$(TMP_DIR)\tclStubStaticPackage.obj \
-	$(TMP_DIR)\tclStubMainEx.obj \
 	$(TMP_DIR)\tclStubLibTbl.obj \
 	$(TMP_DIR)\tclTomMathStubLib.obj \
 	$(TMP_DIR)\tclOOStubLib.obj \
@@ -807,12 +805,6 @@ $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(stubscflags) -Fo$@ $?
 
 $(TMP_DIR)\tclStubCall.obj: $(GENERICDIR)\tclStubCall.c
-	$(cc32) $(stubscflags) -DTCL_DLL_FILE="\"tcl$(TCL_VERSION)$(SUFX:t=).dll\"" $(TCL_INCLUDES) -Fo$@ $?
-
-$(TMP_DIR)\tclStubStaticPackage.obj: $(GENERICDIR)\tclStubStaticPackage.c
-	$(cc32) $(stubscflags) -DTCL_DLL_FILE="\"tcl$(TCL_VERSION)$(SUFX:t=).dll\"" $(TCL_INCLUDES) -Fo$@ $?
-
-$(TMP_DIR)\tclStubMainEx.obj: $(GENERICDIR)\tclStubMainEx.c
 	$(cc32) $(stubscflags) -DTCL_DLL_FILE="\"tcl$(TCL_VERSION)$(SUFX:t=).dll\"" $(TCL_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclStubLibTbl.obj: $(GENERICDIR)\tclStubLibTbl.c

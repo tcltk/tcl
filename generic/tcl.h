@@ -2202,11 +2202,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #endif
 extern void TclStubMainEx(int index, int argc, const void *argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-extern const char *TclStubStaticPackage(Tcl_Interp *interp,
-	    const char *pkgName,
-	    Tcl_PackageInitProc *initProc,
-	    Tcl_PackageInitProc *safeInitProc);
-extern const char *TclStubCall(int flags, void *arg1, void *arg2);
+extern void *TclStubCall(int flags, void *arg1);
 #if defined(_WIN32) && defined(UNICODE)
 #ifndef USE_TCL_STUBS
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
@@ -2217,18 +2213,24 @@ extern const char *TclStubCall(int flags, void *arg1, void *arg2);
 #endif
 #ifdef USE_TCL_STUBS
 #define Tcl_InitSubsystems() \
-    TclInitStubTable(TclStubCall(0, NULL, NULL))
+    TclInitStubTable(((const char *(*)(void))TclStubCall(0, NULL))())
 #define Tcl_FindExecutable(argv0) \
-    TclInitStubTable(TclStubCall(1, (void *)argv0, NULL))
+    TclInitStubTable(((const char *(*)(const char *))TclStubCall(1, NULL))(argv0))
 #define Tcl_SetPanicProc(panicProc) \
-    TclInitStubTable(TclStubCall(2, (void *)panicProc, NULL))
+    TclInitStubTable(((const char *(*)(Tcl_PanicProc *))TclStubCall(1, (void *)panicProc))(panicProc))
 #define TclZipfs_AppHook(argcp, argvp) \
-    TclInitStubTable(TclStubCall(3, (void *)argcp, (void *)argvp))
+    TclInitStubTable(((const char *(*)(int *, void *))TclStubCall(1, NULL))(argcp, argvp))
+#define Tcl_StaticPackage(interp, pkgName, initProc, safeInitProc) \
+	((void(*)(Tcl_Interp *, const char *, Tcl_PackageInitProc *, Tcl_PackageInitProc *)) \
+	TclStubCall(4, NULL))(interp, pkgName, initProc, safeInitProc)
 #if !defined(_WIN32) || !defined(UNICODE)
-#define Tcl_MainEx(argc, argv, appInitProc, interp) TclStubMainEx(0, argc, argv, appInitProc, interp)
+#define Tcl_MainEx(argc, argv, appInitProc, interp) \
+	((void(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	TclStubCall(5, NULL))(argc, argv, appInitProc, interp)
 #endif
-#define Tcl_MainExW(argc, argv, appInitProc, interp) TclStubMainEx(1, argc, argv, appInitProc, interp)
-#define Tcl_StaticPackage TclStubStaticPackage
+#define Tcl_MainExW(argc, argv, appInitProc, interp) \
+	((void(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	TclStubCall(6, NULL))(argc, argv, appInitProc, interp)
 #endif
 
 /*

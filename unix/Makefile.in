@@ -348,8 +348,6 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 
 STUB_LIB_OBJS = tclStubLib.o \
 	tclStubCall.o \
-	tclStubStaticPackage.o \
-	tclStubMainEx.o \
 	tclStubLibTbl.o \
 	tclTomMathStubLib.o \
 	tclOOStubLib.o \
@@ -494,8 +492,6 @@ OO_SRCS = \
 STUB_SRCS = \
 	$(GENERIC_DIR)/tclStubLib.c \
 	$(GENERIC_DIR)/tclStubCall.c \
-	$(GENERIC_DIR)/tclStubStaticPackage.c \
-	$(GENERIC_DIR)/tclStubMainEx.c \
 	$(GENERIC_DIR)/tclStubLibTbl.c \
 	$(GENERIC_DIR)/tclTomMathStubLib.c \
 	$(GENERIC_DIR)/tclOOStubLib.c
@@ -970,7 +966,8 @@ install: $(INSTALL_TARGETS)
 
 install-strip:
 	$(MAKE) $(INSTALL_TARGETS) \
-		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}"
+		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}" \
+		INSTALL_LIBRARY="$(INSTALL_LIBRARY) ${INSTALL_STRIP_LIBRARY}"
 
 install-binaries: binaries
 	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" \
@@ -1919,12 +1916,6 @@ tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 
 tclStubCall.o: $(GENERIC_DIR)/tclStubCall.c
 	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_LIB_FILE)\"" $(GENERIC_DIR)/tclStubCall.c
-
-tclStubStaticPackage.o: $(GENERIC_DIR)/tclStubStaticPackage.c
-	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_LIB_FILE)\"" $(GENERIC_DIR)/tclStubStaticPackage.c
-
-tclStubMainEx.o: $(GENERIC_DIR)/tclStubMainEx.c
-	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_LIB_FILE)\"" $(GENERIC_DIR)/tclStubMainEx.c
 
 tclStubLibTbl.o: $(GENERIC_DIR)/tclStubLibTbl.c
 	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLibTbl.c
