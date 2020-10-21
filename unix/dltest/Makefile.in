@@ -57,7 +57,7 @@ pkgooa.o: $(SRC_DIR)/pkgooa.c
 	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgooa.c
 
 embtest: embtest.o
-	$(SHLIB_LD) -o $@ embtest.o ${SHLIB_LD_LIBS} -lc
+	$(CC) -o $@ embtest.o ${SHLIB_LD_LIBS}
 
 pkga${SHLIB_SUFFIX}: pkga.o
 	${SHLIB_LD} -o $@ pkga.o ${SHLIB_LD_LIBS}

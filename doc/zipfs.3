@@ -10,6 +10,7 @@
 .so man.macros
 .BS
 .SH NAME
+const char *
 TclZipfs_AppHook, Tclzipfs_Mount, TclZipfs_MountBuffer, Tclzipfs_Unmount \- handle ZIP files as Tcl virtual filesystems
 .SH SYNOPSIS
 .nf
@@ -87,7 +88,7 @@ it uses WCHAR instead of char. As a result, it requires your application to
 be compiled with the UNICODE preprocessor symbol defined (e.g., via the
 \fB-DUNICODE\fR compiler flag).
 .PP
-The result of \fBTclZipfs_AppHook\fR is a Tcl result code (e.g., \fBTCL_OK\fR
+The result of \fBTclZipfs_AppHook\fR is the Tcl version string(e.g., \fB"9.0"\fR
 when the function is successful). The function \fImay\fR modify the variables
 pointed to by \fIargcPtr\fR and \fIargvPtr\fR to remove arguments; the
 current implementation does not do so, but callers \fIshould not\fR assume

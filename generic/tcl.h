@@ -2215,22 +2215,22 @@ extern void *TclStubCall(void *arg);
 #define Tcl_SetPanicProc(panicProc) \
     TclInitStubTable(((const char *(*)(Tcl_PanicProc *))TclStubCall((void *)panicProc))(panicProc))
 #define Tcl_InitSubsystems() \
-    TclInitStubTable(((const char *(*)(void))TclStubCall(INT2PTR(1)))())
+    TclInitStubTable(((const char *(*)(void))TclStubCall((void *)1))())
 #define Tcl_FindExecutable(argv0) \
-    TclInitStubTable(((const char *(*)(const char *))TclStubCall(INT2PTR(1)))(argv0))
+    TclInitStubTable(((const char *(*)(const char *))TclStubCall((void *)2))(argv0))
 #if !defined(_WIN32) || !defined(UNICODE)
 #define Tcl_MainEx(argc, argv, appInitProc, interp) \
-	((void(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
-	TclStubCall(INT2PTR(3)))(argc, argv, appInitProc, interp)
+	(void)((void(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	TclStubCall((void *)3))(argc, argv, appInitProc, interp)
 #endif
 #define Tcl_MainExW(argc, argv, appInitProc, interp) \
-	((void(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
-	TclStubCall(INT2PTR(4)))(argc, argv, appInitProc, interp)
+	(void)((const char *(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	TclStubCall((void *)4))(argc, argv, appInitProc, interp)
 #define Tcl_StaticPackage(interp, pkgName, initProc, safeInitProc) \
-	((void(*)(Tcl_Interp *, const char *, Tcl_PackageInitProc *, Tcl_PackageInitProc *)) \
-	TclStubCall(INT2PTR(5)))(interp, pkgName, initProc, safeInitProc)
+	((const char *(*)(Tcl_Interp *, const char *, Tcl_PackageInitProc *, Tcl_PackageInitProc *)) \
+	TclStubCall((void *)5))(interp, pkgName, initProc, safeInitProc)
 #define TclZipfs_AppHook(argcp, argvp) \
-    ((const char *(*)(int *, void *))TclStubCall(INT2PTR(6)))(argcp, argvp)
+	TclInitStubTable(((const char *(*)(int *, void *))TclStubCall((void *)6))(argcp, argvp))
 #endif
 
 /*
