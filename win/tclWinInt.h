@@ -54,7 +54,11 @@ MODULE_SCOPE TclWinProcs tclWinProcs;
 #endif
 
 #ifdef _WIN64
+#if defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO
+#         define TCL_I_MODIFIER        "ll"
+#else
 #         define TCL_I_MODIFIER        "I"
+#endif
 #else
 #         define TCL_I_MODIFIER        ""
 #endif
