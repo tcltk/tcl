@@ -937,7 +937,7 @@ proc ::safe::AliasSource {child args} {
 	}
     } else {
 	set at 0
-	set encoding {}
+	set encoding utf-8
     }
     if {$argc != 1} {
 	set msg "wrong # args: should be \"source ?-encoding E? fileName\""
@@ -980,10 +980,7 @@ proc ::safe::AliasSource {child args} {
     set replacementMsg "script error"
     set code [catch {
 	set f [open $realfile]
-	fconfigure $f -eofchar \032
-	if {$encoding ne ""} {
-	    fconfigure $f -encoding $encoding
-	}
+	fconfigure $f -encoding $encoding -eofchar \032
 	set contents [read $f]
 	close $f
 	::interp eval $child [list info script $file]

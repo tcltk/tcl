@@ -112,7 +112,7 @@ if {[interp issafe]} {
 	foreach cmd {add format scan} {
 	    proc ::tcl::clock::$cmd args {
 		variable TclLibDir
-		source -encoding utf-8 [file join $TclLibDir clock.tcl]
+		source [file join $TclLibDir clock.tcl]
 		return [uplevel 1 [info level 0]]
 	    }
 	}
