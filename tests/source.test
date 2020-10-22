@@ -114,7 +114,7 @@ test source-2.7 {utf-8 with BOM} -setup {
     puts $out "\ufeffset y new-y"
     close $out
     set y old-y
-    source -encoding utf-8 $sourcefile
+    source $sourcefile
     return $y
 } -cleanup {
     removeFile $sourcefile
@@ -226,7 +226,7 @@ test source-7.1 {source -encoding test} -setup {
     close $f
 } -body {
     set x unset
-    source -encoding utf-8 $sourcefile
+    source $sourcefile
     set x
 } -cleanup {
     removeFile source.file
@@ -269,7 +269,7 @@ test source-7.5 {source -encoding: correct operation} -setup {
     puts $f "proc \u20ac {} {return foo}"
     close $f
 } -body {
-    source -encoding utf-8 $sourcefile
+    source $sourcefile
     \u20ac
 } -cleanup {
     removeFile source.file
