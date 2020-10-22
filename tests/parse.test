@@ -1051,7 +1051,7 @@ test parse-19.1 {Bug 1115904: recursion limit in Tcl_EvalEx} -constraints {
     testevalex
 } -setup {
     interp create i
-    load {} Tcltest i
+    load {} tcl::test i
     i eval {proc {} args {}}
     interp recursionlimit i 3
 } -body {
@@ -1064,7 +1064,7 @@ test parse-19.2 {Bug 1115904: recursion limit in Tcl_EvalEx} -constraints {
     testevalex
 } -setup {
     interp create i
-    load {} Tcltest i
+    load {} tcl::test i
     i eval {proc {} args {}}
     interp recursionlimit i 2
 } -body {

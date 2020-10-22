@@ -1163,8 +1163,8 @@ test iortrans-11.0 {origin interpreter of moved transform gone} -setup {
     set ida [interp create];	#puts <<$ida>>
     set idb [interp create];	#puts <<$idb>>
     # Magic to get the test* commands in the children
-    load {} Tcltest $ida
-    load {} Tcltest $idb
+    load {} tcl::test $ida
+    load {} tcl::test $idb
 } -constraints {testchannel} -match glob -body {
     # Set up channel and transform in interpreter
     interp eval $ida $helperscript
@@ -1206,8 +1206,8 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
     set ida [interp create];	#puts <<$ida>>
     set idb [interp create];	#puts <<$idb>>
     # Magic to get the test* commands in the children
-    load {} Tcltest $ida
-    load {} Tcltest $idb
+    load {} tcl::test $ida
+    load {} tcl::test $idb
 } -constraints {testchannel} -match glob -body {
     # Set up channel in thread
     set chan [interp eval $ida $helperscript]
@@ -1246,7 +1246,7 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
 test iortrans-11.2 {delete interp of reflected transform} -setup {
     interp create child
     # Magic to get the test* commands into the child
-    load {} Tcltest child
+    load {} tcl::test child
 } -constraints {testchannel} -body {
     # Get base channel into the child
     set c [tempchan]
@@ -1285,7 +1285,7 @@ test iortrans-11.2 {delete interp of reflected transform} -setup {
 proc inthread {chan script args} {
     # Test thread.
     set tid [thread::create -preserved]
-    thread::send $tid {load {} Tcltest}
+    thread::send $tid {load {} tcl::test}
 
     # Init thread configuration.
     # - Listed variables
@@ -2002,9 +2002,9 @@ test iortrans.tf-8.2 {close flushes write buffers, writes data} -setup {
 test iortrans.tf-11.0 {origin thread of moved transform gone} -setup {
     #puts <<$tcltest::mainThread>>main
     set tida [thread::create -preserved];	#puts <<$tida>>
-    thread::send $tida {load {} Tcltest}
+    thread::send $tida {load {} tcl::test}
     set tidb [thread::create -preserved];	#puts <<$tida>>
-    thread::send $tidb {load {} Tcltest}
+    thread::send $tidb {load {} tcl::test}
 } -constraints {testchannel thread} -match glob -body {
     # Set up channel in thread
     thread::send $tida $helperscript
@@ -2046,9 +2046,9 @@ testConstraint notValgrind [expr {![testConstraint valgrind]}]
 test iortrans.tf-11.1 {origin thread of moved transform destroyed during access} -setup {
     #puts <<$tcltest::mainThread>>main
     set tida [thread::create -preserved];	#puts <<$tida>>
-    thread::send $tida {load {} Tcltest}
+    thread::send $tida {load {} tcl::test}
     set tidb [thread::create -preserved];	#puts <<$tidb>>
-    thread::send $tidb {load {} Tcltest}
+    thread::send $tidb {load {} tcl::test}
 } -constraints {testchannel thread notValgrind} -match glob -body {
     # Set up channel in thread
     thread::send $tida $helperscript

@@ -8477,7 +8477,7 @@ test io-70.1 {Transfer channel} {testchannel thread} {
 
     set tid [thread::create -preserved]
     thread::send $tid [list set c $c]
-    thread::send $tid {load {} Tcltest}
+    thread::send $tid {load {} tcl::test}
     lappend res [thread::send $tid {
 	testchannel splice $c
 	set res [catch {seek $c 0 start}]

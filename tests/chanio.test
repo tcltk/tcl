@@ -7576,7 +7576,7 @@ test chan-io-70.1 {Transfer channel} -setup {
     lappend res [catch {chan seek $c 0 start}]
     set tid [thread::create -preserved]
     thread::send $tid [list set c $c]
-    thread::send $tid {load {} Tcltest}
+    thread::send $tid {load {} tcl::test}
     lappend res [thread::send $tid {
 	testchannel splice $c
 	set res [catch {chan seek $c 0 start}]

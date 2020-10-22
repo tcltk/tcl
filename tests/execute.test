@@ -683,12 +683,12 @@ test execute-6.11 {Tcl_ExprObj: exprcode interp validation} -setup {
 } -constraints testexprlongobj -body {
     set e { [llength {}]+1 }
     set result {}
-    load {} Tcltest child
+    load {} tcl::test child
     interp alias {} e child testexprlongobj
     lappend result [e $e]
     interp delete child
     interp create child
-    load {} Tcltest child
+    load {} tcl::test child
     interp alias {} e child testexprlongobj
     lappend result [e $e]
 } -cleanup {
