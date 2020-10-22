@@ -691,7 +691,7 @@ SocketEventProc(
 	if (infoPtr->lastError) {
 
 	    mask |= TCL_READABLE;
-	    
+
 	} else {
 	    fd_set readFds;
 	    struct timeval timeout;
@@ -1005,7 +1005,7 @@ CreateSocket(
 	 * Register for interest in events in the select mask. Note that this
 	 * automatically places the socket into non-blocking mode.
 	 */
-    
+
 	ioctlsocket(sock, (long) FIONBIO, &flag);
 	SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
 		(LPARAM) infoPtr);
@@ -1056,7 +1056,7 @@ CreateSocket(
 
 	    infoPtr->selectEvents |= FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE;
 	    infoPtr->flags |= SOCKET_ASYNC_CONNECT;
-	    
+
 	    /*
 	     * Free list lock
 	     */
@@ -1257,7 +1257,7 @@ WaitForSocketEvent(
     if ( 0 == (events & FD_CONNECT) ) {
         SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) UNSELECT,
                 (LPARAM) infoPtr);
-    
+
         SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
                 (LPARAM) infoPtr);
     }
@@ -1329,7 +1329,7 @@ Tcl_OpenTcpClient(
 	return NULL;
     }
 
-    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t)infoPtr->socket);
+    sprintf(channelName, "sock%" TCL_Z_MODIFIER "u", (size_t)infoPtr->socket);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
@@ -1394,7 +1394,7 @@ Tcl_MakeTcpClientChannel(
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 	    (WPARAM) SELECT, (LPARAM) infoPtr);
 
-    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t)infoPtr->socket);
+    sprintf(channelName, "sock%" TCL_Z_MODIFIER "u", (size_t)infoPtr->socket);
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto crlf");
@@ -1447,7 +1447,7 @@ Tcl_OpenTcpServer(
     infoPtr->acceptProc = acceptProc;
     infoPtr->acceptProcData = acceptProcData;
 
-    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t)infoPtr->socket);
+    sprintf(channelName, "sock%" TCL_Z_MODIFIER "u", (size_t)infoPtr->socket);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) infoPtr, 0);
@@ -1553,7 +1553,7 @@ TcpAccept(
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 	    (WPARAM) SELECT, (LPARAM) newInfoPtr);
 
-    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t)newInfoPtr->socket);
+    sprintf(channelName, "sock%" TCL_Z_MODIFIER "u", (size_t)newInfoPtr->socket);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
@@ -2619,11 +2619,11 @@ TcpThreadActionProc(
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 	infoPtr->nextPtr = tsdPtr->socketList;
 	tsdPtr->socketList = infoPtr;
-	
+
 	if (infoPtr == tsdPtr->pendingSocketInfo) {
 	    tsdPtr->pendingSocketInfo = NULL;
 	}
-	
+
 	SetEvent(tsdPtr->socketListLock);
 
 	notifyCmd = SELECT;

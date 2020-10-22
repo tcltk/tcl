@@ -967,7 +967,7 @@ TclpOpenFileChannel(
     switch (FileGetType(handle)) {
     case FILE_TYPE_SERIAL:
 	/*
-	 * Natively named serial ports "com1-9", "\\\\.\\comXX" are 
+	 * Natively named serial ports "com1-9", "\\\\.\\comXX" are
 	 * already done with the code above.
 	 * Here we handle all other serial port names.
 	 *
@@ -1356,7 +1356,7 @@ TclWinOpenFileChannel(
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
     infoPtr->dirty = 0;
-    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t)infoPtr);
+    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t)infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
 	    (ClientData) infoPtr, permissions);
@@ -1518,8 +1518,8 @@ FileGetType(
  * NativeIsComPort --
  *
  *	Determines if a path refers to a Windows serial port.
- *	A simple and efficient solution is to use a "name hint" to detect 
- *      COM ports by their filename instead of resorting to a syscall 
+ *	A simple and efficient solution is to use a "name hint" to detect
+ *      COM ports by their filename instead of resorting to a syscall
  *	to detect serialness after the fact.
  *	The following patterns cover common serial port names:
  *	    COM[1-9]:?
@@ -1547,7 +1547,7 @@ NativeIsComPort(
 	 * 1. Look for com[1-9]:?
 	 */
 
-	if ( (len >= 4) && (len <= 5) 
+	if ( (len >= 4) && (len <= 5)
 		&& (_wcsnicmp(p, L"com", 3) == 0) ) {
 	    /*
 	    * The 4th character must be a digit 1..9 optionally followed by a ":"
@@ -1566,7 +1566,7 @@ NativeIsComPort(
 	 * 2. Look for //./com[0-9]+ or \\.\com[0-9]+
 	 */
 
-	if ( (len >= 8) && ( 
+	if ( (len >= 8) && (
 		   (_wcsnicmp(p, L"//./com", 7) == 0)
 		|| (_wcsnicmp(p, L"\\\\.\\com", 7) == 0) ) )
 	{
@@ -1590,7 +1590,7 @@ NativeIsComPort(
 	 * 1. Look for com[1-9]:?
 	 */
 
-	if ( (len >= 4) && (len <= 5) 
+	if ( (len >= 4) && (len <= 5)
 		&& (strnicmp(p, "com", 3) == 0) ) {
 	    /*
 	    * The 4th character must be a digit 1..9 optionally followed by a ":"
@@ -1609,7 +1609,7 @@ NativeIsComPort(
 	 * 2. Look for //./com[0-9]+ or \\.\com[0-9]+
 	 */
 
-	if ( (len >= 8) && ( 
+	if ( (len >= 8) && (
 		   (strnicmp(p, "//./com", 7) == 0)
 		|| (strnicmp(p, "\\\\.\\com", 7) == 0) ) )
 	{
