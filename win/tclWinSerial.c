@@ -1415,7 +1415,7 @@ SerialWriterThread(
  *	Opens or Reopens the serial port with the OVERLAPPED FLAG set
  *
  * Results:
- *	Returns the new handle, or INVALID_HANDLE_VALUE. 
+ *	Returns the new handle, or INVALID_HANDLE_VALUE.
  *	If an existing channel is specified it is closed and reopened.
  *
  * Side effects:
@@ -1502,7 +1502,7 @@ TclWinOpenSerialChannel(
      * are shared between multiple channels (stdin/stdout).
      */
 
-    sprintf(channelName, "file%" TCL_I_MODIFIER "x", (size_t)infoPtr);
+    sprintf(channelName, "file%" TCL_Z_MODIFIER "x", (size_t)infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
 	    (ClientData) infoPtr, permissions);
