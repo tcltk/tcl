@@ -4817,6 +4817,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #define TclNewIndexObj(objPtr, w) \
     do {						\
+	size_t _w = (w);		\
 	TclIncrObjsAllocated();				\
 	TclAllocObjStorage(objPtr);			\
 	(objPtr)->refCount = 0;				\
@@ -4852,7 +4853,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     (objPtr) = Tcl_NewWideIntObj(w)
 
 #define TclNewIndexObj(objPtr, w) \
-    (objPtr) = (w == TCL_INDEX_NONE) ? Tcl_NewObj() : Tcl_NewWideIntObj(w)
+    (objPtr) = ((w) == TCL_INDEX_NONE) ? Tcl_NewObj() : Tcl_NewWideIntObj(w)
 
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)

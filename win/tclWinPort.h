@@ -18,6 +18,10 @@
 /* See [Bug 3354324]: file mtime sets wrong time */
 #   define __MINGW_USE_VC2005_COMPAT
 #endif
+#if !defined(__USE_MINGW_ANSI_STDIO)
+/* See [Bug c975939973]: Usage of gnu_printf in latest mingw-w64 */
+#   define __USE_MINGW_ANSI_STDIO 0
+#endif
 #if defined(_MSC_VER) && defined(_WIN64) && !defined(STATIC_BUILD) \
 	&& !defined(MP_32BIT) && !defined(MP_64BIT)
 #   define MP_64BIT
