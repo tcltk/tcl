@@ -267,7 +267,7 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 		    # of the package file is the last element in the list.
 
 		    package ifneeded $pkgname $pkgversion \
-			"[::list package provide $pkgname $pkgversion];[::list source -encoding utf-8 $file]"
+			"[::list package provide $pkgname $pkgversion];[::list source $file]"
 
 		    # We abort in this unknown handler only if we got a
 		    # satisfying candidate for the requested package.
