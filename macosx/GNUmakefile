@@ -32,6 +32,18 @@ MANDIR			?= ${PREFIX}/man
 # set to non-empty value to install manpages in addition to html help:
 INSTALL_MANPAGES	?=
 
+# Checks and overrides for subframework builds
+ifeq (${SUBFRAMEWORK},1)
+ifeq (${DYLIB_INSTALL_DIR},)
+	@echo "Cannot install subframework with empty DYLIB_INSTALL_DIR !" && false
+endif
+ifeq (${DESTDIR},)
+	@echo "Cannot install subframework with empty DESTDIR !" && false
+endif
+override BUILD_DIR = ${DESTDIR}/build
+override INSTALL_PATH = /Frameworks
+endif
+
 #-------------------------------------------------------------------------------------------------------
 # meta targets
 
@@ -149,9 +161,6 @@ endif
 install-${PROJECT}: build-${PROJECT}
 ifeq (${EMBEDDED_BUILD}_${INSTALL_ROOT},1_)
 	@echo "Cannot install-embedded with empty INSTALL_ROOT !" && false
-endif
-ifeq (${SUBFRAMEWORK}_${DYLIB_INSTALL_DIR},1_)
-	@echo "Cannot install-subframework with empty DYLIB_INSTALL_DIR !" && false
 endif
 ifeq (${EMBEDDED_BUILD},1)
 	@rm -rf "${INSTALL_ROOT}${LIBDIR}/Tcl.framework"
