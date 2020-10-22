@@ -2220,14 +2220,14 @@ extern void *TclStubCall(void *arg);
     TclInitStubTable(((const char *(*)(const char *))TclStubCall((void *)2))(argv0))
 #if !defined(_WIN32) || !defined(UNICODE)
 #define Tcl_MainEx(argc, argv, appInitProc, interp) \
-	(void)((void(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	(void)((const char *(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
 	TclStubCall((void *)3))(argc, argv, appInitProc, interp)
 #endif
 #define Tcl_MainExW(argc, argv, appInitProc, interp) \
 	(void)((const char *(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
 	TclStubCall((void *)4))(argc, argv, appInitProc, interp)
 #define Tcl_StaticPackage(interp, pkgName, initProc, safeInitProc) \
-	((const char *(*)(Tcl_Interp *, const char *, Tcl_PackageInitProc *, Tcl_PackageInitProc *)) \
+	(void)((const char *(*)(Tcl_Interp *, const char *, Tcl_PackageInitProc *, Tcl_PackageInitProc *)) \
 	TclStubCall((void *)5))(interp, pkgName, initProc, safeInitProc)
 #define TclZipfs_AppHook(argcp, argvp) \
 	TclInitStubTable(((const char *(*)(int *, void *))TclStubCall((void *)6))(argcp, argvp))
