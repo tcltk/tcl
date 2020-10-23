@@ -414,7 +414,7 @@ caller (with a reference count of 0).
 the encoding identified by \fIencodingName\fR and evaluates
 its contents as a Tcl script. It returns the same information as
 \fBTcl_EvalObjEx\fR.
-If \fIencodingName\fR is NULL, the system encoding is used for
+If \fIencodingName\fR is NULL, the utf-8 encoding is used for
 reading the file contents.
 If the file could not be read then a Tcl error is returned to describe
 why the file could not be read.
@@ -430,7 +430,7 @@ or
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 \fBTcl_FSEvalFile\fR is a simpler version of
-\fBTcl_FSEvalFileEx\fR that always uses the system encoding
+\fBTcl_FSEvalFileEx\fR that always uses the utf-8 encoding
 when reading the file.
 .PP
 \fBTcl_FSLoadFile\fR dynamically loads a binary code file into memory and
