@@ -92,7 +92,7 @@ typedef struct {
  */
 
 #ifndef TCL_DEFAULT_ENCODING
-#define TCL_DEFAULT_ENCODING "iso8859-1"
+#define TCL_DEFAULT_ENCODING "utf-8"
 #endif
 
 /*

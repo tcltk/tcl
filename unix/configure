@@ -1430,7 +1430,7 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values (default:
-                          iso8859-1)
+                          utf-8)
   --with-system-libtommath
                           use external libtommath (default: true if available,
                           false otherwise)
@@ -3982,7 +3982,7 @@ _ACEOF
 
     else
 
-$as_echo "#define TCL_CFGVAL_ENCODING \"iso8859-1\"" >>confdefs.h
+$as_echo "#define TCL_CFGVAL_ENCODING \"utf-8\"" >>confdefs.h
 
     fi
 
@@ -9737,9 +9737,6 @@ done
     fi
 
 $as_echo "#define USE_VFORK 1" >>confdefs.h
-
-
-$as_echo "#define TCL_DEFAULT_ENCODING \"utf-8\"" >>confdefs.h
 
 
 $as_echo "#define TCL_LOAD_FROM_MEMORY 1" >>confdefs.h

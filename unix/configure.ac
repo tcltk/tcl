@@ -606,8 +606,6 @@ if test "`uname -s`" = "Darwin" ; then
 	AC_CHECK_FUNCS(OSSpinLockLock)
     fi
     AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
-    AC_DEFINE(TCL_DEFAULT_ENCODING, "utf-8",
-	[Are we to override what our default encoding is?])
     AC_DEFINE(TCL_LOAD_FROM_MEMORY, 1,
 	[Can this platform load code from memory?])
     AC_DEFINE(TCL_WIDE_CLICKS, 1,
