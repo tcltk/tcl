@@ -62,7 +62,7 @@ TclStubCall(void *arg)
     static void *stubFn[] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL};
     unsigned index = PTR2UINT(arg);
 
-    if (index > sizeof(PROCNAME)/sizeof(PROCNAME[0])) {
+    if (index >= sizeof(PROCNAME)/sizeof(PROCNAME[0])) {
 	/* Any other value means Tcl_SetPanicProc() with non-null panicProc */
 	index = 0;
     }
