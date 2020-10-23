@@ -21,22 +21,32 @@ MODULE_SCOPE void *tclStubsHandle;
  *
  * TclStubCall --
  *
- *	Load the Tcl core dynamically, version "9.0" (or higher, in future versions)
+ *	Load the Tcl core dynamically, version "9.0" (or higher, in future versions).
  *
  * Results:
- *	Outputs a function returning the value of the "version" argument or NULL.
+ *	Returns a function from the Tcl dynamic library or a function
+ *	returning NULL if that function cannot be found. See PROCNAME table.
+ *
+ *	The functions Tcl_MainEx and Tcl_MainExW never return.
+ *	Tcl_GetMemoryInfo and Tcl_StaticPackage return (void) and
+ *	Tcl_SetExitProc returns its previous exitProc. This means that
+ *	those 5 functions cannot be used to initialize the stub-table,
+ *	only the first 4 functions in the table can do that.
  *
  *----------------------------------------------------------------------
  */
 
+/* Table containing which function will be returned, depending on the "arg" */
 static const char PROCNAME[][24] = {
-    "_Tcl_SetPanicProc",
-    "_Tcl_InitSubsystems",
-    "_Tcl_FindExecutable",
-    "_Tcl_MainEx",
-    "_Tcl_MainExW",
-    "_Tcl_StaticPackage",
-    "_TclZipfs_AppHook"
+    "_Tcl_SetPanicProc", /* Default, whenever "arg" <= 0 or "arg" > 8 */
+    "_Tcl_InitSubsystems", /* "arg" == (void *)1 */
+    "_Tcl_FindExecutable", /* "arg" == (void *)2 */
+    "_TclZipfs_AppHook", /* "arg" == (void *)3 */
+    "_Tcl_MainExW", /* "arg" == (void *)4 */
+    "_Tcl_MainEx", /* "arg" == (void *)5 */
+    "_Tcl_StaticPackage", /* "arg" == (void *)6 */
+    "_Tcl_SetExitProc", /* "arg" == (void *)7 */
+    "_Tcl_GetMemoryInfo" /* "arg" == (void *)8 */
 };
 
 MODULE_SCOPE const void *nullVersionProc(void) {
@@ -52,7 +62,7 @@ TclStubCall(void *arg)
     static void *stubFn[] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL};
     unsigned index = PTR2UINT(arg);
 
-    if (index > 6) {
+    if (index > sizeof(PROCNAME)/sizeof(PROCNAME[0])) {
 	/* Any other value means Tcl_SetPanicProc() with non-null panicProc */
 	index = 0;
     }
