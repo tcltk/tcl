@@ -36,11 +36,7 @@
 #include "tclInt.h"
 
 #ifndef TCL_CFGVAL_ENCODING
-#   ifdef _WIN32
-#	define TCL_CFGVAL_ENCODING "cp1252"
-#   else
-#	define TCL_CFGVAL_ENCODING "iso8859-1"
-#   endif
+#   define TCL_CFGVAL_ENCODING "utf-8"
 #endif
 
 /*

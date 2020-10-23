@@ -91,7 +91,7 @@ How To Compile And Install Tcl:
 				for descriptions of the probes made available,
 				see http://wiki.tcl.tk/DTrace for more details
 	--with-encoding=ENCODING Specifies the encoding for compile-time
-				configuration values. Defaults to iso8859-1,
+				configuration values. Defaults to utf-8,
 				which is also sufficient for ASCII.
 	--with-tzdata=FLAG	Specifies whether to install timezone data. By
 				default, the configure script tries to detect
