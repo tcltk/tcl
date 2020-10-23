@@ -35,7 +35,7 @@ proc ::practcl::_pkgindex_directory {path} {
       # Read the file, and override assumptions as needed
       ###
       set fin [open $file r]
-      fconfigure $fin -eofchar \032
+      fconfigure $fin -encoding utf-8 -eofchar \032
       set dat [read $fin]
       close $fin
       # Look for a teapot style Package statement
@@ -59,7 +59,7 @@ proc ::practcl::_pkgindex_directory {path} {
     foreach file [glob -nocomplain $path/*.tcl] {
       if { [file tail $file] == "version_info.tcl" } continue
       set fin [open $file r]
-      fconfigure $fin -eofchar \032
+      fconfigure $fin -encoding utf-8 -eofchar \032
       set dat [read $fin]
       close $fin
       if {![regexp "package provide" $dat]} continue
@@ -79,7 +79,7 @@ proc ::practcl::_pkgindex_directory {path} {
     return $buffer
   }
   set fin [open $pkgidxfile r]
-  fconfigure $fin -eofchar \032
+  fconfigure $fin -encoding utf-8 -eofchar \032
   set dat [read $fin]
   close $fin
   set trace 0
