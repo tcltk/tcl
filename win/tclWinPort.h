@@ -19,6 +19,10 @@
 /* See [Bug 3354324]: file mtime sets wrong time */
 #   define __MINGW_USE_VC2005_COMPAT
 #endif
+#if !defined(__USE_MINGW_ANSI_STDIO)
+/* See [Bug c975939973]: Usage of gnu_printf in latest mingw-w64 */
+#   define __USE_MINGW_ANSI_STDIO 0
+#endif
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -33,7 +37,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 /*
  * Ask for the winsock function typedefs, also.
  */
-#define INCL_WINSOCK_API_TYPEDEFS   1
+#ifndef INCL_WINSOCK_API_TYPEDEFS
+#   define INCL_WINSOCK_API_TYPEDEFS   1
+#endif
 #include <winsock2.h>
 
 #ifdef CHECK_UNICODE_CALLS
@@ -209,7 +215,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * defined in header files above.
  */
 
-#if TCL_UNION_WAIT
+#ifdef TCL_UNION_WAIT
 #   define WAIT_STATUS_TYPE union wait
 #else
 #   define WAIT_STATUS_TYPE int
@@ -337,10 +343,10 @@ typedef DWORD_PTR * PDWORD_PTR;
  * Define pid_t and uid_t if they're not already defined.
  */
 
-#if ! TCL_PID_T
+#if !defined(TCL_PID_T)
 #   define pid_t int
 #endif /* !TCL_PID_T */
-#if ! TCL_UID_T
+#if !defined(TCL_UID_T)
 #   define uid_t int
 #endif /* !TCL_UID_T */
 

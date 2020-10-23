@@ -45,6 +45,8 @@
  *          SocketCheckProc().
  */
 
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include "tclWinInt.h"
 
 #ifdef _MSC_VER
@@ -187,8 +189,8 @@ static WNDCLASS windowClass;
 static SocketInfo *	CreateSocket(Tcl_Interp *interp, int port,
 			    const char *host, int server, const char *myaddr,
 			    int myport, int async);
-static int		CreateSocketAddress(LPSOCKADDR_IN sockaddrPtr,
-			    const char *host, int port);
+static int		CreateSocketAddress(struct sockaddr_in *sockaddrPtr,
+			    const char *host, int port, int willBind);
 static void		InitSockets(void);
 static SocketInfo *	NewSocketInfo(SOCKET socket);
 static void		SocketExitHandler(ClientData clientData);
@@ -689,7 +691,7 @@ SocketEventProc(
 	if (infoPtr->lastError) {
 
 	    mask |= TCL_READABLE;
-	    
+
 	} else {
 	    fd_set readFds;
 	    struct timeval timeout;
@@ -917,8 +919,8 @@ CreateSocket(
 				 * asynchronously. */
 {
     u_long flag = 1;		/* Indicates nonblocking mode. */
-    SOCKADDR_IN sockaddr;	/* Socket address */
-    SOCKADDR_IN mysockaddr;	/* Socket address for client */
+    struct sockaddr_in sockaddr;   /* Socket address */
+    struct sockaddr_in mysockaddr; /* Socket address for client */
     SOCKET sock = INVALID_SOCKET;
     SocketInfo *infoPtr=NULL;	/* The returned value. */
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
@@ -934,11 +936,11 @@ CreateSocket(
 	return NULL;
     }
 
-    if (!CreateSocketAddress(&sockaddr, host, port)) {
+    if (!CreateSocketAddress(&sockaddr, host, port, server)) {
 	goto error;
     }
     if ((myaddr != NULL || myport != 0) &&
-	    !CreateSocketAddress(&mysockaddr, myaddr, myport)) {
+	    !CreateSocketAddress(&mysockaddr, myaddr, myport, 1)) {
 	goto error;
     }
 
@@ -1003,7 +1005,7 @@ CreateSocket(
 	 * Register for interest in events in the select mask. Note that this
 	 * automatically places the socket into non-blocking mode.
 	 */
-    
+
 	ioctlsocket(sock, (long) FIONBIO, &flag);
 	SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
 		(LPARAM) infoPtr);
@@ -1054,7 +1056,7 @@ CreateSocket(
 
 	    infoPtr->selectEvents |= FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE;
 	    infoPtr->flags |= SOCKET_ASYNC_CONNECT;
-	    
+
 	    /*
 	     * Free list lock
 	     */
@@ -1149,55 +1151,67 @@ static int
 CreateSocketAddress(
     LPSOCKADDR_IN sockaddrPtr,	/* Socket address */
     const char *host,		/* Host. NULL implies INADDR_ANY */
-    int port)			/* Port number */
+    int port,			/* Port number */
+    int willBind)		/* Is this an address to bind() to or
+				 * to connect() to? */
 {
-    struct hostent *hostent;	/* Host database entry */
-    struct in_addr addr;	/* For 64/32 bit madness */
+    struct addrinfo hints, *resPtr = NULL;
+    char *native;
+    Tcl_DString ds;
+    int result;
+
+    if (host == NULL) {
+	sockaddrPtr->sin_family = AF_INET;
+	sockaddrPtr->sin_addr.s_addr = INADDR_ANY;
+    addPort:
+	sockaddrPtr->sin_port = htons((unsigned short) (port & 0xFFFF));
+	return 1;
+    }
+
+    (void) memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    if (willBind) {
+	hints.ai_flags |= AI_PASSIVE;
+    }
 
     /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
+     * Note that getaddrinfo() *is* thread-safe. If a platform doesn't get
+     * that right, it shouldn't use this part of the code.
      */
 
-    if (!SocketsEnabled()) {
-	Tcl_SetErrno(EFAULT);
+    native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
+    result = getaddrinfo(native, NULL, &hints, &resPtr);
+    Tcl_DStringFree(&ds);
+    if (result == 0) {
+	memcpy(sockaddrPtr, resPtr->ai_addr, sizeof(struct sockaddr_in));
+	freeaddrinfo(resPtr);
+	goto addPort;
+    }
+
+    /*
+     * errno corresponding result ...
+     */
+
+    switch (result) {
+    case EAI_NONAME:
+    case EAI_SERVICE:
+#if defined(EAI_ADDRFAMILY) && EAI_ADDRFAMILY != EAI_NONAME
+    case EAI_ADDRFAMILY:
+#endif
+#if defined(EAI_NODATA) && EAI_NODATA != EAI_NONAME
+    case EAI_NODATA:
+#endif
+#ifdef	EHOSTUNREACH
+	Tcl_SetErrno(EHOSTUNREACH);
+	return 0;
+#endif
+    default:
+#ifdef ENXIO
+	Tcl_SetErrno(ENXIO);
+#endif
 	return 0;
     }
-
-    ZeroMemory(sockaddrPtr, sizeof(SOCKADDR_IN));
-    sockaddrPtr->sin_family = AF_INET;
-    sockaddrPtr->sin_port = htons((unsigned short) (port & 0xFFFF));
-    if (host == NULL) {
-	addr.s_addr = INADDR_ANY;
-    } else {
-	addr.s_addr = inet_addr(host);
-	if (addr.s_addr == INADDR_NONE) {
-	    hostent = gethostbyname(host);
-	    if (hostent != NULL) {
-		memcpy(&addr, hostent->h_addr, (size_t) hostent->h_length);
-	    } else {
-#ifdef	EHOSTUNREACH
-		Tcl_SetErrno(EHOSTUNREACH);
-#else
-#ifdef ENXIO
-		Tcl_SetErrno(ENXIO);
-#endif
-#endif
-		return 0;	/* Error. */
-	    }
-	}
-    }
-
-    /*
-     * NOTE: On 64 bit machines the assignment below is rumored to not do the
-     * right thing. Please report errors related to this if you observe
-     * incorrect behavior on 64 bit machines such as DEC Alphas. Should we
-     * modify this code to do an explicit memcpy?
-     */
-
-    sockaddrPtr->sin_addr.s_addr = addr.s_addr;
-    return 1;			/* Success. */
 }
 
 /*
@@ -1243,7 +1257,7 @@ WaitForSocketEvent(
     if ( 0 == (events & FD_CONNECT) ) {
         SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) UNSELECT,
                 (LPARAM) infoPtr);
-    
+
         SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
                 (LPARAM) infoPtr);
     }
@@ -1315,7 +1329,7 @@ Tcl_OpenTcpClient(
 	return NULL;
     }
 
-    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t)infoPtr->socket);
+    sprintf(channelName, "sock%" TCL_Z_MODIFIER "u", (size_t)infoPtr->socket);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
@@ -1380,7 +1394,7 @@ Tcl_MakeTcpClientChannel(
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 	    (WPARAM) SELECT, (LPARAM) infoPtr);
 
-    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t)infoPtr->socket);
+    sprintf(channelName, "sock%" TCL_Z_MODIFIER "u", (size_t)infoPtr->socket);
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto crlf");
@@ -1433,7 +1447,7 @@ Tcl_OpenTcpServer(
     infoPtr->acceptProc = acceptProc;
     infoPtr->acceptProcData = acceptProcData;
 
-    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t)infoPtr->socket);
+    sprintf(channelName, "sock%" TCL_Z_MODIFIER "u", (size_t)infoPtr->socket);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) infoPtr, 0);
@@ -1539,7 +1553,7 @@ TcpAccept(
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 	    (WPARAM) SELECT, (LPARAM) newInfoPtr);
 
-    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t)newInfoPtr->socket);
+    sprintf(channelName, "sock%" TCL_Z_MODIFIER "u", (size_t)newInfoPtr->socket);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
@@ -2605,11 +2619,11 @@ TcpThreadActionProc(
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 	infoPtr->nextPtr = tsdPtr->socketList;
 	tsdPtr->socketList = infoPtr;
-	
+
 	if (infoPtr == tsdPtr->pendingSocketInfo) {
 	    tsdPtr->pendingSocketInfo = NULL;
 	}
-	
+
 	SetEvent(tsdPtr->socketListLock);
 
 	notifyCmd = SELECT;

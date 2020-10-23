@@ -14715,6 +14715,9 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <string.h>
 int main() {
     extern int strstr();
     exit(strstr("\0test", "test") ? 1 : 0);
@@ -14882,6 +14885,9 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <string.h>
 int main() {
     extern int strtoul();
     char *term, *string = "0";
@@ -15049,6 +15055,9 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <string.h>
 int main() {
     extern double strtod();
     char *term, *string = " +69";
@@ -15220,6 +15229,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
+		#include <stdlib.h>
 		extern double strtod();
 		int main() {
 		    char *infString="Inf", *nanString="NaN", *spaceString=" ";
@@ -16607,6 +16617,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
 	#include <stdlib.h>
+	#include <string.h>
 	#define OURVAR "havecopy=yes"
 	int main (int argc, char *argv[])
 	{

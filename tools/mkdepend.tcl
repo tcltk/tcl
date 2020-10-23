@@ -10,20 +10,20 @@
 # above copyright notice and the following two paragraphs appear in
 # all copies of this software.
 #
-# IN NO EVENT SHALL THE AUTHOR BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT, 
-# SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OF 
-# THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF THE AUTHOR HAS BEEN ADVISED 
+# IN NO EVENT SHALL THE AUTHOR BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
+# SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OF
+# THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF THE AUTHOR HAS BEEN ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# THE AUTHOR SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING, BUT NOT 
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
-# PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS" 
+# THE AUTHOR SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS"
 # BASIS, AND THE AUTHOR HAS NO OBLIGATION TO PROVIDE  MAINTENANCE, SUPPORT,
 # UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 #==============================================================================
 #
 # Modified heavily by David Gravereaux <davygrvy@pobox.com> about 9/17/2006.
-# Original can be found @ 
+# Original can be found @
 #	http://web.archive.org/web/20070616205924/http://www.doc.ic.ac.uk/~np2/software/mkdepend.html
 #==============================================================================
 
@@ -88,7 +88,7 @@ proc readDepends {chan} {
     set line ""
     array set depends {}
 
-    while {[gets $chan line] != -1} {
+    while {[gets $chan line] >= 0} {
         if {[regexp {^#line [0-9]+ \"(.*)\"$} $line dummy fname] != 0} {
 	    set fname [file normalize $fname]
             if {![info exists target]} {
@@ -98,7 +98,7 @@ proc readDepends {chan} {
             } else {
 		# don't include ourselves as a dependency of ourself.
 		if {![string compare $fname $target]} {continue}
-		# store in an array so multiple occurances are not counted.
+		# store in an array so multiple occurrences are not counted.
                 set depends($target|$fname) ""
             }
         }

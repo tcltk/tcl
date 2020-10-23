@@ -543,7 +543,7 @@ TclpGetCStackParams(
     if (!tsdPtr->stackBound
 	|| ((UINT_PTR)&tsdPtr < (UINT_PTR)tsdPtr->stackBound)) {
 
-	/* 
+	/*
 	 * Either we haven't determined the stack bound in this thread,
 	 * or else we've overflowed the bound that we previously
 	 * determined.  We need to find a new stack bound from

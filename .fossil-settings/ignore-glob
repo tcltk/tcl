@@ -1,9 +1,12 @@
 *.a
 *.dll
 *.dylib
+*.dylib.E
 *.exe
 *.exp
+*.la
 *.lib
+*.lo
 *.o
 *.obj
 *.pdb
@@ -11,6 +14,7 @@
 *.sl
 *.so
 */Makefile
+*/autom4te.cache
 */config.cache
 */config.log
 */config.status
@@ -40,10 +44,19 @@ libtommath/etc/*
 libtommath/demo/*
 libtommath/*.out
 libtommath/*.tex
+macosx/configure
 unix/autoMkindex.tcl
 unix/dltest.marker
+unix/dltest/*.bundle
+unix/dltest/*.dll
+unix/dltest/*.dylib
+unix/dltest/*.o
+unix/dltest/*.sl
+unix/dltest/*.so
 unix/tcl.pc
 unix/tclIndex
+unix/Tcl-Info.plist
+unix/Tclsh-Info.plist
 unix/pkgs/*
 win/Debug*
 win/Release*
@@ -51,4 +64,5 @@ win/*.manifest
 win/pkgs/*
 win/coffbase.txt
 win/tcl.hpj
+win/nmakehlp.out
 win/nmhlp-out.txt
