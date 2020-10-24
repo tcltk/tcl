@@ -112,7 +112,7 @@ if {[interp issafe]} {
 	foreach cmd {add format scan} {
 	    proc ::tcl::clock::$cmd args {
 		variable TclLibDir
-		source -encoding utf-8 [file join $TclLibDir clock.tcl]
+		source [file join $TclLibDir clock.tcl]
 		return [uplevel 1 [info level 0]]
 	    }
 	}
@@ -245,7 +245,7 @@ proc unknown args {
 		set errInfo [string range $errInfo 0 $last-1]
 		set tail "\"$cinfo\""
 		set last [string last $tail $errInfo]
-		if {$last + [string length $tail] != [string length $errInfo]} {
+		if {$last < 0 || $last + [string length $tail] != [string length $errInfo]} {
 		    return -code error -errorcode $errCode \
 			    -errorinfo $errInfo $msg
 		}
@@ -442,6 +442,7 @@ proc auto_load_index {} {
 	    continue
 	} else {
 	    set error [catch {
+		fconfigure $f -eofchar \032
 		set id [gets $f]
 		if {$id eq "# Tcl autoload index file, version 2.0"} {
 		    eval [read $f]
@@ -742,7 +743,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    }
 	}
     } else {
-	if {[string first $nsrc $ndest] != -1} {
+	if {[string first $nsrc $ndest] >= 0} {
 	    set srclen [expr {[llength [file split $nsrc]] - 1}]
 	    set ndest [lindex [file split $ndest] $srclen]
 	    if {$ndest eq [file tail $nsrc]} {

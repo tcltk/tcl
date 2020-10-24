@@ -17,7 +17,7 @@ if {![llength [info commands case]]} {
 }
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 

@@ -119,7 +119,7 @@ const char tclCharTypeTable[] = {
  * Prototypes for local functions defined in this file:
  */
 
-static inline int	CommandComplete(const char *script, int numBytes);
+static int	CommandComplete(const char *script, int numBytes);
 static int		ParseComment(const char *src, int numBytes,
 			    Tcl_Parse *parsePtr);
 static int		ParseTokens(const char *src, int numBytes, int mask,
@@ -2104,7 +2104,7 @@ TclSubstTokens(
 				 * command, which is refered to by 'script'.
 				 * The 'clNextOuter' refers to the current
 				 * entry in the table of continuation lines in
-				 * this "master script", and the character
+				 * this "main script", and the character
 				 * offsets are relative to the 'outerScript'
 				 * as well.
 				 *
@@ -2396,7 +2396,7 @@ TclSubstTokens(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static int
 CommandComplete(
     const char *script,		/* Script to check. */
     int numBytes)		/* Number of bytes in script. */

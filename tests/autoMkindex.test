@@ -10,7 +10,7 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -146,10 +146,10 @@ test autoMkindex-1.3 {examine tclIndex} -setup {
 
 test autoMkindex-2.1 {commands on the autoload path can be imported} -setup {
     file delete tclIndex
-    interp create slave
+    interp create child
 } -body {
     auto_mkindex . autoMkindex.tcl
-    slave eval {
+    child eval {
         namespace eval blt {}
         set auto_path [linsert $auto_path 0 .]
         set info [list [catch {namespace import buried::*} result] $result]
@@ -159,7 +159,7 @@ test autoMkindex-2.1 {commands on the autoload path can be imported} -setup {
         return $info
     }
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result "0 {} pub_one ::buried::pub_one pub_two ::buried::pub_two"
 
 # Test auto_mkindex hooks
@@ -335,14 +335,14 @@ test autoMkindex-5.2 {correctly locate auto loaded procs with []} -setup {
 	proc {[magic mojo proc]} {} {}
     } [file join pkg magicchar2.tcl]
     set result {}
-    interp create slave
+    interp create child
 } -body {
     auto_mkindex . pkg/magicchar2.tcl
-    # Make a slave interp to test the autoloading
-    slave eval {lappend auto_path [pwd]}
-    slave eval {catch {{[magic mojo proc]}}}
+    # Make a child interp to test the autoloading
+    child eval {lappend auto_path [pwd]}
+    child eval {catch {{[magic mojo proc]}}}
 } -cleanup {
-    interp delete slave
+    interp delete child
     removeFile [file join pkg magicchar2.tcl]
     removeDirectory pkg
 } -result 0

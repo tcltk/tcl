@@ -14,11 +14,16 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
 }
 
 namespace eval ::tcl::test::io {
-    namespace import ::tcltest::*
+
+    if {"::tcltest" ni [namespace children]} {
+	package require tcltest 2.5
+	namespace import -force ::tcltest::*
+    }
 
     variable umaskValue
     variable path
@@ -43,6 +48,7 @@ namespace eval ::tcl::test::io {
     testConstraint testmainthread   [llength [info commands testmainthread]]
     testConstraint testservicemode  [llength [info commands testservicemode]]
     testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+    testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
 
     # You need a *very* special environment to do some tests.  In particular,
     # many file systems do not support large-files...
@@ -5720,7 +5726,7 @@ test chan-io-45.3 {DeleteFileEvent, cleanup on chan close} {fileevent} {
 
 # Execute these tests only if the "testfevent" command is present.
 
-test chan-io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileevent} {
+test chan-io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileevent notOSX} {
     testfevent create
     set script "set f \[[list open $path(foo) r]]\n"
     append script {
@@ -6379,12 +6385,16 @@ test chan-io-50.1 {testing handler deletion} -setup {
     set f [open $path(test1) w]
     chan close $f
     set f [open $path(test1) r]
+    variable z not_called
+    set timer [after 50 lappend z timeout]
+    testservicemode 0
     testchannelevent $f add readable [namespace code {
 	variable z called
 	testchannelevent $f delete 0
     }]
-    variable z not_called
-    update
+    testservicemode 1
+    vwait z
+    after cancel $timer
     set z
 } -cleanup {
     chan close $f
@@ -6474,7 +6484,7 @@ test chan-io-50.5 {testing handler deletion vs reentrant calls} -setup {
     set f [open $path(test1) w]
     chan close $f
     update
-} -constraints {testchannelevent testservicemode} -body {
+} -constraints {testchannelevent testservicemode notOSX} -body {
     proc notcalled {f} {
 	variable z
 	lappend z "notcalled was called!! $f"

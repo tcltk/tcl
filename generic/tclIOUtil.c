@@ -1684,7 +1684,7 @@ Tcl_FSEvalFileEx(
 				 * Tilde-substitution is performed on this
 				 * pathname. */
     const char *encodingName)	/* Either the name of an encoding or NULL to
-				   use the system encoding. */
+				   use the utf-8 encoding. */
 {
     int length, result = TCL_ERROR;
     Tcl_StatBuf statBuf;
@@ -1722,19 +1722,19 @@ Tcl_FSEvalFileEx(
 
     /*
      * If the encoding is specified, set the channel to that encoding.
-     * Otherwise don't touch it, leaving things up to the system encoding.  If
-     * the encoding is unknown report an error.
+     * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
-    if (encodingName != NULL) {
-	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
-		!= TCL_OK) {
-	    Tcl_Close(interp,chan);
-	    return result;
-	}
+    if (encodingName == NULL) {
+	encodingName = "utf-8";
+    }
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+	    != TCL_OK) {
+	Tcl_Close(interp,chan);
+	return result;
     }
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
 
     /*
@@ -1821,7 +1821,7 @@ TclNREvalFile(
 				 * evaluate. Tilde-substitution is performed on
 				 * this pathname. */
     const char *encodingName)	/* The name of an encoding to use, or NULL to
-				 *  use the system encoding. */
+				 *  use the utf-8 encoding. */
 {
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile, *objPtr;
@@ -1858,19 +1858,19 @@ TclNREvalFile(
 
     /*
      * If the encoding is specified, set the channel to that encoding.
-     * Otherwise don't touch it, leaving things up to the system encoding.  If
-     * the encoding is unknown report an error.
+     * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
-    if (encodingName != NULL) {
-	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
-		!= TCL_OK) {
-	    Tcl_Close(interp,chan);
-	    return TCL_ERROR;
-	}
+    if (encodingName == NULL) {
+	encodingName = "utf-8";
+    }
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+	    != TCL_OK) {
+	Tcl_Close(interp, chan);
+	return TCL_ERROR;
     }
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
 
     /*
@@ -2697,7 +2697,7 @@ Tcl_FSGetCwd(
 		 * always be in the 'else' branch below which is simpler.
 		 */
 
-		ClientData cd = (ClientData) Tcl_FSGetNativePath(norm);
+		void *cd = (void *) Tcl_FSGetNativePath(norm);
 
 		FsUpdateCwd(norm, TclNativeDupInternalRep(cd));
 		Tcl_DecrRefCount(norm);
@@ -3173,7 +3173,7 @@ Tcl_LoadFile(
     }
 
     if (fsPtr->loadFileProc != NULL) {
-	int retVal = ((Tcl_FSLoadFileProc2 *)(void *)(fsPtr->loadFileProc))
+	retVal = ((Tcl_FSLoadFileProc2 *)(void *)(fsPtr->loadFileProc))
 		(interp, pathPtr, handlePtr, &unloadProcPtr, flags);
 
 	if (retVal == TCL_OK) {
@@ -3765,7 +3765,7 @@ Tcl_Obj *
 Tcl_FSListVolumes(void)
 {
     FilesystemRecord *fsRecPtr;
-    Tcl_Obj *resultPtr = Tcl_NewObj();
+    Tcl_Obj *resultPtr;
 
     /*
      * Call each "listVolumes" function of each registered filesystem in
@@ -3773,6 +3773,7 @@ Tcl_FSListVolumes(void)
      * has succeeded.
      */
 
+    TclNewObj(resultPtr);
     fsRecPtr = FsGetFirstFilesystem();
     Claim();
     while (fsRecPtr != NULL) {
@@ -3832,7 +3833,7 @@ FsListMounts(
 	if (fsRecPtr->fsPtr != &tclNativeFilesystem &&
 		fsRecPtr->fsPtr->matchInDirectoryProc != NULL) {
 	    if (resultPtr == NULL) {
-		resultPtr = Tcl_NewObj();
+		TclNewObj(resultPtr);
 	    }
 	    fsRecPtr->fsPtr->matchInDirectoryProc(NULL, resultPtr, pathPtr,
 		    pattern, &mountsOnly);
@@ -3903,7 +3904,7 @@ Tcl_FSSplitPath(
      * For example, 'ftp://' is a valid drive name.
      */
 
-    result = Tcl_NewObj();
+    TclNewObj(result);
     p = Tcl_GetString(pathPtr);
     Tcl_ListObjAppendElement(NULL, result,
 	    Tcl_NewStringObj(p, driveNameLength));
@@ -4488,7 +4489,7 @@ Tcl_FSGetFileSystemForPath(
 	return NULL;
     }
 
-    /* Start with an up-to-date copy of the master filesystem. */
+    /* Start with an up-to-date copy of the filesystem. */
     fsRecPtr = FsGetFirstFilesystem();
     Claim();
 

@@ -632,7 +632,8 @@ TclCreateProc(
 	     * local variables for the argument.
 	     */
 
-	    localPtr = (CompiledLocal *)ckalloc(offsetof(CompiledLocal, name) + fieldValues[0]->length +1);
+	    localPtr = (CompiledLocal *)ckalloc(
+		    offsetof(CompiledLocal, name) + fieldValues[0]->length + 1);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -909,9 +910,28 @@ TclNRUplevelObjCmd(
     Tcl_Obj *objPtr;
 
     if (objc < 2) {
+    /* to do
+    *    simplify things by interpreting the argument as a command when there
+    *    is only one argument.  This requires a TIP since currently a single
+    *    argument is interpreted as a level indicator if possible.
+    */
     uplevelSyntax:
 	Tcl_WrongNumArgs(interp, 1, objv, "?level? command ?arg ...?");
 	return TCL_ERROR;
+    } else if (!TclHasStringRep(objv[1]) && objc == 2) {
+	int status ,llength;
+	status = Tcl_ListObjLength(interp, objv[1], &llength);
+	if (status == TCL_OK && llength > 1) {
+	    /* the first argument can't interpreted as a level. Avoid
+	     * generating a string representation of the script. */
+	    result = TclGetFrame(interp, "1", &framePtr);
+	    if (result == -1) {
+		return TCL_ERROR;
+	    }
+	    objc -= 1;
+	    objv += 1;
+	    goto havelevel;
+	}
     }
 
     /*
@@ -927,6 +947,8 @@ TclNRUplevelObjCmd(
 	goto uplevelSyntax;
     }
     objv += result + 1;
+
+    havelevel:
 
     /*
      * Modify the interpreter state to execute in the given frame.
@@ -1313,8 +1335,8 @@ InitLocalCache(
      * for future calls.
      */
 
-    localCachePtr = (LocalCache *)ckalloc(sizeof(LocalCache)
-	    + (localCt - 1) * sizeof(Tcl_Obj *)
+    localCachePtr = (LocalCache *)ckalloc(offsetof(LocalCache, varName0)
+	    + localCt * sizeof(Tcl_Obj *)
 	    + numArgs * sizeof(Var));
 
     namePtr = &localCachePtr->varName0;
