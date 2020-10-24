@@ -15,7 +15,7 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -1040,15 +1040,15 @@ test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
 } -result 0
 test var-22.1 {leak in localVarName intrep: Bug 80304238ac} -setup {
     proc doit {} {
-	interp create slave
-	slave eval {
+	interp create child
+	child eval {
 	    proc doit script {
 		eval $script
 		set foo bar
 	    }
 	    doit {foreach foo baz {}}
 	}
-	interp delete slave
+	interp delete child
     }
 } -constraints memory -body {
     set end [getbytes]

@@ -189,7 +189,7 @@ TclpInitLibraryPath(
     const char *bytes;
     int length;
 
-    pathPtr = Tcl_NewObj();
+    TclNewObj(pathPtr);
 
     /*
      * Initialize the substring used when locating the script library. The

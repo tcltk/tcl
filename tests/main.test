@@ -1,8 +1,8 @@
 # This file contains a collection of tests for generic/tclMain.c.
 
-if {[catch {package require tcltest 2.0.2}]} {
-    puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
-    return
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
 }
 
 namespace eval ::tcl::test::main {

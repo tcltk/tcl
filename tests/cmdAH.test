@@ -11,7 +11,7 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.1
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -30,6 +30,7 @@ testConstraint linkDirectory [expr {
     ($::tcl_platform(osVersion) >= 5.0
      && [lindex [file system [temporaryDirectory]] 1] eq "NTFS")
 }]
+testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
 
 global env
 set cmdAHwd [pwd]
@@ -261,7 +262,7 @@ test cmdAH-6.3 {Tcl_FileObjCmd: volumes} -constraints unix -body {
 test cmdAH-6.4 {Tcl_FileObjCmd: volumes} -constraints win -body {
     set volumeList [string tolower [file volumes]]
     set element [lsearch -exact $volumeList "c:/"]
-    list [expr {$element>-1}] [glob -nocomplain [lindex $volumeList $element]*]
+    list [expr {$element>=0}] [glob -nocomplain [lindex $volumeList $element]*]
 } -match glob -result {1 *}
 
 # attributes
@@ -1348,7 +1349,7 @@ test cmdAH-25.2.1 {Tcl_FileObjCmd: owned} -constraints unix -setup {
 test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unix notRoot} {
     file owned /
 } 0
-test cmdAH-25.3.1 {Tcl_FileObjCmd: owned} -constraints win -body {
+test cmdAH-25.3.1 {Tcl_FileObjCmd: owned} -constraints {win notWine} -body {
     if {[info exists env(SystemRoot)]} {
 	file owned $env(SystemRoot)
     } else {
@@ -1538,7 +1539,7 @@ test cmdAH-29.4 {Tcl_FileObjCmd: type} -constraints {unix} -setup {
 } -cleanup {
     file delete $linkfile
 } -result link
-test cmdAH-29.4.1 {Tcl_FileObjCmd: type} -constraints {linkDirectory} -setup {
+test cmdAH-29.4.1 {Tcl_FileObjCmd: type} -constraints {linkDirectory notWine} -setup {
     set tempdir [makeDirectory temp]
 } -body {
     set linkdir [file join [temporaryDirectory] link.dir]
@@ -1638,7 +1639,7 @@ test cmdAH-31.9 {Tcl_FileObjCmd: channels in other interp} {
     lsort [safeInterp eval [list file channels]]
 } [lsort [list stdout $newFileId]]
 test cmdAH-31.10 {Tcl_FileObjCmd: channels in other interp} {
-    # we can now write to $newFileId from slave
+    # we can now write to $newFileId from child
     safeInterp eval [list puts $newFileId "hello"]
 } {}
 interp transfer {} $newFileId safeInterp

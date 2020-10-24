@@ -14,7 +14,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
 }
 
 namespace eval ::tcl::test::io {
@@ -44,6 +44,7 @@ testConstraint testmainthread   [llength [info commands testmainthread]]
 testConstraint testobj		[llength [info commands testobj]]
 testConstraint testservicemode  [llength [info commands testservicemode]]
 testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -6087,7 +6088,7 @@ test io-45.3 {DeleteFileEvent, cleanup on close} {fileevent} {
 
 # Execute these tests only if the "testfevent" command is present.
 
-test io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileevent} {
+test io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileevent notOSX} {
     testfevent create
     set script "set f \[[list open $path(foo) r]]\n"
     append script {
@@ -6895,7 +6896,7 @@ test io-50.4 {testing handler deletion vs reentrant calls} -constraints {testcha
 } -cleanup {
     close $f
 } -result {{delrecursive calling recursive} {delrecursive deleting recursive}}
-test io-50.5 {testing handler deletion vs reentrant calls} -constraints {testchannelevent testservicemode} -setup {
+test io-50.5 {testing handler deletion vs reentrant calls} -constraints {testchannelevent testservicemode notOSX} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
@@ -8758,16 +8759,16 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     set fn [makeFile {} io-74.1]
     set rfd [open $fn r]
     testobj freeallvars
-    interp create slave
+    interp create child
 } -constraints testobj -body {
     teststringobj set 1 [string range $rfd 0 end]
     read [teststringobj get 1]
     testobj duplicate 1 2
-    interp transfer {} $rfd slave
+    interp transfer {} $rfd child
     catch {read [teststringobj get 1]}
     read [teststringobj get 2]
 } -cleanup {
-    interp delete slave
+    interp delete child
     testobj freeallvars
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}

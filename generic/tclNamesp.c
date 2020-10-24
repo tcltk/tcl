@@ -1770,6 +1770,8 @@ DoImport(
 		TclInvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
 		DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
+	/* corresponding decrement is in DeleteImportedCmd */
+	cmdPtr->refCount++;
 	dataPtr->selfPtr = (Command *) importedCmd;
 	dataPtr->selfPtr->compileProc = cmdPtr->compileProc;
 	Tcl_DStringFree(&ds);
@@ -2077,6 +2079,7 @@ DeleteImportedCmd(
 		prevPtr->nextPtr = refPtr->nextPtr;
 	    }
 	    ckfree(refPtr);
+	    TclCleanupCommandMacro(realCmdPtr);
 	    ckfree(dataPtr);
 	    return;
 	}
@@ -3543,9 +3546,10 @@ NamespaceExportCmd(
      */
 
     if (objc == 1) {
-	Tcl_Obj *listPtr = Tcl_NewObj();
+	Tcl_Obj *listPtr;
 
-	(void) Tcl_AppendExportList(interp, NULL, listPtr);
+	TclNewObj(listPtr);
+	(void)Tcl_AppendExportList(interp, NULL, listPtr);
 	Tcl_SetObjResult(interp, listPtr);
 	return TCL_OK;
     }
@@ -3888,7 +3892,7 @@ NamespaceOriginCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Command command, origCommand;
+    Tcl_Command cmd, origCmd;
     Tcl_Obj *resultPtr;
 
     if (objc != 2) {
@@ -3896,30 +3900,29 @@ NamespaceOriginCmd(
 	return TCL_ERROR;
     }
 
-    command = Tcl_GetCommandFromObj(interp, objv[1]);
-    if (command == NULL) {
+    cmd = Tcl_GetCommandFromObj(interp, objv[1]);
+    if (cmd == NULL) {
+	goto namespaceOriginError;
+    }
+    origCmd = TclGetOriginalCommand(cmd);
+    if (origCmd == NULL) {
+	origCmd = cmd;
+    }
+    TclNewObj(resultPtr);
+    Tcl_GetCommandFullName(interp, origCmd, resultPtr);
+    if (TclCheckEmptyString(resultPtr) == TCL_EMPTYSTRING_YES ) {
+	Tcl_DecrRefCount(resultPtr);
+	namespaceOriginError:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "invalid command name \"%s\"", TclGetString(objv[1])));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
 		TclGetString(objv[1]), NULL);
 	return TCL_ERROR;
     }
-    origCommand = TclGetOriginalCommand(command);
-    TclNewObj(resultPtr);
-    if (origCommand == NULL) {
-	/*
-	 * The specified command isn't an imported command. Return the
-	 * command's name qualified by the full name of the namespace it was
-	 * defined in.
-	 */
-
-	Tcl_GetCommandFullName(interp, command, resultPtr);
-    } else {
-	Tcl_GetCommandFullName(interp, origCommand, resultPtr);
-    }
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -4022,8 +4025,9 @@ NamespacePathCmd(
      */
 
     if (objc == 1) {
-	Tcl_Obj *resultObj = Tcl_NewObj();
+	Tcl_Obj *resultObj;
 
+	TclNewObj(resultObj);
 	for (i=0 ; i<nsPtr->commandPathLength ; i++) {
 	    if (nsPtr->commandPathArray[i].nsPtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
@@ -5016,7 +5020,7 @@ TclLogCommandInfo(
 	 */
 
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
-	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewIntObj(
+	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewWideIntObj(
 		iPtr->framePtr->level - iPtr->varFramePtr->level));
     } else if (iPtr->framePtr != iPtr->rootFramePtr) {
 	/*
