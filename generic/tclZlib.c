@@ -3945,7 +3945,7 @@ TclZlibInit(
     cfg[0].key = "zlibVersion";
     cfg[0].value = zlibVersion();
     cfg[1].key = NULL;
-    Tcl_RegisterConfig(interp, "zlib", cfg, "iso8859-1");
+    Tcl_RegisterConfig(interp, "zlib", cfg, "utf-8");
 
     /*
      * Allow command type introspection to do something sensible with streams.

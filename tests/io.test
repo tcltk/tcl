@@ -8385,7 +8385,7 @@ test io-60.1 {writing illegal utf sequences} {fileevent testbytestring} {
     # This test will hang in older revisions of the core.
 
     set out [open $path(script) w]
-    puts $out "catch {load $::tcltestlib Tcltest}"
+    puts $out "catch {load $::tcltestlib tcl::test}"
     puts $out {
 	puts [testbytestring \xe2]
 	exit 1

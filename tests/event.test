@@ -436,7 +436,7 @@ catch {rename bgerror {}}
 
 test event-8.1 {Tcl_CreateExitHandler procedure} {stdio testexithandler} {
     set child [open |[list [interpreter]] r+]
-    puts $child "catch {load $::tcltestlib Tcltest}"
+    puts $child "catch {load $::tcltestlib tcl::test}"
     puts $child "testexithandler create 41; testexithandler create 4"
     puts $child "testexithandler create 6; exit"
     flush $child
@@ -450,7 +450,7 @@ odd 41
 
 test event-9.1 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
     set child [open |[list [interpreter]] r+]
-    puts $child "catch {load $::tcltestlib Tcltest}"
+    puts $child "catch {load $::tcltestlib tcl::test}"
     puts $child "testexithandler create 41; testexithandler create 4"
     puts $child "testexithandler create 6; testexithandler delete 41"
     puts $child "testexithandler create 16; exit"
@@ -464,7 +464,7 @@ even 4
 }
 test event-9.2 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
     set child [open |[list [interpreter]] r+]
-    puts $child "catch {load $::tcltestlib Tcltest}"
+    puts $child "catch {load $::tcltestlib tcl::test}"
     puts $child "testexithandler create 41; testexithandler create 4"
     puts $child "testexithandler create 6; testexithandler delete 4"
     puts $child "testexithandler create 16; exit"
@@ -478,7 +478,7 @@ odd 41
 }
 test event-9.3 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
     set child [open |[list [interpreter]] r+]
-    puts $child "catch {load $::tcltestlib Tcltest}"
+    puts $child "catch {load $::tcltestlib tcl::test}"
     puts $child "testexithandler create 41; testexithandler create 4"
     puts $child "testexithandler create 6; testexithandler delete 6"
     puts $child "testexithandler create 16; exit"
@@ -492,7 +492,7 @@ odd 41
 }
 test event-9.4 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
     set child [open |[list [interpreter]] r+]
-    puts $child "catch {load $::tcltestlib Tcltest}"
+    puts $child "catch {load $::tcltestlib tcl::test}"
     puts $child "testexithandler create 41; testexithandler delete 41"
     puts $child "testexithandler create 16; exit"
     flush $child
