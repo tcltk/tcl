@@ -90,7 +90,7 @@ TclStubCall(void *arg)
 	if (!stubFn[index]) {
 	    stubFn[index] = dlsym(tclStubsHandle, PROCNAME[index]);
 	    if (!stubFn[index]) {
-		stubFn[index] = nullVersionProc;
+		stubFn[index] = (void *)nullVersionProc;
 	    }
 	}
     }
