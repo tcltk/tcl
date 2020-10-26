@@ -25,7 +25,7 @@ unassigned elements is returned.
 .SH EXAMPLES
 .PP
 An illustration of how multiple assignment works, and what happens
-when there are either not enough or too many elements.
+when there are either too few or too many elements.
 .PP
 .CS
 \fBlassign\fR {a b c} x y z       ;# Empty return
