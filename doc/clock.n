@@ -264,10 +264,10 @@ converts the given time to a calendar date and time of day.  It then
 adds the requisite number of months or years, and reconverts the resulting
 date and time of day to an absolute time.
 .PP
-If the resulting date is impossible because the month has not enough
-days (for example, when adding 1 month to 31 January), the last day
-of the month is substituted.  Thus, adding 1 month to 31 January will
-result in 28 February in a common year or 29 February in a leap year.
+If the resulting date is impossible because the month has too few days
+(for example, when adding 1 month to 31 January), the last day of the
+month is substituted.  Thus, adding 1 month to 31 January will result in
+28 February in a common year or 29 February in a leap year.
 .PP
 The rules for handling anomalies relating to summer time and to the
 Gregorian calendar are the same when adding/subtracting months and
