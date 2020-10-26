@@ -8996,5 +8996,56 @@ See RFC 2045
 2020-04-09 (bug)[085913] Tcl_DStringAppendElement # quoting precision (dgp)
         *** POTENTIAL INCOMPATIBILITY ***
 
+2020-04-15 (bug)[8af92d] zlib transform issue, bad inflate (sebres)
 
-- Released 8.6.11, Aug ??, 2020 - details at http://core.tcl-lang.org/tcl/ -
+2020-04-27 (bug)[45ca23] [string tolower] inconsistency (dgp)
+
+2020-04-30 (bug)[da2352] [info hostname] on Windows is limited to max NetBIOS name length (oehlmann)
+
+2020-05-07 (bug)[b2816a] Tcl_NumUtfChars counts wrong at end of malformed string (dgp)
+
+2020-05-11 (bug)[d402ff] Win32 potential crash when using main() (werner)
+
+2020-05-13 (bug)[81242a] Documentation for Tcl_UtfAtIndex() is incorrect (nijtmans)
+
+2020-05-13 (bug)[ed2980] Tcl_UtfToUniChar reads more than TCL_UTF_MAX bytes (nijtmans)
+
+2020-06-23 (bug)[41c985] library/init.tcl adds nonsense to auto_path in Safe Base interpreters (kjnash)
+
+2020-06-24 (bug)[f70ce1] zlib transform issue, multi-stream inflate ignores streams after first (sebres)
+
+2020-07-09 (bug)[a1bd37] clock (free)scan of ISO 8601 timestamp with literal T behaves strange (sebres)
+
+2020-07-10 (bug)[501974] FreeScan resp. Oldscan does not recognize positive time zone offset (sebres)
+
+2020-07-15 (bug)[3c6e47] Performance degradation by compiled "lappend" command (sebres)
+
+2020-07-16 (bug)[5bbd04] Fix index underflow (schwab)
+
+2020-07-25 (bug)[20dccf] htons-related test fails on Mac OSX Catalina (10.15) (nijtmans)
+
+2020-07-27 (bug)[cb0373] The http::geturl -keepalive option does not work as described in the man page (kjnash)
+
+2020-08-10 (bug)[29e884] calling an imported alias in a deletion trace causes Tcl to cycle (sebres)
+
+2020-08-12 (bug)[e87000] crash for "fconfigure stdout" in Win32 (werner, nijtmans)
+
+2020-08-31 (TIP #581) Master/Slave (nijtmans)
+
+2020-09-11 (bug)[3bc0f4] UBSan complains about body.chars[] usage (nijtmans)
+
+2020-09-17 (bug)[835c93] TIP #525 only implemented for non-singleproc case (nijtmans)
+
+2020-09-19 (bug)[b9ecf3] [uplevel $list], [uplevel 1 $list] and generation of string representations (pouryorick)
+
+2020-09-29 (bug)[0063cb] check http::geturl -headers parameter to be a dict (oehlmann, nijtmans)
+
+2020-10-09 (bug)[014ade] Misleading error message when using "-path" multiple times with "glob" (nijtmans)
+
+2020-10-09 (bug)[53d515] Typo in interp.n (stu)
+
+2020-10-19 (bug)[cb4582] Update install-sh script to latest version (stu, nijtmans)
+
+2020-10-22 (bug)[c97593]: Usage of gnu_printf in latest mingw-w64 (nijtmans)
+
+- Released 8.6.11, Nov ??, 2020 - details at http://core.tcl-lang.org/tcl/ -
