@@ -770,7 +770,7 @@ and terminates at the first null (C string semantics). For example,
 \fBbinary scan\fR "abc\e000efghi" A* var1
 .CE
 will return \fB1\fR with \fBabc\fR stored in \fIvar1\fR.
-.RE 
+.RE
 .IP \fBH\fR 5
 The data is turned into a string of \fIcount\fR hexadecimal digits in
 high-to-low order represented as a sequence of characters in the set
