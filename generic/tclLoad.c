@@ -366,6 +366,15 @@ Tcl_LoadObjCmd(
 
 	Tcl_DStringSetLength(&pkgName,
 		Tcl_UtfToTitle(Tcl_DStringValue(&pkgName)));
+	while (strchr(Tcl_DStringValue(&pkgName), ':') != NULL) {
+	    char *r;
+	    p = Tcl_DStringValue(&pkgName);
+	    r = strchr(p, ':');
+	    if ((r != NULL) && (r[1] == ':')) {
+		memmove(r, r+2, strlen(r+1));
+	    }
+	    Tcl_DStringSetLength(&pkgName, strlen(p));
+	}
 
 	/*
 	 * Compute the names of the two initialization functions, based on the
