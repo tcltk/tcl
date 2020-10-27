@@ -462,7 +462,7 @@ TclCompileStringInsertCmd(
 	    TCL_INDEX_END, &idx)) {
 
 	/* Nothing useful knowable - cease compile; let it direct eval */
-	return TCL_OK;
+	return TCL_ERROR;
     }
 
     /* Compute and push the string to be inserted */
