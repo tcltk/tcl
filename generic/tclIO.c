@@ -287,9 +287,9 @@ static int              WillRead(Channel *chanPtr);
 
 #define IsBufferOverflowing(bufPtr) ((bufPtr)->nextAdded>(bufPtr)->bufLength)
 
-#define InsertPoint(bufPtr)	((bufPtr)->buf + (bufPtr)->nextAdded)
+#define InsertPoint(bufPtr)	(&(bufPtr)->buf[(bufPtr)->nextAdded])
 
-#define RemovePoint(bufPtr)	((bufPtr)->buf + (bufPtr)->nextRemoved)
+#define RemovePoint(bufPtr)	(&(bufPtr)->buf[(bufPtr)->nextRemoved])
 
 /*
  * For working with channel state flag bits.
