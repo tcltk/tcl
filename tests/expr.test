@@ -685,13 +685,13 @@ test expr-15.3 {CompileMathFuncCall: too many arguments} -body {
 test expr-15.4 {CompileMathFuncCall: ')' found before last required arg} -body {
     catch {expr sin()} msg
     set ::errorInfo
-} -match glob -result {too few arguments for math function*
+} -match glob -result {not enough arguments for math function*
     while *ing
 "expr sin()"}
-test expr-15.5 {CompileMathFuncCall: too few arguments} -body {
+test expr-15.5 {CompileMathFuncCall: not enough arguments} -body {
     catch {expr pow(1)} msg
     set ::errorInfo
-} -match glob -result {too few arguments for math function*
+} -match glob -result {not enough arguments for math function*
     while *ing
 "expr pow(1)"}
 test expr-15.6 {CompileMathFuncCall: missing ')'} -body {
@@ -7251,7 +7251,7 @@ test expr-52.1 {
 foreach func {isfinite isinf isnan isnormal issubnormal} {
     test expr-53.1.$func {float classification: basic arg handling} -body {
 	expr ${func}()
-    } -returnCodes error -result "too few arguments for math function \"$func\""
+    } -returnCodes error -result "not enough arguments for math function \"$func\""
     test expr-53.2.$func {float classification: basic arg handling} -body {
 	expr ${func}(1,2)
     } -returnCodes error -result "too many arguments for math function \"$func\""
@@ -7346,10 +7346,10 @@ test expr-59.12 {float classification: fpclassify} -returnCodes error -body {
 
 test expr-60.1 {float classification: basic arg handling} -body {
     expr isunordered()
-} -returnCodes error -result {too few arguments for math function "isunordered"}
+} -returnCodes error -result {not enough arguments for math function "isunordered"}
 test expr-60.2 {float classification: basic arg handling} -body {
     expr isunordered(1)
-} -returnCodes error -result {too few arguments for math function "isunordered"}
+} -returnCodes error -result {not enough arguments for math function "isunordered"}
 test expr-60.3 {float classification: basic arg handling} -body {
     expr {isunordered(1, 2, 3)}
 } -returnCodes error -result {too many arguments for math function "isunordered"}
