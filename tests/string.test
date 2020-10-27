@@ -2477,6 +2477,13 @@ test string-31.24.$noComp {string insert, string end, pure Uni, both shared} {
 test string-31.25.$noComp {string insert, neither byte array nor Unicode} {
     run {tcl::string::insert [makeList a b c] 1 zzzzzz}
 } {azzzzzz b c}
+test string-31.26.$noComp {[11229bad5f] string insert, compiler} -setup {
+    set i 2
+} -body {
+    run {tcl::string::insert abcd $i xyz}
+} -cleanup {
+    unset i
+} -result abxyzcd
 
 test string-32.1.$noComp {string is dict} {
     string is dict {a b c d}
