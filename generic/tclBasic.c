@@ -8017,8 +8017,8 @@ MathFuncWrongNumArgs(
 	}
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "too %s arguments for math function \"%s\"",
-	    (found < expected ? "few" : "many"), name));
+	    "%s arguments for math function \"%s\"",
+	    (found < expected ? "not enough" : "too many"), name));
     Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
 }
 

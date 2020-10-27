@@ -1057,7 +1057,7 @@ TclCompileLindexCmd(
     int i, idx, numWords = parsePtr->numWords;
 
     /*
-     * Quit if too few args.
+     * Quit if not enough args.
      */
 
     /* TODO: Consider support for compiling expanded args. */
