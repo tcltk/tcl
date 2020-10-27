@@ -3525,7 +3525,7 @@
 	* generic/tclVar.c (Tcl_UnsetObjCmd): Rewrote argument parser to avoid
 	a read off the end of the argument array that could occur when
 	executing something like [unset -nocomplain] was executed. Improved
-	the error message given when too few arguments are given (-nocomplain
+	the error message given when not enough arguments are given (-nocomplain
 	should obviously be *before* --, not after it) and also modified the
 	test suite to take account of that and the documentation to use the
 	same improvement. [Bug 405769]
