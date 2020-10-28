@@ -25,7 +25,7 @@ testConstraint memory [llength [info commands memory]]
 
 # Tests for wrong number of arguments
 
-test apply-1.1 {too few arguments} -returnCodes error -body {
+test apply-1.1 {not enough arguments} -returnCodes error -body {
     apply
 } -result {wrong # args: should be "apply lambdaExpr ?arg ...?"}
 
