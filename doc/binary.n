@@ -767,7 +767,7 @@ This form is similar to \fBA\fR, except that it scans the data from start
 and terminates at the first null (C string semantics). For example,
 .RS
 .CS
-\fBbinary scan\fR "abc\e000efghi" A* var1
+\fBbinary scan\fR "abc\e000efghi" C* var1
 .CE
 will return \fB1\fR with \fBabc\fR stored in \fIvar1\fR.
 .RE
