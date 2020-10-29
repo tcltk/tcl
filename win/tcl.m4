@@ -715,7 +715,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	SHLIB_LD='${CC} -shared'
 	SHLIB_LD_LIBS='${LIBS}'
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
-	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
+	    -Wl,--out-implib,\$(patsubst %.dll,lib%.dll.a,\[$]@)"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
 	DLLSUFFIX="\${DBGX}.dll"
