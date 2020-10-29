@@ -141,6 +141,18 @@ test string-2.33 {string compare, high bit} {
     proc foo {} {string compare "\x00\x00" "\x00\x01"}
     foo
 } -1
+test string-2.34 {string compare, binary equal} {
+    proc foo {} {string compare [binary format a100 0] [binary format a100 0]}
+   foo
+} 0
+test string-2.35 {string compare, binary neq} {
+    proc foo {} {string compare [binary format a100a 0 1] [binary format a100a 0 0]}
+    foo
+} 1
+test string-2.36 {string compare, binary neq unequal length} {
+    proc foo {} {string compare [binary format a20a 0 1] [binary format a100a 0 0]}
+    foo
+} 1
 
 # only need a few tests on equal, since it uses the same code as
 # string compare, but just modifies the return output
