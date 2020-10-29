@@ -19,10 +19,6 @@
 /* See [Bug 3354324]: file mtime sets wrong time */
 #   define __MINGW_USE_VC2005_COMPAT
 #endif
-#if !defined(__USE_MINGW_ANSI_STDIO)
-/* See [Bug c975939973]: Usage of gnu_printf in latest mingw-w64 */
-#   define __USE_MINGW_ANSI_STDIO 0
-#endif
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
