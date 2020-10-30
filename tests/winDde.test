@@ -111,7 +111,7 @@ test winDde-1.1 {Settings the server's topic name} -constraints dde -body {
 } -result {foobar foobar self}
 
 test winDde-2.1 {Checking for other services} -constraints dde -body {
-    expr [llength [dde services {} {}]] >= 0
+    expr {[llength [dde services {} {}]] >= 0}
 } -result 1
 test winDde-2.2 {Checking for existence, with service and topic specified} \
 	-constraints dde -body {
@@ -119,11 +119,11 @@ test winDde-2.2 {Checking for existence, with service and topic specified} \
 } -result 1
 test winDde-2.3 {Checking for existence, with only the service specified} \
 	-constraints dde -body {
-    expr [llength [dde services TclEval {}]] >= 1
+    expr {[llength [dde services TclEval {}]] >= 1}
 } -result 1
 test winDde-2.4 {Checking for existence, with only the topic specified} \
 	-constraints dde -body {
-    expr [llength [dde services {} self]] >= 1
+    expr {[llength [dde services {} self]] >= 1}
 } -result 1
 
 # -------------------------------------------------------------------------

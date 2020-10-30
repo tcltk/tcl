@@ -41,7 +41,7 @@ test appendComp-1.3 {append command} {
 test appendComp-2.1 {long appends} {
     proc foo {} {
 	set x ""
-	for {set i 0} {$i < 1000} {set i [expr $i+1]} {
+	for {set i 0} {$i < 1000} {incr i} {
 	    append x "foobar "
 	}
 	set y "foobar"
@@ -223,7 +223,7 @@ test appendComp-5.1 {long lappends} -setup {
     }
 } -body {
     set x ""
-    for {set i 0} {$i < 300} {set i [expr $i+1]} {
+    for {set i 0} {$i < 300} {incr i} {
 	lappend x "item $i"
     }
     check $x 300

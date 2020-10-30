@@ -69,7 +69,7 @@ if {"::tcltest" ni [namespace children]} {
 catch [list package require -exact tcl::test [info patchlevel]]
 ::tcltest::loadTestedCommands
 
-if {[expr {[info exists ::env(TRAVIS_OSX_IMAGE)] && [string match xcode* $::env(TRAVIS_OSX_IMAGE)]}]} {
+if {[info exists ::env(TRAVIS_OSX_IMAGE)] && [string match xcode* $::env(TRAVIS_OSX_IMAGE)]} {
     return
 }
 testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
@@ -969,7 +969,7 @@ test socket_$af-6.1 {accept callback error} -constraints [list socket supported_
     }
     close $f
     set f [open "|[list [interpreter] $path(script)]" r+]
-    proc accept {s a p} {expr 10 / 0}
+    proc accept {s a p} {expr {10 / 0}}
     set s [socket -server accept -myaddr $localhost 0]
     puts $f [lindex [fconfigure $s -sockname] 2]
     close $f

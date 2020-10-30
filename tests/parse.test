@@ -481,7 +481,7 @@ test parse-10.2 {Tcl_EvalTokens, backslash sequences} testevalex {
     testevalex {concat test\063\062test}
 } {test32test}
 test parse-10.3 {Tcl_EvalTokens, nested commands} testevalex {
-    testevalex {concat [expr 2 + 6]}
+    testevalex {concat [expr {2 + 6}]}
 } {8}
 test parse-10.4 {Tcl_EvalTokens, nested commands} testevalex {
     unset -nocomplain a
@@ -499,7 +499,7 @@ test parse-10.6 {Tcl_EvalTokens, array variables} testevalex {
 test parse-10.7 {Tcl_EvalTokens, array variables} testevalex {
     unset -nocomplain a
     set a(12) 46
-    testevalex {concat $a(1[expr 3 - 1])}
+    testevalex {concat $a(1[expr {3 - 1}])}
 } {46}
 test parse-10.8 {Tcl_EvalTokens, array variables} testevalex {
     unset -nocomplain a

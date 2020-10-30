@@ -674,7 +674,7 @@ proc l3 {} {
 # Do all tests once byte compiled and once with direct string evaluation
 foreach noComp {0 1} {
 
-if $noComp {
+if {$noComp} {
     interp alias {} run {} testevalex
     set constraints testevalex
 } else {
