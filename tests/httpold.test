@@ -49,7 +49,7 @@ catch {unset data}
 source [file join [file dirname [info script]] httpd]
 
 set port 8010
-if [catch {httpd_init $port} listen] {
+if {[catch {httpd_init $port} listen]} {
     puts "Cannot start http server, http test skipped"
     unset port
     ::tcltest::cleanupTests

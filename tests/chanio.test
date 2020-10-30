@@ -3045,7 +3045,7 @@ test chan-io-30.13 {Tcl_Write crlf on block boundary, Tcl_Read auto} -setup {
     string length [chan read $f]
 } -cleanup {
     chan close $f
-} -result [expr 700*15+1]
+} -result [expr {700*15 + 1}]
 test chan-io-30.14 {Tcl_Write crlf on block boundary, Tcl_Read crlf} -setup {
     file delete $path(test1)
 } -body {
@@ -3062,7 +3062,7 @@ test chan-io-30.14 {Tcl_Write crlf on block boundary, Tcl_Read crlf} -setup {
     string length [chan read $f]
 } -cleanup {
     chan close $f
-} -result [expr 700*15+1]
+} -result [expr {700*15 + 1}]
 test chan-io-30.15 {Tcl_Write mixed, Tcl_Read auto} -setup {
     file delete $path(test1)
 } -body {
@@ -3904,7 +3904,7 @@ test chan-io-31.31 {Tcl_Write crlf on block boundary, Tcl_Gets crlf} -setup {
     }
     chan close $f
     string length $c
-} -result [expr 700*15+1]
+} -result [expr {700*15 + 1}]
 test chan-io-31.32 {Tcl_Write crlf on block boundary, Tcl_Gets auto} -setup {
     file delete $path(test1)
     set c ""
@@ -3924,7 +3924,7 @@ test chan-io-31.32 {Tcl_Write crlf on block boundary, Tcl_Gets auto} -setup {
     }
     chan close $f
     string length $c
-} -result [expr 700*15+1]
+} -result [expr {700*15 + 1}]
 
 # Test Tcl_Read and buffering.
 
@@ -5335,7 +5335,7 @@ test chan-io-40.2 {POSIX open access modes: CREAT} -setup {
 } -constraints {unix} -body {
     set f [open $path(test3) {WRONLY CREAT} 0600]
     file stat $path(test3) stats
-    set x [format "%#o" [expr $stats(mode)&0o777]]
+    set x [format "%#o" [expr {$stats(mode) & 0o777}]]
     chan puts $f "line 1"
     chan close $f
     set f [open $path(test3) r]
@@ -5349,7 +5349,7 @@ test chan-io-40.3 {POSIX open access modes: CREAT} -setup {
     # This test only works if your umask is 2, like ouster's.
     chan close [open $path(test3) {WRONLY CREAT}]
     file stat $path(test3) stats
-    format "%#o" [expr $stats(mode)&0o777]
+    format "%#o" [expr {$stats(mode) & 0o777}]
 } -result [format %#4o [expr {0o666 & ~ $umaskValue}]]
 test chan-io-40.4 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
@@ -6716,7 +6716,7 @@ test chan-io-52.6 {TclCopyChannel} -setup {
     set f2 [open $path(test1) w]
     chan configure $f1 -translation lf -blocking 0
     chan configure $f2 -translation lf -blocking 0
-    set s0 [chan copy $f1 $f2 -size [expr [file size $thisScript] + 5]]
+    set s0 [chan copy $f1 $f2 -size [expr {[file size $thisScript] + 5}]]
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     chan close $f1
     chan close $f2
@@ -6958,7 +6958,7 @@ test chan-io-53.5 {CopyData: error during chan copy} {socket fcopy} {
     chan close $listen	;# This means the socket open never really succeeds
     chan copy $in $out -command [namespace code FcopyTestDone]
     variable fcopyTestDone
-    if ![info exists fcopyTestDone] {
+    if {![info exists fcopyTestDone]} {
 	vwait [namespace which -variable fcopyTestDone]		;# The error occurs here in the b.g.
     }
     chan close $in
@@ -6978,7 +6978,7 @@ test chan-io-53.6 {CopyData: error during chan copy} -setup {
     set out [open $path(test1) w]
     chan copy $in $out -command [namespace code FcopyTestDone]
     variable fcopyTestDone
-    if ![info exists fcopyTestDone] {
+    if {![info exists fcopyTestDone]} {
 	vwait [namespace which -variable fcopyTestDone]
     }
     return $fcopyTestDone	;# 0 for plain end of file
@@ -7031,7 +7031,7 @@ test chan-io-53.7 {CopyData: Flooding chan copy from pipe} -setup {
 	vwait [namespace which -variable fcopyTestDone]
     }
     # -1=error 0=script error N=number of bytes
-    expr ($fcopyTestDone == 0) ? $fcopyTestCount : -1
+    expr {($fcopyTestDone == 0) ? $fcopyTestCount : -1}
 } -cleanup {
     catch {chan close $in}
     chan close $out

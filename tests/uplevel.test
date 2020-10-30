@@ -17,7 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 proc a {x y} {
-    newset z [expr $x+$y]
+    newset z [expr {$x + $y}]
     return $z
 }
 proc newset {name value} {
@@ -247,7 +247,7 @@ test uplevel-7.1 {var access, no LVT in either level} -setup {
     unset -nocomplain y z
 } -body {
     namespace eval foo {
-	set x 2 
+	set x 2
 	set y 2
 	uplevel 1 {
 	    set x 3
@@ -266,7 +266,7 @@ test uplevel-7.2 {var access, no LVT in upper level} -setup {
     unset -nocomplain y z
 } -body {
     proc foo {} {
-	set x 2 
+	set x 2
 	set y 2
 	uplevel 1 {
 	    set x 3
@@ -290,7 +290,7 @@ test uplevel-7.3 {var access, LVT in upper level} -setup {
     }
 } -body {
     proc foo {} {
-	set x 2 
+	set x 2
 	set y 2
 	uplevel 1 {
 	    set x 3
@@ -309,7 +309,7 @@ test uplevel-7.3 {var access, LVT in upper level} -setup {
 test uplevel-8.0 {
     string representation isn't generated when there is only one argument
 } -body {
-    set res {} 
+    set res {}
     set script [list lindex 5]
     lappend res [apply {script {
 	uplevel $script

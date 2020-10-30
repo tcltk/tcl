@@ -7514,7 +7514,7 @@ test io-53.5 {CopyData: error during fcopy} {socket fcopy} {
     close $listen	;# This means the socket open never really succeeds
     fcopy $in $out -command [namespace code FcopyTestDone]
     variable fcopyTestDone
-    if ![info exists fcopyTestDone] {
+    if {![info exists fcopyTestDone]} {
 	vwait [namespace which -variable fcopyTestDone]		;# The error occurs here in the b.g.
     }
     close $in
@@ -7533,7 +7533,7 @@ test io-53.6 {CopyData: error during fcopy} {stdio fcopy} {
     set out [open $path(test1) w]
     fcopy $in $out -command [namespace code FcopyTestDone]
     variable fcopyTestDone
-    if ![info exists fcopyTestDone] {
+    if {![info exists fcopyTestDone]} {
 	vwait [namespace which -variable fcopyTestDone]
     }
     catch {close $in}
@@ -7580,7 +7580,7 @@ test io-53.7 {CopyData: Flooding fcopy from pipe} {stdio fcopy} {
     set out [open $path(test1) w]
     doFcopy $in $out
     variable fcopyTestDone
-    if ![info exists fcopyTestDone] {
+    if {![info exists fcopyTestDone]} {
 	vwait [namespace which -variable fcopyTestDone]
     }
     catch {close $in}
