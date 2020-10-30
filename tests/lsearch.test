@@ -384,7 +384,7 @@ test lsearch-14.8 {combinations: -start, -inline and -not} {
 } {c4}
 
 test lsearch-15.1 {make sure no shimmering occurs} {
-    set x [expr int(sin(0))]
+    set x [expr {int(sin(0))}]
     lsearch -start $x $x $x
 } 0
 
