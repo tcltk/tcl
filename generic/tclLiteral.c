@@ -361,7 +361,7 @@ CreateLiteral(
 
     if (globalPtrPtr) {
 	*globalPtrPtr = globalPtr;
-    } 
+    }
     *newPtr = 1;
     return objPtr;
 }

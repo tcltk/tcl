@@ -2222,7 +2222,7 @@ CompileScriptTokens(
     }
     if (tokens[0].type != TCL_TOKEN_SCRIPT) {
         Tcl_Panic("CompileScriptTokens: invalid token array, expected script");
-    }	 
+    }
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
     }
@@ -2264,7 +2264,7 @@ CompileScriptTokens(
 	    tokenPtr++;
 	    continue;
 	}
-	
+
 #ifdef TCL_COMPILE_DEBUG
 	/*
 	 * If tracing, print a line for each top level command compiled.
@@ -2552,7 +2552,7 @@ TclCompileTokens(
 	    if (count <= tokenPtr->numComponents) {
 		Tcl_Panic("token components overflow token array");
 	    }
-		
+
 	    envPtr->line += adjust;
 	    CompileScriptTokens(interp, tokenPtr+1,
 		    tokenPtr + (tokenPtr->numComponents), envPtr);

@@ -14,7 +14,7 @@
 /*
  * The routines that follow implement a BrodnikArray of T elements, where
  * T is the type of the elements to be stored, which is the argument of
- * the macro.  
+ * the macro.
  *
  * The BrodnikArray data structure is adapted from Andrej Brodnik et al.,
  * "Resizable Arrays in Optimal Time and Space", from the Proceedings of
@@ -84,7 +84,7 @@ scope	T *		BP_ ## T ## _Next(BP_ ## T *p);			\
 scope	T *		BP_ ## T ## _Plus(BP_ ## T *p, size_t incr);	\
 scope	T *		BP_ ## T ## _Minus(BP_ ## T *p, size_t incr)
 
-									
+
 #define TclBrodnikArray(T) 						\
 									\
 TclBrodnikArrayDeclare(T,static);					\

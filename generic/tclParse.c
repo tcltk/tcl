@@ -475,7 +475,7 @@ TclParseScript(
 		parsePtr->numTokens * sizeof(Tcl_Token));
     } else {
 	result = (Tcl_Token *)Tcl_Alloc(parsePtr->numTokens * sizeof(Tcl_Token));
-	memcpy(result, parsePtr->tokenPtr, 
+	memcpy(result, parsePtr->tokenPtr,
 		(size_t) (parsePtr->numTokens * sizeof(Tcl_Token)));
     }
 
@@ -1814,7 +1814,7 @@ TclParseScriptSubst(
     const char *src,
     size_t numBytes,
     Tcl_Parse *parsePtr,
-    int flags)	
+    int flags)
 {
     int scriptToken;
     Tcl_Token *scriptTokenPtr;
@@ -2657,7 +2657,7 @@ TclSubstTokens(
 	     * Tcl_EvalTokens(Standard)().  All internal parsing avoids
 	     * generation of the TCL_TOKEN_COMMAND token type.
 	     */
-	
+
 	    /* TIP #280: Transfer line information to nested command */
 	    iPtr->numLevels++;
 	    code = TclInterpReady(interp);

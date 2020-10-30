@@ -1445,7 +1445,7 @@ test tcltest-23.2 {removeFile} {
 	file mkdir $mfdir
 	makeFile {} t1.tmp
 	makeFile {} et1.tmp $mfdir
-	if  {![file exists [file join [temporaryDirectory] t1.tmp]] || \
+	if {![file exists [file join [temporaryDirectory] t1.tmp]] || \
 		![file exists [file join $mfdir et1.tmp]]} {
 	    error "file creation didn't work"
 	}

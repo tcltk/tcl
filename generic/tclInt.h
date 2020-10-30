@@ -318,7 +318,7 @@ typedef struct Namespace {
 				 * strings; values have type (Var *). */
     Tcl_Obj *exportPatternList;
 				/* Set of "string match" style patterns that
-				 * specify which commands are exported. 
+				 * specify which commands are exported.
 				 * No namespace qualifiers are allowed. */
     size_t cmdRefEpoch;		/* Incremented if a newly added command
 				 * shadows a command for which this namespace
@@ -2800,7 +2800,7 @@ enum CheckEmptyStringResult {
  *                              a command terminator, as well as newlines,
  *                              semi-colons, and end of string.
  *
- * PARSE_APPEND -               Passed throughout the Parse routines to 
+ * PARSE_APPEND -               Passed throughout the Parse routines to
  *                              indicate that parsing should append to the
  *                              Tcl_Parse structure passed in (by reference).
  *                              If this flag is not set, some routines will

@@ -303,7 +303,7 @@ SetHamtFromAny(
  *
  * UpdateStringOfHamt --
  *
- *	Update the string representation for a hamt object. 
+ *	Update the string representation for a hamt object.
  *
  * Results:
  *	None.

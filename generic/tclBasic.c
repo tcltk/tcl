@@ -4845,7 +4845,7 @@ Tcl_EvalTokensStandard(
  *
  * TclEvalScriptTokens --
  *
- * 
+ *
  * Results:
  *
  * Side effects:
@@ -5042,7 +5042,7 @@ TclEvalScriptTokens(
             if (length == 0) {
                 Tcl_Panic("EvalScriptTokens: overran token array");
             }
-            if (!(tokenPtr->type & (TCL_TOKEN_WORD 
+            if (!(tokenPtr->type & (TCL_TOKEN_WORD
 		    | TCL_TOKEN_SIMPLE_WORD | TCL_TOKEN_EXPAND_WORD))) {
                 Tcl_Panic("EvalScriptTokens: invalid token array, expected word: %d: %.*s", tokenPtr->type, (int)tokenPtr->size, tokenPtr->start);
             }

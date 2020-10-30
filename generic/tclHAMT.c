@@ -46,7 +46,7 @@ typedef struct CNode *Collision;
 
 typedef struct CNode {
     size_t	claim;
-    Collision	next;	
+    Collision	next;
     KVList	l;
 } CNode;
 
@@ -116,7 +116,7 @@ void KVLDisclaim(
     Tcl_Free(l);
 }
 
-static 
+static
 int KVLEqualKeys(
     HAMT *hamt,
     ClientData key1,
@@ -260,7 +260,7 @@ KVList KVLMerge(
     if (one == NULL) {
 	if (valuePtr) {
 	    *valuePtr = NULL;
-	}	
+	}
 	return two;
     }
     if ( (one == two) || KVLEqualKeys(hamt, one->key, two->key) ) {
@@ -370,7 +370,7 @@ KVList KVLRemove(
      * stored in the slot.  This is a kind of hash collision.  We need to
      * look in the overflow area in case they key we seek to remove might
      * be waiting there. */
-     
+
     if (hamt->overflow) {
 	p = hamt->overflow;
 	while (p) {
@@ -978,7 +978,7 @@ ArrayMap AMMergeList(
 	    return map;
 	}
 	/* Hashes do not match. Create Leaf to hold both. */
-	sub = AMNewLeaf(hamt, (size_t)am->slot[loffset], 
+	sub = AMNewLeaf(hamt, (size_t)am->slot[loffset],
 		(KVList)am->slot[loffset + numList], hash, kvl);
 
 	/* Remove the list, Insert the leaf subnode */
@@ -1274,7 +1274,7 @@ assert( (src2 - two->slot) <= 2*numList2 + NumBits(two->amMap) );
 		if (am != *src1) {
 
 		    /* TODO: detect and fix cases failing here
-		     * that should not. 
+		     * that should not.
 fprintf(stdout, "BAIL %p %p\n", am, *src1); fflush(stdout);
 		     */
 		    goto notOne;
@@ -1398,7 +1398,7 @@ assert( (src2 - two->slot) < 2*numList2 + NumBits(two->amMap) );
 	    src2++;
 	}
 	}
-	
+
 	/* If you get here, congrats! the merge is same as two */
 	assert ( identical == 0 );
 	if (identicalPtr) {
@@ -2119,7 +2119,7 @@ ArrayMap AMRemove(
  *
  * TclHAMTCreate --
  *
- *	Create and return a new empty TclHAMT, with key operations 
+ *	Create and return a new empty TclHAMT, with key operations
  *	governed by the TclHAMTType struct pointed to by hktPtr.
  *
  * Results:
@@ -2591,7 +2591,7 @@ TclHAMTRemove(
 	     * KVList to remove our pair from. */
 
 	    l = KVLRemove(hamt, hamt->kvl, key, &scratch, valuePtr);
-	
+
 	    scratch = CollisionRemove(hamt, scratch);
 	    if ((l == hamt->kvl) && (scratch == hamt->overflow)) {
 		/* list unchanged -> HAMT unchanged. */
@@ -2859,7 +2859,7 @@ TclHAMTFirst(
 	i->kvl = i->kvlv[0];
 	i->top[0] = NULL;
 	return i;
-    } 
+    }
     /* There's a tree. Must traverse it to leftmost KVList. */
     am = hamt->x.am;
     while ((n = NumBits(am->kvMap)) == 0) {
@@ -2957,7 +2957,7 @@ HAMTNext(
     if (histPtr) {
 	histPtr[2*NumBits(popme->kvMap) + NumBits(popme->amMap)]++;
     }
- 
+
     if (i->top == i->stack) {
 	/* Nothing left to pop. Stack exhausted. We're done. */
 	if (i->overflow) {

@@ -1,5 +1,5 @@
 # This file contains a collection of tests for the procedures in the
-# file tclBrodnik.c. 
+# file tclBrodnik.c.
 #
 # Contributions from Don Porter, NIST, 2013. (not subject to US copyright)
 #
@@ -43,7 +43,7 @@ namespace eval ::tcl::test::brodnik {
     variable i 8
     while {$i < 8*$::tcl_platform(pointerSize) - 1} {
 
-	variable j -1 
+	variable j -1
 	while {$j < 2} {
 	    set v [expr {(1<<$i) + $j}]
 

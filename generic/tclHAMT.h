@@ -39,7 +39,7 @@ typedef		void (TclClaimProc) (ClientData value);
 
 /*
  * We also need to operate on keys. First we need to be able to check
- * when two key values are the same according to the logic of the 
+ * when two key values are the same according to the logic of the
  * creator.  We make the assumption that identical key values are seen
  * as the same key by any plausible creator logic.  But when key values
  * are distinct, they may still represent "the same" key when interpreted
