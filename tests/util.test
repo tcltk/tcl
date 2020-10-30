@@ -2208,7 +2208,7 @@ test util-18.11 {Tcl_ObjPrintf} {testprint} {
 test util-18.12 {Tcl_ObjPrintf} {testprint} {
     testprint "%I64d %Id" 65537
 } {65537 65537}
-
+
 # cleanup
 ::tcltest::cleanupTests
 return

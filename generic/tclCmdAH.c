@@ -856,7 +856,7 @@ ExprCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj *resultPtr = data[0];
+    Tcl_Obj *resultPtr = (Tcl_Obj *)data[0];
 
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultPtr);
