@@ -140,7 +140,7 @@ test zlib-7.7 {zlib stream: Bug 25842c161} -constraints zlib -body {
 } -result ""
 # Also causes Tk Bug 10f2e7872b
 test zlib-7.8 {zlib stream: Bug b26e38a3e4} -constraints zlib -setup {
-    expr srand(12345)
+    expr {srand(12345)}
     set randdata {}
     for {set i 0} {$i<6001} {incr i} {
 	append randdata [binary format c [expr {int(256*rand())}]]
@@ -451,7 +451,7 @@ test zlib-8.16 {Bug 3603553: buffer transfer with large writes} -setup {
     # Actual data isn't very important; needs to be substantially larger than
     # the internal buffer (32kB) and incompressible.
     set largeData {}
-    for {set i 0;expr srand(1)} {$i < 100000} {incr i} {
+    for {set i 0;expr {srand(1)}} {$i < 100000} {incr i} {
 	append largeData [lindex "a b c d e f g h i j k l m n o p" \
 		[expr {int(16*rand())}]]
     }
