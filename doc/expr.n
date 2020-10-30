@@ -82,9 +82,9 @@ produces the value on the right side.
 .PP
 .CS
 .ta 9c
-\fBexpr\fR 3.1 + $a	\fI6.1\fR
-\fBexpr\fR 2 + "$a.$b"	\fI5.6\fR
-\fBexpr\fR 4*[llength "6 2"]	\fI8\fR
+\fBexpr\fR {3.1 + $a}	\fI6.1\fR
+\fBexpr\fR {2 + "$a.$b"}	\fI5.6\fR
+\fBexpr\fR {4*[llength "6 2"]}	\fI8\fR
 \fBexpr\fR {{word one} < "word $a"}	\fI0\fR
 .CE
 .PP
@@ -268,7 +268,7 @@ which means that operands are not evaluated if they are
 not needed to determine the outcome.  For example, in
 .PP
 .CS
-\fBexpr\fR {$v ? [a] : [b]}
+\fBexpr\fR {$v?[a]:[b]}
 .CE
 .PP
 only one of \fB[a]\fR or \fB[b]\fR is evaluated,
@@ -508,4 +508,5 @@ Copyright \(co 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
 .fi
 '\" Local Variables:
 '\" mode: nroff
+'\" fill-column: 78
 '\" End:
