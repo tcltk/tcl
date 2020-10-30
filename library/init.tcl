@@ -85,7 +85,7 @@ namespace eval tcl {
 	proc min {args} {
 	    if {![llength $args]} {
 		return -code error \
-		    "too few arguments to math function \"min\""
+		    "not enough arguments to math function \"min\""
 	    }
 	    set val Inf
 	    foreach arg $args {
@@ -101,7 +101,7 @@ namespace eval tcl {
 	proc max {args} {
 	    if {![llength $args]} {
 		return -code error \
-		    "too few arguments to math function \"max\""
+		    "not enough arguments to math function \"max\""
 	    }
 	    set val -Inf
 	    foreach arg $args {
