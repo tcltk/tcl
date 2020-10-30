@@ -135,7 +135,7 @@ format %s $b
 } a22b
 test parseOld-4.4 {command substitution} {
     set a 7.7
-    if [catch {expr int($a)}] {set a foo}
+    if {[catch {expr {int($a)}}]} {set a foo}
     set a
 } 7.7
 
