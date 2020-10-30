@@ -37,7 +37,7 @@ test string-1.2 {error conditions} {
     list [catch {string} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
 
-test string-2.1 {string compare, too few args} {
+test string-2.1 {string compare, not enough args} {
     list [catch {string compare a} msg] $msg
 } {1 {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"}}
 test string-2.2 {string compare, bad args} {
@@ -149,6 +149,18 @@ test string-2.33 {string compare, high bit} {
     proc foo {} {string compare "\x00\x00" "\x00\x01"}
     foo
 } -1
+test string-2.34 {string compare, binary equal} {
+    proc foo {} {string compare [binary format a100 0] [binary format a100 0]}
+   foo
+} 0
+test string-2.35 {string compare, binary neq} {
+    proc foo {} {string compare [binary format a100a 0 1] [binary format a100a 0 0]}
+    foo
+} 1
+test string-2.36 {string compare, binary neq unequal length} {
+    proc foo {} {string compare [binary format a20a 0 1] [binary format a100a 0 0]}
+    foo
+} 1
 
 # only need a few tests on equal, since it uses the same code as
 # string compare, but just modifies the return output
@@ -177,7 +189,7 @@ test string-3.8 {string equal with length, unequal strings} {
     string equal -length 2 abc abde
 } 1
 
-test string-4.1 {string first, too few args} {
+test string-4.1 {string first, not enough args} {
     list [catch {string first a} msg] $msg
 } {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
 test string-4.2 {string first, bad args} {
@@ -321,10 +333,10 @@ proc largest_int {} {
     return [expr {$int-1}]
 }
 
-test string-6.1 {string is, too few args} {
+test string-6.1 {string is, not enough args} {
     list [catch {string is} msg] $msg
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
-test string-6.2 {string is, too few args} {
+test string-6.2 {string is, not enough args} {
     list [catch {string is alpha} msg] $msg
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.3 {string is, bad args} {
@@ -774,7 +786,7 @@ test string-6.131 {string is entier, false on bad hex} {
 
 catch {rename largest_int {}}
 
-test string-7.1 {string last, too few args} {
+test string-7.1 {string last, not enough args} {
     list [catch {string last a} msg] $msg
 } {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
 test string-7.2 {string last, bad args} {
@@ -860,7 +872,7 @@ test string-9.7 {string length, bytearray object} {
     string length [binary format I* {0x50515253 0x52}]
 } 8
 
-test string-10.1 {string map, too few args} {
+test string-10.1 {string map, not enough args} {
     list [catch {string map} msg] $msg
 } {1 {wrong # args: should be "string map ?-nocase? charMap string"}}
 test string-10.2 {string map, bad args} {
@@ -960,7 +972,7 @@ test string-10.31 {string map, nasty sharing crash from [Bug 1018562]} {
     string map $a $a
 } {b b}
 
-test string-11.1 {string match, too few args} {
+test string-11.1 {string match, not enough args} {
     list [catch {string match a} msg] $msg
 } {1 {wrong # args: should be "string match ?-nocase? pattern string"}}
 test string-11.2 {string match, too many args} {
@@ -1404,7 +1416,7 @@ test string-14.19 {string replace} {
     string replace {} -1 0 A
 } A
 
-test string-15.1 {string tolower too few args} {
+test string-15.1 {string tolower not enough args} {
     list [catch {string tolower} msg] $msg
 } {1 {wrong # args: should be "string tolower string ?first? ?last?"}}
 test string-15.2 {string tolower bad args} {
@@ -1839,7 +1851,7 @@ test string-25.14 {string is list} {
     list [string is list -failindex x "\uABCD {b c}d e"] $x
 } {0 2}
 
-test string-26.1 {tcl::prefix, too few args} -body {
+test string-26.1 {tcl::prefix, not enough args} -body {
     tcl::prefix match a
 } -returnCodes 1 -result {wrong # args: should be "tcl::prefix match ?options? table string"}
 test string-26.2 {tcl::prefix, bad args} -body {
@@ -1966,7 +1978,7 @@ test string-26.13 {tcl::prefix: testing for leaks} -body {
     }
 } -constraints memory -result {0}
 
-test string-27.1 {tcl::prefix all, too few args} -body {
+test string-27.1 {tcl::prefix all, not enough args} -body {
     tcl::prefix all a
 } -returnCodes 1 -result {wrong # args: should be "tcl::prefix all table string"}
 test string-27.2 {tcl::prefix all, bad args} -body {
@@ -1997,7 +2009,7 @@ test string-27.10 {tcl::prefix all} {
     tcl::prefix all {apa aska appa} {}
 } {apa aska appa}
 
-test string-28.1 {tcl::prefix longest, too few args} -body {
+test string-28.1 {tcl::prefix longest, not enough args} -body {
     tcl::prefix longest a
 } -returnCodes 1 -result {wrong # args: should be "tcl::prefix longest table string"}
 test string-28.2 {tcl::prefix longest, bad args} -body {
