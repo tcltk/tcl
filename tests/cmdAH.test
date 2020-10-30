@@ -11,7 +11,7 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.1
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -26,6 +26,7 @@ testConstraint linkDirectory [expr {
     ($::tcl_platform(osVersion) >= 5.0
      && [lindex [file system [temporaryDirectory]] 1] eq "NTFS")
 }]
+testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
 
 global env
 set cmdAHwd [pwd]
@@ -255,7 +256,7 @@ test cmdAH-6.3 {Tcl_FileObjCmd: volumes} -constraints unix -body {
 test cmdAH-6.4 {Tcl_FileObjCmd: volumes} -constraints win -body {
     set volumeList [string tolower [file volumes]]
     set element [lsearch -exact $volumeList "c:/"]
-    list [expr {$element>-1}] [glob -nocomplain [lindex $volumeList $element]*]
+    list [expr {$element>=0}] [glob -nocomplain [lindex $volumeList $element]*]
 } -match glob -result {1 *}
 
 # attributes
@@ -886,7 +887,7 @@ test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix testchmod} {
     file exe $gorpfile
 } 1
 test cmdAH-18.5 {Tcl_FileObjCmd: executable} -constraints {win} -body {
-    # On pc, must be a .exe, .com, etc.
+    # On windows, must be a .exe, .com, etc.
     set x {}
     set gorpexes {}
     foreach ext {exe com cmd bat} {
@@ -1288,12 +1289,48 @@ test cmdAH-24.14.1 {
     file mtime [file join [temporaryDirectory] CON.txt]
 } -match regexp -result {could not (?:get modification time|read)} -returnCodes error
 
+# 3155760000 is 64-bit unix time, Wed Jan 01 00:00:00 GMT 2070:
+test cmdAH-24.20.1 {Tcl_FileObjCmd: atime 64-bit time_t, bug [4718b41c56]} -setup {
+    set filename [makeFile "" foo.text]
+} -body {
+    list [file atime $filename 3155760000] [file atime $filename]
+} -cleanup {
+    removeFile $filename
+} -result {3155760000 3155760000}
+test cmdAH-24.20.2 {Tcl_FileObjCmd: mtime 64-bit time_t, bug [4718b41c56]} -setup {
+    set filename [makeFile "" foo.text]
+} -body {
+    list [file mtime $filename 3155760000] [file mtime $filename]
+} -cleanup {
+    file delete -force $filename
+} -result {3155760000 3155760000}
+
 # owned
 test cmdAH-25.1 {Tcl_FileObjCmd: owned} -returnCodes error -body {
     file owned a b
 } -result {wrong # args: should be "file owned name"}
-test cmdAH-25.2 {Tcl_FileObjCmd: owned} -constraints win -body {
-    file owned $gorpfile
+test cmdAH-25.2 {Tcl_FileObjCmd: owned} -constraints win -setup {
+    set fn $gorpfile
+    # prefer temp file to check owner (try to avoid bug [7de2d722bd]):
+    if {
+	[info exists ::env(TEMP)] && [file isdirectory $::env(TEMP)] &&
+        [file dirname $fn] ne [file normalize $::env(TEMP)]
+    } {
+	set fn [file join $::env(TEMP)/test-owner-from-tcl.txt]
+	set fn [makeFile "data" test-owner-from-tcl.txt $::env(TEMP)]
+    }
+    # be sure we have really owned this file before trying to check that
+    # (avoid dependency on admin with UAC and the setting "System objects:
+    # Default owner for objects created by members of the Administrators group"):
+    catch {
+	exec takeown /F [file nativename $fn]
+    }
+} -body {
+    file owned $fn
+} -cleanup {
+    if {$fn ne $gorpfile} {
+	removeFile $fn
+    }
 } -result 1
 test cmdAH-25.2.1 {Tcl_FileObjCmd: owned} -constraints unix -setup {
     # Avoid problems with AFS
@@ -1306,8 +1343,12 @@ test cmdAH-25.2.1 {Tcl_FileObjCmd: owned} -constraints unix -setup {
 test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unix notRoot} {
     file owned /
 } 0
-test cmdAH-25.3.1 {Tcl_FileObjCmd: owned} -constraints win -body {
-    file owned $env(windir)
+test cmdAH-25.3.1 {Tcl_FileObjCmd: owned} -constraints {win notWine} -body {
+    if {[info exists env(SystemRoot)]} {
+	file owned $env(SystemRoot)
+    } else {
+	file owned $env(windir)
+    }
 } -result 0
 test cmdAH-25.4 {Tcl_FileObjCmd: owned} -body {
     file owned nosuchfile
@@ -1492,7 +1533,7 @@ test cmdAH-29.4 {Tcl_FileObjCmd: type} -constraints {unix} -setup {
 } -cleanup {
     file delete $linkfile
 } -result link
-test cmdAH-29.4.1 {Tcl_FileObjCmd: type} -constraints {linkDirectory} -setup {
+test cmdAH-29.4.1 {Tcl_FileObjCmd: type} -constraints {linkDirectory notWine} -setup {
     set tempdir [makeDirectory temp]
 } -body {
     set linkdir [file join [temporaryDirectory] link.dir]
@@ -1592,7 +1633,7 @@ test cmdAH-31.9 {Tcl_FileObjCmd: channels in other interp} {
     lsort [safeInterp eval [list file channels]]
 } [lsort [list stdout $newFileId]]
 test cmdAH-31.10 {Tcl_FileObjCmd: channels in other interp} {
-    # we can now write to $newFileId from slave
+    # we can now write to $newFileId from child
     safeInterp eval [list puts $newFileId "hello"]
 } {}
 interp transfer {} $newFileId safeInterp

@@ -349,11 +349,11 @@ static const unsigned char wsaErrorTable[] = {
 
 void
 TclWinConvertError(
-    DWORD errCode)		/* Win32 error code. */
+    int errCode)		/* Win32 error code. */
 {
-    if (errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
+    if ((unsigned)errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
 	errCode -= WSAEWOULDBLOCK;
-	if (errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
+	if ((unsigned)errCode >= sizeof(wsaErrorTable)/sizeof(wsaErrorTable[0])) {
 	    Tcl_SetErrno(errorTable[1]);
 	} else {
 	    Tcl_SetErrno(wsaErrorTable[errCode]);
@@ -394,14 +394,14 @@ tclWinDebugPanic(
 	char buf[TCL_MAX_WARN_LEN * 3];
 
 	vsnprintf(buf, sizeof(buf), format, argList);
-	msgString[TCL_MAX_WARN_LEN-1] = L'\0';
+	msgString[TCL_MAX_WARN_LEN-1] = '\0';
 	MultiByteToWideChar(CP_UTF8, 0, buf, -1, msgString, TCL_MAX_WARN_LEN);
 
 	/*
 	 * Truncate MessageBox string if it is too long to not overflow the buffer.
 	 */
 
-	if (msgString[TCL_MAX_WARN_LEN-1] != L'\0') {
+	if (msgString[TCL_MAX_WARN_LEN-1] != '\0') {
 	    memcpy(msgString + (TCL_MAX_WARN_LEN - 5), L" ...", 5 * sizeof(WCHAR));
 	}
 	OutputDebugStringW(msgString);

@@ -1,25 +1,18 @@
 #include "tommath_private.h"
 #ifdef BN_MP_READ_RADIX_C
-/* LibTomMath, multiple-precision integer library -- Tom St Denis
- *
- * LibTomMath is a library that provides multiple-precision
- * integer arithmetic as well as number theoretic functionality.
- *
- * The library was designed directly after the MPI library by
- * Michael Fromberger but has been written from scratch with
- * additional optimizations in place.
- *
- * SPDX-License-Identifier: Unlicense
- */
+/* LibTomMath, multiple-precision integer library -- Tom St Denis */
+/* SPDX-License-Identifier: Unlicense */
 
 #define MP_TOUPPER(c) ((((c) >= 'a') && ((c) <= 'z')) ? (((c) + 'A') - 'a') : (c))
 
 /* read a string [ASCII] in a given radix */
-int mp_read_radix(mp_int *a, const char *str, int radix)
+mp_err mp_read_radix(mp_int *a, const char *str, int radix)
 {
-   int     y, res, neg;
+   mp_err   err;
+   int      y;
+   mp_sign  neg;
    unsigned pos;
-   char    ch;
+   char     ch;
 
    /* zero the digit bignum */
    mp_zero(a);
@@ -62,11 +55,11 @@ int mp_read_radix(mp_int *a, const char *str, int radix)
       if ((y == 0xff) || (y >= radix)) {
          break;
       }
-      if ((res = mp_mul_d(a, (mp_digit)radix, a)) != MP_OKAY) {
-         return res;
+      if ((err = mp_mul_d(a, (mp_digit)radix, a)) != MP_OKAY) {
+         return err;
       }
-      if ((res = mp_add_d(a, (mp_digit)y, a)) != MP_OKAY) {
-         return res;
+      if ((err = mp_add_d(a, (mp_digit)y, a)) != MP_OKAY) {
+         return err;
       }
       ++str;
    }
@@ -78,13 +71,9 @@ int mp_read_radix(mp_int *a, const char *str, int radix)
    }
 
    /* set the sign only if a != 0 */
-   if (mp_iszero(a) != MP_YES) {
+   if (!MP_IS_ZERO(a)) {
       a->sign = neg;
    }
    return MP_OKAY;
 }
 #endif
-
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */

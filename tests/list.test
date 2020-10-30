@@ -11,8 +11,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -108,7 +108,7 @@ proc slowsort list {
 		set minIndex $i
 		set min [lindex $list $i]
 	    }
-	    set i [expr {$i - 1}]
+	    incr i -1
 	}
 	set result [concat $result [list $min]]
 	if {$minIndex == 0} {

@@ -11,8 +11,11 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2
-namespace import -force ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
@@ -466,6 +469,67 @@ test compile-13.1 {testing underestimate of maxStackSize in list cmd} {exec} {
     list [catch {exec [interpreter] << $script} msg] $msg
 } {0 OK}
 
+# Tests of nested compile (body in body compilation), should not generate stack overflow
+# (with abnormal program termination), bug [fec0c17d39]:
+proc _ti_gencode {} {
+    # creates test interpreter on demand with [gencode] generator:
+    if {[interp exists ti]} {
+	return
+    }
+    interp create ti
+    ti eval {proc gencode {nr {cmd eval} {nl 0}} {
+	set code ""
+	set e ""; if {$nl} {set e "\n"}
+	for {set i 0} {$i < $nr} {incr i} {
+	    append code "$cmd \{$e"
+	}
+	append code "lappend result 1$e"
+	for {set i 0} {$i < $nr} {incr i} {
+	    append code "\}$e"
+	}
+	#puts [format "%% %.40s ... %d bytes" $code [string length $code]]
+	return $code
+    }}
+}
+test compile-13.2 {TclCompileScript: testing expected nested scripts compilation} -setup {
+    _ti_gencode
+    interp recursionlimit ti [expr {10000+50}]
+    ti eval {set result {}}
+} -body {
+    # Test different compilation variants (instructions evalStk, invokeStk, etc),
+    # with 1500 (1000 in debug) nested scripts (bodies). If you get SO/SF exceptions on some low-stack
+    # boxes or systems, please don't decrease it (either provide a constraint)
+    ti eval {foreach cmd {eval "if 1" try catch} {
+	set c [gencode [expr {![::tcl::pkgconfig get debug] ? 1500 : 1000}] $cmd]
+	if 1 $c
+    }}
+    ti eval {set result}
+} -result {1 1 1 1}
+test compile-13.3 {TclCompileScript: testing check of max depth by nested scripts compilation} -setup {
+    _ti_gencode
+    interp recursionlimit ti 100
+    ti eval {set result {}}
+} -body {
+    # Test different compilation variants (instructions evalStk, invokeStk, etc),
+    # with 500 nested scripts (bodies). It must generate "too many nested compilations"
+    # error for any variant we're testing here:
+    ti eval {foreach cmd {eval "if 1" try catch} {
+	set c [gencode 500 $cmd]
+	lappend errors [catch $c e] $e
+    }}
+    #puts $errors
+    # all of nested calls exceed the limit, so must end with "too many nested compilations"
+    # (or evaluations, depending on compile method/instruction and "mixed" compile within
+    # evaliation), so no one succeeds, the result must be empty:
+    ti eval {set result}
+} -result {}
+#
+# clean up:
+if {[interp exists ti]} {
+    interp delete ti
+}
+rename _ti_gencode {}
+
 # Tests compile-14.* for [Bug 599788] [Bug 0c043a175a47da8c2342]
 test compile-14.1 {testing errors in element name; segfault?} {} {
      catch {set a([error])} msg1
@@ -502,7 +566,7 @@ test compile-15.5 {proper TCL_RETURN code from [return]} {
 # Do all tests once byte compiled and once with direct string evaluation
 foreach noComp {0 1} {
 
-if $noComp {
+if {$noComp} {
     interp alias {} run {} testevalex
     set constraints testevalex
 } else {

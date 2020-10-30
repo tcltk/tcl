@@ -203,7 +203,7 @@ static void		PipeThreadActionProc(ClientData instanceData,
 static const Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    TCL_CLOSE2PROC,		/* Close proc. */
+    NULL,		/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -310,7 +310,7 @@ TclpFinalizePipes(void)
 
 void
 PipeSetupProc(
-    ClientData data,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
@@ -363,7 +363,7 @@ PipeSetupProc(
 
 static void
 PipeCheckProc(
-    ClientData data,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
@@ -402,7 +402,7 @@ PipeCheckProc(
 
 	if (needEvent) {
 	    infoPtr->flags |= PIPE_PENDING;
-	    evPtr = Tcl_Alloc(sizeof(PipeEvent));
+	    evPtr = (PipeEvent *)Tcl_Alloc(sizeof(PipeEvent));
 	    evPtr->header.proc = PipeEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -433,7 +433,7 @@ TclWinMakeFile(
 {
     WinFile *filePtr;
 
-    filePtr = Tcl_Alloc(sizeof(WinFile));
+    filePtr = (WinFile *)Tcl_Alloc(sizeof(WinFile));
     filePtr->type = WIN_FILE;
     filePtr->handle = handle;
 
@@ -466,14 +466,14 @@ TempFileName(
 				 * gets stored. */
 {
     const WCHAR *prefix = L"TCL";
-    if (GetTempPath(MAX_PATH, name) != 0) {
-	if (GetTempFileName(name, prefix, 0, name) != 0) {
+    if (GetTempPathW(MAX_PATH, name) != 0) {
+	if (GetTempFileNameW(name, prefix, 0, name) != 0) {
 	    return 1;
 	}
     }
     name[0] = '.';
     name[1] = '\0';
-    return GetTempFileName(name, prefix, 0, name);
+    return GetTempFileNameW(name, prefix, 0, name);
 }
 
 /*
@@ -577,7 +577,8 @@ TclpOpenFile(
 	break;
     }
 
-    nativePath = Tcl_WinUtfToTChar(path, -1, &ds);
+    Tcl_DStringInit(&ds);
+    nativePath = Tcl_UtfToWCharDString(path, -1, &ds);
 
     /*
      * If the file is not being created, use the existing file attributes.
@@ -585,7 +586,7 @@ TclpOpenFile(
 
     flags = 0;
     if (!(mode & O_CREAT)) {
-	flags = GetFileAttributes(nativePath);
+	flags = GetFileAttributesW(nativePath);
 	if (flags == 0xFFFFFFFF) {
 	    flags = 0;
 	}
@@ -601,7 +602,7 @@ TclpOpenFile(
      * Now we get to create the file.
      */
 
-    handle = CreateFile(nativePath, accessMode, shareMode,
+    handle = CreateFileW(nativePath, accessMode, shareMode,
 	    NULL, createMode, flags, NULL);
     Tcl_DStringFree(&ds);
 
@@ -609,7 +610,7 @@ TclpOpenFile(
 	DWORD err;
 
 	err = GetLastError();
-	if ((err & 0xffffL) == ERROR_OPEN_FAILED) {
+	if ((err & 0xFFFFL) == ERROR_OPEN_FAILED) {
 	    err = (mode & O_CREAT) ? ERROR_FILE_EXISTS : ERROR_FILE_NOT_FOUND;
 	}
 	TclWinConvertError(err);
@@ -658,7 +659,7 @@ TclpCreateTempFile(
 	return NULL;
     }
 
-    handle = CreateFile(name,
+    handle = CreateFileW(name,
 	    GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
 	    FILE_ATTRIBUTE_TEMPORARY|FILE_FLAG_DELETE_ON_CLOSE, NULL);
     if (handle == INVALID_HANDLE_VALUE) {
@@ -720,7 +721,7 @@ TclpCreateTempFile(
 
     TclWinConvertError(GetLastError());
     CloseHandle(handle);
-    DeleteFile(name);
+    DeleteFileW(name);
     return NULL;
 }
 
@@ -850,7 +851,7 @@ TclpCloseFile(
  * Results:
  *	Returns the process id for the child process. If the pid was not known
  *	by Tcl, either because the pid was not created by Tcl or the child
- *	process has already been reaped, TCL_IO_FAILURE is returned.
+ *	process has already been reaped, TCL_INDEX_NONE is returned.
  *
  * Side effects:
  *	None.
@@ -874,7 +875,7 @@ TclpGetPid(
 	}
     }
     Tcl_MutexUnlock(&pipeMutex);
-    return TCL_IO_FAILURE;
+    return TCL_INDEX_NONE;
 }
 
 /*
@@ -936,7 +937,7 @@ TclpCreateProcess(
 {
     int result, applType, createFlags;
     Tcl_DString cmdLine;	/* Complete command line (WCHAR). */
-    STARTUPINFO startInfo;
+    STARTUPINFOW startInfo;
     PROCESS_INFORMATION procInfo;
     SECURITY_ATTRIBUTES secAtts;
     HANDLE hProcess, h, inputHandle, outputHandle, errorHandle;
@@ -1047,7 +1048,7 @@ TclpCreateProcess(
 	 * sink.
 	 */
 
-	startInfo.hStdOutput = CreateFile(L"NUL:", GENERIC_WRITE, 0,
+	startInfo.hStdOutput = CreateFileW(L"NUL:", GENERIC_WRITE, 0,
 		&secAtts, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     } else {
 	DuplicateHandle(hProcess, outputHandle, hProcess,
@@ -1067,7 +1068,7 @@ TclpCreateProcess(
 	 * sink.
 	 */
 
-	startInfo.hStdError = CreateFile(L"NUL:", GENERIC_WRITE, 0,
+	startInfo.hStdError = CreateFileW(L"NUL:", GENERIC_WRITE, 0,
 		&secAtts, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     } else {
 	DuplicateHandle(hProcess, errorHandle, hProcess, &startInfo.hStdError,
@@ -1133,7 +1134,7 @@ TclpCreateProcess(
 
     BuildCommandLine(execPath, argc, argv, &cmdLine);
 
-    if (CreateProcess(NULL, (WCHAR *) Tcl_DStringValue(&cmdLine),
+    if (CreateProcessW(NULL, (WCHAR *) Tcl_DStringValue(&cmdLine),
 	    NULL, NULL, TRUE, (DWORD) createFlags, NULL, NULL, &startInfo,
 	    &procInfo) == 0) {
 	TclWinConvertError(GetLastError());
@@ -1155,7 +1156,7 @@ TclpCreateProcess(
      * will be created for each process but the previous instances may not be
      * cleaned up. This results in a significant virtual memory loss each time
      * the process is spawned. If there is a WaitForInputIdle() call between
-     * CreateProcess() and CloseHandle(), the problem does not occur." PSS ID
+     * CreateProcessW() and CloseHandle(), the problem does not occur." PSS ID
      * Number: Q124121
      */
 
@@ -1204,7 +1205,7 @@ HasConsole(void)
 {
     HANDLE handle;
 
-    handle = CreateFileA("CONOUT$", GENERIC_WRITE, FILE_SHARE_WRITE,
+    handle = CreateFileW(L"CONOUT$", GENERIC_WRITE, FILE_SHARE_WRITE,
 	    NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (handle != INVALID_HANDLE_VALUE) {
@@ -1274,7 +1275,7 @@ ApplicationType(
      * is, then try adding .com, .exe, .bat and .cmd, in that order, to the name,
      * looking for an executable.
      *
-     * Using the raw SearchPath() function doesn't do quite what is necessary.
+     * Using the raw SearchPathW() function doesn't do quite what is necessary.
      * If the name of the executable already contains a '.' character, it will
      * not try appending the specified extension when searching (in other
      * words, SearchPath will not find the program "a.b.exe" if the arguments
@@ -1290,9 +1291,10 @@ ApplicationType(
     for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
 	Tcl_DStringSetLength(&nameBuf, nameLen);
 	Tcl_DStringAppend(&nameBuf, extensions[i], -1);
-	nativeName = Tcl_WinUtfToTChar(Tcl_DStringValue(&nameBuf),
+	Tcl_DStringInit(&ds);
+	nativeName = Tcl_UtfToWCharDString(Tcl_DStringValue(&nameBuf),
 		Tcl_DStringLength(&nameBuf), &ds);
-	found = SearchPath(NULL, nativeName, NULL, MAX_PATH,
+	found = SearchPathW(NULL, nativeName, NULL, MAX_PATH,
 		nativeFullPath, &rest);
 	Tcl_DStringFree(&ds);
 	if (found == 0) {
@@ -1304,11 +1306,12 @@ ApplicationType(
 	 * known type.
 	 */
 
-	attr = GetFileAttributes(nativeFullPath);
-	if ((attr == 0xffffffff) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
+	attr = GetFileAttributesW(nativeFullPath);
+	if ((attr == 0xFFFFFFFF) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	    continue;
 	}
-	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, -1, &ds));
+	Tcl_DStringInit(&ds);
+	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, -1, &ds));
 	Tcl_DStringFree(&ds);
 
 	ext = strrchr(fullName, '.');
@@ -1318,7 +1321,7 @@ ApplicationType(
 	    break;
 	}
 
-	hFile = CreateFile(nativeFullPath,
+	hFile = CreateFileW(nativeFullPath,
 		GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) {
@@ -1398,8 +1401,9 @@ ApplicationType(
 	 * application name from the arguments.
 	 */
 
-	GetShortPathName(nativeFullPath, nativeFullPath, MAX_PATH);
-	strcpy(fullName, Tcl_WinTCharToUtf(nativeFullPath, -1, &ds));
+	GetShortPathNameW(nativeFullPath, nativeFullPath, MAX_PATH);
+	Tcl_DStringInit(&ds);
+	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, -1, &ds));
 	Tcl_DStringFree(&ds);
     }
     return applType;
@@ -1411,7 +1415,7 @@ ApplicationType(
  * BuildCommandLine --
  *
  *	The command line arguments are stored in linePtr separated by spaces,
- *	in a form that CreateProcess() understands. Special characters in
+ *	in a form that CreateProcessW() understands. Special characters in
  *	individual arguments from argv[] must be quoted when being stored in
  *	cmdLine.
  *
@@ -1727,7 +1731,8 @@ BuildCommandLine(
 	}
     }
     Tcl_DStringFree(linePtr);
-    Tcl_WinUtfToTChar(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds), linePtr);
+    Tcl_DStringInit(linePtr);
+    Tcl_UtfToWCharDString(Tcl_DStringValue(&ds), Tcl_DStringLength(&ds), linePtr);
     Tcl_DStringFree(&ds);
 }
 
@@ -1758,7 +1763,7 @@ TclpCreateCommandChannel(
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    PipeInfo *infoPtr = Tcl_Alloc(sizeof(PipeInfo));
+    PipeInfo *infoPtr = (PipeInfo *)Tcl_Alloc(sizeof(PipeInfo));
 
     PipeInit();
 
@@ -1784,7 +1789,7 @@ TclpCreateCommandChannel(
 	 * Start the background reader thread.
 	 */
 
-	infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->readable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
 	    TclPipeThreadCreateTI(&infoPtr->readTI, infoPtr, infoPtr->readable),
 	    0, NULL);
@@ -1799,7 +1804,7 @@ TclpCreateCommandChannel(
 	 * Start the background writer thread.
 	 */
 
-	infoPtr->writable = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->writable = CreateEventW(NULL, TRUE, TRUE, NULL);
 	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
 	    TclPipeThreadCreateTI(&infoPtr->writeTI, infoPtr, infoPtr->writable),
 	    0, NULL);
@@ -1851,7 +1856,7 @@ Tcl_CreatePipe(
     Tcl_Interp *interp,		/* Errors returned in result.*/
     Tcl_Channel *rchan,		/* Where to return the read side. */
     Tcl_Channel *wchan,		/* Where to return the write side. */
-    int flags)			/* Reserved for future use. */
+    TCL_UNUSED(int) /*flags*/)	/* Reserved for future use. */
 {
     HANDLE readHandle, writeHandle;
     SECURITY_ATTRIBUTES sec;
@@ -1912,7 +1917,7 @@ TclGetAndDetachPids(
 	return;
     }
 
-    pipePtr = Tcl_GetChannelInstanceData(chan);
+    pipePtr = (PipeInfo *)Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
 	Tcl_ListObjAppendElement(NULL, pidsObj,
@@ -2298,7 +2303,7 @@ PipeOutputProc(
 		Tcl_Free(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = Tcl_Alloc(toWrite);
+	    infoPtr->writeBuf = (char *)Tcl_Alloc(toWrite);
 	}
 	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
@@ -2706,7 +2711,7 @@ TclWinAddProcess(
     void *hProcess,		/* Handle to process */
     size_t id)		/* Global process identifier */
 {
-    ProcInfo *procPtr = Tcl_Alloc(sizeof(ProcInfo));
+    ProcInfo *procPtr = (ProcInfo*)Tcl_Alloc(sizeof(ProcInfo));
 
     PipeInit();
 
@@ -2735,10 +2740,9 @@ TclWinAddProcess(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_PidObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -2767,7 +2771,7 @@ Tcl_PidObjCmd(
 	}
 
 	pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
-	resultPtr = Tcl_NewObj();
+	TclNewObj(resultPtr);
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(/*interp*/ NULL, resultPtr,
 		    Tcl_NewWideIntObj((unsigned)
@@ -2807,7 +2811,7 @@ WaitForRead(
 				 * or not. */
 {
     DWORD timeout, count;
-    HANDLE *handle = ((WinFile *) infoPtr->readFile)->handle;
+    HANDLE *handle = (HANDLE *)((WinFile *) infoPtr->readFile)->handle;
 
     while (1) {
 	/*
@@ -3184,9 +3188,9 @@ PipeThreadActionProc(
 
 Tcl_Channel
 TclpOpenTemporaryFile(
-    Tcl_Obj *dirObj,
+    TCL_UNUSED(Tcl_Obj *) /*dirObj*/,
     Tcl_Obj *basenameObj,
-    Tcl_Obj *extensionObj,
+    TCL_UNUSED(Tcl_Obj *) /*extensionObj*/,
     Tcl_Obj *resultingNameObj)
 {
     WCHAR name[MAX_PATH];
@@ -3202,7 +3206,7 @@ TclpOpenTemporaryFile(
     }
 
     namePtr = (char *) name;
-    length = GetTempPath(MAX_PATH, name);
+    length = GetTempPathW(MAX_PATH, name);
     if (length == 0) {
 	goto gotError;
     }
@@ -3210,7 +3214,8 @@ TclpOpenTemporaryFile(
     if (basenameObj) {
 	const char *string = TclGetStringFromObj(basenameObj, &length);
 
-	Tcl_WinUtfToTChar(string, length, &buf);
+	Tcl_DStringInit(&buf);
+	Tcl_UtfToWCharDString(string, length, &buf);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);
@@ -3230,12 +3235,13 @@ TclpOpenTemporaryFile(
 
 	sprintf(number, "%d.TMP", counter);
 	counter = (unsigned short) (counter + 1);
-	Tcl_WinUtfToTChar(number, strlen(number), &buf);
+	Tcl_DStringInit(&buf);
+	Tcl_UtfToWCharDString(number, strlen(number), &buf);
 	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf) + 1);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf) + 1);
 	Tcl_DStringFree(&buf);
 
-	handle = CreateFile(name,
+	handle = CreateFileW(name,
 		GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, flags, NULL);
     } while (handle == INVALID_HANDLE_VALUE
 	    && --counter2 > 0
@@ -3280,11 +3286,11 @@ TclPipeThreadCreateTI(
 {
     TclPipeThreadInfo *pipeTI;
 #ifndef _PTI_USE_CKALLOC
-    pipeTI = malloc(sizeof(TclPipeThreadInfo));
+    pipeTI = (TclPipeThreadInfo *)malloc(sizeof(TclPipeThreadInfo));
 #else
-    pipeTI = Tcl_Alloc(sizeof(TclPipeThreadInfo));
+    pipeTI = (TclPipeThreadInfo *)Tcl_Alloc(sizeof(TclPipeThreadInfo));
 #endif /* !_PTI_USE_CKALLOC */
-    pipeTI->evControl = CreateEvent(NULL, FALSE, FALSE, NULL);
+    pipeTI->evControl = CreateEventW(NULL, FALSE, FALSE, NULL);
     pipeTI->state = PTI_STATE_IDLE;
     pipeTI->clientData = clientData;
     pipeTI->evWakeUp = wakeEvent;
@@ -3431,6 +3437,7 @@ TclPipeThreadStopSignal(
 
 	SetEvent(evControl);
 	*pipeTIPtr = NULL;
+	/* FALLTHRU */
     case PTI_STATE_DOWN:
 	return 1;
 

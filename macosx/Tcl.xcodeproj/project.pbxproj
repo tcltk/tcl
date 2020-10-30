@@ -138,9 +138,8 @@
 		F96D494008F272C3004A47F5 /* bn_mp_sub_d.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42C208F272B3004A47F5 /* bn_mp_sub_d.c */; };
 		F96D494608F272C3004A47F5 /* bn_mp_toom_mul.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42C808F272B3004A47F5 /* bn_mp_toom_mul.c */; };
 		F96D494708F272C3004A47F5 /* bn_mp_toom_sqr.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42C908F272B3004A47F5 /* bn_mp_toom_sqr.c */; };
-		F96D494908F272C3004A47F5 /* bn_mp_toradix_n.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42CB08F272B3004A47F5 /* bn_mp_toradix_n.c */; };
+		F96D494908F272C3004A47F5 /* bn_mp_to_radix.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42CB08F272B3004A47F5 /* bn_mp_to_radix.c */; };
 		F96D494C08F272C3004A47F5 /* bn_mp_zero.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42CE08F272B3004A47F5 /* bn_mp_zero.c */; };
-		F96D494E08F272C3004A47F5 /* bn_reverse.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42D008F272B3004A47F5 /* bn_reverse.c */; };
 		F96D494F08F272C3004A47F5 /* bn_s_mp_add.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42D108F272B3004A47F5 /* bn_s_mp_add.c */; };
 		F96D495108F272C3004A47F5 /* bn_s_mp_mul_digs.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42D308F272B3004A47F5 /* bn_s_mp_mul_digs.c */; };
 		F96D495308F272C3004A47F5 /* bn_s_mp_sqr.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42D508F272B3004A47F5 /* bn_s_mp_sqr.c */; };
@@ -164,14 +163,12 @@
 		F9E61D29090A486C002B3151 /* bn_mp_neg.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42A208F272B3004A47F5 /* bn_mp_neg.c */; };
 		F9E61D2A090A4891002B3151 /* bn_mp_sqrt.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42C008F272B3004A47F5 /* bn_mp_sqrt.c */; };
 		F9E61D2B090A48A4002B3151 /* bn_mp_and.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D426C08F272B3004A47F5 /* bn_mp_and.c */; };
-		F9E61D2C090A48AC002B3151 /* bn_mp_expt_d.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D427F08F272B3004A47F5 /* bn_mp_expt_d_ex.c */; };
-		F9E61D2C090A48AC002B3151 /* bn_mp_expt_d_ex.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D427F08F272B3004A47F5 /* bn_mp_expt_d.c */; };
+		F9E61D2C090A48AC002B3151 /* bn_mp_expt_u32.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D427F08F272B3004A47F5 /* bn_mp_expt_u32.c */; };
 		F9E61D2D090A48BB002B3151 /* bn_mp_xor.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42CD08F272B3004A47F5 /* bn_mp_xor.c */; };
 		F9E61D2E090A48BF002B3151 /* bn_mp_or.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42A308F272B3004A47F5 /* bn_mp_or.c */; };
 		F9E61D2F090A48C7002B3151 /* bn_mp_shrink.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42BC08F272B3004A47F5 /* bn_mp_shrink.c */; };
-		F9E61D30090A48E2002B3151 /* bn_mp_to_unsigned_bin_n.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42C708F272B3004A47F5 /* bn_mp_to_unsigned_bin_n.c */; };
-		F9E61D31090A48F9002B3151 /* bn_mp_to_unsigned_bin.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42C608F272B3004A47F5 /* bn_mp_to_unsigned_bin.c */; };
-		F9E61D32090A48FA002B3151 /* bn_mp_unsigned_bin_size.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42CC08F272B3004A47F5 /* bn_mp_unsigned_bin_size.c */; };
+		F9E61D31090A48F9002B3151 /* bn_mp_to_ubin.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42C608F272B3004A47F5 /* bn_mp_to_ubin.c */; };
+		F9E61D32090A48FA002B3151 /* bn_mp_ubin_size.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D42CC08F272B3004A47F5 /* bn_mp_ubin_size.c */; };
 		F9F4415E0C8BAE6F00BCCD67 /* tclDTrace.d in Sources */ = {isa = PBXBuildFile; fileRef = F9F4415D0C8BAE6F00BCCD67 /* tclDTrace.d */; };
 		F9FC77B80AB29E9100B7077D /* tclUnixCompat.c in Sources */ = {isa = PBXBuildFile; fileRef = F9FC77B70AB29E9100B7077D /* tclUnixCompat.c */; };
 /* End PBXBuildFile section */
@@ -265,7 +262,7 @@
 		F96D3E1F08F272A5004A47F5 /* CrtInterp.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = CrtInterp.3; sourceTree = "<group>"; };
 		F96D3E2008F272A5004A47F5 /* CrtMathFnc.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = CrtMathFnc.3; sourceTree = "<group>"; };
 		F96D3E2108F272A5004A47F5 /* CrtObjCmd.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = CrtObjCmd.3; sourceTree = "<group>"; };
-		F96D3E2208F272A5004A47F5 /* CrtSlave.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = CrtSlave.3; sourceTree = "<group>"; };
+		F96D3E2208F272A5004A47F5 /* CrtAlias.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = CrtAlias.3; sourceTree = "<group>"; };
 		F96D3E2308F272A5004A47F5 /* CrtTimerHdlr.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = CrtTimerHdlr.3; sourceTree = "<group>"; };
 		F96D3E2408F272A5004A47F5 /* CrtTrace.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = CrtTrace.3; sourceTree = "<group>"; };
 		F96D3E2508F272A5004A47F5 /* dde.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = dde.n; sourceTree = "<group>"; };
@@ -536,7 +533,6 @@
 		F96D3F3408F272A7004A47F5 /* tclUtf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclUtf.c; sourceTree = "<group>"; };
 		F96D3F3508F272A7004A47F5 /* tclUtil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclUtil.c; sourceTree = "<group>"; };
 		F96D3F3608F272A7004A47F5 /* tclVar.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclVar.c; sourceTree = "<group>"; };
-		F96D3F3708F272A7004A47F5 /* tommath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tommath.h; sourceTree = "<group>"; };
 		F96D3F3908F272A8004A47F5 /* auto.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = auto.tcl; sourceTree = "<group>"; };
 		F96D3F3A08F272A8004A47F5 /* clock.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = clock.tcl; sourceTree = "<group>"; };
 		F96D3F3C08F272A8004A47F5 /* pkgIndex.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = pkgIndex.tcl; sourceTree = "<group>"; };
@@ -578,7 +574,7 @@
 		F96D427908F272B3004A47F5 /* bn_mp_div_3.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_div_3.c; sourceTree = "<group>"; };
 		F96D427A08F272B3004A47F5 /* bn_mp_div_d.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_div_d.c; sourceTree = "<group>"; };
 		F96D427E08F272B3004A47F5 /* bn_mp_exch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_exch.c; sourceTree = "<group>"; };
-		F96D427F08F272B3004A47F5 /* bn_mp_expt_d.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_expt_d.c; sourceTree = "<group>"; };
+		F96D427F08F272B3004A47F5 /* bn_mp_expt_u32.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_expt_u32.c; sourceTree = "<group>"; };
 		F96D427F08F272B3004A47F5 /* bn_mp_expt_d_ex.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_expt_d_ex.c; sourceTree = "<group>"; };
 		F96D428708F272B3004A47F5 /* bn_mp_grow.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_grow.c; sourceTree = "<group>"; };
 		F96D428808F272B3004A47F5 /* bn_mp_init.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_init.c; sourceTree = "<group>"; };
@@ -607,15 +603,13 @@
 		F96D42C008F272B3004A47F5 /* bn_mp_sqrt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_sqrt.c; sourceTree = "<group>"; };
 		F96D42C108F272B3004A47F5 /* bn_mp_sub.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_sub.c; sourceTree = "<group>"; };
 		F96D42C208F272B3004A47F5 /* bn_mp_sub_d.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_sub_d.c; sourceTree = "<group>"; };
-		F96D42C608F272B3004A47F5 /* bn_mp_to_unsigned_bin.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_to_unsigned_bin.c; sourceTree = "<group>"; };
-		F96D42C708F272B3004A47F5 /* bn_mp_to_unsigned_bin_n.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_to_unsigned_bin_n.c; sourceTree = "<group>"; };
+		F96D42C608F272B3004A47F5 /* bn_mp_to_ubin.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_to_ubin.c; sourceTree = "<group>"; };
 		F96D42C808F272B3004A47F5 /* bn_mp_toom_mul.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_toom_mul.c; sourceTree = "<group>"; };
 		F96D42C908F272B3004A47F5 /* bn_mp_toom_sqr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_toom_sqr.c; sourceTree = "<group>"; };
-		F96D42CB08F272B3004A47F5 /* bn_mp_toradix_n.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_toradix_n.c; sourceTree = "<group>"; };
-		F96D42CC08F272B3004A47F5 /* bn_mp_unsigned_bin_size.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_unsigned_bin_size.c; sourceTree = "<group>"; };
+		F96D42CB08F272B3004A47F5 /* bn_mp_to_radix.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_to_radix.c; sourceTree = "<group>"; };
+		F96D42CC08F272B3004A47F5 /* bn_mp_ubin_size.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_ubin_size.c; sourceTree = "<group>"; };
 		F96D42CD08F272B3004A47F5 /* bn_mp_xor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_xor.c; sourceTree = "<group>"; };
 		F96D42CE08F272B3004A47F5 /* bn_mp_zero.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_mp_zero.c; sourceTree = "<group>"; };
-		F96D42D008F272B3004A47F5 /* bn_reverse.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_reverse.c; sourceTree = "<group>"; };
 		F96D42D108F272B3004A47F5 /* bn_s_mp_add.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_s_mp_add.c; sourceTree = "<group>"; };
 		F96D42D308F272B3004A47F5 /* bn_s_mp_mul_digs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_s_mp_mul_digs.c; sourceTree = "<group>"; };
 		F96D42D508F272B3004A47F5 /* bn_s_mp_sqr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = bn_s_mp_sqr.c; sourceTree = "<group>"; };
@@ -770,7 +764,6 @@
 		F96D43D108F272B8004A47F5 /* checkLibraryDoc.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = checkLibraryDoc.tcl; sourceTree = "<group>"; };
 		F96D43D208F272B8004A47F5 /* configure */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = configure; sourceTree = "<group>"; };
 		F96D43D308F272B8004A47F5 /* configure.ac */ = {isa = PBXFileReference; explicitFileType = text.script.sh; fileEncoding = 4; path = configure.ac; sourceTree = "<group>"; };
-		F96D442408F272B8004A47F5 /* fix_tommath_h.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = fix_tommath_h.tcl; sourceTree = "<group>"; };
 		F96D442508F272B8004A47F5 /* genStubs.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = genStubs.tcl; sourceTree = "<group>"; };
 		F96D442708F272B8004A47F5 /* index.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = index.tcl; sourceTree = "<group>"; };
 		F96D442808F272B8004A47F5 /* installData.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = installData.tcl; sourceTree = "<group>"; };
@@ -1017,7 +1010,7 @@
 				F96D3E1F08F272A5004A47F5 /* CrtInterp.3 */,
 				F96D3E2008F272A5004A47F5 /* CrtMathFnc.3 */,
 				F96D3E2108F272A5004A47F5 /* CrtObjCmd.3 */,
-				F96D3E2208F272A5004A47F5 /* CrtSlave.3 */,
+				F96D3E2208F272A5004A47F5 /* CrtAlias.3 */,
 				F96D3E2308F272A5004A47F5 /* CrtTimerHdlr.3 */,
 				F96D3E2408F272A5004A47F5 /* CrtTrace.3 */,
 				F96D3E2508F272A5004A47F5 /* dde.n */,
@@ -1326,7 +1319,6 @@
 				F96D3F3508F272A7004A47F5 /* tclUtil.c */,
 				F96D3F3608F272A7004A47F5 /* tclVar.c */,
 				F96437C90EF0D4B2003F468E /* tclZlib.c */,
-				F96D3F3708F272A7004A47F5 /* tommath.h */,
 			);
 			path = generic;
 			sourceTree = "<group>";
@@ -1429,7 +1421,7 @@
 				F96D427908F272B3004A47F5 /* bn_mp_div_3.c */,
 				F96D427A08F272B3004A47F5 /* bn_mp_div_d.c */,
 				F96D427E08F272B3004A47F5 /* bn_mp_exch.c */,
-				F96D427F08F272B3004A47F5 /* bn_mp_expt_d.c */,
+				F96D427F08F272B3004A47F5 /* bn_mp_expt_u32.c */,
 				F96D427F08F272B3004A47F5 /* bn_mp_expt_d_ex.c */,
 				F96D428708F272B3004A47F5 /* bn_mp_grow.c */,
 				F96D428808F272B3004A47F5 /* bn_mp_init.c */,
@@ -1458,15 +1450,13 @@
 				F96D42C008F272B3004A47F5 /* bn_mp_sqrt.c */,
 				F96D42C108F272B3004A47F5 /* bn_mp_sub.c */,
 				F96D42C208F272B3004A47F5 /* bn_mp_sub_d.c */,
-				F96D42C608F272B3004A47F5 /* bn_mp_to_unsigned_bin.c */,
-				F96D42C708F272B3004A47F5 /* bn_mp_to_unsigned_bin_n.c */,
+				F96D42C608F272B3004A47F5 /* bn_mp_to_ubin.c */,
 				F96D42C808F272B3004A47F5 /* bn_mp_toom_mul.c */,
 				F96D42C908F272B3004A47F5 /* bn_mp_toom_sqr.c */,
-				F96D42CB08F272B3004A47F5 /* bn_mp_toradix_n.c */,
-				F96D42CC08F272B3004A47F5 /* bn_mp_unsigned_bin_size.c */,
+				F96D42CB08F272B3004A47F5 /* bn_mp_to_radix.c */,
+				F96D42CC08F272B3004A47F5 /* bn_mp_ubin_size.c */,
 				F96D42CD08F272B3004A47F5 /* bn_mp_xor.c */,
 				F96D42CE08F272B3004A47F5 /* bn_mp_zero.c */,
-				F96D42D008F272B3004A47F5 /* bn_reverse.c */,
 				F96D42D108F272B3004A47F5 /* bn_s_mp_add.c */,
 				F96D42D308F272B3004A47F5 /* bn_s_mp_mul_digs.c */,
 				F96D42D508F272B3004A47F5 /* bn_s_mp_sqr.c */,
@@ -1655,7 +1645,6 @@
 				F96D43D108F272B8004A47F5 /* checkLibraryDoc.tcl */,
 				F96D43D208F272B8004A47F5 /* configure */,
 				F96D43D308F272B8004A47F5 /* configure.ac */,
-				F96D442408F272B8004A47F5 /* fix_tommath_h.tcl */,
 				F96D442508F272B8004A47F5 /* genStubs.tcl */,
 				F96D442708F272B8004A47F5 /* index.tcl */,
 				F96D442808F272B8004A47F5 /* installData.tcl */,
@@ -1905,7 +1894,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "if [ \"${ACTION:-build}\" == \"build\" ]; then\nif [ -z \"${HOME}\" ]; then export HOME=\"$(echo ~)\"; fi\ncd \"${TARGET_TEMP_DIR}\"; rm -rf \"${DERIVED_FILE_DIR}\"; mkdir -p \"${DERIVED_FILE_DIR}\"\nprintf '%s%s%s%s%s' '\npackage require tcltest 2.2\nnamespace import tcltest::*\nconfigure -testdir [file normalize {' \"${TCL_SRCROOT}\" '/tests}]\nconfigure -tmpdir [file normalize {' \"${DERIVED_FILE_DIR}\" '}]\nconfigure -verbose [concat [configure -verbose] line]\nrunAllTests\n' | \"${TEST_RIG}\"; TEST_RIG_RESULT=$?\n[ ${TEST_RIG_RESULT} -ne 0 ] && echo \"tcltest:0: error: tcltest exited abnormally with code ${TEST_RIG_RESULT}.\"\nexit ${TEST_RIG_RESULT}\nfi";
+			shellScript = "if [ \"${ACTION:-build}\" == \"build\" ]; then\nif [ -z \"${HOME}\" ]; then export HOME=\"$(echo ~)\"; fi\ncd \"${TARGET_TEMP_DIR}\"; rm -rf \"${DERIVED_FILE_DIR}\"; mkdir -p \"${DERIVED_FILE_DIR}\"\nprintf '%s%s%s%s%s' '\npackage require tcltest 2.5\nnamespace import tcltest::*\nconfigure -testdir [file normalize {' \"${TCL_SRCROOT}\" '/tests}]\nconfigure -tmpdir [file normalize {' \"${DERIVED_FILE_DIR}\" '}]\nconfigure -verbose [concat [configure -verbose] line]\nrunAllTests\n' | \"${TEST_RIG}\"; TEST_RIG_RESULT=$?\n[ ${TEST_RIG_RESULT} -ne 0 ] && echo \"tcltest:0: error: tcltest exited abnormally with code ${TEST_RIG_RESULT}.\"\nexit ${TEST_RIG_RESULT}\nfi";
 			showEnvVarsInLog = 0;
 		};
 		F97AF02F0B665DA900310EA2 /* Build Tcl */ = {
@@ -2060,7 +2049,7 @@
 				F96D48F708F272C3004A47F5 /* bn_mp_div_3.c in Sources */,
 				F96D48F808F272C3004A47F5 /* bn_mp_div_d.c in Sources */,
 				F96D48FC08F272C3004A47F5 /* bn_mp_exch.c in Sources */,
-				F9E61D2C090A48AC002B3151 /* bn_mp_expt_d.c in Sources */,
+				F9E61D2C090A48AC002B3151 /* bn_mp_expt_u32.c in Sources */,
 				F9E61D2C090A48AC002B3151 /* bn_mp_expt_d_ex.c in Sources */,
 				F96D490508F272C3004A47F5 /* bn_mp_grow.c in Sources */,
 				F96D490608F272C3004A47F5 /* bn_mp_init.c in Sources */,
@@ -2089,15 +2078,13 @@
 				F9E61D2A090A4891002B3151 /* bn_mp_sqrt.c in Sources */,
 				F96D493F08F272C3004A47F5 /* bn_mp_sub.c in Sources */,
 				F96D494008F272C3004A47F5 /* bn_mp_sub_d.c in Sources */,
-				F9E61D30090A48E2002B3151 /* bn_mp_to_unsigned_bin_n.c in Sources */,
-				F9E61D31090A48F9002B3151 /* bn_mp_to_unsigned_bin.c in Sources */,
+				F9E61D31090A48F9002B3151 /* bn_mp_to_ubin.c in Sources */,
 				F96D494608F272C3004A47F5 /* bn_mp_toom_mul.c in Sources */,
 				F96D494708F272C3004A47F5 /* bn_mp_toom_sqr.c in Sources */,
-				F96D494908F272C3004A47F5 /* bn_mp_toradix_n.c in Sources */,
-				F9E61D32090A48FA002B3151 /* bn_mp_unsigned_bin_size.c in Sources */,
+				F96D494908F272C3004A47F5 /* bn_mp_to_radix.c in Sources */,
+				F9E61D32090A48FA002B3151 /* bn_mp_ubin_size.c in Sources */,
 				F9E61D2D090A48BB002B3151 /* bn_mp_xor.c in Sources */,
 				F96D494C08F272C3004A47F5 /* bn_mp_zero.c in Sources */,
-				F96D494E08F272C3004A47F5 /* bn_reverse.c in Sources */,
 				F96D494F08F272C3004A47F5 /* bn_s_mp_add.c in Sources */,
 				F96D495108F272C3004A47F5 /* bn_s_mp_mul_digs.c in Sources */,
 				F96D495308F272C3004A47F5 /* bn_s_mp_sqr.c in Sources */,

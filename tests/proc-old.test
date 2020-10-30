@@ -14,8 +14,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -504,7 +504,7 @@ test proc-old-10.1 {ByteCode epoch change during recursive proc execution} {
         set y 20
         rename expr expr.old
         rename expr.old expr
-        if $x then {t1 0} ;# recursive call after foo's code is invalidated
+        if {$x} then {t1 0} ;# recursive call after foo's code is invalidated
         return 20
     }
     t1 1

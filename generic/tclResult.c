@@ -74,7 +74,7 @@ Tcl_SaveInterpState(
     int status)			/* status code for current operation */
 {
     Interp *iPtr = (Interp *) interp;
-    InterpState *statePtr = Tcl_Alloc(sizeof(InterpState));
+    InterpState *statePtr = (InterpState *)Tcl_Alloc(sizeof(InterpState));
 
     statePtr->status = status;
     statePtr->flags = iPtr->flags & ERR_ALREADY_LOGGED;
@@ -230,11 +230,11 @@ void
 Tcl_SetObjResult(
     Tcl_Interp *interp,		/* Interpreter with which to associate the
 				 * return object value. */
-    register Tcl_Obj *objPtr)	/* Tcl object to be returned. If NULL, the obj
+    Tcl_Obj *objPtr)	/* Tcl object to be returned. If NULL, the obj
 				 * result is made an empty string object. */
 {
-    register Interp *iPtr = (Interp *) interp;
-    register Tcl_Obj *oldObjResult = iPtr->objResultPtr;
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *oldObjResult = iPtr->objResultPtr;
 
     iPtr->objResultPtr = objPtr;
     Tcl_IncrRefCount(objPtr);	/* since interp result is a reference */
@@ -272,7 +272,7 @@ Tcl_Obj *
 Tcl_GetObjResult(
     Tcl_Interp *interp)		/* Interpreter whose result to return. */
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     return iPtr->objResultPtr;
 }
@@ -373,36 +373,6 @@ Tcl_AppendElement(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_FreeResult --
- *
- *	This function frees up the memory associated with an interpreter's
- *	result, resetting the interpreter's result object.  Tcl_FreeResult is
- *	most commonly used when a function is about to replace one result
- *	value with another.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Frees the memory associated with interp's result but does not change
- *	any part of the error dictionary (i.e., the errorinfo and errorcode
- *	remain the same).
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_FreeResult(
-    register Tcl_Interp *interp)/* Interpreter for which to free result. */
-{
-    register Interp *iPtr = (Interp *) interp;
-
-    ResetObjResult(iPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_ResetResult --
  *
  *	This function resets both the interpreter's string and object results.
@@ -421,9 +391,9 @@ Tcl_FreeResult(
 
 void
 Tcl_ResetResult(
-    register Tcl_Interp *interp)/* Interpreter for which to clear result. */
+    Tcl_Interp *interp)/* Interpreter for which to clear result. */
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     ResetObjResult(iPtr);
     if (iPtr->errorCode) {
@@ -474,10 +444,10 @@ Tcl_ResetResult(
 
 static void
 ResetObjResult(
-    register Interp *iPtr)	/* Points to the interpreter whose result
+    Interp *iPtr)	/* Points to the interpreter whose result
 				 * object should be reset. */
 {
-    register Tcl_Obj *objResultPtr = iPtr->objResultPtr;
+    Tcl_Obj *objResultPtr = iPtr->objResultPtr;
 
     if (Tcl_IsShared(objResultPtr)) {
 	TclDecrRefCount(objResultPtr);
@@ -639,8 +609,8 @@ static Tcl_Obj **
 GetKeys(void)
 {
     static Tcl_ThreadDataKey returnKeysKey;
-    Tcl_Obj **keys = Tcl_GetThreadData(&returnKeysKey,
-	    (int) (KEY_LAST * sizeof(Tcl_Obj *)));
+    Tcl_Obj **keys = (Tcl_Obj **)Tcl_GetThreadData(&returnKeysKey,
+	    KEY_LAST * sizeof(Tcl_Obj *));
 
     if (keys[0] == NULL) {
 	/*
@@ -691,7 +661,7 @@ static void
 ReleaseKeys(
     ClientData clientData)
 {
-    Tcl_Obj **keys = clientData;
+    Tcl_Obj **keys = (Tcl_Obj **)clientData;
     int i;
 
     for (i = KEY_CODE; i < KEY_LAST; i++) {
@@ -853,9 +823,10 @@ TclMergeReturnOptions(
     int code = TCL_OK;
     int level = 1;
     Tcl_Obj *valuePtr;
-    Tcl_Obj *returnOpts = Tcl_NewObj();
+    Tcl_Obj *returnOpts;
     Tcl_Obj **keys = GetKeys();
 
+    TclNewObj(returnOpts);
     for (;  objc > 1;  objv += 2, objc -= 2) {
 	const char *opt = TclGetString(objv[0]);
 	const char *compare = TclGetString(keys[KEY_OPTIONS]);
@@ -1049,19 +1020,19 @@ Tcl_GetReturnOptions(
     if (iPtr->returnOpts) {
 	options = Tcl_DuplicateObj(iPtr->returnOpts);
     } else {
-	options = Tcl_NewObj();
+	TclNewObj(options);
     }
 
     if (result == TCL_RETURN) {
 	Tcl_DictObjPut(NULL, options, keys[KEY_CODE],
-		Tcl_NewIntObj(iPtr->returnCode));
+		Tcl_NewWideIntObj(iPtr->returnCode));
 	Tcl_DictObjPut(NULL, options, keys[KEY_LEVEL],
-		Tcl_NewIntObj(iPtr->returnLevel));
+		Tcl_NewWideIntObj(iPtr->returnLevel));
     } else {
 	Tcl_DictObjPut(NULL, options, keys[KEY_CODE],
-		Tcl_NewIntObj(result));
+		Tcl_NewWideIntObj(result));
 	Tcl_DictObjPut(NULL, options, keys[KEY_LEVEL],
-		Tcl_NewIntObj(0));
+		Tcl_NewWideIntObj(0));
     }
 
     if (result == TCL_ERROR) {
@@ -1074,7 +1045,7 @@ Tcl_GetReturnOptions(
     if (iPtr->errorInfo) {
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORINFO], iPtr->errorInfo);
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
-		Tcl_NewIntObj(iPtr->errorLine));
+		Tcl_NewWideIntObj(iPtr->errorLine));
     }
     return options;
 }
@@ -1155,22 +1126,14 @@ Tcl_SetReturnOptions(
  *
  * Tcl_TransferResult --
  *
- *	Copy the result (and error information) from one interp to another.
+ *	Transfer the result (and error information) from one interp to another.
  *	Used when one interp has caused another interp to evaluate a script
  *	and then wants to transfer the results back to itself.
  *
- *	This routine copies the string reps of the result and error
- *	information. It does not simply increment the refcounts of the result
- *	and error information objects themselves. It is not legal to exchange
- *	objects between interps, because an object may be kept alive by one
- *	interp, but have an internal rep that is only valid while some other
- *	interp is alive.
- *
  * Results:
- *	The target interp's result is set to a copy of the source interp's
- *	result. The source's errorInfo field may be transferred to the
- *	target's errorInfo field, and the source's errorCode field may be
- *	transferred to the target's errorCode field.
+ *	The result of targetInterp is set to the result read from sourceInterp.
+ *	The return options dictionary of sourceInterp is transferred to
+ *	targetInterp as appropriate for the return code value code.
  *
  * Side effects:
  *	None.
@@ -1180,14 +1143,16 @@ Tcl_SetReturnOptions(
 
 void
 Tcl_TransferResult(
-    Tcl_Interp *sourceInterp,	/* Interp whose result and error information
+    Tcl_Interp *sourceInterp,	/* Interp whose result and return options
 				 * should be moved to the target interp.
 				 * After moving result, this interp's result
 				 * is reset. */
-    int result,			/* TCL_OK if just the result should be copied,
-				 * TCL_ERROR if both the result and error
-				 * information should be copied. */
-    Tcl_Interp *targetInterp)	/* Interp where result and error information
+    int code,			/* The return code value active in
+				 * sourceInterp. Controls how the return options
+				 * dictionary is retrieved from sourceInterp,
+				 * same as in Tcl_GetReturnOptions, to then be
+				 * transferred to targetInterp. */
+    Tcl_Interp *targetInterp)	/* Interp where result and return options
 				 * should be stored. If source and target are
 				 * the same, nothing is done. */
 {
@@ -1198,7 +1163,7 @@ Tcl_TransferResult(
 	return;
     }
 
-    if (result == TCL_OK && siPtr->returnOpts == NULL) {
+    if (code == TCL_OK && siPtr->returnOpts == NULL) {
 	/*
 	 * Special optimization for the common case of normal command return
 	 * code and no explicit return options.
@@ -1210,7 +1175,7 @@ Tcl_TransferResult(
 	}
     } else {
 	Tcl_SetReturnOptions(targetInterp,
-		Tcl_GetReturnOptions(sourceInterp, result));
+		Tcl_GetReturnOptions(sourceInterp, code));
 	tiPtr->flags &= ~(ERR_ALREADY_LOGGED);
     }
     Tcl_SetObjResult(targetInterp, Tcl_GetObjResult(sourceInterp));

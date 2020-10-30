@@ -96,7 +96,7 @@ typedef struct {
 
 /*
  * The following structure is used to set or get the serial port attributes in
- * a platform-independant manner.
+ * a platform-independent manner.
  */
 
 typedef struct {
@@ -119,27 +119,25 @@ typedef struct {
  * Static routines for this file:
  */
 
-static int		FileBlockModeProc(ClientData instanceData, int mode);
-static int		FileCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
-static int		FileGetHandleProc(ClientData instanceData,
-			    int direction, ClientData *handlePtr);
-static int		FileInputProc(ClientData instanceData, char *buf,
+static int		FileBlockModeProc(void *instanceData, int mode);
+static int		FileCloseProc(void *instanceData,
+			    Tcl_Interp *interp, int flags);
+static int		FileGetHandleProc(void *instanceData,
+			    int direction, void **handlePtr);
+static int		FileInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCode);
-static int		FileOutputProc(ClientData instanceData,
+static int		FileOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCode);
-static int		FileSeekProc(ClientData instanceData, long offset,
-			    int mode, int *errorCode);
-static int		FileTruncateProc(ClientData instanceData,
+static int		FileTruncateProc(void *instanceData,
 			    Tcl_WideInt length);
-static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
+static Tcl_WideInt	FileWideSeekProc(void *instanceData,
 			    Tcl_WideInt offset, int mode, int *errorCode);
-static void		FileWatchProc(ClientData instanceData, int mask);
+static void		FileWatchProc(void *instanceData, int mask);
 #ifdef SUPPORTS_TTY
-static int		TtyCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
+static int		TtyCloseProc(void *instanceData,
+			    Tcl_Interp *interp, int flags);
 static void		TtyGetAttributes(int fd, TtyAttrs *ttyPtr);
-static int		TtyGetOptionProc(ClientData instanceData,
+static int		TtyGetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
 static int		TtyGetBaud(speed_t speed);
@@ -149,7 +147,7 @@ static void		TtyModemStatusStr(int status, Tcl_DString *dsPtr);
 static int		TtyParseMode(Tcl_Interp *interp, const char *mode,
 			    TtyAttrs *ttyPtr);
 static void		TtySetAttributes(int fd, TtyAttrs *ttyPtr);
-static int		TtySetOptionProc(ClientData instanceData,
+static int		TtySetOptionProc(void *instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *value);
 #endif	/* SUPPORTS_TTY */
@@ -161,15 +159,15 @@ static int		TtySetOptionProc(ClientData instanceData,
 static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    FileCloseProc,		/* Close proc. */
+    NULL,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
-    FileSeekProc,		/* Seek proc. */
+	NULL,
     NULL,			/* Set option proc. */
     NULL,			/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
-    NULL,			/* close2proc. */
+    FileCloseProc,		/* close2proc. */
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -187,7 +185,7 @@ static const Tcl_ChannelType fileChannelType = {
 static const Tcl_ChannelType ttyChannelType = {
     "tty",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    TtyCloseProc,		/* Close proc. */
+    NULL,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -195,7 +193,7 @@ static const Tcl_ChannelType ttyChannelType = {
     TtyGetOptionProc,		/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
-    NULL,			/* close2proc. */
+    TtyCloseProc,			/* close2proc. */
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -222,14 +220,13 @@ static const Tcl_ChannelType ttyChannelType = {
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 FileBlockModeProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     int mode)			/* The mode to set. Can be TCL_MODE_BLOCKING
 				 * or TCL_MODE_NONBLOCKING. */
 {
-    FileState *fsPtr = instanceData;
+    FileState *fsPtr = (FileState *)instanceData;
 
     if (TclUnixSetBlockingMode(fsPtr->fd, mode) < 0) {
 	return errno;
@@ -258,13 +255,13 @@ FileBlockModeProc(
 
 static int
 FileInputProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     char *buf,			/* Where to store data read. */
     int toRead,			/* How much space is available in the
 				 * buffer? */
     int *errorCodePtr)		/* Where to store error code. */
 {
-    FileState *fsPtr = instanceData;
+    FileState *fsPtr = (FileState *)instanceData;
     int bytesRead;		/* How many bytes were actually read from the
 				 * input device? */
 
@@ -278,7 +275,7 @@ FileInputProc(
      */
 
     bytesRead = read(fsPtr->fd, buf, toRead);
-    if (bytesRead > -1) {
+    if (bytesRead >= 0) {
 	return bytesRead;
     }
     *errorCodePtr = errno;
@@ -305,12 +302,12 @@ FileInputProc(
 
 static int
 FileOutputProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
 {
-    FileState *fsPtr = instanceData;
+    FileState *fsPtr = (FileState *)instanceData;
     int written;
 
     *errorCodePtr = 0;
@@ -325,7 +322,7 @@ FileOutputProc(
 	return 0;
     }
     written = write(fsPtr->fd, buf, toWrite);
-    if (written > -1) {
+    if (written >= 0) {
 	return written;
     }
     *errorCodePtr = errno;
@@ -352,11 +349,16 @@ FileOutputProc(
 
 static int
 FileCloseProc(
-    ClientData instanceData,	/* File state. */
-    Tcl_Interp *interp)		/* For error reporting - unused. */
+    void *instanceData,	/* File state. */
+    TCL_UNUSED(Tcl_Interp *),
+    int flags)
 {
-    FileState *fsPtr = instanceData;
+    FileState *fsPtr = (FileState *)instanceData;
     int errorCode = 0;
+
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
 
     Tcl_DeleteFileHandler(fsPtr->fd);
 
@@ -377,11 +379,15 @@ FileCloseProc(
 #ifdef SUPPORTS_TTY
 static int
 TtyCloseProc(
-    ClientData instanceData,
-    Tcl_Interp *interp)
+    void *instanceData,
+    Tcl_Interp *interp,
+	int flags)
 {
-    TtyState *ttyPtr = instanceData;
+    TtyState *ttyPtr = (TtyState*)instanceData;
 
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
     /*
      * If we've been asked by the user to drain or flush, do so now.
      */
@@ -410,69 +416,9 @@ TtyCloseProc(
      * Delegate to close for files.
      */
 
-    return FileCloseProc(instanceData, interp);
+    return FileCloseProc(instanceData, interp, flags);
 }
 #endif /* SUPPORTS_TTY */
-
-/*
- *----------------------------------------------------------------------
- *
- * FileSeekProc --
- *
- *	This function is called by the generic IO level to move the access
- *	point in a file based channel.
- *
- * Results:
- *	-1 if failed, the new position if successful. An output argument
- *	contains the POSIX error code if an error occurred, or zero.
- *
- * Side effects:
- *	Moves the location at which the channel will be accessed in future
- *	operations.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-FileSeekProc(
-    ClientData instanceData,	/* File state. */
-    long offset,		/* Offset to seek to. */
-    int mode,			/* Relative to where should we seek? Can be
-				 * one of SEEK_START, SEEK_SET or SEEK_END. */
-    int *errorCodePtr)		/* To store error code. */
-{
-    FileState *fsPtr = instanceData;
-    Tcl_WideInt oldLoc, newLoc;
-
-    /*
-     * Save our current place in case we need to roll-back the seek.
-     */
-
-    oldLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) 0, SEEK_CUR);
-    if (oldLoc == -1) {
-	/*
-	 * Bad things are happening. Error out...
-	 */
-
-	*errorCodePtr = errno;
-	return -1;
-    }
-
-    newLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
-
-    /*
-     * Check for expressability in our return type, and roll-back otherwise.
-     */
-
-    if (newLoc > INT_MAX) {
-	*errorCodePtr = EOVERFLOW;
-	TclOSseek(fsPtr->fd, (Tcl_SeekOffset) oldLoc, SEEK_SET);
-	return -1;
-    } else {
-	*errorCodePtr = (newLoc == -1) ? errno : 0;
-    }
-    return (int) newLoc;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -496,13 +442,13 @@ FileSeekProc(
 
 static Tcl_WideInt
 FileWideSeekProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     Tcl_WideInt offset,		/* Offset to seek to. */
     int mode,			/* Relative to where should we seek? Can be
 				 * one of SEEK_START, SEEK_CUR or SEEK_END. */
     int *errorCodePtr)		/* To store error code. */
 {
-    FileState *fsPtr = instanceData;
+    FileState *fsPtr = (FileState *)instanceData;
     Tcl_WideInt newLoc;
 
     newLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
@@ -530,12 +476,12 @@ FileWideSeekProc(
 
 static void
 FileWatchProc(
-    ClientData instanceData,	/* The file state. */
+    void *instanceData,	/* The file state. */
     int mask)			/* Events of interest; an OR-ed combination of
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
-    FileState *fsPtr = instanceData;
+    FileState *fsPtr = (FileState *)instanceData;
 
     /*
      * Make sure we only register for events that are valid on this file. Note
@@ -572,11 +518,11 @@ FileWatchProc(
 
 static int
 FileGetHandleProc(
-    ClientData instanceData,	/* The file state. */
+    void *instanceData,	/* The file state. */
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
-    ClientData *handlePtr)	/* Where to store the handle. */
+    void **handlePtr)	/* Where to store the handle. */
 {
-    FileState *fsPtr = instanceData;
+    FileState *fsPtr = (FileState *)instanceData;
 
     if (direction & fsPtr->validMask) {
 	*handlePtr = INT2PTR(fsPtr->fd);
@@ -639,12 +585,12 @@ TtyModemStatusStr(
 
 static int
 TtySetOptionProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Which option to set? */
     const char *value)		/* New value for option. */
 {
-    TtyState *fsPtr = instanceData;
+    TtyState *fsPtr = (TtyState *)instanceData;
     size_t len, vlen;
     TtyAttrs tty;
     int argc;
@@ -978,12 +924,12 @@ TtySetOptionProc(
 
 static int
 TtyGetOptionProc(
-    ClientData instanceData,	/* File state. */
+    void *instanceData,	/* File state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Option to get. */
     Tcl_DString *dsPtr)		/* Where to store value(s). */
 {
-    TtyState *fsPtr = instanceData;
+    TtyState *fsPtr = (TtyState *)instanceData;
     size_t len;
     char buf[3*TCL_INTEGER_SPACE + 16];
     int valid = 0;		/* Flag if valid option parsed. */
@@ -1652,7 +1598,7 @@ TclpOpenFileChannel(
 	return NULL;
     }
 
-    native = Tcl_FSGetNativePath(pathPtr);
+    native = (const char *)Tcl_FSGetNativePath(pathPtr);
     if (native == NULL) {
 	if (interp != (Tcl_Interp *) NULL) {
 	    Tcl_AppendResult(interp, "couldn't open \"",
@@ -1712,7 +1658,7 @@ TclpOpenFileChannel(
 	sprintf(channelName, "file%d", fd);
     }
 
-    fsPtr = Tcl_Alloc(sizeof(TtyState));
+    fsPtr = (TtyState *)Tcl_Alloc(sizeof(TtyState));
     fsPtr->fileState.validMask = channelPermissions | TCL_EXCEPTION;
     fsPtr->fileState.fd = fd;
 #ifdef SUPPORTS_TTY
@@ -1737,7 +1683,7 @@ TclpOpenFileChannel(
 
 	if (Tcl_SetChannelOption(interp, fsPtr->fileState.channel,
 		"-translation", translation) != TCL_OK) {
-	    Tcl_Close(NULL, fsPtr->fileState.channel);
+	    Tcl_CloseEx(NULL, fsPtr->fileState.channel, 0);
 	    return NULL;
 	}
     }
@@ -1763,7 +1709,7 @@ TclpOpenFileChannel(
 
 Tcl_Channel
 Tcl_MakeFileChannel(
-    ClientData handle,		/* OS level handle. */
+    void *handle,		/* OS level handle. */
     int mode)			/* ORed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
@@ -1792,7 +1738,7 @@ Tcl_MakeFileChannel(
 		&& (sockaddrLen > 0)
 		&& (sockaddr.sa_family == AF_INET
 			|| sockaddr.sa_family == AF_INET6)) {
-	    return TclpMakeTcpClientChannelMode(INT2PTR(fd), mode);
+	    return (Tcl_Channel)TclpMakeTcpClientChannelMode(INT2PTR(fd), mode);
 	}
 	goto normalChannelAfterAll;
     } else {
@@ -1801,7 +1747,7 @@ Tcl_MakeFileChannel(
 	sprintf(channelName, "file%d", fd);
     }
 
-    fsPtr = Tcl_Alloc(sizeof(TtyState));
+    fsPtr = (TtyState *)Tcl_Alloc(sizeof(TtyState));
     fsPtr->fileState.fd = fd;
     fsPtr->fileState.validMask = mode | TCL_EXCEPTION;
     fsPtr->fileState.channel = Tcl_CreateChannel(channelTypePtr, channelName,
@@ -1932,17 +1878,16 @@ Tcl_GetOpenFile(
     const char *chanID,		/* String that identifies file. */
     int forWriting,		/* 1 means the file is going to be used for
 				 * writing, 0 means for reading. */
-    int checkUsage,		/* 1 means verify that the file was opened in
-				 * a mode that allows the access specified by
-				 * "forWriting". Ignored, we always check that
+    TCL_UNUSED(int),		/* Obsolete argument.
+				 * Ignored, we always check that
 				 * the channel is open for the requested
 				 * mode. */
-    ClientData *filePtr)	/* Store pointer to FILE structure here. */
+    void **filePtr)	/* Store pointer to FILE structure here. */
 {
     Tcl_Channel chan;
     int chanMode, fd;
     const Tcl_ChannelType *chanTypePtr;
-    ClientData data;
+    void *data;
     FILE *f;
 
     chan = Tcl_GetChannel(interp, chanID, &chanMode);
@@ -2027,10 +1972,10 @@ Tcl_GetOpenFile(
 
 static int
 FileTruncateProc(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_WideInt length)
 {
-    FileState *fsPtr = instanceData;
+    FileState *fsPtr = (FileState *)instanceData;
     int result;
 
 #ifdef HAVE_TYPE_OFF64_T

@@ -643,7 +643,7 @@ SubstituteFile(
 	}
 
 	/* debug: dump the list */
-#ifdef _DEBUG
+#ifndef NDEBUG
 	{
 	    int n = 0;
 	    list_item_t *p = NULL;
@@ -708,7 +708,7 @@ QualifyPath(
 {
     char szCwd[MAX_PATH + 1];
 
-	GetFullPathName(szPath, sizeof(szCwd)-1, szCwd, NULL);
+    GetFullPathName(szPath, sizeof(szCwd)-1, szCwd, NULL);
     printf("%s\n", szCwd);
     return 0;
 }

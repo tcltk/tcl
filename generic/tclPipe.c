@@ -183,12 +183,12 @@ Tcl_DetachPids(
 				 * array pointed to by pidPtr. */
     Tcl_Pid *pidPtr)		/* Array of pids to detach. */
 {
-    register Detached *detPtr;
+    Detached *detPtr;
     int i;
 
     Tcl_MutexLock(&pipeMutex);
     for (i = 0; i < numPids; i++) {
-	detPtr = Tcl_Alloc(sizeof(Detached));
+	detPtr = (Detached *)Tcl_Alloc(sizeof(Detached));
 	detPtr->pid = pidPtr[i];
 	detPtr->nextPtr = detList;
 	detList = detPtr;
@@ -219,7 +219,7 @@ Tcl_DetachPids(
 void
 Tcl_ReapDetachedProcs(void)
 {
-    register Detached *detPtr;
+    Detached *detPtr;
     Detached *nextPtr, *prevPtr;
     int status, code;
 
@@ -334,7 +334,7 @@ TclCleanupChildren(
 	    Tcl_Obj *objPtr;
 
 	    Tcl_Seek(errorChan, 0, SEEK_SET);
-	    objPtr = Tcl_NewObj();
+	    TclNewObj(objPtr);
 	    count = Tcl_ReadChars(errorChan, objPtr, -1, 0);
 	    if (count == -1) {
 		result = TCL_ERROR;
@@ -351,7 +351,7 @@ TclCleanupChildren(
 		Tcl_DecrRefCount(objPtr);
 	    }
 	}
-	Tcl_Close(NULL, errorChan);
+	Tcl_CloseEx(NULL, errorChan, 0);
     }
 
     /*
@@ -413,7 +413,7 @@ TclCreatePipeline(
 				 * at *inPipePtr. NULL means command specified
 				 * its own input source. */
     TclFile *outPipePtr,	/* If non-NULL, output to the pipeline goes to
-				 * a pipe, unless overriden by redirection in
+				 * a pipe, unless overridden by redirection in
 				 * the command. The file id with which to read
 				 * frome this pipe is stored at *outPipePtr.
 				 * NULL means command specified its own output
@@ -824,7 +824,7 @@ TclCreatePipeline(
      */
 
     Tcl_ReapDetachedProcs();
-    pidPtr = Tcl_Alloc(cmdCount * sizeof(Tcl_Pid));
+    pidPtr = (Tcl_Pid *)Tcl_Alloc(cmdCount * sizeof(Tcl_Pid));
 
     curInFile = inputFile;
 

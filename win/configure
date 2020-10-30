@@ -669,7 +669,6 @@ EXTRA_CFLAGS
 CFG_TCL_EXPORT_FILE_SUFFIX
 CFG_TCL_UNSHARED_LIB_SUFFIX
 CFG_TCL_SHARED_LIB_SUFFIX
-TCL_DBGX
 TCL_BIN_DIR
 TCL_SRC_DIR
 TCL_DLL_FILE
@@ -710,8 +709,11 @@ ZIP_PROG
 TCLSH_PROG
 EXEEXT_FOR_BUILD
 CC_FOR_BUILD
+TOMMATH_OBJS
 ZLIB_OBJS
+TOMMATH_LIBS
 ZLIB_LIBS
+TOMMATH_DLL_FILE
 ZLIB_DLL_FILE
 CFLAGS_WARNING
 CFLAGS_OPTIMIZE
@@ -1618,51 +1620,92 @@ fi
 
 } # ac_fn_c_try_run
 
-# ac_fn_c_check_decl LINENO SYMBOL VAR INCLUDES
-# ---------------------------------------------
-# Tests whether SYMBOL is declared in INCLUDES, setting cache variable VAR
+# ac_fn_c_check_header_mongrel LINENO HEADER VAR INCLUDES
+# -------------------------------------------------------
+# Tests whether HEADER exists, giving a warning if it cannot be compiled using
+# the include files in INCLUDES and setting the cache variable VAR
 # accordingly.
-ac_fn_c_check_decl ()
+ac_fn_c_check_header_mongrel ()
 {
   as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  as_decl_name=`echo $2|sed 's/ *(.*//'`
-  as_decl_use=`echo $2|sed -e 's/(/((/' -e 's/)/) 0&/' -e 's/,/) 0& (/g'`
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $as_decl_name is declared" >&5
-$as_echo_n "checking whether $as_decl_name is declared... " >&6; }
+  if eval \${$3+:} false; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
 if eval \${$3+:} false; then :
   $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-#ifndef $as_decl_name
-#ifdef __cplusplus
-  (void) $as_decl_use;
-#else
-  (void) $as_decl_name;
-#endif
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  eval "$3=yes"
-else
-  eval "$3=no"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 eval ac_res=\$$3
 	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
 $as_echo "$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 usability" >&5
+$as_echo_n "checking $2 usability... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+#include <$2>
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_header_compiler=yes
+else
+  ac_header_compiler=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 presence" >&5
+$as_echo_n "checking $2 presence... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <$2>
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"; then :
+  ac_header_preproc=yes
+else
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in #((
+  yes:no: )
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: $2: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: $2: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: $2:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: $2: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: $2:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
+    ;;
+esac
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  eval "$3=\$ac_header_compiler"
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+fi
   eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
 
-} # ac_fn_c_check_decl
+} # ac_fn_c_check_header_mongrel
 
 # ac_fn_c_check_header_compile LINENO HEADER VAR INCLUDES
 # -------------------------------------------------------
@@ -2110,7 +2153,7 @@ SHELL=/bin/sh
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="a0"
+TCL_PATCH_LEVEL="a2"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -3704,8 +3747,7 @@ fi
 _ACEOF
 
     else
-	# Default encoding on windows is not "iso8859-1"
-	$as_echo "#define TCL_CFGVAL_ENCODING \"cp1252\"" >>confdefs.h
+	$as_echo "#define TCL_CFGVAL_ENCODING \"utf-8\"" >>confdefs.h
 
     fi
 
@@ -3911,14 +3953,14 @@ $as_echo "$ac_cv_cross" >&6; }
       if test "$ac_cv_cross" = "yes"; then
 	case "$do64bit" in
 	    amd64|x64|yes)
-		CC="x86_64-w64-mingw32-gcc"
+		CC="x86_64-w64-mingw32-${CC}"
 		LD="x86_64-w64-mingw32-ld"
 		AR="x86_64-w64-mingw32-ar"
 		RANLIB="x86_64-w64-mingw32-ranlib"
 		RC="x86_64-w64-mingw32-windres"
 	    ;;
 	    *)
-		CC="i686-w64-mingw32-gcc"
+		CC="i686-w64-mingw32-${CC}"
 		LD="i686-w64-mingw32-ld"
 		AR="i686-w64-mingw32-ar"
 		RANLIB="i686-w64-mingw32-ranlib"
@@ -4117,7 +4159,7 @@ $as_echo_n "checking compiler flags... " >&6; }
 $as_echo "using static flags" >&6; }
 	    runtime=
 	    LIBRARIES="\${STATIC_LIBRARIES}"
-	    EXESUFFIX="s\${DBGX}.exe"
+	    EXESUFFIX="s.exe"
 	else
 	    # dynamic
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: using shared flags" >&5
@@ -4132,7 +4174,7 @@ $as_echo "using shared flags" >&6; }
 	    runtime=
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 
-	    EXESUFFIX="\${DBGX}.exe"
+	    EXESUFFIX=".exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
 	# Link with gcc since ld does not link to default libs like
@@ -4140,21 +4182,30 @@ $as_echo "using shared flags" >&6; }
 	SHLIB_LD='${CC} -shared'
 	SHLIB_LD_LIBS='${LIBS}'
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \$@ ${extra_ldflags} \
-	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\$@)"
+	    -Wl,--out-implib,\$(patsubst %.dll,lib%.dll.a,\$@)"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
-	DLLSUFFIX="\${DBGX}.dll"
-	LIBSUFFIX="\${DBGX}.a"
-	LIBFLAGSUFFIX="\${DBGX}"
+	DLLSUFFIX=".dll"
+	LIBSUFFIX=".a"
+	LIBFLAGSUFFIX=""
 	SHLIB_SUFFIX=.dll
 
 	EXTRA_CFLAGS="${extra_cflags}"
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement -Wpointer-arith"
+	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
+
+	case "${CC}" in
+	    *++)
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wno-format"
+		;;
+	    *)
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -Wdeclaration-after-statement"
+		;;
+	esac
 
 	# Specify the CC output file names based on the target name
 	CC_OBJNAME="-o \$@"
@@ -4226,7 +4277,7 @@ $as_echo "   Using 64-bit $MACHINE mode" >&6; }
 $as_echo "using static flags" >&6; }
 	    runtime=-MT
 	    LIBRARIES="\${STATIC_LIBRARIES}"
-	    EXESUFFIX="s\${DBGX}.exe"
+	    EXESUFFIX="s.exe"
 	else
 	    # dynamic
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: using shared flags" >&5
@@ -4234,7 +4285,7 @@ $as_echo "using shared flags" >&6; }
 	    runtime=-MD
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 	    LIBRARIES="\${SHARED_LIBRARIES}"
-	    EXESUFFIX="\${DBGX}.exe"
+	    EXESUFFIX=".exe"
 	    case "x`echo \${VisualStudioVersion}`" in
 		x1[4-9]*)
 		    lflags="${lflags} -nodefaultlib:libucrt.lib"
@@ -4246,33 +4297,19 @@ $as_echo "using shared flags" >&6; }
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -out:\$@"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
-	DLLSUFFIX="\${DBGX}.dll"
-	LIBSUFFIX="\${DBGX}.lib"
-	LIBFLAGSUFFIX="\${DBGX}"
+	DLLSUFFIX=".dll"
+	LIBSUFFIX=".lib"
+	LIBFLAGSUFFIX=""
 
-	# This is a 2-stage check to make sure we have the 64-bit SDK
-	# We have to know where the SDK is installed.
-	# This magic is based on MS Platform SDK for Win2003 SP1 - hobbs
 	if test "$do64bit" != "no" ; then
-	    if test "x${MSSDK}x" = "xx" ; then
-		MSSDK="C:/Progra~1/Microsoft Platform SDK"
-	    fi
-	    MSSDK=`echo "$MSSDK" | sed -e 's!\\\!/!g'`
-	    PATH64=""
 	    case "$do64bit" in
 		amd64|x64|yes)
 		    MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
-		    PATH64="${MSSDK}/Bin/Win64/x86/AMD64"
 		    ;;
 		ia64)
 		    MACHINE="IA64"
-		    PATH64="${MSSDK}/Bin/Win64"
 		    ;;
 	    esac
-	    if test ! -d "${PATH64}" ; then
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Could not find 64-bit $MACHINE SDK" >&5
-$as_echo "$as_me: WARNING: Could not find 64-bit $MACHINE SDK" >&2;}
-	    fi
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result:    Using 64-bit $MACHINE mode" >&5
 $as_echo "   Using 64-bit $MACHINE mode" >&6; }
 	fi
@@ -4288,26 +4325,12 @@ $as_echo "   Using 64-bit $MACHINE mode" >&6; }
 	esac
 
 	if test "$do64bit" != "no" ; then
-	    # The space-based-path will work for the Makefile, but will
-	    # not work if AC_TRY_COMPILE is called.  TEA has the
-	    # TEA_PATH_NOSPACE to avoid this issue.
-	    # Check if _WIN64 is already recognized, and if so we don't
-	    # need to modify CC.
-	    ac_fn_c_check_decl "$LINENO" "_WIN64" "ac_cv_have_decl__WIN64" "$ac_includes_default"
-if test "x$ac_cv_have_decl__WIN64" = xyes; then :
-
-else
-  CC="\"${PATH64}/cl.exe\" -I\"${MSSDK}/Include\" \
-			 -I\"${MSSDK}/Include/crt\" \
-			 -I\"${MSSDK}/Include/crt/sys\""
-fi
-
-	    RC="\"${MSSDK}/bin/rc.exe\""
+	    RC="rc"
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
 	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
 	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
-	    lflags="${lflags} -nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
-	    LINKBIN="\"${PATH64}/link.exe\""
+	    lflags="${lflags} -nologo -MACHINE:${MACHINE}"
+	    LINKBIN="link"
 	    # Avoid 'unresolved external symbol __security_cookie' errors.
 	    # c.f. http://support.microsoft.com/?id=894573
 	    LIBS="$LIBS bufferoverflowU.lib"
@@ -4503,6 +4526,15 @@ $as_echo "#define HAVE_WINNT_IGNORE_VOID 1" >>confdefs.h
 
 	fi
 
+	ac_fn_c_check_header_mongrel "$LINENO" "stdbool.h" "ac_cv_header_stdbool_h" "$ac_includes_default"
+if test "x$ac_cv_header_stdbool_h" = xyes; then :
+
+$as_echo "#define HAVE_STDBOOL_H 1" >>confdefs.h
+
+fi
+
+
+
 	# See if the compiler supports casting to a union type.
 	# This is used to stop gcc from printing a compiler
 	# warning when initializing a union member.
@@ -4561,8 +4593,9 @@ case ${host_alias} in
 esac
 
 #------------------------------------------------------------------------
-#	Add stuff for zlib; note that this is mostly done in the makefile now
-#	as we just assume that the platform hasn't got a usable z.lib
+#	Add stuff for zlib/libtommath; note that this is mostly done in the
+#	makefile now as we just assume that the platform hasn't got usable
+#   z.lib/tommath.lib
 #------------------------------------------------------------------------
 
 if test "${enable_shared+set}" = "set"; then :
@@ -4579,16 +4612,28 @@ if test "$tcl_ok" = "yes"; then :
 
   ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
 
+  TOMMATH_DLL_FILE=\${TOMMATH_DLL_FILE}
+
+
+$as_echo "#define TCL_WITH_EXTERNAL_TOMMATH 1" >>confdefs.h
+
   if test "$do64bit" != "no"; then :
+
+
+$as_echo "#define MP_64BIT 1" >>confdefs.h
 
     if test "$GCC" == "yes"; then :
 
       ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64/libz.dll.a
 
+      TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a
+
 
 else
 
       ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64/zdll.lib
+
+      TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/tommath.lib
 
 
 fi
@@ -4597,12 +4642,16 @@ else
 
     ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win32/zdll.lib
 
+    TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win32/tommath.lib
+
 
 fi
 
 else
 
   ZLIB_OBJS=\${ZLIB_OBJS}
+
+  TOMMATH_OBJS=\${TOMMATH_OBJS}
 
 
 fi
@@ -5104,7 +5153,6 @@ fi
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
-	DBGX=""
 
 $as_echo "#define NDEBUG 1" >>confdefs.h
 
@@ -5116,7 +5164,6 @@ $as_echo "no" >&6; }
     else
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
-	DBGX=g
 	if test "$tcl_ok" = "yes"; then
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (standard debugging)" >&5
 $as_echo "yes (standard debugging)" >&6; }
@@ -5150,8 +5197,6 @@ $as_echo "enabled $tcl_ok debugging" >&6; }
 	fi
     fi
 
-
-TCL_DBGX=${DBGX}
 
 #--------------------------------------------------------------------
 # Embed the manifest if we can determine how
@@ -5218,10 +5263,6 @@ TCL_SHARED_BUILD=${SHARED_BUILD}
 # Perform final evaluations of variables with possible substitutions.
 #--------------------------------------------------------------------
 
-TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
-TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
-TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
-
 eval "TCL_SRC_DIR=\"`cd $srcdir/..; $CYGPATH $(pwd)`\""
 
 eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
@@ -5233,18 +5274,20 @@ eval "TCL_STUB_LIB_SPEC=\"-L${libdir} ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_BUILD_STUB_LIB_PATH=\"`$CYGPATH $(pwd)`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
 
-eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
+if test ${SHARED_BUILD} = 0 ; then
+ eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
+else
+ eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${DLLSUFFIX}.a\""
+fi
 eval "TCL_BUILD_LIB_SPEC=\"-L`$CYGPATH $(pwd)` -ltcl${VER}${FLAGSUFFIX}\""
 eval "TCL_LIB_SPEC=\"-L${libdir} -ltcl${VER}${FLAGSUFFIX}\""
 
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
 
-
-eval "DLLSUFFIX=${DLLSUFFIX}"
-eval "LIBPREFIX=${LIBPREFIX}"
-eval "LIBSUFFIX=${LIBSUFFIX}"
-eval "EXESUFFIX=${EXESUFFIX}"
+TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
+TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
+TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
 
 CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}
 CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}
@@ -5256,17 +5299,9 @@ CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 #--------------------------------------------------------------------
 
 if test ${SHARED_BUILD} = 0 ; then
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
-    fi
+    RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
 else
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES=""
-    fi
+    RC_DEFINES=""
 fi
 
 #--------------------------------------------------------------------
@@ -5277,9 +5312,9 @@ fi
 #--------------------------------------------------------------------
 
 if test "$prefix/lib" != "$libdir"; then
-    TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
+    TCL_PACKAGE_PATH="{${libdir}} {${prefix}/lib}"
 else
-    TCL_PACKAGE_PATH="${prefix}/lib"
+    TCL_PACKAGE_PATH="{${prefix}/lib}"
 fi
 
 # The tclsh.exe.manifest requires these
@@ -5309,7 +5344,6 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 # empty on win
-
 
 
 

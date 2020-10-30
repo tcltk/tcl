@@ -11,8 +11,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -111,27 +111,27 @@ test lreplace-1.30 {lreplace command} -body {
     lreplace {not {}alist} 0 0 [error foo]
 } -returnCodes 1 -result {foo}
 
-test lreplace-2.1 {lreplace errors} {
+test lreplace-2.1 {lreplace errors} -body {
     list [catch lreplace msg] $msg
-} {1 {wrong # args: should be "lreplace list first last ?element ...?"}}
-test lreplace-2.2 {lreplace errors} {
+} -result {1 {wrong # args: should be "lreplace list first last ?element ...?"}}
+test lreplace-2.2 {lreplace errors} -body {
     list [catch {lreplace a b} msg] $msg
-} {1 {wrong # args: should be "lreplace list first last ?element ...?"}}
-test lreplace-2.3 {lreplace errors} {
+} -result {1 {wrong # args: should be "lreplace list first last ?element ...?"}}
+test lreplace-2.3 {lreplace errors} -body {
     list [catch {lreplace x a 10} msg] $msg
-} {1 {bad index "a": must be integer?[+-]integer? or end?[+-]integer?}}
-test lreplace-2.4 {lreplace errors} {
+} -result {1 {bad index "a": must be integer?[+-]integer? or end?[+-]integer?}}
+test lreplace-2.4 {lreplace errors} -body {
     list [catch {lreplace x 10 x} msg] $msg
-} {1 {bad index "x": must be integer?[+-]integer? or end?[+-]integer?}}
-test lreplace-2.5 {lreplace errors} {
+} -result {1 {bad index "x": must be integer?[+-]integer? or end?[+-]integer?}}
+test lreplace-2.5 {lreplace errors} -body {
     list [catch {lreplace x 10 1x} msg] $msg
-} {1 {bad index "1x": must be integer?[+-]integer? or end?[+-]integer?}}
-test lreplace-2.6 {lreplace errors} {
+} -result {1 {bad index "1x": must be integer?[+-]integer? or end?[+-]integer?}}
+test lreplace-2.6 {lreplace errors} -body {
     list [catch {lreplace x 3 2} msg] $msg
-} {0 x}
-test lreplace-2.7 {lreplace errors} {
+} -result {0 x}
+test lreplace-2.7 {lreplace errors} -body {
     list [catch {lreplace x 2 2} msg] $msg
-} {0 x}
+} -result {0 x}
 
 test lreplace-3.1 {lreplace won't modify shared argument objects} {
     proc p {} {
@@ -228,8 +228,8 @@ apply {{} {
 		    set tester [list lreplace $ls $a $b {*}$i]
 		    set script [list catch $tester m]
 		    set script "list \[$script\] \$m"
-		    test lreplace-6.[incr n] {lreplace battery} \
-			[list apply [list {} $script]] $expected
+		    test lreplace-6.[incr n] {lreplace battery} -body \
+			[list apply [list {} $script]] -result $expected
 		}
 	    }
 	}

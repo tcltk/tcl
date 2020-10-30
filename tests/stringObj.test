@@ -12,8 +12,8 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -23,12 +23,13 @@ catch [list package require -exact Tcltest [info patchlevel]]
 testConstraint testobj [llength [info commands testobj]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testdstring [llength [info commands testdstring]]
+testConstraint fullutf [expr {[string length \U010000] == 1}]
 
 test stringObj-1.1 {string type registration} testobj {
     set t [testobj types]
     set first [string first "string" $t]
-    set result [expr {$first != -1}]
-} {1}
+    set result [expr {$first >= 0}]
+} 1
 
 test stringObj-2.1 {Tcl_NewStringObj} testobj {
     set result ""
@@ -439,9 +440,9 @@ test stringObj-13.8 {Tcl_GetCharLength with identity nulls} {testobj testbytestr
 
 test stringObj-14.1 {Tcl_SetObjLength on pure unicode object} testobj {
     teststringobj set 1 foo
-    teststringobj getunicode 1
+    teststringobj maxchars 1
     teststringobj append 1 bar -1
-    teststringobj getunicode 1
+    teststringobj maxchars 1
     teststringobj append 1 bar -1
     teststringobj setlength 1 0
     teststringobj append 1 bar -1
@@ -464,19 +465,19 @@ test stringObj-15.4 {Tcl_Append*ToObj: self appends} testobj {
     teststringobj set 1 foo
     teststringobj appendself 1 3
 } foo
-test stringObj-15.5 {Tcl_Append*ToObj: self appends} testobj {
+test stringObj-15.5 {Tcl_Append*ToObj: self appends} {testobj fullutf} {
     teststringobj set 1 foo
     teststringobj appendself2 1 0
 } foofoo
-test stringObj-15.6 {Tcl_Append*ToObj: self appends} testobj {
+test stringObj-15.6 {Tcl_Append*ToObj: self appends} {testobj fullutf} {
     teststringobj set 1 foo
     teststringobj appendself2 1 1
 } foooo
-test stringObj-15.7 {Tcl_Append*ToObj: self appends} testobj {
+test stringObj-15.7 {Tcl_Append*ToObj: self appends} {testobj fullutf} {
     teststringobj set 1 foo
     teststringobj appendself2 1 2
 } fooo
-test stringObj-15.8 {Tcl_Append*ToObj: self appends} testobj {
+test stringObj-15.8 {Tcl_Append*ToObj: self appends} {testobj fullutf} {
     teststringobj set 1 foo
     teststringobj appendself2 1 3
 } foo

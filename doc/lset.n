@@ -116,6 +116,8 @@ The indicated return value also becomes the new value of \fIx\fR
 \fBlset\fR x {2 1} j
       \fI\(-> {a b c} {d e f} {g j i}\fR
 \fBlset\fR x {2 3} j
+      \fI\(-> {a b c} {d e f} {g h i j}\fR
+\fBlset\fR x {2 4} j
       \fI\(-> list index out of range\fR
 .CE
 .PP
@@ -136,8 +138,9 @@ The indicated return value also becomes the new value of \fIx\fR.
       \fI\(-> {{a b} {c d}} {{e f} {j h}}\fR
 .CE
 .SH "SEE ALSO"
-list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n),
-lsort(n), lrange(n), lreplace(n),
+list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
+lreverse(n), lsearch(n), lsort(n)
 string(n)
 .SH KEYWORDS
 element, index, list, replace, set

@@ -13,8 +13,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2.1
-namespace import ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
@@ -837,12 +839,12 @@ test expr-old-32.42 {math functions in expressions} {
 test expr-old-32.45 {math functions in expressions} {
     expr {(0 <= rand()) && (rand() < 1)}
 } {1}
-test expr-old-32.46 {math functions in expressions} -returnCodes error -body {
-    expr {rand(24)}
-} -match glob -result {too many arguments for math function*}
-test expr-old-32.47 {math functions in expressions} -returnCodes error -body {
-    expr {srand()}
-} -match glob -result {too few arguments for math function*}
+test expr-old-32.46 {math functions in expressions} -body {
+    list [catch {expr rand(24)} msg] $msg
+} -match glob -result {1 {too many arguments for math function*}}
+test expr-old-32.47 {math functions in expressions} -body {
+    list [catch {expr srand()} msg] $msg
+} -match glob -result {1 {not enough arguments for math function*}}
 test expr-old-32.48 {math functions in expressions} -body {
     expr {srand(3.79)}
 } -returnCodes error -match glob -result *
@@ -897,12 +899,12 @@ test expr-old-34.5 {errors in math functions} -body {
 test expr-old-34.6 {errors in math functions} -body {
     expr {hypot(1.0 ,}
 } -returnCodes error -match glob -result *
-test expr-old-34.7 {errors in math functions} -returnCodes error -body {
-    expr {hypot(1.0)}
-} -match glob -result {too few arguments for math function*}
-test expr-old-34.8 {errors in math functions} -returnCodes error -body {
-    expr {hypot(1.0, 2.0, 3.0)}
-} -match glob -result {too many arguments for math function*}
+test expr-old-34.7 {errors in math functions} -body {
+    list [catch {expr hypot(1.0)} msg] $msg
+} -match glob -result {1 {not enough arguments for math function*}}
+test expr-old-34.8 {errors in math functions} -body {
+    list [catch {expr {hypot(1.0, 2.0, 3.0)}} msg] $msg
+} -match glob -result {1 {too many arguments for math function*}}
 test expr-old-34.9 {errors in math functions} {
     list [catch {expr {acos(-2.0)}} msg] $msg $errorCode
 } {1 {domain error: argument not in valid range} {ARITH DOMAIN {domain error: argument not in valid range}}}
@@ -1141,7 +1143,7 @@ test expr-old-40.2 {min math function} -body {
 } -result 0.0
 test expr-old-40.3 {min math function} -body {
     expr {min()}
-} -returnCodes error -result {too few arguments for math function "min"}
+} -returnCodes error -result {not enough arguments for math function "min"}
 test expr-old-40.4 {min math function} -body {
     expr {min(wide(-1) << 30, 4.5, -10)}
 } -result [expr {wide(-1) << 30}]
@@ -1166,7 +1168,7 @@ test expr-old-41.2 {max math function} -body {
 } -result 0.0
 test expr-old-41.3 {max math function} -body {
     expr {max()}
-} -returnCodes error -result {too few arguments for math function "max"}
+} -returnCodes error -result {not enough arguments for math function "max"}
 test expr-old-41.4 {max math function} -body {
     expr {max(wide(1) << 30, 4.5, -10)}
 } -result [expr {wide(1) << 30}]

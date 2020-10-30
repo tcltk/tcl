@@ -221,7 +221,6 @@ Sorting using indices:
 {e 1} {d 2} { c 3} {b 4} {a 5}
 .CE
 .PP
-.VS 8.6
 Sorting a dictionary:
 .PP
 .CS
@@ -239,7 +238,6 @@ Sorting using striding and multiple indices:
      {{Bob Smith} 25 Audi {Jane Doe} 40 Ford}
 {{Jane Doe} 40 Ford {Bob Smith} 25 Audi}
 .CE
-.VE 8.6
 .PP
 Stripping duplicate values using sorting:
 .PP
@@ -266,8 +264,9 @@ More complex sorting using a comparison function:
 {1 dingo} {2 banana} {0x2 carrot} {3 apple}
 .CE
 .SH "SEE ALSO"
-list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n),
-lset(n), lrange(n), lreplace(n)
+list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n)
 .SH KEYWORDS
 element, list, order, sort
 '\" Local Variables:

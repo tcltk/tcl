@@ -172,7 +172,7 @@ TclMacOSXGetFileAttribute(
     } else {
 	alist.commonattr = ATTR_CMN_FNDRINFO;
     }
-    native = Tcl_FSGetNativePath(fileName);
+    native = (const char *)Tcl_FSGetNativePath(fileName);
     result = getattrlist(native, &alist, &finfo, sizeof(fileinfobuf), 0);
 
     if (result != 0) {
@@ -192,11 +192,11 @@ TclMacOSXGetFileAttribute(
 		OSSwapBigToHostInt32(finder->type));
 	break;
     case MACOSX_HIDDEN_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewWideIntObj(
+	TclNewIntObj(*attributePtrPtr,
 		(finder->fdFlags & kFinfoIsInvisible) != 0);
 	break;
     case MACOSX_RSRCLENGTH_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewWideIntObj(*rsrcForkSize);
+	TclNewIntObj(*attributePtrPtr, *rsrcForkSize);
 	break;
     }
     return TCL_OK;
@@ -268,7 +268,7 @@ TclMacOSXSetFileAttribute(
     } else {
 	alist.commonattr = ATTR_CMN_FNDRINFO;
     }
-    native = Tcl_FSGetNativePath(fileName);
+    native = (const char *)Tcl_FSGetNativePath(fileName);
     result = getattrlist(native, &alist, &finfo, sizeof(fileinfobuf), 0);
 
     if (result != 0) {
@@ -347,7 +347,7 @@ TclMacOSXSetFileAttribute(
 	    Tcl_DStringAppend(&ds, native, -1);
 	    Tcl_DStringAppend(&ds, _PATH_RSRCFORKSPEC, -1);
 
-	    result = truncate(Tcl_DStringValue(&ds), (off_t)0);
+	    result = truncate(Tcl_DStringValue(&ds), 0);
 	    if (result != 0) {
 		/*
 		 * truncate() on a valid resource fork path may fail with a
@@ -690,10 +690,10 @@ SetOSTypeFromAny(
 
 static void
 UpdateStringOfOSType(
-    register Tcl_Obj *objPtr)	/* OSType object whose string rep to
+    Tcl_Obj *objPtr)	/* OSType object whose string rep to
 				 * update. */
 {
-    const int size = TCL_UTF_MAX * 4;
+    const size_t size = TCL_UTF_MAX * 4;
     char *dst = Tcl_InitStringRep(objPtr, NULL, size);
     OSType osType = (OSType) objPtr->internalRep.wideValue;
     int written = 0;

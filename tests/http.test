@@ -11,15 +11,17 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2
-namespace import -force ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 
 if {[catch {package require http 2} version]} {
     if {[info exists http2]} {
 	catch {puts "Cannot load http 2.* package"}
 	return
     } else {
-	catch {puts "Running http 2.* tests in slave interp"}
+	catch {puts "Running http 2.* tests in child interp"}
 	set interp [interp create http2]
 	$interp eval [list set http2 "running"]
 	$interp eval [list set argv $argv]
@@ -186,7 +188,7 @@ test http-3.7 {http::geturl} -body {
 <h2>GET $tail</h2>
 </body></html>"
 test http-3.8 {http::geturl} -body {
-    set token [http::geturl $url -query Name=Value&Foo=Bar -timeout 2000]
+    set token [http::geturl $url -query Name=Value&Foo=Bar -timeout 3000]
     http::data $token
 } -cleanup {
     http::cleanup $token
@@ -352,7 +354,7 @@ test http-3.24 {http::geturl parse failures} -body {
 test http-3.25 {http::meta} -setup {
     unset -nocomplain m token
 } -body {
-    set token [http::geturl $url -timeout 2000]
+    set token [http::geturl $url -timeout 3000]
     array set m [http::meta $token]
     lsort [array names m]
 } -cleanup {
@@ -362,7 +364,7 @@ test http-3.25 {http::meta} -setup {
 test http-3.26 {http::meta} -setup {
     unset -nocomplain m token
 } -body {
-    set token [http::geturl $url -headers {X-Check 1} -timeout 2000]
+    set token [http::geturl $url -headers {X-Check 1} -timeout 3000]
     array set m [http::meta $token]
     lsort [array names m]
 } -cleanup {
@@ -442,6 +444,9 @@ test http-3.33 {http::geturl application/xml is text} -body {
 } -cleanup {
     catch { http::cleanup $token }
 } -result {test 4660 /test}
+test http-3.34 {http::geturl -headers not a dict} -returnCodes error -body {
+    http::geturl http://test/t -headers NoDict
+} -result {Bad value for -headers (NoDict), must be dict}
 
 test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]
@@ -588,7 +593,7 @@ test http-4.14 {http::Event} -body {
 test http-4.15 {http::Event} -body {
     # This test may fail if you use a proxy server. That is to be
     # expected and is not a problem with Tcl.
-    set token [http::geturl //not_a_host.tcl.tk -timeout 1000 -command \#]
+    set token [http::geturl //not_a_host.tcl.tk -timeout 3000 -command \#]
     http::wait $token
     http::status $token
     # error codes vary among platforms.
@@ -670,7 +675,7 @@ test http-7.4 {http::formatQuery} -setup {
     http::config -urlencoding $enc
 } -result {%3F}
 
-package require -exact tcl::idna 1.0
+package require tcl::idna 1.0
 
 test http-idna-1.1 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna
@@ -680,7 +685,7 @@ test http-idna-1.2 {IDNA package: basics} -returnCodes error -body {
 } -result {unknown or ambiguous subcommand "?": must be decode, encode, puny, or version}
 test http-idna-1.3 {IDNA package: basics} -body {
     ::tcl::idna version
-} -result 1.0
+} -result 1.0.1
 test http-idna-1.4 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna version what
 } -result {wrong # args: should be "::tcl::idna version"}

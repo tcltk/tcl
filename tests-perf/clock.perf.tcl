@@ -122,7 +122,7 @@ proc test-format {{reptime 1000}} {
 }
 
 proc test-scan {{reptime 1000}} {
-  _test_run $reptime {
+  _test_run -convert-result {clock format $_(r) -locale en} $reptime {
     # Scan : date (in gmt)
     {clock scan "25.11.2015" -format "%d.%m.%Y" -base 0 -gmt 1}
     # Scan : date (system time zone, with base)
@@ -198,11 +198,11 @@ proc test-scan {{reptime 1000}} {
     # {clock scan "25.11.2015" -format [string repeat "[incr i] %d.%m.%Y %d.%m.%Y" 10] -base 0 -gmt 1}
     # # Scan : again:
     # {clock scan "25.11.2015" -format [string repeat "[incr i -1] %d.%m.%Y %d.%m.%Y" 10] -base 0 -gmt 1}
-  } {puts [clock format $_(r) -locale en]}
+  }
 }
 
 proc test-freescan {{reptime 1000}} {
-  _test_run $reptime {
+  _test_run -convert-result {clock format $_(r) -locale en}  $reptime {
     # FreeScan : relative date
     {clock scan "5 years 18 months 385 days" -base 0 -gmt 1}
     # FreeScan : relative date with relative weekday
@@ -239,7 +239,7 @@ proc test-freescan {{reptime 1000}} {
     {clock scan "19:18:30 MST" -base 148863600 -gmt 1
      clock scan "19:18:30 EST" -base 148863600
     }
-  } {puts [clock format $_(r) -locale en]}
+  }
 }
 
 proc test-add {{reptime 1000}} {
@@ -282,7 +282,7 @@ proc test-add {{reptime 1000}} {
   if {[catch {clock add 0 3 weekdays -gmt 1}]} {
     regsub -all {\mweekdays\M} $tests "days" tests
   }
-  _test_run $reptime $tests {puts [clock format $_(r) -locale en]}
+  _test_run -convert-result {clock format $_(r) -locale en} $reptime $tests
 }
 
 proc test-convert {{reptime 1000}} {

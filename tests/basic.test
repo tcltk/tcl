@@ -15,8 +15,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2
-namespace import ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
@@ -672,7 +674,7 @@ proc l3 {} {
 # Do all tests once byte compiled and once with direct string evaluation
 foreach noComp {0 1} {
 
-if $noComp {
+if {$noComp} {
     interp alias {} run {} testevalex
     set constraints testevalex
 } else {
@@ -964,7 +966,7 @@ test basic-48.24.$noComp {expansion: empty not canonical list, regression test, 
     run {list [list {*}{ }] [list {*}[format %c 32]] [list {*}[set a { }]]}
 } -result [lrepeat 3 {}] -cleanup {unset -nocomplain a}
 
-test basic-48.25.$noComp {Bug cc191552c: expansion: empty non-canonical list} -setup {
+test basic-48.25.$noComp {Bug cc191552c: expansion: empty non-canonical list} -constraints $constraints -setup {
     unset -nocomplain ::CRLF
     set ::CRLF "\r\n"
 } -body {
@@ -999,13 +1001,13 @@ test basic-49.2 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} testevalex {
 } {global}
 
 test basic-50.1 {[586e71dce4] EvalObjv level #0 exception handling} -setup {
-    interp create slave
-    interp alias {} foo slave return
+    interp create child
+    interp alias {} foo child return
 } -body {
     list [catch foo m] $m
 } -cleanup {
     unset -nocomplain m
-    interp delete slave
+    interp delete child
 } -result {0 {}}
 
 # Clean up after expand tests

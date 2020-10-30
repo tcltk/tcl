@@ -38,6 +38,8 @@ Pkgooa_StubsOKObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");
 	return TCL_ERROR;
@@ -76,9 +78,13 @@ static TclOOStubs stubsCopy = {
      * a function with a different memory address than
      * the real Tcl_CopyObjectInstance function in Tcl. */
     (Tcl_Object (*) (Tcl_Interp *, Tcl_Object, const char *,
-	    const char *t)) Pkgooa_StubsOKObjCmd
+	    const char *t))(void *)Pkgooa_StubsOKObjCmd,
     /* More entries could be here, but those are not used
      * for this test-case. So, being NULL is OK. */
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 };
 
 extern DLLEXPORT int

@@ -73,7 +73,7 @@ static TimeInfo timeInfo = {
     (HANDLE) NULL,
     (HANDLE) NULL,
     (HANDLE) NULL,
-#ifdef HAVE_CAST_TO_UNION
+#if defined(HAVE_CAST_TO_UNION) && !defined(__cplusplus)
     (LARGE_INTEGER) (Tcl_WideInt) 0,
     (ULARGE_INTEGER) (DWORDLONG) 0,
     (LARGE_INTEGER) (Tcl_WideInt) 0,
@@ -99,7 +99,7 @@ static struct {
     int initialized;		/* 1 if initialized, 0 otherwise */
     int perfCounter;		/* 1 if performance counter usable for wide clicks */
     double microsecsScale;	/* Denominator scale between clock / microsecs */
-} wideClick = {0, 0.0};
+} wideClick = {0, 0, 0.0};
 
 
 /*
@@ -170,7 +170,7 @@ TclpGetSeconds(void)
  *	This procedure returns a value that represents the highest resolution
  *	clock available on the system. There are no guarantees on what the
  *	resolution will be. In Tcl we will call this value a "click". The
- *	start time is also system dependant.
+ *	start time is also system dependent.
  *
  * Results:
  *	Number of clicks from some start time.
@@ -385,8 +385,8 @@ Tcl_GetTime(
 
 static void
 NativeScaleTime(
-    Tcl_Time *timePtr,
-    ClientData clientData)
+    TCL_UNUSED(Tcl_Time *),
+    TCL_UNUSED(ClientData))
 {
     /*
      * Native scale is 1:1. Nothing is done.
@@ -495,9 +495,9 @@ NativeGetMicroseconds(void)
 
 		GetSystemInfo(&systemInfo);
 		if (TclWinCPUID(0, regs) == TCL_OK
-			&& regs[1] == 0x756e6547	/* "Genu" */
-			&& regs[3] == 0x49656e69	/* "ineI" */
-			&& regs[2] == 0x6c65746e	/* "ntel" */
+			&& regs[1] == 0x756E6547	/* "Genu" */
+			&& regs[3] == 0x49656E69	/* "ineI" */
+			&& regs[2] == 0x6C65746E	/* "ntel" */
 			&& TclWinCPUID(1, regs) == TCL_OK
 			&& ((regs[0]&0x00000F00) == 0x00000F00 /* Pentium 4 */
 			|| ((regs[0] & 0x00F00000)	/* Extended family */
@@ -520,8 +520,8 @@ NativeGetMicroseconds(void)
 		DWORD id;
 
 		InitializeCriticalSection(&timeInfo.cs);
-		timeInfo.readyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-		timeInfo.exitEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+		timeInfo.readyEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
+		timeInfo.exitEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
 		timeInfo.calibrationThread = CreateThread(NULL, 256,
 			CalibrationThread, (LPVOID) NULL, 0, &id);
 		SetThreadPriority(timeInfo.calibrationThread,
@@ -621,7 +621,7 @@ NativeGetMicroseconds(void)
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    ClientData clientData)
+    TCL_UNUSED(ClientData))
 {
     Tcl_WideInt usecSincePosixEpoch;
 
@@ -666,7 +666,7 @@ void TclWinResetTimerResolution(void);
 
 static void
 StopCalibration(
-    ClientData unused)		/* Client data is unused */
+    TCL_UNUSED(ClientData))
 {
     SetEvent(timeInfo.exitEvent);
 
@@ -708,7 +708,7 @@ StopCalibration(
 
 static DWORD WINAPI
 CalibrationThread(
-    LPVOID arg)
+    TCL_UNUSED(LPVOID))
 {
     FILETIME curFileTime;
     DWORD waitResult;
@@ -752,7 +752,6 @@ CalibrationThread(
 	UpdateTimeEachSecond();
     }
 
-    /* lint */
     return (DWORD) 0;
 }
 

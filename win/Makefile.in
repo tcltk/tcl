@@ -23,6 +23,7 @@ bindir			= @bindir@
 libdir			= @libdir@
 includedir		= @includedir@
 datarootdir		= @datarootdir@
+runstatedir		= @runstatedir@
 mandir			= @mandir@
 
 # The following definition can be set to non-null for special systems like AFS
@@ -48,6 +49,9 @@ LIB_INSTALL_DIR		= $(INSTALL_ROOT)$(libdir)
 # Path name to use when installing library scripts.
 SCRIPT_INSTALL_DIR	= $(INSTALL_ROOT)$(TCL_LIBRARY)
 
+# Path name to use when installing Tcl modules.
+MODULE_INSTALL_DIR	= $(SCRIPT_INSTALL_DIR)/../tcl9
+
 # Directory in which to install the include file tcl.h:
 INCLUDE_INSTALL_DIR	= $(INSTALL_ROOT)$(includedir)
 
@@ -66,9 +70,6 @@ MAN3_INSTALL_DIR = $(MAN_INSTALL_DIR)/man3
 # Directory in which to install manual entries for the built-in Tcl commands:
 MANN_INSTALL_DIR = $(MAN_INSTALL_DIR)/mann
 
-# Libraries built with optimization switches have this additional extension
-TCL_DBGX = @TCL_DBGX@
-
 # warning flags
 CFLAGS_WARNING = @CFLAGS_WARNING@
 
@@ -81,7 +82,7 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG)
 #CFLAGS = 		$(CFLAGS_OPTIMIZE)
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DUNICODE -D_UNICODE -D_ATL_XP_TARGETING
+CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DMP_FIXED_CUTOFFS -D__USE_MINGW_ANSI_STDIO=0 -DMP_NO_STDINT
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
@@ -96,13 +97,14 @@ COMPILE_DEBUG_FLAGS =
 
 SRC_DIR			= @srcdir@
 ROOT_DIR		= @srcdir@/..
-TOP_DIR			= $(shell cd @srcdir@/..; pwd -P)
+TOP_DIR			= $(shell cd @srcdir@/..; pwd -W 2>/dev/null || pwd -P)
 GENERIC_DIR		= $(TOP_DIR)/generic
-TOMMATH_DIR		= $(TOP_DIR)/libtommath
 WIN_DIR			= $(TOP_DIR)/win
 COMPAT_DIR		= $(TOP_DIR)/compat
 PKGS_DIR		= $(TOP_DIR)/pkgs
 ZLIB_DIR		= $(COMPAT_DIR)/zlib
+MINIZIP_DIR		= $(ZLIB_DIR)/contrib/minizip
+TOMMATH_DIR		= $(TOP_DIR)/libtommath
 
 # Converts a POSIX path to a Windows native path.
 CYGPATH			= @CYGPATH@
@@ -113,15 +115,15 @@ includedir_native = $(shell $(CYGPATH) '$(includedir)')
 mandir_native = $(shell $(CYGPATH) '$(mandir)')
 TCL_LIBRARY_NATIVE	= $(shell $(CYGPATH) '$(TCL_LIBRARY)')
 GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
-TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
 WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
 ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
-ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W || pwd -P)
+SCRIPT_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(SCRIPT_INSTALL_DIR)')
+INCLUDE_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(INCLUDE_INSTALL_DIR)')
+MAN_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(MAN_INSTALL_DIR)')
+ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W 2>/dev/null || pwd -P)
 ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)')
-#GENERIC_DIR_NATIVE	= $(GENERIC_DIR)
-#TOMMATH_DIR_NATIVE	= $(TOMMATH_DIR)
-#WIN_DIR_NATIVE		= $(WIN_DIR)
-#ROOT_DIR_NATIVE		= $(ROOT_DIR)
+MINIZIP_DIR_NATIVE	= $(shell $(CYGPATH) '$(MINIZIP_DIR)')
+TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
 
 # Fully qualify library path so that `make test`
 # does not depend on the current directory.
@@ -147,20 +149,21 @@ TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 TCL_DLL_FILE		= @TCL_DLL_FILE@
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 DDE_DLL_FILE		= tcldde$(DDEVER)${DLLSUFFIX}
-DDE_LIB_FILE		= @LIBPREFIX@tcldde$(DDEVER)${LIBSUFFIX}
+DDE_LIB_FILE		= @LIBPREFIX@tcldde$(DDEVER)${DLLSUFFIX}${LIBSUFFIX}
 REG_DLL_FILE		= tclreg$(REGVER)${DLLSUFFIX}
-REG_LIB_FILE		= @LIBPREFIX@tclreg$(REGVER)${LIBSUFFIX}
+REG_LIB_FILE		= @LIBPREFIX@tclreg$(REGVER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
-TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${LIBSUFFIX}
+TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
-			  package ifneeded dde 1.4.1 [list load [file normalize ${DDE_DLL_FILE}] dde];\
-			  package ifneeded registry 1.3.3 [list load [file normalize ${REG_DLL_FILE}] registry]
+			  package ifneeded dde 1.4.3 [list load [file normalize ${DDE_DLL_FILE}] dde];\
+			  package ifneeded registry 1.3.5 [list load [file normalize ${REG_DLL_FILE}] registry]
 TEST_LOAD_FACILITIES	= package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest];\
 			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
+TOMMATH_DLL_FILE		= libtommath.dll
 
-SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@
+SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@
 STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
@@ -180,7 +183,7 @@ TCL_EXE			= @TCL_EXE@
 # Setting the VPATH variable to a list of paths will cause the Makefile to
 # look into these paths when resolving .c to .obj dependencies.
 
-VPATH = $(GENERIC_DIR):$(TOMMATH_DIR):$(WIN_DIR):$(COMPAT_DIR):$(ZLIB_DIR)
+VPATH = $(GENERIC_DIR):$(WIN_DIR):$(COMPAT_DIR):$(ZLIB_DIR):$(TOMMATH_DIR)
 
 AR		= @AR@
 RANLIB		= @RANLIB@
@@ -201,7 +204,7 @@ SHLIB_LD	= @SHLIB_LD@
 SHLIB_LD_LIBS	= @SHLIB_LD_LIBS@
 SHLIB_CFLAGS	= @SHLIB_CFLAGS@
 SHLIB_SUFFIX	= @SHLIB_SUFFIX@
-LIBS		= @LIBS@ $(shell $(CYGPATH) '@ZLIB_LIBS@')
+LIBS		= @LIBS@ $(shell $(CYGPATH) '@ZLIB_LIBS@') $(shell $(CYGPATH) '@TOMMATH_LIBS@')
 
 RMDIR		= rm -rf
 MKDIR		= mkdir -p
@@ -249,16 +252,16 @@ MINIZIP_OBJS = \
 
 ZIP_INSTALL_OBJS =  @ZIP_INSTALL_OBJS@
 
-CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
--I"${ZLIB_DIR_NATIVE}" -I"${GENERIC_DIR_NATIVE}" \
--DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
+CC_SWITCHES = -I"${GENERIC_DIR_NATIVE}" -I"${TOMMATH_DIR_NATIVE}" \
+-I"${ZLIB_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
+${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} -DMP_PREC=4 \
 ${AC_FLAGS} ${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
 
 CC_OBJNAME = @CC_OBJNAME@
 CC_EXENAME = @CC_EXENAME@
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I"${GENERIC_DIR_NATIVE}" -DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" \
+-I"${GENERIC_DIR_NATIVE}" -I"${TOMMATH_DIR_NATIVE}" \
 -I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
 ${COMPILE_DEBUG_FLAGS}
 
@@ -316,8 +319,8 @@ GENERIC_OBJS = \
 	tclLiteral.$(OBJEXT) \
 	tclListObj.$(OBJEXT) \
 	tclLoad.$(OBJEXT) \
+	tclMainW.$(OBJEXT) \
 	tclMain.$(OBJEXT) \
-	tclMain2.$(OBJEXT) \
 	tclNamesp.$(OBJEXT) \
 	tclNotify.$(OBJEXT) \
 	tclOO.$(OBJEXT) \
@@ -360,9 +363,6 @@ GENERIC_OBJS = \
 	tclZlib.$(OBJEXT)
 
 TOMMATH_OBJS = \
-	bn_reverse.${OBJEXT} \
-	bn_fast_s_mp_mul_digs.${OBJEXT} \
-	bn_fast_s_mp_sqr.${OBJEXT} \
 	bn_mp_add.${OBJEXT} \
 	bn_mp_add_d.${OBJEXT} \
 	bn_mp_and.${OBJEXT} \
@@ -381,21 +381,16 @@ TOMMATH_OBJS = \
 	bn_mp_div_2d.${OBJEXT} \
 	bn_mp_div_3.${OBJEXT} \
 	bn_mp_exch.${OBJEXT} \
-	bn_mp_expt_d.${OBJEXT} \
-	bn_mp_expt_d_ex.${OBJEXT} \
-	bn_s_mp_get_bit.${OBJEXT} \
-	bn_mp_get_int.${OBJEXT} \
-	bn_mp_get_long.${OBJEXT} \
-	bn_mp_get_long_long.${OBJEXT} \
+	bn_mp_expt_u32.${OBJEXT} \
+	bn_mp_get_mag_u64.${OBJEXT} \
 	bn_mp_grow.${OBJEXT} \
 	bn_mp_init.${OBJEXT} \
 	bn_mp_init_copy.${OBJEXT} \
+	bn_mp_init_i64.${OBJEXT} \
 	bn_mp_init_multi.${OBJEXT} \
 	bn_mp_init_set.${OBJEXT} \
-	bn_mp_init_set_int.${OBJEXT} \
 	bn_mp_init_size.${OBJEXT} \
-	bn_mp_karatsuba_mul.${OBJEXT} \
-	bn_mp_karatsuba_sqr.$(OBJEXT) \
+	bn_mp_init_u64.${OBJEXT} \
 	bn_mp_lshd.${OBJEXT} \
 	bn_mp_mod.${OBJEXT} \
 	bn_mp_mod_2d.${OBJEXT} \
@@ -409,28 +404,31 @@ TOMMATH_OBJS = \
 	bn_mp_radix_smap.${OBJEXT} \
 	bn_mp_read_radix.${OBJEXT} \
 	bn_mp_rshd.${OBJEXT} \
-	bn_mp_set.${OBJEXT} \
-	bn_mp_set_int.${OBJEXT} \
-	bn_mp_set_long.${OBJEXT} \
-	bn_mp_set_long_long.${OBJEXT} \
+	bn_mp_set_i64.${OBJEXT} \
+	bn_mp_set_u64.${OBJEXT} \
 	bn_mp_shrink.${OBJEXT} \
 	bn_mp_sqr.${OBJEXT} \
 	bn_mp_sqrt.${OBJEXT} \
 	bn_mp_sub.${OBJEXT} \
 	bn_mp_sub_d.${OBJEXT} \
 	bn_mp_signed_rsh.${OBJEXT} \
-	bn_mp_to_unsigned_bin.${OBJEXT} \
-	bn_mp_to_unsigned_bin_n.${OBJEXT} \
-	bn_mp_toom_mul.${OBJEXT} \
-	bn_mp_toom_sqr.${OBJEXT} \
-	bn_mp_toradix_n.${OBJEXT} \
-	bn_mp_unsigned_bin_size.${OBJEXT} \
+	bn_mp_to_ubin.${OBJEXT} \
+	bn_mp_to_radix.${OBJEXT} \
+	bn_mp_ubin_size.${OBJEXT} \
 	bn_mp_xor.${OBJEXT} \
 	bn_mp_zero.${OBJEXT} \
 	bn_s_mp_add.${OBJEXT} \
+	bn_s_mp_balance_mul.$(OBJEXT) \
+	bn_s_mp_karatsuba_mul.${OBJEXT} \
+	bn_s_mp_karatsuba_sqr.$(OBJEXT) \
 	bn_s_mp_mul_digs.${OBJEXT} \
+	bn_s_mp_mul_digs_fast.${OBJEXT} \
+	bn_s_mp_reverse.${OBJEXT} \
+	bn_s_mp_sqr_fast.${OBJEXT} \
 	bn_s_mp_sqr.${OBJEXT} \
-	bn_s_mp_sub.${OBJEXT}
+	bn_s_mp_sub.${OBJEXT} \
+	bn_s_mp_toom_mul.${OBJEXT} \
+	bn_s_mp_toom_sqr.${OBJEXT}
 
 
 WIN_OBJS = \
@@ -474,7 +472,7 @@ ZLIB_OBJS = \
 	uncompr.$(OBJEXT) \
 	zutil.$(OBJEXT)
 
-TCL_OBJS = ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} @ZLIB_OBJS@
+TCL_OBJS = ${GENERIC_OBJS} ${WIN_OBJS} @ZLIB_OBJS@ @TOMMATH_OBJS@
 
 TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
@@ -486,7 +484,7 @@ all: binaries libraries doc packages
 # or from mingw/msys shell:
 #   $ ./tcltest -verbose bps -file fileName.test
 
-tcltest.cmd:
+tcltest.cmd: Makefile
 	@echo 'Create tcltest.cmd helpers';
 	@(\
 	  echo '@echo off'; \
@@ -494,8 +492,8 @@ tcltest.cmd:
 	  echo 'set BDP=%~dp0'; \
 	  echo 'set OWD=%CD%'; \
 	  echo 'cd /d %TEMP%'; \
-	  echo 'rem "%BDP%\$(TCLSH)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" %*'; \
-	  echo '"%BDP%\$(TEST_EXE_FILE)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $(TESTFLAGS) -load "$(TEST_LOAD_PRMS)" %*'; \
+	  echo 'rem "%BDP%\$(TCLSH)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" %TESTFLAGS% -load "$(TEST_LOAD_FACILITIES)" %*'; \
+	  echo '"%BDP%\$(TEST_EXE_FILE)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" %TESTFLAGS% -load "$(TEST_LOAD_PRMS)" %*'; \
 	  echo 'cd /d %OWD%'; \
 	) > tcltest.cmd;
 	@(\
@@ -503,11 +501,13 @@ tcltest.cmd:
 	  echo '#LANG=en_US'; \
 	  echo 'BDP=$$(dirname $$(readlink -f %0))'; \
 	  echo 'cd /tmp'; \
-	  echo '#"$$BDP/$(TCLSH)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" "$$@"'; \
-	  echo '"$$BDP/$(TEST_EXE_FILE)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $(TESTFLAGS) -load "$(TEST_LOAD_PRMS)" "$$@"'; \
-	) > tcltest;
+	  echo '#"$$BDP/$(TCLSH)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $$TESTFLAGS -load "$(TEST_LOAD_FACILITIES)" "$$@"'; \
+	  echo '"$$BDP/$(TEST_EXE_FILE)" "$(ROOT_DIR_WIN_NATIVE)/tests/all.tcl" $$TESTFLAGS -load "$(TEST_LOAD_PRMS)" "$$@"'; \
+	) > tcltest.sh;
 
-tcltest: $(TCLSH) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd
+tcltest.sh: tcltest.cmd
+
+tcltest: binaries $(TEST_EXE_FILE) $(TEST_DLL_FILE) $(CAT32) tcltest.cmd
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ winextensions ${TCL_ZIP_FILE} $(TCLSH)
 
@@ -548,10 +548,11 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
 	tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+	$(COPY) tclsh.exe.manifest $(TCLSH).manifest
 	@VC_MANIFEST_EMBED_EXE@
 
 cat32.$(OBJEXT): cat.c
-	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
 $(CAT32): cat32.$(OBJEXT)
 	$(CC) $(CFLAGS) cat32.$(OBJEXT) $(CC_EXENAME) $(LIBS) $(LDFLAGS_CONSOLE)
@@ -564,9 +565,10 @@ ${TCL_STUB_LIB_FILE}: ${STUB_OBJS}
 	@MAKE_STUB_LIB@ ${STUB_OBJS}
 	@POST_MAKE_LIB@
 
-${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ ${TCL_ZIP_FILE}
+${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@ ${TCL_ZIP_FILE}
 	@$(RM) ${TCL_DLL_FILE} $(TCL_LIB_FILE)
 	@MAKE_DLL@ ${TCL_OBJS} tcl.$(RES) $(SHLIB_LD_LIBS)
+	$(COPY) tclsh.exe.manifest ${TCL_DLL_FILE}.manifest
 	@VC_MANIFEST_EMBED_DLL@
 	@if test "${ZIPFS_BUILD}" = "1" ; then \
 		cat ${TCL_ZIP_FILE} >> ${TCL_DLL_FILE}; \
@@ -581,18 +583,22 @@ ${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 
 ${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
+	$(COPY) tclsh.exe.manifest ${DDE_DLL_FILE}.manifest
 
 ${REG_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${REG_OBJS}
 	@MAKE_DLL@ ${REG_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
+	$(COPY) tclsh.exe.manifest ${REG_DLL_FILE}.manifest
 
 ${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 	@$(RM) ${TEST_DLL_FILE} ${TEST_LIB_FILE}
 	@MAKE_DLL@ ${TCLTEST_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
+	$(COPY) tclsh.exe.manifest ${TEST_DLL_FILE}.manifest
 
 ${TEST_EXE_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS} tclTestMain.${OBJEXT}
 	@$(RM) ${TEST_EXE_FILE}
 	$(CC) $(CFLAGS) $(TCLTEST_OBJS) tclTestMain.$(OBJEXT) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+	$(COPY) tclsh.exe.manifest ${TEST_EXE_FILE}.manifest
 
 # use pre-built zlib1.dll
 ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
@@ -600,6 +606,14 @@ ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
 		$(COPY) $(ZLIB_DIR)/win64/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
 	else \
 		$(COPY) $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
+	fi;
+
+# use pre-built libtommath.dll
+${TOMMATH_DLL_FILE}: ${TCL_STUB_LIB_FILE}
+	@if test "@TOMMATH_LIBS@set" != "${TOMMATH_DIR_NATIVE}/win32/tommath.libset" ; then \
+		$(COPY) $(TOMMATH_DIR)/win64/${TOMMATH_DLL_FILE} ${TOMMATH_DLL_FILE}; \
+	else \
+		$(COPY) $(TOMMATH_DIR)/win32/${TOMMATH_DLL_FILE} ${TOMMATH_DLL_FILE}; \
 	fi;
 
 # Add the object extension to the implicit rules. By default .obj is not
@@ -612,7 +626,7 @@ ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
 # Special case object targets
 
 tclTestMain.${OBJEXT}: tclAppInit.c
-	$(CC) -c $(CC_SWITCHES) -DTCL_TEST -DBUILD_tcl $(EXTFLAGS) $(CC_OBJNAME) $(WIN_DIR)/tclAppInit.c
+	$(CC) -c $(CC_SWITCHES) -DTCL_TEST -DUNICODE -D_UNICODE $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 tclWinInit.${OBJEXT}: tclWinInit.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
@@ -620,21 +634,27 @@ tclWinInit.${OBJEXT}: tclWinInit.c
 tclWinPipe.${OBJEXT}: tclWinPipe.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
-testMain.${OBJEXT}: tclAppInit.c
-	$(CC) -c $(CC_SWITCHES) -DTCL_TEST @DEPARG@ $(CC_OBJNAME)
+tclWinReg.${OBJEXT}: tclWinReg.c
+	$(CC) -c $(CC_SWITCHES) $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
-tclMain2.${OBJEXT}: tclMain.c
-	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_ASCII_MAIN @DEPARG@ $(CC_OBJNAME)
+tclWinDde.${OBJEXT}: tclWinDde.c
+	$(CC) -c $(CC_SWITCHES) $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
+
+tclAppInit.${OBJEXT}: tclAppInit.c
+	$(CC) -c $(CC_SWITCHES) $(EXTFLAGS) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
+
+tclMainW.${OBJEXT}: tclMain.c
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
 
 # TIP #430, ZipFS Support
 tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl \
-	-DCFG_RUNTIME_PATH=\"$(bindir_native)\" \
+	-DCFG_RUNTIME_PATH="\"$(bindir_native)\"" \
 	-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
 	-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 	-DCFG_RUNTIME_LIBDIR="\"$(bindir_native)\"" \
 	-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY_NATIVE)\"" \
-	$(ZLIB_INCLUDE) -I$(ZLIB_DIR)/contrib/minizip  @DEPARG@ $(CC_OBJNAME)
+	$(ZLIB_INCLUDE) -I$(MINIZIP_DIR_NATIVE)  @DEPARG@ $(CC_OBJNAME)
 
 
 # TIP #59, embedding of configuration information into the binary library.
@@ -647,17 +667,17 @@ tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
 
 tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 	$(CC)	-c $(CC_SWITCHES)			\
-		-DCFG_INSTALL_LIBDIR=\"$(LIB_INSTALL_DIR_NATIVE)\" \
-		-DCFG_INSTALL_BINDIR=\"$(BIN_INSTALL_DIR_NATIVE)\" \
-		-DCFG_INSTALL_SCRDIR=\"$(SCRIPT_INSTALL_DIR_NATIVE)\" \
-		-DCFG_INSTALL_INCDIR=\"$(INCLUDE_INSTALL_DIR_NATIVE)\" \
-		-DCFG_INSTALL_DOCDIR=\"$(MAN_INSTALL_DIR)\" \
+		-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR_NATIVE)\"" \
+		-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR_NATIVE)\"" \
+		-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR_NATIVE)\"" \
+		-DCFG_INSTALL_INCDIR="\"$(INCLUDE_INSTALL_DIR_NATIVE)\"" \
+		-DCFG_INSTALL_DOCDIR="\"$(MAN_INSTALL_DIR_NATIVE)\"" \
 		\
-		-DCFG_RUNTIME_LIBDIR=\"$(libdir_native)\" \
-		-DCFG_RUNTIME_BINDIR=\"$(bindir_native)\" \
-		-DCFG_RUNTIME_SCRDIR=\"$(TCL_LIBRARY_NATIVE)\" \
-		-DCFG_RUNTIME_INCDIR=\"$(includedir_native)\" \
-		-DCFG_RUNTIME_DOCDIR=\"$(mandir_native)\" \
+		-DCFG_RUNTIME_LIBDIR="\"$(libdir_native)\"" \
+		-DCFG_RUNTIME_BINDIR="\"$(bindir_native)\"" \
+		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY_NATIVE)\"" \
+		-DCFG_RUNTIME_INCDIR="\"$(includedir_native)\"" \
+		-DCFG_RUNTIME_DOCDIR="\"$(mandir_native)\"" \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
 		-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 		-DBUILD_tcl \
@@ -704,7 +724,7 @@ deflate.$(HOST_OBJEXT):
 	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/deflate.c
 
 ioapi.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -DIOAPI_NO_64 -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/ioapi.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/ioapi.c
 
 iowin32.$(HOST_OBJEXT):
 	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/iowin32.c
@@ -734,7 +754,7 @@ zutil.$(HOST_OBJEXT):
 	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -c $(ZLIB_DIR)/zutil.c
 
 minizip.$(HOST_OBJEXT):
-	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -DIOAPI_NO_64 -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/minizip.c
+	$(HOST_CC) -o $@ -I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip -c $(ZLIB_DIR)/contrib/minizip/minizip.c
 
 minizip${HOST_EXEEXT}: $(MINIZIP_OBJS)
 	$(HOST_CC) -o $@ $(MINIZIP_OBJS)
@@ -751,14 +771,6 @@ gendate:
 	--no-lines \
 	$(GENERIC_DIR)/tclGetDate.y
 
-# The following target generates the file generic/tclTomMath.h. It needs to be
-# run (and the results checked) after updating to a new release of libtommath.
-
-gentommath_h:
-	$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/fix_tommath_h.tcl" \
-		"$(TOMMATH_DIR_NATIVE)/tommath.h" \
-		> "$(GENERIC_DIR_NATIVE)/tclTomMath.h"
-
 INSTALL_BASE_TARGETS = install-binaries $(INSTALL_LIBRARIES) $(INSTALL_MSGS) $(INSTALL_TZDATA)
 INSTALL_DOC_TARGETS = install-doc
 INSTALL_PACKAGE_TARGETS = install-packages
@@ -770,24 +782,24 @@ INSTALL_TARGETS = $(INSTALL_BASE_TARGETS) $(INSTALL_DOC_TARGETS) $(INSTALL_DEV_T
 install: $(INSTALL_TARGETS)
 
 install-binaries: binaries
-	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" ; \
+	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)"; \
 	    do \
-	    if [ ! -d $$i ] ; then \
+	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
-		$(MKDIR) $$i; \
-		chmod 755 $$i; \
+		$(MKDIR) "$$i"; \
+		chmod 755 "$$i"; \
 		else true; \
 		fi; \
 	    done;
 	@for i in dde${DDEDOTVER} reg${REGDOTVER}; \
 	    do \
-	    if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
+	    if [ ! -d "$(LIB_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
-		$(MKDIR) $(LIB_INSTALL_DIR)/$$i; \
+		$(MKDIR) "$(LIB_INSTALL_DIR)/$$i"; \
 		else true; \
 		fi; \
 	    done;
-	@for i in $(TCL_DLL_FILE) $(ZLIB_DLL_FILE) $(TCLSH); \
+	@for i in $(TCL_DLL_FILE) $(ZLIB_DLL_FILE) $(TOMMATH_DLL_FILE) $(TCLSH); \
 	    do \
 	    if [ -f $$i ]; then \
 		echo "Installing $$i to $(BIN_INSTALL_DIR)/"; \
@@ -803,45 +815,53 @@ install-binaries: binaries
 	    done
 	@if [ -f $(DDE_DLL_FILE) ]; then \
 	    echo Installing $(DDE_DLL_FILE); \
-	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
+	    $(COPY) $(DDE_DLL_FILE) "$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
 	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl \
-		$(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
+		"$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
 	    fi
 	@if [ -f $(DDE_LIB_FILE) ]; then \
 	    echo Installing $(DDE_LIB_FILE); \
-	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
+	    $(COPY) $(DDE_LIB_FILE) "$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
 	    fi
 	@if [ -f $(REG_DLL_FILE) ]; then \
 	    echo Installing $(REG_DLL_FILE); \
-	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
+	    $(COPY) $(REG_DLL_FILE) "$(LIB_INSTALL_DIR)/reg${REGDOTVER}"; \
 	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl \
-		$(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
+		"$(LIB_INSTALL_DIR)/reg${REGDOTVER}"; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
 	    echo Installing $(REG_LIB_FILE); \
-	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
+	    $(COPY) $(REG_LIB_FILE) "$(LIB_INSTALL_DIR)/reg${REGDOTVER}"; \
 	    fi
 
 install-libraries-zipfs-shared: libraries
 
 install-libraries-zipfs-static: install-libraries-zipfs-shared
-	$(INSTALL_DATA) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
+	$(COPY) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
 
 install-libraries: libraries install-tzdata install-msgs
-	@for i in "$$($(CYGPATH) $(prefix)/lib)" "$(INCLUDE_INSTALL_DIR)" \
-		$(SCRIPT_INSTALL_DIR); \
+	@for i in "$(prefix)/lib" "$(INCLUDE_INSTALL_DIR)" \
+		"$(SCRIPT_INSTALL_DIR)" "$(MODULE_INSTALL_DIR)"; \
 	    do \
-	    if [ ! -d $$i ] ; then \
+	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
-		$(MKDIR) $$i; \
+		$(MKDIR) "$$i"; \
 		else true; \
 		fi; \
 	    done;
-	@for i in opt0.4 encoding ../tcl9 ../tcl9/9.0 ../tcl9/9.0/platform; \
+	@for i in opt0.4 cookiejar0.2 encoding; \
 	    do \
-	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
+	    if [ ! -d "$(SCRIPT_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
-		$(MKDIR) $(SCRIPT_INSTALL_DIR)/$$i; \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)/$$i"; \
+		else true; \
+		fi; \
+	    done;
+	@for i in 9.0  9.0/platform; \
+	    do \
+	    if [ ! -d "$(MODULE_INSTALL_DIR)/$$i" ] ; then \
+		echo "Making directory $(MODULE_INSTALL_DIR)/$$i"; \
+		$(MKDIR) "$(MODULE_INSTALL_DIR)/$$i"; \
 		else true; \
 		fi; \
 	    done;
@@ -850,35 +870,40 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
-	@echo "Installing package http 2.9.0 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/http-2.9.0.tm;
-	@echo "Installing library opt0.4 directory";
+	@echo "Installing package cookiejar 0.2"
+	@for j in $(ROOT_DIR)/library/cookiejar/*.{tcl,txt.gz}; \
+	    do \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
+	    done;
+	@echo "Installing package http 2.10.0a1 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/9.0/http-2.10.0a1.tm";
+	@echo "Installing package opt 0.4.7";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
-	@echo "Installing package msgcat 1.7.0 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/msgcat-1.7.0.tm;
-	@echo "Installing package tcltest 2.4.0 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/tcltest-2.4.0.tm;
+	@echo "Installing package msgcat 1.7.1 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl "$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.1.tm";
+	@echo "Installing package tcltest 2.5.3 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.3.tm";
 	@echo "Installing package platform 1.0.14 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/platform-1.0.14.tm;
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/9.0/platform-1.0.14.tm";
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl $(SCRIPT_INSTALL_DIR)/../tcl9/9.0/platform/shell-1.1.4.tm;
+	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl "$(MODULE_INSTALL_DIR)/9.0/platform/shell-1.1.4.tm";
 	@echo "Installing encodings";
-	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
+	@for i in $(ROOT_DIR)/library/encoding/*.enc; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \
 	done;
 
 install-tzdata:
 	@echo "Installing time zone data"
 	@$(TCL_EXE) "$(ROOT_DIR)/tools/installData.tcl" \
-	    "$(ROOT_DIR)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
+	    "$(ROOT_DIR)/library/tzdata" "$(SCRIPT_INSTALL_DIR_NATIVE)/tzdata"
 
 install-msgs:
 	@echo "Installing message catalogs"
-	@$(TCL_EXE) "$(ROOT_DIR)/tools/installData.tcl" \
-	    "$(ROOT_DIR)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
+	$(TCL_EXE) "$(ROOT_DIR)/tools/installData.tcl" \
+	    "$(ROOT_DIR)/library/msgs" "$(SCRIPT_INSTALL_DIR_NATIVE)/msgs"
 
 install-doc: doc
 
@@ -897,7 +922,8 @@ install-headers:
 		$(GENERIC_DIR)/tclOO.h $(GENERIC_DIR)/tclOODecls.h \
 		$(GENERIC_DIR)/tclPlatDecls.h \
 		$(GENERIC_DIR)/tclTomMath.h \
-		$(GENERIC_DIR)/tclTomMathDecls.h ; \
+		$(GENERIC_DIR)/tclTomMathDecls.h \
+		$(TOMMATH_DIR)/tommath.h ; \
 	    do \
 	    $(COPY) $$i "$(INCLUDE_INSTALL_DIR)"; \
 	    done;
@@ -927,13 +953,13 @@ install-private-headers: libraries
 
 test: test-tcl test-packages
 
-test-tcl: binaries $(TCLSH) $(CAT32) $(TEST_DLL_FILE)
+test-tcl: tcltest
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	$(WINE) ./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
-	-load "$(TEST_LOAD_FACILITIES)" | $(WINE) ./$(CAT32)
+	-load "$(TEST_LOAD_FACILITIES)"
 
 # Useful target to launch a built tclsh with the proper path,...
-runtest: binaries $(TCLSH) $(TEST_DLL_FILE)
+runtest: tcltest
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	$(WINE) ./$(TCLSH) $(TESTFLAGS) -load "$(TEST_LOAD_FACILITIES)" $(SCRIPT)
 
@@ -959,7 +985,7 @@ cleanhelp:
 
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
-	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd tcltest
+	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd tcltest.sh
 	$(RM) *.pch *.ilk *.pdb
 	$(RM) minizip${HOST_EXEEXT} *.${HOST_OBJEXT}
 	$(RM) *.zip

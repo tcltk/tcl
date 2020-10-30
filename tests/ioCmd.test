@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
@@ -241,23 +241,23 @@ test iocmd-8.7 {fconfigure command} -setup {
     file delete $path(test1)
 } -body {
     set f1 [open $path(test1) w]
-    fconfigure $f1 -translation lf -eofchar {} -encoding unicode
+    fconfigure $f1 -translation lf -eofchar {} -encoding utf-16
     fconfigure $f1
 } -cleanup {
     catch {close $f1}
-} -result {-blocking 1 -buffering full -buffersize 4096 -encoding unicode -eofchar {} -translation lf}
+} -result {-blocking 1 -buffering full -buffersize 4096 -encoding utf-16 -eofchar {} -translation lf}
 test iocmd-8.8 {fconfigure command} -setup {
     file delete $path(test1)
     set x {}
 } -body {
     set f1 [open $path(test1) w]
     fconfigure $f1 -translation lf -buffering line -buffersize 3030 \
-		-eofchar {} -encoding unicode
+		-eofchar {} -encoding utf-16
     lappend x [fconfigure $f1 -buffering]
     lappend x [fconfigure $f1]
 } -cleanup {
     catch {close $f1}
-} -result {line {-blocking 1 -buffering line -buffersize 3030 -encoding unicode -eofchar {} -translation lf}}
+} -result {line {-blocking 1 -buffering line -buffersize 3030 -encoding utf-16 -eofchar {} -translation lf}}
 test iocmd-8.9 {fconfigure command} -setup {
     file delete $path(test1)
 } -body {
@@ -294,7 +294,7 @@ removeFile fconfigure.dummy
 test iocmd-8.14 {fconfigure command} {
     fconfigure stdin -buffers
 } 4096
-test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOrPc} -setup {
+test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOrWin} -setup {
     set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]
     proc iocmdSRV {sock ip port} {close $sock}
@@ -402,18 +402,18 @@ test iocmd-10.5 {fblocked command} {
 set path(test4) [makeFile {} test4]
 set path(test5) [makeFile {} test5]
 
-test iocmd-11.1 {I/O to command pipelines} {unixOrPc unixExecs} {
+test iocmd-11.1 {I/O to command pipelines} {unixOrWin unixExecs} {
     set f [open $path(test4) w]
     close $f
     list [catch {open "| cat < \"$path(test4)\" > \"$path(test5)\"" w} msg] $msg $::errorCode
 } {1 {can't write input to command: standard input was redirected} {TCL OPERATION EXEC BADREDIRECT}}
-test iocmd-11.2 {I/O to command pipelines} {unixOrPc unixExecs} {
+test iocmd-11.2 {I/O to command pipelines} {unixOrWin unixExecs} {
     list [catch {open "| echo > \"$path(test5)\"" r} msg] $msg $::errorCode
 } {1 {can't read output from command: standard output was redirected} {TCL OPERATION EXEC BADREDIRECT}}
-test iocmd-11.3 {I/O to command pipelines} {unixOrPc unixExecs} {
+test iocmd-11.3 {I/O to command pipelines} {unixOrWin unixExecs} {
     list [catch {open "| echo > \"$path(test5)\"" r+} msg] $msg $::errorCode
 } {1 {can't read output from command: standard output was redirected} {TCL OPERATION EXEC BADREDIRECT}}
-test iocmd-11.4 {I/O to command pipelines} {notValgrind unixOrPc} {
+test iocmd-11.4 {I/O to command pipelines} {notValgrind unixOrWin} {
     list [catch {open "| no_such_command_exists" rb} msg] $msg $::errorCode
 } {1 {couldn't execute "no_such_command_exists": no such file or directory} {POSIX ENOENT {no such file or directory}}}
 
@@ -824,11 +824,11 @@ test iocmd-21.20 {Bug 88aef05cda} -setup {
     }
     set ch [chan create {read write} foo]
 } -body {
-    list [catch {chan configure $ch -blocking 0} m] $m
+    chan configure $ch -blocking 0
 } -cleanup {
     close $ch
     rename foo {}
-} -match glob -result {1 {*nested eval*}}
+} -match glob -returnCodes 1 -result {*(infinite loop?)*}
 test iocmd-21.21 {[close] in [read] segfaults} -setup {
     proc foo {method chan args} {
 	switch -- $method initialize {
@@ -2015,7 +2015,7 @@ test iocmd-31.6 {chan postevent, posted events do happen} -match glob -body {
     set c [chan create {r w} foo]
     set tock {}
     note [fileevent $c readable {lappend res TOCK; set tock 1}]
-    set stop [after 10000 {lappend res TIMEOUT; set tock 1}]
+    set stop [after 15000 {lappend res TIMEOUT; set tock 1}]
     after  1000 {note [chan postevent $c r]}
     vwait ::tock
     catch {after cancel $stop}
@@ -2028,7 +2028,7 @@ test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
     proc foo {args} {oninit; onfinal; track; return}
     set c [chan create {r w} foo]
     note [fileevent $c writable {lappend res TOCK; set tock 1}]
-    set stop [after 10000 {lappend res TIMEOUT; set tock 1}]
+    set stop [after 15000 {lappend res TIMEOUT; set tock 1}]
     after  1000 {note [chan postevent $c w]}
     vwait ::tock
     catch {after cancel $stop}
@@ -2084,7 +2084,7 @@ test iocmd-32.0 {origin interpreter of moved channel gone} -match glob -body {
     set ida [interp create];#puts <<$ida>>
     set idb [interp create];#puts <<$idb>>
 
-    # Magic to get the test* commands in the slaves
+    # Magic to get the test* commands in the children
     load {} Tcltest $ida
     load {} Tcltest $idb
 
@@ -2122,7 +2122,7 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
     set ida [interp create];#puts <<$ida>>
     set idb [interp create];#puts <<$idb>>
 
-    # Magic to get the test* commands in the slaves
+    # Magic to get the test* commands in the children
     load {} Tcltest $ida
     load {} Tcltest $idb
 
@@ -2164,13 +2164,13 @@ test iocmd-32.2 {delete interp of reflected chan} {
     # Bug 3034840
     # Run this test in an interp with memory debugging to panic
     # on the double free
-    interp create slave
-    slave eval {
+    interp create child
+    child eval {
         proc no-op args {}
         proc driver {sub args} {return {initialize finalize watch read}}
         chan event [chan create read driver] readable no-op
     }
-    interp delete slave
+    interp delete child
 } {}
 
 # ### ### ### ######### ######### #########

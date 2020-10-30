@@ -61,10 +61,10 @@ TclpDlopen(
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
-    int flags)
+    TCL_UNUSED(int) /*flags*/)
 {
     HINSTANCE hInstance = NULL;
-    const TCHAR *nativeName;
+    const WCHAR *nativeName;
     Tcl_LoadHandle handlePtr;
     DWORD firstError;
 
@@ -74,9 +74,9 @@ TclpDlopen(
      * relative path.
      */
 
-    nativeName = Tcl_FSGetNativePath(pathPtr);
+    nativeName = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
     if (nativeName != NULL) {
-	hInstance = LoadLibraryEx(nativeName, NULL,
+	hInstance = LoadLibraryExW(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
     }
     if (hInstance == NULL) {
@@ -95,8 +95,9 @@ TclpDlopen(
         firstError = (nativeName == NULL) ?
 		ERROR_MOD_NOT_FOUND : GetLastError();
 
-	nativeName = Tcl_WinUtfToTChar(TclGetString(pathPtr), -1, &ds);
-	hInstance = LoadLibraryEx(nativeName, NULL,
+	Tcl_DStringInit(&ds);
+	nativeName = Tcl_UtfToWCharDString(TclGetString(pathPtr), -1, &ds);
+	hInstance = LoadLibraryExW(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
 	Tcl_DStringFree(&ds);
     }
@@ -170,7 +171,7 @@ TclpDlopen(
      * Succeded; package everything up for Tcl.
      */
 
-    handlePtr = Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
+    handlePtr = (Tcl_LoadHandle)Tcl_Alloc(sizeof(struct Tcl_LoadHandle_));
     handlePtr->clientData = (ClientData) hInstance;
     handlePtr->findSymbolProcPtr = &FindSymbol;
     handlePtr->unloadFileProcPtr = &UnloadFile;
@@ -202,14 +203,14 @@ FindSymbol(
     const char *symbol)
 {
     HINSTANCE hInstance = (HINSTANCE) loadHandle->clientData;
-    Tcl_PackageInitProc *proc = NULL;
+    void *proc = NULL;
 
     /*
      * For each symbol, check for both Symbol and _Symbol, since Borland
      * generates C symbols with a leading '_' by default.
      */
 
-    proc = (void *) GetProcAddress(hInstance, symbol);
+    proc = (void *)GetProcAddress(hInstance, symbol);
     if (proc == NULL) {
 	Tcl_DString ds;
 	const char *sym2;
@@ -217,7 +218,7 @@ FindSymbol(
 	Tcl_DStringInit(&ds);
 	TclDStringAppendLiteral(&ds, "_");
 	sym2 = Tcl_DStringAppend(&ds, symbol, -1);
-	proc = (Tcl_PackageInitProc *) GetProcAddress(hInstance, sym2);
+	proc = (void *)GetProcAddress(hInstance, sym2);
 	Tcl_DStringFree(&ds);
     }
     if (proc == NULL && interp != NULL) {
@@ -280,10 +281,8 @@ UnloadFile(
 
 int
 TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
+    TCL_UNUSED(const char *),
+    TCL_UNUSED(Tcl_DString *))
 {
     return 0;
 }
@@ -416,7 +415,7 @@ InitDLLDirectoryName(void)
      */
 
   copyToGlobalBuffer:
-    dllDirectoryName = Tcl_Alloc((nameLen+1) * sizeof(WCHAR));
+    dllDirectoryName = (WCHAR *)Tcl_Alloc((nameLen+1) * sizeof(WCHAR));
     wcscpy(dllDirectoryName, name);
     return TCL_OK;
 }

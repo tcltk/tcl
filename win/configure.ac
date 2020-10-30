@@ -14,7 +14,7 @@ SHELL=/bin/sh
 TCL_VERSION=9.0
 TCL_MAJOR_VERSION=9
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="a0"
+TCL_PATCH_LEVEL="a2"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -110,8 +110,9 @@ case ${host_alias} in
 esac
 
 #------------------------------------------------------------------------
-#	Add stuff for zlib; note that this is mostly done in the makefile now
-#	as we just assume that the platform hasn't got a usable z.lib
+#	Add stuff for zlib/libtommath; note that this is mostly done in the
+#	makefile now as we just assume that the platform hasn't got usable
+#   z.lib/tommath.lib
 #------------------------------------------------------------------------
 
 AS_IF([test "${enable_shared+set}" = "set"], [
@@ -122,17 +123,24 @@ AS_IF([test "${enable_shared+set}" = "set"], [
 ])
 AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(ZLIB_DLL_FILE,[\${ZLIB_DLL_FILE}])
+  AC_SUBST(TOMMATH_DLL_FILE,[\${TOMMATH_DLL_FILE}])
+  AC_DEFINE(TCL_WITH_EXTERNAL_TOMMATH, 1, [Tcl with external libtommath])
   AS_IF([test "$do64bit" != "no"], [
+    AC_DEFINE(MP_64BIT, 1, [Using libtommath.dll in 64-bit mode])
     AS_IF([test "$GCC" == "yes"],[
       AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/libz.dll.a])
+      AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a])
     ], [
       AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/zdll.lib])
+      AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/tommath.lib])
     ])
   ], [
     AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win32/zdll.lib])
+    AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win32/tommath.lib])
   ])
 ], [
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
+  AC_SUBST(TOMMATH_OBJS,[\${TOMMATH_OBJS}])
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
@@ -310,8 +318,6 @@ fi
 
 SC_ENABLE_SYMBOLS
 
-TCL_DBGX=${DBGX}
-
 #--------------------------------------------------------------------
 # Embed the manifest if we can determine how
 #--------------------------------------------------------------------
@@ -328,10 +334,6 @@ TCL_SHARED_BUILD=${SHARED_BUILD}
 # Perform final evaluations of variables with possible substitutions.
 #--------------------------------------------------------------------
 
-TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
-TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
-TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
-
 eval "TCL_SRC_DIR=\"`cd $srcdir/..; $CYGPATH $(pwd)`\""
 
 eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
@@ -343,18 +345,20 @@ eval "TCL_STUB_LIB_SPEC=\"-L${libdir} ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_BUILD_STUB_LIB_PATH=\"`$CYGPATH $(pwd)`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
 
-eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
+if test ${SHARED_BUILD} = 0 ; then
+ eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
+else
+ eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${DLLSUFFIX}.a\""
+fi
 eval "TCL_BUILD_LIB_SPEC=\"-L`$CYGPATH $(pwd)` -ltcl${VER}${FLAGSUFFIX}\""
 eval "TCL_LIB_SPEC=\"-L${libdir} -ltcl${VER}${FLAGSUFFIX}\""
 
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
 
-
-eval "DLLSUFFIX=${DLLSUFFIX}"
-eval "LIBPREFIX=${LIBPREFIX}"
-eval "LIBSUFFIX=${LIBSUFFIX}"
-eval "EXESUFFIX=${EXESUFFIX}"
+TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
+TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
+TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
 
 CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}
 CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}
@@ -366,17 +370,9 @@ CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 #--------------------------------------------------------------------
 
 if test ${SHARED_BUILD} = 0 ; then
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
-    fi
+    RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
 else
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES=""
-    fi
+    RC_DEFINES=""
 fi
 
 #--------------------------------------------------------------------
@@ -387,9 +383,9 @@ fi
 #--------------------------------------------------------------------
 
 if test "$prefix/lib" != "$libdir"; then
-    TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
+    TCL_PACKAGE_PATH="{${libdir}} {${prefix}/lib}"
 else
-    TCL_PACKAGE_PATH="${prefix}/lib"
+    TCL_PACKAGE_PATH="{${prefix}/lib}"
 fi
 
 # The tclsh.exe.manifest requires these
@@ -431,7 +427,6 @@ AC_SUBST(TCL_DLL_FILE)
 
 AC_SUBST(TCL_SRC_DIR)
 AC_SUBST(TCL_BIN_DIR)
-AC_SUBST(TCL_DBGX)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)

@@ -65,7 +65,8 @@ error message.  The result or error from the initialization procedure will
 be returned as the result of the \fBload\fR command that caused the
 initialization procedure to be invoked.
 .PP
-This function can not be used in stub-enabled extensions.
+\fBTcl_StaticPackage\fR can not be safely used by stub-enabled extensions,
+so its symbol is not included in the stub table.
 .SH KEYWORDS
 initialization procedure, package, static linking
 .SH "SEE ALSO"

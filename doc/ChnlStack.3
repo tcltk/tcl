@@ -49,11 +49,8 @@ I/O channels.  Examples include compression and encryption modules.  These
 functions transparently stack and unstack a new channel on top of an
 existing one.  Any number of channels can be stacked together.
 .PP
-The implementation of the Tcl channel code was rewritten in 8.3.2 to
-correct some problems with the previous implementation with regard to
-stacked channels.  Anyone using stacked channels or creating stacked
-channel drivers should update to the new \fBTCL_CHANNEL_VERSION_2\fR
-\fBTcl_ChannelType\fR structure.  See \fBTcl_CreateChannel\fR for details.
+The \fBTcl_ChannelType\fR version currently supported is
+\fBTCL_CHANNEL_VERSION_5\fR.  See \fBTcl_CreateChannel\fR for details.
 .PP
 \fBTcl_StackChannel\fR stacks a new \fIchannel\fR on an existing channel
 with the same name that was registered for \fIchannel\fR by

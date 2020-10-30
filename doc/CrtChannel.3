@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelWideSeekProc, Tcl_ChannelTruncateProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_ChannelThreadActionProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers, Tcl_GetChannelThread, Tcl_ChannelBuffered \- procedures for creating and manipulating channels
+Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelWideSeekProc, Tcl_ChannelTruncateProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_ChannelThreadActionProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers, Tcl_GetChannelThread, Tcl_ChannelBuffered \- procedures for creating and manipulating channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -75,9 +75,6 @@ Tcl_ChannelTypeVersion
 Tcl_DriverBlockModeProc *
 \fBTcl_ChannelBlockModeProc\fR(\fItypePtr\fR)
 .sp
-Tcl_DriverCloseProc *
-\fBTcl_ChannelCloseProc\fR(\fItypePtr\fR)
-.sp
 Tcl_DriverClose2Proc *
 \fBTcl_ChannelClose2Proc\fR(\fItypePtr\fR)
 .sp
@@ -86,9 +83,6 @@ Tcl_DriverInputProc *
 .sp
 Tcl_DriverOutputProc *
 \fBTcl_ChannelOutputProc\fR(\fItypePtr\fR)
-.sp
-Tcl_DriverSeekProc *
-\fBTcl_ChannelSeekProc\fR(\fItypePtr\fR)
 .sp
 Tcl_DriverWideSeekProc *
 \fBTcl_ChannelWideSeekProc\fR(\fItypePtr\fR)
@@ -286,16 +280,13 @@ name is registered in the (thread)-global list of all channels (result
 (thread)global list of all channels (of the current thread).
 Application to a channel still registered in some interpreter
 is not allowed.
-Also notifies the driver if the \fBTcl_ChannelType\fR version is
-\fBTCL_CHANNEL_VERSION_4\fR (or higher), and
+Also notifies the driver if
 \fBTcl_DriverThreadActionProc\fR is defined for it.
 .PP
 \fBTcl_SpliceChannel\fR adds the specified \fIchannel\fR to the
 (thread)global list of all channels (of the current thread).
 Application to a channel registered in some interpreter is not allowed.
-Also notifies the driver if the \fBTcl_ChannelType\fR version is
-\fBTCL_CHANNEL_VERSION_4\fR (or higher), and
-\fBTcl_DriverThreadActionProc\fR is defined for it.
+Also notifies the driver if \fBTcl_DriverThreadActionProc\fR is defined for it.
 .PP
 \fBTcl_ClearChannelHandlers\fR removes all channel handlers and event
 scripts associated with the specified \fIchannel\fR, thus shutting
@@ -315,10 +306,10 @@ The \fBTcl_ChannelType\fR structure contains the following fields:
 typedef struct Tcl_ChannelType {
         const char *\fItypeName\fR;
         Tcl_ChannelTypeVersion \fIversion\fR;
-        Tcl_DriverCloseProc *\fIcloseProc\fR;
+        void *\fIcloseProc\fR; /* Not used any more*/
         Tcl_DriverInputProc *\fIinputProc\fR;
         Tcl_DriverOutputProc *\fIoutputProc\fR;
-        Tcl_DriverSeekProc *\fIseekProc\fR;
+        void *\fIseekProc\fR; /* Not used any more */
         Tcl_DriverSetOptionProc *\fIsetOptionProc\fR;
         Tcl_DriverGetOptionProc *\fIgetOptionProc\fR;
         Tcl_DriverWatchProc *\fIwatchProc\fR;
@@ -347,9 +338,8 @@ The user should only use the above structure for \fBTcl_ChannelType\fR
 instantiation.  When referencing fields in a \fBTcl_ChannelType\fR
 structure, the following functions should be used to obtain the values:
 \fBTcl_ChannelName\fR, \fBTcl_ChannelVersion\fR,
-\fBTcl_ChannelBlockModeProc\fR, \fBTcl_ChannelCloseProc\fR,
-\fBTcl_ChannelClose2Proc\fR, \fBTcl_ChannelInputProc\fR,
-\fBTcl_ChannelOutputProc\fR, \fBTcl_ChannelSeekProc\fR,
+\fBTcl_ChannelBlockModeProc\fR, \fBTcl_ChannelClose2Proc\fR,
+\fBTcl_ChannelInputProc\fR, \fBTcl_ChannelOutputProc\fR,
 \fBTcl_ChannelWideSeekProc\fR, \fBTcl_ChannelThreadActionProc\fR,
 \fBTcl_ChannelTruncateProc\fR,
 \fBTcl_ChannelSetOptionProc\fR, \fBTcl_ChannelGetOptionProc\fR,
@@ -372,25 +362,9 @@ a pointer to the string.
 .PP
 
 The \fIversion\fR field should be set to the version of the structure
-that you require. \fBTCL_CHANNEL_VERSION_2\fR is the minimum recommended.
-\fBTCL_CHANNEL_VERSION_3\fR must be set to specify the \fIwideSeekProc\fR member.
-\fBTCL_CHANNEL_VERSION_4\fR must be set to specify the \fIthreadActionProc\fR member
-(includes \fIwideSeekProc\fR).
-\fBTCL_CHANNEL_VERSION_5\fR must be set to specify the
-\fItruncateProc\fR members (includes
-\fIwideSeekProc\fR and \fIthreadActionProc\fR).
-If it is not set to any of these, then this
-\fBTcl_ChannelType\fR is assumed to have the original structure.  See
-\fBOLD CHANNEL TYPES\fR for more details.  While Tcl will recognize
-and function with either structures, stacked channels must be of at
-least \fBTCL_CHANNEL_VERSION_2\fR to function correctly.
+that you require. \fBTCL_CHANNEL_VERSION_5\fR is the minimum supported.
 .PP
-This value can be retrieved with \fBTcl_ChannelVersion\fR, which returns
-one of
-\fBTCL_CHANNEL_VERSION_5\fR,
-\fBTCL_CHANNEL_VERSION_4\fR,
-\fBTCL_CHANNEL_VERSION_3\fR,
-\fBTCL_CHANNEL_VERSION_2\fR or \fBTCL_CHANNEL_VERSION_1\fR.
+This value can be retrieved with \fBTcl_ChannelVersion\fR.
 .SS BLOCKMODEPROC
 .PP
 The \fIblockModeProc\fR field contains the address of a function called by
@@ -426,33 +400,11 @@ blocking mode is acceptable to it, and should this also document for
 the user so that the blocking mode of the channel is not changed to an
 unacceptable value. Any confusion here may lead the interpreter into a
 (spurious and difficult to find) deadlock.
-.SS "CLOSEPROC AND CLOSE2PROC"
+.SS "CLOSE2PROC"
 .PP
-The \fIcloseProc\fR field contains the address of a function called by the
+The \fIclose2Proc\fR field contains the address of a function called by the
 generic layer to clean up driver-related information when the channel is
-closed. \fICloseProc\fR must match the following prototype:
-.PP
-.CS
-typedef int \fBTcl_DriverCloseProc\fR(
-        void *\fIinstanceData\fR,
-        Tcl_Interp *\fIinterp\fR);
-.CE
-.PP
-The \fIinstanceData\fR argument is the same as the value provided to
-\fBTcl_CreateChannel\fR when the channel was created. The function should
-release any storage maintained by the channel driver for this channel, and
-close the input and output devices encapsulated by this channel. All queued
-output will have been flushed to the device before this function is called,
-and no further driver operations will be invoked on this instance after
-calling the \fIcloseProc\fR. If the close operation is successful, the
-procedure should return zero; otherwise it should return a nonzero POSIX
-error code. In addition, if an error occurs and \fIinterp\fR is not NULL,
-the procedure should store an error message in the interpreter's result.
-.PP
-Alternatively, channels that support closing the read and write sides
-independently may set \fIcloseProc\fR to \fBTCL_CLOSE2PROC\fR and set
-\fIclose2Proc\fR to the address of a function that matches the
-following prototype:
+closed. \fIClose2Proc\fR must match the following prototype:
 .PP
 .CS
 typedef int \fBTcl_DriverClose2Proc\fR(
@@ -461,24 +413,32 @@ typedef int \fBTcl_DriverClose2Proc\fR(
         int \fIflags\fR);
 .CE
 .PP
-The \fIclose2Proc\fR will be called with \fIflags\fR set to an OR'ed
+If \fIflags\fR is 0, the \fIinstanceData\fR argument is the same as the value
+provided to \fBTcl_CreateChannel\fR when the channel was created. The function
+should release any storage maintained by the channel driver for this channel,
+and close the input and output devices encapsulated by this channel. All queued
+output will have been flushed to the device before this function is called,
+and no further driver operations will be invoked on this instance after
+calling the \fIcloseProc\fR. If the close operation is successful, the
+procedure should return zero; otherwise it should return a nonzero POSIX
+error code. In addition, if an error occurs and \fIinterp\fR is not NULL,
+the procedure should store an error message in the interpreter's result.
+.PP
+Alternatively, channels that support closing the read and write sides
+independently may accept other flag values than 0.
+Then \fIclose2Proc\fR will be called with \fIflags\fR set to an OR'ed
 combination of \fBTCL_CLOSE_READ\fR or \fBTCL_CLOSE_WRITE\fR to
 indicate that the driver should close the read and/or write side of
 the channel.  The channel driver may be invoked to perform
 additional operations on the channel after \fIclose2Proc\fR is
-called to close one or both sides of the channel.  If \fIflags\fR is
-\fB0\fR (zero), the driver should close the channel in the manner
-described above for \fIcloseProc\fR.  No further operations will be
-invoked on this instance after \fIclose2Proc\fR is called with all
-flags cleared.  In all cases, the \fIclose2Proc\fR function should
-return zero if the close operation was successful; otherwise it should
-return a nonzero POSIX error code. In addition, if an error occurs and
-\fIinterp\fR is not NULL, the procedure should store an error message
-in the interpreter's result.
+called to close one or both sides of the channel.  In all cases, the
+\fIclose2Proc\fR function should return zero if the close operation was
+successful; otherwise it should return a nonzero POSIX error code.
+In addition, if an error occurs and \fIinterp\fR is not NULL, the procedure
+should store an error message in the interpreter's result.
 .PP
-The \fIcloseProc\fR and \fIclose2Proc\fR values can be retrieved with
-\fBTcl_ChannelCloseProc\fR or \fBTcl_ChannelClose2Proc\fR, which
-return a pointer to the respective function.
+The \fIclose2Proc\fR value can be retrieved with \fBTcl_ChannelClose2Proc\fR,
+which returns a pointer to the function.
 .SS INPUTPROC
 .PP
 The \fIinputProc\fR field contains the address of a function called by the
@@ -561,17 +521,17 @@ without writing any data.
 .PP
 This value can be retrieved with \fBTcl_ChannelOutputProc\fR, which returns
 a pointer to the function.
-.SS "SEEKPROC AND WIDESEEKPROC"
+.SS "WIDESEEKPROC"
 .PP
-The \fIseekProc\fR field contains the address of a function called by the
+The \fIwideSeekProc\fR field contains the address of a function called by the
 generic layer to move the access point at which subsequent input or output
-operations will be applied. \fISeekProc\fR must match the following
+operations will be applied. \fIWideSeekProc\fR must match the following
 prototype:
 .PP
 .CS
-typedef int \fBTcl_DriverSeekProc\fR(
+typedef Tcl_WideInt \fBTcl_DriverWideSeekProc\fR(
         void *\fIinstanceData\fR,
-        long \fIoffset\fR,
+        Tcl_WideInt \fIoffset\fR,
         int \fIseekMode\fR,
         int *\fIerrorCodePtr\fR);
 .CE
@@ -590,30 +550,8 @@ does not implement seeking.
 The return value is the new access point or -1 in case of error. If an
 error occurred, the function should not move the access point.
 .PP
-If there is a non-NULL \fIseekProc\fR field, the \fIwideSeekProc\fR
-field may contain the address of an alternative function to use which
-handles wide (i.e. larger than 32-bit) offsets, so allowing seeks
-within files larger than 2GB.  The \fIwideSeekProc\fR will be called
-in preference to the \fIseekProc\fR, but both must be defined if the
-\fIwideSeekProc\fR is defined.  \fIWideSeekProc\fR must match the
-following prototype:
-.PP
-.CS
-typedef Tcl_WideInt \fBTcl_DriverWideSeekProc\fR(
-        void *\fIinstanceData\fR,
-        Tcl_WideInt \fIoffset\fR,
-        int \fIseekMode\fR,
-        int *\fIerrorCodePtr\fR);
-.CE
-.PP
-The arguments and return values mean the same thing as with
-\fIseekProc\fR above, except that the type of offsets and the return
-type are different.
-.PP
-The \fIseekProc\fR value can be retrieved with
-\fBTcl_ChannelSeekProc\fR, which returns a pointer to the function,
-and similarly the \fIwideSeekProc\fR can be retrieved with
-\fBTcl_ChannelWideSeekProc\fR.
+The \fIwideSseekProc\fR value can be retrieved with
+\fBTcl_ChannelWideSeekProc\fR, which returns a pointer to the function.
 .SS SETOPTIONPROC
 .PP
 The \fIsetOptionProc\fR field contains the address of a function called by
@@ -648,8 +586,8 @@ It should call \fBTcl_BadChannelOption\fR which itself returns
 unrecognized.
 If \fInewValue\fR specifies a value for the option that
 is not supported or if a system call error occurs,
-the function should leave an error message in the
-\fIresult\fR field of \fIinterp\fR if \fIinterp\fR is not NULL. The
+the function should leave an error message in the result
+of \fIinterp\fR if \fIinterp\fR is not NULL. The
 function should also call \fBTcl_SetErrno\fR to store an appropriate POSIX
 error code.
 .PP
@@ -870,58 +808,6 @@ The function takes good care of inserting minus signs before
 each option, commas after, and an
 .QW or
 before the last option.
-.SH "OLD CHANNEL TYPES"
-The original (8.3.1 and below) \fBTcl_ChannelType\fR structure contains
-the following fields:
-.PP
-.CS
-typedef struct Tcl_ChannelType {
-    const char *\fItypeName\fR;
-    Tcl_DriverBlockModeProc *\fIblockModeProc\fR;
-    Tcl_DriverCloseProc *\fIcloseProc\fR;
-    Tcl_DriverInputProc *\fIinputProc\fR;
-    Tcl_DriverOutputProc *\fIoutputProc\fR;
-    Tcl_DriverSeekProc *\fIseekProc\fR;
-    Tcl_DriverSetOptionProc *\fIsetOptionProc\fR;
-    Tcl_DriverGetOptionProc *\fIgetOptionProc\fR;
-    Tcl_DriverWatchProc *\fIwatchProc\fR;
-    Tcl_DriverGetHandleProc *\fIgetHandleProc\fR;
-    Tcl_DriverClose2Proc *\fIclose2Proc\fR;
-} \fBTcl_ChannelType\fR;
-.CE
-.PP
-It is still possible to create channel with the above structure.  The
-internal channel code will determine the version.  It is imperative to use
-the new \fBTcl_ChannelType\fR structure if you are creating a stacked
-channel driver, due to problems with the earlier stacked channel
-implementation (in 8.2.0 to 8.3.1).
-.PP
-Prior to 8.4.0 (i.e. during the later releases of 8.3 and early part
-of the 8.4 development cycle) the \fBTcl_ChannelType\fR structure
-contained the following fields:
-.PP
-.CS
-typedef struct Tcl_ChannelType {
-    const char *\fItypeName\fR;
-    Tcl_ChannelTypeVersion \fIversion\fR;
-    Tcl_DriverCloseProc *\fIcloseProc\fR;
-    Tcl_DriverInputProc *\fIinputProc\fR;
-    Tcl_DriverOutputProc *\fIoutputProc\fR;
-    Tcl_DriverSeekProc *\fIseekProc\fR;
-    Tcl_DriverSetOptionProc *\fIsetOptionProc\fR;
-    Tcl_DriverGetOptionProc *\fIgetOptionProc\fR;
-    Tcl_DriverWatchProc *\fIwatchProc\fR;
-    Tcl_DriverGetHandleProc *\fIgetHandleProc\fR;
-    Tcl_DriverClose2Proc *\fIclose2Proc\fR;
-    Tcl_DriverBlockModeProc *\fIblockModeProc\fR;
-    Tcl_DriverFlushProc *\fIflushProc\fR;
-    Tcl_DriverHandlerProc *\fIhandlerProc\fR;
-    Tcl_DriverTruncateProc *\fItruncateProc\fR;
-} \fBTcl_ChannelType\fR;
-.CE
-.PP
-When the above structure is registered as a channel type, the
-\fIversion\fR field should always be \fBTCL_CHANNEL_VERSION_2\fR.
 .SH "SEE ALSO"
 Tcl_Close(3), Tcl_OpenFileChannel(3), Tcl_SetErrno(3), Tcl_QueueEvent(3), Tcl_StackChannel(3), Tcl_GetStdChannel(3)
 .SH KEYWORDS

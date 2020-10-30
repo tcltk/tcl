@@ -213,14 +213,11 @@ typedef struct Object {
 				 * command. */
 } Object;
 
-#define OBJECT_DELETED	1	/* Flag to say that an object has been
-				 * destroyed. */
-#define DESTRUCTOR_CALLED 2	/* Flag to say that the destructor has been
-				 * called. */
-#define CLASS_GONE	4	/* Obsolete. Indicates that the class of this
-				 * object has been deleted, and so the object
-				 * should not attempt to remove itself from its
-				 * class. */
+#define OBJECT_DESTRUCTING	1	/* Indicates that an object is being or has
+								 *  been destroyed  */
+#define DESTRUCTOR_CALLED 2	/* Indicates that evaluation of destructor script for the
+							   object has began */
+#define OO_UNUSED_4	4	/* No longer used.  */
 #define ROOT_OBJECT 0x1000	/* Flag to say that this object is the root of
 				 * the class hierarchy and should be treated
 				 * specially during teardown. */
@@ -332,7 +329,7 @@ typedef struct Class {
  */
 
 typedef struct ThreadLocalData {
-    size_t nsCount;		/* Master epoch counter is used for keeping
+    size_t nsCount;		/* Epoch counter is used for keeping
 				 * the values used in Tcl_Obj internal
 				 * representations sane. Must be thread-local
 				 * because Tcl_Objs can cross interpreter
@@ -344,7 +341,7 @@ typedef struct Foundation {
     Tcl_Interp *interp;
     Class *objectCls;		/* The root of the object system. */
     Class *classCls;		/* The class of all classes. */
-    Tcl_Namespace *ooNs;	/* Master ::oo namespace. */
+    Tcl_Namespace *ooNs;	/* ::oo namespace. */
     Tcl_Namespace *defineNs;	/* Namespace containing special commands for
 				 * manipulating objects and classes. The
 				 * "oo::define" command acts as a special kind
@@ -587,6 +584,7 @@ MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
 			    const char *nameStr,
 			    const char *nsNameStr);
 MODULE_SCOPE int	TclOODecrRefCount(Object *oPtr);
+MODULE_SCOPE int	TclOOObjectDestroyed(Object *oPtr);
 MODULE_SCOPE int	TclOODefineSlots(Foundation *fPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
@@ -681,11 +679,11 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
     Tcl_HashEntry *hPtr;Tcl_HashSearch search
 #define FOREACH_HASH(key,val,tablePtr) \
     for(hPtr=Tcl_FirstHashEntry((tablePtr),&search); hPtr!=NULL ? \
-	    ((key)=(void *)Tcl_GetHashKey((tablePtr),hPtr),\
-	    (val)=Tcl_GetHashValue(hPtr),1):0; hPtr=Tcl_NextHashEntry(&search))
+	    (*(void **)&(key)=Tcl_GetHashKey((tablePtr),hPtr),\
+	    *(void **)&(val)=Tcl_GetHashValue(hPtr),1):0; hPtr=Tcl_NextHashEntry(&search))
 #define FOREACH_HASH_VALUE(val,tablePtr) \
     for(hPtr=Tcl_FirstHashEntry((tablePtr),&search); hPtr!=NULL ? \
-	    ((val)=Tcl_GetHashValue(hPtr),1):0;hPtr=Tcl_NextHashEntry(&search))
+	    (*(void **)&(val)=Tcl_GetHashValue(hPtr),1):0;hPtr=Tcl_NextHashEntry(&search))
 
 /*
  * Convenience macro for duplicating a list. Needs no external declaration,
@@ -695,7 +693,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 #undef DUPLICATE /* prevent possible conflict with definition in WINAPI nb30.h */
 #define DUPLICATE(target,source,type) \
     do { \
-	register size_t len = sizeof(type) * ((target).num=(source).num);\
+	size_t len = sizeof(type) * ((target).num=(source).num);\
 	if (len != 0) { \
 	    memcpy(((target).list=(type*)Tcl_Alloc(len)), (source).list, len); \
 	} else { \

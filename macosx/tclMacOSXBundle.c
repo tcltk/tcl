@@ -12,6 +12,7 @@
  */
 
 #include "tclPort.h"
+#include "tclInt.h"
 
 #ifdef HAVE_COREFOUNDATION
 #include <CoreFoundation/CoreFoundation.h>
@@ -106,7 +107,7 @@ OpenResourceMap(
 	if (tclMacOSXDarwinRelease >= 8)
 #endif
 	{
-	    openresourcemap = dlsym(RTLD_NEXT,
+	    openresourcemap = (short (*)(CFBundleRef))dlsym(RTLD_NEXT,
 		    "CFBundleOpenBundleResourceMap");
 #ifdef TCL_DEBUG_LOAD
 	    if (!openresourcemap) {
@@ -145,38 +146,6 @@ OpenResourceMap(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_MacOSXOpenBundleResources --
- *
- *	Given the bundle name for a shared library, this routine sets
- *	libraryPath to the Resources/Scripts directory in the framework
- *	package. If hasResourceFile is true, it will also open the main
- *	resource file for the bundle.
- *
- * Results:
- *	TCL_OK if the bundle could be opened, and the Scripts folder found.
- *	TCL_ERROR otherwise.
- *
- * Side effects:
- *	libraryVariableName may be set, and the resource file opened.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_MacOSXOpenBundleResources(
-    Tcl_Interp *interp,
-    const char *bundleName,
-    int hasResourceFile,
-    size_t maxPathLen,
-    char *libraryPath)
-{
-    return Tcl_MacOSXOpenVersionedBundleResources(interp, bundleName, NULL,
-	    hasResourceFile, maxPathLen, libraryPath);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_MacOSXOpenVersionedBundleResources --
  *
  *	Given the bundle and version name for a shared library (version name
@@ -197,7 +166,7 @@ Tcl_MacOSXOpenBundleResources(
 
 int
 Tcl_MacOSXOpenVersionedBundleResources(
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     const char *bundleName,
     const char *bundleVersion,
     int hasResourceFile,

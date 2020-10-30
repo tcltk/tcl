@@ -83,7 +83,6 @@ typedef struct {
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 void
 TclFinalizePreserve(void)
 {
@@ -144,7 +143,7 @@ Tcl_Preserve(
 
     if (inUse == spaceAvl) {
 	spaceAvl = spaceAvl ? 2*spaceAvl : INITIAL_SIZE;
-	refArray = Tcl_Realloc(refArray, spaceAvl * sizeof(Reference));
+	refArray = (Reference *)Tcl_Realloc(refArray, spaceAvl * sizeof(Reference));
     }
 
     /*
@@ -226,7 +225,7 @@ Tcl_Release(
 	    if (freeProc == TCL_DYNAMIC) {
 		Tcl_Free(clientData);
 	    } else {
-		freeProc(clientData);
+		freeProc((char *)clientData);
 	    }
 	}
 	return;
@@ -293,7 +292,7 @@ Tcl_EventuallyFree(
     if (freeProc == TCL_DYNAMIC) {
 	Tcl_Free(clientData);
     } else {
-	freeProc(clientData);
+	freeProc((char *)clientData);
     }
 }
 
@@ -327,7 +326,7 @@ TclHandleCreate(
 				 * be tracked for deletion. Must not be
 				 * NULL. */
 {
-    HandleStruct *handlePtr = Tcl_Alloc(sizeof(HandleStruct));
+    HandleStruct *handlePtr = (HandleStruct *)Tcl_Alloc(sizeof(HandleStruct));
 
     handlePtr->ptr = ptr;
 #ifdef TCL_MEM_DEBUG

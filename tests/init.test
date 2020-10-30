@@ -11,13 +11,26 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.3.4
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 # Clear out any namespaces called test_ns_*
 catch {namespace delete {*}[namespace children :: test_ns_*]}
 
+test init-0.1 {no error on initialization phase (init.tcl)} -setup {
+    interp create child
+} -body {
+    child eval {
+	list [set v [info exists ::errorInfo]] \
+		[if {$v} {set ::errorInfo}] \
+	     [set v [info exists ::errorCode]] \
+		[if {$v} {set ::errorCode}]
+    }
+} -cleanup {
+    interp delete child
+} -result {0 {} 0 {}}
+
 # Six cases - white box testing
 
 test init-1.1 {auto_qualify - absolute cmd - namespace} {
@@ -46,11 +59,11 @@ test init-1.8 {auto_qualify - multiple colons 2} {
     auto_qualify :::foo ::bar
 } foo
 
-# We use a sub-interp and auto_reset and double the tests because there is 2
+# We use a child interp and auto_reset and double the tests because there is 2
 # places where auto_loading occur (before loading the indexes files and after)
 
 set testInterp [interp create]
-tcltest::loadIntoSlaveInterpreter $testInterp {*}$argv
+tcltest::loadIntoChildInterpreter $testInterp {*}$argv
 interp eval $testInterp {
     namespace import -force ::tcltest::*
     customMatch pairwise {apply {{mode pair} {

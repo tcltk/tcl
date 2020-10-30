@@ -2307,7 +2307,7 @@ to the standard channel, do not increment the refcount. The channel can
 be NULL if there is for example no standard input. (JL)
 
 9/6/96 (portability improvement) Changed parsing of backslash sequences
-like \n to translate directly to absolute values like 0xa instead of
+like \n to translate directly to absolute values like 0xA instead of
 letting the compiler do the translation.  This guarantees that the
 translation is done the same everywhere. (JO)
 
@@ -8303,7 +8303,7 @@ reported usage of large expressions (porter)
 
 Many optmizations, improvements, and tightened stack management in bytecode.
 
---- Released 8.6.1, September 20, 2013 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.1, September 20, 2013 --- https://core.tcl-lang.org/tcl/ for details
 
 2013-09-27 (enhancement) improved ::env synchronization (fellows)
 
@@ -8451,7 +8451,7 @@ include ::oo::class (fellows)
 
 2014-08-25 (TIP 429) New command [string cat] (leitgeb,ferrieux)
 
---- Released 8.6.2, August 27, 2014 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.2, August 27, 2014 --- https://core.tcl-lang.org/tcl/ for details
 
 2014-08-28 (bug)[b9e1a3] Correct Method Search Order (nadkarni,fellows)
 => TclOO 1.0.3
@@ -8491,7 +8491,7 @@ include ::oo::class (fellows)
 
 2014-11-06 (bug)[5adc35] Stop forcing EOF to be permanent (porter)
 
---- Released 8.6.3, November 12, 2014 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.3, November 12, 2014 --- https://core.tcl-lang.org/tcl/ for details
 
 2014-11-21 (bug)[743338] Win: socket error encoding (ladayaroslav,nijtmans)
 
@@ -8527,7 +8527,7 @@ include ::oo::class (fellows)
 2015-03-10 (enhancement) Revise OS X notifier for better Cocoa (walzer)
         *** POTENTIAL INCOMPATIBILITY ***
 
---- Released 8.6.4, March 12, 2015 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.4, March 12, 2015 --- https://core.tcl-lang.org/tcl/ for details
 
 2015-03-19 (bug)[e66e44] Win: Ctrl-C/Ctrl-Break in console not EOF (nadkarni)
 
@@ -8623,7 +8623,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-02-22 (bug)[9b4702] [info exists env(missing)] kills trace (nijtmans)
 
---- Released 8.6.5, February 29, 2016 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.5, February 29, 2016 --- https://core.tcl-lang.org/tcl/ for details
 
 2016-03-01 (bug)[803042] mem leak due to reference cycle (porter)
 
@@ -8697,7 +8697,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-07-20 tzdata updated to Olson's tzdata2016f (venkat)
 
---- Released 8.6.6, July 27, 2016 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.6, July 27, 2016 --- https://core.tcl-lang.org/tcl/ for details
 
 2016-09-07 (bug)[c09edf] Bad caching with  custom resolver (neumann,nijtmans)
 
@@ -8794,7 +8794,56 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-07-17 (bug)[fb2208] Repeatable tclIndex generation (wiedemann,nijtmans)
 
---- Released 8.6.7, August 9, 2017 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.7, August 9, 2017 --- https://core.tcl-lang.org/tcl/ for details
+
+Changes to 8.7a1 include all changes to the 8.6 line through 8.6.7,
+plus the following, which focuses on the high-level feature changes
+in this changeset (new minor version) rather than bug fixes:
+
+2016-03-17 (bug)[0b8c38] socket accept callbacks always in global ns (porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2016-07-01 Hack accommodations for legacy Itcl 3 disabled (porter)
+
+2016-07-12 Make TCL_HASH_TYPE build-time configurable (nijtmans)
+
+2016-07-19 (bug)[0363f0] Partial array search ID reform (porter)
+
+2016-07-19 (feature removed) Tcl_ObjType "array search" unregistered (porter)
+	*** POTENTIAL INCOMPATIBILITY for Tcl_GetObjType("array search") ***
+
+2016-10-04 Server socket on port 0 chooses port supporting IPv4 * IPv6 (max)
+
+2016-11-25 [array names -regexp] supports backrefs (goth)
+
+2017-01-04 (TIP 456) New routine Tcl_OpenTcpServerEx() (limeboy)
+
+2017-01-04 (TIP 459) New subcommand [package files] (nijtmans)
+
+2017-01-16 threaded allocator initialization repair (vasiljevic,nijtmans)
+
+2017-01-30 Add to Win shell builtins: assoc ftype move (ashok)
+
+2017-03-31 TCL_MEM_DEBUG facilities better support 64-bit memory (nijtmans)
+
+2017-04-13 \u escaped content in msg files converted to true utf-8 (nijtmans)
+
+2017-05-18 (TIP 458) New epoll or kqueue notifiers are default (alborboz)
+
+2017-05-31 Purge build support for SunOS-4.* (stu)
+
+2017-06-22 (TIP 463) New option [regsub ... -command ...] (fellows)
+
+2017-06-22 (TIP 470) Tcl_GetDefineContextObject();[oo::define [self]] (fellows)
+=> TclOO 1.2.0
+
+2017-06-23 (TIP 472) Support 0d as prefix of decimal numbers (iyer,griffin)
+
+2017-08-31 (bug)[2a9465] http state 100 continue handling broken (oehlmann)
+
+2017-09-02 (bug)[0e4d88] replace command, delete trace kills namespace (porter)
+
+--- Released 8.7a1, September 8, 2017 --- http://core.tcl.tk/tcl/ for details
 
 2017-08-10 [array names -regexp] supports backrefs (goth)
 
@@ -8829,7 +8878,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2017-12-19 (bug)[586e71] EvalObjv exception handling at level #0 (sebres,porter)
 
---- Released 8.6.8, December 22, 2017 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.6.8, December 22, 2017 --- https://core.tcl-lang.org/tcl/ for details
 
 2018-02-11 (enhance) stop blocking conversion of object to/from class (coulter)
 
@@ -8895,58 +8944,199 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 - Released 8.6.9, November 16, 2018 - details at http://core.tcl-lang.org/tcl/ -
 
-Changes to 8.7a1 include all changes to the 8.6 line through 8.6.7,
+2018-11-22 (bug)[7a9dc5] [file normalize ~/~foo] segfault (sebres)
+
+2018-12-30 (bug)[3cf3a9] variable 'timezone' deprecated in vc2017 (nijtmans)
+
+2019-01-09 (bug)[cc1e91] [list [list {*}[set a " "]]] regression (sebres)
+
+2019-02-01 (bug)[e3f481] tests var-1.2[01] (sebres)
+
+2019-03-01 (new) Update to Unicode 12.0 (nijtmans)
+
+2019-03-05 (new)[TIP 527] New command [timerate] (sebres)
+
+2019-03-08 (bug)[39fed4] [package require] memory validity (hume,porter)
+
+2019-04-23 (new) New command tcl::unsupported::corotype (fellows)
+
+2019-05-04 (bug) memlink when namespace deletion kills linked var (porter)
+
+2019-05-28 (new) README file converted to README.md in Markdown (nijtmans)
+
+2019-06-17 (bug)[8b9854] [info level 0] regression with ensembles (porter)
+
+2019-06-20 (bug)[6bdadf] crash multi-arg write-traced [lappend] (fellows,porter)
+
+2019-06-21 (bug)[f8a33c] crash Tcl_Exit before init (brooks,sebres)
+
+2019-08-27 (bug)[fa6bf3] Bytecode fails epoch recovery at numLevel=0 (sebres)
+
+2019-08-29 (bug)[fec0c1] C stack overflow compiling bytecode (ade,sebres)
+
+2019-09-12 tzdata updated to Olson's tzdata2019c (jima)
+
+2019-09-20 (new) registry/dde no longer need -DUNICODE (nijtmans)
+=> registry 1.3.4
+=> dde 1.4.2
+
+2019-10-02 (bug)[16768d] Fix [info hostname] on NetBSD (rytaro)
+
+2019-10-23 (new) libtommath updated to release 1.2.0 (nijtmans)
+
+2019-10-25 OSX: system Tcl deprecated. End default use of its packages. (walzer)
+
+2019-10-28 (bug)[bcd100] bad fs cache when system encoding changes (coulter)
+
+2019-11-15 (bug)[135804] segfault in [next] after destroy (coulter,sebres)
+
+- Released 8.6.10, Nov 21, 2019 - details at http://core.tcl-lang.org/tcl/ -
+
+Changes to 8.7a3 include all changes to the 8.6 line through 8.6.10,
 plus the following, which focuses on the high-level feature changes
 in this changeset (new minor version) rather than bug fixes:
 
-2016-03-17 (bug)[0b8c38] socket accept callbacks always in global ns (porter)
-        *** POTENTIAL INCOMPATIBILITY ***
+2017-11-01 (bug)[3c32a3] crash deleting class mixed into instance (coulter)
 
-2016-07-01 Hack accommodations for legacy Itcl 3 disabled (porter)
+2017-11-03 [TIP 345] eliminate the encoding 'identity' (porter)
 
-2016-07-12 Make TCL_HASH_TYPE build-time configurable (nijtmans)
+2017-11-04 (bug)[0d902e] [string first] on ASCII stored as Unicode (fellows)
 
-2016-07-19 (bug)[0363f0] Partial array search ID reform (porter)
+2017-11-17 [TIP 422] Mark all Tcl_*VA() routines deprecated. (nijtmans)
 
-2016-07-19 (feature removed) Tcl_ObjType "array search" unregistered (porter)
-	*** POTENTIAL INCOMPATIBILITY for Tcl_GetObjType("array search") ***
+2017-11-20 (support) Ended use of the obsolete values.h header (culler)
 
-2016-10-04 Server socket on port 0 chooses port supporting IPv4 * IPv6 (max)
+2017-11-30 (bug)[8e1e31] [lsort] ordering of U+0000 (nijtmans)
 
-2016-11-25 [array names -regexp] supports backrefs (goth)
+2017-12-07 [TIP 487] Terminate support for pre-XP Windows (nijtmans)
 
-2017-01-04 (TIP 456) New routine Tcl_OpenTcpServerEx() (limeboy)
+2017-12-08 [TIP 477] Reform of nmake build (nadkarni)
 
-2017-01-04 (TIP 459) New subcommand [package files] (nijtmans)
+2017-12-20 (bug)[ba1419] Crash: complex ensemble delete, namespace-7.8 (coulter)
 
-2017-01-16 threaded allocator initialization repair (vasiljevic,nijtmans)
+2018-01-17 [TIP 485] Removal of many deprecated features (nijtmans)
 
-2017-01-30 Add to Win shell builtins: assoc ftype move (ashok)
+2018-01-27 (bug) Crash in [join $l $l], join-4.1 (porter)
 
-2017-03-31 TCL_MEM_DEBUG facilities better support 64-bit memory (nijtmans)
+2018-02-06 [TIP 493] Cease Distribution of http 1.0 (porter)
 
-2017-04-13 \u escaped content in msg files converted to true utf-8 (nijtmans)
+2018-02-06 [TIP 484] internal rep for native ints are all 64-bit (nijtmans)
 
-2017-05-18 (TIP 458) New epoll or kqueue notifiers are default (alborboz)
+2018-02-14 [TIP 476] Scan/Printf consistency (nijtmans)
 
-2017-05-31 Purge build support for SunOS-4.* (stu)
+2018-03-05 [TIP 351] [lsearch] striding
 
-2017-06-22 (TIP 463) New option [regsub ... -command ...] (fellows)
+2018-03-05 [TIPs 330,336] tighten access to Interp fields (porter)
 
-2017-06-22 (TIP 470) Tcl_GetDefineContextObject();[oo::define [self]] (fellows)
-=> TclOO 1.2.0
+2018-03-12 [TIP 462] [::tcl::process]
 
-2017-06-23 (TIP 472) Support 0d as prefix of decimal numbers (iyer,griffin)
+2018-03-12 [TIP 490] add oo support for msgcat => msgcat 1.7.0 (oehlmann)
 
-2017-08-31 (bug)[2a9465] http state 100 continue handling broken (oehlmann)
-
-2017-09-02 (bug)[0e4d88] replace command, delete trace kills namespace (porter)
-
---- Released 8.7a1, September 8, 2017 --- http://core.tcl.tk/tcl/ for details
-
-2018-03-12 (TIP 490) add oo support for msgcat => msgcat 1.7.0 (oehlmann)
-
-2018-03-12 (TIP 499) custom locale preference list (oehlmann)
+2018-03-12 [TIP 499] custom locale preference list (oehlmann)
 => msgcat 1.7.0
 
-- Released 8.7a3, Nov 30, 2018 --- http://core.tcl-lang.org/tcl/ for details -
+2018-03-20 [TIP 503] End CONST84 support for Tcl 8.3 (porter)
+
+2018-03-30 Refactored [lrange] (spjuth)
+
+2018-04-20 [TIP 389] Unicode beyond BMP (nijtmans)
+
+2018-04-20 [TIP 421] [array for]
+
+2018-05-11 [TIP 425] Windows panic callback use of UTF-8
+
+2018-05-17 [TIP 491] Phase out --disable-threads support
+
+2018-06-03 [TIP 500] TclOO Private Methods and Variables
+
+2018-07-26 (bug)[ba921a] [string cat] of bytearrays (coulter,porter)
+
+2018-09-02 [TIP 478] Many new features in TclOO (lester,fellows)
+
+2018-09-04 (bug)[540bed] [binary format w] from bignum (nijtmans)
+
+2018-09-12 [TIP 430] zipfs and embedded script library (woods)
+
+2018-09-26 [TIP 508] [array default] (bonnet,fellows)
+
+2018-09-27 [TIP 515] level value reform (nijtmans)
+
+2018-09-27 [TIP 516] More OO slot operations (fellows)
+
+2018-09-27 [TIP 426] [info cmdtype] (fellows)
+
+2018-09-28 [TIP 509] Cross platform reentrant mutex
+
+2018-10-08 [TIP 514] native integers are 64-bit
+
+2018-10-12 [TIP 502] index value reform (porter)
+
+2018-11-06 [TIP 406] http cookies (fellows)
+
+2018-11-06 [TIP 445] Tcl_ObjType utilities (migrate to Tcl 9) (porter)
+
+2018-11-06 [TIP 501] [string is dict]
+
+2018-11-06 [TIP 519] inline export/unexport option for [oo::define]
+
+2018-11-06 [TIP 523] [lpop]
+
+2018-11-06 [TIP 524] TclOO custom dialects
+
+2018-11-06 [TIP 506] Tcl_(Incr|Decr)RefCount macros -> functions (porter)
+
+2018-11-15 [TIP 512] No stub for Tcl_SetExitProc()
+
+2019-04-08 (bug)[45b9fa] crash in [try] (coulter)
+
+2019-04-14 [TIP 160] terminal and serial channel controls
+
+2019-04-14 [TIP 312] more types for Tcl_LinkVar
+
+2019-04-14 [TIP 367] [lremove]
+
+2019-04-14 [TIP 504] [string insert]
+
+2019-04-16 [TIP 342] [dict getwithdefault]
+
+2019-05-25 [TIP 431] [file tempdir]
+
+2019-05-25 [TIP 383] [coroinject], [coroprobe]
+
+2019-05-31 [TIP 544] Tcl_GetIntForIndex()
+
+2019-06-12 Replace TclOffset() with offsetof()
+
+2019-06-15 [TIP 461] string compare operators for [expr]
+
+2019-06-16 [TIP 521] floating point classification functions for [expr]
+
+2019-06-20 (bug)[6bdadf] crash multi-arg traced [lappend] (fellows)
+
+2019-06-28 [TIP 547] New encodings utf-16, ucs-2
+
+2019-09-14 [TIP 414] Tcl_InitSubsystems()
+
+2019-09-14 [TIP 548] wchar_t conversion functions
+
+- Released 8.7a3, Nov 21, 2019 --- http://core.tcl-lang.org/tcl/ for details -
+
+Changes to 9.0a1 include all changes to the 8.7 line through 8.7a3,
+plus the following, which focuses on the high-level feature changes
+in this changeset (new minor version) rather than bug fixes:
+
+2017-11-03 [TIP 114] Leading zero integer no longer means octal
+
+2017-11-03 [TIP 278] Revise variable name resolution, solve "Creative Writing"
+
+2017-11-03 [TIPs 330,336] Encapsulate struct Tcl_Interp
+
+2017-11-17 [TIP 422] Remove all Tcl_*VA() routines
+
+2017-12-15 [TIP 488] Disable magic $::tcl_precision
+
+2018-10-08 [TIP 494] Increased support for size_t value ranges
+
+2019-05-31 [TIP 537] 64-bit indices in regexp matching
+
+- Released 9.0a1, Nov 25, 2019 --- http://core.tcl-lang.org/tcl/ for details -

@@ -3304,7 +3304,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 	return
     }
 
-    # Since an unsafe interp uses the [clock] command in the master, this code
+    # Since an unsafe interp uses the [clock] command in the parent, this code
     # is security sensitive.  Make sure that the path name cannot escape the
     # given directory.
 
@@ -3314,7 +3314,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 	    "time zone \":$fileName\" not valid"
     }
     try {
-	source -encoding utf-8 [file join $DataDir $fileName]
+	source [file join $DataDir $fileName]
     } on error {} {
 	return -code error \
 	    -errorcode [list CLOCK badTimeZone :$fileName] \
@@ -3344,7 +3344,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 proc ::tcl::clock::LoadZoneinfoFile { fileName } {
     variable ZoneinfoPaths
 
-    # Since an unsafe interp uses the [clock] command in the master, this code
+    # Since an unsafe interp uses the [clock] command in the parent, this code
     # is security sensitive.  Make sure that the path name cannot escape the
     # given directory.
 
@@ -3452,7 +3452,7 @@ proc ::tcl::clock::ReadZoneinfoFile {fileName fname} {
     set times [linsert $times 0 $MINWIDE]
     set codes {}
     foreach c $tempCodes {
-	lappend codes [expr { $c & 0xff }]
+	lappend codes [expr { $c & 0xFF }]
     }
     set codes [linsert $codes 0 0]
 

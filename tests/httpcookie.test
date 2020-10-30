@@ -9,8 +9,10 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2
-namespace import -force ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 
 ::tcltest::loadTestedCommands
 
@@ -25,48 +27,48 @@ testConstraint cookiejar [expr {[testConstraint sqlite3] && ![catch {
     package require cookiejar
 }]}]
 
-set COOKIEJAR_VERSION 0.1
-test http-cookiejar-1.1 "cookie storage: packaging" {notOSXtravis sqlite3 cookiejar} {
+set COOKIEJAR_VERSION 0.2.0
+test http-cookiejar-1.1 "cookie storage: packaging" {cookiejar} {
     package require cookiejar
 } $COOKIEJAR_VERSION
-test http-cookiejar-1.2 "cookie storage: packaging" {notOSXtravis sqlite3 cookiejar} {
+test http-cookiejar-1.2 "cookie storage: packaging" {cookiejar} {
     package require cookiejar
     package require cookiejar
 } $COOKIEJAR_VERSION
 
 test http-cookiejar-2.1 "cookie storage: basics" -constraints {
-    notOSXtravis sqlite3 cookiejar
+    cookiejar
 } -returnCodes error -body {
     http::cookiejar
 } -result {wrong # args: should be "http::cookiejar method ?arg ...?"}
 test http-cookiejar-2.2 "cookie storage: basics" -constraints {
-    notOSXtravis sqlite3 cookiejar
+    cookiejar
 } -returnCodes error -body {
     http::cookiejar ?
 } -result {unknown method "?": must be configure, create, destroy or new}
 test http-cookiejar-2.3 "cookie storage: basics" -constraints {
-    notOSXtravis sqlite3 cookiejar
+    cookiejar
 } -body {
     http::cookiejar configure
 } -result {-domainfile -domainlist -domainrefresh -loglevel -offline -purgeold -retain -vacuumtrigger}
 test http-cookiejar-2.4 "cookie storage: basics" -constraints {
-    notOSXtravis sqlite3 cookiejar
+    cookiejar
 } -returnCodes error -body {
     http::cookiejar configure a b c d e
 } -result {wrong # args: should be "http::cookiejar configure ?optionName? ?optionValue?"}
 test http-cookiejar-2.5 "cookie storage: basics" -constraints {
-    notOSXtravis sqlite3 cookiejar
+    cookiejar
 } -returnCodes error -body {
     http::cookiejar configure a
 } -result {bad option "a": must be -domainfile, -domainlist, -domainrefresh, -loglevel, -offline, -purgeold, -retain, or -vacuumtrigger}
 test http-cookiejar-2.6 "cookie storage: basics" -constraints {
-    notOSXtravis sqlite3 cookiejar
+    cookiejar
 } -returnCodes error -body {
     http::cookiejar configure -d
 } -result {ambiguous option "-d": must be -domainfile, -domainlist, -domainrefresh, -loglevel, -offline, -purgeold, -retain, or -vacuumtrigger}
 test http-cookiejar-2.7 "cookie storage: basics" -setup {
     set old [http::cookiejar configure -loglevel]
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     list [http::cookiejar configure -loglevel] \
 	[http::cookiejar configure -loglevel debug] \
 	[http::cookiejar configure -loglevel] \
@@ -77,7 +79,7 @@ test http-cookiejar-2.7 "cookie storage: basics" -setup {
 } -result {info debug debug error error}
 test http-cookiejar-2.8 "cookie storage: basics" -setup {
     set old [http::cookiejar configure -loglevel]
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     list [http::cookiejar configure -loglevel] \
 	[http::cookiejar configure -loglevel d] \
 	[http::cookiejar configure -loglevel i] \
@@ -88,38 +90,38 @@ test http-cookiejar-2.8 "cookie storage: basics" -setup {
 } -result {info debug info warn error}
 test http-cookiejar-2.9 "cookie storage: basics" -body {
     http::cookiejar configure -off
-} -constraints {notOSXtravis sqlite3 cookiejar} -match glob -result *
+} -constraints {cookiejar} -match glob -result *
 test http-cookiejar-2.10 "cookie storage: basics" -setup {
     set oldval [http::cookiejar configure -offline]
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     http::cookiejar configure -offline true
 } -cleanup {
     catch {http::cookiejar configure -offline $oldval}
 } -result 1
 test http-cookiejar-2.11 "cookie storage: basics" -setup {
     set oldval [http::cookiejar configure -offline]
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     http::cookiejar configure -offline nonbool
 } -cleanup {
     catch {http::cookiejar configure -offline $oldval}
 } -returnCodes error -result {expected boolean value but got "nonbool"}
 test http-cookiejar-2.12 "cookie storage: basics" -setup {
     set oldval [http::cookiejar configure -purgeold]
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     http::cookiejar configure -purge nonint
 } -cleanup {
     catch {http::cookiejar configure -purgeold $oldval}
 } -returnCodes error -result {expected positive integer but got "nonint"}
 test http-cookiejar-2.13 "cookie storage: basics" -setup {
     set oldval [http::cookiejar configure -domainrefresh]
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     http::cookiejar configure -domainref nonint
 } -cleanup {
     catch {http::cookiejar configure -domainrefresh $oldval}
 } -returnCodes error -result {expected positive integer but got "nonint"}
 test http-cookiejar-2.14 "cookie storage: basics" -setup {
     set oldval [http::cookiejar configure -domainrefresh]
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     http::cookiejar configure -domainref -42
 } -cleanup {
     catch {http::cookiejar configure -domainrefresh $oldval}
@@ -128,7 +130,7 @@ test http-cookiejar-2.15 "cookie storage: basics" -setup {
     set oldval [http::cookiejar configure -domainrefresh]
     set result unset
     set tracer [http::cookiejar create tracer]
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     oo::objdefine $tracer method PostponeRefresh {} {
 	set ::result set
 	next
@@ -140,28 +142,28 @@ test http-cookiejar-2.15 "cookie storage: basics" -setup {
     catch {http::cookiejar configure -domainrefresh $oldval}
 } -result set
 
-test http-cookiejar-3.1 "cookie storage: class" {notOSXtravis sqlite3 cookiejar} {
+test http-cookiejar-3.1 "cookie storage: class" {cookiejar} {
     info object isa object http::cookiejar
 } 1
-test http-cookiejar-3.2 "cookie storage: class" {notOSXtravis sqlite3 cookiejar} {
+test http-cookiejar-3.2 "cookie storage: class" {cookiejar} {
     info object isa class http::cookiejar
 } 1
-test http-cookiejar-3.3 "cookie storage: class" {notOSXtravis sqlite3 cookiejar} {
+test http-cookiejar-3.3 "cookie storage: class" {cookiejar} {
     lsort [info object methods http::cookiejar]
 } {configure}
-test http-cookiejar-3.4 "cookie storage: class" {notOSXtravis sqlite3 cookiejar} {
+test http-cookiejar-3.4 "cookie storage: class" {cookiejar} {
     lsort [info object methods http::cookiejar -all]
 } {configure create destroy new}
 test http-cookiejar-3.5 "cookie storage: class" -setup {
     catch {rename ::cookiejar ""}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     namespace eval :: {http::cookiejar create cookiejar}
 } -cleanup {
     catch {rename ::cookiejar ""}
 } -result ::cookiejar
 test http-cookiejar-3.6 "cookie storage: class" -setup {
     catch {rename ::cookiejar ""}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     list [http::cookiejar create ::cookiejar] [info commands ::cookiejar] \
 	    [::cookiejar destroy] [info commands ::cookiejar]
 } -cleanup {
@@ -169,7 +171,7 @@ test http-cookiejar-3.6 "cookie storage: class" -setup {
 } -result {::cookiejar ::cookiejar {} {}}
 test http-cookiejar-3.7 "cookie storage: class" -setup {
     catch {rename ::cookiejar ""}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     http::cookiejar create ::cookiejar foo bar
 } -returnCodes error -cleanup {
     catch {rename ::cookiejar ""}
@@ -178,7 +180,7 @@ test http-cookiejar-3.8 "cookie storage: class" -setup {
     catch {rename ::cookiejar ""}
     set f [makeFile "" cookiejar]
     file delete $f
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     list [file exists $f] [http::cookiejar create ::cookiejar $f] \
 	[file exists $f]
 } -cleanup {
@@ -188,7 +190,7 @@ test http-cookiejar-3.8 "cookie storage: class" -setup {
 test http-cookiejar-3.9 "cookie storage: class" -setup {
     catch {rename ::cookiejar ""}
     set f [makeFile "bogus content for a database" cookiejar]
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     http::cookiejar create ::cookiejar $f
 } -returnCodes error -cleanup {
     catch {rename ::cookiejar ""}
@@ -197,7 +199,7 @@ test http-cookiejar-3.9 "cookie storage: class" -setup {
 test http-cookiejar-3.10 "cookie storage: class" -setup {
     catch {rename ::cookiejar ""}
     set dir [makeDirectory cookiejar]
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     http::cookiejar create ::cookiejar $dir
 } -returnCodes error -cleanup {
     catch {rename ::cookiejar ""}
@@ -206,49 +208,49 @@ test http-cookiejar-3.10 "cookie storage: class" -setup {
 
 test http-cookiejar-4.1 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar
 } -returnCodes error -cleanup {
     ::cookiejar destroy
 } -result {wrong # args: should be "cookiejar method ?arg ...?"}
 test http-cookiejar-4.2 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar ?
 } -returnCodes error -cleanup {
     ::cookiejar destroy
 } -result {unknown method "?": must be destroy, forceLoadDomainData, getCookies, lookup, policyAllow or storeCookie}
 test http-cookiejar-4.3 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     lsort [info object methods cookiejar -all]
 } -cleanup {
     ::cookiejar destroy
 } -result {destroy forceLoadDomainData getCookies lookup policyAllow storeCookie}
 test http-cookiejar-4.4 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar getCookies
 } -returnCodes error -cleanup {
     ::cookiejar destroy
 } -result {wrong # args: should be "cookiejar getCookies proto host path"}
 test http-cookiejar-4.5 "cookie storage" -setup {
     http::cookiejar create ::cookiejar
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar getCookies http www.example.com /
 } -cleanup {
     ::cookiejar destroy
 } -result {}
 test http-cookiejar-4.6 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie
 } -returnCodes error -cleanup {
     ::cookiejar destroy
 } -result {wrong # args: should be "cookiejar storeCookie options"}
 test http-cookiejar-4.7 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie {
 	key foo
 	value bar
@@ -264,7 +266,7 @@ test http-cookiejar-4.7 "cookie storage: instance" -setup {
 test http-cookiejar-4.8 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     oo::objdefine ::cookiejar export Database
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie {
 	key foo
 	value bar
@@ -282,7 +284,7 @@ test http-cookiejar-4.8 "cookie storage: instance" -setup {
 test http-cookiejar-4.9 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     oo::objdefine ::cookiejar export Database
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie {
 	key foo
 	value bar
@@ -299,7 +301,7 @@ test http-cookiejar-4.9 "cookie storage: instance" -setup {
 } -result 0
 test http-cookiejar-4.10 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie [dict replace {
 	key foo
 	value bar
@@ -315,7 +317,7 @@ test http-cookiejar-4.10 "cookie storage: instance" -setup {
 test http-cookiejar-4.11 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     oo::objdefine ::cookiejar export Database
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie [dict replace {
 	key foo
 	value bar
@@ -333,7 +335,7 @@ test http-cookiejar-4.11 "cookie storage: instance" -setup {
 test http-cookiejar-4.12 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     oo::objdefine ::cookiejar export Database
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie [dict replace {
 	key foo
 	value bar
@@ -351,7 +353,7 @@ test http-cookiejar-4.12 "cookie storage: instance" -setup {
 test http-cookiejar-4.13 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     set result {}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     lappend result [cookiejar getCookies http www.example.com /]
     cookiejar storeCookie {
 	key foo
@@ -369,7 +371,7 @@ test http-cookiejar-4.13 "cookie storage: instance" -setup {
 test http-cookiejar-4.14 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     set result {}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     lappend result [cookiejar getCookies http www.example.com /]
     cookiejar storeCookie [dict replace {
 	key foo
@@ -387,7 +389,7 @@ test http-cookiejar-4.14 "cookie storage: instance" -setup {
 test http-cookiejar-4.15 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     set result {}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     lappend result [cookiejar getCookies http www.example.com /]
     cookiejar storeCookie {
 	key foo
@@ -414,7 +416,7 @@ test http-cookiejar-4.15 "cookie storage: instance" -setup {
 test http-cookiejar-4.16 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     set result {}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     lappend result [cookiejar getCookies http www.example.com /]
     cookiejar storeCookie {
 	key foo1
@@ -440,7 +442,7 @@ test http-cookiejar-4.16 "cookie storage: instance" -setup {
 } -result {{} {foo1 bar foo2 bar}}
 test http-cookiejar-4.17 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar lookup a b c d
 } -returnCodes error -cleanup {
     ::cookiejar destroy
@@ -448,7 +450,7 @@ test http-cookiejar-4.17 "cookie storage: instance" -setup {
 test http-cookiejar-4.18 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     set result {}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     lappend result [cookiejar lookup]
     lappend result [cookiejar lookup www.example.com]
     lappend result [catch {cookiejar lookup www.example.com foo} value] $value
@@ -470,7 +472,7 @@ test http-cookiejar-4.18 "cookie storage: instance" -setup {
 test http-cookiejar-4.19 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     set result {}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie {
 	key foo
 	value bar
@@ -500,7 +502,7 @@ test http-cookiejar-4.19 "cookie storage: instance" -setup {
 test http-cookiejar-4.20 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     set result {}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie {
 	key foo1
 	value bar1
@@ -529,7 +531,7 @@ test http-cookiejar-4.20 "cookie storage: instance" -setup {
 test http-cookiejar-4.21 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     set result {}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie {
 	key foo1
 	value bar1
@@ -558,7 +560,7 @@ test http-cookiejar-4.21 "cookie storage: instance" -setup {
 test http-cookiejar-4.22 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     set result {}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar forceLoadDomainData x y z
 } -returnCodes error -cleanup {
     ::cookiejar destroy
@@ -566,14 +568,14 @@ test http-cookiejar-4.22 "cookie storage: instance" -setup {
 test http-cookiejar-4.23 "cookie storage: instance" -setup {
     http::cookiejar create ::cookiejar
     set result {}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar forceLoadDomainData
 } -cleanup {
     ::cookiejar destroy
 } -result {}
 test http-cookiejar-4.23.a {cookie storage: instance} -setup {
     set off [http::cookiejar configure -offline]
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     http::cookiejar configure -offline 1
     [http::cookiejar create ::cookiejar] destroy
 } -cleanup {
@@ -582,7 +584,7 @@ test http-cookiejar-4.23.a {cookie storage: instance} -setup {
 } -result {}
 test http-cookiejar-4.23.b {cookie storage: instance} -setup {
     set off [http::cookiejar configure -offline]
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     http::cookiejar configure -offline 0
     [http::cookiejar create ::cookiejar] destroy
 } -cleanup {
@@ -593,7 +595,7 @@ test http-cookiejar-4.23.b {cookie storage: instance} -setup {
 test http-cookiejar-5.1 "cookie storage: constraints" -setup {
     http::cookiejar create ::cookiejar
     cookiejar forceLoadDomainData
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie {
 	key foo
 	value bar
@@ -610,7 +612,7 @@ test http-cookiejar-5.1 "cookie storage: constraints" -setup {
 test http-cookiejar-5.2 "cookie storage: constraints" -setup {
     http::cookiejar create ::cookiejar
     cookiejar forceLoadDomainData
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie {
 	key foo
 	value bar
@@ -627,7 +629,7 @@ test http-cookiejar-5.2 "cookie storage: constraints" -setup {
 test http-cookiejar-5.3 "cookie storage: constraints" -setup {
     http::cookiejar create ::cookiejar
     cookiejar forceLoadDomainData
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie {
 	key foo1
 	value bar
@@ -653,7 +655,7 @@ test http-cookiejar-5.3 "cookie storage: constraints" -setup {
 test http-cookiejar-5.4 "cookie storage: constraints" -setup {
     http::cookiejar create ::cookiejar
     cookiejar forceLoadDomainData
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie {
 	key foo
 	value bar1
@@ -679,7 +681,7 @@ test http-cookiejar-5.4 "cookie storage: constraints" -setup {
 test http-cookiejar-5.5 "cookie storage: constraints" -setup {
     http::cookiejar create ::cookiejar
     cookiejar forceLoadDomainData
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     cookiejar storeCookie {
 	key foo1
 	value 1
@@ -777,7 +779,7 @@ test http-cookiejar-6.1 "cookie storage: expiry and lookup" -setup {
 	global result
 	lappend result [lsort [lmap {k v} $cookies {set v}]]
     }
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     values [cookiejar getCookies http www.example.com /]
     cookiejar storeCookie {
 	key foo
@@ -833,7 +835,7 @@ test http-cookiejar-7.1 "cookie storage: persistence of persistent cookies" -set
     catch {rename ::cookiejar ""}
     set f [makeFile "" cookiejar]
     file delete $f
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     http::cookiejar create ::cookiejar $f
     ::cookiejar destroy
     http::cookiejar create ::cookiejar $f
@@ -846,7 +848,7 @@ test http-cookiejar-7.2 "cookie storage: persistence of persistent cookies" -set
     set f [makeFile "" cookiejar]
     file delete $f
     set result {}
-} -constraints {notOSXtravis sqlite3 cookiejar} -body {
+} -constraints {cookiejar} -body {
     http::cookiejar create ::cookiejar $f
     cookiejar storeCookie [dict replace {
 	key foo

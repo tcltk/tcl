@@ -10,7 +10,7 @@
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 
 /*
  * Flag values used by Tcl_ScanObjCmd.
@@ -30,14 +30,16 @@
  */
 
 typedef struct {
+    Tcl_UniChar start;
+    Tcl_UniChar end;
+} Range;
+
+typedef struct {
     int exclude;		/* 1 if this is an exclusion set. */
     int nchars;
     Tcl_UniChar *chars;
     int nranges;
-    struct Range {
-	Tcl_UniChar start;
-	Tcl_UniChar end;
-    } *ranges;
+    Range *ranges;
 } CharSet;
 
 /*
@@ -102,9 +104,9 @@ BuildCharSet(
 	end += TclUtfToUniChar(end, &ch);
     }
 
-    cset->chars = Tcl_Alloc(sizeof(Tcl_UniChar) * (end - format - 1));
+    cset->chars = (Tcl_UniChar *)Tcl_Alloc(sizeof(Tcl_UniChar) * (end - format - 1));
     if (nranges > 0) {
-	cset->ranges = Tcl_Alloc(sizeof(struct Range) * nranges);
+	cset->ranges = (Range *)Tcl_Alloc(sizeof(Range) * nranges);
     } else {
 	cset->ranges = NULL;
     }
@@ -260,12 +262,12 @@ ValidateFormat(
     char *end;
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
-    int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
-    char buf[TCL_UTF_MAX + 1] = "";
+    int *nassign = (int *)TclStackAlloc(interp, nspace * sizeof(int));
     Tcl_Obj *errorMsg;		/* Place to build an error messages. Note that
 				 * these are messy operations because we do
 				 * not want to use the formatting engine;
 				 * we're inside there! */
+    char buf[5] = "";
 
     /*
      * Initialize an array that records the number of times a variable is
@@ -363,8 +365,10 @@ ValidateFormat(
 		format += TclUtfToUniChar(format, &ch);
 		break;
 	    }
+	    /* FALLTHRU */
 	case 'L':
 	    flags |= SCAN_LONGER;
+	    /* FALLTHRU */
 	case 'h':
 	    format += TclUtfToUniChar(format, &ch);
 	}
@@ -386,9 +390,7 @@ ValidateFormat(
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", NULL);
 		goto error;
 	    }
-	    /*
-	     * Fall through!
-	     */
+	    /* FALLTHRU */
 	case 'n':
 	case 's':
 	    if (flags & (SCAN_LONGER|SCAN_BIG)) {
@@ -477,7 +479,7 @@ ValidateFormat(
 		} else {
 		    nspace += 16;	/* formerly STATIC_LIST_SIZE */
 		}
-		nassign = TclStackRealloc(interp, nassign,
+		nassign = (int *)TclStackRealloc(interp, nassign,
 			nspace * sizeof(int));
 		for (i = value; i < nspace; i++) {
 		    nassign[i] = 0;
@@ -560,10 +562,9 @@ ValidateFormat(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_ScanObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -579,9 +580,6 @@ Tcl_ScanObjCmd(
     Tcl_UniChar ch = 0, sch = 0;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
-    char buf[513];		/* Temporary buffer to hold scanned number
-				 * strings before they are passed to
-				 * strtoul. */
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -605,7 +603,7 @@ Tcl_ScanObjCmd(
      */
 
     if (totalVars > 0) {
-	objs = Tcl_Alloc(sizeof(Tcl_Obj *) * totalVars);
+	objs = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj *) * totalVars);
 	for (i = 0; i < totalVars; i++) {
 	    objs[i] = NULL;
 	}
@@ -703,11 +701,10 @@ Tcl_ScanObjCmd(
 		format += TclUtfToUniChar(format, &ch);
 		break;
 	    }
+	    /* FALLTHRU */
 	case 'L':
 	    flags |= SCAN_LONGER;
-	    /*
-	     * Fall through so we skip to the next character.
-	     */
+	    /* FALLTHRU */
 	case 'h':
 	    format += TclUtfToUniChar(format, &ch);
 	}
@@ -719,7 +716,7 @@ Tcl_ScanObjCmd(
 	switch (ch) {
 	case 'n':
 	    if (!(flags & SCAN_SUPPRESS)) {
-		objPtr = Tcl_NewWideIntObj(string - baseString);
+		TclNewIntObj(objPtr, string - baseString);
 		Tcl_IncrRefCount(objPtr);
 		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
@@ -879,17 +876,10 @@ Tcl_ScanObjCmd(
 	     * Scan a single Unicode character.
 	     */
 
-	    offset = TclUtfToUniChar(string, &sch);
-	    i = (int)sch;
-#if TCL_UTF_MAX <= 4
-	    if ((sch >= 0xD800) && (offset < 3)) {
-		offset += TclUtfToUniChar(string+offset, &sch);
-		i = (((i<<10) & 0x0FFC00) + 0x10000) + (sch & 0x3FF);
-	    }
-#endif
+	    offset = TclUtfToUCS4(string, &i);
 	    string += offset;
 	    if (!(flags & SCAN_SUPPRESS)) {
-		objPtr = Tcl_NewWideIntObj(i);
+		TclNewIntObj(objPtr, i);
 		Tcl_IncrRefCount(objPtr);
 		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
@@ -900,13 +890,13 @@ Tcl_ScanObjCmd(
 	    /*
 	     * Scan an unsigned or signed integer.
 	     */
-	    objPtr = Tcl_NewWideIntObj(0);
+	    TclNewIntObj(objPtr, 0);
 	    Tcl_IncrRefCount(objPtr);
 	    if (width == 0) {
 		width = ~0;
 	    }
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
-		    &end, TCL_PARSE_INTEGER_ONLY | parseFlag)) {
+		&end, TCL_PARSE_INTEGER_ONLY | TCL_PARSE_NO_UNDERSCORE | parseFlag)) {
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {
@@ -932,24 +922,31 @@ Tcl_ScanObjCmd(
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
-		    sprintf(buf, "%" TCL_LL_MODIFIER "u", wideValue);
-		    Tcl_SetStringObj(objPtr, buf, -1);
+		    mp_int big;
+		    if (mp_init_u64(&big, (Tcl_WideUInt)wideValue) != MP_OKAY) {
+			Tcl_SetObjResult(interp, Tcl_NewStringObj(
+				"insufficient memory to create bignum", -1));
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+			return TCL_ERROR;
+		    } else {
+			Tcl_SetBignumObj(objPtr, &big);
+		    }
 		} else {
 		    TclSetIntObj(objPtr, wideValue);
 		}
 	    } else if (flags & SCAN_BIG) {
 		if (flags & SCAN_UNSIGNED) {
 		    mp_int big;
-		    int code = Tcl_GetBignumFromObj(interp, objPtr, &big);
+		    int res = Tcl_GetBignumFromObj(interp, objPtr, &big);
 
-		    if (code == TCL_OK) {
-			if (big.sign != MP_ZPOS) {
-			    code = TCL_ERROR;
+		    if (res == TCL_OK) {
+			if (mp_isneg(&big)) {
+			    res = TCL_ERROR;
 			}
 			mp_clear(&big);
 		    }
 
-		    if (code == TCL_ERROR) {
+		    if (res == TCL_ERROR) {
 			if (objs != NULL) {
 			    Tcl_Free(objs);
 			}
@@ -970,8 +967,19 @@ Tcl_ScanObjCmd(
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (value < 0)) {
-		    sprintf(buf, "%lu", value);	/* INTL: ISO digit */
-		    Tcl_SetStringObj(objPtr, buf, -1);
+#ifdef TCL_WIDE_INT_IS_LONG
+		    mp_int big;
+		    if (mp_init_u64(&big, (unsigned long)value) != MP_OKAY) {
+			Tcl_SetObjResult(interp, Tcl_NewStringObj(
+				"insufficient memory to create bignum", -1));
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+			return TCL_ERROR;
+		    } else {
+			Tcl_SetBignumObj(objPtr, &big);
+		    }
+#else
+		    Tcl_SetWideIntObj(objPtr, (unsigned long)value);
+#endif
 		} else {
 		    TclSetIntObj(objPtr, value);
 		}
@@ -990,7 +998,7 @@ Tcl_ScanObjCmd(
 		width = ~0;
 	    }
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
-		    &end, TCL_PARSE_DECIMAL_ONLY | TCL_PARSE_NO_WHITESPACE)) {
+		    &end, TCL_PARSE_DECIMAL_ONLY | TCL_PARSE_NO_WHITESPACE | TCL_PARSE_NO_UNDERSCORE)) {
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {
@@ -1060,7 +1068,7 @@ Tcl_ScanObjCmd(
 	 * Here no vars were specified, we want a list returned (inline scan)
 	 */
 
-	objPtr = Tcl_NewObj();
+	TclNewObj(objPtr);
 	for (i = 0; i < totalVars; i++) {
 	    if (objs[i] != NULL) {
 		Tcl_ListObjAppendElement(NULL, objPtr, objs[i]);
@@ -1081,16 +1089,16 @@ Tcl_ScanObjCmd(
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
-		objPtr = Tcl_NewWideIntObj(-1);
+		TclNewIndexObj(objPtr, TCL_INDEX_NONE);
 	    } else {
 		if (objPtr) {
 		    Tcl_SetListObj(objPtr, 0, NULL);
 		} else {
-		    objPtr = Tcl_NewObj();
+		    TclNewObj(objPtr);
 		}
 	    }
 	} else if (numVars) {
-	    objPtr = Tcl_NewWideIntObj(result);
+	    TclNewIntObj(objPtr, result);
 	}
 	Tcl_SetObjResult(interp, objPtr);
     }

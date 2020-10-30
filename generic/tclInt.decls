@@ -215,10 +215,11 @@ declare 46 {
 #    Tcl_Obj *TclIncrVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 #	    Tcl_Obj *part2Ptr, long incrAmount, int part1NotParsed)
 #}
-declare 50 {
-    void TclInitCompiledLocals(Tcl_Interp *interp, CallFrame *framePtr,
-	    Namespace *nsPtr)
-}
+# Removed in 9.0:
+#declare 50 {
+#    void TclInitCompiledLocals(Tcl_Interp *interp, CallFrame *framePtr,
+#	    Namespace *nsPtr)
+#}
 declare 51 {
     int TclInterpInit(Tcl_Interp *interp)
 }
@@ -920,7 +921,7 @@ declare 227 {
 #  Used to be needed for TclOO-extension; unneeded now that TclOO is in the
 #  core and NRE-enabled
 #  declare 228 {
-#      int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
+#      int TclObjInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
 #             int skip, ProcErrorProc *errorProc)
 #  }
 declare 229 {
@@ -1020,7 +1021,7 @@ declare 249 {
 }
 # TIP #285: Script cancellation support.
 declare 250 {
-    void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
+    void TclSetChildCancelFlags(Tcl_Interp *interp, int flags, int force)
 }
 
 # Allow extensions for optimization
@@ -1064,6 +1065,17 @@ declare 258 {
     Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 	    Tcl_Obj *basenameObj)
 }
+# TIP 542
+declare 259 {
+    void TclAppendUnicodeToObj(Tcl_Obj *objPtr,
+	    const Tcl_UniChar *unicode, size_t length)
+}
+
+declare 260 {
+    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    size_t *lengthPtr)
+}
+
 
 ##############################################################################
 
@@ -1076,11 +1088,11 @@ interface tclIntPlat
 # Windows specific functions
 
 declare 0 win {
-    void TclWinConvertError(DWORD errCode)
+    void TclWinConvertError(int errCode)
 }
 # Removed in 9.0:
 #declare 1 win {
-#    void TclWinConvertWSAError(DWORD errCode)
+#    void TclWinConvertWSAError(int errCode)
 #}
 # Removed in 9.0:
 #declare 2 win {
@@ -1093,7 +1105,7 @@ declare 0 win {
 #	    char *optval, int *optlen)
 #}
 declare 4 win {
-    HINSTANCE TclWinGetTclInstance(void)
+    void *TclWinGetTclInstance(void)
 }
 # new for 8.4.20+/8.5.12+ Cygwin only
 declare 5 win {
@@ -1171,7 +1183,7 @@ declare 19 win {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 20 win {
-    void TclWinAddProcess(HANDLE hProcess, size_t id)
+    void TclWinAddProcess(void *hProcess, size_t id)
 }
 # Removed in 9.0:
 #declare 21 win {
@@ -1238,10 +1250,9 @@ declare 4 unix {
 	    const char **argv, TclFile inputFile, TclFile outputFile,
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
-# Signature changed in 8.1:
-#  declare 5 unix {
-#      TclFile TclpCreateTempFile(char *contents, Tcl_DString *namePtr)
-#  }
+declare 5 unix {
+    int TclUnixWaitForFile_(int fd, int mask, int timeout)
+}
 declare 6 unix {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
 }
@@ -1287,25 +1298,28 @@ declare 14 unix {
 ################################
 # Mac OS X specific functions
 
-declare 15 macosx {
+declare 15 {unix macosx} {
     int TclMacOSXGetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr)
 }
-declare 16 macosx {
+declare 16 {unix macosx} {
     int TclMacOSXSetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj *attributePtr)
 }
-declare 17 macosx {
+declare 17 {unix macosx} {
     int TclMacOSXCopyFileAttributes(const char *src, const char *dst,
 	    const Tcl_StatBuf *statBufPtr)
 }
-declare 18 macosx {
+declare 18 {unix macosx} {
     int TclMacOSXMatchType(Tcl_Interp *interp, const char *pathName,
 	    const char *fileName, Tcl_StatBuf *statBufPtr,
 	    Tcl_GlobTypeData *types)
 }
-declare 19 macosx {
+declare 19 {unix macosx} {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+}
+declare 22 {unix macosx} {
+    TclFile TclpCreateTempFile_(const char *contents)
 }
 
 declare 29 {win unix} {
@@ -1316,8 +1330,6 @@ declare 30 {win unix} {
     int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
 	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
 }
-
-
 
 # Local Variables:
 # mode: tcl

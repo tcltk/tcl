@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -192,6 +192,17 @@ test regexp-3.7 {getting substrings back from regexp} {
     set foo 1; set f2 1; set f3 1; set f4 1
     list [regexp -indices (a)(b)?(c) xacy foo f2 f3 f4] $foo $f2 $f3 $f4
 } {1 {1 2} {1 1} {-1 -1} {2 2}}
+test regexp-3.8a {-indices by multi-byte utf-8} {
+    regexp -inline -indices {(\w+)-(\w+)} \
+	"gr\u00FC\u00DF-\u043F\u0440\u0438\u0432\u0435\u0442"
+} {{0 10} {0 3} {5 10}}
+test regexp-3.8b {-indices by multi-byte utf-8, from -start position} {
+    list\
+	[regexp -inline -indices -start 3 {(\w+)-(\w+)} \
+	"gr\u00FC\u00DF-\u043F\u0440\u0438\u0432\u0435\u0442"] \
+	[regexp -inline -indices -start 4 {(\w+)-(\w+)} \
+	"gr\u00FC\u00DF-\u043F\u0440\u0438\u0432\u0435\u0442"]
+} {{{3 10} {3 3} {5 10}} {}}
 
 test regexp-4.1 {-nocase option to regexp} {
     regexp -nocase foo abcFOo
@@ -542,133 +553,133 @@ test regexp-14.3 {CompileRegexp: regexp cache, empty regexp and empty cache} -co
     removeFile junk.tcl
 } -result 1
 
-test regexp-15.1 {regexp -start} {
+test regexp-15.1 {regexp -start} -body {
     unset -nocomplain x
     list [regexp -start -10 {\d} 1abc2de3 x] $x
-} {1 1}
-test regexp-15.2 {regexp -start} {
+} -result {1 1}
+test regexp-15.2 {regexp -start} -body {
     unset -nocomplain x
     list [regexp -start 2 {\d} 1abc2de3 x] $x
-} {1 2}
-test regexp-15.3 {regexp -start} {
+} -result {1 2}
+test regexp-15.3 {regexp -start} -body {
     unset -nocomplain x
     list [regexp -start 4 {\d} 1abc2de3 x] $x
-} {1 2}
-test regexp-15.4 {regexp -start} {
+} -result {1 2}
+test regexp-15.4 {regexp -start} -body {
     unset -nocomplain x
     list [regexp -start 5 {\d} 1abc2de3 x] $x
-} {1 3}
-test regexp-15.5 {regexp -start, over end of string} {
+} -result {1 3}
+test regexp-15.5 {regexp -start, over end of string} -body {
     unset -nocomplain x
     list [regexp -start [string length 1abc2de3] {\d} 1abc2de3 x] [info exists x]
-} {0 0}
-test regexp-15.6 {regexp -start, loss of ^$ behavior} {
+} -result {0 0}
+test regexp-15.6 {regexp -start, loss of ^$ behavior} -body {
     list [regexp -start 2 {^$} {}]
-} {0}
-test regexp-15.7 {regexp -start, double option} {
+} -result {0}
+test regexp-15.7 {regexp -start, double option} -body {
     regexp -start 2 -start 0 a abc
-} 1
-test regexp-15.8 {regexp -start, double option} {
+} -result 1
+test regexp-15.8 {regexp -start, double option} -body {
     regexp -start 0 -start 2 a abc
-} 0
-test regexp-15.9 {regexp -start, end relative index} {
+} -result 0
+test regexp-15.9 {regexp -start, end relative index} -body {
     unset -nocomplain x
     list [regexp -start end {\d} 1abc2de3 x] [info exists x]
-} {0 0}
-test regexp-15.10 {regexp -start, end relative index} {
+} -result {0 0}
+test regexp-15.10 {regexp -start, end relative index} -body {
     unset -nocomplain x
     list [regexp -start end-1 {\d} 1abc2de3 x] [info exists x] $x
-} {1 1 3}
-test regexp-15.11 {regexp -start, over end of string} {
+} -result {1 1 3}
+test regexp-15.11 {regexp -start, over end of string} -body {
     set x NA
     list [regexp -start 2 {.*} ab x] $x
-} {1 {}}
+} -result {1 {}}
 
-test regexp-16.1 {regsub -start} {
+test regexp-16.1 {regsub -start} -body {
     unset -nocomplain x
     list [regsub -all -start 2 {\d} a1b2c3d4e5 {/&} x] $x
-} {4 a1b/2c/3d/4e/5}
-test regexp-16.2 {regsub -start} {
+} -result {4 a1b/2c/3d/4e/5}
+test regexp-16.2 {regsub -start} -body {
     unset -nocomplain x
     list [regsub -all -start -25 {z} hello {/&} x] $x
-} {0 hello}
-test regexp-16.3 {regsub -start} {
+} -result {0 hello}
+test regexp-16.3 {regsub -start} -body {
     unset -nocomplain x
     list [regsub -all -start 3 {z} hello {/&} x] $x
-} {0 hello}
-test regexp-16.4 {regsub -start, \A behavior} {
+} -result {0 hello}
+test regexp-16.4 {regsub -start, \A behavior} -body {
     set out {}
     lappend out [regsub -start 0 -all {\A(\w)} {abcde} {/\1} x] $x
     lappend out [regsub -start 2 -all {\A(\w)} {abcde} {/\1} x] $x
-} {5 /a/b/c/d/e 3 ab/c/d/e}
-test regexp-16.5 {regsub -start, double option} {
+} -result {5 /a/b/c/d/e 3 ab/c/d/e}
+test regexp-16.5 {regsub -start, double option} -body {
     list [regsub -start 2 -start 0 a abc c x] $x
-} {1 cbc}
-test regexp-16.6 {regsub -start, double option} {
+} -result {1 cbc}
+test regexp-16.6 {regsub -start, double option} -body {
     list [regsub -start 0 -start 2 a abc c x] $x
-} {0 abc}
-test regexp-16.7 {regexp -start, end relative index} {
+} -result {0 abc}
+test regexp-16.7 {regexp -start, end relative index} -body {
     list [regsub -start end a aaa b x] $x
-} {0 aaa}
-test regexp-16.8 {regexp -start, end relative index} {
+} -result {0 aaa}
+test regexp-16.8 {regexp -start, end relative index} -body {
     list [regsub -start end-1 a aaa b x] $x
-} {1 aab}
-test regexp-16.9 {regsub -start and -all} {
+} -result {1 aab}
+test regexp-16.9 {regsub -start and -all} -body {
     set foo {}
     list [regsub -start 0 -all x+ axxxbxx |&| foo] $foo
-} {2 a|xxx|b|xx|}
-test regexp-16.10 {regsub -start and -all} {
+} -result {2 a|xxx|b|xx|}
+test regexp-16.10 {regsub -start and -all} -body {
     set foo {}
     list [regsub -start 1 -all x+ axxxbxx |&| foo] $foo
-} {2 a|xxx|b|xx|}
-test regexp-16.11 {regsub -start and -all} {
+} -result {2 a|xxx|b|xx|}
+test regexp-16.11 {regsub -start and -all} -body {
     set foo {}
     list [regsub -start 4 -all x+ axxxbxx |&| foo] $foo
-} {1 axxxb|xx|}
-test regexp-16.12 {regsub -start} {
+} -result {1 axxxb|xx|}
+test regexp-16.12 {regsub -start} -body {
     set foo {}
     list [regsub -start 4 x+ axxxbxx |&| foo] $foo
-} {1 axxxb|xx|}
-test regexp-16.13 {regsub -start and -all} {
+} -result {1 axxxb|xx|}
+test regexp-16.13 {regsub -start and -all} -body {
     set foo {}
     list [regsub -start 1 -all a+ "" & foo] $foo
-} {0 {}}
-test regexp-16.14 {regsub -start} {
+} -result {0 {}}
+test regexp-16.14 {regsub -start} -body {
     set foo {}
     list [regsub -start 1 a+ "" & foo] $foo
-} {0 {}}
-test regexp-16.15 {regsub -start and -all} {
+} -result {0 {}}
+test regexp-16.15 {regsub -start and -all} -body {
     set foo {}
     list [regsub -start 2 -all a+ "xy" & foo] $foo
-} {0 xy}
-test regexp-16.16 {regsub -start} {
+} -result {0 xy}
+test regexp-16.16 {regsub -start} -body {
     set foo {}
     list [regsub -start 2 a+ "xy" & foo] $foo
-} {0 xy}
-test regexp-16.17 {regsub -start and -all} {
+} -result {0 xy}
+test regexp-16.17 {regsub -start and -all} -body {
     set foo {}
     list [regsub -start 1 -all y+ "xy" & foo] $foo
-} {1 xy}
-test regexp-16.18 {regsub -start} {
+} -result {1 xy}
+test regexp-16.18 {regsub -start} -body {
     set foo {}
     list [regsub -start 1 y+ "xy" & foo] $foo
-} {1 xy}
-test regexp-16.19 {regsub -start} {
+} -result {1 xy}
+test regexp-16.19 {regsub -start} -body {
     set foo {}
     list [regsub -start -1 a+ "" & foo] $foo
-} {0 {}}
-test regexp-16.20 {regsub -start, loss of ^$ behavior} {
+} -result {0 {}}
+test regexp-16.20 {regsub -start, loss of ^$ behavior} -body {
     set foo NA
     list [regsub -start 1 {^$} {} & foo] $foo
-} {0 {}}
-test regexp-16.21 {regsub -start, loss of ^$ behavior} {
+} -result {0 {}}
+test regexp-16.21 {regsub -start, loss of ^$ behavior} -body {
     set foo NA
     list [regsub -start 1 {^.*$} abc & foo] $foo
-} {0 abc}
-test regexp-16.22 {regsub -start, loss of ^$ behavior} {
+} -result {0 abc}
+test regexp-16.22 {regsub -start, loss of ^$ behavior} -body {
     set foo NA
     list [regsub -all -start 1 {^.*$} abc & foo] $foo
-} {0 abc}
+} -result {0 abc}
 
 test regexp-17.1 {regexp -inline} {
     regexp -inline b ababa
@@ -754,45 +765,45 @@ test regexp-19.2 {regsub null replacement} {
     string equal $result $expected
 } 1
 
-test regexp-20.1 {regsub shared object shimmering} {
+test regexp-20.1 {regsub shared object shimmering} -body {
     # Bug #461322
     set a abcdefghijklmnopqurstuvwxyz
     set b $a
     set c abcdefghijklmnopqurstuvwxyz0123456789
     regsub $a $c $b d
     list $d [string length $d] [string bytelength $d]
-} [list abcdefghijklmnopqurstuvwxyz0123456789 37 37]
-test regexp-20.2 {regsub shared object shimmering with -about} {
+} -result [list abcdefghijklmnopqurstuvwxyz0123456789 37 37]
+test regexp-20.2 {regsub shared object shimmering with -about} -body {
     eval regexp -about abc
-} {0 {}}
+} -result {0 {}}
 
-test regexp-21.1 {regsub works with empty string} {
+test regexp-21.1 {regsub works with empty string} -body {
     regsub -- ^ {} foo
-} {foo}
-test regexp-21.2 {regsub works with empty string} {
+} -result {foo}
+test regexp-21.2 {regsub works with empty string} -body {
     regsub -- \$ {} foo
-} {foo}
-test regexp-21.3 {regsub works with empty string offset} {
+} -result {foo}
+test regexp-21.3 {regsub works with empty string offset} -body {
     regsub -start 0 -- ^ {} foo
-} {foo}
-test regexp-21.4 {regsub works with empty string offset} {
+} -result {foo}
+test regexp-21.4 {regsub works with empty string offset} -body {
     regsub -start 0 -- \$ {} foo
-} {foo}
-test regexp-21.5 {regsub works with empty string offset} {
+} -result {foo}
+test regexp-21.5 {regsub works with empty string offset} -body {
     regsub -start 3 -- \$ {123} foo
-} {123foo}
-test regexp-21.6 {regexp works with empty string} {
+} -result {123foo}
+test regexp-21.6 {regexp works with empty string} -body {
     regexp -- ^ {}
-} {1}
-test regexp-21.7 {regexp works with empty string} {
+} -result {1}
+test regexp-21.7 {regexp works with empty string} -body {
     regexp -start 0 -- ^ {}
-} {1}
-test regexp-21.8 {regexp works with empty string offset} {
+} -result {1}
+test regexp-21.8 {regexp works with empty string offset} -body {
     regexp -start 3 -- ^ {123}
-} {0}
-test regexp-21.9 {regexp works with empty string offset} {
+} -result {0}
+test regexp-21.9 {regexp works with empty string offset} -body {
     regexp -start 3 -- \$ {123}
-} {1}
+} -result {1}
 test regexp-21.10 {multiple matches handle newlines} {
     regsub -all -lineanchor -- {^#[^\n]*\n} "#one\n#two\n#three\n" foo\n
 } "foo\nfoo\nfoo\n"
@@ -1096,13 +1107,13 @@ test regexp-26.1 {matches start of line 1 time} {
 test regexp-26.2 {matches start of line(s) 2 times} {
     regexp -all -inline -line -- {^a+} "aab\naaa"
 } {aa aaa}
-test regexp-26.3 {effect of -line -all and -start} {
+test regexp-26.3 {effect of -line -all and -start} -body {
     list \
 	[regexp -all -inline -line -start 0 -- {^a+} "aab\naaa"] \
 	[regexp -all -inline -line -start 1 -- {^a+} "aab\naaa"] \
 	[regexp -all -inline -line -start 3 -- {^a+} "aab\naaa"] \
 	[regexp -all -inline -line -start 4 -- {^a+} "aab\naaa"] \
-} {{aa aaa} aaa aaa aaa}
+} -result {{aa aaa} aaa aaa aaa}
 # No regexp-26.4
 test regexp-26.5 {match length 0, match length 1} {
     regexp -all -inline -line -- {^b*} "a\nb"

@@ -122,7 +122,7 @@ const Tcl_ObjType tclRegexpType = {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), &tclRegexpType);		\
-	(rePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(rePtr) = irPtr ? (TclRegexp *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 
@@ -675,9 +675,9 @@ TclRegAbout(
      * well and Tcl has other limits that constrain things as well...
      */
 
-    resultObj = Tcl_NewObj();
-    Tcl_ListObjAppendElement(NULL, resultObj,
-	    TclNewWideIntObjFromSize(regexpPtr->re.re_nsub));
+    TclNewObj(resultObj);
+    TclNewIndexObj(infoObj, regexpPtr->re.re_nsub);
+    Tcl_ListObjAppendElement(NULL, resultObj, infoObj);
 
     /*
      * Now append a list of all the bit-flags set for the RE.
@@ -724,12 +724,12 @@ TclRegError(
     const char *p;
 
     Tcl_ResetResult(interp);
-    n = TclReError(status, NULL, buf, sizeof(buf));
+    n = TclReError(status, buf, sizeof(buf));
     p = (n > sizeof(buf)) ? "..." : "";
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s%s%s", msg, buf, p));
 
     sprintf(cbuf, "%d", status);
-    (void) TclReError(REG_ITOA, NULL, cbuf, sizeof(cbuf));
+    (void) TclReError(REG_ITOA, cbuf, sizeof(cbuf));
     Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
 }
 
@@ -915,7 +915,7 @@ CompileRegexp(
      * This is a new expression, so compile it and add it to the cache.
      */
 
-    regexpPtr = Tcl_Alloc(sizeof(TclRegexp));
+    regexpPtr = (TclRegexp*)Tcl_Alloc(sizeof(TclRegexp));
     regexpPtr->objPtr = NULL;
     regexpPtr->string = NULL;
     regexpPtr->details.rm_extend.rm_so = -1;
@@ -970,7 +970,7 @@ CompileRegexp(
      */
 
     regexpPtr->matches =
-	    Tcl_Alloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
+	    (regmatch_t*)Tcl_Alloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
 
     /*
      * Initialize the refcount to one initially, since it is in the cache.
@@ -996,7 +996,7 @@ CompileRegexp(
 	tsdPtr->patLengths[i+1] = tsdPtr->patLengths[i];
 	tsdPtr->regexps[i+1] = tsdPtr->regexps[i];
     }
-    tsdPtr->patterns[0] = Tcl_Alloc(length + 1);
+    tsdPtr->patterns[0] = (char *)Tcl_Alloc(length + 1);
     memcpy(tsdPtr->patterns[0], string, length + 1);
     tsdPtr->patLengths[0] = length;
     tsdPtr->regexps[0] = regexpPtr;
@@ -1052,7 +1052,7 @@ FreeRegexp(
 
 static void
 FinalizeRegexp(
-    ClientData clientData)	/* Not used. */
+    TCL_UNUSED(ClientData))
 {
     int i;
     TclRegexp *regexpPtr;

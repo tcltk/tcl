@@ -22,7 +22,8 @@ This command searches the elements of \fIlist\fR to see if one
 of them matches \fIpattern\fR.  If so, the command returns the index
 of the first matching element
 (unless the options \fB\-all\fR or \fB\-inline\fR are specified.)
-If not, the command returns \fB\-1\fR.  The \fIoption\fR arguments
+If not, the command returns \fB\-1\fR or (if options \fB\-all\fR
+or \fB\-inline\fR are specified) the empty string.  The \fIoption\fR arguments
 indicates how the elements of the list are to be matched against
 \fIpattern\fR and must have one of the values below:
 .SS "MATCHING STYLE OPTIONS"
@@ -64,8 +65,8 @@ These options may be given with all matching styles.
 .
 Changes the result to be the list of all matching indices (or all matching
 values if \fB\-inline\fR is specified as well.) If indices are returned, the
-indices will be in numeric order. If values are returned, the order of the
-values will be the order of those values within the input \fIlist\fR.
+indices will be in ascending numeric order. If values are returned, the order
+of the values will be the order of those values within the input \fIlist\fR.
 .TP
 \fB\-inline\fR
 .
@@ -134,7 +135,6 @@ The list elements are sorted in increasing order.  This option is only
 meaningful when used with \fB\-sorted\fR.
 .TP
 \fB\-bisect\fR
-.VS 8.6
 Inexact search when the list elements are in sorted order. For an increasing
 list the last index where the element is less than or equal to the pattern
 is returned. For a decreasing list the last index where the element is greater
@@ -142,7 +142,6 @@ than or equal to the pattern is returned. If the pattern is before the first
 element or the list is empty, -1 is returned.
 This option implies \fB\-sorted\fR and cannot be used with either \fB\-all\fR
 or \fB\-not\fR.
-.VE 8.6
 .SS "NESTED LIST OPTIONS"
 .PP
 These options are used to search lists of lists.  They may be used
@@ -229,8 +228,10 @@ The same thing for a flattened list:
       \fI\(-> {a abc b bcd}\fR
 .CE
 .SH "SEE ALSO"
-foreach(n), list(n), lappend(n), lindex(n), linsert(n), llength(n),
-lset(n), lsort(n), lrange(n), lreplace(n),
+foreach(n),
+list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
+lreverse(n), lset(n), lsort(n),
 string(n)
 .SH KEYWORDS
 binary search, linear search,

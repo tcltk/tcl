@@ -529,7 +529,7 @@ typedef struct ByteCode {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), (typePtr));			\
-	(codePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 /*
@@ -905,7 +905,7 @@ typedef enum InstStringClassType {
 } InstStringClassType;
 
 typedef struct StringClassDesc {
-    const char *name;		/* Name of the class. */
+    char name[8];		/* Name of the class. */
     int (*comparator)(int);	/* Function to test if a single unicode
 				 * character is a member of the class. */
 } StringClassDesc;
@@ -969,7 +969,7 @@ typedef struct JumpFixupArray {
 
 typedef struct ForeachVarList {
     int numVars;		/* The number of variables in the list. */
-    int varIndexes[1];		/* An array of the indexes ("slot numbers")
+    int varIndexes[TCLFLEXARRAY];/* An array of the indexes ("slot numbers")
 				 * for each variable in the procedure's array
 				 * of local variables. Only scalar variables
 				 * are supported. The actual size of this
@@ -993,7 +993,7 @@ typedef struct ForeachInfo {
 				 * the loop's iteration count. Used to
 				 * determine next value list element to assign
 				 * each loop var. */
-    ForeachVarList *varLists[1];/* An array of pointers to ForeachVarList
+    ForeachVarList *varLists[TCLFLEXARRAY];/* An array of pointers to ForeachVarList
 				 * structures describing each var list. The
 				 * actual size of this field will be large
 				 * enough to numVars indexes. THIS MUST BE THE
@@ -1024,7 +1024,7 @@ MODULE_SCOPE const AuxDataType tclJumptableInfoType;
 
 typedef struct {
     size_t length;		/* Size of array */
-    int varIndices[1];		/* Array of variable indices to manage when
+    int varIndices[TCLFLEXARRAY];		/* Array of variable indices to manage when
 				 * processing the start and end of a [dict
 				 * update]. There is really more than one
 				 * entry, and the structure is allocated to
@@ -1195,7 +1195,7 @@ MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
-			    register Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
 
@@ -1383,7 +1383,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 
 #define TclEmitPush(objIndex, envPtr) \
     do {							 \
-	register int _objIndexCopy = (objIndex);			 \
+	int _objIndexCopy = (objIndex);			 \
 	if (_objIndexCopy <= 255) {				 \
 	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr)); \
 	} else {						 \

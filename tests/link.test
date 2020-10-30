@@ -12,7 +12,7 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -410,29 +410,29 @@ test link-8.3 {Tcl_UpdateLinkedVar procedure, read-only variable} {testlink} {
     } msg] $msg $int
 } {0 {} 47}
 
-test link-9.1 {linkarray usage messages} -returnCodes error -body {
+test link-9.1 {linkarray usage messages} -returnCodes error -constraints testlinkarray -body {
     testlinkarray
 } -result {wrong # args: should be "testlinkarray option args"}
-test link-9.2 {linkarray usage messages} -returnCodes error -body {
+test link-9.2 {linkarray usage messages} -returnCodes error -constraints testlinkarray -body {
     testlinkarray x
 } -result {bad option "x": must be update, remove, or create}
-test link-9.3 {linkarray usage messages} -body {
+test link-9.3 {linkarray usage messages} -constraints testlinkarray -body {
     testlinkarray update
 } -result {}
-test link-9.4 {linkarray usage messages} -body {
+test link-9.4 {linkarray usage messages} -constraints testlinkarray -body {
     testlinkarray remove
 } -result {}
-test link-9.5 {linkarray usage messages} -returnCodes error -body {
+test link-9.5 {linkarray usage messages} -returnCodes error -constraints testlinkarray -body {
     testlinkarray create
 } -result {wrong # args: should be "testlinkarray create ?-readonly? type size name ?address?"}
-test link-9.6 {linkarray usage messages} -returnCodes error -body {
+test link-9.6 {linkarray usage messages} -returnCodes error -constraints testlinkarray -body {
     testlinkarray create xx 1 my
 } -result {bad type "xx": must be char, uchar, short, ushort, int, uint, long, ulong, wide, uwide, float, double, string, char*, or binary}
-test link-9.7 {linkarray usage messages} -returnCodes error -body {
+test link-9.7 {linkarray usage messages} -returnCodes error -constraints testlinkarray -body {
     testlinkarray create char* 0 my
 } -result {wrong array size given}
 
-test link-10.1 {linkarray char*} -setup {
+test link-10.1 {linkarray char*} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create char* 1 ::my(var)
@@ -443,7 +443,7 @@ test link-10.1 {linkarray char*} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{} {can't set "::my(var)": wrong size of char* value}}
-test link-10.2 {linkarray char*} -body {
+test link-10.2 {linkarray char*} -constraints testlinkarray -body {
     testlinkarray create char* 4 ::my(var)
     set ::my(var) x
     catch {set ::my(var) xyzz} msg
@@ -452,7 +452,7 @@ test link-10.2 {linkarray char*} -body {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {can't set "::my(var)": wrong size of char* value}
-test link-10.3 {linkarray char*} -body {
+test link-10.3 {linkarray char*} -constraints testlinkarray -body {
     testlinkarray create -r char* 4 ::my(var)
     catch {set ::my(var) x} msg
     return $msg
@@ -461,7 +461,7 @@ test link-10.3 {linkarray char*} -body {
     unset -nocomplain my
 } -result {can't set "::my(var)": linked variable is read-only}
 
-test link-11.1 {linkarray char} -setup {
+test link-11.1 {linkarray char} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create char 1 ::my(var)
@@ -474,7 +474,7 @@ test link-11.1 {linkarray char} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": variable must have char value} 120 {can't set "::my(var)": variable must have char value}}
-test link-11.2 {linkarray char} -setup {
+test link-11.2 {linkarray char} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create char 4 ::my(var)
@@ -486,7 +486,7 @@ test link-11.2 {linkarray char} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": wrong dimension} {1 2 3 4}}
-test link-11.3 {linkarray char} -body {
+test link-11.3 {linkarray char} -constraints testlinkarray -body {
     testlinkarray create -r char 2 ::my(var)
     catch {set ::my(var) {1 2}} msg
     return $msg
@@ -495,7 +495,7 @@ test link-11.3 {linkarray char} -body {
     unset -nocomplain my
 } -result {can't set "::my(var)": linked variable is read-only}
 
-test link-12.1 {linkarray unsigned char} -setup {
+test link-12.1 {linkarray unsigned char} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create uchar 1 ::my(var)
@@ -510,7 +510,7 @@ test link-12.1 {linkarray unsigned char} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": variable must have unsigned char value} 120 {can't set "::my(var)": variable must have unsigned char value} {can't set "::my(var)": variable must have unsigned char value}}
-test link-12.2 {linkarray unsigned char} -setup {
+test link-12.2 {linkarray unsigned char} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create uchar 4 ::my(var)
@@ -522,7 +522,7 @@ test link-12.2 {linkarray unsigned char} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": wrong dimension} {1 2 3 4}}
-test link-12.3 {linkarray unsigned char} -body {
+test link-12.3 {linkarray unsigned char} -constraints testlinkarray -body {
     testlinkarray create -r uchar 2 ::my(var)
     catch {set ::my(var) {1 2}} msg
     return $msg
@@ -531,7 +531,7 @@ test link-12.3 {linkarray unsigned char} -body {
     unset -nocomplain my
 } -result {can't set "::my(var)": linked variable is read-only}
 
-test link-13.1 {linkarray short} -setup {
+test link-13.1 {linkarray short} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create short 1 ::my(var)
@@ -544,7 +544,7 @@ test link-13.1 {linkarray short} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": variable must have short value} 120 {can't set "::my(var)": variable must have short value}}
-test link-13.2 {linkarray short} -setup {
+test link-13.2 {linkarray short} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create short 4 ::my(var)
@@ -556,7 +556,7 @@ test link-13.2 {linkarray short} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": wrong dimension} {1 2 3 4}}
-test link-13.3 {linkarray short} -body {
+test link-13.3 {linkarray short} -constraints testlinkarray -body {
     testlinkarray create -r short 2 ::my(var)
     catch {set ::my(var) {1 2}} msg
     return $msg
@@ -565,7 +565,7 @@ test link-13.3 {linkarray short} -body {
     unset -nocomplain my
 } -result {can't set "::my(var)": linked variable is read-only}
 
-test link-14.1 {linkarray unsigned short} -setup {
+test link-14.1 {linkarray unsigned short} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create ushort 1 ::my(var)
@@ -580,7 +580,7 @@ test link-14.1 {linkarray unsigned short} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": variable must have unsigned short value} 120 {can't set "::my(var)": variable must have unsigned short value} {can't set "::my(var)": variable must have unsigned short value}}
-test link-14.2 {linkarray unsigned short} -setup {
+test link-14.2 {linkarray unsigned short} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create ushort 4 ::my(var)
@@ -592,7 +592,7 @@ test link-14.2 {linkarray unsigned short} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": wrong dimension} {1 2 3 4}}
-test link-14.3 {linkarray unsigned short} -body {
+test link-14.3 {linkarray unsigned short} -constraints testlinkarray -body {
     testlinkarray create -r ushort 2 ::my(var)
     catch {set ::my(var) {1 2}} msg
     return $msg
@@ -601,7 +601,7 @@ test link-14.3 {linkarray unsigned short} -body {
     unset -nocomplain my
 } -result {can't set "::my(var)": linked variable is read-only}
 
-test link-15.1 {linkarray int} -setup {
+test link-15.1 {linkarray int} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create int 1 ::my(var)
@@ -614,7 +614,7 @@ test link-15.1 {linkarray int} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": variable must have integer value} 120 {can't set "::my(var)": variable must have integer value}}
-test link-15.2 {linkarray int} -setup {
+test link-15.2 {linkarray int} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create int 4 ::my(var)
@@ -626,7 +626,7 @@ test link-15.2 {linkarray int} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": wrong dimension} {1 2 3 4}}
-test link-15.3 {linkarray int} -body {
+test link-15.3 {linkarray int} -constraints testlinkarray -body {
     testlinkarray create -r int 2 ::my(var)
     catch {set ::my(var) {1 2}} msg
     return $msg
@@ -635,7 +635,7 @@ test link-15.3 {linkarray int} -body {
     unset -nocomplain my
 } -result {can't set "::my(var)": linked variable is read-only}
 
-test link-16.1 {linkarray unsigned int} -setup {
+test link-16.1 {linkarray unsigned int} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create uint 1 ::my(var)
@@ -650,7 +650,7 @@ test link-16.1 {linkarray unsigned int} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain ::my
 } -result {{can't set "::my(var)": variable must have unsigned int value} 120 {can't set "::my(var)": variable must have unsigned int value} {can't set "::my(var)": variable must have unsigned int value}}
-test link-16.2 {linkarray unsigned int} -setup {
+test link-16.2 {linkarray unsigned int} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create uint 4 ::my(var)
@@ -662,7 +662,7 @@ test link-16.2 {linkarray unsigned int} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain ::my
 } -result {{can't set "::my(var)": wrong dimension} {1 2 3 4}}
-test link-16.3 {linkarray unsigned int} -body {
+test link-16.3 {linkarray unsigned int} -constraints testlinkarray -body {
     testlinkarray create -r uint 2 ::my(var)
     catch {set ::my(var) {1 2}} msg
     return $msg
@@ -671,7 +671,7 @@ test link-16.3 {linkarray unsigned int} -body {
     unset -nocomplain my
 } -result {can't set "::my(var)": linked variable is read-only}
 
-test link-17.1 {linkarray long} -setup {
+test link-17.1 {linkarray long} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create long 1 ::my(var)
@@ -684,7 +684,7 @@ test link-17.1 {linkarray long} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": variable must have * value} 120 {can't set "::my(var)": variable must have * value}}
-test link-17.2 {linkarray long} -setup {
+test link-17.2 {linkarray long} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create long 4 ::my(var)
@@ -696,7 +696,7 @@ test link-17.2 {linkarray long} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": wrong dimension} {1 2 3 4}}
-test link-17.3 {linkarray long} -body {
+test link-17.3 {linkarray long} -constraints testlinkarray -body {
     testlinkarray create -r long 2 ::my(var)
     catch {set ::my(var) {1 2}} msg
     return $msg
@@ -705,7 +705,7 @@ test link-17.3 {linkarray long} -body {
     unset -nocomplain my
 } -result {can't set "::my(var)": linked variable is read-only}
 
-test link-18.1 {linkarray unsigned long} -setup {
+test link-18.1 {linkarray unsigned long} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create ulong 1 ::my(var)
@@ -718,7 +718,7 @@ test link-18.1 {linkarray unsigned long} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": variable must have unsigned * value} 120 {can't set "::my(var)": variable must have unsigned * value}}
-test link-18.2 {linkarray unsigned long} -body {
+test link-18.2 {linkarray unsigned long} -constraints testlinkarray -body {
     testlinkarray create ulong 1 ::my(var)
     set ::my(var) 120
     catch {set ::my(var) -1} msg
@@ -727,7 +727,7 @@ test link-18.2 {linkarray unsigned long} -body {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {can't set "::my(var)": variable must have unsigned * value}
-test link-18.3 {linkarray unsigned long} -setup {
+test link-18.3 {linkarray unsigned long} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create ulong 4 ::my(var)
@@ -739,7 +739,7 @@ test link-18.3 {linkarray unsigned long} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": wrong dimension} {1 2 3 4}}
-test link-18.4 {linkarray unsigned long} -body {
+test link-18.4 {linkarray unsigned long} -constraints testlinkarray -body {
     testlinkarray create -r ulong 2 ::my(var)
     catch {set ::my(var) {1 2}} msg
     return $msg
@@ -748,7 +748,7 @@ test link-18.4 {linkarray unsigned long} -body {
     unset -nocomplain my
 } -result {can't set "::my(var)": linked variable is read-only}
 
-test link-19.1 {linkarray wide} -setup {
+test link-19.1 {linkarray wide} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create wide 1 ::my(var)
@@ -761,7 +761,7 @@ test link-19.1 {linkarray wide} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": variable must have wide integer value} 120 {can't set "::my(var)": variable must have wide integer value}}
-test link-19.2 {linkarray wide} -setup {
+test link-19.2 {linkarray wide} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create wide 4 ::my(var)
@@ -773,7 +773,7 @@ test link-19.2 {linkarray wide} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": wrong dimension} {1 2 3 4}}
-test link-19.3 {linkarray wide} -body {
+test link-19.3 {linkarray wide} -constraints testlinkarray -body {
     testlinkarray create -r wide 2 ::my(var)
     catch {set ::my(var) {1 2}} msg
     return $msg
@@ -782,7 +782,7 @@ test link-19.3 {linkarray wide} -body {
     unset -nocomplain my
 } -result {can't set "::my(var)": linked variable is read-only}
 
-test link-20.1 {linkarray unsigned wide} -setup {
+test link-20.1 {linkarray unsigned wide} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create uwide 1 ::my(var)
@@ -796,7 +796,7 @@ test link-20.1 {linkarray unsigned wide} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": variable must have unsigned wide int value} 120 {can't set "::my(var)": variable must have unsigned wide int value} 0xbabed00dbabed00d}
-test link-20.2 {linkarray unsigned wide} -body {
+test link-20.2 {linkarray unsigned wide} -constraints testlinkarray -body {
     testlinkarray create uwide 1 ::my(var)
     set ::my(var) 120
     catch {set ::my(var) -1} msg
@@ -805,7 +805,7 @@ test link-20.2 {linkarray unsigned wide} -body {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {can't set "::my(var)": variable must have unsigned wide int value}
-test link-20.3 {linkarray unsigned wide} -setup {
+test link-20.3 {linkarray unsigned wide} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create uwide 4 ::my(var)
@@ -817,7 +817,7 @@ test link-20.3 {linkarray unsigned wide} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": wrong dimension} {1 2 3 4}}
-test link-20.4 {linkarray unsigned wide} -body {
+test link-20.4 {linkarray unsigned wide} -constraints testlinkarray -body {
     testlinkarray create -r uwide 2 ::my(var)
     catch {set ::my(var) {1 2}} msg
     return $msg
@@ -826,7 +826,7 @@ test link-20.4 {linkarray unsigned wide} -body {
     unset -nocomplain my
 } -result {can't set "::my(var)": linked variable is read-only}
 
-test link-21.1 {linkarray string} -setup {
+test link-21.1 {linkarray string} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create string 1 ::my(var)
@@ -837,7 +837,7 @@ test link-21.1 {linkarray string} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{} xyz xyz}
-test link-21.2 {linkarray string} -body {
+test link-21.2 {linkarray string} -constraints testlinkarray -body {
     testlinkarray create -r string 4 ::my(var)
     catch {set ::my(var) x} msg
     return $msg
@@ -846,7 +846,7 @@ test link-21.2 {linkarray string} -body {
     unset -nocomplain my
 } -result {can't set "::my(var)": linked variable is read-only}
 
-test link-22.1 {linkarray binary} -setup {
+test link-22.1 {linkarray binary} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create binary 1 ::my(var)
@@ -858,7 +858,7 @@ test link-22.1 {linkarray binary} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": wrong size of binary value} x}
-test link-22.2 {linkarray binary} -setup {
+test link-22.2 {linkarray binary} -constraints testlinkarray -setup {
     set mylist [list]
 } -body {
     testlinkarray create binary 4 ::my(var)
@@ -872,7 +872,7 @@ test link-22.2 {linkarray binary} -setup {
     testlinkarray remove ::my(var)
     unset -nocomplain my
 } -result {{can't set "::my(var)": wrong size of binary value} {can't set "::my(var)": wrong size of binary value} abcd}
-test link-22.3 {linkarray binary} -body {
+test link-22.3 {linkarray binary} -constraints testlinkarray -body {
     testlinkarray create -r binary 4 ::my(var)
     catch {set ::my(var) xyzv} msg
     return $msg

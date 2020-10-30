@@ -119,7 +119,7 @@ static char *errorProcString;
 
 TCL_DECLARE_MUTEX(threadMutex)
 
-static int		ThreadObjCmd(ClientData clientData,
+static int		ThreadObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static int		ThreadCreate(Tcl_Interp *interp, const char *script,
@@ -130,15 +130,15 @@ static int		ThreadSend(Tcl_Interp *interp, Tcl_ThreadId id,
 static int		ThreadCancel(Tcl_Interp *interp, Tcl_ThreadId id,
 			    const char *result, int flags);
 
-static Tcl_ThreadCreateType	NewTestThread(ClientData clientData);
+static Tcl_ThreadCreateType	NewTestThread(void *clientData);
 static void		ListRemove(ThreadSpecificData *tsdPtr);
 static void		ListUpdateInner(ThreadSpecificData *tsdPtr);
 static int		ThreadEventProc(Tcl_Event *evPtr, int mask);
 static void		ThreadErrorProc(Tcl_Interp *interp);
-static void		ThreadFreeProc(ClientData clientData);
+static void		ThreadFreeProc(void *clientData);
 static int		ThreadDeleteEvent(Tcl_Event *eventPtr,
-			    ClientData clientData);
-static void		ThreadExitProc(ClientData clientData);
+			    void *clientData);
+static void		ThreadExitProc(void *clientData);
 extern int		Tcltest_Init(Tcl_Interp *interp);
 
 /*
@@ -203,10 +203,9 @@ TclThread_Init(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ThreadObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -414,7 +413,7 @@ ThreadObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 		Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT)));
 	return TCL_OK;
     }
@@ -435,7 +434,7 @@ ThreadObjCmd(
 	    Tcl_Free(errorProcString);
 	}
 	proc = Tcl_GetString(objv[2]);
-	errorProcString = Tcl_Alloc(strlen(proc) + 1);
+	errorProcString = (char *)Tcl_Alloc(strlen(proc) + 1);
 	strcpy(errorProcString, proc);
 	Tcl_MutexUnlock(&threadMutex);
 	return TCL_OK;
@@ -491,7 +490,6 @@ ThreadObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 ThreadCreate(
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -556,9 +554,9 @@ ThreadCreate(
 
 Tcl_ThreadCreateType
 NewTestThread(
-    ClientData clientData)
+    void *clientData)
 {
-    ThreadCtrl *ctrlPtr = clientData;
+    ThreadCtrl *ctrlPtr = (ThreadCtrl *)clientData;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     int result;
     char *threadEvalScript;
@@ -595,7 +593,7 @@ NewTestThread(
      * eval'ing, for the case that we exit during evaluation
      */
 
-    threadEvalScript = Tcl_Alloc(strlen(ctrlPtr->script) + 1);
+    threadEvalScript = (char *)Tcl_Alloc(strlen(ctrlPtr->script) + 1);
     strcpy(threadEvalScript, ctrlPtr->script);
 
     Tcl_CreateThreadExitHandler(ThreadExitProc, threadEvalScript);
@@ -840,13 +838,13 @@ ThreadSend(
      * Create the event for its event queue.
      */
 
-    threadEventPtr = Tcl_Alloc(sizeof(ThreadEvent));
-    threadEventPtr->script = Tcl_Alloc(strlen(script) + 1);
+    threadEventPtr = (ThreadEvent*)Tcl_Alloc(sizeof(ThreadEvent));
+    threadEventPtr->script = (char *)Tcl_Alloc(strlen(script) + 1);
     strcpy(threadEventPtr->script, script);
     if (!wait) {
 	resultPtr = threadEventPtr->resultPtr = NULL;
     } else {
-	resultPtr = Tcl_Alloc(sizeof(ThreadEventResult));
+	resultPtr = (ThreadEventResult *)Tcl_Alloc(sizeof(ThreadEventResult));
 	threadEventPtr->resultPtr = resultPtr;
 
 	/*
@@ -1010,7 +1008,7 @@ ThreadCancel(
 static int
 ThreadEventProc(
     Tcl_Event *evPtr,		/* Really ThreadEvent */
-    int mask)
+    TCL_UNUSED(int) /*mask*/)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     ThreadEvent *threadEventPtr = (ThreadEvent *) evPtr;
@@ -1042,14 +1040,14 @@ ThreadEventProc(
     if (resultPtr) {
 	Tcl_MutexLock(&threadMutex);
 	resultPtr->code = code;
-	resultPtr->result = Tcl_Alloc(strlen(result) + 1);
+	resultPtr->result = (char *)Tcl_Alloc(strlen(result) + 1);
 	strcpy(resultPtr->result, result);
 	if (errorCode != NULL) {
-	    resultPtr->errorCode = Tcl_Alloc(strlen(errorCode) + 1);
+	    resultPtr->errorCode = (char *)Tcl_Alloc(strlen(errorCode) + 1);
 	    strcpy(resultPtr->errorCode, errorCode);
 	}
 	if (errorInfo != NULL) {
-	    resultPtr->errorInfo = Tcl_Alloc(strlen(errorInfo) + 1);
+	    resultPtr->errorInfo = (char *)Tcl_Alloc(strlen(errorInfo) + 1);
 	    strcpy(resultPtr->errorInfo, errorInfo);
 	}
 	Tcl_ConditionNotify(&resultPtr->done);
@@ -1073,15 +1071,14 @@ ThreadEventProc(
  *    None.
  *
  * Side effects:
- *	Clears up mem specified in ClientData
+ *	Clears up mem specified in clientData
  *
  *------------------------------------------------------------------------
  */
 
-     /* ARGSUSED */
 static void
 ThreadFreeProc(
-    ClientData clientData)
+    void *clientData)
 {
     if (clientData) {
 	Tcl_Free(clientData);
@@ -1105,11 +1102,10 @@ ThreadFreeProc(
  *------------------------------------------------------------------------
  */
 
-     /* ARGSUSED */
 static int
 ThreadDeleteEvent(
     Tcl_Event *eventPtr,	/* Really ThreadEvent */
-    ClientData clientData)	/* dummy */
+    TCL_UNUSED(void *))
 {
     if (eventPtr->proc == ThreadEventProc) {
 	Tcl_Free(((ThreadEvent *) eventPtr)->script);
@@ -1141,12 +1137,11 @@ ThreadDeleteEvent(
  *------------------------------------------------------------------------
  */
 
-     /* ARGSUSED */
 static void
 ThreadExitProc(
-    ClientData clientData)
+    void *clientData)
 {
-    char *threadEvalScript = clientData;
+    char *threadEvalScript = (char *)clientData;
     ThreadEventResult *resultPtr, *nextPtr;
     Tcl_ThreadId self = Tcl_GetCurrentThread();
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -1199,7 +1194,7 @@ ThreadExitProc(
 
 	    const char *msg = "target thread died";
 
-	    resultPtr->result = Tcl_Alloc(strlen(msg) + 1);
+	    resultPtr->result = (char *)Tcl_Alloc(strlen(msg) + 1);
 	    strcpy(resultPtr->result, msg);
 	    resultPtr->code = TCL_ERROR;
 	    Tcl_ConditionNotify(&resultPtr->done);

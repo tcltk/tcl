@@ -15,7 +15,7 @@
 #include "tclInt.h"
 #include "tclParse.h"
 #include "tclStringTrim.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 #include <math.h>
 
 /*
@@ -101,7 +101,7 @@ static ProcessGlobalValue executableName = {
 static void		ClearHash(Tcl_HashTable *tablePtr);
 static void		FreeProcessGlobalValue(ClientData clientData);
 static void		FreeThreadHash(ClientData clientData);
-static int		GetEndOffsetFromObj(Tcl_Obj *objPtr,
+static int		GetEndOffsetFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    size_t endValue, Tcl_WideInt *indexPtr);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		GetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -392,7 +392,7 @@ TclMaxListLength(
 {
     size_t count = 0;
 
-    if ((numBytes == 0) || ((numBytes == TCL_AUTO_LENGTH) && (*bytes == '\0'))) {
+    if ((numBytes == 0) || ((numBytes == TCL_INDEX_NONE) && (*bytes == '\0'))) {
 	/* Empty string case - quick exit */
 	goto done;
     }
@@ -401,17 +401,17 @@ TclMaxListLength(
      * No list element before leading white space.
      */
 
-    count += 1 - TclIsSpaceProc(*bytes);
+    count += 1 - TclIsSpaceProcM(*bytes);
 
     /*
      * Count white space runs as potential element separators.
      */
 
     while (numBytes) {
-	if ((numBytes == TCL_AUTO_LENGTH) && (*bytes == '\0')) {
+	if ((numBytes == TCL_INDEX_NONE) && (*bytes == '\0')) {
 	    break;
 	}
-	if (TclIsSpaceProc(*bytes)) {
+	if (TclIsSpaceProcM(*bytes)) {
 	    /*
 	     * Space run started; bump count.
 	     */
@@ -419,9 +419,9 @@ TclMaxListLength(
 	    count++;
 	    do {
 		bytes++;
-		numBytes -= (numBytes != TCL_AUTO_LENGTH);
-	    } while (numBytes && TclIsSpaceProc(*bytes));
-	    if ((numBytes == 0) || ((numBytes == TCL_AUTO_LENGTH) && (*bytes == '\0'))) {
+		numBytes -= (numBytes != TCL_INDEX_NONE);
+	    } while (numBytes && TclIsSpaceProcM(*bytes));
+	    if ((numBytes == 0) || ((numBytes == TCL_INDEX_NONE) && (*bytes == '\0'))) {
 		break;
 	    }
 
@@ -430,14 +430,14 @@ TclMaxListLength(
 	     */
 	}
 	bytes++;
-	numBytes -= (numBytes != TCL_AUTO_LENGTH);
+	numBytes -= (numBytes != TCL_INDEX_NONE);
     }
 
     /*
      * No list element following trailing white space.
      */
 
-    count -= TclIsSpaceProc(bytes[-1]);
+    count -= TclIsSpaceProcM(bytes[-1]);
 
   done:
     if (endPtr) {
@@ -574,7 +574,7 @@ FindElement(
     const char *limit;		/* Points just after list/dict's last byte. */
     int openBraces = 0;		/* Brace nesting level during parse. */
     int inQuotes = 0;
-    int size = 0;		/* lint. */
+    int size = 0;
     size_t numChars;
     int literal = 1;
     const char *p2;
@@ -586,7 +586,7 @@ FindElement(
      */
 
     limit = (string + stringLength);
-    while ((p < limit) && (TclIsSpaceProc(*p))) {
+    while ((p < limit) && (TclIsSpaceProcM(*p))) {
 	p++;
     }
     if (p == limit) {		/* no element found */
@@ -631,7 +631,7 @@ FindElement(
 	    } else if (openBraces == 1) {
 		size = (p - elemStart);
 		p++;
-		if ((p >= limit) || TclIsSpaceProc(*p)) {
+		if ((p >= limit) || TclIsSpaceProcM(*p)) {
 		    goto done;
 		}
 
@@ -641,7 +641,7 @@ FindElement(
 
 		if (interp != NULL) {
 		    p2 = p;
-		    while ((p2 < limit) && (!TclIsSpaceProc(*p2))
+		    while ((p2 < limit) && (!TclIsSpaceProcM(*p2))
 			    && (p2 < p+20)) {
 			p2++;
 		    }
@@ -676,23 +676,6 @@ FindElement(
 	    break;
 
 	    /*
-	     * Space: ignore if element is in braces or quotes; otherwise
-	     * terminate element.
-	     */
-
-	case ' ':
-	case '\f':
-	case '\n':
-	case '\r':
-	case '\t':
-	case '\v':
-	    if ((openBraces == 0) && !inQuotes) {
-		size = (p - elemStart);
-		goto done;
-	    }
-	    break;
-
-	    /*
 	     * Double-quote: if element is in quotes then terminate it.
 	     */
 
@@ -700,7 +683,7 @@ FindElement(
 	    if (inQuotes) {
 		size = (p - elemStart);
 		p++;
-		if ((p >= limit) || TclIsSpaceProc(*p)) {
+		if ((p >= limit) || TclIsSpaceProcM(*p)) {
 		    goto done;
 		}
 
@@ -710,7 +693,7 @@ FindElement(
 
 		if (interp != NULL) {
 		    p2 = p;
-		    while ((p2 < limit) && (!TclIsSpaceProc(*p2))
+		    while ((p2 < limit) && (!TclIsSpaceProcM(*p2))
 			    && (p2 < p+20)) {
 			p2++;
 		    }
@@ -723,6 +706,20 @@ FindElement(
 		return TCL_ERROR;
 	    }
 	    break;
+
+	default:
+	    if (TclIsSpaceProcM(*p)) {
+		/*
+		 * Space: ignore if element is in braces or quotes;
+		 * otherwise terminate element.
+		 */
+		if ((openBraces == 0) && !inQuotes) {
+		    size = (p - elemStart);
+		    goto done;
+		}
+	    }
+	    break;
+
 	}
 	p++;
     }
@@ -753,7 +750,7 @@ FindElement(
     }
 
   done:
-    while ((p < limit) && (TclIsSpaceProc(*p))) {
+    while ((p < limit) && (TclIsSpaceProcM(*p))) {
 	p++;
     }
     *elementPtr = elemStart;
@@ -870,7 +867,7 @@ Tcl_SplitList(
 
     size = TclMaxListLength(list, -1, &end) + 1;
     length = end - list;
-    argv = Tcl_Alloc((size * sizeof(char *)) + length + 1);
+    argv = (const char **)Tcl_Alloc((size * sizeof(char *)) + length + 1);
 
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
@@ -1035,7 +1032,7 @@ TclScanElement(
     int braceCount = 0;		/* Count of all braces '{' '}' seen. */
 #endif /* COMPAT */
 
-    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == TCL_AUTO_LENGTH))) {
+    if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == TCL_INDEX_NONE))) {
 	/*
 	 * Empty string element must be brace quoted.
 	 */
@@ -1110,12 +1107,6 @@ TclScanElement(
 	case '[':	/* TYPE_SUBS */
 	case '$':	/* TYPE_SUBS */
 	case ';':	/* TYPE_COMMAND_END */
-	case ' ':	/* TYPE_SPACE */
-	case '\f':	/* TYPE_SPACE */
-	case '\n':	/* TYPE_COMMAND_END */
-	case '\r':	/* TYPE_SPACE */
-	case '\t':	/* TYPE_SPACE */
-	case '\v':	/* TYPE_SPACE */
 	    forbidNone = 1;
 	    extra++;		/* Escape sequences all one byte longer. */
 #if COMPAT
@@ -1124,7 +1115,7 @@ TclScanElement(
 	    break;
 	case '\\':	/* TYPE_SUBS */
 	    extra++;				/* Escape '\' => '\\' */
-	    if ((length == 1) || ((length == TCL_AUTO_LENGTH) && (p[1] == '\0'))) {
+	    if ((length == 1) || ((length == TCL_INDEX_NONE) && (p[1] == '\0'))) {
 		/*
 		 * Final backslash. Cannot format with brace quoting.
 		 */
@@ -1155,10 +1146,19 @@ TclScanElement(
 #endif /* COMPAT */
 	    break;
 	case '\0':	/* TYPE_SUBS */
-	    if (length == TCL_AUTO_LENGTH) {
+	    if (length == TCL_INDEX_NONE) {
 		goto endOfString;
 	    }
 	    /* TODO: Panic on improper encoding? */
+	    break;
+	default:
+	    if (TclIsSpaceProcM(*p)) {
+		forbidNone = 1;
+		extra++;	/* Escape sequences all one byte longer. */
+#if COMPAT
+		preferBrace = 1;
+#endif
+	    }
 	    break;
 	}
       }
@@ -1342,7 +1342,7 @@ Tcl_ConvertElement(
 
 size_t
 Tcl_ConvertCountedElement(
-    register const char *src,	/* Source information for list element. */
+    const char *src,	/* Source information for list element. */
     size_t length,		/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -1375,7 +1375,7 @@ Tcl_ConvertCountedElement(
 
 size_t
 TclConvertElement(
-    register const char *src,	/* Source information for list element. */
+    const char *src,	/* Source information for list element. */
     size_t length,		/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
@@ -1395,7 +1395,7 @@ TclConvertElement(
      * No matter what the caller demands, empty string must be braced!
      */
 
-    if ((src == NULL) || (length == 0) || (*src == '\0' && length == TCL_AUTO_LENGTH)) {
+    if ((src == NULL) || (length == 0) || (*src == '\0' && length == TCL_INDEX_NONE)) {
 	p[0] = '{';
 	p[1] = '}';
 	return 2;
@@ -1422,7 +1422,7 @@ TclConvertElement(
      */
 
     if (conversion == CONVERT_NONE) {
-	if (length == TCL_AUTO_LENGTH) {
+	if (length == TCL_INDEX_NONE) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1441,7 +1441,7 @@ TclConvertElement(
     if (conversion == CONVERT_BRACE) {
 	*p = '{';
 	p++;
-	if (length == TCL_AUTO_LENGTH) {
+	if (length == TCL_INDEX_NONE) {
 	    /* TODO: INT_MAX overflow? */
 	    while (*src) {
 		*p++ = *src++;
@@ -1514,7 +1514,7 @@ TclConvertElement(
 	    p++;
 	    continue;
 	case '\0':
-	    if (length == TCL_AUTO_LENGTH) {
+	    if (length == TCL_INDEX_NONE) {
 		return (size_t)(p - dst);
 	    }
 
@@ -1571,7 +1571,7 @@ Tcl_Merge(
      */
 
     if (argc == 0) {
-	result = Tcl_Alloc(1);
+	result = (char *)Tcl_Alloc(1);
 	result[0] = '\0';
 	return result;
     }
@@ -1583,7 +1583,7 @@ Tcl_Merge(
     if (argc <= LOCAL_SIZE) {
 	flagPtr = localFlags;
     } else {
-	flagPtr = Tcl_Alloc(argc);
+	flagPtr = (char *)Tcl_Alloc(argc);
     }
     for (i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -1595,7 +1595,7 @@ Tcl_Merge(
      * Pass two: copy into the result area.
      */
 
-    result = Tcl_Alloc(bytesNeeded);
+    result = (char *)Tcl_Alloc(bytesNeeded);
     dst = result;
     for (i = 0; i < argc; i++) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -1614,42 +1614,6 @@ Tcl_Merge(
 /*
  *----------------------------------------------------------------------
  *
- * UtfWellFormedEnd --
- *	Checks the end of utf string is malformed, if yes - wraps bytes
- *	to the given buffer (as well-formed NTS string).  The buffer
- *	argument should be initialized by the caller and ready to use.
- *
- * Results:
- *	The bytes with well-formed end of the string.
- *
- * Side effects:
- *	Buffer (DString) may be allocated, so must be released.
- *
- *----------------------------------------------------------------------
- */
-
-static inline const char*
-UtfWellFormedEnd(
-    Tcl_DString *buffer,	/* Buffer used to hold well-formed string. */
-    const char *bytes,		/* Pointer to the beginning of the string. */
-    int length)			/* Length of the string. */
-{
-    const char *l = bytes + length;
-    const char *p = Tcl_UtfPrev(l, bytes);
-
-    if (Tcl_UtfCharComplete(p, l - p)) {
-	return bytes;
-    }
-    /*
-     * Malformed utf-8 end, be sure we've NTS to safe compare of end-character,
-     * avoid segfault by access violation out of range.
-     */
-    Tcl_DStringAppend(buffer, bytes, length);
-    return Tcl_DStringValue(buffer);
-}
-/*
- *----------------------------------------------------------------------
- *
  * TclTrimRight --
  *	Takes two counted strings in the Tcl encoding.  Conceptually
  *	finds the sub string (offset) to trim from the right side of the
@@ -1664,16 +1628,24 @@ UtfWellFormedEnd(
  *----------------------------------------------------------------------
  */
 
-static inline size_t
-TrimRight(
-    const char *bytes,		/* String to be trimmed... */
-    size_t numBytes,		/* ...and its length in bytes */
-    const char *trim,		/* String of trim characters... */
-    size_t numTrim)		/* ...and its length in bytes */
+size_t
+TclTrimRight(
+    const char *bytes,	/* String to be trimmed... */
+    size_t numBytes,	/* ...and its length in bytes */
+			/* Calls to TclUtfToUniChar() in this routine
+			 * rely on (bytes[numBytes] == '\0'). */
+    const char *trim,	/* String of trim characters... */
+    size_t numTrim)	/* ...and its length in bytes */
+			/* Calls to TclUtfToUniChar() in this routine
+			 * rely on (trim[numTrim] == '\0'). */
 {
-    const char *p = bytes + numBytes;
-    size_t pInc;
-    Tcl_UniChar ch1 = 0, ch2 = 0;
+    const char *pp, *p = bytes + numBytes;
+    int ch1, ch2;
+
+    /* Empty strings -> nothing to do */
+    if ((numBytes == 0) || (numTrim == 0)) {
+	return 0;
+    }
 
     /*
      * Outer loop: iterate over string to be trimmed.
@@ -1681,17 +1653,20 @@ TrimRight(
 
     do {
 	const char *q = trim;
-	size_t bytesLeft = numTrim;
+    size_t pInc = 0, bytesLeft = numTrim;
 
-	p = Tcl_UtfPrev(p, bytes);
- 	pInc = TclUtfToUniChar(p, &ch1);
+	pp = TclUtfPrev(p, bytes);
+	do {
+	    pp += pInc;
+ 	    pInc = TclUtfToUCS4(pp, &ch1);
+	} while (pp + pInc < p);
 
 	/*
 	 * Inner loop: scan trim string for match to current character.
 	 */
 
 	do {
-	    size_t qInc = TclUtfToUniChar(q, &ch2);
+	    size_t qInc = TclUtfToUCS4(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
@@ -1706,43 +1681,12 @@ TrimRight(
 	     * No match; trim task done; *p is last non-trimmed char.
 	     */
 
-	    p += pInc;
 	    break;
 	}
+	p = pp;
     } while (p > bytes);
 
     return numBytes - (p - bytes);
-}
-
-size_t
-TclTrimRight(
-    const char *bytes,	/* String to be trimmed... */
-    size_t numBytes,	/* ...and its length in bytes */
-    const char *trim,	/* String of trim characters... */
-    size_t numTrim)	/* ...and its length in bytes */
-{
-    size_t res;
-    Tcl_DString bytesBuf, trimBuf;
-
-    /* Empty strings -> nothing to do */
-    if ((numBytes == 0) || (numTrim == 0)) {
-	return 0;
-    }
-
-    Tcl_DStringInit(&bytesBuf);
-    Tcl_DStringInit(&trimBuf);
-    bytes = UtfWellFormedEnd(&bytesBuf, bytes, numBytes);
-    trim = UtfWellFormedEnd(&trimBuf, trim, numTrim);
-
-    res = TrimRight(bytes, numBytes, trim, numTrim);
-    if (res > numBytes) {
-	res = numBytes;
-    }
-
-    Tcl_DStringFree(&bytesBuf);
-    Tcl_DStringFree(&trimBuf);
-
-    return res;
 }
 
 /*
@@ -1763,22 +1707,31 @@ TclTrimRight(
  *----------------------------------------------------------------------
  */
 
-static inline size_t
-TrimLeft(
-    const char *bytes,		/* String to be trimmed... */
-    size_t numBytes,		/* ...and its length in bytes */
-    const char *trim,		/* String of trim characters... */
-    size_t numTrim)		/* ...and its length in bytes */
+size_t
+TclTrimLeft(
+    const char *bytes,	/* String to be trimmed... */
+    size_t numBytes,	/* ...and its length in bytes */
+			/* Calls to TclUtfToUniChar() in this routine
+			 * rely on (bytes[numBytes] == '\0'). */
+    const char *trim,	/* String of trim characters... */
+    size_t numTrim)	/* ...and its length in bytes */
+			/* Calls to TclUtfToUniChar() in this routine
+			 * rely on (trim[numTrim] == '\0'). */
 {
     const char *p = bytes;
-	Tcl_UniChar ch1 = 0, ch2 = 0;
+	int ch1, ch2;
+
+    /* Empty strings -> nothing to do */
+    if ((numBytes == 0) || (numTrim == 0)) {
+	return 0;
+    }
 
     /*
      * Outer loop: iterate over string to be trimmed.
      */
 
     do {
-	size_t pInc = TclUtfToUniChar(p, &ch1);
+	size_t pInc = TclUtfToUCS4(p, &ch1);
 	const char *q = trim;
 	size_t bytesLeft = numTrim;
 
@@ -1787,7 +1740,7 @@ TrimLeft(
 	 */
 
 	do {
-	    size_t qInc = TclUtfToUniChar(q, &ch2);
+	    size_t qInc = TclUtfToUCS4(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
@@ -1811,37 +1764,6 @@ TrimLeft(
 
     return p - bytes;
 }
-
-size_t
-TclTrimLeft(
-    const char *bytes,	/* String to be trimmed... */
-    size_t numBytes,	/* ...and its length in bytes */
-    const char *trim,	/* String of trim characters... */
-    size_t numTrim)	/* ...and its length in bytes */
-{
-    size_t res;
-    Tcl_DString bytesBuf, trimBuf;
-
-    /* Empty strings -> nothing to do */
-    if ((numBytes == 0) || (numTrim == 0)) {
-	return 0;
-    }
-
-    Tcl_DStringInit(&bytesBuf);
-    Tcl_DStringInit(&trimBuf);
-    bytes = UtfWellFormedEnd(&bytesBuf, bytes, numBytes);
-    trim = UtfWellFormedEnd(&trimBuf, trim, numTrim);
-
-    res = TrimLeft(bytes, numBytes, trim, numTrim);
-    if (res > numBytes) {
-	res = numBytes;
-    }
-
-    Tcl_DStringFree(&bytesBuf);
-    Tcl_DStringFree(&trimBuf);
-
-    return res;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -1863,41 +1785,39 @@ size_t
 TclTrim(
     const char *bytes,	/* String to be trimmed... */
     size_t numBytes,	/* ...and its length in bytes */
+			/* Calls in this routine
+			 * rely on (bytes[numBytes] == '\0'). */
     const char *trim,	/* String of trim characters... */
     size_t numTrim,	/* ...and its length in bytes */
-    size_t *trimRight)		/* Offset from the end of the string. */
+			/* Calls in this routine
+			 * rely on (trim[numTrim] == '\0'). */
+    size_t *trimRightPtr)	/* Offset from the end of the string. */
 {
-    size_t trimLeft;
-    Tcl_DString bytesBuf, trimBuf;
+    size_t trimLeft = 0, trimRight = 0;
 
-    *trimRight = 0;
     /* Empty strings -> nothing to do */
-    if ((numBytes == 0) || (numTrim == 0)) {
-	return 0;
-    }
+    if ((numBytes > 0) && (numTrim > 0)) {
 
-    Tcl_DStringInit(&bytesBuf);
-    Tcl_DStringInit(&trimBuf);
-    bytes = UtfWellFormedEnd(&bytesBuf, bytes, numBytes);
-    trim = UtfWellFormedEnd(&trimBuf, trim, numTrim);
+	/* When bytes is NUL-terminated, returns 0 <= trimLeft <= numBytes */
+	trimLeft = TclTrimLeft(bytes, numBytes, trim, numTrim);
+	numBytes -= trimLeft;
 
-    trimLeft = TrimLeft(bytes, numBytes, trim, numTrim);
-    if (trimLeft > numBytes) {
-	trimLeft = numBytes;
-    }
-    numBytes -= trimLeft;
-    /* have to trim yet (first char was already verified within TrimLeft) */
-    if (numBytes > 1) {
-	bytes += trimLeft;
-	*trimRight = TrimRight(bytes, numBytes, trim, numTrim);
-	if (*trimRight > numBytes) {
-	    *trimRight = numBytes;
+	/* If we did not trim the whole string, it starts with a character
+	 * that we will not trim. Skip over it. */
+	if (numBytes > 0) {
+	    int ch;
+	    const char *first = bytes + trimLeft;
+	    bytes += TclUtfToUCS4(first, &ch);
+	    numBytes -= (bytes - first);
+
+	    if (numBytes > 0) {
+		/* When bytes is NUL-terminated, returns
+		 * 0 <= trimRight <= numBytes */
+		trimRight = TclTrimRight(bytes, numBytes, trim, numTrim);
+	    }
 	}
     }
-
-    Tcl_DStringFree(&bytesBuf);
-    Tcl_DStringFree(&trimBuf);
-
+    *trimRightPtr = trimRight;
     return trimLeft;
 }
 
@@ -1954,7 +1874,7 @@ Tcl_Concat(
      * All element bytes + (argc - 1) spaces + 1 terminating NULL.
      */
 
-    result = Tcl_Alloc(bytesNeeded + argc);
+    result = (char *)Tcl_Alloc(bytesNeeded + argc);
 
     for (p = result, i = 0;  i < argc;  i++) {
 	size_t triml, trimr, elemLength;
@@ -2059,7 +1979,7 @@ Tcl_ConcatObj(
 	    }
 	}
 	if (!resPtr) {
-	    resPtr = Tcl_NewObj();
+	    TclNewObj(resPtr);
 	}
 	return resPtr;
     }
@@ -2149,8 +2069,7 @@ Tcl_StringCaseMatch(
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
     int p, charLen;
-    const char *pstart = pattern;
-    Tcl_UniChar ch1 = 0, ch2 = 0;
+    int ch1 = 0, ch2 = 0;
 
     while (1) {
 	p = *pattern;
@@ -2191,10 +2110,10 @@ Tcl_StringCaseMatch(
 	     */
 
 	    if (UCHAR(*pattern) < 0x80) {
-		ch2 = (Tcl_UniChar)
+		ch2 = (int)
 			(nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
 	    } else {
-		Tcl_UtfToUniChar(pattern, &ch2);
+		TclUtfToUCS4(pattern, &ch2);
 		if (nocase) {
 		    ch2 = Tcl_UniCharToLower(ch2);
 		}
@@ -2210,8 +2129,8 @@ Tcl_StringCaseMatch(
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
 			while (*str) {
-			    charLen = TclUtfToUniChar(str, &ch1);
-			    if (ch2==ch1 || ch2==(Tcl_UniChar)Tcl_UniCharToLower(ch1)) {
+			    charLen = TclUtfToUCS4(str, &ch1);
+			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
 				break;
 			    }
 			    str += charLen;
@@ -2224,7 +2143,7 @@ Tcl_StringCaseMatch(
 			 */
 
 			while (*str) {
-			    charLen = TclUtfToUniChar(str, &ch1);
+			    charLen = TclUtfToUCS4(str, &ch1);
 			    if (ch2 == ch1) {
 				break;
 			    }
@@ -2238,7 +2157,7 @@ Tcl_StringCaseMatch(
 		if (*str == '\0') {
 		    return 0;
 		}
-		str += TclUtfToUniChar(str, &ch1);
+		str += TclUtfToUCS4(str, &ch1);
 	    }
 	}
 
@@ -2249,7 +2168,7 @@ Tcl_StringCaseMatch(
 
 	if (p == '?') {
 	    pattern++;
-	    str += TclUtfToUniChar(str, &ch1);
+	    str += TclUtfToUCS4(str, &ch1);
 	    continue;
 	}
 
@@ -2260,15 +2179,15 @@ Tcl_StringCaseMatch(
 	 */
 
 	if (p == '[') {
-	    Tcl_UniChar startChar = 0, endChar = 0;
+	    int startChar = 0, endChar = 0;
 
 	    pattern++;
 	    if (UCHAR(*str) < 0x80) {
-		ch1 = (Tcl_UniChar)
+		ch1 = (int)
 			(nocase ? tolower(UCHAR(*str)) : UCHAR(*str));
 		str++;
 	    } else {
-		str += Tcl_UtfToUniChar(str, &ch1);
+		str += TclUtfToUCS4(str, &ch1);
 		if (nocase) {
 		    ch1 = Tcl_UniCharToLower(ch1);
 		}
@@ -2278,11 +2197,11 @@ Tcl_StringCaseMatch(
 		    return 0;
 		}
 		if (UCHAR(*pattern) < 0x80) {
-		    startChar = (Tcl_UniChar) (nocase
+		    startChar = (int) (nocase
 			    ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
 		    pattern++;
 		} else {
-		    pattern += Tcl_UtfToUniChar(pattern, &startChar);
+		    pattern += TclUtfToUCS4(pattern, &startChar);
 		    if (nocase) {
 			startChar = Tcl_UniCharToLower(startChar);
 		    }
@@ -2293,11 +2212,11 @@ Tcl_StringCaseMatch(
 			return 0;
 		    }
 		    if (UCHAR(*pattern) < 0x80) {
-			endChar = (Tcl_UniChar) (nocase
+			endChar = (int) (nocase
 				? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
 			pattern++;
 		    } else {
-			pattern += Tcl_UtfToUniChar(pattern, &endChar);
+			pattern += TclUtfToUCS4(pattern, &endChar);
 			if (nocase) {
 			    endChar = Tcl_UniCharToLower(endChar);
 			}
@@ -2314,10 +2233,13 @@ Tcl_StringCaseMatch(
 		    break;
 		}
 	    }
+	    /* If we reach here, we matched. Need to move past closing ] */
 	    while (*pattern != ']') {
 		if (*pattern == '\0') {
-		    pattern = Tcl_UtfPrev(pattern, pstart);
-		    break;
+		    /* We ran out of pattern after matching something in
+		     * (unclosed!) brackets. So long as we ran out of string
+		     * at the same time, we have a match. Otherwise, not. */
+		    return (*str == '\0');
 		}
 		pattern++;
 	    }
@@ -2342,8 +2264,8 @@ Tcl_StringCaseMatch(
 	 * each string match.
 	 */
 
-	str += TclUtfToUniChar(str, &ch1);
-	pattern += TclUtfToUniChar(pattern, &ch2);
+	str += TclUtfToUCS4(str, &ch1);
+	pattern += TclUtfToUCS4(pattern, &ch2);
 	if (nocase) {
 	    if (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2)) {
 		return 0;
@@ -2382,7 +2304,7 @@ TclByteArrayMatch(
 				/* Pattern, which may contain special
 				 * characters. */
     size_t ptnLen,			/* Length of Pattern */
-    int flags)
+    TCL_UNUSED(int) /*flags*/)
 {
     const unsigned char *stringEnd, *patternEnd;
     unsigned char p;
@@ -2638,14 +2560,14 @@ char *
 Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
     const char *bytes,		/* String to append. If length is
-				 * TCL_AUTO_LENGTH then this must be null-terminated. */
+				 * TCL_INDEX_NONE then this must be null-terminated. */
     size_t length)			/* Number of bytes from "bytes" to append. If
-				 * TCL_AUTO_LENGTH, then append all of bytes, up to null
+				 * TCL_INDEX_NONE, then append all of bytes, up to null
 				 * at end. */
 {
     size_t newSize;
 
-    if (length == TCL_AUTO_LENGTH) {
+    if (length == TCL_INDEX_NONE) {
 	length = strlen(bytes);
     }
     newSize = length + dsPtr->length;
@@ -2659,7 +2581,7 @@ Tcl_DStringAppend(
     if (newSize >= dsPtr->spaceAvl) {
 	dsPtr->spaceAvl = newSize * 2;
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = Tcl_Alloc(dsPtr->spaceAvl);
+	    char *newString = (char *)Tcl_Alloc(dsPtr->spaceAvl);
 
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
@@ -2672,7 +2594,7 @@ Tcl_DStringAppend(
 		index = bytes - dsPtr->string;
 	    }
 
-	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
+	    dsPtr->string = (char *)Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 
 	    if (index != TCL_INDEX_NONE) {
 		bytes = dsPtr->string + index;
@@ -2747,9 +2669,38 @@ Tcl_DStringAppendElement(
 {
     char *dst = dsPtr->string + dsPtr->length;
     int needSpace = TclNeedSpace(dsPtr->string, dst);
-    char flags = needSpace ? TCL_DONT_QUOTE_HASH : 0;
-    size_t newSize = dsPtr->length + needSpace
-	    + TclScanElement(element, -1, &flags);
+    char flags = 0;
+    int quoteHash = 1;
+    size_t newSize;
+
+    if (needSpace) {
+	/*
+	 * If we need a space to separate the new element from something
+	 * already ending the string, we're not appending the first element
+	 * of any list, so we need not quote any leading hash character.
+	 */
+	quoteHash = 0;
+    } else {
+	/*
+	 * We don't need a space, maybe because there's some already there.
+	 * Checking whether we might be appending a first element is a bit
+	 * more involved.
+	 *
+	 * Backtrack over all whitespace.
+	 */
+	while ((--dst >= dsPtr->string) && TclIsSpaceProcM(*dst)) {
+	}
+
+	/* Call again without whitespace to confound things. */
+	quoteHash = !TclNeedSpace(dsPtr->string, dst+1);
+    }
+    if (!quoteHash) {
+	flags |= TCL_DONT_QUOTE_HASH;
+    }
+    newSize = dsPtr->length + needSpace + TclScanElement(element, -1, &flags);
+    if (!quoteHash) {
+	flags |= TCL_DONT_QUOTE_HASH;
+    }
 
     /*
      * Allocate a larger buffer for the string if the current one isn't large
@@ -2762,7 +2713,7 @@ Tcl_DStringAppendElement(
     if (newSize >= dsPtr->spaceAvl) {
 	dsPtr->spaceAvl = newSize * 2;
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = Tcl_Alloc(dsPtr->spaceAvl);
+	    char *newString = (char *)Tcl_Alloc(dsPtr->spaceAvl);
 
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
@@ -2775,14 +2726,14 @@ Tcl_DStringAppendElement(
 		offset = element - dsPtr->string;
 	    }
 
-	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
+	    dsPtr->string = (char *)Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 
 	    if (offset >= 0) {
 		element = dsPtr->string + offset;
 	    }
 	}
-	dst = dsPtr->string + dsPtr->length;
     }
+    dst = dsPtr->string + dsPtr->length;
 
     /*
      * Convert the new string to a list element and copy it into the buffer at
@@ -2793,15 +2744,8 @@ Tcl_DStringAppendElement(
 	*dst = ' ';
 	dst++;
 	dsPtr->length++;
-
-	/*
-	 * If we need a space to separate this element from preceding stuff,
-	 * then this element will not lead a list, and need not have it's
-	 * leading '#' quoted.
-	 */
-
-	flags |= TCL_DONT_QUOTE_HASH;
     }
+
     dsPtr->length += TclConvertElement(element, -1, dst, flags);
     dsPtr->string[dsPtr->length] = '\0';
     return dsPtr->string;
@@ -2852,12 +2796,12 @@ Tcl_DStringSetLength(
 	    dsPtr->spaceAvl = length + 1;
 	}
 	if (dsPtr->string == dsPtr->staticSpace) {
-	    char *newString = Tcl_Alloc(dsPtr->spaceAvl);
+	    char *newString = (char *)Tcl_Alloc(dsPtr->spaceAvl);
 
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    dsPtr->string = Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
+	    dsPtr->string = (char *)Tcl_Realloc(dsPtr->string, dsPtr->spaceAvl);
 	}
     }
     dsPtr->length = length;
@@ -3092,7 +3036,7 @@ Tcl_DStringEndSublist(
 
 void
 Tcl_PrintDouble(
-    Tcl_Interp *interp,		/* Not used */
+    TCL_UNUSED(Tcl_Interp *),
     double value,		/* Value to print as string. */
     char *dst)			/* Where to store converted value; must have
 				 * at least TCL_DOUBLE_SPACE characters. */
@@ -3215,63 +3159,69 @@ TclNeedSpace(
     /*
      * A space is needed unless either:
      * (a) we're at the start of the string, or
-     */
+     *
+     * (NOTE: This check is now absorbed into the loop below.)
+     *
 
     if (end == start) {
 	return 0;
     }
+
+     *
+     */
 
     /*
      * (b) we're at the start of a nested list-element, quoted with an open
      *	   curly brace; we can be nested arbitrarily deep, so long as the
      *	   first curly brace starts an element, so backtrack over open curly
      *	   braces that are trailing characters of the string; and
-     */
+     *
+     *  (NOTE: Every character our parser is looking for is a proper
+     *  single-byte encoding of an ASCII value. It does not accept
+     *  overlong encodings.  Given that, there's no benefit using
+     *  Tcl_UtfPrev. If it would find what we seek, so would byte-by-byte
+     *  backward scan. Save routine call overhead and risk of wrong
+     *  results should the behavior of Tcl_UtfPrev change in unexpected ways.
+     *	Reconsider this if we ever start treating non-ASCII Unicode
+     *	characters as meaningful list syntax, expanded Unicode spaces as
+     *	element separators, for example.)
+     *
 
     end = Tcl_UtfPrev(end, start);
     while (*end == '{') {
-	if (end == start) {
-	    return 0;
-	}
-	end = Tcl_UtfPrev(end, start);
+        if (end == start) {
+            return 0;
+        }
+        end = Tcl_UtfPrev(end, start);
+    }
+
+     *
+     */
+
+    while ((--end >= start) && (*end == '{')) {
+    }
+    if (end < start) {
+        return 0;
     }
 
     /*
      * (c) the trailing character of the string is already a list-element
-     *	   separator (according to TclFindElement); that is, one of these
-     *	   characters:
-     *		\u0009	\t	TAB
-     *		\u000A	\n	NEWLINE
-     *		\u000B	\v	VERTICAL TAB
-     *		\u000C	\f	FORM FEED
-     *		\u000D	\r	CARRIAGE RETURN
-     *		\u0020		SPACE
-     *	   with the condition that the penultimate character is not a
-     *	   backslash.
+     *	   separator, Use the same testing routine as TclFindElement to
+     *	   enforce consistency.
      */
 
-    if (*end > 0x20) {
+    if (TclIsSpaceProcM(*end)) {
+	int result = 0;
+
 	/*
-	 * Performance tweak. All ASCII spaces are <= 0x20. So get a quick
-	 * answer for most characters before comparing against all spaces in
-	 * the switch below.
-	 *
-	 * NOTE: Remove this if other Unicode spaces ever get accepted as
-	 * list-element separators.
+	 * Trailing whitespace might be part of a backslash escape
+	 * sequence. Handle that possibility.
 	 */
 
-	return 1;
-    }
-    switch (*end) {
-    case ' ':
-    case '\t':
-    case '\n':
-    case '\r':
-    case '\v':
-    case '\f':
-	if ((end == start) || (end[-1] != '\\')) {
-	    return 0;
+	while ((--end >= start) && (*end == '\\')) {
+	    result = !result;
 	}
+	return result;
     }
     return 1;
 }
@@ -3307,48 +3257,24 @@ TclFormatInt(
 				 * formatted characters are written. */
     Tcl_WideInt n)			/* The integer to format. */
 {
-    Tcl_WideInt intVal;
-    size_t i, numFormatted, j;
-    const char *digits = "0123456789";
-
-    /*
-     * Check first whether "n" is zero.
-     */
-
-    if (n == 0) {
-	buffer[0] = '0';
-	buffer[1] = 0;
-	return 1;
-    }
-
-    /*
-     * Check whether "n" is the maximum negative value. This is -2^(m-1) for
-     * an m-bit word, and has no positive equivalent; negating it produces the
-     * same value.
-     */
-
-    intVal = -n;			/* [Bug 3390638] Workaround for*/
-    if (n == -n || intVal == n) {	/* broken compiler optimizers. */
-	return sprintf(buffer, "%" TCL_LL_MODIFIER "d", n);
-    }
+    Tcl_WideUInt intVal;
+    size_t i = 0, numFormatted, j;
+    static const char digits[] = "0123456789";
 
     /*
      * Generate the characters of the result backwards in the buffer.
      */
 
-    intVal = (n < 0? -n : n);
-    i = 0;
-    buffer[0] = '\0';
+    intVal = (n < 0 ? -(Tcl_WideUInt)n : (Tcl_WideUInt)n);
     do {
-	i++;
-	buffer[i] = digits[intVal % 10];
-	intVal = intVal/10;
+	buffer[i++] = digits[intVal % 10];
+	intVal = intVal / 10;
     } while (intVal > 0);
     if (n < 0) {
-	i++;
-	buffer[i] = '-';
+	buffer[i++] = '-';
     }
-    numFormatted = i;
+    buffer[i] = '\0';
+    numFormatted = i--;
 
     /*
      * Now reverse the characters.
@@ -3401,9 +3327,8 @@ GetWideForIndex(
     Tcl_WideInt *widePtr)       /* Location filled in with a wide integer
                                  * representing an index. */
 {
+    int numType;
     ClientData cd;
-    const char *opPtr;
-    int numType, length, t1 = 0, t2 = 0;
     int code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
 
     if (code == TCL_OK) {
@@ -3412,151 +3337,16 @@ GetWideForIndex(
 	    *widePtr = *(Tcl_WideInt *)cd;
 	    return TCL_OK;
 	}
-	if (numType != TCL_NUMBER_BIG) {
-	    /* Must be a double -> not a valid index */
-	    goto parseError;
-	}
-
-	/* objPtr holds an integer outside the signed wide range */
-	/* Truncate to the signed wide range. */
-	*widePtr = (((mp_int *)cd)->sign != MP_ZPOS) ? WIDE_MIN : WIDE_MAX;
-    return TCL_OK;
-    }
-
-    /* objPtr does not hold a number, check the end+/- format... */
-    if (GetEndOffsetFromObj(objPtr, endValue, widePtr) == TCL_OK) {
-	return TCL_OK;
-    }
-
-    /* If we reach here, the string rep of objPtr exists. */
-
-    /*
-     * The valid index syntax does not include any value that is
-     * a list of more than one element. This is necessary so that
-     * lists of index values can be reliably distinguished from any
-     * single index value.
-     */
-
-    /*
-     * Quick scan to see if multi-value list is even possible.
-     * This relies on TclGetString() returning a NUL-terminated string.
-     */
-    if ((TclMaxListLength(TclGetString(objPtr), -1, NULL) > 1)
-
-	    /* If it's possible, do the full list parse. */
-            && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length))
-            && (length > 1)) {
-        goto parseError;
-    }
-
-    /* Passed the list screen, so parse for index arithmetic expression */
-    if (TCL_OK == TclParseNumber(NULL, objPtr, NULL, NULL, -1, &opPtr,
-            TCL_PARSE_INTEGER_ONLY)) {
-	Tcl_WideInt w1=0, w2=0;
-
-	/* value starts with valid integer... */
-
-        if ((*opPtr == '-') || (*opPtr == '+')) {
-	    /* ... value continues with [-+] ... */
-
-	    /* Save first integer as wide if possible */
-	    TclGetNumberFromObj(NULL, objPtr, &cd, &t1);
-	    if (t1 == TCL_NUMBER_INT) {
-		w1 = (*(Tcl_WideInt *)cd);
-	    }
-
-	    if (TCL_OK == TclParseNumber(NULL, objPtr, NULL, opPtr + 1,
-		    -1, NULL, TCL_PARSE_INTEGER_ONLY)) {
-		/* ... value concludes with second valid integer */
-
-		/* Save second integer as wide if possible */
-		TclGetNumberFromObj(NULL, objPtr, &cd, &t2);
-		if (t2 == TCL_NUMBER_INT) {
-		    w2 = (*(Tcl_WideInt *)cd);
-		}
-	    }
-        }
-	/* Clear invalid intreps left by TclParseNumber */
-	TclFreeIntRep(objPtr);
-
-	if (t1 && t2) {
-	    /* We have both integer values */
-	    if ((t1 == TCL_NUMBER_INT) && (t2 == TCL_NUMBER_INT)) {
-		/* Both are wide, do wide-integer math */
-		if (*opPtr == '-') {
-		    if ((w2 == WIDE_MIN) && (interp != NULL)) {
-			goto extreme;
-		    }
-		    w2 = -w2;
-		}
-
-		if ((w1 ^ w2) < 0) {
-		    /* Different signs, sum cannot overflow */
-		    *widePtr = w1 + w2;
-		} else if (w1 >= 0) {
-		    if (w1 < WIDE_MAX - w2) {
-			*widePtr = w1 + w2;
-		    } else {
-			*widePtr = WIDE_MAX;
-		    }
-		} else {
-		    if (w1 > WIDE_MIN - w2) {
-			*widePtr = w1 + w2;
-		    } else {
-			*widePtr = WIDE_MIN;
-		    }
-		}
-	    } else if (interp == NULL) {
-		/*
-		 * We use an interp to do bignum index calculations.
-		 * If we don't get one, call all indices with bignums errors,
-		 * and rely on callers to handle it.
-		 */
-		return TCL_ERROR;
-	    } else {
-		/*
-		 * At least one is big, do bignum math. Little reason to
-		 * value performance here. Re-use code.  Parse has verified
-		 * objPtr is an expression. Compute it.
-		 */
-
-		Tcl_Obj *sum;
-
-	    extreme:
-		Tcl_ExprObj(interp, objPtr, &sum);
-		TclGetNumberFromObj(NULL, sum, &cd, &numType);
-
-		if (numType == TCL_NUMBER_INT) {
-		    /* sum holds an integer in the signed wide range */
-			*widePtr = *(Tcl_WideInt *)cd;
-		} else {
-		    /* sum holds an integer outside the signed wide range */
-		    /* Truncate to the signed wide range. */
-		    if (((mp_int *)cd)->sign != MP_ZPOS) {
-			*widePtr = WIDE_MIN;
-		    } else {
-			*widePtr = WIDE_MAX;
-		    }
-		}
-		Tcl_DecrRefCount(sum);
-	    }
+	if (numType == TCL_NUMBER_BIG) {
+	    /* objPtr holds an integer outside the signed wide range */
+	    /* Truncate to the signed wide range. */
+	    *widePtr = ((mp_isneg((mp_int *)cd)) ? WIDE_MIN : WIDE_MAX);
 	    return TCL_OK;
 	}
     }
 
-    /* Report a parse error. */
-  parseError:
-    if (interp != NULL) {
-        char * bytes = TclGetString(objPtr);
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "bad index \"%s\": must be integer?[+-]integer? or"
-                " end?[+-]integer?", bytes));
-        if (!strncmp(bytes, "end-", 4)) {
-            bytes += 4;
-        }
-        Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
-    }
-    return TCL_ERROR;
+    /* objPtr does not hold a number, check the end+/- format... */
+    return GetEndOffsetFromObj(interp, objPtr, endValue, widePtr);
 }
 
 /*
@@ -3607,12 +3397,14 @@ Tcl_GetIntForIndex(
     if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    if (wide < 0) {
-	*indexPtr = TCL_INDEX_NONE;
-    } else if ((Tcl_WideUInt)wide > TCL_INDEX_END) {
-	*indexPtr = TCL_INDEX_END;
-    } else {
-	*indexPtr = (size_t) wide;
+    if (indexPtr != NULL) {
+	if ((wide < 0) && (endValue != TCL_INDEX_END)) {
+	    *indexPtr = TCL_INDEX_NONE;
+	} else if ((Tcl_WideUInt)wide > TCL_INDEX_END) {
+	    *indexPtr = TCL_INDEX_END;
+	} else {
+	    *indexPtr = (size_t) wide;
+	}
     }
     return TCL_OK;
 }
@@ -3621,8 +3413,19 @@ Tcl_GetIntForIndex(
  *
  * GetEndOffsetFromObj --
  *
- *	Look for a string of the form "end[+-]offset" and convert it to an
- *	internal representation holding the offset.
+ *	Look for a string of the form "end[+-]offset" or "offset[+-]offset" and
+ *	convert it to an internal representation.
+ *
+ *	The internal representation (wideValue) uses the following encoding:
+ *
+ *	WIDE_MIN:   Index value TCL_INDEX_NONE (or -1)
+ *	WIDE_MIN+1: Index value n, for any n < -1  (usually same effect as -1)
+ *	-$n:        Index "end-[expr {$n-1}]"
+ *	-2:         Index "end-1"
+ *	-1:         Index "end"
+ *	0:          Index "0"
+ *	WIDE_MAX-1: Index "end+n", for any n > 1
+ *	WIDE_MAX:   Index "end+1"
  *
  * Results:
  *	Tcl return code.
@@ -3635,6 +3438,7 @@ Tcl_GetIntForIndex(
 
 static int
 GetEndOffsetFromObj(
+    Tcl_Interp *interp,
     Tcl_Obj *objPtr,            /* Pointer to the object to parse */
     size_t endValue,            /* The value to be stored at "indexPtr" if
                                  * "objPtr" holds "end". */
@@ -3642,42 +3446,164 @@ GetEndOffsetFromObj(
                                  * representing an index. */
 {
     Tcl_ObjIntRep *irPtr;
-    Tcl_WideInt offset = 0;	/* Offset in the "end-offset" expression */
+    Tcl_WideInt offset = -1;	/* Offset in the "end-offset" expression - 1 */
+    ClientData cd;
 
     while ((irPtr = TclFetchIntRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjIntRep ir;
 	size_t length;
 	const char *bytes = TclGetStringFromObj(objPtr, &length);
 
-	if ((length < 3) || (length == 4)) {
-	    /* Too short to be "end" or to be "end-$integer" */
-	    return TCL_ERROR;
-	}
-	if ((*bytes != 'e') || (strncmp(bytes, "end", 3) != 0)) {
-	    /* Value doesn't start with "end" */
-	    return TCL_ERROR;
+	if (*bytes != 'e') {
+	    int numType;
+	    const char *opPtr;
+	    int len, t1 = 0, t2 = 0;
+
+	    /* Value doesn't start with "e" */
+
+	    /* If we reach here, the string rep of objPtr exists. */
+
+	    /*
+	     * The valid index syntax does not include any value that is
+	     * a list of more than one element. This is necessary so that
+	     * lists of index values can be reliably distinguished from any
+	     * single index value.
+	     */
+
+	    /*
+	     * Quick scan to see if multi-value list is even possible.
+	     * This relies on TclGetString() returning a NUL-terminated string.
+	     */
+	    if ((TclMaxListLength(bytes, -1, NULL) > 1)
+
+		    /* If it's possible, do the full list parse. */
+	            && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &len))
+	            && (len > 1)) {
+	        goto parseError;
+	    }
+
+	    /* Passed the list screen, so parse for index arithmetic expression */
+	    if (TCL_OK == TclParseNumber(NULL, objPtr, NULL, NULL, -1, &opPtr,
+	            TCL_PARSE_INTEGER_ONLY)) {
+		Tcl_WideInt w1=0, w2=0;
+
+		/* value starts with valid integer... */
+
+		if ((*opPtr == '-') || (*opPtr == '+')) {
+		    /* ... value continues with [-+] ... */
+
+		    /* Save first integer as wide if possible */
+		    TclGetNumberFromObj(NULL, objPtr, &cd, &t1);
+		    if (t1 == TCL_NUMBER_INT) {
+			w1 = (*(Tcl_WideInt *)cd);
+		    }
+
+		    if (TCL_OK == TclParseNumber(NULL, objPtr, NULL, opPtr + 1,
+			    -1, NULL, TCL_PARSE_INTEGER_ONLY)) {
+			/* ... value concludes with second valid integer */
+
+			/* Save second integer as wide if possible */
+			TclGetNumberFromObj(NULL, objPtr, &cd, &t2);
+			if (t2 == TCL_NUMBER_INT) {
+			    w2 = (*(Tcl_WideInt *)cd);
+			}
+		    }
+		}
+		/* Clear invalid intreps left by TclParseNumber */
+		TclFreeIntRep(objPtr);
+
+		if (t1 && t2) {
+		    /* We have both integer values */
+		    if ((t1 == TCL_NUMBER_INT) && (t2 == TCL_NUMBER_INT)) {
+			/* Both are wide, do wide-integer math */
+			if (*opPtr == '-') {
+			    if (w2 == WIDE_MIN) {
+				goto extreme;
+			    }
+			    w2 = -w2;
+			}
+
+			if ((w1 ^ w2) < 0) {
+			    /* Different signs, sum cannot overflow */
+			    offset = w1 + w2;
+			} else if (w1 >= 0) {
+			    if (w1 < WIDE_MAX - w2) {
+				offset = w1 + w2;
+			    } else {
+				offset = WIDE_MAX;
+			    }
+			} else {
+			    if (w1 > WIDE_MIN - w2) {
+				offset = w1 + w2;
+			    } else {
+				offset = WIDE_MIN;
+			    }
+			}
+		    } else {
+			/*
+			 * At least one is big, do bignum math. Little reason to
+			 * value performance here. Re-use code.  Parse has verified
+			 * objPtr is an expression. Compute it.
+			 */
+
+			Tcl_Obj *sum;
+
+		    extreme:
+			if (interp) {
+			    Tcl_ExprObj(interp, objPtr, &sum);
+			} else {
+			    Tcl_Interp *compute = Tcl_CreateInterp();
+			    Tcl_ExprObj(compute, objPtr, &sum);
+			    Tcl_DeleteInterp(compute);
+			}
+			TclGetNumberFromObj(NULL, sum, &cd, &numType);
+
+			if (numType == TCL_NUMBER_INT) {
+			    /* sum holds an integer in the signed wide range */
+			    offset = *(Tcl_WideInt *)cd;
+			} else {
+			    /* sum holds an integer outside the signed wide range */
+			    /* Truncate to the signed wide range. */
+			    if (mp_isneg((mp_int *)cd)) {
+				offset = WIDE_MIN;
+			    } else {
+				offset = WIDE_MAX;
+			    }
+			}
+			Tcl_DecrRefCount(sum);
+		    }
+		    if (offset < 0) {
+			offset = (offset == -1) ? WIDE_MIN : WIDE_MIN+1;
+		    }
+		    goto parseOK;
+		}
+	    }
+	    goto parseError;
 	}
 
+	if ((length < 3) || (length == 4) || (strncmp(bytes, "end", 3) != 0)) {
+	    /* Doesn't start with "end" */
+	    goto parseError;
+	}
 	if (length > 4) {
-	    ClientData cd;
 	    int t;
 
 	    /* Parse for the "end-..." or "end+..." formats */
 
 	    if ((bytes[3] != '-') && (bytes[3] != '+')) {
 		/* No operator where we need one */
-		return TCL_ERROR;
+		goto parseError;
 	    }
 	    if (TclIsSpaceProc(bytes[4])) {
 		/* Space after + or - not permitted. */
-		return TCL_ERROR;
+		goto parseError;
 	    }
 
 	    /* Parse the integer offset */
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL,
 			bytes+4, length-4, NULL, TCL_PARSE_INTEGER_ONLY)) {
 		/* Not a recognized integer format */
-		return TCL_ERROR;
+		goto parseError;
 	    }
 
 	    /* Got an integer offset; pull it from where parser left it. */
@@ -3685,7 +3611,7 @@ GetEndOffsetFromObj(
 
 	    if (t == TCL_NUMBER_BIG) {
 		/* Truncate to the signed wide range. */
-		if (((mp_int *)cd)->sign != MP_ZPOS) {
+		if (mp_isneg((mp_int *)cd)) {
 		    offset = (bytes[3] == '-') ? WIDE_MAX : WIDE_MIN;
 		} else {
 		    offset = (bytes[3] == '-') ? WIDE_MIN : WIDE_MAX;
@@ -3696,9 +3622,17 @@ GetEndOffsetFromObj(
 		if (bytes[3] == '-') {
 		    offset = (offset == WIDE_MIN) ? WIDE_MAX : -offset;
 		}
+		if (offset == 1) {
+		    offset = WIDE_MAX; /* "end+1" */
+		} else if (offset > 1) {
+		    offset = WIDE_MAX - 1; /* "end+n", out of range */
+		} else if (offset != WIDE_MIN) {
+		    offset--;
+		}
 	    }
 	}
 
+    parseOK:
 	/* Success. Store the new internal rep. */
 	ir.wideValue = offset;
 	Tcl_StoreIntRep(objPtr, &endOffsetType, &ir);
@@ -3706,17 +3640,36 @@ GetEndOffsetFromObj(
 
     offset = irPtr->wideValue;
 
-    if (endValue == TCL_INDEX_NONE) {
-        *widePtr = offset - 1;
+    if (offset == WIDE_MAX) {
+	*widePtr = endValue + 1;
+    } else if (offset == WIDE_MIN) {
+	*widePtr = -1;
+    } else if (endValue == (size_t)-1) {
+	*widePtr = offset;
     } else if (offset < 0) {
-        /* Different signs, sum cannot overflow */
-        *widePtr = endValue + offset;
-    } else if (endValue < (Tcl_WideUInt)WIDE_MAX - offset) {
-        *widePtr = endValue + offset;
+	/* Different signs, sum cannot overflow */
+	*widePtr = endValue + offset + 1;
+    } else if (offset < WIDE_MAX) {
+	*widePtr = offset;
     } else {
-        *widePtr = WIDE_MAX;
+	*widePtr = WIDE_MAX;
     }
     return TCL_OK;
+
+    /* Report a parse error. */
+  parseError:
+    if (interp != NULL) {
+        char * bytes = TclGetString(objPtr);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "bad index \"%s\": must be integer?[+-]integer? or"
+                " end?[+-]integer?", bytes));
+        if (!strncmp(bytes, "end-", 4)) {
+            bytes += 4;
+        }
+        Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
+    }
+
+    return TCL_ERROR;
 }
 
 /*
@@ -3753,11 +3706,11 @@ GetEndOffsetFromObj(
  *      collection, and can be encoded as after.  The end-relative
  *      expressions that indicate an index less than or equal to end
  *      are encoded relative to the value TCL_INDEX_END (-2).  The
- *      index "end" is encoded as -2, down to the index "end-0x7ffffffe"
+ *      index "end" is encoded as -2, down to the index "end-0x7FFFFFFE"
  *      which is encoded as INT_MIN. Since the largest index into a
- *      string possible in Tcl 8 is 0x7ffffffe, the interpretation of
- *      "end-0x7ffffffe" for that largest string would be 0.  Thus,
- *      if the tokens "end-0x7fffffff" or "end+-0x80000000" are parsed,
+ *      string possible in Tcl 8 is 0x7FFFFFFE, the interpretation of
+ *      "end-0x7FFFFFFE" for that largest string would be 0.  Thus,
+ *      if the tokens "end-0x7FFFFFFF" or "end+-0x80000000" are parsed,
  *      they can be encoded with the before value.
  *
  *      These details will require re-examination whenever string and
@@ -3782,52 +3735,32 @@ TclIndexEncode(
     size_t after,		/* Value to return for index after end */
     int *indexPtr)	/* Where to write the encoded answer, not NULL */
 {
-    ClientData cd;
     Tcl_WideInt wide;
-    int idx, numType, code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
+    int idx;
 
-    if ((code == TCL_OK) && (numType == TCL_NUMBER_INT)) {
-        /* We parsed a value in the range WIDE_MIN...WIDE_MAX */
-	wide = (*(Tcl_WideInt *)cd);
-    integerEncode:
-        if (wide < 0) {
-            /* All negative absolute indices are "before the beginning" */
-            idx = before;
-        } else if (wide >= INT_MAX) {
-            /* This index value is always "after the end" */
-            idx = after;
-        } else {
-	    idx = (int) wide;
+    if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &endOffsetType);
+	if (irPtr && irPtr->wideValue >= 0) {
+	    /* "int[+-]int" syntax, works the same here as "int" */
+	    irPtr = NULL;
 	}
-        /* usual case, the absolute index value encodes itself */
-    } else if (TCL_OK == GetEndOffsetFromObj(objPtr, 0, &wide)) {
-        /*
-         * We parsed an end+offset index value.
-         * wide holds the offset value in the range WIDE_MIN...WIDE_MAX.
-         */
-        if (wide > 0) {
-            /*
-             * All end+positive or end-negative expressions
-             * always indicate "after the end".
-             */
-            idx = (int) after;
-        } else if (wide < INT_MIN - (int) TCL_INDEX_END) {
-            /* These indices always indicate "before the beginning */
-            idx = (int) before;
-        } else {
-            /* Encoded end-positive (or end+negative) are offset */
-            idx = (int) wide + (int) TCL_INDEX_END;
-        }
-
-    /* TODO: Consider flag to suppress repeated end-offset parse. */
-    } else if (TCL_OK == GetWideForIndex(interp, objPtr, 0, &wide)) {
-        /*
-         * Only reach this case when the index value is a
-         * constant index arithmetic expression, and wide
-         * holds the result. Treat it the same as if it were
-         * parsed as an absolute integer value.
-         */
-        goto integerEncode;
+	/*
+	 * We parsed an end+offset index value.
+	 * wide holds the offset value in the range WIDE_MIN...WIDE_MAX.
+	 */
+	if (wide > (unsigned)(irPtr ? TCL_INDEX_END : INT_MAX)) {
+	    /*
+	     * All end+postive or end-negative expressions
+	     * always indicate "after the end".
+	     */
+	    idx = after;
+	} else if (wide <= (irPtr ? INT_MAX : -1)) {
+	    /* These indices always indicate "before the beginning */
+	    idx = before;
+	} else {
+	    /* Encoded end-positive (or end+negative) are offset */
+	    idx = (int)wide;
+	}
     } else {
 	return TCL_ERROR;
     }
@@ -3883,7 +3816,7 @@ ClearHash(
 
     for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_Obj *objPtr = Tcl_GetHashValue(hPtr);
+	Tcl_Obj *objPtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
 	Tcl_DecrRefCount(objPtr);
 	Tcl_DeleteHashEntry(hPtr);
@@ -3913,10 +3846,10 @@ GetThreadHash(
     Tcl_ThreadDataKey *keyPtr)
 {
     Tcl_HashTable **tablePtrPtr =
-	    Tcl_GetThreadData(keyPtr, sizeof(Tcl_HashTable *));
+	    (Tcl_HashTable **)Tcl_GetThreadData(keyPtr, sizeof(Tcl_HashTable *));
 
     if (NULL == *tablePtrPtr) {
-	*tablePtrPtr = Tcl_Alloc(sizeof(Tcl_HashTable));
+	*tablePtrPtr = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
 	Tcl_CreateThreadExitHandler(FreeThreadHash, *tablePtrPtr);
 	Tcl_InitHashTable(*tablePtrPtr, TCL_ONE_WORD_KEYS);
     }
@@ -3941,7 +3874,7 @@ static void
 FreeThreadHash(
     ClientData clientData)
 {
-    Tcl_HashTable *tablePtr = clientData;
+    Tcl_HashTable *tablePtr = (Tcl_HashTable *)clientData;
 
     ClearHash(tablePtr);
     Tcl_DeleteHashTable(tablePtr);
@@ -3963,7 +3896,7 @@ static void
 FreeProcessGlobalValue(
     ClientData clientData)
 {
-    ProcessGlobalValue *pgvPtr = clientData;
+    ProcessGlobalValue *pgvPtr = (ProcessGlobalValue *)clientData;
 
     pgvPtr->epoch++;
     pgvPtr->numBytes = 0;
@@ -4012,7 +3945,7 @@ TclSetProcessGlobalValue(
     }
     bytes = TclGetString(newValue);
     pgvPtr->numBytes = newValue->length;
-    pgvPtr->value = Tcl_Alloc(pgvPtr->numBytes + 1);
+    pgvPtr->value = (char *)Tcl_Alloc(pgvPtr->numBytes + 1);
     memcpy(pgvPtr->value, bytes, pgvPtr->numBytes + 1);
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
@@ -4028,7 +3961,7 @@ TclSetProcessGlobalValue(
     Tcl_IncrRefCount(newValue);
     cacheMap = GetThreadHash(&pgvPtr->key);
     ClearHash(cacheMap);
-    hPtr = Tcl_CreateHashEntry(cacheMap, (void *)(pgvPtr->epoch), &dummy);
+    hPtr = Tcl_CreateHashEntry(cacheMap, INT2PTR(pgvPtr->epoch), &dummy);
     Tcl_SetHashValue(hPtr, newValue);
     Tcl_MutexUnlock(&pgvPtr->mutex);
 }
@@ -4061,8 +3994,8 @@ TclGetProcessGlobalValue(
 
 	if (pgvPtr->encoding != current) {
 	    /*
-	     * The system encoding has changed since the master string value
-	     * was saved. Convert the master value to be based on the new
+	     * The system encoding has changed since the global string value
+	     * was saved. Convert the global value to be based on the new
 	     * system encoding.
 	     */
 
@@ -4076,7 +4009,7 @@ TclGetProcessGlobalValue(
 	    Tcl_DStringLength(&native), &newValue);
 	    Tcl_DStringFree(&native);
 	    Tcl_Free(pgvPtr->value);
-	    pgvPtr->value = Tcl_Alloc(Tcl_DStringLength(&newValue) + 1);
+	    pgvPtr->value = (char *)Tcl_Alloc(Tcl_DStringLength(&newValue) + 1);
 	    memcpy(pgvPtr->value, Tcl_DStringValue(&newValue),
 		    Tcl_DStringLength(&newValue) + 1);
 	    Tcl_DStringFree(&newValue);
@@ -4088,7 +4021,7 @@ TclGetProcessGlobalValue(
 	}
     }
     cacheMap = GetThreadHash(&pgvPtr->key);
-    hPtr = Tcl_FindHashEntry(cacheMap, (void *) (epoch));
+    hPtr = Tcl_FindHashEntry(cacheMap, INT2PTR(epoch));
     if (NULL == hPtr) {
 	int dummy;
 
@@ -4121,12 +4054,12 @@ TclGetProcessGlobalValue(
 
 	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
 	hPtr = Tcl_CreateHashEntry(cacheMap,
-		(void *)(pgvPtr->epoch), &dummy);
+		INT2PTR(pgvPtr->epoch), &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
 	Tcl_SetHashValue(hPtr, value);
 	Tcl_IncrRefCount(value);
     }
-    return Tcl_GetHashValue(hPtr);
+    return (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 }
 
 /*

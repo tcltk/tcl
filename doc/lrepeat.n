@@ -32,7 +32,9 @@ is identical to \fBlist element ...\fR.
       \fI\(-> {a a} b c {a a} b c {a a} b c\fR
 .CE
 .SH "SEE ALSO"
-list(n), lappend(n), linsert(n), llength(n), lset(n)
+list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n), lsort(n)
 .SH KEYWORDS
 element, index, list
 '\" Local Variables:

@@ -277,7 +277,7 @@ If an error occurs while opening the channel, \fBTcl_OpenCommandChannel\fR
 returns NULL and records a POSIX error code that can be retrieved with
 \fBTcl_GetErrno\fR.
 In addition, \fBTcl_OpenCommandChannel\fR leaves an error message in
-the interpreter's result if \fIinterp\fR is not NULL.
+the interpreter's result. \fIinterp\fR cannot be NULL.
 .PP
 The newly created channel is not registered in the supplied interpreter; to
 register it, use \fBTcl_RegisterChannel\fR, described below.

@@ -49,16 +49,13 @@ When the last interpreter in which the channel is registered invokes
 .PP
 Channels are automatically closed when an interpreter is destroyed and
 when the process exits.
-.VS 8.6
 From 8.6 on (TIP#398), nonblocking channels are no longer switched to blocking mode when exiting; this guarantees a timely exit even when the peer or a communication channel is stalled. To ensure proper flushing of stalled nonblocking channels on exit, one must now either (a) actively switch them back to blocking or (b) use the environment variable TCL_FLUSH_NONBLOCKING_ON_EXIT,  which when set and not equal to "0" restores the previous behavior.
-.VE 8.6
 .PP
 The command returns an empty string, and may generate an error if
 an error occurs while flushing output.  If a command in a command
 pipeline created with \fBopen\fR returns an error, \fBclose\fR
 generates an error (similar to the \fBexec\fR command.)
 .PP
-.VS 8.6
 The two-argument form is a
 .QW "half-close" :
 given a bidirectional channel like a
@@ -80,7 +77,6 @@ abnormal exit error.
 .PP
 Currently only sockets and command pipelines support half-close. A future
 extension will allow reflected and stacked channels to do so.
-.VE 8.6
 .SH EXAMPLE
 .PP
 This illustrates how you can use Tcl to ensure that files get closed

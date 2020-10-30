@@ -63,10 +63,8 @@ int
 \fBTcl_FSLoadFile\fR(\fIinterp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
                loadHandlePtr, unloadProcPtr\fR)
 .sp
-.VS 8.6
 int
 \fBTcl_FSUnloadFile\fR(\fIinterp, loadHandle\fR)
-.VE 8.6
 .sp
 int
 \fBTcl_FSMatchInDirectory\fR(\fIinterp, resultPtr, pathPtr, pattern, types\fR)
@@ -146,7 +144,6 @@ Tcl_Obj *
 Tcl_StatBuf *
 \fBTcl_AllocStatBuf\fR()
 .sp
-.VS 8.6
 Tcl_WideInt
 \fBTcl_GetAccessTimeFromStat\fR(\fIstatPtr\fR)
 .sp
@@ -185,7 +182,6 @@ Tcl_WideUInt
 .sp
 int
 \fBTcl_GetUserIdFromStat\fR(\fIstatPtr\fR)
-.VE 8.6
 .SH ARGUMENTS
 .AS Tcl_GlobTypeData **srcPathPtr out
 .AP "const Tcl_Filesystem" *fsPtr in
@@ -418,7 +414,7 @@ caller (with a reference count of 0).
 the encoding identified by \fIencodingName\fR and evaluates
 its contents as a Tcl script. It returns the same information as
 \fBTcl_EvalObjEx\fR.
-If \fIencodingName\fR is NULL, the system encoding is used for
+If \fIencodingName\fR is NULL, the utf-8 encoding is used for
 reading the file contents.
 If the file could not be read then a Tcl error is returned to describe
 why the file could not be read.
@@ -434,7 +430,7 @@ or
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 \fBTcl_FSEvalFile\fR is a simpler version of
-\fBTcl_FSEvalFileEx\fR that always uses the system encoding
+\fBTcl_FSEvalFileEx\fR that always uses the utf-8 encoding
 when reading the file.
 .PP
 \fBTcl_FSLoadFile\fR dynamically loads a binary code file into memory and
@@ -444,20 +440,16 @@ belongs will be called. If that filesystem does not implement this
 function (most virtual filesystems will not, because of OS limitations
 in dynamically loading binary code), Tcl will attempt to copy the file
 to a temporary directory and load that temporary file.
-.VS 8.6
 \fBTcl_FSUnloadFile\fR reverses the operation, asking for the library
 indicated by the \fIloadHandle\fR to be removed from the process. Note that,
 unlike with the \fBunload\fR command, this does not give the library any
 opportunity to clean up.
-.VE 8.6
 .PP
 Both the above functions return a standard Tcl completion code. If an error
 occurs, an error message is left in the \fIinterp\fR's result.
 .PP
-.VS 8.6
 The token provided via the variable indicated by \fIloadHandlePtr\fR may be
 used with \fBTcl_FindSymbol\fR.
-.VE 8.6
 .PP
 \fBTcl_FSMatchInDirectory\fR is used by the globbing code to search a
 directory for all files which match a given pattern. The appropriate
@@ -795,7 +787,6 @@ may be deallocated by being passed to \fBTcl_Free\fR). This allows extensions to
 invoke \fBTcl_FSStat\fR and \fBTcl_FSLstat\fR without being dependent on the
 size of the buffer. That in turn depends on the flags used to build Tcl.
 .PP
-.VS 8.6
 The portable fields of a \fITcl_StatBuf\fR may be read using the following
 functions, each of which returns the value of the corresponding field listed
 in the table below. Note that on some platforms there may be other fields in
@@ -819,7 +810,6 @@ for a full description of these fields.
  \fBTcl_GetBlocksFromStat\fR	 st_blocks
  \fBTcl_GetBlockSizeFromStat\fR	 st_blksize
 .DE
-.VE 8.6
 .SH "THE VIRTUAL FILESYSTEM API"
 .PP
 A filesystem provides a \fBTcl_Filesystem\fR structure that contains
@@ -1350,11 +1340,11 @@ is considered to be owned by the filesystem (not by Tcl's core), but
 should be given a reference count for Tcl. Tcl will use the contents of the
 list and then decrement that reference count. This allows filesystems to
 choose whether they actually want to retain a
-.QW "master list"
+.QW "global list"
 of volumes
 or not (if not, they generate the list on the fly and pass it to Tcl
 with a reference count of 1 and then forget about the list, if yes, then
-they simply increment the reference count of their master list and pass it
+they simply increment the reference count of their global list and pass it
 to Tcl which will copy the contents and then decrement the count back
 to where it was).
 .PP

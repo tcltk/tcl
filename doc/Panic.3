@@ -50,13 +50,13 @@ In a freshly loaded Tcl library, \fBTcl_Panic\fR prints the formatted
 error message to the standard error file of the process, and then
 calls \fBabort\fR to terminate the process.  \fBTcl_Panic\fR does not
 return. On Windows, when a debugger is running, the formatted error
-message is sent to the debugger in stead. If the windows executable
+message is sent to the debugger instead. If the windows executable
 does not have a stderr channel (e.g. \fBwish.exe\fR), then a
 system dialog box is used to display the panic message.
 .PP
 If your application doesn't use \fBTcl_Main\fR or \fBTk_Main\fR
 and you want to implicitly use the stderr channel of your
-application's C runtime (in stead of the stderr channel of the
+application's C runtime (instead of the stderr channel of the
 C runtime used by Tcl), you can call \fBTcl_SetPanicProc\fR
 with \fBTcl_ConsolePanic\fR as its argument. On platforms which
 only have one C runtime (almost all platforms except Windows)
@@ -83,13 +83,15 @@ The typical use of \fBTcl_SetPanicProc\fR arranges for the error message
 to be displayed or reported in a manner more suitable for the
 application or the platform.
 .PP
+\fBTcl_SetPanicProc\fR can not be used safely by stub-enabled extensions, so its
+symbol is not included in the stub table.
+.PP
 Although the primary callers of \fBTcl_Panic\fR are the procedures of
 the Tcl library, \fBTcl_Panic\fR is a public function and may be called
 by any extension or application that wishes to abort the process and
 have a panic message displayed the same way that panic messages from Tcl
 will be displayed.
 .PP
-This function can not be used in stub-enabled extensions.
 .SH "SEE ALSO"
 abort(3), printf(3), exec(n), format(n)
 .SH KEYWORDS

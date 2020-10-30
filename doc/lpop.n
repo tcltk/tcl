@@ -86,8 +86,9 @@ The indicated value becomes the new value of \fIx\fR.
       \fI\(-> {{a b} {c d}} {{e f} h}\fR
 .CE
 .SH "SEE ALSO"
-list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n),
-lsort(n), lrange(n), lreplace(n), lset(n)
+list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n), lsort(n),
 string(n)
 .SH KEYWORDS
 element, index, list, remove, pop, stack, queue

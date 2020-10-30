@@ -8,10 +8,11 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
@@ -19,6 +20,8 @@ catch [list package require -exact Tcltest [info patchlevel]]
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 testConstraint testobj [llength [info commands testobj]]
+source [file join [file dirname [info script]] internals.tcl]
+namespace import -force ::tcltest::internals::*
 
 test cmdIL-1.1 {Tcl_LsortObjCmd procedure} -returnCodes error -body {
     lsort
@@ -161,10 +164,10 @@ test cmdIL-1.40 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
 } [list \0 \x7f \x80 \uffff \U01ffff]
 test cmdIL-1.41 {lsort -stride and -index} -body {
     lsort -stride 2 -index -2 {a 2 b 1}
-} -returnCodes error -result {index "-2" cannot select an element from any list}
+} -returnCodes error -result {index "-2" out of range}
 test cmdIL-1.42 {lsort -stride and-index} -body {
     lsort -stride 2 -index -1-1 {a 2 b 1}
-} -returnCodes error -result {index "-1-1" cannot select an element from any list}
+} -returnCodes error -result {index "-1-1" out of range}
 
 # Can't think of any good tests for the MergeSort and MergeLists procedures,
 # except a bunch of random lists to sort.
@@ -226,10 +229,10 @@ test cmdIL-3.5.1 {SortCompare procedure, -index option (out of range, calculated
 } -returnCodes error -result {element 4 missing from sublist "1 . c"}
 test cmdIL-3.5.2 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index -1-1 {{1 . c} {2 . b} {3 . a}}
-} -returnCodes error -result {index "-1-1" cannot select an element from any list}
+} -returnCodes error -result {index "-1-1" out of range}
 test cmdIL-3.5.3 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index -2 {{1 . c} {2 . b} {3 . a}}
-} -returnCodes error -result {index "-2" cannot select an element from any list}
+} -returnCodes error -result {index "-2" out of range}
 test cmdIL-3.5.4 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index end-4 {{1 . c} {2 . b} {3 . a}}
 } -returnCodes error -result {element end-4 missing from sublist "1 . c"}
@@ -241,13 +244,13 @@ test cmdIL-3.5.6 {SortCompare procedure, -index option} {
 } {a \{}
 test cmdIL-3.5.7 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index end--1 {{1 . c} {2 . b} {3 . a}}
-} -returnCodes error -result {index "end--1" cannot select an element from any list}
+} -returnCodes error -result {index "end--1" out of range}
 test cmdIL-3.5.8 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index end+1 {{1 . c} {2 . b} {3 . a}}
-} -returnCodes error -result {index "end+1" cannot select an element from any list}
+} -returnCodes error -result {index "end+1" out of range}
 test cmdIL-3.5.9 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index end+2 {{1 . c} {2 . b} {3 . a}}
-} -returnCodes error -result {index "end+2" cannot select an element from any list}
+} -returnCodes error -result {index "end+2" out of range}
 test cmdIL-3.5.10 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index 0 {{}}
 } -returnCodes error -result {element 0 missing from sublist ""}
@@ -519,6 +522,21 @@ test cmdIL-5.5 {lsort with list style index and sharing} -body {
 test cmdIL-5.6 {lsort with multiple list-style index options} {
     lsort -index {1 2 3} -index 0 {{a b} {c d} {b e}}
 } {{a b} {b e} {c d}}
+test cmdIL-5.7 {lsort memory exhaustion} -constraints {testWithLimit} -body {
+    # test it in child process (with limited address space) ca. 80MB extra memory
+    # on x64 system it would be not enough to sort 4M items (the half 2M only),
+    # warn and skip if no error (enough memory) or error by list creation:
+    testWithLimit \
+	-warn-on-code 0 -warn-on-alloc-error 1 \
+	-addmem [expr {$tcl_platform(pointerSize)*4000000 + $tcl_platform(pointerSize)*3*2000000}] \
+    {
+	# create list and get length (avoid too long output in interactive shells):
+	llength [set l [lrepeat 4000000 ""]]
+	# test OOM:
+	llength [lsort $l]
+    }
+    # expecting error no memory by sort
+} -returnCodes 1 -result {no enough memory to proccess sort of 4000000 items}
 
 # Compiled version
 test cmdIL-6.1 {lassign command syntax} -returnCodes error -body {

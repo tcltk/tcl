@@ -222,7 +222,7 @@ WaitProcessStatus(
      * Get process status.
      */
 
-    if (pid == (Tcl_Pid) -1) {
+    if (pid == (Tcl_Pid)-1) {
 	/*
 	 * POSIX errName msg
 	 */
@@ -267,8 +267,8 @@ WaitProcessStatus(
 		    "child process exited abnormally", -1);
 	    if (errorObjPtr) {
 		errorStrings[0] = Tcl_NewStringObj("CHILDSTATUS", -1);
-		errorStrings[1] = Tcl_NewIntObj(resolvedPid);
-		errorStrings[2] = Tcl_NewIntObj(WEXITSTATUS(waitStatus));
+		TclNewIntObj(errorStrings[1], resolvedPid);
+		TclNewIntObj(errorStrings[2], WEXITSTATUS(waitStatus));
 		*errorObjPtr = Tcl_NewListObj(3, errorStrings);
 	    }
 	}
@@ -286,7 +286,7 @@ WaitProcessStatus(
 		"child killed: %s", msg);
 	if (errorObjPtr) {
 	    errorStrings[0] = Tcl_NewStringObj("CHILDKILLED", -1);
-	    errorStrings[1] = Tcl_NewIntObj(resolvedPid);
+	    TclNewIntObj(errorStrings[1], resolvedPid);
 	    errorStrings[2] = Tcl_NewStringObj(Tcl_SignalId(WTERMSIG(waitStatus)), -1);
 	    errorStrings[3] = Tcl_NewStringObj(msg, -1);
 	    *errorObjPtr = Tcl_NewListObj(4, errorStrings);
@@ -305,7 +305,7 @@ WaitProcessStatus(
 		"child suspended: %s", msg);
 	if (errorObjPtr) {
 	    errorStrings[0] = Tcl_NewStringObj("CHILDSUSP", -1);
-	    errorStrings[1] = Tcl_NewIntObj(resolvedPid);
+	    TclNewIntObj(errorStrings[1], resolvedPid);
 	    errorStrings[2] = Tcl_NewStringObj(Tcl_SignalId(WSTOPSIG(waitStatus)), -1);
 	    errorStrings[3] = Tcl_NewStringObj(msg, -1);
 	    *errorObjPtr = Tcl_NewListObj(4, errorStrings);
@@ -326,7 +326,7 @@ WaitProcessStatus(
 	    errorStrings[1] = Tcl_NewStringObj("OPERATION", -1);
 	    errorStrings[2] = Tcl_NewStringObj("EXEC", -1);
 	    errorStrings[3] = Tcl_NewStringObj("ODDWAITRESULT", -1);
-	    errorStrings[4] = Tcl_NewIntObj(resolvedPid);
+	    TclNewIntObj(errorStrings[4], resolvedPid);
 	    *errorObjPtr = Tcl_NewListObj(5, errorStrings);
 	}
 	return TCL_PROCESS_UNKNOWN_STATUS;
@@ -371,14 +371,14 @@ BuildProcessStatusObj(
 	 * Normal exit, return TCL_OK.
 	 */
 
-	return Tcl_NewIntObj(TCL_OK);
+	return Tcl_NewWideIntObj(TCL_OK);
     }
 
     /*
      * Abnormal exit, return {TCL_ERROR msg error}
      */
 
-    resultObjs[0] = Tcl_NewIntObj(TCL_ERROR);
+    TclNewIntObj(resultObjs[0], TCL_ERROR);
     resultObjs[1] = info->msg;
     resultObjs[2] = info->error;
     return Tcl_NewListObj(3, resultObjs);
@@ -402,7 +402,7 @@ BuildProcessStatusObj(
 
 static int
 ProcessListObjCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -427,7 +427,7 @@ ProcessListObjCmd(
 	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
 	info = (ProcessInfo *) Tcl_GetHashValue(entry);
 	Tcl_ListObjAppendElement(interp, list,
-		Tcl_NewIntObj(info->resolvedPid));
+		Tcl_NewWideIntObj(info->resolvedPid));
     }
     Tcl_MutexUnlock(&infoTablesMutex);
     Tcl_SetObjResult(interp, list);
@@ -453,7 +453,7 @@ ProcessListObjCmd(
 
 static int
 ProcessStatusObjCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -472,7 +472,7 @@ ProcessStatusObjCmd(
     static const char *const switches[] = {
 	"-wait", "--", NULL
     };
-    enum switches {
+    enum switchesEnum {
 	STATUS_WAIT, STATUS_LAST
     };
 
@@ -485,7 +485,7 @@ ProcessStatusObjCmd(
 	    return TCL_ERROR;
 	}
 	++objv; --objc;
-	if (STATUS_WAIT == (enum switches) index) {
+	if (STATUS_WAIT == (enum switchesEnum) index) {
 	    options = 0;
 	} else {
 	    break;
@@ -523,7 +523,7 @@ ProcessStatusObjCmd(
 		 * Add to result.
 		 */
 
-		Tcl_DictObjPut(interp, dict, Tcl_NewIntObj(info->resolvedPid),
+		Tcl_DictObjPut(interp, dict, Tcl_NewWideIntObj(info->resolvedPid),
 			BuildProcessStatusObj(info));
 	    }
 	}
@@ -573,7 +573,7 @@ ProcessStatusObjCmd(
 		 * Add to result.
 		 */
 
-		Tcl_DictObjPut(interp, dict, Tcl_NewIntObj(info->resolvedPid),
+		Tcl_DictObjPut(interp, dict, Tcl_NewWideIntObj(info->resolvedPid),
 			BuildProcessStatusObj(info));
 	    }
 	}
@@ -601,7 +601,7 @@ ProcessStatusObjCmd(
 
 static int
 ProcessPurgeObjCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -701,11 +701,12 @@ ProcessPurgeObjCmd(
 
 static int
 ProcessAutopurgeObjCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+
     if (objc != 1 && objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?flag?");
 	return TCL_ERROR;
@@ -833,7 +834,7 @@ TclProcessCreated(
      * Allocate and initialize info structure.
      */
 
-    info = (ProcessInfo *) Tcl_Alloc(sizeof(ProcessInfo));
+    info = (ProcessInfo *)Tcl_Alloc(sizeof(ProcessInfo));
     InitProcessInfo(info, pid, resolvedPid);
 
     /*

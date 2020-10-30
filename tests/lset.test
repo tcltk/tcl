@@ -11,8 +11,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -97,31 +97,31 @@ test lset-4.3 {lset, not compiled, 3 args, index out of range} testevalex {
     list [catch {
 	testevalex {lset a [list -1] w}
     } msg] $msg
-} {1 {list index out of range}}
+} {1 {index "-1" out of range}}
 test lset-4.4 {lset, not compiled, 3 args, index out of range} testevalex {
     set a {x y z}
     list [catch {
 	testevalex {lset a [list 4] w}
     } msg] $msg
-} {1 {list index out of range}}
+} {1 {index "4" out of range}}
 test lset-4.5a {lset, not compiled, 3 args, index out of range} testevalex {
     set a {x y z}
     list [catch {
 	testevalex {lset a [list end--2] w}
     } msg] $msg
-} {1 {list index out of range}}
+} {1 {index "end--2" out of range}}
 test lset-4.5b {lset, not compiled, 3 args, index out of range} testevalex {
     set a {x y z}
     list [catch {
 	testevalex {lset a [list end+2] w}
     } msg] $msg
-} {1 {list index out of range}}
+} {1 {index "end+2" out of range}}
 test lset-4.6 {lset, not compiled, 3 args, index out of range} testevalex {
     set a {x y z}
     list [catch {
 	testevalex {lset a [list end-3] w}
     } msg] $msg
-} {1 {list index out of range}}
+} {1 {index "end-3" out of range}}
 test lset-4.7 {lset, not compiled, 3 args, not a list} testevalex {
     set a "x \{"
     list [catch {
@@ -139,31 +139,31 @@ test lset-4.9 {lset, not compiled, 3 args, index out of range} testevalex {
     list [catch {
 	testevalex {lset a -1 w}
     } msg] $msg
-} {1 {list index out of range}}
+} {1 {index "-1" out of range}}
 test lset-4.10 {lset, not compiled, 3 args, index out of range} testevalex {
     set a {x y z}
     list [catch {
 	testevalex {lset a 4 w}
     } msg] $msg
-} {1 {list index out of range}}
+} {1 {index "4" out of range}}
 test lset-4.11a {lset, not compiled, 3 args, index out of range} testevalex {
     set a {x y z}
     list [catch {
 	testevalex {lset a end--2 w}
     } msg] $msg
-} {1 {list index out of range}}
+} {1 {index "end--2" out of range}}
 test lset-4.11 {lset, not compiled, 3 args, index out of range} testevalex {
     set a {x y z}
     list [catch {
 	testevalex {lset a end+2 w}
     } msg] $msg
-} {1 {list index out of range}}
+} {1 {index "end+2" out of range}}
 test lset-4.12 {lset, not compiled, 3 args, index out of range} testevalex {
     set a {x y z}
     list [catch {
 	testevalex {lset a end-3 w}
     } msg] $msg
-} {1 {list index out of range}}
+} {1 {index "end-3" out of range}}
 
 test lset-5.1 {lset, not compiled, 3 args, can't set variable} testevalex {
     list [catch {
@@ -281,43 +281,43 @@ test lset-8.4 {lset, not compiled, bad second index} testevalex {
 test lset-8.5 {lset, not compiled, second index out of range} testevalex {
     set a {{b c} {d e} {f g}}
     list [catch {testevalex {lset a 2 -1 h}} msg] $msg
-} {1 {list index out of range}}
+} {1 {index "-1" out of range}}
 test lset-8.6 {lset, not compiled, second index out of range} testevalex {
     set a {{b c} {d e} {f g}}
     list [catch {testevalex {lset a {2 -1} h}} msg] $msg
-} {1 {list index out of range}}
+} {1 {index "-1" out of range}}
 test lset-8.7 {lset, not compiled, second index out of range} testevalex {
     set a {{b c} {d e} {f g}}
     list [catch {testevalex {lset a 2 3 h}} msg] $msg
-} {1 {list index out of range}}
+} {1 {index "3" out of range}}
 test lset-8.8 {lset, not compiled, second index out of range} testevalex {
     set a {{b c} {d e} {f g}}
     list [catch {testevalex {lset a {2 3} h}} msg] $msg
-} {1 {list index out of range}}
+} {1 {index "3" out of range}}
 test lset-8.9a {lset, not compiled, second index out of range} testevalex {
     set a {{b c} {d e} {f g}}
     list [catch {testevalex {lset a 2 end--2 h}} msg] $msg
-} {1 {list index out of range}}
+} {1 {index "end--2" out of range}}
 test lset-8.9b {lset, not compiled, second index out of range} testevalex {
     set a {{b c} {d e} {f g}}
     list [catch {testevalex {lset a 2 end+2 h}} msg] $msg
-} {1 {list index out of range}}
+} {1 {index "end+2" out of range}}
 test lset-8.10a {lset, not compiled, second index out of range} testevalex {
     set a {{b c} {d e} {f g}}
     list [catch {testevalex {lset a {2 end--2} h}} msg] $msg
-} {1 {list index out of range}}
+} {1 {index "end--2" out of range}}
 test lset-8.10b {lset, not compiled, second index out of range} testevalex {
     set a {{b c} {d e} {f g}}
     list [catch {testevalex {lset a {2 end+2} h}} msg] $msg
-} {1 {list index out of range}}
+} {1 {index "end+2" out of range}}
 test lset-8.11 {lset, not compiled, second index out of range} testevalex {
     set a {{b c} {d e} {f g}}
     list [catch {testevalex {lset a 2 end-2 h}} msg] $msg
-} {1 {list index out of range}}
+} {1 {index "end-2" out of range}}
 test lset-8.12 {lset, not compiled, second index out of range} testevalex {
     set a {{b c} {d e} {f g}}
     list [catch {testevalex {lset a {2 end-2} h}} msg] $msg
-} {1 {list index out of range}}
+} {1 {index "end-2" out of range}}
 
 test lset-9.1 {lset, not compiled, entire variable} testevalex {
     set a x

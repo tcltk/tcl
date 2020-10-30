@@ -10,8 +10,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -103,7 +103,7 @@ test load-3.1 {error in _Init procedure, same interpreter} \
 "if 44 {open non_existent}"
     invoked from within
 "load [file join $testDir pkge$ext] pkge"} {POSIX ENOENT {no such file or directory}}}
-test load-3.2 {error in _Init procedure, slave interpreter} \
+test load-3.2 {error in _Init procedure, child interpreter} \
 	[list $dll $loaded] {
     catch {interp delete x}
     interp create x
@@ -132,7 +132,8 @@ test load-4.2 {reloading package into same interpreter} -setup {
 
 test load-5.1 {file name not specified and no static package: pick default} -setup {
     catch {interp delete x}
-    interp create x    
+    interp create x
+} -constraints [list $dll $loaded] -body {
 } -constraints [list $dll $loaded] -body {
     load -global [file join $testDir pkga$ext] pkga
     load {} pkga x

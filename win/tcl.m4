@@ -280,15 +280,6 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
         TCL_STUB_LIB_PATH=${TCL_BUILD_STUB_LIB_PATH}
     fi
 
-    #
-    # eval is required to do the TCL_DBGX substitution
-    #
-
-    eval "TCL_ZIP_FILE=\"${TCL_ZIP_FILE}\""
-    eval "TCL_LIB_FILE=\"${TCL_LIB_FILE}\""
-    eval "TCL_LIB_FLAG=\"${TCL_LIB_FLAG}\""
-    eval "TCL_LIB_SPEC=\"${TCL_LIB_SPEC}\""
-
     eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
     eval "TCL_STUB_LIB_FLAG=\"${TCL_STUB_LIB_FLAG}\""
     eval "TCL_STUB_LIB_SPEC=\"${TCL_STUB_LIB_SPEC}\""
@@ -410,7 +401,6 @@ AC_DEFUN([SC_ENABLE_SHARED], [
 #				Sets to $(CFLAGS_OPTIMIZE) if false
 #		LDFLAGS_DEFAULT	Sets to $(LDFLAGS_DEBUG) if true
 #				Sets to $(LDFLAGS_OPTIMIZE) if false
-#		DBGX		Debug library extension
 #
 #------------------------------------------------------------------------
 
@@ -421,7 +411,6 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
-	DBGX=""
 	AC_DEFINE(NDEBUG, 1, [Is no debugging enabled?])
 	AC_MSG_RESULT([no])
 
@@ -429,7 +418,6 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
     else
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
-	DBGX=g
 	if test "$tcl_ok" = "yes"; then
 	    AC_MSG_RESULT([yes (standard debugging)])
 	fi
@@ -541,14 +529,14 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
       if test "$ac_cv_cross" = "yes"; then
 	case "$do64bit" in
 	    amd64|x64|yes)
-		CC="x86_64-w64-mingw32-gcc"
+		CC="x86_64-w64-mingw32-${CC}"
 		LD="x86_64-w64-mingw32-ld"
 		AR="x86_64-w64-mingw32-ar"
 		RANLIB="x86_64-w64-mingw32-ranlib"
 		RC="x86_64-w64-mingw32-windres"
 	    ;;
 	    *)
-		CC="i686-w64-mingw32-gcc"
+		CC="i686-w64-mingw32-${CC}"
 		LD="i686-w64-mingw32-ld"
 		AR="i686-w64-mingw32-ar"
 		RANLIB="i686-w64-mingw32-ranlib"
@@ -651,7 +639,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
             AC_MSG_RESULT([using static flags])
 	    runtime=
 	    LIBRARIES="\${STATIC_LIBRARIES}"
-	    EXESUFFIX="s\${DBGX}.exe"
+	    EXESUFFIX="s.exe"
 	else
 	    # dynamic
             AC_MSG_RESULT([using shared flags])
@@ -665,7 +653,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    runtime=
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 
-	    EXESUFFIX="\${DBGX}.exe"
+	    EXESUFFIX=".exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
 	# Link with gcc since ld does not link to default libs like
@@ -673,21 +661,30 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	SHLIB_LD='${CC} -shared'
 	SHLIB_LD_LIBS='${LIBS}'
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
-	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
+	    -Wl,--out-implib,\$(patsubst %.dll,lib%.dll.a,\[$]@)"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
-	DLLSUFFIX="\${DBGX}.dll"
-	LIBSUFFIX="\${DBGX}.a"
-	LIBFLAGSUFFIX="\${DBGX}"
+	DLLSUFFIX=".dll"
+	LIBSUFFIX=".a"
+	LIBFLAGSUFFIX=""
 	SHLIB_SUFFIX=.dll
 
 	EXTRA_CFLAGS="${extra_cflags}"
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wwrite-strings -Wsign-compare -Wdeclaration-after-statement -Wpointer-arith"
+	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
+
+	case "${CC}" in
+	    *++)
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wno-format"
+		;;
+	    *)
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -Wdeclaration-after-statement"
+		;;
+	esac
 
 	# Specify the CC output file names based on the target name
 	CC_OBJNAME="-o \[$]@"
@@ -741,14 +738,14 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
             AC_MSG_RESULT([using static flags])
 	    runtime=-MT
 	    LIBRARIES="\${STATIC_LIBRARIES}"
-	    EXESUFFIX="s\${DBGX}.exe"
+	    EXESUFFIX="s.exe"
 	else
 	    # dynamic
             AC_MSG_RESULT([using shared flags])
 	    runtime=-MD
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 	    LIBRARIES="\${SHARED_LIBRARIES}"
-	    EXESUFFIX="\${DBGX}.exe"
+	    EXESUFFIX=".exe"
 	    case "x`echo \${VisualStudioVersion}`" in
 		x1[[4-9]]*)
 		    lflags="${lflags} -nodefaultlib:libucrt.lib"
@@ -760,32 +757,19 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -out:\[$]@"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
-	DLLSUFFIX="\${DBGX}.dll"
-	LIBSUFFIX="\${DBGX}.lib"
-	LIBFLAGSUFFIX="\${DBGX}"
+	DLLSUFFIX=".dll"
+	LIBSUFFIX=".lib"
+	LIBFLAGSUFFIX=""
 
-	# This is a 2-stage check to make sure we have the 64-bit SDK
-	# We have to know where the SDK is installed.
-	# This magic is based on MS Platform SDK for Win2003 SP1 - hobbs
 	if test "$do64bit" != "no" ; then
-	    if test "x${MSSDK}x" = "xx" ; then
-		MSSDK="C:/Progra~1/Microsoft Platform SDK"
-	    fi
-	    MSSDK=`echo "$MSSDK" | sed -e 's!\\\!/!g'`
-	    PATH64=""
 	    case "$do64bit" in
 		amd64|x64|yes)
 		    MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
-		    PATH64="${MSSDK}/Bin/Win64/x86/AMD64"
 		    ;;
 		ia64)
 		    MACHINE="IA64"
-		    PATH64="${MSSDK}/Bin/Win64"
 		    ;;
 	    esac
-	    if test ! -d "${PATH64}" ; then
-		AC_MSG_WARN([Could not find 64-bit $MACHINE SDK])
-	    fi
 	    AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 	fi
 
@@ -800,21 +784,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	esac
 
 	if test "$do64bit" != "no" ; then
-	    # The space-based-path will work for the Makefile, but will
-	    # not work if AC_TRY_COMPILE is called.  TEA has the
-	    # TEA_PATH_NOSPACE to avoid this issue.
-	    # Check if _WIN64 is already recognized, and if so we don't
-	    # need to modify CC.
-	    AC_CHECK_DECL([_WIN64], [],
-			  [CC="\"${PATH64}/cl.exe\" -I\"${MSSDK}/Include\" \
-			 -I\"${MSSDK}/Include/crt\" \
-			 -I\"${MSSDK}/Include/crt/sys\""])
-	    RC="\"${MSSDK}/bin/rc.exe\""
+	    RC="rc"
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
 	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
 	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
-	    lflags="${lflags} -nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
-	    LINKBIN="\"${PATH64}/link.exe\""
+	    lflags="${lflags} -nologo -MACHINE:${MACHINE}"
+	    LINKBIN="link"
 	    # Avoid 'unresolved external symbol __security_cookie' errors.
 	    # c.f. http://support.microsoft.com/?id=894573
 	    LIBS="$LIBS bufferoverflowU.lib"
@@ -948,6 +923,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    [Defined when cygwin/mingw ignores VOID define in winnt.h])
 	fi
 
+	AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
+
 	# See if the compiler supports casting to a union type.
 	# This is used to stop gcc from printing a compiler
 	# warning when initializing a union member.
@@ -1080,7 +1057,7 @@ AC_DEFUN([SC_PROG_TCLSH], [
 
 AC_DEFUN([SC_BUILD_TCLSH], [
     AC_MSG_CHECKING([for tclsh in Tcl build directory])
-    BUILD_TCLSH=${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}${TCL_DBGX}${EXEEXT}
+    BUILD_TCLSH=${TCL_BIN_DIR}/tclsh${TCL_MAJOR_VERSION}${TCL_MINOR_VERSION}${EXEEXT}
     AC_MSG_RESULT($BUILD_TCLSH)
     AC_SUBST(BUILD_TCLSH)
 ])
@@ -1108,8 +1085,7 @@ AC_DEFUN([SC_TCL_CFG_ENCODING], [
     if test x"${with_tcencoding}" != x ; then
 	AC_DEFINE_UNQUOTED(TCL_CFGVAL_ENCODING,"${with_tcencoding}")
     else
-	# Default encoding on windows is not "iso8859-1"
-	AC_DEFINE(TCL_CFGVAL_ENCODING,"cp1252")
+	AC_DEFINE(TCL_CFGVAL_ENCODING,"utf-8")
     fi
 ])
 

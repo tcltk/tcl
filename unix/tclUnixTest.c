@@ -62,16 +62,13 @@ static const char *gotsig = "0";
  * Forward declarations of functions defined later in this file:
  */
 
-static Tcl_CmdProc TestalarmCmd;
+static Tcl_ObjCmdProc TestalarmCmd;
 static Tcl_ObjCmdProc TestchmodCmd;
-static Tcl_CmdProc TestfilehandlerCmd;
-static Tcl_CmdProc TestfilewaitCmd;
-static Tcl_CmdProc TestfindexecutableCmd;
-static Tcl_ObjCmdProc TestforkObjCmd;
-static Tcl_ObjCmdProc TestgetencpathObjCmd;
-static Tcl_CmdProc TestgetopenfileCmd;
-static Tcl_CmdProc TestgotsigCmd;
-static Tcl_ObjCmdProc TestsetencpathObjCmd;
+static Tcl_ObjCmdProc TestfilehandlerCmd;
+static Tcl_ObjCmdProc TestfilewaitCmd;
+static Tcl_ObjCmdProc TestfindexecutableCmd;
+static Tcl_ObjCmdProc TestforkCmd;
+static Tcl_ObjCmdProc TestgotsigCmd;
 static Tcl_FileProc TestFileHandlerProc;
 static void AlarmHandler(int signum);
 
@@ -98,23 +95,17 @@ TclplatformtestInit(
 {
     Tcl_CreateObjCommand(interp, "testchmod", TestchmodCmd,
 	    NULL, NULL);
-    Tcl_CreateCommand(interp, "testfilehandler", TestfilehandlerCmd,
+    Tcl_CreateObjCommand(interp, "testfilehandler", TestfilehandlerCmd,
 	    NULL, NULL);
-    Tcl_CreateCommand(interp, "testfilewait", TestfilewaitCmd,
+    Tcl_CreateObjCommand(interp, "testfilewait", TestfilewaitCmd,
 	    NULL, NULL);
-    Tcl_CreateCommand(interp, "testfindexecutable", TestfindexecutableCmd,
+    Tcl_CreateObjCommand(interp, "testfindexecutable", TestfindexecutableCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testfork", TestforkObjCmd,
+    Tcl_CreateObjCommand(interp, "testfork", TestforkCmd,
         NULL, NULL);
-    Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
+    Tcl_CreateObjCommand(interp, "testalarm", TestalarmCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testgetencpath", TestgetencpathObjCmd,
-	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testsetencpath", TestsetencpathObjCmd,
-	    NULL, NULL);
-    Tcl_CreateCommand(interp, "testalarm", TestalarmCmd,
-	    NULL, NULL);
-    Tcl_CreateCommand(interp, "testgotsig", TestgotsigCmd,
+    Tcl_CreateObjCommand(interp, "testgotsig", TestgotsigCmd,
 	    NULL, NULL);
     return TCL_OK;
 }
@@ -138,10 +129,10 @@ TclplatformtestInit(
 
 static int
 TestfilehandlerCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Pipe *pipePtr;
     int i, mask, timeout;
@@ -161,24 +152,23 @@ TestfilehandlerCmd(
 	initialized = 1;
     }
 
-    if (argc < 2) {
-	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
-		" option ... \"", NULL);
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
         return TCL_ERROR;
     }
     pipePtr = NULL;
-    if (argc >= 3) {
-	if (Tcl_GetInt(interp, argv[2], &i) != TCL_OK) {
+    if (objc >= 3) {
+	if (Tcl_GetIntFromObj(interp, objv[2], &i) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (i >= MAX_PIPES) {
-	    Tcl_AppendResult(interp, "bad index ", argv[2], NULL);
+	    Tcl_AppendResult(interp, "bad index ", objv[2], NULL);
 	    return TCL_ERROR;
 	}
 	pipePtr = &testPipes[i];
     }
 
-    if (strcmp(argv[1], "close") == 0) {
+    if (strcmp(Tcl_GetString(objv[1]), "close") == 0) {
 	for (i = 0; i < MAX_PIPES; i++) {
 	    if (testPipes[i].readFile != NULL) {
 		TclpCloseFile(testPipes[i].readFile);
@@ -187,27 +177,24 @@ TestfilehandlerCmd(
 		testPipes[i].writeFile = NULL;
 	    }
 	}
-    } else if (strcmp(argv[1], "clear") == 0) {
-	if (argc != 3) {
-	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
-		    argv[0], " clear index\"", NULL);
+    } else if (strcmp(Tcl_GetString(objv[1]), "clear") == 0) {
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "index");
 	    return TCL_ERROR;
 	}
 	pipePtr->readCount = pipePtr->writeCount = 0;
-    } else if (strcmp(argv[1], "counts") == 0) {
+    } else if (strcmp(Tcl_GetString(objv[1]), "counts") == 0) {
 	char buf[TCL_INTEGER_SPACE * 2];
 
-	if (argc != 3) {
-	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
-		    argv[0], " counts index\"", NULL);
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "index");
 	    return TCL_ERROR;
 	}
 	sprintf(buf, "%d %d", pipePtr->readCount, pipePtr->writeCount);
 	Tcl_AppendResult(interp, buf, NULL);
-    } else if (strcmp(argv[1], "create") == 0) {
-	if (argc != 5) {
-	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
-		    argv[0], " create index readMode writeMode\"", NULL);
+    } else if (strcmp(Tcl_GetString(objv[1]), "create") == 0) {
+	if (objc != 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "index readMode writeMode");
 	    return TCL_ERROR;
 	}
 	if (pipePtr->readFile == NULL) {
@@ -228,83 +215,79 @@ TestfilehandlerCmd(
 	pipePtr->readCount = 0;
 	pipePtr->writeCount = 0;
 
-	if (strcmp(argv[3], "readable") == 0) {
+	if (strcmp(Tcl_GetString(objv[3]), "readable") == 0) {
 	    Tcl_CreateFileHandler(GetFd(pipePtr->readFile), TCL_READABLE,
 		    TestFileHandlerProc, pipePtr);
-	} else if (strcmp(argv[3], "off") == 0) {
+	} else if (strcmp(Tcl_GetString(objv[3]), "off") == 0) {
 	    Tcl_DeleteFileHandler(GetFd(pipePtr->readFile));
-	} else if (strcmp(argv[3], "disabled") == 0) {
+	} else if (strcmp(Tcl_GetString(objv[3]), "disabled") == 0) {
 	    Tcl_CreateFileHandler(GetFd(pipePtr->readFile), 0,
 		    TestFileHandlerProc, pipePtr);
 	} else {
-	    Tcl_AppendResult(interp, "bad read mode \"", argv[3], "\"", NULL);
+	    Tcl_AppendResult(interp, "bad read mode \"", Tcl_GetString(objv[3]), "\"", NULL);
 	    return TCL_ERROR;
 	}
-	if (strcmp(argv[4], "writable") == 0) {
+	if (strcmp(Tcl_GetString(objv[4]), "writable") == 0) {
 	    Tcl_CreateFileHandler(GetFd(pipePtr->writeFile), TCL_WRITABLE,
 		    TestFileHandlerProc, pipePtr);
-	} else if (strcmp(argv[4], "off") == 0) {
+	} else if (strcmp(Tcl_GetString(objv[4]), "off") == 0) {
 	    Tcl_DeleteFileHandler(GetFd(pipePtr->writeFile));
-	} else if (strcmp(argv[4], "disabled") == 0) {
+	} else if (strcmp(Tcl_GetString(objv[4]), "disabled") == 0) {
 	    Tcl_CreateFileHandler(GetFd(pipePtr->writeFile), 0,
 		    TestFileHandlerProc, pipePtr);
 	} else {
-	    Tcl_AppendResult(interp, "bad read mode \"", argv[4], "\"", NULL);
+	    Tcl_AppendResult(interp, "bad read mode \"", Tcl_GetString(objv[4]), "\"", NULL);
 	    return TCL_ERROR;
 	}
-    } else if (strcmp(argv[1], "empty") == 0) {
-	if (argc != 3) {
-	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
-		    argv[0], " empty index\"", NULL);
+    } else if (strcmp(Tcl_GetString(objv[1]), "empty") == 0) {
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "index");
 	    return TCL_ERROR;
 	}
 
         while (read(GetFd(pipePtr->readFile), buffer, 4000) > 0) {
 	    /* Empty loop body. */
         }
-    } else if (strcmp(argv[1], "fill") == 0) {
-	if (argc != 3) {
-	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
-		    argv[0], " fill index\"", NULL);
+    } else if (strcmp(Tcl_GetString(objv[1]), "fill") == 0) {
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "index");
 	    return TCL_ERROR;
 	}
 
 	memset(buffer, 'a', 4000);
-        while (write(GetFd(pipePtr->writeFile), buffer, 4000) > 0) {
+	while (write(GetFd(pipePtr->writeFile), buffer, 4000) > 0) {
 	    /* Empty loop body. */
-        }
-    } else if (strcmp(argv[1], "fillpartial") == 0) {
+	}
+    } else if (strcmp(Tcl_GetString(objv[1]), "fillpartial") == 0) {
 	char buf[TCL_INTEGER_SPACE];
 
-	if (argc != 3) {
-	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
-		    argv[0], " fillpartial index\"", NULL);
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "index");
 	    return TCL_ERROR;
 	}
 
 	memset(buffer, 'b', 10);
 	TclFormatInt(buf, write(GetFd(pipePtr->writeFile), buffer, 10));
 	Tcl_AppendResult(interp, buf, NULL);
-    } else if (strcmp(argv[1], "oneevent") == 0) {
+    } else if (strcmp(Tcl_GetString(objv[1]), "oneevent") == 0) {
 	Tcl_DoOneEvent(TCL_FILE_EVENTS|TCL_DONT_WAIT);
-    } else if (strcmp(argv[1], "wait") == 0) {
-	if (argc != 5) {
-	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
-		    argv[0], " wait index readable|writable timeout\"", NULL);
+    } else if (strcmp(Tcl_GetString(objv[1]), "wait") == 0) {
+	if (objc != 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "index readable|writable timeout");
 	    return TCL_ERROR;
 	}
 	if (pipePtr->readFile == NULL) {
-	    Tcl_AppendResult(interp, "pipe ", argv[2], " doesn't exist", NULL);
+	    Tcl_AppendResult(interp, "pipe ", Tcl_GetString(objv[2]), " doesn't exist", NULL);
 	    return TCL_ERROR;
 	}
-	if (strcmp(argv[3], "readable") == 0) {
+	if (strcmp(Tcl_GetString(objv[3]), "readable") == 0) {
 	    mask = TCL_READABLE;
 	    file = pipePtr->readFile;
 	} else {
 	    mask = TCL_WRITABLE;
 	    file = pipePtr->writeFile;
 	}
-	if (Tcl_GetInt(interp, argv[4], &timeout) != TCL_OK) {
+	if (Tcl_GetIntFromObj(interp, objv[4], &timeout) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	i = TclUnixWaitForFile(GetFd(file), mask, timeout);
@@ -314,10 +297,10 @@ TestfilehandlerCmd(
 	if (i & TCL_WRITABLE) {
 	    Tcl_AppendElement(interp, "writable");
 	}
-    } else if (strcmp(argv[1], "windowevent") == 0) {
+    } else if (strcmp(Tcl_GetString(objv[1]), "windowevent") == 0) {
 	Tcl_DoOneEvent(TCL_WINDOW_EVENTS|TCL_DONT_WAIT);
     } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1],
+	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
 		"\": must be close, clear, counts, create, empty, fill, "
 		"fillpartial, oneevent, wait, or windowevent", NULL);
 	return TCL_ERROR;
@@ -331,7 +314,7 @@ TestFileHandlerProc(
     int mask)			/* Indicates which events happened:
 				 * TCL_READABLE or TCL_WRITABLE. */
 {
-    Pipe *pipePtr = clientData;
+    Pipe *pipePtr = (Pipe *)clientData;
 
     if (mask & TCL_READABLE) {
 	pipePtr->readCount++;
@@ -360,33 +343,32 @@ TestFileHandlerProc(
 
 static int
 TestfilewaitCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
 {
     int mask, result, timeout;
     Tcl_Channel channel;
     int fd;
     ClientData data;
 
-    if (argc != 4) {
-	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
-		" file readable|writable|both timeout\"", NULL);
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 2, objv, "file readable|writable|both timeout");
 	return TCL_ERROR;
     }
-    channel = Tcl_GetChannel(interp, argv[1], NULL);
+    channel = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
     if (channel == NULL) {
 	return TCL_ERROR;
     }
-    if (strcmp(argv[2], "readable") == 0) {
+    if (strcmp(Tcl_GetString(objv[2]), "readable") == 0) {
 	mask = TCL_READABLE;
-    } else if (strcmp(argv[2], "writable") == 0){
+    } else if (strcmp(Tcl_GetString(objv[2]), "writable") == 0){
 	mask = TCL_WRITABLE;
-    } else if (strcmp(argv[2], "both") == 0){
+    } else if (strcmp(Tcl_GetString(objv[2]), "both") == 0){
 	mask = TCL_WRITABLE|TCL_READABLE;
     } else {
-	Tcl_AppendResult(interp, "bad argument \"", argv[2],
+	Tcl_AppendResult(interp, "bad argument \"", Tcl_GetString(objv[2]),
 		"\": must be readable, writable, or both", NULL);
 	return TCL_ERROR;
     }
@@ -397,7 +379,7 @@ TestfilewaitCmd(
 	return TCL_ERROR;
     }
     fd = PTR2INT(data);
-    if (Tcl_GetInt(interp, argv[3], &timeout) != TCL_OK) {
+    if (Tcl_GetIntFromObj(interp, objv[3], &timeout) != TCL_OK) {
 	return TCL_ERROR;
     }
     result = TclUnixWaitForFile(fd, mask, timeout);
@@ -429,23 +411,22 @@ TestfilewaitCmd(
 
 static int
 TestfindexecutableCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Obj *saveName;
 
-    if (argc != 2) {
-	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
-		" argv0\"", NULL);
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "argv0");
 	return TCL_ERROR;
     }
 
     saveName = TclGetObjNameOfExecutable();
     Tcl_IncrRefCount(saveName);
 
-    TclpFindExecutable(argv[1]);
+    TclpFindExecutable(Tcl_GetString(objv[1]));
     Tcl_SetObjResult(interp, TclGetObjNameOfExecutable());
 
     TclSetObjNameOfExecutable(saveName, NULL);
@@ -456,83 +437,7 @@ TestfindexecutableCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestgetopenfileCmd --
- *
- *	This function implements the "testgetopenfile" command. It is used to
- *	get a FILE * value from a registered channel.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestgetopenfileCmd(
-    ClientData clientData,	/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
-{
-    ClientData filePtr;
-
-    if (argc != 3) {
-        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" channelName forWriting\"", NULL);
-        return TCL_ERROR;
-    }
-    if (Tcl_GetOpenFile(interp, argv[1], atoi(argv[2]), 1, &filePtr)
-	    == TCL_ERROR) {
-        return TCL_ERROR;
-    }
-    if (filePtr == NULL) {
-        Tcl_AppendResult(interp,
-		"Tcl_GetOpenFile succeeded but FILE * NULL!", NULL);
-        return TCL_ERROR;
-    }
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestsetencpathCmd --
- *
- *	This function implements the "testsetencpath" command. It is used to
- *	test Tcl_SetDefaultEncodingDir().
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestsetencpathObjCmd(
-    ClientData clientData,	/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)	/* Argument strings. */
-{
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "defaultDir");
-        return TCL_ERROR;
-    }
-
-    Tcl_SetEncodingSearchPath(objv[1]);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestforkObjCmd --
+ * TestforkCmd --
  *
  *	This function implements the "testfork" command. It is used to
  *	fork the Tcl process for specific test cases.
@@ -547,8 +452,8 @@ TestsetencpathObjCmd(
  */
 
 static int
-TestforkObjCmd(
-    ClientData clientData,	/* Not used. */
+TestforkCmd(
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -577,39 +482,6 @@ TestforkObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestgetencpathObjCmd --
- *
- *	This function implements the "testgetencpath" command. It is used to
- *	test Tcl_GetEncodingSearchPath().
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestgetencpathObjCmd(
-    ClientData clientData,	/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)		/* Argument strings. */
-{
-    if (objc != 1) {
-        Tcl_WrongNumArgs(interp, 1, objv, "");
-        return TCL_ERROR;
-    }
-
-    Tcl_SetObjResult(interp, Tcl_GetEncodingSearchPath());
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TestalarmCmd --
  *
  *	Test that EINTR is handled correctly by generating and handling a
@@ -627,19 +499,17 @@ TestgetencpathObjCmd(
 
 static int
 TestalarmCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
 {
 #ifdef SA_RESTART
-    unsigned int sec;
+    unsigned int sec = 1;
     struct sigaction action;
 
-    if (argc > 1) {
-	Tcl_GetInt(interp, argv[1], (int *)&sec);
-    } else {
-	sec = 1;
+    if (objc > 1) {
+	Tcl_GetIntFromObj(interp, objv[1], (int *)&sec);
     }
 
     /*
@@ -658,6 +528,7 @@ TestalarmCmd(
     (void) alarm(sec);
     return TCL_OK;
 #else
+
     Tcl_AppendResult(interp,
 	    "warning: sigaction SA_RESTART not support on this platform",
 	    NULL);
@@ -683,7 +554,7 @@ TestalarmCmd(
 
 static void
 AlarmHandler(
-    int signum)
+    TCL_UNUSED(int) /*signum*/)
 {
     gotsig = "1";
 }
@@ -706,10 +577,10 @@ AlarmHandler(
 
 static int
 TestgotsigCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(Tcl_Obj *const *))
 {
     Tcl_AppendResult(interp, gotsig, NULL);
     gotsig = "0";
@@ -737,7 +608,7 @@ TestgotsigCmd(
 
 static int
 TestchmodCmd(
-    ClientData dummy,			/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,			/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)		/* Argument strings. */
