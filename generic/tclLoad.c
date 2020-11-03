@@ -369,7 +369,7 @@ Tcl_LoadObjCmd(
 	while (strchr(Tcl_DStringValue(&pkgName), ':') != NULL) {
 	    char *r;
 	    p = Tcl_DStringValue(&pkgName);
-	    r = strchr(p, ':');
+	    r = strchr((char *)p, ':');
 	    if ((r != NULL) && (r[1] == ':')) {
 		memmove(r, r+2, strlen(r+1));
 	    }
