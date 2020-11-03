@@ -36,8 +36,8 @@ namespace eval ::tcl::test::io {
 
     catch {
 	::tcltest::loadTestedCommands
-	package require -exact Tcltest [info patchlevel]
-	set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
+	package require -exact tcl::test [info patchlevel]
+	set ::tcltestlib [lindex [package ifneeded tcl::test [info patchlevel]] 1]
     }
     package require tcltests
 
@@ -7493,7 +7493,7 @@ test chan-io-59.1 {Thread reference of channels} {testmainthread testchannel} {
 test chan-io-60.1 {writing illegal utf sequences} {fileevent testbytestring} {
     # This test will hang in older revisions of the core.
     set out [open $path(script) w]
-    chan puts $out "catch {load $::tcltestlib Tcltest}"
+    chan puts $out "catch {load $::tcltestlib tcl::test}"
     chan puts $out {
 	chan puts [testbytestring \xe2]
 	exit 1
@@ -7576,7 +7576,7 @@ test chan-io-70.1 {Transfer channel} -setup {
     lappend res [catch {chan seek $c 0 start}]
     set tid [thread::create -preserved]
     thread::send $tid [list set c $c]
-    thread::send $tid {load {} Tcltest}
+    thread::send $tid {load {} tcl::test}
     lappend res [thread::send $tid {
 	testchannel splice $c
 	set res [catch {chan seek $c 0 start}]

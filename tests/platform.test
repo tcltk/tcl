@@ -21,7 +21,7 @@ namespace eval ::tcl::test::platform {
     namespace upvar :: tcl_platform tcl_platform
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 package require tcltests
 
 testConstraint testCPUID [llength [info commands testcpuid]]

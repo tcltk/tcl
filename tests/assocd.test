@@ -17,7 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testgetassocdata [llength [info commands testgetassocdata]]
 testConstraint testsetassocdata [llength [info commands testsetassocdata]]

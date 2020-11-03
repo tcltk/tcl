@@ -31,7 +31,7 @@ set tmpdir  [file join $CWD tmp]
 file mkdir $tmpdir
 
 test zipfs-0.0 {zipfs basics} -constraints zipfs -body {
-    package require zipfs
+    package require tcl::zipfs
 } -result {2.0}
 test zipfs-0.1 {zipfs basics} -constraints zipfs -body {
     expr {${ziproot} in [file volumes]}
