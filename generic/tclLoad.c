@@ -429,6 +429,22 @@ Tcl_LoadObjCmd(
 	 */
 
 	Tcl_ResetResult(interp);
+    } else {
+	Tcl_DStringAppend(&initName, pkgPtr->packageName, -1);
+	Tcl_DStringSetLength(&initName,
+		Tcl_UtfToTitle(Tcl_DStringValue(&initName)));
+	while (strchr(Tcl_DStringValue(&initName), ':') != NULL) {
+	    char *r;
+	    p = Tcl_DStringValue(&initName);
+	    r = strchr((char *)p, ':');
+	    if ((r != NULL) && (r[1] == ':')) {
+		memmove(r, r+2, strlen(r+1));
+	    }
+	    Tcl_DStringSetLength(&initName, strlen(p));
+	}
+	TclDStringAppendDString(&safeInitName, &initName);
+	TclDStringAppendLiteral(&safeInitName, "_SafeInit");
+	TclDStringAppendLiteral(&initName, "_Init");
     }
 
     /*
@@ -440,7 +456,7 @@ Tcl_LoadObjCmd(
 	if (pkgPtr->safeInitProc == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "can't use package in a safe interpreter: no"
-		    " %s_SafeInit procedure", pkgPtr->packageName));
+		    " %s procedure", Tcl_DStringValue(&safeInitName)));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "UNSAFE",
 		    NULL);
 	    code = TCL_ERROR;
@@ -450,8 +466,8 @@ Tcl_LoadObjCmd(
     } else {
 	if (pkgPtr->initProc == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't attach package to interpreter: no %s_Init procedure",
-		    pkgPtr->packageName));
+		    "can't attach package to interpreter: no %s procedure",
+		    Tcl_DStringValue(&initName)));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "ENTRYPOINT",
 		    NULL);
 	    code = TCL_ERROR;
