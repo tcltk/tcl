@@ -138,7 +138,10 @@ static const Tcl_MethodType classConstructor = {
  */
 
 static const char *initScript =
+#ifndef TCL_NO_DEPRECATED
 "package ifneeded TclOO " TCLOO_PATCHLEVEL " {# Already present, OK?};"
+#endif
+"package ifneeded tcl::oo " TCLOO_PATCHLEVEL " {# Already present, OK?};"
 "namespace eval ::oo { variable version " TCLOO_VERSION " };"
 "namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
 /* "tcl_findLibrary tcloo $oo::version $oo::version" */
@@ -257,7 +260,11 @@ TclOOInit(
 	return TCL_ERROR;
     }
 
-    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
+#ifndef TCL_NO_DEPRECATED
+    Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
+    	    (void *) &tclOOStubs);
+#endif
+    return Tcl_PkgProvideEx(interp, "tcl::oo", TCLOO_PATCHLEVEL,
 	    (void *) &tclOOStubs);
 }
 

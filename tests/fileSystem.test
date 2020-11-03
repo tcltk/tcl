@@ -25,7 +25,7 @@ namespace eval ::tcl::test::fileSystem {
 testConstraint loaddll 0
 catch {
     ::tcltest::loadTestedCommands
-    package require -exact Tcltest [info patchlevel]
+    package require -exact tcl::test [info patchlevel]
     set ::ddever [package require dde]
     set ::ddelib [lindex [package ifneeded dde $::ddever] 1]
     set ::regver  [package require registry]
@@ -33,7 +33,7 @@ catch {
     testConstraint loaddll 1
 }
 
-# Test for commands defined in Tcltest executable
+# Test for commands defined in tcl::test package
 testConstraint testfilesystem  	    [llength [info commands ::testfilesystem]]
 testConstraint testsetplatform 	    [llength [info commands ::testsetplatform]]
 testConstraint testsimplefilesystem [llength [info commands ::testsimplefilesystem]]

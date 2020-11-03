@@ -1175,6 +1175,7 @@ Tcl_CreateInterp(void)
      */
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
+    Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL, &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));

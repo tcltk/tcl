@@ -16,7 +16,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testwinclock [llength [info commands testwinclock]]
 testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
