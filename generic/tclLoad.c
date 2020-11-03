@@ -227,7 +227,7 @@ Tcl_LoadObjCmd(
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
 	    namesMatch = (strcmp(Tcl_DStringValue(&tmp),
-		    Tcl_DStringValue(&pkgName)) == 0) {
+		    Tcl_DStringValue(&pkgName)) == 0);
 	}
 	TclDStringClear(&pkgName);
 
@@ -660,7 +660,7 @@ Tcl_UnloadObjCmd(
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
 	    namesMatch = (strcmp(Tcl_DStringValue(&tmp),
-		    Tcl_DStringValue(&pkgName)) == 0)
+		    Tcl_DStringValue(&pkgName)) == 0);
 	}
 	TclDStringClear(&pkgName);
 
