@@ -1269,7 +1269,7 @@ casecmp(
     size_t len)			/* exact length of comparison */
 {
     for (; len > 0; len--, x++, y++) {
-	if ((*x!=*y) && (Tcl_UniCharFold(*x) != Tcl_UniCharFold(*y))) {
+	if ((*x!=*y) && (Tcl_UniCharToLower(*x) != Tcl_UniCharToLower(*y))) {
 	    return 1;
 	}
     }

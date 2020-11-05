@@ -4782,8 +4782,8 @@ DictionaryCompare(
 	     * other interesting punctuations occur).
 	     */
 
-	    uniLeftLower = Tcl_UniCharFold(uniLeft);
-	    uniRightLower = Tcl_UniCharFold(uniRight);
+	    uniLeftLower = Tcl_UniCharToLower(uniLeft);
+	    uniRightLower = Tcl_UniCharToLower(uniRight);
 	} else {
 	    diff = UCHAR(*left) - UCHAR(*right);
 	    break;

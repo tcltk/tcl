@@ -2412,9 +2412,6 @@ declare 650 {
 declare 651 {
     const char *Tcl_UtfPrev(const char *src, const char *start)
 }
-declare 652 {
-    int Tcl_UniCharFold(int ch)
-}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
