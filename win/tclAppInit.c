@@ -168,12 +168,12 @@ Tcl_AppInit(
     if (Registry_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
+    Tcl_StaticPackage(interp, "Registry", Registry_Init, NULL);
 
     if (Dde_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
+    Tcl_StaticPackage(interp, "Dde", Dde_Init, Dde_SafeInit);
 #endif
 
 #ifdef TCL_TEST
