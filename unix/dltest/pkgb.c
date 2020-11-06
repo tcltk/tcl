@@ -1,7 +1,7 @@
 /*
  * pkgb.c --
  *
- *	This file contains a simple Tcl package "pkgb" that is intended for
+ *	This file contains a simple Tcl package "Pkgb" that is intended for
  *	testing the Tcl dynamic loading facilities. It can be used in both
  *	safe and unsafe interpreters.
  *

@@ -36,8 +36,8 @@ namespace eval ::tcl::test::io {
 
     catch {
 	::tcltest::loadTestedCommands
-	package require -exact Tcltest [info patchlevel]
-	set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
+	package require -exact tcl::test [info patchlevel]
+	set ::tcltestlib [lindex [package ifneeded tcl::test [info patchlevel]] 1]
     }
     package require tcltests
 

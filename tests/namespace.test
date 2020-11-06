@@ -19,7 +19,7 @@ if {"::tcltest" ni [namespace children]} {
 testConstraint memory [llength [info commands memory]]
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 #
 # REMARK: the tests for 'namespace upvar' are not done here. They are to be

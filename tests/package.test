@@ -18,7 +18,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Do all this in a child interp to avoid garbaging the package list
 set i [interp create]
@@ -1340,7 +1340,7 @@ proc prefer {args} {
 
 test package-13.0 {package prefer defaults} -body {
     prefer
-} -result [expr {[string match {*[ab]*} [package provide Tcl]] ? "latest" : "stable"}]
+} -result [expr {[string match {*[ab]*} [package provide tcl]] ? "latest" : "stable"}]
 test package-13.1 {package prefer defaults} -body {
     set ::env(TCL_PKG_PREFER_LATEST) stable	;# value not relevant!
     prefer
