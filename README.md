@@ -6,6 +6,7 @@ You can get any source release of Tcl from [our distribution
 site](https://sourceforge.net/projects/tcl/files/Tcl/).
 
 [![Build Status](https://travis-ci.org/tcltk/tcl.svg?branch=core-8-branch)](https://travis-ci.org/tcltk/tcl)
+[![Build Status](https://github.com/tcltk/tcl/workflows/Linux%20Build%20and%20Test/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Linux+Build+and+Test%22+branch%3Amain)
 
 ## Contents
  1. [Introduction](#intro)
