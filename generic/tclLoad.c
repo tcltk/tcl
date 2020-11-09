@@ -226,8 +226,6 @@ Tcl_LoadObjCmd(
 	    Tcl_DStringAppend(&pkgName, packageName, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
-	    Tcl_UtfToLower(Tcl_DStringValue(&pkgName));
-	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pkgName)) == 0) {
 		namesMatch = 1;
@@ -321,6 +319,12 @@ Tcl_LoadObjCmd(
 	    splitPtr = Tcl_FSSplitPath(objv[1], &pElements);
 	    Tcl_ListObjIndex(NULL, splitPtr, pElements -1, &pkgGuessPtr);
 	    pkgGuess = TclGetString(pkgGuessPtr);
+#if defined(_WIN32) || defined(__CYGWIN__)
+	    if ((pkgGuess[0] == 'w') && (pkgGuess[1] == 'i')
+		    && (pkgGuess[2] == 'n')) {
+		pkgGuess += 3;
+	    } else
+#endif /* __CYGWIN__ */
 	    if ((pkgGuess[0] == 'l') && (pkgGuess[1] == 'i')
 		    && (pkgGuess[2] == 'b')) {
 		pkgGuess += 3;
@@ -351,16 +355,17 @@ Tcl_LoadObjCmd(
 	    }
 	    Tcl_DStringAppend(&pkgName, pkgGuess, p - pkgGuess);
 	    Tcl_DecrRefCount(splitPtr);
+
+	    /*
+	     * Fix the capitalization in the package name so that the first
+	     * character is in caps (or title case) but the others are all
+	     * lower-case.
+	     */
+
+	    Tcl_DStringSetLength(&pkgName,
+		    Tcl_UtfToTitle(Tcl_DStringValue(&pkgName)));
+
 	}
-
-	/*
-	 * Fix the capitalization in the package name so that the first
-	 * character is in caps (or title case) but the others are all
-	 * lower-case.
-	 */
-
-	Tcl_DStringSetLength(&pkgName,
-		Tcl_UtfToTitle(Tcl_DStringValue(&pkgName)));
 
 	/*
 	 * Compute the names of the two initialization functions, based on the
@@ -656,8 +661,6 @@ Tcl_UnloadObjCmd(
 	    Tcl_DStringAppend(&pkgName, packageName, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
-	    Tcl_UtfToLower(Tcl_DStringValue(&pkgName));
-	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pkgName)) == 0) {
 		namesMatch = 1;
