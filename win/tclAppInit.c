@@ -168,19 +168,19 @@ Tcl_AppInit(
     if (Registry_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Registry", Registry_Init, NULL);
+    Tcl_StaticLibrary(interp, "Registry", Registry_Init, NULL);
 
     if (Dde_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Dde", Dde_Init, Dde_SafeInit);
+    Tcl_StaticLibrary(interp, "Dde", Dde_Init, Dde_SafeInit);
 #endif
 
 #ifdef TCL_TEST
     if (Tcltest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
+    Tcl_StaticLibrary(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
 #endif /* TCL_TEST */
 
     /*

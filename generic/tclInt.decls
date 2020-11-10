@@ -1058,7 +1058,7 @@ declare 256 {
 	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
 }
 declare 257 {
-    void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
+    void TclStaticLibrary(Tcl_Interp *interp, const char *prefix,
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
 

@@ -2975,7 +2975,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
 			    size_t *sizePtr);
-MODULE_SCOPE int	TclGetLoadedPackagesEx(Tcl_Interp *interp,
+MODULE_SCOPE int	TclGetLoadedLibraries(Tcl_Interp *interp,
 				const char *targetName,
 				const char *packageName);
 MODULE_SCOPE int	TclGetWideBitsFromObj(Tcl_Interp *, Tcl_Obj *,

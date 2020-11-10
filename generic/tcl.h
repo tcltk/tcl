@@ -2189,10 +2189,11 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 EXTERN void		Tcl_FindExecutable(const char *argv0);
 EXTERN void		Tcl_SetPanicProc(
 			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
-EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
+EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 			    const char *pkgName,
 			    Tcl_PackageInitProc *initProc,
 			    Tcl_PackageInitProc *safeInitProc);
+#define Tcl_StaticPackage Tcl_StaticLibrary
 EXTERN Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
 #ifdef _WIN32
 EXTERN int		TclZipfs_AppHook(int *argc, wchar_t ***argv);

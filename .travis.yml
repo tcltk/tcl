@@ -243,7 +243,7 @@ jobs:
       script:
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc test
-    - name: "Windows/MSVC/StaticPackage"
+    - name: "Windows/MSVC/StaticPkg"
       os: windows
       compiler: cl
       env: *vcenv

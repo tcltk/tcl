@@ -4,16 +4,16 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_StaticPackage 3 7.5 Tcl "Tcl Library Procedures"
+.TH Tcl_StaticLibrary 3 7.5 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
-Tcl_StaticPackage \- make a statically linked package available via the 'load' command
+Tcl_StaticLibrary \- make a statically linked package available via the 'load' command
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
-\fBTcl_StaticPackage\fR(\fIinterp, pkgName, initProc, safeInitProc\fR)
+\fBTcl_StaticLibrary\fR(\fIinterp, pkgName, initProc, safeInitProc\fR)
 .SH ARGUMENTS
 .AS Tcl_PackageInitProc *safeInitProc
 .AP Tcl_Interp *interp in
@@ -37,11 +37,11 @@ cannot be used in safe interpreters.
 This procedure may be invoked to announce that a package has been
 linked statically with a Tcl application and, optionally, that it
 has already been loaded into an interpreter.
-Once \fBTcl_StaticPackage\fR has been invoked for a package, it
+Once \fBTcl_StaticLibrary\fR has been invoked for a package, it
 may be loaded into interpreters using the \fBload\fR command.
-\fBTcl_StaticPackage\fR is normally invoked only by the \fBTcl_AppInit\fR
+\fBTcl_StaticLibrary\fR is normally invoked only by the \fBTcl_AppInit\fR
 procedure for the application, not by packages for themselves
-(\fBTcl_StaticPackage\fR should only be invoked for statically
+(\fBTcl_StaticLibrary\fR should only be invoked for statically
 loaded packages, and code in the package itself should not need
 to know whether the package is dynamically or statically loaded).
 .PP
@@ -65,7 +65,7 @@ error message.  The result or error from the initialization procedure will
 be returned as the result of the \fBload\fR command that caused the
 initialization procedure to be invoked.
 .PP
-\fBTcl_StaticPackage\fR can not be safely used by stub-enabled extensions,
+\fBTcl_StaticLibrary\fR can not be safely used by stub-enabled extensions,
 so its symbol is not included in the stub table.
 .SH KEYWORDS
 initialization procedure, package, static linking

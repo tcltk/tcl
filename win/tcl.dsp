@@ -824,7 +824,7 @@ SOURCE=..\doc\SplitPath.3
 # End Source File
 # Begin Source File
 
-SOURCE=..\doc\StaticPkg.3
+SOURCE=..\doc\StaticLibrary.3
 # End Source File
 # Begin Source File
 

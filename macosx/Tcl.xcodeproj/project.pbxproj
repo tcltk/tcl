@@ -393,7 +393,7 @@
 		F96D3EA208F272A7004A47F5 /* split.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = split.n; sourceTree = "<group>"; };
 		F96D3EA308F272A7004A47F5 /* SplitList.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = SplitList.3; sourceTree = "<group>"; };
 		F96D3EA408F272A7004A47F5 /* SplitPath.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = SplitPath.3; sourceTree = "<group>"; };
-		F96D3EA508F272A7004A47F5 /* StaticPkg.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = StaticPkg.3; sourceTree = "<group>"; };
+		F96D3EA508F272A7004A47F5 /* StaticLibrary.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = StaticLibrary.3; sourceTree = "<group>"; };
 		F96D3EA608F272A7004A47F5 /* StdChannels.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = StdChannels.3; sourceTree = "<group>"; };
 		F96D3EA708F272A7004A47F5 /* string.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = string.n; sourceTree = "<group>"; };
 		F96D3EA808F272A7004A47F5 /* StringObj.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = StringObj.3; sourceTree = "<group>"; };
@@ -1149,7 +1149,7 @@
 				F96D3EA208F272A7004A47F5 /* split.n */,
 				F96D3EA308F272A7004A47F5 /* SplitList.3 */,
 				F96D3EA408F272A7004A47F5 /* SplitPath.3 */,
-				F96D3EA508F272A7004A47F5 /* StaticPkg.3 */,
+				F96D3EA508F272A7004A47F5 /* StaticLibrary.3 */,
 				F96D3EA608F272A7004A47F5 /* StdChannels.3 */,
 				F96D3EA708F272A7004A47F5 /* string.n */,
 				F96D3EA808F272A7004A47F5 /* StringObj.3 */,

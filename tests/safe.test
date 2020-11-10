@@ -1157,7 +1157,7 @@ test safe-9.24 {interpConfigure change the access path; check module loading; st
         res0 res1 res2}
 # See comments on lsort after test safe-9.20.
 
-catch {teststaticpkg Safepkg1 0 0}
+catch {teststaticlibrary Safepkg1 0 0}
 test safe-10.1 {testing statics loading} -constraints TcltestPackage -setup {
     set i [safe::interpCreate]
 } -body {
