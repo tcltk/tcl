@@ -13,7 +13,7 @@
 #-------------------------------------------------------------------------------------------------------
 # customizable settings
 
-DESTDIR			?= ${CURDIR}/../../build
+DESTDIR			?=
 INSTALL_ROOT		?= ${DESTDIR}
 
 BUILD_DIR		?= ${CURDIR}/../../build
