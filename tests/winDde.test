@@ -20,7 +20,7 @@ if {[testConstraint win]} {
     if {![catch {
 	    ::tcltest::loadTestedCommands
 	    set ::ddever [package require dde 1.4.3]
-	    set ::ddelib [lindex [package ifneeded dde $::ddever] 1]}]} {
+	    set ::ddelib [info loaded "" Dde]}]} {
 	testConstraint dde 1
     }
 }
@@ -38,7 +38,7 @@ proc createChildProcess {ddeServerName args} {
 
     set f [open $::scriptName w+]
     puts $f [list set ddeServerName $ddeServerName]
-    puts $f [list load $::ddelib dde]
+    puts $f [list load $::ddelib Dde]
     puts $f {
         # DDE child server -
         #

@@ -100,9 +100,7 @@ TCLAPI int		TclGetFrame(Tcl_Interp *interp, const char *str,
 /* Slot 34 is reserved */
 /* Slot 35 is reserved */
 /* Slot 36 is reserved */
-/* 37 */
-TCLAPI int		TclGetLoadedPackages(Tcl_Interp *interp,
-				const char *targetName);
+/* Slot 37 is reserved */
 /* 38 */
 TCLAPI int		TclGetNamespaceForQualName(Tcl_Interp *interp,
 				const char *qualName, Namespace *cxtNsPtr,
@@ -121,9 +119,7 @@ TCLAPI Tcl_Command	TclGetOriginalCommand(Tcl_Command command);
 TCLAPI const char *	TclpGetUserHome(const char *name,
 				Tcl_DString *bufferPtr);
 /* Slot 43 is reserved */
-/* 44 */
-TCLAPI int		TclGuessPackageName(const char *fileName,
-				Tcl_DString *bufPtr);
+/* Slot 44 is reserved */
 /* 45 */
 TCLAPI int		TclHideUnsafeCommands(Tcl_Interp *interp);
 /* 46 */
@@ -618,14 +614,14 @@ typedef struct TclIntStubs {
     void (*reserved34)(void);
     void (*reserved35)(void);
     void (*reserved36)(void);
-    int (*tclGetLoadedPackages) (Tcl_Interp *interp, const char *targetName); /* 37 */
+    void (*reserved37)(void);
     int (*tclGetNamespaceForQualName) (Tcl_Interp *interp, const char *qualName, Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr, Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr, const char **simpleNamePtr); /* 38 */
     TclObjCmdProcType (*tclGetObjInterpProc) (void); /* 39 */
     int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *seekFlagPtr); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) (Tcl_Command command); /* 41 */
     const char * (*tclpGetUserHome) (const char *name, Tcl_DString *bufferPtr); /* 42 */
     void (*reserved43)(void);
-    int (*tclGuessPackageName) (const char *fileName, Tcl_DString *bufPtr); /* 44 */
+    void (*reserved44)(void);
     int (*tclHideUnsafeCommands) (Tcl_Interp *interp); /* 45 */
     int (*tclInExit) (void); /* 46 */
     void (*reserved47)(void);
@@ -910,8 +906,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 34 is reserved */
 /* Slot 35 is reserved */
 /* Slot 36 is reserved */
-#define TclGetLoadedPackages \
-	(tclIntStubsPtr->tclGetLoadedPackages) /* 37 */
+/* Slot 37 is reserved */
 #define TclGetNamespaceForQualName \
 	(tclIntStubsPtr->tclGetNamespaceForQualName) /* 38 */
 #define TclGetObjInterpProc \
@@ -923,8 +918,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclpGetUserHome \
 	(tclIntStubsPtr->tclpGetUserHome) /* 42 */
 /* Slot 43 is reserved */
-#define TclGuessPackageName \
-	(tclIntStubsPtr->tclGuessPackageName) /* 44 */
+/* Slot 44 is reserved */
 #define TclHideUnsafeCommands \
 	(tclIntStubsPtr->tclHideUnsafeCommands) /* 45 */
 #define TclInExit \
