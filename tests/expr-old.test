@@ -524,7 +524,7 @@ test expr-old-26.10b {error conditions} ieeeFloatingPoint {
     list [catch {expr 2.0/0.0} msg] $msg
 } {0 Inf}
 test expr-old-26.11 {error conditions} -body {
-    expr 2#
+    expr 2`
 } -returnCodes error -match glob -result *
 test expr-old-26.12 {error conditions} -body {
     expr a.b

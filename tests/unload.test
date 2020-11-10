@@ -38,9 +38,6 @@ testConstraint $loaded [expr {![string match *pkgua* $alreadyLoaded]}]
 
 set alreadyTotalLoaded [info loaded]
 
-# Certain tests require the 'teststaticpkg' command from tcltest
-testConstraint teststaticpkg [llength [info commands teststaticpkg]]
-
 # Certain tests need the 'testsimplefilsystem' in tcltest
 testConstraint testsimplefilesystem \
 	[llength [info commands testsimplefilesystem]]

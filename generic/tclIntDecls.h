@@ -1413,4 +1413,9 @@ extern const TclIntStubs *tclIntStubsPtr;
 #   define Tcl_StaticPackage (tclIntStubsPtr->tclStaticPackage)
 #endif
 
+#undef TclGuessPackageName
+#ifndef TCL_NO_DEPRECATED
+#   define TclGuessPackageName(fileName, pkgName) ((void)fileName,(void)pkgName,0)
+#endif
+
 #endif /* _TCLINTDECLS */
