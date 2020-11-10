@@ -308,14 +308,14 @@ static const TclIntStubs tclIntStubs = {
     0, /* 34 */
     0, /* 35 */
     0, /* 36 */
-    TclGetLoadedPackages, /* 37 */
+    0, /* 37 */
     TclGetNamespaceForQualName, /* 38 */
     TclGetObjInterpProc, /* 39 */
     TclGetOpenMode, /* 40 */
     TclGetOriginalCommand, /* 41 */
     TclpGetUserHome, /* 42 */
     0, /* 43 */
-    TclGuessPackageName, /* 44 */
+    0, /* 44 */
     TclHideUnsafeCommands, /* 45 */
     TclInExit, /* 46 */
     0, /* 47 */

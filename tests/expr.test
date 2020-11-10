@@ -7383,6 +7383,67 @@ foreach v1 $values r1 $results {
     }
 }
 unset -nocomplain values results ctr
+
+test expr-62.1 {TIP 582: comments} -body {
+    expr {1 # + 2}
+} -result 1
+test expr-62.2 {TIP 582: comments} -body {
+    expr "1 #\n+ 2"
+} -result 3
+test expr-62.3 {TIP 582: comments} -setup {
+    set ctr 0
+} -body {
+    expr {
+	# This is a demonstration of a comment
+	1 + 2 + 3
+	# and another comment
+	+ 4 + 5
+	# + [incr ctr]
+	+ [incr ctr]
+    }
+} -result 16
+# Buggy because line breaks aren't tracked inside expressions at all
+test expr-62.4 {TIP 582: comments don't hide line breaks} -setup {
+    proc getline {} {
+	dict get [info frame -1] line
+    }
+    set base [getline]
+} -constraints knownBug -body {
+    expr {
+	0
+	# a comment
+	+ [getline] - $base
+    }
+} -cleanup {
+    rename getline ""
+} -result 5
+test expr-62.5 {TIP 582: comments don't splice tokens} {
+    set a False
+    expr {$a#don't splice
+ne#don't splice
+false}
+} 1
+test expr-62.6 {TIP 582: comments don't splice tokens} {
+    expr {0x2#don't splice
+ne#don't splice
+2}
+} 1
+test expr-62.7 {TIP 582: comments can go inside function calls} {
+    expr {max(1,# comment
+	      2)}
+} 2
+test expr-62.8 {TIP 582: comments can go inside function calls} {
+    expr {max(1# comment
+	      ,2)}
+} 2
+test expr-62.9 {TIP 582: comments can go inside function calls} {
+    expr {max(# comment
+	      1,2)}
+} 2
+test expr-62.10 {TIP 582: comments can go inside function calls} {
+    expr {max# comment
+	     (1,2)}
+} 2
 
 # cleanup
 unset -nocomplain a
