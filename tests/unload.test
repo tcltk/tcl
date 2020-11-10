@@ -62,10 +62,10 @@ test unload-1.3 {basic errors} -returnCodes error -body {
 } -result {could not find interpreter "foobar"}
 test unload-1.4 {basic errors} -returnCodes error -body {
     unload {}
-} -result {must specify either file name or package name}
+} -result {must specify either file name or prefix}
 test unload-1.5 {basic errors} -returnCodes error -body {
     unload {} {}
-} -result {must specify either file name or package name}
+} -result {must specify either file name or prefix}
 test unload-1.6 {basic errors} -returnCodes error -body {
     unload {} Unknown
 } -result {library with prefix "Unknown" is loaded statically and cannot be unloaded}

@@ -56,10 +56,10 @@ test load-1.3 {basic errors} -returnCodes error -body {
 } -result {could not find interpreter "foobar"}
 test load-1.4 {basic errors} -returnCodes error -body {
     load -global {}
-} -result {must specify either file name or package name}
+} -result {must specify either file name or prefix}
 test load-1.5 {basic errors} -returnCodes error -body {
     load -lazy {} {}
-} -result {must specify either file name or package name}
+} -result {must specify either file name or prefix}
 test load-1.6 {basic errors} -returnCodes error -body {
     load {} Unknown
 } -result {no library with prefix "Unknown" is loaded statically}
@@ -68,7 +68,7 @@ test load-1.7 {basic errors} -returnCodes error -body {
 } -result {bad option "-abc": must be -global, -lazy, or --}
 test load-1.8 {basic errors} -returnCodes error -body {
     load -global
-} -result {couldn't figure out package name for -global}
+} -result {couldn't figure out prefix for -global}
 
 test load-2.1 {basic loading, with guess for package name} \
 	[list $dll $loaded] {
@@ -90,7 +90,7 @@ test load-2.3 {loading with no _Init procedure} -constraints [list $dll $loaded]
 		 {TCL LOOKUP LOAD_SYMBOL *Foo_Init}]
 test load-2.4 {loading with no _SafeInit procedure} [list $dll $loaded] {
     list [catch {load [file join $testDir pkga$ext] {} child} msg] $msg
-} {1 {can't use package in a safe interpreter: no Pkga_SafeInit procedure}}
+} {1 {can't use library in a safe interpreter: no Pkga_SafeInit procedure}}
 
 test load-3.1 {error in _Init procedure, same interpreter} \
 	[list $dll $loaded] {
@@ -128,7 +128,7 @@ test load-4.2 {reloading package into same interpreter} -setup {
     catch {load [file join $testDir pkga$ext] pkga}
 } -constraints [list $dll $loaded] -returnCodes error -body {
     load [file join $testDir pkga$ext] Pkgb
-} -result "file \"[file join $testDir pkga$ext]\" is already loaded for package \"Pkga\""
+} -result "file \"[file join $testDir pkga$ext]\" is already loaded for prefix \"Pkga\""
 
 test load-5.1 {file name not specified and no static package: pick default} -setup {
     catch {interp delete x}
@@ -164,7 +164,7 @@ test load-7.2 {Tcl_StaticLibrary procedure} [list teststaticlibrary] {
     child eval {set x "not loaded"}
     list [catch {load {} Another child} msg] $msg \
 	[child eval set x] [set x]
-} {1 {can't use package in a safe interpreter: no Another_SafeInit procedure} {not loaded} loaded}
+} {1 {can't use library in a safe interpreter: no Another_SafeInit procedure} {not loaded} loaded}
 test load-7.3 {Tcl_StaticLibrary procedure} [list teststaticlibrary] {
     set x "not loaded"
     teststaticlibrary More 0 1
