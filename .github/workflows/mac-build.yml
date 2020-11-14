@@ -1,0 +1,55 @@
+name: macOS Build and Test
+on: [push]
+jobs:
+  with-Xcode:
+    runs-on: macos-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: macosx
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Prepare
+        run: touch tclStubInit.c tclOOStubInit.c
+        working-directory: generic
+      - name: Build
+        run: make all
+      - name: Run Tests
+        run: make test styles=develop
+        env:
+          ERROR_ON_FAILURES: 1
+          MAC_CI: 1
+  Unix-like:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        config_options: [ "--enable-dtrace", "--enable-debug=mem" ]
+    defaults:
+      run:
+        shell: bash
+        working-directory: unix
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Prepare
+        run: |
+          touch tclStubInit.c tclOOStubInit.c
+          mkdir "$HOME/install dir"
+        working-directory: generic
+      - name: Configure
+        run: ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
+        env:
+          CFGOPT: ${{ matrix.config_options }}
+      - name: Build
+        run: |
+          make all tcltest
+      - name: Run Tests
+        run: |
+          make test
+        env:
+          ERROR_ON_FAILURES: 1
+          MAC_CI: 1
+      - name: Trial Installation
+        run: |
+          make install
