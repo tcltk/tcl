@@ -14,6 +14,9 @@ jobs:
         run: |
           mkdir "${HOME}/install dir"
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
+      - name: Prepare
+        run: touch tclStubInit.c tclOOStubInit.c
+        working-directory: generic
       - name: Build
         run: |
           make all
