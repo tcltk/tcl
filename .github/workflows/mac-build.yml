@@ -24,7 +24,12 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        config_options: [ "--enable-dtrace", "--enable-debug=mem" ]
+        symbols:
+          - "no"
+          - "mem"
+        dtrace:
+          - "no"
+          - "yes"
     defaults:
       run:
         shell: bash
@@ -37,10 +42,11 @@ jobs:
           touch tclStubInit.c tclOOStubInit.c
           mkdir "$HOME/install dir"
         working-directory: generic
-      - name: Configure
-        run: ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
+      - name: Configure (symbols=${{ matrix.symbols }} dtrace=${{ matrix.dtrace }})
+        # Note that macOS is always a 64 bit platform
+        run: ./configure --enable-64bit ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
         env:
-          CFGOPT: ${{ matrix.config_options }}
+          CFGOPT: --enable-symbols=${{ matrix.symbols }} --enable-dtrace=${{ matrix.dtrace }}
       - name: Build
         run: |
           make all tcltest

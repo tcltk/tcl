@@ -3,6 +3,12 @@ on: [push]
 jobs:
   gcc:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        symbols:
+          - "no"
+          - "mem"
+          - "all"
     defaults:
       run:
         shell: bash
@@ -10,10 +16,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Configure
+      - name: Configure (symbols=${{ matrix.symbols }})
         run: |
           mkdir "${HOME}/install dir"
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
+        env:
+          CFGOPT: --enable-symbols=${{ matrix.symbols }}
       - name: Prepare
         run: touch tclStubInit.c tclOOStubInit.c
         working-directory: generic
