@@ -1,7 +1,7 @@
 name: Linux Build and Test
 on: [push]
 jobs:
-  build:
+  gcc:
     runs-on: ubuntu-latest
     defaults:
       run:
