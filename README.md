@@ -8,14 +8,17 @@ site](https://sourceforge.net/projects/tcl/files/Tcl/).
 8.6.10
 [![Build Status](https://github.com/tcltk/tcl/workflows/Linux%20Build%20and%20Test/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Linux+Build+and+Test%22+branch%3Acore-8-6-branch)
 [![Build Status](https://github.com/tcltk/tcl/workflows/Windows%20Build%20and%20Test/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Windows+Build+and+Test%22+branch%3Acore-8-6-branch)
+[![Build Status](https://github.com/tcltk/tcl/workflows/macOS%20Build%20and%20Test/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22macOS+Build+and+Test%22+branch%3Acore-8-6-branch)
 <br>
 8.7a4
 [![Build Status](https://github.com/tcltk/tcl/workflows/Linux%20Build%20and%20Test/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Linux+Build+and+Test%22+branch%3Acore-8-branch)
 [![Build Status](https://github.com/tcltk/tcl/workflows/Windows%20Build%20and%20Test/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Windows+Build+and+Test%22+branch%3Acore-8-branch)
+[![Build Status](https://github.com/tcltk/tcl/workflows/macOS%20Build%20and%20Test/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22macOS+Build+and+Test%22+branch%3Acore-8-branch)
 <br>
 9.0a2
 [![Build Status](https://github.com/tcltk/tcl/workflows/Linux%20Build%20and%20Test/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Linux+Build+and+Test%22+branch%3Amain)
 [![Build Status](https://github.com/tcltk/tcl/workflows/Windows%20Build%20and%20Test/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Windows+Build+and+Test%22+branch%3Amain)
+[![Build Status](https://github.com/tcltk/tcl/workflows/macOS%20Build%20and%20Test/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22macOS+Build+and+Test%22+branch%3Amain)
 
 ## Contents
  1. [Introduction](#intro)
