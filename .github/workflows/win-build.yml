@@ -1,7 +1,7 @@
 name: Windows Build and Test
 on: [push]
 jobs:
-  build:
+  MSVC:
     runs-on: windows-latest
     defaults:
       run:
@@ -31,3 +31,38 @@ jobs:
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
+        env:
+          ERROR_ON_FAILURES: 1
+  MSYS-gcc:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: win
+    strategy:
+      matrix:
+        config_options: [ "--disable-debug", "--enable-debug=mem" ]
+    # Using powershell means we need to explicitly stop on failure
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install MSYS2 and Make
+        run: choco install msys2 make
+      - name: Prepare
+        run: |
+          touch tclStubInit.c tclOOStubInit.c
+          mkdir "${HOME}/install dir"
+        working-directory: generic
+      - name: Configure
+        run: |
+          ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
+        env:
+          CFGOPT: --enable-64bit ${{ matrix.config_options }}
+      - name: Build
+        run: make all
+      - name: Build Test Harness
+        run: make tcltest
+      - name: Run Tests
+        run: make test
+        env:
+          ERROR_ON_FAILURES: 1
