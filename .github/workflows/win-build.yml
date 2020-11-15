@@ -17,17 +17,17 @@ jobs:
         run: |
           &nmake -f makefile.vc all
           if ($lastexitcode -ne 0) {
-	     throw "nmake exit code: $lastexitcode"
+             throw "nmake exit code: $lastexitcode"
           }
       - name: Build Test Harness
         run: |
           &nmake -f makefile.vc tcltest
           if ($lastexitcode -ne 0) {
-	     throw "nmake exit code: $lastexitcode"
+             throw "nmake exit code: $lastexitcode"
           }
       - name: Run Tests
         run: |
           &nmake -f makefile.vc test
           if ($lastexitcode -ne 0) {
-	     throw "nmake exit code: $lastexitcode"
+             throw "nmake exit code: $lastexitcode"
           }
