@@ -41,7 +41,10 @@ jobs:
         working-directory: win
     strategy:
       matrix:
-        config_options: [ "--disable-debug", "--enable-debug=mem" ]
+        symbols:
+          - "no"
+          - "mem"
+          - "all"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
@@ -53,11 +56,11 @@ jobs:
           touch tclStubInit.c tclOOStubInit.c
           mkdir "${HOME}/install dir"
         working-directory: generic
-      - name: Configure
+      - name: Configure (symbols=${{ matrix.symbols }})
         run: |
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
         env:
-          CFGOPT: --enable-64bit ${{ matrix.config_options }}
+          CFGOPT: --enable-64bit --enable-symbols=${{ matrix.symbols }}
       - name: Build
         run: make all
       - name: Build Test Harness
