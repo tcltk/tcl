@@ -78,6 +78,9 @@ when the transaction completes.  For this to work, the Tcl event loop
 must be active.  In Tk applications this is always true.  For pure-Tcl
 applications, the caller can use \fB::http::wait\fR after calling
 \fB::http::geturl\fR to start the event loop.
+.PP
+\fBNote:\fR The event queue is even used without the \fB-command\fR option.
+As a side effect, arbitrary commands may be processed while \fBhttp::geturl\fR is running.
 .SH COMMANDS
 .TP
 \fB::http::config\fR ?\fIoptions\fR?
