@@ -253,8 +253,8 @@ test utf-6.22 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xD0\xF8]
 } 1
 test utf-6.23 {Tcl_UtfNext} {testutfnext testbytestring} {
-    testutfnext [testbytestring \xE8]
-} -1
+    testutfnext [testbytestring \xE8\x00]
+} 1
 test utf-6.24 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xE8]G
 } 1
