@@ -759,7 +759,16 @@ test binary-21.12 {Tcl_BinaryObjCmd: scan} -setup {
 } -body {
     list [binary scan "abc def \x00ghi  " A* arg1] $arg1
 } -result [list 1 "abc def \x00ghi"]
-
+test binary-21.13 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan "abc def \x00  " C* arg1] $arg1
+} -result {1 {abc def }}
+test binary-21.12 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan "abc def \x00ghi" C* arg1] $arg1
+} -result {1 {abc def }}
 test binary-22.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
     binary scan abc b
 } -result {not enough arguments for all format specifiers}
