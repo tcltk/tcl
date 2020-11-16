@@ -547,6 +547,12 @@ is raised, but the status of the transaction will be \fBeof\fR.
 .
 The error message will also be stored in the \fBerror\fR status
 array element, accessible via \fB::http::error\fR.
+.TP\fR
+.\fBtimeout
+A timeout occurred before the transaction could complete
+.TP\fR
+.\fBreset
+user-reset
 .PP
 Another error possibility is that \fB::http::geturl\fR is unable to
 write all the post query data to the server before the server
@@ -662,10 +668,9 @@ the post query data to the server.
 .TP
 \fBstatus\fR
 .
-Either \fBok\fR, for successful completion, \fBreset\fR for
-user-reset, \fBtimeout\fR if a timeout occurred before the transaction
-could complete, or \fBerror\fR for an error condition.  During the
-transaction this value is the empty string.
+See description in the chapter \fBERRORS\fR above for a
+list and description of \fBstatus\fR.
+During the transaction this value is the empty string.
 .TP
 \fBtotalsize\fR
 .
