@@ -28,7 +28,7 @@ set org_pwd [pwd]
 set bindir [file join $org_pwd [file dirname [info nameofexecutable]]]
 set cat32 [file join $bindir cat32.exe]
 
-testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 
 # several test-cases here expect current directory == [temporaryDirectory]:
