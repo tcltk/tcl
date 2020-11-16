@@ -16,11 +16,8 @@ if {"::tcltest" ni [namespace children]} {
 
 ::tcltest::loadTestedCommands
 
-testConstraint notOSXtravis [apply {{} {
-    upvar 1 env(TRAVIS_OSX_IMAGE) travis
-    return [expr {![info exists travis] || ![string match xcode* $travis]}]
-}}]
-testConstraint sqlite3 [expr {[testConstraint notOSXtravis] && ![catch {
+testConstraint notMacCI [expr {![info exists ::env(MAC_CI)]}]
+testConstraint sqlite3 [expr {[testConstraint notMacCI] && ![catch {
     package require sqlite3
 }]}]
 testConstraint cookiejar [expr {[testConstraint sqlite3] && ![catch {

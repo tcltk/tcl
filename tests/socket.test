@@ -69,15 +69,17 @@ if {"::tcltest" ni [namespace children]} {
 catch [list package require -exact Tcltest [info patchlevel]]
 ::tcltest::loadTestedCommands
 
-if {[info exists ::env(TRAVIS_OSX_IMAGE)] && [string match xcode* $::env(TRAVIS_OSX_IMAGE)]} {
+# A bad interaction between socket creation, macOS, and unattended CI
+# environments make this whole file impractical to run; too many weird hangs.
+if {[info exists ::env(MAC_CI)]} {
     return
 }
-testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 # Some tests require the Thread package or exec command
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint exec [llength [info commands exec]]
-testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+testConstraint knownMsvcBug [expr {![info exists ::env(CI_BUILD_WITH_MSVC)]}]
 
 # Produce a random port number in the Dynamic/Private range
 # from 49152 through 65535.
