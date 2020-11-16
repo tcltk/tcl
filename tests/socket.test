@@ -67,7 +67,9 @@ if {"::tcltest" ni [namespace children]} {
 
 ::tcltest::loadTestedCommands
 
-if {[info exists ::env(TRAVIS_OSX_IMAGE)] && [string match xcode* $::env(TRAVIS_OSX_IMAGE)]} {
+# A bad interaction between socket creation, macOS, and unattended CI
+# environments make this whole file impractical to run; too many weird hangs.
+if {[info exists ::env(MAC_CI)]} {
     return
 }
 
