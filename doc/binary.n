@@ -762,6 +762,15 @@ high-to-low order within each byte.  For example,
 will return \fB2\fR with \fB01110\fR stored in \fIvar1\fR and
 \fB1000011100000101\fR stored in \fIvar2\fR.
 .RE
+.IP \fBC\fR 5
+This form is similar to \fBA\fR, except that it scans the data from start
+and terminates at the first null (C string semantics). For example,
+.RS
+.CS
+\fBbinary scan\fR "abc\e000efghi" C* var1
+.CE
+will return \fB1\fR with \fBabc\fR stored in \fIvar1\fR.
+.RE
 .IP \fBH\fR 5
 The data is turned into a string of \fIcount\fR hexadecimal digits in
 high-to-low order represented as a sequence of characters in the set
