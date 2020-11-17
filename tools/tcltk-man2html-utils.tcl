@@ -188,17 +188,26 @@ proc process-text {text} {
 	    {\(bu}	"&bull;" \
 	    {\(fm}	"&prime;" \
 	    {\(mi}	"&minus;" \
+	    {\(.i}	"&imath;" \
+	    {\(.j}	"&jmath;" \
+	    {\(Fn}	"&fnof;" \
+	    {\(OE}	"&OElig;" \
+	    {\(oe}	"&oelig;" \
+	    {\(IJ}	"&IJlig;" \
+	    {\(ij}	"&ijlig;" \
+	    {\(<-}	"<font size=\"+1\">&larr;</font>" \
 	    {\(->}	"<font size=\"+1\">&rarr;</font>" \
 	    {\(eu}	"&euro;" \
 	    {\fP}	{\fR} \
 	    {\.}	. \
 	    ]
     # This might make a few invalid mappings, but we don't use them
-    foreach c {a c e i n o u y A C E I N O U Y} {
+    foreach c {a c e g i l n o s t u y z A C E G I L N O S T U Y Z} {
 	foreach {prefix suffix} {
-	    o ring / slash : uml ' acute ^ circ ` grave ~ tilde , cedil
+	    o ring / slash : uml ' acute ^ circ ` grave ~ tilde , cedil v caron
 	} {
 	    lappend charmap "\\\[${prefix}${c}\]" "&${c}${suffix};"
+	    lappend charmap "\\(${prefix}${c}" "&${c}${suffix};"
 	}
     }
     lappend charmap {\-\|\-} --        ; # two hyphens
