@@ -556,11 +556,13 @@ is raised, but the status of the transaction will be \fBeof\fR.
 .
 The error message will also be stored in the \fBerror\fR status
 array element, accessible via \fB::http::error\fR.
-.TP\fR
-.\fBtimeout
+.TP
+\fBtimeout\fR
+.
 A timeout occurred before the transaction could complete
-.TP\fR
-.\fBreset
+.TP
+\fBreset\fR
+.
 user-reset
 .PP
 Another error possibility is that \fB::http::geturl\fR is unable to
