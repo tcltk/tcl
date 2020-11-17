@@ -196,7 +196,7 @@ proc process-text {text} {
     # This might make a few invalid mappings, but we don't use them
     foreach c {a c e i n o u y A C E I N O U Y} {
 	foreach {prefix suffix} {
-	    o ring / slash : uml ' acute ^ circ ` grave ~ tilde , cedilla
+	    o ring / slash : uml ' acute ^ circ ` grave ~ tilde , cedil
 	} {
 	    lappend charmap "\\\[${prefix}${c}\]" "&${c}${suffix};"
 	}
