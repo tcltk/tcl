@@ -80,6 +80,8 @@ testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint exec [llength [info commands exec]]
 testConstraint knownMsvcBug [expr {![info exists ::env(CI_BUILD_WITH_MSVC)]}]
+testConstraint notWinCI [expr {
+     $tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
 
 # Produce a random port number in the Dynamic/Private range
 # from 49152 through 65535.
@@ -2392,7 +2394,7 @@ test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is I
 	removeFile script
     } -result {{} ok}
 test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener, no flush} \
-    -constraints {socket knownMsvcBug} \
+    -constraints {socket notWinCI} \
     -body {
         set sock [socket -async localhost [randport]]
         fconfigure $sock -blocking 0
