@@ -189,6 +189,7 @@ proc process-text {text} {
 	    {\(fm}	"&prime;" \
 	    {\(mi}	"&minus;" \
 	    {\(->}	"<font size=\"+1\">&rarr;</font>" \
+	    {\(eu}	"&euro;" \
 	    {\fP}	{\fR} \
 	    {\.}	. \
 	    ]
