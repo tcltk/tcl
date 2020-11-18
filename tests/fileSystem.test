@@ -760,7 +760,7 @@ test filesystem-7.1 {load from vfs} {win testsimplefilesystem haveDdeDll} {
     set dde [lindex [glob *dde*[info sharedlib]] 0]
     testsimplefilesystem 1
     # This loads dde via a complex copy-to-temp operation
-    load simplefs:/$dde dde
+    load simplefs:/$dde Dde
     testsimplefilesystem 0
     cd $dir
     set res "ok"
