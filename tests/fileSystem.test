@@ -567,7 +567,7 @@ test filesystem-7.1.1 {load from vfs} -setup {
     cd [file dirname $::ddelib]
     testsimplefilesystem 1
     # This loads dde via a complex copy-to-temp operation
-    load simplefs:/[file tail $::ddelib] dde
+    load simplefs:/[file tail $::ddelib] Dde
     testsimplefilesystem 0
     return ok
     # The real result of this test is what happens when Tcl exits.
