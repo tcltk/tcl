@@ -3189,7 +3189,7 @@ test interp-34.7 {limits with callbacks: deleting the handler interp} -setup {
 # Bug 1085023
 test interp-34.8 {time limits trigger in vwaits} -body {
     set i [interp create]
-    interp limit $i time -seconds [expr {[clock seconds]+1}] -granularity 1
+    interp limit $i time -seconds [expr {[clock seconds] + 1}] -granularity 1
     $i eval {
 	set x {}
 	vwait x
@@ -3237,8 +3237,8 @@ test interp-34.11 {time limit extension in callbacks} -setup {
 } -body {
     set i [interp create]
     set t0 [clock seconds]
-    $i limit time -seconds [expr {$t0+1}] -granularity 1 \
-	-command "cb1 $i [expr {$t0+2}]"
+    $i limit time -seconds [expr {$t0 + 1}] -granularity 1 \
+	-command "cb1 $i [expr {$t0 + 2}]"
     set ::result {}
     lappend ::result [catch {
 	$i eval {
@@ -3265,8 +3265,8 @@ test interp-34.12 {time limit extension in callbacks} -setup {
 } -body {
     set i [interp create]
     set t0 [clock seconds]
-    set ::times "[expr {$t0+2}] [expr {$t0+100}]"
-    $i limit time -seconds [expr {$t0+1}] -granularity 1 -command "cb1 $i"
+    set ::times "[expr {$t0 + 2}] [expr {$t0 + 100}]"
+    $i limit time -seconds [expr {$t0 + 1}] -granularity 1 -command "cb1 $i"
     set ::result {}
     lappend ::result [catch {
 	$i eval {
@@ -3485,7 +3485,7 @@ test interp-36.7 {SlaveBgerror sets error handler of slave [1999035]} -setup {
     slave eval {
 	variable done {}
 	after 0 error foo
-	after 10 [list ::set [namespace which -variable done] {}]
+	after 20 [list ::set [namespace which -variable done] {}]
 	vwait [namespace which -variable done]
     }
     set result

@@ -101,7 +101,7 @@ namespace eval ::tcl::test::main {
 	Tcl_Main: encoding of script name: system encoding loss
 	Note the shortcoming explained in Tcl Feature Request 491789
     } -constraints {
-	stdio
+	stdio tempNotWin
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} \u00c0
 	catch {set f [open "|[list [interpreter] \u00c0]" r]}
