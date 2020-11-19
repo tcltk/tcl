@@ -21,8 +21,12 @@ testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
 testConstraint wideIs64bit \
 	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
 testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
-testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
-
+# MSVC uses a broken libc that gets sprintf("%g") wrong. This is a pain
+# particularly in Continuous Integration, and there isn't anything much we can
+# do about it.
+testConstraint notWinCI [expr {
+    ($::tcl_platform(platform) ne "windows") || ![info exists ::env(CI)]}]
+
 test format-1.1 {integer formatting} {
     format "%*d %d %d %d" 6 34 16923 -12 -1
 } {    34 16923 -12 -1}
@@ -252,13 +256,13 @@ test format-6.1 {floating-point zeroes} {eformat} {
 test format-6.2 {floating-point zeroes} {eformat} {
     format "%.4e %.4f %.4g" 0.0 0.0 0.0 0.0
 } {0.0000e+00 0.0000 0}
-test format-6.3 {floating-point zeroes} {eformat knownMsvcBug} {
+test format-6.3 {floating-point zeroes} {eformat notWinCI} {
     format "%#.4e %#.4f %#.4g" 0.0 0.0 0.0 0.0
 } {0.0000e+00 0.0000 0.000}
 test format-6.4 {floating-point zeroes} {eformat} {
     format "%.0e %.0f %.0g" 0.0 0.0 0.0 0.0
 } {0e+00 0 0}
-test format-6.5 {floating-point zeroes} {eformat knownMsvcBug} {
+test format-6.5 {floating-point zeroes} {eformat notWinCI} {
     format "%#.0e %#.0f %#.0g" 0.0 0.0 0.0 0.0
 } {0.e+00 0. 0.}
 test format-6.6 {floating-point zeroes} {
@@ -532,14 +536,11 @@ test format-18.1 {do not demote existing numeric values} {
     # Ensure $a and $b are separate objects
     set b 0xaaaa
     append b aaaa
-
     set result [expr {$a == $b}]
     format %08lx $b
     lappend result [expr {$a == $b}]
-
     set b 0xaaaa
     append b aaaa
-
     lappend result [expr {$a == $b}]
     format %08x $b
     lappend result [expr {$a == $b}]
@@ -557,11 +558,9 @@ test format-19.1 {
     set x 0x8fedc654
     list [expr { ~ $x }] [format %08x [expr { ~$x }]]
 } -match regexp -result {-2414724693 f*701239ab}
-
 test format-19.2 {Bug 1867855} {
     format %llx 0
 } 0
-
 test format-19.3 {Bug 2830354} {
     string length [format %340f 0]
 } 340
