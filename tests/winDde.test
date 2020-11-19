@@ -24,7 +24,7 @@ if {[testConstraint win]} {
 	testConstraint dde 1
     }
 }
-testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 
 # -------------------------------------------------------------------------

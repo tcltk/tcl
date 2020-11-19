@@ -30,7 +30,7 @@ testConstraint linkDirectory [expr {
     ($::tcl_platform(osVersion) >= 5.0
      && [lindex [file system [temporaryDirectory]] 1] eq "NTFS")
 }]
-testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 global env
 set cmdAHwd [pwd]

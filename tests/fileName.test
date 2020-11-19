@@ -31,7 +31,7 @@ if {[testConstraint win]} {
     testConstraint symbolicLinkFile 0
     testConstraint sharedCdrive [expr {![catch {cd //[info hostname]/c}]}]
 }
-testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 # This match compares the first two words of the result. If the wanted result
 # is "equal", then this is successful if the words are equal. If the wanted
 # result is "not equal", then this is successful if the words are different.

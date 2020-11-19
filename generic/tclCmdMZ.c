@@ -2500,8 +2500,8 @@ StringStartCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int ch;
-    const char *p, *string;
-    int cur, index, length, numChars;
+    const Tcl_UniChar *p, *string;
+    int cur, index, length;
     Tcl_Obj *obj;
 
     if (objc != 3) {
@@ -2509,32 +2509,30 @@ StringStartCmd(
 	return TCL_ERROR;
     }
 
-    string = TclGetStringFromObj(objv[1], &length);
-    numChars = Tcl_NumUtfChars(string, length);
-    if (TclGetIntForIndexM(interp, objv[2], numChars-1, &index) != TCL_OK) {
+    string = Tcl_GetUnicodeFromObj(objv[1], &length);
+    if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    string = TclGetStringFromObj(objv[1], &length);
-    if (index >= numChars) {
-	index = numChars - 1;
+    if (index >= length) {
+	index = length - 1;
     }
     cur = 0;
     if (index > 0) {
-	p = Tcl_UtfAtIndex(string, index);
+	p = &string[index];
 
-	TclUtfToUCS4(p, &ch);
+	(void)TclUniCharToUCS4(p, &ch);
 	for (cur = index; cur >= 0; cur--) {
 	    int delta = 0;
-	    const char *next;
+	    const Tcl_UniChar *next;
 
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;
 	    }
 
-	    next = TclUtfPrev(p, string);
+	    next = TclUCS4Prev(p, string);
 	    do {
 		next += delta;
-		delta = TclUtfToUCS4(next, &ch);
+		delta = TclUniCharToUCS4(next, &ch);
 	    } while (next + delta < p);
 	    p = next;
 	}
@@ -2572,8 +2570,8 @@ StringEndCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int ch;
-    const char *p, *end, *string;
-    int cur, index, length, numChars;
+    const Tcl_UniChar *p, *end, *string;
+    int cur, index, length;
     Tcl_Obj *obj;
 
     if (objc != 3) {
@@ -2581,20 +2579,18 @@ StringEndCmd(
 	return TCL_ERROR;
     }
 
-    string = TclGetStringFromObj(objv[1], &length);
-    numChars = Tcl_NumUtfChars(string, length);
-    if (TclGetIntForIndexM(interp, objv[2], numChars-1, &index) != TCL_OK) {
+    string = Tcl_GetUnicodeFromObj(objv[1], &length);
+    if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    string = TclGetStringFromObj(objv[1], &length);
     if (index < 0) {
 	index = 0;
     }
-    if (index < numChars) {
-	p = Tcl_UtfAtIndex(string, index);
+    if (index < length) {
+	p = &string[index];
 	end = string+length;
 	for (cur = index; p < end; cur++) {
-	    p += TclUtfToUCS4(p, &ch);
+	    p += TclUniCharToUCS4(p, &ch);
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;
 	    }
@@ -2603,7 +2599,7 @@ StringEndCmd(
 	    cur++;
 	}
     } else {
-	cur = numChars;
+	cur = length;
     }
     TclNewIntObj(obj, cur);
     Tcl_SetObjResult(interp, obj);

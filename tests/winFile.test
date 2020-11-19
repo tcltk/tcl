@@ -24,7 +24,7 @@ testConstraint notNTFS 0
 if {[testConstraint testvolumetype]} {
     testConstraint notNTFS [expr {[testvolumetype] eq "NTFS"}]
 }
-testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 test winFile-1.1 {TclpGetUserHome} -constraints {win} -body {
     glob ~nosuchuser
