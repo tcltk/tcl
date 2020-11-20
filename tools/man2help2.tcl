@@ -4,7 +4,7 @@
 # the man page conversion.  It converts the man format input to rtf
 # form suitable for use by the Windows help compiler.
 #
-# Copyright (c) 1996 by Sun Microsystems, Inc.
+# Copyright (c) 1996 Sun Microsystems, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
