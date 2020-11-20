@@ -6,8 +6,8 @@
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 Scriptics Corporation.
-# Copyright (c) 2004 by Kevin B. Kenny.
-# Copyright (c) 2018 by Sean Woods
+# Copyright (c) 2004 Kevin B. Kenny.
+# Copyright (c) 2018 Sean Woods
 #
 # All rights reserved.
 #
