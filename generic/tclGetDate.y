@@ -7,7 +7,7 @@
  *	only used when doing free-form date parsing, an ill-defined process
  *	anyway.
  *
- * Copyright (c) 1992-1995 Karl Lehenbauer and Mark Diekhans.
+ * Copyright (c) 1992-1995 Karl Lehenbauer & Mark Diekhans.
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -27,7 +27,7 @@
  *	This file is generated from a yacc grammar defined in the file
  *	tclGetDate.y. It should not be edited directly.
  *
- * Copyright (c) 1992-1995 Karl Lehenbauer and Mark Diekhans.
+ * Copyright (c) 1992-1995 Karl Lehenbauer & Mark Diekhans.
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
