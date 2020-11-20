@@ -4,7 +4,7 @@ if {[catch {package require Tcl 8.6-} msg]} {
     puts stderr "ERROR: $msg"
     puts stderr "If running this script from 'make html', set the\
 	NATIVE_TCLSH environment\nvariable to point to an installed\
-	tclsh8.7 (or the equivalent tclsh87.exe\non Windows)."
+	tclsh8.6 (or the equivalent tclsh86.exe\non Windows)."
     exit 1
 }
 
@@ -741,7 +741,11 @@ try {
 
 	    # ... but try to extract (name, version) from subdir contents
 	    try {
-		set f [open [file join $pkgsDir $dir configure.ac]]
+		try {
+		    set f [open [file join $pkgsDir $dir configure.in]]
+		} trap {POSIX ENOENT} {} {
+		    set f [open [file join $pkgsDir $dir configure.ac]]
+		}
 		foreach line [split [read $f] \n] {
 		    if {2 == [scan $line \
 			    { AC_INIT ( [%[^]]] , [%[^]]] ) } n v]} {

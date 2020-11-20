@@ -1,37 +1,45 @@
 name: Linux Build and Test
 on: [push]
 jobs:
-  build:
+  gcc:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        symbols:
+          - "no"
+          - "mem"
+          - "all"
+    defaults:
+      run:
+        shell: bash
+        working-directory: unix
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Configure
-        working-directory: unix
+      - name: Configure (symbols=${{ matrix.symbols }})
         run: |
           mkdir "${HOME}/install dir"
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
+        env:
+          CFGOPT: --enable-symbols=${{ matrix.symbols }}
+      - name: Prepare
+        run: touch tclStubInit.c tclOOStubInit.c
+        working-directory: generic
       - name: Build
-        working-directory: unix
         run: |
           make all
       - name: Build Test Harness
-        working-directory: unix
         run: |
           make tcltest
       - name: Run Tests
-        working-directory: unix
         run: |
           make test
       - name: Test-Drive Installation
-        working-directory: unix
         run: |
           make install
       - name: Create Distribution Package
-        working-directory: unix
         run: |
           make dist
       - name: Convert Documentation to HTML
-        working-directory: unix
         run: |
           make html-tcl
