@@ -11,8 +11,8 @@
 #	Microsystems.
 #
 # Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2000 by Ajuba Solutions
+# Copyright (c) 1998-1999 Scriptics Corporation.
+# Copyright (c) 2000 Ajuba Solutions
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 
