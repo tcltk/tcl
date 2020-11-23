@@ -76,7 +76,7 @@ This command depends on the \fBfpclassify\fR() C macro conforming to
 (i.e., to ISO/IEC 9899:1999).
 .SH COPYRIGHT
 .nf
-Copyright \(co 2018 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved
+Copyright \(co 2018 Kevin B. Kenny <kennykb@acm.org>. All rights reserved
 .fi
 '\" Local Variables:
 '\" mode: nroff
