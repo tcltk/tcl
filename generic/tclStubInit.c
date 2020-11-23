@@ -214,24 +214,28 @@ TclWinNoBackslash(char *path)
     return path;
 }
 
+#elif defined(__CYGWIN__)
+static void
+doNothing(void)
+{
+    /* dummy implementation, no need to do anything */
+}
+
 void *TclWinGetTclInstance()
 {
     void *hInstance = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const char *)&TclWinNoBackslash, &hInstance);
+	    (const char *)&doNothing, &hInstance);
     return hInstance;
 }
+#   define TclpLocaltime_unix TclpLocaltime
+#   define TclpGmtime_unix TclpGmtime
+#elif 0
 
 int
 TclpGetPid(Tcl_Pid pid)
 {
     return (int) (size_t) pid;
-}
-
-static void
-doNothing(void)
-{
-    /* dummy implementation, no need to do anything */
 }
 
 char *

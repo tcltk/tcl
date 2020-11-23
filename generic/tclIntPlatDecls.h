@@ -595,6 +595,9 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #else
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((unsigned long) (pid))
+#ifdef __CYGWIN__
+    MODULE_SCOPE void *TclWinGetTclInstance(void);
+#endif
 #endif
 
 #endif /* _TCLINTPLATDECLS */
