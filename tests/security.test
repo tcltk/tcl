@@ -7,7 +7,7 @@
 # No output means no errors were found.
 #
 # Copyright © 1997 Sun Microsystems, Inc.
-# Copyright © 1998-1999 by Scriptics Corporation.
+# Copyright © 1998-1999 Scriptics Corporation.
 # All rights reserved.
 
 if {"::tcltest" ni [namespace children]} {
