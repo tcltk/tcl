@@ -4,8 +4,8 @@
 # strings. This file is primarily needed so Tk text and entry widgets behave
 # properly for different platforms.
 #
-# Copyright (c) 1996 Sun Microsystems, Inc.
-# Copyright (c) 1998 Scritpics Corporation.
+# Copyright © 1996 Sun Microsystems, Inc.
+# Copyright © 1998 Scritpics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
