@@ -3,7 +3,7 @@
 # Sourcing this file into Tcl runs the tests and generates output for
 # errors.  No output means no errors were found.
 #
-# Copyright © 2004 by Donal K. Fellows.
+# Copyright © 2004 Donal K. Fellows.
 # All rights reserved.
 
 if {"::tcltest" ni [namespace children]} {
