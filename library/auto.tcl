@@ -240,6 +240,7 @@ proc auto_mkindex_old {dir args} {
 	set f ""
 	set error [catch {
 	    set f [open $file]
+	    fconfigure $f -eofchar \032
 	    while {[gets $f line] >= 0} {
 		if {[regexp {^proc[ 	]+([^ 	]*)} $line match procName]} {
 		    set procName [lindex [auto_qualify $procName "::"] 0]
@@ -350,6 +351,7 @@ proc auto_mkindex_parser::mkindex {file} {
     set scriptFile $file
 
     set fid [open $file]
+    fconfigure $fid -eofchar \032
     set contents [read $fid]
     close $fid
 
@@ -376,10 +378,10 @@ proc auto_mkindex_parser::mkindex {file} {
 
 # auto_mkindex_parser::hook command
 #
-# Registers a Tcl command to evaluate when initializing the slave interpreter
-# used by the mkindex parser.  The command is evaluated in the master
+# Registers a Tcl command to evaluate when initializing the child interpreter
+# used by the mkindex parser.  The command is evaluated in the parent
 # interpreter, and can use the variable auto_mkindex_parser::parser to get to
-# the slave
+# the child
 
 proc auto_mkindex_parser::hook {cmd} {
     variable initCommands
@@ -389,14 +391,14 @@ proc auto_mkindex_parser::hook {cmd} {
 
 # auto_mkindex_parser::slavehook command
 #
-# Registers a Tcl command to evaluate when initializing the slave interpreter
-# used by the mkindex parser.  The command is evaluated in the slave
+# Registers a Tcl command to evaluate when initializing the child interpreter
+# used by the mkindex parser.  The command is evaluated in the child
 # interpreter.
 
 proc auto_mkindex_parser::slavehook {cmd} {
     variable initCommands
 
-    # The $parser variable is defined to be the name of the slave interpreter
+    # The $parser variable is defined to be the name of the child interpreter
     # when this command is used later.
 
     lappend initCommands "\$parser eval [list $cmd]"
@@ -550,7 +552,7 @@ auto_mkindex_parser::command proc {name args} {
 
 # Conditionally add support for Tcl byte code files.  There are some tricky
 # details here.  First, we need to get the tbcload library initialized in the
-# current interpreter.  We cannot load tbcload into the slave until we have
+# current interpreter.  We cannot load tbcload into the child until we have
 # done so because it needs access to the tcl_patchLevel variable.  Second,
 # because the package index file may defer loading the library until we invoke
 # a command, we need to explicitly invoke auto_load to force it to be loaded.

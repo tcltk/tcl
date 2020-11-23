@@ -877,6 +877,12 @@ typedef struct VarInHash {
  *----------------------------------------------------------------
  */
 
+#if defined(__GNUC__) && (__GNUC__ > 2)
+#   define TCLFLEXARRAY 0
+#else
+#   define TCLFLEXARRAY 1
+#endif
+
 /*
  * Forward declaration to prevent an error when the forward reference to
  * Command is encountered in the Proc and ImportRef types declared below.
@@ -920,7 +926,7 @@ typedef struct CompiledLocal {
 				 * is marked by a unique ClientData tag during
 				 * compilation, and that same tag is used to
 				 * find the variable at runtime. */
-    char name[1];		/* Name of the local variable starts here. If
+    char name[TCLFLEXARRAY];		/* Name of the local variable starts here. If
 				 * the name is NULL, this will just be '\0'.
 				 * The actual size of this field will be large
 				 * enough to hold the name. MUST BE THE LAST
@@ -1254,7 +1260,7 @@ typedef struct CFWordBC {
 typedef struct ContLineLoc {
     int num;			/* Number of entries in loc, not counting the
 				 * final -1 marker entry. */
-    int loc[1];			/* Table of locations, as character offsets.
+    int loc[TCLFLEXARRAY];/* Table of locations, as character offsets.
 				 * The table is allocated as part of the
 				 * structure, extending behind the nominal end
 				 * of the structure. An entry containing the
@@ -1403,7 +1409,7 @@ typedef struct ExecStack {
     Tcl_Obj **markerPtr;
     Tcl_Obj **endPtr;
     Tcl_Obj **tosPtr;
-    Tcl_Obj *stackWords[1];
+    Tcl_Obj *stackWords[TCLFLEXARRAY];
 } ExecStack;
 
 /*
@@ -1682,6 +1688,7 @@ typedef struct Command {
 #define CMD_COMPILES_EXPANDED	    0x08
 #define CMD_REDEF_IN_PROGRESS	    0x10
 #define CMD_VIA_RESOLVER	    0x20
+#define CMD_DEAD                    0x40
 
 
 /*
@@ -1804,7 +1811,7 @@ typedef struct Interp {
 				 * of hidden commands on a per-interp
 				 * basis. */
     ClientData interpInfo;	/* Information used by tclInterp.c to keep
-				 * track of master/slave interps on a
+				 * track of parent/child interps on a
 				 * per-interp basis. */
     union {
 	void (*optimizer)(void *envPtr);
@@ -2082,7 +2089,7 @@ typedef struct Interp {
      *  (c) are accessed very often (e.g., at each command call)
      *
      * Note that these are the same for all interps in the same thread. They
-     * just have to be initialised for the thread's master interp, slaves
+     * just have to be initialised for the thread's parent interp, children
      * inherit the value.
      *
      * They are used by the macros defined below.
@@ -2600,20 +2607,20 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, int *lengthPtr,
 /*
  * A ProcessGlobalValue struct exists for each internal value in Tcl that is
  * to be shared among several threads. Each thread sees a (Tcl_Obj) copy of
- * the value, and the master is kept as a counted string, with epoch and mutex
- * control. Each ProcessGlobalValue struct should be a static variable in some
- * file.
+ * the value, and the gobal value is kept as a counted string, with epoch and
+ * mutex control. Each ProcessGlobalValue struct should be a static variable in
+ * some file.
  */
 
 typedef struct ProcessGlobalValue {
     int epoch;			/* Epoch counter to detect changes in the
-				 * master value. */
-    int numBytes;		/* Length of the master string. */
-    char *value;		/* The master string value. */
-    Tcl_Encoding encoding;	/* system encoding when master string was
+				 * global value. */
+    int numBytes;		/* Length of the global string. */
+    char *value;		/* The global string value. */
+    Tcl_Encoding encoding;	/* system encoding when global string was
 				 * initialized. */
     TclInitProcessGlobalValueProc *proc;
-    				/* A procedure to initialize the master string
+    				/* A procedure to initialize the global string
 				 * copy when a "get" request comes in before
 				 * any "set" request has been received. */
     Tcl_Mutex mutex;		/* Enforce orderly access from multiple
@@ -3025,7 +3032,6 @@ MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
-MODULE_SCOPE int	TclIsSpaceProc(int byte);
 MODULE_SCOPE int	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[],
 			    int forceRelative);
@@ -3066,8 +3072,6 @@ MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
 MODULE_SCOPE int	TclParseBackslash(const char *src,
 			    int numBytes, int *readPtr, char *dst);
-MODULE_SCOPE int	TclParseHex(const char *src, int numBytes,
-			    int *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    const char *expected, const char *bytes,
 			    int numBytes, const char **endPtrPtr, int flags);
@@ -3100,8 +3104,8 @@ MODULE_SCOPE void	TclpInitLock(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
 MODULE_SCOPE void	TclpInitUnlock(void);
 MODULE_SCOPE Tcl_Obj *	TclpObjListVolumes(void);
-MODULE_SCOPE void	TclpMasterLock(void);
-MODULE_SCOPE void	TclpMasterUnlock(void);
+MODULE_SCOPE void	TclpGlobalLock(void);
+MODULE_SCOPE void	TclpGlobalUnlock(void);
 MODULE_SCOPE int	TclpMatchFiles(Tcl_Interp *interp, char *separators,
 			    Tcl_DString *dirPtr, char *pattern, char *tail);
 MODULE_SCOPE int	TclpObjNormalizePath(Tcl_Interp *interp,
@@ -3127,7 +3131,6 @@ MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
 MODULE_SCOPE char *	TclpReadlink(const char *fileName,
 			    Tcl_DString *linkPtr);
-MODULE_SCOPE void	TclpSetInterfaces(void);
 MODULE_SCOPE void	TclpSetVariables(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclThreadStorageKeyGet(Tcl_ThreadDataKey *keyPtr);
 MODULE_SCOPE void	TclThreadStorageKeySet(Tcl_ThreadDataKey *keyPtr,
@@ -3168,7 +3171,7 @@ MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 			    Tcl_Obj *patternObj, int flags);
-MODULE_SCOPE Tcl_Obj *	TclStringObjReverse(Tcl_Obj *objPtr);
+MODULE_SCOPE Tcl_Obj *	TclStringReverse(Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSubstCompile(Tcl_Interp *interp, const char *bytes,
 			    int numBytes, int flags, int line,
 			    struct CompileEnv *envPtr);
@@ -3187,6 +3190,24 @@ MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
+MODULE_SCOPE int	TclUtfToUCS4(const char *, int *);
+MODULE_SCOPE int	TclUCS4ToUtf(int, char *);
+MODULE_SCOPE int	TclUCS4ToLower(int ch);
+#if TCL_UTF_MAX == 4
+    MODULE_SCOPE int	TclGetUCS4(Tcl_Obj *, int);
+    MODULE_SCOPE int	TclUniCharToUCS4(const Tcl_UniChar *, int *);
+#else
+#   define TclGetUCS4 Tcl_GetUniChar
+#   define TclUniCharToUCS4(src, ptr) (*ptr = *(src),1)
+#endif
+
+/*
+ * Bytes F0-F4 are start-bytes for 4-byte sequences.
+ * Byte 0xED can be the start-byte of an upper surrogate. In that case,
+ * TclUtfToUCS4() might read the lower surrogate following it too.
+ */
+#   define TclUCS4Complete(src, length) (((unsigned)(UCHAR(*(src)) - 0xF0) < 5) \
+	    ? ((length) >= 4) : (UCHAR(*(src)) == 0xED) ? ((length) >= 6) : Tcl_UtfCharComplete((src), (length)))
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -3228,10 +3249,20 @@ MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
-MODULE_SCOPE void	TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
-MODULE_SCOPE void *	TclpThreadGetMasterTSD(void *tsdKeyPtr);
+MODULE_SCOPE void	TclpThreadSetGlobalTSD(void *tsdKeyPtr, void *ptr);
+MODULE_SCOPE void *	TclpThreadGetGlobalTSD(void *tsdKeyPtr);
 
 MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp, const char *msg, int length);
+
+/*
+ * Many parsing tasks need a common definition of whitespace.
+ * Use this routine and macro to achieve that and place
+ * optimization (fragile on changes) in one place.
+ */
+
+MODULE_SCOPE int	TclIsSpaceProc(int byte);
+#	define TclIsSpaceProcM(byte) \
+		(((byte) > 0x20) ? 0 : TclIsSpaceProc(byte))
 
 /*
  *----------------------------------------------------------------
@@ -4284,8 +4315,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = tclEmptyStringRep; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *) ckalloc((unsigned) ((len) + 1)); \
-	memcpy((objPtr)->bytes, (bytePtr), (unsigned) (len)); \
+	(objPtr)->bytes = (char *) ckalloc((len) + 1); \
+	memcpy((objPtr)->bytes, (bytePtr), (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
     }
@@ -4338,12 +4369,18 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInvalidateStringRep(objPtr) \
-    if (objPtr->bytes != NULL) { \
-	if (objPtr->bytes != tclEmptyStringRep) { \
-	    ckfree((char *) objPtr->bytes); \
+    do { \
+	Tcl_Obj *_isobjPtr = (Tcl_Obj *)(objPtr); \
+	if (_isobjPtr->bytes != NULL) { \
+	    if (_isobjPtr->bytes != tclEmptyStringRep) { \
+		ckfree((char *)_isobjPtr->bytes); \
+	    } \
+	    _isobjPtr->bytes = NULL; \
 	} \
-	objPtr->bytes = NULL; \
-    }
+    } while (0)
+
+#define TclHasStringRep(objPtr) \
+    ((objPtr)->bytes != NULL)
 
 /*
  *----------------------------------------------------------------
@@ -4429,8 +4466,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclUtfToUniChar(str, chPtr) \
-	((((unsigned char) *(str)) < 0x80) ?		\
-	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
+	(((UCHAR(*(str))) < 0x80) ?		\
+	    ((*(chPtr) = UCHAR(*(str))), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
 
 /*
@@ -4456,6 +4493,11 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	} \
 	(numChars) = _count; \
     } while (0);
+
+#define TclUtfPrev(src, start) \
+	(((src) < (start)+2) ? (start) : \
+	(UCHAR(*((src) - 1))) < 0x80 ? (src)-1 : \
+	Tcl_UtfPrev(src, start))
 
 /*
  *----------------------------------------------------------------

@@ -57,6 +57,7 @@
 #define TclBN_mp_tc_and TclBN_mp_and
 #define TclBN_mp_tc_or TclBN_mp_or
 #define TclBN_mp_tc_xor TclBN_mp_xor
+#define TclStaticPackage Tcl_StaticPackage
 #define TclUnusedStubEntry NULL
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
@@ -71,6 +72,8 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 #endif
 
 MP_SET_UNSIGNED(mp_set_ull, Tcl_WideUInt)
+MP_GET_MAG(mp_get_mag_ull, Tcl_WideUInt)
+MP_SET_SIGNED(mp_set_ll, mp_set_ull, Tcl_WideInt, Tcl_WideUInt)
 
 
 mp_err TclBN_mp_set_int(mp_int *a, unsigned long i)
@@ -91,6 +94,21 @@ mp_err TclBN_mp_init_set_int(mp_int *a, unsigned long i)
 int TclBN_mp_expt_d_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
 {
 	return mp_expt_u32(a, b, c);
+}
+
+#define TclBN_mp_div_ld TclBNMpDivLd
+static mp_err TclBN_mp_div_ld(const mp_int *a, Tcl_WideUInt b, mp_int *c, Tcl_WideUInt *d) {
+   mp_err result;
+   mp_digit d2;
+
+   if ((b | (mp_digit)-1) != (mp_digit)-1) {
+      return MP_VAL;
+   }
+   result = mp_div_d(a, b, c, (d ? &d2 : NULL));
+   if (d) {
+      *d = d2;
+   }
+   return result;
 }
 
 #define TclSetStartupScriptPath setStartupScriptPath
@@ -447,7 +465,7 @@ mp_err mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
    if (maxlen < 0) {
       return MP_VAL;
    }
-   return mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
+   return mp_to_radix(a, str, maxlen, NULL, radix);
 }
 
 void bn_reverse(unsigned char *s, int len)
@@ -728,9 +746,10 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
-    0, /* 257 */
+    TclStaticPackage, /* 257 */
     0, /* 258 */
-    TclUnusedStubEntry, /* 259 */
+    0, /* 259 */
+    TclUnusedStubEntry, /* 260 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -922,8 +941,8 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBNInitBignumFromWideUInt, /* 66 */
     TclBN_mp_expt_d_ex, /* 67 */
     TclBN_mp_set_ull, /* 68 */
-    0, /* 69 */
-    0, /* 70 */
+    TclBN_mp_get_mag_ull, /* 69 */
+    TclBN_mp_set_ll, /* 70 */
     0, /* 71 */
     0, /* 72 */
     TclBN_mp_tc_and, /* 73 */
@@ -932,7 +951,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_signed_rsh, /* 76 */
     0, /* 77 */
     TclBN_mp_to_ubin, /* 78 */
-    0, /* 79 */
+    TclBN_mp_div_ld, /* 79 */
     TclBN_mp_to_radix, /* 80 */
 };
 

@@ -196,9 +196,9 @@ Tcl_LoadObjCmd(
 
     target = interp;
     if (objc == 4) {
-	const char *slaveIntName = Tcl_GetString(objv[3]);
+	const char *childIntName = Tcl_GetString(objv[3]);
 
-	target = Tcl_GetSlave(interp, slaveIntName);
+	target = Tcl_GetChild(interp, childIntName);
 	if (target == NULL) {
 	    code = TCL_ERROR;
 	    goto done;
@@ -619,9 +619,9 @@ Tcl_UnloadObjCmd(
 
     target = interp;
     if (objc - i == 3) {
-	const char *slaveIntName = Tcl_GetString(objv[i + 2]);
+	const char *childIntName = Tcl_GetString(objv[i + 2]);
 
-	target = Tcl_GetSlave(interp, slaveIntName);
+	target = Tcl_GetChild(interp, childIntName);
 	if (target == NULL) {
 	    return TCL_ERROR;
 	}
@@ -871,7 +871,7 @@ Tcl_UnloadObjCmd(
 
 		    for (ipPrevPtr = ipPtr; ipPtr != NULL;
 			    ipPrevPtr = ipPtr, ipPtr = ipPtr->nextPtr) {
-			if (ipPtr->pkgPtr == pkgPtr) {
+			if (ipPtr->pkgPtr == defaultPtr) {
 			    ipPrevPtr->nextPtr = ipPtr->nextPtr;
 			    break;
 			}
@@ -1049,7 +1049,7 @@ TclGetLoadedPackages(
 	 * Return information about all of the available packages.
 	 */
 
-	resultObj = Tcl_NewObj();
+	TclNewObj(resultObj);
 	Tcl_MutexLock(&packageMutex);
 	for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
 		pkgPtr = pkgPtr->nextPtr) {
@@ -1068,12 +1068,12 @@ TclGetLoadedPackages(
      * interpreter.
      */
 
-    target = Tcl_GetSlave(interp, targetName);
+    target = Tcl_GetChild(interp, targetName);
     if (target == NULL) {
 	return TCL_ERROR;
     }
     ipPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	pkgPtr = ipPtr->pkgPtr;
 	pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);

@@ -10,18 +10,22 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 # %u output depends on word length, so this test is not portable.
 testConstraint longIs32bit [expr {int(0x80000000) < 0}]
 testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
-testConstraint wideIs64bit \
-	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
+testConstraint wideIs64bit [expr {
+    (wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
 testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
-testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+# MSVC uses a broken libc that gets sprintf("%g") wrong. This is a pain
+# particularly in Continuous Integration, and there isn't anything much we can
+# do about it.
+testConstraint notWinCI [expr {
+    ($::tcl_platform(platform) ne "windows") || ![info exists ::env(CI)]}]
 
 test format-1.1 {integer formatting} {
     format "%*d %d %d %d" 6 34 16923 -12 -1
@@ -274,13 +278,13 @@ test format-6.1 {floating-point zeroes} {eformat} {
 test format-6.2 {floating-point zeroes} {eformat} {
     format "%.4e %.4f %.4g" 0.0 0.0 0.0 0.0
 } {0.0000e+00 0.0000 0}
-test format-6.3 {floating-point zeroes} {eformat knownMsvcBug} {
+test format-6.3 {floating-point zeroes} {eformat notWinCI} {
     format "%#.4e %#.4f %#.4g" 0.0 0.0 0.0 0.0
 } {0.0000e+00 0.0000 0.000}
 test format-6.4 {floating-point zeroes} {eformat} {
     format "%.0e %.0f %.0g" 0.0 0.0 0.0 0.0
 } {0e+00 0 0}
-test format-6.5 {floating-point zeroes} {eformat knownMsvcBug} {
+test format-6.5 {floating-point zeroes} {eformat notWinCI} {
     format "%#.0e %#.0f %#.0g" 0.0 0.0 0.0 0.0
 } {0.e+00 0. 0.}
 test format-6.6 {floating-point zeroes} {

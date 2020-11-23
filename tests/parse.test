@@ -369,7 +369,7 @@ test parse-8.8 {Tcl_EvalObjv procedure, async handlers} -constraints {
     variable ::aresult
     variable ::acode
     proc async1 {result code} {
-	variable ::aresult 
+	variable ::aresult
 	variable ::acode
 	set aresult $result
 	set acode $code
@@ -405,14 +405,14 @@ test parse-8.11 {Tcl_EvalObjv procedure, TCL_EVAL_INVOKE} testevalobjv {
     proc ::unknown args {lappend ::info [info level]; uplevel 1 foo}
     proc ::foo args {lappend ::info global}
     catch {rename ::noSuchCommand {}}
-    set ::slave [interp create]
-    $::slave alias bar noSuchCommand
+    set ::child [interp create]
+    $::child alias bar noSuchCommand
     set ::info {}
     namespace eval test_ns_1 {
        proc foo args {lappend ::info namespace}
-       $::slave eval bar
-       testevalobjv 1 [list $::slave eval bar]
-       uplevel #0 [list $::slave eval bar]
+       $::child eval bar
+       testevalobjv 1 [list $::child eval bar]
+       uplevel #0 [list $::child eval bar]
     }
     namespace delete test_ns_1
     rename ::foo {}
@@ -429,14 +429,14 @@ test parse-8.12 {Tcl_EvalObjv procedure, TCL_EVAL_INVOKE} {
             lappend ::info ns
         }]
     catch {rename ::noSuchCommand {}}
-    set ::slave [interp create]
-    $::slave alias bar noSuchCommand
+    set ::child [interp create]
+    $::child alias bar noSuchCommand
     set ::info {}
     namespace eval test_ns_1 {
-        $::slave eval bar
+        $::child eval bar
     }
     namespace delete test_ns_1
-    interp delete $::slave
+    interp delete $::child
     catch {rename ::noSuchCommand {}}
     set ::info
 } global
@@ -481,7 +481,7 @@ test parse-10.2 {Tcl_EvalTokens, backslash sequences} testevalex {
     testevalex {concat test\063\062test}
 } {test32test}
 test parse-10.3 {Tcl_EvalTokens, nested commands} testevalex {
-    testevalex {concat [expr 2 + 6]}
+    testevalex {concat [expr {2 + 6}]}
 } {8}
 test parse-10.4 {Tcl_EvalTokens, nested commands} testevalex {
     unset -nocomplain a
@@ -499,7 +499,7 @@ test parse-10.6 {Tcl_EvalTokens, array variables} testevalex {
 test parse-10.7 {Tcl_EvalTokens, array variables} testevalex {
     unset -nocomplain a
     set a(12) 46
-    testevalex {concat $a(1[expr 3 - 1])}
+    testevalex {concat $a(1[expr {3 - 1}])}
 } {46}
 test parse-10.8 {Tcl_EvalTokens, array variables} testevalex {
     unset -nocomplain a

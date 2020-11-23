@@ -130,8 +130,8 @@ proc htmlize-text {text {charmap {}}} {
 	\"	{&quot;} \
 	{<}	{&lt;} \
 	{>}	{&gt;} \
-	\u201c "&#8220;" \
-	\u201d "&#8221;"
+	\u201c "&ldquo;" \
+	\u201d "&rdquo;"
 
     return [string map $charmap $text]
 }
@@ -144,20 +144,72 @@ proc process-text {text} {
 	    {\&}	"\t" \
 	    {\%}	{} \
 	    "\\\n"	"\n" \
-	    {\(+-}	"&#177;" \
+	    {\(r!}	"&iexcl;" \
+	    {\(ct}	"&cent;" \
+	    {\(Po}	"&pound;" \
+	    {\(Cs}	"&curren;" \
+	    {\(Ye}	"&yen;" \
+	    {\(bb}	"&brvbar;" \
+	    {\(sc}	"&sect;" \
+	    {\(ad}	"&die;" \
 	    {\(co}	"&copy;" \
-	    {\(em}	"&#8212;" \
-	    {\(en}	"&#8211;" \
-	    {\(fm}	"&#8242;" \
-	    {\(mc}	"&#181;" \
-	    {\(mu}	"&#215;" \
-	    {\(mi}	"&#8722;" \
-	    {\(->}	"<font size=\"+1\">&#8594;</font>" \
+	    {\(Of}	"&ordf;" \
+	    {\(Fo}	"&laquo;" \
+	    {\(no}	"&not;" \
+	    {\(rg}	"&reg;" \
+	    {\(a-}	"&macr;" \
+	    {\(de}	"&deg;" \
+	    {\(+-}	"&plusmn;" \
+	    {\(S2}	"&sup2;" \
+	    {\(S3}	"&sup3;" \
+	    {\(aa}	"&acute;" \
+	    {\(mc}	"&micro;" \
+	    {\(ps}	"&para;" \
+	    {\(pc}	"&middot;" \
+	    {\(ac}	"&cedil;" \
+	    {\(S1}	"&sup1;" \
+	    {\(Om}	"&ordm;" \
+	    {\(Fc}	"&raquo;" \
+	    {\(14}	"&frac14;" \
+	    {\(12}	"&frac12;" \
+	    {\(34}	"&frac34;" \
+	    {\(r?}	"&iquest;" \
+	    {\(AE}	"&AElig;" \
+	    {\(-D}	"&ETH;" \
+	    {\(mu}	"&times;" \
+	    {\(TP}	"&THORN;" \
+	    {\(ss}	"&szlig;" \
+	    {\(ae}	"&aelig;" \
+	    {\(Sd}	"&eth;" \
+	    {\(di}	"&divide;" \
+	    {\(Tp}	"&thorn;" \
+	    {\(em}	"&mdash;" \
+	    {\(en}	"&ndash;" \
+	    {\(bu}	"&bull;" \
+	    {\(fm}	"&prime;" \
+	    {\(mi}	"&minus;" \
+	    {\(.i}	"&imath;" \
+	    {\(.j}	"&jmath;" \
+	    {\(Fn}	"&fnof;" \
+	    {\(OE}	"&OElig;" \
+	    {\(oe}	"&oelig;" \
+	    {\(IJ}	"&IJlig;" \
+	    {\(ij}	"&ijlig;" \
+	    {\(<-}	"<font size=\"+1\">&larr;</font>" \
+	    {\(->}	"<font size=\"+1\">&rarr;</font>" \
+	    {\(eu}	"&euro;" \
 	    {\fP}	{\fR} \
 	    {\.}	. \
-	    {\(bu}	"&#8226;" \
-	    {\*(qo}	"&ocirc;" \
 	    ]
+    # This might make a few invalid mappings, but we don't use them
+    foreach c {a c e g i l n o s t u y z A C E G I L N O S T U Y Z} {
+	foreach {prefix suffix} {
+	    o ring / slash : uml ' acute ^ circ ` grave ~ tilde , cedil v caron
+	} {
+	    lappend charmap "\\\[${prefix}${c}\]" "&${c}${suffix};"
+	    lappend charmap "\\(${prefix}${c}" "&${c}${suffix};"
+	}
+    }
     lappend charmap {\-\|\-} --        ; # two hyphens
     lappend charmap {\-} -             ; # a hyphen
 
@@ -1557,6 +1609,10 @@ proc make-manpage-section {outputDir sectionDescriptor} {
     }
     if {!$verbose} {
 	puts stderr ""
+    }
+
+    if {![llength $manual(wing-toc)]} {
+	fatal "not table of contents."
     }
 
     #

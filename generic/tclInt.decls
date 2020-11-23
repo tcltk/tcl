@@ -903,7 +903,7 @@ declare 227 {
 #  Used to be needed for TclOO-extension; unneeded now that TclOO is in the
 #  core and NRE-enabled
 #  declare 228 {
-#      int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
+#      int TclObjInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
 #             int skip, ProcErrorProc *errorProc)
 #  }
 declare 229 {
@@ -1037,7 +1037,13 @@ declare 256 {
     int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
 	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
 }
-declare 259 {
+
+declare 257 {
+    void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
+	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+}
+
+declare 260 {
     void TclUnusedStubEntry(void)
 }
 

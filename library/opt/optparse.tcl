@@ -8,10 +8,10 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 
-package require Tcl 8.2
+package require Tcl 8.5-
 # When this version number changes, update the pkgIndex.tcl file
 # and the install directory in the Makefiles.
-package provide opt 0.4.6
+package provide opt 0.4.8
 
 namespace eval ::tcl {
 
@@ -44,8 +44,8 @@ namespace eval ::tcl {
             {-intflag      7}
             {-weirdflag                    "help string"}
             {-noStatics                    "Not ok to load static packages"}
-            {-nestedloading1 true           "OK to load into nested slaves"}
-            {-nestedloading2 -boolean true "OK to load into nested slaves"}
+            {-nestedloading1 true           "OK to load into nested children"}
+            {-nestedloading2 -boolean true "OK to load into nested children"}
             {-libsOK        -choice {Tk SybTcl}
 		                      "List of packages that can be loaded"}
             {-precision     -int 12        "Number of digits of precision"}

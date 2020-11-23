@@ -86,7 +86,6 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 
 #ifdef __CYGWIN__
-
     /* Make some symbols available without including <windows.h> */
 #   define DWORD unsigned int
 #   define CP_UTF8 65001
@@ -103,26 +102,20 @@ typedef off_t		Tcl_SeekOffset;
     __declspec(dllimport) extern __stdcall int MultiByteToWideChar(int, int, const char *, int,
 	    WCHAR *, int);
     __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);
-    __declspec(dllimport) extern __stdcall int IsDebuggerPresent();
-    __declspec(dllimport) extern __stdcall int GetLastError();
+    __declspec(dllimport) extern __stdcall int IsDebuggerPresent(void);
+    __declspec(dllimport) extern __stdcall int GetLastError(void);
     __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
     __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
-
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
-/* On Cygwin, the environment is imported from the Cygwin DLL. */
-#if 0
-#   define environ __cygwin_environ
-    extern char **__cygwin_environ;
-#endif
 #   define timezone _timezone
 #   define TclOSstat		stat
 #   define TclOSlstat		lstat
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
-#   define TclOSstat		stat64
-#   define TclOSlstat		lstat64
+#   define TclOSstat(name, buf) stat64(name, (struct stat64 *)buf)
+#   define TclOSlstat(name,buf) lstat64(name, (struct stat64 *)buf)
 #else
-#   define TclOSstat		stat
-#   define TclOSlstat		lstat
+#   define TclOSstat(name, buf) stat(name, (struct stat *)buf)
+#   define TclOSlstat(name, buf) lstat(name, (struct stat *)buf)
 #endif
 
 /*
@@ -250,29 +243,29 @@ extern int TclUnixSetBlockingMode(int fd, int mode);
  */
 
 #ifndef WIFEXITED
-#   define WIFEXITED(stat)	(((*((int *) &(stat))) & 0xff) == 0)
+#   define WIFEXITED(stat)	(((*((int *) &(stat))) & 0xFF) == 0)
 #endif
 
 #ifndef WEXITSTATUS
-#   define WEXITSTATUS(stat)	(((*((int *) &(stat))) >> 8) & 0xff)
+#   define WEXITSTATUS(stat)	(((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 #ifndef WIFSIGNALED
 #   define WIFSIGNALED(stat) \
 	(((*((int *) &(stat)))) && ((*((int *) &(stat))) \
-		== ((*((int *) &(stat))) & 0x00ff)))
+		== ((*((int *) &(stat))) & 0x00FF)))
 #endif
 
 #ifndef WTERMSIG
-#   define WTERMSIG(stat)	((*((int *) &(stat))) & 0x7f)
+#   define WTERMSIG(stat)	((*((int *) &(stat))) & 0x7F)
 #endif
 
 #ifndef WIFSTOPPED
-#   define WIFSTOPPED(stat)	(((*((int *) &(stat))) & 0xff) == 0177)
+#   define WIFSTOPPED(stat)	(((*((int *) &(stat))) & 0xFF) == 0177)
 #endif
 
 #ifndef WSTOPSIG
-#   define WSTOPSIG(stat)	(((*((int *) &(stat))) >> 8) & 0xff)
+#   define WSTOPSIG(stat)	(((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 /*

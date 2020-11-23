@@ -9,7 +9,11 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
 namespace eval ::tcl::test::fileSystem {
     namespace import ::tcltest::*
 
@@ -34,7 +38,9 @@ catch {
 testConstraint testfilesystem  	    [llength [info commands ::testfilesystem]]
 testConstraint testsetplatform 	    [llength [info commands ::testsetplatform]]
 testConstraint testsimplefilesystem [llength [info commands ::testsimplefilesystem]]
-testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+# Some things fail under all Continuous Integration systems for subtle reasons
+# such as CI often running with elevated privileges in a container.
+testConstraint notInCIenv           [expr {![info exists ::env(CI)]}]
 
 cd [tcltest::temporaryDirectory]
 makeFile "test file" gorp.file
@@ -313,7 +319,7 @@ test filesystem-1.37 {file normalisation with '/./'} -body {
 } -match regexp -result {^(?:[^/]|/(?:[^/]|$))+$}
 test filesystem-1.38 {file normalisation with volume relative} -setup {
     set dir [pwd]
-} -constraints {win moreThanOneDrive knownMsvcBug} -body {
+} -constraints {win moreThanOneDrive notInCIenv} -body {
     set path "[string range [lindex $drives 0] 0 1]foo"
     cd [lindex $drives 1]
     file norm $path
@@ -562,7 +568,7 @@ test filesystem-7.1.1 {load from vfs} -setup {
     cd [file dirname $::ddelib]
     testsimplefilesystem 1
     # This loads dde via a complex copy-to-temp operation
-    load simplefs:/[file tail $::ddelib] dde
+    load simplefs:/[file tail $::ddelib] Dde
     testsimplefilesystem 0
     return ok
     # The real result of this test is what happens when Tcl exits.

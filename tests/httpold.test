@@ -11,8 +11,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -22,7 +22,7 @@ if {[catch {package require http 1.0}]} {
 	::tcltest::cleanupTests
 	return
     } else {
-	catch {puts "Running http 1.0 tests in slave interp"}
+	catch {puts "Running http 1.0 tests in child interp"}
 	set interp [interp create httpold]
 	$interp eval [list set httpold "running"]
 	$interp eval [list set argv $argv]
@@ -49,7 +49,7 @@ catch {unset data}
 source [file join [file dirname [info script]] httpd]
 
 set port 8010
-if [catch {httpd_init $port} listen] {
+if {[catch {httpd_init $port} listen]} {
     puts "Cannot start http server, http test skipped"
     unset port
     ::tcltest::cleanupTests

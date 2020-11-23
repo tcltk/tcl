@@ -557,6 +557,7 @@ array set remap_link_target {
     Tk_Font	Tk_GetFont
     Tk_Image	Tk_GetImage
     Tk_ImageMaster Tk_GetImage
+    Tk_ImageModel Tk_GetImage
     Tk_ItemType Tk_CreateItemType
     Tk_Justify	Tk_GetJustify
     Ttk_Theme	Ttk_GetTheme
@@ -586,6 +587,7 @@ array set exclude_refs_map {
     scrollbar.n		{set}
     selection.n		{string}
     tcltest.n		{error}
+    text.n		{bind image lower raise}
     tkvars.n		{tk}
     tkwait.n		{variable}
     tm.n		{exec}

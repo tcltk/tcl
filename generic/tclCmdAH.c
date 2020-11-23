@@ -228,7 +228,7 @@ Tcl_CaseObjCmd(
 
 	pat = TclGetString(caseObjv[i]);
 	for (p = pat; *p != '\0'; p++) {
-	    if (TclIsSpaceProc(*p) || (*p == '\\')) {
+	    if (TclIsSpaceProcM(*p) || (*p == '\\')) {
 		break;
 	    }
 	}

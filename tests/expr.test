@@ -10,8 +10,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2.1
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -673,13 +673,13 @@ test expr-15.3 {CompileMathFuncCall: too many arguments} -body {
 test expr-15.4 {CompileMathFuncCall: ')' found before last required arg} -body {
     catch {expr sin()} msg
     set ::errorInfo
-} -match glob -result {too few arguments for math function*
+} -match glob -result {not enough arguments for math function*
     while *ing
 "expr sin()"}
-test expr-15.5 {CompileMathFuncCall: too few arguments} -body {
+test expr-15.5 {CompileMathFuncCall: not enough arguments} -body {
     catch {expr pow(1)} msg
     set ::errorInfo
-} -match glob -result {too few arguments for math function*
+} -match glob -result {not enough arguments for math function*
     while *ing
 "expr pow(1)"}
 test expr-15.6 {CompileMathFuncCall: missing ')'} -body {
@@ -6844,6 +6844,72 @@ test expr-41.1 {exponent overflow} {
 test expr-41.2 {exponent underflow} {
     expr 1.0e-2147483630
 } 0.0
+
+test expr-41.3 {exponent overflow} {
+    expr 1e2147483647
+} Inf
+test expr-41.4 {exponent overflow} {
+    expr 1e2147483648
+} Inf
+test expr-41.5 {exponent overflow} {
+    expr 100e2147483645
+} Inf
+test expr-41.6 {exponent overflow} {
+    expr 100e2147483646
+} Inf
+test expr-41.7 {exponent overflow} {
+    expr 1.0e2147483647
+} Inf
+test expr-41.8 {exponent overflow} {
+    expr 1.0e2147483648
+} Inf
+test expr-41.9 {exponent overflow} {
+    expr 1.2e2147483647
+} Inf
+test expr-41.10 {exponent overflow} {
+    expr 1.2e2147483648
+} Inf
+
+test expr-41.11 {exponent overflow} {
+    expr 1e-2147483648
+} 0.0
+test expr-41.12 {exponent overflow} {
+    expr 1e-2147483649
+} 0.0
+test expr-41.13 {exponent overflow} {
+    expr 100e-2147483650
+} 0.0
+test expr-41.14 {exponent overflow} {
+    expr 100e-2147483651
+} 0.0 
+test expr-41.15 {exponent overflow} {
+    expr 1.0e-2147483648
+} 0.0 
+test expr-41.16 {exponent overflow} {
+    expr 1.0e-2147483649
+} 0.0 
+test expr-41.17 {exponent overflow} {
+    expr 1.23e-2147483646
+} 0.0
+test expr-41.18 {exponent overflow} {
+    expr 1.23e-2147483647
+} 0.0 
+
+test expr-41.19 {numSigDigs == 0} {
+    expr 0e309
+} 0.0
+test expr-41.20 {numSigDigs == 0} {
+    expr 0e310
+} 0.0
+test expr-41.21 {negative zero, large exponent} {
+    expr -0e309
+} -0.0
+test expr-41.22 {negative zero, large exponent} {
+    expr -0e310
+} -0.0
+test expr-41.23 {floating point overflow on significand (Bug 1de6b0629e)} {
+    expr 123[string repeat 0 309]1e-310
+} 123.0
 
 test expr-42.1 {denormals} ieeeFloatingPoint {
     expr 7e-324

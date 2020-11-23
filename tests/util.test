@@ -7,8 +7,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -383,6 +383,10 @@ test util-5.50 {Tcl_StringMatch} {
 test util-5.51 {Tcl_StringMatch} {
     Wrapper_Tcl_StringMatch "" ""
 } 1
+test util-5.52 {Tcl_StringMatch} {
+    Wrapper_Tcl_StringMatch \[a\u0000 a\x80
+} 0
+
 
 test util-6.1 {Tcl_PrintDouble - using tcl_precision} -setup {
     set old_precision $::tcl_precision
@@ -468,7 +472,7 @@ test util-7.4 {TclPrecTraceProc - write traces, bogus values} -setup {
 } -result {1 {can't set "tcl_precision": improper value for precision} 12}
 
 # This test always succeeded in the C locale anyway...
-test util-8.1 {TclNeedSpace - correct UTF8 handling} {
+test util-8.1 {TclNeedSpace - correct utf-8 handling} {
     # Bug 411825
     # Note that this test relies on the fact that
     # [interp target] calls on Tcl_AppendElement()
@@ -482,7 +486,7 @@ test util-8.1 {TclNeedSpace - correct UTF8 handling} {
     interp delete \u5420
     set result
 } "\u5420 foo"
-test util-8.2 {TclNeedSpace - correct UTF8 handling} testdstring {
+test util-8.2 {TclNeedSpace - correct utf-8 handling} testdstring {
     # Bug 411825
     # This tests the same bug as the previous test, but
     # should be more future-proof, as the DString
@@ -492,14 +496,14 @@ test util-8.2 {TclNeedSpace - correct UTF8 handling} testdstring {
     testdstring element foo
     llength [testdstring get]
 } 2
-test util-8.3 {TclNeedSpace - correct UTF8 handling} testdstring {
+test util-8.3 {TclNeedSpace - correct utf-8 handling} testdstring {
     # Bug 411825 - new variant reported by Dossy Shiobara
     testdstring free
     testdstring append \u00A0 -1
     testdstring element foo
     llength [testdstring get]
 } 2
-test util-8.4 {TclNeedSpace - correct UTF8 handling} testdstring {
+test util-8.4 {TclNeedSpace - correct utf-8 handling} testdstring {
     # Another bug uncovered while fixing 411825
     testdstring free
     testdstring append {\ } -1
@@ -507,26 +511,65 @@ test util-8.4 {TclNeedSpace - correct UTF8 handling} testdstring {
     testdstring element foo
     llength [testdstring get]
 } 2
-test util-8.5 {TclNeedSpace - correct UTF8 handling} testdstring {
-    # Note that in this test TclNeedSpace actually gets it wrong,
-    # claiming we need a space when we really do not.  Extra space
-    # between list elements is harmless though, and better to have
-    # extra space in really weird string reps of lists, than to
-    # invest the effort required to make TclNeedSpace foolproof.
+test util-8.5 {TclNeedSpace - correct utf-8 handling} testdstring {
     testdstring free
     testdstring append {\\ } -1
     testdstring element foo
     list [llength [testdstring get]] [string length [testdstring get]]
-} {2 7}
-test util-8.6 {TclNeedSpace - correct UTF8 handling} testdstring {
-    # Another example of TclNeedSpace harmlessly getting it wrong.
+} {2 6}
+test util-8.6 {TclNeedSpace - correct utf-8 handling} testdstring {
     testdstring free
     testdstring append {\\ } -1
     testdstring append \{ -1
     testdstring element foo
     testdstring append \} -1
     list [llength [testdstring get]] [string length [testdstring get]]
-} {2 9}
+} {2 8}
+test util-8.7 {TclNeedSpace - watch out for escaped space} {
+    testdstring free
+    testdstring append {\ } -1
+    testdstring start
+    testdstring end
+
+    # Should make {\  {}}
+    list [llength [testdstring get]] [string index [testdstring get] 3]
+} {2 \{}
+test util-8.8 {TclNeedSpace - watch out for escaped space} {
+    testdstring free
+    testdstring append {\\ } -1
+    testdstring start
+    testdstring end
+
+    # Should make {\\ {}}
+    list [llength [testdstring get]] [string index [testdstring get] 3]
+} {2 \{}
+test util-8.9 {TclNeedSpace - watch out for escaped space} {
+    testdstring free
+    testdstring append {\\\ } -1
+    testdstring start
+    testdstring end
+
+    # Should make {\\\  {}}
+    list [llength [testdstring get]] [string index [testdstring get] 5]
+} {2 \{}
+test util-8.10 {TclNeedSpace - watch out for escaped space} {
+    testdstring free
+    testdstring append {\\\\\\\ } -1
+    testdstring start
+    testdstring end
+
+    # Should make {\\\\\\\  {}}
+    list [llength [testdstring get]] [string index [testdstring get] 9]
+} {2 \{}
+test util-8.11 {TclNeedSpace - watch out for escaped space} {
+    testdstring free
+    testdstring append {\\\\\\\\ } -1
+    testdstring start
+    testdstring end
+
+    # Should make {\\\\\\\\ {}}
+    list [llength [testdstring get]] [string index [testdstring get] 9]
+} {2 \{}
 
 test util-9.0.0 {TclGetIntForIndex} {
     string index abcd 0

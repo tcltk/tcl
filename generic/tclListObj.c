@@ -420,14 +420,14 @@ TclListObjCopy(
 int
 Tcl_ListObjGetElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    register Tcl_Obj *listPtr,	/* List object for which an element array is
+    Tcl_Obj *listPtr,	/* List object for which an element array is
 				 * to be returned. */
     int *objcPtr,		/* Where to store the count of objects
 				 * referenced by objv. */
     Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
 				 * pointers to the list's objects. */
 {
-    register List *listRepPtr;
+    List *listRepPtr;
 
     if (listPtr->typePtr != &tclListType) {
 	int result;
@@ -481,7 +481,7 @@ Tcl_ListObjGetElements(
 int
 Tcl_ListObjAppendList(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    register Tcl_Obj *listPtr,	/* List object to append elements to. */
+    Tcl_Obj *listPtr,	/* List object to append elements to. */
     Tcl_Obj *elemListPtr)	/* List obj with elements to append. */
 {
     int objc;
@@ -543,7 +543,7 @@ Tcl_ListObjAppendElement(
     Tcl_Obj *listPtr,		/* List object to append objPtr to. */
     Tcl_Obj *objPtr)		/* Object to append to listPtr's list. */
 {
-    register List *listRepPtr, *newPtr = NULL;
+    List *listRepPtr, *newPtr = NULL;
     int numElems, numRequired, needGrow, isShared, attempt;
 
     if (Tcl_IsShared(listPtr)) {
@@ -653,7 +653,7 @@ Tcl_ListObjAppendElement(
 	     * Old intrep to be freed, re-use refCounts.
 	     */
 
-	    memcpy(dst, src, (size_t) numElems * sizeof(Tcl_Obj *));
+	    memcpy(dst, src, numElems * sizeof(Tcl_Obj *));
 	    ckfree(listRepPtr);
 	}
 	listRepPtr = newPtr;
@@ -711,11 +711,11 @@ Tcl_ListObjAppendElement(
 int
 Tcl_ListObjIndex(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    register Tcl_Obj *listPtr,	/* List object to index into. */
-    register int index,		/* Index of element to return. */
+    Tcl_Obj *listPtr,	/* List object to index into. */
+    int index,		/* Index of element to return. */
     Tcl_Obj **objPtrPtr)	/* The resulting Tcl_Obj* is stored here. */
 {
-    register List *listRepPtr;
+    List *listRepPtr;
 
     if (listPtr->typePtr != &tclListType) {
 	int result;
@@ -766,10 +766,10 @@ Tcl_ListObjIndex(
 int
 Tcl_ListObjLength(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    register Tcl_Obj *listPtr,	/* List object whose #elements to return. */
-    register int *intPtr)	/* The resulting int is stored here. */
+    Tcl_Obj *listPtr,	/* List object whose #elements to return. */
+    int *intPtr)	/* The resulting int is stored here. */
 {
-    register List *listRepPtr;
+    List *listRepPtr;
 
     if (listPtr->typePtr != &tclListType) {
 	int result;
@@ -839,7 +839,7 @@ Tcl_ListObjReplace(
 				 * insert. */
 {
     List *listRepPtr;
-    register Tcl_Obj **elemPtrs;
+    Tcl_Obj **elemPtrs;
     int needGrow, numElems, numRequired, numAfterLast, start, i, j, isShared;
 
     if (Tcl_IsShared(listPtr)) {
@@ -953,7 +953,7 @@ Tcl_ListObjReplace(
 	if ((numAfterLast > 0) && (shift != 0)) {
 	    Tcl_Obj **src = elemPtrs + start;
 
-	    memmove(src+shift, src, (size_t) numAfterLast * sizeof(Tcl_Obj*));
+	    memmove(src+shift, src, numAfterLast * sizeof(Tcl_Obj*));
 	}
     } else {
 	/*
@@ -1024,7 +1024,7 @@ Tcl_ListObjReplace(
 	     */
 
 	    if (first > 0) {
-		memcpy(elemPtrs, oldPtrs, (size_t) first * sizeof(Tcl_Obj *));
+		memcpy(elemPtrs, oldPtrs, first * sizeof(Tcl_Obj *));
 	    }
 
 	    /*
@@ -1227,7 +1227,7 @@ TclLindexFlat(
 			return NULL;
 		    }
 		}
-		listPtr = Tcl_NewObj();
+		TclNewObj(listPtr);
 	    } else {
 		/*
 		 * Extract the pointer to the appropriate element.
@@ -1458,7 +1458,7 @@ TclLsetFlat(
 	if (--indexCount) {
 	    parentList = subListPtr;
 	    if (index == elemCount) {
-		subListPtr = Tcl_NewObj();
+		TclNewObj(subListPtr);
 	    } else {
 		subListPtr = elemPtrs[index];
 	    }

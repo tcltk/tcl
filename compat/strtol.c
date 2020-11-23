@@ -45,7 +45,7 @@ strtol(
 				 * hex, "0" means octal, anything else means
 				 * decimal. */
 {
-    register const char *p;
+    const char *p;
     long result;
 
     /*
@@ -53,7 +53,7 @@ strtol(
      */
 
     p = string;
-    while (TclIsSpaceProc(*p)) {
+    while (isspace(UCHAR(*p))) {
 	p += 1;
     }
 

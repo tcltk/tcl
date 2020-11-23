@@ -1745,7 +1745,7 @@ Tcl_FSGetTranslatedStringPath(
 	const char *orig = Tcl_GetStringFromObj(transPtr, &len);
 	char *result = ckalloc(len+1);
 
-	memcpy(result, orig, (size_t) len+1);
+	memcpy(result, orig, len+1);
 	TclDecrRefCount(transPtr);
 	return result;
     }
@@ -2617,7 +2617,7 @@ DupFsPathInternalRep(
 
 static void
 UpdateStringOfFsPath(
-    register Tcl_Obj *pathPtr)	/* path obj with string rep to update. */
+    Tcl_Obj *pathPtr)	/* path obj with string rep to update. */
 {
     FsPath *fsPathPtr = PATHOBJ(pathPtr);
     int cwdLen;

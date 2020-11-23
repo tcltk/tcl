@@ -1036,7 +1036,7 @@ int
 TclHideUnsafeCommands(
     Tcl_Interp *interp)		/* Hide commands in this interpreter. */
 {
-    register const CmdInfo *cmdInfoPtr;
+    const CmdInfo *cmdInfoPtr;
 
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -2485,7 +2485,7 @@ int
 TclInvokeStringCommand(
     ClientData clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    register int objc,		/* Number of arguments. */
+    int objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Command *cmdPtr = clientData;
@@ -2534,7 +2534,7 @@ TclInvokeObjectCommand(
     ClientData clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
-    register const char **argv)	/* Argument strings. */
+    const char **argv)	/* Argument strings. */
 {
     Command *cmdPtr = clientData;
     Tcl_Obj *objPtr;
@@ -3025,7 +3025,7 @@ Tcl_GetCommandFullName(
 
 {
     Interp *iPtr = (Interp *) interp;
-    register Command *cmdPtr = (Command *) command;
+    Command *cmdPtr = (Command *) command;
     char *name;
 
     /*
@@ -3268,6 +3268,7 @@ Tcl_DeleteCommandFromToken(
      * TclNRExecuteByteCode looks up the command in the command hashtable).
      */
 
+    cmdPtr->flags |= CMD_DEAD;
     TclCleanupCommandMacro(cmdPtr);
     return 0;
 }
@@ -3301,7 +3302,7 @@ CallCommandTraces(
 				 * trigger, either TCL_TRACE_DELETE or
 				 * TCL_TRACE_RENAME. */
 {
-    register CommandTrace *tracePtr;
+    CommandTrace *tracePtr;
     ActiveCommandTrace active;
     char *result;
     Tcl_Obj *oldNamePtr = NULL;
@@ -3443,11 +3444,11 @@ CancelEvalProc(
 	    TclSetCancelFlags(iPtr, cancelInfo->flags | CANCELED);
 
 	    /*
-	     * Now, we must set the script cancellation flags on all the slave
+	     * Now, we must set the script cancellation flags on all the child
 	     * interpreters belonging to this one.
 	     */
 
-	    TclSetSlaveCancelFlags((Tcl_Interp *) iPtr,
+	    TclSetChildCancelFlags((Tcl_Interp *) iPtr,
 		    cancelInfo->flags | CANCELED, 0);
 
 	    /*
@@ -3491,7 +3492,7 @@ CancelEvalProc(
 
 void
 TclCleanupCommand(
-    register Command *cmdPtr)	/* Points to the Command structure to
+    Command *cmdPtr)	/* Points to the Command structure to
 				 * be freed. */
 {
     cmdPtr->refCount--;
@@ -3876,7 +3877,7 @@ int
 TclInterpReady(
     Tcl_Interp *interp)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     /*
      * Reset both the interpreter's string and object results and clear out
@@ -3948,7 +3949,7 @@ TclResetCancellation(
     Tcl_Interp *interp,
     int force)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     if (iPtr == NULL) {
 	return TCL_ERROR;
@@ -3966,7 +3967,7 @@ TclResetCancellation(
  * Tcl_Canceled --
  *
  *	Check if the script in progress has been canceled, i.e.,
- *	Tcl_CancelEval was called for this interpreter or any of its master
+ *	Tcl_CancelEval was called for this interpreter or any of its parent
  *	interpreters.
  *
  * Results:
@@ -3990,7 +3991,7 @@ Tcl_Canceled(
     Tcl_Interp *interp,
     int flags)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     /*
      * Has the current script in progress for this interpreter been canceled
@@ -4138,7 +4139,7 @@ Tcl_CancelEval(
     if (resultObjPtr != NULL) {
 	result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
 	cancelInfo->result = ckrealloc(cancelInfo->result,cancelInfo->length);
-	memcpy(cancelInfo->result, result, (size_t) cancelInfo->length);
+	memcpy(cancelInfo->result, result, cancelInfo->length);
 	TclDecrRefCount(resultObjPtr);	/* Discard their result object. */
     } else {
 	cancelInfo->result = NULL;
@@ -4331,7 +4332,7 @@ EvalObjvCore(
          * Caller gave it to us.
          */
 
-	if (!(preCmdPtr->flags & CMD_IS_DELETED)) {
+	if (!(preCmdPtr->flags & CMD_DEAD)) {
 	    /*
              * So long as it exists, use it.
              */
@@ -4719,7 +4720,7 @@ TEOV_NotFound(
 	newObjv[i] = handlerObjv[i];
 	Tcl_IncrRefCount(newObjv[i]);
     }
-    memcpy(newObjv+handlerObjc, objv, sizeof(Tcl_Obj *) * (unsigned)objc);
+    memcpy(newObjv+handlerObjc, objv, sizeof(Tcl_Obj *) * objc);
 
     /*
      * Look up and invoke the handler (by recursive call to this function). If
@@ -5046,7 +5047,7 @@ TclEvalEx(
 				 * the embedded command, which is refered to
 				 * by 'script'. The 'clNextOuter' refers to
 				 * the current entry in the table of
-				 * continuation lines in this "master script",
+				 * continuation lines in this "main script",
 				 * and the character offsets are relative to
 				 * the 'outerScript' as well.
 				 *
@@ -5505,7 +5506,7 @@ TclAdvanceLines(
     const char *start,
     const char *end)
 {
-    register const char *p;
+    const char *p;
 
     for (p = start; p < end; p++) {
 	if (*p == '\n') {
@@ -6030,7 +6031,7 @@ int
 Tcl_EvalObjEx(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * a previous call to Tcl_CreateInterp). */
-    register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
+    Tcl_Obj *objPtr,	/* Pointer to object containing commands to
 				 * execute. */
     int flags)			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
@@ -6043,7 +6044,7 @@ int
 TclEvalObjEx(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * a previous call to Tcl_CreateInterp). */
-    register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
+    Tcl_Obj *objPtr,	/* Pointer to object containing commands to
 				 * execute. */
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
@@ -6062,7 +6063,7 @@ int
 TclNREvalObjEx(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * a previous call to Tcl_CreateInterp). */
-    register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
+    Tcl_Obj *objPtr,	/* Pointer to object containing commands to
 				 * execute. */
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
@@ -6370,7 +6371,7 @@ Tcl_ExprLong(
     const char *exprstring,	/* Expression to evaluate. */
     long *ptr)			/* Where to store result. */
 {
-    register Tcl_Obj *exprPtr;
+    Tcl_Obj *exprPtr;
     int result = TCL_OK;
     if (*exprstring == '\0') {
 	/*
@@ -6397,7 +6398,7 @@ Tcl_ExprDouble(
     const char *exprstring,	/* Expression to evaluate. */
     double *ptr)		/* Where to store result. */
 {
-    register Tcl_Obj *exprPtr;
+    Tcl_Obj *exprPtr;
     int result = TCL_OK;
 
     if (*exprstring == '\0') {
@@ -6477,7 +6478,7 @@ int
 Tcl_ExprLongObj(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    Tcl_Obj *objPtr,	/* Expression to evaluate. */
     long *ptr)			/* Where to store long result. */
 {
     Tcl_Obj *resultPtr;
@@ -6525,7 +6526,7 @@ int
 Tcl_ExprDoubleObj(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    Tcl_Obj *objPtr,	/* Expression to evaluate. */
     double *ptr)		/* Where to store double result. */
 {
     Tcl_Obj *resultPtr;
@@ -6561,7 +6562,7 @@ int
 Tcl_ExprBooleanObj(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    register Tcl_Obj *objPtr,	/* Expression to evaluate. */
+    Tcl_Obj *objPtr,	/* Expression to evaluate. */
     int *ptr)			/* Where to store 0/1 result. */
 {
     Tcl_Obj *resultPtr;
@@ -6673,7 +6674,7 @@ TclNRInvoke(
     int objc,
     Tcl_Obj *const objv[])
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
     Tcl_HashTable *hTblPtr;	/* Table of hidden commands. */
     const char *cmdName;	/* Name of the command from objv[0]. */
     Tcl_HashEntry *hPtr = NULL;
@@ -6867,7 +6868,7 @@ Tcl_AddObjErrorInfo(
     int length)			/* The number of bytes in the message. If < 0,
 				 * then append all bytes up to a NULL byte. */
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     /*
      * If we are just starting to log an error, errorInfo is initialized from
@@ -7015,7 +7016,7 @@ Tcl_GlobalEval(
 				 * command. */
     const char *command)	/* Command to evaluate. */
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
     int result;
     CallFrame *savedVarFramePtr;
 
@@ -7547,7 +7548,7 @@ ExprAbsFunc(
 	if (mp_cmp_d((const mp_int *) ptr, 0) == MP_LT) {
 	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
 	tooLarge:
-	    mp_neg(&big, &big);
+	    (void)mp_neg(&big, &big);
 	    Tcl_SetObjResult(interp, Tcl_NewBignumObj(&big));
 	} else {
 	unChanged:
@@ -7779,8 +7780,8 @@ ExprRandFunc(
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
 	 */
 
-	iPtr->randSeed &= (unsigned long) 0x7fffffff;
-	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
+	iPtr->randSeed &= (unsigned long) 0x7FFFFFFF;
+	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFF)) {
 	    iPtr->randSeed ^= 123459876;
 	}
     }
@@ -7957,8 +7958,8 @@ ExprSrandFunc(
 
     iPtr->flags |= RAND_SEED_INITIALIZED;
     iPtr->randSeed = i;
-    iPtr->randSeed &= (unsigned long) 0x7fffffff;
-    if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
+    iPtr->randSeed &= (unsigned long) 0x7FFFFFFF;
+    if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFF)) {
 	iPtr->randSeed ^= 123459876;
     }
 
@@ -8006,8 +8007,8 @@ MathFuncWrongNumArgs(
 	}
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "too %s arguments for math function \"%s\"",
-	    (found < expected ? "few" : "many"), name));
+	    "%s arguments for math function \"%s\"",
+	    (found < expected ? "not enough" : "too many"), name));
     Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
 }
 

@@ -11,15 +11,17 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2
-namespace import -force ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 
 if {[catch {package require http 2} version]} {
     if {[info exists http2]} {
 	catch {puts "Cannot load http 2.* package"}
 	return
     } else {
-	catch {puts "Running http 2.* tests in slave interp"}
+	catch {puts "Running http 2.* tests in child interp"}
 	set interp [interp create http2]
 	$interp eval [list set http2 "running"]
 	$interp eval [list set argv $argv]
@@ -126,7 +128,7 @@ test http-3.2 {http::geturl} -returnCodes error -body {
     http::geturl http:junk
 } -result {Unsupported URL: http:junk}
 set url //${::HOST}:$port
-set badurl //${::HOST}:[expr $port+1]
+set badurl //${::HOST}:[expr {$port+1}]
 test http-3.3 {http::geturl} -body {
     set token [http::geturl $url]
     http::data $token
@@ -446,6 +448,9 @@ test http-3.33 {http::geturl application/xml is text} -body {
 } -cleanup {
     catch { http::cleanup $token }
 } -result {test 4660 /test}
+test http-3.34 {http::geturl -headers not a dict} -returnCodes error -body {
+    http::geturl http://test/t -headers NoDict
+} -result {Bad value for -headers (NoDict), must be dict}
 
 test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]

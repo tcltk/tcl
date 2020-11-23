@@ -99,6 +99,8 @@ typedef struct TtyAttrs {
 static int		FileBlockModeProc(ClientData instanceData, int mode);
 static int		FileCloseProc(ClientData instanceData,
 			    Tcl_Interp *interp);
+static int		FileClose2Proc(ClientData instanceData,
+			    Tcl_Interp *interp, int flags);
 static int		FileGetHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
 static int		FileInputProc(ClientData instanceData, char *buf,
@@ -144,7 +146,7 @@ static const Tcl_ChannelType fileChannelType = {
     NULL,			/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
-    NULL,			/* close2proc. */
+    FileClose2Proc,			/* close2proc. */
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -170,7 +172,7 @@ static const Tcl_ChannelType ttyChannelType = {
     TtyGetOptionProc,		/* Get option proc. */
     FileWatchProc,		/* Initialize notifier. */
     FileGetHandleProc,		/* Get OS handles out of channel. */
-    NULL,			/* close2proc. */
+    FileClose2Proc,			/* close2proc. */
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -197,7 +199,6 @@ static const Tcl_ChannelType ttyChannelType = {
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static int
 FileBlockModeProc(
     ClientData instanceData,	/* File state. */
@@ -346,6 +347,17 @@ FileCloseProc(
     }
     ckfree(fsPtr);
     return errorCode;
+}
+static int
+FileClose2Proc(
+    ClientData instanceData,	/* File state. */
+    Tcl_Interp *interp,		/* For error reporting - unused. */
+	int flags)
+{
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) == 0) {
+	return FileCloseProc(instanceData, interp);
+    }
+    return EINVAL;
 }
 
 /*
