@@ -20,7 +20,7 @@ if {[testConstraint win]} {
     if {![catch {
 	    ::tcltest::loadTestedCommands
 	    set ::ddever [package require dde 1.4.3]
-	    set ::ddelib [info loaded "" Dde]}]} {
+	    set ::ddelib [info loaded {} Dde]}]} {
 	testConstraint dde 1
     }
 }

@@ -15,7 +15,7 @@ namespace import -force ::tcltest::*
 catch {
     ::tcltest::loadTestedCommands
     package require -exact tcl::test [info patchlevel]
-    set ::tcltestlib [lindex [package ifneeded tcl::test [info patchlevel]] 1]
+    set ::tcltestlib [info loaded {} Tcltest]
 }
 
 
