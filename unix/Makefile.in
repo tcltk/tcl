@@ -2322,10 +2322,9 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	cp -p $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
 		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
 	@mkdir $(DISTDIR)/tools
-	cp -p $(TOOL_DIR)/Makefile.in $(TOOL_DIR)/README \
-		$(TOOL_DIR)/configure $(TOOL_DIR)/configure.ac \
+	cp -p $(TOOL_DIR)/README $(TOOL_DIR)/*.c $(TOOL_DIR)/*.svg \
 		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/*.bmp \
-		$(DISTDIR)/tools
+		$(TOOL_DIR)/valgrind_suppress $(DISTDIR)/tools
 	@mkdir $(DISTDIR)/libtommath
 	cp -p $(TOMMATH_SRCS) $(TOMMATH_DIR)/*.h $(DISTDIR)/libtommath
 	@mkdir $(DISTDIR)/pkgs
