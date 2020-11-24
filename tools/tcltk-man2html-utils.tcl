@@ -43,13 +43,13 @@ proc indexfile {} {
     if {[info exists ::TARGET] && $::TARGET eq "devsite"} {
 	return "index.tml"
     } else {
-	return "contents.htm"
+	return "index.html"
     }
 }
 
 proc copyright {copyright {level {}}} {
     # We don't actually generate a separate copyright page anymore
-    #set page "${level}copyright.htm"
+    #set page "${level}copyright.html"
     #return "<a href=\"$page\">Copyright</a> &copy; [htmlize-text [lrange $copyright 2 end]]"
     # obfuscate any email addresses that may appear in name
     set who [string map {@ (at)} [lrange $copyright 2 end]]
@@ -371,7 +371,7 @@ proc long-toc {text} {
     set manual($manual(name)-id-$text) $here
     set there L[incr manual(long-toc-n)]
     lappend manual(section-toc) \
-	    "<dd><a href=\"$manual(name).htm#$here\" name=\"[nospace-text $there]\" id=\"[nospace-text $there]\">$text</a>"
+	    "<dd><a href=\"$manual(name).html#$here\" name=\"[nospace-text $there]\" id=\"[nospace-text $there]\">$text</a>"
     return "<a name=\"[nospace-text $here]\" id=\"[nospace-text $here]\">$text</a>"
 }
 
@@ -397,9 +397,9 @@ proc option-toc {name class switch} {
     set here M$first
     set there L[incr manual(long-toc-n)]
     set manual(standard-option-$manual(name)-$first) \
-	"<a href=\"$manual(name).htm#$here\">$switch, $name, $class</a>"
+	"<a href=\"$manual(name).html#$here\">$switch, $name, $class</a>"
     lappend manual(section-toc) \
-	"<dd><a href=\"$manual(name).htm#$here\" name=\"[nospace-text $there]\" id=\"[nospace-text $there]\">$switch, $name, $class</a>"
+	"<dd><a href=\"$manual(name).html#$here\" name=\"[nospace-text $there]\" id=\"[nospace-text $there]\">$switch, $name, $class</a>"
     return "<a name=\"[nospace-text $here]\" id=\"[nospace-text $here]\">$switch</a>"
 }
 
@@ -413,8 +413,8 @@ proc std-option-toc {name page} {
     set here M[incr manual(section-toc-n)]
     set there L[incr manual(long-toc-n)]
     set other M$name
-    lappend manual(section-toc) "<dd><a href=\"$page.htm#$other\">$name</a>"
-    return "<a href=\"$page.htm#$other\">$name</a>"
+    lappend manual(section-toc) "<dd><a href=\"$page.html#$other\">$name</a>"
+    return "<a href=\"$page.html#$other\">$name</a>"
 }
 
 ##
@@ -695,7 +695,7 @@ proc output-name {line} {
 	lappend manual(wing-toc) $name
 	lappend manual(name-$name) $manual(wing-file)/$manual(name)
     }
-    set manual(tooltip-$manual(wing-file)/$manual(name).htm) $line
+    set manual(tooltip-$manual(wing-file)/$manual(name).html) $line
 }
 
 ##
@@ -742,7 +742,7 @@ proc cross-reference {ref} {
 		(![info exists exclude_refs_map($mantail)] ||
 		$manual(name-$name) ni $exclude_refs_map($mantail))
 	    } {
-		return "<a href=\"../$manual(name-$name).htm\">$ref</a>"
+		return "<a href=\"../$manual(name-$name).html\">$ref</a>"
 	    }
 	}
 	if {$lref in {end}} {
@@ -767,17 +767,17 @@ proc cross-reference {ref} {
 	if {$tcl_i >= 0 && $manual(wing-file) eq "TclCmd"
 		|| $manual(wing-file) eq "TclLib"} {
 	    set tcl_ref [lindex $manref $tcl_i]
-	    return "<a href=\"../$tcl_ref.htm\">$ref</a>"
+	    return "<a href=\"../$tcl_ref.html\">$ref</a>"
 	}
 	set tk_i [lsearch -glob $manref *TkCmd*]
 	if {$tk_i >= 0 && $manual(wing-file) eq "TkCmd"
 		|| $manual(wing-file) eq "TkLib"} {
 	    set tk_ref [lindex $manref $tk_i]
-	    return "<a href=\"../$tk_ref.htm\">$ref</a>"
+	    return "<a href=\"../$tk_ref.html\">$ref</a>"
 	}
 	if {$lref eq "exit" && $mantail eq "tclsh.1" && $tcl_i >= 0} {
 	    set tcl_ref [lindex $manref $tcl_i]
-	    return "<a href=\"../$tcl_ref.htm\">$ref</a>"
+	    return "<a href=\"../$tcl_ref.html\">$ref</a>"
 	}
 	puts stderr "multiple cross reference to $ref in $manref from $manual(wing-file)/$mantail"
 	return $ref
@@ -804,7 +804,7 @@ proc cross-reference {ref} {
     ##
     ## return the cross reference
     ##
-    return "<a href=\"../$manref.htm\">$ref</a>"
+    return "<a href=\"../$manref.html\">$ref</a>"
 }
 
 ##
@@ -1098,9 +1098,9 @@ proc output-directive {line} {
 			foreach key [split $more ,] {
 			    set key [string trim $key]
 			    lappend manual(keyword-$key) [list $manual(name) \
-				    $manual(wing-file)/$manual(name).htm]
+				    $manual(wing-file)/$manual(name).html]
 			    set initial [string toupper [string index $key 0]]
-			    lappend keys "<a href=\"../Keywords/$initial.htm\#$key\">$key</a>"
+			    lappend keys "<a href=\"../Keywords/$initial.html\#$key\">$key</a>"
 			}
 			man-puts [join $keys {, }]
 		    }
@@ -1635,15 +1635,15 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 	    set tail [lindex $tail [expr {[llength $tail]-1}]]
 	}
 	set tail [file tail $tail]
-	if {[info exists manual(tooltip-$manual(wing-file)/$tail.htm)]} {
-	    set tooltip $manual(tooltip-$manual(wing-file)/$tail.htm)
+	if {[info exists manual(tooltip-$manual(wing-file)/$tail.html)]} {
+	    set tooltip $manual(tooltip-$manual(wing-file)/$tail.html)
 	    set tooltip [string map {[ {\[} ] {\]} $ {\$} \\ \\\\} $tooltip]
 	    regsub {^[^-]+-\s*(.)} $tooltip {[string totitle \1]} tooltip
 	    append rows([expr {$n%$nrows}]) \
-		"<td> <a href=\"$tail.htm\" title=\"[subst $tooltip]\">$name</a> </td>"
+		"<td> <a href=\"$tail.html\" title=\"[subst $tooltip]\">$name</a> </td>"
 	} else {
 	    append rows([expr {$n%$nrows}]) \
-		"<td> <a href=\"$tail.htm\">$name</a> </td>"
+		"<td> <a href=\"$tail.html\">$name</a> </td>"
 	}
 	incr n
     }

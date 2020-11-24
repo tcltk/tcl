@@ -378,7 +378,7 @@ proc make-man-pages {html args} {
     foreach a $letters {
 	set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
 	if {[llength $keys]} {
-	    lappend keyheader "<a href=\"$a.htm\">$a</a>"
+	    lappend keyheader "<a href=\"$a.html\">$a</a>"
 	} else {
 	    # No keywords for this letter
 	    lappend keyheader $a
@@ -392,7 +392,7 @@ proc make-man-pages {html args} {
 	    continue
 	}
 	# Per-keyword page
-	set afp [open $html/Keywords/$a.htm w]
+	set afp [open $html/Keywords/$a.html w]
 	puts $afp [htmlhead "$tcltkdesc Keywords - $a" \
 		       "$tcltkdesc Keywords - $a" \
 		       $overall_title "../[indexfile]"]
@@ -468,7 +468,7 @@ proc make-man-pages {html args} {
 	    } else {
 		puts -nonewline stderr .
 	    }
-	    set outfd [open $html/$manual(wing-file)/$manual(name).htm w]
+	    set outfd [open $html/$manual(wing-file)/$manual(name).html w]
 	    puts $outfd [htmlhead "$manual($manual(wing-file)-$manual(name)-title)" \
 		    $manual(name) $wing_name "[indexfile]" \
 		    $overall_title "../[indexfile]"]
