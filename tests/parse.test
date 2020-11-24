@@ -685,7 +685,7 @@ test parse-13.5 {Tcl_ParseVar procedure, error looking up variable} testparsevar
     unset -nocomplain abc
     list [catch {testparsevar {$abc([bogus x y z])}} msg] $msg
 } {1 {invalid command name "bogus"}}
-test parse-13.6 {Tcl_ParseVar memory leak} -constraints memory -setup {
+test parse-13.6 {Tcl_ParseVar memory leak} -constraints {testparsevar memory} -setup {
     proc getbytes {} {
 	return [lindex [split [memory info] \n] 3 3]
     }
