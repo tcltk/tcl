@@ -1108,14 +1108,6 @@ typedef struct Tcl_DString {
 #define TCL_LINK_READ_ONLY	0x80
 
 /*
- * Types for Tcl_GetValue():
- */
-
-#define TCL_TYPE_D(type) (0x100 | (int)sizeof(type)) /* float/double/long double */
-#define TCL_TYPE_I(type) (0x200 | (int)sizeof(type)) /* signed integer */
-#define TCL_TYPE_U(type) (0x300 | (int)sizeof(type)) /* unsigned integer */
-
-/*
  *----------------------------------------------------------------------------
  * Forward declarations of Tcl_HashTable and related types.
  */

@@ -2525,7 +2525,7 @@ Tcl_SetIntObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetIntFromObj/Tcl_GetValue --
+ * Tcl_GetIntFromObj --
  *
  *	Attempt to return an int from the Tcl object "objPtr". If the object
  *	is not already an int, an attempt will be made to convert it to one.
@@ -2548,7 +2548,6 @@ Tcl_SetIntObj(
  *----------------------------------------------------------------------
  */
  
-#undef Tcl_GetIntFromObj
 int
 Tcl_GetIntFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
@@ -2575,60 +2574,6 @@ Tcl_GetIntFromObj(
     *intPtr = (int) l;
     return TCL_OK;
 #endif
-}
-
-int
-Tcl_GetValue(
-    Tcl_Interp *interp,        /* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr,           /* The object from which to get a int. */
-    void *ptr,                 /* Place to store resulting int/double. */
-    int flags)
-{
-    double value;
-    int result;
-    if (flags == TCL_TYPE_I(int)) {
-	result = Tcl_GetIntFromObj(interp, objPtr, ptr);
-	if ((result == TCL_OK) && (objPtr->typePtr != &tclIntType)) {
-	    goto toolarge;
-	}
-	return result;
-    }
-    if (flags == TCL_TYPE_U(int)) {
-	result = Tcl_GetIntFromObj(interp, objPtr, ptr);
-	if ((result == TCL_OK) && (objPtr->typePtr == &tclIntType)
-		&& (objPtr->internalRep.wideValue < 0)) {
-	    goto toolarge;
-	}
-	return result;
-    }
-    if (flags == TCL_TYPE_I(Tcl_WideInt)) {
-	return Tcl_GetIntFromObj(interp, objPtr, ptr);
-    }
-    if (flags == TCL_TYPE_U(Tcl_WideInt)) {
-	result = Tcl_GetIntFromObj(interp, objPtr, ptr);
-	if ((result == TCL_OK) && (objPtr->internalRep.wideValue < 0)) {
-	toolarge:
-		if (interp != NULL) {
-		    const char *s = "integer value too large to represent";
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
-		}
-	    return TCL_ERROR;
-	}
-	return result;
-    }
-    result = Tcl_GetDoubleFromObj(interp, objPtr, &value);
-    if (flags == TCL_TYPE_D(double)) {
-	*(double *)ptr = value;
-    } else if (flags == TCL_TYPE_D(float)) {
-	*(float *)ptr = (float) value;
-    } else if (flags == TCL_TYPE_D(long double)) {
-	*(long double *)ptr = (long double) value;
-    } else {
-	Tcl_Panic("%s: invalid flags value: 0x%x", "Tcl_GetValue", flags);
-	return TCL_ERROR;
-    }
-    return result;
 }
 
 
