@@ -1444,10 +1444,6 @@ SOURCE=.\rules.vc
 # End Source File
 # Begin Source File
 
-SOURCE=.\tcl.hpj.in
-# End Source File
-# Begin Source File
-
 SOURCE=.\tcl.m4
 # End Source File
 # Begin Source File

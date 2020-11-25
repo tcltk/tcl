@@ -2521,7 +2521,6 @@ Tcl_SetDoubleObj(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_GetDoubleFromObj
 int
 Tcl_GetDoubleFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
