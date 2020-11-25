@@ -40,5 +40,5 @@ namespace eval ::tcl::clock {
     ::msgcat::mcset ja LOCALE_DATE_FORMAT "%EY年%m月%d日"
     ::msgcat::mcset ja LOCALE_TIME_FORMAT "%H時%M分%S秒"
     ::msgcat::mcset ja LOCALE_DATE_TIME_FORMAT "%EY年%m月%d日 (%a) %H時%M分%S秒 %z"
-    ::msgcat::mcset ja LOCALE_ERAS "{-9223372036854775808 西暦 0} {-3061011600 明治 1867} {-1812186000 大正 1911} {-1357635600 昭和 1925} {600220800 平成 1988}"
+    ::msgcat::mcset ja LOCALE_ERAS "{-9223372036854775808 西暦 0} {-3061011600 明治 1867} {-1812186000 大正 1911} {-1357635600 昭和 1925} {600220800 平成 1988} {1556668800 令和 2018}"
 }

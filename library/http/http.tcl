@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.9.0
+package provide http 2.10.0a1
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -20,6 +20,7 @@ namespace eval http {
     if {![info exists http]} {
 	array set http {
 	    -accept */*
+	    -cookiejar {}
 	    -pipeline 1
 	    -postfresh 0
 	    -proxyhost {}
@@ -125,6 +126,18 @@ namespace eval http {
     variable defaultKeepalive
     if {![info exists defaultKeepalive]} {
 	set defaultKeepalive 0
+    }
+
+    # Regular expression used to parse cookies
+    variable CookieRE {(?x)                            # EXPANDED SYNTAX
+	\s*                                            # Ignore leading spaces
+	([^][\u0000- ()<>@,;:\\""/?={}\u007f-\uffff]+) # Match the name
+	=                                              # LITERAL: Equal sign
+	([!\u0023-+\u002D-:<-\u005B\u005D-~]*)         # Match the value
+	(?:
+	 \s* ; \s*                                     # LITERAL: semicolon
+	 ([^\u0000]+)                                  # Match the options
+	)?
     }
 
     namespace export geturl config reset wait formatQuery quoteString
@@ -531,7 +544,7 @@ proc http::CloseSocket {s {token {}}} {
     } else {
 	set map [array get socketMapping]
 	set ndx [lsearch -exact $map $s]
-	if {$ndx != -1} {
+	if {$ndx >= 0} {
 	    incr ndx -1
 	    set connId [lindex $map $ndx]
 	}
@@ -721,7 +734,7 @@ proc http::geturl {url args} {
 	body		{}
 	status		""
 	http		""
-	connection	close
+	connection	keep-alive
     }
     set state(-keepalive) $defaultKeepalive
     set state(-strict) $strict
@@ -733,6 +746,7 @@ proc http::geturl {url args} {
 	-strict		boolean
 	-timeout	integer
 	-validate	boolean
+	-headers	dict
     }
     set state(charset)	$defaultCharset
     set options {
@@ -746,9 +760,8 @@ proc http::geturl {url args} {
     foreach {flag value} $args {
 	if {[regexp -- $pat $flag]} {
 	    # Validate numbers
-	    if {
-		[info exists type($flag)] &&
-		![string is $type($flag) -strict $value]
+	    if {($flag eq "-headers") ? [catch {dict size $value}] :
+		([info exists type($flag)] && ![string is $type($flag) -strict $value])
 	    } {
 		unset $token
 		return -code error \
@@ -892,8 +905,12 @@ proc http::geturl {url args} {
 	    }
 	    return -code error "Illegal characters in URL path"
 	}
+	if {![regexp {^[^?#]+} $srvurl state(path)]} {
+	    set state(path) /
+	}
     } else {
 	set srvurl /
+	set state(path) /
     }
     if {$proto eq ""} {
 	set proto http
@@ -964,6 +981,18 @@ proc http::geturl {url args} {
     } else {
 	# It's a GET or HEAD.
 	set state(-pipeline) $http(-pipeline)
+    }
+
+    # We cannot handle chunked encodings with -handler, so force HTTP/1.0
+    # until we can manage this.
+    if {[info exists state(-handler)]} {
+	set state(-protocol) 1.0
+    }
+
+    # RFC 7320 A.1 - HTTP/1.0 Keep-Alive is problematic. We do not support it.
+    if {$state(-protocol) eq "1.0"} {
+	set state(connection) close
+	set state(-keepalive) 0
     }
 
     # See if we are supposed to use a previously opened channel.
@@ -1037,7 +1066,7 @@ proc http::geturl {url args} {
 
 	    }
 	    # Do not automatically close the connection socket.
-	    set state(connection) {}
+	    set state(connection) keep-alive
 	}
     }
 
@@ -1332,18 +1361,11 @@ proc http::Connected {token proto phost srvurl} {
 	set how POST
 	# The query channel must be blocking for the async Write to
 	# work properly.
-	lassign [fconfigure $sock -translation] trRead trWrite
-	fconfigure $state(-querychannel) -blocking 1 \
-					 -translation [list $trRead binary]
+	fconfigure $state(-querychannel) -blocking 1 -translation binary
 	set contDone 0
     }
     if {[info exists state(-method)] && ($state(-method) ne "")} {
 	set how $state(-method)
-    }
-    # We cannot handle chunked encodings with -handler, so force HTTP/1.0
-    # until we can manage this.
-    if {[info exists state(-handler)]} {
-	set state(-protocol) 1.0
     }
     set accept_types_seen 0
 
@@ -1354,16 +1376,20 @@ proc http::Connected {token proto phost srvurl} {
 	puts $sock "$how $srvurl HTTP/$state(-protocol)"
 	if {[dict exists $state(-headers) Host]} {
 	    # Allow Host spoofing. [Bug 928154]
-	    puts $sock "Host: [dict get $state(-headers) Host]"
+	    set hostHdr [dict get $state(-headers) Host]
+	    regexp {^[^:]+} $hostHdr state(host)
+	    puts $sock "Host: $hostHdr"
 	} elseif {$port == $defport} {
 	    # Don't add port in this case, to handle broken servers. [Bug
 	    # #504508]
+	    set state(host) $host
 	    puts $sock "Host: $host"
 	} else {
+	    set state(host) $host
 	    puts $sock "Host: $host:$port"
 	}
 	puts $sock "User-Agent: $http(-useragent)"
-	if {($state(-protocol) >= 1.0) && $state(-keepalive)} {
+	if {($state(-protocol) > 1.0) && $state(-keepalive)} {
 	    # Send this header, because a 1.1 server is not compelled to treat
 	    # this as the default.
 	    puts $sock "Connection: keep-alive"
@@ -1371,9 +1397,17 @@ proc http::Connected {token proto phost srvurl} {
 	if {($state(-protocol) > 1.0) && !$state(-keepalive)} {
 	    puts $sock "Connection: close" ;# RFC2616 sec 8.1.2.1
 	}
-	if {[info exists phost] && ($phost ne "") && $state(-keepalive)} {
-	    puts $sock "Proxy-Connection: Keep-Alive"
+	if {($state(-protocol) < 1.1)} {
+	    # RFC7230 A.1
+	    # Some server implementations of HTTP/1.0 have a faulty
+	    # implementation of RFC 2068 Keep-Alive.
+	    # Don't leave this to chance.
+	    # For HTTP/1.0 we have already "set state(connection) close"
+	    # and "state(-keepalive) 0".
+	    puts $sock "Connection: close"
 	}
+	# RFC7230 A.1 - "clients are encouraged not to send the
+	# Proxy-Connection header field in any requests"
 	set accept_encoding_seen 0
 	set content_type_seen 0
 	dict for {key value} $state(-headers) {
@@ -1419,6 +1453,22 @@ proc http::Connected {token proto phost srvurl} {
 	    set state(querylength) \
 		    [expr {[tell $state(-querychannel)] - $start}]
 	    seek $state(-querychannel) $start
+	}
+
+	# Note that we don't do Cookie2; that's much nastier and not normally
+	# observed in practice either. It also doesn't fix the multitude of
+	# bugs in the basic cookie spec.
+	if {$http(-cookiejar) ne ""} {
+	    set cookies ""
+	    set separator ""
+	    foreach {key value} [{*}$http(-cookiejar) \
+		    getCookies $proto $host $state(path)] {
+		append cookies $separator $key = $value
+		set separator "; "
+	    }
+	    if {$cookies ne ""} {
+		puts $sock "Cookie: $cookies"
+	    }
 	}
 
 	# Flush the request header and set up the fileevent that will either
@@ -1633,8 +1683,50 @@ proc http::ReceiveResponse {token} {
     Log ^D$tk begin receiving response - token $token
 
     coroutine ${token}EventCoroutine http::Event $sock $token
-    fileevent $sock readable ${token}EventCoroutine
+    if {[info exists state(-handler)] || [info exists state(-progress)]} {
+        fileevent $sock readable [list http::EventGateway $sock $token]
+    } else {
+        fileevent $sock readable ${token}EventCoroutine
+    }
+    return
 }
+
+
+# http::EventGateway
+#
+#	Bug [c2dc1da315].
+#	- Recursive launch of the coroutine can occur if a -handler or -progress
+#	  callback is used, and the callback command enters the event loop.
+#	- To prevent this, the fileevent "binding" is disabled while the
+#	  coroutine is in flight.
+#	- If a recursive call occurs despite these precautions, it is not
+#	  trapped and discarded here, because it is better to report it as a
+#	  bug.
+#	- Although this solution is believed to be sufficiently general, it is
+#	  used only if -handler or -progress is specified.  In other cases,
+#	  the coroutine is called directly.
+
+proc http::EventGateway {sock token} {
+    variable $token
+    upvar 0 $token state
+    fileevent $sock readable {}
+    catch {${token}EventCoroutine} res opts
+    if {[info commands ${token}EventCoroutine] ne {}} {
+        # The coroutine can be deleted by completion (a non-yield return), by
+        # http::Finish (when there is a premature end to the transaction), by
+        # http::reset or http::cleanup, or if the caller set option -channel
+        # but not option -handler: in the last case reading from the socket is
+        # now managed by commands ::http::Copy*, http::ReceiveChunked, and
+        # http::make-transformation-chunked.
+        #
+        # Catch in case the coroutine has closed the socket.
+        catch {fileevent $sock readable [list http::EventGateway $sock $token]}
+    }
+
+    # If there was an error, re-throw it.
+    return -options $opts $res
+}
+
 
 # http::NextPipelinedWrite
 #
@@ -2690,8 +2782,37 @@ proc http::Event {sock token} {
 			}
 			proxy-connection -
 			connection {
-			    set state(connection) \
-				    [string trim [string tolower $value]]
+			    set tmpHeader [string trim [string tolower $value]]
+			    # RFC 7230 Section 6.1 states that a comma-separated
+			    # list is an acceptable value.  According to
+			    # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Connection
+			    # any comma-separated list implies keep-alive, but I
+			    # don't see this in the RFC so we'll play safe and
+			    # scan any list for "close".
+			    if {$tmpHeader in {close keep-alive}} {
+				# The common cases, continue.
+			    } elseif {[string first , $tmpHeader] < 0} {
+				# Not a comma-separated list, not "close",
+				# therefore "keep-alive".
+				set tmpHeader keep-alive
+			    } else {
+				set tmpResult keep-alive
+				set tmpCsl [split $tmpHeader ,]
+				# Optional whitespace either side of separator.
+				foreach el $tmpCsl {
+				    if {[string trim $el] eq {close}} {
+					set tmpResult close
+					break
+				    }
+			        }
+				set tmpHeader $tmpResult
+			    }
+			    set state(connection) $tmpHeader
+			}
+			set-cookie {
+			    if {$http(-cookiejar) ne ""} {
+				ParseCookie $token [string trim $value]
+			    }
 			}
 		    }
 		    lappend state(meta) $key [string trim $value]
@@ -2978,7 +3099,7 @@ proc http::IsBinaryContentType {type} {
     # and so on.
     if {$major eq "application"} {
 	set minor [string trimright $minor]
-	if {$minor in {"xml" "xml-external-parsed-entity" "xml-dtd"}} {
+	if {$minor in {"json" "xml" "xml-external-parsed-entity" "xml-dtd"}} {
 	    return false
 	}
     }
@@ -2988,6 +3109,83 @@ proc http::IsBinaryContentType {type} {
 	return false
     }
     return true
+}
+
+proc http::ParseCookie {token value} {
+    variable http
+    variable CookieRE
+    variable $token
+    upvar 0 $token state
+
+    if {![regexp $CookieRE $value -> cookiename cookieval opts]} {
+	# Bad cookie! No biscuit!
+	return
+    }
+
+    # Convert the options into a list before feeding into the cookie store;
+    # ugly, but quite easy.
+    set realopts {hostonly 1 path / secure 0 httponly 0}
+    dict set realopts origin $state(host)
+    dict set realopts domain $state(host)
+    foreach option [split [regsub -all {;\s+} $opts \u0000] \u0000] {
+	regexp {^(.*?)(?:=(.*))?$} $option -> optname optval
+	switch -exact -- [string tolower $optname] {
+	    expires {
+		if {[catch {
+		    #Sun, 06 Nov 1994 08:49:37 GMT
+		    dict set realopts expires \
+			[clock scan $optval -format "%a, %d %b %Y %T %Z"]
+		}] && [catch {
+		    # Google does this one
+		    #Mon, 01-Jan-1990 00:00:00 GMT
+		    dict set realopts expires \
+			[clock scan $optval -format "%a, %d-%b-%Y %T %Z"]
+		}] && [catch {
+		    # This is in the RFC, but it is also in the original
+		    # Netscape cookie spec, now online at:
+		    # <URL:http://curl.haxx.se/rfc/cookie_spec.html>
+		    #Sunday, 06-Nov-94 08:49:37 GMT
+		    dict set realopts expires \
+			[clock scan $optval -format "%A, %d-%b-%y %T %Z"]
+		}]} {catch {
+		    #Sun Nov  6 08:49:37 1994
+		    dict set realopts expires \
+			[clock scan $optval -gmt 1 -format "%a %b %d %T %Y"]
+		}}
+	    }
+	    max-age {
+		# Normalize
+		if {[string is integer -strict $optval]} {
+		    dict set realopts expires [expr {[clock seconds] + $optval}]
+		}
+	    }
+	    domain {
+		# From the domain-matches definition [RFC 2109, section 2]:
+		#   Host A's name domain-matches host B's if [...]
+		#	A is a FQDN string and has the form NB, where N is a
+		#	non-empty name string, B has the form .B', and B' is a
+		#	FQDN string. (So, x.y.com domain-matches .y.com but
+		#	not y.com.)
+		if {$optval ne "" && ![string match *. $optval]} {
+		    dict set realopts domain [string trimleft $optval "."]
+		    dict set realopts hostonly [expr {
+			! [string match .* $optval]
+		    }]
+		}
+	    }
+	    path {
+		if {[string match /* $optval]} {
+		    dict set realopts path $optval
+		}
+	    }
+	    secure - httponly {
+		dict set realopts [string tolower $optname] 1
+	    }
+	}
+    }
+    dict set realopts key $cookiename
+    dict set realopts value $cookieval
+    {*}$http(-cookiejar) storeCookie $realopts
 }
 
 # http::getTextLine --
@@ -3046,7 +3244,7 @@ proc http::BlockingGets {sock} {
     while 1 {
 	set count [gets $sock line]
 	set eof [eof $sock]
-	if {$count > -1 || $eof} {
+	if {$count >= 0 || $eof} {
 	    return $line
 	} else {
 	    yield

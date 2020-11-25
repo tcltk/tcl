@@ -60,7 +60,7 @@ proc http::Log {args} {
     variable TestStartTimeInMs
     set time [expr {[clock milliseconds] - $TestStartTimeInMs}]
     set txt [list $time {*}$args]
-    if {[string first ^ $txt] != -1} {
+    if {[string first ^ $txt] >= 0} {
         ::httpTest::LogRecord $txt
         ::httpTest::Puts $txt
     } elseif {$::httpTest::testOptions(-verbose) > 1} {
@@ -68,7 +68,11 @@ proc http::Log {args} {
     }
     return
 }
-
+# The http::Log routine above needs the variable ::httpTest::testOptions
+# Set up to destroy it when that variable goes away.
+trace add variable ::httpTest::testOptions unset {apply {args {
+    proc ::http::Log args {}
+}}}
 
 # Called by http::Log (the "testing" version) to record logs for later analysis.
 
@@ -82,7 +86,7 @@ proc httpTest::LogRecord {txt} {
         puts stdout "Fix this call to Log in http-*.tm so it has ^ then\
 		a letter then a numeral."
         flush stdout
-    } elseif {$pos == -1} {
+    } elseif {$pos < 0} {
         # Called by mistake.
     } else {
         set letter [string index $txt [incr pos]]
@@ -149,7 +153,7 @@ proc httpTest::TestOverlaps {someResults n term msg badTrans notPiped} {
         set myStart   [lsearch -exact $someResults [list B $i]]
         set myEnd     [lsearch -exact $someResults [list $term $i]]
 
-        if {($myStart == -1 || $myEnd == -1)} {
+        if {($myStart < 0 || $myEnd < 0)} {
             set res "Cannot find positions of transaction $i"
 	    append msg $res \n
 	    Puts $res
@@ -370,7 +374,7 @@ proc httpTest::ProcessRetries {someResults n msg skipOverlaps notIncluded notPip
     variable testOptions
 
     set nextRetry [lsearch -glob -index 0 $someResults {[PQR]}]
-    if {$nextRetry == -1} {
+    if {$nextRetry < 0} {
         return [MostAnalysis $someResults $n $msg $skipOverlaps $notIncluded $notPiped]
     }
     set badTrans $notIncluded
@@ -387,7 +391,7 @@ proc httpTest::ProcessRetries {someResults n msg skipOverlaps notIncluded notPip
     for {set i 1} {$i <= $n} {incr i} {
         set first [lsearch -exact $beforeTry [list A $i]]
         set last  [lsearch -exact $beforeTry [list F $i]]
-        if {$first == -1} {
+        if {$first < 0} {
 	    set res "Transaction $i was not started in connection number $tryCount"
 	    # So lappend it to badTrans and don't include it in the call below of MostAnalysis.
 	    # append msg $res \n
@@ -396,7 +400,7 @@ proc httpTest::ProcessRetries {someResults n msg skipOverlaps notIncluded notPip
 		lappend badTrans $i
 	    } else {
 	    }
-        } elseif {$last == -1} {
+        } elseif {$last < 0} {
 	    set res "Transaction $i was started but unfinished in connection number $tryCount"
 	    # So lappend it to badTrans and don't include it in the call below of MostAnalysis.
 	    # append msg $res \n

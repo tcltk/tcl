@@ -14,8 +14,13 @@
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
+#include <float.h>
 #include <math.h>
+
+#ifdef _WIN32
+#define copysign _copysign
+#endif
 
 /*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
@@ -45,7 +50,7 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
 
 #define _FPU_GETCW(cw)	__asm__ __volatile__ ("fnstcw %0" : "=m" (*&cw))
 #define _FPU_SETCW(cw)	__asm__ __volatile__ ("fldcw %0" : : "m" (*&cw))
-#   define FPU_IEEE_ROUNDING	0x027f
+#   define FPU_IEEE_ROUNDING	0x027F
 #   define ADJUST_FPU_CONTROL_WORD
 #define TCL_IEEE_DOUBLE_ROUNDING \
     fpu_control_t roundTo53Bits = FPU_IEEE_ROUNDING;	\
@@ -94,10 +99,10 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
  */
 
 #ifdef __hppa
-#   define NAN_START	0x7ff4
+#   define NAN_START	0x7FF4
 #   define NAN_MASK	(((Tcl_WideUInt) 1) << 50)
 #else
-#   define NAN_START	0x7ff8
+#   define NAN_START	0x7FF8
 #   define NAN_MASK	(((Tcl_WideUInt) 1) << 51)
 #endif
 
@@ -119,23 +124,23 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
 #define SIGN_BIT 	0x80000000
 				/* Mask for the sign bit in the first word of
 				 * a double. */
-#define EXP_MASK	0x7ff00000
+#define EXP_MASK	0x7FF00000
 				/* Mask for the exponent field in the first
 				 * word of a double. */
 #define EXP_SHIFT	20	/* Shift count to make the exponent an
 				 * integer. */
 #define HIDDEN_BIT	(((Tcl_WideUInt) 0x00100000) << 32)
 				/* Hidden 1 bit for the significand. */
-#define HI_ORDER_SIG_MASK 0x000fffff
+#define HI_ORDER_SIG_MASK 0x000FFFFF
 				/* Mask for the high-order part of the
 				 * significand in the first word of a
 				 * double. */
 #define SIG_MASK	(((Tcl_WideUInt) HI_ORDER_SIG_MASK << 32) \
-			| 0xffffffff)
+			| 0xFFFFFFFF)
 				/* Mask for the 52-bit significand. */
 #define FP_PRECISION	53	/* Number of bits of significand plus the
 				 * hidden bit. */
-#define EXPONENT_BIAS	0x3ff	/* Bias of the exponent 0. */
+#define EXPONENT_BIAS	0x3FF	/* Bias of the exponent 0. */
 
 /*
  * Derived quantities.
@@ -145,7 +150,7 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
 #define QUICK_MAX	14	/* floor((FP_PRECISION-1)*log(2)/log(10))-1 */
 #define BLETCH		0x10	/* Highest power of two that is greater than
 				 * DBL_MAX_10_EXP, divided by 16. */
-#define DIGIT_GROUP	8	/* floor(DIGIT_BIT*log(2)/log(10)) */
+#define DIGIT_GROUP	8	/* floor(MP_DIGIT_BIT*log(2)/log(10)) */
 
 /*
  * Union used to dismantle floating point numbers.
@@ -289,16 +294,16 @@ static const Tcl_WideUInt wuipow5[27] = {
 static int		AccumulateDecimalDigit(unsigned, int,
 			    Tcl_WideUInt *, mp_int *, int);
 static double		MakeHighPrecisionDouble(int signum,
-			    mp_int *significand, int nSigDigs, int exponent);
+			    mp_int *significand, int nSigDigs, long exponent);
 static double		MakeLowPrecisionDouble(int signum,
 			    Tcl_WideUInt significand, int nSigDigs,
-			    int exponent);
+			    long exponent);
 #ifdef IEEE_FLOATING_POINT
 static double		MakeNaN(int signum, Tcl_WideUInt tag);
 #endif
 static double		RefineApproximation(double approx,
 			    mp_int *exactSignificand, int exponent);
-static void		MulPow5(mp_int *, unsigned, mp_int *);
+static mp_err	MulPow5(mp_int *, unsigned, mp_int *) MP_WUR;
 static int 		NormalizeRightward(Tcl_WideUInt *);
 static int		RequiredPrecision(Tcl_WideUInt);
 static void		DoubleToExpAndSig(double, Tcl_WideUInt *, int *,
@@ -320,36 +325,36 @@ static char *		StrictQuickFormat(double, int, int, double,
 static char *		QuickConversion(double, int, int, int, int, int, int,
 			    int *, char **);
 static void		CastOutPowersOf2(int *, int *, int *);
-static char *		ShorteningInt64Conversion(Double *, int, Tcl_WideUInt,
+static char *		ShorteningInt64Conversion(Double *, Tcl_WideUInt,
 			    int, int, int, int, int, int, int, int, int,
 			    int, int, int *, char **);
-static char *		StrictInt64Conversion(Double *, int, Tcl_WideUInt,
+static char *		StrictInt64Conversion(Tcl_WideUInt,
 			    int, int, int, int, int, int,
 			    int, int, int *, char **);
 static int		ShouldBankerRoundUpPowD(mp_int *, int, int);
 static int		ShouldBankerRoundUpToNextPowD(mp_int *, mp_int *,
-			    int, int, int, mp_int *);
+			    int, int, mp_int *);
 static char *		ShorteningBignumConversionPowD(Double *dPtr,
-			    int convType, Tcl_WideUInt bw, int b2, int b5,
+			    Tcl_WideUInt bw, int b2, int b5,
 			    int m2plus, int m2minus, int m5,
 			    int sd, int k, int len,
 			    int ilim, int ilim1, int *decpt,
 			    char **endPtr);
-static char *		StrictBignumConversionPowD(Double *dPtr, int convType,
+static char *		StrictBignumConversionPowD(
 			    Tcl_WideUInt bw, int b2, int b5,
 			    int sd, int k, int len,
 			    int ilim, int ilim1, int *decpt,
 			    char **endPtr);
 static int		ShouldBankerRoundUp(mp_int *, mp_int *, int);
 static int		ShouldBankerRoundUpToNext(mp_int *, mp_int *,
-			    mp_int *, int, int, mp_int *);
-static char *		ShorteningBignumConversion(Double *dPtr, int convType,
+			    mp_int *, int);
+static char *		ShorteningBignumConversion(Double *dPtr,
 			    Tcl_WideUInt bw, int b2,
 			    int m2plus, int m2minus,
 			    int s2, int s5, int k, int len,
 			    int ilim, int ilim1, int *decpt,
 			    char **endPtr);
-static char *		StrictBignumConversion(Double *dPtr, int convType,
+static char *		StrictBignumConversion(
 			    Tcl_WideUInt bw, int b2,
 			    int s2, int s5, int k, int len,
 			    int ilim, int ilim1, int *decpt,
@@ -529,8 +534,11 @@ TclParseNumber(
 				 * to avoid a compiler warning. */
     int shift = 0;		/* Amount to shift when accumulating binary */
     int explicitOctal = 0;
+    mp_err err = MP_OKAY;
+    int under = 0;              /* Flag trailing '_' as error if true once
+				 * number is accepted. */
 
-#define ALL_BITS	(~(Tcl_WideUInt)0)
+#define ALL_BITS	((Tcl_WideUInt)-1)
 #define MOST_BITS	(ALL_BITS >> 1)
 
     /*
@@ -540,11 +548,11 @@ TclParseNumber(
 
     if (bytes == NULL) {
 	if (interp == NULL && endPtrPtr == NULL) {
-	    if (objPtr->typePtr == &tclDictType) {
+	    if (TclHasIntRep(objPtr, &tclDictType)) {
 		/* A dict can never be a (single) number */
 		return TCL_ERROR;
 	    }
-	    if (objPtr->typePtr == &tclListType) {
+	    if (TclHasIntRep(objPtr, &tclListType)) {
 		int length;
 		/* A list can only be a (single) number if its length == 1 */
 		TclListObjLength(NULL, objPtr, &length);
@@ -570,7 +578,7 @@ TclParseNumber(
 	     * I, N, and whitespace.
 	     */
 
-	    if (TclIsSpaceProc(c)) {
+	    if (TclIsSpaceProcM(c)) {
 		if (flags & TCL_PARSE_NO_WHITESPACE) {
 		    goto endgame;
 		}
@@ -637,7 +645,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == 'x' || c == 'X') {
-		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY)) {
+		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY) || under) {
 		    goto endgame;
 		}
 		state = ZERO_X;
@@ -650,7 +658,7 @@ TclParseNumber(
 		goto zeroo;
 	    }
 	    if (c == 'b' || c == 'B') {
-		if (flags & TCL_PARSE_OCTAL_ONLY) {
+		if ((flags & TCL_PARSE_OCTAL_ONLY) || under) {
 		    goto endgame;
 		}
 		state = ZERO_B;
@@ -660,11 +668,17 @@ TclParseNumber(
 		goto zerob;
 	    }
 	    if (c == 'o' || c == 'O') {
+		if (under) {
+		    goto endgame;
+		}
 		explicitOctal = 1;
 		state = ZERO_O;
 		break;
 	    }
 	    if (c == 'd' || c == 'D') {
+		if (under) {
+		    goto endgame;
+		}
 		state = ZERO_D;
 		break;
 	    }
@@ -688,9 +702,11 @@ TclParseNumber(
 	zeroo:
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = OCTAL;
 		break;
 	    } else if (c >= '1' && c <= '7') {
+		under = 0;
 		if (objPtr != NULL) {
 		    shift = 3 * (numTrailZeros + 1);
 		    significandOverflow = AccumulateDecimalDigit(
@@ -709,9 +725,9 @@ TclParseNumber(
 				&& (((size_t)shift >=
 					CHAR_BIT*sizeof(Tcl_WideUInt))
 				|| (octalSignificandWide >
-					(~(Tcl_WideUInt)0 >> shift)))) {
+					((Tcl_WideUInt)-1 >> shift)))) {
 			    octalSignificandOverflow = 1;
-			    TclInitBignumFromWideUInt(&octalSignificandBig,
+			    err = mp_init_u64(&octalSignificandBig,
 				    octalSignificandWide);
 			}
 		    }
@@ -719,10 +735,17 @@ TclParseNumber(
 			octalSignificandWide =
 				(octalSignificandWide << shift) + (c - '0');
 		    } else {
-			mp_mul_2d(&octalSignificandBig, shift,
-				&octalSignificandBig);
-			mp_add_d(&octalSignificandBig, (mp_digit)(c - '0'),
-				&octalSignificandBig);
+			if (err == MP_OKAY) {
+			    err = mp_mul_2d(&octalSignificandBig, shift,
+				    &octalSignificandBig);
+			}
+			if (err == MP_OKAY) {
+			    err = mp_add_d(&octalSignificandBig, (mp_digit)(c - '0'),
+				    &octalSignificandBig);
+			}
+		    }
+		    if (err != MP_OKAY) {
+			return TCL_ERROR;
 		    }
 		}
 		if (numSigDigs != 0) {
@@ -733,6 +756,10 @@ TclParseNumber(
 		numTrailZeros = 0;
 		state = OCTAL;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    }
 	    /* FALLTHROUGH */
 
@@ -761,6 +788,7 @@ TclParseNumber(
 
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = BAD_OCTAL;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
@@ -776,12 +804,15 @@ TclParseNumber(
 		    numSigDigs = 1;
 		}
 		numTrailZeros = 0;
+		under = 0;
 		state = BAD_OCTAL;
 		break;
 	    } else if (c == '.') {
+		under = 0;
 		state = FRACTION;
 		break;
 	    } else if (c == 'E' || c == 'e') {
+		under = 0;
 		state = EXPONENT_START;
 		break;
 	    }
@@ -804,14 +835,22 @@ TclParseNumber(
 	zerox:
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = HEXADECIMAL;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
+		under = 0;
 		d = (c-'0');
 	    } else if (c >= 'A' && c <= 'F') {
+		under = 0;
 		d = (c-'A'+10);
 	    } else if (c >= 'a' && c <= 'f') {
+		under = 0;
 		d = (c-'a'+10);
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    } else {
 		goto endgame;
 	    }
@@ -826,18 +865,23 @@ TclParseNumber(
 
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
-			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
+			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
 			significandOverflow = 1;
-			TclInitBignumFromWideUInt(&significandBig,
+			err = mp_init_u64(&significandBig,
 				significandWide);
 		    }
 		}
 		if (!significandOverflow) {
 		    significandWide = (significandWide << shift) + d;
-		} else {
-		    mp_mul_2d(&significandBig, shift, &significandBig);
-		    mp_add_d(&significandBig, (mp_digit) d, &significandBig);
+		} else if (err == MP_OKAY) {
+		    err = mp_mul_2d(&significandBig, shift, &significandBig);
+		    if (err == MP_OKAY) {
+			err = mp_add_d(&significandBig, (mp_digit) d, &significandBig);
+		    }
 		}
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    numTrailZeros = 0;
 	    state = HEXADECIMAL;
@@ -847,12 +891,18 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
+		/* FALLTHRU */
 	case ZERO_B:
 	zerob:
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = BINARY;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    } else if (c != '1') {
 		goto endgame;
 	    }
@@ -867,18 +917,23 @@ TclParseNumber(
 
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
-			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
+			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
 			significandOverflow = 1;
-			TclInitBignumFromWideUInt(&significandBig,
+			err = mp_init_u64(&significandBig,
 				significandWide);
 		    }
 		}
 		if (!significandOverflow) {
 		    significandWide = (significandWide << shift) + 1;
-		} else {
-		    mp_mul_2d(&significandBig, shift, &significandBig);
-		    mp_add_d(&significandBig, (mp_digit) 1, &significandBig);
+		} else if (err == MP_OKAY) {
+		    err = mp_mul_2d(&significandBig, shift, &significandBig);
+		    if (err == MP_OKAY) {
+			err = mp_add_d(&significandBig, (mp_digit) 1, &significandBig);
+		    }
 		}
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    numTrailZeros = 0;
 	    state = BINARY;
@@ -886,10 +941,17 @@ TclParseNumber(
 
 	case ZERO_D:
 	    if (c == '0') {
+		under = 0;
 		numTrailZeros++;
 	    } else if ( ! isdigit(UCHAR(c))) {
+                if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                    /* Ignore numeric "white space" */
+                    under = 1;
+                    break;
+                }
 		goto endgame;
 	    }
+	    under = 0;
 	    state = DECIMAL;
 	    flags |= TCL_PARSE_INTEGER_ONLY;
 	    /* FALLTHROUGH */
@@ -908,6 +970,7 @@ TclParseNumber(
 	    acceptLen = len;
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = DECIMAL;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
@@ -919,14 +982,21 @@ TclParseNumber(
 		}
 		numSigDigs += numTrailZeros+1;
 		numTrailZeros = 0;
+		under = 0;
 		state = DECIMAL;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    } else if (flags & TCL_PARSE_INTEGER_ONLY) {
 		goto endgame;
 	    } else if (c == '.') {
+		under = 0;
 		state = FRACTION;
 		break;
 	    } else if (c == 'E' || c == 'e') {
+		under = 0;
 		state = EXPONENT_START;
 		break;
 	    }
@@ -952,6 +1022,7 @@ TclParseNumber(
 	    if (c == '0') {
 		numDigitsAfterDp++;
 		numTrailZeros++;
+		under = 0;
 		state = FRACTION;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
@@ -968,8 +1039,13 @@ TclParseNumber(
 		    numSigDigs = 1;
 		}
 		numTrailZeros = 0;
+		under = 0;
 		state = FRACTION;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    }
 	    goto endgame;
 
@@ -981,10 +1057,12 @@ TclParseNumber(
 	     */
 
 	    if (c == '+') {
+		under = 0;
 		state = EXPONENT_SIGNUM;
 		break;
 	    } else if (c == '-') {
 		exponentSignum = 1;
+		under = 0;
 		state = EXPONENT_SIGNUM;
 		break;
 	    }
@@ -998,8 +1076,13 @@ TclParseNumber(
 
 	    if (isdigit(UCHAR(c))) {
 		exponent = c - '0';
+		under = 0;
 		state = EXPONENT;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    }
 	    goto endgame;
 
@@ -1018,8 +1101,13 @@ TclParseNumber(
 		} else {
 		    exponent = LONG_MAX;
 		}
+		under = 0;
 		state = EXPONENT;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    }
 	    goto endgame;
 
@@ -1030,12 +1118,14 @@ TclParseNumber(
 
 	case sI:
 	    if (c == 'n' || c == 'N') {
+		under = 0;
 		state = sIN;
 		break;
 	    }
 	    goto endgame;
 	case sIN:
 	    if (c == 'f' || c == 'F') {
+		under = 0;
 		state = sINF;
 		break;
 	    }
@@ -1044,6 +1134,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
+            under = 0;
 	    if (c == 'i' || c == 'I') {
 		state = sINFI;
 		break;
@@ -1051,24 +1142,28 @@ TclParseNumber(
 	    goto endgame;
 	case sINFI:
 	    if (c == 'n' || c == 'N') {
+		under = 0;
 		state = sINFIN;
 		break;
 	    }
 	    goto endgame;
 	case sINFIN:
 	    if (c == 'i' || c == 'I') {
+		under = 0;
 		state = sINFINI;
 		break;
 	    }
 	    goto endgame;
 	case sINFINI:
 	    if (c == 't' || c == 'T') {
+		under = 0;
 		state = sINFINIT;
 		break;
 	    }
 	    goto endgame;
 	case sINFINIT:
 	    if (c == 'y' || c == 'Y') {
+		under = 0;
 		state = sINFINITY;
 		break;
 	    }
@@ -1080,12 +1175,14 @@ TclParseNumber(
 #ifdef IEEE_FLOATING_POINT
 	case sN:
 	    if (c == 'a' || c == 'A') {
+		under = 0;
 		state = sNA;
 		break;
 	    }
 	    goto endgame;
 	case sNA:
 	    if (c == 'n' || c == 'N') {
+		under = 0;
 		state = sNAN;
 		break;
 	    }
@@ -1095,6 +1192,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == '(') {
+		under = 0;
 		state = sNANPAREN;
 		break;
 	    }
@@ -1105,12 +1203,14 @@ TclParseNumber(
 	     */
 	case sNANHEX:
 	    if (c == ')') {
+		under = 0;
 		state = sNANFINISH;
 		break;
 	    }
 	    /* FALLTHROUGH */
 	case sNANPAREN:
-	    if (TclIsSpaceProc(c)) {
+	    if (TclIsSpaceProcM(c)) {
+		under = 0;
 		break;
 	    }
 	    if (numSigDigs < 13) {
@@ -1125,6 +1225,7 @@ TclParseNumber(
 		}
 		numSigDigs++;
 		significandWide = (significandWide << 4) + d;
+		under = 0;
 		state = sNANHEX;
 		break;
 	    }
@@ -1137,6 +1238,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    goto endgame;
+
 	}
 	p++;
 	len--;
@@ -1155,16 +1257,19 @@ TclParseNumber(
     } else {
 	/*
 	 * Back up to the last accepting state in the lexer.
+	 * If the last char seen is the numeric whitespace character '_',
+	 * backup to that.
 	 */
 
-	p = acceptPoint;
-	len = acceptLen;
+	p = under ? acceptPoint-1 : acceptPoint;
+	len = under ? acceptLen-1 : acceptLen;
+
 	if (!(flags & TCL_PARSE_NO_WHITESPACE)) {
 	    /*
 	     * Accept trailing whitespace.
 	     */
 
-	    while (len != 0 && TclIsSpaceProc(*p)) {
+	    while (len != 0 && TclIsSpaceProcM(*p)) {
 		p++;
 		len--;
 	    }
@@ -1214,14 +1319,17 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
-		TclInitBignumFromWideUInt(&significandBig, significandWide);
+		err = mp_init_u64(&significandBig, significandWide);
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
 		    significandWide <<= shift;
-		} else {
-		    mp_mul_2d(&significandBig, shift, &significandBig);
+		} else if (err == MP_OKAY) {
+		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		}
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    goto returnInteger;
 
@@ -1235,14 +1343,17 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    significandWide > (MOST_BITS + signum) >> shift)) {
 		significandOverflow = 1;
-		TclInitBignumFromWideUInt(&significandBig, significandWide);
+		err = mp_init_u64(&significandBig, significandWide);
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
 		    significandWide <<= shift;
-		} else {
-		    mp_mul_2d(&significandBig, shift, &significandBig);
+		} else if (err == MP_OKAY) {
+		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		}
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    goto returnInteger;
 
@@ -1256,20 +1367,20 @@ TclParseNumber(
 		    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
 		    octalSignificandWide > (MOST_BITS + signum) >> shift)) {
 		octalSignificandOverflow = 1;
-		TclInitBignumFromWideUInt(&octalSignificandBig,
+		err = mp_init_u64(&octalSignificandBig,
 			octalSignificandWide);
 	    }
 	    if (shift) {
 		if (!octalSignificandOverflow) {
 		    octalSignificandWide <<= shift;
-		} else {
-		    mp_mul_2d(&octalSignificandBig, shift,
+		} else if (err == MP_OKAY) {
+		    err = mp_mul_2d(&octalSignificandBig, shift,
 			    &octalSignificandBig);
 		}
 	    }
 	    if (!octalSignificandOverflow) {
-		if (octalSignificandWide > (MOST_BITS + signum)) {
-		    TclInitBignumFromWideUInt(&octalSignificandBig,
+		if ((err == MP_OKAY) && (octalSignificandWide > (MOST_BITS + signum))) {
+		    err = mp_init_u64(&octalSignificandBig,
 			    octalSignificandWide);
 		    octalSignificandOverflow = 1;
 		} else {
@@ -1283,11 +1394,14 @@ TclParseNumber(
 		    }
 		}
 	    }
-	    if (octalSignificandOverflow) {
+	    if ((err == MP_OKAY) && octalSignificandOverflow) {
 		if (signum) {
-		    mp_neg(&octalSignificandBig, &octalSignificandBig);
+		    err = mp_neg(&octalSignificandBig, &octalSignificandBig);
 		}
 		TclSetBignumIntRep(objPtr, &octalSignificandBig);
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    break;
 
@@ -1295,14 +1409,14 @@ TclParseNumber(
 	case DECIMAL:
 	    significandOverflow = AccumulateDecimalDigit(0, numTrailZeros-1,
 		    &significandWide, &significandBig, significandOverflow);
-	    if (!significandOverflow && (significandWide > MOST_BITS+signum)){
+	    if ((err == MP_OKAY) && !significandOverflow && (significandWide > MOST_BITS+signum)) {
 		significandOverflow = 1;
-		TclInitBignumFromWideUInt(&significandBig, significandWide);
+		err = mp_init_u64(&significandBig, significandWide);
 	    }
 	returnInteger:
 	    if (!significandOverflow) {
-		if (significandWide > MOST_BITS+signum) {
-		    TclInitBignumFromWideUInt(&significandBig,
+		if ((err == MP_OKAY) && (significandWide > MOST_BITS+signum)) {
+		    err = mp_init_u64(&significandBig,
 			    significandWide);
 		    significandOverflow = 1;
 		} else {
@@ -1316,11 +1430,14 @@ TclParseNumber(
 		    }
 		}
 	    }
-	    if (significandOverflow) {
+	    if ((err == MP_OKAY) && significandOverflow) {
 		if (signum) {
-		    mp_neg(&significandBig, &significandBig);
+		    err = mp_neg(&significandBig, &significandBig);
 		}
 		TclSetBignumIntRep(objPtr, &significandBig);
+	    }
+	    if (err != MP_OKAY) {
+		return TCL_ERROR;
 	    }
 	    break;
 
@@ -1337,16 +1454,45 @@ TclParseNumber(
 
 	    objPtr->typePtr = &tclDoubleType;
 	    if (exponentSignum) {
+		/*
+		 * At this point exponent>=0, so the following calculation
+		 * cannot underflow.
+		 */
 		exponent = -exponent;
 	    }
+
+	    /*
+	     * Adjust the exponent for the number of trailing zeros that
+	     * have not been accumulated, and the number of digits after
+	     * the decimal point. Pin any overflow to LONG_MAX/LONG_MIN
+	     * respectively.
+	     */
+
+	    if (exponent >= 0) {
+		if (exponent - numDigitsAfterDp > LONG_MAX - numTrailZeros) {
+		    exponent = LONG_MAX;
+		} else {
+		    exponent = exponent - numDigitsAfterDp + numTrailZeros;
+		}
+	    } else {
+		if (exponent + numTrailZeros < LONG_MIN + numDigitsAfterDp) {
+		    exponent = LONG_MIN;
+		} else {
+		    exponent = exponent + numTrailZeros - numDigitsAfterDp;
+		}
+	    }
+
+	    /*
+	     * The desired number is now significandWide * 10**exponent
+	     * or significandBig * 10**exponent, depending on whether
+	     * the significand has overflowed a wide int.
+	     */
 	    if (!significandOverflow) {
 		objPtr->internalRep.doubleValue = MakeLowPrecisionDouble(
-			signum, significandWide, numSigDigs,
-			numTrailZeros + exponent - numDigitsAfterDp);
+			signum, significandWide, numSigDigs, exponent);
 	    } else {
 		objPtr->internalRep.doubleValue = MakeHighPrecisionDouble(
-			signum, &significandBig, numSigDigs,
-			numTrailZeros + exponent - numDigitsAfterDp);
+			signum, &significandBig, numSigDigs, exponent);
 	    }
 	    break;
 
@@ -1363,7 +1509,7 @@ TclParseNumber(
 #ifdef IEEE_FLOATING_POINT
 	case sNAN:
 	case sNANFINISH:
-	    objPtr->internalRep.doubleValue = MakeNaN(signum,significandWide);
+	    objPtr->internalRep.doubleValue = MakeNaN(signum, significandWide);
 	    objPtr->typePtr = &tclDoubleType;
 	    break;
 #endif
@@ -1451,13 +1597,15 @@ AccumulateDecimalDigit(
 	    *wideRepPtr = digit;
 	    return 0;
 	} else if (numZeros >= maxpow10_wide
-		|| w > ((~(Tcl_WideUInt)0)-digit)/pow10_wide[numZeros+1]) {
+		|| w > ((Tcl_WideUInt)-1-digit)/pow10_wide[numZeros+1]) {
 	    /*
 	     * Wide multiplication will overflow.  Expand the number to a
 	     * bignum and fall through into the bignum case.
 	     */
 
-	    TclInitBignumFromWideUInt(bignumRepPtr, w);
+	    if (mp_init_u64(bignumRepPtr, w) != MP_OKAY) {
+		return 0;
+	    }
 	} else {
 	    /*
 	     * Wide multiplication.
@@ -1477,32 +1625,37 @@ AccumulateDecimalDigit(
 	 * Up to about 8 zeros - single digit multiplication.
 	 */
 
-	mp_mul_d(bignumRepPtr, (mp_digit) pow10_wide[numZeros+1],
-		bignumRepPtr);
-	mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr);
+	if ((mp_mul_d(bignumRepPtr, (mp_digit) pow10_wide[numZeros+1],
+		bignumRepPtr) != MP_OKAY)
+		|| (mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr) != MP_OKAY))
+	return 0;
     } else {
+	mp_err err;
 	/*
 	 * More than single digit multiplication. Multiply by the appropriate
 	 * small powers of 5, and then shift. Large strings of zeroes are
 	 * eaten 256 at a time; this is less efficient than it could be, but
-	 * seems implausible. We presume that DIGIT_BIT is at least 27. The
+	 * seems implausible. We presume that MP_DIGIT_BIT is at least 27. The
 	 * first multiplication, by up to 10**7, is done with a one-DIGIT
-	 * multiply (this presumes that DIGIT_BIT >= 24).
+	 * multiply (this presumes that MP_DIGIT_BIT >= 24).
 	 */
 
 	n = numZeros + 1;
-	mp_mul_d(bignumRepPtr, (mp_digit) pow10_wide[n&0x7], bignumRepPtr);
-	for (i=3; i<=7; ++i) {
+	err = mp_mul_d(bignumRepPtr, (mp_digit) pow10_wide[n&0x7], bignumRepPtr);
+	for (i = 3; (err == MP_OKAY) && (i <= 7); ++i) {
 	    if (n & (1 << i)) {
-		mp_mul(bignumRepPtr, pow5+i, bignumRepPtr);
+		err = mp_mul(bignumRepPtr, pow5+i, bignumRepPtr);
 	    }
 	}
-	while (n >= 256) {
-	    mp_mul(bignumRepPtr, pow5+8, bignumRepPtr);
+	while ((err == MP_OKAY) && (n >= 256)) {
+	    err = mp_mul(bignumRepPtr, pow5+8, bignumRepPtr);
 	    n -= 256;
 	}
-	mp_mul_2d(bignumRepPtr, (int)(numZeros+1)&~0x7, bignumRepPtr);
-	mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr);
+	if ((err != MP_OKAY)
+		|| (mp_mul_2d(bignumRepPtr, (int)(numZeros+1)&~0x7, bignumRepPtr) != MP_OKAY)
+		|| (mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr) != MP_OKAY)) {
+	    return 0;
+	}
     }
 
     return 1;
@@ -1530,9 +1683,9 @@ AccumulateDecimalDigit(
 static double
 MakeLowPrecisionDouble(
     int signum,			/* 1 if the number is negative, 0 otherwise */
-    Tcl_WideUInt significand,	/* Significand of the number. */
-    int numSigDigs,		/* Number of digits in the significand. */
-    int exponent)		/* Power of ten. */
+    Tcl_WideUInt significand,	/* Significand of the number */
+    int numSigDigs,		/* Number of digits in the significand */
+    long exponent)		/* Power of ten */
 {
     double retval;		/* Value of the number. */
     mp_int significandBig;	/* Significand expressed as a bignum. */
@@ -1551,6 +1704,9 @@ MakeLowPrecisionDouble(
      * Test for the easy cases.
      */
 
+    if (significand == 0) {
+	return copysign(0.0, -signum);
+    }
     if (numSigDigs <= QUICK_MAX) {
 	if (exponent >= 0) {
 	    if (exponent <= mmaxpow) {
@@ -1600,7 +1756,9 @@ MakeLowPrecisionDouble(
      * call MakeHighPrecisionDouble to do it the hard way.
      */
 
-    TclInitBignumFromWideUInt(&significandBig, significand);
+    if (mp_init_u64(&significandBig, significand) != MP_OKAY) {
+	return 0.0;
+    }
     retval = MakeHighPrecisionDouble(0, &significandBig, numSigDigs,
 	    exponent);
     mp_clear(&significandBig);
@@ -1643,13 +1801,13 @@ MakeLowPrecisionDouble(
 
 static double
 MakeHighPrecisionDouble(
-    int signum,			/* 1=negative, 0=nonnegative. */
-    mp_int *significand,	/* Exact significand of the number. */
-    int numSigDigs,		/* Number of significant digits. */
-    int exponent)		/* Power of 10 by which to multiply. */
+    int signum,			/* 1=negative, 0=nonnegative */
+    mp_int *significand,	/* Exact significand of the number */
+    int numSigDigs,		/* Number of significant digits */
+    long exponent)		/* Power of 10 by which to multiply */
 {
     double retval;
-    int machexp;		/* Machine exponent of a power of 10. */
+    int machexp = 0;		/* Machine exponent of a power of 10. */
 
     /*
      * With gcc on x86, the floating point rounding mode is double-extended.
@@ -1662,15 +1820,18 @@ MakeHighPrecisionDouble(
     TCL_IEEE_DOUBLE_ROUNDING;
 
     /*
-     * Quick checks for over/underflow.
+     * Quick checks for zero, and over/underflow. Be careful to avoid
+     * integer overflow when calculating with 'exponent'.
      */
 
-    if (numSigDigs+exponent-1 > maxDigits) {
+    if (mp_iszero(significand)) {
+	return copysign(0.0, -signum);
+    }
+    if (exponent >= 0 && exponent-1 > maxDigits-numSigDigs) {
 	retval = HUGE_VAL;
 	goto returnValue;
-    }
-    if (numSigDigs+exponent-1 < minDigits) {
-	retval = 0;
+    } else if (exponent < 0 && numSigDigs+exponent < minDigits+1) {
+	retval = 0.0;
 	goto returnValue;
     }
 
@@ -1805,9 +1966,13 @@ RefineApproximation(
 				 * "round to even" functionality */
     double rteSignificand;	/* Significand of the round-to-even result */
     int rteExponent;		/* Exponent of the round-to-even result */
+    int shift;			/* Shift count for converting numerator
+				 * and denominator of corrector to floating
+				 * point */
     Tcl_WideInt rteSigWide;	/* Wide integer version of the significand
 				 * for testing evenness */
     int i;
+    mp_err err = MP_OKAY;
 
     /*
      * The first approximation is always low. If we find that it's HUGE_VAL,
@@ -1817,13 +1982,22 @@ RefineApproximation(
     if (approxResult == HUGE_VAL) {
 	return approxResult;
     }
+    significand = frexp(approxResult, &binExponent);
 
     /*
-     * Find a common denominator for the decimal and binary fractions. The
-     * common denominator will be 2**M2 + 5**M5.
+     * We are trying to compute a corrector term that, when added to the
+     * approximate result, will yield close to the exact result.
+     * The exact result is exactSignificand * 10**exponent.
+     * The approximate result is significand * 2**binExponent
+     * If exponent<0, we need to multiply the exact value by 10**-exponent
+     * to make it an integer, plus another factor of 2 to decide on rounding.
+     *  Similarly if binExponent<FP_PRECISION, we need
+     * to multiply by 2**FP_PRECISION to make the approximate value an integer.
+     *
+     * Let M = 2**M2 * 5**M5 be the least common multiple of these two
+     * multipliers.
      */
 
-    significand = frexp(approxResult, &binExponent);
     i = mantBits - binExponent;
     if (i < 0) {
 	M2 = 0;
@@ -1840,87 +2014,119 @@ RefineApproximation(
     }
 
     /*
-     * The floating point number is significand*2**binExponent. Compute the
-     * large integer significand*2**(binExponent+M2+1). The 2**-1 bit of the
-     * significand (the most significant) corresponds to the
-     * 2**(binExponent+M2 + 1) bit of 2*M2*v. Allocate enough digits to hold
-     * that quantity, then convert the significand to a large integer, scaled
-     * appropriately. Then multiply by the appropriate power of 5.
+     * Compute twoMv as 2*M*v, where v is the approximate value.
+     * This is done by bit-whacking to calculate 2**(M2+1)*significand,
+     * and then multiplying by 5**M5.
      */
 
     msb = binExponent + M2;	/* 1008 */
-    nDigits = msb / DIGIT_BIT + 1;
-    mp_init_size(&twoMv, nDigits);
-    i = (msb % DIGIT_BIT + 1);
+    nDigits = msb / MP_DIGIT_BIT + 1;
+    if (mp_init_size(&twoMv, nDigits) != MP_OKAY) {
+	return approxResult;
+    }
+    i = (msb % MP_DIGIT_BIT + 1);
     twoMv.used = nDigits;
     significand *= SafeLdExp(1.0, i);
     while (--nDigits >= 0) {
 	twoMv.dp[nDigits] = (mp_digit) significand;
 	significand -= (mp_digit) significand;
-	significand = SafeLdExp(significand, DIGIT_BIT);
+	significand = SafeLdExp(significand, MP_DIGIT_BIT);
     }
     for (i = 0; i <= 8; ++i) {
-	if (M5 & (1 << i)) {
-	    mp_mul(&twoMv, pow5+i, &twoMv);
+	if (M5 & (1 << i) && (mp_mul(&twoMv, pow5+i, &twoMv) != MP_OKAY)) {
+	    mp_clear(&twoMv);
+	    return approxResult;
 	}
     }
 
     /*
-     * Collect the decimal significand as a high precision integer. The least
-     * significant bit corresponds to bit M2+exponent+1 so it will need to be
-     * shifted left by that many bits after being multiplied by
-     * 5**(M5+exponent).
+     * Compute twoMd as 2*M*d, where d is the exact value.
+     * This is done by multiplying by 5**(M5+exponent) and then multiplying
+     * by 2**(M5+exponent+1), which is, of couse, a left shift.
      */
 
-    mp_init_copy(&twoMd, exactSignificand);
-    for (i=0; i<=8; ++i) {
+    if (mp_init_copy(&twoMd, exactSignificand) != MP_OKAY) {
+	mp_clear(&twoMv);
+	return approxResult;
+    }
+    for (i = 0; (i <= 8); ++i) {
 	if ((M5 + exponent) & (1 << i)) {
-	    mp_mul(&twoMd, pow5+i, &twoMd);
+	    err = mp_mul(&twoMd, pow5+i, &twoMd);
 	}
     }
-    mp_mul_2d(&twoMd, M2+exponent+1, &twoMd);
-    mp_sub(&twoMd, &twoMv, &twoMd);
+    if (err == MP_OKAY) {
+	err = mp_mul_2d(&twoMd, M2+exponent+1, &twoMd);
+    }
+
+    /*
+     * Now let twoMd = twoMd - twoMv, the difference between the exact and
+     * approximate values.
+     */
+
+    if (err == MP_OKAY) {
+	err = mp_sub(&twoMd, &twoMv, &twoMd);
+    }
 
     /*
      * The result, 2Mv-2Md, needs to be divided by 2M to yield a correction
      * term. Because 2M may well overflow a double, we need to scale the
-     * denominator by a factor of 2**binExponent-mantBits.
+     * denominator by a factor of 2**binExponent-mantBits. Place that factor
+     * times 1/2 ULP into twoMd.
      */
 
     scale = binExponent - mantBits - 1;
-
-    mp_set(&twoMv, 1);
-    for (i=0; i<=8; ++i) {
+    mp_set_u64(&twoMv, 1);
+    for (i = 0; (i <= 8) && (err == MP_OKAY); ++i) {
 	if (M5 & (1 << i)) {
-	    mp_mul(&twoMv, pow5+i, &twoMv);
+	    err = mp_mul(&twoMv, pow5+i, &twoMv);
 	}
     }
     multiplier = M2 + scale + 1;
-    if (multiplier > 0) {
-	mp_mul_2d(&twoMv, multiplier, &twoMv);
+    if (err != MP_OKAY) {
+	mp_clear(&twoMd);
+	mp_clear(&twoMv);
+	return approxResult;
+    } else if (multiplier > 0) {
+	err = mp_mul_2d(&twoMv, multiplier, &twoMv);
     } else if (multiplier < 0) {
-	mp_div_2d(&twoMv, -multiplier, &twoMv, NULL);
+	err = mp_div_2d(&twoMv, -multiplier, &twoMv, NULL);
     }
+    if (err != MP_OKAY) {
+	mp_clear(&twoMd);
+	mp_clear(&twoMv);
+	return approxResult;
+    }
+
+    /*
+     * Will the eventual correction term be less than, equal to, or
+     * greater than 1/2 ULP?
+     */
 
     switch (mp_cmp_mag(&twoMd, &twoMv)) {
     case MP_LT:
 	/*
-	 * If the result is less than unity, the error is less than 1/2 unit in
-	 * the last place, so there's no correction to make.
+	 * If the error is less than 1/2 ULP, there's no correction to make.
 	 */
 	mp_clear(&twoMd);
 	mp_clear(&twoMv);
 	return approxResult;
     case MP_EQ:
 	/*
-	 * If the result is exactly unity, we need to round to even.
+	 * If the error is exactly 1/2 ULP, we need to round to even.
 	 */
 	roundToEven = 1;
 	break;
     case MP_GT:
+	/*
+	 * We need to correct the result if the error exceeds 1/2 ULP.
+	 */
 	break;
     }
 
+    /*
+     * If we're in the 'round to even' case, and the significand is already
+     * even, we're done. Return the approximate result.
+     */
     if (roundToEven) {
 	rteSignificand = frexp(approxResult, &rteExponent);
 	rteSigWide = (Tcl_WideInt) ldexp(rteSignificand, FP_PRECISION);
@@ -1929,6 +2135,23 @@ RefineApproximation(
 	    mp_clear(&twoMv);
 	    return approxResult;
 	}
+    }
+
+    /*
+     * Reduce the numerator and denominator of the corrector term so that
+     * they will fit in the floating point precision.
+     */
+    shift = mp_count_bits(&twoMv) - FP_PRECISION - 1;
+    if (shift > 0) {
+	err = mp_div_2d(&twoMv, shift, &twoMv, NULL);
+	if (err == MP_OKAY) {
+	    err = mp_div_2d(&twoMd, shift, &twoMd, NULL);
+	}
+    }
+    if (err != MP_OKAY) {
+	mp_clear(&twoMd);
+	mp_clear(&twoMv);
+	return approxResult;
     }
 
     /*
@@ -1967,7 +2190,7 @@ RefineApproximation(
  *----------------------------------------------------------------------
  */
 
-static inline void
+static inline mp_err
 MulPow5(
     mp_int *base, 		/* Number to multiply. */
     unsigned n,			/* Power of 5 to multiply by. */
@@ -1976,23 +2199,25 @@ MulPow5(
     mp_int *p = base;
     int n13 = n / 13;
     int r = n % 13;
+    mp_err err = MP_OKAY;
 
     if (r != 0) {
-	mp_mul_d(p, dpow5[r], result);
+	err = mp_mul_d(p, dpow5[r], result);
 	p = result;
     }
     r = 0;
-    while (n13 != 0) {
+    while ((err == MP_OKAY) && (n13 != 0)) {
 	if (n13 & 1) {
-	    mp_mul(p, pow5_13+r, result);
+	    err = mp_mul(p, pow5_13+r, result);
 	    p = result;
 	}
 	n13 >>= 1;
 	++r;
     }
-    if (p != result) {
-	mp_copy(p, result);
+    if ((err == MP_OKAY) && (p != result)) {
+	err = mp_copy(p, result);
     }
+    return err;
 }
 
 /*
@@ -2019,16 +2244,16 @@ NormalizeRightward(
     int rv = 0;
     Tcl_WideUInt w = *wPtr;
 
-    if (!(w & (Tcl_WideUInt) 0xffffffff)) {
+    if (!(w & (Tcl_WideUInt) 0xFFFFFFFF)) {
 	w >>= 32; rv += 32;
     }
-    if (!(w & (Tcl_WideUInt) 0xffff)) {
+    if (!(w & (Tcl_WideUInt) 0xFFFF)) {
 	w >>= 16; rv += 16;
     }
-    if (!(w & (Tcl_WideUInt) 0xff)) {
+    if (!(w & (Tcl_WideUInt) 0xFF)) {
 	w >>= 8; rv += 8;
     }
-    if (!(w & (Tcl_WideUInt) 0xf)) {
+    if (!(w & (Tcl_WideUInt) 0xF)) {
 	w >>= 4; rv += 4;
     }
     if (!(w & 0x3)) {
@@ -2062,21 +2287,21 @@ RequiredPrecision(
     int rv;
     unsigned long wi;
 
-    if (w & ((Tcl_WideUInt) 0xffffffff << 32)) {
+    if (w & ((Tcl_WideUInt) 0xFFFFFFFF << 32)) {
 	wi = (unsigned long) (w >> 32); rv = 32;
     } else {
 	wi = (unsigned long) w; rv = 0;
     }
-    if (wi & 0xffff0000) {
+    if (wi & 0xFFFF0000) {
 	wi >>= 16; rv += 16;
     }
-    if (wi & 0xff00) {
+    if (wi & 0xFF00) {
 	wi >>= 8; rv += 8;
     }
-    if (wi & 0xf0) {
+    if (wi & 0xF0) {
 	wi >>= 4; rv += 4;
     }
-    if (wi & 0xc) {
+    if (wi & 0xC) {
 	wi >>= 2; rv += 2;
     }
     if (wi & 0x2) {
@@ -2192,13 +2417,13 @@ FormatInfAndNaN(
 
     *decpt = 9999;
     if (!(d->w.word1) && !(d->w.word0 & HI_ORDER_SIG_MASK)) {
-	retval = ckalloc(9);
+	retval = (char *)ckalloc(9);
 	strcpy(retval, "Infinity");
 	if (endPtr) {
 	    *endPtr = retval + 8;
 	}
     } else {
-	retval = ckalloc(4);
+	retval = (char *)ckalloc(4);
 	strcpy(retval, "NaN");
 	if (endPtr) {
 	    *endPtr = retval + 3;
@@ -2229,7 +2454,7 @@ FormatZero(
     int *decpt,			/* Location of the decimal point. */
     char **endPtr)		/* Pointer to the end of the formatted data */
 {
-    char *retval = ckalloc(2);
+    char *retval = (char *)ckalloc(2);
 
     strcpy(retval, "0");
     if (endPtr) {
@@ -2410,9 +2635,8 @@ ComputeScale(
 
 static inline void
 SetPrecisionLimits(
-    int convType,		/* Type of conversion: TCL_DD_SHORTEST,
-				 * TCL_DD_STEELE0, TCL_DD_E_FMT,
-				 * TCL_DD_F_FMT. */
+    int flags,		/* Type of conversion: TCL_DD_SHORTEST,
+				 * TCL_DD_E_FMT, TCL_DD_F_FMT. */
     int k,			/* Floor(log10(number to convert)) */
     int *ndigitsPtr,		/* IN/OUT: Number of digits requested (will be
 				 *         adjusted if needed). */
@@ -2422,13 +2646,7 @@ SetPrecisionLimits(
     int *iLim1Ptr)		/* OUT: Number of digits of significance if
 				 *      the quick method is used. */
 {
-    switch (convType) {
-    case TCL_DD_SHORTEST0:
-    case TCL_DD_STEELE0:
-	*iLimPtr = *iLim1Ptr = -1;
-	*iPtr = 18;
-	*ndigitsPtr = 0;
-	break;
+    switch (flags & TCL_DD_CONVERSION_TYPE_MASK) {
     case TCL_DD_E_FORMAT:
 	if (*ndigitsPtr <= 0) {
 	    *ndigitsPtr = 1;
@@ -2444,10 +2662,10 @@ SetPrecisionLimits(
 	}
 	break;
     default:
-	*iPtr = -1;
-	*iLimPtr = -1;
-	*iLim1Ptr = -1;
-	Tcl_Panic("impossible conversion type in TclDoubleDigits");
+	*iLimPtr = *iLim1Ptr = -1;
+	*iPtr = 18;
+	*ndigitsPtr = 0;
+	break;
     }
 }
 
@@ -2521,7 +2739,7 @@ AdjustRange(
 	 * The number must be reduced to bring it into range.
 	 */
 
-	ds = tens[k & 0xf];
+	ds = tens[k & 0xF];
 	j = k >> 4;
 	if (j & BLETCH) {
 	    j &= (BLETCH-1);
@@ -2542,7 +2760,7 @@ AdjustRange(
 	 * The number must be increased to bring it into range.
 	 */
 
-	d *= tens[j1 & 0xf];
+	d *= tens[j1 & 0xF];
 	i = 0;
 	for (j = j1>>4; j; j>>=1) {
 	    if (j & 1) {
@@ -2731,7 +2949,7 @@ QuickConversion(
     int k,			/* floor(log10(d)), approximately. */
     int k_check,		/* 0 if k is exact, 1 if it may be too high */
     int flags,			/* Flags passed to dtoa:
-				 *    TCL_DD_SHORTEN_FLAG */
+				 *    TCL_DD_SHORTEST */
     int len,			/* Length of the return value. */
     int ilim,			/* Number of digits to store. */
     int ilim1,			/* Number of digits to store if we misguessed
@@ -2782,7 +3000,7 @@ QuickConversion(
      * Handle the peculiar case where the result has no significant digits.
      */
 
-    retval = ckalloc(len + 1);
+    retval = (char *)ckalloc(len + 1);
     if (ilim == 0) {
 	d -= 5.;
 	if (d > eps.d) {
@@ -2802,7 +3020,7 @@ QuickConversion(
      * Format the digit string.
      */
 
-    if (flags & TCL_DD_SHORTEN_FLAG) {
+    if (flags & TCL_DD_SHORTEST) {
 	end = ShorteningQuickFormat(d, k, ilim, eps.d, retval, decpt);
     } else {
 	end = StrictQuickFormat(d, k, ilim, eps.d, retval, decpt);
@@ -2877,8 +3095,6 @@ CastOutPowersOf2(
 static inline char *
 ShorteningInt64Conversion(
     Double *dPtr,		/* Original number to convert. */
-    int convType,		/* Type of conversion (shortest, Steele,
-				 * E format, F format). */
     Tcl_WideUInt bw,		/* Integer significand. */
     int b2, int b5,		/* Scale factor for the significand in the
 				 * numerator. */
@@ -2895,7 +3111,7 @@ ShorteningInt64Conversion(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = ckalloc(len + 1);
+    char *retval = (char *)ckalloc(len + 1);
 				/* Output buffer. */
     Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
@@ -2945,7 +3161,7 @@ ShorteningInt64Conversion(
 	 */
 
 	if (b < mplus || (b == mplus
-		&& convType != TCL_DD_STEELE0 && (dPtr->w.word1 & 1) == 0)) {
+		&& (dPtr->w.word1 & 1) == 0)) {
 	    /*
 	     * Make sure we shouldn't be rounding *up* instead, in case the
 	     * next number above is closer.
@@ -2974,7 +3190,7 @@ ShorteningInt64Conversion(
 	 */
 
 	if (b > S - mminus || (b == S - mminus
-		&& convType != TCL_DD_STEELE0 && (dPtr->w.word1 & 1) == 0)) {
+		&& (dPtr->w.word1 & 1) == 0)) {
 	    if (digit == 9) {
 		*s++ = '9';
 		s = BumpUp(s, retval, &k);
@@ -3045,9 +3261,6 @@ ShorteningInt64Conversion(
 
 static inline char *
 StrictInt64Conversion(
-    Double *dPtr,		/* Original number to convert. */
-    int convType,		/* Type of conversion (shortest, Steele,
-				 * E format, F format). */
     Tcl_WideUInt bw,		/* Integer significand. */
     int b2, int b5,		/* Scale factor for the significand in the
 				 * numerator. */
@@ -3061,7 +3274,7 @@ StrictInt64Conversion(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = ckalloc(len + 1);
+    char *retval = (char *)ckalloc(len + 1);
 				/* Output buffer. */
     Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
@@ -3140,7 +3353,7 @@ StrictInt64Conversion(
  *
  *	Test whether bankers' rounding should round a digit up. Assumption is
  *	made that the denominator of the fraction being tested is a power of
- *	2**DIGIT_BIT.
+ *	2**MP_DIGIT_BIT.
  *
  * Results:
  *	Returns 1 iff the fraction is more than 1/2, or if the fraction is
@@ -3152,11 +3365,11 @@ StrictInt64Conversion(
 static inline int
 ShouldBankerRoundUpPowD(
     mp_int *b,			/* Numerator of the fraction. */
-    int sd,			/* Denominator is 2**(sd*DIGIT_BIT). */
+    int sd,			/* Denominator is 2**(sd*MP_DIGIT_BIT). */
     int isodd)			/* 1 if the digit is odd, 0 if even. */
 {
     int i;
-    static const mp_digit topbit = 1 << (DIGIT_BIT - 1);
+    static const mp_digit topbit = ((mp_digit)1) << (MP_DIGIT_BIT - 1);
 
     if (b->used < sd || (b->dp[sd-1] & topbit) == 0) {
 	return 0;
@@ -3191,10 +3404,7 @@ static inline int
 ShouldBankerRoundUpToNextPowD(
     mp_int *b,			/* Numerator of the fraction. */
     mp_int *m,			/* Numerator of the rounding tolerance. */
-    int sd,			/* Common denominator is 2**(sd*DIGIT_BIT). */
-    int convType,		/* Conversion type: STEELE defeats
-				 * round-to-even (not sure why one wants to do
-				 * this; I copied it from Gay). FIXME */
+    int sd,			/* Common denominator is 2**(sd*MP_DIGIT_BIT). */
     int isodd,			/* 1 if the integer significand is odd. */
     mp_int *temp)		/* Work area for the calculation. */
 {
@@ -3203,11 +3413,10 @@ ShouldBankerRoundUpToNextPowD(
     /*
      * Compare B and S-m - which is the same as comparing B+m and S - which we
      * do by computing b+m and doing a bitwhack compare against
-     * 2**(DIGIT_BIT*sd)
+     * 2**(MP_DIGIT_BIT*sd)
      */
 
-    mp_add(b, m, temp);
-    if (temp->used <= sd) {	/* Too few digits to be > s */
+    if ((mp_add(b, m, temp) != MP_OKAY) || (temp->used <= sd)) {	/* Too few digits to be > s */
 	return 0;
     }
     if (temp->used > sd+1 || temp->dp[sd] > 1) {
@@ -3220,10 +3429,6 @@ ShouldBankerRoundUpToNextPowD(
 	    return 1;
 	}
     }
-    if (convType == TCL_DD_STEELE0) {
-				/* Biased rounding. */
-	return 0;
-    }
     return isodd;
 }
 
@@ -3235,7 +3440,7 @@ ShouldBankerRoundUpToNextPowD(
  *	Converts a double-precision number to the shortest string of digits
  *	that reconverts exactly to the given number, or to 'ilim' digits if
  *	that will yield a shorter result. The denominator in David Gay's
- *	conversion algorithm is known to be a power of 2**DIGIT_BIT, and hence
+ *	conversion algorithm is known to be a power of 2**MP_DIGIT_BIT, and hence
  *	the division in the main loop may be replaced by a digit shift and
  *	mask.
  *
@@ -3253,8 +3458,6 @@ ShouldBankerRoundUpToNextPowD(
 static inline char *
 ShorteningBignumConversionPowD(
     Double *dPtr,		/* Original number to convert. */
-    int convType,		/* Type of conversion (shortest, Steele,
-				 * E format, F format). */
     Tcl_WideUInt bw,		/* Integer significand. */
     int b2, int b5,		/* Scale factor for the significand in the
 				 * numerator. */
@@ -3271,7 +3474,7 @@ ShorteningBignumConversionPowD(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = ckalloc(len + 1);
+    char *retval = (char *)ckalloc(len + 1);
 				/* Output buffer. */
     mp_int b;			/* Numerator of the fraction being
 				 * converted. */
@@ -3281,23 +3484,31 @@ ShorteningBignumConversionPowD(
     int i;			/* Index in the output buffer. */
     mp_int temp;
     int r1;
+    mp_err err = MP_OKAY;
 
     /*
      * b = bw * 2**b2 * 5**b5
      * mminus = 5**m5
      */
 
-    TclInitBignumFromWideUInt(&b, bw);
-    mp_init_set_int(&mminus, 1);
-    MulPow5(&b, b5, &b);
-    mp_mul_2d(&b, b2, &b);
+    if ((retval == NULL) || (mp_init_u64(&b, bw) != MP_OKAY)) {
+	return NULL;
+    }
+    if (mp_init_set(&mminus, 1) != MP_OKAY) {
+	mp_clear(&b);
+	return NULL;
+    }
+    err = MulPow5(&b, b5, &b);
+    if (err == MP_OKAY) {
+	err = mp_mul_2d(&b, b2, &b);
+    }
 
     /*
      * Adjust if the logarithm was guessed wrong.
      */
 
-    if (b.used <= sd) {
-	mp_mul_d(&b, 10, &b);
+    if ((err == MP_OKAY) && (b.used <= sd)) {
+	err = mp_mul_d(&b, 10, &b);
 	++m2plus; ++m2minus; ++m5;
 	ilim = ilim1;
 	--k;
@@ -3308,16 +3519,24 @@ ShorteningBignumConversionPowD(
      * mplus = 5**m5 * 2**m2plus
      */
 
-    mp_mul_2d(&mminus, m2minus, &mminus);
-    MulPow5(&mminus, m5, &mminus);
-    if (m2plus > m2minus) {
-	mp_init_copy(&mplus, &mminus);
-	mp_mul_2d(&mplus, m2plus-m2minus, &mplus);
+    if (err == MP_OKAY) {
+	err = mp_mul_2d(&mminus, m2minus, &mminus);
     }
-    mp_init(&temp);
+    if (err == MP_OKAY) {
+	err = MulPow5(&mminus, m5, &mminus);
+    }
+    if ((err == MP_OKAY) && (m2plus > m2minus)) {
+	err = mp_init_copy(&mplus, &mminus);
+	if (err == MP_OKAY) {
+	    err = mp_mul_2d(&mplus, m2plus-m2minus, &mplus);
+	}
+    }
+    if (err == MP_OKAY) {
+	err = mp_init(&temp);
+    }
 
     /*
-     * Loop through the digits. Do division and mod by s == 2**(sd*DIGIT_BIT)
+     * Loop through the digits. Do division and mod by s == 2**(sd*MP_DIGIT_BIT)
      * by mp_digit extraction.
      */
 
@@ -3340,7 +3559,7 @@ ShorteningBignumConversionPowD(
 
 	r1 = mp_cmp_mag(&b, (m2plus > m2minus)? &mplus : &mminus);
 	if (r1 == MP_LT || (r1 == MP_EQ
-		&& convType != TCL_DD_STEELE0 && (dPtr->w.word1 & 1) == 0)) {
+		&& (dPtr->w.word1 & 1) == 0)) {
 	    /*
 	     * Make sure we shouldn't be rounding *up* instead, in case the
 	     * next number above is closer.
@@ -3368,7 +3587,7 @@ ShorteningBignumConversionPowD(
 	 * number?
 	 */
 
-	if (ShouldBankerRoundUpToNextPowD(&b, &mminus, sd, convType,
+	if (ShouldBankerRoundUpToNextPowD(&b, &mminus, sd,
 		dPtr->w.word1 & 1, &temp)) {
 	    if (digit == 9) {
 		*s++ = '9';
@@ -3396,10 +3615,14 @@ ShorteningBignumConversionPowD(
 	 * Advance to the next digit.
 	 */
 
-	mp_mul_d(&b, 10, &b);
-	mp_mul_d(&mminus, 10, &mminus);
-	if (m2plus > m2minus) {
-	    mp_mul_2d(&mminus, m2plus-m2minus, &mplus);
+	if (err == MP_OKAY) {
+	    err = mp_mul_d(&b, 10, &b);
+	}
+	if (err == MP_OKAY) {
+	    err = mp_mul_d(&mminus, 10, &mminus);
+	}
+	if ((err == MP_OKAY) && (m2plus > m2minus)) {
+	    err = mp_mul_2d(&mminus, m2plus-m2minus, &mplus);
 	}
 	++i;
     }
@@ -3418,7 +3641,7 @@ ShorteningBignumConversionPowD(
     if (endPtr) {
 	*endPtr = s;
     }
-    return retval;
+    return (err == MP_OKAY) ? retval : NULL;
 }
 
 /*
@@ -3429,7 +3652,7 @@ ShorteningBignumConversionPowD(
  *	Converts a double-precision number to a fixed-lengt string of 'ilim'
  *	digits (or 'ilim1' if log10(d) has been overestimated).  The
  *	denominator in David Gay's conversion algorithm is known to be a power
- *	of 2**DIGIT_BIT, and hence the division in the main loop may be
+ *	of 2**MP_DIGIT_BIT, and hence the division in the main loop may be
  *	replaced by a digit shift and mask.
  *
  * Results:
@@ -3445,9 +3668,6 @@ ShorteningBignumConversionPowD(
 
 static inline char *
 StrictBignumConversionPowD(
-    Double *dPtr,		/* Original number to convert. */
-    int convType,		/* Type of conversion (shortest, Steele,
-				 * E format, F format). */
     Tcl_WideUInt bw,		/* Integer significand. */
     int b2, int b5,		/* Scale factor for the significand in the
 				 * numerator. */
@@ -3461,41 +3681,44 @@ StrictBignumConversionPowD(
     char **endPtr)		/* OUTPUT: Position of the terminal '\0' at
 				 *	   the end of the returned string. */
 {
-    char *retval = ckalloc(len + 1);
+    char *retval = (char *)ckalloc(len + 1);
 				/* Output buffer. */
     mp_int b;			/* Numerator of the fraction being
 				 * converted. */
     mp_digit digit;		/* Current output digit. */
     char *s = retval;		/* Cursor in the output buffer. */
     int i;			/* Index in the output buffer. */
-    mp_int temp;
+    mp_err err;
 
     /*
      * b = bw * 2**b2 * 5**b5
      */
 
-    TclInitBignumFromWideUInt(&b, bw);
-    MulPow5(&b, b5, &b);
-    mp_mul_2d(&b, b2, &b);
+    if (mp_init_u64(&b, bw) != MP_OKAY) {
+	return NULL;
+    }
+    err = MulPow5(&b, b5, &b);
+    if (err == MP_OKAY) {
+	err = mp_mul_2d(&b, b2, &b);
+    }
 
     /*
      * Adjust if the logarithm was guessed wrong.
      */
 
-    if (b.used <= sd) {
-	mp_mul_d(&b, 10, &b);
+    if ((err == MP_OKAY) && (b.used <= sd)) {
+	err = mp_mul_d(&b, 10, &b);
 	ilim = ilim1;
 	--k;
     }
-    mp_init(&temp);
 
     /*
-     * Loop through the digits. Do division and mod by s == 2**(sd*DIGIT_BIT)
+     * Loop through the digits. Do division and mod by s == 2**(sd*MP_DIGIT_BIT)
      * by mp_digit extraction.
      */
 
     i = 1;
-    for (;;) {
+    while (err == MP_OKAY) {
 	if (b.used <= sd) {
 	    digit = 0;
 	} else {
@@ -3527,7 +3750,7 @@ StrictBignumConversionPowD(
 	 * Advance to the next digit.
 	 */
 
-	mp_mul_d(&b, 10, &b);
+	err = mp_mul_d(&b, 10, &b);
 	++i;
     }
 
@@ -3536,7 +3759,7 @@ StrictBignumConversionPowD(
      * string.
      */
 
-    mp_clear_multi(&b, &temp, NULL);
+    mp_clear(&b);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
@@ -3600,29 +3823,25 @@ ShouldBankerRoundUpToNext(
 				 * the last digit. */
     mp_int *m,			/* Numerator of the rounding tolerance. */
     mp_int *S,			/* Denominator. */
-    int convType,		/* Conversion type: STEELE0 defeats
-				 * round-to-even. (Not sure why one would want
-				 * this; I coped it from Gay). FIXME */
-    int isodd,			/* 1 if the integer significand is odd. */
-    mp_int *temp)		/* Work area needed for the calculation. */
+    int isodd)			/* 1 if the integer significand is odd. */
 {
     int r;
+    mp_int temp;
 
     /*
      * Compare b and S-m: this is the same as comparing B+m and S.
      */
 
-    mp_add(b, m, temp);
-    r = mp_cmp_mag(temp, S);
+    if ((mp_init(&temp) != MP_OKAY) || (mp_add(b, m, &temp) != MP_OKAY)) {
+	return 0;
+    }
+    r = mp_cmp_mag(&temp, S);
+    mp_clear(&temp);
     switch(r) {
     case MP_LT:
 	return 0;
     case MP_EQ:
-	if (convType == TCL_DD_STEELE0) {
-	    return 0;
-	} else {
-	    return isodd;
-	}
+	return isodd;
     case MP_GT:
 	return 1;
     }
@@ -3651,7 +3870,6 @@ ShouldBankerRoundUpToNext(
 static inline char *
 ShorteningBignumConversion(
     Double *dPtr,		/* Original number being converted. */
-    int convType,		/* Conversion type. */
     Tcl_WideUInt bw,		/* Integer significand and exponent. */
     int b2,			/* Scale factor for the significand. */
     int m2plus, int m2minus,	/* Scale factors for 1/2 ulp in numerator. */
@@ -3663,7 +3881,7 @@ ShorteningBignumConversion(
     int *decpt,			/* OUTPUT: Position of the decimal point. */
     char **endPtr)		/* OUTPUT: Pointer to the end of the number */
 {
-    char *retval = ckalloc(len+1);
+    char *retval = (char *)ckalloc(len+1);
 				/* Buffer of digits to return. */
     char *s = retval;		/* Cursor in the return value. */
     mp_int b;			/* Numerator of the result. */
@@ -3672,27 +3890,36 @@ ShorteningBignumConversion(
     mp_int S;			/* Denominator of the result. */
     mp_int dig;			/* Current digit of the result. */
     int digit;			/* Current digit of the result. */
-    mp_int temp;		/* Work area. */
     int minit = 1;		/* Fudge factor for when we misguess k. */
     int i;
     int r1;
+    mp_err err;
 
     /*
      * b = bw * 2**b2 * 5**b5
      * S = 2**s2 * 5*s5
      */
 
-    TclInitBignumFromWideUInt(&b, bw);
-    mp_mul_2d(&b, b2, &b);
-    mp_init_set_int(&S, 1);
-    MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
+    if ((retval == NULL) || (mp_init_u64(&b, bw) != MP_OKAY)) {
+	return NULL;
+    }
+    err = mp_mul_2d(&b, b2, &b);
+    if (err == MP_OKAY) {
+	err = mp_init_set(&S, 1);
+    }
+    if (err == MP_OKAY) {
+	err = MulPow5(&S, s5, &S);
+    }
+    if (err == MP_OKAY) {
+	err = mp_mul_2d(&S, s2, &S);
+    }
 
     /*
      * Handle the case where we guess the position of the decimal point wrong.
      */
 
-    if (mp_cmp_mag(&b, &S) == MP_LT) {
-	mp_mul_d(&b, 10, &b);
+    if ((err == MP_OKAY) && (mp_cmp_mag(&b, &S) == MP_LT)) {
+	err = mp_mul_d(&b, 10, &b);
 	minit = 10;
 	ilim =ilim1;
 	--k;
@@ -3702,22 +3929,29 @@ ShorteningBignumConversion(
      * mminus = 2**m2minus * 5**m5
      */
 
-    mp_init_set_int(&mminus, minit);
-    mp_mul_2d(&mminus, m2minus, &mminus);
-    if (m2plus > m2minus) {
-	mp_init_copy(&mplus, &mminus);
-	mp_mul_2d(&mplus, m2plus-m2minus, &mplus);
+    if (err == MP_OKAY) {
+	err = mp_init_set(&mminus, minit);
     }
-    mp_init(&temp);
+    if (err == MP_OKAY) {
+	err = mp_mul_2d(&mminus, m2minus, &mminus);
+    }
+    if ((err == MP_OKAY) && (m2plus > m2minus)) {
+	err = mp_init_copy(&mplus, &mminus);
+	if (err == MP_OKAY) {
+	    err = mp_mul_2d(&mplus, m2plus-m2minus, &mplus);
+	}
+    }
 
     /*
      * Loop through the digits.
      */
 
-    mp_init(&dig);
+    if (err == MP_OKAY) {
+	err = mp_init(&dig);
+    }
     i = 1;
-    for (;;) {
-	mp_div(&b, &S, &dig, &b);
+    while (err == MP_OKAY) {
+	err = mp_div(&b, &S, &dig, &b);
 	if (dig.used > 1 || dig.dp[0] >= 10) {
 	    Tcl_Panic("wrong digit!");
 	}
@@ -3729,9 +3963,8 @@ ShorteningBignumConversion(
 	 */
 
 	r1 = mp_cmp_mag(&b, (m2plus > m2minus)? &mplus : &mminus);
-	if (r1 == MP_LT || (r1 == MP_EQ
-		&& convType != TCL_DD_STEELE0 && (dPtr->w.word1 & 1) == 0)) {
-	    mp_mul_2d(&b, 1, &b);
+	if (r1 == MP_LT || (r1 == MP_EQ && (dPtr->w.word1 & 1) == 0)) {
+	    err = mp_mul_2d(&b, 1, &b);
 	    if (ShouldBankerRoundUp(&b, &S, digit&1)) {
 		++digit;
 		if (digit == 10) {
@@ -3749,8 +3982,8 @@ ShorteningBignumConversion(
 	 * commit to rounding up to the next higher digit?
 	 */
 
-	if (ShouldBankerRoundUpToNext(&b, &mminus, &S, convType,
-		dPtr->w.word1 & 1, &temp)) {
+	if (ShouldBankerRoundUpToNext(&b, &mminus, &S,
+		dPtr->w.word1 & 1)) {
 	    ++digit;
 	    if (digit == 10) {
 		*s++ = '9';
@@ -3766,8 +3999,8 @@ ShorteningBignumConversion(
 	 */
 
 	*s++ = '0' + digit;
-	if (i == ilim) {
-	    mp_mul_2d(&b, 1, &b);
+	if ((err == MP_OKAY) && (i == ilim)) {
+	    err = mp_mul_2d(&b, 1, &b);
 	    if (ShouldBankerRoundUp(&b, &S, digit&1)) {
 		s = BumpUp(s, retval, &k);
 	    }
@@ -3778,17 +4011,21 @@ ShorteningBignumConversion(
 	 * Advance to the next digit.
 	 */
 
-	if (s5 > 0) {
+	if ((err == MP_OKAY) && (s5 > 0)) {
 	    /*
 	     * Can possibly shorten the denominator.
 	     */
 
-	    mp_mul_2d(&b, 1, &b);
-	    mp_mul_2d(&mminus, 1, &mminus);
-	    if (m2plus > m2minus) {
-		mp_mul_2d(&mplus, 1, &mplus);
+	    err = mp_mul_2d(&b, 1, &b);
+	    if (err == MP_OKAY) {
+		err = mp_mul_2d(&mminus, 1, &mminus);
 	    }
-	    mp_div_d(&S, 5, &S, NULL);
+	    if ((err == MP_OKAY) && (m2plus > m2minus)) {
+		err = mp_mul_2d(&mplus, 1, &mplus);
+	    }
+	    if (err == MP_OKAY) {
+		err = mp_div_d(&S, 5, &S, NULL);
+	    }
 	    --s5;
 
 	    /*
@@ -3818,11 +4055,13 @@ ShorteningBignumConversion(
 	     * 10**42  16 trips
 	     * thereafter no gain.
 	     */
-	} else {
-	    mp_mul_d(&b, 10, &b);
-	    mp_mul_d(&mminus, 10, &mminus);
-	    if (m2plus > m2minus) {
-		mp_mul_2d(&mplus, 10, &mplus);
+	} else if (err == MP_OKAY) {
+	    err = mp_mul_d(&b, 10, &b);
+	    if (err == MP_OKAY) {
+		err = mp_mul_d(&mminus, 10, &mminus);
+	    }
+	    if ((err == MP_OKAY) && (m2plus > m2minus)) {
+		err = mp_mul_2d(&mplus, 10, &mplus);
 	    }
 	}
 
@@ -3837,7 +4076,7 @@ ShorteningBignumConversion(
     if (m2plus > m2minus) {
 	mp_clear(&mplus);
     }
-    mp_clear_multi(&b, &mminus, &temp, &dig, &S, NULL);
+    mp_clear_multi(&b, &mminus, &dig, &S, NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
@@ -3866,8 +4105,6 @@ ShorteningBignumConversion(
 
 static inline char *
 StrictBignumConversion(
-    Double *dPtr,		/* Original number being converted. */
-    int convType,		/* Conversion type. */
     Tcl_WideUInt bw,		/* Integer significand and exponent. */
     int b2,			/* Scale factor for the significand. */
     int s2, int s5,		/* Scale factors for denominator. */
@@ -3878,34 +4115,45 @@ StrictBignumConversion(
     int *decpt,			/* OUTPUT: Position of the decimal point. */
     char **endPtr)		/* OUTPUT: Pointer to the end of the number */
 {
-    char *retval = ckalloc(len+1);
+    char *retval = (char *)ckalloc(len+1);
 				/* Buffer of digits to return. */
     char *s = retval;		/* Cursor in the return value. */
     mp_int b;			/* Numerator of the result. */
     mp_int S;			/* Denominator of the result. */
     mp_int dig;			/* Current digit of the result. */
     int digit;			/* Current digit of the result. */
-    mp_int temp;		/* Work area. */
     int g;			/* Size of the current digit ground. */
     int i, j;
+    mp_err err;
 
     /*
      * b = bw * 2**b2 * 5**b5
      * S = 2**s2 * 5*s5
      */
 
-    mp_init_multi(&temp, &dig, NULL);
-    TclInitBignumFromWideUInt(&b, bw);
-    mp_mul_2d(&b, b2, &b);
-    mp_init_set_int(&S, 1);
-    MulPow5(&S, s5, &S); mp_mul_2d(&S, s2, &S);
+    if (mp_init(&dig) != MP_OKAY) {
+	return NULL;
+    }
+    if (mp_init_u64(&b, bw) != MP_OKAY) {
+	mp_clear(&dig);
+	return NULL;
+    }
+    err = mp_mul_2d(&b, b2, &b);
+    if (err == MP_OKAY) {
+ 	err = mp_init_set(&S, 1);
+    }
+    if (err == MP_OKAY) {
+	err = MulPow5(&S, s5, &S);
+	if (err == MP_OKAY) {
+	    err = mp_mul_2d(&S, s2, &S);
+	}
+    }
 
     /*
      * Handle the case where we guess the position of the decimal point wrong.
      */
 
-    if (mp_cmp_mag(&b, &S) == MP_LT) {
-	mp_mul_d(&b, 10, &b);
+    if ((mp_cmp_mag(&b, &S) == MP_LT) && (mp_mul_d(&b, 10, &b) == MP_OKAY)) {
 	ilim =ilim1;
 	--k;
     }
@@ -3915,7 +4163,7 @@ StrictBignumConversion(
      */
 
     i = 0;
-    mp_div(&b, &S, &dig, &b);
+    err = mp_div(&b, &S, &dig, &b);
     if (dig.used > 1 || dig.dp[0] >= 10) {
 	Tcl_Panic("wrong digit!");
     }
@@ -3927,12 +4175,11 @@ StrictBignumConversion(
 
     *s++ = '0' + digit;
     if (++i >= ilim) {
-	mp_mul_2d(&b, 1, &b);
-	if (ShouldBankerRoundUp(&b, &S, digit&1)) {
+	if ((mp_mul_2d(&b, 1, &b) == MP_OKAY) && ShouldBankerRoundUp(&b, &S, digit&1)) {
 	    s = BumpUp(s, retval, &k);
 	}
     } else {
-	for (;;) {
+	while (err == MP_OKAY) {
 	    /*
 	     * Shift by a group of digits.
 	     */
@@ -3942,16 +4189,20 @@ StrictBignumConversion(
 		g = DIGIT_GROUP;
 	    }
 	    if (s5 >= g) {
-		mp_div_d(&S, dpow5[g], &S, NULL);
+		err = mp_div_d(&S, dpow5[g], &S, NULL);
 		s5 -= g;
 	    } else if (s5 > 0) {
-		mp_div_d(&S, dpow5[s5], &S, NULL);
-		mp_mul_d(&b, dpow5[g - s5], &b);
+		err = mp_div_d(&S, dpow5[s5], &S, NULL);
+		if (err == MP_OKAY) {
+		    err = mp_mul_d(&b, dpow5[g - s5], &b);
+		}
 		s5 = 0;
 	    } else {
-		mp_mul_d(&b, dpow5[g], &b);
+		err = mp_mul_d(&b, dpow5[g], &b);
 	    }
-	    mp_mul_2d(&b, g, &b);
+	    if (err == MP_OKAY) {
+		err = mp_mul_2d(&b, g, &b);
+	    }
 
 	    /*
 	     * As with the shortening bignum conversion, it's possible at this
@@ -3965,8 +4216,8 @@ StrictBignumConversion(
 	     * Extract the next group of digits.
 	     */
 
-	    mp_div(&b, &S, &dig, &b);
-	    if (dig.used > 1) {
+
+	    if ((err != MP_OKAY) || (mp_div(&b, &S, &dig, &b) != MP_OKAY) || (dig.used > 1)) {
 		Tcl_Panic("wrong digit!");
 	    }
 	    digit = dig.dp[0];
@@ -3983,8 +4234,7 @@ StrictBignumConversion(
 	     */
 
 	    if (i == ilim) {
-		mp_mul_2d(&b, 1, &b);
-		if (ShouldBankerRoundUp(&b, &S, digit&1)) {
+		if ((mp_mul_2d(&b, 1, &b) == MP_OKAY) && ShouldBankerRoundUp(&b, &S, digit&1)) {
 		    s = BumpUp(s, retval, &k);
 		}
 		break;
@@ -4001,7 +4251,7 @@ StrictBignumConversion(
      * string.
      */
 
-    mp_clear_multi(&b, &S, &temp, &dig, NULL);
+    mp_clear_multi(&b, &S, &dig, NULL);
     *s = '\0';
     *decpt = k;
     if (endPtr) {
@@ -4037,22 +4287,13 @@ StrictBignumConversion(
  *		For floating point numbers that are exactly between two
  *		decimal numbers, it resolves using the 'round to even' rule.
  *		With this value, the 'ndigits' parameter is ignored.
- *	TCL_DD_STEELE - This value is not recommended and may be removed in
- *		the future. It follows the conversion algorithm outlined in
- *		"How to Print Floating-Point Numbers Accurately" by Guy
- *		L. Steele, Jr. and Jon L. White [Proc. ACM SIGPLAN '90,
- *		pp. 112-126]. This rule has the effect of rendering 1e23 as
- *		9.9999999999999999e22 - which is a 'better' approximation in
- *		the sense that it will reconvert correctly even if a
- *		subsequent input conversion is 'round up' or 'round down'
- *		rather than 'round to nearest', but is surprising otherwise.
  *	TCL_DD_E_FORMAT - This value is used to prepare numbers for %e format
  *		conversion (or for default floating->string if tcl_precision
  *		is not 0). It constructs a string of at most 'ndigits' digits,
  *		choosing the one that is closest to the given number (and
  *		resolving ties with 'round to even').  It is allowed to return
  *		fewer than 'ndigits' if the number converts exactly; if the
- *		TCL_DD_E_FORMAT|TCL_DD_SHORTEN_FLAG is supplied instead, it
+ *		TCL_DD_E_FORMAT|TCL_DD_SHORTEST is supplied instead, it
  *		also returns fewer digits if the shorter string will still
  *		reconvert without loss to the given input number. In any case,
  *		strings of trailing zeroes are suppressed.
@@ -4063,7 +4304,7 @@ StrictBignumConversion(
  *		string if the number is sufficiently small. Again, it is
  *		permissible for TCL_DD_F_FORMAT to return fewer digits for a
  *		number that converts exactly, and changing the argument to
- *		TCL_DD_F_FORMAT|TCL_DD_SHORTEN_FLAG will allow the routine
+ *		TCL_DD_F_FORMAT|TCL_DD_SHORTEST will allow the routine
  *		also to return fewer digits if the shorter string will still
  *		reconvert without loss to the given input number. Strings of
  *		trailing zeroes are suppressed.
@@ -4096,10 +4337,6 @@ TclDoubleDigits(
 				 *	   one character beyond the end of the
 				 *	   returned string. */
 {
-    int convType = (flags & TCL_DD_CONVERSION_TYPE_MASK);
-				/* Type of conversion being performed:
-				 * TCL_DD_SHORTEST0, TCL_DD_STEELE0,
-				 * TCL_DD_E_FORMAT, or TCL_DD_F_FORMAT. */
     Double d;			/* Union for deconstructing doubles. */
     Tcl_WideUInt bw;		/* Integer significand. */
     int be;			/* Power of 2 by which b must be multiplied */
@@ -4167,18 +4404,18 @@ TclDoubleDigits(
      * Correct an incorrect caller-supplied 'ndigits'.  Also determine:
      *	i = The maximum number of decimal digits that will be returned in the
      *      formatted string.  This is k + 1 + ndigits for F format, 18 for
-     *      shortest and Steele, and ndigits for E format.
+     *      shortest, and ndigits for E format.
      *  ilim = The number of significant digits to convert if k has been
-     *         guessed correctly. This is -1 for shortest and Steele (which
+     *         guessed correctly. This is -1 for shortest (which
      *         stop when all significance has been lost), 'ndigits' for E
      *         format, and 'k + 1 + ndigits' for F format.
      *  ilim1 = The minimum number of significant digits to convert if k has
-     *	        been guessed 1 too high. This, too, is -1 for shortest and
-     *	        Steele, and 'ndigits' for E format, but it's 'ndigits-1' for F
+     *	        been guessed 1 too high. This, too, is -1 for shortest,
+     *	        and 'ndigits' for E format, but it's 'ndigits-1' for F
      *	        format.
      */
 
-    SetPrecisionLimits(convType, k, &ndigits, &i, &ilim, &ilim1);
+    SetPrecisionLimits(flags, k, &ndigits, &i, &ilim, &ilim1);
 
     /*
      * Try to do low-precision conversion in floating point rather than
@@ -4204,7 +4441,7 @@ TclDoubleDigits(
      * denominator.
      */
 
-    if (flags & TCL_DD_SHORTEN_FLAG) {
+    if (flags & TCL_DD_SHORTEST) {
 	int m2minus = b2;
 	int m2plus;
 	int m5 = b5;
@@ -4251,27 +4488,27 @@ TclDoubleDigits(
 	     * [1.0e-3 .. 1.0e+24]).
 	     */
 
-	    return ShorteningInt64Conversion(&d, convType, bw, b2, b5, m2plus,
+	    return ShorteningInt64Conversion(&d, bw, b2, b5, m2plus,
 		    m2minus, m5, s2, s5, k, len, ilim, ilim1, decpt, endPtr);
 	} else if (s5 == 0) {
 	    /*
 	     * The denominator is a power of 2, so we can replace division by
-	     * digit shifts. First we round up s2 to a multiple of DIGIT_BIT,
+	     * digit shifts. First we round up s2 to a multiple of MP_DIGIT_BIT,
 	     * and adjust m2 and b2 accordingly. Then we launch into a version
 	     * of the comparison that's specialized for the 'power of mp_digit
 	     * in the denominator' case.
 	     */
 
-	    if (s2 % DIGIT_BIT != 0) {
-		int delta = DIGIT_BIT - (s2 % DIGIT_BIT);
+	    if (s2 % MP_DIGIT_BIT != 0) {
+		int delta = MP_DIGIT_BIT - (s2 % MP_DIGIT_BIT);
 
 		b2 += delta;
 		m2plus += delta;
 		m2minus += delta;
 		s2 += delta;
 	    }
-	    return ShorteningBignumConversionPowD(&d, convType, bw, b2, b5,
-		    m2plus, m2minus, m5, s2/DIGIT_BIT, k, len, ilim, ilim1,
+	    return ShorteningBignumConversionPowD(&d, bw, b2, b5,
+		    m2plus, m2minus, m5, s2/MP_DIGIT_BIT, k, len, ilim, ilim1,
 		    decpt, endPtr);
 	} else {
 	    /*
@@ -4279,7 +4516,7 @@ TclDoubleDigits(
 	     * arithmetic for the conversion.
 	     */
 
-	    return ShorteningBignumConversion(&d, convType, bw, b2, m2plus,
+	    return ShorteningBignumConversion(&d, bw, b2, m2plus,
 		    m2minus, s2, s5, k, len, ilim, ilim1, decpt, endPtr);
 	}
     } else {
@@ -4307,25 +4544,25 @@ TclDoubleDigits(
 	     * operations.
 	     */
 
-	    return StrictInt64Conversion(&d, convType, bw, b2, b5, s2, s5, k,
+	    return StrictInt64Conversion(bw, b2, b5, s2, s5, k,
 		    len, ilim, ilim1, decpt, endPtr);
 	} else if (s5 == 0) {
 	    /*
 	     * The denominator is a power of 2, so we can replace division by
-	     * digit shifts. First we round up s2 to a multiple of DIGIT_BIT,
+	     * digit shifts. First we round up s2 to a multiple of MP_DIGIT_BIT,
 	     * and adjust m2 and b2 accordingly. Then we launch into a version
 	     * of the comparison that's specialized for the 'power of mp_digit
 	     * in the denominator' case.
 	     */
 
-	    if (s2 % DIGIT_BIT != 0) {
-		int delta = DIGIT_BIT - (s2 % DIGIT_BIT);
+	    if (s2 % MP_DIGIT_BIT != 0) {
+		int delta = MP_DIGIT_BIT - (s2 % MP_DIGIT_BIT);
 
 		b2 += delta;
 		s2 += delta;
 	    }
-	    return StrictBignumConversionPowD(&d, convType, bw, b2, b5,
-		    s2/DIGIT_BIT, k, len, ilim, ilim1, decpt, endPtr);
+	    return StrictBignumConversionPowD(bw, b2, b5,
+		    s2/MP_DIGIT_BIT, k, len, ilim, ilim1, decpt, endPtr);
 	} else {
 	    /*
 	     * There are no helpful special cases, but at least we know in
@@ -4334,7 +4571,7 @@ TclDoubleDigits(
 	     * fewer mp_int divisions.
 	     */
 
-	    return StrictBignumConversion(&d, convType, bw, b2, s2, s5, k,
+	    return StrictBignumConversion(bw, b2, s2, s5, k,
 		    len, ilim, ilim1, decpt, endPtr);
 	}
     }
@@ -4372,6 +4609,7 @@ TclInitDoubleConversion(void)
 	Tcl_WideUInt iv;
     } bitwhack;
 #endif
+    mp_err err = MP_OKAY;
 #if defined(__sgi) && defined(_COMPILER_VERSION)
     union fpc_csr mipsCR;
 
@@ -4386,7 +4624,8 @@ TclInitDoubleConversion(void)
 
     maxpow10_wide = (int)
 	    floor(sizeof(Tcl_WideUInt) * CHAR_BIT * log(2.) / log(10.));
-    pow10_wide = ckalloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
+    pow10_wide = (Tcl_WideUInt *)
+	    ckalloc((maxpow10_wide + 1) * sizeof(Tcl_WideUInt));
     u = 1;
     for (i = 0; i < maxpow10_wide; ++i) {
 	pow10_wide[i] = u;
@@ -4427,16 +4666,19 @@ TclInitDoubleConversion(void)
      */
 
     for (i=0; i<9; ++i) {
-	mp_init(pow5 + i);
+	err = err || mp_init(pow5 + i);
     }
-    mp_set(pow5, 5);
+    mp_set_u64(pow5, 5);
     for (i=0; i<8; ++i) {
-	mp_sqr(pow5+i, pow5+i+1);
+	err = err || mp_sqr(pow5+i, pow5+i+1);
     }
-    mp_init_set_int(pow5_13, 1220703125);
+    err = err || mp_init_u64(pow5_13, 1220703125);
     for (i = 1; i < 5; ++i) {
-	mp_init(pow5_13 + i);
-	mp_sqr(pow5_13 + i - 1, pow5_13 + i);
+	err = err || mp_init(pow5_13 + i);
+	err = err || mp_sqr(pow5_13 + i - 1, pow5_13 + i);
+    }
+    if (err != MP_OKAY) {
+	Tcl_Panic("out of memory");
     }
 
     /*
@@ -4450,7 +4692,7 @@ TclInitDoubleConversion(void)
 	    + 0.5 * log(10.)) / log(10.));
     minDigits = (int) floor((DBL_MIN_EXP - DBL_MANT_DIG)
 	    * log((double) FLT_RADIX) / log(10.));
-    log10_DIGIT_MAX = (int) floor(DIGIT_BIT * log(2.) / log(10.));
+    log10_DIGIT_MAX = (int) floor(MP_DIGIT_BIT * log(2.) / log(10.));
 
     /*
      * Nokia 770's software-emulated floating point is "middle endian": the
@@ -4462,9 +4704,9 @@ TclInitDoubleConversion(void)
 #ifdef IEEE_FLOATING_POINT
     bitwhack.dv = 1.000000238418579;
 				/* 3ff0 0000 4000 0000 */
-    if ((bitwhack.iv >> 32) == 0x3ff00000) {
+    if ((bitwhack.iv >> 32) == 0x3FF00000) {
 	n770_fp = 0;
-    } else if ((bitwhack.iv & 0xffffffff) == 0x3ff00000) {
+    } else if ((bitwhack.iv & 0xFFFFFFFF) == 0x3FF00000) {
 	n770_fp = 1;
     } else {
 	Tcl_Panic("unknown floating point word order on this machine");
@@ -4524,10 +4766,12 @@ int
 Tcl_InitBignumFromDouble(
     Tcl_Interp *interp,		/* For error message. */
     double d,			/* Number to convert. */
-    mp_int *b)			/* Place to store the result. */
+    void *big)			/* Place to store the result. */
 {
     double fract;
     int expt;
+    mp_err err;
+    mp_int *b = (mp_int *)big;
 
     /*
      * Infinite values can't convert to bignum.
@@ -4545,18 +4789,23 @@ Tcl_InitBignumFromDouble(
 
     fract = frexp(d, &expt);
     if (expt <= 0) {
-	mp_init(b);
+	err = mp_init(b);
 	mp_zero(b);
     } else {
 	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
 	int shift = expt - mantBits;
 
-	TclInitBignumFromWideInt(b, w);
-	if (shift < 0) {
-	    mp_div_2d(b, -shift, b, NULL);
+	err = mp_init_i64(b, w);
+	if (err != MP_OKAY) {
+		/* just skip */
+	} else if (shift < 0) {
+	    err = mp_div_2d(b, -shift, b, NULL);
 	} else if (shift > 0) {
-	    mp_mul_2d(b, shift, b);
+	    err = mp_mul_2d(b, shift, b);
 	}
+    }
+    if (err != MP_OKAY) {
+	return TCL_ERROR;
     }
     return TCL_OK;
 }
@@ -4578,11 +4827,13 @@ Tcl_InitBignumFromDouble(
 
 double
 TclBignumToDouble(
-    const mp_int *a)			/* Integer to convert. */
+    const void *big)			/* Integer to convert. */
 {
     mp_int b;
     int bits, shift, i, lsb;
     double r;
+    mp_err err;
+    const mp_int *a = (const mp_int *)big;
 
 
     /*
@@ -4593,10 +4844,10 @@ TclBignumToDouble(
     bits = mp_count_bits(a);
     if (bits > DBL_MAX_EXP*log2FLT_RADIX) {
 	errno = ERANGE;
-	if (a->sign == MP_ZPOS) {
-	    return HUGE_VAL;
-	} else {
+	if (mp_isneg(a)) {
 	    return -HUGE_VAL;
+	} else {
+	    return HUGE_VAL;
 	}
     }
     shift = mantBits - bits;
@@ -4611,11 +4862,13 @@ TclBignumToDouble(
      * 'rounded to even'.
      */
 
-    mp_init(&b);
-    if (shift == 0) {
-	mp_copy(a, &b);
+    err = mp_init(&b);
+    if (err != MP_OKAY) {
+	/* just skip */
+    } else if (shift == 0) {
+	err = mp_copy(a, &b);
     } else if (shift > 0) {
-	mp_mul_2d(a, shift, &b);
+	err = mp_mul_2d(a, shift, &b);
     } else if (shift < 0) {
 	lsb = mp_cnt_lsb(a);
 	if (lsb == -1-shift) {
@@ -4624,12 +4877,12 @@ TclBignumToDouble(
 	     * Round to even
 	     */
 
-	    mp_div_2d(a, -shift, &b, NULL);
-	    if (mp_isodd(&b)) {
-		if (b.sign == MP_ZPOS) {
-		    mp_add_d(&b, 1, &b);
+	    err = mp_div_2d(a, -shift, &b, NULL);
+	    if ((err == MP_OKAY) && mp_isodd(&b)) {
+		if (mp_isneg(&b)) {
+		    err = mp_sub_d(&b, 1, &b);
 		} else {
-		    mp_sub_d(&b, 1, &b);
+		    err = mp_add_d(&b, 1, &b);
 		}
 	    }
 	} else {
@@ -4638,13 +4891,15 @@ TclBignumToDouble(
 	     * Ordinary rounding
 	     */
 
-	    mp_div_2d(a, -1-shift, &b, NULL);
-	    if (b.sign == MP_ZPOS) {
-		mp_add_d(&b, 1, &b);
+	    err = mp_div_2d(a, -1-shift, &b, NULL);
+	    if (err != MP_OKAY) {
+		/* just skip */
+	    } else if (mp_isneg(&b)) {
+		err = mp_sub_d(&b, 1, &b);
 	    } else {
-		mp_sub_d(&b, 1, &b);
+		err = mp_add_d(&b, 1, &b);
 	    }
-	    mp_div_2d(&b, 1, &b, NULL);
+	    err = mp_div_2d(&b, 1, &b, NULL);
 	}
     }
 
@@ -4652,9 +4907,12 @@ TclBignumToDouble(
      * Accumulate the result, one mp_digit at a time.
      */
 
+    if (err != MP_OKAY) {
+	return 0.0;
+    }
     r = 0.0;
-    for (i=b.used-1 ; i>=0 ; --i) {
-	r = ldexp(r, DIGIT_BIT) + b.dp[i];
+    for (i = b.used-1; i>=0; --i) {
+	r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
     }
     mp_clear(&b);
 
@@ -4668,10 +4926,10 @@ TclBignumToDouble(
      * Return the result with the appropriate sign.
      */
 
-    if (a->sign == MP_ZPOS) {
-	return r;
-    } else {
+    if (mp_isneg(a)) {
 	return -r;
+    } else {
+	return r;
     }
 }
 
@@ -4691,14 +4949,16 @@ TclBignumToDouble(
 
 double
 TclCeil(
-    const mp_int *a)			/* Integer to convert. */
+    const void *big)			/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
+    mp_err err;
+    const mp_int *a = (const mp_int *)big;
 
-    mp_init(&b);
-    if (mp_isneg(a)) {
-	mp_neg(a, &b);
+    err = mp_init(&b);
+    if ((err == MP_OKAY) && mp_isneg(a)) {
+	err = mp_neg(a, &b);
 	r = -TclFloor(&b);
     } else {
 	int bits = mp_count_bits(a);
@@ -4708,22 +4968,29 @@ TclCeil(
 	} else {
 	    int i, exact = 1, shift = mantBits - bits;
 
-	    if (shift > 0) {
-		mp_mul_2d(a, shift, &b);
+	    if (err != MP_OKAY) {
+		/* just skip */
+	    } else if (shift > 0) {
+		err = mp_mul_2d(a, shift, &b);
 	    } else if (shift < 0) {
 		mp_int d;
-		mp_init(&d);
-		mp_div_2d(a, -shift, &b, &d);
+		err = mp_init(&d);
+		if (err == MP_OKAY) {
+		    err = mp_div_2d(a, -shift, &b, &d);
+		}
 		exact = mp_iszero(&d);
 		mp_clear(&d);
 	    } else {
-		mp_copy(a, &b);
+		err = mp_copy(a, &b);
 	    }
-	    if (!exact) {
-		mp_add_d(&b, 1, &b);
+	    if ((err == MP_OKAY) && !exact) {
+		err = mp_add_d(&b, 1, &b);
+	    }
+	    if (err != MP_OKAY) {
+		return 0.0;
 	    }
 	    for (i=b.used-1 ; i>=0 ; --i) {
-		r = ldexp(r, DIGIT_BIT) + b.dp[i];
+		r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
 	    }
 	    r = ldexp(r, bits - mantBits);
 	}
@@ -4748,14 +5015,16 @@ TclCeil(
 
 double
 TclFloor(
-    const mp_int *a)			/* Integer to convert. */
+    const void *big)			/* Integer to convert. */
 {
     double r = 0.0;
     mp_int b;
+    mp_err err;
+    const mp_int *a = (const mp_int *)big;
 
-    mp_init(&b);
-    if (mp_isneg(a)) {
-	mp_neg(a, &b);
+    err = mp_init(&b);
+    if ((err == MP_OKAY) && mp_isneg(a)) {
+	err = mp_neg(a, &b);
 	r = -TclCeil(&b);
     } else {
 	int bits = mp_count_bits(a);
@@ -4766,14 +5035,17 @@ TclFloor(
 	    int i, shift = mantBits - bits;
 
 	    if (shift > 0) {
-		mp_mul_2d(a, shift, &b);
+		err = mp_mul_2d(a, shift, &b);
 	    } else if (shift < 0) {
-		mp_div_2d(a, -shift, &b, NULL);
+		err = mp_div_2d(a, -shift, &b, NULL);
 	    } else {
-		mp_copy(a, &b);
+		err = mp_copy(a, &b);
+	    }
+	    if (err != MP_OKAY) {
+		return 0.0;
 	    }
 	    for (i=b.used-1 ; i>=0 ; --i) {
-		r = ldexp(r, DIGIT_BIT) + b.dp[i];
+		r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
 	    }
 	    r = ldexp(r, bits - mantBits);
 	}
@@ -4812,6 +5084,7 @@ BignumToBiasedFrExp(
     int shift;
     int i;
     double r;
+    mp_err err = MP_OKAY;
 
     /*
      * Determine how many bits we need, and extract that many from the input.
@@ -4820,13 +5093,15 @@ BignumToBiasedFrExp(
 
     bits = mp_count_bits(a);
     shift = mantBits - 2 - bits;
-    mp_init(&b);
+    if (mp_init(&b)) {
+	return 0.0;
+    }
     if (shift > 0) {
-	mp_mul_2d(a, shift, &b);
+	err = mp_mul_2d(a, shift, &b);
     } else if (shift < 0) {
-	mp_div_2d(a, -shift, &b, NULL);
+	err = mp_div_2d(a, -shift, &b, NULL);
     } else {
-	mp_copy(a, &b);
+	err = mp_copy(a, &b);
     }
 
     /*
@@ -4834,8 +5109,10 @@ BignumToBiasedFrExp(
      */
 
     r = 0.0;
-    for (i=b.used-1; i>=0; --i) {
-	r = ldexp(r, DIGIT_BIT) + b.dp[i];
+    if (err == MP_OKAY) {
+	for (i=b.used-1; i>=0; --i) {
+	    r = ldexp(r, MP_DIGIT_BIT) + b.dp[i];
+	}
     }
     mp_clear(&b);
 
@@ -4844,7 +5121,7 @@ BignumToBiasedFrExp(
      */
 
     *machexp = bits - mantBits + 2;
-    return ((a->sign == MP_ZPOS) ? r : -r);
+    return (mp_isneg(a) ? -r : r);
 }
 
 /*
@@ -4883,7 +5160,7 @@ Pow10TimesFrExp(
 	 * Multiply by 10**exponent.
 	 */
 
-	retval = frexp(retval * pow10vals[exponent & 0xf], &j);
+	retval = frexp(retval * pow10vals[exponent & 0xF], &j);
 	expt += j;
 	for (i=4; i<9; ++i) {
 	    if (exponent & (1<<i)) {
@@ -4896,7 +5173,7 @@ Pow10TimesFrExp(
 	 * Divide by 10**-exponent.
 	 */
 
-	retval = frexp(retval / pow10vals[(-exponent) & 0xf], &j);
+	retval = frexp(retval / pow10vals[(-exponent) & 0xF], &j);
 	expt += j;
 	for (i=4; i<9; ++i) {
 	    if ((-exponent) & (1<<i)) {
@@ -5012,7 +5289,7 @@ static Tcl_WideUInt
 Nokia770Twiddle(
     Tcl_WideUInt w)		/* Number to transpose. */
 {
-    return (((w >> 32) & 0xffffffff) | (w << 32));
+    return (((w >> 32) & 0xFFFFFFFF) | (w << 32));
 }
 #endif
 

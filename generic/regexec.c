@@ -73,7 +73,7 @@ struct dfa {
     chr *lastnopr;		/* location of last cache-flushed NOPROGRESS */
     struct sset *search;	/* replacement-search-pointer memory */
     int cptsmalloced;		/* were the areas individually malloced? */
-    char *mallocarea;		/* self, or master malloced area, or NULL */
+    char *mallocarea;		/* self, or malloced area, or NULL */
 };
 
 #define	WORK	1		/* number of work bitvectors needed */
@@ -91,7 +91,6 @@ struct smalldfa {
     struct sset *outsarea[FEWSTATES*2 * FEWCOLORS];
     struct arcp incarea[FEWSTATES*2 * FEWCOLORS];
 };
-#define	DOMALLOC	((struct smalldfa *)NULL)	/* force malloc */
 
 /*
  * Internal variables, bundled for easy passing around.
@@ -129,7 +128,7 @@ int exec(regex_t *, const chr *, size_t, rm_detail_t *, size_t, regmatch_t [], i
 static struct dfa *getsubdfa(struct vars *, struct subre *);
 static int simpleFind(struct vars *const, struct cnfa *const, struct colormap *const);
 static int complicatedFind(struct vars *const, struct cnfa *const, struct colormap *const);
-static int complicatedFindLoop(struct vars *const, struct cnfa *const, struct colormap *const, struct dfa *const, struct dfa *const, chr **const);
+static int complicatedFindLoop(struct vars *const, struct dfa *const, struct dfa *const, chr **const);
 static void zapallsubs(regmatch_t *const, const size_t);
 static void zaptreesubs(struct vars *const, struct subre *const);
 static void subset(struct vars *const, struct subre *const, chr *const, chr *const);
@@ -172,8 +171,8 @@ exec(
 {
     AllocVars(v);
     int st, backref;
-    size_t n;
-    size_t i;
+    int n;
+    int i;
 #define	LOCALMAT	20
     regmatch_t mat[LOCALMAT];
 #define LOCALDFAS	40
@@ -236,7 +235,7 @@ exec(
     v->stop = (chr *)string + len;
     v->err = 0;
     assert(v->g->ntree >= 0);
-    n = (size_t) v->g->ntree;
+    n = v->g->ntree;
     if (n <= LOCALDFAS)
 	v->subdfas = subdfas;
     else
@@ -278,7 +277,7 @@ exec(
     if (v->pmatch != pmatch && v->pmatch != mat) {
 	FREE(v->pmatch);
     }
-    n = (size_t) v->g->ntree;
+    n = v->g->ntree;
     for (i = 0; i < n; i++) {
 	if (v->subdfas[i] != NULL)
 	    freeDFA(v->subdfas[i]);
@@ -299,7 +298,7 @@ getsubdfa(struct vars * v,
 	  struct subre * t)
 {
     if (v->subdfas[t->id] == NULL) {
-	v->subdfas[t->id] = newDFA(v, &t->cnfa, &v->g->cmap, DOMALLOC);
+	v->subdfas[t->id] = newDFA(v, &t->cnfa, &v->g->cmap, NULL);
 	if (ISERR())
 	    return NULL;
     }
@@ -434,7 +433,7 @@ complicatedFind(
 	return v->err;
     }
 
-    ret = complicatedFindLoop(v, cnfa, cm, d, s, &cold);
+    ret = complicatedFindLoop(v, d, s, &cold);
 
     freeDFA(d);
     freeDFA(s);
@@ -453,14 +452,12 @@ complicatedFind(
 
 /*
  - complicatedFindLoop - the heart of complicatedFind
- ^ static int complicatedFindLoop(struct vars *, struct cnfa *, struct colormap *,
+ ^ static int complicatedFindLoop(struct vars *,
  ^	struct dfa *, struct dfa *, chr **);
  */
 static int
 complicatedFindLoop(
     struct vars *const v,
-    struct cnfa *const cnfa,
-    struct colormap *const cm,
     struct dfa *const d,
     struct dfa *const s,
     chr **const coldp)		/* where to put coldstart pointer */
@@ -889,7 +886,7 @@ cbrdissect(
     MDEBUG(("cbackref n%d %d{%d-%d}\n", t->id, n, min, max));
 
     /* get the backreferenced string */
-    if (v->pmatch[n].rm_so == -1) {
+    if (v->pmatch[n].rm_so == TCL_INDEX_NONE) {
 	return REG_NOMATCH;
     }
     brstring = v->start + v->pmatch[n].rm_so;

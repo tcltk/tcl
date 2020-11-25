@@ -150,13 +150,14 @@ equivalent to using the \fBTCL_EVAL_GLOBAL\fR flag (see below).
 of any length, concatenates them into a single string,
 then calls \fBTcl_Eval\fR to execute that string as a Tcl command.
 It returns the result of the command and also modifies
-\fIinterp->result\fR in the same way as \fBTcl_Eval\fR.
+the interpreter result in the same way as \fBTcl_Eval\fR.
 The last argument to \fBTcl_VarEval\fR must be NULL to indicate the end
 of arguments.  \fBTcl_VarEval\fR is now deprecated.
 .PP
 \fBTcl_VarEvalVA\fR is the same as \fBTcl_VarEval\fR except that
 instead of taking a variable number of arguments it takes an argument
-list. Like \fBTcl_VarEval\fR, \fBTcl_VarEvalVA\fR is deprecated.
+list. Interfaces using argument lists have been found to be nonportable
+in practice. This function is deprecated and will be removed in Tcl 9.0.
 
 .SH "FLAG BITS"
 .PP

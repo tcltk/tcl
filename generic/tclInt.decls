@@ -5,9 +5,9 @@
 #	is used to generate the tclIntDecls.h, tclIntPlatDecls.h
 #	and tclStubInit.c files
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
-# Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001 Kevin B. Kenny.  All rights reserved.
+# Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -151,7 +151,7 @@ declare 32 {
 #declare 33 {
 #    TclCmdProcType TclGetInterpProc(void)
 #}
-declare 34 {
+declare 34 {deprecated {Use Tcl_GetIntForIndex}} {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int endValue, int *indexPtr)
 }
@@ -289,7 +289,7 @@ declare 64 {
 #    int TclpAccess(const char *path, int mode)
 #}
 declare 69 {
-    char *TclpAlloc(unsigned int size)
+    void *TclpAlloc(unsigned int size)
 }
 #declare 70 {
 #    int TclpCopyFile(const char *source, const char *dest)
@@ -305,7 +305,7 @@ declare 69 {
 #    int TclpDeleteFile(const char *path)
 #}
 declare 74 {
-    void TclpFree(char *ptr)
+    void TclpFree(void *ptr)
 }
 declare 75 {
     unsigned long TclpGetClicks(void)
@@ -330,7 +330,7 @@ declare 77 {deprecated {}} {
 #	    char *modeString, int permissions)
 #}
 declare 81 {
-    char *TclpRealloc(char *ptr, unsigned int size)
+    void *TclpRealloc(void *ptr, unsigned int size)
 }
 #declare 82 {
 #    int TclpRemoveDirectory(const char *path, int recursive,
@@ -380,7 +380,7 @@ declare 93 {
 }
 # Removed in 8.5:
 #declare 94 {
-#    int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp,
+#    int TclProcInterpProc(void *clientData, Tcl_Interp *interp,
 #	    int argc, const char **argv)
 #}
 # Replaced by Tcl_FSStat in 8.4:
@@ -553,7 +553,7 @@ declare 138 {
 #declare 139 {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
 #	    char *sym2, Tcl_PackageInitProc **proc1Ptr,
-#	    Tcl_PackageInitProc **proc2Ptr, ClientData *clientDataPtr)
+#	    Tcl_PackageInitProc **proc2Ptr, void **clientDataPtr)
 #}
 #declare 140 {
 #    int TclLooksLikeInt(const char *bytes, int length)
@@ -608,11 +608,11 @@ declare 153 {
 
 # moved to tclTest.c (static) in 8.3.2/8.4a2
 #declare 154 {
-#    int TclTestChannelCmd(ClientData clientData,
+#    int TclTestChannelCmd(void *clientData,
 #    Tcl_Interp *interp, int argc, char **argv)
 #}
 #declare 155 {
-#    int TclTestChannelEventCmd(ClientData clientData,
+#    int TclTestChannelEventCmd(void *clientData,
 #	     Tcl_Interp *interp, int argc, char **argv)
 #}
 
@@ -893,7 +893,7 @@ declare 227 {
 #  Used to be needed for TclOO-extension; unneeded now that TclOO is in the
 #  core and NRE-enabled
 #  declare 228 {
-#      int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
+#      int TclObjInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
 #             int skip, ProcErrorProc *errorProc)
 #  }
 declare 229 {
@@ -990,7 +990,7 @@ declare 249 {
 }
 # TIP #285: Script cancellation support.
 declare 250 {
-    void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
+    void TclSetChildCancelFlags(Tcl_Interp *interp, int flags, int force)
 }
 
 # Allow extensions for optimization
@@ -1023,6 +1023,25 @@ declare 255 {
 declare 256 {
     int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
 	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
+}
+declare 257 {
+    void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
+	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+}
+
+# TIP 431: temporary directory creation function
+declare 258 {
+    Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
+	    Tcl_Obj *basenameObj)
+}
+
+declare 259 {
+    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int *lengthPtr)
+}
+
+declare 260 {
+    void TclUnusedStubEntry(void)
 }
 
 ##############################################################################
@@ -1189,10 +1208,9 @@ declare 4 unix {
 	    const char **argv, TclFile inputFile, TclFile outputFile,
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
-# Signature changed in 8.1:
-#  declare 5 unix {
-#      TclFile TclpCreateTempFile(char *contents, Tcl_DString *namePtr)
-#  }
+declare 5 unix {
+    int TclUnixWaitForFile_(int fd, int mask, int timeout)
+}
 declare 6 unix {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
 }
@@ -1236,25 +1254,28 @@ declare 14 unix {
 ################################
 # Mac OS X specific functions
 
-declare 15 macosx {
+declare 15 {unix macosx} {
     int TclMacOSXGetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr)
 }
-declare 16 macosx {
+declare 16 {unix macosx} {
     int TclMacOSXSetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj *attributePtr)
 }
-declare 17 macosx {
+declare 17 {unix macosx} {
     int TclMacOSXCopyFileAttributes(const char *src, const char *dst,
 	    const Tcl_StatBuf *statBufPtr)
 }
-declare 18 macosx {
+declare 18 {unix macosx} {
     int TclMacOSXMatchType(Tcl_Interp *interp, const char *pathName,
 	    const char *fileName, Tcl_StatBuf *statBufPtr,
 	    Tcl_GlobTypeData *types)
 }
-declare 19 macosx {
+declare 19 {unix macosx} {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+}
+declare 22 {unix macosx} {
+    TclFile TclpCreateTempFile_(const char *contents)
 }
 
 declare 29 {win unix} {
@@ -1265,8 +1286,6 @@ declare 30 {win unix} {
     int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
 	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
 }
-
-
 
 # Local Variables:
 # mode: tcl

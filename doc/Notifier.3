@@ -132,22 +132,17 @@ higher-level software that they have occurred.  The procedures
 and \fBTcl_SetMaxBlockTime\fR, \fBTcl_QueueEvent\fR, and
 \fBTcl_DeleteEvents\fR are used primarily by event sources.
 .IP [2]
-The event queue: for non-threaded applications,
-there is a single queue for the whole application,
-containing events that have been detected but not yet serviced.  Event
-sources place events onto the queue so that they may be processed in
-order at appropriate times during the event loop. The event queue
-guarantees a fair discipline of event handling, so that no event
-source can starve the others.  It also allows events to be saved for
-servicing at a future time.  Threaded applications work in a
-similar manner, except that there is a separate event queue for
-each thread containing a Tcl interpreter.
+The event queue: there is a single queue for each thread containing
+a Tcl interpreter, containing events that have been detected but not
+yet serviced.  Event sources place events onto the queue so that they
+may be processed in order at appropriate times during the event loop.
+The event queue guarantees a fair discipline of event handling, so that
+no event source can starve the others.  It also allows events to be
+saved for servicing at a future time.
 \fBTcl_QueueEvent\fR is used (primarily
-by event sources) to add events to the event queue and
+by event sources) to add events to the current thread's event queue and
 \fBTcl_DeleteEvents\fR is used to remove events from the queue without
-processing them.  In a threaded application, \fBTcl_QueueEvent\fR adds
-an event to the current thread's queue, and \fBTcl_ThreadQueueEvent\fR
-adds an event to a queue in a specific thread.
+processing them.
 .IP [3]
 The event loop: in order to detect and process events, the application
 enters a loop that waits for events to occur, places them on the event
@@ -403,11 +398,7 @@ the event source (using \fBTcl_Alloc\fR or the Tcl macro \fBckalloc\fR)
 before calling \fBTcl_QueueEvent\fR, but it
 will be freed by \fBTcl_ServiceEvent\fR, not by the event source.
 .PP
-Threaded applications work in a
-similar manner, except that there is a separate event queue for
-each thread containing a Tcl interpreter.
-Calling \fBTcl_QueueEvent\fR in a multithreaded application adds
-an event to the current thread's queue.
+Calling \fBTcl_QueueEvent\fR adds an event to the current thread's queue.
 To add an event to another thread's queue, use \fBTcl_ThreadQueueEvent\fR.
 \fBTcl_ThreadQueueEvent\fR accepts as an argument a Tcl_ThreadId argument,
 which uniquely identifies a thread in a Tcl application.  To obtain the
@@ -498,8 +489,7 @@ under Unix it happens when \fBTcl_WaitForEvent\fR would have waited
 forever because there were no active event sources and the timeout was
 infinite.
 .PP
-\fBTcl_AlertNotifier\fR is used in multithreaded applications to allow
-any thread to
+\fBTcl_AlertNotifier\fR is used to allow any thread to
 .QW "wake up"
 the notifier to alert it to new events on its
 queue.  \fBTcl_AlertNotifier\fR requires as an argument the notifier

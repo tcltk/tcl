@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH "tcltest" n 2.3 tcltest "Tcl Bundled Packages"
+.TH "tcltest" n 2.5 tcltest "Tcl Bundled Packages"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
@@ -16,7 +16,7 @@
 tcltest \- Test harness support code and utilities
 .SH SYNOPSIS
 .nf
-\fBpackage require tcltest\fR ?\fB2.3\fR?
+\fBpackage require tcltest\fR ?\fB2.5\fR?
 
 \fBtcltest::test \fIname description\fR ?\fI\-option value ...\fR?
 \fBtcltest::test \fIname description\fR ?\fIconstraints\fR? \fIbody result\fR
@@ -203,7 +203,7 @@ array. Returns an empty string.
 .TP
 \fBrunAllTests\fR
 .
-This is a master command meant to run an entire suite of tests,
+This is a main command meant to run an entire suite of tests,
 spanning multiple files and/or directories, as governed by
 the configurable options of \fBtcltest\fR.  See \fBRUNNING ALL TESTS\fR
 below for a complete description of the many variations possible
@@ -454,6 +454,7 @@ The valid options for \fBtest\fR are summarized:
         ?\fB\-output \fIexpectedOutput\fR?
         ?\fB\-errorOutput \fIexpectedError\fR?
         ?\fB\-returnCodes \fIcodeList\fR?
+        ?\fB\-errorCode \fIexpectedErrorCode\fR?
         ?\fB\-match \fImode\fR?
 .CE
 .PP
@@ -577,6 +578,15 @@ return codes known to \fBreturn\fR, in both numeric and symbolic
 form, including extended return codes, are acceptable elements in
 the \fIexpectedCodeList\fR.  Default value is
 .QW "\fBok return\fR" .
+.TP
+\fB\-errorCode \fIexpectedErrorCode\fR
+.
+The optional \fB\-errorCode\fR attribute supplies \fIexpectedErrorCode\fR,
+a glob pattern that should match the error code reported from evaluation of the
+\fB\-body\fR script.  If evaluation of the \fB\-body\fR script returns
+a code not matching \fIexpectedErrorCode\fR, the test fails.  Default value is
+.QW "\fB*\fR" .
+If \fB\-returnCodes\fR does not include \fBerror\fR it is set to \fBerror\fR.
 .PP
 To pass, a test must successfully evaluate its \fB\-setup\fR, \fB\-body\fR,
 and \fB\-cleanup\fR scripts.  The return code of the \fB\-body\fR script and
@@ -794,17 +804,17 @@ then a copy of \fBinterpreter\fR will be \fBexec\fR'd to
 evaluate each file.  The multi-process operation is useful
 when testing can cause errors so severe that a process
 terminates.  Although such an error may terminate a child
-process evaluating one file, the master process can continue
+process evaluating one file, the main process can continue
 with the rest of the test suite.  In multi-process operation,
-the configuration of \fBtcltest\fR in the master process is
+the configuration of \fBtcltest\fR in the main process is
 passed to the child processes as command line arguments,
 with the exception of \fBconfigure \-outfile\fR.  The
 \fBrunAllTests\fR command in the
-master process collects all output from the child processes
-and collates their results into one master report.  Any
+main process collects all output from the child processes
+and collates their results into one main report.  Any
 reports of individual test failures, or messages requested
 by a \fBconfigure \-verbose\fR setting are passed directly
-on to \fBoutputChannel\fR by the master process.
+on to \fBoutputChannel\fR by the main process.
 .PP
 After evaluating all selected test files, a summary of the
 results is printed to \fBoutputChannel\fR.  The summary
@@ -1124,7 +1134,7 @@ A good namespace to use is a child namespace \fBtest\fR of the namespace
 of the module you are testing.
 .PP
 A test file should also be able to be evaluated directly as a script,
-not depending on being called by a master \fBrunAllTests\fR.  This
+not depending on being called by a main \fBrunAllTests\fR.  This
 means that each test file should process command line arguments to give
 the tester all the configuration control that \fBtcltest\fR provides.
 .PP
@@ -1135,7 +1145,7 @@ Here is a sketch of a sample test file illustrating those points:
 .RS
 .PP
 .CS
-package require tcltest 2.2
+package require tcltest 2.5
 eval \fB::tcltest::configure\fR $argv
 package require example
 namespace eval ::example::test {
@@ -1165,12 +1175,12 @@ doing any necessary setup.  This script is usually named \fBall.tcl\fR
 because that is the default name used by \fBrunAllTests\fR when combining
 multiple test suites into one testing run.
 .IP [8]
-Here is a sketch of a sample test suite master script:
+Here is a sketch of a sample test suite main script:
 .RS
 .PP
 .CS
-package require Tcl 8.4
-package require tcltest 2.2
+package require Tcl 8.6
+package require tcltest 2.5
 package require example
 \fB::tcltest::configure\fR -testdir \e
         [file dirname [file normalize [info script]]]

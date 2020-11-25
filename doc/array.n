@@ -40,7 +40,7 @@ has been completed.
 .VS TIP508
 Manages the default value of the array. Arrays initially have no default
 value, but this command allows you to set one; the default value will be
-returned when reading from an element of the array \farrayName\fR if the read
+returned when reading from an element of the array \fIarrayName\fR if the read
 would otherwise result in an error. Note that this may cause the \fBappend\fR,
 \fBdict\fR, \fBincr\fR and \fBlappend\fR commands to change their behavior in
 relation to non-existing array elements.

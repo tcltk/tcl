@@ -44,13 +44,11 @@ one of \fBHKEY_LOCAL_MACHINE\fR, \fBHKEY_USERS\fR,
 \fBHKEY_DYN_DATA\fR.  The \fIkeypath\fR can be one or more
 registry key names separated by backslash (\fB\e\fR) characters.
 .PP
-.VS 8.6
 The optional \fI\-mode\fR argument indicates which registry to work
 with; when it is \fB\-32bit\fR the 32-bit registry will be used, and
 when it is \fB\-64bit\fR the 64-bit registry will be used. If this
 argument is omitted, the system's default registry will be the subject
 of the requested operation.
-.VE 8.6
 .PP
 \fIOption\fR indicates what to do with the registry key name.  Any
 unique abbreviation for \fIoption\fR is acceptable.  The valid options

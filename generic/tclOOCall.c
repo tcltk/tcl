@@ -15,6 +15,7 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
+#include <assert.h>
 
 /*
  * Structure containing a CallContext and any other values needed only during
@@ -29,6 +30,22 @@ struct ChainBuilder {
     Object *oPtr;		/* The object that we are building the chain
 				 * for. */
 };
+
+/*
+ * Structures used for traversing the class hierarchy to find out where
+ * definitions are supposed to be done.
+ */
+
+typedef struct {
+    Class *definerCls;
+    Tcl_Obj *namespaceName;
+} DefineEntry;
+
+typedef struct {
+    DefineEntry *list;
+    int num;
+    int size;
+} DefineChain;
 
 /*
  * Extra flags used for call chain management.
@@ -77,6 +94,9 @@ static void		AddClassFiltersToCallContext(Object *const oPtr,
 static void		AddClassMethodNames(Class *clsPtr, const int flags,
 			    Tcl_HashTable *const namesPtr,
 			    Tcl_HashTable *const examinedClassesPtr);
+static inline void	AddDefinitionNamespaceToChain(Class *const definerCls,
+			    Tcl_Obj *const namespaceName,
+			    DefineChain *const definePtr, int flags);
 static inline void	AddMethodToCallChain(Method *const mPtr,
 			    struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters,
@@ -105,6 +125,10 @@ static int		AddSimpleClassChainToCallContext(Class *classPtr,
 			    struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters, int flags,
 			    Class *const filterDecl);
+static void		AddSimpleClassDefineNamespaces(Class *classPtr,
+			    DefineChain *const definePtr, int flags);
+static inline void	AddSimpleDefineNamespaces(Object *const oPtr,
+			    DefineChain *const definePtr, int flags);
 static int		CmpStr(const void *ptr1, const void *ptr2);
 static void		DupMethodNameRep(Tcl_Obj *srcPtr, Tcl_Obj *dstPtr);
 static Tcl_NRPostProc	FinalizeMethodRefs;
@@ -128,6 +152,7 @@ static const Tcl_ObjType methodNameType = {
     NULL,
     NULL
 };
+
 
 /*
  * ----------------------------------------------------------------------
@@ -143,7 +168,7 @@ void
 TclOODeleteContext(
     CallContext *contextPtr)
 {
-    register Object *oPtr = contextPtr->oPtr;
+    Object *oPtr = contextPtr->oPtr;
 
     TclOODeleteChain(contextPtr->callPtr);
     if (oPtr != NULL) {
@@ -222,11 +247,12 @@ StashCallChain(
     Tcl_Obj *objPtr,
     CallChain *callPtr)
 {
+    Tcl_ObjIntRep ir;
+
     callPtr->refCount++;
     TclGetString(objPtr);
-    TclFreeIntRep(objPtr);
-    objPtr->typePtr = &methodNameType;
-    objPtr->internalRep.twoPtrValue.ptr1 = callPtr;
+    ir.twoPtrValue.ptr1 = callPtr;
+    Tcl_StoreIntRep(objPtr, &methodNameType, &ir);
 }
 
 void
@@ -253,21 +279,16 @@ DupMethodNameRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dstPtr)
 {
-    register CallChain *callPtr = srcPtr->internalRep.twoPtrValue.ptr1;
-
-    dstPtr->typePtr = &methodNameType;
-    dstPtr->internalRep.twoPtrValue.ptr1 = callPtr;
-    callPtr->refCount++;
+    StashCallChain(dstPtr,
+	    (CallChain *)TclFetchIntRep(srcPtr, &methodNameType)->twoPtrValue.ptr1);
 }
 
 static void
 FreeMethodNameRep(
     Tcl_Obj *objPtr)
 {
-    register CallChain *callPtr = objPtr->internalRep.twoPtrValue.ptr1;
-
-    TclOODeleteChain(callPtr);
-    objPtr->typePtr = NULL;
+    TclOODeleteChain(
+	    (CallChain *)TclFetchIntRep(objPtr, &methodNameType)->twoPtrValue.ptr1);
 }
 
 /*
@@ -293,7 +314,7 @@ TclOOInvokeContext(
     int objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The arguments as actually seen. */
 {
-    register CallContext *const contextPtr = clientData;
+    CallContext *const contextPtr = (CallContext *)clientData;
     Method *const mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     const int isFilter =
 	    contextPtr->callPtr->chain[contextPtr->index].isFilter;
@@ -307,7 +328,7 @@ TclOOInvokeContext(
     if (contextPtr->index == 0) {
 	int i;
 
-	for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+	for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	    AddRef(contextPtr->callPtr->chain[i].mPtr);
 	}
 
@@ -355,10 +376,10 @@ TclOOInvokeContext(
 static int
 SetFilterFlags(
     ClientData data[],
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     int result)
 {
-    CallContext *contextPtr = data[0];
+    CallContext *contextPtr = (CallContext *)data[0];
 
     contextPtr->oPtr->flags |= FILTER_HANDLING;
     return result;
@@ -367,10 +388,10 @@ SetFilterFlags(
 static int
 ResetFilterFlags(
     ClientData data[],
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     int result)
 {
-    CallContext *contextPtr = data[0];
+    CallContext *contextPtr = (CallContext *)data[0];
 
     contextPtr->oPtr->flags &= ~FILTER_HANDLING;
     return result;
@@ -379,13 +400,13 @@ ResetFilterFlags(
 static int
 FinalizeMethodRefs(
     ClientData data[],
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     int result)
 {
-    CallContext *contextPtr = data[0];
+    CallContext *contextPtr = (CallContext *)data[0];
     int i;
 
-    for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+    for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);
     }
     return result;
@@ -592,7 +613,7 @@ SortMethodNames(
      * sorted when it is long enough to matter.
      */
 
-    strings = ckalloc(sizeof(char *) * namesPtr->numEntries);
+    strings = (const char **)ckalloc(sizeof(char *) * namesPtr->numEntries);
     FOREACH_HASH(namePtr, isWanted, namesPtr) {
 	if (!WANT_PUBLIC(flags) || (PTR2INT(isWanted) & IN_LIST)) {
 	    if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
@@ -610,7 +631,7 @@ SortMethodNames(
 
     if (i > 0) {
 	if (i > 1) {
-	    qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
+	    qsort((void *) strings, i, sizeof(char *), CmpStr);
 	}
 	*stringsPtr = strings;
     } else {
@@ -620,7 +641,10 @@ SortMethodNames(
     return i;
 }
 
-/* Comparator for SortMethodNames */
+/*
+ * Comparator for SortMethodNames
+ */
+
 static int
 CmpStr(
     const void *ptr1,
@@ -811,7 +835,7 @@ AddInstancePrivateToCallContext(
     if (oPtr->methodsPtr) {
 	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) methodName);
 	if (hPtr != NULL) {
-	    mPtr = Tcl_GetHashValue(hPtr);
+	    mPtr = (Method *)Tcl_GetHashValue(hPtr);
 	    if (IS_PRIVATE(mPtr)) {
 		AddMethodToCallChain(mPtr, cbPtr, NULL, NULL, flags);
 		donePrivate = 1;
@@ -861,7 +885,7 @@ AddSimpleChainToCallContext(
 	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) methodNameObj);
 
 	if (hPtr != NULL) {
-	    mPtr = Tcl_GetHashValue(hPtr);
+	    mPtr = (Method *)Tcl_GetHashValue(hPtr);
 	    if (!IS_PRIVATE(mPtr)) {
 		if (WANT_PUBLIC(flags)) {
 		    if (!IS_PUBLIC(mPtr)) {
@@ -891,7 +915,7 @@ AddSimpleChainToCallContext(
 	if (oPtr->methodsPtr && !blockedUnexported) {
 	    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char*) methodNameObj);
 	    if (hPtr != NULL) {
-		mPtr = Tcl_GetHashValue(hPtr);
+		mPtr = (Method *)Tcl_GetHashValue(hPtr);
 		if (!IS_PRIVATE(mPtr)) {
 		    AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl,
 			    flags);
@@ -944,7 +968,7 @@ AddMethodToCallChain(
 				 * looking to add things from a mixin and have
 				 * not passed a mixin. */
 {
-    register CallChain *callPtr = cbPtr->callChainPtr;
+    CallChain *callPtr = cbPtr->callChainPtr;
     int i;
 
     /*
@@ -983,7 +1007,7 @@ AddMethodToCallChain(
      * any leading filters.
      */
 
-    for (i=cbPtr->filterLength ; i<callPtr->numChain ; i++) {
+    for (i = cbPtr->filterLength ; i < callPtr->numChain ; i++) {
 	if (callPtr->chain[i].mPtr == mPtr &&
 		callPtr->chain[i].isFilter == (doneFilters != NULL)) {
 	    /*
@@ -995,8 +1019,8 @@ AddMethodToCallChain(
 
 	    Class *declCls = callPtr->chain[i].filterDeclarer;
 
-	    for (; i+1<callPtr->numChain ; i++) {
-		callPtr->chain[i] = callPtr->chain[i+1];
+	    for (; i + 1 < callPtr->numChain ; i++) {
+		callPtr->chain[i] = callPtr->chain[i + 1];
 	    }
 	    callPtr->chain[i].mPtr = mPtr;
 	    callPtr->chain[i].isFilter = (doneFilters != NULL);
@@ -1013,11 +1037,11 @@ AddMethodToCallChain(
 
     if (callPtr->numChain == CALL_CHAIN_STATIC_SIZE) {
 	callPtr->chain =
-		ckalloc(sizeof(struct MInvoke) * (callPtr->numChain + 1));
+		(struct MInvoke *)ckalloc(sizeof(struct MInvoke) * (callPtr->numChain + 1));
 	memcpy(callPtr->chain, callPtr->staticChain,
 		sizeof(struct MInvoke) * callPtr->numChain);
     } else if (callPtr->numChain > CALL_CHAIN_STATIC_SIZE) {
-	callPtr->chain = ckrealloc(callPtr->chain,
+	callPtr->chain = (struct MInvoke *)ckrealloc(callPtr->chain,
 		sizeof(struct MInvoke) * (callPtr->numChain + 1));
     }
     callPtr->chain[i].mPtr = mPtr;
@@ -1165,15 +1189,16 @@ TclOOGetCallContext(
 	 * the object, and in the class).
 	 */
 
+	const Tcl_ObjIntRep *irPtr;
 	const int reuseMask = (WANT_PUBLIC(flags) ? ~0 : ~PUBLIC_METHOD);
 
-	if (cacheInThisObj->typePtr == &methodNameType) {
-	    callPtr = cacheInThisObj->internalRep.twoPtrValue.ptr1;
+	if ((irPtr = TclFetchIntRep(cacheInThisObj, &methodNameType))) {
+	    callPtr = (CallChain *)irPtr->twoPtrValue.ptr1;
 	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
 		goto returnContext;
 	    }
-	    FreeMethodNameRep(cacheInThisObj);
+	    Tcl_StoreIntRep(cacheInThisObj, &methodNameType, NULL);
 	}
 
 	if (oPtr->flags & USE_CLASS_CACHE) {
@@ -1193,7 +1218,7 @@ TclOOGetCallContext(
 	}
 
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
-	    callPtr = Tcl_GetHashValue(hPtr);
+	    callPtr = (CallChain *)Tcl_GetHashValue(hPtr);
 	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
 		goto returnContext;
@@ -1205,7 +1230,7 @@ TclOOGetCallContext(
 	doFilters = 1;
     }
 
-    callPtr = ckalloc(sizeof(CallChain));
+    callPtr = (CallChain *)ckalloc(sizeof(CallChain));
     InitCallChain(callPtr, oPtr, flags);
 
     cb.callChainPtr = callPtr;
@@ -1310,7 +1335,7 @@ TclOOGetCallContext(
 	    if (oPtr->flags & USE_CLASS_CACHE) {
 		if (oPtr->selfCls->classChainCache == NULL) {
 		    oPtr->selfCls->classChainCache =
-			    ckalloc(sizeof(Tcl_HashTable));
+			    (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 
 		    Tcl_InitObjHashTable(oPtr->selfCls->classChainCache);
 		}
@@ -1318,7 +1343,7 @@ TclOOGetCallContext(
 			(char *) methodNameObj, &i);
 	    } else {
 		if (oPtr->chainCache == NULL) {
-		    oPtr->chainCache = ckalloc(sizeof(Tcl_HashTable));
+		    oPtr->chainCache = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 
 		    Tcl_InitObjHashTable(oPtr->chainCache);
 		}
@@ -1344,7 +1369,7 @@ TclOOGetCallContext(
     }
 
   returnContext:
-    contextPtr = TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
+    contextPtr = (CallContext *)TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
     contextPtr->oPtr = oPtr;
 
     /*
@@ -1413,7 +1438,7 @@ TclOOGetStereotypeCallChain(
 	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
 	    const int reuseMask = (WANT_PUBLIC(flags) ? ~0 : ~PUBLIC_METHOD);
 
-	    callPtr = Tcl_GetHashValue(hPtr);
+	    callPtr = (CallChain *)Tcl_GetHashValue(hPtr);
 	    if (IsStillValid(callPtr, &obj, flags, reuseMask)) {
 		callPtr->refCount++;
 		return callPtr;
@@ -1425,7 +1450,7 @@ TclOOGetStereotypeCallChain(
 	hPtr = NULL;
     }
 
-    callPtr = ckalloc(sizeof(CallChain));
+    callPtr = (CallChain *)ckalloc(sizeof(CallChain));
     memset(callPtr, 0, sizeof(CallChain));
     callPtr->flags = flags & (PUBLIC_METHOD|PRIVATE_METHOD|FILTER_HANDLING);
     callPtr->epoch = fPtr->epoch;
@@ -1480,7 +1505,7 @@ TclOOGetStereotypeCallChain(
     } else {
 	if (hPtr == NULL) {
 	    if (clsPtr->classChainCache == NULL) {
-		clsPtr->classChainCache = ckalloc(sizeof(Tcl_HashTable));
+		clsPtr->classChainCache = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(clsPtr->classChainCache);
 	    }
 	    hPtr = Tcl_CreateHashEntry(clsPtr->classChainCache,
@@ -1628,10 +1653,10 @@ AddPrivatesFromClassChainToCallContext(
 
     if (classPtr == contextCls) {
 	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&classPtr->classMethods,
-		(char *) methodName);
+		methodName);
 
 	if (hPtr != NULL) {
-	    register Method *mPtr = Tcl_GetHashValue(hPtr);
+	    Method *mPtr = (Method *)Tcl_GetHashValue(hPtr);
 
 	    if (IS_PRIVATE(mPtr)) {
 		AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl,
@@ -1652,6 +1677,7 @@ AddPrivatesFromClassChainToCallContext(
 		return 1;
 	    }
 	}
+	/* FALLTHRU */
     case 0:
 	return 0;
     }
@@ -1715,7 +1741,7 @@ AddSimpleClassChainToCallContext(
 	    privateDanger |= 1;
 	}
 	if (hPtr != NULL) {
-	    register Method *mPtr = Tcl_GetHashValue(hPtr);
+	    Method *mPtr = (Method *)Tcl_GetHashValue(hPtr);
 
 	    if (!IS_PRIVATE(mPtr)) {
 		if (!(flags & KNOWN_STATE)) {
@@ -1743,6 +1769,7 @@ AddSimpleClassChainToCallContext(
 	    privateDanger |= AddSimpleClassChainToCallContext(superPtr,
 		    methodNameObj, cbPtr, doneFilters, flags, filterDecl);
 	}
+	/* FALLTHRU */
     case 0:
 	return privateDanger;
     }
@@ -1794,8 +1821,8 @@ TclOORenderCallChain(
      * method (or "object" if it is declared on the instance).
      */
 
-    objv = TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
-    for (i=0 ; i<callPtr->numChain ; i++) {
+    objv = (Tcl_Obj **)TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
+    for (i = 0 ; i < callPtr->numChain ; i++) {
 	struct MInvoke *miPtr = &callPtr->chain[i];
 
 	descObjs[0] =
@@ -1833,6 +1860,246 @@ TclOORenderCallChain(
     resultObj = Tcl_NewListObj(callPtr->numChain, objv);
     TclStackFree(interp, objv);
     return resultObj;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOGetDefineContextNamespace --
+ *
+ *	Responsible for determining which namespace to use for definitions.
+ *	This is done by building a define chain, which models (strongly!) the
+ *	way that a call chain works but with a different internal model.
+ *
+ *	Then it walks the chain to find the first namespace name that actually
+ *	resolves to an existing namespace.
+ *
+ * Returns:
+ *	Name of namespace, or NULL if none can be found. Note that this
+ *	function does *not* set an error message in the interpreter on failure.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+#define DEFINE_CHAIN_STATIC_SIZE 4 /* Enough space to store most cases. */
+
+Tcl_Namespace *
+TclOOGetDefineContextNamespace(
+    Tcl_Interp *interp,		/* In what interpreter should namespace names
+				 * actually be resolved. */
+    Object *oPtr,		/* The object to get the context for. */
+    int forClass)		/* What sort of context are we looking for.
+				 * If true, we are going to use this for
+				 * [oo::define], otherwise, we are going to
+				 * use this for [oo::objdefine]. */
+{
+    DefineChain define;
+    DefineEntry staticSpace[DEFINE_CHAIN_STATIC_SIZE];
+    DefineEntry *entryPtr;
+    Tcl_Namespace *nsPtr = NULL;
+    int i;
+
+    define.list = staticSpace;
+    define.num = 0;
+    define.size = DEFINE_CHAIN_STATIC_SIZE;
+
+    /*
+     * Add the actual define locations. We have to do this twice to handle
+     * class mixins right.
+     */
+
+    AddSimpleDefineNamespaces(oPtr, &define, forClass | BUILDING_MIXINS);
+    AddSimpleDefineNamespaces(oPtr, &define, forClass);
+
+    /*
+     * Go through the list until we find a namespace whose name we can
+     * resolve.
+     */
+
+    FOREACH_STRUCT(entryPtr, define) {
+	if (TclGetNamespaceFromObj(interp, entryPtr->namespaceName,
+		&nsPtr) == TCL_OK) {
+	    break;
+	}
+	Tcl_ResetResult(interp);
+    }
+    if (define.list != staticSpace) {
+	ckfree(define.list);
+    }
+    return nsPtr;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AddSimpleDefineNamespaces --
+ *
+ *	Adds to the definition chain all the definitions provided by an
+ *	object's class and its mixins, taking into account everything they
+ *	inherit from.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline void
+AddSimpleDefineNamespaces(
+    Object *const oPtr,		/* Object to add define chain entries for. */
+    DefineChain *const definePtr,
+				/* Where to add the define chain entries. */
+    int flags)			/* What sort of define chain are we
+				 * building. */
+{
+    Class *mixinPtr;
+    int i;
+
+    FOREACH(mixinPtr, oPtr->mixins) {
+	AddSimpleClassDefineNamespaces(mixinPtr, definePtr,
+		flags | TRAVERSED_MIXIN);
+    }
+
+    AddSimpleClassDefineNamespaces(oPtr->selfCls, definePtr, flags);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AddSimpleClassDefineNamespaces --
+ *
+ *	Adds to the definition chain all the definitions provided by a class
+ *	and its superclasses and its class mixins.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+AddSimpleClassDefineNamespaces(
+    Class *classPtr,		/* Class to add the define chain entries for. */
+    DefineChain *const definePtr,
+				/* Where to add the define chain entries. */
+    int flags)			/* What sort of define chain are we
+				 * building. */
+{
+    int i;
+    Class *superPtr;
+
+    /*
+     * We hard-code the tail-recursive form. It's by far the most common case
+     * *and* it is much more gentle on the stack.
+     */
+
+  tailRecurse:
+    FOREACH(superPtr, classPtr->mixins) {
+	AddSimpleClassDefineNamespaces(superPtr, definePtr,
+		flags | TRAVERSED_MIXIN);
+    }
+
+    if (flags & ~(TRAVERSED_MIXIN | BUILDING_MIXINS)) {
+	AddDefinitionNamespaceToChain(classPtr, classPtr->clsDefinitionNs,
+		definePtr, flags);
+    } else {
+	AddDefinitionNamespaceToChain(classPtr, classPtr->objDefinitionNs,
+		definePtr, flags);
+    }
+
+    switch (classPtr->superclasses.num) {
+    case 1:
+	classPtr = classPtr->superclasses.list[0];
+	goto tailRecurse;
+    default:
+	FOREACH(superPtr, classPtr->superclasses) {
+	    AddSimpleClassDefineNamespaces(superPtr, definePtr, flags);
+	}
+    case 0:
+	return;
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AddDefinitionNamespaceToChain --
+ *
+ *	Adds a single item to the definition chain (if it is meaningful),
+ *	reallocating the space for the chain if necessary.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline void
+AddDefinitionNamespaceToChain(
+    Class *const definerCls,		/* What class defines this entry. */
+    Tcl_Obj *const namespaceName,	/* The name for this entry (or NULL, a
+				 * no-op). */
+    DefineChain *const definePtr,
+				/* The define chain to add the method
+				 * implementation to. */
+    int flags)			/* Used to check if we're mixin-consistent
+				 * only. Mixin-consistent means that either
+				 * we're looking to add things from a mixin
+				 * and we have passed a mixin, or we're not
+				 * looking to add things from a mixin and have
+				 * not passed a mixin. */
+{
+    int i;
+
+    /*
+     * Return if this entry is blank. This is also where we enforce
+     * mixin-consistency.
+     */
+
+    if (namespaceName == NULL || !MIXIN_CONSISTENT(flags)) {
+	return;
+    }
+
+    /*
+     * First test whether the method is already in the call chain.
+     */
+
+    for (i=0 ; i<definePtr->num ; i++) {
+	if (definePtr->list[i].definerCls == definerCls) {
+	    /*
+	     * Call chain semantics states that methods come as *late* in the
+	     * call chain as possible. This is done by copying down the
+	     * following methods. Note that this does not change the number of
+	     * method invocations in the call chain; it just rearranges them.
+	     *
+	     * We skip changing anything if the place we found was already at
+	     * the end of the list.
+	     */
+
+	    if (i < definePtr->num - 1) {
+		memmove(&definePtr->list[i], &definePtr->list[i + 1],
+			sizeof(DefineEntry) * (definePtr->num - i - 1));
+		definePtr->list[i].definerCls = definerCls;
+		definePtr->list[i].namespaceName = namespaceName;
+	    }
+	    return;
+	}
+    }
+
+    /*
+     * Need to really add the define. This is made a bit more complex by the
+     * fact that we are using some "static" space initially, and only start
+     * realloc-ing if the chain gets long.
+     */
+
+    if (definePtr->num == definePtr->size) {
+	definePtr->size *= 2;
+	if (definePtr->num == DEFINE_CHAIN_STATIC_SIZE) {
+	    DefineEntry *staticList = definePtr->list;
+
+	    definePtr->list =
+		    (DefineEntry *)ckalloc(sizeof(DefineEntry) * definePtr->size);
+	    memcpy(definePtr->list, staticList,
+		    sizeof(DefineEntry) * definePtr->num);
+	} else {
+	    definePtr->list = (DefineEntry *)ckrealloc(definePtr->list,
+		    sizeof(DefineEntry) * definePtr->size);
+	}
+    }
+    definePtr->list[i].definerCls = definerCls;
+    definePtr->list[i].namespaceName = namespaceName;
+    definePtr->num++;
 }
 
 /*

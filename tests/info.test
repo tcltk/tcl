@@ -5,10 +5,10 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1994 The Regents of the University of California.
-# Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2006      ActiveState
+# Copyright © 1991-1994 The Regents of the University of California.
+# Copyright © 1994-1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2006 ActiveState
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -16,7 +16,7 @@
 # DO NOT DELETE THIS LINE
 
 if {{::tcltest} ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 ::tcltest::loadTestedCommands
@@ -325,7 +325,7 @@ test info-9.2 {info level option} {
 } {1 {t1 146 testString}}
 test info-9.3 {info level option} {
     proc t1 {a b} {
-        t2 [expr $a*2] $b
+        t2 [expr {$a*2}] $b
     }
     proc t2 {x y} {
         list [info level] [info level 1] [info level 2] [info level -1] \
@@ -655,7 +655,7 @@ test info-19.6 {info vars: Bug 1072654} -setup {
     namespace delete x
 } -result {}
 
-set functions {abs acos asin atan atan2 bool ceil cos cosh double entier exp floor fmod hypot int isqrt log log10 max min pow rand round sin sinh sqrt srand tan tanh wide}
+set functions {abs acos asin atan atan2 bool ceil cos cosh double entier exp floor fmod hypot int isfinite isinf isnan isnormal isqrt issubnormal isunordered log log10 max min pow rand round sin sinh sqrt srand tan tanh wide}
 # Check whether the extra testing functions are defined...
 if {!([catch {expr T1()} msg] && ($msg eq {invalid command name "tcl::mathfunc::T1"}))} {
     set functions "T1 T2 T3 $functions"  ;# A lazy way of prepending!
@@ -768,26 +768,26 @@ test info-22.8 {info frame, basic trace} -match glob -body {
 * {type source line * file tcltest* cmd {uplevel 1 $script} proc ::tcltest::RunTest}}
 unset -nocomplain msg
 
-test info-23.0.0 {eval'd info frame} {!singleTestInterp} {
-    eval {info frame}
-} 8
-test info-23.0.1 {eval'd info frame} -constraints {singleTestInterp} -match glob -body {
-    eval {info frame}
-} -result {1[12]} ;# SingleTestInterp results changes depending on running the whole suite, or info.test alone.
-test info-23.1.0 {eval'd info frame, semi-dynamic} {!singleTestInterp} {
-    eval info frame
-} 8
-test info-23.1.1 {eval'd info frame, semi-dynamic} -constraints {singleTestInterp} -match glob -body {
-    eval info frame
-} -result {1[12]}
-test info-23.2.0 {eval'd info frame, dynamic} -constraints {!singleTestInterp} -body {
-    set script {info frame}
-    eval $script
-} -cleanup {unset script} -result 8
-test info-23.2.1 {eval'd info frame, dynamic} -constraints {singleTestInterp} -match glob -body {
-    set script {info frame}
-    eval $script
-} -cleanup {unset script} -result {1[12]}
+
+
+
+
+
+
+
+
+
+## The line 1967 is off by 5 from the true value of 1972. This is a knownBug, see testcase 30.0
+test info-23.0 {eval'd info frame} -constraints {!singleTestInterp} -body {
+    list [i eval {info frame}] [i eval {eval {info frame}}]
+} -setup {interp create i} -cleanup {interp delete i} -result {1 2}
+test info-23.1 {eval'd info frame, semi-dynamic} -constraints {!singleTestInterp} -body {
+    i eval {eval info frame}
+} -setup {interp create i} -cleanup {interp delete i} -result 2
+test info-23.2 {eval'd info frame, dynamic} -constraints {!singleTestInterp} -body {
+    i eval {	set script {info frame}
+		eval $script}
+} -setup {interp create i} -cleanup {interp delete i} -result 2
 test info-23.3 {eval'd info frame, literal} -match glob -body {
     eval {
 	info frame 0
@@ -2447,16 +2447,16 @@ test info-40.9 {info cmdtype: imports} -setup {
     rename ::testinfocmdtype::bar {}
     namespace delete ::testinfocmdtype::foo
 } -result import
-test info-40.10 {info cmdtype: slaves} -setup {
+test info-40.10 {info cmdtype: interps} -setup {
     apply {i {
-	rename $i ::testinfocmdtype::slave
-	variable ::testinfocmdtype::slave $i
+	rename $i ::testinfocmdtype::child
+	variable ::testinfocmdtype::child $i
     }} [interp create]
 } -body {
-    info cmdtype ::testinfocmdtype::slave
+    info cmdtype ::testinfocmdtype::child
 } -cleanup {
-    interp delete $::testinfocmdtype::slave
-} -result slave
+    interp delete $::testinfocmdtype::child
+} -result interp
 test info-40.11 {info cmdtype: objects} -setup {
     apply {{} {
 	oo::object create obj
@@ -2518,7 +2518,7 @@ test info-40.16 {info cmdtype: dynamic behavior} -setup {
 	catch {rename bar {}}
     }
 } -result {0 1 ::testinfocmdtype::foo {} ::testinfocmdtype::bar 1 0}
-test info-40.17 {info cmdtype: aliases in slave interpreters} -setup {
+test info-40.17 {info cmdtype: aliases in child interpreters} -setup {
     set i [interp create]
 } -body {
     $i alias foo gorp
@@ -2528,7 +2528,7 @@ test info-40.17 {info cmdtype: aliases in slave interpreters} -setup {
 } -cleanup {
     interp delete $i
 } -result alias
-test info-40.18 {info cmdtype: aliases in slave interpreters} -setup {
+test info-40.18 {info cmdtype: aliases in child interpreters} -setup {
     set safe [interp create -safe]
 } -body {
     $safe alias foo gorp
@@ -2538,7 +2538,7 @@ test info-40.18 {info cmdtype: aliases in slave interpreters} -setup {
 } -returnCodes error -cleanup {
     interp delete $safe
 } -result {not allowed to invoke subcommand cmdtype of info}
-test info-40.19 {info cmdtype: aliases in slave interpreters} -setup {
+test info-40.19 {info cmdtype: aliases in child interpreters} -setup {
     set safe [interp create -safe]
 } -body {
     set inner [interp create [list $safe bar]]
@@ -2551,7 +2551,7 @@ test info-40.19 {info cmdtype: aliases in slave interpreters} -setup {
 } -returnCodes error -cleanup {
     interp delete $safe
 } -result {not allowed to invoke subcommand cmdtype of info}
-test info-40.20 {info cmdtype: aliases in slave interpreters} -setup {
+test info-40.20 {info cmdtype: aliases in child interpreters} -setup {
     set safe [interp create -safe]
 } -body {
     $safe eval {

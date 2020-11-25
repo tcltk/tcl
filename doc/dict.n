@@ -28,7 +28,7 @@ writing the resulting dictionary value back to that variable.
 Non-existent keys are treated as if they map to an empty string. The
 updated dictionary value is returned.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the appending operation.
 .VE TIP508
@@ -54,16 +54,14 @@ type (which may be abbreviated.)  Supported filter types are:
 .RS
 .TP
 \fBdict filter \fIdictionaryValue \fBkey\fR ?\fIglobPattern ...\fR?
-.VS 8.6
 The key rule only matches those key/value pairs whose keys match any
 of the given patterns (in the style of \fBstring match\fR.)
-.VE 8.6
 .TP
 \fBdict filter \fIdictionaryValue \fBscript {\fIkeyVariable valueVariable\fB} \fIscript\fR
 .
 The script rule tests for matching by assigning the key to the
 \fIkeyVariable\fR and the value to the \fIvalueVariable\fR, and then evaluating
-the given script which should return a boolean value (with the
+the given script which should result in a boolean value (with the
 key/value pair only being included in the result of the \fBdict
 filter\fR when a true value is returned.)  Note that the first
 argument after the rule selection word is a two-element list.  If the
@@ -74,10 +72,8 @@ result. The key/value pairs are tested in the order in which the keys
 were inserted into the dictionary.
 .TP
 \fBdict filter \fIdictionaryValue \fBvalue \fR?\fIglobPattern ...\fR?
-.VS 8.6
 The value rule only matches those key/value pairs whose values match any
 of the given patterns (in the style of \fBstring match\fR.)
-.VE 8.6
 .RE
 .TP
 \fBdict for {\fIkeyVariable valueVariable\fB} \fIdictionaryValue body\fR
@@ -120,6 +116,22 @@ It is an error to attempt to retrieve a value for a key that is not
 present in the dictionary.
 .RE
 .TP
+\fBdict getdef \fIdictionaryValue \fR?\fIkey ...\fR? \fIkey default\fR
+.TP
+\fBdict getwithdefault \fIdictionaryValue \fR?\fIkey ...\fR? \fIkey default\fR
+.VS "8.7, TIP342"
+This behaves the same as \fBdict get\fR (with at least one \fIkey\fR
+argument), returning the value that the key path maps to in the
+dictionary \fIdictionaryValue\fR, except that instead of producing an
+error because the \fIkey\fR (or one of the \fIkey\fRs on the key path)
+is absent, it returns the \fIdefault\fR argument instead.
+.RS
+.PP
+Note that there must always be at least one \fIkey\fR provided, and that
+\fBdict getdef\fR and \fBdict getwithdefault\fR are aliases for each other.
+.RE
+.VE "8.7, TIP342"
+.TP
 \fBdict incr \fIdictionaryVariable key \fR?\fIincrement\fR?
 .
 This adds the given increment value (an integer that defaults to 1 if
@@ -130,7 +142,7 @@ are treated as if they map to 0. It is an error to increment a value
 for an existing key if that value is not an integer. The updated
 dictionary value is returned.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the incrementing operation.
 .VE TIP508
@@ -160,7 +172,7 @@ there to be no items to append to the list. It is an error for the
 value that the key maps to to not be representable as a list. The
 updated dictionary value is returned.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the list-appending operation.
 .VE TIP508
@@ -222,7 +234,7 @@ containing a mapping from the given key to the given value. When
 multiple keys are present, this operation creates or updates a chain
 of nested dictionaries. The updated dictionary value is returned.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the value insert/update operation.
 .VE TIP508
@@ -242,7 +254,7 @@ must be specified, but the last key on the key-path need not exist.
 All other components on the path must exist. The updated dictionary
 value is returned.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the value remove operation.
 .VE TIP508
@@ -262,7 +274,7 @@ or some other kind of exceptional exit. The result of \fBdict
 update\fR is (unless some kind of error occurs) the result of the
 evaluation of \fIbody\fR.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the update operation.
 .VE TIP508
@@ -301,7 +313,7 @@ dictionaries no longer exists. The result of \fBdict with\fR is
 (unless some kind of error occurs) the result of the evaluation of
 \fIbody\fR.
 .VS TIP508
-If \fIdictionaryVarable\fR indicates an element that does not exist of an
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
 array that has a default value set, the default value and will be used as the
 value of the dictionary prior to the updating operation.
 .VE TIP508

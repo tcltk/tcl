@@ -338,7 +338,6 @@ if {[catch {\fBexec\fR grep foo bar.txt} results options]} {
     }
 }
 .CE
-.VS 8.6
 .PP
 This is more easily written using the \fBtry\fR command, as that makes
 it simpler to trap specific types of errors. This is
@@ -352,7 +351,6 @@ try {
     set status [lindex [dict get $options -errorcode] 2]
 }
 .CE
-.VE 8.6
 .SS "WORKING WITH QUOTED ARGUMENTS"
 .PP
 When translating a command from a Unix shell invocation, care should

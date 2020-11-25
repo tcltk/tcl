@@ -134,6 +134,9 @@ finalization of Tcl's subsystems via \fBTcl_Finalize\fR at an
 appropriate time.  The argument passed to \fIproc\fR when it is
 invoked will be the exit status code (as passed to \fBTcl_Exit\fR)
 cast to a ClientData value.
+.PP
+\fBTcl_SetExitProc\fR can not be used in stub-enabled extensions. Its symbol
+entry in the stub table is deprecated and it will be removed in Tcl 9.0.
 .SH "SEE ALSO"
 exit(n)
 .SH KEYWORDS

@@ -13,7 +13,7 @@
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 
 MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
 
@@ -88,97 +88,6 @@ int
 TclBN_revision(void)
 {
     return TCLTOMMATH_REVISION;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitBignumFromLong --
- *
- *	Allocate and initialize a 'bignum' from a native 'long'.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The 'bignum' is constructed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclInitBignumFromLong(
-    mp_int *a,
-    long v)
-{
-    if (mp_init_size(a, (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) != MP_OKAY) {
-	Tcl_Panic("initialization failure in TclInitBignumFromLong");
-    }
-    if (v < (long)0) {
-	mp_set_long_long(a, (Tcl_WideUInt)(-(Tcl_WideInt)v));
-	mp_neg(a, a);
-    } else {
-	mp_set_long_long(a, (Tcl_WideUInt)v);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclBNInitBignumFromWideInt --
- *
- *	Allocate and initialize a 'bignum' from a Tcl_WideInt
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The 'bignum' is constructed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclInitBignumFromWideInt(
-    mp_int *a,			/* Bignum to initialize */
-    Tcl_WideInt v)		/* Initial value */
-{
-	if (mp_init_size(a, (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT) != MP_OKAY) {
-		Tcl_Panic("initialization failure in TclInitBignumFromWideInt");
-	}
-    if (v < (Tcl_WideInt)0) {
-	mp_set_long_long(a, (Tcl_WideUInt)(-v));
-	mp_neg(a, a);
-    } else {
-	mp_set_long_long(a, (Tcl_WideUInt)v);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclBNInitBignumFromWideUInt --
- *
- *	Allocate and initialize a 'bignum' from a Tcl_WideUInt
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The 'bignum' is constructed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclInitBignumFromWideUInt(
-    mp_int *a,			/* Bignum to initialize */
-    Tcl_WideUInt v)		/* Initial value */
-{
-	if (mp_init_size(a, (CHAR_BIT * sizeof(Tcl_WideUInt) + DIGIT_BIT - 1) / DIGIT_BIT) != MP_OKAY) {
-	    Tcl_Panic("initialization failure in TclInitBignumFromWideUInt");
-	}
-	mp_set_long_long(a, v);
 }
 
 /*

@@ -30,11 +30,12 @@ gai_strerror(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (tsdPtr->initialized) {
-	Tcl_DStringFree(&tsdPtr->errorMsg);
+	Tcl_DStringSetLength(&tsdPtr->errorMsg, 0);
     } else {
+	Tcl_DStringInit(&tsdPtr->errorMsg);
 	tsdPtr->initialized = 1;
     }
-    Tcl_WinTCharToUtf(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
+    Tcl_WCharToUtfDString(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
     return Tcl_DStringValue(&tsdPtr->errorMsg);
 }
 #endif

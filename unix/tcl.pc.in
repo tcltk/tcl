@@ -11,7 +11,7 @@ Name: Tool Command Language
 Description: Tcl is a powerful, easy-to-learn dynamic programming language, suitable for a wide range of uses.
 URL: http://www.tcl.tk/
 Version: @TCL_VERSION@@TCL_PATCH_LEVEL@
-Requires.private: zlib >= 1.2.3
+Requires.private: zlib >= 1.2.3, libtommath >= 1.2.0
 Libs: -L${libdir} @TCL_LIB_FLAG@ @TCL_STUB_LIB_FLAG@
 Libs.private: @TCL_LIBS@
 Cflags: -I${includedir}

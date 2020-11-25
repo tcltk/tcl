@@ -148,10 +148,6 @@ SOURCE=..\compat\dlfcn.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\compat\fixstrtod.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\compat\gettod.c
 # End Source File
 # Begin Source File
@@ -188,10 +184,6 @@ SOURCE=..\compat\strstr.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\compat\strtod.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\compat\strtol.c
 # End Source File
 # Begin Source File
@@ -201,10 +193,6 @@ SOURCE=..\compat\strtoul.c
 # Begin Source File
 
 SOURCE=..\compat\tclErrno.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\compat\unistd.h
 # End Source File
 # Begin Source File
 
@@ -360,7 +348,7 @@ SOURCE=..\doc\CrtObjCmd.3
 # End Source File
 # Begin Source File
 
-SOURCE=..\doc\CrtSlave.3
+SOURCE=..\doc\CrtAlias.3
 # End Source File
 # Begin Source File
 

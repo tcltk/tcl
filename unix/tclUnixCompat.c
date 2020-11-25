@@ -118,10 +118,10 @@ static int		CopyString(const char *src, char *buf, int buflen);
 #endif
 
 #ifdef NEED_PW_CLEANER
-static void		FreePwBuf(ClientData ignored);
+static void		FreePwBuf(ClientData dummy);
 #endif
 #ifdef NEED_GR_CLEANER
-static void		FreeGrBuf(ClientData ignored);
+static void		FreeGrBuf(ClientData dummy);
 #endif
 #endif /* TCL_THREADS */
 
@@ -201,7 +201,7 @@ TclpGetPwNam(
 	if (tsdPtr->pbuflen < 1) {
 	    tsdPtr->pbuflen = 1024;
 	}
-	tsdPtr->pbuf = ckalloc(tsdPtr->pbuflen);
+	tsdPtr->pbuf = (char *)ckalloc(tsdPtr->pbuflen);
 	Tcl_CreateThreadExitHandler(FreePwBuf, NULL);
     }
     while (1) {
@@ -214,7 +214,7 @@ TclpGetPwNam(
 	    return NULL;
 	}
 	tsdPtr->pbuflen *= 2;
-	tsdPtr->pbuf = ckrealloc(tsdPtr->pbuf, tsdPtr->pbuflen);
+	tsdPtr->pbuf = (char *)ckrealloc(tsdPtr->pbuf, tsdPtr->pbuflen);
     }
     return (pwPtr != NULL ? &tsdPtr->pwd : NULL);
 
@@ -281,7 +281,7 @@ TclpGetPwUid(
 	if (tsdPtr->pbuflen < 1) {
 	    tsdPtr->pbuflen = 1024;
 	}
-	tsdPtr->pbuf = ckalloc(tsdPtr->pbuflen);
+	tsdPtr->pbuf = (char *)ckalloc(tsdPtr->pbuflen);
 	Tcl_CreateThreadExitHandler(FreePwBuf, NULL);
     }
     while (1) {
@@ -294,7 +294,7 @@ TclpGetPwUid(
 	    return NULL;
 	}
 	tsdPtr->pbuflen *= 2;
-	tsdPtr->pbuf = ckrealloc(tsdPtr->pbuf, tsdPtr->pbuflen);
+	tsdPtr->pbuf = (char *)ckrealloc(tsdPtr->pbuf, tsdPtr->pbuflen);
     }
     return (pwPtr != NULL ? &tsdPtr->pwd : NULL);
 
@@ -336,7 +336,7 @@ TclpGetPwUid(
 #ifdef NEED_PW_CLEANER
 static void
 FreePwBuf(
-    ClientData ignored)
+    TCL_UNUSED(ClientData))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -384,7 +384,7 @@ TclpGetGrNam(
 	if (tsdPtr->gbuflen < 1) {
 	    tsdPtr->gbuflen = 1024;
 	}
-	tsdPtr->gbuf = ckalloc(tsdPtr->gbuflen);
+	tsdPtr->gbuf = (char *)ckalloc(tsdPtr->gbuflen);
 	Tcl_CreateThreadExitHandler(FreeGrBuf, NULL);
     }
     while (1) {
@@ -397,7 +397,7 @@ TclpGetGrNam(
 	    return NULL;
 	}
 	tsdPtr->gbuflen *= 2;
-	tsdPtr->gbuf = ckrealloc(tsdPtr->gbuf, tsdPtr->gbuflen);
+	tsdPtr->gbuf = (char *)ckrealloc(tsdPtr->gbuf, tsdPtr->gbuflen);
     }
     return (grPtr != NULL ? &tsdPtr->grp : NULL);
 
@@ -464,7 +464,7 @@ TclpGetGrGid(
 	if (tsdPtr->gbuflen < 1) {
 	    tsdPtr->gbuflen = 1024;
 	}
-	tsdPtr->gbuf = ckalloc(tsdPtr->gbuflen);
+	tsdPtr->gbuf = (char *)ckalloc(tsdPtr->gbuflen);
 	Tcl_CreateThreadExitHandler(FreeGrBuf, NULL);
     }
     while (1) {
@@ -477,7 +477,7 @@ TclpGetGrGid(
 	    return NULL;
 	}
 	tsdPtr->gbuflen *= 2;
-	tsdPtr->gbuf = ckrealloc(tsdPtr->gbuf, tsdPtr->gbuflen);
+	tsdPtr->gbuf = (char *)ckrealloc(tsdPtr->gbuf, tsdPtr->gbuflen);
     }
     return (grPtr != NULL ? &tsdPtr->grp : NULL);
 
@@ -519,7 +519,7 @@ TclpGetGrGid(
 #ifdef NEED_GR_CLEANER
 static void
 FreeGrBuf(
-    ClientData ignored)
+    TCL_UNUSED(ClientData))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -685,8 +685,8 @@ CopyGrp(
     char *buf,
     int buflen)
 {
-    register char *p = buf;
-    register int copied, len = 0;
+    char *p = buf;
+    int copied, len = 0;
 
     /*
      * Copy username.
@@ -887,7 +887,7 @@ CopyArray(
     int buflen)			/* Size of buffer. */
 {
     int i, j, len = 0;
-    char *p, **new;
+    char *p, **newBuffer;
 
     if (src == NULL) {
 	return 0;
@@ -903,7 +903,7 @@ CopyArray(
 	return -1;
     }
 
-    new = (char **) buf;
+    newBuffer = (char **)buf;
     p = buf + len;
 
     for (j = 0; j < i; j++) {
@@ -914,10 +914,10 @@ CopyArray(
 	    return -1;
 	}
 	memcpy(p, src[j], sz);
-	new[j] = p;
+	newBuffer[j] = p;
 	p = buf + len;
     }
-    new[j] = NULL;
+    newBuffer[j] = NULL;
 
     return len;
 }

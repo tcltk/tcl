@@ -12,9 +12,10 @@
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 
 #include <math.h>
+#include <assert.h>
 
 /*
  * The following constants are used by GetFormatSpec to indicate various
@@ -56,9 +57,12 @@
 
 static void		DupByteArrayInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
+static void		DupProperByteArrayInternalRep(Tcl_Obj *srcPtr,
+			    Tcl_Obj *copyPtr);
 static int		FormatNumber(Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr);
 static void		FreeByteArrayInternalRep(Tcl_Obj *objPtr);
+static void		FreeProperByteArrayInternalRep(Tcl_Obj *objPtr);
 static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
 			    int *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
@@ -155,99 +159,94 @@ static const EnsembleImplMap decodeMap[] = {
 };
 
 /*
- * The following object types represent an array of bytes. The intent is
- * to allow arbitrary binary data to pass through Tcl as a Tcl value
- * without loss or damage. Such values are useful for things like
- * encoded strings or Tk images to name just two.
+ * The following object types represent an array of bytes. The intent is to
+ * allow arbitrary binary data to pass through Tcl as a Tcl value without loss
+ * or damage. Such values are useful for things like encoded strings or Tk
+ * images to name just two.
  *
- * It's strange to have two Tcl_ObjTypes in place for this task when
- * one would do, so a bit of detail and history how we got to this point
- * and where we might go from here.
+ * It's strange to have two Tcl_ObjTypes in place for this task when one would
+ * do, so a bit of detail and history how we got to this point and where we
+ * might go from here.
  *
- * A bytearray is an ordered sequence of bytes. Each byte is an integer
- * value in the range [0-255].  To be a Tcl value type, we need a way to
- * encode each value in the value set as a Tcl string.  The simplest
- * encoding is to represent each byte value as the same codepoint value.
- * A bytearray of N bytes is encoded into a Tcl string of N characters
- * where the codepoint of each character is the value of corresponding byte.
- * This approach creates a one-to-one map between all bytearray values
- * and a subset of Tcl string values.
+ * A bytearray is an ordered sequence of bytes. Each byte is an integer value
+ * in the range [0-255].  To be a Tcl value type, we need a way to encode each
+ * value in the value set as a Tcl string.  The simplest encoding is to
+ * represent each byte value as the same codepoint value.  A bytearray of N
+ * bytes is encoded into a Tcl string of N characters where the codepoint of
+ * each character is the value of corresponding byte.  This approach creates a
+ * one-to-one map between all bytearray values and a subset of Tcl string
+ * values.
  *
  * When converting a Tcl string value to the bytearray internal rep, the
  * question arises what to do with strings outside that subset?  That is,
- * those Tcl strings containing at least one codepoint greater than 255?
- * The obviously correct answer is to raise an error!  That string value
- * does not represent any valid bytearray value. Full Stop.  The
- * setFromAnyProc signature has a completion code return value for just
- * this reason, to reject invalid inputs.
+ * those Tcl strings containing at least one codepoint greater than 255?  The
+ * obviously correct answer is to raise an error!  That string value does not
+ * represent any valid bytearray value. Full Stop.  The setFromAnyProc
+ * signature has a completion code return value for just this reason, to
+ * reject invalid inputs.
  *
- * Unfortunately this was not the path taken by the authors of the
- * original tclByteArrayType.  They chose to accept all Tcl string values
- * as acceptable string encodings of the bytearray values that result
- * from masking away the high bits of any codepoint value at all. This
- * meant that every bytearray value had multiple accepted string
- * representations.
+ * Unfortunately this was not the path taken by the authors of the original
+ * tclByteArrayType.  They chose to accept all Tcl string values as acceptable
+ * string encodings of the bytearray values that result from masking away the
+ * high bits of any codepoint value at all. This meant that every bytearray
+ * value had multiple accepted string representations.
  *
- * The implications of this choice are truly ugly.  When a Tcl value has
- * a string representation, we are required to accept that as the true
- * value.  Bytearray values that possess a string representation cannot
- * be processed as bytearrays because we cannot know which true value
- * that bytearray represents.  The consequence is that we drag around
- * an internal rep that we cannot make any use of.  This painful price
- * is extracted at any point after a string rep happens to be generated
- * for the value.  This happens even when the troublesome codepoints
- * outside the byte range never show up.  This happens rather routinely
- * in normal Tcl operations unless we burden the script writer with the
- * cognitive burden of avoiding it.  The price is also paid by callers
- * of the C interface.  The routine
+ * The implications of this choice are truly ugly.  When a Tcl value has a
+ * string representation, we are required to accept that as the true value.
+ * Bytearray values that possess a string representation cannot be processed
+ * as bytearrays because we cannot know which true value that bytearray
+ * represents.  The consequence is that we drag around an internal rep that we
+ * cannot make any use of.  This painful price is extracted at any point after
+ * a string rep happens to be generated for the value.  This happens even when
+ * the troublesome codepoints outside the byte range never show up.  This
+ * happens rather routinely in normal Tcl operations unless we burden the
+ * script writer with the cognitive burden of avoiding it.  The price is also
+ * paid by callers of the C interface.  The routine
  *
  *	unsigned char *Tcl_GetByteArrayFromObj(objPtr, lenPtr)
  *
- * has a guarantee to always return a non-NULL value, but that value
- * points to a byte sequence that cannot be used by the caller to
- * process the Tcl value absent some sideband testing that objPtr
- * is "pure".  Tcl offers no public interface to perform this test,
- * so callers either break encapsulation or are unavoidably buggy.  Tcl
- * has defined a public interface that cannot be used correctly. The
- * Tcl source code itself suffers the same problem, and has been buggy,
- * but progressively less so as more and more portions of the code have
- * been retrofitted with the required "purity testing".  The set of values
- * able to pass the purity test can be increased via the introduction of
- * a "canonical" flag marker, but the only way the broken interface itself
+ * has a guarantee to always return a non-NULL value, but that value points to
+ * a byte sequence that cannot be used by the caller to process the Tcl value
+ * absent some sideband testing that objPtr is "pure".  Tcl offers no public
+ * interface to perform this test, so callers either break encapsulation or
+ * are unavoidably buggy.  Tcl has defined a public interface that cannot be
+ * used correctly. The Tcl source code itself suffers the same problem, and
+ * has been buggy, but progressively less so as more and more portions of the
+ * code have been retrofitted with the required "purity testing".  The set of
+ * values able to pass the purity test can be increased via the introduction
+ * of a "canonical" flag marker, but the only way the broken interface itself
  * can be discarded is to start over and define the Tcl_ObjType properly.
- * Bytearrays should simply be usable as bytearrays without a kabuki
- * dance of testing.
+ * Bytearrays should simply be usable as bytearrays without a kabuki dance of
+ * testing.
  *
- * The Tcl_ObjType "properByteArrayType" is (nearly) a correct
- * implementation of bytearrays.  Any Tcl value with the type
- * properByteArrayType can have its bytearray value fetched and
- * used with confidence that acting on that value is equivalent to
- * acting on the true Tcl string value.  This still implies a side
- * testing burden -- past mistakes will not let us avoid that
- * immediately, but it is at least a conventional test of type, and
- * can be implemented entirely by examining the objPtr fields, with
- * no need to query the intrep, as a canonical flag would require.
+ * The Tcl_ObjType "properByteArrayType" is (nearly) a correct implementation
+ * of bytearrays.  Any Tcl value with the type properByteArrayType can have
+ * its bytearray value fetched and used with confidence that acting on that
+ * value is equivalent to acting on the true Tcl string value.  This still
+ * implies a side testing burden -- past mistakes will not let us avoid that
+ * immediately, but it is at least a conventional test of type, and can be
+ * implemented entirely by examining the objPtr fields, with no need to query
+ * the intrep, as a canonical flag would require.
  *
- * Until Tcl_GetByteArrayFromObj() and Tcl_SetByteArrayLength() can
- * be revised to admit the possibility of returning NULL when the true
- * value is not a valid bytearray, we need a mechanism to retain
- * compatibility with the deployed callers of the broken interface.
- * That's what the retained "tclByteArrayType" provides.  In those
- * unusual circumstances where we convert an invalid bytearray value
- * to a bytearray type, it is to this legacy type.  Essentially any
- * time this legacy type gets used, it's a signal of a bug being ignored.
- * A TIP should be drafted to remove this connection to the broken past
- * so that Tcl 9 will no longer have any trace of it.  Prescribing a
- * migration path will be the key element of that work.  The internal
- * changes now in place are the limit of what can be done short of
- * interface repair.  They provide a great expansion of the histories
- * over which bytearray values can be useful in the meanwhile.
+ * Until Tcl_GetByteArrayFromObj() and Tcl_SetByteArrayLength() can be revised
+ * to admit the possibility of returning NULL when the true value is not a
+ * valid bytearray, we need a mechanism to retain compatibility with the
+ * deployed callers of the broken interface.  That's what the retained
+ * "tclByteArrayType" provides.  In those unusual circumstances where we
+ * convert an invalid bytearray value to a bytearray type, it is to this
+ * legacy type.  Essentially any time this legacy type gets used, it's a
+ * signal of a bug being ignored.  A TIP should be drafted to remove this
+ * connection to the broken past so that Tcl 9 will no longer have any trace
+ * of it.  Prescribing a migration path will be the key element of that work.
+ * The internal changes now in place are the limit of what can be done short
+ * of interface repair.  They provide a great expansion of the histories over
+ * which bytearray values can be useful in the meanwhile.
  */
 
 static const Tcl_ObjType properByteArrayType = {
     "bytearray",
-    FreeByteArrayInternalRep,
-    DupByteArrayInternalRep,
+    FreeProperByteArrayInternalRep,
+    DupProperByteArrayInternalRep,
     UpdateStringOfByteArray,
     NULL
 };
@@ -268,27 +267,29 @@ const Tcl_ObjType tclByteArrayType = {
  */
 
 typedef struct ByteArray {
-    int used;			/* The number of bytes used in the byte
+    unsigned int bad;		/* Index of the character that is a nonbyte.
+				 * If all characters are bytes, bad = used,
+				 * though then we should never read it. */
+    unsigned int used;		/* The number of bytes used in the byte
 				 * array. */
-    int allocated;		/* The amount of space actually allocated
+    unsigned int allocated;	/* The amount of space actually allocated
 				 * minus 1 byte. */
-    unsigned char bytes[1];	/* The array of bytes. The actual size of this
+    unsigned char bytes[TCLFLEXARRAY];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
 				 * above. */
 } ByteArray;
 
 #define BYTEARRAY_SIZE(len) \
-		((unsigned) (TclOffset(ByteArray, bytes) + (len)))
-#define GET_BYTEARRAY(objPtr) \
-		((ByteArray *) (objPtr)->internalRep.twoPtrValue.ptr1)
-#define SET_BYTEARRAY(objPtr, baPtr) \
-		(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (baPtr)
+		(offsetof(ByteArray, bytes) + (len))
+#define GET_BYTEARRAY(irPtr) ((ByteArray *) (irPtr)->twoPtrValue.ptr1)
+#define SET_BYTEARRAY(irPtr, baPtr) \
+		(irPtr)->twoPtrValue.ptr1 = (void *) (baPtr)
 
 int
 TclIsPureByteArray(
     Tcl_Obj * objPtr)
 {
-    return (objPtr->typePtr == &properByteArrayType);
+    return TclHasIntRep(objPtr, &properByteArrayType);
 }
 
 /*
@@ -354,6 +355,7 @@ Tcl_NewByteArrayObj(
  *----------------------------------------------------------------------
  */
 
+#ifdef TCL_MEM_DEBUG
 Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
@@ -365,16 +367,25 @@ Tcl_DbNewByteArrayObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
-#ifdef TCL_MEM_DEBUG
     Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
     Tcl_SetByteArrayObj(objPtr, bytes, length);
     return objPtr;
-#else /* if not TCL_MEM_DEBUG */
-    return Tcl_NewByteArrayObj(bytes, length);
-#endif /* TCL_MEM_DEBUG */
 }
+#else /* if not TCL_MEM_DEBUG */
+Tcl_Obj *
+Tcl_DbNewByteArrayObj(
+    const unsigned char *bytes,	/* The array of bytes used to initialize the
+				 * new object. */
+    int length,			/* Length of the array of bytes, which must be
+				 * >= 0. */
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
+{
+    return Tcl_NewByteArrayObj(bytes, length);
+}
+#endif /* TCL_MEM_DEBUG */
 
 /*
  *---------------------------------------------------------------------------
@@ -397,31 +408,89 @@ Tcl_DbNewByteArrayObj(
 void
 Tcl_SetByteArrayObj(
     Tcl_Obj *objPtr,		/* Object to initialize as a ByteArray. */
-    const unsigned char *bytes,	/* The array of bytes to use as the new
-				   value. May be NULL even if length > 0. */
+    const unsigned char *bytes,	/* The array of bytes to use as the new value.
+				 * May be NULL even if length > 0. */
     int length)			/* Length of the array of bytes, which must
-				   be >= 0. */
+				 * be >= 0. */
 {
     ByteArray *byteArrayPtr;
+    Tcl_ObjIntRep ir;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayObj");
     }
-    TclFreeIntRep(objPtr);
     TclInvalidateStringRep(objPtr);
 
     if (length < 0) {
 	length = 0;
     }
-    byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr->bad = length;
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
 
     if ((bytes != NULL) && (length > 0)) {
-	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
+	memcpy(byteArrayPtr->bytes, bytes, length);
     }
-    objPtr->typePtr = &properByteArrayType;
-    SET_BYTEARRAY(objPtr, byteArrayPtr);
+    SET_BYTEARRAY(&ir, byteArrayPtr);
+
+    Tcl_StoreIntRep(objPtr, &properByteArrayType, &ir);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetBytesFromObj --
+ *
+ *	Attempt to extract the value from objPtr in the representation
+ *	of a byte sequence. On success return the extracted byte sequence.
+ *	On failures, return NULL and record error message and code in
+ *	interp (if not NULL).
+ *
+ * Results:
+ *	Pointer to array of bytes, or NULL. representing the ByteArray object.
+ *	Writes number of bytes in array to *lengthPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned char *
+TclGetBytesFromObj(
+    Tcl_Interp *interp,		/* For error reporting */
+    Tcl_Obj *objPtr,		/* Value to extract from */
+    int *lengthPtr)		/* If non-NULL, filled with length of the
+				 * array of bytes in the ByteArray object. */
+{
+    ByteArray *baPtr;
+    const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
+
+    if (irPtr == NULL) {
+	SetByteArrayFromAny(NULL, objPtr);
+	irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
+	if (irPtr == NULL) {
+	    if (interp) {
+		const char *nonbyte;
+		int ucs4;
+
+		irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+		baPtr = GET_BYTEARRAY(irPtr);
+		nonbyte = Tcl_UtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
+		TclUtfToUCS4(nonbyte, &ucs4);
+
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"expected byte sequence but character %d "
+			"was '%1s' (U+%06X)", baPtr->bad, nonbyte, ucs4));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BYTES", NULL);
+	    }
+	    return NULL;
+	}
+    }
+    baPtr = GET_BYTEARRAY(irPtr);
+
+    if (lengthPtr != NULL) {
+	*lengthPtr = baPtr->used;
+    }
+    return baPtr->bytes;
 }
 
 /*
@@ -450,12 +519,17 @@ Tcl_GetByteArrayFromObj(
 				 * array of bytes in the ByteArray object. */
 {
     ByteArray *baPtr;
+    const Tcl_ObjIntRep *irPtr;
+    unsigned char *result = TclGetBytesFromObj(NULL, objPtr, lengthPtr);
 
-    if ((objPtr->typePtr != &properByteArrayType)
-	    && (objPtr->typePtr != &tclByteArrayType)) {
-	SetByteArrayFromAny(NULL, objPtr);
+    if (result) {
+	return result;
     }
-    baPtr = GET_BYTEARRAY(objPtr);
+
+    irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+    assert(irPtr != NULL);
+
+    baPtr = GET_BYTEARRAY(irPtr);
 
     if (lengthPtr != NULL) {
 	*lengthPtr = baPtr->used;
@@ -470,12 +544,17 @@ Tcl_GetByteArrayFromObj2(
 				 * array of bytes in the ByteArray object. */
 {
     ByteArray *baPtr;
+    const Tcl_ObjIntRep *irPtr;
+    unsigned char *result = TclGetBytesFromObj(NULL, objPtr, (int *)NULL);
 
-    if ((objPtr->typePtr != &properByteArrayType)
-	    && (objPtr->typePtr != &tclByteArrayType)) {
-	SetByteArrayFromAny(NULL, objPtr);
+    if (result) {
+	return result;
     }
-    baPtr = GET_BYTEARRAY(objPtr);
+
+    irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+    assert(irPtr != NULL);
+
+    baPtr = GET_BYTEARRAY(irPtr);
 
     if (lengthPtr != NULL) {
 #if TCL_MAJOR_VERSION > 8
@@ -484,7 +563,7 @@ Tcl_GetByteArrayFromObj2(
 	*lengthPtr = ((size_t)(unsigned)(baPtr->used + 1)) - 1;
 #endif
     }
-    return (unsigned char *) baPtr->bytes;
+    return baPtr->bytes;
 }
 
 /*
@@ -515,23 +594,38 @@ Tcl_SetByteArrayLength(
     int length)			/* New length for internal byte array. */
 {
     ByteArray *byteArrayPtr;
+    unsigned newLength;
+    Tcl_ObjIntRep *irPtr;
+
+    assert(length >= 0);
+    newLength = (unsigned int)length;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayLength");
     }
-    if ((objPtr->typePtr != &properByteArrayType)
-	    && (objPtr->typePtr != &tclByteArrayType)) {
-	SetByteArrayFromAny(NULL, objPtr);
+
+    irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
+    if (irPtr == NULL) {
+	irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+	if (irPtr == NULL) {
+	    SetByteArrayFromAny(NULL, objPtr);
+	    irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
+	    if (irPtr == NULL) {
+		irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+	    }
+	}
     }
 
-    byteArrayPtr = GET_BYTEARRAY(objPtr);
-    if (length > byteArrayPtr->allocated) {
-	byteArrayPtr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(length));
-	byteArrayPtr->allocated = length;
-	SET_BYTEARRAY(objPtr, byteArrayPtr);
+    byteArrayPtr = GET_BYTEARRAY(irPtr);
+    if (newLength > byteArrayPtr->allocated) {
+	byteArrayPtr = (ByteArray *)ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(newLength));
+	byteArrayPtr->allocated = newLength;
+	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
     TclInvalidateStringRep(objPtr);
-    byteArrayPtr->used = length;
+    objPtr->typePtr = &properByteArrayType;
+    byteArrayPtr->bad = newLength;
+    byteArrayPtr->used = newLength;
     return byteArrayPtr->bytes;
 }
 
@@ -553,40 +647,48 @@ Tcl_SetByteArrayLength(
 
 static int
 SetByteArrayFromAny(
-    Tcl_Interp *interp,		/* Not used. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
-    size_t length;
-    int improper = 0;
+    size_t length, bad;
     const char *src, *srcEnd;
     unsigned char *dst;
-    ByteArray *byteArrayPtr;
     Tcl_UniChar ch = 0;
+    ByteArray *byteArrayPtr;
+    Tcl_ObjIntRep ir;
 
-    if (objPtr->typePtr == &properByteArrayType) {
+    if (TclHasIntRep(objPtr, &properByteArrayType)) {
 	return TCL_OK;
     }
-    if (objPtr->typePtr == &tclByteArrayType) {
+    if (TclHasIntRep(objPtr, &tclByteArrayType)) {
 	return TCL_OK;
     }
 
     src = TclGetString(objPtr);
-    length = objPtr->length;
+    length = bad = objPtr->length;
     srcEnd = src + length;
 
-    byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
 	src += TclUtfToUniChar(src, &ch);
-	improper = improper || (ch > 255);
+	if ((bad == length) && (ch > 255)) {
+	    bad = dst - byteArrayPtr->bytes;
+	}
 	*dst++ = UCHAR(ch);
     }
 
-    byteArrayPtr->used = dst - byteArrayPtr->bytes;
+    SET_BYTEARRAY(&ir, byteArrayPtr);
     byteArrayPtr->allocated = length;
+    byteArrayPtr->used = dst - byteArrayPtr->bytes;
 
-    TclFreeIntRep(objPtr);
-    objPtr->typePtr = improper ? &tclByteArrayType : &properByteArrayType;
-    SET_BYTEARRAY(objPtr, byteArrayPtr);
+    if (bad == length) {
+	byteArrayPtr->bad = byteArrayPtr->used;
+	Tcl_StoreIntRep(objPtr, &properByteArrayType, &ir);
+    } else {
+	byteArrayPtr->bad = bad;
+	Tcl_StoreIntRep(objPtr, &tclByteArrayType, &ir);
+    }
+
     return TCL_OK;
 }
 
@@ -611,8 +713,14 @@ static void
 FreeByteArrayInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
-    ckfree(GET_BYTEARRAY(objPtr));
-    objPtr->typePtr = NULL;
+    ckfree(GET_BYTEARRAY(TclFetchIntRep(objPtr, &tclByteArrayType)));
+}
+
+static void
+FreeProperByteArrayInternalRep(
+    Tcl_Obj *objPtr)		/* Object with internal rep to free. */
+{
+    ckfree(GET_BYTEARRAY(TclFetchIntRep(objPtr, &properByteArrayType)));
 }
 
 /*
@@ -637,19 +745,43 @@ DupByteArrayInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
-    int length;
+    unsigned int length;
     ByteArray *srcArrayPtr, *copyArrayPtr;
+    Tcl_ObjIntRep ir;
 
-    srcArrayPtr = GET_BYTEARRAY(srcPtr);
+    srcArrayPtr = GET_BYTEARRAY(TclFetchIntRep(srcPtr, &tclByteArrayType));
     length = srcArrayPtr->used;
 
-    copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr->bad = srcArrayPtr->bad;
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
-    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
-    SET_BYTEARRAY(copyPtr, copyArrayPtr);
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
 
-    copyPtr->typePtr = srcPtr->typePtr;
+    SET_BYTEARRAY(&ir, copyArrayPtr);
+    Tcl_StoreIntRep(copyPtr, &tclByteArrayType, &ir);
+}
+
+static void
+DupProperByteArrayInternalRep(
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
+{
+    unsigned int length;
+    ByteArray *srcArrayPtr, *copyArrayPtr;
+    Tcl_ObjIntRep ir;
+
+    srcArrayPtr = GET_BYTEARRAY(TclFetchIntRep(srcPtr, &properByteArrayType));
+    length = srcArrayPtr->used;
+
+    copyArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
+    copyArrayPtr->bad = length;
+    copyArrayPtr->used = length;
+    copyArrayPtr->allocated = length;
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
+
+    SET_BYTEARRAY(&ir, copyArrayPtr);
+    Tcl_StoreIntRep(copyPtr, &properByteArrayType, &ir);
 }
 
 /*
@@ -657,9 +789,7 @@ DupByteArrayInternalRep(
  *
  * UpdateStringOfByteArray --
  *
- *	Update the string representation for a ByteArray data object. Note:
- *	This procedure does not invalidate an existing old string rep so
- *	storage will be lost if this has not already been done.
+ *	Update the string representation for a ByteArray data object.
  *
  * Results:
  *	None.
@@ -667,9 +797,6 @@ DupByteArrayInternalRep(
  * Side effects:
  *	The object's string is set to a valid string that results from the
  *	ByteArray-to-string conversion.
- *
- *	The object becomes a string object -- the internal rep is discarded
- *	and the typePtr becomes NULL.
  *
  *----------------------------------------------------------------------
  */
@@ -679,41 +806,37 @@ UpdateStringOfByteArray(
     Tcl_Obj *objPtr)		/* ByteArray object whose string rep to
 				 * update. */
 {
-    int i, length, size;
-    unsigned char *src;
-    char *dst;
-    ByteArray *byteArrayPtr;
-
-    byteArrayPtr = GET_BYTEARRAY(objPtr);
-    src = byteArrayPtr->bytes;
-    length = byteArrayPtr->used;
+    const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
+    ByteArray *byteArrayPtr = GET_BYTEARRAY(irPtr);
+    unsigned char *src = byteArrayPtr->bytes;
+    unsigned int i, length = byteArrayPtr->used;
+    unsigned int size = length;
 
     /*
      * How much space will string rep need?
      */
 
-    size = length;
-    for (i = 0; i < length && size >= 0; i++) {
+    for (i = 0; i < length && size <= INT_MAX; i++) {
 	if ((src[i] == 0) || (src[i] > 127)) {
 	    size++;
 	}
     }
-    if (size < 0) {
+    if (size > INT_MAX) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
-    dst = ckalloc(size + 1);
-    objPtr->bytes = dst;
-    objPtr->length = size;
-
     if (size == length) {
-	memcpy(dst, src, (size_t) size);
-	dst[size] = '\0';
+	char *dst = Tcl_InitStringRep(objPtr, (char *)src, size);
+
+	TclOOM(dst, size);
     } else {
+	char *dst = Tcl_InitStringRep(objPtr, NULL, size);
+
+	TclOOM(dst, size);
 	for (i = 0; i < length; i++) {
 	    dst += Tcl_UniCharToUtf(src[i], dst);
 	}
-	*dst = '\0';
+	(void) Tcl_InitStringRep(objPtr, NULL, size);
     }
 }
 
@@ -743,7 +866,8 @@ TclAppendBytesToByteArray(
     int len)
 {
     ByteArray *byteArrayPtr;
-    int needed;
+    unsigned int length, needed;
+    Tcl_ObjIntRep *irPtr;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
@@ -753,57 +877,80 @@ TclAppendBytesToByteArray(
 		"TclAppendBytesToByteArray");
     }
     if (len == 0) {
-	/* Append zero bytes is a no-op. */
+	/*
+	 * Append zero bytes is a no-op.
+	 */
+
 	return;
     }
-    if ((objPtr->typePtr != &properByteArrayType)
-	    && (objPtr->typePtr != &tclByteArrayType)) {
-	SetByteArrayFromAny(NULL, objPtr);
-    }
-    byteArrayPtr = GET_BYTEARRAY(objPtr);
 
-    if (len > INT_MAX - byteArrayPtr->used) {
+    length = (unsigned int) len;
+
+    irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
+    if (irPtr == NULL) {
+	irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+	if (irPtr == NULL) {
+	    SetByteArrayFromAny(NULL, objPtr);
+	    irPtr = TclFetchIntRep(objPtr, &properByteArrayType);
+	    if (irPtr == NULL) {
+		irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+	    }
+	}
+    }
+    byteArrayPtr = GET_BYTEARRAY(irPtr);
+
+    if (length > INT_MAX - byteArrayPtr->used) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
-    needed = byteArrayPtr->used + len;
+    needed = byteArrayPtr->used + length;
     /*
      * If we need to, resize the allocated space in the byte array.
      */
 
     if (needed > byteArrayPtr->allocated) {
 	ByteArray *ptr = NULL;
-	int attempt;
+	unsigned int attempt;
 
 	if (needed <= INT_MAX/2) {
-	    /* Try to allocate double the total space that is needed. */
+	    /*
+	     * Try to allocate double the total space that is needed.
+	     */
+
 	    attempt = 2 * needed;
-	    ptr = attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    ptr = (ByteArray *)attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	if (ptr == NULL) {
-	    /* Try to allocate double the increment that is needed (plus). */
+	    /*
+	     * Try to allocate double the increment that is needed (plus).
+	     */
+
 	    unsigned int limit = INT_MAX - needed;
-	    unsigned int extra = len + TCL_MIN_GROWTH;
+	    unsigned int extra = length + TCL_MIN_GROWTH;
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
 	    attempt = needed + growth;
-	    ptr = attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    ptr = (ByteArray *)attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	if (ptr == NULL) {
-	    /* Last chance: Try to allocate exactly what is needed. */
+	    /*
+	     * Last chance: Try to allocate exactly what is needed.
+	     */
+
 	    attempt = needed;
-	    ptr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    ptr = (ByteArray *)ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	byteArrayPtr = ptr;
 	byteArrayPtr->allocated = attempt;
-	SET_BYTEARRAY(objPtr, byteArrayPtr);
+	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
 
     if (bytes) {
-	memcpy(byteArrayPtr->bytes + byteArrayPtr->used, bytes, len);
+	memcpy(byteArrayPtr->bytes + byteArrayPtr->used, bytes, length);
     }
-    byteArrayPtr->used += len;
+    byteArrayPtr->used += length;
     TclInvalidateStringRep(objPtr);
+    objPtr->typePtr = &properByteArrayType;
 }
 
 /*
@@ -853,7 +1000,7 @@ TclInitBinaryCmd(
 
 static int
 BinaryFormatCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -865,7 +1012,7 @@ BinaryFormatCmd(
     int count;			/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
-    const char *format;	/* Pointer to current position in format
+    const char *format;		/* Pointer to current position in format
 				 * string. */
     Tcl_Obj *resultPtr = NULL;	/* Object holding result buffer. */
     unsigned char *buffer;	/* Start of result buffer. */
@@ -1046,14 +1193,14 @@ BinaryFormatCmd(
      * bytes and filling with nulls.
      */
 
-    resultPtr = Tcl_NewObj();
+    TclNewObj(resultPtr);
     buffer = Tcl_SetByteArrayLength(resultPtr, length);
-    memset(buffer, 0, (size_t) length);
+    memset(buffer, 0, length);
 
     /*
-     * Pack the data into the result object. Note that we can skip the
-     * error checking during this pass, since we have already parsed the
-     * string once.
+     * Pack the data into the result object. Note that we can skip the error
+     * checking during this pass, since we have already parsed the string
+     * once.
      */
 
     arg = 2;
@@ -1085,10 +1232,10 @@ BinaryFormatCmd(
 		count = 1;
 	    }
 	    if (length >= count) {
-		memcpy(cursor, bytes, (size_t) count);
+		memcpy(cursor, bytes, count);
 	    } else {
-		memcpy(cursor, bytes, (size_t) length);
-		memset(cursor + length, pad, (size_t) (count - length));
+		memcpy(cursor, bytes, length);
+		memset(cursor + length, pad, count - length);
 	    }
 	    cursor += count;
 	    break;
@@ -1187,7 +1334,7 @@ BinaryFormatCmd(
 		    if (c > 16) {
 			c += ('A' - 'a');
 		    }
-		    value |= (c & 0xf);
+		    value |= (c & 0xF);
 		    if (offset % 2) {
 			*cursor++ = (char) value;
 			value = 0;
@@ -1209,9 +1356,9 @@ BinaryFormatCmd(
 		    if (c > 16) {
 			c += ('A' - 'a');
 		    }
-		    value |= ((c << 4) & 0xf0);
+		    value |= ((c << 4) & 0xF0);
 		    if (offset % 2) {
-			*cursor++ = UCHAR(value & 0xff);
+			*cursor++ = UCHAR(value & 0xFF);
 			value = 0;
 		    }
 		}
@@ -1266,7 +1413,7 @@ BinaryFormatCmd(
 	    }
 	    arg++;
 	    for (i = 0; i < count; i++) {
-		if (FormatNumber(interp, cmd, listv[i], &cursor)!=TCL_OK) {
+		if (FormatNumber(interp, cmd, listv[i], &cursor) != TCL_OK) {
 		    Tcl_DecrRefCount(resultPtr);
 		    return TCL_ERROR;
 		}
@@ -1277,7 +1424,7 @@ BinaryFormatCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    memset(cursor, 0, (size_t) count);
+	    memset(cursor, 0, count);
 	    cursor += count;
 	    break;
 	case 'X':
@@ -1326,7 +1473,7 @@ BinaryFormatCmd(
  badField:
     {
 	Tcl_UniChar ch = 0;
-	char buf[TCL_UTF_MAX + 1];
+	char buf[5] = "";
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
@@ -1358,7 +1505,7 @@ BinaryFormatCmd(
 
 int
 BinaryScanCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1370,15 +1517,14 @@ BinaryScanCmd(
     int count;			/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
-    const char *format;	/* Pointer to current position in format
+    const char *format;		/* Pointer to current position in format
 				 * string. */
     Tcl_Obj *resultPtr = NULL;	/* Object holding result buffer. */
     unsigned char *buffer;	/* Start of result buffer. */
     const char *errorString;
     const char *str;
-    int offset, size, length;
+    int offset, size, length, i;
 
-    int i;
     Tcl_Obj *valuePtr, *elementPtr;
     Tcl_HashTable numberCacheHash;
     Tcl_HashTable *numberCachePtr;
@@ -1402,7 +1548,8 @@ BinaryScanCmd(
 	}
 	switch (cmd) {
 	case 'a':
-	case 'A': {
+	case 'A':
+	case 'C': {
 	    unsigned char *src;
 
 	    if (arg >= objc) {
@@ -1424,12 +1571,20 @@ BinaryScanCmd(
 	    size = count;
 
 	    /*
-	     * Trim trailing nulls and spaces, if necessary.
+	     * Apply C string semantics or trim trailing
+	     * nulls and spaces, if necessary.
 	     */
 
-	    if (cmd == 'A') {
+	    if (cmd == 'C') {
+		for (i = 0; i < size; i++) {
+		    if (src[i] == '\0') {
+			size = i;
+			break;
+		    }
+		}
+	    } else if (cmd == 'A') {
 		while (size > 0) {
-		    if (src[size-1] != '\0' && src[size-1] != ' ') {
+		    if (src[size - 1] != '\0' && src[size - 1] != ' ') {
 			break;
 		    }
 		    size--;
@@ -1479,7 +1634,7 @@ BinaryScanCmd(
 		}
 	    }
 	    src = buffer + offset;
-	    valuePtr = Tcl_NewObj();
+	    TclNewObj(valuePtr);
 	    Tcl_SetObjLength(valuePtr, count);
 	    dest = TclGetString(valuePtr);
 
@@ -1534,7 +1689,7 @@ BinaryScanCmd(
 		}
 	    }
 	    src = buffer + offset;
-	    valuePtr = Tcl_NewObj();
+	    TclNewObj(valuePtr);
 	    Tcl_SetObjLength(valuePtr, count);
 	    dest = TclGetString(valuePtr);
 
@@ -1545,7 +1700,7 @@ BinaryScanCmd(
 		    } else {
 			value = *src++;
 		    }
-		    *dest++ = hexdigit[value & 0xf];
+		    *dest++ = hexdigit[value & 0xF];
 		}
 	    } else {
 		for (i = 0; i < count; i++) {
@@ -1554,7 +1709,7 @@ BinaryScanCmd(
 		    } else {
 			value = *src++;
 		    }
-		    *dest++ = hexdigit[(value >> 4) & 0xf];
+		    *dest++ = hexdigit[(value >> 4) & 0xF];
 		}
 	    }
 
@@ -1618,7 +1773,7 @@ BinaryScanCmd(
 		if ((length - offset) < (count * size)) {
 		    goto done;
 		}
-		valuePtr = Tcl_NewObj();
+		TclNewObj(valuePtr);
 		src = buffer + offset;
 		for (i = 0; i < count; i++) {
 		    elementPtr = ScanNumber(src, cmd, flags, &numberCachePtr);
@@ -1680,7 +1835,7 @@ BinaryScanCmd(
      */
 
  done:
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(arg - 3));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(arg - 3));
     DeleteScanNumberCache(numberCachePtr);
 
     return TCL_OK;
@@ -1696,7 +1851,7 @@ BinaryScanCmd(
  badField:
     {
 	Tcl_UniChar ch = 0;
-	char buf[TCL_UTF_MAX + 1];
+	char buf[5] = "";
 
 	TclUtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
@@ -1909,8 +2064,8 @@ CopyNumber(
 	memcpy(to, from, length);
 	break;
     case 1: {
-	const unsigned char *fromPtr = from;
-	unsigned char *toPtr = to;
+	const unsigned char *fromPtr = (const unsigned char *)from;
+	unsigned char *toPtr = (unsigned char *)to;
 
 	switch (length) {
 	case 4:
@@ -1933,8 +2088,8 @@ CopyNumber(
 	break;
     }
     case 2: {
-	const unsigned char *fromPtr = from;
-	unsigned char *toPtr = to;
+	const unsigned char *fromPtr = (const unsigned char *)from;
+	unsigned char *toPtr = (unsigned char *)to;
 
 	toPtr[0] = fromPtr[4];
 	toPtr[1] = fromPtr[5];
@@ -1947,8 +2102,8 @@ CopyNumber(
 	break;
     }
     case 3: {
-	const unsigned char *fromPtr = from;
-	unsigned char *toPtr = to;
+	const unsigned char *fromPtr = (const unsigned char *)from;
+	unsigned char *toPtr = (unsigned char *)to;
 
 	toPtr[0] = fromPtr[3];
 	toPtr[1] = fromPtr[2];
@@ -2003,10 +2158,11 @@ FormatNumber(
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    if (src->typePtr != &tclDoubleType) {
+	    const Tcl_ObjIntRep *irPtr = TclFetchIntRep(src, &tclDoubleType);
+	    if (irPtr == NULL) {
 		return TCL_ERROR;
 	    }
-	    dvalue = src->internalRep.doubleValue;
+	    dvalue = irPtr->doubleValue;
 	}
 	CopyNumber(&dvalue, *cursorPtr, sizeof(double), type);
 	*cursorPtr += sizeof(double);
@@ -2022,10 +2178,12 @@ FormatNumber(
 	 */
 
 	if (Tcl_GetDoubleFromObj(interp, src, &dvalue) != TCL_OK) {
-	    if (src->typePtr != &tclDoubleType) {
+	    const Tcl_ObjIntRep *irPtr = TclFetchIntRep(src, &tclDoubleType);
+
+	    if (irPtr == NULL) {
 		return TCL_ERROR;
 	    }
-	    dvalue = src->internalRep.doubleValue;
+	    dvalue = irPtr->doubleValue;
 	}
 
 	/*
@@ -2034,7 +2192,7 @@ FormatNumber(
 	 * valid range for float.
 	 */
 
-	if (fabs(dvalue) > (double)FLT_MAX) {
+	if (fabs(dvalue) > (double) FLT_MAX) {
 	    fvalue = (dvalue >= 0.0) ? FLT_MAX : -FLT_MAX;
 	} else {
 	    fvalue = (float) dvalue;
@@ -2155,9 +2313,9 @@ ScanNumber(
     int type,			/* Format character from "binary scan" */
     int flags,			/* Format field flags */
     Tcl_HashTable **numberCachePtrPtr)
-				/* Place to look for cache of scanned
-				 * value objects, or NULL if too many
-				 * different numbers have been scanned. */
+				/* Place to look for cache of scanned value
+				 * objects, or NULL if too many different
+				 * numbers have been scanned. */
 {
     long value;
     float fvalue;
@@ -2231,6 +2389,7 @@ ScanNumber(
 	/*
 	 * Check to see if the value was sign extended properly on systems
 	 * where an int is more than 32-bits.
+	 *
 	 * We avoid caching unsigned integers as we cannot distinguish between
 	 * 32bit signed and unsigned in the hash (short and char are ok).
 	 */
@@ -2238,26 +2397,27 @@ ScanNumber(
 	if (flags & BINARY_UNSIGNED) {
 	    return Tcl_NewWideIntObj((Tcl_WideInt)(unsigned long)value);
 	}
-	if ((value & (((unsigned) 1)<<31)) && (value > 0)) {
-	    value -= (((unsigned) 1)<<31);
-	    value -= (((unsigned) 1)<<31);
+	if ((value & (((unsigned) 1) << 31)) && (value > 0)) {
+	    value -= (((unsigned) 1) << 31);
+	    value -= (((unsigned) 1) << 31);
 	}
 
     returnNumericObject:
 	if (*numberCachePtrPtr == NULL) {
-	    return Tcl_NewLongObj(value);
+	    return Tcl_NewWideIntObj(value);
 	} else {
-	    register Tcl_HashTable *tablePtr = *numberCachePtrPtr;
-	    register Tcl_HashEntry *hPtr;
+	    Tcl_HashTable *tablePtr = *numberCachePtrPtr;
+	    Tcl_HashEntry *hPtr;
 	    int isNew;
 
 	    hPtr = Tcl_CreateHashEntry(tablePtr, INT2PTR(value), &isNew);
 	    if (!isNew) {
-		return Tcl_GetHashValue(hPtr);
+		return (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 	    }
 	    if (tablePtr->numEntries <= BINARY_SCAN_MAX_CACHE) {
-		register Tcl_Obj *objPtr = Tcl_NewLongObj(value);
+		Tcl_Obj *objPtr;
 
+		TclNewIntObj(objPtr, value);
 		Tcl_IncrRefCount(objPtr);
 		Tcl_SetHashValue(hPtr, objPtr);
 		return objPtr;
@@ -2274,7 +2434,7 @@ ScanNumber(
 
 	    DeleteScanNumberCache(tablePtr);
 	    *numberCachePtrPtr = NULL;
-	    return Tcl_NewLongObj(value);
+	    return Tcl_NewWideIntObj(value);
 	}
 
 	/*
@@ -2308,8 +2468,9 @@ ScanNumber(
 	    Tcl_Obj *bigObj = NULL;
 	    mp_int big;
 
-	    TclInitBignumFromWideUInt(&big, uwvalue);
-	    bigObj = Tcl_NewBignumObj(&big);
+	    if (mp_init_u64(&big, uwvalue) == MP_OKAY) {
+		bigObj = Tcl_NewBignumObj(&big);
+	    }
 	    return bigObj;
 	}
 	return Tcl_NewWideIntObj((Tcl_WideInt) uwvalue);
@@ -2375,7 +2536,7 @@ DeleteScanNumberCache(
 
     hEntry = Tcl_FirstHashEntry(numberCachePtr, &search);
     while (hEntry != NULL) {
-	register Tcl_Obj *value = Tcl_GetHashValue(hEntry);
+	Tcl_Obj *value = (Tcl_Obj *)Tcl_GetHashValue(hEntry);
 
 	if (value != NULL) {
 	    Tcl_DecrRefCount(value);
@@ -2421,7 +2582,7 @@ DeleteScanNumberCache(
 
 static int
 BinaryEncodeHex(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2440,8 +2601,8 @@ BinaryEncodeHex(
     data = Tcl_GetByteArrayFromObj(objv[1], &count);
     cursor = Tcl_SetByteArrayLength(resultObj, count * 2);
     for (offset = 0; offset < count; ++offset) {
-	*cursor++ = HexDigits[((data[offset] >> 4) & 0x0f)];
-	*cursor++ = HexDigits[(data[offset] & 0x0f)];
+	*cursor++ = HexDigits[(data[offset] >> 4) & 0x0F];
+	*cursor++ = HexDigits[data[offset] & 0x0F];
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
@@ -2465,7 +2626,7 @@ BinaryEncodeHex(
 
 static int
 BinaryDecodeHex(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2473,7 +2634,8 @@ BinaryDecodeHex(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor, c;
-    int i, index, value, size, count = 0, cut = 0, strict = 0;
+    int i, index, value, size, pure = 1, count = 0, cut = 0, strict = 0;
+    int ucs4;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -2481,7 +2643,7 @@ BinaryDecodeHex(
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
 	return TCL_ERROR;
     }
-    for (i = 1; i < objc-1; ++i) {
+    for (i = 1; i < objc - 1; ++i) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
 		TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2494,14 +2656,18 @@ BinaryDecodeHex(
     }
 
     TclNewObj(resultObj);
-    datastart = data = (unsigned char *)
-	    TclGetStringFromObj(objv[objc-1], &count);
+    data = TclGetBytesFromObj(NULL, objv[objc - 1], &count);
+    if (data == NULL) {
+	pure = 0;
+	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
+    }
+    datastart = data;
     dataend = data + count;
     size = (count + 1) / 2;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
     while (data < dataend) {
 	value = 0;
-	for (i=0 ; i<2 ; i++) {
+	for (i = 0 ; i < 2 ; i++) {
 	    if (data >= dataend) {
 		value <<= 4;
 		break;
@@ -2524,7 +2690,7 @@ BinaryDecodeHex(
 	    if (c > 16) {
 		c += ('A' - 'a');
 	    }
-	    value |= (c & 0xf);
+	    value |= c & 0xF;
 	}
 	if (i < 2) {
 	    cut++;
@@ -2540,10 +2706,16 @@ BinaryDecodeHex(
     return TCL_OK;
 
   badChar:
+    if (pure) {
+	ucs4 = c;
+    } else {
+	TclUtfToUCS4((const char *)(data - 1), &ucs4);
+    }
     TclDecrRefCount(resultObj);
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid hexadecimal digit \"%c\" at position %d",
-	    c, (int) (data - datastart - 1)));
+	    "invalid hexadecimal digit \"%c\" (U+%06X) at position %d",
+	    ucs4, ucs4, (int) (data - datastart - 1)));
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     return TCL_ERROR;
 }
 
@@ -2552,16 +2724,10 @@ BinaryDecodeHex(
  *
  * BinaryEncode64 --
  *
- *	This implements a generic 6 bit binary encoding. Input is broken into
- *	6 bit chunks and a lookup table passed in via clientData is used to
- *	turn these values into output characters. This is used to implement
- *	base64 binary encodings.
+ *	This procedure implements the "binary encode base64" Tcl command.
  *
  * Results:
- *	Interp result set to an encoded byte array object
- *
- * Side effects:
- *	None
+ *	The base64 encoded value prescribed by the input arguments.
  *
  *----------------------------------------------------------------------
  */
@@ -2584,33 +2750,33 @@ BinaryDecodeHex(
 
 static int
 BinaryEncode64(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj;
-    unsigned char *data, *cursor, *limit;
+    unsigned char *data, *limit;
     int maxlen = 0;
     const char *wrapchar = "\n";
     int wrapcharlen = 1;
-    int offset, i, index, size, outindex = 0, count = 0;
-    enum {OPT_MAXLEN, OPT_WRAPCHAR };
+    int offset, i, index, size, outindex = 0, count = 0, purewrap = 1;
+    enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
-    if (objc < 2 || objc%2 != 0) {
+    if (objc < 2 || objc % 2 != 0) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-maxlen len? ?-wrapchar char? data");
 	return TCL_ERROR;
     }
-    for (i = 1; i < objc-1; i += 2) {
+    for (i = 1; i < objc - 1; i += 2) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
 		TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
 	case OPT_MAXLEN:
-	    if (Tcl_GetIntFromObj(interp, objv[i+1], &maxlen) != TCL_OK) {
+	    if (Tcl_GetIntFromObj(interp, objv[i + 1], &maxlen) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (maxlen < 0) {
@@ -2622,18 +2788,25 @@ BinaryEncode64(
 	    }
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = TclGetStringFromObj(objv[i+1], &wrapcharlen);
-	    if (wrapcharlen == 0) {
-		maxlen = 0;
+	    wrapchar = (const char *)TclGetBytesFromObj(NULL,
+		    objv[i + 1], &wrapcharlen);
+	    if (wrapchar == NULL) {
+		purewrap = 0;
+		wrapchar = TclGetStringFromObj(objv[i + 1], &wrapcharlen);
 	    }
 	    break;
 	}
     }
+    if (wrapcharlen == 0) {
+	maxlen = 0;
+    }
 
-    resultObj = Tcl_NewObj();
-    data = Tcl_GetByteArrayFromObj(objv[objc-1], &count);
+    TclNewObj(resultObj);
+    data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
     if (count > 0) {
-	size = (((count * 4) / 3) + 3) & ~3; /* ensure 4 byte chunks */
+	unsigned char *cursor = NULL;
+
+	size = (((count * 4) / 3) + 3) & ~3;	/* ensure 4 byte chunks */
 	if (maxlen > 0 && size > maxlen) {
 	    int adjusted = size + (wrapcharlen * (size / maxlen));
 
@@ -2641,24 +2814,33 @@ BinaryEncode64(
 		adjusted -= wrapcharlen;
 	    }
 	    size = adjusted;
+
+	    if (purewrap == 0) {
+		/* Wrapchar is (possibly) non-byte, so build result as
+		 * general string, not bytearray */
+		Tcl_SetObjLength(resultObj, size);
+		cursor = (unsigned char *) TclGetString(resultObj);
+	    }
 	}
-	cursor = Tcl_SetByteArrayLength(resultObj, size);
+	if (cursor == NULL) {
+	    cursor = Tcl_SetByteArrayLength(resultObj, size);
+	}
 	limit = cursor + size;
-	for (offset = 0; offset < count; offset+=3) {
+	for (offset = 0; offset < count; offset += 3) {
 	    unsigned char d[3] = {0, 0, 0};
 
-	    for (i = 0; i < 3 && offset+i < count; ++i) {
+	    for (i = 0; i < 3 && offset + i < count; ++i) {
 		d[i] = data[offset + i];
 	    }
 	    OUTPUT(B64Digits[d[0] >> 2]);
 	    OUTPUT(B64Digits[((d[0] & 0x03) << 4) | (d[1] >> 4)]);
-	    if (offset+1 < count) {
-		OUTPUT(B64Digits[((d[1] & 0x0f) << 2) | (d[2] >> 6)]);
+	    if (offset + 1 < count) {
+		OUTPUT(B64Digits[((d[1] & 0x0F) << 2) | (d[2] >> 6)]);
 	    } else {
 		OUTPUT(B64Digits[64]);
 	    }
 	    if (offset+2 < count) {
-		OUTPUT(B64Digits[d[2] & 0x3f]);
+		OUTPUT(B64Digits[d[2] & 0x3F]);
 	    } else {
 		OUTPUT(B64Digits[64]);
 	    }
@@ -2690,7 +2872,7 @@ BinaryEncode64(
 
 static int
 BinaryEncodeUu(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2699,37 +2881,69 @@ BinaryEncodeUu(
     unsigned char *data, *start, *cursor;
     int offset, count, rawLength, n, i, j, bits, index;
     int lineLength = 61;
-    const unsigned char SingleNewline[] = { (unsigned char) '\n' };
+    const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
     int wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
-    if (objc < 2 || objc%2 != 0) {
+    if (objc < 2 || objc % 2 != 0) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-maxlen len? ?-wrapchar char? data");
 	return TCL_ERROR;
     }
-    for (i = 1; i < objc-1; i += 2) {
+    for (i = 1; i < objc - 1; i += 2) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
 		TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
 	case OPT_MAXLEN:
-	    if (Tcl_GetIntFromObj(interp, objv[i+1], &lineLength) != TCL_OK) {
+	    if (Tcl_GetIntFromObj(interp, objv[i + 1],
+		    &lineLength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (lineLength < 3 || lineLength > 85) {
+	    if (lineLength < 5 || lineLength > 85) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"line length out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
 			"LINE_LENGTH", NULL);
 		return TCL_ERROR;
 	    }
+	    lineLength = ((lineLength - 1) & -4) + 1; /* 5, 9, 13 ... */
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = Tcl_GetByteArrayFromObj(objv[i+1], &wrapcharlen);
+	    wrapchar = (const unsigned char *) TclGetStringFromObj(
+		    objv[i + 1], &wrapcharlen);
+	    {
+		const unsigned char *p = wrapchar;
+		int numBytes = wrapcharlen;
+
+		while (numBytes) {
+		    switch (*p) {
+			case '\t':
+			case '\v':
+			case '\f':
+			case '\r':
+			    p++; numBytes--;
+			    continue;
+			case '\n':
+			    numBytes--;
+			    break;
+			default:
+			badwrap:
+			    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+				    "invalid wrapchar; will defeat decoding",
+				    -1));
+			    Tcl_SetErrorCode(interp, "TCL", "BINARY",
+				    "ENCODE", "WRAPCHAR", NULL);
+			    return TCL_ERROR;
+		    }
+		}
+		if (numBytes) {
+		    goto badwrap;
+		}
+	    }
 	    break;
 	}
     }
@@ -2739,9 +2953,9 @@ BinaryEncodeUu(
      * enough".
      */
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     offset = 0;
-    data = Tcl_GetByteArrayFromObj(objv[objc-1], &count);
+    data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
     rawLength = (lineLength - 1) * 3 / 4;
     start = cursor = Tcl_SetByteArrayLength(resultObj,
 	    (lineLength + wrapcharlen) *
@@ -2762,19 +2976,19 @@ BinaryEncodeUu(
 	    lineLen = rawLength;
 	}
 	*cursor++ = UueDigits[lineLen];
-	for (i=0 ; i<lineLen ; i++) {
+	for (i = 0 ; i < lineLen ; i++) {
 	    n <<= 8;
 	    n |= data[offset++];
 	    for (bits += 8; bits > 6 ; bits -= 6) {
-		*cursor++ = UueDigits[(n >> (bits-6)) & 0x3f];
+		*cursor++ = UueDigits[(n >> (bits - 6)) & 0x3F];
 	    }
 	}
 	if (bits > 0) {
 	    n <<= 8;
-	    *cursor++ = UueDigits[(n >> (bits + 2)) & 0x3f];
+	    *cursor++ = UueDigits[(n >> (bits + 2)) & 0x3F];
 	    bits = 0;
 	}
-	for (j=0 ; j<wrapcharlen ; ++j) {
+	for (j = 0 ; j < wrapcharlen ; ++j) {
 	    *cursor++ = wrapchar[j];
 	}
     }
@@ -2783,7 +2997,7 @@ BinaryEncodeUu(
      * Fix the length of the output bytearray.
      */
 
-    Tcl_SetByteArrayLength(resultObj, cursor-start);
+    Tcl_SetByteArrayLength(resultObj, cursor - start);
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
@@ -2806,7 +3020,7 @@ BinaryEncodeUu(
 
 static int
 BinaryDecodeUu(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2814,16 +3028,17 @@ BinaryDecodeUu(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor;
-    int i, index, size, count = 0, strict = 0, lineLen;
+    int i, index, size, pure = 1, count = 0, strict = 0, lineLen;
     unsigned char c;
-    enum {OPT_STRICT };
+    int ucs4;
+    enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
     if (objc < 2 || objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
 	return TCL_ERROR;
     }
-    for (i = 1; i < objc-1; ++i) {
+    for (i = 1; i < objc - 1; ++i) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
 		TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2836,8 +3051,12 @@ BinaryDecodeUu(
     }
 
     TclNewObj(resultObj);
-    datastart = data = (unsigned char *)
-	    TclGetStringFromObj(objv[objc-1], &count);
+    data = TclGetBytesFromObj(NULL, objv[objc - 1], &count);
+    if (data == NULL) {
+	pure = 0;
+	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
+    }
+    datastart = data;
     dataend = data + count;
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -2862,14 +3081,14 @@ BinaryDecodeUu(
 		i--;
 		continue;
 	    }
-	    lineLen = (c - 32) & 0x3f;
+	    lineLen = (c - 32) & 0x3F;
 	}
 
 	/*
 	 * Now we read a four-character grouping.
 	 */
 
-	for (i=0 ; i<4 ; i++) {
+	for (i = 0 ; i < 4 ; i++) {
 	    if (data < dataend) {
 		d[i] = c = *data++;
 		if (c < 32 || c > 96) {
@@ -2891,14 +3110,14 @@ BinaryDecodeUu(
 	 */
 
 	if (lineLen > 0) {
-	    *cursor++ = (((d[0] - 0x20) & 0x3f) << 2)
-		    | (((d[1] - 0x20) & 0x3f) >> 4);
+	    *cursor++ = (((d[0] - 0x20) & 0x3F) << 2)
+		    | (((d[1] - 0x20) & 0x3F) >> 4);
 	    if (--lineLen > 0) {
-		*cursor++ = (((d[1] - 0x20) & 0x3f) << 4)
-			| (((d[2] - 0x20) & 0x3f) >> 2);
+		*cursor++ = (((d[1] - 0x20) & 0x3F) << 4)
+			| (((d[2] - 0x20) & 0x3F) >> 2);
 		if (--lineLen > 0) {
-		    *cursor++ = (((d[2] - 0x20) & 0x3f) << 6)
-			    | (((d[3] - 0x20) & 0x3f));
+		    *cursor++ = (((d[2] - 0x20) & 0x3F) << 6)
+			    | (((d[3] - 0x20) & 0x3F));
 		    lineLen--;
 		}
 	    }
@@ -2943,9 +3162,14 @@ BinaryDecodeUu(
     return TCL_ERROR;
 
   badUu:
+    if (pure) {
+	ucs4 = c;
+    } else {
+	TclUtfToUCS4((const char *)(data - 1), &ucs4);
+    }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid uuencode character \"%c\" at position %d",
-	    c, (int) (data - datastart - 1)));
+	    "invalid uuencode character \"%c\" (U+%06X) at position %d",
+	    ucs4, ucs4, (int) (data - datastart - 1)));
     Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
@@ -2969,7 +3193,7 @@ BinaryDecodeUu(
 
 static int
 BinaryDecode64(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2978,8 +3202,9 @@ BinaryDecode64(
     unsigned char *data, *datastart, *dataend, c = '\0';
     unsigned char *begin = NULL;
     unsigned char *cursor = NULL;
-    int strict = 0;
+    int pure = 1, strict = 0;
     int i, index, size, cut = 0, count = 0;
+    int ucs4;
     enum { OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -2987,7 +3212,7 @@ BinaryDecode64(
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
 	return TCL_ERROR;
     }
-    for (i = 1; i < objc-1; ++i) {
+    for (i = 1; i < objc - 1; ++i) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
 		TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3000,8 +3225,12 @@ BinaryDecode64(
     }
 
     TclNewObj(resultObj);
-    datastart = data = (unsigned char *)
-	    TclGetStringFromObj(objv[objc-1], &count);
+    data = TclGetBytesFromObj(NULL, objv[objc - 1], &count);
+    if (data == NULL) {
+	pure = 0;
+	data = (unsigned char *) TclGetStringFromObj(objv[objc - 1], &count);
+    }
+    datastart = data;
     dataend = data + count;
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -3028,6 +3257,14 @@ BinaryDecode64(
 	    } else if (i > 1) {
 		c = '=';
 	    } else {
+		if (strict && i <= 1) {
+		    /*
+		     * Single resp. unfulfilled char (each 4th next single
+		     * char) is rather bad64 error case in strict mode.
+		     */
+
+		    goto bad64;
+		}
 		cut += 3;
 		break;
 	    }
@@ -3041,35 +3278,41 @@ BinaryDecode64(
 
 	    if (cut) {
 		if (c == '=' && i > 1) {
-		     value <<= 6;
-		     cut++;
-		} else if (!strict && TclIsSpaceProc(c)) {
-		     i--;
+		    value <<= 6;
+		    cut++;
+		} else if (!strict) {
+		    i--;
 		} else {
 		    goto bad64;
 		}
 	    } else if (c >= 'A' && c <= 'Z') {
-		value = (value << 6) | ((c - 'A') & 0x3f);
+		value = (value << 6) | ((c - 'A') & 0x3F);
 	    } else if (c >= 'a' && c <= 'z') {
-		value = (value << 6) | ((c - 'a' + 26) & 0x3f);
+		value = (value << 6) | ((c - 'a' + 26) & 0x3F);
 	    } else if (c >= '0' && c <= '9') {
-		value = (value << 6) | ((c - '0' + 52) & 0x3f);
+		value = (value << 6) | ((c - '0' + 52) & 0x3F);
 	    } else if (c == '+') {
-		value = (value << 6) | 0x3e;
+		value = (value << 6) | 0x3E;
 	    } else if (c == '/') {
-		value = (value << 6) | 0x3f;
-	    } else if (c == '=') {
+		value = (value << 6) | 0x3F;
+	    } else if (c == '=' && (!strict || i > 1)) {
+		/*
+		 * "=" and "a=" is rather bad64 error case in strict mode.
+		 */
+
 		value <<= 6;
-		cut++;
-	    } else if (strict || !TclIsSpaceProc(c)) {
+		if (i) {
+		    cut++;
+		}
+	    } else if (strict) {
 		goto bad64;
 	    } else {
 		i--;
 	    }
 	}
-	*cursor++ = UCHAR((value >> 16) & 0xff);
-	*cursor++ = UCHAR((value >> 8) & 0xff);
-	*cursor++ = UCHAR(value & 0xff);
+	*cursor++ = UCHAR((value >> 16) & 0xFF);
+	*cursor++ = UCHAR((value >> 8) & 0xFF);
+	*cursor++ = UCHAR(value & 0xFF);
 
 	/*
 	 * Since = is only valid within the final block, if it was encountered
@@ -3081,11 +3324,6 @@ BinaryDecode64(
 	    if (strict) {
 		goto bad64;
 	    }
-	    for (; data < dataend; data++) {
-		if (!TclIsSpaceProc(*data)) {
-		    goto bad64;
-		}
-	    }
 	}
     }
     Tcl_SetByteArrayLength(resultObj, cursor - begin - cut);
@@ -3093,9 +3331,21 @@ BinaryDecode64(
     return TCL_OK;
 
   bad64:
+    if (pure) {
+	ucs4 = c;
+    } else {
+	/* The decoder is byte-oriented. If we saw a byte that's not a
+	 * valid member of the base64 alphabet, it could be the lead byte
+	 * of a multi-byte character. */
+
+	/* Safe because we know data is NUL-terminated */
+	TclUtfToUCS4((const char *)(data - 1), &ucs4);
+    }
+
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid base64 character \"%c\" at position %d",
-	    (char) c, (int) (data - datastart - 1)));
+	    "invalid base64 character \"%c\" (U+%06X) at position %d",
+	    ucs4, ucs4, (int) (data - datastart - 1)));
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 }
@@ -3107,4 +3357,3 @@ BinaryDecode64(
  * fill-column: 78
  * End:
  */
-

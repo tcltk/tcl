@@ -35,7 +35,6 @@ turned on by default.
 .
 Close and destroy the channel called \fIchannelId\fR. Note that this
 deletes all existing file-events registered on the channel.
-.VS 8.6
 If the \fIdirection\fR argument (which must be \fBread\fR or \fBwrite\fR or
 any unique abbreviation of them) is present, the channel will only be
 half-closed, so that it can go from being read-write to write-only or
@@ -45,7 +44,6 @@ write-only channels. Without the \fIdirection\fR argument, the channel is
 closed for both reading and writing (but only if those directions are
 currently open). It is an error to close a read-only channel for writing, or a
 write-only channel for reading.
-.VE 8.6
 .RS
 .PP
 As part of closing the channel, all buffered output is flushed to the
@@ -83,12 +81,10 @@ an error occurs while flushing output.  If a command in a command
 pipeline created with \fBopen\fR returns an error, \fBchan close\fR
 generates an error (similar to the \fBexec\fR command.)
 .PP
-.VS 8.6
 Note that half-closes of sockets and command pipelines can have important side
 effects because they result in a shutdown() or close() of the underlying
 system resource, which can change how other processes or systems respond to
 the Tcl program.
-.VE 8.6
 .RE
 .TP
 \fBchan configure \fIchannelId\fR ?\fIoptionName\fR? ?\fIvalue\fR? ?\fIoptionName value\fR?...
@@ -540,7 +536,6 @@ an extremely long line that exceeds the available memory to buffer it).
 Returns -1 if the channel was not opened for the mode in question.
 .TP
 \fBchan pipe\fR
-.VS 8.6
 Creates a standalone pipe whose read- and write-side channels are
 returned as a 2-element list, the first element being the read side and
 the second the write side. Can be useful e.g. to redirect
@@ -561,16 +556,13 @@ is most likely to show up when using pipelines for testing; care should be
 taken to ensure that deadlocks do not occur and that potential short reads are
 allowed for.
 .RE
-.VE 8.6
 .TP
 \fBchan pop \fIchannelId\fR
-.VS 8.6
 Removes the topmost transformation from the channel \fIchannelId\fR, if there
 is any. If there are no transformations added to \fIchannelId\fR, this is
 equivalent to \fBchan close\fR of that channel. The result is normally the
 empty string, but can be an error in some situations (i.e. where the
 underlying system stream is closed and that results in an error).
-.VE 8.6
 .TP
 \fBchan postevent \fIchannelId eventSpec\fR
 .
@@ -609,7 +601,6 @@ executed in the interpreter that set them up.
 .RE
 .TP
 \fBchan push \fIchannelId cmdPrefix\fR
-.VS 8.6
 Adds a new transformation on top of the channel \fIchannelId\fR. The
 \fIcmdPrefix\fR argument describes a list of one or more words which represent
 a handler that will be used to implement the transformation. The command
@@ -618,7 +609,6 @@ The result of this subcommand is a handle to the transformation. Note that it
 is important to make sure that the transformation is capable of supporting the
 channel mode that it is used with or this can make the channel neither
 readable nor writable.
-.VE 8.6
 .TP
 \fBchan puts\fR ?\fB\-nonewline\fR? ?\fIchannelId\fR? \fIstring\fR
 .
@@ -782,7 +772,7 @@ set offset 0
 \fI# Search for string "FOOBAR" in the file\fR
 while {[\fBchan gets\fR $f line] >= 0} {
     set idx [string first FOOBAR $line]
-    if {$idx > -1} {
+    if {$idx >= 0} {
         \fI# Found it; rewrite line\fR
 
         \fBchan seek\fR $f [expr {$offset + $idx}]

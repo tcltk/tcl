@@ -61,7 +61,7 @@ Tcl_RecordAndEval(
 				 * TCL_EVAL_GLOBAL means use Tcl_GlobalEval
 				 * instead of Tcl_Eval. */
 {
-    register Tcl_Obj *cmdPtr;
+    Tcl_Obj *cmdPtr;
     int result;
 
     if (cmd[0]) {
@@ -130,14 +130,14 @@ Tcl_RecordAndEvalObj(
     int result, call = 1;
     Tcl_CmdInfo info;
     HistoryObjs *histObjsPtr =
-	    Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
+	    (HistoryObjs *)Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
 
     /*
      * Create the references to the [::history add] command if necessary.
      */
 
     if (histObjsPtr == NULL) {
-	histObjsPtr = ckalloc(sizeof(HistoryObjs));
+	histObjsPtr = (HistoryObjs *)ckalloc(sizeof(HistoryObjs));
 	TclNewLiteralStringObj(histObjsPtr->historyObj, "::history");
 	TclNewLiteralStringObj(histObjsPtr->addObj, "add");
 	Tcl_IncrRefCount(histObjsPtr->historyObj);
@@ -211,9 +211,9 @@ Tcl_RecordAndEvalObj(
 static void
 DeleteHistoryObjs(
     ClientData clientData,
-    Tcl_Interp *interp)
+    TCL_UNUSED(Tcl_Interp *))
 {
-    register HistoryObjs *histObjsPtr = clientData;
+    HistoryObjs *histObjsPtr = (HistoryObjs *)clientData;
 
     TclDecrRefCount(histObjsPtr->historyObj);
     TclDecrRefCount(histObjsPtr->addObj);

@@ -8,14 +8,14 @@
 # Sourcing this file into Tcl runs the tests and generates output for errors.
 # No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -202,6 +202,28 @@ test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array:
 test var-1.19 {TclLookupVar, right error message when parsing variable name} -body {
     [format set] thisvar(doesntexist)
 } -returnCodes error -result {can't read "thisvar(doesntexist)": no such variable}
+test var-1.20 {TclLookupVar, regression on utf-8 variable names} -setup {
+    proc p [list \u20ac \xe4] {info vars}
+} -body {
+    # test variable with non-ascii name is available (euro and a-uml chars here):
+    list \
+	[p 1 2] \
+	[apply [list [list \u20ac \xe4] {info vars}] 1 2] \
+	[apply [list [list [list \u20ac \u20ac] [list \xe4 \xe4]] {info vars}]] \
+} -cleanup {
+    rename p {}
+} -result [lrepeat 3 [list \u20ac \xe4]]
+test var-1.21 {TclLookupVar, regression on utf-8 variable names} -setup {
+    proc p [list [list \u20ac v\u20ac] [list \xe4 v\xe4]] {list [set \u20ac] [set \xe4]}
+} -body {
+    # test variable with non-ascii name (and default) is resolvable (euro and a-uml chars here):
+    list \
+	[p] \
+	[apply [list [list \u20ac \xe4] {list [set \u20ac] [set \xe4]}] v\u20ac v\xe4] \
+	[apply [list [list [list \u20ac v\u20ac] [list \xe4 v\xe4]] {list [set \u20ac] [set \xe4]}]] \
+} -cleanup {
+    rename p {}
+} -result [lrepeat 3 [list v\u20ac v\xe4]]
 
 test var-2.1 {Tcl_LappendObjCmd, create var if new} {
     catch {unset x}
@@ -430,7 +452,7 @@ test var-7.4 {Tcl_VariableObjCmd, list of vars} -setup {
         variable three 3 four 4
     }
     list [lsort [info vars test_ns_var::*]] \
-         [namespace eval test_ns_var {expr $three+$four}]
+         [namespace eval test_ns_var {expr {$three+$four}}]
 } -result [list [lsort {::test_ns_var::four ::test_ns_var::three ::test_ns_var::two ::test_ns_var::one}] 7]
 test var-7.5 {Tcl_VariableObjCmd, value for last var is optional} -setup {
     catch {unset a}
@@ -1018,15 +1040,15 @@ test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
 } -result 0
 test var-22.1 {leak in localVarName intrep: Bug 80304238ac} -setup {
     proc doit {} {
-	interp create slave
-	slave eval {
+	interp create child
+	child eval {
 	    proc doit script {
 		eval $script
 		set foo bar
 	    }
 	    doit {foreach foo baz {}}
 	}
-	interp delete slave
+	interp delete child
     }
 } -constraints memory -body {
     set end [getbytes]

@@ -4,6 +4,9 @@
 # usage:
 #       astyle --options=astylerc *.[ch]
 
+# Do not create backup, annonying in the times of git
+suffix=none
+
 ## Bracket Style Options
 style=kr
 

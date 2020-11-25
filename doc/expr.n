@@ -1,7 +1,7 @@
 '\"
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-2000 Sun Microsystems, Inc.
-'\" Copyright (c) 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved
+'\" Copyright (c) 2005 Kevin B. Kenny <kennykb@acm.org>. All rights reserved
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -17,7 +17,7 @@ expr \- Evaluate an expression
 .BE
 .SH DESCRIPTION
 .PP
-Concatenates \fIarg\fRs, separated by a space, into an expression, and evaluates
+The \fIexpr\fR command concatenates \fIarg\fRs, separated by a space, into an expression, and evaluates
 that expression, returning its value.
 The operators permitted in an expression include a subset of
 the operators permitted in C expressions.  For those operators
@@ -41,27 +41,17 @@ When an expression evaluates to an integer, the value is the decimal form of
 the integer, and when an expression evaluates to a floating-point number, the
 value is the form produced by the \fB%g\fR format specifier of Tcl's
 \fBformat\fR command.
+.PP
+.VS "TIP 582"
+You can use \fB#\fR at any point in the expression (except inside double
+quotes or braces) to start a comment. Comments last to the end of the line or
+the end of the expression, whichever comes first.
+.VE "TIP 582"
 .SS OPERANDS
 .PP
 An expression consists of a combination of operands, operators, parentheses and
 commas, possibly with whitespace between any of these elements, which is
 ignored.
-An integer operand may be specified in decimal (the normal case, the optional
-first two characters are \fB0d\fR), binary
-(the first two characters are \fB0b\fR), octal
-(the first two characters are \fB0o\fR), or hexadecimal
-(the first two characters are \fB0x\fR) form.  For
-compatibility with older Tcl releases, an operand that begins with \fB0\fR is
-interpreted as an octal integer even if the second character is not \fBo\fR.
-A floating-point number may be specified in any of several
-common decimal formats, and may use the decimal point \fB.\fR,
-\fBe\fR or \fBE\fR for scientific notation, and
-the sign characters \fB+\fR and \fB\-\fR.  The
-following are all valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16.
-The strings \fBInf\fR
-and \fBNaN\fR, in any combination of case, are also recognized as floating point
-values.  An operand that doesn't have a numeric interpretation must be quoted
-with either braces or with double quotes.
 .PP
 An operand may be specified in any of the following ways:
 .IP [1]
@@ -97,12 +87,55 @@ and the value of \fBb\fR is 6.  The command on the left side of each line
 produces the value on the right side.
 .PP
 .CS
-.ta 6c
-\fBexpr\fR 3.1 + $a	\fI6.1\fR
-\fBexpr\fR 2 + "$a.$b"	\fI5.6\fR
-\fBexpr\fR 4*[llength "6 2"]	\fI8\fR
+.ta 9c
+\fBexpr\fR {3.1 + $a}	\fI6.1\fR
+\fBexpr\fR {2 + "$a.$b"}	\fI5.6\fR
+\fBexpr\fR {4*[llength "6 2"]}	\fI8\fR
 \fBexpr\fR {{word one} < "word $a"}	\fI0\fR
 .CE
+.PP
+\fBInteger value\fR
+.PP
+An integer operand may be specified in decimal (the normal case, the optional
+first two characters are \fB0d\fR), binary
+(the first two characters are \fB0b\fR), octal
+(the first two characters are \fB0o\fR), or hexadecimal
+(the first two characters are \fB0x\fR) form.  For
+compatibility with older Tcl releases, an operand that begins with \fB0\fR is
+interpreted as an octal integer even if the second character is not \fBo\fR.
+.PP
+\fBFloating-point value\fR
+.PP
+A floating-point number may be specified in any of several
+common decimal formats, and may use the decimal point \fB.\fR,
+\fBe\fR or \fBE\fR for scientific notation, and
+the sign characters \fB+\fR and \fB\-\fR.  The
+following are all valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16.
+The strings \fBInf\fR
+and \fBNaN\fR, in any combination of case, are also recognized as floating point
+values.  An operand that doesn't have a numeric interpretation must be quoted
+with either braces or with double quotes.
+.PP
+\fBBoolean value\fR
+.PP
+A boolean value may be represented by any of the values \fB0\fR, \fBfalse\fR, \fBno\fR,
+or \fBoff\fR and any of the values \fB1\fR, \fBtrue\fR, \fByes\fR, or \fBon\fR.
+.PP
+\fBDigit Separator\fR
+.PP
+Digits in any numeric value may be separated with one or more underscore
+characters, "\fB_\fR", to improve readability.  These separators may only
+appear between digits.  The separator may not appear at the start of a
+numeric value, between the leading 0 and radix specifier, or at the
+end of a numeric value.  Here are some examples:
+.PP
+.CS
+.ta 9c
+\fBexpr\fR 100_000_000		\fI100000000\fR
+\fBexpr\fR 0xffff_ffff		\fI4294967295\fR
+\fBformat\fR 0x%x 0b1111_1110_1101_1011		\fI0xfedb\fR
+.CE
+.PP
 .SS OPERATORS
 .PP
 For operators having both a numeric mode and a string mode, the numeric mode is
@@ -126,7 +159,8 @@ applied to integers.
 .TP 20
 \fB**\fR
 .
-Exponentiation.  Valid for numeric operands.
+Exponentiation.  Valid for numeric operands.  The maximum exponent value
+that Tcl can handle if the first number is an integer > 1 is 268435455.
 .TP 20
 \fB*\0\0/\0\0%\fR
 .
@@ -158,7 +192,18 @@ A right shift always propagates the sign bit.
 .TP 20
 \fB<\0\0>\0\0<=\0\0>=\fR
 .
-Boolean less than, greater than, less than or equal, and greater than or equal.
+Boolean numeric-preferring comparisons: less than, greater than, less than or
+equal, and greater than or equal. If either argument is not numeric, the
+comparison is done using UNICODE string comparison, as with the string
+comparison operators below, which have the same precedence.
+.TP 20
+\fBlt\0\0gt\0\0le\0\0ge\fR
+.VS "8.7, TIP461"
+Boolean string comparisons: less than, greater than, less than or equal, and
+greater than or equal. These always compare values using their UNICODE strings
+(also see \fBstring compare\fR), unlike with the numeric-preferring
+comparisons abov, which have the same precedence.
+.VE "8.7, TIP461"
 .TP 20
 \fB==\0\0!=\fR
 .
@@ -189,22 +234,29 @@ Bit-wise OR.  Valid for integer operands.
 \fB&&\fR
 .
 Logical AND.  If both operands are true, the result is 1, or 0 otherwise.
-
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
 .TP 20
 \fB||\fR
 .
 Logical OR.  If both operands are false, the result is 0, or 1 otherwise.
+This operator evaluates lazily; it only evaluates its second operand if it
+must in order to determine its result.
 .TP 20
-\fIx\fB?\fIy\fB:\fIz\fR
+\fIx \fB?\fI y \fB:\fI z\fR
 .
 If-then-else, as in C.  If \fIx\fR is false , the result is the value of
 \fIy\fR.  Otherwise the result is the value of \fIz\fR.
+This operator evaluates lazily; it evaluates only one of \fIy\fR or \fIz\fR.
 .PP
 The exponentiation operator promotes types in the same way that the multiply
 and divide operators do, and the result is is the same as the result of
 \fBpow\fR.
 Exponentiation groups right-to-left within a precedence level. Other binary
 operators group left-to-right.  For example, the value of
+.PP
 .PP
 .CS
 \fBexpr\fR {4*2 < 7}
@@ -224,7 +276,7 @@ which means that operands are not evaluated if they are
 not needed to determine the outcome.  For example, in
 .PP
 .CS
-\fBexpr\fR {$v ? [a] : [b]}
+\fBexpr\fR {$v?[a]:[b]}
 .CE
 .PP
 only one of \fB[a]\fR or \fB[b]\fR is evaluated,
@@ -336,38 +388,72 @@ This also avoids issues that can arise if Tcl is allowed to perform
 substitution on the value before \fBexpr\fR is called.
 .PP
 In the following example, the value of the expression is 11 because the Tcl parser first
-substitutes \fB$b\fR and \fBexpr\fR then substitutes \fB$a\fR.  Enclosing the
-expression in braces would result in a syntax error.
+substitutes \fB$b\fR and \fBexpr\fR then substitutes \fB$a\fR as part
+of evaluating the expression
+.QW "$a + 2*4" .
+Enclosing the
+expression in braces would result in a syntax error as \fB$b\fR does
+not evaluate to a numeric value.
+.PP
 .CS
 set a 3
 set b {$a + 2}
 \fBexpr\fR $b*4
 .CE
 .PP
-
-When an expression is generated at runtime, like the one above is, the bytcode
+When an expression is generated at runtime, like the one above is, the bytecode
 compiler must ensure that new code is generated each time the expression
 is evaluated.  This is the most costly kind of expression from a performance
 perspective.  In such cases, consider directly using the commands described in
 the \fBmathfunc\fR(n) or \fBmathop\fR(n) documentation instead of \fBexpr\fR.
-
+.PP
 Most expressions are not formed at runtime, but are literal strings or contain
 substitutions that don't introduce other substitutions.  To allow the bytecode
 compiler to work with an expression as a string literal at compilation time,
 ensure that it contains no substitutions or that it is enclosed in braces or
 otherwise quoted to prevent Tcl from performing substitutions, allowing
 \fBexpr\fR to perform them instead.
+.PP
+If it is necessary to include a non-constant expression string within the
+wider context of an otherwise-constant expression, the most efficient
+technique is to put the varying part inside a recursive \fBexpr\fR, as this at
+least allows for the compilation of the outer part, though it does mean that
+the varying part must itself be evaluated as a separate expression. Thus, in
+this example the result is 20 and the outer expression benefits from fully
+cached bytecode compilation.
+.PP
+.CS
+set a 3
+set b {$a + 2}
+\fBexpr\fR {[\fBexpr\fR $b] * 4}
+.CE
+.PP
+In general, you should enclose your expression in braces wherever possible,
+and where not possible, the argument to \fBexpr\fR should be an expression
+defined elsewhere as simply as possible. It is usually more efficient and
+safer to use other techniques (e.g., the commands in the \fBtcl::mathop\fR
+namespace) than it is to do complex expression generation.
 .SH EXAMPLES
 .PP
 A numeric comparison whose result is 1:
+.PP
 .CS
 \fBexpr\fR {"0x03" > "2"}
 .CE
 .PP
 A string comparison whose result is 1:
+.PP
 .CS
 \fBexpr\fR {"0y" > "0x12"}
 .CE
+.PP
+.VS "8.7, TIP461"
+A forced string comparison whose result is 0:
+.PP
+.CS
+\fBexpr\fR {"0x03" gt "2"}
+.CE
+.VE "8.7, TIP461"
 .PP
 Define a procedure that computes an
 .QW interesting
@@ -407,7 +493,9 @@ value of true:
 .PP
 .CS
 set isTrue [\fBexpr\fR {
+    # Does the environment variable exist, and...
     [info exists ::env(SOME_ENV_VAR)] &&
+    # ...does it contain a proper true value?
     [string is true -strict $::env(SOME_ENV_VAR)]
 }]
 .CE
@@ -421,13 +509,14 @@ set randNum [\fBexpr\fR { int(100 * rand()) }]
 array(n), for(n), if(n), mathfunc(n), mathop(n), namespace(n), proc(n),
 string(n), Tcl(n), while(n)
 .SH KEYWORDS
-arithmetic, boolean, compare, expression, fuzzy comparison
+arithmetic, boolean, compare, expression, fuzzy comparison, integer value
 .SH COPYRIGHT
 .nf
-Copyright (c) 1993 The Regents of the University of California.
-Copyright (c) 1994-2000 Sun Microsystems Incorporated.
-Copyright (c) 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
+Copyright \(co 1993 The Regents of the University of California.
+Copyright \(co 1994-2000 Sun Microsystems Incorporated.
+Copyright \(co 2005 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
 .fi
 '\" Local Variables:
 '\" mode: nroff
+'\" fill-column: 78
 '\" End:

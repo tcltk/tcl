@@ -56,10 +56,9 @@ static const chr *scanplain(struct vars *);
 static void onechr(struct vars *, pchr, struct state *, struct state *);
 static void dovec(struct vars *, struct cvec *, struct state *, struct state *);
 static void wordchrs(struct vars *);
-static struct subre *subre(struct vars *, int, int, struct state *, struct state *);
+static struct subre *sub_re(struct vars *, int, int, struct state *, struct state *);
 static void freesubre(struct vars *, struct subre *);
 static void freesrnode(struct vars *, struct subre *);
-static void optst(struct vars *, struct subre *);
 static int numst(struct subre *, int);
 static void markst(struct subre *);
 static void cleanst(struct vars *);
@@ -206,11 +205,11 @@ struct vars {
     int cflags;			/* copy of compile flags */
     int lasttype;		/* type of previous token */
     int nexttype;		/* type of next token */
-    chr nextvalue;		/* value (if any) of next token */
+    int nextvalue;		/* value (if any) of next token */
     int lexcon;			/* lexical context type (see lex.c) */
     int nsubexp;		/* subexpression count */
     struct subre **subs;	/* subRE pointer vector */
-    size_t nsubs;		/* length of vector */
+    int nsubs;			/* length of vector */
     struct subre *sub10[10];	/* initial vector, enough for most */
     struct nfa *nfa;		/* the NFA */
     struct colormap *cm;	/* character color map */
@@ -244,6 +243,7 @@ struct vars {
 #define	EMPTYARC(x, y)	newarc(v->nfa, EMPTY, 0, x, y)
 
 /* token type codes, some also used as NFA arc types */
+#undef	DIGIT /* prevent conflict with libtommath */
 #define	EMPTY	'n'		/* no token present */
 #define	EOS	'e'		/* end of string */
 #define	PLAIN	'p'		/* ordinary character */
@@ -287,8 +287,7 @@ compile(
 {
     AllocVars(v);
     struct guts *g;
-    int i;
-    size_t j;
+    int i, j;
     FILE *debug = (flags&REG_PROGRESS) ? stdout : NULL;
 #define	CNOERR()	{ if (ISERR()) return freev(v, v->err); }
 
@@ -395,7 +394,6 @@ compile(
 	dumpnfa(v->nfa, debug);
 	dumpst(v->tree, debug, 1);
     }
-    optst(v, v->tree);
     v->ntree = numst(v->tree, 1);
     markst(v->tree);
     cleanst(v);
@@ -477,10 +475,10 @@ moresubs(
     int wanted)			/* want enough room for this one */
 {
     struct subre **p;
-    size_t n;
+    int n;
 
-    assert(wanted > 0 && (size_t)wanted >= v->nsubs);
-    n = (size_t)wanted * 3 / 2 + 1;
+    assert(wanted > 0 && wanted >= v->nsubs);
+    n = wanted * 3 / 2 + 1;
     if (v->subs == v->sub10) {
 	p = (struct subre **) MALLOC(n * sizeof(struct subre *));
 	if (p != NULL) {
@@ -499,7 +497,7 @@ moresubs(
 	*p = NULL;
     }
     assert(v->nsubs == n);
-    assert((size_t)wanted < v->nsubs);
+    assert(wanted < v->nsubs);
 }
 
 /*
@@ -513,7 +511,7 @@ freev(
     struct vars *v,
     int err)
 {
-    register int ret;
+    int ret;
 
     if (v->re != NULL) {
 	rfree(v->re);
@@ -665,7 +663,7 @@ parse(
 
     assert(stopper == ')' || stopper == EOS);
 
-    branches = subre(v, '|', LONGER, init, final);
+    branches = sub_re(v, '|', LONGER, init, final);
     NOERRN();
     branch = branches;
     firstbranch = 1;
@@ -675,7 +673,7 @@ parse(
 	     * Need a place to hang the branch.
 	     */
 
-	    branch->right = subre(v, '|', LONGER, init, final);
+	    branch->right = sub_re(v, '|', LONGER, init, final);
 	    NOERRN();
 	    branch = branch->right;
 	}
@@ -746,7 +744,7 @@ parsebranch(
 
     lp = left;
     seencontent = 0;
-    t = subre(v, '=', 0, left, right);	/* op '=' is tentative */
+    t = sub_re(v, '=', 0, left, right);	/* op '=' is tentative */
     NOERRN();
     while (!SEE('|') && !SEE(stopper) && !SEE(EOS)) {
 	if (seencontent) {	/* implicit concat operator */
@@ -810,7 +808,7 @@ parseqatom(
     atom = NULL;
     assert(lp->nouts == 0);	/* must string new code */
     assert(rp->nins == 0);	/* between lp and rp */
-    subno = 0;			/* just to shut lint up */
+    subno = 0;
 
     /*
      * An atom or constraint...
@@ -923,7 +921,7 @@ parseqatom(
 	 */
 
 	NOTE(REG_UPBOTCH);
-	/* fallthrough into case PLAIN */
+	/* FALLTHRU */
     case PLAIN:
 	onechr(v, v->nextvalue, lp, rp);
 	okcolors(v->nfa, v->cm);
@@ -954,10 +952,10 @@ parseqatom(
 	if (cap) {
 	    v->nsubexp++;
 	    subno = v->nsubexp;
-	    if ((size_t)subno >= v->nsubs) {
+	    if (subno >= v->nsubs) {
 		moresubs(v, subno);
 	    }
-	    assert((size_t)subno < v->nsubs);
+	    assert(subno < v->nsubs);
 	} else {
 	    atomtype = PLAIN;	/* something that's not '(' */
 	}
@@ -979,7 +977,7 @@ parseqatom(
 	NOERR();
 	if (cap) {
 	    v->subs[subno] = atom;
-	    t = subre(v, '(', atom->flags|CAP, lp, rp);
+	    t = sub_re(v, '(', atom->flags|CAP, lp, rp);
 	    NOERR();
 	    t->subno = subno;
 	    t->left = atom;
@@ -997,7 +995,7 @@ parseqatom(
 	INSIST(v->subs[v->nextvalue] != NULL, REG_ESUBREG);
 	NOERR();
 	assert(v->nextvalue > 0);
-	atom = subre(v, 'b', BACKR, lp, rp);
+	atom = sub_re(v, 'b', BACKR, lp, rp);
 	NOERR();
 	subno = v->nextvalue;
 	atom->subno = subno;
@@ -1112,7 +1110,7 @@ parseqatom(
      */
 
     if (atom == NULL) {
-	atom = subre(v, '=', 0, lp, rp);
+	atom = sub_re(v, '=', 0, lp, rp);
 	NOERR();
     }
 
@@ -1149,7 +1147,7 @@ parseqatom(
      * Break remaining subRE into x{...} and what follows.
      */
 
-    t = subre(v, '.', COMBINE(qprefer, atom->flags), lp, rp);
+    t = sub_re(v, '.', COMBINE(qprefer, atom->flags), lp, rp);
     NOERR();
     t->left = atom;
     atomp = &t->left;
@@ -1163,7 +1161,7 @@ parseqatom(
      */
 
     assert(top->op == '=' && top->left == NULL && top->right == NULL);
-    top->left = subre(v, '=', top->flags, top->begin, lp);
+    top->left = sub_re(v, '=', top->flags, top->begin, lp);
     NOERR();
     top->op = '.';
     top->right = t;
@@ -1232,9 +1230,9 @@ parseqatom(
 	assert(m >= 1 && m != DUPINF && n >= 1);
 	repeat(v, s, atom->begin, m-1, (n == DUPINF) ? n : n-1);
 	f = COMBINE(qprefer, atom->flags);
-	t = subre(v, '.', f, s, atom->end);	/* prefix and atom */
+	t = sub_re(v, '.', f, s, atom->end);	/* prefix and atom */
 	NOERR();
-	t->left = subre(v, '=', PREF(f), s, atom->begin);
+	t->left = sub_re(v, '=', PREF(f), s, atom->begin);
 	NOERR();
 	t->right = atom;
 	*atomp = t;
@@ -1249,7 +1247,7 @@ parseqatom(
 	dupnfa(v->nfa, atom->begin, atom->end, s, s2);
 	repeat(v, s, s2, m, n);
 	f = COMBINE(qprefer, atom->flags);
-	t = subre(v, '*', f, s, s2);
+	t = sub_re(v, '*', f, s, s2);
 	NOERR();
 	t->min = (short) m;
 	t->max = (short) n;
@@ -1267,7 +1265,7 @@ parseqatom(
 	t->right = parsebranch(v, stopper, type, s2, rp, 1);
     } else {
 	EMPTYARC(s2, rp);
-	t->right = subre(v, '=', 0, s2, rp);
+	t->right = sub_re(v, '=', 0, s2, rp);
     }
     NOERR();
     assert(SEE('|') || SEE(stopper) || SEE(EOS));
@@ -1719,12 +1717,12 @@ wordchrs(
 }
 
 /*
- - subre - allocate a subre
- ^ static struct subre *subre(struct vars *, int, int, struct state *,
+ - sub_re - allocate a subre
+ ^ static struct subre *sub_re(struct vars *, int, int, struct state *,
  ^	struct state *);
  */
 static struct subre *
-subre(
+sub_re(
     struct vars *v,
     int op,
     int flags,
@@ -1809,25 +1807,6 @@ freesrnode(
     } else {
 	FREE(sr);
     }
-}
-
-/*
- - optst - optimize a subRE subtree
- ^ static void optst(struct vars *, struct subre *);
- */
-static void
-optst(
-    struct vars *v,
-    struct subre *t)
-{
-    /*
-     * DGP (2007-11-13): I assume it was the programmer's intent to eventually
-     * come back and add code to optimize subRE trees, but the routine coded
-     * just spends effort traversing the tree and doing nothing. We can do
-     * nothing with less effort.
-     */
-
-    return;
 }
 
 /*
@@ -2101,6 +2080,9 @@ dump(
     }
     fprintf(f, "\n");
     dumpst(g->tree, f, 0);
+#else
+    (void)re;
+    (void)f;
 #endif
 }
 

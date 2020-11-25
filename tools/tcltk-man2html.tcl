@@ -4,7 +4,7 @@ if {[catch {package require Tcl 8.6-} msg]} {
     puts stderr "ERROR: $msg"
     puts stderr "If running this script from 'make html', set the\
 	NATIVE_TCLSH environment\nvariable to point to an installed\
-	tclsh8.7 (or the equivalent tclsh87.exe\non Windows)."
+	tclsh8.6 (or the equivalent tclsh86.exe\non Windows)."
     exit 1
 }
 
@@ -31,6 +31,52 @@ set ::CSSFILE "docs.css"
 ##
 source [file join [file dirname [info script]] tcltk-man2html-utils.tcl]
 
+proc getversion {tclh {name {}}} {
+    if {[file exists $tclh]} {
+	set chan [open $tclh]
+	set data [read $chan]
+	close $chan
+	if {$name eq ""} {
+	    set name [string toupper [file root [file tail $tclh]]]
+	}
+	# backslash isn't required in front of quote, but it keeps syntax
+	# highlighting straight in some editors
+	if {[regexp -lineanchor \
+	    [string map [list @name@ $name] \
+		{^#define\s+@name@_VERSION\s+\"([^.])+\.([^.\"]+)}] \
+	    $data -> major minor]} {
+		return [list $major $minor]
+	}
+    }
+}
+proc findversion {top name useversion} {
+    # Default search version is a glob pattern, switch it for string match:
+    if {$useversion eq {{,[8-9].[0-9]{,[.ab][0-9]{,[0-9]}}}}} {
+	set useversion {[8-9].[0-9]}
+    }
+    # Search:
+    set upper [string toupper $name]
+    foreach top1 [list $top $top/..] sub {{} generic} {
+	foreach dirname [
+	    glob -nocomplain -tails -type d -directory $top1 *] {
+
+	    set tclh [join [list $top1 $dirname {*}$sub ${name}.h] /]
+	    set v [getversion $tclh $upper]
+	    if {[llength $v]} {
+		lassign $v major minor
+		# to do
+		#     use glob matching instead of string matching or add
+		#     brace handling to [string matcch]
+		if {$useversion eq {} || [string match $useversion $major.$minor]} {
+		    set top [file dirname [file dirname $tclh]]
+		    set prefix [file dirname $top]
+		    return [list $prefix [file tail $top] $major $minor]
+		}
+	    }
+	}
+    }
+}
+
 proc parse_command_line {} {
     global argv Version
 
@@ -44,7 +90,9 @@ proc parse_command_line {} {
     set tcldir {}
     set webdir ../html
     set build_tcl 0
+    set opt_build_tcl 0
     set build_tk 0
+    set opt_build_tk 0
     set verbose 0
     # Default search version is a glob pattern
     set useversion {{,[8-9].[0-9]{,[.ab][0-9]{,[0-9]}}}}
@@ -93,10 +141,12 @@ proc parse_command_line {} {
 
 	    --tcl {
 		set build_tcl 1
+		set opt_build_tcl 1
 	    }
 
 	    --tk {
 		set build_tk 1
+		set opt_build_tk 1
 	    }
 
 	    --verbose=* {
@@ -115,22 +165,40 @@ proc parse_command_line {} {
 	set build_tk 1
     }
 
+    set major ""
+    set minor ""
+
     if {$build_tcl} {
-	# Find Tcl.
+	# Find Tcl (firstly using glob pattern / backwards compatible way)
 	set tcldir [lindex [lsort [glob -nocomplain -tails -type d \
 		-directory $tcltkdir tcl$useversion]] end]
-	if {$tcldir eq ""} {
+	if {$tcldir ne {}} {
+	    # obtain version from generic header if we can:
+	    lassign [getversion [file join $tcltkdir $tcldir generic tcl.h]] major minor
+	} else {
+	    lassign [findversion $tcltkdir tcl $useversion] tcltkdir tcldir major minor
+	}
+	if {$tcldir eq {} && $opt_build_tcl} {
 	    puts stderr "tcltk-man-html: couldn't find Tcl below $tcltkdir"
 	    exit 1
 	}
-	puts "using Tcl source directory $tcldir"
+	puts "using Tcl source directory $tcltkdir $tcldir"
     }
 
+
     if {$build_tk} {
-	# Find Tk.
+	# Find Tk (firstly using glob pattern / backwards compatible way)
 	set tkdir [lindex [lsort [glob -nocomplain -tails -type d \
 		-directory $tcltkdir tk$useversion]] end]
-	if {$tkdir eq ""} {
+	if {$tkdir ne {}} {
+	    if {$major eq ""} {
+		# obtain version from generic header if we can:
+		lassign [getversion [file join $tcltkdir $tcldir generic tk.h]] major minor
+	    }
+	} else {
+	    lassign [findversion $tcltkdir tk $useversion] tcltkdir tkdir major minor
+	}
+	if {$tkdir eq {} && $opt_build_tk} {
 	    puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
 	    exit 1
 	}
@@ -143,7 +211,11 @@ proc parse_command_line {} {
     global overall_title
     set overall_title ""
     if {$build_tcl} {
-	append overall_title "[capitalize $tcldir]"
+	if {$major ne ""} {
+	    append overall_title "Tcl $major.$minor"
+	} else {
+	    append overall_title "Tcl [capitalize $tcldir]"
+	}
     }
     if {$build_tcl && $build_tk} {
 	append overall_title "/"
@@ -557,6 +629,7 @@ array set remap_link_target {
     Tk_Font	Tk_GetFont
     Tk_Image	Tk_GetImage
     Tk_ImageMaster Tk_GetImage
+    Tk_ImageModel Tk_GetImage
     Tk_ItemType Tk_CreateItemType
     Tk_Justify	Tk_GetJustify
     Ttk_Theme	Ttk_GetTheme
@@ -668,7 +741,11 @@ try {
 
 	    # ... but try to extract (name, version) from subdir contents
 	    try {
-		set f [open [file join $pkgsDir $dir configure.ac]]
+		try {
+		    set f [open [file join $pkgsDir $dir configure.in]]
+		} trap {POSIX ENOENT} {} {
+		    set f [open [file join $pkgsDir $dir configure.ac]]
+		}
 		foreach line [split [read $f] \n] {
 		    if {2 == [scan $line \
 			    { AC_INIT ( [%[^]]] , [%[^]]] ) } n v]} {

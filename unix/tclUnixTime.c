@@ -11,7 +11,6 @@
  */
 
 #include "tclInt.h"
-#include <locale.h>
 #if defined(TCL_WIDE_CLICKS) && defined(MAC_OSX_TCL)
 #include <mach/mach_time.h>
 #endif
@@ -59,7 +58,7 @@ static void		NativeGetTime(Tcl_Time *timebuf,
 
 Tcl_GetTimeProc *tclGetTimeProcPtr = NativeGetTime;
 Tcl_ScaleTimeProc *tclScaleTimeProcPtr = NativeScaleTime;
-ClientData tclTimeClientData = NULL;
+void *tclTimeClientData = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -87,12 +86,38 @@ TclpGetSeconds(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclpGetMicroseconds --
+ *
+ *	This procedure returns the number of microseconds from the epoch.
+ *	On most Unix systems the epoch is Midnight Jan 1, 1970 GMT.
+ *
+ * Results:
+ *	Number of microseconds from the epoch.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_WideInt
+TclpGetMicroseconds(void)
+{
+    Tcl_Time time;
+
+    tclGetTimeProcPtr(&time, tclTimeClientData);
+    return ((Tcl_WideInt)time.sec)*1000000 + time.usec;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclpGetClicks --
  *
  *	This procedure returns a value that represents the highest resolution
  *	clock available on the system. There are no garantees on what the
  *	resolution will be. In Tcl we will call this value a "click". The
- *	start time is also system dependant.
+ *	start time is also system dependent.
  *
  * Results:
  *	Number of clicks from some start time.
@@ -141,7 +166,7 @@ TclpGetClicks(void)
  *	This procedure returns a WideInt value that represents the highest
  *	resolution clock available on the system. There are no garantees on
  *	what the resolution will be. In Tcl we will call this value a "click".
- *	The start time is also system dependant.
+ *	The start time is also system dependent.
  *
  * Results:
  *	Number of WideInt clicks from some start time.
@@ -218,6 +243,51 @@ TclpWideClicksToNanoseconds(
     }
 
     return nsec;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpWideClickInMicrosec --
+ *
+ *	This procedure return scale to convert click values from the
+ *	TclpGetWideClicks native resolution to microsecond resolution
+ *	and back.
+ *
+ * Results:
+ * 	1 click in microseconds as double.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+double
+TclpWideClickInMicrosec(void)
+{
+    if (tclGetTimeProcPtr != NativeGetTime) {
+	return 1.0;
+    } else {
+#ifdef MAC_OSX_TCL
+	static int initialized = 0;
+	static double scale = 0.0;
+
+	if (initialized) {
+	    return scale;
+	} else {
+	    mach_timebase_info_data_t tb;
+
+	    mach_timebase_info(&tb);
+	    /* value of tb.numer / tb.denom = 1 click in nanoseconds */
+	    scale = ((double)tb.numer) / tb.denom / 1000;
+	    initialized = 1;
+	    return scale;
+	}
+#else
+#error Wide high-resolution clicks not implemented on this platform
+#endif
+    }
 }
 #endif /* TCL_WIDE_CLICKS */
 
@@ -438,8 +508,8 @@ Tcl_QueryTimeProc(
 
 static void
 NativeScaleTime(
-    Tcl_Time *timePtr,
-    ClientData clientData)
+    TCL_UNUSED(Tcl_Time *),
+    TCL_UNUSED(ClientData))
 {
     /* Native scale is 1:1. Nothing is done */
 }
@@ -464,7 +534,7 @@ NativeScaleTime(
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    ClientData clientData)
+    TCL_UNUSED(ClientData))
 {
     struct timeval tv;
 
@@ -508,7 +578,7 @@ SetTZIfNecessary(void)
 	} else {
 	    ckfree(lastTZ);
 	}
-	lastTZ = ckalloc(strlen(newTZ) + 1);
+	lastTZ = (char *)ckalloc(strlen(newTZ) + 1);
 	strcpy(lastTZ, newTZ);
     }
     Tcl_MutexUnlock(&tmMutex);
@@ -533,7 +603,7 @@ SetTZIfNecessary(void)
 
 static void
 CleanupMemory(
-    ClientData ignored)
+    TCL_UNUSED(ClientData))
 {
     ckfree(lastTZ);
 }

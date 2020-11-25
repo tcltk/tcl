@@ -45,8 +45,9 @@ set newList [\fBlinsert\fR $midList end-1 lazy]
 set newerList [\fBlinsert\fR [\fBlinsert\fR $oldList end-1 quick] 1 lazy]
 .CE
 .SH "SEE ALSO"
-list(n), lappend(n), lindex(n), llength(n), lsearch(n),
-lset(n), lsort(n), lrange(n), lreplace(n),
+list(n), lappend(n), lassign(n), lindex(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n), lsort(n),
 string(n)
 .SH KEYWORDS
 element, insert, list
