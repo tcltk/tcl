@@ -41,7 +41,7 @@ if {[testConstraint win]} {
 	testConstraint reg 1
     }
 }
-testConstraint notCI [expr {![info exists ::env(CI)] || !$::env(CI)}]
+testConstraint notInCIenv [expr {![info exists ::env(CI)] || !$::env(CI)}]
 
 set tmpspace /tmp;# default value
 # Find a group that exists on this Unix system, or else skip tests that
@@ -2584,7 +2584,7 @@ test fCmd-30.2 {file readable on 'NTUSER.DAT'} -constraints {win notWine} -body 
 } -result {1}
 # At least one CI environment (GitHub Actions) is set up with the page file in
 # an unusual location; skip the test if that is so.
-test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win notCI} -body {
+test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win notInCIenv} -body {
     set r {}
     if {[info exists env(SystemDrive)]} {
         set path $env(SystemDrive)/pagefile.sys

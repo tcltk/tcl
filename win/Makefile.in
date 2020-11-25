@@ -169,7 +169,6 @@ STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 TCLSH			= tclsh$(VER)${EXESUFFIX}
 WINE			= @WINE@
 CAT32			= cat32$(EXEEXT)
-MAN2TCL			= man2tcl$(EXEEXT)
 
 # For cross-compiled builds, TCL_EXE is the name of a tclsh executable that is
 # available *BEFORE* running make for the first time. Certain build targets
@@ -981,7 +980,7 @@ Makefile: $(SRC_DIR)/Makefile.in
 	./config.status
 
 cleanhelp:
-	$(RM) *.hlp *.cnt *.GID *.rtf man2tcl.exe
+	$(RM) *.hlp *.cnt *.GID
 
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
@@ -993,7 +992,7 @@ clean: cleanhelp clean-packages
 
 distclean: distclean-packages clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
-		tcl.hpj config.status.lineno tclsh.exe.manifest
+		config.status.lineno tclsh.exe.manifest
 
 #
 # Bundled package targets

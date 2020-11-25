@@ -2302,7 +2302,6 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.bat $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.vc $(DISTDIR)/win
-	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/tcl.hpj.in $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/tcl.ds* $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/README $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(DISTDIR)/win
@@ -2325,13 +2324,11 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
 		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
 	$(INSTALL_DATA_DIR) $(DISTDIR)/tools
-	$(DIST_INSTALL_DATA) $(TOOL_DIR)/Makefile.in $(TOOL_DIR)/README \
-		$(TOOL_DIR)/configure $(TOOL_DIR)/configure.ac \
-		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/man2tcl.c \
-		$(TOOL_DIR)/*.bmp $(TOOL_DIR)/tcl.hpj.in \
-		$(DISTDIR)/tools
+	$(DIST_INSTALL_DATA) $(TOOL_DIR)/README $(TOOL_DIR)/*.c $(TOOL_DIR)/*.svg \
+		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/*.bmp \
+		$(TOOL_DIR)/valgrind_suppress $(DISTDIR)/tools
 	chmod 755 $(DISTDIR)/tools/checkLibraryDoc.tcl \
-		$(DISTDIR)/tools/configure $(DISTDIR)/tools/findBadExternals.tcl \
+		$(DISTDIR)/tools/findBadExternals.tcl \
 		$(DISTDIR)/tools/loadICU.tcl \
 		$(DISTDIR)/tools/makeTestCases.tcl $(DISTDIR)/tools/tclZIC.tcl \
 		$(DISTDIR)/tools/tcltk-man2html.tcl
