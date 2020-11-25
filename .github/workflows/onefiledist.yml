@@ -88,7 +88,7 @@ jobs:
         run: ./configure --disable-symbols --disable-shared --enable-zipfs
       - name: Build
         run: |
-          make tclsh tclzipfile
+          make binaries libraries tclzipfile
           sed -n '/^VERSION /{s/.*= /TCL_VER=/;p;q;}' < Makefile >> $GITHUB_ENV
           echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
       - name: Package
