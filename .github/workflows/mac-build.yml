@@ -1,8 +1,8 @@
 name: macOS
 on: [push]
 jobs:
-  with-Xcode:
-    runs-on: macos-latest
+  xcode:
+    runs-on: macos-10.15
     defaults:
       run:
         shell: bash
@@ -20,8 +20,8 @@ jobs:
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
-  Unix-like:
-    runs-on: macos-latest
+  clang:
+    runs-on: macos-10.15
     strategy:
       matrix:
         symbols:
@@ -44,7 +44,7 @@ jobs:
         working-directory: generic
       - name: Configure (symbols=${{ matrix.symbols }} dtrace=${{ matrix.dtrace }})
         # Note that macOS is always a 64 bit platform
-        run: ./configure --enable-64bit ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
+        run: ./configure --enable-64bit --enable-framework ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
         env:
           CFGOPT: --enable-symbols=${{ matrix.symbols }} --enable-dtrace=${{ matrix.dtrace }}
       - name: Build
