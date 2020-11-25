@@ -1,0 +1,102 @@
+name: Build
+on: [push]
+jobs:
+  linux:
+    name: Linux
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: unix
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Prepare
+        run: |
+          touch generic/tclStubInit.c generic/tclOOStubInit.c
+          mkdir 1dist
+        working-directory: .
+      - name: Configure
+        run: ./configure --disable-symbols --disable-shared --enable-zipfs
+      - name: Build
+        run: |
+          make tclsh tclzipfile
+          sed -n '/^VERSION /{s/.*= /TCL_VER=/;p;q;}' < Makefile >> $GITHUB_ENV
+          echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
+      - name: Package
+        run: |
+          cat ../unix/tclsh $TCL_ZIP > tclsh${TCL_VER}_unofficial
+          chmod +x tclsh${TCL_VER}_unofficial
+          tar -cf tclsh${TCL_VER}_unofficial.tar tclsh${TCL_VER}_unofficial
+        working-directory: 1dist
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: Tclsh ${{ env.TCL_VER }} Linux single-file build (unofficial)
+          path: 1dist/*.tar
+  macos:
+    name: macOS
+    runs-on: macos-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: unix
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Prepare
+        run: |
+          touch generic/tclStubInit.c generic/tclOOStubInit.c
+          mkdir 1dist
+        working-directory: .
+      - name: Configure
+        run: ./configure --disable-symbols --disable-shared --enable-zipfs
+      - name: Build
+        run: |
+          make tclsh tclzipfile
+          sed -n '/^VERSION /{s/.*= /TCL_VER=/;p;q;}' < Makefile >> $GITHUB_ENV
+          echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
+      - name: Package
+        run: |
+          cat ../unix/tclsh $TCL_ZIP > tclsh${TCL_VER}_unofficial
+          chmod +x tclsh${TCL_VER}_unofficial
+          tar -cf tclsh${TCL_VER}_unofficial.tar tclsh${TCL_VER}_unofficial
+        working-directory: 1dist
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: Tclsh ${{ env.TCL_VER }} macOS single-file build (unofficial)
+          path: 1dist/*.tar
+  win:
+    name: Windows
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: win
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install MSYS2 and Make
+        run: choco install msys2 make
+      - name: Prepare
+        run: |
+          touch generic/tclStubInit.c generic/tclOOStubInit.c
+          mkdir 1dist
+        working-directory: .
+      - name: Configure
+        run: ./configure --disable-symbols --disable-shared --enable-zipfs
+      - name: Build
+        run: |
+          make tclsh tclzipfile
+          sed -n '/^VERSION /{s/.*= /TCL_VER=/;p;q;}' < Makefile >> $GITHUB_ENV
+          echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
+      - name: Package
+        run: |
+          cat ../win/tclsh*.exe $TCL_ZIP > tclsh${TCL_VER}_unofficial.exe
+        working-directory: 1dist
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: Tclsh ${{ env.TCL_VER }} Windows single-file build (unofficial)
+          path: '1dist/*_unofficial.exe'
