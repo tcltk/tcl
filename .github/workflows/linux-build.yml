@@ -2,7 +2,7 @@ name: Linux
 on: [push]
 jobs:
   gcc:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         cfgopt:
