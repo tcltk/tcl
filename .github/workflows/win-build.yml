@@ -1,7 +1,7 @@
 name: Windows
 on: [push]
 jobs:
-  MSVC:
+  msvc:
     runs-on: windows-latest
     defaults:
       run:
@@ -34,7 +34,7 @@ jobs:
         env:
           ERROR_ON_FAILURES: 1
           CI_BUILD_WITH_MSVC: 1
-  MSYS-gcc:
+  gcc:
     runs-on: windows-latest
     defaults:
       run:
