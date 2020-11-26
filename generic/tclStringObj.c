@@ -1162,7 +1162,7 @@ Tcl_AppendToObj(
     const char *bytes,		/* Points to the bytes to append to the
 				 * object. */
     size_t length)		/* The number of bytes to append from "bytes".
-				 * If -1, then append all bytes up to NUL
+				 * If TCL_INDEX_NONE, then append all bytes up to NUL
 				 * byte. */
 {
     Tcl_AppendLimitedToObj(objPtr, bytes, length, TCL_INDEX_NONE, NULL);
