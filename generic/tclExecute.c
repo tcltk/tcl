@@ -9612,12 +9612,13 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i >= 0;  i--) {
+    for (i = 31;  i;  i--) {
 	if (statsPtr->srcCount[i] > 0) {
-	    maxSizeDecade = i;
-	    break;
+	    break;		/* maxSizeDecade to consume 'i' value
+				 * below... */
 	}
     }
+    maxSizeDecade = i;
     sum = 0;
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
@@ -9635,12 +9636,13 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i >= 0;  i--) {
+    for (i = 31;  i;  i--) {
 	if (statsPtr->byteCodeCount[i] > 0) {
-	    maxSizeDecade = i;
-	    break;
+	    break;		/* maxSizeDecade to consume 'i' value
+				 * below... */
 	}
     }
+    maxSizeDecade = i;
     sum = 0;
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
@@ -9658,12 +9660,13 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i >= 0;  i--) {
+    for (i = 31;  i;  i--) {
 	if (statsPtr->lifetimeCount[i] > 0) {
-	    maxSizeDecade = i;
-	    break;
+	    break;		/* maxSizeDecade to consume 'i' value
+				 * below... */
 	}
     }
+    maxSizeDecade = i;
     sum = 0;
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
