@@ -44,10 +44,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Checkout create-dmg
+        uses: actions/checkout@v2
+        with:
+          repository: create-dmg/create-dmg
+          ref: v1.0.8
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
           mkdir 1dist
+          echo "CREATE_DMG=$(cd create-dmg;pwd)/create-dmg" >> $GITHUB_ENV
         working-directory: .
       - name: Configure
         run: ./configure --disable-symbols --disable-shared --enable-zipfs
@@ -58,15 +64,22 @@ jobs:
           echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
       - name: Package
         run: |
-          cat ../unix/tclsh $TCL_ZIP > tclsh${TCL_VER}_unofficial
-          chmod +x tclsh${TCL_VER}_unofficial
-          tar -cf tclsh${TCL_VER}_unofficial.tar tclsh${TCL_VER}_unofficial
+          mkdir contents
+          cat ../unix/tclsh $TCL_ZIP > contents/tclsh${TCL_VER}_unofficial
+          chmod +x contents/tclsh${TCL_VER}_unofficial
+          $CREATE_DMG \
+              --volname "Tcl ${{ env.TCL_VER }} (unofficial)" \
+              --window-pos 200 120 \
+              --window-size 800 400 \
+              --app-drop-link 600 185 \
+              "Tcl-${{ env.TCL_VER }}-(unofficial).dmg" \
+              "contents/"
         working-directory: 1dist
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
           name: Tclsh ${{ env.TCL_VER }} macOS single-file build (unofficial)
-          path: 1dist/*.tar
+          path: 1dist/*.dmg
   win:
     name: Windows
     runs-on: windows-latest
