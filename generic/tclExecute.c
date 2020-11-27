@@ -9336,7 +9336,6 @@ EvalStatsCmd(
     char *litTableStats;
     LiteralEntry *entryPtr;
     Tcl_Obj *objPtr;
-    (void)unused;
 
 #define Percent(a,b) ((a) * 100.0 / (b))
 
