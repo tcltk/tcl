@@ -1103,15 +1103,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		AC_MSG_ERROR([${CC} is not a cygwin compiler.])
 	    fi
 	    do64bit_ok=yes
-	    if test "x${SHARED_BUILD}" = "x1"; then
-		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
-		# The eval makes quoting arguments work.
-		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
-		then :
-		else
-		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
-		fi
-	    fi
 	    ;;
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
