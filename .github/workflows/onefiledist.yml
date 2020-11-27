@@ -1,4 +1,4 @@
-name: Build
+name: Build Binaries
 on: [push]
 jobs:
   linux:
@@ -27,7 +27,7 @@ jobs:
         working-directory: unix
       - name: Package
         run: |
-          cat ../unix/tclsh $TCL_ZIP > tclsh${TCL_VER}_unofficial
+          cat ../unix/tclsh $TCL_ZIP > tclsh${TCL_PATCHLEVEL}_unofficial
           chmod +x tclsh${TCL_PATCHLEVEL}_unofficial
           tar -cf tclsh${TCL_PATCHLEVEL}_unofficial.tar tclsh${TCL_PATCHLEVEL}_unofficial
         working-directory: 1dist
@@ -50,11 +50,9 @@ jobs:
         with:
           repository: create-dmg/create-dmg
           ref: v1.0.8
+          path: create-dmg
       - name: Prepare
         run: |
-          echo "::group::Listing configuration"
-          find . -ls || true
-          echo "::endgroup::"
           mkdir 1dist
           touch generic/tclStubInit.c generic/tclOOStubInit.c || true
           echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
@@ -74,12 +72,21 @@ jobs:
           mkdir contents
           cat $TCL_BIN $TCL_ZIP > contents/tclsh${TCL_PATCHLEVEL}_unofficial
           chmod +x contents/tclsh${TCL_PATCHLEVEL}_unofficial
+          cat > contents/README.txt <<EOF
+          This is a single-file executable developer preview of Tcl $TCL_PATCHLEVEL
+
+          It is not intended as an official release at all, so it is unsigned and unnotarized.
+          Use strictly at your own risk.
+
+          To run it, you need to copy the executable out and run:
+              xattr -d com.apple.quarantine tclsh${TCL_PATCHLEVEL}_unofficial
+          to mark the executable as runnable on your machine.
+          EOF
           $CREATE_DMG \
-              --volname "Tcl ${{ env.TCL_PATCHLEVEL }} (unofficial)" \
+              --volname "Tcl $TCL_PATCHLEVEL (unofficial)" \
               --window-pos 200 120 \
               --window-size 800 400 \
-              --app-drop-link 600 185 \
-              "Tcl-${{ env.TCL_PATCHLEVEL }}-(unofficial).dmg" \
+              "Tcl-$TCL_PATCHLEVEL-(unofficial).dmg" \
               "contents/"
         working-directory: 1dist
       - name: Upload
@@ -96,8 +103,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Install MSYS2 and Make
-        run: choco install msys2 make
+      - name: Install MSYS2
+        uses: msys2/setup-msys2@v2
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
@@ -110,12 +117,19 @@ jobs:
       - name: Build
         run: |
           make binaries libraries tclzipfile
-          make shell SCRIPT="$VER_PATH $GITHUB_ENV"
           echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
         working-directory: win
       - name: Package
         run: |
-          cat ../win/tclsh*.exe $TCL_ZIP > tclsh${TCL_PATCHLEVEL}_unofficial.exe
+          cat ../win/tclsh*.exe $TCL_ZIP > combined.exe
+        working-directory: 1dist
+      - name: Get Exact Version
+        run: |
+          ./combined.exe $VER_PATH $GITHUB_ENV
+        working-directory: 1dist
+      - name: Set Executable Name
+        run: |
+          mv combined.exe tclsh${TCL_PATCHLEVEL}_unofficial.exe
         working-directory: 1dist
       - name: Upload
         uses: actions/upload-artifact@v2
