@@ -7,7 +7,6 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: unix
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -15,24 +14,27 @@ jobs:
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
           mkdir 1dist
+          echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
         working-directory: .
       - name: Configure
         run: ./configure --disable-symbols --disable-shared --enable-zipfs
+        working-directory: unix
       - name: Build
         run: |
           make tclsh tclzipfile
-          sed -n '/^VERSION /{s/.*= /TCL_VER=/;p;q;}' < Makefile >> $GITHUB_ENV
+          make shell SCRIPT="$VER_PATH $GITHUB_ENV"
           echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
+        working-directory: unix
       - name: Package
         run: |
           cat ../unix/tclsh $TCL_ZIP > tclsh${TCL_VER}_unofficial
-          chmod +x tclsh${TCL_VER}_unofficial
-          tar -cf tclsh${TCL_VER}_unofficial.tar tclsh${TCL_VER}_unofficial
+          chmod +x tclsh${TCL_PATCHLEVEL}_unofficial
+          tar -cf tclsh${TCL_PATCHLEVEL}_unofficial.tar tclsh${TCL_PATCHLEVEL}_unofficial
         working-directory: 1dist
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          name: Tclsh ${{ env.TCL_VER }} Linux single-file build (unofficial)
+          name: Tclsh ${{ env.TCL_PATCHLEVEL }} Linux single-file build (unofficial)
           path: 1dist/*.tar
   macos:
     name: macOS
@@ -40,7 +42,6 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: unix
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -51,34 +52,40 @@ jobs:
           ref: v1.0.8
       - name: Prepare
         run: |
-          touch generic/tclStubInit.c generic/tclOOStubInit.c
+          echo "::group::Listing configuration"
+          find . -ls || true
+          echo "::endgroup::"
           mkdir 1dist
+          touch generic/tclStubInit.c generic/tclOOStubInit.c || true
+          echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
           echo "CREATE_DMG=$(cd create-dmg;pwd)/create-dmg" >> $GITHUB_ENV
-        working-directory: .
       - name: Configure
         run: ./configure --disable-symbols --disable-shared --enable-zipfs
+        working-directory: unix
       - name: Build
         run: |
           make tclsh tclzipfile
-          sed -n '/^VERSION /{s/.*= /TCL_VER=/;p;q;}' < Makefile >> $GITHUB_ENV
+          make shell SCRIPT="$VER_PATH $GITHUB_ENV"
+          echo "TCL_BIN=`pwd`/tclsh" >> $GITHUB_ENV
           echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
+        working-directory: unix
       - name: Package
         run: |
           mkdir contents
-          cat ../unix/tclsh $TCL_ZIP > contents/tclsh${TCL_VER}_unofficial
-          chmod +x contents/tclsh${TCL_VER}_unofficial
+          cat $TCL_BIN $TCL_ZIP > contents/tclsh${TCL_PATCHLEVEL}_unofficial
+          chmod +x contents/tclsh${TCL_PATCHLEVEL}_unofficial
           $CREATE_DMG \
-              --volname "Tcl ${{ env.TCL_VER }} (unofficial)" \
+              --volname "Tcl ${{ env.TCL_PATCHLEVEL }} (unofficial)" \
               --window-pos 200 120 \
               --window-size 800 400 \
               --app-drop-link 600 185 \
-              "Tcl-${{ env.TCL_VER }}-(unofficial).dmg" \
+              "Tcl-${{ env.TCL_PATCHLEVEL }}-(unofficial).dmg" \
               "contents/"
         working-directory: 1dist
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          name: Tclsh ${{ env.TCL_VER }} macOS single-file build (unofficial)
+          name: Tclsh ${{ env.TCL_PATCHLEVEL }} macOS single-file build (unofficial)
           path: 1dist/*.dmg
   win:
     name: Windows
@@ -86,7 +93,6 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: win
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -95,21 +101,24 @@ jobs:
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
+          echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
           mkdir 1dist
         working-directory: .
       - name: Configure
         run: ./configure --disable-symbols --disable-shared --enable-zipfs
+        working-directory: win
       - name: Build
         run: |
           make binaries libraries tclzipfile
-          sed -n '/^VERSION /{s/.*= /TCL_VER=/;p;q;}' < Makefile >> $GITHUB_ENV
+          make shell SCRIPT="$VER_PATH $GITHUB_ENV"
           echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
+        working-directory: win
       - name: Package
         run: |
-          cat ../win/tclsh*.exe $TCL_ZIP > tclsh${TCL_VER}_unofficial.exe
+          cat ../win/tclsh*.exe $TCL_ZIP > tclsh${TCL_PATCHLEVEL}_unofficial.exe
         working-directory: 1dist
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          name: Tclsh ${{ env.TCL_VER }} Windows single-file build (unofficial)
+          name: Tclsh ${{ env.TCL_PATCHLEVEL }} Windows single-file build (unofficial)
           path: '1dist/*_unofficial.exe'
