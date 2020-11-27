@@ -359,13 +359,6 @@ AC_DEFUN([SC_ENABLE_SHARED], [
 	[  --enable-shared         build and link with shared libraries (default: on)],
 	[tcl_ok=$enableval], [tcl_ok=yes])
 
-    if test "${enable_shared+set}" = set; then
-	enableval="$enable_shared"
-	tcl_ok=$enableval
-    else
-	tcl_ok=yes
-    fi
-
     if test "$tcl_ok" = "yes" ; then
 	AC_MSG_RESULT([shared])
 	SHARED_BUILD=1
