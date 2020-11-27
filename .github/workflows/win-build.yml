@@ -57,7 +57,7 @@ jobs:
           touch tclStubInit.c tclOOStubInit.c
           mkdir "${HOME}/install dir"
         working-directory: generic
-      - name: Configure (symbols=${{ matrix.cfgopt }})
+      - name: Configure ${{ matrix.cfgopt }}
         run: |
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
         env:
