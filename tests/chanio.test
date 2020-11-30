@@ -42,7 +42,8 @@ namespace eval ::tcl::test::io {
     testConstraint testchannelevent [llength [info commands testchannelevent]]
     testConstraint testmainthread   [llength [info commands testmainthread]]
     testConstraint testservicemode  [llength [info commands testservicemode]]
-    testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+    testConstraint notWinCI       [expr {
+	$::tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
     testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
 
     # You need a *very* special environment to do some tests.  In particular,
@@ -1881,7 +1882,7 @@ test chan-io-20.3 {Tcl_CreateChannel: initial settings} -constraints {unix} -bod
 } -result {{{} {}} {auto lf}}
 test chan-io-20.5 {Tcl_CreateChannel: install channel in empty slot} -setup {
     set path(stdout) [makeFile {} stdout]
-} -constraints {stdio knownMsvcBug} -body {
+} -constraints {stdio notWinCI} -body {
     set f [open $path(script) w]
     chan puts -nonewline $f {
 	chan close stdout
@@ -2791,7 +2792,7 @@ test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} -s
 	    chan puts $s $l
 	}
     }
-} -constraints {socket tempNotMac fileevent knownMsvcBug} -body {
+} -constraints {socket tempNotMac fileevent notWinCI} -body {
     proc accept {s a p} {
 	variable x
 	chan event $s readable [namespace code [list readit $s]]

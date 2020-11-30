@@ -246,15 +246,6 @@ the backslash character.  If an argument contains forward slashes as the
 path separator, it may or may not be recognized as a path name, depending on
 the program.
 .PP
-Additionally, when calling a 16-bit DOS or Windows 3.X application, all path
-names must use the short, cryptic, path format (e.g., using
-.QW applba~1.def
-instead of
-.QW applbakery.default ),
-which can be obtained with the
-.QW "\fBfile attributes\fI fileName \fB\-shortname\fR"
-command.
-.PP
 Two or more forward or backward slashes in a row in a path refer to a
 network path.  For example, a simple concatenation of the root directory
 \fBc:/\fR with a subdirectory \fB/windows/system\fR will yield
@@ -295,11 +286,9 @@ The directory from which the Tcl executable was loaded.
 .IP \(bu 3
 The current directory.
 .IP \(bu 3
-The Windows NT 32-bit system directory.
+The Windows 32-bit system directory.
 .IP \(bu 3
-The Windows NT 16-bit system directory.
-.IP \(bu 3
-The Windows NT home directory.
+The Windows home directory.
 .IP \(bu 3
 The directories listed in the path.
 .PP

@@ -370,7 +370,7 @@ static Tcl_Obj *dbNewLongObj(
     int line
 ) {
 #ifdef TCL_MEM_DEBUG
-    register Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
     objPtr->bytes = NULL;
