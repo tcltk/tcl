@@ -512,13 +512,6 @@ AC_DEFUN([SC_ENABLE_SHARED], [
 	    [build and link with shared libraries (default: on)]),
 	[tcl_ok=$enableval], [tcl_ok=yes])
 
-    if test "${enable_shared+set}" = set; then
-	enableval="$enable_shared"
-	tcl_ok=$enableval
-    else
-	tcl_ok=yes
-    fi
-
     if test "$tcl_ok" = "yes" ; then
 	AC_MSG_RESULT([shared])
 	SHARED_BUILD=1
@@ -1083,7 +1076,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	CYGWIN_*)
+	CYGWIN_*|MSYS_*)
 	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
@@ -1109,16 +1102,16 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    if test "$ac_cv_cygwin" = "no"; then
 		AC_MSG_ERROR([${CC} is not a cygwin compiler.])
 	    fi
-	    do64bit_ok=yes
-	    if test "x${SHARED_BUILD}" = "x1"; then
-		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
-		# The eval makes quoting arguments work.
-		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
-		then :
-		else
-		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
-		fi
-	    fi
+		AC_MSG_CHECKING([whether CYGWIN platform is 64-bit])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+				[[#include <stdint.h>
+					#if INTPTR_MAX == INT64_MAX
+						#error 64-bit platform
+					#endif
+				]],[])],
+				[do64bit_ok=no],
+				[do64bit_ok=yes])
+		AC_MSG_RESULT([$do64bit_ok])
 	    ;;
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
@@ -1783,7 +1776,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	case $system in
 	    AIX-*) ;;
 	    BSD/OS*) ;;
-	    CYGWIN_*) ;;
+	    CYGWIN_*|MSYS_*) ;;
 	    HP_UX*) ;;
 	    Darwin-*) ;;
 	    IRIX*) ;;

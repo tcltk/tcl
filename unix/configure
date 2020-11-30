@@ -4484,14 +4484,6 @@ else
   tcl_ok=yes
 fi
 
-
-    if test "${enable_shared+set}" = set; then
-	enableval="$enable_shared"
-	tcl_ok=$enableval
-    else
-	tcl_ok=yes
-    fi
-
     if test "$tcl_ok" = "yes" ; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: shared" >&5
 $as_echo "shared" >&6; }
@@ -5310,7 +5302,7 @@ fi
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	CYGWIN_*)
+	CYGWIN_*|MSYS_*)
 	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
@@ -5356,16 +5348,31 @@ $as_echo "$ac_cv_cygwin" >&6; }
 	    if test "$ac_cv_cygwin" = "no"; then
 		as_fn_error $? "${CC} is not a cygwin compiler." "$LINENO" 5
 	    fi
-	    do64bit_ok=yes
-	    if test "x${SHARED_BUILD}" = "x1"; then
-		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
-		# The eval makes quoting arguments work.
-		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
-		then :
-		else
-		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
-		fi
-	    fi
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether CYGWIN platform is 64-bit" >&5
+$as_echo_n "checking whether CYGWIN platform is 64-bit... " >&6; }
+		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <stdint.h>
+					#if INTPTR_MAX == INT64_MAX
+						#error 64-bit platform
+					#endif
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  do64bit_ok=no
+else
+  do64bit_ok=yes
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $do64bit_ok" >&5
+$as_echo "$do64bit_ok" >&6; }
 	    ;;
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
@@ -6559,7 +6566,7 @@ fi
 	case $system in
 	    AIX-*) ;;
 	    BSD/OS*) ;;
-	    CYGWIN_*) ;;
+	    CYGWIN_*|MSYS_*) ;;
 	    HP_UX*) ;;
 	    Darwin-*) ;;
 	    IRIX*) ;;
