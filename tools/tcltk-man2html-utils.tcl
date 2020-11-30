@@ -185,7 +185,6 @@ proc process-text {text} {
 	    {\(Tp}	"&thorn;" \
 	    {\(em}	"&mdash;" \
 	    {\(en}	"&ndash;" \
-	    {\(bu}	"&bull;" \
 	    {\(fm}	"&prime;" \
 	    {\(mi}	"&minus;" \
 	    {\(.i}	"&imath;" \
@@ -200,6 +199,8 @@ proc process-text {text} {
 	    {\(eu}	"&euro;" \
 	    {\fP}	{\fR} \
 	    {\.}	. \
+	    {\(bu}	"&bull;" \
+	    {\*(qo}	"&ocirc;" \
 	    ]
     # This might make a few invalid mappings, but we don't use them
     foreach c {a c e g i l n o s t u y z A C E G I L N O S T U Y Z} {
@@ -572,7 +573,7 @@ proc output-IP-list {context code rest} {
 	    if {[regexp {^\[[\da-f]+\]|\(?[\da-f]+\)$} $rest]} {
 		set dl "<ol class=\"[string tolower $manual(section)]\">"
 		set enddl "</ol>"
-	    } elseif {"&#8226;" eq $rest} {
+	    } elseif {"&bull;" eq $rest} {
 		set dl "<ul class=\"[string tolower $manual(section)]\">"
 		set enddl "</ul>"
 	    }
@@ -598,7 +599,7 @@ proc output-IP-list {context code rest} {
 			    man-puts "$para<li value=\"$value\">"
 			} elseif {[regexp {^\(?([\da-f]+)\)$} $rest -> value]} {
 			    man-puts "$para<li value=\"$value\">"
-			} elseif {"&#8226;" eq $rest} {
+			} elseif {"&bull;" eq $rest} {
 			    man-puts "$para<li>"
 			} else {
 			    man-puts "$para<dt>[long-toc $rest]<dd>"
