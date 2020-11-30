@@ -50,7 +50,7 @@ proc indexfile {} {
 proc copyright {copyright {level {}}} {
     # We don't actually generate a separate copyright page anymore
     #set page "${level}copyright.htm"
-    #return "<A HREF=\"$page\">Copyright</A> &#169; [htmlize-text [lrange $copyright 2 end]]"
+    #return "<A HREF=\"$page\">Copyright</A> &copy; [htmlize-text [lrange $copyright 2 end]]"
     # obfuscate any email addresses that may appear in name
     set who [string map {@ (at)} [lrange $copyright 2 end]]
     return "Copyright &copy; [htmlize-text $who]"
@@ -185,7 +185,6 @@ proc process-text {text} {
 	    {\(Tp}	"&thorn;" \
 	    {\(em}	"&mdash;" \
 	    {\(en}	"&ndash;" \
-	    {\(bu}	"&bull;" \
 	    {\(fm}	"&prime;" \
 	    {\(mi}	"&minus;" \
 	    {\(.i}	"&imath;" \
@@ -200,6 +199,8 @@ proc process-text {text} {
 	    {\(eu}	"&euro;" \
 	    {\fP}	{\fR} \
 	    {\.}	. \
+	    {\(bu}	"&bull;" \
+	    {\*(qo}	"&ocirc;" \
 	    ]
     # This might make a few invalid mappings, but we don't use them
     foreach c {a c e g i l n o s t u y z A C E G I L N O S T U Y Z} {
@@ -572,7 +573,7 @@ proc output-IP-list {context code rest} {
 	    if {[regexp {^\[[\da-f]+\]|\(?[\da-f]+\)$} $rest]} {
 		set dl "<OL class=\"[string tolower $manual(section)]\">"
 		set enddl "</OL>"
-	    } elseif {"&#8226;" eq $rest} {
+	    } elseif {"&bull;" eq $rest} {
 		set dl "<UL class=\"[string tolower $manual(section)]\">"
 		set enddl "</UL>"
 	    }
@@ -598,7 +599,7 @@ proc output-IP-list {context code rest} {
 			    man-puts "$para<LI value=\"$value\">"
 			} elseif {[regexp {^\(?([\da-f]+)\)$} $rest -> value]} {
 			    man-puts "$para<LI value=\"$value\">"
-			} elseif {"&#8226;" eq $rest} {
+			} elseif {"&bull;" eq $rest} {
 			    man-puts "$para<LI>"
 			} else {
 			    man-puts "$para<DT>[long-toc $rest]<DD>"

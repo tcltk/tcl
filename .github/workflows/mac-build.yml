@@ -1,8 +1,8 @@
 name: macOS
 on: [push]
 jobs:
-  with-Xcode:
-    runs-on: macos-latest
+  xcode:
+    runs-on: macos-11.0
     defaults:
       run:
         shell: bash
@@ -20,16 +20,15 @@ jobs:
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
-  Unix-like:
-    runs-on: macos-latest
+  clang:
+    runs-on: macos-11.0
     strategy:
       matrix:
-        symbols:
-          - "no"
-          - "mem"
-        dtrace:
-          - "no"
-          - "yes"
+        cfgopt:
+          - ""
+          - "--disable-shared"
+          - "--enable-symbols"
+          - "--enable-symbols=mem"
     defaults:
       run:
         shell: bash
@@ -42,11 +41,11 @@ jobs:
           touch tclStubInit.c tclOOStubInit.c
           mkdir "$HOME/install dir"
         working-directory: generic
-      - name: Configure (symbols=${{ matrix.symbols }} dtrace=${{ matrix.dtrace }})
+      - name: Configure ${{ matrix.cfgopt }}
         # Note that macOS is always a 64 bit platform
-        run: ./configure --enable-64bit ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
+        run: ./configure --enable-64bit --enable-dtrace --enable-framework ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
         env:
-          CFGOPT: --enable-symbols=${{ matrix.symbols }} --enable-dtrace=${{ matrix.dtrace }}
+          CFGOPT: ${{ matrix.cfgopt }}
       - name: Build
         run: |
           make all tcltest
@@ -56,6 +55,3 @@ jobs:
         env:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
-      - name: Trial Installation
-        run: |
-          make install

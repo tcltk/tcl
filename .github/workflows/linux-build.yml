@@ -10,6 +10,8 @@ jobs:
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
+          - "CFLAGS=-DTCL_UTF_MAX=4"
+          - "CFLAGS=-DTCL_UTF_MAX=6"
     defaults:
       run:
         shell: bash

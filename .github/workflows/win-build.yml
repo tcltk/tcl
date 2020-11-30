@@ -1,7 +1,7 @@
 name: Windows
 on: [push]
 jobs:
-  MSVC:
+  msvc:
     runs-on: windows-latest
     defaults:
       run:
@@ -33,7 +33,7 @@ jobs:
           }
         env:
           ERROR_ON_FAILURES: 1
-  MSYS-gcc:
+  gcc:
     runs-on: windows-latest
     defaults:
       run:
@@ -41,10 +41,11 @@ jobs:
         working-directory: win
     strategy:
       matrix:
-        symbols:
-          - "no"
-          - "mem"
-          - "all"
+        cfgopt:
+          - ""
+          - "--disable-shared"
+          - "--enable-symbols"
+          - "--enable-symbols=mem"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
@@ -56,11 +57,11 @@ jobs:
           touch tclStubInit.c tclOOStubInit.c
           mkdir "${HOME}/install dir"
         working-directory: generic
-      - name: Configure (symbols=${{ matrix.symbols }})
+      - name: Configure ${{ matrix.cfgopt }}
         run: |
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
         env:
-          CFGOPT: --enable-64bit --enable-symbols=${{ matrix.symbols }}
+          CFGOPT: --enable-64bit ${{ matrix.cfgopt }}
       - name: Build
         run: make all
       - name: Build Test Harness
