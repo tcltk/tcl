@@ -3283,7 +3283,7 @@ int
 Tcl_LimitExceeded(
     Tcl_Interp *interp)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     return iPtr->limit.exceeded != 0;
 }
@@ -3314,10 +3314,10 @@ int
 Tcl_LimitReady(
     Tcl_Interp *interp)
 {
-    register Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *) interp;
 
     if (iPtr->limit.active != 0) {
-	register int ticker = ++iPtr->limit.granularityTicker;
+	int ticker = ++iPtr->limit.granularityTicker;
 
 	if ((iPtr->limit.active & TCL_LIMIT_COMMANDS) &&
 		((iPtr->limit.cmdGranularity == 1) ||
@@ -3361,7 +3361,7 @@ Tcl_LimitCheck(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
-    register int ticker = iPtr->limit.granularityTicker;
+    int ticker = iPtr->limit.granularityTicker;
 
     if (Tcl_InterpDeleted(interp)) {
 	return TCL_OK;

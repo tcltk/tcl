@@ -1,6 +1,6 @@
 '\"
 '\" Copyright (c) 1995-1997 Sun Microsystems, Inc.
-'\" Copyright (c) 1998-2000 by Ajuba Solutions.
+'\" Copyright (c) 1998-2000 Ajuba Solutions.
 '\" Copyright (c) 2004 ActiveState Corporation.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
@@ -78,6 +78,9 @@ when the transaction completes.  For this to work, the Tcl event loop
 must be active.  In Tk applications this is always true.  For pure-Tcl
 applications, the caller can use \fB::http::wait\fR after calling
 \fB::http::geturl\fR to start the event loop.
+.PP
+\fBNote:\fR The event queue is even used without the \fB-command\fR option.
+As a side effect, arbitrary commands may be processed while \fBhttp::geturl\fR is running.
 .SH COMMANDS
 .TP
 \fB::http::config\fR ?\fIoptions\fR?
@@ -316,9 +319,11 @@ otherwise complain about HTTP/1.1.
 \fB\-query\fR \fIquery\fR
 .
 This flag causes \fB::http::geturl\fR to do a POST request that passes the
-\fIquery\fR to the server. The \fIquery\fR must be an x-url-encoding
-formatted query.  The \fB::http::formatQuery\fR procedure can be used to
-do the formatting.
+\fIquery\fR as payload verbatim to the server.
+The content format (and encoding) of \fIquery\fR is announced by the header
+field \fBcontent-type\fR set by the option \fB-type\fR.
+\fIquery\fR is an x-url-encoding formatted query, if used for html forms.
+The \fB::http::formatQuery\fR procedure can be used to do the formatting.
 .TP
 \fB\-queryblocksize\fR \fIsize\fR
 .
@@ -542,6 +547,14 @@ is raised, but the status of the transaction will be \fBeof\fR.
 .
 The error message will also be stored in the \fBerror\fR status
 array element, accessible via \fB::http::error\fR.
+.TP
+\fBtimeout\fR
+.
+A timeout occurred before the transaction could complete
+.TP
+\fBreset\fR
+.
+user-reset
 .PP
 Another error possibility is that \fB::http::geturl\fR is unable to
 write all the post query data to the server before the server
@@ -657,10 +670,9 @@ the post query data to the server.
 .TP
 \fBstatus\fR
 .
-Either \fBok\fR, for successful completion, \fBreset\fR for
-user-reset, \fBtimeout\fR if a timeout occurred before the transaction
-could complete, or \fBerror\fR for an error condition.  During the
-transaction this value is the empty string.
+See description in the chapter \fBERRORS\fR above for a
+list and description of \fBstatus\fR.
+During the transaction this value is the empty string.
 .TP
 \fBtotalsize\fR
 .

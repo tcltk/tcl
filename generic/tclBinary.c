@@ -2146,8 +2146,8 @@ ScanNumber(
 	if (*numberCachePtrPtr == NULL) {
 	    return Tcl_NewLongObj(value);
 	} else {
-	    register Tcl_HashTable *tablePtr = *numberCachePtrPtr;
-	    register Tcl_HashEntry *hPtr;
+	    Tcl_HashTable *tablePtr = *numberCachePtrPtr;
+	    Tcl_HashEntry *hPtr;
 	    int isNew;
 
 	    hPtr = Tcl_CreateHashEntry(tablePtr, INT2PTR(value), &isNew);
@@ -2155,7 +2155,7 @@ ScanNumber(
 		return Tcl_GetHashValue(hPtr);
 	    }
 	    if (tablePtr->numEntries <= BINARY_SCAN_MAX_CACHE) {
-		register Tcl_Obj *objPtr = Tcl_NewLongObj(value);
+		Tcl_Obj *objPtr = Tcl_NewLongObj(value);
 
 		Tcl_IncrRefCount(objPtr);
 		Tcl_SetHashValue(hPtr, objPtr);
@@ -2274,7 +2274,7 @@ DeleteScanNumberCache(
 
     hEntry = Tcl_FirstHashEntry(numberCachePtr, &search);
     while (hEntry != NULL) {
-	register Tcl_Obj *value = Tcl_GetHashValue(hEntry);
+	Tcl_Obj *value = Tcl_GetHashValue(hEntry);
 
 	if (value != NULL) {
 	    Tcl_DecrRefCount(value);

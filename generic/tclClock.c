@@ -5,7 +5,7 @@
  *	the time and date facilities of TclX, by Mark Diekhans and Karl
  *	Lehenbauer.
  *
- * Copyright 1991-1995 Karl Lehenbauer and Mark Diekhans.
+ * Copyright (c) 1991-1995 Karl Lehenbauer & Mark Diekhans.
  * Copyright (c) 1995 Sun Microsystems, Inc.
  * Copyright (c) 2004 by Kevin B. Kenny. All rights reserved.
  * Copyright (c) 2015 by Sergey G. Brester aka sebres. All rights reserved.

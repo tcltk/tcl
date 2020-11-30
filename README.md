@@ -5,7 +5,9 @@ This is the **Tcl 8.6.10** source distribution.
 You can get any source release of Tcl from [our distribution
 site](https://sourceforge.net/projects/tcl/files/Tcl/).
 
-[![Build Status](https://travis-ci.org/tcltk/tcl.svg?branch=core-8-6-branch)](https://travis-ci.org/tcltk/tcl)
+[![Build Status](https://github.com/tcltk/tcl/workflows/Linux/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Linux%22+branch%3Acore-8-6-branch)
+[![Build Status](https://github.com/tcltk/tcl/workflows/Windows/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Windows%22+branch%3Acore-8-6-branch)
+[![Build Status](https://github.com/tcltk/tcl/workflows/macOS/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22macOS%22+branch%3Acore-8-6-branch)
 
 ## Contents
  1. [Introduction](#intro)
