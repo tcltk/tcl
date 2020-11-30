@@ -5,20 +5,20 @@ This is the **Tcl 9.0a2** source distribution.
 You can get any source release of Tcl from [our distribution
 site](https://sourceforge.net/projects/tcl/files/Tcl/).
 
-8.6.10
-[![Build Status](https://github.com/tcltk/tcl/workflows/Linux%20Build%20and%20Test/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Linux+Build+and+Test%22+branch%3Acore-8-6-branch)
-[![Build Status](https://github.com/tcltk/tcl/workflows/Windows%20Build%20and%20Test/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Windows+Build+and+Test%22+branch%3Acore-8-6-branch)
-[![Build Status](https://github.com/tcltk/tcl/workflows/macOS%20Build%20and%20Test/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22macOS+Build+and+Test%22+branch%3Acore-8-6-branch)
+8.6 (production release, daily build)
+[![Build Status](https://github.com/tcltk/tcl/workflows/Linux/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Linux%22+branch%3Acore-8-6-branch)
+[![Build Status](https://github.com/tcltk/tcl/workflows/Windows/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Windows%22+branch%3Acore-8-6-branch)
+[![Build Status](https://github.com/tcltk/tcl/workflows/macOS/badge.svg?branch=core-8-6-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22macOS%22+branch%3Acore-8-6-branch)
 <br>
-8.7a4
-[![Build Status](https://github.com/tcltk/tcl/workflows/Linux%20Build%20and%20Test/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Linux+Build+and+Test%22+branch%3Acore-8-branch)
-[![Build Status](https://github.com/tcltk/tcl/workflows/Windows%20Build%20and%20Test/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Windows+Build+and+Test%22+branch%3Acore-8-branch)
-[![Build Status](https://github.com/tcltk/tcl/workflows/macOS%20Build%20and%20Test/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22macOS+Build+and+Test%22+branch%3Acore-8-branch)
+8.7 (in development, daily build))
+[![Build Status](https://github.com/tcltk/tcl/workflows/Linux/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Linux%22+branch%3Acore-8-branch)
+[![Build Status](https://github.com/tcltk/tcl/workflows/Windows/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Windows%22+branch%3Acore-8-branch)
+[![Build Status](https://github.com/tcltk/tcl/workflows/macOS/badge.svg?branch=core-8-branch)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22macOS%22+branch%3Acore-8-branch)
 <br>
-9.0a2
-[![Build Status](https://github.com/tcltk/tcl/workflows/Linux%20Build%20and%20Test/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Linux+Build+and+Test%22+branch%3Amain)
-[![Build Status](https://github.com/tcltk/tcl/workflows/Windows%20Build%20and%20Test/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Windows+Build+and+Test%22+branch%3Amain)
-[![Build Status](https://github.com/tcltk/tcl/workflows/macOS%20Build%20and%20Test/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22macOS+Build+and+Test%22+branch%3Amain)
+9.0 (in development, daily build))
+[![Build Status](https://github.com/tcltk/tcl/workflows/Linux/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Linux%22+branch%3Amain)
+[![Build Status](https://github.com/tcltk/tcl/workflows/Windows/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22Windows%22+branch%3Amain)
+[![Build Status](https://github.com/tcltk/tcl/workflows/macOS/badge.svg?branch=main)](https://github.com/tcltk/tcl/actions?query=workflow%3A%22macOS%22+branch%3Amain)
 
 ## Contents
  1. [Introduction](#intro)
