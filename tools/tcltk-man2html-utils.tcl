@@ -185,7 +185,6 @@ proc process-text {text} {
 	    {\(Tp}	"&thorn;" \
 	    {\(em}	"&mdash;" \
 	    {\(en}	"&ndash;" \
-	    {\(bu}	"&bull;" \
 	    {\(fm}	"&prime;" \
 	    {\(mi}	"&minus;" \
 	    {\(.i}	"&imath;" \
@@ -200,6 +199,8 @@ proc process-text {text} {
 	    {\(eu}	"&euro;" \
 	    {\fP}	{\fR} \
 	    {\.}	. \
+	    {\(bu}	"&#8226;" \
+	    {\*(qo}	"&ocirc;" \
 	    ]
     # This might make a few invalid mappings, but we don't use them
     foreach c {a c e g i l n o s t u y z A C E G I L N O S T U Y Z} {
