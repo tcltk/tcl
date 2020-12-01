@@ -156,9 +156,9 @@ TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
 TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
-			  package ifneeded dde 1.4.3 [list load [file normalize ${DDE_DLL_FILE}] dde];\
-			  package ifneeded registry 1.3.5 [list load [file normalize ${REG_DLL_FILE}] registry]
-TEST_LOAD_FACILITIES	= package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest];\
+			  package ifneeded dde 1.4.3 [list load [file normalize ${DDE_DLL_FILE}] Dde];\
+			  package ifneeded registry 1.3.5 [list load [file normalize ${REG_DLL_FILE}] Registry]
+TEST_LOAD_FACILITIES	= package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}]];\
 			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
 TOMMATH_DLL_FILE		= libtommath.dll
@@ -169,7 +169,6 @@ STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 TCLSH			= tclsh$(VER)${EXESUFFIX}
 WINE			= @WINE@
 CAT32			= cat32$(EXEEXT)
-MAN2TCL			= man2tcl$(EXEEXT)
 
 # For cross-compiled builds, TCL_EXE is the name of a tclsh executable that is
 # available *BEFORE* running make for the first time. Certain build targets
@@ -981,7 +980,7 @@ Makefile: $(SRC_DIR)/Makefile.in
 	./config.status
 
 cleanhelp:
-	$(RM) *.hlp *.cnt *.GID *.rtf man2tcl.exe
+	$(RM) *.hlp *.cnt *.GID
 
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
@@ -993,7 +992,7 @@ clean: cleanhelp clean-packages
 
 distclean: distclean-packages clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
-		tcl.hpj config.status.lineno tclsh.exe.manifest
+		config.status.lineno tclsh.exe.manifest
 
 #
 # Bundled package targets

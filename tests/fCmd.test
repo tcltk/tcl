@@ -4,8 +4,8 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1996-1997 Sun Microsystems, Inc.
-# Copyright (c) 1999 by Scriptics Corporation.
+# Copyright © 1996-1997 Sun Microsystems, Inc.
+# Copyright © 1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -41,7 +41,7 @@ if {[testConstraint win]} {
 	testConstraint reg 1
     }
 }
-testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
+testConstraint notInCIenv [expr {![info exists ::env(CI)] || !$::env(CI)}]
 
 set tmpspace /tmp;# default value
 # Find a group that exists on this Unix system, or else skip tests that
@@ -79,6 +79,7 @@ testConstraint darwin9 [expr {
     && [package vsatisfies 1.$::tcl_platform(osVersion) 1.9]
 }]
 testConstraint notDarwin9 [expr {![testConstraint darwin9]}]
+testConstraint notContinuousIntegration [expr {![info exists ::env(CI)]}]
 
 testConstraint fileSharing 0
 testConstraint notFileSharing 1
@@ -2581,7 +2582,9 @@ test fCmd-30.2 {file readable on 'NTUSER.DAT'} -constraints {win notWine} -body 
           && [file exists $env(USERPROFILE)/NTUSER.DAT]
           && [file readable $env(USERPROFILE)/NTUSER.DAT]}
 } -result {1}
-test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win notWine} -body {
+# At least one CI environment (GitHub Actions) is set up with the page file in
+# an unusual location; skip the test if that is so.
+test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win notInCIenv} -body {
     set r {}
     if {[info exists env(SystemDrive)]} {
         set path $env(SystemDrive)/pagefile.sys

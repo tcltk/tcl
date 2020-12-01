@@ -3,11 +3,11 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 Scriptics Corporation.
-# Copyright (c) 2004 by Kevin B. Kenny.
-# Copyright (c) 2018 by Sean Woods
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994-1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2004 Kevin B. Kenny.
+# Copyright © 2018 Sean Woods
 #
 # All rights reserved.
 #

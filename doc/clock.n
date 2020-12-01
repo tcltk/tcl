@@ -951,7 +951,7 @@ msgcat(n)
 .SH KEYWORDS
 clock, date, time
 .SH "COPYRIGHT"
-Copyright (c) 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
+Copyright \(co 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

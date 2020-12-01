@@ -6,7 +6,7 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+# Copyright © 2001 Kevin B. Kenny.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.

@@ -4,7 +4,7 @@
 #
 #   source [file join [file dirname [info script]] internals.tcl]
 #
-# Copyright (c) 2020 Sergey G. Brester (sebres).
+# Copyright © 2020 Sergey G. Brester (sebres).
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.

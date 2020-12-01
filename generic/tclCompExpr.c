@@ -164,6 +164,8 @@ enum Marks {
 				 * "=" is encountered.  */
 #define INVALID		5	/* A parse error. Used when any punctuation
 				 * appears that's not a supported operator. */
+#define COMMENT		6	/* Comment. Lasts to end of line or end of
+				 * expression, whichever comes first. */
 
 /* Leaf lexemes */
 
@@ -462,7 +464,7 @@ static const unsigned char Lexeme[] = {
 	INVALID		/* FS */,	INVALID		/* GS */,
 	INVALID		/* RS */,	INVALID		/* US */,
 	INVALID		/* SPACE */,	0		/* ! or != */,
-	QUOTED		/* " */,	INVALID		/* # */,
+	QUOTED		/* " */,	0		/* # */,
 	VARIABLE	/* $ */,	MOD		/* % */,
 	0		/* & or && */,	INVALID		/* ' */,
 	OPEN_PAREN	/* ( */,	CLOSE_PAREN	/* ) */,
@@ -674,9 +676,10 @@ ParseExpr(
 	    OpNode *newPtr = NULL;
 
 	    do {
-	      if (size <= UINT_MAX/sizeof(OpNode)) {
-		newPtr = (OpNode *)Tcl_AttemptRealloc(nodes, size * sizeof(OpNode));
-	      }
+		if (size <= UINT_MAX/sizeof(OpNode)) {
+		    newPtr = (OpNode *) Tcl_AttemptRealloc(nodes,
+			    size * sizeof(OpNode));
+		}
 	    } while ((newPtr == NULL)
 		    && ((size -= (size - nodesUsed) / 2) > nodesUsed));
 	    if (newPtr == NULL) {
@@ -708,6 +711,10 @@ ParseExpr(
 	    int b;
 
 	    switch (lexeme) {
+	    case COMMENT:
+		start += scanned;
+		numBytes -= scanned;
+		continue;
 	    case INVALID:
 		msg = Tcl_ObjPrintf("invalid character \"%.*s\"",
 			(int)scanned, start);
@@ -742,6 +749,32 @@ ParseExpr(
 		} else if (Tcl_GetBooleanFromObj(NULL,literal,&b) == TCL_OK) {
 		    lexeme = BOOLEAN;
 		} else {
+		    /*
+		     * Tricky case: see test expr-62.10
+		     */
+
+		    int scanned2 = scanned;
+		    do {
+			scanned2 += TclParseAllWhiteSpace(
+				start + scanned2, numBytes - scanned2);
+			scanned2 += ParseLexeme(
+				start + scanned2, numBytes - scanned2, &lexeme,
+				NULL);
+		    } while (lexeme == COMMENT);
+		    if (lexeme == OPEN_PAREN) {
+			/*
+			 * Actually a function call, but with obscuring
+			 * comments.  Skip to the start of the parentheses.
+			 * Note that we assume that open parentheses are one
+			 * byte long.
+			 */
+
+			lexeme = FUNCTION;
+			Tcl_ListObjAppendElement(NULL, funcList, literal);
+			scanned = scanned2 - 1;
+			break;
+		    }
+
 		    Tcl_DecrRefCount(literal);
 		    msg = Tcl_ObjPrintf("invalid bareword \"%.*s%s\"",
 			    (scanned < limit) ? (int)scanned : (int)limit - 3, start,
@@ -1894,7 +1927,7 @@ ParseLexeme(
 				   storage, if non-NULL. */
 {
     const char *end;
-    Tcl_UniChar ch = 0;
+    int ch;
     Tcl_Obj *literal = NULL;
     unsigned char byte;
 
@@ -1908,6 +1941,19 @@ ParseLexeme(
 	return 1;
     }
     switch (byte) {
+    case '#': {
+	/*
+	 * Scan forward over the comment contents.
+	 */
+	size_t size;
+
+	for (size = 0; byte != '\n' && byte != 0 && size < numBytes; size++) {
+	    byte = UCHAR(start[size]);
+	}
+	*lexemePtr = COMMENT;
+	return size - (byte == '\n');
+    }
+
     case '*':
 	if ((numBytes > 1) && (start[1] == '*')) {
 	    *lexemePtr = EXPON;
@@ -2102,14 +2148,14 @@ ParseLexeme(
 
     if (!TclIsBareword(*start) || *start == '_') {
 	size_t scanned;
-	if (Tcl_UtfCharComplete(start, numBytes)) {
-	    scanned = TclUtfToUniChar(start, &ch);
+	if (TclUCS4Complete(start, numBytes)) {
+	    scanned = TclUtfToUCS4(start, &ch);
 	} else {
-	    char utfBytes[4];
+	    char utfBytes[8];
 
 	    memcpy(utfBytes, start, numBytes);
 	    utfBytes[numBytes] = '\0';
-	    scanned = TclUtfToUniChar(utfBytes, &ch);
+	    scanned = TclUtfToUCS4(utfBytes, &ch);
 	}
 	*lexemePtr = INVALID;
 	Tcl_DecrRefCount(literal);
