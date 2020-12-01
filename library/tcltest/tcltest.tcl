@@ -41,7 +41,9 @@ namespace eval tcltest {
 	    outputChannel testConstraint
 
     # Export commands that are duplication (candidates for deprecation)
-    namespace export bytestring		;# dups [encoding convertfrom identity]
+    if {![package vsatisfies [package provide Tcl] 8.7-]} {
+	namespace export bytestring	;# dups [encoding convertfrom identity]
+    }
     namespace export debug		;#	[configure -debug]
     namespace export errorFile		;#	[configure -errfile]
     namespace export limitConstraints	;#	[configure -limitconstraints]
@@ -3080,6 +3082,9 @@ proc tcltest::makeFile {contents name {directory ""}} {
 
     set fd [open $fullName w]
     chan configure $fd -translation lf
+    if {[package vsatisfies [package provide Tcl] 8.7-]} {
+	chan configure $fd -encoding utf-8
+    } 
     if {[string index $contents end] eq "\n"} {
 	puts -nonewline $fd $contents
     } else {
@@ -3249,6 +3254,9 @@ proc tcltest::viewFile {name {directory ""}} {
 # construct improperly formed strings in this manner, because it involves
 # exposing that Tcl uses UTF-8 internally.
 #
+# This function doesn't work any more in Tcl 8.7, since the 'identity'
+# is gone (TIP #345)
+#
 # Arguments:
 #	string being converted
 #
@@ -3258,8 +3266,10 @@ proc tcltest::viewFile {name {directory ""}} {
 # Side effects:
 #	None
 
-proc tcltest::bytestring {string} {
-    return [encoding convertfrom identity $string]
+if {![package vsatisfies [package provide Tcl] 8.7-]} {
+    proc tcltest::bytestring {string} {
+	return [encoding convertfrom identity $string]
+    }
 }
 
 # tcltest::OpenFiles --
