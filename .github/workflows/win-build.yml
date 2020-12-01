@@ -7,6 +7,13 @@ jobs:
       run:
         shell: powershell
         working-directory: win
+    strategy:
+      matrix:
+        cfgopt:
+          - "OPTS=threads"
+          - "OPTS=static,msvcrt,threads"
+          - "OPTS=symbols,threads"
+          - "OPTS=memdbg,threads"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
@@ -15,19 +22,19 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
       - name: Build
         run: |
-          &nmake -f makefile.vc all
+          &nmake -f makefile.vc ${{ matrix.cfgopt }} all
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
       - name: Build Test Harness
         run: |
-          &nmake -f makefile.vc tcltest
+          &nmake -f makefile.vc ${{ matrix.cfgopt }} tcltest
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
       - name: Run Tests
         run: |
-          &nmake -f makefile.vc test
+          &nmake -f makefile.vc ${{ matrix.cfgopt }} test
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
@@ -61,7 +68,7 @@ jobs:
         run: |
           ./configure ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
         env:
-          CFGOPT: --enable-64bit ${{ matrix.cfgopt }}
+          CFGOPT: --enable-64bit --enable-threads ${{ matrix.cfgopt }}
       - name: Build
         run: make all
       - name: Build Test Harness
