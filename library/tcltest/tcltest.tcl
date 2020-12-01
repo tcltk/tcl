@@ -1271,7 +1271,7 @@ proc tcltest::DefineConstraintInitializers {} {
 
     ConstraintInitializer nonBlockFiles {
 	    set code [expr {[catch {set f [open defs r]}]
-		    || [catch {chan configure $f -blocking off}]}]
+		    || [catch {fconfigure $f -blocking off}]}]
 	    catch {close $f}
 	    set code
     }
@@ -3081,9 +3081,9 @@ proc tcltest::makeFile {contents name {directory ""}} {
 	     putting ``$contents'' into $fullName"
 
     set fd [open $fullName w]
-    chan configure $fd -translation lf
+    fconfigure $fd -translation lf
     if {[package vsatisfies [package provide Tcl] 8.7-]} {
-	chan configure $fd -encoding utf-8
+	fconfigure $fd -encoding utf-8
     } 
     if {[string index $contents end] eq "\n"} {
 	puts -nonewline $fd $contents
@@ -3233,6 +3233,9 @@ proc tcltest::viewFile {name {directory ""}} {
     }
     set fullName [file join $directory $name]
     set f [open $fullName]
+    if {[package vsatisfies [package provide Tcl] 8.7-]} {
+	fconfigure $f -encoding utf-8
+    }
     set data [read -nonewline $f]
     close $f
     return $data
