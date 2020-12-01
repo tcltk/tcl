@@ -327,7 +327,7 @@ test cmdAH-8.14 {Tcl_FileObjCmd: dirname} testsetplatform {
 test cmdAH-8.15 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname //foo/bar
-} //foo
+} //foo/bar
 test cmdAH-8.16 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname {//foo\/bar/baz}
@@ -471,7 +471,7 @@ test cmdAH-9.14 {Tcl_FileObjCmd: tail} testsetplatform {
 test cmdAH-9.15 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail //foo/bar
-} bar
+} {}
 test cmdAH-9.16 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail {//foo\/bar/baz}
