@@ -489,9 +489,6 @@ lflags	= $(lflags) -nodefaultlib:libucrt.lib
 !if $(ALIGN98_HACK) && !$(STATIC_BUILD)
 ### Align sections for PE size savings.
 lflags	= $(lflags) -opt:nowin98
-!else if !$(ALIGN98_HACK) && $(STATIC_BUILD)
-### Align sections for speed in loading by choosing the virtual page size.
-lflags	= $(lflags) -align:4096
 !endif
 
 !if $(LOIMPACT)
