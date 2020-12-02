@@ -97,6 +97,9 @@ proc ::platform::generic {} {
 	cygwin* {
 	    set plat cygwin
 	}
+	msys* {
+	    set plat msystem
+	}
 	windows {
 	    if {$tcl_platform(platform) == "unix"} {
 		set plat cygwin

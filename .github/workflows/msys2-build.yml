@@ -4,7 +4,7 @@ on:
   push:
 
 jobs:
-  build:
+  msys2:
     runs-on: windows-latest
 
     defaults:
@@ -30,4 +30,4 @@ jobs:
         run: make test
         env:
           ERROR_ON_FAILURES: 1
-          TESTFLAGS: -skip io-53.4.1 -verbose bpsel
+          TESTFLAGS: -skip io-53.4.1
