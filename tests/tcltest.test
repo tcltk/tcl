@@ -546,8 +546,8 @@ makeDirectory notreadable
 makeDirectory notwriteable
 switch -- $::tcl_platform(platform) {
     unix {
-	file attributes $notReadableDir -permissions 00333
-	file attributes $notWriteableDir -permissions 00555
+	file attributes $notReadableDir -permissions 0o333
+	file attributes $notWriteableDir -permissions 0o555
     }
     default {
 	# note in FAT/NTFS we won't be able to protect directory with read-only attribute...
