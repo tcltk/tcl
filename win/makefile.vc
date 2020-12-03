@@ -486,11 +486,6 @@ lflags	= $(lflags) -profile
 lflags	= $(lflags) -nodefaultlib:libucrt.lib
 !endif
 
-!if $(ALIGN98_HACK) && !$(STATIC_BUILD)
-### Align sections for PE size savings.
-lflags	= $(lflags) -opt:nowin98
-!endif
-
 !if $(LOIMPACT)
 lflags	= $(lflags) -ws:aggressive
 !endif
