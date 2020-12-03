@@ -624,10 +624,10 @@ test fCmd-6.23 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
     cleanup $tmpspace
 } -constraints {xdev notRoot} -body {
     file mkdir td1/td2/td3
-    file attributes td1 -permissions 0000
+    file attributes td1 -permissions 0o000
     file rename td1 $tmpspace
 } -returnCodes error -cleanup {
-    file attributes td1 -permissions 0755
+    file attributes td1 -permissions 0o755
     cleanup
 } -match regexp -result {^error renaming "td1"( to "/tmp/tcl\d+/td1")?: permission denied$}
 test fCmd-6.24 {CopyRenameOneFile: error uses original name} -setup {
@@ -635,10 +635,10 @@ test fCmd-6.24 {CopyRenameOneFile: error uses original name} -setup {
 } -constraints {unix notRoot} -body {
     file mkdir ~/td1/td2
     set td1name [file join [file dirname ~] [file tail ~] td1]
-    file attributes $td1name -permissions 0000
+    file attributes $td1name -permissions 0o000
     file copy ~/td1 td1
 } -returnCodes error -cleanup {
-    file attributes $td1name -permissions 0755
+    file attributes $td1name -permissions 0o755
     file delete -force ~/td1
 } -result {error copying "~/td1": permission denied}
 test fCmd-6.25 {CopyRenameOneFile: error uses original name} -setup {
@@ -647,10 +647,10 @@ test fCmd-6.25 {CopyRenameOneFile: error uses original name} -setup {
     file mkdir td2
     file mkdir ~/td1
     set td1name [file join [file dirname ~] [file tail ~] td1]
-    file attributes $td1name -permissions 0000
+    file attributes $td1name -permissions 0o000
     file copy td2 ~/td1
 } -returnCodes error -cleanup {
-    file attributes $td1name -permissions 0755
+    file attributes $td1name -permissions 0o755
     file delete -force ~/td1
 } -result {error copying "td2" to "~/td1/td2": permission denied}
 test fCmd-6.26 {CopyRenameOneFile: doesn't use original name} -setup {
@@ -658,10 +658,10 @@ test fCmd-6.26 {CopyRenameOneFile: doesn't use original name} -setup {
 } -constraints {unix notRoot} -body {
     file mkdir ~/td1/td2
     set td2name [file join [file dirname ~] [file tail ~] td1 td2]
-    file attributes $td2name -permissions 0000
+    file attributes $td2name -permissions 0o000
     file copy ~/td1 td1
 } -returnCodes error -cleanup {
-    file attributes $td2name -permissions 0755
+    file attributes $td2name -permissions 0o755
     file delete -force ~/td1
 } -result "error copying \"~/td1\" to \"td1\": \"[file join $::env(HOME) td1 td2]\": permission denied"
 test fCmd-6.27 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
@@ -676,10 +676,10 @@ test fCmd-6.28 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
     cleanup $tmpspace
 } -constraints {notRoot xdev} -body {
     file mkdir td1/td2/td3
-    file attributes td1/td2/td3 -permissions 0000
+    file attributes td1/td2/td3 -permissions 0o000
     file rename td1 $tmpspace
 } -returnCodes error -cleanup {
-    file attributes td1/td2/td3 -permissions 0755
+    file attributes td1/td2/td3 -permissions 0o755
     cleanup $tmpspace
 } -match glob -result {error renaming "td1" to "/tmp/tcl*/td1": "td1/td2/td3": permission denied}
 test fCmd-6.29 {CopyRenameOneFile: TclpCopyDirectory passed} -setup {
@@ -1343,10 +1343,10 @@ test fCmd-12.8 {renamefile: generic error} -setup {
 } -constraints {unix notRoot} -body {
     file mkdir tfa
     file mkdir tfa/dir
-    file attributes tfa -permissions 0555
+    file attributes tfa -permissions 0o555
     catch {file rename tfa/dir tfa2}
 } -cleanup {
-    catch {file attributes tfa -permissions 0777}
+    catch {file attributes tfa -permissions 0o777}
     file delete -force tfa
 } -result {1}
 test fCmd-12.9 {renamefile: moving a file across volumes} -setup {
@@ -1529,10 +1529,10 @@ test fCmd-14.8 {copyfile: copy directory failing} -setup {
     catch {file delete -force -- tfa}
 } -constraints {unix notRoot} -body {
     file mkdir tfa/dir/a/b/c
-    file attributes tfa/dir -permissions 0000
+    file attributes tfa/dir -permissions 0o000
     catch {file copy tfa tfa2}
 } -cleanup {
-    file attributes tfa/dir -permissions 0777
+    file attributes tfa/dir -permissions 0o777
     file delete -force tfa tfa2
 } -result {1}
 
@@ -1572,10 +1572,10 @@ test fCmd-15.4 {TclMakeDirsCmd - stat failing} -setup {
 } -constraints {unix notRoot} -body {
     file mkdir tfa
     createfile tfa/file
-    file attributes tfa -permissions 0000
+    file attributes tfa -permissions 0o000
     catch {file mkdir tfa/file}
 } -cleanup {
-    file attributes tfa -permissions 0777
+    file attributes tfa -permissions 0o777
     file delete -force tfa
 } -result {1}
 test fCmd-15.5 {TclMakeDirsCmd: - making a directory several levels deep} -setup {
@@ -1672,7 +1672,7 @@ test fCmd-16.9 {error while deleting file} -setup {
 } -constraints {unix notRoot} -body {
     file mkdir tfa
     createfile tfa/a
-    file attributes tfa -permissions 0555
+    file attributes tfa -permissions 0o555
     catch {file delete tfa/a}
     #######
     #######  If any directory in a tree that is being removed does not have
@@ -1680,7 +1680,7 @@ test fCmd-16.9 {error while deleting file} -setup {
     #######  with "rm -rf"
     #######
 } -cleanup {
-    file attributes tfa -permissions 0777
+    file attributes tfa -permissions 0o777
     file delete -force tfa
 } -result {1}
 test fCmd-16.10 {deleting multiple files} -constraints {notRoot} -setup {
@@ -1702,10 +1702,10 @@ test fCmd-17.1 {mkdir stat failing on target but not ENOENT} -setup {
      catch {file delete -force -- tfa1}
 } -constraints {unix notRoot} -body {
      file mkdir tfa1
-     file attributes tfa1 -permissions 0555
+     file attributes tfa1 -permissions 0o555
      catch {file mkdir tfa1/tfa2}
 } -cleanup {
-     file attributes tfa1 -permissions 0777
+     file attributes tfa1 -permissions 0o777
      file delete -force tfa1
 } -result {1}
 test fCmd-17.2 {mkdir several levels deep - relative} -setup {
@@ -1913,10 +1913,10 @@ test fCmd-19.2 {rmdir error besides EEXIST} -setup {
 } -constraints {unix notRoot} -body {
     file mkdir tfa
     file mkdir tfa/a
-    file attributes tfa -permissions 0555
+    file attributes tfa -permissions 0o555
     catch {file delete tfa/a}
 } -cleanup {
-    file attributes tfa -permissions 0777
+    file attributes tfa -permissions 0o777
     file delete -force tfa
 } -result {1}
 test fCmd-19.3 {recursive remove} -constraints {notRoot} -setup {
@@ -1941,10 +1941,10 @@ test fCmd-20.1 {TraverseUnixTree : failure opening a subdirectory directory} -se
 } -constraints {unix notRoot} -body {
     file mkdir tfa
     file mkdir tfa/a
-    file attributes tfa/a -permissions 0000
+    file attributes tfa/a -permissions 0o000
     catch {file delete -force tfa}
 } -cleanup {
-    file attributes tfa/a -permissions 0777
+    file attributes tfa/a -permissions 0o777
     file delete -force tfa
 } -result {1}
 test fCmd-20.2 {TraverseUnixTree : recursive delete of large directory: Bug 1034337} -setup {
