@@ -5350,8 +5350,8 @@ test chan-io-40.3 {POSIX open access modes: CREAT} -setup {
     # This test only works if your umask is 2, like ouster's.
     chan close [open $path(test3) {WRONLY CREAT}]
     file stat $path(test3) stats
-    format "%#o" [expr {$stats(mode) & 0o777}]
-} -result [format %#4o [expr {0o666 & ~ $umaskValue}]]
+    format "0o%03o" [expr {$stats(mode) & 0o777}]
+} -result [format 0o%03o [expr {0o666 & ~ $umaskValue}]]
 test chan-io-40.4 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -body {
