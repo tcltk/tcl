@@ -1481,18 +1481,6 @@ lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 lflags	= $(lflags) -nodefaultlib:libucrt.lib
 !endif
 
-# Old linkers (Visual C++ 6 in particular) will link for fast loading
-# on Win98. Since we do not support Win98 any more, we specify nowin98
-# as recommended for NT and later. However, this is only required by
-# IX86 on older compilers and only needed if we are not doing a static build.
-
-!if "$(MACHINE)" == "IX86" && !$(STATIC_BUILD)
-!if [nmakehlp -l -opt:nowin98 $(LINKER_TESTFLAGS)]
-# Align sections for PE size savings.
-lflags	= $(lflags) -opt:nowin98
-!endif
-!endif
-
 dlllflags = $(lflags) -dll
 conlflags = $(lflags) -subsystem:console
 guilflags = $(lflags) -subsystem:windows

@@ -130,8 +130,8 @@ proc htmlize-text {text {charmap {}}} {
 	\"	{&quot;} \
 	{<}	{&lt;} \
 	{>}	{&gt;} \
-	\u201c "&ldquo;" \
-	\u201d "&rdquo;"
+	\u201C "&ldquo;" \
+	\u201D "&rdquo;"
 
     return [string map $charmap $text]
 }
@@ -1303,8 +1303,8 @@ proc make-manpage-section {outputDir sectionDescriptor} {
     global manual overall_title tcltkdesc verbose
     global excluded_pages forced_index_pages process_first_patterns
 
-    set LQ \u201c
-    set RQ \u201d
+    set LQ \u201C
+    set RQ \u201D
 
     lassign $sectionDescriptor \
 	manual(wing-glob) \
