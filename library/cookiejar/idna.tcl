@@ -7,7 +7,7 @@
 #
 # This implementation includes code from that RFC, translated to Tcl; the
 # other parts are:
-# Copyright (c) 2014 Donal K. Fellows
+# Copyright © 2014 Donal K. Fellows
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -27,9 +27,9 @@ namespace eval ::tcl::idna {
     proc IDNAencode hostname {
 	set parts {}
 	# Split term from RFC 3490, Sec 3.1
-	foreach part [split $hostname "\u002E\u3002\uFF0E\uFF61"] {
+	foreach part [split $hostname "\x2E\u3002\uFF0E\uFF61"] {
 	    if {[regexp {[^-A-Za-z0-9]} $part]} {
-		if {[regexp {[^-A-Za-z0-9\u00a1-\uffff]} $part ch]} {
+		if {[regexp {[^-A-Za-z0-9\xA1-\uFFFF]} $part ch]} {
 		    scan $ch %c c
 		    if {$ch < "!" || $ch > "~"} {
 			set ch [format "\\u%04x" $c]
@@ -51,7 +51,7 @@ namespace eval ::tcl::idna {
     proc IDNAdecode hostname {
 	set parts {}
 	# Split term from RFC 3490, Sec 3.1
-	foreach part [split $hostname "\u002E\u3002\uFF0E\uFF61"] {
+	foreach part [split $hostname "\x2E\u3002\uFF0E\uFF61"] {
 	    if {[string match -nocase "xn--*" $part]} {
 		set part [punydecode [string range $part 4 end]]
 	    }
@@ -116,7 +116,7 @@ namespace eval ::tcl::idna {
 
 	# Handle the basic code points:
 	foreach ch $string {
-	    if {$ch < "\u0080"} {
+	    if {$ch < "\x80"} {
 		if {$case eq ""} {
 		    append output $ch
 		} elseif {[string is true $case]} {

@@ -4,7 +4,7 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 2002 Vincent Darley.
+# Copyright © 2002 Vincent Darley.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -25,7 +25,7 @@ namespace eval ::tcl::test::fileSystem {
 testConstraint loaddll 0
 catch {
     ::tcltest::loadTestedCommands
-    package require -exact Tcltest [info patchlevel]
+    package require -exact tcl::test [info patchlevel]
     set ::ddever [package require dde]
     set ::ddelib [lindex [package ifneeded dde $::ddever] 1]
     set ::regver  [package require registry]
@@ -33,7 +33,7 @@ catch {
     testConstraint loaddll 1
 }
 
-# Test for commands defined in Tcltest executable
+# Test for commands defined in tcl::test package
 testConstraint testfilesystem  	    [llength [info commands ::testfilesystem]]
 testConstraint testsetplatform 	    [llength [info commands ::testsetplatform]]
 testConstraint testsimplefilesystem [llength [info commands ::testsimplefilesystem]]
@@ -694,7 +694,7 @@ test filesystem-7.5 {cross-filesystem file copy with -force} -setup {
     # First copy should succeed
     set res [catch {file copy simplefs:/simplefile file2} err]
     lappend res $err
-    file attributes file2 -permissions 0000
+    file attributes file2 -permissions 0
     # Second copy should fail (no -force)
     lappend res [catch {file copy simplefs:/simplefile file2} err]
     lappend res $err

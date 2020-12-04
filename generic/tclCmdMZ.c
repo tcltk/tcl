@@ -36,31 +36,31 @@ static int		UniCharIsHexDigit(int character);
  */
 
 const char tclDefaultTrimSet[] =
-	"\x09\x0a\x0b\x0c\x0d " /* ASCII */
-	"\xc0\x80" /*     nul (U+0000) */
-	"\xc2\x85" /*     next line (U+0085) */
-	"\xc2\xa0" /*     non-breaking space (U+00a0) */
-	"\xe1\x9a\x80" /* ogham space mark (U+1680) */
-	"\xe1\xa0\x8e" /* mongolian vowel separator (U+180e) */
-	"\xe2\x80\x80" /* en quad (U+2000) */
-	"\xe2\x80\x81" /* em quad (U+2001) */
-	"\xe2\x80\x82" /* en space (U+2002) */
-	"\xe2\x80\x83" /* em space (U+2003) */
-	"\xe2\x80\x84" /* three-per-em space (U+2004) */
-	"\xe2\x80\x85" /* four-per-em space (U+2005) */
-	"\xe2\x80\x86" /* six-per-em space (U+2006) */
-	"\xe2\x80\x87" /* figure space (U+2007) */
-	"\xe2\x80\x88" /* punctuation space (U+2008) */
-	"\xe2\x80\x89" /* thin space (U+2009) */
-	"\xe2\x80\x8a" /* hair space (U+200a) */
-	"\xe2\x80\x8b" /* zero width space (U+200b) */
-	"\xe2\x80\xa8" /* line separator (U+2028) */
-	"\xe2\x80\xa9" /* paragraph separator (U+2029) */
-	"\xe2\x80\xaf" /* narrow no-break space (U+202f) */
-	"\xe2\x81\x9f" /* medium mathematical space (U+205f) */
-	"\xe2\x81\xa0" /* word joiner (U+2060) */
-	"\xe3\x80\x80" /* ideographic space (U+3000) */
-	"\xef\xbb\xbf" /* zero width no-break space (U+feff) */
+	"\x09\x0A\x0B\x0C\x0D " /* ASCII */
+	"\xC0\x80" /*     nul (U+0000) */
+	"\xC2\x85" /*     next line (U+0085) */
+	"\xC2\xA0" /*     non-breaking space (U+00a0) */
+	"\xE1\x9A\x80" /* ogham space mark (U+1680) */
+	"\xE1\xA0\x8E" /* mongolian vowel separator (U+180e) */
+	"\xE2\x80\x80" /* en quad (U+2000) */
+	"\xE2\x80\x81" /* em quad (U+2001) */
+	"\xE2\x80\x82" /* en space (U+2002) */
+	"\xE2\x80\x83" /* em space (U+2003) */
+	"\xE2\x80\x84" /* three-per-em space (U+2004) */
+	"\xE2\x80\x85" /* four-per-em space (U+2005) */
+	"\xE2\x80\x86" /* six-per-em space (U+2006) */
+	"\xE2\x80\x87" /* figure space (U+2007) */
+	"\xE2\x80\x88" /* punctuation space (U+2008) */
+	"\xE2\x80\x89" /* thin space (U+2009) */
+	"\xE2\x80\x8A" /* hair space (U+200a) */
+	"\xE2\x80\x8B" /* zero width space (U+200b) */
+	"\xE2\x80\xA8" /* line separator (U+2028) */
+	"\xE2\x80\xA9" /* paragraph separator (U+2029) */
+	"\xE2\x80\xAF" /* narrow no-break space (U+202f) */
+	"\xE2\x81\x9F" /* medium mathematical space (U+205f) */
+	"\xE2\x81\xA0" /* word joiner (U+2060) */
+	"\xE3\x80\x80" /* ideographic space (U+3000) */
+	"\xEF\xBB\xBF" /* zero width no-break space (U+feff) */
 ;
 
 /*
@@ -2548,64 +2548,6 @@ StringStartCmd(
 /*
  *----------------------------------------------------------------------
  *
- * StringCharStartCmd --
- *
- *	This procedure is invoked to process the "string charstart" Tcl
- *	command. See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-StringCharStartCmd(
-    TCL_UNUSED(ClientData),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-#if TCL_UTF_MAX <= 3
-    const Tcl_UniChar *src;
-#else
-    const char *src;
-#endif
-    int index, length;
-
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "string index");
-	return TCL_ERROR;
-    }
-
-#if TCL_UTF_MAX <= 3
-    src = Tcl_GetUnicodeFromObj(objv[1], &length);
-#else
-    src = Tcl_GetStringFromObj(objv[1], &length);
-    length = Tcl_NumUtfChars(src, length);
-#endif
-    if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (index >= length) {
-	index = length;
-    } else if (index < 0) {
-	index = -1;
-#if TCL_UTF_MAX <= 3
-    } else if ((index > 0) && ((src[index-1] & 0xFC00) == 0xD800) && ((src[index] & 0xFC00) == 0xDC00)) {
-	index--;
-#endif
-    }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(index));
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * StringEndCmd --
  *
  *	This procedure is invoked to process the "string wordend" Tcl command.
@@ -2661,65 +2603,6 @@ StringEndCmd(
     }
     TclNewIntObj(obj, cur);
     Tcl_SetObjResult(interp, obj);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * StringCharEndCmd --
- *
- *	This procedure is invoked to process the "string charend" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-StringCharEndCmd(
-    TCL_UNUSED(ClientData),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-#if TCL_UTF_MAX <= 3
-    const Tcl_UniChar *src;
-#else
-    const char *src;
-#endif
-    int index, length;
-
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "string index");
-	return TCL_ERROR;
-    }
-
-#if TCL_UTF_MAX <= 3
-    src = Tcl_GetUnicodeFromObj(objv[1], &length);
-#else
-    src = Tcl_GetStringFromObj(objv[1], &length);
-    length = Tcl_NumUtfChars(src, length);
-#endif
-    if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (++index < 0) {
-	index = 0;
-    }
-    if (index >= length) {
-	index = length;
-#if TCL_UTF_MAX <= 3
-    } else if ((index > 0) && ((src[index-1] & 0xFC00) == 0xD800) && ((src[index] & 0xFC00) == 0xDC00)) {
-	index++;
-#endif
-    }
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(index));
     return TCL_OK;
 }
 
@@ -3425,8 +3308,6 @@ TclInitStringCmd(
     static const EnsembleImplMap stringImplMap[] = {
 	{"bytelength",	StringBytesCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"cat",		StringCatCmd,	TclCompileStringCatCmd, NULL, NULL, 0},
-	{"charend",	StringCharEndCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"charstart",	StringCharStartCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
 	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
 	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, 0},

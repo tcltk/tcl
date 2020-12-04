@@ -7,8 +7,8 @@
 # In order for these tests to run, the registry package must be on the
 # auto_path or the registry package must have been loaded already.
 #
-# Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.  All rights reserved.
+# Copyright © 1998-1999 Scriptics Corporation.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5

@@ -5,7 +5,7 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 2007 Andreas Kupries <andreask@activestate.com>
+# Copyright © 2007 Andreas Kupries <andreask@activestate.com>
 #                                    <akupries@shaw.ca>
 #
 # See the file "license.terms" for information on usage and redistribution
@@ -17,7 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Custom constraints used in this file
 testConstraint testchannel [llength [info commands testchannel]]

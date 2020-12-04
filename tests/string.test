@@ -4,10 +4,10 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001 Kevin B. Kenny.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -18,7 +18,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Helper commands to test various optimizations, code paths, and special cases.
 proc makeByteArray {s} {binary format a* $s}
@@ -74,7 +74,7 @@ if {$noComp} {
 
 test string-1.1.$noComp {error conditions} {
     list [catch {run {string gorp a b}} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2.$noComp {error conditions} {
     list [catch {run {string}} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -1818,7 +1818,7 @@ test string-20.1.$noComp {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-20.2.$noComp {string trimright errors} {
     list [catch {run {string trimg a}} msg] $msg
-} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3.$noComp {string trimright} {
     run {string trimright "    XYZ      "}
 } {    XYZ}
@@ -1911,7 +1911,7 @@ test string-21.16.$noComp {string wordend, unicode} -constraints utf16 -body {
 
 test string-22.1.$noComp {string wordstart} -body {
     list [catch {run {string word a}} msg] $msg
-} -result {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -result {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2.$noComp {string wordstart} -body {
     list [catch {run {string wordstart a}} msg] $msg
 } -result {1 {wrong # args: should be "string wordstart string index"}}
@@ -2556,106 +2556,6 @@ test string-32.16.$noComp {string is dict, invalid dict} {
 test string-32.17.$noComp {string is dict, valid dict packed in invalid dict} {
     string is dict {{a b c d e f g h}}
 } 0
-
-test string-33.1.$noComp {string charend} -body {
-    list [catch {run {string charend a}} msg] $msg
-} -result {1 {wrong # args: should be "string charend string index"}}
-test string-33.2.$noComp {string charend} -body {
-    list [catch {run {string charend a b c}} msg] $msg
-} -result {1 {wrong # args: should be "string charend string index"}}
-test string-33.3.$noComp {string charend} -body {
-    list [catch {run {string charend a gorp}} msg] $msg
-} -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-33.4.$noComp {string charend} -body {
-    run {string charend abc. -1}
-} -result 0
-test string-33.5.$noComp {string charend} -body {
-    run {string charend abc. 100}
-} -result 4
-test string-33.6.$noComp {string charend} -body {
-    run {string charend "word_one two three" 2}
-} -result 3
-test string-33.7.$noComp {string charend} -body {
-    run {string charend "one .&# three" 5}
-} -result 6
-test string-33.8.$noComp {string charend} -body {
-    run {string worde "x.y" 0}
-} -result 1
-test string-33.9.$noComp {string charend} -body {
-    run {string worde "x.y" end-1}
-} -result 2
-test string-33.10.$noComp {string charend, unicode} -body {
-    run {string charend "xyz\xC7de fg" 0}
-} -result 1
-test string-33.11.$noComp {string charend, unicode} -body {
-    run {string charend "xyz\uC700de fg" 0}
-} -result 1
-test string-33.12.$noComp {string charend, unicode} -body {
-    run {string charend "xyz\u203Fde fg" 0}
-} -result 1
-test string-33.13.$noComp {string charend, unicode} -body {
-    run {string charend "xyz\u2045de fg" 0}
-} -result 1
-test string-33.14.$noComp {string charend, unicode} -body {
-    run {string charend "\uC700\uC700 abc" 8}
-} -result 6
-test string-33.15.$noComp {string charend, unicode} -constraints utf16 -body {
-    run {string charend "\U1D7CA\U1D7CA abc" 0}
-} -result 2
-test string-33.16.$noComp {string charend, unicode} -constraints utf16 -body {
-    run {string charend "\U1D7CA\U1D7CA abc" 10}
-} -result 8
-
-test string-34.1.$noComp {string charstart} -body {
-    list [catch {run {string word a}} msg] $msg
-} -match regexp -result {1 {unknown or ambiguous subcommand "word": must be (bytelength, |)cat, charend, charstart, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
-test string-34.2.$noComp {string charstart} -body {
-    list [catch {run {string charstart a}} msg] $msg
-} -result {1 {wrong # args: should be "string charstart string index"}}
-test string-34.3.$noComp {string charstart} -body {
-    list [catch {run {string charstart a b c}} msg] $msg
-} -result {1 {wrong # args: should be "string charstart string index"}}
-test string-34.4.$noComp {string charstart} -body {
-    list [catch {run {string charstart a gorp}} msg] $msg
-} -result {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
-test string-34.5.$noComp {string charstart} -body {
-    run {string charstart "one two three_words" 400}
-} -result 19
-test string-34.6.$noComp {string charstart} -body {
-    run {string charstart "one two three_words" 2}
-} -result 2
-test string-34.7.$noComp {string charstart} -body {
-    run {string charstart "one two three_words" -2}
-} -result -1
-test string-34.8.$noComp {string charstart} -body {
-    run {string charstart "one .*&^ three" 6}
-} -result 6
-test string-34.9.$noComp {string charstart} -body {
-    run {string charstart "one two three" 4}
-} -result 4
-test string-34.10.$noComp {string charstart} -body {
-    run {string charstart "one two three" end-5}
-} -result 7
-test string-34.11.$noComp {string charstart, unicode} -body {
-    run {string charstart "one tw\xC7o three" 7}
-} -result 7
-test string-34.12.$noComp {string charstart, unicode} -body {
-    run {string charstart "ab\uC700\uC700 cdef ghi" 12}
-} -result 12
-test string-34.13.$noComp {string charstart, unicode} -body {
-    run {string charstart "\uC700\uC700 abc" 8}
-} -result 6
-test string-34.14.$noComp {string charstart, invalid UTF-8} -constraints testbytestring -body {
-    # See Bug c61818e4c9
-    set demo [testbytestring "abc def\xE0\xA9ghi"]
-    run {string index $demo [string charstart $demo 10]}
-} -result h
-test string-34.15.$noComp {string charstart, unicode} -body {
-    run {string charstart "\U1D7CA\U1D7CA abc" 0}
-} -result 0
-test string-34.16.$noComp {string charstart, unicode} -constraints utf16 -body {
-    run {string charstart "\U1D7CA\U1D7CA abc" 10}
-} -result 8
 
 };				# foreach noComp {0 1}
 

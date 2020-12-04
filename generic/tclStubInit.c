@@ -95,16 +95,16 @@ static void uniCodePanic(void) {
 #define TclUtfPrev UtfPrev
 
 static int TclUtfCharComplete(const char *src, int length) {
-	if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
-		return length < 3;
-	}
+    if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
+	return length < 3;
+    }
     return Tcl_UtfCharComplete(src, length);
 }
 
 static const char *TclUtfNext(const char *src) {
-	if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
-		return src + 1;
-	}
+    if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
+	return src + 1;
+    }
     return Tcl_UtfNext(src);
 }
 

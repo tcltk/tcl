@@ -33,20 +33,6 @@ and is more efficient than building a list of arguments and using
 \fBjoin\fR with an empty join string.
 .RE
 .TP
-\fBstring charend \fIstring charIndex\fR
-.
-Returns the index of the next character just after position \fIcharIndex\fR
-in the \fIstring\fR.  \fIcharIndex\fR may be specified using the forms in
-\fBSTRING INDICES\fR.  If position \fIcharIndex\fR of \fIstring\fR holds a
-character > U+FFFF, the returned index will be 2 higher than \fIcharIndex\fR.
-.TP
-\fBstring charstart \fIstring charIndex\fR
-.
-Returns the index of the character containing \fIcharIndex\fR in the \fIstring\fR.
-\fIcharIndex\fR may be specified using the forms in \fBSTRING INDICES\fR.
-Normally this will return \fIcharIndex\fR, except if position \fIcharIndex\fR-1
-holds a chraracter > U+FFFF: In that case the returned index will be one higher.
-.TP
 \fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
 Perform a character-by-character comparison of strings \fIstring1\fR
@@ -237,24 +223,6 @@ number of bytes used to store the string.  If the value is a
 byte array value (such as those returned from reading a binary encoded
 channel), then this will return the actual byte length of the value.
 .TP
-\fBstring lineend \fIstring charIndex\fR
-.
-Returns the index of the character just after the last one in the word
-containing character \fIcharIndex\fR of \fIstring\fR.  \fIcharIndex\fR
-may be specified using the forms in \fBSTRING INDICES\fR.  A word is
-considered to be any contiguous range of alphanumeric (Unicode letters
-or decimal digits) or underscore (Unicode connector punctuation)
-characters, or any single character other than these.
-.TP
-\fBstring linestart \fIstring charIndex\fR
-.
-Returns the index of the first character in the word containing character
-\fIcharIndex\fR of \fIstring\fR.  \fIcharIndex\fR may be specified using the
-forms in \fBSTRING INDICES\fR.  A word is considered to be any contiguous
-range of alphanumeric (Unicode letters or decimal digits) or underscore
-(Unicode connector punctuation) characters, or any single character other than
-these.
-.TP
 \fBstring map\fR ?\fB\-nocase\fR? \fImapping string\fR
 .
 Replaces substrings in \fIstring\fR based on the key-value pairs in
@@ -403,24 +371,6 @@ characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (any character
 for which \fBstring is space\fR returns 1, and "\e0").
 .TP
-\fBstring wordend \fIstring charIndex\fR
-.
-Returns the index of the character just after the last one in the word
-containing character \fIcharIndex\fR of \fIstring\fR.  \fIcharIndex\fR
-may be specified using the forms in \fBSTRING INDICES\fR.  A word is
-considered to be any contiguous range of alphanumeric (Unicode letters
-or decimal digits) or underscore (Unicode connector punctuation)
-characters, or any single character other than these.
-.TP
-\fBstring wordstart \fIstring charIndex\fR
-.
-Returns the index of the first character in the word containing character
-\fIcharIndex\fR of \fIstring\fR.  \fIcharIndex\fR may be specified using the
-forms in \fBSTRING INDICES\fR.  A word is considered to be any contiguous
-range of alphanumeric (Unicode letters or decimal digits) or underscore
-(Unicode connector punctuation) characters, or any single character other than
-these.
-.TP
 \fBstring trimright \fIstring\fR ?\fIchars\fR?
 .
 Returns a value equal to \fIstring\fR except that any trailing
@@ -472,6 +422,24 @@ encoding and then apply \fBstring length\fR to that.
 \fBstring length\fR [encoding convertto utf-8 $theString]
 .CE
 .RE
+.TP
+\fBstring wordend \fIstring charIndex\fR
+.
+Returns the index of the character just after the last one in the word
+containing character \fIcharIndex\fR of \fIstring\fR.  \fIcharIndex\fR
+may be specified using the forms in \fBSTRING INDICES\fR.  A word is
+considered to be any contiguous range of alphanumeric (Unicode letters
+or decimal digits) or underscore (Unicode connector punctuation)
+characters, or any single character other than these.
+.TP
+\fBstring wordstart \fIstring charIndex\fR
+.
+Returns the index of the first character in the word containing character
+\fIcharIndex\fR of \fIstring\fR.  \fIcharIndex\fR may be specified using the
+forms in \fBSTRING INDICES\fR.  A word is considered to be any contiguous
+range of alphanumeric (Unicode letters or decimal digits) or underscore
+(Unicode connector punctuation) characters, or any single character other than
+these.
 .SH "STRING INDICES"
 .PP
 When referring to indices into a string (e.g., for \fBstring index\fR

@@ -5323,7 +5323,7 @@ TEBCresume(
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
 		    Tcl_GetByteArrayFromObj(valuePtr, NULL)+index, 1);
-	} else if (valuePtr->bytes && length == valuePtr->length && !(valuePtr->bytes[index] & 0x80)) {
+	} else if (valuePtr->bytes && length == valuePtr->length) {
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);
 	} else {
@@ -5566,14 +5566,14 @@ TEBCresume(
     case INST_STR_FIND:
 	objResultPtr = TclStringFirst(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
 
-	TRACE(("%.20s %.20s => %d\n",
+	TRACE(("%.20s %.20s => %s\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_FIND_LAST:
 	objResultPtr = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, INT_MAX - 1);
 
-	TRACE(("%.20s %.20s => %d\n",
+	TRACE(("%.20s %.20s => %s\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
@@ -9696,7 +9696,7 @@ TclLog2(
 
 static int
 EvalStatsCmd(
-    ClientData unused,		/* Unused. */
+    TCL_UNUSED(void *),		/* Unused. */
     Tcl_Interp *interp,		/* The current interpreter. */
     int objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The argument strings. */

@@ -3769,14 +3769,6 @@ else
   tcl_ok=yes
 fi
 
-
-    if test "${enable_shared+set}" = set; then
-	enableval="$enable_shared"
-	tcl_ok=$enableval
-    else
-	tcl_ok=yes
-    fi
-
     if test "$tcl_ok" = "yes" ; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: shared" >&5
 $as_echo "shared" >&6; }
@@ -5445,7 +5437,7 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 
-ac_config_files="$ac_config_files Makefile tclConfig.sh tcl.hpj tclsh.exe.manifest"
+ac_config_files="$ac_config_files Makefile tclConfig.sh tclsh.exe.manifest"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -6154,7 +6146,6 @@ do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "tclConfig.sh") CONFIG_FILES="$CONFIG_FILES tclConfig.sh" ;;
-    "tcl.hpj") CONFIG_FILES="$CONFIG_FILES tcl.hpj" ;;
     "tclsh.exe.manifest") CONFIG_FILES="$CONFIG_FILES tclsh.exe.manifest" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

@@ -4,7 +4,7 @@
 # spencer2regexp.tcl, which are programs written to convert Henry
 # Spencer's test suite to tcl test files.
 #
-# Copyright (c) 1996 by Sun Microsystems, Inc.
+# Copyright (c) 1996 Sun Microsystems, Inc.
 
 proc readInputFile {} {
     global inFileName
@@ -192,7 +192,7 @@ proc convertTestLine {currentLine len lineNum srcLineNum} {
 	# if and \r substitutions are made, do not wrap re, flags,
 	# str, and result in braces
 
-	set noBraces [regsub -all {R} $currentLine {\\\u000D} currentLine]
+	set noBraces [regsub -all {R} $currentLine {\\\x0D} currentLine]
 	regsub -all {T} $currentLine {\\t} currentLine
 	regsub -all {V} $currentLine {\\v} currentLine
 	if {[regexp {=} $flags] == 1} {
