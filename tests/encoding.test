@@ -19,7 +19,7 @@ namespace eval ::tcl::test::encoding {
 
 catch {
     ::tcltest::loadTestedCommands
-    package require -exact Tcltest [info patchlevel]
+    package require -exact tcl::test [info patchlevel]
 }
 
 proc toutf {args} {

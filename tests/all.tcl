@@ -11,7 +11,6 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 package prefer latest
-package require Tcl 8.5-
 package require tcltest 2.5
 namespace import ::tcltest::*
 
