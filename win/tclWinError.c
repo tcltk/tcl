@@ -407,7 +407,7 @@ tclWinDebugPanic(
 	OutputDebugStringW(msgString);
     } else {
 	if (!isatty(fileno(stderr))) {
-	    fprintf(stderr, "\xef\xbb\xbf");
+	    fprintf(stderr, "\xEF\xBB\xBF");
 	}
 	vfprintf(stderr, format, argList);
 	fprintf(stderr, "\n");
