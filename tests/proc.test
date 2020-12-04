@@ -7,8 +7,8 @@
 # Sourcing this file into Tcl runs the tests and generates output for errors.
 # No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -18,7 +18,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-testConstraint procbodytest [expr {![catch {package require procbodytest}]}]
+testConstraint tcl::test [expr {![catch {package require tcl::test}]}]
 testConstraint memory	    [llength [info commands memory]]
 
 catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -210,14 +210,14 @@ catch {rename p ""}
 catch {rename t ""}
 
 # Note that the test require that procedures whose body is used to create
-# procbody objects must be executed before the procbodytest::proc command is
+# procbody objects must be executed before the tcl::procbodytest::proc command is
 # executed, so that the Proc struct is populated correctly (CompiledLocals are
 # added at compile time).
 
-test proc-4.1 {TclCreateProc, procbody obj} -constraints procbodytest -body {
+test proc-4.1 {TclCreateProc, procbody obj} -constraints tcl::test -body {
     proc p x {return "$x:$x"}
     set rv [p P]
-    procbodytest::proc t x p
+    tcl::procbodytest::proc t x p
     lappend rv [t T]
 } -cleanup {
     catch {rename p ""}
@@ -229,9 +229,9 @@ test proc-4.2 {TclCreateProc, procbody obj, use compiled locals} -body {
 	return "$x:$y"
     }
     set rv [p P]
-    procbodytest::proc t x p
+    tcl::procbodytest::proc t x p
     lappend rv [t T]
-} -constraints procbodytest -cleanup {
+} -constraints tcl::test -cleanup {
     catch {rename p ""}
     catch {rename t ""}
 } -result {P:p T:t}
@@ -241,9 +241,9 @@ test proc-4.3 {TclCreateProc, procbody obj, too many args} -body {
 	return "$x:$y"
     }
     set rv [p P]
-    procbodytest::proc t {x x1 x2} p
+    tcl::procbodytest::proc t {x x1 x2} p
     lappend rv [t T]
-} -constraints procbodytest -returnCodes error -cleanup {
+} -constraints tcl::test -returnCodes error -cleanup {
     catch {rename p ""}
     catch {rename t ""}
 } -result {procedure "t": arg list contains 3 entries, precompiled header expects 1}
@@ -254,9 +254,9 @@ test proc-4.4 {TclCreateProc, procbody obj, inconsistent arg name} -body {
 	return "$v:$w"
     }
     set rv [p P Q R]
-    procbodytest::proc t {x x1 z} p
+    tcl::procbodytest::proc t {x x1 z} p
     lappend rv [t S T U]
-} -constraints procbodytest -returnCodes error -cleanup {
+} -constraints tcl::test -returnCodes error -cleanup {
     catch {rename p ""}
     catch {rename t ""}
 } -result {procedure "t": formal parameter 1 is inconsistent with precompiled body}
@@ -267,9 +267,9 @@ test proc-4.5 {TclCreateProc, procbody obj, inconsistent arg default type} -body
 	return "$v:$w"
     }
     set rv [p P Q R]
-    procbodytest::proc t {x y z} p
+    tcl::procbodytest::proc t {x y z} p
     lappend rv [t S T U]
-} -constraints procbodytest -returnCodes error -cleanup {
+} -constraints tcl::test -returnCodes error -cleanup {
     catch {rename p ""}
     catch {rename t ""}
 } -result {procedure "t": formal parameter 2 is inconsistent with precompiled body}
@@ -280,9 +280,9 @@ test proc-4.6 {TclCreateProc, procbody obj, inconsistent arg default type} -body
 	return "$v:$w"
     }
     set rv [p P Q R]
-    procbodytest::proc t {x y {z Z}} p
+    tcl::procbodytest::proc t {x y {z Z}} p
     lappend rv [t S T U]
-} -returnCodes error -constraints procbodytest -cleanup {
+} -returnCodes error -constraints tcl::test -cleanup {
     catch {rename p ""}
     catch {rename t ""}
 } -result {procedure "t": formal parameter 2 is inconsistent with precompiled body}
@@ -293,9 +293,9 @@ test proc-4.7 {TclCreateProc, procbody obj, inconsistent arg default value} -bod
 	return "$v:$w"
     }
     set rv [p P Q R]
-    procbodytest::proc t {x y {z ZZ}} p
+    tcl::procbodytest::proc t {x y {z ZZ}} p
     lappend rv [t S T U]
-} -constraints procbodytest -returnCodes error -cleanup {
+} -constraints tcl::test -returnCodes error -cleanup {
     catch {rename p ""}
     catch {rename t ""}
 } -result {procedure "t": formal parameter "z" has default value inconsistent with precompiled body}
@@ -309,10 +309,10 @@ test proc-4.8 {TclCreateProc, procbody obj, no leak on multiple iterations} -set
 	return "$x:$y"
     }
     px x
-} -constraints {procbodytest memory} -body {
+} -constraints {tcl::test memory} -body {
     set end [getbytes]
     for {set i 0} {$i < 5} {incr i} {
-	procbodytest::proc tx x px
+	tcl::procbodytest::proc tx x px
 	set tmp $end
 	set end [getbytes]
     }
@@ -321,8 +321,8 @@ test proc-4.8 {TclCreateProc, procbody obj, no leak on multiple iterations} -set
     rename getbytes {}
     unset -nocomplain end i tmp leakedBytes
 } -result 0
-test proc-4.9 {[39fed4dae5] Valid Tcl_PkgPresent return} procbodytest {
-    procbodytest::check
+test proc-4.9 {[39fed4dae5] Valid Tcl_PkgPresent return} tcl::test {
+    tcl::procbodytest::check
 } 1
 
 test proc-5.1 {Bytecompiling noop; test for correct argument substitution} -body {

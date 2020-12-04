@@ -7,8 +7,8 @@
 # In order for these tests to run, the registry package must be on the
 # auto_path or the registry package must have been loaded already.
 #
-# Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.  All rights reserved.
+# Copyright © 1998-1999 Scriptics Corporation.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
@@ -24,7 +24,7 @@ if {[testConstraint win]} {
 	testConstraint reg 1
     }
 }
-testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 # determine the current locale
 testConstraint english [expr {

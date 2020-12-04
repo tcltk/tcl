@@ -2,8 +2,8 @@
 # Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1998 Mark Harrison.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1998 Mark Harrison.
+# Copyright © 1998-1999 Scriptics Corporation.
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 #
 # See the file "license.terms" for information on usage and redistribution

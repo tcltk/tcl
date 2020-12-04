@@ -1757,7 +1757,7 @@ Tcl_FSEvalFileEx(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
+	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1894,7 +1894,7 @@ TclNREvalFile(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
+	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -3010,7 +3010,7 @@ Tcl_FSLoadFile(
     const char *sym1, const char *sym2,
 				/* Names of two functions to find in the
 				 * dynamic shared object. */
-    Tcl_PackageInitProc **proc1Ptr, Tcl_PackageInitProc **proc2Ptr,
+    Tcl_LibraryInitProc **proc1Ptr, Tcl_LibraryInitProc **proc2Ptr,
 				/* Places to store pointers to the functions
 				 * named by sym1 and sym2. */
     Tcl_LoadHandle *handlePtr,	/* A place to store the token for the loaded
@@ -3028,8 +3028,8 @@ Tcl_FSLoadFile(
 
     res = Tcl_LoadFile(interp, pathPtr, symbols, 0, procPtrs, handlePtr);
     if (res == TCL_OK) {
-	*proc1Ptr = (Tcl_PackageInitProc *) procPtrs[0];
-	*proc2Ptr = (Tcl_PackageInitProc *) procPtrs[1];
+	*proc1Ptr = (Tcl_LibraryInitProc *) procPtrs[0];
+	*proc2Ptr = (Tcl_LibraryInitProc *) procPtrs[1];
     } else {
 	*proc1Ptr = *proc2Ptr = NULL;
     }

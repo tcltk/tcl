@@ -36,31 +36,31 @@ static int		UniCharIsHexDigit(int character);
  */
 
 const char tclDefaultTrimSet[] =
-	"\x09\x0a\x0b\x0c\x0d " /* ASCII */
-	"\xc0\x80" /*     nul (U+0000) */
-	"\xc2\x85" /*     next line (U+0085) */
-	"\xc2\xa0" /*     non-breaking space (U+00a0) */
-	"\xe1\x9a\x80" /* ogham space mark (U+1680) */
-	"\xe1\xa0\x8e" /* mongolian vowel separator (U+180e) */
-	"\xe2\x80\x80" /* en quad (U+2000) */
-	"\xe2\x80\x81" /* em quad (U+2001) */
-	"\xe2\x80\x82" /* en space (U+2002) */
-	"\xe2\x80\x83" /* em space (U+2003) */
-	"\xe2\x80\x84" /* three-per-em space (U+2004) */
-	"\xe2\x80\x85" /* four-per-em space (U+2005) */
-	"\xe2\x80\x86" /* six-per-em space (U+2006) */
-	"\xe2\x80\x87" /* figure space (U+2007) */
-	"\xe2\x80\x88" /* punctuation space (U+2008) */
-	"\xe2\x80\x89" /* thin space (U+2009) */
-	"\xe2\x80\x8a" /* hair space (U+200a) */
-	"\xe2\x80\x8b" /* zero width space (U+200b) */
-	"\xe2\x80\xa8" /* line separator (U+2028) */
-	"\xe2\x80\xa9" /* paragraph separator (U+2029) */
-	"\xe2\x80\xaf" /* narrow no-break space (U+202f) */
-	"\xe2\x81\x9f" /* medium mathematical space (U+205f) */
-	"\xe2\x81\xa0" /* word joiner (U+2060) */
-	"\xe3\x80\x80" /* ideographic space (U+3000) */
-	"\xef\xbb\xbf" /* zero width no-break space (U+feff) */
+	"\x09\x0A\x0B\x0C\x0D " /* ASCII */
+	"\xC0\x80" /*     nul (U+0000) */
+	"\xC2\x85" /*     next line (U+0085) */
+	"\xC2\xA0" /*     non-breaking space (U+00a0) */
+	"\xE1\x9A\x80" /* ogham space mark (U+1680) */
+	"\xE1\xA0\x8E" /* mongolian vowel separator (U+180e) */
+	"\xE2\x80\x80" /* en quad (U+2000) */
+	"\xE2\x80\x81" /* em quad (U+2001) */
+	"\xE2\x80\x82" /* en space (U+2002) */
+	"\xE2\x80\x83" /* em space (U+2003) */
+	"\xE2\x80\x84" /* three-per-em space (U+2004) */
+	"\xE2\x80\x85" /* four-per-em space (U+2005) */
+	"\xE2\x80\x86" /* six-per-em space (U+2006) */
+	"\xE2\x80\x87" /* figure space (U+2007) */
+	"\xE2\x80\x88" /* punctuation space (U+2008) */
+	"\xE2\x80\x89" /* thin space (U+2009) */
+	"\xE2\x80\x8A" /* hair space (U+200a) */
+	"\xE2\x80\x8B" /* zero width space (U+200b) */
+	"\xE2\x80\xA8" /* line separator (U+2028) */
+	"\xE2\x80\xA9" /* paragraph separator (U+2029) */
+	"\xE2\x80\xAF" /* narrow no-break space (U+202f) */
+	"\xE2\x81\x9F" /* medium mathematical space (U+205f) */
+	"\xE2\x81\xA0" /* word joiner (U+2060) */
+	"\xE3\x80\x80" /* ideographic space (U+3000) */
+	"\xEF\xBB\xBF" /* zero width no-break space (U+feff) */
 ;
 
 /*
@@ -2505,8 +2505,8 @@ StringStartCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int ch;
-    const char *p, *string;
-    size_t numChars, length, cur, index;
+    const Tcl_UniChar *p, *string;
+    size_t cur, index, length;
     Tcl_Obj *obj;
 
     if (objc != 3) {
@@ -2514,32 +2514,30 @@ StringStartCmd(
 	return TCL_ERROR;
     }
 
-    string = TclGetStringFromObj(objv[1], &length);
-    numChars = Tcl_NumUtfChars(string, length) - 1;
-    if (TclGetIntForIndexM(interp, objv[2], numChars, &index) != TCL_OK) {
+    string = TclGetUnicodeFromObj(objv[1], &length);
+    if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    string = TclGetString(objv[1]);
-    if (index + 1 > numChars + 1) {
-	index = numChars;
+    if (index + 1 >= length + 1) {
+	index = length - 1;
     }
     cur = 0;
     if (index + 1 > 1) {
-	p = Tcl_UtfAtIndex(string, index);
+	p = &string[index];
 
-	TclUtfToUCS4(p, &ch);
+	(void)TclUniCharToUCS4(p, &ch);
 	for (cur = index; cur != TCL_INDEX_NONE; cur--) {
 	    int delta = 0;
-	    const char *next;
+	    const Tcl_UniChar *next;
 
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;
 	    }
 
-	    next = TclUtfPrev(p, string);
+	    next = TclUCS4Prev(p, string);
 	    do {
 		next += delta;
-		delta = TclUtfToUCS4(next, &ch);
+		delta = TclUniCharToUCS4(next, &ch);
 	    } while (next + delta < p);
 	    p = next;
 	}
@@ -2577,8 +2575,8 @@ StringEndCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int ch;
-    const char *p, *end, *string;
-    size_t length, numChars, cur, index;
+    const Tcl_UniChar *p, *end, *string;
+    size_t cur, index, length;
     Tcl_Obj *obj;
 
     if (objc != 3) {
@@ -2586,20 +2584,18 @@ StringEndCmd(
 	return TCL_ERROR;
     }
 
-    string = TclGetStringFromObj(objv[1], &length);
-    numChars = Tcl_NumUtfChars(string, length) - 1;
-    if (TclGetIntForIndexM(interp, objv[2], numChars, &index) != TCL_OK) {
+    string = TclGetUnicodeFromObj(objv[1], &length);
+    if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    string = TclGetStringFromObj(objv[1], &length);
     if (index == TCL_INDEX_NONE) {
 	index = TCL_INDEX_START;
     }
-    if (index + 1 <= numChars + 1) {
-	p = Tcl_UtfAtIndex(string, index);
+    if (index + 1 <= length + 1) {
+	p = &string[index];
 	end = string+length;
 	for (cur = index; p < end; cur++) {
-	    p += TclUtfToUCS4(p, &ch);
+	    p += TclUniCharToUCS4(p, &ch);
 	    if (!Tcl_UniCharIsWordChar(ch)) {
 		break;
 	    }
@@ -2608,7 +2604,7 @@ StringEndCmd(
 	    cur++;
 	}
     } else {
-	cur = numChars + 1;
+	cur = length;
     }
     TclNewIndexObj(obj, cur);
     Tcl_SetObjResult(interp, obj);

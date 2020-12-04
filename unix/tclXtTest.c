@@ -16,7 +16,7 @@
 #include "tcl.h"
 
 static Tcl_ObjCmdProc TesteventloopCmd;
-extern DLLEXPORT Tcl_PackageInitProc Tclxttest_Init;
+extern DLLEXPORT Tcl_LibraryInitProc Tclxttest_Init;
 
 /*
  * Functions defined in tclXtNotify.c for use by users of the Xt Notifier:

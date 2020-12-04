@@ -15,7 +15,7 @@ Tcl_StaticLibrary \- make a statically linked package available via the 'load' c
 .sp
 \fBTcl_StaticLibrary\fR(\fIinterp, pkgName, initProc, safeInitProc\fR)
 .SH ARGUMENTS
-.AS Tcl_PackageInitProc *safeInitProc
+.AS Tcl_LibraryInitProc *safeInitProc
 .AP Tcl_Interp *interp in
 If not NULL, points to an interpreter into which the package has
 already been loaded (i.e., the caller has already invoked the
@@ -24,10 +24,10 @@ has not yet been incorporated into any interpreter.
 .AP "const char" *pkgName in
 Name of the package;  should be properly capitalized (first letter
 upper-case, all others lower-case).
-.AP Tcl_PackageInitProc *initProc in
+.AP Tcl_LibraryInitProc *initProc in
 Procedure to invoke to incorporate this package into a trusted
 interpreter.
-.AP Tcl_PackageInitProc *safeInitProc in
+.AP Tcl_LibraryInitProc *safeInitProc in
 Procedure to call to incorporate this package into a safe interpreter
 (one that will execute untrusted scripts).  NULL means the package
 cannot be used in safe interpreters.
@@ -53,7 +53,7 @@ or not.
 following prototype:
 .PP
 .CS
-typedef int \fBTcl_PackageInitProc\fR(
+typedef int \fBTcl_LibraryInitProc\fR(
         Tcl_Interp *\fIinterp\fR);
 .CE
 .PP

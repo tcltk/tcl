@@ -5,9 +5,9 @@
 #	This file is used to generate the tclDecls.h, tclPlatDecls.h
 #	and tclStubInit.c files.
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
-# Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001, 2002 Kevin B. Kenny.  All rights reserved.
+# Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -889,7 +889,7 @@ declare 243 {
 # Removed in 9.0 (stub entry only)
 #declare 244  {
 #    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
-#	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+#	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 #}
 # Removed in 9.0 (stub entry only)
 #declare 245 {
@@ -1643,8 +1643,8 @@ declare 443 {
 }
 declare 444 {
     int	Tcl_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *sym1,
-	    const char *sym2, Tcl_PackageInitProc **proc1Ptr,
-	    Tcl_PackageInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
+	    const char *sym2, Tcl_LibraryInitProc **proc1Ptr,
+	    Tcl_LibraryInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
 	    Tcl_FSUnloadFileProc **unloadProcPtr)
 }
 declare 445 {
@@ -2515,7 +2515,7 @@ export {
 }
 export {
     void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
     void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)

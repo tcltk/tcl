@@ -45,7 +45,6 @@ extern "C" {
  * macosx/Tcl-Common.xcconfig (not patchlevel) 1 LOC
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(1 LOC patch)
- * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  */
 
 #define TCL_MAJOR_VERSION   9
@@ -557,8 +556,8 @@ typedef void (Tcl_InterpDeleteProc) (void *clientData,
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
-typedef int (Tcl_PackageInitProc) (Tcl_Interp *interp);
-typedef int (Tcl_PackageUnloadProc) (Tcl_Interp *interp, int flags);
+typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
+typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
 typedef void (Tcl_TcpAcceptProc) (void *callbackData, Tcl_Channel chan,
 	char *address, int port);
@@ -578,6 +577,9 @@ typedef void *(Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
+#define Tcl_PackageInitProc Tcl_LibraryInitProc
+#define Tcl_PackageUnloadProc Tcl_LibraryUnloadProc
+
 /*
  *----------------------------------------------------------------------------
  * The following structure represents a type of object, which is a particular
@@ -2191,8 +2193,8 @@ EXTERN void		Tcl_SetPanicProc(
 			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
 EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 			    const char *pkgName,
-			    Tcl_PackageInitProc *initProc,
-			    Tcl_PackageInitProc *safeInitProc);
+			    Tcl_LibraryInitProc *initProc,
+			    Tcl_LibraryInitProc *safeInitProc);
 #define Tcl_StaticPackage Tcl_StaticLibrary
 EXTERN Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
 #ifdef _WIN32

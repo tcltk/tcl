@@ -54,7 +54,7 @@ on Safe\-Tcl, see the \fBsafe\fR manual entry.
 The initialization procedure must match the following prototype:
 .PP
 .CS
-typedef int \fBTcl_PackageInitProc\fR(
+typedef int \fBTcl_LibraryInitProc\fR(
         Tcl_Interp *\fIinterp\fR);
 .CE
 .PP
@@ -84,11 +84,12 @@ be specified.
 If \fIprefix\fR is omitted or specified as an empty string,
 Tcl tries to guess the prefix by taking the last element of
 \fIfileName\fR, strip off the first three characters if they
-are \fBlib\fR, and use any following alphabetic and underline
-characters, converted to titlecase as the prefix.
+are \fBlib\fR, then strip off the next three characters if
+they are \fBtcl\fR, and use any following alphabetic and
+underline characters, converted to titlecase as the prefix.
 For example, the command \fBload libxyz4.2.so\fR uses the prefix
-\fBxyz\fR and the command \fBload bin/last.so {}\fR uses the
-prefix \fBlast\fR.
+\fBXyz\fR and the command \fBload bin/last.so {}\fR uses the
+prefix \fBLast\fR.
 .PP
 If \fIfileName\fR is an empty string, then \fIprefix\fR must
 be specified.

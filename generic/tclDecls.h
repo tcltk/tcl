@@ -1172,8 +1172,8 @@ EXTERN int		Tcl_FSDeleteFile(Tcl_Obj *pathPtr);
 /* 444 */
 EXTERN int		Tcl_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 				const char *sym1, const char *sym2,
-				Tcl_PackageInitProc **proc1Ptr,
-				Tcl_PackageInitProc **proc2Ptr,
+				Tcl_LibraryInitProc **proc1Ptr,
+				Tcl_LibraryInitProc **proc2Ptr,
 				Tcl_LoadHandle *handlePtr,
 				Tcl_FSUnloadFileProc **unloadProcPtr);
 /* 445 */
@@ -2230,7 +2230,7 @@ typedef struct TclStubs {
     int (*tcl_FSCopyDirectory) (Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr, Tcl_Obj **errorPtr); /* 441 */
     int (*tcl_FSCreateDirectory) (Tcl_Obj *pathPtr); /* 442 */
     int (*tcl_FSDeleteFile) (Tcl_Obj *pathPtr); /* 443 */
-    int (*tcl_FSLoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *sym1, const char *sym2, Tcl_PackageInitProc **proc1Ptr, Tcl_PackageInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr); /* 444 */
+    int (*tcl_FSLoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *sym1, const char *sym2, Tcl_LibraryInitProc **proc1Ptr, Tcl_LibraryInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr); /* 444 */
     int (*tcl_FSMatchInDirectory) (Tcl_Interp *interp, Tcl_Obj *result, Tcl_Obj *pathPtr, const char *pattern, Tcl_GlobTypeData *types); /* 445 */
     Tcl_Obj * (*tcl_FSLink) (Tcl_Obj *pathPtr, Tcl_Obj *toPtr, int linkAction); /* 446 */
     int (*tcl_FSRemoveDirectory) (Tcl_Obj *pathPtr, int recursive, Tcl_Obj **errorPtr); /* 447 */

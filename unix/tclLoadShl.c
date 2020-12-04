@@ -128,7 +128,7 @@ FindSymbol(
     const char *symbol)
 {
     Tcl_DString newName;
-    Tcl_PackageInitProc *proc = NULL;
+    Tcl_LibraryInitProc *proc = NULL;
     shl_t handle = (shl_t) loadHandle->clientData;
 
     /*

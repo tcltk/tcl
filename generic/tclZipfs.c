@@ -4737,7 +4737,7 @@ TclZipfs_Init(
 		Tcl_NewStringObj("::tcl::zipfs::find", -1));
 	Tcl_CreateObjCommand(interp, "::tcl::zipfs::tcl_library_init",
 		ZipFSTclLibraryObjCmd, NULL, NULL);
-	Tcl_PkgProvideEx(interp, "zipfs", "2.0", NULL);
+	Tcl_PkgProvideEx(interp, "tcl::zipfs", "2.0", NULL);
     }
     return TCL_OK;
 #else /* !HAVE_ZLIB */

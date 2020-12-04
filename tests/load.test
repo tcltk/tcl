@@ -4,8 +4,8 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1995 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1995 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -16,7 +16,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Figure out what extension is used for shared libraries on this
 # platform.
@@ -125,7 +125,7 @@ test load-4.1 {reloading package into same interpreter} [list $dll $loaded] {
     list [catch {load [file join $testDir pkga$ext] Pkga} msg] $msg
 } {0 {}}
 test load-4.2 {reloading package into same interpreter} -setup {
-    catch {load [file join $testDir pkga$ext] pkga}
+    catch {load [file join $testDir pkga$ext] Pkga}
 } -constraints [list $dll $loaded] -returnCodes error -body {
     load [file join $testDir pkga$ext] Pkgb
 } -result "file \"[file join $testDir pkga$ext]\" is already loaded for prefix \"Pkga\""

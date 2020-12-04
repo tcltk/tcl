@@ -29,21 +29,21 @@ typedef struct LoadedLibrary {
 				 * passed to (*unLoadProcPtr)() when the file
 				 * is no longer needed. If fileName is NULL,
 				 * then this field is irrelevant. */
-    Tcl_PackageInitProc *initProc;
+    Tcl_LibraryInitProc *initProc;
 				/* Initialization function to call to
 				 * incorporate this library into a trusted
 				 * interpreter. */
-    Tcl_PackageInitProc *safeInitProc;
+    Tcl_LibraryInitProc *safeInitProc;
 				/* Initialization function to call to
 				 * incorporate this library into a safe
 				 * interpreter (one that will execute
 				 * untrusted scripts). NULL means the library
 				 * can't be used in unsafe interpreters. */
-    Tcl_PackageUnloadProc *unloadProc;
+    Tcl_LibraryUnloadProc *unloadProc;
 				/* Finalization function to unload a library
 				 * from a trusted interpreter. NULL means that
 				 * the library cannot be unloaded. */
-    Tcl_PackageUnloadProc *safeUnloadProc;
+    Tcl_LibraryUnloadProc *safeUnloadProc;
 				/* Finalization function to unload a library
 				 * from a safe interpreter. NULL means that
 				 * the library cannot be unloaded. */
@@ -123,7 +123,7 @@ Tcl_LoadObjCmd(
     InterpLibrary *ipFirstPtr, *ipPtr;
     int code, namesMatch, filesMatch, offset;
     const char *symbols[2];
-    Tcl_PackageInitProc *initProc;
+    Tcl_LibraryInitProc *initProc;
     const char *p, *fullFileName, *prefix;
     Tcl_LoadHandle loadHandle;
     Tcl_UniChar ch = 0;
@@ -290,7 +290,7 @@ Tcl_LoadObjCmd(
 	}
 
 	/*
-	 * Figure out the module name if it wasn't provided explicitly.
+	 * Figure out the prefix if it wasn't provided explicitly.
 	 */
 
 	if (prefix != NULL) {
@@ -305,11 +305,11 @@ Tcl_LoadObjCmd(
 	     */
 
 	    /*
-	     * The platform-specific code couldn't figure out the module
-	     * name. Make a guess by taking the last element of the file
-	     * name, stripping off any leading "lib", and then using all
-	     * of the alphabetic and underline characters that follow
-	     * that.
+	     * The platform-specific code couldn't figure out the prefix.
+	     * Make a guess by taking the last element of the file
+	     * name, stripping off any leading "lib" and/or "tcl", and
+	     * then using all of the alphabetic and underline characters
+	     * that follow that.
 	     */
 
 	    splitPtr = Tcl_FSSplitPath(objv[1], &pElements);
@@ -331,10 +331,13 @@ Tcl_LoadObjCmd(
 		pkgGuess += 3;
 	    }
 #endif /* __CYGWIN__ */
+	    if ((pkgGuess[0] == 't') && (pkgGuess[1] == 'c')
+		    && (pkgGuess[2] == 'l')) {
+		pkgGuess += 3;
+	    }
 	    for (p = pkgGuess; *p != 0; p += offset) {
 		offset = TclUtfToUniChar(p, &ch);
-		if ((ch > 0x100)
-			|| !(isalpha(UCHAR(ch)) /* INTL: ISO only */
+		if (!(Tcl_UniCharIsAlpha(UCHAR(ch))
 				|| (UCHAR(ch) == '_'))) {
 		    break;
 		}
@@ -406,13 +409,13 @@ Tcl_LoadObjCmd(
 	memcpy(libraryPtr->prefix, Tcl_DStringValue(&pkgName), len);
 	libraryPtr->loadHandle	   = loadHandle;
 	libraryPtr->initProc	   = initProc;
-	libraryPtr->safeInitProc	   = (Tcl_PackageInitProc *)
+	libraryPtr->safeInitProc	   = (Tcl_LibraryInitProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeInitName));
-	libraryPtr->unloadProc	   = (Tcl_PackageUnloadProc *)
+	libraryPtr->unloadProc	   = (Tcl_LibraryUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&unloadName));
-	libraryPtr->safeUnloadProc	   = (Tcl_PackageUnloadProc *)
+	libraryPtr->safeUnloadProc	   = (Tcl_LibraryUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeUnloadName));
 	libraryPtr->interpRefCount	   = 0;
@@ -544,7 +547,7 @@ Tcl_UnloadObjCmd(
     Tcl_Interp *target;		/* Which interpreter to unload from. */
     LoadedLibrary *libraryPtr, *defaultPtr;
     Tcl_DString pkgName, tmp;
-    Tcl_PackageUnloadProc *unloadProc;
+    Tcl_LibraryUnloadProc *unloadProc;
     InterpLibrary *ipFirstPtr, *ipPtr;
     int i, index, code, complain = 1, keepLibrary = 0;
     int trustedRefCount = -1, safeRefCount = -1;
@@ -938,10 +941,10 @@ Tcl_StaticLibrary(
 				 * interpreter by calling the appropriate init
 				 * proc. */
     const char *prefix,	/* Prefix. */
-    Tcl_PackageInitProc *initProc,
+    Tcl_LibraryInitProc *initProc,
 				/* Function to call to incorporate this
 				 * library into a trusted interpreter. */
-    Tcl_PackageInitProc *safeInitProc)
+    Tcl_LibraryInitProc *safeInitProc)
 				/* Function to call to incorporate this
 				 * library into a safe interpreter (one that
 				 * will execute untrusted scripts). NULL means

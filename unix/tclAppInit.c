@@ -17,13 +17,13 @@
 #include "tcl.h"
 
 #ifdef TCL_TEST
-extern Tcl_PackageInitProc Tcltest_Init;
-extern Tcl_PackageInitProc Tcltest_SafeInit;
+extern Tcl_LibraryInitProc Tcltest_Init;
+extern Tcl_LibraryInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
 #ifdef TCL_XT_TEST
 extern void                XtToolkitInitialize(void);
-extern Tcl_PackageInitProc Tclxttest_Init;
+extern Tcl_LibraryInitProc Tclxttest_Init;
 #endif /* TCL_XT_TEST */
 
 /*

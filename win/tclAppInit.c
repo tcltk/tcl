@@ -25,14 +25,14 @@
 #include <tchar.h>
 
 #ifdef TCL_TEST
-extern Tcl_PackageInitProc Tcltest_Init;
-extern Tcl_PackageInitProc Tcltest_SafeInit;
+extern Tcl_LibraryInitProc Tcltest_Init;
+extern Tcl_LibraryInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
 #if defined(STATIC_BUILD) && defined(TCL_USE_STATIC_PACKAGES) && TCL_USE_STATIC_PACKAGES
-extern Tcl_PackageInitProc Registry_Init;
-extern Tcl_PackageInitProc Dde_Init;
-extern Tcl_PackageInitProc Dde_SafeInit;
+extern Tcl_LibraryInitProc Registry_Init;
+extern Tcl_LibraryInitProc Dde_Init;
+extern Tcl_LibraryInitProc Dde_SafeInit;
 #endif
 
 #if defined(__GNUC__) || defined(TCL_BROKEN_MAINARGS)
