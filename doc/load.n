@@ -89,9 +89,10 @@ Tcl tries to guess the name of the package.
 This may be done differently on different platforms.
 The default guess, which is used on most UNIX platforms, is to
 take the last element of \fIfileName\fR, strip off the first
-three characters if they are \fBlib\fR, and use any following
+three characters if they are \fBlib\fR, then strip off the next
+three characters if they are \fBtcl\fR, and use any following
 alphabetic and underline characters as the module name.
-For example, the command \fBload libxyz4.2.so\fR uses the module
+For example, the command \fBload libtclxyz4.2.so\fR uses the module
 name \fBxyz\fR and the command \fBload bin/last.so {}\fR uses the
 module name \fBlast\fR.
 .PP

@@ -20,7 +20,7 @@ if {{::tcltest} ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint zlib [llength [info commands zlib]]
 
 # Set up namespaces needed to test operation of "info args", "info body",

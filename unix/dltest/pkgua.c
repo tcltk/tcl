@@ -213,7 +213,7 @@ Pkgua_Init(
 
     PkguaInitTokensHashTable();
 
-    code = Tcl_PkgProvide(interp, "Pkgua", "1.0");
+    code = Tcl_PkgProvide(interp, "pkgua", "1.0");
     if (code != TCL_OK) {
 	return code;
     }

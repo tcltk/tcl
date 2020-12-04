@@ -3084,7 +3084,7 @@ proc tcltest::makeFile {contents name {directory ""}} {
     fconfigure $fd -translation lf
     if {[package vsatisfies [package provide Tcl] 8.7-]} {
 	fconfigure $fd -encoding utf-8
-    } 
+    }
     if {[string index $contents end] eq "\n"} {
 	puts -nonewline $fd $contents
     } else {

@@ -20,7 +20,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 catch {namespace delete {*}[namespace children :: test_ns_*]}
 catch {rename foo ""}
@@ -981,7 +981,7 @@ test execute-8.6 {Compile epoch bump in global level (bug [fa6bf38d07])} -setup 
     interp create child
     child eval {
 	package require tcltest 2.5
-	catch [list package require -exact Tcltest [info patchlevel]]
+	catch [list package require -exact tcl::test [info patchlevel]]
 	::tcltest::loadTestedCommands
 	if {[namespace which -command testbumpinterpepoch] eq ""} {
 	  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
@@ -1014,7 +1014,7 @@ test execute-8.7 {Compile epoch bump in global level (bug [fa6bf38d07]), excepti
     interp create child
     child eval {
 	package require tcltest 2.5
-	catch [list package require -exact Tcltest [info patchlevel]]
+	catch [list package require -exact tcl::test [info patchlevel]]
 	::tcltest::loadTestedCommands
 	if {[namespace which -command testbumpinterpepoch] eq ""} {
 	  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
