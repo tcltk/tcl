@@ -2,8 +2,8 @@
 # file tclParse.c.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -17,7 +17,7 @@ namespace eval ::tcl::test::parse {
     namespace import ::tcltest::*
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testparser [llength [info commands testparser]]
 testConstraint testbytestring [llength [info commands testbytestring]]
@@ -481,7 +481,7 @@ test parse-10.2 {Tcl_EvalTokens, backslash sequences} testevalex {
     testevalex {concat test\063\062test}
 } {test32test}
 test parse-10.3 {Tcl_EvalTokens, nested commands} testevalex {
-    testevalex {concat [expr 2 + 6]}
+    testevalex {concat [expr {2 + 6}]}
 } {8}
 test parse-10.4 {Tcl_EvalTokens, nested commands} testevalex {
     unset -nocomplain a
@@ -499,7 +499,7 @@ test parse-10.6 {Tcl_EvalTokens, array variables} testevalex {
 test parse-10.7 {Tcl_EvalTokens, array variables} testevalex {
     unset -nocomplain a
     set a(12) 46
-    testevalex {concat $a(1[expr 3 - 1])}
+    testevalex {concat $a(1[expr {3 - 1}])}
 } {46}
 test parse-10.8 {Tcl_EvalTokens, array variables} testevalex {
     unset -nocomplain a
@@ -685,7 +685,7 @@ test parse-13.5 {Tcl_ParseVar procedure, error looking up variable} testparsevar
     unset -nocomplain abc
     list [catch {testparsevar {$abc([bogus x y z])}} msg] $msg
 } {1 {invalid command name "bogus"}}
-test parse-13.6 {Tcl_ParseVar memory leak} -constraints memory -setup {
+test parse-13.6 {Tcl_ParseVar memory leak} -constraints {testparsevar memory} -setup {
     proc getbytes {} {
 	return [lindex [split [memory info] \n] 3 3]
     }

@@ -1120,8 +1120,8 @@ TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX:t=).lib
 TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 !endif
 TCL_LIBRARY	= $(_TCLDIR)\lib
-TCLREGLIB	= $(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib
-TCLDDELIB	= $(_TCLDIR)\lib\tcldde14$(SUFX:t=).lib
+TCLREGLIB	= $(_TCLDIR)\lib\tcl9registry13$(SUFX:t=).lib
+TCLDDELIB	= $(_TCLDIR)\lib\tcl9dde14$(SUFX:t=).lib
 TCLTOOLSDIR	= \must\have\tcl\sources\to\build\this\target
 TCL_INCLUDES    = -I"$(_TCLDIR)\include"
 
@@ -1139,8 +1139,8 @@ TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX:t=).lib
 TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 !endif
 TCL_LIBRARY	= $(_TCLDIR)\library
-TCLREGLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib
-TCLDDELIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14$(SUFX:t=).lib
+TCLREGLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl9registry13$(SUFX:t=).lib
+TCLDDELIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl9dde14$(SUFX:t=).lib
 TCLTOOLSDIR	= $(_TCLDIR)\tools
 TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
 
@@ -1484,18 +1484,6 @@ lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 
 !if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
 lflags	= $(lflags) -nodefaultlib:libucrt.lib
-!endif
-
-# Old linkers (Visual C++ 6 in particular) will link for fast loading
-# on Win98. Since we do not support Win98 any more, we specify nowin98
-# as recommended for NT and later. However, this is only required by
-# IX86 on older compilers and only needed if we are not doing a static build.
-
-!if "$(MACHINE)" == "IX86" && !$(STATIC_BUILD)
-!if [nmakehlp -l -opt:nowin98 $(LINKER_TESTFLAGS)]
-# Align sections for PE size savings.
-lflags	= $(lflags) -opt:nowin98
-!endif
 !endif
 
 dlllflags = $(lflags) -dll

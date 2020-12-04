@@ -4,9 +4,9 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1994 The Regents of the University of California.
-# Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1994 The Regents of the University of California.
+# Copyright © 1994-1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -20,13 +20,14 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 package require tcltests
 
 # All tests require the "exec" command.
 # Skip them if exec is not defined.
 testConstraint exec [llength [info commands exec]]
-testConstraint noosx [expr {![info exists ::env(TRAVIS_OSX_IMAGE)] || ![string match xcode* $::env(TRAVIS_OSX_IMAGE)]}]
+# Some skips when running in a macOS CI environment
+testConstraint noosxCI [expr {![info exists ::env(MAC_CI)]}]
 
 unset -nocomplain path
 
@@ -673,7 +674,9 @@ test exec-18.2 {exec cat deals with weird file names} -body {
 # Note that this test cannot be adapted to work on Windows; that platform has
 # no kernel support for an analog of O_APPEND. OTOH, that means we can assume
 # that there is a POSIX shell...
-test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix notValgrind noosx} -setup {
+#
+# This test also fails in some cases when building with macOS
+test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix notValgrind noosxCI} -setup {
     set tmpfile [makeFile {0} tmpfile.exec-19.1]
 } -body {
     # Note that we have to allow for the current contents of the temporary

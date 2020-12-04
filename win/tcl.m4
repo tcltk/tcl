@@ -358,14 +358,6 @@ AC_DEFUN([SC_ENABLE_SHARED], [
     AC_ARG_ENABLE(shared,
 	[  --enable-shared         build and link with shared libraries (default: on)],
 	[tcl_ok=$enableval], [tcl_ok=yes])
-
-    if test "${enable_shared+set}" = set; then
-	enableval="$enable_shared"
-	tcl_ok=$enableval
-    else
-	tcl_ok=yes
-    fi
-
     if test "$tcl_ok" = "yes" ; then
 	AC_MSG_RESULT([shared])
 	SHARED_BUILD=1
@@ -661,7 +653,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	SHLIB_LD='${CC} -shared'
 	SHLIB_LD_LIBS='${LIBS}'
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
-	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
+	    -Wl,--out-implib,\$(patsubst %.dll,lib%.dll.a,\[$]@)"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
 	DLLSUFFIX=".dll"

@@ -4,7 +4,7 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors. No output means no errors were found.
 #
-# Copyright (c) 1999 by Scriptics Corporation.
+# Copyright © 1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -20,11 +20,11 @@ if {[testConstraint win]} {
     if {![catch {
 	    ::tcltest::loadTestedCommands
 	    set ::ddever [package require dde 1.4.3]
-	    set ::ddelib [lindex [package ifneeded dde $::ddever] 1]}]} {
+	    set ::ddelib [info loaded {} Dde]}]} {
 	testConstraint dde 1
     }
 }
-testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 
 # -------------------------------------------------------------------------
@@ -38,7 +38,7 @@ proc createChildProcess {ddeServerName args} {
 
     set f [open $::scriptName w+]
     puts $f [list set ddeServerName $ddeServerName]
-    puts $f [list load $::ddelib dde]
+    puts $f [list load $::ddelib Dde]
     puts $f {
         # DDE child server -
         #
@@ -111,7 +111,7 @@ test winDde-1.1 {Settings the server's topic name} -constraints dde -body {
 } -result {foobar foobar self}
 
 test winDde-2.1 {Checking for other services} -constraints dde -body {
-    expr [llength [dde services {} {}]] >= 0
+    expr {[llength [dde services {} {}]] >= 0}
 } -result 1
 test winDde-2.2 {Checking for existence, with service and topic specified} \
 	-constraints dde -body {
@@ -119,11 +119,11 @@ test winDde-2.2 {Checking for existence, with service and topic specified} \
 } -result 1
 test winDde-2.3 {Checking for existence, with only the service specified} \
 	-constraints dde -body {
-    expr [llength [dde services TclEval {}]] >= 1
+    expr {[llength [dde services TclEval {}]] >= 1}
 } -result 1
 test winDde-2.4 {Checking for existence, with only the topic specified} \
 	-constraints dde -body {
-    expr [llength [dde services {} self]] >= 1
+    expr {[llength [dde services {} self]] >= 1}
 } -result 1
 
 # -------------------------------------------------------------------------

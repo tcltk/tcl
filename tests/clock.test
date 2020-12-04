@@ -6,7 +6,7 @@
 # built-in commands. Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
+# Copyright © 2004 Kevin B. Kenny.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -35436,7 +35436,7 @@ test clock-32.1 {scan/format across the Gregorian change} {
 
 # clock clicks
 test clock-33.1 {clock clicks tests} {
-    expr [clock clicks]+1
+    expr {[clock clicks] + 1}
     concat {}
 } {}
 test clock-33.2 {clock clicks tests} {
@@ -35449,7 +35449,7 @@ test clock-33.3 {clock clicks tests} {
     list [catch {clock clicks foo} msg] $msg
 } {1 {bad option "foo": must be -milliseconds or -microseconds}}
 test clock-33.4 {clock clicks tests} {
-    expr [clock clicks -milliseconds]+1
+    expr {[clock clicks -milliseconds] + 1}
     concat {}
 } {}
 test clock-33.4a {clock milliseconds} {
@@ -35905,7 +35905,7 @@ test clock-34.68 {clock scan tests (merid and TZ)} {
 
 # clock seconds
 test clock-35.1 {clock seconds tests} {
-    expr [clock seconds]+1
+    expr {[clock seconds] + 1}
     concat {}
 } {}
 test clock-35.2 {clock seconds tests} {

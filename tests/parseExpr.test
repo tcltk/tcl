@@ -2,8 +2,8 @@
 # file tclCompExpr.c.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,7 +14,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Note that the Tcl expression parser (tclCompExpr.c) does not check
 # the semantic validity of the expressions it parses. It does not check,
@@ -1074,6 +1074,14 @@ test parseExpr-22.20 {Bug d2ffcca163} -constraints testexprparser -body {
 test parseExpr-22.21 {Bug d2ffcca163} -constraints testexprparser -body {
     testexprparser in\u0433(0) -1
 } -returnCodes error -match glob -result {missing operand*}
+
+test parseExpr-23.1 {TIP 582: comments} -constraints testexprparser -body {
+    testexprparser "7 # * 8 " -1
+} -result {- {} 0 subexpr 7 1 text 7 0 {}}
+test parseExpr-23.2 {TIP 582: comments} -constraints testexprparser -body {
+    testexprparser "7 #\n* 8 " -1
+} -result {- {} 0 subexpr {7 #
+*} 5 operator # 0 subexpr 7 1 text 7 0 subexpr * 1 text * 0 {}}
 
 # cleanup
 cleanupTests

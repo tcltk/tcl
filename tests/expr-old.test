@@ -6,9 +6,9 @@
 # "compExpr.test". Sourcing this file into Tcl runs the tests and generates
 # output for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1994 The Regents of the University of California.
-# Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-2000 by Scriptics Corporation.
+# Copyright © 1991-1994 The Regents of the University of California.
+# Copyright © 1994-1997 Sun Microsystems, Inc.
+# Copyright © 1998-2000 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -19,7 +19,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testexprlong   [llength [info commands testexprlong]]
 testConstraint testexprdouble [llength [info commands testexprdouble]]
@@ -524,7 +524,7 @@ test expr-old-26.10b {error conditions} ieeeFloatingPoint {
     list [catch {expr 2.0/0.0} msg] $msg
 } {0 Inf}
 test expr-old-26.11 {error conditions} -body {
-    expr 2#
+    expr 2`
 } -returnCodes error -match glob -result *
 test expr-old-26.12 {error conditions} -body {
     expr a.b
@@ -852,7 +852,7 @@ test expr-old-32.46 {math functions in expressions} -body {
 } -match glob -result {1 {too many arguments for math function*}}
 test expr-old-32.47 {math functions in expressions} -body {
     list [catch {expr srand()} msg] $msg
-} -match glob -result {1 {too few arguments for math function*}}
+} -match glob -result {1 {not enough arguments for math function*}}
 test expr-old-32.48 {math functions in expressions} -body {
     expr srand(3.79)
 } -returnCodes error -match glob -result *
@@ -909,7 +909,7 @@ test expr-old-34.6 {errors in math functions} -body {
 } -returnCodes error -match glob -result *
 test expr-old-34.7 {errors in math functions} -body {
     list [catch {expr hypot(1.0)} msg] $msg
-} -match glob -result {1 {too few arguments for math function*}}
+} -match glob -result {1 {not enough arguments for math function*}}
 test expr-old-34.8 {errors in math functions} -body {
     list [catch {expr hypot(1.0, 2.0, 3.0)} msg] $msg
 } -match glob -result {1 {too many arguments for math function*}}
@@ -1151,7 +1151,7 @@ test expr-old-40.2 {min math function} -body {
 } -result 0.0
 test expr-old-40.3 {min math function} -body {
     expr {min()}
-} -returnCodes error -result {too few arguments for math function "min"}
+} -returnCodes error -result {not enough arguments for math function "min"}
 test expr-old-40.4 {min math function} -body {
     expr {min(wide(-1) << 30, 4.5, -10)}
 } -result [expr {wide(-1) << 30}]
@@ -1176,7 +1176,7 @@ test expr-old-41.2 {max math function} -body {
 } -result 0.0
 test expr-old-41.3 {max math function} -body {
     expr {max()}
-} -returnCodes error -result {too few arguments for math function "max"}
+} -returnCodes error -result {not enough arguments for math function "max"}
 test expr-old-41.4 {max math function} -body {
     expr {max(wide(1) << 30, 4.5, -10)}
 } -result [expr {wide(1) << 30}]

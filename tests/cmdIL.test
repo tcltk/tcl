@@ -2,8 +2,8 @@
 # tclCmdIL.c. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -15,7 +15,7 @@ if {"::tcltest" ni [namespace children]} {
 
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -514,7 +514,7 @@ test cmdIL-5.5 {lsort with list style index and sharing} -body {
 	foreach e $l {lappend n [list [expr {rand()}] $e]}
 	lindex [lsort -real -index $l $n] 1 1
     }
-    expr srand(1)
+    expr {srand(1)}
     test_lsort 0
 } -result 0 -cleanup {
     rename test_lsort ""

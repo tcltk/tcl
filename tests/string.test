@@ -4,10 +4,10 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001 Kevin B. Kenny.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -18,7 +18,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Helper commands to test various optimizations, code paths, and special cases.
 proc makeByteArray {s} {binary format a* $s}
@@ -88,7 +88,7 @@ test stringComp-1.3.$noComp {error condition - undefined method during compile} 
     foo abc 0
 } a
 
-test string-2.1.$noComp {string compare, too few args} {
+test string-2.1.$noComp {string compare, not enough args} {
     list [catch {run {string compare a}} msg] $msg
 } {1 {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"}}
 test string-2.2.$noComp {string compare, bad args} {
@@ -251,7 +251,7 @@ test string-3.7.$noComp {string equal -nocase} {
 test string-3.8.$noComp {string equal with length, unequal strings} {
     run {string equal -length 2 abc abde}
 } 1
-test string-3.9.$noComp {string equal, too few args} {
+test string-3.9.$noComp {string equal, not enough args} {
     list [catch {run {string equal a}} msg] $msg
 } {1 {wrong # args: should be "string equal ?-nocase? ?-length int? string1 string2"}}
 test string-3.10.$noComp {string equal, bad args} {
@@ -366,7 +366,7 @@ test string-3.42.$noComp {string equal, binary neq inequal length} {
 } 0
 
 
-test string-4.1.$noComp {string first, too few args} {
+test string-4.1.$noComp {string first, not enough args} {
     list [catch {run {string first a}} msg] $msg
 } {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
 test string-4.2.$noComp {string first, bad args} {
@@ -520,10 +520,10 @@ proc largest_int {} {
     return [expr {$int-1}]
 }
 
-test string-6.1.$noComp {string is, too few args} {
+test string-6.1.$noComp {string is, not enough args} {
     list [catch {run {string is}} msg] $msg
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
-test string-6.2.$noComp {string is, too few args} {
+test string-6.2.$noComp {string is, not enough args} {
     list [catch {run {string is alpha}} msg] $msg
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.3.$noComp {string is, bad args} {
@@ -973,7 +973,7 @@ test string-6.131.$noComp {string is entier, false on bad hex} {
 
 catch {rename largest_int {}}
 
-test string-7.1.$noComp {string last, too few args} {
+test string-7.1.$noComp {string last, not enough args} {
     list [catch {run {string last a}} msg] $msg
 } {1 {wrong # args: should be "string last needleString haystackString ?lastIndex?"}}
 test string-7.2.$noComp {string last, bad args} {
@@ -1059,7 +1059,7 @@ test string-9.7.$noComp {string length, bytearray object} {
     run {string length [binary format I* {0x50515253 0x52}]}
 } 8
 
-test string-10.1.$noComp {string map, too few args} {
+test string-10.1.$noComp {string map, not enough args} {
     list [catch {run {string map}} msg] $msg
 } {1 {wrong # args: should be "string map ?-nocase? charMap string"}}
 test string-10.2.$noComp {string map, bad args} {
@@ -1159,7 +1159,7 @@ test string-10.31.$noComp {string map, nasty sharing crash from [Bug 1018562]} {
     run {string map $a $a}
 } {b b}
 
-test string-11.1.$noComp {string match, too few args} {
+test string-11.1.$noComp {string match, not enough args} {
     list [catch {run {string match a}} msg] $msg
 } {1 {wrong # args: should be "string match ?-nocase? pattern string"}}
 test string-11.2.$noComp {string match, too many args} {
@@ -1669,7 +1669,7 @@ test stringComp-14.26.$noComp {} {
     run {string replace abcd 0x10000000000000000-0xffffffffffffffff 2 e}
 } aed
 
-test string-15.1.$noComp {string tolower too few args} {
+test string-15.1.$noComp {string tolower not enough args} {
     list [catch {run {string tolower}} msg] $msg
 } {1 {wrong # args: should be "string tolower string ?first? ?last?"}}
 test string-15.2.$noComp {string tolower bad args} {
@@ -2120,7 +2120,7 @@ test string-25.14.$noComp {string is list} {
     list [run {string is list -failindex x "\uABCD {b c}d e"}] $x
 } {0 2}
 
-test string-26.1.$noComp {tcl::prefix, too few args} -body {
+test string-26.1.$noComp {tcl::prefix, not enough args} -body {
     tcl::prefix match a
 } -returnCodes 1 -result {wrong # args: should be "tcl::prefix match ?options? table string"}
 test string-26.2.$noComp {tcl::prefix, bad args} -body {
@@ -2247,7 +2247,7 @@ test string-26.13.$noComp {tcl::prefix: testing for leaks} -body {
     }
 } -constraints memory -result {0}
 
-test string-27.1.$noComp {tcl::prefix all, too few args} -body {
+test string-27.1.$noComp {tcl::prefix all, not enough args} -body {
     tcl::prefix all a
 } -returnCodes 1 -result {wrong # args: should be "tcl::prefix all table string"}
 test string-27.2.$noComp {tcl::prefix all, bad args} -body {
@@ -2278,7 +2278,7 @@ test string-27.10.$noComp {tcl::prefix all} {
     tcl::prefix all {apa aska appa} {}
 } {apa aska appa}
 
-test string-28.1.$noComp {tcl::prefix longest, too few args} -body {
+test string-28.1.$noComp {tcl::prefix longest, not enough args} -body {
     tcl::prefix longest a
 } -returnCodes 1 -result {wrong # args: should be "tcl::prefix longest table string"}
 test string-28.2.$noComp {tcl::prefix longest, bad args} -body {
@@ -2477,6 +2477,13 @@ test string-31.24.$noComp {string insert, string end, pure Uni, both shared} {
 test string-31.25.$noComp {string insert, neither byte array nor Unicode} {
     run {tcl::string::insert [makeList a b c] 1 zzzzzz}
 } {azzzzzz b c}
+test string-31.26.$noComp {[11229bad5f] string insert, compiler} -setup {
+    set i 2
+} -body {
+    run {tcl::string::insert abcd $i xyz}
+} -cleanup {
+    unset i
+} -result abxyzcd
 
 test string-32.1.$noComp {string is dict} {
     string is dict {a b c d}

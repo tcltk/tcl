@@ -3183,12 +3183,14 @@ MODULE_SCOPE size_t	TclUtfCount(int ch);
 #if TCL_UTF_MAX > 3
 #   define TclUtfToUCS4 Tcl_UtfToUniChar
 #   define TclUniCharToUCS4(src, ptr) (*ptr = *(src),1)
+#   define TclUCS4Prev(src, ptr) (((src) > (ptr)) ? ((src) - 1) : (src))
 #   define TclUCS4Complete Tcl_UtfCharComplete
 #   define TclChar16Complete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
 	    ? ((length) >= 3) : Tcl_UtfCharComplete((src), (length)))
 #else
-    MODULE_SCOPE int	TclUtfToUCS4(const char *src, int *ucs4Ptr);
-    MODULE_SCOPE int	TclUniCharToUCS4(const Tcl_UniChar *src, int *ucs4Ptr);
+    MODULE_SCOPE int	TclUtfToUCS4(const char *, int *);
+    MODULE_SCOPE int	TclUniCharToUCS4(const Tcl_UniChar *, int *);
+    MODULE_SCOPE const Tcl_UniChar *TclUCS4Prev(const Tcl_UniChar *, const Tcl_UniChar *);
 #   define TclUCS4Complete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
 	    ? ((length) >= 4) : Tcl_UtfCharComplete((src), (length)))
 #   define TclChar16Complete Tcl_UtfCharComplete
@@ -4852,7 +4854,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     (objPtr) = Tcl_NewWideIntObj(w)
 
 #define TclNewIndexObj(objPtr, w) \
-    (objPtr) = ((w) == TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideIntObj(w)
+    (objPtr) = (((size_t)w) == TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideIntObj(w)
 
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)

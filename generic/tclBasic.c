@@ -1132,6 +1132,7 @@ Tcl_CreateInterp(void)
      */
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
+    Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL, &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
@@ -8035,8 +8036,8 @@ MathFuncWrongNumArgs(
 	}
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "too %s arguments for math function \"%s\"",
-	    (found < expected ? "few" : "many"), name));
+	    "%s arguments for math function \"%s\"",
+	    (found < expected ? "not enough" : "too many"), name));
     Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
 }
 

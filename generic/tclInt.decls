@@ -5,9 +5,9 @@
 #	is used to generate the tclIntDecls.h, tclIntPlatDecls.h
 #	and tclStubInit.c files
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
-# Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001 Kevin B. Kenny.  All rights reserved.
+# Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -166,9 +166,10 @@ declare 32 {
 #declare 36 {
 #    int TclGetLong(Tcl_Interp *interp, const char *str, long *longPtr)
 #}
-declare 37 {
-    int TclGetLoadedPackages(Tcl_Interp *interp, const char *targetName)
-}
+# Removed in 9.0:
+#declare 37 {
+#    int TclGetLoadedPackages(Tcl_Interp *interp, const char *targetName)
+#}
 declare 38 {
     int TclGetNamespaceForQualName(Tcl_Interp *interp, const char *qualName,
 	    Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr,
@@ -192,9 +193,10 @@ declare 42 {
 #    int TclGlobalInvoke(Tcl_Interp *interp, int argc, const char **argv,
 #	    int flags)
 #}
-declare 44 {
-    int TclGuessPackageName(const char *fileName, Tcl_DString *bufPtr)
-}
+# Removed in 9.0:
+#declare 44 {
+#    int TclGuessPackageName(const char *fileName, Tcl_DString *bufPtr)
+#}
 declare 45 {
     int TclHideUnsafeCommands(Tcl_Interp *interp)
 }

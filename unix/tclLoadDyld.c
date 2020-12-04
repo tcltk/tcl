@@ -468,34 +468,6 @@ UnloadFile(
 /*
  *----------------------------------------------------------------------
  *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    TCL_UNUSED(const char *) /*fileName*/,
-    TCL_UNUSED(Tcl_DString *) /*bufPtr*/)
-{
-    return 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclpLoadMemoryGetBuffer --
  *
  *	Allocate a buffer that can be used with TclpLoadMemory() below.

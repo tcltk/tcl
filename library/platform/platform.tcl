@@ -97,6 +97,9 @@ proc ::platform::generic {} {
 	cygwin* {
 	    set plat cygwin
 	}
+	msys* {
+	    set plat msystem
+	}
 	windows {
 	    if {$tcl_platform(platform) == "unix"} {
 		set plat cygwin
@@ -378,7 +381,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.14
+package provide platform 1.0.15
 
 # ### ### ### ######### ######### #########
 ## Demo application
