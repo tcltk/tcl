@@ -25,6 +25,7 @@
 #	shell    -- Just builds the shell and the core.
 #	core     -- Only builds the core [tclXX.(dll|lib)].
 #	all      -- Builds everything.
+#       sfe      -- Build static single file executable.
 #	test     -- Builds and runs the test suite.
 #	tcltest  -- Just builds the test shell.
 #	install  -- Installs the built binaries and libraries to $(INSTALLDIR)
@@ -180,7 +181,7 @@ VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 !include versions.vc
 
 # Single file Tclsh
-TCLSFE = $(OUT_DIR)\$(PROJECT)sfe$(VERSION).exe
+TCLSFE = $(OUT_DIR)\$(PROJECT)sfe$(VERSION)$(SUFX).exe
 
 DDEDOTVERSION = 1.4
 DDEVERSION = $(DDEDOTVERSION:.=)
