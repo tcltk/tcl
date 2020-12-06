@@ -457,13 +457,13 @@ TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
 # Project specific targets
 #---------------------------------------------------------------------
 
-release:    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
+release:    setup $(TCLSH) $(TCLSTUBLIB) dlls libtclzip pkgs
 core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
 dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
 all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
 !if $(STATIC_BUILD) && $(TCL_USE_STATIC_PACKAGES)
-sfe:        setup $(TCLSH) $(TCLSTUBLIB) $(TCLSFE)
+sfe:        setup $(TCLSH) $(TCLSTUBLIB) libtclzip $(TCLSFE)
 !else
 sfe:
 	    @echo Single file executables need static build of Tcl. Specify "static" and "staticpkg" in OPTS.
@@ -611,20 +611,31 @@ genstubs:
 #---------------------------------------------------------------------
 # Build a single file executable version of Tcl
 #---------------------------------------------------------------------
-!if $(STATIC_BUILD) && $(TCL_USE_STATIC_PACKAGES)
-$(OUT_DIR)\tcl_library.zip:
+LIBTCLVFS = $(OUT_DIR)\libtcl.vfs
+!if "$(TCL_PATCH_LETTER)" == "."
+LIBTCLZIP = libtcl_$(TCL_MAJOR_VERSION)_$(TCL_MINOR_VERSION)_$(TCL_RELEASE_SERIAL).zip
+!else
+LIBTCLZIP = libtcl_$(TCL_MAJOR_VERSION)_$(TCL_MINOR_VERSION)_$(TCL_PATCH_LETTER)$(TCL_RELEASE_SERIAL).zip
+!endif
+
+libtclzip: $(OUT_DIR)\$(LIBTCLZIP)
+$(OUT_DIR)\$(LIBTCLZIP): .PHONY
 	@echo Building Tcl library zip file
-	@echo file delete -force tcl_library > "$(OUT_DIR)\zipper.tcl"
-	@echo file delete -force tcl_library.zip >> "$(OUT_DIR)\zipper.tcl"
-	@echo file copy ../../library tcl_library >> "$(OUT_DIR)\zipper.tcl"
-	@echo file rename tcl_library/manifest.txt tcl_library/pkgIndex.tcl >> "$(OUT_DIR)\zipper.tcl"
-	@echo zipfs mkzip {$@} tcl_library tcl_library >> "$(OUT_DIR)\zipper.tcl"
+	@if exist "$(LIBTCLVFS)" $(RMDIR) "$(LIBTCLVFS)"
+	@$(MKDIR) "$(LIBTCLVFS)"
+	@$(CPYDIR) $(LIBDIR) "$(LIBTCLVFS)\tcl_library"
+	@move /y "$(LIBTCLVFS)\tcl_library\manifest.txt"  "$(LIBTCLVFS)\tcl_library\pkgIndex.tcl"
+	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
+	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
 	@cd "$(OUT_DIR)" && $(TCLSH) zipper.tcl
 
-$(TCLSFE): $(OUT_DIR)\tcl_library.zip
-	@echo Building single-file exe from $(TCLSH) and $(OUT_DIR)\tcl_library.zip
-	@copy /y /b "$(TCLSH)"+"$(OUT_DIR)\tcl_library.zip" "$@"
+!if $(STATIC_BUILD) && $(TCL_USE_STATIC_PACKAGES)
+$(TCLSFE): $(OUT_DIR)\$(LIBTCLZIP)
+	@echo Building single-file exe from $(TCLSH)
+	@copy /y /b "$(TCLSH)"+"$(OUT_DIR)\$(LIBTCLZIP)" "$@"
 !endif
+
+.PHONY:
 
 
 #---------------------------------------------------------------------
