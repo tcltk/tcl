@@ -56,8 +56,8 @@ OR-ed combination of bits providing additional information for
 operation.  The only bits that are currently defined are \fBTCL_EXACT\fR
 and \fBTCL_INDEX_TEMP_TABLE\fR.
 .AP int *indexPtr out
-The index of the string in \fItablePtr\fR that matches the value of
-\fIobjPtr\fR is returned here.
+If not NULL, the index of the string in \fItablePtr\fR that matches
+the value of \fIobjPtr\fR is returned here.
 .BE
 .SH DESCRIPTION
 .PP
@@ -70,8 +70,8 @@ the strings in \fItablePtr\fR to find a match.  A match occurs if
 \fItablePtr\fR, or if it is a non-empty unique abbreviation
 for exactly one of the strings in \fItablePtr\fR and the
 \fBTCL_EXACT\fR flag was not specified; in either case
-the index of the matching entry is stored at \fI*indexPtr\fR
-and \fBTCL_OK\fR is returned.
+\fBTCL_OK\fR is returned. If \fI*indexPtr\fR is not NULL the index
+of the matching entry is stored there.
 .PP
 If there is no matching entry,
 \fBTCL_ERROR\fR is returned and an error message is left in \fIinterp\fR's
