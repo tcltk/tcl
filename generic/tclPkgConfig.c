@@ -35,6 +35,10 @@
 
 #include "tclInt.h"
 
+#ifndef TCL_CFGVAL_ENCODING
+#   define TCL_CFGVAL_ENCODING "utf-8"
+#endif
+
 /*
  * Use C preprocessor statements to define the various values for the embedded
  * configuration information.

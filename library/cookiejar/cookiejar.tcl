@@ -98,7 +98,8 @@ namespace eval [info object namespace ::http::cookiejar] {
 	}
 	proc splitPath path {
 	    set pieces [split [string trimleft $path "/"] "/"]
-	    for {set j -1} {$j < [llength $pieces]} {incr j} {
+	    set result /
+	    for {set j 0} {$j < [llength $pieces]} {incr j} {
 		lappend result /[join [lrange $pieces 0 $j] "/"]
 	    }
 	    return $result
@@ -131,7 +132,7 @@ package provide cookiejar \
 # The implementation of the cookiejar package
 ::oo::define ::http::cookiejar {
     self {
-	method configure {{optionName "\u0000\u0000"} {optionValue "\u0000\u0000"}} {
+	method configure {{optionName "\x00\x00"} {optionValue "\x00\x00"}} {
 	    set tbl {
 		-domainfile    {domainfile set}
 		-domainlist    {domainlist set}
@@ -148,14 +149,14 @@ package provide cookiejar \
 	    dict lappend tbl -purgeold [namespace code {
 		my IntervalTrigger PostponePurge
 	    }]
-	    if {$optionName eq "\u0000\u0000"} {
+	    if {$optionName eq "\x00\x00"} {
 		return [dict keys $tbl]
 	    }
 	    set opt [::tcl::prefix match -message "option" \
 		    [dict keys $tbl] $optionName]
 	    set setter [lassign [dict get $tbl $opt] varname]
 	    namespace upvar [namespace current] $varname var
-	    if {$optionValue ne "\u0000\u0000"} {
+	    if {$optionValue ne "\x00\x00"} {
 		{*}$setter var $optionValue
 	    }
 	    return $var

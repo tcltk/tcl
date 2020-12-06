@@ -51,7 +51,7 @@ Tcl_SetPanicProc(
 {
 #if defined(_WIN32)
     /* tclWinDebugPanic only installs if there is no panicProc yet. */
-    if ((proc != tclWinDebugPanic) || (panicProc == NULL))
+    if (((Tcl_PanicProc *)proc != tclWinDebugPanic) || (panicProc == NULL))
 #elif defined(__CYGWIN__)
     if (proc == NULL)
 	panicProc = tclWinDebugPanic;
@@ -141,8 +141,6 @@ Tcl_PanicVA(
  *
  *----------------------------------------------------------------------
  */
-
-/* ARGSUSED */
 
 /*
  * The following comment is here so that Coverity's static analizer knows that

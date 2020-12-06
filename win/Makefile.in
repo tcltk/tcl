@@ -49,6 +49,9 @@ LIB_INSTALL_DIR		= $(INSTALL_ROOT)$(libdir)
 # Path name to use when installing library scripts.
 SCRIPT_INSTALL_DIR	= $(INSTALL_ROOT)$(TCL_LIBRARY)
 
+# Path name to use when installing Tcl modules.
+MODULE_INSTALL_DIR	= $(SCRIPT_INSTALL_DIR)/../tcl8
+
 # Directory in which to install the include file tcl.h:
 INCLUDE_INSTALL_DIR	= $(INSTALL_ROOT)$(includedir)
 
@@ -67,9 +70,6 @@ MAN3_INSTALL_DIR = $(MAN_INSTALL_DIR)/man3
 # Directory in which to install manual entries for the built-in Tcl commands:
 MANN_INSTALL_DIR = $(MAN_INSTALL_DIR)/mann
 
-# Libraries built with optimization switches have this additional extension
-TCL_DBGX = @TCL_DBGX@
-
 # warning flags
 CFLAGS_WARNING = @CFLAGS_WARNING@
 
@@ -82,7 +82,7 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG)
 #CFLAGS = 		$(CFLAGS_OPTIMIZE)
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -D_ATL_XP_TARGETING -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
+CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -D_ATL_XP_TARGETING=1 -D__USE_MINGW_ANSI_STDIO=0 -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
@@ -117,6 +117,9 @@ TCL_LIBRARY_NATIVE	= $(shell $(CYGPATH) '$(TCL_LIBRARY)')
 GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
 WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
 ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
+SCRIPT_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(SCRIPT_INSTALL_DIR)')
+INCLUDE_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(INCLUDE_INSTALL_DIR)')
+MAN_INSTALL_DIR_NATIVE	= $(shell $(CYGPATH) '$(MAN_INSTALL_DIR)')
 ROOT_DIR_WIN_NATIVE	= $(shell cd '$(ROOT_DIR)' ; pwd -W 2>/dev/null || pwd -P)
 ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)')
 MINIZIP_DIR_NATIVE	= $(shell $(CYGPATH) '$(MINIZIP_DIR)')
@@ -146,16 +149,16 @@ TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 TCL_DLL_FILE		= @TCL_DLL_FILE@
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 DDE_DLL_FILE		= tcldde$(DDEVER)${DLLSUFFIX}
-DDE_LIB_FILE		= @LIBPREFIX@tcldde$(DDEVER)${LIBSUFFIX}
-REG_DLL_FILE		= tclreg$(REGVER)${DLLSUFFIX}
-REG_LIB_FILE		= @LIBPREFIX@tclreg$(REGVER)${LIBSUFFIX}
+DDE_LIB_FILE		= @LIBPREFIX@tcldde$(DDEVER)${DLLSUFFIX}${LIBSUFFIX}
+REG_DLL_FILE		= tclregistry$(REGVER)${DLLSUFFIX}
+REG_LIB_FILE		= @LIBPREFIX@tclregistry$(REGVER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
-TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${LIBSUFFIX}
+TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
-			  package ifneeded dde 1.4.3 [list load [file normalize ${DDE_DLL_FILE}] dde];\
-			  package ifneeded registry 1.3.5 [list load [file normalize ${REG_DLL_FILE}] registry]
-TEST_LOAD_FACILITIES	= package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest];\
+			  package ifneeded dde 1.4.3 [list load [file normalize ${DDE_DLL_FILE}]];\
+			  package ifneeded registry 1.3.5 [list load [file normalize ${REG_DLL_FILE}]]
+TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest];\
 			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
 TOMMATH_DLL_FILE		= libtommath.dll
@@ -166,7 +169,6 @@ STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 TCLSH			= tclsh$(VER)${EXESUFFIX}
 WINE			= @WINE@
 CAT32			= cat32$(EXEEXT)
-MAN2TCL			= man2tcl$(EXEEXT)
 
 # For cross-compiled builds, TCL_EXE is the name of a tclsh executable that is
 # available *BEFORE* running make for the first time. Certain build targets
@@ -251,7 +253,7 @@ ZIP_INSTALL_OBJS =  @ZIP_INSTALL_OBJS@
 
 CC_SWITCHES = -I"${GENERIC_DIR_NATIVE}" -I"${TOMMATH_DIR_NATIVE}" \
 -I"${ZLIB_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
-${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} -DMP_PREC=4 \
+${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} -DMP_PREC=4 \
 ${AC_FLAGS} ${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
 
 CC_OBJNAME = @CC_OBJNAME@
@@ -528,12 +530,12 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	  done) && \
 	  $(LN) ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl && \
 	  $(LN) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde/ && \
-	  $(LN) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg/ \
+	  $(LN) ${REG_DLL_FILE} ${TCL_VFS_PATH}/registry/ \
 	) || ( \
 	  $(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
 	  $(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl; \
 	  $(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde; \
-	  $(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg; \
+	  $(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/registry; \
 	)
 	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
 	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
@@ -646,7 +648,7 @@ tclMainW.${OBJEXT}: tclMain.c
 # TIP #430, ZipFS Support
 tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl \
-	-DCFG_RUNTIME_PATH=\"$(bindir_native)\" \
+	-DCFG_RUNTIME_PATH="\"$(bindir_native)\"" \
 	-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
 	-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 	-DCFG_RUNTIME_LIBDIR="\"$(bindir_native)\"" \
@@ -668,7 +670,7 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR_NATIVE)\"" \
 		-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR_NATIVE)\"" \
 		-DCFG_INSTALL_INCDIR="\"$(INCLUDE_INSTALL_DIR_NATIVE)\"" \
-		-DCFG_INSTALL_DOCDIR="\"$(MAN_INSTALL_DIR)\"" \
+		-DCFG_INSTALL_DOCDIR="\"$(MAN_INSTALL_DIR_NATIVE)\"" \
 		\
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir_native)\"" \
 		-DCFG_RUNTIME_BINDIR="\"$(bindir_native)\"" \
@@ -781,18 +783,18 @@ install: $(INSTALL_TARGETS)
 install-binaries: binaries
 	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)"; \
 	    do \
-	    if [ ! -d $$i ] ; then \
+	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
-		$(MKDIR) $$i; \
-		chmod 755 $$i; \
+		$(MKDIR) "$$i"; \
+		chmod 755 "$$i"; \
 		else true; \
 		fi; \
 	    done;
-	@for i in dde${DDEDOTVER} reg${REGDOTVER}; \
+	@for i in dde${DDEDOTVER} registry${REGDOTVER}; \
 	    do \
-	    if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
+	    if [ ! -d "$(LIB_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
-		$(MKDIR) $(LIB_INSTALL_DIR)/$$i; \
+		$(MKDIR) "$(LIB_INSTALL_DIR)/$$i"; \
 		else true; \
 		fi; \
 	    done;
@@ -812,23 +814,23 @@ install-binaries: binaries
 	    done
 	@if [ -f $(DDE_DLL_FILE) ]; then \
 	    echo Installing $(DDE_DLL_FILE); \
-	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
+	    $(COPY) $(DDE_DLL_FILE) "$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
 	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl \
-		$(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
+		"$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
 	    fi
 	@if [ -f $(DDE_LIB_FILE) ]; then \
 	    echo Installing $(DDE_LIB_FILE); \
-	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
+	    $(COPY) $(DDE_LIB_FILE) "$(LIB_INSTALL_DIR)/dde${DDEDOTVER}"; \
 	    fi
 	@if [ -f $(REG_DLL_FILE) ]; then \
 	    echo Installing $(REG_DLL_FILE); \
-	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
-	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl \
-		$(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
+	    $(COPY) $(REG_DLL_FILE) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
+	    $(COPY) $(ROOT_DIR)/library/registry/pkgIndex.tcl \
+		"$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
 	    echo Installing $(REG_LIB_FILE); \
-	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
+	    $(COPY) $(REG_LIB_FILE) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
 	    fi
 
 install-libraries-zipfs-shared: libraries
@@ -837,20 +839,28 @@ install-libraries-zipfs-static: install-libraries-zipfs-shared
 	$(COPY) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
 
 install-libraries: libraries install-tzdata install-msgs
-	@for i in "$$($(CYGPATH) $(prefix)/lib)" "$(INCLUDE_INSTALL_DIR)" \
-		$(SCRIPT_INSTALL_DIR); \
+	@for i in "$(prefix)/lib" "$(INCLUDE_INSTALL_DIR)" \
+		"$(SCRIPT_INSTALL_DIR)" "$(MODULE_INSTALL_DIR)"; \
 	    do \
-	    if [ ! -d $$i ] ; then \
+	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
-		$(MKDIR) $$i; \
+		$(MKDIR) "$$i"; \
 		else true; \
 		fi; \
 	    done;
-	@for i in opt0.4 cookiejar0.2 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6 ../tcl8/8.7; \
+	@for i in opt0.4 cookiejar0.2 encoding; \
 	    do \
-	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
+	    if [ ! -d "$(SCRIPT_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
-		$(MKDIR) $(SCRIPT_INSTALL_DIR)/$$i; \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)/$$i"; \
+		else true; \
+		fi; \
+	    done;
+	@for i in 8.4  8.4/platform 8.5 8.6 8.7; \
+	    do \
+	    if [ ! -d "$(MODULE_INSTALL_DIR)/$$i" ] ; then \
+		echo "Making directory $(MODULE_INSTALL_DIR)/$$i"; \
+		$(MKDIR) "$(MODULE_INSTALL_DIR)/$$i"; \
 		else true; \
 		fi; \
 	    done;
@@ -864,21 +874,21 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done;
-	@echo "Installing package http 2.9.1 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.6/http-2.9.1.tm;
+	@echo "Installing package http 2.10.0a1 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/8.6/http-2.10.0a1.tm";
 	@echo "Installing package opt 0.4.7";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
-	@echo "Installing package msgcat 1.7.0 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.7/msgcat-1.7.0.tm;
-	@echo "Installing package tcltest 2.5.2 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.5.2.tm;
-	@echo "Installing package platform 1.0.14 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.14.tm;
+	@echo "Installing package msgcat 1.7.1 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl "$(MODULE_INSTALL_DIR)/8.7/msgcat-1.7.1.tm";
+	@echo "Installing package tcltest 2.5.3 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.3.tm";
+	@echo "Installing package platform 1.0.15 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/8.4/platform-1.0.15.tm";
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform/shell-1.1.4.tm;
+	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl "$(MODULE_INSTALL_DIR)/8.4/platform/shell-1.1.4.tm";
 	@echo "Installing encodings";
 	@for i in $(ROOT_DIR)/library/encoding/*.enc; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \
@@ -887,12 +897,12 @@ install-libraries: libraries install-tzdata install-msgs
 install-tzdata:
 	@echo "Installing time zone data"
 	@$(TCL_EXE) "$(ROOT_DIR)/tools/installData.tcl" \
-	    "$(ROOT_DIR)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
+	    "$(ROOT_DIR)/library/tzdata" "$(SCRIPT_INSTALL_DIR_NATIVE)/tzdata"
 
 install-msgs:
 	@echo "Installing message catalogs"
-	@$(TCL_EXE) "$(ROOT_DIR)/tools/installData.tcl" \
-	    "$(ROOT_DIR)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
+	$(TCL_EXE) "$(ROOT_DIR)/tools/installData.tcl" \
+	    "$(ROOT_DIR)/library/msgs" "$(SCRIPT_INSTALL_DIR_NATIVE)/msgs"
 
 install-doc: doc
 
@@ -970,7 +980,7 @@ Makefile: $(SRC_DIR)/Makefile.in
 	./config.status
 
 cleanhelp:
-	$(RM) *.hlp *.cnt *.GID *.rtf man2tcl.exe
+	$(RM) *.hlp *.cnt *.GID
 
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
@@ -982,7 +992,7 @@ clean: cleanhelp clean-packages
 
 distclean: distclean-packages clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
-		tcl.hpj config.status.lineno tclsh.exe.manifest
+		config.status.lineno tclsh.exe.manifest
 
 #
 # Bundled package targets

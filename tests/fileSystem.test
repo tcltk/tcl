@@ -4,14 +4,17 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 2002 Vincent Darley.
+# Copyright © 2002 Vincent Darley.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest 2
 namespace eval ::tcl::test::fileSystem {
-    namespace import ::tcltest::*
+
+    if {"::tcltest" ni [namespace children]} {
+	package require tcltest 2.5
+	namespace import -force ::tcltest::*
+    }
 
     catch {
 	file delete -force link.file
@@ -22,7 +25,7 @@ namespace eval ::tcl::test::fileSystem {
 testConstraint loaddll 0
 catch {
     ::tcltest::loadTestedCommands
-    package require -exact Tcltest [info patchlevel]
+    package require -exact tcl::test [info patchlevel]
     set ::ddever [package require dde]
     set ::ddelib [lindex [package ifneeded dde $::ddever] 1]
     set ::regver  [package require registry]
@@ -30,11 +33,13 @@ catch {
     testConstraint loaddll 1
 }
 
-# Test for commands defined in Tcltest executable
+# Test for commands defined in tcl::test package
 testConstraint testfilesystem  	    [llength [info commands ::testfilesystem]]
 testConstraint testsetplatform 	    [llength [info commands ::testsetplatform]]
 testConstraint testsimplefilesystem [llength [info commands ::testsimplefilesystem]]
-testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+# Some things fail under all Continuous Integration systems for subtle reasons
+# such as CI often running with elevated privileges in a container.
+testConstraint notInCIenv           [expr {![info exists ::env(CI)]}]
 
 cd [tcltest::temporaryDirectory]
 makeFile "test file" gorp.file
@@ -313,7 +318,7 @@ test filesystem-1.37 {file normalisation with '/./'} -body {
 } -match regexp -result {^(?:[^/]|/(?:[^/]|$))+$}
 test filesystem-1.38 {file normalisation with volume relative} -setup {
     set dir [pwd]
-} -constraints {win moreThanOneDrive knownMsvcBug} -body {
+} -constraints {win moreThanOneDrive notInCIenv} -body {
     set path "[string range [lindex $drives 0] 0 1]foo"
     cd [lindex $drives 1]
     file norm $path
@@ -562,7 +567,7 @@ test filesystem-7.1.1 {load from vfs} -setup {
     cd [file dirname $::ddelib]
     testsimplefilesystem 1
     # This loads dde via a complex copy-to-temp operation
-    load simplefs:/[file tail $::ddelib] dde
+    load simplefs:/[file tail $::ddelib] Dde
     testsimplefilesystem 0
     return ok
     # The real result of this test is what happens when Tcl exits.
@@ -689,7 +694,7 @@ test filesystem-7.5 {cross-filesystem file copy with -force} -setup {
     # First copy should succeed
     set res [catch {file copy simplefs:/simplefile file2} err]
     lappend res $err
-    file attributes file2 -permissions 0000
+    file attributes file2 -permissions 0
     # Second copy should fail (no -force)
     lappend res [catch {file copy simplefs:/simplefile file2} err]
     lappend res $err

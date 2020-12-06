@@ -1235,7 +1235,7 @@ RecursiveDeleteKey(
 		checkExProc = 1;
 		handle = GetModuleHandleW(L"ADVAPI32");
 		regDeleteKeyExProc = (LONG (*) (HKEY, LPCWSTR, REGSAM, DWORD))
-			GetProcAddress(handle, "RegDeleteKeyExW");
+			(void *)GetProcAddress(handle, "RegDeleteKeyExW");
 	    }
 	    if (mode && regDeleteKeyExProc) {
 		result = regDeleteKeyExProc(startKey, keyName, mode, 0);

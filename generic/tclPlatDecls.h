@@ -114,6 +114,11 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+#ifdef MAC_OSX_TCL /* MACOSX */
+#undef Tcl_MacOSXOpenBundleResources
+#define Tcl_MacOSXOpenBundleResources(a,b,c,d,e) Tcl_MacOSXOpenVersionedBundleResources(a,b,NULL,c,d,e)
+#endif
+
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 

@@ -4,15 +4,15 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
+# Copyright © 1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2006-2008 Joe Mistachkin.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -20,7 +20,7 @@ if {"::tcltest" ni [namespace children]} {
 #  be fully finalized, which avoids valgrind "still reachable" reports.
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 package require tcltests
 
 # Some tests require the testthread command
@@ -39,11 +39,11 @@ set threadSuperKillScript {
 proc getThreadErrorFromInfo { info } {
     set list [split $info \n]
     set idx [lsearch -glob $list "*eval*unwound*"]
-    if {$idx != -1} then {
+    if {$idx >= 0} then {
         return [lindex $list $idx]
     }
     set idx [lsearch -glob $list "*eval*canceled*"]
-    if {$idx != -1} then {
+    if {$idx >= 0} then {
         return [lindex $list $idx]
     }
     return ""; # some other error we do not care about.
@@ -805,7 +805,7 @@ test thread-7.21 {cancel: subst -unwind} -constraints {thread drainEventQueue} -
 } -cleanup {
     unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval unwound}}
-test thread-7.22 {cancel: slave interp} -constraints {thread drainEventQueue} -setup {
+test thread-7.22 {cancel: child interp} -constraints {thread drainEventQueue} -setup {
     unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \
@@ -835,7 +835,7 @@ test thread-7.22 {cancel: slave interp} -constraints {thread drainEventQueue} -s
 } -cleanup {
     unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -result {{} 1 1 {eval canceled}}
-test thread-7.23 {cancel: slave interp -unwind} -constraints {thread drainEventQueue} -setup {
+test thread-7.23 {cancel: child interp -unwind} -constraints {thread drainEventQueue} -setup {
     unset -nocomplain ::threadSawError ::threadError ::threadId ::threadIdStarted
 } -body {
     set serverthread [thread::create -joinable \

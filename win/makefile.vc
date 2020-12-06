@@ -25,6 +25,7 @@
 #	shell    -- Just builds the shell and the core.
 #	core     -- Only builds the core [tclXX.(dll|lib)].
 #	all      -- Builds everything.
+#       sfe      -- Build static single file executable.
 #	test     -- Builds and runs the test suite.
 #	tcltest  -- Just builds the test shell.
 #	install  -- Installs the built binaries and libraries to $(INSTALLDIR)
@@ -67,7 +68,7 @@
 #		static    = Builds a static library of the core instead of a
 #			    dll.  The shell will be static (and large), as well.
 #		staticpkg = Affects the static option only to switch
-#			    tclshXX.exe to have the dde and reg extension linked
+#			    tclshXX.exe to have the dde and registry extension linked
 #			    inside it.
 #		symbols   =  Adds symbols for step debugging.
 #		thrdalloc = Use the thread allocator (shared global free pool).
@@ -113,10 +114,6 @@
 #
 #	TESTPAT=<file>
 #		Reads the tests requested to be run from this file.
-#
-#	CFG_ENCODING=encoding
-#		name of encoding for configuration information. Defaults
-#		to cp1252
 #
 # Examples:
 #       c:\tcl_src\win\>nmake -f makefile.vc release
@@ -178,10 +175,13 @@ VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
    && [nmakehlp -V ..\library\dde\pkgIndex.tcl "dde " >> versions.vc]
 !endif
 !if [echo PKG_REG_VER =\>> versions.vc] \
-   && [nmakehlp -V ..\library\reg\pkgIndex.tcl registry >> versions.vc]
+   && [nmakehlp -V ..\library\registry\pkgIndex.tcl "registry " >> versions.vc]
 !endif
 
 !include versions.vc
+
+# Single file Tclsh
+TCLSFE = $(OUT_DIR)\$(PROJECT)sfe$(VERSION)$(SUFX).exe
 
 DDEDOTVERSION = 1.4
 DDEVERSION = $(DDEDOTVERSION:.=)
@@ -462,6 +462,13 @@ core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
 dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
 all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
+!if $(STATIC_BUILD) && $(TCL_USE_STATIC_PACKAGES)
+sfe:        setup $(TCLSH) $(TCLSTUBLIB) $(TCLSFE)
+!else
+sfe:
+	    @echo Single file executables need static build of Tcl. Specify "static" and "staticpkg" in OPTS.
+!endif
+
 tcltest:    setup $(TCLTEST) dlls
 install:    install-binaries install-libraries install-docs install-pkgs
 !if $(SYMBOLS)
@@ -473,8 +480,8 @@ test: test-core test-pkgs
 test-core: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.3 [list load "$(TCLDDELIB:\=/)" dde]
-		package ifneeded registry 1.3.5 [list load "$(TCLREGLIB:\=/)" registry]
+		package ifneeded dde 1.4.3 [list load "$(TCLDDELIB:\=/)"]
+		package ifneeded registry 1.3.5 [list load "$(TCLREGLIB:\=/)"]
 <<
 
 runtest: setup $(TCLTEST) dlls
@@ -601,6 +608,24 @@ genstubs:
 		$(GENERICDIR:\=/)/tclOO.decls
 !endif
 
+#---------------------------------------------------------------------
+# Build a single file executable version of Tcl
+#---------------------------------------------------------------------
+!if $(STATIC_BUILD) && $(TCL_USE_STATIC_PACKAGES)
+$(OUT_DIR)\tcl_library.zip:
+	@echo Building Tcl library zip file
+	@echo file delete -force tcl_library > "$(OUT_DIR)\zipper.tcl"
+	@echo file delete -force tcl_library.zip >> "$(OUT_DIR)\zipper.tcl"
+	@echo file copy ../../library tcl_library >> "$(OUT_DIR)\zipper.tcl"
+	@echo file rename tcl_library/manifest.txt tcl_library/pkgIndex.tcl >> "$(OUT_DIR)\zipper.tcl"
+	@echo zipfs mkzip {$@} tcl_library tcl_library >> "$(OUT_DIR)\zipper.tcl"
+	@cd "$(OUT_DIR)" && $(TCLSH) zipper.tcl
+
+$(TCLSFE): $(OUT_DIR)\tcl_library.zip
+	@echo Building single-file exe from $(TCLSH) and $(OUT_DIR)\tcl_library.zip
+	@copy /y /b "$(TCLSH)"+"$(OUT_DIR)\tcl_library.zip" "$@"
+!endif
+
 
 #---------------------------------------------------------------------
 # Build the Windows HTML help file.
@@ -688,7 +713,6 @@ $(OUT_DIR)\tclConfig.sh: $(WIN_DIR)\tclConfig.sh.in
 @CFLAGS_OPTIMIZE@    -nologo -c -W3 -YX -Fp$(TMP_DIR)\ -MD
 @LDFLAGS_DEBUG@      -nologo -machine:$(MACHINE) -debug -debugtype:cv
 @LDFLAGS_OPTIMIZE@   -nologo -machine:$(MACHINE) -release -opt:ref -opt:icf,3
-@TCL_DBGX@           $(SUFX)
 @TCL_LIB_FILE@       $(PROJECT)$(VERSION)$(SUFX).lib
 @TCL_NEEDS_EXP_FILE@
 @LIBS@               $(baselibs) $(PRJ_LIBS)
@@ -907,18 +931,18 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\cookiejar0.2" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\cookiejar0.2"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7"
+	@if not exist "$(MODULE_INSTALL_DIR)" \
+		$(MKDIR) "$(MODULE_INSTALL_DIR)"
+	@if not exist "$(MODULE_INSTALL_DIR)\8.4" \
+		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.4"
+	@if not exist "$(MODULE_INSTALL_DIR)\8.4\platform" \
+		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.4\platform"
+	@if not exist "$(MODULE_INSTALL_DIR)\8.5" \
+		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.5"
+	@if not exist "$(MODULE_INSTALL_DIR)\8.6" \
+		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.6"
+	@if not exist "$(MODULE_INSTALL_DIR)\8.7" \
+		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.7"
 	@if not exist "$(LIB_INSTALL_DIR)\nmake" \
 		$(MKDIR) "$(LIB_INSTALL_DIR)\nmake"
 	@echo Installing header files
@@ -957,19 +981,19 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
 	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\http\http.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6\http-$(PKG_HTTP_VER).tm"
+	    "$(MODULE_INSTALL_DIR)\8.6\http-$(PKG_HTTP_VER).tm"
 	@echo Installing package msgcat $(PKG_MSGCAT_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\msgcat\msgcat.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.7\msgcat-$(PKG_MSGCAT_VER).tm"
+	    "$(MODULE_INSTALL_DIR)\8.7\msgcat-$(PKG_MSGCAT_VER).tm"
 	@echo Installing package tcltest $(PKG_TCLTEST_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\tcltest-$(PKG_TCLTEST_VER).tm"
+	    "$(MODULE_INSTALL_DIR)\8.5\tcltest-$(PKG_TCLTEST_VER).tm"
 	@echo Installing package platform $(PKG_PLATFORM_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\platform\platform.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform-$(PKG_PLATFORM_VER).tm"
+	    "$(MODULE_INSTALL_DIR)\8.4\platform-$(PKG_PLATFORM_VER).tm"
 	@echo Installing package platform::shell $(PKG_SHELL_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\platform\shell.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform\shell-$(PKG_SHELL_VER).tm"
+	    "$(MODULE_INSTALL_DIR)\8.4\platform\shell-$(PKG_SHELL_VER).tm"
 	@echo Installing $(TCLDDELIBNAME)
 !if $(STATIC_BUILD)
 !if !$(TCL_USE_STATIC_PACKAGES)
@@ -986,9 +1010,9 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\"
 !endif
 !else
-	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
-	@$(CPY) "$(ROOT)\library\reg\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
+	@$(CPY) "$(ROOT)\library\registry\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
 !endif
 	@echo Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \

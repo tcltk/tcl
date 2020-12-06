@@ -84,12 +84,12 @@ Tcl_InitNotifier(void)
     } else {
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-	TclpMasterLock();
+	TclpGlobalLock();
 	if (!initialized) {
 	    initialized = 1;
 	    InitializeCriticalSection(&notifierMutex);
 	}
-	TclpMasterUnlock();
+	TclpGlobalUnlock();
 
 	/*
 	 * Register Notifier window class if this is the first thread to use

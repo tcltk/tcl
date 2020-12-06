@@ -4,19 +4,19 @@
 # built-in commands. Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1996-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-2000 by Scriptics Corporation.
+# Copyright © 1996-1997 Sun Microsystems, Inc.
+# Copyright © 1998-2000 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2.1
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Determine if "long int" type is a 32 bit number and if the wide
 # type is a 64 bit number on this machine.
@@ -685,13 +685,13 @@ test expr-15.3 {CompileMathFuncCall: too many arguments} -body {
 test expr-15.4 {CompileMathFuncCall: ')' found before last required arg} -body {
     catch {expr sin()} msg
     set ::errorInfo
-} -match glob -result {too few arguments for math function*
+} -match glob -result {not enough arguments for math function*
     while *ing
 "expr sin()"}
-test expr-15.5 {CompileMathFuncCall: too few arguments} -body {
+test expr-15.5 {CompileMathFuncCall: not enough arguments} -body {
     catch {expr pow(1)} msg
     set ::errorInfo
-} -match glob -result {too few arguments for math function*
+} -match glob -result {not enough arguments for math function*
     while *ing
 "expr pow(1)"}
 test expr-15.6 {CompileMathFuncCall: missing ')'} -body {
@@ -7251,7 +7251,7 @@ test expr-52.1 {
 foreach func {isfinite isinf isnan isnormal issubnormal} {
     test expr-53.1.$func {float classification: basic arg handling} -body {
 	expr ${func}()
-    } -returnCodes error -result "too few arguments for math function \"$func\""
+    } -returnCodes error -result "not enough arguments for math function \"$func\""
     test expr-53.2.$func {float classification: basic arg handling} -body {
 	expr ${func}(1,2)
     } -returnCodes error -result "too many arguments for math function \"$func\""
@@ -7346,10 +7346,10 @@ test expr-59.12 {float classification: fpclassify} -returnCodes error -body {
 
 test expr-60.1 {float classification: basic arg handling} -body {
     expr isunordered()
-} -returnCodes error -result {too few arguments for math function "isunordered"}
+} -returnCodes error -result {not enough arguments for math function "isunordered"}
 test expr-60.2 {float classification: basic arg handling} -body {
     expr isunordered(1)
-} -returnCodes error -result {too few arguments for math function "isunordered"}
+} -returnCodes error -result {not enough arguments for math function "isunordered"}
 test expr-60.3 {float classification: basic arg handling} -body {
     expr {isunordered(1, 2, 3)}
 } -returnCodes error -result {too many arguments for math function "isunordered"}
@@ -7384,6 +7384,67 @@ foreach v1 $values r1 $results {
     }
 }
 unset -nocomplain values results ctr
+
+test expr-62.1 {TIP 582: comments} -body {
+    expr {1 # + 2}
+} -result 1
+test expr-62.2 {TIP 582: comments} -body {
+    expr "1 #\n+ 2"
+} -result 3
+test expr-62.3 {TIP 582: comments} -setup {
+    set ctr 0
+} -body {
+    expr {
+	# This is a demonstration of a comment
+	1 + 2 + 3
+	# and another comment
+	+ 4 + 5
+	# + [incr ctr]
+	+ [incr ctr]
+    }
+} -result 16
+# Buggy because line breaks aren't tracked inside expressions at all
+test expr-62.4 {TIP 582: comments don't hide line breaks} -setup {
+    proc getline {} {
+	dict get [info frame -1] line
+    }
+    set base [getline]
+} -constraints knownBug -body {
+    expr {
+	0
+	# a comment
+	+ [getline] - $base
+    }
+} -cleanup {
+    rename getline ""
+} -result 5
+test expr-62.5 {TIP 582: comments don't splice tokens} {
+    set a False
+    expr {$a#don't splice
+ne#don't splice
+false}
+} 1
+test expr-62.6 {TIP 582: comments don't splice tokens} {
+    expr {0x2#don't splice
+ne#don't splice
+2}
+} 1
+test expr-62.7 {TIP 582: comments can go inside function calls} {
+    expr {max(1,# comment
+	      2)}
+} 2
+test expr-62.8 {TIP 582: comments can go inside function calls} {
+    expr {max(1# comment
+	      ,2)}
+} 2
+test expr-62.9 {TIP 582: comments can go inside function calls} {
+    expr {max(# comment
+	      1,2)}
+} 2
+test expr-62.10 {TIP 582: comments can go inside function calls} {
+    expr {max# comment
+	     (1,2)}
+} 2
 
 # cleanup
 unset -nocomplain a

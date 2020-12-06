@@ -64,7 +64,7 @@ instance of \fBoo::object\fR or one of its subclasses.
 that represents an instance of \fBoo::object\fR or one of its subclasses.
 .IP \fBproc\fR
 \fIcommandName\fR was created by \fBproc\fR.
-.IP \fBslave\fR
+.IP \fBinterp\fR
 \fIcommandName\fR was created by \fBinterp create\fR.
 .IP \fBzlibStream\fR
 \fIcommandName\fR was created by \fBzlib stream\fR.
@@ -278,7 +278,7 @@ Returns the name of each file loaded in \fIinterp\fR va \fBload\fR as part of
 \fIpackage\fR .  If \fIpackage\fR is not given, returns a list where each item
 is the name of the loaded file and the name of the package for which the file
 was loaded.  For a statically-loaded package the name of the file is the empty
-string.  For \fInterp\fR, the empty string is the current interpreter.
+string.  For \fIinterp\fR, the empty string is the current interpreter.
 .TP
 \fBinfo locals \fR?\fIpattern\fR?
 .

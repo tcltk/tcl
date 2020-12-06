@@ -11,8 +11,8 @@
 #	Microsystems.
 #
 # Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2000 by Ajuba Solutions
+# Copyright (c) 1998-1999 Scriptics Corporation.
+# Copyright (c) 2000 Ajuba Solutions
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 
@@ -22,7 +22,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.2
+    variable Version 2.5.3
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -41,7 +41,9 @@ namespace eval tcltest {
 	    outputChannel testConstraint
 
     # Export commands that are duplication (candidates for deprecation)
-    namespace export bytestring		;# dups [encoding convertfrom identity]
+    if {![package vsatisfies [package provide Tcl] 8.7-]} {
+	namespace export bytestring	;# dups [encoding convertfrom identity]
+    }
     namespace export debug		;#	[configure -debug]
     namespace export errorFile		;#	[configure -errfile]
     namespace export limitConstraints	;#	[configure -limitconstraints]
@@ -640,7 +642,7 @@ namespace eval tcltest {
 
     proc IsVerbose {level} {
 	variable Option
-	return [expr {[lsearch -exact $Option(-verbose) $level] != -1}]
+	return [expr {[lsearch -exact $Option(-verbose) $level] >= 0}]
     }
 
     # Default verbosity is to show bodies of failed tests
@@ -811,14 +813,14 @@ namespace eval tcltest {
     trace add variable Option(-errfile) write \
 	    [namespace code {errorChannel $Option(-errfile) ;#}]
 
-    proc loadIntoSlaveInterpreter {slave args} {
+    proc loadIntoChildInterpreter {child args} {
 	variable Version
-	interp eval $slave [package ifneeded tcltest $Version]
-	interp eval $slave "tcltest::configure {*}{$args}"
-	interp alias $slave ::tcltest::ReportToMaster \
-	    {} ::tcltest::ReportedFromSlave
+	interp eval $child [package ifneeded tcltest $Version]
+	interp eval $child "tcltest::configure {*}{$args}"
+	interp alias $child ::tcltest::ReportToParent \
+	    {} ::tcltest::ReportedFromChild
     }
-    proc ReportedFromSlave {total passed skipped failed because newfiles} {
+    proc ReportedFromChild {total passed skipped failed because newfiles} {
 	variable numTests
 	variable skippedBecause
 	variable createdNewFiles
@@ -1269,7 +1271,7 @@ proc tcltest::DefineConstraintInitializers {} {
 
     ConstraintInitializer nonBlockFiles {
 	    set code [expr {[catch {set f [open defs r]}]
-		    || [catch {chan configure $f -blocking off}]}]
+		    || [catch {fconfigure $f -blocking off}]}]
 	    catch {close $f}
 	    set code
     }
@@ -2462,8 +2464,8 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
     set testFileName [file tail [info script]]
 
     # Hook to handle reporting to a parent interpreter
-    if {[llength [info commands [namespace current]::ReportToMaster]]} {
-	ReportToMaster $numTests(Total) $numTests(Passed) $numTests(Skipped) \
+    if {[llength [info commands [namespace current]::ReportToParent]]} {
+	ReportToParent $numTests(Total) $numTests(Passed) $numTests(Skipped) \
 	    $numTests(Failed) [array get skippedBecause] \
 	    [array get createdNewFiles]
 	set testSingleFile false
@@ -2798,7 +2800,6 @@ proc tcltest::runAllTests { {shell ""} } {
     variable numTests
     variable failFiles
     variable DefaultValue
-    set failFilesAccum {}
 
     FillFilesExisted
     if {[llength [info level 0]] == 1} {
@@ -2854,8 +2855,18 @@ proc tcltest::runAllTests { {shell ""} } {
 	flush [outputChannel]
 
 	if {[singleProcess]} {
-	    incr numTestFiles
-	    uplevel 1 [list ::source $file]
+	    if {[catch {
+		incr numTestFiles
+		uplevel 1 [list ::source $file]
+	    } msg]} {
+		puts [outputChannel] "Test file error: $msg"
+		# append the name of the test to a list to be reported
+		# later
+		lappend testFileFailures $file
+	    }
+	    if {$numTests(Failed) > 0} {
+		set failFilesSet 1
+	    }
 	} else {
 	    # Pass along our configuration to the child processes.
 	    # EXCEPT for the -outfile, because the parent process
@@ -2888,7 +2899,7 @@ proc tcltest::runAllTests { {shell ""} } {
 			}
 			if {$Failed > 0} {
 			    lappend failFiles $testFile
-			    lappend failFilesAccum $testFile
+			    set failFilesSet 1
 			}
 		    } elseif {[regexp [join {
 			    {^Number of tests skipped }
@@ -2935,7 +2946,7 @@ proc tcltest::runAllTests { {shell ""} } {
 	puts [outputChannel] ""
 	puts [outputChannel] [string repeat ~ 44]
     }
-    return [expr {[info exists testFileFailures] || [llength $failFilesAccum]}]
+    return [expr {[info exists testFileFailures] || [info exists failFilesSet]}]
 }
 
 #####################################################################
@@ -3070,7 +3081,10 @@ proc tcltest::makeFile {contents name {directory ""}} {
 	     putting ``$contents'' into $fullName"
 
     set fd [open $fullName w]
-    chan configure $fd -translation lf
+    fconfigure $fd -translation lf
+    if {[package vsatisfies [package provide Tcl] 8.7-]} {
+	fconfigure $fd -encoding utf-8
+    }
     if {[string index $contents end] eq "\n"} {
 	puts -nonewline $fd $contents
     } else {
@@ -3107,11 +3121,12 @@ proc tcltest::removeFile {name {directory ""}} {
     set fullName [file join $directory $name]
     DebugPuts 3 "[lindex [info level 0] 0]: removing $fullName"
     set idx [lsearch -exact $filesMade $fullName]
-    set filesMade [lreplace $filesMade $idx $idx]
-    if {$idx == -1} {
+    if {$idx < 0} {
 	DebugDo 1 {
 	    Warn "removeFile removing \"$fullName\":\n  not created by makeFile"
 	}
+    } else {
+	set filesMade [lreplace $filesMade $idx $idx]
     }
     if {![file isfile $fullName]} {
 	DebugDo 1 {
@@ -3183,7 +3198,7 @@ proc tcltest::removeDirectory {name {directory ""}} {
     DebugPuts 3 "[lindex [info level 0] 0]: deleting $fullName"
     set idx [lsearch -exact $filesMade $fullName]
     set filesMade [lreplace $filesMade $idx $idx]
-    if {$idx == -1} {
+    if {$idx < 0} {
 	DebugDo 1 {
 	    Warn "removeDirectory removing \"$fullName\":\n  not created\
 		    by makeDirectory"
@@ -3218,6 +3233,9 @@ proc tcltest::viewFile {name {directory ""}} {
     }
     set fullName [file join $directory $name]
     set f [open $fullName]
+    if {[package vsatisfies [package provide Tcl] 8.7-]} {
+	fconfigure $f -encoding utf-8
+    }
     set data [read -nonewline $f]
     close $f
     return $data
@@ -3232,12 +3250,15 @@ proc tcltest::viewFile {name {directory ""}} {
 #    procedures that are supposed to accept strings with embedded NULL
 #    bytes.
 # 2. Confirm that a string result has a certain pattern of bytes, for
-#    instance to confirm that "\xe0\0" in a Tcl script is stored
-#    internally in UTF-8 as the sequence of bytes "\xc3\xa0\xc0\x80".
+#    instance to confirm that "\xE0\0" in a Tcl script is stored
+#    internally in UTF-8 as the sequence of bytes "\xC3\xA0\xC0\x80".
 #
 # Generally, it's a bad idea to examine the bytes in a Tcl string or to
 # construct improperly formed strings in this manner, because it involves
 # exposing that Tcl uses UTF-8 internally.
+#
+# This function doesn't work any more in Tcl 8.7, since the 'identity'
+# is gone (TIP #345)
 #
 # Arguments:
 #	string being converted
@@ -3248,8 +3269,10 @@ proc tcltest::viewFile {name {directory ""}} {
 # Side effects:
 #	None
 
-proc tcltest::bytestring {string} {
-    return [encoding convertfrom identity $string]
+if {![package vsatisfies [package provide Tcl] 8.7-]} {
+    proc tcltest::bytestring {string} {
+	return [encoding convertfrom identity $string]
+    }
 }
 
 # tcltest::OpenFiles --

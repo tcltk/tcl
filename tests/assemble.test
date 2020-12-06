@@ -2,8 +2,8 @@
 #
 #	Test suite for the 'tcl::unsupported::assemble' command
 #
-# Copyright (c) 2010 by Ozgur Dogan Ugurlu.
-# Copyright (c) 2010 by Kevin B. Kenny.
+# Copyright © 2010 Ozgur Dogan Ugurlu.
+# Copyright © 2010 Kevin B. Kenny.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1536,61 +1536,35 @@ test assemble-14.7 {incrArrayStkImm} {
 
 # assemble-15 - listIndexImm
 
-test assemble-15.1 {listIndexImm - wrong # args} {
-    -body {
-	assemble {listIndexImm}
-    }
-    -returnCodes error
-    -match glob
-    -result {wrong # args*}
-}
-test assemble-15.2 {listIndexImm - wrong # args} {
-    -body {
-	assemble {listIndexImm too many}
-    }
-    -returnCodes error
-    -match glob
-    -result {wrong # args*}
-}
-test assemble-15.3 {listIndexImm - bad substitution} {
-    -body {
-	list [catch {assemble {listIndexImm $foo}} result] $result $::errorCode
-    }
-    -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
-    -cleanup {unset result}
-}
-test assemble-15.4 {listIndexImm - invalid index} {
-    -body {
-	assemble {listIndexImm rubbish}
-    }
-    -returnCodes error
-    -match glob
-    -result {bad index "rubbish"*}
-}
-test assemble-15.5 {listIndexImm} {
-    -body {
-	assemble {push {a b c}; listIndexImm 2}
-    }
-    -result c
-}
-test assemble-15.6 {listIndexImm} {
-    -body {
-	assemble {push {a b c}; listIndexImm end-1}
-    }
-    -result b
-}
-test assemble-15.7 {listIndexImm} {
-    -body {
-	assemble {push {a b c}; listIndexImm end}
-    }
-    -result c
-}
-test assemble-15.8 {listIndexImm} {
+test assemble-15.1 {listIndexImm - wrong # args} -body {
+    assemble {listIndexImm}
+} -returnCodes error -match glob -result {wrong # args*}
+test assemble-15.2 {listIndexImm - wrong # args} -body {
+    assemble {listIndexImm too many}
+} -returnCodes error -match glob -result {wrong # args*}
+test assemble-15.3 {listIndexImm - bad substitution} -body {
+    list [catch {assemble {listIndexImm $foo}} result] $result $::errorCode
+} -cleanup {
+    unset result
+} -result {1 {assembly code may not contain substitutions} {TCL ASSEM NOSUBST}}
+test assemble-15.4 {listIndexImm - invalid index} -body {
+    assemble {listIndexImm rubbish}
+} -returnCodes error -match glob -result {bad index "rubbish"*}
+test assemble-15.5 {listIndexImm} -body {
+    assemble {push {a b c}; listIndexImm 2}
+} -result c
+test assemble-15.6 {listIndexImm} -body {
+    assemble {push {a b c}; listIndexImm end-1}
+} -result b
+test assemble-15.7 {listIndexImm} -body {
+    assemble {push {a b c}; listIndexImm end}
+} -result c
+test assemble-15.8 {listIndexImm} -body {
     assemble {push {a b c}; listIndexImm end+2}
-} {}
-test assemble-15.9 {listIndexImm} {
+} -result {}
+test assemble-15.9 {listIndexImm} -body {
     assemble {push {a b c}; listIndexImm -1-1}
-} {}
+} -result {}
 
 # assemble-16 - invokeStk
 

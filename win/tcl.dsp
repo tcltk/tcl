@@ -348,7 +348,7 @@ SOURCE=..\doc\CrtObjCmd.3
 # End Source File
 # Begin Source File
 
-SOURCE=..\doc\CrtSlave.3
+SOURCE=..\doc\CrtAlias.3
 # End Source File
 # Begin Source File
 
@@ -1441,10 +1441,6 @@ SOURCE=.\rmd.bat
 # Begin Source File
 
 SOURCE=.\rules.vc
-# End Source File
-# Begin Source File
-
-SOURCE=.\tcl.hpj.in
 # End Source File
 # Begin Source File
 

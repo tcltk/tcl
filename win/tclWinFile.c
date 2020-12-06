@@ -938,7 +938,7 @@ TclpMatchInDirectory(
 	    WIN32_FILE_ATTRIBUTE_DATA data;
 	    const char *str = TclGetStringFromObj(norm, &len);
 
-	    native = Tcl_FSGetNativePath(pathPtr);
+	    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
 	    if (GetFileAttributesExW(native,
 		    GetFileExInfoStandard, &data) != TRUE) {
@@ -979,7 +979,7 @@ TclpMatchInDirectory(
 	 * Verify that the specified path exists and is actually a directory.
 	 */
 
-	native = Tcl_FSGetNativePath(pathPtr);
+	native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 	if (native == NULL) {
 	    return TCL_OK;
 	}
@@ -1094,7 +1094,6 @@ TclpMatchInDirectory(
 	do {
 	    const char *utfname;
 	    int checkDrive = 0, isDrive;
-	    DWORD attr;
 
 	    native = data.cFileName;
 	    attr = data.dwFileAttributes;
@@ -1445,7 +1444,6 @@ TclpGetUserHome(
     int rc = 0;
     const char *domain;
     WCHAR *wName, *wHomeDir, *wDomain;
-    WCHAR buf[MAX_PATH];
 
     Tcl_DStringInit(bufferPtr);
 
@@ -1501,7 +1499,7 @@ TclpGetUserHome(
 	    if (rc != 0) {
 		break;
 	    }
-	    domain = INT2PTR(-1); /* repeat once */
+	    domain = (const char *)INT2PTR(-1); /* repeat once */
 	}
 	if (rc == 0) {
 	    DWORD i, size = MAX_PATH;
@@ -1511,6 +1509,7 @@ TclpGetUserHome(
 		size = lstrlenW(wHomeDir);
 		Tcl_WCharToUtfDString(wHomeDir, size, bufferPtr);
 	    } else {
+		WCHAR buf[MAX_PATH];
 		/*
 		 * User exists but has no home dir. Return
 		 * "{GetProfilesDirectory}/<user>".
@@ -1920,7 +1919,7 @@ TclpObjChdir(
     int result;
     const WCHAR *nativePath;
 
-    nativePath = Tcl_FSGetNativePath(pathPtr);
+    nativePath = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
     if (!nativePath) {
 	return -1;
@@ -2013,7 +2012,7 @@ TclpObjStat(
 
     TclWinFlushDirtyChannels();
 
-    return NativeStat(Tcl_FSGetNativePath(pathPtr), statPtr, 0);
+    return NativeStat((const WCHAR *)Tcl_FSGetNativePath(pathPtr), statPtr, 0);
 }
 
 /*
@@ -2207,7 +2206,7 @@ NativeDev(
 	p = strchr(p + 1, '\\');
 	if (p == NULL) {
 	    /*
-	     * Add terminating backslash to fullpath or GetVolumeInformation()
+	     * Add terminating backslash to fullpath or GetVolumeInformationW()
 	     * won't work.
 	     */
 
@@ -2384,7 +2383,7 @@ TclpObjAccess(
     Tcl_Obj *pathPtr,
     int mode)
 {
-    return NativeAccess(Tcl_FSGetNativePath(pathPtr), mode);
+    return NativeAccess((const WCHAR *)Tcl_FSGetNativePath(pathPtr), mode);
 }
 
 int
@@ -2400,7 +2399,7 @@ TclpObjLstat(
 
     TclWinFlushDirtyChannels();
 
-    return NativeStat(Tcl_FSGetNativePath(pathPtr), statPtr, 1);
+    return NativeStat((const WCHAR *)Tcl_FSGetNativePath(pathPtr), statPtr, 1);
 }
 
 #ifdef S_IFLNK
@@ -2413,14 +2412,14 @@ TclpObjLink(
     if (toPtr != NULL) {
 	int res;
 	const WCHAR *LinkTarget;
-	const WCHAR *LinkSource = Tcl_FSGetNativePath(pathPtr);
+	const WCHAR *LinkSource = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 	Tcl_Obj *normalizedToPtr = Tcl_FSGetNormalizedPath(NULL, toPtr);
 
 	if (normalizedToPtr == NULL) {
 	    return NULL;
 	}
 
-	LinkTarget = Tcl_FSGetNativePath(normalizedToPtr);
+	LinkTarget = (const WCHAR *)Tcl_FSGetNativePath(normalizedToPtr);
 
 	if (LinkSource == NULL || LinkTarget == NULL) {
 	    return NULL;
@@ -2432,7 +2431,7 @@ TclpObjLink(
 	    return NULL;
 	}
     } else {
-	const WCHAR *LinkSource = Tcl_FSGetNativePath(pathPtr);
+	const WCHAR *LinkSource = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
 	if (LinkSource == NULL) {
 	    return NULL;
@@ -2481,13 +2480,13 @@ TclpFilesystemPathType(
 
     firstSeparator = strchr(path, '/');
     if (firstSeparator == NULL) {
-	found = GetVolumeInformationW(Tcl_FSGetNativePath(pathPtr),
+	found = GetVolumeInformationW((const WCHAR *)Tcl_FSGetNativePath(pathPtr),
 		NULL, 0, NULL, NULL, NULL, volType, VOL_BUF_SIZE);
     } else {
 	Tcl_Obj *driveName = Tcl_NewStringObj(path, firstSeparator - path+1);
 
 	Tcl_IncrRefCount(driveName);
-	found = GetVolumeInformationW(Tcl_FSGetNativePath(driveName),
+	found = GetVolumeInformationW((const WCHAR *)Tcl_FSGetNativePath(driveName),
 		NULL, 0, NULL, NULL, NULL, volType, VOL_BUF_SIZE);
 	Tcl_DecrRefCount(driveName);
     }
@@ -2541,7 +2540,7 @@ TclpFilesystemPathType(
 
 int
 TclpObjNormalizePath(
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *pathPtr,	        /* An unshared object containing the path to
 				 * normalize */
     int nextCheckpoint)	        /* offset to start at in pathPtr */
@@ -2818,7 +2817,6 @@ TclpObjNormalizePath(
 	     */
 
 	    int len;
-	    char *path;
 	    Tcl_Obj *tmpPathPtr;
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
@@ -3114,7 +3112,7 @@ TclNativeCreateNativeRep(
      * Overallocate 6 chars, making some room for extended paths
      */
 
-    wp = nativePathPtr = ckalloc((len + 6) * sizeof(WCHAR));
+    wp = nativePathPtr = (WCHAR *)ckalloc((len + 6) * sizeof(WCHAR));
     if (nativePathPtr==0) {
       goto done;
     }
@@ -3212,7 +3210,7 @@ TclNativeDupInternalRep(
 
     len = sizeof(WCHAR) * (wcslen((const WCHAR *) clientData) + 1);
 
-    copy = ckalloc(len);
+    copy = (char *)ckalloc(len);
     memcpy(copy, clientData, len);
     return copy;
 }
@@ -3249,7 +3247,7 @@ TclpUtime(
     FromCTime(tval->actime, &lastAccessTime);
     FromCTime(tval->modtime, &lastModTime);
 
-    native = Tcl_FSGetNativePath(pathPtr);
+    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
     attr = GetFileAttributesW(native);
 
@@ -3300,7 +3298,7 @@ TclWinFileOwned(
     DWORD bufsz;
     int owned = 0;
 
-    native = Tcl_FSGetNativePath(pathPtr);
+    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
     if (GetNamedSecurityInfoW((LPWSTR) native, SE_FILE_OBJECT,
 	    OWNER_SECURITY_INFORMATION, &ownerSid, NULL, NULL, NULL,
@@ -3328,7 +3326,7 @@ TclWinFileOwned(
         bufsz = 0;
         GetTokenInformation(token, TokenUser, NULL, 0, &bufsz);
         if (bufsz) {
-            buf = ckalloc(bufsz);
+            buf = (LPBYTE)ckalloc(bufsz);
             if (GetTokenInformation(token, TokenUser, buf, bufsz, &bufsz)) {
                 owned = EqualSid(ownerSid, ((PTOKEN_USER) buf)->User.Sid);
             }

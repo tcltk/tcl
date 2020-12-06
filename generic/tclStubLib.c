@@ -65,7 +65,7 @@ Tcl_InitStubs(
      * times. [Bug 615304]
      */
 
-    if (!stubsPtr || (stubsPtr->magic != (((exact&0xff00) >= 0x900) ? magic : TCL_STUB_MAGIC))) {
+    if (!stubsPtr || (stubsPtr->magic != (((exact&0xFF00) >= 0x900) ? magic : TCL_STUB_MAGIC))) {
 	iPtr->result = (char *)"interpreter uses an incompatible stubs mechanism";
 	iPtr->freeProc = 0;
 	return NULL;
@@ -101,7 +101,7 @@ Tcl_InitStubs(
 	    }
 	}
     }
-    if (((exact&0xff00) < 0x900)) {
+    if (((exact&0xFF00) < 0x900)) {
 	/* We are running Tcl 8.x */
 	stubsPtr = (TclStubs *)pkgData;
     }

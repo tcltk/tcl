@@ -3,11 +3,11 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 Scriptics Corporation.
-# Copyright (c) 2004 by Kevin B. Kenny.
-# Copyright (c) 2018 by Sean Woods
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994-1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2004 Kevin B. Kenny.
+# Copyright © 2018 Sean Woods
 #
 # All rights reserved.
 #
@@ -19,7 +19,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 8.7a4
+package require -exact tcl 8.7a4
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -40,41 +40,46 @@ package require -exact Tcl 8.7a4
 # tcl_pkgPath, which is set by the platform-specific initialization routines
 #	On UNIX it is compiled in
 #       On Windows, it is not used
+#
+# (Ticket 41c9857bdd) In a safe interpreter, this file does not set
+# ::auto_path (other than to {} if it is undefined). The caller, typically
+# a Safe Base command, is responsible for setting ::auto_path.
 
 if {![info exists auto_path]} {
-    if {[info exists env(TCLLIBPATH)]} {
+    if {[info exists env(TCLLIBPATH)] && (![interp issafe])} {
 	set auto_path $env(TCLLIBPATH)
     } else {
 	set auto_path ""
     }
 }
 namespace eval tcl {
-    variable Dir
-    foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
-	if {$Dir ni $::auto_path} {
-	    lappend ::auto_path $Dir
-	}
-    }
-    set Dir [file join [file dirname [file dirname \
-	    [info nameofexecutable]]] lib]
-    if {$Dir ni $::auto_path} {
-	lappend ::auto_path $Dir
-    }
-    if {[info exists ::tcl_pkgPath]} { catch {
-	foreach Dir $::tcl_pkgPath {
+    if {![interp issafe]} {
+	variable Dir
+	foreach Dir [list $::tcl_library [file dirname $::tcl_library]] {
 	    if {$Dir ni $::auto_path} {
 		lappend ::auto_path $Dir
 	    }
 	}
-    }}
+	set Dir [file join [file dirname [file dirname \
+		[info nameofexecutable]]] lib]
+	if {$Dir ni $::auto_path} {
+	    lappend ::auto_path $Dir
+	}
+	if {[info exists ::tcl_pkgPath]} { catch {
+	    foreach Dir $::tcl_pkgPath {
+		if {$Dir ni $::auto_path} {
+		    lappend ::auto_path $Dir
+		}
+	    }
+	}}
 
-    if {![interp issafe]} {
-        variable Path [encoding dirs]
-        set Dir [file join $::tcl_library encoding]
-        if {$Dir ni $Path} {
+	variable Path [encoding dirs]
+	set Dir [file join $::tcl_library encoding]
+	if {$Dir ni $Path} {
 	    lappend Path $Dir
 	    encoding dirs $Path
-        }
+	}
+	unset Dir Path
     }
 }
 
@@ -107,7 +112,7 @@ if {[interp issafe]} {
 	foreach cmd {add format scan} {
 	    proc ::tcl::clock::$cmd args {
 		variable TclLibDir
-		source -encoding utf-8 [file join $TclLibDir clock.tcl]
+		source [file join $TclLibDir clock.tcl]
 		return [uplevel 1 [info level 0]]
 	    }
 	}
@@ -240,7 +245,7 @@ proc unknown args {
 		set errInfo [string range $errInfo 0 $last-1]
 		set tail "\"$cinfo\""
 		set last [string last $tail $errInfo]
-		if {$last + [string length $tail] != [string length $errInfo]} {
+		if {$last < 0 || $last + [string length $tail] != [string length $errInfo]} {
 		    return -code error -errorcode $errCode \
 			    -errorinfo $errInfo $msg
 		}
@@ -437,6 +442,7 @@ proc auto_load_index {} {
 	    continue
 	} else {
 	    set error [catch {
+		fconfigure $f -eofchar \032
 		set id [gets $f]
 		if {$id eq "# Tcl autoload index file, version 2.0"} {
 		    eval [read $f]
@@ -737,7 +743,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    }
 	}
     } else {
-	if {[string first $nsrc $ndest] != -1} {
+	if {[string first $nsrc $ndest] >= 0} {
 	    set srclen [expr {[llength [file split $nsrc]] - 1}]
 	    set ndest [lindex [file split $ndest] $srclen]
 	    if {$ndest eq [file tail $nsrc]} {
