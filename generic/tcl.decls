@@ -25,7 +25,7 @@ scspec EXTERN
 
 # Declare each of the functions in the public Tcl interface.  Note that
 # in order to preserve backwards compatibility an index should
-# never be reused for a different function
+# never be reused for a different function.
 
 declare 0 {
     int Tcl_PkgProvideEx(Tcl_Interp *interp, const char *name,
