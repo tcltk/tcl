@@ -33,7 +33,7 @@ dltest_suffix: pkgπ${DLTEST_SUFFIX} pkga${DLTEST_SUFFIX} pkgb${DLTEST_SUFFIX} p
 	@touch ../dltest.marker
 
 pkgπ.o: $(SRC_DIR)/pkgπ.c
-	$(CC) -c $(CC_SWITCHES) -fextended-identifiers $(SRC_DIR)/pkgπ.c
+	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgπ.c
 
 pkga.o: $(SRC_DIR)/pkga.c
 	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkga.c
