@@ -6,7 +6,7 @@
 # compiler switches, defining common targets and macros. The Tcl makefile
 # directly includes this. Extensions include it via "rules-ext.vc".
 #
-# See TIP 477 (https://core.tcl-lang.org/tips/doc/trunk/tip/477.md) for
+# See TIP 477 (https://core.tcl-lang.org/tips/doc/main/tip/477.md) for
 # detailed documentation.
 #
 # See the file "license.terms" for information on usage and redistribution
@@ -1565,11 +1565,11 @@ default-target: $(DEFAULT_BUILD_TARGET)
 !if $(MULTIPLATFORM_INSTALL)
 default-pkgindex:
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
-	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)] [string totitle $(PRJ_PACKAGE_TCLNAME)]] > $(OUT_DIR)\pkgIndex.tcl
 !else
 default-pkgindex:
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
-	    [list load [file join $$dir $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+	    [list load [file join $$dir $(PRJLIBNAME)] [string totitle $(PRJ_PACKAGE_TCLNAME)]] > $(OUT_DIR)\pkgIndex.tcl
 !endif
 
 default-pkgindex-tea:
