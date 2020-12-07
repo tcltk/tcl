@@ -2,8 +2,8 @@
 # Sourcing this file into Tcl runs the tests and generates output for errors.
 # No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -19,7 +19,7 @@ namespace eval ::tcl::test::encoding {
 
 catch {
     ::tcltest::loadTestedCommands
-    package require -exact Tcltest [info patchlevel]
+    package require -exact tcl::test [info patchlevel]
 }
 
 proc toutf {args} {
@@ -64,12 +64,12 @@ test encoding-1.2 {Tcl_GetEncoding: existing encoding} {testencoding} {
     return $x
 } {{fromutf }}
 test encoding-1.3 {Tcl_GetEncoding: load encoding} {
-    list [encoding convertto jis0208 \u4e4e] \
+    list [encoding convertto jis0208 乎] \
 	[encoding convertfrom jis0208 8C]
-} "8C \u4e4e"
+} "8C 乎"
 
 test encoding-2.1 {Tcl_FreeEncoding: refcount == 0} {
-    encoding convertto jis0208 \u4e4e
+    encoding convertto jis0208 乎
 } {8C}
 test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} -setup {
     set system [encoding system]
@@ -77,15 +77,15 @@ test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} -setup {
 } -constraints {testencoding} -body {
     encoding system shiftjis		;# incr ref count
     encoding dirs [list [pwd]]
-    set x [encoding convertto shiftjis \u4e4e]	;# old one found
+    set x [encoding convertto shiftjis 乎]	;# old one found
     encoding system iso8859-1
     llength shiftjis		;# Shimmer away any cache of Tcl_Encoding
-    lappend x [catch {encoding convertto shiftjis \u4e4e} msg] $msg
+    lappend x [catch {encoding convertto shiftjis 乎} msg] $msg
 } -cleanup {
     encoding system iso8859-1
     encoding dirs $path
     encoding system $system
-} -result "\u008c\u00c1 1 {unknown encoding \"shiftjis\"}"
+} -result "\x8C\xC1 1 {unknown encoding \"shiftjis\"}"
 
 test encoding-3.1 {Tcl_GetEncodingName, NULL} -setup {
     set old [encoding system]
@@ -137,7 +137,7 @@ test encoding-5.1 {Tcl_SetSystemEncoding} -setup {
     set old [encoding system]
 } -body {
     encoding system jis0208
-    encoding convertto \u4e4e
+    encoding convertto 乎
 } -cleanup {
     encoding system iso8859-1
     encoding system $old
@@ -169,7 +169,7 @@ test encoding-6.2 {Tcl_CreateEncoding: replace encoding} {testencoding} {
 
 test encoding-7.1 {Tcl_ExternalToUtfDString: small buffer} {
     encoding convertfrom jis0208 8c8c8c8c
-} "\u543e\u543e\u543e\u543e"
+} "吾吾吾吾"
 test encoding-7.2 {Tcl_UtfToExternalDString: big buffer} {
     set a 8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C
     append a $a
@@ -178,7 +178,7 @@ test encoding-7.2 {Tcl_UtfToExternalDString: big buffer} {
     append a $a
     set x [encoding convertfrom jis0208 $a]
     list [string length $x] [string index $x 0]
-} "512 \u4e4e"
+} "512 乎"
 
 test encoding-8.1 {Tcl_ExternalToUtf} {
     set f [open [file join [temporaryDirectory] dummy] w]
@@ -191,13 +191,13 @@ test encoding-8.1 {Tcl_ExternalToUtf} {
     close $f
     file delete [file join [temporaryDirectory] dummy]
     return $x
-} "ab\u4e4eg"
+} "ab乎g"
 
 test encoding-9.1 {Tcl_UtfToExternalDString: small buffer} {
-    encoding convertto jis0208 "\u543e\u543e\u543e\u543e"
+    encoding convertto jis0208 "吾吾吾吾"
 } {8c8c8c8c}
 test encoding-9.2 {Tcl_UtfToExternalDString: big buffer} {
-    set a \u4e4e\u4e4e\u4e4e\u4e4e\u4e4e\u4e4e\u4e4e\u4e4e
+    set a 乎乎乎乎乎乎乎乎
     append a $a
     append a $a
     append a $a
@@ -211,7 +211,7 @@ test encoding-9.2 {Tcl_UtfToExternalDString: big buffer} {
 test encoding-10.1 {Tcl_UtfToExternal} {
     set f [open [file join [temporaryDirectory] dummy] w]
     fconfigure $f -translation binary -encoding shiftjis
-    puts -nonewline $f "ab\u4e4eg"
+    puts -nonewline $f "ab乎g"
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
     fconfigure $f -translation binary -encoding iso8859-1
@@ -239,25 +239,25 @@ test encoding-11.1 {LoadEncodingFile: unknown encoding} {testencoding} {
     encoding system iso8859-1
     encoding dirs {}
     llength jis0208	;# Shimmer any cached Tcl_Encoding in shared literal
-    set x [list [catch {encoding convertto jis0208 \u4e4e} msg] $msg]
+    set x [list [catch {encoding convertto jis0208 乎} msg] $msg]
     encoding dirs $path
     encoding system $system
-    lappend x [encoding convertto jis0208 \u4e4e]
+    lappend x [encoding convertto jis0208 乎]
 } {1 {unknown encoding "jis0208"} 8C}
 test encoding-11.2 {LoadEncodingFile: single-byte} {
-    encoding convertfrom jis0201 \xa1
-} "\uff61"
+    encoding convertfrom jis0201 \xA1
+} "｡"
 test encoding-11.3 {LoadEncodingFile: double-byte} {
     encoding convertfrom jis0208 8C
-} "\u4e4e"
+} 乎
 test encoding-11.4 {LoadEncodingFile: multi-byte} {
-    encoding convertfrom shiftjis \x8c\xc1
-} "\u4e4e"
+    encoding convertfrom shiftjis \x8C\xC1
+} 乎
 test encoding-11.5 {LoadEncodingFile: escape file} {
-    viewable [encoding convertto iso2022 \u4e4e]
-} [viewable "\x1b\$B8C\x1b(B"]
+    viewable [encoding convertto iso2022 乎]
+} [viewable "\x1B\$B8C\x1B(B"]
 test encoding-11.5.1 {LoadEncodingFile: escape file} {
-    viewable [encoding convertto iso2022-jp \u4e4e]
+    viewable [encoding convertto iso2022-jp 乎]
 } [viewable "\x1b\$B8C\x1b(B"]
 test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} -setup {
     set system [encoding system]
@@ -272,7 +272,7 @@ test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} 
     fconfigure $f -translation binary
     puts $f "abcdefghijklmnop"
     close $f
-    encoding convertto splat \u4e4e
+    encoding convertto splat 乎
 } -returnCodes error -cleanup {
     file delete [file join [temporaryDirectory] tmp encoding splat.enc]
     removeDirectory [file join tmp encoding]
@@ -281,45 +281,50 @@ test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} 
     encoding dirs $path
     encoding system $system
 } -result {invalid encoding file "splat"}
-
+test encoding-11.8 {encoding: extended Unicode UTF-16} {
+    viewable [encoding convertto utf-16le 😹]
+} {=Ø9Þ (=\u00d89\u00de)}
+test encoding-11.9 {encoding: extended Unicode UTF-16} {
+    viewable [encoding convertto utf-16be 😹]
+} {Ø=Þ9 (\u00d8=\u00de9)}
 # OpenEncodingFile is fully tested by the rest of the tests in this file.
 
 test encoding-12.1 {LoadTableEncoding: normal encoding} {
     set x [encoding convertto iso8859-3 \u0120]
     append x [encoding convertto iso8859-3 \xD5]
     append x [encoding convertfrom iso8859-3 \xD5]
-} "\xd5?\u120"
+} "\xD5?\u120"
 test encoding-12.2 {LoadTableEncoding: single-byte encoding} {
     set x [encoding convertto iso8859-3 ab\u0120g]
     append x [encoding convertfrom iso8859-3 ab\xD5g]
-} "ab\xd5gab\u120g"
+} "ab\xD5gab\u120g"
 test encoding-12.3 {LoadTableEncoding: multi-byte encoding} {
-    set x [encoding convertto shiftjis ab\u4E4Eg]
+    set x [encoding convertto shiftjis ab乎g]
     append x [encoding convertfrom shiftjis ab\x8c\xc1g]
-} "ab\x8c\xc1gab\u4e4eg"
+} "ab\x8C\xC1gab乎g"
 test encoding-12.4 {LoadTableEncoding: double-byte encoding} {
-    set x [encoding convertto jis0208 \u4e4e\u3b1]
+    set x [encoding convertto jis0208 乎α]
     append x [encoding convertfrom jis0208 8C&A]
-} "8C&A\u4e4e\u3b1"
+} "8C&A乎α"
 test encoding-12.5 {LoadTableEncoding: symbol encoding} {
-    set x [encoding convertto symbol \u3b3]
-    append x [encoding convertto symbol \u67]
-    append x [encoding convertfrom symbol \x67]
-} "\x67\x67\u3b3"
+    set x [encoding convertto symbol γ]
+    append x [encoding convertto symbol g]
+    append x [encoding convertfrom symbol g]
+} "ggγ"
 
 test encoding-13.1 {LoadEscapeTable} {
-    viewable [set x [encoding convertto iso2022 ab\u4e4e\u68d9g]]
-} [viewable "ab\x1b\$B8C\x1b\$\(DD%\x1b(Bg"]
+    viewable [set x [encoding convertto iso2022 ab乎棙g]]
+} [viewable "ab\x1B\$B8C\x1B\$\(DD%\x1B(Bg"]
 
 test encoding-15.1 {UtfToUtfProc} {
-    encoding convertto utf-8 \xa3
-} "\xc2\xa3"
+    encoding convertto utf-8 \xA3
+} "\xC2\xA3"
 test encoding-15.2 {UtfToUtfProc null character output} testbytestring {
-    binary scan [testbytestring [encoding convertto utf-8 \u0000]] H* z
+    binary scan [testbytestring [encoding convertto utf-8 \x00]] H* z
     set z
 } 00
 test encoding-15.3 {UtfToUtfProc null character input} teststringbytes {
-    set y [encoding convertfrom utf-8 [encoding convertto utf-8 \u0000]]
+    set y [encoding convertfrom utf-8 [encoding convertto utf-8 \x00]]
     binary scan [teststringbytes $y] H* z
     set z
 } c080
@@ -327,12 +332,12 @@ test encoding-15.4 {UtfToUtfProc emoji character input} -body {
     set x \xED\xA0\xBD\xED\xB8\x82
     set y [encoding convertfrom utf-8 \xED\xA0\xBD\xED\xB8\x82]
     list [string length $x] $y
-} -result "6 \U1F602"
+} -result "6 😂"
 test encoding-15.5 {UtfToUtfProc emoji character input} {
     set x \xF0\x9F\x98\x82
     set y [encoding convertfrom utf-8 \xF0\x9F\x98\x82]
     list [string length $x] $y
-} "4 \U1F602"
+} "4 😂"
 test encoding-15.6 {UtfToUtfProc emoji character output} {
     set x \uDE02\uD83D\uDE02\uD83D
     set y [encoding convertto utf-8 \uDE02\uD83D\uDE02\uD83D]
@@ -399,8 +404,8 @@ test encoding-15.16 {UtfToUtfProc: Invalid 4-byte UTF-8, see [ed29806ba]} {
     list [string length $x] $y
 } "4 \xF0\xA0\xA1\xC2"
 test encoding-15.17 {UtfToUtfProc emoji character output} {
-    set x \U1F602
-    set y [encoding convertto utf-8 \U1F602]
+    set x 😂
+    set y [encoding convertto utf-8 😂]
     binary scan $y H* z
     list [string length $y] $z
 } {4 f09f9882}
@@ -408,7 +413,7 @@ test encoding-15.17 {UtfToUtfProc emoji character output} {
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]
     list $val [format %x [scan $val %c]]
-} -result "\u4E4E 4e4e"
+} -result "乎 4e4e"
 test encoding-16.2 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 "\xD8\xD8\xDC\xDC"]
     list $val [format %x [scan $val %c]]
@@ -530,17 +535,17 @@ test encoding-24.2 {EscapeFreeProc on open channels} {exec} {
     viewable [runInSubprocess {
 	encoding system cp1252;	# Bug #2891556 crash revelator
 	fconfigure stdout -encoding iso2022-jp
-	puts ab\u4e4e\u68d9g
+	puts ab乎棙g
 	set env(TCL_FINALIZE_ON_EXIT) 1
 	exit
     }]
-} "ab\x1b\$B8C\x1b\$(DD%\x1b(Bg (ab\\u001b\$B8C\\u001b\$(DD%\\u001b(Bg)"
+} "ab\x1B\$B8C\x1B\$(DD%\x1B(Bg (ab\\u001b\$B8C\\u001b\$(DD%\\u001b(Bg)"
 test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     # Bug #219314 - if we don't free escape encodings correctly on channel
     # closure, we go boom
     set file [makeFile {
 	encoding system iso2022-jp
-	set a "\u4e4e\u4e5e\u4e5f"; # 3 Japanese Kanji letters
+	set a "乎乞也"; # 3 Japanese Kanji letters
 	puts $a
     } iso2022.tcl]
     set f [open "|[list [interpreter] $file]"]
@@ -549,31 +554,31 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     close $f
     removeFile iso2022.tcl
     list $count [viewable $line]
-} [list 3 "\u4e4e\u4e5e\u4e5f (\\u4e4e\\u4e5e\\u4e5f)"]
+} [list 3 "乎乞也 (\\u4e4e\\u4e5e\\u4e5f)"]
 
 test encoding-24.4 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xc0\x80"]
+    string length [encoding convertfrom utf-8 "\xC0\x80"]
 } 1
 test encoding-24.5 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xc0\x81"]
+    string length [encoding convertfrom utf-8 "\xC0\x81"]
 } 2
 test encoding-24.6 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xc1\xbf"]
+    string length [encoding convertfrom utf-8 "\xC1\xBF"]
 } 2
 test encoding-24.7 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xc2\x80"]
+    string length [encoding convertfrom utf-8 "\xC2\x80"]
 } 1
 test encoding-24.8 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xe0\x80\x80"]
+    string length [encoding convertfrom utf-8 "\xE0\x80\x80"]
 } 3
 test encoding-24.9 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xe0\x9f\xbf"]
+    string length [encoding convertfrom utf-8 "\xE0\x9F\xBF"]
 } 3
 test encoding-24.10 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xe0\xa0\x80"]
+    string length [encoding convertfrom utf-8 "\xE0\xA0\x80"]
 } 1
 test encoding-24.11 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xef\xbf\xbf"]
+    string length [encoding convertfrom utf-8 "\xEF\xBF\xBF"]
 } 1
 
 file delete [file join [temporaryDirectory] iso2022.txt]

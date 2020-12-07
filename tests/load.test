@@ -4,8 +4,8 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1995 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1995 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -16,7 +16,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Figure out what extension is used for shared libraries on this
 # platform.
@@ -78,7 +78,7 @@ test load-2.1 {basic loading, with guess for package name} \
 interp create -safe child
 test load-2.2 {loading into a safe interpreter, with package name conversion} \
 	[list $dll $loaded] {
-    load -lazy [file join $testDir pkgb$ext] pKgB child
+    load -lazy [file join $testDir pkgb$ext] Pkgb child
     list [child eval pkgb_sub 44 13] [catch {child eval pkgb_unsafe} msg] $msg \
 	    [catch {pkgb_sub 12 10} msg2] $msg2
 } {31 1 {invalid command name "pkgb_unsafe"} 1 {invalid command name "pkgb_sub"}}
@@ -125,17 +125,17 @@ test load-4.1 {reloading package into same interpreter} [list $dll $loaded] {
     list [catch {load [file join $testDir pkga$ext] pkga} msg] $msg
 } {0 {}}
 test load-4.2 {reloading package into same interpreter} -setup {
-    catch {load [file join $testDir pkga$ext] pkga}
+    catch {load [file join $testDir pkga$ext] Pkga}
 } -constraints [list $dll $loaded] -returnCodes error -body {
-    load [file join $testDir pkga$ext] pkgb
+    load [file join $testDir pkga$ext] Pkgb
 } -result "file \"[file join $testDir pkga$ext]\" is already loaded for package \"Pkga\""
 
 test load-5.1 {file name not specified and no static package: pick default} -setup {
     catch {interp delete x}
     interp create x
 } -constraints [list $dll $loaded] -body {
-    load -global [file join $testDir pkga$ext] pkga
-    load {} pkga x
+    load -global [file join $testDir pkga$ext] Pkga
+    load {} Pkga x
     info loaded x
 } -cleanup {
     interp delete x
@@ -153,8 +153,8 @@ test load-6.1 {errors loading file} [list $dll $loaded] {
 test load-7.1 {Tcl_StaticPackage procedure} [list teststaticpkg] {
     set x "not loaded"
     teststaticpkg Test 1 0
-    load {} Test
-    load {} Test child
+    load {} test
+    load {} test child
     list [set x] [child eval set x]
 } {loaded loaded}
 test load-7.2 {Tcl_StaticPackage procedure} [list teststaticpkg] {
@@ -168,12 +168,12 @@ test load-7.2 {Tcl_StaticPackage procedure} [list teststaticpkg] {
 test load-7.3 {Tcl_StaticPackage procedure} [list teststaticpkg] {
     set x "not loaded"
     teststaticpkg More 0 1
-    load {} More
+    load {} more
     set x
 } {not loaded}
-catch {load [file join $testDir pkga$ext] pkga}
-catch {load [file join $testDir pkgb$ext] pkgb}
-catch {load [file join $testDir pkge$ext] pkge}
+catch {load [file join $testDir pkga$ext] Pkga}
+catch {load [file join $testDir pkgb$ext] Pkgb}
+catch {load [file join $testDir pkge$ext] Pkge}
 set currentRealPackages [list [list [file join $testDir pkge$ext] Pkge] [list [file join $testDir pkgb$ext] Pkgb] [list [file join $testDir pkga$ext] Pkga]]
 test load-7.4 {Tcl_StaticPackage procedure, redundant calls} -setup {
     teststaticpkg Test 1 0
@@ -209,7 +209,7 @@ test load-8.3b {TclGetLoadedPackages procedure} [list teststaticpkg_8.x $dll $lo
     lsort -index 1 [info loaded child]
 } [lsort -index 1 [list {{} Test} [list [file join $testDir pkgb$ext] Pkgb]]]
 test load-8.4 {TclGetLoadedPackages procedure} [list teststaticpkg_8.x $dll $loaded] {
-    load [file join $testDir pkgb$ext] pkgb
+    load [file join $testDir pkgb$ext] Pkgb
     list [lsort -index 1 [info loaded {}]] [lsort [info commands pkgb_*]]
 } [list [lsort -index 1 [concat [list [list [file join $testDir pkgb$ext] Pkgb] {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga]] $alreadyLoaded]] {pkgb_demo pkgb_sub pkgb_unsafe}]
 interp delete child
@@ -234,7 +234,7 @@ test load-10.1 {load from vfs} -setup {
     cd $testDir
     testsimplefilesystem 1
 } -constraints [list $dll $loaded testsimplefilesystem] -body {
-    list [catch {load simplefs:/pkgd$ext pkgd} msg] $msg
+    list [catch {load simplefs:/pkgd$ext PKGD} msg] $msg
 } -result {0 {}} -cleanup {
     testsimplefilesystem 0
     cd $dir

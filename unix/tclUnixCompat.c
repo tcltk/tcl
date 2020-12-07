@@ -554,17 +554,17 @@ TclpGetHostByName(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETHOSTBYNAME_R_5)
-    int h_errno;
+    int local_errno;
 
     return gethostbyname_r(name, &tsdPtr->hent, tsdPtr->hbuf,
-			   sizeof(tsdPtr->hbuf), &h_errno);
+			   sizeof(tsdPtr->hbuf), &local_errno);
 
 #elif defined(HAVE_GETHOSTBYNAME_R_6)
     struct hostent *hePtr = NULL;
-    int h_errno, result;
+    int local_errno, result;
 
     result = gethostbyname_r(name, &tsdPtr->hent, tsdPtr->hbuf,
-	    sizeof(tsdPtr->hbuf), &hePtr, &h_errno);
+	    sizeof(tsdPtr->hbuf), &hePtr, &local_errno);
     return (result == 0) ? hePtr : NULL;
 
 #elif defined(HAVE_GETHOSTBYNAME_R_3)
@@ -624,17 +624,17 @@ TclpGetHostByAddr(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETHOSTBYADDR_R_7)
-    int h_errno;
+    int local_errno;
 
     return gethostbyaddr_r(addr, length, type, &tsdPtr->hent, tsdPtr->hbuf,
-	    sizeof(tsdPtr->hbuf), &h_errno);
+	    sizeof(tsdPtr->hbuf), &local_errno);
 
 #elif defined(HAVE_GETHOSTBYADDR_R_8)
     struct hostent *hePtr;
-    int h_errno;
+    int local_errno;
 
     return (gethostbyaddr_r(addr, length, type, &tsdPtr->hent, tsdPtr->hbuf,
-		sizeof(tsdPtr->hbuf), &hePtr, &h_errno) == 0)
+		sizeof(tsdPtr->hbuf), &hePtr, &local_errno) == 0)
 	    ? &tsdPtr->hent : NULL;
 #else
 #define NEED_COPYHOSTENT 1

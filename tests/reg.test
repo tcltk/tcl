@@ -7,7 +7,7 @@
 # and aren't using Tcl -- reg's own regression tester also knows how
 # to read this file, ignoring the Tcl-isms.)
 #
-# Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+# Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
@@ -15,7 +15,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # All tests require the testregexp command, return if this
 # command doesn't exist
