@@ -17,7 +17,7 @@
  * Prototypes for procedures defined later in this file:
  */
 
-static int    Pkgπ_ΠObjCmd(ClientData clientData,
+static int    Pkg\u03C0_\u03A0ObjCmd(ClientData clientData,
 		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 /*
@@ -39,7 +39,7 @@ static int    Pkgπ_ΠObjCmd(ClientData clientData,
  */
 
 static int
-Pkgπ_ΠObjCmd(
+Pkg\u03C0_\u03A0ObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -77,7 +77,7 @@ Pkgπ_ΠObjCmd(
  */
 
 DLLEXPORT int
-Pkgπ_Init(
+Pkg\u03C0_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
 {
@@ -90,6 +90,6 @@ Pkgπ_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "π", Pkgπ_ΠObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "π", Pkg\u03C0_\u03A0ObjCmd, NULL, NULL);
     return TCL_OK;
 }
