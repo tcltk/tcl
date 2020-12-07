@@ -252,8 +252,8 @@ test utf-6.22 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xD0\xF8]
 } 1
 test utf-6.23 {Tcl_UtfNext} {testutfnext testbytestring} {
-    testutfnext [testbytestring \xE8]
-} -1
+    testutfnext [testbytestring \xE8\x00]
+} 1
 test utf-6.24 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xE8]G
 } 1
@@ -276,8 +276,8 @@ test utf-6.30.0 {Tcl_UtfNext} {testutfnext testbytestring ucs2} {
     testutfnext [testbytestring \xF2]
 } 1
 test utf-6.30.1 {Tcl_UtfNext} {testutfnext testbytestring fullutf} {
-    testutfnext [testbytestring \xF2]
-} -1
+    testutfnext [testbytestring \xF2\x00]
+} 1
 test utf-6.31 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xF2]G
 } 1
@@ -285,8 +285,8 @@ test utf-6.32.0 {Tcl_UtfNext} {testutfnext testbytestring ucs2} {
     testutfnext [testbytestring \xF2\xA0]
 } 1
 test utf-6.32.1 {Tcl_UtfNext} {testutfnext testbytestring fullutf} {
-    testutfnext [testbytestring \xF2\xA0]
-} -1
+    testutfnext [testbytestring \xF2\xA0\x00]
+} 1
 test utf-6.33 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xF2\xD0]
 } 1
@@ -545,9 +545,11 @@ test utf-6.108 {Tcl_UtfNext, read limits} {testutfnext testbytestring} {
 test utf-6.109 {Tcl_UtfNext, read limits} {testutfnext testbytestring} {
     testutfnext \u8820[testbytestring \xA0] 3
 } 3
+# This testcase actually tests Tcl_UtfCharComplete, not Tcl_UtfNext
 test utf-6.110 {Tcl_UtfNext, read limits} {testutfnext testbytestring} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0]G 1
 } 0
+# This testcase actually tests Tcl_UtfCharComplete, not Tcl_UtfNext
 test utf-6.111 {Tcl_UtfNext, read limits} {testutfnext testbytestring} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0]G 2
 } 0
@@ -563,9 +565,11 @@ test utf-6.113.0 {Tcl_UtfNext, read limits} {testutfnext testbytestring ucs2} {
 test utf-6.113.1 {Tcl_UtfNext, read limits} {testutfnext testbytestring fullutf} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0]G 4
 } 4
+# This testcase actually tests Tcl_UtfCharComplete, not Tcl_UtfNext
 test utf-6.114 {Tcl_UtfNext, read limits} {testutfnext testbytestring} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0\xA0] 1
 } 0
+# This testcase actually tests Tcl_UtfCharComplete, not Tcl_UtfNext
 test utf-6.115 {Tcl_UtfNext, read limits} {testutfnext testbytestring} {
     testutfnext [testbytestring \xF2\xA0\xA0\xA0\xA0] 2
 } 0
