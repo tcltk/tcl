@@ -4,7 +4,7 @@
  *	This file contains a simple Tcl package "pkgπ" that is intended for
  *	testing the Tcl dynamic loading facilities.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
+ * Copyright © 1995 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
