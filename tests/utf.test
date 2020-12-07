@@ -615,6 +615,22 @@ test utf-6.126 {Tcl_UtfNext, read limits} {testutfnext testbytestring} {
     testutfnext [testbytestring \xA0\xA0\xA0\xA0\xA0] 4
 } 1
 
+test utf-6.200 {Tcl_UtfNext can read past end of buffer} {
+	testutfnext testbytestring
+} {
+    testutfnext [testbytestring \xE8]
+} -1
+test utf-6.201 {Tcl_UtfNext can read past end of buffer} {
+	testutfnext testbytestring fullutf
+} {
+    testutfnext [testbytestring \xF2]
+} -1
+test utf-6.202 {Tcl_UtfNext can read past end of buffer} {
+	testutfnext testbytestring fullutf
+} {
+    testutfnext [testbytestring \xF2\xA0]
+} -1
+
 test utf-7.1 {Tcl_UtfPrev} testutfprev {
     testutfprev {}
 } 0
