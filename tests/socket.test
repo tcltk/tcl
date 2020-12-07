@@ -4,8 +4,8 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-2000 Ajuba Solutions.
+# Copyright © 1994-1996 Sun Microsystems, Inc.
+# Copyright © 1998-2000 Ajuba Solutions.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -66,18 +66,22 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 ::tcltest::loadTestedCommands
 
-if {[info exists ::env(TRAVIS_OSX_IMAGE)] && [string match xcode* $::env(TRAVIS_OSX_IMAGE)]} {
+# A bad interaction between socket creation, macOS, and unattended CI
+# environments make this whole file impractical to run; too many weird hangs.
+if {[info exists ::env(MAC_CI)]} {
     return
 }
-testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 # Some tests require the Thread package or exec command
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint exec [llength [info commands exec]]
-testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+testConstraint knownMsvcBug [expr {![info exists ::env(CI_BUILD_WITH_MSVC)]}]
+testConstraint notWinCI [expr {
+     $tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
 
 # Produce a random port number in the Dynamic/Private range
 # from 49152 through 65535.
@@ -295,6 +299,8 @@ proc getPort sock {
 # Some tests in this file are known to hang *occasionally* on OSX; stop the
 # worst offenders.
 testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
+# Here "Windows" means derived platforms as Cygwin or Msys2 too.
+testConstraint notWindows [expr {![regexp {^(Windows|MSYS|CYGWIN)} $::tcl_platform(os)]}]
 
 # ----------------------------------------------------------------------
 
@@ -937,7 +943,7 @@ test socket_$af-5.1 {byte order problems, socket numbers, htons} -body {
         return {htons problem, should be disallowed, are you running as SU?}
     }
     return {couldn't open socket: not owner}
-} -constraints [list socket supported_$af unix notRoot notOSX] -result {couldn't open socket: not owner}
+} -constraints [list socket supported_$af unix notRoot notOSX notWindows] -result {couldn't open socket: not owner}
 test socket_$af-5.2 {byte order problems, socket numbers, htons} -body {
     if {![catch {socket -server dodo 0x10000} msg]} {
 	close $msg
@@ -951,7 +957,7 @@ test socket_$af-5.3 {byte order problems, socket numbers, htons} -body {
 	return {htons problem, should be disallowed, are you running as SU?}
     }
     return {couldn't open socket: not owner}
-} -constraints [list socket supported_$af unix notRoot notOSX] -result {couldn't open socket: not owner}
+} -constraints [list socket supported_$af unix notRoot notOSX notWindows] -result {couldn't open socket: not owner}
 
 test socket_$af-6.1 {accept callback error} -constraints [list socket supported_$af stdio] -setup {
     proc myHandler {msg options} {
@@ -2390,7 +2396,7 @@ test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is I
 	removeFile script
     } -result {{} ok}
 test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener, no flush} \
-    -constraints {socket knownMsvcBug} \
+    -constraints {socket notWinCI} \
     -body {
         set sock [socket -async localhost [randport]]
         fconfigure $sock -blocking 0

@@ -150,15 +150,15 @@ TCL_DLL_FILE		= @TCL_DLL_FILE@
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 DDE_DLL_FILE		= tcldde$(DDEVER)${DLLSUFFIX}
 DDE_LIB_FILE		= @LIBPREFIX@tcldde$(DDEVER)${DLLSUFFIX}${LIBSUFFIX}
-REG_DLL_FILE		= tclreg$(REGVER)${DLLSUFFIX}
-REG_LIB_FILE		= @LIBPREFIX@tclreg$(REGVER)${DLLSUFFIX}${LIBSUFFIX}
+REG_DLL_FILE		= tclregistry$(REGVER)${DLLSUFFIX}
+REG_LIB_FILE		= @LIBPREFIX@tclregistry$(REGVER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
 TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_LOAD_PRMS		= lappend ::auto_path {$(ROOT_DIR_WIN_NATIVE)/tests};\
-			  package ifneeded dde 1.4.3 [list load [file normalize ${DDE_DLL_FILE}] Dde];\
-			  package ifneeded registry 1.3.5 [list load [file normalize ${REG_DLL_FILE}] Registry]
-TEST_LOAD_FACILITIES	= package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}]];\
+			  package ifneeded dde 1.4.3 [list load [file normalize ${DDE_DLL_FILE}]];\
+			  package ifneeded registry 1.3.5 [list load [file normalize ${REG_DLL_FILE}]]
+TEST_LOAD_FACILITIES	= package ifneeded tcl::test ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest];\
 			  $(TEST_LOAD_PRMS)
 ZLIB_DLL_FILE		= zlib1.dll
 TOMMATH_DLL_FILE		= libtommath.dll
@@ -169,7 +169,6 @@ STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 TCLSH			= tclsh$(VER)${EXESUFFIX}
 WINE			= @WINE@
 CAT32			= cat32$(EXEEXT)
-MAN2TCL			= man2tcl$(EXEEXT)
 
 # For cross-compiled builds, TCL_EXE is the name of a tclsh executable that is
 # available *BEFORE* running make for the first time. Certain build targets
@@ -530,12 +529,12 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	  done) && \
 	  $(LN) ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl && \
 	  $(LN) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde/ && \
-	  $(LN) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg/ \
+	  $(LN) ${REG_DLL_FILE} ${TCL_VFS_PATH}/registry/ \
 	) || ( \
 	  $(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
 	  $(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl; \
 	  $(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde; \
-	  $(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/reg; \
+	  $(COPY) ${REG_DLL_FILE} ${TCL_VFS_PATH}/registry; \
 	)
 	(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}') 2>/dev/null || \
 	  (echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")`; \
@@ -787,7 +786,7 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@for i in dde${DDEDOTVER} reg${REGDOTVER}; \
+	@for i in dde${DDEDOTVER} registry${REGDOTVER}; \
 	    do \
 	    if [ ! -d "$(LIB_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
@@ -821,13 +820,13 @@ install-binaries: binaries
 	    fi
 	@if [ -f $(REG_DLL_FILE) ]; then \
 	    echo Installing $(REG_DLL_FILE); \
-	    $(COPY) $(REG_DLL_FILE) "$(LIB_INSTALL_DIR)/reg${REGDOTVER}"; \
-	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl \
-		"$(LIB_INSTALL_DIR)/reg${REGDOTVER}"; \
+	    $(COPY) $(REG_DLL_FILE) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
+	    $(COPY) $(ROOT_DIR)/library/registry/pkgIndex.tcl \
+		"$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
 	    echo Installing $(REG_LIB_FILE); \
-	    $(COPY) $(REG_LIB_FILE) "$(LIB_INSTALL_DIR)/reg${REGDOTVER}"; \
+	    $(COPY) $(REG_LIB_FILE) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
 	    fi
 
 install-libraries-zipfs-shared: libraries
@@ -883,7 +882,7 @@ install-libraries: libraries install-tzdata install-msgs
 	@echo "Installing package tcltest 2.5.3 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.3.tm";
 	@echo "Installing package platform 1.0.14 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/9.0/platform-1.0.14.tm";
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/9.0/platform-1.0.15.tm";
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl "$(MODULE_INSTALL_DIR)/9.0/platform/shell-1.1.4.tm";
 	@echo "Installing encodings";
@@ -977,7 +976,7 @@ Makefile: $(SRC_DIR)/Makefile.in
 	./config.status
 
 cleanhelp:
-	$(RM) *.hlp *.cnt *.GID *.rtf man2tcl.exe
+	$(RM) *.hlp *.cnt *.GID
 
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
@@ -989,7 +988,7 @@ clean: cleanhelp clean-packages
 
 distclean: distclean-packages clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
-		tcl.hpj config.status.lineno tclsh.exe.manifest
+		config.status.lineno tclsh.exe.manifest
 
 #
 # Bundled package targets
