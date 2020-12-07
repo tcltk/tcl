@@ -2,8 +2,8 @@
 # Sourcing this file into Tcl runs the tests and generates output for
 # errors.  No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,7 +14,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint ucs2 [expr {[format %c 0x010000] eq "\uFFFD"}]
 testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
@@ -253,8 +253,8 @@ test utf-6.22 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xD0\xF8]
 } 1
 test utf-6.23 {Tcl_UtfNext} {testutfnext testbytestring} {
-    testutfnext [testbytestring \xE8]
-} -1
+    testutfnext [testbytestring \xE8\x00]
+} 1
 test utf-6.24 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xE8]G
 } 1
@@ -277,8 +277,8 @@ test utf-6.30.0 {Tcl_UtfNext} {testutfnext testbytestring ucs2_utf16} {
     testutfnext [testbytestring \xF2]
 } 1
 test utf-6.30.1 {Tcl_UtfNext} {testutfnext testbytestring ucs4} {
-    testutfnext [testbytestring \xF2]
-} -1
+    testutfnext [testbytestring \xF2\x00]
+} 1
 test utf-6.31 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xF2]G
 } 1
@@ -286,8 +286,8 @@ test utf-6.32.0 {Tcl_UtfNext} {testutfnext testbytestring ucs2_utf16} {
     testutfnext [testbytestring \xF2\xA0]
 } 1
 test utf-6.32.1 {Tcl_UtfNext} {testutfnext testbytestring ucs4} {
-    testutfnext [testbytestring \xF2\xA0]
-} -1
+    testutfnext [testbytestring \xF2\xA0\x00]
+} 1
 test utf-6.33 {Tcl_UtfNext} {testutfnext testbytestring} {
     testutfnext [testbytestring \xF2\xD0]
 } 1

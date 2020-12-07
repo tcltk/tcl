@@ -461,7 +461,7 @@ Tcltest_Init(
     }
     /* TIP #268: Full patchlevel instead of just major.minor */
 
-    if (Tcl_PkgProvideEx(interp, "Tcltest", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
+    if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -6963,8 +6963,10 @@ TestUtfNextCmd(
 	/* Run Tcl_UtfNext with many more possible bytes at src[end], all should give the same result */
 	result = Tcl_UtfNext(buffer + 1);
 	if (first != result) {
-	    first = buffer;
-	    break;
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Tcl_UtfNext is not supposed to read src[end]\n"
+		    "Different result when src[end] is %#x", UCHAR(p[-1])));
+	    return TCL_ERROR;
 	}
     }
 

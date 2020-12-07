@@ -16,7 +16,7 @@ namespace eval ::tcl::test::brodnik {
     namespace import ::tcltest::cleanupTests
 
     loadTestedCommands
-    try {package require Tcltest}
+    try {package require tcl::test}
     testConstraint testmsb [expr {[namespace which -command testmsb] ne {}}]
 
     namespace eval tcl {

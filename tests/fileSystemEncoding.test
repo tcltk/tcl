@@ -1,6 +1,6 @@
 #!  /usr/bin/env tclsh
 
-# Copyright (c) 2019 Poor Yorick
+# Copyright © 2019 Poor Yorick
 
 if {[string equal $::tcl_platform(os) "Windows NT"]} {
     return

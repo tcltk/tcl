@@ -5356,14 +5356,14 @@ TEBCresume(
     case INST_STR_FIND:
 	objResultPtr = TclStringFirst(OBJ_UNDER_TOS, OBJ_AT_TOS, 0);
 
-	TRACE(("%.20s %.20s => %d\n",
+	TRACE(("%.20s %.20s => %s\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_FIND_LAST:
 	objResultPtr = TclStringLast(OBJ_UNDER_TOS, OBJ_AT_TOS, INT_MAX - 1);
 
-	TRACE(("%.20s %.20s => %d\n",
+	TRACE(("%.20s %.20s => %s\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
@@ -9314,7 +9314,7 @@ TclLog2(
 
 static int
 EvalStatsCmd(
-    ClientData unused,		/* Unused. */
+    TCL_UNUSED(void *),		/* Unused. */
     Tcl_Interp *interp,		/* The current interpreter. */
     int objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The argument strings. */
@@ -9608,12 +9608,13 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i >= 0;  i--) {
+    for (i = 31;  i;  i--) {
 	if (statsPtr->srcCount[i] > 0) {
-	    maxSizeDecade = i;
-	    break;
+	    break;		/* maxSizeDecade to consume 'i' value
+				 * below... */
 	}
     }
+    maxSizeDecade = i;
     sum = 0;
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
@@ -9631,12 +9632,13 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i >= 0;  i--) {
+    for (i = 31;  i;  i--) {
 	if (statsPtr->byteCodeCount[i] > 0) {
-	    maxSizeDecade = i;
-	    break;
+	    break;		/* maxSizeDecade to consume 'i' value
+				 * below... */
 	}
     }
+    maxSizeDecade = i;
     sum = 0;
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
@@ -9654,12 +9656,13 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i >= 0;  i--) {
+    for (i = 31;  i;  i--) {
 	if (statsPtr->lifetimeCount[i] > 0) {
-	    maxSizeDecade = i;
-	    break;
+	    break;		/* maxSizeDecade to consume 'i' value
+				 * below... */
 	}
     }
+    maxSizeDecade = i;
     sum = 0;
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;

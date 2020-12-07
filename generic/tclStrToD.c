@@ -2926,7 +2926,7 @@ QuickConversion(
 	}
 	ilim = ilim1;
 	--k;
-	d *= 10.0;
+	d = d * 10.0;
 	++ieps;
     }
 
@@ -2943,7 +2943,7 @@ QuickConversion(
 
     retval = (char *)Tcl_Alloc(len + 1);
     if (ilim == 0) {
-	d -= 5.;
+	d = d - 5.;
 	if (d > eps.d) {
 	    *retval = '1';
 	    *decpt = k;
