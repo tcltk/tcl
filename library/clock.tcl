@@ -9,7 +9,7 @@
 #
 #----------------------------------------------------------------------
 #
-# Copyright (c) 2004,2005,2006,2007 by Kevin B. Kenny
+# Copyright © 2004-2007 Kevin B. Kenny
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #

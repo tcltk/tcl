@@ -3969,7 +3969,10 @@ TclZlibInit(
      * Formally provide the package as a Tcl built-in.
      */
 
-    return Tcl_PkgProvideEx(interp, "zlib", TCL_ZLIB_VERSION, NULL);
+#ifndef TCL_NO_DEPRECATED
+    Tcl_PkgProvideEx(interp, "zlib", TCL_ZLIB_VERSION, NULL);
+#endif
+    return Tcl_PkgProvideEx(interp, "tcl::zlib", TCL_ZLIB_VERSION, NULL);
 }
 
 /*

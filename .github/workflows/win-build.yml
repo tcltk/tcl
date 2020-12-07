@@ -1,22 +1,83 @@
-name: Windows Build and Test
+name: Windows
 on: [push]
 jobs:
-  build:
+  msvc:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: powershell
+        working-directory: win
+    strategy:
+      matrix:
+        cfgopt:
+          - ""
+          - "OPTS=static,staticpkg,msvcrt"
+          - "OPTS=symbols"
+          - "OPTS=memdbg"
+    # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Init MSVC
         uses: ilammy/msvc-dev-cmd@v1
+      - name: Build ${{ matrix.cfgopt }}
+        run: |
+          &nmake -f makefile.vc ${{ matrix.cfgopt }} all
+          if ($lastexitcode -ne 0) {
+             throw "nmake exit code: $lastexitcode"
+          }
+      - name: Build Test Harness ${{ matrix.cfgopt }}
+        run: |
+          &nmake -f makefile.vc ${{ matrix.cfgopt }} tcltest
+          if ($lastexitcode -ne 0) {
+             throw "nmake exit code: $lastexitcode"
+          }
+      - name: Run Tests ${{ matrix.cfgopt }}
+        run: |
+          &nmake -f makefile.vc ${{ matrix.cfgopt }} test
+          if ($lastexitcode -ne 0) {
+             throw "nmake exit code: $lastexitcode"
+          }
+        env:
+          ERROR_ON_FAILURES: 1
+          CI_BUILD_WITH_MSVC: 1
+  gcc:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: win
+    strategy:
+      matrix:
+        cfgopt:
+          - ""
+          - "--disable-shared"
+          - "--enable-symbols"
+          - "--enable-symbols=mem"
+    # Using powershell means we need to explicitly stop on failure
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install MSYS2 and Make
+        run: choco install msys2 make
+      - name: Prepare
+        run: |
+          touch tclStubInit.c tclOOStubInit.c tclOOScript.h
+          mkdir "${HOME}/install dir"
+        working-directory: generic
+      - name: Configure ${{ matrix.cfgopt }}
+        run: |
+          ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
+        env:
+          CFGOPT: --enable-64bit ${{ matrix.cfgopt }}
       - name: Build
-        working-directory: win
-        run: |
-          nmake -f makefile.vc all
+        run: make all
       - name: Build Test Harness
-        working-directory: win
-        run: |
-          nmake -f makefile.vc tcltest
+        run: make tcltest
       - name: Run Tests
-        working-directory: win
-        run: |
-          nmake -f makefile.vc test
+        run: make test
+        env:
+          ERROR_ON_FAILURES: 1
+
+# If you add builds with Wine, be sure to define the environment variable
+# CI_USING_WINE when running them so that broken tests know not to run.

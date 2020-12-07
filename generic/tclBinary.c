@@ -1529,7 +1529,8 @@ BinaryScanCmd(
 	}
 	switch (cmd) {
 	case 'a':
-	case 'A': {
+	case 'A':
+	case 'C': {
 	    unsigned char *src;
 
 	    if (arg >= objc) {
@@ -1551,10 +1552,18 @@ BinaryScanCmd(
 	    size = count;
 
 	    /*
-	     * Trim trailing nulls and spaces, if necessary.
+	     * Apply C string semantics or trim trailing
+	     * nulls and spaces, if necessary.
 	     */
 
-	    if (cmd == 'A') {
+	    if (cmd == 'C') {
+		for (i = 0; i < size; i++) {
+		    if (src[i] == '\0') {
+			size = i;
+			break;
+		    }
+		}
+	    } else if (cmd == 'A') {
 		while (size > 0) {
 		    if (src[size - 1] != '\0' && src[size - 1] != ' ') {
 			break;
