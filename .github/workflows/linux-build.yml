@@ -1,37 +1,47 @@
-name: Linux Build and Test
+name: Linux
 on: [push]
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  gcc:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        cfgopt:
+          - ""
+          - "--disable-shared"
+          - "--enable-symbols"
+          - "--enable-symbols=mem"
+          - "CFLAGS=-DTCL_UTF_MAX=4"
+    defaults:
+      run:
+        shell: bash
+        working-directory: unix
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Configure
-        working-directory: unix
+      - name: Prepare
+        run: touch tclStubInit.c tclOOStubInit.c tclOOScript.h
+        working-directory: generic
+      - name: Configure ${{ matrix.cfgopt }}
         run: |
           mkdir "${HOME}/install dir"
           ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
+        env:
+          CFGOPT: ${{ matrix.cfgopt }}
       - name: Build
-        working-directory: unix
         run: |
           make all
       - name: Build Test Harness
-        working-directory: unix
         run: |
           make tcltest
       - name: Run Tests
-        working-directory: unix
         run: |
           make test
       - name: Test-Drive Installation
-        working-directory: unix
         run: |
           make install
       - name: Create Distribution Package
-        working-directory: unix
         run: |
           make dist
       - name: Convert Documentation to HTML
-        working-directory: unix
         run: |
           make html-tcl

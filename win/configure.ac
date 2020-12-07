@@ -509,7 +509,7 @@ AC_SUBST(RC_DEFINE)
 AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 
-AC_OUTPUT(Makefile tclConfig.sh tcl.hpj tclsh.exe.manifest)
+AC_OUTPUT(Makefile tclConfig.sh tclsh.exe.manifest)
 
 dnl Local Variables:
 dnl mode: autoconf;

@@ -257,15 +257,6 @@ jobs:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc test
-    - name: "Windows/MSVC/StaticPackage"
-      os: windows
-      compiler: cl
-      env: *vcenv
-      before_install: *vcpreinst
-      install: []
-      script:
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,staticpkg,msvcrt' '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,staticpkg,msvcrt' '-f' makefile.vc test
     - name: "Windows/MSVC/Debug"
@@ -321,8 +312,8 @@ jobs:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc test
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static,staticpkg,msvcrt' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static,staticpkg,msvcrt' '-f' makefile.vc test
     - name: "Windows/MSVC-x86/Debug"
       os: windows
       compiler: cl

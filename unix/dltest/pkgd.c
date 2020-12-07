@@ -1,7 +1,7 @@
 /*
  * pkgd.c --
  *
- *	This file contains a simple Tcl package "pkgd" that is intended for
+ *	This file contains a simple Tcl package "PKGD" that is intended for
  *	testing the Tcl dynamic loading facilities. It can be used in both
  *	safe and unsafe interpreters.
  *
@@ -121,7 +121,7 @@ Pkgd_Init(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgd", "7.3");
+    code = Tcl_PkgProvide(interp, "PKGD", "7.3");
     if (code != TCL_OK) {
 	return code;
     }
@@ -158,7 +158,7 @@ Pkgd_SafeInit(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgd", "7.3");
+    code = Tcl_PkgProvide(interp, "PKGD", "7.3");
     if (code != TCL_OK) {
 	return code;
     }

@@ -63,8 +63,8 @@ TclpDlopen(
 
 MODULE_SCOPE void *
 TclpLoadMemoryGetBuffer(
-    Tcl_Interp *interp,		/* Dummy: unused by this implementation */
-    int size)			/* Dummy: unused by this implementation */
+    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(int))
 {
     return NULL;
 }
@@ -72,14 +72,12 @@ TclpLoadMemoryGetBuffer(
 MODULE_SCOPE int
 TclpLoadMemory(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    void *buffer,		/* Dummy: unused by this implementation */
-    int size,			/* Dummy: unused by this implementation */
-    int codeSize,		/* Dummy: unused by this implementation */
-    Tcl_LoadHandle *loadHandle,	/* Dummy: unused by this implementation */
-    Tcl_FSUnloadFileProc **unloadProcPtr,
-				/* Dummy: unused by this implementation */
-    int flags)
-				/* Dummy: unused by this implementation */
+    TCL_UNUSED(void *),
+    TCL_UNUSED(int),
+    TCL_UNUSED(int),
+    TCL_UNUSED(Tcl_LoadHandle *),
+    TCL_UNUSED(Tcl_FSUnloadFileProc **),
+    TCL_UNUSED(int))
 {
     if (interp) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("dynamic loading from memory "
