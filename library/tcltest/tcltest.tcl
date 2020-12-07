@@ -11,8 +11,8 @@
 #	Microsystems.
 #
 # Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2000 by Ajuba Solutions
+# Copyright (c) 1998-1999 Scriptics Corporation.
+# Copyright (c) 2000 Ajuba Solutions
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 
@@ -41,7 +41,9 @@ namespace eval tcltest {
 	    outputChannel testConstraint
 
     # Export commands that are duplication (candidates for deprecation)
-    namespace export bytestring		;# dups [encoding convertfrom identity]
+    if {![package vsatisfies [package provide Tcl] 8.7-]} {
+	namespace export bytestring	;# dups [encoding convertfrom identity]
+    }
     namespace export debug		;#	[configure -debug]
     namespace export errorFile		;#	[configure -errfile]
     namespace export limitConstraints	;#	[configure -limitconstraints]
@@ -1269,7 +1271,7 @@ proc tcltest::DefineConstraintInitializers {} {
 
     ConstraintInitializer nonBlockFiles {
 	    set code [expr {[catch {set f [open defs r]}]
-		    || [catch {chan configure $f -blocking off}]}]
+		    || [catch {fconfigure $f -blocking off}]}]
 	    catch {close $f}
 	    set code
     }
@@ -3079,7 +3081,10 @@ proc tcltest::makeFile {contents name {directory ""}} {
 	     putting ``$contents'' into $fullName"
 
     set fd [open $fullName w]
-    chan configure $fd -translation lf
+    fconfigure $fd -translation lf
+    if {[package vsatisfies [package provide Tcl] 8.7-]} {
+	fconfigure $fd -encoding utf-8
+    }
     if {[string index $contents end] eq "\n"} {
 	puts -nonewline $fd $contents
     } else {
@@ -3228,6 +3233,9 @@ proc tcltest::viewFile {name {directory ""}} {
     }
     set fullName [file join $directory $name]
     set f [open $fullName]
+    if {[package vsatisfies [package provide Tcl] 8.7-]} {
+	fconfigure $f -encoding utf-8
+    }
     set data [read -nonewline $f]
     close $f
     return $data
@@ -3249,6 +3257,9 @@ proc tcltest::viewFile {name {directory ""}} {
 # construct improperly formed strings in this manner, because it involves
 # exposing that Tcl uses UTF-8 internally.
 #
+# This function doesn't work any more in Tcl 8.7, since the 'identity'
+# is gone (TIP #345)
+#
 # Arguments:
 #	string being converted
 #
@@ -3258,8 +3269,10 @@ proc tcltest::viewFile {name {directory ""}} {
 # Side effects:
 #	None
 
-proc tcltest::bytestring {string} {
-    return [encoding convertfrom identity $string]
+if {![package vsatisfies [package provide Tcl] 8.7-]} {
+    proc tcltest::bytestring {string} {
+	return [encoding convertfrom identity $string]
+    }
 }
 
 # tcltest::OpenFiles --

@@ -10,7 +10,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     #tcltest::configure -verbose {pass start}
     namespace import -force ::tcltest::*
 }
@@ -21,7 +21,7 @@ if {[testConstraint win]} {
     if {![catch {
 	    ::tcltest::loadTestedCommands
 	    set ::ddever [package require dde 1.4.3]
-	    set ::ddelib [lindex [package ifneeded dde $::ddever] 1]}]} {
+	    set ::ddelib [info loaded "" Dde]}]} {
 	testConstraint dde 1
     }
 }
@@ -38,12 +38,12 @@ proc createChildProcess {ddeServerName args} {
 
     set f [open $::scriptName w+]
     puts $f [list set ddeServerName $ddeServerName]
-    puts $f [list load $::ddelib dde]
+    puts $f [list load $::ddelib Dde]
     puts $f {
         # DDE child server -
         #
 	if {"::tcltest" ni [namespace children]} {
-	    package require tcltest
+	    package require tcltest 2.5
 	    namespace import -force ::tcltest::*
 	}
 
@@ -111,7 +111,7 @@ test winDde-1.1 {Settings the server's topic name} -constraints dde -body {
 } -result {foobar foobar self}
 
 test winDde-2.1 {Checking for other services} -constraints dde -body {
-    expr [llength [dde services {} {}]] >= 0
+    expr {[llength [dde services {} {}]] >= 0}
 } -result 1
 test winDde-2.2 {Checking for existence, with service and topic specified} \
 	-constraints dde -body {
@@ -119,11 +119,11 @@ test winDde-2.2 {Checking for existence, with service and topic specified} \
 } -result 1
 test winDde-2.3 {Checking for existence, with only the service specified} \
 	-constraints dde -body {
-    expr [llength [dde services TclEval {}]] >= 1
+    expr {[llength [dde services TclEval {}]] >= 1}
 } -result 1
 test winDde-2.4 {Checking for existence, with only the topic specified} \
 	-constraints dde -body {
-    expr [llength [dde services {} self]] >= 1
+    expr {[llength [dde services {} self]] >= 1}
 } -result 1
 
 # -------------------------------------------------------------------------
@@ -154,8 +154,8 @@ test winDde-3.5 {DDE request locally} -constraints dde -body {
     dde request -binary TclEval self \xe1
 } -result "foo\x00"
 # Set variable a to A with diaeresis (unicode C4) by relying on the fact
-# that utf8 is sent (e.g. "c3 84" on the wire)
-test winDde-3.6 {DDE request utf8} -constraints dde -body {
+# that utf-8 is sent (e.g. "c3 84" on the wire)
+test winDde-3.6 {DDE request utf-8} -constraints dde -body {
     set \xe1 "not set"
     dde execute TclEval self "set \xe1 \xc4"
     scan [set \xe1] %c

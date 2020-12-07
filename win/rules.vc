@@ -193,19 +193,6 @@ COMPILERFLAGS   = $(COMPILERFLAGS) -QIA64_Bx
 LINKER_TESTFLAGS = /DLL /NOENTRY /OUT:nmhlp-out.txt
 !endif
 
-!if "$(MACHINE)" == "IX86"
-### test for -align:4096, when align:512 will do.
-!if [nmakehlp -l -opt:nowin98 $(LINKER_TESTFLAGS)]
-!message *** Linker has 'Win98 alignment problem'
-ALIGN98_HACK	= 1
-!else
-!message *** Linker does not have 'Win98 alignment problem'
-ALIGN98_HACK	= 0
-!endif
-!else
-ALIGN98_HACK	= 0
-!endif
-
 LINKERFLAGS     =
 
 !if [nmakehlp -l -ltcg $(LINKER_TESTFLAGS)]
