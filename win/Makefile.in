@@ -558,9 +558,9 @@ $(CAT32): cat32.$(OBJEXT)
 # The following targets are configured by autoconf to generate either a shared
 # library or static library
 
-${TCL_STUB_LIB_FILE}: ${STUB_OBJS}
+${TCL_STUB_LIB_FILE}: ${STUB_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@$(RM) ${TCL_STUB_LIB_FILE}
-	@MAKE_STUB_LIB@ ${STUB_OBJS}
+	@MAKE_STUB_LIB@ ${STUB_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@POST_MAKE_LIB@
 
 ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@ ${TCL_ZIP_FILE}
@@ -574,12 +574,12 @@ ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@ ${TCL
 		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
-${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
+${TCL_LIB_FILE}: ${TCL_OBJS}
 	@$(RM) ${TCL_LIB_FILE}
 	@MAKE_LIB@ ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@POST_MAKE_LIB@
 
-${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
+${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 	$(COPY) tclsh.exe.manifest ${DDE_DLL_FILE}.manifest
 
