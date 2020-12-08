@@ -3,8 +3,8 @@
  *
  *	Contains the Unix-specific interpreter initialization functions.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 1999 by Scriptics Corporation.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1999 Scriptics Corporation.
  * All rights reserved.
  */
 

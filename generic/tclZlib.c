@@ -3,9 +3,9 @@
  *
  *	This file provides the interface to the Zlib library.
  *
- * Copyright (C) 2004-2005 Pascal Scheffers <pascal@scheffers.net>
- * Copyright (C) 2005 Unitas Software B.V.
- * Copyright (c) 2008-2012 Donal K. Fellows
+ * Copyright © 2004-2005 Pascal Scheffers <pascal@scheffers.net>
+ * Copyright © 2005 Unitas Software B.V.
+ * Copyright © 2008-2012 Donal K. Fellows
  *
  * Parts written by Jean-Claude Wippler, as part of Tclkit, placed in the
  * public domain March 2003.

@@ -4,8 +4,8 @@
  *	This file contains the public interfaces to the Tcl regular expression
  *	mechanism.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -26,7 +26,7 @@
  *	regex.h		regexec.c	regfree.c
  *	regfronts.c	regguts.h
  *
- * Copyright (c) 1998 Henry Spencer.  All rights reserved.
+ * Copyright © 1998 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics

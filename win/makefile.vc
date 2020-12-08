@@ -25,7 +25,6 @@
 #	shell    -- Just builds the shell and the core.
 #	core     -- Only builds the core [tclXX.(dll|lib)].
 #	all      -- Builds everything.
-#       sfe      -- Build static single file executable.
 #	test     -- Builds and runs the test suite.
 #	tcltest  -- Just builds the test shell.
 #	install  -- Installs the built binaries and libraries to $(INSTALLDIR)
@@ -53,17 +52,23 @@
 # turn on the 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,unchecked,none
+#	OPTS=msvcrt,noembed,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,unchecked,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
+#               noembed   = Without this option, the Tcl core library scripts
+#			    are embedded into the executable if "static" is
+#                           specified in OPTS, or into the DLL otherwise. If
+#                           "noembed" is specified, the scripts are not embedded
+#                           but copied to the installation target (as in 8.6).
 #		msvcrt    = Affects the static option only to switch it from
 #			    using libcmt(d) as the C runtime [by default] to
 #			    msvcrt(d). This is useful for static embedding
 #			    support.
+#		none      = Overrides all other options to nothing.
 #		nothreads = Turns off full multithreading support (default on).
-#		pbds      =  Produce separate debug symbol files.
+#		pdbs      =  Produce separate debug symbol files.
 #		profile   =  Adds profiling hooks.  Map file is assumed.
 #		static    = Builds a static library of the core instead of a
 #			    dll.  The shell will be static (and large), as well.
@@ -142,6 +147,15 @@ RCFILE = tcl.rc
 DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
 VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 
+
+!if [nmakehlp -f $(OPTS) "noembed"]
+!message *** Option noembed specified. Tcl script library will not be appended to binary.
+TCL_EMBED_SCRIPTS = 0
+!else
+!message *** Tcl script library will be appended to binary.
+TCL_EMBED_SCRIPTS = 1
+!endif
+
 # We need versions of various core packages to generate appropriate
 # file names during installation.
 !if [echo REM = This file is generated from makefile.vc > versions.vc]
@@ -176,16 +190,13 @@ VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 
 !include versions.vc
 
-# Single file Tclsh
-TCLSFE = $(OUT_DIR)\$(PROJECT)sfe$(VERSION)$(SUFX).exe
-
 DDEDOTVERSION = 1.4
 DDEVERSION = $(DDEDOTVERSION:.=)
 
 REGDOTVERSION = 1.3
 REGVERSION = $(REGDOTVERSION:.=)
 
-TCLREGLIBNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX:t=).$(EXT)
+TCLREGLIBNAME	= $(PROJECT)registry$(REGVERSION)$(SUFX:t=).$(EXT)
 TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
 
 TCLDDELIBNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
@@ -432,6 +443,15 @@ TCLSTUBOBJS = \
 TOMMATHDIR	= $(ROOT)\libtommath
 PKGSDIR		= $(ROOT)\pkgs
 
+# TIP430 ZIP file
+LIBTCLVFS = $(OUT_DIR)\libtcl.vfs
+!if "$(TCL_PATCH_LETTER)" == "."
+LIBTCLZIP = $(OUT_DIR)\libtcl_$(TCL_MAJOR_VERSION)_$(TCL_MINOR_VERSION)_$(TCL_RELEASE_SERIAL).zip
+!else
+LIBTCLZIP = $(OUT_DIR)\libtcl_$(TCL_MAJOR_VERSION)_$(TCL_MINOR_VERSION)_$(TCL_PATCH_LETTER)$(TCL_RELEASE_SERIAL).zip
+!endif
+
+
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
 PRJ_INCLUDES	= -I"$(TOMMATHDIR)"
@@ -453,16 +473,19 @@ TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
 # Project specific targets
 #---------------------------------------------------------------------
 
-release:    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
+release:    setup $(TCLSH) $(TCLSTUBLIB) dlls libtclzip embed pkgs
 core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
 dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
-all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
-!if $(STATIC_BUILD) && $(TCL_USE_STATIC_PACKAGES)
-sfe:        setup $(TCLSH) $(TCLSTUBLIB) $(TCLSFE)
+libtclzip:  core dlls $(LIBTCLZIP)
+all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls libtclzip embed pkgs
+embed:      setup $(TCLSH) $(TCLSTUBLIB) libtclzip
+!if $(TCL_EMBED_SCRIPTS)
+!if $(STATIC_BUILD)
+	@copy /y /b "$(TCLSH)"+"$(LIBTCLZIP)" "$(TCLSH)"
 !else
-sfe:
-	    @echo Single file executables need static build of Tcl. Specify "static" and "staticpkg" in OPTS.
+	@copy /y /b "$(TCLLIB)"+"$(LIBTCLZIP)" "$(TCLLIB)"
+!endif
 !endif
 
 tcltest:    setup $(TCLTEST) dlls
@@ -556,6 +579,21 @@ $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win32\tommath.lib
 	$(COPY) $(TOMMATHDIR)\win32\tommath.lib $(OUT_DIR)\tommath.lib
 !endif
 
+$(LIBTCLZIP): .PHONY
+	@echo Building Tcl library zip file
+	@if exist "$(LIBTCLVFS)" $(RMDIR) "$(LIBTCLVFS)"
+	@$(MKDIR) "$(LIBTCLVFS)"
+	@$(CPYDIR) $(LIBDIR) "$(LIBTCLVFS)\tcl_library"
+	@move /y "$(LIBTCLVFS)\tcl_library\manifest.txt"  "$(LIBTCLVFS)\tcl_library\pkgIndex.tcl" > NUL
+!if ! $(TCL_USE_STATIC_PACKAGES)
+# Remove the registry and dde directories as the DLLS are still external
+	@$(RMDIR) "$(LIBTCLVFS)\tcl_library\registry"
+	@$(RMDIR) "$(LIBTCLVFS)\tcl_library\dde"
+!endif
+	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
+	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
+	@cd "$(OUT_DIR)" && $(TCLSH) zipper.tcl
+
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
@@ -603,25 +641,6 @@ genstubs:
 	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
 		$(GENERICDIR:\=/)/tclOO.decls
 !endif
-
-#---------------------------------------------------------------------
-# Build a single file executable version of Tcl
-#---------------------------------------------------------------------
-!if $(STATIC_BUILD) && $(TCL_USE_STATIC_PACKAGES)
-$(OUT_DIR)\tcl_library.zip:
-	@echo Building Tcl library zip file
-	@echo file delete -force tcl_library > "$(OUT_DIR)\zipper.tcl"
-	@echo file delete -force tcl_library.zip >> "$(OUT_DIR)\zipper.tcl"
-	@echo file copy ../../library tcl_library >> "$(OUT_DIR)\zipper.tcl"
-	@echo file rename tcl_library/manifest.txt tcl_library/pkgIndex.tcl >> "$(OUT_DIR)\zipper.tcl"
-	@echo zipfs mkzip {$@} tcl_library tcl_library >> "$(OUT_DIR)\zipper.tcl"
-	@cd "$(OUT_DIR)" && $(TCLSH) zipper.tcl
-
-$(TCLSFE): $(OUT_DIR)\tcl_library.zip
-	@echo Building single-file exe from $(TCLSH) and $(OUT_DIR)\tcl_library.zip
-	@copy /y /b "$(TCLSH)"+"$(OUT_DIR)\tcl_library.zip" "$@"
-!endif
-
 
 #---------------------------------------------------------------------
 # Build the Windows HTML help file.
@@ -942,6 +961,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(GENERICDIR)\tclTomMath.h"      "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclTomMathDecls.h" "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(TOMMATHDIR)\tommath.h"         "$(INCLUDE_INSTALL_DIR)\"
+!if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
 	@$(CPY) "$(ROOT)\library\history.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\init.tcl"        "$(SCRIPT_INSTALL_DIR)\"
@@ -953,12 +973,15 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(ROOT)\library\package.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\word.tcl"        "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\auto.tcl"        "$(SCRIPT_INSTALL_DIR)\"
+!endif
 	@$(CPY) "$(OUT_DIR)\tclConfig.sh"         "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(WIN_DIR)\tclooConfig.sh"        "$(LIB_INSTALL_DIR)\"
+	@$(CPY) "$(LIBTCLZIP)"                    "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(WIN_DIR)\rules.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
+!if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing package cookiejar $(PKG_COOKIEJAR_VER)
 	@$(CPY) "$(ROOT)\library\cookiejar\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
@@ -982,6 +1005,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@echo Installing package platform::shell $(PKG_SHELL_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\platform\shell.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\platform\shell-$(PKG_SHELL_VER).tm"
+!endif
 	@echo Installing $(TCLDDELIBNAME)
 !if $(STATIC_BUILD)
 !if !$(TCL_USE_STATIC_PACKAGES)
@@ -1002,22 +1026,28 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(ROOT)\library\registry\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
 !endif
+!if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
 		"$(SCRIPT_INSTALL_DIR)\encoding\"
+!endif
 # "emacs font-lock highlighting fix
 
 install-tzdata:
+!if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing time zone data
 	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
 	    "$(ROOT:\=/)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
+!endif
 
 install-msgs:
+!if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing message catalogs
 	@set TCL_LIBRARY=$(ROOT:\=/)/library
 	@$(TCLSH_NATIVE) "$(ROOT:\=/)/tools/installData.tcl" \
 	    "$(ROOT:\=/)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
+!endif
 
 install-pdbs:
 	@echo Installing debug symbols
@@ -1047,6 +1077,7 @@ tidy:
 clean: default-clean clean-pkgs
 hose: default-hose
 realclean: hose
+.PHONY:
 
 # Local Variables:
 # mode: makefile

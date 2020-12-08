@@ -11,6 +11,7 @@ jobs:
       matrix:
         cfgopt:
           - ""
+          - "OPTS=nodep"
           - "OPTS=static,staticpkg,msvcrt"
           - "OPTS=symbols"
           - "OPTS=memdbg"
@@ -51,9 +52,11 @@ jobs:
       matrix:
         cfgopt:
           - ""
+          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
+          - "CC=g++"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout

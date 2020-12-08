@@ -4,8 +4,8 @@
  *	This file contains a simple Tcl package "pkgua" that is intended for
  *	testing the Tcl dynamic unloading facilities.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
- * Copyright (c) 2004 Georgios Petasis
+ * Copyright © 1995 Sun Microsystems, Inc.
+ * Copyright © 2004 Georgios Petasis
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
