@@ -3,9 +3,9 @@
  *
  *	This file implements the Windows-specific thread operations.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 1999 by Scriptics Corporation
- * Copyright (c) 2008 by George Peter Staplin
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 1999 Scriptics Corporation
+ * Copyright © 2008 George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

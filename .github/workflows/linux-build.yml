@@ -7,10 +7,12 @@ jobs:
       matrix:
         cfgopt:
           - ""
+          - "CFLAGS=-DTCL_UTF_MAX=4"
+          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
-          - "CFLAGS=-DTCL_UTF_MAX=4"
+          - "CC=g++"
     defaults:
       run:
         shell: bash

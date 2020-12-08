@@ -4,8 +4,8 @@
  *	This file implements Platform independent thread operations. Most of
  *	the real work is done in the platform dependent files.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 2008 by George Peter Staplin
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 2008 George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
