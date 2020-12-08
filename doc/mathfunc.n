@@ -13,7 +13,7 @@
 .SH NAME
 mathfunc \- Mathematical functions for Tcl expressions
 .SH SYNOPSIS
-package require \fBTcl 8.5\fR
+package require \fBTcl 8.5-\fR
 .sp
 \fB::tcl::mathfunc::abs\fR \fIarg\fR
 .br
