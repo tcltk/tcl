@@ -667,9 +667,10 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 # MSVCRT  - 1 -> link to dynamic C runtime even when building static Tcl build
 #           0 -> link to static C runtime for static Tcl build.
 #           Does not impact shared Tcl builds (STATIC_BUILD == 0)
+#           Default: 1 for Tcl 8.7 and up, 0 otherwise.
 # TCL_USE_STATIC_PACKAGES - 1 -> statically link the registry and dde extensions
-#           in the Tcl shell. 0 -> keep them as shared libraries
-#           Does not impact shared Tcl builds.
+#           in the Tcl and Wish shell. 0 -> keep them as shared libraries. Does
+#           not impact shared Tcl builds. Implied by STATIC_BUILD since Tcl 8.7.
 # USE_THREAD_ALLOC - 1 -> Use a shared global free pool for allocation.
 #           0 -> Use the non-thread allocator.
 # UNCHECKED - 1 -> when doing a debug build with symbols, use the release
@@ -724,7 +725,7 @@ MSVCRT		= 0
 !if [nmakehlp -f $(OPTS) "msvcrt"]
 !message *** Doing msvcrt
 !else
-!if $(STATIC_BUILD)
+!if "$(TCL_MAJOR_VERSION)" == "8" && "$(TCL_MINOR_VERSION)" < "7" && $(STATIC_BUILD)
 MSVCRT		= 0
 !endif
 !endif
