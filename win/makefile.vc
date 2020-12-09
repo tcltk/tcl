@@ -590,8 +590,10 @@ $(LIBTCLZIP): .PHONY
 	@move /y "$(LIBTCLVFS)\tcl_library\manifest.txt"  "$(LIBTCLVFS)\tcl_library\pkgIndex.tcl" > NUL
 !if ! $(STATIC_BUILD)
 # Remove the registry and dde directories as the DLLS are still external
-	@$(RMDIR) "$(LIBTCLVFS)\tcl_library\registry"
-	@$(RMDIR) "$(LIBTCLVFS)\tcl_library\dde"
+	@del "$(LIBTCLVFS)\tcl_library\registry\pkgIndex.tcl"
+	@rmdir "$(LIBTCLVFS)\tcl_library\registry"
+	@del "$(LIBTCLVFS)\tcl_library\dde\pkgIndex.tcl"
+	@rmdir "$(LIBTCLVFS)\tcl_library\dde"
 !endif
 	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
 	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"

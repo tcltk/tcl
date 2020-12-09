@@ -58,7 +58,6 @@ jobs:
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
-          - "CC=g++"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
