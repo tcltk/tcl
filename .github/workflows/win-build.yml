@@ -11,8 +11,8 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "OPTS=nodep"
-          - "OPTS=static,staticpkg,msvcrt"
+          - "CHECKS=nodep"
+          - "OPTS=static"
           - "OPTS=symbols"
           - "OPTS=memdbg"
     # Using powershell means we need to explicitly stop on failure

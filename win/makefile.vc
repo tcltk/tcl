@@ -52,7 +52,7 @@
 # turn on the 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=msvcrt,noembed,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,unchecked,none
+#	OPTS=nomsvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,unchecked,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -62,20 +62,18 @@
 #                           specified in OPTS, or into the DLL otherwise. If
 #                           "noembed" is specified, the scripts are not embedded
 #                           but copied to the installation target (as in 8.6).
-#		msvcrt    = Affects the static option only to switch it from
-#			    using libcmt(d) as the C runtime [by default] to
-#			    msvcrt(d). This is useful for static embedding
+#		nomsvcrt  = Affects the static option only to switch it from
+#			    using msvcrt(d) as the C runtime [by default] to
+#			    libcmt(d). This is useful for static embedding
 #			    support.
 #		none      = Overrides all other options to nothing.
 #		nothreads = Turns off full multithreading support (default on).
-#		pdbs      =  Produce separate debug symbol files.
-#		profile   =  Adds profiling hooks.  Map file is assumed.
+#		pdbs      = Produce separate debug symbol files.
+#		profile   = Adds profiling hooks.  Map file is assumed.
 #		static    = Builds a static library of the core instead of a
-#			    dll.  The shell will be static (and large), as well.
-#		staticpkg = Affects the static option only to switch
-#			    tclshXX.exe to have the dde and registry extension linked
-#			    inside it.
-#		symbols   =  Adds symbols for step debugging.
+#			    dll.  The shell will be static (and large), and
+#			    have the dde and registry extensions linked inside.
+#		symbols   = Adds symbols for step debugging.
 #		thrdalloc = Use the thread allocator (shared global free pool).
 #		unchecked = Allows a symbols build to not use the debug
 #			    enabled runtime (msvcrt.dll not msvcrtd.dll
