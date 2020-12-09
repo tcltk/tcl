@@ -147,12 +147,24 @@ RCFILE = tcl.rc
 DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
 VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 
+# The staticpkg option is not longer supported in Tcl 8.7
+# though extensions may still be using it. If specified together
+# with "static", ignore it as that is now the default for
+# static build. For non-static builds, no longer supported
+# now (was permitted in 8.6)
+!if $(TCL_USE_STATIC_PACKAGES)
+!if $(STATIC_BUILD)
+!message *** NOTE: The "staticpkg" option redundant in 8.7.
+!else
+!message *** NOTE: The "staticpkg" option ignored for shared library builds.
+!endif
+!endif
 
 !if [nmakehlp -f $(OPTS) "noembed"]
-!message *** Option noembed specified. Tcl script library will not be appended to binary.
+!message *** Option noembed specified. Tcl script library will not be appended to the binary.
 TCL_EMBED_SCRIPTS = 0
 !else
-!message *** Tcl script library will be appended to binary.
+!message *** Tcl script library will be appended to the binary.
 TCL_EMBED_SCRIPTS = 1
 !endif
 
@@ -206,12 +218,6 @@ TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
 
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
-!if !$(STATIC_BUILD)
-!if $(TCL_USE_STATIC_PACKAGES)
-	$(TMP_DIR)\tclWinReg.obj \
-	$(TMP_DIR)\tclWinDde.obj \
-!endif
-!endif
 	$(TMP_DIR)\tclsh.res
 
 TCLTESTOBJS = \
@@ -221,10 +227,6 @@ TCLTESTOBJS = \
 	$(TMP_DIR)\tclThreadTest.obj \
 	$(TMP_DIR)\tclWinTest.obj \
 !if !$(STATIC_BUILD)
-!if $(TCL_USE_STATIC_PACKAGES)
-	$(TMP_DIR)\tclWinReg.obj \
-	$(TMP_DIR)\tclWinDde.obj \
-!endif
 	$(OUT_DIR)\tommath.lib \
 !endif
 	$(TMP_DIR)\testMain.obj
@@ -585,7 +587,7 @@ $(LIBTCLZIP): .PHONY
 	@$(MKDIR) "$(LIBTCLVFS)"
 	@$(CPYDIR) $(LIBDIR) "$(LIBTCLVFS)\tcl_library"
 	@move /y "$(LIBTCLVFS)\tcl_library\manifest.txt"  "$(LIBTCLVFS)\tcl_library\pkgIndex.tcl" > NUL
-!if ! $(TCL_USE_STATIC_PACKAGES)
+!if ! $(STATIC_BUILD)
 # Remove the registry and dde directories as the DLLS are still external
 	@$(RMDIR) "$(LIBTCLVFS)\tcl_library\registry"
 	@$(RMDIR) "$(LIBTCLVFS)\tcl_library\dde"
@@ -790,7 +792,6 @@ gendate:
 
 $(TMP_DIR)\testMain.obj: $(WIN_DIR)\tclAppInit.c
 	$(cc32) $(appcflags) /DTCL_TEST /DUNICODE /D_UNICODE \
-	    /DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
 	    -Fo$@ $?
 
 $(TMP_DIR)\tclMainW.obj: $(GENERICDIR)\tclMain.c
@@ -806,12 +807,38 @@ $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 $(TMP_DIR)\tclWinTest.obj: $(WIN_DIR)\tclWinTest.c
 	$(CCAPPCMD) $?
 
+# Following the lead of the autoconf based make, we define the
+# CFG_RUNTIME_DLLFILE flag specifically for tclZipfs and tclPkgConfig
+# and not as part of the global defines. Moreover, for tclZipfs,
+# we define only CFG_RUNTIME_DLLFILE to force use of //zipfs:
+# as the zip fs root. However it is defined as empty. See tclPkgConfig.obj
+# comments as to why.
+# We do not define other CFG_RUNTIME_ZIPFILE at all because
+# that causes the zipfs code to go looking at directories that existed
+# on the *build* system as opposed to the target runtime system. This
+# is the case even if the value is defined as an empty string.
 $(TMP_DIR)\tclZipfs.obj: $(GENERICDIR)\tclZipfs.c
-	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -I$(COMPATDIR)\zlib\contrib\minizip -Fo$@ $?
+	$(cc32) $(pkgcflags) \
+	-DCFG_RUNTIME_DLLFILE="\"\"" \
+	-I$(COMPATDIR)\zlib -I$(COMPATDIR)\zlib\contrib\minizip \
+	-Fo$@ $?
 
 $(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
 	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -Fo$@ $?
 
+# Following the lead of the autoconf based make, we define the
+# CFG_RUNTIME_DLLFILE and CFG_RUNTIME_ZIPFILE flags specifically for tclPkgConfig
+# and not as part of the global defines. These are all defined
+# as empty strings because they are intended to represent paths
+# at *runtime*, not build time. This may make sense on Unix systems
+# where end-user does configure and make on the target system. It
+# makes no sense on Windows where binary distributions may be installed
+# anywhere. Storing build time paths as runtime paths is misleading
+# at best and inefficient at worst as the code goes looking for
+# files and directories that do not exist.
+# Note: the same is true for the other CFG_RUNTIME* and CFG_INSTALL*
+# settings as well but they are historical and I do not want to change
+# them.
 $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	$(cc32) $(pkgcflags) \
 	/DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
@@ -824,13 +851,12 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	/DCFG_RUNTIME_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
 	/DCFG_RUNTIME_INCDIR="\"$(INCLUDE_INSTALL_DIR:\=\\)\"" \
 	/DCFG_RUNTIME_DOCDIR="\"$(DOC_INSTALL_DIR:\=\\)\""     \
-	/DCFG_RUNTIME_DLLFILE="\"$(CFG_RUNTIME_DLLFILE:\=\\)\""     \
-	/DCFG_RUNTIME_ZIPFILE="\"$(CFG_RUNTIME_ZIPFILE:\=\\)\""     \
+	/DCFG_RUNTIME_DLLFILE="\"\""     \
+	/DCFG_RUNTIME_ZIPFILE="\"\""     \
 	-Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c
 	$(cc32) $(appcflags) /DUNICODE /D_UNICODE \
-	    /DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
 	    -Fo$@ $?
 
 ### The following objects should be built using the stub interfaces
@@ -1007,21 +1033,13 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	    "$(MODULE_INSTALL_DIR)\9.0\platform\shell-$(PKG_SHELL_VER).tm"
 !endif
 	@echo Installing $(TCLDDELIBNAME)
-!if $(STATIC_BUILD)
-!if !$(TCL_USE_STATIC_PACKAGES)
-	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
-!endif
-!else
+!if !$(STATIC_BUILD)
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
 	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
 !endif
 	@echo Installing $(TCLREGLIBNAME)
-!if $(STATIC_BUILD)
-!if !$(TCL_USE_STATIC_PACKAGES)
-	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\"
-!endif
-!else
+!if !$(STATIC_BUILD)
 	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
 	@$(CPY) "$(ROOT)\library\registry\pkgIndex.tcl" \
 	    "$(LIB_INSTALL_DIR)\registry$(REGDOTVERSION)\"
