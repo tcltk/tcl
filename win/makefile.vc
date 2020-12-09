@@ -811,12 +811,38 @@ $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 $(TMP_DIR)\tclWinTest.obj: $(WIN_DIR)\tclWinTest.c
 	$(CCAPPCMD) $?
 
+# Following the lead of the autoconf based make, we define the
+# CFG_RUNTIME_DLLFILE flag specifically for tclZipfs and tclPkgConfig
+# and not as part of the global defines. Moreover, for tclZipfs,
+# we define only CFG_RUNTIME_DLLFILE to force use of //zipfs:
+# as the zip fs root. However it is defined as empty. See tclPkgConfig.obj
+# comments as to why.
+# We do not define other CFG_RUNTIME_ZIPFILE at all because
+# that causes the zipfs code to go looking at directories that existed
+# on the *build* system as opposed to the target runtime system. This
+# is the case even if the value is defined as an empty string.
 $(TMP_DIR)\tclZipfs.obj: $(GENERICDIR)\tclZipfs.c
-	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -I$(COMPATDIR)\zlib\contrib\minizip -Fo$@ $?
+	$(cc32) $(pkgcflags) \
+	-DCFG_RUNTIME_DLLFILE="\"\"" \
+	-I$(COMPATDIR)\zlib -I$(COMPATDIR)\zlib\contrib\minizip \
+	-Fo$@ $?
 
 $(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
 	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -Fo$@ $?
 
+# Following the lead of the autoconf based make, we define the
+# CFG_RUNTIME_DLLFILE and CFG_RUNTIME_ZIPFILE flags specifically for tclPkgConfig
+# and not as part of the global defines. These are all defined
+# as empty strings because they are intended to represent paths
+# at *runtime*, not build time. This may make sense on Unix systems
+# where end-user does configure and make on the target system. It
+# makes no sense on Windows where binary distributions may be installed
+# anywhere. Storing build time paths as runtime paths is misleading
+# at best and inefficient at worst as the code goes looking for
+# files and directories that do not exist.
+# Note: the same is true for the other CFG_RUNTIME* and CFG_INSTALL*
+# settings as well but they are historical and I do not want to change
+# them.
 $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	$(cc32) $(pkgcflags) \
 	/DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
@@ -829,8 +855,8 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	/DCFG_RUNTIME_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
 	/DCFG_RUNTIME_INCDIR="\"$(INCLUDE_INSTALL_DIR:\=\\)\"" \
 	/DCFG_RUNTIME_DOCDIR="\"$(DOC_INSTALL_DIR:\=\\)\""     \
-	/DCFG_RUNTIME_DLLFILE="\"$(CFG_RUNTIME_DLLFILE:\=\\)\""     \
-	/DCFG_RUNTIME_ZIPFILE="\"$(CFG_RUNTIME_ZIPFILE:\=\\)\""     \
+	/DCFG_RUNTIME_DLLFILE="\"\""     \
+	/DCFG_RUNTIME_ZIPFILE="\"\""     \
 	-Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c
