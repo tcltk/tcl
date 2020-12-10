@@ -29,7 +29,7 @@ extern Tcl_LibraryInitProc Tcltest_Init;
 extern Tcl_LibraryInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
-#if defined(STATIC_BUILD) && defined(TCL_USE_STATIC_PACKAGES) && TCL_USE_STATIC_PACKAGES
+#if defined(STATIC_BUILD)
 extern Tcl_LibraryInitProc Registry_Init;
 extern Tcl_LibraryInitProc Dde_Init;
 extern Tcl_LibraryInitProc Dde_SafeInit;
@@ -164,7 +164,7 @@ Tcl_AppInit(
 	return TCL_ERROR;
     }
 
-#if defined(STATIC_BUILD) && defined(TCL_USE_STATIC_PACKAGES) && TCL_USE_STATIC_PACKAGES
+#if defined(STATIC_BUILD)
     if (Registry_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }

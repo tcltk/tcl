@@ -6,7 +6,7 @@
 # compiler switches, defining common targets and macros. The Tcl makefile
 # directly includes this. Extensions include it via "rules-ext.vc".
 #
-# See TIP 477 (https://core.tcl-lang.org/tips/doc/trunk/tip/477.md) for
+# See TIP 477 (https://core.tcl-lang.org/tips/doc/main/tip/477.md) for
 # detailed documentation.
 #
 # See the file "license.terms" for information on usage and redistribution
@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 6
+RULES_VERSION_MINOR = 7
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -667,9 +667,10 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 # MSVCRT  - 1 -> link to dynamic C runtime even when building static Tcl build
 #           0 -> link to static C runtime for static Tcl build.
 #           Does not impact shared Tcl builds (STATIC_BUILD == 0)
+#           Default: 1 for Tcl 8.7 and up, 0 otherwise.
 # TCL_USE_STATIC_PACKAGES - 1 -> statically link the registry and dde extensions
-#           in the Tcl shell. 0 -> keep them as shared libraries
-#           Does not impact shared Tcl builds.
+#           in the Tcl and Wish shell. 0 -> keep them as shared libraries. Does
+#           not impact shared Tcl builds. Implied by STATIC_BUILD since Tcl 8.7.
 # USE_THREAD_ALLOC - 1 -> Use a shared global free pool for allocation.
 #           0 -> Use the non-thread allocator.
 # UNCHECKED - 1 -> when doing a debug build with symbols, use the release
@@ -724,7 +725,7 @@ MSVCRT		= 0
 !if [nmakehlp -f $(OPTS) "msvcrt"]
 !message *** Doing msvcrt
 !else
-!if $(STATIC_BUILD)
+!if "$(TCL_MAJOR_VERSION)" == "8" && "$(TCL_MINOR_VERSION)" < "7" && $(STATIC_BUILD)
 MSVCRT		= 0
 !endif
 !endif
@@ -907,10 +908,14 @@ WARNINGS		    = $(WARNINGS) -Wp64
 # Sets the following macros:
 # TCL_MAJOR_VERSION
 # TCL_MINOR_VERSION
+# TCL_RELEASE_SERIAL
 # TCL_PATCH_LEVEL
+# TCL_PATCH_LETTER
 # TCL_VERSION
 # TK_MAJOR_VERSION
 # TK_MINOR_VERSION
+# TK_RELEASE_SERIAL
+# TK_PATCH_LEVEL
 # TK_PATCH_LEVEL
 # TK_VERSION
 # DOTVERSION - set as (for example) 2.5
@@ -925,6 +930,9 @@ WARNINGS		    = $(WARNINGS) -Wp64
 !if [echo TCL_MINOR_VERSION = \>> versions.vc] \
    && [nmakehlp -V "$(_TCL_H)" TCL_MINOR_VERSION >> versions.vc]
 !endif
+!if [echo TCL_RELEASE_SERIAL = \>> versions.vc] \
+   && [nmakehlp -V "$(_TCL_H)" TCL_RELEASE_SERIAL >> versions.vc]
+!endif
 !if [echo TCL_PATCH_LEVEL = \>> versions.vc] \
    && [nmakehlp -V "$(_TCL_H)" TCL_PATCH_LEVEL >> versions.vc]
 !endif
@@ -936,6 +944,9 @@ WARNINGS		    = $(WARNINGS) -Wp64
 !if [echo TK_MINOR_VERSION = \>> versions.vc] \
    && [nmakehlp -V $(_TK_H) TK_MINOR_VERSION >> versions.vc]
 !endif
+!if [echo TK_RELEASE_SERIAL = \>> versions.vc] \
+   && [nmakehlp -V "$(_TK_H)" TK_RELEASE_SERIAL >> versions.vc]
+!endif
 !if [echo TK_PATCH_LEVEL = \>> versions.vc] \
    && [nmakehlp -V $(_TK_H) TK_PATCH_LEVEL >> versions.vc]
 !endif
@@ -945,9 +956,26 @@ WARNINGS		    = $(WARNINGS) -Wp64
 
 TCL_VERSION	= $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 TCL_DOTVERSION	= $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
+!if [nmakehlp -f $(TCL_PATCH_LEVEL) "a"]
+TCL_PATCH_LETTER = a
+!elseif [nmakehlp -f $(TCL_PATCH_LEVEL) "b"]
+TCL_PATCH_LETTER = b
+!else
+TCL_PATCH_LETTER = .
+!endif
+
 !if defined(_TK_H)
+
 TK_VERSION	= $(TK_MAJOR_VERSION)$(TK_MINOR_VERSION)
 TK_DOTVERSION	= $(TK_MAJOR_VERSION).$(TK_MINOR_VERSION)
+!if [nmakehlp -f $(TK_PATCH_LEVEL) "a"]
+TK_PATCH_LETTER = a
+!elseif [nmakehlp -f $(TK_PATCH_LEVEL) "b"]
+TK_PATCH_LETTER = b
+!else
+TK_PATCH_LETTER = .
+!endif
+
 !endif
 
 # Set DOTVERSION and VERSION
@@ -1538,11 +1566,11 @@ default-target: $(DEFAULT_BUILD_TARGET)
 !if $(MULTIPLATFORM_INSTALL)
 default-pkgindex:
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
-	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)] [string totitle $(PRJ_PACKAGE_TCLNAME)]] > $(OUT_DIR)\pkgIndex.tcl
 !else
 default-pkgindex:
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
-	    [list load [file join $$dir $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+	    [list load [file join $$dir $(PRJLIBNAME)] [string totitle $(PRJ_PACKAGE_TCLNAME)]] > $(OUT_DIR)\pkgIndex.tcl
 !endif
 
 default-pkgindex-tea:
