@@ -1250,7 +1250,7 @@ WinIsReserved(
 
 	    if (path[4] == '\0') {
 		return 4;
-	    } else if (path [4] == ':' && path[5] == '\0') {
+	    } else if (path[4] == ':' && path[5] == '\0') {
 		return 4;
 	    }
 	} else if ((path[2] == 'n' || path[2] == 'N') && path[3] == '\0') {
@@ -1271,7 +1271,7 @@ WinIsReserved(
 
 	    if (path[4] == '\0') {
 		return 4;
-	    } else if (path [4] == ':' && path[5] == '\0') {
+	    } else if (path[4] == ':' && path[5] == '\0') {
 		return 4;
 	    }
 	}
@@ -3100,7 +3100,8 @@ TclNativeCreateNativeRep(
       goto done;
     }
     MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr,
-	    len + 1);
+	    len + 2);
+    nativePathPtr[len] = 0;
 
     /*
      * If path starts with "//?/" or "\\?\" (extended path), translate any
