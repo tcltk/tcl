@@ -242,7 +242,7 @@ ExtractWinRoot(
 
 		if (path[4] == '\0') {
 		    abs = 4;
-		} else if (path [4] == ':' && path[5] == '\0') {
+		} else if (path[4] == ':' && path[5] == '\0') {
 		    abs = 5;
 		}
 
@@ -264,7 +264,7 @@ ExtractWinRoot(
 
 		if (path[4] == '\0') {
 		    abs = 4;
-		} else if (path [4] == ':' && path[5] == '\0') {
+		} else if (path[4] == ':' && path[5] == '\0') {
 		    abs = 5;
 		}
 	    }
