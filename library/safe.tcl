@@ -1009,8 +1009,8 @@ proc ::safe::AliasLoad {child file args} {
 	return -code error $msg
     }
 
-    # package name (can be empty if file is not).
-    set package [lindex $args 0]
+    # prefix (can be empty if file is not).
+    set prefix [lindex $args 0]
 
     namespace upvar ::safe [VarName $child] state
 
@@ -1022,23 +1022,23 @@ proc ::safe::AliasLoad {child file args} {
 	# authorize that.
 	if {!$state(nestedok)} {
 	    Log $child "loading to a sub interp (nestedok)\
-			disabled (trying to load $package to $target)"
+			disabled (trying to load $prefix to $target)"
 	    return -code error "permission denied (nested load)"
 	}
     }
 
     # Determine what kind of load is requested
     if {$file eq ""} {
-	# static package loading
-	if {$package eq ""} {
-	    set msg "load error: empty filename and no package name"
+	# static loading
+	if {$prefix eq ""} {
+	    set msg "load error: empty filename and no prefix"
 	    Log $child $msg
 	    return -code error $msg
 	}
 	if {!$state(staticsok)} {
-	    Log $child "static packages loading disabled\
-			(trying to load $package to $target)"
-	    return -code error "permission denied (static package)"
+	    Log $child "static library loading disabled\
+			(trying to load $prefix to $target)"
+	    return -code error "permission denied (static library)"
 	}
     } else {
 	# file loading
@@ -1061,10 +1061,10 @@ proc ::safe::AliasLoad {child file args} {
     }
 
     try {
-	return [::interp invokehidden $child load $file $package $target]
+	return [::interp invokehidden $child load $file $prefix $target]
     } on error msg {
-	# Some packages return no error message.
-	set msg0 "load of binary library for package $package failed"
+	# Some libraries return no error message.
+	set msg0 "load of binary library with prefix $prefix failed"
 	if {$msg eq {}} {
 	    set msg $msg0
 	} else {

@@ -1157,58 +1157,58 @@ test safe-9.24 {interpConfigure change the access path; check module loading; st
         res0 res1 res2}
 # See comments on lsort after test safe-9.20.
 
-catch {teststaticlibrary Safepkg1 0 0}
+catch {teststaticlibrary Safe1 0 0}
 test safe-10.1 {testing statics loading} -constraints tcl::test -setup {
     set i [safe::interpCreate]
 } -body {
-    interp eval $i {load {} Safepkg1}
+    interp eval $i {load {} Safe1}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {load of binary library for package Safepkg1 failed: can't use library in a safe interpreter: no Safepkg1_SafeInit procedure}
+} -result {load of binary library with prefix Safe1 failed: can't use library in a safe interpreter: no Safe1_SafeInit procedure}
 test safe-10.1.1 {testing statics loading} -constraints tcl::test -setup {
     set i [safe::interpCreate]
 } -body {
-    catch {interp eval $i {load {} Safepkg1}} m o
+    catch {interp eval $i {load {} Safe1}} m o
     dict get $o -errorinfo
 } -returnCodes ok -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
-} -result {load of binary library for package Safepkg1 failed: can't use library in a safe interpreter: no Safepkg1_SafeInit procedure
+} -result {load of binary library with prefix Safe1 failed: can't use library in a safe interpreter: no Safe1_SafeInit procedure
     invoked from within
-"load {} Safepkg1"
+"load {} Safe1"
     invoked from within
-"interp eval $i {load {} Safepkg1}"}
+"interp eval $i {load {} Safe1}"}
 test safe-10.2 {testing statics loading / -nostatics} -constraints tcl::test -body {
     set i [safe::interpCreate -nostatics]
-    interp eval $i {load {} Safepkg1}
+    interp eval $i {load {} Safe1}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {permission denied (static package)}
+} -result {permission denied (static library)}
 test safe-10.3 {testing nested statics loading / no nested by default} -setup {
     set i [safe::interpCreate]
 } -constraints tcl::test -body {
-    interp eval $i {interp create x; load {} Safepkg1 x}
+    interp eval $i {interp create x; load {} Safe1 x}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
 } -result {permission denied (nested load)}
 test safe-10.4 {testing nested statics loading / -nestedloadok} -constraints tcl::test -body {
     set i [safe::interpCreate -nestedloadok]
-    interp eval $i {interp create x; load {} Safepkg1 x}
+    interp eval $i {interp create x; load {} Safe1 x}
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {load of binary library for package Safepkg1 failed: can't use library in a safe interpreter: no Safepkg1_SafeInit procedure}
+} -result {load of binary library with prefix Safe1 failed: can't use library in a safe interpreter: no Safe1_SafeInit procedure}
 test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints tcl::test -body {
     set i [safe::interpCreate -nestedloadok]
-    catch {interp eval $i {interp create x; load {} Safepkg1 x}} m o
+    catch {interp eval $i {interp create x; load {} Safe1 x}} m o
     dict get $o -errorinfo
 } -returnCodes ok -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
-} -result {load of binary library for package Safepkg1 failed: can't use library in a safe interpreter: no Safepkg1_SafeInit procedure
+} -result {load of binary library with prefix Safe1 failed: can't use library in a safe interpreter: no Safe1_SafeInit procedure
     invoked from within
-"load {} Safepkg1 x"
+"load {} Safe1 x"
     invoked from within
-"interp eval $i {interp create x; load {} Safepkg1 x}"}
+"interp eval $i {interp create x; load {} Safe1 x}"}
 
 test safe-11.1 {testing safe encoding} -setup {
     set i [safe::interpCreate]
