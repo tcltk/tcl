@@ -20,7 +20,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Prepare
-        run: touch tclStubInit.c tclOOStubInit.c
+        run: |
+          touch tclStubInit.c tclOOStubInit.c
         working-directory: generic
       - name: Configure ${{ matrix.cfgopt }}
         run: |

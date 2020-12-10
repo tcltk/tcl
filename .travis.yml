@@ -190,7 +190,6 @@ jobs:
         - BUILD_DIR=win
         - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
       before_install: &vcpreinst
-        - rm -rf tests/safe-stock8*.test
         - touch generic/tclStubInit.c generic/tclOOStubInit.c
         - PATH="$PATH:$VCDIR"
         - cd ${BUILD_DIR}
@@ -297,7 +296,6 @@ jobs:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit"
       before_install: &makepreinst
-        - rm -rf tests/safe-stock8*.test
         - touch generic/tclStubInit.c generic/tclOOStubInit.c
         - choco install -y make
         - cd ${BUILD_DIR}
@@ -374,7 +372,6 @@ jobs:
       script:
         - make dist
 before_install:
-  - rm -rf tests/safe-stock8*.test
   - touch generic/tclStubInit.c generic/tclOOStubInit.c
   - cd ${BUILD_DIR}
 install:
