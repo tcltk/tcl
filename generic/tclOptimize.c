@@ -3,7 +3,7 @@
  *
  *	This file contains the bytecode optimizer.
  *
- * Copyright (c) 2013 by Donal Fellows.
+ * Copyright © 2013 Donal Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

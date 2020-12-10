@@ -6,10 +6,10 @@
  *	Andreas Stolcke and this implementation is based heavily on a
  *	prototype implementation provided by him.
  *
- * Copyright (c) 1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 2008 Rene Zaumseil
- * Copyright (c) 2019 Donal K. Fellows
+ * Copyright © 1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 2008 Rene Zaumseil
+ * Copyright © 2019 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

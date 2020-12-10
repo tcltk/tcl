@@ -12,7 +12,7 @@
 oo::define, oo::objdefine \- define and configure classes and objects
 .SH SYNOPSIS
 .nf
-package require TclOO
+package require tcl::oo
 
 \fBoo::define\fI class defScript\fR
 \fBoo::define\fI class subcommand arg\fR ?\fIarg ...\fR?

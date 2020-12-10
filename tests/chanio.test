@@ -5339,7 +5339,7 @@ test chan-io-40.1 {POSIX open access modes: RDWR} -setup {
 test chan-io-40.2 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -constraints {unix} -body {
-    set f [open $path(test3) {WRONLY CREAT} 0600]
+    set f [open $path(test3) {WRONLY CREAT} 0o600]
     file stat $path(test3) stats
     set x [format 0o%03o [expr {$stats(mode) & 0o777}]]
     chan puts $f "line 1"

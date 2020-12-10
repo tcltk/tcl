@@ -7,11 +7,11 @@
  *	children of the global namespace. These other namespaces contain
  *	special-purpose commands and variables for packages.
  *
- * Copyright (c) 1993-1997 Lucent Technologies.
- * Copyright (c) 1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2002-2005 Donal K. Fellows.
- * Copyright (c) 2006 Neil Madden.
+ * Copyright © 1993-1997 Lucent Technologies.
+ * Copyright © 1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
+ * Copyright © 2002-2005 Donal K. Fellows.
+ * Copyright © 2006 Neil Madden.
  * Contributions from Don Porter, NIST, 2007. (not subject to US copyright)
  *
  * Originally implemented by

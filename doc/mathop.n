@@ -11,7 +11,7 @@
 .SH NAME
 mathop \- Mathematical operators as Tcl commands
 .SH SYNOPSIS
-package require \fBTcl 8.5\fR
+package require \fBTcl 8.5-\fR
 .sp
 \fB::tcl::mathop::!\fR \fInumber\fR
 .br
