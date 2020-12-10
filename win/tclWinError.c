@@ -4,7 +4,7 @@
  *	This file contains code for converting from Win32 errors to errno
  *	errors.
  *
- * Copyright (c) 1995-1996 by Sun Microsystems, Inc.
+ * Copyright © 1995-1996 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
