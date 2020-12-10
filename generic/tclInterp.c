@@ -4,8 +4,8 @@
  *	This file implements the "interp" command which allows creation and
  *	manipulation of Tcl interpreters from within Tcl scripts.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 2004 Donal K. Fellows
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 2004 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.

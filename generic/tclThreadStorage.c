@@ -4,8 +4,8 @@
  *	This file implements platform independent thread storage operations to
  *	work around system limits on the number of thread-specific variables.
  *
- * Copyright (c) 2003-2004 by Joe Mistachkin
- * Copyright (c) 2008 by George Peter Staplin
+ * Copyright © 2003-2004 Joe Mistachkin
+ * Copyright © 2008 George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
