@@ -137,11 +137,11 @@ test unixFCmd-1.7 {TclpRenameFile: EXDEV} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
     file mkdir foo/bar
-    file attr foo -perm 040555
+    file attr foo -perm 0o40555
     file rename foo/bar /tmp
 } -returnCodes error -cleanup {
     catch {file delete /tmp/bar}
-    catch {file attr foo -perm 040777}
+    catch {file attr foo -perm 0o40777}
     catch {file delete -force foo}
 } -match glob -result {*: permission denied}
 test unixFCmd-1.8 {Checking EINTR Bug} {unix notRoot nonPortable} {

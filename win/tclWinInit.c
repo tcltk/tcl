@@ -3,8 +3,8 @@
  *
  *	Contains the Windows-specific interpreter initialization functions.
  *
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  * All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of

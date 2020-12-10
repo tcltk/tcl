@@ -210,7 +210,6 @@ jobs:
         - BUILD_DIR=win
         - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
       before_install: &vcpreinst
-        - rm -rf tests/safe-stock8*.test
         - touch generic/tclStubInit.c generic/tclOOStubInit.c generic/tclOOScript.h
         - PATH="$PATH:$VCDIR"
         - cd ${BUILD_DIR}
@@ -225,8 +224,8 @@ jobs:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,staticpkg,msvcrt' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,staticpkg,msvcrt' '-f' makefile.vc test
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static' '-f' makefile.vc test
     - name: "Windows/MSVC/Debug"
       os: windows
       compiler: cl
@@ -262,8 +261,8 @@ jobs:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static,staticpkg,msvcrt' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static,staticpkg,msvcrt' '-f' makefile.vc test
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static' '-f' makefile.vc test
     - name: "Windows/MSVC-x86/Debug"
       os: windows
       compiler: cl
@@ -290,7 +289,6 @@ jobs:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit"
       before_install: &makepreinst
-        - rm -rf tests/safe-stock8*.test
         - touch generic/tclStubInit.c generic/tclOOStubInit.c generic/tclOOScript.h
         - choco install -y make zip
         - cd ${BUILD_DIR}
@@ -385,7 +383,6 @@ jobs:
       script:
         - make dist
 before_install:
-  - rm -rf tests/safe-stock8*.test
   - touch generic/tclStubInit.c generic/tclOOStubInit.c generic/tclOOScript.h
   - cd ${BUILD_DIR}
 install:

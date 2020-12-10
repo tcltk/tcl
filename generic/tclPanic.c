@@ -5,9 +5,9 @@
  *	applications will probably call Tcl_SetPanicProc() to set an
  *	application-specific panic procedure.
  *
- * Copyright (c) 1988-1993 The Regents of the University of California.
- * Copyright (c) 1994 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1988-1993 The Regents of the University of California.
+ * Copyright © 1994 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

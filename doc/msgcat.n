@@ -11,7 +11,7 @@
 .SH NAME
 msgcat \- Tcl message catalog
 .SH SYNOPSIS
-\fBpackage require Tcl 8.7\fR
+\fBpackage require tcl 8.7\fR
 .sp
 \fBpackage require msgcat 1.7\fR
 .sp

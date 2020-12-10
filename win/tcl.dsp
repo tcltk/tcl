@@ -76,7 +76,7 @@ CFG=tcl - Win32 Debug Static
 # PROP BASE Use_Debug_Libraries 1
 # PROP BASE Output_Dir "Debug"
 # PROP BASE Intermediate_Dir "Debug\tcl_Static"
-# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=symbols,static,staticpkg,msvcrt MSVCDIR=IDE"
+# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=symbols,static MSVCDIR=IDE"
 # PROP BASE Rebuild_Opt "-a"
 # PROP BASE Target_File "Debug\tclsh90sg.exe"
 # PROP BASE Bsc_Name ""
@@ -85,7 +85,7 @@ CFG=tcl - Win32 Debug Static
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "Debug"
 # PROP Intermediate_Dir "Debug\tcl_Static"
-# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=symbols,static,staticpkg,msvcrt MSVCDIR=IDE"
+# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=symbols,static MSVCDIR=IDE"
 # PROP Rebuild_Opt "-a"
 # PROP Target_File "Debug\tclsh90sg.exe"
 # PROP Bsc_Name ""
@@ -97,7 +97,7 @@ CFG=tcl - Win32 Debug Static
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "Release"
 # PROP BASE Intermediate_Dir "Release\tcl_Static"
-# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=static,staticpkg,msvcrt MSVCDIR=IDE"
+# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=static MSVCDIR=IDE"
 # PROP BASE Rebuild_Opt "-a"
 # PROP BASE Target_File "Release\tclsh90s.exe"
 # PROP BASE Bsc_Name ""
@@ -106,7 +106,7 @@ CFG=tcl - Win32 Debug Static
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release"
 # PROP Intermediate_Dir "Release\tcl_Static"
-# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=static,staticpkg,msvcrt MSVCDIR=IDE"
+# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=static MSVCDIR=IDE"
 # PROP Rebuild_Opt "-a"
 # PROP Target_File "Release\tclsh90s.exe"
 # PROP Bsc_Name ""

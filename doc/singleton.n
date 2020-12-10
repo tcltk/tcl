@@ -12,7 +12,7 @@
 oo::singleton \- a class that does only allows one instance of itself
 .SH SYNOPSIS
 .nf
-package require TclOO
+package require tcl::oo
 
 \fBoo::singleton\fI method \fR?\fIarg ...\fR?
 .fi

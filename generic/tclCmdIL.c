@@ -6,12 +6,12 @@
  *	contains only commands in the generic core (i.e., those that don't
  *	depend much upon UNIX facilities).
  *
- * Copyright (c) 1987-1993 The Regents of the University of California.
- * Copyright (c) 1993-1997 Lucent Technologies.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
- * Copyright (c) 2005 Donal K. Fellows.
+ * Copyright © 1987-1993 The Regents of the University of California.
+ * Copyright © 1993-1997 Lucent Technologies.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
+ * Copyright © 2001 Kevin B. Kenny. All rights reserved.
+ * Copyright © 2005 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
