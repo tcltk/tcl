@@ -4,8 +4,8 @@
  *	This file implements package and version control for Tcl via the
  *	"package" command and a few C APIs.
  *
- * Copyright (c) 1996 Sun Microsystems, Inc.
- * Copyright (c) 2006 Andreas Kupries <andreas_kupries@users.sourceforge.net>
+ * Copyright © 1996 Sun Microsystems, Inc.
+ * Copyright © 2006 Andreas Kupries <andreas_kupries@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

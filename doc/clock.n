@@ -8,7 +8,7 @@
 .SH NAME
 clock \- Obtain and manipulate dates and times
 .SH "SYNOPSIS"
-package require \fBTcl 8.5\fR
+package require \fBTcl 8.5-\fR
 .sp
 \fBclock add\fR \fItimeVal\fR ?\fIcount unit...\fR? ?\fI\-option value\fR?
 .sp
