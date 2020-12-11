@@ -443,14 +443,7 @@ TCLSTUBOBJS = \
 TOMMATHDIR	= $(ROOT)\libtommath
 PKGSDIR		= $(ROOT)\pkgs
 
-# TIP430 ZIP file
 LIBTCLVFS = $(OUT_DIR)\libtcl.vfs
-!if "$(TCL_PATCH_LETTER)" == "."
-LIBTCLZIP = $(OUT_DIR)\libtcl_$(TCL_MAJOR_VERSION)_$(TCL_MINOR_VERSION)_$(TCL_RELEASE_SERIAL).zip
-!else
-LIBTCLZIP = $(OUT_DIR)\libtcl_$(TCL_MAJOR_VERSION)_$(TCL_MINOR_VERSION)_$(TCL_PATCH_LETTER)$(TCL_RELEASE_SERIAL).zip
-!endif
-
 
 # Additional include and C macro definitions for the implicit rules
 # defined in rules.vc
@@ -477,14 +470,14 @@ release:    setup $(TCLSH) $(TCLSTUBLIB) dlls libtclzip embed pkgs
 core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
 dlls:	    setup $(TCLREGLIB) $(TCLDDELIB) $(OUT_DIR)\zlib1.dll $(OUT_DIR)\libtommath.dll
-libtclzip:  core dlls $(LIBTCLZIP)
+libtclzip:  core dlls $(TCLSCRIPTZIP)
 all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls libtclzip embed pkgs
 embed:      setup $(TCLSH) $(TCLSTUBLIB) libtclzip
 !if $(TCL_EMBED_SCRIPTS)
 !if $(STATIC_BUILD)
-	@copy /y /b "$(TCLSH)"+"$(LIBTCLZIP)" "$(TCLSH)"
+	@copy /y /b "$(TCLSH)"+"$(TCLSCRIPTZIP)" "$(TCLSH)"
 !else
-	@copy /y /b "$(TCLLIB)"+"$(LIBTCLZIP)" "$(TCLLIB)"
+	@copy /y /b "$(TCLLIB)"+"$(TCLSCRIPTZIP)" "$(TCLLIB)"
 !endif
 !endif
 
@@ -579,7 +572,7 @@ $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win32\tommath.lib
 	$(COPY) $(TOMMATHDIR)\win32\tommath.lib $(OUT_DIR)\tommath.lib
 !endif
 
-$(LIBTCLZIP): .PHONY
+$(TCLSCRIPTZIP): .PHONY
 	@echo Building Tcl library zip file
 	@if exist "$(LIBTCLVFS)" $(RMDIR) "$(LIBTCLVFS)"
 	@$(MKDIR) "$(LIBTCLVFS)"
@@ -1002,7 +995,7 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 !endif
 	@$(CPY) "$(OUT_DIR)\tclConfig.sh"         "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(WIN_DIR)\tclooConfig.sh"        "$(LIB_INSTALL_DIR)\"
-	@$(CPY) "$(LIBTCLZIP)"                    "$(LIB_INSTALL_DIR)\"
+	@$(CPY) "$(TCLSCRIPTZIP)"                    "$(LIB_INSTALL_DIR)\"
 	@$(CPY) "$(WIN_DIR)\rules.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
