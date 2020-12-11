@@ -3,7 +3,7 @@
  *
  *	Contains the implementation of the encoding conversion package.
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -2570,7 +2570,7 @@ UtfToUtf16Proc(
 		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
 		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
 		*dst++ = (*chPtr & 0xFF);
-		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
+		*dst++ = ((*chPtr >> 8) & 0x3) | 0xDC;
 	    }
 #else
 	    *dst++ = (*chPtr & 0xFF);
@@ -2582,10 +2582,10 @@ UtfToUtf16Proc(
 		*dst++ = (*chPtr >> 8);
 		*dst++ = (*chPtr & 0xFF);
 	    } else {
-		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
-		*dst++ = (*chPtr & 0xFF);
 		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
 		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
+		*dst++ = ((*chPtr >> 8) & 0x3) | 0xDC;
+		*dst++ = (*chPtr & 0xFF);
 	    }
 #else
 	    *dst++ = (*chPtr >> 8);

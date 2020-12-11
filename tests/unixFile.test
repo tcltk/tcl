@@ -15,7 +15,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testfindexecutable [llength [info commands testfindexecutable]]
 
@@ -24,7 +24,7 @@ cd [temporaryDirectory]
 
 catch {
     set oldPath $env(PATH)
-    file attributes [makeFile "" junk] -perm 0777
+    file attributes [makeFile "" junk] -perm 0o777
 }
 set absPath [file join [temporaryDirectory] junk]
 

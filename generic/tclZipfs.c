@@ -4,8 +4,8 @@
  *	Implementation of the ZIP filesystem used in TIP 430
  *	Adapted from the implentation for AndroWish.
  *
- * Copyright (c) 2016-2017 Sean Woods <yoda@etoyoc.com>
- * Copyright (c) 2013-2015 Christian Werner <chw@ch-werner.de>
+ * Copyright © 2016-2017 Sean Woods <yoda@etoyoc.com>
+ * Copyright © 2013-2015 Christian Werner <chw@ch-werner.de>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -4771,7 +4771,7 @@ TclZipfs_Init(
 		Tcl_NewStringObj("::tcl::zipfs::find", -1));
 	Tcl_CreateObjCommand(interp, "::tcl::zipfs::tcl_library_init",
 		ZipFSTclLibraryObjCmd, NULL, NULL);
-	Tcl_PkgProvide(interp, "zipfs", "2.0");
+	Tcl_PkgProvide(interp, "tcl::zipfs", "2.0");
     }
     return TCL_OK;
 #else /* !HAVE_ZLIB */

@@ -27,8 +27,8 @@
  *	internal representation to keep track of how much space is used vs.
  *	allocated.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 1999 by Scriptics Corporation.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -604,6 +604,7 @@ Tcl_GetUniChar(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetUnicodeFromObj
 #ifndef TCL_NO_DEPRECATED
 #undef Tcl_GetUnicode
 Tcl_UniChar *
@@ -611,14 +612,14 @@ Tcl_GetUnicode(
     Tcl_Obj *objPtr)		/* The object to find the unicode string
 				 * for. */
 {
-    return Tcl_GetUnicodeFromObj2(objPtr, NULL);
+    return Tcl_GetUnicodeFromObj(objPtr, (int *)NULL);
 }
 #endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetUnicodeFromObj/Tcl_GetUnicodeFromObj2 --
+ * Tcl_GetUnicodeFromObj/TclGetUnicodeFromObj --
  *
  *	Get the Unicode form of the String object with length. If the object
  *	is not already a String object, it will be converted to one. If the
@@ -634,7 +635,6 @@ Tcl_GetUnicode(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_GetUnicodeFromObj
 Tcl_UniChar *
 Tcl_GetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the unicode string
@@ -659,7 +659,7 @@ Tcl_GetUnicodeFromObj(
     return stringPtr->unicode;
 }
 Tcl_UniChar *
-Tcl_GetUnicodeFromObj2(
+TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the unicode string
 				 * for. */
     size_t *lengthPtr)		/* If non-NULL, the location where the string
@@ -1404,7 +1404,7 @@ Tcl_AppendObjToObj(
 	 */
 
 	TclAppendBytesToByteArray(objPtr,
-		Tcl_GetByteArrayFromObj2(appendObjPtr, NULL), lengthSrc);
+		TclGetByteArrayFromObj(appendObjPtr, NULL), lengthSrc);
 	return;
     }
 
@@ -2944,7 +2944,7 @@ TclStringRepeat(
 	    done *= 2;
 	}
 	TclAppendBytesToByteArray(objResultPtr,
-		Tcl_GetByteArrayFromObj2(objResultPtr, NULL),
+		TclGetByteArrayFromObj(objResultPtr, NULL),
 		(count - done) * length);
     } else if (unichar) {
 	/*
@@ -3817,7 +3817,7 @@ TclStringReverse(
 	if (!inPlace || Tcl_IsShared(objPtr)) {
 	    objPtr = Tcl_NewByteArrayObj(NULL, numBytes);
 	}
-	ReverseBytes(Tcl_GetByteArrayFromObj2(objPtr, NULL), from, numBytes);
+	ReverseBytes(TclGetByteArrayFromObj(objPtr, NULL), from, numBytes);
 	return objPtr;
     }
 

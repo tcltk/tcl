@@ -3,7 +3,7 @@
  *
  *	This file contains the initializers for the Tcl stub vectors.
  *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1894,9 +1894,9 @@ const TclStubs tclStubs = {
     Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
-    Tcl_GetStringFromObj2, /* 649 */
-    Tcl_GetUnicodeFromObj2, /* 650 */
-    Tcl_GetByteArrayFromObj2, /* 651 */
+    TclGetStringFromObj, /* 649 */
+    TclGetUnicodeFromObj, /* 650 */
+    TclGetByteArrayFromObj, /* 651 */
 };
 
 /* !END!: Do not edit above this line. */

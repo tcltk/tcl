@@ -2404,13 +2404,13 @@ declare 648 {
 
 # TIP #481
 declare 649 {
-    char *Tcl_GetStringFromObj2(Tcl_Obj *objPtr, size_t *lengthPtr)
+    char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 declare 650 {
-    Tcl_UniChar *Tcl_GetUnicodeFromObj2(Tcl_Obj *objPtr, size_t *lengthPtr)
+    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 declare 651 {
-    unsigned char *Tcl_GetByteArrayFromObj2(Tcl_Obj *objPtr, size_t *lengthPtr)
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
