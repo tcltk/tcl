@@ -1808,8 +1808,8 @@ $<
 TCLNMAKECONFIG = "$(_TCLDIR)\lib\nmake\tcl.nmake"
 !endif
 !else # !$(TCLINSTALL) - building against Tcl source
-!if exist("$(OUT_DIR)\tcl.nmake")
-TCLNMAKECONFIG	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl.nmake""
+!if exist("$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl.nmake")
+TCLNMAKECONFIG	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl.nmake"
 !endif
 !endif # TCLINSTALL
 
