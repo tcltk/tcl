@@ -27,10 +27,10 @@ catch {
     ::tcltest::loadTestedCommands
     package require -exact tcl::test [info patchlevel]
     set ::ddever [package require dde]
-    set ::ddelib [lindex [package ifneeded dde $::ddever] 1]
+    set ::ddelib [info loaded {} Dde]
     set ::regver  [package require registry]
-    set ::reglib [lindex [package ifneeded registry $::regver] 1]
-    testConstraint loaddll 1
+    set ::reglib [info loaded {} Registry]
+    testConstraint loaddll [expr {$::ddelib ne "" && $::reglib ne ""}]
 }
 
 # Test for commands defined in tcl::test package

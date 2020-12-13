@@ -4,8 +4,8 @@
  *	Implementation of the ZIP filesystem used in TIP 430
  *	Adapted from the implentation for AndroWish.
  *
- * Copyright (c) 2016-2017 Sean Woods <yoda@etoyoc.com>
- * Copyright (c) 2013-2015 Christian Werner <chw@ch-werner.de>
+ * Copyright © 2016-2017 Sean Woods <yoda@etoyoc.com>
+ * Copyright © 2013-2015 Christian Werner <chw@ch-werner.de>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

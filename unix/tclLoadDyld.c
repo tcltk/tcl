@@ -6,8 +6,8 @@
  *	Original version of his file (superseded long ago) provided by
  *	Wilfredo Sanchez (wsanchez@apple.com).
  *
- * Copyright (c) 1995 Apple Computer, Inc.
- * Copyright (c) 2001-2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 1995 Apple Computer, Inc.
+ * Copyright © 2001-2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
