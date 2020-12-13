@@ -4,7 +4,7 @@
  *	This file provides the generic portion (those that are the same on all
  *	platforms) of Tcl's dynamic loading facilities.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -296,60 +296,59 @@ Tcl_LoadObjCmd(
 	if (packageName != NULL) {
 	    Tcl_DStringAppend(&pkgName, packageName, -1);
 	} else {
-	    int retc;
+	    Tcl_Obj *splitPtr, *pkgGuessPtr;
+	    int pElements;
+	    const char *pkgGuess;
 
 	    /*
 	     * Threading note - this call used to be protected by a mutex.
 	     */
 
-	    retc = TclGuessPackageName(fullFileName, &pkgName);
-	    if (!retc) {
-		Tcl_Obj *splitPtr, *pkgGuessPtr;
-		int pElements;
-		const char *pkgGuess;
+	    /*
+	     * The platform-specific code couldn't figure out the module
+	     * name. Make a guess by taking the last element of the file
+	     * name, stripping off any leading "lib", and then using all
+	     * of the alphabetic and underline characters that follow
+	     * that.
+	     */
 
-		/*
-		 * The platform-specific code couldn't figure out the module
-		 * name. Make a guess by taking the last element of the file
-		 * name, stripping off any leading "lib", and then using all
-		 * of the alphabetic and underline characters that follow
-		 * that.
-		 */
-
-		splitPtr = Tcl_FSSplitPath(objv[1], &pElements);
-		Tcl_ListObjIndex(NULL, splitPtr, pElements -1, &pkgGuessPtr);
-		pkgGuess = Tcl_GetString(pkgGuessPtr);
-		if ((pkgGuess[0] == 'l') && (pkgGuess[1] == 'i')
-			&& (pkgGuess[2] == 'b')) {
-		    pkgGuess += 3;
-		}
-#ifdef __CYGWIN__
-		if ((pkgGuess[0] == 'c') && (pkgGuess[1] == 'y')
-			&& (pkgGuess[2] == 'g')) {
-		    pkgGuess += 3;
-		}
-#endif /* __CYGWIN__ */
-		for (p = pkgGuess; *p != 0; p += offset) {
-		    offset = TclUtfToUniChar(p, &ch);
-		    if ((ch > 0x100)
-			    || !(isalpha(UCHAR(ch)) /* INTL: ISO only */
-				    || (UCHAR(ch) == '_'))) {
-			break;
-		    }
-		}
-		if (p == pkgGuess) {
-		    Tcl_DecrRefCount(splitPtr);
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "couldn't figure out package name for %s",
-			    fullFileName));
-		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
-			    "WHATPACKAGE", NULL);
-		    code = TCL_ERROR;
-		    goto done;
-		}
-		Tcl_DStringAppend(&pkgName, pkgGuess, p - pkgGuess);
-		Tcl_DecrRefCount(splitPtr);
+	    splitPtr = Tcl_FSSplitPath(objv[1], &pElements);
+	    Tcl_ListObjIndex(NULL, splitPtr, pElements -1, &pkgGuessPtr);
+	    pkgGuess = Tcl_GetString(pkgGuessPtr);
+	    if ((pkgGuess[0] == 'l') && (pkgGuess[1] == 'i')
+		    && (pkgGuess[2] == 'b')) {
+		pkgGuess += 3;
 	    }
+#ifdef __CYGWIN__
+	    else if ((pkgGuess[0] == 'c') && (pkgGuess[1] == 'y')
+		    && (pkgGuess[2] == 'g')) {
+		pkgGuess += 3;
+	    }
+#endif /* __CYGWIN__ */
+	    if ((pkgGuess[0] == 't') && (pkgGuess[1] == 'c')
+		    && (pkgGuess[2] == 'l')) {
+		pkgGuess += 3;
+	    }
+	    for (p = pkgGuess; *p != 0; p += offset) {
+		offset = TclUtfToUniChar(p, &ch);
+		if ((ch > 0x100)
+			|| !(isalpha(UCHAR(ch)) /* INTL: ISO only */
+				|| (UCHAR(ch) == '_'))) {
+		    break;
+		}
+	    }
+	    if (p == pkgGuess) {
+		Tcl_DecrRefCount(splitPtr);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't figure out package name for %s",
+			fullFileName));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
+			"WHATPACKAGE", NULL);
+		code = TCL_ERROR;
+		goto done;
+	    }
+	    Tcl_DStringAppend(&pkgName, pkgGuess, p - pkgGuess);
+	    Tcl_DecrRefCount(splitPtr);
 	}
 
 	/*
@@ -1015,7 +1014,7 @@ Tcl_StaticPackage(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetLoadedPackages, TclGetLoadedPackagesEx --
+ * TclGetLoadedPackagesEx --
  *
  *	This function returns information about all of the files that are
  *	loaded (either in a particular interpreter, or for all interpreters).
@@ -1032,18 +1031,6 @@ Tcl_StaticPackage(
  *
  *----------------------------------------------------------------------
  */
-
-int
-TclGetLoadedPackages(
-    Tcl_Interp *interp,		/* Interpreter in which to return information
-				 * or error message. */
-    const char *targetName)	/* Name of target interpreter or NULL. If
-				 * NULL, return info about all interps;
-				 * otherwise, just return info about this
-				 * interpreter. */
-{
-    return TclGetLoadedPackagesEx(interp, targetName, NULL);
-}
 
 int
 TclGetLoadedPackagesEx(

@@ -3,7 +3,7 @@
  *
  *	This file contains the initializers for the Tcl stub vectors.
  *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -67,6 +67,8 @@
 #undef TclWinNToHS
 #undef TclStaticPackage
 #undef Tcl_BackgroundError
+#undef TclGuessPackageName
+#undef TclGetLoadedPackages
 #define TclStaticPackage Tcl_StaticPackage
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
@@ -261,7 +263,27 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define Tcl_ChannelCloseProc 0
 #   define Tcl_Close 0
 #   define Tcl_MacOSXOpenBundleResources 0
+#   define TclGuessPackageName 0
+#   define TclGetLoadedPackages 0
 #else
+
+#define TclGuessPackageName guessPackageName
+static int TclGuessPackageName(
+    TCL_UNUSED(const char *),
+    TCL_UNUSED(Tcl_DString *)) {
+    return 0;
+}
+#define TclGetLoadedPackages getLoadedPackages
+static int TclGetLoadedPackages(
+    Tcl_Interp *interp,		/* Interpreter in which to return information
+				 * or error message. */
+    const char *targetName)	/* Name of target interpreter or NULL. If
+				 * NULL, return info about all interps;
+				 * otherwise, just return info about this
+				 * interpreter. */
+{
+    return TclGetLoadedPackagesEx(interp, targetName, NULL);
+}
 
 mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
     mp_digit d2;

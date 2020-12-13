@@ -3,7 +3,7 @@
  *
  *	Routines for manipulating UTF-8 strings.
  *
- * Copyright (c) 1997-1998 Sun Microsystems, Inc.
+ * Copyright © 1997-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -2629,12 +2629,25 @@ TclUniCharToUCS4(
 			 * by the Tcl_UniChar string. */
 {
     if (((src[0] & 0xFC00) == 0xD800) && ((src[1] & 0xFC00) == 0xDC00)) {
-	*ucs4Ptr = (((src[0] & 0x3FF) << 10) | (src[01] & 0x3FF)) + 0x10000;
+	*ucs4Ptr = (((src[0] & 0x3FF) << 10) | (src[1] & 0x3FF)) + 0x10000;
 	return 2;
     }
     *ucs4Ptr = src[0];
     return 1;
 }
+
+const Tcl_UniChar *TclUCS4Prev(const Tcl_UniChar *src, const Tcl_UniChar *ptr) {
+    if (src <= ptr + 1) {
+    	return ptr;
+    }
+    if (((src[-1] & 0xFC00) == 0xDC00) && ((src[-2] & 0xFC00) == 0xD800)) {
+	return src - 2;
+    }
+    return src - 1;
+}
+
+
+
 #endif
 
 /*

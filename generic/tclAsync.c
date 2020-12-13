@@ -5,8 +5,8 @@
  *	in a safe way. The code here doesn't actually handle signals, though.
  *	This code is based on proposals made by Mark Diekhans and Don Libes.
  *
- * Copyright (c) 1993 The Regents of the University of California.
- * Copyright (c) 1994 Sun Microsystems, Inc.
+ * Copyright © 1993 The Regents of the University of California.
+ * Copyright © 1994 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

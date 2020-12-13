@@ -4,8 +4,8 @@
 # in the reusing context.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 2011 Gustaf Neumann <gustaf.neumann@wu.ac.at>
-# Copyright (c) 2011 Stefan Sobernig <stefan.sobernig@wu.ac.at>
+# Copyright © 2011 Gustaf Neumann <gustaf.neumann@wu.ac.at>
+# Copyright © 2011 Stefan Sobernig <stefan.sobernig@wu.ac.at>
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.

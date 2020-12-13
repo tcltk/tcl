@@ -4,8 +4,8 @@
  *	This file contains the implementation of the "binary" Tcl built-in
  *	command and the Tcl binary data object.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1518,7 +1518,8 @@ BinaryScanCmd(
 	}
 	switch (cmd) {
 	case 'a':
-	case 'A': {
+	case 'A':
+	case 'C': {
 	    unsigned char *src;
 
 	    if (arg >= objc) {
@@ -1540,10 +1541,18 @@ BinaryScanCmd(
 	    size = count;
 
 	    /*
-	     * Trim trailing nulls and spaces, if necessary.
+	     * Apply C string semantics or trim trailing
+	     * nulls and spaces, if necessary.
 	     */
 
-	    if (cmd == 'A') {
+	    if (cmd == 'C') {
+		for (i = 0; i < size; i++) {
+		    if (src[i] == '\0') {
+			size = i;
+			break;
+		    }
+		}
+	    } else if (cmd == 'A') {
 		while (size > 0) {
 		    if (src[size - 1] != '\0' && src[size - 1] != ' ') {
 			break;

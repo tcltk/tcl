@@ -5,8 +5,8 @@
  *	general-purpose fashion that can be used for many different purposes,
  *	including compilation, direct execution, code analysis, etc.
  *
- * Copyright (c) 1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 Ajuba Solutions.
+ * Copyright © 1997 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Ajuba Solutions.
  * Contributions from Don Porter, NIST, 2002. (not subject to US copyright)
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -789,7 +789,7 @@ TclParseBackslash(
 				 * written. At most 4 bytes will be written there. */
 {
     const char *p = src+1;
-    Tcl_UniChar unichar = 0;
+    int unichar;
     int result;
     int count;
     char buf[4] = "";
@@ -935,14 +935,14 @@ TclParseBackslash(
 	 * #217987] test subst-3.2
 	 */
 
-	if (Tcl_UtfCharComplete(p, numBytes - 1)) {
-	    count = TclUtfToUniChar(p, &unichar) + 1;	/* +1 for '\' */
+	if (TclUCS4Complete(p, numBytes - 1)) {
+	    count = TclUtfToUCS4(p, &unichar) + 1;	/* +1 for '\' */
 	} else {
-	    char utfBytes[4];
+	    char utfBytes[8];
 
 	    memcpy(utfBytes, p, numBytes - 1);
 	    utfBytes[numBytes - 1] = '\0';
-	    count = TclUtfToUniChar(utfBytes, &unichar) + 1;
+	    count = TclUtfToUCS4(utfBytes, &unichar) + 1;
 	}
 	result = unichar;
 	break;

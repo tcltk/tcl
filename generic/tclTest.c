@@ -6,10 +6,10 @@
  *	commands are not normally included in Tcl applications; they're only
  *	used for testing.
  *
- * Copyright (c) 1993-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 Ajuba Solutions.
- * Copyright (c) 2003 by Kevin B. Kenny.  All rights reserved.
+ * Copyright © 1993-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Ajuba Solutions.
+ * Copyright © 2003 Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -6974,8 +6974,10 @@ TestUtfNextCmd(
 	/* Run Tcl_UtfNext with many more possible bytes at src[end], all should give the same result */
 	result = Tcl_UtfNext(buffer + 1);
 	if (first != result) {
-	    first = buffer;
-	    break;
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Tcl_UtfNext is not supposed to read src[end]\n"
+		    "Different result when src[end] is %#x", UCHAR(p[-1])));
+	    return TCL_ERROR;
 	}
     }
 

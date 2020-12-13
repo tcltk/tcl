@@ -4,7 +4,7 @@
 # avoids recursive calls to TEBC. Only the NRE behaviour is tested here, the
 # actual command functionality is tested in the specific test file.
 #
-# Copyright (c) 2008 by Miguel Sofer.
+# Copyright © 2008 Miguel Sofer.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.

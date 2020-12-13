@@ -7,7 +7,7 @@
  *	into strings of digits, and procedures for interconversion among
  *	'double' and 'mp_int' types.
  *
- * Copyright (c) 2005 by Kevin B. Kenny. All rights reserved.
+ * Copyright © 2005 Kevin B. Kenny. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -2985,7 +2985,7 @@ QuickConversion(
 	}
 	ilim = ilim1;
 	--k;
-	d *= 10.0;
+	d = d * 10.0;
 	++ieps;
     }
 
@@ -3002,7 +3002,7 @@ QuickConversion(
 
     retval = (char *)ckalloc(len + 1);
     if (ilim == 0) {
-	d -= 5.;
+	d = d - 5.;
 	if (d > eps.d) {
 	    *retval = '1';
 	    *decpt = k;

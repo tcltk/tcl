@@ -4,7 +4,7 @@
  *	This file implements the "tcl::process" ensemble for subprocess
  *	management as defined by TIP #462.
  *
- * Copyright (c) 2017 Frederic Bonnet.
+ * Copyright © 2017 Frederic Bonnet.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

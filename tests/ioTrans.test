@@ -5,7 +5,7 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 2007 Andreas Kupries <andreask@activestate.com>
+# Copyright © 2007 Andreas Kupries <andreask@activestate.com>
 #                                    <akupries@shaw.ca>
 #
 # See the file "license.terms" for information on usage and redistribution

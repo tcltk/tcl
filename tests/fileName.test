@@ -4,8 +4,8 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# Copyright (c) 1999 by Scriptics Corporation.
+# Copyright © 1995-1996 Sun Microsystems, Inc.
+# Copyright © 1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -31,7 +31,7 @@ if {[testConstraint win]} {
     testConstraint symbolicLinkFile 0
     testConstraint sharedCdrive [expr {![catch {cd //[info hostname]/c}]}]
 }
-testConstraint notWine [expr {$::tcl_platform(platform) ne "windows" || ![info exists ::env(TRAVIS_OS_NAME)] || ![string match linux $::env(TRAVIS_OS_NAME)]}]
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 # This match compares the first two words of the result. If the wanted result
 # is "equal", then this is successful if the words are equal. If the wanted
 # result is "not equal", then this is successful if the words are different.
@@ -1329,7 +1329,7 @@ unset globname
 # AFS, "000" protection doesn't prevent access by owner, so the following test
 # is not portable.
 
-catch {file attributes globTest/a1 -permissions 0000}
+catch {file attributes globTest/a1 -permissions 0}
 test filename-15.1 {unix specific globbing} {unix nonPortable} {
     string tolower [list [catch {glob globTest/a1/*} msg] $msg $errorCode]
 } {1 {couldn't read directory "globtest/a1": permission denied} {posix eacces {permission denied}}}
@@ -1341,7 +1341,7 @@ test filename-15.3 {unix specific no complain: no errors, good result} \
     # test fails because if an error occurs, the interp's result is reset...
     glob -nocomplain globTest/a2 globTest/a1/* globTest/a3
 } {globTest/a2 globTest/a3}
-catch {file attributes globTest/a1 -permissions 0755}
+catch {file attributes globTest/a1 -permissions 0o755}
 test filename-15.4 {unix specific no complain: no errors, good result} \
 	{unix nonPortable} {
     # test fails because if an error occurs, the interp's result is reset...

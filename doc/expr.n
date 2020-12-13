@@ -1,7 +1,7 @@
 '\"
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-2000 Sun Microsystems, Inc.
-'\" Copyright (c) 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved
+'\" Copyright (c) 2005 Kevin B. Kenny <kennykb@acm.org>. All rights reserved
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -41,6 +41,12 @@ When an expression evaluates to an integer, the value is the decimal form of
 the integer, and when an expression evaluates to a floating-point number, the
 value is the form produced by the \fB%g\fR format specifier of Tcl's
 \fBformat\fR command.
+.PP
+.VS "TIP 582"
+You can use \fB#\fR at any point in the expression (except inside double
+quotes or braces) to start a comment. Comments last to the end of the line or
+the end of the expression, whichever comes first.
+.VE "TIP 582"
 .SS OPERANDS
 .PP
 An expression consists of a combination of operands, operators, parentheses and
@@ -487,7 +493,9 @@ value of true:
 .PP
 .CS
 set isTrue [\fBexpr\fR {
+    # Does the environment variable exist, and...
     [info exists ::env(SOME_ENV_VAR)] &&
+    # ...does it contain a proper true value?
     [string is true -strict $::env(SOME_ENV_VAR)]
 }]
 .CE
@@ -506,7 +514,7 @@ arithmetic, boolean, compare, expression, fuzzy comparison, integer value
 .nf
 Copyright \(co 1993 The Regents of the University of California.
 Copyright \(co 1994-2000 Sun Microsystems Incorporated.
-Copyright \(co 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
+Copyright \(co 2005 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
 .fi
 '\" Local Variables:
 '\" mode: nroff

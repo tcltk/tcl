@@ -6,9 +6,9 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1994 The Regents of the University of California.
-# Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1994 The Regents of the University of California.
+# Copyright © 1994-1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -37,7 +37,7 @@ namespace eval ::tcl::test::io {
     catch {
 	::tcltest::loadTestedCommands
 	package require -exact tcl::test [info patchlevel]
-	set ::tcltestlib [lindex [package ifneeded tcl::test [info patchlevel]] 1]
+	set ::tcltestlib [info loaded {} Tcltest]
     }
     package require tcltests
 
@@ -47,7 +47,8 @@ namespace eval ::tcl::test::io {
     testConstraint testchannelevent [llength [info commands testchannelevent]]
     testConstraint testmainthread   [llength [info commands testmainthread]]
     testConstraint testservicemode  [llength [info commands testservicemode]]
-    testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+    testConstraint notWinCI       [expr {
+	$::tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
     testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
 
     # You need a *very* special environment to do some tests.  In particular,
@@ -1886,7 +1887,7 @@ test chan-io-20.3 {Tcl_CreateChannel: initial settings} -constraints {unix} -bod
 } -result {{{} {}} {auto lf}}
 test chan-io-20.5 {Tcl_CreateChannel: install channel in empty slot} -setup {
     set path(stdout) [makeFile {} stdout]
-} -constraints {stdio knownMsvcBug} -body {
+} -constraints {stdio notWinCI} -body {
     set f [open $path(script) w]
     chan puts -nonewline $f {
 	chan close stdout
@@ -2796,7 +2797,7 @@ test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} -s
 	    chan puts $s $l
 	}
     }
-} -constraints {socket tempNotMac fileevent knownMsvcBug} -body {
+} -constraints {socket tempNotMac fileevent notWinCI} -body {
     proc accept {s a p} {
 	variable x
 	chan event $s readable [namespace code [list readit $s]]
@@ -5338,9 +5339,9 @@ test chan-io-40.1 {POSIX open access modes: RDWR} -setup {
 test chan-io-40.2 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -constraints {unix} -body {
-    set f [open $path(test3) {WRONLY CREAT} 0600]
+    set f [open $path(test3) {WRONLY CREAT} 0o600]
     file stat $path(test3) stats
-    set x [format "%#o" [expr {$stats(mode) & 0o777}]]
+    set x [format 0o%03o [expr {$stats(mode) & 0o777}]]
     chan puts $f "line 1"
     chan close $f
     set f [open $path(test3) r]
@@ -5354,8 +5355,8 @@ test chan-io-40.3 {POSIX open access modes: CREAT} -setup {
     # This test only works if your umask is 2, like ouster's.
     chan close [open $path(test3) {WRONLY CREAT}]
     file stat $path(test3) stats
-    format "%#o" [expr {$stats(mode) & 0o777}]
-} -result [format %#5o [expr {0o666 & ~ $umaskValue}]]
+    format 0o%03o [expr {$stats(mode) & 0o777}]
+} -result [format 0o%03o [expr {0o666 & ~ $umaskValue}]]
 test chan-io-40.4 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -body {
