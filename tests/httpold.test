@@ -33,18 +33,17 @@ if {[catch {package require http 1.0}]} {
     }
 }
 
-if {$::tcl_platform(os) eq "Darwin"} {
-    # Name resolution often a problem on OSX; not focus of HTTP package anyway
-    set HOST localhost
-} else {
-    set HOST [info hostname]
-}
+# Do not use [info hostname].
+# Name resolution is often a problem on OSX; not focus of HTTP package anyway.
+# Also a problem on other platforms for http-4.14 (test with bad port number).
+set HOST localhost
 
 set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
 catch {unset data}
 
 ##
 ## The httpd script implement a stub http server
+## Sourcing httpd overwrites the value of HOST.
 ##
 source [file join [file dirname [info script]] httpd]
 
