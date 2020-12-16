@@ -185,12 +185,12 @@ TclWinInit(
     GetVersionExW(&os);
 
     /*
-     * We no longer support Win32s or Win9x or Windows CE, so just in case
-     * someone manages to get a runtime there, make sure they know that.
+     * We no longer support Win32s or Win9x or Windows CE or Windows XP, so just
+     * in case someone manages to get a runtime there, make sure they know that.
      */
 
     if (os.dwPlatformId != VER_PLATFORM_WIN32_NT) {
-	Tcl_Panic("Windows NT is the only supported platform");
+	Tcl_Panic("Windows 7 is the minimum supported platform");
     }
 }
 

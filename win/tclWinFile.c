@@ -264,12 +264,7 @@ WinLink(
 
 	    TclWinConvertError(GetLastError());
 	} else if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
-	    if (!tclWinProcs.createSymbolicLink) {
-		/*
-		 * Can't symlink files.
-		 */
-		Tcl_SetErrno(ENOTDIR);
-	    } else if (tclWinProcs.createSymbolicLink(linkSourcePath, linkTargetPath,
+	    if (CreateSymbolicLinkW(linkSourcePath, linkTargetPath,
 		    0x2 /* SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */)) {
 		/*
 		 * Success!

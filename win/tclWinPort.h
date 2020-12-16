@@ -26,14 +26,14 @@
 /*
  * We must specify the lower version we intend to support.
  *
- * WINVER = 0x0501 means Windows XP and above
+ * WINVER = 0x0601 means Windows 7 and above
  */
 
 #ifndef WINVER
-#   define WINVER 0x0501
+#   define WINVER 0x0601
 #endif
 #ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0501
+#   define _WIN32_WINNT 0x0601
 #endif
 
 #define WIN32_LEAN_AND_MEAN
