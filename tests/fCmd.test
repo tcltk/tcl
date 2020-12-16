@@ -70,7 +70,8 @@ if {[testConstraint win]} {
     if {$::tcl_platform(osVersion) >= 5.0} {
 	if {$::tcl_platform(osVersion) >= 10.0} {
 	    testConstraint win10 1
-	} elseif {$::tcl_platform(osVersion) >= 6.0} {
+	}
+	if {$::tcl_platform(osVersion) >= 6.0} {
 	    testConstraint winVista 1
 	} else {
 	    testConstraint win2000orXP 1
