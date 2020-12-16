@@ -24,6 +24,7 @@ testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testchmod [llength [info commands testchmod]]
 testConstraint winVista 0
 testConstraint winXP 0
+testConstraint win10 0
 # Don't know how to determine this constraint correctly
 testConstraint notNetworkFilesystem 0
 testConstraint reg 0
@@ -67,9 +68,14 @@ if {[testConstraint unix]} {
 # Also used in winFCmd...
 if {[testConstraint win]} {
     if {$::tcl_platform(osVersion) >= 5.0} {
-	testConstraint winVista 1
-    } else {
-	testConstraint winXP 1
+	if {$::tcl_platform(osVersion) >= 10.0} {
+	    testConstraint win10 1
+	}
+	if {$::tcl_platform(osVersion) >= 6.0} {
+	    testConstraint winVista 1
+	} else {
+	    testConstraint win2000orXP 1
+	}
     }
 }
 
@@ -2354,13 +2360,13 @@ test fCmd-28.7 {file link: source already exists} -setup {
 } -returnCodes error -cleanup {
     cd [workingDirectory]
 } -result {could not create new link "abc.file": that path already exists}
-test fCmd-28.8 {file link} -constraints {linkFile win} -setup {
+test fCmd-28.8 {file link} -constraints {linkFile win10} -setup {
     cd [temporaryDirectory]
 } -body {
     file link -symbolic abc.link abc.file
-} -returnCodes error -cleanup {
+} -cleanup {
     cd [workingDirectory]
-} -result {could not create new link "abc.link" pointing to "abc.file": not a directory}
+} -result abc.file
 test fCmd-28.9 {file link: success with file} -constraints {linkFile} -setup {
     cd [temporaryDirectory]
     file delete -force abc.link
