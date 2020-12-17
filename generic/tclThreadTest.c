@@ -370,7 +370,7 @@ ThreadObjCmd(
 	} else {
 	    char buf[20];
 
-	    sprintf(buf, "%lld", id);
+	    sprintf(buf, "%" TCL_LL_MODIFIER "d", id);
 	    Tcl_AppendResult(interp, "cannot join thread ", buf, NULL);
 	}
 	return result;
