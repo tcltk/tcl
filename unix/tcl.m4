@@ -2355,23 +2355,16 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
     AC_MSG_CHECKING([for 64-bit integer type])
     AC_CACHE_VAL(tcl_cv_type_64bit,[
 	tcl_cv_type_64bit=none
-	# See if the compiler knows natively about __int64
-	AC_TRY_COMPILE(,[__int64 value = (__int64) 0;],
-	    tcl_type_64bit=__int64, tcl_type_64bit="long long")
 	# See if we could use long anyway  Note that we substitute in the
 	# type that is our current guess for a 64-bit type inside this check
 	# program, so it should be modified only carefully...
         AC_TRY_COMPILE(,[switch (0) {
-            case 1: case (sizeof(]${tcl_type_64bit}[)==sizeof(long)): ;
-        }],tcl_cv_type_64bit=${tcl_type_64bit})])
+            case 1: case (sizeof(long long)==sizeof(long)): ;
+        }],tcl_cv_type_64bit="long long")])
     if test "${tcl_cv_type_64bit}" = none ; then
 	AC_DEFINE(TCL_WIDE_INT_IS_LONG, 1, [Do 'long' and 'long long' have the same size (64-bit)?])
 	AC_MSG_RESULT([yes])
     else
-	AC_DEFINE_UNQUOTED(TCL_WIDE_INT_TYPE,${tcl_cv_type_64bit},
-	    [What type should be used to define wide integers?])
-	AC_MSG_RESULT([${tcl_cv_type_64bit}])
-
 	# Now check for auxiliary declarations
 	AC_CACHE_CHECK([for struct dirent64], tcl_cv_struct_dirent64,[
 	    AC_TRY_COMPILE([#include <sys/types.h>
