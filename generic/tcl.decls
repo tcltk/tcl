@@ -2403,13 +2403,13 @@ declare 648 {
 }
 
 # TIP #481
-declare 649 {
+declare 651 {
     char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
-declare 650 {
+declare 652 {
     Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
-declare 651 {
+declare 653 {
     unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 

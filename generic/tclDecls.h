@@ -1920,13 +1920,15 @@ EXTERN char *		Tcl_UniCharToUtfDString(const int *uniStr,
 /* 648 */
 EXTERN int *		Tcl_UtfToUniCharDString(const char *src, int length,
 				Tcl_DString *dsPtr);
-/* 649 */
+/* Slot 649 is reserved */
+/* Slot 650 is reserved */
+/* 651 */
 EXTERN char *		TclGetStringFromObj(Tcl_Obj *objPtr,
 				size_t *lengthPtr);
-/* 650 */
+/* 652 */
 EXTERN Tcl_UniChar *	TclGetUnicodeFromObj(Tcl_Obj *objPtr,
 				size_t *lengthPtr);
-/* 651 */
+/* 653 */
 EXTERN unsigned char *	TclGetByteArrayFromObj(Tcl_Obj *objPtr,
 				size_t *lengthPtr);
 
@@ -2613,9 +2615,11 @@ typedef struct TclStubs {
     int (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 646 */
     char * (*tcl_UniCharToUtfDString) (const int *uniStr, int uniLength, Tcl_DString *dsPtr); /* 647 */
     int * (*tcl_UtfToUniCharDString) (const char *src, int length, Tcl_DString *dsPtr); /* 648 */
-    char * (*tclGetStringFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 649 */
-    Tcl_UniChar * (*tclGetUnicodeFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 650 */
-    unsigned char * (*tclGetByteArrayFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 651 */
+    void (*reserved649)(void);
+    void (*reserved650)(void);
+    char * (*tclGetStringFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 651 */
+    Tcl_UniChar * (*tclGetUnicodeFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 652 */
+    unsigned char * (*tclGetByteArrayFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 653 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3944,12 +3948,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UniCharToUtfDString) /* 647 */
 #define Tcl_UtfToUniCharDString \
 	(tclStubsPtr->tcl_UtfToUniCharDString) /* 648 */
+/* Slot 649 is reserved */
+/* Slot 650 is reserved */
 #define TclGetStringFromObj \
-	(tclStubsPtr->tclGetStringFromObj) /* 649 */
+	(tclStubsPtr->tclGetStringFromObj) /* 651 */
 #define TclGetUnicodeFromObj \
-	(tclStubsPtr->tclGetUnicodeFromObj) /* 650 */
+	(tclStubsPtr->tclGetUnicodeFromObj) /* 652 */
 #define TclGetByteArrayFromObj \
-	(tclStubsPtr->tclGetByteArrayFromObj) /* 651 */
+	(tclStubsPtr->tclGetByteArrayFromObj) /* 653 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
