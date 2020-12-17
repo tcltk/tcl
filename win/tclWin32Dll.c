@@ -25,14 +25,6 @@
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
 
 /*
- * VC++ 5.x has no 'cpuid' assembler instruction, so we must emulate it
- */
-
-#if defined(_MSC_VER) && (_MSC_VER <= 1100) && defined (_M_IX86)
-#define cpuid	__asm __emit 0fh __asm __emit 0a2h
-#endif
-
-/*
  * The following declaration is for the VC++ DLL entry point.
  */
 

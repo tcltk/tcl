@@ -454,12 +454,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 
 #if defined(_MSC_VER) || defined(__MSVCRT__)
 #   define environ _environ
-#   if defined(_MSC_VER) && (_MSC_VER < 1600)
-#	define hypot _hypot
-#   endif
 #   define exception _exception
 #   undef EDEADLOCK
-#   if defined(_MSC_VER) && (_MSC_VER >= 1700)
+#   if defined(_MSC_VER)
 #	define timezone _timezone
 #   endif
 #endif /* _MSC_VER || __MSVCRT__ */
@@ -480,18 +477,11 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 
-/*
- * MSVC 8.0 started to mark many standard C library functions depreciated
- * including the *printf family and others. Tell it to shut up.
- * (_MSC_VER is 1200 for VC6, 1300 or 1310 for vc7.net, 1400 for 8.0)
- */
 #if defined(_MSC_VER)
 #   pragma warning(disable:4146)
 #   pragma warning(disable:4244)
-#   if _MSC_VER >= 1400
-#	pragma warning(disable:4267)
-#	pragma warning(disable:4996)
-#   endif
+#   pragma warning(disable:4267)
+#   pragma warning(disable:4996)
 #endif
 
 /*
