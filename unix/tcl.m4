@@ -28,9 +28,9 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 	# we reset no_tcl in case something fails here
 	no_tcl=true
 	AC_ARG_WITH(tcl,
-	    AC_HELP_STRING([--with-tcl],
+	    AS_HELP_STRING([--with-tcl],
 		[directory containing tcl configuration (tclConfig.sh)]),
-	    with_tclconfig="${withval}")
+	    [with_tclconfig="${withval}"])
 	AC_MSG_CHECKING([for Tcl configuration])
 	AC_CACHE_VAL(ac_cv_c_tclconfig,[
 
@@ -161,9 +161,9 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 	# we reset no_tk in case something fails here
 	no_tk=true
 	AC_ARG_WITH(tk,
-	    AC_HELP_STRING([--with-tk],
+	    AS_HELP_STRING([--with-tk],
 		[directory containing tk configuration (tkConfig.sh)]),
-	    with_tkconfig="${withval}")
+	    [with_tkconfig="${withval}"])
 	AC_MSG_CHECKING([for Tk configuration])
 	AC_CACHE_VAL(ac_cv_c_tkconfig,[
 
@@ -508,7 +508,7 @@ AC_DEFUN([SC_BUILD_TCLSH], [
 AC_DEFUN([SC_ENABLE_SHARED], [
     AC_MSG_CHECKING([how to build libraries])
     AC_ARG_ENABLE(shared,
-	AC_HELP_STRING([--enable-shared],
+	AS_HELP_STRING([--enable-shared],
 	    [build and link with shared libraries (default: on)]),
 	[tcl_ok=$enableval], [tcl_ok=yes])
     if test "$tcl_ok" = "yes" ; then
@@ -543,7 +543,7 @@ AC_DEFUN([SC_ENABLE_FRAMEWORK], [
     if test "`uname -s`" = "Darwin" ; then
 	AC_MSG_CHECKING([how to package libraries])
 	AC_ARG_ENABLE(framework,
-	    AC_HELP_STRING([--enable-framework],
+	    AS_HELP_STRING([--enable-framework],
 		[package shared libraries in MacOSX frameworks (default: off)]),
 	    [enable_framework=$enableval], [enable_framework=no])
 	if test $enable_framework = yes; then
@@ -601,7 +601,7 @@ AC_DEFUN([SC_ENABLE_FRAMEWORK], [
 AC_DEFUN([SC_ENABLE_SYMBOLS], [
     AC_MSG_CHECKING([for build with symbols])
     AC_ARG_ENABLE(symbols,
-	AC_HELP_STRING([--enable-symbols],
+	AS_HELP_STRING([--enable-symbols],
 	    [build with debugging symbols (default: off)]),
 	[tcl_ok=$enableval], [tcl_ok=no])
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
@@ -660,7 +660,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 
 AC_DEFUN([SC_ENABLE_LANGINFO], [
     AC_ARG_ENABLE(langinfo,
-	AC_HELP_STRING([--enable-langinfo],
+	AS_HELP_STRING([--enable-langinfo],
 	    [use nl_langinfo if possible to determine encoding at startup, otherwise use old heuristic (default: on)]),
 	[langinfo_ok=$enableval], [langinfo_ok=yes])
 
@@ -712,22 +712,22 @@ AC_DEFUN([SC_ENABLE_LANGINFO], [
 AC_DEFUN([SC_CONFIG_MANPAGES], [
     AC_MSG_CHECKING([whether to use symlinks for manpages])
     AC_ARG_ENABLE(man-symlinks,
-	AC_HELP_STRING([--enable-man-symlinks],
+	AS_HELP_STRING([--enable-man-symlinks],
 	    [use symlinks for the manpages (default: off)]),
-	test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --symlinks",
-	enableval="no")
+	[test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --symlinks"],
+	[enableval="no"])
     AC_MSG_RESULT([$enableval])
 
     AC_MSG_CHECKING([whether to compress the manpages])
     AC_ARG_ENABLE(man-compression,
-	AC_HELP_STRING([--enable-man-compression=PROG],
+	AS_HELP_STRING([--enable-man-compression=PROG],
 	    [compress the manpages with PROG (default: off)]),
 	[case $enableval in
 	    yes) AC_MSG_ERROR([missing argument to --enable-man-compression]);;
 	    no)  ;;
 	    *)   MAN_FLAGS="$MAN_FLAGS --compress $enableval";;
 	esac],
-	enableval="no")
+	[enableval="no"])
     AC_MSG_RESULT([$enableval])
     if test "$enableval" != "no"; then
 	AC_MSG_CHECKING([for compressed file suffix])
@@ -741,14 +741,14 @@ AC_DEFUN([SC_CONFIG_MANPAGES], [
 
     AC_MSG_CHECKING([whether to add a package name suffix for the manpages])
     AC_ARG_ENABLE(man-suffix,
-	AC_HELP_STRING([--enable-man-suffix=STRING],
+	AS_HELP_STRING([--enable-man-suffix=STRING],
 	    [use STRING as a suffix to manpage file names (default: no, AC_PACKAGE_NAME if enabled without specifying STRING)]),
 	[case $enableval in
 	    yes) enableval="AC_PACKAGE_NAME" MAN_FLAGS="$MAN_FLAGS --suffix $enableval";;
 	    no)  ;;
 	    *)   MAN_FLAGS="$MAN_FLAGS --suffix $enableval";;
 	esac],
-	enableval="no")
+	[enableval="no"])
     AC_MSG_RESULT([$enableval])
 
     AC_SUBST(MAN_FLAGS)
@@ -884,7 +884,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     AC_MSG_CHECKING([if 64bit support is requested])
     AC_ARG_ENABLE(64bit,
-	AC_HELP_STRING([--enable-64bit],
+	AS_HELP_STRING([--enable-64bit],
 	    [enable 64bit support (default: off)]),
 	[do64bit=$enableval], [do64bit=no])
     AC_MSG_RESULT([$do64bit])
@@ -893,7 +893,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     AC_MSG_CHECKING([if 64bit Sparc VIS support is requested])
     AC_ARG_ENABLE(64bit-vis,
-	AC_HELP_STRING([--enable-64bit-vis],
+	AS_HELP_STRING([--enable-64bit-vis],
 	    [enable 64bit Sparc VIS support (default: off)]),
 	[do64bitVIS=$enableval], [do64bitVIS=no])
     AC_MSG_RESULT([$do64bitVIS])
@@ -922,7 +922,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     AC_MSG_CHECKING([if rpath support is requested])
     AC_ARG_ENABLE(rpath,
-	AC_HELP_STRING([--disable-rpath],
+	AS_HELP_STRING([--disable-rpath],
 	    [disable rpath support (default: on)]),
 	[doRpath=$enableval], [doRpath=yes])
     AC_MSG_RESULT([$doRpath])
@@ -1461,7 +1461,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    PLAT_SRCS='${MAC_OSX_SRCS}'
 	    AC_MSG_CHECKING([whether to use CoreFoundation])
 	    AC_ARG_ENABLE(corefoundation,
-		AC_HELP_STRING([--enable-corefoundation],
+		AS_HELP_STRING([--enable-corefoundation],
 		    [use CoreFoundation API on MacOSX (default: on)]),
 		[tcl_corefoundation=$enableval], [tcl_corefoundation=yes])
 	    AC_MSG_RESULT([$tcl_corefoundation])
@@ -1748,7 +1748,7 @@ dnl # preprocessing tests use only CPPFLAGS.
     # Step 4: disable dynamic loading if requested via a command-line switch.
 
     AC_ARG_ENABLE(load,
-	AC_HELP_STRING([--enable-load],
+	AS_HELP_STRING([--enable-load],
 	    [allow dynamic loading and "load" command (default: on)]),
 	[tcl_ok=$enableval], [tcl_ok=yes])
     AS_IF([test "$tcl_ok" = no], [DL_OBJS=""])
@@ -2436,9 +2436,9 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 
 AC_DEFUN([SC_TCL_CFG_ENCODING], [
     AC_ARG_WITH(encoding,
-	AC_HELP_STRING([--with-encoding],
+	AS_HELP_STRING([--with-encoding],
 	    [encoding for configuration values (default: utf-8)]),
-	with_tcencoding=${withval})
+	[with_tcencoding=${withval}])
 
     if test x"${with_tcencoding}" != x ; then
 	AC_DEFINE_UNQUOTED(TCL_CFGVAL_ENCODING,"${with_tcencoding}",

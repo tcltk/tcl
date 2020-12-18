@@ -264,11 +264,16 @@ WinLink(
 
 	    TclWinConvertError(GetLastError());
 	} else if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
-	    /*
-	     * Can't symlink files.
-	     */
+	    if (CreateSymbolicLinkW(linkSourcePath, linkTargetPath,
+		    0x2 /* SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */)) {
+		/*
+		 * Success!
+		 */
 
-	    Tcl_SetErrno(ENOTDIR);
+		return 0;
+	    }
+
+	    TclWinConvertError(GetLastError());
 	} else {
 	    Tcl_SetErrno(ENODEV);
 	}
