@@ -594,8 +594,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	AC_TRY_LINK([
 	#include <windows.h>
 	int APIENTRY wWinMain(HINSTANCE a, HINSTANCE b, LPWSTR c, int d) {return 0;}
-	],
-	[],
+	], [],
 	    ac_cv_municode=yes,
 	    ac_cv_municode=no)
 	)
@@ -907,8 +906,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		SHORT s;
 		LONG l;
 	    ],
-        tcl_cv_winnt_ignore_void=yes,
-        tcl_cv_winnt_ignore_void=no)
+	    tcl_cv_winnt_ignore_void=yes,
+	    tcl_cv_winnt_ignore_void=no)
 	)
 	if test "$tcl_cv_winnt_ignore_void" = "yes" ; then
 	    AC_DEFINE(HAVE_WINNT_IGNORE_VOID, 1,
