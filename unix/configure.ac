@@ -4,7 +4,7 @@ dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 
 AC_INIT([tcl],[8.7])
-AC_PREREQ(2.69)
+AC_PREREQ([2.69])
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
@@ -172,9 +172,9 @@ AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
 libtommath_ok=yes
 AC_ARG_WITH(system-libtommath,
-AC_HELP_STRING([--with-system-libtommath],
+AS_HELP_STRING([--with-system-libtommath],
 	[use external libtommath (default: true if available, false otherwise)]),
-	libtommath_ok=${withval})
+	[libtommath_ok=${withval}])
 if test x"${libtommath_ok}" = x -o x"${libtommath_ok}" != xno; then
     AC_CHECK_HEADER([tommath.h],[
 	AC_CHECK_TYPE([mp_int],[],[libtommath_ok=no],[#include <tommath.h>])],[
@@ -423,37 +423,9 @@ if test $tcl_cv_type_socklen_t = no; then
     AC_DEFINE(socklen_t, int, [Define as int if socklen_t is not available])
 fi
 
-AC_CHECK_TYPE([intptr_t], [
-    AC_DEFINE([HAVE_INTPTR_T], 1, [Do we have the intptr_t type?])], [
-    AC_CACHE_CHECK([for pointer-size signed integer type], tcl_cv_intptr_t, [
-    for tcl_cv_intptr_t in "int" "long" "long long" none; do
-	if test "$tcl_cv_intptr_t" != none; then
-	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
-		    [[sizeof (void *) <= sizeof ($tcl_cv_intptr_t)]])],
-		[tcl_ok=yes], [tcl_ok=no])
-	    test "$tcl_ok" = yes && break; fi
-    done])
-    if test "$tcl_cv_intptr_t" != none; then
-	AC_DEFINE_UNQUOTED([intptr_t], [$tcl_cv_intptr_t], [Signed integer
-	   type wide enough to hold a pointer.])
-    fi
-])
-AC_CHECK_TYPE([uintptr_t], [
-    AC_DEFINE([HAVE_UINTPTR_T], 1, [Do we have the uintptr_t type?])], [
-    AC_CACHE_CHECK([for pointer-size unsigned integer type], tcl_cv_uintptr_t, [
-    for tcl_cv_uintptr_t in "unsigned int" "unsigned long" "unsigned long long" \
-	    none; do
-	if test "$tcl_cv_uintptr_t" != none; then
-	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
-		    [[sizeof (void *) <= sizeof ($tcl_cv_uintptr_t)]])],
-		[tcl_ok=yes], [tcl_ok=no])
-	    test "$tcl_ok" = yes && break; fi
-    done])
-    if test "$tcl_cv_uintptr_t" != none; then
-	AC_DEFINE_UNQUOTED([uintptr_t], [$tcl_cv_uintptr_t], [Unsigned integer
-	   type wide enough to hold a pointer.])
-    fi
-])
+AC_CHECK_TYPES([intptr_t, uintptr_t],,,[[
+#include <stdint.h>
+]])
 
 #--------------------------------------------------------------------
 #	If a system doesn't have an opendir function (man, that's old!)
@@ -689,7 +661,7 @@ SC_BLOCKING_STYLE
 
 AC_MSG_CHECKING([whether to use dll unloading])
 AC_ARG_ENABLE(dll-unloading,
-    AC_HELP_STRING([--enable-dll-unloading],
+    AS_HELP_STRING([--enable-dll-unloading],
 	[enable the 'unload' command (default: on)]),
     [tcl_ok=$enableval], [tcl_ok=yes])
 if test $tcl_ok = yes; then
@@ -705,7 +677,7 @@ AC_MSG_RESULT([$tcl_ok])
 
 AC_MSG_CHECKING([for timezone data])
 AC_ARG_WITH(tzdata,
-    AC_HELP_STRING([--with-tzdata],
+    AS_HELP_STRING([--with-tzdata],
 	[install timezone data (default: autodetect)]),
     [tcl_ok=$withval], [tcl_ok=auto])
 #
@@ -753,7 +725,7 @@ fi
 #--------------------------------------------------------------------
 
 AC_ARG_ENABLE(dtrace,
-    AC_HELP_STRING([--enable-dtrace],
+    AS_HELP_STRING([--enable-dtrace],
 	[build with DTrace support (default: off)]),
     [tcl_ok=$enableval], [tcl_ok=no])
 if test $tcl_ok = yes; then
@@ -789,7 +761,7 @@ AC_MSG_RESULT([$tcl_ok])
 #	Zipfs support - Tip 430
 #--------------------------------------------------------------------
 AC_ARG_ENABLE(zipfs,
-    AC_HELP_STRING([--enable-zipfs],
+    AS_HELP_STRING([--enable-zipfs],
 	[build with Zipfs support (default: on)]),
     [tcl_ok=$enableval], [tcl_ok=yes])
 if test "$tcl_ok" = "yes" ; then
