@@ -1761,6 +1761,9 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	@mkdir $(DISTDIR)/libtommath
 	cp -p $(TOMMATH_SRCS) $(TOMMATH_DIR)/*.h \
 		$(DISTDIR)/libtommath
+	cp -p $(TOP_DIR)/.travis.yml $(DISTDIR)
+	mkdir -p $(DISTDIR)/.github/workflows
+	cp -p $(TOP_DIR)/.github/workflows/*.yml $(DISTDIR)/.github/workflows
 
 alldist: dist
 	rm -f $(DISTROOT)/$(DISTNAME)-src.tar.gz $(DISTROOT)/$(ZIPNAME)
