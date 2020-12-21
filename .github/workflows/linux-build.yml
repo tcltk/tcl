@@ -12,7 +12,6 @@ jobs:
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
-          - "CC=g++"
     defaults:
       run:
         shell: bash
