@@ -55,14 +55,6 @@ jobs:
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols=mem"
-# C++ build.
-    - name: "Linux/G++/Shared"
-      os: linux
-      dist: focal
-      compiler: g++
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT="CC=g++ CFLAGS=-Dregister=dont+use+register"
 # Newer/Older versions of GCC
     - name: "Linux/GCC 10/Shared"
       os: linux
@@ -140,14 +132,6 @@ jobs:
         homebrew:
           packages:
             - libtommath
-    - name: "macOS/Clang++/Xcode 12/Shared"
-      os: osx
-      osx_image: xcode12.2
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT="CC=clang++ --enable-framework --enable-dtrace CFLAGS=-Dregister=dont+use+register CPPFLAGS=-D__private_extern__=extern"
-      script:
-        - make all tcltest
 # Newer MacOS versions
     - name: "macOS/Clang/Xcode 12/Universal Apps/Shared"
       os: osx
@@ -331,15 +315,6 @@ jobs:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
       before_install: *makepreinst
-    - name: "Windows/G++/Shared"
-      os: windows
-      compiler: g++
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="CC=g++ --enable-64bit"
-      before_install: *makepreinst
-      script:
-        - make all tcltest
     - name: "Windows/GCC/Static"
       os: windows
       compiler: gcc
@@ -382,15 +357,6 @@ jobs:
         - BUILD_DIR=win
         - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
       before_install: *makepreinst
-    - name: "Windows/G++-x86/Shared"
-      os: windows
-      compiler: g++
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="CC=g++"
-      before_install: *makepreinst
-      script:
-        - make all tcltest
     - name: "Windows/GCC-x86/Static"
       os: windows
       compiler: gcc
