@@ -343,7 +343,14 @@ proc ::platform::patterns {id} {
 			lappend alt universal
 		    }
 		    x86_64  {
-			lappend alt i386-x86_64
+			if {[lindex [split $::tcl_platform(osVersion) .] 0] < 19} {
+			    set alt i386-x86_64
+			} else {
+			    set alt {}
+			}
+		    }
+		    arm  {
+			lappend alt x86_64
 		    }
 		    default { set alt {} }
 		}
@@ -365,7 +372,9 @@ proc ::platform::patterns {id} {
 		    }
 		    # Add 10.5 to 10.minor to patterns.
 		    for {set j $minor} {$j >= 5} {incr j -1} {
-			lappend res macosx${major}.${j}-${cpu}
+			if {$cpu ne "arm"} {
+			    lappend res macosx${major}.${j}-${cpu}
+			}
 			foreach a $alt {
 			    lappend res macosx${major}.${j}-$a
 			}
