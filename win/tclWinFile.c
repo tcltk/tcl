@@ -268,7 +268,7 @@ WinLink(
 		/*
 		 * Can't symlink files.
 		 */
-		Tcl_SetErrno(ENOTDIR);
+		Tcl_SetErrno(EINVAL);
 	    } else if (tclWinProcs.createSymbolicLink(linkSourcePath, linkTargetPath,
 		    0x2 /* SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */)) {
 		/*
@@ -276,9 +276,9 @@ WinLink(
 		 */
 
 		return 0;
+	    } else {
+		TclWinConvertError(GetLastError());
 	    }
-
-	    TclWinConvertError(GetLastError());
 	} else {
 	    Tcl_SetErrno(ENODEV);
 	}
