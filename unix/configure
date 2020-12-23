@@ -2430,6 +2430,7 @@ _ACEOF
 esac
 
 
+
 #--------------------------------------------------------------------
 # Supply substitutes for missing POSIX header files.  Special notes:
 #	- stdlib.h doesn't define strtol, strtoul, or
@@ -7027,7 +7028,7 @@ echo "$as_me: error: CYGWIN compile is only supported with --enable-threads" >&2
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_SUFFIX=".so"
-	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
+	    SHLIB_LD='${CC} ${CFLAGS} ${LDFLAGS} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-lroot"
 	    echo "$as_me:$LINENO: checking for inet_ntoa in -lnetwork" >&5
@@ -7428,7 +7429,7 @@ fi
 	    # get rid of the warnings.
 	    #CFLAGS_OPTIMIZE="${CFLAGS_OPTIMIZE} -D__NO_STRING_INLINES -D__NO_MATH_INLINES"
 
-	    SHLIB_LD='${CC} -shared ${CFLAGS} ${LDFLAGS}'
+	    SHLIB_LD='${CC} ${CFLAGS} ${LDFLAGS} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
@@ -7619,7 +7620,7 @@ fi
 	NetBSD-*)
 	    # NetBSD has ELF and can use 'cc -shared' to build shared libs
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
+	    SHLIB_LD='${CC} ${SHLIB_CFLAGS} -shared'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -8297,13 +8298,13 @@ fi
 	    # below.
 	    if test "$GCC" = yes; then
 
-	    	SHLIB_CFLAGS="-fPIC -melf"
-	    	LDFLAGS="$LDFLAGS -melf -Wl,-Bexport"
+		SHLIB_CFLAGS="-fPIC -melf"
+		LDFLAGS="$LDFLAGS -melf -Wl,-Bexport"
 
 else
 
-	    	SHLIB_CFLAGS="-Kpic -belf"
-	    	LDFLAGS="$LDFLAGS -belf -Wl,-Bexport"
+		SHLIB_CFLAGS="-Kpic -belf"
+		LDFLAGS="$LDFLAGS -belf -Wl,-Bexport"
 
 fi
 
@@ -8493,7 +8494,7 @@ else
 		arch=`isainfo`
 		echo "$as_me:$LINENO: checking whether to use -lsunmath for fp rounding control" >&5
 echo $ECHO_N "checking whether to use -lsunmath for fp rounding control... $ECHO_C" >&6
-		if test "$arch" = "amd64 i386"; then
+		if test "$arch" = "amd64 i386" -o "$arch" = "i386"; then
 
 			echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -8692,7 +8693,7 @@ else
 fi
 
 		case $system in
-		    SunOS-5.[1-9][0-9]*)
+		    SunOS-5.[1-9][0-9]*|SunOS-5.[7-9])
 			SHLIB_LD="\${CC} -G -z $textmode \${LDFLAGS}";;
 		    *)
 			SHLIB_LD="/usr/ccs/bin/ld -G -z $textmode";;
@@ -14004,7 +14005,7 @@ _ACEOF
 #--------------------------------------------------------------------
 
 if test "$ac_cv_cygwin" != "yes"; then
-echo "$as_me:$LINENO: checking for struct stat.st_blocks" >&5
+    echo "$as_me:$LINENO: checking for struct stat.st_blocks" >&5
 echo $ECHO_N "checking for struct stat.st_blocks... $ECHO_C" >&6
 if test "${ac_cv_member_struct_stat_st_blocks+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -14391,8 +14392,8 @@ fi
 
 
 #--------------------------------------------------------------------
-#       Some system have no memcmp or it does not work with 8 bit
-#       data, this checks it and add memcmp.o to LIBOBJS if needed
+#       Some system have no memcmp or it does not work with 8 bit data, this
+#       checks it and add memcmp.o to LIBOBJS if needed
 #--------------------------------------------------------------------
 
 echo "$as_me:$LINENO: checking for working memcmp" >&5
@@ -14478,9 +14479,9 @@ esac
 
 
 #--------------------------------------------------------------------
-#       Some system like SunOS 4 and other BSD like systems
-#       have no memmove (we assume they have bcopy instead).
-#       {The replacement define is in compat/string.h}
+#       Some system like SunOS 4 and other BSD like systems have no memmove
+#       (we assume they have bcopy instead). {The replacement define is in
+#       compat/string.h}
 #--------------------------------------------------------------------
 
 echo "$as_me:$LINENO: checking for memmove" >&5
@@ -14591,8 +14592,8 @@ fi
 
 
 #--------------------------------------------------------------------
-#	On some systems strstr is broken: it returns a pointer even
-#	even if the original string is empty.
+#	On some systems strstr is broken: it returns a pointer even even if
+#	the original string is empty.
 #--------------------------------------------------------------------
 
 
@@ -15606,7 +15607,10 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-$ac_includes_default
+
+#include <stdint.h>
+
+
 int
 main ()
 {
@@ -15653,83 +15657,12 @@ echo "$as_me:$LINENO: result: $ac_cv_type_intptr_t" >&5
 echo "${ECHO_T}$ac_cv_type_intptr_t" >&6
 if test $ac_cv_type_intptr_t = yes; then
 
-
-cat >>confdefs.h <<\_ACEOF
+cat >>confdefs.h <<_ACEOF
 #define HAVE_INTPTR_T 1
 _ACEOF
 
-else
-
-    echo "$as_me:$LINENO: checking for pointer-size signed integer type" >&5
-echo $ECHO_N "checking for pointer-size signed integer type... $ECHO_C" >&6
-if test "${tcl_cv_intptr_t+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-
-    for tcl_cv_intptr_t in "int" "long" "long long" none; do
-	if test "$tcl_cv_intptr_t" != none; then
-	    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-int
-main ()
-{
-static int test_array [1 - 2 * !(sizeof (void *) <= sizeof ($tcl_cv_intptr_t))];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  tcl_ok=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-tcl_ok=no
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-	    test "$tcl_ok" = yes && break; fi
-    done
-fi
-echo "$as_me:$LINENO: result: $tcl_cv_intptr_t" >&5
-echo "${ECHO_T}$tcl_cv_intptr_t" >&6
-    if test "$tcl_cv_intptr_t" != none; then
-
-cat >>confdefs.h <<_ACEOF
-#define intptr_t $tcl_cv_intptr_t
-_ACEOF
-
-    fi
 
 fi
-
 echo "$as_me:$LINENO: checking for uintptr_t" >&5
 echo $ECHO_N "checking for uintptr_t... $ECHO_C" >&6
 if test "${ac_cv_type_uintptr_t+set}" = set; then
@@ -15741,7 +15674,10 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-$ac_includes_default
+
+#include <stdint.h>
+
+
 int
 main ()
 {
@@ -15788,81 +15724,10 @@ echo "$as_me:$LINENO: result: $ac_cv_type_uintptr_t" >&5
 echo "${ECHO_T}$ac_cv_type_uintptr_t" >&6
 if test $ac_cv_type_uintptr_t = yes; then
 
-
-cat >>confdefs.h <<\_ACEOF
+cat >>confdefs.h <<_ACEOF
 #define HAVE_UINTPTR_T 1
 _ACEOF
 
-else
-
-    echo "$as_me:$LINENO: checking for pointer-size unsigned integer type" >&5
-echo $ECHO_N "checking for pointer-size unsigned integer type... $ECHO_C" >&6
-if test "${tcl_cv_uintptr_t+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-
-    for tcl_cv_uintptr_t in "unsigned int" "unsigned long" "unsigned long long" \
-	    none; do
-	if test "$tcl_cv_uintptr_t" != none; then
-	    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-int
-main ()
-{
-static int test_array [1 - 2 * !(sizeof (void *) <= sizeof ($tcl_cv_uintptr_t))];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  tcl_ok=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-tcl_ok=no
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-	    test "$tcl_ok" = yes && break; fi
-    done
-fi
-echo "$as_me:$LINENO: result: $tcl_cv_uintptr_t" >&5
-echo "${ECHO_T}$tcl_cv_uintptr_t" >&6
-    if test "$tcl_cv_uintptr_t" != none; then
-
-cat >>confdefs.h <<_ACEOF
-#define uintptr_t $tcl_cv_uintptr_t
-_ACEOF
-
-    fi
 
 fi
 
@@ -18006,7 +17871,7 @@ else
 fi
 
 #--------------------------------------------------------------------
-# Check for support of fts functions (readdir replacement)
+#	Check for support of fts functions (readdir replacement)
 #--------------------------------------------------------------------
 
 echo "$as_me:$LINENO: checking for fts" >&5
@@ -18081,10 +17946,9 @@ _ACEOF
 fi
 
 #--------------------------------------------------------------------
-#	The statements below check for systems where POSIX-style
-#	non-blocking I/O (O_NONBLOCK) doesn't work or is unimplemented.
-#	On these systems (mostly older ones), use the old BSD-style
-#	FIONBIO approach instead.
+#	The statements below check for systems where POSIX-style non-blocking
+#	I/O (O_NONBLOCK) doesn't work or is unimplemented. On these systems
+#	(mostly older ones), use the old BSD-style FIONBIO approach instead.
 #--------------------------------------------------------------------
 
 
@@ -19020,7 +18884,7 @@ _ACEOF
     PRIVATE_INCLUDE_DIR="${libdir}/PrivateHeaders"
     HTML_DIR="${libdir}/Resources/Documentation/Reference/Tcl"
     EXTRA_INSTALL="install-private-headers html-tcl"
-    EXTRA_BUILD_HTML='@ln -fs contents.htm "$(HTML_INSTALL_DIR)"/TclTOC.html'
+    EXTRA_BUILD_HTML='@ln -fs contents.htm "$(HTML_INSTALL_DIR)/TclTOC.html"'
     EXTRA_INSTALL_BINARIES='@echo "Installing Info.plist to $(LIB_INSTALL_DIR)/Resources/" && $(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)/Resources" && $(INSTALL_DATA) Tcl-Info.plist "$(LIB_INSTALL_DIR)/Resources/Info.plist"'
     EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Installing license.terms to $(LIB_INSTALL_DIR)/Resources/" && $(INSTALL_DATA) "$(TOP_DIR)/license.terms" "$(LIB_INSTALL_DIR)/Resources"'
     EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Finalizing Tcl.framework" && rm -f "$(LIB_INSTALL_DIR)/../Current" && ln -s "$(VERSION)" "$(LIB_INSTALL_DIR)/../Current" && for f in "$(LIB_FILE)" tclConfig.sh Resources Headers PrivateHeaders; do rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/Current/$$f" "$(LIB_INSTALL_DIR)/../.."; done && f="$(STUB_LIB_FILE)" && rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/$(VERSION)/$$f" "$(LIB_INSTALL_DIR)/../.."'
@@ -20267,4 +20131,5 @@ if test "$no_create" != yes; then
   # would make configure fail if this is the last instruction.
   $ac_cs_success || { (exit 1); exit 1; }
 fi
+
 

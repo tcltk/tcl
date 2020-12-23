@@ -28,9 +28,9 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 	# we reset no_tcl in case something fails here
 	no_tcl=true
 	AC_ARG_WITH(tcl,
-	    AC_HELP_STRING([--with-tcl],
+	    AS_HELP_STRING([--with-tcl],
 		[directory containing tcl configuration (tclConfig.sh)]),
-	    with_tclconfig="${withval}")
+	    [with_tclconfig="${withval}"])
 	AC_MSG_CHECKING([for Tcl configuration])
 	AC_CACHE_VAL(ac_cv_c_tclconfig,[
 
@@ -146,9 +146,9 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 	# we reset no_tk in case something fails here
 	no_tk=true
 	AC_ARG_WITH(tk,
-	    AC_HELP_STRING([--with-tk],
+	    AS_HELP_STRING([--with-tk],
 		[directory containing tk configuration (tkConfig.sh)]),
-	    with_tkconfig="${withval}")
+	    [with_tkconfig="${withval}"])
 	AC_MSG_CHECKING([for Tk configuration])
 	AC_CACHE_VAL(ac_cv_c_tkconfig,[
 
@@ -568,8 +568,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		#error cross-compiler
 	    #endif
 	], [],
-	ac_cv_cross=no,
-	ac_cv_cross=yes)
+	[ac_cv_cross=no],
+	[ac_cv_cross=yes])
       )
 
       if test "$ac_cv_cross" = "yes"; then
@@ -635,8 +635,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    #error win32
 		#endif
 	    ], [],
-	    ac_cv_win32=no,
-	    ac_cv_win32=yes)
+	    [ac_cv_win32=no],
+	    [ac_cv_win32=yes])
 	)
 	if test "$ac_cv_win32" != "yes"; then
 	    AC_MSG_ERROR([${CC} cannot produce win32 executables.])
@@ -741,13 +741,13 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			#error 32-bit
 		    #endif
 		], [],
-			tcl_win_64bit=yes,
-			tcl_win_64bit=no
+		    [tcl_win_64bit=yes],
+		    [tcl_win_64bit=no]
 		)
 		if test "$tcl_win_64bit" = "yes" ; then
-			do64bit=amd64
-			MACHINE="AMD64"
-			AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		    do64bit=amd64
+		    MACHINE="AMD64"
+		    AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 		fi
 		;;
 	esac
@@ -977,9 +977,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		return 1;
 	    }
 	],
-	    tcl_cv_seh=yes,
-	    tcl_cv_seh=no,
-	    tcl_cv_seh=no)
+	    [tcl_cv_seh=yes],
+	    [tcl_cv_seh=no],
+	    [tcl_cv_seh=no])
 	)
 	if test "$tcl_cv_seh" = "no" ; then
 	    AC_DEFINE(HAVE_NO_SEH, 1,
@@ -1001,8 +1001,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ],[
 		EXCEPTION_DISPOSITION x;
 	    ],
-		tcl_cv_eh_disposition=yes,
-		tcl_cv_eh_disposition=no)
+	    [tcl_cv_eh_disposition=yes],
+	    [tcl_cv_eh_disposition=no])
 	)
 	if test "$tcl_cv_eh_disposition" = "no" ; then
 	AC_DEFINE(EXCEPTION_DISPOSITION, int,
@@ -1025,8 +1025,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		SHORT s;
 		LONG l;
 	    ],
-        tcl_cv_winnt_ignore_void=yes,
-        tcl_cv_winnt_ignore_void=no)
+	    [tcl_cv_winnt_ignore_void=yes],
+	    [tcl_cv_winnt_ignore_void=no])
 	)
 	if test "$tcl_cv_winnt_ignore_void" = "yes" ; then
 	    AC_DEFINE(HAVE_WINNT_IGNORE_VOID, 1,
@@ -1044,8 +1044,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		  union foo { int i; double d; };
 		  union foo f = (union foo) (int) 0;
 	    ],
-	    tcl_cv_cast_to_union=yes,
-	    tcl_cv_cast_to_union=no)
+	    [tcl_cv_cast_to_union=yes],
+	    [tcl_cv_cast_to_union=no])
 	)
 	if test "$tcl_cv_cast_to_union" = "yes"; then
 	    AC_DEFINE(HAVE_CAST_TO_UNION, 1,
@@ -1216,7 +1216,7 @@ AC_DEFUN([SC_TCL_CFG_ENCODING], [
 AC_DEFUN([SC_EMBED_MANIFEST], [
     AC_MSG_CHECKING(whether to embed manifest)
     AC_ARG_ENABLE(embedded-manifest,
-	AC_HELP_STRING([--enable-embedded-manifest],
+	AS_HELP_STRING([--enable-embedded-manifest],
 		[embed manifest if possible (default: yes)]),
 	[embed_ok=$enableval], [embed_ok=yes])
 

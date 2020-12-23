@@ -37,6 +37,17 @@
 /* Is the cpuid instruction usable? */
 #undef HAVE_CPUID
 
+/* Define to 1 if you have the declaration of `gethostbyaddr_r', and to 0 if
+   you don't. */
+#undef HAVE_DECL_GETHOSTBYADDR_R
+
+/* Define to 1 if you have the declaration of `gethostbyname_r', and to 0 if
+   you don't. */
+#undef HAVE_DECL_GETHOSTBYNAME_R
+
+/* Is 'DIR64' in <sys/types.h>? */
+#undef HAVE_DIR64
+
 /* Do we have fts functions? */
 #undef HAVE_FTS
 
@@ -109,7 +120,7 @@
 /* Define to 1 if you have the `gmtime_r' function. */
 #undef HAVE_GMTIME_R
 
-/* Do we have the intptr_t type? */
+/* Define to 1 if the system has the type `intptr_t'. */
 #undef HAVE_INTPTR_T
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -193,9 +204,6 @@
 /* Is 'struct dirent64' in <sys/types.h>? */
 #undef HAVE_STRUCT_DIRENT64
 
-/* Is 'DIR64' in <sys/types.h>? */
-#undef HAVE_DIR64
-
 /* Is 'struct stat64' in <sys/stat.h>? */
 #undef HAVE_STRUCT_STAT64
 
@@ -241,7 +249,7 @@
 /* Is off64_t in <sys/types.h>? */
 #undef HAVE_TYPE_OFF64_T
 
-/* Do we have the uintptr_t type? */
+/* Define to 1 if the system has the type `uintptr_t'. */
 #undef HAVE_UINTPTR_T
 
 /* Define to 1 if you have the <unistd.h> header file. */
@@ -478,9 +486,6 @@
 #undef inline
 #endif
 
-/* Signed integer type wide enough to hold a pointer. */
-#undef intptr_t
-
 /* Define to `int' if <sys/types.h> does not define. */
 #undef mode_t
 
@@ -498,9 +503,6 @@
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
-
-/* Unsigned integer type wide enough to hold a pointer. */
-#undef uintptr_t
 
 
     /* Undef unused package specific autoheader defines so that we can
