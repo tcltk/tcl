@@ -2360,7 +2360,7 @@ test fCmd-28.7 {file link: source already exists} -setup {
     cd [workingDirectory]
 } -result {could not create new link "abc.file": that path already exists}
 # In Windows 10 developer mode, we _can_ create symbolic links to files!
-test fCmd-28.8 {file link} -constraints {linkFile} -setup {
+test fCmd-28.8 {file link} -constraints {linkFile winLessThan10} -setup {
     cd [temporaryDirectory]
 } -body {
     file link -symbolic abc.link abc.file
