@@ -1841,7 +1841,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
       	set ::count [expr {$maxIter / 4 * 3 - 1}]; # bypass 3/4 iterations
       }
     }
-    tcltest::DebugPuts 1 "== test \[$::localhost\]:$port $testmode =="
+    tcltest::DebugPuts 2 "== test \[$::localhost\]:$port $testmode =="
     set ::parent [thread::id]
     # helper thread creating async connection and initiating transfer (detach) to parent:
     set ::helper [thread::create]
@@ -1869,7 +1869,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
     }
     # parent proc commiting transfer attempt (attach) and checking acquire was successful:
     proc transf_parent {fd args} {
-      tcltest::DebugPuts 1 "** trma / $::count ** $args **"
+      tcltest::DebugPuts 2 "** trma / $::count ** $args **"
       thread::attach $fd
       if {"parent-close" in $::testmode} {;# to test close during connect
         set ::count $::count
@@ -1896,7 +1896,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
         break
       }
       if {[incr ::count] >= $maxIter} break
-      tcltest::DebugPuts 1 "** iter / $::count **"
+      tcltest::DebugPuts 2 "** iter / $::count **"
       thread::send -async $::helper [list iteration nr $::count]
     }
     update
@@ -1905,7 +1905,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
     catch {after cancel $tout}
     if {$srvsock ne {}} {close $srvsock}
     if {[info exists ::helper]} {thread::release -wait $::helper}
-    tcltest::DebugPuts 1 "== stop / $::count =="
+    tcltest::DebugPuts 2 "== stop / $::count =="
     unset -nocomplain ::count ::testmode ::parent ::helper
   }
 }

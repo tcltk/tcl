@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 7
+RULES_VERSION_MINOR = 8
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -652,254 +652,9 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 !endif
 !endif
 
-########################################################################
-# 6. Parse the OPTS macro to work out the requested build configuration.
-# Based on this, we will construct the actual switches to be passed to the
-# compiler and linker using the macros defined in the previous section.
-# The following macros are defined by this section based on OPTS
-# STATIC_BUILD - 0 -> Tcl is to be built as a shared library
-#                1 -> build as a static library and shell
-# TCL_THREADS - legacy but always 1 on Windows since winsock requires it.
-# DEBUG - 1 -> debug build, 0 -> release builds
-# SYMBOLS - 1 -> generate PDB's, 0 -> no PDB's
-# PROFILE - 1 -> generate profiling info, 0 -> no profiling
-# PGO     - 1 -> profile based optimization, 0 -> no
-# MSVCRT  - 1 -> link to dynamic C runtime even when building static Tcl build
-#           0 -> link to static C runtime for static Tcl build.
-#           Does not impact shared Tcl builds (STATIC_BUILD == 0)
-# TCL_USE_STATIC_PACKAGES - 1 -> statically link the registry and dde extensions
-#           in the Tcl shell. 0 -> keep them as shared libraries
-#           Does not impact shared Tcl builds.
-# USE_THREAD_ALLOC - 1 -> Use a shared global free pool for allocation.
-#           0 -> Use the non-thread allocator.
-# UNCHECKED - 1 -> when doing a debug build with symbols, use the release
-#           C runtime, 0 -> use the debug C runtime.
-# USE_STUBS - 1 -> compile to use stubs interfaces, 0 -> direct linking
-# CONFIG_CHECK - 1 -> check current build configuration against Tcl
-#           configuration (ignored for Tcl itself)
-# _USE_64BIT_TIME_T - forces a build using 64-bit time_t for 32-bit build
-#           (CRT library should support this, not needed for Tcl 9.x)
-# TCL_UTF_MAX=4 - forces a build allowing 4-byte UTF-8 sequences internally.
-#           (Not needed for Tcl 9.x)
-# Further, LINKERFLAGS are modified based on above.
-
-# Default values for all the above
-STATIC_BUILD	= 0
-TCL_THREADS	= 1
-DEBUG		= 0
-SYMBOLS		= 0
-PROFILE		= 0
-PGO		= 0
-MSVCRT		= 1
-TCL_USE_STATIC_PACKAGES	= 0
-USE_THREAD_ALLOC = 1
-UNCHECKED	= 0
-CONFIG_CHECK    = 1
-!if $(DOING_TCL)
-USE_STUBS       = 0
-!else
-USE_STUBS       = 1
-!endif
-
-# If OPTS is not empty AND does not contain "none" which turns off all OPTS
-# set the above macros based on OPTS content
-!if "$(OPTS)" != "" && ![nmakehlp -f "$(OPTS)" "none"]
-
-# OPTS are specified, parse them
-
-!if [nmakehlp -f $(OPTS) "static"]
-!message *** Doing static
-STATIC_BUILD	= 1
-!endif
-
-!if [nmakehlp -f $(OPTS) "nostubs"]
-!message *** Not using stubs
-USE_STUBS	= 0
-!endif
-
-!if [nmakehlp -f $(OPTS) "nomsvcrt"]
-!message *** Doing nomsvcrt
-MSVCRT		= 0
-!else
-!if [nmakehlp -f $(OPTS) "msvcrt"]
-!message *** Doing msvcrt
-!else
-!if $(STATIC_BUILD)
-MSVCRT		= 0
-!endif
-!endif
-!endif # [nmakehlp -f $(OPTS) "nomsvcrt"]
-
-!if [nmakehlp -f $(OPTS) "staticpkg"] && $(STATIC_BUILD)
-!message *** Doing staticpkg
-TCL_USE_STATIC_PACKAGES	= 1
-!endif
-
-!if [nmakehlp -f $(OPTS) "nothreads"]
-!message *** Compile explicitly for non-threaded tcl
-TCL_THREADS = 0
-USE_THREAD_ALLOC= 0
-!endif
-
-!if "$(TCL_MAJOR_VERSION)" == "8"
-!if [nmakehlp -f $(OPTS) "time64bit"]
-!message *** Force 64-bit time_t
-_USE_64BIT_TIME_T = 1
-!endif
-
-!if [nmakehlp -f $(OPTS) "utfmax"]
-!message *** Force allowing 4-byte UTF-8 sequences internally
-TCL_UTF_MAX = 4
-!endif
-!endif
-
-# Yes, it's weird that the "symbols" option controls DEBUG and
-# the "pdbs" option controls SYMBOLS. That's historical.
-!if [nmakehlp -f $(OPTS) "symbols"]
-!message *** Doing symbols
-DEBUG		= 1
-!else
-DEBUG		= 0
-!endif
-
-!if [nmakehlp -f $(OPTS) "pdbs"]
-!message *** Doing pdbs
-SYMBOLS		= 1
-!else
-SYMBOLS		= 0
-!endif
-
-!if [nmakehlp -f $(OPTS) "profile"]
-!message *** Doing profile
-PROFILE		= 1
-!else
-PROFILE		= 0
-!endif
-
-!if [nmakehlp -f $(OPTS) "pgi"]
-!message *** Doing profile guided optimization instrumentation
-PGO		= 1
-!elseif [nmakehlp -f $(OPTS) "pgo"]
-!message *** Doing profile guided optimization
-PGO		= 2
-!else
-PGO		= 0
-!endif
-
-!if [nmakehlp -f $(OPTS) "loimpact"]
-!message *** Warning: ignoring option "loimpact" - deprecated on modern Windows.
-!endif
-
-# TBD - should get rid of this option
-!if [nmakehlp -f $(OPTS) "thrdalloc"]
-!message *** Doing thrdalloc
-USE_THREAD_ALLOC = 1
-!endif
-
-!if [nmakehlp -f $(OPTS) "tclalloc"]
-USE_THREAD_ALLOC = 0
-!endif
-
-!if [nmakehlp -f $(OPTS) "unchecked"]
-!message *** Doing unchecked
-UNCHECKED = 1
-!else
-UNCHECKED = 0
-!endif
-
-!if [nmakehlp -f $(OPTS) "noconfigcheck"]
-CONFIG_CHECK = 1
-!else
-CONFIG_CHECK = 0
-!endif
-
-!endif # "$(OPTS)" != ""  && ... parsing of OPTS
-
-# Set linker flags based on above
-
-!if $(PGO) > 1
-!if [nmakehlp -l -ltcg:pgoptimize $(LINKER_TESTFLAGS)]
-LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pgoptimize
-!else
-MSG=^
-This compiler does not support profile guided optimization.
-!error $(MSG)
-!endif
-!elseif $(PGO) > 0
-!if [nmakehlp -l -ltcg:pginstrument $(LINKER_TESTFLAGS)]
-LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pginstrument
-!else
-MSG=^
-This compiler does not support profile guided optimization.
-!error $(MSG)
-!endif
-!endif
 
 ################################################################
-# 7. Parse the STATS macro to configure code instrumentation
-# The following macros are set by this section:
-# TCL_MEM_DEBUG - 1 -> enables memory allocation instrumentation
-#                 0 -> disables
-# TCL_COMPILE_DEBUG - 1 -> enables byte compiler logging
-#                     0 -> disables
-
-# Default both are off
-TCL_MEM_DEBUG	    = 0
-TCL_COMPILE_DEBUG   = 0
-
-!if "$(STATS)" != "" && ![nmakehlp -f "$(STATS)" "none"]
-
-!if [nmakehlp -f $(STATS) "memdbg"]
-!message *** Doing memdbg
-TCL_MEM_DEBUG	    = 1
-!else
-TCL_MEM_DEBUG	    = 0
-!endif
-
-!if [nmakehlp -f $(STATS) "compdbg"]
-!message *** Doing compdbg
-TCL_COMPILE_DEBUG   = 1
-!else
-TCL_COMPILE_DEBUG   = 0
-!endif
-
-!endif
-
-####################################################################
-# 8. Parse the CHECKS macro to configure additional compiler checks
-# The following macros are set by this section:
-# WARNINGS - compiler switches that control the warnings level
-# TCL_NO_DEPRECATED - 1 -> disable support for deprecated functions
-#                     0 -> enable deprecated functions
-
-# Defaults - Permit deprecated functions and warning level 3
-TCL_NO_DEPRECATED	    = 0
-WARNINGS		    = -W3
-
-!if "$(CHECKS)" != "" && ![nmakehlp -f "$(CHECKS)" "none"]
-
-!if [nmakehlp -f $(CHECKS) "nodep"]
-!message *** Doing nodep check
-TCL_NO_DEPRECATED	    = 1
-!endif
-
-!if [nmakehlp -f $(CHECKS) "fullwarn"]
-!message *** Doing full warnings check
-WARNINGS		    = -W4
-!if [nmakehlp -l -warn:3 $(LINKER_TESTFLAGS)]
-LINKERFLAGS		    = $(LINKERFLAGS) -warn:3
-!endif
-!endif
-
-!if [nmakehlp -f $(CHECKS) "64bit"] && [nmakehlp -c -Wp64]
-!message *** Doing 64bit portability warnings
-WARNINGS		    = $(WARNINGS) -Wp64
-!endif
-
-!endif
-
-################################################################
-# 9. Extract various version numbers
+# 6. Extract various version numbers from headers
 # For Tcl and Tk, version numbers are extracted from tcl.h and tk.h
 # respectively. For extensions, versions are extracted from the
 # configure.in or configure.ac from the TEA configuration if it
@@ -915,7 +670,7 @@ WARNINGS		    = $(WARNINGS) -Wp64
 # TK_MINOR_VERSION
 # TK_RELEASE_SERIAL
 # TK_PATCH_LEVEL
-# TK_PATCH_LEVEL
+# TK_PATCH_LETTER
 # TK_VERSION
 # DOTVERSION - set as (for example) 2.5
 # VERSION - set as (for example 25)
@@ -1019,6 +774,254 @@ DOTSEPARATED=$(DOTSEPARATED:b=.)
 !endif
 !include versions.vc
 
+########################################################################
+# 7. Parse the OPTS macro to work out the requested build configuration.
+# Based on this, we will construct the actual switches to be passed to the
+# compiler and linker using the macros defined in the previous section.
+# The following macros are defined by this section based on OPTS
+# STATIC_BUILD - 0 -> Tcl is to be built as a shared library
+#                1 -> build as a static library and shell
+# TCL_THREADS - legacy but always 1 on Windows since winsock requires it.
+# DEBUG - 1 -> debug build, 0 -> release builds
+# SYMBOLS - 1 -> generate PDB's, 0 -> no PDB's
+# PROFILE - 1 -> generate profiling info, 0 -> no profiling
+# PGO     - 1 -> profile based optimization, 0 -> no
+# MSVCRT  - 1 -> link to dynamic C runtime even when building static Tcl build
+#           0 -> link to static C runtime for static Tcl build.
+#           Does not impact shared Tcl builds (STATIC_BUILD == 0)
+#           Default: 1 for Tcl 8.7 and up, 0 otherwise.
+# TCL_USE_STATIC_PACKAGES - 1 -> statically link the registry and dde extensions
+#           in the Tcl and Wish shell. 0 -> keep them as shared libraries. Does
+#           not impact shared Tcl builds. Implied by STATIC_BUILD since Tcl 8.7.
+# USE_THREAD_ALLOC - 1 -> Use a shared global free pool for allocation.
+#           0 -> Use the non-thread allocator.
+# UNCHECKED - 1 -> when doing a debug build with symbols, use the release
+#           C runtime, 0 -> use the debug C runtime.
+# USE_STUBS - 1 -> compile to use stubs interfaces, 0 -> direct linking
+# CONFIG_CHECK - 1 -> check current build configuration against Tcl
+#           configuration (ignored for Tcl itself)
+# _USE_64BIT_TIME_T - forces a build using 64-bit time_t for 32-bit build
+#           (CRT library should support this, not needed for Tcl 9.x)
+# TCL_UTF_MAX=4 - forces a build allowing 4-byte UTF-8 sequences internally.
+#           (Not needed for Tcl 9.x)
+# Further, LINKERFLAGS are modified based on above.
+
+# Default values for all the above
+STATIC_BUILD	= 0
+TCL_THREADS	= 1
+DEBUG		= 0
+SYMBOLS		= 0
+PROFILE		= 0
+PGO		= 0
+MSVCRT		= 1
+TCL_USE_STATIC_PACKAGES	= 0
+USE_THREAD_ALLOC = 1
+UNCHECKED	= 0
+CONFIG_CHECK    = 1
+!if $(DOING_TCL)
+USE_STUBS       = 0
+!else
+USE_STUBS       = 1
+!endif
+
+# If OPTS is not empty AND does not contain "none" which turns off all OPTS
+# set the above macros based on OPTS content
+!if "$(OPTS)" != "" && ![nmakehlp -f "$(OPTS)" "none"]
+
+# OPTS are specified, parse them
+
+!if [nmakehlp -f $(OPTS) "static"]
+!message *** Doing static
+STATIC_BUILD	= 1
+!endif
+
+!if [nmakehlp -f $(OPTS) "nostubs"]
+!message *** Not using stubs
+USE_STUBS	= 0
+!endif
+
+!if [nmakehlp -f $(OPTS) "nomsvcrt"]
+!message *** Doing nomsvcrt
+MSVCRT		= 0
+!else
+!if [nmakehlp -f $(OPTS) "msvcrt"]
+!message *** Doing msvcrt
+!else
+!if $(TCL_MAJOR_VERSION) == 8 && $(TCL_MINOR_VERSION) < 7 && $(STATIC_BUILD)
+MSVCRT		= 0
+!endif
+!endif
+!endif # [nmakehlp -f $(OPTS) "nomsvcrt"]
+
+!if [nmakehlp -f $(OPTS) "staticpkg"] && $(STATIC_BUILD)
+!message *** Doing staticpkg
+TCL_USE_STATIC_PACKAGES	= 1
+!endif
+
+!if [nmakehlp -f $(OPTS) "nothreads"]
+!message *** Compile explicitly for non-threaded tcl
+TCL_THREADS = 0
+USE_THREAD_ALLOC= 0
+!endif
+
+!if $(TCL_MAJOR_VERSION) == 8
+!if [nmakehlp -f $(OPTS) "time64bit"]
+!message *** Force 64-bit time_t
+_USE_64BIT_TIME_T = 1
+!endif
+
+!if [nmakehlp -f $(OPTS) "utfmax"]
+!message *** Force allowing 4-byte UTF-8 sequences internally
+TCL_UTF_MAX = 4
+!endif
+!endif
+
+# Yes, it's weird that the "symbols" option controls DEBUG and
+# the "pdbs" option controls SYMBOLS. That's historical.
+!if [nmakehlp -f $(OPTS) "symbols"]
+!message *** Doing symbols
+DEBUG		= 1
+!else
+DEBUG		= 0
+!endif
+
+!if [nmakehlp -f $(OPTS) "pdbs"]
+!message *** Doing pdbs
+SYMBOLS		= 1
+!else
+SYMBOLS		= 0
+!endif
+
+!if [nmakehlp -f $(OPTS) "profile"]
+!message *** Doing profile
+PROFILE		= 1
+!else
+PROFILE		= 0
+!endif
+
+!if [nmakehlp -f $(OPTS) "pgi"]
+!message *** Doing profile guided optimization instrumentation
+PGO		= 1
+!elseif [nmakehlp -f $(OPTS) "pgo"]
+!message *** Doing profile guided optimization
+PGO		= 2
+!else
+PGO		= 0
+!endif
+
+!if [nmakehlp -f $(OPTS) "loimpact"]
+!message *** Warning: ignoring option "loimpact" - deprecated on modern Windows.
+!endif
+
+# TBD - should get rid of this option
+!if [nmakehlp -f $(OPTS) "thrdalloc"]
+!message *** Doing thrdalloc
+USE_THREAD_ALLOC = 1
+!endif
+
+!if [nmakehlp -f $(OPTS) "tclalloc"]
+USE_THREAD_ALLOC = 0
+!endif
+
+!if [nmakehlp -f $(OPTS) "unchecked"]
+!message *** Doing unchecked
+UNCHECKED = 1
+!else
+UNCHECKED = 0
+!endif
+
+!if [nmakehlp -f $(OPTS) "noconfigcheck"]
+CONFIG_CHECK = 1
+!else
+CONFIG_CHECK = 0
+!endif
+
+!endif # "$(OPTS)" != ""  && ... parsing of OPTS
+
+# Set linker flags based on above
+
+!if $(PGO) > 1
+!if [nmakehlp -l -ltcg:pgoptimize $(LINKER_TESTFLAGS)]
+LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pgoptimize
+!else
+MSG=^
+This compiler does not support profile guided optimization.
+!error $(MSG)
+!endif
+!elseif $(PGO) > 0
+!if [nmakehlp -l -ltcg:pginstrument $(LINKER_TESTFLAGS)]
+LINKERFLAGS	= $(LINKERFLAGS:-ltcg=) -ltcg:pginstrument
+!else
+MSG=^
+This compiler does not support profile guided optimization.
+!error $(MSG)
+!endif
+!endif
+
+################################################################
+# 8. Parse the STATS macro to configure code instrumentation
+# The following macros are set by this section:
+# TCL_MEM_DEBUG - 1 -> enables memory allocation instrumentation
+#                 0 -> disables
+# TCL_COMPILE_DEBUG - 1 -> enables byte compiler logging
+#                     0 -> disables
+
+# Default both are off
+TCL_MEM_DEBUG	    = 0
+TCL_COMPILE_DEBUG   = 0
+
+!if "$(STATS)" != "" && ![nmakehlp -f "$(STATS)" "none"]
+
+!if [nmakehlp -f $(STATS) "memdbg"]
+!message *** Doing memdbg
+TCL_MEM_DEBUG	    = 1
+!else
+TCL_MEM_DEBUG	    = 0
+!endif
+
+!if [nmakehlp -f $(STATS) "compdbg"]
+!message *** Doing compdbg
+TCL_COMPILE_DEBUG   = 1
+!else
+TCL_COMPILE_DEBUG   = 0
+!endif
+
+!endif
+
+####################################################################
+# 9. Parse the CHECKS macro to configure additional compiler checks
+# The following macros are set by this section:
+# WARNINGS - compiler switches that control the warnings level
+# TCL_NO_DEPRECATED - 1 -> disable support for deprecated functions
+#                     0 -> enable deprecated functions
+
+# Defaults - Permit deprecated functions and warning level 3
+TCL_NO_DEPRECATED	    = 0
+WARNINGS		    = -W3
+
+!if "$(CHECKS)" != "" && ![nmakehlp -f "$(CHECKS)" "none"]
+
+!if [nmakehlp -f $(CHECKS) "nodep"]
+!message *** Doing nodep check
+TCL_NO_DEPRECATED	    = 1
+!endif
+
+!if [nmakehlp -f $(CHECKS) "fullwarn"]
+!message *** Doing full warnings check
+WARNINGS		    = -W4
+!if [nmakehlp -l -warn:3 $(LINKER_TESTFLAGS)]
+LINKERFLAGS		    = $(LINKERFLAGS) -warn:3
+!endif
+!endif
+
+!if [nmakehlp -f $(CHECKS) "64bit"] && [nmakehlp -c -Wp64]
+!message *** Doing 64bit portability warnings
+WARNINGS		    = $(WARNINGS) -Wp64
+!endif
+
+!endif
+
+
 ################################################################
 # 10. Construct output directory and file paths
 # Figure-out how to name our intermediate and output directories.
@@ -1114,14 +1117,29 @@ OUT_DIR	    = $(TMP_DIR)
 # The name of the stubs library for the project being built
 STUBPREFIX      = $(PROJECT)stub
 
+#
 # Set up paths to various Tcl executables and libraries needed by extensions
-!if $(DOING_TCL)
+#
 
+# TIP 430. Unused for 8.6 but no harm defining it to allow a common rules.vc
+!if "$(TCL_PATCH_LETTER)" == "."
+TCLSCRIPTZIPNAME = libtcl_$(TCL_MAJOR_VERSION)_$(TCL_MINOR_VERSION)_$(TCL_RELEASE_SERIAL).zip
+!else
+TCLSCRIPTZIPNAME = libtcl_$(TCL_MAJOR_VERSION)_$(TCL_MINOR_VERSION)_$(TCL_PATCH_LETTER)$(TCL_RELEASE_SERIAL).zip
+!endif
+!if "$(TK_PATCH_LETTER)" == "."
+TKSCRIPTZIPNAME = libtk_$(TK_MAJOR_VERSION)_$(TK_MINOR_VERSION)_$(TK_RELEASE_SERIAL).zip
+!else
+TKSCRIPTZIPNAME = libtk_$(TK_MAJOR_VERSION)_$(TK_MINOR_VERSION)_$(TK_PATCH_LETTER)$(TK_RELEASE_SERIAL).zip
+!endif
+
+!if $(DOING_TCL)
 TCLSHNAME       = $(PROJECT)sh$(VERSION)$(SUFX).exe
 TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
 TCLIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 TCLLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
 TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
+TCLSCRIPTZIP    = $(OUT_DIR)\$(TCLSCRIPTZIPNAME)
 
 TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
 TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
@@ -1149,6 +1167,7 @@ TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 TCL_LIBRARY	= $(_TCLDIR)\lib
 TCLREGLIB	= $(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib
 TCLDDELIB	= $(_TCLDIR)\lib\tcldde14$(SUFX:t=).lib
+TCLSCRIPTZIP	= $(_TCLDIR)\lib\$(TCLSCRIPTZIPNAME)
 TCLTOOLSDIR	= \must\have\tcl\sources\to\build\this\target
 TCL_INCLUDES    = -I"$(_TCLDIR)\include"
 
@@ -1168,6 +1187,7 @@ TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 TCL_LIBRARY	= $(_TCLDIR)\library
 TCLREGLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib
 TCLDDELIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14$(SUFX:t=).lib
+TCLSCRIPTZIP	= $(_TCLDIR)\win\$(BUILDDIRTOP)\$(TCLSCRIPTZIPNAME)
 TCLTOOLSDIR	= $(_TCLDIR)\tools
 TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
 
@@ -1200,7 +1220,8 @@ WISH 		= $(OUT_DIR)\$(WISHNAME)
 TKSTUBLIB	= $(OUT_DIR)\$(TKSTUBLIBNAME)
 TKIMPLIB	= $(OUT_DIR)\$(TKIMPLIBNAME)
 TKLIB		= $(OUT_DIR)\$(TKLIBNAME)
-TK_INCLUDES    = -I"$(WIN_DIR)" -I"$(GENERICDIR)"
+TK_INCLUDES     = -I"$(WIN_DIR)" -I"$(GENERICDIR)"
+TKSCRIPTZIP     = $(OUT_DIR)\$(TKSCRIPTZIPNAME)
 
 !else # effectively NEED_TK
 
@@ -1215,7 +1236,10 @@ TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX:t=).lib
 TKIMPLIB	= $(_TKDIR)\lib\$(TKIMPLIBNAME)
 !endif
 TK_INCLUDES     = -I"$(_TKDIR)\include"
+TKSCRIPTZIP     = $(_TKDIR)\lib\$(TKSCRIPTZIPNAME)
+
 !else # Building against Tk sources
+
 WISH		= $(_TKDIR)\win\$(BUILDDIRTOP)\$(WISHNAME)
 TKSTUBLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKSTUBLIBNAME)
 TKIMPLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKIMPLIBNAME)
@@ -1226,7 +1250,10 @@ TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX:t=).lib
 TKIMPLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKIMPLIBNAME)
 !endif
 TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
+TKSCRIPTZIP     = $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKSCRIPTZIPNAME)
+
 !endif # TKINSTALL
+
 tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 
 !endif # $(DOING_TK)
@@ -1313,7 +1340,7 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 #    define PRJ_LIBS before including rules.rc if additional libs are needed
 
 OPTDEFINES	= /DSTDC_HEADERS
-!if $(VCVERSION) >= 1600
+!if $(VCVERSION) > 1600
 OPTDEFINES	= $(OPTDEFINES) /DHAVE_STDINT_H=1
 !else
 OPTDEFINES	= $(OPTDEFINES) /DMP_NO_STDINT=1
@@ -1615,6 +1642,8 @@ default-install-pdbs:
 	@if not exist "$(LIB_INSTALL_DIR)" mkdir "$(LIB_INSTALL_DIR)"
 	@$(CPY) "$(OUT_DIR)\*.pdb" "$(LIB_INSTALL_DIR)\"
 
+# "emacs font-lock highlighting fix
+
 default-install-docs-html:
 	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
 	@if not exist "$(DOC_INSTALL_DIR)" mkdir "$(DOC_INSTALL_DIR)"
@@ -1779,8 +1808,8 @@ $<
 TCLNMAKECONFIG = "$(_TCLDIR)\lib\nmake\tcl.nmake"
 !endif
 !else # !$(TCLINSTALL) - building against Tcl source
-!if exist("$(OUT_DIR)\tcl.nmake")
-TCLNMAKECONFIG = "$(OUT_DIR)\tcl.nmake"
+!if exist("$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl.nmake")
+TCLNMAKECONFIG	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl.nmake"
 !endif
 !endif # TCLINSTALL
 

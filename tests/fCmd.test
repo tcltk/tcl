@@ -24,6 +24,7 @@ testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testchmod [llength [info commands testchmod]]
 testConstraint winVista 0
 testConstraint win2000orXP 0
+testConstraint winLessThan10 0
 # Don't know how to determine this constraint correctly
 testConstraint notNetworkFilesystem 0
 testConstraint reg 0
@@ -64,13 +65,16 @@ if {[testConstraint unix]} {
 }
 
 # Also used in winFCmd...
-if {[testConstraint win]} {
-    if {[testConstraint nt] && $::tcl_platform(osVersion) >= 5.0} {
-        if {$::tcl_platform(osVersion) >= 6.0} {
-            testConstraint winVista 1
-        } else {
-            testConstraint win2000orXP 1
-        }
+if {[testConstraint win] && [testConstraint nt]} {
+    if {$::tcl_platform(osVersion) >= 5.0} {
+	if {$::tcl_platform(osVersion) < 10.0} {
+	    testConstraint winLessThan10 1
+	}
+	if {$::tcl_platform(osVersion) >= 6.0} {
+	    testConstraint winVista 1
+	} else {
+	    testConstraint win2000orXP 1
+	}
     }
 }
 
@@ -2355,13 +2359,15 @@ test fCmd-28.7 {file link: source already exists} -setup {
 } -returnCodes error -cleanup {
     cd [workingDirectory]
 } -result {could not create new link "abc.file": that path already exists}
-test fCmd-28.8 {file link} -constraints {linkFile win} -setup {
+# In Windows 10 developer mode, we _can_ create symbolic links to files!
+test fCmd-28.8 {file link} -constraints {linkFile winLessThan10} -setup {
     cd [temporaryDirectory]
 } -body {
     file link -symbolic abc.link abc.file
-} -returnCodes error -cleanup {
+} -cleanup {
+    file delete -force abc.link
     cd [workingDirectory]
-} -result {could not create new link "abc.link" pointing to "abc.file": not a directory}
+} -returnCodes error -result {could not create new link "abc.link" pointing to "abc.file": invalid argument}
 test fCmd-28.9 {file link: success with file} -constraints {linkFile} -setup {
     cd [temporaryDirectory]
     file delete -force abc.link

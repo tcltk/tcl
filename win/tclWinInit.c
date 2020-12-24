@@ -164,6 +164,9 @@ TclpInitPlatform(void)
     tclWinProcs.cancelSynchronousIo =
 	    (BOOL (WINAPI *)(HANDLE))(void *)GetProcAddress(handle,
 	    "CancelSynchronousIo");
+    tclWinProcs.createSymbolicLink =
+	    (BOOLEAN (WINAPI *)(LPCWSTR, LPCWSTR, DWORD))(void *)GetProcAddress(handle,
+	    "CreateSymbolicLinkW");
 }
 
 /*

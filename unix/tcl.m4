@@ -1210,7 +1210,16 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    if test "x${TCL_THREADS}" = "x0"; then
 		AC_MSG_ERROR([CYGWIN compile is only supported with --enable-threads])
 	    fi
-	    do64bit_ok=yes
+	    AC_MSG_CHECKING([whether CYGWIN platform is 64-bit])
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+		    [[#include <stdint.h>
+			#if INTPTR_MAX == INT64_MAX
+			    #error 64-bit platform
+			#endif
+		    ]],[])],
+		[do64bit_ok=no],
+		[do64bit_ok=yes])
+	    AC_MSG_RESULT([$do64bit_ok])
 	    ;;
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
