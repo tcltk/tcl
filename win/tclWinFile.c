@@ -271,9 +271,9 @@ WinLink(
 		 */
 
 		return 0;
+	    } else {
+		TclWinConvertError(GetLastError());
 	    }
-
-	    TclWinConvertError(GetLastError());
 	} else {
 	    Tcl_SetErrno(ENODEV);
 	}

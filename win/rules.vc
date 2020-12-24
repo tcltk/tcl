@@ -1340,7 +1340,7 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 #    define PRJ_LIBS before including rules.rc if additional libs are needed
 
 OPTDEFINES	= /DSTDC_HEADERS
-!if $(VCVERSION) >= 1600
+!if $(VCVERSION) > 1600
 OPTDEFINES	= $(OPTDEFINES) /DHAVE_STDINT_H=1
 !else
 OPTDEFINES	= $(OPTDEFINES) /DMP_NO_STDINT=1

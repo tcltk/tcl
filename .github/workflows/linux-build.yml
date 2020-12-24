@@ -9,6 +9,7 @@ jobs:
           - ""
           - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "CFLAGS=-DTCL_UTF_MAX=3"
+          - "EXTRA_CC_SWITCHES=-x\ c++"
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
