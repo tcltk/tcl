@@ -563,11 +563,11 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
       AC_CACHE_CHECK(for cross-compile version of gcc,
 	ac_cv_cross,
-	AC_TRY_COMPILE([
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	    #ifndef _WIN32
 		#error cross-compiler
 	    #endif
-	], [],
+	]], [[]])],
 	[ac_cv_cross=no],
 	[ac_cv_cross=yes])
       )
@@ -630,11 +630,11 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	extra_ldflags="-pipe -static-libgcc"
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
-	    AC_TRY_COMPILE([
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		#ifdef _WIN32
 		    #error win32
 		#endif
-	    ], [],
+	    ]], [[]])],
 	    [ac_cv_win32=no],
 	    [ac_cv_win32=yes])
 	)
@@ -736,11 +736,11 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 		;;
 	    *)
-		AC_TRY_COMPILE([
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		    #ifndef _WIN64
 			#error 32-bit
 		    #endif
-		], [],
+		]], [[]])],
 		    [tcl_win_64bit=yes],
 		    [tcl_win_64bit=no]
 		)
@@ -961,7 +961,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     if test "${GCC}" = "yes" ; then
 	AC_CACHE_CHECK(for SEH support in compiler,
 	    tcl_cv_seh,
-	AC_TRY_RUN([
+	AC_RUN_IFELSE([AC_LANG_SOURCE([[
 	    #define WIN32_LEAN_AND_MEAN
 	    #include <windows.h>
 	    #undef WIN32_LEAN_AND_MEAN
@@ -976,7 +976,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		}
 		return 1;
 	    }
-	],
+	]])],
 	    [tcl_cv_seh=yes],
 	    [tcl_cv_seh=no],
 	    [tcl_cv_seh=no])
@@ -994,13 +994,13 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	#
 	AC_CACHE_CHECK(for EXCEPTION_DISPOSITION support in include files,
 	    tcl_cv_eh_disposition,
-	    AC_TRY_COMPILE([
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #	    define WIN32_LEAN_AND_MEAN
 #	    include <windows.h>
 #	    undef WIN32_LEAN_AND_MEAN
-	    ],[
+	    ]], [[
 		EXCEPTION_DISPOSITION x;
-	    ],
+	    ]])],
 	    [tcl_cv_eh_disposition=yes],
 	    [tcl_cv_eh_disposition=no])
 	)
@@ -1015,16 +1015,16 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	AC_CACHE_CHECK(for winnt.h that ignores VOID define,
 	    tcl_cv_winnt_ignore_void,
-	    AC_TRY_COMPILE([
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		#define VOID void
 		#define WIN32_LEAN_AND_MEAN
 		#include <windows.h>
 		#undef WIN32_LEAN_AND_MEAN
-	    ], [
+	    ]], [[
 		CHAR c;
 		SHORT s;
 		LONG l;
-	    ],
+	    ]])],
 	    [tcl_cv_winnt_ignore_void=yes],
 	    [tcl_cv_winnt_ignore_void=no])
 	)
@@ -1039,11 +1039,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	AC_CACHE_CHECK(for cast to union support,
 	    tcl_cv_cast_to_union,
-	    AC_TRY_COMPILE([],
-	    [
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
 		  union foo { int i; double d; };
 		  union foo f = (union foo) (int) 0;
-	    ],
+	    ]])],
 	    [tcl_cv_cast_to_union=yes],
 	    [tcl_cv_cast_to_union=no])
 	)
