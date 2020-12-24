@@ -14712,7 +14712,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #include <stdlib.h>
 #include <string.h>
 int main() {
-    extern int strstr();
+    extern char *strstr(const char *, const char *);
     exit(strstr("\0test", "test") ? 1 : 0);
 }
 _ACEOF
@@ -14882,7 +14882,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #include <stdlib.h>
 #include <string.h>
 int main() {
-    extern int strtoul();
+    extern unsigned long strtoul(const char *, char **, int);
     char *term, *string = "0";
     exit(strtoul(string,&term,0) != 0 || term != string+1);
 }
@@ -15052,7 +15052,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #include <stdlib.h>
 #include <string.h>
 int main() {
-    extern double strtod();
+    extern double strtod(const char *, char **);
     char *term, *string = " +69";
     exit(strtod(string,&term) != 69 || term != string+4);
 }
