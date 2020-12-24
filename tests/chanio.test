@@ -6502,10 +6502,10 @@ test chan-io-50.5 {testing handler deletion vs reentrant calls} -setup {
 	    set u recursive
 	    lappend z "del calling recursive"
 	    set timer [after 50 lappend z timeout]
-	    set mode [test servicemode 1]
+	    set mode [testservicemode 1]
 	    vwait z
 	    after cancel $timer
-	    test servicemode $mode
+	    testservicemode $mode
 	    lappend z "del after update"
 	}
     }

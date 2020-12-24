@@ -27,6 +27,7 @@ jobs:
       matrix:
         cfgopt:
           - ""
+          - "EXTRA_CC_SWITCHES=-x\ c++"
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
