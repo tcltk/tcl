@@ -82,7 +82,7 @@ if test -z "$no_pipe" && test -n "$GCC"; then
     AC_CACHE_CHECK([if the compiler understands -pipe],
 	tcl_cv_cc_pipe, [
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -pipe"
-	AC_TRY_COMPILE(,, tcl_cv_cc_pipe=yes, tcl_cv_cc_pipe=no)
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_cc_pipe=yes],[tcl_cv_cc_pipe=no])
 	CFLAGS=$hold_cflags])
     if test $tcl_cv_cc_pipe = yes; then
 	CFLAGS="$CFLAGS -pipe"
@@ -220,8 +220,9 @@ SC_SERIAL_PORT
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([for fd_set in sys/types], tcl_cv_type_fd_set, [
-    AC_TRY_COMPILE([#include <sys/types.h>],[fd_set readMask, writeMask;],
-	tcl_cv_type_fd_set=yes, tcl_cv_type_fd_set=no)])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[fd_set readMask, writeMask;]])],
+	[tcl_cv_type_fd_set=yes],
+	[tcl_cv_type_fd_set=no])])
 tcl_ok=$tcl_cv_type_fd_set
 if test $tcl_ok = no; then
     AC_CACHE_CHECK([for fd_mask in sys/select], tcl_cv_grep_fd_mask, [
@@ -277,7 +278,7 @@ AC_CHECK_FUNC(memmove, , [
 #--------------------------------------------------------------------
 
 SC_TCL_CHECK_BROKEN_FUNC(strstr, [
-    extern int strstr();
+    extern char *strstr(const char *, const char *);
     exit(strstr("\0test", "test") ? 1 : 0);
 ])
 
@@ -288,7 +289,7 @@ SC_TCL_CHECK_BROKEN_FUNC(strstr, [
 #--------------------------------------------------------------------
 
 SC_TCL_CHECK_BROKEN_FUNC(strtoul, [
-    extern int strtoul();
+    extern unsigned long strtoul(const char *, char **, int);
     char *term, *string = "0";
     exit(strtoul(string,&term,0) != 0 || term != string+1);
 ])
@@ -299,7 +300,7 @@ SC_TCL_CHECK_BROKEN_FUNC(strtoul, [
 #--------------------------------------------------------------------
 
 SC_TCL_CHECK_BROKEN_FUNC(strtod, [
-    extern double strtod();
+    extern double strtod(const char *, char **);
     char *term, *string = " +69";
     exit(strtod(string,&term) != 69 || term != string+4);
 ])
@@ -324,12 +325,12 @@ AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
 AC_CACHE_CHECK([for socklen_t], tcl_cv_type_socklen_t, [
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	#include <sys/types.h>
 	#include <sys/socket.h>
-    ],[
+    ]], [[
     	socklen_t foo;
-    ],[tcl_cv_type_socklen_t=yes],[tcl_cv_type_socklen_t=no])])
+    ]])],[tcl_cv_type_socklen_t=yes],[tcl_cv_type_socklen_t=no])])
 if test $tcl_cv_type_socklen_t = no; then
     AC_DEFINE(socklen_t, int, [Define as int if socklen_t is not available])
 fi
@@ -356,12 +357,12 @@ AC_CHECK_FUNC(opendir, , [AC_DEFINE(USE_DIRENT2_H, 1, [May we include <dirent2.h
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([union wait], tcl_cv_union_wait, [
-    AC_TRY_LINK([#include <sys/types.h>
-#include <sys/wait.h>], [
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#include <sys/wait.h>]], [[
 union wait x;
 WIFEXITED(x);		/* Generates compiler error if WIFEXITED
 			 * uses an int. */
-    ], tcl_cv_union_wait=yes, tcl_cv_union_wait=no)])
+    ]])],[tcl_cv_union_wait=yes],[tcl_cv_union_wait=no])])
 if test $tcl_cv_union_wait = no; then
     AC_DEFINE(NO_UNION_WAIT, 1, [Do we have a usable 'union wait'?])
 fi
@@ -411,10 +412,10 @@ fi
 
 AC_C_CHAR_UNSIGNED
 AC_CACHE_CHECK([signed char declarations], tcl_cv_char_signed, [
-    AC_TRY_COMPILE(, [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
 	signed char *p;
 	p = 0;
-	], tcl_cv_char_signed=yes, tcl_cv_char_signed=no)])
+	]])],[tcl_cv_char_signed=yes],[tcl_cv_char_signed=no])])
 if test $tcl_cv_char_signed = yes; then
     AC_DEFINE(HAVE_SIGNED_CHAR, 1, [Are characters signed?])
 fi
@@ -424,7 +425,7 @@ fi
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([for a putenv() that copies the buffer], tcl_cv_putenv_copy, [
-    AC_TRY_RUN([
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 	#include <stdlib.h>
 	#include <string.h>
 	#define OURVAR "havecopy=yes"
@@ -443,10 +444,10 @@ AC_CACHE_CHECK([for a putenv() that copies the buffer], tcl_cv_putenv_copy, [
 		return 1;
 	    }
 	}
-    ],
-    tcl_cv_putenv_copy=no,
-    tcl_cv_putenv_copy=yes,
-    tcl_cv_putenv_copy=no)])
+    ]])],
+    [tcl_cv_putenv_copy=no],
+    [tcl_cv_putenv_copy=yes],
+    [tcl_cv_putenv_copy=no])])
 if test $tcl_cv_putenv_copy = yes; then
     AC_DEFINE(HAVE_PUTENV_THAT_COPIES, 1,
 	[Does putenv() copy strings or incorporate them by reference?])
@@ -469,9 +470,9 @@ AC_CHECK_FUNCS(chflags)
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([isnan], tcl_cv_isnan, [
-    AC_TRY_LINK([#include <math.h>], [
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <math.h>]], [[
 isnan(0.0);			/* Generates an error if isnan is missing */
-], tcl_cv_isnan=yes, tcl_cv_isnan=no)])
+]])],[tcl_cv_isnan=yes],[tcl_cv_isnan=no])])
 if test $tcl_cv_isnan = no; then
     AC_DEFINE(NO_ISNAN, 1, [Do we have a usable 'isnan'?])
 fi
@@ -499,7 +500,7 @@ if test "`uname -s`" = "Darwin" ; then
     if test "$ac_cv_header_AvailabilityMacros_h" = yes; then
 	AC_CACHE_CHECK([if weak import is available], tcl_cv_cc_weak_import, [
 	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    AC_TRY_LINK([
+	    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
 		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1020
 		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1020
@@ -508,8 +509,7 @@ if test "`uname -s`" = "Darwin" ; then
 		    #error MAC_OS_X_VERSION_MIN_REQUIRED < 1020
 		    #endif
 		    int rand(void) __attribute__((weak_import));
-		], [rand();],
-		tcl_cv_cc_weak_import=yes, tcl_cv_cc_weak_import=no)
+		]], [[rand();]])],[tcl_cv_cc_weak_import=yes],[tcl_cv_cc_weak_import=no])
 	    CFLAGS=$hold_cflags])
 	if test $tcl_cv_cc_weak_import = yes; then
 	    AC_DEFINE(HAVE_WEAK_IMPORT, 1, [Is weak import available?])
@@ -517,7 +517,7 @@ if test "`uname -s`" = "Darwin" ; then
 	AC_CACHE_CHECK([if Darwin SUSv3 extensions are available],
 	    tcl_cv_cc_darwin_c_source, [
 	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    AC_TRY_COMPILE([
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
 		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
 		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
@@ -527,7 +527,7 @@ if test "`uname -s`" = "Darwin" ; then
 		    #endif
 		    #define _DARWIN_C_SOURCE 1
 		    #include <sys/cdefs.h>
-		],,tcl_cv_cc_darwin_c_source=yes, tcl_cv_cc_darwin_c_source=no)
+		]], [[]])],[tcl_cv_cc_darwin_c_source=yes],[tcl_cv_cc_darwin_c_source=no])
 	    CFLAGS=$hold_cflags])
 	if test $tcl_cv_cc_darwin_c_source = yes; then
 	    AC_DEFINE(_DARWIN_C_SOURCE, 1,
@@ -547,15 +547,15 @@ fi
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([for fts], tcl_cv_api_fts, [
-    AC_TRY_LINK([
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 	    #include <sys/param.h>
 	    #include <sys/stat.h>
 	    #include <fts.h>
-	], [
+	]], [[
 	    char*const p[2] = {"/", NULL};
 	    FTS *f = fts_open(p, FTS_PHYSICAL|FTS_NOCHDIR|FTS_NOSTAT, NULL);
 	    FTSENT *e = fts_read(f); fts_close(f);
-	], tcl_cv_api_fts=yes, tcl_cv_api_fts=no)])
+	]])],[tcl_cv_api_fts=yes],[tcl_cv_api_fts=no])])
 if test $tcl_cv_api_fts = yes; then
     AC_DEFINE(HAVE_FTS, 1, [Do we have fts functions?])
 fi
@@ -673,7 +673,7 @@ AC_MSG_RESULT([$tcl_ok])
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([if the C stack grows upwards in memory], tcl_cv_stack_grows_up, [
-    AC_TRY_RUN([
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 	int StackGrowsUp(int *parent) {
 	    int here;
 	    volatile int result;
@@ -686,8 +686,8 @@ AC_CACHE_CHECK([if the C stack grows upwards in memory], tcl_cv_stack_grows_up, 
 	int main (int argc, char *argv[]) {
 	    return StackGrowsUp(0);
 	}
-    ], tcl_cv_stack_grows_up=yes, tcl_cv_stack_grows_up=no,
-    tcl_cv_stack_grows_up=unknown)])
+    ]])],[tcl_cv_stack_grows_up=yes],[tcl_cv_stack_grows_up=no],
+    [tcl_cv_stack_grows_up=unknown])])
 if test $tcl_cv_stack_grows_up = unknown; then
     AC_DEFINE(TCL_CROSS_COMPILE, 1, [Are we cross-compiling?])
 elif test $tcl_cv_stack_grows_up = yes; then
@@ -699,7 +699,7 @@ fi
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([whether the cpuid instruction is usable], tcl_cv_cpuid, [
-    AC_TRY_LINK(, [
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 	int index,regsPtr[4];
     __asm__ __volatile__("mov %%ebx, %%edi     \n\t"
                  "cpuid            \n\t"
@@ -707,7 +707,7 @@ AC_CACHE_CHECK([whether the cpuid instruction is usable], tcl_cv_cpuid, [
                  "mov %%edi, %%ebx  \n\t"
                  : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
                  : "a"(index) : "edi");
-    ], tcl_cv_cpuid=yes, tcl_cv_cpuid=no)])
+    ]])],[tcl_cv_cpuid=yes],[tcl_cv_cpuid=no])])
 if test $tcl_cv_cpuid = yes; then
     AC_DEFINE(HAVE_CPUID, 1, [Is the cpuid instruction usable?])
 fi
