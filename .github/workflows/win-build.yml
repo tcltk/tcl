@@ -53,7 +53,6 @@ jobs:
         cfgopt:
           - ""
           - "CFLAGS=-DTCL_NO_DEPRECATED=1"
-          - "EXTRA_CC_SWITCHES=-x\ c++"
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
