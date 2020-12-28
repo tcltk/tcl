@@ -9011,49 +9011,66 @@ See RFC 2045
 
 2020-05-11 (bug)[d402ff] Win32 potential crash when using main() (werner)
 
-2020-05-13 (bug)[81242a] Documentation for Tcl_UtfAtIndex() is incorrect (nijtmans)
+2020-05-13 (bug)[81242a] revised documentation for Tcl_UtfAtIndex() (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
 
-2020-05-13 (bug)[ed2980] Tcl_UtfToUniChar reads more than TCL_UTF_MAX bytes (nijtmans)
+2020-05-13 (bug)[ed2980] Tcl_UtfToUniChar reads > TCL_UTF_MAX bytes (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
 
-2020-06-23 (bug)[41c985] library/init.tcl adds nonsense to auto_path in Safe Base interpreters (kjnash)
+2020-06-02 (bug) prevent segfault in parser (sebres)
 
-2020-06-24 (bug)[f70ce1] zlib transform issue, multi-stream inflate ignores streams after first (sebres)
+2020-06-21 (bug)[f81bec] http POST a binary file (alakendu,nash)
+=> http 2.9.2
 
-2020-07-09 (bug)[a1bd37] clock (free)scan of ISO 8601 timestamp with literal T behaves strange (sebres)
+2020-06-23 (bug)[41c985] auto_path nonsense in Safe Base (nash)
 
-2020-07-10 (bug)[501974] FreeScan resp. Oldscan does not recognize positive time zone offset (sebres)
+2020-06-24 (bug)[f70ce1] zlib multi-stream inflate acts only on first (sebres)
 
-2020-07-15 (bug)[3c6e47] Performance degradation by compiled "lappend" command (sebres)
+2020-07-09 (bug)[a1bd37] [clock scan] new ISO format (clock-34.(19-24)) (sebres)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2020-07-10 (bug)[501974] [clock scan] +time zone (clock-34.(53-68)) (sebres)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2020-07-15 (bug)[3c6e47] compiled [lappend] performance, avoid copy (sebres)
 
 2020-07-16 (bug)[5bbd04] Fix index underflow (schwab)
 
-2020-07-25 (bug)[20dccf] htons-related test fails on Mac OSX Catalina (10.15) (nijtmans)
+2020-07-27 (bug)[cb0373] http::geturl -keepalive fixes (nash)
+=> http 2.9.3
 
-2020-07-27 (bug)[cb0373] The http::geturl -keepalive option does not work as described in the man page (kjnash)
+2020-08-10 (bug)[29e884] cmd resolution cycle (namespace-57.0) (coulter,sebres)
 
-2020-08-10 (bug)[29e884] calling an imported alias in a deletion trace causes Tcl to cycle (sebres)
+2020-08-12 (bug)[e87000] Tcl_BadChannelOption tolerate NULL (werner,nijtmans)
 
-2020-08-12 (bug)[e87000] crash for "fconfigure stdout" in Win32 (werner, nijtmans)
-
-2020-08-31 (TIP #581) Master/Slave (nijtmans)
+2020-08-31 (TIP #581) disfavor Master/Slave terminolgy (nijtmans)
+=> opt 0.4.8
 
 2020-09-11 (bug)[3bc0f4] UBSan complains about body.chars[] usage (nijtmans)
 
-2020-09-17 (bug)[835c93] TIP #525 only implemented for non-singleproc case (nijtmans)
+2020-09-17 (bug)[835c93] Support TIP 525 exit code for -singleproc 1 (nijtmans)
+=> tcltest 2.5.3
 
-2020-09-19 (bug)[b9ecf3] [uplevel $list], [uplevel 1 $list] and generation of string representations (pooryorick)
+2020-09-25 (new) force -eofchar \032 when evaluating library scripts (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
 
-2020-09-29 (bug)[0063cb] check http::geturl -headers parameter to be a dict (oehlmann, nijtmans)
+2020-09-29 (bug)[0063cb] http::geturl -headers must be dict (oehlmann,nijtmans)
 
-2020-10-09 (bug)[014ade] Misleading error message when using "-path" multiple times with "glob" (nijtmans)
+2020-10-19 (bug)[cb4582] Update install-sh script (stu,nijtmans)
 
-2020-10-09 (bug)[53d515] Typo in interp.n (stu)
+2020-10-22 (bug)[c97593] Usage of gnu_printf in latest mingw-w64 (nijtmans)
 
-2020-10-19 (bug)[cb4582] Update install-sh script to latest version (stu, nijtmans)
+2020-10-26 (new)[48898a] improve error message consistency (stu)
+        *** POTENTIAL INCOMPATIBILITY ***
 
-2020-10-22 (bug)[c97593]: Usage of gnu_printf in latest mingw-w64 (nijtmans)
+2020-11-06 (new) revised case of module names (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
 
+2020-12-10 (bug)[ed5be7] Win: recognize "comx:" as serial port (oehlmann)
 
+2020-12-11 (new) support for msys2, Big Sur (nijtmans)
+=> platform 1.0.15
 
+2020-12-23 tzdata updated to Olson's tzdata2020e (jima)
 
 - Released 8.6.11, Dec 31, 2020 - details at http://core.tcl-lang.org/tcl/ -
