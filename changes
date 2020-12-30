@@ -9043,7 +9043,7 @@ See RFC 2045
 
 2020-08-12 (bug)[e87000] Tcl_BadChannelOption tolerate NULL (werner,nijtmans)
 
-2020-08-31 (TIP #581) disfavor Master/Slave terminolgy (nijtmans)
+2020-08-31 (TIP #581) disfavor Master/Slave terminology (nijtmans)
 => opt 0.4.8
 
 2020-09-11 (bug)[3bc0f4] UBSan complains about body.chars[] usage (nijtmans)
