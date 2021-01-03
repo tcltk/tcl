@@ -55,7 +55,6 @@ jobs:
           - ""
           - "CFLAGS=-DTCL_UTF_MAX=4"
           - "CFLAGS=-DTCL_NO_DEPRECATED=1"
-          - "EXTRA_CC_SWITCHES=-x\ c++"
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
