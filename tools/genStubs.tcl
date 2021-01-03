@@ -258,7 +258,7 @@ proc genStubs::rewriteFile {file text} {
     }
     set in [open ${file} r]
     set out [open ${file}.new w]
-    fconfigure $out -translation lf
+    fconfigure $out -translation lf -encoding utf-8
 
     while {![eof $in]} {
 	set line [gets $in]
