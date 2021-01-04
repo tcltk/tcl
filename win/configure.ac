@@ -3,7 +3,8 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 
-AC_INIT(../generic/tcl.h)
+AC_INIT([tcl],[8.7])
+AC_CONFIG_SRCDIR([../generic/tcl.h])
 AC_PREREQ([2.69])
 
 # The following define is needed when building with Cygwin since newer
@@ -219,17 +220,16 @@ AC_SUBST(INSTALL_MSGS)
 
 AC_CACHE_CHECK(for FINDEX_INFO_LEVELS in winbase.h,
     tcl_cv_findex_enums,
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
-],
-[
+]], [[
   FINDEX_INFO_LEVELS i;
   FINDEX_SEARCH_OPS j;
-],
-        tcl_cv_findex_enums=yes,
-        tcl_cv_findex_enums=no)
+]])],
+    [tcl_cv_findex_enums=yes],
+    [tcl_cv_findex_enums=no])
 )
 if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
@@ -480,8 +480,9 @@ AC_SUBST(RC_DEFINE)
 AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 
-AC_OUTPUT(Makefile tclConfig.sh tclsh.exe.manifest)
+AC_CONFIG_FILES([Makefile tclConfig.sh tclsh.exe.manifest])
+AC_OUTPUT
 
 dnl Local Variables:
-dnl mode: autoconf;
+dnl mode: autoconf
 dnl End:

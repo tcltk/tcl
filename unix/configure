@@ -7206,7 +7206,7 @@ then :
 	    Darwin-*) ;;
 	    IRIX*) ;;
 	    Linux*|GNU*) ;;
-	    NetBSD-*|OpenBSD-*) ;;
+	    NetBSD-*|DragonFly-*|FreeBSD-*|OpenBSD-*) ;;
 	    OSF1-V*) ;;
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
@@ -9218,14 +9218,6 @@ then :
 
 fi
 
-
-# Obsolete code to be removed.
-if test $ac_cv_header_sys_time_h = yes; then
-
-printf "%s\n" "#define TIME_WITH_SYS_TIME 1" >>confdefs.h
-
-fi
-# End of obsolete code.
 
 
     ac_fn_c_check_func "$LINENO" "gmtime_r" "ac_cv_func_gmtime_r"

@@ -768,6 +768,7 @@ AC_DEFUN([SC_CONFIG_MANPAGES], [
 #	Defines the following var:
 #
 #	system -	System/platform/version identification code.
+#
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_CONFIG_SYSTEM], [
@@ -908,7 +909,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 	    extern __attribute__((__visibility__("hidden"))) void f(void);
-	    void f(void) {}]], [[f();]])],[tcl_cv_cc_visibility_hidden=yes],
+	    void f(void) {}]], [[f();]])],
+	    [tcl_cv_cc_visibility_hidden=yes],
 	    [tcl_cv_cc_visibility_hidden=no])
 	CFLAGS=$hold_cflags])
     AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
@@ -1397,7 +1399,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 				tcl_cv_cc_arch_ppc64, [
 			    hold_cflags=$CFLAGS
 			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
-			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_cc_arch_ppc64=yes],
+			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+				    [tcl_cv_cc_arch_ppc64=yes],
 				    [tcl_cv_cc_arch_ppc64=no])
 			    CFLAGS=$hold_cflags])
 			AS_IF([test $tcl_cv_cc_arch_ppc64 = yes], [
@@ -1409,7 +1412,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 				tcl_cv_cc_arch_x86_64, [
 			    hold_cflags=$CFLAGS
 			    CFLAGS="$CFLAGS -arch x86_64"
-			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_cc_arch_x86_64=yes],
+			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+				    [tcl_cv_cc_arch_x86_64=yes],
 				    [tcl_cv_cc_arch_x86_64=no])
 			    CFLAGS=$hold_cflags])
 			AS_IF([test $tcl_cv_cc_arch_x86_64 = yes], [
@@ -1442,7 +1446,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    tcl_cv_ld_search_paths_first, [
 		hold_ldflags=$LDFLAGS
 		LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
-		AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int i;]])],[tcl_cv_ld_search_paths_first=yes],
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int i;]])],
+			[tcl_cv_ld_search_paths_first=yes],
 			[tcl_cv_ld_search_paths_first=no])
 		LDFLAGS=$hold_ldflags])
 	    AS_IF([test $tcl_cv_ld_search_paths_first = yes], [
@@ -1780,7 +1785,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	    Darwin-*) ;;
 	    IRIX*) ;;
 	    Linux*|GNU*) ;;
-	    NetBSD-*|OpenBSD-*) ;;
+	    NetBSD-*|DragonFly-*|FreeBSD-*|OpenBSD-*) ;;
 	    OSF1-V*) ;;
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
@@ -2111,33 +2116,22 @@ AC_DEFUN([SC_BLOCKING_STYLE], [
 
 AC_DEFUN([SC_TIME_HANDLER], [
     AC_CHECK_HEADERS(sys/time.h)
-    m4_warn([obsolete],
-[Update your code to rely only on HAVE_SYS_TIME_H,
-then remove this warning and the obsolete code below it.
-All current systems provide time.h; it need not be checked for.
-Not all systems provide sys/time.h, but those that do, all allow
-you to include it and time.h simultaneously.])dnl
-AC_CHECK_HEADERS_ONCE([sys/time.h])
-# Obsolete code to be removed.
-if test $ac_cv_header_sys_time_h = yes; then
-  AC_DEFINE([TIME_WITH_SYS_TIME],[1],[Define to 1 if you can safely include both <sys/time.h>
-	     and <time.h>.  This macro is obsolete.])
-fi
-# End of obsolete code.
-
+    AC_CHECK_HEADERS_ONCE([sys/time.h])
 
     AC_CHECK_FUNCS(gmtime_r localtime_r mktime)
 
     AC_CACHE_CHECK([tm_tzadj in struct tm], tcl_cv_member_tm_tzadj, [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[struct tm tm; tm.tm_tzadj;]])],
-	    [tcl_cv_member_tm_tzadj=yes],[tcl_cv_member_tm_tzadj=no])])
+	    [tcl_cv_member_tm_tzadj=yes],
+	    [tcl_cv_member_tm_tzadj=no])])
     if test $tcl_cv_member_tm_tzadj = yes ; then
 	AC_DEFINE(HAVE_TM_TZADJ, 1, [Should we use the tm_tzadj field of struct tm?])
     fi
 
     AC_CACHE_CHECK([tm_gmtoff in struct tm], tcl_cv_member_tm_gmtoff, [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[struct tm tm; (void)tm.tm_gmtoff;]])],
-	    [tcl_cv_member_tm_gmtoff=yes],[tcl_cv_member_tm_gmtoff=no])])
+	    [tcl_cv_member_tm_gmtoff=yes],
+	    [tcl_cv_member_tm_gmtoff=no])])
     if test $tcl_cv_member_tm_gmtoff = yes ; then
 	AC_DEFINE(HAVE_TM_GMTOFF, 1, [Should we use the tm_gmtoff field of struct tm?])
     fi
