@@ -3,7 +3,8 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 
-AC_INIT(../generic/tcl.h)
+AC_INIT([tcl],[8.7])
+AC_CONFIG_SRCDIR([../generic/tcl.h])
 AC_PREREQ([2.69])
 
 # The following define is needed when building with Cygwin since newer
@@ -480,8 +481,9 @@ AC_SUBST(RC_DEFINE)
 AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 
-AC_OUTPUT(Makefile tclConfig.sh tclsh.exe.manifest)
+AC_CONFIG_FILES(Makefile tclConfig.sh tclsh.exe.manifest)
+AC_OUTPUT
 
 dnl Local Variables:
-dnl mode: autoconf;
+dnl mode: autoconf
 dnl End:
