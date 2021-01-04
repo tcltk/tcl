@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 8
+RULES_VERSION_MINOR = 9
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -1592,11 +1592,11 @@ default-target: $(DEFAULT_BUILD_TARGET)
 !if $(MULTIPLATFORM_INSTALL)
 default-pkgindex:
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
-	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)] [string totitle $(PRJ_PACKAGE_TCLNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
 !else
 default-pkgindex:
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
-	    [list load [file join $$dir $(PRJLIBNAME)] [string totitle $(PRJ_PACKAGE_TCLNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+	    [list load [file join $$dir $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
 !endif
 
 default-pkgindex-tea:
