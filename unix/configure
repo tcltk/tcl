@@ -7640,7 +7640,7 @@ else $as_nop
   tcl_type_64bit="long long"
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-	# See if we could use long anyway  Note that we substitute in the
+	# See if we should use long anyway  Note that we substitute in the
 	# type that is our current guess for a 64-bit type inside this check
 	# program, so it should be modified only carefully...
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -9286,7 +9286,7 @@ else $as_nop
 int
 main (void)
 {
-struct tm tm; tm.tm_tzadj;
+struct tm tm; (void)tm.tm_tzadj;
   ;
   return 0;
 }

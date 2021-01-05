@@ -1429,7 +1429,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AC_CACHE_CHECK([if ld accepts -single_module flag], tcl_cv_ld_single_module, [
 		hold_ldflags=$LDFLAGS
 		LDFLAGS="$LDFLAGS -dynamiclib -Wl,-single_module"
-		AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int i;]])],[tcl_cv_ld_single_module=yes],[tcl_cv_ld_single_module=no])
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int i;]])],[tcl_cv_ld_single_module=yes],
+		    [tcl_cv_ld_single_module=no])
 		LDFLAGS=$hold_ldflags])
 	    AS_IF([test $tcl_cv_ld_single_module = yes], [
 		SHLIB_LD="${SHLIB_LD} -Wl,-single_module"
@@ -1443,7 +1444,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		hold_ldflags=$LDFLAGS
 		LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
 		AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int i;]])],[tcl_cv_ld_search_paths_first=yes],
-			[tcl_cv_ld_search_paths_first=no])
+		    [tcl_cv_ld_search_paths_first=no])
 		LDFLAGS=$hold_ldflags])
 	    AS_IF([test $tcl_cv_ld_search_paths_first = yes], [
 		LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
@@ -1499,9 +1500,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			    eval 'hold_'$v'="$'$v'";'$v'="`echo "$'$v' "|sed -e "s/-arch ppc / /g" -e "s/-arch i386 / /g"`"'
 			done
 			AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <CoreFoundation/CoreFoundation.h>]],
-				[[CFBundleRef b = CFBundleGetMainBundle();]])],
-				[tcl_cv_lib_corefoundation_64=yes],
-				[tcl_cv_lib_corefoundation_64=no])
+			    [[CFBundleRef b = CFBundleGetMainBundle();]])],
+			    [tcl_cv_lib_corefoundation_64=yes],
+			    [tcl_cv_lib_corefoundation_64=no])
 			for v in CFLAGS CPPFLAGS LDFLAGS; do
 			    eval $v'="$hold_'$v'"'
 			done])
@@ -2129,15 +2130,15 @@ fi
     AC_CHECK_FUNCS(gmtime_r localtime_r mktime)
 
     AC_CACHE_CHECK([tm_tzadj in struct tm], tcl_cv_member_tm_tzadj, [
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[struct tm tm; tm.tm_tzadj;]])],
-	    [tcl_cv_member_tm_tzadj=yes],[tcl_cv_member_tm_tzadj=no])])
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[struct tm tm; (void)tm.tm_tzadj;]])],
+	    [tcl_cv_member_tm_tzadj=yes], [tcl_cv_member_tm_tzadj=no])])
     if test $tcl_cv_member_tm_tzadj = yes ; then
 	AC_DEFINE(HAVE_TM_TZADJ, 1, [Should we use the tm_tzadj field of struct tm?])
     fi
 
     AC_CACHE_CHECK([tm_gmtoff in struct tm], tcl_cv_member_tm_gmtoff, [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[struct tm tm; (void)tm.tm_gmtoff;]])],
-	    [tcl_cv_member_tm_gmtoff=yes],[tcl_cv_member_tm_gmtoff=no])])
+	    [tcl_cv_member_tm_gmtoff=yes], [tcl_cv_member_tm_gmtoff=no])])
     if test $tcl_cv_member_tm_gmtoff = yes ; then
 	AC_DEFINE(HAVE_TM_GMTOFF, 1, [Should we use the tm_gmtoff field of struct tm?])
     fi
@@ -2148,10 +2149,10 @@ fi
     #
     AC_CACHE_CHECK([long timezone variable], tcl_cv_timezone_long, [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]],
-	    [[extern long timezone;
+	[[extern long timezone;
 	    timezone += 1;
 	    exit (0);]])],
-	    [tcl_cv_timezone_long=yes],[tcl_cv_timezone_long=no])])
+	    [tcl_cv_timezone_long=yes], [tcl_cv_timezone_long=no])])
     if test $tcl_cv_timezone_long = yes ; then
 	AC_DEFINE(HAVE_TIMEZONE_VAR, 1, [Should we use the global timezone variable?])
     else
@@ -2160,10 +2161,10 @@ fi
 	#
 	AC_CACHE_CHECK([time_t timezone variable], tcl_cv_timezone_time, [
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]],
-		[[extern time_t timezone;
+	    [[extern time_t timezone;
 		timezone += 1;
 		exit (0);]])],
-		[tcl_cv_timezone_time=yes],[tcl_cv_timezone_time=no])])
+		[tcl_cv_timezone_time=yes], [tcl_cv_timezone_time=no])])
 	if test $tcl_cv_timezone_time = yes ; then
 	    AC_DEFINE(HAVE_TIMEZONE_VAR, 1, [Should we use the global timezone variable?])
 	fi
@@ -2174,8 +2175,9 @@ fi
 # SC_TCL_LINK_LIBS
 #
 #	Search for the libraries needed to link the Tcl shell.
-#	Things like the math library (-lm) and socket stuff (-lsocket vs.
-#	-lnsl) or thread library (-lpthread) are dealt with here.
+#	Things like the math library (-lm), socket stuff (-lsocket vs.
+#	-lnsl), zlib (-lz) and libtommath (-ltommath) or thread library
+#	(-lpthread) are dealt with here.
 #
 # Arguments:
 #	None.
@@ -2369,8 +2371,8 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 	tcl_cv_type_64bit=none
 	# See if the compiler knows natively about __int64
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[__int64 value = (__int64) 0;]])],
-	    [tcl_type_64bit=__int64],[tcl_type_64bit="long long"])
-	# See if we could use long anyway  Note that we substitute in the
+	    [tcl_type_64bit=__int64], [tcl_type_64bit="long long"])
+	# See if we should use long anyway  Note that we substitute in the
 	# type that is our current guess for a 64-bit type inside this check
 	# program, so it should be modified only carefully...
         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[switch (0) {
@@ -2397,7 +2399,7 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <dirent.h>]], [[struct dirent64 *p; DIR64 d = opendir64(".");
             p = readdir64(d); rewinddir64(d); closedir64(d);]])],
-		[tcl_cv_DIR64=yes],[tcl_cv_DIR64=no])])
+		[tcl_cv_DIR64=yes], [tcl_cv_DIR64=no])])
 	if test "x${tcl_cv_DIR64}" = "xyes" ; then
 	    AC_DEFINE(HAVE_DIR64, 1, [Is 'DIR64' in <sys/types.h>?])
 	fi
@@ -2405,7 +2407,7 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 	AC_CACHE_CHECK([for struct stat64], tcl_cv_struct_stat64,[
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/stat.h>]], [[struct stat64 p;
 ]])],
-		[tcl_cv_struct_stat64=yes],[tcl_cv_struct_stat64=no])])
+		[tcl_cv_struct_stat64=yes], [tcl_cv_struct_stat64=no])])
 	if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
 	    AC_DEFINE(HAVE_STRUCT_STAT64, 1, [Is 'struct stat64' in <sys/stat.h>?])
 	fi
@@ -2415,7 +2417,7 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 	AC_CACHE_VAL(tcl_cv_type_off64_t,[
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[off64_t offset;
 ]])],
-		[tcl_cv_type_off64_t=yes],[tcl_cv_type_off64_t=no])])
+		[tcl_cv_type_off64_t=yes], [tcl_cv_type_off64_t=no])])
 	dnl Define HAVE_TYPE_OFF64_T only when the off64_t type and the
 	dnl functions lseek64 and open64 are defined.
 	if test "x${tcl_cv_type_off64_t}" = "xyes" && \
