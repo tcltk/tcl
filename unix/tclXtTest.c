@@ -3,7 +3,7 @@
  *
  *	Contains commands for Xt notifier specific tests on Unix.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright © 1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -78,7 +78,7 @@ Tclxttest_Init(
 
 static int
 TesteventloopCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

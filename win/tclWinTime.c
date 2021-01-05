@@ -4,7 +4,7 @@
  *	Contains Windows specific versions of Tcl functions that obtain time
  *	values from the operating system.
  *
- * Copyright 1995-1998 by Sun Microsystems, Inc.
+ * Copyright © 1995-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -98,7 +98,7 @@ static TimeInfo timeInfo = {
     (HANDLE) NULL,
     (HANDLE) NULL,
     (HANDLE) NULL,
-#ifdef HAVE_CAST_TO_UNION
+#if defined(HAVE_CAST_TO_UNION) && !defined(__cplusplus)
     (LARGE_INTEGER) (Tcl_WideInt) 0,
     (ULARGE_INTEGER) (DWORDLONG) 0,
     (LARGE_INTEGER) (Tcl_WideInt) 0,
@@ -413,8 +413,8 @@ Tcl_GetTime(
 
 static void
 NativeScaleTime(
-    Tcl_Time *timePtr,
-    ClientData clientData)
+    TCL_UNUSED(Tcl_Time *),
+    TCL_UNUSED(ClientData))
 {
     /*
      * Native scale is 1:1. Nothing is done.
@@ -523,9 +523,9 @@ NativeGetMicroseconds(void)
 
 		GetSystemInfo(&systemInfo);
 		if (TclWinCPUID(0, regs) == TCL_OK
-			&& regs[1] == 0x756e6547	/* "Genu" */
-			&& regs[3] == 0x49656e69	/* "ineI" */
-			&& regs[2] == 0x6c65746e	/* "ntel" */
+			&& regs[1] == 0x756E6547	/* "Genu" */
+			&& regs[3] == 0x49656E69	/* "ineI" */
+			&& regs[2] == 0x6C65746E	/* "ntel" */
 			&& TclWinCPUID(1, regs) == TCL_OK
 			&& ((regs[0]&0x00000F00) == 0x00000F00 /* Pentium 4 */
 			|| ((regs[0] & 0x00F00000)	/* Extended family */
@@ -649,7 +649,7 @@ NativeGetMicroseconds(void)
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    ClientData clientData)
+    TCL_UNUSED(ClientData))
 {
     Tcl_WideInt usecSincePosixEpoch;
 
@@ -694,7 +694,7 @@ void TclWinResetTimerResolution(void);
 
 static void
 StopCalibration(
-    ClientData unused)		/* Client data is unused */
+    TCL_UNUSED(ClientData))
 {
     SetEvent(timeInfo.exitEvent);
 
@@ -973,7 +973,7 @@ ComputeGMT(
 
 static DWORD WINAPI
 CalibrationThread(
-    LPVOID arg)
+    TCL_UNUSED(LPVOID))
 {
     FILETIME curFileTime;
     DWORD waitResult;
@@ -1017,7 +1017,6 @@ CalibrationThread(
 	UpdateTimeEachSecond();
     }
 
-    /* lint */
     return (DWORD) 0;
 }
 
@@ -1365,7 +1364,7 @@ TclpGmtime(
 #if defined(_WIN64) || defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400)
     return gmtime(timePtr);
 #else
-    return _gmtime32((CONST __time32_t *)timePtr);
+    return _gmtime32((const __time32_t *)timePtr);
 #endif
 }
 
@@ -1400,7 +1399,7 @@ TclpLocaltime(
 #if defined(_WIN64) || defined(_USE_64BIT_TIME_T) || (defined(_MSC_VER) && _MSC_VER < 1400)
     return localtime(timePtr);
 #else
-    return _localtime32((CONST __time32_t *)timePtr);
+    return _localtime32((const __time32_t *)timePtr);
 #endif
 }
 #endif /* TCL_NO_DEPRECATED */

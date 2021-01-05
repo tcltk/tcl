@@ -5,9 +5,9 @@
 #	This file is used to generate the tclDecls.h, tclPlatDecls.h
 #	and tclStubInit.c files.
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
-# Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001, 2002 Kevin B. Kenny.  All rights reserved.
+# Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -316,12 +316,12 @@ declare 85 {
 	    int flags)
 }
 declare 86 {
-    int Tcl_CreateAlias(Tcl_Interp *slave, const char *slaveCmd,
+    int Tcl_CreateAlias(Tcl_Interp *childInterp, const char *childCmd,
 	    Tcl_Interp *target, const char *targetCmd, int argc,
 	    const char *const *argv)
 }
 declare 87 {
-    int Tcl_CreateAliasObj(Tcl_Interp *slave, const char *slaveCmd,
+    int Tcl_CreateAliasObj(Tcl_Interp *childInterp, const char *childCmd,
 	    Tcl_Interp *target, const char *targetCmd, int objc,
 	    Tcl_Obj *const objv[])
 }
@@ -364,7 +364,7 @@ declare 96 {
 	    Tcl_CmdDeleteProc *deleteProc)
 }
 declare 97 {
-    Tcl_Interp *Tcl_CreateSlave(Tcl_Interp *interp, const char *slaveName,
+    Tcl_Interp *Tcl_CreateChild(Tcl_Interp *interp, const char *name,
 	    int isSafe)
 }
 declare 98 {
@@ -527,12 +527,12 @@ declare 147 {deprecated {see TIP #559. Use Tcl_ResetResult}} {
     void Tcl_FreeResult(Tcl_Interp *interp)
 }
 declare 148 {
-    int Tcl_GetAlias(Tcl_Interp *interp, const char *slaveCmd,
+    int Tcl_GetAlias(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
 	    int *argcPtr, const char ***argvPtr)
 }
 declare 149 {
-    int Tcl_GetAliasObj(Tcl_Interp *interp, const char *slaveCmd,
+    int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
 	    int *objcPtr, Tcl_Obj ***objv)
 }
@@ -582,10 +582,10 @@ declare 162 {
     const char *Tcl_GetHostName(void)
 }
 declare 163 {
-    int Tcl_GetInterpPath(Tcl_Interp *askInterp, Tcl_Interp *slaveInterp)
+    int Tcl_GetInterpPath(Tcl_Interp *interp, Tcl_Interp *childInterp)
 }
 declare 164 {
-    Tcl_Interp *Tcl_GetMaster(Tcl_Interp *interp)
+    Tcl_Interp *Tcl_GetParent(Tcl_Interp *interp)
 }
 declare 165 {
     const char *Tcl_GetNameOfExecutable(void)
@@ -595,7 +595,7 @@ declare 166 {
 }
 
 # Tcl_GetOpenFile is only available on unix, but it is a part of the old
-# generic interface, so we inlcude it here for compatibility reasons.
+# generic interface, so we include it here for compatibility reasons.
 
 declare 167 unix {
     int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID, int forWriting,
@@ -616,7 +616,7 @@ declare 171 {
     int Tcl_GetServiceMode(void)
 }
 declare 172 {
-    Tcl_Interp *Tcl_GetSlave(Tcl_Interp *interp, const char *slaveName)
+    Tcl_Interp *Tcl_GetChild(Tcl_Interp *interp, const char *name)
 }
 declare 173 {
     Tcl_Channel Tcl_GetStdChannel(int type)
@@ -1415,7 +1415,7 @@ declare 400 {
     Tcl_DriverBlockModeProc *Tcl_ChannelBlockModeProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
-declare 401 {
+declare 401 {deprecated {Use Tcl_ChannelClose2Proc}} {
     Tcl_DriverCloseProc *Tcl_ChannelCloseProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
@@ -1431,7 +1431,7 @@ declare 404 {
     Tcl_DriverOutputProc *Tcl_ChannelOutputProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
-declare 405 {
+declare 405 {deprecated {Use Tcl_ChannelWideSeekProc}} {
     Tcl_DriverSeekProc *Tcl_ChannelSeekProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }

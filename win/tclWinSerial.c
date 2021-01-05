@@ -4,7 +4,7 @@
  *	This file implements the Windows-specific serial port functions, and
  *	the "serial" channel driver.
  *
- * Copyright (c) 1999 by Scriptics Corp.
+ * Copyright © 1999 Scriptics Corp.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -168,7 +168,7 @@ static COMMTIMEOUTS no_timeout = {
 static int		SerialBlockProc(ClientData instanceData, int mode);
 static void		SerialCheckProc(ClientData clientData, int flags);
 static int		SerialCloseProc(ClientData instanceData,
-			    Tcl_Interp *interp);
+			    Tcl_Interp *interp, int flags);
 static int		SerialEventProc(Tcl_Event *evPtr, int flags);
 static void		SerialExitHandler(ClientData clientData);
 static int		SerialGetHandleProc(ClientData instanceData,
@@ -204,7 +204,7 @@ static int		SerialBlockingWrite(SerialInfo *infoPtr, LPVOID buf,
 static const Tcl_ChannelType serialChannelType = {
     "serial",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
-    SerialCloseProc,		/* Close proc. */
+    TCL_CLOSE2PROC,		/* Close proc. */
     SerialInputProc,		/* Input proc. */
     SerialOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
@@ -212,7 +212,7 @@ static const Tcl_ChannelType serialChannelType = {
     SerialGetOptionProc,	/* Get option proc. */
     SerialWatchProc,		/* Set up notifier to watch the channel. */
     SerialGetHandleProc,	/* Get an OS handle from channel. */
-    NULL,			/* close2proc. */
+    SerialCloseProc,		/* close2proc. */
     SerialBlockProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -285,7 +285,7 @@ SerialInit(void)
 
 static void
 SerialExitHandler(
-    ClientData clientData)	/* Old window proc */
+    TCL_UNUSED(ClientData))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     SerialInfo *infoPtr;
@@ -323,7 +323,7 @@ SerialExitHandler(
 
 static void
 ProcExitHandler(
-    ClientData clientData)	/* Old window proc */
+    TCL_UNUSED(ClientData))
 {
     Tcl_MutexLock(&serialMutex);
     initialized = 0;
@@ -400,9 +400,13 @@ SerialGetMilliseconds(void)
  *----------------------------------------------------------------------
  */
 
+#ifdef __cplusplus
+#define min(a, b)  (((a) < (b)) ? (a) : (b))
+#endif
+
 void
 SerialSetupProc(
-    ClientData data,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     SerialInfo *infoPtr;
@@ -457,7 +461,7 @@ SerialSetupProc(
 
 static void
 SerialCheckProc(
-    ClientData data,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     SerialInfo *infoPtr;
@@ -531,7 +535,7 @@ SerialCheckProc(
 
 	if (needEvent) {
 	    infoPtr->flags |= SERIAL_PENDING;
-	    evPtr = ckalloc(sizeof(SerialEvent));
+	    evPtr = (SerialEvent *)ckalloc(sizeof(SerialEvent));
 	    evPtr->header.proc = SerialEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -597,14 +601,18 @@ SerialBlockProc(
 static int
 SerialCloseProc(
     ClientData instanceData,    /* Pointer to SerialInfo structure. */
-    Tcl_Interp *interp)		/* For error reporting. */
+    TCL_UNUSED(Tcl_Interp *),
+    int flags)
 {
     SerialInfo *serialPtr = (SerialInfo *) instanceData;
-    int errorCode, result = 0;
+    int errorCode = 0, result = 0;
     SerialInfo *infoPtr, **nextPtrPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    errorCode = 0;
+    if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
+	return EINVAL;
+    }
+
 
     if (serialPtr->validMask & TCL_READABLE) {
 	PurgeComm(serialPtr->handle, PURGE_RXABORT | PURGE_RXCLEAR);
@@ -1030,7 +1038,7 @@ SerialOutputProc(
 		ckfree(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc(toWrite);
+	    infoPtr->writeBuf = (char *)ckalloc(toWrite);
 	}
 	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
@@ -1242,7 +1250,7 @@ SerialWatchProc(
 static int
 SerialGetHandleProc(
     ClientData instanceData,	/* The serial state. */
-    int direction,		/* TCL_READABLE or TCL_WRITABLE */
+    TCL_UNUSED(int) /*direction*/,
     ClientData *handlePtr)	/* Where to store the handle. */
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
@@ -1447,7 +1455,7 @@ TclWinOpenSerialChannel(
 
     SerialInit();
 
-    infoPtr = ckalloc(sizeof(SerialInfo));
+    infoPtr = (SerialInfo *)ckalloc(sizeof(SerialInfo));
     memset(infoPtr, 0, sizeof(SerialInfo));
 
     infoPtr->validMask = permissions;
@@ -1818,7 +1826,7 @@ SerialSetOptionProc(
      */
 
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
-	int i, result = TCL_OK;
+	int i, res = TCL_OK;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
@@ -1836,7 +1844,7 @@ SerialSetOptionProc(
 
 	for (i = 0; i < argc - 1; i += 2) {
 	    if (Tcl_GetBoolean(interp, argv[i+1], &flag) == TCL_ERROR) {
-		result = TCL_ERROR;
+		res = TCL_ERROR;
 		break;
 	    }
 	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
@@ -1848,7 +1856,7 @@ SerialSetOptionProc(
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", NULL);
 		    }
-		    result = TCL_ERROR;
+		    res = TCL_ERROR;
 		    break;
 		}
 	    } else if (strncasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
@@ -1860,7 +1868,7 @@ SerialSetOptionProc(
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", NULL);
 		    }
-		    result = TCL_ERROR;
+		    res = TCL_ERROR;
 		    break;
 		}
 	    } else if (strncasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
@@ -1872,7 +1880,7 @@ SerialSetOptionProc(
 			Tcl_SetErrorCode(interp, "TCL", "OPERATION",
 				"FCONFIGURE", "TTY_SIGNAL", NULL);
 		    }
-		    result = TCL_ERROR;
+		    res = TCL_ERROR;
 		    break;
 		}
 	    } else {
@@ -1883,13 +1891,13 @@ SerialSetOptionProc(
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTY_SIGNAL",
 			    NULL);
 		}
-		result = TCL_ERROR;
+		res = TCL_ERROR;
 		break;
 	    }
 	}
 
 	ckfree(argv);
-	return result;
+	return res;
     }
 
     /*

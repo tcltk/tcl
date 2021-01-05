@@ -5,7 +5,7 @@
  *	to represent and manipulate a general (virtual) filesystem entity in
  *	an efficient manner.
  *
- * Copyright (c) 2003 Vince Darley.
+ * Copyright © 2003 Vince Darley.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -722,7 +722,7 @@ TclPathPart(
 		    (Tcl_FSGetPathType(pathPtr) == TCL_PATH_RELATIVE))) {
 		Tcl_ListObjIndex(NULL, splitPtr, splitElements-1, &resultPtr);
 	    } else {
-		resultPtr = Tcl_NewObj();
+		TclNewObj(resultPtr);
 	    }
 	} else {
 	    /*
@@ -760,7 +760,7 @@ GetExtension(
     tail = TclGetString(pathPtr);
     extension = TclGetExtension(tail);
     if (extension == NULL) {
-	ret = Tcl_NewObj();
+	TclNewObj(ret);
     } else {
 	ret = Tcl_NewStringObj(extension, -1);
     }
@@ -1036,7 +1036,7 @@ TclJoinPath(
 
     noQuickReturn:
 	if (res == NULL) {
-	    res = Tcl_NewObj();
+	    TclNewObj(res);
 	}
 	ptr = TclGetStringFromObj(res, &length);
 
@@ -1272,8 +1272,8 @@ TclNewFSPathObj(
 	return pathPtr;
     }
 
-    pathPtr = Tcl_NewObj();
-    fsPathPtr = ckalloc(sizeof(FsPath));
+    TclNewObj(pathPtr);
+    fsPathPtr = (FsPath *)ckalloc(sizeof(FsPath));
 
     /*
      * Set up the path.
@@ -1385,7 +1385,7 @@ AppendPath(
 
 Tcl_Obj *
 TclFSMakePathRelative(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *pathPtr,		/* The path we have. */
     Tcl_Obj *cwdPtr)		/* Make it relative to this. */
 {
@@ -1456,7 +1456,7 @@ TclFSMakePathRelative(
 
 static int
 MakePathFromNormalized(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *pathPtr)		/* The object to convert. */
 {
     FsPath *fsPathPtr;
@@ -1465,7 +1465,7 @@ MakePathFromNormalized(
 	return TCL_OK;
     }
 
-    fsPathPtr = ckalloc(sizeof(FsPath));
+    fsPathPtr = (FsPath *)ckalloc(sizeof(FsPath));
 
     /*
      * It's a pure normalized absolute path.
@@ -1533,7 +1533,7 @@ Tcl_FSNewNativePath(
      */
 
     Tcl_StoreIntRep(pathPtr, &fsPathType, NULL);
-    fsPathPtr = ckalloc(sizeof(FsPath));
+    fsPathPtr = (FsPath *)ckalloc(sizeof(FsPath));
 
     fsPathPtr->translatedPathPtr = NULL;
 
@@ -1659,7 +1659,7 @@ Tcl_FSGetTranslatedStringPath(
     if (transPtr != NULL) {
 	int len;
 	const char *orig = TclGetStringFromObj(transPtr, &len);
-	char *result = ckalloc(len+1);
+	char *result = (char *)ckalloc(len+1);
 
 	memcpy(result, orig, len+1);
 	TclDecrRefCount(transPtr);
@@ -2014,7 +2014,7 @@ Tcl_FSGetInternalRep(
 	    return NULL;
 	}
 
-	nativePathPtr = proc(pathPtr);
+	nativePathPtr = (char *)proc(pathPtr);
 	srcFsPathPtr = PATHOBJ(pathPtr);
 	srcFsPathPtr->nativePathPtr = nativePathPtr;
 	srcFsPathPtr->filesystemEpoch = TclFSEpoch();
@@ -2346,7 +2346,7 @@ SetFsPathFromAny(
      * slashes on Windows, and will not contain any ~user sequences.
      */
 
-    fsPathPtr = ckalloc(sizeof(FsPath));
+    fsPathPtr = (FsPath *)ckalloc(sizeof(FsPath));
 
     if (transPtr == pathPtr) {
         transPtr = Tcl_DuplicateObj(pathPtr);
@@ -2406,7 +2406,7 @@ DupFsPathInternalRep(
     Tcl_Obj *copyPtr)		/* Path obj with internal rep to set. */
 {
     FsPath *srcFsPathPtr = PATHOBJ(srcPtr);
-    FsPath *copyFsPathPtr = ckalloc(sizeof(FsPath));
+    FsPath *copyFsPathPtr = (FsPath *)ckalloc(sizeof(FsPath));
 
     SETPATHOBJ(copyPtr, copyFsPathPtr);
 
@@ -2510,7 +2510,7 @@ UpdateStringOfFsPath(
 int
 TclNativePathInFilesystem(
     Tcl_Obj *pathPtr,
-    ClientData *clientDataPtr)
+    TCL_UNUSED(ClientData *))
 {
     /*
      * A special case is required to handle the empty path "". This is a valid

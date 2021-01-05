@@ -1,7 +1,7 @@
 /*
  * re_*exec and friends - match REs
  *
- * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -73,7 +73,7 @@ struct dfa {
     chr *lastnopr;		/* location of last cache-flushed NOPROGRESS */
     struct sset *search;	/* replacement-search-pointer memory */
     int cptsmalloced;		/* were the areas individually malloced? */
-    char *mallocarea;		/* self, or master malloced area, or NULL */
+    char *mallocarea;		/* self, or malloced area, or NULL */
 };
 
 #define	WORK	1		/* number of work bitvectors needed */

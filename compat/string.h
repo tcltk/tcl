@@ -21,19 +21,15 @@
 
 #include <sys/types.h>
 
-#ifdef __APPLE__
 extern void *		memchr(const void *s, int c, size_t n);
-#else
-extern char *		memchr(const void *s, int c, size_t n);
-#endif
 extern int		memcmp(const void *s1, const void *s2, size_t n);
-extern char *		memcpy(void *t, const void *f, size_t n);
+extern void *		memcpy(void *t, const void *f, size_t n);
 #ifdef NO_MEMMOVE
 #define memmove(d,s,n)	(bcopy((s), (d), (n)))
 #else
 extern char *		memmove(void *t, const void *f, size_t n);
 #endif
-extern char *		memset(void *s, int c, size_t n);
+extern void *		memset(void *s, int c, size_t n);
 
 extern int		strcasecmp(const char *s1, const char *s2);
 extern char *		strcat(char *dst, const char *src);

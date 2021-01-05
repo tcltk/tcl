@@ -4,7 +4,7 @@
  *	Contains Unix specific versions of Tcl functions that obtain time
  *	values from the operating system.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
+ * Copyright © 1995 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -58,7 +58,7 @@ static void		NativeGetTime(Tcl_Time *timebuf,
 
 Tcl_GetTimeProc *tclGetTimeProcPtr = NativeGetTime;
 Tcl_ScaleTimeProc *tclScaleTimeProcPtr = NativeScaleTime;
-ClientData tclTimeClientData = NULL;
+void *tclTimeClientData = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -508,8 +508,8 @@ Tcl_QueryTimeProc(
 
 static void
 NativeScaleTime(
-    Tcl_Time *timePtr,
-    ClientData clientData)
+    TCL_UNUSED(Tcl_Time *),
+    TCL_UNUSED(ClientData))
 {
     /* Native scale is 1:1. Nothing is done */
 }
@@ -534,7 +534,7 @@ NativeScaleTime(
 static void
 NativeGetTime(
     Tcl_Time *timePtr,
-    ClientData clientData)
+    TCL_UNUSED(ClientData))
 {
     struct timeval tv;
 
@@ -578,7 +578,7 @@ SetTZIfNecessary(void)
 	} else {
 	    ckfree(lastTZ);
 	}
-	lastTZ = ckalloc(strlen(newTZ) + 1);
+	lastTZ = (char *)ckalloc(strlen(newTZ) + 1);
 	strcpy(lastTZ, newTZ);
     }
     Tcl_MutexUnlock(&tmMutex);
@@ -603,7 +603,7 @@ SetTZIfNecessary(void)
 
 static void
 CleanupMemory(
-    ClientData ignored)
+    TCL_UNUSED(ClientData))
 {
     ckfree(lastTZ);
 }

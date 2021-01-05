@@ -45,7 +45,6 @@ extern "C" {
  * macosx/Tcl-Common.xcconfig (not patchlevel) 1 LOC
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(1 LOC patch)
- * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  */
 
 #define TCL_MAJOR_VERSION   8
@@ -361,7 +360,7 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(_WIN32)
+#   if defined(_WIN32) && (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)
 #      define TCL_WIDE_INT_TYPE __int64
 #      define TCL_LL_MODIFIER	"I64"
 #      if defined(_WIN64)
@@ -973,11 +972,14 @@ typedef struct Tcl_DString {
 #define TCL_DONT_QUOTE_HASH	8
 
 /*
- * Flag that may be passed to Tcl_GetIndexFromObj to force it to disallow
- * abbreviated strings.
+ * Flags that may be passed to Tcl_GetIndexFromObj.
+ * TCL_EXACT disallows abbreviated strings.
+ * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
+ *      a table that will not live long enough to make it worthwhile.
  */
 
-#define TCL_EXACT	1
+#define TCL_EXACT		1
+#define TCL_INDEX_TEMP_TABLE	2
 
 /*
  *----------------------------------------------------------------------------
@@ -1400,10 +1402,12 @@ typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, ClientData clientData);
  * Channel version tag. This was introduced in 8.3.2/8.4.
  */
 
+#ifndef TCL_NO_DEPRECATED
 #define TCL_CHANNEL_VERSION_1	((Tcl_ChannelTypeVersion) 0x1)
 #define TCL_CHANNEL_VERSION_2	((Tcl_ChannelTypeVersion) 0x2)
 #define TCL_CHANNEL_VERSION_3	((Tcl_ChannelTypeVersion) 0x3)
 #define TCL_CHANNEL_VERSION_4	((Tcl_ChannelTypeVersion) 0x4)
+#endif
 #define TCL_CHANNEL_VERSION_5	((Tcl_ChannelTypeVersion) 0x5)
 
 /*
@@ -1472,7 +1476,7 @@ typedef struct Tcl_ChannelType {
 				/* Version of the channel type. */
     Tcl_DriverCloseProc *closeProc;
 				/* Function to call to close the channel, or
-				 * TCL_CLOSE2PROC if the close2Proc should be
+				 * NULL or TCL_CLOSE2PROC if the close2Proc should be
 				 * used instead. */
     Tcl_DriverInputProc *inputProc;
 				/* Function to call for input on channel. */
@@ -2112,8 +2116,8 @@ typedef struct Tcl_EncodingType {
  * The maximum number of bytes that are necessary to represent a single
  * Unicode character in UTF-8. The valid values are 3 and 4
  * (or perhaps 1 if we want to support a non-unicode enabled core). If 3,
- * then Tcl_UniChar must be 2-bytes in size (UCS-2) (the default). If > 3,
- * then Tcl_UniChar must be 4-bytes in size (UCS-4). At this time UCS-2 mode
+ * then Tcl_UniChar must be 2-bytes in size (UTF-16) (the default). If > 3,
+ * then Tcl_UniChar must be 4-bytes in size (UCS-4). At this time UTF-16 mode
  * is the default and recommended mode.
  */
 
@@ -2474,7 +2478,7 @@ EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 #   define Tcl_DecrRefCount(objPtr) \
 	do { \
 	    Tcl_Obj *_objPtr = (objPtr); \
-	    if ((_objPtr)->refCount-- <= 1) { \
+	    if (_objPtr->refCount-- <= 1) { \
 		TclFreeObj(_objPtr); \
 	    } \
 	} while(0)

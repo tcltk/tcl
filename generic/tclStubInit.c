@@ -3,7 +3,7 @@
  *
  *	This file contains the initializers for the Tcl stub vectors.
  *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -67,24 +67,27 @@
 #undef TclWinNToHS
 #undef TclStaticPackage
 #undef Tcl_BackgroundError
+#undef TclGuessPackageName
+#undef TclGetLoadedPackages
 #define TclStaticPackage Tcl_StaticPackage
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
+#undef Tcl_MacOSXOpenBundleResources
 
 #if TCL_UTF_MAX > 3
-static void uniCodePanic() {
+static void uniCodePanic(void) {
     Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
 }
-#   define Tcl_GetUnicode (int *(*)(Tcl_Obj *)) uniCodePanic
-#   define Tcl_GetUnicodeFromObj (int *(*)(Tcl_Obj *, Tcl_UniChar *)) uniCodePanic
-#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const int *, Tcl_UniChar)) uniCodePanic
-#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, int)) uniCodePanic
-#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, int)) uniCodePanic
-#   define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long)) uniCodePanic
-#   define Tcl_UniCharCaseMatch (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, int)) uniCodePanic
-#   define Tcl_UniCharLen (int(*)(const Tcl_UniChar *)) uniCodePanic
-#   define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long)) uniCodePanic
+#   define Tcl_GetUnicode (int *(*)(Tcl_Obj *))(void *)uniCodePanic
+#   define Tcl_GetUnicodeFromObj (int *(*)(Tcl_Obj *, Tcl_UniChar *))(void *)uniCodePanic
+#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const int *, Tcl_UniChar))(void *)uniCodePanic
+#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, int))(void *)uniCodePanic
+#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, int))(void *)uniCodePanic
+#   define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long))(void *)uniCodePanic
+#   define Tcl_UniCharCaseMatch (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, int))(void *)uniCodePanic
+#   define Tcl_UniCharLen (int(*)(const Tcl_UniChar *))(void *)uniCodePanic
+#   define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long))(void *)uniCodePanic
 #endif
 
 #define TclBN_mp_add mp_add
@@ -203,7 +206,7 @@ mp_err	TclBN_mp_div_ld(const mp_int *a, uint64_t b, mp_int *c, uint64_t *d) {
    if ((b | (mp_digit)-1) != (mp_digit)-1) {
       return MP_VAL;
    }
-   result = mp_div_d(a, b, c, (d ? &d2 : NULL));
+   result = mp_div_d(a, (mp_digit)b, c, (d ? &d2 : NULL));
    if (d) {
       *d = d2;
    }
@@ -256,7 +259,31 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define Tcl_DbNewLongObj 0
 #   define Tcl_BackgroundError 0
 #   define Tcl_FreeResult 0
+#   define Tcl_ChannelSeekProc 0
+#   define Tcl_ChannelCloseProc 0
+#   define Tcl_Close 0
+#   define Tcl_MacOSXOpenBundleResources 0
+#   define TclGuessPackageName 0
+#   define TclGetLoadedPackages 0
 #else
+
+#define TclGuessPackageName guessPackageName
+static int TclGuessPackageName(
+    TCL_UNUSED(const char *),
+    TCL_UNUSED(Tcl_DString *)) {
+    return 0;
+}
+#define TclGetLoadedPackages getLoadedPackages
+static int TclGetLoadedPackages(
+    Tcl_Interp *interp,		/* Interpreter in which to return information
+				 * or error message. */
+    const char *targetName)	/* Name of target interpreter or NULL. If
+				 * NULL, return info about all interps;
+				 * otherwise, just return info about this
+				 * interpreter. */
+{
+    return TclGetLoadedPackagesEx(interp, targetName, NULL);
+}
 
 mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
     mp_digit d2;
@@ -267,7 +294,8 @@ mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
     return result;
 }
 
-int TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c, int fast)
+int TclBN_mp_expt_d_ex(const mp_int *a, unsigned int b, mp_int *c,
+    TCL_UNUSED(int) /*fast*/)
 {
     return TclBN_mp_expt_u32(a, b, c);
 }
@@ -313,7 +341,7 @@ mp_err TclBN_mp_toradix_n(const mp_int *a, char *str, int radix, int maxlen)
     if (maxlen < 0) {
 	return MP_VAL;
     }
-    return TclBN_mp_to_radix(a, str, (size_t)maxlen, NULL, radix);
+    return TclBN_mp_to_radix(a, str, maxlen, NULL, radix);
 }
 
 #define TclSetStartupScriptPath setStartupScriptPath
@@ -366,6 +394,16 @@ TclWinGetPlatformId(void)
 #endif
 #endif /* TCL_NO_DEPRECATED */
 
+#define TclpCreateTempFile_ TclpCreateTempFile
+#define TclUnixWaitForFile_ TclUnixWaitForFile
+#ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
+#define TclMacOSXGetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj **))(void *)TclpCreateProcess
+#define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
+#define TclMacOSXCopyFileAttributes (int (*)(const char *, const char *, const Tcl_StatBuf *))(void *)TclUnixCopyFile
+#define TclMacOSXMatchType (int (*)(Tcl_Interp *, const char *, const char *, Tcl_StatBuf *, Tcl_GlobTypeData *))(void *)TclpMakeFile
+#define TclMacOSXNotifierAddRunLoopMode (void (*)(const void *))(void *)TclpOpenFile
+#endif
+
 #ifdef _WIN32
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
@@ -373,7 +411,7 @@ TclWinGetPlatformId(void)
 #   define TclpReaddir 0
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
-#   define TclpIsAtty TclPlatIsAtty
+#   define TclpIsAtty isatty
 #if defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
 static void
 doNothing(void)
@@ -383,20 +421,6 @@ doNothing(void)
 #endif
 #   define TclWinAddProcess (void (*) (void *, unsigned int)) doNothing
 #   define TclWinFlushDirtyChannels doNothing
-
-static int
-TclpIsAtty(int fd)
-{
-    return isatty(fd);
-}
-
-void *TclWinGetTclInstance()
-{
-    void *hInstance = NULL;
-    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-	    (const wchar_t *)&TclpIsAtty, &hInstance);
-    return hInstance;
-}
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 #define TclWinSetSockOpt winSetSockOpt
@@ -437,10 +461,18 @@ TclWinNoBackslash(char *path)
     return path;
 }
 
+void *TclWinGetTclInstance()
+{
+    void *hInstance = NULL;
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+	    (const wchar_t *)&TclWinNoBackslash, &hInstance);
+    return hInstance;
+}
+
 int
 TclpGetPid(Tcl_Pid pid)
 {
-    return (int) (size_t) pid;
+    return (int)(size_t)pid;
 }
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
@@ -512,7 +544,7 @@ static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned 
 static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
    return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
 }
-#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
+#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))(void *)uniCharNcasecmp
 #endif
 static int utfNcmp(const char *s1, const char *s2, unsigned int n){
    return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
@@ -964,7 +996,7 @@ static const TclIntStubs tclIntStubs = {
     TclResetRewriteEnsemble, /* 247 */
     TclCopyChannel, /* 248 */
     TclDoubleDigits, /* 249 */
-    TclSetSlaveCancelFlags, /* 250 */
+    TclSetChildCancelFlags, /* 250 */
     TclRegisterLiteral, /* 251 */
     TclPtrGetVar, /* 252 */
     TclPtrSetVar, /* 253 */
@@ -973,7 +1005,8 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticPackage, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
-    TclUnusedStubEntry, /* 259 */
+    TclGetBytesFromObj, /* 259 */
+    TclUnusedStubEntry, /* 260 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -985,7 +1018,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
     TclpCreateProcess, /* 4 */
-    0, /* 5 */
+    TclUnixWaitForFile_, /* 5 */
     TclpMakeFile, /* 6 */
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
@@ -995,14 +1028,14 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpGmtime_unix, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
-    0, /* 15 */
-    0, /* 16 */
-    0, /* 17 */
-    0, /* 18 */
-    0, /* 19 */
+    TclMacOSXGetFileAttribute, /* 15 */
+    TclMacOSXSetFileAttribute, /* 16 */
+    TclMacOSXCopyFileAttributes, /* 17 */
+    TclMacOSXMatchType, /* 18 */
+    TclMacOSXNotifierAddRunLoopMode, /* 19 */
     0, /* 20 */
     0, /* 21 */
-    0, /* 22 */
+    TclpCreateTempFile_, /* 22 */
     0, /* 23 */
     0, /* 24 */
     0, /* 25 */
@@ -1051,7 +1084,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
     TclpCreateProcess, /* 4 */
-    0, /* 5 */
+    TclUnixWaitForFile_, /* 5 */
     TclpMakeFile, /* 6 */
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
@@ -1068,7 +1101,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclMacOSXNotifierAddRunLoopMode, /* 19 */
     0, /* 20 */
     0, /* 21 */
-    0, /* 22 */
+    TclpCreateTempFile_, /* 22 */
     0, /* 23 */
     0, /* 24 */
     0, /* 25 */
@@ -1301,7 +1334,7 @@ const TclStubs tclStubs = {
     Tcl_CreateInterp, /* 94 */
     Tcl_CreateMathFunc, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
-    Tcl_CreateSlave, /* 97 */
+    Tcl_CreateChild, /* 97 */
     Tcl_CreateTimerHandler, /* 98 */
     Tcl_CreateTrace, /* 99 */
     Tcl_DeleteAssocData, /* 100 */
@@ -1368,7 +1401,7 @@ const TclStubs tclStubs = {
     Tcl_GetErrno, /* 161 */
     Tcl_GetHostName, /* 162 */
     Tcl_GetInterpPath, /* 163 */
-    Tcl_GetMaster, /* 164 */
+    Tcl_GetParent, /* 164 */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
 #if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
@@ -1384,7 +1417,7 @@ const TclStubs tclStubs = {
     Tcl_Gets, /* 169 */
     Tcl_GetsObj, /* 170 */
     Tcl_GetServiceMode, /* 171 */
-    Tcl_GetSlave, /* 172 */
+    Tcl_GetChild, /* 172 */
     Tcl_GetStdChannel, /* 173 */
     Tcl_GetStringResult, /* 174 */
     Tcl_GetVar, /* 175 */

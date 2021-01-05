@@ -4,7 +4,7 @@
  *	This file provides timer event management facilities for Tcl,
  *	including the "after" command.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright © 1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -182,7 +182,7 @@ static void		TimerSetupProc(ClientData clientData, int flags);
 static ThreadSpecificData *
 InitTimer(void)
 {
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (tsdPtr == NULL) {
 	tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -211,9 +211,9 @@ InitTimer(void)
 
 static void
 TimerExitProc(
-    ClientData clientData)	/* Not used. */
+    TCL_UNUSED(ClientData))
 {
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     Tcl_DeleteEventSource(TimerSetupProc, TimerCheckProc, NULL);
     if (tsdPtr != NULL) {
@@ -297,7 +297,7 @@ TclCreateAbsoluteTimerHandler(
     TimerHandler *timerHandlerPtr, *tPtr2, *prevPtr;
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    timerHandlerPtr = ckalloc(sizeof(TimerHandler));
+    timerHandlerPtr = (TimerHandler *)ckalloc(sizeof(TimerHandler));
 
     /*
      * Fill in fields for the event.
@@ -398,7 +398,7 @@ Tcl_DeleteTimerHandler(
 
 static void
 TimerSetupProc(
-    ClientData data,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     Tcl_Time blockTime;
@@ -456,7 +456,7 @@ TimerSetupProc(
 
 static void
 TimerCheckProc(
-    ClientData data,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     Tcl_Event *timerEvPtr;
@@ -488,7 +488,7 @@ TimerCheckProc(
 	if (blockTime.sec == 0 && blockTime.usec == 0 &&
 		!tsdPtr->timerPending) {
 	    tsdPtr->timerPending = 1;
-	    timerEvPtr = ckalloc(sizeof(Tcl_Event));
+	    timerEvPtr = (Tcl_Event *)ckalloc(sizeof(Tcl_Event));
 	    timerEvPtr->proc = TimerHandlerEventProc;
 	    Tcl_QueueEvent(timerEvPtr, TCL_QUEUE_TAIL);
 	}
@@ -518,7 +518,7 @@ TimerCheckProc(
 
 static int
 TimerHandlerEventProc(
-    Tcl_Event *evPtr,		/* Event to service. */
+    TCL_UNUSED(Tcl_Event *),
     int flags)			/* Flags that indicate what events to handle,
 				 * such as TCL_FILE_EVENTS. */
 {
@@ -625,7 +625,7 @@ Tcl_DoWhenIdle(
     Tcl_Time blockTime;
     ThreadSpecificData *tsdPtr = InitTimer();
 
-    idlePtr = ckalloc(sizeof(IdleHandler));
+    idlePtr = (IdleHandler *)ckalloc(sizeof(IdleHandler));
     idlePtr->proc = proc;
     idlePtr->clientData = clientData;
     idlePtr->generation = tsdPtr->idleGeneration;
@@ -776,10 +776,9 @@ TclServiceIdle(void)
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_AfterObjCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -793,7 +792,7 @@ Tcl_AfterObjCmd(
     static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
     };
-    enum afterSubCmds {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
+    enum afterSubCmdsEnum {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (objc < 2) {
@@ -806,9 +805,9 @@ Tcl_AfterObjCmd(
      * doesn't already exist.
      */
 
-    assocPtr = Tcl_GetAssocData(interp, "tclAfter", NULL);
+    assocPtr = (AfterAssocData *)Tcl_GetAssocData(interp, "tclAfter", NULL);
     if (assocPtr == NULL) {
-	assocPtr = ckalloc(sizeof(AfterAssocData));
+	assocPtr = (AfterAssocData *)ckalloc(sizeof(AfterAssocData));
 	assocPtr->interp = interp;
 	assocPtr->firstAfterPtr = NULL;
 	Tcl_SetAssocData(interp, "tclAfter", AfterCleanupProc, assocPtr);
@@ -845,7 +844,7 @@ Tcl_AfterObjCmd(
 	if (objc == 2) {
 	    return AfterDelay(interp, ms);
 	}
-	afterPtr = ckalloc(sizeof(AfterInfo));
+	afterPtr = (AfterInfo *)ckalloc(sizeof(AfterInfo));
 	afterPtr->assocPtr = assocPtr;
 	if (objc == 3) {
 	    afterPtr->commandPtr = objv[2];
@@ -925,7 +924,7 @@ Tcl_AfterObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "script ?script ...?");
 	    return TCL_ERROR;
 	}
-	afterPtr = ckalloc(sizeof(AfterInfo));
+	afterPtr = (AfterInfo *)ckalloc(sizeof(AfterInfo));
 	afterPtr->assocPtr = assocPtr;
 	if (objc == 3) {
 	    afterPtr->commandPtr = objv[2];
@@ -943,8 +942,9 @@ Tcl_AfterObjCmd(
 	break;
     case AFTER_INFO:
 	if (objc == 2) {
-            Tcl_Obj *resultObj = Tcl_NewObj();
+	    Tcl_Obj *resultObj;
 
+	    TclNewObj(resultObj);
 	    for (afterPtr = assocPtr->firstAfterPtr; afterPtr != NULL;
 		    afterPtr = afterPtr->nextPtr) {
 		if (assocPtr->interp == interp) {
@@ -968,8 +968,9 @@ Tcl_AfterObjCmd(
             Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, NULL);
 	    return TCL_ERROR;
 	} else {
-            Tcl_Obj *resultListPtr = Tcl_NewObj();
+            Tcl_Obj *resultListPtr;
 
+            TclNewObj(resultListPtr);
             Tcl_ListObjAppendElement(interp, resultListPtr,
                     afterPtr->commandPtr);
             Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
@@ -1150,7 +1151,7 @@ static void
 AfterProc(
     ClientData clientData)	/* Describes command to execute. */
 {
-    AfterInfo *afterPtr = clientData;
+    AfterInfo *afterPtr = (AfterInfo *)clientData;
     AfterAssocData *assocPtr = afterPtr->assocPtr;
     AfterInfo *prevPtr;
     int result;
@@ -1248,14 +1249,13 @@ FreeAfterPtr(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 static void
 AfterCleanupProc(
     ClientData clientData,	/* Points to AfterAssocData for the
 				 * interpreter. */
-    Tcl_Interp *interp)		/* Interpreter that is being deleted. */
+    TCL_UNUSED(Tcl_Interp *))
 {
-    AfterAssocData *assocPtr = clientData;
+    AfterAssocData *assocPtr = (AfterAssocData *)clientData;
     AfterInfo *afterPtr;
 
     while (assocPtr->firstAfterPtr != NULL) {

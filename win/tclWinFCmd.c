@@ -4,7 +4,7 @@
  *	This file implements the Windows specific portion of file manipulation
  *	subcommands of the "file" command.
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -145,8 +145,8 @@ TclpObjRenameFile(
     Tcl_Obj *srcPathPtr,
     Tcl_Obj *destPathPtr)
 {
-    return DoRenameFile(Tcl_FSGetNativePath(srcPathPtr),
-	    Tcl_FSGetNativePath(destPathPtr));
+    return DoRenameFile((const WCHAR *)Tcl_FSGetNativePath(srcPathPtr),
+	    (const WCHAR *)Tcl_FSGetNativePath(destPathPtr));
 }
 
 static int
@@ -204,7 +204,7 @@ DoRenameFile(
 	"leal	    1f,		    %%eax"	    "\n\t"
 	"movl	    %%eax,	    0x4(%%edx)"	    "\n\t" /* handler */
 	"movl	    %%ebp,	    0x8(%%edx)"	    "\n\t" /* ebp */
-	"movl	    %%esp,	    0xc(%%edx)"	    "\n\t" /* esp */
+	"movl	    %%esp,	    0xC(%%edx)"	    "\n\t" /* esp */
 	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
 
 	/*
@@ -245,7 +245,7 @@ DoRenameFile(
 	 */
 
 	"2:"					    "\t"
-	"movl	    0xc(%%edx),	    %%esp"	    "\n\t"
+	"movl	    0xC(%%edx),	    %%esp"	    "\n\t"
 	"movl	    0x8(%%edx),	    %%ebp"	    "\n\t"
 	"movl	    0x0(%%edx),	    %%eax"	    "\n\t"
 	"movl	    %%eax,	    %%fs:0"	    "\n\t"
@@ -283,7 +283,7 @@ DoRenameFile(
 
     srcAttr = GetFileAttributesW(nativeSrc);
     dstAttr = GetFileAttributesW(nativeDst);
-    if (srcAttr == 0xffffffff) {
+    if (srcAttr == 0xFFFFFFFF) {
 	if (GetFullPathNameW(nativeSrc, 0, NULL,
 		NULL) >= MAX_PATH) {
 	    errno = ENAMETOOLONG;
@@ -291,7 +291,7 @@ DoRenameFile(
 	}
 	srcAttr = 0;
     }
-    if (dstAttr == 0xffffffff) {
+    if (dstAttr == 0xFFFFFFFF) {
 	if (GetFullPathNameW(nativeDst, 0, NULL,
 		NULL) >= MAX_PATH) {
 	    errno = ENAMETOOLONG;
@@ -536,8 +536,8 @@ TclpObjCopyFile(
     Tcl_Obj *srcPathPtr,
     Tcl_Obj *destPathPtr)
 {
-    return DoCopyFile(Tcl_FSGetNativePath(srcPathPtr),
-	    Tcl_FSGetNativePath(destPathPtr));
+    return DoCopyFile((const WCHAR *)Tcl_FSGetNativePath(srcPathPtr),
+	    (const WCHAR *)Tcl_FSGetNativePath(destPathPtr));
 }
 
 static int
@@ -593,7 +593,7 @@ DoCopyFile(
 	"leal	    1f,		    %%eax"	    "\n\t"
 	"movl	    %%eax,	    0x4(%%edx)"	    "\n\t" /* handler */
 	"movl	    %%ebp,	    0x8(%%edx)"	    "\n\t" /* ebp */
-	"movl	    %%esp,	    0xc(%%edx)"	    "\n\t" /* esp */
+	"movl	    %%esp,	    0xC(%%edx)"	    "\n\t" /* esp */
 	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
 
 	/*
@@ -635,7 +635,7 @@ DoCopyFile(
 	 */
 
 	"2:"					    "\t"
-	"movl	    0xc(%%edx),	    %%esp"	    "\n\t"
+	"movl	    0xC(%%edx),	    %%esp"	    "\n\t"
 	"movl	    0x8(%%edx),	    %%ebp"	    "\n\t"
 	"movl	    0x0(%%edx),	    %%eax"	    "\n\t"
 	"movl	    %%eax,	    %%fs:0"	    "\n\t"
@@ -679,8 +679,8 @@ DoCopyFile(
 
 	srcAttr = GetFileAttributesW(nativeSrc);
 	dstAttr = GetFileAttributesW(nativeDst);
-	if (srcAttr != 0xffffffff) {
-	    if (dstAttr == 0xffffffff) {
+	if (srcAttr != 0xFFFFFFFF) {
+	    if (dstAttr == 0xFFFFFFFF) {
 		dstAttr = 0;
 	    }
 	    if ((srcAttr & FILE_ATTRIBUTE_DIRECTORY) ||
@@ -751,7 +751,7 @@ TclpDeleteFile(
     const void *nativePath)	/* Pathname of file to be removed (native). */
 {
     DWORD attr;
-    const WCHAR *path = nativePath;
+    const WCHAR *path = (const WCHAR *)nativePath;
 
     /*
      * The DeleteFile API acts differently under Win95/98 and NT WRT NULL and
@@ -770,7 +770,7 @@ TclpDeleteFile(
 
     if (Tcl_GetErrno() == EACCES) {
 	attr = GetFileAttributesW(path);
-	if (attr != 0xffffffff) {
+	if (attr != 0xFFFFFFFF) {
 	    if (attr & FILE_ATTRIBUTE_DIRECTORY) {
 		if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
 		    /*
@@ -805,7 +805,7 @@ TclpDeleteFile(
 	}
     } else if (Tcl_GetErrno() == ENOENT) {
 	attr = GetFileAttributesW(path);
-	if (attr != 0xffffffff) {
+	if (attr != 0xFFFFFFFF) {
 	    if (attr & FILE_ATTRIBUTE_DIRECTORY) {
 		/*
 		 * Windows 95 reports removing a directory as ENOENT instead
@@ -856,7 +856,7 @@ int
 TclpObjCreateDirectory(
     Tcl_Obj *pathPtr)
 {
-    return DoCreateDirectory(Tcl_FSGetNativePath(pathPtr));
+    return DoCreateDirectory((const WCHAR *)Tcl_FSGetNativePath(pathPtr));
 }
 
 static int
@@ -993,7 +993,7 @@ TclpObjRemoveDirectory(
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
     } else {
-	ret = DoRemoveJustDirectory(Tcl_FSGetNativePath(pathPtr), 0, &ds);
+	ret = DoRemoveJustDirectory((const WCHAR *)Tcl_FSGetNativePath(pathPtr), 0, &ds);
     }
 
     if (ret != TCL_OK) {
@@ -1058,7 +1058,7 @@ DoRemoveJustDirectory(
 
     if (Tcl_GetErrno() == EACCES) {
 	attr = GetFileAttributesW(nativePath);
-	if (attr != 0xffffffff) {
+	if (attr != 0xFFFFFFFF) {
 	    if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 		/*
 		 * Windows 95 reports calling RemoveDirectory on a file as an
@@ -1195,7 +1195,7 @@ TraverseWinTree(
 
     nativeErrfile = NULL;
     result = TCL_OK;
-    oldTargetLen = 0;		/* lint. */
+    oldTargetLen = 0;
 
     nativeSource = (WCHAR *) Tcl_DStringValue(sourcePtr);
     nativeTarget = (WCHAR *)
@@ -1203,7 +1203,7 @@ TraverseWinTree(
 
     oldSourceLen = Tcl_DStringLength(sourcePtr);
     sourceAttr = GetFileAttributesW(nativeSource);
-    if (sourceAttr == 0xffffffff) {
+    if (sourceAttr == 0xFFFFFFFF) {
 	nativeErrfile = nativeSource;
 	goto end;
     }
@@ -1427,7 +1427,7 @@ TraversalCopy(
 static int
 TraversalDelete(
     const WCHAR *nativeSrc,	/* Source pathname to delete. */
-    const WCHAR *dstPtr,	/* Not used. */
+    TCL_UNUSED(const WCHAR *) /*dstPtr*/,
     int type,			/* Reason for call - see TraverseWinTree() */
     Tcl_DString *errorPtr)	/* If non-NULL, initialized DString filled
 				 * with UTF-8 name of file causing error. */
@@ -1517,10 +1517,10 @@ GetWinFileAttributes(
     const WCHAR *nativeName;
     int attr;
 
-    nativeName = Tcl_FSGetNativePath(fileName);
+    nativeName = (const WCHAR *)Tcl_FSGetNativePath(fileName);
     result = GetFileAttributesW(nativeName);
 
-    if (result == 0xffffffff) {
+    if (result == 0xFFFFFFFF) {
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }
@@ -1560,7 +1560,7 @@ GetWinFileAttributes(
 	}
     }
 
-    *attributePtrPtr = Tcl_NewWideIntObj(attr != 0);
+    TclNewIntObj(*attributePtrPtr, attr != 0);
     return TCL_OK;
 }
 
@@ -1590,7 +1590,7 @@ GetWinFileAttributes(
 static int
 ConvertFileNameFormat(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
-    int objIndex,		/* The index of the attribute. */
+    TCL_UNUSED(int) /*objIndex*/,
     Tcl_Obj *fileName,		/* The name of the file. */
     int longShort,		/* 0 to short name, 1 to long name. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
@@ -1843,10 +1843,10 @@ SetWinFileAttributes(
     int yesNo, result;
     const WCHAR *nativeName;
 
-    nativeName = Tcl_FSGetNativePath(fileName);
+    nativeName = (const WCHAR *)Tcl_FSGetNativePath(fileName);
     fileAttributes = old = GetFileAttributesW(nativeName);
 
-    if (fileAttributes == 0xffffffff) {
+    if (fileAttributes == 0xFFFFFFFF) {
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }
@@ -1892,7 +1892,7 @@ CannotSetAttribute(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
     int objIndex,		/* The index of the attribute. */
     Tcl_Obj *fileName,		/* The name of the file. */
-    Tcl_Obj *attributePtr)	/* The new value of the attribute. */
+    TCL_UNUSED(Tcl_Obj *) /*attributePtr*/)
 {
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "cannot set attribute \"%s\" for file \"%s\": attribute is readonly",
@@ -1926,7 +1926,7 @@ TclpObjListVolumes(void)
     int i;
     char *p;
 
-    resultPtr = Tcl_NewObj();
+    TclNewObj(resultPtr);
 
     /*
      * On Win32s:

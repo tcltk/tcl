@@ -4,7 +4,7 @@
 #	interface.
 #
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 # Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
@@ -258,7 +258,7 @@ proc genStubs::rewriteFile {file text} {
     }
     set in [open ${file} r]
     set out [open ${file}.new w]
-    fconfigure $out -translation lf
+    fconfigure $out -translation lf -encoding utf-8
 
     while {![eof $in]} {
 	set line [gets $in]
@@ -485,7 +485,9 @@ proc genStubs::makeDecl {name decl index} {
 	set line "$scspec $rtype"
     }
     set count [expr {2 - ([string length $line] / 8)}]
-    append line [string range "\t\t\t" 0 $count]
+    if {$count >= 0} {
+	append line [string range "\t\t\t" 0 $count]
+    }
     set pad [expr {24 - [string length $line]}]
     if {$pad <= 0} {
 	append line " "

@@ -56,6 +56,9 @@
 #   define MODULE_SCOPE extern
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 MODULE_SCOPE mp_err	TclBN_s_mp_add_d(const mp_int *a, mp_digit b, mp_int *c);
 MODULE_SCOPE mp_ord	TclBN_s_mp_cmp_d(const mp_int *a, mp_digit b);
 MODULE_SCOPE mp_err	TclBN_s_mp_div_d(const mp_int *a, mp_digit b, mp_int *c, mp_digit *d);
@@ -66,7 +69,9 @@ MODULE_SCOPE mp_err	TclBN_s_mp_mul_d(const mp_int *a, mp_digit b, mp_int *c);
 MODULE_SCOPE void	TclBN_s_mp_reverse(unsigned char *s, size_t len);
 MODULE_SCOPE void	TclBN_s_mp_set(mp_int *a, mp_digit b);
 MODULE_SCOPE mp_err	TclBN_s_mp_sub_d(const mp_int *a, mp_digit b, mp_int *c);
-
+#ifdef __cplusplus
+}
+#endif
 
 /* Rename the global symbols in libtommath to avoid linkage conflicts */
 
@@ -739,7 +744,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #undef mp_iseven
 #undef mp_isodd
 #define mp_iseven(a) (!mp_isodd(a))
-#define mp_isodd(a)  (((a)->used != 0 && (((a)->dp[0] & 1) != 0)) ? MP_YES : MP_NO)
+#define mp_isodd(a)  (((a)->used != 0) && (((a)->dp[0] & 1) != 0))
 #undef mp_sqr
 #define mp_sqr(a,b) mp_mul(a,a,b)
 

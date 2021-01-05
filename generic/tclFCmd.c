@@ -4,7 +4,7 @@
  *	This file implements the generic portion of file manipulation
  *	subcommands of the "file" command.
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -47,7 +47,7 @@ static int		FileForceOption(Tcl_Interp *interp,
 
 int
 TclFileRenameCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interp for error reporting or recursive
 				 * calls in the case of a tricky rename. */
     int objc,			/* Number of arguments. */
@@ -76,7 +76,7 @@ TclFileRenameCmd(
 
 int
 TclFileCopyCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Used for error reporting or recursive calls
 				 * in the case of a tricky copy. */
     int objc,			/* Number of arguments. */
@@ -214,7 +214,7 @@ FileCopyRename(
 
 int
 TclFileMakeDirsCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Used for error reporting. */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
@@ -338,7 +338,7 @@ TclFileMakeDirsCmd(
 
 int
 TclFileDeleteCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Used for error reporting */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
@@ -904,7 +904,7 @@ FileBasename(
 	}
     }
     if (resultPtr == NULL) {
-	resultPtr = Tcl_NewObj();
+	TclNewObj(resultPtr);
     }
     Tcl_IncrRefCount(resultPtr);
     Tcl_DecrRefCount(splitPtr);
@@ -946,7 +946,7 @@ FileBasename(
 
 int
 TclFileAttrsCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter for error reporting. */
     int objc,			/* Number of command line arguments. */
     Tcl_Obj *const objv[])	/* The command line objects. */
@@ -1085,7 +1085,7 @@ TclFileAttrsCmd(
 	}
 
 	if (Tcl_GetIndexFromObj(interp, objv[0], attributeStrings,
-		"option", INDEX_TEMP_TABLE, &index) != TCL_OK) {
+		"option", TCL_INDEX_TEMP_TABLE, &index) != TCL_OK) {
 	    goto end;
 	}
 	if (Tcl_FSFileAttrsGet(interp, index, filePtr,
@@ -1110,7 +1110,7 @@ TclFileAttrsCmd(
 
 	for (i = 0; i < objc ; i += 2) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], attributeStrings,
-		    "option", INDEX_TEMP_TABLE, &index) != TCL_OK) {
+		    "option", TCL_INDEX_TEMP_TABLE, &index) != TCL_OK) {
 		goto end;
 	    }
 	    if (i + 1 == objc) {
@@ -1162,7 +1162,7 @@ TclFileAttrsCmd(
 
 int
 TclFileLinkCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1313,7 +1313,7 @@ TclFileLinkCmd(
 
 int
 TclFileReadLinkCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1364,7 +1364,7 @@ TclFileReadLinkCmd(
 
 int
 TclFileTemporaryCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1523,7 +1523,7 @@ TclFileTemporaryCmd(
 
 int
 TclFileTempDirCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])

@@ -1,7 +1,7 @@
 '\"
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-2000 Sun Microsystems, Inc.
-'\" Copyright (c) 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved
+'\" Copyright (c) 2005 Kevin B. Kenny <kennykb@acm.org>. All rights reserved
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -17,7 +17,7 @@ expr \- Evaluate an expression
 .BE
 .SH DESCRIPTION
 .PP
-Concatenates \fIarg\fRs, separated by a space, into an expression, and evaluates
+The \fIexpr\fR command concatenates \fIarg\fRs, separated by a space, into an expression, and evaluates
 that expression, returning its value.
 The operators permitted in an expression include a subset of
 the operators permitted in C expressions.  For those operators
@@ -41,27 +41,17 @@ When an expression evaluates to an integer, the value is the decimal form of
 the integer, and when an expression evaluates to a floating-point number, the
 value is the form produced by the \fB%g\fR format specifier of Tcl's
 \fBformat\fR command.
+.PP
+.VS "TIP 582"
+You can use \fB#\fR at any point in the expression (except inside double
+quotes or braces) to start a comment. Comments last to the end of the line or
+the end of the expression, whichever comes first.
+.VE "TIP 582"
 .SS OPERANDS
 .PP
 An expression consists of a combination of operands, operators, parentheses and
 commas, possibly with whitespace between any of these elements, which is
 ignored.
-An integer operand may be specified in decimal (the normal case, the optional
-first two characters are \fB0d\fR), binary
-(the first two characters are \fB0b\fR), octal
-(the first two characters are \fB0o\fR), or hexadecimal
-(the first two characters are \fB0x\fR) form.  For
-compatibility with older Tcl releases, an operand that begins with \fB0\fR is
-interpreted as an octal integer even if the second character is not \fBo\fR.
-A floating-point number may be specified in any of several
-common decimal formats, and may use the decimal point \fB.\fR,
-\fBe\fR or \fBE\fR for scientific notation, and
-the sign characters \fB+\fR and \fB\-\fR.  The
-following are all valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16.
-The strings \fBInf\fR
-and \fBNaN\fR, in any combination of case, are also recognized as floating point
-values.  An operand that doesn't have a numeric interpretation must be quoted
-with either braces or with double quotes.
 .PP
 An operand may be specified in any of the following ways:
 .IP [1]
@@ -98,11 +88,54 @@ produces the value on the right side.
 .PP
 .CS
 .ta 9c
-\fBexpr\fR 3.1 + $a	\fI6.1\fR
-\fBexpr\fR 2 + "$a.$b"	\fI5.6\fR
-\fBexpr\fR 4*[llength "6 2"]	\fI8\fR
+\fBexpr\fR {3.1 + $a}	\fI6.1\fR
+\fBexpr\fR {2 + "$a.$b"}	\fI5.6\fR
+\fBexpr\fR {4*[llength "6 2"]}	\fI8\fR
 \fBexpr\fR {{word one} < "word $a"}	\fI0\fR
 .CE
+.PP
+\fBInteger value\fR
+.PP
+An integer operand may be specified in decimal (the normal case, the optional
+first two characters are \fB0d\fR), binary
+(the first two characters are \fB0b\fR), octal
+(the first two characters are \fB0o\fR), or hexadecimal
+(the first two characters are \fB0x\fR) form.  For
+compatibility with older Tcl releases, an operand that begins with \fB0\fR is
+interpreted as an octal integer even if the second character is not \fBo\fR.
+.PP
+\fBFloating-point value\fR
+.PP
+A floating-point number may be specified in any of several
+common decimal formats, and may use the decimal point \fB.\fR,
+\fBe\fR or \fBE\fR for scientific notation, and
+the sign characters \fB+\fR and \fB\-\fR.  The
+following are all valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16.
+The strings \fBInf\fR
+and \fBNaN\fR, in any combination of case, are also recognized as floating point
+values.  An operand that doesn't have a numeric interpretation must be quoted
+with either braces or with double quotes.
+.PP
+\fBBoolean value\fR
+.PP
+A boolean value may be represented by any of the values \fB0\fR, \fBfalse\fR, \fBno\fR,
+or \fBoff\fR and any of the values \fB1\fR, \fBtrue\fR, \fByes\fR, or \fBon\fR.
+.PP
+\fBDigit Separator\fR
+.PP
+Digits in any numeric value may be separated with one or more underscore
+characters, "\fB_\fR", to improve readability.  These separators may only
+appear between digits.  The separator may not appear at the start of a
+numeric value, between the leading 0 and radix specifier, or at the
+end of a numeric value.  Here are some examples:
+.PP
+.CS
+.ta 9c
+\fBexpr\fR 100_000_000		\fI100000000\fR
+\fBexpr\fR 0xffff_ffff		\fI4294967295\fR
+\fBformat\fR 0x%x 0b1111_1110_1101_1011		\fI0xfedb\fR
+.CE
+.PP
 .SS OPERATORS
 .PP
 For operators having both a numeric mode and a string mode, the numeric mode is
@@ -243,7 +276,7 @@ which means that operands are not evaluated if they are
 not needed to determine the outcome.  For example, in
 .PP
 .CS
-\fBexpr\fR {$v ? [a] : [b]}
+\fBexpr\fR {$v?[a]:[b]}
 .CE
 .PP
 only one of \fB[a]\fR or \fB[b]\fR is evaluated,
@@ -460,7 +493,9 @@ value of true:
 .PP
 .CS
 set isTrue [\fBexpr\fR {
+    # Does the environment variable exist, and...
     [info exists ::env(SOME_ENV_VAR)] &&
+    # ...does it contain a proper true value?
     [string is true -strict $::env(SOME_ENV_VAR)]
 }]
 .CE
@@ -474,13 +509,14 @@ set randNum [\fBexpr\fR { int(100 * rand()) }]
 array(n), for(n), if(n), mathfunc(n), mathop(n), namespace(n), proc(n),
 string(n), Tcl(n), while(n)
 .SH KEYWORDS
-arithmetic, boolean, compare, expression, fuzzy comparison
+arithmetic, boolean, compare, expression, fuzzy comparison, integer value
 .SH COPYRIGHT
 .nf
 Copyright \(co 1993 The Regents of the University of California.
 Copyright \(co 1994-2000 Sun Microsystems Incorporated.
-Copyright \(co 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
+Copyright \(co 2005 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
 .fi
 '\" Local Variables:
 '\" mode: nroff
+'\" fill-column: 78
 '\" End:

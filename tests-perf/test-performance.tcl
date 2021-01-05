@@ -9,7 +9,7 @@
 #
 # ------------------------------------------------------------------------
 #
-# Copyright (c) 2014 Serg G. Brester (aka sebres)
+# Copyright © 2014 Serg G. Brester (aka sebres)
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file.
@@ -49,7 +49,7 @@ proc _test_out_total {} {
     return
   }
 
-  set mintm 0x7fffffff
+  set mintm 0x7FFFFFFF
   set maxtm 0
   set nettm 0
   set wtm 0

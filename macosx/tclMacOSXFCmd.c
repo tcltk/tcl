@@ -4,7 +4,7 @@
  *	This file implements the MacOSX specific portion of file manipulation
  *	subcommands of the "file" command.
  *
- * Copyright (c) 2003-2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 2003-2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -172,7 +172,7 @@ TclMacOSXGetFileAttribute(
     } else {
 	alist.commonattr = ATTR_CMN_FNDRINFO;
     }
-    native = Tcl_FSGetNativePath(fileName);
+    native = (const char *)Tcl_FSGetNativePath(fileName);
     result = getattrlist(native, &alist, &finfo, sizeof(fileinfobuf), 0);
 
     if (result != 0) {
@@ -192,11 +192,11 @@ TclMacOSXGetFileAttribute(
 		OSSwapBigToHostInt32(finder->type));
 	break;
     case MACOSX_HIDDEN_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewWideIntObj(
+	TclNewIntObj(*attributePtrPtr,
 		(finder->fdFlags & kFinfoIsInvisible) != 0);
 	break;
     case MACOSX_RSRCLENGTH_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewWideIntObj(*rsrcForkSize);
+	TclNewIntObj(*attributePtrPtr, *rsrcForkSize);
 	break;
     }
     return TCL_OK;
@@ -268,7 +268,7 @@ TclMacOSXSetFileAttribute(
     } else {
 	alist.commonattr = ATTR_CMN_FNDRINFO;
     }
-    native = Tcl_FSGetNativePath(fileName);
+    native = (const char *)Tcl_FSGetNativePath(fileName);
     result = getattrlist(native, &alist, &finfo, sizeof(fileinfobuf), 0);
 
     if (result != 0) {

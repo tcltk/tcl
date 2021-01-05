@@ -5,7 +5,7 @@
  *	is the lowest-level part of the Tcl event loop. This file works
  *	together with ../generic/tclNotify.c.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -84,12 +84,12 @@ Tcl_InitNotifier(void)
     } else {
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-	TclpMasterLock();
+	TclpGlobalLock();
 	if (!initialized) {
 	    initialized = 1;
 	    InitializeCriticalSection(&notifierMutex);
 	}
-	TclpMasterUnlock();
+	TclpGlobalUnlock();
 
 	/*
 	 * Register Notifier window class if this is the first thread to use

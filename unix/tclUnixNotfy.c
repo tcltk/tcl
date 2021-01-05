@@ -4,8 +4,8 @@
  *	This file contains subroutines shared by all notifier backend
  *	implementations on *nix platforms.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 2016 Lucio Andrés Illanes Albornoz <l.illanes@gmx.de>
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 2016 Lucio Andrés Illanes Albornoz <l.illanes@gmx.de>
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -108,7 +108,7 @@ Tcl_AlertNotifier(
     } else {
 #ifdef NOTIFIER_SELECT
 #if TCL_THREADS
-	ThreadSpecificData *tsdPtr = clientData;
+	ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
 
 	pthread_mutex_lock(&notifierMutex);
 	tsdPtr->eventReady = 1;
@@ -121,7 +121,7 @@ Tcl_AlertNotifier(
 	pthread_mutex_unlock(&notifierMutex);
 #endif /* TCL_THREADS */
 #else /* !NOTIFIER_SELECT */
-	ThreadSpecificData *tsdPtr = clientData;
+	ThreadSpecificData *tsdPtr = (ThreadSpecificData *)clientData;
 #if defined(NOTIFIER_EPOLL) && defined(HAVE_EVENTFD)
 	uint64_t eventFdVal = 1;
 	if (write(tsdPtr->triggerEventFd, &eventFdVal,

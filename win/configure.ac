@@ -3,8 +3,9 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 
-AC_INIT(../generic/tcl.h)
-AC_PREREQ(2.69)
+AC_INIT([tcl],[8.7])
+AC_CONFIG_SRCDIR([../generic/tcl.h])
+AC_PREREQ([2.69])
 
 # The following define is needed when building with Cygwin since newer
 # versions of autoconf incorrectly set SHELL to /bin/bash instead of
@@ -59,7 +60,6 @@ fi
 
 AC_PROG_CC
 AC_C_INLINE
-AC_HEADER_STDC
 
 AC_CHECK_TOOL(AR, ar)
 AC_CHECK_TOOL(RANLIB, ranlib)
@@ -97,7 +97,7 @@ SC_ENABLE_SHARED
 
 AC_MSG_CHECKING([force of 64-bit time_t])
 AC_ARG_ENABLE(time64bit,
-    AC_HELP_STRING([--enable-time64bit],
+    AS_HELP_STRING([--enable-time64bit],
 	[force 64-bit time_t for 32-bit build (default: off)]),
     [tcl_ok=$enableval], [tcl_ok=no])
 AC_MSG_RESULT("$tcl_ok")
@@ -158,44 +158,15 @@ AS_IF([test "$tcl_ok" = "yes"], [
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
-AC_CHECK_TYPE([intptr_t], [
-    AC_DEFINE([HAVE_INTPTR_T], 1, [Do we have the intptr_t type?])], [
-    AC_CACHE_CHECK([for pointer-size signed integer type], tcl_cv_intptr_t, [
-    for tcl_cv_intptr_t in "int" "long" "long long" none; do
-	if test "$tcl_cv_intptr_t" != none; then
-	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
-		    [[sizeof (void *) <= sizeof ($tcl_cv_intptr_t)]])],
-		[tcl_ok=yes], [tcl_ok=no])
-	    test "$tcl_ok" = yes && break; fi
-    done])
-    if test "$tcl_cv_intptr_t" != none; then
-	AC_DEFINE_UNQUOTED([intptr_t], [$tcl_cv_intptr_t], [Signed integer
-	   type wide enough to hold a pointer.])
-    fi
-])
-AC_CHECK_TYPE([uintptr_t], [
-    AC_DEFINE([HAVE_UINTPTR_T], 1, [Do we have the uintptr_t type?])], [
-    AC_CACHE_CHECK([for pointer-size unsigned integer type], tcl_cv_uintptr_t, [
-    for tcl_cv_uintptr_t in "unsigned int" "unsigned long" "unsigned long long" \
-	    none; do
-	if test "$tcl_cv_uintptr_t" != none; then
-	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
-		    [[sizeof (void *) <= sizeof ($tcl_cv_uintptr_t)]])],
-		[tcl_ok=yes], [tcl_ok=no])
-	    test "$tcl_ok" = yes && break; fi
-    done])
-    if test "$tcl_cv_uintptr_t" != none; then
-	AC_DEFINE_UNQUOTED([uintptr_t], [$tcl_cv_uintptr_t], [Unsigned integer
-	   type wide enough to hold a pointer.])
-    fi
-])
-
+AC_CHECK_TYPES([intptr_t, uintptr_t],,,[[
+#include <stdint.h>
+]])
 
 #--------------------------------------------------------------------
 #	Zipfs support - Tip 430
 #--------------------------------------------------------------------
 AC_ARG_ENABLE(zipfs,
-    AC_HELP_STRING([--enable-zipfs],
+    AS_HELP_STRING([--enable-zipfs],
 	[build with Zipfs support (default: on)]),
     [tcl_ok=$enableval], [tcl_ok=yes])
 if test "$tcl_ok" = "yes" ; then
@@ -248,17 +219,16 @@ AC_SUBST(INSTALL_MSGS)
 
 AC_CACHE_CHECK(for FINDEX_INFO_LEVELS in winbase.h,
     tcl_cv_findex_enums,
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
-],
-[
+]], [[
   FINDEX_INFO_LEVELS i;
   FINDEX_SEARCH_OPS j;
-],
-        tcl_cv_findex_enums=yes,
-        tcl_cv_findex_enums=no)
+]])],
+    [tcl_cv_findex_enums=yes],
+    [tcl_cv_findex_enums=no])
 )
 if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
@@ -269,17 +239,16 @@ fi
 
 AC_CACHE_CHECK(for intrinsics support in compiler,
     tcl_cv_intrinsics,
-AC_TRY_LINK([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 #include <intrin.h>
-],
-[
+]], [[
   __cpuidex(0,0,0);
-],
-        tcl_cv_intrinsics=yes,
-        tcl_cv_intrinsics=no)
+]])],
+    [tcl_cv_intrinsics=yes],
+    [tcl_cv_intrinsics=no])
 )
 if test "$tcl_cv_intrinsics" = "yes"; then
     AC_DEFINE(HAVE_INTRIN_H, 1,
@@ -290,11 +259,11 @@ fi
 
 AC_CACHE_CHECK(for wspiapi.h,
     tcl_cv_wspiapi_h,
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <wspiapi.h>
-], [],
-        tcl_cv_wspiapi_h=yes,
-        tcl_cv_wspiapi_h=no)
+]], [[]])],
+    [tcl_cv_wspiapi_h=yes],
+    [tcl_cv_wspiapi_h=no])
 )
 if test "$tcl_cv_wspiapi_h" = "yes"; then
     AC_DEFINE(HAVE_WSPIAPI_H, 1,
@@ -307,17 +276,16 @@ fi
 
 AC_CACHE_CHECK(for FINDEX_INFO_LEVELS in winbase.h,
     tcl_cv_findex_enums,
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
-],
-[
+]], [[
   FINDEX_INFO_LEVELS i;
   FINDEX_SEARCH_OPS j;
-],
-        tcl_cv_findex_enums=yes,
-        tcl_cv_findex_enums=no)
+]])],
+    [tcl_cv_findex_enums=yes],
+    [tcl_cv_findex_enums=no])
 )
 if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
@@ -331,8 +299,6 @@ fi
 #--------------------------------------------------------------------
 
 SC_ENABLE_SYMBOLS
-
-TCL_DBGX=${DBGX}
 
 #--------------------------------------------------------------------
 # Embed the manifest if we can determine how
@@ -350,10 +316,6 @@ TCL_SHARED_BUILD=${SHARED_BUILD}
 # Perform final evaluations of variables with possible substitutions.
 #--------------------------------------------------------------------
 
-TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
-TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
-TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
-
 eval "TCL_SRC_DIR=\"`cd $srcdir/..; $CYGPATH $(pwd)`\""
 
 eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
@@ -365,18 +327,20 @@ eval "TCL_STUB_LIB_SPEC=\"-L${libdir} ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_BUILD_STUB_LIB_PATH=\"`$CYGPATH $(pwd)`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
 
-eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
+if test ${SHARED_BUILD} = 0 ; then
+ eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
+else
+ eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${DLLSUFFIX}.a\""
+fi
 eval "TCL_BUILD_LIB_SPEC=\"-L`$CYGPATH $(pwd)` -ltcl${VER}${FLAGSUFFIX}\""
 eval "TCL_LIB_SPEC=\"-L${libdir} -ltcl${VER}${FLAGSUFFIX}\""
 
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
 
-
-eval "DLLSUFFIX=${DLLSUFFIX}"
-eval "LIBPREFIX=${LIBPREFIX}"
-eval "LIBSUFFIX=${LIBSUFFIX}"
-eval "EXESUFFIX=${EXESUFFIX}"
+TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
+TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
+TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
 
 CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}
 CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}
@@ -388,17 +352,9 @@ CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 #--------------------------------------------------------------------
 
 if test ${SHARED_BUILD} = 0 ; then
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
-    fi
+    RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
 else
-    if test "${DBGX}" = "g"; then
-        RC_DEFINES="${RC_DEFINE} DEBUG"
-    else
-        RC_DEFINES=""
-    fi
+    RC_DEFINES=""
 fi
 
 #--------------------------------------------------------------------
@@ -409,9 +365,9 @@ fi
 #--------------------------------------------------------------------
 
 if test "$prefix/lib" != "$libdir"; then
-    TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
+    TCL_PACKAGE_PATH="{${libdir}} {${prefix}/lib}"
 else
-    TCL_PACKAGE_PATH="${prefix}/lib"
+    TCL_PACKAGE_PATH="{${prefix}/lib}"
 fi
 
 # The tclsh.exe.manifest requires these
@@ -453,7 +409,6 @@ AC_SUBST(TCL_DLL_FILE)
 
 AC_SUBST(TCL_SRC_DIR)
 AC_SUBST(TCL_BIN_DIR)
-AC_SUBST(TCL_DBGX)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
@@ -522,8 +477,9 @@ AC_SUBST(RC_DEFINE)
 AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 
-AC_OUTPUT(Makefile tclConfig.sh tcl.hpj tclsh.exe.manifest)
+AC_CONFIG_FILES(Makefile tclConfig.sh tclsh.exe.manifest)
+AC_OUTPUT
 
 dnl Local Variables:
-dnl mode: autoconf;
+dnl mode: autoconf
 dnl End:

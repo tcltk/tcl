@@ -7,8 +7,8 @@
  *	general hashtable implementation of Tcl hash tables that appears in
  *	tclHash.c.
  *
- * Copyright (c) 1997-1998 Sun Microsystems, Inc.
- * Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
+ * Copyright © 1997-1998 Sun Microsystems, Inc.
+ * Copyright © 2004 Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -114,6 +114,8 @@ TclDeleteLiteralTable(
 
 #ifdef TCL_COMPILE_DEBUG
     TclVerifyGlobalLiteralTable((Interp *) interp);
+#else
+    (void)interp;
 #endif /*TCL_COMPILE_DEBUG*/
 
     /*
@@ -276,7 +278,7 @@ TclCreateLiteral(
     }
 #endif
 
-    globalPtr = ckalloc(sizeof(LiteralEntry));
+    globalPtr = (LiteralEntry *)ckalloc(sizeof(LiteralEntry));
     globalPtr->objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
     globalPtr->refCount = 1;
@@ -401,7 +403,7 @@ TclRegisterLiteral(
 				 * the literal should not be shared accross
 				 * namespaces. */
 {
-    CompileEnv *envPtr = ePtr;
+    CompileEnv *envPtr = (CompileEnv *)ePtr;
     Interp *iPtr = envPtr->iPtr;
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *globalPtr, *localPtr;
@@ -758,14 +760,14 @@ ExpandLocalLiteralArray(
     }
 
     if (envPtr->mallocedLiteralArray) {
-	newArrayPtr = ckrealloc(currArrayPtr, newSize);
+	newArrayPtr = (LiteralEntry *)ckrealloc(currArrayPtr, newSize);
     } else {
 	/*
 	 * envPtr->literalArrayPtr isn't a ckalloc'd pointer, so we must
 	 * code a ckrealloc equivalent for ourselves.
 	 */
 
-	newArrayPtr = ckalloc(newSize);
+	newArrayPtr = (LiteralEntry *)ckalloc(newSize);
 	memcpy(newArrayPtr, currArrayPtr, currBytes);
 	envPtr->mallocedLiteralArray = 1;
     }
@@ -992,7 +994,8 @@ RebuildLiteralTable(
     }
 
     tablePtr->numBuckets *= 4;
-    tablePtr->buckets = ckalloc(tablePtr->numBuckets * sizeof(LiteralEntry*));
+    tablePtr->buckets = (LiteralEntry **)ckalloc(
+	    tablePtr->numBuckets * sizeof(LiteralEntry*));
     for (count=tablePtr->numBuckets, newChainPtr=tablePtr->buckets;
 	    count>0 ; count--, newChainPtr++) {
 	*newChainPtr = NULL;
@@ -1130,7 +1133,7 @@ TclLiteralStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    result = ckalloc(NUM_COUNTERS*60 + 300);
+    result = (char *)ckalloc(NUM_COUNTERS*60 + 300);
     sprintf(result, "%d entries in table, %d buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);

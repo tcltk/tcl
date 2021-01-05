@@ -7,9 +7,9 @@
  *	is the primary author.  Other signifiant contributors are Karl
  *	Lehenbauer, Mark Diekhans and Peter da Silva.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 2001-2004 Vincent Darley.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 2001-2004 Vincent Darley.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -82,7 +82,6 @@ static void		Disclaim(void);
 static void *		DivertFindSymbol(Tcl_Interp *interp,
 			    Tcl_LoadHandle loadHandle, const char *symbol);
 static void		DivertUnloadFile(Tcl_LoadHandle loadHandle);
-
 
 /*
  * Functions that provide native filesystem support. They are private and
@@ -417,7 +416,7 @@ static void
 FsThrExitProc(
     ClientData cd)
 {
-    ThreadSpecificData *tsdPtr = cd;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)cd;
     FilesystemRecord *fsRecPtr = NULL, *tmpFsRecPtr = NULL;
 
     /*
@@ -579,7 +578,7 @@ FsRecacheFilesystemList(void)
     list = NULL;
     fsRecPtr = tmpFsRecPtr;
     while (fsRecPtr != NULL) {
-	tmpFsRecPtr = ckalloc(sizeof(FilesystemRecord));
+	tmpFsRecPtr = (FilesystemRecord *)ckalloc(sizeof(FilesystemRecord));
 	*tmpFsRecPtr = *fsRecPtr;
 	tmpFsRecPtr->nextPtr = list;
 	tmpFsRecPtr->prevPtr = NULL;
@@ -853,7 +852,7 @@ Tcl_FSRegister(
 	return TCL_ERROR;
     }
 
-    newFilesystemPtr = ckalloc(sizeof(FilesystemRecord));
+    newFilesystemPtr = (FilesystemRecord *)ckalloc(sizeof(FilesystemRecord));
 
     newFilesystemPtr->clientData = clientData;
     newFilesystemPtr->fsPtr = fsPtr;
@@ -1229,15 +1228,12 @@ FsAddMountsToGlobResult(
 
 void
 Tcl_FSMountsChanged(
-    const Tcl_Filesystem *fsPtr)
-{
+    TCL_UNUSED(const Tcl_Filesystem *) /*fsPtr*/)
     /*
      * fsPtr is currently unused.  In the future it might invalidate files for
      * a particular filesystem, or take some other more advanced action.
      */
-
-    (void)fsPtr;
-
+{
     /*
      * Increment the filesystem epoch to invalidate every existing cached
      * internal representation.
@@ -1688,7 +1684,7 @@ Tcl_FSEvalFileEx(
 				 * Tilde-substitution is performed on this
 				 * pathname. */
     const char *encodingName)	/* Either the name of an encoding or NULL to
-				   use the system encoding. */
+				   use the utf-8 encoding. */
 {
     int length, result = TCL_ERROR;
     Tcl_StatBuf statBuf;
@@ -1726,19 +1722,19 @@ Tcl_FSEvalFileEx(
 
     /*
      * If the encoding is specified, set the channel to that encoding.
-     * Otherwise don't touch it, leaving things up to the system encoding.  If
-     * the encoding is unknown report an error.
+     * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
-    if (encodingName != NULL) {
-	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
-		!= TCL_OK) {
-	    Tcl_Close(interp,chan);
-	    return result;
-	}
+    if (encodingName == NULL) {
+	encodingName = "utf-8";
+    }
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+	    != TCL_OK) {
+	Tcl_Close(interp,chan);
+	return result;
     }
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
 
     /*
@@ -1760,7 +1756,7 @@ Tcl_FSEvalFileEx(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
+	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1825,7 +1821,7 @@ TclNREvalFile(
 				 * evaluate. Tilde-substitution is performed on
 				 * this pathname. */
     const char *encodingName)	/* The name of an encoding to use, or NULL to
-				 *  use the system encoding. */
+				 *  use the utf-8 encoding. */
 {
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile, *objPtr;
@@ -1862,19 +1858,19 @@ TclNREvalFile(
 
     /*
      * If the encoding is specified, set the channel to that encoding.
-     * Otherwise don't touch it, leaving things up to the system encoding.  If
-     * the encoding is unknown report an error.
+     * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
-    if (encodingName != NULL) {
-	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
-		!= TCL_OK) {
-	    Tcl_Close(interp,chan);
-	    return TCL_ERROR;
-	}
+    if (encodingName == NULL) {
+	encodingName = "utf-8";
+    }
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+	    != TCL_OK) {
+	Tcl_Close(interp, chan);
+	return TCL_ERROR;
     }
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
 
     /*
@@ -1897,7 +1893,7 @@ TclNREvalFile(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
+	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1933,9 +1929,9 @@ EvalFileCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *oldScriptFile = data[0];
-    Tcl_Obj *pathPtr = data[1];
-    Tcl_Obj *objPtr = data[2];
+    Tcl_Obj *oldScriptFile = (Tcl_Obj *)data[0];
+    Tcl_Obj *pathPtr = (Tcl_Obj *)data[1];
+    Tcl_Obj *objPtr = (Tcl_Obj *)data[2];
 
     /*
      * Restore the original iPtr->scriptFile value, but because the value may
@@ -2315,8 +2311,8 @@ Tcl_FSUtime(
 
 static const char *const *
 NativeFileAttrStrings(
-    Tcl_Obj *pathPtr,
-    Tcl_Obj **objPtrRef)
+    TCL_UNUSED(Tcl_Obj *),
+    TCL_UNUSED(Tcl_Obj **))
 {
     return tclpFileAttrStrings;
 }
@@ -2701,7 +2697,7 @@ Tcl_FSGetCwd(
 		 * always be in the 'else' branch below which is simpler.
 		 */
 
-		ClientData cd = (ClientData) Tcl_FSGetNativePath(norm);
+		void *cd = (void *) Tcl_FSGetNativePath(norm);
 
 		FsUpdateCwd(norm, TclNativeDupInternalRep(cd));
 		Tcl_DecrRefCount(norm);
@@ -3019,9 +3015,7 @@ Tcl_FSLoadFile(
     Tcl_LoadHandle *handlePtr,	/* A place to store the token for the loaded
 				 * object.  Can be passed to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
-				/* A place to store a pointer to the function
-				 * that unloads the object. */
+    TCL_UNUSED(Tcl_FSUnloadFileProc **))
 {
     const char *symbols[3];
     void *procPtrs[2];
@@ -3101,6 +3095,7 @@ skipUnlink(
 
 
 #ifdef hpux
+    (void)shlibFile;
     return 1;
 #else
     char *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
@@ -3109,7 +3104,9 @@ skipUnlink(
 	return atoi(skipstr);
     }
 
-#ifdef TCL_TEMPLOAD_NO_UNLINK
+#ifndef TCL_TEMPLOAD_NO_UNLINK
+    (void)shlibFile;
+#else
 /* At built time TCL_TEMPLOAD_NO_UNLINK can be set manually to control whether
  * this automatic overriding of unlink is included.
  */
@@ -3176,7 +3173,7 @@ Tcl_LoadFile(
     }
 
     if (fsPtr->loadFileProc != NULL) {
-	int retVal = ((Tcl_FSLoadFileProc2 *)(void *)(fsPtr->loadFileProc))
+	retVal = ((Tcl_FSLoadFileProc2 *)(void *)(fsPtr->loadFileProc))
 		(interp, pathPtr, handlePtr, &unloadProcPtr, flags);
 
 	if (retVal == TCL_OK) {
@@ -3245,7 +3242,7 @@ Tcl_LoadFile(
 	    Tcl_Close(interp, data);
 	    goto mustCopyToTempAnyway;
 	}
-	ret = Tcl_Read(data, buffer, size);
+	ret = Tcl_Read(data, (char *)buffer, size);
 	Tcl_Close(interp, data);
 	ret = TclpLoadMemory(interp, buffer, size, ret, handlePtr,
 		&unloadProcPtr, flags);
@@ -3360,7 +3357,7 @@ Tcl_LoadFile(
      * Divert the unloading in order to unload and cleanup the temporary file.
      */
 
-    tvdlPtr = ckalloc(sizeof(FsDivertLoad));
+    tvdlPtr = (FsDivertLoad *)ckalloc(sizeof(FsDivertLoad));
 
     /*
      * Remember three pieces of information in order to clean up the diverted
@@ -3401,7 +3398,7 @@ Tcl_LoadFile(
 
     copyToPtr = NULL;
 
-    divertedLoadHandle = ckalloc(sizeof(struct Tcl_LoadHandle_));
+    divertedLoadHandle = (Tcl_LoadHandle)ckalloc(sizeof(struct Tcl_LoadHandle_));
     divertedLoadHandle->clientData = tvdlPtr;
     divertedLoadHandle->findSymbolProcPtr = DivertFindSymbol;
     divertedLoadHandle->unloadFileProcPtr = DivertUnloadFile;
@@ -3768,7 +3765,7 @@ Tcl_Obj *
 Tcl_FSListVolumes(void)
 {
     FilesystemRecord *fsRecPtr;
-    Tcl_Obj *resultPtr = Tcl_NewObj();
+    Tcl_Obj *resultPtr;
 
     /*
      * Call each "listVolumes" function of each registered filesystem in
@@ -3776,6 +3773,7 @@ Tcl_FSListVolumes(void)
      * has succeeded.
      */
 
+    TclNewObj(resultPtr);
     fsRecPtr = FsGetFirstFilesystem();
     Claim();
     while (fsRecPtr != NULL) {
@@ -3835,7 +3833,7 @@ FsListMounts(
 	if (fsRecPtr->fsPtr != &tclNativeFilesystem &&
 		fsRecPtr->fsPtr->matchInDirectoryProc != NULL) {
 	    if (resultPtr == NULL) {
-		resultPtr = Tcl_NewObj();
+		TclNewObj(resultPtr);
 	    }
 	    fsRecPtr->fsPtr->matchInDirectoryProc(NULL, resultPtr, pathPtr,
 		    pattern, &mountsOnly);
@@ -3906,7 +3904,7 @@ Tcl_FSSplitPath(
      * For example, 'ftp://' is a valid drive name.
      */
 
-    result = Tcl_NewObj();
+    TclNewObj(result);
     p = Tcl_GetString(pathPtr);
     Tcl_ListObjAppendElement(NULL, result,
 	    Tcl_NewStringObj(p, driveNameLength));
@@ -4088,7 +4086,7 @@ TclFSNonnativePathType(
 		    if (pathLen < len) {
 			continue;
 		    }
-		    if (strncmp(strVol, path, (size_t) len) == 0) {
+		    if (strncmp(strVol, path, len) == 0) {
 			type = TCL_PATH_ABSOLUTE;
 			if (filesystemPtrPtr != NULL) {
 			    *filesystemPtrPtr = fsRecPtr->fsPtr;
@@ -4491,7 +4489,7 @@ Tcl_FSGetFileSystemForPath(
 	return NULL;
     }
 
-    /* Start with an up-to-date copy of the master filesystem. */
+    /* Start with an up-to-date copy of the filesystem. */
     fsRecPtr = FsGetFirstFilesystem();
     Claim();
 
@@ -4681,9 +4679,9 @@ Tcl_FSPathSeparator(
 
 static Tcl_Obj *
 NativeFilesystemSeparator(
-    Tcl_Obj *pathPtr)
+    TCL_UNUSED(Tcl_Obj *) /*pathPtr*/)
 {
-    const char *separator = NULL; /* lint */
+    const char *separator = NULL;
 
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:

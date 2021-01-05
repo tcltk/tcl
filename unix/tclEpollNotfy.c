@@ -5,8 +5,8 @@
  *	Linux-specific notifier, which is the lowest-level part of the Tcl
  *	event loop. This file works together with generic/tclNotify.c.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 2016 Lucio Andrés Illanes Albornoz <l.illanes@gmx.de>
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 2016 Lucio Andrés Illanes Albornoz <l.illanes@gmx.de>
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -16,7 +16,9 @@
 #ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
 				 * in tclMacOSXNotify.c */
 #if defined(NOTIFIER_EPOLL) && TCL_THREADS
-#define _GNU_SOURCE		/* For pipe2(2) */
+#ifndef _GNU_SOURCE
+#   define _GNU_SOURCE		/* For pipe2(2) */
+#endif
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/epoll.h>
@@ -181,7 +183,7 @@ Tcl_InitNotifier(void)
 
 void
 Tcl_FinalizeNotifier(
-    ClientData clientData)		/* Not used. */
+    ClientData clientData)
 {
     if (tclNotifierHooks.finalizeNotifierProc) {
 	tclNotifierHooks.finalizeNotifierProc(clientData);
@@ -238,7 +240,7 @@ PlatformEventsControl(
 	newEvent.events |= EPOLLOUT;
     }
     if (isNew) {
-        newPedPtr = ckalloc(sizeof(*newPedPtr));
+        newPedPtr = (struct PlatformEventData *)ckalloc(sizeof(struct PlatformEventData));
         newPedPtr->filePtr = filePtr;
         newPedPtr->tsdPtr = tsdPtr;
 	filePtr->pedPtr = newPedPtr;
@@ -370,7 +372,7 @@ PlatformEventsInit(void)
     if (errno) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create mutex");
     }
-    filePtr = ckalloc(sizeof(*filePtr));
+    filePtr = (FileHandler *)ckalloc(sizeof(FileHandler));
 #ifdef HAVE_EVENTFD
     tsdPtr->triggerEventFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
     if (tsdPtr->triggerEventFd <= 0) {
@@ -391,7 +393,7 @@ PlatformEventsInit(void)
     PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, 1);
     if (!tsdPtr->readyEvents) {
         tsdPtr->maxReadyEvents = 512;
-	tsdPtr->readyEvents = ckalloc(
+	tsdPtr->readyEvents = (struct epoll_event *)ckalloc(
 		tsdPtr->maxReadyEvents * sizeof(tsdPtr->readyEvents[0]));
     }
     LIST_INIT(&tsdPtr->firstReadyFileHandlerPtr);
@@ -550,7 +552,7 @@ Tcl_CreateFileHandler(
 	    }
 	}
 	if (filePtr == NULL) {
-	    filePtr = ckalloc(sizeof(FileHandler));
+	    filePtr = (FileHandler *)ckalloc(sizeof(FileHandler));
 	    filePtr->fd = fd;
 	    filePtr->readyMask = 0;
 	    filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
@@ -733,7 +735,7 @@ Tcl_WaitForEvent(
 	     */
 
 	    if (filePtr->readyMask == 0) {
-		FileHandlerEvent *fileEvPtr =
+		FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
 			ckalloc(sizeof(FileHandlerEvent));
 
 		fileEvPtr->header.proc = FileHandlerEventProc;
@@ -772,7 +774,7 @@ Tcl_WaitForEvent(
 	numFound = PlatformEventsWait(tsdPtr->readyEvents,
 		tsdPtr->maxReadyEvents, timeoutPtr);
 	for (numEvent = 0; numEvent < numFound; numEvent++) {
-	    pedPtr = tsdPtr->readyEvents[numEvent].data.ptr;
+	    pedPtr = (struct PlatformEventData*)tsdPtr->readyEvents[numEvent].data.ptr;
 	    filePtr = pedPtr->filePtr;
 	    mask = PlatformEventsTranslate(&tsdPtr->readyEvents[numEvent]);
 #ifdef HAVE_EVENTFD
@@ -810,7 +812,7 @@ Tcl_WaitForEvent(
 	     */
 
 	    if (filePtr->readyMask == 0) {
-		FileHandlerEvent *fileEvPtr =
+		FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
 			ckalloc(sizeof(FileHandlerEvent));
 
 		fileEvPtr->header.proc = FileHandlerEventProc;

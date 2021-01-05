@@ -3,7 +3,7 @@
  *
  *	This file contains code to manage the interpreter result.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright © 1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -77,7 +77,7 @@ Tcl_SaveInterpState(
     int status)			/* status code for current operation */
 {
     Interp *iPtr = (Interp *) interp;
-    InterpState *statePtr = ckalloc(sizeof(InterpState));
+    InterpState *statePtr = (InterpState *)ckalloc(sizeof(InterpState));
 
     statePtr->status = status;
     statePtr->flags = iPtr->flags & ERR_ALREADY_LOGGED;
@@ -248,7 +248,7 @@ Tcl_SaveResult(
      */
 
     statePtr->objResultPtr = iPtr->objResultPtr;
-    iPtr->objResultPtr = Tcl_NewObj();
+    TclNewObj(iPtr->objResultPtr);
     Tcl_IncrRefCount(iPtr->objResultPtr);
 
     /*
@@ -432,7 +432,7 @@ Tcl_SetResult(
 	int length = strlen(result);
 
 	if (length > TCL_RESULT_SIZE) {
-	    iPtr->result = ckalloc(length + 1);
+	    iPtr->result = (char *)ckalloc(length + 1);
 	    iPtr->freeProc = TCL_DYNAMIC;
 	} else {
 	    iPtr->result = iPtr->resultSpace;
@@ -730,6 +730,7 @@ Tcl_AppendElement(
     char *dst;
     int size;
     int flags;
+    int quoteHash = 1;
 
     /*
      * If the string result is empty, move the object result to the string
@@ -766,9 +767,17 @@ Tcl_AppendElement(
 	 * then this element will not lead a list, and need not have it's
 	 * leading '#' quoted.
 	 */
-
+	quoteHash = 0;
+    } else {
+	while ((--dst >= iPtr->appendResult) && TclIsSpaceProcM(*dst)) {
+	}
+	quoteHash = !TclNeedSpace(iPtr->appendResult, dst+1);
+    }
+    dst = iPtr->appendResult + iPtr->appendUsed;
+    if (!quoteHash) {
 	flags |= TCL_DONT_QUOTE_HASH;
     }
+
     iPtr->appendUsed += Tcl_ConvertElement(element, dst, flags);
 #endif /* !TCL_NO_DEPRECATED */
 }
@@ -832,19 +841,19 @@ SetupAppendBuffer(
 
     totalSpace = newSpace + iPtr->appendUsed;
     if (totalSpace >= iPtr->appendAvl) {
-	char *newSpace;
+	char *newSpacePtr;
 
 	if (totalSpace < 100) {
 	    totalSpace = 200;
 	} else {
 	    totalSpace *= 2;
 	}
-	newSpace = ckalloc(totalSpace);
-	strcpy(newSpace, iPtr->result);
+	newSpacePtr = (char *)ckalloc(totalSpace);
+	strcpy(newSpacePtr, iPtr->result);
 	if (iPtr->appendResult != NULL) {
 	    ckfree(iPtr->appendResult);
 	}
-	iPtr->appendResult = newSpace;
+	iPtr->appendResult = newSpacePtr;
 	iPtr->appendAvl = totalSpace;
     } else if (iPtr->result != iPtr->appendResult) {
 	strcpy(iPtr->appendResult, iPtr->result);
@@ -1027,13 +1036,14 @@ Tcl_SetErrorCodeVA(
     Tcl_Interp *interp,		/* Interpreter in which to set errorCode */
     va_list argList)		/* Variable argument list. */
 {
-    Tcl_Obj *errorObj = Tcl_NewObj();
+    Tcl_Obj *errorObj;
 
     /*
      * Scan through the arguments one at a time, appending them to the
      * errorCode field as list elements.
      */
 
+    TclNewObj(errorObj);
     while (1) {
 	char *elem = va_arg(argList, char *);
 
@@ -1174,8 +1184,8 @@ static Tcl_Obj **
 GetKeys(void)
 {
     static Tcl_ThreadDataKey returnKeysKey;
-    Tcl_Obj **keys = Tcl_GetThreadData(&returnKeysKey,
-	    (int) (KEY_LAST * sizeof(Tcl_Obj *)));
+    Tcl_Obj **keys = (Tcl_Obj **)Tcl_GetThreadData(&returnKeysKey,
+	    KEY_LAST * sizeof(Tcl_Obj *));
 
     if (keys[0] == NULL) {
 	/*
@@ -1226,7 +1236,7 @@ static void
 ReleaseKeys(
     ClientData clientData)
 {
-    Tcl_Obj **keys = clientData;
+    Tcl_Obj **keys = (Tcl_Obj **)clientData;
     int i;
 
     for (i = KEY_CODE; i < KEY_LAST; i++) {
@@ -1386,9 +1396,10 @@ TclMergeReturnOptions(
     int code = TCL_OK;
     int level = 1;
     Tcl_Obj *valuePtr;
-    Tcl_Obj *returnOpts = Tcl_NewObj();
+    Tcl_Obj *returnOpts;
     Tcl_Obj **keys = GetKeys();
 
+    TclNewObj(returnOpts);
     for (;  objc > 1;  objv += 2, objc -= 2) {
 	const char *opt = TclGetString(objv[0]);
 	const char *compare = TclGetString(keys[KEY_OPTIONS]);
@@ -1582,19 +1593,19 @@ Tcl_GetReturnOptions(
     if (iPtr->returnOpts) {
 	options = Tcl_DuplicateObj(iPtr->returnOpts);
     } else {
-	options = Tcl_NewObj();
+	TclNewObj(options);
     }
 
     if (result == TCL_RETURN) {
 	Tcl_DictObjPut(NULL, options, keys[KEY_CODE],
-		Tcl_NewIntObj(iPtr->returnCode));
+		Tcl_NewWideIntObj(iPtr->returnCode));
 	Tcl_DictObjPut(NULL, options, keys[KEY_LEVEL],
-		Tcl_NewIntObj(iPtr->returnLevel));
+		Tcl_NewWideIntObj(iPtr->returnLevel));
     } else {
 	Tcl_DictObjPut(NULL, options, keys[KEY_CODE],
-		Tcl_NewIntObj(result));
+		Tcl_NewWideIntObj(result));
 	Tcl_DictObjPut(NULL, options, keys[KEY_LEVEL],
-		Tcl_NewIntObj(0));
+		Tcl_NewWideIntObj(0));
     }
 
     if (result == TCL_ERROR) {
@@ -1607,7 +1618,7 @@ Tcl_GetReturnOptions(
     if (iPtr->errorInfo) {
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORINFO], iPtr->errorInfo);
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
-		Tcl_NewIntObj(iPtr->errorLine));
+		Tcl_NewWideIntObj(iPtr->errorLine));
     }
     return options;
 }

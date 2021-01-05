@@ -2,19 +2,20 @@
 # tclCmdIL.c. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
+
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -163,10 +164,10 @@ test cmdIL-1.40 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
 } [list \0 \x7f \x80 \uffff \U01ffff]
 test cmdIL-1.41 {lsort -stride and -index} -body {
     lsort -stride 2 -index -2 {a 2 b 1}
-} -returnCodes error -result {index "-2" cannot select an element from any list}
+} -returnCodes error -result {index "-2" out of range}
 test cmdIL-1.42 {lsort -stride and-index} -body {
     lsort -stride 2 -index -1-1 {a 2 b 1}
-} -returnCodes error -result {index "-1-1" cannot select an element from any list}
+} -returnCodes error -result {index "-1-1" out of range}
 
 # Can't think of any good tests for the MergeSort and MergeLists procedures,
 # except a bunch of random lists to sort.
@@ -228,10 +229,10 @@ test cmdIL-3.5.1 {SortCompare procedure, -index option (out of range, calculated
 } -returnCodes error -result {element 4 missing from sublist "1 . c"}
 test cmdIL-3.5.2 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index -1-1 {{1 . c} {2 . b} {3 . a}}
-} -returnCodes error -result {index "-1-1" cannot select an element from any list}
+} -returnCodes error -result {index "-1-1" out of range}
 test cmdIL-3.5.3 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index -2 {{1 . c} {2 . b} {3 . a}}
-} -returnCodes error -result {index "-2" cannot select an element from any list}
+} -returnCodes error -result {index "-2" out of range}
 test cmdIL-3.5.4 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index end-4 {{1 . c} {2 . b} {3 . a}}
 } -returnCodes error -result {element end-4 missing from sublist "1 . c"}
@@ -243,13 +244,13 @@ test cmdIL-3.5.6 {SortCompare procedure, -index option} {
 } {a \{}
 test cmdIL-3.5.7 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index end--1 {{1 . c} {2 . b} {3 . a}}
-} -returnCodes error -result {index "end--1" cannot select an element from any list}
+} -returnCodes error -result {index "end--1" out of range}
 test cmdIL-3.5.8 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index end+1 {{1 . c} {2 . b} {3 . a}}
-} -returnCodes error -result {index "end+1" cannot select an element from any list}
+} -returnCodes error -result {index "end+1" out of range}
 test cmdIL-3.5.9 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index end+2 {{1 . c} {2 . b} {3 . a}}
-} -returnCodes error -result {index "end+2" cannot select an element from any list}
+} -returnCodes error -result {index "end+2" out of range}
 test cmdIL-3.5.10 {SortCompare procedure, -index option (out of range, calculated index)} -body {
     lsort -index 0 {{}}
 } -returnCodes error -result {element 0 missing from sublist ""}
@@ -513,7 +514,7 @@ test cmdIL-5.5 {lsort with list style index and sharing} -body {
 	foreach e $l {lappend n [list [expr {rand()}] $e]}
 	lindex [lsort -real -index $l $n] 1 1
     }
-    expr srand(1)
+    expr {srand(1)}
     test_lsort 0
 } -result 0 -cleanup {
     rename test_lsort ""

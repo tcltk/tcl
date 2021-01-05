@@ -5,7 +5,7 @@
  *	the "shl_load" and "shl_findsym" library procedures for dynamic
  *	loading (e.g. for HP machines).
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -97,7 +97,7 @@ TclpDlopen(
 		fileName, Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)ckalloc(sizeof(*newHandle));
     newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = *unloadProcPtr = &UnloadFile;
@@ -183,36 +183,6 @@ UnloadFile(
 
     shl_unload(handle);
     ckfree(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
-{
-    return 0;
 }
 
 /*

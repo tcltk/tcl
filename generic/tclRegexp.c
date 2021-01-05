@@ -4,8 +4,8 @@
  *	This file contains the public interfaces to the Tcl regular expression
  *	mechanism.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -26,7 +26,7 @@
  *	regex.h		regexec.c	regfree.c
  *	regfronts.c	regguts.h
  *
- * Copyright (c) 1998 Henry Spencer.  All rights reserved.
+ * Copyright © 1998 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -122,7 +122,7 @@ const Tcl_ObjType tclRegexpType = {
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), &tclRegexpType);		\
-	(rePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	(rePtr) = irPtr ? (TclRegexp *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 
@@ -676,9 +676,9 @@ TclRegAbout(
      * well and Tcl has other limits that constrain things as well...
      */
 
-    resultObj = Tcl_NewObj();
-    Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewWideIntObj((Tcl_WideInt) regexpPtr->re.re_nsub));
+    TclNewObj(resultObj);
+    TclNewIntObj(infoObj, regexpPtr->re.re_nsub);
+    Tcl_ListObjAppendElement(NULL, resultObj, infoObj);
 
     /*
      * Now append a list of all the bit-flags set for the RE.
@@ -916,7 +916,7 @@ CompileRegexp(
      * This is a new expression, so compile it and add it to the cache.
      */
 
-    regexpPtr = ckalloc(sizeof(TclRegexp));
+    regexpPtr = (TclRegexp*)ckalloc(sizeof(TclRegexp));
     regexpPtr->objPtr = NULL;
     regexpPtr->string = NULL;
     regexpPtr->details.rm_extend.rm_so = -1;
@@ -971,7 +971,7 @@ CompileRegexp(
      */
 
     regexpPtr->matches =
-	    ckalloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
+	    (regmatch_t*)ckalloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
 
     /*
      * Initialize the refcount to one initially, since it is in the cache.
@@ -997,7 +997,7 @@ CompileRegexp(
 	tsdPtr->patLengths[i+1] = tsdPtr->patLengths[i];
 	tsdPtr->regexps[i+1] = tsdPtr->regexps[i];
     }
-    tsdPtr->patterns[0] = ckalloc(length + 1);
+    tsdPtr->patterns[0] = (char *)ckalloc(length + 1);
     memcpy(tsdPtr->patterns[0], string, length + 1);
     tsdPtr->patLengths[0] = length;
     tsdPtr->regexps[0] = regexpPtr;
@@ -1053,7 +1053,7 @@ FreeRegexp(
 
 static void
 FinalizeRegexp(
-    ClientData clientData)	/* Not used. */
+    TCL_UNUSED(ClientData))
 {
     int i;
     TclRegexp *regexpPtr;

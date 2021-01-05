@@ -208,13 +208,13 @@ EXTERN int		TclObjInvoke(Tcl_Interp *interp, int objc,
 /* Slot 67 is reserved */
 /* Slot 68 is reserved */
 /* 69 */
-EXTERN char *		TclpAlloc(unsigned int size);
+EXTERN void *		TclpAlloc(unsigned int size);
 /* Slot 70 is reserved */
 /* Slot 71 is reserved */
 /* Slot 72 is reserved */
 /* Slot 73 is reserved */
 /* 74 */
-EXTERN void		TclpFree(char *ptr);
+EXTERN void		TclpFree(void *ptr);
 /* 75 */
 EXTERN unsigned long	TclpGetClicks(void);
 /* 76 */
@@ -226,7 +226,7 @@ void			TclpGetTime(Tcl_Time *time);
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
 /* 81 */
-EXTERN char *		TclpRealloc(char *ptr, unsigned int size);
+EXTERN void *		TclpRealloc(void *ptr, unsigned int size);
 /* Slot 82 is reserved */
 /* Slot 83 is reserved */
 /* Slot 84 is reserved */
@@ -623,7 +623,7 @@ EXTERN int		TclCopyChannel(Tcl_Interp *interp,
 EXTERN char *		TclDoubleDigits(double dv, int ndigits, int flags,
 				int *decpt, int *signum, char **endPtr);
 /* 250 */
-EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
+EXTERN void		TclSetChildCancelFlags(Tcl_Interp *interp, int flags,
 				int force);
 /* 251 */
 EXTERN int		TclRegisterLiteral(void *envPtr, const char *bytes,
@@ -659,6 +659,9 @@ EXTERN void		TclStaticPackage(Tcl_Interp *interp,
 EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj);
 /* 259 */
+EXTERN unsigned char *	TclGetBytesFromObj(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, int *lengthPtr);
+/* 260 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct TclIntStubs {
@@ -734,19 +737,19 @@ typedef struct TclIntStubs {
     void (*reserved66)(void);
     void (*reserved67)(void);
     void (*reserved68)(void);
-    char * (*tclpAlloc) (unsigned int size); /* 69 */
+    void * (*tclpAlloc) (unsigned int size); /* 69 */
     void (*reserved70)(void);
     void (*reserved71)(void);
     void (*reserved72)(void);
     void (*reserved73)(void);
-    void (*tclpFree) (char *ptr); /* 74 */
+    void (*tclpFree) (void *ptr); /* 74 */
     unsigned long (*tclpGetClicks) (void); /* 75 */
     unsigned long (*tclpGetSeconds) (void); /* 76 */
     TCL_DEPRECATED_API("") void (*tclpGetTime) (Tcl_Time *time); /* 77 */
     void (*reserved78)(void);
     void (*reserved79)(void);
     void (*reserved80)(void);
-    char * (*tclpRealloc) (char *ptr, unsigned int size); /* 81 */
+    void * (*tclpRealloc) (void *ptr, unsigned int size); /* 81 */
     void (*reserved82)(void);
     void (*reserved83)(void);
     void (*reserved84)(void);
@@ -915,7 +918,7 @@ typedef struct TclIntStubs {
     void (*tclResetRewriteEnsemble) (Tcl_Interp *interp, int isRootEnsemble); /* 247 */
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
-    void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
+    void (*tclSetChildCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
     int (*tclRegisterLiteral) (void *envPtr, const char *bytes, int length, int flags); /* 251 */
     Tcl_Obj * (*tclPtrGetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 252 */
     Tcl_Obj * (*tclPtrSetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, const int flags); /* 253 */
@@ -924,7 +927,8 @@ typedef struct TclIntStubs {
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 256 */
     void (*tclStaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 257 */
     Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
-    void (*tclUnusedStubEntry) (void); /* 259 */
+    unsigned char * (*tclGetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *lengthPtr); /* 259 */
+    void (*tclUnusedStubEntry) (void); /* 260 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1352,8 +1356,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclCopyChannel) /* 248 */
 #define TclDoubleDigits \
 	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
-#define TclSetSlaveCancelFlags \
-	(tclIntStubsPtr->tclSetSlaveCancelFlags) /* 250 */
+#define TclSetChildCancelFlags \
+	(tclIntStubsPtr->tclSetChildCancelFlags) /* 250 */
 #define TclRegisterLiteral \
 	(tclIntStubsPtr->tclRegisterLiteral) /* 251 */
 #define TclPtrGetVar \
@@ -1370,8 +1374,10 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclStaticPackage) /* 257 */
 #define TclpCreateTemporaryDirectory \
 	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
+#define TclGetBytesFromObj \
+	(tclIntStubsPtr->tclGetBytesFromObj) /* 259 */
 #define TclUnusedStubEntry \
-	(tclIntStubsPtr->tclUnusedStubEntry) /* 259 */
+	(tclIntStubsPtr->tclUnusedStubEntry) /* 260 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -1405,6 +1411,11 @@ extern const TclIntStubs *tclIntStubsPtr;
 #   undef TclSockMinimumBuffersOld
 #   undef Tcl_StaticPackage
 #   define Tcl_StaticPackage (tclIntStubsPtr->tclStaticPackage)
+#endif
+
+#undef TclGuessPackageName
+#ifndef TCL_NO_DEPRECATED
+#   define TclGuessPackageName(fileName, pkgName) ((void)fileName,(void)pkgName,0)
 #endif
 
 #endif /* _TCLINTDECLS */

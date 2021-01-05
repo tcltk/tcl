@@ -4,8 +4,8 @@
  *	This file contains a simple Tcl package "pkgua" that is intended for
  *	testing the Tcl dynamic unloading facilities.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
- * Copyright (c) 2004 Georgios Petasis
+ * Copyright © 1995 Sun Microsystems, Inc.
+ * Copyright © 2004 Georgios Petasis
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -125,6 +125,7 @@ PkguaEqObjCmd(
     int result;
     const char *str1, *str2;
     int len1, len2;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,  "string1 string2");
@@ -166,6 +167,8 @@ PkguaQuoteObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
+    (void)dummy;
+
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
@@ -210,7 +213,7 @@ Pkgua_Init(
 
     PkguaInitTokensHashTable();
 
-    code = Tcl_PkgProvide(interp, "Pkgua", "1.0");
+    code = Tcl_PkgProvide(interp, "pkgua", "1.0");
     if (code != TCL_OK) {
 	return code;
     }

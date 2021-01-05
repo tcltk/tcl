@@ -7,7 +7,7 @@
 #
 # This implementation includes code from that RFC, translated to Tcl; the
 # other parts are:
-# Copyright (c) 2014 Donal K. Fellows
+# Copyright © 2014 Donal K. Fellows
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -27,9 +27,9 @@ namespace eval ::tcl::idna {
     proc IDNAencode hostname {
 	set parts {}
 	# Split term from RFC 3490, Sec 3.1
-	foreach part [split $hostname "\u002E\u3002\uFF0E\uFF61"] {
+	foreach part [split $hostname "\x2E\u3002\uFF0E\uFF61"] {
 	    if {[regexp {[^-A-Za-z0-9]} $part]} {
-		if {[regexp {[^-A-Za-z0-9\u00a1-\uffff]} $part ch]} {
+		if {[regexp {[^-A-Za-z0-9\xA1-\uFFFF]} $part ch]} {
 		    scan $ch %c c
 		    if {$ch < "!" || $ch > "~"} {
 			set ch [format "\\u%04x" $c]
@@ -51,7 +51,7 @@ namespace eval ::tcl::idna {
     proc IDNAdecode hostname {
 	set parts {}
 	# Split term from RFC 3490, Sec 3.1
-	foreach part [split $hostname "\u002E\u3002\uFF0E\uFF61"] {
+	foreach part [split $hostname "\x2E\u3002\uFF0E\uFF61"] {
 	    if {[string match -nocase "xn--*" $part]} {
 		set part [punydecode [string range $part 4 end]]
 	    }
@@ -116,7 +116,7 @@ namespace eval ::tcl::idna {
 
 	# Handle the basic code points:
 	foreach ch $string {
-	    if {$ch < "\u0080"} {
+	    if {$ch < "\x80"} {
 		if {$case eq ""} {
 		    append output $ch
 		} elseif {[string is true $case]} {
@@ -152,14 +152,14 @@ namespace eval ::tcl::idna {
 	    # Increase delta enough to advance the decoder's <n,i> state to
 	    # <m,0>, but guard against overflow:
 
-	    if {$m-$n > (0xffffffff-$delta)/($h+1)} {
+	    if {$m-$n > (0xFFFFFFFF-$delta)/($h+1)} {
 		throw {PUNYCODE OVERFLOW} "overflow in delta computation"
 	    }
 	    incr delta [expr {($m-$n) * ($h+1)}]
 	    set n $m
 
 	    foreach ch $in {
-		if {$ch < $n && ([incr delta] & 0xffffffff) == 0} {
+		if {$ch < $n && ([incr delta] & 0xFFFFFFFF) == 0} {
 		    throw {PUNYCODE OVERFLOW} "overflow in delta computation"
 		}
 
@@ -251,7 +251,7 @@ namespace eval ::tcl::idna {
 		    set first 0
 		    break
 		}
-		if {[set w [expr {$w * ($base - $t)}]] > 0x7fffffff} {
+		if {[set w [expr {$w * ($base - $t)}]] > 0x7FFFFFFF} {
 		    throw {PUNYCODE OVERFLOW} \
 			"excessively large integer computed in digit decode"
 		}
@@ -261,11 +261,11 @@ namespace eval ::tcl::idna {
 	    # i was supposed to wrap around from out+1 to 0, incrementing n
 	    # each time, so we'll fix that now:
 
-	    if {[incr n [expr {$i / $out}]] > 0x7fffffff} {
+	    if {[incr n [expr {$i / $out}]] > 0x7FFFFFFF} {
 		throw {PUNYCODE OVERFLOW} \
 		    "excessively large integer computed in character choice"
 	    } elseif {$n > $max_codepoint} {
-		if {$n >= 0x00d800 && $n < 0x00e000} {
+		if {$n >= 0x00D800 && $n < 0x00E000} {
 		    # Bare surrogate?!
 		    throw {PUNYCODE NON_BMP} \
 			[format "unsupported character U+%06x" $n]

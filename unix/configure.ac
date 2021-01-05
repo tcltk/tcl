@@ -4,7 +4,7 @@ dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 
 AC_INIT([tcl],[8.7])
-AC_PREREQ(2.69)
+AC_PREREQ([2.69])
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
@@ -113,7 +113,7 @@ if test -z "$no_pipe" && test -n "$GCC"; then
     AC_CACHE_CHECK([if the compiler understands -pipe],
 	tcl_cv_cc_pipe, [
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -pipe"
-	AC_TRY_COMPILE(,, tcl_cv_cc_pipe=yes, tcl_cv_cc_pipe=no)
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_cc_pipe=yes],[tcl_cv_cc_pipe=no])
 	CFLAGS=$hold_cflags])
     if test $tcl_cv_cc_pipe = yes; then
 	CFLAGS="$CFLAGS -pipe"
@@ -172,9 +172,9 @@ AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
 libtommath_ok=yes
 AC_ARG_WITH(system-libtommath,
-AC_HELP_STRING([--with-system-libtommath],
+AS_HELP_STRING([--with-system-libtommath],
 	[use external libtommath (default: true if available, false otherwise)]),
-	libtommath_ok=${withval})
+	[libtommath_ok=${withval}])
 if test x"${libtommath_ok}" = x -o x"${libtommath_ok}" != xno; then
     AC_CHECK_HEADER([tommath.h],[
 	AC_CHECK_TYPE([mp_int],[],[libtommath_ok=no],[#include <tommath.h>])],[
@@ -301,8 +301,8 @@ AC_CHECK_HEADERS(sys/modem.h)
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([for fd_set in sys/types], tcl_cv_type_fd_set, [
-    AC_TRY_COMPILE([#include <sys/types.h>],[fd_set readMask, writeMask;],
-	tcl_cv_type_fd_set=yes, tcl_cv_type_fd_set=no)])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[fd_set readMask, writeMask;]])],
+	[tcl_cv_type_fd_set=yes],[tcl_cv_type_fd_set=no])])
 tcl_ok=$tcl_cv_type_fd_set
 if test $tcl_ok = no; then
     AC_CACHE_CHECK([for fd_mask in sys/select], tcl_cv_grep_fd_mask, [
@@ -388,7 +388,6 @@ AC_CHECK_FUNC(memmove, , [
 #--------------------------------------------------------------------
 
 SC_TCL_CHECK_BROKEN_FUNC(strstr, [
-    extern int strstr();
     exit(strstr("\0test", "test") ? 1 : 0);
 ])
 
@@ -399,7 +398,6 @@ SC_TCL_CHECK_BROKEN_FUNC(strstr, [
 #--------------------------------------------------------------------
 
 SC_TCL_CHECK_BROKEN_FUNC(strtoul, [
-    extern int strtoul();
     char *term, *string = "0";
     exit(strtoul(string,&term,0) != 0 || term != string+1);
 ])
@@ -415,47 +413,19 @@ AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
 AC_CACHE_CHECK([for socklen_t], tcl_cv_type_socklen_t, [
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	#include <sys/types.h>
 	#include <sys/socket.h>
-    ],[
+    ]], [[
     	socklen_t foo;
-    ],[tcl_cv_type_socklen_t=yes],[tcl_cv_type_socklen_t=no])])
+    ]])],[tcl_cv_type_socklen_t=yes],[tcl_cv_type_socklen_t=no])])
 if test $tcl_cv_type_socklen_t = no; then
     AC_DEFINE(socklen_t, int, [Define as int if socklen_t is not available])
 fi
 
-AC_CHECK_TYPE([intptr_t], [
-    AC_DEFINE([HAVE_INTPTR_T], 1, [Do we have the intptr_t type?])], [
-    AC_CACHE_CHECK([for pointer-size signed integer type], tcl_cv_intptr_t, [
-    for tcl_cv_intptr_t in "int" "long" "long long" none; do
-	if test "$tcl_cv_intptr_t" != none; then
-	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
-		    [[sizeof (void *) <= sizeof ($tcl_cv_intptr_t)]])],
-		[tcl_ok=yes], [tcl_ok=no])
-	    test "$tcl_ok" = yes && break; fi
-    done])
-    if test "$tcl_cv_intptr_t" != none; then
-	AC_DEFINE_UNQUOTED([intptr_t], [$tcl_cv_intptr_t], [Signed integer
-	   type wide enough to hold a pointer.])
-    fi
-])
-AC_CHECK_TYPE([uintptr_t], [
-    AC_DEFINE([HAVE_UINTPTR_T], 1, [Do we have the uintptr_t type?])], [
-    AC_CACHE_CHECK([for pointer-size unsigned integer type], tcl_cv_uintptr_t, [
-    for tcl_cv_uintptr_t in "unsigned int" "unsigned long" "unsigned long long" \
-	    none; do
-	if test "$tcl_cv_uintptr_t" != none; then
-	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
-		    [[sizeof (void *) <= sizeof ($tcl_cv_uintptr_t)]])],
-		[tcl_ok=yes], [tcl_ok=no])
-	    test "$tcl_ok" = yes && break; fi
-    done])
-    if test "$tcl_cv_uintptr_t" != none; then
-	AC_DEFINE_UNQUOTED([uintptr_t], [$tcl_cv_uintptr_t], [Unsigned integer
-	   type wide enough to hold a pointer.])
-    fi
-])
+AC_CHECK_TYPES([intptr_t, uintptr_t],,,[[
+#include <stdint.h>
+]])
 
 #--------------------------------------------------------------------
 #	If a system doesn't have an opendir function (man, that's old!)
@@ -475,12 +445,12 @@ AC_CHECK_FUNC(opendir, , [AC_DEFINE(USE_DIRENT2_H, 1, [May we include <dirent2.h
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([union wait], tcl_cv_union_wait, [
-    AC_TRY_LINK([#include <sys/types.h>
-#include <sys/wait.h>], [
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#include <sys/wait.h>]], [[
 union wait x;
 WIFEXITED(x);		/* Generates compiler error if WIFEXITED
 			 * uses an int. */
-    ], tcl_cv_union_wait=yes, tcl_cv_union_wait=no)])
+    ]])],[tcl_cv_union_wait=yes],[tcl_cv_union_wait=no])])
 if test $tcl_cv_union_wait = no; then
     AC_DEFINE(NO_UNION_WAIT, 1, [Do we have a usable 'union wait'?])
 fi
@@ -530,10 +500,10 @@ fi
 
 AC_C_CHAR_UNSIGNED
 AC_CACHE_CHECK([signed char declarations], tcl_cv_char_signed, [
-    AC_TRY_COMPILE(, [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
 	signed char *p;
 	p = 0;
-	], tcl_cv_char_signed=yes, tcl_cv_char_signed=no)])
+	]])],[tcl_cv_char_signed=yes],[tcl_cv_char_signed=no])])
 if test $tcl_cv_char_signed = yes; then
     AC_DEFINE(HAVE_SIGNED_CHAR, 1, [Are characters signed?])
 fi
@@ -543,8 +513,9 @@ fi
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([for a putenv() that copies the buffer], tcl_cv_putenv_copy, [
-    AC_TRY_RUN([
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 	#include <stdlib.h>
+	#include <string.h>
 	#define OURVAR "havecopy=yes"
 	int main (int argc, char *argv[])
 	{
@@ -561,10 +532,10 @@ AC_CACHE_CHECK([for a putenv() that copies the buffer], tcl_cv_putenv_copy, [
 		return 1;
 	    }
 	}
-    ],
-    tcl_cv_putenv_copy=no,
-    tcl_cv_putenv_copy=yes,
-    tcl_cv_putenv_copy=no)])
+    ]])],
+    [tcl_cv_putenv_copy=no],
+    [tcl_cv_putenv_copy=yes],
+    [tcl_cv_putenv_copy=no])])
 if test $tcl_cv_putenv_copy = yes; then
     AC_DEFINE(HAVE_PUTENV_THAT_COPIES, 1,
 	[Does putenv() copy strings or incorporate them by reference?])
@@ -587,9 +558,9 @@ AC_CHECK_FUNCS(cfmakeraw chflags mkstemps)
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([isnan], tcl_cv_isnan, [
-    AC_TRY_LINK([#include <math.h>], [
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <math.h>]], [[
 isnan(0.0);			/* Generates an error if isnan is missing */
-], tcl_cv_isnan=yes, tcl_cv_isnan=no)])
+]])],[tcl_cv_isnan=yes],[tcl_cv_isnan=no])])
 if test $tcl_cv_isnan = no; then
     AC_DEFINE(NO_ISNAN, 1, [Do we have a usable 'isnan'?])
 fi
@@ -617,7 +588,7 @@ if test "`uname -s`" = "Darwin" ; then
     if test "$ac_cv_header_AvailabilityMacros_h" = yes; then
 	AC_CACHE_CHECK([if weak import is available], tcl_cv_cc_weak_import, [
 	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    AC_TRY_LINK([
+	    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
 		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1020
 		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1020
@@ -626,8 +597,8 @@ if test "`uname -s`" = "Darwin" ; then
 		    #error MAC_OS_X_VERSION_MIN_REQUIRED < 1020
 		    #endif
 		    int rand(void) __attribute__((weak_import));
-		], [rand();],
-		tcl_cv_cc_weak_import=yes, tcl_cv_cc_weak_import=no)
+		]], [[rand();]])],
+		[tcl_cv_cc_weak_import=yes],[tcl_cv_cc_weak_import=no])
 	    CFLAGS=$hold_cflags])
 	if test $tcl_cv_cc_weak_import = yes; then
 	    AC_DEFINE(HAVE_WEAK_IMPORT, 1, [Is weak import available?])
@@ -635,7 +606,7 @@ if test "`uname -s`" = "Darwin" ; then
 	AC_CACHE_CHECK([if Darwin SUSv3 extensions are available],
 	    tcl_cv_cc_darwin_c_source, [
 	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    AC_TRY_COMPILE([
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 		    #ifdef __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__
 		    #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
 		    #error __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1050
@@ -645,7 +616,7 @@ if test "`uname -s`" = "Darwin" ; then
 		    #endif
 		    #define _DARWIN_C_SOURCE 1
 		    #include <sys/cdefs.h>
-		],,tcl_cv_cc_darwin_c_source=yes, tcl_cv_cc_darwin_c_source=no)
+		]], [[]])],[tcl_cv_cc_darwin_c_source=yes],[tcl_cv_cc_darwin_c_source=no])
 	    CFLAGS=$hold_cflags])
 	if test $tcl_cv_cc_darwin_c_source = yes; then
 	    AC_DEFINE(_DARWIN_C_SOURCE, 1,
@@ -665,15 +636,15 @@ fi
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([for fts], tcl_cv_api_fts, [
-    AC_TRY_LINK([
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 	    #include <sys/param.h>
 	    #include <sys/stat.h>
 	    #include <fts.h>
-	], [
+	]], [[
 	    char*const p[2] = {"/", NULL};
 	    FTS *f = fts_open(p, FTS_PHYSICAL|FTS_NOCHDIR|FTS_NOSTAT, NULL);
 	    FTSENT *e = fts_read(f); fts_close(f);
-	], tcl_cv_api_fts=yes, tcl_cv_api_fts=no)])
+	]])],[tcl_cv_api_fts=yes],[tcl_cv_api_fts=no])])
 if test $tcl_cv_api_fts = yes; then
     AC_DEFINE(HAVE_FTS, 1, [Do we have fts functions?])
 fi
@@ -690,7 +661,7 @@ SC_BLOCKING_STYLE
 
 AC_MSG_CHECKING([whether to use dll unloading])
 AC_ARG_ENABLE(dll-unloading,
-    AC_HELP_STRING([--enable-dll-unloading],
+    AS_HELP_STRING([--enable-dll-unloading],
 	[enable the 'unload' command (default: on)]),
     [tcl_ok=$enableval], [tcl_ok=yes])
 if test $tcl_ok = yes; then
@@ -706,7 +677,7 @@ AC_MSG_RESULT([$tcl_ok])
 
 AC_MSG_CHECKING([for timezone data])
 AC_ARG_WITH(tzdata,
-    AC_HELP_STRING([--with-tzdata],
+    AS_HELP_STRING([--with-tzdata],
 	[install timezone data (default: autodetect)]),
     [tcl_ok=$withval], [tcl_ok=auto])
 #
@@ -754,7 +725,7 @@ fi
 #--------------------------------------------------------------------
 
 AC_ARG_ENABLE(dtrace,
-    AC_HELP_STRING([--enable-dtrace],
+    AS_HELP_STRING([--enable-dtrace],
 	[build with DTrace support (default: off)]),
     [tcl_ok=$enableval], [tcl_ok=no])
 if test $tcl_ok = yes; then
@@ -790,7 +761,7 @@ AC_MSG_RESULT([$tcl_ok])
 #	Zipfs support - Tip 430
 #--------------------------------------------------------------------
 AC_ARG_ENABLE(zipfs,
-    AC_HELP_STRING([--enable-zipfs],
+    AS_HELP_STRING([--enable-zipfs],
 	[build with Zipfs support (default: on)]),
     [tcl_ok=$enableval], [tcl_ok=yes])
 if test "$tcl_ok" = "yes" ; then
@@ -837,7 +808,7 @@ AC_SUBST(INSTALL_MSGS)
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([whether the cpuid instruction is usable], tcl_cv_cpuid, [
-    AC_TRY_LINK(, [
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 	int index,regsPtr[4];
     __asm__ __volatile__("mov %%ebx, %%edi     \n\t"
                  "cpuid            \n\t"
@@ -845,7 +816,7 @@ AC_CACHE_CHECK([whether the cpuid instruction is usable], tcl_cv_cpuid, [
                  "mov %%edi, %%ebx  \n\t"
                  : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
                  : "a"(index) : "edi");
-    ], tcl_cv_cpuid=yes, tcl_cv_cpuid=no)])
+    ]])],[tcl_cv_cpuid=yes],[tcl_cv_cpuid=no])])
 if test $tcl_cv_cpuid = yes; then
     AC_DEFINE(HAVE_CPUID, 1, [Is the cpuid instruction usable?])
 fi
@@ -878,7 +849,7 @@ if test "`uname -s`" = "Darwin" ; then
     SC_ENABLE_FRAMEWORK
     TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version ${TCL_VERSION}`echo ${TCL_PATCH_LEVEL} | awk ['{match($0, "\\\.[0-9]+"); print substr($0,RSTART,RLENGTH)}']`"
     TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -install_name "${DYLIB_INSTALL_DIR}"/${TCL_LIB_FILE}'
-    echo "$LDFLAGS " | grep -q -- '-prebind ' && TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -seg1addr 0xa000000'
+    echo "$LDFLAGS " | grep -q -- '-prebind ' && TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -seg1addr 0xA000000'
     TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -sectcreate __TEXT __info_plist Tcl-Info.plist'
     EXTRA_TCLSH_LIBS='-sectcreate __TEXT __info_plist Tclsh-Info.plist'
     EXTRA_APP_CC_SWITCHES='-mdynamic-no-pic'
@@ -918,7 +889,7 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     PRIVATE_INCLUDE_DIR="${libdir}/PrivateHeaders"
     HTML_DIR="${libdir}/Resources/Documentation/Reference/Tcl"
     EXTRA_INSTALL="install-private-headers html-tcl"
-    EXTRA_BUILD_HTML='@ln -fs contents.htm "$(HTML_INSTALL_DIR)"/TclTOC.html'
+    EXTRA_BUILD_HTML='@ln -fs contents.htm "$(HTML_INSTALL_DIR)/TclTOC.html"'
     EXTRA_INSTALL_BINARIES='@echo "Installing Info.plist to $(LIB_INSTALL_DIR)/Resources/" && $(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)/Resources" && $(INSTALL_DATA) Tcl-Info.plist "$(LIB_INSTALL_DIR)/Resources/Info.plist"'
     EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Installing license.terms to $(LIB_INSTALL_DIR)/Resources/" && $(INSTALL_DATA) "$(TOP_DIR)/license.terms" "$(LIB_INSTALL_DIR)/Resources"'
     EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Finalizing Tcl.framework" && rm -f "$(LIB_INSTALL_DIR)/../Current" && ln -s "$(VERSION)" "$(LIB_INSTALL_DIR)/../Current" && for f in "$(LIB_FILE)" tclConfig.sh Resources Headers PrivateHeaders; do rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/Current/$$f" "$(LIB_INSTALL_DIR)/../.."; done && f="$(STUB_LIB_FILE)" && rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/$(VERSION)/$$f" "$(LIB_INSTALL_DIR)/../.."'
@@ -958,9 +929,9 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     test -z "$TCL_MODULE_PATH"  && \
 	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl"
 elif test "$prefix/lib" != "$libdir"; then
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${libdir} ${prefix}/lib ${TCL_PACKAGE_PATH}"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="{${libdir}} {${prefix}/lib} ${TCL_PACKAGE_PATH}"
 else
-    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="${prefix}/lib ${TCL_PACKAGE_PATH}"
+    test -z "$TCL_PACKAGE_PATH" && TCL_PACKAGE_PATH="{${prefix}/lib} ${TCL_PACKAGE_PATH}"
 fi
 
 #--------------------------------------------------------------------
@@ -973,7 +944,7 @@ fi
 #
 eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
 eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
-eval "TCL_STUB_LIB_DIR=${libdir}"
+eval "TCL_STUB_LIB_DIR=\"${libdir}\""
 
 if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
     TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}"

@@ -6,8 +6,8 @@
  *	level part of the Tcl event loop. This file works together with
  *	generic/tclNotify.c.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 2016 Lucio Andrés Illanes Albornoz <l.illanes@gmx.de>
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 2016 Lucio Andrés Illanes Albornoz <l.illanes@gmx.de>
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -169,7 +169,7 @@ Tcl_InitNotifier(void)
 
 void
 Tcl_FinalizeNotifier(
-    ClientData clientData)		/* Not used. */
+    ClientData clientData)
 {
     if (tclNotifierHooks.finalizeNotifierProc) {
 	tclNotifierHooks.finalizeNotifierProc(clientData);
@@ -222,7 +222,7 @@ PlatformEventsControl(
     struct stat fdStat;
 
     if (isNew) {
-        newPedPtr = ckalloc(sizeof(*newPedPtr));
+        newPedPtr = (struct PlatformEventData *)ckalloc(sizeof(struct PlatformEventData));
         newPedPtr->filePtr = filePtr;
         newPedPtr->tsdPtr = tsdPtr;
         filePtr->pedPtr = newPedPtr;
@@ -409,13 +409,13 @@ PlatformEventsInit(void)
     } else if (fcntl(tsdPtr->eventsFd, F_SETFD, FD_CLOEXEC) == -1) {
 	Tcl_Panic("fcntl: %s", strerror(errno));
     }
-    filePtr = ckalloc(sizeof(*filePtr));
+    filePtr = (FileHandler *)ckalloc(sizeof(FileHandler));
     filePtr->fd = tsdPtr->triggerPipe[0];
     filePtr->mask = TCL_READABLE;
     PlatformEventsControl(filePtr, tsdPtr, EV_ADD, 1);
     if (!tsdPtr->readyEvents) {
         tsdPtr->maxReadyEvents = 512;
-	tsdPtr->readyEvents = ckalloc(
+	tsdPtr->readyEvents = (struct kevent *)ckalloc(
 		tsdPtr->maxReadyEvents * sizeof(tsdPtr->readyEvents[0]));
     }
     LIST_INIT(&tsdPtr->firstReadyFileHandlerPtr);
@@ -580,7 +580,7 @@ Tcl_CreateFileHandler(
 	    }
 	}
 	if (filePtr == NULL) {
-	    filePtr = ckalloc(sizeof(FileHandler));
+	    filePtr = (FileHandler *)ckalloc(sizeof(FileHandler));
 	    filePtr->fd = fd;
 	    filePtr->readyMask = 0;
 	    filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
@@ -768,7 +768,7 @@ Tcl_WaitForEvent(
 	     */
 
 	    if (filePtr->readyMask == 0) {
-		FileHandlerEvent *fileEvPtr =
+		FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
 			ckalloc(sizeof(FileHandlerEvent));
 
 		fileEvPtr->header.proc = FileHandlerEventProc;
@@ -828,7 +828,7 @@ Tcl_WaitForEvent(
 	     */
 
 	    if (filePtr->readyMask == 0) {
-		FileHandlerEvent *fileEvPtr =
+		FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
 			ckalloc(sizeof(FileHandlerEvent));
 
 		fileEvPtr->header.proc = FileHandlerEventProc;

@@ -5,9 +5,9 @@
  *    problems involving overwritten, double freeing memory and loss of
  *    memory.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -246,7 +246,7 @@ ValidateMemory(
 	if (byte != GUARD_VALUE) {
 	    guard_failed = TRUE;
 	    fflush(stdout);
-	    byte &= 0xff;
+	    byte &= 0xFF;
 	    fprintf(stderr, "low guard byte %d is 0x%x  \t%c\n", (int)idx, byte,
 		    (isprint(UCHAR(byte)) ? byte : ' ')); /* INTL: bytes */
 	}
@@ -267,7 +267,7 @@ ValidateMemory(
 	if (byte != GUARD_VALUE) {
 	    guard_failed = TRUE;
 	    fflush(stdout);
-	    byte &= 0xff;
+	    byte &= 0xFF;
 	    fprintf(stderr, "hi guard byte %d is 0x%x  \t%c\n", (int)idx, byte,
 		    (isprint(UCHAR(byte)) ? byte : ' ')); /* INTL: bytes */
 	}
@@ -633,7 +633,7 @@ Tcl_DbCkfree(
 
     if (memp->tagPtr != NULL) {
 	if ((memp->tagPtr->refCount-- <= 1) && (curTagPtr != memp->tagPtr)) {
-	    TclpFree((char *) memp->tagPtr);
+	    TclpFree(memp->tagPtr);
 	}
     }
 
@@ -650,7 +650,7 @@ Tcl_DbCkfree(
     if (allocHead == memp) {
 	allocHead = memp->flink;
     }
-    TclpFree((char *) memp);
+    TclpFree(memp);
     Tcl_MutexUnlock(ckallocMutexPtr);
 }
 
@@ -808,13 +808,12 @@ Tcl_AttemptRealloc(
  *
  *----------------------------------------------------------------------
  */
-	/* ARGSUSED */
 static int
 MemoryCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,			/* Number of arguments. */
-	Tcl_Obj *const objv[])		/* Obj values of arguments. */
+    Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     const char *fileName;
     FILE *fileP;
@@ -914,7 +913,7 @@ MemoryCmd(
 	    return TCL_ERROR;
 	}
 	if ((curTagPtr != NULL) && (curTagPtr->refCount == 0)) {
-	    TclpFree((char *) curTagPtr);
+	    TclpFree(curTagPtr);
 	}
 	len = strlen(TclGetString(objv[2]));
 	curTagPtr = (MemTag *) TclpAlloc(TAG_SIZE(len));
@@ -987,10 +986,10 @@ static int		CheckmemCmd(ClientData clientData,
 
 static int
 CheckmemCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
     int objc,			/* Number of arguments. */
-	Tcl_Obj *const objv[])		/* Obj values of arguments. */
+    Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "fileName");
@@ -1052,9 +1051,7 @@ char *
 Tcl_Alloc(
     unsigned int size)
 {
-    char *result;
-
-    result = TclpAlloc(size);
+    char *result = (char *)TclpAlloc(size);
 
     /*
      * Most systems will not alloc(0), instead bumping it to one so that NULL
@@ -1078,9 +1075,7 @@ Tcl_DbCkalloc(
     const char *file,
     int line)
 {
-    char *result;
-
-    result = (char *) TclpAlloc(size);
+    char *result = (char *)TclpAlloc(size);
 
     if ((result == NULL) && size) {
 	fflush(stdout);
@@ -1104,24 +1099,16 @@ char *
 Tcl_AttemptAlloc(
     unsigned int size)
 {
-    char *result;
-
-    result = TclpAlloc(size);
-    return result;
+    return (char *)TclpAlloc(size);
 }
 
 char *
 Tcl_AttemptDbCkalloc(
     unsigned int size,
-    const char *file,
-    int line)
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
 {
-    char *result;
-    (void)file;
-    (void)line;
-
-    result = (char *) TclpAlloc(size);
-    return result;
+    return (char *)TclpAlloc(size);
 }
 
 /*
@@ -1140,9 +1127,7 @@ Tcl_Realloc(
     char *ptr,
     unsigned int size)
 {
-    char *result;
-
-    result = TclpRealloc(ptr, size);
+    char *result = (char *)TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
 	Tcl_Panic("unable to realloc %u bytes", size);
@@ -1157,9 +1142,7 @@ Tcl_DbCkrealloc(
     const char *file,
     int line)
 {
-    char *result;
-
-    result = (char *) TclpRealloc(ptr, size);
+    char *result = (char *)TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
 	fflush(stdout);
@@ -1184,25 +1167,17 @@ Tcl_AttemptRealloc(
     char *ptr,
     unsigned int size)
 {
-    char *result;
-
-    result = TclpRealloc(ptr, size);
-    return result;
+    return (char *)TclpRealloc(ptr, size);
 }
 
 char *
 Tcl_AttemptDbCkrealloc(
     char *ptr,
     unsigned int size,
-    const char *file,
-    int line)
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
 {
-    char *result;
-    (void)file;
-    (void)line;
-
-    result = (char *) TclpRealloc(ptr, size);
-    return result;
+    return (char *)TclpRealloc(ptr, size);
 }
 
 /*
@@ -1227,11 +1202,9 @@ Tcl_Free(
 void
 Tcl_DbCkfree(
     char *ptr,
-    const char *file,
-    int line)
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
 {
-    (void)file;
-    (void)line;
     TclpFree(ptr);
 }
 
@@ -1245,38 +1218,31 @@ Tcl_DbCkfree(
  *
  *----------------------------------------------------------------------
  */
-	/* ARGSUSED */
 void
 Tcl_InitMemory(
-    Tcl_Interp *interp)
+    TCL_UNUSED(Tcl_Interp *) /*interp*/)
 {
-    (void)interp;
 }
 
 int
 Tcl_DumpActiveMemory(
-    const char *fileName)
+    TCL_UNUSED(const char *) /*fileName*/)
 {
-    (void)fileName;
     return TCL_OK;
 }
 
 void
 Tcl_ValidateAllMemory(
-    const char *file,
-    int line)
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
 {
-    (void)file;
-    (void)line;
 }
 
 int
 TclDumpMemoryInfo(
-    ClientData clientData,
-    int flags)
+    TCL_UNUSED(ClientData),
+    TCL_UNUSED(int) /*flags*/)
 {
-    (void)clientData;
-    (void)flags;
     return 1;
 }
 
@@ -1314,7 +1280,7 @@ TclFinalizeMemorySubsystem(void)
     Tcl_MutexLock(ckallocMutexPtr);
 
     if (curTagPtr != NULL) {
-	TclpFree((char *) curTagPtr);
+	TclpFree(curTagPtr);
 	curTagPtr = NULL;
     }
     allocHead = NULL;
@@ -1322,7 +1288,7 @@ TclFinalizeMemorySubsystem(void)
     Tcl_MutexUnlock(ckallocMutexPtr);
 #endif
 
-#if USE_TCLALLOC
+#if defined(USE_TCLALLOC) && USE_TCLALLOC
     TclFinalizeAllocSubsystem();
 #endif
 }

@@ -6,7 +6,7 @@
  *	provide the functionality of joining threads.  This code is currently
  *	not necessary on Unix.
  *
- * Copyright (c) 2000 by Scriptics Corporation
+ * Copyright © 2000 Scriptics Corporation
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -230,7 +230,7 @@ TclRememberJoinableThread(
 {
     JoinableThread *threadPtr;
 
-    threadPtr = ckalloc(sizeof(JoinableThread));
+    threadPtr = (JoinableThread *)ckalloc(sizeof(JoinableThread));
     threadPtr->id = id;
     threadPtr->done = 0;
     threadPtr->waitedUpon = 0;

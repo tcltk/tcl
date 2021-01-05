@@ -4,7 +4,7 @@
  *	This file contains the implementation of the ::oo::define command,
  *	part of the object-system core (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006-2013 by Donal K. Fellows
+ * Copyright © 2006-2013 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -280,9 +280,9 @@ TclOOObjectSetFilters(
 	int size = sizeof(Tcl_Obj *) * numFilters;	/* should be size_t */
 
 	if (oPtr->filters.num == 0) {
-	    filtersList = ckalloc(size);
+	    filtersList = (Tcl_Obj **)ckalloc(size);
 	} else {
-	    filtersList = ckrealloc(oPtr->filters.list, size);
+	    filtersList = (Tcl_Obj **)ckrealloc(oPtr->filters.list, size);
 	}
 	for (i = 0 ; i < numFilters ; i++) {
 	    filtersList[i] = filters[i];
@@ -339,9 +339,9 @@ TclOOClassSetFilters(
 	int size = sizeof(Tcl_Obj *) * numFilters;	/* should be size_t */
 
 	if (classPtr->filters.num == 0) {
-	    filtersList = ckalloc(size);
+	    filtersList = (Tcl_Obj **)ckalloc(size);
 	} else {
-	    filtersList = ckrealloc(classPtr->filters.list, size);
+	    filtersList = (Tcl_Obj **)ckrealloc(classPtr->filters.list, size);
 	}
 	for (i = 0 ; i < numFilters ; i++) {
 	    filtersList[i] = filters[i];
@@ -395,10 +395,10 @@ TclOOObjectSetMixins(
 		}
 		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
-	    oPtr->mixins.list = ckrealloc(oPtr->mixins.list,
+	    oPtr->mixins.list = (Class **)ckrealloc(oPtr->mixins.list,
 		    sizeof(Class *) * numMixins);
 	} else {
-	    oPtr->mixins.list = ckalloc(sizeof(Class *) * numMixins);
+	    oPtr->mixins.list = (Class **)ckalloc(sizeof(Class *) * numMixins);
 	    oPtr->flags &= ~USE_CLASS_CACHE;
 	}
 	oPtr->mixins.num = numMixins;
@@ -453,10 +453,10 @@ TclOOClassSetMixins(
 		TclOORemoveFromMixinSubs(classPtr, mixinPtr);
 		TclOODecrRefCount(mixinPtr->thisPtr);
 	    }
-	    classPtr->mixins.list = ckrealloc(classPtr->mixins.list,
+	    classPtr->mixins.list = (Class **)ckrealloc(classPtr->mixins.list,
 		    sizeof(Class *) * numMixins);
 	} else {
-	    classPtr->mixins.list = ckalloc(sizeof(Class *) * numMixins);
+	    classPtr->mixins.list = (Class **)ckalloc(sizeof(Class *) * numMixins);
 	}
 	classPtr->mixins.num = numMixins;
 	memcpy(classPtr->mixins.list, mixins, sizeof(Class *) * numMixins);
@@ -502,9 +502,9 @@ InstallStandardVariableMapping(
 	if (varc == 0) {
 	    ckfree(vnlPtr->list);
 	} else if (i) {
-	    vnlPtr->list = ckrealloc(vnlPtr->list, sizeof(Tcl_Obj *) * varc);
+	    vnlPtr->list = (Tcl_Obj **)ckrealloc(vnlPtr->list, sizeof(Tcl_Obj *) * varc);
 	} else {
-	    vnlPtr->list = ckalloc(sizeof(Tcl_Obj *) * varc);
+	    vnlPtr->list = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj *) * varc);
 	}
     }
     vnlPtr->num = 0;
@@ -525,7 +525,7 @@ InstallStandardVariableMapping(
 	 */
 
 	if (n != varc) {
-	    vnlPtr->list = ckrealloc(vnlPtr->list, sizeof(Tcl_Obj *) * n);
+	    vnlPtr->list = (Tcl_Obj **)ckrealloc(vnlPtr->list, sizeof(Tcl_Obj *) * n);
 	}
 	Tcl_DeleteHashTable(&uniqueTable);
     }
@@ -553,10 +553,10 @@ InstallPrivateVariableMapping(
 	if (varc == 0) {
 	    ckfree(pvlPtr->list);
 	} else if (i) {
-	    pvlPtr->list = ckrealloc(pvlPtr->list,
+	    pvlPtr->list = (PrivateVariableMapping *)ckrealloc(pvlPtr->list,
 		    sizeof(PrivateVariableMapping) * varc);
 	} else {
-	    pvlPtr->list = ckalloc(sizeof(PrivateVariableMapping) * varc);
+	    pvlPtr->list = (PrivateVariableMapping *)ckalloc(sizeof(PrivateVariableMapping) * varc);
 	}
     }
 
@@ -583,7 +583,7 @@ InstallPrivateVariableMapping(
 	 */
 
 	if (n != varc) {
-	    pvlPtr->list = ckrealloc(pvlPtr->list,
+	    pvlPtr->list = (PrivateVariableMapping *)ckrealloc(pvlPtr->list,
 		    sizeof(PrivateVariableMapping) * n);
 	}
 	Tcl_DeleteHashTable(&uniqueTable);
@@ -664,7 +664,7 @@ RenameDeleteMethod(
      * Complete the splicing by changing the method's name.
      */
 
-    mPtr = Tcl_GetHashValue(hPtr);
+    mPtr = (Method *)Tcl_GetHashValue(hPtr);
     if (toPtr) {
 	Tcl_IncrRefCount(toPtr);
 	Tcl_DecrRefCount(mPtr->namePtr);
@@ -695,7 +695,7 @@ RenameDeleteMethod(
 
 int
 TclOOUnknownDefinition(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -722,7 +722,7 @@ TclOOUnknownDefinition(
     }
     hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
     while (hPtr != NULL) {
-	const char *nameStr = Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
+	const char *nameStr = (const char *)Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
 
 	if (strncmp(soughtStr, nameStr, soughtLen) == 0) {
 	    if (matchedStr != NULL) {
@@ -738,7 +738,7 @@ TclOOUnknownDefinition(
 	 * Got one match, and only one match!
 	 */
 
-	Tcl_Obj **newObjv =
+	Tcl_Obj **newObjv = (Tcl_Obj **)
 		TclStackAlloc(interp, sizeof(Tcl_Obj*) * (objc - 1));
 	int result;
 
@@ -890,7 +890,7 @@ TclOOGetDefineCmdContext(
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return NULL;
     }
-    object = iPtr->varFramePtr->clientData;
+    object = (Tcl_Object)iPtr->varFramePtr->clientData;
     if (Tcl_ObjectDeleted(object)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"this command cannot be called when the object has been"
@@ -1050,8 +1050,8 @@ MagicDefinitionInvoke(
      * comments above for why these contortions are necessary.
      */
 
-    objPtr = Tcl_NewObj();
-    obj2Ptr = Tcl_NewObj();
+    TclNewObj(objPtr);
+    TclNewObj(obj2Ptr);
     cmd = FindCommand(interp, objv[cmdIndex], nsPtr);
     if (cmd == NULL) {
 	/*
@@ -1092,7 +1092,7 @@ MagicDefinitionInvoke(
 
 int
 TclOODefineObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1168,7 +1168,7 @@ TclOODefineObjCmd(
 
 int
 TclOOObjDefObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1237,7 +1237,7 @@ TclOOObjDefObjCmd(
 
 int
 TclOODefineSelfObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1308,7 +1308,7 @@ TclOODefineSelfObjCmd(
 
 int
 TclOODefineObjSelfObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1415,7 +1415,7 @@ TclOODefinePrivateObjCmd(
 
 int
 TclOODefineClassObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1524,7 +1524,7 @@ TclOODefineClassObjCmd(
 
 int
 TclOODefineConstructorObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1593,7 +1593,7 @@ TclOODefineConstructorObjCmd(
 
 int
 TclOODefineDefnNsObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1735,7 +1735,7 @@ TclOODefineDeleteMethodObjCmd(
 
 int
 TclOODefineDestructorObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1841,7 +1841,7 @@ TclOODefineExportObjCmd(
 
 	if (isInstanceExport) {
 	    if (!oPtr->methodsPtr) {
-		oPtr->methodsPtr = ckalloc(sizeof(Tcl_HashTable));
+		oPtr->methodsPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
@@ -1853,14 +1853,14 @@ TclOODefineExportObjCmd(
 	}
 
 	if (isNew) {
-	    mPtr = ckalloc(sizeof(Method));
+	    mPtr = (Method *)ckalloc(sizeof(Method));
 	    memset(mPtr, 0, sizeof(Method));
 	    mPtr->refCount = 1;
 	    mPtr->namePtr = objv[i];
 	    Tcl_IncrRefCount(objv[i]);
 	    Tcl_SetHashValue(hPtr, mPtr);
 	} else {
-	    mPtr = Tcl_GetHashValue(hPtr);
+	    mPtr = (Method *)Tcl_GetHashValue(hPtr);
 	}
 	if (isNew || !(mPtr->flags & (PUBLIC_METHOD | PRIVATE_METHOD))) {
 	    mPtr->flags |= PUBLIC_METHOD;
@@ -2154,7 +2154,7 @@ TclOODefineUnexportObjCmd(
 
 	if (isInstanceUnexport) {
 	    if (!oPtr->methodsPtr) {
-		oPtr->methodsPtr = ckalloc(sizeof(Tcl_HashTable));
+		oPtr->methodsPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
@@ -2166,14 +2166,14 @@ TclOODefineUnexportObjCmd(
 	}
 
 	if (isNew) {
-	    mPtr = ckalloc(sizeof(Method));
+	    mPtr = (Method *)ckalloc(sizeof(Method));
 	    memset(mPtr, 0, sizeof(Method));
 	    mPtr->refCount = 1;
 	    mPtr->namePtr = objv[i];
 	    Tcl_IncrRefCount(objv[i]);
 	    Tcl_SetHashValue(hPtr, mPtr);
 	} else {
-	    mPtr = Tcl_GetHashValue(hPtr);
+	    mPtr = (Method *)Tcl_GetHashValue(hPtr);
 	}
 	if (isNew || mPtr->flags & (PUBLIC_METHOD | TRUE_PRIVATE_METHOD)) {
 	    mPtr->flags &= ~(PUBLIC_METHOD | TRUE_PRIVATE_METHOD);
@@ -2314,7 +2314,7 @@ TclOODefineSlots(
 
 static int
 ClassFilterGet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2338,7 +2338,7 @@ ClassFilterGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(filterObj, oPtr->classPtr->filters) {
 	Tcl_ListObjAppendElement(NULL, resultObj, filterObj);
     }
@@ -2348,7 +2348,7 @@ ClassFilterGet(
 
 static int
 ClassFilterSet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2394,7 +2394,7 @@ ClassFilterSet(
 
 static int
 ClassMixinGet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2419,7 +2419,7 @@ ClassMixinGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(mixinPtr, oPtr->classPtr->mixins) {
 	Tcl_ListObjAppendElement(NULL, resultObj,
 		TclOOObjectName(interp, mixinPtr->thisPtr));
@@ -2431,7 +2431,7 @@ ClassMixinGet(
 
 static int
 ClassMixinSet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2466,7 +2466,7 @@ ClassMixinSet(
 	return TCL_ERROR;
     }
 
-    mixins = TclStackAlloc(interp, sizeof(Class *) * mixinc);
+    mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * mixinc);
     Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
 
     for (i = 0; i < mixinc; i++) {
@@ -2515,7 +2515,7 @@ ClassMixinSet(
 
 static int
 ClassSuperGet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2540,7 +2540,7 @@ ClassSuperGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(superPtr, oPtr->classPtr->superclasses) {
 	Tcl_ListObjAppendElement(NULL, resultObj,
 		TclOOObjectName(interp, superPtr->thisPtr));
@@ -2551,7 +2551,7 @@ ClassSuperGet(
 
 static int
 ClassSuperSet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2600,7 +2600,7 @@ ClassSuperSet(
      */
 
     if (superc == 0) {
-	superclasses = ckrealloc(superclasses, sizeof(Class *));
+	superclasses = (Class **)ckrealloc(superclasses, sizeof(Class *));
 	if (TclOOIsReachable(oPtr->fPtr->classCls, oPtr->classPtr)) {
 	    superclasses[0] = oPtr->fPtr->classCls;
 	} else {
@@ -2682,7 +2682,7 @@ ClassSuperSet(
 
 static int
 ClassVarsGet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2706,7 +2706,7 @@ ClassVarsGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     if (IsPrivateDefine(interp)) {
 	PrivateVariableMapping *privatePtr;
 
@@ -2726,7 +2726,7 @@ ClassVarsGet(
 
 static int
 ClassVarsSet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2797,7 +2797,7 @@ ClassVarsSet(
 
 static int
 ObjFilterGet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2815,7 +2815,7 @@ ObjFilterGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(filterObj, oPtr->filters) {
 	Tcl_ListObjAppendElement(NULL, resultObj, filterObj);
     }
@@ -2825,7 +2825,7 @@ ObjFilterGet(
 
 static int
 ObjFilterSet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2865,7 +2865,7 @@ ObjFilterSet(
 
 static int
 ObjMixinGet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2884,7 +2884,7 @@ ObjMixinGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(mixinPtr, oPtr->mixins) {
 	if (mixinPtr) {
 	    Tcl_ListObjAppendElement(NULL, resultObj,
@@ -2897,7 +2897,7 @@ ObjMixinGet(
 
 static int
 ObjMixinSet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2926,7 +2926,7 @@ ObjMixinSet(
 	return TCL_ERROR;
     }
 
-    mixins = TclStackAlloc(interp, sizeof(Class *) * mixinc);
+    mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * mixinc);
     Tcl_InitHashTable(&uniqueCheck, TCL_ONE_WORD_KEYS);
 
     for (i = 0; i < mixinc; i++) {
@@ -2967,7 +2967,7 @@ ObjMixinSet(
 
 static int
 ObjVarsGet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2985,7 +2985,7 @@ ObjVarsGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     if (IsPrivateDefine(interp)) {
 	PrivateVariableMapping *privatePtr;
 
@@ -3005,7 +3005,7 @@ ObjVarsGet(
 
 static int
 ObjVarsSet(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -3070,7 +3070,7 @@ ObjVarsSet(
 
 static int
 ResolveClass(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
