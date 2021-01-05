@@ -6,7 +6,7 @@
  *	files, which can be manipulated through the Win32 console redirection
  *	interfaces.
  *
- * Copyright (c) 1995-1998 Sun Microsystems, Inc.
+ * Copyright © 1995-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -264,11 +264,21 @@ WinLink(
 
 	    TclWinConvertError(GetLastError());
 	} else if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
-	    /*
-	     * Can't symlink files.
-	     */
+	    if (!tclWinProcs.createSymbolicLink) {
+		/*
+		 * Can't symlink files.
+		 */
+		Tcl_SetErrno(EINVAL);
+	    } else if (tclWinProcs.createSymbolicLink(linkSourcePath, linkTargetPath,
+		    0x2 /* SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */)) {
+		/*
+		 * Success!
+		 */
 
-	    Tcl_SetErrno(ENOTDIR);
+		return 0;
+	    } else {
+		TclWinConvertError(GetLastError());
+	    }
 	} else {
 	    Tcl_SetErrno(ENODEV);
 	}
@@ -1254,7 +1264,7 @@ WinIsReserved(
 
 	    if (path[4] == '\0') {
 		return 4;
-	    } else if (path [4] == ':' && path[5] == '\0') {
+	    } else if (path[4] == ':' && path[5] == '\0') {
 		return 4;
 	    }
 	} else if ((path[2] == 'n' || path[2] == 'N') && path[3] == '\0') {
@@ -1275,7 +1285,7 @@ WinIsReserved(
 
 	    if (path[4] == '\0') {
 		return 4;
-	    } else if (path [4] == ':' && path[5] == '\0') {
+	    } else if (path[4] == ':' && path[5] == '\0') {
 		return 4;
 	    }
 	}
@@ -3117,7 +3127,8 @@ TclNativeCreateNativeRep(
       goto done;
     }
     MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr,
-	    len + 1);
+	    len + 2);
+    nativePathPtr[len] = 0;
 
     /*
      * If path starts with "//?/" or "\\?\" (extended path), translate any

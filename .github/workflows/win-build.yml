@@ -11,7 +11,9 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "OPTS=static,msvcrt"
+          - "OPTS=utfmax"
+          - "CHECKS=nodep"
+          - "OPTS=static"
           - "OPTS=symbols"
           - "OPTS=memdbg"
     # Using powershell means we need to explicitly stop on failure
@@ -51,6 +53,8 @@ jobs:
       matrix:
         cfgopt:
           - ""
+          - "CFLAGS=-DTCL_UTF_MAX=4"
+          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"

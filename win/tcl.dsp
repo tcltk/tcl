@@ -34,7 +34,7 @@ CFG=tcl - Win32 Debug Static
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "Release"
 # PROP BASE Intermediate_Dir "Release\tcl_Dynamic"
-# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=none MSVCDIR=IDE"
+# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc MSVCDIR=IDE"
 # PROP BASE Rebuild_Opt "-a"
 # PROP BASE Target_File "Release\tclsh87.exe"
 # PROP BASE Bsc_Name ""
@@ -43,7 +43,7 @@ CFG=tcl - Win32 Debug Static
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release"
 # PROP Intermediate_Dir "Release\tcl_Dynamic"
-# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=threads MSVCDIR=IDE"
+# PROP Cmd_Line "nmake -nologo -f makefile.vc MSVCDIR=IDE"
 # PROP Rebuild_Opt "clean release"
 # PROP Target_File "Release\tclsh87t.exe"
 # PROP Bsc_Name ""

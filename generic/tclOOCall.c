@@ -5,7 +5,7 @@
  *	object-system core. It also contains everything else that does
  *	inheritance hierarchy traversal.
  *
- * Copyright (c) 2005-2019 by Donal K. Fellows
+ * Copyright © 2005-2019 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

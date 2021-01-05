@@ -3,7 +3,7 @@
  *
  *	This file contains the initializers for the Tcl stub vectors.
  *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -206,7 +206,7 @@ mp_err	TclBN_mp_div_ld(const mp_int *a, uint64_t b, mp_int *c, uint64_t *d) {
    if ((b | (mp_digit)-1) != (mp_digit)-1) {
       return MP_VAL;
    }
-   result = mp_div_d(a, b, c, (d ? &d2 : NULL));
+   result = mp_div_d(a, (mp_digit)b, c, (d ? &d2 : NULL));
    if (d) {
       *d = d2;
    }

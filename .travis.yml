@@ -55,14 +55,6 @@ jobs:
       env:
         - BUILD_DIR=unix
         - CFGOPT="--enable-symbols=mem"
-# C++ build.
-    - name: "Linux/G++/Shared"
-      os: linux
-      dist: focal
-      compiler: g++
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT="CC=g++ CFLAGS=-Dregister=dont+use+register"
 # Newer/Older versions of GCC
     - name: "Linux/GCC 10/Shared"
       os: linux
@@ -147,14 +139,6 @@ jobs:
         homebrew:
           packages:
             - libtommath
-    - name: "macOS/Clang++/Xcode 12/Shared"
-      os: osx
-      osx_image: xcode12.2
-      env:
-        - BUILD_DIR=unix
-        - CFGOPT="CC=clang++ --enable-framework --enable-dtrace CFLAGS=-Dregister=dont+use+register CPPFLAGS=-D__private_extern__=extern"
-      script:
-        - make all tcltest
 # Newer MacOS versions
     - name: "macOS/Clang/Xcode 12/Universal Apps/Shared"
       os: osx
@@ -224,7 +208,6 @@ jobs:
         - BUILD_DIR=win
         - VCDIR="/C/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/VC/Auxiliary/Build"
       before_install: &vcpreinst
-        - rm -rf tests/safe-stock8*.test
         - touch generic/tclStubInit.c generic/tclOOStubInit.c generic/tclOOScript.h
         - PATH="$PATH:$VCDIR"
         - cd ${BUILD_DIR}
@@ -248,8 +231,8 @@ jobs:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=nodep' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=nodep' '-f' makefile.vc test
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'CHECKS=nodep' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'CHECKS=nodep' '-f' makefile.vc test
     - name: "Windows/MSVC/Static"
       os: windows
       compiler: cl
@@ -257,17 +240,8 @@ jobs:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc test
-    - name: "Windows/MSVC/StaticPackage"
-      os: windows
-      compiler: cl
-      env: *vcenv
-      before_install: *vcpreinst
-      install: []
-      script:
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,staticpkg,msvcrt' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static,staticpkg,msvcrt' '-f' makefile.vc test
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=static' '-f' makefile.vc test
     - name: "Windows/MSVC/Debug"
       os: windows
       compiler: cl
@@ -312,8 +286,8 @@ jobs:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=nodep' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=nodep' '-f' makefile.vc test
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'CHECKS=nodep' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'CHECKS=nodep' '-f' makefile.vc test
     - name: "Windows/MSVC-x86/Static"
       os: windows
       compiler: cl
@@ -321,8 +295,8 @@ jobs:
       before_install: *vcpreinst
       install: []
       script:
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static,msvcrt' '-f' makefile.vc test
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static' '-f' makefile.vc all tcltest
+        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=static' '-f' makefile.vc test
     - name: "Windows/MSVC-x86/Debug"
       os: windows
       compiler: cl
@@ -349,7 +323,6 @@ jobs:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit"
       before_install: &makepreinst
-        - rm -rf tests/safe-stock8*.test
         - touch generic/tclStubInit.c generic/tclOOStubInit.c generic/tclOOScript.h
         - choco install -y make zip
         - cd ${BUILD_DIR}
@@ -367,15 +340,6 @@ jobs:
         - BUILD_DIR=win
         - CFGOPT="--enable-64bit CFLAGS=-DTCL_NO_DEPRECATED=1"
       before_install: *makepreinst
-    - name: "Windows/G++/Shared"
-      os: windows
-      compiler: g++
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="CC=g++ --enable-64bit"
-      before_install: *makepreinst
-      script:
-        - make all tcltest
     - name: "Windows/GCC/Static"
       os: windows
       compiler: gcc
@@ -418,15 +382,6 @@ jobs:
         - BUILD_DIR=win
         - CFGOPT="CFLAGS=-DTCL_NO_DEPRECATED=1"
       before_install: *makepreinst
-    - name: "Windows/G++-x86/Shared"
-      os: windows
-      compiler: g++
-      env:
-        - BUILD_DIR=win
-        - CFGOPT="CC=g++"
-      before_install: *makepreinst
-      script:
-        - make all tcltest
     - name: "Windows/GCC-x86/Static"
       os: windows
       compiler: gcc
@@ -458,7 +413,6 @@ jobs:
       script:
         - make dist
 before_install:
-  - rm -rf tests/safe-stock8*.test
   - touch generic/tclStubInit.c generic/tclOOStubInit.c generic/tclOOScript.h
   - cd ${BUILD_DIR}
 install:

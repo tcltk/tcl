@@ -6,9 +6,9 @@
  *	that don't exactly fit are passed up to the next larger size. Blocks
  *	over a certain size are directly allocated from the system.
  *
- * Copyright (c) 1983 Regents of the University of California.
- * Copyright (c) 1996-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1983 Regents of the University of California.
+ * Copyright © 1996-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * Portions contributed by Chris Kingsley, Jack Jansen and Ray Johnson.
  *
