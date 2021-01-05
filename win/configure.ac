@@ -60,7 +60,6 @@ fi
 
 AC_PROG_CC
 AC_C_INLINE
-AC_HEADER_STDC
 
 AC_CHECK_TOOL(AR, ar)
 AC_CHECK_TOOL(RANLIB, ranlib)
@@ -206,17 +205,16 @@ AC_SUBST(INSTALL_MSGS)
 
 AC_CACHE_CHECK(for FINDEX_INFO_LEVELS in winbase.h,
     tcl_cv_findex_enums,
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
-],
-[
+]], [[
   FINDEX_INFO_LEVELS i;
   FINDEX_SEARCH_OPS j;
-],
-        tcl_cv_findex_enums=yes,
-        tcl_cv_findex_enums=no)
+]])],
+    [tcl_cv_findex_enums=yes],
+    [tcl_cv_findex_enums=no])
 )
 if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
@@ -227,17 +225,16 @@ fi
 
 AC_CACHE_CHECK(for intrinsics support in compiler,
     tcl_cv_intrinsics,
-AC_TRY_LINK([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 #include <intrin.h>
-],
-[
+]], [[
   __cpuidex(0,0,0);
-],
-        tcl_cv_intrinsics=yes,
-        tcl_cv_intrinsics=no)
+]])],
+    [tcl_cv_intrinsics=yes],
+    [tcl_cv_intrinsics=no])
 )
 if test "$tcl_cv_intrinsics" = "yes"; then
     AC_DEFINE(HAVE_INTRIN_H, 1,
@@ -248,11 +245,11 @@ fi
 
 AC_CACHE_CHECK(for wspiapi.h,
     tcl_cv_wspiapi_h,
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <wspiapi.h>
-], [],
-        tcl_cv_wspiapi_h=yes,
-        tcl_cv_wspiapi_h=no)
+]], [[]])],
+    [tcl_cv_wspiapi_h=yes],
+    [tcl_cv_wspiapi_h=no])
 )
 if test "$tcl_cv_wspiapi_h" = "yes"; then
     AC_DEFINE(HAVE_WSPIAPI_H, 1,
@@ -265,17 +262,16 @@ fi
 
 AC_CACHE_CHECK(for FINDEX_INFO_LEVELS in winbase.h,
     tcl_cv_findex_enums,
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
-],
-[
+]], [[
   FINDEX_INFO_LEVELS i;
   FINDEX_SEARCH_OPS j;
-],
-        tcl_cv_findex_enums=yes,
-        tcl_cv_findex_enums=no)
+]])],
+    [tcl_cv_findex_enums=yes],
+    [tcl_cv_findex_enums=no])
 )
 if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
