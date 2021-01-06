@@ -30,7 +30,7 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 	AC_ARG_WITH(tcl,
 	    AS_HELP_STRING([--with-tcl],
 		[directory containing tcl configuration (tclConfig.sh)]),
-	    with_tclconfig="${withval}")
+	    [with_tclconfig="${withval}"])
 	AC_MSG_CHECKING([for Tcl configuration])
 	AC_CACHE_VAL(ac_cv_c_tclconfig,[
 
@@ -163,7 +163,7 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 	AC_ARG_WITH(tk,
 	    AS_HELP_STRING([--with-tk],
 		[directory containing tk configuration (tkConfig.sh)]),
-	    with_tkconfig="${withval}")
+	    [with_tkconfig="${withval}"])
 	AC_MSG_CHECKING([for Tk configuration])
 	AC_CACHE_VAL(ac_cv_c_tkconfig,[
 
@@ -589,6 +589,7 @@ AC_DEFUN([SC_ENABLE_FRAMEWORK], [
 #		TCL_THREADS
 #		_REENTRANT
 #		_THREAD_SAFE
+#
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ENABLE_THREADS], [
@@ -778,7 +779,7 @@ AC_DEFUN([SC_ENABLE_LANGINFO], [
     if test "$langinfo_ok" = "yes"; then
 	AC_CACHE_VAL(tcl_cv_langinfo_h, [
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <langinfo.h>]], [[nl_langinfo(CODESET);]])],
-		    [tcl_cv_langinfo_h=yes],[tcl_cv_langinfo_h=no])])
+		    [tcl_cv_langinfo_h=yes], [tcl_cv_langinfo_h=no])])
 	AC_MSG_RESULT([$tcl_cv_langinfo_h])
 	if test $tcl_cv_langinfo_h = yes; then
 	    AC_DEFINE(HAVE_LANGINFO, 1, [Do we have nl_langinfo()?])
@@ -820,8 +821,8 @@ AC_DEFUN([SC_CONFIG_MANPAGES], [
     AC_ARG_ENABLE(man-symlinks,
 	AS_HELP_STRING([--enable-man-symlinks],
 	    [use symlinks for the manpages (default: off)]),
-	test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --symlinks",
-	enableval="no")
+	[test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --symlinks"],
+	[enableval="no"])
     AC_MSG_RESULT([$enableval])
 
     AC_MSG_CHECKING([whether to compress the manpages])
@@ -833,7 +834,7 @@ AC_DEFUN([SC_CONFIG_MANPAGES], [
 	    no)  ;;
 	    *)   MAN_FLAGS="$MAN_FLAGS --compress $enableval";;
 	esac],
-	enableval="no")
+	[enableval="no"])
     AC_MSG_RESULT([$enableval])
     if test "$enableval" != "no"; then
 	AC_MSG_CHECKING([for compressed file suffix])
@@ -854,7 +855,7 @@ AC_DEFUN([SC_CONFIG_MANPAGES], [
 	    no)  ;;
 	    *)   MAN_FLAGS="$MAN_FLAGS --suffix $enableval";;
 	esac],
-	enableval="no")
+	[enableval="no"])
     AC_MSG_RESULT([$enableval])
 
     AC_SUBST(MAN_FLAGS)
@@ -1022,7 +1023,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 	    extern __attribute__((__visibility__("hidden"))) void f(void);
-	    void f(void) {}]], [[f();]])],[tcl_cv_cc_visibility_hidden=yes],
+	    void f(void) {}]], [[f();]])],
+	    [tcl_cv_cc_visibility_hidden=yes],
 	    [tcl_cv_cc_visibility_hidden=no])
 	CFLAGS=$hold_cflags])
     AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
@@ -1533,7 +1535,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 				tcl_cv_cc_arch_ppc64, [
 			    hold_cflags=$CFLAGS
 			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
-			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_cc_arch_ppc64=yes],
+			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+				    [tcl_cv_cc_arch_ppc64=yes],
 				    [tcl_cv_cc_arch_ppc64=no])
 			    CFLAGS=$hold_cflags])
 			AS_IF([test $tcl_cv_cc_arch_ppc64 = yes], [
@@ -1545,7 +1548,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 				tcl_cv_cc_arch_x86_64, [
 			    hold_cflags=$CFLAGS
 			    CFLAGS="$CFLAGS -arch x86_64"
-			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_cc_arch_x86_64=yes],
+			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+				    [tcl_cv_cc_arch_x86_64=yes],
 				    [tcl_cv_cc_arch_x86_64=no])
 			    CFLAGS=$hold_cflags])
 			AS_IF([test $tcl_cv_cc_arch_x86_64 = yes], [
@@ -2168,7 +2172,7 @@ closedir(d);
     AC_CHECK_HEADER(dlfcn.h, , [AC_DEFINE(NO_DLFCN_H, 1, [Do we have <dlfcn.h>?])])
 
     # OS/390 lacks sys/param.h (and doesn't need it, by chance).
-    AC_HAVE_HEADERS(sys/param.h)
+    AC_CHECK_HEADERS([sys/param.h])
 ])
 
 #--------------------------------------------------------------------
@@ -2325,14 +2329,16 @@ AC_DEFUN([SC_TIME_HANDLER], [
 
     AC_CACHE_CHECK([tm_tzadj in struct tm], tcl_cv_member_tm_tzadj, [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[struct tm tm; (void)tm.tm_tzadj;]])],
-	    [tcl_cv_member_tm_tzadj=yes], [tcl_cv_member_tm_tzadj=no])])
+	    [tcl_cv_member_tm_tzadj=yes],
+	    [tcl_cv_member_tm_tzadj=no])])
     if test $tcl_cv_member_tm_tzadj = yes ; then
 	AC_DEFINE(HAVE_TM_TZADJ, 1, [Should we use the tm_tzadj field of struct tm?])
     fi
 
     AC_CACHE_CHECK([tm_gmtoff in struct tm], tcl_cv_member_tm_gmtoff, [
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[struct tm tm; (void)tm.tm_gmtoff;]])],
-	    [tcl_cv_member_tm_gmtoff=yes], [tcl_cv_member_tm_gmtoff=no])])
+	    [tcl_cv_member_tm_gmtoff=yes],
+	    [tcl_cv_member_tm_gmtoff=no])])
     if test $tcl_cv_member_tm_gmtoff = yes ; then
 	AC_DEFINE(HAVE_TM_GMTOFF, 1, [Should we use the tm_gmtoff field of struct tm?])
     fi
@@ -2456,11 +2462,11 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
 
 AC_DEFUN([SC_TCL_EARLY_FLAG],[
     AC_CACHE_VAL([tcl_cv_flag_]translit($1,[A-Z],[a-z]),
-	AC_TRY_COMPILE([$2], $3, [tcl_cv_flag_]translit($1,[A-Z],[a-z])=no,
-	    AC_TRY_COMPILE([[#define ]$1[ 1
-]$2], $3,
-		[tcl_cv_flag_]translit($1,[A-Z],[a-z])=yes,
-		[tcl_cv_flag_]translit($1,[A-Z],[a-z])=no)))
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[$2]], [[$3]])],
+	    [tcl_cv_flag_]translit($1,[A-Z],[a-z])=no,[AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[[#define ]$1[ 1
+]$2]], [[$3]]),
+	[tcl_cv_flag_]translit($1,[A-Z],[a-z])=yes,
+	[tcl_cv_flag_]translit($1,[A-Z],[a-z])=no)]))
     if test ["x${tcl_cv_flag_]translit($1,[A-Z],[a-z])[}" = "xyes"] ; then
 	AC_DEFINE($1, 1, [Add the ]$1[ flag when building])
 	tcl_flags="$tcl_flags $1"
@@ -2589,7 +2595,7 @@ AC_DEFUN([SC_TCL_CFG_ENCODING], [
     AC_ARG_WITH(encoding,
 	AS_HELP_STRING([--with-encoding],
 	    [encoding for configuration values (default: iso8859-1)]),
-	with_tcencoding=${withval})
+	[with_tcencoding=${withval}])
 
     if test x"${with_tcencoding}" != x ; then
 	AC_DEFINE_UNQUOTED(TCL_CFGVAL_ENCODING,"${with_tcencoding}",
