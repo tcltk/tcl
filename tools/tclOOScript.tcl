@@ -583,7 +583,7 @@
 	#
 	#	Namespaces used as implementation vectors for oo::define and
 	#	oo::objdefine when the class/instance is configurable.
-	# 
+	#
 	# ------------------------------------------------------------------
 
 	namespace eval configurableclass {
@@ -739,7 +739,7 @@
 	    # configure --
 	    #	Method for providing client access to the property mechanism.
 	    #	Has a user-facing API similar to that of [chan configure].
-	    # 
+	    #
 	    method configure -export args {
 		::if {![::info exists my]} {
 		    ::set my [::namespace which my]
