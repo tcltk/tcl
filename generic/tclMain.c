@@ -452,6 +452,7 @@ Tcl_MainEx(
 	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
 	    int length;
+	    Tcl_DString savedEncoding;
 
 	    if (is.tty) {
 		Prompt(interp, &is);
@@ -471,7 +472,11 @@ Tcl_MainEx(
 		is.commandPtr = Tcl_DuplicateObj(is.commandPtr);
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
+	    Tcl_DStringInit(&savedEncoding);
+	    Tcl_GetChannelOption(NULL, is.input, "-encoding", &savedEncoding);
+	    Tcl_SetChannelOption(NULL, is.input, "-encoding", "utf-8");
 	    length = Tcl_GetsObj(is.input, is.commandPtr);
+	    Tcl_SetChannelOption(NULL, is.input, "-encoding", Tcl_DStringValue(&savedEncoding));
 	    if (length < 0) {
 		if (Tcl_InputBlocked(is.input)) {
 		    /*
@@ -741,13 +746,18 @@ StdinProc(
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
     Tcl_Interp *interp = isPtr->interp;
+    Tcl_DString savedEncoding;
 
     if (Tcl_IsShared(commandPtr)) {
 	Tcl_DecrRefCount(commandPtr);
 	commandPtr = Tcl_DuplicateObj(commandPtr);
 	Tcl_IncrRefCount(commandPtr);
     }
+    Tcl_DStringInit(&savedEncoding);
+    Tcl_GetChannelOption(NULL, chan, "-encoding", &savedEncoding);
+    Tcl_SetChannelOption(NULL, chan, "-encoding", "utf-8");
     length = Tcl_GetsObj(chan, commandPtr);
+    Tcl_SetChannelOption(NULL, chan, "-encoding", Tcl_DStringValue(&savedEncoding));
     if (length < 0) {
 	if (Tcl_InputBlocked(chan)) {
 	    return;
