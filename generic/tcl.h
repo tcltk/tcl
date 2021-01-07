@@ -137,7 +137,11 @@ extern "C" {
 #    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
 #endif /* !TCL_NO_DEPRECATED */
 #if defined(__GNUC__) && (__GNUC__ > 2)
-#   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+#   if defined(_WIN32) && defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO
+#	define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__MINGW_PRINTF_FORMAT, a, b)))
+#   else
+#	define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+#   endif
 #   define TCL_NORETURN __attribute__ ((noreturn))
 #   define TCL_NOINLINE __attribute__ ((noinline))
 #   if defined(BUILD_tcl) || defined(BUILD_tk)
@@ -359,16 +363,15 @@ typedef long LONG;
  * sprintf(...,"%" TCL_LL_MODIFIER "d",...).
  */
 
-#if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(_WIN32) && (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)
-#      define TCL_WIDE_INT_TYPE __int64
-#      define TCL_LL_MODIFIER	"I64"
-#      if defined(_WIN64)
-#         define TCL_Z_MODIFIER	"I"
-#      endif
-#   elif defined(__GNUC__)
-#      define TCL_Z_MODIFIER	"z"
-#   else /* ! _WIN32 && ! __GNUC__ */
+#if !defined(TCL_WIDE_INT_TYPE) && !defined(TCL_WIDE_INT_IS_LONG)
+#   ifdef _WIN32
+#	define TCL_WIDE_INT_TYPE __int64
+#	if defined(_WIN32) && (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)
+#	    define TCL_LL_MODIFIER	"I64"
+#	else
+#	    define TCL_LL_MODIFIER	"ll"
+#	endif
+#   elif !defined(__GNUC__)
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
@@ -377,7 +380,7 @@ typedef long LONG;
 #      if defined(LLONG_MAX) && (LLONG_MAX == LONG_MAX)
 #         define TCL_WIDE_INT_IS_LONG	1
 #      endif
-#   endif /* _WIN32 */
+#   endif /* !__GNUC__ */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
 
 #ifndef TCL_WIDE_INT_TYPE
@@ -393,6 +396,8 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #ifndef TCL_Z_MODIFIER
 #   if defined(__GNUC__) && !defined(_WIN32)
 #	define TCL_Z_MODIFIER	"z"
+#   elif defined(_WIN64)
+#	define TCL_Z_MODIFIER	TCL_LL_MODIFIER
 #   else
 #	define TCL_Z_MODIFIER	""
 #   endif
@@ -402,7 +407,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
-#if defined(_WIN32)
+#ifdef _WIN32
 #   ifdef __BORLANDC__
 	typedef struct stati64 Tcl_StatBuf;
 #   elif defined(_WIN64) || defined(_USE_64BIT_TIME_T)
