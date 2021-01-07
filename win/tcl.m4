@@ -591,12 +591,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -mwindows -municode -Dmain=xxmain"
 	AC_CACHE_CHECK(for working -municode linker flag,
 	    ac_cv_municode,
-	AC_TRY_LINK([
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 	#include <windows.h>
 	int APIENTRY wWinMain(HINSTANCE a, HINSTANCE b, LPWSTR c, int d) {return 0;}
-	], [],
-	    ac_cv_municode=yes,
-	    ac_cv_municode=no)
+	]], [[]])],
+	    [ac_cv_municode=yes],
+	    [ac_cv_municode=no])
 	)
 	CFLAGS=$hold_cflags
 	if test "$ac_cv_municode" = "yes" ; then
@@ -713,8 +713,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			#error 32-bit
 		    #endif
 		]], [[]])],
-		    [tcl_win_64bit=yes],
-		    [tcl_win_64bit=no]
+			[tcl_win_64bit=yes],
+			[tcl_win_64bit=no]
 		)
 		if test "$tcl_win_64bit" = "yes" ; then
 		    do64bit=amd64
@@ -882,8 +882,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ]], [[
 		EXCEPTION_DISPOSITION x;
 	    ]])],
-	    [tcl_cv_eh_disposition=yes],
-	    [tcl_cv_eh_disposition=no])
+		[tcl_cv_eh_disposition=yes],
+		[tcl_cv_eh_disposition=no])
 	)
 	if test "$tcl_cv_eh_disposition" = "no" ; then
 	AC_DEFINE(EXCEPTION_DISPOSITION, int,
