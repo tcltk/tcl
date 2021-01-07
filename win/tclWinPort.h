@@ -111,11 +111,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifndef __MWERKS__
 #include <sys/stat.h>
 #include <sys/timeb.h>
-#   ifdef __BORLANDC__
-#	include <utime.h>
-#   else
-#	include <sys/utime.h>
-#   endif /* __BORLANDC__ */
+#include <sys/utime.h>
 #endif /* __MWERKS__ */
 
 /*
@@ -460,22 +456,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #	define timezone _timezone
 #   endif
 #endif /* _MSC_VER || __MSVCRT__ */
-
-/*
- * Borland's timezone and environ functions.
- */
-
-#ifdef  __BORLANDC__
-#   define timezone _timezone
-#   define environ  _environ
-#endif /* __BORLANDC__ */
-
-#ifdef __WATCOMC__
-#   if !defined(__CHAR_SIGNED__)
-#	error "You must use the -j switch to ensure char is signed."
-#   endif
-#endif
-
 
 #if defined(_MSC_VER)
 #   pragma warning(disable:4146)

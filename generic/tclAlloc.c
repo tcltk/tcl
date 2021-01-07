@@ -31,7 +31,7 @@
  * until Tcl uses config.h properly.
  */
 
-#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
 typedef size_t caddr_t;
 #endif
 

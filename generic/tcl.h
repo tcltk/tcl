@@ -192,8 +192,7 @@ extern "C" {
  *       MSVCRT.
  */
 
-#if (defined(_WIN32) && (defined(_MSC_VER) || (defined(__BORLANDC__) && (__BORLANDC__ >= 0x0550)) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
-#   define HAVE_DECLSPEC 1
+#ifdef _WIN32
 #   ifdef STATIC_BUILD
 #       define DLLIMPORT
 #       define DLLEXPORT
@@ -361,16 +360,24 @@ typedef long LONG;
  * sprintf(...,"%" TCL_LL_MODIFIER "d",...).
  */
 
-#if !defined(TCL_WIDE_INT_TYPE) && !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32)
+#if !defined(TCL_WIDE_INT_TYPE) && !defined(TCL_WIDE_INT_IS_LONG)
+#   ifdef _WIN32
+#	if defined(_WIN32) && (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)
+#	    define TCL_LL_MODIFIER	"I64"
+#	else
+#	    define TCL_LL_MODIFIER	"ll"
+#	endif
+#   elif !defined(__GNUC__)
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
  */
-#   include <limits.h>
-#   if defined(LLONG_MAX) && (LLONG_MAX == LONG_MAX)
-#	 define TCL_WIDE_INT_IS_LONG	1
-#   endif
-#endif
+#      include <limits.h>
+#      if defined(LLONG_MAX) && (LLONG_MAX == LONG_MAX)
+#         define TCL_WIDE_INT_IS_LONG	1
+#      endif
+#   endif /* !__GNUC__ */
+#endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
 
 #ifndef TCL_WIDE_INT_TYPE
 #   define TCL_WIDE_INT_TYPE		long long
@@ -380,11 +387,7 @@ typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #ifndef TCL_LL_MODIFIER
-#   if defined(_WIN32) && (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)
-#	define TCL_LL_MODIFIER	"I64"
-#   else
-#	define TCL_LL_MODIFIER	"ll"
-#   endif
+#   define TCL_LL_MODIFIER	"ll"
 #endif /* !TCL_LL_MODIFIER */
 #ifndef TCL_Z_MODIFIER
 #   if defined(__GNUC__) && !defined(_WIN32)
@@ -400,10 +403,8 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
-#if defined(_WIN32)
-#   ifdef __BORLANDC__
-	typedef struct stati64 Tcl_StatBuf;
-#   elif defined(_WIN64) || defined(_USE_64BIT_TIME_T)
+#ifdef _WIN32
+#   if defined(_WIN64) || defined(_USE_64BIT_TIME_T)
 	typedef struct __stat64 Tcl_StatBuf;
 #   elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
 	typedef struct _stati64	Tcl_StatBuf;
