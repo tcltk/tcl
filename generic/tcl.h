@@ -360,23 +360,15 @@ typedef long LONG;
  * sprintf(...,"%" TCL_LL_MODIFIER "d",...).
  */
 
-#if !defined(TCL_WIDE_INT_TYPE) && !defined(TCL_WIDE_INT_IS_LONG)
-#   ifdef _WIN32
-#	if defined(_WIN32) && (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)
-#	    define TCL_LL_MODIFIER	"I64"
-#	else
-#	    define TCL_LL_MODIFIER	"ll"
-#	endif
-#   elif !defined(__GNUC__)
+#if !defined(TCL_WIDE_INT_TYPE) && !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__GNUC__)
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
  */
-#      include <limits.h>
-#      if defined(LLONG_MAX) && (LLONG_MAX == LONG_MAX)
-#         define TCL_WIDE_INT_IS_LONG	1
-#      endif
-#   endif /* !__GNUC__ */
+#   include <limits.h>
+#   if defined(LLONG_MAX) && (LLONG_MAX == LONG_MAX)
+#	define TCL_WIDE_INT_IS_LONG	1
+#   endif
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
 
 #ifndef TCL_WIDE_INT_TYPE
