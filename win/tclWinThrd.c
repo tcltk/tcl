@@ -222,7 +222,7 @@ TclpThreadCreate(
                  * on WIN64 sizeof void* != sizeof unsigned
 		 */
 
-#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize,
 	    (Tcl_ThreadCreateProc*) TclWinThreadStart, winThreadPtr,
 	    0, (unsigned *)idPtr);
@@ -300,7 +300,7 @@ TclpThreadExit(
     TclSignalExitThread(Tcl_GetCurrentThread(), status);
     LeaveCriticalSection(&joinLock);
 
-#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
     _endthreadex((unsigned) status);
 #else
     ExitThread((DWORD) status);

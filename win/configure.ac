@@ -463,7 +463,7 @@ AC_SUBST(RC_DEFINE)
 AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 
-AC_CONFIG_FILES(Makefile tclConfig.sh tclsh.exe.manifest)
+AC_CONFIG_FILES([Makefile tclConfig.sh tclsh.exe.manifest])
 AC_OUTPUT
 
 dnl Local Variables:

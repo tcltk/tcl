@@ -1813,10 +1813,10 @@ declare 490 {
     Tcl_StatBuf *Tcl_AllocStatBuf(void)
 }
 declare 491 {
-    Tcl_WideInt Tcl_Seek(Tcl_Channel chan, Tcl_WideInt offset, int mode)
+    long long Tcl_Seek(Tcl_Channel chan, long long offset, int mode)
 }
 declare 492 {
-    Tcl_WideInt Tcl_Tell(Tcl_Channel chan)
+    long long Tcl_Tell(Tcl_Channel chan)
 }
 
 # TIP#91 (back-compat enhancements for channels) dkf
@@ -2088,7 +2088,7 @@ declare 559 {
 
 # TIP #208 ('chan' command) jeffh
 declare 560 {
-    int Tcl_TruncateChannel(Tcl_Channel chan, Tcl_WideInt length)
+    int Tcl_TruncateChannel(Tcl_Channel chan, long long length)
 }
 declare 561 {
     Tcl_DriverTruncateProc *Tcl_ChannelTruncateProc(
@@ -2239,19 +2239,19 @@ declare 595 {
     int Tcl_GetDeviceTypeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 596 {
-    Tcl_WideInt Tcl_GetAccessTimeFromStat(const Tcl_StatBuf *statPtr)
+    long long Tcl_GetAccessTimeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 597 {
-    Tcl_WideInt Tcl_GetModificationTimeFromStat(const Tcl_StatBuf *statPtr)
+    long long Tcl_GetModificationTimeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 598 {
-    Tcl_WideInt Tcl_GetChangeTimeFromStat(const Tcl_StatBuf *statPtr)
+    long long Tcl_GetChangeTimeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 599 {
-    Tcl_WideUInt Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr)
+    unsigned long long Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 600 {
-    Tcl_WideUInt Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr)
+    unsigned long long Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 601 {
     unsigned Tcl_GetBlockSizeFromStat(const Tcl_StatBuf *statPtr)

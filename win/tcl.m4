@@ -673,7 +673,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		CFLAGS_WARNING="${CFLAGS_WARNING} -Wno-format"
 		;;
 	    *)
-		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -fextended-identifiers -Wdeclaration-after-statement"
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -fextended-identifiers"
 		;;
 	esac
 
@@ -717,9 +717,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			[tcl_win_64bit=no]
 		)
 		if test "$tcl_win_64bit" = "yes" ; then
-			do64bit=amd64
-			MACHINE="AMD64"
-			AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		    do64bit=amd64
+		    MACHINE="AMD64"
+		    AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 		fi
 		;;
 	esac

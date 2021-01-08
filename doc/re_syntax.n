@@ -138,22 +138,22 @@ later, under \fBESCAPES\fR.
 \fB^\fR
 .
 matches at the beginning of the string or a line (according to whether
-matching is line-sensitive or not, as described in \fBMATCHING\fR,
+matching is newline-sensitive or not, as described in \fBMATCHING\fR,
 below).
 .TP
 \fB$\fR
 .
 matches at the end of the string or a line (according to whether
-matching is line-sensitive or not, as described in \fBMATCHING\fR,
+matching is newline-sensitive or not, as described in \fBMATCHING\fR,
 below).
 .RS
 .PP
 The difference between string and line matching modes is immaterial
 when the string does not contain a newline character.  The \fB\eA\fR
-and \fB\eZ\fR constraint escapes have a similar purpose, but are
+and \fB\eZ\fR constraint escapes have a similar purpose but are
 always constraints for the overall string.
 .PP
-The default line-sensitvity depends on the command that uses the
+The default newline-sensitivity depends on the command that uses the
 regular expression, and can be overridden as described in
 \fBMETASYNTAX\fR, below.
 .RE
