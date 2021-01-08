@@ -7,10 +7,6 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "CFLAGS=-DTCL_UTF_MAX=4"
-          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
-          - "EXTRA_CC_SWITCHES=-x\\ c++"
-          - "EXTRA_CC_SWITCHES=-x\\\ c++"
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
@@ -28,7 +24,7 @@ jobs:
       - name: Configure ${{ matrix.cfgopt }}
         run: |
           mkdir "${HOME}/install dir"
-          ./configure ${CFGOPT} "--prefix=$HOME/install dir" || (cat config.log && exit 1)
+          ./configure ${CFGOPT} CFLAGS=-TCL_WIDE_INT_TYPE=__int128 "--prefix=$HOME/install dir" || (cat config.log && exit 1)
         env:
           CFGOPT: ${{ matrix.cfgopt }}
       - name: Build
