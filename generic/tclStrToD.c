@@ -5251,21 +5251,21 @@ TclFormatNaN(
 #else
     union {
 	double dv;
-	Tcl_WideUInt iv;
+	unsigned long long iv;
     } bitwhack;
 
     bitwhack.dv = value;
     if (n770_fp) {
 	bitwhack.iv = Nokia770Twiddle(bitwhack.iv);
     }
-    if (bitwhack.iv & ((Tcl_WideUInt) 1 << 63)) {
-	bitwhack.iv &= ~ ((Tcl_WideUInt) 1 << 63);
+    if (bitwhack.iv & (1ULL << 63)) {
+	bitwhack.iv &= ~ (1ULL << 63);
 	*buffer++ = '-';
     }
     *buffer++ = 'N';
     *buffer++ = 'a';
     *buffer++ = 'N';
-    bitwhack.iv &= (((Tcl_WideUInt) 1) << 51) - 1;
+    bitwhack.iv &= ((1ULL) << 51) - 1;
     if (bitwhack.iv != 0) {
 	sprintf(buffer, "(%" TCL_LL_MODIFIER "x)", bitwhack.iv);
     } else {
