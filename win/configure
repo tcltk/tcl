@@ -4360,7 +4360,7 @@ printf "%s\n" "using shared flags" >&6; }
 		CFLAGS_WARNING="${CFLAGS_WARNING} -Wno-format"
 		;;
 	    *)
-		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -fextended-identifiers -Wdeclaration-after-statement"
+		CFLAGS_WARNING="${CFLAGS_WARNING} -Wc++-compat -fextended-identifiers"
 		;;
 	esac
 
@@ -4421,9 +4421,9 @@ else $as_nop
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
 		if test "$tcl_win_64bit" = "yes" ; then
-			do64bit=amd64
-			MACHINE="AMD64"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result:    Using 64-bit $MACHINE mode" >&5
+		    do64bit=amd64
+		    MACHINE="AMD64"
+		    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result:    Using 64-bit $MACHINE mode" >&5
 printf "%s\n" "   Using 64-bit $MACHINE mode" >&6; }
 		fi
 		;;

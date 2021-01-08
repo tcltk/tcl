@@ -239,7 +239,7 @@ static OSSpinLock notifierLock     = SPINLOCK_INIT;
 
 #define SpinLockLockDbg(p) \
     if (!SpinLockTry(p)) {						\
-	Tcl_WideInt s = TclpGetWideClicks(), e;				\
+	long long s = TclpGetWideClicks(), e;				\
 									\
 	SpinLockLock(p);						\
 	e = TclpGetWideClicks();					\

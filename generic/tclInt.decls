@@ -981,7 +981,7 @@ declare 247 {
 
 declare 248 {
     int TclCopyChannel(Tcl_Interp *interp, Tcl_Channel inChan,
-	    Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr)
+	    Tcl_Channel outChan, long long toRead, Tcl_Obj *cmdPtr)
 }
 
 declare 249 {
