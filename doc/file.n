@@ -50,16 +50,16 @@ can be given to the command, but it returns a group name. \fB\-owner\fR gets
 or sets the user name of the owner of the file. The command returns the
 owner name, but the numerical id can be passed when setting the
 owner. \fB\-permissions\fR sets or retrieves the octal code that chmod(1)
-uses.  This command does also has limited support for setting using the
-symbolic attributes for chmod(1), of the form [ugo]?[[+\-=][rwxst],[...]],
-where multiple symbolic attributes can be separated by commas (example:
-\fBu+s,go\-rw\fR add sticky bit for user, remove read and write
-permissions for group and other).  A simplified \fBls\fR style string,
-of the form rwxrwxrwx (must be 9 characters), is also supported
-(example: \fBrwxr\-xr\-t\fR is equivalent to 01755).
-On versions of Unix supporting file flags, \fB\-readonly\fR gives the
-value or sets or clears the readonly attribute of the file,
-i.e. the user immutable flag \fBuchg\fR to chflags(1).
+uses. This option also provides limited support for setting permissions
+using the symbolic notation used by the Unix chmod(1) command, following the
+form [ugo]?[[+-=][rwxst],[...]]. Multiple permission specifications may be
+given, separated by commas. E.g., \fBu+s,go-rw\fR would set the setuid bit
+for a file's owner as well as remove read and write permission for the file's
+group and other users. A simplified \fBls\fR style string, of the form
+rwxrwxrwx (must be 9 characters), is also supported (example:
+\fBrwxr\-xr\-t\fR is equivalent to 01755). On versions of Unix supporting
+file flags, \fB\-readonly\fR gives the value or sets or clears the readonly
+attribute of the file, i.e. the user immutable flag \fBuchg\fR to chflags(1).
 .PP
 On Windows, \fB\-archive\fR gives the value or sets or clears the
 archive attribute of the file. \fB\-hidden\fR gives the value or sets
