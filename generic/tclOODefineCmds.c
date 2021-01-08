@@ -2946,6 +2946,7 @@ ObjMixinSet(
 
     TclOOObjectSetMixins(oPtr, mixinc, mixins);
     TclStackFree(interp, mixins);
+    Tcl_DeleteHashTable(&uniqueCheck);
     return TCL_OK;
 
   freeAndError:
