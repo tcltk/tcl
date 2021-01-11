@@ -1920,6 +1920,17 @@ EXTERN char *		Tcl_UniCharToUtfDString(const int *uniStr,
 /* 648 */
 EXTERN int *		Tcl_UtfToUniCharDString(const char *src, int length,
 				Tcl_DString *dsPtr);
+/* Slot 649 is reserved */
+/* Slot 650 is reserved */
+/* 651 */
+EXTERN char *		TclGetStringFromObj(Tcl_Obj *objPtr,
+				size_t *lengthPtr);
+/* 652 */
+EXTERN Tcl_UniChar *	TclGetUnicodeFromObj(Tcl_Obj *objPtr,
+				size_t *lengthPtr);
+/* 653 */
+EXTERN unsigned char *	TclGetByteArrayFromObj(Tcl_Obj *objPtr,
+				size_t *lengthPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2604,6 +2615,11 @@ typedef struct TclStubs {
     int (*tcl_UtfToUniChar) (const char *src, int *chPtr); /* 646 */
     char * (*tcl_UniCharToUtfDString) (const int *uniStr, int uniLength, Tcl_DString *dsPtr); /* 647 */
     int * (*tcl_UtfToUniCharDString) (const char *src, int length, Tcl_DString *dsPtr); /* 648 */
+    void (*reserved649)(void);
+    void (*reserved650)(void);
+    char * (*tclGetStringFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 651 */
+    Tcl_UniChar * (*tclGetUnicodeFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 652 */
+    unsigned char * (*tclGetByteArrayFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 653 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3932,6 +3948,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UniCharToUtfDString) /* 647 */
 #define Tcl_UtfToUniCharDString \
 	(tclStubsPtr->tcl_UtfToUniCharDString) /* 648 */
+/* Slot 649 is reserved */
+/* Slot 650 is reserved */
+#define TclGetStringFromObj \
+	(tclStubsPtr->tclGetStringFromObj) /* 651 */
+#define TclGetUnicodeFromObj \
+	(tclStubsPtr->tclGetUnicodeFromObj) /* 652 */
+#define TclGetByteArrayFromObj \
+	(tclStubsPtr->tclGetByteArrayFromObj) /* 653 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4114,6 +4138,30 @@ extern const TclStubs *tclStubsPtr;
 #   endif
 #endif
 
+#undef Tcl_GetStringFromObj
+#undef Tcl_GetUnicodeFromObj
+#undef Tcl_GetByteArrayFromObj
+#undef Tcl_GetUnicode
+#if defined(USE_TCL_STUBS)
+#define Tcl_GetStringFromObj(objPtr, sizePtr) \
+	(sizeof(*sizePtr) <= sizeof(int) ? tclStubsPtr->tcl_GetStringFromObj(objPtr, (int *)sizePtr) : tclStubsPtr->tclGetStringFromObj(objPtr, (size_t *)sizePtr))
+#define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
+	(sizeof(*sizePtr) <= sizeof(int) ? tclStubsPtr->tcl_GetByteArrayFromObj(objPtr, (int *)sizePtr) : tclStubsPtr->tclGetByteArrayFromObj(objPtr, (size_t *)sizePtr))
+#define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
+	(sizeof(*sizePtr) <= sizeof(int) ? tclStubsPtr->tcl_GetUnicodeFromObj(objPtr, (int *)sizePtr) : tclStubsPtr->tclGetUnicodeFromObj(objPtr, (size_t *)sizePtr))
+#define Tcl_GetUnicode(objPtr) \
+	tclStubsPtr->tcl_GetUnicodeFromObj(objPtr, NULL)
+#else
+#define Tcl_GetStringFromObj(objPtr, sizePtr) \
+	(sizeof(*sizePtr) <= sizeof(int) ? (Tcl_GetStringFromObj)(objPtr, (int *)sizePtr) : (TclGetStringFromObj)(objPtr, (size_t *)sizePtr))
+#define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
+	(sizeof(*sizePtr) <= sizeof(int) ? (Tcl_GetByteArrayFromObj)(objPtr, (int *)sizePtr) : TclGetByteArrayFromObj(objPtr, (size_t *)sizePtr))
+#define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
+	(sizeof(*sizePtr) <= sizeof(int) ? (Tcl_GetUnicodeFromObj)(objPtr, (int *)sizePtr) : TclGetUnicodeFromObj(objPtr, (size_t *)sizePtr))
+#define Tcl_GetUnicode(objPtr) \
+	(Tcl_GetUnicodeFromObj)(objPtr, NULL)
+#endif
+
 #undef Tcl_NewLongObj
 #define Tcl_NewLongObj(value) Tcl_NewWideIntObj((long)(value))
 #undef Tcl_NewIntObj
@@ -4124,8 +4172,6 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_SetIntObj(objPtr, value)	Tcl_SetWideIntObj((objPtr), (int)(value))
 #undef Tcl_SetLongObj
 #define Tcl_SetLongObj(objPtr, value)	Tcl_SetWideIntObj((objPtr), (long)(value))
-#undef Tcl_GetUnicode
-#define Tcl_GetUnicode(objPtr)	Tcl_GetUnicodeFromObj((objPtr), NULL)
 #undef Tcl_BackgroundError
 #define Tcl_BackgroundError(interp)	Tcl_BackgroundException((interp), TCL_ERROR)
 #undef Tcl_StringMatch

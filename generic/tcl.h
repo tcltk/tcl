@@ -1093,7 +1093,7 @@ typedef struct Tcl_DString {
 #define TCL_LINK_CHARS		15
 #define TCL_LINK_BINARY		16
 #define TCL_LINK_READ_ONLY	0x80
-
+
 /*
  *----------------------------------------------------------------------------
  * Forward declarations of Tcl_HashTable and related types.
