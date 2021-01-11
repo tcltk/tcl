@@ -22,6 +22,11 @@
 #define copysign _copysign
 #endif
 
+#ifndef PRIx64
+#   define PRIx64 TCL_LL_MODIFIER "x"
+#endif
+
+
 /*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
  * floating point; of these, only IEEE-754 can represent NaN. IEEE-754 can be
