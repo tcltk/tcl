@@ -4140,7 +4140,7 @@ Tcl_WriteChars(
     }
 
     objPtr = Tcl_NewStringObj(src, len);
-    src = (char *) TclGetByteArrayFromObj(objPtr, &len);
+    src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
     result = WriteBytes(chanPtr, src, len);
     TclDecrRefCount(objPtr);
     return result;
@@ -4192,10 +4192,10 @@ Tcl_WriteObj(
 	return TCL_IO_FAILURE;
     }
     if (statePtr->encoding == NULL) {
-	src = (char *) TclGetByteArrayFromObj(objPtr, &srcLen);
+	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &srcLen);
 	return WriteBytes(chanPtr, src, srcLen);
     } else {
-	src = TclGetStringFromObj(objPtr, &srcLen);
+	src = Tcl_GetStringFromObj(objPtr, &srcLen);
 	return WriteChars(chanPtr, src, srcLen);
     }
 }
@@ -4573,7 +4573,7 @@ Tcl_GetsObj(
      * newline in the available input.
      */
 
-    (void)TclGetStringFromObj(objPtr, &oldLength);
+    (void)Tcl_GetStringFromObj(objPtr, &oldLength);
     oldFlags = statePtr->inputEncodingFlags;
     oldState = statePtr->inputEncodingState;
     oldRemoved = BUFFER_PADDING;
@@ -4956,7 +4956,7 @@ TclGetsObjBinary(
      * newline in the available input.
      */
 
-    byteArray = TclGetByteArrayFromObj(objPtr, &byteLen);
+    byteArray = Tcl_GetByteArrayFromObj(objPtr, &byteLen);
     oldFlags = statePtr->inputEncodingFlags;
     oldRemoved = BUFFER_PADDING;
     oldLength = byteLen;
@@ -6108,7 +6108,7 @@ ReadChars(
     int factor = *factorPtr;
     int dstLimit = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
 
-    (void) TclGetStringFromObj(objPtr, &numBytes);
+    (void) Tcl_GetStringFromObj(objPtr, &numBytes);
     Tcl_AppendToObj(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
 	size_t size;
@@ -9612,7 +9612,7 @@ CopyData(
 	    buffer = csPtr->buffer;
 	    sizeb = size;
 	} else {
-	    buffer = TclGetStringFromObj(bufObj, &sizeb);
+	    buffer = Tcl_GetStringFromObj(bufObj, &sizeb);
 	}
 
 	if (outBinary || sameEncoding) {

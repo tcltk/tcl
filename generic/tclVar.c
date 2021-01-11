@@ -665,7 +665,7 @@ TclObjLookupVarEx(
 	 */
 
 	size_t len;
-	const char *part1 = TclGetStringFromObj(part1Ptr, &len);
+	const char *part1 = Tcl_GetStringFromObj(part1Ptr, &len);
 
 	if ((len > 1) && (part1[len - 1] == ')')) {
 	    const char *part2 = strchr(part1, '(');
@@ -848,7 +848,7 @@ TclLookupSimpleVar(
     ResolverScheme *resPtr;
     int isNew, i, result;
     size_t varLen;
-    const char *varName = TclGetStringFromObj(varNamePtr, &varLen);
+    const char *varName = Tcl_GetStringFromObj(varNamePtr, &varLen);
 
     varPtr = NULL;
     varNsPtr = NULL;		/* Set non-NULL if a nonlocal variable. */
@@ -983,7 +983,7 @@ TclLookupSimpleVar(
 		Tcl_Obj *objPtr = *objPtrPtr;
 
 		if (objPtr) {
-		    localNameStr = TclGetStringFromObj(objPtr, &localLen);
+		    localNameStr = Tcl_GetStringFromObj(objPtr, &localLen);
 
 		    if ((varLen == localLen) && (varName[0] == localNameStr[0])
 			&& !memcmp(varName, localNameStr, varLen)) {

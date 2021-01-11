@@ -1017,12 +1017,12 @@ ProcedureMethodCompiledVarConnect(
      * either.
      */
 
-    varName = TclGetStringFromObj(infoPtr->variableObj, &varLen);
+    varName = Tcl_GetStringFromObj(infoPtr->variableObj, &varLen);
     if (contextPtr->callPtr->chain[contextPtr->index]
 	    .mPtr->declaringClassPtr != NULL) {
 	FOREACH_STRUCT(privateVar, contextPtr->callPtr->chain[contextPtr->index]
 		.mPtr->declaringClassPtr->privateVariables) {
-	    match = TclGetStringFromObj(privateVar->variableObj, &len);
+	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
 		variableObj = privateVar->fullNameObj;
 		cacheIt = 0;
@@ -1031,7 +1031,7 @@ ProcedureMethodCompiledVarConnect(
 	}
 	FOREACH(variableObj, contextPtr->callPtr->chain[contextPtr->index]
 		.mPtr->declaringClassPtr->variables) {
-	    match = TclGetStringFromObj(variableObj, &len);
+	    match = Tcl_GetStringFromObj(variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
 		cacheIt = 0;
 		goto gotMatch;
@@ -1039,7 +1039,7 @@ ProcedureMethodCompiledVarConnect(
 	}
     } else {
 	FOREACH_STRUCT(privateVar, contextPtr->oPtr->privateVariables) {
-	    match = TclGetStringFromObj(privateVar->variableObj, &len);
+	    match = Tcl_GetStringFromObj(privateVar->variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
 		variableObj = privateVar->fullNameObj;
 		cacheIt = 1;
@@ -1047,7 +1047,7 @@ ProcedureMethodCompiledVarConnect(
 	    }
 	}
 	FOREACH(variableObj, contextPtr->oPtr->variables) {
-	    match = TclGetStringFromObj(variableObj, &len);
+	    match = Tcl_GetStringFromObj(variableObj, &len);
 	    if ((len == varLen) && !memcmp(match, varName, len)) {
 		cacheIt = 1;
 		goto gotMatch;
@@ -1187,7 +1187,7 @@ MethodErrorHandler(
     CallContext *contextPtr = (CallContext *)((Interp *) interp)->varFramePtr->clientData;
     Method *mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
     const char *objectName, *kindName, *methodName =
-	    TclGetStringFromObj(mPtr->namePtr, &nameLen);
+	    Tcl_GetStringFromObj(mPtr->namePtr, &nameLen);
     Object *declarerPtr;
 
     if (mPtr->declaringObjectPtr != NULL) {
@@ -1201,7 +1201,7 @@ MethodErrorHandler(
 	kindName = "class";
     }
 
-    objectName = TclGetStringFromObj(TclOOObjectName(interp, declarerPtr),
+    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
 	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)",
@@ -1232,7 +1232,7 @@ ConstructorErrorHandler(
 	kindName = "class";
     }
 
-    objectName = TclGetStringFromObj(TclOOObjectName(interp, declarerPtr),
+    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
 	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" constructor line %d)", kindName,
@@ -1262,7 +1262,7 @@ DestructorErrorHandler(
 	kindName = "class";
     }
 
-    objectName = TclGetStringFromObj(TclOOObjectName(interp, declarerPtr),
+    objectName = Tcl_GetStringFromObj(TclOOObjectName(interp, declarerPtr),
 	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" destructor line %d)", kindName,

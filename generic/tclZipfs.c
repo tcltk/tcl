@@ -228,7 +228,7 @@ typedef struct ZipFile {
 typedef struct ZipEntry {
     char *name;			/* The full pathname of the virtual file */
     ZipFile *zipFilePtr;	/* The ZIP file holding this virtual file */
-    long long offset;		/* Data offset into memory mapped ZIP file */
+    size_t offset;		/* Data offset into memory mapped ZIP file */
     int numBytes;		/* Uncompressed size of the virtual file */
     int numCompressedBytes;	/* Compressed size of the virtual file */
     int compressMethod;		/* Compress method */
@@ -3035,7 +3035,7 @@ ZipFSListObjCmd(
     }
     if (objc == 3) {
 	size_t n;
-	char *what = TclGetStringFromObj(objv[1], &n);
+	char *what = Tcl_GetStringFromObj(objv[1], &n);
 
 	if ((n >= 2) && (strncmp(what, "-glob", n) == 0)) {
 	    pattern = TclGetString(objv[2]);
@@ -3884,7 +3884,7 @@ ZipChannelOpen(
     }
 
   wrapchan:
-    sprintf(cname, "zipfs_%" TCL_LL_MODIFIER "x_%d", z->offset,
+    sprintf(cname, "zipfs_%" TCL_Z_MODIFIER "x_%d", z->offset,
 	    ZipFS.idCount++);
     z->zipFilePtr->numOpen++;
     Unlock();
@@ -4130,13 +4130,13 @@ ZipFSMatchInDirectoryProc(
      * The prefix that gets prepended to results.
      */
 
-    prefix = TclGetStringFromObj(pathPtr, &prefixLen);
+    prefix = Tcl_GetStringFromObj(pathPtr, &prefixLen);
 
     /*
      * The (normalized) path we're searching.
      */
 
-    path = TclGetStringFromObj(normPathPtr, &len);
+    path = Tcl_GetStringFromObj(normPathPtr, &len);
 
     Tcl_DStringInit(&dsPref);
     Tcl_DStringAppend(&dsPref, prefix, prefixLen);
@@ -4308,7 +4308,7 @@ ZipFSPathInFilesystemProc(
 	return -1;
     }
 
-    path = TclGetStringFromObj(pathPtr, &len);
+    path = Tcl_GetStringFromObj(pathPtr, &len);
     if (strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) != 0) {
 	return -1;
     }

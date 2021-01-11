@@ -1369,7 +1369,7 @@ ReflectInput(
         goto invalid;
     }
 
-    bytev = TclGetByteArrayFromObj(resObj, &bytec);
+    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 
     if ((size_t)toRead < bytec) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_toomuch);
@@ -1993,7 +1993,7 @@ ReflectGetOption(
         goto error;
     } else {
 	size_t len;
-	const char *str = TclGetStringFromObj(resObj, &len);
+	const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 	if (len) {
 	    TclDStringAppendLiteral(dsPtr, " ");
@@ -2368,7 +2368,7 @@ InvokeTclMethod(
 
 	    if (result != TCL_ERROR) {
 		size_t cmdLen;
-		const char *cmdString = TclGetStringFromObj(cmd, &cmdLen);
+		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
 		Tcl_ResetResult(rcPtr->interp);
@@ -3039,7 +3039,7 @@ ForwardProc(
 	    size_t bytec = 0;		/* Number of returned bytes */
 	    unsigned char *bytev;	/* Array of returned bytes */
 
-	    bytev = TclGetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 
 	    if (paramPtr->input.toRead < bytec) {
 		ForwardSetStaticError(paramPtr, msg_read_toomuch);
@@ -3236,7 +3236,7 @@ ForwardProc(
 		ForwardSetDynamicError(paramPtr, buf);
 	    } else {
 		size_t len;
-		const char *str = TclGetStringFromObj(resObj, &len);
+		const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 		if (len) {
 		    TclDStringAppendLiteral(paramPtr->getOpt.value, " ");
@@ -3335,7 +3335,7 @@ ForwardSetObjError(
     Tcl_Obj *obj)
 {
     size_t len;
-    const char *msgStr = TclGetStringFromObj(obj, &len);
+    const char *msgStr = Tcl_GetStringFromObj(obj, &len);
 
     len++;
     ForwardSetDynamicError(paramPtr, Tcl_Alloc(len));
