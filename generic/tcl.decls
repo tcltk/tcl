@@ -147,7 +147,7 @@ declare 32 {
 	    int *boolPtr)
 }
 declare 33 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -174,7 +174,7 @@ declare 40 {
     const Tcl_ObjType *Tcl_GetObjType(const char *typeName)
 }
 declare 41 {
-    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    char *TclGetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 42 {
     void Tcl_InvalidateStringRep(Tcl_Obj *objPtr)
@@ -1604,7 +1604,7 @@ declare 433 {
 
 # introduced in 8.4a3
 declare 434 {
-    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 
 # TIP#15 (math function introspection) dkf
@@ -1815,10 +1815,10 @@ declare 490 {
     Tcl_StatBuf *Tcl_AllocStatBuf(void)
 }
 declare 491 {
-    Tcl_WideInt Tcl_Seek(Tcl_Channel chan, Tcl_WideInt offset, int mode)
+    long long Tcl_Seek(Tcl_Channel chan, long long offset, int mode)
 }
 declare 492 {
-    Tcl_WideInt Tcl_Tell(Tcl_Channel chan)
+    long long Tcl_Tell(Tcl_Channel chan)
 }
 
 # TIP#91 (back-compat enhancements for channels) dkf
@@ -2090,7 +2090,7 @@ declare 559 {
 
 # TIP #208 ('chan' command) jeffh
 declare 560 {
-    int Tcl_TruncateChannel(Tcl_Channel chan, Tcl_WideInt length)
+    int Tcl_TruncateChannel(Tcl_Channel chan, long long length)
 }
 declare 561 {
     Tcl_DriverTruncateProc *Tcl_ChannelTruncateProc(
@@ -2241,19 +2241,19 @@ declare 595 {
     int Tcl_GetDeviceTypeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 596 {
-    Tcl_WideInt Tcl_GetAccessTimeFromStat(const Tcl_StatBuf *statPtr)
+    long long Tcl_GetAccessTimeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 597 {
-    Tcl_WideInt Tcl_GetModificationTimeFromStat(const Tcl_StatBuf *statPtr)
+    long long Tcl_GetModificationTimeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 598 {
-    Tcl_WideInt Tcl_GetChangeTimeFromStat(const Tcl_StatBuf *statPtr)
+    long long Tcl_GetChangeTimeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 599 {
-    Tcl_WideUInt Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr)
+    unsigned long long Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 600 {
-    Tcl_WideUInt Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr)
+    unsigned long long Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 601 {
     unsigned Tcl_GetBlockSizeFromStat(const Tcl_StatBuf *statPtr)
@@ -2465,6 +2465,17 @@ declare 647 {
 declare 648 {
     int *Tcl_UtfToUniCharDString(const char *src,
 	    size_t length, Tcl_DString *dsPtr)
+}
+
+# TIP #481
+declare 651 {
+    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 652 {
+    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 653 {
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

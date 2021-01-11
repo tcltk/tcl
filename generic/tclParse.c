@@ -2200,7 +2200,7 @@ TclSubstTokens(
 		    if (result == 0) {
 			clPos = 0;
 		    } else {
-			(void)TclGetStringFromObj(result, &clPos);
+			(void)Tcl_GetStringFromObj(result, &clPos);
 		    }
 
 		    if (numCL >= maxNumCL) {
@@ -2476,7 +2476,7 @@ TclObjCommandComplete(
 				 * check. */
 {
     size_t length;
-    const char *script = TclGetStringFromObj(objPtr, &length);
+    const char *script = Tcl_GetStringFromObj(objPtr, &length);
 
     return CommandComplete(script, length);
 }

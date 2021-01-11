@@ -20,8 +20,6 @@ catch [list package require -exact tcl::test [info patchlevel]]
 
 # Initialise the test constraints
 
-testConstraint winVista 0
-testConstraint winXP 0
 testConstraint testvolumetype [llength [info commands testvolumetype]]
 testConstraint testfile       [llength [info commands testfile]]
 testConstraint testchmod      [llength [info commands testchmod]]
@@ -56,14 +54,6 @@ proc cleanup {args} {
 	if {$x != ""} {
 	    catch {file delete -force -- {*}$x}
 	}
-    }
-}
-
-if {[testConstraint win]} {
-    if {$::tcl_platform(osVersion) >= 5.0} {
-	testConstraint winVista 1
-    } else {
-	testConstraint winXP 1
     }
 }
 
@@ -206,11 +196,6 @@ test winFCmd-1.12 {TclpRenameFile: errno: EACCES} -setup {
 } -cleanup {
     catch {close $fd}
 } -returnCodes error -result EACCES
-test winFCmd-1.13 {TclpRenameFile: errno: EACCES} -setup {
-    cleanup
-} -constraints {win winXP testfile} -body {
-    testfile mv nul tf1
-} -returnCodes error -result EINVAL
 test winFCmd-1.15 {TclpRenameFile: errno: EEXIST} -setup {
     cleanup
 } -constraints {win testfile} -body {
@@ -234,11 +219,6 @@ test winFCmd-1.18 {TclpRenameFile: srcAttr == -1} -setup {
 } -constraints {win testfile} -body {
     testfile mv tf1 tf2
 } -returnCodes error -result ENOENT
-test winFCmd-1.19 {TclpRenameFile: errno == EACCES} -setup {
-    cleanup
-} -constraints {win winXP testfile} -body {
-    testfile mv nul tf1
-} -returnCodes error -result EINVAL
 test winFCmd-1.20 {TclpRenameFile: src is dir} -setup {
     cleanup
 } -constraints {win testfile} -body {
@@ -447,11 +427,6 @@ test winFCmd-2.6 {TclpCopyFile: errno: ENOENT} -setup {
 } -cleanup {
     cleanup
 } -returnCodes error -result ENOENT
-test winFCmd-2.7 {TclpCopyFile: errno: EACCES} -setup {
-    cleanup
-} -constraints {win winXP testfile} -body {
-    testfile cp nul tf1
-} -returnCodes error -result EINVAL
 test winFCmd-2.10 {TclpCopyFile: CopyFile succeeds} -setup {
     cleanup
 } -constraints {win testfile} -body {
@@ -642,7 +617,7 @@ test winFCmd-5.1 {TclpCopyDirectory: calls TraverseWinTree} -setup {
 
 test winFCmd-6.1 {TclpRemoveDirectory: errno: EACCES} -setup {
     cleanup
-} -constraints {winVista testfile testchmod knownMsvcBug notInCIenv} -body {
+} -constraints {win testfile testchmod knownMsvcBug notInCIenv} -body {
     file mkdir td1
     testchmod 0 td1
     testfile rmdir td1
@@ -696,7 +671,7 @@ test winFCmd-6.8 {TclpRemoveDirectory: RemoveDirectory fails} -setup {
 } -result {1 {tf1 ENOTDIR}}
 test winFCmd-6.9 {TclpRemoveDirectory: errno == EACCES} -setup {
     cleanup
-} -constraints {winVista testfile testchmod knownMsvcBug notInCIenv} -body {
+} -constraints {win testfile testchmod knownMsvcBug notInCIenv} -body {
     file mkdir td1
     testchmod 0 td1
     testfile rmdir td1
@@ -714,7 +689,7 @@ test winFCmd-6.11 {TclpRemoveDirectory: attr == -1} -setup {
 } -returnCodes error -match regexp -result {^/ E(ACCES|EXIST)$}
 test winFCmd-6.13 {TclpRemoveDirectory: write-protected} -setup {
     cleanup
-} -constraints {winVista testfile testchmod knownMsvcBug notInCIenv} -body {
+} -constraints {win testfile testchmod knownMsvcBug notInCIenv} -body {
     file mkdir td1
     testchmod 0 td1
     testfile rmdir td1
@@ -943,7 +918,7 @@ test winFCmd-9.1 {TraversalDelete: DOTREE_F} -setup {
 } -result {}
 test winFCmd-9.3 {TraversalDelete: DOTREE_PRED} -setup {
     cleanup
-} -constraints {winVista testfile testchmod knownMsvcBug notInCIenv} -body {
+} -constraints {win testfile testchmod knownMsvcBug notInCIenv} -body {
     file mkdir td1/td2
     testchmod 0 td1
     testfile rmdir -force td1
@@ -1056,15 +1031,7 @@ test winFCmd-12.4 {ConvertFileNameFormat} -constraints {win} -setup {
 test winFCmd-12.5 {ConvertFileNameFormat: absolute path} -body {
     list [file attributes / -longname] [file attributes \\ -longname]
 } -constraints {win} -result {/ /}
-test winFCmd-12.6 {ConvertFileNameFormat: absolute path with drive} -setup {
-    catch {file delete -force -- c:/TclTmpC.1}
-} -constraints {win winXP} -body {
-    createfile c:/TclTmpC.1 {}
-    string tolower [file attributes c:/TclTmpC.1 -longname]
-} -cleanup {
-    file delete -force -- c:/TclTmpC.1
-} -result [string tolower {c:/TclTmpC.1}]
-test winFCmd-12.6.2 {ConvertFileNameFormat: absolute path with drive (in temp folder)} -setup {
+test winFCmd-12.6 {ConvertFileNameFormat: absolute path with drive (in temp folder)} -setup {
     catch {file delete -force -- $::env(TEMP)/td1}
 } -constraints {win} -body {
     createfile $::env(TEMP)/td1 {}

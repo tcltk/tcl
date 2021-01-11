@@ -32,16 +32,6 @@ typedef struct TCLEXCEPTION_REGISTRATION {
 #endif
 
 /*
- * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
- * quotation marks), JOIN joins two arguments.
- */
-
-#ifndef STRINGIFY
-#  define STRINGIFY(x) STRINGIFY1(x)
-#  define STRINGIFY1(x) #x
-#endif
-
-/*
  * Declarations of functions that are not accessible by way of the
  * stubs table.
  */

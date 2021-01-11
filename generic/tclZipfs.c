@@ -228,7 +228,7 @@ typedef struct ZipFile {
 typedef struct ZipEntry {
     char *name;			/* The full pathname of the virtual file */
     ZipFile *zipFilePtr;	/* The ZIP file holding this virtual file */
-    Tcl_WideInt offset;		/* Data offset into memory mapped ZIP file */
+    size_t offset;		/* Data offset into memory mapped ZIP file */
     int numBytes;		/* Uncompressed size of the virtual file */
     int numCompressedBytes;	/* Compressed size of the virtual file */
     int compressMethod;		/* Compress method */
@@ -332,7 +332,7 @@ static int		ZipChannelClose(void *instanceData,
 static Tcl_DriverGetHandleProc	ZipChannelGetFile;
 static int		ZipChannelRead(void *instanceData, char *buf,
 			    int toRead, int *errloc);
-static Tcl_WideInt ZipChannelWideSeek(void *instanceData, Tcl_WideInt offset,
+static long long ZipChannelWideSeek(void *instanceData, long long offset,
 			    int mode, int *errloc);
 static void		ZipChannelWatchChannel(void *instanceData,
 			    int mask);
@@ -2044,7 +2044,7 @@ ZipAddFile(
     const char *zpath;
     int crc, flush, zpathlen;
     size_t nbyte, nbytecompr, len, olen, align = 0;
-    Tcl_WideInt pos[3];
+    long long pos[3];
     int mtime = 0, isNew, compMeth;
     unsigned long keys[3], keys0[3];
     char obuf[4096];
@@ -2398,7 +2398,7 @@ ZipFSMkZipOrImgObjCmd(
     Tcl_Channel out;
     int pwlen = 0, count, ret = TCL_ERROR, lobjc;
     size_t len, slen = 0, i = 0;
-    Tcl_WideInt pos[3];
+    long long pos[3];
     Tcl_Obj **lobjv, *list = NULL;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
@@ -3035,7 +3035,7 @@ ZipFSListObjCmd(
     }
     if (objc == 3) {
 	size_t n;
-	char *what = TclGetStringFromObj(objv[1], &n);
+	char *what = Tcl_GetStringFromObj(objv[1], &n);
 
 	if ((n >= 2) && (strncmp(what, "-glob", n) == 0)) {
 	    pattern = TclGetString(objv[2]);
@@ -3430,10 +3430,10 @@ ZipChannelWrite(
  *-------------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 ZipChannelWideSeek(
     void *instanceData,
-    Tcl_WideInt offset,
+    long long offset,
     int mode,
     int *errloc)
 {
@@ -3884,7 +3884,7 @@ ZipChannelOpen(
     }
 
   wrapchan:
-    sprintf(cname, "zipfs_%" TCL_LL_MODIFIER "x_%d", z->offset,
+    sprintf(cname, "zipfs_%" TCL_Z_MODIFIER "x_%d", z->offset,
 	    ZipFS.idCount++);
     z->zipFilePtr->numOpen++;
     Unlock();
@@ -4130,13 +4130,13 @@ ZipFSMatchInDirectoryProc(
      * The prefix that gets prepended to results.
      */
 
-    prefix = TclGetStringFromObj(pathPtr, &prefixLen);
+    prefix = Tcl_GetStringFromObj(pathPtr, &prefixLen);
 
     /*
      * The (normalized) path we're searching.
      */
 
-    path = TclGetStringFromObj(normPathPtr, &len);
+    path = Tcl_GetStringFromObj(normPathPtr, &len);
 
     Tcl_DStringInit(&dsPref);
     Tcl_DStringAppend(&dsPref, prefix, prefixLen);
@@ -4308,7 +4308,7 @@ ZipFSPathInFilesystemProc(
 	return -1;
     }
 
-    path = TclGetStringFromObj(pathPtr, &len);
+    path = Tcl_GetStringFromObj(pathPtr, &len);
     if (strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) != 0) {
 	return -1;
     }

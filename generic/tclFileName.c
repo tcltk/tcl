@@ -587,7 +587,7 @@ Tcl_SplitPath(
     size = 1;
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
-	(void)TclGetStringFromObj(eltPtr, &len);
+	(void)Tcl_GetStringFromObj(eltPtr, &len);
 	size += len + 1;
     }
 
@@ -607,7 +607,7 @@ Tcl_SplitPath(
     p = (char *) &(*argvPtr)[(*argcPtr) + 1];
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
-	str = TclGetStringFromObj(eltPtr, &len);
+	str = Tcl_GetStringFromObj(eltPtr, &len);
 	memcpy(p, str, len + 1);
 	p += len+1;
     }
@@ -870,7 +870,7 @@ TclpNativeJoinPath(
     const char *p;
     const char *start;
 
-    start = TclGetStringFromObj(prefix, &length);
+    start = Tcl_GetStringFromObj(prefix, &length);
 
     /*
      * Remove the ./ from tilde prefixed elements, and drive-letter prefixed
@@ -898,7 +898,7 @@ TclpNativeJoinPath(
 
 	if (length > 0 && (start[length-1] != '/')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    (void)TclGetStringFromObj(prefix, &length);
+	    (void)Tcl_GetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
@@ -934,7 +934,7 @@ TclpNativeJoinPath(
 	if ((length > 0) &&
 		(start[length-1] != '/') && (start[length-1] != ':')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    (void)TclGetStringFromObj(prefix, &length);
+	    (void)Tcl_GetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
@@ -1018,7 +1018,7 @@ Tcl_JoinPath(
      * Store the result.
      */
 
-    resultStr = TclGetStringFromObj(resultObj, &len);
+    resultStr = Tcl_GetStringFromObj(resultObj, &len);
     Tcl_DStringAppend(resultPtr, resultStr, len);
     Tcl_DecrRefCount(resultObj);
 
@@ -1380,7 +1380,7 @@ Tcl_GlobObjCmd(
     if (dir == PATH_GENERAL) {
 	size_t pathlength;
 	const char *last;
-	const char *first = TclGetStringFromObj(pathOrDir,&pathlength);
+	const char *first = Tcl_GetStringFromObj(pathOrDir,&pathlength);
 
 	/*
 	 * Find the last path separator in the path
@@ -1483,7 +1483,7 @@ Tcl_GlobObjCmd(
 	    const char *str;
 
 	    Tcl_ListObjIndex(interp, typePtr, length, &look);
-	    str = TclGetStringFromObj(look, &len);
+	    str = Tcl_GetStringFromObj(look, &len);
 	    if (strcmp("readonly", str) == 0) {
 		globTypes->perm |= TCL_GLOB_PERM_RONLY;
 	    } else if (strcmp("hidden", str) == 0) {
@@ -1979,7 +1979,7 @@ TclGlob(
 	    Tcl_Panic("Called TclGlob with TCL_GLOBMODE_TAILS and pathPrefix==NULL");
 	}
 
-	pre = TclGetStringFromObj(pathPrefix, &prefixLen);
+	pre = Tcl_GetStringFromObj(pathPrefix, &prefixLen);
 	if (prefixLen > 0
 		&& (strchr(separators, pre[prefixLen-1]) == NULL)) {
 	    /*
@@ -1997,7 +1997,7 @@ TclGlob(
 	Tcl_ListObjGetElements(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
 	    size_t len;
-	    const char *oldStr = TclGetStringFromObj(objv[i], &len);
+	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
 	    Tcl_Obj *elem;
 
 	    if (len == prefixLen) {
@@ -2349,7 +2349,7 @@ DoGlob(
 			Tcl_Obj *fixme, *newObj;
 
 			Tcl_ListObjIndex(NULL, matchesObj, repair, &fixme);
-			bytes = TclGetStringFromObj(fixme, &numBytes);
+			bytes = Tcl_GetStringFromObj(fixme, &numBytes);
 			newObj = Tcl_NewStringObj(bytes+2, numBytes-2);
 			Tcl_ListObjReplace(NULL, matchesObj, repair, 1,
 				1, &newObj);
@@ -2387,7 +2387,7 @@ DoGlob(
 	Tcl_DStringAppend(&append, pattern, p-pattern);
 
 	if (pathPtr != NULL) {
-	    (void) TclGetStringFromObj(pathPtr, &length);
+	    (void) Tcl_GetStringFromObj(pathPtr, &length);
 	} else {
 	    length = 0;
 	}
@@ -2433,7 +2433,7 @@ DoGlob(
 		 */
 
 		size_t len;
-		const char *joined = TclGetStringFromObj(joinedPtr,&len);
+		const char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
 
 		if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
@@ -2470,7 +2470,7 @@ DoGlob(
 	     */
 
 	    size_t len;
-	    const char *joined = TclGetStringFromObj(joinedPtr,&len);
+	    const char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
 
 	    if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		if (Tcl_FSGetPathType(pathPtr) != TCL_PATH_VOLUME_RELATIVE) {
@@ -2580,44 +2580,44 @@ Tcl_GetDeviceTypeFromStat(
     return (int) statPtr->st_rdev;
 }
 
-Tcl_WideInt
+long long
 Tcl_GetAccessTimeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideInt) statPtr->st_atime;
+    return (long long) statPtr->st_atime;
 }
 
-Tcl_WideInt
+long long
 Tcl_GetModificationTimeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideInt) statPtr->st_mtime;
+    return (long long) statPtr->st_mtime;
 }
 
-Tcl_WideInt
+long long
 Tcl_GetChangeTimeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideInt) statPtr->st_ctime;
+    return (long long) statPtr->st_ctime;
 }
 
-Tcl_WideUInt
+unsigned long long
 Tcl_GetSizeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideUInt) statPtr->st_size;
+    return (unsigned long long) statPtr->st_size;
 }
 
-Tcl_WideUInt
+unsigned long long
 Tcl_GetBlocksFromStat(
     const Tcl_StatBuf *statPtr)
 {
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-    return (Tcl_WideUInt) statPtr->st_blocks;
+    return (unsigned long long) statPtr->st_blocks;
 #else
     unsigned blksize = Tcl_GetBlockSizeFromStat(statPtr);
 
-    return ((Tcl_WideUInt) statPtr->st_size + blksize - 1) / blksize;
+    return ((unsigned long long) statPtr->st_size + blksize - 1) / blksize;
 #endif
 }
 

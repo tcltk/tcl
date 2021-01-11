@@ -1956,7 +1956,7 @@ Tcl_ConcatObj(
 	if (TclListObjIsCanonical(objPtr)) {
 	    continue;
 	}
-	(void)TclGetStringFromObj(objPtr, &length);
+	(void)Tcl_GetStringFromObj(objPtr, &length);
 	if (length > 0) {
 	    break;
 	}
@@ -1993,7 +1993,7 @@ Tcl_ConcatObj(
      */
 
     for (i = 0;  i < objc;  i++) {
-	element = TclGetStringFromObj(objv[i], &elemLength);
+	element = Tcl_GetStringFromObj(objv[i], &elemLength);
 	bytesNeeded += elemLength;
     }
 
@@ -2010,7 +2010,7 @@ Tcl_ConcatObj(
     for (i = 0;  i < objc;  i++) {
 	size_t triml, trimr;
 
-	element = TclGetStringFromObj(objv[i], &elemLength);
+	element = Tcl_GetStringFromObj(objv[i], &elemLength);
 
 	/* Trim away the leading/trailing whitespace. */
 	triml = TclTrim(element, elemLength, CONCAT_TRIM_SET,
@@ -2493,15 +2493,15 @@ TclStringMatchObj(
     if (TclHasIntRep(strObj, &tclStringType) || (strObj->typePtr == NULL)) {
 	Tcl_UniChar *udata, *uptn;
 
-	udata = TclGetUnicodeFromObj(strObj, &length);
-	uptn  = TclGetUnicodeFromObj(ptnObj, &plen);
+	udata = Tcl_GetUnicodeFromObj(strObj, &length);
+	uptn  = Tcl_GetUnicodeFromObj(ptnObj, &plen);
 	match = TclUniCharMatch(udata, length, uptn, plen, flags);
     } else if (TclIsPureByteArray(strObj) && TclIsPureByteArray(ptnObj)
 		&& !flags) {
 	unsigned char *data, *ptn;
 
-	data = TclGetByteArrayFromObj(strObj, &length);
-	ptn  = TclGetByteArrayFromObj(ptnObj, &plen);
+	data = Tcl_GetByteArrayFromObj(strObj, &length);
+	ptn  = Tcl_GetByteArrayFromObj(ptnObj, &plen);
 	match = TclByteArrayMatch(data, length, ptn, plen, 0);
     } else {
 	match = Tcl_StringCaseMatch(TclGetString(strObj),
@@ -2629,7 +2629,7 @@ TclDStringAppendObj(
     Tcl_Obj *objPtr)
 {
     size_t length;
-    const char *bytes = TclGetStringFromObj(objPtr, &length);
+    const char *bytes = Tcl_GetStringFromObj(objPtr, &length);
 
     return Tcl_DStringAppend(dsPtr, bytes, length);
 }
@@ -3452,7 +3452,7 @@ GetEndOffsetFromObj(
     while ((irPtr = TclFetchIntRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjIntRep ir;
 	size_t length;
-	const char *bytes = TclGetStringFromObj(objPtr, &length);
+	const char *bytes = Tcl_GetStringFromObj(objPtr, &length);
 
 	if (*bytes != 'e') {
 	    int numType;

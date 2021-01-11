@@ -362,7 +362,7 @@ Tcl_AppendElement(
     if (Tcl_IsShared(iPtr->objResultPtr)) {
 	Tcl_SetObjResult(interp, Tcl_DuplicateObj(iPtr->objResultPtr));
     }
-    bytes = TclGetStringFromObj(iPtr->objResultPtr, &length);
+    bytes = Tcl_GetStringFromObj(iPtr->objResultPtr, &length);
     if (TclNeedSpace(bytes, bytes + length)) {
 	Tcl_AppendToObj(iPtr->objResultPtr, " ", 1);
     }
@@ -723,7 +723,7 @@ TclProcessReturn(
 	if (valuePtr != NULL) {
 	    size_t length;
 
-	    (void) TclGetStringFromObj(valuePtr, &length);
+	    (void) Tcl_GetStringFromObj(valuePtr, &length);
 	    if (length) {
 		iPtr->errorInfo = valuePtr;
 		Tcl_IncrRefCount(iPtr->errorInfo);

@@ -76,15 +76,16 @@ typedef struct {
 #define PROCESSOR_ARCHITECTURE_UNKNOWN		0xFFFF
 #endif
 
+
 /*
  * The following arrays contain the human readable strings for the
  * processor values.
  */
 
-#define NUMPROCESSORS 11
+#define NUMPROCESSORS 15
 static const char *const processors[NUMPROCESSORS] = {
     "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
-    "amd64", "ia32_on_win64"
+    "amd64", "ia32_on_win64", "neutral", "arm64", "arm32_on_win64", "ia32_on_arm64"
 };
 
 /*
@@ -208,7 +209,7 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = TclGetStringFromObj(pathPtr, &length);
+    bytes = Tcl_GetStringFromObj(pathPtr, &length);
     *lengthPtr = length++;
     *valuePtr = (char *)Tcl_Alloc(length);
     memcpy(*valuePtr, bytes, length);

@@ -481,7 +481,7 @@ Tcl_RegExpExecObj(
     regexpPtr->string = NULL;
     regexpPtr->objPtr = textObj;
 
-    udata = TclGetUnicodeFromObj(textObj, &length);
+    udata = Tcl_GetUnicodeFromObj(textObj, &length);
 
     if (offset > length) {
 	offset = length;
@@ -600,7 +600,7 @@ Tcl_GetRegExpFromObj(
     RegexpGetIntRep(objPtr, regexpPtr);
 
     if ((regexpPtr == NULL) || (regexpPtr->flags != flags)) {
-	pattern = TclGetStringFromObj(objPtr, &length);
+	pattern = Tcl_GetStringFromObj(objPtr, &length);
 
 	regexpPtr = CompileRegexp(interp, pattern, length, flags);
 	if (regexpPtr == NULL) {

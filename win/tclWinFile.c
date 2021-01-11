@@ -29,7 +29,7 @@
  */
 
 #define POSIX_EPOCH_AS_FILETIME	\
-	((Tcl_WideInt) 116444736 * (Tcl_WideInt) 1000000000)
+	((long long) 116444736 * (long long) 1000000000)
 
 /*
  * Declarations for 'link' related information. This information should come
@@ -922,7 +922,7 @@ TclpMatchInDirectory(
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
 	    size_t length = 0;
-	    const char *str = TclGetStringFromObj(norm, &length);
+	    const char *str = Tcl_GetStringFromObj(norm, &length);
 
 	    native = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
 
@@ -982,7 +982,7 @@ TclpMatchInDirectory(
 	 */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = TclGetStringFromObj(fileNamePtr, &dirLength);
+	dirName = Tcl_GetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	lastChar = dirName[dirLength -1];
@@ -2083,8 +2083,8 @@ NativeStat(
             statPtr->st_ctime = ToCTime(data.ftCreationTime);
         }
 	attr = data.dwFileAttributes;
-	statPtr->st_size = ((Tcl_WideInt) data.nFileSizeLow) |
-		(((Tcl_WideInt) data.nFileSizeHigh) << 32);
+	statPtr->st_size = ((long long) data.nFileSizeLow) |
+		(((long long) data.nFileSizeHigh) << 32);
 
 	/*
 	 * On Unix, for directories, nlink apparently depends on the number of
@@ -2131,8 +2131,8 @@ NativeStat(
 
 	attr = data.dwFileAttributes;
 
-	statPtr->st_size = ((Tcl_WideInt) data.nFileSizeLow) |
-		(((Tcl_WideInt) data.nFileSizeHigh) << 32);
+	statPtr->st_size = ((long long) data.nFileSizeLow) |
+		(((long long) data.nFileSizeHigh) << 32);
 	statPtr->st_atime = ToCTime(data.ftLastAccessTime);
 	statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
 	statPtr->st_ctime = ToCTime(data.ftCreationTime);
@@ -2294,7 +2294,7 @@ ToCTime(
     convertedTime.HighPart = (LONG) fileTime.dwHighDateTime;
 
     return (__time64_t) ((convertedTime.QuadPart -
-	    (Tcl_WideInt) POSIX_EPOCH_AS_FILETIME) / (Tcl_WideInt) 10000000);
+	    (long long) POSIX_EPOCH_AS_FILETIME) / (long long) 10000000);
 }
 
 /*
@@ -2808,7 +2808,7 @@ TclpObjNormalizePath(
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
 	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, -1);
-	    path = TclGetStringFromObj(tmpPathPtr, &length);
+	    path = Tcl_GetStringFromObj(tmpPathPtr, &length);
 	    Tcl_SetStringObj(pathPtr, path, length);
 	    Tcl_DecrRefCount(tmpPathPtr);
 	} else {
@@ -2893,7 +2893,7 @@ TclWinVolumeRelativeNormalize(
 	 */
 
 	size_t cwdLen;
-	const char *drive = TclGetStringFromObj(useThisCwd, &cwdLen);
+	const char *drive = Tcl_GetStringFromObj(useThisCwd, &cwdLen);
 	char drive_cur = path[0];
 
 	if (drive_cur >= 'a') {
@@ -3066,7 +3066,7 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = TclGetStringFromObj(validPathPtr, &len);
+    str = Tcl_GetStringFromObj(validPathPtr, &len);
 
     if (strlen(str) != len) {
 	/*

@@ -3199,19 +3199,19 @@ MODULE_SCOPE void	TclFinalizeThreadDataThread(void);
 MODULE_SCOPE void	TclFinalizeThreadStorage(void);
 
 #ifdef TCL_WIDE_CLICKS
-MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
-MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
+MODULE_SCOPE long long TclpGetWideClicks(void);
+MODULE_SCOPE double	TclpWideClicksToNanoseconds(long long clicks);
 MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 #else
 #   ifdef _WIN32
 #	define TCL_WIDE_CLICKS 1
-MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
+MODULE_SCOPE long long TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 #	define		TclpWideClicksToNanoseconds(clicks) \
 				((double)(clicks) * TclpWideClickInMicrosec() * 1000)
 #   endif
 #endif
-MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
+MODULE_SCOPE long long TclpGetMicroseconds(void);
 
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
@@ -4405,39 +4405,6 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString(objPtr))
-
-#if 0
-   static inline char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
-      char *response = Tcl_GetString(objPtr);
-      *(lenPtr) = objPtr->length;
-      return response;
-   }
-   static inline Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
-      Tcl_UniChar *response = Tcl_GetUnicodeFromObj(objPtr, NULL);
-      *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
-      return response;
-   }
-   static inline unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
-      unsigned char *response = Tcl_GetByteArrayFromObj(objPtr, NULL);
-      if (response) {
-          *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1 + 1);
-      }
-      return response;
-   }
-#else
-#define TclGetStringFromObj(objPtr, lenPtr) \
-    (((objPtr)->bytes \
-	    ? NULL : Tcl_GetString((objPtr)), \
-	    *(lenPtr) = (objPtr)->length, (objPtr)->bytes))
-#define TclGetUnicodeFromObj(objPtr, lenPtr) \
-    (Tcl_GetUnicodeFromObj((objPtr), NULL), \
-	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-	    Tcl_GetUnicodeFromObj((objPtr), NULL))
-#define TclGetByteArrayFromObj(objPtr, lenPtr) \
-    (Tcl_GetByteArrayFromObj((objPtr), NULL) ? \
-	(*(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1 + 1), \
-	(unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 3)) : NULL)
-#endif
 
 /*
  *----------------------------------------------------------------
