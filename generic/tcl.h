@@ -354,10 +354,6 @@ typedef long LONG;
  *
  * The following invariant should hold for any long value 'longVal':
  *	longVal == Tcl_WideAsLong(Tcl_LongAsWide(longVal))
- *
- * Note on converting between Tcl_WideInt and strings. This implementation (in
- * tclObj.c) depends on the function
- * sprintf(...,"%" TCL_LL_MODIFIER "d",...).
  */
 
 #if !defined(TCL_WIDE_INT_TYPE) && !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__GNUC__)
@@ -1097,7 +1093,7 @@ typedef struct Tcl_DString {
 #define TCL_LINK_CHARS		15
 #define TCL_LINK_BINARY		16
 #define TCL_LINK_READ_ONLY	0x80
-
+
 /*
  *----------------------------------------------------------------------------
  * Forward declarations of Tcl_HashTable and related types.

@@ -1005,7 +1005,7 @@ brenext(
 	if (LASTTYPE(EMPTY) || LASTTYPE('(') || LASTTYPE('^')) {
 	    RETV(PLAIN, c);
 	}
-	RET('*');
+	RETV('*', 1);
 	break;
     case CHR('['):
 	if (HAVE(6) &&	*(v->now+0) == CHR('[') &&

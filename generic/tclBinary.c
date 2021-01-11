@@ -496,7 +496,7 @@ TclGetBytesFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetByteArrayFromObj --
+ * Tcl_GetByteArrayFromObj/TclGetByteArrayFromObj --
  *
  *	Attempt to get the array of bytes from the Tcl object. If the object
  *	is not already a ByteArray object, an attempt will be made to convert
@@ -511,6 +511,7 @@ TclGetBytesFromObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetByteArrayFromObj
 unsigned char *
 Tcl_GetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
@@ -532,6 +533,35 @@ Tcl_GetByteArrayFromObj(
 
     if (lengthPtr != NULL) {
 	*lengthPtr = baPtr->used;
+    }
+    return (unsigned char *) baPtr->bytes;
+}
+
+unsigned char *
+TclGetByteArrayFromObj(
+    Tcl_Obj *objPtr,		/* The ByteArray object. */
+    size_t *lengthPtr)		/* If non-NULL, filled with length of the
+				 * array of bytes in the ByteArray object. */
+{
+    ByteArray *baPtr;
+    const Tcl_ObjIntRep *irPtr;
+    unsigned char *result = TclGetBytesFromObj(NULL, objPtr, (int *)NULL);
+
+    if (result) {
+	return result;
+    }
+
+    irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+    assert(irPtr != NULL);
+
+    baPtr = GET_BYTEARRAY(irPtr);
+
+    if (lengthPtr != NULL) {
+#if TCL_MAJOR_VERSION > 8
+	*lengthPtr = baPtr->used;
+#else
+	*lengthPtr = ((size_t)(unsigned)(baPtr->used + 1)) - 1;
+#endif
     }
     return baPtr->bytes;
 }
@@ -2180,6 +2210,7 @@ FormatNumber(
 	if (TclGetWideBitsFromObj(interp, src, &wvalue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	wvalue &= ULLONG_MAX;
 	if (NeedReversing(type)) {
 	    *(*cursorPtr)++ = UCHAR(wvalue);
 	    *(*cursorPtr)++ = UCHAR(wvalue >> 8);
@@ -2290,7 +2321,7 @@ ScanNumber(
     long value;
     float fvalue;
     double dvalue;
-    Tcl_WideUInt uwvalue;
+    uint64_t uwvalue;
 
     /*
      * We cannot rely on the compiler to properly sign extend integer values
@@ -2416,23 +2447,23 @@ ScanNumber(
     case 'W':
     case 'm':
 	if (NeedReversing(type)) {
-	    uwvalue = ((Tcl_WideUInt) buffer[0])
-		    | (((Tcl_WideUInt) buffer[1]) << 8)
-		    | (((Tcl_WideUInt) buffer[2]) << 16)
-		    | (((Tcl_WideUInt) buffer[3]) << 24)
-		    | (((Tcl_WideUInt) buffer[4]) << 32)
-		    | (((Tcl_WideUInt) buffer[5]) << 40)
-		    | (((Tcl_WideUInt) buffer[6]) << 48)
-		    | (((Tcl_WideUInt) buffer[7]) << 56);
+	    uwvalue = ((uint64_t) buffer[0])
+		    | (((uint64_t) buffer[1]) << 8)
+		    | (((uint64_t) buffer[2]) << 16)
+		    | (((uint64_t) buffer[3]) << 24)
+		    | (((uint64_t) buffer[4]) << 32)
+		    | (((uint64_t) buffer[5]) << 40)
+		    | (((uint64_t) buffer[6]) << 48)
+		    | (((uint64_t) buffer[7]) << 56);
 	} else {
-	    uwvalue = ((Tcl_WideUInt) buffer[7])
-		    | (((Tcl_WideUInt) buffer[6]) << 8)
-		    | (((Tcl_WideUInt) buffer[5]) << 16)
-		    | (((Tcl_WideUInt) buffer[4]) << 24)
-		    | (((Tcl_WideUInt) buffer[3]) << 32)
-		    | (((Tcl_WideUInt) buffer[2]) << 40)
-		    | (((Tcl_WideUInt) buffer[1]) << 48)
-		    | (((Tcl_WideUInt) buffer[0]) << 56);
+	    uwvalue = ((uint64_t) buffer[7])
+		    | (((uint64_t) buffer[6]) << 8)
+		    | (((uint64_t) buffer[5]) << 16)
+		    | (((uint64_t) buffer[4]) << 24)
+		    | (((uint64_t) buffer[3]) << 32)
+		    | (((uint64_t) buffer[2]) << 40)
+		    | (((uint64_t) buffer[1]) << 48)
+		    | (((uint64_t) buffer[0]) << 56);
 	}
 	if (flags & BINARY_UNSIGNED) {
 	    Tcl_Obj *bigObj = NULL;

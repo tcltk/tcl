@@ -22,6 +22,11 @@
 #define copysign _copysign
 #endif
 
+#ifndef PRIx64
+#   define PRIx64 TCL_LL_MODIFIER "x"
+#endif
+
+
 /*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
  * floating point; of these, only IEEE-754 can represent NaN. IEEE-754 can be
@@ -257,34 +262,34 @@ static const int log2pow5[27] = {
 };
 #define N_LOG2POW5 27
 
-static const Tcl_WideUInt wuipow5[27] = {
-    (Tcl_WideUInt) 1,		/* 5**0 */
-    (Tcl_WideUInt) 5,
-    (Tcl_WideUInt) 25,
-    (Tcl_WideUInt) 125,
-    (Tcl_WideUInt) 625,
-    (Tcl_WideUInt) 3125,	/* 5**5 */
-    (Tcl_WideUInt) 3125*5,
-    (Tcl_WideUInt) 3125*25,
-    (Tcl_WideUInt) 3125*125,
-    (Tcl_WideUInt) 3125*625,
-    (Tcl_WideUInt) 3125*3125,	/* 5**10 */
-    (Tcl_WideUInt) 3125*3125*5,
-    (Tcl_WideUInt) 3125*3125*25,
-    (Tcl_WideUInt) 3125*3125*125,
-    (Tcl_WideUInt) 3125*3125*625,
-    (Tcl_WideUInt) 3125*3125*3125, /* 5**15 */
-    (Tcl_WideUInt) 3125*3125*3125*5,
-    (Tcl_WideUInt) 3125*3125*3125*25,
-    (Tcl_WideUInt) 3125*3125*3125*125,
-    (Tcl_WideUInt) 3125*3125*3125*625,
-    (Tcl_WideUInt) 3125*3125*3125*3125,	/* 5**20 */
-    (Tcl_WideUInt) 3125*3125*3125*3125*5,
-    (Tcl_WideUInt) 3125*3125*3125*3125*25,
-    (Tcl_WideUInt) 3125*3125*3125*3125*125,
-    (Tcl_WideUInt) 3125*3125*3125*3125*625,
-    (Tcl_WideUInt) 3125*3125*3125*3125*3125,  /* 5**25 */
-    (Tcl_WideUInt) 3125*3125*3125*3125*3125*5 /* 5**26 */
+static const unsigned long long wuipow5[27] = {
+    1ULL,		/* 5**0 */
+    5ULL,
+    25ULL,
+    125ULL,
+    625ULL,
+    3125ULL,	/* 5**5 */
+    3125ULL*5,
+    3125ULL*25,
+    3125ULL*125,
+    3125ULL*625,
+    3125ULL*3125,	/* 5**10 */
+    3125ULL*3125*5,
+    3125ULL*3125*25,
+    3125ULL*3125*125,
+    3125ULL*3125*625,
+    3125ULL*3125*3125, /* 5**15 */
+    3125ULL*3125*3125*5,
+    3125ULL*3125*3125*25,
+    3125ULL*3125*3125*125,
+    3125ULL*3125*3125*625,
+    3125ULL*3125*3125*3125,	/* 5**20 */
+    3125ULL*3125*3125*3125*5,
+    3125ULL*3125*3125*3125*25,
+    3125ULL*3125*3125*3125*125,
+    3125ULL*3125*3125*3125*625,
+    3125ULL*3125*3125*3125*3125,  /* 5**25 */
+    3125ULL*3125*3125*3125*3125*5 /* 5**26 */
 };
 
 /*
@@ -3113,13 +3118,13 @@ ShorteningInt64Conversion(
 {
     char *retval = (char *)ckalloc(len + 1);
 				/* Output buffer. */
-    Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
+    unsigned long long b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
 				 * converted. */
-    Tcl_WideUInt S = wuipow5[s5] << s2;
+    unsigned long long S = wuipow5[s5] << s2;
 				/* Denominator of the fraction being
 				 * converted. */
-    Tcl_WideUInt mplus, mminus;	/* Ranges for testing whether the result is
+    unsigned long long mplus, mminus;	/* Ranges for testing whether the result is
 				 * within roundoff of being exact. */
     int digit;			/* Current output digit. */
     char *s = retval;		/* Cursor in the output buffer. */
@@ -3276,10 +3281,10 @@ StrictInt64Conversion(
 {
     char *retval = (char *)ckalloc(len + 1);
 				/* Output buffer. */
-    Tcl_WideUInt b = (bw * wuipow5[b5]) << b2;
+    unsigned long long b = (bw * wuipow5[b5]) << b2;
 				/* Numerator of the fraction being
 				 * converted. */
-    Tcl_WideUInt S = wuipow5[s5] << s2;
+    unsigned long long S = wuipow5[s5] << s2;
 				/* Denominator of the fraction being
 				 * converted. */
     int digit;			/* Current output digit. */
@@ -5251,23 +5256,23 @@ TclFormatNaN(
 #else
     union {
 	double dv;
-	unsigned long long iv;
+	uint64_t iv;
     } bitwhack;
 
     bitwhack.dv = value;
     if (n770_fp) {
 	bitwhack.iv = Nokia770Twiddle(bitwhack.iv);
     }
-    if (bitwhack.iv & (1ULL << 63)) {
-	bitwhack.iv &= ~ (1ULL << 63);
+    if (bitwhack.iv & (UINT64_C(1) << 63)) {
+	bitwhack.iv &= ~ (UINT64_C(1) << 63);
 	*buffer++ = '-';
     }
     *buffer++ = 'N';
     *buffer++ = 'a';
     *buffer++ = 'N';
-    bitwhack.iv &= ((1ULL) << 51) - 1;
+    bitwhack.iv &= ((UINT64_C(1)) << 51) - 1;
     if (bitwhack.iv != 0) {
-	sprintf(buffer, "(%" TCL_LL_MODIFIER "x)", bitwhack.iv);
+	sprintf(buffer, "(%" PRIx64 ")", bitwhack.iv);
     } else {
 	*buffer = '\0';
     }
