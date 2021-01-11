@@ -228,7 +228,7 @@ typedef struct ZipFile {
 typedef struct ZipEntry {
     char *name;			/* The full pathname of the virtual file */
     ZipFile *zipFilePtr;	/* The ZIP file holding this virtual file */
-    long long offset;		/* Data offset into memory mapped ZIP file */
+    size_t offset;		/* Data offset into memory mapped ZIP file */
     int numBytes;		/* Uncompressed size of the virtual file */
     int numCompressedBytes;	/* Compressed size of the virtual file */
     int compressMethod;		/* Compress method */
@@ -3910,7 +3910,7 @@ ZipChannelOpen(
     }
 
   wrapchan:
-    sprintf(cname, "zipfs_%" TCL_LL_MODIFIER "x_%d", z->offset,
+    sprintf(cname, "zipfs_%" TCL_Z_MODIFIER "x_%d", z->offset,
 	    ZipFS.idCount++);
     z->zipFilePtr->numOpen++;
     Unlock();
