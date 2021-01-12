@@ -253,13 +253,13 @@ Tcl_Stat(
     Tcl_DecrRefCount(pathPtr);
     if (ret != -1) {
 #ifndef TCL_WIDE_INT_IS_LONG
-	Tcl_WideInt tmp1, tmp2, tmp3 = 0;
+	long long tmp1, tmp2, tmp3 = 0;
 
 # define OUT_OF_RANGE(x) \
-	(((Tcl_WideInt)(x)) < LONG_MIN || \
-	 ((Tcl_WideInt)(x)) > LONG_MAX)
+	(((long long)(x)) < LONG_MIN || \
+	 ((long long)(x)) > LONG_MAX)
 # define OUT_OF_URANGE(x) \
-	(((Tcl_WideUInt)(x)) > ((Tcl_WideUInt)ULONG_MAX))
+	(((unsigned long long)(x)) > ((unsigned long long)ULONG_MAX))
 
 	/*
 	 * Perform the result-buffer overflow check manually.
@@ -271,10 +271,10 @@ Tcl_Stat(
 	 * Tcl_WideInt.
 	 */
 
-	tmp1 = (Tcl_WideInt) buf.st_ino;
-	tmp2 = (Tcl_WideInt) buf.st_size;
+	tmp1 = (long long) buf.st_ino;
+	tmp2 = (long long) buf.st_size;
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-	tmp3 = (Tcl_WideInt) buf.st_blocks;
+	tmp3 = (long long) buf.st_blocks;
 #endif
 
 	if (OUT_OF_URANGE(tmp1) || OUT_OF_RANGE(tmp2) || OUT_OF_RANGE(tmp3)) {

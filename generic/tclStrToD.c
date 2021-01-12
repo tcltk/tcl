@@ -104,11 +104,9 @@ typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
  */
 
 #ifdef __hppa
-#   define NAN_START	0x7FF4
-#   define NAN_MASK	(((Tcl_WideUInt) 1) << 50)
+#   define NAN_START	UINT64_C(0x7FF4)
 #else
-#   define NAN_START	0x7FF8
-#   define NAN_MASK	(((Tcl_WideUInt) 1) << 51)
+#   define NAN_START	UINT64_C(0x7FF8)
 #endif
 
 /*
@@ -369,7 +367,7 @@ static double		Pow10TimesFrExp(int exponent, double fraction,
 			    int *machexp);
 static double		SafeLdExp(double fraction, int exponent);
 #ifdef IEEE_FLOATING_POINT
-static Tcl_WideUInt	Nokia770Twiddle(Tcl_WideUInt w);
+static uint64_t	Nokia770Twiddle(uint64_t w);
 #endif
 
 /*
@@ -1908,16 +1906,15 @@ MakeNaN(
     Tcl_WideUInt tags)		/* Tag bits to put in the NaN. */
 {
     union {
-	Tcl_WideUInt iv;
+	uint64_t iv;
 	double dv;
     } theNaN;
 
-    theNaN.iv = tags;
-    theNaN.iv &= (((Tcl_WideUInt) 1) << 51) - 1;
+    theNaN.iv = (uint64_t)tags & ((UINT64_C(1) << 51) - 1);
     if (signum) {
-	theNaN.iv |= ((Tcl_WideUInt) (0x8000 | NAN_START)) << 48;
+	theNaN.iv |= ((UINT64_C(0x8000) | NAN_START)) << 48;
     } else {
-	theNaN.iv |= ((Tcl_WideUInt) NAN_START) << 48;
+	theNaN.iv |= (NAN_START) << 48;
     }
     if (n770_fp) {
 	theNaN.iv = Nokia770Twiddle(theNaN.iv);
@@ -4611,7 +4608,7 @@ TclInitDoubleConversion(void)
 #ifdef IEEE_FLOATING_POINT
     union {
 	double dv;
-	Tcl_WideUInt iv;
+	uint64_t iv;
     } bitwhack;
 #endif
     mp_err err = MP_OKAY;
@@ -5290,9 +5287,9 @@ TclFormatNaN(
  *----------------------------------------------------------------------
  */
 #ifdef IEEE_FLOATING_POINT
-static Tcl_WideUInt
+static uint64_t
 Nokia770Twiddle(
-    Tcl_WideUInt w)		/* Number to transpose. */
+    uint64_t w)		/* Number to transpose. */
 {
     return (((w >> 32) & 0xFFFFFFFF) | (w << 32));
 }
