@@ -3654,7 +3654,13 @@ GetBignumFromObj(
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclIntType) {
-	    if (mp_init_i64(bignumValue,
+		if ((sizeof(Tcl_WideInt) > sizeof(int64_t)) && ((objPtr->internalRep.wideValue > INT64_MAX)
+			|| (objPtr->internalRep.wideValue < INT64_MIN))) {
+		    if (mp_init(bignumValue) != MP_OKAY || mp_unpack(bignumValue, 1, 1,
+			    sizeof(Tcl_WideInt), 0, 0, &objPtr->internalRep.wideValue) != MP_OKAY) {
+			return TCL_ERROR;
+		    }
+		} else if (mp_init_i64(bignumValue,
 		    objPtr->internalRep.wideValue) != MP_OKAY) {
 		return TCL_ERROR;
 	    }
