@@ -313,7 +313,7 @@ eval "TCL_STUB_LIB_SPEC=\"-L${libdir} ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_BUILD_STUB_LIB_PATH=\"`$CYGPATH $(pwd)`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
 
-if test ${SHARED_BUILD} = 0 ; then
+if test ${SHARED_BUILD} = 0 -o "$GCC" != "yes" ; then
  eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
 else
  eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${DLLSUFFIX}.a\""
