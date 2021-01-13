@@ -916,14 +916,20 @@ Tcl_ScanObjCmd(
 	    }
 	    if (flags & SCAN_LONGER) {
 		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
-		    wideValue = WIDE_MAX;
+		    wideValue = INT64_MAX;
 		    if (TclGetString(objPtr)[0] == '-') {
-			wideValue = WIDE_MIN;
+			wideValue = INT64_MIN;
+		    }
+		} else if (sizeof(Tcl_WideInt) > sizeof(int64_t)) {
+		    if (wideValue > INT64_MAX) {
+			wideValue = INT64_MAX;
+		    } else if (wideValue < INT64_MIN) {
+			wideValue = INT64_MIN;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
 		    mp_int big;
-		    if (mp_init_u64(&big, (Tcl_WideUInt)wideValue) != MP_OKAY) {
+		    if (mp_init_u64(&big, (uint64_t)wideValue) != MP_OKAY) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"insufficient memory to create bignum", -1));
 			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
