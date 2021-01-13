@@ -133,6 +133,7 @@ MODULE_SCOPE mp_err TclBN_mp_div_3(const mp_int *a, mp_int *q, mp_digit *r);
 #define mp_to_radix TclBN_mp_to_radix
 #define mp_to_ubin TclBN_mp_to_ubin
 #define mp_ubin_size TclBN_mp_ubin_size
+#define mp_unpack TclBN_mp_unpack
 #define mp_xor TclBN_mp_xor
 #define mp_zero TclBN_mp_zero
 #define s_mp_add TclBN_s_mp_add
@@ -313,7 +314,11 @@ TCLAPI void		TclBN_mp_set_u64(mp_int *a, uint64_t i);
 TCLAPI uint64_t		TclBN_mp_get_mag_u64(const mp_int *a) MP_WUR;
 /* 70 */
 TCLAPI void		TclBN_mp_set_i64(mp_int *a, int64_t i);
-/* Slot 71 is reserved */
+/* 71 */
+TCLAPI mp_err		TclBN_mp_unpack(mp_int *rop, size_t count,
+				mp_order order, size_t size,
+				mp_endian endian, size_t nails,
+				const void *op) MP_WUR;
 /* Slot 72 is reserved */
 /* Slot 73 is reserved */
 /* Slot 74 is reserved */
@@ -405,7 +410,7 @@ typedef struct TclTomMathStubs {
     void (*tclBN_mp_set_u64) (mp_int *a, uint64_t i); /* 68 */
     uint64_t (*tclBN_mp_get_mag_u64) (const mp_int *a) MP_WUR; /* 69 */
     void (*tclBN_mp_set_i64) (mp_int *a, int64_t i); /* 70 */
-    void (*reserved71)(void);
+    mp_err (*tclBN_mp_unpack) (mp_int *rop, size_t count, mp_order order, size_t size, mp_endian endian, size_t nails, const void *op) MP_WUR; /* 71 */
     void (*reserved72)(void);
     void (*reserved73)(void);
     void (*reserved74)(void);
@@ -550,7 +555,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_u64) /* 69 */
 #define TclBN_mp_set_i64 \
 	(tclTomMathStubsPtr->tclBN_mp_set_i64) /* 70 */
-/* Slot 71 is reserved */
+#define TclBN_mp_unpack \
+	(tclTomMathStubsPtr->tclBN_mp_unpack) /* 71 */
 /* Slot 72 is reserved */
 /* Slot 73 is reserved */
 /* Slot 74 is reserved */

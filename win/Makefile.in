@@ -414,6 +414,7 @@ TOMMATH_OBJS = \
 	bn_mp_to_ubin.${OBJEXT} \
 	bn_mp_to_radix.${OBJEXT} \
 	bn_mp_ubin_size.${OBJEXT} \
+	bn_mp_unpack.${OBJEXT} \
 	bn_mp_xor.${OBJEXT} \
 	bn_mp_zero.${OBJEXT} \
 	bn_s_mp_add.${OBJEXT} \
