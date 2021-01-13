@@ -204,7 +204,7 @@ eval "TCL_SRC_DIR=\"`cd $srcdir/..; $CYGPATH $(pwd)`\""
 
 eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
 
-if test ${SHARED_BUILD} = 0 ; then
+if test ${SHARED_BUILD} = 0 -o "$GCC" != "yes" ; then
  eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
 else
  eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${DLLSUFFIX}.a\""
