@@ -8184,7 +8184,13 @@ ExecuteExtendedBinaryMathOp(
 		 * Arguments are opposite sign; remainder is sum.
 		 */
 
-		err = mp_init_i64(&big1, w1);
+		if ((sizeof(Tcl_WideInt) > sizeof(int64_t)) && ((w1 > INT64_MAX)
+			|| (w1 < INT64_MIN))) {
+		    err = mp_init(&big1) != MP_OKAY || mp_unpack(&big1, 1, 1,
+			    sizeof(Tcl_WideInt), 0, 0, &w1);
+		} else {
+		    err = mp_init_i64(&big1, w1);
+		}
 		if (err == MP_OKAY) {
 		    err = mp_add(&big2, &big1, &big2);
 		    mp_clear(&big1);
@@ -8851,7 +8857,13 @@ ExecuteExtendedUnaryMathOp(
 	    if (w != WIDE_MIN) {
 		WIDE_RESULT(-w);
 	    }
-	    err = mp_init_i64(&big, w);
+	    if ((sizeof(Tcl_WideInt) > sizeof(int64_t)) && ((w > INT64_MAX)
+		    || (w < INT64_MIN))) {
+		err = mp_init(&big) != MP_OKAY || mp_unpack(&big, 1, 1,
+			sizeof(Tcl_WideInt), 0, 0, &w);
+	    } else {
+		err = mp_init_i64(&big, w);
+	    }
 	    if (err != MP_OKAY) {
 		return OUT_OF_MEMORY;
 	    }

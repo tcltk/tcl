@@ -4794,7 +4794,7 @@ Tcl_InitBignumFromDouble(
 	err = mp_init(b);
 	mp_zero(b);
     } else {
-	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
+	int64_t w = (int64_t) ldexp(fract, mantBits);
 	int shift = expt - mantBits;
 
 	err = mp_init_i64(b, w);
