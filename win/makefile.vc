@@ -390,6 +390,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_to_ubin.obj \
 	$(TMP_DIR)\bn_mp_to_radix.obj \
 	$(TMP_DIR)\bn_mp_ubin_size.obj \
+	$(TMP_DIR)\bn_mp_unpack.obj \
 	$(TMP_DIR)\bn_mp_xor.obj \
 	$(TMP_DIR)\bn_mp_zero.obj \
 	$(TMP_DIR)\bn_s_mp_add.obj \
