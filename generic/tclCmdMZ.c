@@ -1754,7 +1754,8 @@ StringIsCmd(
 	}
 	break;
     case STR_IS_WIDE:
-	if (TCL_OK == TclGetWideIntFromObj(NULL, objPtr, &w)) {
+	if (TCL_OK == TclGetWideIntFromObj(NULL, objPtr, &w) && (sizeof(Tcl_WideInt) <= sizeof(int64_t)
+		|| (((w <= INT64_MAX) && (w >= INT64_MIN))))) {
 	    break;
 	}
 

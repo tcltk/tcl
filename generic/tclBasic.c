@@ -8087,7 +8087,7 @@ ExprWideFunc(
 	return TCL_ERROR;
     }
     TclGetWideBitsFromObj(NULL, Tcl_GetObjResult(interp), &wResult);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wResult));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((int64_t)wResult));
     return TCL_OK;
 }
 
