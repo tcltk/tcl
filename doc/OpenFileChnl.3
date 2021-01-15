@@ -92,10 +92,10 @@ int
 int
 \fBTcl_OutputBuffered\fR(\fIchannel\fR)
 .sp
-Tcl_WideInt
+long long
 \fBTcl_Seek\fR(\fIchannel, offset, seekMode\fR)
 .sp
-Tcl_WideInt
+long long
 \fBTcl_Tell\fR(\fIchannel\fR)
 .sp
 int
@@ -190,7 +190,7 @@ A buffer containing the bytes to output to the channel.
 .AP int bytesToWrite in
 The number of bytes to consume from \fIcharBuf\fR or \fIbyteBuf\fR and
 output to the channel.
-.AP Tcl_WideInt offset in
+.AP "long long" offset in
 How far to move the access point in the channel at which the next input or
 output operation will be applied, measured in bytes from the position
 given by \fIseekMode\fR.  May be either positive or negative.
@@ -198,7 +198,7 @@ given by \fIseekMode\fR.  May be either positive or negative.
 Relative to which point to seek; used with \fIoffset\fR to calculate the new
 access point for the channel. Legal values are \fBSEEK_SET\fR,
 \fBSEEK_CUR\fR, and \fBSEEK_END\fR.
-.AP Tcl_WideInt length in
+.AP "long long" length in
 The (non-negative) length to truncate the channel the channel to.
 .AP "const char" *optionName in
 The name of an option applicable to this channel, such as \fB\-blocking\fR.

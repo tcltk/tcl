@@ -1176,6 +1176,7 @@ TeststringobjCmd(
 {
     Tcl_UniChar *unicode;
     int varIndex, option, i, length;
+    size_t size;
 #define MAX_STRINGS 11
     const char *index, *string, *strings[MAX_STRINGS+1];
     String *strPtr;
@@ -1308,12 +1309,12 @@ TeststringobjCmd(
 	     * is "copy on write".
 	     */
 
-	    string = Tcl_GetStringFromObj(objv[3], &length);
+	    string = Tcl_GetStringFromObj(objv[3], &size);
 	    if ((varPtr[varIndex] != NULL)
 		    && !Tcl_IsShared(varPtr[varIndex])) {
-		Tcl_SetStringObj(varPtr[varIndex], string, length);
+		Tcl_SetStringObj(varPtr[varIndex], string, size);
 	    } else {
-		SetVarToObj(varPtr, varIndex, Tcl_NewStringObj(string, length));
+		SetVarToObj(varPtr, varIndex, Tcl_NewStringObj(string, size));
 	    }
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
@@ -1365,18 +1366,18 @@ TeststringobjCmd(
 		SetVarToObj(varPtr, varIndex, Tcl_DuplicateObj(varPtr[varIndex]));
 	    }
 
-	    string = Tcl_GetStringFromObj(varPtr[varIndex], &length);
+	    string = Tcl_GetStringFromObj(varPtr[varIndex], &size);
 
 	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if ((i < 0) || (i > length)) {
+	    if ((i < 0) || ((size_t)i > size)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"index value out of range", -1));
 		return TCL_ERROR;
 	    }
 
-	    Tcl_AppendToObj(varPtr[varIndex], string + i, length - i);
+	    Tcl_AppendToObj(varPtr[varIndex], string + i, size - i);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 11:			/* appendself2 */
@@ -1396,18 +1397,18 @@ TeststringobjCmd(
 		SetVarToObj(varPtr, varIndex, Tcl_DuplicateObj(varPtr[varIndex]));
 	    }
 
-	    unicode = Tcl_GetUnicodeFromObj(varPtr[varIndex], &length);
+	    unicode = Tcl_GetUnicodeFromObj(varPtr[varIndex], &size);
 
 	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if ((i < 0) || (i > length)) {
+	    if ((i < 0) || ((size_t)i > size)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"index value out of range", -1));
 		return TCL_ERROR;
 	    }
 
-	    Tcl_AppendUnicodeToObj(varPtr[varIndex], unicode + i, length - i);
+	    Tcl_AppendUnicodeToObj(varPtr[varIndex], unicode + i, size - i);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
     }

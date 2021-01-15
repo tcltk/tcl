@@ -340,7 +340,7 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_mp_set_u64.o bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
 	bn_mp_signed_rsh.o \
-	bn_mp_to_ubin.o \
+	bn_mp_to_ubin.o bn_mp_unpack.o \
 	bn_s_mp_toom_mul.o bn_s_mp_toom_sqr.o bn_mp_to_radix.o \
 	bn_mp_ubin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
 	bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
@@ -1050,12 +1050,12 @@ install-libraries: libraries
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
 		"$(MODULE_INSTALL_DIR)/8.7/msgcat-1.7.1.tm"
-	@echo "Installing package tcltest 2.5.3 as a Tcl Module"
+	@echo "Installing package tcltest 2.5.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.3.tm"
-	@echo "Installing package platform 1.0.15 as a Tcl Module"
+		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.4.tm"
+	@echo "Installing package platform 1.0.16 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
-		"$(MODULE_INSTALL_DIR)/8.4/platform-1.0.15.tm"
+		"$(MODULE_INSTALL_DIR)/8.4/platform-1.0.16.tm"
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
 		"$(MODULE_INSTALL_DIR)/8.4/platform/shell-1.1.4.tm"
@@ -1739,6 +1739,9 @@ bn_mp_to_radix.o: $(TOMMATH_DIR)/bn_mp_to_radix.c $(MATHHDRS)
 
 bn_mp_ubin_size.o: $(TOMMATH_DIR)/bn_mp_ubin_size.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_ubin_size.c
+
+bn_mp_unpack.o: $(TOMMATH_DIR)/bn_mp_unpack.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_unpack.c
 
 bn_mp_xor.o: $(TOMMATH_DIR)/bn_mp_xor.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_xor.c

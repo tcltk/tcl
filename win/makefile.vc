@@ -393,6 +393,7 @@ TOMMATHOBJS = \
 	$(TMP_DIR)\bn_mp_to_ubin.obj \
 	$(TMP_DIR)\bn_mp_to_radix.obj \
 	$(TMP_DIR)\bn_mp_ubin_size.obj \
+	$(TMP_DIR)\bn_mp_unpack.obj \
 	$(TMP_DIR)\bn_mp_xor.obj \
 	$(TMP_DIR)\bn_mp_zero.obj \
 	$(TMP_DIR)\bn_s_mp_add.obj \
@@ -495,8 +496,8 @@ test: test-core test-pkgs
 test-core: setup $(TCLTEST) dlls
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.3 [list load "$(TCLDDELIB:\=/)"]
-		package ifneeded registry 1.3.5 [list load "$(TCLREGLIB:\=/)"]
+		package ifneeded dde 1.4.4 [list load "$(TCLDDELIB:\=/)"]
+		package ifneeded registry 1.3.6 [list load "$(TCLREGLIB:\=/)"]
 <<
 
 runtest: setup $(TCLTEST) dlls

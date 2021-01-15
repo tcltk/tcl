@@ -496,7 +496,7 @@ TclGetBytesFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetByteArrayFromObj --
+ * Tcl_GetByteArrayFromObj/TclGetByteArrayFromObj --
  *
  *	Attempt to get the array of bytes from the Tcl object. If the object
  *	is not already a ByteArray object, an attempt will be made to convert
@@ -511,6 +511,7 @@ TclGetBytesFromObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetByteArrayFromObj
 unsigned char *
 Tcl_GetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
@@ -532,6 +533,35 @@ Tcl_GetByteArrayFromObj(
 
     if (lengthPtr != NULL) {
 	*lengthPtr = baPtr->used;
+    }
+    return (unsigned char *) baPtr->bytes;
+}
+
+unsigned char *
+TclGetByteArrayFromObj(
+    Tcl_Obj *objPtr,		/* The ByteArray object. */
+    size_t *lengthPtr)		/* If non-NULL, filled with length of the
+				 * array of bytes in the ByteArray object. */
+{
+    ByteArray *baPtr;
+    const Tcl_ObjIntRep *irPtr;
+    unsigned char *result = TclGetBytesFromObj(NULL, objPtr, (int *)NULL);
+
+    if (result) {
+	return result;
+    }
+
+    irPtr = TclFetchIntRep(objPtr, &tclByteArrayType);
+    assert(irPtr != NULL);
+
+    baPtr = GET_BYTEARRAY(irPtr);
+
+    if (lengthPtr != NULL) {
+#if TCL_MAJOR_VERSION > 8
+	*lengthPtr = baPtr->used;
+#else
+	*lengthPtr = ((size_t)(unsigned)(baPtr->used + 1)) - 1;
+#endif
     }
     return baPtr->bytes;
 }

@@ -3,7 +3,8 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 
-AC_INIT(../generic/tcl.h)
+AC_INIT([tcl],[8.7])
+AC_CONFIG_SRCDIR([../generic/tcl.h])
 AC_PREREQ([2.69])
 
 # The following define is needed when building with Cygwin since newer
@@ -59,7 +60,6 @@ fi
 
 AC_PROG_CC
 AC_C_INLINE
-AC_HEADER_STDC
 
 AC_CHECK_TOOL(AR, ar)
 AC_CHECK_TOOL(RANLIB, ranlib)
@@ -219,17 +219,16 @@ AC_SUBST(INSTALL_MSGS)
 
 AC_CACHE_CHECK(for FINDEX_INFO_LEVELS in winbase.h,
     tcl_cv_findex_enums,
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
-],
-[
+]], [[
   FINDEX_INFO_LEVELS i;
   FINDEX_SEARCH_OPS j;
-],
-        tcl_cv_findex_enums=yes,
-        tcl_cv_findex_enums=no)
+]])],
+    [tcl_cv_findex_enums=yes],
+    [tcl_cv_findex_enums=no])
 )
 if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
@@ -240,17 +239,16 @@ fi
 
 AC_CACHE_CHECK(for intrinsics support in compiler,
     tcl_cv_intrinsics,
-AC_TRY_LINK([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 #include <intrin.h>
-],
-[
+]], [[
   __cpuidex(0,0,0);
-],
-        tcl_cv_intrinsics=yes,
-        tcl_cv_intrinsics=no)
+]])],
+    [tcl_cv_intrinsics=yes],
+    [tcl_cv_intrinsics=no])
 )
 if test "$tcl_cv_intrinsics" = "yes"; then
     AC_DEFINE(HAVE_INTRIN_H, 1,
@@ -261,11 +259,11 @@ fi
 
 AC_CACHE_CHECK(for wspiapi.h,
     tcl_cv_wspiapi_h,
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <wspiapi.h>
-], [],
-        tcl_cv_wspiapi_h=yes,
-        tcl_cv_wspiapi_h=no)
+]], [[]])],
+    [tcl_cv_wspiapi_h=yes],
+    [tcl_cv_wspiapi_h=no])
 )
 if test "$tcl_cv_wspiapi_h" = "yes"; then
     AC_DEFINE(HAVE_WSPIAPI_H, 1,
@@ -278,17 +276,16 @@ fi
 
 AC_CACHE_CHECK(for FINDEX_INFO_LEVELS in winbase.h,
     tcl_cv_findex_enums,
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
-],
-[
+]], [[
   FINDEX_INFO_LEVELS i;
   FINDEX_SEARCH_OPS j;
-],
-        tcl_cv_findex_enums=yes,
-        tcl_cv_findex_enums=no)
+]])],
+    [tcl_cv_findex_enums=yes],
+    [tcl_cv_findex_enums=no])
 )
 if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
@@ -330,7 +327,7 @@ eval "TCL_STUB_LIB_SPEC=\"-L${libdir} ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_BUILD_STUB_LIB_PATH=\"`$CYGPATH $(pwd)`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
 
-if test ${SHARED_BUILD} = 0 ; then
+if test ${SHARED_BUILD} = 0 -o "$GCC" != "yes" ; then
  eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
 else
  eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${DLLSUFFIX}.a\""
@@ -480,8 +477,9 @@ AC_SUBST(RC_DEFINE)
 AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 
-AC_OUTPUT(Makefile tclConfig.sh tclsh.exe.manifest)
+AC_CONFIG_FILES([Makefile tclConfig.sh tclsh.exe.manifest])
+AC_OUTPUT
 
 dnl Local Variables:
-dnl mode: autoconf;
+dnl mode: autoconf
 dnl End:
