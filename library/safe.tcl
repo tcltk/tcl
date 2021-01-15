@@ -980,7 +980,7 @@ proc ::safe::AliasSource {child args} {
     set replacementMsg "script error"
     set code [catch {
 	set f [open $realfile]
-	fconfigure $f -encoding $encoding -eofchar \032
+	fconfigure $f -encoding $encoding -eofchar "\032 {}"
 	set contents [read $f]
 	close $f
 	::interp eval $child [list info script $file]
