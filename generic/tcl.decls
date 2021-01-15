@@ -2408,6 +2408,17 @@ declare 649 {
 	    int *lengthPtr)
 }
 
+# TIP #481
+declare 651 {
+    char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 652 {
+    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 653 {
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
