@@ -606,7 +606,7 @@ namespace eval ::tcl::test::main {
 	catch {set f [open "|[list [interpreter]]" w+]}
 	catch {chan configure $f -blocking 0}
     } -body {
-	type $f "chan configure stdin -eofchar \\032
+	type $f "chan configure stdin -eofchar \"\\032 {}\"
 	    if 1 \{\n\032"
 	variable wait
 	chan event $f readable \
