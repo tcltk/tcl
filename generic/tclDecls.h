@@ -1464,10 +1464,10 @@ EXTERN void		Tcl_SetWideIntObj(Tcl_Obj *objPtr,
 /* 490 */
 EXTERN Tcl_StatBuf *	Tcl_AllocStatBuf(void);
 /* 491 */
-EXTERN Tcl_WideInt	Tcl_Seek(Tcl_Channel chan, Tcl_WideInt offset,
+EXTERN long long	Tcl_Seek(Tcl_Channel chan, long long offset,
 				int mode);
 /* 492 */
-EXTERN Tcl_WideInt	Tcl_Tell(Tcl_Channel chan);
+EXTERN long long	Tcl_Tell(Tcl_Channel chan);
 /* 493 */
 EXTERN Tcl_DriverWideSeekProc * Tcl_ChannelWideSeekProc(
 				const Tcl_ChannelType *chanTypePtr);
@@ -1665,7 +1665,7 @@ EXTERN int		Tcl_TakeBignumFromObj(Tcl_Interp *interp,
 				Tcl_Obj *obj, void *value);
 /* 560 */
 EXTERN int		Tcl_TruncateChannel(Tcl_Channel chan,
-				Tcl_WideInt length);
+				long long length);
 /* 561 */
 EXTERN Tcl_DriverTruncateProc * Tcl_ChannelTruncateProc(
 				const Tcl_ChannelType *chanTypePtr);
@@ -1771,16 +1771,16 @@ EXTERN int		Tcl_GetGroupIdFromStat(const Tcl_StatBuf *statPtr);
 /* 595 */
 EXTERN int		Tcl_GetDeviceTypeFromStat(const Tcl_StatBuf *statPtr);
 /* 596 */
-EXTERN Tcl_WideInt	Tcl_GetAccessTimeFromStat(const Tcl_StatBuf *statPtr);
+EXTERN long long	Tcl_GetAccessTimeFromStat(const Tcl_StatBuf *statPtr);
 /* 597 */
-EXTERN Tcl_WideInt	Tcl_GetModificationTimeFromStat(
+EXTERN long long	Tcl_GetModificationTimeFromStat(
 				const Tcl_StatBuf *statPtr);
 /* 598 */
-EXTERN Tcl_WideInt	Tcl_GetChangeTimeFromStat(const Tcl_StatBuf *statPtr);
+EXTERN long long	Tcl_GetChangeTimeFromStat(const Tcl_StatBuf *statPtr);
 /* 599 */
-EXTERN Tcl_WideUInt	Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr);
+EXTERN unsigned long long Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr);
 /* 600 */
-EXTERN Tcl_WideUInt	Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr);
+EXTERN unsigned long long Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr);
 /* 601 */
 EXTERN unsigned		Tcl_GetBlockSizeFromStat(const Tcl_StatBuf *statPtr);
 /* 602 */
@@ -2449,8 +2449,8 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_NewWideIntObj) (Tcl_WideInt wideValue); /* 488 */
     void (*tcl_SetWideIntObj) (Tcl_Obj *objPtr, Tcl_WideInt wideValue); /* 489 */
     Tcl_StatBuf * (*tcl_AllocStatBuf) (void); /* 490 */
-    Tcl_WideInt (*tcl_Seek) (Tcl_Channel chan, Tcl_WideInt offset, int mode); /* 491 */
-    Tcl_WideInt (*tcl_Tell) (Tcl_Channel chan); /* 492 */
+    long long (*tcl_Seek) (Tcl_Channel chan, long long offset, int mode); /* 491 */
+    long long (*tcl_Tell) (Tcl_Channel chan); /* 492 */
     Tcl_DriverWideSeekProc * (*tcl_ChannelWideSeekProc) (const Tcl_ChannelType *chanTypePtr); /* 493 */
     int (*tcl_DictObjPut) (Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Obj *keyPtr, Tcl_Obj *valuePtr); /* 494 */
     int (*tcl_DictObjGet) (Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Obj *keyPtr, Tcl_Obj **valuePtrPtr); /* 495 */
@@ -2518,7 +2518,7 @@ typedef struct TclStubs {
     void (*tcl_SetBignumObj) (Tcl_Obj *obj, void *value); /* 557 */
     int (*tcl_GetBignumFromObj) (Tcl_Interp *interp, Tcl_Obj *obj, void *value); /* 558 */
     int (*tcl_TakeBignumFromObj) (Tcl_Interp *interp, Tcl_Obj *obj, void *value); /* 559 */
-    int (*tcl_TruncateChannel) (Tcl_Channel chan, Tcl_WideInt length); /* 560 */
+    int (*tcl_TruncateChannel) (Tcl_Channel chan, long long length); /* 560 */
     Tcl_DriverTruncateProc * (*tcl_ChannelTruncateProc) (const Tcl_ChannelType *chanTypePtr); /* 561 */
     void (*tcl_SetChannelErrorInterp) (Tcl_Interp *interp, Tcl_Obj *msg); /* 562 */
     void (*tcl_GetChannelErrorInterp) (Tcl_Interp *interp, Tcl_Obj **msg); /* 563 */
@@ -2554,11 +2554,11 @@ typedef struct TclStubs {
     int (*tcl_GetUserIdFromStat) (const Tcl_StatBuf *statPtr); /* 593 */
     int (*tcl_GetGroupIdFromStat) (const Tcl_StatBuf *statPtr); /* 594 */
     int (*tcl_GetDeviceTypeFromStat) (const Tcl_StatBuf *statPtr); /* 595 */
-    Tcl_WideInt (*tcl_GetAccessTimeFromStat) (const Tcl_StatBuf *statPtr); /* 596 */
-    Tcl_WideInt (*tcl_GetModificationTimeFromStat) (const Tcl_StatBuf *statPtr); /* 597 */
-    Tcl_WideInt (*tcl_GetChangeTimeFromStat) (const Tcl_StatBuf *statPtr); /* 598 */
-    Tcl_WideUInt (*tcl_GetSizeFromStat) (const Tcl_StatBuf *statPtr); /* 599 */
-    Tcl_WideUInt (*tcl_GetBlocksFromStat) (const Tcl_StatBuf *statPtr); /* 600 */
+    long long (*tcl_GetAccessTimeFromStat) (const Tcl_StatBuf *statPtr); /* 596 */
+    long long (*tcl_GetModificationTimeFromStat) (const Tcl_StatBuf *statPtr); /* 597 */
+    long long (*tcl_GetChangeTimeFromStat) (const Tcl_StatBuf *statPtr); /* 598 */
+    unsigned long long (*tcl_GetSizeFromStat) (const Tcl_StatBuf *statPtr); /* 599 */
+    unsigned long long (*tcl_GetBlocksFromStat) (const Tcl_StatBuf *statPtr); /* 600 */
     unsigned (*tcl_GetBlockSizeFromStat) (const Tcl_StatBuf *statPtr); /* 601 */
     int (*tcl_SetEnsembleParameterList) (Tcl_Interp *interp, Tcl_Command token, Tcl_Obj *paramList); /* 602 */
     int (*tcl_GetEnsembleParameterList) (Tcl_Interp *interp, Tcl_Command token, Tcl_Obj **paramListPtr); /* 603 */

@@ -32,16 +32,6 @@ typedef struct TCLEXCEPTION_REGISTRATION {
 #endif
 
 /*
- * Windows version dependend functions
- */
-typedef struct TclWinProcs {
-    BOOL (WINAPI *cancelSynchronousIo)(HANDLE);
-    BOOLEAN (WINAPI *createSymbolicLink)(LPCWSTR, LPCWSTR, DWORD);
-} TclWinProcs;
-
-MODULE_SCOPE TclWinProcs tclWinProcs;
-
-/*
  * Declarations of functions that are not accessible by way of the
  * stubs table.
  */

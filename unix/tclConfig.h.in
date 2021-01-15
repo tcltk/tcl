@@ -139,7 +139,7 @@
 /* Compiler support for module scope symbols */
 #undef HAVE_HIDDEN
 
-/* Do we have the intptr_t type? */
+/* Define to 1 if the system has the type `intptr_t'. */
 #undef HAVE_INTPTR_T
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -289,7 +289,7 @@
 /* Is off64_t in <sys/types.h>? */
 #undef HAVE_TYPE_OFF64_T
 
-/* Do we have the uintptr_t type? */
+/* Define to 1 if the system has the type `uintptr_t'. */
 #undef HAVE_UINTPTR_T
 
 /* Define to 1 if you have the <unistd.h> header file. */
@@ -441,15 +441,8 @@
 /* Do 'long' and 'long long' have the same size (64-bit)? */
 #undef TCL_WIDE_INT_IS_LONG
 
-/* What type should be used to define wide integers? */
-#undef TCL_WIDE_INT_TYPE
-
 /* Tcl with external libtommath */
 #undef TCL_WITH_EXTERNAL_TOMMATH
-
-/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. This
-   macro is obsolete. */
-#undef TIME_WITH_SYS_TIME
 
 /* Is getcwd Posix-compliant? */
 #undef USEGETWD
@@ -526,9 +519,6 @@
 #undef inline
 #endif
 
-/* Signed integer type wide enough to hold a pointer. */
-#undef intptr_t
-
 /* Define to `int' if <sys/types.h> does not define. */
 #undef mode_t
 
@@ -544,13 +534,11 @@
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
 
-/* Unsigned integer type wide enough to hold a pointer. */
-#undef uintptr_t
-
 
     /* Undef unused package specific autoheader defines so that we can
      * include both tclConfig.h and tkConfig.h at the same time: */
     /* override */ #undef PACKAGE_NAME
-    /* override */ #undef PACKAGE_STRING
     /* override */ #undef PACKAGE_TARNAME
+    /* override */ #undef PACKAGE_VERSION
+    /* override */ #undef PACKAGE_STRING
     #endif /* _TCLCONFIG */

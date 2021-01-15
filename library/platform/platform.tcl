@@ -71,6 +71,7 @@ proc ::platform::generic {} {
 	    set cpu sparc
 	}
 	intel -
+	ia32* -
 	i*86* {
 	    set cpu ix86
 	}
@@ -404,7 +405,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.15
+package provide platform 1.0.16
 
 # ### ### ### ######### ######### #########
 ## Demo application
