@@ -298,7 +298,7 @@ SetTokensFromAny (
     Tcl_Obj *objPtr)	/* Value for which to generate Tcl_Token array by
 			 * parsing the string value */
 {
-    int numBytes;
+    size_t numBytes;
     const char *script = Tcl_GetStringFromObj(objPtr, &numBytes);
     TokenIntRep *tirPtr = (TokenIntRep *)Tcl_Alloc(sizeof(TokenIntRep));
 
@@ -2636,7 +2636,7 @@ TclSubstTokens(
 		    if (result == 0) {
 			clPos = 0;
 		    } else {
-			(void)TclGetStringFromObj(result, &clPos);
+			(void)Tcl_GetStringFromObj(result, &clPos);
 		    }
 
 		    if (numCL >= maxNumCL) {
@@ -2961,7 +2961,7 @@ TclObjCommandComplete(
 				 * check. */
 {
     size_t length;
-    const char *script = TclGetStringFromObj(objPtr, &length);
+    const char *script = Tcl_GetStringFromObj(objPtr, &length);
 
     return CommandComplete(script, length);
 }

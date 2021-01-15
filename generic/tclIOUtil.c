@@ -524,8 +524,8 @@ TclFSCwdPointerEquals(
 	size_t len1, len2;
 	const char *str1, *str2;
 
-	str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	str2 = TclGetStringFromObj(*pathPtrPtr, &len2);
+	str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	str2 = Tcl_GetStringFromObj(*pathPtrPtr, &len2);
 	if ((len1 == len2) && !memcmp(str1, str2, len1)) {
 	    /*
 	     * The values are equal but the objects are different.  Cache the
@@ -668,7 +668,7 @@ FsUpdateCwd(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
     if (cwdObj != NULL) {
-	str = TclGetStringFromObj(cwdObj, &len);
+	str = Tcl_GetStringFromObj(cwdObj, &len);
     }
 
     Tcl_MutexLock(&cwdMutex);
@@ -1157,8 +1157,8 @@ FsAddMountsToGlobResult(
 	    if (norm != NULL) {
 		const char *path, *mount;
 
-		mount = TclGetStringFromObj(mElt, &mlen);
-		path = TclGetStringFromObj(norm, &len);
+		mount = Tcl_GetStringFromObj(mElt, &mlen);
+		path = Tcl_GetStringFromObj(norm, &len);
 		if (path[len-1] == '/') {
 		    /*
 		     * Deal with the root of the volume.
@@ -1338,7 +1338,7 @@ TclFSNormalizeToUniquePath(
      * We check these first to avoid useless calls to the native filesystem's
      * normalizePathProc.
      */
-    path = TclGetStringFromObj(pathPtr, &i);
+    path = Tcl_GetStringFromObj(pathPtr, &i);
 
     if ( (i >= 3) && ( (path[0] == '/' && path[1] == '/')
 		    || (path[0] == '\\' && path[1] == '\\') ) ) {
@@ -1799,7 +1799,7 @@ Tcl_FSEvalFileEx(
 	 */
 
 	size_t length;
-	const char *pathString = TclGetStringFromObj(pathPtr, &length);
+	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
 	unsigned limit = 150;
 	int overflow = (length > limit);
 
@@ -1952,7 +1952,7 @@ EvalFileCallback(
 	 */
 
 	size_t length;
-	const char *pathString = TclGetStringFromObj(pathPtr, &length);
+	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
 	const unsigned int limit = 150;
 	int overflow = (length > limit);
 
@@ -2796,8 +2796,8 @@ Tcl_FSGetCwd(
 	    size_t len1, len2;
 	    const char *str1, *str2;
 
-	    str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	    str2 = TclGetStringFromObj(norm, &len2);
+	    str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	    str2 = Tcl_GetStringFromObj(norm, &len2);
 	    if ((len1 == len2) && (strcmp(str1, str2) == 0)) {
 		/*
 		 * The pathname values are equal so retain the old pathname
@@ -3975,7 +3975,7 @@ TclGetPathType(
 				 * of the volume. */
 {
     size_t pathLen;
-    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
+    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
     Tcl_PathType type;
 
     type = TclFSNonnativePathType(path, pathLen, filesystemPtrPtr,
@@ -4082,7 +4082,7 @@ TclFSNonnativePathType(
 
 		    numVolumes--;
 		    Tcl_ListObjIndex(NULL, thisFsVolumes, numVolumes, &vol);
-		    strVol = TclGetStringFromObj(vol,&len);
+		    strVol = Tcl_GetStringFromObj(vol,&len);
 		    if ((size_t) pathLen < len) {
 			continue;
 		    }
@@ -4429,8 +4429,8 @@ Tcl_FSRemoveDirectory(
 	    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 
 	    if (normPath != NULL) {
-		normPathStr = TclGetStringFromObj(normPath, &normLen);
-		cwdStr = TclGetStringFromObj(cwdPtr, &cwdLen);
+		normPathStr = Tcl_GetStringFromObj(normPath, &normLen);
+		cwdStr = Tcl_GetStringFromObj(cwdPtr, &cwdLen);
 		if ((cwdLen >= normLen) && (strncmp(normPathStr, cwdStr,
 			normLen) == 0)) {
 		    /*

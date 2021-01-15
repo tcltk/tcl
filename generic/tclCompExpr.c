@@ -2346,7 +2346,7 @@ CompileExprTree(
 
 		Tcl_DStringInit(&cmdName);
 		TclDStringAppendLiteral(&cmdName, "tcl::mathfunc::");
-		p = TclGetStringFromObj(*funcObjv, &length);
+		p = Tcl_GetStringFromObj(*funcObjv, &length);
 		funcObjv++;
 		Tcl_DStringAppend(&cmdName, p, length);
 		TclEmitPush(TclRegisterLiteral(envPtr,
@@ -2497,7 +2497,7 @@ CompileExprTree(
 
 	    if (optimize) {
 		size_t length;
-		const char *bytes = TclGetStringFromObj(literal, &length);
+		const char *bytes = Tcl_GetStringFromObj(literal, &length);
 		int idx = TclRegisterLiteral(envPtr, bytes, length, 0);
 		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, idx);
 
@@ -2557,7 +2557,7 @@ CompileExprTree(
 			Tcl_Obj *tableValue;
 			size_t numBytes;
 			const char *bytes
-				= TclGetStringFromObj(objPtr, &numBytes);
+				= Tcl_GetStringFromObj(objPtr, &numBytes);
 
 			idx = TclRegisterLiteral(envPtr, bytes, numBytes, 0);
 			tableValue = TclFetchLiteral(envPtr, idx);

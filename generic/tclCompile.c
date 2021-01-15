@@ -804,7 +804,7 @@ TclSetByteCodeFromAny(
     }
 #endif
 
-    stringPtr = TclGetStringFromObj(objPtr, &length);
+    stringPtr = Tcl_GetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280: Pick up the CmdFrame in which the BC compiler was invoked and
@@ -1350,7 +1350,7 @@ CompileSubstObj(
     if (codePtr == NULL) {
 	CompileEnv compEnv;
 	size_t numBytes;
-	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
+	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
 
 	/* TODO: Check for more TIP 280 */
 	TclInitCompileEnv(interp, &compEnv, bytes, numBytes, NULL, 0);
@@ -1832,7 +1832,7 @@ CompileCmdLiteral(
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
 
-    bytes = TclGetStringFromObj(cmdObj, &length);
+    bytes = Tcl_GetStringFromObj(cmdObj, &length);
     cmdLitIdx = TclRegisterLiteral(envPtr, bytes, length, extraLiteralFlags);
 
     if (cmdPtr && TclRoutineHasName(cmdPtr)) {
@@ -2828,8 +2828,9 @@ PreventCycle(
          * can be sure we do not have any lingering cycles hiding in
 	 * the intrep.
 	 */
-	int numBytes, i = PTR2INT(Tcl_GetHashValue(hePtr));
-	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
+	size_t numBytes;
+	int i = PTR2INT(Tcl_GetHashValue(hePtr));
+	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
 
 	envPtr->literalArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
 	Tcl_IncrRefCount(envPtr->literalArrayPtr[i]);
@@ -3060,7 +3061,7 @@ TclFindCompiledLocal(
 	varNamePtr = &cachePtr->varName0;
 	for (i=0; i < cachePtr->numVars; varNamePtr++, i++) {
 	    if (*varNamePtr) {
-		localName = TclGetStringFromObj(*varNamePtr, &len);
+		localName = Tcl_GetStringFromObj(*varNamePtr, &len);
 		if ((len == nameBytes) && !strncmp(name, localName, len)) {
 		    return i;
 		}
