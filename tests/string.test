@@ -511,15 +511,6 @@ test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -con
 } -result [list \U100000 b {}]
 
 
-proc largest_int {} {
-    # This will give us what the largest valid int on this machine is,
-    # so we can test for overflow properly below on >32 bit systems
-    set int 1
-    set exp 7; # assume we get at least 8 bits
-    while {wide($int) > 0} { set int [expr {wide(1) << [incr exp]}] }
-    return [expr {$int-1}]
-}
-
 test string-6.1.$noComp {string is, not enough args} {
     list [catch {run {string is}} msg] $msg
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
@@ -634,7 +625,7 @@ test string-6.37.$noComp {string is double, false on int overflow} -setup {
     # Since bignums arrived in Tcl 8.5, the sense of this test changed.
     # Now integer values that exceed native limits become bignums, and
     # bignums can convert to doubles without error.
-    list [run {string is double -fail var [largest_int]0}] $var
+    list [run {string is double -fail var 9223372036854775808}] $var
 } -result {1 priorValue}
 # string-6.38 removed, underflow on input is no longer an error.
 test string-6.39.$noComp {string is double, false} {
@@ -694,7 +685,7 @@ test string-6.54.$noComp {string is integer, false} {
     list [run {string is integer -fail var 123abc}] $var
 } {0 3}
 test string-6.55.$noComp {string is integer, no overflow possible} {
-    run {string is integer +[largest_int]0}
+    run {string is integer +9223372036854775808}
 } 1
 test string-6.56.$noComp {string is integer, false} {
     list [run {string is integer -fail var [expr double(1)]}] $var
@@ -864,7 +855,7 @@ test string-6.101.$noComp {string is wideinteger, false} {
     list [run {string is wideinteger -fail var 123abc}] $var
 } {0 3}
 test string-6.102.$noComp {string is wideinteger, false on overflow} {
-    list [run {string is wideinteger -fail var +[largest_int]0}] $var
+    list [run {string is wideinteger -fail var +9223372036854775808}] $var
 } {0 -1}
 test string-6.103.$noComp {string is wideinteger, false} {
     list [run {string is wideinteger -fail var [expr double(1)]}] $var
@@ -970,8 +961,6 @@ test string-6.130.1.$noComp {string is entier, false on bad octal} {
 test string-6.131.$noComp {string is entier, false on bad hex} {
     list [run {string is entier -fail var 0X12345611234123456123456562345612345612345612345612345612345612345612345612345612345345XYZ}] $var
 } {0 88}
-
-catch {rename largest_int {}}
 
 test string-7.1.$noComp {string last, not enough args} {
     list [catch {run {string last a}} msg] $msg

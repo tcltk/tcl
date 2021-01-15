@@ -128,6 +128,7 @@ static void uniCodePanic() {
 #define TclBN_mp_to_radix mp_to_radix
 #define TclBN_mp_to_ubin mp_to_ubin
 #define TclBN_mp_ubin_size mp_ubin_size
+#define TclBN_mp_unpack mp_unpack
 #define TclBN_mp_xor mp_xor
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
@@ -721,7 +722,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_set_u64, /* 68 */
     TclBN_mp_get_mag_u64, /* 69 */
     TclBN_mp_set_i64, /* 70 */
-    0, /* 71 */
+    TclBN_mp_unpack, /* 71 */
     0, /* 72 */
     0, /* 73 */
     0, /* 74 */
@@ -791,7 +792,7 @@ const TclStubs tclStubs = {
     TclFreeObj, /* 30 */
     Tcl_GetBoolean, /* 31 */
     Tcl_GetBooleanFromObj, /* 32 */
-    Tcl_GetByteArrayFromObj, /* 33 */
+    TclGetByteArrayFromObj, /* 33 */
     Tcl_GetDouble, /* 34 */
     Tcl_GetDoubleFromObj, /* 35 */
     0, /* 36 */
@@ -799,7 +800,7 @@ const TclStubs tclStubs = {
     Tcl_GetIntFromObj, /* 38 */
     Tcl_GetLongFromObj, /* 39 */
     Tcl_GetObjType, /* 40 */
-    Tcl_GetStringFromObj, /* 41 */
+    TclGetStringFromObj, /* 41 */
     Tcl_InvalidateStringRep, /* 42 */
     Tcl_ListObjAppendList, /* 43 */
     Tcl_ListObjAppendElement, /* 44 */
@@ -1200,7 +1201,7 @@ const TclStubs tclStubs = {
     Tcl_AttemptDbCkrealloc, /* 431 */
     Tcl_AttemptSetObjLength, /* 432 */
     Tcl_GetChannelThread, /* 433 */
-    Tcl_GetUnicodeFromObj, /* 434 */
+    TclGetUnicodeFromObj, /* 434 */
     0, /* 435 */
     0, /* 436 */
     Tcl_SubstObj, /* 437 */
@@ -1415,6 +1416,11 @@ const TclStubs tclStubs = {
     Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
+    0, /* 649 */
+    0, /* 650 */
+    Tcl_GetStringFromObj, /* 651 */
+    Tcl_GetUnicodeFromObj, /* 652 */
+    Tcl_GetByteArrayFromObj, /* 653 */
 };
 
 /* !END!: Do not edit above this line. */

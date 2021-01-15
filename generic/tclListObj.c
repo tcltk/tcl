@@ -540,7 +540,7 @@ Tcl_ListObjGetElements(
 	int result;
 	size_t length;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	(void) Tcl_GetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *objcPtr = 0;
 	    *objvPtr = NULL;
@@ -664,7 +664,7 @@ Tcl_ListObjAppendElement(
 	int result;
 	size_t length;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	(void) Tcl_GetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
 	    return TCL_OK;
@@ -839,7 +839,7 @@ Tcl_ListObjIndex(
 	int result;
 	size_t length;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	(void) Tcl_GetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *objPtrPtr = NULL;
 	    return TCL_OK;
@@ -896,7 +896,7 @@ Tcl_ListObjLength(
 	int result;
 	size_t length;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	(void) Tcl_GetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *intPtr = 0;
 	    return TCL_OK;
@@ -973,7 +973,7 @@ Tcl_ListObjReplace(
     if (listRepPtr == NULL) {
 	size_t length;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	(void) Tcl_GetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    if (objc == 0) {
 		return TCL_OK;
@@ -1784,7 +1784,7 @@ TclListObjSetElement(
 	int result;
 	size_t length;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	(void) Tcl_GetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2020,7 +2020,7 @@ SetListFromAny(
     } else {
 	int estCount;
 	size_t length;
-	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
+	const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
 
 	/*
 	 * Allocate enough space to hold a (Tcl_Obj *) for each
@@ -2163,7 +2163,7 @@ UpdateStringOfList(
     elemPtrs = &listRepPtr->elements;
     for (i = 0; i < numElems; i++) {
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
-	elem = TclGetStringFromObj(elemPtrs[i], &length);
+	elem = Tcl_GetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
     }
     bytesNeeded += numElems - 1;
@@ -2176,7 +2176,7 @@ UpdateStringOfList(
     TclOOM(dst, bytesNeeded);
     for (i = 0; i < numElems; i++) {
 	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
-	elem = TclGetStringFromObj(elemPtrs[i], &length);
+	elem = Tcl_GetStringFromObj(elemPtrs[i], &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
     }

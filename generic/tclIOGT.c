@@ -37,8 +37,8 @@ static void		TransformWatchProc(ClientData instanceData, int mask);
 static int		TransformGetFileHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
 static int		TransformNotifyProc(ClientData instanceData, int mask);
-static Tcl_WideInt	TransformWideSeekProc(ClientData instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCodePtr);
+static long long	TransformWideSeekProc(ClientData instanceData,
+			    long long offset, int mode, int *errorCodePtr);
 
 /*
  * Forward declarations of internal procedures. Secondly the procedures for
@@ -440,7 +440,7 @@ ExecuteCallback(
 	    break;
 	}
 	resObj = Tcl_GetObjResult(eval);
-	resBuf = TclGetByteArrayFromObj(resObj, &resLen);
+	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
 	Tcl_WriteRaw(Tcl_GetStackedChannel(dataPtr->self), (char *) resBuf,
 		resLen);
 	break;
@@ -450,13 +450,13 @@ ExecuteCallback(
 	    break;
 	}
 	resObj = Tcl_GetObjResult(eval);
-	resBuf = TclGetByteArrayFromObj(resObj, &resLen);
+	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
 	Tcl_WriteRaw(dataPtr->self, (char *) resBuf, resLen);
 	break;
 
     case TRANSMIT_IBUF:
 	resObj = Tcl_GetObjResult(eval);
-	resBuf = TclGetByteArrayFromObj(resObj, &resLen);
+	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
 	ResultAdd(&dataPtr->result, resBuf, resLen);
 	break;
 
@@ -830,10 +830,10 @@ TransformOutputProc(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 TransformWideSeekProc(
     ClientData instanceData,	/* The channel to manipulate. */
-    Tcl_WideInt offset,		/* Size of movement. */
+    long long offset,		/* Size of movement. */
     int mode,			/* How to move. */
     int *errorCodePtr)		/* Location of error flag. */
 {
@@ -842,7 +842,7 @@ TransformWideSeekProc(
     const Tcl_ChannelType *parentType	= Tcl_GetChannelType(parent);
     Tcl_DriverWideSeekProc *parentWideSeekProc =
 	    Tcl_ChannelWideSeekProc(parentType);
-    ClientData parentData = Tcl_GetChannelInstanceData(parent);
+    void *parentData = Tcl_GetChannelInstanceData(parent);
 
     if ((offset == 0) && (mode == SEEK_CUR)) {
 	/*

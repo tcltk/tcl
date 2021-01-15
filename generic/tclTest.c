@@ -4773,7 +4773,7 @@ GetTimesObjCmd(
     Tcl_Free(objv);
 
     /* TclGetString 100000 times */
-    fprintf(stderr, "TclGetStringFromObj of \"12345\" 100000 times\n");
+    fprintf(stderr, "Tcl_GetStringFromObj of \"12345\" 100000 times\n");
     objPtr = Tcl_NewStringObj("12345", -1);
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
@@ -4781,7 +4781,7 @@ GetTimesObjCmd(
     }
     Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
-    fprintf(stderr, "   %.3f usec per TclGetStringFromObj of \"12345\"\n",
+    fprintf(stderr, "   %.3f usec per Tcl_GetStringFromObj of \"12345\"\n",
 	    timePer/100000);
 
     /* Tcl_GetIntFromObj 100000 times */

@@ -307,7 +307,7 @@ Tcl_LoadObjCmd(
 	    /*
 	     * The platform-specific code couldn't figure out the prefix.
 	     * Make a guess by taking the last element of the file
-	     * name, stripping off any leading "lib" and/or "tcl", and
+	     * name, stripping off any leading "lib" and/or "tcl9", and
 	     * then using all of the alphabetic and underline characters
 	     * that follow that.
 	     */
@@ -315,12 +315,6 @@ Tcl_LoadObjCmd(
 	    splitPtr = Tcl_FSSplitPath(objv[1], &pElements);
 	    Tcl_ListObjIndex(NULL, splitPtr, pElements -1, &pkgGuessPtr);
 	    pkgGuess = TclGetString(pkgGuessPtr);
-#if defined(_WIN32) || defined(__CYGWIN__)
-	    if ((pkgGuess[0] == 'w') && (pkgGuess[1] == 'i')
-		    && (pkgGuess[2] == 'n')) {
-		pkgGuess += 3;
-	    } else
-#endif /* __CYGWIN__ */
 	    if ((pkgGuess[0] == 'l') && (pkgGuess[1] == 'i')
 		    && (pkgGuess[2] == 'b')) {
 		pkgGuess += 3;
@@ -332,8 +326,8 @@ Tcl_LoadObjCmd(
 	    }
 #endif /* __CYGWIN__ */
 	    if ((pkgGuess[0] == 't') && (pkgGuess[1] == 'c')
-		    && (pkgGuess[2] == 'l')) {
-		pkgGuess += 3;
+		    && (pkgGuess[2] == 'l') && (pkgGuess[2] == '9')) {
+		pkgGuess += 4;
 	    }
 	    for (p = pkgGuess; *p != 0; p += offset) {
 		offset = TclUtfToUniChar(p, &ch);
