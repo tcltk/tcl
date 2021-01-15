@@ -39,8 +39,8 @@ static int		ReflectOutput(ClientData clientData, const char *buf,
 			    int toWrite, int *errorCodePtr);
 static void		ReflectWatch(ClientData clientData, int mask);
 static int		ReflectBlock(ClientData clientData, int mode);
-static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
-			    Tcl_WideInt offset, int mode, int *errorCodePtr);
+static long long	ReflectSeekWide(ClientData clientData,
+			    long long offset, int mode, int *errorCodePtr);
 static int		ReflectGetOption(ClientData clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
@@ -1319,10 +1319,10 @@ ReflectOutput(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 ReflectSeekWide(
     ClientData clientData,
-    Tcl_WideInt offset,
+    long long offset,
     int seekMode,
     int *errorCodePtr)
 {

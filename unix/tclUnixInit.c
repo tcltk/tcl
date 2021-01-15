@@ -46,10 +46,10 @@ DLLIMPORT extern __stdcall void GetSystemInfo(void *);
 }
 #endif
 
-#define NUMPROCESSORS 11
+#define NUMPROCESSORS 15
 static const char *const processors[NUMPROCESSORS] = {
-    "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
-    "amd64", "ia32_on_win64"
+    "i686", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
+    "x86_64", "ia32_on_win64", "neutral", "arm64", "arm32_on_win64", "ia32_on_arm64"
 };
 
 typedef struct {
@@ -885,8 +885,7 @@ TclpSetVariables(
 
     GetSystemInfo(&sysInfo);
 
-    Tcl_SetVar2(interp, "tcl_platform", "os",
-	    "Windows NT", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
     sprintf(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sysInfo.wProcessorArchitecture < NUMPROCESSORS) {

@@ -44,8 +44,8 @@ static void		ReflectThread(ClientData clientData, int action);
 static int		ReflectEventRun(Tcl_Event *ev, int flags);
 static int		ReflectEventDelete(Tcl_Event *ev, ClientData cd);
 #endif
-static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
-			    Tcl_WideInt offset, int mode, int *errorCodePtr);
+static long long ReflectSeekWide(ClientData clientData,
+			    long long offset, int mode, int *errorCodePtr);
 static int		ReflectGetOption(ClientData clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
@@ -1543,10 +1543,10 @@ ReflectOutput(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 ReflectSeekWide(
     ClientData clientData,
-    Tcl_WideInt offset,
+    long long offset,
     int seekMode,
     int *errorCodePtr)
 {

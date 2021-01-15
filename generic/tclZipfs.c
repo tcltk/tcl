@@ -228,7 +228,7 @@ typedef struct ZipFile {
 typedef struct ZipEntry {
     char *name;			/* The full pathname of the virtual file */
     ZipFile *zipFilePtr;	/* The ZIP file holding this virtual file */
-    Tcl_WideInt offset;		/* Data offset into memory mapped ZIP file */
+    long long offset;		/* Data offset into memory mapped ZIP file */
     int numBytes;		/* Uncompressed size of the virtual file */
     int numCompressedBytes;	/* Compressed size of the virtual file */
     int compressMethod;		/* Compress method */
@@ -332,7 +332,7 @@ static int		ZipChannelClose(void *instanceData,
 static Tcl_DriverGetHandleProc	ZipChannelGetFile;
 static int		ZipChannelRead(void *instanceData, char *buf,
 			    int toRead, int *errloc);
-static Tcl_WideInt ZipChannelWideSeek(void *instanceData, Tcl_WideInt offset,
+static long long ZipChannelWideSeek(void *instanceData, long long offset,
 			    int mode, int *errloc);
 static void		ZipChannelWatchChannel(void *instanceData,
 			    int mask);
@@ -2044,7 +2044,7 @@ ZipAddFile(
     const char *zpath;
     int crc, flush, zpathlen;
     size_t nbyte, nbytecompr, len, olen, align = 0;
-    Tcl_WideInt pos[3];
+    long long pos[3];
     int mtime = 0, isNew, compMeth;
     unsigned long keys[3], keys0[3];
     char obuf[4096];
@@ -2398,7 +2398,7 @@ ZipFSMkZipOrImgObjCmd(
     Tcl_Channel out;
     int pwlen = 0, count, ret = TCL_ERROR, lobjc;
     size_t len, slen = 0, i = 0;
-    Tcl_WideInt pos[3];
+    long long pos[3];
     Tcl_Obj **lobjv, *list = NULL;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
@@ -3430,10 +3430,10 @@ ZipChannelWrite(
  *-------------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 ZipChannelWideSeek(
     void *instanceData,
-    Tcl_WideInt offset,
+    long long offset,
     int mode,
     int *errloc)
 {

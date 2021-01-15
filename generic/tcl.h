@@ -101,7 +101,11 @@ extern "C" {
 #include <stdio.h>
 
 #if defined(__GNUC__) && (__GNUC__ > 2)
-#   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+#   if defined(_WIN32) && defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO
+#	define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__MINGW_PRINTF_FORMAT, a, b)))
+#   else
+#	define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+#   endif
 #   define TCL_NORETURN __attribute__ ((noreturn))
 #   define TCL_NOINLINE __attribute__ ((noinline))
 #   define TCL_NORETURN1 __attribute__ ((noreturn))
@@ -148,8 +152,7 @@ extern "C" {
  *       MSVCRT.
  */
 
-#if (defined(_WIN32) && (defined(_MSC_VER) || (defined(__BORLANDC__) && (__BORLANDC__ >= 0x0550)) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
-#   define HAVE_DECLSPEC 1
+#ifdef _WIN32
 #   ifdef STATIC_BUILD
 #       define DLLIMPORT
 #       define DLLEXPORT
@@ -231,11 +234,9 @@ typedef void *ClientData;
 
 #ifdef __APPLE__
 #   ifdef __LP64__
-#	undef TCL_WIDE_INT_TYPE
 #	define TCL_WIDE_INT_IS_LONG 1
 #	define TCL_CFG_DO64BIT 1
 #    else /* !__LP64__ */
-#	define TCL_WIDE_INT_TYPE long long
 #	undef TCL_WIDE_INT_IS_LONG
 #	undef TCL_CFG_DO64BIT
 #    endif /* __LP64__ */
@@ -263,26 +264,16 @@ typedef void *ClientData;
  * sprintf(...,"%" TCL_LL_MODIFIER "d",...).
  */
 
-#if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(_WIN32) && (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)
-#      define TCL_WIDE_INT_TYPE __int64
-#      define TCL_LL_MODIFIER	"I64"
-#      if defined(_WIN64)
-#         define TCL_Z_MODIFIER	"I"
-#      endif
-#   elif defined(__GNUC__)
-#      define TCL_Z_MODIFIER	"z"
-#   else /* ! _WIN32 && ! __GNUC__ */
+#if !defined(TCL_WIDE_INT_TYPE) && !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__GNUC__)
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
  */
-#      include <limits.h>
-#      if defined(LLONG_MAX) && (LLONG_MAX == LONG_MAX)
-#         define TCL_WIDE_INT_IS_LONG	1
-#      endif
-#   endif /* _WIN32 */
-#endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
+#   include <limits.h>
+#   if defined(LLONG_MAX) && (LLONG_MAX == LONG_MAX)
+#	define TCL_WIDE_INT_IS_LONG	1
+#   endif
+#endif
 
 #ifndef TCL_WIDE_INT_TYPE
 #   define TCL_WIDE_INT_TYPE		long long
@@ -292,11 +283,17 @@ typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #ifndef TCL_LL_MODIFIER
-#   define TCL_LL_MODIFIER	"ll"
+#   if defined(_WIN32) && (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)
+#	define TCL_LL_MODIFIER	"I64"
+#   else
+#	define TCL_LL_MODIFIER	"ll"
+#   endif
 #endif /* !TCL_LL_MODIFIER */
 #ifndef TCL_Z_MODIFIER
 #   if defined(__GNUC__) && !defined(_WIN32)
 #	define TCL_Z_MODIFIER	"z"
+#   elif defined(_WIN64)
+#	define TCL_Z_MODIFIER	TCL_LL_MODIFIER
 #   else
 #	define TCL_Z_MODIFIER	""
 #   endif
@@ -801,7 +798,7 @@ typedef struct Tcl_DString {
  * 64-bit integers).
  */
 
-#define TCL_INTEGER_SPACE	24
+#define TCL_INTEGER_SPACE	(3*(int)sizeof(Tcl_WideInt))
 
 /*
  * Flag values passed to Tcl_ConvertElement.
@@ -1264,8 +1261,8 @@ typedef int	(Tcl_DriverGetHandleProc) (void *instanceData,
 typedef int	(Tcl_DriverFlushProc) (void *instanceData);
 typedef int	(Tcl_DriverHandlerProc) (void *instanceData,
 			int interestMask);
-typedef Tcl_WideInt (Tcl_DriverWideSeekProc) (void *instanceData,
-			Tcl_WideInt offset, int mode, int *errorCodePtr);
+typedef long long (Tcl_DriverWideSeekProc) (void *instanceData,
+			long long offset, int mode, int *errorCodePtr);
 /*
  * TIP #218, Channel Thread Actions
  */
@@ -1275,7 +1272,7 @@ typedef void	(Tcl_DriverThreadActionProc) (void *instanceData,
  * TIP #208, File Truncation (etc.)
  */
 typedef int	(Tcl_DriverTruncateProc) (void *instanceData,
-			Tcl_WideInt length);
+			long long length);
 
 /*
  * struct Tcl_ChannelType:

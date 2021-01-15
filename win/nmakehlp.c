@@ -19,15 +19,6 @@
 #include <stdio.h>
 #include <math.h>
 
-/*
- * This library is required for x64 builds with _some_ versions of MSVC
- */
-#if defined(_M_IA64) || defined(_M_AMD64)
-#if _MSC_VER >= 1400 && _MSC_VER < 1500
-#pragma comment(lib, "bufferoverflowU")
-#endif
-#endif
-
 /* ISO hack for dumb VC++ */
 #ifdef _MSC_VER
 #define   snprintf	_snprintf
