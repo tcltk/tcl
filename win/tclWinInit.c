@@ -87,10 +87,10 @@ static char* platforms[NUMPLATFORMS] = {
     "Win32s", "Windows 95", "Windows NT", "Windows CE"
 };
 
-#define NUMPROCESSORS 11
+#define NUMPROCESSORS 15
 static char* processors[NUMPROCESSORS] = {
     "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
-    "amd64", "ia32_on_win64"
+    "amd64", "ia32_on_win64", "neutral", "arm64", "arm32_on_win64", "ia32_on_arm64"
 };
 
 /*
