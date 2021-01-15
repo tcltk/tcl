@@ -128,6 +128,7 @@ static void uniCodePanic() {
 #define TclBN_mp_to_radix mp_to_radix
 #define TclBN_mp_to_ubin mp_to_ubin
 #define TclBN_mp_ubin_size mp_ubin_size
+#define TclBN_mp_unpack mp_unpack
 #define TclBN_mp_xor mp_xor
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
@@ -722,7 +723,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_set_u64, /* 68 */
     TclBN_mp_get_mag_u64, /* 69 */
     TclBN_mp_set_i64, /* 70 */
-    0, /* 71 */
+    TclBN_mp_unpack, /* 71 */
     0, /* 72 */
     0, /* 73 */
     0, /* 74 */
