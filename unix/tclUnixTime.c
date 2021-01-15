@@ -72,13 +72,13 @@ TclpGetSeconds(void)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+long long
 TclpGetMicroseconds(void)
 {
     Tcl_Time time;
 
     tclGetTimeProcPtr(&time, tclTimeClientData);
-    return ((Tcl_WideInt)time.sec)*1000000 + time.usec;
+    return ((long long)time.sec)*1000000 + time.usec;
 }
 
 /*
@@ -149,19 +149,19 @@ TclpGetClicks(void)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+long long
 TclpGetWideClicks(void)
 {
-    Tcl_WideInt now;
+    long long now;
 
     if (tclGetTimeProcPtr != NativeGetTime) {
 	Tcl_Time time;
 
 	tclGetTimeProcPtr(&time, tclTimeClientData);
-	now = ((Tcl_WideInt)time.sec)*1000000 + time.usec;
+	now = ((long long)time.sec)*1000000 + time.usec;
     } else {
 #ifdef MAC_OSX_TCL
-	now = (Tcl_WideInt) (mach_absolute_time() & INT64_MAX);
+	now = (long long) (mach_absolute_time() & INT64_MAX);
 #else
 #error Wide high-resolution clicks not implemented on this platform
 #endif
@@ -189,7 +189,7 @@ TclpGetWideClicks(void)
 
 double
 TclpWideClicksToNanoseconds(
-    Tcl_WideInt clicks)
+    long long clicks)
 {
     double nsec;
 
