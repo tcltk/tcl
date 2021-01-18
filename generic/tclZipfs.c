@@ -1896,7 +1896,7 @@ ZipFSMountBufferObjCmd(
 	return TCL_OK;
     }
 
-    data = Tcl_GetBytesFromObj(interp, objv[2], &length);
+    data = TclGetBytesFromObj(interp, objv[2], &length);
     if (data == NULL) {
 	return TCL_ERROR;
     }

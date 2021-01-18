@@ -8,7 +8,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewByteArrayObj, Tcl_SetByteArrayObj, Tcl_GetByteArrayFromObj, Tcl_SetByteArrayLength \- manipulate Tcl values as a arrays of bytes
+Tcl_NewByteArrayObj, Tcl_SetByteArrayObj, Tcl_GetByteArrayFromObj, Tcl_GetBytesFromObj, Tcl_SetByteArrayLength \- manipulate Tcl values as a arrays of bytes
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -23,9 +23,14 @@ unsigned char *
 \fBTcl_GetByteArrayFromObj\fR(\fIobjPtr, lengthPtr\fR)
 .sp
 unsigned char *
+\fBTcl_GetBytesFromObj\fR(\fIinterp, objPtr, lengthPtr\fR)
+.sp
+unsigned char *
 \fBTcl_SetByteArrayLength\fR(\fIobjPtr, length\fR)
 .SH ARGUMENTS
 .AS "const unsigned char" *lengthPtr in/out
+.AP Tcl_Interp *interp in
+Interpreter to use for error reporting.
 .AP "const unsigned char" *bytes in
 The array of bytes used to initialize or set a byte-array value. May be NULL
 even if \fIlength\fR is non-zero.
@@ -33,11 +38,11 @@ even if \fIlength\fR is non-zero.
 The length of the array of bytes.  It must be >= 0.
 .AP Tcl_Obj *objPtr in/out
 For \fBTcl_SetByteArrayObj\fR, this points to the value to be converted to
-byte-array type.  For \fBTcl_GetByteArrayFromObj\fR and
+byte-array type.  For \fBTcl_GetByteArrayFromObj\fR, \fBTcl_GetBytesFromObj\fR and
 \fBTcl_SetByteArrayLength\fR, this points to the value from which to get
 the byte-array value; if \fIobjPtr\fR does not already point to a byte-array
 value, it will be converted to one.
-.AP int *lengthPtr out
+.AP size_t | int *lengthPtr out
 If non-NULL, filled with the length of the array of bytes in the value.
 .BE
 
@@ -74,6 +79,10 @@ bytes.  The length of this array is stored in \fIlengthPtr\fR if
 the value and should not be freed.  The contents of the array may be
 modified by the caller only if the value is not shared and the caller
 invalidates the string representation.
+.PP
+\fBTcl_GetBytesFromObj\fR does almost the same as \fBTcl_GetByteArrayFromObj\fR,
+the difference is that this function can error if the object contains
+characters > 255. If \fBinterp\fR is not NULL, an error-message will be left there.
 .PP
 \fBTcl_SetByteArrayLength\fR converts the Tcl value to byte-array type
 and changes the length of the value's internal representation as an

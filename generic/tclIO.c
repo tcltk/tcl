@@ -5863,7 +5863,7 @@ DoReadChars(
 	    && (statePtr->inEofChar == '\0');
 
     if (appendFlag) {
-	if (binaryMode && (NULL == Tcl_GetBytesFromObj(NULL, objPtr, NULL))) {
+	if (binaryMode && (NULL == TclGetBytesFromObj(NULL, objPtr, NULL))) {
 	    binaryMode = 0;
 	}
     } else {

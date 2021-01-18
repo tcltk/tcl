@@ -1153,8 +1153,8 @@ Tcl_ZlibStreamSetCompressionDictionary(
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
 
-    if (compressionDictionaryObj && (NULL == Tcl_GetBytesFromObj(NULL,
-	    compressionDictionaryObj, NULL))) {
+    if (compressionDictionaryObj && (NULL == TclGetBytesFromObj(NULL,
+	    compressionDictionaryObj, (int *)NULL))) {
 	/* Missing or invalid compression dictionary */
 	compressionDictionaryObj = NULL;
     }
@@ -1208,7 +1208,7 @@ Tcl_ZlibStreamPut(
 	return TCL_ERROR;
     }
 
-    bytes = Tcl_GetBytesFromObj(zshPtr->interp, data, &size);
+    bytes = TclGetBytesFromObj(zshPtr->interp, data, &size);
     if (bytes == NULL) {
 	return TCL_ERROR;
     }
@@ -1338,7 +1338,7 @@ Tcl_ZlibStreamGet(
 	return TCL_OK;
     }
 
-    if (NULL == Tcl_GetBytesFromObj(zshPtr->interp, data, &existing)) {
+    if (NULL == TclGetBytesFromObj(zshPtr->interp, data, &existing)) {
 	return TCL_ERROR;
     }
 
@@ -1592,7 +1592,7 @@ Tcl_ZlibDeflate(
      * to the deflate command.
      */
 
-    inData = Tcl_GetBytesFromObj(interp, data, &inLen);
+    inData = TclGetBytesFromObj(interp, data, &inLen);
     if (inData == NULL) {
 	return TCL_ERROR;
     }
@@ -1741,7 +1741,7 @@ Tcl_ZlibInflate(
 	return TCL_ERROR;
     }
 
-    inData = Tcl_GetBytesFromObj(interp, data, &inLen);
+    inData = TclGetBytesFromObj(interp, data, &inLen);
     if (inData == NULL) {
 	return TCL_ERROR;
     }
@@ -1978,7 +1978,7 @@ ZlibCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "data ?startValue?");
 	    return TCL_ERROR;
 	}
-	data = Tcl_GetBytesFromObj(interp, objv[2], &dlen);
+	data = TclGetBytesFromObj(interp, objv[2], &dlen);
 	if (data == NULL) {
 	    return TCL_ERROR;
 	}
@@ -1998,7 +1998,7 @@ ZlibCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "data ?startValue?");
 	    return TCL_ERROR;
 	}
-	data = Tcl_GetBytesFromObj(interp, objv[2], &dlen);
+	data = TclGetBytesFromObj(interp, objv[2], &dlen);
 	if (data == NULL) {
 	    return TCL_ERROR;
 	}
@@ -2342,7 +2342,7 @@ ZlibStreamSubcmd(
     }
 
     if (compDictObj) {
-	if (NULL == Tcl_GetBytesFromObj(interp, compDictObj, NULL)) {
+	if (NULL == TclGetBytesFromObj(interp, compDictObj, NULL)) {
 	    return TCL_ERROR;
 	}
     }
@@ -2524,7 +2524,7 @@ ZlibPushSubcmd(
 	}
     }
 
-    if (compDictObj && (NULL == Tcl_GetBytesFromObj(interp, compDictObj, NULL))) {
+    if (compDictObj && (NULL == TclGetBytesFromObj(interp, compDictObj, NULL))) {
 	return TCL_ERROR;
     }
 
@@ -2773,7 +2773,7 @@ ZlibStreamAddCmd(
     if (compDictObj != NULL) {
 	int len;
 
-	if (NULL == Tcl_GetBytesFromObj(interp, compDictObj, &len)) {
+	if (NULL == TclGetBytesFromObj(interp, compDictObj, &len)) {
 	    return TCL_ERROR;
 	}
 
@@ -2880,7 +2880,7 @@ ZlibStreamPutCmd(
     if (compDictObj != NULL) {
 	int len;
 
-	if (NULL == Tcl_GetBytesFromObj(interp, compDictObj, &len)) {
+	if (NULL == TclGetBytesFromObj(interp, compDictObj, &len)) {
 	    return TCL_ERROR;
 	}
 	if (len == 0) {
@@ -3318,7 +3318,7 @@ ZlibTransformSetOption(			/* not used */
 
 	TclNewStringObj(compDictObj, value, strlen(value));
 	Tcl_IncrRefCount(compDictObj);
-	if (NULL == Tcl_GetBytesFromObj(interp, compDictObj, NULL)) {
+	if (NULL == TclGetBytesFromObj(interp, compDictObj, NULL)) {
 	    Tcl_DecrRefCount(compDictObj);
 	    return TCL_ERROR;
 	}

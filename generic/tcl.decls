@@ -2404,8 +2404,12 @@ declare 648 {
 
 # TIP #568
 declare 649 {
-    unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int *lengthPtr)
+}
+declare 650 {
+    unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    size_t *lengthPtr)
 }
 
 # TIP #481
