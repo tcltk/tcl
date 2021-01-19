@@ -4,8 +4,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.so man.macros
 .TH Tcl_SetChannelError 3 8.5 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -55,12 +55,12 @@ arrange for their return as errors. The POSIX error codes set by a driver are
 used now if and only if no messages are present.
 .PP
 \fBTcl_SetChannelError\fR stores error information in the bypass area of the
-specified channel. The number of references to the \fBmsg\fR object goes up by
+specified channel. The number of references to the \fBmsg\fR value goes up by
 one. Previously stored information will be discarded, by releasing the
 reference held by the channel. The channel reference must not be NULL.
 .PP
 \fBTcl_SetChannelErrorInterp\fR stores error information in the bypass area of
-the specified interpreter. The number of references to the \fBmsg\fR object
+the specified interpreter. The number of references to the \fBmsg\fR value
 goes up by one. Previously stored information will be discarded, by releasing
 the reference held by the interpreter. The interpreter reference must not be
 NULL.
@@ -72,7 +72,7 @@ NULL, until an intervening invocation of \fBTcl_SetChannelError\fR with a
 non-NULL message. The \fImsgPtr\fR must not be NULL. The reference count of
 the message is not touched.  The reference previously held by the channel is
 now held by the caller of the function and it is its responsibility to release
-that reference when it is done with the object.
+that reference when it is done with the value.
 .PP
 \fBTcl_GetChannelErrorInterp\fR places either the error message held in the
 bypass area of the specified interpreter into \fImsgPtr\fR, or NULL; and
@@ -82,7 +82,7 @@ return NULL, until an intervening invocation of
 not be NULL. The reference count of the message is not touched.  The reference
 previously held by the interpreter is now held by the caller of the function
 and it is its responsibility to release that reference when it is done with
-the object.
+the value.
 .PP
 Which functions of a channel driver are allowed to use which bypass function
 is listed below, as is which functions of the public channel API may leave a

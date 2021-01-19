@@ -2,7 +2,7 @@
  * lexical analyzer
  * This file is #included by regcomp.c.
  *
- * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -256,20 +256,33 @@ static const chr brbacks[] = {	/* \s within brackets */
     CHR('s'), CHR('p'), CHR('a'), CHR('c'), CHR('e'),
     CHR(':'), CHR(']')
 };
+
+#define PUNCT_CONN \
+	CHR('_'), \
+	0x203F /* UNDERTIE */, \
+	0x2040 /* CHARACTER TIE */,\
+	0x2054 /* INVERTED UNDERTIE */,\
+	0xFE33 /* PRESENTATION FORM FOR VERTICAL LOW LINE */, \
+	0xFE34 /* PRESENTATION FORM FOR VERTICAL WAVY LOW LINE */, \
+	0xFE4D /* DASHED LOW LINE */, \
+	0xFE4E /* CENTRELINE LOW LINE */, \
+	0xFE4F /* WAVY LOW LINE */, \
+	0xFF3F /* FULLWIDTH LOW LINE */
+
 static const chr backw[] = {	/* \w */
     CHR('['), CHR('['), CHR(':'),
     CHR('a'), CHR('l'), CHR('n'), CHR('u'), CHR('m'),
-    CHR(':'), CHR(']'), CHR('_'), CHR(']')
+    CHR(':'), CHR(']'), PUNCT_CONN, CHR(']')
 };
 static const chr backW[] = {	/* \W */
     CHR('['), CHR('^'), CHR('['), CHR(':'),
     CHR('a'), CHR('l'), CHR('n'), CHR('u'), CHR('m'),
-    CHR(':'), CHR(']'), CHR('_'), CHR(']')
+    CHR(':'), CHR(']'), PUNCT_CONN, CHR(']')
 };
 static const chr brbackw[] = {	/* \w within brackets */
     CHR('['), CHR(':'),
     CHR('a'), CHR('l'), CHR('n'), CHR('u'), CHR('m'),
-    CHR(':'), CHR(']'), CHR('_')
+    CHR(':'), CHR(']'), PUNCT_CONN
 };
 
 /*
@@ -444,7 +457,7 @@ next(
 	    if (ATEOS()) {
 		FAILW(REG_EESCAPE);
 	    }
-	    (DISCARD)lexescape(v);
+	    (void)lexescape(v);
 	    switch (v->nexttype) {	/* not all escapes okay here */
 	    case PLAIN:
 		return 1;
@@ -703,7 +716,7 @@ next(
 	}
 	RETV(PLAIN, *v->now++);
     }
-    (DISCARD)lexescape(v);
+    (void)lexescape(v);
     if (ISERR()) {
 	FAILW(REG_EESCAPE);
     }
@@ -892,9 +905,7 @@ lexescape(
 
 	v->now = save;
 
-	/*
-	 * And fall through into octal number.
-	 */
+	/* FALLTHRU */
 
     case CHR('0'):
 	NOTE(REG_UUNPORT);
@@ -903,7 +914,7 @@ lexescape(
 	if (ISERR()) {
 	    FAILW(REG_EESCAPE);
 	}
-	if (c > 0xff) {
+	if (c > 0xFF) {
 	    /* out of range, so we handled one digit too much */
 	    v->now--;
 	    c >>= 3;
@@ -937,7 +948,7 @@ lexdigits(
 
     n = 0;
     for (len = 0; len < maxlen && !ATEOS(); len++) {
-	if (n > 0x10fff) {
+	if (n > 0x10FFF) {
 	    /* Stop when continuing would otherwise overflow */
 	    break;
 	}
@@ -994,7 +1005,7 @@ brenext(
 	if (LASTTYPE(EMPTY) || LASTTYPE('(') || LASTTYPE('^')) {
 	    RETV(PLAIN, c);
 	}
-	RET('*');
+	RETV('*', 1);
 	break;
     case CHR('['):
 	if (HAVE(6) &&	*(v->now+0) == CHR('[') &&
@@ -1130,31 +1141,13 @@ skip(
 /*
  - newline - return the chr for a newline
  * This helps confine use of CHR to this source file.
- ^ static chr newline(NOPARMS);
+ ^ static chr newline(void);
  */
 static chr
 newline(void)
 {
     return CHR('\n');
 }
-
-/*
- - ch - return the chr sequence for regc_locale.c's fake collating element ch
- * This helps confine use of CHR to this source file.  Beware that the caller
- * knows how long the sequence is.
- ^ #ifdef REG_DEBUG
- ^ static const chr *ch(NOPARMS);
- ^ #endif
- */
-#ifdef REG_DEBUG
-static const chr *
-ch(void)
-{
-    static const chr chstr[] = { CHR('c'), CHR('h'), CHR('\0') };
-
-    return chstr;
-}
-#endif
 
 /*
  - chrnamed - return the chr known by a given (chr string) name

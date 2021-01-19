@@ -8,19 +8,19 @@
 # Sourcing this file into Tcl runs the tests and generates output for errors.
 # No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 catch {namespace delete {*}[namespace children :: test_ns_*]}
 catch {rename foo ""}
@@ -34,9 +34,14 @@ testConstraint testobj [expr {
     && [llength [info commands teststringobj]]
 }]
 
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
 testConstraint testexprlongobj [llength [info commands testexprlongobj]]
 
+
+if {[namespace which -command testbumpinterpepoch] eq ""} {
+  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
+}
+
 # Tests for the omnibus TclExecuteByteCode function:
 
 # INST_DONE not tested
@@ -652,56 +657,56 @@ test execute-6.8 {TclCompEvalObj: bytecode name resolution epoch validation} -se
     namespace delete foo
 } -result {0 AHA!}
 test execute-6.9 {TclCompEvalObj: bytecode interp validation} -setup {
-    interp create slave
+    interp create child
 } -body {
     set script { llength {} }
-    slave eval {proc llength args {return AHA!}}
+    child eval {proc llength args {return AHA!}}
     set result {}
     lappend result [if 1 $script]
-    lappend result [slave eval $script]
+    lappend result [child eval $script]
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result {0 AHA!}
 test execute-6.10 {TclCompEvalObj: bytecode interp validation} -body {
     set script { llength {} }
-    interp create slave
+    interp create child
     set result {}
-    lappend result [slave eval $script]
-    interp delete slave
-    interp create slave
-    lappend result [slave eval $script]
+    lappend result [child eval $script]
+    interp delete child
+    interp create child
+    lappend result [child eval $script]
 } -cleanup {
-    catch {interp delete slave}
+    catch {interp delete child}
 } -result {0 0}
 test execute-6.11 {Tcl_ExprObj: exprcode interp validation} -setup {
-    interp create slave
+    interp create child
 } -constraints testexprlongobj -body {
     set e { [llength {}]+1 }
     set result {}
-    load {} Tcltest slave
-    interp alias {} e slave testexprlongobj
+    load {} Tcltest child
+    interp alias {} e child testexprlongobj
     lappend result [e $e]
-    interp delete slave
-    interp create slave
-    load {} Tcltest slave
-    interp alias {} e slave testexprlongobj
+    interp delete child
+    interp create child
+    load {} Tcltest child
+    interp alias {} e child testexprlongobj
     lappend result [e $e]
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result {{This is a result: 1} {This is a result: 1}}
 test execute-6.12 {Tcl_ExprObj: exprcode interp validation} -setup {
-    interp create slave
+    interp create child
 } -body {
     set e { [llength {}]+1 }
     set result {}
-    interp alias {} e slave expr
+    interp alias {} e child expr
     lappend result [e $e]
-    interp delete slave
-    interp create slave
-    interp alias {} e slave expr 
+    interp delete child
+    interp create child
+    interp alias {} e child expr
     lappend result [e $e]
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result {1 1}
 test execute-6.13 {Tcl_ExprObj: exprcode epoch validation} -body {
     set e { [llength {}]+1 }
@@ -724,7 +729,7 @@ test execute-6.14 {Tcl_ExprObj: exprcode context validation} -setup {
     }
     set result {}
     lappend result [expr $e]
-    lappend result [namespace eval foo {expr $e}]
+    lappend result [namespace eval foo [list expr $e]]
 } -cleanup {
     namespace delete foo
 } -result {1 2}
@@ -733,25 +738,25 @@ test execute-6.15 {Tcl_ExprObj: exprcode name resolution epoch validation} -setu
 } -body {
     set e { [llength {}]+1 }
     set result {}
-    lappend result [namespace eval foo {expr $e}]
+    lappend result [namespace eval foo [list expr $e]]
     namespace eval foo {
 	proc llength {args} {return 1}
     }
-    lappend result [namespace eval foo {expr $e}]
+    lappend result [namespace eval foo [list expr $e]]
 } -cleanup {
     namespace delete foo
 } -result {1 2}
 test execute-6.16 {Tcl_ExprObj: exprcode interp validation} -setup {
-    interp create slave
+    interp create child
 } -body {
     set e { [llength {}]+1 }
-    interp alias {} e slave expr
-    slave eval {proc llength args {return 1}}
+    interp alias {} e child expr
+    child eval {proc llength args {return 1}}
     set result {}
     lappend result [expr $e]
     lappend result [e $e]
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result {1 2}
 test execute-6.17 {Tcl_ExprObj: exprcode context validation} -body {
     proc foo e {set v 0; expr $e}
@@ -805,9 +810,9 @@ test execute-7.7 {Wide int handling in INST_EQ and [incr]} {
     set y [expr {$x+1}]
     expr {double($x) == double($y)}
 } 1
-test execute-7.8 {Wide int conversions can change sign} longIs32bit {
-    set x 0x80000000
-    expr {int($x) < wide($x)}
+test execute-7.8 {Wide int conversions can change sign} {
+    set x 0x8000000000000000
+    expr {wide($x) < 0}
 } 1
 test execute-7.9 {Wide int handling in INST_MOD} {
     expr {(wide(1)<<60) % ((wide(47)<<45)-1)}
@@ -816,49 +821,49 @@ test execute-7.10 {Wide int handling in INST_MOD} {
     expr {((wide(1)<<60)-1) % 0x400000000}
 } 17179869183
 test execute-7.11 {Wide int handling in INST_LSHIFT} {
-    expr wide(42)<<30
+    expr {wide(42) << 30}
 } 45097156608
 test execute-7.12 {Wide int handling in INST_LSHIFT} {
-    expr 12345678901<<3
+    expr {12345678901 << 3}
 } 98765431208
 test execute-7.13 {Wide int handling in INST_RSHIFT} {
-    expr 0x543210febcda9876>>7
+    expr {0x543210febcda9876 >> 7}
 } 47397893236700464
 test execute-7.14 {Wide int handling in INST_RSHIFT} {
-    expr wide(0x9876543210febcda)>>7
+    expr {wide(0x9876543210febcda) >> 7}
 } -58286587177206407
 test execute-7.15 {Wide int handling in INST_BITOR} {
-    expr wide(0x9876543210febcda) | 0x543210febcda9876
+    expr {wide(0x9876543210febcda) | 0x543210febcda9876}
 } -2560765885044310786
 test execute-7.16 {Wide int handling in INST_BITXOR} {
-    expr wide(0x9876543210febcda) ^ 0x543210febcda9876
+    expr {wide(0x9876543210febcda) ^ 0x543210febcda9876}
 } -3727778945703861076
 test execute-7.17 {Wide int handling in INST_BITAND} {
-    expr wide(0x9876543210febcda) & 0x543210febcda9876
+    expr {wide(0x9876543210febcda) & 0x543210febcda9876}
 } 1167013060659550290
 test execute-7.18 {Wide int handling in INST_ADD} {
-    expr wide(0x7fffffff)+wide(0x7fffffff)
+    expr {wide(0x7fffffff) + wide(0x7fffffff)}
 } 4294967294
 test execute-7.19 {Wide int handling in INST_ADD} {
-    expr 0x7fffffff+wide(0x7fffffff)
+    expr {0x7fffffff + wide(0x7fffffff)}
 } 4294967294
 test execute-7.20 {Wide int handling in INST_ADD} {
-    expr wide(0x7fffffff)+0x7fffffff
+    expr {wide(0x7fffffff) + 0x7fffffff}
 } 4294967294
 test execute-7.21 {Wide int handling in INST_ADD} {
-    expr double(0x7fffffff)+wide(0x7fffffff)
+    expr {double(0x7fffffff) + wide(0x7fffffff)}
 } 4294967294.0
 test execute-7.22 {Wide int handling in INST_ADD} {
-    expr wide(0x7fffffff)+double(0x7fffffff)
+    expr {wide(0x7fffffff) + double(0x7fffffff)}
 } 4294967294.0
 test execute-7.23 {Wide int handling in INST_SUB} {
-    expr 0x123456789a-0x20406080a
+    expr {0x123456789a - 0x20406080a}
 } 69530054800
 test execute-7.24 {Wide int handling in INST_MULT} {
-    expr 0x123456789a*193
+    expr {0x123456789a * 193}
 } 15090186251290
 test execute-7.25 {Wide int handling in INST_DIV} {
-    expr 0x123456789a/193
+    expr {0x123456789a / 193}
 } 405116546
 test execute-7.26 {Wide int handling in INST_UPLUS} {
     set x 0x123456871234568
@@ -887,12 +892,12 @@ test execute-7.31 {Wide int handling in abs()} {
     set y 0x123456871234568
     concat [expr {abs($x)}] [expr {abs($y)}]
 } {730503879441204585 81985533099853160}
-test execute-7.32 {Wide int handling} longIs32bit {
+test execute-7.32 {Wide int handling} {
     expr {int(1024 * 1024 * 1024 * 1024)}
-} 0
-test execute-7.33 {Wide int handling} longIs32bit {
+} 1099511627776
+test execute-7.33 {Wide int handling} {
     expr {int(0x1 * 1024 * 1024 * 1024 * 1024)}
-} 0
+} 1099511627776
 test execute-7.34 {Wide int handling} {
     expr {wide(0x1) * 1024 * 1024 * 1024 * 1024}
 } 1099511627776
@@ -933,8 +938,7 @@ test execute-8.3 {Stack restoration} -setup {
     proc f {args} "f $arglst"
     proc run {} {
 	# bump the interp's epoch
-	rename ::set ::dummy
-	rename ::dummy ::set
+	testbumpinterpepoch
 	catch f msg
 	set msg
     }
@@ -948,8 +952,7 @@ test execute-8.4 {Compile epoch bump effect on stack trace} -setup {
     }
     proc FOO {} {
 	catch {error bar} m o
-	rename ::set ::dummy
-	rename ::dummy ::set
+	testbumpinterpepoch
 	return -options $o $m
     }
 } -body {
@@ -978,10 +981,80 @@ test execute-8.5 {Bug 2038069} -setup {
     invoked from within
 "catch \[list error FOO\] m o"} -errorline 2}
 
+test execute-8.6 {Compile epoch bump in global level (bug [fa6bf38d07])} -setup {
+    interp create child
+    child eval {
+	package require tcltest 2.5
+	catch [list package require -exact tcl::test [info patchlevel]]
+	::tcltest::loadTestedCommands
+	if {[namespace which -command testbumpinterpepoch] eq ""} {
+	  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
+	}
+    }
+} -body {
+    child eval {
+	lappend res A; testbumpinterpepoch; lappend res B; return; lappend res C;
+    }
+    child eval {
+	set i 0; while {[incr i] < 3} {
+	    lappend res A; testbumpinterpepoch; lappend res B; return; lappend res C;
+	}
+    }
+    child eval {
+	set i 0; while {[incr i] < 3} {
+	    lappend res A; testbumpinterpepoch; lappend res B; break; lappend res C;
+	}
+    }
+    child eval {
+	catch {
+	    lappend res A; testbumpinterpepoch; lappend res B; error test; lappend res C;
+	}
+    }
+    child eval {set res}
+} -cleanup {
+    interp delete child
+} -result [lrepeat 4 A B]
+test execute-8.7 {Compile epoch bump in global level (bug [fa6bf38d07]), exception case} -setup {
+    interp create child
+    child eval {
+	package require tcltest 2.5
+	catch [list package require -exact tcl::test [info patchlevel]]
+	::tcltest::loadTestedCommands
+	if {[namespace which -command testbumpinterpepoch] eq ""} {
+	  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
+	}
+    }
+} -body {
+    set res {}
+    lappend res [catch {
+	child eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; return -code error test; lappend res C;
+	}
+    } e] $e
+    lappend res [catch {
+	child eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; error test; lappend res C;
+	}
+    } e] $e
+    lappend res [catch {
+	child eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; return -code return test; lappend res C;
+	}
+    } e] $e
+    lappend res [catch {
+	child eval {
+	   lappend res A; testbumpinterpepoch; lappend res B; break; lappend res C;
+	}
+    } e] $e
+    list $res [child eval {set res}]
+} -cleanup {
+    interp delete child
+} -result [list {1 test 1 test 2 test 3 {}} [lrepeat 4 A B]]
+
 test execute-9.1 {Interp result resetting [Bug 1522803]} {
     set c 0
     catch {
-	catch {set foo}
+	catch {error foo}
 	expr {1/$c}
     }
     if {[string match *foo* $::errorInfo]} {
@@ -996,16 +1069,16 @@ test execute-10.1 {TclExecuteByteCode, INST_CONCAT1, bytearrays} {
     apply {s {binary scan $s c x; list $x [scan $s$s %c%c]}} \u0130
 } {48 {304 304}}
 test execute-10.2 {Bug 2802881} -setup {
-    interp create slave
+    interp create child
 } -body {
     # If [Bug 2802881] is not fixed, this will segfault
-    slave eval {
+    child eval {
 	trace add variable ::errorInfo write {expr {$foo} ;#}
 	proc demo {} {a {}{}}
 	demo
     }
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -returnCodes error -match glob -result *
 test execute-10.3 {Bug 3072640} -setup {
     proc generate {n} {
@@ -1013,9 +1086,10 @@ test execute-10.3 {Bug 3072640} -setup {
 	    yield $i
 	}
     }
-    proc t {args} { 
-	incr ::foo 
+    proc t {args} {
+	incr ::foo
     }
+    set ::foo 0
     trace add execution ::generate enterstep ::t
 } -body {
     coroutine coro generate 5
@@ -1029,9 +1103,9 @@ test execute-10.3 {Bug 3072640} -setup {
 } -result 4
 
 test execute-11.1 {Bug 3142026: GrowEvaluationStack off-by-one} -setup {
-    interp create slave
+    interp create child
 } -body {
-    slave eval {
+    child eval {
 	set x [lrepeat 1320 199]
 	for {set i 0} {$i < 20} {incr i} {
 	    lappend x $i
@@ -1041,8 +1115,70 @@ test execute-11.1 {Bug 3142026: GrowEvaluationStack off-by-one} -setup {
 	return ok
     }
 } -cleanup {
-    interp delete slave
+    interp delete child
 } -result ok
+
+test execute-11.2 {Bug 268b23df11} -setup {
+    proc zero {} {return 0}
+    proc crash {} {expr {abs([zero])}}
+    proc noop args {}
+    trace add execution crash enterstep noop
+} -body {
+    crash
+} -cleanup {
+    trace remove execution crash enterstep noop
+    rename noop {}
+    rename crash {}
+    rename zero {}
+} -result 0
+test execute-11.3 {Bug a0ece9d6d4} -setup {
+    proc crash {} {expr {rand()}}
+    trace add execution crash enterstep {apply {args {info frame -2}}}
+} -body {
+    string is double [crash]
+} -cleanup {
+    trace remove execution crash enterstep {apply {args {info frame -2}}}
+    rename crash {}
+} -result 1
+
+test execute-12.1 {failing multi-lappend to unshared} -setup {
+    unset -nocomplain x y
+} -body {
+    set x 1
+    lappend x 2 3
+    trace add variable x write {apply {args {error boo}}}
+    lappend x 4 5
+} -cleanup {
+    unset -nocomplain x y
+} -returnCodes error -result {can't set "x": boo}
+test execute-12.2 {failing multi-lappend to shared} -setup {
+    unset -nocomplain x y
+} -body {
+    set x 1
+    lappend x 2 3
+    set y $x
+    trace add variable x write {apply {args {error boo}}}
+    lappend x 4 5
+} -cleanup {
+    unset -nocomplain x y
+} -returnCodes error -result {can't set "x": boo}
+test execute-12.3 {failing multi-lappend to unshared: LVT} -body {
+    apply {{} {
+	set x 1
+	lappend x 2 3
+	trace add variable x write {apply {args {error boo}}}
+	lappend x 4 5
+    }}
+} -returnCodes error -result {can't set "x": boo}
+test execute-12.4 {failing multi-lappend to shared: LVT} -body {
+    apply {{} {
+	set x 1
+	lappend x 2 3
+	set y $x
+	trace add variable x write {apply {args {error boo}}}
+	lappend x 4 5
+    }}
+} -returnCodes error -result {can't set "x": boo}
 
 # cleanup
 if {[info commands testobj] != {}} {

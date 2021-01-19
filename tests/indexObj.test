@@ -2,19 +2,19 @@
 # tkIndexObj.c, which implement indexed table lookups.  The tests here are
 # organized in the standard fashion for Tcl tests.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testindexobj [llength [info commands testindexobj]]
 testConstraint testparseargs [llength [info commands testparseargs]]
@@ -109,7 +109,7 @@ test indexObj-5.6 {Tcl_WrongNumArgs} testindexobj {
 } "wrong # args: should be \"mycmd foo\""
 # Contrast this with test proc-3.6; they have to be like this because
 # of [Bug 1066837] so Itcl won't break.
-test indexObj-5.7 {Tcl_WrongNumArgs} testindexobj {
+test indexObj-5.7 {Tcl_WrongNumArgs} {testindexobj obsolete} {
     testwrongnumargs 2 "fee fi" "fo fum" foo bar
 } "wrong # args: should be \"fo fum foo fee fi\""
 

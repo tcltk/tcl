@@ -7,8 +7,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -287,7 +287,7 @@ This command is the complement of the \fBnamespace qualifiers\fR command.
 It does not check whether the namespace names are, in fact,
 the names of currently defined namespaces.
 .TP
-\fBnamespace upvar\fR \fInamespace\fR ?\fIotherVar myVar \fR...
+\fBnamespace upvar\fR \fInamespace\fR ?\fIotherVar myVar \fR...?
 .
 This command arranges for zero or more local variables in the current
 procedure to refer to variables in \fInamespace\fR. The namespace name is
@@ -303,7 +303,7 @@ used for qualified namespace or variable names.
 Sets or returns the unknown command handler for the current namespace.
 The handler is invoked when a command called from within the namespace
 cannot be found in the current namespace, the namespace's path nor in
-the global namespace. 
+the global namespace.
 The \fIscript\fR argument, if given, should be a well
 formed list representing a command name and optional arguments. When
 the handler is invoked, the full invocation line will be appended to the
@@ -788,12 +788,10 @@ name.  Note that when this option is non-empty and the
 will be exactly those words that have mappings in the dictionary.
 .TP
 \fB\-parameters\fR
-.VS 8.6
 This option gives a list of named arguments (the names being used during
 generation of error messages) that are passed by the caller of the ensemble
 between the name of the ensemble and the subcommand argument. By default, it
 is the empty list.
-.VE 8.6
 .TP
 \fB\-prefixes\fR
 .
@@ -943,7 +941,6 @@ Remove all imported commands from the current namespace:
 namespace forget {*}[namespace import]
 .CE
 .PP
-.VS 8.6
 Create an ensemble for simple working with numbers, using the
 \fB\-parameters\fR option to allow the operator to be put between the first
 and second arguments.
@@ -959,7 +956,6 @@ and second arguments.
 # In use, the ensemble works like this:
 puts [do 1 plus [do 9 minus 7]]
 .CE
-.VE 8.6
 .SH "SEE ALSO"
 interp(n), upvar(n), variable(n)
 .SH KEYWORDS

@@ -2,13 +2,12 @@
 #
 #	This file contains the declarations for all unsupported
 #	functions that are exported by the Tcl library.  This file
-#	is used to generate the tclIntDecls.h, tclIntPlatDecls.h,
-#	tclIntStub.c, tclPlatStub.c, tclCompileDecls.h and tclCompileStub.c
-#	files
+#	is used to generate the tclIntDecls.h, tclIntPlatDecls.h
+#	and tclStubInit.c files
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
-# Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001 Kevin B. Kenny.  All rights reserved.
+# Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -51,7 +50,7 @@ declare 6 {
 declare 7 {
     int TclCopyAndCollapse(int count, const char *src, char *dst)
 }
-declare 8 {
+declare 8 {deprecated {}} {
     int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
 	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
 }
@@ -74,7 +73,7 @@ declare 11 {
 declare 12 {
     void TclDeleteVars(Interp *iPtr, TclVarHashTable *tablePtr)
 }
-# Removed in 8.5
+# Removed in 8.5:
 #declare 13 {
 #    int TclDoGlob(Tcl_Interp *interp, char *separators,
 #	    Tcl_DString *headPtr, char *tail, Tcl_GlobTypeData *types)
@@ -89,7 +88,7 @@ declare 14 {
 declare 16 {
     void TclExprFloatError(Tcl_Interp *interp, double value)
 }
-# Removed in 8.4
+# Removed in 8.4:
 #declare 17 {
 #    int TclFileAttrsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 #}
@@ -115,7 +114,7 @@ declare 23 {
 }
 # Replaced with macro (see tclInt.h) in Tcl 8.5.0, restored in 8.5.10
 declare 24 {
-    int TclFormatInt(char *buffer, long n)
+    int TclFormatInt(char *buffer, Tcl_WideInt n)
 }
 declare 25 {
     void TclFreePackageInfo(Interp *iPtr)
@@ -124,7 +123,7 @@ declare 25 {
 #  declare 26 {
 #      char *TclGetCwd(Tcl_Interp *interp)
 #  }
-# Removed in 8.5
+# Removed in 8.5:
 #declare 27 {
 #    int TclGetDate(char *p, unsigned long now, long zone,
 #	    unsigned long *timePtr)
@@ -148,11 +147,11 @@ declare 32 {
     int TclGetFrame(Tcl_Interp *interp, const char *str,
 	    CallFrame **framePtrPtr)
 }
-# Removed in Tcl 8.5
+# Removed in 8.5:
 #declare 33 {
 #    TclCmdProcType TclGetInterpProc(void)
 #}
-declare 34 {
+declare 34 {deprecated {Use Tcl_GetIntForIndex}} {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int endValue, int *indexPtr)
 }
@@ -161,7 +160,7 @@ declare 34 {
 #    Tcl_Obj *TclGetIndexedScalar(Tcl_Interp *interp, int localIndex,
 #	    int flags)
 #}
-# Removed in 8.6a2
+# Removed in 8.6a2:
 #declare 36 {
 #    int TclGetLong(Tcl_Interp *interp, const char *str, long *longPtr)
 #}
@@ -186,9 +185,9 @@ declare 41 {
 declare 42 {
     CONST86 char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
-# Removed in Tcl 8.5a2
+# Removed in 8.5a2:
 #declare 43 {
-#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
+#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, const char **argv,
 #	    int flags)
 #}
 declare 44 {
@@ -221,14 +220,14 @@ declare 50 {
 declare 51 {
     int TclInterpInit(Tcl_Interp *interp)
 }
-# Removed in Tcl 8.5a2
+# Removed in 8.5a2:
 #declare 52 {
-#    int TclInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
+#    int TclInvoke(Tcl_Interp *interp, int argc, const char **argv,
 #	    int flags)
 #}
 declare 53 {
     int TclInvokeObjectCommand(ClientData clientData, Tcl_Interp *interp,
-	    int argc, CONST84 char **argv)
+	    int argc, const char **argv)
 }
 declare 54 {
     int TclInvokeStringCommand(ClientData clientData, Tcl_Interp *interp,
@@ -274,7 +273,7 @@ declare 64 {
     int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
 	    int flags)
 }
-# Removed in Tcl 8.5a2
+# Removed in 8.5a2:
 #declare 65 {
 #    int TclObjInvokeGlobal(Tcl_Interp *interp, int objc,
 #	    Tcl_Obj *const objv[], int flags)
@@ -290,7 +289,7 @@ declare 64 {
 #    int TclpAccess(const char *path, int mode)
 #}
 declare 69 {
-    char *TclpAlloc(unsigned int size)
+    void *TclpAlloc(unsigned int size)
 }
 #declare 70 {
 #    int TclpCopyFile(const char *source, const char *dest)
@@ -306,7 +305,7 @@ declare 69 {
 #    int TclpDeleteFile(const char *path)
 #}
 declare 74 {
-    void TclpFree(char *ptr)
+    void TclpFree(void *ptr)
 }
 declare 75 {
     unsigned long TclpGetClicks(void)
@@ -314,9 +313,7 @@ declare 75 {
 declare 76 {
     unsigned long TclpGetSeconds(void)
 }
-
-# deprecated
-declare 77 {
+declare 77 {deprecated {}} {
     void TclpGetTime(Tcl_Time *time)
 }
 # Removed in 8.6:
@@ -333,7 +330,7 @@ declare 77 {
 #	    char *modeString, int permissions)
 #}
 declare 81 {
-    char *TclpRealloc(char *ptr, unsigned int size)
+    void *TclpRealloc(void *ptr, unsigned int size)
 }
 #declare 82 {
 #    int TclpRemoveDirectory(const char *path, int recursive,
@@ -358,7 +355,7 @@ declare 81 {
 #  declare 87 {
 #      void TclPlatformInit(Tcl_Interp *interp)
 #  }
-declare 88 {
+declare 88 {deprecated {}} {
     char *TclPrecTraceProc(ClientData clientData, Tcl_Interp *interp,
 	    const char *name1, const char *name2, int flags)
 }
@@ -381,9 +378,9 @@ declare 92 {
 declare 93 {
     void TclProcDeleteProc(ClientData clientData)
 }
-# Removed in Tcl 8.5:
+# Removed in 8.5:
 #declare 94 {
-#    int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp,
+#    int TclProcInterpProc(void *clientData, Tcl_Interp *interp,
 #	    int argc, const char **argv)
 #}
 # Replaced by Tcl_FSStat in 8.4:
@@ -420,7 +417,7 @@ declare 103 {
     int TclSockGetPort(Tcl_Interp *interp, const char *str, const char *proto,
 	    int *portPtr)
 }
-declare 104 {
+declare 104 {deprecated {}} {
     int TclSockMinimumBuffersOld(int sock, int size)
 }
 # Replaced by Tcl_FSStat in 8.4:
@@ -456,26 +453,26 @@ declare 111 {
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
 declare 112 {
-    int Tcl_AppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+    int TclAppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
 	    Tcl_Obj *objPtr)
 }
 declare 113 {
-    Tcl_Namespace *Tcl_CreateNamespace(Tcl_Interp *interp, const char *name,
+    Tcl_Namespace *TclCreateNamespace(Tcl_Interp *interp, const char *name,
 	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
 }
 declare 114 {
-    void Tcl_DeleteNamespace(Tcl_Namespace *nsPtr)
+    void TclDeleteNamespace(Tcl_Namespace *nsPtr)
 }
 declare 115 {
-    int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+    int TclExport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
 	    const char *pattern, int resetListFirst)
 }
 declare 116 {
-    Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, const char *name,
+    Tcl_Command TclFindCommand(Tcl_Interp *interp, const char *name,
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
 declare 117 {
-    Tcl_Namespace *Tcl_FindNamespace(Tcl_Interp *interp, const char *name,
+    Tcl_Namespace *TclFindNamespace(Tcl_Interp *interp, const char *name,
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
 declare 118 {
@@ -491,28 +488,28 @@ declare 120 {
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
 declare 121 {
-    int Tcl_ForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+    int TclForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
 	    const char *pattern)
 }
 declare 122 {
-    Tcl_Command Tcl_GetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+    Tcl_Command TclGetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 declare 123 {
-    void Tcl_GetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
+    void TclGetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
 	    Tcl_Obj *objPtr)
 }
 declare 124 {
-    Tcl_Namespace *Tcl_GetCurrentNamespace(Tcl_Interp *interp)
+    Tcl_Namespace *TclGetCurrentNamespace_(Tcl_Interp *interp)
 }
 declare 125 {
-    Tcl_Namespace *Tcl_GetGlobalNamespace(Tcl_Interp *interp)
+    Tcl_Namespace *TclGetGlobalNamespace_(Tcl_Interp *interp)
 }
 declare 126 {
     void Tcl_GetVariableFullName(Tcl_Interp *interp, Tcl_Var variable,
 	    Tcl_Obj *objPtr)
 }
 declare 127 {
-    int Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+    int TclImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
 	    const char *pattern, int allowOverwrite)
 }
 declare 128 {
@@ -533,7 +530,7 @@ declare 131 {
 declare 132 {
     int TclpHasSockets(Tcl_Interp *interp)
 }
-declare 133 {
+declare 133 {deprecated {}} {
     struct tm *TclpGetDate(const time_t *time, int useGMT)
 }
 # Removed in 8.5
@@ -551,19 +548,19 @@ declare 133 {
 #   int TclpChdir(const char *dirName)
 #}
 declare 138 {
-    CONST84_RETURN char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
+    const char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
 }
 #declare 139 {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
 #	    char *sym2, Tcl_PackageInitProc **proc1Ptr,
-#	    Tcl_PackageInitProc **proc2Ptr, ClientData *clientDataPtr)
+#	    Tcl_PackageInitProc **proc2Ptr, void **clientDataPtr)
 #}
 #declare 140 {
 #    int TclLooksLikeInt(const char *bytes, int length)
 #}
 # This is used by TclX, but should otherwise be considered private
 declare 141 {
-    CONST84_RETURN char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+    const char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 142 {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -611,11 +608,11 @@ declare 153 {
 
 # moved to tclTest.c (static) in 8.3.2/8.4a2
 #declare 154 {
-#    int TclTestChannelCmd(ClientData clientData,
+#    int TclTestChannelCmd(void *clientData,
 #    Tcl_Interp *interp, int argc, char **argv)
 #}
 #declare 155 {
-#    int TclTestChannelEventCmd(ClientData clientData,
+#    int TclTestChannelEventCmd(void *clientData,
 #	     Tcl_Interp *interp, int argc, char **argv)
 #}
 
@@ -626,14 +623,12 @@ declare 156 {
 declare 157 {
     Var *TclVarTraceExists(Tcl_Interp *interp, const char *varName)
 }
-# REMOVED - use public Tcl_SetStartupScript()
-#declare 158 {
-#    void TclSetStartupScriptFileName(const char *filename)
-#}
-# REMOVED - use public Tcl_GetStartupScript()
-#declare 159 {
-#    const char *TclGetStartupScriptFileName(void)
-#}
+declare 158 {deprecated {use public Tcl_SetStartupScript()}} {
+    void TclSetStartupScriptFileName(const char *filename)
+}
+declare 159 {deprecated {use public Tcl_GetStartupScript()}} {
+    const char *TclGetStartupScriptFileName(void)
+}
 #declare 160 {
 #    int TclpMatchFilesTypes(Tcl_Interp *interp, char *separators,
 #	    Tcl_DString *dirPtr, char *pattern, char *tail,
@@ -677,15 +672,12 @@ declare 166 {
 	    int index, Tcl_Obj *valuePtr)
 }
 
-# VFS-aware versions of Tcl*StartupScriptFileName (158 and 159 above)
-# REMOVED - use public Tcl_SetStartupScript()
-#declare 167 {
-#    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
-#}
-# REMOVED - use public Tcl_GetStartupScript()
-#declare 168 {
-#    Tcl_Obj *TclGetStartupScriptPath(void)
-#}
+declare 167 {deprecated {use public Tcl_SetStartupScript()}} {
+    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
+}
+declare 168 {deprecated {use public Tcl_GetStartupScript()}} {
+    Tcl_Obj *TclGetStartupScriptPath(void)
+}
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
 declare 169 {
     int TclpUtfNcmp2(const char *s1, const char *s2, unsigned long n)
@@ -731,13 +723,12 @@ declare 177 {
     void TclVarErrMsg(Tcl_Interp *interp, const char *part1, const char *part2,
 	    const char *operation, const char *reason)
 }
-# TIP 338 made these public - now declared in tcl.h
-#declare 178 {
-#    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
-#}
-#declare 179 {
-#    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
-#}
+declare 178 {
+    void TclSetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
+}
+declare 179 {
+    Tcl_Obj *TclGetStartupScript(const char **encodingNamePtr)
+}
 
 # REMOVED
 # Allocate lists without copying arrays
@@ -749,12 +740,10 @@ declare 177 {
 #	    const char *file, int line)
 #}
 
-# TclpGmtime and TclpLocaltime promoted to the generic interface from unix
-
-declare 182 {
+declare 182 {deprecated {}} {
      struct tm *TclpLocaltime(const time_t *clock)
 }
-declare 183 {
+declare 183 {deprecated {}}  {
      struct tm *TclpGmtime(const time_t *clock)
 }
 
@@ -904,7 +893,7 @@ declare 227 {
 #  Used to be needed for TclOO-extension; unneeded now that TclOO is in the
 #  core and NRE-enabled
 #  declare 228 {
-#      int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
+#      int TclObjInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
 #             int skip, ProcErrorProc *errorProc)
 #  }
 declare 229 {
@@ -938,12 +927,9 @@ declare 234 {
 declare 235 {
     void TclInitVarHashTable(TclVarHashTable *tablePtr, Namespace *nsPtr)
 }
-
-
-# TIP 337 made this one public
-#declare 236 {
-#    void TclBackgroundException(Tcl_Interp *interp, int code)
-#}
+declare 236 {deprecated {use Tcl_BackgroundException}} {
+    void TclBackgroundException(Tcl_Interp *interp, int code)
+}
 
 # TIP #285: Script cancellation support.
 declare 237 {
@@ -995,7 +981,7 @@ declare 247 {
 
 declare 248 {
     int TclCopyChannel(Tcl_Interp *interp, Tcl_Channel inChan,
-	    Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr)
+	    Tcl_Channel outChan, long long toRead, Tcl_Obj *cmdPtr)
 }
 
 declare 249 {
@@ -1004,7 +990,58 @@ declare 249 {
 }
 # TIP #285: Script cancellation support.
 declare 250 {
-    void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
+    void TclSetChildCancelFlags(Tcl_Interp *interp, int flags, int force)
+}
+
+# Allow extensions for optimization
+declare 251 {
+    int TclRegisterLiteral(void *envPtr,
+	    const char *bytes, int length, int flags)
+}
+
+# Exporting of the internal API to variables.
+
+declare 252 {
+    Tcl_Obj *TclPtrGetVar(Tcl_Interp *interp, Tcl_Var varPtr,
+	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	    const int flags)
+}
+declare 253 {
+    Tcl_Obj *TclPtrSetVar(Tcl_Interp *interp, Tcl_Var varPtr,
+	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	    Tcl_Obj *newValuePtr, const int flags)
+}
+declare 254 {
+    Tcl_Obj *TclPtrIncrObjVar(Tcl_Interp *interp, Tcl_Var varPtr,
+	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+	    Tcl_Obj *incrPtr, const int flags)
+}
+declare 255 {
+    int	TclPtrObjMakeUpvar(Tcl_Interp *interp, Tcl_Var otherPtr,
+	    Tcl_Obj *myNamePtr, int myFlags)
+}
+declare 256 {
+    int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
+	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
+}
+declare 257 {
+    void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
+	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+}
+
+# TIP 431: temporary directory creation function
+declare 258 {
+    Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
+	    Tcl_Obj *basenameObj)
+}
+
+declare 259 {
+    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int *lengthPtr)
+}
+
+declare 260 {
+    void TclUnusedStubEntry(void)
 }
 
 ##############################################################################
@@ -1057,9 +1094,9 @@ declare 9 win {
 }
 # new for 8.4.20+/8.5.12+ Cygwin only
 declare 10 win {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
+    Tcl_DirEntry *TclpReaddir(TclDIR *dir)
 }
-# Removed in 8.3.1 (for Win32s only)
+# Removed in 8.3.1 (for Win32s only):
 #declare 10 win {
 #    int TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
 #}
@@ -1109,7 +1146,6 @@ declare 19 win {
 declare 20 win {
     void TclWinAddProcess(HANDLE hProcess, DWORD id)
 }
-# new for 8.4.20+/8.5.12+
 declare 21 win {
     char *TclpInetNtoa(struct in_addr addr)
 }
@@ -1148,9 +1184,6 @@ declare 27 win {
 declare 28 win {
     void TclWinResetInterfaces(void)
 }
-declare 29 win {
-    int TclWinCPUID(unsigned int index, unsigned int *regs)
-}
 
 ################################
 # Unix specific functions
@@ -1175,10 +1208,9 @@ declare 4 unix {
 	    const char **argv, TclFile inputFile, TclFile outputFile,
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
-# Signature changed in 8.1:
-#  declare 5 unix {
-#      TclFile TclpCreateTempFile(char *contents, Tcl_DString *namePtr)
-#  }
+declare 5 unix {
+    int TclUnixWaitForFile_(int fd, int mask, int timeout)
+}
 declare 6 unix {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
 }
@@ -1198,7 +1230,7 @@ declare 9 unix {
 # Added in 8.4:
 
 declare 10 unix {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
+    Tcl_DirEntry *TclpReaddir(TclDIR *dir)
 }
 # Slots 11 and 12 are forwarders for functions that were promoted to
 # generic Stubs
@@ -1222,28 +1254,37 @@ declare 14 unix {
 ################################
 # Mac OS X specific functions
 
-declare 15 macosx {
+declare 15 {unix macosx} {
     int TclMacOSXGetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr)
 }
-declare 16 macosx {
+declare 16 {unix macosx} {
     int TclMacOSXSetFileAttribute(Tcl_Interp *interp, int objIndex,
 	    Tcl_Obj *fileName, Tcl_Obj *attributePtr)
 }
-declare 17 macosx {
+declare 17 {unix macosx} {
     int TclMacOSXCopyFileAttributes(const char *src, const char *dst,
 	    const Tcl_StatBuf *statBufPtr)
 }
-declare 18 macosx {
+declare 18 {unix macosx} {
     int TclMacOSXMatchType(Tcl_Interp *interp, const char *pathName,
 	    const char *fileName, Tcl_StatBuf *statBufPtr,
 	    Tcl_GlobTypeData *types)
 }
-declare 19 macosx {
+declare 19 {unix macosx} {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
 }
-declare 29 unix {
-    int TclWinCPUID(unsigned int index, unsigned int *regs)
+declare 22 {unix macosx} {
+    TclFile TclpCreateTempFile_(const char *contents)
+}
+
+declare 29 {win unix} {
+    int TclWinCPUID(int index, int *regs)
+}
+# Added in 8.6; core of TclpOpenTemporaryFile
+declare 30 {win unix} {
+    int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
+	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
 }
 
 # Local Variables:

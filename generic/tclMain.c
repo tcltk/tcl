@@ -8,28 +8,19 @@
  *	application. Or, it can be used as a template for creating new main
  *	programs for Tcl applications.
  *
- * Copyright (c) 1988-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 2000 Ajuba Solutions.
+ * Copyright © 1988-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 2000 Ajuba Solutions.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-/**
- * On Windows, this file needs to be compiled twice, once with
- * TCL_ASCII_MAIN defined. This way both Tcl_Main and Tcl_MainExW
- * can be implemented, sharing the same source code.
+/*
+ * On Windows, this file needs to be compiled twice, once with UNICODE and
+ * _UNICODE defined. This way both Tcl_Main and Tcl_MainExW can be
+ * implemented, sharing the same source code.
  */
-#if defined(TCL_ASCII_MAIN)
-#   ifdef UNICODE
-#	undef UNICODE
-#	undef _UNICODE
-#   else
-#	define UNICODE
-#	define _UNICODE
-#   endif
-#endif
 
 #include "tclInt.h"
 
@@ -40,46 +31,38 @@
 #define DEFAULT_PRIMARY_PROMPT	"% "
 
 /*
- * This file can be compiled on Windows in UNICODE mode, as well as
- * on all other platforms using the native encoding. This is done
- * by using the normal Windows functions like _tcscmp, but on
- * platforms which don't have <tchar.h> we have to translate that
- * to strcmp here.
+ * This file can be compiled on Windows in UNICODE mode, as well as on all
+ * other platforms using the native encoding. This is done by using the normal
+ * Windows functions like _tcscmp, but on platforms which don't have <tchar.h>
+ * we have to translate that to strcmp here.
  */
-#ifndef __WIN32__
+
+#ifndef _WIN32
 #   define TCHAR char
 #   define TEXT(arg) arg
 #   define _tcscmp strcmp
 #endif
 
-/*
- * Further on, in UNICODE mode we just use Tcl_NewUnicodeObj, otherwise
- * NewNativeObj is needed (which provides proper conversion from native
- * encoding to UTF-8).
- */
-
-#ifdef UNICODE
-#   define NewNativeObj Tcl_NewUnicodeObj
-#else /* !UNICODE */
-static inline Tcl_Obj *
+static Tcl_Obj *
 NewNativeObj(
-    char *string,
-    int length)
+    TCHAR *string)
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDString(NULL, string, length, &ds);
+#ifdef UNICODE
+    Tcl_DStringInit(&ds);
+    Tcl_WCharToUtfDString(string, -1, &ds);
+#else
+    Tcl_ExternalToUtfDString(NULL, (char *)string, -1, &ds);
+#endif
     return TclDStringToObj(&ds);
 }
-#endif /* !UNICODE */
 
 /*
  * Declarations for various library functions and variables (don't want to
  * include tclPort.h here, because people might copy this file out of the Tcl
  * source directory to make their own modified versions).
  */
-
-extern CRTIMPORT int	isatty(int fd);
 
 /*
  * The thread-local variables for this file's functions.
@@ -108,7 +91,7 @@ typedef enum {
     PROMPT_CONTINUE		/* Print prompt for command continuation */
 } PromptType;
 
-typedef struct InteractiveState {
+typedef struct {
     Tcl_Channel input;		/* The standard input channel from which lines
 				 * are read. */
     int tty;			/* Non-zero means standard input is a
@@ -128,10 +111,11 @@ typedef struct InteractiveState {
 MODULE_SCOPE Tcl_MainLoopProc *TclGetMainLoop(void);
 static void		Prompt(Tcl_Interp *interp, InteractiveState *isPtr);
 static void		StdinProc(ClientData clientData, int mask);
-static void     FreeMainInterp(ClientData clientData);
+static void		FreeMainInterp(ClientData clientData);
 
-#ifndef TCL_ASCII_MAIN
+#if !defined(_WIN32) || defined(UNICODE) && !defined(TCL_ASCII_MAIN)
 static Tcl_ThreadDataKey dataKey;
+
 /*
  *----------------------------------------------------------------------
  *
@@ -241,7 +225,7 @@ Tcl_SourceRCFile(
     const char *fileName;
     Tcl_Channel chan;
 
-    fileName = Tcl_GetVar(interp, "tcl_rcFileName", TCL_GLOBAL_ONLY);
+    fileName = Tcl_GetVar2(interp, "tcl_rcFileName", NULL, TCL_GLOBAL_ONLY);
     if (fileName != NULL) {
 	Tcl_Channel c;
 	const char *fullName;
@@ -274,11 +258,11 @@ Tcl_SourceRCFile(
 	Tcl_DStringFree(&temp);
     }
 }
-#endif /* !TCL_ASCII_MAIN */
+#endif /* !UNICODE */
 
 /*----------------------------------------------------------------------
  *
- * Tcl_Main, Tcl_MainEx --
+ * Tcl_MainEx --
  *
  *	Main program for tclsh and most other Tcl-based applications.
  *
@@ -311,11 +295,14 @@ Tcl_MainEx(
     Tcl_Channel chan;
     InteractiveState is;
 
+    TclpSetInitialEncodings();
+    TclpFindExecutable((const char *)argv[0]);
+
     Tcl_InitMemory(interp);
 
     is.interp = interp;
     is.prompt = PROMPT_START;
-    is.commandPtr = Tcl_NewObj();
+    TclNewObj(is.commandPtr);
 
     /*
      * If the application has not already set a startup script, parse the
@@ -332,14 +319,15 @@ Tcl_MainEx(
 	 */
 
 	if ((argc > 3) && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
-		&& (TEXT('-') != argv[3][0])) {
-		Tcl_Obj *value = NewNativeObj(argv[2], -1);
-	    Tcl_SetStartupScript(NewNativeObj(argv[3], -1), Tcl_GetString(value));
+		&& ('-' != argv[3][0])) {
+	    Tcl_Obj *value = NewNativeObj(argv[2]);
+	    Tcl_SetStartupScript(NewNativeObj(argv[3]),
+		    Tcl_GetString(value));
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    argv += 3;
-	} else if ((argc > 1) && (TEXT('-') != argv[1][0])) {
-	    Tcl_SetStartupScript(NewNativeObj(argv[1], -1), NULL);
+	} else if ((argc > 1) && ('-' != argv[1][0])) {
+	    Tcl_SetStartupScript(NewNativeObj(argv[1]), NULL);
 	    argc--;
 	    argv++;
 	}
@@ -347,7 +335,7 @@ Tcl_MainEx(
 
     path = Tcl_GetStartupScript(&encodingName);
     if (path == NULL) {
-	appName = NewNativeObj(argv[0], -1);
+	appName = NewNativeObj(argv[0]);
     } else {
 	appName = path;
     }
@@ -355,11 +343,11 @@ Tcl_MainEx(
     argc--;
     argv++;
 
-    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewWideIntObj(argc), TCL_GLOBAL_ONLY);
 
     argvPtr = Tcl_NewListObj(0, NULL);
     while (argc--) {
-	Tcl_ListObjAppendElement(NULL, argvPtr, NewNativeObj(*argv++, -1));
+	Tcl_ListObjAppendElement(NULL, argvPtr, NewNativeObj(*argv++));
     }
     Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);
 
@@ -369,7 +357,7 @@ Tcl_MainEx(
 
     is.tty = isatty(0);
     Tcl_SetVar2Ex(interp, "tcl_interactive", NULL,
-	    Tcl_NewIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
+	    Tcl_NewWideIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
 
     /*
      * Invoke application-specific initialization.
@@ -395,8 +383,9 @@ Tcl_MainEx(
 	/*
 	 * Arrange for final deletion of the main interp
 	 */
-	/* ARGH Munchhausen effect  */
-	Tcl_CreateExitHandler(FreeMainInterp, (ClientData)interp);
+
+	/* ARGH Munchhausen effect */
+	Tcl_CreateExitHandler(FreeMainInterp, interp);
     }
 
     /*
@@ -452,12 +441,13 @@ Tcl_MainEx(
      * Get a new value for tty if anyone writes to ::tcl_interactive
      */
 
-    Tcl_LinkVar(interp, "tcl_interactive", (char *) &is.tty, TCL_LINK_BOOLEAN);
+    Tcl_LinkVar(interp, "tcl_interactive", &is.tty, TCL_LINK_BOOLEAN);
     is.input = Tcl_GetStdChannel(TCL_STDIN);
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
 	mainLoopProc = TclGetMainLoop();
 	if (mainLoopProc == NULL) {
 	    int length;
+
 	    if (is.tty) {
 		Prompt(interp, &is);
 		if (Tcl_InterpDeleted(interp)) {
@@ -521,12 +511,13 @@ Tcl_MainEx(
 	     * error messages troubles deeper in, so lop it back off.
 	     */
 
-	    Tcl_GetStringFromObj(is.commandPtr, &length);
+	    TclGetStringFromObj(is.commandPtr, &length);
 	    Tcl_SetObjLength(is.commandPtr, --length);
-	    code = Tcl_RecordAndEvalObj(interp, is.commandPtr, TCL_EVAL_GLOBAL);
+	    code = Tcl_RecordAndEvalObj(interp, is.commandPtr,
+		    TCL_EVAL_GLOBAL);
 	    is.input = Tcl_GetStdChannel(TCL_STDIN);
 	    Tcl_DecrRefCount(is.commandPtr);
-	    is.commandPtr = Tcl_NewObj();
+	    TclNewObj(is.commandPtr);
 	    Tcl_IncrRefCount(is.commandPtr);
 	    if (code != TCL_OK) {
 		chan = Tcl_GetStdChannel(TCL_STDERR);
@@ -537,7 +528,7 @@ Tcl_MainEx(
 	    } else if (is.tty) {
 		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(resultPtr);
-		Tcl_GetStringFromObj(resultPtr, &length);
+		TclGetStringFromObj(resultPtr, &length);
 		chan = Tcl_GetStdChannel(TCL_STDOUT);
 		if ((length > 0) && chan) {
 		    Tcl_WriteObj(chan, resultPtr);
@@ -557,7 +548,8 @@ Tcl_MainEx(
 		    Prompt(interp, &is);
 		}
 
-		Tcl_CreateChannelHandler(is.input, TCL_READABLE, StdinProc, &is);
+		Tcl_CreateChannelHandler(is.input, TCL_READABLE,
+			StdinProc, &is);
 	    }
 
 	    mainLoopProc();
@@ -568,24 +560,23 @@ Tcl_MainEx(
 	    }
 	    is.input = Tcl_GetStdChannel(TCL_STDIN);
 	}
-#ifdef TCL_MEM_DEBUG
 
 	/*
 	 * This code here only for the (unsupported and deprecated) [checkmem]
 	 * command.
 	 */
 
+#ifdef TCL_MEM_DEBUG
 	if (tclMemDumpFileName != NULL) {
 	    Tcl_SetMainLoop(NULL);
 	    Tcl_DeleteInterp(interp);
 	}
-#endif
+#endif /* TCL_MEM_DEBUG */
     }
 
   done:
     mainLoopProc = TclGetMainLoop();
-    if ((exitCode == 0) && (mainLoopProc != NULL)
-	    && !Tcl_LimitExceeded(interp)) {
+    if ((exitCode == 0) && mainLoopProc && !Tcl_LimitExceeded(interp)) {
 	/*
 	 * If everything has gone OK so far, call the main loop proc, if it
 	 * exists. Packages (like Tk) can set it to start processing events at
@@ -605,41 +596,25 @@ Tcl_MainEx(
      * exit. The Tcl_EvalObjEx call should never return.
      */
 
-    if (!Tcl_InterpDeleted(interp)) {
-	if (!Tcl_LimitExceeded(interp)) {
-	    Tcl_Obj *cmd = Tcl_ObjPrintf("exit %d", exitCode);
-	    
-	    Tcl_IncrRefCount(cmd);
-	    Tcl_EvalObjEx(interp, cmd, TCL_EVAL_GLOBAL);
-	    Tcl_DecrRefCount(cmd);
-	}
+    if (!Tcl_InterpDeleted(interp) && !Tcl_LimitExceeded(interp)) {
+	Tcl_Obj *cmd = Tcl_ObjPrintf("exit %d", exitCode);
+
+	Tcl_IncrRefCount(cmd);
+	Tcl_EvalObjEx(interp, cmd, TCL_EVAL_GLOBAL);
+	Tcl_DecrRefCount(cmd);
     }
-	/*
-	 * If Tcl_EvalObjEx returns, trying to eval [exit], something unusual
-	 * is happening. Maybe interp has been deleted; maybe [exit] was
-	 * redefined, maybe we've blown up because of an exceeded limit. We
-	 * still want to cleanup and exit.
-	 */
+
+    /*
+     * If Tcl_EvalObjEx returns, trying to eval [exit], something unusual is
+     * happening. Maybe interp has been deleted; maybe [exit] was redefined,
+     * maybe we've blown up because of an exceeded limit. We still want to
+     * cleanup and exit.
+     */
+
     Tcl_Exit(exitCode);
 }
-
-#if (TCL_MAJOR_VERSION == 8) && !defined(UNICODE)
-#undef Tcl_Main
-extern DLLEXPORT void
-Tcl_Main(
-    int argc,			/* Number of arguments. */
-    char **argv,		/* Array of argument strings. */
-    Tcl_AppInitProc *appInitProc)
-				/* Application-specific initialization
-				 * function to call after most initialization
-				 * but before starting to execute commands. */
-{
-    Tcl_FindExecutable(argv[0]);
-    Tcl_MainEx(argc, argv, appInitProc, Tcl_CreateInterp());
-}
-#endif
 
-#ifndef TCL_ASCII_MAIN
+#if !defined(_WIN32) || defined(UNICODE)
 
 /*
  *---------------------------------------------------------------
@@ -711,6 +686,7 @@ TclGetMainLoop(void)
  *
  *----------------------------------------------------------------------
  */
+
 MODULE_SCOPE int
 TclFullFinalizationRequested(void)
 {
@@ -720,16 +696,16 @@ TclFullFinalizationRequested(void)
     const char *fin;
     Tcl_DString ds;
     int finalize = 0;
-    
+
     fin = TclGetEnv("TCL_FINALIZE_ON_EXIT", &ds);
     finalize = ((fin != NULL) && strcmp(fin, "0"));
     if (fin != NULL) {
 	Tcl_DStringFree(&ds);
     }
     return finalize;
-#endif
+#endif /* PURIFY */
 }
-#endif /* !TCL_ASCII_MAIN */
+#endif /* UNICODE */
 
 /*
  *----------------------------------------------------------------------
@@ -750,14 +726,13 @@ TclFullFinalizationRequested(void)
  *----------------------------------------------------------------------
  */
 
-    /* ARGSUSED */
 static void
 StdinProc(
     ClientData clientData,	/* The state of interactive cmd line */
-    int mask)			/* Not used. */
+    TCL_UNUSED(int) /*mask*/)
 {
     int code, length;
-    InteractiveState *isPtr = clientData;
+    InteractiveState *isPtr = (InteractiveState *)clientData;
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
     Tcl_Interp *interp = isPtr->interp;
@@ -796,7 +771,7 @@ StdinProc(
 	goto prompt;
     }
     isPtr->prompt = PROMPT_START;
-    Tcl_GetStringFromObj(commandPtr, &length);
+    TclGetStringFromObj(commandPtr, &length);
     Tcl_SetObjLength(commandPtr, --length);
 
     /*
@@ -810,7 +785,8 @@ StdinProc(
     code = Tcl_RecordAndEvalObj(interp, commandPtr, TCL_EVAL_GLOBAL);
     isPtr->input = chan = Tcl_GetStdChannel(TCL_STDIN);
     Tcl_DecrRefCount(commandPtr);
-    isPtr->commandPtr = commandPtr = Tcl_NewObj();
+    TclNewObj(commandPtr);
+    isPtr->commandPtr = commandPtr;
     Tcl_IncrRefCount(commandPtr);
     if (chan != NULL) {
 	Tcl_CreateChannelHandler(chan, TCL_READABLE, StdinProc, isPtr);
@@ -827,7 +803,7 @@ StdinProc(
 	chan = Tcl_GetStdChannel(TCL_STDOUT);
 
 	Tcl_IncrRefCount(resultPtr);
-	Tcl_GetStringFromObj(resultPtr, &length);
+	TclGetStringFromObj(resultPtr, &length);
 	if ((length > 0) && (chan != NULL)) {
 	    Tcl_WriteObj(chan, resultPtr);
 	    Tcl_WriteChars(chan, "\n", 1);
@@ -866,9 +842,8 @@ StdinProc(
 static void
 Prompt(
     Tcl_Interp *interp,		/* Interpreter to use for prompting. */
-    InteractiveState *isPtr) /* InteractiveState. Filled
-				 * with PROMPT_NONE after a prompt is
-				 * printed. */
+    InteractiveState *isPtr)	/* InteractiveState. Filled with PROMPT_NONE
+				 * after a prompt is printed. */
 {
     Tcl_Obj *promptCmdPtr;
     int code;
@@ -879,7 +854,7 @@ Prompt(
     }
 
     promptCmdPtr = Tcl_GetVar2Ex(interp,
-	    ((isPtr->prompt == PROMPT_CONTINUE) ? "tcl_prompt2" : "tcl_prompt1"),
+	    (isPtr->prompt==PROMPT_CONTINUE ? "tcl_prompt2" : "tcl_prompt1"),
 	    NULL, TCL_GLOBAL_ONLY);
 
     if (Tcl_InterpDeleted(interp)) {
@@ -920,8 +895,8 @@ Prompt(
  *
  * FreeMainInterp --
  *
- *	Exit handler used to cleanup the main interpreter and ancillary startup
- *	script storage at exit.
+ *	Exit handler used to cleanup the main interpreter and ancillary
+ *	startup script storage at exit.
  *
  *----------------------------------------------------------------------
  */
@@ -930,13 +905,13 @@ static void
 FreeMainInterp(
     ClientData clientData)
 {
-	Tcl_Interp *interp = (Tcl_Interp *) clientData;
+    Tcl_Interp *interp = (Tcl_Interp *)clientData;
 
-	/*if (TclInExit()) return;*/
+    /*if (TclInExit()) return;*/
 
-	if (!Tcl_InterpDeleted(interp)) {
-	    Tcl_DeleteInterp(interp);
-	}
+    if (!Tcl_InterpDeleted(interp)) {
+	Tcl_DeleteInterp(interp);
+    }
     Tcl_SetStartupScript(NULL, NULL);
     Tcl_Release(interp);
 }

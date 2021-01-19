@@ -2,7 +2,7 @@
  * Utility functions for handling cvecs
  * This file is #included by regcomp.c.
  *
- * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -81,6 +81,7 @@ addchr(
     struct cvec *cv,		/* character vector */
     pchr c)			/* character to add */
 {
+    assert(cv->nchrs < cv->chrspace);
     cv->chrs[cv->nchrs++] = (chr)c;
 }
 

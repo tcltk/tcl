@@ -4,20 +4,20 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testdel [llength [info commands testdel]]
 
@@ -140,6 +140,13 @@ test rename-4.7 {reentrancy issues with command deletion and renaming} testdel {
 if {[info exists env(value)]} {
     unset env(value)
 }
+test rename-4.8 {Bug a16752c252} testdel {
+    set x broken
+    testdel {} foo {set x ok}
+    proc foo args {}
+    rename foo {}
+    return -level 0 $x[unset x]
+} ok
 
 # Save the unknown procedure which is modified by the following test.
 

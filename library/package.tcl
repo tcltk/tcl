@@ -3,8 +3,8 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994-1998 Sun Microsystems, Inc.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994-1998 Sun Microsystems, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -237,7 +237,7 @@ proc pkg_mkIndex {args} {
 	$c eval [list set ::tcl::file $file]
 	$c eval [list set ::tcl::direct $direct]
 
-	# Download needed procedures into the slave because we've just deleted
+	# Download needed procedures into the child because we've just deleted
 	# the unknown procedure.  This doesn't handle procedures with default
 	# arguments.
 
@@ -395,9 +395,7 @@ proc pkg_mkIndex {args} {
 
     foreach pkg [lsort [array names files]] {
 	set cmd {}
-	foreach {name version} $pkg {
-	    break
-	}
+	lassign $pkg name version
 	lappend cmd ::tcl::Pkg::Create -name $name -version $version
 	foreach spec [lsort -index 0 $files($pkg)] {
 	    foreach {file type procs} $spec {
@@ -411,6 +409,7 @@ proc pkg_mkIndex {args} {
     }
 
     set f [open [file join $dir pkgIndex.tcl] w]
+    fconfigure $f -encoding utf-8 -translation lf
     puts $f $index
     close $f
 }
@@ -481,21 +480,28 @@ proc tclPkgUnknown {name args} {
 	}
 	set tclSeenPath($dir) 1
 
-	# we can't use glob in safe interps, so enclose the following in a
-	# catch statement, where we get the pkgIndex files out of the
-	# subdirectories
+	# Get the pkgIndex.tcl files in subdirectories of auto_path directories.
+	# - Safe Base interpreters have a restricted "glob" command that
+	#   works in this case.
+	# - The "catch" was essential when there was no safe glob and every
+	#   call in a safe interp failed; it is retained only for corner
+	#   cases in which the eventual call to glob returns an error.
 	catch {
 	    foreach file [glob -directory $dir -join -nocomplain \
 		    * pkgIndex.tcl] {
 		set dir [file dirname $file]
 		if {![info exists procdDirs($dir)]} {
 		    try {
-			source $file
+			::tcl::Pkg::source $file
 		    } trap {POSIX EACCES} {} {
 			# $file was not readable; silently ignore
 			continue
 		    } on error msg {
-			tclLog "error reading package index file $file: $msg"
+			if {[regexp {version conflict for package} $msg]} {
+			    # In case of version conflict, silently ignore
+			    continue
+			}
+    			tclLog "error reading package index file $file: $msg"
 		    } on ok {} {
 			set procdDirs($dir) 1
 		    }
@@ -508,11 +514,15 @@ proc tclPkgUnknown {name args} {
 	    # safe interps usually don't have "file exists",
 	    if {([interp issafe] || [file exists $file])} {
 		try {
-		    source $file
+		    ::tcl::Pkg::source $file
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
 		    continue
 		} on error msg {
+		    if {[regexp {version conflict for package} $msg]} {
+			# In case of version conflict, silently ignore
+			continue
+		    }
 		    tclLog "error reading package index file $file: $msg"
 		} on ok {} {
 		    set procdDirs($dir) 1
@@ -544,8 +554,7 @@ proc tclPkgUnknown {name args} {
 	# Don't add directories we've already seen, or ones already on the
 	# $use_path.
 	foreach dir [lrange $auto_path $index end] {
-	    if {![info exists tclSeenPath($dir)]
-		    && ([lsearch -exact $use_path $dir] == -1) } {
+	    if {![info exists tclSeenPath($dir)] && ($dir ni $use_path)} {
 		lappend use_path $dir
 	    }
 	}
@@ -588,16 +597,21 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 	set tclSeenPath($dir) 1
 
 	# get the pkgIndex files out of the subdirectories
+	# Safe interpreters do not use tcl::MacOSXPkgUnknown - see init.tcl.
 	foreach file [glob -directory $dir -join -nocomplain \
 		* Resources Scripts pkgIndex.tcl] {
 	    set dir [file dirname $file]
 	    if {![info exists procdDirs($dir)]} {
 		try {
-		    source $file
+		    ::tcl::Pkg::source $file
 		} trap {POSIX EACCES} {} {
 		    # $file was not readable; silently ignore
 		    continue
 		} on error msg {
+		    if {[regexp {version conflict for package} $msg]} {
+		 	# In case of version conflict, silently ignore
+			continue
+		    }
 		    tclLog "error reading package index file $file: $msg"
 		} on ok {} {
 		    set procdDirs($dir) 1
@@ -628,8 +642,7 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 	# Don't add directories we've already seen, or ones already on the
 	# $use_path.
 	foreach dir [lrange $auto_path $index end] {
-	    if {![info exists tclSeenPath($dir)]
-		    && ([lsearch -exact $use_path $dir] == -1) } {
+	    if {![info exists tclSeenPath($dir)] && ($dir ni $use_path)} {
 		lappend use_path $dir
 	    }
 	}
@@ -681,10 +694,7 @@ proc ::tcl::Pkg::Create {args} {
     }
 
     # Initialize parameters
-    set opts(-name)		{}
-    set opts(-version)		{}
-    set opts(-source)		{}
-    set opts(-load)		{}
+    array set opts {-name {} -version {} -source {} -load {}}
 
     # process parameters
     for {set i 0} {$i < $len} {incr i} {
@@ -732,14 +742,9 @@ proc ::tcl::Pkg::Create {args} {
     # Handle -load and -source specs
     foreach key {load source} {
 	foreach filespec $opts(-$key) {
-	    foreach {filename proclist} {{} {}} {
-		break
-	    }
-	    foreach {filename proclist} $filespec {
-		break
-	    }
+	    lassign $filespec filename proclist
 
-	    if {![llength $proclist]} {
+	    if { [llength $proclist] == 0 } {
 		set cmd "\[list $key \[file join \$dir [list $filename]\]\]"
 		lappend cmdList $cmd
 	    } else {

@@ -4,9 +4,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH pid n 7.0 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -43,6 +43,9 @@ close $pipeline
 
 .SH "SEE ALSO"
 exec(n), open(n)
-
 .SH KEYWORDS
 file, pipeline, process identifier
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

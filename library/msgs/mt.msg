@@ -1,19 +1,19 @@
 # created by tools/loadICU.tcl -- do not edit
 namespace eval ::tcl::clock {
     ::msgcat::mcset mt DAYS_OF_WEEK_ABBREV [list \
-        "\u0126ad"\
+        "Ħad"\
         "Tne"\
         "Tli"\
         "Erb"\
-        "\u0126am"\
-        "\u0120im"]
+        "Ħam"\
+        "Ġim"]
     ::msgcat::mcset mt MONTHS_ABBREV [list \
         "Jan"\
         "Fra"\
         "Mar"\
         "Apr"\
         "Mej"\
-        "\u0120un"\
+        "Ġun"\
         "Lul"\
         "Awi"\
         "Set"\

@@ -3,7 +3,7 @@
  *
  *	Contains commands for Xt notifier specific tests on Unix.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright © 1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -15,7 +15,7 @@
 #include <X11/Intrinsic.h>
 #include "tcl.h"
 
-static Tcl_CmdProc TesteventloopCmd;
+static Tcl_ObjCmdProc TesteventloopCmd;
 extern DLLEXPORT Tcl_PackageInitProc Tclxttest_Init;
 
 /*
@@ -48,12 +48,12 @@ int
 Tclxttest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     XtToolkitInitialize();
     InitNotifier();
-    Tcl_CreateCommand(interp, "testeventloop", TesteventloopCmd,
+    Tcl_CreateObjCommand(interp, "testeventloop", TesteventloopCmd,
 	    NULL, NULL);
     return TCL_OK;
 }
@@ -78,23 +78,22 @@ Tclxttest_Init(
 
 static int
 TesteventloopCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
 				 * innermost invocation of the "wait"
 				 * subcommand. */
 
-    if (argc < 2) {
-	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
-		" option ... \"", NULL);
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
 	return TCL_ERROR;
     }
-    if (strcmp(argv[1], "done") == 0) {
+    if (strcmp(Tcl_GetString(objv[1]), "done") == 0) {
 	*framePtr = 1;
-    } else if (strcmp(argv[1], "wait") == 0) {
+    } else if (strcmp(Tcl_GetString(objv[1]), "wait") == 0) {
 	int *oldFramePtr;
 	int done;
 	int oldMode = Tcl_SetServiceMode(TCL_SERVICE_ALL);
@@ -118,7 +117,7 @@ TesteventloopCmd(
 	(void) Tcl_SetServiceMode(oldMode);
 	framePtr = oldFramePtr;
     } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1],
+	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
 		"\": must be done or wait", NULL);
 	return TCL_ERROR;
     }

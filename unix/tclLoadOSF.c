@@ -26,7 +26,7 @@
  *
  *	John Robert LoVerso <loverso@freebsd.osf.org>
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -35,12 +35,14 @@
 #include "tclInt.h"
 #include <sys/types.h>
 #include <loader.h>
-
-/* Static functions defined within this file */
 
-static void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
-		       const char* symbol);
-static void UnloadFile(Tcl_LoadHandle handle);
+/*
+ * Static functions defined within this file.
+ */
+
+static void *		FindSymbol(Tcl_Interp *interp,
+			    Tcl_LoadHandle loadHandle, const char* symbol);
+static void		UnloadFile(Tcl_LoadHandle handle);
 
 /*
  *----------------------------------------------------------------------
@@ -68,10 +70,11 @@ TclpDlopen(
     Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr,
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
+    int flags)
 {
     Tcl_LoadHandle newHandle;
     ldr_module_t lm;
@@ -103,8 +106,9 @@ TclpDlopen(
     }
 
     if (lm == LDR_NULL_MODULE) {
-	Tcl_AppendResult(interp, "couldn't load file \"", fileName, "\": ",
-		Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't load file \"%s\": %s",
+		fileName, Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
 
@@ -124,7 +128,7 @@ TclpDlopen(
     } else {
 	pkg++;
     }
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)ckalloc(sizeof(*newHandle));
     newHandle->clientData = pkg;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
@@ -155,10 +159,11 @@ FindSymbol(
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
-    void* retval = ldr_lookup_package((char *)loadHandle, symbol);
+    void *retval = ldr_lookup_package((char *) loadHandle, symbol);
+
     if (retval == NULL && interp != NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "cannot find symbol\"", symbol, "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot find symbol \"%s\"", symbol));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, NULL);
     }
     return retval;
@@ -189,36 +194,6 @@ UnloadFile(
 				 * that represents the loaded file. */
 {
     ckfree(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this function is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name.  A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
-{
-    return 0;
 }
 
 /*

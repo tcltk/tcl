@@ -4,9 +4,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH open n 8.3 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -68,7 +68,7 @@ Set the initial access position  to the end of the file.
 All of the legal \fIaccess\fR values above may have the character
 \fBb\fR added as the second or third character in the value to
 indicate that the opened channel should be configured as if with the
-\fBfconfigure\fR \fB\-translation binary\fR option, making the channel suitable for 
+\fBfconfigure\fR \fB\-translation binary\fR option, making the channel suitable for
 reading or writing of binary data.
 .PP
 In the second form, \fIaccess\fR consists of a list of any of the
@@ -166,8 +166,9 @@ is opened and initialized in a platform-dependent manner.  Acceptable
 values for the \fIfileName\fR to use to open a serial port are described in
 the PORTABILITY ISSUES section.
 .PP
-The \fBfconfigure\fR command can be used to query and set additional
-configuration options specific to serial ports (where supported):
+The \fBchan configure\fR and \fBfconfigure\fR commands can be used to query
+and set additional configuration options specific to serial ports (where
+supported):
 .TP
 \fB\-mode\fR \fIbaud\fB,\fIparity\fB,\fIdata\fB,\fIstop\fR
 .
@@ -249,6 +250,75 @@ handshake characters. Normally the operating system default should be
 DC1 (0x11) and DC3 (0x13) representing the ASCII standard
 XON and XOFF characters.
 .TP
+\fB\-closemode\fR \fIcloseMode\fR
+.VS "8.7, TIP 160"
+(Windows and Unix). This option is used to query or change the close mode of
+the serial channel, which defines how pending output in operating system
+buffers is handled when the channel is closed. The following values for
+\fIcloseMode\fR are supported:
+.RS
+.TP
+\fBdefault\fR
+.
+indicates that a system default operation should be used; all serial channels
+default to this.
+.TP
+\fBdiscard\fR
+.
+indicates that the contents of the OS buffers should be discarded.  Note that
+this is \fInot recommended\fR when writing to a POSIX terminal, as it can
+interact unexpectedly with handling of \fBstderr\fR.
+.TP
+\fBdrain\fR
+.
+indicates that Tcl should wait when closing the channel until all output has
+been consumed. This may slow down \fBclose\fR noticeably.
+.RE
+.VE "8.7, TIP 160"
+.TP
+\fB\-inputmode\fR \fIinputMode\fR
+.VS "8.7, TIP 160"
+(Unix only; Windows has the equivalent option on console channels). This
+option is used to query or change the input mode of the serial channel under
+the assumption that it is talking to a terminal, which controls how interactive
+input from users is handled. The following values for \fIinputMode\fR are
+supported:
+.RS
+.TP
+\fBnormal\fR
+.
+indicates that normal line-oriented input should be used, with standard
+terminal editing capabilities enabled.
+.TP
+\fBpassword\fR
+.
+indicates that non-echoing input should be used, with standard terminal
+editing capabilities enabled but no writing of typed characters to the
+terminal (except for newlines). Some terminals may indicate this specially.
+.TP
+\fBraw\fR
+.
+indicates that all keyboard input should be given directly to Tcl with the
+terminal doing no processing at all. It does not echo the keys, leaving it up
+to the Tcl script to interpret what to do.
+.TP
+\fBreset\fR (set only)
+.
+indicates that the terminal should be reset to what state it was in when the
+terminal was opened.
+.PP
+Note that setting this option (technically, anything that changes the terminal
+state from its initial value \fIvia this option\fR) will cause the channel to
+turn on an automatic reset of the terminal when the channel is closed.
+.RE
+.TP
+\fB\-winsize\fR
+.
+(Unix only; Windows has the equivalent option on console channels). This
+option is query only. It retrieves a two-element list with the the current
+width and height of the terminal.
+.VE "8.7, TIP 160"
+.TP
 \fB\-pollinterval\fR \fImsec\fR
 .
 (Windows only). This option is used to set the maximum time between
@@ -275,7 +345,7 @@ In case of a serial communication error, \fBread\fR or \fBputs\fR
 returns a general Tcl file I/O error.
 \fBfconfigure\fR \fB\-lasterror\fR can be called to get a list of error details.
 See below for an explanation of the various error codes.
-.SH "SERIAL PORT SIGNALS"
+.SS "SERIAL PORT SIGNALS"
 .PP
 RS-232 is the most commonly used standard electrical interface for serial
 communications. A negative voltage (-3V..-12V) define a mark (on=1) bit and
@@ -316,7 +386,7 @@ milliseconds.  Normally a receive or transmit data signal stays at the mark
 (on=1) voltage until the next character is transferred. A BREAK is sometimes
 used to reset the communications line or change the operating mode of
 communications hardware.
-.SH "ERROR CODES (Windows only)"
+.SS "ERROR CODES (Windows only)"
 .PP
 A lot of different errors may occur during serial read operations or during
 event polling in background. The external device may have been switched
@@ -359,65 +429,30 @@ may cause this error.
 \fBBREAK\fR
 .
 A BREAK condition has been detected by your UART (see above).
-.SH "PORTABILITY ISSUES"
+.SS "PORTABILITY ISSUES"
 .TP
-\fBWindows \fR(all versions)
+\fBWindows \fR
 .
 Valid values for \fIfileName\fR to open a serial port are of the form
-\fBcom\fIX\fB:\fR, where \fIX\fR is a number, generally from 1 to 4.
-This notation only works for serial ports from 1 to 9, if the system
-happens to have more than four.  An attempt to open a serial port that
+\fBcom\fIX\fB\fR, where \fIX\fR is a number, generally from 1 to 9.
+A legacy form accepted as well is \fBcom\fIX\fB:\fR. This notation only
+works for serial ports from 1 to 9.  An attempt to open a serial port that
 does not exist or has a number greater than 9 will fail.  An alternate
-form of opening serial ports is to use the filename \fB\e\e.\ecomX\fR,
-where X is any number that corresponds to a serial port; please note
-that this method is considerably slower on Windows 95 and Windows 98.
-.TP
-\fBWindows NT\fR
-.
+form of opening serial ports is to use the filename \fB//./comX\fR,
+where X is any number that corresponds to a serial port.
+.PP
+.RS
 When running Tcl interactively, there may be some strange interactions
 between the real console, if one is present, and a command pipeline that uses
 standard input or output.  If a command pipeline is opened for reading, some
 of the lines entered at the console will be sent to the command pipeline and
 some will be sent to the Tcl evaluator.  If a command pipeline is opened for
 writing, keystrokes entered into the console are not visible until the
-pipe is closed.  This behavior occurs whether the command pipeline is
-executing 16-bit or 32-bit applications.  These problems only occur because
-both Tcl and the child application are competing for the console at
-the same time.  If the command pipeline is started from a script, so that Tcl
-is not accessing the console, or if the command pipeline does not use
-standard input or output, but is redirected from or to a file, then the
-above problems do not occur.  
-.TP
-\fBWindows 95\fR 
-.
-A command pipeline that executes a 16-bit DOS application cannot be opened
-for both reading and writing, since 16-bit DOS applications that receive
-standard input from a pipe and send standard output to a pipe run
-synchronously.  Command pipelines that do not execute 16-bit DOS
-applications run asynchronously and can be opened for both reading and
-writing.  
-.RS
-.PP
-When running Tcl interactively, there may be some strange interactions
-between the real console, if one is present, and a command pipeline that uses
-standard input or output.  If a command pipeline is opened for reading from
-a 32-bit application, some of the keystrokes entered at the console will be
-sent to the command pipeline and some will be sent to the Tcl evaluator.  If
-a command pipeline is opened for writing to a 32-bit application, no output
-is visible on the console until the pipe is closed.  These problems only
-occur because both Tcl and the child application are competing for the
-console at the same time.  If the command pipeline is started from a script,
-so that Tcl is not accessing the console, or if the command pipeline does
-not use standard input or output, but is redirected from or to a file, then
-the above problems do not occur.  
-.PP
-Whether or not Tcl is running interactively, if a command pipeline is opened
-for reading from a 16-bit DOS application, the call to \fBopen\fR will not
-return until end-of-file has been received from the command pipeline's
-standard output.  If a command pipeline is opened for writing to a 16-bit DOS
-application, no data will be sent to the command pipeline's standard output
-until the pipe is actually closed.  This problem occurs because 16-bit DOS
-applications are run synchronously, as described above.  
+pipe is closed.  These problems only occur because both Tcl and the child
+application are competing for the console at the same time.  If the command
+pipeline is started from a script, so that Tcl is not accessing the console,
+or if the command pipeline does not use standard input or output, but is
+redirected from or to a file, then the above problems do not occur.
 .RE
 .TP
 \fBUnix\fR\0\0\0\0\0\0\0
@@ -437,13 +472,61 @@ some will be sent to the Tcl evaluator.  This problem only occurs because
 both Tcl and the child application are competing for the console at the
 same time.  If the command pipeline is started from a script, so that Tcl is
 not accessing the console, or if the command pipeline does not use standard
-input, but is redirected from a file, then the above problem does not occur.  
+input, but is redirected from a file, then the above problem does not occur.
 .RE
 .PP
 See the \fBPORTABILITY ISSUES\fR section of the \fBexec\fR command for
 additional information not specific to command pipelines about executing
 applications on the various platforms
-.SH "EXAMPLE"
+.SH "CONSOLE CHANNELS"
+.VS "8.7, TIP 160"
+On Windows only, console channels (usually \fBstdin\fR or \fBstdout\fR)
+support the following options:
+.TP
+\fB\-inputmode\fR \fIinputMode\fR
+.
+This option is used to query or change the input mode of the console channel,
+which controls how interactive input from users is handled. The following
+values for \fIinputMode\fR are supported:
+.RS
+.TP
+\fBnormal\fR
+.
+indicates that normal line-oriented input should be used, with standard
+console editing capabilities enabled.
+.TP
+\fBpassword\fR
+.
+indicates that non-echoing input should be used, with standard console
+editing capabilitied enabled but no writing of typed characters to the
+terminal (except for newlines).
+.TP
+\fBraw\fR
+.
+indicates that all keyboard input should be given directly to Tcl with the
+console doing no processing at all. It does not echo the keys, leaving it up
+to the Tcl script to interpret what to do.
+.TP
+\fBreset\fR (set only)
+.
+indicates that the console should be reset to what state it was in when the
+console channel was opened.
+.PP
+Note that setting this option (technically, anything that changes the console
+state from its default \fIvia this option\fR) will cause the channel to turn
+on an automatic reset of the console when the channel is closed.
+.RE
+.TP
+\fB\-winsize\fR
+.
+This option is query only.
+It retrieves a two-element list with the the current width and height of the
+console that this channel is talking to.
+.PP
+Note that the equivalent options exist on Unix, but are on the serial channel
+type.
+.VE "8.7, TIP 160"
+.SH "EXAMPLES"
 .PP
 Open a command pipeline and catch any errors:
 .PP
@@ -454,6 +537,22 @@ if {[catch {close $fl} err]} {
     puts "ls command failed: $err"
 }
 .CE
+.PP
+.VS "8.7, TIP 160"
+Read a password securely from the user (assuming that the script is being run
+interactively):
+.PP
+.CS
+chan configure stdin \fB-inputmode password\fR
+try {
+    chan puts -nonewline "Password: "
+    chan flush stdout
+    set thePassword [chan gets stdin]
+} finally {
+    chan configure stdin \fB-inputmode reset\fR
+}
+.CE
+.VE "8.7, TIP 160"
 .SH "SEE ALSO"
 file(n), close(n), filename(n), fconfigure(n), gets(n), read(n),
 puts(n), exec(n), pid(n), fopen(3)

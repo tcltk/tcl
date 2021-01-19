@@ -3,18 +3,18 @@ namespace eval ::tcl::clock {
     ::msgcat::mcset cs DAYS_OF_WEEK_ABBREV [list \
         "Ne"\
         "Po"\
-        "\u00dat"\
+        "Út"\
         "St"\
-        "\u010ct"\
-        "P\u00e1"\
+        "Čt"\
+        "Pá"\
         "So"]
     ::msgcat::mcset cs DAYS_OF_WEEK_FULL [list \
-        "Ned\u011ble"\
-        "Pond\u011bl\u00ed"\
-        "\u00dater\u00fd"\
-        "St\u0159eda"\
-        "\u010ctvrtek"\
-        "P\u00e1tek"\
+        "Neděle"\
+        "Pondělí"\
+        "Úterý"\
+        "Středa"\
+        "Čtvrtek"\
+        "Pátek"\
         "Sobota"]
     ::msgcat::mcset cs MONTHS_ABBREV [list \
         "I"\
@@ -32,19 +32,19 @@ namespace eval ::tcl::clock {
         ""]
     ::msgcat::mcset cs MONTHS_FULL [list \
         "leden"\
-        "\u00fanor"\
-        "b\u0159ezen"\
+        "únor"\
+        "březen"\
         "duben"\
-        "kv\u011bten"\
-        "\u010derven"\
-        "\u010dervenec"\
+        "květen"\
+        "červen"\
+        "červenec"\
         "srpen"\
-        "z\u00e1\u0159\u00ed"\
-        "\u0159\u00edjen"\
+        "září"\
+        "říjen"\
         "listopad"\
         "prosinec"\
         ""]
-    ::msgcat::mcset cs BCE "p\u0159.Kr."
+    ::msgcat::mcset cs BCE "př.Kr."
     ::msgcat::mcset cs CE "po Kr."
     ::msgcat::mcset cs AM "dop."
     ::msgcat::mcset cs PM "odp."

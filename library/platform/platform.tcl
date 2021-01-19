@@ -71,6 +71,7 @@ proc ::platform::generic {} {
 	    set cpu sparc
 	}
 	intel -
+	ia32* -
 	i*86* {
 	    set cpu ix86
 	}
@@ -93,9 +94,13 @@ proc ::platform::generic {} {
 	}
     }
 
-    switch -- $plat {
+    switch -glob -- $plat {
 	windows {
-	    set plat win32
+	    if {$tcl_platform(platform) == "unix"} {
+		set plat cygwin
+	    } else {
+		set plat win32
+	    }
 	    if {$cpu eq "amd64"} {
 		# Do not check wordSize, win32-x64 is an IL32P64 platform.
 		set cpu x86_64
@@ -142,6 +147,9 @@ proc ::platform::generic {} {
 	osf1 {
 	    set plat tru64
 	}
+	default {
+	    set plat [lindex [split $plat _-] 0]
+	}
     }
 
     return "${plat}-${cpu}"
@@ -168,11 +176,15 @@ proc ::platform::identify {} {
 	}
 	macosx {
 	    set major [lindex [split $tcl_platform(osVersion) .] 0]
-	    if {$major > 8} {
+	    if {$major > 19} {
+		incr major -20
+		append plat 11.$major
+	    } else {
 		incr major -4
 		append plat 10.$major
 		return "${plat}-${cpu}"
 	    }
+	    return "${plat}-${cpu}"
 	}
 	linux {
 	    # Look for the libc*.so and determine its version
@@ -256,7 +268,7 @@ proc ::platform::LibcVersion {base _->_ vv} {
     if {![catch {
 	set vdata [lindex [split [exec $libc] \n] 0]
     }]} {
-	regexp {([0-9]+(\.[0-9]+)*)} $vdata -> v
+	regexp {version ([0-9]+(\.[0-9]+)*)} $vdata -> v
 	foreach {major minor} [split $v .] break
 	set v glibc${major}.${minor}
 	return 1
@@ -313,51 +325,76 @@ proc ::platform::patterns {id} {
 		}
 	    }
 	}
+	macosx-powerpc {
+	    lappend res macosx-universal
+	}
+	macosx-x86_64 {
+	    lappend res macosx-i386-x86_64
+	}
+	macosx-ix86 {
+	    lappend res macosx-universal macosx-i386-x86_64
+	}
 	macosx*-*    {
-	    # 10.5+ 
+	    # 10.5+,11.0+
 	    if {[regexp {macosx([^-]*)-(.*)} $id -> v cpu]} {
 
 		switch -exact -- $cpu {
-		    ix86    -
-		    x86_64  { set alt i386-x86_64 }
+		    ix86    {
+			lappend alt i386-x86_64
+			lappend alt universal
+		    }
+		    x86_64  {
+			if {[lindex [split $::tcl_platform(osVersion) .] 0] < 19} {
+			    set alt i386-x86_64
+			} else {
+			    set alt {}
+			}
+		    }
+		    arm  {
+			lappend alt x86_64
+		    }
 		    default { set alt {} }
 		}
 
 		if {$v ne ""} {
 		    foreach {major minor} [split $v .] break
 
-		    # Add 10.5 to 10.minor to patterns.
 		    set res {}
+		    if {$major eq 11} {
+			# Add 11.0 to 11.minor to patterns.
+			for {set j $minor} {$j >= 0} {incr j -1} {
+			    lappend res macosx${major}.${j}-${cpu}
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+			set major 10
+			set minor 15
+		    }
+		    # Add 10.5 to 10.minor to patterns.
 		    for {set j $minor} {$j >= 5} {incr j -1} {
-			lappend res macosx${major}.${j}-${cpu}
-			lappend res macosx${major}.${j}-universal
-			if {$alt ne {}} {
-			    lappend res macosx${major}.${j}-$alt
+			if {$cpu ne "arm"} {
+			    lappend res macosx${major}.${j}-${cpu}
+			}
+			foreach a $alt {
+			    lappend res macosx${major}.${j}-$a
 			}
 		    }
 
 		    # Add unversioned patterns for 10.3/10.4 builds.
 		    lappend res macosx-${cpu}
-		    lappend res macosx-universal
-		    if {$alt ne {}} {
-			lappend res macosx-$alt
+		    foreach a $alt {
+			lappend res macosx-$a
 		    }
 		} else {
-		    lappend res macosx-universal
-		    if {$alt ne {}} {
-			lappend res macosx-$alt
+		    # No version, just do unversioned patterns.
+		    foreach a $alt {
+			lappend res macosx-$a
 		    }
 		}
 	    } else {
-		lappend res macosx-universal
+		# no v, no cpu ... nothing
 	    }
-	}
-	macosx-powerpc {
-	    lappend res macosx-universal
-	}
-	macosx-x86_64 -
-	macosx-ix86 {
-	    lappend res macosx-universal macosx-i386-x86_64
 	}
     }
     lappend res tcl ; # Pure tcl packages are always compatible.
@@ -368,7 +405,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.10
+package provide platform 1.0.16
 
 # ### ### ### ######### ######### #########
 ## Demo application

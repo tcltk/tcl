@@ -4,8 +4,8 @@
  *	This file contains routines for converting file names betwen native
  *	and network form.
  *
- * Copyright (c) 1995-1998 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1995-1998 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -235,14 +235,14 @@ ExtractWinRoot(
 	if ((path[0] == 'c' || path[0] == 'C')
 		&& (path[1] == 'o' || path[1] == 'O')) {
 	    if ((path[2] == 'm' || path[2] == 'M')
-		    && path[3] >= '1' && path[3] <= '4') {
+		    && path[3] >= '1' && path[3] <= '9') {
 		/*
-		 * May have match for 'com[1-4]:?', which is a serial port.
+		 * May have match for 'com[1-9]:?', which is a serial port.
 		 */
 
 		if (path[4] == '\0') {
 		    abs = 4;
-		} else if (path [4] == ':' && path[5] == '\0') {
+		} else if (path[4] == ':' && path[5] == '\0') {
 		    abs = 5;
 		}
 
@@ -257,14 +257,14 @@ ExtractWinRoot(
 	} else if ((path[0] == 'l' || path[0] == 'L')
 		&& (path[1] == 'p' || path[1] == 'P')
 		&& (path[2] == 't' || path[2] == 'T')) {
-	    if (path[3] >= '1' && path[3] <= '3') {
+	    if (path[3] >= '1' && path[3] <= '9') {
 		/*
-		 * May have match for 'lpt[1-3]:?'
+		 * May have match for 'lpt[1-9]:?'
 		 */
 
 		if (path[4] == '\0') {
 		    abs = 4;
-		} else if (path [4] == ':' && path[5] == '\0') {
+		} else if (path[4] == ':' && path[5] == '\0') {
 		    abs = 5;
 		}
 	    }
@@ -387,7 +387,7 @@ TclpGetNativePathType(
 {
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
     int pathLen;
-    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
 
     if (path[0] == '~') {
 	/*
@@ -412,26 +412,22 @@ TclpGetNativePathType(
 	     */
 
 	    if (path[0] == '/') {
+		++path;
 		/*
-		 * Check for "//" prefix
+		 * Check for "//" network path prefix
 		 */
-		if (path[1] == '/') {
-		    path++;
-#ifdef __QNX__
-		    /*
-		     * Check for QNX //<node id> prefix
-		     */
-		    while (isdigit(UCHAR(path[1]))) {
-			path++;
+		if ((*path == '/') && path[1] && (path[1] != '/')) {
+		    path += 2;
+		    while (*path && *path != '/') {
+			++path;
 		    }
-#endif
 		}
 		if (driveNameLengthPtr != NULL) {
 		    /*
-		     * We need this addition in case the QNX or "//" code was used.
+		     * We need this addition in case the "//" code was used.
 		     */
 
-		    *driveNameLengthPtr = (1 + path - origPath);
+		    *driveNameLengthPtr = (path - origPath);
 		}
 	    } else {
 		type = TCL_PATH_RELATIVE;
@@ -569,7 +565,7 @@ Tcl_SplitPath(
     size = 1;
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
-	Tcl_GetStringFromObj(eltPtr, &len);
+	TclGetStringFromObj(eltPtr, &len);
 	size += len + 1;
     }
 
@@ -578,7 +574,8 @@ Tcl_SplitPath(
      * plus the argv pointers and the terminating NULL pointer.
      */
 
-    *argvPtr = ckalloc((((*argcPtr) + 1) * sizeof(char *)) + size);
+    *argvPtr = (const char **)ckalloc(
+	    ((((*argcPtr) + 1) * sizeof(char *)) + size));
 
     /*
      * Position p after the last argv pointer and copy the contents of the
@@ -588,8 +585,8 @@ Tcl_SplitPath(
     p = (char *) &(*argvPtr)[(*argcPtr) + 1];
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
-	str = Tcl_GetStringFromObj(eltPtr, &len);
-	memcpy(p, str, (size_t) len+1);
+	str = TclGetStringFromObj(eltPtr, &len);
+	memcpy(p, str, len + 1);
 	p += len+1;
     }
 
@@ -634,35 +631,31 @@ SplitUnixPath(
     const char *path)		/* Pointer to string containing a path. */
 {
     int length;
-    const char *p, *elementStart;
-    Tcl_Obj *result = Tcl_NewObj();
+    const char *origPath = path, *elementStart;
+    Tcl_Obj *result;
 
     /*
      * Deal with the root directory as a special case.
      */
 
-    p = path;
-    if (*p == '/') {
-	Tcl_Obj *rootElt = Tcl_NewStringObj("/", 1);
-	p++;
+    TclNewObj(result);
+    if (*path == '/') {
+	Tcl_Obj *rootElt;
+	++path;
 	/*
-	 * Check for "//" prefix
+	 * Check for "//" network path prefix
 	 */
-	if (*p == '/') {
-	    Tcl_AppendToObj(rootElt, "/", 1);
-	    p++;
-#ifdef __QNX__ */
-	    /*
-	     * Check for QNX //<node id> prefix
-	     */
-
-	    while (isdigit(UCHAR(*p))) { /* INTL: digit */
-		    Tcl_AppendToObj(rootElt, p, 1);
-		    p++;
+	if ((*path == '/') && path[1] && (path[1] != '/')) {
+	    path += 2;
+	    while (*path && *path != '/') {
+		++path;
 	    }
-#endif
 	}
+	rootElt = Tcl_NewStringObj(origPath, path - origPath);
 	Tcl_ListObjAppendElement(NULL, result, rootElt);
+	while (*path == '/') {
+	    ++path;
+	}
     }
 
     /*
@@ -671,14 +664,14 @@ SplitUnixPath(
      */
 
     for (;;) {
-	elementStart = p;
-	while ((*p != '\0') && (*p != '/')) {
-	    p++;
+	elementStart = path;
+	while ((*path != '\0') && (*path != '/')) {
+	    path++;
 	}
-	length = p - elementStart;
+	length = path - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-	    if ((elementStart[0] == '~') && (elementStart != path)) {
+	    if ((elementStart[0] == '~') && (elementStart != origPath)) {
 		TclNewLiteralStringObj(nextElt, "./");
 		Tcl_AppendToObj(nextElt, elementStart, length);
 	    } else {
@@ -686,7 +679,7 @@ SplitUnixPath(
 	    }
 	    Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
-	if (*p++ == '\0') {
+	if (*path++ == '\0') {
 	    break;
 	}
     }
@@ -718,9 +711,10 @@ SplitWinPath(
     const char *p, *elementStart;
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
     Tcl_DString buf;
-    Tcl_Obj *result = Tcl_NewObj();
+    Tcl_Obj *result;
     Tcl_DStringInit(&buf);
 
+    TclNewObj(result);
     p = ExtractWinRoot(path, &buf, 0, &type);
 
     /*
@@ -791,24 +785,24 @@ Tcl_FSJoinToPath(
     Tcl_Obj *const objv[])	/* Path elements to join. */
 {
     if (pathPtr == NULL) {
-	return TclJoinPath(objc, objv);
+	return TclJoinPath(objc, objv, 0);
     }
     if (objc == 0) {
-	return TclJoinPath(1, &pathPtr);
+	return TclJoinPath(1, &pathPtr, 0);
     }
     if (objc == 1) {
 	Tcl_Obj *pair[2];
 
 	pair[0] = pathPtr;
 	pair[1] = objv[0];
-	return TclJoinPath(2, pair);
+	return TclJoinPath(2, pair, 0);
     } else {
 	int elemc = objc + 1;
-	Tcl_Obj *ret, **elemv = ckalloc(elemc*sizeof(Tcl_Obj **));
+	Tcl_Obj *ret, **elemv = (Tcl_Obj**)ckalloc(elemc*sizeof(Tcl_Obj *));
 
 	elemv[0] = pathPtr;
-	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj **));
-	ret = TclJoinPath(elemc, elemv);
+	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
+	ret = TclJoinPath(elemc, elemv, 0);
 	ckfree(elemv);
 	return ret;
     }
@@ -840,7 +834,7 @@ TclpNativeJoinPath(
     const char *p;
     const char *start;
 
-    start = Tcl_GetStringFromObj(prefix, &length);
+    start = TclGetStringFromObj(prefix, &length);
 
     /*
      * Remove the ./ from tilde prefixed elements, and drive-letter prefixed
@@ -868,7 +862,7 @@ TclpNativeJoinPath(
 
 	if (length > 0 && (start[length-1] != '/')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    Tcl_GetStringFromObj(prefix, &length);
+	    TclGetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
@@ -904,7 +898,7 @@ TclpNativeJoinPath(
 	if ((length > 0) &&
 		(start[length-1] != '/') && (start[length-1] != ':')) {
 	    Tcl_AppendToObj(prefix, "/", 1);
-	    Tcl_GetStringFromObj(prefix, &length);
+	    TclGetStringFromObj(prefix, &length);
 	}
 	needsSep = 0;
 
@@ -960,7 +954,7 @@ Tcl_JoinPath(
     Tcl_DString *resultPtr)	/* Pointer to previously initialized DString */
 {
     int i, len;
-    Tcl_Obj *listObj = Tcl_NewObj();
+    Tcl_Obj *listObj;
     Tcl_Obj *resultObj;
     const char *resultStr;
 
@@ -968,6 +962,7 @@ Tcl_JoinPath(
      * Build the list of paths.
      */
 
+    TclNewObj(listObj);
     for (i = 0; i < argc; i++) {
 	Tcl_ListObjAppendElement(NULL, listObj,
 		Tcl_NewStringObj(argv[i], -1));
@@ -986,7 +981,7 @@ Tcl_JoinPath(
      * Store the result.
      */
 
-    resultStr = Tcl_GetStringFromObj(resultObj, &len);
+    resultStr = TclGetStringFromObj(resultObj, &len);
     Tcl_DStringAppend(resultPtr, resultStr, len);
     Tcl_DecrRefCount(resultObj);
 
@@ -1055,7 +1050,7 @@ Tcl_TranslateFileName(
      */
 
     if (tclPlatform == TCL_PLATFORM_WINDOWS) {
-	register char *p;
+	char *p;
 	for (p = Tcl_DStringValue(bufferPtr); *p != '\0'; p++) {
 	    if (*p == '/') {
 		*p = '\\';
@@ -1162,9 +1157,10 @@ DoTildeSubst(
 	dir = TclGetEnv("HOME", &dirString);
 	if (dir == NULL) {
 	    if (interp) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't find HOME environment "
-			"variable to expand path", NULL);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"couldn't find HOME environment "
+			"variable to expand path", -1));
+		Tcl_SetErrorCode(interp, "TCL", "FILENAME", "NO_HOME", NULL);
 	    }
 	    return NULL;
 	}
@@ -1173,8 +1169,9 @@ DoTildeSubst(
     } else if (TclpGetUserHome(user, resultPtr) == NULL) {
 	if (interp) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "user \"", user, "\" doesn't exist",
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "user \"%s\" doesn't exist", user));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "USER", user, NULL);
 	}
 	return NULL;
     }
@@ -1198,10 +1195,9 @@ DoTildeSubst(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_GlobObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1216,7 +1212,7 @@ Tcl_GlobObjCmd(
 	"-directory", "-join", "-nocomplain", "-path", "-tails",
 	"-types", "--", NULL
     };
-    enum options {
+    enum globOptionsEnum {
 	GLOB_DIR, GLOB_JOIN, GLOB_NOCOMPLAIN, GLOB_PATH, GLOB_TAILS,
 	GLOB_TYPE, GLOB_LAST
     };
@@ -1230,7 +1226,7 @@ Tcl_GlobObjCmd(
     for (i = 1; i < objc; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&index) != TCL_OK) {
-	    string = Tcl_GetStringFromObj(objv[i], &length);
+	    string = TclGetStringFromObj(objv[i], &length);
 	    if (string[0] == '-') {
 		/*
 		 * It looks like the command contains an option so signal an
@@ -1249,7 +1245,7 @@ Tcl_GlobObjCmd(
 	    }
 	}
 
-	switch (index) {
+	switch ((enum globOptionsEnum) index) {
 	case GLOB_NOCOMPLAIN:			/* -nocomplain */
 	    globFlags |= TCL_GLOBMODE_NO_COMPLAIN;
 	    break;
@@ -1262,7 +1258,10 @@ Tcl_GlobObjCmd(
 	    }
 	    if (dir != PATH_NONE) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-directory\" cannot be used with \"-path\"", -1));
+			dir == PATH_DIR
+			    ? "\"-directory\" may only be used once"
+			    : "\"-directory\" cannot be used with \"-path\"",
+			-1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 			"BADOPTIONCOMBINATION", NULL);
 		return TCL_ERROR;
@@ -1287,7 +1286,10 @@ Tcl_GlobObjCmd(
 	    }
 	    if (dir != PATH_NONE) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-path\" cannot be used with \"-directory\"", -1));
+			dir == PATH_GENERAL
+			    ? "\"-path\" may only be used once"
+			    : "\"-path\" cannot be used with \"-dictionary\"",
+			-1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 			"BADOPTIONCOMBINATION", NULL);
 		return TCL_ERROR;
@@ -1317,15 +1319,15 @@ Tcl_GlobObjCmd(
 
   endOfForLoop:
     if ((globFlags & TCL_GLOBMODE_TAILS) && (pathOrDir == NULL)) {
-	Tcl_AppendResult(interp,
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"\"-tails\" must be used with either "
-		"\"-directory\" or \"-path\"", NULL);
+		"\"-directory\" or \"-path\"", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 		"BADOPTIONCOMBINATION", NULL);
 	return TCL_ERROR;
     }
 
-    separators = NULL;		/* lint. */
+    separators = NULL;
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:
 	separators = "/";
@@ -1338,7 +1340,7 @@ Tcl_GlobObjCmd(
     if (dir == PATH_GENERAL) {
 	int pathlength;
 	const char *last;
-	const char *first = Tcl_GetStringFromObj(pathOrDir,&pathlength);
+	const char *first = TclGetStringFromObj(pathOrDir,&pathlength);
 
 	/*
 	 * Find the last path separator in the path
@@ -1430,7 +1432,7 @@ Tcl_GlobObjCmd(
 	if (length <= 0) {
 	    goto skipTypes;
 	}
-	globTypes = TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
+	globTypes = (Tcl_GlobTypeData *)TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
 	globTypes->type = 0;
 	globTypes->perm = 0;
 	globTypes->macType = NULL;
@@ -1441,7 +1443,7 @@ Tcl_GlobObjCmd(
 	    const char *str;
 
 	    Tcl_ListObjIndex(interp, typePtr, length, &look);
-	    str = Tcl_GetStringFromObj(look, &len);
+	    str = TclGetStringFromObj(look, &len);
 	    if (strcmp("readonly", str) == 0) {
 		globTypes->perm |= TCL_GLOB_PERM_RONLY;
 	    } else if (strcmp("hidden", str) == 0) {
@@ -1576,8 +1578,9 @@ Tcl_GlobObjCmd(
     } else if (dir == PATH_GENERAL) {
 	Tcl_DString str;
 
+	Tcl_DStringInit(&str);
 	for (i = 0; i < objc; i++) {
-	    Tcl_DStringInit(&str);
+	    Tcl_DStringSetLength(&str, 0);
 	    if (dir == PATH_GENERAL) {
 		TclDStringAppendDString(&str, &prefix);
 	    }
@@ -1613,20 +1616,23 @@ Tcl_GlobObjCmd(
 	}
 
 	if (length == 0) {
-	    Tcl_AppendResult(interp, "no files matched glob pattern",
-		    (join || (objc == 1)) ? " \"" : "s \"", NULL);
+	    Tcl_Obj *errorMsg =
+		    Tcl_ObjPrintf("no files matched glob pattern%s \"",
+			    (join || (objc == 1)) ? "" : "s");
+
 	    if (join) {
-		Tcl_AppendResult(interp, Tcl_DStringValue(&prefix), NULL);
+		Tcl_AppendToObj(errorMsg, Tcl_DStringValue(&prefix), -1);
 	    } else {
 		const char *sep = "";
 
 		for (i = 0; i < objc; i++) {
-		    string = Tcl_GetString(objv[i]);
-		    Tcl_AppendResult(interp, sep, string, NULL);
+		    Tcl_AppendPrintfToObj(errorMsg, "%s%s",
+			    sep, Tcl_GetString(objv[i]));
 		    sep = " ";
 		}
 	    }
-	    Tcl_AppendResult(interp, "\"", NULL);
+	    Tcl_AppendToObj(errorMsg, "\"", -1);
+	    Tcl_SetObjResult(interp, errorMsg);
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "NOMATCH",
 		    NULL);
 	    result = TCL_ERROR;
@@ -1657,9 +1663,8 @@ Tcl_GlobObjCmd(
  *
  * TclGlob --
  *
- *	This procedure prepares arguments for the DoGlob call. It sets the
- *	separator string based on the platform, performs * tilde substitution,
- *	and calls DoGlob.
+ *	Sets the separator string based on the platform, performs tilde
+ *	substitution, and calls DoGlob.
  *
  *	The interpreter's result, on entry to this function, must be a valid
  *	Tcl list (e.g. it could be empty), since we will lappend any new
@@ -1682,7 +1687,6 @@ Tcl_GlobObjCmd(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 TclGlob(
     Tcl_Interp *interp,		/* Interpreter for returning error message or
@@ -1701,7 +1705,7 @@ TclGlob(
     int result;
     Tcl_Obj *filenamesObj, *savedResultObj;
 
-    separators = NULL;		/* lint. */
+    separators = NULL;
     switch (tclPlatform) {
     case TCL_PLATFORM_UNIX:
 	separators = "/";
@@ -1757,6 +1761,7 @@ TclGlob(
 	    if (c != '\0') {
 		tail++;
 	    }
+	    Tcl_DStringFree(&buffer);
 	} else {
 	    tail = pattern;
 	}
@@ -1857,7 +1862,7 @@ TclGlob(
 	separators = "/\\";
 
     } else if (tclPlatform == TCL_PLATFORM_UNIX) {
-	if (pathPrefix == NULL && tail[0] == '/') {
+	if (pathPrefix == NULL && tail[0] == '/' && tail[1] != '/') {
 	    pathPrefix = Tcl_NewStringObj(tail, 1);
 	    tail++;
 	    Tcl_IncrRefCount(pathPrefix);
@@ -1880,7 +1885,7 @@ TclGlob(
     }
 
     /*
-     * To process a [glob] invokation, this function may be called multiple
+     * To process a [glob] invocation, this function may be called multiple
      * times. Each time, the previously discovered filenames are in the
      * interpreter result. We stash that away here so the result is free for
      * error messsages.
@@ -1968,7 +1973,7 @@ TclGlob(
 	    Tcl_Panic("Called TclGlob with TCL_GLOBMODE_TAILS and pathPrefix==NULL");
 	}
 
-	pre = Tcl_GetStringFromObj(pathPrefix, &prefixLen);
+	pre = TclGetStringFromObj(pathPrefix, &prefixLen);
 	if (prefixLen > 0
 		&& (strchr(separators, pre[prefixLen-1]) == NULL)) {
 	    /*
@@ -1986,7 +1991,7 @@ TclGlob(
 	Tcl_ListObjGetElements(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
 	    int len;
-	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
+	    const char *oldStr = TclGetStringFromObj(objv[i], &len);
 	    Tcl_Obj *elem;
 
 	    if (len == prefixLen) {
@@ -2034,7 +2039,7 @@ TclGlob(
  * SkipToChar --
  *
  *	This function traverses a glob pattern looking for the next unquoted
- *	occurance of the specified character at the same braces nesting level.
+ *	occurrence of the specified character at the same braces nesting level.
  *
  * Results:
  *	Updates stringPtr to point to the matching character, or to the end of
@@ -2053,7 +2058,7 @@ SkipToChar(
     int match)			/* Character to find. */
 {
     int quoted, level;
-    register char *p;
+    char *p;
 
     quoted = 0;
     level = 0;
@@ -2194,15 +2199,15 @@ DoGlob(
 		closeBrace = p;
 		break;
 	    }
-	    Tcl_SetResult(interp, "unmatched open-brace in file name",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unmatched open-brace in file name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    NULL);
 	    return TCL_ERROR;
 
 	} else if (*p == '}') {
-	    Tcl_SetResult(interp, "unmatched close-brace in file name",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unmatched close-brace in file name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    NULL);
 	    return TCL_ERROR;
@@ -2338,7 +2343,7 @@ DoGlob(
 			Tcl_Obj *fixme, *newObj;
 
 			Tcl_ListObjIndex(NULL, matchesObj, repair, &fixme);
-			bytes = Tcl_GetStringFromObj(fixme, &numBytes);
+			bytes = TclGetStringFromObj(fixme, &numBytes);
 			newObj = Tcl_NewStringObj(bytes+2, numBytes-2);
 			Tcl_ListObjReplace(NULL, matchesObj, repair, 1,
 				1, &newObj);
@@ -2376,7 +2381,7 @@ DoGlob(
 	Tcl_DStringAppend(&append, pattern, p-pattern);
 
 	if (pathPtr != NULL) {
-	    (void) Tcl_GetStringFromObj(pathPtr, &length);
+	    (void) TclGetStringFromObj(pathPtr, &length);
 	} else {
 	    length = 0;
 	}
@@ -2422,9 +2427,9 @@ DoGlob(
 		 */
 
 		int len;
-		const char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
+		const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
-		if (strchr(separators, joined[len-1]) == NULL) {
+		if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
 		}
 	    }
@@ -2459,9 +2464,9 @@ DoGlob(
 	     */
 
 	    int len;
-	    const char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
+	    const char *joined = TclGetStringFromObj(joinedPtr,&len);
 
-	    if (strchr(separators, joined[len-1]) == NULL) {
+	    if ((len > 0) && (strchr(separators, joined[len-1]) == NULL)) {
 		if (Tcl_FSGetPathType(pathPtr) != TCL_PATH_VOLUME_RELATIVE) {
 		    Tcl_AppendToObj(joinedPtr, "/", 1);
 		}
@@ -2499,7 +2504,7 @@ DoGlob(
 Tcl_StatBuf *
 Tcl_AllocStatBuf(void)
 {
-    return ckalloc(sizeof(Tcl_StatBuf));
+    return (Tcl_StatBuf *)ckalloc(sizeof(Tcl_StatBuf));
 }
 
 /*
@@ -2524,21 +2529,21 @@ unsigned
 Tcl_GetFSDeviceFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (unsigned) statPtr->st_dev;
+    return statPtr->st_dev;
 }
 
 unsigned
 Tcl_GetFSInodeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (unsigned) statPtr->st_ino;
+    return statPtr->st_ino;
 }
 
 unsigned
 Tcl_GetModeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (unsigned) statPtr->st_mode;
+    return statPtr->st_mode;
 }
 
 int
@@ -2569,61 +2574,66 @@ Tcl_GetDeviceTypeFromStat(
     return (int) statPtr->st_rdev;
 }
 
-Tcl_WideInt
+long long
 Tcl_GetAccessTimeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideInt) statPtr->st_atime;
+    return (long long) statPtr->st_atime;
 }
 
-Tcl_WideInt
+long long
 Tcl_GetModificationTimeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideInt) statPtr->st_mtime;
+    return (long long) statPtr->st_mtime;
 }
 
-Tcl_WideInt
+long long
 Tcl_GetChangeTimeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideInt) statPtr->st_ctime;
+    return (long long) statPtr->st_ctime;
 }
 
-Tcl_WideUInt
+unsigned long long
 Tcl_GetSizeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideUInt) statPtr->st_size;
+    return (unsigned long long) statPtr->st_size;
 }
 
-Tcl_WideUInt
+unsigned long long
 Tcl_GetBlocksFromStat(
     const Tcl_StatBuf *statPtr)
 {
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-    return (Tcl_WideUInt) statPtr->st_blocks;
+    return (unsigned long long) statPtr->st_blocks;
 #else
-    register unsigned blksize = Tcl_GetBlockSizeFromStat(statPtr);
+    unsigned blksize = Tcl_GetBlockSizeFromStat(statPtr);
 
-    return ((Tcl_WideUInt) statPtr->st_size + blksize - 1) / blksize;
+    return ((unsigned long long) statPtr->st_size + blksize - 1) / blksize;
 #endif
 }
 
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 unsigned
 Tcl_GetBlockSizeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    return (unsigned) statPtr->st_blksize;
+    return statPtr->st_blksize;
+}
 #else
+unsigned
+Tcl_GetBlockSizeFromStat(
+    TCL_UNUSED(const Tcl_StatBuf *))
+{
     /*
      * Not a great guess, but will do...
      */
 
     return GUESSED_BLOCK_SIZE;
-#endif
 }
+#endif
 
 /*
  * Local Variables:

@@ -4,9 +4,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH Tcl_AppInit 3 7.0 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_AppInit \- perform application-specific initialization
@@ -52,7 +52,7 @@ Invoke a startup script to initialize the application.
 Use the routines \fBTcl_SetStartupScript\fR and
 \fBTcl_GetStartupScript\fR to set or query the file and encoding
 that the active \fBTcl_Main\fR or \fBTk_Main\fR routine will
-use as a startup script. 
+use as a startup script.
 .LP
 \fBTcl_AppInit\fR returns \fBTCL_OK\fR or \fBTCL_ERROR\fR.
 If it returns \fBTCL_ERROR\fR then it must leave an error message in

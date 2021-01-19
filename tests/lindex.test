@@ -4,21 +4,21 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001 Kevin B. Kenny.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2.2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 set minus -
 testConstraint testevalex [llength [info commands testevalex]]
@@ -51,22 +51,22 @@ test lindex-2.4 {malformed index list} testevalex {
 
 # Indices that are integers or convertible to integers
 
-test lindex-3.1 {integer -1} testevalex {
+test lindex-3.1 {integer -1} -constraints testevalex -body {
     set x ${minus}1
     list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
-} {{} {}}
-test lindex-3.2 {integer 0} testevalex {
+} -result {{} {}}
+test lindex-3.2 {integer 0} -constraints testevalex -body {
     set x [string range 00 0 0]
     list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
-} {a a}
-test lindex-3.3 {integer 2} testevalex {
+} -result {a a}
+test lindex-3.3 {integer 2} -constraints testevalex -body {
     set x [string range 22 0 0]
     list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
-} {c c}
-test lindex-3.4 {integer 3} testevalex {
+} -result {c c}
+test lindex-3.4 {integer 3} -constraints testevalex -body {
     set x [string range 33 0 0]
     list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
-} {{} {}}
+} -result {{} {}}
 test lindex-3.5 {bad octal} -constraints testevalex -body {
     set x 0o8
     list [catch { testevalex {lindex {a b c} $x} } result] $result
@@ -75,10 +75,19 @@ test lindex-3.6 {bad octal} -constraints testevalex -body {
     set x -0o9
     list [catch { testevalex {lindex {a b c} $x} } result] $result
 } -match glob -result {1 {*invalid octal number*}}
-test lindex-3.7 {indexes don't shimmer wide ints} {
+test lindex-3.7 {indexes don't shimmer wide ints} -body {
     set x [expr {(wide(1)<<31) - 2}]
     list $x [lindex {1 2 3} $x] [incr x] [incr x]
-} {2147483646 {} 2147483647 2147483648}
+} -result {2147483646 {} 2147483647 2147483648}
+test lindex-3.8 {compiled with static indices out of range, negative} -body {
+    list [lindex {a b c} -1] [lindex {a b c} -2] [lindex {a b c} -3]
+} -result [lrepeat 3 {}]
+test lindex-3.9 {compiled with calculated indices out of range, negative constant} -body {
+    list [lindex {a b c} -1-1] [lindex {a b c} -2+0] [lindex {a b c} -2+1]
+} -result [lrepeat 3 {}]
+test lindex-3.10 {compiled with calculated indices out of range, after end} -body {
+    list [lindex {a b c} end+1] [lindex {a b c} end+2] [lindex {a b c} end+3]
+} -result [lrepeat 3 {}]
 
 # Indices relative to end
 
@@ -156,34 +165,38 @@ test lindex-7.4 {quoted elements} {
     lindex {a b {c d "e} {f g"}} 2
 } {c d "e}
 
-test lindex-8.1 {data reuse} testevalex {
+test lindex-8.1 {data reuse} -constraints testevalex -body {
     set x 0
     testevalex {lindex $x $x}
-} {0}
-test lindex-8.2 {data reuse} testevalex {
+} -result 0
+test lindex-8.2 {data reuse} -constraints testevalex -body {
     set a 0
     testevalex {lindex $a $a $a}
-} 0
-test lindex-8.3 {data reuse} testevalex {
+} -result 0
+test lindex-8.3 {data reuse} -constraints {
+    testevalex
+} -body {
     set a 1
     testevalex {lindex $a $a $a}
-} {}
-test lindex-8.4 {data reuse} testevalex {
+} -result {}
+test lindex-8.4 {data reuse} -constraints testevalex -body {
     set x [list 0 0]
     testevalex {lindex $x $x}
-} {0}
-test lindex-8.5 {data reuse} testevalex {
+} -result 0
+test lindex-8.5 {data reuse} -constraints testevalex -body {
     set x 0
     testevalex {lindex $x [list $x $x]}
-} {0}
-test lindex-8.6 {data reuse} testevalex {
+} -result 0
+test lindex-8.6 {data reuse} -constraints testevalex -body {
     set x [list 1 1]
     testevalex {lindex $x $x}
-} {}
-test lindex-8.7 {data reuse} testevalex {
+} -result {}
+test lindex-8.7 {data reuse} -constraints {
+    testevalex
+} -body {
     set x 1
     testevalex {lindex $x [list $x $x]}
-} {}
+} -result {}
 
 #----------------------------------------------------------------------
 
@@ -372,79 +385,76 @@ test lindex-15.3 {quoted elements} {
     } result
     set result
 } {c d " x}
-test lindex-15.4 {quoted elements} {
+test lindex-15.4 {quoted elements} -body {
     catch {
 	lindex {a b {c d "e} {f g"}} 2
     } result
     set result
-} {c d "e}
+} -result {c d "e}
 
-test lindex-16.1 {data reuse} {
+test lindex-16.1 {data reuse} -body {
     set x 0
     catch {
 	lindex $x $x
     } result
     set result
-} {0}
-test lindex-16.2 {data reuse} {
+} -result {0}
+test lindex-16.2 {data reuse} -body {
     set a 0
     catch {
 	lindex $a $a $a
     } result
     set result
-} 0
-test lindex-16.3 {data reuse} {
+} -result 0
+test lindex-16.3 {data reuse} -body {
     set a 1
     catch {
 	lindex $a $a $a
     } result
     set result
-} {}
-test lindex-16.4 {data reuse} {
+} -result {}
+test lindex-16.4 {data reuse} -body {
     set x [list 0 0]
     catch {
 	lindex $x $x
     } result
     set result
-} {0}
-test lindex-16.5 {data reuse} {
+} -result {0}
+test lindex-16.5 {data reuse} -body {
     set x 0
     catch {
 	lindex $x [list $x $x]
     } result
     set result
-} {0}
-test lindex-16.6 {data reuse} {
+} -result {0}
+test lindex-16.6 {data reuse} -body {
     set x [list 1 1]
     catch {
 	lindex $x $x
     } result
     set result
-} {}
-test lindex-16.7 {data reuse} {
+} -result {}
+test lindex-16.7 {data reuse} -body {
     set x 1
     catch {
 	lindex $x [list $x $x]
     } result
     set result
-} {}
+} -result {}
 
-test lindex-17.0 {Bug 1718580} {*}{
-    -body {
-        lindex {} end foo
-    } 
-    -match glob
-    -result {bad index "foo"*}
-    -returnCodes 1
-}
+test lindex-17.0 {Bug 1718580} -body {
+    lindex {} end foo
+} -match glob -result {bad index "foo"*} -returnCodes 1
+test lindex-17.1 {Bug 1718580} -body {
+    lindex a end foo
+} -match glob -result {bad index "foo"*} -returnCodes 1
 
-test lindex-17.1 {Bug 1718580} {*}{
-    -body {
-        lindex a end foo
-    } 
-    -match glob
-    -result {bad index "foo"*}
-    -returnCodes 1
+test lindex-18.0 {nested bytecode execution} -setup {
+    proc demo {i} {lindex {a b c} $i}
+} -body {
+    demo 0+0x10000000000000000
+} -cleanup {
+    rename demo {}
 }
 
 catch { unset minus }

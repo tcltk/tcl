@@ -4,15 +4,15 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH tclsh 1 "" Tcl "Tcl Applications"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 tclsh \- Simple shell containing Tcl interpreter
 .SH SYNOPSIS
-\fBtclsh\fR ?-encoding \fIname\fR? ?\fIfileName arg arg ...\fR?
+\fBtclsh\fR ?\fB\-encoding \fIname\fR? ?\fIfileName arg arg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -44,7 +44,7 @@ If this character is present in the file, the \fBtclsh\fR application
 will read text up to but not including the character.  An application
 that requires this character in the file may safely encode it as
 .QW \e032 ,
-.QW \ex1a ,
+.QW \ex1A ,
 or
 .QW \eu001a ;
 or may generate it by use of commands such as \fBformat\fR or \fBbinary\fR.
@@ -102,7 +102,9 @@ but also the disadvantage of making it harder to write scripts that
 start up uniformly across different versions of Tcl.
 .SH "VARIABLES"
 .PP
-\fBTclsh\fR sets the following Tcl variables:
+\fBTclsh\fR sets the following global Tcl variables in addition to those
+created by the Tcl library itself (such as \fBenv\fR, which maps
+environment variables such as \fBPATH\fR into Tcl):
 .TP 15
 \fBargc\fR
 .
@@ -129,7 +131,7 @@ device), 0 otherwise.
 When \fBtclsh\fR is invoked interactively it normally prompts for each
 command with
 .QW "\fB% \fR" .
-You can change the prompt by setting the
+You can change the prompt by setting the global
 variables \fBtcl_prompt1\fR and \fBtcl_prompt2\fR.  If variable
 \fBtcl_prompt1\fR exists then it must consist of a Tcl script
 to output a prompt;  instead of outputting a prompt \fBtclsh\fR
@@ -141,7 +143,16 @@ incomplete commands.
 .SH "STANDARD CHANNELS"
 .PP
 See \fBTcl_StandardChannels\fR for more explanations.
+.SH ZIPVFS
+.PP
+When a zipfile is concatenated to the end of a \fBtclsh\fR, on
+startup the contents of the zip archive will be mounted as the
+virtual file system /zvfs. If a top level directory tcl8.6 is
+present in the zip archive, it will become the directory loaded
+as env(TCL_LIBRARY). If a file named \fBmain.tcl\fR is present
+in the top level directory of the zip archive, it will be sourced
+instead of the shell's normal command line handing.
 .SH "SEE ALSO"
-encoding(n), fconfigure(n), tclvars(n)
+auto_path(n), encoding(n), env(n), fconfigure(n)
 .SH KEYWORDS
 application, argument, interpreter, prompt, script file, shell

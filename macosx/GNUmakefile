@@ -32,6 +32,18 @@ MANDIR			?= ${PREFIX}/man
 # set to non-empty value to install manpages in addition to html help:
 INSTALL_MANPAGES	?=
 
+# Checks and overrides for subframework builds
+ifeq (${SUBFRAMEWORK},1)
+ifeq (${DYLIB_INSTALL_DIR},)
+	@echo "Cannot install subframework with empty DYLIB_INSTALL_DIR !" && false
+endif
+ifeq (${DESTDIR},)
+	@echo "Cannot install subframework with empty DESTDIR !" && false
+endif
+override BUILD_DIR = ${DESTDIR}/build
+override INSTALL_PATH = /Frameworks
+endif
+
 #-------------------------------------------------------------------------------------------------------
 # meta targets
 
@@ -76,7 +88,7 @@ space			:= ${empty} ${empty}
 objdir			= $(subst ${space},\ ,${OBJ_DIR})
 
 develop_make_args	:= BUILD_STYLE=Development CONFIGURE_ARGS=--enable-symbols
-deploy_make_args	:= BUILD_STYLE=Deployment INSTALL_TARGET=install-strip \
+deploy_make_args	:= BUILD_STYLE=Deployment INSTALL_TARGET=install \
 			   EXTRA_CFLAGS=-DNDEBUG
 embedded_make_args	:= EMBEDDED_BUILD=1
 install_make_args	:= INSTALL_BUILD=1
@@ -92,7 +104,7 @@ PROJECT			:= tcl
 PRODUCT_NAME		:= Tcl
 
 UNIX_DIR		:= ${CURDIR}/../unix
-VERSION			:= $(shell awk -F= '/^TCL_VERSION/ {print $$2; nextfile}' ${UNIX_DIR}/configure.in)
+VERSION			:= $(shell awk -F= '/^TCL_VERSION/ {print $$2; nextfile}' ${UNIX_DIR}/configure.ac)
 TCLSH			:= tclsh${VERSION}
 
 BUILD_TARGET		:= all tcltest
@@ -100,7 +112,7 @@ INSTALL_TARGET		:= install
 
 export CPPROG		:= cp -p
 
-INSTALL_TARGETS		= install-binaries install-libraries
+INSTALL_TARGETS		= install-binaries install-headers install-libraries
 ifeq (${EMBEDDED_BUILD},)
 INSTALL_TARGETS		+= install-private-headers
 endif
@@ -132,7 +144,7 @@ ${objdir}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure \
 	mkdir -p "${OBJ_DIR}" && cd "${OBJ_DIR}" && \
 	if [ ${UNIX_DIR}/configure -nt config.status ]; then ${UNIX_DIR}/configure -C \
 	--prefix="${PREFIX}" --bindir="${BINDIR}" --libdir="${LIBDIR}" \
-	--mandir="${MANDIR}" --enable-threads --enable-framework --enable-dtrace \
+	--mandir="${MANDIR}" --enable-framework --enable-dtrace \
 	${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}; else ./config.status; fi
 
 build-${PROJECT}: ${objdir}/Makefile
@@ -141,9 +153,9 @@ ifeq (${INSTALL_BUILD},)
 # symolic link hackery to trick
 # 'make install INSTALL_ROOT=${OBJ_DIR}'
 # into building Tcl.framework and tclsh in ${SYMROOT}
-	@cd "${OBJ_DIR}" && mkdir -p $(dir $(subst ${space},\ ,./${LIBDIR})) $(dir $(subst ${space},\ ,./${BINDIR})) "${SYMROOT}" && \
-	rm -f "./${LIBDIR}" "./${BINDIR}" && ln -fs "${SYMROOT}" "./${LIBDIR}" && \
-	ln -fs "${SYMROOT}" "./${BINDIR}" && ln -fs "${OBJ_DIR}/tcltest" "${SYMROOT}"
+	@cd "${OBJ_DIR}" && mkdir -p $(dir $(subst ${space},\ ,.${LIBDIR})) $(dir $(subst ${space},\ ,.${BINDIR})) "${SYMROOT}" && \
+	rm -f ".${LIBDIR}" ".${BINDIR}" && ln -fs "${SYMROOT}" ".${LIBDIR}" && \
+	ln -fs "${SYMROOT}" ".${BINDIR}" && ln -fs "${OBJ_DIR}/tcltest" "${SYMROOT}"
 endif
 
 install-${PROJECT}: build-${PROJECT}
@@ -151,7 +163,7 @@ ifeq (${EMBEDDED_BUILD}_${INSTALL_ROOT},1_)
 	@echo "Cannot install-embedded with empty INSTALL_ROOT !" && false
 endif
 ifeq (${EMBEDDED_BUILD},1)
-	@rm -rf "${INSTALL_ROOT}/${LIBDIR}/Tcl.framework"
+	@rm -rf "${INSTALL_ROOT}${LIBDIR}/Tcl.framework"
 endif
 	${DO_MAKE}
 ifeq (${INSTALL_BUILD},1)
@@ -160,17 +172,6 @@ ifeq (${EMBEDDED_BUILD},1)
 	@rm -f "${INSTALL_ROOT}${BINDIR}/${TCLSH}" && \
 	rmdir -p "${INSTALL_ROOT}${BINDIR}" 2>&- || true
 else
-# redo prebinding (when not building for Mac OS X 10.4 or later only)
-	@if [ "`echo "$${MACOSX_DEPLOYMENT_TARGET}" | \
-	awk -F '10\\.' '{print int($$2)}'`" -lt 4 -a "`echo "$${CFLAGS}" | \
-	awk -F '-mmacosx-version-min=10\\.' '{print int($$2)}'`" -lt 4 ]; \
-	then cd ${INSTALL_ROOT}/; \
-	if [ ! -d usr/lib ]; then mkdir -p usr && ln -fs /usr/lib usr/ && RM_USRLIB=1; fi; \
-	if [ ! -d System ]; then ln -fs /System . && RM_SYSTEM=1; fi; \
-	redo_prebinding -r . "./${LIBDIR}/${PRODUCT_NAME}.framework/Versions/${VERSION}/${PRODUCT_NAME}"; \
-	redo_prebinding -r . "./${BINDIR}/${TCLSH}"; \
-	if [ -n "$${RM_USRLIB:-}" ]; then rm -f usr/lib; rmdir -p usr 2>&-; fi; \
-	if [ -n "$${RM_SYSTEM:-}" ]; then rm -f System; fi; fi
 # install tclsh symbolic link
 	@ln -fs ${TCLSH} "${INSTALL_ROOT}${BINDIR}/tclsh"
 endif
@@ -180,8 +181,10 @@ ifeq (${BUILD_STYLE}_${EMBEDDED_BUILD},Development_)
 # Deployment build can be installed on top
 # of Development build without overwriting
 # the debug library
-	@cd "${INSTALL_ROOT}${LIBDIR}/${PRODUCT_NAME}.framework/Versions/${VERSION}" && \
-	ln -f "${PRODUCT_NAME}" "${PRODUCT_NAME}_debug"
+	@if [ -d "${INSTALL_ROOT}${LIBDIR}/${PRODUCT_NAME}.framework/Versions/${VERSION}" ]; then \
+	    cd "${INSTALL_ROOT}${LIBDIR}/${PRODUCT_NAME}.framework/Versions/${VERSION}"; \
+	    ln -f "${PRODUCT_NAME}" "${PRODUCT_NAME}_debug"; \
+	fi
 endif
 
 clean-${PROJECT}: %-${PROJECT}:

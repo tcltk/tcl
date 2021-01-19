@@ -4,8 +4,8 @@
  *	This file implements platform independent thread storage operations to
  *	work around system limits on the number of thread-specific variables.
  *
- * Copyright (c) 2003-2004 by Joe Mistachkin
- * Copyright (c) 2008 by George Peter Staplin
+ * Copyright © 2003-2004 Joe Mistachkin
+ * Copyright © 2008 George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -13,7 +13,7 @@
 
 #include "tclInt.h"
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 #include <signal.h>
 
 /*
@@ -27,11 +27,11 @@
  */
 
 /*
- * The master collection of information about TSDs. This is shared across the
+ * The global collection of information about TSDs. This is shared across the
  * whole process, and includes the mutex used to protect it.
  */
 
-static struct TSDMaster {
+static struct {
     void *key;			/* Key into the system TSD structure. The
 				 * collection of Tcl TSD values for a
 				 * particular thread will hang off the
@@ -41,13 +41,13 @@ static struct TSDMaster {
 				 * increasing value. */
     Tcl_Mutex mutex;		/* Protection for the rest of this structure,
 				 * which holds per-process data. */
-} tsdMaster = { NULL, 0, NULL };
+} tsdGlobal = { NULL, 0, NULL };
 
 /*
  * The type of the data held per thread in a system TSD.
  */
 
-typedef struct TSDTable {
+typedef struct {
     ClientData *tablePtr;	/* The table of Tcl TSDs. */
     sig_atomic_t allocated;	/* The size of the table in the current
 				 * thread. */
@@ -57,7 +57,7 @@ typedef struct TSDTable {
  * The actual type of Tcl_ThreadDataKey.
  */
 
-typedef union TSDUnion {
+typedef union {
     volatile sig_atomic_t offset;
 				/* The type is really an offset into the
 				 * thread-local table of TSDs, which is this
@@ -85,14 +85,14 @@ TSDTableCreate(void)
     TSDTable *tsdTablePtr;
     sig_atomic_t i;
 
-    tsdTablePtr = TclpSysAlloc(sizeof(TSDTable), 0);
+    tsdTablePtr = (TSDTable *)TclpSysAlloc(sizeof(TSDTable), 0);
     if (tsdTablePtr == NULL) {
 	Tcl_Panic("unable to allocate TSDTable");
     }
 
     tsdTablePtr->allocated = 8;
     tsdTablePtr->tablePtr =
-	    TclpSysAlloc(sizeof(void *) * tsdTablePtr->allocated, 0);
+	    (void **)TclpSysAlloc(sizeof(void *) * tsdTablePtr->allocated, 0);
     if (tsdTablePtr->tablePtr == NULL) {
 	Tcl_Panic("unable to allocate TSDTable");
     }
@@ -148,15 +148,15 @@ TSDTableGrow(
     sig_atomic_t atLeast)
 {
     sig_atomic_t newAllocated = tsdTablePtr->allocated * 2;
-    ClientData *newTablePtr;
+    void **newTablePtr;
     sig_atomic_t i;
 
     if (newAllocated <= atLeast) {
 	newAllocated = atLeast + 10;
     }
 
-    newTablePtr = TclpSysRealloc(tsdTablePtr->tablePtr,
-	    sizeof(ClientData) * newAllocated);
+    newTablePtr = (void **)TclpSysRealloc(tsdTablePtr->tablePtr,
+	    sizeof(void *) * newAllocated);
     if (newTablePtr == NULL) {
 	Tcl_Panic("unable to reallocate TSDTable");
     }
@@ -189,7 +189,7 @@ void *
 TclThreadStorageKeyGet(
     Tcl_ThreadDataKey *dataKeyPtr)
 {
-    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMaster.key);
+    TSDTable *tsdTablePtr = (TSDTable *)TclpThreadGetGlobalTSD(tsdGlobal.key);
     ClientData resultPtr = NULL;
     TSDUnion *keyPtr = (TSDUnion *) dataKeyPtr;
     sig_atomic_t offset = keyPtr->offset;
@@ -208,12 +208,12 @@ TclThreadStorageKeyGet(
  *
  *	This procedure set an association of value with the key passed. The
  *	associated value may be retrieved with TclThreadDataKeyGet().
- * 
+ *
  * Results:
  *	None.
  *
  * Side effects:
- *	The thread-specific table may be created or reallocated. 
+ *	The thread-specific table may be created or reallocated.
  *
  *----------------------------------------------------------------------
  */
@@ -223,12 +223,12 @@ TclThreadStorageKeySet(
     Tcl_ThreadDataKey *dataKeyPtr,
     void *value)
 {
-    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMaster.key);
+    TSDTable *tsdTablePtr = (TSDTable *)TclpThreadGetGlobalTSD(tsdGlobal.key);
     TSDUnion *keyPtr = (TSDUnion *) dataKeyPtr;
 
     if (tsdTablePtr == NULL) {
 	tsdTablePtr = TSDTableCreate();
-	TclpThreadSetMasterTSD(tsdMaster.key, tsdTablePtr);
+	TclpThreadSetGlobalTSD(tsdGlobal.key, tsdTablePtr);
     }
 
     /*
@@ -240,15 +240,15 @@ TclThreadStorageKeySet(
      */
 
     if (keyPtr->offset == 0) {
-	Tcl_MutexLock(&tsdMaster.mutex);
+	Tcl_MutexLock(&tsdGlobal.mutex);
 	if (keyPtr->offset == 0) {
 	    /*
 	     * The Tcl_ThreadDataKey hasn't been used yet. Make a new one.
 	     */
 
-	    keyPtr->offset = ++tsdMaster.counter;
+	    keyPtr->offset = ++tsdGlobal.counter;
 	}
-	Tcl_MutexUnlock(&tsdMaster.mutex);
+	Tcl_MutexUnlock(&tsdGlobal.mutex);
     }
 
     /*
@@ -285,14 +285,14 @@ TclThreadStorageKeySet(
  *----------------------------------------------------------------------
  */
 
-void 
+void
 TclFinalizeThreadDataThread(void)
 {
-    TSDTable *tsdTablePtr = TclpThreadGetMasterTSD(tsdMaster.key);
+    TSDTable *tsdTablePtr = (TSDTable *)TclpThreadGetGlobalTSD(tsdGlobal.key);
 
     if (tsdTablePtr != NULL) {
 	TSDTableDelete(tsdTablePtr);
-	TclpThreadSetMasterTSD(tsdMaster.key, NULL);
+	TclpThreadSetGlobalTSD(tsdGlobal.key, NULL);
     }
 }
 
@@ -316,7 +316,7 @@ TclFinalizeThreadDataThread(void)
 void
 TclInitThreadStorage(void)
 {
-    tsdMaster.key = TclpThreadCreateKey();
+    tsdGlobal.key = TclpThreadCreateKey();
 }
 
 /*
@@ -339,8 +339,8 @@ TclInitThreadStorage(void)
 void
 TclFinalizeThreadStorage(void)
 {
-    TclpThreadDeleteKey(tsdMaster.key);
-    tsdMaster.key = NULL;
+    TclpThreadDeleteKey(tsdGlobal.key);
+    tsdGlobal.key = NULL;
 }
 
 #else /* !TCL_THREADS */

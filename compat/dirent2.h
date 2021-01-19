@@ -14,8 +14,6 @@
 #ifndef _DIRENT
 #define _DIRENT
 
-#include "tcl.h"
-
 /*
  * Dirent structure, which holds information about a single
  * directory entry.

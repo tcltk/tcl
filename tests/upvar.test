@@ -4,20 +4,20 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testupvar [llength [info commands testupvar]]
 
@@ -304,6 +304,17 @@ test upvar-8.3 {errors in upvar command} -returnCodes error -body {
     proc p1 {} {upvar a b c}
     p1
 } -result {bad level "a"}
+test upvar-8.3.1 {bad level for upvar (upvar at top-level, bug [775ee88560])} -body {
+    proc p1 {} { uplevel { upvar b b; lappend b UNEXPECTED } }
+    uplevel #0 { p1 }
+} -returnCodes error -result {bad level "1"}
+test upvar-8.3.2 {bad level for upvar (upvar at top-level, bug [775ee88560])} -setup {
+    interp create i
+} -body {
+    i eval { upvar b b; lappend b UNEXPECTED }
+} -returnCodes error -result {bad level "1"} -cleanup {
+    interp delete i
+}
 test upvar-8.4 {errors in upvar command} -returnCodes error -body {
     proc p1 {} {upvar 0 b b}
     p1
@@ -339,7 +350,7 @@ test upvar-8.9 {upvar won't create namespace variable that refers to procedure v
 	unset ::test_ns_1::a
     }
     MakeLink 1
-} -result {bad variable name "a": upvar won't create namespace variable that refers to procedure variable}
+} -result {bad variable name "a": can't create namespace variable that refers to procedure variable}
 test upvar-8.10 {upvar will create element alias for new array element} -setup {
     catch {unset upvarArray}
 } -body {
@@ -355,7 +366,11 @@ test upvar-8.11 {upvar will not create a variable that looks like an array} -set
 
 test upvar-9.1 {Tcl_UpVar2 procedure} testupvar {
     list [catch {testupvar xyz a {} x global} msg] $msg
-} {1 {bad level "xyz"}}
+} {1 {bad level "1"}}
+test upvar-9.1.1 {TclGetFrame, via Tcl_UpVar2} testupvar {
+    apply {{} {testupvar xyz a {} x local; set x foo}}
+    set a
+} foo
 test upvar-9.2 {Tcl_UpVar2 procedure} testupvar {
     catch {unset a}
     catch {unset x}
@@ -414,6 +429,17 @@ test upvar-9.7 {Tcl_UpVar procedure} testupvar {
 } {1234}
 catch {unset a}
 
+test upvar-10.1 {CompileWord OBOE} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        upvar 1 {*}{
+        } [return [incr n -[linenumber]]] x
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+
 #
 # Tests for 'namespace upvar'. As the implementation is essentially the same as
 # for 'upvar', we only test that the variables are linked correctly, i.e., we
@@ -466,7 +492,7 @@ test upvar-NS-1.4 {nsupvar links to correct variable} -body {
 } -returnCodes error -cleanup {
     namespace delete test_ns_1
 } -result {namespace "test_ns_0" not found in "::test_ns_1"}
-    
+
 test upvar-NS-1.5 {nsupvar links to correct variable} -body {
     namespace eval test_ns_1 {
 	namespace eval test_ns_0 {}
@@ -536,6 +562,37 @@ test upvar-NS-2.2 {TIP 323} -setup {
 } -cleanup {
     namespace delete test_ns_1
 } -result {}
+
+test upvar-NS-3.1 {CompileWord OBOE} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        namespace upvar {*}{
+        } [return [incr n -[linenumber]]] x y
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+test upvar-NS-3.2 {CompileWord OBOE} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        namespace upvar :: {*}{
+        } [return [incr n -[linenumber]]] x
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+test upvar-NS-3.3 {CompileWord OBOE} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        variable x {*}{
+        } [return [incr n -[linenumber]]]
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
 
 # cleanup
 ::tcltest::cleanupTests

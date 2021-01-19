@@ -6,7 +6,7 @@ What's here
 
 Source
 ======
-  zlib version 1.2.5
+  zlib version 1.2.11
   available at http://www.gzip.org/zlib/
 
 
@@ -22,21 +22,22 @@ Usage
 
 Build info
 ==========
-  Contributed by Cosmin Truta.
+  Contributed by Jan Nijtmans.
 
   Compiler:
-    gcc-4.5.0-1-mingw32
+    i686-w64-mingw32-gcc (GCC) 5.4.0
   Library:
-    mingwrt-3.17, w32api-3.14
+    mingw64-i686-runtime/headers: 5.0.0
   Build commands:
-    gcc -c -DASMV contrib/asm686/match.S
-    gcc -c -DASMINF -I. -O3 contrib/inflate86/inffas86.c
-    make -f win32/Makefile.gcc LOC="-DASMV -DASMINF" OBJA="inffas86.o match.o"
-
+    i686-w64-mingw32-gcc -c -DASMV contrib/asm686/match.S
+    i686-w64-mingw32-gcc -c -DASMINF -I. -O3 contrib/inflate86/inffas86.c
+    make -f win32/Makefile.gcc PREFIX=i686-w64-mingw32- LOC="-mms-bitfields -DASMV -DASMINF" OBJA="inffas86.o match.o"
+   Finally, from VS commandline (VS2005 or higher):
+    lib -machine:X86 -name:zlib1.dll -def:zlib.def -out:zdll.lib
 
 Copyright notice
 ================
-  Copyright (C) 1995-2010 Jean-loup Gailly and Mark Adler
+  Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages

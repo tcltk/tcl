@@ -6,31 +6,26 @@
 # "compExpr.test". Sourcing this file into Tcl runs the tests and generates
 # output for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1994 The Regents of the University of California.
-# Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-2000 by Scriptics Corporation.
+# Copyright © 1991-1994 The Regents of the University of California.
+# Copyright © 1994-1997 Sun Microsystems, Inc.
+# Copyright © 1998-2000 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2.1
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testexprlong   [llength [info commands testexprlong]]
 testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
-testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
-
-if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
-    testConstraint testmathfunctions 0
-} else {
-    testConstraint testmathfunctions 1
-}
+testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 # Big test for correct ordering of data in [expr]
 
@@ -145,7 +140,7 @@ test expr-old-1.50 {integer operators} {expr +36} 36
 test expr-old-1.51 {integer operators} {expr +--++36} 36
 test expr-old-1.52 {integer operators} {expr +36%+5} 1
 test expr-old-1.53 {integer operators} {
-    catch {unset x}
+    unset -nocomplain x
     set x yes
     list [expr {1 && $x}] [expr {$x && 1}] \
          [expr {0 || $x}] [expr {$x || 0}]
@@ -422,13 +417,13 @@ test expr-old-21.3 {parenthesization} {expr +(3-4)} -1
 
 # Embedded commands and variable names.
 
-set a 16 
-test expr-old-22.1 {embedded variables} {expr {2*$a}} 32 
+set a 16
+test expr-old-22.1 {embedded variables} {expr {2*$a}} 32
 test expr-old-22.2 {embedded variables} {
     set x -5
     set y 10
     expr {$x + $y}
-} {5} 
+} {5}
 test expr-old-22.3 {embedded variables} {
     set x "  -5"
     set y "  +10"
@@ -453,7 +448,7 @@ test expr-old-23.3 {double quotes} {
 test expr-old-23.4 {double quotes} {expr {"11\}\}22"}} 11}}22
 test expr-old-23.5 {double quotes} {expr {"\*bc"}} {*bc}
 test expr-old-23.6 {double quotes} {
-    catch {unset bogus__}
+    unset -nocomplain bogus__
     list [catch {expr {"$bogus__"}} msg] $msg
 } {1 {can't read "bogus__": no such variable}}
 test expr-old-23.7 {double quotes} {
@@ -502,7 +497,7 @@ test expr-old-26.2 {error conditions} -body {
 test expr-old-26.3 {error conditions} -body {
     expr 2+4*(
 } -returnCodes error -match glob -result *
-catch {unset _non_existent_}
+unset -nocomplain _non_existent_
 test expr-old-26.4 {error conditions} {
     list [catch {expr 2+$_non_existent_} msg] $msg
 } {1 {can't read "_non_existent_": no such variable}}
@@ -529,7 +524,7 @@ test expr-old-26.10b {error conditions} ieeeFloatingPoint {
     list [catch {expr 2.0/0.0} msg] $msg
 } {0 Inf}
 test expr-old-26.11 {error conditions} -body {
-    expr 2#
+    expr 2`
 } -returnCodes error -match glob -result *
 test expr-old-26.12 {error conditions} -body {
     expr a.b
@@ -581,7 +576,7 @@ test expr-old-27.4 {cancelled evaluation} {
     expr {1?2:[set a 2]}
     set a
 } 1
-catch {unset x}
+unset -nocomplain x
 test expr-old-27.5 {cancelled evaluation} {
     list [catch {expr {[info exists x] && $x}} msg] $msg
 } {0 0}
@@ -821,10 +816,10 @@ test expr-old-32.32 {math functions in expressions} {
 } {-1}
 test expr-old-32.33 {math functions in expressions} {
     expr int(1e60)
-} 0
+} 999999999999999949387135297074018866963645011013410073083904
 test expr-old-32.34 {math functions in expressions} {
     expr int(-1e60)
-} 0
+} -999999999999999949387135297074018866963645011013410073083904
 test expr-old-32.35 {math functions in expressions} {
     expr round(1.49)
 } {1}
@@ -849,12 +844,6 @@ test expr-old-32.41 {math functions in expressions} {
 test expr-old-32.42 {math functions in expressions} {
     list [catch {expr hypot(5*.8,3)} msg] $msg
 } {0 5.0}
-test expr-old-32.43 {math functions in expressions} testmathfunctions {
-    expr 2*T1()
-} 246
-test expr-old-32.44 {math functions in expressions} testmathfunctions {
-    expr T2()*3
-} 1035
 test expr-old-32.45 {math functions in expressions} {
     expr (0 <= rand()) && (rand() < 1)
 } {1}
@@ -863,7 +852,7 @@ test expr-old-32.46 {math functions in expressions} -body {
 } -match glob -result {1 {too many arguments for math function*}}
 test expr-old-32.47 {math functions in expressions} -body {
     list [catch {expr srand()} msg] $msg
-} -match glob -result {1 {too few arguments for math function*}}
+} -match glob -result {1 {not enough arguments for math function*}}
 test expr-old-32.48 {math functions in expressions} -body {
     expr srand(3.79)
 } -returnCodes error -match glob -result *
@@ -920,7 +909,7 @@ test expr-old-34.6 {errors in math functions} -body {
 } -returnCodes error -match glob -result *
 test expr-old-34.7 {errors in math functions} -body {
     list [catch {expr hypot(1.0)} msg] $msg
-} -match glob -result {1 {too few arguments for math function*}}
+} -match glob -result {1 {not enough arguments for math function*}}
 test expr-old-34.8 {errors in math functions} -body {
     list [catch {expr hypot(1.0, 2.0, 3.0)} msg] $msg
 } -match glob -result {1 {too many arguments for math function*}}
@@ -954,11 +943,6 @@ test expr-old-34.15 {errors in math functions} {
 test expr-old-34.16 {errors in math functions} {
     expr round(-1.0e30)
 } -1000000000000000019884624838656
-test expr-old-34.17 {errors in math functions} -constraints testmathfunctions \
-    -body {
-        list [catch {expr T1(4)} msg] $msg
-    } -match glob -result {1 {too many arguments for math function*}}
-
 test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
     expr 0o289
 } -returnCodes error -match glob -result {*invalid octal number*}
@@ -1054,8 +1038,8 @@ test expr-old-37.8 {Tcl_ExprLong handles overflows} testexprlong {
     testexprlong -0x80000000
 } {This is a result: -2147483648}
 test expr-old-37.9 {Tcl_ExprLong handles overflows} {testexprlong longIs32bit} {
-    testexprlong -0xffffffff
-} {This is a result: 1}
+    testexprlong -0x7fffffff
+} {This is a result: -2147483647}
 test expr-old-37.10 {Tcl_ExprLong handles overflows} \
     -constraints {testexprlong longIs32bit} \
     -match glob \
@@ -1079,9 +1063,13 @@ test expr-old-37.13 {Tcl_ExprLong handles overflows} \
 test expr-old-37.14 {Tcl_ExprLong handles overflows} testexprlong {
     testexprlong -2147483648.
 } {This is a result: -2147483648}
-test expr-old-37.15 {Tcl_ExprLong handles overflows} {testexprlong longIs32bit} {
-    testexprlong -4294967295.
-} {This is a result: 1}
+test expr-old-37.15 {Tcl_ExprLong handles overflows} \
+    -constraints {testexprlong longIs32bit} \
+    -match glob \
+    -body {
+	list [catch {testexprlong -2147483649.} result] $result
+    } \
+    -result {1 {integer value too large to represent*}}
 test expr-old-37.16 {Tcl_ExprLong handles overflows} \
     -constraints {testexprlong longIs32bit} \
     -match glob \
@@ -1122,7 +1110,7 @@ test expr-old-37.25 {Tcl_ExprDouble and NaN} \
     {ieeeFloatingPoint testexprdouble} {
 	list [catch {testexprdouble 0.0/0.0} result] $result
     } {1 {domain error: argument not in valid range}}
-    
+
 test expr-old-38.1 {Verify Tcl_ExprString's basic operation} -constraints {testexprstring} -body {
     list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \
 	    [catch {testexprstring "1+"} msg] $msg
@@ -1161,8 +1149,8 @@ test expr-old-40.2 {min math function} -body {
     expr {min(0.0)}
 } -result 0.0
 test expr-old-40.3 {min math function} -body {
-    list [catch {expr {min()}} msg] $msg
-} -result {1 {too few arguments to math function "min"}}
+    expr {min()}
+} -returnCodes error -result {not enough arguments for math function "min"}
 test expr-old-40.4 {min math function} -body {
     expr {min(wide(-1) << 30, 4.5, -10)}
 } -result [expr {wide(-1) << 30}]
@@ -1172,6 +1160,12 @@ test expr-old-40.5 {min math function} -body {
 test expr-old-40.6 {min math function} -body {
     expr {min(300, "0xFF")}
 } -result 255
+test expr-old-40.7 {min math function} -body {
+    expr min(1[string repeat 0 10000], 1e300)
+} -result 1e+300
+test expr-old-40.8 {min math function} -body {
+    expr {min(0, "a")}
+} -returnCodes error -match glob -result *
 
 test expr-old-41.1 {max math function} -body {
     expr {max(0)}
@@ -1180,8 +1174,8 @@ test expr-old-41.2 {max math function} -body {
     expr {max(0.0)}
 } -result 0.0
 test expr-old-41.3 {max math function} -body {
-    list [catch {expr {max()}} msg] $msg
-} -result {1 {too few arguments to math function "max"}}
+    expr {max()}
+} -returnCodes error -result {not enough arguments for math function "max"}
 test expr-old-41.4 {max math function} -body {
     expr {max(wide(1) << 30, 4.5, -10)}
 } -result [expr {wide(1) << 30}]
@@ -1191,6 +1185,12 @@ test expr-old-41.5 {max math function} -body {
 test expr-old-41.6 {max math function} -body {
     expr {max(200, "0xFF")}
 } -result 255
+test expr-old-41.7 {max math function} -body {
+    expr max(1[string repeat 0 10000], 1e300)
+} -result 1[string repeat 0 10000]
+test expr-old-41.8 {max math function} -body {
+    expr {max(0, "a")}
+} -returnCodes error -match glob -result *
 
 # Special test for Pentium arithmetic bug of 1994:
 

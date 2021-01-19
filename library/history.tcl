@@ -2,7 +2,7 @@
 #
 # Implementation of the history command.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright © 1997 Sun Microsystems, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -55,6 +55,30 @@ proc ::history {args} {
     # Tricky stuff needed to make stack and errors come out right!
     tailcall apply {arglist {tailcall history {*}$arglist} ::tcl} $args
 }
+
+# (unnamed) --
+#
+#	Callback when [::history] is destroyed. Destroys the implementation.
+#
+# Parameters:
+#	oldName    what the command was called.
+#	newName    what the command is now called (an empty string).
+#	op	   the operation (= delete).
+#
+# Results:
+#	none
+#
+# Side Effects:
+#	The implementation of the [::history] command ceases to exist.
+
+trace add command ::history delete [list apply {{oldName newName op} {
+    variable history
+    unset -nocomplain history
+    foreach c [info procs ::tcl::Hist*] {
+	rename $c {}
+    }
+    rename ::tcl::history {}
+} ::tcl}]
 
 # tcl::HistAdd --
 #

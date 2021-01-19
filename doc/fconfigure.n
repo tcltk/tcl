@@ -1,11 +1,11 @@
-'\" 
+'\"
 '\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.so man.macros
 .TH fconfigure n 8.3 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -72,8 +72,8 @@ initially set to \fBline\fR, and \fBstderr\fR is set to \fBnone\fR.
 .
 \fINewvalue\fR must be an integer; its value is used to set the size of
 buffers, in bytes, subsequently allocated for this channel to store input
-or output. \fINewvalue\fR must be between ten and one million, allowing
-buffers of ten to one million bytes in size.
+or output. \fINewvalue\fR must be between one and one million, allowing
+buffers of one to one million bytes in size.
 .TP
 \fB\-encoding\fR \fIname\fR
 .
@@ -105,7 +105,7 @@ system, as returned by \fBencoding system\fR.
 .TP
 \fB\-eofchar\fR \fB{\fIinChar outChar\fB}\fR
 .
-This option supports DOS file systems that use Control-z (\ex1a) as an
+This option supports DOS file systems that use Control-z (\ex1A) as an
 end of file marker.  If \fIchar\fR is not an empty string, then this
 character signals end-of-file when it is encountered during input.  For
 output, the end-of-file character is output when the channel is closed.
@@ -117,15 +117,15 @@ channel you can specify a single value that will apply to both reading
 and writing.  When querying the end-of-file character of a read-write
 channel, a two-element list will always be returned.  The default value
 for \fB\-eofchar\fR is the empty string in all cases except for files
-under Windows.  In that case the \fB\-eofchar\fR is Control-z (\ex1a) for
+under Windows.  In that case the \fB\-eofchar\fR is Control-z (\ex1A) for
 reading and the empty string for writing.
-The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7f;
+The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7F;
 attempting to set \fB\-eofchar\fR to a value outside of this range will
 generate an error.
 .TP
 \fB\-translation\fR \fImode\fR
 .TP
-\fB\-translation\fR \fB{\fIinMode outMode\fB}\fR 
+\fB\-translation\fR \fB{\fIinMode outMode\fB}\fR
 .
 In Tcl scripts the end of a line is always represented using a single
 newline character (\en).  However, in actual files and devices the end of
@@ -163,7 +163,7 @@ Tcl chooses \fBcrlf\fR, for all Unix flavors, it chooses \fBlf\fR, and
 for the various flavors of Windows it chooses \fBcrlf\fR.  The default
 setting for \fB\-translation\fR is \fBauto\fR for both input and output.
 .TP
-\fBbinary\fR 
+\fBbinary\fR
 .
 No end-of-line translations are performed.  This is nearly identical to
 \fBlf\fR mode, except that in addition \fBbinary\fR mode also sets the

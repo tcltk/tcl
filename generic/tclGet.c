@@ -5,8 +5,8 @@
  *	integers or floating-point numbers or booleans, doing syntax checking
  *	along the way.
  *
- * Copyright (c) 1990-1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1990-1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -137,12 +137,12 @@ Tcl_GetBoolean(
     obj.length = strlen(src);
     obj.typePtr = NULL;
 
-    code = Tcl_ConvertToType(interp, &obj, &tclBooleanType);
+    code = TclSetBooleanFromAny(interp, &obj);
     if (obj.refCount > 1) {
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
     if (code == TCL_OK) {
-	*boolPtr = obj.internalRep.longValue;
+	TclGetBooleanFromObj(NULL, &obj, boolPtr);
     }
     return code;
 }

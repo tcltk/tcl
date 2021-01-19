@@ -4,7 +4,7 @@
  *	This procedure provides a version of the TclpDlopen for use in
  *	systems that don't support dynamic loading; it just returns an error.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -39,46 +39,54 @@ TclpDlopen(
     Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr,
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
+    int flags)
 {
-    Tcl_SetResult(interp,
-	    "dynamic loading is not currently available on this system",
-	    TCL_STATIC);
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"dynamic loading is not currently available on this system",
+		-1));
+    }
     return TCL_ERROR;
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
+ * These functions are fallbacks if we somehow determine that the platform can
+ * do loading from memory but the user wishes to disable it. They just report
+ * (gracefully) that they fail.
  */
 
-int
-TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
+#ifdef TCL_LOAD_FROM_MEMORY
+
+MODULE_SCOPE void *
+TclpLoadMemoryGetBuffer(
+    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(int))
 {
-    return 0;
+    return NULL;
 }
+
+MODULE_SCOPE int
+TclpLoadMemory(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    TCL_UNUSED(void *),
+    TCL_UNUSED(int),
+    TCL_UNUSED(int),
+    TCL_UNUSED(Tcl_LoadHandle *),
+    TCL_UNUSED(Tcl_FSUnloadFileProc **),
+    TCL_UNUSED(int))
+{
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("dynamic loading from memory "
+		"is not available on this system", -1));
+    }
+    return TCL_ERROR;
+}
+
+#endif /* TCL_LOAD_FROM_MEMORY */
 
 /*
  * Local Variables:

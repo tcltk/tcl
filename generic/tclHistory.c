@@ -6,8 +6,8 @@
  *	commands ("events") before they are executed. Commands defined in
  *	history.tcl may be used to perform history substitutions.
  *
- * Copyright (c) 1990-1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1990-1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -61,16 +61,15 @@ Tcl_RecordAndEval(
 				 * TCL_EVAL_GLOBAL means use Tcl_GlobalEval
 				 * instead of Tcl_Eval. */
 {
-    register Tcl_Obj *cmdPtr;
-    int length = strlen(cmd);
+    Tcl_Obj *cmdPtr;
     int result;
 
-    if (length > 0) {
+    if (cmd[0]) {
 	/*
 	 * Call Tcl_RecordAndEvalObj to do the actual work.
 	 */
 
-	cmdPtr = Tcl_NewStringObj(cmd, length);
+	cmdPtr = Tcl_NewStringObj(cmd, -1);
 	Tcl_IncrRefCount(cmdPtr);
 	result = Tcl_RecordAndEvalObj(interp, cmdPtr, flags);
 
@@ -131,14 +130,14 @@ Tcl_RecordAndEvalObj(
     int result, call = 1;
     Tcl_CmdInfo info;
     HistoryObjs *histObjsPtr =
-	    Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
+	    (HistoryObjs *)Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
 
     /*
      * Create the references to the [::history add] command if necessary.
      */
 
     if (histObjsPtr == NULL) {
-	histObjsPtr = ckalloc(sizeof(HistoryObjs));
+	histObjsPtr = (HistoryObjs *)ckalloc(sizeof(HistoryObjs));
 	TclNewLiteralStringObj(histObjsPtr->historyObj, "::history");
 	TclNewLiteralStringObj(histObjsPtr->addObj, "add");
 	Tcl_IncrRefCount(histObjsPtr->historyObj);
@@ -161,7 +160,7 @@ Tcl_RecordAndEvalObj(
 	Tcl_Obj *list[3];
 
 	/*
-	 * Do recording by eval'ing a tcl history command: history add $cmd. 
+	 * Do recording by eval'ing a tcl history command: history add $cmd.
 	 */
 
 	list[0] = histObjsPtr->historyObj;
@@ -175,7 +174,7 @@ Tcl_RecordAndEvalObj(
 	/*
 	 * One possible failure mode above: exceeding a resource limit.
 	 */
-	
+
 	if (Tcl_LimitExceeded(interp)) {
 	    return TCL_ERROR;
 	}
@@ -212,9 +211,9 @@ Tcl_RecordAndEvalObj(
 static void
 DeleteHistoryObjs(
     ClientData clientData,
-    Tcl_Interp *interp)
+    TCL_UNUSED(Tcl_Interp *))
 {
-    register HistoryObjs *histObjsPtr = clientData;
+    HistoryObjs *histObjsPtr = (HistoryObjs *)clientData;
 
     TclDecrRefCount(histObjsPtr->historyObj);
     TclDecrRefCount(histObjsPtr->addObj);

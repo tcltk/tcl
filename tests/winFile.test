@@ -4,70 +4,49 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[catch {package require tcltest 2.0.2}]} {
-    puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
-    return
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
 }
-namespace import -force ::tcltest::*
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testvolumetype [llength [info commands testvolumetype]]
 testConstraint notNTFS 0
-testConstraint win2000 0
 
 if {[testConstraint testvolumetype]} {
     testConstraint notNTFS [expr {[testvolumetype] eq "NTFS"}]
 }
-if {[testConstraint nt] && $::tcl_platform(osVersion) >= 5.0} {
-    testConstraint win2000 1
-}
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 test winFile-1.1 {TclpGetUserHome} -constraints {win} -body {
     glob ~nosuchuser
 } -returnCodes error -result {user "nosuchuser" doesn't exist}
-test winFile-1.2 {TclpGetUserHome} -constraints {win nt nonPortable} -body {
+test winFile-1.2 {TclpGetUserHome} -constraints {win nonPortable} -body {
     # The administrator account should always exist.
     glob ~administrator
 } -match glob -result *
-test winFile-1.3 {TclpGetUserHome} -constraints {win 95} -body {
-    # Find some user in system.ini and then see if they have a home.
-
-    set f [open $::env(windir)/system.ini]
-    while {[gets $f line] >= 0} {
-	if {$line ne {[Password Lists]}} {
-	    continue
-	}
-	gets $f
-	set name [lindex [split [gets $f] =] 0]
-	if {$name ne ""} {
-	    return [catch {glob ~$name}]
-	}
-    }
-    return 0 ;# didn't find anything...
-} -cleanup {
-    catch {close $f}
-} -result {0}
-test winFile-1.4 {TclpGetUserHome} {win nt nonPortable} {
+test winFile-1.4 {TclpGetUserHome} {win nonPortable} {
     catch {glob ~stanton@workgroup}
 } {0}
 
 test winFile-2.1 {TclpMatchFiles: case sensitivity} -constraints {win} -body {
     makeFile {} GlobCapS
-    list [glob -nocomplain GlobC*] [glob -nocomplain globc*]
-} -cleanup {
+    set args [list -nocomplain -tails -directory [temporaryDirectory]]
+    list [glob {*}$args GlobC*] [glob {*}$args globc*]} -cleanup {
     removeFile GlobCapS
 } -result {GlobCapS GlobCapS}
 test winFile-2.2 {TclpMatchFiles: case sensitivity} -constraints {win} -body {
     makeFile {} globlower
-    list [glob -nocomplain globl*] [glob -nocomplain gLOBl*]
+    set args [list -nocomplain -tails -directory [temporaryDirectory]]
+    list [glob {*}$args globl*] [glob {*}$args gLOBl*]
 } -cleanup {
     removeFile globlower
 } -result {globlower globlower}
@@ -172,7 +151,7 @@ if {[testConstraint win]} {
 test winFile-4.0 {
     Enhanced NTFS user/group permissions: test no acccess
 } -constraints {
-    win nt notNTFS win2000
+    win notNTFS notWine
 } -setup {
     set owner [getuser $fname]
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
@@ -187,7 +166,7 @@ test winFile-4.0 {
 test winFile-4.1 {
     Enhanced NTFS user/group permissions: test readable only
 } -constraints {
-    win nt notNTFS
+    win notNTFS notWine
 } -setup {
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
 } -body {
@@ -198,7 +177,7 @@ test winFile-4.1 {
 test winFile-4.2 {
     Enhanced NTFS user/group permissions: test writable only
 } -constraints {
-    win nt notNTFS
+    win notNTFS notWine
 } -setup {
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
 } -body {
@@ -210,7 +189,7 @@ test winFile-4.2 {
 test winFile-4.3 {
     Enhanced NTFS user/group permissions: test read+write
 } -constraints {
-    win nt notNTFS
+    win notNTFS
 } -setup {
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
 } -body {
@@ -223,7 +202,7 @@ test winFile-4.3 {
 test winFile-4.4 {
     Enhanced NTFS user/group permissions: test full access
 } -constraints {
-    win nt notNTFS
+    win notNTFS
 } -setup {
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
 } -body {

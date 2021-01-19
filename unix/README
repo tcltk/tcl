@@ -45,8 +45,6 @@ How To Compile And Install Tcl:
     refer to the autoconf documentation (not included here). Tcl's "configure"
     supports the following special switches in addition to the standard ones:
 
-	--enable-threads	If this switch is set, Tcl will compile itself
-				with multithreading support.
 	--disable-load		If this switch is specified then Tcl will
 				configure itself not to allow dynamic loading,
 				even if your system appears to support it.
@@ -93,7 +91,7 @@ How To Compile And Install Tcl:
 				for descriptions of the probes made available,
 				see http://wiki.tcl.tk/DTrace for more details
 	--with-encoding=ENCODING Specifies the encoding for compile-time
-				configuration values. Defaults to iso8859-1,
+				configuration values. Defaults to utf-8,
 				which is also sufficient for ASCII.
 	--with-tzdata=FLAG	Specifies whether to install timezone data. By
 				default, the configure script tries to detect
@@ -163,6 +161,7 @@ you'll see a much more substantial printout for each error. See the README
 file in the "tests" directory for more information on the test suite. Note:
 don't run the tests as superuser: this will cause several of them to fail. If
 a test is failing consistently, please send us a bug report with as much
-detail as you can manage. Please use the online database at
-	http://tcl.sourceforge.net/
+detail as you can manage to our tracker:
+
+	https://core.tcl-lang.org/tcl/reportlist
 

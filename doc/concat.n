@@ -4,9 +4,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH concat n 8.3 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -20,6 +20,7 @@ This command joins each of its arguments together with spaces after
 trimming leading and trailing white-space from each of them.  If all of the
 arguments are lists, this has the same effect as concatenating them
 into a single list.
+Arguments that are empty (after trimming) are ignored entirely.
 It permits any number of arguments;
 if no \fIarg\fRs are supplied, the result is an empty string.
 .SH EXAMPLES

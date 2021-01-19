@@ -4,40 +4,36 @@
 .\"
 .\" See the file "license.terms" for information on usage and redistribution
 .\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-.\" 
-.so man.macros
+.\"
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 .\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 string \- Manipulate strings
 .SH SYNOPSIS
-\fBstring \fIoption arg \fR?\fIarg ...?\fR
+\fBstring \fIoption arg \fR?\fIarg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
 Performs one of several string operations, depending on \fIoption\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
 .TP
-\fBstring bytelength \fIstring\fR
+\fBstring cat\fR ?\fIstring1\fR? ?\fIstring2...\fR?
 .
-Returns a decimal string giving the number of bytes used to represent
-\fIstring\fR in memory.  Because UTF\-8 uses one to three bytes to
-represent Unicode characters, the byte length will not be the same as
-the character length in general.  The cases where a script cares about
-the byte length are rare.  In almost all cases, you should use the
-\fBstring length\fR operation (including determining the length of a
-Tcl ByteArray object).  Refer to the \fBTcl_NumUtfChars\fR manual
-entry for more details on the UTF\-8 representation.
+Concatenate the given \fIstring\fRs just like placing them directly
+next to each other and return the resulting compound string.  If no
+\fIstring\fRs are present, the result is an empty string.
 .RS
 .PP
-\fICompatibility note:\fR it is likely that this subcommand will be
-withdrawn in a future version of Tcl. It is better to use the
-\fBencoding convertto\fR command to convert a string to a known
-encoding and then apply \fBstring length\fR to that.
+This primitive is occasionally handier than juxtaposition of strings
+when mixed quoting is wanted, or when the aim is to return the result
+of a concatenation without resorting to \fBreturn\fR \fB\-level 0\fR,
+and is more efficient than building a list of arguments and using
+\fBjoin\fR with an empty join string.
 .RE
 .TP
-\fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
+\fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
 Perform a character-by-character comparison of strings \fIstring1\fR
 and \fIstring2\fR.  Returns \-1, 0, or 1, depending on whether
@@ -47,7 +43,7 @@ first \fIlength\fR characters are used in the comparison.  If
 \fB\-length\fR is negative, it is ignored.  If \fB\-nocase\fR is
 specified, then the strings are compared in a case-insensitive manner.
 .TP
-\fBstring equal\fR ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
+\fBstring equal\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
 Perform a character-by-character comparison of strings \fIstring1\fR
 and \fIstring2\fR.  Returns 1 if \fIstring1\fR and \fIstring2\fR are
@@ -92,6 +88,24 @@ If \fIcharIndex\fR is less than 0 or greater than or equal to the
 length of the string then this command returns an empty string.
 .RE
 .TP
+\fBstring insert \fIstring index insertString\fR
+.VS "TIP 504"
+Returns a copy of \fIstring\fR with \fIinsertString\fR inserted at the
+\fIindex\fR'th character.  The \fIindex\fR may be specified as described in the
+\fBSTRING INDICES\fR section.
+.RS
+.PP
+If \fIindex\fR is start-relative, the first character inserted in the returned
+string will be at the specified index.  If \fIindex\fR is end-relative, the last
+character inserted in the returned string will be at the specified index.
+.PP
+If \fIindex\fR is at or before the start of \fIstring\fR (e.g., \fIindex\fR is
+\fB0\fR), \fIinsertString\fR is prepended to \fIstring\fR.  If \fIindex\fR is at
+or after the end of \fIstring\fR (e.g., \fIindex\fR is \fBend\fR),
+\fIinsertString\fR is appended to \fIstring\fR.
+.RE
+.VE "TIP 504"
+.TP
 \fBstring is \fIclass\fR ?\fB\-strict\fR? ?\fB\-failindex \fIvarname\fR? \fIstring\fR
 .
 Returns 1 if \fIstring\fR is a valid member of the specified character
@@ -114,19 +128,24 @@ Any character with a value less than \eu0080 (those that are in the
 Any of the forms allowed to \fBTcl_GetBoolean\fR.
 .IP \fBcontrol\fR 12
 Any Unicode control character.
+.IP \fBdict\fR 12
+.VS TIP501
+Any proper dict structure, with optional surrounding whitespace. In
+case of improper dict structure, 0 is returned and the \fIvarname\fR
+will contain the index of the
+.QW element
+where the dict parsing fails, or \-1 if this cannot be determined.
+.VE TIP501
 .IP \fBdigit\fR 12
 Any Unicode digit character.  Note that this includes characters
 outside of the [0\-9] range.
 .IP \fBdouble\fR 12
-Any of the valid forms for a double in Tcl, with optional surrounding
-whitespace.  In case of under/overflow in the value, 0 is returned and
-the \fIvarname\fR will contain \-1.
+Any of the forms allowed to \fBTcl_GetDoubleFromObj\fR.
 .IP \fBentier\fR 12
-.VS 8.6
+.
 Any of the valid string formats for an integer value of arbitrary size
 in Tcl, with optional surrounding whitespace. The formats accepted are
 exactly those accepted by the C routine \fBTcl_GetBignumFromObj\fR.
-.VE
 .IP \fBfalse\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 false.
@@ -134,7 +153,7 @@ false.
 Any Unicode printing character, except space.
 .IP \fBinteger\fR 12
 Any of the valid string formats for a 32-bit integer value in Tcl,
-with optional surrounding whitespace.  In case of under/overflow in
+with optional surrounding whitespace.  In case of overflow in
 the value, 0 is returned and the \fIvarname\fR will contain \-1.
 .IP \fBlist\fR 12
 Any proper list structure, with optional surrounding whitespace. In
@@ -149,7 +168,9 @@ Any Unicode printing character, including space.
 .IP \fBpunct\fR 12
 Any Unicode punctuation character.
 .IP \fBspace\fR 12
-Any Unicode space character.
+Any Unicode whitespace character, mongolian vowel separator
+(U+180e), zero width space (U+200b), word joiner (U+2060) or
+zero width no-break space (U+feff) (=BOM).
 .IP \fBtrue\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 true.
@@ -157,7 +178,7 @@ true.
 Any upper case alphabet character in the Unicode character set.
 .IP \fBwideinteger\fR 12
 Any of the valid forms for a wide integer in Tcl, with optional
-surrounding whitespace.  In case of under/overflow in the value, 0 is
+surrounding whitespace.  In case of overflow in the value, 0 is
 returned and the \fIvarname\fR will contain \-1.
 .IP \fBwordchar\fR 12
 Any Unicode word character.  That is any alphanumeric character, and
@@ -198,9 +219,9 @@ will return \fB1\fR.
 .
 Returns a decimal string giving the number of characters in
 \fIstring\fR.  Note that this is not necessarily the same as the
-number of bytes used to store the string.  If the object is a
-ByteArray object (such as those returned from reading a binary encoded
-channel), then this will return the actual byte length of the object.
+number of bytes used to store the string.  If the value is a
+byte array value (such as those returned from reading a binary encoded
+channel), then this will return the actual byte length of the value.
 .TP
 \fBstring map\fR ?\fB\-nocase\fR? \fImapping string\fR
 .
@@ -271,7 +292,9 @@ the special interpretation of the characters \fB*?[]\e\fR in
 .
 Returns a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
-character whose index is \fIlast\fR. An index of 0 refers to the first
+character whose index is \fIlast\fR (using the forms described in
+\fBSTRING INDICES\fR). An index of \fB0\fR refers to the first
+character of the string; an index of \fBend\fR refers to last
 character of the string.  \fIfirst\fR and \fIlast\fR may be specified
 as for the \fBindex\fR method.  If \fIfirst\fR is less than zero then
 it is treated as if it were zero, and if \fIlast\fR is greater than or
@@ -281,13 +304,16 @@ string is returned.
 .TP
 \fBstring repeat \fIstring count\fR
 .
-Returns \fIstring\fR repeated \fIcount\fR number of times.
+Returns a string consisting of \fIstring\fR concatenated with itself
+\fIcount\fR times. If \fIcount\fR is 0, the empty string will be
+returned.
 .TP
 \fBstring replace \fIstring first last\fR ?\fInewstring\fR?
 .
 Removes a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
-character whose index is \fIlast\fR.  An index of 0 refers to the
+character whose index is \fIlast\fR (using the forms described in
+\fBSTRING INDICES\fR).  An index of 0 refers to the
 first character of the string.  \fIFirst\fR and \fIlast\fR may be
 specified as for the \fBindex\fR method.  If \fInewstring\fR is
 specified, then it is placed in the removed character range.  If
@@ -335,22 +361,67 @@ specified using the forms described in \fBSTRING INDICES\fR.
 .
 Returns a value equal to \fIstring\fR except that any leading or
 trailing characters present in the string given by \fIchars\fR are removed.  If
-\fIchars\fR is not specified then white space is removed (spaces,
-tabs, newlines, and carriage returns).
+\fIchars\fR is not specified then white space is removed (any character
+for which \fBstring is space\fR returns 1, and "\e0").
 .TP
 \fBstring trimleft \fIstring\fR ?\fIchars\fR?
 .
 Returns a value equal to \fIstring\fR except that any leading
 characters present in the string given by \fIchars\fR are removed.  If
-\fIchars\fR is not specified then white space is removed (spaces,
-tabs, newlines, and carriage returns).
+\fIchars\fR is not specified then white space is removed (any character
+for which \fBstring is space\fR returns 1, and "\e0").
 .TP
 \fBstring trimright \fIstring\fR ?\fIchars\fR?
 .
 Returns a value equal to \fIstring\fR except that any trailing
 characters present in the string given by \fIchars\fR are removed.  If
-\fIchars\fR is not specified then white space is removed (spaces,
-tabs, newlines, and carriage returns).
+\fIchars\fR is not specified then white space is removed (any character
+for which \fBstring is space\fR returns 1, and "\e0").
+.SS "OBSOLETE SUBCOMMANDS"
+.PP
+These subcommands are currently supported, but are likely to go away in a
+future release as their functionality is either virtually never used or highly
+misleading.
+.TP
+\fBstring bytelength \fIstring\fR
+.
+Returns a decimal string giving the number of bytes used to represent
+\fIstring\fR in memory when encoded as Tcl's internal modified UTF\-8;
+Tcl may use other encodings for \fIstring\fR as well, and does not
+guarantee to only use a single encoding for a particular \fIstring\fR.
+Because UTF\-8 uses a variable number of bytes to represent Unicode
+characters, the byte length will not be the same as the character
+length in general.  The cases where a script cares about the byte
+length are rare.
+.RS
+.PP
+In almost all cases, you should use the
+\fBstring length\fR operation (including determining the length of a
+Tcl byte array value).  Refer to the \fBTcl_NumUtfChars\fR manual
+entry for more details on the UTF\-8 representation.
+.PP
+Formally, the \fBstring bytelength\fR operation returns the content of
+the \fIlength\fR field of the \fBTcl_Obj\fR structure, after calling
+\fBTcl_GetString\fR to ensure that the \fIbytes\fR field is populated.
+This is highly unlikely to be useful to Tcl scripts, as Tcl's internal
+encoding is not strict UTF\-8, but rather a modified CESU\-8 with a
+denormalized NUL (identical to that used in a number of places by
+Java's serialization mechanism) to enable basic processing with
+non-Unicode-aware C functions.  As this representation should only
+ever be used by Tcl's implementation, the number of bytes used to
+store the representation is of very low value (except to C extension
+code, which has direct access for the purpose of memory management,
+etc.)
+.PP
+\fICompatibility note:\fR it is likely that this subcommand will be
+withdrawn in a future version of Tcl. It is better to use the
+\fBencoding convertto\fR command to convert a string to a known
+encoding and then apply \fBstring length\fR to that.
+.PP
+.CS
+\fBstring length\fR [encoding convertto utf-8 $theString]
+.CE
+.RE
 .TP
 \fBstring wordend \fIstring charIndex\fR
 .
@@ -399,7 +470,7 @@ would refer to the
 in
 .QW abcd ).
 .IP \fIM\fB+\fIN\fR 10
-The char specified at the integral index that is the sum of 
+The char specified at the integral index that is the sum of
 integer values \fIM\fR and \fIN\fR (e.g.,
 .QW \fB1+1\fR
 would refer to the
@@ -407,7 +478,7 @@ would refer to the
 in
 .QW abcd ).
 .IP \fIM\fB\-\fIN\fR 10
-The char specified at the integral index that is the difference of 
+The char specified at the integral index that is the difference of
 integer values \fIM\fR and \fIN\fR (e.g.,
 .QW \fB2\-1\fR
 would refer to the
@@ -434,7 +505,7 @@ if {$length == 0} {
 .SH "SEE ALSO"
 expr(n), list(n)
 .SH KEYWORDS
-case conversion, compare, index, match, pattern, string, word, equal,
+case conversion, compare, index, integer value, match, pattern, string, word, equal,
 ctype, character, reverse
 .\" Local Variables:
 .\" mode: nroff

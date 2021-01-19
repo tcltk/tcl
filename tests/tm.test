@@ -3,12 +3,11 @@
 # Sourcing this file into Tcl runs the tests and generates output for
 # errors.  No output means no errors were found.
 #
-# Copyright (c) 2004 by Donal K. Fellows.
+# Copyright © 2004 Donal K. Fellows.
 # All rights reserved.
 
-package require Tcl 8.5
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -200,7 +199,7 @@ test tm-3.11 {tm: module path management, remove ignores unknown path} -setup {
 proc genpaths {base} {
     # Normalizing picks up drive letters on windows [Bug 1053568]
     set base [file normalize $base]
-    foreach {major minor} [split [info tclversion] .] break
+    regexp {^(\d+)\.(\d+)} [package provide Tcl] - major minor
     set results {}
     set base [file join $base tcl$major]
     lappend results [file join $base site-tcl]

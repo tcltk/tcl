@@ -4,14 +4,15 @@
  *	This file contains functions that implement the Tcl dict object type
  *	and its accessor command.
  *
- * Copyright (c) 2002-2010 by Donal K. Fellows.
+ * Copyright © 2002-2010 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
+#include <assert.h>
 
 /*
  * Forward declaration.
@@ -22,63 +23,44 @@ struct Dict;
  * Prototypes for functions defined later in this file:
  */
 
-static void		DeleteDict(struct Dict *dict);
-static int		DictAppendCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictCreateCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictExistsCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictFilterCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictGetCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictIncrCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictInfoCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictKeysCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictLappendCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictMergeCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictRemoveCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictReplaceCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictSetCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictSizeCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictUnsetCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictUpdateCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictValuesCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictWithCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static void		DupDictInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
-static void		FreeDictInternalRep(Tcl_Obj *dictPtr);
-static void		InvalidateDictChain(Tcl_Obj *dictObj);
-static int		SetDictFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static void		UpdateStringOfDict(Tcl_Obj *dictPtr);
-static Tcl_HashEntry *	AllocChainEntry(Tcl_HashTable *tablePtr,void *keyPtr);
-static inline void	InitChainTable(struct Dict *dict);
-static inline void	DeleteChainTable(struct Dict *dict);
-static inline Tcl_HashEntry *CreateChainEntry(struct Dict *dict,
-			    Tcl_Obj *keyPtr, int *newPtr);
-static inline int	DeleteChainEntry(struct Dict *dict, Tcl_Obj *keyPtr);
-static int		FinalizeDictUpdate(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeDictWith(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		DictForNRCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictForLoopCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
-
+static void			DeleteDict(struct Dict *dict);
+static Tcl_ObjCmdProc		DictAppendCmd;
+static Tcl_ObjCmdProc		DictCreateCmd;
+static Tcl_ObjCmdProc		DictExistsCmd;
+static Tcl_ObjCmdProc		DictFilterCmd;
+static Tcl_ObjCmdProc		DictGetCmd;
+static Tcl_ObjCmdProc		DictGetDefCmd;
+static Tcl_ObjCmdProc		DictIncrCmd;
+static Tcl_ObjCmdProc		DictInfoCmd;
+static Tcl_ObjCmdProc		DictKeysCmd;
+static Tcl_ObjCmdProc		DictLappendCmd;
+static Tcl_ObjCmdProc		DictMergeCmd;
+static Tcl_ObjCmdProc		DictRemoveCmd;
+static Tcl_ObjCmdProc		DictReplaceCmd;
+static Tcl_ObjCmdProc		DictSetCmd;
+static Tcl_ObjCmdProc		DictSizeCmd;
+static Tcl_ObjCmdProc		DictUnsetCmd;
+static Tcl_ObjCmdProc		DictUpdateCmd;
+static Tcl_ObjCmdProc		DictValuesCmd;
+static Tcl_ObjCmdProc		DictWithCmd;
+static Tcl_DupInternalRepProc	DupDictInternalRep;
+static Tcl_FreeInternalRepProc	FreeDictInternalRep;
+static void			InvalidateDictChain(Tcl_Obj *dictObj);
+static Tcl_SetFromAnyProc	SetDictFromAny;
+static Tcl_UpdateStringProc	UpdateStringOfDict;
+static Tcl_AllocHashEntryProc	AllocChainEntry;
+static inline void		InitChainTable(struct Dict *dict);
+static inline void		DeleteChainTable(struct Dict *dict);
+static inline Tcl_HashEntry *	CreateChainEntry(struct Dict *dict,
+					Tcl_Obj *keyPtr, int *newPtr);
+static inline int		DeleteChainEntry(struct Dict *dict,
+					Tcl_Obj *keyPtr);
+static Tcl_NRPostProc		FinalizeDictUpdate;
+static Tcl_NRPostProc		FinalizeDictWith;
+static Tcl_ObjCmdProc		DictForNRCmd;
+static Tcl_ObjCmdProc		DictMapNRCmd;
+static Tcl_NRPostProc		DictForLoopCallback;
+static Tcl_NRPostProc		DictMapLoopCallback;
 
 /*
  * Table of dict subcommand names and implementations.
@@ -86,23 +68,27 @@ static int		DictForLoopCallback(ClientData data[],
 
 static const EnsembleImplMap implementationMap[] = {
     {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, NULL, 0 },
-    {"create",	DictCreateCmd, NULL, NULL, NULL, 0 },
-    {"exists",	DictExistsCmd, NULL, NULL, NULL, 0 },
-    {"filter",	DictFilterCmd, NULL, NULL, NULL, 0 },
+    {"create",	DictCreateCmd,	TclCompileDictCreateCmd, NULL, NULL, 0 },
+    {"exists",	DictExistsCmd,	TclCompileDictExistsCmd, NULL, NULL, 0 },
+    {"filter",	DictFilterCmd,	NULL, NULL, NULL, 0 },
     {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL, 0 },
     {"get",	DictGetCmd,	TclCompileDictGetCmd, NULL, NULL, 0 },
+    {"getdef",	DictGetDefCmd,	TclCompileDictGetWithDefaultCmd, NULL,NULL,0},
+    {"getwithdefault",	DictGetDefCmd,	TclCompileDictGetWithDefaultCmd,
+	NULL, NULL, 0 },
     {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, NULL, 0 },
-    {"info",	DictInfoCmd, NULL, NULL, NULL, 0 },
-    {"keys",	DictKeysCmd, NULL, NULL, NULL, 0 },
+    {"info",	DictInfoCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
+    {"keys",	DictKeysCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
     {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL, 0 },
-    {"merge",	DictMergeCmd, NULL, NULL, NULL, 0 },
-    {"remove",	DictRemoveCmd, NULL, NULL, NULL, 0 },
+    {"map", 	NULL,       	TclCompileDictMapCmd, DictMapNRCmd, NULL, 0 },
+    {"merge",	DictMergeCmd,	TclCompileDictMergeCmd, NULL, NULL, 0 },
+    {"remove",	DictRemoveCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
     {"replace",	DictReplaceCmd, NULL, NULL, NULL, 0 },
     {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL, 0 },
-    {"size",	DictSizeCmd, NULL, NULL, NULL, 0 },
-    {"unset",	DictUnsetCmd, NULL, NULL, NULL, 0 },
+    {"size",	DictSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
+    {"unset",	DictUnsetCmd,	TclCompileDictUnsetCmd, NULL, NULL, 0 },
     {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, NULL, 0 },
-    {"values",	DictValuesCmd, NULL, NULL, NULL, 0 },
+    {"values",	DictValuesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
     {"with",	DictWithCmd,	TclCompileDictWithCmd, NULL, NULL, 0 },
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
@@ -143,8 +129,8 @@ typedef struct Dict {
 				 * the dictionary. Used for doing traversal of
 				 * the entries in the order that they are
 				 * created. */
-    int epoch;			/* Epoch counter */
-    int refcount;		/* Reference counter (see above) */
+    unsigned int epoch; 	/* Epoch counter */
+    size_t refCount;		/* Reference counter (see above) */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
 				 * dictionaries. */
@@ -162,6 +148,21 @@ const Tcl_ObjType tclDictType = {
     UpdateStringOfDict,			/* updateStringProc */
     SetDictFromAny			/* setFromAnyProc */
 };
+
+#define DictSetIntRep(objPtr, dictRepPtr)				\
+    do {                                                                \
+        Tcl_ObjIntRep ir;                                               \
+        ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
+        ir.twoPtrValue.ptr2 = NULL;                                     \
+        Tcl_StoreIntRep((objPtr), &tclDictType, &ir);                   \
+    } while (0)
+
+#define DictGetIntRep(objPtr, dictRepPtr)				\
+    do {                                                                \
+        const Tcl_ObjIntRep *irPtr;                                     \
+        irPtr = TclFetchIntRep((objPtr), &tclDictType);                \
+        (dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;          \
+    } while (0)
 
 /*
  * The type of the specially adapted version of the Tcl_Obj*-containing hash
@@ -181,6 +182,23 @@ static const Tcl_HashKeyType chainHashType = {
     AllocChainEntry,
     TclFreeObjEntry
 };
+
+/*
+ * Structure used in implementation of 'dict map' to hold the state that gets
+ * passed between parts of the implementation.
+ */
+
+typedef struct {
+    Tcl_Obj *keyVarObj;		/* The name of the variable that will have
+				 * keys assigned to it. */
+    Tcl_Obj *valueVarObj;	/* The name of the variable that will have
+				 * values assigned to it. */
+    Tcl_DictSearch search;	/* The dictionary search structure. */
+    Tcl_Obj *scriptObj;		/* The script to evaluate each time through
+				 * the loop. */
+    Tcl_Obj *accumulatorObj;	/* The dictionary used to accumulate the
+				 * results. */
+} DictMapStorage;
 
 /***** START OF FUNCTIONS IMPLEMENTING DICT CORE API *****/
 
@@ -204,13 +222,13 @@ static const Tcl_HashKeyType chainHashType = {
 
 static Tcl_HashEntry *
 AllocChainEntry(
-    Tcl_HashTable *tablePtr,
+    TCL_UNUSED(Tcl_HashTable *),
     void *keyPtr)
 {
-    Tcl_Obj *objPtr = keyPtr;
+    Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
     ChainEntry *cPtr;
 
-    cPtr = ckalloc(sizeof(ChainEntry));
+    cPtr = (ChainEntry *)ckalloc(sizeof(ChainEntry));
     cPtr->entry.key.objPtr = objPtr;
     Tcl_IncrRefCount(objPtr);
     cPtr->entry.clientData = NULL;
@@ -243,7 +261,7 @@ DeleteChainTable(
     ChainEntry *cPtr;
 
     for (cPtr=dict->entryChainHead ; cPtr!=NULL ; cPtr=cPtr->nextPtr) {
-	Tcl_Obj *valuePtr = Tcl_GetHashValue(&cPtr->entry);
+	Tcl_Obj *valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
 
 	TclDecrRefCount(valuePtr);
     }
@@ -290,7 +308,8 @@ DeleteChainEntry(
     if (cPtr == NULL) {
 	return 0;
     } else {
-	Tcl_Obj *valuePtr = Tcl_GetHashValue(&cPtr->entry);
+	Tcl_Obj *valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
+
 	TclDecrRefCount(valuePtr);
     }
 
@@ -340,9 +359,10 @@ DupDictInternalRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *copyPtr)
 {
-    Dict *oldDict = srcPtr->internalRep.otherValuePtr;
-    Dict *newDict = ckalloc(sizeof(Dict));
+    Dict *oldDict, *newDict = (Dict *)ckalloc(sizeof(Dict));
     ChainEntry *cPtr;
+
+    DictGetIntRep(srcPtr, oldDict);
 
     /*
      * Copy values across from the old hash table.
@@ -350,8 +370,8 @@ DupDictInternalRep(
 
     InitChainTable(newDict);
     for (cPtr=oldDict->entryChainHead ; cPtr!=NULL ; cPtr=cPtr->nextPtr) {
-	Tcl_Obj *key = Tcl_GetHashKey(&oldDict->table, &cPtr->entry);
-	Tcl_Obj *valuePtr = Tcl_GetHashValue(&cPtr->entry);
+	Tcl_Obj *key = (Tcl_Obj *)Tcl_GetHashKey(&oldDict->table, &cPtr->entry);
+	Tcl_Obj *valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
 	int n;
 	Tcl_HashEntry *hPtr = CreateChainEntry(newDict, key, &n);
 
@@ -367,16 +387,15 @@ DupDictInternalRep(
      * Initialise other fields.
      */
 
-    newDict->epoch = 0;
+    newDict->epoch = 1;
     newDict->chain = NULL;
-    newDict->refcount = 1;
+    newDict->refCount = 1;
 
     /*
      * Store in the object.
      */
 
-    copyPtr->internalRep.otherValuePtr = newDict;
-    copyPtr->typePtr = &tclDictType;
+    DictSetIntRep(copyPtr, newDict);
 }
 
 /*
@@ -401,15 +420,13 @@ static void
 FreeDictInternalRep(
     Tcl_Obj *dictPtr)
 {
-    Dict *dict = dictPtr->internalRep.otherValuePtr;
+    Dict *dict;
 
-    dict->refcount--;
-    if (dict->refcount <= 0) {
+    DictGetIntRep(dictPtr, dict);
+
+    if (dict->refCount-- <= 1) {
 	DeleteDict(dict);
     }
-
-    dictPtr->internalRep.otherValuePtr = NULL;	/* Belt and braces! */
-    dictPtr->typePtr = NULL;
 }
 
 /*
@@ -466,27 +483,31 @@ static void
 UpdateStringOfDict(
     Tcl_Obj *dictPtr)
 {
-#define LOCAL_SIZE 20
-    int localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    Dict *dict = dictPtr->internalRep.otherValuePtr;
+#define LOCAL_SIZE 64
+    char localFlags[LOCAL_SIZE], *flagPtr = NULL;
+    Dict *dict;
     ChainEntry *cPtr;
     Tcl_Obj *keyPtr, *valuePtr;
     int i, length, bytesNeeded = 0;
     const char *elem;
     char *dst;
-    const int maxFlags = UINT_MAX / sizeof(int);
 
     /*
      * This field is the most useful one in the whole hash structure, and it
      * is not exposed by any API function...
      */
 
-    int numElems = dict->table.numEntries * 2;
+    int numElems;
+
+    DictGetIntRep(dictPtr, dict);
+
+    assert (dict != NULL);
+
+    numElems = dict->table.numEntries * 2;
 
     /* Handle empty list case first, simplifies what follows */
     if (numElems == 0) {
-	dictPtr->bytes = tclEmptyStringRep;
-	dictPtr->length = 0;
+	Tcl_InitStringRep(dictPtr, NULL, 0);
 	return;
     }
 
@@ -496,10 +517,8 @@ UpdateStringOfDict(
 
     if (numElems <= LOCAL_SIZE) {
 	flagPtr = localFlags;
-    } else if (numElems > maxFlags) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     } else {
-	flagPtr = ckalloc(numElems * sizeof(int));
+	flagPtr = (char *)ckalloc(numElems);
     }
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	/*
@@ -508,7 +527,7 @@ UpdateStringOfDict(
 	 */
 
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
-	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
+	keyPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	elem = TclGetStringFromObj(keyPtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	if (bytesNeeded < 0) {
@@ -516,7 +535,7 @@ UpdateStringOfDict(
 	}
 
 	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
-	valuePtr = Tcl_GetHashValue(&cPtr->entry);
+	valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
 	elem = TclGetStringFromObj(valuePtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i+1);
 	if (bytesNeeded < 0) {
@@ -532,23 +551,22 @@ UpdateStringOfDict(
      * Pass 2: copy into string rep buffer.
      */
 
-    dictPtr->length = bytesNeeded - 1;
-    dictPtr->bytes = ckalloc(bytesNeeded);
-    dst = dictPtr->bytes;
+    dst = Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
+    TclOOM(dst, bytesNeeded);
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
-	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
+	keyPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	elem = TclGetStringFromObj(keyPtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
 
 	flagPtr[i+1] |= TCL_DONT_QUOTE_HASH;
-	valuePtr = Tcl_GetHashValue(&cPtr->entry);
+	valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
 	elem = TclGetStringFromObj(valuePtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
 	*dst++ = ' ';
     }
-    dictPtr->bytes[dictPtr->length] = '\0';
+    (void)Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
 
     if (flagPtr != localFlags) {
 	ckfree(flagPtr);
@@ -581,8 +599,8 @@ SetDictFromAny(
     Tcl_Obj *objPtr)
 {
     Tcl_HashEntry *hPtr;
-    int isNew, result;
-    Dict *dict = ckalloc(sizeof(Dict));
+    int isNew;
+    Dict *dict = (Dict *)ckalloc(sizeof(Dict));
 
     InitChainTable(dict);
 
@@ -592,7 +610,7 @@ SetDictFromAny(
      * the conversion from lists to dictionaries.
      */
 
-    if (objPtr->typePtr == &tclListType) {
+    if (TclHasIntRep(objPtr, &tclListType)) {
 	int objc, i;
 	Tcl_Obj **objv;
 
@@ -603,11 +621,11 @@ SetDictFromAny(
 	}
 
 	for (i=0 ; i<objc ; i+=2) {
-	
+
 	    /* Store key and value in the hash table we're building. */
 	    hPtr = CreateChainEntry(dict, objv[i], &isNew);
 	    if (!isNew) {
-		Tcl_Obj *discardedValue = Tcl_GetHashValue(hPtr);
+		Tcl_Obj *discardedValue = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
 		/*
 		 * Not really a well-formed dictionary as there are duplicate
@@ -632,10 +650,9 @@ SetDictFromAny(
 	    const char *elemStart;
 	    int elemSize, literal;
 
-	    result = TclFindElement(interp, nextElem, (limit - nextElem),
-		    &elemStart, &nextElem, &elemSize, &literal);
-	    if (result != TCL_OK) {
-		goto errorExit;
+	    if (TclFindDictElement(interp, nextElem, (limit - nextElem),
+		    &elemStart, &nextElem, &elemSize, &literal) != TCL_OK) {
+		goto errorInFindDictElement;
 	    }
 	    if (elemStart == limit) {
 		break;
@@ -648,33 +665,40 @@ SetDictFromAny(
 		TclNewStringObj(keyPtr, elemStart, elemSize);
 	    } else {
 		/* Avoid double copy */
+		char *dst;
+
 		TclNewObj(keyPtr);
-		keyPtr->bytes = ckalloc((unsigned) elemSize + 1);
-		keyPtr->length = TclCopyAndCollapse(elemSize, elemStart,
-			keyPtr->bytes);
+		Tcl_InvalidateStringRep(keyPtr);
+		dst = Tcl_InitStringRep(keyPtr, NULL, elemSize);
+		TclOOM(dst, elemSize); /* Consider error */
+		(void)Tcl_InitStringRep(keyPtr, NULL,
+			TclCopyAndCollapse(elemSize, elemStart, dst));
 	    }
 
-	    result = TclFindElement(interp, nextElem, (limit - nextElem),
-		    &elemStart, &nextElem, &elemSize, &literal);
-	    if (result != TCL_OK) {
+	    if (TclFindDictElement(interp, nextElem, (limit - nextElem),
+		    &elemStart, &nextElem, &elemSize, &literal) != TCL_OK) {
 		TclDecrRefCount(keyPtr);
-		goto errorExit;
+		goto errorInFindDictElement;
 	    }
 
 	    if (literal) {
 		TclNewStringObj(valuePtr, elemStart, elemSize);
 	    } else {
 		/* Avoid double copy */
+		char *dst;
+
 		TclNewObj(valuePtr);
-		valuePtr->bytes = ckalloc((unsigned) elemSize + 1);
-		valuePtr->length = TclCopyAndCollapse(elemSize, elemStart,
-			valuePtr->bytes);
+		Tcl_InvalidateStringRep(valuePtr);
+		dst = Tcl_InitStringRep(valuePtr, NULL, elemSize);
+		TclOOM(dst, elemSize); /* Consider error */
+		(void)Tcl_InitStringRep(valuePtr, NULL,
+			TclCopyAndCollapse(elemSize, elemStart, dst));
 	    }
 
 	    /* Store key and value in the hash table we're building. */
 	    hPtr = CreateChainEntry(dict, keyPtr, &isNew);
 	    if (!isNew) {
-		Tcl_Obj *discardedValue = Tcl_GetHashValue(hPtr);
+		Tcl_Obj *discardedValue = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
 		TclDecrRefCount(keyPtr);
 		TclDecrRefCount(discardedValue);
@@ -690,28 +714,39 @@ SetDictFromAny(
      * Tcl_GetStringFromObj, to use that old internalRep.
      */
 
-    TclFreeIntRep(objPtr);
-    dict->epoch = 0;
+    dict->epoch = 1;
     dict->chain = NULL;
-    dict->refcount = 1;
-    objPtr->internalRep.otherValuePtr = dict;
-    objPtr->typePtr = &tclDictType;
+    dict->refCount = 1;
+    DictSetIntRep(objPtr, dict);
     return TCL_OK;
 
   missingValue:
     if (interp != NULL) {
-	Tcl_SetResult(interp, "missing value to go with key", TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"missing value to go with key", -1));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
     }
-    result = TCL_ERROR;
-
-  errorExit:
-    if (interp != NULL) {
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
-    }
+  errorInFindDictElement:
     DeleteChainTable(dict);
     ckfree(dict);
-    return result;
+    return TCL_ERROR;
+}
+
+static Dict *
+GetDictFromObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *dictPtr)
+{
+    Dict *dict;
+
+    DictGetIntRep(dictPtr, dict);
+    if (dict == NULL) {
+	if (SetDictFromAny(interp, dictPtr) != TCL_OK) {
+	    return NULL;
+	}
+	DictGetIntRep(dictPtr, dict);
+    }
+    return dict;
 }
 
 /*
@@ -757,12 +792,13 @@ TclTraceDictPath(
     Dict *dict, *newDict;
     int i;
 
-    if (dictPtr->typePtr != &tclDictType) {
+    DictGetIntRep(dictPtr, dict);
+    if (dict == NULL) {
 	if (SetDictFromAny(interp, dictPtr) != TCL_OK) {
 	    return NULL;
 	}
+	DictGetIntRep(dictPtr, dict);
     }
-    dict = dictPtr->internalRep.otherValuePtr;
     if (flags & DICT_PATH_UPDATE) {
 	dict->chain = NULL;
     }
@@ -779,9 +815,9 @@ TclTraceDictPath(
 	    }
 	    if ((flags & DICT_PATH_CREATE) != DICT_PATH_CREATE) {
 		if (interp != NULL) {
-		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, "key \"", TclGetString(keyv[i]),
-			    "\" not known in dictionary", NULL);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "key \"%s\" not known in dictionary",
+			    TclGetString(keyv[i])));
 		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 			    TclGetString(keyv[i]), NULL);
 		}
@@ -797,15 +833,18 @@ TclTraceDictPath(
 	    Tcl_IncrRefCount(tmpObj);
 	    Tcl_SetHashValue(hPtr, tmpObj);
 	} else {
-	    tmpObj = Tcl_GetHashValue(hPtr);
-	    if (tmpObj->typePtr != &tclDictType) {
+	    tmpObj = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
+
+	    DictGetIntRep(tmpObj, newDict);
+
+	    if (newDict == NULL) {
 		if (SetDictFromAny(interp, tmpObj) != TCL_OK) {
 		    return NULL;
 		}
 	    }
 	}
 
-	newDict = tmpObj->internalRep.otherValuePtr;
+	DictGetIntRep(tmpObj, newDict);
 	if (flags & DICT_PATH_UPDATE) {
 	    if (Tcl_IsShared(tmpObj)) {
 		TclDecrRefCount(tmpObj);
@@ -813,7 +852,7 @@ TclTraceDictPath(
 		Tcl_IncrRefCount(tmpObj);
 		Tcl_SetHashValue(hPtr, tmpObj);
 		dict->epoch++;
-		newDict = tmpObj->internalRep.otherValuePtr;
+		DictGetIntRep(tmpObj, newDict);
 	    }
 
 	    newDict->chain = dictPtr;
@@ -848,17 +887,24 @@ static void
 InvalidateDictChain(
     Tcl_Obj *dictObj)
 {
-    Dict *dict = dictObj->internalRep.otherValuePtr;
+    Dict *dict;
+
+    DictGetIntRep(dictObj, dict);
+    assert( dict != NULL);
 
     do {
-	Tcl_InvalidateStringRep(dictObj);
+	dict->refCount++;
+	TclInvalidateStringRep(dictObj);
+	TclFreeIntRep(dictObj);
+	DictSetIntRep(dictObj, dict);
+
 	dict->epoch++;
 	dictObj = dict->chain;
 	if (dictObj == NULL) {
 	    break;
 	}
 	dict->chain = NULL;
-	dict = dictObj->internalRep.otherValuePtr;
+	DictGetIntRep(dictObj, dict);
     } while (dict != NULL);
 }
 
@@ -896,22 +942,19 @@ Tcl_DictObjPut(
 	Tcl_Panic("%s called with shared object", "Tcl_DictObjPut");
     }
 
-    if (dictPtr->typePtr != &tclDictType) {
-	int result = SetDictFromAny(interp, dictPtr);
-
-	if (result != TCL_OK) {
-	    return result;
-	}
+    dict = GetDictFromObj(interp, dictPtr);
+    if (dict == NULL) {
+	return TCL_ERROR;
     }
 
-    if (dictPtr->bytes != NULL) {
-	Tcl_InvalidateStringRep(dictPtr);
-    }
-    dict = dictPtr->internalRep.otherValuePtr;
+    TclInvalidateStringRep(dictPtr);
     hPtr = CreateChainEntry(dict, keyPtr, &isNew);
+    dict->refCount++;
+    TclFreeIntRep(dictPtr)
+    DictSetIntRep(dictPtr, dict);
     Tcl_IncrRefCount(valuePtr);
     if (!isNew) {
-	Tcl_Obj *oldValuePtr = Tcl_GetHashValue(hPtr);
+	Tcl_Obj *oldValuePtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 
 	TclDecrRefCount(oldValuePtr);
     }
@@ -950,19 +993,17 @@ Tcl_DictObjGet(
     Dict *dict;
     Tcl_HashEntry *hPtr;
 
-    if (dictPtr->typePtr != &tclDictType) {
-	int result = SetDictFromAny(interp, dictPtr);
-	if (result != TCL_OK) {
-	    return result;
-	}
+    dict = GetDictFromObj(interp, dictPtr);
+    if (dict == NULL) {
+	*valuePtrPtr = NULL;
+	return TCL_ERROR;
     }
 
-    dict = dictPtr->internalRep.otherValuePtr;
     hPtr = Tcl_FindHashEntry(&dict->table, keyPtr);
     if (hPtr == NULL) {
 	*valuePtrPtr = NULL;
     } else {
-	*valuePtrPtr = Tcl_GetHashValue(hPtr);
+	*valuePtrPtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
     }
     return TCL_OK;
 }
@@ -998,18 +1039,13 @@ Tcl_DictObjRemove(
 	Tcl_Panic("%s called with shared object", "Tcl_DictObjRemove");
     }
 
-    if (dictPtr->typePtr != &tclDictType) {
-	int result = SetDictFromAny(interp, dictPtr);
-	if (result != TCL_OK) {
-	    return result;
-	}
+    dict = GetDictFromObj(interp, dictPtr);
+    if (dict == NULL) {
+	return TCL_ERROR;
     }
 
-    if (dictPtr->bytes != NULL) {
-	Tcl_InvalidateStringRep(dictPtr);
-    }
-    dict = dictPtr->internalRep.otherValuePtr;
     if (DeleteChainEntry(dict, keyPtr)) {
+	TclInvalidateStringRep(dictPtr);
 	dict->epoch++;
     }
     return TCL_OK;
@@ -1041,14 +1077,11 @@ Tcl_DictObjSize(
 {
     Dict *dict;
 
-    if (dictPtr->typePtr != &tclDictType) {
-	int result = SetDictFromAny(interp, dictPtr);
-	if (result != TCL_OK) {
-	    return result;
-	}
+    dict = GetDictFromObj(interp, dictPtr);
+    if (dict == NULL) {
+	return TCL_ERROR;
     }
 
-    dict = dictPtr->internalRep.otherValuePtr;
     *sizePtr = dict->table.numEntries;
     return TCL_OK;
 }
@@ -1095,30 +1128,26 @@ Tcl_DictObjFirst(
     Dict *dict;
     ChainEntry *cPtr;
 
-    if (dictPtr->typePtr != &tclDictType) {
-	int result = SetDictFromAny(interp, dictPtr);
-
-	if (result != TCL_OK) {
-	    return result;
-	}
+    dict = GetDictFromObj(interp, dictPtr);
+    if (dict == NULL) {
+	return TCL_ERROR;
     }
 
-    dict = dictPtr->internalRep.otherValuePtr;
     cPtr = dict->entryChainHead;
     if (cPtr == NULL) {
-	searchPtr->epoch = -1;
+	searchPtr->epoch = 0;
 	*donePtr = 1;
     } else {
 	*donePtr = 0;
 	searchPtr->dictionaryPtr = (Tcl_Dict) dict;
 	searchPtr->epoch = dict->epoch;
 	searchPtr->next = cPtr->nextPtr;
-	dict->refcount++;
+	dict->refCount++;
 	if (keyPtrPtr != NULL) {
-	    *keyPtrPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
+	    *keyPtrPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
 	}
 	if (valuePtrPtr != NULL) {
-	    *valuePtrPtr = Tcl_GetHashValue(&cPtr->entry);
+	    *valuePtrPtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
 	}
     }
     return TCL_OK;
@@ -1167,7 +1196,7 @@ Tcl_DictObjNext(
      * If the searh is done; we do no work.
      */
 
-    if (searchPtr->epoch == -1) {
+    if (!searchPtr->epoch) {
 	*donePtr = 1;
 	return;
     }
@@ -1181,7 +1210,7 @@ Tcl_DictObjNext(
 	Tcl_Panic("concurrent dictionary modification and search");
     }
 
-    cPtr = searchPtr->next;
+    cPtr = (ChainEntry *)searchPtr->next;
     if (cPtr == NULL) {
 	Tcl_DictObjDone(searchPtr);
 	*donePtr = 1;
@@ -1191,11 +1220,11 @@ Tcl_DictObjNext(
     searchPtr->next = cPtr->nextPtr;
     *donePtr = 0;
     if (keyPtrPtr != NULL) {
-	*keyPtrPtr = Tcl_GetHashKey(
+	*keyPtrPtr = (Tcl_Obj *)Tcl_GetHashKey(
 		&((Dict *)searchPtr->dictionaryPtr)->table, &cPtr->entry);
     }
     if (valuePtrPtr != NULL) {
-	*valuePtrPtr = Tcl_GetHashValue(&cPtr->entry);
+	*valuePtrPtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
     }
 }
 
@@ -1224,11 +1253,10 @@ Tcl_DictObjDone(
 {
     Dict *dict;
 
-    if (searchPtr->epoch != -1) {
-	searchPtr->epoch = -1;
+    if (searchPtr->epoch) {
+	searchPtr->epoch = 0;
 	dict = (Dict *) searchPtr->dictionaryPtr;
-	dict->refcount--;
-	if (dict->refcount <= 0) {
+	if (dict->refCount-- <= 1) {
 	    DeleteDict(dict);
 	}
     }
@@ -1278,11 +1306,13 @@ Tcl_DictObjPutKeyList(
 	return TCL_ERROR;
     }
 
-    dict = dictPtr->internalRep.otherValuePtr;
+    DictGetIntRep(dictPtr, dict);
+    assert(dict != NULL);
     hPtr = CreateChainEntry(dict, keyv[keyc-1], &isNew);
     Tcl_IncrRefCount(valuePtr);
     if (!isNew) {
-	Tcl_Obj *oldValuePtr = Tcl_GetHashValue(hPtr);
+	Tcl_Obj *oldValuePtr = (Tcl_Obj *)Tcl_GetHashValue(hPtr);
+
 	TclDecrRefCount(oldValuePtr);
     }
     Tcl_SetHashValue(hPtr, valuePtr);
@@ -1334,7 +1364,8 @@ Tcl_DictObjRemoveKeyList(
 	return TCL_ERROR;
     }
 
-    dict = dictPtr->internalRep.otherValuePtr;
+    DictGetIntRep(dictPtr, dict);
+    assert(dict != NULL);
     DeleteChainEntry(dict, keyv[keyc-1]);
     InvalidateDictChain(dictPtr);
     return TCL_OK;
@@ -1374,14 +1405,13 @@ Tcl_NewDictObj(void)
     Dict *dict;
 
     TclNewObj(dictPtr);
-    Tcl_InvalidateStringRep(dictPtr);
-    dict = ckalloc(sizeof(Dict));
+    TclInvalidateStringRep(dictPtr);
+    dict = (Dict *)ckalloc(sizeof(Dict));
     InitChainTable(dict);
-    dict->epoch = 0;
+    dict->epoch = 1;
     dict->chain = NULL;
-    dict->refcount = 1;
-    dictPtr->internalRep.otherValuePtr = dict;
-    dictPtr->typePtr = &tclDictType;
+    dict->refCount = 1;
+    DictSetIntRep(dictPtr, dict);
     return dictPtr;
 #endif
 }
@@ -1413,29 +1443,34 @@ Tcl_NewDictObj(void)
  *----------------------------------------------------------------------
  */
 
+#ifdef TCL_MEM_DEBUG
 Tcl_Obj *
 Tcl_DbNewDictObj(
     const char *file,
     int line)
 {
-#ifdef TCL_MEM_DEBUG
     Tcl_Obj *dictPtr;
     Dict *dict;
 
     TclDbNewObj(dictPtr, file, line);
-    Tcl_InvalidateStringRep(dictPtr);
-    dict = ckalloc(sizeof(Dict));
+    TclInvalidateStringRep(dictPtr);
+    dict = (Dict *)ckalloc(sizeof(Dict));
     InitChainTable(dict);
-    dict->epoch = 0;
+    dict->epoch = 1;
     dict->chain = NULL;
-    dict->refcount = 1;
-    dictPtr->internalRep.otherValuePtr = dict;
-    dictPtr->typePtr = &tclDictType;
+    dict->refCount = 1;
+    DictSetIntRep(dictPtr, dict);
     return dictPtr;
-#else /* !TCL_MEM_DEBUG */
-    return Tcl_NewDictObj();
-#endif
 }
+#else /* !TCL_MEM_DEBUG */
+Tcl_Obj *
+Tcl_DbNewDictObj(
+    TCL_UNUSED(const char *) /*file*/,
+    TCL_UNUSED(int) /*line*/)
+{
+    return Tcl_NewDictObj();
+}
+#endif
 
 /***** START OF FUNCTIONS IMPLEMENTING TCL COMMANDS *****/
 
@@ -1459,7 +1494,7 @@ Tcl_DbNewDictObj(
 
 static int
 DictCreateCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1483,7 +1518,7 @@ DictCreateCmd(
 	/*
 	 * The next command is assumed to never fail...
 	 */
-	Tcl_DictObjPut(interp, dictObj, objv[i], objv[i+1]);
+	Tcl_DictObjPut(NULL, dictObj, objv[i], objv[i+1]);
     }
     Tcl_SetObjResult(interp, dictObj);
     return TCL_OK;
@@ -1509,7 +1544,7 @@ DictCreateCmd(
 
 static int
 DictGetCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1571,14 +1606,79 @@ DictGetCmd(
 	return result;
     }
     if (valuePtr == NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "key \"", TclGetString(objv[objc-1]),
-		"\" not known in dictionary", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"key \"%s\" not known in dictionary",
+		TclGetString(objv[objc-1])));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 		TclGetString(objv[objc-1]), NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, valuePtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DictGetDefCmd --
+ *
+ *	This function implements the "dict getdef" and "dict getwithdefault"
+ *	Tcl commands. See the user documentation for details on what it does,
+ *	and TIP#342 for the formal specification.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+DictGetDefCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Tcl_Obj *dictPtr, *keyPtr, *valuePtr, *defaultPtr;
+    Tcl_Obj *const *keyPath;
+    int numKeys;
+
+    if (objc < 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...? key default");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Give the bits of arguments names for clarity.
+     */
+
+    dictPtr = objv[1];
+    keyPath = &objv[2];
+    numKeys = objc - 4;		/* Number of keys in keyPath; there's always
+				 * one extra key afterwards too. */
+    keyPtr = objv[objc - 2];
+    defaultPtr = objv[objc - 1];
+
+    /*
+     * Implement the getting-with-default operation.
+     */
+
+    dictPtr = TclTraceDictPath(interp, dictPtr, numKeys, keyPath,
+	    DICT_PATH_EXISTS);
+    if (dictPtr == NULL) {
+	return TCL_ERROR;
+    } else if (dictPtr == DICT_PATH_NON_EXISTENT) {
+	Tcl_SetObjResult(interp, defaultPtr);
+    } else if (Tcl_DictObjGet(interp, dictPtr, keyPtr, &valuePtr) != TCL_OK) {
+	return TCL_ERROR;
+    } else if (valuePtr == NULL) {
+	Tcl_SetObjResult(interp, defaultPtr);
+    } else {
+	Tcl_SetObjResult(interp, valuePtr);
+    }
     return TCL_OK;
 }
 
@@ -1602,14 +1702,13 @@ DictGetCmd(
 
 static int
 DictReplaceCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr;
-    int i, result;
-    int allocatedDict = 0;
+    int i;
 
     if ((objc < 2) || (objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key value ...?");
@@ -1617,18 +1716,15 @@ DictReplaceCmd(
     }
 
     dictPtr = objv[1];
+    if (GetDictFromObj(interp, dictPtr) == NULL) {
+	return TCL_ERROR;
+    }
     if (Tcl_IsShared(dictPtr)) {
 	dictPtr = Tcl_DuplicateObj(dictPtr);
-	allocatedDict = 1;
     }
+    TclInvalidateStringRep(dictPtr);
     for (i=2 ; i<objc ; i+=2) {
-	result = Tcl_DictObjPut(interp, dictPtr, objv[i], objv[i+1]);
-	if (result != TCL_OK) {
-	    if (allocatedDict) {
-		TclDecrRefCount(dictPtr);
-	    }
-	    return TCL_ERROR;
-	}
+	Tcl_DictObjPut(NULL, dictPtr, objv[i], objv[i+1]);
     }
     Tcl_SetObjResult(interp, dictPtr);
     return TCL_OK;
@@ -1654,14 +1750,13 @@ DictReplaceCmd(
 
 static int
 DictRemoveCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr;
-    int i, result;
-    int allocatedDict = 0;
+    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...?");
@@ -1669,18 +1764,15 @@ DictRemoveCmd(
     }
 
     dictPtr = objv[1];
+    if (GetDictFromObj(interp, dictPtr) == NULL) {
+	return TCL_ERROR;
+    }
     if (Tcl_IsShared(dictPtr)) {
 	dictPtr = Tcl_DuplicateObj(dictPtr);
-	allocatedDict = 1;
     }
+    TclInvalidateStringRep(dictPtr);
     for (i=2 ; i<objc ; i++) {
-	result = Tcl_DictObjRemove(interp, dictPtr, objv[i]);
-	if (result != TCL_OK) {
-	    if (allocatedDict) {
-		TclDecrRefCount(dictPtr);
-	    }
-	    return TCL_ERROR;
-	}
+	Tcl_DictObjRemove(NULL, dictPtr, objv[i]);
     }
     Tcl_SetObjResult(interp, dictPtr);
     return TCL_OK;
@@ -1706,7 +1798,7 @@ DictRemoveCmd(
 
 static int
 DictMergeCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1729,10 +1821,8 @@ DictMergeCmd(
      */
 
     targetObj = objv[1];
-    if (targetObj->typePtr != &tclDictType) {
-	if (SetDictFromAny(interp, targetObj) != TCL_OK) {
-	    return TCL_ERROR;
-	}
+    if (GetDictFromObj(interp, targetObj) == NULL) {
+	return TCL_ERROR;
     }
 
     if (objc == 2) {
@@ -1795,7 +1885,7 @@ DictMergeCmd(
 
 static int
 DictKeysCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1814,12 +1904,8 @@ DictKeysCmd(
      * need. [Bug 1705778, leak K04]
      */
 
-    if (objv[1]->typePtr != &tclDictType) {
-	int result = SetDictFromAny(interp, objv[1]);
-
-	if (result != TCL_OK) {
-	    return result;
-	}
+    if (GetDictFromObj(interp, objv[1]) == NULL) {
+	return TCL_ERROR;
     }
 
     if (objc == 3) {
@@ -1878,7 +1964,7 @@ DictKeysCmd(
 
 static int
 DictValuesCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1938,7 +2024,7 @@ DictValuesCmd(
 
 static int
 DictSizeCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1951,7 +2037,7 @@ DictSizeCmd(
     }
     result = Tcl_DictObjSize(interp, objv[1], &size);
     if (result == TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(size));
     }
     return result;
 }
@@ -1976,7 +2062,7 @@ DictSizeCmd(
 
 static int
 DictExistsCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1988,11 +2074,9 @@ DictExistsCmd(
 	return TCL_ERROR;
     }
 
-    dictPtr = TclTraceDictPath(interp, objv[1], objc-3, objv+2,
-	    DICT_PATH_EXISTS);
-    if (dictPtr == NULL || dictPtr == DICT_PATH_NON_EXISTENT
-	    || Tcl_DictObjGet(interp, dictPtr, objv[objc-1],
-		    &valuePtr) != TCL_OK) {
+    dictPtr = TclTraceDictPath(NULL, objv[1], objc-3, objv+2,DICT_PATH_EXISTS);
+    if (dictPtr == NULL || dictPtr == DICT_PATH_NON_EXISTENT ||
+	    Tcl_DictObjGet(NULL, dictPtr, objv[objc-1], &valuePtr) != TCL_OK) {
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(valuePtr != NULL));
@@ -2020,29 +2104,27 @@ DictExistsCmd(
 
 static int
 DictInfoCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
-    Tcl_Obj *dictPtr;
     Dict *dict;
+    char *statsStr;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
 	return TCL_ERROR;
     }
 
-    dictPtr = objv[1];
-    if (dictPtr->typePtr != &tclDictType) {
-	int result = SetDictFromAny(interp, dictPtr);
-	if (result != TCL_OK) {
-	    return result;
-	}
+    dict = GetDictFromObj(interp, objv[1]);
+    if (dict == NULL) {
+	return TCL_ERROR;
     }
-    dict = dictPtr->internalRep.otherValuePtr;
 
-    Tcl_SetResult(interp, Tcl_HashStats(&dict->table), TCL_DYNAMIC);
+    statsStr = Tcl_HashStats(&dict->table);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(statsStr, -1));
+    ckfree(statsStr);
     return TCL_OK;
 }
 
@@ -2066,7 +2148,7 @@ DictInfoCmd(
 
 static int
 DictIncrCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2075,7 +2157,7 @@ DictIncrCmd(
     Tcl_Obj *dictPtr, *valuePtr = NULL;
 
     if (objc < 3 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName key ?increment?");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?increment?");
 	return TCL_ERROR;
     }
 
@@ -2099,12 +2181,11 @@ DictIncrCmd(
 	 * soon be no good.
 	 */
 
-	char *saved = dictPtr->bytes;
 	Tcl_Obj *oldPtr = dictPtr;
 
-	dictPtr->bytes = NULL;
-	dictPtr = Tcl_DuplicateObj(dictPtr);
-	oldPtr->bytes = saved;
+	TclNewObj(dictPtr);
+	TclInvalidateStringRep(dictPtr);
+	DupDictInternalRep(oldPtr, dictPtr);
     }
     if (valuePtr == NULL) {
 	/*
@@ -2128,10 +2209,10 @@ DictIncrCmd(
 		 */
 
 		mp_clear(&increment);
-		Tcl_DictObjPut(interp, dictPtr, objv[2], objv[3]);
+		Tcl_DictObjPut(NULL, dictPtr, objv[2], objv[3]);
 	    }
 	} else {
-	    Tcl_DictObjPut(interp, dictPtr, objv[2], Tcl_NewIntObj(1));
+	    Tcl_DictObjPut(NULL, dictPtr, objv[2], Tcl_NewWideIntObj(1));
 	}
     } else {
 	/*
@@ -2140,20 +2221,21 @@ DictIncrCmd(
 
 	if (Tcl_IsShared(valuePtr)) {
 	    valuePtr = Tcl_DuplicateObj(valuePtr);
-	    Tcl_DictObjPut(interp, dictPtr, objv[2], valuePtr);
+	    Tcl_DictObjPut(NULL, dictPtr, objv[2], valuePtr);
 	}
 	if (objc == 4) {
 	    code = TclIncrObj(interp, valuePtr, objv[3]);
 	} else {
-	    Tcl_Obj *incrPtr = Tcl_NewIntObj(1);
+	    Tcl_Obj *incrPtr;
 
+	    TclNewIntObj(incrPtr, 1);
 	    Tcl_IncrRefCount(incrPtr);
 	    code = TclIncrObj(interp, valuePtr, incrPtr);
-	    Tcl_DecrRefCount(incrPtr);
+	    TclDecrRefCount(incrPtr);
 	}
     }
     if (code == TCL_OK) {
-	Tcl_InvalidateStringRep(dictPtr);
+	TclInvalidateStringRep(dictPtr);
 	valuePtr = Tcl_ObjSetVar2(interp, objv[1], NULL,
 		dictPtr, TCL_LEAVE_ERR_MSG);
 	if (valuePtr == NULL) {
@@ -2162,7 +2244,7 @@ DictIncrCmd(
 	    Tcl_SetObjResult(interp, valuePtr);
 	}
     } else if (dictPtr->refCount == 0) {
-	Tcl_DecrRefCount(dictPtr);
+	TclDecrRefCount(dictPtr);
     }
     return code;
 }
@@ -2187,7 +2269,7 @@ DictIncrCmd(
 
 static int
 DictLappendCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2196,7 +2278,7 @@ DictLappendCmd(
     int i, allocatedDict = 0, allocatedValue = 0;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName key ?value ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
 	return TCL_ERROR;
     }
 
@@ -2240,9 +2322,9 @@ DictLappendCmd(
     }
 
     if (allocatedValue) {
-	Tcl_DictObjPut(interp, dictPtr, objv[2], valuePtr);
-    } else if (dictPtr->bytes != NULL) {
-	Tcl_InvalidateStringRep(dictPtr);
+	Tcl_DictObjPut(NULL, dictPtr, objv[2], valuePtr);
+    } else {
+	TclInvalidateStringRep(dictPtr);
     }
 
     resultPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, dictPtr,
@@ -2274,16 +2356,16 @@ DictLappendCmd(
 
 static int
 DictAppendCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int i, allocatedDict = 0;
+    int allocatedDict = 0;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName key ?value ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
 	return TCL_ERROR;
     }
 
@@ -2303,19 +2385,49 @@ DictAppendCmd(
 	return TCL_ERROR;
     }
 
-    if (valuePtr == NULL) {
-	TclNewObj(valuePtr);
-    } else {
-	if (Tcl_IsShared(valuePtr)) {
-	    valuePtr = Tcl_DuplicateObj(valuePtr);
+    if ((objc > 3) || (valuePtr == NULL)) {
+	/* Only go through append activites when something will change. */
+	Tcl_Obj *appendObjPtr = NULL;
+
+	if (objc > 3) {
+	    /* Something to append */
+
+	    if (objc == 4) {
+		appendObjPtr = objv[3];
+	    } else {
+		appendObjPtr = TclStringCat(interp, objc-3, objv+3,
+			TCL_STRING_IN_PLACE);
+		if (appendObjPtr == NULL) {
+		    return TCL_ERROR;
+		}
+	    }
 	}
+
+	if (appendObjPtr == NULL) {
+	    /* => (objc == 3) => (valuePtr == NULL) */
+	    TclNewObj(valuePtr);
+	} else if (valuePtr == NULL) {
+	    valuePtr = appendObjPtr;
+	    appendObjPtr = NULL;
+	}
+
+	if (appendObjPtr) {
+	    if (Tcl_IsShared(valuePtr)) {
+		valuePtr = Tcl_DuplicateObj(valuePtr);
+	    }
+
+	    Tcl_IncrRefCount(appendObjPtr);
+	    Tcl_AppendObjToObj(valuePtr, appendObjPtr);
+	    Tcl_DecrRefCount(appendObjPtr);
+	}
+
+	Tcl_DictObjPut(NULL, dictPtr, objv[2], valuePtr);
     }
 
-    for (i=3 ; i<objc ; i++) {
-	Tcl_AppendObjToObj(valuePtr, objv[i]);
-    }
-
-    Tcl_DictObjPut(interp, dictPtr, objv[2], valuePtr);
+    /*
+     * Even if nothing changed, we still overwrite so that variable
+     * trace expectations are met.
+     */
 
     resultPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG);
@@ -2331,7 +2443,7 @@ DictAppendCmd(
  *
  * DictForNRCmd --
  *
- *	This function implements the "dict for" Tcl command. See the user
+ *	These functions implement the "dict for" Tcl command.  See the user
  *	documentation for details on what it does, and TIP#111 for the formal
  *	specification.
  *
@@ -2346,7 +2458,7 @@ DictAppendCmd(
 
 static int
 DictForNRCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2359,7 +2471,7 @@ DictForNRCmd(
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"{keyVar valueVar} dictionary script");
+		"{keyVarName valueVarName} dictionary script");
 	return TCL_ERROR;
     }
 
@@ -2371,11 +2483,12 @@ DictForNRCmd(
 	return TCL_ERROR;
     }
     if (varc != 2) {
-	Tcl_SetResult(interp, "must have exactly two variable names",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"must have exactly two variable names", -1));
+	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "for", NULL);
 	return TCL_ERROR;
     }
-    searchPtr = TclStackAlloc(interp, sizeof(Tcl_DictSearch));
+    searchPtr = (Tcl_DictSearch *)TclStackAlloc(interp, sizeof(Tcl_DictSearch));
     if (Tcl_DictObjFirst(interp, objv[2], searchPtr, &keyObj, &valueObj,
 	    &done) != TCL_OK) {
 	TclStackFree(interp, searchPtr);
@@ -2406,12 +2519,14 @@ DictForNRCmd(
      */
 
     Tcl_IncrRefCount(valueObj);
-    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj, TCL_LEAVE_ERR_MSG) == NULL) {
+    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
+	    TCL_LEAVE_ERR_MSG) == NULL) {
 	TclDecrRefCount(valueObj);
 	goto error;
     }
     TclDecrRefCount(valueObj);
-    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj, TCL_LEAVE_ERR_MSG) == NULL) {
+    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
+	    TCL_LEAVE_ERR_MSG) == NULL) {
 	goto error;
     }
 
@@ -2443,10 +2558,10 @@ DictForLoopCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_DictSearch *searchPtr = data[0];
-    Tcl_Obj *keyVarObj = data[1];
-    Tcl_Obj *valueVarObj = data[2];
-    Tcl_Obj *scriptObj = data[3];
+    Tcl_DictSearch *searchPtr = (Tcl_DictSearch *)data[0];
+    Tcl_Obj *keyVarObj = (Tcl_Obj *)data[1];
+    Tcl_Obj *valueVarObj = (Tcl_Obj *)data[2];
+    Tcl_Obj *scriptObj = (Tcl_Obj *)data[3];
     Tcl_Obj *keyObj, *valueObj;
     int done;
 
@@ -2484,13 +2599,15 @@ DictForLoopCallback(
      */
 
     Tcl_IncrRefCount(valueObj);
-    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj, TCL_LEAVE_ERR_MSG) == NULL) {
+    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
+	    TCL_LEAVE_ERR_MSG) == NULL) {
 	TclDecrRefCount(valueObj);
 	result = TCL_ERROR;
 	goto done;
     }
     TclDecrRefCount(valueObj);
-    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj, TCL_LEAVE_ERR_MSG) == NULL) {
+    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
+	    TCL_LEAVE_ERR_MSG) == NULL) {
 	result = TCL_ERROR;
 	goto done;
     }
@@ -2519,6 +2636,218 @@ DictForLoopCallback(
 /*
  *----------------------------------------------------------------------
  *
+ * DictMapNRCmd --
+ *
+ *	These functions implement the "dict map" Tcl command.  See the user
+ *	documentation for details on what it does, and TIP#405 for the formal
+ *	specification.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+DictMapNRCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj **varv, *keyObj, *valueObj;
+    DictMapStorage *storagePtr;
+    int varc, done;
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"{keyVarName valueVarName} dictionary script");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Parse arguments.
+     */
+
+    if (TclListObjGetElements(interp, objv[1], &varc, &varv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (varc != 2) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"must have exactly two variable names", -1));
+	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "map", NULL);
+	return TCL_ERROR;
+    }
+    storagePtr = (DictMapStorage *)TclStackAlloc(interp, sizeof(DictMapStorage));
+    if (Tcl_DictObjFirst(interp, objv[2], &storagePtr->search, &keyObj,
+	    &valueObj, &done) != TCL_OK) {
+	TclStackFree(interp, storagePtr);
+	return TCL_ERROR;
+    }
+    if (done) {
+	/*
+	 * Note that this exit leaves an empty value in the result (due to
+	 * command calling conventions) but that is OK since an empty value is
+	 * an empty dictionary.
+	 */
+
+	TclStackFree(interp, storagePtr);
+	return TCL_OK;
+    }
+    TclNewObj(storagePtr->accumulatorObj);
+    TclListObjGetElements(NULL, objv[1], &varc, &varv);
+    storagePtr->keyVarObj = varv[0];
+    storagePtr->valueVarObj = varv[1];
+    storagePtr->scriptObj = objv[3];
+
+    /*
+     * Make sure that these objects (which we need throughout the body of the
+     * loop) don't vanish. Note that the dictionary internal rep is locked
+     * internally so that updates, shimmering, etc are not a problem.
+     */
+
+    Tcl_IncrRefCount(storagePtr->accumulatorObj);
+    Tcl_IncrRefCount(storagePtr->keyVarObj);
+    Tcl_IncrRefCount(storagePtr->valueVarObj);
+    Tcl_IncrRefCount(storagePtr->scriptObj);
+
+    /*
+     * Stop the value from getting hit in any way by any traces on the key
+     * variable.
+     */
+
+    Tcl_IncrRefCount(valueObj);
+    if (Tcl_ObjSetVar2(interp, storagePtr->keyVarObj, NULL, keyObj,
+	    TCL_LEAVE_ERR_MSG) == NULL) {
+	TclDecrRefCount(valueObj);
+	goto error;
+    }
+    if (Tcl_ObjSetVar2(interp, storagePtr->valueVarObj, NULL, valueObj,
+	    TCL_LEAVE_ERR_MSG) == NULL) {
+	TclDecrRefCount(valueObj);
+	goto error;
+    }
+    TclDecrRefCount(valueObj);
+
+    /*
+     * Run the script.
+     */
+
+    TclNRAddCallback(interp, DictMapLoopCallback, storagePtr, NULL,NULL,NULL);
+    return TclNREvalObjEx(interp, storagePtr->scriptObj, 0,
+	    iPtr->cmdFramePtr, 3);
+
+    /*
+     * For unwinding everything on error.
+     */
+
+  error:
+    TclDecrRefCount(storagePtr->keyVarObj);
+    TclDecrRefCount(storagePtr->valueVarObj);
+    TclDecrRefCount(storagePtr->scriptObj);
+    TclDecrRefCount(storagePtr->accumulatorObj);
+    Tcl_DictObjDone(&storagePtr->search);
+    TclStackFree(interp, storagePtr);
+    return TCL_ERROR;
+}
+
+static int
+DictMapLoopCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    DictMapStorage *storagePtr = (DictMapStorage *)data[0];
+    Tcl_Obj *keyObj, *valueObj;
+    int done;
+
+    /*
+     * Process the result from the previous execution of the script body.
+     */
+
+    if (result == TCL_CONTINUE) {
+	result = TCL_OK;
+    } else if (result != TCL_OK) {
+	if (result == TCL_BREAK) {
+	    Tcl_ResetResult(interp);
+	    result = TCL_OK;
+	} else if (result == TCL_ERROR) {
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    (\"dict map\" body line %d)",
+		    Tcl_GetErrorLine(interp)));
+	}
+	goto done;
+    } else {
+	keyObj = Tcl_ObjGetVar2(interp, storagePtr->keyVarObj, NULL,
+		TCL_LEAVE_ERR_MSG);
+	if (keyObj == NULL) {
+	    result = TCL_ERROR;
+	    goto done;
+	}
+	Tcl_DictObjPut(NULL, storagePtr->accumulatorObj, keyObj,
+		Tcl_GetObjResult(interp));
+    }
+
+    /*
+     * Get the next mapping from the dictionary.
+     */
+
+    Tcl_DictObjNext(&storagePtr->search, &keyObj, &valueObj, &done);
+    if (done) {
+	Tcl_SetObjResult(interp, storagePtr->accumulatorObj);
+	goto done;
+    }
+
+    /*
+     * Stop the value from getting hit in any way by any traces on the key
+     * variable.
+     */
+
+    Tcl_IncrRefCount(valueObj);
+    if (Tcl_ObjSetVar2(interp, storagePtr->keyVarObj, NULL, keyObj,
+	    TCL_LEAVE_ERR_MSG) == NULL) {
+	TclDecrRefCount(valueObj);
+	result = TCL_ERROR;
+	goto done;
+    }
+    if (Tcl_ObjSetVar2(interp, storagePtr->valueVarObj, NULL, valueObj,
+	    TCL_LEAVE_ERR_MSG) == NULL) {
+	TclDecrRefCount(valueObj);
+	result = TCL_ERROR;
+	goto done;
+    }
+    TclDecrRefCount(valueObj);
+
+    /*
+     * Run the script.
+     */
+
+    TclNRAddCallback(interp, DictMapLoopCallback, storagePtr, NULL,NULL,NULL);
+    return TclNREvalObjEx(interp, storagePtr->scriptObj, 0,
+	    iPtr->cmdFramePtr, 3);
+
+    /*
+     * For unwinding everything once the iterating is done.
+     */
+
+  done:
+    TclDecrRefCount(storagePtr->keyVarObj);
+    TclDecrRefCount(storagePtr->valueVarObj);
+    TclDecrRefCount(storagePtr->scriptObj);
+    TclDecrRefCount(storagePtr->accumulatorObj);
+    Tcl_DictObjDone(&storagePtr->search);
+    TclStackFree(interp, storagePtr);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * DictSetCmd --
  *
  *	This function implements the "dict set" Tcl command. See the user
@@ -2536,7 +2865,7 @@ DictForLoopCallback(
 
 static int
 DictSetCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2545,7 +2874,7 @@ DictSetCmd(
     int result, allocatedDict = 0;
 
     if (objc < 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName key ?key ...? value");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?key ...? value");
 	return TCL_ERROR;
     }
 
@@ -2596,7 +2925,7 @@ DictSetCmd(
 
 static int
 DictUnsetCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2605,7 +2934,7 @@ DictUnsetCmd(
     int result, allocatedDict = 0;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName key ?key ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?key ...?");
 	return TCL_ERROR;
     }
 
@@ -2655,7 +2984,7 @@ DictUnsetCmd(
 
 static int
 DictFilterCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2712,12 +3041,12 @@ DictFilterCmd(
 		Tcl_DictObjDone(&search);
 		Tcl_DictObjGet(interp, objv[1], objv[3], &valueObj);
 		if (valueObj != NULL) {
-		    Tcl_DictObjPut(interp, resultObj, objv[3], valueObj);
+		    Tcl_DictObjPut(NULL, resultObj, objv[3], valueObj);
 		}
 	    } else {
 		while (!done) {
 		    if (Tcl_StringMatch(TclGetString(keyObj), pattern)) {
-			Tcl_DictObjPut(interp, resultObj, keyObj, valueObj);
+			Tcl_DictObjPut(NULL, resultObj, keyObj, valueObj);
 		    }
 		    Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
 		}
@@ -2735,7 +3064,7 @@ DictFilterCmd(
 		for (i=3 ; i<objc ; i++) {
 		    pattern = TclGetString(objv[i]);
 		    if (Tcl_StringMatch(TclGetString(keyObj), pattern)) {
-			Tcl_DictObjPut(interp, resultObj, keyObj, valueObj);
+			Tcl_DictObjPut(NULL, resultObj, keyObj, valueObj);
 			break;		/* stop inner loop */
 		    }
 		}
@@ -2761,7 +3090,7 @@ DictFilterCmd(
 	    for (i=3 ; i<objc ; i++) {
 		pattern = TclGetString(objv[i]);
 		if (Tcl_StringMatch(TclGetString(valueObj), pattern)) {
-		    Tcl_DictObjPut(interp, resultObj, keyObj, valueObj);
+		    Tcl_DictObjPut(NULL, resultObj, keyObj, valueObj);
 		    break;		/* stop inner loop */
 		}
 	    }
@@ -2773,7 +3102,7 @@ DictFilterCmd(
     case FILTER_SCRIPT:
 	if (objc != 5) {
 	    Tcl_WrongNumArgs(interp, 1, objv,
-		    "dictionary script {keyVar valueVar} filterScript");
+		    "dictionary script {keyVarName valueVarName} filterScript");
 	    return TCL_ERROR;
 	}
 
@@ -2787,8 +3116,9 @@ DictFilterCmd(
 	    return TCL_ERROR;
 	}
 	if (varc != 2) {
-	    Tcl_SetResult(interp, "must have exactly two variable names",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "must have exactly two variable names", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "filter", NULL);
 	    return TCL_ERROR;
 	}
 	keyVarObj = varv[0];
@@ -2827,17 +3157,16 @@ DictFilterCmd(
 	    Tcl_IncrRefCount(valueObj);
 	    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't set key variable: \"",
-			TclGetString(keyVarObj), "\"", NULL);
+		Tcl_AddErrorInfo(interp,
+			"\n    (\"dict filter\" filter script key variable)");
 		result = TCL_ERROR;
 		goto abnormalResult;
 	    }
 	    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't set value variable: \"",
-			TclGetString(valueVarObj), "\"", NULL);
+		Tcl_AddErrorInfo(interp,
+			"\n    (\"dict filter\" filter script value variable)");
+		result = TCL_ERROR;
 		goto abnormalResult;
 	    }
 
@@ -2859,7 +3188,7 @@ DictFilterCmd(
 		}
 		TclDecrRefCount(boolObj);
 		if (satisfied) {
-		    Tcl_DictObjPut(interp, resultObj, keyObj, valueObj);
+		    Tcl_DictObjPut(NULL, resultObj, keyObj, valueObj);
 		}
 		break;
 	    case TCL_BREAK:
@@ -2871,6 +3200,7 @@ DictFilterCmd(
 
 		Tcl_ResetResult(interp);
 		Tcl_DictObjDone(&search);
+	    /* FALLTHRU */
 	    case TCL_CONTINUE:
 		result = TCL_OK;
 		break;
@@ -2939,7 +3269,7 @@ DictFilterCmd(
 
 static int
 DictUpdateCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2950,7 +3280,7 @@ DictUpdateCmd(
 
     if (objc < 5 || !(objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"varName key varName ?key varName ...? script");
+		"dictVarName key varName ?key varName ...? script");
 	return TCL_ERROR;
     }
 
@@ -2969,7 +3299,7 @@ DictUpdateCmd(
 	}
 	if (objPtr == NULL) {
 	    /* ??? */
-	    Tcl_UnsetVar(interp, Tcl_GetString(objv[i+1]), 0);
+	    Tcl_UnsetVar2(interp, Tcl_GetString(objv[i+1]), NULL, 0);
 	} else if (Tcl_ObjSetVar2(interp, objv[i+1], NULL, objPtr,
 		TCL_LEAVE_ERR_MSG) == NULL) {
 	    TclDecrRefCount(dictPtr);
@@ -3000,8 +3330,8 @@ FinalizeDictUpdate(
     Tcl_Obj *dictPtr, *objPtr, **objv;
     Tcl_InterpState state;
     int i, objc;
-    Tcl_Obj *varName = data[0];
-    Tcl_Obj *argsObj = data[1];
+    Tcl_Obj *varName = (Tcl_Obj *)data[0];
+    Tcl_Obj *argsObj = (Tcl_Obj *)data[1];
 
     /*
      * ErrorInfo handling.
@@ -3047,18 +3377,17 @@ FinalizeDictUpdate(
     for (i=0 ; i<objc ; i+=2) {
 	objPtr = Tcl_ObjGetVar2(interp, objv[i+1], NULL, 0);
 	if (objPtr == NULL) {
-	    Tcl_DictObjRemove(interp, dictPtr, objv[i]);
+	    Tcl_DictObjRemove(NULL, dictPtr, objv[i]);
 	} else if (objPtr == dictPtr) {
 	    /*
 	     * Someone is messing us around, trying to build a recursive
 	     * structure. [Bug 1786481]
 	     */
 
-	    Tcl_DictObjPut(interp, dictPtr, objv[i],
-		    Tcl_DuplicateObj(objPtr));
+	    Tcl_DictObjPut(NULL, dictPtr, objv[i], Tcl_DuplicateObj(objPtr));
 	} else {
 	    /* Shouldn't fail */
-	    Tcl_DictObjPut(interp, dictPtr, objv[i], objPtr);
+	    Tcl_DictObjPut(NULL, dictPtr, objv[i], objPtr);
 	}
     }
     TclDecrRefCount(argsObj);
@@ -3098,7 +3427,7 @@ FinalizeDictUpdate(
 
 static int
 DictWithCmd(
-    ClientData dummy,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -3107,7 +3436,7 @@ DictWithCmd(
     Tcl_Obj *dictPtr, *keysPtr, *pathPtr;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictVar ?key ...? script");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName ?key ...? script");
 	return TCL_ERROR;
     }
 
@@ -3152,9 +3481,9 @@ FinalizeDictWith(
     Tcl_Obj **pathv;
     int pathc;
     Tcl_InterpState state;
-    Tcl_Obj *varName = data[0];
-    Tcl_Obj *keysPtr = data[1];
-    Tcl_Obj *pathPtr = data[2];
+    Tcl_Obj *varName = (Tcl_Obj *)data[0];
+    Tcl_Obj *keysPtr = (Tcl_Obj *)data[1];
+    Tcl_Obj *pathPtr = (Tcl_Obj *)data[2];
     Var *varPtr, *arrayPtr;
 
     if (result == TCL_ERROR) {
@@ -3321,7 +3650,7 @@ TclDictWithFinish(
      * If the dictionary variable doesn't exist, drop everything silently.
      */
 
-    dictPtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
+    dictPtr = TclPtrGetVarIdx(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
 	    TCL_LEAVE_ERR_MSG, index);
     if (dictPtr == NULL) {
 	return TCL_OK;
@@ -3404,8 +3733,8 @@ TclDictWithFinish(
      * Write back the outermost dictionary to the variable.
      */
 
-    if (TclPtrSetVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr, dictPtr,
-	    TCL_LEAVE_ERR_MSG, index) == NULL) {
+    if (TclPtrSetVarIdx(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
+	    dictPtr, TCL_LEAVE_ERR_MSG, index) == NULL) {
 	if (allocdict) {
 	    TclDecrRefCount(dictPtr);
 	}
@@ -3438,7 +3767,7 @@ TclInitDictCmd(
 {
     return TclMakeEnsemble(interp, "dict", implementationMap);
 }
-
+
 /*
  * Local Variables:
  * mode: c

@@ -1356,7 +1356,7 @@
 2004-10-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* *.3: Convert CONST to const and VOID to void so we document how
-	people should actually use the Tcl API and not the compatability hacks
+	people should actually use the Tcl API and not the compatibility hacks
 	that it has to have.
 
 	* doc/man.macros, *.3: Update .AS macro so it can know how wide to
@@ -2302,7 +2302,7 @@
 	934511].
 
 	* doc/CrtCommand.3: Added note that the arguments given to the command
-	proc of a Tcl_CreateCommand are in utf8 since Tcl 8.1. Closing [Patch
+	proc of a Tcl_CreateCommand are in utf-8 since Tcl 8.1. Closing [Patch
 	414778].
 
 	* doc/ChnlStack.3: Removed the declaration that the interp argument to
@@ -2873,7 +2873,7 @@
 2004-06-02  Jeff Hobbs	<jeffh@ActiveState.com>
 
 	* win/tclWinFile.c (TclpFindExecutable): when using GetModuleFileNameA
-	(Win9x), convert from CP_ACP to WCHAR then convert back to utf8.
+	(Win9x), convert from CP_ACP to WCHAR then convert back to utf-8.
 	Adjunct to 2004-04-07 fix.
 
 2004-06-02  David Gravereaux <davygrvy@pobox.com>

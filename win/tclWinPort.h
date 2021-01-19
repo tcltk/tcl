@@ -14,22 +14,26 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-#ifndef _WIN64
-/* See [Bug 2935503]: file mtime sets wrong time */
-#   define _USE_32BIT_TIME_T
+#if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT)
+/* See [Bug 3354324]: file mtime sets wrong time */
+#   define __MINGW_USE_VC2005_COMPAT
+#endif
+#if defined(_MSC_VER) && defined(_WIN64) && !defined(STATIC_BUILD) \
+	&& !defined(MP_32BIT) && !defined(MP_64BIT)
+#   define MP_64BIT
 #endif
 
 /*
  * We must specify the lower version we intend to support.
  *
- * WINVER = 0x0500 means Windows 2000 and above
+ * WINVER = 0x0601 means Windows 7 and above
  */
 
 #ifndef WINVER
-#   define WINVER 0x0501
+#   define WINVER 0x0601
 #endif
 #ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0501
+#   define _WIN32_WINNT 0x0601
 #endif
 
 #define WIN32_LEAN_AND_MEAN
@@ -45,21 +49,14 @@ typedef DWORD_PTR * PDWORD_PTR;
 /*
  * Ask for the winsock function typedefs, also.
  */
-#define INCL_WINSOCK_API_TYPEDEFS   1
+#ifndef INCL_WINSOCK_API_TYPEDEFS
+#   define INCL_WINSOCK_API_TYPEDEFS   1
+#endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #ifdef HAVE_WSPIAPI_H
 #   include <wspiapi.h>
 #endif
-
-#ifdef CHECK_UNICODE_CALLS
-#   define _UNICODE
-#   define UNICODE
-#   define __TCHAR_DEFINED
-    typedef float *_TCHAR;
-#   define _TCHAR_DEFINED
-    typedef float *TCHAR;
-#endif /* CHECK_UNICODE_CALLS */
 
 /*
  *  Pull in the typedef of TCHAR for windows.
@@ -82,6 +79,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  *---------------------------------------------------------------------------
  */
 
+#include <time.h>
 #include <wchar.h>
 #include <io.h>
 #include <errno.h>
@@ -90,13 +88,19 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <malloc.h>
 #include <process.h>
 #include <signal.h>
-#include <limits.h>
-
-#ifndef strncasecmp
-#   define strncasecmp strnicmp
+#ifdef HAVE_INTTYPES_H
+#   include <inttypes.h>
 #endif
-#ifndef strcasecmp
-#   define strcasecmp stricmp
+#include <limits.h>
+#ifdef HAVE_STDINT_H
+#   include <stdint.h>
+#else
+#   include "../compat/stdint.h"
+#endif
+
+#ifndef __GNUC__
+#    define strncasecmp _strnicmp
+#    define strcasecmp _stricmp
 #endif
 
 /*
@@ -107,14 +111,8 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifndef __MWERKS__
 #include <sys/stat.h>
 #include <sys/timeb.h>
-#   ifdef __BORLANDC__
-#	include <utime.h>
-#   else
-#	include <sys/utime.h>
-#   endif /* __BORLANDC__ */
+#include <sys/utime.h>
 #endif /* __MWERKS__ */
-
-#include <time.h>
 
 /*
  * The following defines redefine the Windows Socket errors as
@@ -295,7 +293,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * defined in header files above.
  */
 
-#if TCL_UNION_WAIT
+#ifdef TCL_UNION_WAIT
 #   define WAIT_STATUS_TYPE union wait
 #else
 #   define WAIT_STATUS_TYPE int
@@ -314,7 +312,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 #ifndef WTERMSIG
-#   define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7f)
+#   define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7F)
 #endif
 
 #ifndef WIFSTOPPED
@@ -322,7 +320,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 #ifndef WSTOPSIG
-#   define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xff)
+#   define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 /*
@@ -361,6 +359,20 @@ typedef DWORD_PTR * PDWORD_PTR;
 
 #ifndef S_IFLNK
 #   define S_IFLNK        0120000  /* Symbolic Link */
+#endif
+
+/*
+ * Windows compilers do not define S_IFBLK. However, Tcl uses it in
+ * GetTypeFromMode to identify blockSpecial devices based on the
+ * value in the statsbuf st_mode field. We have no other way to pass this
+ * from NativeStat on Windows so are forced to define it here.
+ * The definition here is essentially what is seen on Linux and MingW.
+ * XXX - the root problem is Tcl using Unix definitions instead of
+ * abstracting the structure into a platform independent one. Sigh - perhaps
+ * Tcl 9
+ */
+#ifndef S_IFBLK
+#   define S_IFBLK (S_IFDIR | S_IFCHR)
 #endif
 
 #ifndef S_ISREG
@@ -423,10 +435,10 @@ typedef DWORD_PTR * PDWORD_PTR;
  * Define pid_t and uid_t if they're not already defined.
  */
 
-#if ! TCL_PID_T
+#if !defined(TCL_PID_T)
 #   define pid_t int
 #endif /* !TCL_PID_T */
-#if ! TCL_UID_T
+#if !defined(TCL_UID_T)
 #   define uid_t int
 #endif /* !TCL_UID_T */
 
@@ -436,43 +448,21 @@ typedef DWORD_PTR * PDWORD_PTR;
  * EDEADLK as the same value, which confuses Tcl_ErrnoId().
  */
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
 #   define environ _environ
-#   if defined(_MSC_VER) && (_MSC_VER < 1600)
-#	define hypot _hypot
-#   endif
 #   define exception _exception
 #   undef EDEADLOCK
-#   if defined(__MINGW32__) && !defined(__MSVCRT__)
+#   if defined(_MSC_VER)
 #	define timezone _timezone
 #   endif
-#endif /* _MSC_VER || __MINGW32__ */
+#endif /* _MSC_VER || __MSVCRT__ */
 
-/*
- * Borland's timezone and environ functions.
- */
-
-#ifdef  __BORLANDC__
-#   define timezone _timezone
-#   define environ  _environ
-#endif /* __BORLANDC__ */
-
-#ifdef __WATCOMC__
-#   if !defined(__CHAR_SIGNED__)
-#	error "You must use the -j switch to ensure char is signed."
-#   endif
+#if defined(_MSC_VER)
+#   pragma warning(disable:4146)
+#   pragma warning(disable:4244)
+#   pragma warning(disable:4267)
+#   pragma warning(disable:4996)
 #endif
-
-
-/*
- * MSVC 8.0 started to mark many standard C library functions depreciated
- * including the *printf family and others. Tell it to shut up.
- * (_MSC_VER is 1200 for VC6, 1300 or 1310 for vc7.net, 1400 for 8.0)
- */
-#if _MSC_VER >= 1400
-#pragma warning(disable:4996)
-#endif
-
 
 /*
  *---------------------------------------------------------------------------
@@ -507,7 +497,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * Msvcrt's putenv() copies the string rather than takes ownership of it.
  */
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
 #   define HAVE_PUTENV_THAT_COPIES 1
 #endif
 
@@ -530,16 +520,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
 					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
 
-/*
- * The following defines map from standard socket names to our internal
- * wrappers that redirect through the winSock function table (see the
- * file tclWinSock.c).
- */
-
-#define getservbyname	TclWinGetServByName
-#define getsockopt	TclWinGetSockOpt
-#define ntohs		TclWinNToHS
-#define setsockopt	TclWinSetSockOpt
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
 
@@ -549,7 +529,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * address platform-specific issues.
  */
 
-#define TclpReleaseFile(file)	ckfree((char *) file)
+#define TclpReleaseFile(file)	ckfree(file)
 
 /*
  * The following macros and declarations wrap the C runtime library
@@ -565,5 +545,8 @@ typedef DWORD_PTR * PDWORD_PTR;
 #ifndef LABEL_SECURITY_INFORMATION
 #   define LABEL_SECURITY_INFORMATION (0x00000010L)
 #endif
+
+#define Tcl_DirEntry void
+#define TclDIR void
 
 #endif /* _TCLWINPORT */

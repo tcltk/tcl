@@ -5,8 +5,8 @@
  *	sure that widget records and other data structures aren't reallocated
  *	when there are nested functions that depend on their existence.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1998 Sun Microsystems, Inc.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -22,7 +22,7 @@
 
 typedef struct {
     ClientData clientData;	/* Address of preserved block. */
-    int refCount;		/* Number of Tcl_Preserve calls in effect for
+    size_t refCount;		/* Number of Tcl_Preserve calls in effect for
 				 * block. */
     int mustFree;		/* Non-zero means Tcl_EventuallyFree was
 				 * called while a Tcl_Preserve call was in
@@ -63,7 +63,7 @@ typedef struct HandleStruct {
 				 * ensure that the contents of the handle are
 				 * not changed by anyone else. */
 #endif
-    int refCount;		/* Number of TclHandlePreserve() calls in
+    size_t refCount;		/* Number of TclHandlePreserve() calls in
 				 * effect on this handle. */
 } HandleStruct;
 
@@ -83,7 +83,6 @@ typedef struct HandleStruct {
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 void
 TclFinalizePreserve(void)
 {
@@ -144,7 +143,7 @@ Tcl_Preserve(
 
     if (inUse == spaceAvl) {
 	spaceAvl = spaceAvl ? 2*spaceAvl : INITIAL_SIZE;
-	refArray = ckrealloc(refArray, spaceAvl * sizeof(Reference));
+	refArray = (Reference *)ckrealloc(refArray, spaceAvl * sizeof(Reference));
     }
 
     /*
@@ -155,7 +154,7 @@ Tcl_Preserve(
     refPtr->clientData = clientData;
     refPtr->refCount = 1;
     refPtr->mustFree = 0;
-    refPtr->freeProc = TCL_STATIC;
+    refPtr->freeProc = 0;
     inUse += 1;
     Tcl_MutexUnlock(&preserveMutex);
 }
@@ -195,7 +194,7 @@ Tcl_Release(
 	    continue;
 	}
 
-	if (--refPtr->refCount != 0) {
+	if (refPtr->refCount-- > 1) {
 	    Tcl_MutexUnlock(&preserveMutex);
 	    return;
 	}
@@ -226,7 +225,7 @@ Tcl_Release(
 	    if (freeProc == TCL_DYNAMIC) {
 		ckfree(clientData);
 	    } else {
-		freeProc(clientData);
+		freeProc((char *)clientData);
 	    }
 	}
 	return;
@@ -293,7 +292,7 @@ Tcl_EventuallyFree(
     if (freeProc == TCL_DYNAMIC) {
 	ckfree(clientData);
     } else {
-	freeProc(clientData);
+	freeProc((char *)clientData);
     }
 }
 
@@ -327,7 +326,7 @@ TclHandleCreate(
 				 * be tracked for deletion. Must not be
 				 * NULL. */
 {
-    HandleStruct *handlePtr = ckalloc(sizeof(HandleStruct));
+    HandleStruct *handlePtr = (HandleStruct *)ckalloc(sizeof(HandleStruct));
 
     handlePtr->ptr = ptr;
 #ifdef TCL_MEM_DEBUG
@@ -459,8 +458,7 @@ TclHandleRelease(
 		handlePtr, handlePtr->ptr2, handlePtr->ptr);
     }
 #endif
-    handlePtr->refCount--;
-    if ((handlePtr->refCount == 0) && (handlePtr->ptr == NULL)) {
+    if ((handlePtr->refCount-- <= 1) && (handlePtr->ptr == NULL)) {
 	ckfree(handlePtr);
     }
 }

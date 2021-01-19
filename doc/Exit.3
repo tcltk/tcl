@@ -3,9 +3,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH Tcl_Exit 3 8.5 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_Exit, Tcl_Finalize, Tcl_CreateExitHandler, Tcl_DeleteExitHandler, Tcl_ExitThread, Tcl_FinalizeThread, Tcl_CreateThreadExitHandler, Tcl_DeleteThreadExitHandler, Tcl_SetExitProc \- end the application or thread (and invoke exit handlers)
@@ -120,7 +120,7 @@ If extension \fBA\fR registers its exit handlers before loading extension
 \fBB\fR, this ensures that any exit handlers for \fBB\fR will be executed
 before the exit handlers for \fBA\fR.
 .PP
-\fBTcl_Finalize\fR and \fBTcl_Exit\fR call \fBTcl_FinalizeThread\fR 
+\fBTcl_Finalize\fR and \fBTcl_Exit\fR call \fBTcl_FinalizeThread\fR
 and the thread exit handlers \fIafter\fR
 the process-wide exit handlers.  This is because thread finalization shuts
 down the I/O channel system, so any attempt at I/O by the global exit
@@ -134,6 +134,9 @@ finalization of Tcl's subsystems via \fBTcl_Finalize\fR at an
 appropriate time.  The argument passed to \fIproc\fR when it is
 invoked will be the exit status code (as passed to \fBTcl_Exit\fR)
 cast to a ClientData value.
+.PP
+\fBTcl_SetExitProc\fR can not be used in stub-enabled extensions. Its symbol
+entry in the stub table is deprecated and it will be removed in Tcl 9.0.
 .SH "SEE ALSO"
 exit(n)
 .SH KEYWORDS

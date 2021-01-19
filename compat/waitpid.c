@@ -1,4 +1,4 @@
-/* 
+/*
  * waitpid.c --
  *
  *	This procedure emulates the POSIX waitpid kernel call on BSD systems
@@ -70,7 +70,7 @@ waitpid(
     int options)		/* OR'ed combination of WNOHANG and
 				 * WUNTRACED. */
 {
-    register WaitInfo *waitPtr, *prevPtr;
+    WaitInfo *waitPtr, *prevPtr;
     pid_t result;
     WAIT_STATUS_TYPE status;
 
@@ -100,7 +100,7 @@ waitpid(
 	} else {
 	    prevPtr->nextPtr = waitPtr->nextPtr;
 	}
-	ckfree((char *) waitPtr);
+	ckfree(waitPtr);
 	return result;
     }
 

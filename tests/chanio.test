@@ -6,19 +6,24 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1994 The Regents of the University of California.
-# Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1994 The Regents of the University of California.
+# Copyright © 1994-1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[catch {package require tcltest 2}]} {
-    chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
-    return
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
 }
+
 namespace eval ::tcl::test::io {
-    namespace import ::tcltest::*
+
+    if {"::tcltest" ni [namespace children]} {
+	package require tcltest 2.5
+	namespace import -force ::tcltest::*
+    }
 
     variable umaskValue
     variable path
@@ -29,22 +34,26 @@ namespace eval ::tcl::test::io {
     variable msg
     variable expected
 
-    ::tcltest::loadTestedCommands
-    catch [list package require -exact Tcltest [info patchlevel]]
-    
+    catch {
+	::tcltest::loadTestedCommands
+	package require -exact tcl::test [info patchlevel]
+	set ::tcltestlib [info loaded {} Tcltest]
+    }
+    package require tcltests
+
+    testConstraint testbytestring   [llength [info commands testbytestring]]
     testConstraint testchannel      [llength [info commands testchannel]]
-    testConstraint exec             [llength [info commands exec]]
-    testConstraint openpipe         1
-    testConstraint fileevent        [llength [info commands fileevent]]
-    testConstraint fcopy            [llength [info commands fcopy]]
     testConstraint testfevent       [llength [info commands testfevent]]
     testConstraint testchannelevent [llength [info commands testchannelevent]]
     testConstraint testmainthread   [llength [info commands testmainthread]]
-    testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
+    testConstraint testservicemode  [llength [info commands testservicemode]]
+    testConstraint notWinCI       [expr {
+	$::tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
+    testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
 
     # You need a *very* special environment to do some tests.  In particular,
     # many file systems do not support large-files...
-    testConstraint largefileSupport 0
+    testConstraint largefileSupport [expr {$::tcl_platform(os) ne "Darwin"}]
 
     # some tests can only be run is umask is 2 if "umask" cannot be run, the
     # tests will be skipped.
@@ -124,10 +133,10 @@ test chan-io-1.8 {Tcl_WriteChars: WriteChars} {
     # Executing this test without the fix for the referenced bug applied to
     # tcl will cause tcl, more specifically WriteChars, to go into an infinite
     # loop.
-    set f [open $path(test2) w] 
-    chan configure      $f -encoding iso2022-jp 
-    chan puts -nonewline $f [format %s%c [string repeat " " 4] 12399] 
-    chan close           $f 
+    set f [open $path(test2) w]
+    chan configure      $f -encoding iso2022-jp
+    chan puts -nonewline $f [format %s%c [string repeat " " 4] 12399]
+    chan close           $f
     contents $path(test2)
 } "    \x1b\$B\$O\x1b(B"
 test chan-io-1.9 {Tcl_WriteChars: WriteChars} {
@@ -242,7 +251,7 @@ test chan-io-3.3 {WriteChars: compatibility with WriteBytes: flush on line} -bod
 test chan-io-3.4 {WriteChars: loop over stage buffer} {
     # stage buffer maps to more than can be queued at once.
     set f [open $path(test1) w]
-    chan configure $f -encoding jis0208 -buffersize 16 
+    chan configure $f -encoding jis0208 -buffersize 16
     chan puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -253,7 +262,7 @@ test chan-io-3.5 {WriteChars: saved != 0} {
     # be moved to beginning of next channel buffer to preserve requested
     # buffersize.
     set f [open $path(test1) w]
-    chan configure $f -encoding jis0208 -buffersize 17 
+    chan configure $f -encoding jis0208 -buffersize 17
     chan puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -282,7 +291,7 @@ test chan-io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} {
     # on flush. The truncated bytes are moved to the beginning of the next
     # channel buffer.
     set f [open $path(test1) w]
-    chan configure $f -encoding jis0208 -buffersize 17 
+    chan configure $f -encoding jis0208 -buffersize 17
     chan puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -347,7 +356,7 @@ test chan-io-4.5 {TranslateOutputEOL: crlf} {
 
 test chan-io-5.1 {CheckFlush: not full} {
     set f [open $path(test1) w]
-    chan configure $f 
+    chan configure $f
     chan puts -nonewline $f "12345678901234567890"
     set x [list [contents $path(test1)]]
     chan close $f
@@ -435,7 +444,7 @@ set a "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 append a $a
 append a $a
 test chan-io-6.6 {Tcl_GetsObj: loop test} -body {
-    # if (dst >= dstEnd) 
+    # if (dst >= dstEnd)
     set f [open $path(test1) w]
     chan puts $f $a
     chan puts $f hi
@@ -445,7 +454,7 @@ test chan-io-6.6 {Tcl_GetsObj: loop test} -body {
 } -cleanup {
     chan close $f
 } -result [list 256 $a]
-test chan-io-6.7 {Tcl_GetsObj: error in input} -constraints {stdio openpipe} -body {
+test chan-io-6.7 {Tcl_GetsObj: error in input} -constraints stdio -body {
     # if (FilterInputBytes(chanPtr, &gs) != 0)
     set f [openpipe w+ $path(cat)]
     chan puts -nonewline $f "hi\nwould"
@@ -706,7 +715,7 @@ test chan-io-6.30 {Tcl_GetsObj: crlf mode: buffer exhausted} -constraints {testc
 } -result [list 15 "123456789012345" 15]
 test chan-io-6.31 {Tcl_GetsObj: crlf mode: buffer exhausted, blocked} -setup {
     set x ""
-} -constraints {stdio testchannel openpipe fileevent} -body {
+} -constraints {stdio testchannel fileevent} -body {
     # (FilterInputBytes() != 0)
     set f [openpipe w+ $path(cat)]
     chan configure $f -translation {crlf lf} -buffering none
@@ -744,7 +753,7 @@ test chan-io-6.33 {Tcl_GetsObj: crlf mode: buffer exhausted, at eof} -body {
     chan close $f
 } -result [list 16 "123456789012345\r" 1]
 test chan-io-6.34 {Tcl_GetsObj: crlf mode: buffer exhausted, not followed by \n} -body {
-    # not (*eol == '\n') 
+    # not (*eol == '\n')
     set f [open $path(test1) w]
     chan configure $f -translation lf
     chan puts -nonewline $f "123456789012345\rabcd\r\nefg"
@@ -846,7 +855,7 @@ test chan-io-6.42 {Tcl_GetsObj: auto mode: several chars} -setup {
 } -result {4 abcd 4 efgh 4 ijkl 4 mnop -1 {}}
 test chan-io-6.43 {Tcl_GetsObj: input saw cr} -setup {
     set x ""
-} -constraints {stdio testchannel openpipe fileevent} -body {
+} -constraints {stdio testchannel fileevent} -body {
     # if (chanPtr->flags & INPUT_SAW_CR)
     set f [openpipe w+ $path(cat)]
     chan configure $f -translation {auto lf} -buffering none
@@ -854,7 +863,7 @@ test chan-io-6.43 {Tcl_GetsObj: input saw cr} -setup {
     chan configure $f -buffersize 16
     lappend x [chan gets $f]
     chan configure $f -blocking 0
-    lappend x [chan gets $f line] $line [testchannel queuedcr $f] 
+    lappend x [chan gets $f line] $line [testchannel queuedcr $f]
     chan configure $f -blocking 1
     chan puts -nonewline $f "\nabcd\refg\x1a"
     lappend x [chan gets $f line] $line [testchannel queuedcr $f]
@@ -864,15 +873,15 @@ test chan-io-6.43 {Tcl_GetsObj: input saw cr} -setup {
 } -result {bbbbbbbbbbbbbbb 15 123456789abcdef 1 4 abcd 0 3 efg}
 test chan-io-6.44 {Tcl_GetsObj: input saw cr, not followed by cr} -setup {
     set x ""
-} -constraints {stdio testchannel openpipe fileevent} -body {
-    # not (*eol == '\n') 
+} -constraints {stdio testchannel fileevent} -body {
+    # not (*eol == '\n')
     set f [openpipe w+ $path(cat)]
     chan configure $f -translation {auto lf} -buffering none
     chan puts -nonewline $f "bbbbbbbbbbbbbbb\n123456789abcdef\r"
     chan configure $f -buffersize 16
     lappend x [chan gets $f]
     chan configure $f -blocking 0
-    lappend x [chan gets $f line] $line [testchannel queuedcr $f] 
+    lappend x [chan gets $f line] $line [testchannel queuedcr $f]
     chan configure $f -blocking 1
     chan puts -nonewline $f "abcd\refg\x1a"
     lappend x [chan gets $f line] $line [testchannel queuedcr $f]
@@ -882,11 +891,11 @@ test chan-io-6.44 {Tcl_GetsObj: input saw cr, not followed by cr} -setup {
 } -result {bbbbbbbbbbbbbbb 15 123456789abcdef 1 4 abcd 0 3 efg}
 test chan-io-6.45 {Tcl_GetsObj: input saw cr, skip right number of bytes} -setup {
     set x ""
-} -constraints {stdio testchannel openpipe fileevent} -body {
+} -constraints {stdio testchannel fileevent} -body {
     # Tcl_ExternalToUtf()
     set f [openpipe w+ $path(cat)]
     chan configure $f -translation {auto lf} -buffering none
-    chan configure $f -encoding unicode
+    chan configure $f -encoding utf-16
     chan puts -nonewline $f "bbbbbbbbbbbbbbb\n123456789abcdef\r"
     chan configure $f -buffersize 16
     chan gets $f
@@ -900,7 +909,7 @@ test chan-io-6.45 {Tcl_GetsObj: input saw cr, skip right number of bytes} -setup
 } -result {15 123456789abcdef 1 4 abcd 0}
 test chan-io-6.46 {Tcl_GetsObj: input saw cr, followed by just \n should give eof} -setup {
     set x ""
-} -constraints {stdio testchannel openpipe fileevent} -body {
+} -constraints {stdio testchannel fileevent} -body {
     # memmove()
     set f [openpipe w+ $path(cat)]
     chan configure $f -translation {auto lf} -buffering none
@@ -951,7 +960,7 @@ test chan-io-6.49 {Tcl_GetsObj: auto mode: \r followed by \n} -constraints {test
     chan close $f
 } -result {123456 0 8 78901}
 test chan-io-6.50 {Tcl_GetsObj: auto mode: \r not followed by \n} -constraints {testchannel} -body {
-    # not (*eol == '\n') 
+    # not (*eol == '\n')
     set f [open $path(test1) w]
     chan configure $f -translation lf
     chan puts -nonewline $f "123456\r78901"
@@ -1018,7 +1027,7 @@ test chan-io-6.55 {Tcl_GetsObj: overconverted} -body {
 test chan-io-6.56 {Tcl_GetsObj: incomplete lines should disable file events} -setup {
     update
     variable x {}
-} -constraints {stdio openpipe fileevent} -body {
+} -constraints {stdio fileevent} -body {
     set f [openpipe w+ $path(cat)]
     chan configure $f -buffering none
     chan puts -nonewline $f "foobar"
@@ -1085,7 +1094,7 @@ test chan-io-7.3 {FilterInputBytes: split up character at EOF} -setup {
 } -result [list 15 "1234567890123\uff10\uff11" 18 0 1 -1 ""]
 test chan-io-7.4 {FilterInputBytes: recover from split up character} -setup {
     variable x ""
-} -constraints {stdio openpipe fileevent} -body {
+} -constraints {stdio fileevent} -body {
     set f [openpipe w+ $path(cat)]
     chan configure $f -encoding binary -buffering none
     chan puts -nonewline $f "1234567890123\x82\x4f\x82\x50\x82"
@@ -1119,7 +1128,7 @@ test chan-io-8.1 {PeekAhead: only go to device if no more cached data} -constrai
 } -result 7
 test chan-io-8.2 {PeekAhead: only go to device if no more cached data} -setup {
     variable x {}
-} -constraints {stdio testchannel openpipe fileevent} -body {
+} -constraints {stdio testchannel fileevent} -body {
     # not (bufPtr->nextPtr == NULL)
     set f [openpipe w+ $path(cat)]
     chan configure $f -translation lf -encoding ascii -buffering none
@@ -1127,7 +1136,7 @@ test chan-io-8.2 {PeekAhead: only go to device if no more cached data} -setup {
     chan event $f read [namespace code {
 	lappend x [chan gets $f line] $line [testchannel inputbuffered $f]
     }]
-    chan configure $f -encoding unicode -buffersize 16 -blocking 0
+    chan configure $f -encoding utf-16 -buffersize 16 -blocking 0
     vwait [namespace which -variable x]
     chan configure $f -translation auto -encoding ascii -blocking 1
     # here
@@ -1136,7 +1145,7 @@ test chan-io-8.2 {PeekAhead: only go to device if no more cached data} -setup {
 } -cleanup {
     chan close $f
 } -result {-1 {} 42 15 123456789012345 25}
-test chan-io-8.3 {PeekAhead: no cached data available} -constraints {stdio testchannel openpipe fileevent} -body {
+test chan-io-8.3 {PeekAhead: no cached data available} -constraints {stdio testchannel fileevent} -body {
     # (bytesLeft == 0)
     set f [openpipe w+ $path(cat)]
     chan configure $f -translation {auto binary}
@@ -1165,7 +1174,7 @@ test chan-io-8.4 {PeekAhead: cached data available in this buffer} -body {
     chan close $f
 } -result $a
 unset a
-test chan-io-8.5 {PeekAhead: don't peek if last read was short} -constraints {stdio testchannel openpipe fileevent} -body {
+test chan-io-8.5 {PeekAhead: don't peek if last read was short} -constraints {stdio testchannel fileevent} -body {
     # (bufPtr->nextAdded < bufPtr->length)
     set f [openpipe w+ $path(cat)]
     chan configure $f -translation {auto binary}
@@ -1176,8 +1185,8 @@ test chan-io-8.5 {PeekAhead: don't peek if last read was short} -constraints {st
 } -cleanup {
     chan close $f
 } -result {15 abcdefghijklmno 1}
-test chan-io-8.6 {PeekAhead: change to non-blocking mode} -constraints {stdio testchannel openpipe fileevent} -body {
-    # ((chanPtr->flags & CHANNEL_NONBLOCKING) == 0) 
+test chan-io-8.6 {PeekAhead: change to non-blocking mode} -constraints {stdio testchannel fileevent} -body {
+    # ((chanPtr->flags & CHANNEL_NONBLOCKING) == 0)
     set f [openpipe w+ $path(cat)]
     chan configure $f -translation {auto binary} -buffersize 16
     chan puts -nonewline $f "abcdefghijklmno\r"
@@ -1189,7 +1198,7 @@ test chan-io-8.6 {PeekAhead: change to non-blocking mode} -constraints {stdio te
 } -result {15 abcdefghijklmno 1}
 test chan-io-8.7 {PeekAhead: cleanup} -setup {
     set x ""
-} -constraints {stdio testchannel openpipe fileevent} -body {
+} -constraints {stdio testchannel fileevent} -body {
     # Make sure bytes are removed from buffer.
     set f [openpipe w+ $path(cat)]
     chan configure $f -translation {auto binary} -buffering none
@@ -1340,7 +1349,7 @@ test chan-io-12.3 {ReadChars: allocate more space} -body {
 } -result {abcdefghijklmnopqrstuvwxyz}
 test chan-io-12.4 {ReadChars: split-up char} -setup {
     variable x {}
-} -constraints {stdio testchannel openpipe fileevent} -body {
+} -constraints {stdio testchannel fileevent} -body {
     # (srcRead == 0)
     set f [openpipe w+ $path(cat)]
     chan configure $f -encoding binary -buffering none -buffersize 16
@@ -1362,7 +1371,7 @@ test chan-io-12.4 {ReadChars: split-up char} -setup {
 } -result [list "123456789012345" 1 "\u672c" 0]
 test chan-io-12.5 {ReadChars: chan events on partial characters} -setup {
     variable x {}
-} -constraints {stdio openpipe fileevent} -body {
+} -constraints {stdio fileevent} -body {
     set path(test1) [makeFile {
 	chan configure stdout -encoding binary -buffering none
 	chan gets stdin; chan puts -nonewline "\xe7"
@@ -1417,7 +1426,7 @@ test chan-io-13.2 {TranslateInputEOL: crlf mode} -body {
     chan close $f
 } -result "abcd\ndef\n"
 test chan-io-13.3 {TranslateInputEOL: crlf mode: naked cr} -body {
-    # (src >= srcMax) 
+    # (src >= srcMax)
     set f [open $path(test1) w]
     chan configure $f -translation lf
     chan puts -nonewline $f "abcd\r\ndef\r"
@@ -1429,7 +1438,7 @@ test chan-io-13.3 {TranslateInputEOL: crlf mode: naked cr} -body {
     chan close $f
 } -result "abcd\ndef\r"
 test chan-io-13.4 {TranslateInputEOL: crlf mode: cr followed by not \n} -body {
-    # (src >= srcMax) 
+    # (src >= srcMax)
     set f [open $path(test1) w]
     chan configure $f -translation lf
     chan puts -nonewline $f "abcd\r\ndef\rfgh"
@@ -1441,7 +1450,7 @@ test chan-io-13.4 {TranslateInputEOL: crlf mode: cr followed by not \n} -body {
     chan close $f
 } -result "abcd\ndef\rfgh"
 test chan-io-13.5 {TranslateInputEOL: crlf mode: naked lf} -body {
-    # (src >= srcMax) 
+    # (src >= srcMax)
     set f [open $path(test1) w]
     chan configure $f -translation lf
     chan puts -nonewline $f "abcd\r\ndef\nfgh"
@@ -1455,7 +1464,7 @@ test chan-io-13.5 {TranslateInputEOL: crlf mode: naked lf} -body {
 test chan-io-13.6 {TranslateInputEOL: auto mode: saw cr in last segment} -setup {
     variable x {}
     variable y {}
-} -constraints {stdio testchannel openpipe fileevent} -body {
+} -constraints {stdio testchannel fileevent} -body {
     # (chanPtr->flags & INPUT_SAW_CR)
     # This test may fail on slower machines.
     set f [openpipe w+ $path(cat)]
@@ -1473,7 +1482,7 @@ test chan-io-13.6 {TranslateInputEOL: auto mode: saw cr in last segment} -setup 
 } -cleanup {
     chan close $f
 } -result [list "abcdefghj\n" 1 "01234" 0]
-test chan-io-13.7 {TranslateInputEOL: auto mode: naked \r} -constraints {testchannel openpipe} -body {
+test chan-io-13.7 {TranslateInputEOL: auto mode: naked \r} -constraints testchannel -body {
     # (src >= srcMax)
     set f [open $path(test1) w]
     chan configure $f -translation lf
@@ -1509,7 +1518,7 @@ test chan-io-13.9 {TranslateInputEOL: auto mode: \r followed by not \n} -body {
     chan close $f
 } -result "abcd\ndef"
 test chan-io-13.10 {TranslateInputEOL: auto mode: \n} -body {
-    # not (*src == '\r') 
+    # not (*src == '\r')
     set f [open $path(test1) w]
     chan configure $f -translation lf
     chan puts -nonewline $f "abcd\ndef"
@@ -1574,7 +1583,7 @@ test chan-io-14.2 {Tcl_SetStdChannel and Tcl_GetStdChannel} -setup {
     interp delete x
 } -result {line line none}
 set path(test3) [makeFile {} test3]
-test chan-io-14.3 {Tcl_SetStdChannel & Tcl_GetStdChannel} -constraints {exec openpipe} -body {
+test chan-io-14.3 {Tcl_SetStdChannel & Tcl_GetStdChannel} -constraints exec -body {
     set f [open $path(test1) w]
     chan puts -nonewline $f {
 	chan close stdin
@@ -1671,7 +1680,7 @@ set path(script) [makeFile {} script]
 test chan-io-14.8 {reuse of stdio special channels} -setup {
     file delete $path(script)
     file delete $path(test1)
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f [open $path(script) w]
     chan puts -nonewline $f {
 	chan close stderr
@@ -1694,7 +1703,7 @@ test chan-io-14.8 {reuse of stdio special channels} -setup {
 test chan-io-14.9 {reuse of stdio special channels} -setup {
     file delete $path(script)
     file delete $path(test1)
-} -constraints {stdio openpipe fileevent} -body {
+} -constraints {stdio fileevent} -body {
     set f [open $path(script) w]
     chan puts $f {
         array set path [lindex $argv 0]
@@ -1878,7 +1887,7 @@ test chan-io-20.3 {Tcl_CreateChannel: initial settings} -constraints {unix} -bod
 } -result {{{} {}} {auto lf}}
 test chan-io-20.5 {Tcl_CreateChannel: install channel in empty slot} -setup {
     set path(stdout) [makeFile {} stdout]
-} -constraints {stdio openpipe} -body {
+} -constraints {stdio notWinCI} -body {
     set f [open $path(script) w]
     chan puts -nonewline $f {
 	chan close stdout
@@ -1963,7 +1972,7 @@ test chan-io-26.1 {Tcl_GetChannelInstanceData} -body {
     # Don't care what pid is (but must be a number), just want to exercise it.
     set f [openpipe r << exit]
     pid $f
-} -constraints {stdio openpipe} -cleanup {
+} -constraints stdio -cleanup {
     chan close $f
 } -match regexp -result {^\d+$}
 
@@ -2022,7 +2031,7 @@ test chan-io-27.4 {FlushChannel, implicit flush when buffer fills} -setup {
 test chan-io-27.5 {FlushChannel, implicit flush when buffer fills and on chan close} -setup {
     file delete $path(test1)
     set l ""
-} -constraints {unixOrPc} -body {
+} -constraints {unixOrWin} -body {
     set f [open $path(test1) w]
     chan configure $f -translation lf -buffersize 60 -eofchar {}
     lappend l [file size $path(test1)]
@@ -2038,7 +2047,7 @@ set path(output) [makeFile {} output]
 test chan-io-27.6 {FlushChannel, async flushing, async chan close} -setup {
     file delete $path(pipe)
     file delete $path(output)
-} -constraints {stdio asyncPipeChan Close openpipe} -body {
+} -constraints {stdio asyncPipeChan Close} -body {
     set f [open $path(pipe) w]
     chan puts $f "set f \[[list open $path(output) w]]"
     chan puts $f {
@@ -2108,7 +2117,7 @@ test chan-io-28.2 {Chan CloseChannel called when all references are dropped} -se
 test chan-io-28.3 {Chan CloseChannel, not called before output queue is empty} -setup {
     file delete $path(pipe)
     file delete $path(output)
-} -constraints {stdio asyncPipeChan Close nonPortable openpipe} -body {
+} -constraints {stdio asyncPipeChan Close nonPortable} -body {
     set f [open $path(pipe) w]
     chan puts $f {
 	# Need to not have eof char appended on chan close, because the other
@@ -2162,7 +2171,7 @@ test chan-io-28.4 {Tcl_Chan Close} -constraints {testchannel} -setup {
 } -result ok
 test chan-io-28.5 {Tcl_Chan Close vs standard handles} -setup {
     file delete $path(script)
-} -constraints {stdio unix testchannel openpipe} -body {
+} -constraints {stdio unix testchannel} -body {
     set f [open $path(script) w]
     chan puts $f {
 	chan close stdin
@@ -2214,13 +2223,17 @@ test chan-io-28.7 {Tcl_CloseEx (half-close) socket} -setup {
 	puts $sok DONE
 	exit 0
     } echo.tcl]
-} -body {
+    variable done
+    unset -nocomplain done
+    set done ""
+    set timer ""
     set ff [openpipe r $echo]
     gets $ff port
+} -body {
     set s [socket 127.0.0.1 $port]
     puts $s Hey
     close $s w
-    set timer [after 1000 [namespace code {set ::done Failed}]]
+    set timer [after 1000 [namespace code {set done Failed}]]
     set acc {}
     fileevent $s readable [namespace code {
 	if {[gets $s line]<0} {
@@ -2230,11 +2243,11 @@ test chan-io-28.7 {Tcl_CloseEx (half-close) socket} -setup {
 	}
     }]
     vwait [namespace which -variable done]
-    after cancel $timer
-    close $s r
-    close $ff
     list $done $acc
 } -cleanup {
+    catch {close $s}
+    close $ff
+    after cancel $timer
     removeFile echo.tcl
 } -result {Succeeded {Hey DONE}}
 
@@ -2375,7 +2388,7 @@ test chan-io-29.11 {Tcl_WriteChars, no newline, implicit flush} -setup {
 test chan-io-29.12 {Tcl_WriteChars on a pipe} -setup {
     file delete $path(test1)
     file delete $path(pipe)
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f1 [open $path(pipe) w]
     chan puts $f1 "set f1 \[[list open $path(longfile) r]]"
     chan puts $f1 {
@@ -2402,7 +2415,7 @@ test chan-io-29.12 {Tcl_WriteChars on a pipe} -setup {
 test chan-io-29.13 {Tcl_WriteChars to a pipe, line buffered} -setup {
     file delete $path(test1)
     file delete $path(pipe)
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f1 [open $path(pipe) w]
     chan puts $f1 {
 	chan puts [chan gets stdin]
@@ -2455,7 +2468,7 @@ test chan-io-29.15 {Tcl_Flush, channel not open for writing} -setup {
 } -match glob -result {channel "*" wasn't opened for writing}
 test chan-io-29.16 {Tcl_Flush on pipe opened only for reading} -setup {
     set fd [openpipe r cat longfile]
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     chan flush $fd
 } -returnCodes error -cleanup {
     catch {chan close $fd}
@@ -2531,7 +2544,7 @@ test chan-io-29.20 {Implicit flush when buffer is full} -setup {
 } -result {4096 12288 12600}
 test chan-io-29.21 {Tcl_Flush to pipe} -setup {
     file delete $path(pipe)
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f1 [open $path(pipe) w]
     chan puts $f1 {set x [chan read stdin 6]}
     chan puts $f1 {set cnt [string length $x]}
@@ -2546,7 +2559,7 @@ test chan-io-29.21 {Tcl_Flush to pipe} -setup {
 } -result "read 6 characters"
 test chan-io-29.22 {Tcl_Flush called at other end of pipe} -setup {
     file delete $path(pipe)
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f1 [open $path(pipe) w]
     chan puts $f1 {
 	chan configure stdout -buffering full
@@ -2570,7 +2583,7 @@ test chan-io-29.22 {Tcl_Flush called at other end of pipe} -setup {
 } -result {hello hello bye}
 test chan-io-29.23 {Tcl_Flush and line buffering at end of pipe} -setup {
     file delete $path(pipe)
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f1 [open $path(pipe) w]
     chan puts $f1 {
 	chan puts hello
@@ -2607,7 +2620,7 @@ test chan-io-29.24 {Tcl_WriteChars and Tcl_Flush move end of file} -setup {
 } -result "{} {Line 1\nLine 2}"
 test chan-io-29.25 {Implicit flush with Tcl_Flush to command pipelines} -setup {
     file delete $path(test3)
-} -constraints {stdio openpipe fileevent} -body {
+} -constraints {stdio fileevent} -body {
     set f [openpipe w $path(cat) | [interpreter] $path(cat) > $path(test3)]
     chan puts $f "Line 1"
     chan puts $f "Line 2"
@@ -2618,7 +2631,7 @@ test chan-io-29.25 {Implicit flush with Tcl_Flush to command pipelines} -setup {
 } -cleanup {
     chan close $f
 } -result "Line 1\nLine 2\n"
-test chan-io-29.26 {Tcl_Flush, Tcl_Write on bidirectional pipelines} -constraints {stdio unixExecs openpipe} -body {
+test chan-io-29.26 {Tcl_Flush, Tcl_Write on bidirectional pipelines} -constraints {stdio unixExecs} -body {
     set f [open "|[list cat -u]" r+]
     chan puts $f "Line1"
     chan flush $f
@@ -2631,7 +2644,7 @@ test chan-io-29.27 {Tcl_Flush on chan closed pipeline} -setup {
     set f [open $path(pipe) w]
     chan puts $f {exit}
     chan close $f
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f [openpipe r+ $path(pipe)]
     chan gets $f
     chan puts $f output
@@ -2684,7 +2697,7 @@ test chan-io-29.30 {Tcl_WriteChars, crlf mode} -setup {
 test chan-io-29.31 {Tcl_WriteChars, background flush} -setup {
     file delete $path(pipe)
     file delete $path(output)
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f [open $path(pipe) w]
     chan puts $f "set f \[[list open $path(output)  w]]"
     chan puts $f {chan configure $f -translation lf}
@@ -2717,7 +2730,7 @@ test chan-io-29.31 {Tcl_WriteChars, background flush} -setup {
 	set result ok
     }
     # allow a little time for the background process to chan close.
-    # otherwise, the following test fails on the [file delete $path(output)
+    # otherwise, the following test fails on the [file delete $path(output)]
     # on Windows because a process still has the file open.
     after 100 set v 1; vwait v
     return $result
@@ -2725,7 +2738,7 @@ test chan-io-29.31 {Tcl_WriteChars, background flush} -setup {
 test chan-io-29.32 {Tcl_WriteChars, background flush to slow reader} -setup {
     file delete $path(pipe)
     file delete $path(output)
-} -constraints {stdio asyncPipeChan Close openpipe} -body {
+} -constraints {stdio asyncPipeChan Close} -body {
     set f [open $path(pipe) w]
     chan puts $f "set f \[[list open $path(output) w]]"
     chan puts $f {chan configure $f -translation lf}
@@ -2784,7 +2797,7 @@ test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} -s
 	    chan puts $s $l
 	}
     }
-} -constraints {socket tempNotMac fileevent} -body {
+} -constraints {socket tempNotMac fileevent notWinCI} -body {
     proc accept {s a p} {
 	variable x
 	chan event $s readable [namespace code [list readit $s]]
@@ -2810,7 +2823,7 @@ test chan-io-29.34 {Tcl_Chan Close, async flush on chan close, using sockets} -s
     chan close $cs
     chan close $ss
     vwait [namespace which -variable x]
-    return $c
+    set c
 } -result 2000
 test chan-io-29.35 {Tcl_Chan Close vs chan event vs multiple interpreters} -setup {
     catch {interp delete x}
@@ -3038,7 +3051,7 @@ test chan-io-30.13 {Tcl_Write crlf on block boundary, Tcl_Read auto} -setup {
     string length [chan read $f]
 } -cleanup {
     chan close $f
-} -result [expr 700*15+1]
+} -result [expr {700*15 + 1}]
 test chan-io-30.14 {Tcl_Write crlf on block boundary, Tcl_Read crlf} -setup {
     file delete $path(test1)
 } -body {
@@ -3055,7 +3068,7 @@ test chan-io-30.14 {Tcl_Write crlf on block boundary, Tcl_Read crlf} -setup {
     string length [chan read $f]
 } -cleanup {
     chan close $f
-} -result [expr 700*15+1]
+} -result [expr {700*15 + 1}]
 test chan-io-30.15 {Tcl_Write mixed, Tcl_Read auto} -setup {
     file delete $path(test1)
 } -body {
@@ -3891,13 +3904,13 @@ test chan-io-31.31 {Tcl_Write crlf on block boundary, Tcl_Gets crlf} -setup {
     }
     chan close $f
     set f [open $path(test1) r]
-    chan configure $f -translation crlf 
+    chan configure $f -translation crlf
     while {[chan gets $f line] >= 0} {
 	append c $line\n
     }
     chan close $f
     string length $c
-} -result [expr 700*15+1]
+} -result [expr {700*15 + 1}]
 test chan-io-31.32 {Tcl_Write crlf on block boundary, Tcl_Gets auto} -setup {
     file delete $path(test1)
     set c ""
@@ -3917,7 +3930,7 @@ test chan-io-31.32 {Tcl_Write crlf on block boundary, Tcl_Gets auto} -setup {
     }
     chan close $f
     string length $c
-} -result [expr 700*15+1]
+} -result [expr {700*15 + 1}]
 
 # Test Tcl_Read and buffering.
 
@@ -3998,7 +4011,7 @@ test chan-io-32.9 {Tcl_Read, read to end of file} {
 } ok
 test chan-io-32.10 {Tcl_Read from a pipe} -setup {
     file delete $path(pipe)
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f1 [open $path(pipe) w]
     chan puts $f1 {chan puts [chan gets stdin]}
     chan close $f1
@@ -4012,7 +4025,7 @@ test chan-io-32.10 {Tcl_Read from a pipe} -setup {
 test chan-io-32.11 {Tcl_Read from a pipe} -setup {
     file delete $path(pipe)
     set x ""
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f1 [open $path(pipe) w]
     chan puts $f1 {chan puts [chan gets stdin]}
     chan puts $f1 {chan puts [chan gets stdin]}
@@ -4124,7 +4137,7 @@ test chan-io-33.2 {Tcl_Gets into variable} {
 } ok
 test chan-io-33.3 {Tcl_Gets from pipe} -setup {
     file delete $path(pipe)
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f1 [open $path(pipe) w]
     chan puts $f1 {chan puts [chan gets stdin]}
     chan close $f1
@@ -4150,12 +4163,20 @@ test chan-io-33.4 {Tcl_Gets with long line} -setup {
 } -cleanup {
     chan close $f
 } -result {abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}
-test chan-io-33.5 {Tcl_Gets with long line} {
+test chan-io-33.5 {Tcl_Gets with long line} -setup {
+    set f [open $path(test3) w]
+    puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    puts -nonewline $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    puts $f "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    close $f
+} -body {
     set f [open $path(test3)]
     set x [chan gets $f y]
     chan close $f
     list $x $y
-} {260 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}
+} -result {260 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}
 test chan-io-33.6 {Tcl_Gets and end of file} -setup {
     file delete $path(test3)
     set x {}
@@ -4326,7 +4347,7 @@ test chan-io-34.7 {Tcl_Seek to offset from end of file, then to current position
 } -result {44 rstuv 49}
 test chan-io-34.8 {Tcl_Seek on pipes: not supported} -setup {
     set pipe [openpipe]
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     chan seek $pipe 0 current
 } -returnCodes error -cleanup {
     chan close $pipe
@@ -4436,13 +4457,13 @@ test chan-io-34.15 {Tcl_Tell combined with seeking} -setup {
 } -cleanup {
     chan close $f1
 } -result {10 20}
-test chan-io-34.16 {Tcl_Tell on pipe: always -1} -constraints {stdio openpipe} -body {
+test chan-io-34.16 {Tcl_Tell on pipe: always -1} -constraints stdio -body {
     set f1 [openpipe]
     chan tell $f1
 } -cleanup {
     chan close $f1
 } -result -1
-test chan-io-34.17 {Tcl_Tell on pipe: always -1} {stdio openpipe} {
+test chan-io-34.17 {Tcl_Tell on pipe: always -1} stdio {
     set f1 [openpipe]
     chan puts $f1 {chan puts hello}
     chan flush $f1
@@ -4516,10 +4537,10 @@ test chan-io-34.21 {Tcl_Seek and Tcl_Tell on large files} -setup {
     chan puts -nonewline $f abcdef
     lappend l [chan tell $f]
     chan close $f
-    lappend l [file size $f]
+    lappend l [file size $path(test3)]
     # truncate...
     chan close [open $path(test3) w]
-    lappend l [file size $f]
+    lappend l [file size $path(test3)]
 } -result {0 6 6 4294967296 4294967302 4294967302 0}
 
 # Test Tcl_Eof
@@ -4544,7 +4565,7 @@ test chan-io-35.1 {Tcl_Eof} -setup {
 } -cleanup {
     chan close $f
 } -result {0 0 0 0 1 1}
-test chan-io-35.2 {Tcl_Eof with pipe} -constraints {stdio openpipe} -setup {
+test chan-io-35.2 {Tcl_Eof with pipe} -constraints stdio -setup {
     file delete $path(pipe)
 } -body {
     set f1 [open $path(pipe) w]
@@ -4563,7 +4584,7 @@ test chan-io-35.2 {Tcl_Eof with pipe} -constraints {stdio openpipe} -setup {
 } -cleanup {
     chan close $f1
 } -result {0 0 0 1}
-test chan-io-35.3 {Tcl_Eof with pipe} -constraints {stdio openpipe} -setup {
+test chan-io-35.3 {Tcl_Eof with pipe} -constraints stdio -setup {
     file delete $path(pipe)
 } -body {
     set f1 [open $path(pipe) w]
@@ -4601,7 +4622,7 @@ test chan-io-35.4 {Tcl_Eof, eof detection on nonblocking file} -setup {
 test chan-io-35.5 {Tcl_Eof, eof detection on nonblocking pipe} -setup {
     file delete $path(pipe)
     set l ""
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f [open $path(pipe) w]
     chan puts $f {
 	exit
@@ -4786,7 +4807,7 @@ test chan-io-35.17 {Tcl_Eof, eof char in middle, crlf write, crlf read} -setup {
 
 test chan-io-36.1 {Tcl_InputBlocked on nonblocking pipe} -setup {
     set x ""
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f1 [openpipe]
     chan puts $f1 {chan puts hello_from_pipe}
     chan flush $f1
@@ -4806,7 +4827,7 @@ test chan-io-36.1 {Tcl_InputBlocked on nonblocking pipe} -setup {
 } -result {{} 1 hello 0 {} 1}
 test chan-io-36.2 {Tcl_InputBlocked on blocking pipe} -setup {
     set x ""
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f1 [openpipe]
     chan configure $f1 -buffering line
     chan puts $f1 {chan puts hello_from_pipe}
@@ -5080,7 +5101,7 @@ test chan-io-39.9 {Tcl_SetChannelOption, blocking mode} -setup {
 test chan-io-39.10 {Tcl_SetChannelOption, blocking mode} -setup {
     file delete $path(pipe)
     set x ""
-} -constraints {stdio openpipe} -body {
+} -constraints stdio -body {
     set f1 [open $path(pipe) w]
     chan puts $f1 {
 	chan gets stdin
@@ -5145,7 +5166,7 @@ test chan-io-39.14 {Tcl_SetChannelOption: -encoding, binary & utf-8} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
-    chan configure $f -encoding {} 
+    chan configure $f -encoding {}
     chan puts -nonewline $f \xe7\x89\xa6
     chan close $f
     set f [open $path(test1) r]
@@ -5177,7 +5198,7 @@ test chan-io-39.16 {Tcl_SetChannelOption: -encoding, errors} -setup {
 } -result {unknown encoding "foobar"}
 test chan-io-39.17 {Tcl_SetChannelOption: -encoding, clearing CHANNEL_NEED_MORE_DATA} -setup {
     variable x {}
-} -constraints {stdio openpipe fileevent} -body {
+} -constraints {stdio fileevent} -body {
     set f [openpipe r+ $path(cat)]
     chan configure $f -encoding binary
     chan puts -nonewline $f "\xe7"
@@ -5290,7 +5311,7 @@ test chan-io-39.23 {Tcl_GetChannelOption, server socket is not readable or\
 test chan-io-39.24 {Tcl_SetChannelOption, server socket is not readable or\
         writable so we can't change -eofchar or -translation} -setup {
     set l [list]
-} -body { 
+} -body {
     set sock [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
     chan configure $sock -eofchar D -translation lf
     lappend l [chan configure $sock -eofchar] \
@@ -5318,24 +5339,24 @@ test chan-io-40.1 {POSIX open access modes: RDWR} -setup {
 test chan-io-40.2 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -constraints {unix} -body {
-    set f [open $path(test3) {WRONLY CREAT} 0600]
+    set f [open $path(test3) {WRONLY CREAT} 0o600]
     file stat $path(test3) stats
-    set x [format "0%o" [expr $stats(mode)&0o777]]
+    set x [format 0o%03o [expr {$stats(mode) & 0o777}]]
     chan puts $f "line 1"
     chan close $f
     set f [open $path(test3) r]
     lappend x [chan gets $f]
 } -cleanup {
     chan close $f
-} -result {0600 {line 1}}
+} -result {0o600 {line 1}}
 test chan-io-40.3 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -constraints {unix umask} -body {
     # This test only works if your umask is 2, like ouster's.
     chan close [open $path(test3) {WRONLY CREAT}]
     file stat $path(test3) stats
-    format "0%o" [expr $stats(mode)&0o777]
-} -result [format %04o [expr {0o666 & ~ $umaskValue}]]
+    format 0o%03o [expr {$stats(mode) & 0o777}]
+} -result [format 0o%03o [expr {0o666 & ~ $umaskValue}]]
 test chan-io-40.4 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -body {
@@ -5443,7 +5464,7 @@ test chan-io-40.13 {POSIX open access modes: WRONLY} -body {
     set x [list [catch {chan gets $f} msg] $msg]
     chan close $f
     lappend x [viewFile test3]
-} -match glob -result {1 {channel "*" wasn't opened for reading} abzzy} 
+} -match glob -result {1 {channel "*" wasn't opened for reading} abzzy}
 test chan-io-40.14 {POSIX open access modes: RDWR} -match regexp -body {
     file delete $path(test3)
     open $path(test3) RDWR
@@ -5537,7 +5558,7 @@ test chan-io-43.2 {Tcl_FileeventCmd: deleting when many present} -setup {
     set f2 [open "|[list cat -u]" r+]
     set f3 [open "|[list cat -u]" r+]
     set result {}
-} -constraints {stdio unixExecs fileevent openpipe} -body {
+} -constraints {stdio unixExecs fileevent} -body {
     lappend result [chan event $f r] [chan event $f2 r] [chan event $f3 r]
     chan event $f r "chan read f"
     chan event $f2 r "chan read f2"
@@ -5557,7 +5578,7 @@ test chan-io-43.2 {Tcl_FileeventCmd: deleting when many present} -setup {
 test chan-io-44.1 {FileEventProc procedure: normal read event} -setup {
     set f2 [open "|[list cat -u]" r+]
     set f3 [open "|[list cat -u]" r+]
-} -constraints {stdio unixExecs fileevent openpipe} -body {
+} -constraints {stdio unixExecs fileevent} -body {
     chan event $f2 readable [namespace code {
 	set x [chan gets $f2]; chan event $f2 readable {}
     }]
@@ -5577,7 +5598,7 @@ test chan-io-44.2 {FileEventProc procedure: error in read event} -setup {
     }
     set handler [interp bgerror {}]
     interp bgerror {} [namespace which myHandler]
-} -constraints {stdio unixExecs fileevent openpipe} -body {
+} -constraints {stdio unixExecs fileevent} -body {
     chan event $f2 readable {error bogus}
     chan puts $f2 text; chan flush $f2
     variable x initial
@@ -5591,7 +5612,7 @@ test chan-io-44.2 {FileEventProc procedure: error in read event} -setup {
 test chan-io-44.3 {FileEventProc procedure: normal write event} -setup {
     set f2 [open "|[list cat -u]" r+]
     set f3 [open "|[list cat -u]" r+]
-} -constraints {stdio unixExecs fileevent openpipe} -body {
+} -constraints {stdio unixExecs fileevent} -body {
     chan event $f2 writable [namespace code {
 	lappend x "triggered"
 	incr count -1
@@ -5617,7 +5638,7 @@ test chan-io-44.4 {FileEventProc procedure: eror in write event} -setup {
     }
     set handler [interp bgerror {}]
     interp bgerror {} [namespace which myHandler]
-} -constraints {stdio unixExecs fileevent openpipe} -body {
+} -constraints {stdio unixExecs fileevent} -body {
     chan event $f2 writable {error bad-write}
     variable x initial
     vwait [namespace which -variable x]
@@ -5627,7 +5648,9 @@ test chan-io-44.4 {FileEventProc procedure: eror in write event} -setup {
     catch {chan close $f2}
     catch {chan close $f3}
 } -result {bad-write {}}
-test chan-io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpipe fileevent} {
+test chan-io-44.5 {FileEventProc procedure: end of file} -constraints {
+    stdio unixExecs fileevent
+} -body {
     set f4 [openpipe r $path(cat) << foo]
     chan event $f4 readable [namespace code {
 	if {[chan gets $f4 line] < 0} {
@@ -5640,9 +5663,10 @@ test chan-io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpi
     variable x initial
     vwait [namespace which -variable x]
     vwait [namespace which -variable x]
-    chan close $f4
     set x
-} {initial foo eof}
+} -cleanup {
+    chan close $f4
+} -result {initial foo eof}
 
 chan close $f
 makeFile "foo bar" foo
@@ -5703,7 +5727,7 @@ test chan-io-45.3 {DeleteFileEvent, cleanup on chan close} {fileevent} {
 
 # Execute these tests only if the "testfevent" command is present.
 
-test chan-io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileevent} {
+test chan-io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileevent notOSX} {
     testfevent create
     set script "set f \[[list open $path(foo) r]]\n"
     append script {
@@ -5713,9 +5737,10 @@ test chan-io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileeven
 	    chan event $f readable {}
 	}]
     }
+    set timer [after 10 lappend x timeout]
     testfevent cmd $script
-    after 1	;# We must delay because Windows takes a little time to notice
-    update
+    vwait x
+    after cancel $timer
     testfevent cmd {chan close $f}
     list [testfevent cmd {set x}] [testfevent cmd {info commands after}]
 } {{f triggered: foo bar} after}
@@ -5848,6 +5873,8 @@ test chan-io-47.6 {file events on shared files, deleting file events} -setup {
     testfevent delete
     chan close $f
 } -result {{script 1} {}}
+unset path(foo)
+removeFile foo
 
 set path(bar) [makeFile {} bar]
 
@@ -5901,7 +5928,7 @@ test chan-io-48.2 {testing readability conditions} {nonBlockFiles fileevent} {
 set path(my_script) [makeFile {} my_script]
 test chan-io-48.3 {testing readability conditions} -setup {
     set l ""
-} -constraints {stdio unix nonBlockFiles openpipe fileevent} -body {
+} -constraints {stdio unix nonBlockFiles fileevent} -body {
     set f [open $path(bar) w]
     chan puts $f abcdefg
     chan puts $f abcdefg
@@ -5943,6 +5970,9 @@ test chan-io-48.3 {testing readability conditions} -setup {
 } -cleanup {
     chan close $f
 } -result {done {0 1 0 1 0 1 0 1 0 1 0 1 0 0}}
+unset path(bar)
+removeFile bar
+
 test chan-io-48.4 {lf write, testing readability, ^Z termination, auto read mode} -setup {
     file delete $path(test1)
     set c 0
@@ -6352,17 +6382,21 @@ test chan-io-49.5 {testing crlf reading, leftover cr disgorgment} -setup {
 
 test chan-io-50.1 {testing handler deletion} -setup {
     file delete $path(test1)
-} -constraints {testchannelevent} -body {
+} -constraints testchannelevent -body {
     set f [open $path(test1) w]
     chan close $f
     set f [open $path(test1) r]
+    variable z not_called
+    set timer [after 50 lappend z timeout]
+    testservicemode 0
     testchannelevent $f add readable [namespace code {
 	variable z called
 	testchannelevent $f delete 0
     }]
-    variable z not_called
-    update
-    return $z
+    testservicemode 1
+    vwait z
+    after cancel $timer
+    set z
 } -cleanup {
     chan close $f
 } -result called
@@ -6370,16 +6404,21 @@ test chan-io-50.2 {testing handler deletion with multiple handlers} -setup {
     file delete $path(test1)
     chan close [open $path(test1) w]
     set z ""
-} -constraints {testchannelevent} -body {
-    set f [open $path(test1) r]
-    testchannelevent $f add readable [namespace code [list delhandler $f 1]]
-    testchannelevent $f add readable [namespace code [list delhandler $f 0]]
+} -constraints {testchannelevent testservicemode} -body {
     proc delhandler {f i} {
 	variable z
 	lappend z "called delhandler $f $i"
 	testchannelevent $f delete 0
     }
-    update
+    set z ""
+    set timer [after 50 lappend z timeout]
+    testservicemode 0
+    set f [open $path(test1) r]
+    testchannelevent $f add readable [namespace code [list delhandler $f 1]]
+    testchannelevent $f add readable [namespace code [list delhandler $f 0]]
+    testservicemode 1
+    vwait z
+    after cancel $timer
     string equal $z \
 	[list [list called delhandler $f 0] [list called delhandler $f 1]]
 } -cleanup {
@@ -6388,11 +6427,7 @@ test chan-io-50.2 {testing handler deletion with multiple handlers} -setup {
 test chan-io-50.3 {testing handler deletion with multiple handlers} -setup {
     file delete $path(test1)
     chan close [open $path(test1) w]
-    set z ""
-} -constraints {testchannelevent} -body {
-    set f [open $path(test1) r]
-    testchannelevent $f add readable [namespace code [list notcalled $f 1]]
-    testchannelevent $f add readable [namespace code [list delhandler $f 0]]
+} -constraints {testchannelevent testservicemode} -body {
     proc notcalled {f i} {
 	variable z
 	lappend z "notcalled was called!! $f $i"
@@ -6404,7 +6439,15 @@ test chan-io-50.3 {testing handler deletion with multiple handlers} -setup {
 	testchannelevent $f delete 0
 	lappend z "delhandler $f $i deleted myself"
     }
-    update
+    set z ""
+    set timer [after 50 lappend z timeout]
+    testservicemode 0
+    set f [open $path(test1) r]
+    testchannelevent $f add readable [namespace code [list notcalled $f 1]]
+    testchannelevent $f add readable [namespace code [list delhandler $f 0]]
+    testservicemode 1
+    vwait z
+    after cancel $timer
     string equal $z \
 	[list [list delhandler $f 0 called] \
 	      [list delhandler $f 0 deleted myself]]
@@ -6415,7 +6458,7 @@ test chan-io-50.4 {testing handler deletion vs reentrant calls} -setup {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan close $f
-} -constraints {testchannelevent} -body {
+} -constraints testchannelevent -body {
     set f [open $path(test1) r]
     testchannelevent $f add readable [namespace code {
 	if {$u eq "recursive"} {
@@ -6429,19 +6472,20 @@ test chan-io-50.4 {testing handler deletion vs reentrant calls} -setup {
     }]
     variable u toplevel
     variable z ""
-    update
-    return $z
+    set timer [after 50 lappend z timeout]
+    vwait z
+    after cancel $timer
+    set z
 } -cleanup {
     chan close $f
+    update
 } -result {{delrecursive calling recursive} {delrecursive deleting recursive}}
 test chan-io-50.5 {testing handler deletion vs reentrant calls} -setup {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan close $f
-} -constraints {testchannelevent} -body {
-    set f [open $path(test1) r]
-    testchannelevent $f add readable [namespace code [list notcalled $f]]
-    testchannelevent $f add readable [namespace code [list del $f]]
+    update
+} -constraints {testchannelevent testservicemode notOSX} -body {
     proc notcalled {f} {
 	variable z
 	lappend z "notcalled was called!! $f"
@@ -6457,33 +6501,46 @@ test chan-io-50.5 {testing handler deletion vs reentrant calls} -setup {
 	} else {
 	    set u recursive
 	    lappend z "del calling recursive"
-	    update
+	    set timer [after 50 lappend z timeout]
+	    set mode [testservicemode 1]
+	    vwait z
+	    after cancel $timer
+	    testservicemode $mode
 	    lappend z "del after update"
 	}
     }
     set z ""
     set u toplevel
-    update
-    return $z
+    set timer [after 50 lappend z timeout]
+    testservicemode 0
+    set f [open $path(test1) r]
+    testchannelevent $f add readable [namespace code [list notcalled $f]]
+    testchannelevent $f add readable [namespace code [list del $f]]
+    testservicemode 1
+    vwait z
+    after cancel $timer
+    set z
 } -cleanup {
     chan close $f
+    update
 } -result [list {del calling recursive} {del deleted notcalled} \
 	       {del deleted myself} {del after update}]
 test chan-io-50.6 {testing handler deletion vs reentrant calls} -setup {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan close $f
-} -constraints {testchannelevent} -body {
-    set f [open $path(test1) r]
-    testchannelevent $f add readable [namespace code [list second $f]]
-    testchannelevent $f add readable [namespace code [list first $f]]
+} -constraints {testchannelevent testservicemode} -body {
     proc first {f} {
 	variable u
 	variable z
 	if {$u eq "toplevel"} {
 	    lappend z "first called"
+	    set mode [testservicemode 1]
+	    set timer [after 50 lappend z timeout]
 	    set u first
-	    update
+	    vwait z
+	    after cancel $timer
+	    testservicemode $mode
 	    lappend z "first after update"
 	} else {
 	    lappend z "first called not toplevel"
@@ -6506,8 +6563,15 @@ test chan-io-50.6 {testing handler deletion vs reentrant calls} -setup {
     }
     set z ""
     set u toplevel
-    update
-    return $z
+    set timer [after 50 lappend z timeout]
+    testservicemode 0
+    set f [open $path(test1) r]
+    testchannelevent $f add readable [namespace code [list second $f]]
+    testchannelevent $f add readable [namespace code [list first $f]]
+    testservicemode 1
+    vwait z
+    after cancel $timer
+    set z
 } -cleanup {
     chan close $f
 } -result [list {first called} {first called not toplevel} \
@@ -6658,7 +6722,7 @@ test chan-io-52.6 {TclCopyChannel} -setup {
     set f2 [open $path(test1) w]
     chan configure $f1 -translation lf -blocking 0
     chan configure $f2 -translation lf -blocking 0
-    set s0 [chan copy $f1 $f2 -size [expr [file size $thisScript] + 5]]
+    set s0 [chan copy $f1 $f2 -size [expr {[file size $thisScript] + 5}]]
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     chan close $f1
     chan close $f2
@@ -6689,7 +6753,7 @@ test chan-io-52.7 {TclCopyChannel} -constraints {fcopy} -setup {
 test chan-io-52.8 {TclCopyChannel} -setup {
     file delete $path(test1)
     file delete $path(pipe)
-} -constraints {stdio openpipe fcopy} -body {
+} -constraints {stdio fcopy} -body {
     set f1 [open $path(pipe) w]
     chan configure $f1 -translation lf
     chan puts $f1 "
@@ -6755,7 +6819,12 @@ test chan-io-52.10 {TclCopyChannel & encodings} {fcopy} {
     chan close $out
     file size $path(utf8-fcopy.txt)
 } 5
-test chan-io-52.11 {TclCopyChannel & encodings} {fcopy} {
+test chan-io-52.11 {TclCopyChannel & encodings} -setup {
+    set f [open $path(utf8-fcopy.txt) w]
+    fconfigure $f -encoding utf-8 -translation lf
+    puts $f "\u0410\u0410"
+    close $f
+} -constraints {fcopy} -body {
     # binary to encoding => the input has to be in utf-8 to make sense to the
     # encoder
     set in  [open $path(utf8-fcopy.txt) r]
@@ -6767,7 +6836,7 @@ test chan-io-52.11 {TclCopyChannel & encodings} {fcopy} {
     chan close $in
     chan close $out
     file size $path(kyrillic.txt)
-} 3
+} -result 3
 
 test chan-io-53.1 {CopyData} -setup {
     file delete $path(test1)
@@ -6805,7 +6874,7 @@ test chan-io-53.2 {CopyData} -setup {
 test chan-io-53.3 {CopyData: background read underflow} -setup {
     file delete $path(test1)
     file delete $path(pipe)
-} -constraints {stdio unix openpipe fcopy} -body {
+} -constraints {stdio unix fcopy} -body {
     set f1 [open $path(pipe) w]
     chan puts -nonewline $f1 {
 	chan puts ready
@@ -6843,7 +6912,7 @@ test chan-io-53.4 {CopyData: background write overflow} -setup {
     }
     file delete $path(test1)
     file delete $path(pipe)
-} -constraints {stdio unix openpipe fileevent fcopy} -body {
+} -constraints {stdio unix fileevent fcopy} -body {
     set f1 [open $path(pipe) w]
     chan puts $f1 {
 	chan puts ready
@@ -6895,7 +6964,7 @@ test chan-io-53.5 {CopyData: error during chan copy} {socket fcopy} {
     chan close $listen	;# This means the socket open never really succeeds
     chan copy $in $out -command [namespace code FcopyTestDone]
     variable fcopyTestDone
-    if ![info exists fcopyTestDone] {
+    if {![info exists fcopyTestDone]} {
 	vwait [namespace which -variable fcopyTestDone]		;# The error occurs here in the b.g.
     }
     chan close $in
@@ -6907,7 +6976,7 @@ test chan-io-53.6 {CopyData: error during chan copy} -setup {
     file delete $path(pipe)
     file delete $path(test1)
     catch {unset fcopyTestDone}
-} -constraints {stdio openpipe fcopy} -body {
+} -constraints {stdio fcopy} -body {
     set f1 [open $path(pipe) w]
     chan puts $f1 "exit 1"
     chan close $f1
@@ -6915,7 +6984,7 @@ test chan-io-53.6 {CopyData: error during chan copy} -setup {
     set out [open $path(test1) w]
     chan copy $in $out -command [namespace code FcopyTestDone]
     variable fcopyTestDone
-    if ![info exists fcopyTestDone] {
+    if {![info exists fcopyTestDone]} {
 	vwait [namespace which -variable fcopyTestDone]
     }
     return $fcopyTestDone	;# 0 for plain end of file
@@ -6941,7 +7010,7 @@ test chan-io-53.7 {CopyData: Flooding chan copy from pipe} -setup {
     variable fcopyTestDone
     file delete $path(pipe)
     catch {unset fcopyTestDone}
-} -constraints {stdio openpipe fcopy} -body {
+} -constraints {stdio fcopy} -body {
     set fcopyTestCount 0
     set f1 [open $path(pipe) w]
     chan puts $f1 {
@@ -6968,7 +7037,7 @@ test chan-io-53.7 {CopyData: Flooding chan copy from pipe} -setup {
 	vwait [namespace which -variable fcopyTestDone]
     }
     # -1=error 0=script error N=number of bytes
-    expr ($fcopyTestDone == 0) ? $fcopyTestCount : -1
+    expr {($fcopyTestDone == 0) ? $fcopyTestCount : -1}
 } -cleanup {
     catch {chan close $in}
     chan close $out
@@ -6991,7 +7060,7 @@ test chan-io-53.8 {CopyData: async callback and error handling, Bug 1932639} -se
     # Channels to copy between
     set f [open $foo r] ; fconfigure $f -translation binary
     set g [open $bar w] ; fconfigure $g -translation binary -buffering none
-} -constraints {stdio openpipe fcopy} -body {
+} -constraints {stdio fcopy} -body {
     # Record input size, so that result is always defined
     lappend ::RES [file size $bar]
     # Run the copy. Should not invoke -command now.
@@ -7008,7 +7077,7 @@ test chan-io-53.8 {CopyData: async callback and error handling, Bug 1932639} -se
     vwait ::forever
     catch {after cancel $token}
     # Report
-    return $::RES
+    set ::RES
 } -cleanup {
     chan close $f
     chan close $g
@@ -7031,7 +7100,7 @@ test chan-io-53.8a {CopyData: async callback and error handling, Bug 1932639, at
     # Channels to copy between
     set f [open $foo r] ; chan configure $f -translation binary
     set g [open $bar w] ; chan configure $g -translation binary -buffering none
-} -constraints {stdio openpipe fcopy} -body {
+} -constraints {stdio fcopy} -body {
     # Initialize and force eof on the input.
     chan seek $f 0 end ; chan read $f 1
     set ::RES [chan eof $f]
@@ -7089,7 +7158,7 @@ test chan-io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
     }
     set ::forever {}
     set out [open $out w]
-} -constraints {stdio openpipe fcopy} -body {
+} -constraints {stdio fcopy} -body {
     chan copy $pipe $out -size 6 -command ::done
     set token [after 5000 {
 	set ::forever {fcopy hangs}
@@ -7162,7 +7231,7 @@ test chan-io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
     chan configure $b -translation binary -buffering none
     chan event  $a readable [namespace code "done $a"]
     chan event  $b readable [namespace code "done $b"]
-} -constraints {stdio openpipe fcopy} -body {
+} -constraints {stdio fcopy} -body {
     # Now pass data through the server in both directions.
     set ::forever {}
     chan puts $a AB
@@ -7208,7 +7277,7 @@ test chan-io-54.1 {Recursive channel events} {socket fileevent} {
     for {set i 0} {$i < 10} {incr i} {
 	if {![catch {
 	    set cs [socket 127.0.0.1 [lindex [chan configure $ss -sockname] 2]]
-	}]} then {
+	}]} {
 	    set done 1
 	    break
 	}
@@ -7280,7 +7349,7 @@ test chan-io-54.2 {Testing for busy-wait in recursive channel events} -setup {
     chan close $writer
     chan close $s
     after cancel $after
-    return $counter
+    set counter
 } -cleanup {
     if {$accept ne {}} {chan close $accept}
 } -result 1
@@ -7307,7 +7376,7 @@ test chan-io-55.1 {ChannelEventScriptInvoker: deletion} -constraints {
     chan event $f writable [namespace code [list eventScript $f]]
     variable x not_done
     vwait [namespace which -variable x]
-    return $x
+    set x
 } -cleanup {
     interp bgerror {} $handler
 } -result {got_error}
@@ -7352,7 +7421,7 @@ test chan-io-57.1 {buffered data and file events, gets} -setup {
     vwait [namespace which -variable result]
     lappend result [chan gets $s2]
     vwait [namespace which -variable result]
-    return $result
+    set result
 } -cleanup {
     chan close $s
     chan close $s2
@@ -7377,14 +7446,14 @@ test chan-io-57.2 {buffered data and file events, read} -setup {
     vwait [namespace which -variable result]
     lappend result [chan read $s2 9]
     vwait [namespace which -variable result]
-    return $result
+    set result
 } -cleanup {
     chan close $s
     chan close $s2
     chan close $server
 } -result {1 readable 234567890 timer}
 
-test chan-io-58.1 {Tcl_NotifyChannel and error when closing} {stdio unixOrPc openpipe fileevent} {
+test chan-io-58.1 {Tcl_NotifyChannel and error when closing} {stdio unixOrWin fileevent} {
     set out [open $path(script) w]
     chan puts $out {
 	chan puts "normal message from pipe"
@@ -7422,11 +7491,12 @@ test chan-io-59.1 {Thread reference of channels} {testmainthread testchannel} {
     string equal $result [testmainthread]
 } {1}
 
-test chan-io-60.1 {writing illegal utf sequences} {openpipe fileevent} {
+test chan-io-60.1 {writing illegal utf sequences} {fileevent testbytestring} {
     # This test will hang in older revisions of the core.
     set out [open $path(script) w]
+    chan puts $out "catch {load $::tcltestlib Tcltest}"
     chan puts $out {
-	chan puts [encoding convertfrom identity \xe2]
+	chan puts [testbytestring \xe2]
 	exit 1
     }
     proc readit {pipe} {

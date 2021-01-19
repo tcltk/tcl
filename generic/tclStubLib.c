@@ -4,21 +4,12 @@
  *	Stub object that will be statically linked into extensions that want
  *	to access Tcl.
  *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 1998 Paul Duffin.
+ * Copyright © 1998-1999 Scriptics Corporation.
+ * Copyright © 1998 Paul Duffin.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
-
-/*
- * We need to ensure that we use the stub macros so that this file contains no
- * references to any of the stub functions. This will make it possible to
- * build an extension that references Tcl_InitStubs but doesn't end up
- * including the rest of the stub functions.
- */
-
-#define USE_TCL_STUBS
 
 #include "tclInt.h"
 
@@ -32,30 +23,11 @@ const TclPlatStubs *tclPlatStubsPtr = NULL;
 const TclIntStubs *tclIntStubsPtr = NULL;
 const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
-static const TclStubs *
-HasStubSupport(
-    Tcl_Interp *interp)
-{
-    Interp *iPtr = (Interp *) interp;
-
-    if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
-	return iPtr->stubTable;
-    }
-
-    iPtr->result =
-	    (char *)"This interpreter does not support stubs-enabled extensions.";
-    iPtr->freeProc = TCL_STATIC;
-    return NULL;
-}
-
 /*
- * Use our own isdigit to avoid linking to libc on windows
+ * Use our own ISDIGIT to avoid linking to libc on windows
  */
 
-static int isDigit(const int c)
-{
-    return (c >= '0' && c <= '9');
-}
+#define ISDIGIT(c) (((unsigned)((c)-'0')) <= 9)
 
 /*
  *----------------------------------------------------------------------
@@ -74,15 +46,19 @@ static int isDigit(const int c)
  *
  *----------------------------------------------------------------------
  */
-
+#undef Tcl_InitStubs
 MODULE_SCOPE const char *
 Tcl_InitStubs(
     Tcl_Interp *interp,
     const char *version,
-    int exact)
+    int exact,
+    int magic)
 {
+    Interp *iPtr = (Interp *)interp;
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
+    const TclStubs *stubsPtr = iPtr->stubTable;
+    const char *tclName = (((exact&0xFF00) >= 0x900) ? "tcl" : "Tcl");
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -90,21 +66,22 @@ Tcl_InitStubs(
      * times. [Bug 615304]
      */
 
-    tclStubsPtr = HasStubSupport(interp);
-    if (!tclStubsPtr) {
+    if (!stubsPtr || (stubsPtr->magic != (((exact&0xFF00) >= 0x900) ? magic : TCL_STUB_MAGIC))) {
+	iPtr->result = (char *)"interpreter uses an incompatible stubs mechanism";
+	iPtr->freeProc = 0; /* TCL_STATIC */
 	return NULL;
     }
 
-    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
+    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, tclName, version, 0, &pkgData);
     if (actualVersion == NULL) {
 	return NULL;
     }
-    if (exact) {
+    if (exact&1) {
 	const char *p = version;
 	int count = 0;
 
 	while (*p) {
-	    count += !isDigit(*p++);
+	    count += !ISDIGIT(*p++);
 	}
 	if (count == 1) {
 	    const char *q = actualVersion;
@@ -113,24 +90,28 @@ Tcl_InitStubs(
 	    while (*p && (*p == *q)) {
 		p++; q++;
 	    }
-	    if (*p) {
+	    if (*p || ISDIGIT(*q)) {
 		/* Construct error message */
-		Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+		stubsPtr->tcl_PkgRequireEx(interp, tclName, version, 1, NULL);
 		return NULL;
 	    }
 	} else {
-	    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+	    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, tclName, version, 1, NULL);
 	    if (actualVersion == NULL) {
 		return NULL;
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs *) pkgData;
+    if (((exact&0xFF00) < 0x900)) {
+	/* We are running Tcl 8.x */
+	stubsPtr = (TclStubs *)pkgData;
+    }
+    tclStubsPtr = stubsPtr;
 
-    if (tclStubsPtr->hooks) {
-	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
-	tclIntStubsPtr = tclStubsPtr->hooks->tclIntStubs;
-	tclIntPlatStubsPtr = tclStubsPtr->hooks->tclIntPlatStubs;
+    if (stubsPtr->hooks) {
+	tclPlatStubsPtr = stubsPtr->hooks->tclPlatStubs;
+	tclIntStubsPtr = stubsPtr->hooks->tclIntStubs;
+	tclIntPlatStubsPtr = stubsPtr->hooks->tclIntPlatStubs;
     } else {
 	tclPlatStubsPtr = NULL;
 	tclIntStubsPtr = NULL;

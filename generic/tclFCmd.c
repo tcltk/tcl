@@ -4,16 +4,11 @@
  *	This file implements the generic portion of file manipulation
  *	subcommands of the "file" command.
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
-
-#ifndef _WIN64
-/* See [Bug 2935503]: file mtime sets wrong time */
-#   define _USE_32BIT_TIME_T
-#endif
 
 #include "tclInt.h"
 #include "tclFileSystem.h"
@@ -52,7 +47,7 @@ static int		FileForceOption(Tcl_Interp *interp,
 
 int
 TclFileRenameCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Interp for error reporting or recursive
 				 * calls in the case of a tricky rename. */
     int objc,			/* Number of arguments. */
@@ -81,7 +76,7 @@ TclFileRenameCmd(
 
 int
 TclFileCopyCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Used for error reporting or recursive calls
 				 * in the case of a tricky copy. */
     int objc,			/* Number of arguments. */
@@ -125,7 +120,7 @@ FileCopyRename(
     }
     i++;
     if ((objc - i) < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, 
+	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-option value ...? source ?source ...? target");
 	return TCL_ERROR;
     }
@@ -152,9 +147,9 @@ FileCopyRename(
 	if ((objc - i) > 2) {
 	    errno = ENOTDIR;
 	    Tcl_PosixError(interp);
-	    Tcl_AppendResult(interp, "error ",
-		    (copyFlag ? "copying" : "renaming"), ": target \"",
-		    TclGetString(target), "\" is not a directory", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "error %s: target \"%s\" is not a directory",
+		    (copyFlag?"copying":"renaming"), TclGetString(target)));
 	    result = TCL_ERROR;
 	} else {
 	    /*
@@ -185,7 +180,7 @@ FileCopyRename(
 	}
 	jargv[0] = objv[objc - 1];
 	jargv[1] = source;
-	newFileName = TclJoinPath(2, jargv);
+	newFileName = TclJoinPath(2, jargv, 1);
 	Tcl_IncrRefCount(newFileName);
 	result = CopyRenameOneFile(interp, objv[i], newFileName, copyFlag,
 		force);
@@ -219,7 +214,7 @@ FileCopyRename(
 
 int
 TclFileMakeDirsCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Used for error reporting. */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
@@ -245,8 +240,12 @@ TclFileMakeDirsCmd(
 	    break;
 	}
 	for (j = 0; j < pobjc; j++) {
+	    int errCount = 2;
+
 	    target = Tcl_FSJoinPath(split, j + 1);
 	    Tcl_IncrRefCount(target);
+
+	createDir:
 
 	    /*
 	     * Call Tcl_FSStat() so that if target is a symlink that points to
@@ -274,23 +273,25 @@ TclFileMakeDirsCmd(
 		 * subdirectory.
 		 */
 
-		if (errno != EEXIST) {
-		    errfile = target;
-		    goto done;
-		} else if ((Tcl_FSStat(target, &statBuf) == 0)
-			&& S_ISDIR(statBuf.st_mode)) {
-		    /*
-		     * It is a directory that wasn't there before, so keep
-		     * going without error.
-		     */
-
-		    Tcl_ResetResult(interp);
-		} else {
-		    errfile = target;
-		    goto done;
+		if (errno == EEXIST) {
+		    /* Be aware other workers could delete it immediately after
+		     * creation, so give this worker still one chance (repeat once),
+		     * see [270f78ca95] for description of the race-condition.
+		     * Don't repeat the create always (to avoid endless loop). */
+		    if (--errCount > 0) {
+			goto createDir;
+		    }
+		    /* Already tried, with delete in-between directly after
+		     * creation, so just continue (assume created successful). */
+		    goto nextPart;
 		}
+
+		/* return with error */
+		errfile = target;
+		goto done;
 	    }
 
+	nextPart:
 	    /*
 	     * Forget about this sub-path.
 	     */
@@ -304,8 +305,9 @@ TclFileMakeDirsCmd(
 
   done:
     if (errfile != NULL) {
-	Tcl_AppendResult(interp, "can't create directory \"",
-		TclGetString(errfile), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't create directory \"%s\": %s",
+		TclGetString(errfile), Tcl_PosixError(interp)));
 	result = TCL_ERROR;
     }
     if (split != NULL) {
@@ -336,7 +338,7 @@ TclFileMakeDirsCmd(
 
 int
 TclFileDeleteCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Used for error reporting */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
@@ -367,14 +369,7 @@ TclFileDeleteCmd(
 	 */
 
 	if (Tcl_FSLstat(objv[i], &statBuf) != 0) {
-	    /*
-	     * Trying to delete a file that does not exist is not considered
-	     * an error, just a no-op
-	     */
-
-	    if (errno != ENOENT) {
-		result = TCL_ERROR;
-	    }
+	    result = TCL_ERROR;
 	} else if (S_ISDIR(statBuf.st_mode)) {
 	    /*
 	     * We own a reference count on errorBuffer, if it was set as a
@@ -384,9 +379,9 @@ TclFileDeleteCmd(
 	    result = Tcl_FSRemoveDirectory(objv[i], force, &errorBuffer);
 	    if (result != TCL_OK) {
 		if ((force == 0) && (errno == EEXIST)) {
-		    Tcl_AppendResult(interp, "error deleting \"",
-			    TclGetString(objv[i]), "\": directory not empty",
-			    NULL);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "error deleting \"%s\": directory not empty",
+			    TclGetString(objv[i])));
 		    Tcl_PosixError(interp);
 		    goto done;
 		}
@@ -410,13 +405,20 @@ TclFileDeleteCmd(
 	}
 
 	if (result != TCL_OK) {
-	    result = TCL_ERROR;
 
+	    /*
+	     * Avoid possible race condition (file/directory deleted after call
+	     * of lstat), so bypass ENOENT because not an error, just a no-op
+	     */
+	    if (errno == ENOENT) {
+		result = TCL_OK;
+		continue;
+	    }
 	    /*
 	     * It is important that we break on error, otherwise we might end
 	     * up owning reference counts on numerous errorBuffers.
 	     */
-
+	    result = TCL_ERROR;
 	    break;
 	}
     }
@@ -426,12 +428,13 @@ TclFileDeleteCmd(
 	     * We try to accomodate poor error results from our Tcl_FS calls.
 	     */
 
-	    Tcl_AppendResult(interp, "error deleting unknown file: ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "error deleting unknown file: %s",
+		    Tcl_PosixError(interp)));
 	} else {
-	    Tcl_AppendResult(interp, "error deleting \"",
-		    TclGetString(errfile), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "error deleting \"%s\": %s",
+		    TclGetString(errfile), Tcl_PosixError(interp)));
 	}
     }
 
@@ -520,7 +523,7 @@ CopyRenameOneFile(
 	 * 16 bits and we get collisions. See bug #2015723.
 	 */
 
-#if !defined(WIN32) && !defined(__CYGWIN__)
+#if !defined(_WIN32) && !defined(__CYGWIN__)
 	if ((sourceStatBuf.st_ino != 0) && (targetStatBuf.st_ino != 0)) {
 	    if ((sourceStatBuf.st_ino == targetStatBuf.st_ino) &&
 		    (sourceStatBuf.st_dev == targetStatBuf.st_dev)) {
@@ -540,17 +543,17 @@ CopyRenameOneFile(
 	if (S_ISDIR(sourceStatBuf.st_mode)
 		&& !S_ISDIR(targetStatBuf.st_mode)) {
 	    errno = EISDIR;
-	    Tcl_AppendResult(interp, "can't overwrite file \"",
-		    TclGetString(target), "\" with directory \"",
-		    TclGetString(source), "\"", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't overwrite file \"%s\" with directory \"%s\"",
+		    TclGetString(target), TclGetString(source)));
 	    goto done;
 	}
 	if (!S_ISDIR(sourceStatBuf.st_mode)
 		&& S_ISDIR(targetStatBuf.st_mode)) {
 	    errno = EISDIR;
-	    Tcl_AppendResult(interp, "can't overwrite directory \"",
-		    TclGetString(target), "\" with file \"",
-		    TclGetString(source), "\"", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't overwrite directory \"%s\" with file \"%s\"",
+		    TclGetString(target), TclGetString(source)));
 	    goto done;
 	}
 
@@ -581,10 +584,10 @@ CopyRenameOneFile(
 	}
 
 	if (errno == EINVAL) {
-	    Tcl_AppendResult(interp, "error renaming \"",
-		    TclGetString(source), "\" to \"", TclGetString(target),
-		    "\": trying to rename a volume or "
-		    "move a directory into itself", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "error renaming \"%s\" to \"%s\": trying to rename a"
+		    " volume or move a directory into itself",
+		    TclGetString(source), TclGetString(target)));
 	    goto done;
 	} else if (errno != EXDEV) {
 	    errfile = target;
@@ -628,8 +631,9 @@ CopyRenameOneFile(
 	     * Actual file doesn't exist.
 	     */
 
-	    Tcl_AppendResult(interp, "error copying \"", TclGetString(source),
-		    "\": the target of this link doesn't exist", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "error copying \"%s\": the target of this link doesn't"
+		    " exist", TclGetString(source)));
 	    goto done;
 	} else {
 	    int counter = 0;
@@ -736,17 +740,14 @@ CopyRenameOneFile(
 	     */
 
 	    errfile = target;
-
-	    /*
-	     * We now need to reset the result, because the above call, if it
-	     * failed, may have put an error message in place. (Ideally we
-	     * would prefer not to pass an interpreter in above, but the
-	     * channel IO code used by TclCrossFilesystemCopy currently
-	     * requires one).
-	     */
-
-	    Tcl_ResetResult(interp);
 	}
+	/*
+	 * We now need to reset the result, because the above call,
+	 * may have left set it.  (Ideally we would prefer not to pass
+	 * an interpreter in above, but the channel IO code used by
+	 * TclCrossFilesystemCopy currently requires one)
+	 */
+	Tcl_ResetResult(interp);
     }
     if ((copyFlag == 0) && (result == TCL_OK)) {
 	if (S_ISDIR(sourceStatBuf.st_mode)) {
@@ -764,23 +765,27 @@ CopyRenameOneFile(
 	    }
 	}
 	if (result != TCL_OK) {
-	    Tcl_AppendResult(interp, "can't unlink \"", TclGetString(errfile),
-		    "\": ", Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("can't unlink \"%s\": %s",
+		    TclGetString(errfile), Tcl_PosixError(interp)));
 	    errfile = NULL;
 	}
     }
 
   done:
     if (errfile != NULL) {
-	Tcl_AppendResult(interp, "error ", (copyFlag ? "copying" : "renaming"),
-		 " \"", TclGetString(source), NULL);
+	Tcl_Obj *errorMsg = Tcl_ObjPrintf("error %s \"%s\"",
+		(copyFlag ? "copying" : "renaming"), TclGetString(source));
+
 	if (errfile != source) {
-	    Tcl_AppendResult(interp, "\" to \"", TclGetString(target), NULL);
+	    Tcl_AppendPrintfToObj(errorMsg, " to \"%s\"",
+		    TclGetString(target));
 	    if (errfile != target) {
-		Tcl_AppendResult(interp, "\": \"", TclGetString(errfile),NULL);
+		Tcl_AppendPrintfToObj(errorMsg, ": \"%s\"",
+			TclGetString(errfile));
 	    }
 	}
-	Tcl_AppendResult(interp, "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_AppendPrintfToObj(errorMsg, ": %s", Tcl_PosixError(interp));
+	Tcl_SetObjResult(interp, errorMsg);
     }
     if (errorBuffer != NULL) {
 	Tcl_DecrRefCount(errorBuffer);
@@ -899,7 +904,7 @@ FileBasename(
 	}
     }
     if (resultPtr == NULL) {
-	resultPtr = Tcl_NewObj();
+	TclNewObj(resultPtr);
     }
     Tcl_IncrRefCount(resultPtr);
     Tcl_DecrRefCount(splitPtr);
@@ -941,7 +946,7 @@ FileBasename(
 
 int
 TclFileAttrsCmd(
-    ClientData clientData,	/* Unused */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* The interpreter for error reporting. */
     int objc,			/* Number of command line arguments. */
     Tcl_Obj *const objv[])	/* The command line objects. */
@@ -983,9 +988,10 @@ TclFileAttrsCmd(
 		 * There was an error, probably that the filePtr is not
 		 * accepted by any filesystem
 		 */
-		Tcl_AppendResult(interp, "could not read \"",
-			TclGetString(filePtr), "\": ", Tcl_PosixError(interp),
-			NULL);
+
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"could not read \"%s\": %s",
+			TclGetString(filePtr), Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1071,19 +1077,16 @@ TclFileAttrsCmd(
 	Tcl_Obj *objPtr = NULL;
 
 	if (numObjStrings == 0) {
-	    Tcl_AppendResult(interp, "bad option \"", TclGetString(objv[0]),
-		    "\", there are no file attributes in this filesystem.",
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad option \"%s\", there are no file attributes in this"
+		    " filesystem", TclGetString(objv[0])));
 	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", NULL);
 	    goto end;
 	}
 
 	if (Tcl_GetIndexFromObj(interp, objv[0], attributeStrings,
-		"option", 0, &index) != TCL_OK) {
+		"option", TCL_INDEX_TEMP_TABLE, &index) != TCL_OK) {
 	    goto end;
-	}
-	if (attributeStringsAllocated != NULL) {
-	    TclFreeIntRep(objv[0]);
 	}
 	if (Tcl_FSFileAttrsGet(interp, index, filePtr,
 		&objPtr) != TCL_OK) {
@@ -1098,24 +1101,21 @@ TclFileAttrsCmd(
 	int i, index;
 
 	if (numObjStrings == 0) {
-	    Tcl_AppendResult(interp, "bad option \"", TclGetString(objv[0]),
-		    "\", there are no file attributes in this filesystem.",
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "bad option \"%s\", there are no file attributes in this"
+		    " filesystem", TclGetString(objv[0])));
 	    Tcl_SetErrorCode(interp, "TCL","OPERATION","FATTR","NONE", NULL);
 	    goto end;
 	}
 
 	for (i = 0; i < objc ; i += 2) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], attributeStrings,
-		    "option", 0, &index) != TCL_OK) {
+		    "option", TCL_INDEX_TEMP_TABLE, &index) != TCL_OK) {
 		goto end;
 	    }
-	    if (attributeStringsAllocated != NULL) {
-		TclFreeIntRep(objv[i]);
-	    }
 	    if (i + 1 == objc) {
-		Tcl_AppendResult(interp, "value for \"",
-			TclGetString(objv[i]), "\" missing", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"value for \"%s\" missing", TclGetString(objv[i])));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FATTR",
 			"NOVALUE", NULL);
 		goto end;
@@ -1162,7 +1162,7 @@ TclFileAttrsCmd(
 
 int
 TclFileLinkCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1196,7 +1196,7 @@ TclFileLinkCmd(
 	    static const char *const linkTypes[] = {
 		"-symbolic", "-hard", NULL
 	    };
-	    if (Tcl_GetIndexFromObj(interp, objv[1], linkTypes, "switch", 0,
+	    if (Tcl_GetIndexFromObj(interp, objv[1], linkTypes, "option", 0,
 		    &linkAction) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1224,9 +1224,9 @@ TclFileLinkCmd(
 	     */
 
 	    if (errno == EEXIST) {
-		Tcl_AppendResult(interp, "could not create new link \"",
-			TclGetString(objv[index]),
-			"\": that path already exists", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"could not create new link \"%s\": that path already"
+			" exists", TclGetString(objv[index])));
 		Tcl_PosixError(interp);
 	    } else if (errno == ENOENT) {
 		/*
@@ -1244,23 +1244,23 @@ TclFileLinkCmd(
 		access = Tcl_FSAccess(dirPtr, F_OK);
 		Tcl_DecrRefCount(dirPtr);
 		if (access != 0) {
-		    Tcl_AppendResult(interp, "could not create new link \"",
-			    TclGetString(objv[index]),
-			    "\": no such file or directory", NULL);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "could not create new link \"%s\": no such file"
+			    " or directory", TclGetString(objv[index])));
 		    Tcl_PosixError(interp);
 		} else {
-		    Tcl_AppendResult(interp, "could not create new link \"",
-			    TclGetString(objv[index]), "\": target \"",
-			    TclGetString(objv[index+1]), "\" doesn't exist",
-			    NULL);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "could not create new link \"%s\": target \"%s\" "
+			    "doesn't exist", TclGetString(objv[index]),
+			    TclGetString(objv[index+1])));
 		    errno = ENOENT;
 		    Tcl_PosixError(interp);
 		}
 	    } else {
-		Tcl_AppendResult(interp, "could not create new link \"",
-			TclGetString(objv[index]), "\" pointing to \"",
-			TclGetString(objv[index+1]), "\": ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"could not create new link \"%s\" pointing to \"%s\": %s",
+			TclGetString(objv[index]),
+			TclGetString(objv[index+1]), Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1275,9 +1275,9 @@ TclFileLinkCmd(
 
 	contents = Tcl_FSLink(objv[index], NULL, 0);
 	if (contents == NULL) {
-	    Tcl_AppendResult(interp, "could not read link \"",
-		    TclGetString(objv[index]), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read link \"%s\": %s",
+		    TclGetString(objv[index]), Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
     }
@@ -1313,7 +1313,7 @@ TclFileLinkCmd(
 
 int
 TclFileReadLinkCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1332,8 +1332,9 @@ TclFileReadLinkCmd(
     contents = Tcl_FSLink(objv[1], NULL, 0);
 
     if (contents == NULL) {
-	Tcl_AppendResult(interp, "could not readlink \"",
-		TclGetString(objv[1]), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"could not read link \"%s\": %s",
+		TclGetString(objv[1]), Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, contents);
@@ -1344,7 +1345,7 @@ TclFileReadLinkCmd(
 /*
  *---------------------------------------------------------------------------
  *
- * TclFileTemporaryCmd
+ * TclFileTemporaryCmd --
  *
  *	This function implements the "tempfile" subcommand of the "file"
  *	command.
@@ -1363,7 +1364,7 @@ TclFileReadLinkCmd(
 
 int
 TclFileTemporaryCmd(
-    ClientData clientData,
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1487,8 +1488,8 @@ TclFileTemporaryCmd(
 	if (nameVarObj) {
 	    TclDecrRefCount(nameObj);
 	}
-	Tcl_AppendResult(interp, "can't create temporary file: ",
-		Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't create temporary file: %s", Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
     Tcl_RegisterChannel(interp, chan);
@@ -1499,7 +1500,152 @@ TclFileTemporaryCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_AppendResult(interp, Tcl_GetChannelName(chan), NULL);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
+    return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclFileTempDirCmd --
+ *
+ *	This function implements the "tempdir" subcommand of the "file"
+ *	command.
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	Creates a temporary directory.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclFileTempDirCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *dirNameObj;	/* Object that will contain the directory
+				 * name. */
+    Tcl_Obj *baseDirObj = NULL, *nameBaseObj = NULL;
+				/* Pieces of template. Each piece is NULL if
+				 * it is omitted. The platform temporary file
+				 * engine might ignore some pieces. */
+
+    if (objc < 1 || objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?template?");
+	return TCL_ERROR;
+    }
+
+    if (objc > 1) {
+	int length;
+	Tcl_Obj *templateObj = objv[1];
+	const char *string = TclGetStringFromObj(templateObj, &length);
+	const int onWindows = (tclPlatform == TCL_PLATFORM_WINDOWS);
+
+	/*
+	 * Treat an empty string as if it wasn't there.
+	 */
+
+	if (length == 0) {
+	    goto makeTemporary;
+	}
+
+	/*
+	 * The template only gives a directory if there is a directory
+	 * separator in it, and only gives a base name if there's at least one
+	 * character after the last directory separator.
+	 */
+
+	if (strchr(string, '/') == NULL
+		&& (!onWindows || strchr(string, '\\') == NULL)) {
+	    /*
+	     * No directory separator, so just assume we have a file name.
+	     * This is a bit wrong on Windows where we could have problems
+	     * with disk name prefixes... but those are much less common in
+	     * naked form so we just pass through and let the OS figure it out
+	     * instead.
+	     */
+
+	    nameBaseObj = templateObj;
+	    Tcl_IncrRefCount(nameBaseObj);
+	} else if (string[length-1] != '/'
+		&& (!onWindows || string[length-1] != '\\')) {
+	    /*
+	     * If the template has a non-terminal directory separator, split
+	     * into dirname and tail.
+	     */
+
+	    baseDirObj = TclPathPart(interp, templateObj, TCL_PATH_DIRNAME);
+	    nameBaseObj = TclPathPart(interp, templateObj, TCL_PATH_TAIL);
+	} else {
+	    /*
+	     * Otherwise, there must be a terminal directory separator, so
+	     * just the directory is given.
+	     */
+
+	    baseDirObj = templateObj;
+	    Tcl_IncrRefCount(baseDirObj);
+	}
+
+	/*
+	 * Only allow creation of temporary directories in the native
+	 * filesystem since they are frequently used for integration with
+	 * external tools or system libraries.
+	 */
+
+	if (baseDirObj != NULL && Tcl_FSGetFileSystemForPath(baseDirObj)
+		!= &tclNativeFilesystem) {
+	    TclDecrRefCount(baseDirObj);
+	    baseDirObj = NULL;
+	}
+    }
+
+    /*
+     * Convert empty parts of the template into unspecified parts.
+     */
+
+    if (baseDirObj && !TclGetString(baseDirObj)[0]) {
+	TclDecrRefCount(baseDirObj);
+	baseDirObj = NULL;
+    }
+    if (nameBaseObj && !TclGetString(nameBaseObj)[0]) {
+	TclDecrRefCount(nameBaseObj);
+	nameBaseObj = NULL;
+    }
+
+    /*
+     * Create and open the temporary file.
+     */
+
+  makeTemporary:
+    dirNameObj = TclpCreateTemporaryDirectory(baseDirObj, nameBaseObj);
+
+    /*
+     * If we created pieces of template, get rid of them now.
+     */
+
+    if (baseDirObj) {
+	TclDecrRefCount(baseDirObj);
+    }
+    if (nameBaseObj) {
+	TclDecrRefCount(nameBaseObj);
+    }
+
+    /*
+     * Deal with results.
+     */
+
+    if (dirNameObj == NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't create temporary directory: %s",
+		Tcl_PosixError(interp)));
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, dirNameObj);
     return TCL_OK;
 }
 

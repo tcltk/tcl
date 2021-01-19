@@ -4,9 +4,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH lassign n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -52,7 +52,9 @@ command in many shell languages like this:
 set ::argv [\fBlassign\fR $::argv argumentToReadOff]
 .CE
 .SH "SEE ALSO"
-lindex(n), list(n), lrange(n), lset(n), set(n)
+list(n), lappend(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n), lsort(n)
 .SH KEYWORDS
 assign, element, list, multiple, set, variable
 '\"Local Variables:

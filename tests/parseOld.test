@@ -6,22 +6,23 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994-1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testwordend [llength [info commands testwordend]]
+testConstraint testbytestring [llength [info commands testbytestring]]
 
 # Save the argv value for restoration later
 set savedArgv $argv
@@ -38,7 +39,7 @@ proc getArgs args {
     global argv
     set argv $args
 }
-
+
 # Basic argument parsing.
 
 test parseOld-1.1 {basic argument parsing} {
@@ -134,7 +135,7 @@ format %s $b
 } a22b
 test parseOld-4.4 {command substitution} {
     set a 7.7
-    if [catch {expr int($a)}] {set a foo}
+    if {[catch {expr {int($a)}}]} {set a foo}
     set a
 } 7.7
 
@@ -166,25 +167,25 @@ test parseOld-5.6 {variable substitution} {
     set msg
 } {can't read "_non_existent_": no such variable}
 test parseOld-5.7 {array variable substitution} {
-    catch {unset a}
+    unset -nocomplain a
     set a(xyz) 123
     set b $a(xyz)foo
     set b
 } 123foo
 test parseOld-5.8 {array variable substitution} {
-    catch {unset a}
+    unset -nocomplain a
     set "a(x y z)" 123
     set b $a(x y z)foo
     set b
 } 123foo
 test parseOld-5.9 {array variable substitution} {
-    catch {unset a}; catch {unset qqq}
+    unset -nocomplain a qqq
     set "a(x y z)" qqq
     set $a([format x]\ y [format z]) foo
     set qqq
 } foo
 test parseOld-5.10 {array variable substitution} {
-    catch {unset a}
+    unset -nocomplain a
     list [catch {set b $a(22)} msg] $msg
 } {1 {can't read "a(22)": no such variable}}
 test parseOld-5.11 {array variable substitution} {
@@ -194,9 +195,9 @@ test parseOld-5.11 {array variable substitution} {
 test parseOld-5.12 {empty array name support} {
     list [catch {set b a$()} msg] $msg
 } {1 {can't read "()": no such variable}}
-catch {unset a}
+unset -nocomplain a
 test parseOld-5.13 {array variable substitution} {
-    catch {unset a}
+    unset -nocomplain a
     set long {This is a very long variable, long enough to cause storage \
 	allocation to occur in Tcl_ParseVar.  If that storage isn't getting \
 	freed up correctly, then a core leak will occur when this test is \
@@ -211,13 +212,13 @@ test parseOld-5.13 {array variable substitution} {
 	run.  This text is probably beginning to sound like drivel, but I've \
 	run out of things to say and I need more characters still.}}}
 test parseOld-5.14 {array variable substitution} {
-    catch {unset a}; catch {unset b}; catch {unset a1}
+    unset -nocomplain a b a1
     set a1(22) foo
     set a(foo) bar
     set b $a($a1(22))
     set b
 } bar
-catch {unset a}; catch {unset a1}
+unset -nocomplain a a1
 
 test parseOld-7.1 {backslash substitution} {
     set a "\a\c\n\]\}"
@@ -263,15 +264,15 @@ test parseOld-7.10 {backslash substitution} {
 test parseOld-7.11 {backslash substitution} {
     eval "list a \"b c\"\\\nd e"
 } {a {b c} d e}
-test parseOld-7.12 {backslash substitution} {
-    list \ua2
-} [bytestring "\xc2\xa2"]
-test parseOld-7.13 {backslash substitution} {
-    list \u4e21
-} [bytestring "\xe4\xb8\xa1"]
-test parseOld-7.14 {backslash substitution} {
-    list \u4e2k
-} [bytestring "\xd3\xa2k"]
+test parseOld-7.12 {backslash substitution} testbytestring {
+    expr {[list \ua2] eq [testbytestring "\xc2\xa2"]}
+} 1
+test parseOld-7.13 {backslash substitution} testbytestring {
+    expr {[list \u4e21] eq [testbytestring "\xe4\xb8\xa1"]}
+} 1
+test parseOld-7.14 {backslash substitution} testbytestring {
+    expr {[list \u4e2k] eq [testbytestring "\xd3\xa2k"]}
+} 1
 
 # Semi-colon.
 
@@ -297,6 +298,7 @@ test parseOld-8.4 {semi-colons} {
 # The following checks are to ensure that the interpreter's result
 # gets re-initialized by Tcl_Eval in all the right places.
 
+set a 22
 test parseOld-9.1 {result initialization} {concat abc} abc
 test parseOld-9.2 {result initialization} {concat abc; proc foo {} {}} {}
 test parseOld-9.3 {result initialization} {concat abc; proc foo {} $a} {}
@@ -409,6 +411,8 @@ test parseOld-11.7 {long values} {
     set b [concat 1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH]
     llength $b
 } 43
+# Duplicate action of previous test
+llength [set b [concat 1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH]]
 test parseOld-11.8 {long values} {
     set b
 } $a
@@ -456,72 +460,6 @@ expr 1+1
 ]"
 } {2}
 
-test parseOld-14.1 {TclWordEnd procedure} {testwordend} {
-    testwordend " 	\n abc"
-} {c}
-test parseOld-14.2 {TclWordEnd procedure} {testwordend} {
-    testwordend "   \\\n"
-} {}
-test parseOld-14.3 {TclWordEnd procedure} {testwordend} {
-    testwordend "   \\\n "
-} { }
-test parseOld-14.4 {TclWordEnd procedure} {testwordend} {
-    testwordend {"abc"}
-} {"}
-#" Emacs formatting :^(
-test parseOld-14.5 {TclWordEnd procedure} {testwordend} {
-    testwordend {{xyz}}
-} \}
-test parseOld-14.6 {TclWordEnd procedure} {testwordend} {
-    testwordend {{a{}b{}\}} xyz}
-} "\} xyz"
-test parseOld-14.7 {TclWordEnd procedure} {testwordend} {
-    testwordend {abc[this is a]def ghi}
-} {f ghi}
-test parseOld-14.8 {TclWordEnd procedure} {testwordend} {
-    testwordend "puts\\\n\n  "
-} "s\\\n\n  "
-test parseOld-14.9 {TclWordEnd procedure} {testwordend} {
-    testwordend "puts\\\n   	"
-} "s\\\n   	"
-test parseOld-14.10 {TclWordEnd procedure} {testwordend} {
-    testwordend "puts\\\n   	xyz"
-} "s\\\n   	xyz"
-test parseOld-14.11 {TclWordEnd procedure} {testwordend} {
-    testwordend {a$x.$y(a long index) foo}
-} ") foo"
-test parseOld-14.12 {TclWordEnd procedure} {testwordend} {
-    testwordend {abc; def}
-} {; def}
-test parseOld-14.13 {TclWordEnd procedure} {testwordend} {
-    testwordend {abc def}
-} {c def}
-test parseOld-14.14 {TclWordEnd procedure} {testwordend} {
-    testwordend {abc	def}
-} {c	def}
-test parseOld-14.15 {TclWordEnd procedure} {testwordend} {
-    testwordend "abc\ndef"
-} "c\ndef"
-test parseOld-14.16 {TclWordEnd procedure} {testwordend} {
-    testwordend "abc"
-} {c}
-test parseOld-14.17 {TclWordEnd procedure} {testwordend} {
-    testwordend "a\000bc"
-} {c}
-test parseOld-14.18 {TclWordEnd procedure} {testwordend} {
-    testwordend \[a\000\]
-} {]}
-test parseOld-14.19 {TclWordEnd procedure} {testwordend} {
-    testwordend \"a\000\"
-} {"}
-#" Emacs formatting :^(
-test parseOld-14.20 {TclWordEnd procedure} {testwordend} {
-    testwordend a{\000}b
-} {b}
-test parseOld-14.21 {TclWordEnd procedure} {testwordend} {
-    testwordend "   \000b"
-} {b}
-
 test parseOld-15.1 {TclScriptEnd procedure} {
     info complete {puts [
 	expr 1+1
@@ -539,8 +477,12 @@ test parseOld-15.4 {TclScriptEnd procedure} {
 test parseOld-15.5 {TclScriptEnd procedure} {
     info complete "xyz \[abc"
 } {0}
-
+
 # cleanup
 set argv $savedArgv
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

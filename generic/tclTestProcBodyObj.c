@@ -5,7 +5,7 @@
  *	creation of Tcl procedures whose body argument is a Tcl_Obj of type
  *	"procbody" rather than a string.
  *
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright © 1998 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -20,14 +20,15 @@
  * name and version of this package
  */
 
-static const char packageName[] = "procbodytest";
-static const char packageVersion[] = "1.0";
+static const char packageName[] = "tcl::procbodytest";
+static const char packageVersion[] = "1.1";
 
 /*
  * Name of the commands exported by this package
  */
 
 static const char procCommand[] = "proc";
+static const char checkCommand[] = "check";
 
 /*
  * this struct describes an entry in the table of command names and command
@@ -44,11 +45,13 @@ typedef struct CmdTable {
  * Declarations for functions defined in this file.
  */
 
-static int	ProcBodyTestProcObjCmd(ClientData dummy,
+static int	ProcBodyTestProcObjCmd(void *dummy,
+			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static int	ProcBodyTestCheckObjCmd(void *dummy,
 			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
-			const char *namespace, const CmdTable *cmdTablePtr);
+			const char *namesp, const CmdTable *cmdTablePtr);
 
 /*
  * List of commands to create when the package is loaded; must go after the
@@ -57,11 +60,13 @@ static int	RegisterCommand(Tcl_Interp* interp,
 
 static const CmdTable commands[] = {
     { procCommand,	ProcBodyTestProcObjCmd,	1 },
+    { checkCommand,	ProcBodyTestCheckObjCmd,	1 },
     { 0, 0, 0 }
 };
 
 static const CmdTable safeCommands[] = {
     { procCommand,	ProcBodyTestProcObjCmd,	1 },
+    { checkCommand,	ProcBodyTestCheckObjCmd,	1 },
     { 0, 0, 0 }
 };
 
@@ -70,7 +75,7 @@ static const CmdTable safeCommands[] = {
  *
  * Procbodytest_Init --
  *
- *	This function initializes the "procbodytest" package.
+ *	This function initializes the "tcl::procbodytest" package.
  *
  * Results:
  *	A standard Tcl result.
@@ -94,7 +99,7 @@ Procbodytest_Init(
  *
  * Procbodytest_SafeInit --
  *
- *	This function initializes the "procbodytest" package.
+ *	This function initializes the "tcl::procbodytest" package.
  *
  * Results:
  *	A standard Tcl result.
@@ -134,7 +139,7 @@ static int
 RegisterCommand(
     Tcl_Interp* interp,		/* the Tcl interpreter for which the operation
 				 * is performed */
-    const char *namespace,		/* the namespace in which the command is
+    const char *namesp,		/* the namespace in which the command is
 				 * registered */
     const CmdTable *cmdTablePtr)/* the command to register */
 {
@@ -142,13 +147,13 @@ RegisterCommand(
 
     if (cmdTablePtr->exportIt) {
 	sprintf(buf, "namespace eval %s { namespace export %s }",
-		namespace, cmdTablePtr->cmdName);
-	if (Tcl_Eval(interp, buf) != TCL_OK) {
+		namesp, cmdTablePtr->cmdName);
+	if (Tcl_EvalEx(interp, buf, -1, 0) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
 
-    sprintf(buf, "%s::%s", namespace, cmdTablePtr->cmdName);
+    sprintf(buf, "%s::%s", namesp, cmdTablePtr->cmdName);
     Tcl_CreateObjCommand(interp, buf, cmdTablePtr->proc, 0, 0);
     return TCL_OK;
 }
@@ -223,7 +228,7 @@ ProcBodyTestInitInternal(
 
 static int
 ProcBodyTestProcObjCmd(
-    ClientData dummy,		/* context; not used */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
@@ -245,7 +250,7 @@ ProcBodyTestProcObjCmd(
      * Find the Command pointer to this procedure
      */
 
-    fullName = Tcl_GetStringFromObj(objv[3], NULL);
+    fullName = Tcl_GetString(objv[3]);
     procCmd = Tcl_FindCommand(interp, fullName, NULL, TCL_LEAVE_ERR_MSG);
     if (procCmd == NULL) {
 	return TCL_ERROR;
@@ -298,6 +303,46 @@ ProcBodyTestProcObjCmd(
     Tcl_DecrRefCount(bodyObjPtr);
 
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcBodyTestCheckObjCmd --
+ *
+ *  Implements the "procbodytest::check" command. Here is the command
+ *  description:
+ *	procbodytest::check
+ *
+ *  Performs an internal check that the Tcl_PkgPresent() command returns
+ *  the same version number as was registered when the tcl::procbodytest package
+ *  was provided.  Places a boolean in the interp result indicating the
+ *  test outcome.
+ *
+ * Results:
+ *  Returns a standard Tcl code.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ProcBodyTestCheckObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* the current interpreter */
+    int objc,			/* argument count */
+    Tcl_Obj *const objv[])	/* arguments */
+{
+    const char *version;
+
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+
+    version = Tcl_PkgPresent(interp, packageName, packageVersion, 1);
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+	    strcmp(version, packageVersion) == 0));
+    return TCL_OK;
 }
 
 /*

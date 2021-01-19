@@ -9,13 +9,13 @@ namespace eval ::tcl::clock {
         "Th 7"\
         "CN"]
     ::msgcat::mcset vi DAYS_OF_WEEK_FULL [list \
-        "Th\u01b0\u0301 hai"\
-        "Th\u01b0\u0301 ba"\
-        "Th\u01b0\u0301 t\u01b0"\
-        "Th\u01b0\u0301 n\u0103m"\
-        "Th\u01b0\u0301 s\u00e1u"\
-        "Th\u01b0\u0301 ba\u0309y"\
-        "Chu\u0309 nh\u00e2\u0323t"]
+        "Thứ hai"\
+        "Thứ ba"\
+        "Thứ tư"\
+        "Thứ năm"\
+        "Thứ sáu"\
+        "Thứ bảy"\
+        "Chủ nhật"]
     ::msgcat::mcset vi MONTHS_ABBREV [list \
         "Thg 1"\
         "Thg 2"\
@@ -31,18 +31,18 @@ namespace eval ::tcl::clock {
         "Thg 12"\
         ""]
     ::msgcat::mcset vi MONTHS_FULL [list \
-        "Th\u00e1ng m\u00f4\u0323t"\
-        "Th\u00e1ng hai"\
-        "Th\u00e1ng ba"\
-        "Th\u00e1ng t\u01b0"\
-        "Th\u00e1ng n\u0103m"\
-        "Th\u00e1ng s\u00e1u"\
-        "Th\u00e1ng ba\u0309y"\
-        "Th\u00e1ng t\u00e1m"\
-        "Th\u00e1ng ch\u00edn"\
-        "Th\u00e1ng m\u01b0\u01a1\u0300i"\
-        "Th\u00e1ng m\u01b0\u01a1\u0300i m\u00f4\u0323t"\
-        "Th\u00e1ng m\u01b0\u01a1\u0300i hai"\
+        "Tháng một"\
+        "Tháng hai"\
+        "Tháng ba"\
+        "Tháng tư"\
+        "Tháng năm"\
+        "Tháng sáu"\
+        "Tháng bảy"\
+        "Tháng tám"\
+        "Tháng chín"\
+        "Tháng mười"\
+        "Tháng mười một"\
+        "Tháng mười hai"\
         ""]
     ::msgcat::mcset vi DATE_FORMAT "%d %b %Y"
     ::msgcat::mcset vi TIME_FORMAT "%H:%M:%S"

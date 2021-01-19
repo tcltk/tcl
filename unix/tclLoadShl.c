@@ -5,31 +5,22 @@
  *	the "shl_load" and "shl_findsym" library procedures for dynamic
  *	loading (e.g. for HP machines).
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include <dl.h>
+#include "tclInt.h"
 
 /*
- * On some HP machines, dl.h defines EXTERN; remove that definition.
+ * Static functions defined within this file.
  */
 
-#ifdef EXTERN
-#   undef EXTERN
-#endif
-
-#include "tclInt.h"
-
-/* Static functions defined within this file */
-
-static void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
-			const char* symbol);
-static void
-UnloadFile(Tcl_LoadHandle handle);
-
+static void *		FindSymbol(Tcl_Interp *interp,
+			    Tcl_LoadHandle loadHandle, const char *symbol);
+static void		UnloadFile(Tcl_LoadHandle handle);
 
 /*
  *----------------------------------------------------------------------
@@ -57,10 +48,11 @@ TclpDlopen(
     Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr,
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
+    int flags)
 {
     shl_t handle;
     Tcl_LoadHandle newHandle;
@@ -100,11 +92,12 @@ TclpDlopen(
     }
 
     if (handle == NULL) {
-	Tcl_AppendResult(interp, "couldn't load file \"", fileName, "\": ",
-		Tcl_PosixError(interp), (char *) NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't load file \"%s\": %s",
+		fileName, Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = (Tcl_LoadHandle)ckalloc(sizeof(*newHandle));
     newHandle->clientData = handle;
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = *unloadProcPtr = &UnloadFile;
@@ -136,7 +129,7 @@ FindSymbol(
 {
     Tcl_DString newName;
     Tcl_PackageInitProc *proc = NULL;
-    shl_t handle = (shl_t)(loadHandle->clientData);
+    shl_t handle = (shl_t) loadHandle->clientData;
 
     /*
      * Some versions of the HP system software still use "_" at the beginning
@@ -155,9 +148,9 @@ FindSymbol(
 	Tcl_DStringFree(&newName);
     }
     if (proc == NULL && interp != NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "cannot find symbol\"", symbol, "\": ",
-		Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot find symbol \"%s\": %s",
+		symbol, Tcl_PosixError(interp)));
     }
     return proc;
 }
@@ -186,41 +179,10 @@ UnloadFile(
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
-    shl_t handle;
+    shl_t handle = (shl_t) loadHandle->clientData;
 
-    handle = (shl_t) (loadHandle -> clientData);
     shl_unload(handle);
     ckfree(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
-{
-    return 0;
 }
 
 /*

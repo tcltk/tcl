@@ -4,7 +4,7 @@
  *	This file contains wrappers around UNIX file handling functions.
  *	These wrappers mask differences between Windows and UNIX.
  *
- * Copyright (c) 1995-1998 Sun Microsystems, Inc.
+ * Copyright © 1995-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -34,16 +34,16 @@ static int NativeMatchType(Tcl_Interp *interp, const char* nativeEntry,
  *---------------------------------------------------------------------------
  */
 
+#ifdef __CYGWIN__
 void
 TclpFindExecutable(
-    const char *argv0)		/* The value of the application's argv[0]
-				 * (native). */
+    TCL_UNUSED(const char *) /*argv0*/)
 {
     Tcl_Encoding encoding;
-#ifdef __CYGWIN__
     int length;
-    char buf[PATH_MAX * 2];
-    char name[PATH_MAX * TCL_UTF_MAX + 1];
+    wchar_t buf[PATH_MAX];
+    char name[PATH_MAX * 3 + 1];
+
     GetModuleFileNameW(NULL, buf, PATH_MAX);
     cygwin_conv_path(3, buf, name, PATH_MAX);
     length = strlen(name);
@@ -54,7 +54,14 @@ TclpFindExecutable(
     encoding = Tcl_GetEncoding(NULL, NULL);
     TclSetObjNameOfExecutable(
 	    Tcl_NewStringObj(name, length), encoding);
+}
 #else
+void
+TclpFindExecutable(
+    const char *argv0)		/* The value of the application's argv[0]
+				 * (native). */
+{
+    Tcl_Encoding encoding;
     const char *name, *p;
     Tcl_StatBuf statBuf;
     Tcl_DString buffer, nameString, cwd, utfName;
@@ -98,7 +105,7 @@ TclpFindExecutable(
      */
 
     while (1) {
-	while (TclIsSpaceProc(*p)) {
+	while (TclIsSpaceProcM(*p)) {
 	    p++;
 	}
 	name = p;
@@ -155,6 +162,11 @@ TclpFindExecutable(
 	goto done;
     }
 
+    if (TclpGetCwd(NULL, &cwd) == NULL) {
+	TclSetObjNameOfExecutable(Tcl_NewObj(), NULL);
+	goto done;
+    }
+
     /*
      * The name is relative to the current working directory. First strip off
      * a leading "./", if any, then add the full path name of the current
@@ -167,8 +179,6 @@ TclpFindExecutable(
 
     Tcl_DStringInit(&nameString);
     Tcl_DStringAppend(&nameString, name, -1);
-
-    TclpGetCwd(NULL, &cwd);
 
     Tcl_DStringFree(&buffer);
     Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&cwd),
@@ -189,8 +199,8 @@ TclpFindExecutable(
 
   done:
     Tcl_DStringFree(&buffer);
-#endif
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -246,9 +256,9 @@ TclpMatchInDirectory(
 	Tcl_Obj *tailPtr;
 	const char *nativeTail;
 
-	native = Tcl_FSGetNativePath(pathPtr);
+	native = (const char *)Tcl_FSGetNativePath(pathPtr);
 	tailPtr = TclPathPart(interp, pathPtr, TCL_PATH_TAIL);
-	nativeTail = Tcl_FSGetNativePath(tailPtr);
+	nativeTail = (const char *)Tcl_FSGetNativePath(tailPtr);
 	matchResult = NativeMatchType(interp, native, nativeTail, types);
 	if (matchResult == 1) {
 	    Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
@@ -256,17 +266,18 @@ TclpMatchInDirectory(
 	Tcl_DecrRefCount(tailPtr);
 	Tcl_DecrRefCount(fileNamePtr);
     } else {
-	DIR *d;
+	TclDIR *d;
 	Tcl_DirEntry *entryPtr;
 	const char *dirName;
-	int dirLength, nativeDirLen;
+	size_t dirLength, nativeDirLen;
 	int matchHidden, matchHiddenPat;
 	Tcl_StatBuf statBuf;
 	Tcl_DString ds;		/* native encoding of dir */
 	Tcl_DString dsOrig;	/* utf-8 encoding of dir */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = Tcl_GetStringFromObj(fileNamePtr, &dirLength);
+	dirName = TclGetString(fileNamePtr);
+	dirLength = fileNamePtr->length;
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	/*
@@ -306,14 +317,13 @@ TclpMatchInDirectory(
 	    return TCL_OK;
 	}
 
-	d = opendir(native);				/* INTL: Native. */
+	d = TclOSopendir(native);				/* INTL: Native. */
 	if (d == NULL) {
 	    Tcl_DStringFree(&ds);
 	    if (interp != NULL) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't read directory \"",
-			Tcl_DStringValue(&dsOrig), "\": ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't read directory \"%s\": %s",
+			Tcl_DStringValue(&dsOrig), Tcl_PosixError(interp)));
 	    }
 	    Tcl_DStringFree(&dsOrig);
 	    Tcl_DecrRefCount(fileNamePtr);
@@ -385,7 +395,7 @@ TclpMatchInDirectory(
 	    }
 	}
 
-	closedir(d);
+	TclOSclosedir(d);
 	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&dsOrig);
 	Tcl_DecrRefCount(fileNamePtr);
@@ -471,7 +481,7 @@ NativeMatchType(
 #ifndef MAC_OSX_TCL
 	    || ((types->perm & TCL_GLOB_PERM_HIDDEN) &&
 		(*nativeName != '.'))
-#endif
+#endif /* MAC_OSX_TCL */
 		) {
 	    return 0;
 	}
@@ -489,12 +499,10 @@ NativeMatchType(
 		 * check that here:
 		 */
 
-		if (types->type & TCL_GLOB_TYPE_LINK) {
-		    if (TclOSlstat(nativeEntry, &buf) == 0) {
-			if (S_ISLNK(buf.st_mode)) {
-			    return 1;
-			}
-		    }
+		if ((types->type & TCL_GLOB_TYPE_LINK)
+			&& (TclOSlstat(nativeEntry, &buf) == 0)
+			&& S_ISLNK(buf.st_mode)) {
+		    return 1;
 		}
 		return 0;
 	    }
@@ -517,12 +525,10 @@ NativeMatchType(
 	     */
 	} else {
 #ifdef S_ISLNK
-	    if (types->type & TCL_GLOB_TYPE_LINK) {
-		if (TclOSlstat(nativeEntry, &buf) == 0) {
-		    if (S_ISLNK(buf.st_mode)) {
-			goto filetypeOK;
-		    }
-		}
+	    if ((types->type & TCL_GLOB_TYPE_LINK)
+		    && (TclOSlstat(nativeEntry, &buf) == 0)
+		    && S_ISLNK(buf.st_mode)) {
+		goto filetypeOK;
 	    }
 #endif /* S_ISLNK */
 	    return 0;
@@ -556,6 +562,8 @@ NativeMatchType(
 	    return matchResult;
 	}
     }
+#else
+    (void)interp;
 #endif /* MAC_OSX_TCL */
 
     return 1;
@@ -623,7 +631,7 @@ TclpObjAccess(
     Tcl_Obj *pathPtr,		/* Path of file to access */
     int mode)			/* Permission setting. */
 {
-    const char *path = Tcl_FSGetNativePath(pathPtr);
+    const char *path = (const char *)Tcl_FSGetNativePath(pathPtr);
 
     if (path == NULL) {
 	return -1;
@@ -651,7 +659,7 @@ int
 TclpObjChdir(
     Tcl_Obj *pathPtr)		/* Path to new working directory */
 {
-    const char *path = Tcl_FSGetNativePath(pathPtr);
+    const char *path = (const char *)Tcl_FSGetNativePath(pathPtr);
 
     if (path == NULL) {
 	return -1;
@@ -680,7 +688,7 @@ TclpObjLstat(
     Tcl_Obj *pathPtr,		/* Path of file to stat */
     Tcl_StatBuf *bufPtr)	/* Filled with results of stat call. */
 {
-    return TclOSlstat(Tcl_FSGetNativePath(pathPtr), bufPtr);
+    return TclOSlstat((const char *)Tcl_FSGetNativePath(pathPtr), bufPtr);
 }
 
 /*
@@ -718,10 +726,10 @@ TclpGetNativeCwd(
     if (getcwd(buffer, MAXPATHLEN+1) == NULL) {		/* INTL: Native. */
 	return NULL;
     }
-#endif
+#endif /* USEGETWD */
 
-    if ((clientData == NULL) || strcmp(buffer, (const char*)clientData)) {
-	char *newCd = ckalloc(strlen(buffer) + 1);
+    if ((clientData == NULL) || strcmp(buffer, (const char *) clientData)) {
+	char *newCd = (char*)ckalloc(strlen(buffer) + 1);
 
 	strcpy(newCd, buffer);
 	return newCd;
@@ -768,12 +776,12 @@ TclpGetCwd(
     if (getwd(buffer) == NULL)				/* INTL: Native. */
 #else
     if (getcwd(buffer, MAXPATHLEN+1) == NULL)		/* INTL: Native. */
-#endif
+#endif /* USEGETWD */
     {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp,
-		    "error getting working directory name: ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "error getting working directory name: %s",
+		    Tcl_PosixError(interp)));
 	}
 	return NULL;
     }
@@ -824,7 +832,7 @@ TclpReadlink(
     return Tcl_DStringValue(linkPtr);
 #else
     return NULL;
-#endif
+#endif /* !DJGPP */
 }
 
 /*
@@ -848,7 +856,7 @@ TclpObjStat(
     Tcl_Obj *pathPtr,		/* Path of file to stat */
     Tcl_StatBuf *bufPtr)	/* Filled with results of stat call. */
 {
-    const char *path = Tcl_FSGetNativePath(pathPtr);
+    const char *path = (const char *)Tcl_FSGetNativePath(pathPtr);
 
     if (path == NULL) {
 	return -1;
@@ -858,14 +866,14 @@ TclpObjStat(
 
 #ifdef S_IFLNK
 
-Tcl_Obj*
+Tcl_Obj *
 TclpObjLink(
     Tcl_Obj *pathPtr,
     Tcl_Obj *toPtr,
     int linkAction)
 {
     if (toPtr != NULL) {
-	const char *src = Tcl_FSGetNativePath(pathPtr);
+	const char *src = (const char *)Tcl_FSGetNativePath(pathPtr);
 	const char *target = NULL;
 
 	if (src == NULL) {
@@ -911,7 +919,7 @@ TclpObjLink(
 	    Tcl_DecrRefCount(absPtr);
 	    Tcl_DecrRefCount(dirPtr);
 	} else {
-	    target = Tcl_FSGetNativePath(toPtr);
+	    target = (const char*)Tcl_FSGetNativePath(toPtr);
 	    if (target == NULL) {
 		return NULL;
 	    }
@@ -939,7 +947,6 @@ TclpObjLink(
 	 */
 
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
-	    int targetLen;
 	    Tcl_DString ds;
 	    Tcl_Obj *transPtr;
 
@@ -953,8 +960,8 @@ TclpObjLink(
 	    if (transPtr == NULL) {
 		return NULL;
 	    }
-	    target = Tcl_GetStringFromObj(transPtr, &targetLen);
-	    target = Tcl_UtfToExternalDString(NULL, target, targetLen, &ds);
+	    target = TclGetString(transPtr);
+	    target = Tcl_UtfToExternalDString(NULL, target, transPtr->length, &ds);
 	    Tcl_DecrRefCount(transPtr);
 
 	    if (symlink(target, src) != 0) {
@@ -984,7 +991,7 @@ TclpObjLink(
 	}
 	Tcl_DecrRefCount(transPtr);
 
-	length = readlink(Tcl_FSGetNativePath(pathPtr), link, sizeof(link));
+	length = readlink((const char *)Tcl_FSGetNativePath(pathPtr), link, sizeof(link));
 	if (length < 0) {
 	    return NULL;
 	}
@@ -1018,7 +1025,7 @@ TclpObjLink(
 
 Tcl_Obj *
 TclpFilesystemPathType(
-    Tcl_Obj *pathPtr)
+    TCL_UNUSED(Tcl_Obj *))
 {
     /*
      * All native paths are of the same type.
@@ -1082,7 +1089,7 @@ TclNativeCreateNativeRep(
     const char *str;
     Tcl_DString ds;
     Tcl_Obj *validPathPtr;
-    int len;
+    size_t len;
 
     if (TclFSCwdIsNative()) {
 	/*
@@ -1107,12 +1114,19 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = Tcl_GetStringFromObj(validPathPtr, &len);
+    str = TclGetString(validPathPtr);
+    len = validPathPtr->length;
     Tcl_UtfToExternalDString(NULL, str, len, &ds);
     len = Tcl_DStringLength(&ds) + sizeof(char);
+    if (strlen(Tcl_DStringValue(&ds)) < len - sizeof(char)) {
+	/* See bug [3118489]: NUL in filenames */
+	Tcl_DecrRefCount(validPathPtr);
+	Tcl_DStringFree(&ds);
+	return NULL;
+    }
     Tcl_DecrRefCount(validPathPtr);
-    nativePathPtr = ckalloc(len);
-    memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
+    nativePathPtr = (char *)ckalloc(len);
+    memcpy(nativePathPtr, Tcl_DStringValue(&ds), len);
 
     Tcl_DStringFree(&ds);
     return nativePathPtr;
@@ -1152,7 +1166,7 @@ TclNativeDupInternalRep(
 
     len = (strlen((const char*) clientData) + 1) * sizeof(char);
 
-    copy = ckalloc(len);
+    copy = (char *)ckalloc(len);
     memcpy(copy, clientData, len);
     return copy;
 }
@@ -1178,12 +1192,20 @@ TclpUtime(
     Tcl_Obj *pathPtr,		/* File to modify */
     struct utimbuf *tval)	/* New modification date structure */
 {
-    return utime(Tcl_FSGetNativePath(pathPtr), tval);
+    return utime((const char *)Tcl_FSGetNativePath(pathPtr), tval);
 }
+
 #ifdef __CYGWIN__
-int TclOSstat(const char *name, Tcl_StatBuf *statBuf) {
+
+int
+TclOSstat(
+    const char *name,
+    void *cygstat)
+{
     struct stat buf;
+    Tcl_StatBuf *statBuf = (Tcl_StatBuf *)cygstat;
     int result = stat(name, &buf);
+
     statBuf->st_mode = buf.st_mode;
     statBuf->st_ino = buf.st_ino;
     statBuf->st_dev = buf.st_dev;
@@ -1197,9 +1219,16 @@ int TclOSstat(const char *name, Tcl_StatBuf *statBuf) {
     statBuf->st_ctime = buf.st_ctime;
     return result;
 }
-int TclOSlstat(const char *name, Tcl_StatBuf *statBuf) {
+
+int
+TclOSlstat(
+    const char *name,
+    void *cygstat)
+{
     struct stat buf;
+    Tcl_StatBuf *statBuf = (Tcl_StatBuf *)cygstat;
     int result = lstat(name, &buf);
+
     statBuf->st_mode = buf.st_mode;
     statBuf->st_ino = buf.st_ino;
     statBuf->st_dev = buf.st_dev;
@@ -1213,7 +1242,7 @@ int TclOSlstat(const char *name, Tcl_StatBuf *statBuf) {
     statBuf->st_ctime = buf.st_ctime;
     return result;
 }
-#endif
+#endif /* CYGWIN */
 
 /*
  * Local Variables:

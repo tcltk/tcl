@@ -5,9 +5,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH list n "" Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -46,9 +46,9 @@ while \fBconcat\fR with the same arguments will return
 \fBa b c d e f {g h}\fR
 .CE
 .SH "SEE ALSO"
-lappend(n), lindex(n), linsert(n), llength(n), lrange(n),
-lrepeat(n),
-lreplace(n), lsearch(n), lset(n), lsort(n)
+lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n), lsort(n)
 .SH KEYWORDS
 element, list, quoting
 '\"Local Variables:

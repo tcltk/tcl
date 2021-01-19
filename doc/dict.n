@@ -4,8 +4,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.so man.macros
 .TH dict n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -25,11 +25,17 @@ below for a description), depending on \fIoption\fR.  The legal
 This appends the given string (or strings) to the value that the given
 key maps to in the dictionary value contained in the given variable,
 writing the resulting dictionary value back to that variable.
-Non-existent keys are treated as if they map to an empty string.
+Non-existent keys are treated as if they map to an empty string. The
+updated dictionary value is returned.
+.VS TIP508
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the appending operation.
+.VE TIP508
 .TP
 \fBdict create \fR?\fIkey value ...\fR?
 .
-Create a new dictionary that contains each of the key/value mappings
+Return a new dictionary that contains each of the key/value mappings
 listed as arguments (keys and values alternating, with each key being
 followed by its associated value.)
 .TP
@@ -48,16 +54,14 @@ type (which may be abbreviated.)  Supported filter types are:
 .RS
 .TP
 \fBdict filter \fIdictionaryValue \fBkey\fR ?\fIglobPattern ...\fR?
-.VS 8.6
 The key rule only matches those key/value pairs whose keys match any
 of the given patterns (in the style of \fBstring match\fR.)
-.VE 8.6
 .TP
-\fBdict filter \fIdictionaryValue \fBscript {\fIkeyVar valueVar\fB} \fIscript\fR
+\fBdict filter \fIdictionaryValue \fBscript {\fIkeyVariable valueVariable\fB} \fIscript\fR
 .
 The script rule tests for matching by assigning the key to the
-\fIkeyVar\fR and the value to the \fIvalueVar\fR, and then evaluating
-the given script which should return a boolean value (with the
+\fIkeyVariable\fR and the value to the \fIvalueVariable\fR, and then evaluating
+the given script which should result in a boolean value (with the
 key/value pair only being included in the result of the \fBdict
 filter\fR when a true value is returned.)  Note that the first
 argument after the rule selection word is a two-element list.  If the
@@ -68,13 +72,11 @@ result. The key/value pairs are tested in the order in which the keys
 were inserted into the dictionary.
 .TP
 \fBdict filter \fIdictionaryValue \fBvalue \fR?\fIglobPattern ...\fR?
-.VS 8.6
 The value rule only matches those key/value pairs whose values match any
 of the given patterns (in the style of \fBstring match\fR.)
-.VE 8.6
 .RE
 .TP
-\fBdict for {\fIkeyVar valueVar\fB} \fIdictionaryValue body\fR
+\fBdict for {\fIkeyVariable valueVariable\fB} \fIdictionaryValue body\fR
 .
 This command takes three arguments, the first a two-element list of
 variable names (for the key and value respectively of each mapping in
@@ -114,6 +116,22 @@ It is an error to attempt to retrieve a value for a key that is not
 present in the dictionary.
 .RE
 .TP
+\fBdict getdef \fIdictionaryValue \fR?\fIkey ...\fR? \fIkey default\fR
+.TP
+\fBdict getwithdefault \fIdictionaryValue \fR?\fIkey ...\fR? \fIkey default\fR
+.VS "8.7, TIP342"
+This behaves the same as \fBdict get\fR (with at least one \fIkey\fR
+argument), returning the value that the key path maps to in the
+dictionary \fIdictionaryValue\fR, except that instead of producing an
+error because the \fIkey\fR (or one of the \fIkey\fRs on the key path)
+is absent, it returns the \fIdefault\fR argument instead.
+.RS
+.PP
+Note that there must always be at least one \fIkey\fR provided, and that
+\fBdict getdef\fR and \fBdict getwithdefault\fR are aliases for each other.
+.RE
+.VE "8.7, TIP342"
+.TP
 \fBdict incr \fIdictionaryVariable key \fR?\fIincrement\fR?
 .
 This adds the given increment value (an integer that defaults to 1 if
@@ -121,7 +139,13 @@ not specified) to the value that the given key maps to in the
 dictionary value contained in the given variable, writing the
 resulting dictionary value back to that variable. Non-existent keys
 are treated as if they map to 0. It is an error to increment a value
-for an existing key if that value is not an integer.
+for an existing key if that value is not an integer. The updated
+dictionary value is returned.
+.VS TIP508
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the incrementing operation.
+.VE TIP508
 .TP
 \fBdict info \fIdictionaryValue\fR
 .
@@ -145,7 +169,38 @@ to in the dictionary value contained in the given variable, writing
 the resulting dictionary value back to that variable. Non-existent
 keys are treated as if they map to an empty list, and it is legal for
 there to be no items to append to the list. It is an error for the
-value that the key maps to to not be representable as a list.
+value that the key maps to to not be representable as a list. The
+updated dictionary value is returned.
+.VS TIP508
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the list-appending operation.
+.VE TIP508
+.TP
+\fBdict map \fR{\fIkeyVariable valueVariable\fR} \fIdictionaryValue body\fR
+.
+This command applies a transformation to each element of a dictionary,
+returning a new dictionary. It takes three arguments: the first is a
+two-element list of variable names (for the key and value respectively of each
+mapping in the dictionary), the second the dictionary value to iterate across,
+and the third a script to be evaluated for each mapping with the key and value
+variables set appropriately (in the manner of \fBlmap\fR). In an iteration
+where the evaluated script completes normally (\fBTCL_OK\fR, as opposed to an
+\fBerror\fR, etc.) the result of the script is put into an accumulator
+dictionary using the key that is the current contents of the \fIkeyVariable\fR
+variable at that point. The result of the \fBdict map\fR command is the
+accumulator dictionary after all keys have been iterated over.
+.RS
+.PP
+If the evaluation of the body for any particular step generates a \fBbreak\fR,
+no further pairs from the dictionary will be iterated over and the \fBdict
+map\fR command will terminate successfully immediately. If the evaluation of
+the body for a particular step generates a \fBcontinue\fR result, the current
+iteration is aborted and the accumulator dictionary is not modified. The order
+of iteration is the natural order of the dictionary (typically the order in
+which the keys were added to the dictionary; the order is the same as that
+used in \fBdict for\fR).
+.RE
 .TP
 \fBdict merge \fR?\fIdictionaryValue ...\fR?
 .
@@ -177,7 +232,12 @@ This operation takes the name of a variable containing a dictionary
 value and places an updated dictionary value in that variable
 containing a mapping from the given key to the given value. When
 multiple keys are present, this operation creates or updates a chain
-of nested dictionaries.
+of nested dictionaries. The updated dictionary value is returned.
+.VS TIP508
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the value insert/update operation.
+.VE TIP508
 .TP
 \fBdict size \fIdictionaryValue\fR
 .
@@ -191,7 +251,13 @@ dictionary value in that variable that does not contain a mapping for
 the given key. Where multiple keys are present, this describes a path
 through nested dictionaries to the mapping to remove. At least one key
 must be specified, but the last key on the key-path need not exist.
-All other components on the path must exist.
+All other components on the path must exist. The updated dictionary
+value is returned.
+.VS TIP508
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the value remove operation.
+.VE TIP508
 .TP
 \fBdict update \fIdictionaryVariable key varName \fR?\fIkey varName ...\fR? \fIbody\fR
 .
@@ -207,6 +273,11 @@ are silently discarded), even if the result of \fIbody\fR is an error
 or some other kind of exceptional exit. The result of \fBdict
 update\fR is (unless some kind of error occurs) the result of the
 evaluation of \fIbody\fR.
+.VS TIP508
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the update operation.
+.VE TIP508
 .RS
 .PP
 Each \fIvarName\fR is mapped in the scope enclosing the \fBdict update\fR;
@@ -241,6 +312,11 @@ dictionary be discarded, and this also happens if the contents of
 dictionaries no longer exists. The result of \fBdict with\fR is
 (unless some kind of error occurs) the result of the evaluation of
 \fIbody\fR.
+.VS TIP508
+If \fIdictionaryVariable\fR indicates an element that does not exist of an
+array that has a default value set, the default value and will be used as the
+value of the dictionary prior to the updating operation.
+.VE TIP508
 .RS
 .PP
 The variables are mapped in the scope enclosing the \fBdict with\fR;
@@ -408,9 +484,9 @@ puts $foo
 #    prints: \fIa b foo {a b} bar 2 baz 3\fR
 .CE
 .SH "SEE ALSO"
-append(n), array(n), foreach(n), incr(n), list(n), lappend(n), set(n)
+append(n), array(n), foreach(n), incr(n), list(n), lappend(n), lmap(n), set(n)
 .SH KEYWORDS
-dictionary, create, update, lookup, iterate, filter
+dictionary, create, update, lookup, iterate, filter, map
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

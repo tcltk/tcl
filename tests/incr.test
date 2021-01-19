@@ -4,14 +4,14 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
@@ -494,6 +494,18 @@ test incr-2.31 {incr command (compiled): bad increment} {
     (reading increment)
     invoked from within
 "incr x 1a"}}
+test incr-2.32 {incr command (compiled): bad pure list increment} {
+    list [catch {incr x [list 1 2]} msg] $msg $::errorInfo
+} {1 {expected integer but got "1 2"} {expected integer but got "1 2"
+    (reading increment)
+    invoked from within
+"incr x [list 1 2]"}}
+test incr-2.33 {incr command (compiled): bad pure dict increment} {
+    list [catch {incr x [dict create 1 2]} msg] $msg $::errorInfo
+} {1 {expected integer but got "1 2"} {expected integer but got "1 2"
+    (reading increment)
+    invoked from within
+"incr x [dict create 1 2]"}}
 
 test incr-3.1 {increment by wide amount: bytecode route} {
     set x 0

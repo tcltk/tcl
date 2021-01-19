@@ -4,23 +4,23 @@
 # library procedures.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1993 The Regents of the University of California.
-# Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1993 The Regents of the University of California.
+# Copyright © 1994-1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testasync [llength [info commands testasync]]
-testConstraint threaded [::tcl::pkgconfig get threaded]
+testConstraint knownMsvcBug [expr {![info exists ::env(CI_BUILD_WITH_MSVC)]}]
 
 proc async1 {result code} {
     global aresult acode
@@ -149,7 +149,7 @@ test async-3.1 {deleting handlers} testasync {
 } {3 del2 {0 0 0 del1 del2}}
 
 test async-4.1 {async interrupting bytecode sequence} -constraints {
-    testasync threaded
+    testasync
 } -setup {
     set hm [testasync create async3]
     proc nothing {} {
@@ -157,21 +157,28 @@ test async-4.1 {async interrupting bytecode sequence} -constraints {
     }
 } -body {
     apply {{handle} {
-	global aresult
-	set aresult {Async event not delivered}
-	testasync marklater $handle
-	for {set i 0} {
-	    $i < 2500000  &&  $aresult eq "Async event not delivered"
-	} {incr i} {
-	    nothing
-	}
+    global aresult
+    set aresult {Async event not delivered}
+    testasync marklater $handle
+    # allow plenty of time to pass in case valgrind is running
+    set start [clock seconds]
+    while {
+	[clock seconds] - $start < 180 && $aresult eq "Async event not delivered"
+    } {
+	# be less busy
+	after 100
+	nothing
+    }
 	return $aresult
     }} $hm
 } -result {test pattern} -cleanup {
+    # give other threads some time to go way so that valgrind doesn't pick up
+    # "still reachable" cases from early thread termination
+    after 100
     testasync delete $hm
 }
 test async-4.2 {async interrupting straight bytecode sequence} -constraints {
-    testasync threaded
+    testasync
 } -setup {
     set hm [testasync create async3]
 } -body {
@@ -179,16 +186,24 @@ test async-4.2 {async interrupting straight bytecode sequence} -constraints {
 	global aresult
 	set aresult {Async event not delivered}
 	testasync marklater $handle
-	for {set i 0} {
-	    $i < 2500000  &&  $aresult eq "Async event not delivered"
-	} {incr i} {}
+	# allow plenty of time to pass in case valgrind is running
+	set start [clock seconds]
+	while {
+		[clock seconds] - $start < 180 && $aresult eq "Async event not delivered"
+	} {
+		# be less busy
+	    after 100
+	}
 	return $aresult
     }} $hm
 } -result {test pattern} -cleanup {
+    # give other threads some time to go way so that valgrind doesn't pick up
+    # "still reachable" cases from early thread termination
+    after 100
     testasync delete $hm
 }
 test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
-    testasync threaded
+    testasync knownMsvcBug
 } -setup {
     set hm [testasync create async3]
 } -body {
@@ -201,6 +216,9 @@ test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
 	return $aresult
     }]] $hm
 } -result {test pattern} -cleanup {
+    # give other threads some time to go way so that valgrind doesn't pick up
+    # "still reachable" cases from early thread termination
+    after 100
     testasync delete $hm
 }
 

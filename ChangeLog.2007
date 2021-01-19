@@ -1426,7 +1426,7 @@
 	initialization assumptions of the TIP 280 code in CompileWord().
 
 	* generic/tclCompExpr.c:	Suppress the attempt to convert to
-	numeric when pre-compiling a constant expresion indicates an error.
+	numeric when pre-compiling a constant expression indicates an error.
 
 2007-08-22  Miguel Sofer  <msofer@users.sf.net>
 

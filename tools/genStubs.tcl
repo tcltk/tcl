@@ -4,13 +4,11 @@
 #	interface.
 #
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 # Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-
-package require Tcl 8.4
 
 namespace eval genStubs {
     # libraryName --
@@ -193,12 +191,28 @@ proc genStubs::declare {args} {
     regsub -all "\[ \t\n\]+" [string trim $decl] " " decl
     set decl [parseDecl $decl]
 
-    foreach platform $platformList {
-	if {$decl ne ""} {
-	    set stubs($curName,$platform,$index) $decl
-	    if {![info exists stubs($curName,$platform,lastNum)] \
-		    || ($index > $stubs($curName,$platform,lastNum))} {
-		set stubs($curName,$platform,lastNum) $index
+    if {([lindex $platformList 0] eq "deprecated")} {
+	set stubs($curName,deprecated,$index) [lindex $platformList 1]
+	set stubs($curName,generic,$index) $decl
+	if {![info exists stubs($curName,generic,lastNum)] \
+		|| ($index > $stubs($curName,generic,lastNum))} {
+	    set stubs($curName,generic,lastNum) $index
+	}
+    } elseif {([lindex $platformList 0] eq "nostub")} {
+	set stubs($curName,nostub,$index) [lindex $platformList 1]
+	set stubs($curName,generic,$index) $decl
+	if {![info exists stubs($curName,generic,lastNum)] \
+		|| ($index > $stubs($curName,generic,lastNum))} {
+	    set stubs($curName,generic,lastNum) $index
+	}
+    } else {
+	foreach platform $platformList {
+	    if {$decl ne ""} {
+		set stubs($curName,$platform,$index) $decl
+		    if {![info exists stubs($curName,$platform,lastNum)] \
+			    || ($index > $stubs($curName,$platform,lastNum))} {
+			set stubs($curName,$platform,lastNum) $index
+		}
 	    }
 	}
     }
@@ -244,7 +258,7 @@ proc genStubs::rewriteFile {file text} {
     }
     set in [open ${file} r]
     set out [open ${file}.new w]
-    fconfigure $out -translation lf
+    fconfigure $out -translation lf -encoding utf-8
 
     while {![eof $in]} {
 	set line [gets $in]
@@ -283,7 +297,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
     set text ""
     switch $plat {
 	win {
-	    append text "#if defined(__WIN32__)"
+	    append text "#if defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " || defined(__CYGWIN__)"
 	    }
@@ -294,7 +308,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
 	    append text "#endif /* WIN */\n"
 	}
 	unix {
-	    append text "#if !defined(__WIN32__)"
+	    append text "#if !defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " && !defined(__CYGWIN__)"
 	    }
@@ -320,7 +334,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
 	    append text "#endif /* AQUA */\n"
 	}
 	x11 {
-	    append text "#if !(defined(__WIN32__)"
+	    append text "#if !(defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " || defined(__CYGWIN__)"
 	    }
@@ -457,12 +471,23 @@ proc genStubs::parseArg {arg} {
 
 proc genStubs::makeDecl {name decl index} {
     variable scspec
+    variable stubs
+    variable libraryName
     lassign $decl rtype fname args
 
     append text "/* $index */\n"
-    set line "$scspec $rtype"
+    if {[info exists stubs($name,deprecated,$index)]} {
+	append text "[string toupper $libraryName]_DEPRECATED(\"$stubs($name,deprecated,$index)\")\n"
+	set line "$rtype"
+    } elseif {[string range $rtype end-5 end] eq "MP_WUR"} {
+	set line "$scspec [string trim [string range $rtype 0 end-6]]"
+    } else {
+	set line "$scspec $rtype"
+    }
     set count [expr {2 - ([string length $line] / 8)}]
-    append line [string range "\t\t\t" 0 $count]
+    if {$count >= 0} {
+	append line [string range "\t\t\t" 0 $count]
+    }
     set pad [expr {24 - [string length $line]}]
     if {$pad <= 0} {
 	append line " "
@@ -502,7 +527,7 @@ proc genStubs::makeDecl {name decl index} {
 	    }
 	    append line ", ...)"
 	    if {[lindex $args end] eq "{const char *} format"} {
-		append line " TCL_FORMAT_PRINTF(" [expr [llength $args] - 1] ", " [llength $args] ")"
+		append line " TCL_FORMAT_PRINTF(" [expr {[llength $args] - 1}] ", " [llength $args] ")"
 	    }
 	}
 	default {
@@ -526,6 +551,9 @@ proc genStubs::makeDecl {name decl index} {
 	    }
 	    append line ")"
 	}
+    }
+    if {[string range $rtype end-5 end] eq "MP_WUR"} {
+	append line " MP_WUR"
     }
     return "$text$line;\n"
 }
@@ -571,17 +599,27 @@ proc genStubs::makeMacro {name decl index} {
 
 proc genStubs::makeSlot {name decl index} {
     lassign $decl rtype fname args
+    variable stubs
 
     set lfname [string tolower [string index $fname 0]]
     append lfname [string range $fname 1 end]
 
     set text "    "
+    if {[info exists stubs($name,deprecated,$index)]} {
+	append text "TCL_DEPRECATED_API(\"$stubs($name,deprecated,$index)\") "
+    } elseif {[info exists stubs($name,nostub,$index)]} {
+	append text "TCL_DEPRECATED_API(\"$stubs($name,nostub,$index)\") "
+    }
     if {$args eq ""} {
 	append text $rtype " *" $lfname "; /* $index */\n"
 	return $text
     }
     if {[string range $rtype end-8 end] eq "__stdcall"} {
 	append text [string trim [string range $rtype 0 end-9]] " (__stdcall *" $lfname ") "
+    } elseif {[string range $rtype 0 11] eq "TCL_NORETURN"} {
+	append text "TCL_NORETURN1 " [string trim [string range $rtype 12 end]] " (*" $lfname ") "
+    } elseif {[string range $rtype end-5 end] eq "MP_WUR"} {
+	append text [string trim [string range $rtype 0 end-6]] " (*" $lfname ") "
     } else {
 	append text $rtype " (*" $lfname ") "
     }
@@ -602,7 +640,7 @@ proc genStubs::makeSlot {name decl index} {
 	    }
 	    append text ", ...)"
 	    if {[lindex $args end] eq "{const char *} format"} {
-		append text " TCL_FORMAT_PRINTF(" [expr [llength $args] - 1] ", " [llength $args] ")"
+		append text " TCL_FORMAT_PRINTF(" [expr {[llength $args] - 1}] ", " [llength $args] ")"
 	    }
 	}
 	default {
@@ -619,6 +657,9 @@ proc genStubs::makeSlot {name decl index} {
 	}
     }
 
+    if {[string range $rtype end-5 end] eq "MP_WUR"} {
+	append text " MP_WUR"
+    }
     append text "; /* $index */\n"
     return $text
 }
@@ -682,7 +723,13 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 	for {set i 0} {$i <= $lastNum} {incr i} {
 	    set slots [array names stubs $name,*,$i]
 	    set emit 0
-	    if {[info exists stubs($name,generic,$i)]} {
+	    if {[info exists stubs($name,deprecated,$i)]} {
+		append text [$slotProc $name $stubs($name,generic,$i) $i]
+		set emit 1
+	    } elseif {[info exists stubs($name,nostub,$i)]} {
+		append text [$slotProc $name $stubs($name,generic,$i) $i]
+		set emit 1
+	    } elseif {[info exists stubs($name,generic,$i)]} {
 		if {[llength $slots] > 1} {
 		    puts stderr "conflicting generic and platform entries:\
 			    $name $i"
@@ -828,7 +875,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 	    append text [addPlatformGuard $plat $temp {} true]
 	}
 	## macosx ##
-	if {$block(macosx) && !$block(aqua) && !$block(x11)} {
+	if {($block(unix) || $block(macosx)) && !$block(aqua) && !$block(x11)} {
 	    set temp {}
 	    set lastNum -1
 	    foreach plat {unix macosx} {
@@ -983,10 +1030,12 @@ proc genStubs::emitHeader {name} {
 	append text "#define ${CAPName}_STUBS_REVISION $revision\n"
     }
 
+    append text "\n#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
+
     emitDeclarations $name text
 
     if {[info exists hooks($name)]} {
-	append text "\ntypedef struct ${capName}StubHooks {\n"
+	append text "\ntypedef struct {\n"
 	foreach hook $hooks($name) {
 	    set capHook [string toupper [string index $hook 0]]
 	    append capHook [string range $hook 1 end]
@@ -1000,14 +1049,17 @@ proc genStubs::emitHeader {name} {
 	append text "    int epoch;\n"
 	append text "    int revision;\n"
     }
-    append text "    const struct ${capName}StubHooks *hooks;\n\n"
+    if {[info exists hooks($name)]} {
+	append text "    const ${capName}StubHooks *hooks;\n\n"
+    } else {
+	append text "    void *hooks;\n\n"
+    }
 
     emitSlots $name text
 
     append text "} ${capName}Stubs;\n\n"
 
-    append text "#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
-    append text "extern const ${capName}Stubs *${name}StubsPtr;\n"
+    append text "extern const ${capName}Stubs *${name}StubsPtr;\n\n"
     append text "#ifdef __cplusplus\n}\n#endif\n"
 
     emitMacros $name text

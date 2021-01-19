@@ -47,9 +47,9 @@
  * library calls.
  */
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 
-typedef struct ThreadSpecificData {
+typedef struct {
     struct passwd pwd;
 #if defined(HAVE_GETPWNAM_R_5) || defined(HAVE_GETPWUID_R_5)
 #define NEED_PW_CLEANER 1
@@ -99,21 +99,29 @@ static Tcl_Mutex compatLock;
 #undef NEED_COPYPWD
 #undef NEED_COPYSTRING
 
+#if !defined(HAVE_GETGRNAM_R_5) && !defined(HAVE_GETGRNAM_R_4)
+#define NEED_COPYGRP 1
+static int		CopyGrp(struct group *tgtPtr, char *buf, int buflen);
+#endif
+
+#if !defined(HAVE_GETPWNAM_R_5) && !defined(HAVE_GETPWNAM_R_4)
+#define NEED_COPYPWD 1
+static int		CopyPwd(struct passwd *tgtPtr, char *buf, int buflen);
+#endif
+
 static int		CopyArray(char **src, int elsize, char *buf,
 			    int buflen);
-static int		CopyGrp(struct group *tgtPtr, char *buf, int buflen);
 static int		CopyHostent(struct hostent *tgtPtr, char *buf,
 			    int buflen);
-static int		CopyPwd(struct passwd *tgtPtr, char *buf, int buflen);
 static int		CopyString(const char *src, char *buf, int buflen);
 
 #endif
 
 #ifdef NEED_PW_CLEANER
-static void		FreePwBuf(ClientData ignored);
+static void		FreePwBuf(ClientData dummy);
 #endif
 #ifdef NEED_GR_CLEANER
-static void		FreeGrBuf(ClientData ignored);
+static void		FreeGrBuf(ClientData dummy);
 #endif
 #endif /* TCL_THREADS */
 
@@ -174,7 +182,7 @@ struct passwd *
 TclpGetPwNam(
     const char *name)
 {
-#if !defined(TCL_THREADS)
+#if !TCL_THREADS
     return getpwnam(name);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -193,7 +201,7 @@ TclpGetPwNam(
 	if (tsdPtr->pbuflen < 1) {
 	    tsdPtr->pbuflen = 1024;
 	}
-	tsdPtr->pbuf = ckalloc(tsdPtr->pbuflen);
+	tsdPtr->pbuf = (char *)ckalloc(tsdPtr->pbuflen);
 	Tcl_CreateThreadExitHandler(FreePwBuf, NULL);
     }
     while (1) {
@@ -206,7 +214,7 @@ TclpGetPwNam(
 	    return NULL;
 	}
 	tsdPtr->pbuflen *= 2;
-	tsdPtr->pbuf = ckrealloc(tsdPtr->pbuf, tsdPtr->pbuflen);
+	tsdPtr->pbuf = (char *)ckrealloc(tsdPtr->pbuf, tsdPtr->pbuflen);
     }
     return (pwPtr != NULL ? &tsdPtr->pwd : NULL);
 
@@ -214,7 +222,6 @@ TclpGetPwNam(
     return getpwnam_r(name, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf));
 
 #else
-#define NEED_COPYPWD 1
     struct passwd *pwPtr;
 
     Tcl_MutexLock(&compatLock);
@@ -255,7 +262,7 @@ struct passwd *
 TclpGetPwUid(
     uid_t uid)
 {
-#if !defined(TCL_THREADS)
+#if !TCL_THREADS
     return getpwuid(uid);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -274,7 +281,7 @@ TclpGetPwUid(
 	if (tsdPtr->pbuflen < 1) {
 	    tsdPtr->pbuflen = 1024;
 	}
-	tsdPtr->pbuf = ckalloc(tsdPtr->pbuflen);
+	tsdPtr->pbuf = (char *)ckalloc(tsdPtr->pbuflen);
 	Tcl_CreateThreadExitHandler(FreePwBuf, NULL);
     }
     while (1) {
@@ -287,7 +294,7 @@ TclpGetPwUid(
 	    return NULL;
 	}
 	tsdPtr->pbuflen *= 2;
-	tsdPtr->pbuf = ckrealloc(tsdPtr->pbuf, tsdPtr->pbuflen);
+	tsdPtr->pbuf = (char *)ckrealloc(tsdPtr->pbuf, tsdPtr->pbuflen);
     }
     return (pwPtr != NULL ? &tsdPtr->pwd : NULL);
 
@@ -295,7 +302,6 @@ TclpGetPwUid(
     return getpwuid_r(uid, &tsdPtr->pwd, tsdPtr->pbuf, sizeof(tsdPtr->pbuf));
 
 #else
-#define NEED_COPYPWD 1
     struct passwd *pwPtr;
 
     Tcl_MutexLock(&compatLock);
@@ -330,7 +336,7 @@ TclpGetPwUid(
 #ifdef NEED_PW_CLEANER
 static void
 FreePwBuf(
-    ClientData ignored)
+    TCL_UNUSED(ClientData))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -359,12 +365,12 @@ struct group *
 TclpGetGrNam(
     const char *name)
 {
-#if !defined(TCL_THREADS)
+#if !TCL_THREADS
     return getgrnam(name);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-#ifdef HAVE_GETGRNAM_R_5
+#if defined(HAVE_GETGRNAM_R_5)
     struct group *grPtr = NULL;
 
     /*
@@ -378,7 +384,7 @@ TclpGetGrNam(
 	if (tsdPtr->gbuflen < 1) {
 	    tsdPtr->gbuflen = 1024;
 	}
-	tsdPtr->gbuf = ckalloc(tsdPtr->gbuflen);
+	tsdPtr->gbuf = (char *)ckalloc(tsdPtr->gbuflen);
 	Tcl_CreateThreadExitHandler(FreeGrBuf, NULL);
     }
     while (1) {
@@ -391,7 +397,7 @@ TclpGetGrNam(
 	    return NULL;
 	}
 	tsdPtr->gbuflen *= 2;
-	tsdPtr->gbuf = ckrealloc(tsdPtr->gbuf, tsdPtr->gbuflen);
+	tsdPtr->gbuf = (char *)ckrealloc(tsdPtr->gbuf, tsdPtr->gbuflen);
     }
     return (grPtr != NULL ? &tsdPtr->grp : NULL);
 
@@ -399,7 +405,6 @@ TclpGetGrNam(
     return getgrnam_r(name, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf));
 
 #else
-#define NEED_COPYGRP 1
     struct group *grPtr;
 
     Tcl_MutexLock(&compatLock);
@@ -440,7 +445,7 @@ struct group *
 TclpGetGrGid(
     gid_t gid)
 {
-#if !defined(TCL_THREADS)
+#if !TCL_THREADS
     return getgrgid(gid);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -459,7 +464,7 @@ TclpGetGrGid(
 	if (tsdPtr->gbuflen < 1) {
 	    tsdPtr->gbuflen = 1024;
 	}
-	tsdPtr->gbuf = ckalloc(tsdPtr->gbuflen);
+	tsdPtr->gbuf = (char *)ckalloc(tsdPtr->gbuflen);
 	Tcl_CreateThreadExitHandler(FreeGrBuf, NULL);
     }
     while (1) {
@@ -472,7 +477,7 @@ TclpGetGrGid(
 	    return NULL;
 	}
 	tsdPtr->gbuflen *= 2;
-	tsdPtr->gbuf = ckrealloc(tsdPtr->gbuf, tsdPtr->gbuflen);
+	tsdPtr->gbuf = (char *)ckrealloc(tsdPtr->gbuf, tsdPtr->gbuflen);
     }
     return (grPtr != NULL ? &tsdPtr->grp : NULL);
 
@@ -480,7 +485,6 @@ TclpGetGrGid(
     return getgrgid_r(gid, &tsdPtr->grp, tsdPtr->gbuf, sizeof(tsdPtr->gbuf));
 
 #else
-#define NEED_COPYGRP 1
     struct group *grPtr;
 
     Tcl_MutexLock(&compatLock);
@@ -515,7 +519,7 @@ TclpGetGrGid(
 #ifdef NEED_GR_CLEANER
 static void
 FreeGrBuf(
-    ClientData ignored)
+    TCL_UNUSED(ClientData))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -544,23 +548,23 @@ struct hostent *
 TclpGetHostByName(
     const char *name)
 {
-#if !defined(TCL_THREADS) || defined(HAVE_MTSAFE_GETHOSTBYNAME)
+#if !TCL_THREADS || defined(HAVE_MTSAFE_GETHOSTBYNAME)
     return gethostbyname(name);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETHOSTBYNAME_R_5)
-    int h_errno;
+    int local_errno;
 
     return gethostbyname_r(name, &tsdPtr->hent, tsdPtr->hbuf,
-			   sizeof(tsdPtr->hbuf), &h_errno);
+			   sizeof(tsdPtr->hbuf), &local_errno);
 
 #elif defined(HAVE_GETHOSTBYNAME_R_6)
     struct hostent *hePtr = NULL;
-    int h_errno, result;
+    int local_errno, result;
 
     result = gethostbyname_r(name, &tsdPtr->hent, tsdPtr->hbuf,
-	    sizeof(tsdPtr->hbuf), &hePtr, &h_errno);
+	    sizeof(tsdPtr->hbuf), &hePtr, &local_errno);
     return (result == 0) ? hePtr : NULL;
 
 #elif defined(HAVE_GETHOSTBYNAME_R_3)
@@ -614,23 +618,23 @@ TclpGetHostByAddr(
     int length,
     int type)
 {
-#if !defined(TCL_THREADS) || defined(HAVE_MTSAFE_GETHOSTBYADDR)
+#if !TCL_THREADS || defined(HAVE_MTSAFE_GETHOSTBYADDR)
     return gethostbyaddr(addr, length, type);
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #if defined(HAVE_GETHOSTBYADDR_R_7)
-    int h_errno;
+    int local_errno;
 
     return gethostbyaddr_r(addr, length, type, &tsdPtr->hent, tsdPtr->hbuf,
-	    sizeof(tsdPtr->hbuf), &h_errno);
+	    sizeof(tsdPtr->hbuf), &local_errno);
 
 #elif defined(HAVE_GETHOSTBYADDR_R_8)
     struct hostent *hePtr;
-    int h_errno;
+    int local_errno;
 
     return (gethostbyaddr_r(addr, length, type, &tsdPtr->hent, tsdPtr->hbuf,
-		sizeof(tsdPtr->hbuf), &hePtr, &h_errno) == 0)
+		sizeof(tsdPtr->hbuf), &hePtr, &local_errno) == 0)
 	    ? &tsdPtr->hent : NULL;
 #else
 #define NEED_COPYHOSTENT 1
@@ -681,8 +685,8 @@ CopyGrp(
     char *buf,
     int buflen)
 {
-    register char *p = buf;
-    register int copied, len = 0;
+    char *p = buf;
+    int copied, len = 0;
 
     /*
      * Copy username.
@@ -883,7 +887,7 @@ CopyArray(
     int buflen)			/* Size of buffer. */
 {
     int i, j, len = 0;
-    char *p, **new;
+    char *p, **newBuffer;
 
     if (src == NULL) {
 	return 0;
@@ -899,7 +903,7 @@ CopyArray(
 	return -1;
     }
 
-    new = (char **) buf;
+    newBuffer = (char **)buf;
     p = buf + len;
 
     for (j = 0; j < i; j++) {
@@ -910,10 +914,10 @@ CopyArray(
 	    return -1;
 	}
 	memcpy(p, src[j], sz);
-	new[j] = p;
+	newBuffer[j] = p;
 	p = buf + len;
     }
-    new[j] = NULL;
+    newBuffer[j] = NULL;
 
     return len;
 }
@@ -984,19 +988,26 @@ CopyString(
 
 int
 TclWinCPUID(
-    unsigned int index,		/* Which CPUID value to retrieve. */
-    unsigned int *regsPtr)	/* Registers after the CPUID. */
+    int index,		/* Which CPUID value to retrieve. */
+    int *regsPtr)	/* Registers after the CPUID. */
 {
     int status = TCL_ERROR;
 
     /* See: <http://en.wikipedia.org/wiki/CPUID> */
 #if defined(HAVE_CPUID)
-    __asm__ __volatile__("mov %%ebx, %%edi     \n\t" /* save %ebx */
+#if defined(__x86_64__) || defined(_M_AMD64) || defined (_M_X64)
+    __asm__ __volatile__("movq %%rbx, %%rsi     \n\t" /* save %rbx */
                  "cpuid            \n\t"
-                 "mov %%ebx, %%esi   \n\t" /* save what cpuid just put in %ebx */
-                 "mov %%edi, %%ebx  \n\t" /* restore the old %ebx */
+                 "xchgq %%rsi, %%rbx   \n\t" /* restore the old %rbx */
                  : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
-                 : "a"(index) : "edi");
+                 : "a"(index));
+#else
+    __asm__ __volatile__("mov %%ebx, %%esi     \n\t" /* save %ebx */
+                 "cpuid            \n\t"
+                 "xchg %%esi, %%ebx   \n\t" /* restore the old %ebx */
+                 : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
+                 : "a"(index));
+#endif
     status = TCL_OK;
 #endif
     return status;
