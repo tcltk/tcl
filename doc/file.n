@@ -49,7 +49,7 @@ On Unix, \fB\-group\fR gets or sets the group name for the file. A
 group id can be given to the command, but it returns a group name.
 \fB\-owner\fR gets or sets the user name of the owner of the file. The
 command returns the owner name, but the numerical id can be passed when
-setting the owner. \fB-permissions\fR retrieves or sets a file's access
+setting the owner. \fB\-permissions\fR retrieves or sets a file's access
 permissions, using octal notation by default. This option also provides
 limited support for setting permissions using the symbolic notation
 accepted by the \fBchmod\fR command, following the form
