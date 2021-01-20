@@ -38,11 +38,11 @@ generated.  On Windows, FAT file systems do not support access time.
 .TP
 \fBfile attributes \fIname\fR ?\fBoption value option value...\fR?
 .
-This subcommand returns or sets platform specific values associated
-with a file. The first form returns a list of the platform specific
-flags and their values. The second form returns the value for the
-specific option. The third form sets one or more of the values. The
-values are as follows:
+This subcommand returns or sets platform-specific values associated
+with a file. The first form returns a list of the platform-specific
+options and their values. The second form returns the value for the
+given option. The third form sets one or more of the values. The values
+are as follows:
 .RS
 .PP
 On Unix, \fB\-group\fR gets or sets the group name for the file. A
