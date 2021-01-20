@@ -8924,7 +8924,7 @@ ExecuteExtendedBinaryMathOp(
 	 * We refuse to accept exponent arguments that exceed one mp_digit
 	 * which means the max exponent value is 2**28-1 = 0x0FFFFFFF =
 	 * 268435455, which fits into a signed 32 bit int which is within the
-	 * range of the long int type. This means any numeric Tcl_Obj value
+	 * range of the long type. This means any numeric Tcl_Obj value
 	 * not using TCL_NUMBER_LONG type must hold a value larger than we
 	 * accept.
 	 */
@@ -9675,20 +9675,20 @@ ValidatePcAndStackTop(
 {
     int stackUpperBound = codePtr->maxStackDepth;
 				/* Greatest legal value for stackTop. */
-    unsigned relativePc = (unsigned) (pc - codePtr->codeStart);
-    unsigned long codeStart = (unsigned long) codePtr->codeStart;
-    unsigned long codeEnd = (unsigned long)
+    size_t relativePc = (size_t) (pc - codePtr->codeStart);
+    size_t codeStart = (size_t) codePtr->codeStart;
+    size_t codeEnd = (size_t)
 	    (codePtr->codeStart + codePtr->numCodeBytes);
     unsigned char opCode = *pc;
 
-    if (((unsigned long) pc < codeStart) || ((unsigned long) pc > codeEnd)) {
+    if (((size_t) pc < codeStart) || ((size_t) pc > codeEnd)) {
 	fprintf(stderr, "\nBad instruction pc 0x%p in TclNRExecuteByteCode\n",
 		pc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad pc");
     }
     if ((unsigned) opCode > LAST_INST_OPCODE) {
-	fprintf(stderr, "\nBad opcode %d at pc %u in TclNRExecuteByteCode\n",
-		(unsigned) opCode, relativePc);
+	fprintf(stderr, "\nBad opcode %d at pc %lu in TclNRExecuteByteCode\n",
+		(unsigned) opCode, (unsigned long)relativePc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad opcode");
     }
     if (checkStack &&
@@ -9696,8 +9696,8 @@ ValidatePcAndStackTop(
 	int numChars;
 	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL, NULL);
 
-	fprintf(stderr, "\nBad stack top %d at pc %u in TclNRExecuteByteCode (min 0, max %i)",
-		stackTop, relativePc, stackUpperBound);
+	fprintf(stderr, "\nBad stack top %d at pc %lu in TclNRExecuteByteCode (min 0, max %i)",
+		stackTop, (unsigned long)relativePc, stackUpperBound);
 	if (cmd != NULL) {
 	    Tcl_Obj *message;
 
@@ -10284,7 +10284,7 @@ EvalStatsCmd(
     Tcl_AppendPrintfToObj(objPtr, "\n----------------------------------------------------------------\n");
     Tcl_AppendPrintfToObj(objPtr,
 	    "Compilation and execution statistics for interpreter %#lx\n",
-	    (long int)iPtr);
+	    (unsigned long)(size_t)iPtr);
 
     Tcl_AppendPrintfToObj(objPtr, "\nNumber ByteCodes executed\t%ld\n",
 	    statsPtr->numExecutions);
