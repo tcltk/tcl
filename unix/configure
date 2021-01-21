@@ -719,6 +719,7 @@ LD_SEARCH_FLAGS
 CC_SEARCH_FLAGS
 LDFLAGS_OPTIMIZE
 LDFLAGS_DEBUG
+CFLAGS_NOLTO
 CFLAGS_WARNING
 CFLAGS_OPTIMIZE
 CFLAGS_DEBUG
@@ -7332,6 +7333,41 @@ printf "%s\n" "$tcl_cv_cast_to_union" >&6; }
 printf "%s\n" "#define HAVE_CAST_TO_UNION 1" >>confdefs.h
 
 	fi
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for working -fno-lto" >&5
+printf %s "checking for working -fno-lto... " >&6; }
+if test ${ac_cv_nolto+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_nolto=yes
+else $as_nop
+  ac_cv_nolto=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_nolto" >&5
+printf "%s\n" "$ac_cv_nolto" >&6; }
+	CFLAGS=$hold_cflags
+	if test "$ac_cv_nolto" = "yes" ; then
+	    CFLAGS_NOLTO="-fno-lto"
+	else
+	    CFLAGS_NOLTO=""
+	fi
 
     ac_fn_c_check_header_compile "$LINENO" "stdbool.h" "ac_cv_header_stdbool_h" "$ac_includes_default"
 if test "x$ac_cv_header_stdbool_h" = xyes
@@ -7345,6 +7381,7 @@ fi
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
     # would use TCL_DL_LIBS instead of TCL_LIBS.
+
 
 
 
