@@ -2054,6 +2054,19 @@ dnl # preprocessing tests use only CPPFLAGS.
 	    AC_DEFINE(HAVE_CAST_TO_UNION, 1,
 		    [Defined when compiler supports casting to union type.])
 	fi
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
+	AC_CACHE_CHECK(for working -fno-lto,
+	    ac_cv_nolto,
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+	    [ac_cv_nolto=yes],
+	    [ac_cv_nolto=no])
+	)
+	CFLAGS=$hold_cflags
+	if test "$ac_cv_nolto" = "yes" ; then
+	    CFLAGS_NOLTO="-fno-lto"
+	else
+	    CFLAGS_NOLTO=""
+	fi
 
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
@@ -2068,6 +2081,7 @@ dnl # preprocessing tests use only CPPFLAGS.
     AC_SUBST(CFLAGS_DEBUG)
     AC_SUBST(CFLAGS_OPTIMIZE)
     AC_SUBST(CFLAGS_WARNING)
+    AC_SUBST(CFLAGS_NOLTO)
 
     AC_SUBST(LDFLAGS)
     AC_SUBST(LDFLAGS_DEBUG)
