@@ -145,7 +145,7 @@ declare 32 {
 	    int *boolPtr)
 }
 declare 33 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -172,7 +172,7 @@ declare 40 {
     const Tcl_ObjType *Tcl_GetObjType(const char *typeName)
 }
 declare 41 {
-    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    char *TclGetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 42 {
     void Tcl_InvalidateStringRep(Tcl_Obj *objPtr)
@@ -1601,7 +1601,7 @@ declare 433 {
 
 # introduced in 8.4a3
 declare 434 {
-    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 
 # TIP#15 (math function introspection) dkf
@@ -2467,8 +2467,23 @@ declare 648 {
 
 # TIP #568
 declare 649 {
-    unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int *lengthPtr)
+}
+declare 650 {
+    unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    size_t *lengthPtr)
+}
+
+# TIP #481
+declare 651 {
+    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 652 {
+    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 653 {
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

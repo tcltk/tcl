@@ -1882,7 +1882,7 @@ ZipFSMountBufferObjCmd(
 	return TCL_OK;
     }
 
-    data = TclGetBytesFromObj(interp, objv[2], &length);
+    data = Tcl_GetBytesFromObj(interp, objv[2], &length);
     if (data == NULL) {
 	return TCL_ERROR;
     }
@@ -3035,7 +3035,7 @@ ZipFSListObjCmd(
     }
     if (objc == 3) {
 	size_t n;
-	char *what = TclGetStringFromObj(objv[1], &n);
+	char *what = Tcl_GetStringFromObj(objv[1], &n);
 
 	if ((n >= 2) && (strncmp(what, "-glob", n) == 0)) {
 	    pattern = TclGetString(objv[2]);
@@ -4130,13 +4130,13 @@ ZipFSMatchInDirectoryProc(
      * The prefix that gets prepended to results.
      */
 
-    prefix = TclGetStringFromObj(pathPtr, &prefixLen);
+    prefix = Tcl_GetStringFromObj(pathPtr, &prefixLen);
 
     /*
      * The (normalized) path we're searching.
      */
 
-    path = TclGetStringFromObj(normPathPtr, &len);
+    path = Tcl_GetStringFromObj(normPathPtr, &len);
 
     Tcl_DStringInit(&dsPref);
     Tcl_DStringAppend(&dsPref, prefix, prefixLen);
@@ -4308,7 +4308,7 @@ ZipFSPathInFilesystemProc(
 	return -1;
     }
 
-    path = TclGetStringFromObj(pathPtr, &len);
+    path = Tcl_GetStringFromObj(pathPtr, &len);
     if (strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) != 0) {
 	return -1;
     }

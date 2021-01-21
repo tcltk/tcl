@@ -431,7 +431,7 @@ EncodingConvertfromObjCmd(
     /*
      * Convert the string into a byte array in 'ds'
      */
-    bytesPtr = (char *) TclGetBytesFromObj(interp, data, &length);
+    bytesPtr = (char *) Tcl_GetBytesFromObj(interp, data, &length);
     if (bytesPtr == NULL) {
 	Tcl_FreeEncoding(encoding);
 	return TCL_ERROR;
@@ -500,7 +500,7 @@ EncodingConverttoObjCmd(
      * Convert the string to a byte array in 'ds'
      */
 
-    stringPtr = TclGetStringFromObj(data, &length);
+    stringPtr = Tcl_GetStringFromObj(data, &length);
     Tcl_UtfToExternalDString(encoding, stringPtr, length, &ds);
     Tcl_SetObjResult(interp,
 		     Tcl_NewByteArrayObj((unsigned char*) Tcl_DStringValue(&ds),

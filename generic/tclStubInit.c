@@ -531,7 +531,6 @@ static const TclIntStubs tclIntStubs = {
     TclStaticPackage, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
     TclAppendUnicodeToObj, /* 259 */
-    TclGetBytesFromObj, /* 260 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -791,7 +790,7 @@ const TclStubs tclStubs = {
     TclFreeObj, /* 30 */
     Tcl_GetBoolean, /* 31 */
     Tcl_GetBooleanFromObj, /* 32 */
-    Tcl_GetByteArrayFromObj, /* 33 */
+    TclGetByteArrayFromObj, /* 33 */
     Tcl_GetDouble, /* 34 */
     Tcl_GetDoubleFromObj, /* 35 */
     0, /* 36 */
@@ -799,7 +798,7 @@ const TclStubs tclStubs = {
     Tcl_GetIntFromObj, /* 38 */
     Tcl_GetLongFromObj, /* 39 */
     Tcl_GetObjType, /* 40 */
-    Tcl_GetStringFromObj, /* 41 */
+    TclGetStringFromObj, /* 41 */
     Tcl_InvalidateStringRep, /* 42 */
     Tcl_ListObjAppendList, /* 43 */
     Tcl_ListObjAppendElement, /* 44 */
@@ -1200,7 +1199,7 @@ const TclStubs tclStubs = {
     Tcl_AttemptDbCkrealloc, /* 431 */
     Tcl_AttemptSetObjLength, /* 432 */
     Tcl_GetChannelThread, /* 433 */
-    Tcl_GetUnicodeFromObj, /* 434 */
+    TclGetUnicodeFromObj, /* 434 */
     0, /* 435 */
     0, /* 436 */
     Tcl_SubstObj, /* 437 */
@@ -1415,7 +1414,11 @@ const TclStubs tclStubs = {
     Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
-    Tcl_GetBytesFromObj, /* 649 */
+    TclGetBytesFromObj, /* 649 */
+    Tcl_GetBytesFromObj, /* 650 */
+    Tcl_GetStringFromObj, /* 651 */
+    Tcl_GetUnicodeFromObj, /* 652 */
+    Tcl_GetByteArrayFromObj, /* 653 */
 };
 
 /* !END!: Do not edit above this line. */

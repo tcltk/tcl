@@ -279,7 +279,7 @@ Tcl_TraceObjCmd(
 
 	TclNewObj(opsList);
 	Tcl_IncrRefCount(opsList);
-	flagOps = TclGetStringFromObj(objv[3], &numFlags);
+	flagOps = Tcl_GetStringFromObj(objv[3], &numFlags);
 	if (numFlags == 0) {
 	    Tcl_DecrRefCount(opsList);
 	    goto badVarOps;
@@ -465,7 +465,7 @@ TraceExecutionObjCmd(
 		break;
 	    }
 	}
-	command = TclGetStringFromObj(objv[5], &commandLength);
+	command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	length = commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)Tcl_Alloc(
@@ -702,7 +702,7 @@ TraceCommandObjCmd(
 	    }
 	}
 
-	command = TclGetStringFromObj(objv[5], &commandLength);
+	command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	length = commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)Tcl_Alloc(
@@ -905,7 +905,7 @@ TraceVariableObjCmd(
 		break;
 	    }
 	}
-	command = TclGetStringFromObj(objv[5], &commandLength);
+	command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	length = commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    CombinedTraceVarInfo *ctvarPtr = (CombinedTraceVarInfo *)Tcl_Alloc(

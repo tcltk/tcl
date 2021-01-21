@@ -258,10 +258,6 @@ typedef void *ClientData;
  *
  * The following invariant should hold for any long value 'longVal':
  *	longVal == Tcl_WideAsLong(Tcl_LongAsWide(longVal))
- *
- * Note on converting between Tcl_WideInt and strings. This implementation (in
- * tclObj.c) depends on the function
- * sprintf(...,"%" TCL_LL_MODIFIER "d",...).
  */
 
 #if !defined(TCL_WIDE_INT_TYPE) && !defined(TCL_WIDE_INT_IS_LONG) && !defined(_WIN32) && !defined(__GNUC__)

@@ -2963,16 +2963,16 @@ test binary-79.6 {Tcl_SetByteArrayLength} -body {
     testsetbytearraylength [string cat A B \u0141] 3
 } -constraints testsetbytearraylength -returnCodes error -match glob -result *
 
-test binary-80.1 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.1 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring "\u4E4E"
 } -result "expected byte sequence but character 0 was '\u4E4E' (U+004E4E)"
-test binary-80.2 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.2 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\x00\xA0\xA0\xA0\xE4\xB9\x8E"]
 } -result "expected byte sequence but character 4 was '\u4E4E' (U+004E4E)"
-test binary-80.3 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.3 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xE4\xB9\x8E"]
 } -result "expected byte sequence but character 4 was '\u4E4E' (U+004E4E)"
-test binary-80.4 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+test binary-80.4 {Tcl_GetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
     testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xF0\x9F\x98\x81"]
 } -result "expected byte sequence but character 4 was '\U01F601' (U+01F601)"
 

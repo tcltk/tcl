@@ -545,7 +545,7 @@ InfoBodyCmd(
      * the object do not invalidate the internal rep.
      */
 
-    bytes = TclGetStringFromObj(procPtr->bodyPtr, &numBytes);
+    bytes = Tcl_GetStringFromObj(procPtr->bodyPtr, &numBytes);
     Tcl_SetObjResult(interp, Tcl_NewStringObj(bytes, numBytes));
     return TCL_OK;
 }
@@ -2212,7 +2212,7 @@ Tcl_JoinObjCmd(
     joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
     Tcl_IncrRefCount(joinObjPtr);
 
-    (void) TclGetStringFromObj(joinObjPtr, &length);
+    (void) Tcl_GetStringFromObj(joinObjPtr, &length);
     if (length == 0) {
 	resObjPtr = TclStringCat(interp, listLen, elemPtrs, 0);
     } else {
@@ -3539,7 +3539,7 @@ Tcl_LsearchObjCmd(
 	switch ((enum datatypes) dataType) {
 	case ASCII:
 	case DICTIONARY:
-	    patternBytes = TclGetStringFromObj(patObj, &length);
+	    patternBytes = Tcl_GetStringFromObj(patObj, &length);
 	    break;
 	case INTEGER:
 	    result = TclGetWideIntFromObj(interp, patObj, &patWide);
@@ -3569,7 +3569,7 @@ Tcl_LsearchObjCmd(
 	    break;
 	}
     } else {
-	patternBytes = TclGetStringFromObj(patObj, &length);
+	patternBytes = Tcl_GetStringFromObj(patObj, &length);
     }
 
     /*
@@ -3713,7 +3713,7 @@ Tcl_LsearchObjCmd(
 	    case EXACT:
 		switch ((enum datatypes) dataType) {
 		case ASCII:
-		    bytes = TclGetStringFromObj(itemPtr, &elemLen);
+		    bytes = Tcl_GetStringFromObj(itemPtr, &elemLen);
 		    if (length == elemLen) {
 			/*
 			 * This split allows for more optimal compilation of

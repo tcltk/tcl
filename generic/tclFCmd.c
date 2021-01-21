@@ -1391,7 +1391,7 @@ TclFileTemporaryCmd(
     if (objc > 2) {
 	size_t length;
 	Tcl_Obj *templateObj = objv[2];
-	const char *string = TclGetStringFromObj(templateObj, &length);
+	const char *string = Tcl_GetStringFromObj(templateObj, &length);
 
 	/*
 	 * Treat an empty string as if it wasn't there.
@@ -1541,9 +1541,9 @@ TclFileTempDirCmd(
     }
 
     if (objc > 1) {
-	int length;
+	size_t length;
 	Tcl_Obj *templateObj = objv[1];
-	const char *string = TclGetStringFromObj(templateObj, &length);
+	const char *string = Tcl_GetStringFromObj(templateObj, &length);
 	const int onWindows = (tclPlatform == TCL_PLATFORM_WINDOWS);
 
 	/*

@@ -4419,39 +4419,6 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString(objPtr))
 
-#if 0
-   static inline char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
-      char *response = Tcl_GetString(objPtr);
-      *(lenPtr) = objPtr->length;
-      return response;
-   }
-   static inline Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
-      Tcl_UniChar *response = Tcl_GetUnicodeFromObj(objPtr, NULL);
-      *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
-      return response;
-   }
-   static inline unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
-      unsigned char *response = Tcl_GetByteArrayFromObj(objPtr, NULL);
-      if (response) {
-          *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
-      }
-      return response;
-   }
-#else
-#define TclGetStringFromObj(objPtr, lenPtr) \
-    (((objPtr)->bytes \
-	    ? NULL : Tcl_GetString((objPtr)), \
-	    *(lenPtr) = (objPtr)->length, (objPtr)->bytes))
-#define TclGetUnicodeFromObj(objPtr, lenPtr) \
-    (Tcl_GetUnicodeFromObj((objPtr), NULL), \
-	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-	    Tcl_GetUnicodeFromObj((objPtr), NULL))
-#define TclGetByteArrayFromObj(objPtr, lenPtr) \
-    (Tcl_GetByteArrayFromObj((objPtr), NULL) ? \
-	(*(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-	(unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 2)) : NULL)
-#endif
-
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to clean out an object's internal

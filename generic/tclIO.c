@@ -4141,7 +4141,7 @@ Tcl_WriteChars(
 
     objPtr = Tcl_NewStringObj(src, len);
     copy = TclNarrowToBytes(objPtr);
-    src = (char *) TclGetByteArrayFromObj(copy, &len);
+    src = (char *) Tcl_GetByteArrayFromObj(copy, &len);
     TclDecrRefCount(objPtr);
     result = WriteBytes(chanPtr, src, len);
     TclDecrRefCount(copy);
@@ -4197,12 +4197,12 @@ Tcl_WriteObj(
 	int result;
 	Tcl_Obj *copy = TclNarrowToBytes(objPtr);
 
-	src = (char *) TclGetByteArrayFromObj(copy, &srcLen);
+	src = (char *) Tcl_GetByteArrayFromObj(copy, &srcLen);
 	result = WriteBytes(chanPtr, src, srcLen);
 	Tcl_DecrRefCount(copy);
 	return result;
     } else {
-	src = TclGetStringFromObj(objPtr, &srcLen);
+	src = Tcl_GetStringFromObj(objPtr, &srcLen);
 	return WriteChars(chanPtr, src, srcLen);
     }
 }
@@ -4562,7 +4562,7 @@ Tcl_GetsObj(
     if ((statePtr->encoding == NULL)
 	    && ((statePtr->inputTranslation == TCL_TRANSLATE_LF)
 		    || (statePtr->inputTranslation == TCL_TRANSLATE_CR))
-	    && Tcl_GetByteArrayFromObj(objPtr, NULL) != NULL) {
+	    && Tcl_GetByteArrayFromObj(objPtr, (size_t *)NULL) != NULL) {
 	return TclGetsObjBinary(chan, objPtr);
     }
 
@@ -4581,7 +4581,7 @@ Tcl_GetsObj(
      * newline in the available input.
      */
 
-    (void)TclGetStringFromObj(objPtr, &oldLength);
+    (void)Tcl_GetStringFromObj(objPtr, &oldLength);
     oldFlags = statePtr->inputEncodingFlags;
     oldState = statePtr->inputEncodingState;
     oldRemoved = BUFFER_PADDING;
@@ -4964,7 +4964,7 @@ TclGetsObjBinary(
      * newline in the available input.
      */
 
-    byteArray = TclGetByteArrayFromObj(objPtr, &byteLen);
+    byteArray = Tcl_GetByteArrayFromObj(objPtr, &byteLen);
     oldFlags = statePtr->inputEncodingFlags;
     oldRemoved = BUFFER_PADDING;
     oldLength = byteLen;
@@ -5832,7 +5832,7 @@ DoReadChars(
 	    && (statePtr->inEofChar == '\0');
 
     if (appendFlag) {
-	if (binaryMode && (NULL == TclGetBytesFromObj(NULL, objPtr, NULL))) {
+	if (binaryMode && (NULL == Tcl_GetBytesFromObj(NULL, objPtr, NULL))) {
 	    binaryMode = 0;
 	}
     } else {
@@ -6116,7 +6116,7 @@ ReadChars(
     int factor = *factorPtr;
     int dstLimit = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
 
-    (void) TclGetStringFromObj(objPtr, &numBytes);
+    (void) Tcl_GetStringFromObj(objPtr, &numBytes);
     Tcl_AppendToObj(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
 	size_t size;
@@ -9620,7 +9620,7 @@ CopyData(
 	    buffer = csPtr->buffer;
 	    sizeb = size;
 	} else {
-	    buffer = TclGetStringFromObj(bufObj, &sizeb);
+	    buffer = Tcl_GetStringFromObj(bufObj, &sizeb);
 	}
 
 	if (outBinary || sameEncoding) {

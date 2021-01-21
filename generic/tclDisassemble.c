@@ -198,7 +198,7 @@ TclPrintObject(
     char *bytes;
     size_t length;
 
-    bytes = TclGetStringFromObj(objPtr, &length);
+    bytes = Tcl_GetStringFromObj(objPtr, &length);
     TclPrintSource(outFile, bytes, TclMin(length, maxChars));
 }
 
@@ -653,7 +653,7 @@ FormatInstruction(
 	size_t length;
 
 	Tcl_AppendToObj(bufferObj, "\t# ", -1);
-	bytes = TclGetStringFromObj(codePtr->objArrayPtr[opnd], &length);
+	bytes = Tcl_GetStringFromObj(codePtr->objArrayPtr[opnd], &length);
 	PrintSourceToObj(bufferObj, bytes, TclMin(length, 40));
     } else if (suffixBuffer[0]) {
 	Tcl_AppendPrintfToObj(bufferObj, "\t# %s", suffixBuffer);

@@ -440,7 +440,7 @@ ExecuteCallback(
 	    break;
 	}
 	resObj = Tcl_GetObjResult(eval);
-	resBuf = TclGetByteArrayFromObj(resObj, &resLen);
+	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
 	if (resBuf) {
 	    Tcl_WriteRaw(Tcl_GetStackedChannel(dataPtr->self),
 		    (char *) resBuf, resLen);
@@ -453,7 +453,7 @@ ExecuteCallback(
 	    break;
 	}
 	resObj = Tcl_GetObjResult(eval);
-	resBuf = TclGetByteArrayFromObj(resObj, &resLen);
+	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
 	if (resBuf) {
 	    Tcl_WriteRaw(dataPtr->self, (char *) resBuf, resLen);
 	    break;
@@ -462,7 +462,7 @@ ExecuteCallback(
 
     case TRANSMIT_IBUF:
 	resObj = Tcl_GetObjResult(eval);
-	resBuf = TclGetByteArrayFromObj(resObj, &resLen);
+	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
 	if (resBuf) {
 	    ResultAdd(&dataPtr->result, resBuf, resLen);
 	    break;
