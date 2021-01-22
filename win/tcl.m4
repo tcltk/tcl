@@ -455,6 +455,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 #		CFLAGS_DEBUG
 #		CFLAGS_OPTIMIZE
 #		CFLAGS_WARNING
+#		CFLAGS_NOLTO
 #		LDFLAGS_DEBUG
 #		LDFLAGS_OPTIMIZE
 #		LDFLAGS_CONSOLE
@@ -603,6 +604,18 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    extra_ldflags="$extra_ldflags -municode"
 	else
 	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
+	fi
+	AC_CACHE_CHECK(for working -fno-lto,
+	    ac_cv_nolto,
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+	    [ac_cv_nolto=yes],
+	    [ac_cv_nolto=no])
+	)
+	CFLAGS=$hold_cflags
+	if test "$ac_cv_nolto" = "yes" ; then
+	    CFLAGS_NOLTO="-fno-lto"
+	else
+	    CFLAGS_NOLTO=""
 	fi
     fi
 
@@ -940,6 +953,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     AC_SUBST(CFLAGS_DEBUG)
     AC_SUBST(CFLAGS_OPTIMIZE)
     AC_SUBST(CFLAGS_WARNING)
+    AC_SUBST(CFLAGS_NOLTO)
 ])
 
 #------------------------------------------------------------------------

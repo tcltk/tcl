@@ -155,11 +155,18 @@ static void uniCodePanic() {
 #define TclpCreateTempFile_ TclpCreateTempFile
 #define TclUnixWaitForFile_ TclUnixWaitForFile
 #ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
-#define TclMacOSXGetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj **))(void *)TclpCreateProcess
-#define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
-#define TclMacOSXCopyFileAttributes (int (*)(const char *, const char *, const Tcl_StatBuf *))(void *)TclUnixCopyFile
-#define TclMacOSXMatchType (int (*)(Tcl_Interp *, const char *, const char *, Tcl_StatBuf *, Tcl_GlobTypeData *))(void *)TclpMakeFile
-#define TclMacOSXNotifierAddRunLoopMode (void (*)(const void *))(void *)TclpOpenFile
+#   define TclMacOSXGetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj **))(void *)TclpCreateProcess
+#   define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
+#   define TclMacOSXCopyFileAttributes (int (*)(const char *, const char *, const Tcl_StatBuf *))(void *)TclUnixCopyFile
+#   define TclMacOSXMatchType (int (*)(Tcl_Interp *, const char *, const char *, Tcl_StatBuf *, Tcl_GlobTypeData *))(void *)TclpMakeFile
+#   define Tcl_MacOSXOpenVersionedBundleResources 0
+#   define Tcl_MacOSXNotifierAddRunLoopMode 0
+#endif
+#define TclMacOSXNotifierAddRunLoopMode Tcl_MacOSXNotifierAddRunLoopMode
+#ifdef _WIN32
+#   define Tcl_CreateFileHandler 0
+#   define Tcl_DeleteFileHandler 0
+#   define Tcl_GetOpenFile 0
 #endif
 
 #ifdef _WIN32
@@ -650,10 +657,9 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#ifdef MAC_OSX_TCL /* MACOSX */
     0, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
-#endif /* MACOSX */
+    Tcl_MacOSXNotifierAddRunLoopMode, /* 2 */
 };
 
 const TclTomMathStubs tclTomMathStubs = {
@@ -762,24 +768,8 @@ const TclStubs tclStubs = {
     Tcl_DbCkalloc, /* 6 */
     Tcl_DbCkfree, /* 7 */
     Tcl_DbCkrealloc, /* 8 */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_CreateFileHandler, /* 9 */
-#endif /* UNIX */
-#if defined(_WIN32) /* WIN */
-    0, /* 9 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    Tcl_CreateFileHandler, /* 9 */
-#endif /* MACOSX */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_DeleteFileHandler, /* 10 */
-#endif /* UNIX */
-#if defined(_WIN32) /* WIN */
-    0, /* 10 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    Tcl_DeleteFileHandler, /* 10 */
-#endif /* MACOSX */
     Tcl_SetTimer, /* 11 */
     Tcl_Sleep, /* 12 */
     Tcl_WaitForEvent, /* 13 */
@@ -936,15 +926,7 @@ const TclStubs tclStubs = {
     Tcl_GetParent, /* 164 */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_GetOpenFile, /* 167 */
-#endif /* UNIX */
-#if defined(_WIN32) /* WIN */
-    0, /* 167 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    Tcl_GetOpenFile, /* 167 */
-#endif /* MACOSX */
     Tcl_GetPathType, /* 168 */
     Tcl_Gets, /* 169 */
     Tcl_GetsObj, /* 170 */

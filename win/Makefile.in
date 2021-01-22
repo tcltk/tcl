@@ -686,10 +686,10 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 # as DLL objects but none of the symbols should be exported
 
 tclStubLib.${OBJEXT}: tclStubLib.c
-	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @CFLAGS_NOLTO@ @DEPARG@ $(CC_OBJNAME)
 
 tclTomMathStubLib.${OBJEXT}: tclTomMathStubLib.c
-	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) @CFLAGS_NOLTO@ @DEPARG@ $(CC_OBJNAME)
 
 tclWinPanic.${OBJEXT}: tclWinPanic.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
