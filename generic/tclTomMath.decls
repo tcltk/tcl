@@ -216,6 +216,10 @@ declare 69 {
 declare 70 {
     void TclBN_mp_set_i64(mp_int *a, int64_t i)
 }
+declare 71 {
+    mp_err MP_WUR TclBN_mp_unpack(mp_int *rop, size_t count, mp_order order, size_t size,
+	    mp_endian endian, size_t nails, const void *op)
+}
 
 # Added in libtommath 1.1.0
 # No longer in use: replaced by mp_and()

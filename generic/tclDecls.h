@@ -72,24 +72,11 @@ EXTERN void		Tcl_DbCkfree(void *ptr, const char *file, int line);
 /* 8 */
 EXTERN void *		Tcl_DbCkrealloc(void *ptr, size_t size,
 				const char *file, int line);
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 9 */
 EXTERN void		Tcl_CreateFileHandler(int fd, int mask,
 				Tcl_FileProc *proc, void *clientData);
-#endif /* UNIX */
-#ifdef MAC_OSX_TCL /* MACOSX */
-/* 9 */
-EXTERN void		Tcl_CreateFileHandler(int fd, int mask,
-				Tcl_FileProc *proc, void *clientData);
-#endif /* MACOSX */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 10 */
 EXTERN void		Tcl_DeleteFileHandler(int fd);
-#endif /* UNIX */
-#ifdef MAC_OSX_TCL /* MACOSX */
-/* 10 */
-EXTERN void		Tcl_DeleteFileHandler(int fd);
-#endif /* MACOSX */
 /* 11 */
 EXTERN void		Tcl_SetTimer(const Tcl_Time *timePtr);
 /* 12 */
@@ -489,18 +476,10 @@ EXTERN Tcl_Interp *	Tcl_GetParent(Tcl_Interp *interp);
 EXTERN const char *	Tcl_GetNameOfExecutable(void);
 /* 166 */
 EXTERN Tcl_Obj *	Tcl_GetObjResult(Tcl_Interp *interp);
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 167 */
 EXTERN int		Tcl_GetOpenFile(Tcl_Interp *interp,
 				const char *chanID, int forWriting,
 				int checkUsage, void **filePtr);
-#endif /* UNIX */
-#ifdef MAC_OSX_TCL /* MACOSX */
-/* 167 */
-EXTERN int		Tcl_GetOpenFile(Tcl_Interp *interp,
-				const char *chanID, int forWriting,
-				int checkUsage, void **filePtr);
-#endif /* MACOSX */
 /* 168 */
 EXTERN Tcl_PathType	Tcl_GetPathType(const char *path);
 /* 169 */
@@ -1785,24 +1764,8 @@ typedef struct TclStubs {
     void * (*tcl_DbCkalloc) (size_t size, const char *file, int line); /* 6 */
     void (*tcl_DbCkfree) (void *ptr, const char *file, int line); /* 7 */
     void * (*tcl_DbCkrealloc) (void *ptr, size_t size, const char *file, int line); /* 8 */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc *proc, void *clientData); /* 9 */
-#endif /* UNIX */
-#if defined(_WIN32) /* WIN */
-    void (*reserved9)(void);
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc *proc, void *clientData); /* 9 */
-#endif /* MACOSX */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_DeleteFileHandler) (int fd); /* 10 */
-#endif /* UNIX */
-#if defined(_WIN32) /* WIN */
-    void (*reserved10)(void);
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    void (*tcl_DeleteFileHandler) (int fd); /* 10 */
-#endif /* MACOSX */
     void (*tcl_SetTimer) (const Tcl_Time *timePtr); /* 11 */
     void (*tcl_Sleep) (int ms); /* 12 */
     int (*tcl_WaitForEvent) (const Tcl_Time *timePtr); /* 13 */
@@ -1959,15 +1922,7 @@ typedef struct TclStubs {
     Tcl_Interp * (*tcl_GetParent) (Tcl_Interp *interp); /* 164 */
     const char * (*tcl_GetNameOfExecutable) (void); /* 165 */
     Tcl_Obj * (*tcl_GetObjResult) (Tcl_Interp *interp); /* 166 */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     int (*tcl_GetOpenFile) (Tcl_Interp *interp, const char *chanID, int forWriting, int checkUsage, void **filePtr); /* 167 */
-#endif /* UNIX */
-#if defined(_WIN32) /* WIN */
-    void (*reserved167)(void);
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    int (*tcl_GetOpenFile) (Tcl_Interp *interp, const char *chanID, int forWriting, int checkUsage, void **filePtr); /* 167 */
-#endif /* MACOSX */
     Tcl_PathType (*tcl_GetPathType) (const char *path); /* 168 */
     size_t (*tcl_Gets) (Tcl_Channel chan, Tcl_DString *dsPtr); /* 169 */
     size_t (*tcl_GetsObj) (Tcl_Channel chan, Tcl_Obj *objPtr); /* 170 */
@@ -2486,22 +2441,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DbCkfree) /* 7 */
 #define Tcl_DbCkrealloc \
 	(tclStubsPtr->tcl_DbCkrealloc) /* 8 */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 #define Tcl_CreateFileHandler \
 	(tclStubsPtr->tcl_CreateFileHandler) /* 9 */
-#endif /* UNIX */
-#ifdef MAC_OSX_TCL /* MACOSX */
-#define Tcl_CreateFileHandler \
-	(tclStubsPtr->tcl_CreateFileHandler) /* 9 */
-#endif /* MACOSX */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 #define Tcl_DeleteFileHandler \
 	(tclStubsPtr->tcl_DeleteFileHandler) /* 10 */
-#endif /* UNIX */
-#ifdef MAC_OSX_TCL /* MACOSX */
-#define Tcl_DeleteFileHandler \
-	(tclStubsPtr->tcl_DeleteFileHandler) /* 10 */
-#endif /* MACOSX */
 #define Tcl_SetTimer \
 	(tclStubsPtr->tcl_SetTimer) /* 11 */
 #define Tcl_Sleep \
@@ -2795,14 +2738,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetNameOfExecutable) /* 165 */
 #define Tcl_GetObjResult \
 	(tclStubsPtr->tcl_GetObjResult) /* 166 */
-#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 #define Tcl_GetOpenFile \
 	(tclStubsPtr->tcl_GetOpenFile) /* 167 */
-#endif /* UNIX */
-#ifdef MAC_OSX_TCL /* MACOSX */
-#define Tcl_GetOpenFile \
-	(tclStubsPtr->tcl_GetOpenFile) /* 167 */
-#endif /* MACOSX */
 #define Tcl_GetPathType \
 	(tclStubsPtr->tcl_GetPathType) /* 168 */
 #define Tcl_Gets \

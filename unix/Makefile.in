@@ -340,7 +340,7 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_mp_set_u64.o bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
 	bn_mp_signed_rsh.o \
-	bn_mp_to_ubin.o \
+	bn_mp_to_ubin.o bn_mp_unpack.o \
 	bn_s_mp_toom_mul.o bn_s_mp_toom_sqr.o bn_mp_to_radix.o \
 	bn_mp_ubin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
 	bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
@@ -1740,6 +1740,9 @@ bn_mp_to_radix.o: $(TOMMATH_DIR)/bn_mp_to_radix.c $(MATHHDRS)
 bn_mp_ubin_size.o: $(TOMMATH_DIR)/bn_mp_ubin_size.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_ubin_size.c
 
+bn_mp_unpack.o: $(TOMMATH_DIR)/bn_mp_unpack.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_unpack.c
+
 bn_mp_xor.o: $(TOMMATH_DIR)/bn_mp_xor.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_xor.c
 
@@ -1907,13 +1910,13 @@ Zzutil.o:    $(ZLIB_DIR)/zutil.c
 #--------------------------------------------------------------------------
 
 tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLib.c
+	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD @CFLAGS_NOLTO@ $(GENERIC_DIR)/tclStubLib.c
 
 tclTomMathStubLib.o: $(GENERIC_DIR)/tclTomMathStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclTomMathStubLib.c
+	$(CC) -c $(STUB_CC_SWITCHES) @CFLAGS_NOLTO@ $(GENERIC_DIR)/tclTomMathStubLib.c
 
 tclOOStubLib.o: $(GENERIC_DIR)/tclOOStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclOOStubLib.c
+	$(CC) -c $(STUB_CC_SWITCHES) @CFLAGS_NOLTO@ $(GENERIC_DIR)/tclOOStubLib.c
 
 .c.o:
 	$(CC) -c $(CC_SWITCHES) $<
