@@ -397,7 +397,9 @@ TclWinGetPlatformId(void)
 
 #define TclpCreateTempFile_ TclpCreateTempFile
 #define TclUnixWaitForFile_ TclUnixWaitForFile
-#ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
+#ifdef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
+#define TclMacOSXNotifierAddRunLoopMode Tcl_MacOSXNotifierAddRunLoopMode
+#else
 #define TclMacOSXGetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj **))(void *)TclpCreateProcess
 #define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
 #define TclMacOSXCopyFileAttributes (int (*)(const char *, const char *, const Tcl_StatBuf *))(void *)TclUnixCopyFile

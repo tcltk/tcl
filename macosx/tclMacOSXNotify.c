@@ -715,7 +715,7 @@ Tcl_InitNotifier(void)
  */
 
 void
-TclMacOSXNotifierAddRunLoopMode(
+Tcl_MacOSXNotifierAddRunLoopMode(
     const void *runLoopMode)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
