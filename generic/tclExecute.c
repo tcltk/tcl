@@ -9608,7 +9608,7 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i;  i--) {
+    for (i = 31;  i != (size_t)-1;  i--) {
 	if (statsPtr->srcCount[i] > 0) {
 	    break;		/* maxSizeDecade to consume 'i' value
 				 * below... */
@@ -9632,7 +9632,7 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i;  i--) {
+    for (i = 31;  i != (size_t)-1;  i--) {
 	if (statsPtr->byteCodeCount[i] > 0) {
 	    break;		/* maxSizeDecade to consume 'i' value
 				 * below... */
@@ -9656,7 +9656,7 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i;  i--) {
+    for (i = 31;  i != (size_t)-1;  i--) {
 	if (statsPtr->lifetimeCount[i] > 0) {
 	    break;		/* maxSizeDecade to consume 'i' value
 				 * below... */

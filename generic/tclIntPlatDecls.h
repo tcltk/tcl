@@ -531,12 +531,12 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #undef TclpCreateTempFile_
 #undef TclUnixWaitForFile_
+#undef TclMacOSXNotifierAddRunLoopMode
 #ifndef MAC_OSX_TCL /* not accessable on Win32/UNIX */
 #undef TclMacOSXGetFileAttribute /* 15 */
 #undef TclMacOSXSetFileAttribute /* 16 */
 #undef TclMacOSXCopyFileAttributes /* 17 */
 #undef TclMacOSXMatchType /* 18 */
-#undef TclMacOSXNotifierAddRunLoopMode /* 19 */
 #endif
 
 #if !defined(_WIN32)
