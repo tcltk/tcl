@@ -154,6 +154,7 @@ static void uniCodePanic() {
 #   define Tcl_MacOSXOpenVersionedBundleResources 0
 #   define Tcl_MacOSXNotifierAddRunLoopMode 0
 #endif
+#define TclMacOSXNotifierAddRunLoopMode Tcl_MacOSXNotifierAddRunLoopMode
 #ifdef _WIN32
 #   define Tcl_CreateFileHandler 0
 #   define Tcl_DeleteFileHandler 0
@@ -564,7 +565,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclMacOSXSetFileAttribute, /* 16 */
     TclMacOSXCopyFileAttributes, /* 17 */
     TclMacOSXMatchType, /* 18 */
-    0, /* 19 */
+    TclMacOSXNotifierAddRunLoopMode, /* 19 */
     0, /* 20 */
     0, /* 21 */
     TclpCreateTempFile_, /* 22 */
@@ -630,7 +631,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclMacOSXSetFileAttribute, /* 16 */
     TclMacOSXCopyFileAttributes, /* 17 */
     TclMacOSXMatchType, /* 18 */
-    0, /* 19 */
+    TclMacOSXNotifierAddRunLoopMode, /* 19 */
     0, /* 20 */
     0, /* 21 */
     TclpCreateTempFile_, /* 22 */

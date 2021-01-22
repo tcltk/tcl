@@ -1317,10 +1317,9 @@ declare 18 {unix macosx} {
 	    const char *fileName, Tcl_StatBuf *statBufPtr,
 	    Tcl_GlobTypeData *types)
 }
-# Removed in 9.0:
-#declare 19 {unix macosx} {
-#    void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
-#}
+declare 19 {unix macosx} {
+    void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+}
 declare 22 {unix macosx} {
     TclFile TclpCreateTempFile_(const char *contents)
 }
