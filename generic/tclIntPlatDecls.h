@@ -92,9 +92,7 @@ EXTERN int		TclMacOSXMatchType(Tcl_Interp *interp,
 				const char *pathName, const char *fileName,
 				Tcl_StatBuf *statBufPtr,
 				Tcl_GlobTypeData *types);
-/* 19 */
-EXTERN void		TclMacOSXNotifierAddRunLoopMode(
-				const void *runLoopMode);
+/* Slot 19 is reserved */
 /* Slot 20 is reserved */
 /* Slot 21 is reserved */
 /* 22 */
@@ -226,9 +224,7 @@ EXTERN int		TclMacOSXMatchType(Tcl_Interp *interp,
 				const char *pathName, const char *fileName,
 				Tcl_StatBuf *statBufPtr,
 				Tcl_GlobTypeData *types);
-/* 19 */
-EXTERN void		TclMacOSXNotifierAddRunLoopMode(
-				const void *runLoopMode);
+/* Slot 19 is reserved */
 /* Slot 20 is reserved */
 /* Slot 21 is reserved */
 /* 22 */
@@ -271,7 +267,7 @@ typedef struct TclIntPlatStubs {
     int (*tclMacOSXSetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj *attributePtr); /* 16 */
     int (*tclMacOSXCopyFileAttributes) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr); /* 17 */
     int (*tclMacOSXMatchType) (Tcl_Interp *interp, const char *pathName, const char *fileName, Tcl_StatBuf *statBufPtr, Tcl_GlobTypeData *types); /* 18 */
-    void (*tclMacOSXNotifierAddRunLoopMode) (const void *runLoopMode); /* 19 */
+    void (*reserved19)(void);
     void (*reserved20)(void);
     void (*reserved21)(void);
     TclFile (*tclpCreateTempFile_) (const char *contents); /* 22 */
@@ -337,7 +333,7 @@ typedef struct TclIntPlatStubs {
     int (*tclMacOSXSetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj *attributePtr); /* 16 */
     int (*tclMacOSXCopyFileAttributes) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr); /* 17 */
     int (*tclMacOSXMatchType) (Tcl_Interp *interp, const char *pathName, const char *fileName, Tcl_StatBuf *statBufPtr, Tcl_GlobTypeData *types); /* 18 */
-    void (*tclMacOSXNotifierAddRunLoopMode) (const void *runLoopMode); /* 19 */
+    void (*reserved19)(void);
     void (*reserved20)(void);
     void (*reserved21)(void);
     TclFile (*tclpCreateTempFile_) (const char *contents); /* 22 */
@@ -399,8 +395,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclMacOSXCopyFileAttributes) /* 17 */
 #define TclMacOSXMatchType \
 	(tclIntPlatStubsPtr->tclMacOSXMatchType) /* 18 */
-#define TclMacOSXNotifierAddRunLoopMode \
-	(tclIntPlatStubsPtr->tclMacOSXNotifierAddRunLoopMode) /* 19 */
+/* Slot 19 is reserved */
 /* Slot 20 is reserved */
 /* Slot 21 is reserved */
 #define TclpCreateTempFile_ \
@@ -503,8 +498,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclMacOSXCopyFileAttributes) /* 17 */
 #define TclMacOSXMatchType \
 	(tclIntPlatStubsPtr->tclMacOSXMatchType) /* 18 */
-#define TclMacOSXNotifierAddRunLoopMode \
-	(tclIntPlatStubsPtr->tclMacOSXNotifierAddRunLoopMode) /* 19 */
+/* Slot 19 is reserved */
 /* Slot 20 is reserved */
 /* Slot 21 is reserved */
 #define TclpCreateTempFile_ \
@@ -536,7 +530,6 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #undef TclMacOSXSetFileAttribute /* 16 */
 #undef TclMacOSXCopyFileAttributes /* 17 */
 #undef TclMacOSXMatchType /* 18 */
-#undef TclMacOSXNotifierAddRunLoopMode /* 19 */
 #endif
 
 #if !defined(_WIN32)

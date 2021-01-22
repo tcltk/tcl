@@ -700,7 +700,7 @@ Tcl_InitNotifier(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclMacOSXNotifierAddRunLoopMode --
+ * Tcl_MacOSXNotifierAddRunLoopMode --
  *
  *	Add the tcl notifier RunLoop source, observer and timer (if any)
  *	to the given RunLoop mode.
@@ -715,7 +715,7 @@ Tcl_InitNotifier(void)
  */
 
 void
-TclMacOSXNotifierAddRunLoopMode(
+Tcl_MacOSXNotifierAddRunLoopMode(
     const void *runLoopMode)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -2138,10 +2138,10 @@ AtForkChild(void)
 #else /* HAVE_COREFOUNDATION */
 
 void
-TclMacOSXNotifierAddRunLoopMode(
+Tcl_MacOSXNotifierAddRunLoopMode(
     const void *runLoopMode)
 {
-    Tcl_Panic("TclMacOSXNotifierAddRunLoopMode: "
+    Tcl_Panic("Tcl_MacOSXNotifierAddRunLoopMode: "
 	    "Tcl not built with CoreFoundation support");
 }
 
