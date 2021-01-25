@@ -661,13 +661,13 @@ declare 27 win {
 # Pipe channel functions
 
 declare 0 unix {
-    void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
+    void TclGetAndDetachPids_(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 1 unix {
     int TclpCloseFile(TclFile file)
 }
 declare 2 unix {
-    Tcl_Channel TclpCreateCommandChannel(TclFile readFile,
+    Tcl_Channel TclpCreateCommandChannel_(TclFile readFile,
 	    TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)
 }
 declare 3 unix {
@@ -679,7 +679,7 @@ declare 4 unix {
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
 declare 5 unix {
-    int TclUnixWaitForFile_(int fd, int mask, int timeout)
+    int TclUnixWaitForFile(int fd, int mask, int timeout)
 }
 declare 6 unix {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
@@ -688,10 +688,17 @@ declare 7 unix {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 8 unix {
-    int TclUnixWaitForFile(int fd, int mask, int timeout)
+    int TclUnixWaitForFile_(int fd, int mask, int timeout)
 }
 declare 9 unix {
-    TclFile TclpCreateTempFile(const char *contents)
+    TclFile TclpCreateTempFile_(const char *contents)
+}
+declare 11 unix {
+    void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
+}
+declare 13 unix {
+    Tcl_Channel TclpCreateCommandChannel(TclFile readFile,
+	    TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)
 }
 declare 14 unix {
     int TclUnixCopyFile(const char *src, const char *dst,
@@ -701,28 +708,11 @@ declare 14 unix {
 ################################
 # Mac OS X specific functions
 
-declare 15 {unix macosx} {
-    int TclMacOSXGetFileAttribute(Tcl_Interp *interp, int objIndex,
-	    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr)
-}
-declare 16 {unix macosx} {
-    int TclMacOSXSetFileAttribute(Tcl_Interp *interp, int objIndex,
-	    Tcl_Obj *fileName, Tcl_Obj *attributePtr)
-}
-declare 17 {unix macosx} {
-    int TclMacOSXCopyFileAttributes(const char *src, const char *dst,
-	    const Tcl_StatBuf *statBufPtr)
-}
-declare 18 {unix macosx} {
-    int TclMacOSXMatchType(Tcl_Interp *interp, const char *pathName,
-	    const char *fileName, Tcl_StatBuf *statBufPtr,
-	    Tcl_GlobTypeData *types)
-}
 declare 19 {unix macosx} {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
 }
 declare 22 {unix macosx} {
-    TclFile TclpCreateTempFile_(const char *contents)
+    TclFile TclpCreateTempFile(const char *contents)
 }
 
 declare 29 {win unix} {

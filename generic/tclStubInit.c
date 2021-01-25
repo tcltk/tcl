@@ -154,6 +154,8 @@ static void uniCodePanic() {
 
 #define TclpCreateTempFile_ TclpCreateTempFile
 #define TclUnixWaitForFile_ TclUnixWaitForFile
+#define TclGetAndDetachPids_ TclGetAndDetachPids
+#define TclpCreateCommandChannel_ TclpCreateCommandChannel
 #ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
 #   define TclMacOSXGetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj **))(void *)TclpCreateProcess
 #   define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
@@ -554,29 +556,29 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     0,
 #if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
-    TclGetAndDetachPids, /* 0 */
+    TclGetAndDetachPids_, /* 0 */
     TclpCloseFile, /* 1 */
-    TclpCreateCommandChannel, /* 2 */
+    TclpCreateCommandChannel_, /* 2 */
     TclpCreatePipe, /* 3 */
     TclpCreateProcess, /* 4 */
-    TclUnixWaitForFile_, /* 5 */
+    TclUnixWaitForFile, /* 5 */
     TclpMakeFile, /* 6 */
     TclpOpenFile, /* 7 */
-    TclUnixWaitForFile, /* 8 */
-    TclpCreateTempFile, /* 9 */
+    TclUnixWaitForFile_, /* 8 */
+    TclpCreateTempFile_, /* 9 */
     0, /* 10 */
-    0, /* 11 */
+    TclGetAndDetachPids, /* 11 */
     0, /* 12 */
-    0, /* 13 */
+    TclpCreateCommandChannel, /* 13 */
     TclUnixCopyFile, /* 14 */
-    TclMacOSXGetFileAttribute, /* 15 */
-    TclMacOSXSetFileAttribute, /* 16 */
-    TclMacOSXCopyFileAttributes, /* 17 */
-    TclMacOSXMatchType, /* 18 */
+    0, /* 15 */
+    0, /* 16 */
+    0, /* 17 */
+    0, /* 18 */
     TclMacOSXNotifierAddRunLoopMode, /* 19 */
     0, /* 20 */
     0, /* 21 */
-    TclpCreateTempFile_, /* 22 */
+    TclpCreateTempFile, /* 22 */
     0, /* 23 */
     0, /* 24 */
     0, /* 25 */
@@ -620,29 +622,29 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclUnixOpenTemporaryFile, /* 30 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-    TclGetAndDetachPids, /* 0 */
+    TclGetAndDetachPids_, /* 0 */
     TclpCloseFile, /* 1 */
-    TclpCreateCommandChannel, /* 2 */
+    TclpCreateCommandChannel_, /* 2 */
     TclpCreatePipe, /* 3 */
     TclpCreateProcess, /* 4 */
-    TclUnixWaitForFile_, /* 5 */
+    TclUnixWaitForFile, /* 5 */
     TclpMakeFile, /* 6 */
     TclpOpenFile, /* 7 */
-    TclUnixWaitForFile, /* 8 */
-    TclpCreateTempFile, /* 9 */
+    TclUnixWaitForFile_, /* 8 */
+    TclpCreateTempFile_, /* 9 */
     0, /* 10 */
-    0, /* 11 */
+    TclGetAndDetachPids, /* 11 */
     0, /* 12 */
-    0, /* 13 */
+    TclpCreateCommandChannel, /* 13 */
     TclUnixCopyFile, /* 14 */
-    TclMacOSXGetFileAttribute, /* 15 */
-    TclMacOSXSetFileAttribute, /* 16 */
-    TclMacOSXCopyFileAttributes, /* 17 */
-    TclMacOSXMatchType, /* 18 */
+    0, /* 15 */
+    0, /* 16 */
+    0, /* 17 */
+    0, /* 18 */
     TclMacOSXNotifierAddRunLoopMode, /* 19 */
     0, /* 20 */
     0, /* 21 */
-    TclpCreateTempFile_, /* 22 */
+    TclpCreateTempFile, /* 22 */
     0, /* 23 */
     0, /* 24 */
     0, /* 25 */
