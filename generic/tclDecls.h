@@ -3782,9 +3782,12 @@ extern const TclStubs *tclStubsPtr;
 #   endif
 #endif
 
+#undef Tcl_GetString
 #undef Tcl_GetUnicode
+#define Tcl_GetString(objPtr) \
+	Tcl_GetStringFromObj(objPtr, (size_t *)NULL)
 #define Tcl_GetUnicode(objPtr) \
-	Tcl_GetUnicodeFromObj(objPtr, (int *)NULL)
+	Tcl_GetUnicodeFromObj(objPtr, (size_t *)NULL)
 #undef Tcl_GetStringFromObj
 #undef Tcl_GetUnicodeFromObj
 #undef Tcl_GetByteArrayFromObj
