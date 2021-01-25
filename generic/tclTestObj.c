@@ -1176,7 +1176,7 @@ TeststringobjCmd(
 {
     Tcl_UniChar *unicode;
     int varIndex, option, i, length;
-    size_t size;
+    int size;
 #define MAX_STRINGS 11
     const char *index, *string, *strings[MAX_STRINGS+1];
     String *strPtr;
@@ -1371,7 +1371,7 @@ TeststringobjCmd(
 	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if ((i < 0) || ((size_t)i > size)) {
+	    if ((i < 0) || (i > size)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"index value out of range", -1));
 		return TCL_ERROR;
@@ -1402,7 +1402,7 @@ TeststringobjCmd(
 	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if ((i < 0) || ((size_t)i > size)) {
+	    if ((i < 0) || (i > size)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"index value out of range", -1));
 		return TCL_ERROR;
