@@ -1617,6 +1617,7 @@ TclSetDuplicateObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetString
 char *
 Tcl_GetString(
     Tcl_Obj *objPtr)	/* Object whose string rep byte pointer should
