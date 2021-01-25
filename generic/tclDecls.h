@@ -4138,7 +4138,10 @@ extern const TclStubs *tclStubsPtr;
 #   endif
 #endif
 
+#undef Tcl_GetString
 #undef Tcl_GetUnicode
+#define Tcl_GetString(objPtr) \
+	Tcl_GetStringFromObj(objPtr, (int *)NULL)
 #define Tcl_GetUnicode(objPtr) \
 	Tcl_GetUnicodeFromObj(objPtr, (int *)NULL)
 #ifdef TCL_NO_DEPRECATED
