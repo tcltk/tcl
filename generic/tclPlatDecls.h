@@ -40,6 +40,14 @@
 #   define _TCHAR_DEFINED
 #endif
 
+#ifndef MODULE_SCOPE
+#   ifdef __cplusplus
+#	define MODULE_SCOPE extern "C"
+#   else
+#	define MODULE_SCOPE extern
+#   endif
+#endif
+
 /* !BEGIN!: Do not edit below this line. */
 
 #ifdef __cplusplus
