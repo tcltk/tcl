@@ -16,7 +16,7 @@
 # non-standard code, this script will produce erroneous results.  Each
 # list should be carefully checked for accuracy.
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 # All rights reserved.
 
 
@@ -67,6 +67,7 @@ set StructList {
     Tk_GeomMgr \
     Tk_Image \
     Tk_ImageMaster \
+    Tk_ImageModel \
     Tk_ImageType \
     Tk_Item \
     Tk_ItemType \
@@ -104,7 +105,6 @@ proc main {} {
     if {($len != 2) && ($len != 3)} {
 	puts "usage: $argv0 pkgName pkgDir \[outFile\]"
 	puts "   pkgName == Tcl,Tk"
-	puts "   pkgDir  == /home/surles/cvs/tcl9.0"
 	exit 1
     }
 

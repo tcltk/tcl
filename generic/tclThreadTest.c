@@ -6,8 +6,8 @@
  *	Some of this code is based on work done by Richard Hipp on behalf of
  *	Conservation Through Innovation, Limited, with their permission.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 2006-2008 Joe Mistachkin.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -205,7 +205,7 @@ TclThread_Init(
 
 static int
 ThreadObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -368,9 +368,9 @@ ThreadObjCmd(
 	if (result == TCL_OK) {
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), status);
 	} else {
-	    char buf[20];
+	    char buf[TCL_INTEGER_SPACE];
 
-	    sprintf(buf, "%" TCL_LL_MODIFIER "d", id);
+	    sprintf(buf, "%" TCL_LL_MODIFIER "d", (long long)id);
 	    Tcl_AppendResult(interp, "cannot join thread ", buf, NULL);
 	}
 	return result;
@@ -413,7 +413,7 @@ ThreadObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 		Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT)));
 	return TCL_OK;
     }
@@ -1105,7 +1105,7 @@ ThreadFreeProc(
 static int
 ThreadDeleteEvent(
     Tcl_Event *eventPtr,	/* Really ThreadEvent */
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     if (eventPtr->proc == ThreadEventProc) {
 	Tcl_Free(((ThreadEvent *) eventPtr)->script);

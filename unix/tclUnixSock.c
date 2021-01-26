@@ -3,7 +3,7 @@
  *
  *	This file contains Unix-specific socket related code.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
+ * Copyright © 1995 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -129,6 +129,7 @@ struct TcpState {
  * Static routines for this file:
  */
 
+static void		TcpAsyncCallback(void *clientData, int mask);
 static int		TcpConnect(Tcl_Interp *interp, TcpState *state);
 static void		TcpAccept(void *data, int mask);
 static int		TcpBlockModeProc(void *data, int mode);
@@ -145,6 +146,7 @@ static int		TcpInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		TcpOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCode);
+static void		TcpThreadActionProc(void *instanceData, int action);
 static void		TcpWatchProc(void *instanceData, int mask);
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
 static void		WrapNotify(void *clientData, int mask);
@@ -170,7 +172,7 @@ static const Tcl_ChannelType tcpChannelType = {
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc. */
-    NULL,			/* thread action proc. */
+    TcpThreadActionProc,	/* thread action proc. */
     NULL			/* truncate proc. */
 };
 
@@ -227,7 +229,7 @@ InitializeHostName(
     struct hostent *hp;
 
     memset(&u, (int) 0, sizeof(struct utsname));
-    if (uname(&u) > -1) {				/* INTL: Native. */
+    if (uname(&u) >= 0) {				/* INTL: Native. */
         hp = TclpGetHostByName(u.nodename);		/* INTL: Native. */
 	if (hp == NULL) {
 	    /*
@@ -275,7 +277,7 @@ InitializeHostName(
     char buffer[256];
 #    endif
 
-    if (gethostname(buffer, sizeof(buffer)) > -1) {	/* INTL: Native. */
+    if (gethostname(buffer, sizeof(buffer)) >= 0) {	/* INTL: Native. */
 	native = buffer;
     }
 #endif /* NO_UNAME */
@@ -540,7 +542,7 @@ TcpInputProc(
 	return -1;
     }
     bytesRead = recv(statePtr->fds.fd, buf, bufSize, 0);
-    if (bytesRead > -1) {
+    if (bytesRead >= 0) {
 	return bytesRead;
     }
     if (errno == ECONNRESET) {
@@ -591,7 +593,7 @@ TcpOutputProc(
     }
     written = send(statePtr->fds.fd, buf, toWrite, 0);
 
-    if (written > -1) {
+    if (written >= 0) {
 	return written;
     }
     *errorCodePtr = errno;
@@ -975,6 +977,51 @@ TcpGetOptionProc(
     }
 
     return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TcpThreadActionProc --
+ *
+ *	Handles detach/attach for asynchronously connecting socket.
+ *
+ *	Reassigning the file handler associated with thread-related channel
+ *	notification, responsible for callbacks (signaling that asynchronous
+ *	connection attempt has succeeded or failed).
+ *
+ * Results:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+TcpThreadActionProc(
+    void *instanceData,
+    int action)
+{
+    TcpState *statePtr = (TcpState *)instanceData;
+
+    if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
+	/*
+	 * Async-connecting socket must get reassigned handler if it have been
+	 * transferred to another thread. Remove the handler if the socket is
+	 * not managed by this thread anymore and create new handler (TSD related)
+	 * so the callback will run in the correct thread, bug [f583715154].
+	 */
+	switch (action) {
+	  case TCL_CHANNEL_THREAD_REMOVE:
+	    CLEAR_BITS(statePtr->flags, TCP_ASYNC_PENDING);
+	    Tcl_DeleteFileHandler(statePtr->fds.fd);
+	  break;
+	  case TCL_CHANNEL_THREAD_INSERT:
+	    Tcl_CreateFileHandler(statePtr->fds.fd,
+		TCL_WRITABLE | TCL_EXCEPTION, TcpAsyncCallback, statePtr);
+	    SET_BITS(statePtr->flags, TCP_ASYNC_PENDING);
+	  break;
+	}
+    }
 }
 
 /*

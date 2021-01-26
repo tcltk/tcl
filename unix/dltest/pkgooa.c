@@ -4,7 +4,7 @@
  *	This file contains a simple Tcl package "pkgooa" that is intended for
  *	testing the Tcl dynamic loading facilities.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
+ * Copyright © 1995 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -38,6 +38,8 @@ Pkgooa_StubsOKObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");
 	return TCL_ERROR;
@@ -76,9 +78,13 @@ static TclOOStubs stubsCopy = {
      * a function with a different memory address than
      * the real Tcl_CopyObjectInstance function in Tcl. */
     (Tcl_Object (*) (Tcl_Interp *, Tcl_Object, const char *,
-	    const char *t)) Pkgooa_StubsOKObjCmd
+	    const char *t))(void *)Pkgooa_StubsOKObjCmd,
     /* More entries could be here, but those are not used
      * for this test-case. So, being NULL is OK. */
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 };
 
 extern DLLEXPORT int
@@ -132,7 +138,7 @@ Pkgooa_Init(
 
     tclOOStubsPtr = &stubsCopy;
 
-    code = Tcl_PkgProvide(interp, "Pkgooa", "1.0");
+    code = Tcl_PkgProvide(interp, "pkgooa", "1.0");
     if (code != TCL_OK) {
 	return code;
     }

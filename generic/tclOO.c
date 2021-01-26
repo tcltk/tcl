@@ -3,8 +3,8 @@
  *
  *	This file contains the object-system core (NB: not Tcl_Obj, but ::oo)
  *
- * Copyright (c) 2005-2012 by Donal K. Fellows
- * Copyright (c) 2017 by Nathan Coulter
+ * Copyright © 2005-2012 Donal K. Fellows
+ * Copyright © 2017 Nathan Coulter
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -133,12 +133,15 @@ static const Tcl_MethodType classConstructor = {
 };
 
 /*
- * Scripted parts of TclOO. First, the master script (cannot be outside this
+ * Scripted parts of TclOO. First, the main script (cannot be outside this
  * file).
  */
 
 static const char *initScript =
+#ifndef TCL_NO_DEPRECATED
 "package ifneeded TclOO " TCLOO_PATCHLEVEL " {# Already present, OK?};"
+#endif
+"package ifneeded tcl::oo " TCLOO_PATCHLEVEL " {# Already present, OK?};"
 "namespace eval ::oo { variable version " TCLOO_VERSION " };"
 "namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
 /* "tcl_findLibrary tcloo $oo::version $oo::version" */
@@ -257,8 +260,12 @@ TclOOInit(
 	return TCL_ERROR;
     }
 
-    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
-	    (ClientData) &tclOOStubs);
+#ifndef TCL_NO_DEPRECATED
+    Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
+    	    (void *) &tclOOStubs);
+#endif
+    return Tcl_PkgProvideEx(interp, "tcl::oo", TCLOO_PATCHLEVEL,
+	    (void *) &tclOOStubs);
 }
 
 /*
@@ -566,7 +573,7 @@ DeletedHelpersNamespace(
 
 static void
 KillFoundation(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp)	/* The interpreter containing the OO system
 			 * foundation. */
 {
@@ -1177,7 +1184,7 @@ ObjectNamespaceDeleted(
      * freed memory.
      */
 
-    if (((Command *) oPtr->command)->flags && CMD_IS_DELETED) {
+    if (((Command *) oPtr->command)->flags && CMD_DYING) {
 	/*
 	 * Something has already started the command deletion process. We can
 	 * go ahead and clean up the the namespace,
@@ -3035,7 +3042,7 @@ TclOOObjectName(
     if (oPtr->cachedNameObj) {
 	return oPtr->cachedNameObj;
     }
-    namePtr = Tcl_NewObj();
+    TclNewObj(namePtr);
     Tcl_GetCommandFullName(interp, oPtr->command, namePtr);
     Tcl_IncrRefCount(namePtr);
     oPtr->cachedNameObj = namePtr;

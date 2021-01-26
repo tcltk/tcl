@@ -6,7 +6,7 @@
  *	fixed size blocks from block caches.
  *
  * The Initial Developer of the Original Code is America Online, Inc.
- * Portions created by AOL are Copyright (C) 1999 America Online, Inc.
+ * Portions created by AOL are Copyright © 1999 America Online, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1146,7 +1146,7 @@ TclFinalizeThreadAllocThread(void)
 
 void
 Tcl_GetMemoryInfo(
-    Tcl_DString *dsPtr)
+    TCL_UNUSED(Tcl_DString *))
 {
     Tcl_Panic("Tcl_GetMemoryInfo called when threaded memory allocator not in use");
 }

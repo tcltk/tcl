@@ -4,7 +4,7 @@
  *	This file provides timer event management facilities for Tcl,
  *	including the "after" command.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright © 1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -792,7 +792,7 @@ Tcl_AfterObjCmd(
     static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
     };
-    enum afterSubCmds {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
+    enum afterSubCmdsEnum {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (objc < 2) {
@@ -893,10 +893,10 @@ Tcl_AfterObjCmd(
 	} else {
 	    commandPtr = Tcl_ConcatObj(objc-2, objv+2);
 	}
-	command = TclGetStringFromObj(commandPtr, &length);
+	command = Tcl_GetStringFromObj(commandPtr, &length);
 	for (afterPtr = assocPtr->firstAfterPtr;  afterPtr != NULL;
 		afterPtr = afterPtr->nextPtr) {
-	    tempCommand = TclGetStringFromObj(afterPtr->commandPtr,
+	    tempCommand = Tcl_GetStringFromObj(afterPtr->commandPtr,
 		    &tempLength);
 	    if ((length == tempLength)
 		    && !memcmp(command, tempCommand, length)) {
@@ -942,8 +942,9 @@ Tcl_AfterObjCmd(
 	break;
     case AFTER_INFO:
 	if (objc == 2) {
-            Tcl_Obj *resultObj = Tcl_NewObj();
+	    Tcl_Obj *resultObj;
 
+	    TclNewObj(resultObj);
 	    for (afterPtr = assocPtr->firstAfterPtr; afterPtr != NULL;
 		    afterPtr = afterPtr->nextPtr) {
 		if (assocPtr->interp == interp) {
@@ -967,8 +968,9 @@ Tcl_AfterObjCmd(
             Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, NULL);
 	    return TCL_ERROR;
 	} else {
-            Tcl_Obj *resultListPtr = Tcl_NewObj();
+            Tcl_Obj *resultListPtr;
 
+            TclNewObj(resultListPtr);
             Tcl_ListObjAppendElement(interp, resultListPtr,
                     afterPtr->commandPtr);
             Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(

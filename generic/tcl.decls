@@ -5,9 +5,9 @@
 #	This file is used to generate the tclDecls.h, tclPlatDecls.h
 #	and tclStubInit.c files.
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
-# Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001, 2002 Kevin B. Kenny.  All rights reserved.
+# Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -145,7 +145,7 @@ declare 32 {
 	    int *boolPtr)
 }
 declare 33 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -172,7 +172,7 @@ declare 40 {
     const Tcl_ObjType *Tcl_GetObjType(const char *typeName)
 }
 declare 41 {
-    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    char *TclGetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 42 {
     void Tcl_InvalidateStringRep(Tcl_Obj *objPtr)
@@ -330,12 +330,12 @@ declare 85 {
 	    int flags)
 }
 declare 86 {
-    int Tcl_CreateAlias(Tcl_Interp *slave, const char *slaveCmd,
+    int Tcl_CreateAlias(Tcl_Interp *childInterp, const char *childCmd,
 	    Tcl_Interp *target, const char *targetCmd, int argc,
 	    const char *const *argv)
 }
 declare 87 {
-    int Tcl_CreateAliasObj(Tcl_Interp *slave, const char *slaveCmd,
+    int Tcl_CreateAliasObj(Tcl_Interp *childInterp, const char *childCmd,
 	    Tcl_Interp *target, const char *targetCmd, int objc,
 	    Tcl_Obj *const objv[])
 }
@@ -379,7 +379,7 @@ declare 96 {
 	    Tcl_CmdDeleteProc *deleteProc)
 }
 declare 97 {
-    Tcl_Interp *Tcl_CreateSlave(Tcl_Interp *interp, const char *slaveName,
+    Tcl_Interp *Tcl_CreateChild(Tcl_Interp *interp, const char *name,
 	    int isSafe)
 }
 declare 98 {
@@ -546,12 +546,12 @@ declare 146 {
 #    void Tcl_FreeResult(Tcl_Interp *interp)
 #}
 declare 148 {
-    int Tcl_GetAlias(Tcl_Interp *interp, const char *slaveCmd,
+    int Tcl_GetAlias(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
 	    int *argcPtr, const char ***argvPtr)
 }
 declare 149 {
-    int Tcl_GetAliasObj(Tcl_Interp *interp, const char *slaveCmd,
+    int Tcl_GetAliasObj(Tcl_Interp *interp, const char *childCmd,
 	    Tcl_Interp **targetInterpPtr, const char **targetCmdPtr,
 	    int *objcPtr, Tcl_Obj ***objv)
 }
@@ -601,10 +601,10 @@ declare 162 {
     const char *Tcl_GetHostName(void)
 }
 declare 163 {
-    int Tcl_GetInterpPath(Tcl_Interp *askInterp, Tcl_Interp *slaveInterp)
+    int Tcl_GetInterpPath(Tcl_Interp *interp, Tcl_Interp *childInterp)
 }
 declare 164 {
-    Tcl_Interp *Tcl_GetMaster(Tcl_Interp *interp)
+    Tcl_Interp *Tcl_GetParent(Tcl_Interp *interp)
 }
 declare 165 {
     const char *Tcl_GetNameOfExecutable(void)
@@ -635,7 +635,7 @@ declare 171 {
     int Tcl_GetServiceMode(void)
 }
 declare 172 {
-    Tcl_Interp *Tcl_GetSlave(Tcl_Interp *interp, const char *slaveName)
+    Tcl_Interp *Tcl_GetChild(Tcl_Interp *interp, const char *name)
 }
 declare 173 {
     Tcl_Channel Tcl_GetStdChannel(int type)
@@ -1601,7 +1601,7 @@ declare 433 {
 
 # introduced in 8.4a3
 declare 434 {
-    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 
 # TIP#15 (math function introspection) dkf
@@ -1813,10 +1813,10 @@ declare 490 {
     Tcl_StatBuf *Tcl_AllocStatBuf(void)
 }
 declare 491 {
-    Tcl_WideInt Tcl_Seek(Tcl_Channel chan, Tcl_WideInt offset, int mode)
+    long long Tcl_Seek(Tcl_Channel chan, long long offset, int mode)
 }
 declare 492 {
-    Tcl_WideInt Tcl_Tell(Tcl_Channel chan)
+    long long Tcl_Tell(Tcl_Channel chan)
 }
 
 # TIP#91 (back-compat enhancements for channels) dkf
@@ -2088,7 +2088,7 @@ declare 559 {
 
 # TIP #208 ('chan' command) jeffh
 declare 560 {
-    int Tcl_TruncateChannel(Tcl_Channel chan, Tcl_WideInt length)
+    int Tcl_TruncateChannel(Tcl_Channel chan, long long length)
 }
 declare 561 {
     Tcl_DriverTruncateProc *Tcl_ChannelTruncateProc(
@@ -2239,19 +2239,19 @@ declare 595 {
     int Tcl_GetDeviceTypeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 596 {
-    Tcl_WideInt Tcl_GetAccessTimeFromStat(const Tcl_StatBuf *statPtr)
+    long long Tcl_GetAccessTimeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 597 {
-    Tcl_WideInt Tcl_GetModificationTimeFromStat(const Tcl_StatBuf *statPtr)
+    long long Tcl_GetModificationTimeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 598 {
-    Tcl_WideInt Tcl_GetChangeTimeFromStat(const Tcl_StatBuf *statPtr)
+    long long Tcl_GetChangeTimeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 599 {
-    Tcl_WideUInt Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr)
+    unsigned long long Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 600 {
-    Tcl_WideUInt Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr)
+    unsigned long long Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 601 {
     unsigned Tcl_GetBlockSizeFromStat(const Tcl_StatBuf *statPtr)
@@ -2465,6 +2465,17 @@ declare 648 {
 	    size_t length, Tcl_DString *dsPtr)
 }
 
+# TIP #481
+declare 651 {
+    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 652 {
+    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 653 {
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
@@ -2480,29 +2491,18 @@ interface tclPlat
 
 ################################
 # Windows specific functions
-
-# Added in Tcl 8.1, Removed in Tcl 9.0 (converted to macro)
-
-#declare 0 {
-#    TCHAR *Tcl_WinUtfToTChar(const char *str, size_t len, Tcl_DString *dsPtr)
-#}
-#declare 1 {
-#    char *Tcl_WinTCharToUtf(const TCHAR *str, size_t len, Tcl_DString *dsPtr)
-#}
+#   (none)
 
 ################################
 # Mac OS X specific functions
 
-# Removed in 9.0
-#declare 0 {
-#    int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
-#	    const char *bundleName, int hasResourceFile,
-#	    size_t maxPathLen, char *libraryPath)
-#}
 declare 1 {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
 	    int hasResourceFile, size_t maxPathLen, char *libraryPath)
+}
+declare 2 {
+    void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
 }
 
 ##############################################################################

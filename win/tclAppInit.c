@@ -29,7 +29,7 @@ extern Tcl_PackageInitProc Tcltest_Init;
 extern Tcl_PackageInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
-#if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
+#if defined(STATIC_BUILD)
 extern Tcl_PackageInitProc Registry_Init;
 extern Tcl_PackageInitProc Dde_Init;
 extern Tcl_PackageInitProc Dde_SafeInit;
@@ -87,7 +87,7 @@ MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 int
 main(
     int argc,			/* Number of command-line arguments. */
-    TCL_UNUSED(char **))
+    char **argv1)
 {
     TCHAR **argv;
     TCHAR *p;
@@ -112,6 +112,7 @@ _tmain(
      * Get our args from the c-runtime. Ignore command line.
      */
 
+    (void)argv1;
     setargv(&argc, &argv);
 #endif
 
@@ -163,16 +164,16 @@ Tcl_AppInit(
 	return TCL_ERROR;
     }
 
-#if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
+#if defined(STATIC_BUILD)
     if (Registry_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
+    Tcl_StaticPackage(interp, "Registry", Registry_Init, NULL);
 
     if (Dde_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
+    Tcl_StaticPackage(interp, "Dde", Dde_Init, Dde_SafeInit);
 #endif
 
 #ifdef TCL_TEST

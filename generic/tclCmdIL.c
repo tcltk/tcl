@@ -6,12 +6,12 @@
  *	contains only commands in the generic core (i.e., those that don't
  *	depend much upon UNIX facilities).
  *
- * Copyright (c) 1987-1993 The Regents of the University of California.
- * Copyright (c) 1993-1997 Lucent Technologies.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
- * Copyright (c) 2005 Donal K. Fellows.
+ * Copyright © 1987-1993 The Regents of the University of California.
+ * Copyright © 1993-1997 Lucent Technologies.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
+ * Copyright © 2001 Kevin B. Kenny. All rights reserved.
+ * Copyright © 2005 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -383,7 +383,7 @@ Tcl_IncrObjCmd(
     if (objc == 3) {
 	incrPtr = objv[2];
     } else {
-	incrPtr = Tcl_NewWideIntObj(1);
+	TclNewIntObj(incrPtr, 1);
     }
     Tcl_IncrRefCount(incrPtr);
     newValuePtr = TclIncrObjVar2(interp, objv[1], NULL,
@@ -545,7 +545,7 @@ InfoBodyCmd(
      * the object do not invalidate the internal rep.
      */
 
-    bytes = TclGetStringFromObj(procPtr->bodyPtr, &numBytes);
+    bytes = Tcl_GetStringFromObj(procPtr->bodyPtr, &numBytes);
     Tcl_SetObjResult(interp, Tcl_NewStringObj(bytes, numBytes));
     return TCL_OK;
 }
@@ -1026,7 +1026,7 @@ InfoErrorStackCmd(
 
     target = interp;
     if (objc == 2) {
-	target = Tcl_GetSlave(interp, TclGetString(objv[1]));
+	target = Tcl_GetChild(interp, TclGetString(objv[1]));
 	if (target == NULL) {
 	    return TCL_ERROR;
 	}
@@ -2142,7 +2142,7 @@ InfoCmdTypeCmd(
     }
 
     /*
-     * There's one special case: safe slave interpreters can't see aliases as
+     * There's one special case: safe child interpreters can't see aliases as
      * aliases as they're part of the security mechanisms.
      */
 
@@ -2212,7 +2212,7 @@ Tcl_JoinObjCmd(
     joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
     Tcl_IncrRefCount(joinObjPtr);
 
-    (void) TclGetStringFromObj(joinObjPtr, &length);
+    (void) Tcl_GetStringFromObj(joinObjPtr, &length);
     if (length == 0) {
 	resObjPtr = TclStringCat(interp, listLen, elemPtrs, 0);
     } else {
@@ -3160,7 +3160,7 @@ Tcl_LsearchObjCmd(
 	"-real",    "-regexp",  "-sorted",     "-start", "-stride",
 	"-subindices", NULL
     };
-    enum options {
+    enum lsearchoptions {
 	LSEARCH_ALL, LSEARCH_ASCII, LSEARCH_BISECT, LSEARCH_DECREASING,
 	LSEARCH_DICTIONARY, LSEARCH_EXACT, LSEARCH_GLOB, LSEARCH_INCREASING,
 	LSEARCH_INDEX, LSEARCH_INLINE, LSEARCH_INTEGER, LSEARCH_NOCASE,
@@ -3208,7 +3208,7 @@ Tcl_LsearchObjCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	switch ((enum options) index) {
+	switch ((enum lsearchoptions) index) {
 	case LSEARCH_ALL:		/* -all */
 	    allMatches = 1;
 	    break;
@@ -3309,7 +3309,7 @@ Tcl_LsearchObjCmd(
 	    if (wide < 1) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"stride length must be at least 1", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSEARCH",
 			"BADSTRIDE", NULL);
 		result = TCL_ERROR;
 		goto done;
@@ -3518,7 +3518,8 @@ Tcl_LsearchObjCmd(
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
-		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-1));
+		TclNewIndexObj(itemPtr, TCL_INDEX_NONE);
+		Tcl_SetObjResult(interp, itemPtr);
 	    }
 	    goto done;
 	}
@@ -3538,7 +3539,7 @@ Tcl_LsearchObjCmd(
 	switch ((enum datatypes) dataType) {
 	case ASCII:
 	case DICTIONARY:
-	    patternBytes = TclGetStringFromObj(patObj, &length);
+	    patternBytes = Tcl_GetStringFromObj(patObj, &length);
 	    break;
 	case INTEGER:
 	    result = TclGetWideIntFromObj(interp, patObj, &patWide);
@@ -3568,7 +3569,7 @@ Tcl_LsearchObjCmd(
 	    break;
 	}
     } else {
-	patternBytes = TclGetStringFromObj(patObj, &length);
+	patternBytes = Tcl_GetStringFromObj(patObj, &length);
     }
 
     /*
@@ -3645,11 +3646,11 @@ Tcl_LsearchObjCmd(
 		/*
 		 * Normally, binary search is written to stop when it finds a
 		 * match. If there are duplicates of an element in the list,
-		 * our first match might not be the first occurance.
+		 * our first match might not be the first occurrence.
 		 * Consider: 0 0 0 1 1 1 2 2 2
 		 *
-		 * To maintain consistancy with standard lsearch semantics, we
-		 * must find the leftmost occurance of the pattern in the
+		 * To maintain consistency with standard lsearch semantics, we
+		 * must find the leftmost occurrence of the pattern in the
 		 * list. Thus we don't just stop searching here. This
 		 * variation means that a search always makes log n
 		 * comparisons (normal binary search might "get lucky" with an
@@ -3712,7 +3713,7 @@ Tcl_LsearchObjCmd(
 	    case EXACT:
 		switch ((enum datatypes) dataType) {
 		case ASCII:
-		    bytes = TclGetStringFromObj(itemPtr, &elemLen);
+		    bytes = Tcl_GetStringFromObj(itemPtr, &elemLen);
 		    if (length == elemLen) {
 			/*
 			 * This split allows for more optimal compilation of
@@ -3806,10 +3807,12 @@ Tcl_LsearchObjCmd(
 	    } else if (returnSubindices) {
 		int j;
 
-		itemPtr = TclNewWideIntObjFromSize(i+groupOffset);
+		TclNewIndexObj(itemPtr, i+groupOffset);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
-		    Tcl_ListObjAppendElement(interp, itemPtr, TclNewWideIntObjFromSize(
-			    TclIndexDecode(sortInfo.indexv[j], listc)));
+		    Tcl_Obj *elObj;
+		    size_t elValue = TclIndexDecode(sortInfo.indexv[j], listc);
+		    TclNewIndexObj(elObj, elValue);
+		    Tcl_ListObjAppendElement(interp, itemPtr, elObj);
 		}
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 	    } else {
@@ -3828,14 +3831,18 @@ Tcl_LsearchObjCmd(
 	if (returnSubindices) {
 	    int j;
 
-	    itemPtr = TclNewWideIntObjFromSize(index+groupOffset);
+	    TclNewIndexObj(itemPtr, index+groupOffset);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		Tcl_ListObjAppendElement(interp, itemPtr, TclNewWideIntObjFromSize(
-			TclIndexDecode(sortInfo.indexv[j], listc)));
+		Tcl_Obj *elObj;
+		size_t elValue = TclIndexDecode(sortInfo.indexv[j], listc);
+		TclNewIndexObj(elObj, elValue);
+		Tcl_ListObjAppendElement(interp, itemPtr, elObj);
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(index));
+		Tcl_Obj *elObj;
+		TclNewIndexObj(elObj, index);
+	    Tcl_SetObjResult(interp, elObj);
 	}
     } else if (index < 0) {
 	/*
@@ -4421,7 +4428,7 @@ Tcl_LsortObjCmd(
 		idx = elementPtr->payload.index;
 		for (j = 0; j < groupSize; j++) {
 		    if (indices) {
-			objPtr = TclNewWideIntObjFromSize(idx + j - groupOffset);
+			TclNewIndexObj(objPtr, idx + j - groupOffset);
 			newArray[i++] = objPtr;
 			Tcl_IncrRefCount(objPtr);
 		    } else {
@@ -4433,7 +4440,7 @@ Tcl_LsortObjCmd(
 	    }
 	} else if (indices) {
 	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
-		objPtr = TclNewWideIntObjFromSize(elementPtr->payload.index);
+		TclNewIndexObj(objPtr, elementPtr->payload.index);
 		newArray[i++] = objPtr;
 		Tcl_IncrRefCount(objPtr);
 	    }
@@ -4704,7 +4711,7 @@ static int
 DictionaryCompare(
     const char *left, const char *right)	/* The strings to compare. */
 {
-    Tcl_UniChar uniLeft = 0, uniRight = 0, uniLeftLower, uniRightLower;
+    int uniLeft = 0, uniRight = 0, uniLeftLower, uniRightLower;
     int diff, zeros;
     int secondaryDiff = 0;
 
@@ -4773,8 +4780,8 @@ DictionaryCompare(
 	 */
 
 	if ((*left != '\0') && (*right != '\0')) {
-	    left += TclUtfToUniChar(left, &uniLeft);
-	    right += TclUtfToUniChar(right, &uniRight);
+	    left += TclUtfToUCS4(left, &uniLeft);
+	    right += TclUtfToUCS4(right, &uniRight);
 
 	    /*
 	     * Convert both chars to lower for the comparison, because

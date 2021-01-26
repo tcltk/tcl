@@ -4,7 +4,7 @@
  *	Channel drivers for Windows channels based on files, command pipes and
  *	TCP sockets.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -85,14 +85,14 @@ static int		FileInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		FileOutputProc(ClientData instanceData,
 			    const char *buf, int toWrite, int *errorCode);
-static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCode);
+static long long	FileWideSeekProc(ClientData instanceData,
+			    long long offset, int mode, int *errorCode);
 static void		FileSetupProc(ClientData clientData, int flags);
 static void		FileWatchProc(ClientData instanceData, int mask);
 static void		FileThreadActionProc(ClientData instanceData,
 			    int action);
 static int		FileTruncateProc(ClientData instanceData,
-			    Tcl_WideInt length);
+			    long long length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const WCHAR *nativeName);
 
@@ -459,10 +459,10 @@ FileCloseProc(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 FileWideSeekProc(
     ClientData instanceData,	/* File state. */
-    Tcl_WideInt offset,		/* Offset to seek to. */
+    long long offset,		/* Offset to seek to. */
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
 {
@@ -491,8 +491,8 @@ FileWideSeekProc(
 	    return -1;
 	}
     }
-    return (((Tcl_WideInt)((unsigned)newPos))
-	    | ((Tcl_WideInt)newPosHigh << 32));
+    return (((long long)((unsigned)newPos))
+	    | ((long long)newPosHigh << 32));
 }
 
 /*
@@ -514,7 +514,7 @@ FileWideSeekProc(
 static int
 FileTruncateProc(
     ClientData instanceData,	/* File state. */
-    Tcl_WideInt length)		/* Length to truncate at. */
+    long long length)		/* Length to truncate at. */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;

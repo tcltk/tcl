@@ -6,8 +6,8 @@
  *	is primarily responsible for keeping the "env" arrays in sync with the
  *	system environment variables.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1998 Sun Microsystems, Inc.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -126,6 +126,17 @@ TclSetupEnv(
     varPtr = TclObjLookupVarEx(interp, varNamePtr, NULL, TCL_GLOBAL_ONLY,
 	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
     TclFindArrayPtrElements(varPtr, &namesHash);
+
+#if defined(_WIN32)
+    if (tenviron == NULL) {
+	/*
+	 * When we are started from main(), the _wenviron array could
+	 * be NULL and will be initialized by the first _wgetenv() call.
+	 */
+
+	(void) _wgetenv(L"WINDIR");
+    }
+#endif
 
     /*
      * Go through the environment array and transfer its values into Tcl. At
@@ -761,7 +772,7 @@ TclFinalizeEnvironment(void)
 
     if (env.cache) {
 #ifdef PURIFY
-	int i;
+	size_t i;
 	for (i = 0; i < env.cacheSize; i++) {
 	    Tcl_Free(env.cache[i]);
 	}

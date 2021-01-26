@@ -4,18 +4,19 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1997 by Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 testConstraint bigEndian [expr {$tcl_platform(byteOrder) eq "bigEndian"}]
 testConstraint littleEndian [expr {$tcl_platform(byteOrder) eq "littleEndian"}]
+testConstraint testbytestring [llength [info commands testbytestring]]
 
 # Big test for correct ordering of data in [expr]
 proc testIEEE {} {
@@ -758,7 +759,16 @@ test binary-21.12 {Tcl_BinaryObjCmd: scan} -setup {
 } -body {
     list [binary scan "abc def \x00ghi  " A* arg1] $arg1
 } -result [list 1 "abc def \x00ghi"]
-
+test binary-21.13 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan "abc def \x00  " C* arg1] $arg1
+} -result {1 {abc def }}
+test binary-21.12 {Tcl_BinaryObjCmd: scan} -setup {
+    unset -nocomplain arg1
+} -body {
+    list [binary scan "abc def \x00ghi" C* arg1] $arg1
+} -result {1 {abc def }}
 test binary-22.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
     binary scan abc b
 } -result {not enough arguments for all format specifiers}
@@ -2510,9 +2520,9 @@ test binary-71.6 {binary decode hex} -body {
 test binary-71.7 {binary decode hex} -body {
     binary decode hex "61\n\n\n61"
 } -result {aa}
-test binary-71.8 {binary decode hex} -body {
+test binary-71.8 {binary decode hex} -match glob -body {
     binary decode hex -strict "61 61"
-} -returnCodes error -result {invalid hexadecimal digit " " at position 2}
+} -returnCodes error -result {invalid hexadecimal digit " " * at position 2}
 test binary-71.9 {binary decode hex} -body {
     set r [binary decode hex "6"]
     list [string length $r] $r
@@ -2674,11 +2684,11 @@ test binary-73.11 {binary decode base64} -body {
 } -result [string repeat abc 20]
 test binary-73.12 {binary decode base64} -body {
     binary decode base64 -strict ":YWJj"
-} -returnCodes error -match glob -result {invalid base64 character ":" at position 0}
+} -returnCodes error -match glob -result {invalid base64 character ":" * at position 0}
 test binary-73.13 {binary decode base64} -body {
     set s "[string repeat YWJj 10]:[string repeat YWJj 10]"
     binary decode base64 -strict $s
-} -returnCodes error -match glob -result {invalid base64 character ":" at position 40}
+} -returnCodes error -match glob -result {invalid base64 character ":" * at position 40}
 test binary-73.14 {binary decode base64} -body {
     set s "[string repeat YWJj 10]\n    [string repeat YWJj 10]"
     binary decode base64 -strict $s
@@ -2803,11 +2813,17 @@ test binary-74.10 {binary encode uuencode} -returnCodes error -body {
     binary encode uuencode -foo 30 abcabcabc
 } -result {bad option "-foo": must be -maxlen or -wrapchar}
 test binary-74.11 {binary encode uuencode} -returnCodes error -body {
-    binary encode uuencode -maxlen 1 abcabcabc
+    binary encode uuencode -maxlen 4 abcabcabc
 } -result {line length out of range}
 test binary-74.12 {binary encode uuencode} -body {
-    binary encode uuencode -maxlen 3 -wrapchar | abcabcabc
-} -result {!80|!8@|!8P|!80|!8@|!8P|!80|!8@|!8P|}
+    binary encode uuencode -maxlen 5 -wrapchar \t abcabcabc
+} -result #86)C\t#86)C\t#86)C\t
+test binary-74.13 {binary encode uuencode} -body {
+    binary encode uuencode -maxlen 85 -wrapchar \t abcabcabc
+} -result )86)C86)C86)C\t
+test binary-74.14 {binary encode uuencode} -returnCodes error -body {
+    binary encode uuencode -maxlen 86 abcabcabc
+} -result {line length out of range}
 
 test binary-75.1 {binary decode uuencode} -body {
     binary decode uuencode
@@ -2849,11 +2865,11 @@ test binary-75.11 {binary decode uuencode} -body {
 } -result [string repeat abc 20]
 test binary-75.12 {binary decode uuencode} -body {
     binary decode uuencode -strict "|86)C"
-} -returnCodes error -match glob -result {invalid uuencode character "|" at position 0}
+} -returnCodes error -match glob -result {invalid uuencode character "|" * at position 0}
 test binary-75.13 {binary decode uuencode} -body {
     set s ">[string repeat 86)C 10]|[string repeat 86)C 10]"
     binary decode uuencode -strict $s
-} -returnCodes error -match glob -result {invalid uuencode character "|" at position 41}
+} -returnCodes error -match glob -result {invalid uuencode character "|" * at position 41}
 test binary-75.14 {binary decode uuencode} -body {
     set s ">[string repeat 86)C 10]\na[string repeat 86)C 10]"
     binary decode uuencode -strict $s
@@ -2881,7 +2897,7 @@ test binary-75.24 {binary decode uuencode} -body {
 test binary-75.25 {binary decode uuencode} -body {
     set s "#04)\#z"
     binary decode uuencode $s
-} -returnCodes error -match glob -result {invalid uuencode character "z" at position 5}
+} -returnCodes error -match glob -result {invalid uuencode character "z" * at position 5}
 test binary-75.26 {binary decode uuencode} -body {
     string length [binary decode uuencode " "]
 } -result 0
@@ -2935,7 +2951,19 @@ test binary-79.2 {Tcl_SetByteArrayLength} testsetbytearraylength {
     testsetbytearraylength [string cat \u0141 B C] 1
 } A
 
-
+test binary-80.1 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+    testbytestring "\u4E4E"
+} -result "expected byte sequence but character 0 was '\u4E4E' (U+004E4E)"
+test binary-80.2 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+    testbytestring [testbytestring "\x00\xA0\xA0\xA0\xE4\xB9\x8E"]
+} -result "expected byte sequence but character 4 was '\u4E4E' (U+004E4E)"
+test binary-80.3 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+    testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xE4\xB9\x8E"]
+} -result "expected byte sequence but character 4 was '\u4E4E' (U+004E4E)"
+test binary-80.4 {TclGetBytesFromObj} -constraints testbytestring -returnCodes 1 -body {
+    testbytestring [testbytestring "\xC0\x80\xA0\xA0\xA0\xF0\x9F\x98\x81"]
+} -result "expected byte sequence but character 4 was '\U01F601' (U+01F601)"
+
 # ----------------------------------------------------------------------
 # cleanup
 

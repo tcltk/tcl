@@ -4,21 +4,21 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001 Kevin B. Kenny.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2.2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 set minus -
 testConstraint testevalex [llength [info commands testevalex]]
@@ -448,6 +448,14 @@ test lindex-17.0 {Bug 1718580} -body {
 test lindex-17.1 {Bug 1718580} -body {
     lindex a end foo
 } -match glob -result {bad index "foo"*} -returnCodes 1
+
+test lindex-18.0 {nested bytecode execution} -setup {
+    proc demo {i} {lindex {a b c} $i}
+} -body {
+    demo 0+0x10000000000000000
+} -cleanup {
+    rename demo {}
+}
 
 catch { unset minus }
 

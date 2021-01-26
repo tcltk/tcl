@@ -4,7 +4,7 @@
  *	This file contains the generic portion of the command channel driver
  *	as well as various utility routines used in managing subprocesses.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright © 1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -334,7 +334,7 @@ TclCleanupChildren(
 	    Tcl_Obj *objPtr;
 
 	    Tcl_Seek(errorChan, 0, SEEK_SET);
-	    objPtr = Tcl_NewObj();
+	    TclNewObj(objPtr);
 	    count = Tcl_ReadChars(errorChan, objPtr, -1, 0);
 	    if (count == -1) {
 		result = TCL_ERROR;

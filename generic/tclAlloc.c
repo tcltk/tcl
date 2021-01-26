@@ -6,9 +6,9 @@
  *	that don't exactly fit are passed up to the next larger size. Blocks
  *	over a certain size are directly allocated from the system.
  *
- * Copyright (c) 1983 Regents of the University of California.
- * Copyright (c) 1996-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1983 Regents of the University of California.
+ * Copyright © 1996-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * Portions contributed by Chris Kingsley, Jack Jansen and Ray Johnson.
  *
@@ -24,14 +24,14 @@
 #include "tclInt.h"
 #if !TCL_THREADS || !defined(USE_THREAD_ALLOC)
 
-#if USE_TCLALLOC
+#if defined(USE_TCLALLOC) && USE_TCLALLOC
 
 /*
  * We should really make use of AC_CHECK_TYPE(caddr_t) here, but it can wait
  * until Tcl uses config.h properly.
  */
 
-#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
 typedef size_t caddr_t;
 #endif
 
@@ -345,7 +345,7 @@ TclpAlloc(
 
     nextf[bucket] = overPtr->next;
     overPtr->overMagic0 = overPtr->overMagic1 = MAGIC;
-    overPtr->bucketIndex = (unsigned char) bucket;
+    overPtr->bucketIndex = UCHAR(bucket);
 
 #ifdef MSTATS
     numMallocs[bucket]++;

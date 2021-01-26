@@ -4,7 +4,7 @@
  *	This file contains the method call chain management code for the
  *	object-system core.
  *
- * Copyright (c) 2005-2012 by Donal K. Fellows
+ * Copyright © 2005-2012 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -913,7 +913,7 @@ AddSimpleChainToCallContext(
 		    flags | TRAVERSED_MIXIN, filterDecl);
 	}
 	if (oPtr->methodsPtr && !blockedUnexported) {
-	    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char*) methodNameObj);
+	    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *)methodNameObj);
 	    if (hPtr != NULL) {
 		mPtr = (Method *)Tcl_GetHashValue(hPtr);
 		if (!IS_PRIVATE(mPtr)) {

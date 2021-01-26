@@ -7,9 +7,9 @@
  *	is the primary author.  Other signifiant contributors are Karl
  *	Lehenbauer, Mark Diekhans and Peter da Silva.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 2001-2004 Vincent Darley.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 2001-2004 Vincent Darley.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -524,8 +524,8 @@ TclFSCwdPointerEquals(
 	size_t len1, len2;
 	const char *str1, *str2;
 
-	str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	str2 = TclGetStringFromObj(*pathPtrPtr, &len2);
+	str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	str2 = Tcl_GetStringFromObj(*pathPtrPtr, &len2);
 	if ((len1 == len2) && !memcmp(str1, str2, len1)) {
 	    /*
 	     * The values are equal but the objects are different.  Cache the
@@ -668,7 +668,7 @@ FsUpdateCwd(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 
     if (cwdObj != NULL) {
-	str = TclGetStringFromObj(cwdObj, &len);
+	str = Tcl_GetStringFromObj(cwdObj, &len);
     }
 
     Tcl_MutexLock(&cwdMutex);
@@ -1157,8 +1157,8 @@ FsAddMountsToGlobResult(
 	    if (norm != NULL) {
 		const char *path, *mount;
 
-		mount = TclGetStringFromObj(mElt, &mlen);
-		path = TclGetStringFromObj(norm, &len);
+		mount = Tcl_GetStringFromObj(mElt, &mlen);
+		path = Tcl_GetStringFromObj(norm, &len);
 		if (path[len-1] == '/') {
 		    /*
 		     * Deal with the root of the volume.
@@ -1338,7 +1338,7 @@ TclFSNormalizeToUniquePath(
      * We check these first to avoid useless calls to the native filesystem's
      * normalizePathProc.
      */
-    path = TclGetStringFromObj(pathPtr, &i);
+    path = Tcl_GetStringFromObj(pathPtr, &i);
 
     if ( (i >= 3) && ( (path[0] == '/' && path[1] == '/')
 		    || (path[0] == '\\' && path[1] == '\\') ) ) {
@@ -1684,7 +1684,7 @@ Tcl_FSEvalFileEx(
 				 * Tilde-substitution is performed on this
 				 * pathname. */
     const char *encodingName)	/* Either the name of an encoding or NULL to
-				   use the system encoding. */
+				   use the utf-8 encoding. */
 {
     size_t length;
 	int result = TCL_ERROR;
@@ -1723,19 +1723,19 @@ Tcl_FSEvalFileEx(
 
     /*
      * If the encoding is specified, set the channel to that encoding.
-     * Otherwise don't touch it, leaving things up to the system encoding.  If
-     * the encoding is unknown report an error.
+     * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
-    if (encodingName != NULL) {
-	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
-		!= TCL_OK) {
-	    Tcl_CloseEx(interp,chan,0);
-	    return result;
-	}
+    if (encodingName == NULL) {
+	encodingName = "utf-8";
+    }
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+	    != TCL_OK) {
+	Tcl_CloseEx(interp,chan,0);
+	return result;
     }
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
 
     /*
@@ -1757,7 +1757,7 @@ Tcl_FSEvalFileEx(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
+	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1773,7 +1773,7 @@ Tcl_FSEvalFileEx(
     oldScriptFile = iPtr->scriptFile;
     iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
-    string = TclGetStringFromObj(objPtr, &length);
+    string = Tcl_GetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280:  Open a frame for the evaluated script.
@@ -1800,7 +1800,7 @@ Tcl_FSEvalFileEx(
 	 * Record information about where the error occurred.
 	 */
 
-	const char *pathString = TclGetStringFromObj(pathPtr, &length);
+	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
 	unsigned limit = 150;
 	int overflow = (length > limit);
 
@@ -1822,7 +1822,7 @@ TclNREvalFile(
 				 * evaluate. Tilde-substitution is performed on
 				 * this pathname. */
     const char *encodingName)	/* The name of an encoding to use, or NULL to
-				 *  use the system encoding. */
+				 *  use the utf-8 encoding. */
 {
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile, *objPtr;
@@ -1859,19 +1859,19 @@ TclNREvalFile(
 
     /*
      * If the encoding is specified, set the channel to that encoding.
-     * Otherwise don't touch it, leaving things up to the system encoding.  If
-     * the encoding is unknown report an error.
+     * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
-    if (encodingName != NULL) {
-	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
-		!= TCL_OK) {
-	    Tcl_CloseEx(interp, chan, 0);
-	    return TCL_ERROR;
-	}
+    if (encodingName == NULL) {
+	encodingName = "utf-8";
+    }
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+	    != TCL_OK) {
+	Tcl_CloseEx(interp, chan, 0);
+	return TCL_ERROR;
     }
 
-    objPtr = Tcl_NewObj();
+    TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
 
     /*
@@ -1894,7 +1894,7 @@ TclNREvalFile(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
+	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_CloseEx(interp, chan, 0);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1953,7 +1953,7 @@ EvalFileCallback(
 	 */
 
 	size_t length;
-	const char *pathString = TclGetStringFromObj(pathPtr, &length);
+	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
 	const unsigned int limit = 150;
 	int overflow = (length > limit);
 
@@ -2698,7 +2698,7 @@ Tcl_FSGetCwd(
 		 * always be in the 'else' branch below which is simpler.
 		 */
 
-		ClientData cd = (ClientData) Tcl_FSGetNativePath(norm);
+		void *cd = (void *) Tcl_FSGetNativePath(norm);
 
 		FsUpdateCwd(norm, TclNativeDupInternalRep(cd));
 		Tcl_DecrRefCount(norm);
@@ -2797,8 +2797,8 @@ Tcl_FSGetCwd(
 	    size_t len1, len2;
 	    const char *str1, *str2;
 
-	    str1 = TclGetStringFromObj(tsdPtr->cwdPathPtr, &len1);
-	    str2 = TclGetStringFromObj(norm, &len2);
+	    str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+	    str2 = Tcl_GetStringFromObj(norm, &len2);
 	    if ((len1 == len2) && (strcmp(str1, str2) == 0)) {
 		/*
 		 * The pathname values are equal so retain the old pathname
@@ -3174,7 +3174,7 @@ Tcl_LoadFile(
     }
 
     if (fsPtr->loadFileProc != NULL) {
-	int retVal = ((Tcl_FSLoadFileProc2 *)(void *)(fsPtr->loadFileProc))
+	retVal = ((Tcl_FSLoadFileProc2 *)(void *)(fsPtr->loadFileProc))
 		(interp, pathPtr, handlePtr, &unloadProcPtr, flags);
 
 	if (retVal == TCL_OK) {
@@ -3766,7 +3766,7 @@ Tcl_Obj *
 Tcl_FSListVolumes(void)
 {
     FilesystemRecord *fsRecPtr;
-    Tcl_Obj *resultPtr = Tcl_NewObj();
+    Tcl_Obj *resultPtr;
 
     /*
      * Call each "listVolumes" function of each registered filesystem in
@@ -3774,6 +3774,7 @@ Tcl_FSListVolumes(void)
      * has succeeded.
      */
 
+    TclNewObj(resultPtr);
     fsRecPtr = FsGetFirstFilesystem();
     Claim();
     while (fsRecPtr != NULL) {
@@ -3833,7 +3834,7 @@ FsListMounts(
 	if (fsRecPtr->fsPtr != &tclNativeFilesystem &&
 		fsRecPtr->fsPtr->matchInDirectoryProc != NULL) {
 	    if (resultPtr == NULL) {
-		resultPtr = Tcl_NewObj();
+		TclNewObj(resultPtr);
 	    }
 	    fsRecPtr->fsPtr->matchInDirectoryProc(NULL, resultPtr, pathPtr,
 		    pattern, &mountsOnly);
@@ -3904,7 +3905,7 @@ Tcl_FSSplitPath(
      * For example, 'ftp://' is a valid drive name.
      */
 
-    result = Tcl_NewObj();
+    TclNewObj(result);
     p = TclGetString(pathPtr);
     Tcl_ListObjAppendElement(NULL, result,
 	    Tcl_NewStringObj(p, driveNameLength));
@@ -3975,7 +3976,7 @@ TclGetPathType(
 				 * of the volume. */
 {
     size_t pathLen;
-    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
+    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
     Tcl_PathType type;
 
     type = TclFSNonnativePathType(path, pathLen, filesystemPtrPtr,
@@ -4082,7 +4083,7 @@ TclFSNonnativePathType(
 
 		    numVolumes--;
 		    Tcl_ListObjIndex(NULL, thisFsVolumes, numVolumes, &vol);
-		    strVol = TclGetStringFromObj(vol,&len);
+		    strVol = Tcl_GetStringFromObj(vol,&len);
 		    if ((size_t) pathLen < len) {
 			continue;
 		    }
@@ -4429,8 +4430,8 @@ Tcl_FSRemoveDirectory(
 	    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 
 	    if (normPath != NULL) {
-		normPathStr = TclGetStringFromObj(normPath, &normLen);
-		cwdStr = TclGetStringFromObj(cwdPtr, &cwdLen);
+		normPathStr = Tcl_GetStringFromObj(normPath, &normLen);
+		cwdStr = Tcl_GetStringFromObj(cwdPtr, &cwdLen);
 		if ((cwdLen >= normLen) && (strncmp(normPathStr, cwdStr,
 			normLen) == 0)) {
 		    /*
@@ -4489,7 +4490,7 @@ Tcl_FSGetFileSystemForPath(
 	return NULL;
     }
 
-    /* Start with an up-to-date copy of the master filesystem. */
+    /* Start with an up-to-date copy of the filesystem. */
     fsRecPtr = FsGetFirstFilesystem();
     Claim();
 

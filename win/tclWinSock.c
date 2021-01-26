@@ -3,7 +3,7 @@
  *
  *	This file contains Windows-specific socket related code.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -368,7 +368,7 @@ InitializeHostName(
     Tcl_DString ds;
 
     Tcl_DStringInit(&ds);
-    if (GetComputerNameExW(ComputerNameDnsFullyQualified, wbuf, &length) != 0) {
+    if (GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, wbuf, &length) != 0) {
 	/*
 	 * Convert string from native to UTF then change to lowercase.
 	 */
@@ -2485,7 +2485,7 @@ InitSockets(void)
 	windowClass.style = 0;
 	windowClass.cbClsExtra = 0;
 	windowClass.cbWndExtra = 0;
-	windowClass.hInstance = (HMODULE)TclWinGetTclInstance();
+	windowClass.hInstance = (HINSTANCE)TclWinGetTclInstance();
 	windowClass.hbrBackground = NULL;
 	windowClass.lpszMenuName = NULL;
 	windowClass.lpszClassName = className;
@@ -2616,7 +2616,7 @@ SocketExitHandler(
      */
 
     TclpFinalizeSockets();
-    UnregisterClassW(className, (HMODULE)TclWinGetTclInstance());
+    UnregisterClassW(className, (HINSTANCE)TclWinGetTclInstance());
     initialized = 0;
     Tcl_MutexUnlock(&socketMutex);
 }

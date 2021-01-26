@@ -4,7 +4,7 @@
  *	This file implements the Windows specific portion of file manipulation
  *	subcommands of the "file" command.
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1536,7 +1536,7 @@ GetWinFileAttributes(
 	 */
 
 	size_t len;
-	const char *str = TclGetStringFromObj(fileName, &len);
+	const char *str = Tcl_GetStringFromObj(fileName, &len);
 
 	if (len < 4) {
 	    if (len == 0) {
@@ -1560,7 +1560,7 @@ GetWinFileAttributes(
 	}
     }
 
-    *attributePtrPtr = Tcl_NewWideIntObj(attr != 0);
+    TclNewIntObj(*attributePtrPtr, attr != 0);
     return TCL_OK;
 }
 
@@ -1625,7 +1625,7 @@ ConvertFileNameFormat(
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
-	pathv = TclGetStringFromObj(elt, &length);
+	pathv = Tcl_GetStringFromObj(elt, &length);
 	if ((pathv[0] == '/') || ((length == 3) && (pathv[1] == ':'))
 		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
@@ -1661,7 +1661,7 @@ ConvertFileNameFormat(
 	     * likely to lead to infinite loops.
 	     */
 
-	    tempString = TclGetStringFromObj(tempPath, &length);
+	    tempString = Tcl_GetStringFromObj(tempPath, &length);
 	    Tcl_DStringInit(&ds);
 	    nativeName = Tcl_UtfToWCharDString(tempString, length, &ds);
 	    Tcl_DecrRefCount(tempPath);
@@ -1926,7 +1926,7 @@ TclpObjListVolumes(void)
     int i;
     char *p;
 
-    resultPtr = Tcl_NewObj();
+    TclNewObj(resultPtr);
 
     /*
      * On Win32s:

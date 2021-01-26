@@ -7,11 +7,11 @@
  *	children of the global namespace. These other namespaces contain
  *	special-purpose commands and variables for packages.
  *
- * Copyright (c) 1993-1997 Lucent Technologies.
- * Copyright (c) 1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2002-2005 Donal K. Fellows.
- * Copyright (c) 2006 Neil Madden.
+ * Copyright © 1993-1997 Lucent Technologies.
+ * Copyright © 1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
+ * Copyright © 2002-2005 Donal K. Fellows.
+ * Copyright © 2006 Neil Madden.
  * Contributions from Don Porter, NIST, 2007. (not subject to US copyright)
  *
  * Originally implemented by
@@ -1771,6 +1771,8 @@ DoImport(
 		TclInvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
 		DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
+	/* corresponding decrement is in DeleteImportedCmd */
+	cmdPtr->refCount++;
 	dataPtr->selfPtr = (Command *) importedCmd;
 	dataPtr->selfPtr->compileProc = cmdPtr->compileProc;
 	Tcl_DStringFree(&ds);
@@ -2078,6 +2080,7 @@ DeleteImportedCmd(
 		prevPtr->nextPtr = refPtr->nextPtr;
 	    }
 	    Tcl_Free(refPtr);
+	    TclCleanupCommandMacro(realCmdPtr);
 	    Tcl_Free(dataPtr);
 	    return;
 	}
@@ -3130,7 +3133,7 @@ NamespaceCodeCmd(
      " "namespace" command.  [Bug 3202171].
      */
 
-    arg = TclGetStringFromObj(objv[1], &length);
+    arg = Tcl_GetStringFromObj(objv[1], &length);
     if (*arg==':' && length > 20
 	    && strncmp(arg, "::namespace inscope ", 20) == 0) {
 	Tcl_SetObjResult(interp, objv[1]);
@@ -3544,9 +3547,10 @@ NamespaceExportCmd(
      */
 
     if (objc == 1) {
-	Tcl_Obj *listPtr = Tcl_NewObj();
+	Tcl_Obj *listPtr;
 
-	(void) Tcl_AppendExportList(interp, NULL, listPtr);
+	TclNewObj(listPtr);
+	(void)Tcl_AppendExportList(interp, NULL, listPtr);
 	Tcl_SetObjResult(interp, listPtr);
 	return TCL_OK;
     }
@@ -3889,7 +3893,7 @@ NamespaceOriginCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Command command, origCommand;
+    Tcl_Command cmd, origCmd;
     Tcl_Obj *resultPtr;
 
     if (objc != 2) {
@@ -3897,30 +3901,29 @@ NamespaceOriginCmd(
 	return TCL_ERROR;
     }
 
-    command = Tcl_GetCommandFromObj(interp, objv[1]);
-    if (command == NULL) {
+    cmd = Tcl_GetCommandFromObj(interp, objv[1]);
+    if (cmd == NULL) {
+	goto namespaceOriginError;
+    }
+    origCmd = TclGetOriginalCommand(cmd);
+    if (origCmd == NULL) {
+	origCmd = cmd;
+    }
+    TclNewObj(resultPtr);
+    Tcl_GetCommandFullName(interp, origCmd, resultPtr);
+    if (TclCheckEmptyString(resultPtr) == TCL_EMPTYSTRING_YES ) {
+	Tcl_DecrRefCount(resultPtr);
+	namespaceOriginError:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "invalid command name \"%s\"", TclGetString(objv[1])));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
 		TclGetString(objv[1]), NULL);
 	return TCL_ERROR;
     }
-    origCommand = TclGetOriginalCommand(command);
-    TclNewObj(resultPtr);
-    if (origCommand == NULL) {
-	/*
-	 * The specified command isn't an imported command. Return the
-	 * command's name qualified by the full name of the namespace it was
-	 * defined in.
-	 */
-
-	Tcl_GetCommandFullName(interp, command, resultPtr);
-    } else {
-	Tcl_GetCommandFullName(interp, origCommand, resultPtr);
-    }
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -4024,8 +4027,9 @@ NamespacePathCmd(
      */
 
     if (objc == 1) {
-	Tcl_Obj *resultObj = Tcl_NewObj();
+	Tcl_Obj *resultObj;
 
+	TclNewObj(resultObj);
 	for (i=0 ; i<nsPtr->commandPathLength ; i++) {
 	    if (nsPtr->commandPathArray[i].nsPtr != NULL) {
 		Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewStringObj(
@@ -4928,7 +4932,7 @@ TclLogCommandInfo(
 	    }
 	}
 
-	if (length == TCL_AUTO_LENGTH) {
+	if (length == TCL_INDEX_NONE) {
 	    length = strlen(command);
 	}
 	overflow = (length > (size_t)limit);
@@ -5018,7 +5022,7 @@ TclLogCommandInfo(
 	 */
 
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
-	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewIntObj(
+	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewWideIntObj(
 		iPtr->framePtr->level - iPtr->varFramePtr->level));
     } else if (iPtr->framePtr != iPtr->rootFramePtr) {
 	/*

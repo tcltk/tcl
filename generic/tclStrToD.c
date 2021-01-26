@@ -7,7 +7,7 @@
  *	into strings of digits, and procedures for interconversion among
  *	'double' and 'mp_int' types.
  *
- * Copyright (c) 2005 by Kevin B. Kenny. All rights reserved.
+ * Copyright © 2005 Kevin B. Kenny. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -21,6 +21,11 @@
 #ifdef _WIN32
 #define copysign _copysign
 #endif
+
+#ifndef PRIx64
+#   define PRIx64 TCL_LL_MODIFIER "x"
+#endif
+
 
 /*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
@@ -534,8 +539,10 @@ TclParseNumber(
 				 * to avoid a compiler warning. */
     int shift = 0;		/* Amount to shift when accumulating binary */
     mp_err err = MP_OKAY;
+    int under = 0;              /* Flag trailing '_' as error if true once
+				 * number is accepted. */
 
-#define ALL_BITS	((Tcl_WideUInt)-1)
+#define ALL_BITS	UWIDE_MAX
 #define MOST_BITS	(ALL_BITS >> 1)
 
     /*
@@ -575,7 +582,7 @@ TclParseNumber(
 	     * I, N, and whitespace.
 	     */
 
-	    if (TclIsSpaceProc(c)) {
+	    if (TclIsSpaceProcM(c)) {
 		if (flags & TCL_PARSE_NO_WHITESPACE) {
 		    goto endgame;
 		}
@@ -642,7 +649,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == 'x' || c == 'X') {
-		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY)) {
+		if (flags & (TCL_PARSE_OCTAL_ONLY|TCL_PARSE_BINARY_ONLY) || under) {
 		    goto endgame;
 		}
 		state = ZERO_X;
@@ -655,7 +662,7 @@ TclParseNumber(
 		goto zeroo;
 	    }
 	    if (c == 'b' || c == 'B') {
-		if (flags & TCL_PARSE_OCTAL_ONLY) {
+		if ((flags & TCL_PARSE_OCTAL_ONLY) || under) {
 		    goto endgame;
 		}
 		state = ZERO_B;
@@ -665,10 +672,16 @@ TclParseNumber(
 		goto zerob;
 	    }
 	    if (c == 'o' || c == 'O') {
+		if (under) {
+		    goto endgame;
+		}
 		state = ZERO_O;
 		break;
 	    }
 	    if (c == 'd' || c == 'D') {
+		if (under) {
+		    goto endgame;
+		}
 		state = ZERO_D;
 		break;
 	    }
@@ -689,9 +702,11 @@ TclParseNumber(
 	zeroo:
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = OCTAL;
 		break;
 	    } else if (c >= '1' && c <= '7') {
+		under = 0;
 		if (objPtr != NULL) {
 		    shift = 3 * (numTrailZeros + 1);
 		    significandOverflow = AccumulateDecimalDigit(
@@ -710,7 +725,7 @@ TclParseNumber(
 				&& (((size_t)shift >=
 					CHAR_BIT*sizeof(Tcl_WideUInt))
 				|| (octalSignificandWide >
-					((Tcl_WideUInt)-1 >> shift)))) {
+					(UWIDE_MAX >> shift)))) {
 			    octalSignificandOverflow = 1;
 			    err = mp_init_u64(&octalSignificandBig,
 				    octalSignificandWide);
@@ -741,6 +756,10 @@ TclParseNumber(
 		numTrailZeros = 0;
 		state = OCTAL;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    }
 	    goto endgame;
 
@@ -760,14 +779,22 @@ TclParseNumber(
 	zerox:
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = HEXADECIMAL;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
+		under = 0;
 		d = (c-'0');
 	    } else if (c >= 'A' && c <= 'F') {
+		under = 0;
 		d = (c-'A'+10);
 	    } else if (c >= 'a' && c <= 'f') {
+		under = 0;
 		d = (c-'a'+10);
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    } else {
 		goto endgame;
 	    }
@@ -782,7 +809,7 @@ TclParseNumber(
 
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
-			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
+			    significandWide > (UWIDE_MAX >> shift))) {
 			significandOverflow = 1;
 			err = mp_init_u64(&significandBig,
 				significandWide);
@@ -813,10 +840,17 @@ TclParseNumber(
 	zerob:
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = BINARY;
+		break;
+	    } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+		/* Ignore numeric "white space" */
+		under = 1;
 		break;
 	    } else if (c != '1') {
 		goto endgame;
+	    } else {
+		under = 0;
 	    }
 	    if (objPtr != NULL) {
 		shift = numTrailZeros + 1;
@@ -829,7 +863,7 @@ TclParseNumber(
 
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
-			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
+			    significandWide > (UWIDE_MAX >> shift))) {
 			significandOverflow = 1;
 			err = mp_init_u64(&significandBig,
 				significandWide);
@@ -853,10 +887,17 @@ TclParseNumber(
 
 	case ZERO_D:
 	    if (c == '0') {
+		under = 0;
 		numTrailZeros++;
 	    } else if ( ! isdigit(UCHAR(c))) {
+		if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+		    /* Ignore numeric "white space" */
+		    under = 1;
+		    break;
+		}
 		goto endgame;
 	    }
+	    under = 0;
 	    state = DECIMAL;
 	    flags |= TCL_PARSE_INTEGER_ONLY;
 	    /* FALLTHROUGH */
@@ -873,6 +914,7 @@ TclParseNumber(
 	    acceptLen = len;
 	    if (c == '0') {
 		numTrailZeros++;
+		under = 0;
 		state = DECIMAL;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
@@ -884,14 +926,21 @@ TclParseNumber(
 		}
 		numSigDigs += numTrailZeros+1;
 		numTrailZeros = 0;
+		under = 0;
 		state = DECIMAL;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    } else if (flags & TCL_PARSE_INTEGER_ONLY) {
 		goto endgame;
 	    } else if (c == '.') {
+		under = 0;
 		state = FRACTION;
 		break;
 	    } else if (c == 'E' || c == 'e') {
+		under = 0;
 		state = EXPONENT_START;
 		break;
 	    }
@@ -917,6 +966,7 @@ TclParseNumber(
 	    if (c == '0') {
 		numDigitsAfterDp++;
 		numTrailZeros++;
+		under = 0;
 		state = FRACTION;
 		break;
 	    } else if (isdigit(UCHAR(c))) {
@@ -933,8 +983,13 @@ TclParseNumber(
 		    numSigDigs = 1;
 		}
 		numTrailZeros = 0;
+		under = 0;
 		state = FRACTION;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    }
 	    goto endgame;
 
@@ -946,10 +1001,12 @@ TclParseNumber(
 	     */
 
 	    if (c == '+') {
+		under = 0;
 		state = EXPONENT_SIGNUM;
 		break;
 	    } else if (c == '-') {
 		exponentSignum = 1;
+		under = 0;
 		state = EXPONENT_SIGNUM;
 		break;
 	    }
@@ -963,8 +1020,13 @@ TclParseNumber(
 
 	    if (isdigit(UCHAR(c))) {
 		exponent = c - '0';
+		under = 0;
 		state = EXPONENT;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    }
 	    goto endgame;
 
@@ -983,8 +1045,13 @@ TclParseNumber(
 		} else {
 		    exponent = LONG_MAX;
 		}
+		under = 0;
 		state = EXPONENT;
 		break;
+            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+                /* Ignore numeric "white space" */
+                under = 1;
+                break;
 	    }
 	    goto endgame;
 
@@ -995,12 +1062,14 @@ TclParseNumber(
 
 	case sI:
 	    if (c == 'n' || c == 'N') {
+		under = 0;
 		state = sIN;
 		break;
 	    }
 	    goto endgame;
 	case sIN:
 	    if (c == 'f' || c == 'F') {
+		under = 0;
 		state = sINF;
 		break;
 	    }
@@ -1009,6 +1078,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
+            under = 0;
 	    if (c == 'i' || c == 'I') {
 		state = sINFI;
 		break;
@@ -1016,24 +1086,28 @@ TclParseNumber(
 	    goto endgame;
 	case sINFI:
 	    if (c == 'n' || c == 'N') {
+		under = 0;
 		state = sINFIN;
 		break;
 	    }
 	    goto endgame;
 	case sINFIN:
 	    if (c == 'i' || c == 'I') {
+		under = 0;
 		state = sINFINI;
 		break;
 	    }
 	    goto endgame;
 	case sINFINI:
 	    if (c == 't' || c == 'T') {
+		under = 0;
 		state = sINFINIT;
 		break;
 	    }
 	    goto endgame;
 	case sINFINIT:
 	    if (c == 'y' || c == 'Y') {
+		under = 0;
 		state = sINFINITY;
 		break;
 	    }
@@ -1045,12 +1119,14 @@ TclParseNumber(
 #ifdef IEEE_FLOATING_POINT
 	case sN:
 	    if (c == 'a' || c == 'A') {
+		under = 0;
 		state = sNA;
 		break;
 	    }
 	    goto endgame;
 	case sNA:
 	    if (c == 'n' || c == 'N') {
+		under = 0;
 		state = sNAN;
 		break;
 	    }
@@ -1060,6 +1136,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    if (c == '(') {
+		under = 0;
 		state = sNANPAREN;
 		break;
 	    }
@@ -1070,12 +1147,14 @@ TclParseNumber(
 	     */
 	case sNANHEX:
 	    if (c == ')') {
+		under = 0;
 		state = sNANFINISH;
 		break;
 	    }
 	    /* FALLTHROUGH */
 	case sNANPAREN:
-	    if (TclIsSpaceProc(c)) {
+	    if (TclIsSpaceProcM(c)) {
+		under = 0;
 		break;
 	    }
 	    if (numSigDigs < 13) {
@@ -1090,6 +1169,7 @@ TclParseNumber(
 		}
 		numSigDigs++;
 		significandWide = (significandWide << 4) + d;
+		under = 0;
 		state = sNANHEX;
 		break;
 	    }
@@ -1102,6 +1182,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    goto endgame;
+
 	}
 	p++;
 	len--;
@@ -1120,16 +1201,19 @@ TclParseNumber(
     } else {
 	/*
 	 * Back up to the last accepting state in the lexer.
+	 * If the last char seen is the numeric whitespace character '_',
+	 * backup to that.
 	 */
 
-	p = acceptPoint;
-	len = acceptLen;
+	p = under ? acceptPoint-1 : acceptPoint;
+	len = under ? acceptLen-1 : acceptLen;
+
 	if (!(flags & TCL_PARSE_NO_WHITESPACE)) {
 	    /*
 	     * Accept trailing whitespace.
 	     */
 
-	    while (len != 0 && TclIsSpaceProc(*p)) {
+	    while (len != 0 && TclIsSpaceProcM(*p)) {
 		p++;
 		len--;
 	    }
@@ -1453,7 +1537,7 @@ AccumulateDecimalDigit(
 	    *wideRepPtr = digit;
 	    return 0;
 	} else if (numZeros >= maxpow10_wide
-		|| w > ((Tcl_WideUInt)-1-digit)/pow10_wide[numZeros+1]) {
+		|| w > (UWIDE_MAX-digit)/pow10_wide[numZeros+1]) {
 	    /*
 	     * Wide multiplication will overflow.  Expand the number to a
 	     * bignum and fall through into the bignum case.
@@ -2841,7 +2925,7 @@ QuickConversion(
 	}
 	ilim = ilim1;
 	--k;
-	d *= 10.0;
+	d = d * 10.0;
 	++ieps;
     }
 
@@ -2858,7 +2942,7 @@ QuickConversion(
 
     retval = (char *)Tcl_Alloc(len + 1);
     if (ilim == 0) {
-	d -= 5.;
+	d = d - 5.;
 	if (d > eps.d) {
 	    *retval = '1';
 	    *decpt = k;
@@ -5106,23 +5190,23 @@ TclFormatNaN(
 #else
     union {
 	double dv;
-	Tcl_WideUInt iv;
+	uint64_t iv;
     } bitwhack;
 
     bitwhack.dv = value;
     if (n770_fp) {
 	bitwhack.iv = Nokia770Twiddle(bitwhack.iv);
     }
-    if (bitwhack.iv & ((Tcl_WideUInt) 1 << 63)) {
-	bitwhack.iv &= ~ ((Tcl_WideUInt) 1 << 63);
+    if (bitwhack.iv & (UINT64_C(1) << 63)) {
+	bitwhack.iv &= ~ (UINT64_C(1) << 63);
 	*buffer++ = '-';
     }
     *buffer++ = 'N';
     *buffer++ = 'a';
     *buffer++ = 'N';
-    bitwhack.iv &= (((Tcl_WideUInt) 1) << 51) - 1;
+    bitwhack.iv &= ((UINT64_C(1)) << 51) - 1;
     if (bitwhack.iv != 0) {
-	sprintf(buffer, "(%" TCL_LL_MODIFIER "x)", bitwhack.iv);
+	sprintf(buffer, "(%" PRIx64 ")", bitwhack.iv);
     } else {
 	*buffer = '\0';
     }

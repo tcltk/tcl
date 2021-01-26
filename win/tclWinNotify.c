@@ -5,7 +5,7 @@
  *	is the lowest-level part of the Tcl event loop. This file works
  *	together with ../generic/tclNotify.c.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -84,12 +84,12 @@ Tcl_InitNotifier(void)
     } else {
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-	TclpMasterLock();
+	TclpGlobalLock();
 	if (!initialized) {
 	    initialized = 1;
 	    InitializeCriticalSection(&notifierMutex);
 	}
-	TclpMasterUnlock();
+	TclpGlobalUnlock();
 
 	/*
 	 * Register Notifier window class if this is the first thread to use
@@ -103,7 +103,7 @@ Tcl_InitNotifier(void)
 	    clazz.style = 0;
 	    clazz.cbClsExtra = 0;
 	    clazz.cbWndExtra = 0;
-	    clazz.hInstance = (HMODULE)TclWinGetTclInstance();
+	    clazz.hInstance = (HINSTANCE)TclWinGetTclInstance();
 	    clazz.hbrBackground = NULL;
 	    clazz.lpszMenuName = NULL;
 	    clazz.lpszClassName = className;
@@ -195,7 +195,7 @@ Tcl_FinalizeNotifier(
 	if (notifierCount) {
 	    notifierCount--;
 	    if (notifierCount == 0) {
-		UnregisterClassW(className, (HMODULE)TclWinGetTclInstance());
+		UnregisterClassW(className, (HINSTANCE)TclWinGetTclInstance());
 	    }
 	}
 	LeaveCriticalSection(&notifierMutex);
@@ -360,7 +360,7 @@ Tcl_ServiceModeHook(
 
 	if (mode == TCL_SERVICE_ALL && !tsdPtr->hwnd) {
 	    tsdPtr->hwnd = CreateWindowW(className, className,
-		    WS_TILED, 0, 0, 0, 0, NULL, NULL, (HMODULE)TclWinGetTclInstance(),
+		    WS_TILED, 0, 0, 0, 0, NULL, NULL, (HINSTANCE)TclWinGetTclInstance(),
 		    NULL);
 
 	    /*

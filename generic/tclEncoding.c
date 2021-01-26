@@ -3,7 +3,7 @@
  *
  *	Contains the implementation of the encoding conversion package.
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -116,7 +116,7 @@ typedef struct {
 				 * entry in this array is 1, otherwise it is
 				 * 0. */
     int numSubTables;		/* Length of following array. */
-    EscapeSubTable subTables[1];/* Information about each EscapeSubTable used
+    EscapeSubTable subTables[TCLFLEXARRAY];/* Information about each EscapeSubTable used
 				 * by this encoding type. The actual size is
 				 * as large as necessary to hold all
 				 * EscapeSubTables. */
@@ -469,12 +469,13 @@ FillEncodingFileMap(void)
 	 */
 
 	int j, numFiles;
-	Tcl_Obj *directory, *matchFileList = Tcl_NewObj();
+	Tcl_Obj *directory, *matchFileList;
 	Tcl_Obj **filev;
 	Tcl_GlobTypeData readableFiles = {
 	    TCL_GLOB_TYPE_FILE, TCL_GLOB_PERM_R, NULL, NULL
 	};
 
+	TclNewObj(matchFileList);
 	Tcl_ListObjIndex(NULL, searchPath, i, &directory);
 	Tcl_IncrRefCount(directory);
 	Tcl_IncrRefCount(matchFileList);
@@ -851,10 +852,11 @@ Tcl_GetEncodingNames(
     Tcl_HashTable table;
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
-    Tcl_Obj *map, *name, *result = Tcl_NewObj();
+    Tcl_Obj *map, *name, *result;
     Tcl_DictSearch mapSearch;
     int dummy, done = 0;
 
+    TclNewObj(result);
     Tcl_InitObjHashTable(&table);
 
     /*
@@ -1071,7 +1073,7 @@ Tcl_ExternalToUtfDString(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_AUTO_LENGTH) {
+    } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = encodingPtr->lengthProc(src);
     }
 
@@ -1161,7 +1163,7 @@ Tcl_ExternalToUtf(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_AUTO_LENGTH) {
+    } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = encodingPtr->lengthProc(src);
     }
     if (statePtr == NULL) {
@@ -1261,7 +1263,7 @@ Tcl_UtfToExternalDString(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_AUTO_LENGTH) {
+    } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
@@ -1350,7 +1352,7 @@ Tcl_UtfToExternal(
 
     if (src == NULL) {
 	srcLen = 0;
-    } else if (srcLen == TCL_AUTO_LENGTH) {
+    } else if (srcLen == TCL_INDEX_NONE) {
 	srcLen = strlen(src);
     }
     if (statePtr == NULL) {
@@ -1991,7 +1993,7 @@ LoadEscapeEncoding(
 	Tcl_DStringFree(&lineString);
     }
 
-    size = sizeof(EscapeEncodingData) - sizeof(EscapeSubTable)
+    size = offsetof(EscapeEncodingData, subTables)
 	    + Tcl_DStringLength(&escapeData);
     dataPtr = (EscapeEncodingData *)Tcl_Alloc(size);
     dataPtr->initLen = strlen(init);
@@ -2238,7 +2240,7 @@ UtfToUtfProc(
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
     int result, numChars, charLimit = INT_MAX;
-    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
+    int *chPtr = (int *) statePtr;
 
     if (flags & TCL_ENCODING_START) {
     	*statePtr = 0;
@@ -2259,7 +2261,7 @@ UtfToUtfProc(
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	if ((src > srcClose) && (!TclUCS4Complete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -2287,23 +2289,23 @@ UtfToUtfProc(
 
 	    *dst++ = 0;
 	    src += 2;
-	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
+	} else if (!TclUCS4Complete(src, srcEnd - src)) {
 	    /*
-	     * Always check before using TclUtfToUniChar. Not doing can so
+	     * Always check before using TclUtfToUCS4. Not doing can so
 	     * cause it run beyond the end of the buffer! If we happen such an
 	     * incomplete char its bytes are made to represent themselves.
 	     */
 
-	    *chPtr = (unsigned char) *src;
+	    *chPtr = UCHAR(*src);
 	    src += 1;
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	} else {
-	    src += TclUtfToUniChar(src, chPtr);
+	    src += TclUtfToUCS4(src, chPtr);
 	    if ((*chPtr | 0x7FF) == 0xDFFF) {
 		/* A surrogate character is detected, handle especially */
-		Tcl_UniChar low = *chPtr;
-		size_t len = (src <= srcEnd-3) ? Tcl_UtfToUniChar(src, &low) : 0;
-		if (((low | 0x3FF) != 0xDFFF) || (*chPtr & 0x400)) {
+		int low = *chPtr;
+		size_t len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
+		if (((low & ~0x3FF) != 0xDC00) || (*chPtr & 0x400)) {
 			*dst++ = (char) (((*chPtr >> 12) | 0xE0) & 0xEF);
 			*dst++ = (char) (((*chPtr >> 6) | 0x80) & 0xBF);
 			*dst++ = (char) ((*chPtr | 0x80) & 0xBF);
@@ -2495,11 +2497,6 @@ UtfToUtf16Proc(
 	}
 	src += TclUtfToUniChar(src, chPtr);
 
-	/*
-	 * Need to handle this in a way that won't cause misalignment by
-	 * casting dst to a Tcl_UniChar. [Bug 1122671]
-	 */
-
 	if (clientData) {
 #if TCL_UTF_MAX > 3
 	    if (*chPtr <= 0xFFFF) {
@@ -2509,7 +2506,7 @@ UtfToUtf16Proc(
 		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
 		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
 		*dst++ = (*chPtr & 0xFF);
-		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
+		*dst++ = ((*chPtr >> 8) & 0x3) | 0xDC;
 	    }
 #else
 	    *dst++ = (*chPtr & 0xFF);
@@ -2521,10 +2518,10 @@ UtfToUtf16Proc(
 		*dst++ = (*chPtr >> 8);
 		*dst++ = (*chPtr & 0xFF);
 	    } else {
-		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
-		*dst++ = (*chPtr & 0xFF);
 		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
 		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
+		*dst++ = ((*chPtr >> 8) & 0x3) | 0xDC;
+		*dst++ = (*chPtr & 0xFF);
 	    }
 #else
 	    *dst++ = (*chPtr >> 8);
@@ -3702,7 +3699,7 @@ InitializeEncodingSearchPath(
     if (*encodingPtr) {
 	((Encoding *)(*encodingPtr))->refCount++;
     }
-    bytes = TclGetStringFromObj(searchPathObj, lengthPtr);
+    bytes = Tcl_GetStringFromObj(searchPathObj, lengthPtr);
     *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, bytes, *lengthPtr + 1);
     Tcl_DecrRefCount(searchPathObj);

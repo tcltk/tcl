@@ -6,9 +6,9 @@
  *	These commands are not normally included in Tcl applications; they're
  *	only used for testing.
  *
- * Copyright (c) 1995-1998 Sun Microsystems, Inc.
- * Copyright (c) 1999 by Scriptics Corporation.
- * Copyright (c) 2005 by Kevin B. Kenny.  All rights reserved.
+ * Copyright © 1995-1998 Sun Microsystems, Inc.
+ * Copyright © 1999 Scriptics Corporation.
+ * Copyright © 2005 Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -141,7 +141,7 @@ TclObjTest_Init(
 
 static int
 TestbignumobjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
@@ -340,7 +340,7 @@ TestbignumobjCmd(
 
 static int
 TestbooleanobjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -440,7 +440,7 @@ TestbooleanobjCmd(
 
 static int
 TestdoubleobjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -558,7 +558,7 @@ TestdoubleobjCmd(
 
 static int
 TestindexobjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -619,7 +619,7 @@ TestindexobjCmd(
     argv[objc-4] = NULL;
 
     result = Tcl_GetIndexFromObj((setError? interp : NULL), objv[3],
-	    argv, "token", INDEX_TEMP_TABLE|(allowAbbrev? 0 : TCL_EXACT),
+	    argv, "token", TCL_INDEX_TEMP_TABLE|(allowAbbrev? 0 : TCL_EXACT),
 	    &index);
     Tcl_Free((void *)argv);
     if (result == TCL_OK) {
@@ -648,7 +648,7 @@ TestindexobjCmd(
 
 static int
 TestintobjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -852,7 +852,7 @@ TestintobjCmd(
 
 static int
 TestlistobjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument objects */
@@ -949,7 +949,7 @@ TestlistobjCmd(
 
 static int
 TestobjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1161,13 +1161,14 @@ TestobjCmd(
 
 static int
 TeststringobjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_UniChar *unicode;
     int varIndex, option, i, length;
+    size_t size;
 #define MAX_STRINGS 11
     const char *index, *string, *strings[MAX_STRINGS+1];
     String *strPtr;
@@ -1300,12 +1301,12 @@ TeststringobjCmd(
 	     * is "copy on write".
 	     */
 
-	    string = Tcl_GetStringFromObj(objv[3], &length);
+	    string = Tcl_GetStringFromObj(objv[3], &size);
 	    if ((varPtr[varIndex] != NULL)
 		    && !Tcl_IsShared(varPtr[varIndex])) {
-		Tcl_SetStringObj(varPtr[varIndex], string, length);
+		Tcl_SetStringObj(varPtr[varIndex], string, size);
 	    } else {
-		SetVarToObj(varPtr, varIndex, Tcl_NewStringObj(string, length));
+		SetVarToObj(varPtr, varIndex, Tcl_NewStringObj(string, size));
 	    }
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
@@ -1357,18 +1358,18 @@ TeststringobjCmd(
 		SetVarToObj(varPtr, varIndex, Tcl_DuplicateObj(varPtr[varIndex]));
 	    }
 
-	    string = Tcl_GetStringFromObj(varPtr[varIndex], &length);
+	    string = Tcl_GetStringFromObj(varPtr[varIndex], &size);
 
 	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if ((i < 0) || (i > length)) {
+	    if ((i < 0) || ((size_t)i > size)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"index value out of range", -1));
 		return TCL_ERROR;
 	    }
 
-	    Tcl_AppendToObj(varPtr[varIndex], string + i, length - i);
+	    Tcl_AppendToObj(varPtr[varIndex], string + i, size - i);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 11:			/* appendself2 */
@@ -1388,18 +1389,18 @@ TeststringobjCmd(
 		SetVarToObj(varPtr, varIndex, Tcl_DuplicateObj(varPtr[varIndex]));
 	    }
 
-	    unicode = Tcl_GetUnicodeFromObj(varPtr[varIndex], &length);
+	    unicode = Tcl_GetUnicodeFromObj(varPtr[varIndex], &size);
 
 	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if ((i < 0) || (i > length)) {
+	    if ((i < 0) || ((size_t)i > size)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"index value out of range", -1));
 		return TCL_ERROR;
 	    }
 
-	    TclAppendUnicodeToObj(varPtr[varIndex], unicode + i, length - i);
+	    TclAppendUnicodeToObj(varPtr[varIndex], unicode + i, size - i);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
     }

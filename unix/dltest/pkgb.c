@@ -1,11 +1,11 @@
 /*
  * pkgb.c --
  *
- *	This file contains a simple Tcl package "pkgb" that is intended for
+ *	This file contains a simple Tcl package "Pkgb" that is intended for
  *	testing the Tcl dynamic loading facilities. It can be used in both
  *	safe and unsafe interpreters.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
+ * Copyright © 1995 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -54,6 +54,7 @@ Pkgb_SubObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int first, second;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "num num");
@@ -94,6 +95,10 @@ Pkgb_UnsafeObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    (void)dummy;
+    (void)objc;
+    (void)objv;
+
     return Tcl_EvalEx(interp, "list unsafe command invoked", -1, TCL_EVAL_GLOBAL);
 }
 
@@ -106,6 +111,9 @@ Pkgb_DemoObjCmd(
 {
 #if (TCL_MAJOR_VERSION > 8) || (TCL_MINOR_VERSION > 4)
     Tcl_Obj *first;
+    (void)dummy;
+    (void)objc;
+    (void)objv;
 
     if (Tcl_ListObjIndex(NULL, Tcl_GetEncodingSearchPath(), 0, &first)
 	    == TCL_OK) {

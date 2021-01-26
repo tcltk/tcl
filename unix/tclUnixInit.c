@@ -3,8 +3,8 @@
  *
  *	Contains the Unix-specific interpreter initialization functions.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 1999 by Scriptics Corporation.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1999 Scriptics Corporation.
  * All rights reserved.
  */
 
@@ -46,37 +46,37 @@ DLLIMPORT extern __stdcall void GetSystemInfo(void *);
 }
 #endif
 
-#define NUMPROCESSORS 11
+#define NUMPROCESSORS 15
 static const char *const processors[NUMPROCESSORS] = {
-    "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
-    "amd64", "ia32_on_win64"
+    "i686", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
+    "x86_64", "ia32_on_win64", "neutral", "arm64", "arm32_on_win64", "ia32_on_arm64"
 };
 
 typedef struct {
   union {
-    DWORD  dwOemId;
+    unsigned int  dwOemId;
     struct {
       int wProcessorArchitecture;
       int wReserved;
     };
   };
-  DWORD     dwPageSize;
+  unsigned int     dwPageSize;
   void *lpMinimumApplicationAddress;
   void *lpMaximumApplicationAddress;
   void *dwActiveProcessorMask;
-  DWORD     dwNumberOfProcessors;
-  DWORD     dwProcessorType;
-  DWORD     dwAllocationGranularity;
+  unsigned int     dwNumberOfProcessors;
+  unsigned int     dwProcessorType;
+  unsigned int     dwAllocationGranularity;
   int      wProcessorLevel;
   int      wProcessorRevision;
 } SYSTEM_INFO;
 
 typedef struct {
-  DWORD dwOSVersionInfoSize;
-  DWORD dwMajorVersion;
-  DWORD dwMinorVersion;
-  DWORD dwBuildNumber;
-  DWORD dwPlatformId;
+  unsigned int dwOSVersionInfoSize;
+  unsigned int dwMajorVersion;
+  unsigned int dwMinorVersion;
+  unsigned int dwBuildNumber;
+  unsigned int dwPlatformId;
   wchar_t szCSDVersion[128];
 } OSVERSIONINFOW;
 #endif
@@ -92,7 +92,7 @@ typedef struct {
  */
 
 #ifndef TCL_DEFAULT_ENCODING
-#define TCL_DEFAULT_ENCODING "iso8859-1"
+#define TCL_DEFAULT_ENCODING "utf-8"
 #endif
 
 /*
@@ -133,9 +133,9 @@ typedef struct {
  */
 
 static const LocaleTable localeTable[] = {
-	    {"",		"iso8859-1"},
-		    {"ansi-1251",	"cp1251"},
-	    {"ansi_x3.4-1968",	"iso8859-1"},
+    {"",		"iso8859-1"},
+    {"ansi-1251",	"cp1251"},
+    {"ansi_x3.4-1968",	"iso8859-1"},
     {"ascii",		"ascii"},
     {"big5",		"big5"},
     {"cp1250",		"cp1250"},
@@ -172,61 +172,61 @@ static const LocaleTable localeTable[] = {
     {"euc-cn",		"euc-cn"},
     {"euc-jp",		"euc-jp"},
     {"euc-kr",		"euc-kr"},
-		    {"eucjp",		"euc-jp"},
-		    {"euckr",		"euc-kr"},
-		    {"euctw",		"euc-cn"},
+    {"eucjp",		"euc-jp"},
+    {"euckr",		"euc-kr"},
+    {"euctw",		"euc-cn"},
     {"gb12345",		"gb12345"},
     {"gb1988",		"gb1988"},
     {"gb2312",		"gb2312"},
-		    {"gb2312-1980",	"gb2312"},
+    {"gb2312-1980",	"gb2312"},
     {"gb2312-raw",	"gb2312-raw"},
-		    {"greek8",		"cp869"},
-	    {"ibm1250",		"cp1250"},
-	    {"ibm1251",		"cp1251"},
-	    {"ibm1252",		"cp1252"},
-	    {"ibm1253",		"cp1253"},
-	    {"ibm1254",		"cp1254"},
-	    {"ibm1255",		"cp1255"},
-	    {"ibm1256",		"cp1256"},
-	    {"ibm1257",		"cp1257"},
-	    {"ibm1258",		"cp1258"},
-	    {"ibm437",		"cp437"},
-	    {"ibm737",		"cp737"},
-	    {"ibm775",		"cp775"},
-	    {"ibm850",		"cp850"},
-	    {"ibm852",		"cp852"},
-	    {"ibm855",		"cp855"},
-	    {"ibm857",		"cp857"},
-	    {"ibm860",		"cp860"},
-	    {"ibm861",		"cp861"},
-	    {"ibm862",		"cp862"},
-	    {"ibm863",		"cp863"},
-	    {"ibm864",		"cp864"},
-	    {"ibm865",		"cp865"},
-	    {"ibm866",		"cp866"},
-	    {"ibm869",		"cp869"},
-	    {"ibm874",		"cp874"},
-	    {"ibm932",		"cp932"},
-	    {"ibm936",		"cp936"},
-	    {"ibm949",		"cp949"},
-	    {"ibm950",		"cp950"},
-	    {"iso-2022",	"iso2022"},
-	    {"iso-2022-jp",	"iso2022-jp"},
-	    {"iso-2022-kr",	"iso2022-kr"},
-	    {"iso-8859-1",	"iso8859-1"},
-	    {"iso-8859-10",	"iso8859-10"},
-	    {"iso-8859-13",	"iso8859-13"},
-	    {"iso-8859-14",	"iso8859-14"},
-	    {"iso-8859-15",	"iso8859-15"},
-	    {"iso-8859-16",	"iso8859-16"},
-	    {"iso-8859-2",	"iso8859-2"},
-	    {"iso-8859-3",	"iso8859-3"},
-	    {"iso-8859-4",	"iso8859-4"},
-	    {"iso-8859-5",	"iso8859-5"},
-	    {"iso-8859-6",	"iso8859-6"},
-	    {"iso-8859-7",	"iso8859-7"},
-	    {"iso-8859-8",	"iso8859-8"},
-	    {"iso-8859-9",	"iso8859-9"},
+    {"greek8",		"cp869"},
+    {"ibm1250",		"cp1250"},
+    {"ibm1251",		"cp1251"},
+    {"ibm1252",		"cp1252"},
+    {"ibm1253",		"cp1253"},
+    {"ibm1254",		"cp1254"},
+    {"ibm1255",		"cp1255"},
+    {"ibm1256",		"cp1256"},
+    {"ibm1257",		"cp1257"},
+    {"ibm1258",		"cp1258"},
+    {"ibm437",		"cp437"},
+    {"ibm737",		"cp737"},
+    {"ibm775",		"cp775"},
+    {"ibm850",		"cp850"},
+    {"ibm852",		"cp852"},
+    {"ibm855",		"cp855"},
+    {"ibm857",		"cp857"},
+    {"ibm860",		"cp860"},
+    {"ibm861",		"cp861"},
+    {"ibm862",		"cp862"},
+    {"ibm863",		"cp863"},
+    {"ibm864",		"cp864"},
+    {"ibm865",		"cp865"},
+    {"ibm866",		"cp866"},
+    {"ibm869",		"cp869"},
+    {"ibm874",		"cp874"},
+    {"ibm932",		"cp932"},
+    {"ibm936",		"cp936"},
+    {"ibm949",		"cp949"},
+    {"ibm950",		"cp950"},
+    {"iso-2022",	"iso2022"},
+    {"iso-2022-jp",	"iso2022-jp"},
+    {"iso-2022-kr",	"iso2022-kr"},
+    {"iso-8859-1",	"iso8859-1"},
+    {"iso-8859-10",	"iso8859-10"},
+    {"iso-8859-13",	"iso8859-13"},
+    {"iso-8859-14",	"iso8859-14"},
+    {"iso-8859-15",	"iso8859-15"},
+    {"iso-8859-16",	"iso8859-16"},
+    {"iso-8859-2",	"iso8859-2"},
+    {"iso-8859-3",	"iso8859-3"},
+    {"iso-8859-4",	"iso8859-4"},
+    {"iso-8859-5",	"iso8859-5"},
+    {"iso-8859-6",	"iso8859-6"},
+    {"iso-8859-7",	"iso8859-7"},
+    {"iso-8859-8",	"iso8859-8"},
+    {"iso-8859-9",	"iso8859-9"},
     {"iso2022",		"iso2022"},
     {"iso2022-jp",	"iso2022-jp"},
     {"iso2022-kr",	"iso2022-kr"},
@@ -244,47 +244,47 @@ static const LocaleTable localeTable[] = {
     {"iso8859-7",	"iso8859-7"},
     {"iso8859-8",	"iso8859-8"},
     {"iso8859-9",	"iso8859-9"},
-		    {"iso88591",	"iso8859-1"},
-		    {"iso885915",	"iso8859-15"},
-		    {"iso88592",	"iso8859-2"},
-		    {"iso88595",	"iso8859-5"},
-		    {"iso88596",	"iso8859-6"},
-		    {"iso88597",	"iso8859-7"},
-		    {"iso88598",	"iso8859-8"},
-		    {"iso88599",	"iso8859-9"},
+    {"iso88591",	"iso8859-1"},
+    {"iso885915",	"iso8859-15"},
+    {"iso88592",	"iso8859-2"},
+    {"iso88595",	"iso8859-5"},
+    {"iso88596",	"iso8859-6"},
+    {"iso88597",	"iso8859-7"},
+    {"iso88598",	"iso8859-8"},
+    {"iso88599",	"iso8859-9"},
 #ifdef hpux
-		    {"ja",		"shiftjis"},
+    {"ja",		"shiftjis"},
 #else
-		    {"ja",		"euc-jp"},
+    {"ja",		"euc-jp"},
 #endif
-		    {"ja_jp",		"euc-jp"},
-		    {"ja_jp.euc",	"euc-jp"},
-		    {"ja_jp.eucjp",	"euc-jp"},
-		    {"ja_jp.jis",	"iso2022-jp"},
-		    {"ja_jp.mscode",	"shiftjis"},
-		    {"ja_jp.sjis",	"shiftjis"},
-		    {"ja_jp.ujis",	"euc-jp"},
-		    {"japan",		"euc-jp"},
+    {"ja_jp",		"euc-jp"},
+	{"ja_jp.euc",	"euc-jp"},
+    {"ja_jp.eucjp",	"euc-jp"},
+    {"ja_jp.jis",	"iso2022-jp"},
+    {"ja_jp.mscode",	"shiftjis"},
+    {"ja_jp.sjis",	"shiftjis"},
+    {"ja_jp.ujis",	"euc-jp"},
+    {"japan",		"euc-jp"},
 #ifdef hpux
-		    {"japanese",	"shiftjis"},
+    {"japanese",	"shiftjis"},
 #else
-		    {"japanese",	"euc-jp"},
+    {"japanese",	"euc-jp"},
 #endif
-		    {"japanese-sjis",	"shiftjis"},
-		    {"japanese-ujis",	"euc-jp"},
-		    {"japanese.euc",	"euc-jp"},
-		    {"japanese.sjis",	"shiftjis"},
+    {"japanese-sjis",	"shiftjis"},
+    {"japanese-ujis",	"euc-jp"},
+    {"japanese.euc",	"euc-jp"},
+    {"japanese.sjis",	"shiftjis"},
     {"jis0201",		"jis0201"},
     {"jis0208",		"jis0208"},
     {"jis0212",		"jis0212"},
-		    {"jp_jp",		"shiftjis"},
-		    {"ko",		"euc-kr"},
-		    {"ko_kr",		"euc-kr"},
-		    {"ko_kr.euc",	"euc-kr"},
-		    {"ko_kw.euckw",	"euc-kr"},
+    {"jp_jp",		"shiftjis"},
+    {"ko",		"euc-kr"},
+    {"ko_kr",		"euc-kr"},
+    {"ko_kr.euc",	"euc-kr"},
+    {"ko_kw.euckw",	"euc-kr"},
     {"koi8-r",		"koi8-r"},
     {"koi8-u",		"koi8-u"},
-		    {"korean",		"euc-kr"},
+    {"korean",		"euc-kr"},
     {"ksc5601",		"ksc5601"},
     {"maccenteuro",	"macCentEuro"},
     {"maccroatian",	"macCroatian"},
@@ -298,23 +298,23 @@ static const LocaleTable localeTable[] = {
     {"macthai",		"macThai"},
     {"macturkish",	"macTurkish"},
     {"macukraine",	"macUkraine"},
-		    {"roman8",		"iso8859-1"},
-		    {"ru",		"iso8859-5"},
-		    {"ru_ru",		"iso8859-5"},
-		    {"ru_su",		"iso8859-5"},
+    {"roman8",		"iso8859-1"},
+    {"ru",		"iso8859-5"},
+    {"ru_ru",		"iso8859-5"},
+    {"ru_su",		"iso8859-5"},
     {"shiftjis",	"shiftjis"},
-		    {"sjis",		"shiftjis"},
+    {"sjis",		"shiftjis"},
     {"symbol",		"symbol"},
     {"tis-620",		"tis-620"},
-		    {"tis620",		"tis-620"},
-		    {"turkish8",	"cp857"},
-		    {"utf8",		"utf-8"},
-		    {"zh",		"cp936"},
-		    {"zh_cn.gb2312",	"euc-cn"},
-		    {"zh_cn.gbk",	"euc-cn"},
-		    {"zh_cz.gb2312",	"euc-cn"},
-		    {"zh_tw",		"euc-tw"},
-		    {"zh_tw.big5",	"big5"},
+    {"tis620",		"tis-620"},
+    {"turkish8",	"cp857"},
+    {"utf8",		"utf-8"},
+    {"zh",		"cp936"},
+    {"zh_cn.gb2312",	"euc-cn"},
+    {"zh_cn.gbk",	"euc-cn"},
+    {"zh_cz.gb2312",	"euc-cn"},
+    {"zh_tw",		"euc-tw"},
+    {"zh_tw.big5",	"big5"},
 };
 
 #ifdef HAVE_COREFOUNDATION
@@ -463,7 +463,7 @@ TclpInitLibraryPath(
     const char *str;
     Tcl_DString buffer;
 
-    pathPtr = Tcl_NewObj();
+    TclNewObj(pathPtr);
 
     /*
      * Look for the library relative to the TCL_LIBRARY env variable. If the
@@ -544,7 +544,7 @@ TclpInitLibraryPath(
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    str = TclGetStringFromObj(pathPtr, lengthPtr);
+    str = Tcl_GetStringFromObj(pathPtr, lengthPtr);
     *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, str, *lengthPtr + 1);
     Tcl_DecrRefCount(pathPtr);
@@ -873,7 +873,7 @@ TclpSetVariables(
 #ifdef __CYGWIN__
 	unameOK = 1;
     if (!osInfoInitialized) {
-	HANDLE handle = GetModuleHandleW(L"NTDLL");
+	void *handle = GetModuleHandleW(L"NTDLL");
 	int(__stdcall *getversion)(void *) =
 		(int(__stdcall *)(void *))GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
@@ -987,7 +987,7 @@ TclpSetVariables(
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or TCL_IO_FAILURE if there is no such entry. The integer at *lengthPtr is
+ *	"name", or TCL_INDEX_NONE if there is no such entry. The integer at *lengthPtr is
  *	filled in with the length of name (if a matching entry is found) or
  *	the length of the environ array (if no matching entry is found).
  *
@@ -1006,7 +1006,7 @@ TclpFindVariable(
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    size_t i, result = TCL_IO_FAILURE;
+    size_t i, result = TCL_INDEX_NONE;
     const char *env, *p1, *p2;
     Tcl_DString envString;
 

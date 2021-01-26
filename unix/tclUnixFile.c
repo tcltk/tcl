@@ -4,7 +4,7 @@
  *	This file contains wrappers around UNIX file handling functions.
  *	These wrappers mask differences between Windows and UNIX.
  *
- * Copyright (c) 1995-1998 Sun Microsystems, Inc.
+ * Copyright © 1995-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -105,7 +105,7 @@ TclpFindExecutable(
      */
 
     while (1) {
-	while (TclIsSpaceProc(*p)) {
+	while (TclIsSpaceProcM(*p)) {
 	    p++;
 	}
 	name = p;
@@ -729,7 +729,7 @@ TclpGetNativeCwd(
 #endif /* USEGETWD */
 
     if ((clientData == NULL) || strcmp(buffer, (const char *) clientData)) {
-	char *newCd = (char*)Tcl_Alloc(strlen(buffer) + 1);
+	char *newCd = (char *)Tcl_Alloc(strlen(buffer) + 1);
 
 	strcpy(newCd, buffer);
 	return newCd;
@@ -961,7 +961,7 @@ TclpObjLink(
 	    if (transPtr == NULL) {
 		return NULL;
 	    }
-	    target = TclGetStringFromObj(transPtr, &length);
+	    target = Tcl_GetStringFromObj(transPtr, &length);
 	    target = Tcl_UtfToExternalDString(NULL, target, length, &ds);
 	    Tcl_DecrRefCount(transPtr);
 
@@ -1115,7 +1115,7 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = TclGetStringFromObj(validPathPtr, &len);
+    str = Tcl_GetStringFromObj(validPathPtr, &len);
     Tcl_UtfToExternalDString(NULL, str, len, &ds);
     len = Tcl_DStringLength(&ds) + sizeof(char);
     if (strlen(Tcl_DStringValue(&ds)) < len - sizeof(char)) {

@@ -4,8 +4,8 @@
  *	This file implements package and version control for Tcl via the
  *	"package" command and a few C APIs.
  *
- * Copyright (c) 1996 Sun Microsystems, Inc.
- * Copyright (c) 2006 Andreas Kupries <andreas_kupries@users.sourceforge.net>
+ * Copyright © 1996 Sun Microsystems, Inc.
+ * Copyright © 2006 Andreas Kupries <andreas_kupries@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -285,7 +285,7 @@ TclPkgFileSeen(
 	Tcl_Obj *list;
 
 	if (isNew) {
-	    list = Tcl_NewObj();
+	    TclNewObj(list);
 	    Tcl_SetHashValue(entry, list);
 	    Tcl_IncrRefCount(list);
 	} else {
@@ -905,8 +905,9 @@ SelectPackageFinal(
 	    }
 	}
     } else if (result != TCL_ERROR) {
-	Tcl_Obj *codePtr = Tcl_NewIntObj(result);
+	Tcl_Obj *codePtr;
 
+	TclNewIntObj(codePtr, result);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"attempt to provide package %s %s failed:"
 		" bad return code: %s",
@@ -1072,7 +1073,7 @@ TclNRPackageObjCmd(
 	"present", "provide", "require",  "unknown", "vcompare",
 	"versions", "vsatisfies", NULL
     };
-    enum pkgOptions {
+    enum pkgOptionsEnum {
 	PKG_FILES,  PKG_FORGET,  PKG_IFNEEDED, PKG_NAMES,   PKG_PREFER,
 	PKG_PRESENT, PKG_PROVIDE, PKG_REQUIRE,  PKG_UNKNOWN, PKG_VCOMPARE,
 	PKG_VERSIONS, PKG_VSATISFIES
@@ -1098,7 +1099,7 @@ TclNRPackageObjCmd(
 	    &optionIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch ((enum pkgOptions) optionIndex) {
+    switch ((enum pkgOptionsEnum) optionIndex) {
     case PKG_FILES: {
 	PkgFiles *pkgFiles;
 
@@ -1181,7 +1182,7 @@ TclNRPackageObjCmd(
 	} else {
 	    pkgPtr = FindPackage(interp, argv2);
 	}
-	argv3 = TclGetStringFromObj(objv[3], &length);
+	argv3 = Tcl_GetStringFromObj(objv[3], &length);
 
 	for (availPtr = pkgPtr->availPtr, prevPtr = NULL; availPtr != NULL;
 		prevPtr = availPtr, availPtr = availPtr->nextPtr) {
@@ -1228,10 +1229,10 @@ TclNRPackageObjCmd(
 	    }
 	}
 	if (iPtr->scriptFile) {
-	    argv4 = TclGetStringFromObj(iPtr->scriptFile, &length);
+	    argv4 = Tcl_GetStringFromObj(iPtr->scriptFile, &length);
 	    DupBlock(availPtr->pkgIndex, argv4, length + 1);
 	}
-	argv4 = TclGetStringFromObj(objv[4], &length);
+	argv4 = Tcl_GetStringFromObj(objv[4], &length);
 	DupBlock(availPtr->script, argv4, length + 1);
 	break;
     }
@@ -1242,7 +1243,7 @@ TclNRPackageObjCmd(
 	} else {
 	    Tcl_Obj *resultObj;
 
-	    resultObj = Tcl_NewObj();
+	    TclNewObj(resultObj);
 	    tablePtr = &iPtr->packageTable;
 	    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
 		    hPtr = Tcl_NextHashEntry(&search)) {
@@ -1369,9 +1370,9 @@ TclNRPackageObjCmd(
 		    newObjvPtr, NULL);
 	    return TCL_OK;
 	} else {
-	    int i, newobjc = objc-3;
 	    Tcl_Obj *const *newobjv = objv + 3;
 
+	    newobjc = objc - 3;
 	    if (CheckAllRequirements(interp, objc-3, objv+3) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1408,7 +1409,7 @@ TclNRPackageObjCmd(
 	    if (iPtr->packageUnknown != NULL) {
 		Tcl_Free(iPtr->packageUnknown);
 	    }
-	    argv2 = TclGetStringFromObj(objv[2], &length);
+	    argv2 = Tcl_GetStringFromObj(objv[2], &length);
 	    if (argv2[0] == 0) {
 		iPtr->packageUnknown = NULL;
 	    } else {
@@ -1482,7 +1483,7 @@ TclNRPackageObjCmd(
 	 */
 
 	Tcl_SetObjResult(interp,
-		Tcl_NewIntObj(CompareVersions(iva, ivb, NULL)));
+		Tcl_NewWideIntObj(CompareVersions(iva, ivb, NULL)));
 	Tcl_Free(iva);
 	Tcl_Free(ivb);
 	break;
@@ -1491,8 +1492,9 @@ TclNRPackageObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "package");
 	    return TCL_ERROR;
 	} else {
-	    Tcl_Obj *resultObj = Tcl_NewObj();
+	    Tcl_Obj *resultObj;
 
+	    TclNewObj(resultObj);
 	    argv2 = TclGetString(objv[2]);
 	    hPtr = Tcl_FindHashEntry(&iPtr->packageTable, argv2);
 	    if (hPtr != NULL) {
@@ -2072,7 +2074,7 @@ AddRequirementsToResult(
     size_t length;
 
     for (i = 0; i < reqc; i++) {
-	const char *v = TclGetStringFromObj(reqv[i], &length);
+	const char *v = Tcl_GetStringFromObj(reqv[i], &length);
 
 	if ((length & 0x1) && (v[length/2] == '-')
 		&& (strncmp(v, v+((length+1)/2), length/2) == 0)) {

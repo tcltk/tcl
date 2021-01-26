@@ -4,7 +4,7 @@
  *	This file implements the MacOSX specific portion of file manipulation
  *	subcommands of the "file" command.
  *
- * Copyright (c) 2003-2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 2003-2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -192,11 +192,11 @@ TclMacOSXGetFileAttribute(
 		OSSwapBigToHostInt32(finder->type));
 	break;
     case MACOSX_HIDDEN_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewWideIntObj(
+	TclNewIntObj(*attributePtrPtr,
 		(finder->fdFlags & kFinfoIsInvisible) != 0);
 	break;
     case MACOSX_RSRCLENGTH_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewWideIntObj(*rsrcForkSize);
+	TclNewIntObj(*attributePtrPtr, *rsrcForkSize);
 	break;
     }
     return TCL_OK;
@@ -641,7 +641,7 @@ SetOSTypeFromAny(
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
     size_t length;
 
-    string = TclGetStringFromObj(objPtr, &length);
+    string = Tcl_GetStringFromObj(objPtr, &length);
     Tcl_UtfToExternalDString(encoding, string, length, &ds);
 
     if (Tcl_DStringLength(&ds) > 4) {
@@ -693,7 +693,7 @@ UpdateStringOfOSType(
     Tcl_Obj *objPtr)	/* OSType object whose string rep to
 				 * update. */
 {
-    const int size = TCL_UTF_MAX * 4;
+    const size_t size = TCL_UTF_MAX * 4;
     char *dst = Tcl_InitStringRep(objPtr, NULL, size);
     OSType osType = (OSType) objPtr->internalRep.wideValue;
     int written = 0;

@@ -6,8 +6,8 @@
  * This file contains the procedures that convert Tcl Assembly Language (TAL)
  * to a sequence of bytecode instructions for the Tcl execution engine.
  *
- * Copyright (c) 2010 by Ozgur Dogan Ugurlu.
- * Copyright (c) 2010 by Kevin B. Kenny.
+ * Copyright © 2010 Ozgur Dogan Ugurlu.
+ * Copyright © 2010 Kevin B. Kenny.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -131,7 +131,7 @@ enum BasicBlockFlags {
  * Source instruction type recognized by the assembler.
  */
 
-typedef enum TalInstType {
+typedef enum {
     ASSEM_1BYTE,		/* Fixed arity, 1-byte instruction */
     ASSEM_BEGIN_CATCH,		/* Begin catch: one 4-byte jump offset to be
 				 * converted to appropriate exception
@@ -144,8 +144,6 @@ typedef enum TalInstType {
 				 * be strictly positive, consumes N, produces
 				 * 1 */
     ASSEM_DICT_GET,		/* 'dict get' and related - consumes N+1
-				 * operands, produces 1, N > 0 */
-    ASSEM_DICT_GET_DEF,		/* 'dict getwithdefault' - consumes N+2
 				 * operands, produces 1, N > 0 */
     ASSEM_DICT_SET,		/* specifies key count and LVT index, consumes
 				 * N+1 operands, produces 1, N > 0 */
@@ -189,8 +187,10 @@ typedef enum TalInstType {
 				 * produces N */
     ASSEM_SINT1,		/* One 1-byte signed-integer operand
 				 * (INCR_STK_IMM) */
-    ASSEM_SINT4_LVT4		/* Signed 4-byte integer operand followed by
+    ASSEM_SINT4_LVT4,		/* Signed 4-byte integer operand followed by
 				 * LVT entry.  Fixed arity */
+    ASSEM_DICT_GET_DEF		/* 'dict getwithdefault' - consumes N+2
+				 * operands, produces 1, N > 0 */
 } TalInstType;
 
 /*
@@ -813,7 +813,7 @@ TclNRAssembleObjCmd(
 	Tcl_AddErrorInfo(interp, "\n    (\"");
 	Tcl_AppendObjToErrorInfo(interp, objv[0]);
 	Tcl_AddErrorInfo(interp, "\" body, line ");
-	backtrace = Tcl_NewWideIntObj(Tcl_GetErrorLine(interp));
+	TclNewIntObj(backtrace, Tcl_GetErrorLine(interp));
 	Tcl_AppendObjToErrorInfo(interp, backtrace);
 	Tcl_AddErrorInfo(interp, ")");
 	return TCL_ERROR;
@@ -887,7 +887,7 @@ CompileAssembleObj(
      * Set up the compilation environment, and assemble the code.
      */
 
-    source = TclGetStringFromObj(objPtr, &sourceLen);
+    source = Tcl_GetStringFromObj(objPtr, &sourceLen);
     TclInitCompileEnv(interp, &compEnv, source, sourceLen, NULL, 0);
     status = TclAssembleCode(&compEnv, source, sourceLen, TCL_EVAL_DIRECT);
     if (status != TCL_OK) {
@@ -1264,7 +1264,7 @@ AssembleOneLine(
     Tcl_Obj* instNameObj;	/* Name of the instruction */
     int tblIdx;			/* Index in TalInstructionTable of the
 				 * instruction */
-    enum TalInstType instType;	/* Type of the instruction */
+    TalInstType instType;	/* Type of the instruction */
     Tcl_Obj* operand1Obj = NULL;
 				/* First operand to the instruction */
     const char* operand1;	/* String rep of the operand */
@@ -1311,7 +1311,7 @@ AssembleOneLine(
 	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	}
-	operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
+	operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
 	litIndex = TclRegisterLiteral(envPtr, operand1, operand1Len, 0);
 	BBEmitInst1or4(assemEnvPtr, tblIdx, litIndex, 0);
 	break;
@@ -1478,7 +1478,7 @@ AssembleOneLine(
 		&operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	} else {
-	    operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
+	    operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
 	    litIndex = TclRegisterLiteral(envPtr, operand1, operand1Len, 0);
 
 	    /*
@@ -2096,8 +2096,9 @@ GetNextOperand(
 				 * with \-substitutions done. */
 {
     Tcl_Interp* interp = (Tcl_Interp*) assemEnvPtr->envPtr->iPtr;
-    Tcl_Obj* operandObj = Tcl_NewObj();
+    Tcl_Obj* operandObj;
 
+    TclNewObj(operandObj);
     if (!TclWordKnownAtCompileTime(*tokenPtrPtr, operandObj)) {
 	Tcl_DecrRefCount(operandObj);
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
@@ -2314,7 +2315,7 @@ FindLocalVar(
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {
 	return -1;
     }
-    varNameStr = TclGetStringFromObj(varNameObj, &varNameLen);
+    varNameStr = Tcl_GetStringFromObj(varNameObj, &varNameLen);
     if (CheckNamespaceQualifiers(interp, varNameStr, varNameLen)) {
 	Tcl_DecrRefCount(varNameObj);
 	return -1;
@@ -2910,7 +2911,7 @@ CheckJumpTableLabels(
 	valEntryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
 		TclGetString(symbolObj));
 	DEBUG_PRINT("  %s -> %s (%d)\n",
-		(char*) Tcl_GetHashKey(symHash, symEntryPtr),
+		(char *)Tcl_GetHashKey(symHash, symEntryPtr),
 		TclGetString(symbolObj), (valEntryPtr != NULL));
 	if (valEntryPtr == NULL) {
 	    ReportUndefinedLabel(assemEnvPtr, bbPtr, symbolObj);
@@ -3115,7 +3116,7 @@ ResolveJumpTableTargets(
 	realJumpEntryPtr = Tcl_CreateHashEntry(realJumpHashPtr,
 		Tcl_GetHashKey(symHash, symEntryPtr), &junk);
 	DEBUG_PRINT("  %s -> %s -> bb %p (pc %d)    hash entry %p\n",
-		(char*) Tcl_GetHashKey(symHash, symEntryPtr),
+		(char *)Tcl_GetHashKey(symHash, symEntryPtr),
 		TclGetString(symbolObj), jumpTargetBBPtr,
 		jumpTargetBBPtr->startOffset, realJumpEntryPtr);
 
@@ -4267,7 +4268,7 @@ AddBasicBlockRangeToErrorInfo(
     Tcl_Obj* lineNo;		/* Line number in the source */
 
     Tcl_AddErrorInfo(interp, "\n    in assembly code between lines ");
-    lineNo = Tcl_NewWideIntObj(bbPtr->startLine);
+    TclNewIntObj(lineNo, bbPtr->startLine);
     Tcl_IncrRefCount(lineNo);
     Tcl_AppendObjToErrorInfo(interp, lineNo);
     Tcl_AddErrorInfo(interp, " and ");

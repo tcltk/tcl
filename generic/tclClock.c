@@ -5,9 +5,9 @@
  *	the time and date facilities of TclX, by Mark Diekhans and Karl
  *	Lehenbauer.
  *
- * Copyright 1991-1995 Karl Lehenbauer and Mark Diekhans.
- * Copyright (c) 1995 Sun Microsystems, Inc.
- * Copyright (c) 2004 by Kevin B. Kenny. All rights reserved.
+ * Copyright © 1991-1995 Karl Lehenbauer & Mark Diekhans.
+ * Copyright © 1995 Sun Microsystems, Inc.
+ * Copyright © 2004 Kevin B. Kenny. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -263,7 +263,7 @@ TclClockInit(
     };
 
     /*
-     * Safe interps get [::clock] as alias to a master, so do not need their
+     * Safe interps get [::clock] as alias to a parent, so do not need their
      * own copies of the support routines.
      */
 

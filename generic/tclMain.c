@@ -8,9 +8,9 @@
  *	application. Or, it can be used as a template for creating new main
  *	programs for Tcl applications.
  *
- * Copyright (c) 1988-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 2000 Ajuba Solutions.
+ * Copyright © 1988-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 2000 Ajuba Solutions.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -43,7 +43,7 @@
 #   define _tcscmp strcmp
 #endif
 
-static inline Tcl_Obj *
+static Tcl_Obj *
 NewNativeObj(
     TCHAR *string)
 {
@@ -53,7 +53,7 @@ NewNativeObj(
     Tcl_DStringInit(&ds);
     Tcl_WCharToUtfDString(string, -1, &ds);
 #else
-    Tcl_ExternalToUtfDString(NULL, (char *) string, -1, &ds);
+    Tcl_ExternalToUtfDString(NULL, (char *)string, -1, &ds);
 #endif
     return TclDStringToObj(&ds);
 }
@@ -63,11 +63,6 @@ NewNativeObj(
  * include tclPort.h here, because people might copy this file out of the Tcl
  * source directory to make their own modified versions).
  */
-
-#if defined _MSC_VER && _MSC_VER < 1900
-/* isatty is always defined on MSVC 14.0, but not necessarily as CRTIMPORT. */
-extern CRTIMPORT int	isatty(int fd);
-#endif
 
 /*
  * The thread-local variables for this file's functions.
@@ -307,7 +302,7 @@ Tcl_MainEx(
 
     is.interp = interp;
     is.prompt = PROMPT_START;
-    is.commandPtr = Tcl_NewObj();
+    TclNewObj(is.commandPtr);
 
     /*
      * If the application has not already set a startup script, parse the
@@ -348,7 +343,7 @@ Tcl_MainEx(
     argc--;
     argv++;
 
-    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewWideIntObj(argc), TCL_GLOBAL_ONLY);
 
     argvPtr = Tcl_NewListObj(0, NULL);
     while (argc--) {
@@ -362,7 +357,7 @@ Tcl_MainEx(
 
     is.tty = isatty(0);
     Tcl_SetVar2Ex(interp, "tcl_interactive", NULL,
-	    Tcl_NewIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
+	    Tcl_NewWideIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
 
     /*
      * Invoke application-specific initialization.
@@ -472,7 +467,7 @@ Tcl_MainEx(
 		Tcl_IncrRefCount(is.commandPtr);
 	    }
 	    length = Tcl_GetsObj(is.input, is.commandPtr);
-	    if (length == TCL_AUTO_LENGTH) {
+	    if (length == TCL_INDEX_NONE) {
 		if (Tcl_InputBlocked(is.input)) {
 		    /*
 		     * This can only happen if stdin has been set to
@@ -516,13 +511,13 @@ Tcl_MainEx(
 	     * error messages troubles deeper in, so lop it back off.
 	     */
 
-	    (void)TclGetStringFromObj(is.commandPtr, &length);
+	    (void)Tcl_GetStringFromObj(is.commandPtr, &length);
 	    Tcl_SetObjLength(is.commandPtr, --length);
 	    code = Tcl_RecordAndEvalObj(interp, is.commandPtr,
 		    TCL_EVAL_GLOBAL);
 	    is.input = Tcl_GetStdChannel(TCL_STDIN);
 	    Tcl_DecrRefCount(is.commandPtr);
-	    is.commandPtr = Tcl_NewObj();
+	    TclNewObj(is.commandPtr);
 	    Tcl_IncrRefCount(is.commandPtr);
 	    if (code != TCL_OK) {
 		chan = Tcl_GetStdChannel(TCL_STDERR);
@@ -533,7 +528,7 @@ Tcl_MainEx(
 	    } else if (is.tty) {
 		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(resultPtr);
-		(void)TclGetStringFromObj(resultPtr, &length);
+		(void)Tcl_GetStringFromObj(resultPtr, &length);
 		chan = Tcl_GetStdChannel(TCL_STDOUT);
 		if ((length > 0) && chan) {
 		    Tcl_WriteObj(chan, resultPtr);
@@ -749,7 +744,7 @@ StdinProc(
 	Tcl_IncrRefCount(commandPtr);
     }
     length = Tcl_GetsObj(chan, commandPtr);
-    if (length == TCL_AUTO_LENGTH) {
+    if (length == TCL_INDEX_NONE) {
 	if (Tcl_InputBlocked(chan)) {
 	    return;
 	}
@@ -777,7 +772,7 @@ StdinProc(
 	goto prompt;
     }
     isPtr->prompt = PROMPT_START;
-    (void)TclGetStringFromObj(commandPtr, &length);
+    (void)Tcl_GetStringFromObj(commandPtr, &length);
     Tcl_SetObjLength(commandPtr, --length);
 
     /*
@@ -791,7 +786,8 @@ StdinProc(
     code = Tcl_RecordAndEvalObj(interp, commandPtr, TCL_EVAL_GLOBAL);
     isPtr->input = chan = Tcl_GetStdChannel(TCL_STDIN);
     Tcl_DecrRefCount(commandPtr);
-    isPtr->commandPtr = commandPtr = Tcl_NewObj();
+    TclNewObj(commandPtr);
+    isPtr->commandPtr = commandPtr;
     Tcl_IncrRefCount(commandPtr);
     if (chan != NULL) {
 	Tcl_CreateChannelHandler(chan, TCL_READABLE, StdinProc, isPtr);
@@ -808,7 +804,7 @@ StdinProc(
 	chan = Tcl_GetStdChannel(TCL_STDOUT);
 
 	Tcl_IncrRefCount(resultPtr);
-	(void)TclGetStringFromObj(resultPtr, &length);
+	(void)Tcl_GetStringFromObj(resultPtr, &length);
 	if ((length > 0) && (chan != NULL)) {
 	    Tcl_WriteObj(chan, resultPtr);
 	    Tcl_WriteChars(chan, "\n", 1);

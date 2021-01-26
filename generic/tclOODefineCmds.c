@@ -4,7 +4,7 @@
  *	This file contains the implementation of the ::oo::define command,
  *	part of the object-system core (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006-2013 by Donal K. Fellows
+ * Copyright © 2006-2013 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -716,7 +716,7 @@ TclOOUnknownDefinition(
 	return TCL_ERROR;
     }
 
-    soughtStr = TclGetStringFromObj(objv[1], &soughtLen);
+    soughtStr = Tcl_GetStringFromObj(objv[1], &soughtLen);
     if (soughtLen == 0) {
 	goto noMatch;
     }
@@ -778,7 +778,7 @@ FindCommand(
     Tcl_Namespace *const namespacePtr)
 {
     size_t length;
-    const char *nameStr, *string = TclGetStringFromObj(stringObj, &length);
+    const char *nameStr, *string = Tcl_GetStringFromObj(stringObj, &length);
     Namespace *const nsPtr = (Namespace *) namespacePtr;
     FOREACH_HASH_DECLS;
     Tcl_Command cmd, cmd2;
@@ -999,7 +999,7 @@ GenerateErrorInfo(
     size_t length;
     Tcl_Obj *realNameObj = Tcl_ObjectDeleted((Tcl_Object) oPtr)
 	    ? savedNameObj : TclOOObjectName(interp, oPtr);
-    const char *objName = TclGetStringFromObj(realNameObj, &length);
+    const char *objName = Tcl_GetStringFromObj(realNameObj, &length);
     unsigned limit = OBJNAME_LENGTH_IN_ERRORINFO_LIMIT;
     int overflow = (length > limit);
 
@@ -1050,8 +1050,8 @@ MagicDefinitionInvoke(
      * comments above for why these contortions are necessary.
      */
 
-    objPtr = Tcl_NewObj();
-    obj2Ptr = Tcl_NewObj();
+    TclNewObj(objPtr);
+    TclNewObj(obj2Ptr);
     cmd = FindCommand(interp, objv[cmdIndex], nsPtr);
     if (cmd == NULL) {
 	/*
@@ -1550,7 +1550,7 @@ TclOODefineConstructorObjCmd(
     }
     clsPtr = oPtr->classPtr;
 
-    (void)TclGetStringFromObj(objv[2], &bodyLength);
+    (void)Tcl_GetStringFromObj(objv[2], &bodyLength);
     if (bodyLength > 0) {
 	/*
 	 * Create the method structure.
@@ -1756,7 +1756,7 @@ TclOODefineDestructorObjCmd(
     }
     clsPtr = oPtr->classPtr;
 
-    (void)TclGetStringFromObj(objv[1], &bodyLength);
+    (void)Tcl_GetStringFromObj(objv[1], &bodyLength);
     if (bodyLength > 0) {
 	/*
 	 * Create the method structure.
@@ -1845,10 +1845,10 @@ TclOODefineExportObjCmd(
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
-	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *) objv[i],
+	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *)objv[i],
 		    &isNew);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char*) objv[i],
+	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *)objv[i],
 		    &isNew);
 	}
 
@@ -2158,10 +2158,10 @@ TclOODefineUnexportObjCmd(
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
-	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *) objv[i],
+	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *)objv[i],
 		    &isNew);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char*) objv[i],
+	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *)objv[i],
 		    &isNew);
 	}
 
@@ -2338,7 +2338,7 @@ ClassFilterGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(filterObj, oPtr->classPtr->filters) {
 	Tcl_ListObjAppendElement(NULL, resultObj, filterObj);
     }
@@ -2419,7 +2419,7 @@ ClassMixinGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(mixinPtr, oPtr->classPtr->mixins) {
 	Tcl_ListObjAppendElement(NULL, resultObj,
 		TclOOObjectName(interp, mixinPtr->thisPtr));
@@ -2525,7 +2525,7 @@ ClassSuperGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(superPtr, oPtr->classPtr->superclasses) {
 	Tcl_ListObjAppendElement(NULL, resultObj,
 		TclOOObjectName(interp, superPtr->thisPtr));
@@ -2691,7 +2691,7 @@ ClassVarsGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     if (IsPrivateDefine(interp)) {
 	PrivateVariableMapping *privatePtr;
 
@@ -2800,7 +2800,7 @@ ObjFilterGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(filterObj, oPtr->filters) {
 	Tcl_ListObjAppendElement(NULL, resultObj, filterObj);
     }
@@ -2869,7 +2869,7 @@ ObjMixinGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     FOREACH(mixinPtr, oPtr->mixins) {
 	if (mixinPtr) {
 	    Tcl_ListObjAppendElement(NULL, resultObj,
@@ -2954,7 +2954,7 @@ ObjVarsGet(
 	return TCL_ERROR;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     if (IsPrivateDefine(interp)) {
 	PrivateVariableMapping *privatePtr;
 

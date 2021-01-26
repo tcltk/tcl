@@ -12,7 +12,7 @@
 oo::object \- root class of the class hierarchy
 .SH SYNOPSIS
 .nf
-package require TclOO
+package require tcl::oo
 
 \fBoo::object\fI method \fR?\fIarg ...\fR?
 .fi

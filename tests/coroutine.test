@@ -4,18 +4,18 @@
 # found in ::tcl::unsupported. The tests will migrate to normal test files
 # if/when the commands find their way into the core.
 #
-# Copyright (c) 2008 by Miguel Sofer.
+# Copyright © 2008 Miguel Sofer.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testnrelevels [llength [info commands testnrelevels]]
 testConstraint memory [llength [info commands memory]]
@@ -771,25 +771,25 @@ test coroutine-8.0.1 {coro inject after error} -body {
     lappend ::result [catch {demo} err] $err
 } -result {inject-executed 1 test}
 test coroutine-8.1.1 {coro inject, ticket 42202ba1e5ff566e} -body {
-    interp create slave
-    slave eval {
+    interp create child
+    child eval {
 	coroutine demo apply {{} { while {1} yield }}
 	demo
 	tcl::unsupported::inject demo set ::result inject-executed
     }
-    interp delete slave
+    interp delete child
 } -result {}
 test coroutine-8.1.2 {coro inject with result, ticket 42202ba1e5ff566e} -body {
-    interp create slave
-    slave eval {
+    interp create child
+    child eval {
 	coroutine demo apply {{} { while {1} yield }}
 	demo
 	tcl::unsupported::inject demo set ::result inject-executed
     }
-    slave eval demo
-    set result [slave eval {set ::result}]
+    child eval demo
+    set result [child eval {set ::result}]
 
-    interp delete slave
+    interp delete child
     set result
 } -result {inject-executed}
 

@@ -10,7 +10,7 @@
  *
  *	See TIP #219 for the specification of this functionality.
  *
- * Copyright (c) 2004-2005 ActiveState, a divison of Sophos
+ * Copyright © 2004-2005 ActiveState, a divison of Sophos
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -44,8 +44,8 @@ static void		ReflectThread(ClientData clientData, int action);
 static int		ReflectEventRun(Tcl_Event *ev, int flags);
 static int		ReflectEventDelete(Tcl_Event *ev, ClientData cd);
 #endif
-static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
-			    Tcl_WideInt offset, int mode, int *errorCodePtr);
+static long long ReflectSeekWide(ClientData clientData,
+			    long long offset, int mode, int *errorCodePtr);
 static int		ReflectGetOption(ClientData clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
@@ -1340,7 +1340,7 @@ ReflectInput(
 		PassReceivedError(rcPtr->chan, &p);
 		*errorCodePtr = EINVAL;
 	    }
-	    p.input.toRead = TCL_AUTO_LENGTH;
+	    p.input.toRead = TCL_INDEX_NONE;
 	} else {
 	    *errorCodePtr = EOK;
 	}
@@ -1354,7 +1354,7 @@ ReflectInput(
 
     Tcl_Preserve(rcPtr);
 
-    toReadObj = Tcl_NewIntObj(toRead);
+    TclNewIntObj(toReadObj, toRead);
     Tcl_IncrRefCount(toReadObj);
 
     if (InvokeTclMethod(rcPtr, METH_READ, toReadObj, NULL, &resObj)!=TCL_OK) {
@@ -1369,7 +1369,7 @@ ReflectInput(
         goto invalid;
     }
 
-    bytev = TclGetByteArrayFromObj(resObj, &bytec);
+    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 
     if ((size_t)toRead < bytec) {
 	SetChannelErrorStr(rcPtr->chan, msg_read_toomuch);
@@ -1539,10 +1539,10 @@ ReflectOutput(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 ReflectSeekWide(
     ClientData clientData,
-    Tcl_WideInt offset,
+    long long offset,
     int seekMode,
     int *errorCodePtr)
 {
@@ -1580,7 +1580,7 @@ ReflectSeekWide(
 
     Tcl_Preserve(rcPtr);
 
-    offObj  = Tcl_NewWideIntObj(offset);
+    TclNewIntObj(offObj, offset);
     baseObj = Tcl_NewStringObj(
             (seekMode == SEEK_SET) ? "start" :
             (seekMode == SEEK_CUR) ? "current" : "end", -1);
@@ -1993,7 +1993,7 @@ ReflectGetOption(
         goto error;
     } else {
 	size_t len;
-	const char *str = TclGetStringFromObj(resObj, &len);
+	const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 	if (len) {
 	    TclDStringAppendLiteral(dsPtr, " ");
@@ -2368,7 +2368,7 @@ InvokeTclMethod(
 
 	    if (result != TCL_ERROR) {
 		size_t cmdLen;
-		const char *cmdString = TclGetStringFromObj(cmd, &cmdLen);
+		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
 		Tcl_ResetResult(rcPtr->interp);
@@ -3016,10 +3016,12 @@ ForwardProc(
     }
 
     case ForwardedInput: {
-	Tcl_Obj *toReadObj = Tcl_NewIntObj(paramPtr->input.toRead);
-        Tcl_IncrRefCount(toReadObj);
+	Tcl_Obj *toReadObj;
 
-        Tcl_Preserve(rcPtr);
+	TclNewIntObj(toReadObj, paramPtr->input.toRead);
+	Tcl_IncrRefCount(toReadObj);
+
+	Tcl_Preserve(rcPtr);
 	if (InvokeTclMethod(rcPtr, METH_READ, toReadObj, NULL, &resObj)!=TCL_OK){
 	    int code = ErrnoReturn(rcPtr, resObj);
 
@@ -3037,7 +3039,7 @@ ForwardProc(
 	    size_t bytec = 0;		/* Number of returned bytes */
 	    unsigned char *bytev;	/* Array of returned bytes */
 
-	    bytev = TclGetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 
 	    if (paramPtr->input.toRead < bytec) {
 		ForwardSetStaticError(paramPtr, msg_read_toomuch);
@@ -3094,15 +3096,18 @@ ForwardProc(
     }
 
     case ForwardedSeek: {
-	Tcl_Obj *offObj = Tcl_NewWideIntObj(paramPtr->seek.offset);
-	Tcl_Obj *baseObj = Tcl_NewStringObj(
-                (paramPtr->seek.seekMode==SEEK_SET) ? "start" :
-                (paramPtr->seek.seekMode==SEEK_CUR) ? "current" : "end", -1);
+	Tcl_Obj *offObj;
+	Tcl_Obj *baseObj;
 
-        Tcl_IncrRefCount(offObj);
-        Tcl_IncrRefCount(baseObj);
+	TclNewIntObj(offObj, paramPtr->seek.offset);
+	baseObj = Tcl_NewStringObj(
+		(paramPtr->seek.seekMode==SEEK_SET) ? "start" :
+		(paramPtr->seek.seekMode==SEEK_CUR) ? "current" : "end", -1);
 
-        Tcl_Preserve(rcPtr);
+	Tcl_IncrRefCount(offObj);
+	Tcl_IncrRefCount(baseObj);
+
+	Tcl_Preserve(rcPtr);
 	if (InvokeTclMethod(rcPtr, METH_SEEK, offObj, baseObj, &resObj)!=TCL_OK){
 	    ForwardSetObjError(paramPtr, resObj);
 	    paramPtr->seek.offset = -1;
@@ -3231,7 +3236,7 @@ ForwardProc(
 		ForwardSetDynamicError(paramPtr, buf);
 	    } else {
 		size_t len;
-		const char *str = TclGetStringFromObj(resObj, &len);
+		const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 		if (len) {
 		    TclDStringAppendLiteral(paramPtr->getOpt.value, " ");
@@ -3330,7 +3335,7 @@ ForwardSetObjError(
     Tcl_Obj *obj)
 {
     size_t len;
-    const char *msgStr = TclGetStringFromObj(obj, &len);
+    const char *msgStr = Tcl_GetStringFromObj(obj, &len);
 
     len++;
     ForwardSetDynamicError(paramPtr, Tcl_Alloc(len));

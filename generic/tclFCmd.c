@@ -4,7 +4,7 @@
  *	This file implements the generic portion of file manipulation
  *	subcommands of the "file" command.
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -904,7 +904,7 @@ FileBasename(
 	}
     }
     if (resultPtr == NULL) {
-	resultPtr = Tcl_NewObj();
+	TclNewObj(resultPtr);
     }
     Tcl_IncrRefCount(resultPtr);
     Tcl_DecrRefCount(splitPtr);
@@ -1085,7 +1085,7 @@ TclFileAttrsCmd(
 	}
 
 	if (Tcl_GetIndexFromObj(interp, objv[0], attributeStrings,
-		"option", INDEX_TEMP_TABLE, &index) != TCL_OK) {
+		"option", TCL_INDEX_TEMP_TABLE, &index) != TCL_OK) {
 	    goto end;
 	}
 	if (Tcl_FSFileAttrsGet(interp, index, filePtr,
@@ -1110,7 +1110,7 @@ TclFileAttrsCmd(
 
 	for (i = 0; i < objc ; i += 2) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], attributeStrings,
-		    "option", INDEX_TEMP_TABLE, &index) != TCL_OK) {
+		    "option", TCL_INDEX_TEMP_TABLE, &index) != TCL_OK) {
 		goto end;
 	    }
 	    if (i + 1 == objc) {
@@ -1391,7 +1391,7 @@ TclFileTemporaryCmd(
     if (objc > 2) {
 	size_t length;
 	Tcl_Obj *templateObj = objv[2];
-	const char *string = TclGetStringFromObj(templateObj, &length);
+	const char *string = Tcl_GetStringFromObj(templateObj, &length);
 
 	/*
 	 * Treat an empty string as if it wasn't there.
@@ -1543,7 +1543,7 @@ TclFileTempDirCmd(
     if (objc > 1) {
 	int length;
 	Tcl_Obj *templateObj = objv[1];
-	const char *string = TclGetStringFromObj(templateObj, &length);
+	const char *string = Tcl_GetStringFromObj(templateObj, &length);
 	const int onWindows = (tclPlatform == TCL_PLATFORM_WINDOWS);
 
 	/*

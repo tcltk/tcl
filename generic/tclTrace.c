@@ -3,10 +3,10 @@
  *
  *	This file contains code to handle most trace management.
  *
- * Copyright (c) 1987-1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 Scriptics Corporation.
- * Copyright (c) 2002 ActiveState Corporation.
+ * Copyright © 1987-1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Scriptics Corporation.
+ * Copyright © 2002 ActiveState Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -183,7 +183,7 @@ typedef struct {
 
 int
 Tcl_TraceObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -202,7 +202,7 @@ Tcl_TraceObjCmd(
 	NULL
     };
     /* 'OLD' options are pre-Tcl-8.4 style */
-    enum traceOptions {
+    enum traceOptionsEnum {
 	TRACE_ADD, TRACE_INFO, TRACE_REMOVE,
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
 	TRACE_OLD_VARIABLE, TRACE_OLD_VDELETE, TRACE_OLD_VINFO
@@ -218,7 +218,7 @@ Tcl_TraceObjCmd(
 	    &optionIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch ((enum traceOptions) optionIndex) {
+    switch ((enum traceOptionsEnum) optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
 	/*
@@ -277,9 +277,9 @@ Tcl_TraceObjCmd(
 	    return TCL_ERROR;
 	}
 
-	opsList = Tcl_NewObj();
+	TclNewObj(opsList);
 	Tcl_IncrRefCount(opsList);
-	flagOps = TclGetStringFromObj(objv[3], &numFlags);
+	flagOps = Tcl_GetStringFromObj(objv[3], &numFlags);
 	if (numFlags == 0) {
 	    Tcl_DecrRefCount(opsList);
 	    goto badVarOps;
@@ -321,7 +321,7 @@ Tcl_TraceObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "name");
 	    return TCL_ERROR;
 	}
-	resultListPtr = Tcl_NewObj();
+	TclNewObj(resultListPtr);
 	name = TclGetString(objv[2]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *)clientData;
@@ -465,7 +465,7 @@ TraceExecutionObjCmd(
 		break;
 	    }
 	}
-	command = TclGetStringFromObj(objv[5], &commandLength);
+	command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	length = commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)Tcl_Alloc(
@@ -702,7 +702,7 @@ TraceCommandObjCmd(
 	    }
 	}
 
-	command = TclGetStringFromObj(objv[5], &commandLength);
+	command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	length = commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)Tcl_Alloc(
@@ -905,7 +905,7 @@ TraceVariableObjCmd(
 		break;
 	    }
 	}
-	command = TclGetStringFromObj(objv[5], &commandLength);
+	command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	length = commandLength;
 	if ((enum traceOptions) optionIndex == TRACE_ADD) {
 	    CombinedTraceVarInfo *ctvarPtr = (CombinedTraceVarInfo *)Tcl_Alloc(
@@ -966,7 +966,7 @@ TraceVariableObjCmd(
 	    return TCL_ERROR;
 	}
 
-	resultListPtr = Tcl_NewObj();
+	TclNewObj(resultListPtr);
 	name = TclGetString(objv[3]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
 	    Tcl_Obj *opObjPtr, *eachTraceObjPtr, *elemObjPtr;
@@ -1178,7 +1178,7 @@ Tcl_UntraceCommand(
     CommandTrace *tracePtr;
     CommandTrace *prevPtr;
     Command *cmdPtr;
-    Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *)interp;
     ActiveCommandTrace *activePtr;
     int hasExecTraces = 0;
 
@@ -1253,7 +1253,6 @@ Tcl_UntraceCommand(
 	 */
 
 	if (cmdPtr->compileProc != NULL) {
-	    Interp *iPtr = (Interp *) interp;
 	    iPtr->compileEpoch++;
 	}
     }
@@ -1849,7 +1848,7 @@ TraceExecutionProc(
 		 * Append result code.
 		 */
 
-		resultCode = Tcl_NewIntObj(code);
+		TclNewIntObj(resultCode, code);
 		resultCodeStr = TclGetString(resultCode);
 		Tcl_DStringAppendElement(&cmd, resultCodeStr);
 		Tcl_DecrRefCount(resultCode);
@@ -1977,7 +1976,7 @@ TraceVarProc(
     int rewind = ((Interp *)interp)->execEnvPtr->rewind;
 
     /*
-     * We might call Tcl_Eval() below, and that might evaluate [trace vdelete]
+     * We might call Tcl_EvalEx() below, and that might evaluate [trace vdelete]
      * which might try to free tvarPtr. We want to use tvarPtr until the end
      * of this function, so we use Tcl_Preserve() and Tcl_Release() to be sure
      * it is not freed while we still need it.

@@ -111,9 +111,7 @@ EXTERN int		TclGetFrame(Tcl_Interp *interp, const char *str,
 /* Slot 34 is reserved */
 /* Slot 35 is reserved */
 /* Slot 36 is reserved */
-/* 37 */
-EXTERN int		TclGetLoadedPackages(Tcl_Interp *interp,
-				const char *targetName);
+/* Slot 37 is reserved */
 /* 38 */
 EXTERN int		TclGetNamespaceForQualName(Tcl_Interp *interp,
 				const char *qualName, Namespace *cxtNsPtr,
@@ -132,9 +130,7 @@ EXTERN Tcl_Command	TclGetOriginalCommand(Tcl_Command command);
 EXTERN const char *	TclpGetUserHome(const char *name,
 				Tcl_DString *bufferPtr);
 /* Slot 43 is reserved */
-/* 44 */
-EXTERN int		TclGuessPackageName(const char *fileName,
-				Tcl_DString *bufPtr);
+/* Slot 44 is reserved */
 /* 45 */
 EXTERN int		TclHideUnsafeCommands(Tcl_Interp *interp);
 /* 46 */
@@ -541,12 +537,12 @@ EXTERN void		TclResetRewriteEnsemble(Tcl_Interp *interp,
 /* 248 */
 EXTERN int		TclCopyChannel(Tcl_Interp *interp,
 				Tcl_Channel inChan, Tcl_Channel outChan,
-				Tcl_WideInt toRead, Tcl_Obj *cmdPtr);
+				long long toRead, Tcl_Obj *cmdPtr);
 /* 249 */
 EXTERN char *		TclDoubleDigits(double dv, int ndigits, int flags,
 				int *decpt, int *signum, char **endPtr);
 /* 250 */
-EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
+EXTERN void		TclSetChildCancelFlags(Tcl_Interp *interp, int flags,
 				int force);
 /* 251 */
 EXTERN int		TclRegisterLiteral(void *envPtr, const char *bytes,
@@ -584,6 +580,9 @@ EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 /* 259 */
 EXTERN void		TclAppendUnicodeToObj(Tcl_Obj *objPtr,
 				const Tcl_UniChar *unicode, size_t length);
+/* 260 */
+EXTERN unsigned char *	TclGetBytesFromObj(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, size_t *lengthPtr);
 
 typedef struct TclIntStubs {
     int magic;
@@ -626,14 +625,14 @@ typedef struct TclIntStubs {
     void (*reserved34)(void);
     void (*reserved35)(void);
     void (*reserved36)(void);
-    int (*tclGetLoadedPackages) (Tcl_Interp *interp, const char *targetName); /* 37 */
+    void (*reserved37)(void);
     int (*tclGetNamespaceForQualName) (Tcl_Interp *interp, const char *qualName, Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr, Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr, const char **simpleNamePtr); /* 38 */
     TclObjCmdProcType (*tclGetObjInterpProc) (void); /* 39 */
     int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *seekFlagPtr); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) (Tcl_Command command); /* 41 */
     const char * (*tclpGetUserHome) (const char *name, Tcl_DString *bufferPtr); /* 42 */
     void (*reserved43)(void);
-    int (*tclGuessPackageName) (const char *fileName, Tcl_DString *bufPtr); /* 44 */
+    void (*reserved44)(void);
     int (*tclHideUnsafeCommands) (Tcl_Interp *interp); /* 45 */
     int (*tclInExit) (void); /* 46 */
     void (*reserved47)(void);
@@ -837,9 +836,9 @@ typedef struct TclIntStubs {
     Tcl_HashTable * (*tclGetNamespaceCommandTable) (Tcl_Namespace *nsPtr); /* 245 */
     int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, size_t numRemoved, size_t numInserted, Tcl_Obj *const *objv); /* 246 */
     void (*tclResetRewriteEnsemble) (Tcl_Interp *interp, int isRootEnsemble); /* 247 */
-    int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
+    int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, long long toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
-    void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
+    void (*tclSetChildCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
     int (*tclRegisterLiteral) (void *envPtr, const char *bytes, size_t length, int flags); /* 251 */
     Tcl_Obj * (*tclPtrGetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 252 */
     Tcl_Obj * (*tclPtrSetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, const int flags); /* 253 */
@@ -849,6 +848,7 @@ typedef struct TclIntStubs {
     void (*tclStaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 257 */
     Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
     void (*tclAppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, size_t length); /* 259 */
+    unsigned char * (*tclGetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, size_t *lengthPtr); /* 260 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -917,8 +917,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 34 is reserved */
 /* Slot 35 is reserved */
 /* Slot 36 is reserved */
-#define TclGetLoadedPackages \
-	(tclIntStubsPtr->tclGetLoadedPackages) /* 37 */
+/* Slot 37 is reserved */
 #define TclGetNamespaceForQualName \
 	(tclIntStubsPtr->tclGetNamespaceForQualName) /* 38 */
 #define TclGetObjInterpProc \
@@ -930,8 +929,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclpGetUserHome \
 	(tclIntStubsPtr->tclpGetUserHome) /* 42 */
 /* Slot 43 is reserved */
-#define TclGuessPackageName \
-	(tclIntStubsPtr->tclGuessPackageName) /* 44 */
+/* Slot 44 is reserved */
 #define TclHideUnsafeCommands \
 	(tclIntStubsPtr->tclHideUnsafeCommands) /* 45 */
 #define TclInExit \
@@ -1248,8 +1246,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclCopyChannel) /* 248 */
 #define TclDoubleDigits \
 	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
-#define TclSetSlaveCancelFlags \
-	(tclIntStubsPtr->tclSetSlaveCancelFlags) /* 250 */
+#define TclSetChildCancelFlags \
+	(tclIntStubsPtr->tclSetChildCancelFlags) /* 250 */
 #define TclRegisterLiteral \
 	(tclIntStubsPtr->tclRegisterLiteral) /* 251 */
 #define TclPtrGetVar \
@@ -1268,6 +1266,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
 #define TclAppendUnicodeToObj \
 	(tclIntStubsPtr->tclAppendUnicodeToObj) /* 259 */
+#define TclGetBytesFromObj \
+	(tclIntStubsPtr->tclGetBytesFromObj) /* 260 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

@@ -25,7 +25,7 @@
 #
 #----------------------------------------------------------------------
 #
-# Copyright (c) 2004 by Kevin B. Kenny.	 All rights reserved.
+# Copyright (c) 2004 Kevin B. Kenny.	 All rights reserved.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #----------------------------------------------------------------------
@@ -36,7 +36,7 @@
 set olsonFiles {
     africa antarctica asia australasia
     backward etcetera europe northamerica
-    pacificnew southamerica systemv
+    southamerica
 }
 
 # Define the year at which the DST information will stop.
@@ -1263,7 +1263,7 @@ proc writeZones {outDir} {
 	# Write the data to the information file
 
 	set f [open $fileName w]
-	fconfigure $f -translation lf
+	fconfigure $f -translation lf -encoding utf-8
 	puts $f "\# created by $::argv0 - do not edit"
 	puts $f ""
 	puts $f [list set TZData(:$zoneName) $data]
@@ -1316,7 +1316,7 @@ proc writeLinks {outDir} {
 	# Write the file
 
 	set f [open $fileName w]
-	fconfigure $f -translation lf
+	fconfigure $f -translation lf -encoding utf-8
 	puts $f "\# created by $::argv0 - do not edit"
 	puts $f $ifCmd
 	puts $f $setCmd

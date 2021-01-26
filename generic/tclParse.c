@@ -5,8 +5,8 @@
  *	general-purpose fashion that can be used for many different purposes,
  *	including compilation, direct execution, code analysis, etc.
  *
- * Copyright (c) 1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 Ajuba Solutions.
+ * Copyright © 1997 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Ajuba Solutions.
  * Contributions from Don Porter, NIST, 2002. (not subject to US copyright)
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -119,7 +119,7 @@ const char tclCharTypeTable[] = {
  * Prototypes for local functions defined in this file:
  */
 
-static inline int	CommandComplete(const char *script, size_t numBytes);
+static int	CommandComplete(const char *script, size_t numBytes);
 static size_t		ParseComment(const char *src, size_t numBytes,
 			    Tcl_Parse *parsePtr);
 static int		ParseTokens(const char *src, size_t numBytes, int mask,
@@ -128,6 +128,8 @@ static size_t		ParseWhiteSpace(const char *src, size_t numBytes,
 			    int *incompletePtr, char *typePtr);
 static size_t		ParseAllWhiteSpace(const char *src, size_t numBytes,
 			    int *incompletePtr);
+static int		ParseHex(const char *src, size_t numBytes,
+			    int *resultPtr);
 
 /*
  *----------------------------------------------------------------------
@@ -218,6 +220,10 @@ Tcl_ParseCommand(
 				 * point to char after terminating one. */
     size_t scanned;
 
+    if (numBytes == TCL_INDEX_NONE && start) {
+	numBytes = strlen(start);
+    }
+    TclParseInit(interp, start, numBytes, parsePtr);
     if ((start == NULL) && (numBytes != 0)) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -225,10 +231,6 @@ Tcl_ParseCommand(
 	}
 	return TCL_ERROR;
     }
-    if (numBytes == TCL_AUTO_LENGTH) {
-	numBytes = strlen(start);
-    }
-    TclParseInit(interp, start, numBytes, parsePtr);
     parsePtr->commentStart = NULL;
     parsePtr->commentSize = 0;
     parsePtr->commandStart = NULL;
@@ -702,7 +704,7 @@ TclParseAllWhiteSpace(
 /*
  *----------------------------------------------------------------------
  *
- * TclParseHex --
+ * ParseHex --
  *
  *	Scans a hexadecimal number as a Tcl_UniChar value (e.g., for parsing
  *	\x and \u escape sequences). At most numBytes bytes are scanned.
@@ -722,7 +724,7 @@ TclParseAllWhiteSpace(
  */
 
 int
-TclParseHex(
+ParseHex(
     const char *src,		/* First character to parse. */
     size_t numBytes,		/* Max number of byes to scan */
     int *resultPtr)		/* Points to storage provided by caller where
@@ -788,7 +790,7 @@ TclParseBackslash(
 				 * written. At most 4 bytes will be written there. */
 {
     const char *p = src+1;
-    Tcl_UniChar unichar = 0;
+    int unichar;
     int result;
     size_t count;
     char buf[4] = "";
@@ -846,7 +848,7 @@ TclParseBackslash(
 	result = 0xB;
 	break;
     case 'x':
-	count += TclParseHex(p+1, (numBytes > 3) ? 2 : numBytes-2, &result);
+	count += ParseHex(p+1, (numBytes > 3) ? 2 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
 	     * No hexdigits -> This is just "x".
@@ -857,30 +859,30 @@ TclParseBackslash(
 	    /*
 	     * Keep only the last byte (2 hex digits).
 	     */
-	    result = (unsigned char) result;
+	    result = UCHAR(result);
 	}
 	break;
     case 'u':
-	count += TclParseHex(p+1, (numBytes > 5) ? 4 : numBytes-2, &result);
+	count += ParseHex(p+1, (numBytes > 5) ? 4 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
 	     * No hexdigits -> This is just "u".
 	     */
 	    result = 'u';
-	} else if (((result & 0xDC00) == 0xD800) && (count == 6)
+	} else if (((result & 0xFC00) == 0xD800) && (count == 6)
 		    && (p[5] == '\\') && (p[6] == 'u') && (numBytes >= 10)) {
 	    /* If high surrogate is immediately followed by a low surrogate
 	     * escape, combine them into one character. */
 	    int low;
-	    int count2 = TclParseHex(p+7, 4, &low);
-	    if ((count2 == 4) && ((low & 0xDC00) == 0xDC00)) {
+	    int count2 = ParseHex(p+7, 4, &low);
+	    if ((count2 == 4) && ((low & 0xFC00) == 0xDC00)) {
 		result = ((result & 0x3FF)<<10 | (low & 0x3FF)) + 0x10000;
 		count += count2 + 2;
 	    }
 	}
 	break;
     case 'U':
-	count += TclParseHex(p+1, (numBytes > 9) ? 8 : numBytes-2, &result);
+	count += ParseHex(p+1, (numBytes > 9) ? 8 : numBytes-2, &result);
 	if (count == 2) {
 	    /*
 	     * No hexdigits -> This is just "U".
@@ -934,14 +936,14 @@ TclParseBackslash(
 	 * #217987] test subst-3.2
 	 */
 
-	if (Tcl_UtfCharComplete(p, numBytes - 1)) {
-	    count = TclUtfToUniChar(p, &unichar) + 1;	/* +1 for '\' */
+	if (TclUCS4Complete(p, numBytes - 1)) {
+	    count = TclUtfToUCS4(p, &unichar) + 1;	/* +1 for '\' */
 	} else {
-	    char utfBytes[4];
+	    char utfBytes[8];
 
 	    memcpy(utfBytes, p, numBytes - 1);
 	    utfBytes[numBytes - 1] = '\0';
-	    count = TclUtfToUniChar(utfBytes, &unichar) + 1;
+	    count = TclUtfToUCS4(utfBytes, &unichar) + 1;
 	}
 	result = unichar;
 	break;
@@ -1346,15 +1348,14 @@ Tcl_ParseVarName(
     int varIndex;
     unsigned array;
 
-    if ((numBytes == 0) || (start == NULL)) {
-	return TCL_ERROR;
-    }
-    if (numBytes == TCL_AUTO_LENGTH) {
+    if (numBytes == TCL_INDEX_NONE && start) {
 	numBytes = strlen(start);
     }
-
     if (!append) {
 	TclParseInit(interp, start, numBytes, parsePtr);
+    }
+    if ((numBytes == 0) || (start == NULL)) {
+	return TCL_ERROR;
     }
 
     /*
@@ -1629,15 +1630,14 @@ Tcl_ParseBraces(
     int startIndex, level;
     size_t length;
 
-    if ((numBytes == 0) || (start == NULL)) {
-	return TCL_ERROR;
-    }
-    if (numBytes == TCL_AUTO_LENGTH) {
+    if (numBytes == TCL_INDEX_NONE && start) {
 	numBytes = strlen(start);
     }
-
     if (!append) {
 	TclParseInit(interp, start, numBytes, parsePtr);
+    }
+    if ((numBytes == 0) || (start == NULL)) {
+	return TCL_ERROR;
     }
 
     src = start;
@@ -1763,7 +1763,7 @@ Tcl_ParseBraces(
 		openBrace = 0;
 		break;
 	    case '#' :
-		if (openBrace && TclIsSpaceProc(src[-1])) {
+		if (openBrace && TclIsSpaceProcM(src[-1])) {
 		    Tcl_AppendToObj(Tcl_GetObjResult(parsePtr->interp),
 			    ": possible unbalanced brace in comment", -1);
 		    goto error;
@@ -1827,15 +1827,14 @@ Tcl_ParseQuotedString(
 				 * the quoted string's terminating close-quote
 				 * if the parse succeeds. */
 {
-    if ((numBytes == 0) || (start == NULL)) {
-	return TCL_ERROR;
-    }
-    if (numBytes == TCL_AUTO_LENGTH) {
+    if (numBytes == TCL_INDEX_NONE && start) {
 	numBytes = strlen(start);
     }
-
     if (!append) {
 	TclParseInit(interp, start, numBytes, parsePtr);
+    }
+    if ((numBytes == 0) || (start == NULL)) {
+	return TCL_ERROR;
     }
 
     if (TCL_OK != ParseTokens(start+1, numBytes-1, TYPE_QUOTE, TCL_SUBST_ALL,
@@ -2107,7 +2106,7 @@ TclSubstTokens(
 				 * command, which is refered to by 'script'.
 				 * The 'clNextOuter' refers to the current
 				 * entry in the table of continuation lines in
-				 * this "master script", and the character
+				 * this "main script", and the character
 				 * offsets are relative to the 'outerScript'
 				 * as well.
 				 *
@@ -2201,7 +2200,7 @@ TclSubstTokens(
 		    if (result == 0) {
 			clPos = 0;
 		    } else {
-			(void)TclGetStringFromObj(result, &clPos);
+			(void)Tcl_GetStringFromObj(result, &clPos);
 		    }
 
 		    if (numCL >= maxNumCL) {
@@ -2399,7 +2398,7 @@ TclSubstTokens(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static int
 CommandComplete(
     const char *script,		/* Script to check. */
     size_t numBytes)		/* Number of bytes in script. */
@@ -2477,7 +2476,7 @@ TclObjCommandComplete(
 				 * check. */
 {
     size_t length;
-    const char *script = TclGetStringFromObj(objPtr, &length);
+    const char *script = Tcl_GetStringFromObj(objPtr, &length);
 
     return CommandComplete(script, length);
 }

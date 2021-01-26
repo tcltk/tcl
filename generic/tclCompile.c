@@ -5,8 +5,8 @@
  *	commands (like quoted strings or nested sub-commands) into a sequence
  *	of instructions ("bytecodes").
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
- * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 2001 Kevin B. Kenny. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -785,7 +785,7 @@ TclSetByteCodeFromAny(
     }
 #endif
 
-    stringPtr = TclGetStringFromObj(objPtr, &length);
+    stringPtr = Tcl_GetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280: Pick up the CmdFrame in which the BC compiler was invoked and
@@ -829,7 +829,7 @@ TclSetByteCodeFromAny(
      * faster code in some cases, and more compact code in more.
      */
 
-    if (Tcl_GetMaster(interp) == NULL &&
+    if (Tcl_GetParent(interp) == NULL &&
 	    !Tcl_LimitTypeEnabled(interp, TCL_LIMIT_COMMANDS|TCL_LIMIT_TIME)
 	    && IsCompactibleCompileEnv(&compEnv)) {
 	TclFreeCompileEnv(&compEnv);
@@ -1323,7 +1323,7 @@ CompileSubstObj(
     if (codePtr == NULL) {
 	CompileEnv compEnv;
 	size_t numBytes;
-	const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
+	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
 
 	/* TODO: Check for more TIP 280 */
 	TclInitCompileEnv(interp, &compEnv, bytes, numBytes, NULL, 0);
@@ -1727,7 +1727,7 @@ TclWordKnownAtCompileTime(
     }
     tokenPtr++;
     if (valuePtr != NULL) {
-	tempPtr = Tcl_NewObj();
+	TclNewObj(tempPtr);
 	Tcl_IncrRefCount(tempPtr);
     }
     while (numComponents--) {
@@ -1812,10 +1812,10 @@ CompileCmdLiteral(
 	extraLiteralFlags |= LITERAL_UNSHARED;
     }
 
-    bytes = TclGetStringFromObj(cmdObj, &length);
+    bytes = Tcl_GetStringFromObj(cmdObj, &length);
     cmdLitIdx = TclRegisterLiteral(envPtr, bytes, length, extraLiteralFlags);
 
-    if (cmdPtr) {
+    if (cmdPtr && TclRoutineHasName(cmdPtr)) {
 	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
     }
     TclEmitPush(cmdLitIdx, envPtr);
@@ -1829,9 +1829,9 @@ TclCompileInvocation(
     size_t numWords,
     CompileEnv *envPtr)
 {
+    DefineLineInformation;
     size_t wordIdx = 0;
     int depth = TclGetStackDepth(envPtr);
-    DefineLineInformation;
 
     if (cmdObj) {
 	CompileCmdLiteral(interp, cmdObj, envPtr);
@@ -1874,8 +1874,8 @@ CompileExpanded(
     int numWords,
     CompileEnv *envPtr)
 {
-    int wordIdx = 0;
     DefineLineInformation;
+    int wordIdx = 0;
     int depth = TclGetStackDepth(envPtr);
 
     StartExpanding(envPtr);
@@ -1933,8 +1933,8 @@ CompileCmdCompileProc(
     Command *cmdPtr,
     CompileEnv *envPtr)
 {
-    int unwind = 0, incrOffset = -1;
     DefineLineInformation;
+    int unwind = 0, incrOffset = -1;
     int depth = TclGetStackDepth(envPtr);
 
     /*
@@ -2017,7 +2017,7 @@ CompileCommandTokens(
     Interp *iPtr = (Interp *) interp;
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
-    Tcl_Obj *cmdObj = Tcl_NewObj();
+    Tcl_Obj *cmdObj;
     Command *cmdPtr = NULL;
     int code = TCL_ERROR;
     int cmdKnown, expand = -1;
@@ -2032,6 +2032,7 @@ CompileCommandTokens(
 
     /* Pre-Compile */
 
+    TclNewObj(cmdObj);
     envPtr->numCommands++;
     EnterCmdStartData(envPtr, cmdIdx,
 	    parsePtr->commandStart - envPtr->source, startCodeOffset);
@@ -2783,7 +2784,7 @@ PreventCycle(
 	     * the intrep.
 	     */
 	    size_t numBytes;
-	    const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
+	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
 	    Tcl_Obj *copyPtr = Tcl_NewStringObj(bytes, numBytes);
 
 	    Tcl_IncrRefCount(copyPtr);
@@ -3020,7 +3021,7 @@ TclFindCompiledLocal(
 	varNamePtr = &cachePtr->varName0;
 	for (i=0; i < cachePtr->numVars; varNamePtr++, i++) {
 	    if (*varNamePtr) {
-		localName = TclGetStringFromObj(*varNamePtr, &len);
+		localName = Tcl_GetStringFromObj(*varNamePtr, &len);
 		if ((len == nameBytes) && !strncmp(name, localName, len)) {
 		    return i;
 		}

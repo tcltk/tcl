@@ -6,8 +6,8 @@
  *	Original version of his file (superseded long ago) provided by
  *	Wilfredo Sanchez (wsanchez@apple.com).
  *
- * Copyright (c) 1995 Apple Computer, Inc.
- * Copyright (c) 2001-2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 1995 Apple Computer, Inc.
+ * Copyright © 2001-2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -292,8 +292,9 @@ TclpDlopen(
 	*loadHandle = newHandle;
 	result = TCL_OK;
     } else {
-	Tcl_Obj *errObj = Tcl_NewObj();
+	Tcl_Obj *errObj;
 
+	TclNewObj(errObj);
 	if (errMsg != NULL) {
 	    Tcl_AppendToObj(errObj, errMsg, -1);
 	}
@@ -467,34 +468,6 @@ UnloadFile(
 /*
  *----------------------------------------------------------------------
  *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    TCL_UNUSED(const char *) /*fileName*/,
-    TCL_UNUSED(Tcl_DString *) /*bufPtr*/)
-{
-    return 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclpLoadMemoryGetBuffer --
  *
  *	Allocate a buffer that can be used with TclpLoadMemory() below.
@@ -610,7 +583,7 @@ TclpLoadMemory(
 
 	    if ((size_t) codeSize >= sizeof(struct fat_header) +
 		    fh_nfat_arch * sizeof(struct fat_arch)) {
-		void *fatarchs = (char*)buffer + sizeof(struct fat_header);
+		void *fatarchs = (char *)buffer + sizeof(struct fat_header);
 		const NXArchInfo *arch = NXGetLocalArchInfo();
 		struct fat_arch *fa;
 

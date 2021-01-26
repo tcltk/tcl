@@ -4,7 +4,7 @@
  *	This file contains functions that implement the Tcl dict object type
  *	and its accessor command.
  *
- * Copyright (c) 2002-2010 by Donal K. Fellows.
+ * Copyright © 2002-2010 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -528,11 +528,11 @@ UpdateStringOfDict(
 
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetStringFromObj(keyPtr, &length);
+	elem = Tcl_GetStringFromObj(keyPtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	flagPtr[i+1] = TCL_DONT_QUOTE_HASH;
 	valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetStringFromObj(valuePtr, &length);
+	elem = Tcl_GetStringFromObj(valuePtr, &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i+1);
     }
     bytesNeeded += numElems;
@@ -546,13 +546,13 @@ UpdateStringOfDict(
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = (Tcl_Obj *)Tcl_GetHashKey(&dict->table, &cPtr->entry);
-	elem = TclGetStringFromObj(keyPtr, &length);
+	elem = Tcl_GetStringFromObj(keyPtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
 	*dst++ = ' ';
 
 	flagPtr[i+1] |= TCL_DONT_QUOTE_HASH;
 	valuePtr = (Tcl_Obj *)Tcl_GetHashValue(&cPtr->entry);
-	elem = TclGetStringFromObj(valuePtr, &length);
+	elem = Tcl_GetStringFromObj(valuePtr, &length);
 	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
 	*dst++ = ' ';
     }
@@ -632,7 +632,7 @@ SetDictFromAny(
 	}
     } else {
 	size_t length;
-	const char *nextElem = TclGetStringFromObj(objPtr, &length);
+	const char *nextElem = Tcl_GetStringFromObj(objPtr, &length);
 	const char *limit = (nextElem + length);
 
 	while (nextElem < limit) {
@@ -2028,7 +2028,7 @@ DictSizeCmd(
     }
     result = Tcl_DictObjSize(interp, objv[1], &size);
     if (result == TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(size));
     }
     return result;
 }
@@ -2203,7 +2203,7 @@ DictIncrCmd(
 		Tcl_DictObjPut(NULL, dictPtr, objv[2], objv[3]);
 	    }
 	} else {
-	    Tcl_DictObjPut(NULL, dictPtr, objv[2], Tcl_NewIntObj(1));
+	    Tcl_DictObjPut(NULL, dictPtr, objv[2], Tcl_NewWideIntObj(1));
 	}
     } else {
 	/*
@@ -2217,8 +2217,9 @@ DictIncrCmd(
 	if (objc == 4) {
 	    code = TclIncrObj(interp, valuePtr, objv[3]);
 	} else {
-	    Tcl_Obj *incrPtr = Tcl_NewIntObj(1);
+	    Tcl_Obj *incrPtr;
 
+	    TclNewIntObj(incrPtr, 1);
 	    Tcl_IncrRefCount(incrPtr);
 	    code = TclIncrObj(interp, valuePtr, incrPtr);
 	    TclDecrRefCount(incrPtr);

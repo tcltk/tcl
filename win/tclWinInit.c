@@ -3,8 +3,8 @@
  *
  *	Contains the Windows-specific interpreter initialization functions.
  *
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  * All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -78,20 +78,14 @@ typedef struct {
 
 
 /*
- * Windows version dependend functions
- */
-TclWinProcs tclWinProcs;
-
-/*
- * The following arrays contain the human readable strings for the Windows
+ * The following arrays contain the human readable strings for the
  * processor values.
  */
 
-
-#define NUMPROCESSORS 11
+#define NUMPROCESSORS 15
 static const char *const processors[NUMPROCESSORS] = {
     "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
-    "amd64", "ia32_on_win64"
+    "amd64", "ia32_on_win64", "neutral", "arm64", "arm32_on_win64", "ia32_on_arm64"
 };
 
 /*
@@ -132,7 +126,6 @@ TclpInitPlatform(void)
 {
     WSADATA wsaData;
     WORD wVersionRequested = MAKEWORD(2, 2);
-    HMODULE handle;
 
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
@@ -151,14 +144,6 @@ TclpInitPlatform(void)
 
     TclWinInit(GetModuleHandleW(NULL));
 #endif
-
-    /*
-     * Fill available functions depending on windows version
-     */
-    handle = GetModuleHandleW(L"KERNEL32");
-    tclWinProcs.cancelSynchronousIo =
-	    (BOOL (WINAPI *)(HANDLE))(void *)GetProcAddress(handle,
-	    "CancelSynchronousIo");
 }
 
 /*
@@ -190,7 +175,7 @@ TclpInitLibraryPath(
     const char *bytes;
     size_t length;
 
-    pathPtr = Tcl_NewObj();
+    TclNewObj(pathPtr);
 
     /*
      * Initialize the substring used when locating the script library. The
@@ -224,7 +209,7 @@ TclpInitLibraryPath(
 	    TclGetProcessGlobalValue(&sourceLibraryDir));
 
     *encodingPtr = NULL;
-    bytes = TclGetStringFromObj(pathPtr, &length);
+    bytes = Tcl_GetStringFromObj(pathPtr, &length);
     *lengthPtr = length++;
     *valuePtr = (char *)Tcl_Alloc(length);
     memcpy(*valuePtr, bytes, length);
@@ -540,7 +525,8 @@ TclpSetVariables(
 
     Tcl_SetVar2(interp, "tcl_platform", "platform", "windows",
 	    TCL_GLOBAL_ONLY);
-    Tcl_SetVar2(interp, "tcl_platform", "os", "Windows NT", TCL_GLOBAL_ONLY);
+    Tcl_SetVar2(interp, "tcl_platform", "os",
+	    "Windows NT", TCL_GLOBAL_ONLY);
     wsprintfA(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
     if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
@@ -614,7 +600,7 @@ TclpSetVariables(
  *
  * Results:
  *	The return value is the index in environ of an entry with the name
- *	"name", or TCL_IO_FAILURE if there is no such entry. The integer
+ *	"name", or TCL_INDEX_NONE if there is no such entry. The integer
  *	at *lengthPtr is filled in with the length of name (if a matching
  *	entry is found) or the length of the environ array (if no
  *	matching entry is found).
@@ -625,15 +611,8 @@ TclpSetVariables(
  *----------------------------------------------------------------------
  */
 
-#if defined(_WIN32)
-#  define tenviron _wenviron
-#  define tenviron2utfdstr(string, len, dsPtr) (Tcl_DStringInit(dsPtr), \
-		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr)))
-#else
-#  define tenviron environ
-#  define tenviron2utfdstr(tenvstr, len, dstr) \
-		Tcl_ExternalToUtfDString(NULL, tenvstr, len, dstr)
-#endif
+#  define tenviron2utfdstr(string, len, dsPtr) \
+		(char *)Tcl_Char16ToUtfDString((const unsigned short *)(string), ((((len) + 2) >> 1) - 1), (dsPtr))
 
 size_t
 TclpFindVariable(
@@ -644,8 +623,9 @@ TclpFindVariable(
 				 * entries in environ (for unsuccessful
 				 * searches). */
 {
-    size_t i, length, result = TCL_IO_FAILURE;
-    const char *env, *p1, *p2;
+    size_t i, length, result = TCL_INDEX_NONE;
+    const WCHAR *env;
+    const char *p1, *p2;
     char *envUpper, *nameUpper;
     Tcl_DString envString;
 
@@ -659,16 +639,17 @@ TclpFindVariable(
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);
-    for (i = 0, env = (const char *)tenviron[i];
+    for (i = 0, env = _wenviron[i];
 	env != NULL;
-	i++, env = (const char *)tenviron[i]) {
+	i++, env = _wenviron[i]) {
 	/*
 	 * Chop the env string off after the equal sign, then Convert the name
 	 * to all upper case, so we do not have to convert all the characters
 	 * after the equal sign.
 	 */
 
-	envUpper = tenviron2utfdstr(env, -1, &envString);
+	Tcl_DStringInit(&envString);
+	envUpper = Tcl_WCharToUtfDString(env, -1, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;

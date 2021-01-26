@@ -6,10 +6,10 @@
  *	Andreas Stolcke and this implementation is based heavily on a
  *	prototype implementation provided by him.
  *
- * Copyright (c) 1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 2008 Rene Zaumseil
- * Copyright (c) 2019 Donal K. Fellows
+ * Copyright © 1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 2008 Rene Zaumseil
+ * Copyright © 2019 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -634,7 +634,7 @@ SetInvalidRealFromAny(
     size_t length;
     const char *str, *endPtr;
 
-    str = TclGetStringFromObj(objPtr, &length);
+    str = Tcl_GetStringFromObj(objPtr, &length);
     if ((length == 1) && (str[0] == '.')) {
 	objPtr->typePtr = &invalidRealType;
 	objPtr->internalRep.doubleValue = 0.0;
@@ -679,7 +679,7 @@ GetInvalidIntFromObj(
     int *intPtr)
 {
     size_t length;
-    const char *str = TclGetStringFromObj(objPtr, &length);
+    const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
     if ((length == 0) ||
 	    ((length == 2) && (str[0] == '0') && strchr("xXbBoOdD", str[1]))) {
@@ -897,7 +897,7 @@ LinkTraceProc(
 
     switch (linkPtr->type) {
     case TCL_LINK_STRING:
-	value = TclGetStringFromObj(valueObj, &valueLength);
+	value = Tcl_GetStringFromObj(valueObj, &valueLength);
 	pp = (char **) linkPtr->addr;
 
 	*pp = (char *)Tcl_Realloc(*pp, ++valueLength);
@@ -905,14 +905,14 @@ LinkTraceProc(
 	return NULL;
 
     case TCL_LINK_CHARS:
-	value = (char *) TclGetStringFromObj(valueObj, &valueLength);
+	value = (char *) Tcl_GetStringFromObj(valueObj, &valueLength);
 	valueLength++;		/* include end of string char */
 	if (valueLength > linkPtr->bytes) {
 	    return (char *) "wrong size of char* value";
 	}
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.aryPtr, value, (size_t) valueLength);
-	    memcpy(linkPtr->addr, value, (size_t) valueLength);
+	    memcpy(linkPtr->lastValue.aryPtr, value, valueLength);
+	    memcpy(linkPtr->addr, value, valueLength);
 	} else {
 	    linkPtr->lastValue.c = '\0';
 	    LinkedVar(char) = linkPtr->lastValue.c;
@@ -920,13 +920,13 @@ LinkTraceProc(
 	return NULL;
 
     case TCL_LINK_BINARY:
-	value = (char *) TclGetByteArrayFromObj(valueObj, &valueLength);
+	value = (char *) Tcl_GetByteArrayFromObj(valueObj, &valueLength);
 	if (valueLength != linkPtr->bytes) {
 	    return (char *) "wrong size of binary value";
 	}
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    memcpy(linkPtr->lastValue.aryPtr, value, (size_t) valueLength);
-	    memcpy(linkPtr->addr, value, (size_t) valueLength);
+	    memcpy(linkPtr->lastValue.aryPtr, value, valueLength);
+	    memcpy(linkPtr->addr, value, valueLength);
 	} else {
 	    linkPtr->lastValue.uc = (unsigned char) *value;
 	    LinkedVar(unsigned char) = linkPtr->lastValue.uc;
@@ -1296,20 +1296,20 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.iPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.iPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);
 	    return resultObj;
 	}
 	linkPtr->lastValue.i = LinkedVar(int);
-	return Tcl_NewIntObj(linkPtr->lastValue.i);
+	return Tcl_NewWideIntObj(linkPtr->lastValue.i);
     case TCL_LINK_WIDE_INT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewWideIntObj(linkPtr->lastValue.wPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.wPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);
@@ -1348,59 +1348,59 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.cPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.cPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);
 	    return resultObj;
 	}
 	linkPtr->lastValue.c = LinkedVar(char);
-	return Tcl_NewIntObj(linkPtr->lastValue.c);
+	return Tcl_NewWideIntObj(linkPtr->lastValue.c);
     case TCL_LINK_UCHAR:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.ucPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.ucPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);
 	    return resultObj;
 	}
 	linkPtr->lastValue.uc = LinkedVar(unsigned char);
-	return Tcl_NewIntObj(linkPtr->lastValue.uc);
+	return Tcl_NewWideIntObj(linkPtr->lastValue.uc);
     case TCL_LINK_SHORT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.sPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.sPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);
 	    return resultObj;
 	}
 	linkPtr->lastValue.s = LinkedVar(short);
-	return Tcl_NewIntObj(linkPtr->lastValue.s);
+	return Tcl_NewWideIntObj(linkPtr->lastValue.s);
     case TCL_LINK_USHORT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewIntObj(linkPtr->lastValue.usPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.usPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);
 	    return resultObj;
 	}
 	linkPtr->lastValue.us = LinkedVar(unsigned short);
-	return Tcl_NewIntObj(linkPtr->lastValue.us);
+	return Tcl_NewWideIntObj(linkPtr->lastValue.us);
     case TCL_LINK_UINT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewWideIntObj(linkPtr->lastValue.uiPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.uiPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);
@@ -1414,7 +1414,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewWideIntObj(linkPtr->lastValue.lPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.lPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);
@@ -1427,7 +1427,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewWideIntObj(linkPtr->lastValue.ulPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.ulPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    Tcl_Free(objv);
@@ -1454,7 +1454,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)Tcl_Alloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewWideIntObj((Tcl_WideInt)
+		TclNewIntObj(objv[i], (Tcl_WideInt)
 			linkPtr->lastValue.uwPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
