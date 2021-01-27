@@ -1101,7 +1101,7 @@ proc genStubs::emitInit {name textVar} {
     }
     foreach intf [array names interfaces] {
 	if {[info exists hooks($intf)]} {
-	    if {[lsearch -exact $hooks($intf) $name] >= 0} {
+	    if {$name in $hooks($intf)} {
 		set root 0
 		break
 	    }
