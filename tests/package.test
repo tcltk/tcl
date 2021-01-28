@@ -23,7 +23,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 # Do all this in a child interp to avoid garbaging the package list
 set i [interp create]
 tcltest::loadIntoChildInterpreter $i {*}$argv
-catch [list load {} tcl::test $i]
+catch [list load {} Tcltest $i]
 interp eval $i {
 namespace import -force ::tcltest::*
 #package forget {*}[package names]
@@ -577,7 +577,7 @@ test package-3.44 {Tcl_PkgRequire: exact version matching (1578344)} -setup {
 } -result {version conflict for package "demo": have 1.2.3, need exactly 1.2}
 test package-3.50 {Tcl_PkgRequire procedure, picking best stable version} -constraints testpreferstable -setup {
     interp create child
-    load {} tcl::test child
+    load {} Tcltest child
     child eval {
     testpreferstable
     package forget t
