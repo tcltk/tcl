@@ -381,20 +381,20 @@ test format-8.23 {error conditions} {
 # scripts, therefore they are not documented. It's intended use is through
 # the function Tcl_AppendPrintfToObj (et al).
 test format-8.24 {Undocumented formats} -body {
-    format "%zd %td %d" [expr 2**30] [expr 2**30] [expr 2**30]
+    format "%zd %td %d" [expr {2**30}] [expr {2**30}] [expr {2**30}]
 } -result {1073741824 1073741824 1073741824}
 test format-8.25 {Undocumented formats} -constraints pointerIs64bit -body {
-    format "%zd %td %lld" [expr 2**33] [expr 2**33] [expr 2**33]
+    format "%zd %td %lld" [expr {2**33}] [expr {2**33}] [expr {2**33}]
 } -result {8589934592 8589934592 8589934592}
 # Since "%p" is equivalent to "%#llx" in 64-bit platforms and equivalent
 # to "%#x" in 32-bit platforms, it are really not useful in scripts,
 # therefore they are not documented. It's intended use is through the
 # function Tcl_AppendPrintfToObj (et al).
 test format-8.26 {Undocumented formats} -body {
-    format "%p %#x" [expr 2**31] [expr 2**31]
+    format "%p %#x" [expr {2**31}] [expr {2**31}]
 } -result {0x80000000 0x80000000}
 test format-8.27 {Undocumented formats} -constraints pointerIs64bit -body {
-    format "%p %#llx" [expr 2**33] [expr 2**33]
+    format "%p %#llx" [expr {2**33}] [expr {2**33}]
 } -result {0x200000000 0x200000000}
 
 test format-9.1 {long result} {
@@ -469,7 +469,7 @@ test format-13.1 {tcl_precision fuzzy comparison} {
     set a 0.0000000000001
     set b 0.00000000000001
     set c 0.00000000000000001
-    set d [expr $a + $b + $c]
+    set d [expr {$a + $b + $c}]
     format {%0.10f %0.12f %0.15f %0.17f} $d $d $d $d
 } {0.0000000000 0.000000000000 0.000000000000110 0.00000000000011001}
 test format-13.2 {tcl_precision fuzzy comparison} {
@@ -480,7 +480,7 @@ test format-13.2 {tcl_precision fuzzy comparison} {
     set a 0.000000000001
     set b 0.000000000000005
     set c 0.0000000000000008
-    set d [expr $a + $b + $c]
+    set d [expr {$a + $b + $c}]
     format {%0.10f %0.12f %0.15f %0.17f} $d $d $d $d
 } {0.0000000000 0.000000000001 0.000000000001006 0.00000000000100580}
 test format-13.3 {tcl_precision fuzzy comparison} {
@@ -489,7 +489,7 @@ test format-13.3 {tcl_precision fuzzy comparison} {
     catch {unset c}
     set a 0.00000000000099
     set b 0.000000000000011
-    set c [expr $a + $b]
+    set c [expr {$a + $b}]
     format {%0.10f %0.12f %0.15f %0.17f} $c $c $c $c
 } {0.0000000000 0.000000000001 0.000000000001001 0.00000000000100100}
 test format-13.4 {tcl_precision fuzzy comparison} {
@@ -498,7 +498,7 @@ test format-13.4 {tcl_precision fuzzy comparison} {
     catch {unset c}
     set a 0.444444444444
     set b 0.33333333333333
-    set c [expr $a + $b]
+    set c [expr {$a + $b}]
     format {%0.10f %0.12f %0.15f %0.16f} $c $c $c $c
 } {0.7777777778 0.777777777777 0.777777777777330 0.7777777777773300}
 test format-13.5 {tcl_precision fuzzy comparison} {
@@ -507,7 +507,7 @@ test format-13.5 {tcl_precision fuzzy comparison} {
     catch {unset c}
     set a 0.444444444444
     set b 0.99999999999999
-    set c [expr $a + $b]
+    set c [expr {$a + $b}]
     format {%0.10f %0.12f %0.15f} $c $c $c
 } {1.4444444444 1.444444444444 1.444444444443990}
 
@@ -543,7 +543,7 @@ for {set i 0} {$i < 290} {incr i} {
     append b $a
 }
 for {set i 290} {$i < 400} {incr i} {
-    test format-16.[expr $i -289] {testing MAX_FLOAT_SIZE} {
+    test format-16.[expr {$i -289}] {testing MAX_FLOAT_SIZE} {
         format {%s} $b
     } $b
     append b "x"
