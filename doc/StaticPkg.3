@@ -13,7 +13,6 @@ Tcl_StaticPackage \- make a statically linked package available via the 'load' c
 .nf
 \fB#include <tcl.h>\fR
 .sp
-void
 \fBTcl_StaticPackage\fR(\fIinterp, pkgName, initProc, safeInitProc\fR)
 .SH ARGUMENTS
 .AS Tcl_PackageInitProc *safeInitProc
@@ -23,7 +22,8 @@ already been loaded (i.e., the caller has already invoked the
 appropriate initialization procedure).  NULL means the package
 has not yet been incorporated into any interpreter.
 .AP "const char" *pkgName in
-Name of the package.
+Name of the package;  should be properly capitalized (first letter
+upper-case, all others lower-case).
 .AP Tcl_PackageInitProc *initProc in
 Procedure to invoke to incorporate this package into a trusted
 interpreter.

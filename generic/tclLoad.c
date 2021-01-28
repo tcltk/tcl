@@ -226,8 +226,14 @@ Tcl_LoadObjCmd(
 	    Tcl_DStringAppend(&pkgName, packageName, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
-	    namesMatch = (strcmp(Tcl_DStringValue(&tmp),
-		    Tcl_DStringValue(&pkgName)) == 0);
+	    Tcl_UtfToLower(Tcl_DStringValue(&pkgName));
+	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
+	    if (strcmp(Tcl_DStringValue(&tmp),
+		    Tcl_DStringValue(&pkgName)) == 0) {
+		namesMatch = 1;
+	    } else {
+		namesMatch = 0;
+	    }
 	}
 	TclDStringClear(&pkgName);
 
@@ -352,29 +358,27 @@ Tcl_LoadObjCmd(
 	}
 
 	/*
-	 * Compute the names of the initialization functions, based on the
+	 * Fix the capitalization in the package name so that the first
+	 * character is in caps (or title case) but the others are all
+	 * lower-case.
+	 */
+
+	Tcl_DStringSetLength(&pkgName,
+		Tcl_UtfToTitle(Tcl_DStringValue(&pkgName)));
+
+	/*
+	 * Compute the names of the two initialization functions, based on the
 	 * package name.
 	 */
 
 	TclDStringAppendDString(&initName, &pkgName);
-	Tcl_DStringSetLength(&initName,
-		Tcl_UtfToTitle(Tcl_DStringValue(&initName)));
-	while (strchr(Tcl_DStringValue(&initName), ':') != NULL) {
-	    char *r;
-	    p = Tcl_DStringValue(&initName);
-	    r = strchr((char *)p, ':');
-	    if ((r != NULL) && (r[1] == ':')) {
-		memmove(r, r+2, strlen(r+1));
-	    }
-	    Tcl_DStringSetLength(&initName, strlen(p));
-	}
-	TclDStringAppendDString(&safeInitName, &initName);
-	TclDStringAppendLiteral(&safeInitName, "_SafeInit");
-	TclDStringAppendDString(&unloadName, &initName);
-	TclDStringAppendLiteral(&unloadName, "_Unload");
-	TclDStringAppendDString(&safeUnloadName, &initName);
-	TclDStringAppendLiteral(&safeUnloadName, "_SafeUnload");
 	TclDStringAppendLiteral(&initName, "_Init");
+	TclDStringAppendDString(&safeInitName, &pkgName);
+	TclDStringAppendLiteral(&safeInitName, "_SafeInit");
+	TclDStringAppendDString(&unloadName, &pkgName);
+	TclDStringAppendLiteral(&unloadName, "_Unload");
+	TclDStringAppendDString(&safeUnloadName, &pkgName);
+	TclDStringAppendLiteral(&safeUnloadName, "_SafeUnload");
 
 	/*
 	 * Call platform-specific code to load the package and find the two
@@ -658,8 +662,14 @@ Tcl_UnloadObjCmd(
 	    Tcl_DStringAppend(&pkgName, packageName, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
-	    namesMatch = (strcmp(Tcl_DStringValue(&tmp),
-		    Tcl_DStringValue(&pkgName)) == 0);
+	    Tcl_UtfToLower(Tcl_DStringValue(&pkgName));
+	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
+	    if (strcmp(Tcl_DStringValue(&tmp),
+		    Tcl_DStringValue(&pkgName)) == 0) {
+		namesMatch = 1;
+	    } else {
+		namesMatch = 0;
+	    }
 	}
 	TclDStringClear(&pkgName);
 

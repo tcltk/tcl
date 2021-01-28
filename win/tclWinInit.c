@@ -78,19 +78,14 @@ typedef struct {
 
 
 /*
- * Windows version dependend functions
- */
-TclWinProcs tclWinProcs;
-
-/*
  * The following arrays contain the human readable strings for the
  * processor values.
  */
 
-#define NUMPROCESSORS 11
+#define NUMPROCESSORS 15
 static const char *const processors[NUMPROCESSORS] = {
     "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
-    "amd64", "ia32_on_win64"
+    "amd64", "ia32_on_win64", "neutral", "arm64", "arm32_on_win64", "ia32_on_arm64"
 };
 
 /*
@@ -131,7 +126,6 @@ TclpInitPlatform(void)
 {
     WSADATA wsaData;
     WORD wVersionRequested = MAKEWORD(2, 2);
-    HMODULE handle;
 
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
@@ -150,14 +144,6 @@ TclpInitPlatform(void)
 
     TclWinInit(GetModuleHandleW(NULL));
 #endif
-
-    /*
-     * Fill available functions depending on windows version
-     */
-    handle = GetModuleHandleW(L"KERNEL32");
-    tclWinProcs.cancelSynchronousIo =
-	    (BOOL (WINAPI *)(HANDLE))(void *)GetProcAddress(handle,
-	    "CancelSynchronousIo");
 }
 
 /*

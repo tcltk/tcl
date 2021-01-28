@@ -203,7 +203,7 @@ test winpipe-4.1 {Tcl_WaitPid} {win exec cat32} {
 test winpipe-4.2 {Tcl_WaitPid: return of exception codes, SIGFPE} {win exec testexcept notWine} {
     set f [open "|[list [interpreter]]" w+]
     set pid [pid $f]
-    puts $f "load $::tcltestlib tcl::test"
+    puts $f "load $::tcltestlib Tcltest"
     puts $f "testexcept float_underflow"
     set status [catch {close $f}]
     list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
@@ -211,7 +211,7 @@ test winpipe-4.2 {Tcl_WaitPid: return of exception codes, SIGFPE} {win exec test
 test winpipe-4.3 {Tcl_WaitPid: return of exception codes, SIGSEGV} {win exec testexcept notWine} {
     set f [open "|[list [interpreter]]" w+]
     set pid [pid $f]
-    puts $f "load $::tcltestlib tcl::test"
+    puts $f "load $::tcltestlib Tcltest"
     puts $f "testexcept access_violation"
     set status [catch {close $f}]
     list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
@@ -219,7 +219,7 @@ test winpipe-4.3 {Tcl_WaitPid: return of exception codes, SIGSEGV} {win exec tes
 test winpipe-4.4 {Tcl_WaitPid: return of exception codes, SIGILL} {win exec testexcept notWine} {
     set f [open "|[list [interpreter]]" w+]
     set pid [pid $f]
-    puts $f "load $::tcltestlib tcl::test"
+    puts $f "load $::tcltestlib Tcltest"
     puts $f "testexcept illegal_instruction"
     set status [catch {close $f}]
     list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
@@ -227,7 +227,7 @@ test winpipe-4.4 {Tcl_WaitPid: return of exception codes, SIGILL} {win exec test
 test winpipe-4.5 {Tcl_WaitPid: return of exception codes, SIGINT} {win exec testexcept notWine} {
     set f [open "|[list [interpreter]]" w+]
     set pid [pid $f]
-    puts $f "load $::tcltestlib tcl::test"
+    puts $f "load $::tcltestlib Tcltest"
     puts $f "testexcept ctrl+c"
     set status [catch {close $f}]
     list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]

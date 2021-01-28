@@ -368,9 +368,9 @@ ThreadObjCmd(
 	if (result == TCL_OK) {
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), status);
 	} else {
-	    char buf[20];
+	    char buf[TCL_INTEGER_SPACE];
 
-	    sprintf(buf, "%" TCL_LL_MODIFIER "d", id);
+	    sprintf(buf, "%" TCL_LL_MODIFIER "d", (long long)id);
 	    Tcl_AppendResult(interp, "cannot join thread ", buf, NULL);
 	}
 	return result;

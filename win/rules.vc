@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 8
+RULES_VERSION_MINOR = 9
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -1340,7 +1340,7 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 #    define PRJ_LIBS before including rules.rc if additional libs are needed
 
 OPTDEFINES	= /DSTDC_HEADERS /DUSE_NMAKE=1
-!if $(VCVERSION) >= 1600
+!if $(VCVERSION) > 1600
 OPTDEFINES	= $(OPTDEFINES) /DHAVE_STDINT_H=1
 !else
 OPTDEFINES	= $(OPTDEFINES) /DMP_NO_STDINT=1
@@ -1510,7 +1510,7 @@ pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) /DBUILD_$(PROJECT)
 # so we do not remove it from cflags. -GL may prevent extensions
 # compiled with one VC version to fail to link against stubs library
 # compiled with another VC version. Check for this and fix accordingly.
-stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl /DSTATIC_BUILD $(INCLUDES) $(USE_STUBS_DEFS)
+stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) /Zl /GL- /DSTATIC_BUILD $(INCLUDES) $(USE_STUBS_DEFS)
 
 # Link flags
 
@@ -1592,11 +1592,11 @@ default-target: $(DEFAULT_BUILD_TARGET)
 !if $(MULTIPLATFORM_INSTALL)
 default-pkgindex:
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
-	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)] [string totitle $(PRJ_PACKAGE_TCLNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
 !else
 default-pkgindex:
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
-	    [list load [file join $$dir $(PRJLIBNAME)] [string totitle $(PRJ_PACKAGE_TCLNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+	    [list load [file join $$dir $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
 !endif
 
 default-pkgindex-tea:

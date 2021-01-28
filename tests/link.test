@@ -28,7 +28,7 @@ foreach i {int real bool string} {
 
 test link-0.1 {leak test} {testlink} {
     interp create i
-    load {} tcl::test i
+    load {} Tcltest i
     i eval {
 	testlink create 1 0 0 0 0 0 0 0 0 0 0 0 0 0
 	namespace delete ::

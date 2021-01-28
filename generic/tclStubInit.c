@@ -138,6 +138,7 @@ static void uniCodePanic(void) {
 #define TclBN_mp_to_radix mp_to_radix
 #define TclBN_mp_to_ubin mp_to_ubin
 #define TclBN_mp_ubin_size mp_ubin_size
+#define TclBN_mp_unpack mp_unpack
 #define TclBN_mp_xor mp_xor
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
@@ -206,7 +207,7 @@ mp_err	TclBN_mp_div_ld(const mp_int *a, uint64_t b, mp_int *c, uint64_t *d) {
    if ((b | (mp_digit)-1) != (mp_digit)-1) {
       return MP_VAL;
    }
-   result = mp_div_d(a, b, c, (d ? &d2 : NULL));
+   result = mp_div_d(a, (mp_digit)b, c, (d ? &d2 : NULL));
    if (d) {
       *d = d2;
    }
@@ -396,7 +397,9 @@ TclWinGetPlatformId(void)
 
 #define TclpCreateTempFile_ TclpCreateTempFile
 #define TclUnixWaitForFile_ TclUnixWaitForFile
-#ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
+#ifdef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
+#define TclMacOSXNotifierAddRunLoopMode Tcl_MacOSXNotifierAddRunLoopMode
+#else
 #define TclMacOSXGetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj **))(void *)TclpCreateProcess
 #define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
 #define TclMacOSXCopyFileAttributes (int (*)(const char *, const char *, const Tcl_StatBuf *))(void *)TclUnixCopyFile
@@ -1123,6 +1126,7 @@ static const TclPlatStubs tclPlatStubs = {
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
+    Tcl_MacOSXNotifierAddRunLoopMode, /* 2 */
 #endif /* MACOSX */
 };
 
@@ -1200,7 +1204,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_set_u64, /* 68 */
     TclBN_mp_get_mag_u64, /* 69 */
     TclBN_mp_set_i64, /* 70 */
-    0, /* 71 */
+    TclBN_mp_unpack, /* 71 */
     0, /* 72 */
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
@@ -1894,6 +1898,11 @@ const TclStubs tclStubs = {
     Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
+    0, /* 649 */
+    0, /* 650 */
+    TclGetStringFromObj, /* 651 */
+    TclGetUnicodeFromObj, /* 652 */
+    TclGetByteArrayFromObj, /* 653 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -1943,11 +1943,11 @@ test io-17.1 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} 
     eof stdin
     interp create x
     set l ""
-    lappend l [expr [testchannel refcount stdin] - $l1]
+    lappend l [expr {[testchannel refcount stdin] - $l1}]
     x eval {eof stdin}
-    lappend l [expr [testchannel refcount stdin] - $l1]
+    lappend l [expr {[testchannel refcount stdin] - $l1}]
     interp delete x
-    lappend l [expr [testchannel refcount stdin] - $l1]
+    lappend l [expr {[testchannel refcount stdin] - $l1}]
     set l
 } {0 1 0}
 test io-17.2 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} {
@@ -1955,11 +1955,11 @@ test io-17.2 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} 
     eof stdin
     interp create x
     set l ""
-    lappend l [expr [testchannel refcount stdout] - $l1]
+    lappend l [expr {[testchannel refcount stdout] - $l1}]
     x eval {eof stdout}
-    lappend l [expr [testchannel refcount stdout] - $l1]
+    lappend l [expr {[testchannel refcount stdout] - $l1}]
     interp delete x
-    lappend l [expr [testchannel refcount stdout] - $l1]
+    lappend l [expr {[testchannel refcount stdout] - $l1}]
     set l
 } {0 1 0}
 test io-17.3 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} {
@@ -1967,11 +1967,11 @@ test io-17.3 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} 
     eof stdin
     interp create x
     set l ""
-    lappend l [expr [testchannel refcount stderr] - $l1]
+    lappend l [expr {[testchannel refcount stderr] - $l1}]
     x eval {eof stderr}
-    lappend l [expr [testchannel refcount stderr] - $l1]
+    lappend l [expr {[testchannel refcount stderr] - $l1}]
     interp delete x
-    lappend l [expr [testchannel refcount stderr] - $l1]
+    lappend l [expr {[testchannel refcount stderr] - $l1}]
     set l
 } {0 1 0}
 
@@ -2161,7 +2161,7 @@ test io-26.1 {Tcl_GetChannelInstanceData} stdio {
     # Don't care what pid is (but must be a number), just want to exercise it.
 
     set f [open "|[list [interpreter] << exit]"]
-    expr [pid $f]
+    expr {[pid $f]}
     close $f
 } {}
 
@@ -3162,7 +3162,7 @@ test io-30.13 {Tcl_Write crlf on block boundary, Tcl_Read auto} {
     set c [read $f]
     close $f
     string length $c
-} [expr 700*15+1]
+} [expr {700*15+1}]
 test io-30.14 {Tcl_Write crlf on block boundary, Tcl_Read crlf} {
     file delete $path(test1)
     set f [open $path(test1) w]
@@ -3178,7 +3178,7 @@ test io-30.14 {Tcl_Write crlf on block boundary, Tcl_Read crlf} {
     set c [read $f]
     close $f
     string length $c
-} [expr 700*15+1]
+} [expr {700*15+1}]
 test io-30.15 {Tcl_Write mixed, Tcl_Read auto} {
     file delete $path(test1)
     set f [open $path(test1) w]
@@ -3996,7 +3996,7 @@ test io-31.31 {Tcl_Write crlf on block boundary, Tcl_Gets crlf} {
     }
     close $f
     string length $c
-} [expr 700*15+1]
+} [expr {700*15+1}]
 test io-31.32 {Tcl_Write crlf on block boundary, Tcl_Gets auto} {
     file delete $path(test1)
     set f [open $path(test1) w]
@@ -4015,7 +4015,7 @@ test io-31.32 {Tcl_Write crlf on block boundary, Tcl_Gets auto} {
     }
     close $f
     string length $c
-} [expr 700*15+1]
+} [expr {700*15+1}]
 
 # Test Tcl_Read and buffering.
 
@@ -5641,7 +5641,7 @@ test io-40.2 {POSIX open access modes: CREAT} {unix} {
     file delete $path(test3)
     set f [open $path(test3) {WRONLY CREAT} 0o600]
     file stat $path(test3) stats
-    set x [format "%#o" [expr $stats(mode)&0o777]]
+    set x [format "%#o" [expr {$stats(mode)&0o777}]]
     puts $f "line 1"
     close $f
     set f [open $path(test3) r]
@@ -5655,7 +5655,7 @@ test io-40.3 {POSIX open access modes: CREAT} {unix umask} {
     set f [open $path(test3) {WRONLY CREAT}]
     close $f
     file stat $path(test3) stats
-    format 0o%03o [expr $stats(mode)&0o777]
+    format 0o%03o [expr {$stats(mode)&0o777}]
 } [format 0o%03o [expr {0o666 & ~ $umaskValue}]]
 test io-40.4 {POSIX open access modes: CREAT} {
     file delete $path(test3)
@@ -7157,7 +7157,7 @@ test io-52.6 {TclCopyChannel} {fcopy} {
     set f2 [open $path(test1) w]
     fconfigure $f1 -translation lf -blocking 0
     fconfigure $f2 -translation lf -blocking 0
-    set s0 [fcopy $f1 $f2 -size [expr [file size $thisScript] + 5]]
+    set s0 [fcopy $f1 $f2 -size [expr {[file size $thisScript] + 5}]]
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
     close $f2
@@ -7653,7 +7653,7 @@ test io-53.7 {CopyData: Flooding fcopy from pipe} {stdio fcopy} {
     catch {close $in}
     close $out
     # -1=error 0=script error N=number of bytes
-    expr ($fcopyTestDone == 0) ? $fcopyTestCount : -1
+    expr {($fcopyTestDone == 0) ? $fcopyTestCount : -1}
 } {3450}
 test io-53.8 {CopyData: async callback and error handling, Bug 1932639} -setup {
     # copy progress callback. errors out intentionally
@@ -8388,7 +8388,7 @@ test io-60.1 {writing illegal utf sequences} {fileevent testbytestring} {
     # This test will hang in older revisions of the core.
 
     set out [open $path(script) w]
-    puts $out "catch {load $::tcltestlib tcl::test}"
+    puts $out "catch {load $::tcltestlib Tcltest}"
     puts $out {
 	puts [testbytestring \xe2]
 	exit 1
@@ -8480,7 +8480,7 @@ test io-70.1 {Transfer channel} {testchannel thread} {
 
     set tid [thread::create -preserved]
     thread::send $tid [list set c $c]
-    thread::send $tid {load {} tcl::test}
+    thread::send $tid {load {} Tcltest}
     lappend res [thread::send $tid {
 	testchannel splice $c
 	set res [catch {seek $c 0 start}]

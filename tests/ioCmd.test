@@ -2085,8 +2085,8 @@ test iocmd-32.0 {origin interpreter of moved channel gone} -match glob -body {
     set idb [interp create];#puts <<$idb>>
 
     # Magic to get the test* commands in the children
-    load {} tcl::test $ida
-    load {} tcl::test $idb
+    load {} Tcltest $ida
+    load {} Tcltest $idb
 
     # Set up channel in interpreter
     interp eval $ida $helperscript
@@ -2123,8 +2123,8 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
     set idb [interp create];#puts <<$idb>>
 
     # Magic to get the test* commands in the children
-    load {} tcl::test $ida
-    load {} tcl::test $idb
+    load {} Tcltest $ida
+    load {} Tcltest $idb
 
     # Set up channel in thread
     set chan [interp eval $ida $helperscript]
@@ -2194,7 +2194,7 @@ proc inthread {chan script args} {
     # Test thread.
 
     set tid [thread::create -preserved]
-    thread::send $tid {load {} tcl::test}
+    thread::send $tid {load {} Tcltest}
 
     # Init thread configuration.
     # - Listed variables
@@ -2833,7 +2833,7 @@ test iocmd.tf-24.17.bug3522560 {postevent for transfered channel} \
 	    return
 	}
 	LOG THREAD-STARTED
-	load {} tcl::test
+	load {} Tcltest
 	proc bgerror s {
 	    LOG BGERROR:$s
 	}
@@ -3790,10 +3790,10 @@ test iocmd.tf-32.0 {origin thread of moved channel gone} -match glob -body {
 
     #puts <<$tcltest::mainThread>>main
     set tida [thread::create -preserved];#puts <<$tida>>
-    thread::send $tida {load {} tcl::test}
+    thread::send $tida {load {} Tcltest}
 
     set tidb [thread::create -preserved];#puts <<$tidb>>
-    thread::send $tidb {load {} tcl::test}
+    thread::send $tidb {load {} Tcltest}
 
     # Set up channel in thread
     thread::send $tida $helperscript
@@ -3840,9 +3840,9 @@ test iocmd.tf-32.1 {origin thread of moved channel destroyed during access} -mat
 
     #puts <<$tcltest::mainThread>>main
     set tida [thread::create -preserved];#puts <<$tida>>
-    thread::send $tida {load {} tcl::test}
+    thread::send $tida {load {} Tcltest}
     set tidb [thread::create -preserved];#puts <<$tidb>>
-    thread::send $tidb {load {} tcl::test}
+    thread::send $tidb {load {} Tcltest}
 
     # Set up channel in thread
     thread::send $tida $helperscript

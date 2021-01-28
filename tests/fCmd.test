@@ -22,8 +22,7 @@ cd [temporaryDirectory]
 
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testchmod [llength [info commands testchmod]]
-testConstraint winVista 0
-testConstraint winXP 0
+testConstraint winLessThan10 0
 # Don't know how to determine this constraint correctly
 testConstraint notNetworkFilesystem 0
 testConstraint reg 0
@@ -65,12 +64,8 @@ if {[testConstraint unix]} {
 }
 
 # Also used in winFCmd...
-if {[testConstraint win]} {
-    if {$::tcl_platform(osVersion) >= 5.0} {
-	testConstraint winVista 1
-    } else {
-	testConstraint winXP 1
-    }
+if {[testConstraint win] && $::tcl_platform(osVersion) < 10.0} {
+    testConstraint winLessThan10 1
 }
 
 testConstraint darwin9 [expr {
@@ -789,18 +784,7 @@ test fCmd-9.3 {file rename: comprehensive: file to new name} -setup {
     file rename tf2 tf4
     list [lsort [glob tf*]] [file writable tf3] [file writable tf4]
 } -result {{tf3 tf4} 1 0}
-test fCmd-9.4.a {file rename: comprehensive: dir to new name} -setup {
-    cleanup
-} -constraints {win winXP testchmod} -body {
-    file mkdir td1 td2
-    testchmod 0o555 td2
-    file rename td1 td3
-    file rename td2 td4
-    list [lsort [glob td*]] [file writable td3] [file writable td4]
-} -cleanup {
-    cleanup
-} -result {{td3 td4} 1 0}
-test fCmd-9.4.b {file rename: comprehensive: dir to new name} -setup {
+test fCmd-9.4 {file rename: comprehensive: dir to new name} -setup {
     cleanup
 } -constraints {unix notRoot testchmod notDarwin9} -body {
     file mkdir td1 td2
@@ -821,17 +805,7 @@ test fCmd-9.5 {file rename: comprehensive: file to self} -setup {
     file rename -force tf2 tf2
     list [contents tf1] [contents tf2] [file writable tf1] [file writable tf2]
 } -result {tf1 tf2 1 0}
-test fCmd-9.6.a {file rename: comprehensive: dir to self} -setup {
-    cleanup
-} -constraints {win winXP testchmod} -body {
-    file mkdir td1
-    file mkdir td2
-    testchmod 0o555 td2
-    file rename -force td1 .
-    file rename -force td2 .
-    list [lsort [glob td*]] [file writable td1] [file writable td2]
-} -result {{td1 td2} 1 0}
-test fCmd-9.6.b {file rename: comprehensive: dir to self} -setup {
+test fCmd-9.6 {file rename: comprehensive: dir to self} -setup {
     cleanup
 } -constraints {unix notRoot testchmod} -body {
     file mkdir td1
@@ -909,16 +883,9 @@ test fCmd-9.9 {file rename: comprehensive: dir to non-empty dir} -setup {
     file mkdir tds2
     file mkdir [file join tdd1 tds1 xxx]
     file mkdir [file join tdd2 tds2 xxx]
-    if {!([testConstraint unix] || [testConstraint winVista])} {
-	testchmod 0o555 tds2
-    }
     set a1 [list [catch {file rename -force tds1 tdd1} msg] $msg]
     set a2 [list [catch {file rename -force tds2 tdd2} msg] $msg]
-    if {[testConstraint unix] || [testConstraint winVista]} {
-	set w2 0
-    } else {
-	set w2 [file writable tds2]
-    }
+    set w2 0
     list [lsort [glob td*]] $a1 $a2 [file writable tds1] $w2
 } -match glob -result \
     [subst {{tdd1 tdd2 tds1 tds2} {1 {error renaming "tds1" to "[file join tdd1 tds1]": file *}} {1 {error renaming "tds2" to "[file join tdd2 tds2]": file *}} 1 0}]
@@ -940,16 +907,9 @@ test fCmd-9.11 {file rename: comprehensive: dir to new name and dir} -setup {
     file mkdir td1
     file mkdir td2
     file mkdir td3
-    if {!([testConstraint unix] || [testConstraint winVista])} {
-	testchmod 0o555 td2
-    }
     file rename td1 [file join td3 td3]
     file rename td2 [file join td3 td4]
-    if {[testConstraint unix] || [testConstraint winVista]} {
-        set w4 0
-    } else {
-	set w4 [file writable [file join td3 td4]]
-    }
+    set w4 0
     list [lsort [glob td*]] [lsort [glob -directory td3 t*]] \
     [file writable [file join td3 td3]] $w4
 } -result [subst {td3 {[file join td3 td3] [file join td3 td4]} 1 0}]
@@ -2354,13 +2314,15 @@ test fCmd-28.7 {file link: source already exists} -setup {
 } -returnCodes error -cleanup {
     cd [workingDirectory]
 } -result {could not create new link "abc.file": that path already exists}
-test fCmd-28.8 {file link} -constraints {linkFile win} -setup {
+# In Windows 10 developer mode, we _can_ create symbolic links to files!
+test fCmd-28.8 {file link} -constraints {linkFile winLessThan10} -setup {
     cd [temporaryDirectory]
 } -body {
     file link -symbolic abc.link abc.file
-} -returnCodes error -cleanup {
+} -cleanup {
+    file delete -force abc.link
     cd [workingDirectory]
-} -result {could not create new link "abc.link" pointing to "abc.file": not a directory}
+} -returnCodes error -result {could not create new link "abc.link" pointing to "abc.file": invalid argument}
 test fCmd-28.9 {file link: success with file} -constraints {linkFile} -setup {
     cd [temporaryDirectory]
     file delete -force abc.link

@@ -53,7 +53,11 @@
 #define MP_FREE(mem, size)                TclBNFree(mem)
 
 #ifndef MODULE_SCOPE
-#   define MODULE_SCOPE extern
+#   ifdef __cplusplus
+#	define MODULE_SCOPE extern "C"
+#   else
+#	define MODULE_SCOPE extern
+#   endif
 #endif
 
 #ifdef __cplusplus
@@ -141,6 +145,7 @@ MODULE_SCOPE mp_err	TclBN_s_mp_sub_d(const mp_int *a, mp_digit b, mp_int *c);
 #define mp_to_radix TclBN_mp_to_radix
 #define mp_to_ubin TclBN_mp_to_ubin
 #define mp_ubin_size TclBN_mp_ubin_size
+#define mp_unpack TclBN_mp_unpack
 #define mp_xor TclBN_mp_xor
 #define mp_zero TclBN_mp_zero
 #define s_mp_add TclBN_s_mp_add
@@ -379,7 +384,11 @@ EXTERN void		TclBN_mp_set_u64(mp_int *a, uint64_t i);
 EXTERN uint64_t		TclBN_mp_get_mag_u64(const mp_int *a) MP_WUR;
 /* 70 */
 EXTERN void		TclBN_mp_set_i64(mp_int *a, int64_t i);
-/* Slot 71 is reserved */
+/* 71 */
+EXTERN mp_err		TclBN_mp_unpack(mp_int *rop, size_t count,
+				mp_order order, size_t size,
+				mp_endian endian, size_t nails,
+				const void *op) MP_WUR;
 /* Slot 72 is reserved */
 /* 73 */
 TCL_DEPRECATED("merged with mp_and")
@@ -482,7 +491,7 @@ typedef struct TclTomMathStubs {
     void (*tclBN_mp_set_u64) (mp_int *a, uint64_t i); /* 68 */
     uint64_t (*tclBN_mp_get_mag_u64) (const mp_int *a) MP_WUR; /* 69 */
     void (*tclBN_mp_set_i64) (mp_int *a, int64_t i); /* 70 */
-    void (*reserved71)(void);
+    mp_err (*tclBN_mp_unpack) (mp_int *rop, size_t count, mp_order order, size_t size, mp_endian endian, size_t nails, const void *op) MP_WUR; /* 71 */
     void (*reserved72)(void);
     TCL_DEPRECATED_API("merged with mp_and") mp_err (*tclBN_mp_tc_and) (const mp_int *a, const mp_int *b, mp_int *c); /* 73 */
     TCL_DEPRECATED_API("merged with mp_or") mp_err (*tclBN_mp_tc_or) (const mp_int *a, const mp_int *b, mp_int *c); /* 74 */
@@ -648,7 +657,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBN_mp_get_mag_u64) /* 69 */
 #define TclBN_mp_set_i64 \
 	(tclTomMathStubsPtr->tclBN_mp_set_i64) /* 70 */
-/* Slot 71 is reserved */
+#define TclBN_mp_unpack \
+	(tclTomMathStubsPtr->tclBN_mp_unpack) /* 71 */
 /* Slot 72 is reserved */
 #define TclBN_mp_tc_and \
 	(tclTomMathStubsPtr->tclBN_mp_tc_and) /* 73 */
