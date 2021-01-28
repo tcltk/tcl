@@ -4,10 +4,10 @@
  *	This file contains routines that implement Tcl procedures, including
  *	the "proc" and "uplevel" commands.
  *
- * Copyright (c) 1987-1993 The Regents of the University of California.
- * Copyright (c) 1994-1998 Sun Microsystems, Inc.
- * Copyright (c) 2004-2006 Miguel Sofer
- * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 1987-1993 The Regents of the University of California.
+ * Copyright © 1994-1998 Sun Microsystems, Inc.
+ * Copyright © 2004-2006 Miguel Sofer
+ * Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -352,7 +352,7 @@ Tcl_ProcObjCmd(
 	 * The argument list is just "args"; check the body
 	 */
 
-	procBody = TclGetStringFromObj(objv[3], &numBytes);
+	procBody = Tcl_GetStringFromObj(objv[3], &numBytes);
 	if (TclParseAllWhiteSpace(procBody, numBytes) < numBytes) {
 	    goto done;
 	}
@@ -447,7 +447,7 @@ TclCreateProc(
 	    size_t length;
 	    Tcl_Obj *sharedBodyPtr = bodyPtr;
 
-	    bytes = TclGetStringFromObj(bodyPtr, &length);
+	    bytes = Tcl_GetStringFromObj(bodyPtr, &length);
 	    bodyPtr = Tcl_NewStringObj(bytes, length);
 
 	    /*
@@ -538,7 +538,7 @@ TclCreateProc(
 	    goto procError;
 	}
 
-	argname = TclGetStringFromObj(fieldValues[0], &nameLength);
+	argname = Tcl_GetStringFromObj(fieldValues[0], &nameLength);
 
 	/*
 	 * Check that the formal parameter name is a scalar.
@@ -601,8 +601,8 @@ TclCreateProc(
 
 	    if (localPtr->defValuePtr != NULL) {
 		size_t tmpLength, valueLength;
-		const char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr, &tmpLength);
-		const char *value = TclGetStringFromObj(fieldValues[1], &valueLength);
+		const char *tmpPtr = Tcl_GetStringFromObj(localPtr->defValuePtr, &tmpLength);
+		const char *value = Tcl_GetStringFromObj(fieldValues[1], &valueLength);
 
 		if ((valueLength != tmpLength)
 		     || memcmp(value, tmpPtr, tmpLength) != 0
@@ -2034,7 +2034,7 @@ MakeProcError(
 {
     unsigned int overflow, limit = 60;
     size_t nameLen;
-    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
+    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -2705,7 +2705,7 @@ MakeLambdaError(
 {
     unsigned int overflow, limit = 60;
     size_t nameLen;
-    const char *procName = TclGetStringFromObj(procNameObj, &nameLen);
+    const char *procName = Tcl_GetStringFromObj(procNameObj, &nameLen);
 
     overflow = (nameLen > limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(

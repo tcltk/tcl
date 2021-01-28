@@ -5,8 +5,8 @@
  *	general-purpose fashion that can be used for many different purposes,
  *	including compilation, direct execution, code analysis, etc.
  *
- * Copyright (c) 1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 Ajuba Solutions.
+ * Copyright © 1997 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Ajuba Solutions.
  * Contributions from Don Porter, NIST, 2002. (not subject to US copyright)
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -2200,7 +2200,7 @@ TclSubstTokens(
 		    if (result == 0) {
 			clPos = 0;
 		    } else {
-			(void)TclGetStringFromObj(result, &clPos);
+			(void)Tcl_GetStringFromObj(result, &clPos);
 		    }
 
 		    if (numCL >= maxNumCL) {
@@ -2476,7 +2476,7 @@ TclObjCommandComplete(
 				 * check. */
 {
     size_t length;
-    const char *script = TclGetStringFromObj(objPtr, &length);
+    const char *script = Tcl_GetStringFromObj(objPtr, &length);
 
     return CommandComplete(script, length);
 }

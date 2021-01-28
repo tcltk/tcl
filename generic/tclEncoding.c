@@ -3,7 +3,7 @@
  *
  *	Contains the implementation of the encoding conversion package.
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -3699,7 +3699,7 @@ InitializeEncodingSearchPath(
     if (*encodingPtr) {
 	((Encoding *)(*encodingPtr))->refCount++;
     }
-    bytes = TclGetStringFromObj(searchPathObj, lengthPtr);
+    bytes = Tcl_GetStringFromObj(searchPathObj, lengthPtr);
     *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
     memcpy(*valuePtr, bytes, *lengthPtr + 1);
     Tcl_DecrRefCount(searchPathObj);

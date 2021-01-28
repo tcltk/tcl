@@ -13,7 +13,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint controversialNaN 1
 testConstraint testbytestring [llength [info commands testbytestring]]
@@ -102,7 +102,7 @@ proc verdonk_test {sig binexp shouldbe exp} {
     regexp {([-+]?)([0-9a-f]+)} $sig -> signum sig
     scan $sig %llx sig
     if {$signum eq {-}} {
-	set signum [expr {1 << 63}]
+	set signum [expr {1<<63}]
     } else {
 	set signum 0
     }
@@ -122,7 +122,7 @@ proc verdonk_test {sig binexp shouldbe exp} {
                             should be ${signum}0.${digits1}E$decexp"
     }
 }
-
+
 test util-1.1 {TclFindElement procedure - binary element in middle of list} {
     lindex {0 foo\x00help 1} 1
 } "foo\x00help"
@@ -390,10 +390,10 @@ test util-5.52 {Tcl_StringMatch} {
 
 
 test util-6.5 {Tcl_PrintDouble - make sure there's a decimal point} {
-    concat x[expr 2.0]
+    concat x[expr {2.0}]
 } {x2.0}
 test util-6.6 {Tcl_PrintDouble - make sure there's a decimal point} {
-    concat x[expr 3.0e98]
+    concat x[expr {3.0e98}]
 } {x3e+98}
 
 # This test always succeeded in the C locale anyway...
@@ -1111,73 +1111,73 @@ test util-10.122 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
 } {5.20831059055e+36}
 
 test util-11.1 {Tcl_PrintDouble - scaling} {
-    expr 1.1e-5
+    expr {1.1e-5}
 } {1.1e-5}
 test util-11.2 {Tcl_PrintDouble - scaling} {
-    expr 1.1e-4
+    expr {1.1e-4}
 } {0.00011}
 test util-11.3 {Tcl_PrintDouble - scaling} {
-    expr 1.1e-3
+    expr {1.1e-3}
 } {0.0011}
 test util-11.4 {Tcl_PrintDouble - scaling} {
-    expr 1.1e-2
+    expr {1.1e-2}
 } {0.011}
 test util-11.5 {Tcl_PrintDouble - scaling} {
-    expr 1.1e-1
+    expr {1.1e-1}
 } {0.11}
 test util-11.6 {Tcl_PrintDouble - scaling} {
-    expr 1.1e0
+    expr {1.1e0}
 } {1.1}
 test util-11.7 {Tcl_PrintDouble - scaling} {
-    expr 1.1e1
+    expr {1.1e1}
 } {11.0}
 test util-11.8 {Tcl_PrintDouble - scaling} {
-    expr 1.1e2
+    expr {1.1e2}
 } {110.0}
 test util-11.9 {Tcl_PrintDouble - scaling} {
-    expr 1.1e3
+    expr {1.1e3}
 } {1100.0}
 test util-11.10 {Tcl_PrintDouble - scaling} {
-    expr 1.1e4
+    expr {1.1e4}
 } {11000.0}
 test util-11.11 {Tcl_PrintDouble - scaling} {
-    expr 1.1e5
+    expr {1.1e5}
 } {110000.0}
 test util-11.12 {Tcl_PrintDouble - scaling} {
-    expr 1.1e6
+    expr {1.1e6}
 } {1100000.0}
 test util-11.13 {Tcl_PrintDouble - scaling} {
-    expr 1.1e7
+    expr {1.1e7}
 } {11000000.0}
 test util-11.14 {Tcl_PrintDouble - scaling} {
-    expr 1.1e8
+    expr {1.1e8}
 } {110000000.0}
 test util-11.15 {Tcl_PrintDouble - scaling} {
-    expr 1.1e9
+    expr {1.1e9}
 } {1100000000.0}
 test util-11.16 {Tcl_PrintDouble - scaling} {
-    expr 1.1e10
+    expr {1.1e10}
 } {11000000000.0}
 test util-11.17 {Tcl_PrintDouble - scaling} {
-    expr 1.1e11
+    expr {1.1e11}
 } {110000000000.0}
 test util-11.18 {Tcl_PrintDouble - scaling} {
-    expr 1.1e12
+    expr {1.1e12}
 } {1100000000000.0}
 test util-11.19 {Tcl_PrintDouble - scaling} {
-    expr 1.1e13
+    expr {1.1e13}
 } {11000000000000.0}
 test util-11.20 {Tcl_PrintDouble - scaling} {
-    expr 1.1e14
+    expr {1.1e14}
 } {110000000000000.0}
 test util-11.21 {Tcl_PrintDouble - scaling} {
-    expr 1.1e15
+    expr {1.1e15}
 } {1100000000000000.0}
 test util-11.22 {Tcl_PrintDouble - scaling} {
-    expr 1.1e16
+    expr {1.1e16}
 } {11000000000000000.0}
 test util-11.23 {Tcl_PrintDouble - scaling} {
-    expr 1.1e17
+    expr {1.1e17}
 } {1.1e+17}
 
 test util-12.1 {TclDoubleDigits - Inf} {testdoubledigits ieeeFloatingPoint} {
@@ -2054,6 +2054,7 @@ test util-14.1 {funky NaN} {*}{
     }
     -result -NaN
 }
+
 test util-14.2 {funky NaN} {*}{
     -constraints {ieeeFloatingPoint controversialNaN}
     -body {
@@ -2069,9 +2070,10 @@ test util-15.1 {largest subnormal} {*}{
     }
     -result 2.225073858507201e-308
     -cleanup {
-	unset -nocomplain x
+	unset x
     }
 }
+
 test util-15.2 {largest subnormal} {*}{
     -body {
 	binary scan [binary format w 0x800fffffffffffff] q x
@@ -2079,9 +2081,10 @@ test util-15.2 {largest subnormal} {*}{
     }
     -result -2.225073858507201e-308
     -cleanup {
-	unset -nocomplain x
+	unset x
     }
 }
+
 test util-15.3 {largest subnormal} {*}{
     -body {
 	binary scan [binary format q 2.225073858507201e-308] w x
@@ -2089,9 +2092,10 @@ test util-15.3 {largest subnormal} {*}{
     }
     -result 0xfffffffffffff
     -cleanup {
-	unset -nocomplain x
+	unset x
     }
 }
+
 test util-15.4 {largest subnormal} {*}{
     -body {
 	binary scan [binary format q -2.225073858507201e-308] w x
@@ -2099,9 +2103,10 @@ test util-15.4 {largest subnormal} {*}{
     }
     -result 0x800fffffffffffff
     -cleanup {
-	unset -nocomplain x
+	unset x
     }
 }
+
 test util-15.5 {smallest normal} {*}{
     -body {
 	binary scan [binary format w 0x0010000000000000] q x
@@ -2109,9 +2114,10 @@ test util-15.5 {smallest normal} {*}{
     }
     -result 2.2250738585072014e-308
     -cleanup {
-	unset -nocomplain x
+	unset x
     }
 }
+
 test util-15.6 {smallest normal} {*}{
     -body {
 	binary scan [binary format w 0x8010000000000000] q x
@@ -2119,9 +2125,10 @@ test util-15.6 {smallest normal} {*}{
     }
     -result -2.2250738585072014e-308
     -cleanup {
-	unset -nocomplain x
+	unset x
     }
 }
+
 test util-15.7 {smallest normal} {*}{
     -body {
 	binary scan [binary format q 2.2250738585072014e-308] w x
@@ -2129,9 +2136,10 @@ test util-15.7 {smallest normal} {*}{
     }
     -result 0x10000000000000
     -cleanup {
-	unset -nocomplain x
+	unset x
     }
 }
+
 test util-15.8 {smallest normal} {*}{
     -body {
 	binary scan [binary format q -2.2250738585072014e-308] w x
@@ -2139,7 +2147,7 @@ test util-15.8 {smallest normal} {*}{
     }
     -result 0x8010000000000000
     -cleanup {
-	unset -nocomplain x
+	unset x
     }
 }
 
@@ -2173,38 +2181,49 @@ test util-17.1 {bankers' rounding [Bug 3349507]} {ieeeFloatingPoint} {
 }]
 
 test util-18.1 {Tcl_ObjPrintf} {testprint} {
-    testprint %lld [expr {2**63 - 1}]
+    testprint %lld [expr {2**63-1}]
 } {9223372036854775807}
+
 test util-18.2 {Tcl_ObjPrintf} {testprint} {
-    testprint %I64d [expr {2**63 - 1}]
+    testprint %I64d [expr {2**63-1}]
 } {9223372036854775807}
+
 test util-18.3 {Tcl_ObjPrintf} {testprint} {
-    testprint %qd [expr {2**63 - 1}]
+    testprint %qd [expr {2**63-1}]
 } {9223372036854775807}
+
 test util-18.4 {Tcl_ObjPrintf} {testprint} {
-    testprint %jd [expr {2**63 - 1}]
+    testprint %jd [expr {2**63-1}]
 } {9223372036854775807}
+
 test util-18.5 {Tcl_ObjPrintf} {testprint} {
     testprint %lld [expr {-2**63}]
 } {-9223372036854775808}
+
 test util-18.6 {Tcl_ObjPrintf} {testprint} {
     testprint %I64d [expr {-2**63}]
 } {-9223372036854775808}
+
 test util-18.7 {Tcl_ObjPrintf} {testprint} {
     testprint %qd [expr {-2**63}]
 } {-9223372036854775808}
+
 test util-18.8 {Tcl_ObjPrintf} {testprint} {
     testprint %jd [expr {-2**63}]
 } {-9223372036854775808}
+
 test util-18.9 {Tcl_ObjPrintf} {testprint} {
-    testprint "%I64d %I32d" [expr {-2**63 + 2}]
+    testprint "%I64d %I32d" [expr {-2**63+2}]
 } {-9223372036854775806 2}
+
 test util-18.10 {Tcl_ObjPrintf} {testprint} {
     testprint "%I64d %p" 65535
 } {65535 0xffff}
+
 test util-18.11 {Tcl_ObjPrintf} {testprint} {
     testprint "%I64d %td" 65536
 } {65536 65536}
+
 test util-18.12 {Tcl_ObjPrintf} {testprint} {
     testprint "%I64d %Id" 65537
 } {65537 65537}

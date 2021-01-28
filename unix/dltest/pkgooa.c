@@ -4,7 +4,7 @@
  *	This file contains a simple Tcl package "pkgooa" that is intended for
  *	testing the Tcl dynamic loading facilities.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
+ * Copyright © 1995 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -138,7 +138,7 @@ Pkgooa_Init(
 
     tclOOStubsPtr = &stubsCopy;
 
-    code = Tcl_PkgProvide(interp, "Pkgooa", "1.0");
+    code = Tcl_PkgProvide(interp, "pkgooa", "1.0");
     if (code != TCL_OK) {
 	return code;
     }

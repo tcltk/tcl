@@ -5,10 +5,10 @@
  *	commands (beginning with the letters 'g' through 'r') into a sequence
  *	of instructions ("bytecodes").
  *
- * Copyright (c) 1997-1998 Sun Microsystems, Inc.
- * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
- * Copyright (c) 2002 ActiveState Corporation.
- * Copyright (c) 2004-2013 by Donal K. Fellows.
+ * Copyright © 1997-1998 Sun Microsystems, Inc.
+ * Copyright © 2001 Kevin B. Kenny.  All rights reserved.
+ * Copyright © 2002 ActiveState Corporation.
+ * Copyright © 2004-2013 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -2304,7 +2304,7 @@ TclCompileRegsubCmd(
      * replacement "simple"?
      */
 
-    bytes = TclGetStringFromObj(patternObj, &len);
+    bytes = Tcl_GetStringFromObj(patternObj, &len);
     if (TclReToGlob(NULL, bytes, len, &pattern, &exact, &quantified)
 	    != TCL_OK || exact || quantified) {
 	goto done;
@@ -2352,7 +2352,7 @@ TclCompileRegsubCmd(
     result = TCL_OK;
     bytes = Tcl_DStringValue(&pattern) + 1;
     PushLiteral(envPtr,	bytes, len);
-    bytes = TclGetStringFromObj(replacementObj, &len);
+    bytes = Tcl_GetStringFromObj(replacementObj, &len);
     PushLiteral(envPtr,	bytes, len);
     CompileWord(envPtr,	stringTokenPtr, interp, parsePtr->numWords - 2);
     TclEmitOpcode(	INST_STR_MAP,	envPtr);
@@ -2610,7 +2610,7 @@ TclCompileSyntaxError(
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
     size_t numBytes;
-    const char *bytes = TclGetStringFromObj(msg, &numBytes);
+    const char *bytes = Tcl_GetStringFromObj(msg, &numBytes);
 
     TclErrorStackResetIf(interp, bytes, numBytes);
     TclEmitPush(TclRegisterLiteral(envPtr, bytes, numBytes, 0), envPtr);
@@ -2868,7 +2868,7 @@ IndexTailVarIfKnown(
 	Tcl_SetStringObj(tailPtr, lastTokenPtr->start, lastTokenPtr->size);
     }
 
-    tailName = TclGetStringFromObj(tailPtr, &len);
+    tailName = Tcl_GetStringFromObj(tailPtr, &len);
 
     if (len) {
 	if (*(tailName + len - 1) == ')') {

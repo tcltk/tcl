@@ -19,7 +19,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 9.0a2
+package require -exact tcl 9.0a2
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -442,7 +442,7 @@ proc auto_load_index {} {
 	    continue
 	} else {
 	    set error [catch {
-		fconfigure $f -eofchar \032
+		fconfigure $f -encoding utf-8 -eofchar "\032 {}"
 		set id [gets $f]
 		if {$id eq "# Tcl autoload index file, version 2.0"} {
 		    eval [read $f]

@@ -4,7 +4,7 @@
  *	This procedure provides a version of the TclLoadFile that works with
  *	NeXTs rld_* dynamic loading. This file provided by Pedja Bogdanovich.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.

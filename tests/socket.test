@@ -66,7 +66,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 ::tcltest::loadTestedCommands
 
 # A bad interaction between socket creation, macOS, and unattended CI
@@ -299,6 +299,8 @@ proc getPort sock {
 # Some tests in this file are known to hang *occasionally* on OSX; stop the
 # worst offenders.
 testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
+# Here "Windows" means derived platforms as Cygwin or Msys2 too.
+testConstraint notWindows [expr {![regexp {^(Windows|MSYS|CYGWIN)} $::tcl_platform(os)]}]
 
 # ----------------------------------------------------------------------
 
@@ -941,7 +943,7 @@ test socket_$af-5.1 {byte order problems, socket numbers, htons} -body {
         return {htons problem, should be disallowed, are you running as SU?}
     }
     return {couldn't open socket: not owner}
-} -constraints [list socket supported_$af unix notRoot notOSX] -result {couldn't open socket: not owner}
+} -constraints [list socket supported_$af unix notRoot notOSX notWindows] -result {couldn't open socket: not owner}
 test socket_$af-5.2 {byte order problems, socket numbers, htons} -body {
     if {![catch {socket -server dodo 0x10000} msg]} {
 	close $msg
@@ -955,7 +957,7 @@ test socket_$af-5.3 {byte order problems, socket numbers, htons} -body {
 	return {htons problem, should be disallowed, are you running as SU?}
     }
     return {couldn't open socket: not owner}
-} -constraints [list socket supported_$af unix notRoot notOSX] -result {couldn't open socket: not owner}
+} -constraints [list socket supported_$af unix notRoot notOSX notWindows] -result {couldn't open socket: not owner}
 
 test socket_$af-6.1 {accept callback error} -constraints [list socket supported_$af stdio] -setup {
     proc myHandler {msg options} {
@@ -1871,7 +1873,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
       	set ::count [expr {$maxIter / 4 * 3 - 1}]; # bypass 3/4 iterations
       }
     }
-    tcltest::DebugPuts 1 "== test \[$::localhost\]:$port $testmode =="
+    tcltest::DebugPuts 2 "== test \[$::localhost\]:$port $testmode =="
     set ::parent [thread::id]
     # helper thread creating async connection and initiating transfer (detach) to parent:
     set ::helper [thread::create]
@@ -1899,7 +1901,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
     }
     # parent proc commiting transfer attempt (attach) and checking acquire was successful:
     proc transf_parent {fd args} {
-      tcltest::DebugPuts 1 "** trma / $::count ** $args **"
+      tcltest::DebugPuts 2 "** trma / $::count ** $args **"
       thread::attach $fd
       if {"parent-close" in $::testmode} {;# to test close during connect
         set ::count $::count
@@ -1926,7 +1928,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
         break
       }
       if {[incr ::count] >= $maxIter} break
-      tcltest::DebugPuts 1 "** iter / $::count **"
+      tcltest::DebugPuts 2 "** iter / $::count **"
       thread::send -async $::helper [list iteration nr $::count]
     }
     update
@@ -1935,7 +1937,7 @@ proc transf_test {{testmode transfer} {maxIter 1000} {maxTime 10000}} {
     catch {after cancel $tout}
     if {$srvsock ne {}} {close $srvsock}
     if {[info exists ::helper]} {thread::release -wait $::helper}
-    tcltest::DebugPuts 1 "== stop / $::count =="
+    tcltest::DebugPuts 2 "== stop / $::count =="
     unset -nocomplain ::count ::testmode ::parent ::helper
   }
 }

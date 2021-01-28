@@ -7,27 +7,35 @@ jobs:
       run:
         shell: powershell
         working-directory: win
+    strategy:
+      matrix:
+        cfgopt:
+          - ""
+          - "CHECKS=nodep"
+          - "OPTS=static"
+          - "OPTS=symbols"
+          - "OPTS=memdbg"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Init MSVC
         uses: ilammy/msvc-dev-cmd@v1
-      - name: Build
+      - name: Build ${{ matrix.cfgopt }}
         run: |
-          &nmake -f makefile.vc all
+          &nmake -f makefile.vc ${{ matrix.cfgopt }} all
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
-      - name: Build Test Harness
+      - name: Build Test Harness ${{ matrix.cfgopt }}
         run: |
-          &nmake -f makefile.vc tcltest
+          &nmake -f makefile.vc ${{ matrix.cfgopt }} tcltest
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
-      - name: Run Tests
+      - name: Run Tests ${{ matrix.cfgopt }}
         run: |
-          &nmake -f makefile.vc test
+          &nmake -f makefile.vc ${{ matrix.cfgopt }} test
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
@@ -44,6 +52,7 @@ jobs:
       matrix:
         cfgopt:
           - ""
+          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"

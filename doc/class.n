@@ -12,7 +12,7 @@
 oo::class \- class of all classes
 .SH SYNOPSIS
 .nf
-package require TclOO
+package require tcl::oo
 
 \fBoo::class\fI method \fR?\fIarg ...\fR?
 .fi

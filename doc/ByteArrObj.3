@@ -37,8 +37,9 @@ byte-array type.  For \fBTcl_GetByteArrayFromObj\fR and
 \fBTcl_SetByteArrayLength\fR, this points to the value from which to get
 the byte-array value; if \fIobjPtr\fR does not already point to a byte-array
 value, it will be converted to one.
-.AP int *lengthPtr out
-If non-NULL, filled with the length of the array of bytes in the value.
+.AP size_t | int *lengthPtr out
+Filled with the length of the array of bytes in the value.
+May be (int *)NULL when not used.
 .BE
 
 .SH DESCRIPTION

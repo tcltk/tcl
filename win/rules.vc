@@ -6,7 +6,7 @@
 # compiler switches, defining common targets and macros. The Tcl makefile
 # directly includes this. Extensions include it via "rules-ext.vc".
 #
-# See TIP 477 (https://core.tcl-lang.org/tips/doc/trunk/tip/477.md) for
+# See TIP 477 (https://core.tcl-lang.org/tips/doc/main/tip/477.md) for
 # detailed documentation.
 #
 # See the file "license.terms" for information on usage and redistribution
@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 6
+RULES_VERSION_MINOR = 9
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -652,8 +652,130 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 !endif
 !endif
 
+
+################################################################
+# 6. Extract various version numbers from headers
+# For Tcl and Tk, version numbers are extracted from tcl.h and tk.h
+# respectively. For extensions, versions are extracted from the
+# configure.in or configure.ac from the TEA configuration if it
+# exists, and unset otherwise.
+# Sets the following macros:
+# TCL_MAJOR_VERSION
+# TCL_MINOR_VERSION
+# TCL_RELEASE_SERIAL
+# TCL_PATCH_LEVEL
+# TCL_PATCH_LETTER
+# TCL_VERSION
+# TK_MAJOR_VERSION
+# TK_MINOR_VERSION
+# TK_RELEASE_SERIAL
+# TK_PATCH_LEVEL
+# TK_PATCH_LETTER
+# TK_VERSION
+# DOTVERSION - set as (for example) 2.5
+# VERSION - set as (for example 25)
+#--------------------------------------------------------------
+
+!if [echo REM = This file is generated from rules.vc > versions.vc]
+!endif
+!if [echo TCL_MAJOR_VERSION = \>> versions.vc] \
+   && [nmakehlp -V "$(_TCL_H)" TCL_MAJOR_VERSION >> versions.vc]
+!endif
+!if [echo TCL_MINOR_VERSION = \>> versions.vc] \
+   && [nmakehlp -V "$(_TCL_H)" TCL_MINOR_VERSION >> versions.vc]
+!endif
+!if [echo TCL_RELEASE_SERIAL = \>> versions.vc] \
+   && [nmakehlp -V "$(_TCL_H)" TCL_RELEASE_SERIAL >> versions.vc]
+!endif
+!if [echo TCL_PATCH_LEVEL = \>> versions.vc] \
+   && [nmakehlp -V "$(_TCL_H)" TCL_PATCH_LEVEL >> versions.vc]
+!endif
+
+!if defined(_TK_H)
+!if [echo TK_MAJOR_VERSION = \>> versions.vc] \
+   && [nmakehlp -V $(_TK_H) TK_MAJOR_VERSION >> versions.vc]
+!endif
+!if [echo TK_MINOR_VERSION = \>> versions.vc] \
+   && [nmakehlp -V $(_TK_H) TK_MINOR_VERSION >> versions.vc]
+!endif
+!if [echo TK_RELEASE_SERIAL = \>> versions.vc] \
+   && [nmakehlp -V "$(_TK_H)" TK_RELEASE_SERIAL >> versions.vc]
+!endif
+!if [echo TK_PATCH_LEVEL = \>> versions.vc] \
+   && [nmakehlp -V $(_TK_H) TK_PATCH_LEVEL >> versions.vc]
+!endif
+!endif # _TK_H
+
+!include versions.vc
+
+TCL_VERSION	= $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
+TCL_DOTVERSION	= $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
+!if [nmakehlp -f $(TCL_PATCH_LEVEL) "a"]
+TCL_PATCH_LETTER = a
+!elseif [nmakehlp -f $(TCL_PATCH_LEVEL) "b"]
+TCL_PATCH_LETTER = b
+!else
+TCL_PATCH_LETTER = .
+!endif
+
+!if defined(_TK_H)
+
+TK_VERSION	= $(TK_MAJOR_VERSION)$(TK_MINOR_VERSION)
+TK_DOTVERSION	= $(TK_MAJOR_VERSION).$(TK_MINOR_VERSION)
+!if [nmakehlp -f $(TK_PATCH_LEVEL) "a"]
+TK_PATCH_LETTER = a
+!elseif [nmakehlp -f $(TK_PATCH_LEVEL) "b"]
+TK_PATCH_LETTER = b
+!else
+TK_PATCH_LETTER = .
+!endif
+
+!endif
+
+# Set DOTVERSION and VERSION
+!if $(DOING_TCL)
+
+DOTVERSION = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
+VERSION = $(TCL_VERSION)
+
+!elseif $(DOING_TK)
+
+DOTVERSION = $(TK_DOTVERSION)
+VERSION = $(TK_VERSION)
+
+!else # Doing a non-Tk extension
+
+# If parent makefile has not defined DOTVERSION, try to get it from TEA
+# first from a configure.in file, and then from configure.ac
+!ifndef DOTVERSION
+!if [echo DOTVERSION = \> versions.vc] \
+   || [nmakehlp -V $(ROOT)\configure.in ^[$(PROJECT)^] >> versions.vc]
+!if [echo DOTVERSION = \> versions.vc] \
+   || [nmakehlp -V $(ROOT)\configure.ac ^[$(PROJECT)^] >> versions.vc]
+!error *** Could not figure out extension version. Please define DOTVERSION in parent makefile before including rules.vc.
+!endif
+!endif
+!include versions.vc
+!endif # DOTVERSION
+VERSION         = $(DOTVERSION:.=)
+
+!endif # $(DOING_TCL) ... etc.
+
+# Windows RC files have 3 version components. Ensure this irrespective
+# of how many components the package has specified. Basically, ensure
+# minimum 4 components by appending 4 0's and then pick out the first 4.
+# Also take care of the fact that DOTVERSION may have "a" or "b" instead
+# of "." separating the version components.
+DOTSEPARATED=$(DOTVERSION:a=.)
+DOTSEPARATED=$(DOTSEPARATED:b=.)
+!if [echo RCCOMMAVERSION = \> versions.vc] \
+  || [for /f "tokens=1,2,3,4,5* delims=." %a in ("$(DOTSEPARATED).0.0.0.0") do echo %a,%b,%c,%d >> versions.vc]
+!error *** Could not generate RCCOMMAVERSION ***
+!endif
+!include versions.vc
+
 ########################################################################
-# 6. Parse the OPTS macro to work out the requested build configuration.
+# 7. Parse the OPTS macro to work out the requested build configuration.
 # Based on this, we will construct the actual switches to be passed to the
 # compiler and linker using the macros defined in the previous section.
 # The following macros are defined by this section based on OPTS
@@ -667,9 +789,10 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 # MSVCRT  - 1 -> link to dynamic C runtime even when building static Tcl build
 #           0 -> link to static C runtime for static Tcl build.
 #           Does not impact shared Tcl builds (STATIC_BUILD == 0)
+#           Default: 1 for Tcl 8.7 and up, 0 otherwise.
 # TCL_USE_STATIC_PACKAGES - 1 -> statically link the registry and dde extensions
-#           in the Tcl shell. 0 -> keep them as shared libraries
-#           Does not impact shared Tcl builds.
+#           in the Tcl and Wish shell. 0 -> keep them as shared libraries. Does
+#           not impact shared Tcl builds. Implied by STATIC_BUILD since Tcl 8.7.
 # USE_THREAD_ALLOC - 1 -> Use a shared global free pool for allocation.
 #           0 -> Use the non-thread allocator.
 # UNCHECKED - 1 -> when doing a debug build with symbols, use the release
@@ -724,7 +847,7 @@ MSVCRT		= 0
 !if [nmakehlp -f $(OPTS) "msvcrt"]
 !message *** Doing msvcrt
 !else
-!if $(STATIC_BUILD)
+!if $(TCL_MAJOR_VERSION) == 8 && $(TCL_MINOR_VERSION) < 7 && $(STATIC_BUILD)
 MSVCRT		= 0
 !endif
 !endif
@@ -741,7 +864,7 @@ TCL_THREADS = 0
 USE_THREAD_ALLOC= 0
 !endif
 
-!if "$(TCL_MAJOR_VERSION)" == "8"
+!if $(TCL_MAJOR_VERSION) == 8
 !if [nmakehlp -f $(OPTS) "time64bit"]
 !message *** Force 64-bit time_t
 _USE_64BIT_TIME_T = 1
@@ -836,7 +959,7 @@ This compiler does not support profile guided optimization.
 !endif
 
 ################################################################
-# 7. Parse the STATS macro to configure code instrumentation
+# 8. Parse the STATS macro to configure code instrumentation
 # The following macros are set by this section:
 # TCL_MEM_DEBUG - 1 -> enables memory allocation instrumentation
 #                 0 -> disables
@@ -866,7 +989,7 @@ TCL_COMPILE_DEBUG   = 0
 !endif
 
 ####################################################################
-# 8. Parse the CHECKS macro to configure additional compiler checks
+# 9. Parse the CHECKS macro to configure additional compiler checks
 # The following macros are set by this section:
 # WARNINGS - compiler switches that control the warnings level
 # TCL_NO_DEPRECATED - 1 -> disable support for deprecated functions
@@ -898,99 +1021,6 @@ WARNINGS		    = $(WARNINGS) -Wp64
 
 !endif
 
-################################################################
-# 9. Extract various version numbers
-# For Tcl and Tk, version numbers are extracted from tcl.h and tk.h
-# respectively. For extensions, versions are extracted from the
-# configure.in or configure.ac from the TEA configuration if it
-# exists, and unset otherwise.
-# Sets the following macros:
-# TCL_MAJOR_VERSION
-# TCL_MINOR_VERSION
-# TCL_PATCH_LEVEL
-# TCL_VERSION
-# TK_MAJOR_VERSION
-# TK_MINOR_VERSION
-# TK_PATCH_LEVEL
-# TK_VERSION
-# DOTVERSION - set as (for example) 2.5
-# VERSION - set as (for example 25)
-#--------------------------------------------------------------
-
-!if [echo REM = This file is generated from rules.vc > versions.vc]
-!endif
-!if [echo TCL_MAJOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" TCL_MAJOR_VERSION >> versions.vc]
-!endif
-!if [echo TCL_MINOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" TCL_MINOR_VERSION >> versions.vc]
-!endif
-!if [echo TCL_PATCH_LEVEL = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" TCL_PATCH_LEVEL >> versions.vc]
-!endif
-
-!if defined(_TK_H)
-!if [echo TK_MAJOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V $(_TK_H) TK_MAJOR_VERSION >> versions.vc]
-!endif
-!if [echo TK_MINOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V $(_TK_H) TK_MINOR_VERSION >> versions.vc]
-!endif
-!if [echo TK_PATCH_LEVEL = \>> versions.vc] \
-   && [nmakehlp -V $(_TK_H) TK_PATCH_LEVEL >> versions.vc]
-!endif
-!endif # _TK_H
-
-!include versions.vc
-
-TCL_VERSION	= $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
-TCL_DOTVERSION	= $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
-!if defined(_TK_H)
-TK_VERSION	= $(TK_MAJOR_VERSION)$(TK_MINOR_VERSION)
-TK_DOTVERSION	= $(TK_MAJOR_VERSION).$(TK_MINOR_VERSION)
-!endif
-
-# Set DOTVERSION and VERSION
-!if $(DOING_TCL)
-
-DOTVERSION = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
-VERSION = $(TCL_VERSION)
-
-!elseif $(DOING_TK)
-
-DOTVERSION = $(TK_DOTVERSION)
-VERSION = $(TK_VERSION)
-
-!else # Doing a non-Tk extension
-
-# If parent makefile has not defined DOTVERSION, try to get it from TEA
-# first from a configure.in file, and then from configure.ac
-!ifndef DOTVERSION
-!if [echo DOTVERSION = \> versions.vc] \
-   || [nmakehlp -V $(ROOT)\configure.in ^[$(PROJECT)^] >> versions.vc]
-!if [echo DOTVERSION = \> versions.vc] \
-   || [nmakehlp -V $(ROOT)\configure.ac ^[$(PROJECT)^] >> versions.vc]
-!error *** Could not figure out extension version. Please define DOTVERSION in parent makefile before including rules.vc.
-!endif
-!endif
-!include versions.vc
-!endif # DOTVERSION
-VERSION         = $(DOTVERSION:.=)
-
-!endif # $(DOING_TCL) ... etc.
-
-# Windows RC files have 3 version components. Ensure this irrespective
-# of how many components the package has specified. Basically, ensure
-# minimum 4 components by appending 4 0's and then pick out the first 4.
-# Also take care of the fact that DOTVERSION may have "a" or "b" instead
-# of "." separating the version components.
-DOTSEPARATED=$(DOTVERSION:a=.)
-DOTSEPARATED=$(DOTSEPARATED:b=.)
-!if [echo RCCOMMAVERSION = \> versions.vc] \
-  || [for /f "tokens=1,2,3,4,5* delims=." %a in ("$(DOTSEPARATED).0.0.0.0") do echo %a,%b,%c,%d >> versions.vc]
-!error *** Could not generate RCCOMMAVERSION ***
-!endif
-!include versions.vc
 
 ################################################################
 # 10. Construct output directory and file paths
@@ -1087,14 +1117,29 @@ OUT_DIR	    = $(TMP_DIR)
 # The name of the stubs library for the project being built
 STUBPREFIX      = $(PROJECT)stub
 
+#
 # Set up paths to various Tcl executables and libraries needed by extensions
-!if $(DOING_TCL)
+#
 
+# TIP 430. Unused for 8.6 but no harm defining it to allow a common rules.vc
+!if "$(TCL_PATCH_LETTER)" == "."
+TCLSCRIPTZIPNAME = libtcl_$(TCL_MAJOR_VERSION)_$(TCL_MINOR_VERSION)_$(TCL_RELEASE_SERIAL).zip
+!else
+TCLSCRIPTZIPNAME = libtcl_$(TCL_MAJOR_VERSION)_$(TCL_MINOR_VERSION)_$(TCL_PATCH_LETTER)$(TCL_RELEASE_SERIAL).zip
+!endif
+!if "$(TK_PATCH_LETTER)" == "."
+TKSCRIPTZIPNAME = libtk_$(TK_MAJOR_VERSION)_$(TK_MINOR_VERSION)_$(TK_RELEASE_SERIAL).zip
+!else
+TKSCRIPTZIPNAME = libtk_$(TK_MAJOR_VERSION)_$(TK_MINOR_VERSION)_$(TK_PATCH_LETTER)$(TK_RELEASE_SERIAL).zip
+!endif
+
+!if $(DOING_TCL)
 TCLSHNAME       = $(PROJECT)sh$(VERSION)$(SUFX).exe
 TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
 TCLIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 TCLLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
 TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
+TCLSCRIPTZIP    = $(OUT_DIR)\$(TCLSCRIPTZIPNAME)
 
 TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
 TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
@@ -1122,6 +1167,7 @@ TCLIMPLIB	= $(_TCLDIR)\lib\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 TCL_LIBRARY	= $(_TCLDIR)\lib
 TCLREGLIB	= $(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib
 TCLDDELIB	= $(_TCLDIR)\lib\tcldde14$(SUFX:t=).lib
+TCLSCRIPTZIP	= $(_TCLDIR)\lib\$(TCLSCRIPTZIPNAME)
 TCLTOOLSDIR	= \must\have\tcl\sources\to\build\this\target
 TCL_INCLUDES    = -I"$(_TCLDIR)\include"
 
@@ -1141,6 +1187,7 @@ TCLIMPLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)t$(SUFX:t=).lib
 TCL_LIBRARY	= $(_TCLDIR)\library
 TCLREGLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib
 TCLDDELIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14$(SUFX:t=).lib
+TCLSCRIPTZIP	= $(_TCLDIR)\win\$(BUILDDIRTOP)\$(TCLSCRIPTZIPNAME)
 TCLTOOLSDIR	= $(_TCLDIR)\tools
 TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
 
@@ -1173,7 +1220,8 @@ WISH 		= $(OUT_DIR)\$(WISHNAME)
 TKSTUBLIB	= $(OUT_DIR)\$(TKSTUBLIBNAME)
 TKIMPLIB	= $(OUT_DIR)\$(TKIMPLIBNAME)
 TKLIB		= $(OUT_DIR)\$(TKLIBNAME)
-TK_INCLUDES    = -I"$(WIN_DIR)" -I"$(GENERICDIR)"
+TK_INCLUDES     = -I"$(WIN_DIR)" -I"$(GENERICDIR)"
+TKSCRIPTZIP     = $(OUT_DIR)\$(TKSCRIPTZIPNAME)
 
 !else # effectively NEED_TK
 
@@ -1188,7 +1236,10 @@ TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX:t=).lib
 TKIMPLIB	= $(_TKDIR)\lib\$(TKIMPLIBNAME)
 !endif
 TK_INCLUDES     = -I"$(_TKDIR)\include"
+TKSCRIPTZIP     = $(_TKDIR)\lib\$(TKSCRIPTZIPNAME)
+
 !else # Building against Tk sources
+
 WISH		= $(_TKDIR)\win\$(BUILDDIRTOP)\$(WISHNAME)
 TKSTUBLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKSTUBLIBNAME)
 TKIMPLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKIMPLIBNAME)
@@ -1199,7 +1250,10 @@ TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX:t=).lib
 TKIMPLIB	= $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKIMPLIBNAME)
 !endif
 TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
+TKSCRIPTZIP     = $(_TKDIR)\win\$(BUILDDIRTOP)\$(TKSCRIPTZIPNAME)
+
 !endif # TKINSTALL
+
 tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 
 !endif # $(DOING_TK)
@@ -1286,7 +1340,7 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 #    define PRJ_LIBS before including rules.rc if additional libs are needed
 
 OPTDEFINES	= /DSTDC_HEADERS
-!if $(VCVERSION) >= 1600
+!if $(VCVERSION) > 1600
 OPTDEFINES	= $(OPTDEFINES) /DHAVE_STDINT_H=1
 !else
 OPTDEFINES	= $(OPTDEFINES) /DMP_NO_STDINT=1
@@ -1456,7 +1510,7 @@ pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) /DBUILD_$(PROJECT)
 # so we do not remove it from cflags. -GL may prevent extensions
 # compiled with one VC version to fail to link against stubs library
 # compiled with another VC version. Check for this and fix accordingly.
-stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl /DSTATIC_BUILD $(INCLUDES) $(USE_STUBS_DEFS)
+stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) /Zl /GL- /DSTATIC_BUILD $(INCLUDES) $(USE_STUBS_DEFS)
 
 # Link flags
 
@@ -1479,18 +1533,6 @@ lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 
 !if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
 lflags	= $(lflags) -nodefaultlib:libucrt.lib
-!endif
-
-# Old linkers (Visual C++ 6 in particular) will link for fast loading
-# on Win98. Since we do not support Win98 any more, we specify nowin98
-# as recommended for NT and later. However, this is only required by
-# IX86 on older compilers and only needed if we are not doing a static build.
-
-!if "$(MACHINE)" == "IX86" && !$(STATIC_BUILD)
-!if [nmakehlp -l -opt:nowin98 $(LINKER_TESTFLAGS)]
-# Align sections for PE size savings.
-lflags	= $(lflags) -opt:nowin98
-!endif
 !endif
 
 dlllflags = $(lflags) -dll
@@ -1599,6 +1641,8 @@ default-install-pdbs:
 	@echo Installing PDBs to '$(LIB_INSTALL_DIR)'
 	@if not exist "$(LIB_INSTALL_DIR)" mkdir "$(LIB_INSTALL_DIR)"
 	@$(CPY) "$(OUT_DIR)\*.pdb" "$(LIB_INSTALL_DIR)\"
+
+# "emacs font-lock highlighting fix
 
 default-install-docs-html:
 	@echo Installing documentation files to '$(DOC_INSTALL_DIR)'
@@ -1764,8 +1808,8 @@ $<
 TCLNMAKECONFIG = "$(_TCLDIR)\lib\nmake\tcl.nmake"
 !endif
 !else # !$(TCLINSTALL) - building against Tcl source
-!if exist("$(OUT_DIR)\tcl.nmake")
-TCLNMAKECONFIG = "$(OUT_DIR)\tcl.nmake"
+!if exist("$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl.nmake")
+TCLNMAKECONFIG	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl.nmake"
 !endif
 !endif # TCLINSTALL
 

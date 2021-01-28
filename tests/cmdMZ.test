@@ -59,7 +59,7 @@ test cmdMZ-1.4 {Tcl_PwdObjCmd: failure} -setup {
     # This test fails on various unix platforms (eg Linux) where permissions
     # caching causes this to fail. The caching is strictly incorrect, but we
     # have no control over that.
-    file attr . -permissions 000
+    file attr . -permissions 0
     pwd
 } -returnCodes error -cleanup {
     cd $cwd

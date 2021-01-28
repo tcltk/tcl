@@ -20,7 +20,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 package require tcltests
 
 # All tests require the "exec" command.
@@ -113,7 +113,7 @@ set path(sh2) [makeFile {
     exit
 } sh2]
 set path(sleep) [makeFile {
-    after [expr {[lindex $argv 0] * 1000}]
+    after [expr {$argv*1000}]
     exit
 } sleep]
 set path(exit) [makeFile {

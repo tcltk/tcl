@@ -7,8 +7,8 @@
  *	general hashtable implementation of Tcl hash tables that appears in
  *	tclHash.c.
  *
- * Copyright (c) 1997-1998 Sun Microsystems, Inc.
- * Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
+ * Copyright © 1997-1998 Sun Microsystems, Inc.
+ * Copyright © 2004 Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -211,7 +211,7 @@ TclCreateLiteral(
 	     */
 
 	    size_t objLength;
-	    const char *objBytes = TclGetStringFromObj(objPtr, &objLength);
+	    const char *objBytes = Tcl_GetStringFromObj(objPtr, &objLength);
 
 	    if ((objLength == length) && ((length == 0)
 		    || ((objBytes[0] == bytes[0])
@@ -510,7 +510,7 @@ LookupLiteralEntry(
     const char *bytes;
     size_t globalHash, length;
 
-    bytes = TclGetStringFromObj(objPtr, &length);
+    bytes = Tcl_GetStringFromObj(objPtr, &length);
     globalHash = (HashString(bytes, length) & globalTablePtr->mask);
     for (entryPtr=globalTablePtr->buckets[globalHash] ; entryPtr!=NULL;
 	    entryPtr=entryPtr->nextPtr) {
@@ -571,7 +571,7 @@ TclHideLiteral(
     TclReleaseLiteral(interp, lPtr->objPtr);
     lPtr->objPtr = newObjPtr;
 
-    bytes = TclGetStringFromObj(newObjPtr, &length);
+    bytes = Tcl_GetStringFromObj(newObjPtr, &length);
     localHash = HashString(bytes, length) & localTablePtr->mask;
     nextPtrPtr = &localTablePtr->buckets[localHash];
 
@@ -704,7 +704,7 @@ AddLocalLiteralEntry(
 	}
 
 	if (!found) {
-	    bytes = TclGetStringFromObj(objPtr, &length);
+	    bytes = Tcl_GetStringFromObj(objPtr, &length);
 	    Tcl_Panic("%s: literal \"%.*s\" wasn't found locally",
 		    "AddLocalLiteralEntry", (length>60? 60 : (int)length), bytes);
 	}
@@ -833,7 +833,7 @@ TclReleaseLiteral(
     }
 
     globalTablePtr = &iPtr->literalTable;
-    bytes = TclGetStringFromObj(objPtr, &length);
+    bytes = Tcl_GetStringFromObj(objPtr, &length);
     index = HashString(bytes, length) & globalTablePtr->mask;
 
     /*
@@ -1005,7 +1005,7 @@ RebuildLiteralTable(
 
     for (oldChainPtr=oldBuckets ; oldSize>0 ; oldSize--,oldChainPtr++) {
 	for (entryPtr=*oldChainPtr ; entryPtr!=NULL ; entryPtr=*oldChainPtr) {
-	    bytes = TclGetStringFromObj(entryPtr->objPtr, &length);
+	    bytes = Tcl_GetStringFromObj(entryPtr->objPtr, &length);
 	    index = (HashString(bytes, length) & tablePtr->mask);
 
 	    *oldChainPtr = entryPtr->nextPtr;
@@ -1176,7 +1176,7 @@ TclVerifyLocalLiteralTable(
 		localPtr=localPtr->nextPtr) {
 	    count++;
 	    if (localPtr->refCount != TCL_INDEX_NONE) {
-		bytes = TclGetStringFromObj(localPtr->objPtr, &length);
+		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
 		Tcl_Panic("%s: local literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "u",
 			"TclVerifyLocalLiteralTable",
 			(length>60? 60 : (int) length), bytes, localPtr->refCount);
@@ -1225,7 +1225,7 @@ TclVerifyGlobalLiteralTable(
 		globalPtr=globalPtr->nextPtr) {
 	    count++;
 	    if (globalPtr->refCount + 1 < 2) {
-		bytes = TclGetStringFromObj(globalPtr->objPtr, &length);
+		bytes = Tcl_GetStringFromObj(globalPtr->objPtr, &length);
 		Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %" TCL_Z_MODIFIER "u",
 			"TclVerifyGlobalLiteralTable",
 			(length>60? 60 : (int)length), bytes, globalPtr->refCount);

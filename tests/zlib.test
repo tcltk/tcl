@@ -34,7 +34,7 @@ test zlib-1.3 {zlib basics} -constraints zlib -body {
     zlib::pkgconfig list
 } -result zlibVersion
 test zlib-1.4 {zlib basics} -constraints zlib -body {
-    package present zlib
+    package present tcl::zlib
 } -result 2.0.1
 
 test zlib-2.1 {zlib compress/decompress} zlib {

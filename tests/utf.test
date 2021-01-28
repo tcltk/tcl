@@ -14,7 +14,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint ucs2 [expr {[format %c 0x010000] eq "\uFFFD"}]
 testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
@@ -1173,7 +1173,25 @@ test utf-19.1 {TclUniCharLen} -body {
 test utf-20.1 {TclUniCharNcmp} ucs4 {
     string compare [string range [format %c 0xFFFF] 0 0] [string range [format %c 0x10000] 0 0]
 } -1
-test utf-20.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} knownBug {
+test utf-20.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} ucs2 {
+    set one [format %c 0xFFFF]
+    set two [format %c 0x10000]
+    set first [string compare $one $two]
+    string range $one 0 0
+    string range $two 0 0
+    set second [string compare $one $two]
+    expr {($first == $second) ? "agree" : "disagree"}
+} agree
+test utf-20.2.1 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} {utf16 knownBug} {
+    set one [format %c 0xFFFF]
+    set two [format %c 0x10000]
+    set first [string compare $one $two]
+    string range $one 0 0
+    string range $two 0 0
+    set second [string compare $one $two]
+    expr {($first == $second) ? "agree" : "disagree"}
+} agree
+test utf-20.2.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} ucs4 {
     set one [format %c 0xFFFF]
     set two [format %c 0x10000]
     set first [string compare $one $two]

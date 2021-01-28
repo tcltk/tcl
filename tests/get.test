@@ -16,7 +16,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testgetint [llength [info commands testgetint]]
 testConstraint testdoubleobj [llength [info commands testdoubleobj]]
@@ -110,11 +110,11 @@ test get-3.4 {Tcl_GetDouble with iffy numbers} testdoubleobj {
     }
 } {0.0 0.0 0.0 0.0 0.0 9.0 {expected floating-point number but got "- 0"} 0.0 10.0 2.0}
 test get-3.5 {tcl_GetInt with numeric whitespace (i.e. '_')} testgetint {
-    lmap x {0_0 " 1_0" "0_2 " " 3_3 " 14__23__32___4 " 0x_a " " 0_07 " " 0o_1_0 " " 0_b1_0 " _33 42_ 0_x15 0_o17 0_d19 } {
+    lmap x {0_0 " 1_0" "0_2 " " 3_3 " 14__23__32___4 " 0x_a " 0b1111_1111 " 0_07 " " 0o_1_0 " " 0b_1_0 " " 0_b1_0 " _33 42_ 0_x15 0_o17 0_d19 } {
 	catch {testgetint $x} x
 	set x
     }
-} {0 10 2 33 1423324 10 7 8 {expected integer but got " 0_b1_0 "} {expected integer but got "_33"} {expected integer but got "42_"} {expected integer but got "0_x15"} {expected integer but got "0_o17"} {expected integer but got "0_d19"}}
+} {0 10 2 33 1423324 10 255 7 8 2 {expected integer but got " 0_b1_0 "} {expected integer but got "_33"} {expected integer but got "42_"} {expected integer but got "0_x15"} {expected integer but got "0_o17"} {expected integer but got "0_d19"}}
 
 # cleanup
 ::tcltest::cleanupTests

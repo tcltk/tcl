@@ -6,8 +6,8 @@
  * This file contains the procedures that convert Tcl Assembly Language (TAL)
  * to a sequence of bytecode instructions for the Tcl execution engine.
  *
- * Copyright (c) 2010 by Ozgur Dogan Ugurlu.
- * Copyright (c) 2010 by Kevin B. Kenny.
+ * Copyright © 2010 Ozgur Dogan Ugurlu.
+ * Copyright © 2010 Kevin B. Kenny.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -887,7 +887,7 @@ CompileAssembleObj(
      * Set up the compilation environment, and assemble the code.
      */
 
-    source = TclGetStringFromObj(objPtr, &sourceLen);
+    source = Tcl_GetStringFromObj(objPtr, &sourceLen);
     TclInitCompileEnv(interp, &compEnv, source, sourceLen, NULL, 0);
     status = TclAssembleCode(&compEnv, source, sourceLen, TCL_EVAL_DIRECT);
     if (status != TCL_OK) {
@@ -1311,7 +1311,7 @@ AssembleOneLine(
 	if (GetNextOperand(assemEnvPtr, &tokenPtr, &operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	}
-	operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
+	operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
 	litIndex = TclRegisterLiteral(envPtr, operand1, operand1Len, 0);
 	BBEmitInst1or4(assemEnvPtr, tblIdx, litIndex, 0);
 	break;
@@ -1478,7 +1478,7 @@ AssembleOneLine(
 		&operand1Obj) != TCL_OK) {
 	    goto cleanup;
 	} else {
-	    operand1 = TclGetStringFromObj(operand1Obj, &operand1Len);
+	    operand1 = Tcl_GetStringFromObj(operand1Obj, &operand1Len);
 	    litIndex = TclRegisterLiteral(envPtr, operand1, operand1Len, 0);
 
 	    /*
@@ -2315,7 +2315,7 @@ FindLocalVar(
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {
 	return -1;
     }
-    varNameStr = TclGetStringFromObj(varNameObj, &varNameLen);
+    varNameStr = Tcl_GetStringFromObj(varNameObj, &varNameLen);
     if (CheckNamespaceQualifiers(interp, varNameStr, varNameLen)) {
 	Tcl_DecrRefCount(varNameObj);
 	return -1;

@@ -3,9 +3,9 @@
  *
  *	This file provides the interface to the Zlib library.
  *
- * Copyright (C) 2004-2005 Pascal Scheffers <pascal@scheffers.net>
- * Copyright (C) 2005 Unitas Software B.V.
- * Copyright (c) 2008-2012 Donal K. Fellows
+ * Copyright © 2004-2005 Pascal Scheffers <pascal@scheffers.net>
+ * Copyright © 2005 Unitas Software B.V.
+ * Copyright © 2008-2012 Donal K. Fellows
  *
  * Parts written by Jean-Claude Wippler, as part of Tclkit, placed in the
  * public domain March 2003.
@@ -443,7 +443,7 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "comment", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
-	valueStr = TclGetStringFromObj(value, &length);
+	valueStr = Tcl_GetStringFromObj(value, &length);
 	Tcl_UtfToExternal(NULL, latin1enc, valueStr, length, 0, NULL,
 		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
 		NULL);
@@ -464,7 +464,7 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "filename", &value) != TCL_OK) {
 	goto error;
     } else if (value != NULL) {
-	valueStr = TclGetStringFromObj(value, &length);
+	valueStr = Tcl_GetStringFromObj(value, &length);
 	Tcl_UtfToExternal(NULL, latin1enc, valueStr, length, 0, NULL,
 		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len, NULL);
 	headerPtr->nativeFilenameBuf[len] = '\0';
@@ -595,7 +595,7 @@ SetInflateDictionary(
 {
     if (compDictObj != NULL) {
 	size_t length = 0;
-	unsigned char *bytes = TclGetByteArrayFromObj(compDictObj, &length);
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(compDictObj, &length);
 
 	return inflateSetDictionary(strm, bytes, length);
     }
@@ -609,7 +609,7 @@ SetDeflateDictionary(
 {
     if (compDictObj != NULL) {
 	size_t length = 0;
-	unsigned char *bytes = TclGetByteArrayFromObj(compDictObj, &length);
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(compDictObj, &length);
 
 	return deflateSetDictionary(strm, bytes, length);
     }
@@ -1386,7 +1386,7 @@ Tcl_ZlibStreamGet(
 		if (Tcl_IsShared(itemObj)) {
 		    itemObj = Tcl_DuplicateObj(itemObj);
 		}
-		itemPtr = TclGetByteArrayFromObj(itemObj, &itemLen);
+		itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 		Tcl_IncrRefCount(itemObj);
 		zshPtr->currentInput = itemObj;
 		zshPtr->stream.next_in = itemPtr;
@@ -1458,7 +1458,7 @@ Tcl_ZlibStreamGet(
 	    if (Tcl_IsShared(itemObj)) {
 		itemObj = Tcl_DuplicateObj(itemObj);
 	    }
-	    itemPtr = TclGetByteArrayFromObj(itemObj, &itemLen);
+	    itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 	    Tcl_IncrRefCount(itemObj);
 	    zshPtr->currentInput = itemObj;
 	    zshPtr->stream.next_in = itemPtr;
@@ -1507,7 +1507,7 @@ Tcl_ZlibStreamGet(
 	    count = 0;
 	    for (i=0; i<listLen; i++) {
 		Tcl_ListObjIndex(NULL, zshPtr->outData, i, &itemObj);
-		(void) TclGetByteArrayFromObj(itemObj, &itemLen);
+		(void) Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 		if (i == 0) {
 		    count += itemLen - zshPtr->outPos;
 		} else {
@@ -1532,7 +1532,7 @@ Tcl_ZlibStreamGet(
 	     */
 
 	    Tcl_ListObjIndex(NULL, zshPtr->outData, 0, &itemObj);
-	    itemPtr = TclGetByteArrayFromObj(itemObj, &itemLen);
+	    itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 	    if (itemLen-zshPtr->outPos + dataPos >= count) {
 		size_t len = count - dataPos;
 
@@ -3481,7 +3481,7 @@ ZlibTransformGetOption(
 	} else {
 	    if (cd->compDictObj) {
 		size_t length;
-		const char *str = TclGetStringFromObj(cd->compDictObj, &length);
+		const char *str = Tcl_GetStringFromObj(cd->compDictObj, &length);
 
 		Tcl_DStringAppend(dsPtr, str, length);
 	    }
@@ -3721,7 +3721,7 @@ ZlibStackChannelTransform(
     if (compDictObj != NULL) {
 	cd->compDictObj = Tcl_DuplicateObj(compDictObj);
 	Tcl_IncrRefCount(cd->compDictObj);
-	Tcl_GetByteArrayFromObj(cd->compDictObj, NULL);
+	TclGetByteArrayFromObj(cd->compDictObj, NULL);
     }
 
     if (format == TCL_ZLIB_FORMAT_RAW) {
@@ -3969,7 +3969,10 @@ TclZlibInit(
      * Formally provide the package as a Tcl built-in.
      */
 
-    return Tcl_PkgProvideEx(interp, "zlib", TCL_ZLIB_VERSION, NULL);
+#ifndef TCL_NO_DEPRECATED
+    Tcl_PkgProvideEx(interp, "zlib", TCL_ZLIB_VERSION, NULL);
+#endif
+    return Tcl_PkgProvideEx(interp, "tcl::zlib", TCL_ZLIB_VERSION, NULL);
 }
 
 /*

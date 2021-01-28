@@ -6,7 +6,7 @@
  *	fixed size blocks from block caches.
  *
  * The Initial Developer of the Original Code is America Online, Inc.
- * Portions created by AOL are Copyright (C) 1999 America Online, Inc.
+ * Portions created by AOL are Copyright © 1999 America Online, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

@@ -5,13 +5,13 @@
  *	including interpreter creation and deletion, command creation and
  *	deletion, and command/script execution.
  *
- * Copyright (c) 1987-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
- * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
- * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
- * Copyright (c) 2008 Miguel Sofer <msofer@users.sourceforge.net>
+ * Copyright © 1987-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
+ * Copyright © 2001, 2002 Kevin B. Kenny.  All rights reserved.
+ * Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 2006-2008 Joe Mistachkin.  All rights reserved.
+ * Copyright © 2008 Miguel Sofer <msofer@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1132,6 +1132,7 @@ Tcl_CreateInterp(void)
      */
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
+    Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL, &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
@@ -3954,7 +3955,7 @@ Tcl_Canceled(
          */
 
         if (iPtr->asyncCancelMsg != NULL) {
-            message = TclGetStringFromObj(iPtr->asyncCancelMsg, &length);
+            message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg, &length);
         } else {
             length = 0;
         }
@@ -4053,7 +4054,7 @@ Tcl_CancelEval(
      */
 
     if (resultObjPtr != NULL) {
-	result = TclGetStringFromObj(resultObjPtr, &cancelInfo->length);
+	result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
 	cancelInfo->result = (char *)Tcl_Realloc(cancelInfo->result,cancelInfo->length);
 	memcpy(cancelInfo->result, result, cancelInfo->length);
 	TclDecrRefCount(resultObjPtr);	/* Discard their result object. */
@@ -4552,7 +4553,7 @@ TEOV_Error(
 	 */
 
 	listPtr = Tcl_NewListObj(objc, objv);
-	cmdString = TclGetStringFromObj(listPtr, &cmdLen);
+	cmdString = Tcl_GetStringFromObj(listPtr, &cmdLen);
 	Tcl_LogCommandInfo(interp, cmdString, cmdString, cmdLen);
 	Tcl_DecrRefCount(listPtr);
     }
@@ -4698,7 +4699,7 @@ TEOV_RunEnterTraces(
     Command *cmdPtr = *cmdPtrPtr;
     size_t length, newEpoch, cmdEpoch = cmdPtr->cmdEpoch;
     int traceCode = TCL_OK;
-    const char *command = TclGetStringFromObj(commandPtr, &length);
+    const char *command = Tcl_GetStringFromObj(commandPtr, &length);
 
     /*
      * Call trace functions.
@@ -4750,7 +4751,7 @@ TEOV_RunLeaveTraces(
     Command *cmdPtr = (Command *)data[2];
     Tcl_Obj **objv = (Tcl_Obj **)data[3];
     size_t length;
-    const char *command = TclGetStringFromObj(commandPtr, &length);
+    const char *command = Tcl_GetStringFromObj(commandPtr, &length);
 
     if (!(cmdPtr->flags & CMD_DYING)) {
 	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES) {
@@ -5992,7 +5993,7 @@ TclNREvalObjEx(
 
 	Tcl_IncrRefCount(objPtr);
 
-	script = TclGetStringFromObj(objPtr, &numSrcBytes);
+	script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 	result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
 
 	TclDecrRefCount(objPtr);
@@ -6023,7 +6024,7 @@ TEOEx_ByteCodeCallback(
 
 	    ProcessUnexpectedResult(interp, result);
 	    result = TCL_ERROR;
-	    script = TclGetStringFromObj(objPtr, &numSrcBytes);
+	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 	    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
 	}
 
@@ -6554,7 +6555,7 @@ Tcl_AppendObjToErrorInfo(
     Tcl_Obj *objPtr)		/* Message to record. */
 {
     size_t length;
-    const char *message = TclGetStringFromObj(objPtr, &length);
+    const char *message = Tcl_GetStringFromObj(objPtr, &length);
     Interp *iPtr = (Interp *) interp;
 
     Tcl_IncrRefCount(objPtr);
@@ -7138,7 +7139,7 @@ ExprAbsFunc(
 	} else if (l == 0) {
 	    if (TclHasStringRep(objv[1])) {
 		size_t numBytes;
-		const char *bytes = TclGetStringFromObj(objv[1], &numBytes);
+		const char *bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
 		while (numBytes) {
 		    if (*bytes == '-') {

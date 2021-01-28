@@ -4,10 +4,10 @@
  *	This file contains compilation procedures that compile various Tcl
  *	commands into a sequence of instructions ("bytecodes").
  *
- * Copyright (c) 1997-1998 Sun Microsystems, Inc.
- * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
- * Copyright (c) 2002 ActiveState Corporation.
- * Copyright (c) 2004-2013 by Donal K. Fellows.
+ * Copyright © 1997-1998 Sun Microsystems, Inc.
+ * Copyright © 2001 Kevin B. Kenny.  All rights reserved.
+ * Copyright © 2002 ActiveState Corporation.
+ * Copyright © 2004-2013 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -896,7 +896,7 @@ TclCompileConcatCmd(
 	Tcl_ListObjGetElements(NULL, listObj, &len, &objs);
 	objPtr = Tcl_ConcatObj(len, objs);
 	Tcl_DecrRefCount(listObj);
-	bytes = TclGetStringFromObj(objPtr, &slen);
+	bytes = Tcl_GetStringFromObj(objPtr, &slen);
 	PushLiteral(envPtr, bytes, slen);
 	Tcl_DecrRefCount(objPtr);
 	return TCL_OK;
@@ -1333,7 +1333,7 @@ TclCompileDictCreateCmd(
      * We did! Excellent. The "verifyDict" is to do type forcing.
      */
 
-    bytes = TclGetStringFromObj(dictObj, &len);
+    bytes = Tcl_GetStringFromObj(dictObj, &len);
     PushLiteral(envPtr, bytes, len);
     TclEmitOpcode(		INST_DUP,			envPtr);
     TclEmitOpcode(		INST_DICT_VERIFY,		envPtr);
@@ -2773,7 +2773,7 @@ CompileEachloopCmd(
 
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
-	    bytes = TclGetStringFromObj(varNameObj, &length);
+	    bytes = Tcl_GetStringFromObj(varNameObj, &length);
 	    varIndex = LocalScalar(bytes, length, envPtr);
 	    if (varIndex < 0) {
 		code = TCL_ERROR;
@@ -3210,7 +3210,7 @@ TclCompileFormatCmd(
      * literal. Job done.
      */
 
-    bytes = TclGetStringFromObj(tmpObj, &len);
+    bytes = Tcl_GetStringFromObj(tmpObj, &len);
     PushLiteral(envPtr, bytes, len);
     Tcl_DecrRefCount(tmpObj);
     return TCL_OK;
@@ -3281,7 +3281,7 @@ TclCompileFormatCmd(
 	    if (*++bytes == '%') {
 		Tcl_AppendToObj(tmpObj, "%", 1);
 	    } else {
-		const char *b = TclGetStringFromObj(tmpObj, &len);
+		const char *b = Tcl_GetStringFromObj(tmpObj, &len);
 
 		/*
 		 * If there is a non-empty literal from the format string,
@@ -3315,7 +3315,7 @@ TclCompileFormatCmd(
      */
 
     Tcl_AppendToObj(tmpObj, start, bytes - start);
-    bytes = TclGetStringFromObj(tmpObj, &len);
+    bytes = Tcl_GetStringFromObj(tmpObj, &len);
     if (len > 0) {
 	PushLiteral(envPtr, bytes, len);
 	i++;

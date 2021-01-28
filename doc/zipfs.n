@@ -14,7 +14,7 @@
 zipfs \- Mount and work with ZIP files within Tcl
 .SH SYNOPSIS
 .nf
-\fBpackage require zipfs \fR?\fB1.0\fR?
+\fBpackage require tcl::zipfs \fR?\fB1.0\fR?
 .sp
 \fBzipfs canonical\fR ?\fImntpnt\fR? \fIfilename\fR ?\fIZIPFS\fR?
 \fBzipfs exists\fR \fIfilename\fR

@@ -4,8 +4,8 @@
  *	Stub object that will be statically linked into extensions that want
  *	to access Tcl.
  *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 1998 Paul Duffin.
+ * Copyright © 1998-1999 Scriptics Corporation.
+ * Copyright © 1998 Paul Duffin.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -54,10 +54,11 @@ Tcl_InitStubs(
     int exact,
     int magic)
 {
-    Interp *iPtr = (Interp *) interp;
+    Interp *iPtr = (Interp *)interp;
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
     const TclStubs *stubsPtr = iPtr->stubTable;
+    const char *tclName = (((exact&0xFF00) >= 0x900) ? "tcl" : "Tcl");
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -71,7 +72,7 @@ Tcl_InitStubs(
 	return NULL;
     }
 
-    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
+    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, tclName, version, 0, &pkgData);
     if (actualVersion == NULL) {
 	return NULL;
     }
@@ -91,11 +92,11 @@ Tcl_InitStubs(
 	    }
 	    if (*p || ISDIGIT(*q)) {
 		/* Construct error message */
-		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+		stubsPtr->tcl_PkgRequireEx(interp, tclName, version, 1, NULL);
 		return NULL;
 	    }
 	} else {
-	    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+	    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, tclName, version, 1, NULL);
 	    if (actualVersion == NULL) {
 		return NULL;
 	    }

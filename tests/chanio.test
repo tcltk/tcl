@@ -36,8 +36,8 @@ namespace eval ::tcl::test::io {
 
     catch {
 	::tcltest::loadTestedCommands
-	package require -exact Tcltest [info patchlevel]
-	set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
+	package require -exact tcl::test [info patchlevel]
+	set ::tcltestlib [info loaded {} Tcltest]
     }
     package require tcltests
 
@@ -5339,9 +5339,9 @@ test chan-io-40.1 {POSIX open access modes: RDWR} -setup {
 test chan-io-40.2 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -constraints {unix} -body {
-    set f [open $path(test3) {WRONLY CREAT} 0600]
+    set f [open $path(test3) {WRONLY CREAT} 0o600]
     file stat $path(test3) stats
-    set x [format "%#o" [expr {$stats(mode) & 0o777}]]
+    set x [format 0o%03o [expr {$stats(mode) & 0o777}]]
     chan puts $f "line 1"
     chan close $f
     set f [open $path(test3) r]
@@ -5355,8 +5355,8 @@ test chan-io-40.3 {POSIX open access modes: CREAT} -setup {
     # This test only works if your umask is 2, like ouster's.
     chan close [open $path(test3) {WRONLY CREAT}]
     file stat $path(test3) stats
-    format "%#o" [expr {$stats(mode) & 0o777}]
-} -result [format %#5o [expr {0o666 & ~ $umaskValue}]]
+    format 0o%03o [expr {$stats(mode) & 0o777}]
+} -result [format 0o%03o [expr {0o666 & ~ $umaskValue}]]
 test chan-io-40.4 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -body {
@@ -6502,10 +6502,10 @@ test chan-io-50.5 {testing handler deletion vs reentrant calls} -setup {
 	    set u recursive
 	    lappend z "del calling recursive"
 	    set timer [after 50 lappend z timeout]
-	    set mode [test servicemode 1]
+	    set mode [testservicemode 1]
 	    vwait z
 	    after cancel $timer
-	    test servicemode $mode
+	    testservicemode $mode
 	    lappend z "del after update"
 	}
     }

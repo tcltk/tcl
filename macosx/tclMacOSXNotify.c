@@ -5,9 +5,9 @@
  *	based notifier, which is the lowest-level part of the Tcl event loop.
  *	This file works together with generic/tclNotify.c.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright 2001-2009, Apple Inc.
- * Copyright (c) 2005-2009 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 2001-2009, Apple Inc.
+ * Copyright © 2005-2009 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -239,7 +239,7 @@ static OSSpinLock notifierLock     = SPINLOCK_INIT;
 
 #define SpinLockLockDbg(p) \
     if (!SpinLockTry(p)) {						\
-	Tcl_WideInt s = TclpGetWideClicks(), e;				\
+	long long s = TclpGetWideClicks(), e;				\
 									\
 	SpinLockLock(p);						\
 	e = TclpGetWideClicks();					\
@@ -700,7 +700,7 @@ Tcl_InitNotifier(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclMacOSXNotifierAddRunLoopMode --
+ * Tcl_MacOSXNotifierAddRunLoopMode --
  *
  *	Add the tcl notifier RunLoop source, observer and timer (if any)
  *	to the given RunLoop mode.
@@ -715,7 +715,7 @@ Tcl_InitNotifier(void)
  */
 
 void
-TclMacOSXNotifierAddRunLoopMode(
+Tcl_MacOSXNotifierAddRunLoopMode(
     const void *runLoopMode)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -2138,10 +2138,10 @@ AtForkChild(void)
 #else /* HAVE_COREFOUNDATION */
 
 void
-TclMacOSXNotifierAddRunLoopMode(
+Tcl_MacOSXNotifierAddRunLoopMode(
     const void *runLoopMode)
 {
-    Tcl_Panic("TclMacOSXNotifierAddRunLoopMode: "
+    Tcl_Panic("Tcl_MacOSXNotifierAddRunLoopMode: "
 	    "Tcl not built with CoreFoundation support");
 }
 

@@ -6,10 +6,10 @@
  *	commands are not normally included in Tcl applications; they're only
  *	used for testing.
  *
- * Copyright (c) 1993-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 Ajuba Solutions.
- * Copyright (c) 2003 by Kevin B. Kenny.  All rights reserved.
+ * Copyright © 1993-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Ajuba Solutions.
+ * Copyright © 2003 Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -460,7 +460,7 @@ Tcltest_Init(
     }
     /* TIP #268: Full patchlevel instead of just major.minor */
 
-    if (Tcl_PkgProvideEx(interp, "Tcltest", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
+    if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -4773,7 +4773,7 @@ GetTimesObjCmd(
     Tcl_Free(objv);
 
     /* TclGetString 100000 times */
-    fprintf(stderr, "TclGetStringFromObj of \"12345\" 100000 times\n");
+    fprintf(stderr, "Tcl_GetStringFromObj of \"12345\" 100000 times\n");
     objPtr = Tcl_NewStringObj("12345", -1);
     Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
@@ -4781,7 +4781,7 @@ GetTimesObjCmd(
     }
     Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
-    fprintf(stderr, "   %.3f usec per TclGetStringFromObj of \"12345\"\n",
+    fprintf(stderr, "   %.3f usec per Tcl_GetStringFromObj of \"12345\"\n",
 	    timePer/100000);
 
     /* Tcl_GetIntFromObj 100000 times */

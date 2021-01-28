@@ -4,8 +4,8 @@
  *	This file implements package and version control for Tcl via the
  *	"package" command and a few C APIs.
  *
- * Copyright (c) 1996 Sun Microsystems, Inc.
- * Copyright (c) 2006 Andreas Kupries <andreas_kupries@users.sourceforge.net>
+ * Copyright © 1996 Sun Microsystems, Inc.
+ * Copyright © 2006 Andreas Kupries <andreas_kupries@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1182,7 +1182,7 @@ TclNRPackageObjCmd(
 	} else {
 	    pkgPtr = FindPackage(interp, argv2);
 	}
-	argv3 = TclGetStringFromObj(objv[3], &length);
+	argv3 = Tcl_GetStringFromObj(objv[3], &length);
 
 	for (availPtr = pkgPtr->availPtr, prevPtr = NULL; availPtr != NULL;
 		prevPtr = availPtr, availPtr = availPtr->nextPtr) {
@@ -1229,10 +1229,10 @@ TclNRPackageObjCmd(
 	    }
 	}
 	if (iPtr->scriptFile) {
-	    argv4 = TclGetStringFromObj(iPtr->scriptFile, &length);
+	    argv4 = Tcl_GetStringFromObj(iPtr->scriptFile, &length);
 	    DupBlock(availPtr->pkgIndex, argv4, length + 1);
 	}
-	argv4 = TclGetStringFromObj(objv[4], &length);
+	argv4 = Tcl_GetStringFromObj(objv[4], &length);
 	DupBlock(availPtr->script, argv4, length + 1);
 	break;
     }
@@ -1409,7 +1409,7 @@ TclNRPackageObjCmd(
 	    if (iPtr->packageUnknown != NULL) {
 		Tcl_Free(iPtr->packageUnknown);
 	    }
-	    argv2 = TclGetStringFromObj(objv[2], &length);
+	    argv2 = Tcl_GetStringFromObj(objv[2], &length);
 	    if (argv2[0] == 0) {
 		iPtr->packageUnknown = NULL;
 	    } else {
@@ -2074,7 +2074,7 @@ AddRequirementsToResult(
     size_t length;
 
     for (i = 0; i < reqc; i++) {
-	const char *v = TclGetStringFromObj(reqv[i], &length);
+	const char *v = Tcl_GetStringFromObj(reqv[i], &length);
 
 	if ((length & 0x1) && (v[length/2] == '-')
 		&& (strncmp(v, v+((length+1)/2), length/2) == 0)) {

@@ -1179,7 +1179,6 @@ Here is a sketch of a sample test suite main script:
 .RS
 .PP
 .CS
-package require Tcl 8.6
 package require tcltest 2.5
 package require example
 \fB::tcltest::configure\fR -testdir \e

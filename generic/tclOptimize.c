@@ -3,7 +3,7 @@
  *
  *	This file contains the bytecode optimizer.
  *
- * Copyright (c) 2013 by Donal Fellows.
+ * Copyright © 2013 Donal Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -233,7 +233,7 @@ ConvertZeroEffectToNOP(
 			TclGetUInt1AtPtr(currentInstPtr + 1));
 		size_t numBytes;
 
-		(void) TclGetStringFromObj(litPtr, &numBytes);
+		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
 		if (numBytes == 0) {
 		    blank = size + InstLength(nextInst);
 		}
@@ -248,7 +248,7 @@ ConvertZeroEffectToNOP(
 			TclGetUInt4AtPtr(currentInstPtr + 1));
 		size_t numBytes;
 
-		(void) TclGetStringFromObj(litPtr, &numBytes);
+		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
 		if (numBytes == 0) {
 		    blank = size + InstLength(nextInst);
 		}

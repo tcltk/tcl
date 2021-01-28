@@ -6,10 +6,10 @@
  *	Andreas Stolcke and this implementation is based heavily on a
  *	prototype implementation provided by him.
  *
- * Copyright (c) 1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 2008 Rene Zaumseil
- * Copyright (c) 2019 Donal K. Fellows
+ * Copyright © 1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 2008 Rene Zaumseil
+ * Copyright © 2019 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -634,7 +634,7 @@ SetInvalidRealFromAny(
     size_t length;
     const char *str, *endPtr;
 
-    str = TclGetStringFromObj(objPtr, &length);
+    str = Tcl_GetStringFromObj(objPtr, &length);
     if ((length == 1) && (str[0] == '.')) {
 	objPtr->typePtr = &invalidRealType;
 	objPtr->internalRep.doubleValue = 0.0;
@@ -679,7 +679,7 @@ GetInvalidIntFromObj(
     int *intPtr)
 {
     size_t length;
-    const char *str = TclGetStringFromObj(objPtr, &length);
+    const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
     if ((length == 0) ||
 	    ((length == 2) && (str[0] == '0') && strchr("xXbBoOdD", str[1]))) {
@@ -897,7 +897,7 @@ LinkTraceProc(
 
     switch (linkPtr->type) {
     case TCL_LINK_STRING:
-	value = TclGetStringFromObj(valueObj, &valueLength);
+	value = Tcl_GetStringFromObj(valueObj, &valueLength);
 	pp = (char **) linkPtr->addr;
 
 	*pp = (char *)Tcl_Realloc(*pp, ++valueLength);
@@ -905,7 +905,7 @@ LinkTraceProc(
 	return NULL;
 
     case TCL_LINK_CHARS:
-	value = (char *) TclGetStringFromObj(valueObj, &valueLength);
+	value = (char *) Tcl_GetStringFromObj(valueObj, &valueLength);
 	valueLength++;		/* include end of string char */
 	if (valueLength > linkPtr->bytes) {
 	    return (char *) "wrong size of char* value";
@@ -920,7 +920,7 @@ LinkTraceProc(
 	return NULL;
 
     case TCL_LINK_BINARY:
-	value = (char *) TclGetByteArrayFromObj(valueObj, &valueLength);
+	value = (char *) Tcl_GetByteArrayFromObj(valueObj, &valueLength);
 	if (valueLength != linkPtr->bytes) {
 	    return (char *) "wrong size of binary value";
 	}

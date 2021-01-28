@@ -7,7 +7,7 @@
 # If you edit this file, advance the revision number (and the epoch
 # if the new stubs are not backward compatible) in tclTomMathDecls.h
 #
-# Copyright (c) 2005 by Kevin B. Kenny.  All rights reserved.
+# Copyright © 2005 Kevin B. Kenny.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -215,6 +215,10 @@ declare 69 {
 }
 declare 70 {
     void TclBN_mp_set_i64(mp_int *a, int64_t i)
+}
+declare 71 {
+    mp_err MP_WUR TclBN_mp_unpack(mp_int *rop, size_t count, mp_order order, size_t size,
+	    mp_endian endian, size_t nails, const void *op)
 }
 
 # Added in libtommath 1.1.0

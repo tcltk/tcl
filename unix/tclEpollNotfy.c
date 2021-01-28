@@ -5,8 +5,8 @@
  *	Linux-specific notifier, which is the lowest-level part of the Tcl
  *	event loop. This file works together with generic/tclNotify.c.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 2016 Lucio Andrés Illanes Albornoz <l.illanes@gmx.de>
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 2016 Lucio Andrés Illanes Albornoz <l.illanes@gmx.de>
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.

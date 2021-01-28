@@ -4,9 +4,9 @@
  *	This file contains procedures that disassemble bytecode into either
  *	human-readable or Tcl-processable forms.
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
- * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
- * Copyright (c) 2013-2016 Donal K. Fellows.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 2001 Kevin B. Kenny. All rights reserved.
+ * Copyright © 2013-2016 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -198,7 +198,7 @@ TclPrintObject(
     char *bytes;
     size_t length;
 
-    bytes = TclGetStringFromObj(objPtr, &length);
+    bytes = Tcl_GetStringFromObj(objPtr, &length);
     TclPrintSource(outFile, bytes, TclMin(length, maxChars));
 }
 
@@ -653,7 +653,7 @@ FormatInstruction(
 	size_t length;
 
 	Tcl_AppendToObj(bufferObj, "\t# ", -1);
-	bytes = TclGetStringFromObj(codePtr->objArrayPtr[opnd], &length);
+	bytes = Tcl_GetStringFromObj(codePtr->objArrayPtr[opnd], &length);
 	PrintSourceToObj(bufferObj, bytes, TclMin(length, 40));
     } else if (suffixBuffer[0]) {
 	Tcl_AppendPrintfToObj(bufferObj, "\t# %s", suffixBuffer);
