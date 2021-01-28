@@ -134,7 +134,6 @@ test load-5.1 {file name not specified and no static package: pick default} -set
     catch {interp delete x}
     interp create x
 } -constraints [list $dll $loaded] -body {
-} -constraints [list $dll $loaded] -body {
     load -global [file join $testDir pkga$ext] Pkga
     load {} Pkga x
     info loaded x
