@@ -10995,7 +10995,7 @@ else $as_nop
   tcl_ok=yes
 fi
 
-if test "$tcl_ok" = "yes" -a "$enable_framework" = "no"; then
+if test "$tcl_ok" = "yes" -a "x$enable_framework" != "xyes"; then
     #
     # Find a native compiler
     #
