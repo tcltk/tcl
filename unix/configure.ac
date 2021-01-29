@@ -5,10 +5,10 @@ dnl	to configure the system for the local environment.
 
 AC_INIT([tcl],[9.0])
 AC_PREREQ([2.69])
+AC_CONFIG_HEADERS([tclConfig.h:../unix/tclConfig.h.in])
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
-    AC_CONFIG_HEADERS([tclConfig.h:../unix/tclConfig.h.in])
     AC_CONFIG_COMMANDS_PRE([DEFS="-DHAVE_TCL_CONFIG_H  -imacros tclConfig.h"])
     AH_TOP([
     #ifndef _TCLCONFIG
@@ -757,52 +757,6 @@ fi
 AC_MSG_RESULT([$tcl_ok])
 
 #--------------------------------------------------------------------
-#	Zipfs support - Tip 430
-#--------------------------------------------------------------------
-AC_ARG_ENABLE(zipfs,
-    AS_HELP_STRING([--enable-zipfs],
-	[build with Zipfs support (default: on)]),
-    [tcl_ok=$enableval], [tcl_ok=yes])
-if test "$tcl_ok" = "yes" ; then
-    #
-    # Find a native compiler
-    #
-    AX_CC_FOR_BUILD
-    #
-    # Find a native zip implementation
-    #
-    SC_ZIPFS_SUPPORT
-	ZIPFS_BUILD=1
-	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
-else
-	ZIPFS_BUILD=0
-	TCL_ZIP_FILE=
-fi
-# Do checking message here to not mess up interleaved configure output
-AC_MSG_CHECKING([for building with zipfs])
-if test "${ZIPFS_BUILD}" = 1; then
-    if test "${SHARED_BUILD}" = 0; then
-       ZIPFS_BUILD=2;
-       AC_DEFINE(ZIPFS_BUILD, 2, [Are we building with zipfs enabled?])
-       INSTALL_LIBRARIES=install-libraries-zipfs-static
-       AC_MSG_RESULT([yes])
-     else
-       AC_DEFINE(ZIPFS_BUILD, 1, [Are we building with zipfs enabled?])\
-       INSTALL_LIBRARIES=install-libraries-zipfs-shared
-       AC_MSG_RESULT([yes])
-    fi
-else
-AC_MSG_RESULT([no])
-INSTALL_LIBRARIES=install-libraries
-INSTALL_MSGS=install-msgs
-fi
-AC_SUBST(ZIPFS_BUILD)
-AC_SUBST(TCL_ZIP_FILE)
-AC_SUBST(INSTALL_LIBRARIES)
-AC_SUBST(INSTALL_MSGS)
-
-
-#--------------------------------------------------------------------
 # The check below checks whether the cpuid instruction is usable.
 #--------------------------------------------------------------------
 
@@ -914,6 +868,52 @@ VERSION='${VERSION}'
 eval "CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}"
 eval "CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
 VERSION=${TCL_VERSION}
+
+#--------------------------------------------------------------------
+#	Zipfs support - Tip 430
+#--------------------------------------------------------------------
+AC_ARG_ENABLE(zipfs,
+    AS_HELP_STRING([--enable-zipfs],
+	[build with Zipfs support (default: on)]),
+    [tcl_ok=$enableval], [tcl_ok=yes])
+if test "$tcl_ok" = "yes" -a "x$enable_framework" != "xyes"; then
+    #
+    # Find a native compiler
+    #
+    AX_CC_FOR_BUILD
+    #
+    # Find a native zip implementation
+    #
+    SC_ZIPFS_SUPPORT
+	ZIPFS_BUILD=1
+	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
+else
+	ZIPFS_BUILD=0
+	TCL_ZIP_FILE=
+fi
+# Do checking message here to not mess up interleaved configure output
+AC_MSG_CHECKING([for building with zipfs])
+if test "${ZIPFS_BUILD}" = 1; then
+    if test "${SHARED_BUILD}" = 0; then
+       ZIPFS_BUILD=2;
+       AC_DEFINE(ZIPFS_BUILD, 2, [Are we building with zipfs enabled?])
+       INSTALL_LIBRARIES=install-libraries-zipfs-static
+       AC_MSG_RESULT([yes])
+     else
+       AC_DEFINE(ZIPFS_BUILD, 1, [Are we building with zipfs enabled?])\
+       INSTALL_LIBRARIES=install-libraries-zipfs-shared
+       AC_MSG_RESULT([yes])
+    fi
+else
+AC_MSG_RESULT([no])
+INSTALL_LIBRARIES=install-libraries
+INSTALL_MSGS=install-msgs
+fi
+AC_SUBST(ZIPFS_BUILD)
+AC_SUBST(TCL_ZIP_FILE)
+AC_SUBST(INSTALL_LIBRARIES)
+AC_SUBST(INSTALL_MSGS)
+
 
 #--------------------------------------------------------------------
 #	The statements below define the symbol TCL_PACKAGE_PATH, which
