@@ -1197,6 +1197,9 @@ Tcl_CreateInterp(void)
 #ifdef TCL_COMPILE_STATS
 	    ".compilestats"
 #endif
+#if defined(__cplusplus) && !defined(__OBJC__)
+	    ".cplusplus"
+#endif
 #ifndef NDEBUG
 	    ".debug"
 #endif
@@ -1224,6 +1227,12 @@ Tcl_CreateInterp(void)
 #endif
 #ifndef TCL_CFG_OPTIMIZED
 	    ".no-optimize"
+#endif
+#ifdef __OBJC__
+	    ".objective-c"
+#if defined(__cplusplus)
+	    "plusplus"
+#endif
 #endif
 #ifdef TCL_CFG_PROFILED
 	    ".profiled"
