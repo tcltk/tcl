@@ -5,10 +5,10 @@ dnl	to configure the system for the local environment.
 
 AC_INIT([tcl],[9.0])
 AC_PREREQ([2.69])
-AC_CONFIG_HEADERS([tclConfig.h:../unix/tclConfig.h.in])
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
+    AC_CONFIG_HEADERS([tclConfig.h:../unix/tclConfig.h.in])
     AC_CONFIG_COMMANDS_PRE([DEFS="-DHAVE_TCL_CONFIG_H  -imacros tclConfig.h"])
     AH_TOP([
     #ifndef _TCLCONFIG
