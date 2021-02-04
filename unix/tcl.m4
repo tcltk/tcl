@@ -960,7 +960,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     CFLAGS_DEBUG=-g
     AS_IF([test "$GCC" = yes], [
 	CFLAGS_OPTIMIZE=-O2
-	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith -finput-charset=UTF-8"
+	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith"
 	case "${CC}" in
 	    *++|*++-*)
 		;;
@@ -1838,36 +1838,44 @@ dnl # preprocessing tests use only CPPFLAGS.
         TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"])
     AC_SUBST(TCL_LIBS)
 
-	# See if the compiler supports casting to a union type.
-	# This is used to stop gcc from printing a compiler
-	# warning when initializing a union member.
+    # See if the compiler supports casting to a union type.
+    # This is used to stop gcc from printing a compiler
+    # warning when initializing a union member.
 
-	AC_CACHE_CHECK(for cast to union support,
-	    tcl_cv_cast_to_union,
-	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-		  union foo { int i; double d; };
-		  union foo f = (union foo) (int) 0;
-	    ]])],
-	    [tcl_cv_cast_to_union=yes],
-	    [tcl_cv_cast_to_union=no])
-	)
-	if test "$tcl_cv_cast_to_union" = "yes"; then
-	    AC_DEFINE(HAVE_CAST_TO_UNION, 1,
-		    [Defined when compiler supports casting to union type.])
-	fi
-	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
-	AC_CACHE_CHECK(for working -fno-lto,
-	    ac_cv_nolto,
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
-	    [ac_cv_nolto=yes],
-	    [ac_cv_nolto=no])
-	)
-	CFLAGS=$hold_cflags
-	if test "$ac_cv_nolto" = "yes" ; then
-	    CFLAGS_NOLTO="-fno-lto"
-	else
-	    CFLAGS_NOLTO=""
-	fi
+    AC_CACHE_CHECK(for cast to union support,
+	tcl_cv_cast_to_union,
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+		union foo { int i; double d; };
+		union foo f = (union foo) (int) 0;
+	]])],
+	[tcl_cv_cast_to_union=yes],
+	[tcl_cv_cast_to_union=no])
+    )
+    if test "$tcl_cv_cast_to_union" = "yes"; then
+	AC_DEFINE(HAVE_CAST_TO_UNION, 1,
+		[Defined when compiler supports casting to union type.])
+    fi
+    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
+    AC_CACHE_CHECK(for working -fno-lto,
+	ac_cv_nolto,
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+	[ac_cv_nolto=yes],
+	[ac_cv_nolto=no])
+    )
+    CFLAGS=$hold_cflags
+    if test "$ac_cv_nolto" = "yes" ; then
+	CFLAGS_NOLTO="-fno-lto"
+    else
+	CFLAGS_NOLTO=""
+    fi
+    AC_CACHE_CHECK([if the compiler understands -finput-charset],
+	tcl_cv_cc_input_charset, [
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -finput-charset=UTF-8"
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_cc_input_charset=yes],[tcl_cv_cc_input_charset=no])
+	CFLAGS=$hold_cflags])
+    if test $tcl_cv_cc_input_charset = yes; then
+	CFLAGS="$CFLAGS -finput-charset=UTF-8"
+    fi
 
     AC_CHECK_HEADER(stdbool.h, [AC_DEFINE(HAVE_STDBOOL_H, 1, [Do we have <stdbool.h>?])],)
 
