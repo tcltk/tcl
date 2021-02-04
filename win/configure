@@ -4301,6 +4301,39 @@ printf "%s\n" "$ac_cv_nolto" >&6; }
 	else
 	    CFLAGS_NOLTO=""
 	fi
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if the compiler understands -finput-charset" >&5
+printf %s "checking if the compiler understands -finput-charset... " >&6; }
+if test ${tcl_cv_cc_input_charset+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -finput-charset=UTF-8"
+	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv_cc_input_charset=yes
+else $as_nop
+  tcl_cv_cc_input_charset=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	    CFLAGS=$hold_cflags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_input_charset" >&5
+printf "%s\n" "$tcl_cv_cc_input_charset" >&6; }
+	if test $tcl_cv_cc_input_charset = yes; then
+	    extra_cflags="$extra_cflags -finput-charset=UTF-8"
+	fi
     fi
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking compiler flags" >&5
@@ -4364,7 +4397,7 @@ printf "%s\n" "using shared flags" >&6; }
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith -finput-charset=UTF-8"
+	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 
