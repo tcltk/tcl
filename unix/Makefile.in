@@ -814,10 +814,15 @@ tclLibObjs:
 # This targets actually build the objects needed for the lib in the above case
 objs: ${OBJS}
 
-${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
+${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${TCL_ZIP_FILE}
 	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} \
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCL_EXE}
+	@if test "${ZIPFS_BUILD}" = "2" ; then \
+	    cat ${TCL_ZIP_FILE} >> ${TCL_EXE}; \
+	    ${NATIVE_ZIP} -A ${TCL_EXE} \
+	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
+	fi
 
 # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
 ${NATIVE_TCLSH}:
