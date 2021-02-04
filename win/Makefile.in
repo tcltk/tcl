@@ -545,11 +545,16 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	  echo "${TCL_ZIP_FILE} successful created with $$zip" && \
 	  cd ..)
 
-$(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
+$(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) ${TCL_ZIP_FILE}
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
 	tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	$(COPY) tclsh.exe.manifest $(TCLSH).manifest
 	@VC_MANIFEST_EMBED_EXE@
+	@if test "${ZIPFS_BUILD}" = "2" ; then \
+		cat ${TCL_ZIP_FILE} >> ${TCLSH}; \
+		${NATIVE_ZIP} -A ${TCLSH} \
+		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
+	fi
 
 cat32.$(OBJEXT): cat.c
 	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
