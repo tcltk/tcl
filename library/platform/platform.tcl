@@ -29,8 +29,10 @@
 # are on "Windows NT" or "Windows XP" or whatever.
 #
 # Machine specific
+# % amd64  -> x86_64
 # % arm*   -> arm
 # % sun4*  -> sparc
+# % ia32*  -> ix86
 # % intel  -> ix86
 # % i*86*  -> ix86
 # % Power* -> powerpc
@@ -81,6 +83,7 @@ proc ::platform::generic {} {
 		set cpu ix86
 	    }
 	}
+	ppc -
 	"Power*" {
 	    set cpu powerpc
 	}
@@ -177,8 +180,9 @@ proc ::platform::identify {} {
 	macosx {
 	    set major [lindex [split $tcl_platform(osVersion) .] 0]
 	    if {$major > 19} {
-		incr major -20
-		append plat 11.$major
+		set minor [lindex [split $tcl_platform(osVersion) .] 1]
+		incr major -9
+		append plat $major.[expr {$minor - 1}]
 	    } else {
 		incr major -4
 		append plat 10.$major
@@ -405,7 +409,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.16
+package provide platform 1.0.17
 
 # ### ### ### ######### ######### #########
 ## Demo application

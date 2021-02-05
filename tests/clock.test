@@ -35470,7 +35470,7 @@ test clock-33.5 {clock clicks tests, millisecond timing test} {
     expr {
 	  ($end > $start) && (($end - $start) <= 60) ?
 	  "ok" :
-	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
+	  "test should have taken 0-60 ms, actually took [expr {$end - $start}]"}
 } {ok}
 test clock-33.5a {clock tests, millisecond timing test} {
     # This test can fail on a system that is so heavily loaded that
@@ -35486,7 +35486,7 @@ test clock-33.5a {clock tests, millisecond timing test} {
     expr {
 	  ($end > $start) && (($end - $start) <= 60) ?
 	  "ok" :
-	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
+	  "test should have taken 0-60 ms, actually took [expr {$end - $start}]"}
 } {ok}
 test clock-33.6 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks ? } msg] $msg
@@ -36930,10 +36930,10 @@ test clock-61.2 {overflow of a wide integer on output} {*}{
 }
 test clock-61.3 {near-miss overflow of a wide integer on output} {
     clock format 0x7fffffffffffffff -format %s -gmt true
-} [expr 0x7fffffffffffffff]
+} [expr {0x7fffffffffffffff}]
 test clock-61.4 {near-miss overflow of a wide integer on output} {
     clock format -0x8000000000000000 -format %s -gmt true
-} [expr -0x8000000000000000]
+} [expr {-0x8000000000000000}]
 
 test clock-62.1 {Bug 1902423} {*}{
     -setup {::tcl::clock::ClearCaches}
