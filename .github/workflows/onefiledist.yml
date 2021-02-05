@@ -21,13 +21,13 @@ jobs:
         working-directory: unix
       - name: Build
         run: |
-          make tclsh tclzipfile
+          make tclsh
           make shell SCRIPT="$VER_PATH $GITHUB_ENV"
           echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
         working-directory: unix
       - name: Package
         run: |
-          cat ../unix/tclsh $TCL_ZIP > tclsh${TCL_PATCHLEVEL}_unofficial
+          cp ../unix/tclsh tclsh${TCL_PATCHLEVEL}_unofficial
           chmod +x tclsh${TCL_PATCHLEVEL}_unofficial
           tar -cf tclsh${TCL_PATCHLEVEL}_unofficial.tar tclsh${TCL_PATCHLEVEL}_unofficial
         working-directory: 1dist
@@ -62,7 +62,7 @@ jobs:
         working-directory: unix
       - name: Build
         run: |
-          make tclsh tclzipfile
+          make tclsh
           make shell SCRIPT="$VER_PATH $GITHUB_ENV"
           echo "TCL_BIN=`pwd`/tclsh" >> $GITHUB_ENV
           echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
@@ -70,7 +70,7 @@ jobs:
       - name: Package
         run: |
           mkdir contents
-          cat $TCL_BIN $TCL_ZIP > contents/tclsh${TCL_PATCHLEVEL}_unofficial
+          cp $TCL_BIN contents/tclsh${TCL_PATCHLEVEL}_unofficial
           chmod +x contents/tclsh${TCL_PATCHLEVEL}_unofficial
           cat > contents/README.txt <<EOF
           This is a single-file executable developer preview of Tcl $TCL_PATCHLEVEL
@@ -116,20 +116,16 @@ jobs:
         working-directory: win
       - name: Build
         run: |
-          make binaries libraries tclzipfile
+          make binaries libraries
           echo "TCL_ZIP=`pwd`/`echo libtcl*.zip`" >> $GITHUB_ENV
         working-directory: win
-      - name: Package
-        run: |
-          cat ../win/tclsh*.exe $TCL_ZIP > combined.exe
-        working-directory: 1dist
       - name: Get Exact Version
         run: |
-          ./combined.exe $VER_PATH $GITHUB_ENV
-        working-directory: 1dist
+          ./tclsh*.exe $VER_PATH $GITHUB_ENV
+        working-directory: win
       - name: Set Executable Name
         run: |
-          mv combined.exe tclsh${TCL_PATCHLEVEL}_unofficial.exe
+          cp ../win/tclsh*.exe tclsh${TCL_PATCHLEVEL}_unofficial.exe
         working-directory: 1dist
       - name: Upload
         uses: actions/upload-artifact@v2
