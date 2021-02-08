@@ -991,9 +991,8 @@ cleanhelp:
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
 	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd tcltest.sh
-	$(RM) *.pch *.ilk *.pdb
+	$(RM) *.pch *.ilk *.pdb *.zip
 	$(RM) minizip${HOST_EXEEXT} *.${HOST_OBJEXT}
-	$(RM) *.zip
 	$(RMDIR) *.vfs
 
 distclean: distclean-packages clean
