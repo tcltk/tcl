@@ -886,7 +886,7 @@ if test "$tcl_ok" = "yes" -a "x$enable_framework" != "xyes"; then
     #
     SC_ZIPFS_SUPPORT
 	ZIPFS_BUILD=1
-	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
+	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}${TCL_PATCH_LEVEL}.zip
 else
 	ZIPFS_BUILD=0
 	TCL_ZIP_FILE=
