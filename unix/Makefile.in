@@ -28,6 +28,7 @@ bindir			= @bindir@
 libdir			= @libdir@
 includedir		= @includedir@
 datarootdir		= @datarootdir@
+runstatedir		= @runstatedir@
 mandir			= @mandir@
 
 # The following definition can be set to non-null for special systems like AFS
@@ -148,8 +149,8 @@ SHELL			= @MAKEFILE_SHELL@
 # around; better to use the install-sh script that comes with the
 # distribution, which is slower but guaranteed to work.
 
-INSTALL_STRIP_PROGRAM   = -s
-INSTALL_STRIP_LIBRARY   = -S -x
+INSTALL_STRIP_PROGRAM	= -s
+INSTALL_STRIP_LIBRARY	= -S -x
 
 INSTALL			= $(SHELL) $(UNIX_DIR)/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
@@ -176,7 +177,6 @@ SHLIB_LD_FLAGS		= @SHLIB_LD_FLAGS@
 TCL_SHLIB_LD_EXTRAS	= @TCL_SHLIB_LD_EXTRAS@
 
 SHLIB_SUFFIX		= @SHLIB_SUFFIX@
-#SHLIB_SUFFIX		=
 
 DLTEST_TARGETS		= dltest.marker
 
@@ -719,14 +719,12 @@ install-strip:
 
 install-binaries: binaries
 	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" \
-		"$(CONFIG_INSTALL_DIR)"; \
-	    do \
+		"$(CONFIG_INSTALL_DIR)" ; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
-		else true; \
-		fi; \
-	    done;
+	    fi; \
+	done
 	@echo "Installing $(LIB_FILE) to $(DLL_INSTALL_DIR)/"
 	@@INSTALL_LIB@
 	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
@@ -796,83 +794,75 @@ install-libraries: libraries $(INSTALL_TZDATA) install-msgs
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform/shell-1.1.4.tm;
 
-	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/";
-	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
-		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/encoding; \
-	done;
-	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ]; then \
+	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/"
+	@for i in $(TOP_DIR)/library/encoding/*.enc; do \
+		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/encoding"; \
+	done
+	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ] ; then \
 	    echo "Customizing tcl module path"; \
 	    echo "if {![interp issafe]} { ::tcl::tm::roots {$(TCL_MODULE_PATH)} }" >> \
-	        "$(SCRIPT_INSTALL_DIR)"/tm.tcl; \
+	        "$(SCRIPT_INSTALL_DIR)/tm.tcl"; \
 	fi
 
 install-tzdata:
-	@for i in tzdata; \
-	    do \
-	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
+	@for i in tzdata; do \
+	    if [ ! -d "$(SCRIPT_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
-		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
-		else true; \
-		fi; \
-	    done;
+		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)/$$i"; \
+	    fi; \
+	done
 	@echo "Installing time zone files to $(SCRIPT_INSTALL_DIR)/tzdata/"
-	@for i in $(TOP_DIR)/library/tzdata/* ; do \
+	@for i in $(TOP_DIR)/library/tzdata/*; do \
 	    if [ -d $$i ] ; then \
 		ii=`basename $$i`; \
-		if [ ! -d "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii ] ; then \
-		    $(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii; \
+		if [ ! -d "$(SCRIPT_INSTALL_DIR)/tzdata/$$ii" ] ; then \
+		    $(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)/tzdata/$$ii"; \
 		fi; \
-		for j in $$i/* ; do \
+		for j in $$i/*; do \
 		    if [ -d $$j ] ; then \
 			jj=`basename $$j`; \
-			if [ ! -d "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii/$$jj ] ; then \
-			    $(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii/$$jj; \
+			if [ ! -d "$(SCRIPT_INSTALL_DIR)/tzdata/$$ii/$$jj" ] ; then \
+			    $(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)/tzdata/$$ii/$$jj"; \
 			fi; \
-			for k in $$j/* ; do \
-			    $(INSTALL_DATA) $$k "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii/$$jj; \
+			for k in $$j/*; do \
+			    $(INSTALL_DATA) $$k "$(SCRIPT_INSTALL_DIR)/tzdata/$$ii/$$jj"; \
 			done; \
 		    else \
-			$(INSTALL_DATA) $$j "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii; \
+			$(INSTALL_DATA) $$j "$(SCRIPT_INSTALL_DIR)/tzdata/$$ii"; \
 		    fi; \
 		done; \
 	    else \
-		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/tzdata; \
+		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/tzdata"; \
 	    fi; \
-	done;
+	done
 
 install-msgs:
-	@for i in msgs; \
-	    do \
-	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
+	@for i in msgs; do \
+	    if [ ! -d "$(SCRIPT_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
-		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
-		else true; \
-		fi; \
-	    done;
+		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)/$$i"; \
+	    fi; \
+	done
 	@echo "Installing message catalog files to $(SCRIPT_INSTALL_DIR)/msgs/"
-	@for i in $(TOP_DIR)/library/msgs/*.msg ; do \
-		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/msgs; \
-	done;
+	@for i in $(TOP_DIR)/library/msgs/*.msg; do \
+	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/msgs"; \
+	done
 
 install-doc: doc
-	@for i in "$(MAN_INSTALL_DIR)" "$(MAN1_INSTALL_DIR)" "$(MAN3_INSTALL_DIR)" "$(MANN_INSTALL_DIR)" ; \
-	    do \
+	@for i in "$(MAN_INSTALL_DIR)" "$(MAN1_INSTALL_DIR)" "$(MAN3_INSTALL_DIR)" "$(MANN_INSTALL_DIR)"; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
-		else true; \
-		fi; \
-	    done;
-	@echo "Installing and cross-linking top-level (.1) docs to $(MAN1_INSTALL_DIR)/";
+	    fi; \
+	done
+	@echo "Installing and cross-linking top-level (.1) docs to $(MAN1_INSTALL_DIR)/"
 	@for i in $(TOP_DIR)/doc/*.1; do \
 	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MAN1_INSTALL_DIR)"; \
 	done
-
-	@echo "Installing and cross-linking C API (.3) docs to $(MAN3_INSTALL_DIR)/";
+	@echo "Installing and cross-linking C API (.3) docs to $(MAN3_INSTALL_DIR)/"
 	@for i in $(TOP_DIR)/doc/*.3; do \
 	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MAN3_INSTALL_DIR)"; \
 	done
-
 	@echo "Installing and cross-linking command (.n) docs to $(MANN_INSTALL_DIR)/";
 	@for i in $(TOP_DIR)/doc/*.n; do \
 	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MANN_INSTALL_DIR)"; \
@@ -886,18 +876,18 @@ install-private-headers: libraries
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
 		else true; \
-		fi; \
-	    done;
+	    fi; \
+	done
 	@echo "Installing private header files to $(PRIVATE_INCLUDE_INSTALL_DIR)/";
 	@for i in $(GENERIC_DIR)/tclInt.h $(GENERIC_DIR)/tclIntDecls.h \
 		$(GENERIC_DIR)/tclIntPlatDecls.h $(GENERIC_DIR)/tclPort.h \
 		$(UNIX_DIR)/tclUnixPort.h; \
 	    do \
 	    $(INSTALL_DATA) $$i "$(PRIVATE_INCLUDE_INSTALL_DIR)"; \
-	    done;
+	done
 	@if test -f tclConfig.h; then\
 	    $(INSTALL_DATA) tclConfig.h "$(PRIVATE_INCLUDE_INSTALL_DIR)"; \
-	    fi;
+	fi
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
@@ -905,8 +895,9 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 #	$(SHELL) config.status
 
 clean:
-	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
-		errors ${TCL_EXE} tcltest@EXEEXT@ lib.exp Tcl @DTRACE_HDR@
+	rm -rf *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
+		errors ${TCL_EXE} tcltest@EXEEXT@ lib.exp Tcl @DTRACE_HDR@ \
+		*.zip *.vfs
 	cd dltest ; $(MAKE) clean
 
 distclean: clean
