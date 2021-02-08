@@ -110,7 +110,6 @@ static Tcl_Config const cfg[] = {
     {"includedir,runtime",	CFG_RUNTIME_INCDIR},
     {"docdir,runtime",		CFG_RUNTIME_DOCDIR},
     {"dllfile,runtime",		CFG_RUNTIME_DLLFILE},
-    {"zipfile,runtime",		CFG_RUNTIME_ZIPFILE},
 
     /* Installation paths to various stuff */
 
