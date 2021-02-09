@@ -39,7 +39,7 @@ if {![string match ${ziproot}* $tcl_library]} {
     # Hack the environment to pretend we did pull tcl_library from a zip
     # archive
     ###
-    set tclzip [file join $CWD [::tcl::pkgconfig get dllfile,runtime]]
+    set tclzip [file join $CWD libtcl[info patchlevel].zip]
     testConstraint zipfslib [file isfile $tclzip]
     if {[testConstraint zipfslib]} {
         zipfs mount /lib/tcl $tclzip
