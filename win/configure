@@ -5150,7 +5150,6 @@ if test "${ZIPFS_BUILD}" = 1; then
 printf "%s\n" "#define ZIPFS_BUILD 2" >>confdefs.h
 
      else
-       ZIPFS_BUILD=1;
 
 printf "%s\n" "#define ZIPFS_BUILD 1" >>confdefs.h
 \

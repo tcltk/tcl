@@ -192,7 +192,6 @@ if test "${ZIPFS_BUILD}" = 1; then
        ZIPFS_BUILD=2;
        AC_DEFINE(ZIPFS_BUILD, 2, [Are we building with zipfs enabled?])
      else
-       ZIPFS_BUILD=1;
        AC_DEFINE(ZIPFS_BUILD, 1, [Are we building with zipfs enabled?])\
     fi
     AC_MSG_RESULT([yes])
