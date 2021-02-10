@@ -97,15 +97,24 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 		}
 		if {!$found} {
 		    set paths {}
-		    lappend paths [file join $root app]
-		    lappend paths [::${basename}::pkgconfig get libdir,runtime]
-		    lappend paths [::${basename}::pkgconfig get bindir,runtime]
-		    if {[catch {::${basename}::pkgconfig get zipfile,runtime} zipfile]} {
-			set zipfile "lib${basename}[join [split $patch .] _].zip"
+		    if {![catch {::${basename}::pkgconfig get libdir,runtime} dir]} {
+			lappend paths $dir
+		    } else {
+			catch {lappend paths [::tcl::pkgconfig get libdir,runtime]}
 		    }
-		    lappend paths [file dirname [file join [pwd] [info nameofexecutable]]]
+		    if {![catch {::${basename}::pkgconfig get bindir,runtime} dir]} {
+			lappend paths $dir
+		    } else {
+			catch {lappend paths [::tcl::pkgconfig get bindir,runtime]}
+		    }
+		    if {[catch {::${basename}::pkgconfig get dllfile,runtime} dllfile]} {
+			set dllfile "lib${basename}${version}[info sharedlibextension]"
+		    }
+		    set dir [file dirname [file join [pwd] [info nameofexecutable]]]
+		    lappend paths $dir
+		    lappend paths [file join [file dirname $dir] lib]
 		    foreach path $paths {
-			set archive [file join $path $zipfile]
+			set archive [file join $path $dllfile]
 			if {![file exists $archive]} {
 			    continue
 			}

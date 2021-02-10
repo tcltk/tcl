@@ -19,7 +19,7 @@ if {"::tcltest" ni [namespace children]} {
 
 test pkgconfig-1.1 {query keys} {
     lsort [::tcl::pkgconfig list]
-} {64bit bindir,install bindir,runtime compile_debug compile_stats debug dllfile,runtime docdir,install docdir,runtime includedir,install includedir,runtime libdir,install libdir,runtime mem_debug optimized profiled scriptdir,install scriptdir,runtime threaded zipfile,runtime}
+} {64bit bindir,install bindir,runtime compile_debug compile_stats debug dllfile,runtime docdir,install docdir,runtime includedir,install includedir,runtime libdir,install libdir,runtime mem_debug optimized profiled scriptdir,install scriptdir,runtime threaded}
 test pkgconfig-1.2 {query keys multiple times} {
     string compare [::tcl::pkgconfig list] [::tcl::pkgconfig list]
 } 0
