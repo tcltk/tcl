@@ -654,10 +654,6 @@ tclMainW.${OBJEXT}: tclMain.c
 # TIP #430, ZipFS Support
 tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl \
-	-DCFG_RUNTIME_PATH="\"$(bindir_native)\"" \
-	-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
-	-DCFG_RUNTIME_LIBDIR="\"$(bindir_native)\"" \
-	-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY_NATIVE)\"" \
 	$(ZLIB_INCLUDE) -I$(MINIZIP_DIR_NATIVE)  @DEPARG@ $(CC_OBJNAME)
 
 

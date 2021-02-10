@@ -38,8 +38,6 @@
 #include "zutil.h"
 #include "crc32.h"
 
-#ifdef CFG_RUNTIME_DLLFILE
-
 /*
 ** We are compiling as part of the core.
 ** TIP430 style zipfs prefix
@@ -49,22 +47,6 @@
 #define ZIPFS_VOLUME_LEN  9
 #define ZIPFS_APP_MOUNT	  "//zipfs:/app"
 #define ZIPFS_ZIP_MOUNT	  "//zipfs:/lib/tcl"
-
-#else /* !CFG_RUNTIME_DLLFILE */
-
-/*
-** We are compiling from the /compat folder of tclconfig
-** Pre TIP430 style zipfs prefix
-** //zipfs:/ doesn't work straight out of the box on either windows or Unix
-** without other changes made to tip 430
-*/
-
-#define ZIPFS_VOLUME	  "zipfs:/"
-#define ZIPFS_VOLUME_LEN  7
-#define ZIPFS_APP_MOUNT	  "zipfs:/app"
-#define ZIPFS_ZIP_MOUNT	  "zipfs:/lib/tcl"
-
-#endif /* CFG_RUNTIME_DLLFILE */
 
 /*
  * Various constants and offsets found in ZIP archive files
@@ -3149,6 +3131,7 @@ TclZipfs_TclLibrary(void)
      * that we must mount the zip file and dll before releasing to search.
      */
 
+#if !defined(STATIC_BUILD)
 #if defined(_WIN32)
     hModule = (HMODULE)TclWinGetTclInstance();
     GetModuleFileNameW(hModule, wName, MAX_PATH);
@@ -3157,12 +3140,21 @@ TclZipfs_TclLibrary(void)
     if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
-#elif /* !_WIN32 && */ defined(CFG_RUNTIME_DLLFILE)
+#else
+# if defined(CFG_RUNTIME_LIBDIR)
     if (ZipfsAppHookFindTclInit(
 	    CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
-#endif /* _WIN32 || CFG_RUNTIME_DLLFILE */
+# endif
+# if defined(CFG_RUNTIME_BINDIR)
+    if (ZipfsAppHookFindTclInit(
+	    CFG_RUNTIME_BINDIR "/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
+	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
+    }
+# endif
+#endif /* _WIN32 */
+#endif /* !defined(STATIC_BUILD) */
 
     /*
      * If anything set the cache (but subsequently failed) go with that
