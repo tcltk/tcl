@@ -3168,6 +3168,7 @@ TclZipfs_TclLibrary(void)
     }
 # endif
 #endif /* _WIN32 */
+#endif /* !defined(STATIC_BUILD) */
 
     /*
      * If anything set the cache (but subsequently failed) go with that
