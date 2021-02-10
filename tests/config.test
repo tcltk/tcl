@@ -19,7 +19,7 @@ if {"::tcltest" ni [namespace children]} {
 
 test pkgconfig-1.1 {query keys} -body {
     lsort [::tcl::pkgconfig list]
-} -match glob -result {*bindir,install bindir,runtime*dllfile,runtime docdir,install docdir,runtime includedir,install includedir,runtime libdir,install libdir,runtime*scriptdir,install scriptdir,runtime*zipfile,runtime}
+} -match glob -result {*bindir,install bindir,runtime*docdir,install docdir,runtime includedir,install includedir,runtime libdir,install libdir,runtime*scriptdir,install scriptdir,runtime*}
 test pkgconfig-1.2 {query keys multiple times} {
     string compare [::tcl::pkgconfig list] [::tcl::pkgconfig list]
 } 0

@@ -251,7 +251,6 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 #		TCL_BIN_DIR
 #		TCL_SRC_DIR
 #		TCL_LIB_FILE
-#		TCL_ZIP_FILE
 #
 #------------------------------------------------------------------------
 
@@ -288,7 +287,6 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
 
-    AC_SUBST(TCL_ZIP_FILE)
     AC_SUBST(TCL_LIB_FILE)
     AC_SUBST(TCL_LIB_FLAG)
     AC_SUBST(TCL_LIB_SPEC)
@@ -617,6 +615,14 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	else
 	    CFLAGS_NOLTO=""
 	fi
+	AC_CACHE_CHECK([if the compiler understands -finput-charset],
+	    tcl_cv_cc_input_charset, [
+	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -finput-charset=UTF-8"
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_cc_input_charset=yes],[tcl_cv_cc_input_charset=no])
+	    CFLAGS=$hold_cflags])
+	if test $tcl_cv_cc_input_charset = yes; then
+	    extra_cflags="$extra_cflags -finput-charset=UTF-8"
+	fi
     fi
 
     AC_MSG_CHECKING([compiler flags])
@@ -677,7 +683,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith -finput-charset=UTF-8"
+	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 

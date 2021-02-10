@@ -3179,24 +3179,6 @@ TclZipfs_TclLibrary(void)
 #endif /* _WIN32 || CFG_RUNTIME_DLLFILE */
 
     /*
-     * If we're configured to know about a ZIP archive we should use, do that.
-     */
-
-#ifdef CFG_RUNTIME_ZIPFILE
-    if (ZipfsAppHookFindTclInit(
-	    CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_ZIPFILE) == TCL_OK) {
-	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
-    }
-    if (ZipfsAppHookFindTclInit(
-	    CFG_RUNTIME_SCRDIR "/" CFG_RUNTIME_ZIPFILE) == TCL_OK) {
-	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
-    }
-    if (ZipfsAppHookFindTclInit(CFG_RUNTIME_ZIPFILE) == TCL_OK) {
-	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
-    }
-#endif /* CFG_RUNTIME_ZIPFILE */
-
-    /*
      * If anything set the cache (but subsequently failed) go with that
      * anyway.
      */
