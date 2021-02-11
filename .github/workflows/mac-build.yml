@@ -13,6 +13,9 @@ jobs:
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
+          wget https://github.com/culler/macher/releases/download/v1.0/macher
+          sudo cp macher /usr/local/bin
+          sudo chmod a+x /usr/local/bin/macher
         working-directory: generic
       - name: Build
         run: make all
@@ -40,6 +43,9 @@ jobs:
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
+          wget https://github.com/culler/macher/releases/download/v1.0/macher
+          sudo cp macher /usr/local/bin
+          sudo chmod a+x /usr/local/bin/macher
           mkdir "$HOME/install dir"
         working-directory: generic
       - name: Configure ${{ matrix.cfgopt }}

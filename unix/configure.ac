@@ -878,7 +878,7 @@ AC_ARG_ENABLE(zipfs,
     AS_HELP_STRING([--enable-zipfs],
 	[build with Zipfs support (default: on)]),
     [tcl_ok=$enableval], [tcl_ok=yes])
-if test "$tcl_ok" = "yes" -a "x$enable_framework" != "xyes"; then
+if test "$tcl_ok" = "yes"; then
     #
     # Find a native compiler
     #
@@ -887,11 +887,11 @@ if test "$tcl_ok" = "yes" -a "x$enable_framework" != "xyes"; then
     # Find a native zip implementation
     #
     SC_ZIPFS_SUPPORT
-	ZIPFS_BUILD=1
-	TCL_ZIP_FILE=libtcl${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}${TCL_PATCH_LEVEL}.zip
+    ZIPFS_BUILD=1
+    TCL_ZIP_FILE=libtcl${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}${TCL_PATCH_LEVEL}.zip
 else
-	ZIPFS_BUILD=0
-	TCL_ZIP_FILE=
+    ZIPFS_BUILD=0
+    TCL_ZIP_FILE=
 fi
 # Do checking message here to not mess up interleaved configure output
 AC_MSG_CHECKING([for building with zipfs])
