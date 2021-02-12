@@ -13,7 +13,7 @@ jobs:
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
-          wget https://github.com/culler/macher/releases/download/v1.1/macher
+          wget https://github.com/culler/macher/releases/download/v1.2/macher
           sudo cp macher /usr/local/bin
           sudo chmod a+x /usr/local/bin/macher
         working-directory: generic
@@ -43,7 +43,7 @@ jobs:
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
-          wget https://github.com/culler/macher/releases/download/v1.1/macher
+          wget https://github.com/culler/macher/releases/download/v1.2/macher
           sudo cp macher /usr/local/bin
           sudo chmod a+x /usr/local/bin/macher
           mkdir "$HOME/install dir"

@@ -795,7 +795,8 @@ ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS} ${TCL_ZIP_FILE}
 	@if test "${ZIPFS_BUILD}" = "1" ; then \
 	    if test "x$(MACHER)" = "x" ; then \
 	    cat ${TCL_ZIP_FILE} >> ${LIB_FILE}; \
-	    else $(MACHER) append ${TCL_ZIP_FILE} ${LIB_FILE}; \
+	    else $(MACHER) append ${LIB_FILE} ${TCL_ZIP_FILE} /tmp/macher_output; \
+	         mv /tmp/macher_output ${LIB_FILE}; \
 	    fi; \
 	    ${NATIVE_ZIP} -A ${LIB_FILE} \
 	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
@@ -825,7 +826,8 @@ ${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${TCL_ZIP_FILE}
 	@if test "${ZIPFS_BUILD}" = "2" ; then \
 	    if test "x$(MACHER)" = "x" ; then \
 	    cat ${TCL_ZIP_FILE} >> ${TCL_EXE}; \
-	    else $(MACHER) append ${TCL_ZIP_FILE} ${TCL_EXE}; \
+	    else $(MACHER) append ${TCL_EXE} ${TCL_ZIP_FILE} /tmp/macher_output; \
+	         mv /tmp/macher_output ${TCL_EXE}; \
 	    fi; \
 	    ${NATIVE_ZIP} -A ${TCL_EXE} \
 	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
