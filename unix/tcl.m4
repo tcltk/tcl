@@ -3011,18 +3011,40 @@ AC_DEFUN([AX_CC_FOR_BUILD],[# Put a plausible default for CC_FOR_BUILD in Makefi
 #
 # Results:
 #	Substitutes the following vars:
-#		ZIP_PROG
+#       MACHER_PROG
+#       ZIP_PROG
 #       ZIP_PROG_OPTIONS
 #       ZIP_PROG_VFSSEARCH
 #       ZIP_INSTALL_OBJS
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ZIPFS_SUPPORT], [
+    MACHER_PROG=""
     ZIP_PROG=""
     ZIP_PROG_OPTIONS=""
     ZIP_PROG_VFSSEARCH=""
     ZIP_INSTALL_OBJS=""
 
+    AC_MSG_CHECKING([for macher])
+    AC_CACHE_VAL(ac_cv_path_macher, [
+    search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+    for dir in $search_path ; do
+        for j in `ls -r $dir/macher 2> /dev/null` \
+            `ls -r $dir/macher 2> /dev/null` ; do
+        if test x"$ac_cv_path_macher" = x ; then
+            if test -f "$j" ; then
+            ac_cv_path_macher=$j
+            break
+            fi
+        fi
+        done
+    done
+    ])
+    if test -f "$ac_cv_path_macher" ; then
+        MACHER_PROG="$ac_cv_path_macher"
+        AC_MSG_RESULT([$MACHER_PROG])
+        AC_MSG_RESULT([Found macher in environment])
+    fi
     AC_MSG_CHECKING([for zip])
     AC_CACHE_VAL(ac_cv_path_zip, [
     search_path=`echo ${PATH} | sed -e 's/:/ /g'`
@@ -3054,6 +3076,7 @@ AC_DEFUN([SC_ZIPFS_SUPPORT], [
         ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
         AC_MSG_RESULT([No zip found on PATH. Building minizip])
     fi
+    AC_SUBST(MACHER_PROG)
     AC_SUBST(ZIP_PROG)
     AC_SUBST(ZIP_PROG_OPTIONS)
     AC_SUBST(ZIP_PROG_VFSSEARCH)

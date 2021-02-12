@@ -285,7 +285,9 @@ static const char *zipfs_literal_tcl_library = NULL;
 static inline int	DescribeMounted(Tcl_Interp *interp,
 			    const char *mountPoint);
 static inline int	ListMountPoints(Tcl_Interp *interp);
+#if !defined(STATIC_BUILD)
 static int		ZipfsAppHookFindTclInit(const char *archive);
+#endif
 static int		ZipFSPathInFilesystemProc(Tcl_Obj *pathPtr,
 			    void **clientDataPtr);
 static Tcl_Obj *	ZipFSFilesystemPathTypeProc(Tcl_Obj *pathPtr);
@@ -4721,6 +4723,7 @@ TclZipfs_Init(
 #endif /* HAVE_ZLIB */
 }
 
+#if !defined(STATIC_BUILD)
 static int
 ZipfsAppHookFindTclInit(
     const char *archive)
@@ -4757,6 +4760,7 @@ ZipfsAppHookFindTclInit(
 
     return TCL_ERROR;
 }
+#endif
 
 static void
 ZipfsExitHandler(
