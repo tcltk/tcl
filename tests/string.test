@@ -1645,6 +1645,33 @@ test string-21.13 {string wordend, unicode} {
 test string-21.14 {string wordend, unicode} {
     string wordend "\uC700\uC700 abc" 8
 } 6
+test string-21.17 {string trim, unicode} knownBug {
+    string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02
+} "Hello world!"
+test string-21.18 {string trimleft, unicode} {
+    string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02
+} "Hello world!\uD83D\uDE02"
+test string-21.19 {string trimright, unicode} knownBug {
+    string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02
+} "\uD83D\uDE02Hello world!"
+test string-21.20 {string trim, unicode} {
+    string trim "\uF602Hello world!\uF602" \uD83D\uDE02
+} "\uF602Hello world!\uF602"
+test string-21.21 {string trimleft, unicode} {
+    string trimleft "\uF602Hello world!\uF602" \uD83D\uDE02
+} "\uF602Hello world!\uF602"
+test string-21.22 {string trimright, unicode} {
+    string trimright "\uF602Hello world!\uF602" \uD83D\uDE02
+} "\uF602Hello world!\uF602"
+test string-21.23 {string trim, unicode} knownBug {
+    string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
+test string-21.24 {string trimleft, unicode} {
+    string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
+test string-21.25 {string trimright, unicode} knownBug {
+    string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
 
 test string-22.1 {string wordstart} {
     list [catch {string word a} msg] $msg
