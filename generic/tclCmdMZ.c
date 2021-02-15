@@ -4148,14 +4148,14 @@ Tcl_TimeRateObjCmd(
     Tcl_Obj *objPtr;
     int result, i;
     Tcl_Obj *calibrate = NULL, *direct = NULL;
-    TclWideMUInt count = 0;	/* Holds repetition count */
+    Tcl_WideUInt count = 0;	/* Holds repetition count */
     Tcl_WideInt maxms = WIDE_MIN;
 				/* Maximal running time (in milliseconds) */
-    TclWideMUInt maxcnt = WIDE_MAX;
+    Tcl_WideUInt maxcnt = WIDE_MAX;
 				/* Maximal count of iterations. */
-    TclWideMUInt threshold = 1;	/* Current threshold for check time (faster
+    Tcl_WideUInt threshold = 1;	/* Current threshold for check time (faster
 				 * repeat count without time check) */
-    TclWideMUInt maxIterTm = 1;	/* Max time of some iteration as max
+    Tcl_WideUInt maxIterTm = 1;	/* Max time of some iteration as max
 				 * threshold, additionally avoiding divide to
 				 * zero (i.e., never < 1) */
     unsigned short factor = 50;	/* Factor (4..50) limiting threshold to avoid
@@ -4529,13 +4529,13 @@ Tcl_TimeRateObjCmd(
 
     {
 	Tcl_Obj *objarr[8], **objs = objarr;
-	TclWideMUInt usec, val;
+	Tcl_WideUInt usec, val;
 	int digits;
 
 	/*
 	 * Absolute execution time in microseconds or in wide clicks.
 	 */
-	usec = (TclWideMUInt)(middle - start);
+	usec = (Tcl_WideUInt)(middle - start);
 
 #ifdef TCL_WIDE_CLICKS
 	/*
@@ -4565,7 +4565,7 @@ Tcl_TimeRateObjCmd(
 		 * Estimate the time of overhead (microsecs).
 		 */
 
-		TclWideMUInt curOverhead = overhead * count;
+		Tcl_WideUInt curOverhead = overhead * count;
 
 		if (usec > curOverhead) {
 		    usec -= curOverhead;

@@ -133,9 +133,9 @@ static int		FileSeekProc(void *instanceData, long offset,
 			    int mode, int *errorCode);
 #endif
 static int		FileTruncateProc(void *instanceData,
-			    Tcl_WideInt length);
-static Tcl_WideInt	FileWideSeekProc(void *instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCode);
+			    long long length);
+static long long	FileWideSeekProc(void *instanceData,
+			    long long offset, int mode, int *errorCode);
 static void		FileWatchProc(void *instanceData, int mask);
 #ifdef SUPPORTS_TTY
 static int		TtyCloseProc(void *instanceData,
@@ -456,7 +456,7 @@ FileSeekProc(
     int *errorCodePtr)		/* To store error code. */
 {
     FileState *fsPtr = (FileState *)instanceData;
-    Tcl_WideInt oldLoc, newLoc;
+    long long oldLoc, newLoc;
 
     /*
      * Save our current place in case we need to roll-back the seek.
@@ -509,16 +509,16 @@ FileSeekProc(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 FileWideSeekProc(
     void *instanceData,	/* File state. */
-    Tcl_WideInt offset,		/* Offset to seek to. */
+    long long offset,		/* Offset to seek to. */
     int mode,			/* Relative to where should we seek? Can be
 				 * one of SEEK_START, SEEK_CUR or SEEK_END. */
     int *errorCodePtr)		/* To store error code. */
 {
     FileState *fsPtr = (FileState *)instanceData;
-    Tcl_WideInt newLoc;
+    long long newLoc;
 
     newLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
 
@@ -2037,7 +2037,7 @@ Tcl_GetOpenFile(
 static int
 FileTruncateProc(
     void *instanceData,
-    Tcl_WideInt length)
+    long long length)
 {
     FileState *fsPtr = (FileState *)instanceData;
     int result;

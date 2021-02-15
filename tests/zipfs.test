@@ -20,11 +20,6 @@ testConstraint zipfs [expr {
 }]
 testConstraint zipfslib 1
 
-# Removed in tip430 - zipfs is no longer a static package
-#test zipfs-0.0 {zipfs basics} -constraints zipfs -body {
-#    load {} zipfs
-#} -result {}
-
 set ziproot [zipfs root]
 set CWD [pwd]
 set tmpdir  [file join $CWD tmp]
@@ -44,7 +39,7 @@ if {![string match ${ziproot}* $tcl_library]} {
     # Hack the environment to pretend we did pull tcl_library from a zip
     # archive
     ###
-    set tclzip [file join $CWD [::tcl::pkgconfig get zipfile,runtime]]
+    set tclzip [file join $CWD libtcl[info patchlevel].zip]
     testConstraint zipfslib [file isfile $tclzip]
     if {[testConstraint zipfslib]} {
         zipfs mount /lib/tcl $tclzip

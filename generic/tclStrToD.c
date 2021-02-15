@@ -22,6 +22,11 @@
 #define copysign _copysign
 #endif
 
+#ifndef PRIx64
+#   define PRIx64 TCL_LL_MODIFIER "x"
+#endif
+
+
 /*
  * This code supports (at least hypothetically), IBM, Cray, VAX and IEEE-754
  * floating point; of these, only IEEE-754 can represent NaN. IEEE-754 can be
@@ -538,7 +543,7 @@ TclParseNumber(
     int under = 0;              /* Flag trailing '_' as error if true once
 				 * number is accepted. */
 
-#define ALL_BITS	((Tcl_WideUInt)-1)
+#define ALL_BITS	UWIDE_MAX
 #define MOST_BITS	(ALL_BITS >> 1)
 
     /*
@@ -725,7 +730,7 @@ TclParseNumber(
 				&& (((size_t)shift >=
 					CHAR_BIT*sizeof(Tcl_WideUInt))
 				|| (octalSignificandWide >
-					((Tcl_WideUInt)-1 >> shift)))) {
+					(UWIDE_MAX >> shift)))) {
 			    octalSignificandOverflow = 1;
 			    err = mp_init_u64(&octalSignificandBig,
 				    octalSignificandWide);
@@ -865,7 +870,7 @@ TclParseNumber(
 
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
-			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
+			    significandWide > (UWIDE_MAX >> shift))) {
 			significandOverflow = 1;
 			err = mp_init_u64(&significandBig,
 				significandWide);
@@ -899,12 +904,14 @@ TclParseNumber(
 		under = 0;
 		state = BINARY;
 		break;
-            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
-                /* Ignore numeric "white space" */
-                under = 1;
-                break;
+	    } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+		/* Ignore numeric "white space" */
+		under = 1;
+		break;
 	    } else if (c != '1') {
 		goto endgame;
+	    } else {
+		under = 0;
 	    }
 	    if (objPtr != NULL) {
 		shift = numTrailZeros + 1;
@@ -917,7 +924,7 @@ TclParseNumber(
 
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
-			    significandWide > ((Tcl_WideUInt)-1 >> shift))) {
+			    significandWide > (UWIDE_MAX >> shift))) {
 			significandOverflow = 1;
 			err = mp_init_u64(&significandBig,
 				significandWide);
@@ -944,11 +951,11 @@ TclParseNumber(
 		under = 0;
 		numTrailZeros++;
 	    } else if ( ! isdigit(UCHAR(c))) {
-                if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
-                    /* Ignore numeric "white space" */
-                    under = 1;
-                    break;
-                }
+		if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+		    /* Ignore numeric "white space" */
+		    under = 1;
+		    break;
+		}
 		goto endgame;
 	    }
 	    under = 0;
@@ -1597,7 +1604,7 @@ AccumulateDecimalDigit(
 	    *wideRepPtr = digit;
 	    return 0;
 	} else if (numZeros >= maxpow10_wide
-		|| w > ((Tcl_WideUInt)-1-digit)/pow10_wide[numZeros+1]) {
+		|| w > (UWIDE_MAX-digit)/pow10_wide[numZeros+1]) {
 	    /*
 	     * Wide multiplication will overflow.  Expand the number to a
 	     * bignum and fall through into the bignum case.
@@ -5251,23 +5258,23 @@ TclFormatNaN(
 #else
     union {
 	double dv;
-	Tcl_WideUInt iv;
+	uint64_t iv;
     } bitwhack;
 
     bitwhack.dv = value;
     if (n770_fp) {
 	bitwhack.iv = Nokia770Twiddle(bitwhack.iv);
     }
-    if (bitwhack.iv & ((Tcl_WideUInt) 1 << 63)) {
-	bitwhack.iv &= ~ ((Tcl_WideUInt) 1 << 63);
+    if (bitwhack.iv & (UINT64_C(1) << 63)) {
+	bitwhack.iv &= ~ (UINT64_C(1) << 63);
 	*buffer++ = '-';
     }
     *buffer++ = 'N';
     *buffer++ = 'a';
     *buffer++ = 'N';
-    bitwhack.iv &= (((Tcl_WideUInt) 1) << 51) - 1;
+    bitwhack.iv &= ((UINT64_C(1)) << 51) - 1;
     if (bitwhack.iv != 0) {
-	sprintf(buffer, "(%" TCL_LL_MODIFIER "x)", bitwhack.iv);
+	sprintf(buffer, "(%" PRIx64 ")", bitwhack.iv);
     } else {
 	*buffer = '\0';
     }

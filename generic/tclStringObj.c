@@ -604,6 +604,7 @@ Tcl_GetUniChar(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetUnicodeFromObj
 #ifndef TCL_NO_DEPRECATED
 #undef Tcl_GetUnicode
 Tcl_UniChar *
@@ -611,14 +612,14 @@ Tcl_GetUnicode(
     Tcl_Obj *objPtr)		/* The object to find the unicode string
 				 * for. */
 {
-    return Tcl_GetUnicodeFromObj(objPtr, NULL);
+    return Tcl_GetUnicodeFromObj(objPtr, (int *)NULL);
 }
 #endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetUnicodeFromObj --
+ * Tcl_GetUnicodeFromObj/TclGetUnicodeFromObj --
  *
  *	Get the Unicode form of the String object with length. If the object
  *	is not already a String object, it will be converted to one. If the
@@ -654,6 +655,33 @@ Tcl_GetUnicodeFromObj(
 
     if (lengthPtr != NULL) {
 	*lengthPtr = stringPtr->numChars;
+    }
+    return stringPtr->unicode;
+}
+Tcl_UniChar *
+TclGetUnicodeFromObj(
+    Tcl_Obj *objPtr,		/* The object to find the unicode string
+				 * for. */
+    size_t *lengthPtr)		/* If non-NULL, the location where the string
+				 * rep's unichar length should be stored. If
+				 * NULL, no length is stored. */
+{
+    String *stringPtr;
+
+    SetStringFromAny(NULL, objPtr);
+    stringPtr = GET_STRING(objPtr);
+
+    if (stringPtr->hasUnicode == 0) {
+	FillUnicodeRep(objPtr);
+	stringPtr = GET_STRING(objPtr);
+    }
+
+    if (lengthPtr != NULL) {
+#if TCL_MAJOR_VERSION > 8
+	*lengthPtr = stringPtr->numChars;
+#else
+	*lengthPtr = ((size_t)(unsigned)(stringPtr->numChars + 1)) - 1;
+#endif
     }
     return stringPtr->unicode;
 }
@@ -1376,7 +1404,7 @@ Tcl_AppendObjToObj(
 	 */
 
 	TclAppendBytesToByteArray(objPtr,
-		Tcl_GetByteArrayFromObj(appendObjPtr, NULL), lengthSrc);
+		TclGetByteArrayFromObj(appendObjPtr, NULL), lengthSrc);
 	return;
     }
 
@@ -2916,7 +2944,7 @@ TclStringRepeat(
 	    done *= 2;
 	}
 	TclAppendBytesToByteArray(objResultPtr,
-		Tcl_GetByteArrayFromObj(objResultPtr, NULL),
+		TclGetByteArrayFromObj(objResultPtr, NULL),
 		(count - done) * length);
     } else if (unichar) {
 	/*
@@ -3789,7 +3817,7 @@ TclStringReverse(
 	if (!inPlace || Tcl_IsShared(objPtr)) {
 	    objPtr = Tcl_NewByteArrayObj(NULL, numBytes);
 	}
-	ReverseBytes(Tcl_GetByteArrayFromObj(objPtr, NULL), from, numBytes);
+	ReverseBytes(TclGetByteArrayFromObj(objPtr, NULL), from, numBytes);
 	return objPtr;
     }
 
