@@ -1656,6 +1656,9 @@ TclTrimRight(
     size_t pInc = 0, bytesLeft = numTrim;
 
 	pp = TclUtfPrev(p, bytes);
+#if TCL_UTF_MAX < 4
+	pp = TclUtfPrev(pp, bytes);
+#endif
 	do {
 	    pp += pInc;
  	    pInc = TclUtfToUCS4(pp, &ch1);
@@ -1719,7 +1722,7 @@ TclTrimLeft(
 			 * rely on (trim[numTrim] == '\0'). */
 {
     const char *p = bytes;
-	int ch1, ch2;
+    int ch1, ch2;
 
     /* Empty strings -> nothing to do */
     if ((numBytes == 0) || (numTrim == 0)) {

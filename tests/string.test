@@ -1897,13 +1897,13 @@ test string-21.15.$noComp {string wordend, unicode} -body {
 test string-21.16.$noComp {string wordend, unicode} -constraints fullutf -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
 } -result 6
-test string-21.17.$noComp {string trim, unicode} knownBug {
+test string-21.17.$noComp {string trim, unicode} {
     run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
 } "Hello world!"
 test string-21.18.$noComp {string trimleft, unicode} {
     run {string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
 } "Hello world!\uD83D\uDE02"
-test string-21.19.$noComp {string trimright, unicode} knownBug {
+test string-21.19.$noComp {string trimright, unicode} {
     run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
 } "\uD83D\uDE02Hello world!"
 test string-21.20.$noComp {string trim, unicode} {

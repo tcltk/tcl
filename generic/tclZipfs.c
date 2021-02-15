@@ -3099,7 +3099,7 @@ TclZipfs_TclLibrary(void)
 {
     Tcl_Obj *vfsInitScript;
     int found;
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(STATIC_BUILD)
     HMODULE hModule;
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
     char dllName[(MAX_PATH + LIBRARY_SIZE) * 3];
