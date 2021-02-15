@@ -1897,32 +1897,32 @@ test string-21.15.$noComp {string wordend, unicode} -body {
 test string-21.16.$noComp {string wordend, unicode} -constraints fullutf -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
 } -result 6
-test string-21.17 {string trim, unicode} knownBug {
-    string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02
+test string-21.17.$noComp {string trim, unicode} knownBug {
+    run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
 } "Hello world!"
-test string-21.18 {string trimleft, unicode} {
-    string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02
+test string-21.18.$noComp {string trimleft, unicode} {
+    run {string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
 } "Hello world!\uD83D\uDE02"
-test string-21.19 {string trimright, unicode} knownBug {
-    string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02
+test string-21.19.$noComp {string trimright, unicode} knownBug {
+    run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
 } "\uD83D\uDE02Hello world!"
-test string-21.20 {string trim, unicode} {
-    string trim "\uF602Hello world!\uF602" \uD83D\uDE02
+test string-21.20.$noComp {string trim, unicode} {
+    run {string trim "\uF602Hello world!\uF602" \uD83D\uDE02}
 } "\uF602Hello world!\uF602"
-test string-21.21 {string trimleft, unicode} {
-    string trimleft "\uF602Hello world!\uF602" \uD83D\uDE02
+test string-21.21.$noComp {string trimleft, unicode} {
+    run {string trimleft "\uF602Hello world!\uF602" \uD83D\uDE02}
 } "\uF602Hello world!\uF602"
-test string-21.22 {string trimright, unicode} {
-    string trimright "\uF602Hello world!\uF602" \uD83D\uDE02
+test string-21.22.$noComp {string trimright, unicode} {
+    run {string trimright "\uF602Hello world!\uF602" \uD83D\uDE02}
 } "\uF602Hello world!\uF602"
-test string-21.23 {string trim, unicode} {
-    string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02
+test string-21.23.$noComp {string trim, unicode} {
+    run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
 } "\uD83D\uDE02Hello world!\uD83D\uDE02"
-test string-21.24 {string trimleft, unicode} {
-    string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02
+test string-21.24.$noComp {string trimleft, unicode} {
+    run {string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
 } "\uD83D\uDE02Hello world!\uD83D\uDE02"
-test string-21.25 {string trimright, unicode} {
-    string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02
+test string-21.25.$noComp {string trimright, unicode} {
+    run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
 } "\uD83D\uDE02Hello world!\uD83D\uDE02"
 
 test string-22.1.$noComp {string wordstart} -body {
