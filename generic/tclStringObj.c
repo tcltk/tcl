@@ -3003,7 +3003,6 @@ TclStringReverse(
 	     * Pass 1. Reverse the bytes of each multi-byte character.
 	     */
 
-	    int charCount = 0;
 	    int bytesLeft = numBytes;
 	    int chw;
 
@@ -3021,11 +3020,9 @@ TclStringReverse(
 		to += bytesInChar;
 		from += bytesInChar;
 		bytesLeft -= bytesInChar;
-		charCount++;
 	    }
 
 	    from = to = objPtr->bytes;
-	    stringPtr->numChars = charCount;
 	}
 	/* Pass 2. Reverse all the bytes. */
 	ReverseBytes((unsigned char *)to, (unsigned char *)from, numBytes);
