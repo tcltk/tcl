@@ -180,7 +180,7 @@ if test "$tcl_ok" = "yes" ; then
     SC_PROG_TCLSH
     SC_ZIPFS_SUPPORT
 	ZIPFS_BUILD=1
-	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
+	TCL_ZIP_FILE=libtcl${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}${TCL_PATCH_LEVEL}.zip
 else
 	ZIPFS_BUILD=0
 	TCL_ZIP_FILE=
@@ -191,13 +191,10 @@ if test "${ZIPFS_BUILD}" = 1; then
     if test "${SHARED_BUILD}" = 0; then
        ZIPFS_BUILD=2;
        AC_DEFINE(ZIPFS_BUILD, 2, [Are we building with zipfs enabled?])
-       INSTALL_LIBRARIES=install-libraries-zipfs-static
-       AC_MSG_RESULT([yes])
      else
        AC_DEFINE(ZIPFS_BUILD, 1, [Are we building with zipfs enabled?])\
-       INSTALL_LIBRARIES=install-libraries-zipfs-shared
-       AC_MSG_RESULT([yes])
     fi
+    AC_MSG_RESULT([yes])
 else
 AC_MSG_RESULT([no])
 INSTALL_LIBRARIES=install-libraries
