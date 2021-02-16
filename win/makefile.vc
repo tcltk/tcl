@@ -576,18 +576,21 @@ $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win32\tommath.lib
 	$(COPY) $(TOMMATHDIR)\win32\tommath.lib $(OUT_DIR)\tommath.lib
 !endif
 
-$(TCLSCRIPTZIP): .PHONY
+$(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
 	@echo Building Tcl library zip file
 	@if exist "$(LIBTCLVFS)" $(RMDIR) "$(LIBTCLVFS)"
 	@$(MKDIR) "$(LIBTCLVFS)"
 	@$(CPYDIR) $(LIBDIR) "$(LIBTCLVFS)\tcl_library"
 	@move /y "$(LIBTCLVFS)\tcl_library\manifest.txt"  "$(LIBTCLVFS)\tcl_library\pkgIndex.tcl" > NUL
-!if ! $(STATIC_BUILD)
+!if $(STATIC_BUILD)
 # Remove the registry and dde directories as the DLLS are still external
 	@del "$(LIBTCLVFS)\tcl_library\registry\pkgIndex.tcl"
 	@rmdir "$(LIBTCLVFS)\tcl_library\registry"
 	@del "$(LIBTCLVFS)\tcl_library\dde\pkgIndex.tcl"
 	@rmdir "$(LIBTCLVFS)\tcl_library\dde"
+!else
+    @$(COPY) $(TCLDDELIB) "$(LIBTCLVFS)\tcl_library\dde
+    @$(COPY) $(TCLREGLIB) "$(LIBTCLVFS)\tcl_library\registry
 !endif
 	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
 	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
@@ -804,19 +807,8 @@ $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 $(TMP_DIR)\tclWinTest.obj: $(WIN_DIR)\tclWinTest.c
 	$(CCAPPCMD) $?
 
-# Following the lead of the autoconf based make, we define the
-# CFG_RUNTIME_DLLFILE flag specifically for tclZipfs and tclPkgConfig
-# and not as part of the global defines. Moreover, for tclZipfs,
-# we define only CFG_RUNTIME_DLLFILE to force use of //zipfs:
-# as the zip fs root. However it is defined as empty. See tclPkgConfig.obj
-# comments as to why.
-# We do not define other CFG_RUNTIME_ZIPFILE at all because
-# that causes the zipfs code to go looking at directories that existed
-# on the *build* system as opposed to the target runtime system. This
-# is the case even if the value is defined as an empty string.
 $(TMP_DIR)\tclZipfs.obj: $(GENERICDIR)\tclZipfs.c
 	$(cc32) $(pkgcflags) \
-	-DCFG_RUNTIME_DLLFILE="\"\"" \
 	-I$(COMPATDIR)\zlib -I$(COMPATDIR)\zlib\contrib\minizip \
 	-Fo$@ $?
 
@@ -824,7 +816,7 @@ $(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
 	$(cc32) $(pkgcflags) -I$(COMPATDIR)\zlib -Fo$@ $?
 
 # Following the lead of the autoconf based make, we define the
-# CFG_RUNTIME_DLLFILE and CFG_RUNTIME_ZIPFILE flags specifically for tclPkgConfig
+# CFG_RUNTIME_*DIR flags specifically for tclPkgConfig
 # and not as part of the global defines. These are all defined
 # as empty strings because they are intended to represent paths
 # at *runtime*, not build time. This may make sense on Unix systems
@@ -848,8 +840,7 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	/DCFG_RUNTIME_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
 	/DCFG_RUNTIME_INCDIR="\"$(INCLUDE_INSTALL_DIR:\=\\)\"" \
 	/DCFG_RUNTIME_DOCDIR="\"$(DOC_INSTALL_DIR:\=\\)\""     \
-	/DCFG_RUNTIME_DLLFILE="\"\""     \
-	/DCFG_RUNTIME_ZIPFILE="\"\""     \
+	/DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\""     \
 	-Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c

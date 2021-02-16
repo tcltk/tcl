@@ -1897,6 +1897,33 @@ test string-21.15.$noComp {string wordend, unicode} -body {
 test string-21.16.$noComp {string wordend, unicode} -constraints utf16 -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
 } -result 8
+test string-21.17.$noComp {string trim, unicode} {
+    run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
+} "Hello world!"
+test string-21.18.$noComp {string trimleft, unicode} {
+    run {string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
+} "Hello world!\uD83D\uDE02"
+test string-21.19.$noComp {string trimright, unicode} {
+    run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
+} "\uD83D\uDE02Hello world!"
+test string-21.20.$noComp {string trim, unicode} {
+    run {string trim "\uF602Hello world!\uF602" \uD83D\uDE02}
+} "\uF602Hello world!\uF602"
+test string-21.21.$noComp {string trimleft, unicode} {
+    run {string trimleft "\uF602Hello world!\uF602" \uD83D\uDE02}
+} "\uF602Hello world!\uF602"
+test string-21.22.$noComp {string trimright, unicode} {
+    run {string trimright "\uF602Hello world!\uF602" \uD83D\uDE02}
+} "\uF602Hello world!\uF602"
+test string-21.23.$noComp {string trim, unicode} {
+    run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
+test string-21.24.$noComp {string trimleft, unicode} {
+    run {string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
+test string-21.25.$noComp {string trimright, unicode} {
+    run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
 
 test string-22.1.$noComp {string wordstart} -body {
     list [catch {run {string word a}} msg] $msg
@@ -2059,6 +2086,24 @@ test string-24.15.$noComp {string reverse command - pure bytearray} {
     binary scan [run {tcl::string::reverse [binary format H* 010203]}] H* x
     set x
 } 030201
+test string-24.16.$noComp {string reverse command - surrogates} {
+    run {string reverse \u0444bulb\uD83D\uDE02}
+} \uD83D\uDE02blub\u0444
+test string-24.17.$noComp {string reverse command - surrogates} {
+    run {string reverse \uD83D\uDE02hello\uD83D\uDE02}
+} \uD83D\uDE02olleh\uD83D\uDE02
+test string-24.18.$noComp {string reverse command - surrogates} {
+    set s \u0444bulb\uD83D\uDE02
+    # shim shimmery ...
+    string index $s 0
+    run {string reverse $s}
+} \uD83D\uDE02blub\u0444
+test string-24.19.$noComp {string reverse command - surrogates} {
+    set s \uD83D\uDE02hello\uD83D\uDE02
+    # shim shimmery ...
+    string index $s 0
+    run {string reverse $s}
+} \uD83D\uDE02olleh\uD83D\uDE02
 
 test string-25.1.$noComp {string is list} {
     run {string is list {a b c}}

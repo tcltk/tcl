@@ -38,8 +38,6 @@
 #include "zutil.h"
 #include "crc32.h"
 
-#ifdef CFG_RUNTIME_DLLFILE
-
 /*
 ** We are compiling as part of the core.
 ** TIP430 style zipfs prefix
@@ -49,22 +47,6 @@
 #define ZIPFS_VOLUME_LEN  9
 #define ZIPFS_APP_MOUNT	  "//zipfs:/app"
 #define ZIPFS_ZIP_MOUNT	  "//zipfs:/lib/tcl"
-
-#else /* !CFG_RUNTIME_DLLFILE */
-
-/*
-** We are compiling from the /compat folder of tclconfig
-** Pre TIP430 style zipfs prefix
-** //zipfs:/ doesn't work straight out of the box on either windows or Unix
-** without other changes made to tip 430
-*/
-
-#define ZIPFS_VOLUME	  "zipfs:/"
-#define ZIPFS_VOLUME_LEN  7
-#define ZIPFS_APP_MOUNT	  "zipfs:/app"
-#define ZIPFS_ZIP_MOUNT	  "zipfs:/lib/tcl"
-
-#endif /* CFG_RUNTIME_DLLFILE */
 
 /*
  * Various constants and offsets found in ZIP archive files
@@ -303,7 +285,9 @@ static const char *zipfs_literal_tcl_library = NULL;
 static inline int	DescribeMounted(Tcl_Interp *interp,
 			    const char *mountPoint);
 static inline int	ListMountPoints(Tcl_Interp *interp);
+#if !defined(STATIC_BUILD)
 static int		ZipfsAppHookFindTclInit(const char *archive);
+#endif
 static int		ZipFSPathInFilesystemProc(Tcl_Obj *pathPtr,
 			    void **clientDataPtr);
 static Tcl_Obj *	ZipFSFilesystemPathTypeProc(Tcl_Obj *pathPtr);
@@ -3129,7 +3113,7 @@ TclZipfs_TclLibrary(void)
 {
     Tcl_Obj *vfsInitScript;
     int found;
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(STATIC_BUILD)
     HMODULE hModule;
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
     char dllName[(MAX_PATH + LIBRARY_SIZE) * 3];
@@ -3163,6 +3147,7 @@ TclZipfs_TclLibrary(void)
      * that we must mount the zip file and dll before releasing to search.
      */
 
+#if !defined(STATIC_BUILD)
 #if defined(_WIN32)
     hModule = TclWinGetTclInstance();
     GetModuleFileNameW(hModule, wName, MAX_PATH);
@@ -3171,30 +3156,21 @@ TclZipfs_TclLibrary(void)
     if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
-#elif /* !_WIN32 && */ defined(CFG_RUNTIME_DLLFILE)
+#else
+# if defined(CFG_RUNTIME_LIBDIR)
     if (ZipfsAppHookFindTclInit(
 	    CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
-#endif /* _WIN32 || CFG_RUNTIME_DLLFILE */
-
-    /*
-     * If we're configured to know about a ZIP archive we should use, do that.
-     */
-
-#ifdef CFG_RUNTIME_ZIPFILE
+# endif
+# if defined(CFG_RUNTIME_BINDIR)
     if (ZipfsAppHookFindTclInit(
-	    CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_ZIPFILE) == TCL_OK) {
+	    CFG_RUNTIME_BINDIR "/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
-    if (ZipfsAppHookFindTclInit(
-	    CFG_RUNTIME_SCRDIR "/" CFG_RUNTIME_ZIPFILE) == TCL_OK) {
-	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
-    }
-    if (ZipfsAppHookFindTclInit(CFG_RUNTIME_ZIPFILE) == TCL_OK) {
-	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
-    }
-#endif /* CFG_RUNTIME_ZIPFILE */
+# endif
+#endif /* _WIN32 */
+#endif /* !defined(STATIC_BUILD) */
 
     /*
      * If anything set the cache (but subsequently failed) go with that
@@ -4781,6 +4757,7 @@ TclZipfs_Init(
 #endif /* HAVE_ZLIB */
 }
 
+#if !defined(STATIC_BUILD)
 static int
 ZipfsAppHookFindTclInit(
     const char *archive)
@@ -4817,6 +4794,7 @@ ZipfsAppHookFindTclInit(
 
     return TCL_ERROR;
 }
+#endif
 
 static void
 ZipfsExitHandler(
