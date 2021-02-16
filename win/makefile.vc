@@ -1,7 +1,6 @@
 #------------------------------------------------------------- -*- makefile -*-
-# makefile.vc --
 #
-#	Microsoft Visual C++ makefile for use with nmake.exe v1.62+ (VC++ 5.0+)
+#	Microsoft Visual C++ makefile for building Tcl with nmake
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.

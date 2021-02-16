@@ -171,7 +171,7 @@ TCL_EXE			= tclsh
 # Setting the VPATH variable to a list of paths will cause the Makefile to
 # look into these paths when resolving .c to .obj dependencies.
 
-VPATH = $(GENERIC_DIR):$(TOMMATH_DIR):$(WIN_DIR):$(COMPAT_DIR)
+VPATH = $(GENERIC_DIR):$(WIN_DIR):$(COMPAT_DIR):$(TOMMATH_DIR)
 
 AR		= @AR@
 RANLIB		= @RANLIB@
@@ -751,7 +751,8 @@ cleanhelp:
 clean: cleanhelp
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
 	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) tcltest.cmd tcltest.sh
-	$(RM) *.pch *.ilk *.pdb
+	$(RM) *.pch *.ilk *.pdb *.zip
+	$(RMDIR) *.vfs
 
 distclean: clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
