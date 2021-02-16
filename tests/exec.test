@@ -113,7 +113,7 @@ set path(sh2) [makeFile {
     exit
 } sh2]
 set path(sleep) [makeFile {
-    after [expr $argv*1000]
+    after [expr {$argv*1000}]
     exit
 } sleep]
 set path(exit) [makeFile {

@@ -53,7 +53,11 @@
 #define MP_FREE(mem, size)                TclBNFree(mem)
 
 #ifndef MODULE_SCOPE
-#   define MODULE_SCOPE extern
+#   ifdef __cplusplus
+#	define MODULE_SCOPE extern "C"
+#   else
+#	define MODULE_SCOPE extern
+#   endif
 #endif
 
 #ifdef __cplusplus

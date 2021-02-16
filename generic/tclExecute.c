@@ -8184,10 +8184,17 @@ ExecuteExtendedBinaryMathOp(
 		 * Arguments are opposite sign; remainder is sum.
 		 */
 
-		if ((sizeof(Tcl_WideInt) > sizeof(int64_t)) && ((w1 > INT64_MAX)
+		if ((sizeof(Tcl_WideInt) > INT64_MAX) && ((w1 > INT64_MAX)
 			|| (w1 < INT64_MIN))) {
-		    err = mp_init(&big1) != MP_OKAY || mp_unpack(&big1, 1, 1,
-			    sizeof(Tcl_WideInt), 0, 0, &w1);
+		    Tcl_WideUInt uw1 = (Tcl_WideUInt)w1;
+		    if (w1 < 0) {uw1 = -uw1;}
+		    err = mp_init(&big1);
+		    if (err == MP_OKAY) {
+			err = mp_unpack(&big1, 1, 1, sizeof(Tcl_WideInt), 0, 0, &w1);
+		    }
+		    if ((err == MP_OKAY) && (w1 < 0)) {
+			err = mp_neg(&big1, &big1);
+		    }
 		} else {
 		    err = mp_init_i64(&big1, w1);
 		}
@@ -8859,8 +8866,15 @@ ExecuteExtendedUnaryMathOp(
 	    }
 	    if ((sizeof(Tcl_WideInt) > sizeof(int64_t)) && ((w > INT64_MAX)
 		    || (w < INT64_MIN))) {
-		err = mp_init(&big) != MP_OKAY || mp_unpack(&big, 1, 1,
-			sizeof(Tcl_WideInt), 0, 0, &w);
+		Tcl_WideUInt uw = (Tcl_WideUInt)w;
+		if (w < 0) {uw = -uw;}
+		err = mp_init(&big);
+		if (err == MP_OKAY) {
+		    err = mp_unpack(&big, 1, 1, sizeof(Tcl_WideInt), 0, 0, &uw);
+		}
+		if ((err == MP_OKAY) && (w < 0)) {
+		    err = mp_neg(&big, &big);
+		}
 	    } else {
 		err = mp_init_i64(&big, w);
 	    }
@@ -10003,7 +10017,7 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i >= 0;  i--) {
+    for (i = 31;  i != (size_t)-1;  i--) {
 	if (statsPtr->srcCount[i] > 0) {
 	    maxSizeDecade = i;
 	    break;
@@ -10026,7 +10040,7 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i >= 0;  i--) {
+    for (i = 31;  i != (size_t)-1;  i--) {
 	if (statsPtr->byteCodeCount[i] > 0) {
 	    maxSizeDecade = i;
 	    break;
@@ -10049,7 +10063,7 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i >= 0;  i--) {
+    for (i = 31;  i != (size_t)-1;  i--) {
 	if (statsPtr->lifetimeCount[i] > 0) {
 	    maxSizeDecade = i;
 	    break;

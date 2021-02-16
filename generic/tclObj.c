@@ -1617,6 +1617,7 @@ TclSetDuplicateObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetString
 char *
 Tcl_GetString(
     Tcl_Obj *objPtr)	/* Object whose string rep byte pointer should
@@ -3656,8 +3657,13 @@ GetBignumFromObj(
 	if (objPtr->typePtr == &tclIntType) {
 		if ((sizeof(Tcl_WideInt) > sizeof(int64_t)) && ((objPtr->internalRep.wideValue > INT64_MAX)
 			|| (objPtr->internalRep.wideValue < INT64_MIN))) {
+			Tcl_WideUInt uw = (Tcl_WideUInt)objPtr->internalRep.wideValue;
+			if (objPtr->internalRep.wideValue < 0) {uw = -uw;}
 		    if (mp_init(bignumValue) != MP_OKAY || mp_unpack(bignumValue, 1, 1,
-			    sizeof(Tcl_WideInt), 0, 0, &objPtr->internalRep.wideValue) != MP_OKAY) {
+			    sizeof(Tcl_WideInt), 0, 0, &uw) != MP_OKAY) {
+			return TCL_ERROR;
+		    }
+		    if ((objPtr->internalRep.wideValue < 0) && (mp_neg(bignumValue, bignumValue) != MP_OKAY)) {
 			return TCL_ERROR;
 		    }
 		} else if (mp_init_i64(bignumValue,

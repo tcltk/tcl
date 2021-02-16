@@ -7907,8 +7907,12 @@ ExprAbsFunc(
 	    goto unChanged;
 	} else if (l == WIDE_MIN) {
 	    if (sizeof(Tcl_WideInt) > sizeof(int64_t)) {
+		Tcl_WideUInt ul = -(Tcl_WideUInt)WIDE_MIN;
 		if (mp_init(&big) != MP_OKAY || mp_unpack(&big, 1, 1,
-			sizeof(Tcl_WideInt), 0, 0, &l) != MP_OKAY) {
+			sizeof(Tcl_WideInt), 0, 0, &ul) != MP_OKAY) {
+		    return TCL_ERROR;
+		}
+		if (mp_neg(&big, &big) != MP_OKAY) {
 		    return TCL_ERROR;
 		}
 	    } else if (mp_init_i64(&big, l) != MP_OKAY) {

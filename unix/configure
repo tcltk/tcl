@@ -698,6 +698,7 @@ ZIP_INSTALL_OBJS
 ZIP_PROG_VFSSEARCH
 ZIP_PROG_OPTIONS
 ZIP_PROG
+MACHER_PROG
 EXEEXT_FOR_BUILD
 CC_FOR_BUILD
 DTRACE
@@ -719,6 +720,7 @@ LD_SEARCH_FLAGS
 CC_SEARCH_FLAGS
 LDFLAGS_OPTIMIZE
 LDFLAGS_DEBUG
+CFLAGS_NOLTO
 CFLAGS_WARNING
 CFLAGS_OPTIMIZE
 CFLAGS_DEBUG
@@ -809,8 +811,8 @@ enable_langinfo
 enable_dll_unloading
 with_tzdata
 enable_dtrace
-enable_zipfs
 enable_framework
+enable_zipfs
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1458,9 +1460,9 @@ Optional Features:
                           startup, otherwise use old heuristic (default: on)
   --enable-dll-unloading  enable the 'unload' command (default: on)
   --enable-dtrace         build with DTrace support (default: off)
-  --enable-zipfs          build with Zipfs support (default: on)
   --enable-framework      package shared libraries in MacOSX frameworks
                           (default: off)
+  --enable-zipfs          build with Zipfs support (default: on)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5580,7 +5582,7 @@ fi
 then :
 
 	CFLAGS_OPTIMIZE=-O2
-	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith -finput-charset=UTF-8"
+	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith"
 	case "${CC}" in
 	    *++|*++-*)
 		;;
@@ -7292,11 +7294,11 @@ then :
 fi
 
 
-	# See if the compiler supports casting to a union type.
-	# This is used to stop gcc from printing a compiler
-	# warning when initializing a union member.
+    # See if the compiler supports casting to a union type.
+    # This is used to stop gcc from printing a compiler
+    # warning when initializing a union member.
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for cast to union support" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for cast to union support" >&5
 printf %s "checking for cast to union support... " >&6; }
 if test ${tcl_cv_cast_to_union+y}
 then :
@@ -7309,8 +7311,8 @@ int
 main (void)
 {
 
-		  union foo { int i; double d; };
-		  union foo f = (union foo) (int) 0;
+		union foo { int i; double d; };
+		union foo f = (union foo) (int) 0;
 
   ;
   return 0;
@@ -7327,11 +7329,79 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cast_to_union" >&5
 printf "%s\n" "$tcl_cv_cast_to_union" >&6; }
-	if test "$tcl_cv_cast_to_union" = "yes"; then
+    if test "$tcl_cv_cast_to_union" = "yes"; then
 
 printf "%s\n" "#define HAVE_CAST_TO_UNION 1" >>confdefs.h
 
-	fi
+    fi
+    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for working -fno-lto" >&5
+printf %s "checking for working -fno-lto... " >&6; }
+if test ${ac_cv_nolto+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_nolto=yes
+else $as_nop
+  ac_cv_nolto=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_nolto" >&5
+printf "%s\n" "$ac_cv_nolto" >&6; }
+    CFLAGS=$hold_cflags
+    if test "$ac_cv_nolto" = "yes" ; then
+	CFLAGS_NOLTO="-fno-lto"
+    else
+	CFLAGS_NOLTO=""
+    fi
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if the compiler understands -finput-charset" >&5
+printf %s "checking if the compiler understands -finput-charset... " >&6; }
+if test ${tcl_cv_cc_input_charset+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -finput-charset=UTF-8"
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv_cc_input_charset=yes
+else $as_nop
+  tcl_cv_cc_input_charset=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	CFLAGS=$hold_cflags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_input_charset" >&5
+printf "%s\n" "$tcl_cv_cc_input_charset" >&6; }
+    if test $tcl_cv_cc_input_charset = yes; then
+	CFLAGS="$CFLAGS -finput-charset=UTF-8"
+    fi
 
     ac_fn_c_check_header_compile "$LINENO" "stdbool.h" "ac_cv_header_stdbool_h" "$ac_includes_default"
 if test "x$ac_cv_header_stdbool_h" = xyes
@@ -7345,6 +7415,7 @@ fi
     # FIXME: This subst was left in only because the TCL_DL_LIBS
     # entry in tclConfig.sh uses it. It is not clear why someone
     # would use TCL_DL_LIBS instead of TCL_LIBS.
+
 
 
 
@@ -10769,175 +10840,6 @@ fi
 printf "%s\n" "$tcl_ok" >&6; }
 
 #--------------------------------------------------------------------
-#	Zipfs support - Tip 430
-#--------------------------------------------------------------------
-# Check whether --enable-zipfs was given.
-if test ${enable_zipfs+y}
-then :
-  enableval=$enable_zipfs; tcl_ok=$enableval
-else $as_nop
-  tcl_ok=yes
-fi
-
-if test "$tcl_ok" = "yes" ; then
-    #
-    # Find a native compiler
-    #
-    # Put a plausible default for CC_FOR_BUILD in Makefile.
-    if test -z "$CC_FOR_BUILD"; then
-      if test "x$cross_compiling" = "xno"; then
-        CC_FOR_BUILD='$(CC)'
-      else
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gcc" >&5
-printf %s "checking for gcc... " >&6; }
-        if test ${ac_cv_path_cc+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-            search_path=`echo ${PATH} | sed -e 's/:/ /g'`
-            for dir in $search_path ; do
-                for j in `ls -r $dir/gcc 2> /dev/null` \
-                        `ls -r $dir/gcc 2> /dev/null` ; do
-                    if test x"$ac_cv_path_cc" = x ; then
-                        if test -f "$j" ; then
-                            ac_cv_path_cc=$j
-                            break
-                        fi
-                    fi
-                done
-            done
-
-fi
-
-      fi
-    fi
-
-    # Also set EXEEXT_FOR_BUILD.
-    if test "x$cross_compiling" = "xno"; then
-      EXEEXT_FOR_BUILD='$(EXEEXT)'
-      OBJEXT_FOR_BUILD='$(OBJEXT)'
-    else
-      OBJEXT_FOR_BUILD='.no'
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for build system executable suffix" >&5
-printf %s "checking for build system executable suffix... " >&6; }
-if test ${bfd_cv_build_exeext+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  rm -f conftest*
-         echo 'int main () { return 0; }' > conftest.c
-         bfd_cv_build_exeext=
-         ${CC_FOR_BUILD} -o conftest conftest.c 1>&5 2>&5
-         for file in conftest.*; do
-           case $file in
-           *.c | *.o | *.obj | *.ilk | *.pdb) ;;
-           *) bfd_cv_build_exeext=`echo $file | sed -e s/conftest//` ;;
-           esac
-         done
-         rm -f conftest*
-         test x"${bfd_cv_build_exeext}" = x && bfd_cv_build_exeext=no
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $bfd_cv_build_exeext" >&5
-printf "%s\n" "$bfd_cv_build_exeext" >&6; }
-      EXEEXT_FOR_BUILD=""
-      test x"${bfd_cv_build_exeext}" != xno && EXEEXT_FOR_BUILD=${bfd_cv_build_exeext}
-    fi
-
-    #
-    # Find a native zip implementation
-    #
-
-    ZIP_PROG=""
-    ZIP_PROG_OPTIONS=""
-    ZIP_PROG_VFSSEARCH=""
-    ZIP_INSTALL_OBJS=""
-
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zip" >&5
-printf %s "checking for zip... " >&6; }
-    if test ${ac_cv_path_zip+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-    search_path=`echo ${PATH} | sed -e 's/:/ /g'`
-    for dir in $search_path ; do
-        for j in `ls -r $dir/zip 2> /dev/null` \
-            `ls -r $dir/zip 2> /dev/null` ; do
-        if test x"$ac_cv_path_zip" = x ; then
-            if test -f "$j" ; then
-            ac_cv_path_zip=$j
-            break
-            fi
-        fi
-        done
-    done
-
-fi
-
-    if test -f "$ac_cv_path_zip" ; then
-        ZIP_PROG="$ac_cv_path_zip"
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
-printf "%s\n" "$ZIP_PROG" >&6; }
-        ZIP_PROG_OPTIONS="-rq"
-        ZIP_PROG_VFSSEARCH="*"
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found INFO Zip in environment" >&5
-printf "%s\n" "Found INFO Zip in environment" >&6; }
-        # Use standard arguments for zip
-    else
-        # It is not an error if an installed version of Zip can't be located.
-        # We can use the locally distributed minizip instead
-        ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
-        ZIP_PROG_OPTIONS="-o -r"
-        ZIP_PROG_VFSSEARCH="*"
-        ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH. Building minizip" >&5
-printf "%s\n" "No zip found on PATH. Building minizip" >&6; }
-    fi
-
-
-
-
-
-	ZIPFS_BUILD=1
-	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
-else
-	ZIPFS_BUILD=0
-	TCL_ZIP_FILE=
-fi
-# Do checking message here to not mess up interleaved configure output
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for building with zipfs" >&5
-printf %s "checking for building with zipfs... " >&6; }
-if test "${ZIPFS_BUILD}" = 1; then
-    if test "${SHARED_BUILD}" = 0; then
-       ZIPFS_BUILD=2;
-
-printf "%s\n" "#define ZIPFS_BUILD 2" >>confdefs.h
-
-       INSTALL_LIBRARIES=install-libraries-zipfs-static
-       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-     else
-
-printf "%s\n" "#define ZIPFS_BUILD 1" >>confdefs.h
-\
-       INSTALL_LIBRARIES=install-libraries-zipfs-shared
-       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-    fi
-else
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-INSTALL_LIBRARIES=install-libraries
-INSTALL_MSGS=install-msgs
-fi
-
-
-
-
-
-
-#--------------------------------------------------------------------
 # The check below checks whether the cpuid instruction is usable.
 #--------------------------------------------------------------------
 
@@ -11115,6 +11017,202 @@ VERSION='${VERSION}'
 eval "CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}"
 eval "CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
 VERSION=${TCL_VERSION}
+
+#--------------------------------------------------------------------
+#	Zipfs support - Tip 430
+#--------------------------------------------------------------------
+# Check whether --enable-zipfs was given.
+if test ${enable_zipfs+y}
+then :
+  enableval=$enable_zipfs; tcl_ok=$enableval
+else $as_nop
+  tcl_ok=yes
+fi
+
+if test "$tcl_ok" = "yes" -a "x$enable_framework" != "xyes"; then
+    #
+    # Find a native compiler
+    #
+    # Put a plausible default for CC_FOR_BUILD in Makefile.
+    if test -z "$CC_FOR_BUILD"; then
+      if test "x$cross_compiling" = "xno"; then
+        CC_FOR_BUILD='$(CC)'
+      else
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gcc" >&5
+printf %s "checking for gcc... " >&6; }
+        if test ${ac_cv_path_cc+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+            search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+            for dir in $search_path ; do
+                for j in `ls -r $dir/gcc 2> /dev/null` \
+                        `ls -r $dir/gcc 2> /dev/null` ; do
+                    if test x"$ac_cv_path_cc" = x ; then
+                        if test -f "$j" ; then
+                            ac_cv_path_cc=$j
+                            break
+                        fi
+                    fi
+                done
+            done
+
+fi
+
+      fi
+    fi
+
+    # Also set EXEEXT_FOR_BUILD.
+    if test "x$cross_compiling" = "xno"; then
+      EXEEXT_FOR_BUILD='$(EXEEXT)'
+      OBJEXT_FOR_BUILD='$(OBJEXT)'
+    else
+      OBJEXT_FOR_BUILD='.no'
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for build system executable suffix" >&5
+printf %s "checking for build system executable suffix... " >&6; }
+if test ${bfd_cv_build_exeext+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  rm -f conftest*
+         echo 'int main () { return 0; }' > conftest.c
+         bfd_cv_build_exeext=
+         ${CC_FOR_BUILD} -o conftest conftest.c 1>&5 2>&5
+         for file in conftest.*; do
+           case $file in
+           *.c | *.o | *.obj | *.ilk | *.pdb) ;;
+           *) bfd_cv_build_exeext=`echo $file | sed -e s/conftest//` ;;
+           esac
+         done
+         rm -f conftest*
+         test x"${bfd_cv_build_exeext}" = x && bfd_cv_build_exeext=no
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $bfd_cv_build_exeext" >&5
+printf "%s\n" "$bfd_cv_build_exeext" >&6; }
+      EXEEXT_FOR_BUILD=""
+      test x"${bfd_cv_build_exeext}" != xno && EXEEXT_FOR_BUILD=${bfd_cv_build_exeext}
+    fi
+
+    #
+    # Find a native zip implementation
+    #
+
+    MACHER_PROG=""
+    ZIP_PROG=""
+    ZIP_PROG_OPTIONS=""
+    ZIP_PROG_VFSSEARCH=""
+    ZIP_INSTALL_OBJS=""
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for macher" >&5
+printf %s "checking for macher... " >&6; }
+    if test ${ac_cv_path_macher+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+    search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+    for dir in $search_path ; do
+        for j in `ls -r $dir/macher 2> /dev/null` \
+            `ls -r $dir/macher 2> /dev/null` ; do
+        if test x"$ac_cv_path_macher" = x ; then
+            if test -f "$j" ; then
+            ac_cv_path_macher=$j
+            break
+            fi
+        fi
+        done
+    done
+
+fi
+
+    if test -f "$ac_cv_path_macher" ; then
+        MACHER_PROG="$ac_cv_path_macher"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $MACHER_PROG" >&5
+printf "%s\n" "$MACHER_PROG" >&6; }
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found macher in environment" >&5
+printf "%s\n" "Found macher in environment" >&6; }
+    fi
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zip" >&5
+printf %s "checking for zip... " >&6; }
+    if test ${ac_cv_path_zip+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+    search_path=`echo ${PATH} | sed -e 's/:/ /g'`
+    for dir in $search_path ; do
+        for j in `ls -r $dir/zip 2> /dev/null` \
+            `ls -r $dir/zip 2> /dev/null` ; do
+        if test x"$ac_cv_path_zip" = x ; then
+            if test -f "$j" ; then
+            ac_cv_path_zip=$j
+            break
+            fi
+        fi
+        done
+    done
+
+fi
+
+    if test -f "$ac_cv_path_zip" ; then
+        ZIP_PROG="$ac_cv_path_zip"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ZIP_PROG" >&5
+printf "%s\n" "$ZIP_PROG" >&6; }
+        ZIP_PROG_OPTIONS="-rq"
+        ZIP_PROG_VFSSEARCH="*"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found INFO Zip in environment" >&5
+printf "%s\n" "Found INFO Zip in environment" >&6; }
+        # Use standard arguments for zip
+    else
+        # It is not an error if an installed version of Zip can't be located.
+        # We can use the locally distributed minizip instead
+        ZIP_PROG="./minizip${EXEEXT_FOR_BUILD}"
+        ZIP_PROG_OPTIONS="-o -r"
+        ZIP_PROG_VFSSEARCH="*"
+        ZIP_INSTALL_OBJS="minizip${EXEEXT_FOR_BUILD}"
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: No zip found on PATH. Building minizip" >&5
+printf "%s\n" "No zip found on PATH. Building minizip" >&6; }
+    fi
+
+
+
+
+
+
+    ZIPFS_BUILD=1
+    TCL_ZIP_FILE=libtcl${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}${TCL_PATCH_LEVEL}.zip
+else
+    ZIPFS_BUILD=0
+    TCL_ZIP_FILE=
+fi
+# Do checking message here to not mess up interleaved configure output
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for building with zipfs" >&5
+printf %s "checking for building with zipfs... " >&6; }
+if test "${ZIPFS_BUILD}" = 1; then
+    if test "${SHARED_BUILD}" = 0; then
+       ZIPFS_BUILD=2;
+
+printf "%s\n" "#define ZIPFS_BUILD 2" >>confdefs.h
+
+     else
+
+printf "%s\n" "#define ZIPFS_BUILD 1" >>confdefs.h
+\
+    fi
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+INSTALL_LIBRARIES=install-libraries
+INSTALL_MSGS=install-msgs
+fi
+
+
+
+
+
 
 #--------------------------------------------------------------------
 #	The statements below define the symbol TCL_PACKAGE_PATH, which

@@ -744,6 +744,7 @@ TOMMATH_LIBS
 ZLIB_LIBS
 TOMMATH_DLL_FILE
 ZLIB_DLL_FILE
+CFLAGS_NOLTO
 CFLAGS_WARNING
 CFLAGS_OPTIMIZE
 CFLAGS_DEBUG
@@ -4288,6 +4289,73 @@ printf "%s\n" "$ac_cv_municode" >&6; }
 	else
 	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
 	fi
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for working -fno-lto" >&5
+printf %s "checking for working -fno-lto... " >&6; }
+if test ${ac_cv_nolto+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_nolto=yes
+else $as_nop
+  ac_cv_nolto=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_nolto" >&5
+printf "%s\n" "$ac_cv_nolto" >&6; }
+	CFLAGS=$hold_cflags
+	if test "$ac_cv_nolto" = "yes" ; then
+	    CFLAGS_NOLTO="-fno-lto"
+	else
+	    CFLAGS_NOLTO=""
+	fi
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if the compiler understands -finput-charset" >&5
+printf %s "checking if the compiler understands -finput-charset... " >&6; }
+if test ${tcl_cv_cc_input_charset+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -finput-charset=UTF-8"
+	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv_cc_input_charset=yes
+else $as_nop
+  tcl_cv_cc_input_charset=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+	    CFLAGS=$hold_cflags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_input_charset" >&5
+printf "%s\n" "$tcl_cv_cc_input_charset" >&6; }
+	if test $tcl_cv_cc_input_charset = yes; then
+	    extra_cflags="$extra_cflags -finput-charset=UTF-8"
+	fi
     fi
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking compiler flags" >&5
@@ -4351,7 +4419,7 @@ printf "%s\n" "using shared flags" >&6; }
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith -finput-charset=UTF-8"
+	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 
@@ -4792,6 +4860,7 @@ printf "%s\n" "#define HAVE_CAST_TO_UNION 1" >>confdefs.h
 
 
 
+
 # Cross-compiling
 case ${host_alias} in
 *mingw32*)
@@ -5066,7 +5135,7 @@ printf "%s\n" "No zip found on PATH building minizip" >&6; }
 
 
 	ZIPFS_BUILD=1
-	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
+	TCL_ZIP_FILE=libtcl${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}${TCL_PATCH_LEVEL}.zip
 else
 	ZIPFS_BUILD=0
 	TCL_ZIP_FILE=
@@ -5080,17 +5149,13 @@ if test "${ZIPFS_BUILD}" = 1; then
 
 printf "%s\n" "#define ZIPFS_BUILD 2" >>confdefs.h
 
-       INSTALL_LIBRARIES=install-libraries-zipfs-static
-       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
      else
 
 printf "%s\n" "#define ZIPFS_BUILD 1" >>confdefs.h
 \
-       INSTALL_LIBRARIES=install-libraries-zipfs-shared
-       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
     fi
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
 else
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }

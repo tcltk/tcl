@@ -902,12 +902,14 @@ TclParseNumber(
 		under = 0;
 		state = BINARY;
 		break;
-            } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
-                /* Ignore numeric "white space" */
-                under = 1;
-                break;
+	    } else if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+		/* Ignore numeric "white space" */
+		under = 1;
+		break;
 	    } else if (c != '1') {
 		goto endgame;
+	    } else {
+		under = 0;
 	    }
 	    if (objPtr != NULL) {
 		shift = numTrailZeros + 1;
@@ -947,11 +949,11 @@ TclParseNumber(
 		under = 0;
 		numTrailZeros++;
 	    } else if ( ! isdigit(UCHAR(c))) {
-                if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
-                    /* Ignore numeric "white space" */
-                    under = 1;
-                    break;
-                }
+		if (c == '_' && !(flags & TCL_PARSE_NO_UNDERSCORE)) {
+		    /* Ignore numeric "white space" */
+		    under = 1;
+		    break;
+		}
 		goto endgame;
 	    }
 	    under = 0;
