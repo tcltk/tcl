@@ -885,11 +885,11 @@ if test "$tcl_ok" = "yes" -a "x$enable_framework" != "xyes"; then
     # Find a native zip implementation
     #
     SC_ZIPFS_SUPPORT
-	ZIPFS_BUILD=1
-	TCL_ZIP_FILE=libtcl_${TCL_MAJOR_VERSION}_${TCL_MINOR_VERSION}_${TCL_PATCH_LEVEL}.zip
+    ZIPFS_BUILD=1
+    TCL_ZIP_FILE=libtcl${TCL_MAJOR_VERSION}.${TCL_MINOR_VERSION}${TCL_PATCH_LEVEL}.zip
 else
-	ZIPFS_BUILD=0
-	TCL_ZIP_FILE=
+    ZIPFS_BUILD=0
+    TCL_ZIP_FILE=
 fi
 # Do checking message here to not mess up interleaved configure output
 AC_MSG_CHECKING([for building with zipfs])
@@ -897,13 +897,10 @@ if test "${ZIPFS_BUILD}" = 1; then
     if test "${SHARED_BUILD}" = 0; then
        ZIPFS_BUILD=2;
        AC_DEFINE(ZIPFS_BUILD, 2, [Are we building with zipfs enabled?])
-       INSTALL_LIBRARIES=install-libraries-zipfs-static
-       AC_MSG_RESULT([yes])
      else
        AC_DEFINE(ZIPFS_BUILD, 1, [Are we building with zipfs enabled?])\
-       INSTALL_LIBRARIES=install-libraries-zipfs-shared
-       AC_MSG_RESULT([yes])
     fi
+    AC_MSG_RESULT([yes])
 else
 AC_MSG_RESULT([no])
 INSTALL_LIBRARIES=install-libraries
