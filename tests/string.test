@@ -2086,19 +2086,19 @@ test string-24.15.$noComp {string reverse command - pure bytearray} {
     binary scan [run {tcl::string::reverse [binary format H* 010203]}] H* x
     set x
 } 030201
-test string-24.16.$noComp {string reverse command - surrogates} knownBug {
+test string-24.16.$noComp {string reverse command - surrogates} {
     run {string reverse \u0444bulb\uD83D\uDE02}
 } \uD83D\uDE02blub\u0444
-test string-24.17.$noComp {string reverse command - surrogates} knownBug {
+test string-24.17.$noComp {string reverse command - surrogates} {
     run {string reverse \uD83D\uDE02hello\uD83D\uDE02}
 } \uD83D\uDE02olleh\uD83D\uDE02
-test string-24.18.$noComp {string reverse command - surrogates} knownBug {
+test string-24.18.$noComp {string reverse command - surrogates} {
     set s \u0444bulb\uD83D\uDE02
     # shim shimmery ...
     string index $s 0
     run {string reverse $s}
 } \uD83D\uDE02blub\u0444
-test string-24.19.$noComp {string reverse command - surrogates} knownBug {
+test string-24.19.$noComp {string reverse command - surrogates} {
     set s \uD83D\uDE02hello\uD83D\uDE02
     # shim shimmery ...
     string index $s 0
