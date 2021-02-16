@@ -55,7 +55,7 @@ jobs:
         run: |
           mkdir 1dist
           touch generic/tclStubInit.c generic/tclOOStubInit.c || true
-          wget https://github.com/culler/macher/releases/download/v1.2/macher
+          wget https://github.com/culler/macher/releases/download/v1.3/macher
           sudo cp macher /usr/local/bin
           sudo chmod a+x /usr/local/bin/macher
           echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
