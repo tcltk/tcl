@@ -1708,7 +1708,8 @@ TclTrimRight(
 	int pInc = 0, bytesLeft = numTrim;
 
 	pp = TclUtfPrev(p, bytes);
-#if TCL_UTF_MAX < 4
+#if TCL_UTF_MAX < 4 /* Needed because TclUtfPrev() cannot always jump back */
+	/* sufficiently. See [d43f96c1a8] */
 	pp = TclUtfPrev(pp, bytes);
 #endif
 	do {
@@ -1721,14 +1722,14 @@ TclTrimRight(
 	 */
 
 	do {
-	    int qInc = TclUtfToUCS4(q, &ch2);
+	    pInc = TclUtfToUCS4(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
 	    }
 
-	    q += qInc;
-	    bytesLeft -= qInc;
+	    q += pInc;
+	    bytesLeft -= pInc;
 	} while (bytesLeft);
 
 	if (bytesLeft == 0) {
