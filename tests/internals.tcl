@@ -21,7 +21,7 @@ namespace path ::tcltest
 # Options:
 #	-addmem - set additional memory limit (in bytes) as difference (extra memory needed to run a test)
 #	-maxmem - set absolute maximum address space limit (in bytes)
-# 
+#
 proc testWithLimit args {
     set body [lindex $args end]
     array set in [lrange $args 0 end-1]
@@ -45,7 +45,7 @@ proc testWithLimit args {
 		    incr in(-addmem) 20000000
 		    # + size of locale-archive (may be up to 100MB):
 		    incr in(-addmem) [expr {
-			[file exists /usr/lib/locale/locale-archive] ? 
+			[file exists /usr/lib/locale/locale-archive] ?
 			[file size /usr/lib/locale/locale-archive] : 0
 		    }]
 		}
