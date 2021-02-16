@@ -888,7 +888,7 @@ Tcl_UtfPrev(
 
 	/* Continue the search backwards... */
 	look--;
-    } while (trailBytesSeen < 3);
+    } while (trailBytesSeen < (TCL_UTF_MAX < 4 ? 3 : 4));
 
     /*
      * We've seen 3 trail bytes, so we know there will not be a
