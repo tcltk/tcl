@@ -1718,14 +1718,14 @@ TclTrimRight(
 	 */
 
 	do {
-	    int qInc = TclUtfToUCS4(q, &ch2);
+	    pInc = TclUtfToUCS4(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
 	    }
 
-	    q += qInc;
-	    bytesLeft -= qInc;
+	    q += pInc;
+	    bytesLeft -= pInc;
 	} while (bytesLeft);
 
 	if (bytesLeft == 0) {
@@ -1771,7 +1771,7 @@ TclTrimLeft(
 			 * rely on (trim[numTrim] == '\0'). */
 {
     const char *p = bytes;
-	int ch1, ch2;
+    int ch1, ch2;
 
     /* Empty strings -> nothing to do */
     if ((numBytes == 0) || (numTrim == 0)) {
