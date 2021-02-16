@@ -251,7 +251,6 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 #		TCL_BIN_DIR
 #		TCL_SRC_DIR
 #		TCL_LIB_FILE
-#		TCL_ZIP_FILE
 #
 #------------------------------------------------------------------------
 
@@ -288,7 +287,6 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
 
-    AC_SUBST(TCL_ZIP_FILE)
     AC_SUBST(TCL_LIB_FILE)
     AC_SUBST(TCL_LIB_FLAG)
     AC_SUBST(TCL_LIB_SPEC)
