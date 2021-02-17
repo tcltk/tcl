@@ -781,9 +781,12 @@ test utf-7.18.2 {Tcl_UtfPrev} {testutfprev testbytestring} {
 test utf-7.19 {Tcl_UtfPrev} {testutfprev testbytestring} {
     testutfprev A[testbytestring \xF8\xA0\xA0\xA0]
 } 4
-test utf-7.20 {Tcl_UtfPrev} {testutfprev testbytestring} {
+test utf-7.20.0 {Tcl_UtfPrev} {testutfprev testbytestring ucs2} {
     testutfprev A[testbytestring \xF2\xA0\xA0\xA0]
 } 4
+test utf-7.20.1 {Tcl_UtfPrev} {testutfprev testbytestring fullutf} {
+    testutfprev A[testbytestring \xF2\xA0\xA0\xA0]
+} 1
 test utf-7.21 {Tcl_UtfPrev} {testutfprev testbytestring} {
     testutfprev A\u8820[testbytestring \xA0]
 } 4
@@ -844,9 +847,12 @@ test utf-7.37 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring} {
 test utf-7.38 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring} {
     testutfprev A[testbytestring \xE0\xA0\x80] 2
 } 1
-test utf-7.39 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring} {
+test utf-7.39.0 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring ucs2} {
     testutfprev A[testbytestring \xF0\x90\x80\x80]
 } 4
+test utf-7.39.1 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring fullutf} {
+    testutfprev A[testbytestring \xF0\x90\x80\x80]
+} 1
 test utf-7.40.0 {Tcl_UtfPrev -- overlong sequence}  {testutfprev testbytestring ucs2} {
     testutfprev A[testbytestring \xF0\x90\x80\x80] 4
 } 3
@@ -883,22 +889,25 @@ test utf-7.47.1 {Tcl_UtfPrev, pointing to 3th byte of 3-byte valid sequence} tes
 test utf-7.47.2 {Tcl_UtfPrev, pointing to 3th byte of 3-byte invalid sequence} {testutfprev testbytestring} {
     testutfprev [testbytestring \xE8\xA0\x00] 2
 } 0
-test utf-7.48.0 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring} {
+test utf-7.48.0 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring ucs2} {
     testutfprev A[testbytestring \xF4\x8F\xBF\xBF]
 } 4
-test utf-7.48.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring ucs2} {
+test utf-7.48.1 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring fullutf} {
+    testutfprev A[testbytestring \xF4\x8F\xBF\xBF]
+} 1
+test utf-7.48.2 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring ucs2} {
     testutfprev A[testbytestring \xF4\x8F\xBF\xBF] 4
 } 3
-test utf-7.48.2 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring fullutf} {
+test utf-7.48.3 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring fullutf} {
     testutfprev A[testbytestring \xF4\x8F\xBF\xBF] 4
 } 1
-test utf-7.48.3 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring ucs2} {
+test utf-7.48.4 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring ucs2} {
     testutfprev A[testbytestring \xF4\x8F\xBF\xBF] 3
 } 2
-test utf-7.48.4 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring fullutf} {
+test utf-7.48.5 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring fullutf} {
     testutfprev A[testbytestring \xF4\x8F\xBF\xBF] 3
 } 1
-test utf-7.48.5 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring} {
+test utf-7.48.6 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring} {
     testutfprev A[testbytestring \xF4\x8F\xBF\xBF] 2
 } 1
 test utf-7.49.0 {Tcl_UtfPrev, validity check [493dccc2de]} {testutfprev testbytestring} {
@@ -1281,7 +1290,25 @@ test utf-19.1 {TclUniCharLen} -body {
 test utf-20.1 {TclUniCharNcmp} ucs4 {
     string compare [string range [format %c 0xFFFF] 0 0] [string range [format %c 0x10000] 0 0]
 } -1
-test utf-20.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} knownBug {
+test utf-20.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} ucs2 {
+    set one [format %c 0xFFFF]
+    set two [format %c 0x10000]
+    set first [string compare $one $two]
+    string range $one 0 0
+    string range $two 0 0
+    set second [string compare $one $two]
+    expr {($first == $second) ? "agree" : "disagree"}
+} agree
+test utf-20.2.1 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} {utf16 knownBug} {
+    set one [format %c 0xFFFF]
+    set two [format %c 0x10000]
+    set first [string compare $one $two]
+    string range $one 0 0
+    string range $two 0 0
+    set second [string compare $one $two]
+    expr {($first == $second) ? "agree" : "disagree"}
+} agree
+test utf-20.2.2 {[4c591fa487] TclUniCharNcmp/TclUtfNcmp} ucs4 {
     set one [format %c 0xFFFF]
     set two [format %c 0x10000]
     set first [string compare $one $two]

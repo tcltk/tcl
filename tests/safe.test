@@ -174,6 +174,8 @@ test safe-4.6 {safe::interpDelete, indirectly} -setup {
 # A replacement test using example files is "safe-9.8".
 # Tests 5.* test the example files before using them to test safe interpreters.
 
+unset -nocomplain path
+
 test safe-5.1 {example tclIndex commands, test in parent interpreter} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $TestsDir auto0 auto1] [file join $TestsDir auto0 auto2]
@@ -1659,6 +1661,7 @@ test safe-16.8 {Bug 3529949: defang ~user in paths used by AliasGlob (2)} -setup
 # cleanup
 set ::auto_path $SaveAutoPath
 unset SaveAutoPath TestsDir PathMapp
+unset -nocomplain path
 rename mapList {}
 rename mapAndSortList {}
 ::tcltest::cleanupTests

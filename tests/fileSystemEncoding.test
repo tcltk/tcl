@@ -42,7 +42,7 @@ namespace eval ::tcl::test::fileSystemEncoding {
 	set globbed [lindex [glob -directory $dir *] 0]
 	encoding system utf-8
 	set res [file exists $globbed]
-	encoding system iso8859-1 
+	encoding system iso8859-1
 	lappend res [file exists $globbed]
 	return $res
     } -cleanup {

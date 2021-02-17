@@ -36,6 +36,7 @@ typedef struct TCLEXCEPTION_REGISTRATION {
  */
 typedef struct TclWinProcs {
     BOOL (WINAPI *cancelSynchronousIo)(HANDLE);
+    BOOLEAN (WINAPI *createSymbolicLink)(LPCWSTR, LPCWSTR, DWORD);
 } TclWinProcs;
 
 MODULE_SCOPE TclWinProcs tclWinProcs;

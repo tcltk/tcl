@@ -252,7 +252,7 @@ ValidateMemory(
     if (guard_failed) {
 	TclDumpMemoryInfo((ClientData) stderr, 0);
 	fprintf(stderr, "low guard failed at %lx, %s %d\n",
-		(long unsigned) memHeaderP->body, file, line);
+		(unsigned long)(size_t)memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
 	fprintf(stderr, "%ld bytes allocated at (%s %d)\n", memHeaderP->length,
 		memHeaderP->file, memHeaderP->line);
@@ -274,7 +274,7 @@ ValidateMemory(
     if (guard_failed) {
 	TclDumpMemoryInfo((ClientData) stderr, 0);
 	fprintf(stderr, "high guard failed at %lx, %s %d\n",
-		(long unsigned) memHeaderP->body, file, line);
+		(unsigned long)(size_t)memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
 	fprintf(stderr, "%ld bytes allocated at (%s %d)\n",
 		memHeaderP->length, memHeaderP->file,
@@ -360,8 +360,8 @@ Tcl_DumpActiveMemory(
     for (memScanP = allocHead; memScanP != NULL; memScanP = memScanP->flink) {
 	address = &memScanP->body[0];
 	fprintf(fileP, "%8lx - %8lx  %7ld @ %s %d %s",
-		(long unsigned) address,
-		(long unsigned) address + memScanP->length - 1,
+		(unsigned long)(size_t)address,
+		(unsigned long)(size_t)address + memScanP->length - 1,
 		memScanP->length, memScanP->file, memScanP->line,
 		(memScanP->tagPtr == NULL) ? "" : memScanP->tagPtr->string);
 	(void) fputc('\n', fileP);
@@ -459,7 +459,7 @@ Tcl_DbCkalloc(
 
     if (alloc_tracing) {
 	fprintf(stderr,"ckalloc %lx %u %s %d\n",
-		(long unsigned int) result->body, size, file, line);
+		(unsigned long)(size_t)result->body, size, file, line);
     }
 
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
@@ -548,7 +548,7 @@ Tcl_AttemptDbCkalloc(
 
     if (alloc_tracing) {
 	fprintf(stderr,"ckalloc %lx %u %s %d\n",
-		(long unsigned int) result->body, size, file, line);
+		(unsigned long)(size_t)result->body, size, file, line);
     }
 
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
@@ -613,7 +613,7 @@ Tcl_DbCkfree(
 
     if (alloc_tracing) {
 	fprintf(stderr, "ckfree %lx %ld %s %d\n",
-		(long unsigned int) memp->body, memp->length, file, line);
+		(unsigned long)(size_t)memp->body, memp->length, file, line);
     }
 
     if (validate_memory) {

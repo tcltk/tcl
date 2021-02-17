@@ -420,7 +420,7 @@ Tcl_SetByteArrayLength(
 
     byteArrayPtr = GET_BYTEARRAY(objPtr);
     if (length > byteArrayPtr->allocated) {
-	byteArrayPtr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(length));
+	byteArrayPtr = (ByteArray *)ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(length));
 	byteArrayPtr->allocated = length;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
     }
@@ -669,7 +669,7 @@ TclAppendBytesToByteArray(
 	     */
 
 	    attempt = 2 * needed;
-	    ptr = attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    ptr = (ByteArray *)attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	if (ptr == NULL) {
 	    /*
@@ -681,7 +681,7 @@ TclAppendBytesToByteArray(
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
 	    attempt = needed + growth;
-	    ptr = attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    ptr = (ByteArray *)attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	if (ptr == NULL) {
 	    /*
@@ -689,7 +689,7 @@ TclAppendBytesToByteArray(
 	     */
 
 	    attempt = needed;
-	    ptr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    ptr = (ByteArray *)ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	byteArrayPtr = ptr;
 	byteArrayPtr->allocated = attempt;
@@ -1806,8 +1806,8 @@ CopyNumber(
 	memcpy(to, from, length);
 	break;
     case 1: {
-	const unsigned char *fromPtr = from;
-	unsigned char *toPtr = to;
+	const unsigned char *fromPtr = (const unsigned char *)from;
+	unsigned char *toPtr = (unsigned char *)to;
 
 	switch (length) {
 	case 4:
@@ -1830,8 +1830,8 @@ CopyNumber(
 	break;
     }
     case 2: {
-	const unsigned char *fromPtr = from;
-	unsigned char *toPtr = to;
+	const unsigned char *fromPtr = (const unsigned char *)from;
+	unsigned char *toPtr = (unsigned char *)to;
 
 	toPtr[0] = fromPtr[4];
 	toPtr[1] = fromPtr[5];
@@ -1844,8 +1844,8 @@ CopyNumber(
 	break;
     }
     case 3: {
-	const unsigned char *fromPtr = from;
-	unsigned char *toPtr = to;
+	const unsigned char *fromPtr = (const unsigned char *)from;
+	unsigned char *toPtr = (unsigned char *)to;
 
 	toPtr[0] = fromPtr[3];
 	toPtr[1] = fromPtr[2];
@@ -2152,7 +2152,7 @@ ScanNumber(
 
 	    hPtr = Tcl_CreateHashEntry(tablePtr, INT2PTR(value), &isNew);
 	    if (!isNew) {
-		return Tcl_GetHashValue(hPtr);
+		return (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 	    }
 	    if (tablePtr->numEntries <= BINARY_SCAN_MAX_CACHE) {
 		Tcl_Obj *objPtr = Tcl_NewLongObj(value);
@@ -2274,7 +2274,7 @@ DeleteScanNumberCache(
 
     hEntry = Tcl_FirstHashEntry(numberCachePtr, &search);
     while (hEntry != NULL) {
-	Tcl_Obj *value = Tcl_GetHashValue(hEntry);
+	Tcl_Obj *value = (Tcl_Obj *)Tcl_GetHashValue(hEntry);
 
 	if (value != NULL) {
 	    Tcl_DecrRefCount(value);
@@ -2689,7 +2689,7 @@ BinaryEncodeUu(
      * enough".
      */
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     offset = 0;
     data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
     rawLength = (lineLength - 1) * 3 / 4;

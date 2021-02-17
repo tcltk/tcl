@@ -33,18 +33,17 @@ if {[catch {package require http 1.0}]} {
     }
 }
 
-if {$::tcl_platform(os) eq "Darwin"} {
-    # Name resolution often a problem on OSX; not focus of HTTP package anyway
-    set HOST localhost
-} else {
-    set HOST [info hostname]
-}
+# Do not use [info hostname].
+# Name resolution is often a problem on OSX; not focus of HTTP package anyway.
+# Also a problem on other platforms for http-4.14 (test with bad port number).
+set HOST localhost
 
 set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
 catch {unset data}
 
 ##
 ## The httpd script implement a stub http server
+## Sourcing httpd overwrites the value of HOST.
 ##
 source [file join [file dirname [info script]] httpd]
 
@@ -168,7 +167,7 @@ test httpold-4.1 {httpEvent} {
     set token [http_get $url]
     upvar #0 $token data
     array set meta $data(meta)
-    expr ($data(totalsize) == $meta(Content-Length))
+    expr {$data(totalsize) == $meta(Content-Length)}
 } 1
 
 test httpold-4.2 {httpEvent} {
@@ -205,7 +204,7 @@ test httpold-4.5 {httpEvent} {
     close $out
     upvar #0 $token data
     removeFile $testfile
-    expr $data(currentsize) == $data(totalsize)
+    expr {$data(currentsize) == $data(totalsize)}
 } 1
 
 test httpold-4.6 {httpEvent} {

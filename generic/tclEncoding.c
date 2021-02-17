@@ -2580,7 +2580,7 @@ UtfToUnicodeProc(
 		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
 		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
 		*dst++ = (*chPtr & 0xFF);
-		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
+		*dst++ = ((*chPtr >> 8) & 0x3) | 0xDC;
 	    }
 #else
 	    *dst++ = (*chPtr & 0xFF);
@@ -2592,10 +2592,10 @@ UtfToUnicodeProc(
 		*dst++ = (*chPtr >> 8);
 		*dst++ = (*chPtr & 0xFF);
 	    } else {
-		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
-		*dst++ = (*chPtr & 0xFF);
 		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
 		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
+		*dst++ = ((*chPtr >> 8) & 0x3) | 0xDC;
+		*dst++ = (*chPtr & 0xFF);
 	    }
 #else
 	    *dst++ = (*chPtr >> 8);

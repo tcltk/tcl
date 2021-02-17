@@ -2899,6 +2899,9 @@ TclStringReverse(
 {
     String *stringPtr;
     Tcl_UniChar ch = 0;
+#if TCL_UTF_MAX <= 4
+    int needFlip = 0;
+#endif
 
     if (TclIsPureByteArray(objPtr)) {
 	int numBytes;
@@ -2917,10 +2920,9 @@ TclStringReverse(
     if (stringPtr->hasUnicode) {
 	Tcl_UniChar *from = Tcl_GetUnicode(objPtr);
 	Tcl_UniChar *src = from + stringPtr->numChars;
+	Tcl_UniChar *to;
 
 	if (Tcl_IsShared(objPtr)) {
-	    Tcl_UniChar *to;
-
 	    /*
 	     * Create a non-empty, pure unicode value, so we can coax
 	     * Tcl_SetObjLength into growing the unicode rep buffer.
@@ -2930,19 +2932,54 @@ TclStringReverse(
 	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
 	    to = Tcl_GetUnicode(objPtr);
 	    while (--src >= from) {
+#if TCL_UTF_MAX <= 4
+		ch = *src;
+		if ((ch & 0xF800) == 0xD800) {
+		    needFlip = 1;
+		}
+		*to++ = ch;
+#else
 		*to++ = *src;
+#endif
 	    }
 	} else {
 	    /*
 	     * Reversing in place.
 	     */
 
+#if TCL_UTF_MAX <= 4
+	    to = src;
+#endif
 	    while (--src > from) {
 		ch = *src;
+#if TCL_UTF_MAX <= 4
+		if ((ch & 0xF800) == 0xD800) {
+		    needFlip = 1;
+		}
+#endif
 		*src = *from;
 		*from++ = ch;
 	    }
 	}
+#if TCL_UTF_MAX <= 4
+	if (needFlip) {
+	    /*
+	     * Flip back surrogate pairs.
+	     */
+
+	    from = to - stringPtr->numChars;
+	    while (--to >= from) {
+		ch = *to;
+		if ((ch & 0xFC00) == 0xD800) {
+		    if ((to-1 >= from) && ((to[-1] & 0xFC00) == 0xDC00)) {
+			to[0] = to[-1];
+			to[-1] = ch;
+			--to;
+		    }
+		}
+	    }
+	}
+#endif
     }
 
     if (objPtr->bytes) {
@@ -2966,8 +3003,8 @@ TclStringReverse(
 	     * Pass 1. Reverse the bytes of each multi-byte character.
 	     */
 
-	    int charCount = 0;
 	    int bytesLeft = numBytes;
+	    int chw;
 
 	    while (bytesLeft) {
 		/*
@@ -2976,18 +3013,16 @@ TclStringReverse(
 		 * skip calling Tcl_UtfCharComplete() here.
 		 */
 
-		int bytesInChar = TclUtfToUniChar(from, &ch);
+		int bytesInChar = TclUtfToUCS4(from, &chw);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
 			bytesInChar);
 		to += bytesInChar;
 		from += bytesInChar;
 		bytesLeft -= bytesInChar;
-		charCount++;
 	    }
 
 	    from = to = objPtr->bytes;
-	    stringPtr->numChars = charCount;
 	}
 	/* Pass 2. Reverse all the bytes. */
 	ReverseBytes((unsigned char *)to, (unsigned char *)from, numBytes);

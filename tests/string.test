@@ -414,7 +414,7 @@ test string-6.27 {string is double, true} {
     string is double 1
 } 1
 test string-6.28 {string is double, true} {
-    string is double [expr double(1)]
+    string is double [expr {double(1)}]
 } 1
 test string-6.29 {string is double, true} {
     string is double 1.0
@@ -489,7 +489,7 @@ test string-6.48 {string is integer, true} {
     string is integer +1234567890
 } 1
 test string-6.49 {string is integer, true on type} {
-    string is integer [expr int(50.0)]
+    string is integer [expr {int(50.0)}]
 } 1
 test string-6.50 {string is integer, true} {
     string is integer [list -10]
@@ -510,7 +510,7 @@ test string-6.55 {string is integer, false on overflow} {
     list [string is integer -fail var +[largest_int]0] $var
 } {0 -1}
 test string-6.56 {string is integer, false} {
-    list [string is integer -fail var [expr double(1)]] $var
+    list [string is integer -fail var [expr {double(1)}]] $var
 } {0 1}
 test string-6.57 {string is integer, false} {
     list [string is integer -fail var "    "] $var
@@ -659,7 +659,7 @@ test string-6.95 {string is wideinteger, true} {
     string is wideinteger +1234567890
 } 1
 test string-6.96 {string is wideinteger, true on type} {
-    string is wideinteger [expr wide(50.0)]
+    string is wideinteger [expr {wide(50.0)}]
 } 1
 test string-6.97 {string is wideinteger, true} {
     string is wideinteger [list -10]
@@ -680,7 +680,7 @@ test string-6.102 {string is wideinteger, false on overflow} {
     list [string is wideinteger -fail var +[largest_int]0] $var
 } {0 -1}
 test string-6.103 {string is wideinteger, false} {
-    list [string is wideinteger -fail var [expr double(1)]] $var
+    list [string is wideinteger -fail var [expr {double(1)}]] $var
 } {0 1}
 test string-6.104 {string is wideinteger, false} {
     list [string is wideinteger -fail var "    "] $var
@@ -715,7 +715,7 @@ test string-6.110 {string is entier, true} {
     string is entier +1234567890
 } 1
 test string-6.111 {string is entier, true on type} {
-    string is entier [expr wide(50.0)]
+    string is entier [expr {wide(50.0)}]
 } 1
 test string-6.112 {string is entier, true} {
     string is entier [list -10]
@@ -736,7 +736,7 @@ test string-6.117 {string is entier, false} {
     list [string is entier -fail var 123123123123123123123123123123123123123123123123123123123123123123123123123123123123abc] $var
 } {0 84}
 test string-6.118 {string is entier, false} {
-    list [string is entier -fail var [expr double(1)]] $var
+    list [string is entier -fail var [expr {double(1)}]] $var
 } {0 1}
 test string-6.119 {string is entier, false} {
     list [string is entier -fail var "    "] $var
@@ -1645,6 +1645,33 @@ test string-21.13 {string wordend, unicode} {
 test string-21.14 {string wordend, unicode} {
     string wordend "\uC700\uC700 abc" 8
 } 6
+test string-21.17 {string trim, unicode} {
+    string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02
+} "Hello world!"
+test string-21.18 {string trimleft, unicode} {
+    string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02
+} "Hello world!\uD83D\uDE02"
+test string-21.19 {string trimright, unicode} {
+    string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02
+} "\uD83D\uDE02Hello world!"
+test string-21.20 {string trim, unicode} {
+    string trim "\uF602Hello world!\uF602" \uD83D\uDE02
+} "\uF602Hello world!\uF602"
+test string-21.21 {string trimleft, unicode} {
+    string trimleft "\uF602Hello world!\uF602" \uD83D\uDE02
+} "\uF602Hello world!\uF602"
+test string-21.22 {string trimright, unicode} {
+    string trimright "\uF602Hello world!\uF602" \uD83D\uDE02
+} "\uF602Hello world!\uF602"
+test string-21.23 {string trim, unicode} {
+    string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
+test string-21.24 {string trimleft, unicode} {
+    string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
+test string-21.25 {string trimright, unicode} {
+    string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
 
 test string-22.1 {string wordstart} {
     list [catch {string word a} msg] $msg
@@ -1801,6 +1828,24 @@ test string-24.15 {string reverse command - pure bytearray} {
     binary scan [tcl::string::reverse [binary format H* 010203]] H* x
     set x
 } 030201
+test string-24.16 {string reverse command - surrogates} {
+    string reverse \u0444bulb\uD83D\uDE02
+} \uD83D\uDE02blub\u0444
+test string-24.17 {string reverse command - surrogates} {
+    string reverse \uD83D\uDE02hello\uD83D\uDE02
+} \uD83D\uDE02olleh\uD83D\uDE02
+test string-24.18 {string reverse command - surrogates} {
+    set s \u0444bulb\uD83D\uDE02
+    # shim shimmery ...
+    string index $s 0
+    string reverse $s
+} \uD83D\uDE02blub\u0444
+test string-24.19 {string reverse command - surrogates} {
+    set s \uD83D\uDE02hello\uD83D\uDE02
+    # shim shimmery ...
+    string index $s 0
+    string reverse $s
+} \uD83D\uDE02olleh\uD83D\uDE02
 
 test string-25.1 {string is list} {
     string is list {a b c}
