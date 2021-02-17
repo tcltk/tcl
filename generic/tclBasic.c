@@ -864,6 +864,7 @@ Tcl_CreateInterp(void)
 	Tcl_Export(interp, nsPtr, "*", 1);
     }
 
+
 #ifdef USE_DTRACE
     /*
      * Register the tcl::dtrace command.

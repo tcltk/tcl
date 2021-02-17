@@ -5,7 +5,7 @@
 #	library via the stubs table.  This file is used to generate the
 #	tclOODecls.h, tclOOIntDecls.h and tclOOStubInit.c files.
 #
-# Copyright (c) 2008-2013 by Donal K. Fellows.
+# Copyright © 2008-2013 Donal K. Fellows.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.

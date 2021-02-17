@@ -153,7 +153,7 @@ test filesystem-1.10 {link normalisation: double link} -constraints {
 	[file normalize [file join dir2.link inside.file foo]]
 } -cleanup {
     file delete dir2.link
-} -result ok 
+} -result ok
 makeDirectory dir2.file
 test filesystem-1.11 {link normalisation: double link, back in tree} {unix hasLinks} {
     file link dir2.link dir.link
@@ -168,7 +168,7 @@ test filesystem-1.12 {file new native path} {} {
 	}
     }
     # If we reach here we've succeeded. We used to crash above.
-    expr 1
+    expr {1}
 } {1}
 test filesystem-1.13 {file normalisation} {win} {
     # This used to be broken
@@ -695,7 +695,7 @@ test filesystem-7.5 {cross-filesystem file copy with -force} -setup {
     # First copy should succeed
     set res [catch {file copy simplefs:/simplefile file2} err]
     lappend res $err
-    file attributes file2 -permissions 0000
+    file attributes file2 -permissions 0o000
     # Second copy should fail (no -force)
     lappend res [catch {file copy simplefs:/simplefile file2} err]
     lappend res $err
@@ -913,7 +913,7 @@ test filesystem-9.5 {path objects and file tail and object rep} -setup {
     }
     return $res
 } -cleanup {
-    file delete -force dgp 
+    file delete -force dgp
     cd $origdir
 } -result {test test}
 test filesystem-9.6 {path objects and file tail and object rep} win {

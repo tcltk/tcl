@@ -1798,7 +1798,7 @@ Tcl_FSEvalFileEx(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
+	    memcmp(string, "\xEF\xBB\xBF", 3)) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1933,7 +1933,7 @@ TclNREvalFile(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) < 0) {
+	    memcmp(string, "\xEF\xBB\xBF", 3)) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",

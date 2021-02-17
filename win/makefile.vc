@@ -16,7 +16,7 @@
 # General usage:
 #   nmake [-nologo] -f makefile.vc [TARGET|MACRODEF [TARGET|MACRODEF] [...]]
 #
-# For MACRODEF, see TIP 477 (https://core.tcl-lang.org/tips/doc/trunk/tip/477.md)
+# For MACRODEF, see TIP 477 (https://core.tcl-lang.org/tips/doc/main/tip/477.md)
 # or examine Sections 6-8 in rules.vc.
 #
 # Possible values of TARGET are:

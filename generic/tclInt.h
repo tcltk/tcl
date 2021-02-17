@@ -4216,7 +4216,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 	    (objPtr) = TclThreadAllocObj();				\
 	} else {							\
 	    (objPtr) = cachePtr->firstObjPtr;				\
-	    cachePtr->firstObjPtr = (objPtr)->internalRep.twoPtrValue.ptr1; \
+	    cachePtr->firstObjPtr = (Tcl_Obj *)(objPtr)->internalRep.twoPtrValue.ptr1; \
 	    --cachePtr->numObjects;					\
 	}								\
     } while (0)

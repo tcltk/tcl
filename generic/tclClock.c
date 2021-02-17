@@ -225,9 +225,9 @@ TclClockInit(
      * Create the client data, which is a refcounted literal pool.
      */
 
-    data = ckalloc(sizeof(ClockClientData));
+    data = (ClockClientData *)ckalloc(sizeof(ClockClientData));
     data->refCount = 0;
-    data->literals = ckalloc(LIT__END * sizeof(Tcl_Obj*));
+    data->literals = (Tcl_Obj **)ckalloc(LIT__END * sizeof(Tcl_Obj*));
     for (i = 0; i < LIT__END; ++i) {
 	Tcl_InitObjRef(data->literals[i], Tcl_NewStringObj(Literals[i], -1));
     }
@@ -367,7 +367,7 @@ static void
 ClockDeleteCmdProc(
     ClientData clientData)	/* Opaque pointer to the client data */
 {
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     int i;
 
     if (data->refCount-- <= 1) {
@@ -726,7 +726,7 @@ NormLocaleObj(
 Tcl_Obj *
 ClockMCDict(ClockFmtScnCmdArgs *opts)
 {
-    ClockClientData *dataPtr = opts->clientData;
+    ClockClientData *dataPtr = (ClockClientData *)opts->clientData;
 
     /* if dict not yet retrieved */
     if (opts->mcDictObj == NULL) {
@@ -734,7 +734,7 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 	/* if locale was not yet used */
 	if ( !(opts->flags & CLF_LOCALE_USED) ) {
 
-	    opts->localeObj = NormLocaleObj(opts->clientData, opts->interp,
+	    opts->localeObj = NormLocaleObj((ClockClientData *)opts->clientData, opts->interp,
 		opts->localeObj, &opts->mcDictObj);
 
 	    if (opts->localeObj == NULL) {
@@ -748,7 +748,7 @@ ClockMCDict(ClockFmtScnCmdArgs *opts)
 	    /* check locale literals already available (on demand creation) */
 	    if (dataPtr->mcLiterals == NULL) {
 		int i;
-		dataPtr->mcLiterals = ckalloc(MCLIT__END * sizeof(Tcl_Obj*));
+		dataPtr->mcLiterals = (Tcl_Obj **)ckalloc(MCLIT__END * sizeof(Tcl_Obj*));
 		for (i = 0; i < MCLIT__END; ++i) {
 		    Tcl_InitObjRef(dataPtr->mcLiterals[i],
 			Tcl_NewStringObj(MsgCtLiterals[i], -1));
@@ -835,7 +835,7 @@ ClockMCGet(
     ClockFmtScnCmdArgs *opts,
     int mcKey)
 {
-    ClockClientData *dataPtr = opts->clientData;
+    ClockClientData *dataPtr = (ClockClientData *)opts->clientData;
 
     Tcl_Obj *valObj = NULL;
 
@@ -871,7 +871,7 @@ ClockMCGetIdx(
     ClockFmtScnCmdArgs *opts,
     int mcKey)
 {
-    ClockClientData *dataPtr = opts->clientData;
+    ClockClientData *dataPtr = (ClockClientData *)opts->clientData;
 
     Tcl_Obj *valObj = NULL;
 
@@ -915,7 +915,7 @@ ClockMCSetIdx(
     ClockFmtScnCmdArgs *opts,
     int mcKey, Tcl_Obj *valObj)
 {
-    ClockClientData *dataPtr = opts->clientData;
+    ClockClientData *dataPtr = (ClockClientData *)opts->clientData;
 
     if (opts->mcDictObj == NULL) {
 	ClockMCDict(opts);
@@ -926,7 +926,7 @@ ClockMCSetIdx(
     /* if literal storage for indices not yet created */
     if (dataPtr->mcLitIdxs == NULL) {
 	int i;
-	dataPtr->mcLitIdxs = ckalloc(MCLIT__END * sizeof(Tcl_Obj*));
+	dataPtr->mcLitIdxs = (Tcl_Obj **)ckalloc(MCLIT__END * sizeof(Tcl_Obj*));
 	for (i = 0; i < MCLIT__END; ++i) {
 	    Tcl_InitObjRef(dataPtr->mcLitIdxs[i],
 		Tcl_NewStringObj(MsgCtLitIdxs[i], -1));
@@ -985,7 +985,7 @@ ClockConfigureObjCmd(
     int objc,		    /* Parameter count */
     Tcl_Obj *const objv[])  /* Parameter vector */
 {
-    ClockClientData *dataPtr = clientData;
+    ClockClientData *dataPtr = (ClockClientData *)clientData;
 
     static const char *const options[] = {
 	"-system-tz",	  "-setup-tz",	  "-default-locale",	"-current-locale",
@@ -1190,7 +1190,7 @@ ClockGetTZData(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj *timezoneObj)	/* Name of the timezone */
 {
-    ClockClientData *dataPtr = clientData;
+    ClockClientData *dataPtr = (ClockClientData *)clientData;
     Tcl_Obj *ret, **out = NULL;
 
     /* if cached (if already setup this one) */
@@ -1268,7 +1268,7 @@ ClockGetSystemTimeZone(
     ClientData clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp)		/* Tcl interpreter */
 {
-    ClockClientData *dataPtr = clientData;
+    ClockClientData *dataPtr = (ClockClientData *)clientData;
 
     /* if known (cached and same epoch) - return now */
     if (dataPtr->systemTimeZone != NULL
@@ -1308,7 +1308,7 @@ ClockSetupTimeZone(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj *timezoneObj)
 {
-    ClockClientData *dataPtr = clientData;
+    ClockClientData *dataPtr = (ClockClientData *)clientData;
     int loaded;
     Tcl_Obj *callargs[2];
 
@@ -1425,7 +1425,7 @@ ClockConvertlocaltoutcObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *secondsObj;
     Tcl_Obj *dict;
     int changeover;
@@ -1518,7 +1518,7 @@ ClockGetdatefieldsObjCmd(
 {
     TclDateFields fields;
     Tcl_Obj *dict;
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
 
@@ -1668,9 +1668,10 @@ FetchEraField(
     Tcl_Interp *interp,
     Tcl_Obj *dict,
     Tcl_Obj *key,
-    int *storePtr)
+    ERA_ENUM *storePtr)
 {
     Tcl_Obj *value = NULL;
+    int result, era;
 
     if (Tcl_DictObjGet(interp, dict, key, &value) != TCL_OK) {
 	return TCL_ERROR;
@@ -1680,7 +1681,11 @@ FetchEraField(
 		"expected key(s) not found in dictionary", -1));
 	return TCL_ERROR;
     }
-    return Tcl_GetIndexFromObj(interp, value, eras, "era", TCL_EXACT, storePtr);
+    result = Tcl_GetIndexFromObj(interp, value, eras, "era", TCL_EXACT, &era);
+    if (result == TCL_OK && storePtr) {
+	*storePtr = (ERA_ENUM)era;
+    }
+    return result;
 }
 
 static int
@@ -1712,12 +1717,12 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 {
     TclDateFields fields;
     Tcl_Obj *dict;
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
     int copied = 0;
     int status;
-    int era = 0;
+    ERA_ENUM era = CE;
 
     fields.tzName = NULL;
 
@@ -1798,12 +1803,12 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 {
     TclDateFields fields;
     Tcl_Obj *dict;
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
     int copied = 0;
     int status;
-    int era = 0;
+    ERA_ENUM era = CE;
 
     fields.tzName = NULL;
 
@@ -1880,7 +1885,7 @@ ConvertLocalToUTC(
     Tcl_Obj *timezoneObj,	/* Time zone */
     int changeover)		/* Julian Day of the Gregorian transition */
 {
-    ClockClientData *dataPtr = clientData;
+    ClockClientData *dataPtr = (ClockClientData *)clientData;
     Tcl_Obj *tzdata;		/* Time zone data */
     int rowc;			/* Number of rows in tzdata */
     Tcl_Obj **rowv;		/* Pointers to the rows */
@@ -2176,7 +2181,7 @@ ConvertUTCToLocal(
     Tcl_Obj *timezoneObj,	/* Time zone */
     int changeover)		/* Julian Day of the Gregorian transition */
 {
-    ClockClientData *dataPtr = clientData;
+    ClockClientData *dataPtr = (ClockClientData *)clientData;
     Tcl_Obj *tzdata;		/* Time zone data */
     int rowc;			/* Number of rows in tzdata */
     Tcl_Obj **rowv;		/* Pointers to the rows */
@@ -3082,7 +3087,7 @@ ThreadSafeLocalTime(
      * Get a thread-local buffer to hold the returned time.
      */
 
-    struct tm *tmPtr = Tcl_GetThreadData(&tmKey, sizeof(struct tm));
+    struct tm *tmPtr = (struct tm *)Tcl_GetThreadData(&tmKey, sizeof(struct tm));
 #ifdef HAVE_LOCALTIME_R
     localtime_r(timePtr, tmPtr);
 #else
@@ -3288,7 +3293,7 @@ ClockParseFmtScnArgs(
     const char *syntax		/* Syntax of the current command */
 ) {
     Tcl_Interp	    *interp =  opts->interp;
-    ClockClientData *dataPtr = opts->clientData;
+    ClockClientData *dataPtr = (ClockClientData *)opts->clientData;
     int gmtFlag = 0;
     static const char *const options[] = {
 	"-base", "-format", "-gmt", "-locale", "-timezone", "-validate", NULL
@@ -3530,7 +3535,7 @@ ClockFormatObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
-    ClockClientData *dataPtr = clientData;
+    ClockClientData *dataPtr = (ClockClientData *)clientData;
 
     static const char *syntax = "clock format clockval|-now "
 	"?-format string? "
@@ -3732,7 +3737,7 @@ ClockScanCommit(
 
     /* some overflow checks */
     if (info->flags & CLF_JULIANDAY) {
-	ClockClientData *dataPtr = opts->clientData;
+	ClockClientData *dataPtr = (ClockClientData *)opts->clientData;
 	double curJDN = (double)yydate.julianDay
 	    + ((double)yySecondOfDay - SECONDS_PER_DAY/2) / SECONDS_PER_DAY;
 	if (curJDN > dataPtr->maxJDN) {
@@ -3791,7 +3796,7 @@ ClockValidDate(
     const char *errMsg = "", *errCode = "";
     TclDateFields temp;
     int tempCpyFlg = 0;
-    ClockClientData *dataPtr = opts->clientData;
+    ClockClientData *dataPtr = (ClockClientData *)opts->clientData;
 
     #if 0
     printf("yyMonth %d, yyDay %d, yyDayOfYear %d, yyHour %d, yyMinutes %d, yySeconds %d, "
@@ -3953,7 +3958,7 @@ ClockFreeScan(
     ClockFmtScnCmdArgs *opts)	/* Command options */
 {
     Tcl_Interp	    *interp =  opts->interp;
-    ClockClientData *dataPtr = opts->clientData;
+    ClockClientData *dataPtr = (ClockClientData *)opts->clientData;
 
     int ret = TCL_ERROR;
 
@@ -4352,7 +4357,7 @@ ClockAddObjCmd(
     static const char *syntax = "clock add clockval|-now ?number units?..."
 	"?-gmt boolean? "
 	"?-locale LOCALE? ?-timezone ZONE?";
-    ClockClientData *dataPtr = clientData;
+    ClockClientData *dataPtr = (ClockClientData *)clientData;
     int ret;
     ClockFmtScnCmdArgs opts;	/* Format, locale, timezone and base */
     DateInfo	    yy;		/* Common structure used for parsing */
@@ -4630,7 +4635,7 @@ ClockSafeCatchCmd(
 static size_t
 TzsetIfNecessary(void)
 {
-    static char* tzWas = INT2PTR(-1);	 /* Previous value of TZ, protected by
+    static char* tzWas = (char *)INT2PTR(-1);	 /* Previous value of TZ, protected by
 					  * clockMutex. */
     static long	 tzLastRefresh = 0;	 /* Used for latency before next refresh */
     static size_t tzWasEpoch = 0;        /* Epoch, signals that TZ changed */
@@ -4658,18 +4663,18 @@ TzsetIfNecessary(void)
     if (tzIsNow == NULL) {
 	tzIsNow = getenv("TZ");
     }
-    if (tzIsNow != NULL && (tzWas == NULL || tzWas == INT2PTR(-1)
+    if (tzIsNow != NULL && (tzWas == NULL || tzWas == (char*)INT2PTR(-1)
 	    || strcmp(tzIsNow, tzWas) != 0)) {
 	tzset();
-	if (tzWas != NULL && tzWas != INT2PTR(-1)) {
+	if (tzWas != NULL && tzWas != (char*)INT2PTR(-1)) {
 	    ckfree(tzWas);
 	}
-	tzWas = ckalloc(strlen(tzIsNow) + 1);
+	tzWas = (char *)ckalloc(strlen(tzIsNow) + 1);
 	strcpy(tzWas, tzIsNow);
 	tzWasEpoch++;
     } else if (tzIsNow == NULL && tzWas != NULL) {
 	tzset();
-	if (tzWas != INT2PTR(-1)) ckfree(tzWas);
+	if (tzWas != (char*)INT2PTR(-1)) ckfree(tzWas);
 	tzWas = NULL;
 	tzWasEpoch++;
     }

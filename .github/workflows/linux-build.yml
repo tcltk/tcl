@@ -20,7 +20,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Prepare
-        run: touch tclStubInit.c tclOOStubInit.c
+        run: |
+          touch tclStubInit.c tclOOStubInit.c
         working-directory: generic
       - name: Configure ${{ matrix.cfgopt }}
         run: |
@@ -37,6 +38,8 @@ jobs:
       - name: Run Tests
         run: |
           make test
+        env:
+          ERROR_ON_FAILURES: 1
       - name: Test-Drive Installation
         run: |
           make install
