@@ -4,8 +4,8 @@
  *	Common channel driver for Unix channels based on files, command pipes
  *	and TCP sockets.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -129,9 +129,9 @@ static int		FileInputProc(void *instanceData, char *buf,
 static int		FileOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCode);
 static int		FileTruncateProc(void *instanceData,
-			    Tcl_WideInt length);
-static Tcl_WideInt	FileWideSeekProc(void *instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCode);
+			    long long length);
+static long long	FileWideSeekProc(void *instanceData,
+			    long long offset, int mode, int *errorCode);
 static void		FileWatchProc(void *instanceData, int mask);
 #ifdef SUPPORTS_TTY
 static int		TtyCloseProc(void *instanceData,
@@ -440,16 +440,16 @@ TtyCloseProc(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 FileWideSeekProc(
     void *instanceData,	/* File state. */
-    Tcl_WideInt offset,		/* Offset to seek to. */
+    long long offset,		/* Offset to seek to. */
     int mode,			/* Relative to where should we seek? Can be
 				 * one of SEEK_START, SEEK_CUR or SEEK_END. */
     int *errorCodePtr)		/* To store error code. */
 {
     FileState *fsPtr = (FileState *)instanceData;
-    Tcl_WideInt newLoc;
+    long long newLoc;
 
     newLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
 
@@ -1973,7 +1973,7 @@ Tcl_GetOpenFile(
 static int
 FileTruncateProc(
     void *instanceData,
-    Tcl_WideInt length)
+    long long length)
 {
     FileState *fsPtr = (FileState *)instanceData;
     int result;

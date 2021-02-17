@@ -2,8 +2,8 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2000 by Ajuba Solutions
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2000 Ajuba Solutions
 # All rights reserved.
 
 # Note that there are several places where the value of
@@ -547,8 +547,8 @@ makeDirectory notwriteable
 
 switch -- $::tcl_platform(platform) {
     unix {
-	file attributes $notReadableDir -permissions 00333
-	file attributes $notWriteableDir -permissions 00555
+	file attributes $notReadableDir -permissions 0o333
+	file attributes $notWriteableDir -permissions 0o555
     }
     default {
 	# note in FAT/NTFS we won't be able to protect directory with read-only attribute...
@@ -1445,7 +1445,7 @@ test tcltest-23.2 {removeFile} {
 	file mkdir $mfdir
 	makeFile {} t1.tmp
 	makeFile {} et1.tmp $mfdir
-	if  {![file exists [file join [temporaryDirectory] t1.tmp]] || \
+	if {![file exists [file join [temporaryDirectory] t1.tmp]] || \
 		![file exists [file join $mfdir et1.tmp]]} {
 	    error "file creation didn't work"
 	}

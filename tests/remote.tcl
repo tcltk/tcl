@@ -4,7 +4,7 @@
 #
 # Source this file in the remote server you are using to test Tcl against.
 #
-# Copyright (c) 1995-1996 Sun Microsystems, Inc.
+# Copyright © 1995-1996 Sun Microsystems, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -91,8 +91,8 @@ if {![info exists serverPort]} {
 if {![info exists serverPort]} {
     for {set i 0} {$i < $argc} {incr i} {
 	if {[string compare -port [lindex $argv $i]] == 0} {
-	    if {$i < [expr $argc - 1]} {
-		set serverPort [lindex $argv [expr $i + 1]]
+	    if {$i < $argc - 1} {
+		set serverPort [lindex $argv [expr {$i + 1}]]
 	    }
 	    break
 	}
@@ -110,8 +110,8 @@ if {![info exists serverAddress]} {
 if {![info exists serverAddress]} {
     for {set i 0} {$i < $argc} {incr i} {
 	if {[string compare -address [lindex $argv $i]] == 0} {
-	    if {$i < [expr $argc - 1]} {
-		set serverAddress [lindex $argv [expr $i + 1]]
+	    if {$i < $argc - 1} {
+		set serverAddress [lindex $argv [expr {$i + 1}]]
 	    }
 	    break
 	}

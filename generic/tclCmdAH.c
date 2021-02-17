@@ -4,8 +4,8 @@
  *	This file contains the top-level command routines for most of the Tcl
  *	built-in commands whose names begin with the letters A to H.
  *
- * Copyright (c) 1987-1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1987-1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -431,7 +431,7 @@ EncodingConvertfromObjCmd(
     /*
      * Convert the string into a byte array in 'ds'
      */
-    bytesPtr = (char *) TclGetByteArrayFromObj(data, &length);
+    bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
     Tcl_ExternalToUtfDString(encoding, bytesPtr, length, &ds);
 
     /*
@@ -496,7 +496,7 @@ EncodingConverttoObjCmd(
      * Convert the string to a byte array in 'ds'
      */
 
-    stringPtr = TclGetStringFromObj(data, &length);
+    stringPtr = Tcl_GetStringFromObj(data, &length);
     Tcl_UtfToExternalDString(encoding, stringPtr, length, &ds);
     Tcl_SetObjResult(interp,
 		     Tcl_NewByteArrayObj((unsigned char*) Tcl_DStringValue(&ds),

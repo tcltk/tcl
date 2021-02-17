@@ -7,13 +7,11 @@
 # Sourcing this file into tcl runs the tests and generates output for errors.
 # No output means no errors were found.
 #
-# Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1995-1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-
-package require Tcl 8.5-
 
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
@@ -53,10 +51,10 @@ proc mapAndSortList {map listIn} {
 # thus un-autoindexed) APIs in this test result arguments:
 catch {safe::interpConfigure}
 
-# testing that nested and statics do what is advertised (we use a static
-# package - Tcltest - but it might be absent if we're in standard tclsh)
+# testing that nested and statics do what is advertised (we use a
+# package - tcl::test - but it might be absent if we're in standard tclsh)
 
-testConstraint TcltestPackage [expr {![catch {package require Tcltest}]}]
+testConstraint tcl::test [expr {![catch {package require tcl::test}]}]
 
 # Tests 5.* test the example files before using them to test safe interpreters.
 

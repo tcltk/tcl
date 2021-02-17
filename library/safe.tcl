@@ -7,7 +7,7 @@
 #
 # See the safe.n man page for details.
 #
-# Copyright (c) 1996-1997 Sun Microsystems, Inc.
+# Copyright © 1996-1997 Sun Microsystems, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -980,7 +980,7 @@ proc ::safe::AliasSource {child args} {
     set replacementMsg "script error"
     set code [catch {
 	set f [open $realfile]
-	fconfigure $f -encoding $encoding -eofchar \032
+	fconfigure $f -encoding $encoding -eofchar "\032 {}"
 	set contents [read $f]
 	close $f
 	::interp eval $child [list info script $file]

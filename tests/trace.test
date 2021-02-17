@@ -4,9 +4,9 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -17,7 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testcmdtrace [llength [info commands testcmdtrace]]
 testConstraint testevalobjv [llength [info commands testevalobjv]]
@@ -2314,8 +2314,8 @@ test trace-28.10 {exec trace info nonsense} {
 } {1 {wrong # args: should be "trace remove execution name opList command"}}
 
 test trace-29.1 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
-    testcmdtrace tracetest {set stuff [expr 14 + 16]}
-} {{expr 14 + 16} {expr 14 + 16} {set stuff [expr 14 + 16]} {set stuff 30}}
+    testcmdtrace tracetest {set stuff [expr {14 + 16}]}
+} {{expr {14 + 16}} {expr {14 + 16}} {set stuff [expr {14 + 16}]} {set stuff 30}}
 test trace-29.2 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
     testcmdtrace tracetest {set stuff [info tclversion]}
 } [concat {{info tclversion} {info tclversion} ::tcl::info::tclversion {::tcl::info::tclversion} {set stuff [info tclversion]}} [list "set stuff [info tclversion]"]]

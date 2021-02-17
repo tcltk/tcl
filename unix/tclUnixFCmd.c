@@ -5,7 +5,7 @@
  *	subcommands of the "file" command. All filename arguments should
  *	already be translated to native format.
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -13,7 +13,7 @@
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
  *
- * Copyright (c) 1988, 1993, 1994
+ * Copyright © 1988, 1993, 1994
  *      The Regents of the University of California. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1506,7 +1506,7 @@ SetGroupAttribute(
 	const char *string;
 	size_t length;
 
-	string = TclGetStringFromObj(attributePtr, &length);
+	string = Tcl_GetStringFromObj(attributePtr, &length);
 
 	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
 	groupPtr = TclpGetGrNam(native); /* INTL: Native. */
@@ -1573,7 +1573,7 @@ SetOwnerAttribute(
 	const char *string;
 	size_t length;
 
-	string = TclGetStringFromObj(attributePtr, &length);
+	string = Tcl_GetStringFromObj(attributePtr, &length);
 
 	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
 	pwPtr = TclpGetPwNam(native);			/* INTL: Native. */
@@ -1948,7 +1948,7 @@ TclpObjNormalizePath(
     const char *currentPathEndPosition;
     char cur;
     size_t pathLen;
-    const char *path = TclGetStringFromObj(pathPtr, &pathLen);
+    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
     Tcl_DString ds;
     const char *nativePath;
 #ifndef NO_REALPATH
@@ -2178,7 +2178,7 @@ TclUnixOpenTemporaryFile(
      */
 
     if (dirObj) {
-	string = TclGetStringFromObj(dirObj, &length);
+	string = Tcl_GetStringFromObj(dirObj, &length);
 	Tcl_UtfToExternalDString(NULL, string, length, &templ);
     } else {
 	Tcl_DStringInit(&templ);
@@ -2188,7 +2188,7 @@ TclUnixOpenTemporaryFile(
     TclDStringAppendLiteral(&templ, "/");
 
     if (basenameObj) {
-	string = TclGetStringFromObj(basenameObj, &length);
+	string = Tcl_GetStringFromObj(basenameObj, &length);
 	Tcl_UtfToExternalDString(NULL, string, length, &tmp);
 	TclDStringAppendDString(&templ, &tmp);
 	Tcl_DStringFree(&tmp);
@@ -2200,7 +2200,7 @@ TclUnixOpenTemporaryFile(
 
 #ifdef HAVE_MKSTEMPS
     if (extensionObj) {
-	string = TclGetStringFromObj(extensionObj, &length);
+	string = Tcl_GetStringFromObj(extensionObj, &length);
 	Tcl_UtfToExternalDString(NULL, string, length, &tmp);
 	TclDStringAppendDString(&templ, &tmp);
 	fd = mkstemps(Tcl_DStringValue(&templ), Tcl_DStringLength(&tmp));

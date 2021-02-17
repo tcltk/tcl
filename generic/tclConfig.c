@@ -4,7 +4,7 @@
  *	This file provides the facilities which allow Tcl and other packages
  *	to embed configuration information into their binary libraries.
  *
- * Copyright (c) 2002 Andreas Kupries <andreas_kupries@users.sourceforge.net>
+ * Copyright © 2002 Andreas Kupries <andreas_kupries@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -259,7 +259,7 @@ QueryConfigObjCmd(
 	 * Value is stored as-is in a byte array, see Bug [9b2e636361],
 	 * so we have to decode it first.
 	 */
-	value = (const char *) TclGetByteArrayFromObj(val, &n);
+	value = (const char *) Tcl_GetByteArrayFromObj(val, &n);
 	value = Tcl_ExternalToUtfDString(venc, value, n, &conv);
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(value,
 		Tcl_DStringLength(&conv)));

@@ -132,7 +132,7 @@ for Target in $Names; do
 	chmod 644 "$Dir/$First"
 	$Gzip "$Dir/$First"
     else
-	ln "$SymOrLoc$First$Gz" "$Dir/$Target$Gz"
+	ln $SymOrLoc"$First$Gz" "$Dir/$Target$Gz"
     fi
 done
 

@@ -341,7 +341,7 @@ TOMMATH_OBJS = bn_s_mp_reverse.o bn_s_mp_mul_digs_fast.o \
 	bn_mp_set_u64.o bn_mp_shrink.o \
 	bn_mp_sqr.o bn_mp_sqrt.o bn_mp_sub.o bn_mp_sub_d.o \
 	bn_mp_signed_rsh.o \
-	bn_mp_to_ubin.o \
+	bn_mp_to_ubin.o bn_mp_unpack.o \
 	bn_s_mp_toom_mul.o bn_s_mp_toom_sqr.o bn_mp_to_radix.o \
 	bn_mp_ubin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
 	bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
@@ -732,6 +732,7 @@ HOST_CC			= @CC_FOR_BUILD@
 HOST_EXEEXT		= @EXEEXT_FOR_BUILD@
 HOST_OBJEXT		= @OBJEXT_FOR_BUILD@
 ZIPFS_BUILD		= @ZIPFS_BUILD@
+MACHER			= @MACHER_PROG@
 NATIVE_ZIP		= @ZIP_PROG@
 ZIP_PROG_OPTIONS	= @ZIP_PROG_OPTIONS@
 ZIP_PROG_VFSSEARCH	= @ZIP_PROG_VFSSEARCH@
@@ -782,7 +783,7 @@ ${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
 	    cp -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
 	fi
 	mv ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
-	rm -rf ${TCL_VFS_PATH}/dde ${TCL_VFS_PATH}/reg
+	rm -rf ${TCL_VFS_PATH}/dde ${TCL_VFS_PATH}/registry
 	@find ${TCL_VFS_ROOT} -type d -empty -delete
 	@echo "creating ${TCL_ZIP_FILE} from ${TCL_VFS_PATH}"
 	@(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}' || \
@@ -797,7 +798,11 @@ ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS} ${TCL_ZIP_FILE}
 	rm -f $@
 	@MAKE_LIB@
 	@if test "${ZIPFS_BUILD}" = "1" ; then \
+	    if test "x$(MACHER)" = "x" ; then \
 	    cat ${TCL_ZIP_FILE} >> ${LIB_FILE}; \
+	    else $(MACHER) append ${LIB_FILE} ${TCL_ZIP_FILE} /tmp/macher_output; \
+	         mv /tmp/macher_output ${LIB_FILE}; chmod u+x ${LIB_FILE}; \
+	    fi; \
 	    ${NATIVE_ZIP} -A ${LIB_FILE} \
 	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
@@ -819,10 +824,19 @@ tclLibObjs:
 # This targets actually build the objects needed for the lib in the above case
 objs: ${OBJS}
 
-${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
+${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${TCL_ZIP_FILE}
 	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} \
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCL_EXE}
+	@if test "${ZIPFS_BUILD}" = "2" ; then \
+	    if test "x$(MACHER)" = "x" ; then \
+	    cat ${TCL_ZIP_FILE} >> ${TCL_EXE}; \
+	    else $(MACHER) append ${TCL_EXE} ${TCL_ZIP_FILE} /tmp/macher_output; \
+	         mv /tmp/macher_output ${TCL_EXE}; chmod u+x ${TCL_EXE}; \
+	    fi; \
+	    ${NATIVE_ZIP} -A ${TCL_EXE} \
+	    || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
+	fi
 
 # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
 ${NATIVE_TCLSH}:
@@ -996,21 +1010,6 @@ install-binaries: binaries
 	@$(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)/pkgconfig"
 	@$(INSTALL_DATA) tcl.pc "$(LIB_INSTALL_DIR)/pkgconfig/tcl.pc"
 
-install-libraries-zipfs-shared: libraries
-	@for i in "$(SCRIPT_INSTALL_DIR)"; do \
-	    if [ ! -d "$$i" ] ; then \
-		echo "Making directory $$i"; \
-		$(INSTALL_DATA_DIR) "$$i"; \
-	    fi; \
-	done
-	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/"
-	@for i in $(UNIX_DIR)/tclAppInit.c @LDAIX_SRC@ @DTRACE_SRC@; do \
-	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"; \
-	done
-
-install-libraries-zipfs-static: install-libraries-zipfs-shared
-	$(INSTALL_DATA) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
-
 install-libraries: libraries
 	@for i in "$(SCRIPT_INSTALL_DIR)" "$(MODULE_INSTALL_DIR)"; \
 	    do \
@@ -1055,12 +1054,12 @@ install-libraries: libraries
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.1.tm"
-	@echo "Installing package tcltest 2.5.3 as a Tcl Module"
+	@echo "Installing package tcltest 2.5.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.3.tm"
-	@echo "Installing package platform 1.0.14 as a Tcl Module"
+		"$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.4.tm"
+	@echo "Installing package platform 1.0.17 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/platform-1.0.14.tm"
+		"$(MODULE_INSTALL_DIR)/9.0/platform-1.0.17.tm"
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/platform/shell-1.1.4.tm"
@@ -1475,7 +1474,6 @@ tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
 		-DCFG_RUNTIME_INCDIR="\"$(includedir)\"" \
 		-DCFG_RUNTIME_DOCDIR="\"$(mandir)\"" \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
-		-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 		$(GENERIC_DIR)/tclPkgConfig.c
 
 tclPosixStr.o: $(GENERIC_DIR)/tclPosixStr.c
@@ -1529,9 +1527,8 @@ tclZlib.o: $(GENERIC_DIR)/tclZlib.c
 tclZipfs.o: $(GENERIC_DIR)/tclZipfs.c
 	$(CC) -c $(CC_SWITCHES) \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
-		-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
-		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
+		-DCFG_RUNTIME_BINDIR="\"$(bindir)\"" \
 		-I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip \
 		$(GENERIC_DIR)/tclZipfs.c
 
@@ -1745,6 +1742,9 @@ bn_mp_to_radix.o: $(TOMMATH_DIR)/bn_mp_to_radix.c $(MATHHDRS)
 bn_mp_ubin_size.o: $(TOMMATH_DIR)/bn_mp_ubin_size.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_ubin_size.c
 
+bn_mp_unpack.o: $(TOMMATH_DIR)/bn_mp_unpack.c $(MATHHDRS)
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_unpack.c
+
 bn_mp_xor.o: $(TOMMATH_DIR)/bn_mp_xor.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_xor.c
 
@@ -1912,7 +1912,7 @@ Zzutil.o:    $(ZLIB_DIR)/zutil.c
 #--------------------------------------------------------------------------
 
 tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLib.c
+	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD @CFLAGS_NOLTO@ $(GENERIC_DIR)/tclStubLib.c
 
 tclStubCall.o: $(GENERIC_DIR)/tclStubCall.c
 	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_LIB_FILE)\"" $(GENERIC_DIR)/tclStubCall.c
@@ -1921,10 +1921,10 @@ tclStubLibTbl.o: $(GENERIC_DIR)/tclStubLibTbl.c
 	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLibTbl.c
 
 tclTomMathStubLib.o: $(GENERIC_DIR)/tclTomMathStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclTomMathStubLib.c
+	$(CC) -c $(STUB_CC_SWITCHES) @CFLAGS_NOLTO@ $(GENERIC_DIR)/tclTomMathStubLib.c
 
 tclOOStubLib.o: $(GENERIC_DIR)/tclOOStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclOOStubLib.c
+	$(CC) -c $(STUB_CC_SWITCHES) @CFLAGS_NOLTO@ $(GENERIC_DIR)/tclOOStubLib.c
 
 .c.o:
 	$(CC) -c $(CC_SWITCHES) $<
@@ -2231,7 +2231,7 @@ ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
 DIST_INSTALL_DATA   = CPPROG='cp -p' $(INSTALL) -m 644
 DIST_INSTALL_SCRIPT = CPPROG='cp -p' $(INSTALL) -m 755
-BUILTIN_PACKAGE_LIST = cookiejar http opt msgcat reg dde tcltest platform
+BUILTIN_PACKAGE_LIST = cookiejar http opt msgcat registry dde tcltest platform
 
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.ac $(UNIX_DIR)/tcl.m4 \
 		$(UNIX_DIR)/aclocal.m4
@@ -2301,6 +2301,19 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \
 		$(TOP_DIR)/tests/httpd $(TOP_DIR)/tests/*.tcl \
 		$(DISTDIR)/tests
+	@mkdir $(DISTDIR)/tests/auto0
+	for i in auto1 auto2 ; \
+	    do \
+		$(INSTALL_DATA_DIR) $(DISTDIR)/tests/auto0/$$i ;\
+		$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/auto0/$$i/tclIndex $(TOP_DIR)/tests/auto0/$$i/*.tcl \
+			$(DISTDIR)/tests/auto0/$$i; \
+	    done;
+	for i in modules modules/mod1 modules/mod2 ; \
+	    do \
+		$(INSTALL_DATA_DIR) $(DISTDIR)/tests/auto0/$$i ;\
+		$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/auto0/$$i/*.tm \
+			$(DISTDIR)/tests/auto0/$$i; \
+	    done;
 	$(INSTALL_DATA_DIR) $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/Makefile.in $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/configure.ac \
@@ -2313,7 +2326,6 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.bat $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/*.vc $(DISTDIR)/win
-	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/tcl.hpj.in $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/tcl.ds* $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/README $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(DISTDIR)/win
@@ -2336,13 +2348,11 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	$(DIST_INSTALL_DATA) $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
 		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
 	$(INSTALL_DATA_DIR) $(DISTDIR)/tools
-	$(DIST_INSTALL_DATA) $(TOOL_DIR)/Makefile.in $(TOOL_DIR)/README \
-		$(TOOL_DIR)/configure $(TOOL_DIR)/configure.ac \
-		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/man2tcl.c \
-		$(TOOL_DIR)/*.bmp $(TOOL_DIR)/tcl.hpj.in \
-		$(DISTDIR)/tools
+	$(DIST_INSTALL_DATA) $(TOOL_DIR)/README $(TOOL_DIR)/*.c $(TOOL_DIR)/*.svg \
+		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/*.bmp \
+		$(TOOL_DIR)/valgrind_suppress $(DISTDIR)/tools
 	chmod 755 $(DISTDIR)/tools/checkLibraryDoc.tcl \
-		$(DISTDIR)/tools/configure $(DISTDIR)/tools/findBadExternals.tcl \
+		$(DISTDIR)/tools/findBadExternals.tcl \
 		$(DISTDIR)/tools/loadICU.tcl \
 		$(DISTDIR)/tools/makeTestCases.tcl $(DISTDIR)/tools/tclZIC.tcl \
 		$(DISTDIR)/tools/tcltk-man2html.tcl
@@ -2354,6 +2364,9 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	for i in `ls $(DISTROOT)/pkgs/*.tar.gz 2> /dev/null`; do \
 	    tar -C $(DISTDIR)/pkgs -xzf "$$i"; \
 	done
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/.travis.yml $(DISTDIR)
+	$(INSTALL_DATA_DIR) $(DISTDIR)/.github/workflows
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/.github/workflows/*.yml $(DISTDIR)/.github/workflows
 
 alldist: dist
 	rm -f $(DISTROOT)/$(DISTNAME)-src.tar.gz $(DISTROOT)/$(ZIPNAME)
@@ -2409,7 +2422,7 @@ BUILD_HTML = \
 .PHONY: install-tzdata install-msgs
 .PHONY: packages configure-packages test-packages clean-packages
 .PHONY: dist-packages distclean-packages install-packages
-.PHONY: install-libraries-zipfs-shared install-libraries-zipfs-static tclzipfile
+.PHONY: tclzipfile
 
 #--------------------------------------------------------------------------
 # DO NOT DELETE THIS LINE -- make depend depends on it.

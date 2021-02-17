@@ -4,7 +4,7 @@ if {[catch {package require Tcl 8.6-} msg]} {
     puts stderr "ERROR: $msg"
     puts stderr "If running this script from 'make html', set the\
 	NATIVE_TCLSH environment\nvariable to point to an installed\
-	tclsh9.0 (or the equivalent tclsh90.exe\non Windows)."
+	tclsh8.6 (or the equivalent tclsh86.exe\non Windows)."
     exit 1
 }
 
@@ -240,7 +240,7 @@ proc css-style args {
     append style $tokens " \{" $body "\}\n"
 }
 proc css-stylesheet {} {
-    set hBd "1px dotted #11577b"
+    set hBd "1px dotted #11577B"
 
     css-style body div p th td li dd ul ol dl dt blockquote {
 	font-family: Verdana, sans-serif;
@@ -249,7 +249,7 @@ proc css-stylesheet {} {
 	font-family: 'Courier New', Courier, monospace;
     }
     css-style pre {
-	background-color:  #f6fcec;
+	background-color:  #F6FCEC;
 	border-top:        1px solid #6A6A6A;
 	border-bottom:     1px solid #6A6A6A;
 	padding:           1em;
@@ -269,20 +269,20 @@ proc css-stylesheet {} {
     }
     css-style h1 {
 	font-size:         18px;
-	color:             #11577b;
+	color:             #11577B;
 	border-bottom:     $hBd;
 	margin-top:        0px;
     }
     css-style h2 {
 	font-size:         14px;
-	color:             #11577b;
-	background-color:  #c5dce8;
+	color:             #11577B;
+	background-color:  #C5DCE8;
 	padding-left:      1em;
 	border:            1px solid #6A6A6A;
     }
     css-style h3 h4 {
 	color:             #1674A4;
-	background-color:  #e8f2f6;
+	background-color:  #E8F2F6;
 	border-bottom:     $hBd;
 	border-top:        $hBd;
     }
@@ -296,16 +296,16 @@ proc css-stylesheet {} {
 	width: 20em;
 	float: left;
 	padding: 2px;
-	border-top: 1px solid #999;
+	border-top: 1px solid #999999;
     }
     css-style ".keylist dt" { font-weight: bold; }
     css-style ".keylist dd" ".arguments dd" {
 	margin-left: 20em;
 	padding: 2px;
-	border-top: 1px solid #999;
+	border-top: 1px solid #999999;
     }
     css-style .copy {
-	background-color:  #f6fcfc;
+	background-color:  #F6FCFC;
 	white-space:       pre;
 	font-size:         80%;
 	border-top:        1px solid #6A6A6A;
@@ -334,7 +334,7 @@ proc make-man-pages {html args} {
     set manual(short-toc-n) 1
     set manual(short-toc-fp) [open $html/[indexfile] w]
     puts $manual(short-toc-fp) [htmlhead $overall_title $overall_title]
-    puts $manual(short-toc-fp) "<DL class=\"keylist\">"
+    puts $manual(short-toc-fp) "<dl class=\"keylist\">"
     set manual(merge-copyrights) {}
 
     foreach arg $args {
@@ -378,13 +378,13 @@ proc make-man-pages {html args} {
     foreach a $letters {
 	set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
 	if {[llength $keys]} {
-	    lappend keyheader "<A HREF=\"$a.htm\">$a</A>"
+	    lappend keyheader "<a href=\"$a.html\">$a</a>"
 	} else {
 	    # No keywords for this letter
 	    lappend keyheader $a
 	}
     }
-    set keyheader <H3>[join $keyheader " |\n"]</H3>
+    set keyheader <h3>[join $keyheader " |\n"]</h3>
     puts $keyfp $keyheader
     foreach a $letters {
 	set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
@@ -392,16 +392,16 @@ proc make-man-pages {html args} {
 	    continue
 	}
 	# Per-keyword page
-	set afp [open $html/Keywords/$a.htm w]
+	set afp [open $html/Keywords/$a.html w]
 	puts $afp [htmlhead "$tcltkdesc Keywords - $a" \
 		       "$tcltkdesc Keywords - $a" \
 		       $overall_title "../[indexfile]"]
 	puts $afp $keyheader
-	puts $afp "<DL class=\"keylist\">"
+	puts $afp "<dl class=\"keylist\">"
 	foreach k [lsort -dictionary $keys] {
 	    set k [string range $k 8 end]
-	    puts $afp "<DT><A NAME=\"$k\">$k</A></DT>"
-	    puts $afp "<DD>"
+	    puts $afp "<dt><a name=\"[nospace-text $k]\" id=\"[nospace-text $k]\">$k</a></dt>"
+	    puts $afp "<dd>"
 	    set refs {}
 	    foreach man $manual(keyword-$k) {
 		set name [lindex $man 0]
@@ -411,32 +411,32 @@ proc make-man-pages {html args} {
 		    if {[string match {*[<>""]*} $tooltip]} {
 			manerror "bad tooltip for $file: \"$tooltip\""
 		    }
-		    lappend refs "<A HREF=\"../$file\" TITLE=\"$tooltip\">$name</A>"
+		    lappend refs "<a href=\"../$file\" title=\"$tooltip\">$name</a>"
 		} else {
-		    lappend refs "<A HREF=\"../$file\">$name</A>"
+		    lappend refs "<a href=\"../$file\">$name</a>"
 		}
 	    }
-	    puts $afp "[join $refs {, }]</DD>"
+	    puts $afp "[join $refs {, }]</dd>"
 	}
-	puts $afp "</DL>"
+	puts $afp "</dl>"
 	# insert merged copyrights
 	puts $afp [copyout $manual(merge-copyrights)]
-	puts $afp "</BODY></HTML>"
+	puts $afp "</body></html>"
 	close $afp
     }
     # insert merged copyrights
     puts $keyfp [copyout $manual(merge-copyrights)]
-    puts $keyfp "</BODY></HTML>"
+    puts $keyfp "</body></html>"
     close $keyfp
 
     ##
     ## finish off short table of contents
     ##
-    puts $manual(short-toc-fp) "<DT><A HREF=\"Keywords/[indexfile]\">Keywords</A><DD>The keywords from the $tcltkdesc man pages."
-    puts $manual(short-toc-fp) "</DL>"
+    puts $manual(short-toc-fp) "<dt><a href=\"Keywords/[indexfile]\">Keywords</a><dd>The keywords from the $tcltkdesc man pages."
+    puts $manual(short-toc-fp) "</dl>"
     # insert merged copyrights
     puts $manual(short-toc-fp) [copyout $manual(merge-copyrights)]
-    puts $manual(short-toc-fp) "</BODY></HTML>"
+    puts $manual(short-toc-fp) "</body></html>"
     close $manual(short-toc-fp)
 
     ##
@@ -468,7 +468,7 @@ proc make-man-pages {html args} {
 	    } else {
 		puts -nonewline stderr .
 	    }
-	    set outfd [open $html/$manual(wing-file)/$manual(name).htm w]
+	    set outfd [open $html/$manual(wing-file)/$manual(name).html w]
 	    puts $outfd [htmlhead "$manual($manual(wing-file)-$manual(name)-title)" \
 		    $manual(name) $wing_name "[indexfile]" \
 		    $overall_title "../[indexfile]"]
@@ -486,7 +486,7 @@ proc make-man-pages {html args} {
 	    foreach item $text {
 		puts $outfd [insert-cross-references $item]
 	    }
-	    puts $outfd "</BODY></HTML>"
+	    puts $outfd "</body></html>"
 	} on error msg {
 	    if {$verbose} {
 		puts stderr $msg
@@ -741,7 +741,11 @@ try {
 
 	    # ... but try to extract (name, version) from subdir contents
 	    try {
-		set f [open [file join $pkgsDir $dir configure.ac]]
+		try {
+		    set f [open [file join $pkgsDir $dir configure.in]]
+		} trap {POSIX ENOENT} {} {
+		    set f [open [file join $pkgsDir $dir configure.ac]]
+		}
 		foreach line [split [read $f] \n] {
 		    if {2 == [scan $line \
 			    { AC_INIT ( [%[^]]] , [%[^]]] ) } n v]} {
@@ -801,9 +805,9 @@ try {
 	[list $tcltkdir/{$appdir}/doc/*.1 "$tcltkdesc Applications" UserCmd \
 	     "The interpreters which implement $cmdesc."] \
 	[plus-base $build_tcl $tcldir doc/*.n {Tcl Commands} TclCmd \
-	     "The commands which the <B>tclsh</B> interpreter implements."] \
+	     "The commands which the <b>tclsh</b> interpreter implements."] \
 	[plus-base $build_tk $tkdir doc/*.n {Tk Commands} TkCmd \
-	     "The additional commands which the <B>wish</B> interpreter implements."] \
+	     "The additional commands which the <b>wish</b> interpreter implements."] \
 	{*}[plus-pkgs n {*}$packageBuildList] \
 	[plus-base $build_tcl $tcldir doc/*.3 {Tcl C API} TclLib \
 	     "The C functions which a Tcl extended C program may use."] \

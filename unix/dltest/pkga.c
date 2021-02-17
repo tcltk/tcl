@@ -4,7 +4,7 @@
  *	This file contains a simple Tcl package "pkga" that is intended for
  *	testing the Tcl dynamic loading facilities.
  *
- * Copyright (c) 1995 Sun Microsystems, Inc.
+ * Copyright © 1995 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -129,7 +129,7 @@ Pkga_Init(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkga", "1.0");
+    code = Tcl_PkgProvide(interp, "pkga", "1.0");
     if (code != TCL_OK) {
 	return code;
     }

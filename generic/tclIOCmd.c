@@ -3,7 +3,7 @@
  *
  *	Contains the definitions of most of the Tcl commands relating to IO.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -456,7 +456,7 @@ Tcl_ReadObjCmd(
 	const char *result;
 	size_t length;
 
-	result = TclGetStringFromObj(resultPtr, &length);
+	result = Tcl_GetStringFromObj(resultPtr, &length);
 	if (result[length - 1] == '\n') {
 	    Tcl_SetObjLength(resultPtr, length - 1);
 	}
@@ -703,7 +703,7 @@ Tcl_CloseObjCmd(
 	    resultPtr = Tcl_DuplicateObj(resultPtr);
 	    Tcl_SetObjResult(interp, resultPtr);
 	}
-	string = TclGetStringFromObj(resultPtr, &len);
+	string = Tcl_GetStringFromObj(resultPtr, &len);
 	if ((len > 0) && (string[len - 1] == '\n')) {
 	    Tcl_SetObjLength(resultPtr, len - 1);
 	}
@@ -983,7 +983,7 @@ Tcl_ExecObjCmd(
      */
 
     if (keepNewline == 0) {
-	string = TclGetStringFromObj(resultPtr, &length);
+	string = Tcl_GetStringFromObj(resultPtr, &length);
 	if ((length > 0) && (string[length - 1] == '\n')) {
 	    Tcl_SetObjLength(resultPtr, length - 1);
 	}

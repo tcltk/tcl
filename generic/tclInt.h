@@ -3183,12 +3183,14 @@ MODULE_SCOPE size_t	TclUtfCount(int ch);
 #if TCL_UTF_MAX > 3
 #   define TclUtfToUCS4 Tcl_UtfToUniChar
 #   define TclUniCharToUCS4(src, ptr) (*ptr = *(src),1)
+#   define TclUCS4Prev(src, ptr) (((src) > (ptr)) ? ((src) - 1) : (src))
 #   define TclUCS4Complete Tcl_UtfCharComplete
 #   define TclChar16Complete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
 	    ? ((length) >= 3) : Tcl_UtfCharComplete((src), (length)))
 #else
-    MODULE_SCOPE int	TclUtfToUCS4(const char *src, int *ucs4Ptr);
-    MODULE_SCOPE int	TclUniCharToUCS4(const Tcl_UniChar *src, int *ucs4Ptr);
+    MODULE_SCOPE int	TclUtfToUCS4(const char *, int *);
+    MODULE_SCOPE int	TclUniCharToUCS4(const Tcl_UniChar *, int *);
+    MODULE_SCOPE const Tcl_UniChar *TclUCS4Prev(const Tcl_UniChar *, const Tcl_UniChar *);
 #   define TclUCS4Complete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
 	    ? ((length) >= 4) : Tcl_UtfCharComplete((src), (length)))
 #   define TclChar16Complete Tcl_UtfCharComplete
@@ -3210,19 +3212,19 @@ MODULE_SCOPE void	TclFinalizeThreadDataThread(void);
 MODULE_SCOPE void	TclFinalizeThreadStorage(void);
 
 #ifdef TCL_WIDE_CLICKS
-MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
-MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
+MODULE_SCOPE long long TclpGetWideClicks(void);
+MODULE_SCOPE double	TclpWideClicksToNanoseconds(long long clicks);
 MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 #else
 #   ifdef _WIN32
 #	define TCL_WIDE_CLICKS 1
-MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
+MODULE_SCOPE long long TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClickInMicrosec(void);
 #	define		TclpWideClicksToNanoseconds(clicks) \
 				((double)(clicks) * TclpWideClickInMicrosec() * 1000)
 #   endif
 #endif
-MODULE_SCOPE Tcl_WideInt TclpGetMicroseconds(void);
+MODULE_SCOPE long long TclpGetMicroseconds(void);
 
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
@@ -4417,39 +4419,6 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString(objPtr))
 
-#if 0
-   static inline char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
-      char *response = Tcl_GetString(objPtr);
-      *(lenPtr) = objPtr->length;
-      return response;
-   }
-   static inline Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
-      Tcl_UniChar *response = Tcl_GetUnicodeFromObj(objPtr, NULL);
-      *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1);
-      return response;
-   }
-   static inline unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lenPtr) {
-      unsigned char *response = Tcl_GetByteArrayFromObj(objPtr, NULL);
-      if (response) {
-          *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1 + 1);
-      }
-      return response;
-   }
-#else
-#define TclGetStringFromObj(objPtr, lenPtr) \
-    (((objPtr)->bytes \
-	    ? NULL : Tcl_GetString((objPtr)), \
-	    *(lenPtr) = (objPtr)->length, (objPtr)->bytes))
-#define TclGetUnicodeFromObj(objPtr, lenPtr) \
-    (Tcl_GetUnicodeFromObj((objPtr), NULL), \
-	    *(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1), \
-	    Tcl_GetUnicodeFromObj((objPtr), NULL))
-#define TclGetByteArrayFromObj(objPtr, lenPtr) \
-    (Tcl_GetByteArrayFromObj((objPtr), NULL) ? \
-	(*(lenPtr) = *((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1 + 1), \
-	(unsigned char *)(((size_t *) (objPtr)->internalRep.twoPtrValue.ptr1) + 3)) : NULL)
-#endif
-
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to clean out an object's internal
@@ -4852,7 +4821,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     (objPtr) = Tcl_NewWideIntObj(w)
 
 #define TclNewIndexObj(objPtr, w) \
-    (objPtr) = ((w) == TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideIntObj(w)
+    (objPtr) = (((size_t)w) == TCL_INDEX_NONE) ? Tcl_NewWideIntObj(-1) : Tcl_NewWideIntObj(w)
 
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)

@@ -3,9 +3,9 @@
  *
  *	This file implements the Windows-specific thread operations.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 1999 by Scriptics Corporation
- * Copyright (c) 2008 by George Peter Staplin
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 1999 Scriptics Corporation
+ * Copyright © 2008 George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -222,7 +222,7 @@ TclpThreadCreate(
                  * on WIN64 sizeof void* != sizeof unsigned
 		 */
 
-#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize,
 	    (Tcl_ThreadCreateProc*) TclWinThreadStart, winThreadPtr,
 	    0, (unsigned *)idPtr);
@@ -300,7 +300,7 @@ TclpThreadExit(
     TclSignalExitThread(Tcl_GetCurrentThread(), status);
     LeaveCriticalSection(&joinLock);
 
-#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
     _endthreadex((unsigned) status);
 #else
     ExitThread((DWORD) status);

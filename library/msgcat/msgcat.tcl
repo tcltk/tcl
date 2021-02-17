@@ -4,9 +4,9 @@
 #	message catalog facility for Tcl programs.  It should be
 #	loaded with the command "package require msgcat".
 #
-# Copyright (c) 2010-2018 by Harald Oehlmann.
-# Copyright (c) 1998-2000 by Ajuba Solutions.
-# Copyright (c) 1998 by Mark Harrison.
+# Copyright © 2010-2018 Harald Oehlmann.
+# Copyright © 1998-2000 Ajuba Solutions.
+# Copyright © 1998 Mark Harrison.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.

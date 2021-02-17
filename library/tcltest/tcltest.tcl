@@ -11,8 +11,8 @@
 #	Microsystems.
 #
 # Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2000 by Ajuba Solutions
+# Copyright (c) 1998-1999 Scriptics Corporation.
+# Copyright (c) 2000 Ajuba Solutions
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 
@@ -22,7 +22,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.5.3
+    variable Version 2.5.4
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -41,7 +41,9 @@ namespace eval tcltest {
 	    outputChannel testConstraint
 
     # Export commands that are duplication (candidates for deprecation)
-    namespace export bytestring		;# dups [encoding convertfrom identity]
+    if {![package vsatisfies [package provide Tcl] 8.7-]} {
+	namespace export bytestring	;# dups [encoding convertfrom identity]
+    }
     namespace export debug		;#	[configure -debug]
     namespace export errorFile		;#	[configure -errfile]
     namespace export limitConstraints	;#	[configure -limitconstraints]
@@ -397,6 +399,9 @@ namespace eval tcltest {
 	    }
 	    default {
 		set outputChannel [open $filename a]
+		if {[package vsatisfies [package provide Tcl] 8.7-]} {
+		    fconfigure $outputChannel -encoding utf-8
+		}
 		set ChannelsWeOpened($outputChannel) 1
 
 		# If we created the file in [temporaryDirectory], then
@@ -441,6 +446,9 @@ namespace eval tcltest {
 	    }
 	    default {
 		set errorChannel [open $filename a]
+		if {[package vsatisfies [package provide Tcl] 8.7-]} {
+		    fconfigure $errorChannel -encoding utf-8
+		}
 		set ChannelsWeOpened($errorChannel) 1
 
 		# If we created the file in [temporaryDirectory], then
@@ -640,7 +648,7 @@ namespace eval tcltest {
 
     proc IsVerbose {level} {
 	variable Option
-	return [expr {[lsearch -exact $Option(-verbose) $level] >= 0}]
+	return [expr {$level in $Option(-verbose)}]
     }
 
     # Default verbosity is to show bodies of failed tests
@@ -783,6 +791,9 @@ namespace eval tcltest {
 	variable Option
 	if {$Option(-loadfile) eq {}} {return}
 	set tmp [open $Option(-loadfile) r]
+	if {[package vsatisfies [package provide Tcl] 8.7-]} {
+	    fconfigure $tmp -encoding utf-8
+	}
 	loadScript [read $tmp]
 	close $tmp
     }
@@ -1269,7 +1280,7 @@ proc tcltest::DefineConstraintInitializers {} {
 
     ConstraintInitializer nonBlockFiles {
 	    set code [expr {[catch {set f [open defs r]}]
-		    || [catch {chan configure $f -blocking off}]}]
+		    || [catch {fconfigure $f -blocking off}]}]
 	    catch {close $f}
 	    set code
     }
@@ -1328,6 +1339,9 @@ proc tcltest::DefineConstraintInitializers {} {
     ConstraintInitializer stdio {
 	set code 0
 	if {![catch {set f [open "|[list [interpreter]]" w]}]} {
+	    if {[package vsatisfies [package provide Tcl] 8.7-]} {
+		fconfigure $f -encoding utf-8
+	    }
 	    if {![catch {puts $f exit}]} {
 		if {![catch {close $f}]} {
 		    set code 1
@@ -2175,6 +2189,9 @@ proc tcltest::test {name description args} {
 	    set testFile [file normalize [uplevel 1 {info script}]]
 	    if {[file readable $testFile]} {
 		set testFd [open $testFile r]
+		if {[package vsatisfies [package provide Tcl] 8.7-]} {
+		    fconfigure $testFd -encoding utf-8
+		}
 		set testLine [expr {[lsearch -regexp \
 			[split [read $testFd] "\n"] \
 			"^\[ \t\]*test [string map {. \\.} $name] "] + 1}]
@@ -2883,6 +2900,9 @@ proc tcltest::runAllTests { {shell ""} } {
 	    if {[catch {
 		incr numTestFiles
 		set pipeFd [open $cmd "r"]
+		if {[package vsatisfies [package provide Tcl] 8.7-]} {
+		    fconfigure $pipeFd -encoding utf-8
+		}
 		while {[gets $pipeFd line] >= 0} {
 		    if {[regexp [join {
 			    {^([^:]+):\t}
@@ -3079,7 +3099,10 @@ proc tcltest::makeFile {contents name {directory ""}} {
 	     putting ``$contents'' into $fullName"
 
     set fd [open $fullName w]
-    chan configure $fd -translation lf
+    fconfigure $fd -translation lf
+    if {[package vsatisfies [package provide Tcl] 8.7-]} {
+	fconfigure $fd -encoding utf-8
+    }
     if {[string index $contents end] eq "\n"} {
 	puts -nonewline $fd $contents
     } else {
@@ -3228,6 +3251,9 @@ proc tcltest::viewFile {name {directory ""}} {
     }
     set fullName [file join $directory $name]
     set f [open $fullName]
+    if {[package vsatisfies [package provide Tcl] 8.7-]} {
+	fconfigure $f -encoding utf-8
+    }
     set data [read -nonewline $f]
     close $f
     return $data
@@ -3249,6 +3275,9 @@ proc tcltest::viewFile {name {directory ""}} {
 # construct improperly formed strings in this manner, because it involves
 # exposing that Tcl uses UTF-8 internally.
 #
+# This function doesn't work any more in Tcl 8.7, since the 'identity'
+# is gone (TIP #345)
+#
 # Arguments:
 #	string being converted
 #
@@ -3258,8 +3287,10 @@ proc tcltest::viewFile {name {directory ""}} {
 # Side effects:
 #	None
 
-proc tcltest::bytestring {string} {
-    return [encoding convertfrom identity $string]
+if {![package vsatisfies [package provide Tcl] 8.7-]} {
+    proc tcltest::bytestring {string} {
+	return [encoding convertfrom identity $string]
+    }
 }
 
 # tcltest::OpenFiles --

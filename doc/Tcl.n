@@ -224,7 +224,7 @@ is reached.  The upper bits of the Unicode character will be 0.
 .RS
 .PP
 The range U+00D800\(enU+00DFFF is reserved for surrogates, which
-are illegal on its own. Therefore, such sequences will result in
+are illegal on their own. Therefore, such sequences will result in
 the replacement character U+FFFD. Surrogate pairs should be
 encoded as single \e\fBU\fIhhhhhhhh\fR character.
 .RE

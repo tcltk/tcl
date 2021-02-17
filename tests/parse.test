@@ -2,8 +2,8 @@
 # file tclParse.c.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -17,7 +17,7 @@ namespace eval ::tcl::test::parse {
     namespace import ::tcltest::*
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testparser [llength [info commands testparser]]
 testConstraint testbytestring [llength [info commands testbytestring]]
@@ -278,7 +278,7 @@ test parse-6.9 {ParseTokens procedure, error in command substitution} {
 } {0}
 test parse-6.10 {ParseTokens procedure, incomplete sub-command} {
     info complete {puts [
-	expr 1+1
+	expr {1+1}
 	#this is a comment ]}
 } {0}
 test parse-6.11 {ParseTokens procedure, memory allocation for big nested command} testparser {
@@ -481,11 +481,11 @@ test parse-10.2 {Tcl_EvalTokens, backslash sequences} testevalex {
     testevalex {concat test\063\062test}
 } {test32test}
 test parse-10.3 {Tcl_EvalTokens, nested commands} testevalex {
-    testevalex {concat [expr 2 + 6]}
+    testevalex {concat [expr {2 + 6}]}
 } {8}
 test parse-10.4 {Tcl_EvalTokens, nested commands} testevalex {
     unset -nocomplain a
-    list [catch {testevalex {concat xxx[expr $a]}} msg] $msg
+    list [catch {testevalex {concat xxx[expr {$a}]}} msg] $msg
 } {1 {can't read "a": no such variable}}
 test parse-10.5 {Tcl_EvalTokens, simple variables} testevalex {
     set a hello
@@ -499,7 +499,7 @@ test parse-10.6 {Tcl_EvalTokens, array variables} testevalex {
 test parse-10.7 {Tcl_EvalTokens, array variables} testevalex {
     unset -nocomplain a
     set a(12) 46
-    testevalex {concat $a(1[expr 3 - 1])}
+    testevalex {concat $a(1[expr {3 - 1}])}
 } {46}
 test parse-10.8 {Tcl_EvalTokens, array variables} testevalex {
     unset -nocomplain a
@@ -518,7 +518,7 @@ test parse-10.11 {Tcl_EvalTokens, object values} testevalex {
     testevalex {concat $a$a$a}
 } {123123123}
 test parse-10.12 {Tcl_EvalTokens, object values} testevalex {
-    testevalex {concat [expr 2][expr 4][expr 6]}
+    testevalex {concat [expr {2}][expr {4}][expr {6}]}
 } {246}
 test parse-10.13 {Tcl_EvalTokens, string values} testevalex {
     testevalex {concat {a" b"}}
@@ -685,7 +685,7 @@ test parse-13.5 {Tcl_ParseVar procedure, error looking up variable} testparsevar
     unset -nocomplain abc
     list [catch {testparsevar {$abc([bogus x y z])}} msg] $msg
 } {1 {invalid command name "bogus"}}
-test parse-13.6 {Tcl_ParseVar memory leak} -constraints memory -setup {
+test parse-13.6 {Tcl_ParseVar memory leak} -constraints {testparsevar memory} -setup {
     proc getbytes {} {
 	return [lindex [split [memory info] \n] 3 3]
     }
@@ -984,26 +984,26 @@ test parse-18.14 {Tcl_SubstObj, exception handling} {
     subst {abc,[break],def}
 } {abc,}
 test parse-18.15 {Tcl_SubstObj, exception handling} {
-    subst {abc,[continue; expr 1+2],def}
+    subst {abc,[continue; expr {1+2}],def}
 } {abc,,def}
 test parse-18.16 {Tcl_SubstObj, exception handling} {
-    subst {abc,[return foo; expr 1+2],def}
+    subst {abc,[return foo; expr {1+2}],def}
 } {abc,foo,def}
 test parse-18.17 {Tcl_SubstObj, exception handling} {
-    subst {abc,[return -code 10 foo; expr 1+2],def}
+    subst {abc,[return -code 10 foo; expr {1+2}],def}
 } {abc,foo,def}
 test parse-18.18 {Tcl_SubstObj, exception handling} {
     subst {abc,[break; set {} {}{}],def}
 } {abc,}
 test parse-18.19 {Tcl_SubstObj, exception handling} {
-    list [catch {subst {abc,[continue; expr 1+2; set {} {}{}],def}} msg] $msg
+    list [catch {subst {abc,[continue; expr {1+2}; set {} {}{}],def}} msg] $msg
 } [list 1 "extra characters after close-brace"]
 test parse-18.20 {Tcl_SubstObj, exception handling} {
-    list [catch {subst {abc,[return foo; expr 1+2; set {} {}{}],def}} msg] $msg
+    list [catch {subst {abc,[return foo; expr {1+2}; set {} {}{}],def}} msg] $msg
 } [list 1 "extra characters after close-brace"]
 test parse-18.21 {Tcl_SubstObj, exception handling} {
     list [catch {
-	subst {abc,[return -code 10 foo; expr 1+2; set {} {}{}],def}
+	subst {abc,[return -code 10 foo; expr {1+2}; set {} {}{}],def}
     } msg] $msg
 } [list 1 "extra characters after close-brace"]
 

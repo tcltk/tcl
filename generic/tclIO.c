@@ -4,8 +4,8 @@
  *	This file provides the generic portions (those that are the same on
  *	all platforms and for all channel types) of Tcl's IO facilities.
  *
- * Copyright (c) 1998-2000 Ajuba Solutions
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Ajuba Solutions
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  * Contributions from Don Porter, NIST, 2014. (not subject to US copyright)
  *
  * See the file "license.terms" for information on usage and redistribution of
@@ -4140,7 +4140,7 @@ Tcl_WriteChars(
     }
 
     objPtr = Tcl_NewStringObj(src, len);
-    src = (char *) TclGetByteArrayFromObj(objPtr, &len);
+    src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
     result = WriteBytes(chanPtr, src, len);
     TclDecrRefCount(objPtr);
     return result;
@@ -4192,10 +4192,10 @@ Tcl_WriteObj(
 	return TCL_IO_FAILURE;
     }
     if (statePtr->encoding == NULL) {
-	src = (char *) TclGetByteArrayFromObj(objPtr, &srcLen);
+	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &srcLen);
 	return WriteBytes(chanPtr, src, srcLen);
     } else {
-	src = TclGetStringFromObj(objPtr, &srcLen);
+	src = Tcl_GetStringFromObj(objPtr, &srcLen);
 	return WriteChars(chanPtr, src, srcLen);
     }
 }
@@ -4573,7 +4573,7 @@ Tcl_GetsObj(
      * newline in the available input.
      */
 
-    (void)TclGetStringFromObj(objPtr, &oldLength);
+    (void)Tcl_GetStringFromObj(objPtr, &oldLength);
     oldFlags = statePtr->inputEncodingFlags;
     oldState = statePtr->inputEncodingState;
     oldRemoved = BUFFER_PADDING;
@@ -4956,7 +4956,7 @@ TclGetsObjBinary(
      * newline in the available input.
      */
 
-    byteArray = TclGetByteArrayFromObj(objPtr, &byteLen);
+    byteArray = Tcl_GetByteArrayFromObj(objPtr, &byteLen);
     oldFlags = statePtr->inputEncodingFlags;
     oldRemoved = BUFFER_PADDING;
     oldLength = byteLen;
@@ -6108,7 +6108,7 @@ ReadChars(
     int factor = *factorPtr;
     int dstLimit = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
 
-    (void) TclGetStringFromObj(objPtr, &numBytes);
+    (void) Tcl_GetStringFromObj(objPtr, &numBytes);
     Tcl_AppendToObj(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
 	size_t size;
@@ -6951,10 +6951,10 @@ GetInput(
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+long long
 Tcl_Seek(
     Tcl_Channel chan,		/* The channel on which to seek. */
-    Tcl_WideInt offset,		/* Offset to seek to. */
+    long long offset,		/* Offset to seek to. */
     int mode)			/* Relative to which location to seek? */
 {
     Channel *chanPtr = (Channel *) chan;
@@ -6964,7 +6964,7 @@ Tcl_Seek(
     int inputBuffered, outputBuffered;
 				/* # bytes held in buffers. */
     int result;			/* Of device driver operations. */
-    Tcl_WideInt curPos;		/* Position on the device. */
+    long long curPos;		/* Position on the device. */
     int wasAsync;		/* Was the channel nonblocking before the seek
 				 * operation? If so, must restore to
 				 * non-blocking mode after the seek. */
@@ -7121,7 +7121,7 @@ Tcl_Seek(
  *----------------------------------------------------------------------
  */
 
-Tcl_WideInt
+long long
 Tcl_Tell(
     Tcl_Channel chan)		/* The channel to return pos for. */
 {
@@ -7132,7 +7132,7 @@ Tcl_Tell(
     int inputBuffered, outputBuffered;
 				/* # bytes held in buffers. */
     int result;			/* Of calling device driver. */
-    Tcl_WideInt curPos;		/* Position on device. */
+    long long curPos;		/* Position on device. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
 	return -1;
@@ -7213,7 +7213,7 @@ Tcl_Tell(
 int
 Tcl_TruncateChannel(
     Tcl_Channel chan,		/* Channel to truncate. */
-    Tcl_WideInt length)		/* Length to truncate it to. */
+    long long length)		/* Length to truncate it to. */
 {
     Channel *chanPtr = (Channel *) chan;
     Tcl_DriverTruncateProc *truncateProc =
@@ -9101,7 +9101,7 @@ TclCopyChannel(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Channel inChan,		/* Channel to read from. */
     Tcl_Channel outChan,	/* Channel to write to. */
-    Tcl_WideInt toRead,		/* Amount of data to copy, or -1 for all. */
+    long long toRead,		/* Amount of data to copy, or -1 for all. */
     Tcl_Obj *cmdPtr)		/* Pointer to script to execute or NULL. */
 {
     Channel *inPtr = (Channel *) inChan;
@@ -9612,7 +9612,7 @@ CopyData(
 	    buffer = csPtr->buffer;
 	    sizeb = size;
 	} else {
-	    buffer = TclGetStringFromObj(bufObj, &sizeb);
+	    buffer = Tcl_GetStringFromObj(bufObj, &sizeb);
 	}
 
 	if (outBinary || sameEncoding) {

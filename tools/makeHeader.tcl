@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.6
+package require Tcl 8.6-
 
 namespace eval makeHeader {
 
@@ -25,7 +25,7 @@ namespace eval makeHeader {
 	}
 	set XFORM {[format \\\\\\\\u%04x {*}[scan & %c]]}
 
-	subst [regsub -all {[^\u0020-\u007e]} [string map $MAP $str] $XFORM]
+	subst [regsub -all {[^\x20-\x7E]} [string map $MAP $str] $XFORM]
     }
 
     ####################################################################

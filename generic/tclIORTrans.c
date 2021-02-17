@@ -10,7 +10,7 @@
  *
  *	See TIP #230 for the specification of this functionality.
  *
- * Copyright (c) 2007-2008 ActiveState.
+ * Copyright © 2007-2008 ActiveState.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -39,8 +39,8 @@ static int		ReflectOutput(ClientData clientData, const char *buf,
 			    int toWrite, int *errorCodePtr);
 static void		ReflectWatch(ClientData clientData, int mask);
 static int		ReflectBlock(ClientData clientData, int mode);
-static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
-			    Tcl_WideInt offset, int mode, int *errorCodePtr);
+static long long	ReflectSeekWide(ClientData clientData,
+			    long long offset, int mode, int *errorCodePtr);
 static int		ReflectGetOption(ClientData clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
@@ -1319,10 +1319,10 @@ ReflectOutput(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 ReflectSeekWide(
     ClientData clientData,
-    Tcl_WideInt offset,
+    long long offset,
     int seekMode,
     int *errorCodePtr)
 {
@@ -2006,7 +2006,7 @@ InvokeTclMethod(
 	    if (result != TCL_ERROR) {
 		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rtPtr->argv);
 		size_t cmdLen;
-		const char *cmdString = TclGetStringFromObj(cmd, &cmdLen);
+		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
 		Tcl_ResetResult(rtPtr->interp);
@@ -2565,7 +2565,7 @@ ForwardProc(
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
-	    bytev = TclGetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 
 	    paramPtr->transform.size = bytec;
 
@@ -2599,7 +2599,7 @@ ForwardProc(
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
-	    bytev = TclGetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 
 	    paramPtr->transform.size = bytec;
 
@@ -2628,7 +2628,7 @@ ForwardProc(
 	    size_t bytec = 0;	/* Number of returned bytes */
 	    unsigned char *bytev; /* Array of returned bytes */
 
-	    bytev = TclGetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 
 	    paramPtr->transform.size = bytec;
 
@@ -2655,7 +2655,7 @@ ForwardProc(
 	    unsigned char *bytev;
 				/* Array of returned bytes */
 
-	    bytev = TclGetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 
 	    paramPtr->transform.size = bytec;
 
@@ -2770,7 +2770,7 @@ ForwardSetObjError(
     Tcl_Obj *obj)
 {
     size_t len;
-    const char *msgStr = TclGetStringFromObj(obj, &len);
+    const char *msgStr = Tcl_GetStringFromObj(obj, &len);
 
     len++;
     ForwardSetDynamicError(paramPtr, Tcl_Alloc(len));
@@ -3055,7 +3055,7 @@ TransformRead(
     if (rtPtr->thread != Tcl_GetCurrentThread()) {
 	ForwardParam p;
 
-	p.transform.buf = (char *) TclGetByteArrayFromObj(bufObj,
+	p.transform.buf = (char *) Tcl_GetByteArrayFromObj(bufObj,
 		&(p.transform.size));
 
 	ForwardOpToOwnerThread(rtPtr, ForwardedInput, &p);
@@ -3083,7 +3083,7 @@ TransformRead(
 	return 0;
     }
 
-    bytev = TclGetByteArrayFromObj(resObj, &bytec);
+    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
     ResultAdd(&rtPtr->result, bytev, bytec);
 
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
@@ -3145,7 +3145,7 @@ TransformWrite(
 
 	*errorCodePtr = EOK;
 
-	bytev = TclGetByteArrayFromObj(resObj, &bytec);
+	bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 	res = Tcl_WriteRaw(rtPtr->parent, (char *) bytev, bytec);
 
 	Tcl_DecrRefCount(bufObj);
@@ -3198,7 +3198,7 @@ TransformDrain(
 	    return 0;
 	}
 
-	bytev = TclGetByteArrayFromObj(resObj, &bytec);
+	bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 	ResultAdd(&rtPtr->result, bytev, bytec);
 
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
@@ -3254,7 +3254,7 @@ TransformFlush(
 	}
 
 	if (op == FLUSH_WRITE) {
-	    bytev = TclGetByteArrayFromObj(resObj, &bytec);
+	    bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
 	    res = Tcl_WriteRaw(rtPtr->parent, (char *) bytev, bytec);
 	} else {
 	    res = 0;

@@ -4,7 +4,7 @@
 #	interface.
 #
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 # Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
@@ -257,8 +257,9 @@ proc genStubs::rewriteFile {file text} {
 	return
     }
     set in [open ${file} r]
+    fconfigure $in -eofchar "\032 {}" -encoding utf-8
     set out [open ${file}.new w]
-    fconfigure $out -translation lf
+    fconfigure $out -translation lf -encoding utf-8
 
     while {![eof $in]} {
 	set line [gets $in]
@@ -1100,7 +1101,7 @@ proc genStubs::emitInit {name textVar} {
     }
     foreach intf [array names interfaces] {
 	if {[info exists hooks($intf)]} {
-	    if {[lsearch -exact $hooks($intf) $name] >= 0} {
+	    if {$name in $hooks($intf)} {
 		set root 0
 		break
 	    }
@@ -1191,7 +1192,7 @@ proc genStubs::init {} {
     set outDir [lindex $argv 0]
 
     foreach file [lrange $argv 1 end] {
-	source $file
+	source -encoding utf-8 $file
     }
 
     foreach name [lsort [array names interfaces]] {

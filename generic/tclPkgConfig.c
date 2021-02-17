@@ -4,7 +4,7 @@
  *	This file contains the configuration information to embed into the tcl
  *	binary library.
  *
- * Copyright (c) 2002 Andreas Kupries <andreas_kupries@users.sourceforge.net>
+ * Copyright © 2002 Andreas Kupries <andreas_kupries@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -109,8 +109,9 @@ static Tcl_Config const cfg[] = {
     {"scriptdir,runtime",	CFG_RUNTIME_SCRDIR},
     {"includedir,runtime",	CFG_RUNTIME_INCDIR},
     {"docdir,runtime",		CFG_RUNTIME_DOCDIR},
+#if !defined(STATIC_BUILD)
     {"dllfile,runtime",		CFG_RUNTIME_DLLFILE},
-    {"zipfile,runtime",		CFG_RUNTIME_ZIPFILE},
+#endif
 
     /* Installation paths to various stuff */
 

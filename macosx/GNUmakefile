@@ -88,7 +88,7 @@ space			:= ${empty} ${empty}
 objdir			= $(subst ${space},\ ,${OBJ_DIR})
 
 develop_make_args	:= BUILD_STYLE=Development CONFIGURE_ARGS=--enable-symbols
-deploy_make_args	:= BUILD_STYLE=Deployment INSTALL_TARGET=install \
+deploy_make_args	:= BUILD_STYLE=Deployment INSTALL_TARGET=install-strip \
 			   EXTRA_CFLAGS=-DNDEBUG
 embedded_make_args	:= EMBEDDED_BUILD=1
 install_make_args	:= INSTALL_BUILD=1
@@ -144,7 +144,7 @@ ${objdir}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure \
 	mkdir -p "${OBJ_DIR}" && cd "${OBJ_DIR}" && \
 	if [ ${UNIX_DIR}/configure -nt config.status ]; then ${UNIX_DIR}/configure -C \
 	--prefix="${PREFIX}" --bindir="${BINDIR}" --libdir="${LIBDIR}" \
-	--mandir="${MANDIR}" --enable-framework --enable-dtrace \
+	--mandir="${MANDIR}" --enable-framework --enable-dtrace --disable-zipfs \
 	${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}; else ./config.status; fi
 
 build-${PROJECT}: ${objdir}/Makefile

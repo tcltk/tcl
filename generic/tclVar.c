@@ -7,11 +7,11 @@
  *	The implementation of arrays is modelled after an initial
  *	implementation by Mark Diekhans and Karl Lehenbauer.
  *
- * Copyright (c) 1987-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
- * Copyright (c) 2007 Miguel Sofer
+ * Copyright © 1987-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
+ * Copyright © 2001 Kevin B. Kenny. All rights reserved.
+ * Copyright © 2007 Miguel Sofer
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -665,7 +665,7 @@ TclObjLookupVarEx(
 	 */
 
 	size_t len;
-	const char *part1 = TclGetStringFromObj(part1Ptr, &len);
+	const char *part1 = Tcl_GetStringFromObj(part1Ptr, &len);
 
 	if ((len > 1) && (part1[len - 1] == ')')) {
 	    const char *part2 = strchr(part1, '(');
@@ -848,7 +848,7 @@ TclLookupSimpleVar(
     ResolverScheme *resPtr;
     int isNew, i, result;
     size_t varLen;
-    const char *varName = TclGetStringFromObj(varNamePtr, &varLen);
+    const char *varName = Tcl_GetStringFromObj(varNamePtr, &varLen);
 
     varPtr = NULL;
     varNsPtr = NULL;		/* Set non-NULL if a nonlocal variable. */
@@ -983,7 +983,7 @@ TclLookupSimpleVar(
 		Tcl_Obj *objPtr = *objPtrPtr;
 
 		if (objPtr) {
-		    localNameStr = TclGetStringFromObj(objPtr, &localLen);
+		    localNameStr = Tcl_GetStringFromObj(objPtr, &localLen);
 
 		    if ((varLen == localLen) && (varName[0] == localNameStr[0])
 			&& !memcmp(varName, localNameStr, varLen)) {

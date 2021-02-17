@@ -4,7 +4,7 @@
  *	This file implements the Windows-specific exec pipeline functions, the
  *	"pipe" channel driver, and the "pid" Tcl command.
  *
- * Copyright (c) 1996-1997 by Sun Microsystems, Inc.
+ * Copyright © 1996-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -3212,7 +3212,7 @@ TclpOpenTemporaryFile(
     }
     namePtr += length * sizeof(WCHAR);
     if (basenameObj) {
-	const char *string = TclGetStringFromObj(basenameObj, &length);
+	const char *string = Tcl_GetStringFromObj(basenameObj, &length);
 
 	Tcl_DStringInit(&buf);
 	Tcl_UtfToWCharDString(string, length, &buf);
@@ -3575,9 +3575,7 @@ TclPipeThreadStop(
 	     * Cancel all sync-IO of this thread (may be blocked there).
 	     */
 
-	    if (tclWinProcs.cancelSynchronousIo) {
-		tclWinProcs.cancelSynchronousIo(hThread);
-	    }
+	    CancelSynchronousIo(hThread);
 
 	    /*
 	     * Wait at most 20 milliseconds for the reader thread to close
