@@ -63,11 +63,11 @@ declare 8 {
 # but they are part of the old generic interface, so we include them here for
 # compatibility reasons.
 
-declare 9 unix {
+declare 9 {
     void Tcl_CreateFileHandler(int fd, int mask, Tcl_FileProc *proc,
 	    void *clientData)
 }
-declare 10 unix {
+declare 10 {
     void Tcl_DeleteFileHandler(int fd)
 }
 declare 11 {
@@ -616,7 +616,7 @@ declare 166 {
 # Tcl_GetOpenFile is only available on unix, but it is a part of the old
 # generic interface, so we include it here for compatibility reasons.
 
-declare 167 unix {
+declare 167 {
     int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID, int forWriting,
 	    int checkUsage, void **filePtr)
 }
@@ -2491,29 +2491,18 @@ interface tclPlat
 
 ################################
 # Windows specific functions
-
-# Added in Tcl 8.1, Removed in Tcl 9.0 (converted to macro)
-
-#declare 0 win {
-#    TCHAR *Tcl_WinUtfToTChar(const char *str, size_t len, Tcl_DString *dsPtr)
-#}
-#declare 1 win {
-#    char *Tcl_WinTCharToUtf(const TCHAR *str, size_t len, Tcl_DString *dsPtr)
-#}
+#   (none)
 
 ################################
 # Mac OS X specific functions
 
-# Removed in 9.0
-#declare 0 macosx {
-#    int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
-#	    const char *bundleName, int hasResourceFile,
-#	    size_t maxPathLen, char *libraryPath)
-#}
-declare 1 macosx {
+declare 1 {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
 	    int hasResourceFile, size_t maxPathLen, char *libraryPath)
+}
+declare 2 {
+    void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
 }
 
 ##############################################################################

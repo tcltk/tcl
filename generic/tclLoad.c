@@ -326,7 +326,7 @@ Tcl_LoadObjCmd(
 	    }
 #endif /* __CYGWIN__ */
 	    if ((pkgGuess[0] == 't') && (pkgGuess[1] == 'c')
-		    && (pkgGuess[2] == 'l') && (pkgGuess[2] == '9')) {
+		    && (pkgGuess[2] == 'l') && (pkgGuess[3] == '9')) {
 		pkgGuess += 4;
 	    }
 	    for (p = pkgGuess; *p != 0; p += offset) {

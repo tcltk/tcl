@@ -1653,9 +1653,13 @@ TclTrimRight(
 
     do {
 	const char *q = trim;
-    size_t pInc = 0, bytesLeft = numTrim;
+	size_t pInc = 0, bytesLeft = numTrim;
 
 	pp = TclUtfPrev(p, bytes);
+#if TCL_UTF_MAX < 4 /* Needed because TclUtfPrev() cannot always jump back */
+	/* sufficiently. See [d43f96c1a8] */
+	pp = TclUtfPrev(pp, bytes);
+#endif
 	do {
 	    pp += pInc;
  	    pInc = TclUtfToUCS4(pp, &ch1);
@@ -1666,14 +1670,14 @@ TclTrimRight(
 	 */
 
 	do {
-	    size_t qInc = TclUtfToUCS4(q, &ch2);
+	    pInc = TclUtfToUCS4(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
 	    }
 
-	    q += qInc;
-	    bytesLeft -= qInc;
+	    q += pInc;
+	    bytesLeft -= pInc;
 	} while (bytesLeft);
 
 	if (bytesLeft == 0) {
@@ -1719,7 +1723,7 @@ TclTrimLeft(
 			 * rely on (trim[numTrim] == '\0'). */
 {
     const char *p = bytes;
-	int ch1, ch2;
+    int ch1, ch2;
 
     /* Empty strings -> nothing to do */
     if ((numBytes == 0) || (numTrim == 0)) {

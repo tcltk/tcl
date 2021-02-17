@@ -243,6 +243,13 @@ typedef void *ClientData;
 #    undef HAVE_STRUCT_STAT64
 #endif /* __APPLE__ */
 
+/* Cross-compiling 32-bit on a 64-bit platform? Then our
+ * configure script does the wrong thing. Correct that here.
+ */
+#if defined(__GNUC__) && !defined(_WIN32) && !defined(__LP64__)
+#   undef TCL_WIDE_INT_IS_LONG
+#endif
+
 /*
  * Define Tcl_WideInt to be a type that is (at least) 64-bits wide, and define
  * Tcl_WideUInt to be the unsigned variant of that type (assuming that where
