@@ -2045,6 +2045,60 @@ DictSizeCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_DictObjSmartRef --
+ *
+ *	This function returns new tcl-object with the smart reference to
+ *	dictionary object.
+ *
+ *	Object returned with this function is a smart reference (pointer),
+ *	so new object of type tclDictType, that directly references given
+ *	dictionary object (with internally increased refCount).
+ *
+ *	The usage of such pointer objects allows to hold more as one
+ *	reference to the same real dictionary object, allows to make a pointer
+ *	to part of another dictionary, allows to change the dictionary without
+ *	regarding of the "shared" state of the dictionary object.
+ *
+ *	Prevents "called with shared object" exception if object is multiple
+ *	referenced.
+ *
+ * Results:
+ *	The newly create object (contains smart reference) is returned.
+ *	The returned object has a ref count of 0.
+ *
+ * Side effects:
+ *	Increases ref count of the referenced dictionary.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_DictObjSmartRef(
+    Tcl_Interp *interp,
+    Tcl_Obj    *dictPtr)
+{
+    Tcl_Obj *result;
+    Dict    *dict;
+
+    if (dictPtr->typePtr != &tclDictType
+	    && SetDictFromAny(interp, dictPtr) != TCL_OK) {
+	return NULL;
+    }
+
+    DictGetIntRep(dictPtr, dict);
+
+    result = Tcl_NewObj();
+    DictSetIntRep(result, dict);
+    dict->refCount++;
+    result->internalRep.twoPtrValue.ptr2 = NULL;
+    result->typePtr = &tclDictType;
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * DictExistsCmd --
  *
  *	This function implements the "dict exists" Tcl command. See the user

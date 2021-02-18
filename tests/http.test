@@ -679,7 +679,7 @@ test http-idna-1.1 {IDNA package: basics} -returnCodes error -body {
 } -result {wrong # args: should be "::tcl::idna subcommand ?arg ...?"}
 test http-idna-1.2 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna ?
-} -result {unknown or ambiguous subcommand "?": must be decode, encode, puny, or version}
+} -result {unknown subcommand "?": must be decode, encode, puny, or version}
 test http-idna-1.3 {IDNA package: basics} -body {
     ::tcl::idna version
 } -result 1.0.1
@@ -691,7 +691,7 @@ test http-idna-1.5 {IDNA package: basics} -returnCodes error -body {
 } -result {wrong # args: should be "::tcl::idna puny subcommand ?arg ...?"}
 test http-idna-1.6 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna puny ?
-} -result {unknown or ambiguous subcommand "?": must be decode, or encode}
+} -result {unknown subcommand "?": must be decode, or encode}
 test http-idna-1.7 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna puny encode
 } -result {wrong # args: should be "::tcl::idna puny encode string ?case?"}
