@@ -3496,7 +3496,7 @@ baseNow:
 badOptionMsg:
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	"bad option \"%s\": must be \"%s\"",
+	"bad option \"%s\": must be %s",
 	TclGetString(objv[i]), syntax)
     );
 
