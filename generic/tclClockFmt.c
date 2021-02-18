@@ -2521,7 +2521,7 @@ ClockScan(
 
 overflow:
 
-    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj("requested date too large to represent",
+    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj("integer value too large to represent",
 	-1));
     Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", NULL);
     goto done;
