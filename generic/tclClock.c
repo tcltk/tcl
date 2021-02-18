@@ -2594,8 +2594,8 @@ GetGregorianEraYearDay(
     int changeover)		/* Gregorian transition date */
 {
     Tcl_WideInt jday = fields->julianDay;
-    Tcl_WideInt year;
     Tcl_WideInt day;
+    Tcl_WideInt year;
     Tcl_WideInt n;
 
     if (jday >= changeover) {
@@ -2680,12 +2680,12 @@ GetGregorianEraYearDay(
 
     if (year <= 0) {
 	fields->era = BCE;
-	fields->year = 1 - (int)year;
+	fields->year = 1 - year;
     } else {
 	fields->era = CE;
-	fields->year = (int)year;
+	fields->year = year;
     }
-    fields->dayOfYear = (int)(day + 1);
+    fields->dayOfYear = day + 1;
 }
 
 /*
@@ -3151,7 +3151,7 @@ ClockClicksObjCmd(
 	}
 	break;
     default:
-	Tcl_WrongNumArgs(interp, 0, NULL, "clock clicks ?-switch?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-switch?");
 	return TCL_ERROR;
     }
 
@@ -3205,7 +3205,7 @@ ClockMillisecondsObjCmd(
     (void)clientData;
 
     if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, "clock milliseconds");
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
@@ -4537,7 +4537,7 @@ ClockSecondsObjCmd(
     (void)clientData;
 
     if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, "clock seconds");
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
