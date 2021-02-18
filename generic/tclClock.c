@@ -3496,7 +3496,7 @@ baseNow:
 badOptionMsg:
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	"bad option \"%s\": should be \"%s\"",
+	"bad option \"%s\": must be \"%s\"",
 	TclGetString(objv[i]), syntax)
     );
 
@@ -3560,7 +3560,7 @@ ClockFormatObjCmd(
 
     ClockInitFmtScnArgs(clientData, interp, &opts);
     ret = ClockParseFmtScnArgs(&opts, &dateFmt.date, objc, objv,
-	    CLC_FMT_ARGS, syntax);
+	    CLC_FMT_ARGS, "-format, -gmt, -locale, or -timezone");
     if (ret != TCL_OK) {
 	goto done;
     }
@@ -3637,7 +3637,7 @@ ClockScanObjCmd(
 
     ClockInitFmtScnArgs(clientData, interp, &opts);
     ret = ClockParseFmtScnArgs(&opts, &yy.date, objc, objv,
-	    CLC_SCN_ARGS, syntax);
+	    CLC_SCN_ARGS, "-base, -format, -gmt, -locale, -timezone or -validate");
     if (ret != TCL_OK) {
 	goto done;
     }
@@ -3742,7 +3742,7 @@ ClockScanCommit(
 	    + ((double)yySecondOfDay - SECONDS_PER_DAY/2) / SECONDS_PER_DAY;
 	if (curJDN > dataPtr->maxJDN) {
 	    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
-		"requested date too large to represent", -1));
+		"integer value too large to represent", -1));
 	    Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", NULL);
 	    return TCL_ERROR;
 	}
