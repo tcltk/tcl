@@ -151,10 +151,10 @@ declare 74 {
     void TclpFree(void *ptr)
 }
 declare 75 {
-    Tcl_WideUInt TclpGetClicks(void)
+    unsigned long long TclpGetClicks(void)
 }
 declare 76 {
-    Tcl_WideUInt TclpGetSeconds(void)
+    unsigned long long TclpGetSeconds(void)
 }
 declare 81 {
     void *TclpRealloc(void *ptr, size_t size)

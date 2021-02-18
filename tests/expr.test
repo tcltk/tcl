@@ -6698,6 +6698,12 @@ test expr-38.12 {abs and -0x0 [Bug 2954959]} {
 test expr-38.13 {abs and 0.0 [Bug 2954959]} {
     ::tcl::mathfunc::abs 1e-324
 } 1e-324
+test expr-38.14 {abs and INT64_MIN special-case} {
+    ::tcl::mathfunc::abs -9223372036854775808
+} 9223372036854775808
+test expr-38.15 {abs and INT128_MIN special-case} {
+    ::tcl::mathfunc::abs -170141183460469231731687303715884105728
+} 170141183460469231731687303715884105728
 
 testConstraint testexprlongobj   [llength [info commands testexprlongobj]]
 testConstraint testexprdoubleobj [llength [info commands testexprdoubleobj]]
