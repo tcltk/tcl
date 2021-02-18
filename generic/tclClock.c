@@ -3742,7 +3742,7 @@ ClockScanCommit(
 	    + ((double)yySecondOfDay - SECONDS_PER_DAY/2) / SECONDS_PER_DAY;
 	if (curJDN > dataPtr->maxJDN) {
 	    Tcl_SetObjResult(opts->interp, Tcl_NewStringObj(
-		"integer value too large to represent", -1));
+		"requested date too large to represent", -1));
 	    Tcl_SetErrorCode(opts->interp, "CLOCK", "dateTooLarge", NULL);
 	    return TCL_ERROR;
 	}

@@ -18917,13 +18917,13 @@ test clock-7.6 {Julian Day, overflow} {
     list [catch {
 	clock scan 5373485 -format %J
     } result] $result $errorCode
-} {1 {integer value too large to represent} {CLOCK dateTooLarge}}
+} {1 {requested date too large to represent} {CLOCK dateTooLarge}}
 
 test clock-7.7 {Julian Day, overflow} {
     list [catch {
 	clock scan 2147483648 -format %J
     } result] $result $errorCode
-} {1 {integer value too large to represent} {CLOCK dateTooLarge}}
+} {1 {requested date too large to represent} {CLOCK dateTooLarge}}
 
 test clock-7.8 {Julian Day, precedence below seconds} {
     list [clock scan {2440588 86400} -format {%J %s} -gmt true] \
@@ -18997,7 +18997,7 @@ test clock-7.16 {Astronomical JDN/JD, overflow} {
     [catch {
 	clock scan 2147483648.5 -format %Ej
     } result] $result $errorCode
-} [lrepeat 4 1 {integer value too large to represent} {CLOCK dateTooLarge}]
+} [lrepeat 4 1 {requested date too large to represent} {CLOCK dateTooLarge}]
 
 test clock-7.18 {Astronomical JDN/JD, same precedence as seconds (last wins} {
     list [clock scan {2440588 86400} -format {%Ej %s} -gmt true] \
