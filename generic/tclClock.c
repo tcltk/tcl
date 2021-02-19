@@ -1762,13 +1762,13 @@ ClockClicksObjCmd(
     switch (index) {
     case CLICKS_MILLIS:
 	Tcl_GetTime(&now);
-	clicks = (Tcl_WideInt) now.sec * 1000 + now.usec / 1000;
+	clicks = (Tcl_WideInt)(unsigned long)now.sec * 1000 + now.usec / 1000;
 	break;
     case CLICKS_NATIVE:
 #ifdef TCL_WIDE_CLICKS
 	clicks = TclpGetWideClicks();
 #else
-	clicks = (Tcl_WideInt) TclpGetClicks();
+	clicks = (Tcl_WideInt)TclpGetClicks();
 #endif
 	break;
     case CLICKS_MICROS:
@@ -2024,9 +2024,26 @@ ClockSecondsObjCmd(
 static void
 TzsetIfNecessary(void)
 {
-    static char* tzWas = (char *)INT2PTR(-1);	/* Previous value of TZ, protected by
+    static char *tzWas = (char *)INT2PTR(-1);	/* Previous value of TZ, protected by
 				 * clockMutex. */
+    static long	 tzLastRefresh = 0;	 /* Used for latency before next refresh */
+    static size_t tzEnvEpoch = 0;        /* Last env epoch, for faster signaling,
+					    that TZ changed via TCL */
     const char *tzIsNow;	/* Current value of TZ */
+
+    /*
+     * Prevent performance regression on some platforms by resolving of system time zone:
+     * small latency for check whether environment was changed (once per second)
+     * no latency if environment was changed with tcl-env (compare both epoch values)
+     */
+    Tcl_Time now;
+    Tcl_GetTime(&now);
+    if (now.sec == tzLastRefresh && tzEnvEpoch == TclEnvEpoch) {
+	return;
+    }
+
+    tzEnvEpoch = TclEnvEpoch;
+    tzLastRefresh = now.sec;
 
     Tcl_MutexLock(&clockMutex);
     tzIsNow = getenv("TZ");

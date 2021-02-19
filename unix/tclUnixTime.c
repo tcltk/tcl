@@ -49,10 +49,10 @@ void *tclTimeClientData = NULL;
  *----------------------------------------------------------------------
  */
 
-Tcl_WideUInt
+unsigned long long
 TclpGetSeconds(void)
 {
-    return time(NULL);
+    return (unsigned long long)time(NULL);
 }
 
 /*
@@ -78,7 +78,7 @@ TclpGetMicroseconds(void)
     Tcl_Time time;
 
     tclGetTimeProcPtr(&time, tclTimeClientData);
-    return ((long long)time.sec)*1000000 + time.usec;
+    return ((long long)(unsigned long)time.sec)*1000000 + time.usec;
 }
 
 /*
@@ -100,30 +100,30 @@ TclpGetMicroseconds(void)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideUInt
+unsigned long long
 TclpGetClicks(void)
 {
-	Tcl_WideUInt now;
+    unsigned long long now;
 
 #ifdef NO_GETTOD
     if (tclGetTimeProcPtr != NativeGetTime) {
 	Tcl_Time time;
 
 	tclGetTimeProcPtr(&time, tclTimeClientData);
-	now = (Tcl_WideUInt)time.sec*1000000 + time.usec;
+	now = (unsigned long long)(unsigned long)time.sec*1000000 + time.usec;
     } else {
 	/*
 	 * A semi-NativeGetTime, specialized to clicks.
 	 */
 	struct tms dummy;
 
-	now = (Tcl_WideUInt) times(&dummy);
+	now = (unsigned long long)times(&dummy);
     }
 #else
     Tcl_Time time;
 
     tclGetTimeProcPtr(&time, tclTimeClientData);
-    now = (Tcl_WideUInt)time.sec*1000000 + time.usec;
+    now = (unsigned long long)time.sec*1000000 + time.usec;
 #endif
 
     return now;
