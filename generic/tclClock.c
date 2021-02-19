@@ -126,19 +126,19 @@ static int		ClockScanObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		ClockScanCommit(
-			    register DateInfo *info,
-			    register ClockFmtScnCmdArgs *opts);
+			    DateInfo *info,
+			    ClockFmtScnCmdArgs *opts);
 static int		ClockFreeScan(
-			    register DateInfo *info,
+			    DateInfo *info,
 			    Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);
 static int		ClockCalcRelTime(
-			    register DateInfo *info, ClockFmtScnCmdArgs *opts);
+			    DateInfo *info);
 static int		ClockAddObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		ClockValidDate(
-			    register DateInfo *,
-			    register ClockFmtScnCmdArgs *, int stage);
+			    DateInfo *,
+			    ClockFmtScnCmdArgs *, int stage);
 static struct tm *	ThreadSafeLocalTime(const time_t *);
 static size_t		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(ClientData);
@@ -3039,14 +3039,13 @@ WeekdayOnOrBefore(
 
 int
 ClockGetenvObjCmd(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
 {
     const char *varName;
     const char *varValue;
-    (void)clientData;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
@@ -3125,7 +3124,7 @@ ThreadSafeLocalTime(
 
 int
 ClockClicksObjCmd(
-    ClientData clientData,	/* Client data is unused */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
@@ -3139,7 +3138,6 @@ ClockClicksObjCmd(
     int index = CLICKS_NATIVE;
     Tcl_Time now;
     Tcl_WideInt clicks = 0;
-    (void)clientData;
 
     switch (objc) {
     case 1:
@@ -3196,13 +3194,12 @@ ClockClicksObjCmd(
 
 int
 ClockMillisecondsObjCmd(
-    ClientData clientData,	/* Client data is unused */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
-    (void)clientData;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -3234,14 +3231,13 @@ ClockMillisecondsObjCmd(
 
 int
 ClockMicrosecondsObjCmd(
-    ClientData clientData,	/* Client data is unused */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
-    (void)clientData;
     if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, "clock microseconds");
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
@@ -3283,7 +3279,6 @@ ClockInitFmtScnArgs(
 
 static int
 ClockParseFmtScnArgs(
-    register
     ClockFmtScnCmdArgs *opts,	/* Result vector: format, locale, timezone... */
     TclDateFields      *date,	/* Extracted date-time corresponding base
 				 * (by scan or add) resp. clockval (by format) */
@@ -3420,7 +3415,7 @@ ClockParseFmtScnArgs(
     /* Base (by scan or add) or clock value (by format) */
 
     if (opts->baseObj != NULL) {
-	register Tcl_Obj *baseObj = opts->baseObj;
+	Tcl_Obj *baseObj = opts->baseObj;
 	/* bypass integer recognition if looks like option "-now" */
 	if (
 	    (baseObj->length == 4 && baseObj->bytes && *(baseObj->bytes+1) == 'n') ||
@@ -3537,7 +3532,7 @@ ClockFormatObjCmd(
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
 
-    static const char *syntax = "clock format clockval|-now "
+    static const char *syntax = "clockval|-now "
 	"?-format string? "
 	"?-gmt boolean? "
 	"?-locale LOCALE? ?-timezone ZONE?";
@@ -3547,7 +3542,7 @@ ClockFormatObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, syntax);
+	Tcl_WrongNumArgs(interp, 1, objv, syntax);
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
 	return TCL_ERROR;
     }
@@ -3612,7 +3607,7 @@ ClockScanObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
-    static const char *syntax = "clock scan string "
+    static const char *syntax = "string "
 	    "?-base seconds? "
 	    "?-format string? "
 	    "?-gmt boolean? "
@@ -3624,7 +3619,7 @@ ClockScanObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, syntax);
+	Tcl_WrongNumArgs(interp, 1, objv, syntax);
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
 	return TCL_ERROR;
     }
@@ -3713,8 +3708,7 @@ done:
 
 static int
 ClockScanCommit(
-    register DateInfo  *info,	/* Clock scan info structure */
-    register
+    DateInfo  *info,	/* Clock scan info structure */
     ClockFmtScnCmdArgs *opts)	/* Format, locale, timezone and base */
 {
     /* If needed assemble julianDay using year, month, etc. */
@@ -3788,8 +3782,7 @@ ClockScanCommit(
 
 static int
 ClockValidDate(
-    register DateInfo  *info,	/* Clock scan info structure */
-    register
+    DateInfo  *info,	/* Clock scan info structure */
     ClockFmtScnCmdArgs *opts,	/* Scan options */
     int stage)			/* Stage to validate (1, 2 or 3 for both) */
 {
@@ -3950,7 +3943,6 @@ ClockValidDate(
 
 int
 ClockFreeScan(
-    register
     DateInfo	       *info,	/* Date fields used for parsing & converting
 				 * simultaneously a yy-parse structure of the
 				 * TclClockFreeScan */
@@ -4064,7 +4056,7 @@ ClockFreeScan(
      * Do relative times
      */
 
-    ret = ClockCalcRelTime(info, opts);
+    ret = ClockCalcRelTime(info);
 
     /* Free scanning completed - date ready */
 
@@ -4089,9 +4081,7 @@ done:
  */
 int
 ClockCalcRelTime(
-    register
-    DateInfo	       *info,	/* Date fields used for converting */
-    ClockFmtScnCmdArgs *opts)	/* Command options */
+    DateInfo	       *info)	/* Date fields used for converting */
 {
 
     int prevDayOfWeek = yyDayOfWeek;	/* preserve unchanged day of week */
@@ -4264,10 +4254,10 @@ repeat_rel:
 
 static inline int
 ClockWeekdaysOffs(
-    register int dayOfWeek,
-    register int offs)
+    int dayOfWeek,
+    int offs)
 {
-    register int weeks, resDayOfWeek;
+    int weeks, resDayOfWeek;
 
     /* offset in days */
     weeks = offs / 5;
@@ -4281,7 +4271,7 @@ ClockWeekdaysOffs(
 
     /* resulting day of week */
     {
-	register int day = (offs % 7);
+	int day = (offs % 7);
 	/* compiler fix for negative offs - wrap (0, -1) -> (-1, 6) */
 	if (day < 0) {
 	    day = 7 + day;
@@ -4354,7 +4344,7 @@ ClockAddObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
-    static const char *syntax = "clock add clockval|-now ?number units?..."
+    static const char *syntax = "clockval|-now ?number units?..."
 	"?-gmt boolean? "
 	"?-locale LOCALE? ?-timezone ZONE?";
     ClockClientData *dataPtr = (ClockClientData *)clientData;
@@ -4381,7 +4371,7 @@ ClockAddObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, syntax);
+	Tcl_WrongNumArgs(interp, 1, objv, syntax);
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
 	return TCL_ERROR;
     }
@@ -4443,7 +4433,7 @@ ClockAddObjCmd(
 	    || yySeconds + yyRelSeconds < 0
 	  )
 	) {
-	    if (ClockCalcRelTime(info, &opts) != TCL_OK) {
+	    if (ClockCalcRelTime(info) != TCL_OK) {
 		goto done;
 	    }
 	}
@@ -4487,7 +4477,7 @@ ClockAddObjCmd(
      */
 
     if (info->flags & CLF_RELCONV) {
-	if (ClockCalcRelTime(info, &opts) != TCL_OK) {
+	if (ClockCalcRelTime(info) != TCL_OK) {
 	    goto done;
 	}
     }
@@ -4528,13 +4518,12 @@ done:
 
 int
 ClockSecondsObjCmd(
-    ClientData clientData,	/* Client data is unused */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter values */
 {
     Tcl_Time now;
-    (void)clientData;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -4558,7 +4547,7 @@ ClockSecondsObjCmd(
  */
 int
 ClockSafeCatchCmd(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])

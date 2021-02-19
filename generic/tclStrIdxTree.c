@@ -166,8 +166,8 @@ TclStrIdxTreeFree(
 static inline void
 TclStrIdxTreeInsertBranch(
     TclStrIdxTree *parent,
-    register TclStrIdx *item,
-    register TclStrIdx *child)
+    TclStrIdx *item,
+    TclStrIdx *child)
 {
     if (parent->firstPtr == child)
 	parent->firstPtr = item;
@@ -187,8 +187,8 @@ TclStrIdxTreeInsertBranch(
 
 static inline void
 TclStrIdxTreeAppend(
-    register TclStrIdxTree *parent,
-    register TclStrIdx	   *item)
+    TclStrIdxTree *parent,
+    TclStrIdx	   *item)
 {
     if (parent->lastPtr != NULL) {
 	parent->lastPtr->nextPtr = item;

@@ -415,7 +415,7 @@ FmtScn4HashEntry(Tcl_HashEntry *hKeyPtr) {
 
 static Tcl_HashEntry *
 ClockFmtScnStorageAllocProc(
-    Tcl_HashTable *tablePtr,	/* Hash table. */
+    TCL_UNUSED(Tcl_HashTable *),	/* Hash table. */
     void *keyPtr)		/* Key to store in the hash table entry. */
 {
     ClockFmtScnStorage *fss;
@@ -423,7 +423,6 @@ ClockFmtScnStorageAllocProc(
     Tcl_HashEntry *hPtr;
     unsigned int size,
 	allocsize = sizeof(ClockFmtScnStorage) + sizeof(Tcl_HashEntry);
-    (void)tablePtr;
 
     allocsize += (size = strlen(string) + 1);
     if (size > sizeof(hPtr->key)) {
@@ -585,11 +584,10 @@ ClockFmtObj_FreeInternalRep(
 
 static int
 ClockFmtObj_SetFromAny(
-    Tcl_Interp *interp,
+    TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj    *objPtr)
 {
     /* validate string representation before free old internal representation */
-    (void)interp;
     (void)TclGetString(objPtr);
 
     /* free old internal representation */
@@ -955,7 +953,7 @@ FindTokenBegin(
  */
 
 static void
-DetermineGreedySearchLen(ClockFmtScnCmdArgs *opts,
+DetermineGreedySearchLen(
     DateInfo *info, ClockScanToken *tok,
     int *minLenPtr, int *maxLenPtr)
 {
@@ -1054,7 +1052,7 @@ DetermineGreedySearchLen(ClockFmtScnCmdArgs *opts,
  */
 
 static inline int
-ObjListSearch(ClockFmtScnCmdArgs *opts,
+ObjListSearch(
     DateInfo *info, int *val,
     Tcl_Obj **lstv, int lstc,
     int minLen, int maxLen)
@@ -1121,7 +1119,7 @@ LocaleListSearch(ClockFmtScnCmdArgs *opts,
     }
 
     /* search in list */
-    return ObjListSearch(opts, info, val, lstv, lstc,
+    return ObjListSearch(info, val, lstv, lstc,
 	minLen, maxLen);
 }
 #endif
@@ -1294,7 +1292,7 @@ done:
  */
 
 static inline int
-ClockStrIdxTreeSearch(ClockFmtScnCmdArgs *opts,
+ClockStrIdxTreeSearch(
     DateInfo *info, TclStrIdxTree *idxTree, int *val,
     int minLen, int maxLen)
 {
@@ -1398,7 +1396,7 @@ ClockScnToken_Month_Proc(ClockFmtScnCmdArgs *opts,
     int minLen, maxLen;
     TclStrIdxTree *idxTree;
 
-    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
 
     /* get or create tree in msgcat dict */
 
@@ -1407,7 +1405,7 @@ ClockScnToken_Month_Proc(ClockFmtScnCmdArgs *opts,
 	return TCL_ERROR;
     }
 
-    ret = ClockStrIdxTreeSearch(opts, info, idxTree, &val, minLen, maxLen);
+    ret = ClockStrIdxTreeSearch(info, idxTree, &val, minLen, maxLen);
     if (ret != TCL_OK) {
 	return ret;
     }
@@ -1428,7 +1426,7 @@ ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
     char curTok = *tok->tokWord.start;
     TclStrIdxTree *idxTree;
 
-    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
 
     /* %u %w %Ou %Ow */
     if ( curTok != 'a' && curTok != 'A'
@@ -1447,7 +1445,7 @@ ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
 		return TCL_ERROR;
 	    }
 
-	    ret = ClockStrIdxTreeSearch(opts, info, idxTree, &val, minLen, maxLen);
+	    ret = ClockStrIdxTreeSearch(info, idxTree, &val, minLen, maxLen);
 	    if (ret != TCL_OK) {
 		return ret;
 	    }
@@ -1478,7 +1476,7 @@ ClockScnToken_DayOfWeek_Proc(ClockFmtScnCmdArgs *opts,
 	return TCL_ERROR;
     }
 
-    ret = ClockStrIdxTreeSearch(opts, info, idxTree, &val, minLen, maxLen);
+    ret = ClockStrIdxTreeSearch(info, idxTree, &val, minLen, maxLen);
     if (ret != TCL_OK) {
 	return ret;
     }
@@ -1500,7 +1498,7 @@ ClockScnToken_amPmInd_Proc(ClockFmtScnCmdArgs *opts,
     int minLen, maxLen;
     Tcl_Obj *amPmObj[2];
 
-    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
 
     amPmObj[0] = ClockMCGet(opts, MCLIT_AM);
     amPmObj[1] = ClockMCGet(opts, MCLIT_PM);
@@ -1509,7 +1507,7 @@ ClockScnToken_amPmInd_Proc(ClockFmtScnCmdArgs *opts,
 	return TCL_ERROR;
     }
 
-    ret = ObjListSearch(opts, info, &val, amPmObj, 2,
+    ret = ObjListSearch(info, &val, amPmObj, 2,
 	minLen, maxLen);
     if (ret != TCL_OK) {
 	return ret;
@@ -1534,7 +1532,7 @@ ClockScnToken_LocaleERA_Proc(ClockFmtScnCmdArgs *opts,
     int minLen, maxLen;
     Tcl_Obj *eraObj[6];
 
-    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
 
     eraObj[0] = ClockMCGet(opts, MCLIT_BCE);
     eraObj[1] = ClockMCGet(opts, MCLIT_CE);
@@ -1547,7 +1545,7 @@ ClockScnToken_LocaleERA_Proc(ClockFmtScnCmdArgs *opts,
 	return TCL_ERROR;
     }
 
-    ret = ObjListSearch(opts, info, &val, eraObj, 6,
+    ret = ObjListSearch(info, &val, eraObj, 6,
 	minLen, maxLen);
     if (ret != TCL_OK) {
 	return ret;
@@ -1570,7 +1568,7 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
     int minLen, maxLen;
     TclStrIdxTree *idxTree;
 
-    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
 
     /* get or create tree in msgcat dict */
 
@@ -1579,7 +1577,7 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
 	return TCL_ERROR;
     }
 
-    ret = ClockStrIdxTreeSearch(opts, info, idxTree, &val, minLen, maxLen);
+    ret = ClockStrIdxTreeSearch(info, idxTree, &val, minLen, maxLen);
     if (ret != TCL_OK) {
 	return ret;
     }
@@ -1592,14 +1590,14 @@ ClockScnToken_LocaleListMatcher_Proc(ClockFmtScnCmdArgs *opts,
 }
 
 static int
-ClockScnToken_JDN_Proc(ClockFmtScnCmdArgs *opts,
+ClockScnToken_JDN_Proc(TCL_UNUSED(ClockFmtScnCmdArgs *),
     DateInfo *info, ClockScanToken *tok)
 {
     int minLen, maxLen;
     const char *p = yyInput, *end; const char *s;
     Tcl_WideInt intJD; int fractJD = 0, fractJDDiv = 1;
 
-    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
 
     end = yyInput + maxLen;
 
@@ -1666,7 +1664,7 @@ ClockScnToken_TimeZone_Proc(ClockFmtScnCmdArgs *opts,
     const char *p = yyInput;
     Tcl_Obj *tzObjStor = NULL;
 
-    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
 
     /* numeric timezone */
     if (*p == '+' || *p == '-') {
@@ -1738,7 +1736,7 @@ ClockScnToken_TimeZone_Proc(ClockFmtScnCmdArgs *opts,
 }
 
 static int
-ClockScnToken_StarDate_Proc(ClockFmtScnCmdArgs *opts,
+ClockScnToken_StarDate_Proc(TCL_UNUSED(ClockFmtScnCmdArgs *),
     DateInfo *info, ClockScanToken *tok)
 {
     int minLen, maxLen;
@@ -1746,7 +1744,7 @@ ClockScnToken_StarDate_Proc(ClockFmtScnCmdArgs *opts,
     int year, fractYear, fractDayDiv, fractDay;
     static const char *stardatePref = "stardate ";
 
-    DetermineGreedySearchLen(opts, info, tok, &minLen, &maxLen);
+    DetermineGreedySearchLen(info, tok, &minLen, &maxLen);
 
     end = yyInput + maxLen;
 
@@ -1820,49 +1818,49 @@ static const char *ScnSTokenMapIndex =
 static ClockScanTokenMap ScnSTokenMap[] = {
     /* %d %e */
     {CTOKT_INT, CLF_DAYOFMONTH, 0, 1, 2, offsetof(DateInfo, date.dayOfMonth),
-	NULL},
+	NULL, NULL},
     /* %m %N */
     {CTOKT_INT, CLF_MONTH, 0, 1, 2, offsetof(DateInfo, date.month),
-	NULL},
+	NULL, NULL},
     /* %b %B %h */
     {CTOKT_PARSER, CLF_MONTH, 0, 0, 0xffff, 0,
-	    ClockScnToken_Month_Proc},
+	    ClockScnToken_Month_Proc, NULL},
     /* %y */
     {CTOKT_INT, CLF_YEAR, 0, 1, 2, offsetof(DateInfo, date.year),
-	NULL},
+	NULL, NULL},
     /* %Y */
     {CTOKT_INT, CLF_YEAR | CLF_CENTURY, 0, 4, 4, offsetof(DateInfo, date.year),
-	NULL},
+	NULL, NULL},
     /* %H %k %I %l */
     {CTOKT_INT, CLF_TIME, 0, 1, 2, offsetof(DateInfo, date.hour),
-	NULL},
+	NULL, NULL},
     /* %M */
     {CTOKT_INT, CLF_TIME, 0, 1, 2, offsetof(DateInfo, date.minutes),
-	NULL},
+	NULL, NULL},
     /* %S */
     {CTOKT_INT, CLF_TIME, 0, 1, 2, offsetof(DateInfo, date.secondOfMin),
-	NULL},
+	NULL, NULL},
     /* %p %P */
     {CTOKT_PARSER, 0, 0, 0, 0xffff, 0,
 	ClockScnToken_amPmInd_Proc, NULL},
     /* %J */
     {CTOKT_WIDE, CLF_JULIANDAY | CLF_SIGNED, 0, 1, 0xffff, offsetof(DateInfo, date.julianDay),
-	NULL},
+	NULL, NULL},
     /* %j */
     {CTOKT_INT, CLF_DAYOFYEAR, 0, 1, 3, offsetof(DateInfo, date.dayOfYear),
-	NULL},
+	NULL, NULL},
     /* %C */
     {CTOKT_INT, CLF_CENTURY|CLF_ISO8601CENTURY, 0, 1, 2, offsetof(DateInfo, dateCentury),
-	NULL},
+	NULL, NULL},
     /* %g */
     {CTOKT_INT, CLF_ISO8601YEAR, 0, 2, 2, offsetof(DateInfo, date.iso8601Year),
-	NULL},
+	NULL, NULL},
     /* %G */
     {CTOKT_INT, CLF_ISO8601YEAR | CLF_ISO8601CENTURY, 0, 4, 4, offsetof(DateInfo, date.iso8601Year),
-	NULL},
+	NULL, NULL},
     /* %V */
     {CTOKT_INT, CLF_ISO8601WEAK, 0, 1, 2, offsetof(DateInfo, date.iso8601Week),
-	NULL},
+	NULL, NULL},
     /* %a %A %u %w */
     {CTOKT_PARSER, CLF_DAYOFWEEK, 0, 0, 0xffff, 0,
 	ClockScnToken_DayOfWeek_Proc, NULL},
@@ -1871,10 +1869,10 @@ static ClockScanTokenMap ScnSTokenMap[] = {
 	ClockScnToken_TimeZone_Proc, NULL},
     /* %U %W */
     {CTOKT_INT, CLF_OPTIONAL, 0, 1, 2, 0, /* currently no capture, parse only token */
-	NULL},
+	NULL, NULL},
     /* %s */
     {CTOKT_WIDE, CLF_POSIXSEC | CLF_SIGNED, 0, 1, 0xffff, offsetof(DateInfo, date.seconds),
-	NULL},
+	NULL, NULL},
     /* %n */
     {CTOKT_CHAR, 0, 0, 1, 1, 0, NULL, "\n"},
     /* %t */
@@ -1905,7 +1903,7 @@ static ClockScanTokenMap ScnETokenMap[] = {
 	ClockScnToken_LocaleListMatcher_Proc, (void *)MCLIT_LOCALE_NUMERALS},
     /* %Es */
     {CTOKT_WIDE, CLF_LOCALSEC | CLF_SIGNED, 0, 1, 0xffff, offsetof(DateInfo, date.localSeconds),
-	NULL},
+	NULL, NULL},
 };
 static const char *ScnETokenMapAliasIndex[2] = {
     "",
@@ -1945,12 +1943,12 @@ static const char *ScnOTokenMapAliasIndex[2] = {
 /* Token map reserved for CTOKT_SPACE */
 static ClockScanTokenMap ScnSpaceTokenMap = {
     CTOKT_SPACE,  0, 0, 1, 1, 0,
-	NULL,
+	NULL, NULL
 };
 
 static ClockScanTokenMap ScnWordTokenMap = {
     CTOKT_WORD,	   0, 0, 1, 1, 0,
-	NULL
+	NULL, NULL
 };
 
 
@@ -2283,7 +2281,7 @@ ClockScan(
 		if (*p == '-') { yyInput = ++p; sign = -1; };
 	    }
 
-	    DetermineGreedySearchLen(opts, info, tok, &minLen, &size);
+	    DetermineGreedySearchLen(info, tok, &minLen, &size);
 
 	    if (size < map->minSize) {
 		/* missing input -> error */
@@ -2582,9 +2580,9 @@ FrmResultAllocate(
 
 static int
 ClockFmtToken_HourAMPM_Proc(
-    ClockFmtScnCmdArgs *opts,
-    DateFormat *dateFmt,
-    ClockFormatToken *tok,
+    TCL_UNUSED(ClockFmtScnCmdArgs *),
+    TCL_UNUSED(DateFormat *),
+    TCL_UNUSED(ClockFormatToken *),
     int *val)
 {
     *val = ( ( *val + SECONDS_PER_DAY - 3600 ) / 3600 ) % 12 + 1;
@@ -2623,11 +2621,11 @@ ClockFmtToken_AMPM_Proc(
 
 static int
 ClockFmtToken_StarDate_Proc(
-    ClockFmtScnCmdArgs *opts,
+    TCL_UNUSED(ClockFmtScnCmdArgs *),
     DateFormat *dateFmt,
-    ClockFormatToken *tok,
-    int *val)
- {
+    TCL_UNUSED(ClockFormatToken *),
+    TCL_UNUSED(int *))
+{
     int fractYear;
     /* Get day of year, zero based */
     int v = dateFmt->date.dayOfYear - 1;
@@ -2657,12 +2655,13 @@ ClockFmtToken_StarDate_Proc(
 }
 static int
 ClockFmtToken_WeekOfYear_Proc(
-    ClockFmtScnCmdArgs *opts,
+    TCL_UNUSED(ClockFmtScnCmdArgs *),
     DateFormat *dateFmt,
     ClockFormatToken *tok,
     int *val)
 {
     int dow = dateFmt->date.dayOfWeek;
+
     if (*tok->tokWord.start == 'U') {
 	if (dow == 7) {
 	    dow = 0;
@@ -2674,11 +2673,11 @@ ClockFmtToken_WeekOfYear_Proc(
 }
 static int
 ClockFmtToken_JDN_Proc(
-    ClockFmtScnCmdArgs *opts,
+    TCL_UNUSED(ClockFmtScnCmdArgs *),
     DateFormat *dateFmt,
     ClockFormatToken *tok,
-    int *val)
- {
+    TCL_UNUSED(int *))
+{
     Tcl_WideInt intJD = dateFmt->date.julianDay;
     int fractJD;
 
@@ -2738,10 +2737,8 @@ ClockFmtToken_TimeZone_Proc(
     ClockFmtScnCmdArgs *opts,
     DateFormat *dateFmt,
     ClockFormatToken *tok,
-    int *val)
+    TCL_UNUSED(int *))
 {
-    (void)val;
-
     if (*tok->tokWord.start == 'z') {
 	int z = dateFmt->date.tzOffset;
 	char sign = '+';
@@ -2782,14 +2779,12 @@ static int
 ClockFmtToken_LocaleERA_Proc(
     ClockFmtScnCmdArgs *opts,
     DateFormat *dateFmt,
-    ClockFormatToken *tok,
-    int *val)
+    TCL_UNUSED(ClockFormatToken *),
+    TCL_UNUSED(int *))
 {
     Tcl_Obj *mcObj;
     const char *s;
     int len;
-    (void)tok;
-    (void)val;
 
     if (dateFmt->date.era == BCE) {
 	mcObj = ClockMCGet(opts, MCLIT_BCE);
@@ -2896,13 +2891,13 @@ static const char *FmtSTokenMapIndex =
     "demNbByYCHMSIklpaAuwUVzgGjJsntQ";
 static ClockFormatTokenMap FmtSTokenMap[] = {
     /* %d */
-    {CTOKT_INT, "0", 2, 0, 0, 0, offsetof(DateFormat, date.dayOfMonth), NULL},
+    {CTOKT_INT, "0", 2, 0, 0, 0, offsetof(DateFormat, date.dayOfMonth), NULL, NULL},
     /* %e */
-    {CTOKT_INT, " ", 2, 0, 0, 0, offsetof(DateFormat, date.dayOfMonth), NULL},
+    {CTOKT_INT, " ", 2, 0, 0, 0, offsetof(DateFormat, date.dayOfMonth), NULL, NULL},
     /* %m */
-    {CTOKT_INT, "0", 2, 0, 0, 0, offsetof(DateFormat, date.month), NULL},
+    {CTOKT_INT, "0", 2, 0, 0, 0, offsetof(DateFormat, date.month), NULL, NULL},
     /* %N */
-    {CTOKT_INT, " ", 2, 0, 0, 0, offsetof(DateFormat, date.month), NULL},
+    {CTOKT_INT, " ", 2, 0, 0, 0, offsetof(DateFormat, date.month), NULL, NULL},
     /* %b %h */
     {CTOKT_INT, NULL, 0, CLFMT_LOCALE_INDX | CLFMT_DECR, 0, 12, offsetof(DateFormat, date.month),
 	NULL, (void *)MCLIT_MONTHS_ABBREV},
@@ -2910,22 +2905,22 @@ static ClockFormatTokenMap FmtSTokenMap[] = {
     {CTOKT_INT, NULL, 0, CLFMT_LOCALE_INDX | CLFMT_DECR, 0, 12, offsetof(DateFormat, date.month),
 	NULL, (void *)MCLIT_MONTHS_FULL},
     /* %y */
-    {CTOKT_INT, "0", 2, 0, 0, 100, offsetof(DateFormat, date.year), NULL},
+    {CTOKT_INT, "0", 2, 0, 0, 100, offsetof(DateFormat, date.year), NULL, NULL},
     /* %Y */
-    {CTOKT_INT, "0", 4, 0, 0, 0, offsetof(DateFormat, date.year), NULL},
+    {CTOKT_INT, "0", 4, 0, 0, 0, offsetof(DateFormat, date.year), NULL, NULL},
     /* %C */
-    {CTOKT_INT, "0", 2, 0, 100, 0, offsetof(DateFormat, date.year), NULL},
+    {CTOKT_INT, "0", 2, 0, 100, 0, offsetof(DateFormat, date.year), NULL, NULL},
     /* %H */
-    {CTOKT_INT, "0", 2, 0, 3600, 24, offsetof(DateFormat, date.secondOfDay), NULL},
+    {CTOKT_INT, "0", 2, 0, 3600, 24, offsetof(DateFormat, date.secondOfDay), NULL, NULL},
     /* %M */
-    {CTOKT_INT, "0", 2, 0, 60, 60, offsetof(DateFormat, date.secondOfDay), NULL},
+    {CTOKT_INT, "0", 2, 0, 60, 60, offsetof(DateFormat, date.secondOfDay), NULL, NULL},
     /* %S */
-    {CTOKT_INT, "0", 2, 0, 0, 60, offsetof(DateFormat, date.secondOfDay), NULL},
+    {CTOKT_INT, "0", 2, 0, 0, 60, offsetof(DateFormat, date.secondOfDay), NULL, NULL},
     /* %I */
     {CTOKT_INT, "0", 2, CLFMT_CALC, 0, 0, offsetof(DateFormat, date.secondOfDay),
 	ClockFmtToken_HourAMPM_Proc, NULL},
     /* %k */
-    {CTOKT_INT, " ", 2, 0, 3600, 24, offsetof(DateFormat, date.secondOfDay), NULL},
+    {CTOKT_INT, " ", 2, 0, 3600, 24, offsetof(DateFormat, date.secondOfDay), NULL, NULL},
     /* %l */
     {CTOKT_INT, " ", 2, CLFMT_CALC, 0, 0, offsetof(DateFormat, date.secondOfDay),
 	ClockFmtToken_HourAMPM_Proc, NULL},
@@ -2939,31 +2934,31 @@ static ClockFormatTokenMap FmtSTokenMap[] = {
     {CTOKT_INT, NULL, 0, CLFMT_LOCALE_INDX, 0, 7, offsetof(DateFormat, date.dayOfWeek),
 	NULL, (void *)MCLIT_DAYS_OF_WEEK_FULL},
     /* %u */
-    {CTOKT_INT, " ", 1, 0, 0, 0, offsetof(DateFormat, date.dayOfWeek), NULL},
+    {CTOKT_INT, " ", 1, 0, 0, 0, offsetof(DateFormat, date.dayOfWeek), NULL, NULL},
     /* %w */
-    {CTOKT_INT, " ", 1, 0, 0, 7, offsetof(DateFormat, date.dayOfWeek), NULL},
+    {CTOKT_INT, " ", 1, 0, 0, 7, offsetof(DateFormat, date.dayOfWeek), NULL, NULL},
     /* %U %W */
     {CTOKT_INT, "0", 2, CLFMT_CALC, 0, 0, offsetof(DateFormat, date.dayOfYear),
 	ClockFmtToken_WeekOfYear_Proc, NULL},
     /* %V */
-    {CTOKT_INT, "0", 2, 0, 0, 0, offsetof(DateFormat, date.iso8601Week), NULL},
+    {CTOKT_INT, "0", 2, 0, 0, 0, offsetof(DateFormat, date.iso8601Week), NULL, NULL},
     /* %z %Z */
     {CFMTT_PROC, NULL, 0, 0, 0, 0, 0,
 	ClockFmtToken_TimeZone_Proc, NULL},
     /* %g */
-    {CTOKT_INT, "0", 2, 0, 0, 100, offsetof(DateFormat, date.iso8601Year), NULL},
+    {CTOKT_INT, "0", 2, 0, 0, 100, offsetof(DateFormat, date.iso8601Year), NULL, NULL},
     /* %G */
-    {CTOKT_INT, "0", 4, 0, 0, 0, offsetof(DateFormat, date.iso8601Year), NULL},
+    {CTOKT_INT, "0", 4, 0, 0, 0, offsetof(DateFormat, date.iso8601Year), NULL, NULL},
     /* %j */
-    {CTOKT_INT, "0", 3, 0, 0, 0, offsetof(DateFormat, date.dayOfYear), NULL},
+    {CTOKT_INT, "0", 3, 0, 0, 0, offsetof(DateFormat, date.dayOfYear), NULL, NULL},
     /* %J */
-    {CTOKT_WIDE, "0", 7, 0, 0, 0, offsetof(DateFormat, date.julianDay), NULL},
+    {CTOKT_WIDE, "0", 7, 0, 0, 0, offsetof(DateFormat, date.julianDay), NULL, NULL},
     /* %s */
-    {CTOKT_WIDE, "0", 1, 0, 0, 0, offsetof(DateFormat, date.seconds), NULL},
+    {CTOKT_WIDE, "0", 1, 0, 0, 0, offsetof(DateFormat, date.seconds), NULL, NULL},
     /* %n */
-    {CTOKT_CHAR, "\n", 0, 0, 0, 0, 0, NULL},
+    {CTOKT_CHAR, "\n", 0, 0, 0, 0, 0, NULL, NULL},
     /* %t */
-    {CTOKT_CHAR, "\t", 0, 0, 0, 0, 0, NULL},
+    {CTOKT_CHAR, "\t", 0, 0, 0, 0, 0, NULL, NULL},
     /* %Q */
     {CFMTT_PROC, NULL, 0, 0, 0, 0, 0,
 	ClockFmtToken_StarDate_Proc, NULL},
@@ -2989,7 +2984,7 @@ static ClockFormatTokenMap FmtETokenMap[] = {
     {CTOKT_INT, NULL, 0, 0, 0, 0, offsetof(DateFormat, date.year),
 	ClockFmtToken_LocaleERAYear_Proc, NULL},
     /* %Es */
-    {CTOKT_WIDE, "0", 1, 0, 0, 0, offsetof(DateFormat, date.localSeconds), NULL},
+    {CTOKT_WIDE, "0", 1, 0, 0, 0, offsetof(DateFormat, date.localSeconds), NULL, NULL},
 };
 static const char *FmtETokenMapAliasIndex[2] = {
     "C",
@@ -3033,7 +3028,7 @@ static const char *FmtOTokenMapAliasIndex[2] = {
 };
 
 static ClockFormatTokenMap FmtWordTokenMap = {
-    CTOKT_WORD, NULL, 0, 0, 0, 0, 0, NULL
+    CTOKT_WORD, NULL, 0, 0, 0, 0, 0, NULL, NULL
 };
 
 /*
