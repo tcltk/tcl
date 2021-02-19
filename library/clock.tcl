@@ -905,10 +905,10 @@ proc ::tcl::clock::LocalizeFormat { locale format mcd } {
 proc ::tcl::clock::GetSystemTimeZone {} {
     variable TimeZoneBad
 
-    if {[set result [getenv TCL_TZ]] ne {}} {
-	set timezone $result
-    } elseif {[set result [getenv TZ]] ne {}} {
-	set timezone $result
+    if {[info exist ::env(TCL_TZ)]} {
+	set timezone $::env(TCL_TZ)
+    } elseif {[info exist ::env(TZ)]} {
+	set timezone $::env(TZ)
     }
     if {![info exists timezone]} {
         # ask engine for the cached timezone:

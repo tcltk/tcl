@@ -107,9 +107,6 @@ static int		ClockGetjuliandayfromerayearmonthdayObjCmd(
 static int		ClockGetjuliandayfromerayearweekdayObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		ClockGetenvObjCmd(
-			    ClientData clientData, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
 static int		ClockMicrosecondsObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -166,7 +163,6 @@ static const struct ClockCommand clockCommands[] = {
     {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, NULL},
     {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd,  NULL},
     {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
-    {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
     {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(1)},
     {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(2)},
     {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
@@ -3014,50 +3010,6 @@ WeekdayOnOrBefore(
 	k += 7;
     }
     return julianDay - ((julianDay - k) % 7);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ClockGetenvObjCmd --
- *
- *	Tcl command that reads an environment variable from the system
- *
- * Usage:
- *	::tcl::clock::getEnv NAME
- *
- * Parameters:
- *	NAME - Name of the environment variable desired
- *
- * Results:
- *	Returns a standard Tcl result. Returns an error if the variable does
- *	not exist, with a message left in the interpreter. Returns TCL_OK and
- *	the value of the variable if the variable does exist,
- *
- *----------------------------------------------------------------------
- */
-
-int
-ClockGetenvObjCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    const char *varName;
-    const char *varValue;
-
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "name");
-	return TCL_ERROR;
-    }
-    varName = TclGetString(objv[1]);
-    varValue = getenv(varName);
-    if (varValue == NULL) {
-	varValue = "";
-    }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
-    return TCL_OK;
 }
 
 /*
