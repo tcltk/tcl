@@ -140,7 +140,7 @@ static int		ClockValidDate(
 			    DateInfo *,
 			    ClockFmtScnCmdArgs *, int stage);
 static struct tm *	ThreadSafeLocalTime(const time_t *);
-static size_t		TzsetIfNecessary(void);
+static size_t		TzsetIfNecessary(Tcl_Interp *interp);
 static void		ClockDeleteCmdProc(ClientData);
 
 static int		ClockSafeCatchCmd(
@@ -1014,7 +1014,7 @@ ClockConfigureObjCmd(
 	case CLOCK_SYSTEM_TZ:
 	if (1) {
 	    /* validate current tz-epoch */
-	    size_t lastTZEpoch = TzsetIfNecessary();
+	    size_t lastTZEpoch = TzsetIfNecessary(interp);
 	    if (i < objc) {
 		if (dataPtr->systemTimeZone != objv[i]) {
 		    Tcl_SetObjRef(dataPtr->systemTimeZone, objv[i]);
@@ -1272,7 +1272,7 @@ ClockGetSystemTimeZone(
 
     /* if known (cached and same epoch) - return now */
     if (dataPtr->systemTimeZone != NULL
-	    && dataPtr->lastTZEpoch == TzsetIfNecessary()) {
+	    && dataPtr->lastTZEpoch == TzsetIfNecessary(interp)) {
 	return dataPtr->systemTimeZone;
     }
 
@@ -2137,7 +2137,7 @@ ConvertLocalToUTCUsingC(
      * platforms, so seize a mutex before attempting this.
      */
 
-    TzsetIfNecessary();
+    TzsetIfNecessary(interp);
     Tcl_MutexLock(&clockMutex);
     errno = 0;
     fields->seconds = (Tcl_WideInt) mktime(&timeVal);
@@ -2373,7 +2373,7 @@ ConvertUTCToLocalUsingC(
 	Tcl_SetErrorCode(interp, "CLOCK", "argTooLarge", NULL);
 	return TCL_ERROR;
     }
-    TzsetIfNecessary();
+    TzsetIfNecessary(interp);
     timeVal = ThreadSafeLocalTime(&tock);
     if (timeVal == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -4628,7 +4628,7 @@ ClockSafeCatchCmd(
  */
 
 static size_t
-TzsetIfNecessary(void)
+TzsetIfNecessary(Tcl_Interp *interp)
 {
     static char* tzWas = (char *)INT2PTR(-1);	 /* Previous value of TZ, protected by
 					  * clockMutex. */
@@ -4654,9 +4654,9 @@ TzsetIfNecessary(void)
 
     /* check in lock */
     Tcl_MutexLock(&clockMutex);
-    tzIsNow = getenv("TCL_TZ");
+    tzIsNow = Tcl_GetVar2(interp, "env", "TCL_TZ", TCL_GLOBAL_ONLY);
     if (tzIsNow == NULL) {
-	tzIsNow = getenv("TZ");
+	tzIsNow = Tcl_GetVar2(interp, "env", "TZ", TCL_GLOBAL_ONLY);
     }
     if (tzIsNow != NULL && (tzWas == NULL || tzWas == (char*)INT2PTR(-1)
 	    || strcmp(tzIsNow, tzWas) != 0)) {
