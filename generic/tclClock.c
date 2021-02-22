@@ -3045,7 +3045,7 @@ ClockGetenvObjCmd(
     Tcl_Obj *const objv[])
 {
     const char *varName;
-    const char *varValue;
+    Tcl_Obj *varValue;
     (void)clientData;
 
     if (objc != 2) {
@@ -3053,11 +3053,10 @@ ClockGetenvObjCmd(
 	return TCL_ERROR;
     }
     varName = TclGetString(objv[1]);
-    varValue = getenv(varName);
-    if (varValue == NULL) {
-	varValue = "";
+    varValue = Tcl_GetVar2Ex(interp, "env", varName, TCL_GLOBAL_ONLY);
+    if (varValue != NULL) {
+	Tcl_SetObjResult(interp, varValue);
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
     return TCL_OK;
 }
 
