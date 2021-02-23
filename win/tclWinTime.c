@@ -144,7 +144,7 @@ ClientData tclTimeClientData = NULL;
  *----------------------------------------------------------------------
  */
 
-Tcl_WideUInt
+unsigned long long
 TclpGetSeconds(void)
 {
     long long usecSincePosixEpoch;
@@ -158,7 +158,7 @@ TclpGetSeconds(void)
 	Tcl_Time t;
 
 	tclGetTimeProcPtr(&t, tclTimeClientData);	/* Tcl_GetTime inlined. */
-	return t.sec;
+	return (unsigned long long)(unsigned long)t.sec;
     }
 }
 
@@ -181,7 +181,7 @@ TclpGetSeconds(void)
  *----------------------------------------------------------------------
  */
 
-Tcl_WideUInt
+unsigned long long
 TclpGetClicks(void)
 {
     long long usecSincePosixEpoch;
@@ -200,7 +200,7 @@ TclpGetClicks(void)
 	Tcl_Time now;		/* Current Tcl time */
 
 	tclGetTimeProcPtr(&now, tclTimeClientData);	/* Tcl_GetTime inlined */
-	return (Tcl_WideUInt)(now.sec * 1000000) + now.usec;
+	return ((unsigned long long)(unsigned long)now.sec * 1000000ULL) + now.usec;
     }
 }
 

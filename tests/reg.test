@@ -1221,6 +1221,10 @@ test reg-33.29 {} {
 test reg-33.30 {Bug 1080042} {
     regexp {(\Y)+} foo
 } 1
+test reg-33.31 {Bug 7c64aa5e1a} {
+    regexp -inline {(?b).\{1,10\}} {abcdef}
+} abcdef
+
 
 # cleanup
 ::tcltest::cleanupTests
