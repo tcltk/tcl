@@ -126,19 +126,19 @@ static int		ClockScanObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		ClockScanCommit(
-			    register DateInfo *info,
-			    register ClockFmtScnCmdArgs *opts);
+			    DateInfo *info,
+			    ClockFmtScnCmdArgs *opts);
 static int		ClockFreeScan(
-			    register DateInfo *info,
+			    DateInfo *info,
 			    Tcl_Obj *strObj, ClockFmtScnCmdArgs *opts);
 static int		ClockCalcRelTime(
-			    register DateInfo *info, ClockFmtScnCmdArgs *opts);
+			    DateInfo *info);
 static int		ClockAddObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		ClockValidDate(
-			    register DateInfo *,
-			    register ClockFmtScnCmdArgs *, int stage);
+			    DateInfo *,
+			    ClockFmtScnCmdArgs *, int stage);
 static struct tm *	ThreadSafeLocalTime(const time_t *);
 static size_t		TzsetIfNecessary(void);
 static void		ClockDeleteCmdProc(ClientData);
@@ -3044,20 +3044,37 @@ ClockGetenvObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+#ifdef _WIN32
+    const WCHAR *varName;
+    const WCHAR *varValue;
+    Tcl_DString ds;
+#else
     const char *varName;
     const char *varValue;
+#endif
     (void)clientData;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
+#ifdef _WIN32
+    varName = (const WCHAR *)Tcl_WinUtfToTChar(TclGetString(objv[1]), -1, &ds);
+    varValue = _wgetenv(varName);
+	Tcl_DStringFree(&ds);
+    if (varValue == NULL) {
+	varValue = L"";
+    }
+    Tcl_WinTCharToUtf((TCHAR *)varValue, -1, &ds);
+    Tcl_DStringResult(interp, &ds);
+#else
     varName = TclGetString(objv[1]);
     varValue = getenv(varName);
     if (varValue == NULL) {
 	varValue = "";
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
+#endif
     return TCL_OK;
 }
 
@@ -3241,7 +3258,7 @@ ClockMicrosecondsObjCmd(
 {
     (void)clientData;
     if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, "clock microseconds");
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclpGetMicroseconds()));
@@ -3283,7 +3300,6 @@ ClockInitFmtScnArgs(
 
 static int
 ClockParseFmtScnArgs(
-    register
     ClockFmtScnCmdArgs *opts,	/* Result vector: format, locale, timezone... */
     TclDateFields      *date,	/* Extracted date-time corresponding base
 				 * (by scan or add) resp. clockval (by format) */
@@ -3420,7 +3436,7 @@ ClockParseFmtScnArgs(
     /* Base (by scan or add) or clock value (by format) */
 
     if (opts->baseObj != NULL) {
-	register Tcl_Obj *baseObj = opts->baseObj;
+	Tcl_Obj *baseObj = opts->baseObj;
 	/* bypass integer recognition if looks like option "-now" */
 	if (
 	    (baseObj->length == 4 && baseObj->bytes && *(baseObj->bytes+1) == 'n') ||
@@ -3537,7 +3553,7 @@ ClockFormatObjCmd(
 {
     ClockClientData *dataPtr = (ClockClientData *)clientData;
 
-    static const char *syntax = "clock format clockval|-now "
+    static const char *syntax = "clockval|-now "
 	"?-format string? "
 	"?-gmt boolean? "
 	"?-locale LOCALE? ?-timezone ZONE?";
@@ -3547,7 +3563,7 @@ ClockFormatObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, syntax);
+	Tcl_WrongNumArgs(interp, 1, objv, syntax);
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
 	return TCL_ERROR;
     }
@@ -3612,7 +3628,7 @@ ClockScanObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
-    static const char *syntax = "clock scan string "
+    static const char *syntax = "string "
 	    "?-base seconds? "
 	    "?-format string? "
 	    "?-gmt boolean? "
@@ -3624,7 +3640,7 @@ ClockScanObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, syntax);
+	Tcl_WrongNumArgs(interp, 1, objv, syntax);
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
 	return TCL_ERROR;
     }
@@ -3713,8 +3729,7 @@ done:
 
 static int
 ClockScanCommit(
-    register DateInfo  *info,	/* Clock scan info structure */
-    register
+    DateInfo  *info,	/* Clock scan info structure */
     ClockFmtScnCmdArgs *opts)	/* Format, locale, timezone and base */
 {
     /* If needed assemble julianDay using year, month, etc. */
@@ -3788,8 +3803,7 @@ ClockScanCommit(
 
 static int
 ClockValidDate(
-    register DateInfo  *info,	/* Clock scan info structure */
-    register
+    DateInfo  *info,	/* Clock scan info structure */
     ClockFmtScnCmdArgs *opts,	/* Scan options */
     int stage)			/* Stage to validate (1, 2 or 3 for both) */
 {
@@ -3950,7 +3964,6 @@ ClockValidDate(
 
 int
 ClockFreeScan(
-    register
     DateInfo	       *info,	/* Date fields used for parsing & converting
 				 * simultaneously a yy-parse structure of the
 				 * TclClockFreeScan */
@@ -4064,7 +4077,7 @@ ClockFreeScan(
      * Do relative times
      */
 
-    ret = ClockCalcRelTime(info, opts);
+    ret = ClockCalcRelTime(info);
 
     /* Free scanning completed - date ready */
 
@@ -4089,9 +4102,7 @@ done:
  */
 int
 ClockCalcRelTime(
-    register
-    DateInfo	       *info,	/* Date fields used for converting */
-    ClockFmtScnCmdArgs *opts)	/* Command options */
+    DateInfo	       *info)	/* Date fields used for converting */
 {
 
     int prevDayOfWeek = yyDayOfWeek;	/* preserve unchanged day of week */
@@ -4264,10 +4275,10 @@ repeat_rel:
 
 static inline int
 ClockWeekdaysOffs(
-    register int dayOfWeek,
-    register int offs)
+    int dayOfWeek,
+    int offs)
 {
-    register int weeks, resDayOfWeek;
+    int weeks, resDayOfWeek;
 
     /* offset in days */
     weeks = offs / 5;
@@ -4281,7 +4292,7 @@ ClockWeekdaysOffs(
 
     /* resulting day of week */
     {
-	register int day = (offs % 7);
+	int day = (offs % 7);
 	/* compiler fix for negative offs - wrap (0, -1) -> (-1, 6) */
 	if (day < 0) {
 	    day = 7 + day;
@@ -4354,7 +4365,7 @@ ClockAddObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter values */
 {
-    static const char *syntax = "clock add clockval|-now ?number units?..."
+    static const char *syntax = "clockval|-now ?number units?..."
 	"?-gmt boolean? "
 	"?-locale LOCALE? ?-timezone ZONE?";
     ClockClientData *dataPtr = (ClockClientData *)clientData;
@@ -4381,7 +4392,7 @@ ClockAddObjCmd(
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
-	Tcl_WrongNumArgs(interp, 0, NULL, syntax);
+	Tcl_WrongNumArgs(interp, 1, objv, syntax);
 	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
 	return TCL_ERROR;
     }
@@ -4443,7 +4454,7 @@ ClockAddObjCmd(
 	    || yySeconds + yyRelSeconds < 0
 	  )
 	) {
-	    if (ClockCalcRelTime(info, &opts) != TCL_OK) {
+	    if (ClockCalcRelTime(info) != TCL_OK) {
 		goto done;
 	    }
 	}
@@ -4487,7 +4498,7 @@ ClockAddObjCmd(
      */
 
     if (info->flags & CLF_RELCONV) {
-	if (ClockCalcRelTime(info, &opts) != TCL_OK) {
+	if (ClockCalcRelTime(info) != TCL_OK) {
 	    goto done;
 	}
     }
@@ -4558,7 +4569,7 @@ ClockSecondsObjCmd(
  */
 int
 ClockSafeCatchCmd(
-    ClientData clientData,
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -4579,6 +4590,7 @@ ClockSafeCatchCmd(
     Interp *iPtr = (Interp *)interp;
     int ret, flags = 0;
     InterpState *statePtr;
+    (void)dummy;
 
     if (objc == 1) {
 	/* wrong # args : */
@@ -4632,16 +4644,25 @@ ClockSafeCatchCmd(
  *----------------------------------------------------------------------
  */
 
+#ifdef _WIN32
+#define getenv(x) _wgetenv(L##x)
+#else
+#define WCHAR char
+#define wcslen strlen
+#define wcscmp strcmp
+#define wcscpy strcpy
+#endif
+
 static size_t
 TzsetIfNecessary(void)
 {
-    static char* tzWas = (char *)INT2PTR(-1);	 /* Previous value of TZ, protected by
+    static WCHAR* tzWas = (WCHAR *)INT2PTR(-1);	 /* Previous value of TZ, protected by
 					  * clockMutex. */
     static long	 tzLastRefresh = 0;	 /* Used for latency before next refresh */
     static size_t tzWasEpoch = 0;        /* Epoch, signals that TZ changed */
     static size_t tzEnvEpoch = 0;        /* Last env epoch, for faster signaling,
 					    that TZ changed via TCL */
-    const char *tzIsNow;		 /* Current value of TZ */
+    const WCHAR *tzIsNow;		 /* Current value of TZ */
 
     /*
      * Prevent performance regression on some platforms by resolving of system time zone:
@@ -4663,18 +4684,18 @@ TzsetIfNecessary(void)
     if (tzIsNow == NULL) {
 	tzIsNow = getenv("TZ");
     }
-    if (tzIsNow != NULL && (tzWas == NULL || tzWas == (char*)INT2PTR(-1)
-	    || strcmp(tzIsNow, tzWas) != 0)) {
+    if (tzIsNow != NULL && (tzWas == NULL || tzWas == (WCHAR *)INT2PTR(-1)
+	    || wcscmp(tzIsNow, tzWas) != 0)) {
 	tzset();
-	if (tzWas != NULL && tzWas != (char*)INT2PTR(-1)) {
+	if (tzWas != NULL && tzWas != (WCHAR *)INT2PTR(-1)) {
 	    ckfree(tzWas);
 	}
-	tzWas = (char *)ckalloc(strlen(tzIsNow) + 1);
-	strcpy(tzWas, tzIsNow);
+	tzWas = (WCHAR *)ckalloc(sizeof(WCHAR) * (wcslen(tzIsNow) + 1));
+	wcscpy(tzWas, tzIsNow);
 	tzWasEpoch++;
     } else if (tzIsNow == NULL && tzWas != NULL) {
 	tzset();
-	if (tzWas != (char*)INT2PTR(-1)) ckfree(tzWas);
+	if (tzWas != (WCHAR *)INT2PTR(-1)) ckfree(tzWas);
 	tzWas = NULL;
 	tzWasEpoch++;
     }

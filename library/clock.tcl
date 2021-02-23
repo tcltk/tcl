@@ -909,8 +909,7 @@ proc ::tcl::clock::GetSystemTimeZone {} {
 	set timezone $result
     } elseif {[set result [getenv TZ]] ne {}} {
 	set timezone $result
-    }
-    if {![info exists timezone]} {
+    } else {
         # ask engine for the cached timezone:
         set timezone [configure -system-tz]
         if { $timezone ne "" } {

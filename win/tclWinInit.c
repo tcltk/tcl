@@ -359,8 +359,8 @@ InitializeDefaultLibraryDir(
     char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;
 
-    if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
-	GetModuleFileNameA(hModule, name, MAX_PATH);
+    if (GetModuleFileNameW(hModule, wName, sizeof(wName)/sizeof(WCHAR)) == 0) {
+	GetModuleFileNameA(hModule, name, sizeof(name));
     } else {
 	ToUtf(wName, name);
     }
@@ -407,11 +407,11 @@ InitializeSourceLibraryDir(
 {
     HMODULE hModule = TclWinGetTclInstance();
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
-    char name[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+    char name[(MAX_PATH + LIBRARY_SIZE) * 3];
     char *end, *p;
 
-    if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
-	GetModuleFileNameA(hModule, name, MAX_PATH);
+    if (GetModuleFileNameW(hModule, wName, sizeof(wName)/sizeof(WCHAR)) == 0) {
+	GetModuleFileNameA(hModule, name, sizeof(name));
     } else {
 	ToUtf(wName, name);
     }

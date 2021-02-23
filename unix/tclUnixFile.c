@@ -43,9 +43,9 @@ TclpFindExecutable(
 #ifdef __CYGWIN__
     int length;
     char buf[PATH_MAX * 2];
-    char name[PATH_MAX * TCL_UTF_MAX + 1];
-    GetModuleFileNameW(NULL, buf, PATH_MAX);
-    cygwin_conv_path(3, buf, name, PATH_MAX);
+    char name[PATH_MAX * 3 + 1];
+    GetModuleFileNameW(NULL, buf, sizeof(buf)/2);
+    cygwin_conv_path(3, buf, name, sizeof(name));
     length = strlen(name);
     if ((length > 4) && !strcasecmp(name + length - 4, ".exe")) {
 	/* Strip '.exe' part. */
