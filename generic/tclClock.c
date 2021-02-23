@@ -107,6 +107,9 @@ static int		ClockGetjuliandayfromerayearmonthdayObjCmd(
 static int		ClockGetjuliandayfromerayearweekdayObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		ClockGetenvObjCmd(
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 static int		ClockMicrosecondsObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -163,6 +166,7 @@ static const struct ClockCommand clockCommands[] = {
     {"add",		ClockAddObjCmd,		TclCompileBasicMin1ArgCmd, NULL},
     {"clicks",		ClockClicksObjCmd,	TclCompileClockClicksCmd,  NULL},
     {"format",		ClockFormatObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
+    {"getenv",		ClockGetenvObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
     {"microseconds",	ClockMicrosecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(1)},
     {"milliseconds",	ClockMillisecondsObjCmd,TclCompileClockReadingCmd, INT2PTR(2)},
     {"scan",		ClockScanObjCmd,	TclCompileBasicMin1ArgCmd, NULL},
@@ -3015,6 +3019,68 @@ WeekdayOnOrBefore(
 /*
  *----------------------------------------------------------------------
  *
+ * ClockGetenvObjCmd --
+ *
+ *	Tcl command that reads an environment variable from the system
+ *
+ * Usage:
+ *	::tcl::clock::getEnv NAME
+ *
+ * Parameters:
+ *	NAME - Name of the environment variable desired
+ *
+ * Results:
+ *	Returns a standard Tcl result. Returns an error if the variable does
+ *	not exist, with a message left in the interpreter. Returns TCL_OK and
+ *	the value of the variable if the variable does exist,
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ClockGetenvObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+#ifdef _WIN32
+    const WCHAR *varName;
+    const WCHAR *varValue;
+    Tcl_DString ds;
+#else
+    const char *varName;
+    const char *varValue;
+#endif
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name");
+	return TCL_ERROR;
+    }
+#ifdef _WIN32
+    Tcl_DStringInit(&ds);
+    varName = Tcl_UtfToWCharDString(TclGetString(objv[1]), -1, &ds);
+    varValue = _wgetenv(varName);
+    if (varValue == NULL) {
+	Tcl_DStringFree(&ds);
+    } else {
+	Tcl_DStringSetLength(&ds, 0);
+	Tcl_WCharToUtfDString(varValue, -1, &ds);
+	Tcl_DStringResult(interp, &ds);
+    }
+#else
+    varName = TclGetString(objv[1]);
+    varValue = getenv(varName);
+    if (varValue != NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
+    }
+#endif
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ThreadSafeLocalTime --
  *
  *	Wrapper around the 'localtime' library function to make it thread
@@ -4573,16 +4639,25 @@ ClockSafeCatchCmd(
  *----------------------------------------------------------------------
  */
 
+#ifdef _WIN32
+#define getenv(x) _wgetenv(L##x)
+#else
+#define WCHAR char
+#define wcslen strlen
+#define wcscmp strcmp
+#define wcscpy strcpy
+#endif
+
 static size_t
 TzsetIfNecessary(void)
 {
-    static char* tzWas = (char *)INT2PTR(-1);	 /* Previous value of TZ, protected by
+    static WCHAR* tzWas = (WCHAR *)INT2PTR(-1);	 /* Previous value of TZ, protected by
 					  * clockMutex. */
     static long	 tzLastRefresh = 0;	 /* Used for latency before next refresh */
     static size_t tzWasEpoch = 0;        /* Epoch, signals that TZ changed */
     static size_t tzEnvEpoch = 0;        /* Last env epoch, for faster signaling,
 					    that TZ changed via TCL */
-    const char *tzIsNow;		 /* Current value of TZ */
+    const WCHAR *tzIsNow;		 /* Current value of TZ */
 
     /*
      * Prevent performance regression on some platforms by resolving of system time zone:
@@ -4604,18 +4679,18 @@ TzsetIfNecessary(void)
     if (tzIsNow == NULL) {
 	tzIsNow = getenv("TZ");
     }
-    if (tzIsNow != NULL && (tzWas == NULL || tzWas == (char*)INT2PTR(-1)
-	    || strcmp(tzIsNow, tzWas) != 0)) {
+    if (tzIsNow != NULL && (tzWas == NULL || tzWas == (WCHAR *)INT2PTR(-1)
+	    || wcscmp(tzIsNow, tzWas) != 0)) {
 	tzset();
-	if (tzWas != NULL && tzWas != (char*)INT2PTR(-1)) {
+	if (tzWas != NULL && tzWas != (WCHAR *)INT2PTR(-1)) {
 	    ckfree(tzWas);
 	}
-	tzWas = (char *)ckalloc(strlen(tzIsNow) + 1);
-	strcpy(tzWas, tzIsNow);
+	tzWas = (WCHAR *)ckalloc(sizeof(WCHAR) * (wcslen(tzIsNow) + 1));
+	wcscpy(tzWas, tzIsNow);
 	tzWasEpoch++;
     } else if (tzIsNow == NULL && tzWas != NULL) {
 	tzset();
-	if (tzWas != (char*)INT2PTR(-1)) ckfree(tzWas);
+	if (tzWas != (WCHAR *)INT2PTR(-1)) ckfree(tzWas);
 	tzWas = NULL;
 	tzWasEpoch++;
     }
