@@ -852,7 +852,7 @@ TclpFindExecutable(
      * create this process.
      */
 
-    if (GetModuleFileNameW(NULL, wName, MAX_PATH) == 0) {
+    if (GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(WCHAR)) == 0) {
 	GetModuleFileNameA(NULL, name, sizeof(name));
 
 	/*
