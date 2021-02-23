@@ -774,6 +774,10 @@ Tcl_CreateInterp(void)
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
 
+#ifdef _WIN32
+#   define getenv(x) _wgetenv(L##x) /* On Windows, use _wgetenv below */
+#endif
+
     /* TIP #268 */
 #if (TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE)
     if (getenv("TCL_PKG_PREFER_LATEST") == NULL) {
