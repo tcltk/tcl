@@ -92,6 +92,8 @@ extern "C" {
     /* Make some symbols available without including <windows.h> */
 #   define CP_UTF8 65001
 #   define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
+#   define HMODULE void *
+#   define MAX_PATH 260
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
     typedef unsigned short WCHAR;

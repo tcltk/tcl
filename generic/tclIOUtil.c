@@ -3078,6 +3078,13 @@ Tcl_FSLoadFile(
  *
  */
 
+#ifdef _WIN32
+#define getenv(x) _wgetenv(L##x)
+#define atoi(x) _wtoi(x)
+#else
+#define WCHAR char
+#endif
+
 static int
 skipUnlink(
     Tcl_Obj *shlibFile)
@@ -3099,7 +3106,7 @@ skipUnlink(
     (void)shlibFile;
     return 1;
 #else
-    char *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
+    WCHAR *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
 
     if (skipstr && (skipstr[0] != '\0')) {
 	return atoi(skipstr);
