@@ -3104,16 +3104,13 @@ ZipFSListObjCmd(
  *-------------------------------------------------------------------------
  */
 
-#ifdef _WIN32
-#define LIBRARY_SIZE	    64
-#endif /* _WIN32 */
-
 Tcl_Obj *
 TclZipfs_TclLibrary(void)
 {
     Tcl_Obj *vfsInitScript;
     int found;
 #if (defined(_WIN32) || defined(__CYGWIN__)) && !defined(STATIC_BUILD)
+#   define LIBRARY_SIZE	    64
     HMODULE hModule;
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
     char dllName[(MAX_PATH + LIBRARY_SIZE) * 3];

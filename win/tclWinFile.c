@@ -885,7 +885,7 @@ TclpFindExecutable(
 	Tcl_SetPanicProc(tclWinDebugPanic);
     }
 
-    GetModuleFileNameW(NULL, wName, MAX_PATH);
+    GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(WCHAR));
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
     TclSetObjNameOfExecutable(Tcl_NewStringObj(name, -1), NULL);
