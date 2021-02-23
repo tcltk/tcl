@@ -1650,20 +1650,37 @@ ClockGetenvObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+#ifdef _WIN32
+    const WCHAR *varName;
+    const WCHAR *varValue;
+    Tcl_DString ds;
+#else
     const char *varName;
     const char *varValue;
+#endif
     (void)clientData;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
+#ifdef _WIN32
+    varName = (const WCHAR *)Tcl_WinUtfToTChar(TclGetString(objv[1]), -1, &ds);
+    varValue = _wgetenv(varName);
+	Tcl_DStringFree(&ds);
+    if (varValue == NULL) {
+	varValue = L"";
+    }
+    Tcl_WinTCharToUtf((TCHAR *)varValue, -1, &ds);
+    Tcl_DStringResult(interp, &ds);
+#else
     varName = TclGetString(objv[1]);
     varValue = getenv(varName);
     if (varValue == NULL) {
 	varValue = "";
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
+#endif
     return TCL_OK;
 }
 
@@ -2026,15 +2043,24 @@ ClockSecondsObjCmd(
  *----------------------------------------------------------------------
  */
 
+#ifdef _WIN32
+#define getenv(x) _wgetenv(L##x)
+#else
+#define WCHAR char
+#define wcslen strlen
+#define wcscmp strcmp
+#define wcscpy strcpy
+#endif
+
 static void
 TzsetIfNecessary(void)
 {
-    static char *tzWas = (char *)INT2PTR(-1);	/* Previous value of TZ, protected by
-				 * clockMutex. */
+    static WCHAR* tzWas = (WCHAR *)INT2PTR(-1);	 /* Previous value of TZ, protected by
+					  * clockMutex. */
     static long	 tzLastRefresh = 0;	 /* Used for latency before next refresh */
     static size_t tzEnvEpoch = 0;        /* Last env epoch, for faster signaling,
 					    that TZ changed via TCL */
-    const char *tzIsNow;	/* Current value of TZ */
+    const WCHAR *tzIsNow;		 /* Current value of TZ */
 
     /*
      * Prevent performance regression on some platforms by resolving of system time zone:
@@ -2052,17 +2078,17 @@ TzsetIfNecessary(void)
 
     Tcl_MutexLock(&clockMutex);
     tzIsNow = getenv("TZ");
-    if (tzIsNow != NULL && (tzWas == NULL || tzWas == (char*)INT2PTR(-1)
-	    || strcmp(tzIsNow, tzWas) != 0)) {
+    if (tzIsNow != NULL && (tzWas == NULL || tzWas == (WCHAR *)INT2PTR(-1)
+	    || wcscmp(tzIsNow, tzWas) != 0)) {
 	tzset();
-	if (tzWas != NULL && tzWas != (char*)INT2PTR(-1)) {
+	if (tzWas != NULL && tzWas != (WCHAR *)INT2PTR(-1)) {
 	    ckfree(tzWas);
 	}
-	tzWas = (char *)ckalloc(strlen(tzIsNow) + 1);
-	strcpy(tzWas, tzIsNow);
+	tzWas = (WCHAR *)ckalloc(sizeof(WCHAR) * (wcslen(tzIsNow) + 1));
+	wcscpy(tzWas, tzIsNow);
     } else if (tzIsNow == NULL && tzWas != NULL) {
 	tzset();
-	if (tzWas != (char*)INT2PTR(-1)) ckfree(tzWas);
+	if (tzWas != (WCHAR *)INT2PTR(-1)) ckfree(tzWas);
 	tzWas = NULL;
     }
     Tcl_MutexUnlock(&clockMutex);
