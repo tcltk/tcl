@@ -122,7 +122,6 @@ static void uniCodePanic() {
 #define TclBN_mp_neg mp_neg
 #define TclBN_mp_or mp_or
 #define TclBN_mp_radix_size mp_radix_size
-#define TclBN_mp_reverse mp_reverse
 #define TclBN_mp_read_radix mp_read_radix
 #define TclBN_mp_rshd mp_rshd
 #define TclBN_mp_set_i64 mp_set_i64
@@ -140,7 +139,7 @@ static void uniCodePanic() {
 #define TclBN_mp_xor mp_xor
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
-#define TclBN_s_mp_balance_mul mp_balance_mul
+#define TclBN_mp_balance_mul s_mp_balance_mul
 #define TclBN_mp_karatsuba_mul s_mp_karatsuba_mul
 #define TclBN_mp_karatsuba_sqr s_mp_karatsuba_sqr
 #define TclBN_s_mp_mul_digs s_mp_mul_digs

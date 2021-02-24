@@ -1521,7 +1521,6 @@ tclZipfs.o: $(GENERIC_DIR)/tclZipfs.c
 	$(CC) -c $(CC_SWITCHES) \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
-		-DCFG_RUNTIME_BINDIR="\"$(bindir)\"" \
 		-I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip \
 		$(GENERIC_DIR)/tclZipfs.c
 

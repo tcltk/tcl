@@ -2,7 +2,7 @@
  * tclZipfs.c --
  *
  *	Implementation of the ZIP filesystem used in TIP 430
- *	Adapted from the implentation for AndroWish.
+ *	Adapted from the implementation for AndroWish.
  *
  * Copyright © 2016-2017 Sean Woods <yoda@etoyoc.com>
  * Copyright © 2013-2015 Christian Werner <chw@ch-werner.de>
@@ -3090,16 +3090,13 @@ ZipFSListObjCmd(
  *-------------------------------------------------------------------------
  */
 
-#ifdef _WIN32
-#define LIBRARY_SIZE	    64
-#endif /* _WIN32 */
-
 Tcl_Obj *
 TclZipfs_TclLibrary(void)
 {
     Tcl_Obj *vfsInitScript;
     int found;
-#if defined(_WIN32) && !defined(STATIC_BUILD)
+#if (defined(_WIN32) || defined(__CYGWIN__)) && !defined(STATIC_BUILD)
+#   define LIBRARY_SIZE	    64
     HMODULE hModule;
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
     char dllName[(MAX_PATH + LIBRARY_SIZE) * 3];
@@ -3134,22 +3131,20 @@ TclZipfs_TclLibrary(void)
      */
 
 #if !defined(STATIC_BUILD)
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__CYGWIN__)
     hModule = (HMODULE)TclWinGetTclInstance();
     GetModuleFileNameW(hModule, wName, MAX_PATH);
+#ifdef __CYGWIN__
+    cygwin_conv_path(3, wName, dllName, sizeof(dllName));
+#else
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, dllName, sizeof(dllName), NULL, NULL);
+#endif
 
     if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
 #else
-    if (ZipfsAppHookFindTclInit(
-#ifdef __CYGWIN__
-		CFG_RUNTIME_BINDIR
-#else
-		CFG_RUNTIME_LIBDIR
-#endif
-		"/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
+    if (ZipfsAppHookFindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
 #endif /* _WIN32 */
@@ -4793,14 +4788,14 @@ TclZipfs_AppHook(
     char ***argvPtr)		/* Pointer to argv */
 #endif /* _WIN32 */
 {
-    char *archive;
+    const char *archive;
 
 #ifdef _WIN32
     Tcl_FindExecutable(NULL);
 #else
     Tcl_FindExecutable((*argvPtr)[0]);
 #endif
-    archive = (char *) Tcl_GetNameOfExecutable();
+    archive = Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
 
     /*
