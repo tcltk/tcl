@@ -818,19 +818,8 @@ $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 $(TMP_DIR)\tclWinTest.obj: $(WIN_DIR)\tclWinTest.c
 	$(CCAPPCMD) $?
 
-# Following the lead of the autoconf based make, we define the
-# CFG_RUNTIME_DLLFILE flag specifically for tclZipfs and tclPkgConfig
-# and not as part of the global defines. Moreover, for tclZipfs,
-# we define only CFG_RUNTIME_DLLFILE to force use of //zipfs:
-# as the zip fs root. However it is defined as empty. See tclPkgConfig.obj
-# comments as to why.
-# We do not define other CFG_RUNTIME_ZIPFILE at all because
-# that causes the zipfs code to go looking at directories that existed
-# on the *build* system as opposed to the target runtime system. This
-# is the case even if the value is defined as an empty string.
 $(TMP_DIR)\tclZipfs.obj: $(GENERICDIR)\tclZipfs.c
 	$(cc32) $(pkgcflags) \
-	-DCFG_RUNTIME_DLLFILE="\"\"" \
 	-I$(COMPATDIR)\zlib -I$(COMPATDIR)\zlib\contrib\minizip \
 	-Fo$@ $?
 

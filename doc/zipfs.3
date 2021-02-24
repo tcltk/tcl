@@ -13,7 +13,7 @@
 TclZipfs_AppHook, Tclzipfs_Mount, TclZipfs_MountBuffer, Tclzipfs_Unmount \- handle ZIP files as Tcl virtual filesystems
 .SH SYNOPSIS
 .nf
-int
+const char *
 \fBTclZipfs_AppHook(\fIargcPtr, argvPtr\fR)
 .sp
 int
@@ -87,11 +87,10 @@ it uses WCHAR instead of char. As a result, it requires your application to
 be compiled with the UNICODE preprocessor symbol defined (e.g., via the
 \fB-DUNICODE\fR compiler flag).
 .PP
-The result of \fBTclZipfs_AppHook\fR is a Tcl result code (e.g., \fBTCL_OK\fR
-when the function is successful). The function \fImay\fR modify the variables
-pointed to by \fIargcPtr\fR and \fIargvPtr\fR to remove arguments; the
-current implementation does not do so, but callers \fIshould not\fR assume
-that this will be true in the future.
+The result of \fBTclZipfs_AppHook\fR is the Tcl version (e.g., \fB8.7.0\fR).
+The function \fImay\fR modify the variables pointed to by \fIargcPtr\fR and
+\fIargvPtr\fR to remove arguments; the current implementation does not do so,
+but callers \fIshould not\fR assume that this will be true in the future.
 .PP
 \fBTclzipfs_Mount\fR mounts the ZIP archive \fIzipname\fR on the mount point
 given in \fImountpoint\fR using the optional ZIP password \fIpassword\fR.

@@ -38,8 +38,6 @@
 #include "zutil.h"
 #include "crc32.h"
 
-#ifdef CFG_RUNTIME_DLLFILE
-
 /*
 ** We are compiling as part of the core.
 ** TIP430 style zipfs prefix
@@ -49,22 +47,6 @@
 #define ZIPFS_VOLUME_LEN  9
 #define ZIPFS_APP_MOUNT	  "//zipfs:/app"
 #define ZIPFS_ZIP_MOUNT	  "//zipfs:/lib/tcl"
-
-#else /* !CFG_RUNTIME_DLLFILE */
-
-/*
-** We are compiling from the /compat folder of tclconfig
-** Pre TIP430 style zipfs prefix
-** //zipfs:/ doesn't work straight out of the box on either windows or Unix
-** without other changes made to tip 430
-*/
-
-#define ZIPFS_VOLUME	  "zipfs:/"
-#define ZIPFS_VOLUME_LEN  7
-#define ZIPFS_APP_MOUNT	  "zipfs:/app"
-#define ZIPFS_ZIP_MOUNT	  "zipfs:/lib/tcl"
-
-#endif /* CFG_RUNTIME_DLLFILE */
 
 /*
  * Various constants and offsets found in ZIP archive files
@@ -303,7 +285,9 @@ static const char *zipfs_literal_tcl_library = NULL;
 static inline int	DescribeMounted(Tcl_Interp *interp,
 			    const char *mountPoint);
 static inline int	ListMountPoints(Tcl_Interp *interp);
+#if !defined(STATIC_BUILD)
 static int		ZipfsAppHookFindTclInit(const char *archive);
+#endif
 static int		ZipFSPathInFilesystemProc(Tcl_Obj *pathPtr,
 			    void **clientDataPtr);
 static Tcl_Obj *	ZipFSFilesystemPathTypeProc(Tcl_Obj *pathPtr);
@@ -3120,16 +3104,13 @@ ZipFSListObjCmd(
  *-------------------------------------------------------------------------
  */
 
-#ifdef _WIN32
-#define LIBRARY_SIZE	    64
-#endif /* _WIN32 */
-
 Tcl_Obj *
 TclZipfs_TclLibrary(void)
 {
     Tcl_Obj *vfsInitScript;
     int found;
-#ifdef _WIN32
+#if (defined(_WIN32) || defined(__CYGWIN__)) && !defined(STATIC_BUILD)
+#   define LIBRARY_SIZE	    64
     HMODULE hModule;
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
     char dllName[(MAX_PATH + LIBRARY_SIZE) * 3];
@@ -3163,20 +3144,25 @@ TclZipfs_TclLibrary(void)
      * that we must mount the zip file and dll before releasing to search.
      */
 
-#if defined(_WIN32)
+#if !defined(STATIC_BUILD)
+#if defined(_WIN32) || defined(__CYGWIN__)
     hModule = TclWinGetTclInstance();
     GetModuleFileNameW(hModule, wName, MAX_PATH);
+#ifdef __CYGWIN__
+    cygwin_conv_path(3, wName, dllName, sizeof(dllName));
+#else
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, dllName, sizeof(dllName), NULL, NULL);
+#endif
 
     if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
-#elif /* !_WIN32 && */ defined(CFG_RUNTIME_DLLFILE)
-    if (ZipfsAppHookFindTclInit(
-	    CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
+#else
+    if (ZipfsAppHookFindTclInit(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE) == TCL_OK) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
-#endif /* _WIN32 || CFG_RUNTIME_DLLFILE */
+#endif /* _WIN32 */
+#endif /* !defined(STATIC_BUILD) */
 
     /*
      * If anything set the cache (but subsequently failed) go with that
@@ -4763,6 +4749,7 @@ TclZipfs_Init(
 #endif /* HAVE_ZLIB */
 }
 
+#if !defined(STATIC_BUILD)
 static int
 ZipfsAppHookFindTclInit(
     const char *archive)
@@ -4799,6 +4786,7 @@ ZipfsAppHookFindTclInit(
 
     return TCL_ERROR;
 }
+#endif
 
 static void
 ZipfsExitHandler(
@@ -4821,7 +4809,7 @@ ZipfsExitHandler(
  *-------------------------------------------------------------------------
  */
 
-int
+const char *
 TclZipfs_AppHook(
 #ifdef SUPPORT_BUILTIN_ZIP_INSTALL
     int *argcPtr,		/* Pointer to argc */
@@ -4835,11 +4823,12 @@ TclZipfs_AppHook(
 #endif /* _WIN32 */
 {
     char *archive;
+    const char *version;
 
 #ifdef _WIN32
-    Tcl_FindExecutable(NULL);
+    version = Tcl_FindExecutable(NULL);
 #else
-    Tcl_FindExecutable((*argvPtr)[0]);
+    version = Tcl_FindExecutable((*argvPtr)[0]);
 #endif
     archive = (char *) Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
@@ -4877,7 +4866,7 @@ TclZipfs_AppHook(
 	    Tcl_DecrRefCount(vfsInitScript);
 	    if (found == TCL_OK) {
 		zipfs_literal_tcl_library = ZIPFS_APP_MOUNT "/tcl_library";
-		return TCL_OK;
+		return version;
 	    }
 	}
 #ifdef SUPPORT_BUILTIN_ZIP_INSTALL
@@ -4910,7 +4899,7 @@ TclZipfs_AppHook(
 	    if (Tcl_FSAccess(vfsInitScript, F_OK) == 0) {
 		Tcl_SetStartupScript(vfsInitScript, NULL);
 	    }
-	    return TCL_OK;
+	    return version;
 	} else if (!TclZipfs_Mount(NULL, ZIPFS_APP_MOUNT, archive, NULL)) {
 	    int found;
 	    Tcl_Obj *vfsInitScript;
@@ -4934,7 +4923,7 @@ TclZipfs_AppHook(
 	    Tcl_DecrRefCount(vfsInitScript);
 	    if (found == TCL_OK) {
 		zipfs_literal_tcl_library = ZIPFS_APP_MOUNT "/tcl_library";
-		return TCL_OK;
+		return version;
 	    }
 	}
 #ifdef _WIN32
@@ -4942,7 +4931,7 @@ TclZipfs_AppHook(
 #endif /* _WIN32 */
 #endif /* SUPPORT_BUILTIN_ZIP_INSTALL */
     }
-    return TCL_OK;
+    return version;
 }
 
 #ifndef HAVE_ZLIB

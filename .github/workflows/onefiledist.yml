@@ -38,7 +38,7 @@ jobs:
           path: 1dist/*.tar
   macos:
     name: macOS
-    runs-on: macos-latest
+    runs-on: macos-11.0
     defaults:
       run:
         shell: bash
@@ -55,8 +55,12 @@ jobs:
         run: |
           mkdir 1dist
           touch generic/tclStubInit.c generic/tclOOStubInit.c || true
+          wget https://github.com/culler/macher/releases/download/v1.3/macher
+          sudo cp macher /usr/local/bin
+          sudo chmod a+x /usr/local/bin/macher
           echo "VER_PATH=$(cd tools; pwd)/addVerToFile.tcl" >> $GITHUB_ENV
           echo "CREATE_DMG=$(cd create-dmg;pwd)/create-dmg" >> $GITHUB_ENV
+          echo "CFLAGS=-arch x86_64 -arch arm64e" >> $GITHUB_ENV
       - name: Configure
         run: ./configure --disable-symbols --disable-shared --enable-zipfs
         working-directory: unix

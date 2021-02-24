@@ -645,8 +645,7 @@ Tcl_CreateInterp(void)
 #endif /* TCL_COMPILE_STATS */
     char mathFuncName[32];
     CallFrame *framePtr;
-
-    Tcl_InitSubsystems();
+    const char *version = Tcl_InitSubsystems();
 
     /*
      * Panic if someone updated the CallFrame structure without also updating
@@ -774,6 +773,10 @@ Tcl_CreateInterp(void)
 
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
+
+#ifdef _WIN32
+#   define getenv(x) _wgetenv(L##x) /* On Windows, use _wgetenv below */
+#endif
 
     /* TIP #268 */
 #if (TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE)
@@ -1182,68 +1185,7 @@ Tcl_CreateInterp(void)
      */
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
-    Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL
-	    "+" STRINGIFY(TCL_VERSION_UUID)
-#if defined(__clang__) && defined(__clang_major__)
-	    ".clang-" STRINGIFY(__clang_major__)
-#if __clang_minor__ < 10
-	    "0"
-#endif
-	    STRINGIFY(__clang_minor__)
-#endif
-#ifdef TCL_COMPILE_DEBUG
-	    ".compiledebug"
-#endif
-#ifdef TCL_COMPILE_STATS
-	    ".compilestats"
-#endif
-#if defined(__cplusplus) && !defined(__OBJC__)
-	    ".cplusplus"
-#endif
-#ifndef NDEBUG
-	    ".debug"
-#endif
-#if !defined(__clang__) && defined(__GNUC__)
-	    ".gcc-" STRINGIFY(__GNUC__)
-#if __GNUC_MINOR__ < 10
-	    "0"
-#endif
-	    STRINGIFY(__GNUC_MINOR__)
-#endif
-#ifdef TCL_MEM_DEBUG
-	    ".memdebug"
-#endif
-#if defined(_MSC_VER)
-	    ".msvc-" STRINGIFY(_MSC_VER)
-#endif
-#ifdef USE_NMAKE
-	    ".nmake"
-#endif
-#ifdef TCL_NO_DEPRECATED
-	    ".no-deprecate"
-#endif
-#ifndef TCL_THREADS
-	    ".no-thread"
-#endif
-#ifndef TCL_CFG_OPTIMIZED
-	    ".no-optimize"
-#endif
-#ifdef __OBJC__
-	    ".objective-c"
-#if defined(__cplusplus)
-	    "plusplus"
-#endif
-#endif
-#ifdef TCL_CFG_PROFILED
-	    ".profiled"
-#endif
-#ifdef STATIC_BUILD
-	    ".static"
-#endif
-#if TCL_UTF_MAX < 4
-	    ".utf16"
-#endif
-	    , &tclStubs);
+    Tcl_PkgProvideEx(interp, "tcl", version, &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
@@ -7974,7 +7916,16 @@ ExprAbsFunc(
 	    }
 	    goto unChanged;
 	} else if (l == WIDE_MIN) {
-	    if (mp_init_i64(&big, l) != MP_OKAY) {
+	    if (sizeof(Tcl_WideInt) > sizeof(int64_t)) {
+		Tcl_WideUInt ul = -(Tcl_WideUInt)WIDE_MIN;
+		if (mp_init(&big) != MP_OKAY || mp_unpack(&big, 1, 1,
+			sizeof(Tcl_WideInt), 0, 0, &ul) != MP_OKAY) {
+		    return TCL_ERROR;
+		}
+		if (mp_neg(&big, &big) != MP_OKAY) {
+		    return TCL_ERROR;
+		}
+	    } else if (mp_init_i64(&big, l) != MP_OKAY) {
 		return TCL_ERROR;
 	    }
 	    goto tooLarge;
