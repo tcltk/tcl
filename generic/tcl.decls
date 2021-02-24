@@ -2544,6 +2544,9 @@ export {
 export {
     void Tcl_InitSubsystems(void)
 }
+export { 
+    int TclZipfs_AppHook(int *argc, char ***argv)
+}
 
 # Local Variables:
 # mode: tcl

@@ -2,7 +2,7 @@
  * tclZipfs.c --
  *
  *	Implementation of the ZIP filesystem used in TIP 430
- *	Adapted from the implentation for AndroWish.
+ *	Adapted from the implementation for AndroWish.
  *
  * Copyright © 2016-2017 Sean Woods <yoda@etoyoc.com>
  * Copyright © 2013-2015 Christian Werner <chw@ch-werner.de>
@@ -4788,7 +4788,7 @@ TclZipfs_AppHook(
     char ***argvPtr)		/* Pointer to argv */
 #endif /* _WIN32 */
 {
-    char *archive;
+    const char *archive;
     const char *result;
 
 #ifdef _WIN32
@@ -4796,7 +4796,7 @@ TclZipfs_AppHook(
 #else
     result = Tcl_FindExecutable((*argvPtr)[0]);
 #endif
-    archive = (char *) Tcl_GetNameOfExecutable();
+    archive = Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);
 
     /*
