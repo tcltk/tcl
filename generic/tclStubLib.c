@@ -109,7 +109,7 @@ Tcl_InitStubs(
 	stubsPtr = (TclStubs *)pkgData;
     }
     if (tclStubsHandle == NULL) {
-	tclStubsHandle = (void *) -1;
+	tclStubsHandle = INT2PTR(-1);
     }
     tclStubsPtr = stubsPtr;
 

@@ -201,7 +201,6 @@ BUILD_DLTEST		= @BUILD_DLTEST@
 
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 #TCL_LIB_FILE		= libtcl.a
-TCL_PREV_LIB_FILE		= @TCL_PREV_LIB_FILE@
 
 # Generic lib name used in rules that apply to tcl and tk
 LIB_FILE		= ${TCL_LIB_FILE}
@@ -1914,7 +1913,11 @@ tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD @CFLAGS_NOLTO@ $(GENERIC_DIR)/tclStubLib.c
 
 tclStubCall.o: $(GENERIC_DIR)/tclStubCall.c
-	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_LIB_FILE)\"" $(GENERIC_DIR)/tclStubCall.c
+	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD \
+		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
+		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
+		-DCFG_RUNTIME_BINDIR="\"$(bindir)\"" \
+		$(GENERIC_DIR)/tclStubCall.c
 
 tclStubLibTbl.o: $(GENERIC_DIR)/tclStubLibTbl.c
 	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLibTbl.c

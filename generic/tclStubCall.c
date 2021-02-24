@@ -59,7 +59,7 @@ static const char CANNOTFIND[] = "Cannot find %s: %s\n";
 MODULE_SCOPE void *
 TclStubCall(void *arg)
 {
-    static void *stubFn[] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+    static void *stubFn[] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
     unsigned index = PTR2UINT(arg);
 
     if (index >= sizeof(PROCNAME)/sizeof(PROCNAME[0])) {
@@ -76,12 +76,26 @@ TclStubCall(void *arg)
     }
     if (!stubFn[index]) {
 	if (!tclStubsHandle) {
-	    tclStubsHandle = dlopen(TCL_DLL_FILE, RTLD_NOW|RTLD_LOCAL);
+	    tclStubsHandle = dlopen(CFG_RUNTIME_DLLFILE, RTLD_NOW|RTLD_LOCAL);
+	    if (!tclStubsHandle) {
+		tclStubsHandle = dlopen(
+#if defined(_WIN32) || defined(__CYGWIN__)
+			CFG_RUNTIME_BINDIR
+#else
+			CFG_RUNTIME_LIBDIR
+#endif
+#if defined(_WIN32)
+			"\\"
+#else
+			"/"
+#endif
+			CFG_RUNTIME_DLLFILE, RTLD_NOW|RTLD_LOCAL);
+	    }
 	    if (!tclStubsHandle) {
 		if ((index == 0) && (arg != NULL)) {
-		    ((Tcl_PanicProc *)arg)(CANNOTFIND, TCL_DLL_FILE, dlerror());
+		    ((Tcl_PanicProc *)arg)(CANNOTFIND, CFG_RUNTIME_DLLFILE, dlerror());
 		} else {
-		    fprintf(stderr, CANNOTFIND, TCL_DLL_FILE, dlerror());
+		    fprintf(stderr, CANNOTFIND, CFG_RUNTIME_DLLFILE, dlerror());
 		    abort();
 		}
 	    }

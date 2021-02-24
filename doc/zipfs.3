@@ -87,8 +87,8 @@ it uses WCHAR instead of char. As a result, it requires your application to
 be compiled with the UNICODE preprocessor symbol defined (e.g., via the
 \fB-DUNICODE\fR compiler flag).
 .PP
-The result of \fBTclZipfs_AppHook\fR is the Tcl version string(e.g., \fB"9.0"\fR
-when the function is successful). The function \fImay\fR modify the variables
+The result of \fBTclZipfs_AppHook\fR is the full Tcl version string(e.g.,
+\fB"9.0.0"\fR). The function \fImay\fR modify the variables
 pointed to by \fIargcPtr\fR and \fIargvPtr\fR to remove arguments; the
 current implementation does not do so, but callers \fIshould not\fR assume
 that this will be true in the future.
