@@ -1007,6 +1007,9 @@ TclWinCPUID(
                  : "a"(index));
 #endif
     status = TCL_OK;
+#else
+    (void)index;
+    (void)regsPtr;
 #endif
     return status;
 }

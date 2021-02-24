@@ -781,7 +781,7 @@ ${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
 	    cp -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
 	fi
 	mv ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl
-	rm -rf ${TCL_VFS_PATH}/dde ${TCL_VFS_PATH}/reg
+	rm -rf ${TCL_VFS_PATH}/dde ${TCL_VFS_PATH}/registry
 	@find ${TCL_VFS_ROOT} -type d -empty -delete
 	@echo "creating ${TCL_ZIP_FILE} from ${TCL_VFS_PATH}"
 	@(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}' || \
@@ -1535,7 +1535,6 @@ tclZipfs.o: $(GENERIC_DIR)/tclZipfs.c
 	$(CC) -c $(CC_SWITCHES) \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
-		-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY)\"" \
 		-I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip \
 		$(GENERIC_DIR)/tclZipfs.c
 
@@ -2232,7 +2231,7 @@ ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
 DIST_INSTALL_DATA   = CPPROG='cp -p' $(INSTALL) -m 644
 DIST_INSTALL_SCRIPT = CPPROG='cp -p' $(INSTALL) -m 755
-BUILTIN_PACKAGE_LIST = cookiejar http opt msgcat reg dde tcltest platform
+BUILTIN_PACKAGE_LIST = cookiejar http opt msgcat registry dde tcltest platform
 
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.ac $(UNIX_DIR)/tcl.m4 \
 		$(UNIX_DIR)/aclocal.m4
