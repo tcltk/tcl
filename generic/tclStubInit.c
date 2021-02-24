@@ -142,7 +142,7 @@ static void uniCodePanic(void) {
 #define TclBN_mp_xor mp_xor
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
-#define TclBN_s_mp_balance_mul mp_balance_mul
+#define TclBN_s_mp_balance_mul s_mp_balance_mul
 #define TclBN_mp_karatsuba_mul s_mp_karatsuba_mul
 #define TclBN_mp_karatsuba_sqr s_mp_karatsuba_sqr
 #define TclBN_s_mp_mul_digs s_mp_mul_digs
