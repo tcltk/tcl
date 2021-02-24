@@ -38,7 +38,7 @@ jobs:
           path: 1dist/*.tar
   macos:
     name: macOS
-    runs-on: macos-latest
+    runs-on: macos-11.0
     defaults:
       run:
         shell: bash

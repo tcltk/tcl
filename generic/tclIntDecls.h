@@ -186,9 +186,9 @@ EXTERN void *		TclpAlloc(size_t size);
 /* 74 */
 EXTERN void		TclpFree(void *ptr);
 /* 75 */
-EXTERN Tcl_WideUInt	TclpGetClicks(void);
+EXTERN unsigned long long TclpGetClicks(void);
 /* 76 */
-EXTERN Tcl_WideUInt	TclpGetSeconds(void);
+EXTERN unsigned long long TclpGetSeconds(void);
 /* Slot 77 is reserved */
 /* Slot 78 is reserved */
 /* Slot 79 is reserved */
@@ -660,8 +660,8 @@ typedef struct TclIntStubs {
     void (*reserved72)(void);
     void (*reserved73)(void);
     void (*tclpFree) (void *ptr); /* 74 */
-    Tcl_WideUInt (*tclpGetClicks) (void); /* 75 */
-    Tcl_WideUInt (*tclpGetSeconds) (void); /* 76 */
+    unsigned long long (*tclpGetClicks) (void); /* 75 */
+    unsigned long long (*tclpGetSeconds) (void); /* 76 */
     void (*reserved77)(void);
     void (*reserved78)(void);
     void (*reserved79)(void);
