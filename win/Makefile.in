@@ -673,7 +673,7 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 
-tclBasic.${OBJEXT}: tclBasic.c tclUuid.h
+tclEvent.${OBJEXT}: tclEvent.c tclUuid.h
 
 $(TOP_DIR)/manifest.uuid:
 	printf "git-" >$(TOP_DIR)/manifest.uuid

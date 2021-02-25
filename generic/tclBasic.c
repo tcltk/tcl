@@ -21,7 +21,6 @@
 #include "tclOOInt.h"
 #include "tclCompile.h"
 #include "tclTomMath.h"
-#include "tclUuid.h"
 #include <math.h>
 #include <assert.h>
 
@@ -1171,11 +1170,6 @@ Tcl_CreateInterp(void)
      */
 
     Tcl_SetVar2(interp, "tcl_platform", "threaded", "1", TCL_GLOBAL_ONLY);
-#endif
-
-#ifndef STRINGIFY
-#  define STRINGIFY(x) STRINGIFY1(x)
-#  define STRINGIFY1(x) #x
 #endif
 
     /*

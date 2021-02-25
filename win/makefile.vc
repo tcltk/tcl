@@ -805,9 +805,9 @@ $(ROOT)\manifest.uuid:
 $(TMP_DIR)\tclUuid.h:	$(ROOT)\manifest.uuid
 	copy $(WIN_DIR)\tclUuid.h.in+$(ROOT)\manifest.uuid $(TMP_DIR)\tclUuid.h
 
-$(TMP_DIR)\tclBasic.obj: $(GENERICDIR)\tclBasic.c $(TMP_DIR)\tclUuid.h
+$(TMP_DIR)\tclEvent.obj: $(GENERICDIR)\tclEvent.c $(TMP_DIR)\tclUuid.h
 	$(cc32) $(pkgcflags) -I$(TMP_DIR) \
-	    -Fo$@ $(GENERICDIR)\tclBasic.c
+	    -Fo$@ $(GENERICDIR)\tclEvent.c
 
 $(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c $(TMP_DIR)\tclUuid.h
 	$(cc32) $(appcflags) -I$(TMP_DIR) -Fo$@ $?

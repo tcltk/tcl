@@ -14,6 +14,7 @@
  */
 
 #include "tclInt.h"
+#include "tclUuid.h"
 
 /*
  * The data structure below is used to report background errors. One such
@@ -1071,6 +1072,12 @@ Tcl_InitSubsystems(void)
 	TclpInitUnlock();
     }
     TclInitNotifier();
+
+#ifndef STRINGIFY
+#  define STRINGIFY(x) STRINGIFY1(x)
+#  define STRINGIFY1(x) #x
+#endif
+
     return TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
 #if defined(__clang__) && defined(__clang_major__)
 	    ".clang-" STRINGIFY(__clang_major__)
