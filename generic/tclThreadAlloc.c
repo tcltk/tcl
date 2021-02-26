@@ -131,12 +131,12 @@ static struct {
 static Cache *	GetCache(void);
 static void	LockBucket(Cache *cachePtr, int bucket);
 static void	UnlockBucket(Cache *cachePtr, int bucket);
-static void	PutBlocks(Cache *cachePtr, int bucket, long numMove);
+static void	PutBlocks(Cache *cachePtr, int bucket, size_t numMove);
 static int	GetBlocks(Cache *cachePtr, int bucket);
 static Block *	Ptr2Block(void *ptr);
-static void *	Block2Ptr(Block *blockPtr, int bucket, unsigned int reqSize);
-static void	MoveObjs(Cache *fromPtr, Cache *toPtr, long numMove);
-static void	PutObjs(Cache *fromPtr, long numMove);
+static void *	Block2Ptr(Block *blockPtr, int bucket, size_t reqSize);
+static void	MoveObjs(Cache *fromPtr, Cache *toPtr, size_t numMove);
+static void	PutObjs(Cache *fromPtr, size_t numMove);
 
 /*
  * Local variables defined in this file and initialized at startup.
@@ -521,7 +521,7 @@ TclThreadAllocObj(void)
      */
 
     if (cachePtr->numObjects == 0) {
-	long numMove;
+	size_t numMove;
 
 	Tcl_MutexLock(objLockPtr);
 	numMove = sharedPtr->numObjects;
@@ -644,7 +644,8 @@ Tcl_GetMemoryInfo(
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	for (n = 0; n < NBUCKETS; ++n) {
-	    sprintf(buf, "%" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d",
+	    sprintf(buf, "%" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %"
+		    TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u",
 		    bucketInfo[n].blockSize,
 		    cachePtr->buckets[n].numFree,
 		    cachePtr->buckets[n].numRemoves,
@@ -679,7 +680,7 @@ static void
 MoveObjs(
     Cache *fromPtr,
     Cache *toPtr,
-    long numMove)
+    size_t numMove)
 {
     Tcl_Obj *objPtr = fromPtr->firstObjPtr;
     Tcl_Obj *fromFirstObjPtr = objPtr;
@@ -726,7 +727,7 @@ MoveObjs(
 static void
 PutObjs(
     Cache *fromPtr,
-    long numMove)
+    size_t numMove)
 {
     size_t keep = fromPtr->numObjects - numMove;
     Tcl_Obj *firstPtr, *lastPtr = NULL;
@@ -780,7 +781,7 @@ static void *
 Block2Ptr(
     Block *blockPtr,
     int bucket,
-    unsigned int reqSize)
+    size_t reqSize)
 {
     void *ptr;
 
@@ -870,14 +871,14 @@ static void
 PutBlocks(
     Cache *cachePtr,
     int bucket,
-    long numMove)
+    size_t numMove)
 {
     /*
      * We have numFree.  Want to shed numMove. So compute how many
      * Blocks to keep.
      */
 
-    long keep = cachePtr->buckets[bucket].numFree - numMove;
+    size_t keep = cachePtr->buckets[bucket].numFree - numMove;
     Block *lastPtr = NULL, *firstPtr;
 
     cachePtr->buckets[bucket].numFree = keep;
@@ -1056,7 +1057,7 @@ TclInitThreadAlloc(void)
 	bucketInfo[i].blockSize = MINALLOC << i;
 	bucketInfo[i].maxBlocks = ((size_t)1) << (NBUCKETS - 1 - i);
 	bucketInfo[i].numMove = i < NBUCKETS - 1 ?
-		1 << (NBUCKETS - 2 - i) : 1;
+		(size_t)1 << (NBUCKETS - 2 - i) : 1;
 	bucketInfo[i].lockPtr = TclpNewAllocMutex();
     }
     TclpInitAllocCache();
