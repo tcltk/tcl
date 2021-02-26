@@ -91,9 +91,8 @@ typedef struct {
 
     size_t numRemoves;		/* Number of removes from bucket */
     size_t numInserts;		/* Number of inserts into bucket */
-    size_t numWaits;		/* Number of waits to acquire a lock */
     size_t numLocks;		/* Number of locks acquired */
-    size_t totalAssigned;	/* Total space assigned to bucket */
+    size_t totalAssigned;		/* Total space assigned to bucket */
 } Bucket;
 
 /*
@@ -107,9 +106,9 @@ typedef struct Cache {
     struct Cache *nextPtr;	/* Linked list of cache entries */
     Tcl_ThreadId owner;		/* Which thread's cache is this? */
     Tcl_Obj *firstObjPtr;	/* List of free objects for thread */
-    int numObjects;		/* Number of objects for thread */
+    size_t numObjects;		/* Number of objects for thread */
     Tcl_Obj *lastPtr;		/* Last object in this cache */
-    int totalAssigned;		/* Total space assigned to thread */
+    size_t totalAssigned;	/* Total space assigned to thread */
     Bucket buckets[NBUCKETS];	/* The buckets for this thread */
 } Cache;
 
@@ -132,12 +131,12 @@ static struct {
 static Cache *	GetCache(void);
 static void	LockBucket(Cache *cachePtr, int bucket);
 static void	UnlockBucket(Cache *cachePtr, int bucket);
-static void	PutBlocks(Cache *cachePtr, int bucket, int numMove);
+static void	PutBlocks(Cache *cachePtr, int bucket, long numMove);
 static int	GetBlocks(Cache *cachePtr, int bucket);
 static Block *	Ptr2Block(void *ptr);
 static void *	Block2Ptr(Block *blockPtr, int bucket, unsigned int reqSize);
-static void	MoveObjs(Cache *fromPtr, Cache *toPtr, int numMove);
-static void	PutObjs(Cache *fromPtr, int numMove);
+static void	MoveObjs(Cache *fromPtr, Cache *toPtr, long numMove);
+static void	PutObjs(Cache *fromPtr, long numMove);
 
 /*
  * Local variables defined in this file and initialized at startup.
@@ -522,7 +521,7 @@ TclThreadAllocObj(void)
      */
 
     if (cachePtr->numObjects == 0) {
-	int numMove;
+	long numMove;
 
 	Tcl_MutexLock(objLockPtr);
 	numMove = sharedPtr->numObjects;
@@ -539,11 +538,11 @@ TclThreadAllocObj(void)
 	    cachePtr->numObjects = numMove = NOBJALLOC;
 	    newObjsPtr = (Tcl_Obj *)TclpSysAlloc(sizeof(Tcl_Obj) * numMove);
 	    if (newObjsPtr == NULL) {
-		Tcl_Panic("alloc: could not allocate %d new objects", numMove);
+		Tcl_Panic("alloc: could not allocate %ld new objects", numMove);
 	    }
 	    cachePtr->lastPtr = newObjsPtr + numMove - 1;
 	    objPtr = cachePtr->firstObjPtr;	/* NULL */
-	    while (--numMove >= 0) {
+	    while (numMove-- > 0) {
 		newObjsPtr[numMove].internalRep.twoPtrValue.ptr1 = objPtr;
 		objPtr = newObjsPtr + numMove;
 	    }
@@ -645,14 +644,13 @@ Tcl_GetMemoryInfo(
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	for (n = 0; n < NBUCKETS; ++n) {
-	    sprintf(buf, "%" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u",
+	    sprintf(buf, "%" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d",
 		    bucketInfo[n].blockSize,
 		    cachePtr->buckets[n].numFree,
 		    cachePtr->buckets[n].numRemoves,
 		    cachePtr->buckets[n].numInserts,
 		    cachePtr->buckets[n].totalAssigned,
-		    cachePtr->buckets[n].numLocks,
-		    cachePtr->buckets[n].numWaits);
+		    cachePtr->buckets[n].numLocks);
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	Tcl_DStringEndSublist(dsPtr);
@@ -681,7 +679,7 @@ static void
 MoveObjs(
     Cache *fromPtr,
     Cache *toPtr,
-    int numMove)
+    long numMove)
 {
     Tcl_Obj *objPtr = fromPtr->firstObjPtr;
     Tcl_Obj *fromFirstObjPtr = objPtr;
@@ -694,7 +692,7 @@ MoveObjs(
      * to be moved) as the first object in the 'from' cache.
      */
 
-    while (--numMove) {
+    while (numMove-- > 1) {
 	objPtr = (Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr1;
     }
     fromPtr->firstObjPtr = (Tcl_Obj *)objPtr->internalRep.twoPtrValue.ptr1;
@@ -728,9 +726,9 @@ MoveObjs(
 static void
 PutObjs(
     Cache *fromPtr,
-    int numMove)
+    long numMove)
 {
-    int keep = fromPtr->numObjects - numMove;
+    size_t keep = fromPtr->numObjects - numMove;
     Tcl_Obj *firstPtr, *lastPtr = NULL;
 
     fromPtr->numObjects = keep;
@@ -741,7 +739,7 @@ PutObjs(
 	do {
 	    lastPtr = firstPtr;
 	    firstPtr = (Tcl_Obj *)firstPtr->internalRep.twoPtrValue.ptr1;
-	} while (--keep > 0);
+	} while (keep-- > 1);
 	lastPtr->internalRep.twoPtrValue.ptr1 = NULL;
     }
 
@@ -872,14 +870,14 @@ static void
 PutBlocks(
     Cache *cachePtr,
     int bucket,
-    int numMove)
+    long numMove)
 {
     /*
      * We have numFree.  Want to shed numMove. So compute how many
      * Blocks to keep.
      */
 
-    int keep = cachePtr->buckets[bucket].numFree - numMove;
+    long keep = cachePtr->buckets[bucket].numFree - numMove;
     Block *lastPtr = NULL, *firstPtr;
 
     cachePtr->buckets[bucket].numFree = keep;
@@ -890,7 +888,7 @@ PutBlocks(
 	do {
 	    lastPtr = firstPtr;
 	    firstPtr = firstPtr->nextBlock;
-	} while (--keep > 0);
+	} while (keep-- > 1);
 	lastPtr->nextBlock = NULL;
     }
 
@@ -968,7 +966,7 @@ GetBlocks(
 		cachePtr->buckets[bucket].firstPtr = blockPtr;
 		sharedPtr->buckets[bucket].numFree -= n;
 		cachePtr->buckets[bucket].numFree = n;
-		while (--n > 0) {
+		while (n-- > 1) {
 		    blockPtr = blockPtr->nextBlock;
 		}
 		sharedPtr->buckets[bucket].firstPtr = blockPtr->nextBlock;
@@ -990,7 +988,7 @@ GetBlocks(
 	blockPtr = NULL;
 	n = NBUCKETS;
 	size = 0;
-	while (--n > (size_t)bucket) {
+	while (n-- > (size_t)bucket + 1) {
 	    if (cachePtr->buckets[n].numFree > 0) {
 		size = bucketInfo[n].blockSize;
 		blockPtr = cachePtr->buckets[n].firstPtr;
@@ -1019,7 +1017,7 @@ GetBlocks(
 	n = size / bucketInfo[bucket].blockSize;
 	cachePtr->buckets[bucket].numFree = n;
 	cachePtr->buckets[bucket].firstPtr = blockPtr;
-	while (--n > 0) {
+	while (n-- > 1) {
 	    blockPtr->nextBlock = (Block *)
 		((char *) blockPtr + bucketInfo[bucket].blockSize);
 	    blockPtr = blockPtr->nextBlock;
