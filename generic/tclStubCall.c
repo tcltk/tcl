@@ -60,7 +60,7 @@ MODULE_SCOPE void *
 TclStubCall(void *arg)
 {
     static void *stubFn[] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
-    unsigned index = PTR2UINT(arg);
+    size_t index = PTR2UINT(arg);
 
     if (index >= sizeof(PROCNAME)/sizeof(PROCNAME[0])) {
 	/* Any other value means Tcl_SetPanicProc() with non-null panicProc */
@@ -78,18 +78,13 @@ TclStubCall(void *arg)
 	if (!tclStubsHandle) {
 	    tclStubsHandle = dlopen(CFG_RUNTIME_DLLFILE, RTLD_NOW|RTLD_LOCAL);
 	    if (!tclStubsHandle) {
-		tclStubsHandle = dlopen(
-#if defined(_WIN32) || defined(__CYGWIN__)
-			CFG_RUNTIME_BINDIR
-#else
-			CFG_RUNTIME_LIBDIR
-#endif
 #if defined(_WIN32)
-			"\\"
+		tclStubsHandle = dlopen(CFG_RUNTIME_BINDIR "\\" CFG_RUNTIME_DLLFILE, RTLD_NOW|RTLD_LOCAL);
+#elif defined(__CYGWIN__)
+		tclStubsHandle = dlopen(CFG_RUNTIME_BINDIR "/" CFG_RUNTIME_DLLFILE, RTLD_NOW|RTLD_LOCAL);
 #else
-			"/"
+		tclStubsHandle = dlopen(CFG_RUNTIME_LIBDIR "/" CFG_RUNTIME_DLLFILE, RTLD_NOW|RTLD_LOCAL);
 #endif
-			CFG_RUNTIME_DLLFILE, RTLD_NOW|RTLD_LOCAL);
 	    }
 	    if (!tclStubsHandle) {
 		if ((index == 0) && (arg != NULL)) {
