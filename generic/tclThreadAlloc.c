@@ -82,10 +82,10 @@ typedef union Block {
  * and statistics information.
  */
 
-typedef struct Bucket {
+typedef struct {
     Block *firstPtr;		/* First block available */
     Block *lastPtr;		/* End of block list */
-    long numFree;		/* Number of blocks available */
+    size_t numFree;		/* Number of blocks available */
 
     /* All fields below for accounting only */
 
@@ -119,8 +119,8 @@ typedef struct Cache {
 
 static struct {
     size_t blockSize;		/* Bucket blocksize. */
-    int maxBlocks;		/* Max blocks before move to share. */
-    int numMove;		/* Num blocks to move to share. */
+    size_t maxBlocks;		/* Max blocks before move to share. */
+    size_t numMove;			/* Num blocks to move to share. */
     Tcl_Mutex *lockPtr;		/* Share bucket lock. */
 } bucketInfo[NBUCKETS];
 
@@ -131,12 +131,12 @@ static struct {
 static Cache *	GetCache(void);
 static void	LockBucket(Cache *cachePtr, int bucket);
 static void	UnlockBucket(Cache *cachePtr, int bucket);
-static void	PutBlocks(Cache *cachePtr, int bucket, long numMove);
+static void	PutBlocks(Cache *cachePtr, int bucket, size_t numMove);
 static int	GetBlocks(Cache *cachePtr, int bucket);
 static Block *	Ptr2Block(void *ptr);
-static void *	Block2Ptr(Block *blockPtr, int bucket, unsigned int reqSize);
-static void	MoveObjs(Cache *fromPtr, Cache *toPtr, long numMove);
-static void	PutObjs(Cache *fromPtr, long numMove);
+static void *	Block2Ptr(Block *blockPtr, int bucket, size_t reqSize);
+static void	MoveObjs(Cache *fromPtr, Cache *toPtr, size_t numMove);
+static void	PutObjs(Cache *fromPtr, size_t numMove);
 
 /*
  * Local variables defined in this file and initialized at startup.
@@ -547,7 +547,7 @@ TclThreadAllocObj(void)
      */
 
     if (cachePtr->numObjects == 0) {
-	long numMove;
+	size_t numMove;
 
 	Tcl_MutexLock(objLockPtr);
 	numMove = sharedPtr->numObjects;
@@ -670,7 +670,8 @@ Tcl_GetMemoryInfo(
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	for (n = 0; n < NBUCKETS; ++n) {
-	    sprintf(buf, "%" TCL_Z_MODIFIER "u %ld %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d",
+	    sprintf(buf, "%" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %"
+		    TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u %" TCL_Z_MODIFIER "u",
 		    bucketInfo[n].blockSize,
 		    cachePtr->buckets[n].numFree,
 		    cachePtr->buckets[n].numRemoves,
@@ -705,7 +706,7 @@ static void
 MoveObjs(
     Cache *fromPtr,
     Cache *toPtr,
-    long numMove)
+    size_t numMove)
 {
     Tcl_Obj *objPtr = fromPtr->firstObjPtr;
     Tcl_Obj *fromFirstObjPtr = objPtr;
@@ -752,7 +753,7 @@ MoveObjs(
 static void
 PutObjs(
     Cache *fromPtr,
-    long numMove)
+    size_t numMove)
 {
     size_t keep = fromPtr->numObjects - numMove;
     Tcl_Obj *firstPtr, *lastPtr = NULL;
@@ -806,7 +807,7 @@ static void *
 Block2Ptr(
     Block *blockPtr,
     int bucket,
-    unsigned int reqSize)
+    size_t reqSize)
 {
     void *ptr;
 
@@ -896,14 +897,14 @@ static void
 PutBlocks(
     Cache *cachePtr,
     int bucket,
-    long numMove)
+    size_t numMove)
 {
     /*
      * We have numFree.  Want to shed numMove. So compute how many
      * Blocks to keep.
      */
 
-    long keep = cachePtr->buckets[bucket].numFree - numMove;
+    size_t keep = cachePtr->buckets[bucket].numFree - numMove;
     Block *lastPtr = NULL, *firstPtr;
 
     cachePtr->buckets[bucket].numFree = keep;
@@ -959,7 +960,7 @@ GetBlocks(
     int bucket)
 {
     Block *blockPtr;
-    long n;
+    size_t n;
 
     /*
      * First, atttempt to move blocks from the shared cache. Note the
@@ -1014,7 +1015,7 @@ GetBlocks(
 	blockPtr = NULL;
 	n = NBUCKETS;
 	size = 0;
-	while (n-- > bucket + 1) {
+	while (n-- > (size_t)bucket + 1) {
 	    if (cachePtr->buckets[n].numFree > 0) {
 		size = bucketInfo[n].blockSize;
 		blockPtr = cachePtr->buckets[n].firstPtr;
@@ -1080,9 +1081,9 @@ TclInitThreadAlloc(void)
     objLockPtr = TclpNewAllocMutex();
     for (i = 0; i < NBUCKETS; ++i) {
 	bucketInfo[i].blockSize = MINALLOC << i;
-	bucketInfo[i].maxBlocks = 1 << (NBUCKETS - 1 - i);
+	bucketInfo[i].maxBlocks = ((size_t)1) << (NBUCKETS - 1 - i);
 	bucketInfo[i].numMove = i < NBUCKETS - 1 ?
-		1 << (NBUCKETS - 2 - i) : 1;
+		(size_t)1 << (NBUCKETS - 2 - i) : 1;
 	bucketInfo[i].lockPtr = TclpNewAllocMutex();
     }
     TclpInitAllocCache();
