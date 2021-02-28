@@ -471,7 +471,7 @@ EXTERN int		Tcl_ExprString(Tcl_Interp *interp, const char *expr);
 /* 143 */
 EXTERN void		Tcl_Finalize(void);
 /* 144 */
-EXTERN const char *	Tcl_FindExecutable(const char *argv0);
+EXTERN void		Tcl_FindExecutable(const char *argv0);
 /* 145 */
 EXTERN Tcl_HashEntry *	Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
 				Tcl_HashSearch *searchPtr);
@@ -710,7 +710,7 @@ EXTERN void		Tcl_SetErrorCode(Tcl_Interp *interp, ...);
 /* 229 */
 EXTERN void		Tcl_SetMaxBlockTime(const Tcl_Time *timePtr);
 /* 230 */
-EXTERN const char *	Tcl_SetPanicProc(
+EXTERN void		Tcl_SetPanicProc(
 				TCL_NORETURN1 Tcl_PanicProc *panicProc);
 /* 231 */
 EXTERN int		Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth);
@@ -2102,7 +2102,7 @@ typedef struct TclStubs {
     int (*tcl_ExprObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr); /* 141 */
     int (*tcl_ExprString) (Tcl_Interp *interp, const char *expr); /* 142 */
     void (*tcl_Finalize) (void); /* 143 */
-    TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") const char * (*tcl_FindExecutable) (const char *argv0); /* 144 */
+    TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") void (*tcl_FindExecutable) (const char *argv0); /* 144 */
     Tcl_HashEntry * (*tcl_FirstHashEntry) (Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr); /* 145 */
     int (*tcl_Flush) (Tcl_Channel chan); /* 146 */
     TCL_DEPRECATED_API("see TIP #559. Use Tcl_ResetResult") void (*tcl_FreeResult) (Tcl_Interp *interp); /* 147 */
@@ -2196,7 +2196,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrno) (int err); /* 227 */
     void (*tcl_SetErrorCode) (Tcl_Interp *interp, ...); /* 228 */
     void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
-    TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") const char * (*tcl_SetPanicProc) (TCL_NORETURN1 Tcl_PanicProc *panicProc); /* 230 */
+    TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") void (*tcl_SetPanicProc) (TCL_NORETURN1 Tcl_PanicProc *panicProc); /* 230 */
     int (*tcl_SetRecursionLimit) (Tcl_Interp *interp, int depth); /* 231 */
     void (*tcl_SetResult) (Tcl_Interp *interp, char *result, Tcl_FreeProc *freeProc); /* 232 */
     int (*tcl_SetServiceMode) (int mode); /* 233 */

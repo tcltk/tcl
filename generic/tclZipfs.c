@@ -4823,12 +4823,12 @@ TclZipfs_AppHook(
 #endif /* _WIN32 */
 {
     const char *archive;
-    const char *version;
+    const char *version = Tcl_InitSubsystems();
 
 #ifdef _WIN32
-    version = Tcl_FindExecutable(NULL);
+    Tcl_FindExecutable(NULL);
 #else
-    version = Tcl_FindExecutable((*argvPtr)[0]);
+    Tcl_FindExecutable((*argvPtr)[0]);
 #endif
     archive = Tcl_GetNameOfExecutable();
     TclZipfs_Init(NULL);

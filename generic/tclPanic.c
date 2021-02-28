@@ -45,7 +45,7 @@ static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
  *----------------------------------------------------------------------
  */
 
-const char *
+void
 Tcl_SetPanicProc(
     TCL_NORETURN1 Tcl_PanicProc *proc)
 {
@@ -58,7 +58,7 @@ Tcl_SetPanicProc(
     else
 #endif
     panicProc = proc;
-    return Tcl_InitSubsystems();
+    Tcl_InitSubsystems();
 }
 
 /*

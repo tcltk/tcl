@@ -514,7 +514,7 @@ declare 143 {
     void Tcl_Finalize(void)
 }
 declare 144 {nostub {Don't use this function in a stub-enabled extension}} {
-    const char *Tcl_FindExecutable(const char *argv0)
+    void Tcl_FindExecutable(const char *argv0)
 }
 declare 145 {
     Tcl_HashEntry *Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
@@ -813,7 +813,7 @@ declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
 declare 230 {nostub {Don't use this function in a stub-enabled extension}} {
-    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
@@ -2471,13 +2471,13 @@ export {
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
 export {
-    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 export {
     Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
 }
 export {
-    const char *Tcl_FindExecutable(const char *argv0)
+    void Tcl_FindExecutable(const char *argv0)
 }
 export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,
