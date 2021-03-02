@@ -2497,7 +2497,7 @@ export {
 export {
     void Tcl_InitSubsystems(void)
 }
-export { 
+export {
     int TclZipfs_AppHook(int *argc, char ***argv)
 }
 
