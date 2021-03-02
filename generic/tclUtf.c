@@ -90,6 +90,8 @@ static const unsigned char complete[256] = {
 #if TCL_UTF_MAX > 3
     4,4,4,4,4,
 #else
+    /* Tcl_UtfToUniChar() accesses src[1] and src[2] to check whether
+     * the UTF-8 sequence is valid, so we cannot use 1 here. */
     3,3,3,3,3,
 #endif
     1,1,1,1,1,1,1,1,1,1,1
@@ -536,7 +538,7 @@ Tcl_UtfToUniCharDString(
     w = wString;
     p = src;
     endPtr = src + length;
-    optPtr = endPtr - TCL_UTF_MAX;
+    optPtr = endPtr - ((TCL_UTF_MAX > 3) ? 4 : 3) ;
     while (p <= optPtr) {
 	p += TclUtfToUniChar(p, &ch);
 	*w++ = ch;
@@ -623,7 +625,7 @@ Tcl_NumUtfChars(
 	/* Pointer to the end of string. Never read endPtr[0] */
 	const char *endPtr = src + length;
 	/* Pointer to last byte where optimization still can be used */
-	const char *optPtr = endPtr - TCL_UTF_MAX;
+	const char *optPtr = endPtr - ((TCL_UTF_MAX > 3) ? 4 : 3);
 
 	/*
 	 * Optimize away the call in this loop. Justified because...
@@ -758,6 +760,19 @@ Tcl_UtfNext(
 {
     int left;
     const char *next;
+
+#if TCL_UTF_MAX > 3
+    if (((*src) & 0xC0) == 0x80) {
+	/* Continuation byte, so we start 'inside' a (possible valid) UTF-8
+	 * sequence. Since we are not allowed to access src[-1], we cannot
+	 * check if the sequence is actually valid, the best we can do is
+	 * just assume it is valid and locate the end. */
+	if ((((*++src) & 0xC0) == 0x80) && (((*++src) & 0xC0) == 0x80)) {
+	    ++src;
+	}
+	return src;
+    }
+#endif
 
     left = totalBytes[UCHAR(*src)];
     next = src + 1;
@@ -895,7 +910,6 @@ Tcl_UtfPrev(
      * properly formed byte sequence to find, and we can stop looking,
      * accepting the fallback.
      */
-
     return fallback;
 }
 
