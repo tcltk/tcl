@@ -1296,11 +1296,11 @@ Tcl_UtfNcmp(
 	if (ch1 != ch2) {
 #if TCL_UTF_MAX == 4
 	    /* Surrogates always report higher than non-surrogates */
-	    if (((ch1 & ~0x3FF) == 0xD800)) {
-	    if ((ch2 & ~0x3FF) != 0xD800) {
+	    if (((ch1 & 0xFC00) == 0xD800)) {
+	    if ((ch2 & 0xFC00) != 0xD800) {
 		return ch1;
 	    }
-	    } else if ((ch2 & ~0x3FF) == 0xD800) {
+	    } else if ((ch2 & 0xFC00) == 0xD800) {
 		return -ch2;
 	    }
 #endif
