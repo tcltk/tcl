@@ -803,7 +803,8 @@ MILESTONE: Bug 67aa9a2070 was fixed in June 2017, first released in Tcl 8.6.7
 in August 2017.  This is when Tcl stopped accepting overlong byte sequences
 in its internal encoding as valid alternative ways to encode characters.
 
-MILESTONE: Find the point where valid 4-byte sequences started being recognized
+MILESTONE: [8a640c771ee927c8], 2019-11-14, first released in Tcl 8.6.10
+in November 2019. This is when valid 4-byte sequences started being recognized
 and treated as something other than 4 improperly encoded ISO-8859-1 chars.
 
 
