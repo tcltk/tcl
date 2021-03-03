@@ -21,7 +21,6 @@ testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
 testConstraint utf16 [expr {[string length [format %c 0x10000]] == 2}]
 testConstraint ucs4 [expr {[testConstraint fullutf]
 		&& [string length [format %c 0x10000]] == 1}]
-testConstraint ucs2_utf16 [expr {![testConstraint ucs4]}]
 
 testConstraint Uesc [expr {"\U0041" eq "A"}]
 testConstraint pre388 [expr {"\x741" eq "A"}]
@@ -107,16 +106,22 @@ test utf-2.6 {Tcl_UtfToUniChar: lead (3-byte) followed by 1 trail} testbytestrin
 test utf-2.7 {Tcl_UtfToUniChar: lead (3-byte) followed by 2 trail} testbytestring {
     string length [testbytestring \xE4\xB9\x8E]
 } 1
-test utf-2.8.0 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs2_utf16} {
+test utf-2.8.0 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs2} {
     string length [testbytestring \xF0\x90\x80\x80]
 } 2
-test utf-2.8.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs4} {
-    string length [testbytestring \xF0\x90\x80\x80]
+test utf-2.8.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {Uesc utf16} {
+    string length \U010000
+} 2
+test utf-2.8.2 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {Uesc ucs4} {
+    string length \U010000
 } 1
 test utf-2.9.0 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {testbytestring ucs2} {
     string length [testbytestring \xF4\x8F\xBF\xBF]
 } 2
-test utf-2.9.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {Uesc ucs4} {
+test utf-2.9.1 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {Uesc utf16} {
+    string length \U10FFFF
+} 2
+test utf-2.9.2 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail} {Uesc ucs4} {
     string length \U10FFFF
 } 1
 test utf-2.10 {Tcl_UtfToUniChar: lead (4-byte) followed by 3 trail, underflow} testbytestring {
