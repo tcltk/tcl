@@ -21,6 +21,7 @@ library tcl
 
 interface tcl
 hooks {tclPlat tclInt tclIntPlat}
+scspec EXTERN
 
 # Declare each of the functions in the public Tcl interface.  Note that
 # the an index should never be reused for a different function in order
@@ -2110,7 +2111,7 @@ declare 579 {
 
 # ----- BASELINE -- FOR -- 8.5.0 ----- #
 
-declare 649 {
+declare 656 {
     void TclUnusedStubEntry(void)
 }
 
@@ -2149,6 +2150,9 @@ declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
 	    int hasResourceFile, int maxPathLen, char *libraryPath)
+}
+declare 2 macosx {
+    void TclUnusedStubEntry(void)
 }
 
 ##############################################################################
@@ -2191,6 +2195,7 @@ export {
 export {
     TclTomMathStubs *tclTomMathStubsPtr         (fool checkstubs)
 }
+
 # Local Variables:
 # mode: tcl
 # End:
