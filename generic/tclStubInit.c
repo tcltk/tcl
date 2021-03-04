@@ -866,6 +866,7 @@ static const TclPlatStubs tclPlatStubs = {
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
+    TclUnusedStubEntry, /* 2 */
 #endif /* MACOSX */
 };
 
@@ -1637,7 +1638,14 @@ const TclStubs tclStubs = {
     0, /* 646 */
     0, /* 647 */
     0, /* 648 */
-    TclUnusedStubEntry, /* 649 */
+    0, /* 649 */
+    0, /* 650 */
+    0, /* 651 */
+    0, /* 652 */
+    0, /* 653 */
+    0, /* 654 */
+    0, /* 655 */
+    TclUnusedStubEntry, /* 656 */
 };
 
 /* !END!: Do not edit above this line. */

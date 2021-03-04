@@ -2325,7 +2325,7 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
-declare 649 {
+declare 656 {
     void TclUnusedStubEntry(void)
 }
 
@@ -2365,6 +2365,9 @@ declare 1 macosx {
 	    const char *bundleName, const char *bundleVersion,
 	    int hasResourceFile, int maxPathLen, char *libraryPath)
 }
+declare 2 macosx {
+    void TclUnusedStubEntry(void)
+}
 
 ##############################################################################
 
@@ -2392,6 +2395,7 @@ export {
 export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
 }
+
 
 # Local Variables:
 # mode: tcl
