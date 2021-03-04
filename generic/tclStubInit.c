@@ -74,6 +74,7 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
+#define TclUnusedStubEntry 0
 
 #if TCL_UTF_MAX <= 3
 static void uniCodePanic() {
@@ -1424,6 +1425,9 @@ const TclStubs tclStubs = {
     Tcl_GetStringFromObj, /* 651 */
     Tcl_GetUnicodeFromObj, /* 652 */
     Tcl_GetByteArrayFromObj, /* 653 */
+    0, /* 654 */
+    0, /* 655 */
+    TclUnusedStubEntry, /* 656 */
 };
 
 /* !END!: Do not edit above this line. */

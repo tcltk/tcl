@@ -17,7 +17,6 @@ library tcl
 # Define the unsupported generic interfaces.
 
 interface tclTomMath
-# hooks {tclTomMathInt}
 scspec TCLAPI
 
 # Declare each of the functions in the Tcl tommath interface
