@@ -1408,6 +1408,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 #endif
 
 #undef TclGuessPackageName
+#undef TclUnusedStubEntry
 #ifndef TCL_NO_DEPRECATED
 #   define TclGuessPackageName(fileName, pkgName) ((void)fileName,(void)pkgName,0)
 #endif

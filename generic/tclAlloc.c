@@ -94,7 +94,7 @@ union overhead {
 
 #define MINBLOCK	((sizeof(union overhead) + (TCL_ALLOCALIGN-1)) & ~(TCL_ALLOCALIGN-1))
 #define NBUCKETS	(13 - (MINBLOCK >> 4))
-#define MAXMALLOC	(1<<(NBUCKETS+2))
+#define MAXMALLOC	((size_t)1 << (NBUCKETS+2))
 static union overhead *nextf[NBUCKETS];
 
 /*
@@ -583,7 +583,7 @@ TclpRealloc(
 	Tcl_MutexUnlock(allocMutexPtr);
 	return (void *)(overPtr+1);
     }
-    maxSize = 1 << (i+3);
+    maxSize = (size_t)1 << (i+3);
     expensive = 0;
     if (numBytes+OVERHEAD > maxSize) {
 	expensive = 1;
@@ -656,18 +656,18 @@ mstats(
 	for (j=0, overPtr=nextf[i]; overPtr; overPtr=overPtr->next, j++) {
 	    fprintf(stderr, " %u", j);
 	}
-	totalFree += ((size_t)j) * (1 << (i + 3));
+	totalFree += ((size_t)j) * ((size_t)1 << (i + 3));
     }
 
     fprintf(stderr, "\nused:\t");
     for (i = 0; i < NBUCKETS; i++) {
 	fprintf(stderr, " %" TCL_Z_MODIFIER "u", numMallocs[i]);
-	totalUsed += numMallocs[i] * (1 << (i + 3));
+	totalUsed += numMallocs[i] * ((size_t)1 << (i + 3));
     }
 
     fprintf(stderr, "\n\tTotal small in use: %" TCL_Z_MODIFIER "u, total free: %" TCL_Z_MODIFIER "u\n",
 	totalUsed, totalFree);
-    fprintf(stderr, "\n\tNumber of big (>%d) blocks in use: %" TCL_Z_MODIFIER "u\n",
+    fprintf(stderr, "\n\tNumber of big (>%" TCL_Z_MODIFIER "u) blocks in use: %" TCL_Z_MODIFIER "u\n",
 	    MAXMALLOC, numMallocs[NBUCKETS]);
 
     Tcl_MutexUnlock(allocMutexPtr);
