@@ -17,6 +17,7 @@ library tcl
 # Define the unsupported generic interfaces.
 
 interface tclInt
+scspec EXTERN
 
 # Declare each of the functions in the unsupported internal Tcl
 # interface.  These interfaces are allowed to changed between versions.
