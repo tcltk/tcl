@@ -576,9 +576,11 @@ typedef void (Tcl_ServiceModeHookProc) (int mode);
 typedef void *(Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
-
-#define Tcl_PackageInitProc Tcl_LibraryInitProc
-#define Tcl_PackageUnloadProc Tcl_LibraryUnloadProc
+
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_PackageInitProc Tcl_LibraryInitProc
+#   define Tcl_PackageUnloadProc Tcl_LibraryUnloadProc
+#endif
 
 /*
  *----------------------------------------------------------------------------
@@ -2195,7 +2197,9 @@ EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 			    const char *pkgName,
 			    Tcl_LibraryInitProc *initProc,
 			    Tcl_LibraryInitProc *safeInitProc);
-#define Tcl_StaticPackage Tcl_StaticLibrary
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_StaticPackage Tcl_StaticLibrary
+#endif
 EXTERN Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
 #ifdef _WIN32
 EXTERN int		TclZipfs_AppHook(int *argc, wchar_t ***argv);

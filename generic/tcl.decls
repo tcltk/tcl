@@ -2475,6 +2475,9 @@ declare 652 {
 declare 653 {
     unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
+declare 656 {
+    void TclUnusedStubEntry(void)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
@@ -2544,7 +2547,7 @@ export {
 export {
     void Tcl_InitSubsystems(void)
 }
-export { 
+export {
     int TclZipfs_AppHook(int *argc, char ***argv)
 }
 

@@ -8,44 +8,44 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_StaticLibrary \- make a statically linked package available via the 'load' command
+Tcl_StaticLibrary \- make a statically linked library available via the 'load' command
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
-\fBTcl_StaticLibrary\fR(\fIinterp, pkgName, initProc, safeInitProc\fR)
+\fBTcl_StaticLibrary\fR(\fIinterp, prefix, initProc, safeInitProc\fR)
 .SH ARGUMENTS
 .AS Tcl_LibraryInitProc *safeInitProc
 .AP Tcl_Interp *interp in
-If not NULL, points to an interpreter into which the package has
-already been loaded (i.e., the caller has already invoked the
-appropriate initialization procedure).  NULL means the package
+If not NULL, points to an interpreter into which the library has
+already been incorporated (i.e., the caller has already invoked the
+appropriate initialization procedure).  NULL means the library
 has not yet been incorporated into any interpreter.
-.AP "const char" *pkgName in
-Name of the package;  should be properly capitalized (first letter
-upper-case, all others lower-case).
+.AP "const char" *prefix in
+Prefix for library initialization function. Normally in titlecase (first
+letter upper-case, all others lower-case), but this is no longer required.
 .AP Tcl_LibraryInitProc *initProc in
-Procedure to invoke to incorporate this package into a trusted
+Procedure to invoke to incorporate this library into a trusted
 interpreter.
 .AP Tcl_LibraryInitProc *safeInitProc in
-Procedure to call to incorporate this package into a safe interpreter
-(one that will execute untrusted scripts).  NULL means the package
+Procedure to call to incorporate this library into a safe interpreter
+(one that will execute untrusted scripts).  NULL means the library
 cannot be used in safe interpreters.
 .BE
 .SH DESCRIPTION
 .PP
-This procedure may be invoked to announce that a package has been
+This procedure may be invoked to announce that a library has been
 linked statically with a Tcl application and, optionally, that it
-has already been loaded into an interpreter.
-Once \fBTcl_StaticLibrary\fR has been invoked for a package, it
-may be loaded into interpreters using the \fBload\fR command.
+has already been incorporated into an interpreter.
+Once \fBTcl_StaticLibrary\fR has been invoked for a library, it
+may be incorporated into interpreters using the \fBload\fR command.
 \fBTcl_StaticLibrary\fR is normally invoked only by the \fBTcl_AppInit\fR
-procedure for the application, not by packages for themselves
+procedure for the application, not by libraries for themselves
 (\fBTcl_StaticLibrary\fR should only be invoked for statically
-loaded packages, and code in the package itself should not need
-to know whether the package is dynamically or statically loaded).
+linked libraries, and code in the library itself should not need
+to know whether the library is dynamically loaded or statically linked).
 .PP
-When the \fBload\fR command is used later to load the package into
+When the \fBload\fR command is used later to incorporate the library into
 an interpreter, one of \fIinitProc\fR and \fIsafeInitProc\fR will
 be invoked, depending on whether the target interpreter is safe
 or not.
@@ -57,8 +57,8 @@ typedef int \fBTcl_LibraryInitProc\fR(
         Tcl_Interp *\fIinterp\fR);
 .CE
 .PP
-The \fIinterp\fR argument identifies the interpreter in which the package
-is to be loaded.  The initialization procedure must return \fBTCL_OK\fR or
+The \fIinterp\fR argument identifies the interpreter in which the library
+is to be incorporated.  The initialization procedure must return \fBTCL_OK\fR or
 \fBTCL_ERROR\fR to indicate whether or not it completed successfully; in
 the event of an error it should set the interpreter's result to point to an
 error message.  The result or error from the initialization procedure will
@@ -67,6 +67,9 @@ initialization procedure to be invoked.
 .PP
 \fBTcl_StaticLibrary\fR can not be safely used by stub-enabled extensions,
 so its symbol is not included in the stub table.
+.PP
+\fBTcl_StaticLibrary\fR was named \fBTcl_StaticPackage\fR in Tcl 8.6 and
+earlier, but the old name is deprecated now.
 .SH KEYWORDS
 initialization procedure, package, static linking
 .SH "SEE ALSO"

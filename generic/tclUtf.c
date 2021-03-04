@@ -92,6 +92,8 @@ static const unsigned char complete[256] = {
 #if TCL_UTF_MAX > 3
     4,4,4,4,4,
 #else
+    /* Tcl_UtfToUniChar() accesses src[1] and src[2] to check whether
+     * the UTF-8 sequence is valid, so we cannot use 1 here. */
     3,3,3,3,3,
 #endif
     1,1,1,1,1,1,1,1,1,1,1
@@ -971,6 +973,10 @@ Tcl_UtfNext(
     const char *next;
 
     if (((*src) & 0xC0) == 0x80) {
+	/* Continuation byte, so we start 'inside' a (possible valid) UTF-8
+	 * sequence. Since we are not allowed to access src[-1], we cannot
+	 * check if the sequence is actually valid, the best we can do is
+	 * just assume it is valid and locate the end. */
 	if ((((*++src) & 0xC0) == 0x80) && (((*++src) & 0xC0) == 0x80)) {
 	    ++src;
 	}
