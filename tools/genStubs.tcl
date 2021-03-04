@@ -4,7 +4,7 @@
 #	interface.
 #
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-1999 Scriptics Corporation.
 # Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
@@ -194,7 +194,7 @@ proc genStubs::declare {args} {
     set decl [parseDecl $decl]
 
     foreach platform $platformList {
-	if {$decl != ""} {
+	if {$decl ne ""} {
 	    set stubs($curName,$platform,$index) $decl
 	    if {![info exists stubs($curName,$platform,lastNum)] \
 		    || ($index > $stubs($curName,$platform,lastNum))} {
@@ -243,8 +243,9 @@ proc genStubs::rewriteFile {file text} {
 	return
     }
     set in [open ${file} r]
+    fconfigure $in -eofchar "\032 {}" -encoding utf-8
     set out [open ${file}.new w]
-    fconfigure $out -translation lf
+    fconfigure $out -translation lf -encoding utf-8
 
     while {![eof $in]} {
 	set line [gets $in]
@@ -465,7 +466,9 @@ proc genStubs::makeDecl {name decl index} {
     }
     set line "$scspec $rtype"
     set count [expr {2 - ([string length $line] / 8)}]
-    append line [string range "\t\t\t" 0 $count]
+    if {$count >= 0} {
+	append line [string range "\t\t\t" 0 $count]
+    }
     set pad [expr {24 - [string length $line]}]
     if {$pad <= 0} {
 	append line " "
@@ -552,7 +555,7 @@ proc genStubs::makeMacro {name decl index} {
     append lfname [string range $fname 1 end]
 
     set text "#ifndef $fname\n#define $fname \\\n\t("
-    if {$args == ""} {
+    if {$args eq ""} {
 	append text "*"
     }
     append text "${name}StubsPtr->$lfname)"
@@ -579,14 +582,14 @@ proc genStubs::makeSlot {name decl index} {
     append lfname [string range $fname 1 end]
 
     set text "    "
-    if {$args == ""} {
+    if {$args eq ""} {
 	append text $rtype " *" $lfname "; /* $index */\n"
 	return $text
     }
     if {$rtype ne "void"} {
 	regsub -all void $rtype VOID rtype
     }
-    if {[string range $rtype end-8 end] == "__stdcall"} {
+    if {[string range $rtype end-8 end] eq "__stdcall"} {
 	append text [string trim [string range $rtype 0 end-9]] " (__stdcall *" $lfname ") "
     } else {
 	append text $rtype " (*" $lfname ") "
@@ -1004,7 +1007,7 @@ proc genStubs::emitHeader {name} {
     }
     append text "\ntypedef struct ${capName}Stubs {\n"
     append text "    int magic;\n"
-    if {$epoch != ""} {
+    if {$epoch ne ""} {
 	append text "    int epoch;\n"
 	append text "    int revision;\n"
     }
@@ -1053,7 +1056,7 @@ proc genStubs::emitInit {name textVar} {
     }
     append text "\n${capName}Stubs ${name}Stubs = \{\n"
     append text "    TCL_STUB_MAGIC,\n"
-    if {$epoch != ""} {
+    if {$epoch ne ""} {
 	set CAPName [string toupper $name]
 	append text "    ${CAPName}_STUBS_EPOCH,\n"
 	append text "    ${CAPName}_STUBS_REVISION,\n"
@@ -1132,7 +1135,7 @@ proc genStubs::init {} {
     set outDir [lindex $argv 0]
 
     foreach file [lrange $argv 1 end] {
-	source $file
+	source -encoding utf-8 $file
     }
 
     foreach name [lsort [array names interfaces]] {
@@ -1154,7 +1157,7 @@ proc genStubs::init {} {
 # Results:
 #	Returns any values that were not assigned to variables.
 
-if {[string length [namespace which lassign]] == 0} {
+if {[namespace which lassign] ne ""} {
     proc lassign {valueList args} {
 	if {[llength $args] == 0} {
 	    error "wrong # args: should be \"lassign list varName ?varName ...?\""
