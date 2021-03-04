@@ -3685,17 +3685,17 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, CONST char *file,
  */
 
 #define TclUtfToUniChar(str, chPtr) \
-	((((unsigned char) *(str)) < 0xC0) ?		\
-	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
+	(((UCHAR(*(str))) < 0x80) ?		\
+	    ((*(chPtr) = UCHAR(*(str))), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
 
 #define TclUtfPrev(src, start) \
 	(((src) < (start)+2) ? (start) : \
-	((unsigned char) *(src - 1)) < 0x80 ? (src)-1 : \
+	(UCHAR(*((src) - 1))) < 0x80 ? (src)-1 : \
 	Tcl_UtfPrev(src, start))
 
 #define TclUtfNext(src)	\
-	((((unsigned char) *(src)) < 0xC0) ? src + 1 : Tcl_UtfNext(src))
+	(((UCHAR(*(src))) < 0x80) ? src + 1 : Tcl_UtfNext(src))
 
 /*
  *----------------------------------------------------------------

@@ -75,6 +75,11 @@ EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
 				int hasResourceFile, int maxPathLen,
 				char *libraryPath);
 #endif
+#ifndef TclUnusedStubEntry_TCL_DECLARED
+#define TclUnusedStubEntry_TCL_DECLARED
+/* 2 */
+EXTERN void		TclUnusedStubEntry(void);
+#endif
 #endif /* MACOSX */
 
 typedef struct TclPlatStubs {
@@ -88,6 +93,7 @@ typedef struct TclPlatStubs {
 #ifdef MAC_OSX_TCL /* MACOSX */
     int (*tcl_MacOSXOpenBundleResources) (Tcl_Interp *interp, CONST char *bundleName, int hasResourceFile, int maxPathLen, char *libraryPath); /* 0 */
     int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, CONST char *bundleName, CONST char *bundleVersion, int hasResourceFile, int maxPathLen, char *libraryPath); /* 1 */
+    void (*tclUnusedStubEntry) (void); /* 2 */
 #endif /* MACOSX */
 } TclPlatStubs;
 
@@ -121,6 +127,10 @@ extern TclPlatStubs *tclPlatStubsPtr;
 #ifndef Tcl_MacOSXOpenVersionedBundleResources
 #define Tcl_MacOSXOpenVersionedBundleResources \
 	(tclPlatStubsPtr->tcl_MacOSXOpenVersionedBundleResources) /* 1 */
+#endif
+#ifndef TclUnusedStubEntry
+#define TclUnusedStubEntry \
+	(tclPlatStubsPtr->tclUnusedStubEntry) /* 2 */
 #endif
 #endif /* MACOSX */
 

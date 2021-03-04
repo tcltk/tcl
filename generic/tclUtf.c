@@ -167,14 +167,13 @@ Invalid(
     unsigned char byte = UCHAR(*src);
     int index;
 
-    if ((byte & 0xC3) != 0xC0) {
+    if ((byte & 0xC3) == 0xC0) {
 	/* Only lead bytes 0xC0, 0xE0, 0xF0, 0xF4 need examination */
-	return 0;
-    }
-    index = (byte - 0xC0) >> 1;
-    if (UCHAR(src[1]) < bounds[index] || UCHAR(src[1]) > bounds[index+1]) {
-	/* Out of bounds - report invalid. */
-	return 1;
+	index = (byte - 0xC0) >> 1;
+	if (UCHAR(src[1]) < bounds[index] || UCHAR(src[1]) > bounds[index+1]) {
+	    /* Out of bounds - report invalid. */
+	    return 1;
+	}
     }
     return 0;
 }
@@ -425,10 +424,10 @@ Tcl_UtfToUniCharDString(
     Tcl_UniChar *w, *wString;
     const char *p;
     int oldLength;
-	/* Pointer to the end of string. Never read endPtr[0] */
-	const char *endPtr = src + length;
-	/* Pointer to breakpoint in scan where optimization is lost */
-	const char *optPtr = endPtr - TCL_UTF_MAX;
+    /* Pointer to the end of string. Never read endPtr[0] */
+    const char *endPtr;
+    /* Pointer to last byte where optimization still can be used */
+    const char *optPtr;
 
     if (length < 0) {
 	length = strlen(src);
@@ -448,14 +447,15 @@ Tcl_UtfToUniCharDString(
     w = wString;
     p = src;
     endPtr = src + length;
-    optPtr = endPtr - TCL_UTF_MAX;
+    optPtr = endPtr - ((TCL_UTF_MAX > 3) ? 4 : 3) ;
     while (p <= optPtr) {
 	p += TclUtfToUniChar(p, w);
 	w++;
     }
     while (p < endPtr) {
 	if (Tcl_UtfCharComplete(p, endPtr-p)) {
-	    p += TclUtfToUniChar(p, w++);
+	    p += TclUtfToUniChar(p, w);
+	    w++;
 	} else {
 	    *w++ = UCHAR(*p++);
 	}
@@ -534,7 +534,7 @@ Tcl_NumUtfChars(
 	/* Pointer to the end of string. Never read endPtr[0] */
 	const char *endPtr = src + length;
 	/* Pointer to last byte where optimization still can be used */
-	const char *optPtr = endPtr - TCL_UTF_MAX;
+	const char *optPtr = endPtr - ((TCL_UTF_MAX > 3) ? 4 : 3);
 
 	/*
 	 * Optimize away the call in this loop. Justified because...
@@ -554,7 +554,7 @@ Tcl_NumUtfChars(
 		src += TclUtfToUniChar(src, &ch);
 	    } else {
 		/*
-		 * src points to incomplete UTF-8 sequence 
+		 * src points to incomplete UTF-8 sequence
 		 * Treat first byte as character and count it
 		 */
 		src++;
@@ -570,7 +570,7 @@ Tcl_NumUtfChars(
  *
  * Tcl_UtfFindFirst --
  *
- *	Returns a pointer to the first occurance of the given Unicode character
+ *	Returns a pointer to the first occurrence of the given Unicode character
  *	in the NULL-terminated UTF-8 string. The NULL terminator is considered
  *	part of the UTF-8 string. Equivalent to Plan 9 utfrune().
  *
@@ -670,6 +670,19 @@ Tcl_UtfNext(
 {
     int left;
     const char *next;
+
+#if TCL_UTF_MAX > 3
+    if (((*src) & 0xC0) == 0x80) {
+	/* Continuation byte, so we start 'inside' a (possible valid) UTF-8
+	 * sequence. Since we are not allowed to access src[-1], we cannot
+	 * check if the sequence is actually valid, the best we can do is
+	 * just assume it is valid and locate the end. */
+	if ((((*++src) & 0xC0) == 0x80) && (((*++src) & 0xC0) == 0x80)) {
+	    ++src;
+	}
+	return src;
+    }
+#endif
 
     left = totalBytes[UCHAR(*src)];
     next = src + 1;
@@ -800,14 +813,13 @@ Tcl_UtfPrev(
 
 	/* Continue the search backwards... */
 	look--;
-    } while (trailBytesSeen < TCL_UTF_MAX);
+    } while (trailBytesSeen < (TCL_UTF_MAX < 4 ? 3 : 4));
 
     /*
-     * We've seen TCL_UTF_MAX trail bytes, so we know there will not be a
+     * We've seen 3 trail bytes, so we know there will not be a
      * properly formed byte sequence to find, and we can stop looking,
      * accepting the fallback.
      */
-
     return fallback;
 }
 
