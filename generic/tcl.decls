@@ -2412,6 +2412,9 @@ declare 652 {
 declare 653 {
     unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
+declare 656 {
+    void TclUnusedStubEntry(void)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 

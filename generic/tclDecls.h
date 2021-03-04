@@ -1931,6 +1931,10 @@ EXTERN Tcl_UniChar *	TclGetUnicodeFromObj(Tcl_Obj *objPtr,
 /* 653 */
 EXTERN unsigned char *	TclGetByteArrayFromObj(Tcl_Obj *objPtr,
 				size_t *lengthPtr);
+/* Slot 654 is reserved */
+/* Slot 655 is reserved */
+/* 656 */
+EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2620,6 +2624,9 @@ typedef struct TclStubs {
     char * (*tclGetStringFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 651 */
     Tcl_UniChar * (*tclGetUnicodeFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 652 */
     unsigned char * (*tclGetByteArrayFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 653 */
+    void (*reserved654)(void);
+    void (*reserved655)(void);
+    void (*tclUnusedStubEntry) (void); /* 656 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3956,11 +3963,16 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclGetUnicodeFromObj) /* 652 */
 #define TclGetByteArrayFromObj \
 	(tclStubsPtr->tclGetByteArrayFromObj) /* 653 */
+/* Slot 654 is reserved */
+/* Slot 655 is reserved */
+#define TclUnusedStubEntry \
+	(tclStubsPtr->tclUnusedStubEntry) /* 656 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
 
+#undef TclUnusedStubEntry
 #if defined(USE_TCL_STUBS)
 #   undef Tcl_CreateInterp
 #   undef Tcl_FindExecutable
