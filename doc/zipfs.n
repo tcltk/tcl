@@ -84,7 +84,7 @@ Return a list of all files in the mounted zipfs, or just those matching
 \fIpattern\fR (optionally controlled by the option parameters).  The order of
 the names in the list is arbitrary.
 .TP
-\fBzipfs mount ?\fImountpoint\fR? ?\fIzipfile\fR? ?\fIpassword\fR?
+\fBzipfs mount\fR ?\fImountpoint\fR? ?\fIzipfile\fR? ?\fIpassword\fR?
 .
 The \fBzipfs mount\fR command mounts a ZIP archive file as a Tcl virtual
 filesystem at \fImountpoint\fR.  After this command executes, files contained

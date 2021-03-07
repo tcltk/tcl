@@ -2424,21 +2424,21 @@ ZipFSMkZipOrImgObjCmd(
 	list = objv[2];
 	Tcl_IncrRefCount(list);
     } else {
-	Tcl_Obj *cmd[3];
+	Tcl_Obj *cmd[2];
+	int result;
 
 	/*
 	 * Discover the list of files to add.
 	 */
 
-	cmd[1] = Tcl_NewStringObj("::tcl::zipfs::find", -1);
-	cmd[2] = objv[2];
-	cmd[0] = Tcl_NewListObj(2, cmd + 1);
+	cmd[0] = Tcl_NewStringObj("::tcl::zipfs::find", -1);
+	cmd[1] = objv[2];
 	Tcl_IncrRefCount(cmd[0]);
-	if (Tcl_EvalObjEx(interp, cmd[0], TCL_EVAL_DIRECT) != TCL_OK) {
-	    Tcl_DecrRefCount(cmd[0]);
+	result = Tcl_EvalObjv(interp, 2, cmd, 0);
+	Tcl_DecrRefCount(cmd[0]);
+	if (result != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	Tcl_DecrRefCount(cmd[0]);
 	list = Tcl_GetObjResult(interp);
 	Tcl_IncrRefCount(list);
     }
