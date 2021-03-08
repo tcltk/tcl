@@ -380,6 +380,10 @@ test zipfs-4.5 {zipfs lmkimg: making image from mounted} -constraints zipfs -set
     removeFile $targetImage
     removeFile $addFile
 } -result {//zipfs://ziptest/test/add.tcl //zipfs://ziptest/test/ok.tcl}
+
+test zipfs-5.1 {zipfs mount_data: short data} -body {
+    zipfs mount_data gorp {}
+} -constraints zipfs -returnCodes error -result {bad zip data}
 
 ::tcltest::cleanupTests
 return

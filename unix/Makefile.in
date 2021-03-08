@@ -945,6 +945,9 @@ shell: ${TCL_EXE}
 gdb: ${TCL_EXE}
 	$(SHELL_ENV) $(GDB) ./${TCL_EXE}
 
+lldb: ${TCL_EXE}
+	$(SHELL_ENV) $(LLDB) ./${TCL_EXE}
+
 valgrind: ${TCL_EXE} ${TCLTEST_EXE}
 	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} \
 		$(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind \
