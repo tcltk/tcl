@@ -270,6 +270,120 @@ test zipfs-3.4 {zipfs in child interpreters} -constraints zipfs -setup {
 } -returnCodes error -cleanup {
     interp delete $safe
 } -result {not allowed to invoke subcommand mkzip of zipfs}
+
+test zipfs-4.1 {zipfs lmkimg} -constraints zipfs -setup {
+    set baseImage [makeFile "return sourceWorking\n\x1a" base]
+    set targetImage [makeFile "" target]
+    set addFile [makeFile "return mountWorking" add.data]
+    file delete $targetImage
+} -body {
+    zipfs lmkimg $targetImage [list $addFile test/add.tcl] {} $baseImage
+    zipfs mount ziptest $targetImage
+    try {
+	list [source $targetImage] [source //zipfs:/ziptest/test/add.tcl]
+    } finally {
+	zipfs unmount ziptest
+    }
+} -cleanup {
+    removeFile $baseImage
+    removeFile $targetImage
+    removeFile $addFile
+} -result {sourceWorking mountWorking}
+test zipfs-4.2 {zipfs lmkimg: making an image from an image} -constraints zipfs -setup {
+    set baseImage [makeFile "return sourceWorking\n\x1a" base_image.tcl]
+    set midImage [makeFile "" mid_image.tcl]
+    set targetImage [makeFile "" target_image.tcl]
+    set addFile [makeFile "return mountWorking" add.data]
+    file delete $midImage $targetImage
+} -body {
+    zipfs lmkimg $midImage [list $addFile test/ko.tcl] {} $baseImage
+    zipfs lmkimg $targetImage [list $addFile test/ok.tcl] {} $midImage
+    zipfs mount ziptest $targetImage
+    try {
+	list [glob -tails -directory //zipfs://ziptest/test *.tcl] \
+	    [if {[file size $midImage] == [file size $targetImage]} {
+		string cat equal
+	    } else {
+		list mid=[file size $midImage] target=[file size $targetImage]
+	    }]
+    } finally {
+	zipfs unmount ziptest
+    }
+} -cleanup {
+    removeFile $baseImage
+    removeFile $midImage
+    removeFile $targetImage
+    removeFile $addFile
+} -result {ok.tcl equal}
+test zipfs-4.3 {zipfs lmkimg: stripping password} -constraints zipfs -setup {
+    set baseImage [makeFile "return sourceWorking\n\x1a" base_image.tcl]
+    set midImage [makeFile "" mid_image.tcl]
+    set targetImage [makeFile "" target_image.tcl]
+    set addFile [makeFile "return mountWorking" add.data]
+    file delete $midImage $targetImage
+} -body {
+    set pass gorp
+    zipfs lmkimg $midImage [list $addFile test/add.tcl] $pass $baseImage
+    zipfs lmkimg $targetImage [list $addFile test/ok.tcl] {} $midImage
+    zipfs mount ziptest $targetImage
+    try {
+	glob -tails -directory //zipfs://ziptest/test *.tcl
+    } finally {
+	zipfs unmount ziptest
+    }
+} -cleanup {
+    removeFile $baseImage
+    removeFile $midImage
+    removeFile $targetImage
+    removeFile $addFile
+} -result {ok.tcl}
+test zipfs-4.4 {zipfs lmkimg: final password} -constraints zipfs -setup {
+    set baseImage [makeFile "return sourceWorking\n\x1a" base_image.tcl]
+    set midImage [makeFile "" mid_image.tcl]
+    set targetImage [makeFile "" target_image.tcl]
+    set addFile [makeFile "return mountWorking" add.data]
+    file delete $midImage $targetImage
+} -body {
+    set pass gorp
+    zipfs lmkimg $midImage [list $addFile test/add.tcl] {} $baseImage
+    zipfs lmkimg $targetImage [list $addFile test/ok.tcl] $pass $midImage
+    zipfs mount ziptest $targetImage
+    try {
+	glob -tails -directory //zipfs://ziptest/test *.tcl
+    } finally {
+	zipfs unmount ziptest
+    }
+} -cleanup {
+    removeFile $baseImage
+    removeFile $midImage
+    removeFile $targetImage
+    removeFile $addFile
+} -result {ok.tcl}
+test zipfs-4.5 {zipfs lmkimg: making image from mounted} -constraints zipfs -setup {
+    set baseImage [makeFile "return sourceWorking\n\x1a" base_image.tcl]
+    set midImage [makeFile "" mid_image.tcl]
+    set targetImage [makeFile "" target_image.tcl]
+    set addFile [makeFile "return mountWorking" add.data]
+    file delete $midImage $targetImage
+} -body {
+    zipfs lmkimg $midImage [list $addFile test/add.tcl] {} $baseImage
+    zipfs mount ziptest $midImage
+    set f [glob -directory //zipfs://ziptest/test *.tcl]
+    zipfs lmkimg $targetImage [list $f test/ok.tcl] {} $midImage
+    zipfs unmount ziptest
+    zipfs mount ziptest $targetImage
+    list $f [glob -directory //zipfs://ziptest/test *.tcl]
+} -cleanup {
+    zipfs unmount ziptest
+    removeFile $baseImage
+    removeFile $midImage
+    removeFile $targetImage
+    removeFile $addFile
+} -result {//zipfs://ziptest/test/add.tcl //zipfs://ziptest/test/ok.tcl}
+
+test zipfs-5.1 {zipfs mount_data: short data} -body {
+    zipfs mount_data gorp {}
+} -constraints zipfs -returnCodes error -result {bad zip data}
 
 ::tcltest::cleanupTests
 return
