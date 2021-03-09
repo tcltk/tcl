@@ -680,7 +680,7 @@ try {
 		} trap {POSIX ENOENT} {} {
 		    set f [open [file join $pkgsDir $dir configure.ac]]
 		}
-		fconfigure $f -encoding utf-8	
+		fconfigure $f -encoding utf-8
 		foreach line [split [read $f] \n] {
 		    if {2 == [scan $line \
 			    { AC_INIT ( [%[^]]] , [%[^]]] ) } n v]} {
@@ -705,7 +705,7 @@ try {
 	set packageDirNameMap {}
 	if {$build_tcl} {
 	    set f [open $tcltkdir/$tcldir/pkgs/package.list.txt]
-	    fconfigure $f -encoding utf-8	
+	    fconfigure $f -encoding utf-8
 	    try {
 		foreach line [split [read $f] \n] {
 		    if {[string trim $line] eq ""} continue
