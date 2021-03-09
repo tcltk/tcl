@@ -274,12 +274,15 @@ FileInputProc(
      * nonblocking, the read will never block.
      */
 
-    bytesRead = read(fsPtr->fd, buf, toRead);
-    if (bytesRead >= 0) {
-	return bytesRead;
+    do {
+	bytesRead = read(fsPtr->fd, buf, toRead);
+    } while ((bytesRead < 0) && (errno == EINTR));
+
+    if (bytesRead < 0) {
+	*errorCodePtr = errno;
+	return -1;
     }
-    *errorCodePtr = errno;
-    return -1;
+    return bytesRead;
 }
 
 /*
