@@ -571,7 +571,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #undef TclWinConvertWSAError
 #undef TclWinConvertError
 #if !defined(TCL_USE_STUBS) && !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-#   define TclWinConvertWSAError TclWinConvertError
+#   define TclWinConvertWSAError Tcl_WinConvertError
 #   define TclWinConvertError Tcl_WinConvertError
 #endif
 
