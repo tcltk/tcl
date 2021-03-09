@@ -570,8 +570,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #undef TclpGmtime_unix
 #undef TclWinConvertWSAError
 #undef TclWinConvertError
-#define TclWinConvertWSAError TclWinConvertError
 #if !defined(TCL_USE_STUBS) && !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
+#   define TclWinConvertWSAError TclWinConvertError
 #   define TclWinConvertError Tcl_WinConvertError
 #endif
 

@@ -177,7 +177,7 @@ proc uni::main {} {
     puts "shift = $shift, space = $size"
 
     set f [open [file join [lindex $argv 1] tclUniData.c] w]
-    fconfigure $f -translation lf
+    fconfigure $f -translation lf -encoding utf-8
     puts $f "/*
  * tclUniData.c --
  *

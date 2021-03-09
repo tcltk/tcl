@@ -511,15 +511,6 @@ test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -con
 } -result [list \U100000 {} b]
 
 
-proc largest_int {} {
-    # This will give us what the largest valid int on this machine is,
-    # so we can test for overflow properly below on >32 bit systems
-    set int 1
-    set exp 7; # assume we get at least 8 bits
-    while {wide($int) > 0} { set int [expr {wide(1) << [incr exp]}] }
-    return [expr {$int-1}]
-}
-
 test string-6.1.$noComp {string is, not enough args} {
     list [catch {run {string is}} msg] $msg
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
@@ -601,7 +592,7 @@ test string-6.27.$noComp {string is double, true} {
     run {string is double 1}
 } 1
 test string-6.28.$noComp {string is double, true} {
-    run {string is double [expr double(1)]}
+    run {string is double [expr {double(1)}]}
 } 1
 test string-6.29.$noComp {string is double, true} {
     run {string is double 1.0}
@@ -634,7 +625,7 @@ test string-6.37.$noComp {string is double, false on int overflow} -setup {
     # Since bignums arrived in Tcl 8.5, the sense of this test changed.
     # Now integer values that exceed native limits become bignums, and
     # bignums can convert to doubles without error.
-    list [run {string is double -fail var [largest_int]0}] $var
+    list [run {string is double -fail var 9223372036854775808}] $var
 } -result {1 priorValue}
 # string-6.38 removed, underflow on input is no longer an error.
 test string-6.39.$noComp {string is double, false} {
@@ -676,7 +667,7 @@ test string-6.48.$noComp {string is integer, true} {
     run {string is integer +1234567890}
 } 1
 test string-6.49.$noComp {string is integer, true on type} {
-    run {string is integer [expr int(50.0)]}
+    run {string is integer [expr {int(50.0)}]}
 } 1
 test string-6.50.$noComp {string is integer, true} {
     run {string is integer [list -10]}
@@ -694,10 +685,10 @@ test string-6.54.$noComp {string is integer, false} {
     list [run {string is integer -fail var 123abc}] $var
 } {0 3}
 test string-6.55.$noComp {string is integer, no overflow possible} {
-    run {string is integer +[largest_int]0}
+    run {string is integer +9223372036854775808}
 } 1
 test string-6.56.$noComp {string is integer, false} {
-    list [run {string is integer -fail var [expr double(1)]}] $var
+    list [run {string is integer -fail var [expr {double(1)}]}] $var
 } {0 1}
 test string-6.57.$noComp {string is integer, false} {
     list [run {string is integer -fail var "    "}] $var
@@ -846,7 +837,7 @@ test string-6.95.$noComp {string is wideinteger, true} {
     run {string is wideinteger +1234567890}
 } 1
 test string-6.96.$noComp {string is wideinteger, true on type} {
-    run {string is wideinteger [expr wide(50.0)]}
+    run {string is wideinteger [expr {wide(50.0)}]}
 } 1
 test string-6.97.$noComp {string is wideinteger, true} {
     run {string is wideinteger [list -10]}
@@ -864,10 +855,10 @@ test string-6.101.$noComp {string is wideinteger, false} {
     list [run {string is wideinteger -fail var 123abc}] $var
 } {0 3}
 test string-6.102.$noComp {string is wideinteger, false on overflow} {
-    list [run {string is wideinteger -fail var +[largest_int]0}] $var
+    list [run {string is wideinteger -fail var +9223372036854775808}] $var
 } {0 -1}
 test string-6.103.$noComp {string is wideinteger, false} {
-    list [run {string is wideinteger -fail var [expr double(1)]}] $var
+    list [run {string is wideinteger -fail var [expr {double(1)}]}] $var
 } {0 1}
 test string-6.104.$noComp {string is wideinteger, false} {
     list [run {string is wideinteger -fail var "    "}] $var
@@ -902,7 +893,7 @@ test string-6.110.$noComp {string is entier, true} {
     run {string is entier +1234567890}
 } 1
 test string-6.111.$noComp {string is entier, true on type} {
-    run {string is entier [expr wide(50.0)]}
+    run {string is entier [expr {wide(50.0)}]}
 } 1
 test string-6.112.$noComp {string is entier, true} {
     run {string is entier [list -10]}
@@ -923,7 +914,7 @@ test string-6.117.$noComp {string is entier, false} {
     list [run {string is entier -fail var 123123123123123123123123123123123123123123123123123123123123123123123123123123123123abc}] $var
 } {0 84}
 test string-6.118.$noComp {string is entier, false} {
-    list [run {string is entier -fail var [expr double(1)]}] $var
+    list [run {string is entier -fail var [expr {double(1)}]}] $var
 } {0 1}
 test string-6.119.$noComp {string is entier, false} {
     list [run {string is entier -fail var "    "}] $var
@@ -970,8 +961,6 @@ test string-6.130.1.$noComp {string is entier, false on bad octal} {
 test string-6.131.$noComp {string is entier, false on bad hex} {
     list [run {string is entier -fail var 0X12345611234123456123456562345612345612345612345612345612345612345612345612345612345345XYZ}] $var
 } {0 88}
-
-catch {rename largest_int {}}
 
 test string-7.1.$noComp {string last, not enough args} {
     list [catch {run {string last a}} msg] $msg
@@ -1908,6 +1897,33 @@ test string-21.15.$noComp {string wordend, unicode} -body {
 test string-21.16.$noComp {string wordend, unicode} -constraints utf16 -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
 } -result 8
+test string-21.17.$noComp {string trim, unicode} {
+    run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
+} "Hello world!"
+test string-21.18.$noComp {string trimleft, unicode} {
+    run {string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
+} "Hello world!\uD83D\uDE02"
+test string-21.19.$noComp {string trimright, unicode} {
+    run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
+} "\uD83D\uDE02Hello world!"
+test string-21.20.$noComp {string trim, unicode} {
+    run {string trim "\uF602Hello world!\uF602" \uD83D\uDE02}
+} "\uF602Hello world!\uF602"
+test string-21.21.$noComp {string trimleft, unicode} {
+    run {string trimleft "\uF602Hello world!\uF602" \uD83D\uDE02}
+} "\uF602Hello world!\uF602"
+test string-21.22.$noComp {string trimright, unicode} {
+    run {string trimright "\uF602Hello world!\uF602" \uD83D\uDE02}
+} "\uF602Hello world!\uF602"
+test string-21.23.$noComp {string trim, unicode} {
+    run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
+test string-21.24.$noComp {string trimleft, unicode} {
+    run {string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
+test string-21.25.$noComp {string trimright, unicode} {
+    run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
 
 test string-22.1.$noComp {string wordstart} -body {
     list [catch {run {string word a}} msg] $msg
@@ -2070,6 +2086,24 @@ test string-24.15.$noComp {string reverse command - pure bytearray} {
     binary scan [run {tcl::string::reverse [binary format H* 010203]}] H* x
     set x
 } 030201
+test string-24.16.$noComp {string reverse command - surrogates} {
+    run {string reverse \u0444bulb\uD83D\uDE02}
+} \uD83D\uDE02blub\u0444
+test string-24.17.$noComp {string reverse command - surrogates} {
+    run {string reverse \uD83D\uDE02hello\uD83D\uDE02}
+} \uD83D\uDE02olleh\uD83D\uDE02
+test string-24.18.$noComp {string reverse command - surrogates} {
+    set s \u0444bulb\uD83D\uDE02
+    # shim shimmery ...
+    string index $s 0
+    run {string reverse $s}
+} \uD83D\uDE02blub\u0444
+test string-24.19.$noComp {string reverse command - surrogates} {
+    set s \uD83D\uDE02hello\uD83D\uDE02
+    # shim shimmery ...
+    string index $s 0
+    run {string reverse $s}
+} \uD83D\uDE02olleh\uD83D\uDE02
 
 test string-25.1.$noComp {string is list} {
     run {string is list {a b c}}

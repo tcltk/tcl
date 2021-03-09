@@ -278,7 +278,7 @@ test parse-6.9 {ParseTokens procedure, error in command substitution} {
 } {0}
 test parse-6.10 {ParseTokens procedure, incomplete sub-command} {
     info complete {puts [
-	expr 1+1
+	expr {1+1}
 	#this is a comment ]}
 } {0}
 test parse-6.11 {ParseTokens procedure, memory allocation for big nested command} testparser {
@@ -485,7 +485,7 @@ test parse-10.3 {Tcl_EvalTokens, nested commands} testevalex {
 } {8}
 test parse-10.4 {Tcl_EvalTokens, nested commands} testevalex {
     unset -nocomplain a
-    list [catch {testevalex {concat xxx[expr $a]}} msg] $msg
+    list [catch {testevalex {concat xxx[expr {$a}]}} msg] $msg
 } {1 {can't read "a": no such variable}}
 test parse-10.5 {Tcl_EvalTokens, simple variables} testevalex {
     set a hello
@@ -518,7 +518,7 @@ test parse-10.11 {Tcl_EvalTokens, object values} testevalex {
     testevalex {concat $a$a$a}
 } {123123123}
 test parse-10.12 {Tcl_EvalTokens, object values} testevalex {
-    testevalex {concat [expr 2][expr 4][expr 6]}
+    testevalex {concat [expr {2}][expr {4}][expr {6}]}
 } {246}
 test parse-10.13 {Tcl_EvalTokens, string values} testevalex {
     testevalex {concat {a" b"}}
@@ -984,26 +984,26 @@ test parse-18.14 {Tcl_SubstObj, exception handling} {
     subst {abc,[break],def}
 } {abc,}
 test parse-18.15 {Tcl_SubstObj, exception handling} {
-    subst {abc,[continue; expr 1+2],def}
+    subst {abc,[continue; expr {1+2}],def}
 } {abc,,def}
 test parse-18.16 {Tcl_SubstObj, exception handling} {
-    subst {abc,[return foo; expr 1+2],def}
+    subst {abc,[return foo; expr {1+2}],def}
 } {abc,foo,def}
 test parse-18.17 {Tcl_SubstObj, exception handling} {
-    subst {abc,[return -code 10 foo; expr 1+2],def}
+    subst {abc,[return -code 10 foo; expr {1+2}],def}
 } {abc,foo,def}
 test parse-18.18 {Tcl_SubstObj, exception handling} {
     subst {abc,[break; set {} {}{}],def}
 } {abc,}
 test parse-18.19 {Tcl_SubstObj, exception handling} {
-    list [catch {subst {abc,[continue; expr 1+2; set {} {}{}],def}} msg] $msg
+    list [catch {subst {abc,[continue; expr {1+2}; set {} {}{}],def}} msg] $msg
 } [list 1 "extra characters after close-brace"]
 test parse-18.20 {Tcl_SubstObj, exception handling} {
-    list [catch {subst {abc,[return foo; expr 1+2; set {} {}{}],def}} msg] $msg
+    list [catch {subst {abc,[return foo; expr {1+2}; set {} {}{}],def}} msg] $msg
 } [list 1 "extra characters after close-brace"]
 test parse-18.21 {Tcl_SubstObj, exception handling} {
     list [catch {
-	subst {abc,[return -code 10 foo; expr 1+2; set {} {}{}],def}
+	subst {abc,[return -code 10 foo; expr {1+2}; set {} {}{}],def}
     } msg] $msg
 } [list 1 "extra characters after close-brace"]
 

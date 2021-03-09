@@ -89,14 +89,14 @@ static int		FileOutputProc(ClientData instanceData,
 static int		FileSeekProc(ClientData instanceData, long offset,
 			    int mode, int *errorCode);
 #endif
-static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCode);
+static long long	FileWideSeekProc(ClientData instanceData,
+			    long long offset, int mode, int *errorCode);
 static void		FileSetupProc(ClientData clientData, int flags);
 static void		FileWatchProc(ClientData instanceData, int mask);
 static void		FileThreadActionProc(ClientData instanceData,
 			    int action);
 static int		FileTruncateProc(ClientData instanceData,
-			    Tcl_WideInt length);
+			    long long length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const WCHAR *nativeName);
 
@@ -546,10 +546,10 @@ FileSeekProc(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 FileWideSeekProc(
     ClientData instanceData,	/* File state. */
-    Tcl_WideInt offset,		/* Offset to seek to. */
+    long long offset,		/* Offset to seek to. */
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
 {
@@ -578,8 +578,8 @@ FileWideSeekProc(
 	    return -1;
 	}
     }
-    return (((Tcl_WideInt)((unsigned)newPos))
-	    | ((Tcl_WideInt)newPosHigh << 32));
+    return (((long long)((unsigned)newPos))
+	    | ((long long)newPosHigh << 32));
 }
 
 /*
@@ -601,7 +601,7 @@ FileWideSeekProc(
 static int
 FileTruncateProc(
     ClientData instanceData,	/* File state. */
-    Tcl_WideInt length)		/* Length to truncate at. */
+    long long length)		/* Length to truncate at. */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;

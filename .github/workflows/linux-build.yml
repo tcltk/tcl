@@ -12,7 +12,6 @@ jobs:
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
-          - "CC=g++"
     defaults:
       run:
         shell: bash
@@ -39,6 +38,8 @@ jobs:
       - name: Run Tests
         run: |
           make test
+        env:
+          ERROR_ON_FAILURES: 1
       - name: Test-Drive Installation
         run: |
           make install
