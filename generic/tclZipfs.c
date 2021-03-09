@@ -283,7 +283,7 @@ static const char *zipfs_literal_tcl_library = NULL;
 
 /* Function prototypes */
 
-static int		CopyImageFile(Tcl_Interp *interp, const char *imgName, 
+static int		CopyImageFile(Tcl_Interp *interp, const char *imgName,
 			    Tcl_Channel out);
 static inline int	DescribeMounted(Tcl_Interp *interp,
 			    const char *mountPoint);
@@ -292,7 +292,7 @@ static void		SerializeCentralDirectoryEntry(char *buf, ZipEntry *z,
 			    size_t nameLength, long long dataStartOffset);
 static void		SerializeCentralDirectorySuffix(char *buf,
 			    int entryCount, long long dataStartOffset,
-			    long long directoryStartOffset, 
+			    long long directoryStartOffset,
 			    long long suffixStartOffset);
 static void		SerializeLocalEntryHeader(char *buf, ZipEntry *z,
 			    int nameLength, int align);
@@ -333,7 +333,7 @@ static int		ZipChannelRead(void *instanceData, char *buf,
 static int		ZipChannelSeek(void *instanceData, long offset,
 			    int mode, int *errloc);
 #endif
-static long long	ZipChannelWideSeek(void *instanceData, 
+static long long	ZipChannelWideSeek(void *instanceData,
 			    long long offset, int mode, int *errloc);
 static void		ZipChannelWatchChannel(void *instanceData,
 			    int mask);
@@ -1244,7 +1244,7 @@ ZipMapArchive(
      * Map the file.
      */
 
-    zf->mountHandle = CreateFileMappingW(hFile, 0, PAGE_READONLY, 0, 
+    zf->mountHandle = CreateFileMappingW(hFile, 0, PAGE_READONLY, 0,
 	    zf->length, 0);
     if (zf->mountHandle == INVALID_HANDLE_VALUE) {
 	ZIPFS_POSIX_ERROR(interp, "file mapping failed");
@@ -1270,7 +1270,7 @@ ZipMapArchive(
     }
     lseek(fd, 0, SEEK_SET);
 
-    zf->data = (unsigned char *) 
+    zf->data = (unsigned char *)
 	    mmap(0, zf->length, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
     if (zf->data == MAP_FAILED) {
 	ZIPFS_POSIX_ERROR(interp, "file mapping failed");
@@ -2760,7 +2760,7 @@ ZipFSMkZipOrImgObjCmd(
     /*
      * Prepare the contents of the ZIP archive.
      */
-    
+
     Tcl_InitHashTable(&fileHash, TCL_STRING_KEYS);
     dataStartOffset = Tcl_Tell(out);
     if (mappingList == NULL && stripPrefix != NULL) {
@@ -2811,7 +2811,7 @@ ZipFSMkZipOrImgObjCmd(
 	    name = path;
 	    if (slen > 0) {
 		len = strlen(name);
-		if ((len <= (size_t) slen) || 
+		if ((len <= (size_t) slen) ||
 			(strncmp(strip, name, slen) != 0)) {
 		    continue;
 		}
@@ -2844,7 +2844,7 @@ ZipFSMkZipOrImgObjCmd(
     /*
      * Finalize the central directory.
      */
-    
+
     Tcl_Flush(out);
     suffixStartOffset = Tcl_Tell(out);
     SerializeCentralDirectorySuffix(buf, count, dataStartOffset,
@@ -2957,7 +2957,7 @@ CopyImageFile(
 /*
  * ---------------------------------------------------------------------
  *
- * SerializeLocalEntryHeader, SerializeCentralDirectoryEntry, 
+ * SerializeLocalEntryHeader, SerializeCentralDirectoryEntry,
  * SerializeCentralDirectorySuffix --
  *
  *	Create serialized forms of the structures that make up the ZIP
