@@ -1365,7 +1365,7 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 	    continue
 	}
 	set manual(infp) [open $manual(page)]
-	fconfigure $manual(infp) -encoding utf-8	
+	fconfigure $manual(infp) -encoding utf-8
 	set manual(text) {}
 	set manual(partial-text) {}
 	foreach p {.RS .DS .CS .SO} {
