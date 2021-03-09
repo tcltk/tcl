@@ -67,7 +67,7 @@ proc findversion {top name useversion} {
 		# to do
 		#     use glob matching instead of string matching or add
 		#     brace handling to [string matcch]
-		if {$useversion eq {} || [string match $useversion $major.$minor]} {
+		if {$useversion eq "" || [string match $useversion $major.$minor]} {
 		    set top [file dirname [file dirname $tclh]]
 		    set prefix [file dirname $top]
 		    return [list $prefix [file tail $top] $major $minor]
@@ -172,17 +172,17 @@ proc parse_command_line {} {
 	# Find Tcl (firstly using glob pattern / backwards compatible way)
 	set tcldir [lindex [lsort [glob -nocomplain -tails -type d \
 		-directory $tcltkdir tcl$useversion]] end]
-	if {$tcldir ne {}} {
+	if {$tcldir ne ""} {
 	    # obtain version from generic header if we can:
 	    lassign [getversion [file join $tcltkdir $tcldir generic tcl.h]] major minor
 	} else {
 	    lassign [findversion $tcltkdir tcl $useversion] tcltkdir tcldir major minor
 	}
-	if {$tcldir eq {} && $opt_build_tcl} {
+	if {$tcldir eq "" && $opt_build_tcl} {
 	    puts stderr "tcltk-man-html: couldn't find Tcl below $tcltkdir"
 	    exit 1
 	}
-	puts "using Tcl source directory $tcltkdir $tcldir"
+	puts "using Tcl source directory [file join $tcltkdir $tcldir]"
     }
 
 
@@ -190,19 +190,19 @@ proc parse_command_line {} {
 	# Find Tk (firstly using glob pattern / backwards compatible way)
 	set tkdir [lindex [lsort [glob -nocomplain -tails -type d \
 		-directory $tcltkdir tk$useversion]] end]
-	if {$tkdir ne {}} {
+	if {$tkdir ne ""} {
 	    if {$major eq ""} {
 		# obtain version from generic header if we can:
-		lassign [getversion [file join $tcltkdir $tcldir generic tk.h]] major minor
+		lassign [getversion [file join $tcltkdir $tkdir generic tk.h]] major minor
 	    }
 	} else {
 	    lassign [findversion $tcltkdir tk $useversion] tcltkdir tkdir major minor
 	}
-	if {$tkdir eq {} && $opt_build_tk} {
+	if {$tkdir eq "" && $opt_build_tk} {
 	    puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
 	    exit 1
 	}
-	puts "using Tk source directory $tkdir"
+	puts "using Tk source directory [file join $tcltkdir $tkdir]"
     }
 
     puts "verbose messages are [expr {$verbose ? {on} : {off}}]"
@@ -329,10 +329,12 @@ proc make-man-pages {html args} {
 
     makedirhier $html
     set cssfd [open $html/$::CSSFILE w]
+    fconfigure $cssfd -translation lf -encoding utf-8
     puts $cssfd [css-stylesheet]
     close $cssfd
     set manual(short-toc-n) 1
     set manual(short-toc-fp) [open $html/[indexfile] w]
+    fconfigure $manual(short-toc-fp) -translation lf -encoding utf-8
     puts $manual(short-toc-fp) [htmlhead $overall_title $overall_title]
     puts $manual(short-toc-fp) "<dl class=\"keylist\">"
     set manual(merge-copyrights) {}
@@ -370,6 +372,7 @@ proc make-man-pages {html args} {
     file delete -force -- $html/Keywords
     makedirhier $html/Keywords
     set keyfp [open $html/Keywords/[indexfile] w]
+    fconfigure $keyfp -translation lf -encoding utf-8
     puts $keyfp [htmlhead "$tcltkdesc Keywords" "$tcltkdesc Keywords" \
 		     $overall_title "../[indexfile]"]
     set letters {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
@@ -393,6 +396,7 @@ proc make-man-pages {html args} {
 	}
 	# Per-keyword page
 	set afp [open $html/Keywords/$a.html w]
+	fconfigure $afp -translation lf -encoding utf-8
 	puts $afp [htmlhead "$tcltkdesc Keywords - $a" \
 		       "$tcltkdesc Keywords - $a" \
 		       $overall_title "../[indexfile]"]
@@ -469,6 +473,7 @@ proc make-man-pages {html args} {
 		puts -nonewline stderr .
 	    }
 	    set outfd [open $html/$manual(wing-file)/$manual(name).html w]
+	    fconfigure $outfd -translation lf -encoding utf-8
 	    puts $outfd [htmlhead "$manual($manual(wing-file)-$manual(name)-title)" \
 		    $manual(name) $wing_name "[indexfile]" \
 		    $overall_title "../[indexfile]"]
@@ -511,6 +516,7 @@ proc plus-base {var root glob name dir desc} {
     if {$var} {
 	if {[file exists $tcltkdir/$root/README]} {
 	    set f [open $tcltkdir/$root/README]
+	    fconfigure $f -encoding utf-8
 	    set d [read $f]
 	    close $f
 	    if {[regexp {This is the \w+ (\S+) source distribution} $d -> version]} {
@@ -746,6 +752,7 @@ try {
 		} trap {POSIX ENOENT} {} {
 		    set f [open [file join $pkgsDir $dir configure.ac]]
 		}
+		fconfigure $f -encoding utf-8
 		foreach line [split [read $f] \n] {
 		    if {2 == [scan $line \
 			    { AC_INIT ( [%[^]]] , [%[^]]] ) } n v]} {
@@ -770,6 +777,7 @@ try {
 	set packageDirNameMap {}
 	if {$build_tcl} {
 	    set f [open $tcltkdir/$tcldir/pkgs/package.list.txt]
+	    fconfigure $f -encoding utf-8
 	    try {
 		foreach line [split [read $f] \n] {
 		    if {[string trim $line] eq ""} continue
