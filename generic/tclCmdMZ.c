@@ -2755,7 +2755,7 @@ TclStringCmp(
 		s1 = (char *) Tcl_GetUnicode(value1Ptr);
 		s2 = (char *) Tcl_GetUnicode(value2Ptr);
 		if (
-#ifdef WORDS_BIGENDIAN
+#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX != 4)
 			1
 #else
 			checkEq
