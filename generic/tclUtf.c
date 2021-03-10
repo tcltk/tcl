@@ -1851,6 +1851,14 @@ TclUniCharNcmp(
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
     size_t numChars)	/* Number of unichars to compare. */
 {
+#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
+    /*
+     * We are definitely on a big-endian machine; memcmp() is safe
+     */
+
+    return memcmp(ucs, uct, numChars*sizeof(Tcl_UniChar));
+
+#else /* !WORDS_BIGENDIAN */
     /*
      * We can't simply call memcmp() because that is not lexically correct.
      */
@@ -1869,6 +1877,7 @@ TclUniCharNcmp(
 	}
     }
     return 0;
+#endif /* WORDS_BIGENDIAN */
 }
 
 /*
@@ -1901,6 +1910,14 @@ TclUniCharNcasecmp(
 	    Tcl_UniChar lct = Tcl_UniCharToLower(*uct);
 
 	    if (lcs != lct) {
+#if TCL_UTF_MAX < 4
+	    /* special case for handling upper surrogates */
+	    if (((lcs & 0xFC00) == 0xD800) && ((lct & 0xFC00) != 0xD800)) {
+		return 1;
+	    } else if (((lct & 0xFC00) == 0xD800)) {
+		return -1;
+	    }
+#endif
 		return (lcs - lct);
 	    }
 	}
