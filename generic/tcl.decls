@@ -2412,8 +2412,8 @@ declare 652 {
 declare 653 {
     unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
-declare 656 {
-    void TclUnusedStubEntry(void)
+declare 657 {
+    int Tcl_UniCharIsUnicode(int ch)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

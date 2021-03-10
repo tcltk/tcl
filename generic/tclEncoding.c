@@ -517,6 +517,9 @@ FillEncodingFileMap(void)
  *---------------------------------------------------------------------------
  */
 
+#define FLAG_LE 1
+#define FLAG_WTF 2
+
 void
 TclInitEncodingSubsystem(void)
 {
@@ -559,13 +562,16 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 1;
     type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
+    type.clientData	= INT2PTR(FLAG_WTF);
+    type.encodingName	= "wtf-8";
+    Tcl_CreateEncoding(&type);
 
     type.toUtfProc	= Utf16ToUtfProc;
     type.fromUtfProc    = UtfToUcs2Proc;
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "ucs-2le";
-    type.clientData	= INT2PTR(1);
+    type.clientData	= INT2PTR(FLAG_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2be";
     type.clientData	= INT2PTR(0);
@@ -579,7 +585,7 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "utf-16le";
-    type.clientData	= INT2PTR(1);
+    type.clientData	= INT2PTR(FLAG_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16be";
     type.clientData	= INT2PTR(0);
@@ -2271,7 +2277,7 @@ UtfExtToUtfIntProc(
 
 static int
 UtfToUtfProc(
-    TCL_UNUSED(ClientData),
+    void *clientData,	/* flags */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2302,6 +2308,7 @@ UtfToUtfProc(
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
     int result, numChars, charLimit = INT_MAX;
+    int encflags = PTR2INT(clientData);
     int *chPtr = (int *) statePtr;
 
     if (flags & TCL_ENCODING_START) {
@@ -2370,6 +2377,9 @@ UtfToUtfProc(
 		int low = *chPtr;
 		size_t len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
 		if (((low & ~0x3FF) != 0xDC00) || (*chPtr & 0x400)) {
+		    if ((pureNullMode == 1) && !(encflags & FLAG_WTF)) {
+			*chPtr = 0xFFFD;
+		    }
 			*dst++ = (char) (((*chPtr >> 12) | 0xE0) & 0xEF);
 			*dst++ = (char) (((*chPtr >> 6) | 0x80) & 0xBF);
 			*dst++ = (char) ((*chPtr | 0x80) & 0xBF);
@@ -2378,6 +2388,9 @@ UtfToUtfProc(
 		src += len;
 		dst += Tcl_UniCharToUtf(*chPtr, dst);
 		*chPtr = low;
+	    } else if ((pureNullMode == 1) && !(encflags & FLAG_WTF)
+		    && !Tcl_UniCharIsUnicode(*chPtr)) {
+		*chPtr = 0xFFFD;
 	    }
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	}

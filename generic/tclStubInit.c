@@ -1905,7 +1905,8 @@ const TclStubs tclStubs = {
     TclGetByteArrayFromObj, /* 653 */
     0, /* 654 */
     0, /* 655 */
-    TclUnusedStubEntry, /* 656 */
+    0, /* 656 */
+    Tcl_UniCharIsUnicode, /* 657 */
 };
 
 /* !END!: Do not edit above this line. */
