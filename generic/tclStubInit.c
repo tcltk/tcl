@@ -527,7 +527,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetSrcInfoForPc, /* 233 */
     TclVarHashCreateVar, /* 234 */
     TclInitVarHashTable, /* 235 */
-    0, /* 236 */
+    TclAppendUnicodeToObj, /* 236 */
     TclResetCancellation, /* 237 */
     TclNRInterpProc, /* 238 */
     TclNRInterpProcCore, /* 239 */
@@ -550,8 +550,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticPackage, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
-    TclAppendUnicodeToObj, /* 259 */
-    TclGetBytesFromObj, /* 260 */
+    TclGetBytesFromObj, /* 259 */
     TclMSB, /* 261 */
 };
 
