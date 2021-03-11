@@ -468,6 +468,7 @@ declare 232 {
 declare 233 {
     void TclGetSrcInfoForPc(CmdFrame *contextPtr)
 }
+
 # Exports for VarReform compat: Itcl, XOTcl like to peek into our varTables :(
 declare 234 {
     Var *TclVarHashCreateVar(TclVarHashTable *tablePtr, const char *key,
@@ -476,10 +477,17 @@ declare 234 {
 declare 235 {
     void TclInitVarHashTable(TclVarHashTable *tablePtr, Namespace *nsPtr)
 }
+# TIP 542
+declare 236 {
+    void TclAppendUnicodeToObj(Tcl_Obj *objPtr,
+	    const Tcl_UniChar *unicode, size_t length)
+}
+
 # TIP #285: Script cancellation support.
 declare 237 {
     int TclResetCancellation(Tcl_Interp *interp, int force)
 }
+
 # NRE functions for "rogue" extensions to exploit NRE; they will need to
 # include NRE.h too.
 declare 238 {
@@ -568,7 +576,6 @@ declare 256 {
     int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
 	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
 }
-
 declare 257 {
     void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
@@ -578,11 +585,6 @@ declare 257 {
 declare 258 {
     Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 	    Tcl_Obj *basenameObj)
-}
-# TIP 542
-declare 259 {
-    void TclAppendUnicodeToObj(Tcl_Obj *objPtr,
-	    const Tcl_UniChar *unicode, size_t length)
 }
 
 
