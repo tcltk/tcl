@@ -4,16 +4,23 @@
 
 All Tcl values are strings, but what is a string?
 
+The aim of this document is to spell out what the answer to that question
+has been, what it should be, and how we get from one to the other.
+
 ## Fundamentals
 
 A string is a sequence of zero or more symbols, each symbol a member of
 a symbol set known as an alphabet.  For example, the Tcl string **cat**
 is the sequence of three symbols **c**, **a**, **t**.
 
-Each symbol in the Tcl alphabet is associated with a non-negative integer.
+Each symbol in the Tcl alphabet is associated with a non-negative integer,
+known as the *code* of that symbol.  Schemes that associate symbols with
+code values are known as character sets.  For example, in Tcl's character
+set, the symbols **c**, **a**, and **t** are associated with code
+values 99, 97, and 116 respectively.
 
 The number of symbols in a string's symbol sequence is the length
-of that string.
+of that string.  
 
 A symbol within a string can be identified by its place in the sequence,
 counting with an index that starts at 0.  A string of length N has a
