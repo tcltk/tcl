@@ -20,17 +20,25 @@ as ***character sets***.  For example, in Tcl's character set, the
 symbols **c**, **a**, and **t** are associated with code
 values 99, 97, and 116 respectively.
 
-There is an ordering imposed on the alphabet by the order of associated
-code values.  This ordering allows symbols to be compared and sorted.
-The natural extension of that ordering to sequences established one
-well defined way to compare, order and sort string values.
+There is an ordering imposed on the alphabet by the numeric order of
+the associated code values.  This ordering allows symbols to be compared
+and sorted.  The natural extension of that ordering to sequences
+establishes one well defined way to compare, order and sort string values.
 
 The number of symbols in a string's symbol sequence is the ***length***
 of that string.  
 
 A symbol within a string can be identified by its place in the sequence,
 counting with an ***index*** that starts at 0.  A string of length *N*
-has a symbol at each of the index values 0 through *N*-1.
+has a symbol at each of the index values 0 through *N*-1.  We can
+represent the symbol found at index *i* within string *s* with the
+notation *s*[*i*].
+
+Given a string *s* of length *N*, every pair of an index
+value *i*, 0 <= *i* <= *N*, and a length *l*, 0 <= *l* <= *N* - *i*,
+defines a substring of *s* of length *l* built from the sequence
+of symbols *s*[*i*], ..., *s*[*i* + *l* - 1].
+
 
 ## Tcl alphabet versions
 
