@@ -35,11 +35,34 @@ represent the symbol found at index *i* within string *s* with the
 notation *s*[*i*].
 
 Given a string *s* of length *N*, every pair of an index
-value *i*, 0 <= *i* <= *N*, and a length *l*, 0 <= *l* <= *N* - *i*,
-defines a substring of *s* of length *l* built from the sequence
-of symbols *s*[*i*], ..., *s*[*i* + *l* - 1].
+value *i*, 0 <= *i* <= *N*, and a length *L*, 0 <= *L* <= *N* - *i*,
+defines a substring of *s* of length *L* built from the sequence
+of symbols *s*[*i*], ..., *s*[*i* + *L* - 1].
+
+Given a string *s* of length *M* and a string *t* of length *N*, the
+concatenation of *s* and *t* is the string *u* of length *L* = *M* + *N*,
+with *u*[0] = *s*[0], ... *u*[*M* - 1] = *s*[*M* - 1],
+*u*[*M*] = *t*[0], ... *u*[*L* - 1] = *t*[*N* - 1].
+
+In all of these descriptions, the string values act in ways with a
+direct analog to C arrays of integer values.
+
+To be able to create and store an arbitrary string, a program needs
+at a minimum the primitive ability to create and empty string, to create
+a string of length 1 containing each symbol in the alphabet, and the
+ability to concatenate arbitrary strings.  Other important primitives
+are the ability to index into a string, take a substring from a string,
+and compare symbols and strings.  
+
+## Tcl strings as the universal value set
+
 
 
 ## Tcl alphabet versions
+
+
+## Representations
+
+
 
 
