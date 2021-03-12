@@ -37,7 +37,8 @@ notation *s*[*i*].
 Given a string *s* of length *N*, every pair of an index
 value *i*, 0 <= *i* <= *N*, and a length *L*, 0 <= *L* <= *N* - *i*,
 defines a substring of *s* of length *L* built from the sequence
-of symbols *s*[*i*], ..., *s*[*i* + *L* - 1].
+of symbols *s*[*i*], ..., *s*[*i* + *L* - 1]. These substrings are also
+rooted to a particular location in the original string.
 
 Given a string *s* of length *M* and a string *t* of length *N*, the
 concatenation of *s* and *t* is the string *u* of length *L* = *M* + *N*,
@@ -45,20 +46,45 @@ with *u*[0] = *s*[0], ... *u*[*M* - 1] = *s*[*M* - 1],
 *u*[*M*] = *t*[0], ... *u*[*L* - 1] = *t*[*N* - 1].
 
 In all of these descriptions, the string values act in ways with a
-direct analog to C arrays of integer values.
+direct analog to C arrays of integer values.  This is a familiar collection
+of behaviors that a broad collection of programmers can successfully reason
+about without extensive training in the complexities of character
+sets and encodings.  The basics are accessible to even novice programmers.
+*Make the easy things easy; make the harder things possible.*
 
-To be able to create and store an arbitrary string, a program needs
-at a minimum the primitive ability to create and empty string, to create
-a string of length 1 containing each symbol in the alphabet, and the
-ability to concatenate arbitrary strings.  Other important primitives
-are the ability to index into a string, take a substring from a string,
-and compare symbols and strings.  
+To be able to create and store an arbitrary string, a Tcl interpreter has
+the minimum need for a set of commands or substitutions with the primitive
+abilities to create an empty string, to create each string of length 1
+(one for each symbol in the alphabet), and the ability to concatenate
+arbitrary strings.  Other important primitives are the ability to report
+the length of a string, index into a string, take a substring from a
+string, and compare symbols and strings.  
 
 ## Tcl strings as the universal value set
 
-
+We most frequently think of strings as a data type with the purpose of
+entering, creating, storing, manipulating, processing and producing
+text.  In Tcl, though, string values also serve as the universal value
+set.  If a value cannot be expressed as a Tcl string, it is not a Tcl value.
+The representations of other value sets in Tcl is in large part an exercise
+in creating schemes to encode the values of those other value sets in
+the form of Tcl strings.  Because of that, we want the set of Tcl strings
+to permit encodings of other value sets that are clear, simple, efficient
+and convenient.  The history of growing Tcl's alphabet has been driven by
+the desire to better provide for a encoding another value set not easily
+accommodate by the legacy alphabet.
 
 ## Tcl alphabet versions
+
+In Tcl 7, the alphabet for Tcl strings was a set of symbols associated
+with code values 1 through 255.  This is exactly the set
+of **NUL**-terminated C strings.  The symbols with code values 1 through 127
+are defined to follow the ASCII character set.  The symbols with code
+values 128 through 255 were less stringently specified, but such symbols
+could nevertheless be reliably created, stored, processed and produced by
+Tcl programs.  This set of string values continues to have relevance in
+Tcl today, because it is exactly this set that can be passed as arguments
+to Tcl commands defined via Tcl_CreateCommand().
 
 
 ## Representations
