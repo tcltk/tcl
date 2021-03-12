@@ -29,8 +29,8 @@ The number of symbols in a string's symbol sequence is the ***length***
 of that string.  
 
 A symbol within a string can be identified by its place in the sequence,
-counting with an ***index*** that starts at 0.  A string of length **N**
-has a symbol at each of the index values 0 through **N**-1.
+counting with an ***index*** that starts at 0.  A string of length *N*
+has a symbol at each of the index values 0 through *N*-1.
 
 ## Tcl alphabet versions
 
