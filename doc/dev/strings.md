@@ -71,20 +71,67 @@ in creating schemes to encode the values of those other value sets in
 the form of Tcl strings.  Because of that, we want the set of Tcl strings
 to permit encodings of other value sets that are clear, simple, efficient
 and convenient.  The history of growing Tcl's alphabet has been driven by
-the desire to better provide for a encoding another value set not easily
-accommodate by the legacy alphabet.
+the desire to better provide for the encoding of another value set that
+has not easily been accommodated by the legacy alphabet.
 
 ## Tcl alphabet versions
+
+This section looks into Tcl's history, which can be tricky.  History gets
+messy.  It is full of steps and mis-steps and it can be difficult to get
+agreement looking back about which were which.
 
 In Tcl 7, the alphabet for Tcl strings was a set of symbols associated
 with code values 1 through 255.  This is exactly the set
 of **NUL**-terminated C strings.  The symbols with code values 1 through 127
-are defined to follow the ASCII character set.  The symbols with code
-values 128 through 255 were less stringently specified, but such symbols
-could nevertheless be reliably created, stored, processed and produced by
-Tcl programs.  This set of string values continues to have relevance in
-Tcl today, because it is exactly this set that can be passed as arguments
-to Tcl commands defined via Tcl_CreateCommand().
+are defined to follow the ASCII character set.  This is important to the
+definition of Tcl because all symbols with syntactic meaning in Tcl scripts
+are in the ASCII set.  The symbols with code values 128 through 255 were
+less stringently specified, but such symbols could nevertheless be reliably
+created, stored, processed and produced by Tcl programs.  This set of
+string values continues to have relevance in Tcl today, because it is
+exactly this set that can be passed as arguments to Tcl commands defined
+via **Tcl_CreateCommand**.
+
+Even though no Tcl 7 value could contain a symbol with code 0, Tcl still
+offered a substitution suggesting it was possible.
+```
+	% string length <\x01>
+	3
+	% string length <\x00>
+	1
+```
+This seems to be a mis-step, where the \x00 substitution should have
+raised an error.  The fact that everything created by it broke expectations
+in some way supports that judgment.  But it's not beyond imagination for
+someone to take another view.
+
+The value set of arbitrary binary data, in the form of byte sequences,
+is not well served by the Tcl 7 alphabet.  No encoding into Tcl 7 strings
+can be both simple and efficient.  Either it must be variable-width, or
+it must use a fixed width of at least two symbols per byte.  There are
+certainly ways to encode arbitrary binary data in ASCII, but the commands
+of Tcl 7 never chose one for the core commands of the language to use.
+The problem was left unsolved so that a [**read**] from a binary channel returned a value that the rest of Tcl
+simply truncated at the first **NUL**.
+
+In Tcl 8.0, the Tcl alphabet added a symbol with code value 0.  This allowed
+the simplest coding of *N*-byte sequences by a string of length *N* with
+each symbol determined by the code given by the byte value.  Aribtrary
+binary data could be stored in Tcl variables, and processed by any
+commands created by the new **Tcl_CreateObjCommand**.  Legacy commands
+still created by **Tcl_CreateCommand** remained "binary unsafe".
+
+Note that the alphabet strictly grew.  All string values representable
+in Tcl 7 remained representable in Tcl 8.0.  Internally there was reform
+in representation (counted strings replaced terminated strings), but
+the concept of the Tcl string value accessible to scripts changed along
+an upward compatible path.
+
+Tcl 8.0 string values suffered from two deficits.  First, The internals
+still used two representations that were not reconciled to provide the
+same functionality.  Second, the international character sets of 
+increasing importance could not be encoded into Tcl string values in
+ways that were simple, 
 
 
 ## Representations
