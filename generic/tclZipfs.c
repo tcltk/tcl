@@ -5456,7 +5456,7 @@ TclZipfs_Init(
 	Tcl_Obj *mapObj;
 
 	Tcl_EvalEx(interp, findproc, -1, TCL_EVAL_GLOBAL);
-	if (Tcl_IsSafe(interp)) {
+	if (!Tcl_IsSafe(interp)) {
 	    Tcl_LinkVar(interp, "::tcl::zipfs::wrmax", (char *) &ZipFS.wrmax,
 		    TCL_LINK_INT);
 	}
