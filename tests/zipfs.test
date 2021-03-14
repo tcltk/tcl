@@ -381,9 +381,21 @@ test zipfs-4.5 {zipfs lmkimg: making image from mounted} -constraints zipfs -set
     removeFile $addFile
 } -result {//zipfs://ziptest/test/add.tcl //zipfs://ziptest/test/ok.tcl}
 
-test zipfs-5.1 {zipfs mount_data: short data} -body {
+test zipfs-5.1 {zipfs mount_data: short data} -constraints zipfs -body {
     zipfs mount_data gorp {}
-} -constraints zipfs -returnCodes error -result {bad zip data}
+} -returnCodes error -result {bad zip data}
+test zipfs-5.2 {zipfs mount_data: short data} -constraints zipfs -body {
+    zipfs mount_data gorp gorpGORPgorp
+} -returnCodes error -result {bad zip data}
+test zipfs-5.3 {zipfs mount_data: short data} -constraints zipfs -body {
+    set data PK\x03\x04.....................................
+    append data PK\x01\x02.....................................
+    append data PK\x05\x06.....................................
+    zipfs mount_data gorp $data
+} -returnCodes error -result {bad zip data}
+test zipfs-5.4 {zipfs mount_data: bad arg count} -constraints zipfs -body {
+    zipfs mount_data gorp {} foobar
+} -returnCodes error -result {wrong # args: should be "zipfs mount_data ?mountpoint? ?data?"}
 
 ::tcltest::cleanupTests
 return
