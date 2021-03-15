@@ -169,6 +169,12 @@ TCL_DECLARE_MUTEX(localtimeMutex)
 #endif /* !_WIN32 && !HAVE_LOCALTIME_R && TCL_THREADS */
 
 /*
+ * Forward declaration.
+ */
+
+struct ZipEntry;
+
+/*
  * In-core description of mounted ZIP archive file.
  */
 
@@ -197,6 +203,7 @@ typedef struct ZipFile {
 
 /*
  * In-core description of file contained in mounted ZIP archive.
+ * ZIP_ATTR_
  */
 
 typedef struct ZipEntry {
@@ -252,7 +259,9 @@ static struct {
     int initialized;		/* True when initialized */
     int lock;			/* RW lock, see below */
     int waiters;		/* RW lock, see below */
-    int wrmax;			/* Maximum write size of a file */
+    int wrmax;			/* Maximum write size of a file; only written
+				 * to from Tcl code in a trusted interpreter,
+				 * so NOT protected by mutex. */
     int idCount;		/* Counter for channel names */
     Tcl_HashTable fileHash;	/* File name to ZipEntry mapping */
     Tcl_HashTable zipHash;	/* Mount to ZipFile mapping */
@@ -388,27 +397,28 @@ static const Tcl_Filesystem zipfsFilesystem = {
  */
 
 static Tcl_ChannelType ZipChannelType = {
-    "zip",		    /* Type name. */
+    "zip",			/* Type name. */
     TCL_CHANNEL_VERSION_5,
-    TCL_CLOSE2PROC,	    /* Close channel, clean instance data */
-    ZipChannelRead,	    /* Handle read request */
-    ZipChannelWrite,	    /* Handle write request */
+    TCL_CLOSE2PROC,		/* Close channel, clean instance data */
+    ZipChannelRead,		/* Handle read request */
+    ZipChannelWrite,		/* Handle write request */
 #ifndef TCL_NO_DEPRECATED
-    ZipChannelSeek,	    /* Move location of access point, NULL'able */
+    ZipChannelSeek,		/* Move location of access point, NULL'able */
 #else
-	NULL,	    /* Move location of access point, NULL'able */
+    NULL,			/* Move location of access point, NULL'able */
 #endif
-    NULL,		    /* Set options, NULL'able */
-    NULL,		    /* Get options, NULL'able */
-    ZipChannelWatchChannel, /* Initialize notifier */
-    ZipChannelGetFile,	    /* Get OS handle from the channel */
-    ZipChannelClose,	    /* 2nd version of close channel, NULL'able */
-    NULL,		    /* Set blocking mode for raw channel, NULL'able */
-    NULL,		    /* Function to flush channel, NULL'able */
-    NULL,		    /* Function to handle event, NULL'able */
-    ZipChannelWideSeek,	/* Wide seek function, NULL'able */
-    NULL,		    /* Thread action function, NULL'able */
-    NULL,		    /* Truncate function, NULL'able */
+    NULL,			/* Set options, NULL'able */
+    NULL,			/* Get options, NULL'able */
+    ZipChannelWatchChannel,	/* Initialize notifier */
+    ZipChannelGetFile,		/* Get OS handle from the channel */
+    ZipChannelClose,		/* 2nd version of close channel, NULL'able */
+    NULL,			/* Set blocking mode for raw channel,
+				 * NULL'able */
+    NULL,			/* Function to flush channel, NULL'able */
+    NULL,			/* Function to handle event, NULL'able */
+    ZipChannelWideSeek,		/* Wide seek function, NULL'able */
+    NULL,			/* Thread action function, NULL'able */
+    NULL,			/* Truncate function, NULL'able */
 };
 
 /*
@@ -511,7 +521,7 @@ TCL_DECLARE_MUTEX(ZipFSMutex)
 
 static Tcl_Condition ZipFSCond;
 
-static void
+static inline void
 ReadLock(void)
 {
     Tcl_MutexLock(&ZipFSMutex);
@@ -524,7 +534,7 @@ ReadLock(void)
     Tcl_MutexUnlock(&ZipFSMutex);
 }
 
-static void
+static inline void
 WriteLock(void)
 {
     Tcl_MutexLock(&ZipFSMutex);
@@ -537,7 +547,7 @@ WriteLock(void)
     Tcl_MutexUnlock(&ZipFSMutex);
 }
 
-static void
+static inline void
 Unlock(void)
 {
     Tcl_MutexLock(&ZipFSMutex);
@@ -657,7 +667,7 @@ ToDosDate(
  *-------------------------------------------------------------------------
  */
 
-static int
+static inline int
 CountSlashes(
     const char *string)
 {
@@ -861,7 +871,7 @@ CanonicalPath(
  *-------------------------------------------------------------------------
  */
 
-static ZipEntry *
+static inline ZipEntry *
 ZipFSLookup(
     char *filename)
 {
@@ -892,7 +902,7 @@ ZipFSLookup(
  *-------------------------------------------------------------------------
  */
 
-static ZipFile *
+static inline ZipFile *
 ZipFSLookupZip(
     const char *mountPoint)
 {
@@ -925,7 +935,7 @@ ZipFSLookupZip(
  *-------------------------------------------------------------------------
  */
 
-static ZipFile *
+static inline ZipFile *
 AllocateZipFile(
     Tcl_Interp *interp,
     size_t mountPointNameLength)
@@ -941,7 +951,7 @@ AllocateZipFile(
     return zf;
 }
 
-static ZipEntry *
+static inline ZipEntry *
 AllocateZipEntry(void)
 {
     ZipEntry *z = (ZipEntry *) ckalloc(sizeof(ZipEntry));
@@ -949,7 +959,7 @@ AllocateZipEntry(void)
     return z;
 }
 
-static ZipChannel *
+static inline ZipChannel *
 AllocateZipChannel(
     Tcl_Interp *interp)
 {
@@ -1391,16 +1401,17 @@ IsPasswordValid(
 /*
  *-------------------------------------------------------------------------
  *
- * ZipFSRootNode --
+ * ZipFSCatalogFilesystem --
  *
- *	This function generates the root node for a ZIPFS filesystem.
+ *	This function generates the root node for a ZIPFS filesystem by
+ *	reading the ZIP's central directory.
  *
  * Results:
  *	TCL_OK on success, TCL_ERROR otherwise with an error message placed
  *	into the given "interp" if it is not NULL.
  *
  * Side effects:
- *	...
+ *	Will acquire and release the write lock.
  *
  *-------------------------------------------------------------------------
  */
@@ -2022,6 +2033,12 @@ TclZipfs_Unmount(
 	goto done;
     }
     Tcl_DeleteHashEntry(hPtr);
+
+    /*
+     * Now no longer mounted - the rest of the code won't find it - but we're
+     * still cleaning things up.
+     */
+
     for (z = zf->entries; z; z = znext) {
 	znext = z->next;
 	hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, z->name);
@@ -2037,6 +2054,7 @@ TclZipfs_Unmount(
     Tcl_DeleteExitHandler(ZipfsExitHandler, zf);
     ckfree(zf);
     unmounted = 1;
+
   done:
     Unlock();
     if (unmounted) {
@@ -2339,14 +2357,15 @@ RandomChar(
 static int
 ZipAddFile(
     Tcl_Interp *interp,		/* Current interpreter. */
-    const char *path,
-    const char *name,
-    Tcl_Channel out,
+    Tcl_Obj *pathObj,		/* Actual name of the file to add. */
+    const char *name,		/* Name to use in the ZIP archive. */
+    Tcl_Channel out,		/* The open ZIP archive being built. */
     const char *passwd,		/* Password for encoding the file, or NULL if
 				 * the file is to be unprotected. */
-    char *buf,
-    int bufsize,
-    Tcl_HashTable *fileHash)
+    char *buf,			/* Working buffer. */
+    int bufsize,		/* Size of buf */
+    Tcl_HashTable *fileHash)	/* Where to record ZIP entry metdata so we can
+				 * built the central directory. */
 {
     const unsigned char *start = (unsigned char *) buf;
     const unsigned char *end = (unsigned char *) buf + bufsize;
@@ -2378,11 +2397,11 @@ ZipAddFile(
     zpathlen = strlen(zpath);
     if (zpathlen + ZIP_CENTRAL_HEADER_LEN > bufsize) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"path too long for \"%s\"", path));
+		"path too long for \"%s\"", Tcl_GetString(pathObj)));
 	ZIPFS_ERROR_CODE(interp, "PATH_LEN");
 	return TCL_ERROR;
     }
-    in = Tcl_OpenFileChannel(interp, path, "rb", 0);
+    in = Tcl_FSOpenFileChannel(interp, pathObj, "rb", 0);
     if (!in) {
 #ifdef _WIN32
 	/* hopefully a directory */
@@ -2394,14 +2413,11 @@ ZipAddFile(
 	Tcl_Close(interp, in);
 	return TCL_ERROR;
     } else {
-	Tcl_Obj *pathObj = Tcl_NewStringObj(path, -1);
 	Tcl_StatBuf statBuf;
 
-	Tcl_IncrRefCount(pathObj);
 	if (Tcl_FSStat(pathObj, &statBuf) != -1) {
 	    mtime = statBuf.st_mtime;
 	}
-	Tcl_DecrRefCount(pathObj);
     }
     Tcl_ResetResult(interp);
 
@@ -2418,8 +2434,9 @@ ZipAddFile(
 		Tcl_Close(interp, in);
 		return TCL_OK;
 	    }
+	readErrorWithChannelOpen:
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("read error on \"%s\": %s",
-		    path, Tcl_PosixError(interp)));
+		    Tcl_GetString(pathObj), Tcl_PosixError(interp)));
 	    Tcl_Close(interp, in);
 	    return TCL_ERROR;
 	}
@@ -2431,7 +2448,7 @@ ZipAddFile(
     }
     if (Tcl_Seek(in, 0, SEEK_SET) == -1) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("seek error on \"%s\": %s",
-		path, Tcl_PosixError(interp)));
+		Tcl_GetString(pathObj), Tcl_PosixError(interp)));
 	Tcl_Close(interp, in);
 	return TCL_ERROR;
     }
@@ -2452,9 +2469,10 @@ ZipAddFile(
     memcpy(buf + ZIP_LOCAL_HEADER_LEN, zpath, zpathlen);
     len = zpathlen + ZIP_LOCAL_HEADER_LEN;
     if ((size_t) Tcl_Write(out, buf, len) != len) {
-    wrerr:
+    writeErrorWithChannelOpen:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"write error on %s: %s", path, Tcl_PosixError(interp)));
+		"write error on \"%s\": %s",
+		Tcl_GetString(pathObj), Tcl_PosixError(interp)));
 	Tcl_Close(interp, in);
 	return TCL_ERROR;
     }
@@ -2474,7 +2492,7 @@ ZipAddFile(
 	ZipWriteShort(astart, aend, abuf + 2, align - 4);
 	ZipWriteInt(astart, aend, abuf + 4, 0x03020100);
 	if ((size_t) Tcl_Write(out, (const char *) abuf, align) != align) {
-	    goto wrerr;
+	    goto writeErrorWithChannelOpen;
 	}
     }
 
@@ -2504,10 +2522,7 @@ ZipAddFile(
 	len = Tcl_Write(out, (char *) kvbuf, 12);
 	memset(kvbuf, 0, 24);
 	if (len != 12) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "write error on %s: %s", path, Tcl_PosixError(interp)));
-	    Tcl_Close(interp, in);
-	    return TCL_ERROR;
+	    goto writeErrorWithChannelOpen;
 	}
 	memcpy(keys0, keys, sizeof(keys0));
 	nbytecompr += 12;
@@ -2532,19 +2547,17 @@ ZipAddFile(
     if (deflateInit2(&stream, 9, Z_DEFLATED, -15, 8,
 	    Z_DEFAULT_STRATEGY) != Z_OK) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"compression init error on \"%s\"", path));
+		"compression init error on \"%s\"", Tcl_GetString(pathObj)));
 	ZIPFS_ERROR_CODE(interp, "DEFLATE_INIT");
 	Tcl_Close(interp, in);
 	return TCL_ERROR;
     }
+
     do {
 	len = Tcl_Read(in, buf, bufsize);
 	if (len == ERROR_LENGTH) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "read error on %s: %s", path, Tcl_PosixError(interp)));
 	    deflateEnd(&stream);
-	    Tcl_Close(interp, in);
-	    return TCL_ERROR;
+	    goto readErrorWithChannelOpen;
 	}
 	stream.avail_in = len;
 	stream.next_in = (unsigned char *) buf;
@@ -2555,7 +2568,7 @@ ZipAddFile(
 	    len = deflate(&stream, flush);
 	    if (len == (size_t) Z_STREAM_ERROR) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"deflate error on %s", path));
+			"deflate error on \"%s\"", Tcl_GetString(pathObj)));
 		ZIPFS_ERROR_CODE(interp, "DEFLATE");
 		deflateEnd(&stream);
 		Tcl_Close(interp, in);
@@ -2571,11 +2584,8 @@ ZipAddFile(
 		}
 	    }
 	    if (olen && ((size_t) Tcl_Write(out, obuf, olen) != olen)) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"write error: %s", Tcl_PosixError(interp)));
 		deflateEnd(&stream);
-		Tcl_Close(interp, in);
-		return TCL_ERROR;
+		goto writeErrorWithChannelOpen;
 	    }
 	    nbytecompr += olen;
 	} while (stream.avail_out == 0);
@@ -2599,20 +2609,16 @@ ZipAddFile(
 	}
 	if (Tcl_Seek(out, dataStartOffset, SEEK_SET) != dataStartOffset) {
 	seekErr:
-	    Tcl_Close(interp, in);
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "seek error: %s", Tcl_PosixError(interp)));
+	    Tcl_Close(interp, in);
 	    return TCL_ERROR;
 	}
 	nbytecompr = (passwd ? 12 : 0);
 	while (1) {
 	    len = Tcl_Read(in, buf, bufsize);
 	    if (len == ERROR_LENGTH) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"read error on \"%s\": %s",
-			path, Tcl_PosixError(interp)));
-		Tcl_Close(interp, in);
-		return TCL_ERROR;
+		goto readErrorWithChannelOpen;
 	    } else if (len == 0) {
 		break;
 	    }
@@ -2625,10 +2631,7 @@ ZipAddFile(
 		}
 	    }
 	    if ((size_t) Tcl_Write(out, buf, len) != len) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"write error: %s", Tcl_PosixError(interp)));
-		Tcl_Close(interp, in);
-		return TCL_ERROR;
+		goto writeErrorWithChannelOpen;
 	    }
 	    nbytecompr += len;
 	}
@@ -2648,7 +2651,7 @@ ZipAddFile(
     hPtr = Tcl_CreateHashEntry(fileHash, zpath, &isNew);
     if (!isNew) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"non-unique path name \"%s\"", path));
+		"non-unique path name \"%s\"", Tcl_GetString(pathObj)));
 	ZIPFS_ERROR_CODE(interp, "DUPLICATE_PATH");
 	return TCL_ERROR;
     }
@@ -2729,6 +2732,59 @@ ZipFSFind(
 	return NULL;
     }
     return Tcl_GetObjResult(interp);
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ComputeNameInArchive --
+ *
+ *	Helper for ZipFSMkZipOrImg() that computes what the actual name of a
+ *	file in the ZIP archive should be, stripping a prefix (if appropriate)
+ *	and any leading slashes. If the result is an empty string, the entry
+ *	should be skipped.
+ *
+ * Returns:
+ *	Pointer to the name, which will be in memory owned by one of the
+ *	argument objects.
+ *
+ * Side effects:
+ *	None (if Tcl_Objs have string representations)
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static inline const char *
+ComputeNameInArchive(
+    Tcl_Obj *pathObj,		/* The path to the origin file */
+    Tcl_Obj *directNameObj,	/* User-specified name for use in the ZIP
+				 * archive */
+    const char *strip,		/* A prefix to strip */
+    int slen)			/* The length of the prefix */
+{
+    const char *name;
+    int len;
+
+    if (directNameObj) {
+	name = Tcl_GetString(directNameObj);
+    } else {
+	name = Tcl_GetStringFromObj(pathObj, &len);
+	if (slen > 0) {
+	    if ((len <= slen) || (strncmp(strip, name, slen) != 0)) {
+		/*
+		 * Guaranteed to be a NUL at the end, which will make this
+		 * entry be skipped.
+		 */
+
+		return name + len;
+	    }
+	    name += slen;
+	}
+    }
+    while (name[0] == '/') {
+	++name;
+    }
+    return name;
 }
 
 /*
@@ -2829,7 +2885,7 @@ ZipFSMkZipOrImg(
 	ZIPFS_ERROR_CODE(interp, "EMPTY");
 	return TCL_ERROR;
     }
-    out = Tcl_OpenFileChannel(interp, Tcl_GetString(targetFile), "wb", 0755);
+    out = Tcl_FSOpenFileChannel(interp, targetFile, "wb", 0755);
     if (out == NULL) {
 	Tcl_DecrRefCount(list);
 	return TCL_ERROR;
@@ -2956,29 +3012,14 @@ ZipFSMkZipOrImg(
 	strip = Tcl_GetStringFromObj(stripPrefix, &slen);
     }
     for (i = 0; i < (size_t) lobjc; i += (mappingList ? 2 : 1)) {
-	const char *path, *name;
+	Tcl_Obj *pathObj = lobjv[i];
+	const char *name = ComputeNameInArchive(pathObj,
+		(mappingList ? lobjv[i + 1] : NULL), strip, slen);
 
-	path = Tcl_GetString(lobjv[i]);
-	if (mappingList) {
-	    name = Tcl_GetString(lobjv[i + 1]);
-	} else {
-	    name = path;
-	    if (slen > 0) {
-		len = strlen(name);
-		if ((len <= (size_t) slen) ||
-			(strncmp(strip, name, slen) != 0)) {
-		    continue;
-		}
-		name += slen;
-	    }
-	}
-	while (name[0] == '/') {
-	    ++name;
-	}
 	if (name[0] == '\0') {
 	    continue;
 	}
-	if (ZipAddFile(interp, path, name, out, pw, buf, sizeof(buf),
+	if (ZipAddFile(interp, pathObj, name, out, pw, buf, sizeof(buf),
 		&fileHash) != TCL_OK) {
 	    goto done;
 	}
@@ -2991,25 +3032,9 @@ ZipFSMkZipOrImg(
     directoryStartOffset = Tcl_Tell(out);
     count = 0;
     for (i = 0; i < (size_t) lobjc; i += (mappingList ? 2 : 1)) {
-	const char *path, *name;
+	const char *name = ComputeNameInArchive(lobjv[i],
+		(mappingList ? lobjv[i + 1] : NULL), strip, slen);
 
-	path = Tcl_GetString(lobjv[i]);
-	if (mappingList) {
-	    name = Tcl_GetString(lobjv[i + 1]);
-	} else {
-	    name = path;
-	    if (slen > 0) {
-		len = strlen(name);
-		if ((len <= (size_t) slen) ||
-			(strncmp(strip, name, slen) != 0)) {
-		    continue;
-		}
-		name += slen;
-	    }
-	}
-	while (name[0] == '/') {
-	    ++name;
-	}
 	if (name[0] == '\0') {
 	    continue;
 	}
@@ -3500,7 +3525,7 @@ ZipFSExistsObjCmd(
  *
  * ZipFSInfoObjCmd --
  *
- *	This procedure is invoked to process the [zipfs info] command.	 On
+ *	This procedure is invoked to process the [zipfs info] command.  On
  *	success, it returns a Tcl list made up of name of ZIP archive file,
  *	size uncompressed, size compressed, and archive offset of a file in
  *	the ZIP filesystem.
@@ -4099,7 +4124,7 @@ ZipChannelGetFile(
  * ZipChannelOpen --
  *
  *	This function opens a Tcl_Channel on a file from a mounted ZIP archive
- *	according to given open mode.
+ *	according to given open mode (already parsed by caller).
  *
  * Results:
  *	Tcl_Channel on success, or NULL on error.
@@ -4113,30 +4138,14 @@ ZipChannelGetFile(
 static Tcl_Channel
 ZipChannelOpen(
     Tcl_Interp *interp,		/* Current interpreter. */
-    char *filename,
-    int mode,
-    TCL_UNUSED(int) /*permissions*/)
+    char *filename,		/* What are we opening. */
+    int wr,			/* True if we're opening in write mode. */
+    int trunc)			/* True if we're opening in truncate mode. */
 {
     ZipEntry *z;
     ZipChannel *info;
-    int trunc = (mode & O_TRUNC) != 0;
-    int wr = (mode & (O_WRONLY | O_RDWR)) != 0;
     int flags = 0;
     char cname[128];
-
-    /*
-     * Check for unsupported modes.
-     */
-
-    if ((mode & O_APPEND) || ((ZipFS.wrmax <= 0) && wr)) {
-	Tcl_SetErrno(EACCES);
-	if (interp) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "write access not supported: %s",
-		    Tcl_PosixError(interp)));
-	}
-	return NULL;
-    }
 
     /*
      * Is the file there?
@@ -4644,9 +4653,14 @@ ZipEntryAccess(
  *
  * ZipFSOpenFileChannelProc --
  *
+ *	Open a channel to a file in a mounted ZIP archive. Delegates to
+ *	ZipChannelOpen().
+ *
  * Results:
+ *	Tcl_Channel on success, or NULL on error.
  *
  * Side effects:
+ *	Allocates memory.
  *
  *-------------------------------------------------------------------------
  */
@@ -4656,16 +4670,33 @@ ZipFSOpenFileChannelProc(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Obj *pathPtr,
     int mode,
-    int permissions)
+    TCL_UNUSED(int) /* permissions */)
 {
+    int trunc = (mode & O_TRUNC) != 0;
+    int wr = (mode & (O_WRONLY | O_RDWR)) != 0;
     int len;
 
     pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (!pathPtr) {
 	return NULL;
     }
-    return ZipChannelOpen(interp, Tcl_GetStringFromObj(pathPtr, &len), mode,
-	    permissions);
+
+    /*
+     * Check for unsupported modes.
+     */
+
+    if ((mode & O_APPEND) || ((ZipFS.wrmax <= 0) && wr)) {
+	Tcl_SetErrno(EACCES);
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "write access not supported: %s",
+		    Tcl_PosixError(interp)));
+	}
+	return NULL;
+    }
+
+    return ZipChannelOpen(interp, Tcl_GetStringFromObj(pathPtr, &len), wr,
+	    trunc);
 }
 
 /*
@@ -5120,11 +5151,25 @@ ZipFSListVolumesProc(void)
  *-------------------------------------------------------------------------
  */
 
+enum ZipFileAttrs {
+    ZIP_ATTR_UNCOMPSIZE,
+    ZIP_ATTR_COMPSIZE,
+    ZIP_ATTR_OFFSET,
+    ZIP_ATTR_MOUNT,
+    ZIP_ATTR_ARCHIVE,
+    ZIP_ATTR_PERMISSIONS,
+    ZIP_ATTR_CRC
+};
+
 static const char *const *
 ZipFSFileAttrStringsProc(
     TCL_UNUSED(Tcl_Obj *) /*pathPtr*/,
     TCL_UNUSED(Tcl_Obj **) /*objPtrRef*/)
 {
+    /*
+     * Must match up with ZipFileAttrs enum above.
+     */
+
     static const char *const attrs[] = {
 	"-uncompsize",
 	"-compsize",
@@ -5132,6 +5177,7 @@ ZipFSFileAttrStringsProc(
 	"-mount",
 	"-archive",
 	"-permissions",
+	"-crc",
 	NULL,
     };
 
@@ -5183,24 +5229,27 @@ ZipFSFileAttrsGetProc(
 	goto done;
     }
     switch (index) {
-    case 0:
+    case ZIP_ATTR_UNCOMPSIZE:
 	TclNewIntObj(*objPtrRef, z->numBytes);
 	break;
-    case 1:
+    case ZIP_ATTR_COMPSIZE:
 	TclNewIntObj(*objPtrRef, z->numCompressedBytes);
 	break;
-    case 2:
+    case ZIP_ATTR_OFFSET:
 	TclNewIntObj(*objPtrRef, z->offset);
 	break;
-    case 3:
+    case ZIP_ATTR_MOUNT:
 	*objPtrRef = Tcl_NewStringObj(z->zipFilePtr->mountPoint,
 		z->zipFilePtr->mountPointLen);
 	break;
-    case 4:
+    case ZIP_ATTR_ARCHIVE:
 	*objPtrRef = Tcl_NewStringObj(z->zipFilePtr->name, -1);
 	break;
-    case 5:
+    case ZIP_ATTR_PERMISSIONS:
 	*objPtrRef = Tcl_NewStringObj("0o555", -1);
+	break;
+    case ZIP_ATTR_CRC:
+	TclNewIntObj(*objPtrRef, z->crc32);
 	break;
     default:
 	ZIPFS_ERROR(interp, "unknown attribute");
