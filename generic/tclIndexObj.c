@@ -718,7 +718,7 @@ PrefixLongestObjCmd(
 		     * Adjust in case we stopped in the middle of a UTF char.
 		     */
 
-		    resultLength = TclUtfPrev(&resultString[i+1],
+		    resultLength = Tcl_UtfPrev(&resultString[i+1],
 			    resultString) - resultString;
 		    break;
 		}

@@ -6966,7 +6966,7 @@ TestUtfPrevCmd(
     } else {
 	offset = numBytes;
     }
-    result = TclUtfPrev(bytes + offset, bytes);
+    result = Tcl_UtfPrev(bytes + offset, bytes);
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result - bytes));
     return TCL_OK;
 }
