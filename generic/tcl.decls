@@ -1209,7 +1209,7 @@ declare 325 {
     const char *Tcl_UtfAtIndex(const char *src, size_t index)
 }
 declare 326 {
-    int Tcl_UtfCharComplete(const char *src, size_t length)
+    int TclUtfCharComplete(const char *src, size_t length)
 }
 declare 327 {
     size_t Tcl_UtfBackslash(const char *src, int *readPtr, char *dst)
@@ -1221,10 +1221,10 @@ declare 329 {
     const char *Tcl_UtfFindLast(const char *src, int ch)
 }
 declare 330 {
-    const char *Tcl_UtfNext(const char *src)
+    const char *TclUtfNext(const char *src)
 }
 declare 331 {
-    const char *Tcl_UtfPrev(const char *src, const char *start)
+    const char *TclUtfPrev(const char *src, const char *start)
 }
 declare 332 {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding,
@@ -2475,8 +2475,16 @@ declare 652 {
 declare 653 {
     unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
+
+# TIP #575
+declare 654 {
+    int Tcl_UtfCharComplete(const char *src, size_t length)
+}
+declare 655 {
+    const char *Tcl_UtfNext(const char *src)
+}
 declare 656 {
-    void TclUnusedStubEntry(void)
+    const char *Tcl_UtfPrev(const char *src, const char *start)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
