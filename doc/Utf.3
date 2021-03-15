@@ -141,8 +141,8 @@ source buffer is long enough such that this routine does not run off the
 end and dereference non-existent or random memory; if the source buffer
 is known to be null-terminated, this will not happen.  If the input is
 not in proper UTF-8 format, \fBTcl_UtfToUniChar\fR will store the first
-byte of \fIsrc\fR in \fI*chPtr\fR as a Tcl_UniChar between 0x0080 and
-0x00FF and return 1.
+byte of \fIsrc\fR in \fI*chPtr\fR as a Tcl_UniChar between 0x80 and
+0xFF and return 1.
 .PP
 \fBTcl_UniCharToUtfDString\fR converts the given Unicode string
 to UTF-8, storing the result in a previously initialized \fBTcl_DString\fR.
@@ -197,10 +197,10 @@ characters.
 .PP
 \fBTcl_UtfCharComplete\fR returns 1 if the source UTF-8 string \fIsrc\fR
 of \fIlength\fR bytes is long enough to be decoded by
-\fBTcl_UtfToUniChar\fR, or 0 otherwise.  This function does not guarantee
-that the UTF-8 string is properly formed.  This routine is used by
-procedures that are operating on a byte at a time and need to know if a
-full Tcl_UniChar has been seen.
+\fBTcl_UtfToUniChar\fR/\fBTcl_UtfNext\fR, or 0 otherwise.  This function
+does not guarantee that the UTF-8 string is properly formed.  This routine
+is used by procedures that are operating on a byte at a time and need to
+know if a full Tcl_UniChar has been seen.
 .PP
 \fBTcl_NumUtfChars\fR corresponds to \fBstrlen\fR for UTF-8 strings.  It
 returns the number of Tcl_UniChars that are represented by the UTF-8 string
@@ -221,7 +221,8 @@ Given \fIsrc\fR, a pointer to some location in a UTF-8 string,
 \fBTcl_UtfNext\fR returns a pointer to the next UTF-8 character in the
 string.  The caller must not ask for the next character after the last
 character in the string if the string is not terminated by a null
-character.
+character. \fBTcl_UtfCharComplete\fR can be used in that case to
+make sure enough bytes are available before calling \fBTcl_UtfNext\fR.
 .PP
 \fBTcl_UtfPrev\fR is used to step backward through but not beyond the
 UTF-8 string that begins at \fIstart\fR.  If the UTF-8 string is made
