@@ -19,6 +19,9 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
+#ifndef TCL_NO_DEPRECATED
+#   define TCL_NO_DEPRECATED
+#endif
 #include "tclInt.h"
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
 #   include "tommath.h"
@@ -6963,7 +6966,7 @@ TestUtfPrevCmd(
     } else {
 	offset = numBytes;
     }
-    result = TclUtfPrev(bytes + offset, bytes);
+    result = Tcl_UtfPrev(bytes + offset, bytes);
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result - bytes));
     return TCL_OK;
 }

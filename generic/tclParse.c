@@ -936,7 +936,7 @@ TclParseBackslash(
 	 * #217987] test subst-3.2
 	 */
 
-	if (TclUCS4Complete(p, numBytes - 1)) {
+	if (Tcl_UtfCharComplete(p, numBytes - 1)) {
 	    count = TclUtfToUCS4(p, &unichar) + 1;	/* +1 for '\' */
 	} else {
 	    char utfBytes[8];
