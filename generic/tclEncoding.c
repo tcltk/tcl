@@ -2323,7 +2323,7 @@ UtfToUtfProc(
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
-	if ((src > srcClose) && (!TclUCS4Complete(src, srcEnd - src))) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -2353,7 +2353,7 @@ UtfToUtfProc(
 	    *dst++ = 0;
 	    *chPtr = 0; /* reset surrogate handling */
 	    src += 2;
-	} else if (!TclUCS4Complete(src, srcEnd - src)) {
+	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /*
 	     * Always check before using TclUtfToUCS4. Not doing can so
 	     * cause it run beyond the end of the buffer! If we happen such an

@@ -999,7 +999,7 @@ EXTERN int		Tcl_UniCharToUtf(int ch, char *buf);
 /* 325 */
 EXTERN const char *	Tcl_UtfAtIndex(const char *src, int index);
 /* 326 */
-EXTERN int		Tcl_UtfCharComplete(const char *src, int length);
+EXTERN int		TclUtfCharComplete(const char *src, int length);
 /* 327 */
 EXTERN int		Tcl_UtfBackslash(const char *src, int *readPtr,
 				char *dst);
@@ -1008,9 +1008,9 @@ EXTERN const char *	Tcl_UtfFindFirst(const char *src, int ch);
 /* 329 */
 EXTERN const char *	Tcl_UtfFindLast(const char *src, int ch);
 /* 330 */
-EXTERN const char *	Tcl_UtfNext(const char *src);
+EXTERN const char *	TclUtfNext(const char *src);
 /* 331 */
-EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
+EXTERN const char *	TclUtfPrev(const char *src, const char *start);
 /* 332 */
 EXTERN int		Tcl_UtfToExternal(Tcl_Interp *interp,
 				Tcl_Encoding encoding, const char *src,
@@ -1935,10 +1935,12 @@ EXTERN Tcl_UniChar *	TclGetUnicodeFromObj(Tcl_Obj *objPtr,
 /* 653 */
 EXTERN unsigned char *	TclGetByteArrayFromObj(Tcl_Obj *objPtr,
 				size_t *lengthPtr);
-/* Slot 654 is reserved */
-/* Slot 655 is reserved */
+/* 654 */
+EXTERN int		Tcl_UtfCharComplete(const char *src, int length);
+/* 655 */
+EXTERN const char *	Tcl_UtfNext(const char *src);
 /* 656 */
-EXTERN void		TclUnusedStubEntry(void);
+EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2300,12 +2302,12 @@ typedef struct TclStubs {
     int (*tcl_UniCharToUpper) (int ch); /* 323 */
     int (*tcl_UniCharToUtf) (int ch, char *buf); /* 324 */
     const char * (*tcl_UtfAtIndex) (const char *src, int index); /* 325 */
-    int (*tcl_UtfCharComplete) (const char *src, int length); /* 326 */
+    int (*tclUtfCharComplete) (const char *src, int length); /* 326 */
     int (*tcl_UtfBackslash) (const char *src, int *readPtr, char *dst); /* 327 */
     const char * (*tcl_UtfFindFirst) (const char *src, int ch); /* 328 */
     const char * (*tcl_UtfFindLast) (const char *src, int ch); /* 329 */
-    const char * (*tcl_UtfNext) (const char *src); /* 330 */
-    const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 331 */
+    const char * (*tclUtfNext) (const char *src); /* 330 */
+    const char * (*tclUtfPrev) (const char *src, const char *start); /* 331 */
     int (*tcl_UtfToExternal) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr); /* 332 */
     char * (*tcl_UtfToExternalDString) (Tcl_Encoding encoding, const char *src, int srcLen, Tcl_DString *dsPtr); /* 333 */
     int (*tcl_UtfToLower) (char *src); /* 334 */
@@ -2628,9 +2630,9 @@ typedef struct TclStubs {
     char * (*tclGetStringFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 651 */
     Tcl_UniChar * (*tclGetUnicodeFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 652 */
     unsigned char * (*tclGetByteArrayFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 653 */
-    void (*reserved654)(void);
-    void (*reserved655)(void);
-    void (*tclUnusedStubEntry) (void); /* 656 */
+    int (*tcl_UtfCharComplete) (const char *src, int length); /* 654 */
+    const char * (*tcl_UtfNext) (const char *src); /* 655 */
+    const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 656 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3313,18 +3315,18 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UniCharToUtf) /* 324 */
 #define Tcl_UtfAtIndex \
 	(tclStubsPtr->tcl_UtfAtIndex) /* 325 */
-#define Tcl_UtfCharComplete \
-	(tclStubsPtr->tcl_UtfCharComplete) /* 326 */
+#define TclUtfCharComplete \
+	(tclStubsPtr->tclUtfCharComplete) /* 326 */
 #define Tcl_UtfBackslash \
 	(tclStubsPtr->tcl_UtfBackslash) /* 327 */
 #define Tcl_UtfFindFirst \
 	(tclStubsPtr->tcl_UtfFindFirst) /* 328 */
 #define Tcl_UtfFindLast \
 	(tclStubsPtr->tcl_UtfFindLast) /* 329 */
-#define Tcl_UtfNext \
-	(tclStubsPtr->tcl_UtfNext) /* 330 */
-#define Tcl_UtfPrev \
-	(tclStubsPtr->tcl_UtfPrev) /* 331 */
+#define TclUtfNext \
+	(tclStubsPtr->tclUtfNext) /* 330 */
+#define TclUtfPrev \
+	(tclStubsPtr->tclUtfPrev) /* 331 */
 #define Tcl_UtfToExternal \
 	(tclStubsPtr->tcl_UtfToExternal) /* 332 */
 #define Tcl_UtfToExternalDString \
@@ -3969,10 +3971,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclGetUnicodeFromObj) /* 652 */
 #define TclGetByteArrayFromObj \
 	(tclStubsPtr->tclGetByteArrayFromObj) /* 653 */
-/* Slot 654 is reserved */
-/* Slot 655 is reserved */
-#define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 656 */
+#define Tcl_UtfCharComplete \
+	(tclStubsPtr->tcl_UtfCharComplete) /* 654 */
+#define Tcl_UtfNext \
+	(tclStubsPtr->tcl_UtfNext) /* 655 */
+#define Tcl_UtfPrev \
+	(tclStubsPtr->tcl_UtfPrev) /* 656 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4253,10 +4257,16 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_Close(interp, chan) Tcl_CloseEx(interp, chan, 0)
 #endif
 
-#if defined(USE_TCL_STUBS) && (TCL_UTF_MAX > 3)
+#undef TclUtfCharComplete
+#undef TclUtfNext
+#undef TclUtfPrev
+#if defined(USE_TCL_STUBS) && (TCL_UTF_MAX < 4) && !defined(TCL_NO_DEPRECATED)
 #   undef Tcl_UtfCharComplete
-#   define Tcl_UtfCharComplete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
-	    ? ((length) >= 4) : tclStubsPtr->tcl_UtfCharComplete((src), (length)))
+#   undef Tcl_UtfNext
+#   undef Tcl_UtfPrev
+#   define Tcl_UtfCharComplete (tclStubsPtr->tclUtfCharComplete)
+#   define Tcl_UtfNext (tclStubsPtr->tclUtfNext)
+#   define Tcl_UtfPrev (tclStubsPtr->tclUtfPrev)
 #endif
 #define Tcl_CreateSlave Tcl_CreateChild
 #define Tcl_GetSlave Tcl_GetChild

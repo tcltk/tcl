@@ -90,6 +90,32 @@ static void uniCodePanic(void) {
 #   define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long))(void *)uniCodePanic
 #endif
 
+#define TclUtfCharComplete UtfCharComplete
+#define TclUtfNext UtfNext
+#define TclUtfPrev UtfPrev
+
+static int TclUtfCharComplete(const char *src, int length) {
+    if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
+	return length < 3;
+    }
+    return Tcl_UtfCharComplete(src, length);
+}
+
+static const char *TclUtfNext(const char *src) {
+    if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
+	return src + 1;
+    }
+    return Tcl_UtfNext(src);
+}
+
+static const char *TclUtfPrev(const char *src, const char *start) {
+    if ((src >= start + 3) && ((src[-1] & 0xC0) == 0x80)
+	    && ((src[-2] & 0xC0) == 0x80) && ((src[-3] & 0xC0) == 0x80)) {
+	return src - 3;
+    }
+    return Tcl_UtfPrev(src, start);
+}
+
 #define TclBN_mp_add mp_add
 #define TclBN_mp_and mp_and
 #define TclBN_mp_clamp mp_clamp
@@ -1574,12 +1600,12 @@ const TclStubs tclStubs = {
     Tcl_UniCharToUpper, /* 323 */
     Tcl_UniCharToUtf, /* 324 */
     Tcl_UtfAtIndex, /* 325 */
-    Tcl_UtfCharComplete, /* 326 */
+    TclUtfCharComplete, /* 326 */
     Tcl_UtfBackslash, /* 327 */
     Tcl_UtfFindFirst, /* 328 */
     Tcl_UtfFindLast, /* 329 */
-    Tcl_UtfNext, /* 330 */
-    Tcl_UtfPrev, /* 331 */
+    TclUtfNext, /* 330 */
+    TclUtfPrev, /* 331 */
     Tcl_UtfToExternal, /* 332 */
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
@@ -1902,9 +1928,9 @@ const TclStubs tclStubs = {
     TclGetStringFromObj, /* 651 */
     TclGetUnicodeFromObj, /* 652 */
     TclGetByteArrayFromObj, /* 653 */
-    0, /* 654 */
-    0, /* 655 */
-    TclUnusedStubEntry, /* 656 */
+    Tcl_UtfCharComplete, /* 654 */
+    Tcl_UtfNext, /* 655 */
+    Tcl_UtfPrev, /* 656 */
 };
 
 /* !END!: Do not edit above this line. */
