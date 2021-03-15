@@ -3361,7 +3361,8 @@ int
 TclClose(
     Tcl_Interp *interp,		/* Interpreter for errors. */
     Tcl_Channel chan)		/* The channel being closed. Must not be
-				 * referenced in any interpreter. */
+				 * referenced in any interpreter. May be NULL,
+				 * in which case this is a no-op. */
 {
     CloseCallback *cbPtr;	/* Iterate over close callbacks for this
 				 * channel. */

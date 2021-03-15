@@ -78,6 +78,11 @@ static void uniCodePanic() {
 #   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, size_t))(void *)uniCodePanic
 #endif
 
+#define TclUtfCharComplete Tcl_UtfCharComplete
+#define TclUtfNext Tcl_UtfNext
+#define TclUtfPrev Tcl_UtfPrev
+
+
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
 #define TclBN_mp_and mp_and
@@ -551,6 +556,7 @@ static const TclIntStubs tclIntStubs = {
     TclStaticPackage, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
     TclGetBytesFromObj, /* 259 */
+    0, /* 260 */
     TclMSB, /* 261 */
 };
 
@@ -1087,12 +1093,12 @@ const TclStubs tclStubs = {
     Tcl_UniCharToUpper, /* 323 */
     Tcl_UniCharToUtf, /* 324 */
     Tcl_UtfAtIndex, /* 325 */
-    Tcl_UtfCharComplete, /* 326 */
+    TclUtfCharComplete, /* 326 */
     Tcl_UtfBackslash, /* 327 */
     Tcl_UtfFindFirst, /* 328 */
     Tcl_UtfFindLast, /* 329 */
-    Tcl_UtfNext, /* 330 */
-    Tcl_UtfPrev, /* 331 */
+    TclUtfNext, /* 330 */
+    TclUtfPrev, /* 331 */
     Tcl_UtfToExternal, /* 332 */
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
@@ -1415,9 +1421,9 @@ const TclStubs tclStubs = {
     Tcl_GetStringFromObj, /* 651 */
     Tcl_GetUnicodeFromObj, /* 652 */
     Tcl_GetByteArrayFromObj, /* 653 */
-    0, /* 654 */
-    0, /* 655 */
-    TclUnusedStubEntry, /* 656 */
+    Tcl_UtfCharComplete, /* 654 */
+    Tcl_UtfNext, /* 655 */
+    Tcl_UtfPrev, /* 656 */
 };
 
 /* !END!: Do not edit above this line. */

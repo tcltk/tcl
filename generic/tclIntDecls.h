@@ -582,6 +582,7 @@ EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 /* 259 */
 EXTERN unsigned char *	TclGetBytesFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, size_t *lengthPtr);
+/* Slot 260 is reserved */
 /* 261 */
 EXTERN int		TclMSB(size_t n);
 
@@ -849,6 +850,7 @@ typedef struct TclIntStubs {
     void (*tclStaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 257 */
     Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
     unsigned char * (*tclGetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, size_t *lengthPtr); /* 259 */
+    void (*reserved260)(void);
     int (*tclMSB) (size_t n); /* 261 */
 } TclIntStubs;
 
@@ -1268,6 +1270,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
 #define TclGetBytesFromObj \
 	(tclIntStubsPtr->tclGetBytesFromObj) /* 259 */
+/* Slot 260 is reserved */
 #define TclMSB \
 	(tclIntStubsPtr->tclMSB) /* 261 */
 
