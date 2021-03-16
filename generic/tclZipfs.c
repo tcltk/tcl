@@ -1449,9 +1449,8 @@ ZipFSCatalogFilesystem(
      * Validate the TOC data. If that's bad, things fall apart.
      */
 
-    if (zf0->baseOffset < 0 || zf0->baseOffset >= zf0->length ||
-	    zf0->passOffset < 0 || zf0->passOffset >= zf0->length ||
-	    zf0->directoryOffset < 0 || zf0->directoryOffset >= zf0->length) {
+    if (zf0->baseOffset >= zf0->length || zf0->passOffset >= zf0->length ||
+	    zf0->directoryOffset >= zf0->length) {
 	ZIPFS_ERROR(interp, "bad zip data");
 	ZIPFS_ERROR_CODE(interp, "BAD_ZIP");
 	return TCL_ERROR;
