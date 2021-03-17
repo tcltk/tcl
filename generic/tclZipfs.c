@@ -3746,7 +3746,7 @@ TclZipfs_TclLibrary(void)
 
 #if !defined(STATIC_BUILD)
 #if defined(_WIN32) || defined(__CYGWIN__)
-    hModule = TclWinGetTclInstance();
+    hModule = (HMODULE)TclWinGetTclInstance();
     GetModuleFileNameW(hModule, wName, MAX_PATH);
 #ifdef __CYGWIN__
     cygwin_conv_path(3, wName, dllName, sizeof(dllName));
