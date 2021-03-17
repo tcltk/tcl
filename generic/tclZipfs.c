@@ -873,7 +873,7 @@ CanonicalPath(
 
 static inline ZipEntry *
 ZipFSLookup(
-    char *filename)
+    const char *filename)
 {
     Tcl_HashEntry *hPtr;
     ZipEntry *z = NULL;
@@ -1064,7 +1064,7 @@ ZipFSFindTOC(
     ZipFile *zf)
 {
     size_t i;
-    unsigned char *p, *q;
+    const unsigned char *p, *q;
     const unsigned char *start = zf->data;
     const unsigned char *end = zf->data + zf->length;
 
@@ -1121,7 +1121,7 @@ ZipFSFindTOC(
 
     q = zf->data + ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSTART_OFFS);
     p -= ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSIZE_OFFS);
-    if ((p < zf->data) || (p > zf->data + zf->length)
+    if ((p < q) || (p < zf->data) || (p > zf->data + zf->length)
 	    || (q < zf->data) || (q > zf->data + zf->length)) {
 	if (!needZip) {
 	    zf->baseOffset = zf->passOffset = zf->length;
@@ -1166,10 +1166,13 @@ ZipFSFindTOC(
     q = zf->data + zf->baseOffset;
     if ((zf->baseOffset >= 6) &&
 	    (ZipReadInt(start, end, q - 4) == ZIP_PASSWORD_END_SIG)) {
+	const unsigned char *passPtr;
+
 	i = q[-5];
-	if (q - 5 - i > zf->data) {
+	passPtr = q - 5 - i;
+	if (passPtr >= start && passPtr + i < end) {
 	    zf->passBuf[0] = i;
-	    memcpy(zf->passBuf + 1, q - 5 - i, i);
+	    memcpy(zf->passBuf + 1, passPtr, i);
 	    zf->passOffset -= i ? (5 + i) : 0;
 	}
     }
@@ -1498,9 +1501,11 @@ ZipFSCatalogFilesystem(
     zf->mountPoint = (char *) Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
     Tcl_CreateExitHandler(ZipfsExitHandler, zf);
     zf->mountPointLen = strlen(zf->mountPoint);
+
     zf->nameLength = strlen(zipname);
     zf->name = (char *) Tcl_Alloc(zf->nameLength + 1);
     memcpy(zf->name, zipname, zf->nameLength + 1);
+
     Tcl_SetHashValue(hPtr, zf);
     if ((zf->passBuf[0] == 0) && pwlen) {
 	int k = 0;
@@ -1762,17 +1767,28 @@ ListMountPoints(
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     ZipFile *zf;
+    Tcl_Obj *resultList;
 
+    if (!interp) {
+	/*
+	 * Are there any entries in the zipHash? Don't need to enumerate them
+	 * all to know.
+	 */
+
+	return (ZipFS.zipHash.numEntries ? TCL_OK : TCL_BREAK);
+    }
+
+    resultList = Tcl_NewObj();
     for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search); hPtr;
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	if (!interp) {
-	    return TCL_OK;
-	}
 	zf = (ZipFile *) Tcl_GetHashValue(hPtr);
-	Tcl_AppendElement(interp, zf->mountPoint);
-	Tcl_AppendElement(interp, zf->name);
+	Tcl_ListObjAppendElement(NULL, resultList, Tcl_NewStringObj(
+		zf->mountPoint, -1));
+	Tcl_ListObjAppendElement(NULL, resultList, Tcl_NewStringObj(
+		zf->name, -1));
     }
-    return (interp ? TCL_OK : TCL_BREAK);
+    Tcl_SetObjResult(interp, resultList);
+    return TCL_OK;
 }
 
 /*
@@ -1968,7 +1984,6 @@ TclZipfs_MountBuffer(
 	zf->data = data;
 	zf->ptrToFree = NULL;
     }
-    zf->passBuf[0] = 0;	/* stop valgrind cries */
     if (ZipFSFindTOC(interp, 0, zf) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2224,7 +2239,6 @@ ZipFSUnmountObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "zipfile");
 	return TCL_ERROR;
@@ -2257,35 +2271,35 @@ ZipFSMkKeyObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int len, i = 0;
-    char *pw, passBuf[264];
+    const char *pw;
+    Tcl_Obj *passObj;
+    unsigned char *passBuf;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "password");
 	return TCL_ERROR;
     }
-    pw = TclGetString(objv[1]);
-    len = strlen(pw);
+    pw = TclGetStringFromObj(objv[1], &len);
     if (len == 0) {
 	return TCL_OK;
     }
     if (IsPasswordValid(interp, pw, len) != TCL_OK) {
 	return TCL_ERROR;
     }
+
+    passObj = Tcl_NewByteArrayObj(NULL, 264);
+    passBuf = Tcl_GetByteArrayFromObj(passObj, (int *)NULL);
     while (len > 0) {
 	int ch = pw[len - 1];
 
-	passBuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
-	i++;
+	passBuf[i++] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
 	len--;
     }
     passBuf[i] = i;
-    ++i;
-    passBuf[i++] = (char) ZIP_PASSWORD_END_SIG;
-    passBuf[i++] = (char) (ZIP_PASSWORD_END_SIG >> 8);
-    passBuf[i++] = (char) (ZIP_PASSWORD_END_SIG >> 16);
-    passBuf[i++] = (char) (ZIP_PASSWORD_END_SIG >> 24);
-    passBuf[i] = '\0';
-    Tcl_AppendResult(interp, passBuf, (char *) NULL);
+    i++;
+    ZipWriteInt(passBuf, passBuf + 264, passBuf + i, ZIP_PASSWORD_END_SIG);
+    Tcl_SetByteArrayLength(passObj, i + 4);
+    Tcl_SetObjResult(interp, passObj);
     return TCL_OK;
 }
 
@@ -4673,7 +4687,6 @@ ZipFSOpenFileChannelProc(
 {
     int trunc = (mode & O_TRUNC) != 0;
     int wr = (mode & (O_WRONLY | O_RDWR)) != 0;
-    int len;
 
     pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (!pathPtr) {
@@ -4694,8 +4707,7 @@ ZipFSOpenFileChannelProc(
 	return NULL;
     }
 
-    return ZipChannelOpen(interp, TclGetStringFromObj(pathPtr, &len), wr,
-	    trunc);
+    return ZipChannelOpen(interp, TclGetString(pathPtr), wr, trunc);
 }
 
 /*
@@ -4720,13 +4732,11 @@ ZipFSStatProc(
     Tcl_Obj *pathPtr,
     Tcl_StatBuf *buf)
 {
-    int len;
-
     pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (!pathPtr) {
 	return -1;
     }
-    return ZipEntryStat(TclGetStringFromObj(pathPtr, &len), buf);
+    return ZipEntryStat(TclGetString(pathPtr), buf);
 }
 
 /*
@@ -4751,13 +4761,11 @@ ZipFSAccessProc(
     Tcl_Obj *pathPtr,
     int mode)
 {
-    int len;
-
     pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (!pathPtr) {
 	return -1;
     }
-    return ZipEntryAccess(TclGetStringFromObj(pathPtr, &len), mode);
+    return ZipEntryAccess(TclGetString(pathPtr), mode);
 }
 
 /*
@@ -4849,7 +4857,7 @@ ZipFSMatchInDirectoryProc(
     Tcl_HashSearch search;
     Tcl_Obj *normPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     int scnt, l, dirOnly = -1, prefixLen, strip = 0, mounts = 0;
-    size_t len;
+    int len;
     char *pat, *prefix, *path;
     Tcl_DString dsPref, *prefixBuf = NULL;
 
@@ -4871,8 +4879,7 @@ ZipFSMatchInDirectoryProc(
      * The (normalized) path we're searching.
      */
 
-    path = TclGetString(normPathPtr);
-    len = normPathPtr->length;
+    path = TclGetStringFromObj(normPathPtr, &len);
 
     Tcl_DStringInit(&dsPref);
     if (strcmp(prefix, path) == 0) {
@@ -4990,6 +4997,13 @@ ZipFSMatchMountPoints(
     const char *path = TclGetStringFromObj(normPathPtr, &normLength);
     size_t len = (size_t) normLength;
 
+    if (len < 1) {
+	/*
+	 * Shouldn't happen. But "shouldn't"...
+	 */
+
+	return;
+    }
     l = CountSlashes(path);
     if (path[len - 1] == '/') {
 	len--;
@@ -5060,21 +5074,17 @@ ZipFSPathInFilesystemProc(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int ret = -1;
-    size_t len;
+    int ret = -1, len;
     char *path;
 
     pathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (!pathPtr) {
 	return -1;
     }
-
-    path = TclGetString(pathPtr);
+    path = TclGetStringFromObj(pathPtr, &len);
     if (strncmp(path, ZIPFS_VOLUME, ZIPFS_VOLUME_LEN) != 0) {
 	return -1;
     }
-
-    len = pathPtr->length;
 
     ReadLock();
     hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, path);
@@ -5093,12 +5103,13 @@ ZipFSPathInFilesystemProc(
 	    for (z = zf->topEnts; z != NULL; z = z->tnext) {
 		size_t lenz = strlen(z->name);
 
-		if ((len >= lenz) && (strncmp(path, z->name, lenz) == 0)) {
+		if (((size_t) len >= lenz) &&
+			(strncmp(path, z->name, lenz) == 0)) {
 		    ret = TCL_OK;
 		    goto endloop;
 		}
 	    }
-	} else if ((len >= zf->mountPointLen) &&
+	} else if (((size_t) len >= zf->mountPointLen) &&
 		(strncmp(path, zf->mountPoint, zf->mountPointLen) == 0)) {
 	    ret = TCL_OK;
 	    break;
