@@ -2288,7 +2288,7 @@ ZipFSMkKeyObjCmd(
     }
 
     passObj = Tcl_NewByteArrayObj(NULL, 264);
-    passBuf = Tcl_GetByteArrayFromObj(passObj, NULL);
+    passBuf = Tcl_GetByteArrayFromObj(passObj, (int *)NULL);
     while (len > 0) {
 	int ch = pw[len - 1];
 
