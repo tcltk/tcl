@@ -2213,11 +2213,7 @@ UtfToUtfProc(
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
-    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
-				 * information used during a piecewise
-				 * conversion. Contents of statePtr are
-				 * initialized and/or reset by conversion
-				 * routine under control of flags argument. */
+    TCL_UNUSED(Tcl_EncodingState *),
     char *dst,			/* Output buffer in which converted string is
 				 * stored. */
     int dstLen,			/* The maximum length of output buffer in
@@ -2240,11 +2236,8 @@ UtfToUtfProc(
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
     int result, numChars, charLimit = INT_MAX;
-    int *chPtr = (int *) statePtr;
+    int ch;
 
-    if (flags & TCL_ENCODING_START) {
-    	*statePtr = 0;
-    }
     result = TCL_OK;
 
     srcStart = src;
@@ -2296,26 +2289,26 @@ UtfToUtfProc(
 	     * incomplete char its bytes are made to represent themselves.
 	     */
 
-	    *chPtr = UCHAR(*src);
+	    ch = UCHAR(*src);
 	    src += 1;
-	    dst += Tcl_UniCharToUtf(*chPtr, dst);
+	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
-	    src += TclUtfToUCS4(src, chPtr);
-	    if ((*chPtr | 0x7FF) == 0xDFFF) {
+	    src += TclUtfToUCS4(src, &ch);
+	    if ((ch | 0x7FF) == 0xDFFF) {
 		/* A surrogate character is detected, handle especially */
-		int low = *chPtr;
+		int low = ch;
 		size_t len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
-		if (((low & ~0x3FF) != 0xDC00) || (*chPtr & 0x400)) {
-			*dst++ = (char) (((*chPtr >> 12) | 0xE0) & 0xEF);
-			*dst++ = (char) (((*chPtr >> 6) | 0x80) & 0xBF);
-			*dst++ = (char) ((*chPtr | 0x80) & 0xBF);
+		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
+			*dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
+			*dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
+			*dst++ = (char) ((ch | 0x80) & 0xBF);
 			continue;
 		}
 		src += len;
-		dst += Tcl_UniCharToUtf(*chPtr, dst);
-		*chPtr = low;
+		dst += Tcl_UniCharToUtf(ch, dst);
+		ch = low;
 	    }
-	    dst += Tcl_UniCharToUtf(*chPtr, dst);
+	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
     }
 
@@ -2442,11 +2435,7 @@ UtfToUtf16Proc(
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
-    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
-				 * information used during a piecewise
-				 * conversion. Contents of statePtr are
-				 * initialized and/or reset by conversion
-				 * routine under control of flags argument. */
+    TCL_UNUSED(Tcl_EncodingState *),
     char *dst,			/* Output buffer in which converted string is
 				 * stored. */
     int dstLen,			/* The maximum length of output buffer in
@@ -2465,11 +2454,8 @@ UtfToUtf16Proc(
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
     int result, numChars;
-    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
+    int ch;
 
-    if (flags & TCL_ENCODING_START) {
-    	*statePtr = 0;
-    }
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
@@ -2495,38 +2481,27 @@ UtfToUtf16Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	src += TclUtfToUniChar(src, chPtr);
-
+	src += TclUtfToUCS4(src, &ch);
 	if (clientData) {
-#if TCL_UTF_MAX > 3
-	    if (*chPtr <= 0xFFFF) {
-		*dst++ = (*chPtr & 0xFF);
-		*dst++ = (*chPtr >> 8);
+	    if (ch <= 0xFFFF) {
+		*dst++ = (ch & 0xFF);
+		*dst++ = (ch >> 8);
 	    } else {
-		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
-		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
-		*dst++ = (*chPtr & 0xFF);
-		*dst++ = ((*chPtr >> 8) & 0x3) | 0xDC;
+		*dst++ = (((ch - 0x10000) >> 10) & 0xFF);
+		*dst++ = (((ch - 0x10000) >> 18) & 0x3) | 0xD8;
+		*dst++ = (ch & 0xFF);
+		*dst++ = ((ch >> 8) & 0x3) | 0xDC;
 	    }
-#else
-	    *dst++ = (*chPtr & 0xFF);
-	    *dst++ = (*chPtr >> 8);
-#endif
 	} else {
-#if TCL_UTF_MAX > 3
-	    if (*chPtr <= 0xFFFF) {
-		*dst++ = (*chPtr >> 8);
-		*dst++ = (*chPtr & 0xFF);
+	    if (ch <= 0xFFFF) {
+		*dst++ = (ch >> 8);
+		*dst++ = (ch & 0xFF);
 	    } else {
-		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
-		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
-		*dst++ = ((*chPtr >> 8) & 0x3) | 0xDC;
-		*dst++ = (*chPtr & 0xFF);
+		*dst++ = (((ch - 0x10000) >> 18) & 0x3) | 0xD8;
+		*dst++ = (((ch - 0x10000) >> 10) & 0xFF);
+		*dst++ = ((ch >> 8) & 0x3) | 0xDC;
+		*dst++ = (ch & 0xFF);
 	    }
-#else
-	    *dst++ = (*chPtr >> 8);
-	    *dst++ = (*chPtr & 0xFF);
-#endif
 	}
     }
     *srcReadPtr = src - srcStart;
