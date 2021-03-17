@@ -64,20 +64,12 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-/* Tcl_UtfCharComplete() might point to 2nd byte of valid 4-byte sequence */
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-/* End of "continuation byte section" */
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#if TCL_UTF_MAX > 3
-    4,4,4,4,4,
-#else
-    1,1,1,1,1,
-#endif
-    1,1,1,1,1,1,1,1,1,1,1
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1
 };
-
+
 static const unsigned char complete[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -88,17 +80,9 @@ static const unsigned char complete[256] = {
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
 /* End of "continuation byte section" */
     2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-#if TCL_UTF_MAX > 3
-    4,4,4,4,4,
-#else
-    /* Tcl_UtfToUniChar() accesses src[1] and src[2] to check whether
-     * the UTF-8 sequence is valid, so we cannot use 1 here. */
-    3,3,3,3,3,
-#endif
-    1,1,1,1,1,1,1,1,1,1,1
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1
 };
-
+
 /*
  * Functions used only in this module.
  */
@@ -696,7 +680,7 @@ Tcl_UtfToUniCharDString(
 	p += TclUtfToUCS4(p, &ch);
 	*w++ = ch;
     }
-    while ((p < endPtr) && TclUCS4Complete(p, endPtr-p)) {
+    while ((p < endPtr) && Tcl_UtfCharComplete(p, endPtr-p)) {
 	p += TclUtfToUCS4(p, &ch);
 	*w++ = ch;
     }
@@ -754,7 +738,7 @@ Tcl_UtfToChar16DString(
 	*w++ = ch;
     }
     while (p < endPtr) {
-	if (TclChar16Complete(p, endPtr-p)) {
+	if (Tcl_UtfCharComplete(p, endPtr-p)) {
 	    p += Tcl_UtfToChar16(p, &ch);
 	    *w++ = ch;
 	} else {
@@ -835,7 +819,7 @@ Tcl_NumUtfChars(
 	/* Pointer to the end of string. Never read endPtr[0] */
 	const char *endPtr = src + length;
 	/* Pointer to last byte where optimization still can be used */
-	const char *optPtr = endPtr - TCL_UTF_MAX;
+	const char *optPtr = endPtr - 4;
 
 	/*
 	 * Optimize away the call in this loop. Justified because...
@@ -1070,7 +1054,7 @@ Tcl_UtfPrev(
 		 * it (the fallback) is correct.
 		 */
 
-		    || (trailBytesSeen >= complete[byte])) {
+		    || (trailBytesSeen >= totalBytes[byte])) {
 		/*
 		 * That is, (1 + trailBytesSeen > needed).
 		 * We've examined more bytes than needed to complete
@@ -1111,19 +1095,14 @@ Tcl_UtfPrev(
 
 	/* Continue the search backwards... */
 	look--;
-    } while (trailBytesSeen < TCL_UTF_MAX);
+    } while (trailBytesSeen < 4);
 
     /*
-     * We've seen TCL_UTF_MAX trail bytes, so we know there will not be a
+     * We've seen 4 trail bytes, so we know there will not be a
      * properly formed byte sequence to find, and we can stop looking,
-     * accepting the fallback (for TCL_UTF_MAX > 3) or just go back as
-     * far as we can.
+     * accepting the fallback.
      */
-#if TCL_UTF_MAX > 3
     return fallback;
-#else
-    return src - TCL_UTF_MAX;
-#endif
 }
 
 /*
@@ -1750,7 +1729,7 @@ Tcl_UniCharToLower(
     /* Clear away extension bits, if any */
     return ch & 0x1FFFFF;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1844,7 +1823,7 @@ Tcl_UniCharNcmp(
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
 {
-#ifdef WORDS_BIGENDIAN
+#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
     /*
      * We are definitely on a big-endian machine; memcmp() is safe
      */
@@ -1858,6 +1837,14 @@ Tcl_UniCharNcmp(
 
     for ( ; numChars != 0; ucs++, uct++, numChars--) {
 	if (*ucs != *uct) {
+#if TCL_UTF_MAX < 4
+	    /* special case for handling upper surrogates */
+	    if (((*ucs & 0xFC00) == 0xD800) && ((*uct & 0xFC00) != 0xD800)) {
+		return 1;
+	    } else if (((*uct & 0xFC00) == 0xD800)) {
+		return -1;
+	    }
+#endif
 	    return (*ucs - *uct);
 	}
     }
@@ -1895,6 +1882,14 @@ Tcl_UniCharNcasecmp(
 	    Tcl_UniChar lct = Tcl_UniCharToLower(*uct);
 
 	    if (lcs != lct) {
+#if TCL_UTF_MAX < 4
+	    /* special case for handling upper surrogates */
+	    if (((lcs & 0xFC00) == 0xD800) && ((lct & 0xFC00) != 0xD800)) {
+		return 1;
+	    } else if (((lct & 0xFC00) == 0xD800)) {
+		return -1;
+	    }
+#endif
 		return (lcs - lct);
 	    }
 	}

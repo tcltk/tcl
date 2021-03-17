@@ -3253,16 +3253,10 @@ MODULE_SCOPE int	TclUtfCount(int ch);
 #   define TclUtfToUCS4 Tcl_UtfToUniChar
 #   define TclUniCharToUCS4(src, ptr) (*ptr = *(src),1)
 #   define TclUCS4Prev(src, ptr) (((src) > (ptr)) ? ((src) - 1) : (src))
-#   define TclUCS4Complete Tcl_UtfCharComplete
-#   define TclChar16Complete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
-	    ? ((length) >= 3) : Tcl_UtfCharComplete((src), (length)))
 #else
     MODULE_SCOPE int	TclUtfToUCS4(const char *, int *);
     MODULE_SCOPE int	TclUniCharToUCS4(const Tcl_UniChar *, int *);
     MODULE_SCOPE const Tcl_UniChar *TclUCS4Prev(const Tcl_UniChar *, const Tcl_UniChar *);
-#   define TclUCS4Complete(src, length) (((unsigned)((unsigned char)*(src) - 0xF0) < 5) \
-	    ? ((length) >= 4) : Tcl_UtfCharComplete((src), (length)))
-#   define TclChar16Complete Tcl_UtfCharComplete
 #endif
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
@@ -4696,11 +4690,6 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	(numChars) = _count; \
     } while (0);
 
-#define TclUtfPrev(src, start) \
-	(((src) < (start) + 2) ? (start) : \
-	((unsigned char) *((src) - 1)) < 0x80 ? (src) - 1 : \
-	Tcl_UtfPrev(src, start))
-
 /*
  *----------------------------------------------------------------
  * Macro that encapsulates the logic that determines when it is safe to
@@ -4737,7 +4726,7 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
  *----------------------------------------------------------------
  */
 
-#ifdef WORDS_BIGENDIAN
+#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
 #   define TclUniCharNcmp(cs,ct,n) memcmp((cs),(ct),(n)*sizeof(Tcl_UniChar))
 #else /* !WORDS_BIGENDIAN */
 #   define TclUniCharNcmp Tcl_UniCharNcmp
