@@ -220,14 +220,7 @@ static size_t			unilen(const char *src);
 static Tcl_EncodingConvertProc	Utf16ToUtfProc;
 static Tcl_EncodingConvertProc	UtfToUtf16Proc;
 static Tcl_EncodingConvertProc	UtfToUcs2Proc;
-static int              	UtfToUtfProc(ClientData clientData,
-	                            const char *src, int srcLen, int flags,
-       		                    Tcl_EncodingState *statePtr, char *dst,
-				    int dstLen, int *srcReadPtr,
-				    int *dstWrotePtr, int *dstCharsPtr,
-				    int pureNullMode);
-static Tcl_EncodingConvertProc	UtfIntToUtfExtProc;
-static Tcl_EncodingConvertProc	UtfExtToUtfIntProc;
+static Tcl_EncodingConvertProc	UtfToUtfProc;
 static Tcl_EncodingConvertProc	Iso88591FromUtfProc;
 static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
 
@@ -517,6 +510,10 @@ FillEncodingFileMap(void)
  *---------------------------------------------------------------------------
  */
 
+/* Those flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
+#define TCL_ENCODING_LE		0x40	/* Little-endian encoding */
+#define TCL_ENCODING_EXTERNAL 0x80	/* Converting from internal to external variant */
+
 void
 TclInitEncodingSubsystem(void)
 {
@@ -525,7 +522,7 @@ TclInitEncodingSubsystem(void)
     unsigned size;
     unsigned short i;
     union {
-        char c;
+        unsigned char c;
         short s;
     } isLe;
 
@@ -533,7 +530,7 @@ TclInitEncodingSubsystem(void)
 	return;
     }
 
-    isLe.s = 1;
+    isLe.s = TCL_ENCODING_LE;
     Tcl_MutexLock(&encodingMutex);
     Tcl_InitHashTable(&encodingTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&encodingMutex);
@@ -553,8 +550,8 @@ TclInitEncodingSubsystem(void)
     tclIdentityEncoding = Tcl_CreateEncoding(&type);
 
     type.encodingName	= "utf-8";
-    type.toUtfProc	= UtfExtToUtfIntProc;
-    type.fromUtfProc	= UtfIntToUtfExtProc;
+    type.toUtfProc	= UtfToUtfProc;
+    type.fromUtfProc	= UtfToUtfProc;
     type.freeProc	= NULL;
     type.nullSize	= 1;
     type.clientData	= NULL;
@@ -565,7 +562,7 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "ucs-2le";
-    type.clientData	= INT2PTR(1);
+    type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2be";
     type.clientData	= INT2PTR(0);
@@ -579,7 +576,7 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.encodingName   = "utf-16le";
-    type.clientData	= INT2PTR(1);
+    type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16be";
     type.clientData	= INT2PTR(0);
@@ -1269,7 +1266,7 @@ Tcl_UtfToExternalDString(
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
     while (1) {
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
-		srcLen, flags, &state, dst, dstLen, &srcRead, &dstWrote,
+		srcLen, flags | TCL_ENCODING_EXTERNAL, &state, dst, dstLen, &srcRead, &dstWrote,
 		&dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
@@ -1371,7 +1368,7 @@ Tcl_UtfToExternal(
 
     dstLen -= encodingPtr->nullSize;
     result = encodingPtr->fromUtfProc(encodingPtr->clientData, src, srcLen,
-	    flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
+	    flags | TCL_ENCODING_EXTERNAL, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
 	    dstCharsPtr);
     if (encodingPtr->nullSize == 2) {
 	dst[*dstWrotePtr + 1] = '\0';
@@ -2094,104 +2091,6 @@ BinaryProc(
 /*
  *-------------------------------------------------------------------------
  *
- * UtfIntToUtfExtProc --
- *
- *	Convert from UTF-8 to UTF-8. While converting null-bytes from the
- *	Tcl's internal representation (0xC0, 0x80) to the official
- *	representation (0x00). See UtfToUtfProc for details.
- *
- * Results:
- *	Returns TCL_OK if conversion was successful.
- *
- * Side effects:
- *	None.
- *
- *-------------------------------------------------------------------------
- */
-
-static int
-UtfIntToUtfExtProc(
-    ClientData clientData,
-    const char *src,		/* Source string in UTF-8. */
-    int srcLen,			/* Source string length in bytes. */
-    int flags,			/* Conversion control flags. */
-    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
-				 * information used during a piecewise
-				 * conversion. Contents of statePtr are
-				 * initialized and/or reset by conversion
-				 * routine under control of flags argument. */
-    char *dst,			/* Output buffer in which converted string
-				 * is stored. */
-    int dstLen,			/* The maximum length of output buffer in
-				 * bytes. */
-    int *srcReadPtr,		/* Filled with the number of bytes from the
-				 * source string that were converted. This may
-				 * be less than the original source length if
-				 * there was a problem converting some source
-				 * characters. */
-    int *dstWrotePtr,		/* Filled with the number of bytes that were
-				 * stored in the output buffer as a result of
-				 * the conversion. */
-    int *dstCharsPtr)		/* Filled with the number of characters that
-				 * correspond to the bytes stored in the
-				 * output buffer. */
-{
-    return UtfToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
-	    srcReadPtr, dstWrotePtr, dstCharsPtr, 1);
-}
-
-/*
- *-------------------------------------------------------------------------
- *
- * UtfExtToUtfIntProc --
- *
- *	Convert from UTF-8 to UTF-8 while converting null-bytes from the
- *	official representation (0x00) to Tcl's internal representation (0xC0,
- *	0x80). See UtfToUtfProc for details.
- *
- * Results:
- *	Returns TCL_OK if conversion was successful.
- *
- * Side effects:
- *	None.
- *
- *-------------------------------------------------------------------------
- */
-
-static int
-UtfExtToUtfIntProc(
-    ClientData clientData,
-    const char *src,		/* Source string in UTF-8. */
-    int srcLen,			/* Source string length in bytes. */
-    int flags,			/* Conversion control flags. */
-    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
-				 * information used during a piecewise
-				 * conversion. Contents of statePtr are
-				 * initialized and/or reset by conversion
-				 * routine under control of flags argument. */
-    char *dst,			/* Output buffer in which converted string is
-				 * stored. */
-    int dstLen,			/* The maximum length of output buffer in
-				 * bytes. */
-    int *srcReadPtr,		/* Filled with the number of bytes from the
-				 * source string that were converted. This may
-				 * be less than the original source length if
-				 * there was a problem converting some source
-				 * characters. */
-    int *dstWrotePtr,		/* Filled with the number of bytes that were
-				 * stored in the output buffer as a result of
-				 * the conversion. */
-    int *dstCharsPtr)		/* Filled with the number of characters that
-				 * correspond to the bytes stored in the
-				 * output buffer. */
-{
-    return UtfToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
-	    srcReadPtr, dstWrotePtr, dstCharsPtr, 0);
-}
-
-/*
- *-------------------------------------------------------------------------
- *
  * UtfToUtfProc --
  *
  *	Convert from UTF-8 to UTF-8. Note that the UTF-8 to UTF-8 translation
@@ -2226,12 +2125,9 @@ UtfToUtfProc(
     int *dstWrotePtr,		/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    int *dstCharsPtr,		/* Filled with the number of characters that
+    int *dstCharsPtr)		/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
-    int pureNullMode)		/* Convert embedded nulls from internal
-				 * representation to real null-bytes or vice
-				 * versa. Also combine or separate surrogate pairs */
 {
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
@@ -2267,15 +2163,15 @@ UtfToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && pureNullMode == 0)) {
+	if ((UCHAR(*src - 1) < 0x7F) && !(flags & TCL_ENCODING_EXTERNAL)) {
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to 0xC080.
 	     */
 
 	    *dst++ = *src++;
-	} else if (pureNullMode == 1 && UCHAR(*src) == 0xC0 &&
-		(src + 1 < srcEnd) && UCHAR(*(src+1)) == 0x80) {
+	} else if (UCHAR(*src) == 0xC0 && (src + 1 < srcEnd)
+		&& UCHAR(src[1]) == 0x80 && (flags & TCL_ENCODING_EXTERNAL)) {
 	    /*
 	     * Convert 0xC080 to real nulls when we are in output mode.
 	     */
@@ -2336,7 +2232,7 @@ UtfToUtfProc(
 
 static int
 Utf16ToUtfProc(
-    ClientData clientData,	/* != NULL means LE, == NUL means BE */
+    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in Unicode. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2362,6 +2258,7 @@ Utf16ToUtfProc(
     int result, numChars, charLimit = INT_MAX;
     unsigned short ch;
 
+    flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
     }
@@ -2373,7 +2270,7 @@ Utf16ToUtfProc(
 	srcLen--;
     }
     /* If last code point is a high surrogate, we cannot handle that yet */
-    if ((srcLen >= 2) && ((src[srcLen - (clientData?1:2)] & 0xFC) == 0xD8)) {
+    if ((srcLen >= 2) && ((src[srcLen - ((flags & TCL_ENCODING_LE)?1:2)] & 0xFC) == 0xD8)) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen-= 2;
     }
@@ -2390,7 +2287,7 @@ Utf16ToUtfProc(
 	    break;
 	}
 
-	if (clientData) {
+	if (flags & TCL_ENCODING_LE) {
 	    ch = (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
 	} else {
 	    ch = (src[0] & 0xFF) << 8 | (src[1] & 0xFF);
@@ -2528,7 +2425,7 @@ UtfToUtf16Proc(
 
 static int
 UtfToUcs2Proc(
-    ClientData clientData,	/* != NULL means LE, == NUL means BE */
+    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2556,6 +2453,7 @@ UtfToUcs2Proc(
 #endif
     Tcl_UniChar ch = 0;
 
+    flags |= PTR2INT(clientData);
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
@@ -2599,7 +2497,7 @@ UtfToUcs2Proc(
 	 * casting dst to a Tcl_UniChar. [Bug 1122671]
 	 */
 
-	if (clientData) {
+	if (flags & TCL_ENCODING_LE) {
 	    *dst++ = (ch & 0xFF);
 	    *dst++ = (ch >> 8);
 	} else {
