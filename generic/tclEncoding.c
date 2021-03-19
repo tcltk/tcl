@@ -2163,7 +2163,7 @@ UtfToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	if ((UCHAR(*src - 1) < 0x7F) && !(flags & TCL_ENCODING_EXTERNAL)) {
+	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && !(flags & TCL_ENCODING_EXTERNAL))) {
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to 0xC080.
@@ -2194,14 +2194,19 @@ UtfToUtfProc(
 	    src += 1;
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
-	    src += TclUtfToUCS4(src, &ch);
+	    size_t len = TclUtfToUCS4(src, &ch);
+	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_STOPONERROR)) {
+		result = TCL_CONVERT_SYNTAX;
+		break;
+	    }
+	    src += len;
 	    if ((ch | 0x7FF) == 0xDFFF) {
 		/*
 		 * A surrogate character is detected, handle especially.
 		 */
 
 		int low = ch;
-		size_t len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
+		len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
 
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
 		    *dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
