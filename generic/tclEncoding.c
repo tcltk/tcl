@@ -1430,7 +1430,7 @@ Tcl_UtfToExternal(
 
     dstLen -= encodingPtr->nullSize;
     result = encodingPtr->fromUtfProc(encodingPtr->clientData, src, srcLen,
-	    flags | TCL_ENCODING_EXTERNAL, statePtr, dst, dstLen, srcReadPtr, 
+	    flags | TCL_ENCODING_EXTERNAL, statePtr, dst, dstLen, srcReadPtr,
 	    dstWrotePtr, dstCharsPtr);
     if (encodingPtr->nullSize == 2) {
 	dst[*dstWrotePtr + 1] = '\0';
