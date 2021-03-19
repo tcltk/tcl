@@ -47,6 +47,7 @@
 #define ZIPFS_VOLUME_LEN  9
 #define ZIPFS_APP_MOUNT	  "//zipfs:/app"
 #define ZIPFS_ZIP_MOUNT	  "//zipfs:/lib/tcl"
+#define ZIPFS_FALLBACK_ENCODING "cp437"
 
 /*
  * Various constants and offsets found in ZIP archive files
@@ -262,11 +263,19 @@ static struct {
     int wrmax;			/* Maximum write size of a file; only written
 				 * to from Tcl code in a trusted interpreter,
 				 * so NOT protected by mutex. */
+    char *fallbackEntryEncoding;/* The fallback encoding for ZIP entries when
+				 * they are believed to not be UTF-8; only
+				 * written to from Tcl code in a trusted
+				 * interpreter, so not protected by mutex. */
+    Tcl_Encoding utf8;		/* The UTF-8 encoding that we prefer to use
+				 * for the strings (especially filenames)
+				 * embedded in a ZIP. Other encodings are used
+				 * dynamically. */
     int idCount;		/* Counter for channel names */
     Tcl_HashTable fileHash;	/* File name to ZipEntry mapping */
     Tcl_HashTable zipHash;	/* Mount to ZipFile mapping */
 } ZipFS = {
-    0, 0, 0, DEFAULT_WRITE_MAX_SIZE, 0,
+    0, 0, 0, DEFAULT_WRITE_MAX_SIZE, NULL, NULL, 0,
 	    {0,{0,0,0,0},0,0,0,0,0,0,0,0,0},
 	    {0,{0,0,0,0},0,0,0,0,0,0,0,0,0}
 };
@@ -681,6 +690,115 @@ CountSlashes(
 	p++;
     }
     return count;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * DecodeZipEntryText --
+ *
+ *	Given a sequence of bytes from an entry in a ZIP central directory,
+ *	convert that into a Tcl string. This is complicated because we don't
+ *	actually know what encoding is in use! So we try to use UTF-8, and if
+ *	that goes wrong, we fall back to a user-specified encoding, or to an
+ *	encoding we specify (Windows code page 437), or to ISO 8859-1 if
+ *	absolutely nothing else works.
+ *
+ *	During Tcl startup, we skip the user-specified encoding and cp437, as
+ *	we may well not have any loadable encodings yet. Tcl's own library
+ *	files ought to be using ASCII filenames.
+ *
+ * Results:
+ *	The decoded filename; the filename is owned by the argument DString.
+ *
+ * Side effects:
+ *	Updates dstPtr.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static char *
+DecodeZipEntryText(
+    const unsigned char *inputBytes,
+    unsigned int inputLength,
+    Tcl_DString *dstPtr)
+{
+    Tcl_Encoding encoding;
+    const char *src;
+    char *dst;
+    int dstLen, srcLen = inputLength, flags;
+    Tcl_EncodingState state;
+
+    Tcl_DStringInit(dstPtr);
+    if (inputLength < 1) {
+	return Tcl_DStringValue(dstPtr);
+    }
+
+    /*
+     * We can't use Tcl_ExternalToUtfDString at this point; it has no way to
+     * fail. So we use this modified version of it that can report encoding
+     * errors to us (so we can fall back to something else).
+     *
+     * The utf-8 encoding is implemented internally, and so is guaranteed to
+     * be present.
+     */
+
+    src = (const char *) inputBytes;
+    dst = Tcl_DStringValue(dstPtr);
+    dstLen = dstPtr->spaceAvl - 1;
+    flags = TCL_ENCODING_START | TCL_ENCODING_END |
+	    TCL_ENCODING_STOPONERROR;	/* Special flag! */
+
+    while (1) {
+	int srcRead, dstWrote;
+	int result = Tcl_ExternalToUtf(NULL, ZipFS.utf8, src, srcLen, flags,
+		&state, dst, dstLen, &srcRead, &dstWrote, NULL);
+	int soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
+
+	if (result == TCL_OK) {
+	    Tcl_DStringSetLength(dstPtr, soFar);
+	    return Tcl_DStringValue(dstPtr);
+	} else if (result != TCL_CONVERT_NOSPACE) {
+	    break;
+	}
+
+	flags &= ~TCL_ENCODING_START;
+	src += srcRead;
+	srcLen -= srcRead;
+	if (Tcl_DStringLength(dstPtr) == 0) {
+	    Tcl_DStringSetLength(dstPtr, dstLen);
+	}
+	Tcl_DStringSetLength(dstPtr, 2 * Tcl_DStringLength(dstPtr) + 1);
+	dst = Tcl_DStringValue(dstPtr) + soFar;
+	dstLen = Tcl_DStringLength(dstPtr) - soFar - 1;
+    }
+
+    /*
+     * Something went wrong. Fall back to another encoding. Those *can* use
+     * Tcl_ExternalToUtfDString().
+     */
+
+    encoding = NULL;
+    if (ZipFS.fallbackEntryEncoding) {
+	encoding = Tcl_GetEncoding(NULL, ZipFS.fallbackEntryEncoding);
+    }
+    if (!encoding) {
+	encoding = Tcl_GetEncoding(NULL, ZIPFS_FALLBACK_ENCODING);
+    }
+    if (!encoding) {
+	/*
+	 * Fallback to internal encoding that always converts all bytes.
+	 * Should only happen when a filename isn't UTF-8 and we've not got
+	 * our encodings initialised for some reason.
+	 */
+
+	encoding = Tcl_GetEncoding(NULL, "iso8859-1");
+    }
+
+    char *converted = Tcl_ExternalToUtfDString(encoding,
+	    (const char *) inputBytes, inputLength, dstPtr);
+    Tcl_FreeEncoding(encoding);
+    return converted;
 }
 
 /*
@@ -1546,9 +1664,7 @@ ZipFSCatalogFilesystem(
 	pathlen = ZipReadShort(start, end, q + ZIP_CENTRAL_PATHLEN_OFFS);
 	comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
 	extra = ZipReadShort(start, end, q + ZIP_CENTRAL_EXTRALEN_OFFS);
-	Tcl_DStringSetLength(&ds, 0);
-	Tcl_DStringAppend(&ds, (char *) q + ZIP_CENTRAL_HEADER_LEN, pathlen);
-	path = Tcl_DStringValue(&ds);
+	path = DecodeZipEntryText(q + ZIP_CENTRAL_HEADER_LEN, pathlen, &ds);
 	if ((pathlen > 0) && (path[pathlen - 1] == '/')) {
 	    Tcl_DStringSetLength(&ds, pathlen - 1);
 	    path = Tcl_DStringValue(&ds);
@@ -1738,6 +1854,10 @@ ZipfsSetup(void)
     Tcl_InitHashTable(&ZipFS.zipHash, TCL_STRING_KEYS);
     ZipFS.idCount = 1;
     ZipFS.wrmax = DEFAULT_WRITE_MAX_SIZE;
+    ZipFS.fallbackEntryEncoding =
+	    Tcl_Alloc(strlen(ZIPFS_FALLBACK_ENCODING) + 1);
+    strcpy(ZipFS.fallbackEntryEncoding, ZIPFS_FALLBACK_ENCODING);
+    ZipFS.utf8 = Tcl_GetEncoding(NULL, "utf-8");
     ZipFS.initialized = 1;
 }
 
@@ -2357,6 +2477,9 @@ RandomChar(
  *	input file is added to the given fileHash table for later creation of
  *	the central ZIP directory.
  *
+ *	Tcl *always* encodes filenames in the ZIP as UTF-8. Similarly, it
+ *	would always encode comments as UTF-8, if it supported comments.
+ *
  * Results:
  *	A standard Tcl result.
  *
@@ -2371,7 +2494,8 @@ static int
 ZipAddFile(
     Tcl_Interp *interp,		/* Current interpreter. */
     Tcl_Obj *pathObj,		/* Actual name of the file to add. */
-    const char *name,		/* Name to use in the ZIP archive. */
+    const char *name,		/* Name to use in the ZIP archive, in Tcl's
+				 * internal encoding. */
     Tcl_Channel out,		/* The open ZIP archive being built. */
     const char *passwd,		/* Password for encoding the file, or NULL if
 				 * the file is to be unprotected. */
@@ -2386,7 +2510,10 @@ ZipAddFile(
     Tcl_HashEntry *hPtr;
     ZipEntry *z;
     z_stream stream;
-    const char *zpath;
+    Tcl_DString zpathDs;	/* Buffer for the encoded filename. */
+    const char *zpathExt;	/* Filename in external encoding (true
+				 * UTF-8). */
+    const char *zpathTcl;	/* Filename in Tcl's internal encoding. */
     int crc, flush, zpathlen;
     size_t nbyte, nbytecompr, len, olen, align = 0;
     long long headerStartOffset, dataStartOffset, dataEndOffset;
@@ -2399,23 +2526,31 @@ ZipAddFile(
      * nothing to do.
      */
 
-    zpath = name;
-    while (zpath && zpath[0] == '/') {
-	zpath++;
+    zpathTcl = name;
+    while (zpathTcl && zpathTcl[0] == '/') {
+	zpathTcl++;
     }
-    if (!zpath || (zpath[0] == '\0')) {
+    if (!zpathTcl || (zpathTcl[0] == '\0')) {
 	return TCL_OK;
     }
 
-    zpathlen = strlen(zpath);
+    /*
+     * Convert to encoded form. Note that we use strlen() here; if someone's
+     * crazy enough to embed NULs in filenames, they deserve what they get!
+     */
+
+    zpathExt = Tcl_UtfToExternalDString(ZipFS.utf8, zpathTcl, -1, &zpathDs);
+    zpathlen = strlen(zpathExt);
     if (zpathlen + ZIP_CENTRAL_HEADER_LEN > bufsize) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"path too long for \"%s\"", TclGetString(pathObj)));
 	ZIPFS_ERROR_CODE(interp, "PATH_LEN");
+	Tcl_DStringFree(&zpathDs);
 	return TCL_ERROR;
     }
     in = Tcl_FSOpenFileChannel(interp, pathObj, "rb", 0);
     if (!in) {
+	Tcl_DStringFree(&zpathDs);
 #ifdef _WIN32
 	/* hopefully a directory */
 	if (strcmp("permission denied", Tcl_PosixError(interp)) == 0) {
@@ -2443,6 +2578,7 @@ ZipAddFile(
     while (1) {
 	len = Tcl_Read(in, buf, bufsize);
 	if (len == ERROR_LENGTH) {
+	    Tcl_DStringFree(&zpathDs);
 	    if (nbyte == 0 && errno == EISDIR) {
 		Tcl_Close(interp, in);
 		return TCL_OK;
@@ -2463,6 +2599,7 @@ ZipAddFile(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("seek error on \"%s\": %s",
 		TclGetString(pathObj), Tcl_PosixError(interp)));
 	Tcl_Close(interp, in);
+	Tcl_DStringFree(&zpathDs);
 	return TCL_ERROR;
     }
 
@@ -2479,7 +2616,7 @@ ZipAddFile(
      */
 
     memset(buf, '\0', ZIP_LOCAL_HEADER_LEN);
-    memcpy(buf + ZIP_LOCAL_HEADER_LEN, zpath, zpathlen);
+    memcpy(buf + ZIP_LOCAL_HEADER_LEN, zpathExt, zpathlen);
     len = zpathlen + ZIP_LOCAL_HEADER_LEN;
     if ((size_t) Tcl_Write(out, buf, len) != len) {
     writeErrorWithChannelOpen:
@@ -2487,6 +2624,7 @@ ZipAddFile(
 		"write error on \"%s\": %s",
 		TclGetString(pathObj), Tcl_PosixError(interp)));
 	Tcl_Close(interp, in);
+	Tcl_DStringFree(&zpathDs);
 	return TCL_ERROR;
     }
 
@@ -2563,6 +2701,7 @@ ZipAddFile(
 		"compression init error on \"%s\"", TclGetString(pathObj)));
 	ZIPFS_ERROR_CODE(interp, "DEFLATE_INIT");
 	Tcl_Close(interp, in);
+	Tcl_DStringFree(&zpathDs);
 	return TCL_ERROR;
     }
 
@@ -2585,6 +2724,7 @@ ZipAddFile(
 		ZIPFS_ERROR_CODE(interp, "DEFLATE");
 		deflateEnd(&stream);
 		Tcl_Close(interp, in);
+		Tcl_DStringFree(&zpathDs);
 		return TCL_ERROR;
 	    }
 	    olen = sizeof(obuf) - stream.avail_out;
@@ -2625,6 +2765,7 @@ ZipAddFile(
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "seek error: %s", Tcl_PosixError(interp)));
 	    Tcl_Close(interp, in);
+	    Tcl_DStringFree(&zpathDs);
 	    return TCL_ERROR;
 	}
 	nbytecompr = (passwd ? 12 : 0);
@@ -2660,8 +2801,10 @@ ZipAddFile(
 	Tcl_TruncateChannel(out, dataEndOffset);
     }
     Tcl_Close(interp, in);
+    Tcl_DStringFree(&zpathDs);
+    zpathExt = NULL;
 
-    hPtr = Tcl_CreateHashEntry(fileHash, zpath, &isNew);
+    hPtr = Tcl_CreateHashEntry(fileHash, zpathTcl, &isNew);
     if (!isNew) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"non-unique path name \"%s\"", TclGetString(pathObj)));
@@ -2758,8 +2901,8 @@ ZipFSFind(
  *	should be skipped.
  *
  * Returns:
- *	Pointer to the name, which will be in memory owned by one of the
- *	argument objects.
+ *	Pointer to the name (in Tcl's internal encoding), which will be in
+ *	memory owned by one of the argument objects.
  *
  * Side effects:
  *	None (if Tcl_Objs have string representations)
@@ -2772,8 +2915,10 @@ ComputeNameInArchive(
     Tcl_Obj *pathObj,		/* The path to the origin file */
     Tcl_Obj *directNameObj,	/* User-specified name for use in the ZIP
 				 * archive */
-    const char *strip,		/* A prefix to strip */
-    int slen)			/* The length of the prefix */
+    const char *strip,		/* A prefix to strip; may be NULL if no
+				 * stripping need be done. */
+    int slen)			/* The length of the prefix; must be 0 if no
+				 * stripping need be done. */
 {
     const char *name;
     int len;
@@ -2810,6 +2955,9 @@ ComputeNameInArchive(
  *	password, and optional image to be prepended to the output ZIP archive
  *	file. It's the core of the implementation of [zipfs mkzip], [zipfs
  *	mkimg], [zipfs lmkzip] and [zipfs lmkimg].
+ *
+ *	Tcl *always* encodes filenames in the ZIP as UTF-8. Similarly, it
+ *	would always encode comments as UTF-8, if it supported comments.
  *
  * Results:
  *	A standard Tcl result.
@@ -3023,6 +3171,9 @@ ZipFSMkZipOrImg(
     dataStartOffset = Tcl_Tell(out);
     if (mappingList == NULL && stripPrefix != NULL) {
 	strip = TclGetStringFromObj(stripPrefix, &slen);
+	if (!slen) {
+	    strip = NULL;
+	}
     }
     for (i = 0; i < (size_t) lobjc; i += (mappingList ? 2 : 1)) {
 	Tcl_Obj *pathObj = lobjv[i];
@@ -3047,25 +3198,27 @@ ZipFSMkZipOrImg(
     for (i = 0; i < (size_t) lobjc; i += (mappingList ? 2 : 1)) {
 	const char *name = ComputeNameInArchive(lobjv[i],
 		(mappingList ? lobjv[i + 1] : NULL), strip, slen);
+	Tcl_DString ds;
 
-	if (name[0] == '\0') {
-	    continue;
-	}
 	hPtr = Tcl_FindHashEntry(&fileHash, name);
 	if (!hPtr) {
 	    continue;
 	}
 	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
-	len = strlen(z->name);
+
+	name = Tcl_UtfToExternalDString(ZipFS.utf8, z->name, -1, &ds);
+	len = Tcl_DStringLength(&ds);
 	SerializeCentralDirectoryEntry(start, end, (unsigned char *) buf,
 		z, len, dataStartOffset);
 	if ((Tcl_Write(out, buf, ZIP_CENTRAL_HEADER_LEN)
 		!= ZIP_CENTRAL_HEADER_LEN)
-		|| ((size_t) Tcl_Write(out, z->name, len) != len)) {
+		|| ((size_t) Tcl_Write(out, name, len) != len)) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "write error: %s", Tcl_PosixError(interp)));
+	    Tcl_DStringFree(&ds);
 	    goto done;
 	}
+	Tcl_DStringFree(&ds);
 	count++;
     }
 
@@ -5518,6 +5671,8 @@ TclZipfs_Init(
 	if (!Tcl_IsSafe(interp)) {
 	    Tcl_LinkVar(interp, "::tcl::zipfs::wrmax", (char *) &ZipFS.wrmax,
 		    TCL_LINK_INT);
+	    Tcl_LinkVar(interp, "::tcl::zipfs::fallbackEntryEncoding",
+		    (char *) &ZipFS.fallbackEntryEncoding, TCL_LINK_STRING);
 	}
 	ensemble = TclMakeEnsemble(interp, "zipfs",
 		Tcl_IsSafe(interp) ? (initMap + 4) : initMap);

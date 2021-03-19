@@ -512,7 +512,7 @@ FillEncodingFileMap(void)
 
 /* Those flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
 #define TCL_ENCODING_LE		0x40	/* Little-endian encoding */
-#define TCL_ENCODING_EXTERNAL 0x80	/* Converting from internal to external variant */
+#define TCL_ENCODING_EXTERNAL	0x80	/* Converting from internal to external variant */
 
 void
 TclInitEncodingSubsystem(void)
@@ -1266,8 +1266,8 @@ Tcl_UtfToExternalDString(
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
     while (1) {
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
-		srcLen, flags | TCL_ENCODING_EXTERNAL, &state, dst, dstLen, &srcRead, &dstWrote,
-		&dstChars);
+		srcLen, flags | TCL_ENCODING_EXTERNAL, &state, dst, dstLen,
+		&srcRead, &dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
 	if (result != TCL_CONVERT_NOSPACE) {
@@ -1368,8 +1368,8 @@ Tcl_UtfToExternal(
 
     dstLen -= encodingPtr->nullSize;
     result = encodingPtr->fromUtfProc(encodingPtr->clientData, src, srcLen,
-	    flags | TCL_ENCODING_EXTERNAL, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
-	    dstCharsPtr);
+	    flags | TCL_ENCODING_EXTERNAL, statePtr, dst, dstLen, srcReadPtr,
+	    dstWrotePtr, dstCharsPtr);
     if (encodingPtr->nullSize == 2) {
 	dst[*dstWrotePtr + 1] = '\0';
     }
@@ -2182,23 +2182,32 @@ UtfToUtfProc(
 	    /*
 	     * Always check before using TclUtfToUCS4. Not doing can so
 	     * cause it run beyond the end of the buffer! If we happen such an
-	     * incomplete char its bytes are made to represent themselves.
+	     * incomplete char its bytes are made to represent themselves
+	     * unless the user has explicitly asked to be told.
 	     */
 
+	    if (flags & TCL_ENCODING_STOPONERROR) {
+		result = TCL_CONVERT_MULTIBYTE;
+		break;
+	    }
 	    ch = UCHAR(*src);
 	    src += 1;
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
 	    src += TclUtfToUCS4(src, &ch);
 	    if ((ch | 0x7FF) == 0xDFFF) {
-		/* A surrogate character is detected, handle especially */
+		/*
+		 * A surrogate character is detected, handle especially.
+		 */
+
 		int low = ch;
 		size_t len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
+
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
-			*dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
-			*dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
-			*dst++ = (char) ((ch | 0x80) & 0xBF);
-			continue;
+		    *dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
+		    *dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
+		    *dst++ = (char) ((ch | 0x80) & 0xBF);
+		    continue;
 		}
 		src += len;
 		dst += Tcl_UniCharToUtf(ch, dst);
@@ -2264,13 +2273,21 @@ Utf16ToUtfProc(
     }
     result = TCL_OK;
 
-    /* check alignment with utf-16 (2 == sizeof(UTF-16)) */
+    /*
+     * Check alignment with utf-16 (2 == sizeof(UTF-16))
+     */
+
     if ((srcLen % 2) != 0) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen--;
     }
-    /* If last code point is a high surrogate, we cannot handle that yet */
-    if ((srcLen >= 2) && ((src[srcLen - ((flags & TCL_ENCODING_LE)?1:2)] & 0xFC) == 0xD8)) {
+
+    /*
+     * If last code point is a high surrogate, we cannot handle that yet.
+     */
+
+    if ((srcLen >= 2) &&
+	    ((src[srcLen - ((flags & TCL_ENCODING_LE)?1:2)] & 0xFC) == 0xD8)) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen-= 2;
     }
@@ -2292,10 +2309,12 @@ Utf16ToUtfProc(
 	} else {
 	    ch = (src[0] & 0xFF) << 8 | (src[1] & 0xFF);
 	}
+
 	/*
 	 * Special case for 1-byte utf chars for speed. Make sure we work with
 	 * unsigned short-size data.
 	 */
+
 	if (ch && ch < 0x80) {
 	    *dst++ = (ch & 0xFF);
 	} else {
@@ -2905,7 +2924,9 @@ Iso88591FromUtfProc(
 		break;
 	    }
 #if TCL_UTF_MAX <= 3
-	    if ((ch >= 0xD800) && (len < 3)) len = 4;
+	    if ((ch >= 0xD800) && (len < 3)) {
+		len = 4;
+	    }
 #endif
 	    /*
 	     * Plunge on, using '?' as a fallback character.
@@ -2950,7 +2971,7 @@ TableFreeProc(
     ClientData clientData)	/* TableEncodingData that specifies
 				 * encoding. */
 {
-    TableEncodingData *dataPtr = (TableEncodingData *)clientData;
+    TableEncodingData *dataPtr = (TableEncodingData *) clientData;
 
     /*
      * Make sure we aren't freeing twice on shutdown. [Bug 219314]
@@ -3008,7 +3029,7 @@ EscapeToUtfProc(
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
-    EscapeEncodingData *dataPtr = (EscapeEncodingData *)clientData;
+    EscapeEncodingData *dataPtr = (EscapeEncodingData *) clientData;
     const char *prefixBytes, *tablePrefixBytes, *srcStart, *srcEnd;
     const unsigned short *const *tableToUnicode;
     const Encoding *encodingPtr;
