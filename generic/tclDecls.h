@@ -725,7 +725,7 @@ EXTERN void		Tcl_SplitPath(const char *path, int *argcPtr,
 				CONST84 char ***argvPtr);
 /* 244 */
 EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
-				const char *pkgName,
+				const char *prefix,
 				Tcl_PackageInitProc *initProc,
 				Tcl_PackageInitProc *safeInitProc);
 /* 245 */
@@ -2121,7 +2121,7 @@ typedef struct TclStubs {
     void (*tcl_SourceRCFile) (Tcl_Interp *interp); /* 241 */
     int (*tcl_SplitList) (Tcl_Interp *interp, const char *listStr, int *argcPtr, CONST84 char ***argvPtr); /* 242 */
     void (*tcl_SplitPath) (const char *path, int *argcPtr, CONST84 char ***argvPtr); /* 243 */
-    void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
+    void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *prefix, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
     int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
     int (*tcl_TellOld) (Tcl_Channel chan); /* 246 */
     int (*tcl_TraceVar) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 247 */

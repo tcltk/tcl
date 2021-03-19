@@ -1040,7 +1040,7 @@ declare 256 {
 }
 
 declare 257 {
-    void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
+    void TclStaticPackage(Tcl_Interp *interp, const char *prefix,
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
 

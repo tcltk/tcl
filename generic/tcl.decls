@@ -861,7 +861,7 @@ declare 243 {
     void Tcl_SplitPath(const char *path, int *argcPtr, CONST84 char ***argvPtr)
 }
 declare 244 {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
+    void Tcl_StaticPackage(Tcl_Interp *interp, const char *prefix,
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
 declare 245 {

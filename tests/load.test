@@ -234,7 +234,7 @@ test load-10.1 {load from vfs} -setup {
     cd $testDir
     testsimplefilesystem 1
 } -constraints [list $dll $loaded testsimplefilesystem] -body {
-    list [catch {load simplefs:/pkgd$ext pkgd} msg] $msg
+    list [catch {load simplefs:/pkgd$ext Pkgd} msg] $msg
 } -result {0 {}} -cleanup {
     testsimplefilesystem 0
     cd $dir
