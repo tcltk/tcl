@@ -2345,15 +2345,24 @@ UtfToUtfProc(
 	    /*
 	     * Always check before using TclUtfToUniChar. Not doing can so
 	     * cause it run beyond the end of the buffer! If we happen such an
-	     * incomplete char its bytes are made to represent themselves.
+	     * incomplete char its bytes are made to represent themselves
+	     * unless the user has explicitly asked to be told.
 	     */
 
+	    if (flags & TCL_ENCODING_STOPONERROR) {
+		result = TCL_CONVERT_MULTIBYTE;
+		break;
+	    }
 	    *chPtr = UCHAR(*src);
 	    src += 1;
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	} else {
 	    size_t len = TclUtfToUniChar(src, chPtr);
-
+	    if ((len < 2) && (flags & TCL_ENCODING_STOPONERROR) && (*chPtr != 0)
+		    && ((*chPtr & ~0x7FF) != 0xD800)) {
+		result = TCL_CONVERT_SYNTAX;
+		break;
+	    }
 	    src += len;
 	    if ((*chPtr & ~0x7FF) == 0xD800) {
 		Tcl_UniChar low;
@@ -2453,8 +2462,13 @@ UnicodeToUtfProc(
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen--;
     }
-    /* If last code point is a high surrogate, we cannot handle that yet */
-    if ((srcLen >= 2) && ((src[srcLen - (clientData?1:2)] & 0xFC) == 0xD8)) {
+
+    /*
+     * If last code point is a high surrogate, we cannot handle that yet.
+     */
+
+    if ((srcLen >= 2) &&
+	    ((src[srcLen - (clientData?1:2)] & 0xFC) == 0xD8)) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen-= 2;
     }
@@ -2476,10 +2490,12 @@ UnicodeToUtfProc(
 	} else {
 	    ch = (src[0] & 0xFF) << 8 | (src[1] & 0xFF);
 	}
+
 	/*
 	 * Special case for 1-byte utf chars for speed. Make sure we work with
 	 * unsigned short-size data.
 	 */
+
 	if (ch && ch < 0x80) {
 	    *dst++ = (ch & 0xFF);
 	} else {
@@ -3015,7 +3031,9 @@ Iso88591FromUtfProc(
 		break;
 	    }
 #if TCL_UTF_MAX == 4
-	    if ((ch >= 0xD800) && (len < 3)) len = 4;
+	    if ((ch >= 0xD800) && (len < 3)) {
+		len = 4;
+	    }
 #endif
 	    /*
 	     * Plunge on, using '?' as a fallback character.
@@ -3060,7 +3078,7 @@ TableFreeProc(
     ClientData clientData)	/* TableEncodingData that specifies
 				 * encoding. */
 {
-    TableEncodingData *dataPtr = (TableEncodingData *)clientData;
+    TableEncodingData *dataPtr = (TableEncodingData *) clientData;
 
     /*
      * Make sure we aren't freeing twice on shutdown. [Bug 219314]
@@ -3118,7 +3136,7 @@ EscapeToUtfProc(
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
-    EscapeEncodingData *dataPtr = (EscapeEncodingData *)clientData;
+    EscapeEncodingData *dataPtr = (EscapeEncodingData *) clientData;
     const char *prefixBytes, *tablePrefixBytes, *srcStart, *srcEnd;
     const unsigned short *const *tableToUnicode;
     const Encoding *encodingPtr;
