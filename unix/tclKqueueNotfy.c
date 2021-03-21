@@ -209,7 +209,7 @@ Tcl_FinalizeNotifier(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 PlatformEventsControl(
     FileHandler *filePtr,
     ThreadSpecificData *tsdPtr,
@@ -222,7 +222,8 @@ PlatformEventsControl(
     struct stat fdStat;
 
     if (isNew) {
-        newPedPtr = (struct PlatformEventData *)ckalloc(sizeof(struct PlatformEventData));
+        newPedPtr = (struct PlatformEventData *)
+		ckalloc(sizeof(struct PlatformEventData));
         newPedPtr->filePtr = filePtr;
         newPedPtr->tsdPtr = tsdPtr;
         filePtr->pedPtr = newPedPtr;
@@ -324,9 +325,8 @@ PlatformEventsControl(
  *----------------------------------------------------------------------
  */
 
-void
-PlatformEventsFinalize(
-    void)
+static void
+PlatformEventsFinalize(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -380,7 +380,7 @@ PlatformEventsFinalize(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 PlatformEventsInit(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -438,7 +438,7 @@ PlatformEventsInit(void)
  *----------------------------------------------------------------------
  */
 
-int
+static int
 PlatformEventsTranslate(
     struct kevent *eventPtr)
 {
@@ -459,7 +459,7 @@ PlatformEventsTranslate(
     }
     return mask;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -483,7 +483,7 @@ PlatformEventsTranslate(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 PlatformEventsWait(
     struct kevent *events,
     size_t numEvents,
@@ -842,6 +842,8 @@ Tcl_WaitForEvent(
 }
 
 #endif /* NOTIFIER_KQUEUE && TCL_THREADS */
+#else
+TCL_MAC_EMPTY_FILE(unix_tclKqueueNotfy_c)
 #endif /* !HAVE_COREFOUNDATION */
 
 /*

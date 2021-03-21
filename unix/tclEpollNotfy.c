@@ -119,6 +119,9 @@ static Tcl_ThreadDataKey dataKey;
  * Forward declarations.
  */
 
+static void		PlatformCreateFileHandler(int fd, int mask,
+			    Tcl_FileProc *proc, ClientData clientData);
+static void		PlatformDeleteFileHandler(int fd)
 static void		PlatformEventsControl(FileHandler *filePtr,
 			    ThreadSpecificData *tsdPtr, int op, int isNew);
 static void		PlatformEventsFinalize(void);
@@ -126,6 +129,7 @@ static void		PlatformEventsInit(void);
 static int		PlatformEventsTranslate(struct epoll_event *event);
 static int		PlatformEventsWait(struct epoll_event *events,
 			    size_t numEvents, struct timeval *timePtr);
+static int		PlatformWaitForEvent(const Tcl_Time *timePtr);
 
 /*
  * Incorporate the base notifier API.
@@ -144,8 +148,8 @@ static int		PlatformEventsWait(struct epoll_event *events,
  *	Returns a handle to the notifier state for this thread.
  *
  * Side effects:
- *	If no initNotifierProc notifier hook exists, PlatformEventsInit
- *	is called.
+ *	If no initNotifierProc notifier hook exists, PlatformEventsInit is
+ *	called.
  *
  *----------------------------------------------------------------------
  */
@@ -221,7 +225,7 @@ Tcl_FinalizeNotifier(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 PlatformEventsControl(
     FileHandler *filePtr,
     ThreadSpecificData *tsdPtr,
@@ -240,7 +244,8 @@ PlatformEventsControl(
 	newEvent.events |= EPOLLOUT;
     }
     if (isNew) {
-        newPedPtr = (struct PlatformEventData *)ckalloc(sizeof(struct PlatformEventData));
+        newPedPtr = (struct PlatformEventData *)
+		ckalloc(sizeof(struct PlatformEventData));
         newPedPtr->filePtr = filePtr;
         newPedPtr->tsdPtr = tsdPtr;
 	filePtr->pedPtr = newPedPtr;
@@ -249,7 +254,7 @@ PlatformEventsControl(
 
     /*
      * N.B. As discussed in Tcl_WaitForEvent(), epoll(7) does not support
-     * regular files (S_IFREG.) Therefore, filePtr is in these cases simply
+     * regular files (S_IFREG). Therefore, filePtr is in these cases simply
      * added or deleted from the list of FileHandlers associated with regular
      * files belonging to tsdPtr.
      */
@@ -298,9 +303,8 @@ PlatformEventsControl(
  *----------------------------------------------------------------------
  */
 
-void
-PlatformEventsFinalize(
-	void)
+static void
+PlatformEventsFinalize(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -362,7 +366,7 @@ PlatformEventsFinalize(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 PlatformEventsInit(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -393,7 +397,7 @@ PlatformEventsInit(void)
     PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_ADD, 1);
     if (!tsdPtr->readyEvents) {
         tsdPtr->maxReadyEvents = 512;
-	tsdPtr->readyEvents = (struct epoll_event *)ckalloc(
+	tsdPtr->readyEvents = (struct epoll_event *) ckalloc(
 		tsdPtr->maxReadyEvents * sizeof(tsdPtr->readyEvents[0]));
     }
     LIST_INIT(&tsdPtr->firstReadyFileHandlerPtr);
@@ -416,7 +420,7 @@ PlatformEventsInit(void)
  *----------------------------------------------------------------------
  */
 
-int
+static int
 PlatformEventsTranslate(
     struct epoll_event *eventPtr)
 {
@@ -457,7 +461,7 @@ PlatformEventsTranslate(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 PlatformEventsWait(
     struct epoll_event *events,
     size_t numEvents,
@@ -510,7 +514,7 @@ PlatformEventsWait(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CreateFileHandler --
+ * Tcl_CreateFileHandler, CreateFileHandler --
  *
  *	This function registers a file handler with the epoll notifier of the
  *	thread of the caller.
@@ -540,40 +544,53 @@ Tcl_CreateFileHandler(
 
     if (tclNotifierHooks.createFileHandlerProc) {
 	tclNotifierHooks.createFileHandlerProc(fd, mask, proc, clientData);
-	return;
     } else {
-	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-	FileHandler *filePtr;
-
-	for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
-		filePtr = filePtr->nextPtr) {
-	    if (filePtr->fd == fd) {
-		break;
-	    }
-	}
-	if (filePtr == NULL) {
-	    filePtr = (FileHandler *)ckalloc(sizeof(FileHandler));
-	    filePtr->fd = fd;
-	    filePtr->readyMask = 0;
-	    filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
-	    tsdPtr->firstFileHandlerPtr = filePtr;
-	    isNew = 1;
-	} else {
-	    isNew = 0;
-	}
-	filePtr->proc = proc;
-	filePtr->clientData = clientData;
-	filePtr->mask = mask;
-
-	PlatformEventsControl(filePtr, tsdPtr,
-		isNew ? EPOLL_CTL_ADD : EPOLL_CTL_MOD, isNew);
+	PlatformCreateFileHandler(fd, mask, proc, clientData);
     }
+}
+
+static void
+PlatformCreateFileHandler(
+    int fd,			/* Handle of stream to watch. */
+    int mask,			/* OR'ed combination of TCL_READABLE,
+				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
+				 * conditions under which proc should be
+				 * called. */
+    Tcl_FileProc *proc,		/* Function to call for each selected
+				 * event. */
+    ClientData clientData)	/* Arbitrary data to pass to proc. */
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    FileHandler *filePtr;
+
+    for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
+	    filePtr = filePtr->nextPtr) {
+	if (filePtr->fd == fd) {
+	    break;
+	}
+    }
+    if (filePtr == NULL) {
+	filePtr = (FileHandler *) ckalloc(sizeof(FileHandler));
+	filePtr->fd = fd;
+	filePtr->readyMask = 0;
+	filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
+	tsdPtr->firstFileHandlerPtr = filePtr;
+	isNew = 1;
+    } else {
+	isNew = 0;
+    }
+    filePtr->proc = proc;
+    filePtr->clientData = clientData;
+    filePtr->mask = mask;
+
+    PlatformEventsControl(filePtr, tsdPtr,
+	    isNew ? EPOLL_CTL_ADD : EPOLL_CTL_MOD, isNew);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_DeleteFileHandler --
+ * Tcl_DeleteFileHandler, PlatformDeleteFileHandler --
  *
  *	Cancel a previously-arranged callback arrangement for a file on the
  *	epoll file descriptor of the thread of the caller.
@@ -597,51 +614,58 @@ Tcl_DeleteFileHandler(
 {
     if (tclNotifierHooks.deleteFileHandlerProc) {
 	tclNotifierHooks.deleteFileHandlerProc(fd);
-	return;
     } else {
-	FileHandler *filePtr, *prevPtr;
-	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-	/*
-	 * Find the entry for the given file (and return if there isn't one).
-	 */
-
-	for (prevPtr = NULL, filePtr = tsdPtr->firstFileHandlerPtr; ;
-		prevPtr = filePtr, filePtr = filePtr->nextPtr) {
-	    if (filePtr == NULL) {
-		return;
-	    }
-	    if (filePtr->fd == fd) {
-		break;
-	    }
-	}
-
-	/*
-	 * Update the check masks for this file.
-	 */
-
-	PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_DEL, 0);
-	if (filePtr->pedPtr) {
-	    ckfree(filePtr->pedPtr);
-	}
-
-	/*
-	 * Clean up information in the callback record.
-	 */
-
-	if (prevPtr == NULL) {
-	    tsdPtr->firstFileHandlerPtr = filePtr->nextPtr;
-	} else {
-	    prevPtr->nextPtr = filePtr->nextPtr;
-	}
-	ckfree(filePtr);
+	PlatformDeleteFileHandler(fd);
     }
+}
+
+static void
+PlatformDeleteFileHandler(
+    int fd)			/* Stream id for which to remove callback
+				 * function. */
+{
+    FileHandler *filePtr, *prevPtr;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    /*
+     * Find the entry for the given file (and return if there isn't one).
+     */
+
+    for (prevPtr = NULL, filePtr = tsdPtr->firstFileHandlerPtr; ;
+	    prevPtr = filePtr, filePtr = filePtr->nextPtr) {
+	if (filePtr == NULL) {
+	    return;
+	}
+	if (filePtr->fd == fd) {
+	    break;
+	}
+    }
+
+    /*
+     * Update the check masks for this file.
+     */
+
+    PlatformEventsControl(filePtr, tsdPtr, EPOLL_CTL_DEL, 0);
+    if (filePtr->pedPtr) {
+	ckfree(filePtr->pedPtr);
+    }
+
+    /*
+     * Clean up information in the callback record.
+     */
+
+    if (prevPtr == NULL) {
+	tsdPtr->firstFileHandlerPtr = filePtr->nextPtr;
+    } else {
+	prevPtr->nextPtr = filePtr->nextPtr;
+    }
+    ckfree(filePtr);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_WaitForEvent --
+ * Tcl_WaitForEvent, PlatformWaitForEvent --
  *
  *	This function is called by Tcl_DoOneEvent to wait for new events on
  *	the message queue. If the block time is 0, then Tcl_WaitForEvent just
@@ -666,166 +690,170 @@ Tcl_WaitForEvent(
     if (tclNotifierHooks.waitForEventProc) {
 	return tclNotifierHooks.waitForEventProc(timePtr);
     } else {
-	FileHandler *filePtr;
-	int mask;
-	Tcl_Time vTime;
-	/*
-	 * Impl. notes: timeout & timeoutPtr are used if, and only if threads
-	 * are not enabled. They are the arguments for the regular epoll_wait()
-	 * used when the core is not thread-enabled.
-	 */
-
-	struct timeval timeout, *timeoutPtr;
-	int numFound, numEvent;
-	struct PlatformEventData *pedPtr;
-	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-	int numQueued;
-	ssize_t i;
-
-	/*
-	 * Set up the timeout structure. Note that if there are no events to
-	 * check for, we return with a negative result rather than blocking
-	 * forever.
-	 */
-
-	if (timePtr != NULL) {
-	    /*
-	     * TIP #233 (Virtualized Time). Is virtual time in effect? And do
-	     * we actually have something to scale? If yes to both then we
-	     * call the handler to do this scaling.
-	     */
-
-	    if (timePtr->sec != 0 || timePtr->usec != 0) {
-		vTime = *timePtr;
-		tclScaleTimeProcPtr(&vTime, tclTimeClientData);
-		timePtr = &vTime;
-	    }
-	    timeout.tv_sec = timePtr->sec;
-	    timeout.tv_usec = timePtr->usec;
-	    timeoutPtr = &timeout;
-	} else {
-	    timeoutPtr = NULL;
-	}
-
-	/*
-	 * Walk the list of FileHandlers associated with regular files
-	 * (S_IFREG) belonging to tsdPtr, queue Tcl events for them, and
-	 * update their mask of events of interest.
-	 *
-	 * As epoll(7) does not support regular files, the behaviour of
-	 * {select,poll}(2) is simply simulated here: fds associated with
-	 * regular files are added to this list by PlatformEventsControl() and
-	 * processed here before calling (and possibly blocking) on
-	 * PlatformEventsWait().
-	 */
-
-	numQueued = 0;
-	LIST_FOREACH(filePtr, &tsdPtr->firstReadyFileHandlerPtr, readyNode) {
-	    mask = 0;
-	    if (filePtr->mask & TCL_READABLE) {
-		mask |= TCL_READABLE;
-	    }
-	    if (filePtr->mask & TCL_WRITABLE) {
-		mask |= TCL_WRITABLE;
-	    }
-
-	    /*
-	     * Don't bother to queue an event if the mask was previously
-	     * non-zero since an event must still be on the queue.
-	     */
-
-	    if (filePtr->readyMask == 0) {
-		FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
-			ckalloc(sizeof(FileHandlerEvent));
-
-		fileEvPtr->header.proc = FileHandlerEventProc;
-		fileEvPtr->fd = filePtr->fd;
-		Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);
-		numQueued++;
-	    }
-	    filePtr->readyMask = mask;
-	}
-
-	/*
-	 * If any events were queued in the above loop, force
-	 * PlatformEventsWait() to poll as there already are events that need
-	 * to be processed at this point.
-	 */
-
-	if (numQueued) {
-	    timeout.tv_sec = 0;
-	    timeout.tv_usec = 0;
-	    timeoutPtr = &timeout;
-	}
-
-	/*
-	 * Wait or poll for new events, queue Tcl events for the FileHandlers
-	 * corresponding to them, and update the FileHandlers' mask of events
-	 * of interest registered by the last call to Tcl_CreateFileHandler().
-	 *
-	 * Events for the eventfd(2)/trigger pipe are processed here in order
-	 * to facilitate inter-thread IPC. If another thread intends to wake
-	 * up this thread whilst it's blocking on PlatformEventsWait(), it
-	 * write(2)s to the eventfd(2)/trigger pipe (see Tcl_AlertNotifier(),)
-	 * which in turn will cause PlatformEventsWait() to return
-	 * immediately.
-	 */
-
-	numFound = PlatformEventsWait(tsdPtr->readyEvents,
-		tsdPtr->maxReadyEvents, timeoutPtr);
-	for (numEvent = 0; numEvent < numFound; numEvent++) {
-	    pedPtr = (struct PlatformEventData*)tsdPtr->readyEvents[numEvent].data.ptr;
-	    filePtr = pedPtr->filePtr;
-	    mask = PlatformEventsTranslate(&tsdPtr->readyEvents[numEvent]);
-#ifdef HAVE_EVENTFD
-	    if (filePtr->fd == tsdPtr->triggerEventFd) {
-		uint64_t eventFdVal;
-		i = read(tsdPtr->triggerEventFd, &eventFdVal,
-			sizeof(eventFdVal));
-		if ((i != sizeof(eventFdVal)) && (errno != EAGAIN)) {
-		    Tcl_Panic(
-			    "Tcl_WaitForEvent: read from %p->triggerEventFd: %s",
-			    (void *) tsdPtr, strerror(errno));
-		}
-		continue;
-	    }
-#else /* !HAVE_EVENTFD */
-	    if (filePtr->fd == tsdPtr->triggerPipe[0]) {
-		char triggerPipeVal;
-		i = read(tsdPtr->triggerPipe[0], &triggerPipeVal,
-			sizeof(triggerPipeVal));
-		if ((i != sizeof(triggerPipeVal)) && (errno != EAGAIN)) {
-		    Tcl_Panic(
-			    "Tcl_WaitForEvent: read from %p->triggerPipe[0]: %s",
-			    (void *) tsdPtr, strerror(errno));
-		}
-		continue;
-	    }
-#endif /* HAVE_EVENTFD */
-	    if (!mask) {
-		continue;
-	    }
-
-	    /*
-	     * Don't bother to queue an event if the mask was previously
-	     * non-zero since an event must still be on the queue.
-	     */
-
-	    if (filePtr->readyMask == 0) {
-		FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
-			ckalloc(sizeof(FileHandlerEvent));
-
-		fileEvPtr->header.proc = FileHandlerEventProc;
-		fileEvPtr->fd = filePtr->fd;
-		Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);
-	    }
-	    filePtr->readyMask = mask;
-	}
-	return 0;
+	return PlatformWaitForEvent(timePtr);
     }
+}
+
+static int
+PlatformWaitForEvent(
+    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
+{
+    FileHandler *filePtr;
+    Tcl_Time vTime;
+    struct timeval timeout, *timeoutPtr;
+				/* Impl. notes: timeout & timeoutPtr are used
+				 * if, and only if threads are not enabled.
+				 * They are the arguments for the regular
+				 * epoll_wait() used when the core is not
+				 * thread-enabled. */
+    int mask, numFound, numEvent;
+    struct PlatformEventData *pedPtr;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    int numQueued;
+    ssize_t i;
+
+    /*
+     * Set up the timeout structure. Note that if there are no events to check
+     * for, we return with a negative result rather than blocking forever.
+     */
+
+    if (timePtr != NULL) {
+	/*
+	 * TIP #233 (Virtualized Time). Is virtual time in effect? And do we
+	 * actually have something to scale? If yes to both then we call the
+	 * handler to do this scaling.
+	 */
+
+	if (timePtr->sec != 0 || timePtr->usec != 0) {
+	    vTime = *timePtr;
+	    tclScaleTimeProcPtr(&vTime, tclTimeClientData);
+	    timePtr = &vTime;
+	}
+	timeout.tv_sec = timePtr->sec;
+	timeout.tv_usec = timePtr->usec;
+	timeoutPtr = &timeout;
+    } else {
+	timeoutPtr = NULL;
+    }
+
+    /*
+     * Walk the list of FileHandlers associated with regular files (S_IFREG)
+     * belonging to tsdPtr, queue Tcl events for them, and update their mask
+     * of events of interest.
+     *
+     * As epoll(7) does not support regular files, the behaviour of
+     * {select,poll}(2) is simply simulated here: fds associated with regular
+     * files are added to this list by PlatformEventsControl() and processed
+     * here before calling (and possibly blocking) on PlatformEventsWait().
+     */
+
+    numQueued = 0;
+    LIST_FOREACH(filePtr, &tsdPtr->firstReadyFileHandlerPtr, readyNode) {
+	mask = 0;
+	if (filePtr->mask & TCL_READABLE) {
+	    mask |= TCL_READABLE;
+	}
+	if (filePtr->mask & TCL_WRITABLE) {
+	    mask |= TCL_WRITABLE;
+	}
+
+	/*
+	 * Don't bother to queue an event if the mask was previously non-zero
+	 * since an event must still be on the queue.
+	 */
+
+	if (filePtr->readyMask == 0) {
+	    FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
+		    ckalloc(sizeof(FileHandlerEvent));
+
+	    fileEvPtr->header.proc = FileHandlerEventProc;
+	    fileEvPtr->fd = filePtr->fd;
+	    Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);
+	    numQueued++;
+	}
+	filePtr->readyMask = mask;
+    }
+
+    /*
+     * If any events were queued in the above loop, force PlatformEventsWait()
+     * to poll as there already are events that need to be processed at this
+     * point.
+     */
+
+    if (numQueued) {
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 0;
+	timeoutPtr = &timeout;
+    }
+
+    /*
+     * Wait or poll for new events, queue Tcl events for the FileHandlers
+     * corresponding to them, and update the FileHandlers' mask of events of
+     * interest registered by the last call to Tcl_CreateFileHandler().
+     *
+     * Events for the eventfd(2)/trigger pipe are processed here in order to
+     * facilitate inter-thread IPC. If another thread intends to wake up this
+     * thread whilst it's blocking on PlatformEventsWait(), it write(2)s to
+     * the eventfd(2)/trigger pipe (see Tcl_AlertNotifier(),) which in turn
+     * will cause PlatformEventsWait() to return immediately.
+     */
+
+    numFound = PlatformEventsWait(tsdPtr->readyEvents,
+	    tsdPtr->maxReadyEvents, timeoutPtr);
+    for (numEvent = 0; numEvent < numFound; numEvent++) {
+	pedPtr = (struct PlatformEventData *)
+		tsdPtr->readyEvents[numEvent].data.ptr;
+	filePtr = pedPtr->filePtr;
+	mask = PlatformEventsTranslate(&tsdPtr->readyEvents[numEvent]);
+#ifdef HAVE_EVENTFD
+	if (filePtr->fd == tsdPtr->triggerEventFd) {
+	    uint64_t eventFdVal;
+
+	    i = read(tsdPtr->triggerEventFd, &eventFdVal, sizeof(eventFdVal));
+	    if ((i != sizeof(eventFdVal)) && (errno != EAGAIN)) {
+		Tcl_Panic("%s: read from %p->triggerEventFd: %s",
+			"Tcl_WaitForEvent", (void *) tsdPtr, strerror(errno));
+	    }
+	    continue;
+	}
+#else /* !HAVE_EVENTFD */
+	if (filePtr->fd == tsdPtr->triggerPipe[0]) {
+	    char triggerPipeVal;
+
+	    i = read(tsdPtr->triggerPipe[0], &triggerPipeVal,
+		    sizeof(triggerPipeVal));
+	    if ((i != sizeof(triggerPipeVal)) && (errno != EAGAIN)) {
+		Tcl_Panic("%s: read from %p->triggerPipe[0]: %s",
+			"Tcl_WaitForEvent", (void *) tsdPtr, strerror(errno));
+	    }
+	    continue;
+	}
+#endif /* HAVE_EVENTFD */
+	if (!mask) {
+	    continue;
+	}
+
+	/*
+	 * Don't bother to queue an event if the mask was previously non-zero
+	 * since an event must still be on the queue.
+	 */
+
+	if (filePtr->readyMask == 0) {
+	    FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
+		    ckalloc(sizeof(FileHandlerEvent));
+
+	    fileEvPtr->header.proc = FileHandlerEventProc;
+	    fileEvPtr->fd = filePtr->fd;
+	    Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);
+	}
+	filePtr->readyMask = mask;
+    }
+    return 0;
 }
 
 #endif /* NOTIFIER_EPOLL && TCL_THREADS */
+#else
+TCL_MAC_EMPTY_FILE(unix_tclEpollNotfy_c)
 #endif /* !HAVE_COREFOUNDATION */
 
 /*

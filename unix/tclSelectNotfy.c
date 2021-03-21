@@ -216,8 +216,8 @@ extern "C" {
 typedef struct {
     void *hwnd;			/* Messaging window. */
     unsigned int *message;	/* Message payload. */
-    size_t wParam;			/* Event-specific "word" parameter. */
-    size_t lParam;			/* Event-specific "long" parameter. */
+    size_t wParam;		/* Event-specific "word" parameter. */
+    size_t lParam;		/* Event-specific "long" parameter. */
     int time;			/* Event timestamp. */
     int x;			/* Event location (where meaningful). */
     int y;
@@ -244,8 +244,8 @@ extern void __stdcall	CloseHandle(void *);
 extern void *__stdcall	CreateEventW(void *, unsigned char, unsigned char,
 			    void *);
 extern void *__stdcall	CreateWindowExW(void *, const void *, const void *,
-			    unsigned int, int, int, int, int, void *, void *, void *,
-			    void *);
+			    unsigned int, int, int, int, int, void *, void *,
+			    void *, void *);
 extern unsigned int __stdcall	DefWindowProcW(void *, int, void *, void *);
 extern unsigned char __stdcall	DestroyWindow(void *);
 extern int __stdcall	DispatchMessageW(const MSG *);
@@ -504,7 +504,7 @@ Tcl_CreateFileHandler(
 	    FD_CLR(fd, &tsdPtr->checkMasks.exception);
 	}
 	if (tsdPtr->numFdBits <= fd) {
-	    tsdPtr->numFdBits = fd+1;
+	    tsdPtr->numFdBits = fd + 1;
 	}
     }
 }
@@ -573,11 +573,11 @@ Tcl_DeleteFileHandler(
 	if (fd+1 == tsdPtr->numFdBits) {
 	    int numFdBits = 0;
 
-	    for (i = fd-1; i >= 0; i--) {
+	    for (i = fd - 1; i >= 0; i--) {
 		if (FD_ISSET(i, &tsdPtr->checkMasks.readable)
 			|| FD_ISSET(i, &tsdPtr->checkMasks.writable)
 			|| FD_ISSET(i, &tsdPtr->checkMasks.exception)) {
-		    numFdBits = i+1;
+		    numFdBits = i + 1;
 		    break;
 		}
 	    }
@@ -1113,6 +1113,8 @@ NotifierThreadProc(
 #endif /* TCL_THREADS */
 
 #endif /* (!NOTIFIER_EPOLL && !NOTIFIER_KQUEUE) || !TCL_THREADS */
+#else
+TCL_MAC_EMPTY_FILE(unix_tclSelectNotfy_c)
 #endif /* !HAVE_COREFOUNDATION */
 
 /*

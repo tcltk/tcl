@@ -85,6 +85,8 @@ Tcl_Sleep(
     }
 }
 
+#else
+TCL_MAC_EMPTY_FILE(unix_tclUnixEvent_c)
 #endif /* HAVE_COREFOUNDATION */
 /*
  * Local Variables:

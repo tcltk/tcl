@@ -305,6 +305,8 @@ TclSignalExitThread(
 
     Tcl_MutexUnlock(&threadPtr->threadMutex);
 }
+#else
+TCL_MAC_EMPTY_FILE(generic_tclThreadJoin_c)
 #endif /* _WIN32 */
 
 /*
