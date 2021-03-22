@@ -564,7 +564,7 @@ TclThreadAllocObj(void)
 	    cachePtr->numObjects = numMove = NOBJALLOC;
 	    newObjsPtr = (Tcl_Obj *)TclpSysAlloc(sizeof(Tcl_Obj) * numMove, 0);
 	    if (newObjsPtr == NULL) {
-		Tcl_Panic("alloc: could not allocate %ld new objects", numMove);
+		Tcl_Panic("alloc: could not allocate %" TCL_Z_MODIFIER "u new objects", numMove);
 	    }
 	    cachePtr->lastPtr = newObjsPtr + numMove - 1;
 	    objPtr = cachePtr->firstObjPtr;	/* NULL */

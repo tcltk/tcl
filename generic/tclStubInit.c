@@ -309,7 +309,7 @@ static int TclGetLoadedPackages(
 				 * otherwise, just return info about this
 				 * interpreter. */
 {
-    return TclGetLoadedPackagesEx(interp, targetName, NULL);
+    return TclGetLoadedLibraries(interp, targetName, NULL);
 }
 
 mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {

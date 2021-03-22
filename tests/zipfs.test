@@ -396,6 +396,11 @@ test zipfs-5.3 {zipfs mount_data: short data} -constraints zipfs -body {
 test zipfs-5.4 {zipfs mount_data: bad arg count} -constraints zipfs -body {
     zipfs mount_data gorp {} foobar
 } -returnCodes error -result {wrong # args: should be "zipfs mount_data ?mountpoint? ?data?"}
+
+test zipfs-6.1 {zipfs mkkey} -constraints zipfs -body {
+    binary scan [zipfs mkkey gorp] cu* x
+    return $x
+} -result {224 226 111 103 4 80 75 90 90}
 
 ::tcltest::cleanupTests
 return
