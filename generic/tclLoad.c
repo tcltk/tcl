@@ -81,7 +81,7 @@ typedef struct InterpLibrary {
     LoadedLibrary *libraryPtr;	/* Points to detailed information about
 				 * library. */
     struct InterpLibrary *nextPtr;
-				/* Next lirary in this interpreter, or NULL
+				/* Next library in this interpreter, or NULL
 				 * for end of list. */
 } InterpLibrary;
 
@@ -118,7 +118,7 @@ Tcl_LoadObjCmd(
 {
     Tcl_Interp *target;
     LoadedLibrary *libraryPtr, *defaultPtr;
-    Tcl_DString pkgName, tmp, initName, safeInitName;
+    Tcl_DString pfx, tmp, initName, safeInitName;
     Tcl_DString unloadName, safeUnloadName;
     InterpLibrary *ipFirstPtr, *ipPtr;
     int code, namesMatch, filesMatch, offset;
@@ -163,7 +163,7 @@ Tcl_LoadObjCmd(
     }
     fullFileName = TclGetString(objv[1]);
 
-    Tcl_DStringInit(&pkgName);
+    Tcl_DStringInit(&pfx);
     Tcl_DStringInit(&initName);
     Tcl_DStringInit(&safeInitName);
     Tcl_DStringInit(&unloadName);
@@ -218,18 +218,18 @@ Tcl_LoadObjCmd(
 	if (prefix == NULL) {
 	    namesMatch = 0;
 	} else {
-	    TclDStringClear(&pkgName);
-	    Tcl_DStringAppend(&pkgName, prefix, -1);
+	    TclDStringClear(&pfx);
+	    Tcl_DStringAppend(&pfx, prefix, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
 	    if (strcmp(Tcl_DStringValue(&tmp),
-		    Tcl_DStringValue(&pkgName)) == 0) {
+		    Tcl_DStringValue(&pfx)) == 0) {
 		namesMatch = 1;
 	    } else {
 		namesMatch = 0;
 	    }
 	}
-	TclDStringClear(&pkgName);
+	TclDStringClear(&pfx);
 
 	filesMatch = (strcmp(libraryPtr->fileName, fullFileName) == 0);
 	if (filesMatch && (namesMatch || (prefix == NULL))) {
@@ -294,7 +294,7 @@ Tcl_LoadObjCmd(
 	 */
 
 	if (prefix != NULL) {
-	    Tcl_DStringAppend(&pkgName, prefix, -1);
+	    Tcl_DStringAppend(&pfx, prefix, -1);
 	} else {
 	    Tcl_Obj *splitPtr, *pkgGuessPtr;
 	    int pElements;
@@ -346,7 +346,7 @@ Tcl_LoadObjCmd(
 		code = TCL_ERROR;
 		goto done;
 	    }
-	    Tcl_DStringAppend(&pkgName, pkgGuess, p - pkgGuess);
+	    Tcl_DStringAppend(&pfx, pkgGuess, p - pkgGuess);
 	    Tcl_DecrRefCount(splitPtr);
 
 	    /*
@@ -355,8 +355,8 @@ Tcl_LoadObjCmd(
 	     * lower-case.
 	     */
 
-	    Tcl_DStringSetLength(&pkgName,
-		    Tcl_UtfToTitle(Tcl_DStringValue(&pkgName)));
+	    Tcl_DStringSetLength(&pfx,
+		    Tcl_UtfToTitle(Tcl_DStringValue(&pfx)));
 
 	}
 
@@ -365,13 +365,13 @@ Tcl_LoadObjCmd(
 	 * prefix.
 	 */
 
-	TclDStringAppendDString(&initName, &pkgName);
+	TclDStringAppendDString(&initName, &pfx);
 	TclDStringAppendLiteral(&initName, "_Init");
-	TclDStringAppendDString(&safeInitName, &pkgName);
+	TclDStringAppendDString(&safeInitName, &pfx);
 	TclDStringAppendLiteral(&safeInitName, "_SafeInit");
-	TclDStringAppendDString(&unloadName, &pkgName);
+	TclDStringAppendDString(&unloadName, &pfx);
 	TclDStringAppendLiteral(&unloadName, "_Unload");
-	TclDStringAppendDString(&safeUnloadName, &pkgName);
+	TclDStringAppendDString(&safeUnloadName, &pfx);
 	TclDStringAppendLiteral(&safeUnloadName, "_SafeUnload");
 
 	/*
@@ -398,9 +398,9 @@ Tcl_LoadObjCmd(
 	len = strlen(fullFileName) + 1;
 	libraryPtr->fileName	   = (char *)Tcl_Alloc(len);
 	memcpy(libraryPtr->fileName, fullFileName, len);
-	len = Tcl_DStringLength(&pkgName) + 1;
+	len = Tcl_DStringLength(&pfx) + 1;
 	libraryPtr->prefix	   = (char *)Tcl_Alloc(len);
-	memcpy(libraryPtr->prefix, Tcl_DStringValue(&pkgName), len);
+	memcpy(libraryPtr->prefix, Tcl_DStringValue(&pfx), len);
 	libraryPtr->loadHandle	   = loadHandle;
 	libraryPtr->initProc	   = initProc;
 	libraryPtr->safeInitProc	   = (Tcl_LibraryInitProc *)
@@ -505,7 +505,7 @@ Tcl_LoadObjCmd(
     Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
 
   done:
-    Tcl_DStringFree(&pkgName);
+    Tcl_DStringFree(&pfx);
     Tcl_DStringFree(&initName);
     Tcl_DStringFree(&safeInitName);
     Tcl_DStringFree(&unloadName);
@@ -540,7 +540,7 @@ Tcl_UnloadObjCmd(
 {
     Tcl_Interp *target;		/* Which interpreter to unload from. */
     LoadedLibrary *libraryPtr, *defaultPtr;
-    Tcl_DString pkgName, tmp;
+    Tcl_DString pfx, tmp;
     Tcl_LibraryUnloadProc *unloadProc;
     InterpLibrary *ipFirstPtr, *ipPtr;
     int i, index, code, complain = 1, keepLibrary = 0;
@@ -598,7 +598,7 @@ Tcl_UnloadObjCmd(
     }
 
     fullFileName = TclGetString(objv[i]);
-    Tcl_DStringInit(&pkgName);
+    Tcl_DStringInit(&pfx);
     Tcl_DStringInit(&tmp);
 
     prefix = NULL;
@@ -650,18 +650,18 @@ Tcl_UnloadObjCmd(
 	if (prefix == NULL) {
 	    namesMatch = 0;
 	} else {
-	    TclDStringClear(&pkgName);
-	    Tcl_DStringAppend(&pkgName, prefix, -1);
+	    TclDStringClear(&pfx);
+	    Tcl_DStringAppend(&pfx, prefix, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
 	    if (strcmp(Tcl_DStringValue(&tmp),
-		    Tcl_DStringValue(&pkgName)) == 0) {
+		    Tcl_DStringValue(&pfx)) == 0) {
 		namesMatch = 1;
 	    } else {
 		namesMatch = 0;
 	    }
 	}
-	TclDStringClear(&pkgName);
+	TclDStringClear(&pfx);
 
 	filesMatch = (strcmp(libraryPtr->fileName, fullFileName) == 0);
 	if (filesMatch && (namesMatch || (prefix == NULL))) {
@@ -901,7 +901,7 @@ Tcl_UnloadObjCmd(
     }
 
   done:
-    Tcl_DStringFree(&pkgName);
+    Tcl_DStringFree(&pfx);
     Tcl_DStringFree(&tmp);
     if (!complain && (code != TCL_OK)) {
 	code = TCL_OK;
@@ -998,7 +998,7 @@ Tcl_StaticLibrary(
 	}
 
 	/*
-	 * Lirary isn't loaded in the current interp yet. Mark it as now being
+	 * Library isn't loaded in the current interp yet. Mark it as now being
 	 * loaded.
 	 */
 
