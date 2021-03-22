@@ -1029,14 +1029,14 @@ proc ::safe::AliasLoad {child file args} {
 
     # Determine what kind of load is requested
     if {$file eq ""} {
-	# static library loading
+	# static loading
 	if {$prefix eq ""} {
 	    set msg "load error: empty filename and no prefix"
 	    Log $child $msg
 	    return -code error $msg
 	}
 	if {!$state(staticsok)} {
-	    Log $child "static library loading disabled\
+	    Log $child "static loading disabled\
 			(trying to load $prefix to $target)"
 	    return -code error "permission denied (static library)"
 	}
