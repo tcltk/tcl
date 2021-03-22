@@ -2189,7 +2189,7 @@ EXTERN void		Tcl_FindExecutable(const char *argv0);
 EXTERN void		Tcl_SetPanicProc(
 			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
 EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
-			    const char *pkgName,
+			    const char *prefix,
 			    Tcl_PackageInitProc *initProc,
 			    Tcl_PackageInitProc *safeInitProc);
 EXTERN Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);

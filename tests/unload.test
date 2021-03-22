@@ -53,22 +53,22 @@ proc loadIfNotPresent {pkg args} {
 # Basic tests: parameter testing...
 test unload-1.1 {basic errors} -returnCodes error -body {
     unload
-} -result {wrong # args: should be "unload ?-switch ...? fileName ?packageName? ?interp?"}
+} -result {wrong # args: should be "unload ?-switch ...? fileName ?prefix? ?interp?"}
 test unload-1.2 {basic errors} -returnCodes error -body {
     unload a b c d
-} -result {wrong # args: should be "unload ?-switch ...? fileName ?packageName? ?interp?"}
+} -result {wrong # args: should be "unload ?-switch ...? fileName ?prefix? ?interp?"}
 test unload-1.3 {basic errors} -returnCodes error -body {
     unload a b foobar
 } -result {could not find interpreter "foobar"}
 test unload-1.4 {basic errors} -returnCodes error -body {
     unload {}
-} -result {must specify either file name or package name}
+} -result {must specify either file name or prefix}
 test unload-1.5 {basic errors} -returnCodes error -body {
     unload {} {}
-} -result {must specify either file name or package name}
+} -result {must specify either file name or prefix}
 test unload-1.6 {basic errors} -returnCodes error -body {
     unload {} Unknown
-} -result {package "Unknown" is loaded statically and cannot be unloaded}
+} -result {library with prefix "Unknown" is loaded statically and cannot be unloaded}
 test unload-1.7 {-nocomplain switch} {
     unload -nocomplain {} Unknown
 } {}
@@ -142,7 +142,7 @@ test unload-3.1 {basic loading of non-unloadable package in a safe interpreter} 
 test unload-3.2 {basic loading of unloadable package in a safe interpreter} \
 	[list $dll $loaded] {
     list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
-	    [load [file join $testDir pkgua$ext] pkgua child] \
+	    [load [file join $testDir pkgua$ext] Pkgua child] \
 	    [child eval pkgua_eq abc def] \
 	    [lsort [child eval info commands pkgua_*]] \
 	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
@@ -189,7 +189,7 @@ test unload-3.7 {basic unloading of re-loaded package from a safe interpreter, w
     }
 } -constraints [list $dll $loaded] -body {
     list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
-	    [unload [file join $testDir pkgua$ext] pKgUa child] \
+	    [unload [file join $testDir pkgua$ext] Pkgua child] \
 	    [child eval info commands pkgua_*] \
 	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
 } -result {{.. . .} {} {} {.. .. ..}}
@@ -224,7 +224,7 @@ test unload-4.2 {basic loading of unloadable package in a safe interpreter} -set
     incr load(C)
 } -constraints [list $dll $loaded] -body {
     list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
-	    [load [file join $testDir pkgua$ext] pkgua child] \
+	    [load [file join $testDir pkgua$ext] Pkgua child] \
 	    [child eval pkgua_eq abc def] \
 	    [lsort [child eval info commands pkgua_*]] \
 	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
@@ -234,7 +234,7 @@ test unload-4.3 {basic loading of unloadable package in a second trusted interpr
     incr load(T)
 } -constraints [list $dll $loaded] -body {
     list [child-trusted eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
-	    [load [file join $testDir pkgua$ext] pkgua child-trusted] \
+	    [load [file join $testDir pkgua$ext] Pkgua child-trusted] \
 	    [child-trusted eval pkgua_eq abc def] \
 	    [lsort [child-trusted eval info commands pkgua_*]] \
 	    [child-trusted eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
@@ -291,7 +291,7 @@ test unload-5.1 {unload a module loaded from vfs} \
 	 set dir [pwd]
 	 cd $testDir
 	 testsimplefilesystem 1
-	 load simplefs:/pkgua$ext pkgua
+	 load simplefs:/pkgua$ext Pkgua
      } \
     -body {
 	list [catch {unload simplefs:/pkgua$ext} msg] $msg
