@@ -1036,7 +1036,7 @@ proc ::safe::AliasLoad {child file args} {
 	    return -code error $msg
 	}
 	if {!$state(staticsok)} {
-	    Log $child "static library loading disabled\
+	    Log $child "static loading disabled\
 			(trying to load $prefix to $target)"
 	    return -code error "permission denied (static library)"
 	}
