@@ -1199,10 +1199,10 @@ Tcl_AppendLimitedToObj(
 	}
 	eLen = strlen(ellipsis);
 	while (eLen > limit) {
-	    eLen = TclUtfPrev(ellipsis+eLen, ellipsis) - ellipsis;
+	    eLen = Tcl_UtfPrev(ellipsis+eLen, ellipsis) - ellipsis;
 	}
 
-	toCopy = TclUtfPrev(bytes+limit+1-eLen, bytes) - bytes;
+	toCopy = Tcl_UtfPrev(bytes+limit+1-eLen, bytes) - bytes;
     }
 
     /*
@@ -2644,7 +2644,7 @@ AppendPrintfToObjVA(
 		 * multi-byte characters.
 		 */
 
-		q = TclUtfPrev(end, bytes);
+		q = Tcl_UtfPrev(end, bytes);
 		if (!Tcl_UtfCharComplete(q, (int)(end - q))) {
 		    end = q;
 		}
