@@ -19,6 +19,9 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
+#ifndef TCL_NO_DEPRECATED
+#   define TCL_NO_DEPRECATED
+#endif
 #include "tclInt.h"
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
 #   include "tommath.h"
@@ -4240,7 +4243,7 @@ TeststaticpkgCmd(
 
     if (argc != 4) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"",
-		argv[0], " pkgName safe loaded\"", NULL);
+		argv[0], " prefix safe loaded\"", NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetInt(interp, argv[2], &safe) != TCL_OK) {
@@ -6962,7 +6965,7 @@ TestUtfPrevCmd(
     } else {
 	offset = numBytes;
     }
-    result = TclUtfPrev(bytes + offset, bytes);
+    result = Tcl_UtfPrev(bytes + offset, bytes);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
     return TCL_OK;
 }
