@@ -446,7 +446,7 @@ commonly-used character classes:
 .TP
 \fB\ew\fR
 .
-\fB[[:alnum:]_]\fR (note underscore)
+\fB[[:alnum:]_\eu203F\eu2040\eu2054\euFE33\euFE34\euFE4D\euFE4E\euFE4F\euFF3F]\fR (including punctuation connector characters)
 .TP
 \fB\eD\fR
 .
@@ -458,7 +458,7 @@ commonly-used character classes:
 .TP
 \fB\eW\fR
 .
-\fB[^[:alnum:]_]\fR (note underscore)
+\fB[^[:alnum:]_\eu203F\eu2040\eu2054\euFE33\euFE34\euFE4D\euFE4E\euFE4F\euFF3F]\fR (including punctuation connector characters)
 .RE
 .PP
 Within bracket expressions,
