@@ -27,7 +27,7 @@ typedef struct LoadedPackage {
 				 * is loaded statically. Malloc-ed. */
     char *packageName;		/* Name of package prefix for the package,
 				 * properly capitalized (first letter UC,
-				 * others LC), no "_", as in "Net".
+				 * others LC), as in "Net".
 				 * Malloc-ed. */
     Tcl_LoadHandle loadHandle;	/* Token for the loaded file which should be
 				 * passed to (*unLoadProcPtr)() when the file
