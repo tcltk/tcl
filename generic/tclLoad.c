@@ -1024,7 +1024,7 @@ Tcl_StaticPackage(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetLoadedPackagesEx --
+ * TclGetLoadedLibraries --
  *
  *	This function returns information about all of the files that are
  *	loaded (either in a particular interpreter, or for all interpreters).
@@ -1043,7 +1043,7 @@ Tcl_StaticPackage(
  */
 
 int
-TclGetLoadedPackagesEx(
+TclGetLoadedLibraries(
     Tcl_Interp *interp,		/* Interpreter in which to return information
 				 * or error message. */
     const char *targetName,	/* Name of target interpreter or NULL. If
