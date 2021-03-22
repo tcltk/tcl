@@ -890,7 +890,7 @@ declare 243 {
 }
 # Removed in 9.0 (stub entry only)
 #declare 244  {
-#    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
+#    void Tcl_StaticPackage(Tcl_Interp *interp, const char *prefix,
 #	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 #}
 # Removed in 9.0 (stub entry only)

@@ -2154,7 +2154,7 @@ TCLAPI void		Tcl_FindExecutable(const char *argv0);
 TCLAPI void		Tcl_SetPanicProc(
 			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
 TCLAPI void		Tcl_StaticPackage(Tcl_Interp *interp,
-			    const char *pkgName,
+			    const char *prefix,
 			    Tcl_PackageInitProc *initProc,
 			    Tcl_PackageInitProc *safeInitProc);
 TCLAPI Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
