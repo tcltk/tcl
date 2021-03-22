@@ -1064,7 +1064,7 @@ proc ::safe::AliasLoad {child file args} {
 	return [::interp invokehidden $child load $file $prefix $target]
     } on error msg {
 	# Some libraries return no error message.
-	set msg0 "load of binary library with prefix $prefix failed"
+	set msg0 "load of library for prefix $prefix failed"
 	if {$msg eq {}} {
 	    set msg $msg0
 	} else {

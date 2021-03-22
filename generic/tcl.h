@@ -2194,7 +2194,7 @@ EXTERN void		Tcl_FindExecutable(const char *argv0);
 EXTERN void		Tcl_SetPanicProc(
 			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
 EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
-			    const char *pkgName,
+			    const char *prefix,
 			    Tcl_LibraryInitProc *initProc,
 			    Tcl_LibraryInitProc *safeInitProc);
 #ifndef TCL_NO_DEPRECATED

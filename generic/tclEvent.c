@@ -1502,7 +1502,7 @@ Tcl_UpdateObjCmd(
 	}
 	switch ((enum updateOptionsEnum) optionIndex) {
 	case OPT_IDLETASKS:
-	    flags = TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS|TCL_DONT_WAIT;
+	    flags = TCL_IDLE_EVENTS|TCL_DONT_WAIT;
 	    break;
 	default:
 	    Tcl_Panic("Tcl_UpdateObjCmd: bad option index to UpdateOptions");

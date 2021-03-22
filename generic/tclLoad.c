@@ -331,8 +331,8 @@ Tcl_LoadObjCmd(
 	    }
 	    for (p = pkgGuess; *p != 0; p += offset) {
 		offset = TclUtfToUniChar(p, &ch);
-		if (!(Tcl_UniCharIsAlpha(UCHAR(ch))
-				|| (UCHAR(ch) == '_'))) {
+		if (!Tcl_UniCharIsWordChar(UCHAR(ch))
+				|| Tcl_UniCharIsDigit(UCHAR(ch))) {
 		    break;
 		}
 	    }
