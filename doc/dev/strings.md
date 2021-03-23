@@ -15,7 +15,8 @@ Tcl string **cat** is the sequence of three symbols **c**, **a**, **t**.
 
 Each symbol in the Tcl alphabet is associated with a non-negative integer,
 known as the ***code*** of that symbol.  Distinct symbols have distinct
-codes.  Schemes that associate symbols with code values are known
+codes.  Said another way, two symbols associated with the same code are
+equivalent.  Schemes that associate symbols with code values are known
 as ***character sets***.  For example, in Tcl's character set, the
 symbols **c**, **a**, and **t** are associated with code
 values 99, 97, and 116 respectively.
@@ -23,7 +24,7 @@ values 99, 97, and 116 respectively.
 There is an ordering imposed on the alphabet by the numeric order of
 the associated code values.  This ordering allows symbols to be compared
 and sorted.  The natural extension of that ordering to sequences
-establishes one well defined way to compare, order and sort string values.
+establishes one well-defined way to compare, order and sort string values.
 
 The number of symbols in a string's symbol sequence is the ***length***
 of that string.  
@@ -73,6 +74,20 @@ to permit encodings of other value sets that are clear, simple, efficient
 and convenient.  The history of growing Tcl's alphabet has been driven by
 the desire to better provide for the encoding of another value set that
 has not easily been accommodated by the legacy alphabet.
+
+## Implementations
+
+The fundamentals above describe Tcl's value strings at an abstract level,
+but to make Tcl interpreters and Tcl libraries we have to create programs 
+that exhibit the described abstract behviors.  We will have much more
+detailed things to say about string representations later, but for now
+suffice it to say that a proper implementation of the string abstraction
+needs to reproduce all the fundamentals faithfully.  If a representation
+is used that allows multiple representations of a single symbol, or
+multiple representations of a single string, this can be a matter of
+some difficulty.  Representations that include the possibility of states
+that are not valid string values at all are also cases that need
+careful handling.
 
 ## Tcl alphabet versions
 
