@@ -2424,6 +2424,16 @@ declare 656 {
     const char *Tcl_UtfPrev(const char *src, const char *start)
 }
 
+declare 657 {
+    int Tcl_ExternalToUtfDStringEx(Tcl_Encoding encoding,
+	    const char *src, int srcLen, Tcl_DString *dsPtr, int flags)
+}
+declare 658 {
+    int Tcl_UtfToExternalDStringEx(Tcl_Encoding encoding,
+	    const char *src, int srcLen, Tcl_DString *dsPtr, int flags)
+}
+
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################

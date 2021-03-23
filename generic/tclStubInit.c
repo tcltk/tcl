@@ -1932,6 +1932,8 @@ const TclStubs tclStubs = {
     Tcl_UtfCharComplete, /* 654 */
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
+    Tcl_ExternalToUtfDStringEx, /* 657 */
+    Tcl_UtfToExternalDStringEx, /* 658 */
 };
 
 /* !END!: Do not edit above this line. */

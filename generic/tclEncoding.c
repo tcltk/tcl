@@ -1089,7 +1089,7 @@ Tcl_CreateEncoding(
 /*
  *-------------------------------------------------------------------------
  *
- * Tcl_ExternalToUtfDString --
+ * Tcl_ExternalToUtfDString/Tcl_ExternalToUtfDStringEx --
  *
  *	Convert a source buffer from the specified encoding into UTF-8. If any
  *	of the bytes in the source buffer are invalid or cannot be represented
@@ -1099,7 +1099,7 @@ Tcl_CreateEncoding(
  * Results:
  *	The converted bytes are stored in the DString, which is then NULL
  *	terminated. The return value is a pointer to the value stored in the
- *	DString.
+ *	DString resp. an error code.
  *
  * Side effects:
  *	None.
@@ -1117,10 +1117,26 @@ Tcl_ExternalToUtfDString(
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
+    Tcl_ExternalToUtfDStringEx(encoding, src, srcLen, dstPtr, 0);
+    return Tcl_DStringValue(dstPtr);
+}
+
+
+int
+Tcl_ExternalToUtfDStringEx(
+    Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
+				 * for the default system encoding. */
+    const char *src,		/* Source string in specified encoding. */
+    int srcLen,			/* Source string length in bytes, or < 0 for
+				 * encoding-specific string length. */
+    Tcl_DString *dstPtr,	/* Uninitialized or free DString in which the
+				 * converted string is stored. */
+    int flags)			/* Conversion control flags. */
+{
     char *dst;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
-    int flags, dstLen, result, soFar, srcRead, dstWrote, dstChars;
+    int dstLen, result, soFar, srcRead, dstWrote, dstChars;
 
     Tcl_DStringInit(dstPtr);
     dst = Tcl_DStringValue(dstPtr);
@@ -1137,7 +1153,7 @@ Tcl_ExternalToUtfDString(
 	srcLen = encodingPtr->lengthProc(src);
     }
 
-    flags = TCL_ENCODING_START | TCL_ENCODING_END;
+    flags |= TCL_ENCODING_START | TCL_ENCODING_END;
 
     while (1) {
 	result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
@@ -1146,7 +1162,7 @@ Tcl_ExternalToUtfDString(
 
 	if (result != TCL_CONVERT_NOSPACE) {
 	    Tcl_DStringSetLength(dstPtr, soFar);
-	    return Tcl_DStringValue(dstPtr);
+	    return result;
 	}
 
 	flags &= ~TCL_ENCODING_START;
@@ -1279,7 +1295,7 @@ Tcl_ExternalToUtf(
 /*
  *-------------------------------------------------------------------------
  *
- * Tcl_UtfToExternalDString --
+ * Tcl_UtfToExternalDString/Tcl_UtfToExternalDStringEx --
  *
  *	Convert a source buffer from UTF-8 to the specified encoding. If any
  *	of the bytes in the source buffer are invalid or cannot be represented
@@ -1288,7 +1304,7 @@ Tcl_ExternalToUtf(
  * Results:
  *	The converted bytes are stored in the DString, which is then NULL
  *	terminated in an encoding-specific manner. The return value is a
- *	pointer to the value stored in the DString.
+ *	pointer to the value stored in the DString resp. an error code.
  *
  * Side effects:
  *	None.
@@ -1306,10 +1322,25 @@ Tcl_UtfToExternalDString(
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
+    Tcl_UtfToExternalDStringEx(encoding, src, srcLen, dstPtr, 0);
+    return Tcl_DStringValue(dstPtr);
+}
+
+int
+Tcl_UtfToExternalDStringEx(
+    Tcl_Encoding encoding,	/* The encoding for the converted string, or
+				 * NULL for the default system encoding. */
+    const char *src,		/* Source string in UTF-8. */
+    int srcLen,			/* Source string length in bytes, or < 0 for
+				 * strlen(). */
+    Tcl_DString *dstPtr,	/* Uninitialized or free DString in which the
+				 * converted string is stored. */
+    int flags)	/* Conversion control flags. */
+{
     char *dst;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
-    int flags, dstLen, result, soFar, srcRead, dstWrote, dstChars;
+    int dstLen, result, soFar, srcRead, dstWrote, dstChars;
 
     Tcl_DStringInit(dstPtr);
     dst = Tcl_DStringValue(dstPtr);
@@ -1325,10 +1356,10 @@ Tcl_UtfToExternalDString(
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
-    flags = TCL_ENCODING_START | TCL_ENCODING_END;
+    flags |= TCL_ENCODING_START | TCL_ENCODING_END | TCL_ENCODING_EXTERNAL;
     while (1) {
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
-		srcLen, flags | TCL_ENCODING_EXTERNAL, &state, dst, dstLen,
+		srcLen, flags, &state, dst, dstLen,
 		&srcRead, &dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
@@ -1337,7 +1368,7 @@ Tcl_UtfToExternalDString(
 		Tcl_DStringSetLength(dstPtr, soFar + 1);
 	    }
 	    Tcl_DStringSetLength(dstPtr, soFar);
-	    return Tcl_DStringValue(dstPtr);
+	    return result;
 	}
 
 	flags &= ~TCL_ENCODING_START;
