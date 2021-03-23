@@ -115,7 +115,7 @@ offered a substitution suggesting it was possible.
 	% string length <\x00>
 	1
 ```
-This seems to be a mis-step, where the \x00 substitution should have
+This seems to be a mis-step, where the \\x00 substitution should have
 raised an error.  The fact that everything created by it broke expectations
 in some way supports that judgment.  But it's not beyond imagination for
 someone to take another view.
@@ -136,17 +136,43 @@ binary data could be stored in Tcl variables, and processed by any
 commands created by the new **Tcl_CreateObjCommand**.  Legacy commands
 still created by **Tcl_CreateCommand** remained "binary unsafe".
 
-Note that the alphabet strictly grew.  All string values representable
-in Tcl 7 remained representable in Tcl 8.0.  Internally there was reform
-in representation (counted strings replaced terminated strings), but
-the concept of the Tcl string value accessible to scripts changed along
-an upward compatible path.
+Note that the alphabet strictly grew between Tcl 7 and Tcl 8.0.  All string
+values representable in Tcl 7 remained representable in Tcl 8.0.  Internally
+there was reform in representation (counted strings replaced terminated
+strings), but the concept of the Tcl string value accessible to scripts
+changed along an upward compatible path.
 
 Tcl 8.0 string values suffered from two deficits.  First, The internals
 still used two representations that were not reconciled to provide the
 same functionality.  Second, the international character sets of 
 increasing importance could not be encoded into Tcl string values in
-ways that were simple, 
+ways that were both simple and efficient.  International character set text
+became the next value set prompting an expansion of Tcl's alphabet.
+
+In Tcl 8.1 (released April, 1999), the Tcl alphabet expanded to a set of
+symbols with code values ranging from 0 to 65,535 (0x0000 to 0xFFFF).
+Where a code value had an assigned symbol in Unicode 2.0, the symbol of
+Tcl's alphabet agreed with the Unicode character set.  This implied
+continued symbol agreement with ASCII.  All assigned codepoints of
+Unicode 2.0 fit in this alphabet.  Tcl could store all Unicode text values
+in a simple and efficient way in its string values.
+
+Tcl 8.1 added a new backslash substitution syntax, **\\u**___HHHH____,
+capable of producing every symbol in the Tcl alphabet.  Built-in Tcl
+commands such as **format** and **scan** were extended to produce and
+accept symbols and codes in the extended alphabet.  Once again the alphabet
+strictly grew, preserving upward compatibility in the set of string values
+available to Tcl programs.
+
+The representations of strings inside the Tcl 8.1 library were 
+substantially reformed to support the extended alphabet.  These
+representations appeared in parts of the C programming interface
+of the Tcl library, so extensions written for Tcl 7 or Tcl 8 had
+to be adapted to the reforms.
+
+
+
+
 
 
 ## Representations
