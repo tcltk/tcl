@@ -30,7 +30,7 @@ The number of symbols in a string's symbol sequence is the ***length***
 of that string.  
 
 A symbol within a string can be identified by its place in the sequence,
-counting with an ***index*** that starts at 0.  A string of length *N*
+counting with an integer ***index*** that starts at 0.  A string of length *N*
 has a symbol at each of the index values 0 through *N*-1.  We can
 represent the symbol found at index *i* within string *s* with the
 notation *s*[*i*].
@@ -155,9 +155,18 @@ Where a code value had an assigned symbol in Unicode 2.0, the symbol of
 Tcl's alphabet agreed with the Unicode character set.  This implied
 continued symbol agreement with ASCII.  All assigned codepoints of
 Unicode 2.0 fit in this alphabet.  Tcl could store all Unicode text values
-in a simple and efficient way in its string values.
+in a simple and efficient way in its string values.  It could perhaps be
+said that Tcl 8.1 strings *were* Unicode 2.0 text values. The Tcl
+documentation is certainly phrased in those terms.  In hindsight, given
+the later divergence in the development of Tcl and Unicode, that's
+not the most useful perspective.  It is more useful to think of the set 
+of Tcl 8.1 strings as a superset of the set of Unicode 2.0 text values.
+This allowed for the accommodation of continued assignment of unassigned
+code values in later releases of the Unicode standard.  It also best
+accounts for the reality that the Unicode standards became more clear
+and explicit and restrictive in their conformance demands over time.
 
-Tcl 8.1 added a new backslash substitution syntax, **\\u**___HHHH____,
+Tcl 8.1 added a new backslash substitution syntax, **\\u**___HHHH___,
 capable of producing every symbol in the Tcl alphabet.  Built-in Tcl
 commands such as **format** and **scan** were extended to produce and
 accept symbols and codes in the extended alphabet.  Once again the alphabet
@@ -169,6 +178,61 @@ substantially reformed to support the extended alphabet.  These
 representations appeared in parts of the C programming interface
 of the Tcl library, so extensions written for Tcl 7 or Tcl 8 had
 to be adapted to the reforms.
+
+Tcl 8.1 string values did bring with them a new mis-step.  A new
+command **encoding** provided scripts with the ability to transform
+Unicode text values into a variety of encoded forms, typically to
+process values near I/O operations.  This **encoding** command
+included support for an encoding called **identity** that empowers
+scripts to store an arbitrary byte sequence inside an internal
+representation for Tcl strings.  The consequence is that scripts
+can create multiple representations for the same string that are not
+consistently treated as the same string, contrary to our fundamental
+expectations.
+```
+	% info patch
+	8.1.1
+	% set s \u0080
+	
+	% set t [encoding convertfrom identity \x00]
+	??
+	% string length $s
+	1
+	% string length $t
+	1
+	% scan [string index $s 0] %c code; set code
+	128
+	% scan [string index $t 0] %c code; set code
+	128
+	% string equal $s $t
+	0
+	% string bytelength $s
+	2
+	% string bytelength $t
+	1
+```
+This example also demonstrates the mis-step of **string bytelength**
+that exposes differences in internal representation of values that
+should be treated as equivalent.
+
+(As of this writing, TIP 345 has purged the **identity** encoding
+from the development of Tcl 8.7, but **string bytelength** is still
+present in current snapshots of Tcl 9.0.)
+
+While scripts can avoid use of the **identity** encoding (perhaps treating
+any use of it as introducing *undefined* behavior), the underlying
+implementation flaws that allow for its mischief are available to all
+Tcl extensions, so the failure of Tcl 8.1 strings to fully conform
+to fundamental expectations still lurks.  More on this when we 
+examine representations below.
+
+Tcl 8.2 (released August, 1999) kept the same string alphabet, but
+revised all relevant commands to process symbols according to the
+Unicode 2.1 standard.
+
+
+
+
 
 
 
