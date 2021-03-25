@@ -258,14 +258,14 @@ Tcl string values processed symbols corresponding to Unicode surrogates
 no differently from any other symbols in the Tcl alphabet.  In this state
 of things, it is clear that the set of Tcl strings is strictly a superset
 of the set of well-formed Unicode text.  This is not only because of
-unassigned codepoint awaiting their symbols, but includes an ability
-to store symbols sequences in Tcl string values that can never become
+unassigned codepoints awaiting their symbols, but includes an ability
+to store symbol sequences in Tcl string values that can never become
 well-formed Unicode text at any point in the future.
 
 Unicode 3.1.0 was released March 2001.  This was the first version
 of the Unicode Standard that assigned characters to surrogate code
 pairs in the 16-bit encoding, which in Unicode 3 came to have the 
-name UTF-16.  In Unicode 3 it was acknowledged that this is a
+name UTF-16.  In Unicode 3 it was acknowledged that UTF-16 is a
 variable-length encoding.  Tcl's source code was updated to support
 this specification of Unicode in May 2001, but support for surrogate
 pairs to represent Unicode characters greater that **U+FFFF** was
@@ -286,17 +286,17 @@ the days when interest in Unicode characters above **U+FFFF** could be
 said to be rare.  
 
 Also in October 2010 Tcl was awakened out of its Unicode support slumber,
-still offering only partial 3.1.0 support.  At that point, Tcl was brought
-up to date with Unicode 6.0.0, but Tcl remained without surrogate pair
-support.  Since that meant without emoji symbol support, the increasingly
-became a mark against Tcl as a langauge to use for good Unicode programming.
-The partial support of Unicode 6 was first released in Tcl 8.5.10 in
-June 2011.  Since then it has been customary to update Tcl's partial support
-for the new versions of the Unicode Standard as they are released.  Tcl 8.5.19
-was released February 2016 with partial support of Unicode 8.0.  Tcl 8.6.0
-was released December 2012 with partial support of Unicode 6.2.
-
-
+still offering only partial Unicode 3.1.0 support.  At that point, Tcl
+was brought up to date with Unicode 6.0.0, but Tcl remained without
+surrogate pair support.  Since that implied Tcl was also without emoji
+symbol support, this increasingly became a mark against Tcl as a langauge
+to use for good Unicode programming.  The partial support of Unicode 6 was
+first released in Tcl 8.5.10 in June 2011.  Since then it has been customary
+to update Tcl's partial support for the new versions of the Unicode Standard
+as they are released.  Tcl 8.5.19 was released February 2016 with partial
+support of Unicode 8.0.  Tcl 8.6.0 was released December 2012 with partial
+support of Unicode 6.2.  Tcl 8.6.6 was released July 2016 with partial
+support of Unicode 9.0.
 
 
 
