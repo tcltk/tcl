@@ -242,7 +242,7 @@ The second principle states
 "**The full 16-bit codespace... is available to represent characters.**"
 A plain reading of those designs and assurances suggests that sequences
 of symbols from a 16-bit alphabet will be a suitable fixed-width
-representation for Unicode text.  The second principle, though, goes
+representation for Unicode text.  The second design principle, though, goes
 on to describe a "*surrogate extension mechanism*" which uses a pair of
 16-bit code values to represent a single character.  This mechanism, of
 course, makes the specified Unicode definition a variable-width encoding
@@ -255,7 +255,12 @@ code points to be used properly in Unicode text only in the formation
 of such pairs.  It did not assign any characters to those pairs, instead
 describing the mechanism as one "for encoding extremely rare characters".
 Tcl string values processed symbols corresponding to Unicode surrogates
-no differently from any other symbols in the Tcl alphabet.
+no differently from any other symbols in the Tcl alphabet.  In this state
+of things, it is clear that the set of Tcl strings is strictly a superset
+of the set of well-formed Unicode text.  This is not only because of
+unassigned codepoint awaiting their symbols, but includes an ability
+to store symbols sequences in Tcl string values that can never become
+well-formed Unicode text at any point in the future.
 
 Unicode 3.1.0 was released March 2001.  This was the first version
 of the Unicode Standard that assigned characters to surrogate code
