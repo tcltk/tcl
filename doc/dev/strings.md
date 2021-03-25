@@ -130,9 +130,9 @@ The problem was left unsolved so that a [**read**] from a binary channel returne
 simply truncated at the first **NUL**.
 
 In Tcl 8.0, the Tcl alphabet added a symbol with code value 0.  This allowed
-the simplest coding of *N*-byte sequences by a string of length *N* with
-each symbol determined by the code given by the byte value.  Aribtrary
-binary data could be stored in Tcl variables, and processed by any
+the direct encoding of a byte sequences of length *N* by a string of
+length *N* with each symbol determined by the code given by the byte value.
+Aribtrary binary data could be stored in Tcl variables, and processed by any
 commands created by the new **Tcl_CreateObjCommand**.  Legacy commands
 still created by **Tcl_CreateCommand** remained "binary unsafe".
 
@@ -193,6 +193,7 @@ expectations.
 	% info patch
 	8.1.1
 	% set s \u0080
+	 
 	
 	% set t [encoding convertfrom identity \x00]
 	??
