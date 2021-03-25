@@ -193,7 +193,6 @@ expectations.
 	% info patch
 	8.1.1
 	% set s \u0080
-	 
 	
 	% set t [encoding convertfrom identity \x00]
 	??
