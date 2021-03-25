@@ -228,7 +228,60 @@ examine representations below.
 
 Tcl 8.2 (released August, 1999) kept the same string alphabet, but
 revised all relevant commands to process symbols according to the
-Unicode 2.1 standard.
+Unicode 2.1 standard.  Notably this included the assignment of
+code point **U+20AC** to the symbol EURO SIGN.  The Tcl 8.3.* series
+of releases (February 2000 - October 2002) continued that same standard
+of Unicode support.
+
+From Chapter 1 of *The Unicode Standard, Version 2.0*,
+"**The Unicode Standard is a fixed-width, uniform encoding scheme for written characters and test.**"
+Chapter 2 presents a set of desgin principles.  The first principle states,
+in part,
+"**Plain Unicode text consists of pure 16-bit Unicode character sequences.**"
+The second principle states 
+"**The full 16-bit codespace... is available to represent characters.**"
+A plain reading of those designs and assurances suggests that sequences
+of symbols from a 16-bit alphabet will be a suitable fixed-width
+representation for Unicode text.  The second principle, though, goes
+on to describe a "*surrogate extension mechanism*" which uses a pair of
+16-bit code values to represent a single character.  This mechanism, of
+course, makes the specified Unicode definition a variable-width encoding
+of abstract characters, not a fixed-width encoding at all.
+
+That said, Unicode 2.0, does specify surrogate pairs as the way to
+represent a full collection of 1,114,112 distinguishable potential
+symbols in the Unicode collection.  It also reserves the surrogate
+code points to be used properly in Unicode text only in the formation
+of such pairs.  It did not assign any characters to those pairs, instead
+describing the mechanism as one "for encoding extremely rare characters".
+Tcl string values processed symbols corresponding to Unicode surrogates
+no differently from any other symbols in the Tcl alphabet.
+
+Unicode 3.1.0 was released March 2001.  This was the first version
+of the Unicode Standard that assigned characters to surrogate code
+pairs in the 16-bit encoding, which in Unicode 3 came to have the 
+name UTF-16.  In Unicode 3 it was acknowledged that this is a
+variable-length encoding.  Tcl's source code was updated to support
+this specification of Unicode in May 2001, but support for surrogate
+pairs to represent Unicode characters greater that **U+FFFF** was
+not implemented.  This was when Tcl Unicode support broke away
+from conformance to the Unicode Standard.  Many programming assumptions
+rooted in the existence of a fixed-width, 16-bit encoding for every
+Tcl string value had become deeply embedded in both Tcl's implementation
+and in some of its interfaces.  The assigned Unicode characters to be gained
+outside the Basic Multilingual Place remained those
+of "extremely rare" interest.  This level of partial Unicode 3.1.0
+support was first released in Tcl 8.4.0 in September 2002.
+
+And then Tcl's Unicode support fell into a deep sleep.
+
+It was not until October 2010 that Unicode support got an update in Tcl.
+At that point, it was brought up to date with Unicode 6.0.0, but Tcl 
+remained without surrogate pair support.  This partial support of
+Unicode 6 was first released in Tcl 8.5.10 in June 2011.
+
+
+
 
 
 
