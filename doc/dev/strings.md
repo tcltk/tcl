@@ -275,17 +275,21 @@ support was first released in Tcl 8.4.0 in September 2002.
 
 And then Tcl's Unicode support fell into a deep sleep.
 
-It was not until October 2010 that Unicode support got an update in Tcl.
-At that point, it was brought up to date with Unicode 6.0.0, but Tcl 
-remained without surrogate pair support.  This partial support of
-Unicode 6 was first released in Tcl 8.5.10 in June 2011.
+Unicode 6.0.0 (October 2010) was notable as the first version to include
+assignments for emoji symbols.  Their popularity on mobile devices would end
+the days when interest in Unicode characters above **U+FFFF** could be
+said to be rare.  
 
-
-
-
-
-
-
+Also in October 2010 Tcl was awakened out of its Unicode support slumber,
+still offering only partial 3.1.0 support.  At that point, Tcl was brought
+up to date with Unicode 6.0.0, but Tcl remained without surrogate pair
+support.  Since that meant without emoji symbol support, the increasingly
+became a mark against Tcl as a langauge to use for good Unicode programming.
+The partial support of Unicode 6 was first released in Tcl 8.5.10 in
+June 2011.  Since then it has been customary to update Tcl's partial support
+for the new versions of the Unicode Standard as they are released.  Tcl 8.5.19
+was released February 2016 with partial support of Unicode 8.0.  Tcl 8.6.0
+was released December 2012 with partial support of Unicode 6.2.
 
 
 
