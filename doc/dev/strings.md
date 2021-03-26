@@ -298,10 +298,57 @@ support of Unicode 8.0.  Tcl 8.6.0 was released December 2012 with partial
 support of Unicode 6.2.  Tcl 8.6.6 was released July 2016 with partial
 support of Unicode 9.0.
 
+Unicode evolution
+	3.1.0 - UTF-32, surrogates are "irregular",
+		UTF-8 decoders not accept overlong or other illegal
+	Unicode scalar values
 
-
+Opening of Tcl 9 development
 
 ## Representations
+
+Tcl 7 strings are represented directly as C strings.  The representation is
+one-to-one and complete.  Every Tcl 7 string has a representation by exactly
+one C string, and every C string represents exactly one proper Tcl 7 string.
+There is no C string that can be rejected as not representing a Tcl 7 string.
+This is very simple.  Also, any interface using the passing of C string values
+to implement the conceptual passing of Tcl 7 string values can be designed
+with this knowledge.  There is no need to provide for error handling when
+the possibility of error is defined out of existence.  Because of this, many
+of Tcl's interface routines that date back the longest offer no capability
+to report errors in their string arguments.  The C string representation is
+also a fixed width encoding of Tcl 7 strings.  This allows for efficient
+indexing.
+
+Tcl 8.0 strings are represented directly as the pair of a byte array and
+a length stored as a C **signed int**.  No Tcl 8.0 string with length greater
+than **INT\_MAX** can be accommodated by this representation.  Other than
+that limitation, the same direct, complete, and one-to-one nature of
+representation is present as for Tcl 7 strings.  A string too long is the
+only error condition that needs to be considered, and that error can be
+prevented by constraining the arguments by type.  Again, many interfaces
+offer no detection or handling mechanisms to deal with an error in string
+value arguments.  The Tcl 8.0 representations continue to offer efficient
+indexing via fixed-width storage.
+
+Tcl 8.0 strings are a superset of Tcl 7 strings.  When a Tcl 7 string value
+is represented in the Tcl 8.0 manner, the byte array has the same contents
+as the C string representation from Tcl 7.  The only difference is whether
+there must be a terminating **NUL** byte.  In many places in the Tcl 8.0
+representation, such a terminating **NUL** byte was used to allow easier
+interoperability with legacy routines written to Tcl 7 expectations.  Most
+notably the *bytes* and *length* fields of a **Tcl\_Obj** struct implement
+the Tcl 8.0 string representation and require the terminating **NULL**
+to be present at *bytes*[*length*].
+
+
+
+
+
+
+
+
+
 
 
 
