@@ -513,8 +513,8 @@ TclInitEncodingCmd(
     Tcl_Interp* interp)		/* Tcl interpreter */
 {
     static const EnsembleImplMap encodingImplMap[] = {
-	{"convertfrom", EncodingConvertfromObjCmd, TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-	{"convertto",   EncodingConverttoObjCmd,   TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"convertfrom", EncodingConvertfromObjCmd, TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+	{"convertto",   EncodingConverttoObjCmd,   TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
 	{"dirs",        EncodingDirsObjCmd,        TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{"names",       EncodingNamesObjCmd,       TclCompileBasic0ArgCmd,    NULL, NULL, 0},
 	{"system",      EncodingSystemObjCmd,      TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
@@ -550,17 +550,27 @@ EncodingConvertfromObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     int length;			/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
+    const char *stopOnError = NULL;
+    int result;
 
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if (objc == 3) {
+    } else if ((unsigned)(objc - 3) < 2) {
 	if (Tcl_GetEncodingFromObj(interp, objv[1], &encoding) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	data = objv[2];
+	if (objc > 3) {
+	    stopOnError = Tcl_GetString(objv[3]);
+	    if (stopOnError[0] != '-' || stopOnError[1] != 's'
+		    || strncmp(stopOnError, "-stoponerror", strlen(stopOnError))) {
+		goto encConvFromError;
+	    }
+	}
     } else {
-	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data");
+    encConvFromError:
+	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data ?-stoponerror?");
 	return TCL_ERROR;
     }
 
@@ -568,7 +578,13 @@ EncodingConvertfromObjCmd(
      * Convert the string into a byte array in 'ds'
      */
     bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
-    Tcl_ExternalToUtfDString(encoding, bytesPtr, length, &ds);
+    result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length, &ds,
+	    stopOnError ? TCL_ENCODING_STOPONERROR : 0);
+    if (stopOnError && (result != TCL_OK)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("encoding error after producing %d characters", Tcl_DStringLength(&ds)));
+	Tcl_DStringFree(&ds);
+	return TCL_ERROR;
+    }
 
     /*
      * Note that we cannot use Tcl_DStringResult here because it will
@@ -612,19 +628,29 @@ EncodingConverttoObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     int length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
+    int result;
+    const char *stopOnError = NULL;
 
     /* TODO - ADJUST OBJ INDICES WHEN ENSEMBLIFYING THIS */
 
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if (objc == 3) {
+    } else if ((unsigned)(objc - 3) < 2) {
 	if (Tcl_GetEncodingFromObj(interp, objv[1], &encoding) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	data = objv[2];
+	if (objc > 3) {
+	    stopOnError = Tcl_GetString(objv[3]);
+	    if (stopOnError[0] != '-' || stopOnError[1] != 's'
+		    || strncmp(stopOnError, "-stoponerror", strlen(stopOnError))) {
+		goto encConvToError;
+	    }
+	}
     } else {
-	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data");
+    encConvToError:
+	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data ?-stoponerror?");
 	return TCL_ERROR;
     }
 
@@ -633,7 +659,13 @@ EncodingConverttoObjCmd(
      */
 
     stringPtr = TclGetStringFromObj(data, &length);
-    Tcl_UtfToExternalDString(encoding, stringPtr, length, &ds);
+    result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length, &ds,
+	    stopOnError ? TCL_ENCODING_STOPONERROR : 0);
+    if (stopOnError && (result != TCL_OK)) {
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("encoding error after producing %d bytes", Tcl_DStringLength(&ds)));
+    Tcl_DStringFree(&ds);
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp,
 		     Tcl_NewByteArrayObj((unsigned char*) Tcl_DStringValue(&ds),
 					 Tcl_DStringLength(&ds)));
