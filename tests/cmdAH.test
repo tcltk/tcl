@@ -178,7 +178,7 @@ test cmdAH-4.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
 } -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, or system}
 test cmdAH-4.3 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto
-} -result {wrong # args: should be "encoding convertto ?encoding? data"}
+} -result {wrong # args: should be "encoding convertto ?encoding? data ?-stoponerror?"}
 test cmdAH-4.4 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto foo bar
 } -result {unknown encoding "foo"}
@@ -200,7 +200,7 @@ test cmdAH-4.6 {Tcl_EncodingObjCmd} -setup {
 } -result 8C
 test cmdAH-4.7 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertfrom
-} -result {wrong # args: should be "encoding convertfrom ?encoding? data"}
+} -result {wrong # args: should be "encoding convertfrom ?encoding? data ?-stoponerror?"}
 test cmdAH-4.8 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertfrom foo bar
 } -result {unknown encoding "foo"}
