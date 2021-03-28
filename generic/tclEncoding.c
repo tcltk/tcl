@@ -511,8 +511,8 @@ FillEncodingFileMap(void)
  */
 
 /* Those flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
-#define TCL_ENCODING_LE		0x40	/* Little-endian encoding */
-#define TCL_ENCODING_EXTERNAL	0x80	/* Converting from internal to external variant */
+#define TCL_ENCODING_MODIFIED	0x20	/* Converting NULL bytes to 0xC0 0x80 */
+#define TCL_ENCODING_LE		0x80	/* Little-endian encoding, for ucs-2/utf-16 only */
 
 void
 TclInitEncodingSubsystem(void)
@@ -1137,7 +1137,7 @@ Tcl_ExternalToUtfDString(
 	srcLen = encodingPtr->lengthProc(src);
     }
 
-    flags = TCL_ENCODING_START | TCL_ENCODING_END;
+    flags = TCL_ENCODING_START | TCL_ENCODING_END | TCL_ENCODING_MODIFIED;
 
     while (1) {
 	result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
@@ -1253,18 +1253,17 @@ Tcl_ExternalToUtf(
 
 	dstLen--;
     }
+    flags |= TCL_ENCODING_MODIFIED;
     do {
-	int savedFlags = flags;
 	Tcl_EncodingState savedState = *statePtr;
 
 	result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
-		flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
+		flags , statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
 		dstCharsPtr);
 	if (*dstCharsPtr <= maxChars) {
 	    break;
 	}
 	dstLen = Tcl_UtfAtIndex(dst, maxChars) - dst + (TCL_UTF_MAX - 1);
-	flags = savedFlags;
 	*statePtr = savedState;
     } while (1);
     if (!noTerminate) {
@@ -1328,7 +1327,7 @@ Tcl_UtfToExternalDString(
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
     while (1) {
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
-		srcLen, flags | TCL_ENCODING_EXTERNAL, &state, dst, dstLen,
+		srcLen, flags, &state, dst, dstLen,
 		&srcRead, &dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
@@ -1430,7 +1429,7 @@ Tcl_UtfToExternal(
 
     dstLen -= encodingPtr->nullSize;
     result = encodingPtr->fromUtfProc(encodingPtr->clientData, src, srcLen,
-	    flags | TCL_ENCODING_EXTERNAL, statePtr, dst, dstLen, srcReadPtr,
+	    flags, statePtr, dst, dstLen, srcReadPtr,
 	    dstWrotePtr, dstCharsPtr);
     if (encodingPtr->nullSize == 2) {
 	dst[*dstWrotePtr + 1] = '\0';
@@ -2225,7 +2224,7 @@ UtfToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && !(flags & TCL_ENCODING_EXTERNAL))) {
+	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && (flags & TCL_ENCODING_MODIFIED))) {
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to 0xC080.
@@ -2233,7 +2232,7 @@ UtfToUtfProc(
 
 	    *dst++ = *src++;
 	} else if (UCHAR(*src) == 0xC0 && (src + 1 < srcEnd)
-		&& UCHAR(src[1]) == 0x80 && (flags & TCL_ENCODING_EXTERNAL)) {
+		&& UCHAR(src[1]) == 0x80 && !(flags & TCL_ENCODING_MODIFIED)) {
 	    /*
 	     * Convert 0xC080 to real nulls when we are in output mode.
 	     */
