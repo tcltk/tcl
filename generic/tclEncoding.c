@@ -2281,7 +2281,14 @@ UtfToUtfProc(
 	    }
 	    src += len;
 	    if (!(flags & TCL_ENCODING_UTF)) {
-		// TODO : handle chars > U+FFFF
+		if (ch > 0xFFFF) {
+		    /* CESU-8 6-byte sequence for chars > U+FFFF */
+		    ch -= 0x10000;
+		    *dst++ = 0xED;
+		    *dst++ = (char) (((ch >> 16) & 0x0F) | 0xA0);
+		    *dst++ = (char) (((ch >> 10) & 0x3F) | 0x80);
+		    ch = (ch & 0x0CFF) | 0xDC00;
+		}
 		goto cesu8;
 	    } else if ((ch | 0x7FF) == 0xDFFF) {
 		/*
