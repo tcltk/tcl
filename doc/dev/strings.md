@@ -438,10 +438,10 @@ than **INT\_MAX** can be accommodated by this representation.  Other than
 that limitation, the same direct, complete, and one-to-one nature of
 representation is present as for Tcl 7 strings.  A string too long is the
 only error condition that needs to be considered, and that error can be
-prevented by constraining the arguments by type.  Again, many interfaces
-offer no detection or handling mechanisms to deal with an error in string
-value arguments.  The Tcl 8.0 representations continue to offer efficient
-indexing via fixed-width storage.
+prevented by constraining size of arguments.  Again, many interfaces
+offer no detection or handling mechanisms to deal with an errors or 
+invalidity in string value arguments.  The Tcl 8.0 representations also
+continue to offer efficient indexing via fixed-width storage.
 
 Tcl 8.0 strings are a superset of Tcl 7 strings.  When a Tcl 7 string value
 is represented in the Tcl 8.0 manner, the byte array has the same contents
