@@ -281,14 +281,14 @@ And then Tcl's Unicode support fell into a deep sleep.
 While Tcl's support of Unicode slept, Unicode itself evolved and
 had the language of its conformance standards tightened and refined.
 The conception of Unicode defined as seqeunces of 16-bit code units
-faded away, and the 16-bit system, UTF-16, became just one of several
+faded away, and the 16-bit representation, UTF-16, became just one of several
 encodings to be used.  Fundamentally each distinguishable Unicode text
 that exists *or that ever will exist under future revisions of Unicode*
 became defined as a sequence of zero or more symbols from the
 alphabet of ***unicode scalar values***.  A unicode scalar value is
 associated in the Unicode character set with a code value that can
 be expressed as a 21-bit integer, but also constrained to exclude
-the values associate with the surrogate extension mechanism.  The
+the values associated with the surrogate extension mechanism.  The
 code values of unicode scalar values are in the integer ranges
 0 to 55,295 (0x0000 to 0xD7FF) and 57,344 to 1,114,111 (0xE000 to 0x10FFFF).
 From this perspective, the Tcl 8.1 string values were no longer seen as
@@ -358,13 +358,13 @@ appear in a proper UTF-8 byte sequence.  Besides those forbidden bytes,
 there are many sequences also forbidden, including any trailing byte
 where one does not belong, any leading byte where one does not belong,
 or any multi-byte sequence that when decoded would produce a value
-outside the range for that sequence length (for example, the four-byte
+outside the domain for that sequence length (for example, the four-byte
 sequence 0xF0 0x80 0x80 0x80 that would appear to encode U+0000, which
-can only properly be encoded by a single-byte).  The last of these
-constraints was formally imposed by Unicode 3.1.0.  Earlier versions
-of Unicode explictly approved of decoders that accepted overlong
-byte sequences in UTF-8, and even included such decoders in their sample
-implementations.
+is in the domain of unicode scalar values properly encoded by a single-byte).
+The last of these constraints was formally imposed by Unicode 3.1.0.
+Earlier versions of Unicode explictly approved of UTF-8 decoders that accepted
+overlong byte sequences, and even included such decoders in their
+sample implementations.
 
 Here the news is better when it comes to thinking about representations
 of the union of UCS-2 and Unicode.  The three-byte sequences that might
@@ -405,7 +405,14 @@ support of Unicode 9.0.
 
 In 2017, the trunk of Tcl development was turned over to work on the
 Tcl 9.0 release.  This focused attention again on how best to revise
-the string representation for that new milestone.  The history of Tcl
+the string representation for that new milestone.  Following the example
+of earlier alphabet expansions, it appears clear that for improved Unicode
+support, we need the Tcl 9 alphabet to include the set of all unicode
+scalar values.  Also following prior examples, it seems desirable to
+strictly grow the alphabet so that all strings representable in Tcl 8
+remain representable in Tcl 9.  Achieving both would mean a Tcl 9
+alphabet that is a (super?)set of the union of UCS-2 and Unicode scalar
+values.  The history of Tcl
 string values in releases 8.6.7 and later felt the influence of that 
 focus, and are best discussed after some attention to Tcl's string
 representations.
