@@ -87,7 +87,7 @@ is used that allows multiple representations of a single symbol, or
 multiple representations of a single string, this can be a matter of
 some difficulty.  Representations that include the possibility of states
 that are not valid string values at all are also cases that need
-careful handling.
+careful consideration.
 
 ## Tcl alphabet versions
 
@@ -124,10 +124,11 @@ The value set of arbitrary binary data, in the form of byte sequences,
 is not well served by the Tcl 7 alphabet.  No encoding into Tcl 7 strings
 can be both simple and efficient.  Either it must be variable-width, or
 it must use a fixed width of at least two symbols per byte.  There are
-certainly ways to encode arbitrary binary data in ASCII, but the commands
-of Tcl 7 never chose one for the core commands of the language to use.
-The problem was left unsolved so that a [**read**] from a binary channel returned a value that the rest of Tcl
-simply truncated at the first **NUL**.
+certainly ways to encode arbitrary binary data using only the Tcl 7 alphabet,
+but the commands of Tcl 7 never chose one for the core commands of the
+language to use.  The problem was left unsolved so that a [**read**] from a
+binary channel returned a value that the rest of Tcl simply truncated at
+the first **NUL**.
 
 In Tcl 8.0, the Tcl alphabet added a symbol with code value 0.  This allowed
 the direct encoding of a byte sequences of length *N* by a string of
@@ -161,10 +162,8 @@ documentation is certainly phrased in those terms.  In hindsight, given
 the later divergence in the development of Tcl and Unicode, that's
 not the most useful perspective.  It is more useful to think of the set 
 of Tcl 8.1 strings as a superset of the set of Unicode 2.0 text values.
-This allowed for the accommodation of continued assignment of unassigned
-code values in later releases of the Unicode standard.  It also best
-accounts for the reality that the Unicode standards became more clear
-and explicit and restrictive in their conformance demands over time.
+This set of string values came to be known as UCS-2 to distinguish it
+from later versions of Unicode.
 
 Tcl 8.1 added a new backslash substitution syntax, **\\u**___HHHH___,
 capable of producing every symbol in the Tcl alphabet.  Built-in Tcl
@@ -181,10 +180,9 @@ to be adapted to the reforms.
 
 Tcl 8.1 string values did bring with them a new mis-step.  A new
 command **encoding** provided scripts with the ability to transform
-Unicode text values into a variety of encoded forms, typically to
-process values near I/O operations.  This **encoding** command
-included support for an encoding called **identity** that empowers
-scripts to store an arbitrary byte sequence inside an internal
+Unicode text values into a variety of encoded forms.  This **encoding**
+command included support for an encoding called **identity** that
+empowers scripts to store an arbitrary byte sequence inside an internal
 representation for Tcl strings.  The consequence is that scripts
 can create multiple representations for the same string that are not
 consistently treated as the same string, contrary to our fundamental
@@ -194,7 +192,7 @@ expectations.
 	8.1.1
 	% set s \u0080
 	
-	% set t [encoding convertfrom identity \x00]
+	% set t [encoding convertfrom identity \x80]
 	??
 	% string length $s
 	1
@@ -234,7 +232,7 @@ of releases (February 2000 - October 2002) continued that same standard
 of Unicode support.
 
 From Chapter 1 of *The Unicode Standard, Version 2.0*,
-"**The Unicode Standard is a fixed-width, uniform encoding scheme for written characters and test.**"
+"**The Unicode Standard is a fixed-width, uniform encoding scheme for written characters and text.**"
 Chapter 2 presents a set of desgin principles.  The first principle states,
 in part,
 "**Plain Unicode text consists of pure 16-bit Unicode character sequences.**"
@@ -249,8 +247,8 @@ course, makes the specified Unicode definition a variable-width encoding
 of abstract characters, not a fixed-width encoding at all.
 
 That said, Unicode 2.0, does specify surrogate pairs as the way to
-represent a full collection of 1,114,112 distinguishable potential
-symbols in the Unicode collection.  It also reserves the surrogate
+represent a full collection of 1,114,112 distinguishable symbols
+in the potential Unicode collection.  It also reserves the surrogate
 code points to be used properly in Unicode text only in the formation
 of such pairs.  It did not assign any characters to those pairs, instead
 describing the mechanism as one "for encoding extremely rare characters".
@@ -268,8 +266,8 @@ pairs in the 16-bit encoding, which in Unicode 3 came to have the
 name UTF-16.  In Unicode 3 it was acknowledged that UTF-16 is a
 variable-length encoding.  Tcl's source code was updated to support
 this specification of Unicode in May 2001, but support for surrogate
-pairs to represent Unicode characters greater that **U+FFFF** was
-not implemented.  This was when Tcl Unicode support broke away
+pairs to represent Unicode characters with codes greater than **U+FFFF**
+was not implemented.  This was when Tcl Unicode support broke away
 from conformance to the Unicode Standard.  Many programming assumptions
 rooted in the existence of a fixed-width, 16-bit encoding for every
 Tcl string value had become deeply embedded in both Tcl's implementation
@@ -279,6 +277,113 @@ of "extremely rare" interest.  This level of partial Unicode 3.1.0
 support was first released in Tcl 8.4.0 in September 2002.
 
 And then Tcl's Unicode support fell into a deep sleep.
+
+While Tcl's support of Unicode slept, Unicode itself evolved and
+had the language of its conformance standards tightened and refined.
+The conception of Unicode defined as seqeunces of 16-bit code units
+faded away, and the 16-bit system, UTF-16, became just one of several
+encodings to be used.  Fundamentally each distinguishable Unicode text
+that exists *or that ever will exist under future revisions of Unicode*
+became defined as a sequence of zero or more symbols from the
+alphabet of ***unicode scalar values***.  A unicode scalar value is
+associated in the Unicode character set with a code value that can
+be expressed as a 21-bit integer, but also constrained to exclude
+the values associate with the surrogate extension mechanism.  The
+code values of unicode scalar values are in the integer ranges
+0 to 55,295 (0x0000 to 0xD7FF) and 57,344 to 1,114,111 (0xE000 to 0x10FFFF).
+From this perspective, the Tcl 8.1 string values were no longer seen as
+proper Unicode, but as a legacy system called UCS-2 which was flaws in
+two ways.  It lacked support for the supplemntary planes of the full
+Unicode character set beyond **U+FFFF**.  It also allowed for the
+presence of symbols with codes between 55,296 and 57,343 (0xD800 to 0xDFFF).
+Neither system could encode the other in direct, simple, efficient
+representations.
+
+Unicode also came to define a collection of encodings.  The simplest to
+understand is UTF-32, where each unicode scalar value in a Unicode sequence
+is directly represented by a 4-octet (32-bit) value matching the code.
+UTF-32 offers simplicity and fixed-width representation for efficient
+random access indexing.  It also offers considerable waste of storage
+and transmission.  Properly defined, UTF-32 does not include representations
+of symbols that are not unicode scalar values.  However, the extension
+to include them is not difficult to imagine.  The name UCS-4 comes down
+from the ISO 10646 effort, and has evolved to mean the same thing as UTF-32.
+
+The UTF-16 encoding uses 2-octet (16-bit) code units in variable length
+patterns to represent each unicode scalar value.  The Unicode scalar
+values from ranges 0x0000 - 0xD7FF and 0xE000 - 0xFFFF are represented by
+themselves in a single code unit.  The Unicode scalar values from the
+range 0x10000 - 0x10FFFF are each represented by a pair of 16-bit code
+units, the first from the range 0xD800 - 0xDBFF and the second from the
+range 0xDC00 - 0xDFFF.  Every 2-octet value may appear somewhere in the
+proper UTF-16 encoding of some Unicode text.  There are no code unit
+values that are forbidden.  There are UCS-2 sequences that are not
+valid UTF-16, precisely those UCS-2 sequences that include surrogates
+not arranged in properly formed pairs.  
+
+Note the difficulties if we try to design an encoding with 2-octet code
+units to encode the union of UCS-2 and Unicode.  This can certainly
+be done, but the result will bear little resemblence to UTF-16.  All
+valid UTF-16 sequences are used up representing valid Unicode.  To also
+represent the strings of UCS-2 that are not valid Unicode, we would need to
+use 2-octet sequences that are not valid UTF-16.  Any such scheme will
+have some point of discontinuity with the legacy UCS-2 system.  Likewise,
+since every 2-octet code unit sequence is used in UCS-2 to represent
+itself, there is no room to create representation for supplemental
+planes of unicode in a 2-octet encoding without introducing a discontinuity.
+There will have to be some 2-octet sequence that used to mean one thing
+and now means another thing at the transition, or there will have to
+be some approach of preserving both systems and taking care to distinguish
+at each point which is in use.  This sticking point is a major difficulty
+in managing a migration in Tcl's Unicode support, since public interfaces
+exist that transfer 2-octet encoded data.
+
+Unicode also defines the UTF-8 encoding of unicode scalar values into
+single-octet (8-bit) (byte-oriented) code units in variable length
+patterns.  The Unicode scalar values from the range 0x0000 - 0x007F
+are represented by themselves in a single code unit. Each value from the
+range 0x0080 - 0x07FF is represented by a two-byte sequence of a leading
+byte from the range 0xC2 - 0xDF and a trailing byte from the
+range 0x80 - 0xBF.  Each value from the ranges 0x0800 - 0xD7FF and
+0xE000 - 0xFFFF is represented by a three-byte sequence starting
+with a leading byte from the range 0xE0 - 0xEF and two trailing bytes
+as before. (Some such three-byte sequences would encode surrogates,
+and are therefore not valid UTF-8 sequences).  Each value from the
+range 0x10000 - 0x10FFFF is represented by a four-byte sequence
+starting with a leading byte from the range 0xF0 - 0xF4 and three trailing
+bytes as before. (Some such four-byte sequences would decode to a
+codepoint greater than 0x10FFF, and are therefore not valid UTF-8 sequences).
+Note the implication that the bytes 0xC0, 0xC1, and 0xF5 - 0xFF can never
+appear in a proper UTF-8 byte sequence.  Besides those forbidden bytes,
+there are many sequences also forbidden, including any trailing byte
+where one does not belong, any leading byte where one does not belong,
+or any multi-byte sequence that when decoded would produce a value
+outside the range for that sequence length (for example, the four-byte
+sequence 0xF0 0x80 0x80 0x80 that would appear to encode U+0000, which
+can only properly be encoded by a single-byte).  The last of these
+constraints was formally imposed by Unicode 3.1.0.  Earlier versions
+of Unicode explictly approved of decoders that accepted overlong
+byte sequences in UTF-8, and even included such decoders in their sample
+implementations.
+
+Here the news is better when it comes to thinking about representations
+of the union of UCS-2 and Unicode.  The three-byte sequences that might
+encode surrogates that are forbidden in UTF-8 are available to encode
+those values of UCS-2 without interference with UTF-8 encoding of everything
+else.  The WTF-8 variation of UTF-8 is one approach in this area, though
+the details require careful examination.  The byte
+sequence 0xF0 0x90 0x80 0x80 (representing U+10000) and the
+byte sequence 0xED 0xA0 0x80 0xED 0xB0 0x80 (representing U+D8000 U+DC00,
+which in turn is the surrogate pair representation of U+10000)
+are distinct, allowing the required distinction.  WTF-8 is defined to
+disallow this, however, because of the lack of a continuing ability to
+distinguish after conversion to UTF-16.  That remains the critical sticking
+point.
+
+Tcl 8.1 documentation began the claim that Tcl used UTF-8 to store
+its string values and as the encoding with which to pass byte-oriented
+string values through interfaces, but that was never strictly true.
+More on that below.
 
 Unicode 6.0.0 (October 2010) was notable as the first version to include
 assignments for emoji symbols.  Their popularity on mobile devices would end
@@ -298,12 +403,12 @@ support of Unicode 8.0.  Tcl 8.6.0 was released December 2012 with partial
 support of Unicode 6.2.  Tcl 8.6.6 was released July 2016 with partial
 support of Unicode 9.0.
 
-Unicode evolution
-	3.1.0 - UTF-32, surrogates are "irregular",
-		UTF-8 decoders not accept overlong or other illegal
-	Unicode scalar values
-
-Opening of Tcl 9 development
+In 2017, the trunk of Tcl development was turned over to work on the
+Tcl 9.0 release.  This focused attention again on how best to revise
+the string representation for that new milestone.  The history of Tcl
+string values in releases 8.6.7 and later felt the influence of that 
+focus, and are best discussed after some attention to Tcl's string
+representations.
 
 ## Representations
 
@@ -340,15 +445,6 @@ interoperability with legacy routines written to Tcl 7 expectations.  Most
 notably the *bytes* and *length* fields of a **Tcl\_Obj** struct implement
 the Tcl 8.0 string representation and require the terminating **NULL**
 to be present at *bytes*[*length*].
-
-
-
-
-
-
-
-
-
 
 
 
