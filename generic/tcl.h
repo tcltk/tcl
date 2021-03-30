@@ -2069,6 +2069,10 @@ typedef struct Tcl_EncodingType {
  *				content.  Otherwise, the number of chars
  *				produced is controlled only by other limiting
  *				factors.
+ * TCL_ENCODING_MODIFIED -	Convert NULL bytes to \xC0\x80 in stead of
+ *				0x00. Only valid for "utf-8", "wtf-8 and "cesu-8".
+ *				This flag is implicit for external -> internal conversions,
+ *				optional for internal -> external conversions.
  */
 
 #define TCL_ENCODING_START		0x01
@@ -2076,6 +2080,7 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_STOPONERROR	0x04
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
+#define TCL_ENCODING_MODIFIED	0x20
 
 /*
  * The following definitions are the error codes returned by the conversion
