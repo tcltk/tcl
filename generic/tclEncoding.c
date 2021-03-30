@@ -1183,7 +1183,7 @@ Tcl_ExternalToUtf(
     if (!noTerminate) {
 	/*
 	 * If there are any null characters in the middle of the buffer,
-	 * they will converted to the UTF-8 null character (\xC080). To get
+	 * they will converted to the UTF-8 null character (\xC0\x80). To get
 	 * the actual \0 at the end of the destination buffer, we need to
 	 * append it manually.  First make room for it...
 	 */

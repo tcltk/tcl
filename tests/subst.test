@@ -48,7 +48,7 @@ test subst-3.2 {backslash substitutions with utf chars} {
     # 'j' is just a char that doesn't mean anything, and \344 is 'ä'
     # that also doesn't mean anything, but is multi-byte in UTF-8.
     list [subst \j] [subst \\j] [subst \\344] [subst \\\344]
-} "j j \344 \344"
+} "j j ä ä"
 
 test subst-4.1 {variable substitutions} {
     set a 44
