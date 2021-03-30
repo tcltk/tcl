@@ -23,6 +23,10 @@ of one or more subprocesses to execute.
 The arguments take the form of a standard shell pipeline
 where each \fIarg\fR becomes one word of a command, and
 each distinct command becomes a subprocess.
+The result of the command is the standard output of the final subprocess in
+the pipeline, interpreted using the system \fBencoding\fR; to use any other
+encoding (especially including binary data), the pipeline must be
+\fBopen\fRed, configured and read explicitly.
 .PP
 If the initial arguments to \fBexec\fR start with \fB\-\fR then
 they are treated as command-line switches and are not part
@@ -369,6 +373,7 @@ The \fBexec\fR command is fully functional and works as described.
 Here are some examples of the use of the \fBexec\fR command on Unix.
 .PP
 To execute a simple program and get its result:
+.PP
 .CS
 \fBexec\fR uname -a
 .CE
@@ -376,6 +381,7 @@ To execute a simple program and get its result:
 To execute a program that can return a non-zero result, you should
 wrap the call to \fBexec\fR in \fBcatch\fR and check the contents
 of the \fB\-errorcode\fR return option if you have an error:
+.PP
 .CS
 set status 0
 if {[catch {\fBexec\fR grep foo bar.txt} results options]} {
@@ -391,10 +397,13 @@ if {[catch {\fBexec\fR grep foo bar.txt} results options]} {
 When translating a command from a Unix shell invocation, care should
 be taken over the fact that single quote characters have no special
 significance to Tcl.  Thus:
+.PP
 .CS
 awk '{sum += $1} END {print sum}' numbers.list
 .CE
+.PP
 would be translated into something like:
+.PP
 .CS
 \fBexec\fR awk {{sum += $1} END {print sum}} numbers.list
 .CE
@@ -403,6 +412,7 @@ If you are converting invocations involving shell globbing, you should
 remember that Tcl does not handle globbing or expand things into
 multiple arguments by default.  Instead you should write things like
 this:
+.PP
 .CS
 \fBexec\fR ls -l {*}[glob *.tcl]
 .CE
@@ -411,26 +421,41 @@ Here are some examples of the use of the \fBexec\fR command on Windows.
 .PP
 To start an instance of \fInotepad\fR editing a file without waiting
 for the user to finish editing the file:
+.PP
 .CS
 \fBexec\fR notepad myfile.txt &
 .CE
 .PP
 To print a text file using \fInotepad\fR:
+.PP
 .CS
 \fBexec\fR notepad /p myfile.txt
+.CE
+.PP
+To print a text file in a directory other than the current one using
+\fInotepad\fR, you need to use \fBfile nativename\fR to convert the name into
+a form that will be understood by the other program:
+.PP
+.CS
+\fBexec\fR notepad /p [file nativename some/dir/myfile.txt]
 .CE
 .PP
 If a program calls other programs, such as is common with compilers,
 then you may need to resort to batch files to hide the console windows
 that sometimes pop up:
+.PP
 .CS
 \fBexec\fR cmp.bat somefile.c -o somefile
 .CE
+.PP
 With the file \fIcmp.bat\fR looking something like:
+.PP
 .CS
 @gcc %*
 .CE
+.PP
 or like another variant using single parameters:
+.PP
 .CS
 @gcc %1 %2 %3 %4 %5 %6 %7 %8 %9
 .CE
@@ -448,6 +473,7 @@ applies especially when you want to run
 commands like
 \fIdir\fR from a Tcl script (if you just want to list filenames, use
 the \fBglob\fR command.)  To do that, use this:
+.PP
 .CS
 \fBexec\fR {*}[auto_execok dir] *.tcl
 .CE
