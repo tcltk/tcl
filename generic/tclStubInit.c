@@ -1932,7 +1932,7 @@ const TclStubs tclStubs = {
     Tcl_UtfCharComplete, /* 654 */
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
-    0, /* 657 */
+    Tcl_UniCharIsUnicode, /* 657 */
     Tcl_ExternalToUtfDStringEx, /* 658 */
     Tcl_UtfToExternalDStringEx, /* 659 */
 };
