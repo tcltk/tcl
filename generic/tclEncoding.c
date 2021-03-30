@@ -1161,13 +1161,12 @@ Tcl_ExternalToUtfDString(
 		flags, &state, dst, dstLen, &srcRead, &dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
+	src += srcRead;
 	if (result != TCL_CONVERT_NOSPACE) {
 	    Tcl_DStringSetLength(dstPtr, soFar);
 	    return Tcl_DStringValue(dstPtr);
 	}
-
 	flags &= ~TCL_ENCODING_START;
-	src += srcRead;
 	srcLen -= srcRead;
 	if (Tcl_DStringLength(dstPtr) == 0) {
 	    Tcl_DStringSetLength(dstPtr, dstLen);
@@ -1348,6 +1347,7 @@ Tcl_UtfToExternalDString(
 		&srcRead, &dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
+	src += srcRead;
 	if (result != TCL_CONVERT_NOSPACE) {
 	    if (encodingPtr->nullSize == 2) {
 		Tcl_DStringSetLength(dstPtr, soFar + 1);
@@ -1357,7 +1357,6 @@ Tcl_UtfToExternalDString(
 	}
 
 	flags &= ~TCL_ENCODING_START;
-	src += srcRead;
 	srcLen -= srcRead;
 	if (Tcl_DStringLength(dstPtr) == 0) {
 	    Tcl_DStringSetLength(dstPtr, dstLen);
@@ -2274,6 +2273,7 @@ UtfToUtfProc(
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
 	    int low;
+	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
 	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_STOPONERROR)) {
 		result = TCL_CONVERT_SYNTAX;
@@ -2302,6 +2302,7 @@ UtfToUtfProc(
 		    if (!(flags & TCL_ENCODING_WTF)) {
 			if (flags & TCL_ENCODING_STOPONERROR) {
 			    result = TCL_CONVERT_UNKNOWN;
+			    src = saveSrc;
 			    break;
 			}
 			if (!(flags & TCL_ENCODING_MODIFIED)) {
@@ -2320,6 +2321,7 @@ UtfToUtfProc(
 	    } else if (!(flags & TCL_ENCODING_WTF) && !Tcl_UniCharIsUnicode(ch)) {
 		if (flags & TCL_ENCODING_STOPONERROR) {
 		    result = TCL_CONVERT_UNKNOWN;
+		    src = saveSrc;
 		    break;
 		}
 		if (!(flags & TCL_ENCODING_MODIFIED)) {
@@ -2483,7 +2485,7 @@ UtfToUtf16Proc(
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
     int result, numChars;
-    int ch;
+    int ch, len;
 
     srcStart = src;
     srcEnd = src + srcLen;
@@ -2511,7 +2513,7 @@ UtfToUtf16Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	src += TclUtfToUCS4(src, &ch);
+	len = TclUtfToUCS4(src, &ch);
 	if (!(flags & TCL_ENCODING_WTF) && !Tcl_UniCharIsUnicode(ch)) {
 	    if (flags & TCL_ENCODING_STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
@@ -2519,6 +2521,7 @@ UtfToUtf16Proc(
 	    }
 	    ch = 0xFFFD;
 	}
+	src += len;
 	if (flags & TCL_ENCODING_LE) {
 	    if (ch <= 0xFFFF) {
 		*dst++ = (ch & 0xFF);
