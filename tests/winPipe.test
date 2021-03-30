@@ -174,7 +174,7 @@ test winpipe-1.21 {32 bit comprehensive tests: read/write application} \
 	{win exec cat32} {
     set f [open "|[list $cat32]" r+]
     puts $f $big
-    puts $f \032
+    puts $f \x1A
     flush $f
     set r [read $f 64]
     catch {close $f}

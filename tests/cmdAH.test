@@ -149,10 +149,10 @@ test cmdAH-2.6.2 {cd} -constraints {unix nonPortable} -setup {
 test cmdAH-2.6.3 {Tcl_CdObjCmd, bug #3118489} -setup {
     set dir [pwd]
 } -returnCodes error -body {
-    cd .\0
+    cd .\x00
 } -cleanup {
     cd $dir
-} -match glob -result "couldn't change working directory to \".\0\": *"
+} -match glob -result "couldn't change working directory to \".\x00\": *"
 test cmdAH-2.7 {Tcl_ConcatObjCmd} {
     concat
 } {}
@@ -186,7 +186,7 @@ test cmdAH-4.5 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
     encoding system jis0208
-    encoding convertto \u4e4e
+    encoding convertto 乎
 } -cleanup {
     encoding system $system
 } -result 8C
@@ -194,7 +194,7 @@ test cmdAH-4.6 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
     encoding system iso8859-1
-    encoding convertto jis0208 \u4e4e
+    encoding convertto jis0208 乎
 } -cleanup {
     encoding system $system
 } -result 8C
@@ -211,7 +211,7 @@ test cmdAH-4.9 {Tcl_EncodingObjCmd} -setup {
     encoding convertfrom 8C
 } -cleanup {
     encoding system $system
-} -result \u4e4e
+} -result 乎
 test cmdAH-4.10 {Tcl_EncodingObjCmd} -setup {
     set system [encoding system]
 } -body {
@@ -219,7 +219,7 @@ test cmdAH-4.10 {Tcl_EncodingObjCmd} -setup {
     encoding convertfrom jis0208 8C
 } -cleanup {
     encoding system $system
-} -result \u4e4e
+} -result 乎
 test cmdAH-4.11 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding names foo
 } -result {wrong # args: should be "encoding names"}
@@ -1221,7 +1221,7 @@ test cmdAH-24.9 {Tcl_FileObjCmd: mtime touch with non-ascii chars} -setup {
     set oldfile $file
 } -constraints unix -body {
     # introduce some non-ascii characters.
-    append file \u2022
+    append file •
     file delete -force $file
     file rename $oldfile $file
     set mtime [file mtime $file]
@@ -1246,7 +1246,7 @@ test cmdAH-24.11 {Tcl_FileObjCmd: mtime touch with non-ascii chars} -setup {
     set oldfile $file
 } -constraints win -body {
     # introduce some non-ascii characters.
-    append file \u2022
+    append file •
     file delete -force $file
     file rename $oldfile $file
     set mtime [file mtime $file]
