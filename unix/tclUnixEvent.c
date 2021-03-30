@@ -64,7 +64,7 @@ Tcl_Sleep(
 	}
 
 	if ((vdelay.sec != 0) || (vdelay.usec != 0)) {
-	    tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
+	    TclScaleTime(&vdelay);
 	}
 
 	delay.tv_sec  = vdelay.sec;

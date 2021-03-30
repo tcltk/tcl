@@ -2739,7 +2739,6 @@ MODULE_SCOPE char *tclNativeExecutableName;
 MODULE_SCOPE int tclFindExecutableSearchDone;
 MODULE_SCOPE char *tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
-MODULE_SCOPE Tcl_NotifierProcs tclNotifierHooks;
 
 MODULE_SCOPE Tcl_Encoding tclIdentityEncoding;
 
@@ -3133,12 +3132,21 @@ MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
-MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp, Tcl_Obj* pathPtr);
+MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp,
+			    Tcl_Obj* pathPtr);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    int len);
+MODULE_SCOPE void	TclpAlertNotifier(ClientData clientData);
+MODULE_SCOPE void	TclpServiceModeHook(int mode);
+MODULE_SCOPE void	TclpSetTimer(const Tcl_Time *timePtr);
+MODULE_SCOPE int	TclpWaitForEvent(const Tcl_Time *timePtr);
+MODULE_SCOPE void	TclpCreateFileHandler(int fd, int mask,
+			    Tcl_FileProc *proc, ClientData clientData);
 MODULE_SCOPE int	TclpDeleteFile(const void *path);
+MODULE_SCOPE void	TclpDeleteFileHandler(int fd);
 MODULE_SCOPE void	TclpFinalizeCondition(Tcl_Condition *condPtr);
 MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
+MODULE_SCOPE void	TclpFinalizeNotifier(ClientData clientData);
 MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
 MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
@@ -3152,6 +3160,7 @@ MODULE_SCOPE int	TclpFindVariable(const char *name, int *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    unsigned int *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
+MODULE_SCOPE ClientData	TclpInitNotifier(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
 MODULE_SCOPE void	TclpInitUnlock(void);
 MODULE_SCOPE Tcl_Obj *	TclpObjListVolumes(void);
@@ -3178,8 +3187,9 @@ MODULE_SCOPE int	TclpObjChdir(Tcl_Obj *pathPtr);
 MODULE_SCOPE Tcl_Channel TclpOpenTemporaryFile(Tcl_Obj *dirObj,
 			    Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
 			    Tcl_Obj *resultingNameObj);
-MODULE_SCOPE void TclPkgFileSeen(Tcl_Interp *interp, const char *fileName);
-MODULE_SCOPE void *TclInitPkgFiles(Tcl_Interp *interp);
+MODULE_SCOPE void	TclPkgFileSeen(Tcl_Interp *interp,
+			    const char *fileName);
+MODULE_SCOPE void *	TclInitPkgFiles(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
 MODULE_SCOPE char *	TclpReadlink(const char *fileName,
@@ -4210,6 +4220,37 @@ MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           (-2)
 #define TCL_INDEX_START         (0)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclScaleTime --
+ *
+ *	TIP #233 (Virtualized Time): Wrapper around the time virutalisation
+ *	rescale function to hide the binding of the clientData.
+ *
+ *	This is static inline code; it's like a macro, but a function. It's
+ *	used because this is a piece of code that ends up in places that are a
+ *	bit performance sensitive.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Updates the time structure (given as an argument) with what the time
+ *	should be after virtualisation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline void
+TclScaleTime(
+    Tcl_Time *timePtr)
+{
+    if (timePtr != NULL) {
+	tclScaleTimeProcPtr(timePtr, tclTimeClientData);
+    }
+}
 
 /*
  *----------------------------------------------------------------

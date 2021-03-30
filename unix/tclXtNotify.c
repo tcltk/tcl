@@ -132,7 +132,7 @@ TclSetAppContext(
 	     * after initialization, so we panic.
 	     */
 
-	    Tcl_Panic("TclSetAppContext:  multiple application contexts");
+	    Tcl_Panic("TclSetAppContext: multiple application contexts");
 	}
     } else {
 	/*
@@ -359,7 +359,7 @@ CreateFileHandler(
 	}
     }
     if (filePtr == NULL) {
-	filePtr = (FileHandler *)ckalloc(sizeof(FileHandler));
+	filePtr = (FileHandler *) ckalloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->read = 0;
 	filePtr->write = 0;
@@ -496,7 +496,7 @@ FileProc(
     int *fd,
     XtInputId *id)
 {
-    FileHandler *filePtr = (FileHandler *)clientData;
+    FileHandler *filePtr = (FileHandler *) clientData;
     FileHandlerEvent *fileEvPtr;
     int mask = 0;
 
@@ -525,7 +525,7 @@ FileProc(
      */
 
     filePtr->readyMask |= mask;
-    fileEvPtr = (FileHandlerEvent *)ckalloc(sizeof(FileHandlerEvent));
+    fileEvPtr = (FileHandlerEvent *) ckalloc(sizeof(FileHandlerEvent));
     fileEvPtr->header.proc = FileHandlerEventProc;
     fileEvPtr->fd = filePtr->fd;
     Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);

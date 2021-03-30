@@ -97,7 +97,7 @@ typedef struct ThreadSpecificData {
 				 * that are ready for I/O. */
     pthread_mutex_t notifierMutex;
 				/* Mutex protecting notifier termination in
-				 * PlatformEventsFinalize. */
+				 * TclpFinalizeNotifier. */
 #ifdef HAVE_EVENTFD
     int triggerEventFd;		/* eventfd(2) used by other threads to wake
 				 * up this thread for inter-thread IPC. */
@@ -119,20 +119,15 @@ static Tcl_ThreadDataKey dataKey;
  * Forward declarations.
  */
 
-static void		PlatformCreateFileHandler(int fd, int mask,
-			    Tcl_FileProc *proc, ClientData clientData);
-static void		PlatformDeleteFileHandler(int fd)
 static void		PlatformEventsControl(FileHandler *filePtr,
 			    ThreadSpecificData *tsdPtr, int op, int isNew);
-static void		PlatformEventsFinalize(void);
 static void		PlatformEventsInit(void);
 static int		PlatformEventsTranslate(struct epoll_event *event);
 static int		PlatformEventsWait(struct epoll_event *events,
 			    size_t numEvents, struct timeval *timePtr);
-static int		PlatformWaitForEvent(const Tcl_Time *timePtr);
-
+
 /*
- * Incorporate the base notifier API.
+ * Incorporate the base notifier implementation.
  */
 
 #include "tclUnixNotfy.c"
@@ -140,7 +135,7 @@ static int		PlatformWaitForEvent(const Tcl_Time *timePtr);
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InitNotifier --
+ * TclpInitNotifier --
  *
  *	Initializes the platform specific notifier state.
  *
@@ -155,47 +150,14 @@ static int		PlatformWaitForEvent(const Tcl_Time *timePtr);
  */
 
 ClientData
-Tcl_InitNotifier(void)
+TclpInitNotifier(void)
 {
-    if (tclNotifierHooks.initNotifierProc) {
-	return tclNotifierHooks.initNotifierProc();
-    } else {
-	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-	PlatformEventsInit();
-	return tsdPtr;
-    }
+    PlatformEventsInit();
+    return tsdPtr;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_FinalizeNotifier --
- *
- *	This function is called to cleanup the notifier state before a thread
- *	is terminated.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If no finalizeNotifierProc notifier hook exists, PlatformEvents-
- *	Finalize is called.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_FinalizeNotifier(
-    ClientData clientData)
-{
-    if (tclNotifierHooks.finalizeNotifierProc) {
-	tclNotifierHooks.finalizeNotifierProc(clientData);
-	return;
-    } else {
-	PlatformEventsFinalize();
-    }
-}
 
 /*
  *----------------------------------------------------------------------
@@ -282,7 +244,7 @@ PlatformEventsControl(
 /*
  *----------------------------------------------------------------------
  *
- * PlatformEventsFinalize --
+ * TclpFinalizeNotifier --
  *
  *	This function closes the eventfd and the epoll file descriptor and
  *	frees the epoll_event structs owned by the thread of the caller.  The
@@ -303,8 +265,9 @@ PlatformEventsControl(
  *----------------------------------------------------------------------
  */
 
-static void
-PlatformEventsFinalize(void)
+void
+TclpFinalizeNotifier(
+    TCL_UNUSED(ClientData))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -376,7 +339,7 @@ PlatformEventsInit(void)
     if (errno) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create mutex");
     }
-    filePtr = (FileHandler *)ckalloc(sizeof(FileHandler));
+    filePtr = (FileHandler *) ckalloc(sizeof(FileHandler));
 #ifdef HAVE_EVENTFD
     tsdPtr->triggerEventFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
     if (tsdPtr->triggerEventFd <= 0) {
@@ -484,9 +447,9 @@ PlatformEventsWait(
     } else if (!timePtr->tv_sec && !timePtr->tv_usec) {
 	timeout = 0;
     } else {
-	timeout = (int)timePtr->tv_sec * 1000;
+	timeout = (int) timePtr->tv_sec * 1000;
 	if (timePtr->tv_usec) {
-	    timeout += (int)timePtr->tv_usec / 1000;
+	    timeout += (int) timePtr->tv_usec / 1000;
 	}
     }
 
@@ -497,7 +460,7 @@ PlatformEventsWait(
      */
 
     gettimeofday(&tv0, NULL);
-    numFound = epoll_wait(tsdPtr->eventsFd, events, (int)numEvents, timeout);
+    numFound = epoll_wait(tsdPtr->eventsFd, events, (int) numEvents, timeout);
     gettimeofday(&tv1, NULL);
     if (timePtr && (timePtr->tv_sec && timePtr->tv_usec)) {
 	timersub(&tv1, &tv0, &tv_delta);
@@ -514,7 +477,7 @@ PlatformEventsWait(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CreateFileHandler, CreateFileHandler --
+ * TclpCreateFileHandler --
  *
  *	This function registers a file handler with the epoll notifier of the
  *	thread of the caller.
@@ -530,27 +493,7 @@ PlatformEventsWait(
  */
 
 void
-Tcl_CreateFileHandler(
-    int fd,			/* Handle of stream to watch. */
-    int mask,			/* OR'ed combination of TCL_READABLE,
-				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
-				 * conditions under which proc should be
-				 * called. */
-    Tcl_FileProc *proc,		/* Function to call for each selected
-				 * event. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
-{
-    int isNew;
-
-    if (tclNotifierHooks.createFileHandlerProc) {
-	tclNotifierHooks.createFileHandlerProc(fd, mask, proc, clientData);
-    } else {
-	PlatformCreateFileHandler(fd, mask, proc, clientData);
-    }
-}
-
-static void
-PlatformCreateFileHandler(
+TclpCreateFileHandler(
     int fd,			/* Handle of stream to watch. */
     int mask,			/* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
@@ -561,23 +504,15 @@ PlatformCreateFileHandler(
     ClientData clientData)	/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    FileHandler *filePtr;
+    FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
+    int isNew = (filePtr == NULL);
 
-    for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
-	    filePtr = filePtr->nextPtr) {
-	if (filePtr->fd == fd) {
-	    break;
-	}
-    }
-    if (filePtr == NULL) {
+    if (isNew) {
 	filePtr = (FileHandler *) ckalloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->readyMask = 0;
 	filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
 	tsdPtr->firstFileHandlerPtr = filePtr;
-	isNew = 1;
-    } else {
-	isNew = 0;
     }
     filePtr->proc = proc;
     filePtr->clientData = clientData;
@@ -590,7 +525,7 @@ PlatformCreateFileHandler(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_DeleteFileHandler, PlatformDeleteFileHandler --
+ * TclpDeleteFileHandler --
  *
  *	Cancel a previously-arranged callback arrangement for a file on the
  *	epoll file descriptor of the thread of the caller.
@@ -608,19 +543,7 @@ PlatformCreateFileHandler(
  */
 
 void
-Tcl_DeleteFileHandler(
-    int fd)			/* Stream id for which to remove callback
-				 * function. */
-{
-    if (tclNotifierHooks.deleteFileHandlerProc) {
-	tclNotifierHooks.deleteFileHandlerProc(fd);
-    } else {
-	PlatformDeleteFileHandler(fd);
-    }
-}
-
-static void
-PlatformDeleteFileHandler(
+TclpDeleteFileHandler(
     int fd)			/* Stream id for which to remove callback
 				 * function. */
 {
@@ -631,14 +554,9 @@ PlatformDeleteFileHandler(
      * Find the entry for the given file (and return if there isn't one).
      */
 
-    for (prevPtr = NULL, filePtr = tsdPtr->firstFileHandlerPtr; ;
-	    prevPtr = filePtr, filePtr = filePtr->nextPtr) {
-	if (filePtr == NULL) {
-	    return;
-	}
-	if (filePtr->fd == fd) {
-	    break;
-	}
+    filePtr = LookUpFileHandler(tsdPtr, fd, &prevPtr);
+    if (filePtr == NULL) {
+	return;
     }
 
     /*
@@ -665,10 +583,10 @@ PlatformDeleteFileHandler(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_WaitForEvent, PlatformWaitForEvent --
+ * TclpWaitForEvent --
  *
  *	This function is called by Tcl_DoOneEvent to wait for new events on
- *	the message queue. If the block time is 0, then Tcl_WaitForEvent just
+ *	the message queue. If the block time is 0, then TclpWaitForEvent just
  *	polls without blocking.
  *
  *	The waiting logic is implemented in PlatformEventsWait.
@@ -684,18 +602,7 @@ PlatformDeleteFileHandler(
  */
 
 int
-Tcl_WaitForEvent(
-    const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
-{
-    if (tclNotifierHooks.waitForEventProc) {
-	return tclNotifierHooks.waitForEventProc(timePtr);
-    } else {
-	return PlatformWaitForEvent(timePtr);
-    }
-}
-
-static int
-PlatformWaitForEvent(
+TclpWaitForEvent(
     const Tcl_Time *timePtr)	/* Maximum block time, or NULL. */
 {
     FileHandler *filePtr;
@@ -726,7 +633,7 @@ PlatformWaitForEvent(
 
 	if (timePtr->sec != 0 || timePtr->usec != 0) {
 	    vTime = *timePtr;
-	    tclScaleTimeProcPtr(&vTime, tclTimeClientData);
+	    TclScaleTime(&vTime);
 	    timePtr = &vTime;
 	}
 	timeout.tv_sec = timePtr->sec;
