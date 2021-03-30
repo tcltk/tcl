@@ -579,12 +579,19 @@ EncodingConvertfromObjCmd(
     /*
      * Convert the string into a byte array in 'ds'
      */
-    bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
+    if (stopOnError) {
+	bytesPtr = (char *) TclGetBytesFromObj(interp, data, &length);
+	if (bytesPtr == NULL) {
+	    return TCL_ERROR;
+	}
+    } else {
+	bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
+    }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    stopOnError ? TCL_ENCODING_STOPONERROR : 0, &ds);
     if (stopOnError && (result != (size_t)-1)) {
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("decoding error after reading %"
-	    TCL_LL_MODIFIER "u byte%s", (long long)result, (result != 1)?"s":""));
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte at index %"
+	    TCL_LL_MODIFIER "u: '%c' (\\x%X)", (long long)result, UCHAR(bytesPtr[result]), UCHAR(bytesPtr[result])));
 	Tcl_DStringFree(&ds);
 	return TCL_ERROR;
     }
@@ -667,10 +674,12 @@ EncodingConverttoObjCmd(
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    stopOnError ? TCL_ENCODING_STOPONERROR : 0, &ds);
     if (stopOnError && (result != (size_t)-1)) {
-    result = Tcl_NumUtfChars(stringPtr, result);
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("encoding error after reading %"
-	    TCL_LL_MODIFIER "u character%s", (long long)result, (result != 1)?"s":""));
-    Tcl_DStringFree(&ds);
+	size_t pos = Tcl_NumUtfChars(stringPtr, result);
+	int ucs4;
+	TclUtfToUCS4(&stringPtr[result], &ucs4);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected character at index %"
+		TCL_LL_MODIFIER "u: '%1s' (U+%06X)", (long long)pos, &stringPtr[result], ucs4));
+	Tcl_DStringFree(&ds);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp,
