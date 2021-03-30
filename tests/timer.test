@@ -367,7 +367,7 @@ test timer-6.23 {Tcl_AfterCmd procedure, no option, script with NUL} -setup {
     }
 } -body {
     set x "hello world"
-    after 1 "set x ab\0cd"
+    after 1 "set x ab\x00cd"
     after 10
     update
     string length $x
@@ -378,7 +378,7 @@ test timer-6.24 {Tcl_AfterCmd procedure, no option, script with NUL} -setup {
     }
 } -body {
     set x "hello world"
-    after 1 set x ab\0cd
+    after 1 set x ab\x00cd
     after 10
     update
     string length $x
@@ -389,8 +389,8 @@ test timer-6.25 {Tcl_AfterCmd procedure, cancel option, script with NUL} -setup 
     }
 } -body {
     set x "hello world"
-    after 1 set x ab\0cd
-    after cancel "set x ab\0ef"
+    after 1 set x ab\x00cd
+    after cancel "set x ab\x00ef"
     llength [after info]
 } -cleanup {
     foreach i [after info] {
@@ -403,8 +403,8 @@ test timer-6.26 {Tcl_AfterCmd procedure, cancel option, script with NUL} -setup 
     }
 } -body {
     set x "hello world"
-    after 1 set x ab\0cd
-    after cancel set x ab\0ef
+    after 1 set x ab\x00cd
+    after cancel set x ab\x00ef
     llength [after info]
 } -cleanup {
     foreach i [after info] {
@@ -417,7 +417,7 @@ test timer-6.27 {Tcl_AfterCmd procedure, idle option, script with NUL} -setup {
     }
 } -body {
     set x "hello world"
-    after idle "set x ab\0cd"
+    after idle "set x ab\x00cd"
     update
     string length $x
 } -result {5}
@@ -427,7 +427,7 @@ test timer-6.28 {Tcl_AfterCmd procedure, idle option, script with NUL} -setup {
     }
 } -body {
     set x "hello world"
-    after idle set x ab\0cd
+    after idle set x ab\x00cd
     update
     string length $x
 } -result {5}
@@ -438,7 +438,7 @@ test timer-6.29 {Tcl_AfterCmd procedure, info option, script with NUL} -setup {
 } -body {
     set x "hello world"
     set id junk
-    set id [after 10 set x ab\0cd]
+    set id [after 10 set x ab\x00cd]
     update
     string length [lindex [lindex [after info $id] 0] 2]
 } -cleanup {
