@@ -511,7 +511,6 @@ FillEncodingFileMap(void)
  */
 
 /* Those flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
-#define TCL_ENCODING_MODIFIED	0x20	/* Converting NULL bytes to 0xC0 0x80 */
 #define TCL_ENCODING_LE		0x80	/* Little-endian encoding, for ucs-2/utf-16 only */
 
 void
@@ -1117,26 +1116,27 @@ Tcl_ExternalToUtfDString(
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    Tcl_ExternalToUtfDStringEx(encoding, src, srcLen, dstPtr, 0);
+    Tcl_ExternalToUtfDStringEx(encoding, src, srcLen, 0, dstPtr);
     return Tcl_DStringValue(dstPtr);
 }
 
 
-int
+size_t
 Tcl_ExternalToUtfDStringEx(
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
     int srcLen,			/* Source string length in bytes, or < 0 for
 				 * encoding-specific string length. */
-    Tcl_DString *dstPtr,	/* Uninitialized or free DString in which the
+    int flags,			/* Conversion control flags. */
+    Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
-    int flags)			/* Conversion control flags. */
 {
     char *dst;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
     int dstLen, result, soFar, srcRead, dstWrote, dstChars;
+    const char *srcStart = src;
 
     Tcl_DStringInit(dstPtr);
     dst = Tcl_DStringValue(dstPtr);
@@ -1160,13 +1160,12 @@ Tcl_ExternalToUtfDStringEx(
 		flags, &state, dst, dstLen, &srcRead, &dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
+	src += srcRead;
 	if (result != TCL_CONVERT_NOSPACE) {
 	    Tcl_DStringSetLength(dstPtr, soFar);
-	    return result;
+	    return (result == TCL_OK) ? (size_t)-1 : (size_t)(src - srcStart);
 	}
-
 	flags &= ~TCL_ENCODING_START;
-	src += srcRead;
 	srcLen -= srcRead;
 	if (Tcl_DStringLength(dstPtr) == 0) {
 	    Tcl_DStringSetLength(dstPtr, dstLen);
@@ -1321,25 +1320,26 @@ Tcl_UtfToExternalDString(
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    Tcl_UtfToExternalDStringEx(encoding, src, srcLen, dstPtr, 0);
+    Tcl_UtfToExternalDStringEx(encoding, src, srcLen, 0, dstPtr);
     return Tcl_DStringValue(dstPtr);
 }
 
-int
+size_t
 Tcl_UtfToExternalDStringEx(
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes, or < 0 for
 				 * strlen(). */
-    Tcl_DString *dstPtr,	/* Uninitialized or free DString in which the
+    int flags,	/* Conversion control flags. */
+    Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
-    int flags)	/* Conversion control flags. */
 {
     char *dst;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
     int dstLen, result, soFar, srcRead, dstWrote, dstChars;
+    const char *srcStart = src;
 
     Tcl_DStringInit(dstPtr);
     dst = Tcl_DStringValue(dstPtr);
@@ -1355,23 +1355,23 @@ Tcl_UtfToExternalDStringEx(
     } else if (srcLen < 0) {
 	srcLen = strlen(src);
     }
-    flags |= TCL_ENCODING_START | TCL_ENCODING_END | TCL_ENCODING_EXTERNAL;
+    flags |= TCL_ENCODING_START | TCL_ENCODING_END;
     while (1) {
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
 		srcLen, flags, &state, dst, dstLen,
 		&srcRead, &dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
+	src += srcRead;
 	if (result != TCL_CONVERT_NOSPACE) {
 	    if (encodingPtr->nullSize == 2) {
 		Tcl_DStringSetLength(dstPtr, soFar + 1);
 	    }
 	    Tcl_DStringSetLength(dstPtr, soFar);
-	    return result;
+	    return (result == TCL_OK) ? (size_t)-1 : (size_t)(src - srcStart);
 	}
 
 	flags &= ~TCL_ENCODING_START;
-	src += srcRead;
 	srcLen -= srcRead;
 	if (Tcl_DStringLength(dstPtr) == 0) {
 	    Tcl_DStringSetLength(dstPtr, dstLen);
