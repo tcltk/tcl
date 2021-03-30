@@ -2080,7 +2080,7 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_STOPONERROR	0x04
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
-#define TCL_ENCODING_MODIFIED	0x20
+#define TCL_ENCODING_MODIFIED		0x20
 
 /*
  * The following definitions are the error codes returned by the conversion

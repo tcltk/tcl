@@ -1937,11 +1937,12 @@ EXTERN int		Tcl_UtfCharComplete(const char *src, int length);
 EXTERN const char *	Tcl_UtfNext(const char *src);
 /* 656 */
 EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
-/* 657 */
+/* Slot 657 is reserved */
+/* 658 */
 EXTERN size_t		Tcl_ExternalToUtfDStringEx(Tcl_Encoding encoding,
 				const char *src, int srcLen, int flags,
 				Tcl_DString *dsPtr);
-/* 658 */
+/* 659 */
 EXTERN size_t		Tcl_UtfToExternalDStringEx(Tcl_Encoding encoding,
 				const char *src, int srcLen, int flags,
 				Tcl_DString *dsPtr);
@@ -2637,8 +2638,9 @@ typedef struct TclStubs {
     int (*tcl_UtfCharComplete) (const char *src, int length); /* 654 */
     const char * (*tcl_UtfNext) (const char *src); /* 655 */
     const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 656 */
-    size_t (*tcl_ExternalToUtfDStringEx) (Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_DString *dsPtr); /* 657 */
-    size_t (*tcl_UtfToExternalDStringEx) (Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_DString *dsPtr); /* 658 */
+    void (*reserved657)(void);
+    size_t (*tcl_ExternalToUtfDStringEx) (Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_DString *dsPtr); /* 658 */
+    size_t (*tcl_UtfToExternalDStringEx) (Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_DString *dsPtr); /* 659 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3981,10 +3983,11 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfNext) /* 655 */
 #define Tcl_UtfPrev \
 	(tclStubsPtr->tcl_UtfPrev) /* 656 */
+/* Slot 657 is reserved */
 #define Tcl_ExternalToUtfDStringEx \
-	(tclStubsPtr->tcl_ExternalToUtfDStringEx) /* 657 */
+	(tclStubsPtr->tcl_ExternalToUtfDStringEx) /* 658 */
 #define Tcl_UtfToExternalDStringEx \
-	(tclStubsPtr->tcl_UtfToExternalDStringEx) /* 658 */
+	(tclStubsPtr->tcl_UtfToExternalDStringEx) /* 659 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
