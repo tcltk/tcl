@@ -585,16 +585,19 @@ test encoding-24.12 {Parse valid or invalid utf-8} {
 } 1
 test encoding-24.13 {Parse valid or invalid utf-8} -body {
     encoding convertfrom utf-8 "\xC0\x81" -stoponerror
-} -returnCodes 1 -result {encoding error after reading 0 bytes}
+} -returnCodes 1 -result {decoding error after reading 0 bytes}
 test encoding-24.14 {Parse valid or invalid utf-8} -body {
     encoding convertfrom utf-8 "\xC1\xBF" -stoponerror
-} -returnCodes 1 -result {encoding error after reading 0 bytes}
+} -returnCodes 1 -result {decoding error after reading 0 bytes}
 test encoding-24.15 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom utf-8 "\xC2\x80" -stoponerror]
 } 1
 test encoding-24.16 {Parse valid or invalid utf-8} -body {
     encoding convertfrom utf-8 "Z\xE0\x80" -stoponerror
-} -returnCodes 1 -result {encoding error after reading 1 byte}
+} -returnCodes 1 -result {decoding error after reading 1 byte}
+test encoding-24.17 {Parse valid or invalid utf-8} -constraints testbytestring -body {
+    encoding convertto utf-8 [testbytestring "Z\xE0\x80"] -stoponerror
+} -returnCodes 1 -result {encoding error after reading 1 character}
 
 file delete [file join [temporaryDirectory] iso2022.txt]
 

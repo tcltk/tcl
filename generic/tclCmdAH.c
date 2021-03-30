@@ -583,7 +583,7 @@ EncodingConvertfromObjCmd(
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    stopOnError ? TCL_ENCODING_STOPONERROR : 0, &ds);
     if (stopOnError && (result != (size_t)-1)) {
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf("encoding error after reading %"
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("decoding error after reading %"
 	    TCL_LL_MODIFIER "u byte%s", (long long)result, (result != 1)?"s":""));
 	Tcl_DStringFree(&ds);
 	return TCL_ERROR;
