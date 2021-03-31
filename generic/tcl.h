@@ -576,6 +576,11 @@ typedef void (Tcl_ServiceModeHookProc) (int mode);
 typedef void *(Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
+
+/* Undocumented. To be formalized by TIP #595 */
+#define Tcl_LibraryInitProc Tcl_PackageInitProc
+#define Tcl_LibraryUnloadProc Tcl_PackageUnloadProc
+#define Tcl_StaticLibrary Tcl_StaticPackage
 
 /*
  *----------------------------------------------------------------------------
@@ -2190,7 +2195,7 @@ EXTERN const char *	Tcl_InitSubsystems(void);
 EXTERN const char *	Tcl_SetPanicProc(
 			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
 EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
-			    const char *pkgName,
+			    const char *prefix,
 			    Tcl_PackageInitProc *initProc,
 			    Tcl_PackageInitProc *safeInitProc);
 EXTERN Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);

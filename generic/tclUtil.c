@@ -1655,11 +1655,7 @@ TclTrimRight(
 	const char *q = trim;
 	size_t pInc = 0, bytesLeft = numTrim;
 
-	pp = TclUtfPrev(p, bytes);
-#if TCL_UTF_MAX < 4 /* Needed because TclUtfPrev() cannot always jump back */
-	/* sufficiently. See [d43f96c1a8] */
-	pp = TclUtfPrev(pp, bytes);
-#endif
+	pp = Tcl_UtfPrev(p, bytes);
 	do {
 	    pp += pInc;
  	    pInc = TclUtfToUCS4(pp, &ch1);

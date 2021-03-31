@@ -219,7 +219,7 @@ As an example, the user may prefer French or English text. This may be configure
 .PP
 .VS "TIP 499"
 .TP
-\fB::msgcat:mcloadedlocales subcommand\fR ?\fIlocale\fR?
+\fB::msgcat::mcloadedlocales subcommand\fR ?\fIlocale\fR?
 .
 This group of commands manage the list of loaded locales for packages not setting a package locale.
 .PP

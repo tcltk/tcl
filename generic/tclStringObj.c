@@ -1127,10 +1127,10 @@ Tcl_AppendLimitedToObj(
 	}
 	eLen = strlen(ellipsis);
 	while (eLen > limit) {
-	    eLen = TclUtfPrev(ellipsis+eLen, ellipsis) - ellipsis;
+	    eLen = Tcl_UtfPrev(ellipsis+eLen, ellipsis) - ellipsis;
 	}
 
-	toCopy = TclUtfPrev(bytes+limit+1-eLen, bytes) - bytes;
+	toCopy = Tcl_UtfPrev(bytes+limit+1-eLen, bytes) - bytes;
     }
 
     /*
@@ -2537,7 +2537,7 @@ AppendPrintfToObjVA(
 		 * multi-byte characters.
 		 */
 
-		q = TclUtfPrev(end, bytes);
+		q = Tcl_UtfPrev(end, bytes);
 		if (!Tcl_UtfCharComplete(q, (end - q))) {
 		    end = q;
 		}
@@ -3348,7 +3348,7 @@ TclStringCmp(
 		    s1 = (char *) Tcl_GetUnicode(value1Ptr);
 		    s2 = (char *) Tcl_GetUnicode(value2Ptr);
 		    if (
-#ifdef WORDS_BIGENDIAN
+#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
 			    1
 #else
 			    checkEq

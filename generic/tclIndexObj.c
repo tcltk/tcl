@@ -718,7 +718,7 @@ PrefixLongestObjCmd(
 		     * Adjust in case we stopped in the middle of a UTF char.
 		     */
 
-		    resultLength = TclUtfPrev(&resultString[i+1],
+		    resultLength = Tcl_UtfPrev(&resultString[i+1],
 			    resultString) - resultString;
 		    break;
 		}
@@ -1237,7 +1237,6 @@ PrintUsage(
     int width, numSpaces;
 #define NUM_SPACES 20
     static const char spaces[] = "                    ";
-    char tmp[TCL_DOUBLE_SPACE];
     Tcl_Obj *msg;
 
     /*
@@ -1287,7 +1286,6 @@ PrintUsage(
 	case TCL_ARGV_FLOAT:
 	    Tcl_AppendPrintfToObj(msg, "\n\t\tDefault value: %g",
 		    *((double *) infoPtr->dstPtr));
-	    sprintf(tmp, "%g", *((double *) infoPtr->dstPtr));
 	    break;
 	case TCL_ARGV_STRING: {
 	    char *string = *((char **) infoPtr->dstPtr);

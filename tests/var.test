@@ -203,27 +203,27 @@ test var-1.19 {TclLookupVar, right error message when parsing variable name} -bo
     [format set] thisvar(doesntexist)
 } -returnCodes error -result {can't read "thisvar(doesntexist)": no such variable}
 test var-1.20 {TclLookupVar, regression on utf-8 variable names} -setup {
-    proc p [list \u20ac \xe4] {info vars}
+    proc p [list € ä] {info vars}
 } -body {
     # test variable with non-ascii name is available (euro and a-uml chars here):
     list \
 	[p 1 2] \
-	[apply [list [list \u20ac \xe4] {info vars}] 1 2] \
-	[apply [list [list [list \u20ac \u20ac] [list \xe4 \xe4]] {info vars}]] \
+	[apply [list [list € ä] {info vars}] 1 2] \
+	[apply [list [list [list € €] [list ä ä]] {info vars}]] \
 } -cleanup {
     rename p {}
-} -result [lrepeat 3 [list \u20ac \xe4]]
+} -result [lrepeat 3 [list € ä]]
 test var-1.21 {TclLookupVar, regression on utf-8 variable names} -setup {
-    proc p [list [list \u20ac v\u20ac] [list \xe4 v\xe4]] {list [set \u20ac] [set \xe4]}
+    proc p [list [list € v€] [list ä vä]] {list [set €] [set ä]}
 } -body {
     # test variable with non-ascii name (and default) is resolvable (euro and a-uml chars here):
     list \
 	[p] \
-	[apply [list [list \u20ac \xe4] {list [set \u20ac] [set \xe4]}] v\u20ac v\xe4] \
-	[apply [list [list [list \u20ac v\u20ac] [list \xe4 v\xe4]] {list [set \u20ac] [set \xe4]}]] \
+	[apply [list [list € ä] {list [set €] [set ä]}] v€ vä] \
+	[apply [list [list [list € v€] [list ä vä]] {list [set €] [set ä]}]] \
 } -cleanup {
     rename p {}
-} -result [lrepeat 3 [list v\u20ac v\xe4]]
+} -result [lrepeat 3 [list v€ vä]]
 
 test var-2.1 {Tcl_LappendObjCmd, create var if new} {
     catch {unset x}
