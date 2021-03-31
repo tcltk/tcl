@@ -183,7 +183,7 @@ test encoding-7.2 {Tcl_UtfToExternalDString: big buffer} {
 test encoding-8.1 {Tcl_ExternalToUtf} {
     set f [open [file join [temporaryDirectory] dummy] w]
     fconfigure $f -translation binary -encoding iso8859-1
-    puts -nonewline $f "ab\x8c\xc1g"
+    puts -nonewline $f "ab\x8C\xC1g"
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
     fconfigure $f -translation binary -encoding shiftjis
@@ -219,7 +219,7 @@ test encoding-10.1 {Tcl_UtfToExternal} {
     close $f
     file delete [file join [temporaryDirectory] dummy]
     return $x
-} "ab\x8c\xc1g"
+} "ab\x8C\xC1g"
 
 proc viewable {str} {
     set res ""
@@ -227,7 +227,7 @@ proc viewable {str} {
 	if {[string is print $c] && [string is ascii $c]} {
 	    append res $c
 	} else {
-	    append res "\\u[format %4.4x [scan $c %c]]"
+	    append res "\\u[format %4.4X [scan $c %c]]"
 	}
     }
     return "$str ($res)"
@@ -258,7 +258,7 @@ test encoding-11.5 {LoadEncodingFile: escape file} {
 } [viewable "\x1B\$B8C\x1B(B"]
 test encoding-11.5.1 {LoadEncodingFile: escape file} {
     viewable [encoding convertto iso2022-jp 乎]
-} [viewable "\x1b\$B8C\x1b(B"]
+} [viewable "\x1B\$B8C\x1B(B"]
 test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} -setup {
     set system [encoding system]
     set path [encoding dirs]
@@ -283,24 +283,24 @@ test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} 
 } -result {invalid encoding file "splat"}
 test encoding-11.8 {encoding: extended Unicode UTF-16} {
     viewable [encoding convertto utf-16le 😹]
-} {=Ø9Þ (=\u00d89\u00de)}
+} {=Ø9Þ (=\u00D89\u00DE)}
 test encoding-11.9 {encoding: extended Unicode UTF-16} {
     viewable [encoding convertto utf-16be 😹]
-} {Ø=Þ9 (\u00d8=\u00de9)}
+} {Ø=Þ9 (\u00D8=\u00DE9)}
 # OpenEncodingFile is fully tested by the rest of the tests in this file.
 
 test encoding-12.1 {LoadTableEncoding: normal encoding} {
-    set x [encoding convertto iso8859-3 \u0120]
-    append x [encoding convertto iso8859-3 \xD5]
-    append x [encoding convertfrom iso8859-3 \xD5]
-} "\xD5?\u120"
+    set x [encoding convertto iso8859-3 Ġ]
+    append x [encoding convertto iso8859-3 Õ]
+    append x [encoding convertfrom iso8859-3 Õ]
+} "Õ?Ġ"
 test encoding-12.2 {LoadTableEncoding: single-byte encoding} {
-    set x [encoding convertto iso8859-3 ab\u0120g]
-    append x [encoding convertfrom iso8859-3 ab\xD5g]
-} "ab\xD5gab\u120g"
+    set x [encoding convertto iso8859-3 abĠg]
+    append x [encoding convertfrom iso8859-3 abÕg]
+} "abÕgabĠg"
 test encoding-12.3 {LoadTableEncoding: multi-byte encoding} {
     set x [encoding convertto shiftjis ab乎g]
-    append x [encoding convertfrom shiftjis ab\x8c\xc1g]
+    append x [encoding convertfrom shiftjis ab\x8C\xC1g]
 } "ab\x8C\xC1gab乎g"
 test encoding-12.4 {LoadTableEncoding: double-byte encoding} {
     set x [encoding convertto jis0208 乎α]
@@ -317,7 +317,7 @@ test encoding-13.1 {LoadEscapeTable} {
 } [viewable "ab\x1B\$B8C\x1B\$\(DD%\x1B(Bg"]
 
 test encoding-15.1 {UtfToUtfProc} {
-    encoding convertto utf-8 \xA3
+    encoding convertto utf-8 £
 } "\xC2\xA3"
 test encoding-15.2 {UtfToUtfProc null character output} testbytestring {
     binary scan [testbytestring [encoding convertto utf-8 \x00]] H* z
@@ -351,8 +351,8 @@ test encoding-15.7 {UtfToUtfProc emoji character output} {
     list [string length $x] [string length $y] $z
 } {3 9 edb882eda0bdeda0bd}
 test encoding-15.8 {UtfToUtfProc emoji character output} {
-    set x \uDE02\uD83D\xE9
-    set y [encoding convertto utf-8 \uDE02\uD83D\xE9]
+    set x \uDE02\uD83Dé
+    set y [encoding convertto utf-8 \uDE02\uD83Dé]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {3 8 edb882eda0bdc3a9}
@@ -363,14 +363,14 @@ test encoding-15.9 {UtfToUtfProc emoji character output} {
     list [string length $x] [string length $y] $z
 } {3 7 edb882eda0bd58}
 test encoding-15.10 {UtfToUtfProc high surrogate character output} {
-    set x \uDE02\xE9
-    set y [encoding convertto utf-8 \uDE02\xE9]
+    set x \uDE02é
+    set y [encoding convertto utf-8 \uDE02é]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {2 5 edb882c3a9}
 test encoding-15.11 {UtfToUtfProc low surrogate character output} {
-    set x \uDA02\xE9
-    set y [encoding convertto utf-8 \uDA02\xE9]
+    set x \uDA02é
+    set y [encoding convertto utf-8 \uDA02é]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {2 5 eda882c3a9}
@@ -425,7 +425,7 @@ test encoding-16.3 {Utf16ToUtfProc} -body {
 test encoding-16.4 {Ucs2ToUtfProc} -body {
     set val [encoding convertfrom ucs-2 NN]
     list $val [format %x [scan $val %c]]
-} -result "\u4E4E 4e4e"
+} -result "乎 4e4e"
 test encoding-16.4 {Ucs2ToUtfProc} -body {
     set val [encoding convertfrom ucs-2 "\xD8\xD8\xDC\xDC"]
     list $val [format %x [scan $val %c]]
@@ -459,18 +459,18 @@ test encoding-21.1 {EscapeToUtfProc} {
 test encoding-22.1 {EscapeFromUtfProc} {
 } {}
 
-set iso2022encData "\u001b\$B;d\$I\$b\$G\$O!\"%A%C%W\$49XF~;~\$K\$4EPO?\$\$\$?\$@\$\$\$?\$4=;=j\$r%-%c%C%7%e%\"%&%H\$N:]\$N\u001b(B
-\u001b\$B>.@Z<jAwIU@h\$H\$7\$F;HMQ\$7\$F\$*\$j\$^\$9!#62\$lF~\$j\$^\$9\$,!\"@5\$7\$\$=;=j\$r\$4EPO?\$7\$J\$*\u001b(B
-\u001b\$B\$*4j\$\$\$\$\$?\$7\$^\$9!#\$^\$?!\"BgJQ62=L\$G\$9\$,!\"=;=jJQ99\$N\$\"\$H!\"F|K\\8l%5!<%S%9It!J\u001b(B
-casino_japanese@___.com \u001b\$B!K\$^\$G\$4=;=jJQ99:Q\$NO\"Mm\$r\$\$\$?\$@\$1\$J\$\$\$G\u001b(B
-\u001b\$B\$7\$g\$&\$+!)\u001b(B"
+set iso2022encData "\x1B\$B;d\$I\$b\$G\$O!\"%A%C%W\$49XF~;~\$K\$4EPO?\$\$\$?\$@\$\$\$?\$4=;=j\$r%-%c%C%7%e%\"%&%H\$N:]\$N\x1B(B
+\x1B\$B>.@Z<jAwIU@h\$H\$7\$F;HMQ\$7\$F\$*\$j\$^\$9!#62\$lF~\$j\$^\$9\$,!\"@5\$7\$\$=;=j\$r\$4EPO?\$7\$J\$*\x1B(B
+\x1B\$B\$*4j\$\$\$\$\$?\$7\$^\$9!#\$^\$?!\"BgJQ62=L\$G\$9\$,!\"=;=jJQ99\$N\$\"\$H!\"F|K\\8l%5!<%S%9It!J\x1B(B
+casino_japanese@___.com \x1B\$B!K\$^\$G\$4=;=jJQ99:Q\$NO\"Mm\$r\$\$\$?\$@\$1\$J\$\$\$G\x1B(B
+\x1B\$B\$7\$g\$&\$+!)\x1B(B"
 
 set iso2022uniData [encoding convertfrom iso2022-jp $iso2022encData]
-set iso2022uniData2 "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u3054\u8cfc\u5165\u6642\u306b\u3054\u767b\u9332\u3044\u305f\u3060\u3044\u305f\u3054\u4f4f\u6240\u3092\u30ad\u30e3\u30c3\u30b7\u30e5\u30a2\u30a6\u30c8\u306e\u969b\u306e
-\u5c0f\u5207\u624b\u9001\u4ed8\u5148\u3068\u3057\u3066\u4f7f\u7528\u3057\u3066\u304a\u308a\u307e\u3059\u3002\u6050\u308c\u5165\u308a\u307e\u3059\u304c\u3001\u6b63\u3057\u3044\u4f4f\u6240\u3092\u3054\u767b\u9332\u3057\u306a\u304a
-\u304a\u9858\u3044\u3044\u305f\u3057\u307e\u3059\u3002\u307e\u305f\u3001\u5927\u5909\u6050\u7e2e\u3067\u3059\u304c\u3001\u4f4f\u6240\u5909\u66f4\u306e\u3042\u3068\u3001\u65e5\u672c\u8a9e\u30b5\u30fc\u30d3\u30b9\u90e8\uff08
-\u0063\u0061\u0073\u0069\u006e\u006f\u005f\u006a\u0061\u0070\u0061\u006e\u0065\u0073\u0065\u0040\u005f\u005f\u005f\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067
-\u3057\u3087\u3046\u304b\uff1f"
+set iso2022uniData2 "私どもでは、チップご購入時にご登録いただいたご住所をキャッシュアウトの際の
+小切手送付先として使用しております。恐れ入りますが、正しい住所をご登録しなお
+お願いいたします。また、大変恐縮ですが、住所変更のあと、日本語サービス部（
+casino_japanese@___.com ）までご住所変更済の連絡をいただけないで
+しょうか？"
 
 cd [temporaryDirectory]
 set fid [open iso2022.txt w]
@@ -539,7 +539,7 @@ test encoding-24.2 {EscapeFreeProc on open channels} {exec} {
 	set env(TCL_FINALIZE_ON_EXIT) 1
 	exit
     }]
-} "ab\x1B\$B8C\x1B\$(DD%\x1B(Bg (ab\\u001b\$B8C\\u001b\$(DD%\\u001b(Bg)"
+} "ab\x1B\$B8C\x1B\$(DD%\x1B(Bg (ab\\u001B\$B8C\\u001B\$(DD%\\u001B(Bg)"
 test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     # Bug #219314 - if we don't free escape encodings correctly on channel
     # closure, we go boom
@@ -554,7 +554,7 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     close $f
     removeFile iso2022.tcl
     list $count [viewable $line]
-} [list 3 "乎乞也 (\\u4e4e\\u4e5e\\u4e5f)"]
+} [list 3 "乎乞也 (\\u4E4E\\u4E5E\\u4E5F)"]
 
 test encoding-24.4 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom utf-8 "\xC0\x80"]
@@ -632,20 +632,20 @@ proc foreach-jisx0208 {varName command} {
 }
 proc gen-jisx0208-euc-jp {code} {
     binary format cc \
-	[expr {($code >> 8) | 0x80}] [expr {($code & 0xff) | 0x80}]
+	[expr {($code >> 8) | 0x80}] [expr {($code & 0xFF) | 0x80}]
 }
 proc gen-jisx0208-iso2022-jp {code} {
     binary format a3cca3 \
-	"\x1b\$B" [expr {$code >> 8}] [expr {$code & 0xff}] "\x1b(B"
+	"\x1B\$B" [expr {$code >> 8}] [expr {$code & 0xFF}] "\x1B(B"
 }
 proc gen-jisx0208-cp932 {code} {
     set c1 [expr {($code >> 8) | 0x80}]
     set c2 [expr {($code & 0xff)| 0x80}]
     if {$c1 % 2} {
-	set c1 [expr {($c1 >> 1) + ($c1 < 0xdf ? 0x31 : 0x71)}]
-	incr c2 [expr {- (0x60 + ($c2 < 0xe0))}]
+	set c1 [expr {($c1 >> 1) + ($c1 < 0xDF ? 0x31 : 0x71)}]
+	incr c2 [expr {- (0x60 + ($c2 < 0xE0))}]
     } else {
-	set c1 [expr {($c1 >> 1) + ($c1 < 0xdf ? 0x30 : 0x70)}]
+	set c1 [expr {($c1 >> 1) + ($c1 < 0xDF ? 0x30 : 0x70)}]
 	incr c2 -2
     }
     binary format cc $c1 $c2

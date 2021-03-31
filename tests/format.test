@@ -105,17 +105,17 @@ test format-2.4 {string formatting} {
     format "%s %s %% %c %s" abcd {This is a very long test string.} 120 x
 } {abcd This is a very long test string. % x x}
 test format-2.5 {string formatting, embedded nulls} {
-    format "%10s" abc\0def
-} "   abc\0def"
+    format "%10s" abc\x00def
+} "   abc\x00def"
 test format-2.6 {string formatting, international chars} {
-    format "%10s" abc\ufeffdef
-} "   abc\ufeffdef"
+    format "%10s" abc\uFEFFdef
+} "   abc\uFEFFdef"
 test format-2.7 {string formatting, international chars} {
-    format "%.5s" abc\ufeffdef
-} "abc\ufeffd"
+    format "%.5s" abc\uFEFFdef
+} "abc\uFEFFd"
 test format-2.8 {string formatting, international chars} {
-    format "foo\ufeffbar%s" baz
-} "foo\ufeffbarbaz"
+    format "foo\uFEFFbar%s" baz
+} "foo\uFEFFbarbaz"
 test format-2.9 {string formatting, width} {
     format "a%5sa" f
 } "a    fa"
@@ -148,8 +148,8 @@ test format-3.1 {Tcl_FormatObjCmd: character formatting} {
     format "|%c|%0c|%-1c|%1c|%-6c|%6c|%*c|%*c|" 65 65 65 65 65 65 3 65 -4 65
 } "|A|A|A|A|A     |     A|  A|A   |"
 test format-3.2 {Tcl_FormatObjCmd: international character formatting} {
-    format "|%c|%0c|%-1c|%1c|%-6c|%6c|%*c|%*c|" 0xa2 0x4e4e 0x25a 0xc3 0xff08 0 3 0x6575 -4 0x4e4f
-} "|\ua2|\u4e4e|\u25a|\uc3|\uff08     |     \0|  \u6575|\u4e4f   |"
+    format "|%c|%0c|%-1c|%1c|%-6c|%6c|%*c|%*c|" 0xA2 0x4E4E 0x25A 0xC3 0xFF08 0 3 0x6575 -4 0x4E4F
+} "|¢|乎|ɚ|Ã|（     |     \x00|  敵|乏   |"
 
 test format-4.1 {e and f formats} {eformat} {
     format "%e %e %e %e" 34.2e12 68.514 -.125 -16000. .000053
