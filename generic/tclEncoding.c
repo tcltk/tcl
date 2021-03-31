@@ -510,8 +510,10 @@ FillEncodingFileMap(void)
  *---------------------------------------------------------------------------
  */
 
+/* Since TCL_ENCODING_MODIFIED is only used for utf-8/wtf-8/cesu-8 and
+ * TCL_ENCODING_LE is only used for  utf-16/wtf-16/ucs-2. re-use the same value */
+#define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
 /* Those flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
-#define TCL_ENCODING_LE		0x80	/* Little-endian encoding, for ucs-2/utf-16 only */
 #define TCL_ENCODING_WTF	0x100	/* For WTF-8 encoding, don't check for surrogates/noncharacters */
 #define TCL_ENCODING_UTF	0x200	/* For UTF-8 encoding, allow 4-byte output sequences */
 
@@ -523,7 +525,7 @@ TclInitEncodingSubsystem(void)
     unsigned size;
     unsigned short i;
     union {
-        unsigned char c;
+        char c;
         short s;
     } isLe;
 
@@ -1170,7 +1172,10 @@ Tcl_ExternalToUtfDStringEx(
 	srcLen = encodingPtr->lengthProc(src);
     }
 
-    flags |= TCL_ENCODING_START | TCL_ENCODING_END | TCL_ENCODING_MODIFIED | TCL_ENCODING_UTF;
+    flags |= TCL_ENCODING_START | TCL_ENCODING_END;
+    if (encodingPtr->toUtfProc == UtfToUtfProc) {
+	flags |= TCL_ENCODING_MODIFIED | TCL_ENCODING_UTF;
+    }
 
     while (1) {
 	result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
@@ -1285,7 +1290,9 @@ Tcl_ExternalToUtf(
 
 	dstLen--;
     }
-    flags |= TCL_ENCODING_MODIFIED | TCL_ENCODING_UTF;
+    if (encodingPtr->toUtfProc == UtfToUtfProc) {
+	flags |= TCL_ENCODING_MODIFIED | TCL_ENCODING_UTF;
+    }
     do {
 	Tcl_EncodingState savedState = *statePtr;
 
@@ -2217,7 +2224,7 @@ BinaryProc(
 
 static int
 UtfToUtfProc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_MODIFIED */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
