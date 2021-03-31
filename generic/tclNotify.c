@@ -1224,72 +1224,6 @@ Tcl_FinalizeNotifier(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CreateFileHandler --
- *
- *	This function registers a file descriptor handler with the notifier.
- *	Forwards to the platform implementation when the hook is not enabled.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Creates a new file handler structure.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_CreateFileHandler(
-    int fd,			/* Handle of stream to watch. */
-    int mask,			/* OR'ed combination of TCL_READABLE,
-				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
-				 * conditions under which proc should be
-				 * called. */
-    Tcl_FileProc *proc,		/* Function to call for each selected
-				 * event. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
-{
-    if (tclNotifierHooks.createFileHandlerProc) {
-	tclNotifierHooks.createFileHandlerProc(fd, mask, proc, clientData);
-    } else {
-	TclpCreateFileHandler(fd, mask, proc, clientData);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_DeleteFileHandler --
- *
- *	Cancel a previously-arranged callback arrangement for a file
- *	descriptor.  Forwards to the platform implementation when the hook is
- *	not enabled.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If a callback was previously registered on the file descriptor, remove
- *	it.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_DeleteFileHandler(
-    int fd)			/* Stream id for which to remove callback
-				 * function. */
-{
-    if (tclNotifierHooks.deleteFileHandlerProc) {
-	tclNotifierHooks.deleteFileHandlerProc(fd);
-    } else {
-	TclpDeleteFileHandler(fd);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_AlertNotifier --
  *
  *	Wake up the specified notifier from any thread. This routine is called
@@ -1407,6 +1341,82 @@ Tcl_WaitForEvent(
 	return TclpWaitForEvent(timePtr);
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_CreateFileHandler --
+ *
+ *	This function registers a file descriptor handler with the notifier.
+ *	Forwards to the platform implementation when the hook is not enabled.
+ *
+ *	This function is not defined on Windows. The OS API there is too
+ *	different.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Creates a new file handler structure.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef _WIN32
+void
+Tcl_CreateFileHandler(
+    int fd,			/* Handle of stream to watch. */
+    int mask,			/* OR'ed combination of TCL_READABLE,
+				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
+				 * conditions under which proc should be
+				 * called. */
+    Tcl_FileProc *proc,		/* Function to call for each selected
+				 * event. */
+    ClientData clientData)	/* Arbitrary data to pass to proc. */
+{
+    if (tclNotifierHooks.createFileHandlerProc) {
+	tclNotifierHooks.createFileHandlerProc(fd, mask, proc, clientData);
+    } else {
+	TclpCreateFileHandler(fd, mask, proc, clientData);
+    }
+}
+#endif /* !_WIN32 */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DeleteFileHandler --
+ *
+ *	Cancel a previously-arranged callback arrangement for a file
+ *	descriptor.  Forwards to the platform implementation when the hook is
+ *	not enabled.
+ *
+ *	This function is not defined on Windows. The OS API there is too
+ *	different.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If a callback was previously registered on the file descriptor, remove
+ *	it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef _WIN32
+void
+Tcl_DeleteFileHandler(
+    int fd)			/* Stream id for which to remove callback
+				 * function. */
+{
+    if (tclNotifierHooks.deleteFileHandlerProc) {
+	tclNotifierHooks.deleteFileHandlerProc(fd);
+    } else {
+	TclpDeleteFileHandler(fd);
+    }
+}
+#endif /* !_WIN32 */
 
 /*
  * Local Variables:
