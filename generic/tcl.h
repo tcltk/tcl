@@ -717,6 +717,11 @@ typedef void (Tcl_ServiceModeHookProc) (int mode);
 typedef ClientData (Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (ClientData clientData);
 typedef void (Tcl_MainLoopProc) (void);
+
+/* Undocumented. To be formalized by TIP #595 */
+#define Tcl_LibraryInitProc Tcl_PackageInitProc
+#define Tcl_LibraryUnloadProc Tcl_PackageUnloadProc
+#define Tcl_StaticLibrary Tcl_StaticPackage
 
 /*
  *----------------------------------------------------------------------------
