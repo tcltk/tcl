@@ -235,12 +235,6 @@ Tcl_SetNotifier(
      * loop.
      */
 
-    if (tclNotifierHooks.createFileHandlerProc == Tcl_CreateFileHandler) {
-	tclNotifierHooks.createFileHandlerProc = NULL;
-    }
-    if (tclNotifierHooks.deleteFileHandlerProc == Tcl_DeleteFileHandler) {
-	tclNotifierHooks.deleteFileHandlerProc = NULL;
-    }
     if (tclNotifierHooks.setTimerProc == Tcl_SetTimer) {
 	tclNotifierHooks.setTimerProc = NULL;
     }
@@ -259,6 +253,14 @@ Tcl_SetNotifier(
     if (tclNotifierHooks.serviceModeHookProc == Tcl_ServiceModeHook) {
 	tclNotifierHooks.serviceModeHookProc = NULL;
     }
+#ifndef _WIN32
+    if (tclNotifierHooks.createFileHandlerProc == Tcl_CreateFileHandler) {
+	tclNotifierHooks.createFileHandlerProc = NULL;
+    }
+    if (tclNotifierHooks.deleteFileHandlerProc == Tcl_DeleteFileHandler) {
+	tclNotifierHooks.deleteFileHandlerProc = NULL;
+    }
+#endif /* !_WIN32 */
 }
 
 /*
