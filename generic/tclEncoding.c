@@ -511,7 +511,7 @@ FillEncodingFileMap(void)
  */
 
 /* Since TCL_ENCODING_MODIFIED is only used for utf-8/wtf-8/cesu-8 and
- * TCL_ENCODING_LE is only used for  utf-16/wtf-16/ucs-2. re-use the same value */
+ * TCL_ENCODING_LE is only used for  utf-16/wtf-16/ucs-2, re-use the same value */
 #define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
 /* Those flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
 #define TCL_ENCODING_WTF	0x100	/* For WTF-8 encoding, don't check for surrogates/noncharacters */
@@ -1117,7 +1117,7 @@ Tcl_CreateEncoding(
  * Results:
  *	The converted bytes are stored in the DString, which is then NULL
  *	terminated. The return value is a pointer to the value stored in the
- *	DString resp. an error code.
+ *	DString resp. the index of the first erratic byte in 'src'.
  *
  * Side effects:
  *	None.
@@ -1326,7 +1326,8 @@ Tcl_ExternalToUtf(
  * Results:
  *	The converted bytes are stored in the DString, which is then NULL
  *	terminated in an encoding-specific manner. The return value is a
- *	pointer to the value stored in the DString resp. an error code.
+ *	pointer to the value stored in the DString resp. the index of the
+ *	first erratic byte in 'src'.
  *
  * Side effects:
  *	None.
@@ -2319,7 +2320,8 @@ UtfToUtfProc(
 	    int low;
 	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
-	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_STOPONERROR) && (flags & TCL_ENCODING_MODIFIED)) {
+	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_STOPONERROR)
+		    && (flags & TCL_ENCODING_MODIFIED)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
