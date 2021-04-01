@@ -18,6 +18,8 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+testConstraint nodep [info exists tcl_precision]
+
 namespace eval ::tcl::test::io {
 
     if {"::tcltest" ni [namespace children]} {
@@ -248,7 +250,7 @@ test chan-io-3.3 {WriteChars: compatibility with WriteBytes: flush on line} -bod
 } -cleanup {
     chan close $f
 } -result "\r\n12"
-test chan-io-3.4 {WriteChars: loop over stage buffer} {
+test chan-io-3.4 {WriteChars: loop over stage buffer} nodep {
     # stage buffer maps to more than can be queued at once.
     set f [open $path(test1) w]
     chan configure $f -encoding jis0208 -buffersize 16
@@ -257,7 +259,7 @@ test chan-io-3.4 {WriteChars: loop over stage buffer} {
     chan close $f
     lappend x [contents $path(test1)]
 } [list "!)!)!)!)!)!)!)!)" "!)!)!)!)!)!)!)!)!)!)!)!)!)!)!)"]
-test chan-io-3.5 {WriteChars: saved != 0} {
+test chan-io-3.5 {WriteChars: saved != 0} nodep {
     # Bytes produced by UtfToExternal from end of last channel buffer had to
     # be moved to beginning of next channel buffer to preserve requested
     # buffersize.
@@ -284,7 +286,7 @@ test chan-io-3.6 {WriteChars: (stageRead + dstWrote == 0)} {
     chan close $f
     lappend x [contents $path(test1)]
 } [list "12345678901234\x82\x60" "12345678901234\x82\x60\x82\x61"]
-test chan-io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} {
+test chan-io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} nodep {
     # When translating UTF-8 to external, the produced bytes went past end of
     # the channel buffer. This is done on purpose - we then truncate the bytes
     # at the end of the partial character to preserve the requested blocksize

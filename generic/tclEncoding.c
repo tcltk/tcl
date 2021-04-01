@@ -2223,6 +2223,12 @@ BinaryProc(
  *-------------------------------------------------------------------------
  */
 
+#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
+#   define STOPONERROR !(flags & TCL_ENCODING_NO_THROW)
+#else
+#   define STOPONERROR (flags & TCL_ENCODING_STOPONERROR)
+#endif
+
 static int
 UtfToUtfProc(
     ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_MODIFIED */
@@ -2305,7 +2311,7 @@ UtfToUtfProc(
 	     */
 
 	    if (flags & TCL_ENCODING_MODIFIED) {
-		if (flags & TCL_ENCODING_STOPONERROR) {
+		if (STOPONERROR) {
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
@@ -2320,7 +2326,7 @@ UtfToUtfProc(
 	    int low;
 	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
-	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_STOPONERROR)
+	    if ((len < 2) && (ch != 0) && STOPONERROR
 		    && (flags & TCL_ENCODING_MODIFIED)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
@@ -2346,7 +2352,7 @@ UtfToUtfProc(
 
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
 		    if (!(flags & TCL_ENCODING_WTF)) {
-			if (flags & TCL_ENCODING_STOPONERROR) {
+			if (STOPONERROR) {
 			    result = TCL_CONVERT_UNKNOWN;
 			    src = saveSrc;
 			    break;
@@ -2365,7 +2371,7 @@ UtfToUtfProc(
 		dst += Tcl_UniCharToUtf(ch, dst);
 		ch = low;
 	    } else if (!(flags & TCL_ENCODING_WTF) && !Tcl_UniCharIsUnicode(ch)) {
-		if (flags & TCL_ENCODING_STOPONERROR) {
+		if (STOPONERROR) {
 		    result = TCL_CONVERT_UNKNOWN;
 		    src = saveSrc;
 		    break;
@@ -2561,7 +2567,7 @@ UtfToUtf16Proc(
 	}
 	len = TclUtfToUCS4(src, &ch);
 	if (!(flags & TCL_ENCODING_WTF) && !Tcl_UniCharIsUnicode(ch)) {
-	    if (flags & TCL_ENCODING_STOPONERROR) {
+	    if (STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -2781,7 +2787,7 @@ TableToUtfProc(
 	    ch = pageZero[byte];
 	}
 	if ((ch == 0) && (byte != 0)) {
-	    if (flags & TCL_ENCODING_STOPONERROR) {
+	    if (STOPONERROR) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
@@ -2901,7 +2907,7 @@ TableFromUtfProc(
 	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
-	    if (flags & TCL_ENCODING_STOPONERROR) {
+	    if (STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -3089,7 +3095,7 @@ Iso88591FromUtfProc(
 		|| ((ch >= 0xD800) && (len < 3))
 #endif
 		) {
-	    if (flags & TCL_ENCODING_STOPONERROR) {
+	    if (STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -3316,7 +3322,7 @@ EscapeToUtfProc(
 
 	    if ((checked == dataPtr->numSubTables + 2)
 		    || (flags & TCL_ENCODING_END)) {
-		if ((flags & TCL_ENCODING_STOPONERROR) == 0) {
+		if (!STOPONERROR) {
 		    /*
 		     * Skip the unknown escape sequence.
 		     */
@@ -3491,7 +3497,7 @@ EscapeFromUtfProc(
 
 	    if (word == 0) {
 		state = oldState;
-		if (flags & TCL_ENCODING_STOPONERROR) {
+		if (STOPONERROR) {
 		    result = TCL_CONVERT_UNKNOWN;
 		    break;
 		}

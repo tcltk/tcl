@@ -31,6 +31,8 @@ if {[catch {package require http 2} version]} {
     }
 }
 
+testConstraint nodep [info exists tcl_precision]
+
 proc bgerror {args} {
     global errorInfo
     puts stderr "http.test bgerror"
@@ -661,7 +663,7 @@ test http-7.3 {http::formatQuery} -setup {
 } -cleanup {
     http::config -urlencoding $enc
 } -result "can't read \"formMap(∈)\": no such element in array"
-test http-7.4 {http::formatQuery} -setup {
+test http-7.4 {http::formatQuery} -constraints nodep -setup {
     set enc [http::config -urlencoding]
 } -body {
     # this would be reverting to http <=2.4 behavior w/o errors

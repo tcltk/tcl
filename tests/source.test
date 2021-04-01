@@ -20,6 +20,8 @@ if {[catch {package require tcltest 2.5}]} {
 namespace eval ::tcl::test::source {
     namespace import ::tcltest::*
 
+testConstraint nodep [info exists tcl_precision]
+
 test source-1.1 {source command} -setup {
     set x "old x value"
     set y "old y value"
@@ -275,7 +277,7 @@ test source-7.5 {source -encoding: correct operation} -setup {
     removeFile source.file
     rename € {}
 } -result foo
-test source-7.6 {source -encoding: mismatch encoding error} -setup {
+test source-7.6 {source -encoding: mismatch encoding error} -constraints nodep -setup {
     set sourcefile [makeFile {} source.file]
     file delete $sourcefile
     set f [open $sourcefile w]

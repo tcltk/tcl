@@ -564,15 +564,25 @@ EncodingConvertfromObjCmd(
 	if (objc > 3) {
 	    stopOnError = Tcl_GetString(objv[3]);
 	    if (!stopOnError[0]) {
+#if TCL_MAJOR_VERSION < 9 && !defined(TCL_NO_DEPRECATED)
 		stopOnError = NULL;
-	    } else if (stopOnError[0] != '-' || stopOnError[1] != 's'
-		    || strncmp(stopOnError, "-stoponerror", strlen(stopOnError))) {
+#endif
+	    } else if (stopOnError[0] == '-' && stopOnError[1] == 'n'
+		    && !strncmp(stopOnError, "-nothrow", strlen(stopOnError))) {
+		stopOnError = NULL;
+	    } else if (stopOnError[0] == '-' && stopOnError[1] == 's'
+		    && !strncmp(stopOnError, "-stoponerror", strlen(stopOnError))) {
+	    } else {
 		goto encConvFromError;
 	    }
+#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
+	} else {
+		stopOnError = "";
+#endif
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data ?-stoponerror?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data ?-stoponerror|-nothrow?");
 	return TCL_ERROR;
     }
 
@@ -588,7 +598,7 @@ EncodingConvertfromObjCmd(
 	bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
-	    stopOnError ? TCL_ENCODING_STOPONERROR : 0, &ds);
+	    stopOnError ? TCL_ENCODING_STOPONERROR : TCL_ENCODING_NO_THROW, &ds);
     if (stopOnError && (result != (size_t)-1)) {
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte at index %"
 	    TCL_LL_MODIFIER "u: '%c' (\\x%X)", (long long)result, UCHAR(bytesPtr[result]), UCHAR(bytesPtr[result])));
@@ -654,15 +664,25 @@ EncodingConverttoObjCmd(
 	if (objc > 3) {
 	    stopOnError = Tcl_GetString(objv[3]);
 	    if (!stopOnError[0]) {
+#if TCL_MAJOR_VERSION < 9 && !defined(TCL_NO_DEPRECATED)
 		stopOnError = NULL;
-	    } else if (stopOnError[0] != '-' || stopOnError[1] != 's'
-		    || strncmp(stopOnError, "-stoponerror", strlen(stopOnError))) {
+#endif
+	    } else if (stopOnError[0] == '-' && stopOnError[1] == 'n'
+		    && !strncmp(stopOnError, "-nothrow", strlen(stopOnError))) {
+		stopOnError = NULL;
+	    } else if (stopOnError[0] == '-' && stopOnError[1] == 's'
+		    && !strncmp(stopOnError, "-stoponerror", strlen(stopOnError))) {
+	    } else {
 		goto encConvToError;
 	    }
+#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
+	} else {
+		stopOnError = "";
+#endif
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data ?-stoponerror?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data ?-stoponerror|-nothrow?");
 	return TCL_ERROR;
     }
 
@@ -672,7 +692,7 @@ EncodingConverttoObjCmd(
 
     stringPtr = TclGetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
-	    stopOnError ? TCL_ENCODING_STOPONERROR : 0, &ds);
+	    stopOnError ? TCL_ENCODING_STOPONERROR : TCL_ENCODING_NO_THROW, &ds);
     if (stopOnError && (result != (size_t)-1)) {
 	size_t pos = Tcl_NumUtfChars(stringPtr, result);
 	int ucs4;
