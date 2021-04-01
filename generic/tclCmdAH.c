@@ -678,7 +678,7 @@ EncodingConverttoObjCmd(
 	int ucs4;
 	TclUtfToUCS4(&stringPtr[result], &ucs4);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected character at index %"
-		TCL_LL_MODIFIER "u: '%1s' (U+%06X)", (long long)pos, &stringPtr[result], ucs4));
+		TCL_LL_MODIFIER "u: '%c' (U+%06X)", (long long)pos, ucs4, ucs4));
 	Tcl_DStringFree(&ds);
 	return TCL_ERROR;
     }

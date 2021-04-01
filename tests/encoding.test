@@ -671,8 +671,11 @@ test encoding-24.17 {Parse valid or invalid utf-8} -constraints testbytestring -
 } -returnCodes 1 -result {expected byte sequence but character 1 was '䍃' (U+004343)}
 test encoding-24.18 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\xE0\x80"] -stoponerror
-} -returnCodes 1 -match glob -result {unexpected character at index 1: '*' (U+0000E0)}
+} -result "Z\xC3\xA0\xE2\x82\xAC"
 test encoding-24.19 {Parse valid or invalid utf-8} -constraints testbytestring -body {
+    encoding convertto utf-8 [testbytestring "Z\xE0\x80xxxxxx"] -stoponerror
+} -result "Z\xC3\xA0\xE2\x82\xACxxxxxx"
+test encoding-24.20 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 "ZX\uD800" -stoponerror
 } -returnCodes 1 -match glob -result "unexpected character at index 2: '\uD800' (U+00D800)"
 

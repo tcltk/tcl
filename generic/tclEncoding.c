@@ -2303,18 +2303,23 @@ UtfToUtfProc(
 	     * unless the user has explicitly asked to be told.
 	     */
 
-	    if (flags & TCL_ENCODING_STOPONERROR) {
-		result = TCL_CONVERT_MULTIBYTE;
-		break;
+	    if (flags & TCL_ENCODING_MODIFIED) {
+		if (flags & TCL_ENCODING_STOPONERROR) {
+		    result = TCL_CONVERT_MULTIBYTE;
+		    break;
+		}
+		ch = UCHAR(*src++);
+	    } else {
+		char chbuf[2];
+		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
+		TclUtfToUCS4(chbuf, &ch);
 	    }
-	    ch = UCHAR(*src);
-	    src += 1;
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
 	    int low;
 	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
-	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_STOPONERROR)) {
+	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_STOPONERROR) && (flags & TCL_ENCODING_MODIFIED)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
