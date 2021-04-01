@@ -48,6 +48,7 @@ testConstraint testservicemode  [llength [info commands testservicemode]]
 testConstraint notWinCI [expr {
     $::tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
 testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
+testConstraint nodep [info exists tcl_precision]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -268,7 +269,7 @@ test io-3.3 {WriteChars: compatibility with WriteBytes: flush on line} {
     close $f
     set x
 } "\r\n12"
-test io-3.4 {WriteChars: loop over stage buffer} {
+test io-3.4 {WriteChars: loop over stage buffer} nodep {
     # stage buffer maps to more than can be queued at once.
 
     set f [open $path(test1) w]
@@ -278,7 +279,7 @@ test io-3.4 {WriteChars: loop over stage buffer} {
     close $f
     lappend x [contents $path(test1)]
 } [list "!)!)!)!)!)!)!)!)" "!)!)!)!)!)!)!)!)!)!)!)!)!)!)!)"]
-test io-3.5 {WriteChars: saved != 0} {
+test io-3.5 {WriteChars: saved != 0} nodep {
     # Bytes produced by UtfToExternal from end of last channel buffer
     # had to be moved to beginning of next channel buffer to preserve
     # requested buffersize.
@@ -307,7 +308,7 @@ test io-3.6 {WriteChars: (stageRead + dstWrote == 0)} {
     close $f
     lappend x [contents $path(test1)]
 } [list "12345678901234\x82\x60" "12345678901234\x82\x60\x82\x61"]
-test io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} {
+test io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} nodep {
     # When translating UTF-8 to external, the produced bytes went past end
     # of the channel buffer.  This is done purpose -- we then truncate the
     # bytes at the end of the partial character to preserve the requested
@@ -1532,7 +1533,7 @@ test io-12.8 {ReadChars: multibyte chars split} {
     close $f
     scan [string index $in end] %c
 } 160
-test io-12.9 {ReadChars: multibyte chars split} {
+test io-12.9 {ReadChars: multibyte chars split} nodep {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
@@ -1543,7 +1544,7 @@ test io-12.9 {ReadChars: multibyte chars split} {
     close $f
     scan [string index $in end] %c
 } 194
-test io-12.10 {ReadChars: multibyte chars split} {
+test io-12.10 {ReadChars: multibyte chars split} nodep {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2

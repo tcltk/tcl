@@ -5,6 +5,8 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+testConstraint nodep [info exists tcl_precision]
+
 namespace eval ::tcl::test::main {
     namespace import ::tcltest::*
 
@@ -143,7 +145,7 @@ namespace eval ::tcl::test::main {
     test Tcl_Main-1.8 {
 	Tcl_Main: startup script - -encoding option - mismatched encodings
     } -constraints {
-	stdio
+	stdio nodep
     } -setup {
 	set script [makeFile {} script]
 	file delete $script
