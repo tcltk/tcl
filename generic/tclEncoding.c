@@ -2322,7 +2322,7 @@ UtfToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && pureNullMode == 0)) {
+	if (UCHAR(*src) < 0x80 && !((UCHAR(*src) == 0) && (pureNullMode == 0))) {
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to 0xC080.
@@ -2330,8 +2330,8 @@ UtfToUtfProc(
 
 	    *dst++ = *src++;
 	    *chPtr = 0; /* reset surrogate handling */
-	} else if (pureNullMode == 1 && UCHAR(*src) == 0xC0 &&
-		(src + 1 < srcEnd) && UCHAR(*(src+1)) == 0x80) {
+	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
+		&& (UCHAR(src[1]) == 0x80) && (pureNullMode == 1)) {
 	    /*
 	     * Convert 0xC080 to real nulls when we are in output mode.
 	     */
@@ -2347,7 +2347,7 @@ UtfToUtfProc(
 	     * unless the user has explicitly asked to be told.
 	     */
 
-	    if (flags & TCL_ENCODING_STOPONERROR) {
+	    if ((flags & TCL_ENCODING_STOPONERROR) && (pureNullMode == 0)) {
 		result = TCL_CONVERT_MULTIBYTE;
 		break;
 	    }
@@ -2356,8 +2356,8 @@ UtfToUtfProc(
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	} else {
 	    size_t len = TclUtfToUniChar(src, chPtr);
-	    if ((len < 2) && (flags & TCL_ENCODING_STOPONERROR) && (*chPtr != 0)
-		    && ((*chPtr & ~0x7FF) != 0xD800)) {
+	    if ((len < 2) && (*chPtr != 0) && (flags & TCL_ENCODING_STOPONERROR)
+		    && ((*chPtr & ~0x7FF) != 0xD800) && (pureNullMode == 0)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
