@@ -2232,8 +2232,8 @@ extern void *TclStubCall(void *arg);
 	(void)((const char *(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
 	TclStubCall((void *)5))(argc, argv, appInitProc, interp)
 #endif
-#define Tcl_StaticPackage(interp, pkgName, initProc, safeInitProc) \
-	(void)((const char *(*)(Tcl_Interp *, const char *, Tcl_PackageInitProc *, Tcl_PackageInitProc *)) \
+#define Tcl_StaticLibrary(interp, pkgName, initProc, safeInitProc) \
+	(void)((const char *(*)(Tcl_Interp *, const char *, Tcl_LibraryInitProc *, Tcl_LibraryInitProc *)) \
 	TclStubCall((void *)6))(interp, pkgName, initProc, safeInitProc)
 #define Tcl_SetExitProc(proc) \
 	((Tcl_ExitProc *(*)(Tcl_ExitProc *))TclStubCall((void *)7))(proc)

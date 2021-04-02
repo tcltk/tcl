@@ -28,7 +28,7 @@ MODULE_SCOPE void *tclStubsHandle;
  *	returning NULL if that function cannot be found. See PROCNAME table.
  *
  *	The functions Tcl_MainEx and Tcl_MainExW never return.
- *	Tcl_GetMemoryInfo and Tcl_StaticPackage return (void) and
+ *	Tcl_GetMemoryInfo and Tcl_StaticLibrary return (void) and
  *	Tcl_SetExitProc returns its previous exitProc. This means that
  *	those 5 functions cannot be used to initialize the stub-table,
  *	only the first 4 functions in the table can do that.
@@ -44,7 +44,7 @@ static const char PROCNAME[][24] = {
     "_TclZipfs_AppHook", /* "arg" == (void *)3 */
     "_Tcl_MainExW", /* "arg" == (void *)4 */
     "_Tcl_MainEx", /* "arg" == (void *)5 */
-    "_Tcl_StaticPackage", /* "arg" == (void *)6 */
+    "_Tcl_StaticLibrary", /* "arg" == (void *)6 */
     "_Tcl_SetExitProc", /* "arg" == (void *)7 */
     "_Tcl_GetMemoryInfo" /* "arg" == (void *)8 */
 };
