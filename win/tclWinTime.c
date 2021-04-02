@@ -1556,33 +1556,6 @@ Tcl_QueryTimeProc(
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclScaleTime --
- *
- *	TIP #233 (Virtualized Time): Wrapper around the time virutalisation
- *	rescale function.
- *
- * Results:
- *	None
- *
- * Side effects:
- *	Updates the time structure (given as an argument) with what the time
- *	should be after virtualisation.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclScaleTime(
-    Tcl_Time *timePtr)
-{
-    if (timePtr != NULL && tclScaleTimeProcPtr != NULL) {
-	tclScaleTimeProcPtr(timePtr, tclTimeClientData);
-    }
-}
-
-/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
