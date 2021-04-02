@@ -456,3 +456,13 @@ to be present at *bytes*[*length*].
 
 
 
+
+Tcl 8.1 interface routines exchanging 2-octet representations:
+  Tcl\_UniCharToUpper, Tcl\_UniCharToLower, Tcl\_UniCharToTitle,
+  Tcl\_UtfToUniChar, Tcl\_UniCharToUtfDString, Tcl\_UtfToUniCharDString,
+  Tcl\_UniCharLen, Tcl\_UniCharNcmp, Tcl\_UniCharAtIndex
+
+Tcl 8.2 interface routines exchanging 2-octet representations:
+  Tcl\_NewUnicodeObj, Tcl\_SetUnicodeObj, Tcl\_GetUnicode, Tcl\_GetUniChar
+  Tcl\_AppendUnicodeToObj
+
