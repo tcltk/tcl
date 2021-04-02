@@ -1761,15 +1761,12 @@ test oo-11.7 {
     mixed into are also deleted.  If the object has been renamed into the
     namespace of one of the objects it has been mixed into, the routine for the
     object might get entirely deleted before the namespace of the object is
-    entirely deleted, in which case the C routine the performs the namespace
-    either must either understand that the handle on the routine for the object
-    might now be gone, or it must be guaranteed that the handle does not
-    disappear until that routine is finished.
+    entirely deleted, in which case the C routine that performs the namespace
+    deletion either must either understand that the handle on the routine for
+    the object might now be gone, or it must be guaranteed that the handle does
+    not disappear until that routine is finished.
 } -setup {
 } -body {
-    oo::define oo::class {
-	export createWithNamespace
-    }
     oo::class create class1
 
     oo::object create obj1
@@ -1781,8 +1778,8 @@ test oo-11.7 {
     rename class1 ${obj1ns}::class1
     # No segmentation fault
     namespace delete $class1ns
+    return done
 } -cleanup {
-    rename obj {}
 } -result done
 
 
