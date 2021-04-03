@@ -102,13 +102,13 @@ test lsearch-3.7 {lsearch errors} -returnCodes error -body {
 } -result {-subindices cannot be used without -index option}
 
 test lsearch-4.1 {binary data} {
-    lsearch -exact [list foo one\000two bar] bar
+    lsearch -exact [list foo one\x00two bar] bar
 } 2
 test lsearch-4.2 {binary data} {
     set x one
     append x \x00
     append x two
-    lsearch -exact [list foo one\000two bar] $x
+    lsearch -exact [list foo one\x00two bar] $x
 } 1
 
 # Make a sorted list

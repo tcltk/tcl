@@ -33,6 +33,23 @@ Tcl_ScaleTimeProc *tclScaleTimeProcPtr = NativeScaleTime;
 void *tclTimeClientData = NULL;
 
 /*
+ * Inlined version of Tcl_GetTime.
+ */
+
+static inline void
+GetTime(
+    Tcl_Time *timePtr)
+{
+    tclGetTimeProcPtr(timePtr, tclTimeClientData);
+}
+
+static inline int
+IsTimeNative(void)
+{
+    return tclGetTimeProcPtr == NativeGetTime;
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * TclpGetSeconds --
@@ -52,7 +69,7 @@ void *tclTimeClientData = NULL;
 unsigned long long
 TclpGetSeconds(void)
 {
-    return (unsigned long long)time(NULL);
+    return (unsigned long long) time(NULL);
 }
 
 /*
@@ -77,8 +94,8 @@ TclpGetMicroseconds(void)
 {
     Tcl_Time time;
 
-    tclGetTimeProcPtr(&time, tclTimeClientData);
-    return ((long long)(unsigned long)time.sec)*1000000 + time.usec;
+    GetTime(&time);
+    return ((long long)(unsigned long) time.sec)*1000000 + time.usec;
 }
 
 /*
@@ -106,25 +123,26 @@ TclpGetClicks(void)
     unsigned long long now;
 
 #ifdef NO_GETTOD
-    if (tclGetTimeProcPtr != NativeGetTime) {
+    if (!IsTimeNative()) {
 	Tcl_Time time;
 
-	tclGetTimeProcPtr(&time, tclTimeClientData);
-	now = (unsigned long long)(unsigned long)time.sec*1000000 + time.usec;
+	GetTime(&time);
+	now = ((unsigned long long)(unsigned long) time.sec)*1000000 +
+	        time.usec;
     } else {
 	/*
 	 * A semi-NativeGetTime, specialized to clicks.
 	 */
 	struct tms dummy;
 
-	now = (unsigned long long)times(&dummy);
+	now = (unsigned long long) times(&dummy);
     }
-#else
+#else /* !NO_GETTOD */
     Tcl_Time time;
 
-    tclGetTimeProcPtr(&time, tclTimeClientData);
-    now = (unsigned long long)time.sec*1000000 + time.usec;
-#endif
+    GetTime(&time);
+    now = ((unsigned long long) time.sec)*1000000 + time.usec;
+#endif /* NO_GETTOD */
 
     return now;
 }
@@ -154,17 +172,17 @@ TclpGetWideClicks(void)
 {
     long long now;
 
-    if (tclGetTimeProcPtr != NativeGetTime) {
+    if (!IsTimeNative()) {
 	Tcl_Time time;
 
-	tclGetTimeProcPtr(&time, tclTimeClientData);
-	now = ((long long)time.sec)*1000000 + time.usec;
+	GetTime(&time);
+	now = ((long long) time.sec)*1000000 + time.usec;
     } else {
 #ifdef MAC_OSX_TCL
 	now = (long long) (mach_absolute_time() & INT64_MAX);
 #else
 #error Wide high-resolution clicks not implemented on this platform
-#endif
+#endif /* MAC_OSX_TCL */
     }
 
     return now;
@@ -193,7 +211,7 @@ TclpWideClicksToNanoseconds(
 {
     double nsec;
 
-    if (tclGetTimeProcPtr != NativeGetTime) {
+    if (!IsTimeNative()) {
 	nsec = clicks * 1000;
     } else {
 #ifdef MAC_OSX_TCL
@@ -211,7 +229,7 @@ TclpWideClicksToNanoseconds(
 	}
 #else
 #error Wide high-resolution clicks not implemented on this platform
-#endif
+#endif /* MAC_OSX_TCL */
     }
 
     return nsec;
@@ -238,27 +256,25 @@ TclpWideClicksToNanoseconds(
 double
 TclpWideClickInMicrosec(void)
 {
-    if (tclGetTimeProcPtr != NativeGetTime) {
+    if (!IsTimeNative()) {
 	return 1.0;
     } else {
 #ifdef MAC_OSX_TCL
 	static int initialized = 0;
 	static double scale = 0.0;
 
-	if (initialized) {
-	    return scale;
-	} else {
+	if (!initialized) {
 	    mach_timebase_info_data_t tb;
 
 	    mach_timebase_info(&tb);
 	    /* value of tb.numer / tb.denom = 1 click in nanoseconds */
-	    scale = ((double)tb.numer) / tb.denom / 1000;
+	    scale = ((double) tb.numer) / tb.denom / 1000;
 	    initialized = 1;
-	    return scale;
 	}
+	return scale;
 #else
 #error Wide high-resolution clicks not implemented on this platform
-#endif
+#endif /* MAC_OSX_TCL */
     }
 }
 #endif /* TCL_WIDE_CLICKS */
@@ -287,7 +303,7 @@ void
 Tcl_GetTime(
     Tcl_Time *timePtr)		/* Location to store time information. */
 {
-    tclGetTimeProcPtr(timePtr, tclTimeClientData);
+    GetTime(timePtr);
 }
 
 /*

@@ -155,7 +155,7 @@ foreach arg [subst -nocommands -novariables {
 		error stack cannot be uniquely determined.
 		foo bar
 "}
-    {argument that contains non-ASCII character, \u20ac, and which is of such great length that it will be longer than 150 bytes so it will be truncated by the Tcl C library}
+    {argument that contains non-ASCII character, €, and which is of such great length that it will be longer than 150 bytes so it will be truncated by the Tcl C library}
 	}] {    ;# emacs needs -> "
 
     test init-4.$count.0 {::errorInfo produced by [unknown]} -setup {

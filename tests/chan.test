@@ -48,10 +48,10 @@ test chan-4.1 {chan command: configure subcommand} -body {
     chan configure
 } -returnCodes error -result "wrong # args: should be \"chan configure channelId ?-option value ...?\""
 test chan-4.2 {chan command: [Bug 800753]} -body {
-    chan configure stdout -eofchar \u0100
+    chan configure stdout -eofchar Ā
 } -returnCodes error -match glob -result {bad value*}
 test chan-4.3 {chan command: [Bug 800753]} -body {
-    chan configure stdout -eofchar \u0000
+    chan configure stdout -eofchar \x00
 } -returnCodes error -match glob -result {bad value*}
 test chan-4.4 {chan command: check valid inValue, no outValue} -body {
     chan configure stdout -eofchar [list \x27 {}]

@@ -126,7 +126,7 @@ test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} -setup {
 	set oldlibrary $env(TCL_LIBRARY)
     }
 } -body {
-    # ((str != NULL) && (str[0] != '\0'))
+    # ((str != NULL) && (str[0] != '\x00'))
     set env(TCL_LIBRARY) sparkly
     lindex [getlibpath] 0
 } -cleanup {
@@ -158,7 +158,7 @@ test unixInit-2.4 {TclpInitLibraryPath: TCL_LIBRARY: INTL} -setup {
     }
 } -body {
     # Child process translates env variable from native encoding.
-    set env(TCL_LIBRARY) "\xa7"
+    set env(TCL_LIBRARY) "§"
     lindex [getlibpath] 0
 } -cleanup {
     unset -nocomplain env(TCL_LIBRARY) env(LANG)
@@ -166,7 +166,7 @@ test unixInit-2.4 {TclpInitLibraryPath: TCL_LIBRARY: INTL} -setup {
 	set env(TCL_LIBRARY) $oldlibrary
 	unset oldlibrary
     }
-} -result "\xa7"
+} -result "§"
 test unixInit-2.5 {TclpInitLibraryPath: compiled-in library path} {
     # cannot test
 } {}
