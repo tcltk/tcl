@@ -271,7 +271,7 @@ test fCmd-3.14 {FileCopyRename: FileBasename fails} -setup {
     file mkdir td1
     file rename ~_totally_bogus_user td1
 } -result {user "_totally_bogus_user" doesn't exist}
-test fCmd-3.15 {FileCopyRename: source[0] == '\0'} -setup {
+test fCmd-3.15 {FileCopyRename: source[0] == '\x00'} -setup {
     cleanup
 } -constraints {notRoot unixOrWin} -returnCodes error -body {
     file mkdir td1
@@ -313,7 +313,7 @@ test fCmd-4.4 {TclFileMakeDirsCmd: Tcl_TranslateFileName fails} -setup {
 } -constraints {notRoot} -returnCodes error -body {
     file mkdir ~_totally_bogus_user
 } -result {user "_totally_bogus_user" doesn't exist}
-test fCmd-4.5 {TclFileMakeDirsCmd: Tcl_SplitPath returns 0: *name == '\0'} -setup {
+test fCmd-4.5 {TclFileMakeDirsCmd: Tcl_SplitPath returns 0: *name == '\x00'} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
     file mkdir ""
