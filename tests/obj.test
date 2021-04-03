@@ -251,10 +251,10 @@ test obj-13.7 {SetBooleanFromAny, error converting from "empty string"} testobj 
 } {{} 1 {expected boolean value but got ""}}
 test obj-13.8 {SetBooleanFromAny, unicode strings} testobj {
     set result ""
-    lappend result [teststringobj set 1 1\u7777]
+    lappend result [teststringobj set 1 1睷]
     lappend result [catch {testbooleanobj not 1} msg]
     lappend result $msg
-} "1\u7777 1 {expected boolean value but got \"1\u7777\"}"
+} "1睷 1 {expected boolean value but got \"1睷\"}"
 
 test obj-14.1 {UpdateStringOfBoolean} testobj {
     set result ""
