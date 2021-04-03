@@ -68,56 +68,56 @@ namespace eval ::tcl::test::main {
 	stdio
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
-	catch {set f [open "|[list [interpreter] script \u00c0]" r]}
+	catch {set f [open "|[list [interpreter] script À]" r]}
     } -body {
 	read $f
     } -cleanup {
 	close $f
 	removeFile script
     } -result [list script [list [encoding convertfrom [encoding system] \
-	[encoding convertto [encoding system] \u00c0]]] 0]\n
+	[encoding convertto [encoding system] À]]] 0]\n
 
     test Tcl_Main-1.4 {
     } -constraints {
 	stdio
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
-	catch {set f [open "|[list [interpreter] script \u20ac]" r]}
+	catch {set f [open "|[list [interpreter] script €]" r]}
     } -body {
 	read $f
     } -cleanup {
 	close $f
 	removeFile script
     } -result [list script [list [encoding convertfrom [encoding system] \
-	[encoding convertto [encoding system] \u20ac]]] 0]\n
+	[encoding convertto [encoding system] €]]] 0]\n
 
     test Tcl_Main-1.5 {
     } -constraints {
 	stdio
     } -setup {
-	makeFile {puts [list $argv0 $argv $tcl_interactive]} \u00c0
-	catch {set f [open "|[list [interpreter] \u00c0]" r]}
+	makeFile {puts [list $argv0 $argv $tcl_interactive]} À
+	catch {set f [open "|[list [interpreter] À]" r]}
     } -body {
 	read $f
     } -cleanup {
 	close $f
-	removeFile \u00c0
+	removeFile À
     } -result [list [list [encoding convertfrom [encoding system] \
-	[encoding convertto [encoding system] \u00c0]]] {} 0]\n
+	[encoding convertto [encoding system] À]]] {} 0]\n
 
     test Tcl_Main-1.6 {
     } -constraints {
 	stdio
     } -setup {
-	makeFile {puts [list $argv0 $argv $tcl_interactive]} \u20ac
-	catch {set f [open "|[list [interpreter] \u20ac]" r]}
+	makeFile {puts [list $argv0 $argv $tcl_interactive]} €
+	catch {set f [open "|[list [interpreter] €]" r]}
     } -body {
 	read $f
     } -cleanup {
 	close $f
-	removeFile \u20ac
+	removeFile €
     } -result [list [list [encoding convertfrom [encoding system] \
-	[encoding convertto [encoding system] \u20ac]]] {} 0]\n
+	[encoding convertto [encoding system] €]]] {} 0]\n
 
     test Tcl_Main-1.7 {
 	Tcl_Main: startup script - -encoding option
@@ -129,8 +129,8 @@ namespace eval ::tcl::test::main {
 	set f [open $script w]
 	chan configure $f -encoding utf-8
 	puts $f {puts [list $argv0 $argv $tcl_interactive]}
-	puts -nonewline $f {puts [string equal \u20ac }
-	puts $f "\u20ac]"
+	puts -nonewline $f {puts [string equal € }
+	puts $f "€]"
 	close $f
 	catch {set f [open "|[list [interpreter] -encoding utf-8 script]" r]}
     } -body {
@@ -151,7 +151,7 @@ namespace eval ::tcl::test::main {
 	chan configure $f -encoding utf-8
 	puts $f {puts [list $argv0 $argv $tcl_interactive]}
 	puts -nonewline $f {puts [string equal \u20ac }
-	puts $f "\u20ac]"
+	puts $f "€]"
 	close $f
 	catch {set f [open "|[list [interpreter] -encoding ascii script]" r]}
     } -body {
@@ -172,7 +172,7 @@ namespace eval ::tcl::test::main {
 	chan configure $f -encoding utf-8
 	puts $f {puts [list $argv0 $argv $tcl_interactive]}
 	puts -nonewline $f {puts [string equal \u20ac }
-	puts $f "\u20ac]"
+	puts $f "€]"
 	close $f
 	catch {set f [open "|[list [interpreter] -enc utf-8 script]" r+]}
     } -body {
@@ -606,8 +606,8 @@ namespace eval ::tcl::test::main {
 	catch {set f [open "|[list [interpreter]]" w+]}
 	catch {chan configure $f -blocking 0}
     } -body {
-	type $f "chan configure stdin -eofchar \"\\032 {}\"
-	    if 1 \{\n\032"
+	type $f "chan configure stdin -eofchar \"\\x1A {}\"
+	    if 1 \{\n\x1A"
 	variable wait
 	chan event $f readable \
 		[list set [namespace which -variable wait] "child exit"]

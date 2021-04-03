@@ -13,7 +13,7 @@ namespace eval ::tcl::test::fileSystemEncoding {
 	namespace import -force ::tcltest::*
     }
 
-    variable fname1 \u767b\u9e1b\u9d72\u6a13
+    variable fname1 登鸛鵲樓
 
     proc autopath {} {
 	global auto_path
