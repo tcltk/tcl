@@ -33,7 +33,7 @@ while the command procedure executes. (In the days of Tcl 7, this was
 trivially achieved with an assumption that all use of the Tcl library was
 single-threaded.) The elements of that array determine the string value.
 Each element with (unsigned) **char** value between 1 and 255 represents an
-element of the string, stored at the correponding index of that string.
+element of the string, stored at the corresponding index of that string.
 The first element with value 0 (aka **NUL**) is not part of the string value,
 but marks its end.
 
@@ -524,7 +524,7 @@ claimed to serve "Java compatibility". Tcl development at this time took
 place at Sun Microsystems, which was also the home of Java. It appears that
 "Java compatibility" is not a statement about any sort of interoperability,
 but about following the same conventions for the sake of programmer
-familiarity.  Tcl 8.1 added the **\\u_HHHH_** syntax as a way for
+familiarity.  Tcl 8.1 added the **\\u**___HHHH___ syntax as a way for
 scripts to specify Unicode characters using only the ASCII characters.
 This is the same syntax Java uses for the same thing. The "compatibility"
 at work is a reduction of cognitive burden by using the same solution to
