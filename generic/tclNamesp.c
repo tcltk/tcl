@@ -915,10 +915,11 @@ Tcl_DeleteNamespace(
     nsPtr->refCount++;
 
     /*
-     * Give anyone interested - notably TclOO - a chance to use this namespace
-     * normally despite the fact that the namespace is going to go. Allows the
-     * calling of destructors.  Only called once (unless re-established
-     * by the called function). [Bug 2950259]
+     * Before marking the namespace as dying, give anyone interested, notably
+     * TclOO, a chance to use this namespace normally despite the fact that
+     * the namespace is going to go. Allows the calling of destructors.  Only
+     * called once (unless re-established by the called function). [Bug
+     * 2950259]
      *
      * Setting this field requires access to the internal definition
      * of namespaces, so it should only be accessed by code that knows about
@@ -935,12 +936,12 @@ Tcl_DeleteNamespace(
     }
 
     /*
-     * Delete all coroutine commands now: break the circular ref cycle between
+     * Delete all coroutines now, breaking the circular ref cycle between
      * the namespace and the coroutine command [Bug 2724403]. This code is
      * essentially duplicated in TclTeardownNamespace() for all other
      * commands. Don't optimize to Tcl_NextHashEntry() because of traces.
      *
-     * NOTE: we could avoid traversing the ns's command list by keeping a
+     * Maybe later avoid traversing the ns's command list by keeping a
      * separate list of coros.
      */
 
@@ -959,7 +960,7 @@ Tcl_DeleteNamespace(
     /*
      * If the namespace has associated ensemble commands, delete them first.
      * This leaves the actual contents of the namespace alone (unless they are
-     * linked ensemble commands, of course). Note that this code is actually
+     * linked ensemble commands, of course). This code is actually
      * reentrant so command delete traces won't purturb things badly.
      */
 
@@ -990,7 +991,7 @@ Tcl_DeleteNamespace(
      * (NS_DYING is OR'd into its flags): the namespace can't be looked up by
      * name but its commands and variables are still usable by those active
      * call frames. When all active call frames referring to the namespace
-     * have been popped from the Tcl stack, Tcl_PopCallFrame will call this
+     * have been popped from the Tcl stack, Tcl_PopCallFrame calls this
      * function again to delete everything in the namespace. If no nsName
      * objects refer to the namespace (i.e., if its refCount is zero), its
      * commands and variables are deleted and the storage for its namespace
