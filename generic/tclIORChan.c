@@ -52,6 +52,8 @@ static int		ReflectGetOption(ClientData clientData,
 static int		ReflectSetOption(ClientData clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *newValue);
+static int		ReflectTruncate(ClientData clientData,
+			    long long length);
 static void     TimerRunRead(ClientData clientData);
 static void     TimerRunWrite(ClientData clientData);
 
@@ -80,7 +82,7 @@ static const Tcl_ChannelType tclRChannelType = {
 #else
 	NULL,		   /* thread action */
 #endif
-    NULL		   /* truncate */
+    ReflectTruncate	   /* Truncate.				NULL'able */
 };
 
 /*
@@ -178,6 +180,7 @@ static const char *const methodNames[] = {
     "initialize",	/*     */
     "read",		/* OPT */
     "seek",		/* OPT */
+    "truncate",		/* OPT */
     "watch",		/*     */
     "write",		/* OPT */
     NULL
@@ -191,6 +194,7 @@ typedef enum {
     METH_INIT,
     METH_READ,
     METH_SEEK,
+    METH_TRUNCATE,
     METH_WATCH,
     METH_WRITE
 } MethodName;
@@ -200,7 +204,8 @@ typedef enum {
 	(FLAG(METH_INIT) | FLAG(METH_FINAL) | FLAG(METH_WATCH))
 #define NULLABLE_METHODS \
 	(FLAG(METH_BLOCKING) | FLAG(METH_SEEK) | \
-	FLAG(METH_CONFIGURE) | FLAG(METH_CGET) | FLAG(METH_CGETALL))
+	FLAG(METH_CONFIGURE) | FLAG(METH_CGET) | \
+	FLAG(METH_CGETALL)   | FLAG(METH_TRUNCATE))
 
 #define RANDW \
 	(TCL_READABLE | TCL_WRITABLE)
@@ -230,7 +235,8 @@ typedef enum {
     ForwardedBlock,
     ForwardedSetOpt,
     ForwardedGetOpt,
-    ForwardedGetOptAll
+    ForwardedGetOptAll,
+    ForwardedTruncate
 } ForwardedOperation;
 
 /*
@@ -293,6 +299,10 @@ struct ForwardParamGetOpt {
     const char *name;		/* Name of option to get, maybe NULL */
     Tcl_DString *value;		/* Result */
 };
+struct ForwardParamTruncate {
+    ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
+    Tcl_WideInt length;		/* I: Length of file. */
+};
 
 /*
  * Now join all these together in a single union for convenience.
@@ -307,6 +317,7 @@ typedef union ForwardParam {
     struct ForwardParamBlock block;
     struct ForwardParamSetOpt setOpt;
     struct ForwardParamGetOpt getOpt;
+    struct ForwardParamTruncate truncate;
 } ForwardParam;
 
 /*
@@ -694,6 +705,9 @@ TclChanCreateObjCmd(
 	}
 	if (!(methods & FLAG(METH_SEEK))) {
 	    clonePtr->wideSeekProc = NULL;
+	}
+	if (!(methods & FLAG(METH_TRUNCATE))) {
+	    clonePtr->truncateProc = NULL;
 	}
 
 	chanPtr->typePtr = clonePtr;
@@ -2020,6 +2034,73 @@ ReflectGetOption(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * ReflectTruncate --
+ *
+ *	This function is invoked to truncate a channel's file size.
+ *
+ * Results:
+ *	A standard Tcl result code.
+ *
+ * Side effects:
+ *	Arbitrary, as it calls upon a Tcl script.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ReflectTruncate(
+    ClientData clientData,	/* Channel to query */
+    long long length)		/* Length to truncate to. */
+{
+    ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
+    Tcl_Obj *lenObj;
+    int errorNum;		/* EINVAL or EOK (success). */
+    Tcl_Obj *resObj;		/* Result for 'truncate' */
+
+    /*
+     * Are we in the correct thread?
+     */
+
+#ifdef TCL_THREADS
+    if (rcPtr->thread != Tcl_GetCurrentThread()) {
+	ForwardParam p;
+
+	p.truncate.length = length;
+
+	ForwardOpToHandlerThread(rcPtr, ForwardedTruncate, &p);
+
+	if (p.base.code != TCL_OK) {
+	    PassReceivedError(rcPtr->chan, &p);
+	    return EINVAL;
+	}
+
+	return EOK;
+    }
+#endif
+
+    /* ASSERT: rcPtr->method & FLAG(METH_TRUNCATE) */
+
+    Tcl_Preserve(rcPtr);
+
+    lenObj  = Tcl_NewIntObj(length);
+    Tcl_IncrRefCount(lenObj);
+
+    if (InvokeTclMethod(rcPtr,METH_TRUNCATE,lenObj,NULL,&resObj)!=TCL_OK) {
+	Tcl_SetChannelError(rcPtr->chan, resObj);
+	errorNum = EINVAL;
+    } else {
+	errorNum = EOK;
+    }
+
+    Tcl_DecrRefCount(lenObj);
+    Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
+    Tcl_Release(rcPtr);
+    return errorNum;
+}
+
+/*
  * Helpers. =========================================================
  */
 
@@ -3252,6 +3333,19 @@ ForwardProc(
 	}
         Tcl_Release(rcPtr);
 	break;
+
+    case ForwardedTruncate: {
+	Tcl_Obj *lenObj = Tcl_NewIntObj(paramPtr->truncate.length);
+
+	Tcl_IncrRefCount(lenObj);
+	Tcl_Preserve(rcPtr);
+	if (InvokeTclMethod(rcPtr,METH_TRUNCATE,lenObj,NULL,&resObj)!=TCL_OK) {
+	    ForwardSetObjError(paramPtr, resObj);
+	}
+	Tcl_Release(rcPtr);
+	Tcl_DecrRefCount(lenObj);
+	break;
+    }
 
     default:
 	/*
