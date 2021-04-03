@@ -510,9 +510,11 @@ FillEncodingFileMap(void)
  *---------------------------------------------------------------------------
  */
 
-/* Those flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
-#define TCL_ENCODING_LE		0x40	/* Little-endian encoding */
-#define TCL_ENCODING_EXTERNAL	0x80	/* Converting from internal to external variant */
+/* This flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
+#define TCL_ENCODING_MODIFIED	0x20	/* Converting NULL bytes to 0xC0 0x80 */
+/* Since TCL_ENCODING_MODIFIED is only used for utf-8 and
+ * TCL_ENCODING_LE is only used for  utf-16/ucs-2, re-use the same value */
+#define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
 
 void
 TclInitEncodingSubsystem(void)
@@ -522,7 +524,7 @@ TclInitEncodingSubsystem(void)
     unsigned size;
     unsigned short i;
     union {
-        unsigned char c;
+        char c;
         short s;
     } isLe;
 
@@ -1075,19 +1077,21 @@ Tcl_ExternalToUtfDString(
     }
 
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
+    if (encodingPtr->toUtfProc == UtfToUtfProc) {
+	flags |= TCL_ENCODING_MODIFIED;
+    }
 
     while (1) {
 	result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
 		flags, &state, dst, dstLen, &srcRead, &dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
+	src += srcRead;
 	if (result != TCL_CONVERT_NOSPACE) {
 	    Tcl_DStringSetLength(dstPtr, soFar);
 	    return Tcl_DStringValue(dstPtr);
 	}
-
 	flags &= ~TCL_ENCODING_START;
-	src += srcRead;
 	srcLen -= srcRead;
 	if (Tcl_DStringLength(dstPtr) == 0) {
 	    Tcl_DStringSetLength(dstPtr, dstLen);
@@ -1183,15 +1187,17 @@ Tcl_ExternalToUtf(
     if (!noTerminate) {
 	/*
 	 * If there are any null characters in the middle of the buffer,
-	 * they will converted to the UTF-8 null character (\xC080). To get
+	 * they will converted to the UTF-8 null character (\xC0\x80). To get
 	 * the actual \0 at the end of the destination buffer, we need to
 	 * append it manually.  First make room for it...
 	 */
 
 	dstLen--;
     }
+    if (encodingPtr->toUtfProc == UtfToUtfProc) {
+	flags |= TCL_ENCODING_MODIFIED;
+    }
     do {
-	int savedFlags = flags;
 	Tcl_EncodingState savedState = *statePtr;
 
 	result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
@@ -1201,7 +1207,6 @@ Tcl_ExternalToUtf(
 	    break;
 	}
 	dstLen = Tcl_UtfAtIndex(dst, maxChars) - dst + (TCL_UTF_MAX - 1);
-	flags = savedFlags;
 	*statePtr = savedState;
     } while (1);
     if (!noTerminate) {
@@ -1266,7 +1271,7 @@ Tcl_UtfToExternalDString(
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
     while (1) {
 	result = encodingPtr->fromUtfProc(encodingPtr->clientData, src,
-		srcLen, flags | TCL_ENCODING_EXTERNAL, &state, dst, dstLen,
+		srcLen, flags, &state, dst, dstLen,
 		&srcRead, &dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
@@ -1368,7 +1373,7 @@ Tcl_UtfToExternal(
 
     dstLen -= encodingPtr->nullSize;
     result = encodingPtr->fromUtfProc(encodingPtr->clientData, src, srcLen,
-	    flags | TCL_ENCODING_EXTERNAL, statePtr, dst, dstLen, srcReadPtr,
+	    flags, statePtr, dst, dstLen, srcReadPtr,
 	    dstWrotePtr, dstCharsPtr);
     if (encodingPtr->nullSize == 2) {
 	dst[*dstWrotePtr + 1] = '\0';
@@ -2108,7 +2113,7 @@ BinaryProc(
 
 static int
 UtfToUtfProc(
-    TCL_UNUSED(ClientData),
+    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_MODIFIED */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2147,6 +2152,7 @@ UtfToUtfProc(
     }
 
     dstStart = dst;
+    flags |= PTR2INT(clientData);
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
@@ -2163,7 +2169,7 @@ UtfToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && !(flags & TCL_ENCODING_EXTERNAL))) {
+	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && (flags & TCL_ENCODING_MODIFIED))) {
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to 0xC080.
@@ -2171,7 +2177,7 @@ UtfToUtfProc(
 
 	    *dst++ = *src++;
 	} else if (UCHAR(*src) == 0xC0 && (src + 1 < srcEnd)
-		&& UCHAR(src[1]) == 0x80 && (flags & TCL_ENCODING_EXTERNAL)) {
+		&& UCHAR(src[1]) == 0x80 && !(flags & TCL_ENCODING_MODIFIED)) {
 	    /*
 	     * Convert 0xC080 to real nulls when we are in output mode.
 	     */
@@ -2186,16 +2192,23 @@ UtfToUtfProc(
 	     * unless the user has explicitly asked to be told.
 	     */
 
-	    if (flags & TCL_ENCODING_STOPONERROR) {
-		result = TCL_CONVERT_MULTIBYTE;
-		break;
+	    if (flags & TCL_ENCODING_MODIFIED) {
+		if (flags & TCL_ENCODING_STOPONERROR) {
+		    result = TCL_CONVERT_MULTIBYTE;
+		    break;
+		}
+		ch = UCHAR(*src++);
+	    } else {
+		char chbuf[2];
+		chbuf[0] = UCHAR(*src++); chbuf[1] = 0;
+		TclUtfToUCS4(chbuf, &ch);
 	    }
-	    ch = UCHAR(*src);
-	    src += 1;
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
+	    int low;
 	    size_t len = TclUtfToUCS4(src, &ch);
-	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_STOPONERROR)) {
+	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_STOPONERROR)
+		    && (flags & TCL_ENCODING_MODIFIED)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
@@ -2205,7 +2218,7 @@ UtfToUtfProc(
 		 * A surrogate character is detected, handle especially.
 		 */
 
-		int low = ch;
+		low = ch;
 		len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
 
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
@@ -2352,7 +2365,7 @@ Utf16ToUtfProc(
 
 static int
 UtfToUtf16Proc(
-    ClientData clientData,	/* != NULL means LE, == NUL means BE */
+    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2386,6 +2399,7 @@ UtfToUtf16Proc(
 
     dstStart = dst;
     dstEnd   = dst + dstLen - sizeof(Tcl_UniChar);
+    flags |= PTR2INT(clientData);
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd; numChars++) {
@@ -2403,7 +2417,7 @@ UtfToUtf16Proc(
 	    break;
 	}
 	src += TclUtfToUCS4(src, &ch);
-	if (clientData) {
+	if (flags & TCL_ENCODING_LE) {
 	    if (ch <= 0xFFFF) {
 		*dst++ = (ch & 0xFF);
 		*dst++ = (ch >> 8);
