@@ -1184,19 +1184,18 @@ ObjectNamespaceDeleted(
      * freed memory.
      */
 
-    if (oPtr->command != NULL) {
-	if (((Command *) oPtr->command)->flags && CMD_DYING) {
-	    /*
-	     * The command is already (being) deleted. Proceed to clean up the the namespace,
-	     */
-	} else {
-	    /*
-	     * The namespace must have been deleted directly.  Delete the command
-	     * as well.
-	     */
+    if (((Command *) oPtr->command)->flags && CMD_DYING) {
+	/*
+	 * Something has already started the command deletion process. We can
+	 * go ahead and clean up the the namespace,
+	 */
+    } else {
+	/*
+	 * The namespace must have been deleted directly.  Delete the command
+	 * as well.
+	 */
 
-	    Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
-	}
+	Tcl_DeleteCommandFromToken(oPtr->fPtr->interp, oPtr->command);
     }
 
     if (oPtr->myclassCommand) {
