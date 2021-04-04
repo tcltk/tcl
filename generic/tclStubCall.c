@@ -28,9 +28,10 @@ MODULE_SCOPE void *tclStubsHandle;
  *	returning NULL if that function cannot be found. See PROCNAME table.
  *
  *	The functions Tcl_MainEx and Tcl_MainExW never return.
- *	Tcl_GetMemoryInfo and Tcl_StaticLibrary return (void) and
- *	Tcl_SetExitProc returns its previous exitProc. This means that
- *	those 5 functions cannot be used to initialize the stub-table,
+ *	Tcl_GetMemoryInfo and Tcl_StaticLibrary return (void),
+ *	Tcl_SetExitProc returns its previous exitProc and
+ *	Tcl_SetPreInitScript returns the previous script. This means that
+ *	those 6 functions cannot be used to initialize the stub-table,
  *	only the first 4 functions in the table can do that.
  *
  *----------------------------------------------------------------------
@@ -46,7 +47,8 @@ static const char PROCNAME[][24] = {
     "_Tcl_MainEx", /* "arg" == (void *)5 */
     "_Tcl_StaticLibrary", /* "arg" == (void *)6 */
     "_Tcl_SetExitProc", /* "arg" == (void *)7 */
-    "_Tcl_GetMemoryInfo" /* "arg" == (void *)8 */
+    "_Tcl_GetMemoryInfo", /* "arg" == (void *)8 */
+    "_Tcl_SetPreInitScript" /* "arg" == (void *)9 */
 };
 
 MODULE_SCOPE const void *nullVersionProc(void) {

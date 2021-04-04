@@ -2239,6 +2239,8 @@ extern void *TclStubCall(void *arg);
 	((Tcl_ExitProc *(*)(Tcl_ExitProc *))TclStubCall((void *)7))(proc)
 #define Tcl_GetMemoryInfo(dsPtr) \
 	(void)((const char *(*)(Tcl_DString *))TclStubCall((void *)8))(dsPtr)
+#define Tcl_SetPreInitScript(string) \
+	((const char *(*)(const char *))TclStubCall((void *)9))(string)
 #endif
 
 /*
