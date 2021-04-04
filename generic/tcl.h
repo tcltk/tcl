@@ -545,7 +545,6 @@ typedef void (Tcl_MainLoopProc) (void);
 /* Undocumented. To be formalized by TIP #595 */
 #define Tcl_LibraryInitProc Tcl_PackageInitProc
 #define Tcl_LibraryUnloadProc Tcl_PackageUnloadProc
-#define Tcl_StaticLibrary Tcl_StaticPackage
 
 /*
  *----------------------------------------------------------------------------
@@ -2158,10 +2157,12 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 TCLAPI void		Tcl_FindExecutable(const char *argv0);
 TCLAPI void		Tcl_SetPanicProc(
 			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
-TCLAPI void		Tcl_StaticPackage(Tcl_Interp *interp,
+TCLAPI void		Tcl_StaticLibrary(Tcl_Interp *interp,
 			    const char *prefix,
-			    Tcl_PackageInitProc *initProc,
-			    Tcl_PackageInitProc *safeInitProc);
+			    Tcl_LibraryInitProc *initProc,
+			    Tcl_LibraryInitProc *safeInitProc);
+/* Undocumented. To be formalized by TIP #595 */
+#   define Tcl_StaticPackage Tcl_StaticLibrary
 TCLAPI Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
 #ifdef _WIN32
 TCLAPI int		TclZipfs_AppHook(int *argc, wchar_t ***argv);
