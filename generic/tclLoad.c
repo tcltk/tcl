@@ -15,7 +15,7 @@
 /*
  * The following structure describes a library that has been loaded either
  * dynamically (with the "load" command) or statically (as indicated by a call
- * to Tcl_StaticPackage). All such libraries are linked together into a
+ * to Tcl_StaticLibrary). All such libraries are linked together into a
  * single list for the process. Library are never unloaded, until the
  * application exits, when TclFinalizeLoad is called, and these structures are
  * freed.
@@ -921,7 +921,7 @@ Tcl_UnloadObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_StaticPackage --
+ * Tcl_StaticLibrary --
  *
  *	This function is invoked to indicate that a particular library has
  *	been linked statically with an application.
@@ -937,7 +937,7 @@ Tcl_UnloadObjCmd(
  */
 
 void
-Tcl_StaticPackage(
+Tcl_StaticLibrary(
     Tcl_Interp *interp,		/* If not NULL, it means that the library has
 				 * already been loaded into the given
 				 * interpreter by calling the appropriate init
