@@ -65,11 +65,11 @@
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
-#undef TclStaticPackage
+#undef TclStaticLibrary
 #undef Tcl_BackgroundError
 #undef TclGuessPackageName
 #undef TclGetLoadedPackages
-#define TclStaticPackage Tcl_StaticPackage
+#define TclStaticLibrary Tcl_StaticLibrary
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
@@ -1032,7 +1032,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
-    TclStaticPackage, /* 257 */
+    TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
     TclUnusedStubEntry, /* 259 */
 };
@@ -1518,7 +1518,7 @@ const TclStubs tclStubs = {
     Tcl_SourceRCFile, /* 241 */
     Tcl_SplitList, /* 242 */
     Tcl_SplitPath, /* 243 */
-    Tcl_StaticPackage, /* 244 */
+    Tcl_StaticLibrary, /* 244 */
     Tcl_StringMatch, /* 245 */
     Tcl_TellOld, /* 246 */
     Tcl_TraceVar, /* 247 */
