@@ -749,6 +749,8 @@ TclpRealloc(
 }
 
 #endif /* !USE_TCLALLOC */
+#else
+TCL_MAC_EMPTY_FILE(generic_tclAlloc_c)
 #endif /* !TCL_THREADS */
 
 /*
