@@ -456,6 +456,17 @@ to be present at *bytes*[*length*].
 
 
 
+Routines where TCL\_UTF\_MAX is relevant:
+  Tcl\_UniCharToUtf, Tcl\_UtfBackslash, Tcl\_UtfPrev, Tcl\_WinTCharToUtf
+  Tcl\_UtfCharComplete
+  All Utf.3 (sort of)
+  [gets] and [read] and "unicode" string rep buffer sizing
+  Encoding routines (Tcl\_ExternalToUtf,...)
+  TclParseBackslash
+
+
+
+
 
 Tcl 8.1 interface routines exchanging 2-octet representations:
   Tcl\_UniCharToUpper, Tcl\_UniCharToLower, Tcl\_UniCharToTitle,
