@@ -4269,7 +4269,7 @@ TestsetplatformCmd(
  * TeststaticpkgCmd --
  *
  *	This procedure implements the "teststaticpkg" command.
- *	It is used to test the procedure Tcl_StaticPackage.
+ *	It is used to test the procedure Tcl_StaticLibrary.
  *
  * Results:
  *	A standard Tcl result.
@@ -4301,7 +4301,7 @@ TeststaticpkgCmd(
     if (Tcl_GetInt(interp, argv[3], &loaded) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage((loaded) ? interp : NULL, argv[1],
+    Tcl_StaticLibrary((loaded) ? interp : NULL, argv[1],
 	    StaticInitProc, (safe) ? StaticInitProc : NULL);
     return TCL_OK;
 }
