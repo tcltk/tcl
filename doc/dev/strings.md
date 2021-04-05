@@ -292,8 +292,8 @@ the values associated with the surrogate extension mechanism.  The
 code values of unicode scalar values are in the integer ranges
 0 to 55,295 (0x0000 to 0xD7FF) and 57,344 to 1,114,111 (0xE000 to 0x10FFFF).
 From this perspective, the Tcl 8.1 string values were no longer seen as
-proper Unicode, but as a legacy system called UCS-2 which was flaws in
-two ways.  It lacked support for the supplemntary planes of the full
+proper Unicode, but as a legacy system called UCS-2 which suffered from
+two flaws.  It lacked support for the supplemntary planes of the full
 Unicode character set beyond **U+FFFF**.  It also allowed for the
 presence of symbols with codes between 55,296 and 57,343 (0xD800 to 0xDFFF).
 Neither system could encode the other in direct, simple, efficient
@@ -315,21 +315,21 @@ values from ranges 0x0000 - 0xD7FF and 0xE000 - 0xFFFF are represented by
 themselves in a single code unit.  The Unicode scalar values from the
 range 0x10000 - 0x10FFFF are each represented by a pair of 16-bit code
 units, the first from the range 0xD800 - 0xDBFF and the second from the
-range 0xDC00 - 0xDFFF.  Every 2-octet value may appear somewhere in the
+range 0xDC00 - 0xDFFF.  Every 2-octet code unit may appear somewhere in the
 proper UTF-16 encoding of some Unicode text.  There are no code unit
 values that are forbidden.  There are UCS-2 sequences that are not
 valid UTF-16, precisely those UCS-2 sequences that include surrogates
 not arranged in properly formed pairs.  
 
 Note the difficulties if we try to design an encoding with 2-octet code
-units to encode the union of UCS-2 and Unicode.  This can certainly
-be done, but the result will bear little resemblence to UTF-16.  All
-valid UTF-16 sequences are used up representing valid Unicode.  To also
-represent the strings of UCS-2 that are not valid Unicode, we would need to
-use 2-octet sequences that are not valid UTF-16.  Any such scheme will
-have some point of discontinuity with the legacy UCS-2 system.  Likewise,
-since every 2-octet code unit sequence is used in UCS-2 to represent
-itself, there is no room to create representation for supplemental
+units to encode all sequences over the union of the UCS-2 and Unicode
+alphabets.  This can certainly be done, but the result will bear little
+resemblence to UTF-16.  All valid UTF-16 sequences are used up representing
+valid Unicode.  To also represent the strings of UCS-2 that are not validi
+Unicode, we would need to use 2-octet sequences that are not valid UTF-16.
+Any such scheme will have some point of discontinuity with the legacy UCS-2
+system.  Likewise, since every 2-octet code unit sequence is used in UCS-2
+to represent itself, there is no room to create representation for supplemental
 planes of unicode in a 2-octet encoding without introducing a discontinuity.
 There will have to be some 2-octet sequence that used to mean one thing
 and now means another thing at the transition, or there will have to
@@ -367,12 +367,12 @@ overlong byte sequences, and even included such decoders in their
 sample implementations.
 
 Here the news is better when it comes to thinking about representations
-of the union of UCS-2 and Unicode.  The three-byte sequences that might
-encode surrogates that are forbidden in UTF-8 are available to encode
-those values of UCS-2 without interference with UTF-8 encoding of everything
-else.  The WTF-8 variation of UTF-8 is one approach in this area, though
-the details require careful examination.  The byte
-sequence 0xF0 0x90 0x80 0x80 (representing U+10000) and the
+of all sequences over the union of UCS-2 and Unicode alphabets.  The
+three-byte sequences that might encode surrogates that are forbidden
+in UTF-8 are available to encode those values of UCS-2 without interference
+with UTF-8 encoding of everything else.  The WTF-8 variation of UTF-8 is one
+approach in this area, though the details require careful examination.
+The byte sequence 0xF0 0x90 0x80 0x80 (representing U+10000) and the
 byte sequence 0xED 0xA0 0x80 0xED 0xB0 0x80 (representing U+D8000 U+DC00,
 which in turn is the surrogate pair representation of U+10000)
 are distinct, allowing the required distinction.  WTF-8 is defined to
@@ -452,6 +452,9 @@ interoperability with legacy routines written to Tcl 7 expectations.  Most
 notably the *bytes* and *length* fields of a **Tcl\_Obj** struct implement
 the Tcl 8.0 string representation and require the terminating **NULL**
 to be present at *bytes*[*length*].
+
+
+
 
 
 
