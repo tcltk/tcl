@@ -749,7 +749,7 @@ EXTERN int		Tcl_SplitList(Tcl_Interp *interp,
 EXTERN void		Tcl_SplitPath(const char *path, int *argcPtr,
 				const char ***argvPtr);
 /* 244 */
-EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
+EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 				const char *prefix,
 				Tcl_PackageInitProc *initProc,
 				Tcl_PackageInitProc *safeInitProc);
@@ -2226,7 +2226,7 @@ typedef struct TclStubs {
     void (*tcl_SourceRCFile) (Tcl_Interp *interp); /* 241 */
     int (*tcl_SplitList) (Tcl_Interp *interp, const char *listStr, int *argcPtr, const char ***argvPtr); /* 242 */
     void (*tcl_SplitPath) (const char *path, int *argcPtr, const char ***argvPtr); /* 243 */
-    TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *prefix, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
+    TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") void (*tcl_StaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
     TCL_DEPRECATED_API("No longer in use, changed to macro") int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
     TCL_DEPRECATED_API("") int (*tcl_TellOld) (Tcl_Channel chan); /* 246 */
     TCL_DEPRECATED_API("No longer in use, changed to macro") int (*tcl_TraceVar) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 247 */
@@ -3161,8 +3161,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_SplitList) /* 242 */
 #define Tcl_SplitPath \
 	(tclStubsPtr->tcl_SplitPath) /* 243 */
-#define Tcl_StaticPackage \
-	(tclStubsPtr->tcl_StaticPackage) /* 244 */
+#define Tcl_StaticLibrary \
+	(tclStubsPtr->tcl_StaticLibrary) /* 244 */
 #define Tcl_StringMatch \
 	(tclStubsPtr->tcl_StringMatch) /* 245 */
 #define Tcl_TellOld \
@@ -4004,7 +4004,7 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_SetPanicProc
 #   undef Tcl_SetExitProc
 #   undef Tcl_ObjSetVar2
-#   undef Tcl_StaticPackage
+#   undef Tcl_StaticLibrary
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
