@@ -721,7 +721,6 @@ typedef void (Tcl_MainLoopProc) (void);
 /* Undocumented. To be formalized by TIP #595 */
 #define Tcl_LibraryInitProc Tcl_PackageInitProc
 #define Tcl_LibraryUnloadProc Tcl_PackageUnloadProc
-#define Tcl_StaticLibrary Tcl_StaticPackage
 
 /*
  *----------------------------------------------------------------------------
@@ -2385,6 +2384,8 @@ EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 EXTERN void		Tcl_InitSubsystems(void);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+/* Undocumented. To be formalized by TIP #595 */
+#   define Tcl_StaticPackage Tcl_StaticLibrary
 #ifdef _WIN32
 EXTERN int		TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #else
