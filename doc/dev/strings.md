@@ -359,7 +359,7 @@ there are many sequences also forbidden, including any trailing byte
 where one does not belong, any leading byte where one does not belong,
 or any multi-byte sequence that when decoded would produce a value
 outside the domain for that sequence length (for example, the four-byte
-sequence 0xF0 0x80 0x80 0x80 that would appear to encode U+0000, which
+sequence 0xF0 0x80 0x80 0x80 that would appear to encode **U+0000**, which
 is in the domain of unicode scalar values properly encoded by a single-byte).
 The last of these constraints was formally imposed by Unicode 3.1.0.
 Earlier versions of Unicode explictly approved of UTF-8 decoders that accepted
@@ -372,9 +372,9 @@ three-byte sequences that might encode surrogates that are forbidden
 in UTF-8 are available to encode those values of UCS-2 without interference
 with UTF-8 encoding of everything else.  The WTF-8 variation of UTF-8 is one
 approach in this area, though the details require careful examination.
-The byte sequence 0xF0 0x90 0x80 0x80 (representing U+10000) and the
-byte sequence 0xED 0xA0 0x80 0xED 0xB0 0x80 (representing U+D8000 U+DC00,
-which in turn is the surrogate pair representation of U+10000)
+The byte sequence 0xF0 0x90 0x80 0x80 (representing **U+10000**) and the
+byte sequence 0xED 0xA0 0x80 0xED 0xB0 0x80 (representing **U+D8000 U+DC00**,
+which in turn is the surrogate pair representation of **U+10000**)
 are distinct, allowing the required distinction.  WTF-8 is defined to
 disallow this, however, because of the lack of a continuing ability to
 distinguish after conversion to UTF-16.  That remains the critical sticking
@@ -453,8 +453,56 @@ notably the *bytes* and *length* fields of a **Tcl\_Obj** struct implement
 the Tcl 8.0 string representation and require the terminating **NULL**
 to be present at *bytes*[*length*].
 
+The expansion of the Tcl alphabet in Tcl 8.1 to all two-byte values brought
+about new string value representations in the Tcl library.  The simplest
+was the creation of the **Tcl\_UniChar** type sized to contain a single
+symbol from the Tcl alphabet.  This representation of a Tcl string symbol
+is used in the new Tcl 8.1 routines **Tcl\_UniCharToUpper**,
+**Tcl\_UniCharToLower**, **Tcl\_UniCharToTitle**, **Tcl\_UtfToUniChar**,
+**Tcl\_UniCharToUtf** and **Tcl\_UniCharAtIndex**.  In each of these
+routines a symbol is passed in as a value of type **int** and it is
+passed out as a value of type **Tcl\_UniChar**.
 
+A Tcl string is then trivially represented as an array of **Tcl\_UniChar**.
+It has the familiar properties of being a simple, complete, one-to-one,
+fixed-width representation of all abstract Tcl 8.1 strings, with all the
+familiar comforts and benefits.  This representation is used in the new
+Tcl 8.1 routines **Tcl\_UniCharLen**, **Tcl\_UniCharNcmp**,
+**Tcl\_UniCharToUtfDString**, and **Tcl\_UtfToUniCharDString**.  The first
+two are utility routines that can be applied to this representation.  The
+second two are conversion routines between the **Tcl\_UniChar** array
+representation and another representation still to be described.  None
+of the public routines in Tcl 8.1 passed an argument into or out of
+Tcl in the **Tcl\_UniChar** array representation.
 
+The Tcl 8.1 interface continues to pass string values in and out by use
+of either the C strings of Tcl 7, or the counted strings of Tcl 8.0.  These
+interfaces could only represent the extended alphabet of Tcl 8.1 by way of
+a reinterpretation of how the string values are encoded in the byte sequences.
+The routine **Tcl\_UniCharToUtf** generates these encoded byte sequences.
+Tcl 8.1 documentation claims that the byte sequence encoding is UTF-8.
+This was never strictly true. Examination of the body of **Tcl\_UniCharToUtf**
+reveals that it encodes something closer to the FSS-UTF encoding from
+Unicode version 1, with encoding into sequences of more than 3 bytes disabled.
+FSS-UTF calls for 3-byte sequences to encode all codepoints in the range
+U+0800 to U+FFFF, and calls for 4-byte sequences to encode all codepoints
+in the range U+10000 to U+1FFFFF, and longer byte sequences to encode
+codepoints up to U+7FFFFFFF, providing room for up to 31-bits of codepoints
+that ISO 10646 still proposed at the time.  The UTF-8 encoding defined
+in Unicode 2.0 proposed a different use for 4-byte sequences.  They would
+be used to encode codepoint pairs using the surrogate extension mechanism.
+The spec was silent about the encoding of unpaired surrogate codepoints,
+but the sample implementation included as an example did encode such
+codepoints into 3-byte sequences.  Later revisions to the UTF-8 spec
+eliminated the encoding of unpaired surrogates.  The encoding implemented
+by **Tcl\_UniCharToUtf** encodes all surrogate codepoints into 3-byte sequences.
+
+Tcl 7 strings cannot contain the byte 0x00, while UTF-8 (and FSS-UTF)
+specifies that **U+0000** is to be encoded by 0x00.  The early UTF-8 specs
+allowed UTF-8 decoders to decode the two-byte sequence 0xC0 0x80
+into **U+0000** (all overlong encodings were officially tolerated at the
+time). so **Tcl\_UniCharToUtf** is implemented to use that modified encoding
+of **U+0000**.
 
 
 
@@ -467,14 +515,6 @@ Routines where TCL\_UTF\_MAX is relevant:
   Encoding routines (Tcl\_ExternalToUtf,...)
   TclParseBackslash
 
-
-
-
-
-Tcl 8.1 interface routines exchanging 2-octet representations:
-  Tcl\_UniCharToUpper, Tcl\_UniCharToLower, Tcl\_UniCharToTitle,
-  Tcl\_UtfToUniChar, Tcl\_UniCharToUtfDString, Tcl\_UtfToUniCharDString,
-  Tcl\_UniCharLen, Tcl\_UniCharNcmp, Tcl\_UniCharAtIndex
 
 Tcl 8.2 interface routines exchanging 2-octet representations:
   Tcl\_NewUnicodeObj, Tcl\_SetUnicodeObj, Tcl\_GetUnicode, Tcl\_GetUniChar
