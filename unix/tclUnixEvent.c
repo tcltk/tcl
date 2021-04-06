@@ -64,7 +64,7 @@ Tcl_Sleep(
 	}
 
 	if ((vdelay.sec != 0) || (vdelay.usec != 0)) {
-	    tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
+	    TclScaleTime(&vdelay);
 	}
 
 	delay.tv_sec  = vdelay.sec;
@@ -85,6 +85,8 @@ Tcl_Sleep(
     }
 }
 
+#else
+TCL_MAC_EMPTY_FILE(unix_tclUnixEvent_c)
 #endif /* HAVE_COREFOUNDATION */
 /*
  * Local Variables:
