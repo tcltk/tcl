@@ -8,12 +8,14 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_StaticLibrary \- make a statically linked library available via the 'load' command
+Tcl_StaticLibrary, Tcl_StaticPackage \- make a statically linked library available via the 'load' command
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
 \fBTcl_StaticLibrary\fR(\fIinterp, prefix, initProc, safeInitProc\fR)
+.sp
+\fBTcl_StaticPackage\fR(\fIinterp, prefix, initProc, safeInitProc\fR)
 .SH ARGUMENTS
 .AS Tcl_LibraryInitProc *safeInitProc
 .AP Tcl_Interp *interp in
@@ -65,11 +67,11 @@ error message.  The result or error from the initialization procedure will
 be returned as the result of the \fBload\fR command that caused the
 initialization procedure to be invoked.
 .PP
-\fBTcl_StaticLibrary\fR can not be safely used by stub-enabled extensions,
-so its symbol is not included in the stub table.
-.PP
 \fBTcl_StaticLibrary\fR was named \fBTcl_StaticPackage\fR in Tcl 8.6 and
 earlier, but the old name is deprecated now.
+.PP
+\fBTcl_StaticLibrary\fR can not be safely used by stub-enabled extensions,
+so its symbol is not included in the stub table.
 .SH KEYWORDS
 initialization procedure, package, static linking
 .SH "SEE ALSO"
