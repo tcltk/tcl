@@ -2423,7 +2423,8 @@ IssueSwitchJumpTable(
 		 * point to here.
 		 */
 
-		Tcl_SetHashValue(hPtr, CurrentOffset(envPtr) - jumpLocation);
+		Tcl_SetHashValue(hPtr, (ptrdiff_t) 
+			(CurrentOffset(envPtr) - jumpLocation));
 	    }
 	    Tcl_DStringFree(&buffer);
 	} else {
@@ -2434,8 +2435,8 @@ IssueSwitchJumpTable(
 
 	    foundDefault = 1;
 	    isNew = 1;
-	    TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
-		    envPtr->codeStart+jumpToDefault+1);
+	    TclStoreInt4AtPtr(CurrentOffset(envPtr) - jumpToDefault,
+		    envPtr->codeStart + jumpToDefault + 1);
 	}
 
 	/*
@@ -2498,7 +2499,7 @@ IssueSwitchJumpTable(
      */
 
     if (!foundDefault) {
-	TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
+	TclStoreInt4AtPtr(CurrentOffset(envPtr) - jumpToDefault,
 		envPtr->codeStart+jumpToDefault+1);
 	PUSH("");
     }
@@ -2509,8 +2510,8 @@ IssueSwitchJumpTable(
      */
 
     for (i=0 ; i<numRealBodies ; i++) {
-	TclStoreInt4AtPtr(CurrentOffset(envPtr)-finalFixups[i],
-		envPtr->codeStart+finalFixups[i]+1);
+	TclStoreInt4AtPtr(CurrentOffset(envPtr) - finalFixups[i],
+		envPtr->codeStart + finalFixups[i] + 1);
     }
 
     /*

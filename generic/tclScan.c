@@ -16,13 +16,14 @@
  * Flag values used by Tcl_ScanObjCmd.
  */
 
-#define SCAN_NOSKIP	0x1		/* Don't skip blanks. */
-#define SCAN_SUPPRESS	0x2		/* Suppress assignment. */
-#define SCAN_UNSIGNED	0x4		/* Read an unsigned value. */
-#define SCAN_WIDTH	0x8		/* A width value was supplied. */
-
-#define SCAN_LONGER	0x400		/* Asked for a wide value. */
-#define SCAN_BIG	0x800		/* Asked for a bignum value. */
+enum {
+    SCAN_NOSKIP = 0x1,		/* Don't skip blanks. */
+    SCAN_SUPPRESS = 0x2,	/* Suppress assignment. */
+    SCAN_UNSIGNED = 0x4,	/* Read an unsigned value. */
+    SCAN_WIDTH = 0x8,		/* A width value was supplied. */
+    SCAN_LONGER = 0x400,	/* Asked for a wide value. */
+    SCAN_BIG = 0x800		/* Asked for a bignum value. */
+};
 
 /*
  * The following structure contains the information associated with a
@@ -104,9 +105,10 @@ BuildCharSet(
 	end += TclUtfToUniChar(end, &ch);
     }
 
-    cset->chars = (Tcl_UniChar *)ckalloc(sizeof(Tcl_UniChar) * (end - format - 1));
+    cset->chars = (Tcl_UniChar *)
+	    ckalloc(sizeof(Tcl_UniChar) * (end - format - 1));
     if (nranges > 0) {
-	cset->ranges = (Range *)ckalloc(sizeof(Range) * nranges);
+	cset->ranges = (Range *) ckalloc(sizeof(Range) * nranges);
     } else {
 	cset->ranges = NULL;
     }
@@ -262,7 +264,7 @@ ValidateFormat(
     char *end;
     Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
-    int *nassign = (int *)TclStackAlloc(interp, nspace * sizeof(int));
+    int *nassign = (int *) TclStackAlloc(interp, nspace * sizeof(int));
     Tcl_Obj *errorMsg;		/* Place to build an error messages. Note that
 				 * these are messy operations because we do
 				 * not want to use the formatting engine;
@@ -479,7 +481,7 @@ ValidateFormat(
 		} else {
 		    nspace += 16;	/* formerly STATIC_LIST_SIZE */
 		}
-		nassign = (int *)TclStackRealloc(interp, nassign,
+		nassign = (int *) TclStackRealloc(interp, nassign,
 			nspace * sizeof(int));
 		for (i = value; i < nspace; i++) {
 		    nassign[i] = 0;
@@ -588,7 +590,7 @@ Tcl_ScanObjCmd(
     }
 
     format = Tcl_GetString(objv[2]);
-    numVars = objc-3;
+    numVars = objc - 3;
 
     /*
      * Check for errors in the format string.
@@ -603,7 +605,7 @@ Tcl_ScanObjCmd(
      */
 
     if (totalVars > 0) {
-	objs = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj *) * totalVars);
+	objs = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * totalVars);
 	for (i = 0; i < totalVars; i++) {
 	    objs[i] = NULL;
 	}
@@ -890,13 +892,15 @@ Tcl_ScanObjCmd(
 	    /*
 	     * Scan an unsigned or signed integer.
 	     */
+
 	    TclNewIntObj(objPtr, 0);
 	    Tcl_IncrRefCount(objPtr);
 	    if (width == 0) {
 		width = ~0;
 	    }
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
-		&end, TCL_PARSE_INTEGER_ONLY | TCL_PARSE_NO_UNDERSCORE | parseFlag)) {
+		    &end, TCL_PARSE_INTEGER_ONLY | TCL_PARSE_NO_UNDERSCORE | 
+		    parseFlag)) {
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {
@@ -979,7 +983,7 @@ Tcl_ScanObjCmd(
 		    }
 #else
 		    Tcl_SetWideIntObj(objPtr, (unsigned long)value);
-#endif
+#endif /* TCL_WIDE_INT_IS_LONG */
 		} else {
 		    TclSetIntObj(objPtr, value);
 		}
@@ -998,7 +1002,8 @@ Tcl_ScanObjCmd(
 		width = ~0;
 	    }
 	    if (TCL_OK != TclParseNumber(NULL, objPtr, NULL, string, width,
-		    &end, TCL_PARSE_DECIMAL_ONLY | TCL_PARSE_NO_WHITESPACE | TCL_PARSE_NO_UNDERSCORE)) {
+		    &end, TCL_PARSE_DECIMAL_ONLY | TCL_PARSE_NO_WHITESPACE | 
+		    TCL_PARSE_NO_UNDERSCORE)) {
 		Tcl_DecrRefCount(objPtr);
 		if (width < 0) {
 		    if (*end == '\0') {
@@ -1022,7 +1027,7 @@ Tcl_ScanObjCmd(
 		    if (irPtr) {
 			dvalue = irPtr->doubleValue;
 		    } else
-#endif
+#endif /* ACCEPT_NAN */
 		    {
 			Tcl_DecrRefCount(objPtr);
 			goto done;

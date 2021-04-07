@@ -61,17 +61,19 @@
 
 #define ZIP_LOCAL_HEADER_SIG		0x04034b50
 #define ZIP_LOCAL_HEADER_LEN		30
-#define ZIP_LOCAL_SIG_OFFS		0
-#define ZIP_LOCAL_VERSION_OFFS		4
-#define ZIP_LOCAL_FLAGS_OFFS		6
-#define ZIP_LOCAL_COMPMETH_OFFS		8
-#define ZIP_LOCAL_MTIME_OFFS		10
-#define ZIP_LOCAL_MDATE_OFFS		12
-#define ZIP_LOCAL_CRC32_OFFS		14
-#define ZIP_LOCAL_COMPLEN_OFFS		18
-#define ZIP_LOCAL_UNCOMPLEN_OFFS	22
-#define ZIP_LOCAL_PATHLEN_OFFS		26
-#define ZIP_LOCAL_EXTRALEN_OFFS		28
+enum {
+    ZIP_LOCAL_SIG_OFFS =	0,
+    ZIP_LOCAL_VERSION_OFFS =	4,
+    ZIP_LOCAL_FLAGS_OFFS =	6,
+    ZIP_LOCAL_COMPMETH_OFFS =	8,
+    ZIP_LOCAL_MTIME_OFFS =	10,
+    ZIP_LOCAL_MDATE_OFFS =	12,
+    ZIP_LOCAL_CRC32_OFFS =	14,
+    ZIP_LOCAL_COMPLEN_OFFS =	18,
+    ZIP_LOCAL_UNCOMPLEN_OFFS =	22,
+    ZIP_LOCAL_PATHLEN_OFFS =	26,
+    ZIP_LOCAL_EXTRALEN_OFFS =	28
+};
 
 /*
  * Central header of ZIP archive member at end of ZIP file.
@@ -79,23 +81,25 @@
 
 #define ZIP_CENTRAL_HEADER_SIG		0x02014b50
 #define ZIP_CENTRAL_HEADER_LEN		46
-#define ZIP_CENTRAL_SIG_OFFS		0
-#define ZIP_CENTRAL_VERSIONMADE_OFFS	4
-#define ZIP_CENTRAL_VERSION_OFFS	6
-#define ZIP_CENTRAL_FLAGS_OFFS		8
-#define ZIP_CENTRAL_COMPMETH_OFFS	10
-#define ZIP_CENTRAL_MTIME_OFFS		12
-#define ZIP_CENTRAL_MDATE_OFFS		14
-#define ZIP_CENTRAL_CRC32_OFFS		16
-#define ZIP_CENTRAL_COMPLEN_OFFS	20
-#define ZIP_CENTRAL_UNCOMPLEN_OFFS	24
-#define ZIP_CENTRAL_PATHLEN_OFFS	28
-#define ZIP_CENTRAL_EXTRALEN_OFFS	30
-#define ZIP_CENTRAL_FCOMMENTLEN_OFFS	32
-#define ZIP_CENTRAL_DISKFILE_OFFS	34
-#define ZIP_CENTRAL_IATTR_OFFS		36
-#define ZIP_CENTRAL_EATTR_OFFS		38
-#define ZIP_CENTRAL_LOCALHDR_OFFS	42
+enum {
+    ZIP_CENTRAL_SIG_OFFS =	0,
+    ZIP_CENTRAL_VERSIONMADE_OFFS = 4,
+    ZIP_CENTRAL_VERSION_OFFS =	6,
+    ZIP_CENTRAL_FLAGS_OFFS =	8,
+    ZIP_CENTRAL_COMPMETH_OFFS =	10,
+    ZIP_CENTRAL_MTIME_OFFS =	12,
+    ZIP_CENTRAL_MDATE_OFFS =	14,
+    ZIP_CENTRAL_CRC32_OFFS =	16,
+    ZIP_CENTRAL_COMPLEN_OFFS =	20,
+    ZIP_CENTRAL_UNCOMPLEN_OFFS = 24,
+    ZIP_CENTRAL_PATHLEN_OFFS =	28,
+    ZIP_CENTRAL_EXTRALEN_OFFS =	30,
+    ZIP_CENTRAL_FCOMMENTLEN_OFFS = 32,
+    ZIP_CENTRAL_DISKFILE_OFFS =	34,
+    ZIP_CENTRAL_IATTR_OFFS =	36,
+    ZIP_CENTRAL_EATTR_OFFS =	38,
+    ZIP_CENTRAL_LOCALHDR_OFFS =	42
+};
 
 /*
  * Central end signature at very end of ZIP file.
@@ -103,14 +107,16 @@
 
 #define ZIP_CENTRAL_END_SIG		0x06054b50
 #define ZIP_CENTRAL_END_LEN		22
-#define ZIP_CENTRAL_END_SIG_OFFS	0
-#define ZIP_CENTRAL_DISKNO_OFFS		4
-#define ZIP_CENTRAL_DISKDIR_OFFS	6
-#define ZIP_CENTRAL_ENTS_OFFS		8
-#define ZIP_CENTRAL_TOTALENTS_OFFS	10
-#define ZIP_CENTRAL_DIRSIZE_OFFS	12
-#define ZIP_CENTRAL_DIRSTART_OFFS	16
-#define ZIP_CENTRAL_COMMENTLEN_OFFS	20
+enum {
+    ZIP_CENTRAL_END_SIG_OFFS =	0,
+    ZIP_CENTRAL_DISKNO_OFFS =	4,
+    ZIP_CENTRAL_DISKDIR_OFFS =	6,
+    ZIP_CENTRAL_ENTS_OFFS =	8,
+    ZIP_CENTRAL_TOTALENTS_OFFS = 10,
+    ZIP_CENTRAL_DIRSIZE_OFFS =	12,
+    ZIP_CENTRAL_DIRSTART_OFFS =	16,
+    ZIP_CENTRAL_COMMENTLEN_OFFS = 20
+};
 
 #define ZIP_MIN_VERSION			20
 #define ZIP_COMPMETH_STORED		0
@@ -191,6 +197,8 @@ typedef struct ZipFile {
     size_t baseOffset;		/* Archive start */
     size_t passOffset;		/* Password start */
     size_t directoryOffset;	/* Archive directory start */
+    char *comment;		/* Already converted archive-level comment, if
+				 * present. NULL if absent. */
     unsigned char passBuf[264];	/* Password buffer */
     size_t numOpen;		/* Number of open files on archive */
     struct ZipEntry *entries;	/* List of files in archive */
@@ -204,7 +212,6 @@ typedef struct ZipFile {
 
 /*
  * In-core description of file contained in mounted ZIP archive.
- * ZIP_ATTR_
  */
 
 typedef struct ZipEntry {
@@ -220,6 +227,8 @@ typedef struct ZipEntry {
     int timestamp;		/* Modification time */
     int isEncrypted;		/* True if data is encrypted */
     unsigned char *data;	/* File data if written */
+    char *comment;		/* Already converted file-level comment, if
+				 * present. NULL if absent. */
     struct ZipEntry *next;	/* Next file in the same archive */
     struct ZipEntry *tnext;	/* Next top-level dir in archive */
 } ZipEntry;
@@ -1113,6 +1122,10 @@ ZipFSCloseArchive(
     Tcl_Interp *interp,		/* Current interpreter. */
     ZipFile *zf)
 {
+    if (zf->comment) {
+	ckfree(zf->comment);
+	zf->comment = NULL;
+    }
     if (zf->nameLength) {
 	ckfree(zf->name);
     }
@@ -2178,6 +2191,9 @@ TclZipfs_Unmount(
 	hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, z->name);
 	if (hPtr) {
 	    Tcl_DeleteHashEntry(hPtr);
+	}
+	if (z->comment) {
+	    ckfree(z->comment);
 	}
 	if (z->data) {
 	    ckfree(z->data);

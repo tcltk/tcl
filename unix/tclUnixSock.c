@@ -66,7 +66,7 @@ struct TcpState {
 
     Tcl_TcpAcceptProc *acceptProc;
                                 /* Proc to call on accept. */
-    void *acceptProcData;  /* The data for the accept proc. */
+    void *acceptProcData;       /* The data for the accept proc. */
 
     /*
      * Only needed for client sockets
@@ -87,22 +87,25 @@ struct TcpState {
  * structure.
  */
 
-#define TCP_NONBLOCKING		(1<<0)	/* Socket with non-blocking I/O */
-#define TCP_ASYNC_CONNECT	(1<<1)	/* Async connect in progress. */
-#define TCP_ASYNC_PENDING	(1<<4)	/* TcpConnect was called to
-					 * process an async connect. This
-					 * flag indicates that reentry is
-					 * still pending */
-#define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
+enum {
+    TCP_NONBLOCKING = (1<<0),	/* Socket with non-blocking I/O */
+    TCP_ASYNC_CONNECT = (1<<1),	/* Async connect in progress. */
+    TCP_ASYNC_PENDING =	(1<<4),	/* TcpConnect was called to process an async
+                                 * connect. This flag indicates that reentry
+                                 * is still pending */
+    TCP_ASYNC_FAILED = (1<<5)	/* An async connect finally failed */
+};
 
 /*
  * These bits may be ORed together into the "testFlags" field of a TcpState
  * structure.
  */
 
-#define TCP_ASYNC_TEST_MODE	(1<<0)	/* Async testing activated.  Do not
-					 * automatically continue connection
-					 * process. */
+enum {
+    TCP_ASYNC_TEST_MODE = (1<<0)/* Async testing activated.  Do not
+                                 * automatically continue connection
+                                 * process. */
+};
 
 /*
  * The following defines the maximum length of the listen queue. This is the

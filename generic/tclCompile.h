@@ -395,21 +395,23 @@ typedef struct CompileEnv {
  * CmdLocation map, and the compilation AuxData array.
  */
 
-/*
- * A PRECOMPILED bytecode struct is one that was generated from a compiled
- * image rather than implicitly compiled from source
- */
+enum {
+    /*
+     * A PRECOMPILED bytecode struct is one that was generated from a compiled
+     * image rather than implicitly compiled from source
+     */
 
-#define TCL_BYTECODE_PRECOMPILED		0x0001
+    TCL_BYTECODE_PRECOMPILED = 0x0001,
 
-/*
- * When a bytecode is compiled, interp or namespace resolvers have not been
- * applied yet: this is indicated by the TCL_BYTECODE_RESOLVE_VARS flag.
- */
+    /*
+     * When a bytecode is compiled, interp or namespace resolvers have not
+     * been applied yet: this is indicated by the TCL_BYTECODE_RESOLVE_VARS
+     * flag.
+     */
 
-#define TCL_BYTECODE_RESOLVE_VARS		0x0002
-
-#define TCL_BYTECODE_RECOMPILE			0x0004
+    TCL_BYTECODE_RESOLVE_VARS = 0x0002,
+    TCL_BYTECODE_RECOMPILE = 0x0004
+};
 
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the
@@ -515,21 +517,24 @@ typedef struct ByteCode {
 #endif /* TCL_COMPILE_STATS */
 } ByteCode;
 
-#define ByteCodeSetIntRep(objPtr, typePtr, codePtr)			\
-    do {								\
-	Tcl_ObjIntRep ir;						\
-	ir.twoPtrValue.ptr1 = (codePtr);				\
-	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreIntRep((objPtr), (typePtr), &ir);			\
-    } while (0)
+static inline void
+ByteCodeSetIntRep(
+    Tcl_Obj *objPtr,
+    const Tcl_ObjType *typePtr,
+    ByteCode *codePtr)
+{
+    Tcl_ObjIntRep ir;
 
-
+    ir.twoPtrValue.ptr1 = codePtr;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreIntRep(objPtr, typePtr, &ir);
+}
 
 #define ByteCodeGetIntRep(objPtr, typePtr, codePtr)			\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep((objPtr), (typePtr));			\
-	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;		\
+	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;	\
     } while (0)
 
 /*
@@ -1015,7 +1020,8 @@ typedef struct ForeachInfo {
 				 * the loop's iteration count. Used to
 				 * determine next value list element to assign
 				 * each loop var. */
-    ForeachVarList *varLists[TCLFLEXARRAY];/* An array of pointers to ForeachVarList
+    ForeachVarList *varLists[TCLFLEXARRAY];
+				/* An array of pointers to ForeachVarList
 				 * structures describing each var list. The
 				 * actual size of this field will be large
 				 * enough to numVars indexes. THIS MUST BE THE
@@ -1046,7 +1052,8 @@ MODULE_SCOPE const AuxDataType tclJumptableInfoType;
 
 typedef struct {
     int length;			/* Size of array */
-    int varIndices[TCLFLEXARRAY];		/* Array of variable indices to manage when
+    int varIndices[TCLFLEXARRAY];
+				/* Array of variable indices to manage when
 				 * processing the start and end of a [dict
 				 * update]. There is really more than one
 				 * entry, and the structure is allocated to
@@ -1223,8 +1230,8 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 /*
  *----------------------------------------------------------------
- * Macros and flag values used by Tcl bytecode compilation and execution
- * modules inside the Tcl core but not used outside.
+ * Macros, inline functions and flag values used by Tcl bytecode compilation
+ * and execution modules inside the Tcl core but not used outside.
  *----------------------------------------------------------------
  */
 
@@ -1234,12 +1241,19 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * ClientData TclFetchAuxData(CompileEng *envPtr, int index);
  */
 
-#define TclFetchAuxData(envPtr, index) \
-    (envPtr)->auxDataArrayPtr[(index)].clientData
+static inline void *
+TclFetchAuxData(
+    CompileEnv *envPtr,
+    int index)
+{
+    return envPtr->auxDataArrayPtr[index].clientData;
+}
 
-#define LITERAL_ON_HEAP		0x01
-#define LITERAL_CMD_NAME	0x02
-#define LITERAL_UNSHARED	0x04
+enum {
+    LITERAL_ON_HEAP = 0x01,
+    LITERAL_CMD_NAME = 0x02,
+    LITERAL_UNSHARED = 0x04
+};
 
 /*
  * Macro used to manually adjust the stack requirements; used in cases where
@@ -1249,28 +1263,40 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * void TclAdjustStackDepth(int delta, CompileEnv *envPtr);
  */
 
-#define TclAdjustStackDepth(delta, envPtr) \
-    do {								\
-	if ((delta) < 0) {						\
-	    if ((envPtr)->maxStackDepth < (envPtr)->currStackDepth) {	\
-		(envPtr)->maxStackDepth = (envPtr)->currStackDepth;	\
-	    }								\
-	}								\
-	(envPtr)->currStackDepth += (delta);				\
-    } while (0)
+static inline void
+TclAdjustStackDepth(
+    int delta,
+    CompileEnv *envPtr)
+{
+    if (delta < 0) {
+	if (envPtr->maxStackDepth < envPtr->currStackDepth) {
+	    envPtr->maxStackDepth = envPtr->currStackDepth;
+	}
+    }
+    envPtr->currStackDepth += delta;
+}
 
-#define TclGetStackDepth(envPtr)		\
-    ((envPtr)->currStackDepth)
+static inline int
+TclGetStackDepth(
+    CompileEnv *envPtr)
+{
+    return envPtr->currStackDepth;
+}
 
-#define TclSetStackDepth(depth, envPtr)		\
-    (envPtr)->currStackDepth = (depth)
+static inline void
+TclSetStackDepth(
+    int depth,
+    CompileEnv *envPtr)
+{
+    envPtr->currStackDepth = depth;
+}
 
 #define TclCheckStackDepth(depth, envPtr)				\
     do {								\
 	int _dd = (depth);						\
 	if (_dd != (envPtr)->currStackDepth) {				\
 	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
-		    (envPtr)->currStackDepth, _dd);		\
+		    (envPtr)->currStackDepth, _dd);			\
 	}								\
     } while (0)
 
@@ -1284,16 +1310,21 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * void TclUpdateStackReqs(unsigned char op, int i, CompileEnv *envPtr);
  */
 
-#define TclUpdateStackReqs(op, i, envPtr) \
-    do {							\
-	int _delta = tclInstructionTable[(op)].stackEffect;	\
-	if (_delta) {						\
-	    if (_delta == INT_MIN) {				\
-		_delta = 1 - (i);				\
-	    }							\
-	    TclAdjustStackDepth(_delta, envPtr);			\
-	}							\
-    } while (0)
+static inline void
+TclUpdateStackReqs(
+    unsigned char op,
+    int i,
+    CompileEnv *envPtr)
+{
+    int delta = tclInstructionTable[op].stackEffect;
+
+    if (delta) {
+	if (delta == INT_MIN) {
+	    delta = 1 - i;
+	}
+	TclAdjustStackDepth(delta, envPtr);
+    }
+}
 
 /*
  * Macros used to update the flag that indicates if we are at the start of a
@@ -1302,10 +1333,15 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * void TclUpdateAtCmdStart(unsigned char op, CompileEnv *envPtr);
  */
 
-#define TclUpdateAtCmdStart(op, envPtr) \
-    if ((envPtr)->atCmdStart < 2) {				     \
-	(envPtr)->atCmdStart = ((op) == INST_START_CMD ? 1 : 0);     \
+static inline void
+TclUpdateAtCmdStart(
+    unsigned char op,
+    CompileEnv *envPtr)
+{
+    if (envPtr->atCmdStart < 2) {
+	envPtr->atCmdStart = (op == INST_START_CMD ? 1 : 0);
     }
+}
 
 /*
  * Macro to emit an opcode byte into a CompileEnv's code array. The ANSI C
@@ -1314,15 +1350,48 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * void TclEmitOpcode(unsigned char op, CompileEnv *envPtr);
  */
 
-#define TclEmitOpcode(op, envPtr) \
-    do {							\
-	if ((envPtr)->codeNext == (envPtr)->codeEnd) {		\
-	    TclExpandCodeArray(envPtr);				\
-	}							\
-	*(envPtr)->codeNext++ = (unsigned char) (op);		\
-	TclUpdateAtCmdStart(op, envPtr);			\
-	TclUpdateStackReqs(op, 0, envPtr);			\
-    } while (0)
+static inline void
+TclEmitOpcode(
+    unsigned char op,
+    CompileEnv *envPtr)
+{
+    if (envPtr->codeNext == envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    *envPtr->codeNext++ = op;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, 0, envPtr);
+}
+
+/*
+ * Macros to update a (signed or unsigned) integer starting at a pointer. The
+ * two variants depend on the number of bytes. The ANSI C "prototypes" for
+ * these macros are:
+ *
+ * void TclStoreInt1AtPtr(int i, unsigned char *p);
+ * void TclStoreInt4AtPtr(int i, unsigned char *p);
+ */
+
+static inline void
+TclStoreInt1AtPtr(
+    int i,
+    unsigned char *p)
+{
+    p[0] = (unsigned char) ((unsigned int) i);
+}
+
+static inline void
+TclStoreInt4AtPtr(
+    int i,
+    unsigned char *p)
+{
+    unsigned int u = (unsigned int) i;
+
+    p[0] = (unsigned char) (u >> 24);
+    p[1] = (unsigned char) (u >> 16);
+    p[2] = (unsigned char) (u >>  8);
+    p[3] = (unsigned char) (u      );
+}
 
 /*
  * Macros to emit an integer operand. The ANSI C "prototype" for these macros
@@ -1332,28 +1401,29 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * void TclEmitInt4(int i, CompileEnv *envPtr);
  */
 
-#define TclEmitInt1(i, envPtr) \
-    do {								\
-	if ((envPtr)->codeNext == (envPtr)->codeEnd) {			\
-	    TclExpandCodeArray(envPtr);					\
-	}								\
-	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
-    } while (0)
+static inline void
+TclEmitInt1(
+    int i,
+    CompileEnv *envPtr)
+{
+    if (envPtr->codeNext == envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    TclStoreInt1AtPtr(i, envPtr->codeNext);
+    envPtr->codeNext++;
+}
 
-#define TclEmitInt4(i, envPtr) \
-    do {								\
-	if (((envPtr)->codeNext + 4) > (envPtr)->codeEnd) {		\
-	    TclExpandCodeArray(envPtr);					\
-	}								\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >> 24);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >> 16);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i) >>  8);		\
-	*(envPtr)->codeNext++ =						\
-		(unsigned char) ((unsigned int) (i)      );		\
-    } while (0)
+static inline void
+TclEmitInt4(
+    int i,
+    CompileEnv *envPtr)
+{
+    if ((envPtr->codeNext + 4) > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    TclStoreInt4AtPtr(i, envPtr->codeNext);
+    envPtr->codeNext += 4;
+}
 
 /*
  * Macros to emit an instruction with signed or unsigned integer operands.
@@ -1365,34 +1435,37 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * void TclEmitInstInt4(unsigned char op, int i, CompileEnv *envPtr);
  */
 
-#define TclEmitInstInt1(op, i, envPtr) \
-    do {								\
-	if (((envPtr)->codeNext + 2) > (envPtr)->codeEnd) {		\
-	    TclExpandCodeArray(envPtr);					\
-	}								\
-	*(envPtr)->codeNext++ = (unsigned char) (op);			\
-	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
-	TclUpdateAtCmdStart(op, envPtr);				\
-	TclUpdateStackReqs(op, i, envPtr);				\
-    } while (0)
+static inline void
+TclEmitInstInt1(
+    unsigned char op,
+    int i,
+    CompileEnv *envPtr)
+{
+    if ((envPtr->codeNext + 2) > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    *envPtr->codeNext++ = op;
+    TclStoreInt1AtPtr(i, envPtr->codeNext);
+    envPtr->codeNext++;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, i, envPtr);
+}
 
-#define TclEmitInstInt4(op, i, envPtr) \
-    do {							\
-	if (((envPtr)->codeNext + 5) > (envPtr)->codeEnd) {	\
-	    TclExpandCodeArray(envPtr);				\
-	}							\
-	*(envPtr)->codeNext++ = (unsigned char) (op);		\
-	*(envPtr)->codeNext++ =					\
-		(unsigned char) ((unsigned int) (i) >> 24);	\
-	*(envPtr)->codeNext++ =					\
-		(unsigned char) ((unsigned int) (i) >> 16);	\
-	*(envPtr)->codeNext++ =					\
-		(unsigned char) ((unsigned int) (i) >>  8);	\
-	*(envPtr)->codeNext++ =					\
-		(unsigned char) ((unsigned int) (i)      );	\
-	TclUpdateAtCmdStart(op, envPtr);			\
-	TclUpdateStackReqs(op, i, envPtr);			\
-    } while (0)
+static inline void
+TclEmitInstInt4(
+    unsigned char op,
+    int i,
+    CompileEnv *envPtr)
+{
+    if ((envPtr->codeNext + 5) > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    *envPtr->codeNext++ = op;
+    TclStoreInt4AtPtr(i, envPtr->codeNext);
+    envPtr->codeNext += 4;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, i, envPtr);
+}
 
 /*
  * Macro to push a Tcl object onto the Tcl evaluation stack. It emits the
@@ -1403,36 +1476,19 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * void	TclEmitPush(int objIndex, CompileEnv *envPtr);
  */
 
-#define TclEmitPush(objIndex, envPtr) \
-    do {							 \
-	int _objIndexCopy = (objIndex);			 \
-	if (_objIndexCopy <= 255) {				 \
-	    TclEmitInstInt1(INST_PUSH1, _objIndexCopy, (envPtr)); \
-	} else {						 \
-	    TclEmitInstInt4(INST_PUSH4, _objIndexCopy, (envPtr)); \
-	}							 \
-    } while (0)
+static inline void
+TclEmitPush(
+    int objIndex,
+    CompileEnv *envPtr)
+{
+    if (objIndex <= 255) {
+	TclEmitInstInt1(INST_PUSH1, objIndex, envPtr);
+    } else {
+	TclEmitInstInt4(INST_PUSH4, objIndex, envPtr);
+    }
+}
 
-/*
- * Macros to update a (signed or unsigned) integer starting at a pointer. The
- * two variants depend on the number of bytes. The ANSI C "prototypes" for
- * these macros are:
- *
- * void TclStoreInt1AtPtr(int i, unsigned char *p);
- * void TclStoreInt4AtPtr(int i, unsigned char *p);
- */
-
-#define TclStoreInt1AtPtr(i, p) \
-    *(p)   = (unsigned char) ((unsigned int) (i))
-
-#define TclStoreInt4AtPtr(i, p) \
-    do {							\
-	*(p)   = (unsigned char) ((unsigned int) (i) >> 24);	\
-	*(p+1) = (unsigned char) ((unsigned int) (i) >> 16);	\
-	*(p+2) = (unsigned char) ((unsigned int) (i) >>  8);	\
-	*(p+3) = (unsigned char) ((unsigned int) (i)      );	\
-    } while (0)
-
+
 /*
  * Macros to update instructions at a particular pc with a new op code and a
  * (signed or unsigned) int operand. The ANSI C "prototypes" for these macros
@@ -1442,17 +1498,25 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * void TclUpdateInstInt4AtPc(unsigned char op, int i, unsigned char *pc);
  */
 
-#define TclUpdateInstInt1AtPc(op, i, pc) \
-    do {					\
-	*(pc) = (unsigned char) (op);		\
-	TclStoreInt1AtPtr((i), ((pc)+1));	\
-    } while (0)
+static inline void
+TclUpdateInstInt1AtPc(
+    unsigned char op,
+    int i,
+    unsigned char *pc)
+{
+    *pc = op;
+    TclStoreInt1AtPtr(i, pc + 1);
+}
 
-#define TclUpdateInstInt4AtPc(op, i, pc) \
-    do {					\
-	*(pc) = (unsigned char) (op);		\
-	TclStoreInt4AtPtr((i), ((pc)+1));	\
-    } while (0)
+static inline void
+TclUpdateInstInt4AtPc(
+    unsigned char op,
+    int i,
+    unsigned char *pc)
+{
+    *pc = op;
+    TclStoreInt4AtPtr(i, pc + 1);
+}
 
 /*
  * Macro to fix up a forward jump to point to the current code-generation
@@ -1463,10 +1527,16 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  *				 int threshold);
  */
 
-#define TclFixupForwardJumpToHere(envPtr, fixupPtr, threshold) \
-    TclFixupForwardJump((envPtr), (fixupPtr),				\
-	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset, \
-	    (threshold))
+static inline int
+TclFixupForwardJumpToHere(
+    CompileEnv *envPtr,
+    JumpFixup *fixupPtr,
+    int threshold)
+{
+    return TclFixupForwardJump(envPtr, fixupPtr,
+	    envPtr->codeNext - envPtr->codeStart - fixupPtr->codeOffset,
+	    threshold);
+}
 
 /*
  * Macros to get a signed integer (GET_INT{1,2}) or an unsigned int
@@ -1480,36 +1550,48 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * unsigned int TclGetUInt4AtPtr(unsigned char *p);
  */
 
-/*
- * The TclGetInt1AtPtr macro is tricky because we want to do sign extension on
- * the 1-byte value. Unfortunately the "char" type isn't signed on all
- * platforms so sign-extension doesn't always happen automatically. Sometimes
- * we can explicitly declare the pointer to be signed, but other times we have
- * to explicitly sign-extend the value in software.
- */
+static inline int
+TclGetInt1AtPtr(
+    const unsigned char *p)
+{
+    /*
+     * This is tricky because we want to do sign extension on the 1-byte
+     * value. Unfortunately the "char" type isn't signed on all platforms so
+     * sign-extension doesn't always happen automatically. Sometimes we can
+     * explicitly declare the pointer to be signed, but other times we have to
+     * explicitly sign-extend the value in software.
+     */
 
 #ifndef __CHAR_UNSIGNED__
-#   define TclGetInt1AtPtr(p) ((int) *((char *) p))
+    return (int) *((char *) p);
 #elif defined(HAVE_SIGNED_CHAR)
-#   define TclGetInt1AtPtr(p) ((int) *((signed char *) p))
+    return (int) *((signed char *) p);
 #else
-#   define TclGetInt1AtPtr(p) \
-    (((int) *((char *) p)) | ((*(p) & 0200) ? (-256) : 0))
+    return ((int) *((char *) p)) | ((*(p) & 0200) ? (-256) : 0);
 #endif
+}
 
-#define TclGetInt4AtPtr(p) \
-    (((int) (TclGetUInt1AtPtr(p) << 24)) |				\
-		     (*((p)+1) << 16) |				\
-		     (*((p)+2) <<  8) |				\
-		     (*((p)+3)))
+static inline unsigned int
+TclGetUInt1AtPtr(
+    const unsigned char *p)
+{
+    return (unsigned int) *p;
+}
 
-#define TclGetUInt1AtPtr(p) \
-    ((unsigned int) *(p))
-#define TclGetUInt4AtPtr(p) \
-    ((unsigned int) (*(p)     << 24) |				\
-		    (*((p)+1) << 16) |				\
-		    (*((p)+2) <<  8) |				\
-		    (*((p)+3)))
+static inline int
+TclGetInt4AtPtr(
+    const unsigned char *p)
+{
+    return ((int) (TclGetUInt1AtPtr(p) << 24)) |			
+	    (p[1] << 16) | (p[2] << 8) | p[3];
+}
+
+static inline unsigned int
+TclGetUInt4AtPtr(
+    const unsigned char *p)
+{
+    return (unsigned int) (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+}
 
 /*
  * Macros used to compute the minimum and maximum of two integers. The ANSI C
@@ -1519,8 +1601,21 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * int TclMax(int i, int j);
  */
 
-#define TclMin(i, j)	((((int) i) < ((int) j))? (i) : (j))
-#define TclMax(i, j)	((((int) i) > ((int) j))? (i) : (j))
+static inline int
+TclMin(
+    int i,
+    int j)
+{
+    return (i < j) ? i : j;
+}
+
+static inline int
+TclMax(
+    int i,
+    int j)
+{
+    return (i > j) ? i : j;
+}
 
 /*
  * Convenience macros for use when compiling bodies of commands. The ANSI C
@@ -1529,7 +1624,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * static void		BODY(Tcl_Token *tokenPtr, int word);
  */
 
-#define BODY(tokenPtr, word)						\
+#define BODY(tokenPtr, word) \
     SetLineInformation((word));						\
     TclCompileCmdWord(interp, (tokenPtr)+1, (tokenPtr)->numComponents,	\
 	    envPtr)
@@ -1542,9 +1637,19 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  *			    Tcl_Interp *interp);
  */
 
-#define CompileTokens(envPtr, tokenPtr, interp) \
-    TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-	    (envPtr));
+static inline void
+CompileTokens(
+    CompileEnv *envPtr,
+    Tcl_Token *tokenPtr,
+    Tcl_Interp *interp)
+{
+    /*
+     * tokenPtr+1 is the first interior token.
+     */
+
+    TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents, envPtr);
+}
+
 /*
  * Convenience macros for use when pushing literals. The ANSI C "prototype" for
  * these macros are:
@@ -1555,8 +1660,15 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  *			    const char *string);
  */
 
-#define PushLiteral(envPtr, string, length) \
-    TclEmitPush(TclRegisterLiteral(envPtr, string, length, 0), (envPtr))
+static inline void
+PushLiteral(
+    CompileEnv *envPtr,
+    const char *string,
+    int length)
+{
+    TclEmitPush(TclRegisterLiteral(envPtr, string, length, 0), envPtr);
+}
+
 #define PushStringLiteral(envPtr, string) \
     PushLiteral(envPtr, string, (int) (sizeof(string "") - 1))
 
@@ -1567,8 +1679,12 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * static Tcl_Token *	TokenAfter(Tcl_Token *tokenPtr);
  */
 
-#define TokenAfter(tokenPtr) \
-    ((tokenPtr) + ((tokenPtr)->numComponents + 1))
+static inline Tcl_Token *
+TokenAfter(
+    Tcl_Token *tokenPtr)
+{
+    return tokenPtr + (tokenPtr->numComponents + 1);
+}
 
 /*
  * Macro to get the offset to the next instruction to be issued. The ANSI C
@@ -1577,30 +1693,49 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * static int	CurrentOffset(CompileEnv *envPtr);
  */
 
-#define CurrentOffset(envPtr) \
-    ((envPtr)->codeNext - (envPtr)->codeStart)
+static inline int
+CurrentOffset(
+    CompileEnv *envPtr)
+{
+    return envPtr->codeNext - envPtr->codeStart;
+}
 
 /*
- * Note: the exceptDepth is a bit of a misnomer: TEBC only needs the
- * maximal depth of nested CATCH ranges in order to alloc runtime
- * memory. These macros should compute precisely that? OTOH, the nesting depth
- * of LOOP ranges is an interesting datum for debugging purposes, and that is
- * what we compute now.
+ * Note: the exceptDepth is a bit of a misnomer: TEBC only needs the maximal
+ * depth of nested CATCH ranges in order to alloc runtime memory. These macros
+ * should compute precisely that? OTOH, the nesting depth of LOOP ranges is an
+ * interesting datum for debugging purposes, and that is what we compute now.
  *
  * static int	ExceptionRangeStarts(CompileEnv *envPtr, int index);
  * static void	ExceptionRangeEnds(CompileEnv *envPtr, int index);
  * static void	ExceptionRangeTarget(CompileEnv *envPtr, int index, LABEL);
  */
 
-#define ExceptionRangeStarts(envPtr, index) \
-    (((envPtr)->exceptDepth++),						\
-    ((envPtr)->maxExceptDepth =						\
-	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)),	\
-    ((envPtr)->exceptArrayPtr[(index)].codeOffset = CurrentOffset(envPtr)))
-#define ExceptionRangeEnds(envPtr, index) \
-    (((envPtr)->exceptDepth--),						\
-    ((envPtr)->exceptArrayPtr[(index)].numCodeBytes =			\
-	CurrentOffset(envPtr) - (envPtr)->exceptArrayPtr[(index)].codeOffset))
+static inline int
+ExceptionRangeStarts(
+    CompileEnv *envPtr,
+    int index)
+{
+    int offset;
+
+    envPtr->exceptDepth++;
+    envPtr->maxExceptDepth =
+	    TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
+    offset = CurrentOffset(envPtr);
+    envPtr->exceptArrayPtr[index].codeOffset = offset;
+    return offset;
+}
+
+static inline void
+ExceptionRangeEnds(
+    CompileEnv *envPtr,
+    int index)
+{
+    envPtr->exceptDepth--;
+    envPtr->exceptArrayPtr[index].numCodeBytes =
+	    CurrentOffset(envPtr) - envPtr->exceptArrayPtr[index].codeOffset;
+}
+
 #define ExceptionRangeTarget(envPtr, index, targetType) \
     ((envPtr)->exceptArrayPtr[(index)].targetType = CurrentOffset(envPtr))
 
@@ -1608,18 +1743,33 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * Check if there is an LVT for compiled locals
  */
 
-#define EnvHasLVT(envPtr) \
-    (envPtr->procPtr || envPtr->iPtr->varFramePtr->localCachePtr)
+static inline int
+EnvHasLVT(
+    CompileEnv *envPtr)
+{
+    return envPtr->procPtr || envPtr->iPtr->varFramePtr->localCachePtr;
+}
 
 /*
  * Macros for making it easier to deal with tokens and DStrings.
  */
 
-#define TclDStringAppendToken(dsPtr, tokenPtr) \
-    Tcl_DStringAppend((dsPtr), (tokenPtr)->start, (tokenPtr)->size)
-#define TclRegisterDStringLiteral(envPtr, dsPtr) \
-    TclRegisterLiteral(envPtr, Tcl_DStringValue(dsPtr), \
-	    Tcl_DStringLength(dsPtr), /*flags*/ 0)
+static inline void
+TclDStringAppendToken(
+    Tcl_DString *dsPtr,
+    Tcl_Token *tokenPtr)
+{
+    Tcl_DStringAppend(dsPtr, tokenPtr->start, tokenPtr->size);
+}
+
+static inline int
+TclRegisterDStringLiteral(
+    CompileEnv *envPtr,
+    Tcl_DString *dsPtr)
+{
+    return TclRegisterLiteral(envPtr, Tcl_DStringValue(dsPtr),
+	    Tcl_DStringLength(dsPtr), /*flags*/ 0);
+}
 
 /*
  * Macro that encapsulates an efficiency trick that avoids a function call for
@@ -1675,9 +1825,14 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * off the stack) or a local simple scalar.
  */
 
-#define AnonymousLocal(envPtr) \
-    (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, (envPtr)))
-#define LocalScalar(chars,len,envPtr) \
+static inline int
+AnonymousLocal(
+    CompileEnv *envPtr)
+{
+    return TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, envPtr);
+}
+
+#define LocalScalar(chars,len,envPtr)		\
     TclLocalScalar(chars, len, envPtr)
 #define LocalScalarFromToken(tokenPtr,envPtr) \
     TclLocalScalarFromToken(tokenPtr, envPtr)
@@ -1686,8 +1841,10 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  * Flags bits used by TclPushVarName.
  */
 
-#define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
-#define TCL_NO_ELEMENT 2	/* Do not push the array element. */
+enum {
+    TCL_NO_LARGE_INDEX = 1,	/* Do not return localIndex value > 255 */
+    TCL_NO_ELEMENT = 2		/* Do not push the array element. */
+};
 
 /*
  * DTrace probe macros (NOPs if DTrace support is not enabled).
@@ -1835,7 +1992,9 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
     do {								\
 	if (tclDTraceDebugEnabled) {					\
 	    int _l, _t = 0;						\
-	    if (!tclDTraceDebugLog) { TclDTraceOpenDebugLog(); }	\
+	    if (!tclDTraceDebugLog) {					\
+		TclDTraceOpenDebugLog();				\
+	    }								\
 	    fprintf(tclDTraceDebugLog, "%.12s:%.4d:%n",			\
 		    strrchr(__FILE__, '/')+1, __LINE__, &_l); _t += _l; \
 	    fprintf(tclDTraceDebugLog, " %.*s():%n",			\

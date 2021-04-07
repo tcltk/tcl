@@ -105,9 +105,11 @@ typedef struct {
  * Tcl_NewInstanceMethod.
  */
 
-#define TCL_OO_METHOD_PUBLIC		1
-#define TCL_OO_METHOD_UNEXPORTED	0
-#define TCL_OO_METHOD_PRIVATE		0x20
+enum {
+    TCL_OO_METHOD_UNEXPORTED = 0,
+    TCL_OO_METHOD_PUBLIC = 1,
+    TCL_OO_METHOD_PRIVATE = 0x20
+};
 
 /*
  * The type of some object (or class) metadata. This describes how to delete

@@ -173,17 +173,17 @@ static pthread_cond_t notifierCV = PTHREAD_COND_INITIALIZER;
 
 /*
  * The pollState bits:
- *
- * POLL_WANT is set by each thread before it waits on its condition variable.
- *	It is checked by the notifier before it does select.
- *
- * POLL_DONE is set by the notifier if it goes into select after seeing
- *	POLL_WANT. The idea is to ensure it tries a select with the same bits
- *	the initial thread had set.
  */
 
-#define POLL_WANT	0x1
-#define POLL_DONE	0x2
+enum {
+    POLL_WANT =	0x1,		/* Set by each thread before it waits on its
+				 * condition variable.  It is checked by the
+				 * notifier before it does select. */
+    POLL_DONE = 0x2		/* Set by the notifier if it goes into select
+				 * after seeing POLL_WANT. The idea is to
+				 * ensure it tries a select with the same bits
+				 * the initial thread had set. */
+};
 
 /*
  * This is the thread ID of the notifier thread that does select.

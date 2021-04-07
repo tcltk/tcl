@@ -84,9 +84,11 @@ static int ddeIsServer = 0;
 #define TCL_DDE_SERVICE_NAME	L"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	L"$TCLEVAL$EXECUTE$RESULT"
 
-#define DDE_FLAG_ASYNC 1
-#define DDE_FLAG_BINARY 2
-#define DDE_FLAG_FORCE 4
+enum {
+    DDE_FLAG_ASYNC = 1,
+    DDE_FLAG_BINARY = 2,
+    DDE_FLAG_FORCE = 4
+};
 
 TCL_DECLARE_MUTEX(ddeMutex)
 
@@ -390,10 +392,13 @@ DdeSetServerName(
 	    lastSuffix = suffix;
 	    if (suffix > 1) {
 		if (suffix == 2) {
-		    Tcl_DStringAppend(&dString, (char *)name, wcslen(name) * sizeof(WCHAR));
-		    Tcl_DStringAppend(&dString, (char *)L" #", 2 * sizeof(WCHAR));
+		    Tcl_DStringAppend(&dString, (char *)name,
+			    wcslen(name) * sizeof(WCHAR));
+		    Tcl_DStringAppend(&dString, (char *)L" #",
+			    2 * sizeof(WCHAR));
 		    offset = Tcl_DStringLength(&dString);
-		    Tcl_DStringSetLength(&dString, offset + sizeof(WCHAR) * TCL_INTEGER_SPACE);
+		    Tcl_DStringSetLength(&dString,
+			    offset + sizeof(WCHAR) * TCL_INTEGER_SPACE);
 		    actualName = (WCHAR *) Tcl_DStringValue(&dString);
 		}
 		_snwprintf((WCHAR *) (Tcl_DStringValue(&dString) + offset),
@@ -1147,12 +1152,14 @@ DdeServicesOnAck(
 	GlobalGetAtomNameW(service, sz, 255);
 	Tcl_DStringInit(&dString);
 	Tcl_WCharToUtfDString(sz, wcslen(sz), &dString);
-	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_NewStringObj(Tcl_DStringValue(&dString), -1));
+	Tcl_ListObjAppendElement(NULL, matchPtr,
+		Tcl_NewStringObj(Tcl_DStringValue(&dString), -1));
 	Tcl_DStringFree(&dString);
 	GlobalGetAtomNameW(topic, sz, 255);
 	Tcl_DStringInit(&dString);
 	Tcl_WCharToUtfDString(sz, wcslen(sz), &dString);
-	Tcl_ListObjAppendElement(NULL, matchPtr, Tcl_NewStringObj(Tcl_DStringValue(&dString), -1));
+	Tcl_ListObjAppendElement(NULL, matchPtr,
+		Tcl_NewStringObj(Tcl_DStringValue(&dString), -1));
 	Tcl_DStringFree(&dString);
 
 	/*
@@ -1578,15 +1585,19 @@ DdeObjCmd(
 	}
 
 	ddeData = DdeCreateDataHandle(ddeInstance, (BYTE *) dataString,
-		(DWORD) dataLength, 0, 0, (flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT, 0);
+		(DWORD) dataLength, 0, 0,
+		(flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT, 0);
 	if (ddeData != NULL) {
 	    if (flags & DDE_FLAG_ASYNC) {
 		DdeClientTransaction((LPBYTE) ddeData, 0xFFFFFFFF, hConv, 0,
-			(flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT, XTYP_EXECUTE, TIMEOUT_ASYNC, &ddeResult);
+			(flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT,
+			XTYP_EXECUTE, TIMEOUT_ASYNC, &ddeResult);
 		DdeAbandonTransaction(ddeInstance, hConv, ddeResult);
 	    } else {
 		ddeReturn = DdeClientTransaction((LPBYTE) ddeData, 0xFFFFFFFF,
-			hConv, 0, (flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT, XTYP_EXECUTE, 30000, NULL);
+			hConv, 0,
+			(flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT,
+			XTYP_EXECUTE, 30000, NULL);
 		if (ddeReturn == 0) {
 		    SetDdeError(interp);
 		    result = TCL_ERROR;
@@ -1630,7 +1641,8 @@ DdeObjCmd(
 		    CP_WINUNICODE);
 	    if (ddeItem != NULL) {
 		ddeData = DdeClientTransaction(NULL, 0, hConv, ddeItem,
-			(flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT, XTYP_REQUEST, 5000, NULL);
+			(flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT,
+			XTYP_REQUEST, 5000, NULL);
 		if (ddeData == NULL) {
 		    SetDdeError(interp);
 		    result = TCL_ERROR;
@@ -1710,7 +1722,9 @@ DdeObjCmd(
 		    CP_WINUNICODE);
 	    if (ddeItem != NULL) {
 		ddeData = DdeClientTransaction(dataString, (DWORD) length,
-			hConv, ddeItem, (flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT, XTYP_POKE, 5000, NULL);
+			hConv, ddeItem,
+			(flags & DDE_FLAG_BINARY) ? CF_TEXT : CF_UNICODETEXT,
+			XTYP_POKE, 5000, NULL);
 		if (ddeData == NULL) {
 		    SetDdeError(interp);
 		    result = TCL_ERROR;

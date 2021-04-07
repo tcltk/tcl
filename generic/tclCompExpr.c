@@ -153,44 +153,42 @@ enum Marks {
 
 /* Uncategorized lexemes */
 
-#define PLUS		1	/* Ambiguous. Resolves to UNARY_PLUS or
+enum {
+    PLUS = 1,			/* Ambiguous. Resolves to UNARY_PLUS or
 				 * BINARY_PLUS according to context. */
-#define MINUS		2	/* Ambiguous. Resolves to UNARY_MINUS or
+    MINUS = 2,			/* Ambiguous. Resolves to UNARY_MINUS or
 				 * BINARY_MINUS according to context. */
-#define BAREWORD	3	/* Ambigous. Resolves to BOOLEAN or to
+    BAREWORD = 3,		/* Ambigous. Resolves to BOOLEAN or to
 				 * FUNCTION or a parse error according to
 				 * context and value. */
-#define INCOMPLETE	4	/* A parse error. Used only when the single
+    INCOMPLETE = 4,		/* A parse error. Used only when the single
 				 * "=" is encountered.  */
-#define INVALID		5	/* A parse error. Used when any punctuation
+    INVALID = 5,		/* A parse error. Used when any punctuation
 				 * appears that's not a supported operator. */
-#define COMMENT		6	/* Comment. Lasts to end of line or end of
+    COMMENT = 6			/* Comment. Lasts to end of line or end of
 				 * expression, whichever comes first. */
+};
 
 /* Leaf lexemes */
 
-#define NUMBER		(LEAF | 1)
-				/* For literal numbers */
-#define SCRIPT		(LEAF | 2)
-				/* Script substitution; [foo] */
-#define BOOLEAN		(LEAF | BAREWORD)
-				/* For literal booleans */
-#define BRACED		(LEAF | 4)
-				/* Braced string; {foo bar} */
-#define VARIABLE	(LEAF | 5)
-				/* Variable substitution; $x */
-#define QUOTED		(LEAF | 6)
-				/* Quoted string; "foo $bar [soom]" */
-#define EMPTY		(LEAF | 7)
-				/* Used only for an empty argument list to a
+enum {
+    NUMBER = (LEAF | 1),	/* For literal numbers */
+    SCRIPT = (LEAF | 2),	/* Script substitution; [foo] */
+    BOOLEAN = (LEAF | BAREWORD),/* For literal booleans */
+    BRACED = (LEAF | 4),	/* Braced string; {foo bar} */
+    VARIABLE = (LEAF | 5),	/* Variable substitution; $x */
+    QUOTED = (LEAF | 6),	/* Quoted string; "foo $bar [soom]" */
+    EMPTY = (LEAF | 7)		/* Used only for an empty argument list to a
 				 * function. Represents the empty string
 				 * within parens in the expression: rand() */
+};
 
 /* Unary operator lexemes */
 
-#define UNARY_PLUS	(UNARY | PLUS)
-#define UNARY_MINUS	(UNARY | MINUS)
-#define FUNCTION	(UNARY | BAREWORD)
+enum {
+    UNARY_PLUS = (UNARY | PLUS),
+    UNARY_MINUS = (UNARY | MINUS),
+    FUNCTION = (UNARY | BAREWORD),
 				/* This is a bit of "creative interpretation"
 				 * on the part of the parser. A function call
 				 * is parsed into the parse tree according to
@@ -206,69 +204,64 @@ enum Marks {
 				 * include such exceptional handling in the
 				 * code against the need we would otherwise
 				 * have for more lexeme categories. */
-#define START		(UNARY | 4)
-				/* This lexeme isn't parsed from the
+    START = (UNARY | 4),	/* This lexeme isn't parsed from the
 				 * expression text at all. It represents the
 				 * start of the expression and sits at the
 				 * root of the parse tree where it serves as
 				 * the start/end point of traversals. */
-#define OPEN_PAREN	(UNARY | 5)
-				/* Another bit of creative interpretation,
+    OPEN_PAREN = (UNARY | 5),	/* Another bit of creative interpretation,
 				 * where we treat "(" as a unary operator with
 				 * the sub-expression between it and its
 				 * matching ")" as its operand. See
 				 * CLOSE_PAREN below. */
-#define NOT		(UNARY | 6)
-#define BIT_NOT		(UNARY | 7)
+    NOT = (UNARY | 6),
+    BIT_NOT = (UNARY | 7)
+};
 
 /* Binary operator lexemes */
 
-#define BINARY_PLUS	(BINARY |  PLUS)
-#define BINARY_MINUS	(BINARY |  MINUS)
-#define COMMA		(BINARY |  3)
-				/* The "," operator is a low precedence binary
+enum {
+    BINARY_PLUS = (BINARY |  PLUS),
+    BINARY_MINUS = (BINARY |  MINUS),
+    COMMA = (BINARY | 3),	/* The "," operator is a low precedence binary
 				 * operator that separates the arguments in a
 				 * function call. The additional constraint
 				 * that this operator can only legally appear
 				 * at the right places within a function call
 				 * argument list are hard coded within
 				 * ParseExpr().  */
-#define MULT		(BINARY |  4)
-#define DIVIDE		(BINARY |  5)
-#define MOD		(BINARY |  6)
-#define LESS		(BINARY |  7)
-#define GREATER		(BINARY |  8)
-#define BIT_AND		(BINARY |  9)
-#define BIT_XOR		(BINARY | 10)
-#define BIT_OR		(BINARY | 11)
-#define QUESTION	(BINARY | 12)
-				/* These two lexemes make up the */
-#define COLON		(BINARY | 13)
-				/* ternary conditional operator, $x ? $y : $z.
+    MULT = (BINARY | 4),
+    DIVIDE = (BINARY | 5),
+    MOD = (BINARY | 6),
+    LESS = (BINARY | 7),
+    GREATER = (BINARY | 8),
+    BIT_AND = (BINARY | 9),
+    BIT_XOR = (BINARY | 10),
+    BIT_OR = (BINARY | 11),
+    QUESTION = (BINARY | 12),	/* These two lexemes make up the */
+    COLON = (BINARY | 13),	/* ternary conditional operator, $x ? $y : $z.
 				 * We treat them as two binary operators to
 				 * avoid another lexeme category, and code the
 				 * additional constraints directly in
 				 * ParseExpr(). For instance, the right
 				 * operand of a "?" operator must be a ":"
 				 * operator. */
-#define LEFT_SHIFT	(BINARY | 14)
-#define RIGHT_SHIFT	(BINARY | 15)
-#define LEQ		(BINARY | 16)
-#define GEQ		(BINARY | 17)
-#define EQUAL		(BINARY | 18)
-#define NEQ		(BINARY | 19)
-#define AND		(BINARY | 20)
-#define OR		(BINARY | 21)
-#define STREQ		(BINARY | 22)
-#define STRNEQ		(BINARY | 23)
-#define EXPON		(BINARY | 24)
-				/* Unlike the other binary operators, EXPON is
+    LEFT_SHIFT = (BINARY | 14),
+    RIGHT_SHIFT = (BINARY | 15),
+    LEQ = (BINARY | 16),
+    GEQ = (BINARY | 17),
+    EQUAL = (BINARY | 18),
+    NEQ = (BINARY | 19),
+    AND = (BINARY | 20),
+    OR = (BINARY | 21),
+    STREQ = (BINARY | 22),
+    STRNEQ = (BINARY | 23),
+    EXPON = (BINARY | 24),	/* Unlike the other binary operators, EXPON is
 				 * right associative and this distinction is
 				 * coded directly in ParseExpr(). */
-#define IN_LIST		(BINARY | 25)
-#define NOT_IN_LIST	(BINARY | 26)
-#define CLOSE_PAREN	(BINARY | 27)
-				/* By categorizing the CLOSE_PAREN lexeme as a
+    IN_LIST = (BINARY | 25),
+    NOT_IN_LIST = (BINARY | 26),
+    CLOSE_PAREN = (BINARY | 27),/* By categorizing the CLOSE_PAREN lexeme as a
 				 * BINARY operator, the normal parsing rules
 				 * for binary operators assure that a close
 				 * paren will not directly follow another
@@ -283,17 +276,17 @@ enum Marks {
 				 * parse tree. The sub-expression between
 				 * parens becomes the single argument of the
 				 * matching OPEN_PAREN unary operator. */
-#define STR_LT		(BINARY | 28)
-#define STR_GT		(BINARY | 29)
-#define STR_LEQ		(BINARY | 30)
-#define STR_GEQ		(BINARY | 31)
-#define END		(BINARY | 32)
-				/* This lexeme represents the end of the
+    STR_LT = (BINARY | 28),
+    STR_GT = (BINARY | 29),
+    STR_LEQ = (BINARY | 30),
+    STR_GEQ = (BINARY | 31),
+    END = (BINARY | 32)		/* This lexeme represents the end of the
 				 * string being parsed. Treating it as a
 				 * binary operator follows the same logic as
 				 * the CLOSE_PAREN lexeme and END pairs with
 				 * START, in the same way that CLOSE_PAREN
 				 * pairs with OPEN_PAREN. */
+};
 
 /*
  * When ParseExpr() builds the parse tree it must choose which operands to
@@ -2680,9 +2673,10 @@ TclSortingOpCmd(
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
     } else {
 	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
-	Tcl_Obj **litObjv = (Tcl_Obj **)TclStackAlloc(interp,
+	Tcl_Obj **litObjv = (Tcl_Obj **) TclStackAlloc(interp,
 		2 * (objc-2) * sizeof(Tcl_Obj *));
-	OpNode *nodes = (OpNode *)TclStackAlloc(interp, 2 * (objc-2) * sizeof(OpNode));
+	OpNode *nodes = (OpNode *)
+		TclStackAlloc(interp, 2 * (objc-2) * sizeof(OpNode));
 	unsigned char lexeme;
 	int i, lastAnd = 1;
 	Tcl_Obj *const *litObjPtrPtr = litObjv;

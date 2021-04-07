@@ -32,9 +32,12 @@ extern int		copyfile(const char *from, const char *to,
 #else /* HAVE_COPYFILE_H */
 int			copyfile(const char *from, const char *to,
 			    void *state, uint32_t flags);
-#define COPYFILE_ACL		(1<<0)
-#define COPYFILE_XATTR		(1<<2)
-#define COPYFILE_NOFOLLOW_SRC	(1<<18)
+enum {
+    COPYFILE_ACL = (1<<0),
+    COPYFILE_XATTR = (1<<2),
+    COPYFILE_NOFOLLOW_SRC = (1<<18)
+};
+
 #if defined(HAVE_WEAK_IMPORT) && (MAC_OS_X_VERSION_MIN_REQUIRED < 1040)
 /* Support for weakly importing copyfile. */
 #define WEAK_IMPORT_COPYFILE
@@ -84,11 +87,11 @@ static int		SetOSTypeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfOSType(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType tclOSTypeType = {
-    "osType",				/* name */
-    NULL,				/* freeIntRepProc */
-    NULL,				/* dupIntRepProc */
-    UpdateStringOfOSType,		/* updateStringProc */
-    SetOSTypeFromAny			/* setFromAnyProc */
+    "osType",			/* name */
+    NULL,			/* freeIntRepProc */
+    NULL,			/* dupIntRepProc */
+    UpdateStringOfOSType,	/* updateStringProc */
+    SetOSTypeFromAny		/* setFromAnyProc */
 };
 
 enum {

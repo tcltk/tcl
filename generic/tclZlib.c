@@ -140,11 +140,13 @@ typedef struct {
  *	STREAM_DONE -	Flag to signal stream end up to transform input.
  */
 
-#define ASYNC			0x01
-#define IN_HEADER		0x02
-#define OUT_HEADER		0x04
-#define STREAM_DECOMPRESS	0x08
-#define STREAM_DONE		0x10
+enum {
+    ASYNC = 0x01,
+    IN_HEADER = 0x02,
+    OUT_HEADER = 0x04,
+    STREAM_DECOMPRESS = 0x08,
+    STREAM_DONE = 0x10
+};
 
 /*
  * Size of buffers allocated by default, and the range it can be set to.  The

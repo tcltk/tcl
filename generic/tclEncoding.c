@@ -116,7 +116,8 @@ typedef struct {
 				 * entry in this array is 1, otherwise it is
 				 * 0. */
     int numSubTables;		/* Length of following array. */
-    EscapeSubTable subTables[TCLFLEXARRAY];/* Information about each EscapeSubTable used
+    EscapeSubTable subTables[TCLFLEXARRAY];
+				/* Information about each EscapeSubTable used
 				 * by this encoding type. The actual size is
 				 * as large as necessary to hold all
 				 * EscapeSubTables. */
@@ -127,10 +128,12 @@ typedef struct {
  * file.
  */
 
-#define ENCODING_SINGLEBYTE	0
-#define ENCODING_DOUBLEBYTE	1
-#define ENCODING_MULTIBYTE	2
-#define ENCODING_ESCAPE		3
+enum {
+    ENCODING_SINGLEBYTE = 0,
+    ENCODING_DOUBLEBYTE = 1,
+    ENCODING_MULTIBYTE = 2,
+    ENCODING_ESCAPE = 3
+};
 
 /*
  * A list of directories in which Tcl should look for *.enc files. This list
@@ -233,7 +236,7 @@ static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
 static const Tcl_ObjType encodingType = {
     "encoding", FreeEncodingIntRep, DupEncodingIntRep, NULL, NULL
 };
-#define EncodingSetIntRep(objPtr, encoding)				\
+#define EncodingSetIntRep(objPtr, encoding) \
     do {								\
 	Tcl_ObjIntRep ir;						\
 	ir.twoPtrValue.ptr1 = (encoding);				\
@@ -241,7 +244,7 @@ static const Tcl_ObjType encodingType = {
 	Tcl_StoreIntRep((objPtr), &encodingType, &ir);			\
     } while (0)
 
-#define EncodingGetIntRep(objPtr, encoding)				\
+#define EncodingGetIntRep(objPtr, encoding) \
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
 	irPtr = TclFetchIntRep ((objPtr), &encodingType);		\
@@ -512,8 +515,12 @@ FillEncodingFileMap(void)
 
 /* This flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
 #define TCL_ENCODING_MODIFIED	0x20	/* Converting NULL bytes to 0xC0 0x80 */
-/* Since TCL_ENCODING_MODIFIED is only used for utf-8 and
- * TCL_ENCODING_LE is only used for  utf-16/ucs-2, re-use the same value */
+
+/*
+ * Since TCL_ENCODING_MODIFIED is only used for utf-8 and TCL_ENCODING_LE is
+ * only used for utf-16/ucs-2, re-use the same value
+ */
+
 #define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
 
 void
