@@ -2478,7 +2478,7 @@ export {
     Tcl_Interp *interp)
 }
 export {
-    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *pkgName,
+    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
