@@ -521,8 +521,8 @@ typedef void (Tcl_InterpDeleteProc) (void *clientData,
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
-typedef int (Tcl_PackageInitProc) (Tcl_Interp *interp);
-typedef int (Tcl_PackageUnloadProc) (Tcl_Interp *interp, int flags);
+typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
+typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
 typedef void (Tcl_TcpAcceptProc) (void *callbackData, Tcl_Channel chan,
 	char *address, int port);
@@ -542,10 +542,11 @@ typedef void *(Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (void *clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
-/* Undocumented. To be formalized by TIP #595 */
-#define Tcl_LibraryInitProc Tcl_PackageInitProc
-#define Tcl_LibraryUnloadProc Tcl_PackageUnloadProc
-
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_PackageInitProc Tcl_LibraryInitProc
+#   define Tcl_LibraryUnloadProc Tcl_LibraryUnloadProc
+#endif
+
 /*
  *----------------------------------------------------------------------------
  * The following structure represents a type of object, which is a particular
@@ -2161,8 +2162,9 @@ TCLAPI void		Tcl_StaticLibrary(Tcl_Interp *interp,
 			    const char *prefix,
 			    Tcl_LibraryInitProc *initProc,
 			    Tcl_LibraryInitProc *safeInitProc);
-/* Undocumented. To be formalized by TIP #595 */
+#ifndef TCL_NO_DEPRECATED
 #   define Tcl_StaticPackage Tcl_StaticLibrary
+#endif
 TCLAPI Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
 #ifdef _WIN32
 TCLAPI int		TclZipfs_AppHook(int *argc, wchar_t ***argv);
