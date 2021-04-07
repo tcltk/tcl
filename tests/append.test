@@ -53,6 +53,18 @@ test append-3.3 {append errors} -returnCodes error -body {
     unset -nocomplain x
     append x
 } -result {can't read "x": no such variable}
+test append-3.4 {append surrogates} -body {
+    set x \uD83D
+    append x \uDE02
+} -result \uD83D\uDE02
+test append-3.5 {append surrogates} -body {
+    set x \uD83D
+    set x $x\uDE02
+} -result \uD83D\uDE02
+test append-3.5 {append surrogates} -body {
+    set x \uDE02
+    set x \uD83D$x
+} -result \uD83D\uDE02
 
 test append-4.1 {lappend command} {
     unset -nocomplain x
