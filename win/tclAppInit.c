@@ -23,16 +23,20 @@
 #include <locale.h>
 #include <stdlib.h>
 #include <tchar.h>
+#if TCL_MAJOR_VERSION < 9 && TCL_MINOR_VERSION < 7
+#   define Tcl_LibraryInitProc Tcl_PackageInitProc
+#   define Tcl_StaticLibrary Tcl_StaticPackage
+#endif
 
 #ifdef TCL_TEST
-extern Tcl_PackageInitProc Tcltest_Init;
-extern Tcl_PackageInitProc Tcltest_SafeInit;
+extern Tcl_LibraryInitProc Tcltest_Init;
+extern Tcl_LibraryInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
 #if defined(STATIC_BUILD)
-extern Tcl_PackageInitProc Registry_Init;
-extern Tcl_PackageInitProc Dde_Init;
-extern Tcl_PackageInitProc Dde_SafeInit;
+extern Tcl_LibraryInitProc Registry_Init;
+extern Tcl_LibraryInitProc Dde_Init;
+extern Tcl_LibraryInitProc Dde_SafeInit;
 #endif
 
 #if defined(__GNUC__) || defined(TCL_BROKEN_MAINARGS)
@@ -168,19 +172,19 @@ Tcl_AppInit(
     if (Registry_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Registry", Registry_Init, NULL);
+    Tcl_StaticLibrary(interp, "Registry", Registry_Init, NULL);
 
     if (Dde_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Dde", Dde_Init, Dde_SafeInit);
+    Tcl_StaticLibrary(interp, "Dde", Dde_Init, Dde_SafeInit);
 #endif
 
 #ifdef TCL_TEST
     if (Tcltest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
+    Tcl_StaticLibrary(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
 #endif /* TCL_TEST */
 
     /*

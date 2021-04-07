@@ -1,6 +1,6 @@
 #include <tcl.h>
 
-extern DLLEXPORT Tcl_PackageInitProc Tsdperf_Init;
+extern DLLEXPORT Tcl_LibraryInitProc Tsdperf_Init;
 
 static Tcl_ThreadDataKey key;
 
