@@ -15,6 +15,10 @@
 #undef BUILD_tcl
 #undef STATIC_BUILD
 #include "tcl.h"
+#if TCL_MAJOR_VERSION < 9 && TCL_MINOR_VERSION < 7
+#   define Tcl_LibraryInitProc Tcl_PackageInitProc
+#   define Tcl_StaticLibrary Tcl_StaticPackage
+#endif
 
 #ifdef TCL_TEST
 extern Tcl_LibraryInitProc Tcltest_Init;
@@ -79,7 +83,8 @@ main(
 
 #ifdef TCL_LOCAL_MAIN_HOOK
     TCL_LOCAL_MAIN_HOOK(&argc, &argv);
-#else
+#elif !defined(_WIN32) || defined(UNICODE)
+    /* This doesn't work on Windows without UNICODE */
     TclZipfs_AppHook(&argc, &argv);
 #endif
 

@@ -23,6 +23,10 @@
 #include <locale.h>
 #include <stdlib.h>
 #include <tchar.h>
+#if TCL_MAJOR_VERSION < 9 && TCL_MINOR_VERSION < 7
+#   define Tcl_LibraryInitProc Tcl_PackageInitProc
+#   define Tcl_StaticLibrary Tcl_StaticPackage
+#endif
 
 #ifdef TCL_TEST
 extern Tcl_LibraryInitProc Tcltest_Init;
