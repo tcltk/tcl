@@ -88,11 +88,13 @@ static ProcessGlobalValue executableName = {
  */
 
 #define COMPAT 1
-#define CONVERT_NONE	0
-#define CONVERT_BRACE	2
-#define CONVERT_ESCAPE	4
-#define CONVERT_MASK	(CONVERT_BRACE | CONVERT_ESCAPE)
-#define CONVERT_ANY	16
+enum {
+    CONVERT_NONE = 0,
+    CONVERT_BRACE = 2,
+    CONVERT_ESCAPE = 4,
+    CONVERT_MASK = (CONVERT_BRACE | CONVERT_ESCAPE),
+    CONVERT_ANY = 16
+};
 
 /*
  * The following key is used by Tcl_PrintDouble and TclPrecTraceProc to

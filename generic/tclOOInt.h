@@ -103,16 +103,19 @@ typedef struct ProcedureMethod {
 
 /*
  * Flags for use in a ProcedureMethod.
- *
- * When the USE_DECLARER_NS flag is set, the method will use the namespace of
- * the object or class that declared it (or the clone of it, if it was from
- * such that the implementation of the method came to the particular use)
- * instead of the namespace of the object on which the method was invoked.
- * This flag must be distinct from all others that are associated with
- * methods.
  */
 
-#define USE_DECLARER_NS		0x80
+enum {
+    USE_DECLARER_NS = 0x80	/* When the USE_DECLARER_NS flag is set, the
+				 * method will use the namespace of the object
+				 * or class that declared it (or the clone of
+				 * it, if it was from such that the
+				 * implementation of the method came to the
+				 * particular use) instead of the namespace of
+				 * the object on which the method was invoked.
+				 * This flag must be distinct from all others
+				 * that are associated with methods. */
+};
 
 /*
  * Forwarded methods have the following extra information.
@@ -213,36 +216,38 @@ typedef struct Object {
 				 * command. */
 } Object;
 
-#define OBJECT_DESTRUCTING	1	/* Indicates that an object is being or has
-								 *  been destroyed  */
-#define DESTRUCTOR_CALLED 2	/* Indicates that evaluation of destructor script for the
-							   object has began */
-#define OO_UNUSED_4	4	/* No longer used.  */
-#define ROOT_OBJECT 0x1000	/* Flag to say that this object is the root of
+enum {
+    OBJECT_DESTRUCTING = 1,	/* Indicates that an object is being or has
+				 * been destroyed  */
+    DESTRUCTOR_CALLED = 2,	/* Indicates that evaluation of destructor
+				 * script for the object has began */
+    OO_UNUSED_4 = 4,		/* No longer used.  */
+    ROOT_OBJECT = 0x1000,	/* Flag to say that this object is the root of
 				 * the class hierarchy and should be treated
 				 * specially during teardown. */
-#define FILTER_HANDLING 0x2000	/* Flag set when the object is processing a
+    FILTER_HANDLING = 0x2000,	/* Flag set when the object is processing a
 				 * filter; when set, filters are *not*
 				 * processed on the object, preventing nasty
 				 * recursive filtering problems. */
-#define USE_CLASS_CACHE 0x4000	/* Flag set to say that the object is a pure
+    USE_CLASS_CACHE = 0x4000,	/* Flag set to say that the object is a pure
 				 * instance of the class, and has had nothing
 				 * added that changes the dispatch chain (i.e.
 				 * no methods, mixins, or filters. */
-#define ROOT_CLASS 0x8000	/* Flag to say that this object is the root
+    ROOT_CLASS = 0x8000,	/* Flag to say that this object is the root
 				 * class of classes, and should be treated
 				 * specially during teardown (and in a few
 				 * other spots). */
-#define FORCE_UNKNOWN 0x10000	/* States that we are *really* looking up the
+    FORCE_UNKNOWN = 0x10000,	/* States that we are *really* looking up the
 				 * unknown method handler at that point. */
-#define HAS_PRIVATE_METHODS 0x20000
+    HAS_PRIVATE_METHODS = 0x20000,
 				/* Object/class has (or had) private methods,
 				 * and so shouldn't be cached so
 				 * aggressively. */
-#define DONT_DELETE 0x40000	/* Inhibit deletion of this object. Used
+    DONT_DELETE = 0x40000	/* Inhibit deletion of this object. Used
 				 * during fundamental object type mutation to
 				 * make sure that the object actually survives
 				 * to the end of the operation. */
+};
 
 /*
  * And the definition of a class. Note that every class also has an associated
@@ -418,17 +423,18 @@ typedef struct CallContext {
  * Bits for the 'flags' field of the call chain.
  */
 
-#define PUBLIC_METHOD     0x01	/* This is a public (exported) method. */
-#define PRIVATE_METHOD    0x02	/* This is a private (class's direct instances
+enum {
+    PUBLIC_METHOD = 0x01,	/* This is a public (exported) method. */
+    PRIVATE_METHOD = 0x02,	/* This is a private (class's direct instances
 				 * only) method. Supports itcl. */
-#define OO_UNKNOWN_METHOD 0x04	/* This is an unknown method. */
-#define CONSTRUCTOR	  0x08	/* This is a constructor. */
-#define DESTRUCTOR	  0x10	/* This is a destructor. */
-#define TRUE_PRIVATE_METHOD 0x20
-				/* This is a private method only accessible
+    OO_UNKNOWN_METHOD = 0x04,	/* This is an unknown method. */
+    CONSTRUCTOR = 0x08,		/* This is a constructor. */
+    DESTRUCTOR = 0x10,		/* This is a destructor. */
+    TRUE_PRIVATE_METHOD = 0x20,	/* This is a private method only accessible
 				 * from other methods defined on this class
 				 * or instance. [TIP #500] */
-#define SCOPE_FLAGS (PUBLIC_METHOD | PRIVATE_METHOD | TRUE_PRIVATE_METHOD)
+    SCOPE_FLAGS = (PUBLIC_METHOD | PRIVATE_METHOD | TRUE_PRIVATE_METHOD)
+};
 
 /*
  * Structure containing definition information about basic class methods.

@@ -950,7 +950,7 @@ Tcl_DictObjPut(
     TclInvalidateStringRep(dictPtr);
     hPtr = CreateChainEntry(dict, keyPtr, &isNew);
     dict->refCount++;
-    TclFreeIntRep(dictPtr)
+    TclFreeIntRep(dictPtr);
     DictSetIntRep(dictPtr, dict);
     Tcl_IncrRefCount(valuePtr);
     if (!isNew) {

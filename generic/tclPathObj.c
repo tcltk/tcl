@@ -77,23 +77,36 @@ typedef struct FsPath {
  * Flag values for FsPath->flags.
  */
 
-#define TCLPATH_APPENDED 1
-#define TCLPATH_NEEDNORM 4
+enum {
+    TCLPATH_APPENDED = 1,
+    TCLPATH_NEEDNORM = 4
+};
 
 /*
- * Define some macros to give us convenient access to path-object specific
- * fields.
+ * Define some inline functions to give us convenient fast access to
+ * path-object specific fields.
  */
 
-#define PATHOBJ(pathPtr) ((FsPath *) (TclFetchIntRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
-#define SETPATHOBJ(pathPtr,fsPathPtr) \
-	do {							\
-		Tcl_ObjIntRep ir;				\
-		ir.twoPtrValue.ptr1 = (void *) (fsPathPtr);	\
-		ir.twoPtrValue.ptr2 = NULL;			\
-		Tcl_StoreIntRep((pathPtr), &fsPathType, &ir);	\
-	} while (0)
-#define PATHFLAGS(pathPtr) (PATHOBJ(pathPtr)->flags)
+static inline FsPath *
+PATHOBJ(
+    Tcl_Obj *pathPtr)
+{
+    return (FsPath *) TclFetchIntRep(pathPtr, &fsPathType)->twoPtrValue.ptr1;
+}
+
+static inline void
+SETPATHOBJ(
+    Tcl_Obj *pathPtr,
+    FsPath *fsPathPtr)
+{
+    Tcl_ObjIntRep ir;
+
+    ir.twoPtrValue.ptr1 = (void *) fsPathPtr;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreIntRep(pathPtr, &fsPathType, &ir);
+}
+
+#define PATHFLAGS(pathPtr)	(PATHOBJ(pathPtr)->flags)
 
 /*
  *---------------------------------------------------------------------------
@@ -143,17 +156,17 @@ TclFSNormalizeAbsolutePath(
     dirSep = TclGetString(pathPtr);
 
     if (tclPlatform == TCL_PLATFORM_WINDOWS) {
-	if (   (dirSep[0] == '/' || dirSep[0] == '\\')
-	    && (dirSep[1] == '/' || dirSep[1] == '\\')
-	    && (dirSep[2] == '?')
-	    && (dirSep[3] == '/' || dirSep[3] == '\\')) {
+	if (    (dirSep[0] == '/' || dirSep[0] == '\\') &&
+	        (dirSep[1] == '/' || dirSep[1] == '\\') &&
+	        (dirSep[2] == '?') &&
+	        (dirSep[3] == '/' || dirSep[3] == '\\')) {
 	    /* NT extended path */
 	    dirSep += 4;
 
-	    if (   (dirSep[0] == 'U' || dirSep[0] == 'u')
-		&& (dirSep[1] == 'N' || dirSep[1] == 'n')
-		&& (dirSep[2] == 'C' || dirSep[2] == 'c')
-		&& (dirSep[3] == '/' || dirSep[3] == '\\')) {
+	    if (    (dirSep[0] == 'U' || dirSep[0] == 'u') &&
+		    (dirSep[1] == 'N' || dirSep[1] == 'n') &&
+		    (dirSep[2] == 'C' || dirSep[2] == 'c') &&
+		    (dirSep[3] == '/' || dirSep[3] == '\\')) {
 		/* NT extended UNC path */
 		dirSep += 4;
 	    }
@@ -161,8 +174,8 @@ TclFSNormalizeAbsolutePath(
 	if (dirSep[0] != 0 && dirSep[1] == ':' &&
 		(dirSep[2] == '/' || dirSep[2] == '\\')) {
 	    /* Do nothing */
-	} else if ((dirSep[0] == '/' || dirSep[0] == '\\')
-		&& (dirSep[1] == '/' || dirSep[1] == '\\')) {
+	} else if ((dirSep[0] == '/' || dirSep[0] == '\\') &&
+		(dirSep[1] == '/' || dirSep[1] == '\\')) {
 	    /*
 	     * UNC style path, where we must skip over the first separator,
 	     * since the first two segments are actually inseparable.

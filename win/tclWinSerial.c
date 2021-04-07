@@ -33,24 +33,31 @@ TCL_DECLARE_MUTEX(serialMutex)
  * Bit masks used in the flags field of the SerialInfo structure below.
  */
 
-#define SERIAL_PENDING	(1<<0)	/* Message is pending in the queue. */
-#define SERIAL_ASYNC	(1<<1)	/* Channel is non-blocking. */
+enum {
+    SERIAL_PENDING = (1<<0),	/* Message is pending in the queue. */
+    SERIAL_ASYNC = (1<<1)	/* Channel is non-blocking. */
+};
 
 /*
  * Bit masks used in the sharedFlags field of the SerialInfo structure below.
  */
 
-#define SERIAL_EOF	(1<<2)	/* Serial has reached EOF. */
-#define SERIAL_ERROR	(1<<4)
+enum {
+    SERIAL_EOF = (1<<2),	/* Serial has reached EOF. */
+    SERIAL_ERROR = (1<<4)
+};
 
 /*
  * Bit masks used for noting whether to drain or discard output on close. They
  * are disjoint from each other; at most one may be set at a time.
  */
 
-#define SERIAL_CLOSE_DRAIN   (1<<6)	/* Drain all output on close. */
-#define SERIAL_CLOSE_DISCARD (1<<7)	/* Discard all output on close. */
-#define SERIAL_CLOSE_MASK    (3<<6)	/* Both two bits above. */
+enum {
+    SERIAL_CLOSE_DRAIN = (1<<6),/* Drain all output on close. */
+    SERIAL_CLOSE_DISCARD = (1<<7),
+				/* Discard all output on close. */
+    SERIAL_CLOSE_MASK = (3<<6)	/* Both two bits above. */
+};
 
 /*
  * Default time to block between checking status on the serial port.
