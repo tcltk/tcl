@@ -500,7 +500,7 @@ codepoints up to U+7FFFFFFF, providing room for up to 31-bits of codepoints
 that ISO 10646 still proposed at the time.  The UTF-8 encoding defined
 in Unicode 2.0 proposed a different use for 4-byte sequences.  They would
 be used to encode codepoint pairs using the surrogate extension mechanism.
-The refusal of the Tcl 8.1 encoder to produce 4-byte sequences mark another
+The refusal of the Tcl 8.1 encoder to produce 4-byte sequences marks another
 way in which Tcl's encoding was never UTF-8.
 
 The UTF-8 spec in Unicode 2.0 was silent about the encoding of unpaired
@@ -560,6 +560,9 @@ mechanism for error handling, because in earlier Tcl releases no errors
 were possible.  All byte sequences were proper strings until Tcl 8.1.
 That said, it is less clear why a fallback to ISO-8859-1 was considered
 wiser than something like generation of U+FFFD, the REPLACEMENT character.
+One factor might be the ability to pass 4-byte UTF-8 through without
+conversion or loss, at the expense of it being seen as 4 symbols instead
+of 2 (UTF-16) code units or one symbol.
 This might be another of those arguable mis-steps seen more clearly in
 hindsight.
 
@@ -577,6 +580,47 @@ Callers of **Tcl\_UniCharToUtf** are expected to provide an output
 buffer of at least **TCL\_UTF\_MAX** bytes, and to expect a return count
 up to (but never more than) **TCL\_UTF\_MAX**.
 
+The encoder and decoder routines allow translation back and forth between
+the two Tcl 8.1 representations for strings, the variable-width byte encoding
+falsely described as UTF-8, and the fixed-width encoding as elements of
+a **Tcl\_UniChar** array.  The translation is one symbol at a time, either
+reading or writing one **Tcl\_UniChar** element with each call.  This
+nails down the conception of the array representation as UCS-2 strings, with
+no decoding of multi-element sequences.  The documentation is clear about
+this when it declares that *n* calls to **Tcl\_UtfNext** must produce
+the same result as one call to **Tcl\_UtfAtIndex**(*n*).  Indexing and
+iteration must agree.
+
+For extensions and apps, the migration from Tcl 8.0 to Tcl 8.1 was
+pretty abrupt.  The new primary string representation was a variable-width
+encoding of an enlarged alphabet, requiring the use of new utility routines
+to achieve basics tasks like iterating or indexing, in many cases with
+a substantial performance penalty.  After conversion to the new expectations,
+it was rare that the revised code could still be used with Tcl 8.0.  A
+non-trivial conversion with little support for retreat or delay, and a
+performance hit as a reward.  There was plenty of unhappiness expressed
+about the change.
+
+Tcl 8.2 was released just 4 months later, in August 1999.  The string
+representations were unchanged, but much more caching of the
+**Tcl\_UniChar** array representation was added internally to better
+amortize the performance penalties of some operations on sequences
+stored in a variable-width encoding.  Different strings were also
+represented differently internally based on their content to offer
+performance and efficiency benefits.  The result was good enough
+to make the Tcl migration to international strings a success, if a bumpy one.
+
+New interfaces were also supplied by Tcl 8.2 to allow Tcl callers to exchange
+UCS-2 strings stored as **Tcl\_UniChar** arrays with the Tcl library:
+**Tcl\_NewUnicodeObj**, **Tcl\_SetUnicodeObj**,
+**Tcl\_GetUnicode**, **Tcl\_GetUniChar**, and **Tcl\_AppendUnicodeToObj**.
+Here it is unmistakable that **Tcl\_GetUnicode** was a mis-step, re-opening
+the "**NUL** as terminator" problem on the new alphabet.  The undefined
+nature of **Tcl\_GetUniChar** for an index out of range was unwise.  And
+overall the use of "Unicode" in the routine names that act on what came
+to be understood as UCS-2 strings brings about a festival of confusion.
+
+
 
 
 
@@ -587,7 +631,4 @@ Tcl\_UtfBackslash, Tcl\_UtfPrev, Tcl\_WinTCharToUtf
   Encoding routines (Tcl\_ExternalToUtf,...)
 
 
-Tcl 8.2 interface routines exchanging 2-octet representations:
-  Tcl\_NewUnicodeObj, Tcl\_SetUnicodeObj, Tcl\_GetUnicode, Tcl\_GetUniChar
-  Tcl\_AppendUnicodeToObj
 
