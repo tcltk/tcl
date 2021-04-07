@@ -562,9 +562,10 @@ That said, it is less clear why a fallback to ISO-8859-1 was considered
 wiser than something like generation of U+FFFD, the REPLACEMENT character.
 One factor might be the ability to pass 4-byte UTF-8 through without
 conversion or loss, at the expense of it being seen as 4 symbols instead
-of 2 (UTF-16) code units or one symbol.
-This might be another of those arguable mis-steps seen more clearly in
-hindsight.
+of 2 (UTF-16) code units or one symbol.  All that said, roundtrips
+from the byte-encoded format to **Tcl\_UniChar** array and back are
+not lossless.  This might be another of those arguable mis-steps seen
+more clearly in hindsight.
 
 It is the responsibility of each caller of **Tcl\_UtfToUniChar** that
 the byte sequence passed in is either **NUL** terminated, or has
