@@ -544,7 +544,7 @@ typedef void (Tcl_MainLoopProc) (void);
 
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_PackageInitProc Tcl_LibraryInitProc
-#   define Tcl_LibraryUnloadProc Tcl_LibraryUnloadProc
+#   define Tcl_PackageUnloadProc Tcl_LibraryUnloadProc
 #endif
 
 /*
