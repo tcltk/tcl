@@ -576,7 +576,7 @@ read beyond valid memory limits.  The utility routine
 
 is provided as a tool to check for this condition.  It is known by all
 callers that this routine will return 1 (true) whenever
-(_len_ > **TCL\_UTF\_MAX), so many callers omit calls in that circumstance.
+(_len_ > **TCL\_UTF\_MAX**), so many callers omit calls in that circumstance.
 Callers of **Tcl\_UniCharToUtf** are expected to provide an output
 buffer of at least **TCL\_UTF\_MAX** bytes, and to expect a return count
 up to (but never more than) **TCL\_UTF\_MAX**.
@@ -585,7 +585,7 @@ The encoder and decoder routines allow translation back and forth between
 the two Tcl 8.1 representations for strings, the variable-width byte encoding
 falsely described as UTF-8, and the fixed-width encoding as elements of
 a **Tcl\_UniChar** array.  The translation is one symbol at a time, either
-reading or writing one **Tcl\_UniChar** element with each call.  This
+reading or writing one ****Tcl\_UniChar** element with each call.  This
 nails down the conception of the array representation as UCS-2 strings, with
 no decoding of multi-element sequences.  The documentation is clear about
 this when it declares that *n* calls to **Tcl\_UtfNext** must produce
@@ -595,7 +595,7 @@ iteration must agree.
 For extensions and apps, the migration from Tcl 8.0 to Tcl 8.1 was
 pretty abrupt.  The new primary string representation was a variable-width
 encoding of an enlarged alphabet, requiring the use of new utility routines
-to achieve basics tasks like iterating or indexing, in many cases with
+to achieve basic tasks like iterating or indexing, in many cases with
 a substantial performance penalty.  After conversion to the new expectations,
 it was rare that the revised code could still be used with Tcl 8.0.  A
 non-trivial conversion with little support for retreat or delay, and a
