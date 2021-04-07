@@ -578,7 +578,7 @@ declare 256 {
 }
 declare 257 {
     void TclStaticLibrary(Tcl_Interp *interp, const char *prefix,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 
 # TIP 431: temporary directory creation function
