@@ -57,6 +57,8 @@ TCLAPI int		Tcl_MacOSXOpenVersionedBundleResources(
 /* 2 */
 TCLAPI void		Tcl_MacOSXNotifierAddRunLoopMode(
 				const void *runLoopMode);
+/* 3 */
+TCLAPI void		Tcl_WinConvertError(unsigned errCode);
 
 typedef struct TclPlatStubs {
     int magic;
@@ -65,6 +67,7 @@ typedef struct TclPlatStubs {
     void (*reserved0)(void);
     int (*tcl_MacOSXOpenVersionedBundleResources) (Tcl_Interp *interp, const char *bundleName, const char *bundleVersion, int hasResourceFile, size_t maxPathLen, char *libraryPath); /* 1 */
     void (*tcl_MacOSXNotifierAddRunLoopMode) (const void *runLoopMode); /* 2 */
+    void (*tcl_WinConvertError) (unsigned errCode); /* 3 */
 } TclPlatStubs;
 
 extern const TclPlatStubs *tclPlatStubsPtr;
@@ -84,6 +87,8 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 	(tclPlatStubsPtr->tcl_MacOSXOpenVersionedBundleResources) /* 1 */
 #define Tcl_MacOSXNotifierAddRunLoopMode \
 	(tclPlatStubsPtr->tcl_MacOSXNotifierAddRunLoopMode) /* 2 */
+#define Tcl_WinConvertError \
+	(tclPlatStubsPtr->tcl_WinConvertError) /* 3 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

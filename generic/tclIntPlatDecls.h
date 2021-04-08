@@ -31,7 +31,7 @@ extern "C" {
 
 #if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 0 */
-TCLAPI void		TclWinConvertError(int errCode);
+TCLAPI void		TclWinConvertError(unsigned errCode);
 /* 1 */
 TCLAPI int		TclpCloseFile(TclFile file);
 /* 2 */
@@ -98,7 +98,7 @@ TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
 /* 0 */
-TCLAPI void		TclWinConvertError(int errCode);
+TCLAPI void		TclWinConvertError(unsigned errCode);
 /* 1 */
 TCLAPI int		TclpCloseFile(TclFile file);
 /* 2 */
@@ -169,7 +169,7 @@ TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
 /* 0 */
-TCLAPI void		TclWinConvertError(int errCode);
+TCLAPI void		TclWinConvertError(unsigned errCode);
 /* 1 */
 TCLAPI int		TclpCloseFile(TclFile file);
 /* 2 */
@@ -240,7 +240,7 @@ typedef struct TclIntPlatStubs {
     void *hooks;
 
 #if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
-    void (*tclWinConvertError) (int errCode); /* 0 */
+    void (*tclWinConvertError) (unsigned errCode); /* 0 */
     int (*tclpCloseFile) (TclFile file); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
@@ -273,7 +273,7 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-    void (*tclWinConvertError) (int errCode); /* 0 */
+    void (*tclWinConvertError) (unsigned errCode); /* 0 */
     int (*tclpCloseFile) (TclFile file); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
@@ -306,7 +306,7 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-    void (*tclWinConvertError) (int errCode); /* 0 */
+    void (*tclWinConvertError) (unsigned errCode); /* 0 */
     int (*tclpCloseFile) (TclFile file); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
