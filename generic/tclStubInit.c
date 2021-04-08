@@ -67,8 +67,10 @@
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
 #define TclUnusedStubEntry 0
-#undef TclWinConvertError
-#define TclWinConvertError 0
+#if !defined(_WIN32) && !defined(__CYGWIN__)
+#undef Tcl_WinConvertError
+#define Tcl_WinConvertError 0
+#endif
 
 
 #if TCL_UTF_MAX <= 3
@@ -270,8 +272,6 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #else /* __CYGWIN__ */
 #   define TclWinGetTclInstance (void *(*)(void))(void *)TclpCreateProcess
 #   define TclpGetPid (size_t(*)(Tcl_Pid))(void *)TclUnixWaitForFile
-#   undef TclWinConvertError
-#   define TclWinConvertError (void(*)(int))(void *)TclGetAndDetachPids
 #   define TclWinFlushDirtyChannels 0
 #   define TclWinNoBackslash 0
 #   define TclWinAddProcess 0
@@ -566,7 +566,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     0,
 #if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
-    TclWinConvertError, /* 0 */
+    0, /* 0 */
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
@@ -599,7 +599,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclUnixOpenTemporaryFile, /* 30 */
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-    TclWinConvertError, /* 0 */
+    0, /* 0 */
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
@@ -632,7 +632,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclUnixOpenTemporaryFile, /* 30 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-    TclWinConvertError, /* 0 */
+    0, /* 0 */
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
