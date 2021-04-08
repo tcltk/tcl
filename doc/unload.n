@@ -90,7 +90,7 @@ detached from the process.
 The unload procedure must match the following prototype:
 .PP
 .CS
-typedef int \fBTcl_PackageUnloadProc\fR(
+typedef int \fBTcl_LibraryUnloadProc\fR(
         Tcl_Interp *\fIinterp\fR,
         int \fIflags\fR);
 .CE

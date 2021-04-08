@@ -74,6 +74,13 @@
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
 #undef Tcl_MacOSXOpenBundleResources
+#undef TclWinConvertWSAError
+#undef TclWinConvertError
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define TclWinConvertWSAError (void (*)(DWORD))(void *)Tcl_WinConvertError
+#define TclWinConvertError (void (*)(DWORD))(void *)Tcl_WinConvertError
+#endif
+
 
 #if TCL_UTF_MAX > 3
 static void uniCodePanic(void) {
@@ -1147,6 +1154,8 @@ static const TclPlatStubs tclPlatStubs = {
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
+    0, /* 2 */
+    Tcl_WinConvertError, /* 3 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
