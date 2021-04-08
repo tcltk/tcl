@@ -629,7 +629,7 @@ changes it made, but for the changes in Unicode it declined to acknowledge.
 Two new utility routines **Tcl\_UniCharNcasecmp** and **Tcl\_UniCharCaseMatch**
 accepted **Tcl\_UniChar** array arguments.  The routine
 **Tcl\_GetUnicodeFromObj** was also added as the properly defined
-replacement for **Tcl\_GetUniCode**.  Otherwise, the universe of Tcl strings
+replacement for **Tcl\_GetUnicode**.  Otherwise, the universe of Tcl strings
 and their representations remained unchanged.
 
 
