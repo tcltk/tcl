@@ -16,38 +16,34 @@
  * The following structure describes a library that has been loaded either
  * dynamically (with the "load" command) or statically (as indicated by a call
  * to Tcl_StaticLibrary). All such libraries are linked together into a
- * single list for the process. Library are never unloaded, until the
- * application exits, when TclFinalizeLoad is called, and these structures are
- * freed.
+ * single list for the process.
  */
 
 typedef struct LoadedLibrary {
     char *fileName;		/* Name of the file from which the library was
 				 * loaded. An empty string means the library
 				 * is loaded statically. Malloc-ed. */
-    char *prefix;		/* Prefix for the library,
-				 * properly capitalized (first letter UC,
-				 * others LC), as in "Net".
+    char *prefix;		/* Prefix for the library.
 				 * Malloc-ed. */
     Tcl_LoadHandle loadHandle;	/* Token for the loaded file which should be
 				 * passed to (*unLoadProcPtr)() when the file
 				 * is no longer needed. If fileName is NULL,
 				 * then this field is irrelevant. */
-    Tcl_PackageInitProc *initProc;
+    Tcl_LibraryInitProc *initProc;
 				/* Initialization function to call to
 				 * incorporate this library into a trusted
 				 * interpreter. */
-    Tcl_PackageInitProc *safeInitProc;
+    Tcl_LibraryInitProc *safeInitProc;
 				/* Initialization function to call to
 				 * incorporate this library into a safe
 				 * interpreter (one that will execute
 				 * untrusted scripts). NULL means the library
 				 * can't be used in unsafe interpreters. */
-    Tcl_PackageUnloadProc *unloadProc;
+    Tcl_LibraryUnloadProc *unloadProc;
 				/* Finalization function to unload a library
 				 * from a trusted interpreter. NULL means that
 				 * the library cannot be unloaded. */
-    Tcl_PackageUnloadProc *safeUnloadProc;
+    Tcl_LibraryUnloadProc *safeUnloadProc;
 				/* Finalization function to unload a library
 				 * from a safe interpreter. NULL means that
 				 * the library cannot be unloaded. */
@@ -127,7 +123,7 @@ Tcl_LoadObjCmd(
     InterpLibrary *ipFirstPtr, *ipPtr;
     int code, namesMatch, filesMatch, offset;
     const char *symbols[2];
-    Tcl_PackageInitProc *initProc;
+    Tcl_LibraryInitProc *initProc;
     const char *p, *fullFileName, *prefix;
     Tcl_LoadHandle loadHandle;
     Tcl_UniChar ch = 0;
@@ -226,8 +222,6 @@ Tcl_LoadObjCmd(
 	    Tcl_DStringAppend(&pfx, prefix, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
-	    Tcl_UtfToLower(Tcl_DStringValue(&pfx));
-	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pfx)) == 0) {
 		namesMatch = 1;
@@ -313,7 +307,7 @@ Tcl_LoadObjCmd(
 	    /*
 	     * The platform-specific code couldn't figure out the prefix.
 	     * Make a guess by taking the last element of the file
-	     * name, stripping off any leading "lib" and/or "tcl", and
+	     * name, stripping off any leading "lib" and/or "tcl9", and
 	     * then using all of the alphabetic and underline characters
 	     * that follow that.
 	     */
@@ -331,15 +325,18 @@ Tcl_LoadObjCmd(
 		pkgGuess += 3;
 	    }
 #endif /* __CYGWIN__ */
-	    if ((pkgGuess[0] == 't') && (pkgGuess[1] == 'c')
-		    && (pkgGuess[2] == 'l')) {
-		pkgGuess += 3;
+	    if (((pkgGuess[0] == 't')
+#ifdef MAC_OS_TCL
+		    || (pkgGuess[0] == 'T')
+#endif
+		    ) && (pkgGuess[1] == 'c')
+		    && (pkgGuess[2] == 'l') && (pkgGuess[3] == '9')) {
+		pkgGuess += 4;
 	    }
 	    for (p = pkgGuess; *p != 0; p += offset) {
 		offset = TclUtfToUniChar(p, &ch);
-		if ((ch > 0x100)
-			|| !(isalpha(UCHAR(ch)) /* INTL: ISO only */
-				|| (UCHAR(ch) == '_'))) {
+		if (!Tcl_UniCharIsWordChar(UCHAR(ch))
+			|| Tcl_UniCharIsDigit(UCHAR(ch))) {
 		    break;
 		}
 	    }
@@ -355,16 +352,17 @@ Tcl_LoadObjCmd(
 	    }
 	    Tcl_DStringAppend(&pfx, pkgGuess, p - pkgGuess);
 	    Tcl_DecrRefCount(splitPtr);
+
+	    /*
+	     * Fix the capitalization in the prefix so that the first
+	     * character is in caps (or title case) but the others are all
+	     * lower-case.
+	     */
+
+	    Tcl_DStringSetLength(&pfx,
+		    Tcl_UtfToTitle(Tcl_DStringValue(&pfx)));
+
 	}
-
-	/*
-	 * Fix the capitalization in the prefix so that the first
-	 * character is in caps (or title case) but the others are all
-	 * lower-case.
-	 */
-
-	Tcl_DStringSetLength(&pfx,
-		Tcl_UtfToTitle(Tcl_DStringValue(&pfx)));
 
 	/*
 	 * Compute the names of the two initialization functions, based on the
@@ -409,13 +407,13 @@ Tcl_LoadObjCmd(
 	memcpy(libraryPtr->prefix, Tcl_DStringValue(&pfx), len);
 	libraryPtr->loadHandle	   = loadHandle;
 	libraryPtr->initProc	   = initProc;
-	libraryPtr->safeInitProc	   = (Tcl_PackageInitProc *)
+	libraryPtr->safeInitProc	   = (Tcl_LibraryInitProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeInitName));
-	libraryPtr->unloadProc	   = (Tcl_PackageUnloadProc *)
+	libraryPtr->unloadProc	   = (Tcl_LibraryUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&unloadName));
-	libraryPtr->safeUnloadProc	   = (Tcl_PackageUnloadProc *)
+	libraryPtr->safeUnloadProc	   = (Tcl_LibraryUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeUnloadName));
 	libraryPtr->interpRefCount	   = 0;
@@ -547,7 +545,7 @@ Tcl_UnloadObjCmd(
     Tcl_Interp *target;		/* Which interpreter to unload from. */
     LoadedLibrary *libraryPtr, *defaultPtr;
     Tcl_DString pfx, tmp;
-    Tcl_PackageUnloadProc *unloadProc;
+    Tcl_LibraryUnloadProc *unloadProc;
     InterpLibrary *ipFirstPtr, *ipPtr;
     int i, index, code, complain = 1, keepLibrary = 0;
     int trustedRefCount = -1, safeRefCount = -1;
@@ -660,8 +658,6 @@ Tcl_UnloadObjCmd(
 	    Tcl_DStringAppend(&pfx, prefix, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
-	    Tcl_UtfToLower(Tcl_DStringValue(&pfx));
-	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pfx)) == 0) {
 		namesMatch = 1;
@@ -942,13 +938,11 @@ Tcl_StaticLibrary(
 				 * already been loaded into the given
 				 * interpreter by calling the appropriate init
 				 * proc. */
-    const char *prefix,	/* Prefix (must be properly
-				 * capitalized: first letter upper case,
-				 * others lower case). */
-    Tcl_PackageInitProc *initProc,
+    const char *prefix,	/* Prefix. */
+    Tcl_LibraryInitProc *initProc,
 				/* Function to call to incorporate this
 				 * library into a trusted interpreter. */
-    Tcl_PackageInitProc *safeInitProc)
+    Tcl_LibraryInitProc *safeInitProc)
 				/* Function to call to incorporate this
 				 * library into a safe interpreter (one that
 				 * will execute untrusted scripts). NULL means

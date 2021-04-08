@@ -602,7 +602,7 @@ ConsoleCloseProc(
 		&& (GetStdHandle(STD_OUTPUT_HANDLE) != consolePtr->handle)
 		&& (GetStdHandle(STD_ERROR_HANDLE) != consolePtr->handle))) {
 	if (CloseHandle(consolePtr->handle) == FALSE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    errorCode = errno;
 	}
     }
@@ -772,7 +772,7 @@ ConsoleOutputProc(
      */
 
     if (infoPtr->writeError) {
-	TclWinConvertError(infoPtr->writeError);
+	Tcl_WinConvertError(infoPtr->writeError);
 	infoPtr->writeError = 0;
 	goto error;
     }
@@ -807,7 +807,7 @@ ConsoleOutputProc(
 
 	if (WriteConsoleBytes(infoPtr->handle, buf, (DWORD) toWrite,
 		&bytesWritten) == FALSE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    goto error;
 	}
     }
@@ -1065,7 +1065,7 @@ WaitForRead(
 	     * Check to see if the peek failed because of EOF.
 	     */
 
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 
 	    if (errno == EOF) {
 		infoPtr->readFlags |= CONSOLE_EOF;
@@ -1477,7 +1477,7 @@ ConsoleSetOptionProc(
 	DWORD mode;
 
 	if (GetConsoleMode(infoPtr->handle, &mode) == 0) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"couldn't read console mode: %s",
@@ -1509,7 +1509,7 @@ ConsoleSetOptionProc(
 	    return TCL_ERROR;
 	}
 	if (SetConsoleMode(infoPtr->handle, mode) == 0) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"couldn't set console mode: %s",
@@ -1589,7 +1589,7 @@ ConsoleGetOptionProc(
 
 	    valid = 1;
 	    if (GetConsoleMode(infoPtr->handle, &mode) == 0) {
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			    "couldn't read console mode: %s",
@@ -1620,7 +1620,7 @@ ConsoleGetOptionProc(
 
 	valid = 1;
 	if (!GetConsoleScreenBufferInfo(infoPtr->handle, &consoleInfo)) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"couldn't read console size: %s",
