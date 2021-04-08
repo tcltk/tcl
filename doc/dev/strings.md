@@ -621,7 +621,16 @@ nature of **Tcl\_GetUniChar** for an index out of range was unwise.  And
 overall the use of "Unicode" in the routine names that act on what came
 to be understood as UCS-2 strings brings about a festival of confusion.
 
+Tcl 8.3 (released February 2000) added no new interfaces making use of
+**Tcl\_UniChar**, and string representations remained unchanged.
 
+Tcl 8.4 (released September 2002) has already been noted not for the
+changes it made, but for the changes in Unicode it declined to acknowledge.
+Two new utility routines **Tcl\_UniCharNcasecmp** and **Tcl\_UniCharCaseMatch**
+accepted **Tcl\_UniChar** array arguments.  The routine
+**Tcl\_GetUnicodeFromObj** was also added as the properly defined
+replacement for **Tcl\_GetUniCode**.  Otherwise, the universe of Tcl strings
+and their representations remained unchanged.
 
 
 
