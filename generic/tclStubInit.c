@@ -67,6 +67,9 @@
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
 #define TclUnusedStubEntry 0
+#undef TclWinConvertError
+#define TclWinConvertError 0
+
 
 #if TCL_UTF_MAX <= 3
 static void uniCodePanic() {
@@ -267,6 +270,7 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #else /* __CYGWIN__ */
 #   define TclWinGetTclInstance (void *(*)(void))(void *)TclpCreateProcess
 #   define TclpGetPid (size_t(*)(Tcl_Pid))(void *)TclUnixWaitForFile
+#   undef TclWinConvertError
 #   define TclWinConvertError (void(*)(int))(void *)TclGetAndDetachPids
 #   define TclWinFlushDirtyChannels 0
 #   define TclWinNoBackslash 0
@@ -668,6 +672,7 @@ static const TclPlatStubs tclPlatStubs = {
     0, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
     Tcl_MacOSXNotifierAddRunLoopMode, /* 2 */
+    Tcl_WinConvertError, /* 3 */
 };
 
 const TclTomMathStubs tclTomMathStubs = {

@@ -413,7 +413,7 @@ FileCloseProc(
 	    &&  (GetStdHandle(STD_OUTPUT_HANDLE) != fileInfoPtr->handle)
 	    &&  (GetStdHandle(STD_ERROR_HANDLE) != fileInfoPtr->handle))) {
 	if (CloseHandle(fileInfoPtr->handle) == FALSE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    errorCode = errno;
 	}
     }
@@ -486,7 +486,7 @@ FileWideSeekProc(
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
+	    Tcl_WinConvertError(winError);
 	    *errorCodePtr = errno;
 	    return -1;
 	}
@@ -529,7 +529,7 @@ FileTruncateProc(
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
+	    Tcl_WinConvertError(winError);
 	    return errno;
 	}
     }
@@ -545,7 +545,7 @@ FileTruncateProc(
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
+	    Tcl_WinConvertError(winError);
 	    return errno;
 	}
     }
@@ -556,7 +556,7 @@ FileTruncateProc(
      */
 
     if (!SetEndOfFile(infoPtr->handle)) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return errno;
     }
 
@@ -616,7 +616,7 @@ FileInputProc(
 	return bytesRead;
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     *errorCode = errno;
     if (errno == EPIPE) {
 	return 0;
@@ -665,7 +665,7 @@ FileOutputProc(
 
     if (WriteFile(infoPtr->handle, (LPVOID) buf, (DWORD) toWrite,
 	    &bytesWritten, (LPOVERLAPPED) NULL) == FALSE) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	*errorCode = errno;
 	return -1;
     }
@@ -840,7 +840,7 @@ TclpOpenFileChannel(
     if (NativeIsComPort(nativeName)) {
 	handle = TclWinSerialOpen(INVALID_HANDLE_VALUE, nativeName, accessMode);
 	if (handle == INVALID_HANDLE_VALUE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"couldn't open serial \"%s\": %s",
@@ -897,7 +897,7 @@ TclpOpenFileChannel(
 	    err = TEST_FLAG(mode, O_CREAT) ? ERROR_FILE_EXISTS
 		    : ERROR_FILE_NOT_FOUND;
 	}
-	TclWinConvertError(err);
+	Tcl_WinConvertError(err);
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't open \"%s\": %s",
@@ -921,7 +921,7 @@ TclpOpenFileChannel(
 
 	handle = TclWinSerialOpen(handle, nativeName, accessMode);
 	if (handle == INVALID_HANDLE_VALUE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"couldn't reopen serial \"%s\": %s",
