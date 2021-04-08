@@ -585,7 +585,7 @@ The encoder and decoder routines allow translation back and forth between
 the two Tcl 8.1 representations for strings, the variable-width byte encoding
 falsely described as UTF-8, and the fixed-width encoding as elements of
 a **Tcl\_UniChar** array.  The translation is one symbol at a time, either
-reading or writing one ****Tcl\_UniChar** element with each call.  This
+reading or writing one **Tcl\_UniChar** element with each call.  This
 nails down the conception of the array representation as UCS-2 strings, with
 no decoding of multi-element sequences.  The documentation is clear about
 this when it declares that *n* calls to **Tcl\_UtfNext** must produce
