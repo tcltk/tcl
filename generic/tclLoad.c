@@ -16,18 +16,14 @@
  * The following structure describes a library that has been loaded either
  * dynamically (with the "load" command) or statically (as indicated by a call
  * to Tcl_StaticLibrary). All such libraries are linked together into a
- * single list for the process. Library are never unloaded, until the
- * application exits, when TclFinalizeLoad is called, and these structures are
- * freed.
+ * single list for the process.
  */
 
 typedef struct LoadedLibrary {
     char *fileName;		/* Name of the file from which the library was
 				 * loaded. An empty string means the library
 				 * is loaded statically. Malloc-ed. */
-    char *prefix;		/* Prefix for the library,
-				 * properly capitalized (first letter UC,
-				 * others LC), as in "Net".
+    char *prefix;		/* Prefix for the library.
 				 * Malloc-ed. */
     Tcl_LoadHandle loadHandle;	/* Token for the loaded file which should be
 				 * passed to (*unLoadProcPtr)() when the file
@@ -226,8 +222,6 @@ Tcl_LoadObjCmd(
 	    Tcl_DStringAppend(&pfx, prefix, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
-	    Tcl_UtfToLower(Tcl_DStringValue(&pfx));
-	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pfx)) == 0) {
 		namesMatch = 1;
@@ -313,7 +307,7 @@ Tcl_LoadObjCmd(
 	    /*
 	     * The platform-specific code couldn't figure out the prefix.
 	     * Make a guess by taking the last element of the file
-	     * name, stripping off any leading "lib" and/or "tcl", and
+	     * name, stripping off any leading "lib" and/or "tcl9", and
 	     * then using all of the alphabetic and underline characters
 	     * that follow that.
 	     */
@@ -331,15 +325,18 @@ Tcl_LoadObjCmd(
 		pkgGuess += 3;
 	    }
 #endif /* __CYGWIN__ */
-	    if ((pkgGuess[0] == 't') && (pkgGuess[1] == 'c')
-		    && (pkgGuess[2] == 'l')) {
-		pkgGuess += 3;
+	    if (((pkgGuess[0] == 't')
+#ifdef MAC_OS_TCL
+		    || (pkgGuess[0] == 'T')
+#endif
+		    ) && (pkgGuess[1] == 'c')
+		    && (pkgGuess[2] == 'l') && (pkgGuess[3] == '9')) {
+		pkgGuess += 4;
 	    }
 	    for (p = pkgGuess; *p != 0; p += offset) {
 		offset = TclUtfToUniChar(p, &ch);
-		if ((ch > 0x100)
-			|| !(isalpha(UCHAR(ch)) /* INTL: ISO only */
-				|| (UCHAR(ch) == '_'))) {
+		if (!Tcl_UniCharIsWordChar(UCHAR(ch))
+			|| Tcl_UniCharIsDigit(UCHAR(ch))) {
 		    break;
 		}
 	    }
@@ -355,16 +352,17 @@ Tcl_LoadObjCmd(
 	    }
 	    Tcl_DStringAppend(&pfx, pkgGuess, p - pkgGuess);
 	    Tcl_DecrRefCount(splitPtr);
+
+	    /*
+	     * Fix the capitalization in the prefix so that the first
+	     * character is in caps (or title case) but the others are all
+	     * lower-case.
+	     */
+
+	    Tcl_DStringSetLength(&pfx,
+		    Tcl_UtfToTitle(Tcl_DStringValue(&pfx)));
+
 	}
-
-	/*
-	 * Fix the capitalization in the prefix so that the first
-	 * character is in caps (or title case) but the others are all
-	 * lower-case.
-	 */
-
-	Tcl_DStringSetLength(&pfx,
-		Tcl_UtfToTitle(Tcl_DStringValue(&pfx)));
 
 	/*
 	 * Compute the names of the two initialization functions, based on the
@@ -660,8 +658,6 @@ Tcl_UnloadObjCmd(
 	    Tcl_DStringAppend(&pfx, prefix, -1);
 	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, libraryPtr->prefix, -1);
-	    Tcl_UtfToLower(Tcl_DStringValue(&pfx));
-	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
 	    if (strcmp(Tcl_DStringValue(&tmp),
 		    Tcl_DStringValue(&pfx)) == 0) {
 		namesMatch = 1;
@@ -942,9 +938,7 @@ Tcl_StaticLibrary(
 				 * already been loaded into the given
 				 * interpreter by calling the appropriate init
 				 * proc. */
-    const char *prefix,	/* Prefix (must be properly
-				 * capitalized: first letter upper case,
-				 * others lower case). */
+    const char *prefix,	/* Prefix. */
     Tcl_LibraryInitProc *initProc,
 				/* Function to call to incorporate this
 				 * library into a trusted interpreter. */

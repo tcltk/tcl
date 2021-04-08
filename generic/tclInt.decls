@@ -603,7 +603,7 @@ interface tclIntPlat
 # Platform specific functions
 
 declare 0 {unix win} {
-    void TclWinConvertError(int errCode)
+    void TclWinConvertError(unsigned errCode)
 }
 declare 1 {unix win} {
     int TclpCloseFile(TclFile file)

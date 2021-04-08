@@ -2503,10 +2503,6 @@ interface tclPlat
 #   (none)
 
 ################################
-# Windows specific functions
-#   (none)
-
-################################
 # Mac OS X specific functions
 
 declare 1 {
@@ -2516,6 +2512,12 @@ declare 1 {
 }
 declare 2 {
     void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+}
+
+################################
+# Windows specific functions
+declare 3 {
+    void Tcl_WinConvertError(unsigned errCode)
 }
 
 ##############################################################################
