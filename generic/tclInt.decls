@@ -240,8 +240,8 @@ declare 55 {
 # Replaced with TclpLoadFile in 8.1:
 #  declare 56 {
 #      int TclLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
-#  	    char *sym2, Tcl_PackageInitProc **proc1Ptr,
-#  	    Tcl_PackageInitProc **proc2Ptr)
+#  	    char *sym2, Tcl_LibraryInitProc **proc1Ptr,
+#  	    Tcl_LibraryInitProc **proc2Ptr)
 #  }
 # Signature changed to take a length in 8.1:
 #  declare 57 {
@@ -553,8 +553,8 @@ declare 138 {
 }
 #declare 139 {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
-#	    char *sym2, Tcl_PackageInitProc **proc1Ptr,
-#	    Tcl_PackageInitProc **proc2Ptr, void **clientDataPtr)
+#	    char *sym2, Tcl_LibraryInitProc **proc1Ptr,
+#	    Tcl_LibraryInitProc **proc2Ptr, void **clientDataPtr)
 #}
 #declare 140 {
 #    int TclLooksLikeInt(const char *bytes, int length)
@@ -1027,7 +1027,7 @@ declare 256 {
 }
 declare 257 {
     void TclStaticLibrary(Tcl_Interp *interp, const char *prefix,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 
 # TIP 431: temporary directory creation function
