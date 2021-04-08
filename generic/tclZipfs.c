@@ -1854,7 +1854,7 @@ ZipfsSetup(void)
     Tcl_InitHashTable(&ZipFS.zipHash, TCL_STRING_KEYS);
     ZipFS.idCount = 1;
     ZipFS.wrmax = DEFAULT_WRITE_MAX_SIZE;
-    ZipFS.fallbackEntryEncoding =
+    ZipFS.fallbackEntryEncoding = (char *)
 	    Tcl_Alloc(strlen(ZIPFS_FALLBACK_ENCODING) + 1);
     strcpy(ZipFS.fallbackEntryEncoding, ZIPFS_FALLBACK_ENCODING);
     ZipFS.utf8 = Tcl_GetEncoding(NULL, "utf-8");

@@ -206,7 +206,7 @@ TestvolumetypeCmd(
     if (found == 0) {
 	Tcl_AppendResult(interp, "could not get volume type for \"",
 		(path?path:""), "\"", NULL);
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return TCL_ERROR;
     }
     Tcl_AppendResult(interp, volType, NULL);
