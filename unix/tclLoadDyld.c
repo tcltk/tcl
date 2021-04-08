@@ -336,7 +336,7 @@ FindSymbol(
     const char *symbol)		/* Symbol name to look up. */
 {
     Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *)loadHandle->clientData;
-    Tcl_PackageInitProc *proc = NULL;
+    Tcl_LibraryInitProc *proc = NULL;
     const char *errMsg = NULL;
     Tcl_DString ds;
     const char *native;
@@ -344,7 +344,7 @@ FindSymbol(
     native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
     if (dyldLoadHandle->dlHandle) {
 #if TCL_DYLD_USE_DLFCN
-	proc = (Tcl_PackageInitProc *)dlsym(dyldLoadHandle->dlHandle, native);
+	proc = (Tcl_LibraryInitProc *)dlsym(dyldLoadHandle->dlHandle, native);
 	if (!proc) {
 	    errMsg = dlerror();
 	}
@@ -400,7 +400,7 @@ FindSymbol(
 		    dyldLoadHandle->modulePtr->module, native);
 	}
 	if (nsSymbol) {
-	    proc = (Tcl_PackageInitProc *)NSAddressOfSymbol(nsSymbol);
+	    proc = (Tcl_LibraryInitProc *)NSAddressOfSymbol(nsSymbol);
 	}
 	Tcl_DStringFree(&newName);
 #endif /* TCL_DYLD_USE_NSMODULE */
