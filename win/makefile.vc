@@ -451,7 +451,7 @@ test: test-core test-pkgs
 test-core: setup $(TCLTEST) dlls $(CAT32)
 	set TCL_LIBRARY=$(ROOT:\=/)/library
 	$(DEBUGGER) $(TCLTEST) "$(ROOT:\=/)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
-		package ifneeded dde 1.4.3 [list load "$(TCLDDELIB:\=/)" Dde]
+		package ifneeded dde 1.4.4 [list load "$(TCLDDELIB:\=/)" Dde]
 		package ifneeded registry 1.3.5 [list load "$(TCLREGLIB:\=/)" Registry]
 <<
 
