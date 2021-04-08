@@ -602,9 +602,10 @@ interface tclIntPlat
 ################################
 # Platform specific functions
 
-declare 0 {unix win} {
-    void TclWinConvertError(unsigned errCode)
-}
+# Removed in 9.0
+#declare 0 {unix win} {
+#    void TclWinConvertError(unsigned errCode)
+#}
 declare 1 {unix win} {
     int TclpCloseFile(TclFile file)
 }

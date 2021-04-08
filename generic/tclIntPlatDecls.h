@@ -30,8 +30,7 @@ extern "C" {
  */
 
 #if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
-/* 0 */
-TCLAPI void		TclWinConvertError(unsigned errCode);
+/* Slot 0 is reserved */
 /* 1 */
 TCLAPI int		TclpCloseFile(TclFile file);
 /* 2 */
@@ -97,8 +96,7 @@ TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 				Tcl_Obj *resultingNameObj);
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-/* 0 */
-TCLAPI void		TclWinConvertError(unsigned errCode);
+/* Slot 0 is reserved */
 /* 1 */
 TCLAPI int		TclpCloseFile(TclFile file);
 /* 2 */
@@ -168,8 +166,7 @@ TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 				Tcl_Obj *resultingNameObj);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-/* 0 */
-TCLAPI void		TclWinConvertError(unsigned errCode);
+/* Slot 0 is reserved */
 /* 1 */
 TCLAPI int		TclpCloseFile(TclFile file);
 /* 2 */
@@ -240,7 +237,7 @@ typedef struct TclIntPlatStubs {
     void *hooks;
 
 #if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
-    void (*tclWinConvertError) (unsigned errCode); /* 0 */
+    void (*reserved0)(void);
     int (*tclpCloseFile) (TclFile file); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
@@ -273,7 +270,7 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-    void (*tclWinConvertError) (unsigned errCode); /* 0 */
+    void (*reserved0)(void);
     int (*tclpCloseFile) (TclFile file); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
@@ -306,7 +303,7 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-    void (*tclWinConvertError) (unsigned errCode); /* 0 */
+    void (*reserved0)(void);
     int (*tclpCloseFile) (TclFile file); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
@@ -353,8 +350,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
  */
 
 #if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
-#define TclWinConvertError \
-	(tclIntPlatStubsPtr->tclWinConvertError) /* 0 */
+/* Slot 0 is reserved */
 #define TclpCloseFile \
 	(tclIntPlatStubsPtr->tclpCloseFile) /* 1 */
 #define TclpCreateCommandChannel \
@@ -408,8 +404,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 30 */
 #endif /* UNIX */
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-#define TclWinConvertError \
-	(tclIntPlatStubsPtr->tclWinConvertError) /* 0 */
+/* Slot 0 is reserved */
 #define TclpCloseFile \
 	(tclIntPlatStubsPtr->tclpCloseFile) /* 1 */
 #define TclpCreateCommandChannel \
@@ -466,8 +461,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 30 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
-#define TclWinConvertError \
-	(tclIntPlatStubsPtr->tclWinConvertError) /* 0 */
+/* Slot 0 is reserved */
 #define TclpCloseFile \
 	(tclIntPlatStubsPtr->tclpCloseFile) /* 1 */
 #define TclpCreateCommandChannel \
@@ -524,6 +518,9 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
+
+#define TclWinConvertWSAError Tcl_WinConvertError
+#define TclWinConvertError Tcl_WinConvertError
 
 #ifdef MAC_OSX_TCL /* not accessable on Win32/UNIX */
 MODULE_SCOPE int TclMacOSXGetFileAttribute(Tcl_Interp *interp,
