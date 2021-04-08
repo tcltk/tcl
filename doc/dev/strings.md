@@ -632,6 +632,13 @@ accepted **Tcl\_UniChar** array arguments.  The routine
 replacement for **Tcl\_GetUnicode**.  Otherwise, the universe of Tcl strings
 and their representations remained unchanged.
 
+Tcl release 8.4.4 (July, 2003) made the first stab at supporting a
+value for **TCL\_UTF\_MAX** greater than 3.  Comments suggested another
+possible value of 6, with a conditional typedef for a 4-byte **Tcl\_UniChar**.  However, Tcl continued to use the FSS-UTF approach to encoding longer byte
+sequences in such custom builds.  In Tcl release 8.4.14 (October 2006),
+comments were revised to declare for the first time a plan to make
+use of UTF-16.  Nevertheless the encoder remained one patterned after
+FSS-UTF.
 
 
 Routines where TCL\_UTF\_MAX is relevant:
