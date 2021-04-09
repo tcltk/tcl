@@ -84,14 +84,25 @@ test utf-1.13.0 {Tcl_UniCharToUtf: Invalid surrogate} {Uesc ucs2} {
 test utf-1.13.1 {Tcl_UniCharToUtf: Invalid surrogate} {fullutf testbytestring} {
     expr {"\UD842" eq [testbytestring \xEF\xBF\xBD]}
 } 1
-test utf-1.14 {Tcl_UniCharToUtf: surrogate pairs from concat} {pairsTo4bytes testbytestring} {
-    set hi \uD83D
+test utf-1.14 {Tcl_UniCharToUtf: surrogate pairs from concat} {
     set lo \uDE02
-    expr {"$hi$lo" eq [testbytestring \xF0\x9F\x98\x82]}
-} 1
-test utf-1.15 {Tcl_UniCharToUtf: surrogate pairs from concat} {pairsTo4bytes testbytestring} {
-    expr {[string cat \uD83D \uDE02] eq [testbytestring \xF0\x9F\x98\x82]}
-} 1
+    return \uD83D$lo
+} \uD83D\uDE02
+test utf-1.15 {Tcl_UniCharToUtf: surrogate pairs from concat} {
+    set hi \uD83D
+    return $hi\uDE02
+} \uD83D\uDE02
+test utf-1.16 {Tcl_UniCharToUtf: \xC0 + \x80} testbytestring {
+    set lo [testbytestring \x80]
+    string length [testbytestring \xC0]$lo
+} 2
+test utf-1.17 {Tcl_UniCharToUtf: \xC0 + \x80} testbytestring {
+    set hi [testbytestring \xC0]
+    string length $hi[testbytestring \x80]
+} 2
+test utf-1.18 {Tcl_UniCharToUtf: surrogate pairs from concat} {
+    string cat \uD83D \uDE02
+} \uD83D\uDE02
 
 test utf-2.1 {Tcl_UtfToUniChar: low ascii} {
     string length "abc"

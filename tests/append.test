@@ -61,10 +61,22 @@ test append-3.5 {append surrogates} -body {
     set x \uD83D
     set x $x\uDE02
 } -result \uD83D\uDE02
-test append-3.5 {append surrogates} -body {
+test append-3.6 {append surrogates} -body {
     set x \uDE02
     set x \uD83D$x
 } -result \uD83D\uDE02
+test append-3.7 {append \xC0 \x80} -body {
+    set x [testbytestring \xC0]
+    string length [append x [testbytestring \x80]]
+} -result 2
+test append-3.8 {append \xC0 \x80} -body {
+    set x [testbytestring \xC0]
+    string length $x[testbytestring \x80]
+} -result 2
+test append-3.9 {append \xC0 \x80} -body {
+    set x [testbytestring \x80]
+    string length [testbytestring \xC0]$x
+} -result 2
 
 test append-4.1 {lappend command} {
     unset -nocomplain x
