@@ -70,7 +70,7 @@ static void		SetUnicodeObj(Tcl_Obj *objPtr,
 static int		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 
-#define ISCONTBYTEORLOWERSURROGATE(bytes) ((bytes) \
+#define ISCONTINUATION(bytes) ((bytes) \
 	&& ((((bytes)[0] & 0xC0) == 0x80) || (((bytes)[0] == '\xED') \
 	&& (((bytes)[1] & 0xF0) == 0xB0) && (((bytes)[2] & 0xC0) == 0x80))))
 
@@ -1225,7 +1225,7 @@ Tcl_AppendLimitedToObj(
 
     /* If appended string starts with a continuation byte or a lower surrogate,
      * force objPtr to unicode representation. See [7f1162a867] */
-    if (ISCONTBYTEORLOWERSURROGATE(bytes)) {
+    if (ISCONTINUATION(bytes)) {
 	Tcl_GetUnicode(objPtr);
     }
     if (stringPtr->hasUnicode && stringPtr->numChars > 0) {
@@ -1428,8 +1428,8 @@ Tcl_AppendObjToObj(
     /* If appended string starts with a continuation byte or a lower surrogate,
      * force objPtr to unicode representation. See [7f1162a867]
      * This fixes append-3.4, append-3.7 and utf-1.18 testcases. */
-    if (ISCONTBYTEORLOWERSURROGATE(appendObjPtr->bytes)) {
-	Tcl_GetUnicodeFromObj(objPtr, &numChars);
+    if (ISCONTINUATION(appendObjPtr->bytes)) {
+	Tcl_GetUnicode(objPtr);
     }
     /*
      * If objPtr has a valid Unicode rep, then get a Unicode string from
