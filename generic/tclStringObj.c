@@ -1415,6 +1415,14 @@ Tcl_AppendObjToObj(
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
+    bytes = Tcl_GetString(appendObjPtr);
+    /* If appended string starts with a continuation byte or a lower surrogate,
+     * force objPtr to unicode representation. See [7f1162a867]
+     * This fixes append-3.4, append-3.7 and utf-1.18 testcases. */
+    if (((bytes[0] & 0xC0) == 0x80) || ((bytes[0] == '\xED')
+		&& ((bytes[1] & 0xF0) == 0xB0) && ((bytes[2] & 0xC0) == 0x80))) {
+	Tcl_GetUnicodeFromObj(objPtr, &numChars);
+    }
     /*
      * If objPtr has a valid Unicode rep, then get a Unicode string from
      * appendObjPtr and append it.
