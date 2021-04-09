@@ -2451,6 +2451,9 @@ declare 0 win {
 declare 1 win {
     char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
 }
+declare 3 win {
+    void Tcl_WinConvertError(unsigned errCode)
+}
 
 ################################
 # Mac OS X specific functions
