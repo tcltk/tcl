@@ -70,6 +70,11 @@ static void		SetUnicodeObj(Tcl_Obj *objPtr,
 static int		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 
+#define ISCONTBYTEORLOWERSURROGATE(bytes) ((bytes) \
+	&& ((((bytes)[0] & 0xC0) == 0x80) || (((bytes)[0] == '\xED') \
+	&& (((bytes)[1] & 0xF0) == 0xB0) && (((bytes)[2] & 0xC0) == 0x80))))
+
+
 /*
  * The structure below defines the string Tcl object type by means of
  * functions that can be invoked by generic object code.
@@ -1218,6 +1223,11 @@ Tcl_AppendLimitedToObj(
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
+    /* If appended string starts with a continuation byte or a lower surrogate,
+     * force objPtr to unicode representation. See [7f1162a867] */
+    if (ISCONTBYTEORLOWERSURROGATE(bytes)) {
+	Tcl_GetUnicode(objPtr);
+    }
     if (stringPtr->hasUnicode && stringPtr->numChars > 0) {
 	AppendUtfToUnicodeRep(objPtr, bytes, toCopy);
     } else {
@@ -1415,12 +1425,10 @@ Tcl_AppendObjToObj(
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
-    bytes = Tcl_GetString(appendObjPtr);
     /* If appended string starts with a continuation byte or a lower surrogate,
      * force objPtr to unicode representation. See [7f1162a867]
      * This fixes append-3.4, append-3.7 and utf-1.18 testcases. */
-    if (((bytes[0] & 0xC0) == 0x80) || ((bytes[0] == '\xED')
-		&& ((bytes[1] & 0xF0) == 0xB0) && ((bytes[2] & 0xC0) == 0x80))) {
+    if (ISCONTBYTEORLOWERSURROGATE(appendObjPtr->bytes)) {
 	Tcl_GetUnicodeFromObj(objPtr, &numChars);
     }
     /*
