@@ -186,9 +186,9 @@ EXTERN void *		TclpAlloc(size_t size);
 /* 74 */
 EXTERN void		TclpFree(void *ptr);
 /* 75 */
-EXTERN Tcl_WideUInt	TclpGetClicks(void);
+EXTERN unsigned long long TclpGetClicks(void);
 /* 76 */
-EXTERN Tcl_WideUInt	TclpGetSeconds(void);
+EXTERN unsigned long long TclpGetSeconds(void);
 /* Slot 77 is reserved */
 /* Slot 78 is reserved */
 /* Slot 79 is reserved */
@@ -501,7 +501,9 @@ EXTERN Var *		TclVarHashCreateVar(TclVarHashTable *tablePtr,
 /* 235 */
 EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
 				Namespace *nsPtr);
-/* Slot 236 is reserved */
+/* 236 */
+EXTERN void		TclAppendUnicodeToObj(Tcl_Obj *objPtr,
+				const Tcl_UniChar *unicode, size_t length);
 /* 237 */
 EXTERN int		TclResetCancellation(Tcl_Interp *interp, int force);
 /* 238 */
@@ -570,17 +572,14 @@ EXTERN int		TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
 				Tcl_Obj *part2Ptr, const int flags);
 /* 257 */
-EXTERN void		TclStaticPackage(Tcl_Interp *interp,
-				const char *pkgName,
-				Tcl_PackageInitProc *initProc,
-				Tcl_PackageInitProc *safeInitProc);
+EXTERN void		TclStaticLibrary(Tcl_Interp *interp,
+				const char *prefix,
+				Tcl_LibraryInitProc *initProc,
+				Tcl_LibraryInitProc *safeInitProc);
 /* 258 */
 EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj);
 /* 259 */
-EXTERN void		TclAppendUnicodeToObj(Tcl_Obj *objPtr,
-				const Tcl_UniChar *unicode, size_t length);
-/* 260 */
 EXTERN unsigned char *	TclGetBytesFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, size_t *lengthPtr);
 
@@ -663,8 +662,8 @@ typedef struct TclIntStubs {
     void (*reserved72)(void);
     void (*reserved73)(void);
     void (*tclpFree) (void *ptr); /* 74 */
-    Tcl_WideUInt (*tclpGetClicks) (void); /* 75 */
-    Tcl_WideUInt (*tclpGetSeconds) (void); /* 76 */
+    unsigned long long (*tclpGetClicks) (void); /* 75 */
+    unsigned long long (*tclpGetSeconds) (void); /* 76 */
     void (*reserved77)(void);
     void (*reserved78)(void);
     void (*reserved79)(void);
@@ -824,7 +823,7 @@ typedef struct TclIntStubs {
     void (*tclGetSrcInfoForPc) (CmdFrame *contextPtr); /* 233 */
     Var * (*tclVarHashCreateVar) (TclVarHashTable *tablePtr, const char *key, int *newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
-    void (*reserved236)(void);
+    void (*tclAppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, size_t length); /* 236 */
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
     int (*tclNRInterpProc) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, int skip, ProcErrorProc *errorProc); /* 239 */
@@ -845,10 +844,9 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclPtrIncrObjVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, const int flags); /* 254 */
     int (*tclPtrObjMakeUpvar) (Tcl_Interp *interp, Tcl_Var otherPtr, Tcl_Obj *myNamePtr, int myFlags); /* 255 */
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 256 */
-    void (*tclStaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 257 */
+    void (*tclStaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc); /* 257 */
     Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
-    void (*tclAppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, size_t length); /* 259 */
-    unsigned char * (*tclGetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, size_t *lengthPtr); /* 260 */
+    unsigned char * (*tclGetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, size_t *lengthPtr); /* 259 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1219,7 +1217,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclVarHashCreateVar) /* 234 */
 #define TclInitVarHashTable \
 	(tclIntStubsPtr->tclInitVarHashTable) /* 235 */
-/* Slot 236 is reserved */
+#define TclAppendUnicodeToObj \
+	(tclIntStubsPtr->tclAppendUnicodeToObj) /* 236 */
 #define TclResetCancellation \
 	(tclIntStubsPtr->tclResetCancellation) /* 237 */
 #define TclNRInterpProc \
@@ -1260,23 +1259,21 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclPtrObjMakeUpvar) /* 255 */
 #define TclPtrUnsetVar \
 	(tclIntStubsPtr->tclPtrUnsetVar) /* 256 */
-#define TclStaticPackage \
-	(tclIntStubsPtr->tclStaticPackage) /* 257 */
+#define TclStaticLibrary \
+	(tclIntStubsPtr->tclStaticLibrary) /* 257 */
 #define TclpCreateTemporaryDirectory \
 	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
-#define TclAppendUnicodeToObj \
-	(tclIntStubsPtr->tclAppendUnicodeToObj) /* 259 */
 #define TclGetBytesFromObj \
-	(tclIntStubsPtr->tclGetBytesFromObj) /* 260 */
+	(tclIntStubsPtr->tclGetBytesFromObj) /* 259 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
 
 #if defined(USE_TCL_STUBS)
-#undef Tcl_StaticPackage
-#define Tcl_StaticPackage \
-	(tclIntStubsPtr->tclStaticPackage)
+#undef Tcl_StaticLibrary
+#define Tcl_StaticLibrary \
+	(tclIntStubsPtr->tclStaticLibrary)
 #endif /* defined(USE_TCL_STUBS) */
 
 #undef TCL_STORAGE_CLASS

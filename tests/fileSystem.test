@@ -167,7 +167,7 @@ test filesystem-1.12 {file new native path} {} {
 	}
     }
     # If we reach here we've succeeded. We used to crash above.
-    expr 1
+    expr {1}
 } {1}
 test filesystem-1.13 {file normalisation} {win} {
     # This used to be broken

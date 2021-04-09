@@ -888,8 +888,8 @@ declare 243 {
 }
 # Removed in 9.0 (stub entry only)
 #declare 244  {
-#    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
-#	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+#    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
+#	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 #}
 # Removed in 9.0 (stub entry only)
 #declare 245 {
@@ -1209,7 +1209,7 @@ declare 325 {
     const char *Tcl_UtfAtIndex(const char *src, size_t index)
 }
 declare 326 {
-    int Tcl_UtfCharComplete(const char *src, size_t length)
+    int TclUtfCharComplete(const char *src, size_t length)
 }
 declare 327 {
     size_t Tcl_UtfBackslash(const char *src, int *readPtr, char *dst)
@@ -1221,10 +1221,10 @@ declare 329 {
     const char *Tcl_UtfFindLast(const char *src, int ch)
 }
 declare 330 {
-    const char *Tcl_UtfNext(const char *src)
+    const char *TclUtfNext(const char *src)
 }
 declare 331 {
-    const char *Tcl_UtfPrev(const char *src, const char *start)
+    const char *TclUtfPrev(const char *src, const char *start)
 }
 declare 332 {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding,
@@ -1643,8 +1643,8 @@ declare 443 {
 }
 declare 444 {
     int	Tcl_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *sym1,
-	    const char *sym2, Tcl_PackageInitProc **proc1Ptr,
-	    Tcl_PackageInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
+	    const char *sym2, Tcl_LibraryInitProc **proc1Ptr,
+	    Tcl_LibraryInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
 	    Tcl_FSUnloadFileProc **unloadProcPtr)
 }
 declare 445 {
@@ -2476,6 +2476,17 @@ declare 653 {
     unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 
+# TIP #575
+declare 654 {
+    int Tcl_UtfCharComplete(const char *src, size_t length)
+}
+declare 655 {
+    const char *Tcl_UtfNext(const char *src)
+}
+declare 656 {
+    const char *Tcl_UtfPrev(const char *src, const char *start)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
@@ -2490,10 +2501,6 @@ interface tclPlat
 #   (none)
 
 ################################
-# Windows specific functions
-#   (none)
-
-################################
 # Mac OS X specific functions
 
 declare 1 {
@@ -2505,6 +2512,12 @@ declare 2 {
     void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
 }
 
+################################
+# Windows specific functions
+declare 3 {
+    void Tcl_WinConvertError(unsigned errCode)
+}
+
 ##############################################################################
 
 # Public functions that are not accessible via the stubs table.
@@ -2514,8 +2527,8 @@ export {
     Tcl_Interp *interp)
 }
 export {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
     void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
@@ -2543,6 +2556,9 @@ export {
 }
 export {
     void Tcl_InitSubsystems(void)
+}
+export {
+    int TclZipfs_AppHook(int *argc, char ***argv)
 }
 
 # Local Variables:

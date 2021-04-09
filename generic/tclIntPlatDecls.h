@@ -40,8 +40,7 @@ extern "C" {
  * Exported function declarations:
  */
 
-/* 0 */
-EXTERN void		TclWinConvertError(int errCode);
+/* Slot 0 is reserved */
 /* 1 */
 EXTERN int		TclpCloseFile(TclFile file);
 /* 2 */
@@ -105,7 +104,7 @@ typedef struct TclIntPlatStubs {
     int magic;
     void *hooks;
 
-    void (*tclWinConvertError) (int errCode); /* 0 */
+    void (*reserved0)(void);
     int (*tclpCloseFile) (TclFile file); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
@@ -150,8 +149,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
  * Inline function declarations:
  */
 
-#define TclWinConvertError \
-	(tclIntPlatStubsPtr->tclWinConvertError) /* 0 */
+/* Slot 0 is reserved */
 #define TclpCloseFile \
 	(tclIntPlatStubsPtr->tclpCloseFile) /* 1 */
 #define TclpCreateCommandChannel \
@@ -207,7 +205,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
-#define TclWinConvertWSAError TclWinConvertError
+#define TclWinConvertWSAError Tcl_WinConvertError
+#define TclWinConvertError Tcl_WinConvertError
 
 #ifdef MAC_OSX_TCL /* not accessable on Win32/UNIX */
 MODULE_SCOPE int TclMacOSXGetFileAttribute(Tcl_Interp *interp,

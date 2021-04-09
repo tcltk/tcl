@@ -119,16 +119,16 @@ test string-2.10.$noComp {string compare with special index} {
     list [catch {run {string compare -length end-3 abcde abxyz}} msg] $msg
 } {1 {expected integer but got "end-3"}}
 test string-2.11.$noComp {string compare, unicode} {
-    run {string compare ab\u7266 ab\u7267}
+    run {string compare ab牦 ab牧}
 } -1
 test string-2.11.1.$noComp {string compare, unicode} {
-    run {string compare \334 \xDC}
+    run {string compare Ü Ü}
 } 0
 test string-2.11.2.$noComp {string compare, unicode} {
-    run {string compare \334 \xFC}
+    run {string compare Ü ü}
 } -1
 test string-2.11.3.$noComp {string compare, unicode} {
-    run {string compare \334\334\334\374\374 \334\334\334\334\334}
+    run {string compare ÜÜÜüü ÜÜÜÜÜ}
 } 1
 test string-2.12.$noComp {string compare, high bit} {
     # This test will fail if the underlying comparison
@@ -152,10 +152,10 @@ test string-2.15.$noComp {string compare -nocase} {
     run {string compare -nocase abcde abcde}
 } 0
 test string-2.15.1.$noComp {string compare -nocase} {
-    run {string compare -nocase \334 \xDC}
+    run {string compare -nocase Ü Ü}
 } 0
 test string-2.15.2.$noComp {string compare -nocase} {
-    run {string compare -nocase \334\334\334\374\xFC \334\334\334\334\334}
+    run {string compare -nocase ÜÜÜüü ÜÜÜÜÜ}
 } 0
 test string-2.16.$noComp {string compare -nocase with length} {
     run {string compare -length 2 -nocase abcde Abxyz}
@@ -172,7 +172,7 @@ test string-2.19.$noComp {string compare -nocase with excessive length} {
 test string-2.20.$noComp {string compare -len unicode} {
     # These are strings that are 6 BYTELENGTH long, but the length
     # shouldn't make a different because there are actually 3 CHARS long
-    run {string compare -len 5 \334\334\334 \334\334\374}
+    run {string compare -len 5 ÜÜÜ ÜÜü}
 } -1
 test string-2.21.$noComp {string compare -nocase with special index} {
     list [catch {run {string compare -nocase -length end-3 Abcde abxyz}} msg] $msg
@@ -237,7 +237,7 @@ test string-3.3.$noComp {string equal} {
     run {string equal abcde abcde}
 } 1
 test string-3.4.$noComp {string equal -nocase} {
-    run {string equal -nocase \334\334\334\334\374\374\374\374 \334\334\334\334\334\334\334\334}
+    run {string equal -nocase ÜÜÜÜüüüü ÜÜÜÜÜÜÜÜ}
 } 1
 test string-3.5.$noComp {string equal -nocase} {
     run {string equal -nocase abcde abdef}
@@ -274,19 +274,19 @@ test string-3.15.$noComp {string equal with special index} {
 } {1 {expected integer but got "end-3"}}
 
 test string-3.16.$noComp {string equal, unicode} {
-    run {string equal ab\u7266 ab\u7267}
+    run {string equal ab牦 ab牧}
 } 0
 test string-3.17.$noComp {string equal, unicode} {
-    run {string equal \334 \xDC}
+    run {string equal Ü Ü}
 } 1
 test string-3.18.$noComp {string equal, unicode} {
-    run {string equal \334 \xFC}
+    run {string equal Ü ü}
 } 0
 test string-3.19.$noComp {string equal, unicode} {
-    run {string equal \334\334\334\374\374 \334\334\334\334\334}
+    run {string equal ÜÜÜüü ÜÜÜÜÜ}
 } 0
 test string-3.20.$noComp {string equal, high bit} {
-    # This test will fail if the underlying comparaison
+    # This test will fail if the underlying comparison
     # is using signed chars instead of unsigned chars.
     # (like SunOS's default memcmp thus the compat/memcmp.c)
     run {string equal "\x80" "@"}
@@ -298,10 +298,10 @@ test string-3.21.$noComp {string equal -nocase} {
     run {string equal -nocase abcde Abdef}
 } 0
 test string-3.22.$noComp {string equal, -nocase unicode} {
-    run {string equal -nocase \334 \xDC}
+    run {string equal -nocase Ü Ü}
 } 1
 test string-3.23.$noComp {string equal, -nocase unicode} {
-    run {string equal -nocase \334\334\334\374\xFC \334\334\334\334\334}
+    run {string equal -nocase ÜÜÜüü ÜÜÜÜÜ}
 } 1
 test string-3.24.$noComp {string equal -nocase with length} {
     run {string equal -length 2 -nocase abcde Abxyz}
@@ -318,7 +318,7 @@ test string-3.27.$noComp {string equal -nocase with excessive length} {
 test string-3.28.$noComp {string equal -len unicode} {
     # These are strings that are 6 BYTELENGTH long, but the length
     # shouldn't make a different because there are actually 3 CHARS long
-    run {string equal -len 5 \334\334\334 \334\334\374}
+    run {string equal -len 5 ÜÜÜ ÜÜü}
 } 0
 test string-3.29.$noComp {string equal -nocase with special index} {
     list [catch {run {string equal -nocase -length end-3 Abcde abxyz}} msg] $msg
@@ -391,19 +391,19 @@ test string-4.8.$noComp {string first} {
     run {string first "" x123xx345xxx789xxx012}
 } -1
 test string-4.9.$noComp {string first, unicode} {
-    run {string first x abc\u7266x}
+    run {string first x abc牦x}
 } 4
 test string-4.10.$noComp {string first, unicode} {
-    run {string first \u7266 abc\u7266x}
+    run {string first 牦 abc牦x}
 } 3
 test string-4.11.$noComp {string first, start index} {
-    run {string first \u7266 abc\u7266x 3}
+    run {string first 牦 abc牦x 3}
 } 3
 test string-4.12.$noComp {string first, start index} -body {
-    run {string first \u7266 abc\u7266x 4}
+    run {string first 牦 abc牦x 4}
 } -result -1
 test string-4.13.$noComp {string first, start index} -body {
-    run {string first \u7266 abc\u7266x end-2}
+    run {string first 牦 abc牦x end-2}
 } -result 3
 test string-4.14.$noComp {string first, negative start index} -body {
     run {string first b abc -1}
@@ -412,7 +412,7 @@ test string-4.15.$noComp {string first, ability to two-byte encoded utf-8 chars}
     # Test for a bug in Tcl 8.3 where test for all-single-byte-encoded
     # strings was incorrect, leading to an index returned by [string first]
     # which pointed past the end of the string.
-    set uchar \u057E    ;# character with two-byte encoding in utf-8
+    set uchar վ    ;# character with two-byte encoding in utf-8
     run {string first % %#$uchar$uchar#$uchar$uchar#% 3}
 } -result 8
 test string-4.16.$noComp {string first, normal string vs pure unicode string} -body {
@@ -469,13 +469,13 @@ test string-5.9.$noComp {string index} {
     run {string index abc end-1}
 } b
 test string-5.10.$noComp {string index, unicode} {
-    run {string index abc\u7266d 4}
+    run {string index abc牦d 4}
 } d
 test string-5.11.$noComp {string index, unicode} {
-    run {string index abc\u7266d 3}
-} \u7266
+    run {string index abc牦d 3}
+} 牦
 test string-5.12.$noComp {string index, unicode over char length, under byte length} -body {
-    run {string index \334\374\334\374 6}
+    run {string index ÜüÜü 6}
 } -result {}
 test string-5.13.$noComp {string index, bytearray object} {
     run {string index [binary format a5 fuz] 0}
@@ -551,7 +551,7 @@ test string-6.12.$noComp {string is alnum, true} {
 test string-6.13.$noComp {string is alnum, false} {
     list [run {string is alnum -failindex var abc1.23}] $var
 } {0 4}
-test string-6.14.$noComp {string is alnum, unicode} "run {string is alnum abc\xFC}" 1
+test string-6.14.$noComp {string is alnum, unicode} "run {string is alnum abcü}" 1
 test string-6.15.$noComp {string is alpha, true} {
     run {string is alpha abc}
 } 1
@@ -559,7 +559,7 @@ test string-6.16.$noComp {string is alpha, false} {
     list [run {string is alpha -fail var a1bcde}] $var
 } {0 1}
 test string-6.17.$noComp {string is alpha, unicode} {
-    run {string is alpha abc\374}
+    run {string is alpha abcü}
 } 1
 test string-6.18.$noComp {string is ascii, true} {
     run {string is ascii abc\x7Fend\x00}
@@ -583,7 +583,7 @@ test string-6.24.$noComp {string is digit, true} {
     run {string is digit 0123456789}
 } 1
 test string-6.25.$noComp {string is digit, false} {
-    list [run {string is digit -fail var 0123\xDC567}] $var
+    list [run {string is digit -fail var 0123Ü567}] $var
 } {0 4}
 test string-6.26.$noComp {string is digit, false} {
     list [run {string is digit -fail var +123567}] $var
@@ -592,7 +592,7 @@ test string-6.27.$noComp {string is double, true} {
     run {string is double 1}
 } 1
 test string-6.28.$noComp {string is double, true} {
-    run {string is double [expr double(1)]}
+    run {string is double [expr {double(1)}]}
 } 1
 test string-6.29.$noComp {string is double, true} {
     run {string is double 1.0}
@@ -667,7 +667,7 @@ test string-6.48.$noComp {string is integer, true} {
     run {string is integer +1234567890}
 } 1
 test string-6.49.$noComp {string is integer, true on type} {
-    run {string is integer [expr int(50.0)]}
+    run {string is integer [expr {int(50.0)}]}
 } 1
 test string-6.50.$noComp {string is integer, true} {
     run {string is integer [list -10]}
@@ -688,7 +688,7 @@ test string-6.55.$noComp {string is integer, no overflow possible} {
     run {string is integer +9223372036854775808}
 } 1
 test string-6.56.$noComp {string is integer, false} {
-    list [run {string is integer -fail var [expr double(1)]}] $var
+    list [run {string is integer -fail var [expr {double(1)}]}] $var
 } {0 1}
 test string-6.57.$noComp {string is integer, false} {
     list [run {string is integer -fail var "    "}] $var
@@ -706,7 +706,7 @@ test string-6.60.$noComp {string is lower, true} {
     run {string is lower abc}
 } 1
 test string-6.61.$noComp {string is lower, unicode true} {
-    run {string is lower abc\xFCue}
+    run {string is lower abcüue}
 } 1
 test string-6.62.$noComp {string is lower, false} {
     list [run {string is lower -fail var aBc}] $var
@@ -715,7 +715,7 @@ test string-6.63.$noComp {string is lower, false} {
     list [run {string is lower -fail var abc1}] $var
 } {0 3}
 test string-6.64.$noComp {string is lower, unicode false} {
-    list [run {string is lower -fail var ab\xDCUE}] $var
+    list [run {string is lower -fail var abÜUE}] $var
 } {0 2}
 test string-6.65.$noComp {string is space, true} {
     run {string is space " \t\n\v\f"}
@@ -753,7 +753,7 @@ test string-6.75.$noComp {string is upper, true} {
     run {string is upper ABC}
 } 1
 test string-6.76.$noComp {string is upper, unicode true} {
-    run {string is upper ABC\xDCUE}
+    run {string is upper ABCÜUE}
 } 1
 test string-6.77.$noComp {string is upper, false} {
     list [run {string is upper -fail var AbC}] $var
@@ -762,13 +762,13 @@ test string-6.78.$noComp {string is upper, false} {
     list [run {string is upper -fail var AB2C}] $var
 } {0 2}
 test string-6.79.$noComp {string is upper, unicode false} {
-    list [run {string is upper -fail var ABC\xFCue}] $var
+    list [run {string is upper -fail var ABCüue}] $var
 } {0 3}
 test string-6.80.$noComp {string is wordchar, true} {
     run {string is wordchar abc_123}
 } 1
 test string-6.81.$noComp {string is wordchar, unicode true} {
-    run {string is wordchar abc\xFCab\xDCAB\u5001\U1D7CA}
+    run {string is wordchar abcüabÜAB倁\U1D7CA}
 } 1
 test string-6.82.$noComp {string is wordchar, false} {
     list [run {string is wordchar -fail var abcd.ef}] $var
@@ -837,7 +837,7 @@ test string-6.95.$noComp {string is wideinteger, true} {
     run {string is wideinteger +1234567890}
 } 1
 test string-6.96.$noComp {string is wideinteger, true on type} {
-    run {string is wideinteger [expr wide(50.0)]}
+    run {string is wideinteger [expr {wide(50.0)}]}
 } 1
 test string-6.97.$noComp {string is wideinteger, true} {
     run {string is wideinteger [list -10]}
@@ -858,7 +858,7 @@ test string-6.102.$noComp {string is wideinteger, false on overflow} {
     list [run {string is wideinteger -fail var +9223372036854775808}] $var
 } {0 -1}
 test string-6.103.$noComp {string is wideinteger, false} {
-    list [run {string is wideinteger -fail var [expr double(1)]}] $var
+    list [run {string is wideinteger -fail var [expr {double(1)}]}] $var
 } {0 1}
 test string-6.104.$noComp {string is wideinteger, false} {
     list [run {string is wideinteger -fail var "    "}] $var
@@ -893,7 +893,7 @@ test string-6.110.$noComp {string is entier, true} {
     run {string is entier +1234567890}
 } 1
 test string-6.111.$noComp {string is entier, true on type} {
-    run {string is entier [expr wide(50.0)]}
+    run {string is entier [expr {wide(50.0)}]}
 } 1
 test string-6.112.$noComp {string is entier, true} {
     run {string is entier [list -10]}
@@ -914,7 +914,7 @@ test string-6.117.$noComp {string is entier, false} {
     list [run {string is entier -fail var 123123123123123123123123123123123123123123123123123123123123123123123123123123123123abc}] $var
 } {0 84}
 test string-6.118.$noComp {string is entier, false} {
-    list [run {string is entier -fail var [expr double(1)]}] $var
+    list [run {string is entier -fail var [expr {double(1)}]}] $var
 } {0 1}
 test string-6.119.$noComp {string is entier, false} {
     list [run {string is entier -fail var "    "}] $var
@@ -981,22 +981,22 @@ test string-7.6.$noComp {string last} {
     run {string las x xxxx123xx345x678}
 } 12
 test string-7.7.$noComp {string last, unicode} {
-    run {string las x xxxx12\u7266xx345x678}
+    run {string las x xxxx12牦xx345x678}
 } 12
 test string-7.8.$noComp {string last, unicode} {
-    run {string las \u7266 xxxx12\u7266xx345x678}
+    run {string las 牦 xxxx12牦xx345x678}
 } 6
 test string-7.9.$noComp {string last, stop index} {
-    run {string las \u7266 xxxx12\u7266xx345x678}
+    run {string las 牦 xxxx12牦xx345x678}
 } 6
 test string-7.10.$noComp {string last, unicode} {
-    run {string las \u7266 xxxx12\u7266xx345x678}
+    run {string las 牦 xxxx12牦xx345x678}
 } 6
 test string-7.11.$noComp {string last, start index} {
-    run {string last \u7266 abc\u7266x 3}
+    run {string last 牦 abc牦x 3}
 } 3
 test string-7.12.$noComp {string last, start index} {
-    run {string last \u7266 abc\u7266x 2}
+    run {string last 牦 abc牦x 2}
 } -1
 test string-7.13.$noComp {string last, start index} {
     ## Constrain to last 'a' should work
@@ -1007,10 +1007,10 @@ test string-7.14.$noComp {string last, start index} {
     run {string last ba badbad end-2}
 } 0
 test string-7.15.$noComp {string last, start index} {
-    run {string last \334a \334ad\334ad 0}
+    run {string last Üa ÜadÜad 0}
 } -1
 test string-7.16.$noComp {string last, start index} {
-    run {string last \334a \334ad\334ad end-1}
+    run {string last Üa ÜadÜad end-1}
 } 3
 
 test string-8.1.$noComp {string bytelength} {
@@ -1039,7 +1039,7 @@ test string-9.4.$noComp {string length} {
     run {string le ""}
 } 0
 test string-9.5.$noComp {string length, unicode} {
-    run {string le "abcd\u7266"}
+    run {string le "abcd牦"}
 } 5
 test string-9.6.$noComp {string length, bytearray object} {
     run {string length [binary format a5 foo]}
@@ -1082,11 +1082,11 @@ test string-10.11.$noComp {string map, nulls} {
     run {string map {\x00 NULL blah \x00nix} {qwerty}}
 } {qwerty}
 test string-10.12.$noComp {string map, unicode} {
-    run {string map [list \374 ue UE \334] "a\374ueUE\000EU"}
-} aueue\334\0EU
+    run {string map [list ü ue UE Ü] "aüueUE\x00EU"}
+} aueueÜ\x00EU
 test string-10.13.$noComp {string map, -nocase unicode} {
-    run {string map -nocase [list \374 ue UE \334] "a\374ueUE\000EU"}
-} aue\334\334\0EU
+    run {string map -nocase [list ü ue UE Ü] "aüueUE\x00EU"}
+} aueÜÜ\x00EU
 test string-10.14.$noComp {string map, -nocase null arguments} {
     run {string map -nocase {{} abc} foo}
 } foo
@@ -1290,7 +1290,7 @@ test string-11.32.$noComp {string match nocase} {
     run {string match -n a A}
 } 1
 test string-11.33.$noComp {string match nocase} {
-    run {string match -nocase a\334 A\374}
+    run {string match -nocase aÜ Aü}
 } 1
 test string-11.34.$noComp {string match nocase} {
     run {string match -nocase a*f ABCDEf}
@@ -1457,11 +1457,11 @@ test string-12.16.$noComp {string range} {
     run {string range abcdefghijklmnop end end-1}
 } {}
 test string-12.17.$noComp {string range, unicode} {
-    run {string range ab\u7266cdefghijklmnop 5 5}
+    run {string range ab牦cdefghijklmnop 5 5}
 } e
 test string-12.18.$noComp {string range, unicode} {
-    run {string range ab\u7266cdefghijklmnop 2 3}
-} \u7266c
+    run {string range ab牦cdefghijklmnop 2 3}
+} 牦c
 test string-12.19.$noComp {string range, bytearray object} {
     set b [binary format I* {0x50515253 0x52}]
     set r1 [run {string range $b 1 end-1}]
@@ -1544,15 +1544,15 @@ test string-13.11.$noComp {string repeat} {
     run {string repeat def 1}
 } def
 test string-13.12.$noComp {string repeat} {
-    run {string repeat ab\u7266cd 3}
-} ab\u7266cdab\u7266cdab\u7266cd
+    run {string repeat ab牦cd 3}
+} ab牦cdab牦cdab牦cd
 test string-13.13.$noComp {string repeat} {
     run {string repeat \x00 3}
 } \x00\x00\x00
 test string-13.14.$noComp {string repeat} {
     # The string range will ensure us that string repeat gets a unicode string
-    run {string repeat [run {string range ab\u7266cd 2 3}] 3}
-} \u7266c\u7266c\u7266c
+    run {string repeat [run {string range ab牦cd 2 3}] 3}
+} 牦c牦c牦c
 
 test string-14.1.$noComp {string replace} {
     list [catch {run {string replace}} msg] $msg
@@ -1846,7 +1846,7 @@ test string-20.8.$noComp {[c61818e4c9] [string trimright] fails when UtfPrev is 
     lappend result [string map $m [run {string trimright $b [testbytestring \xA0]}]]
     lappend result [string map $m [run {string trimright $b \xE8\xA0}]]
     lappend result [string map $m [run {string trimright $b [testbytestring \xE8\xA0]}]]
-    lappend result [string map $m [run {string trimright $b \u0000}]]
+    lappend result [string map $m [run {string trimright $b \x00}]]
 } [list {*}[lrepeat 4 fooUV] {*}[lrepeat 2 fooU] {*}[lrepeat 2 foo] fooUV]
 
 test string-21.1.$noComp {string wordend} -body {
@@ -1897,6 +1897,33 @@ test string-21.15.$noComp {string wordend, unicode} -body {
 test string-21.16.$noComp {string wordend, unicode} -constraints fullutf -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
 } -result 6
+test string-21.17.$noComp {string trim, unicode} {
+    run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
+} "Hello world!"
+test string-21.18.$noComp {string trimleft, unicode} {
+    run {string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
+} "Hello world!\uD83D\uDE02"
+test string-21.19.$noComp {string trimright, unicode} {
+    run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD83D\uDE02}
+} "\uD83D\uDE02Hello world!"
+test string-21.20.$noComp {string trim, unicode} {
+    run {string trim "\uF602Hello world!\uF602" \uD83D\uDE02}
+} "\uF602Hello world!\uF602"
+test string-21.21.$noComp {string trimleft, unicode} {
+    run {string trimleft "\uF602Hello world!\uF602" \uD83D\uDE02}
+} "\uF602Hello world!\uF602"
+test string-21.22.$noComp {string trimright, unicode} {
+    run {string trimright "\uF602Hello world!\uF602" \uD83D\uDE02}
+} "\uF602Hello world!\uF602"
+test string-21.23.$noComp {string trim, unicode} {
+    run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
+test string-21.24.$noComp {string trimleft, unicode} {
+    run {string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
+test string-21.25.$noComp {string trimright, unicode} {
+    run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+} "\uD83D\uDE02Hello world!\uD83D\uDE02"
 
 test string-22.1.$noComp {string wordstart} -body {
     list [catch {run {string word a}} msg] $msg
@@ -2059,6 +2086,24 @@ test string-24.15.$noComp {string reverse command - pure bytearray} {
     binary scan [run {tcl::string::reverse [binary format H* 010203]}] H* x
     set x
 } 030201
+test string-24.16.$noComp {string reverse command - surrogates} {
+    run {string reverse \u0444bulb\uD83D\uDE02}
+} \uD83D\uDE02blub\u0444
+test string-24.17.$noComp {string reverse command - surrogates} {
+    run {string reverse \uD83D\uDE02hello\uD83D\uDE02}
+} \uD83D\uDE02olleh\uD83D\uDE02
+test string-24.18.$noComp {string reverse command - surrogates} {
+    set s \u0444bulb\uD83D\uDE02
+    # shim shimmery ...
+    string index $s 0
+    run {string reverse $s}
+} \uD83D\uDE02blub\u0444
+test string-24.19.$noComp {string reverse command - surrogates} {
+    set s \uD83D\uDE02hello\uD83D\uDE02
+    # shim shimmery ...
+    string index $s 0
+    run {string reverse $s}
+} \uD83D\uDE02olleh\uD83D\uDE02
 
 test string-25.1.$noComp {string is list} {
     run {string is list {a b c}}

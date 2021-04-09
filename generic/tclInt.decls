@@ -17,6 +17,7 @@ library tcl
 # Define the unsupported generic interfaces.
 
 interface tclInt
+scspec EXTERN
 
 # Declare each of the functions in the unsupported internal Tcl
 # interface.  These interfaces are allowed to changed between versions.
@@ -151,10 +152,10 @@ declare 74 {
     void TclpFree(void *ptr)
 }
 declare 75 {
-    Tcl_WideUInt TclpGetClicks(void)
+    unsigned long long TclpGetClicks(void)
 }
 declare 76 {
-    Tcl_WideUInt TclpGetSeconds(void)
+    unsigned long long TclpGetSeconds(void)
 }
 declare 81 {
     void *TclpRealloc(void *ptr, size_t size)
@@ -467,6 +468,7 @@ declare 232 {
 declare 233 {
     void TclGetSrcInfoForPc(CmdFrame *contextPtr)
 }
+
 # Exports for VarReform compat: Itcl, XOTcl like to peek into our varTables :(
 declare 234 {
     Var *TclVarHashCreateVar(TclVarHashTable *tablePtr, const char *key,
@@ -475,10 +477,17 @@ declare 234 {
 declare 235 {
     void TclInitVarHashTable(TclVarHashTable *tablePtr, Namespace *nsPtr)
 }
+# TIP 542
+declare 236 {
+    void TclAppendUnicodeToObj(Tcl_Obj *objPtr,
+	    const Tcl_UniChar *unicode, size_t length)
+}
+
 # TIP #285: Script cancellation support.
 declare 237 {
     int TclResetCancellation(Tcl_Interp *interp, int force)
 }
+
 # NRE functions for "rogue" extensions to exploit NRE; they will need to
 # include NRE.h too.
 declare 238 {
@@ -567,10 +576,9 @@ declare 256 {
     int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
 	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
 }
-
 declare 257 {
-    void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+    void TclStaticLibrary(Tcl_Interp *interp, const char *prefix,
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 
 # TIP 431: temporary directory creation function
@@ -578,13 +586,8 @@ declare 258 {
     Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 	    Tcl_Obj *basenameObj)
 }
-# TIP 542
-declare 259 {
-    void TclAppendUnicodeToObj(Tcl_Obj *objPtr,
-	    const Tcl_UniChar *unicode, size_t length)
-}
 
-declare 260 {
+declare 259 {
     unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    size_t *lengthPtr)
 }
@@ -599,9 +602,10 @@ interface tclIntPlat
 ################################
 # Platform specific functions
 
-declare 0 {
-    void TclWinConvertError(int errCode)
-}
+# Removed in 9.0
+#declare 0 {unix win} {
+#    void TclWinConvertError(unsigned errCode)
+#}
 declare 1 {
     int TclpCloseFile(TclFile file)
 }

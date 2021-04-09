@@ -148,9 +148,9 @@ TCL_VFS_ROOT		= libtcl.vfs
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 TCL_DLL_FILE		= @TCL_DLL_FILE@
 TCL_LIB_FILE		= @TCL_LIB_FILE@
-DDE_DLL_FILE		= tcldde$(DDEVER)${DLLSUFFIX}
+DDE_DLL_FILE		= tcl9dde$(DDEVER)${DLLSUFFIX}
 DDE_LIB_FILE		= @LIBPREFIX@tcldde$(DDEVER)${DLLSUFFIX}${LIBSUFFIX}
-REG_DLL_FILE		= tclregistry$(REGVER)${DLLSUFFIX}
+REG_DLL_FILE		= tcl9registry$(REGVER)${DLLSUFFIX}
 REG_LIB_FILE		= @LIBPREFIX@tclregistry$(REGVER)${DLLSUFFIX}${LIBSUFFIX}
 TEST_DLL_FILE		= tcltest$(VER)${DLLSUFFIX}
 TEST_EXE_FILE		= tcltest${EXESUFFIX}
@@ -524,15 +524,6 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	@mkdir -p ${TCL_VFS_PATH}
 	@echo "creating ${TCL_VFS_PATH} (prepare compression)"
 	@( \
-	  $(LN) $$(find $(TOP_DIR)/library/* -maxdepth 0 -type f) ${TCL_VFS_PATH}/ && \
-	  (for D in $$(find $(TOP_DIR)/library/* -maxdepth 0 -type d); do \
-	    mkdir -p "${TCL_VFS_PATH}/$$(basename $$D)"; \
-	    $(LN) -s $$D/* ${TCL_VFS_PATH}/$$(basename $$D)/; \
-	  done) && \
-	  $(LN) ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl && \
-	  $(LN) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde/ && \
-	  $(LN) ${REG_DLL_FILE} ${TCL_VFS_PATH}/registry/ \
-	) || ( \
 	  $(COPY) -a $(TOP_DIR)/library/* ${TCL_VFS_PATH}; \
 	  $(COPY) -a ${TCL_VFS_PATH}/manifest.txt ${TCL_VFS_PATH}/pkgIndex.tcl; \
 	  $(COPY) ${DDE_DLL_FILE} ${TCL_VFS_PATH}/dde; \
@@ -545,11 +536,16 @@ ${TCL_ZIP_FILE}:  ${ZIP_INSTALL_OBJS} ${DDE_DLL_FILE} ${REG_DLL_FILE}
 	  echo "${TCL_ZIP_FILE} successful created with $$zip" && \
 	  cd ..)
 
-$(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
+$(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) ${TCL_ZIP_FILE}
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
 	tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	$(COPY) tclsh.exe.manifest $(TCLSH).manifest
 	@VC_MANIFEST_EMBED_EXE@
+	@if test "${ZIPFS_BUILD}" = "2" ; then \
+		cat ${TCL_ZIP_FILE} >> ${TCLSH}; \
+		${NATIVE_ZIP} -A ${TCLSH} \
+		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
+	fi
 
 cat32.$(OBJEXT): cat.c
 	$(CC) -c $(CC_SWITCHES) -DUNICODE -D_UNICODE @DEPARG@ $(CC_OBJNAME)
@@ -649,11 +645,6 @@ tclMainW.${OBJEXT}: tclMain.c
 # TIP #430, ZipFS Support
 tclZipfs.${OBJEXT}: $(GENERIC_DIR)/tclZipfs.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl \
-	-DCFG_RUNTIME_PATH="\"$(bindir_native)\"" \
-	-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
-	-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
-	-DCFG_RUNTIME_LIBDIR="\"$(bindir_native)\"" \
-	-DCFG_RUNTIME_SCRDIR="\"$(TCL_LIBRARY_NATIVE)\"" \
 	$(ZLIB_INCLUDE) -I$(MINIZIP_DIR_NATIVE)  @DEPARG@ $(CC_OBJNAME)
 
 
@@ -679,7 +670,6 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DCFG_RUNTIME_INCDIR="\"$(includedir_native)\"" \
 		-DCFG_RUNTIME_DOCDIR="\"$(mandir_native)\"" \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
-		-DCFG_RUNTIME_ZIPFILE="\"$(TCL_ZIP_FILE)\"" \
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 
@@ -834,11 +824,6 @@ install-binaries: binaries
 	    $(COPY) $(REG_LIB_FILE) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
 	    fi
 
-install-libraries-zipfs-shared: libraries
-
-install-libraries-zipfs-static: install-libraries-zipfs-shared
-	$(COPY) ${TCL_ZIP_FILE} "$(LIB_INSTALL_DIR)"
-
 install-libraries: libraries install-tzdata install-msgs
 	@for i in "$(prefix)/lib" "$(INCLUDE_INSTALL_DIR)" \
 		"$(SCRIPT_INSTALL_DIR)" "$(MODULE_INSTALL_DIR)"; \
@@ -886,8 +871,8 @@ install-libraries: libraries install-tzdata install-msgs
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl "$(MODULE_INSTALL_DIR)/9.0/msgcat-1.7.1.tm";
 	@echo "Installing package tcltest 2.5.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/9.0/tcltest-2.5.4.tm";
-	@echo "Installing package platform 1.0.16 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/9.0/platform-1.0.16.tm";
+	@echo "Installing package platform 1.0.17 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/9.0/platform-1.0.17.tm";
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl "$(MODULE_INSTALL_DIR)/9.0/platform/shell-1.1.4.tm";
 	@echo "Installing encodings";
@@ -986,9 +971,8 @@ cleanhelp:
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
 	$(RM) $(TCLSH) $(CAT32) $(TEST_EXE_FILE) $(TEST_DLL_FILE) tcltest.cmd tcltest.sh
-	$(RM) *.pch *.ilk *.pdb
+	$(RM) *.pch *.ilk *.pdb *.zip
 	$(RM) minizip${HOST_EXEEXT} *.${HOST_OBJEXT}
-	$(RM) *.zip
 	$(RMDIR) *.vfs
 
 distclean: distclean-packages clean
@@ -1122,6 +1106,6 @@ html-tk: $(TCLSH)
 .PHONY: gdb depend cleanhelp clean distclean packages install-packages
 .PHONY: test-packages clean-packages distclean-packages genstubs html
 .PHONY: html-tcl html-tk
-.PHONY: iinstall-libraries-zipfs-shared install-libraries-zipfs-static tclzipfile
+.PHONY: tclzipfile
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

@@ -60,22 +60,33 @@
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
-#undef TclStaticPackage
+#undef TclStaticLibrary
 #undef Tcl_BackgroundError
-#define TclStaticPackage Tcl_StaticPackage
+#define TclStaticLibrary Tcl_StaticLibrary
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
+#define TclUnusedStubEntry 0
+#if !defined(_WIN32) && !defined(__CYGWIN__)
+#undef Tcl_WinConvertError
+#define Tcl_WinConvertError 0
+#endif
+
 
 #if TCL_UTF_MAX <= 3
 static void uniCodePanic() {
     Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
 }
 #   define Tcl_GetUnicode (int *(*)(Tcl_Obj *))(void *)uniCodePanic
-#   define Tcl_GetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, int *))(void *)uniCodePanic
+#   define Tcl_GetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, size_t *))(void *)uniCodePanic
 #   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const Tcl_UniChar *, size_t))(void *)uniCodePanic
 #   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, size_t))(void *)uniCodePanic
 #endif
+
+#define TclUtfCharComplete Tcl_UtfCharComplete
+#define TclUtfNext Tcl_UtfNext
+#define TclUtfPrev Tcl_UtfPrev
+
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
@@ -114,7 +125,6 @@ static void uniCodePanic() {
 #define TclBN_mp_neg mp_neg
 #define TclBN_mp_or mp_or
 #define TclBN_mp_radix_size mp_radix_size
-#define TclBN_mp_reverse mp_reverse
 #define TclBN_mp_read_radix mp_read_radix
 #define TclBN_mp_rshd mp_rshd
 #define TclBN_mp_set_i64 mp_set_i64
@@ -132,7 +142,7 @@ static void uniCodePanic() {
 #define TclBN_mp_xor mp_xor
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
-#define TclBN_s_mp_balance_mul mp_balance_mul
+#define TclBN_mp_balance_mul s_mp_balance_mul
 #define TclBN_mp_karatsuba_mul s_mp_karatsuba_mul
 #define TclBN_mp_karatsuba_sqr s_mp_karatsuba_sqr
 #define TclBN_s_mp_mul_digs s_mp_mul_digs
@@ -253,7 +263,6 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #else /* __CYGWIN__ */
 #   define TclWinGetTclInstance 0
 #   define TclpGetPid 0
-#   define TclWinConvertError 0
 #   define TclWinFlushDirtyChannels 0
 #   define TclWinNoBackslash 0
 #   define TclWinAddProcess 0
@@ -518,7 +527,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetSrcInfoForPc, /* 233 */
     TclVarHashCreateVar, /* 234 */
     TclInitVarHashTable, /* 235 */
-    0, /* 236 */
+    TclAppendUnicodeToObj, /* 236 */
     TclResetCancellation, /* 237 */
     TclNRInterpProc, /* 238 */
     TclNRInterpProcCore, /* 239 */
@@ -539,16 +548,15 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
-    TclStaticPackage, /* 257 */
+    TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
-    TclAppendUnicodeToObj, /* 259 */
-    TclGetBytesFromObj, /* 260 */
+    TclGetBytesFromObj, /* 259 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-    TclWinConvertError, /* 0 */
+    0, /* 0 */
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
     TclpCreatePipe, /* 3 */
@@ -587,6 +595,7 @@ static const TclPlatStubs tclPlatStubs = {
     0, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
     Tcl_MacOSXNotifierAddRunLoopMode, /* 2 */
+    Tcl_WinConvertError, /* 3 */
 };
 
 const TclTomMathStubs tclTomMathStubs = {
@@ -1010,12 +1019,12 @@ const TclStubs tclStubs = {
     Tcl_UniCharToUpper, /* 323 */
     Tcl_UniCharToUtf, /* 324 */
     Tcl_UtfAtIndex, /* 325 */
-    Tcl_UtfCharComplete, /* 326 */
+    TclUtfCharComplete, /* 326 */
     Tcl_UtfBackslash, /* 327 */
     Tcl_UtfFindFirst, /* 328 */
     Tcl_UtfFindLast, /* 329 */
-    Tcl_UtfNext, /* 330 */
-    Tcl_UtfPrev, /* 331 */
+    TclUtfNext, /* 330 */
+    TclUtfPrev, /* 331 */
     Tcl_UtfToExternal, /* 332 */
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
@@ -1338,6 +1347,9 @@ const TclStubs tclStubs = {
     Tcl_GetStringFromObj, /* 651 */
     Tcl_GetUnicodeFromObj, /* 652 */
     Tcl_GetByteArrayFromObj, /* 653 */
+    Tcl_UtfCharComplete, /* 654 */
+    Tcl_UtfNext, /* 655 */
+    Tcl_UtfPrev, /* 656 */
 };
 
 /* !END!: Do not edit above this line. */

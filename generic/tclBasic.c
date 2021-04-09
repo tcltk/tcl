@@ -744,6 +744,10 @@ Tcl_CreateInterp(void)
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
 
+#ifdef _WIN32
+#   define getenv(x) _wgetenv(L##x) /* On Windows, use _wgetenv below */
+#endif
+
     /* TIP #268 */
 #if (TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE)
     if (getenv("TCL_PKG_PREFER_LATEST") == NULL) {
@@ -3431,6 +3435,8 @@ Tcl_DeleteCommandFromToken(
 
     if (cmdPtr->tracePtr != NULL) {
 	CommandTrace *tracePtr;
+	/* Note that CallCommandTraces() never frees cmdPtr, that's
+	 * done just before Tcl_DeleteCommandFromToken() returns  */
 	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
 
 	/*
@@ -3659,6 +3665,8 @@ CallCommandTraces(
 
     cmdPtr->flags &= ~CMD_TRACE_ACTIVE;
     cmdPtr->refCount--;
+    /* Don't free cmdPtr here, since the caller of CallCommandTraces()
+     * is responsible for that. See Tcl_DeleteCommandFromToken() */
     iPtr->activeCmdTracePtr = active.nextPtr;
     Tcl_Release(iPtr);
     return result;
@@ -7151,7 +7159,16 @@ ExprAbsFunc(
 	    }
 	    goto unChanged;
 	} else if (l == WIDE_MIN) {
-	    if (mp_init_i64(&big, l) != MP_OKAY) {
+	    if (sizeof(Tcl_WideInt) > sizeof(int64_t)) {
+		Tcl_WideUInt ul = -(Tcl_WideUInt)WIDE_MIN;
+		if (mp_init(&big) != MP_OKAY || mp_unpack(&big, 1, 1,
+			sizeof(Tcl_WideInt), 0, 0, &ul) != MP_OKAY) {
+		    return TCL_ERROR;
+		}
+		if (mp_neg(&big, &big) != MP_OKAY) {
+		    return TCL_ERROR;
+		}
+	    } else if (mp_init_i64(&big, l) != MP_OKAY) {
 		return TCL_ERROR;
 	    }
 	    goto tooLarge;

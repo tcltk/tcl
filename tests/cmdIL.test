@@ -151,17 +151,17 @@ test cmdIL-1.36 {lsort -stride and -index: Bug 2918962} {
     }
 } {{{b i g} 12345} {{d e m o} 34512} {{c o d e} 54321} {{b l a h} 94729}}
 test cmdIL-1.37 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
-    lsort -ascii [list \0 \x7f \x80 \uffff]
-} [list \0 \x7f \x80 \uffff]
+    lsort -ascii [list \x00 \x7F \x80 \uFFFF]
+} [list \x00 \x7F \x80 \uFFFF]
 test cmdIL-1.38 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
-    lsort -ascii -nocase [list \0 \x7f \x80 \uffff]
-} [list \0 \x7f \x80 \uffff]
+    lsort -ascii -nocase [list \x00 \x7F \x80 \uFFFF]
+} [list \x00 \x7F \x80 \uFFFF]
 test cmdIL-1.39 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
-    lsort -ascii [list \0 \x7f \x80 \U01ffff \uffff]
-} [list \0 \x7f \x80 \uffff \U01ffff]
+    lsort -ascii [list \x00 \x7F \x80 \U01ffff \uFFFF]
+} [list \x00 \x7F \x80 \uFFFF \U01ffff]
 test cmdIL-1.40 {Tcl_LsortObjCmd procedure, Bug 8e1e31eac0fd6b6c} {
-    lsort -ascii -nocase [list \0 \x7f \x80 \U01ffff \uffff]
-} [list \0 \x7f \x80 \uffff \U01ffff]
+    lsort -ascii -nocase [list \x00 \x7F \x80 \U01ffff \uFFFF]
+} [list \x00 \x7F \x80 \uFFFF \U01FFFF]
 test cmdIL-1.41 {lsort -stride and -index} -body {
     lsort -stride 2 -index -2 {a 2 b 1}
 } -returnCodes error -result {index "-2" out of range}
@@ -177,7 +177,7 @@ test cmdIL-2.1 {MergeSort and MergeLists procedures} -setup {
     set r 1435753299
     proc rand {} {
 	global r
-	set r [expr {(16807 * $r) % (0x7fffffff)}]
+	set r [expr {(16807 * $r) % (0x7FFFFFFF)}]
     }
 } -body {
     for {set i 0} {$i < 150} {incr i} {
@@ -396,16 +396,16 @@ test cmdIL-4.23 {DictionaryCompare procedure, case} {
 } {ABcd AbCd}
 test cmdIL-4.24 {DictionaryCompare procedure, international characters} {hasIsoLocale} {
     ::tcltest::set_iso8859_1_locale
-    set result [lsort -dictionary "a b c A B C \xe3 \xc4"]
+    set result [lsort -dictionary "a b c A B C ã Ä"]
     ::tcltest::restore_locale
     set result
-} "A a B b C c \xe3 \xc4"
+} "A a B b C c ã Ä"
 test cmdIL-4.25 {DictionaryCompare procedure, international characters} {hasIsoLocale} {
     ::tcltest::set_iso8859_1_locale
-    set result [lsort -dictionary "a23\xe3 a23\xc5 a23\xe4"]
+    set result [lsort -dictionary "a23ã a23Å a23ä"]
     ::tcltest::restore_locale
     set result
-} "a23\xe3 a23\xe4 a23\xc5"
+} "a23ã a23ä a23Å"
 test cmdIL-4.26 {DefaultCompare procedure, signed characters} {
     set l [lsort [list "abc\200" "abc"]]
     set viewlist {}
@@ -472,10 +472,10 @@ test cmdIL-4.36 {SortCompare procedure, UTF-8 with -nocase option} {
     scan [lsort -ascii -nocase [list \u101 \u100]] %c%c%c
 } {257 32 256}
 test cmdIL-4.37 {SortCompare procedure, UTF-8 with -nocase option} {
-    scan [lsort -ascii -nocase [list a\u0000a a]] %c%c%c%c%c
+    scan [lsort -ascii -nocase [list a\x00a a]] %c%c%c%c%c
 } {97 32 97 0 97}
 test cmdIL-4.38 {SortCompare procedure, UTF-8 with -nocase option} {
-    scan [lsort -ascii -nocase [list a a\u0000a]] %c%c%c%c%c
+    scan [lsort -ascii -nocase [list a a\x00a]] %c%c%c%c%c
 } {97 32 97 0 97}
 
 test cmdIL-5.1 {lsort with list style index} {
