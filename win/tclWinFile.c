@@ -209,7 +209,7 @@ WinLink(
 	 * Invalid file.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
 
@@ -233,7 +233,7 @@ WinLink(
 	 * Invalid file.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
 
@@ -247,7 +247,7 @@ WinLink(
 	 * The target doesn't exist.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
     } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 	/*
 	 * It is a file.
@@ -262,7 +262,7 @@ WinLink(
 		return 0;
 	    }
 
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	} else if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    if (CreateSymbolicLinkW(linkSourcePath, linkTargetPath,
 		    0x2 /* SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */)) {
@@ -272,7 +272,7 @@ WinLink(
 
 		return 0;
 	    } else {
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 	    }
 	} else {
 	    Tcl_SetErrno(ENODEV);
@@ -327,7 +327,7 @@ WinReadLink(
 	 * Invalid file.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return NULL;
     }
 
@@ -341,7 +341,7 @@ WinReadLink(
 	 * The source doesn't exist.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return NULL;
 
     } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
@@ -502,7 +502,7 @@ TclWinSymLinkDelete(
 	     * Error setting junction.
 	     */
 
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    CloseHandle(hFile);
 	} else {
 	    CloseHandle(hFile);
@@ -695,7 +695,7 @@ NativeReadReparse(
 	 * Error creating directory.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
 
@@ -709,7 +709,7 @@ NativeReadReparse(
 	 * Error setting junction.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	CloseHandle(hFile);
 	return -1;
     }
@@ -751,7 +751,7 @@ NativeWriteReparse(
 	 * Error creating directory.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
     hFile = CreateFileW(linkDirPath, GENERIC_WRITE, 0, NULL,
@@ -762,7 +762,7 @@ NativeWriteReparse(
 	 * Error creating directory.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
 
@@ -777,7 +777,7 @@ NativeWriteReparse(
 	 * Error setting junction.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	CloseHandle(hFile);
 	RemoveDirectoryW(linkDirPath);
 	return -1;
@@ -1057,7 +1057,7 @@ TclpMatchInDirectory(
 		return TCL_OK;
 	    }
 
-	    TclWinConvertError(err);
+	    Tcl_WinConvertError(err);
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"couldn't read directory \"%s\": %s",
@@ -1606,7 +1606,7 @@ NativeAccess(
 
 	DWORD lasterror = GetLastError();
 	if (lasterror != ERROR_SHARING_VIOLATION) {
-	    TclWinConvertError(lasterror);
+	    Tcl_WinConvertError(lasterror);
 	    return -1;
 	}
     }
@@ -1732,7 +1732,7 @@ NativeAccess(
 	     * to EACCES - just what we want!
 	     */
 
-	    TclWinConvertError((DWORD) error);
+	    Tcl_WinConvertError((DWORD) error);
 	    return -1;
 	}
 
@@ -1837,7 +1837,7 @@ NativeAccess(
 	     */
 
 	accessError:
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    if (sdPtr != NULL) {
 		HeapFree(GetProcessHeap(), 0, sdPtr);
 	    }
@@ -1932,7 +1932,7 @@ TclpObjChdir(
     result = SetCurrentDirectoryW(nativePath);
 
     if (result == 0) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
     return 0;
@@ -1971,7 +1971,7 @@ TclpGetCwd(
     WCHAR *native;
 
     if (GetCurrentDirectoryW(MAX_PATH, buffer) == 0) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "error getting working directory name: %s",
@@ -2136,12 +2136,12 @@ NativeStat(
 	    DWORD lasterror = GetLastError();
 
 	    if (lasterror != ERROR_SHARING_VIOLATION) {
-		TclWinConvertError(lasterror);
+		Tcl_WinConvertError(lasterror);
 		return -1;
 		}
 	    hFind = FindFirstFileW(nativePath, &ffd);
 	    if (hFind == INVALID_HANDLE_VALUE) {
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		return -1;
 	    }
 	    memcpy(&data, &ffd, sizeof(data));
@@ -2370,7 +2370,7 @@ TclpGetNativeCwd(
     WCHAR buffer[MAX_PATH];
 
     if (GetCurrentDirectoryW(MAX_PATH, buffer) == 0) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return NULL;
     }
 
@@ -3271,7 +3271,7 @@ TclpUtime(
 
     if (fileHandle == INVALID_HANDLE_VALUE ||
 	    !SetFileTime(fileHandle, NULL, &lastAccessTime, &lastModTime)) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	res = -1;
     }
     if (fileHandle != INVALID_HANDLE_VALUE) {
