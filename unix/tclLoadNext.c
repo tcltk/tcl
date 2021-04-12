@@ -133,7 +133,7 @@ FindSymbol(
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
-    Tcl_PackageInitProc *proc = NULL;
+    Tcl_LibraryInitProc *proc = NULL;
 
     if (symbol) {
 	char sym[strlen(symbol) + 2];

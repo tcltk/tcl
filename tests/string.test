@@ -1614,6 +1614,18 @@ test string-14.20.$noComp {string replace} {
     run {string replace [makeByteArray abcdefghijklmnop] end-10 end-2\
 	    [makeByteArray NEW]}
 } {abcdeNEWop}
+test string-14.21.$noComp {string replace (surrogates)} {
+    run {string replace \uD83D? 1 end \uDE02}
+} \uD83D\uDE02
+test string-14.22.$noComp {string replace (surrogates)} {
+    run {string replace ?\uDE02 0 end-1 \uD83D}
+} \uD83D\uDE02
+test string-14.23.$noComp {string replace \xC0 \x80} testbytestring {
+    run {string length [string replace [testbytestring \xC0]? 1 end [testbytestring \x80]]}
+} 2
+test string-14.24.$noComp {string replace \xC0 \x80} testbytestring {
+    run {string length [string replace ?[testbytestring \x80] 0 end-1 [testbytestring \xC0]]}
+} 2
 
 
 test stringComp-14.21.$noComp {Bug 82e7f67325} {
