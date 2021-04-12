@@ -513,15 +513,17 @@ FillEncodingFileMap(void)
  *---------------------------------------------------------------------------
  */
 
-/* This flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
-#define TCL_ENCODING_MODIFIED	0x20	/* Converting NULL bytes to 0xC0 0x80 */
+enum {
+    /* This flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
+    TCL_ENCODING_MODIFIED = 0x20, /* Converting NULL bytes to 0xC0 0x80 */
 
-/*
- * Since TCL_ENCODING_MODIFIED is only used for utf-8 and TCL_ENCODING_LE is
- * only used for utf-16/ucs-2, re-use the same value
- */
+    /*
+     * Since TCL_ENCODING_MODIFIED is only used for utf-8 and TCL_ENCODING_LE
+     * is only used for utf-16/ucs-2, re-use the same value
+     */
 
-#define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
+    TCL_ENCODING_LE = TCL_ENCODING_MODIFIED /* Little-endian encoding */
+};
 
 void
 TclInitEncodingSubsystem(void)

@@ -973,11 +973,11 @@ TransformWideSeekProc(
 
     if (parentWideSeekProc == NULL) {
 	/*
-	 * We're transferring to narrow seeks at this point; this is a bit complex
-	 * because we have to check whether the seek is possible first (i.e.
-	 * whether we are losing information in truncating the bits of the
-	 * offset). Luckily, there's a defined error for what happens when trying
-	 * to go out of the representable range.
+	 * We're transferring to narrow seeks at this point; this is a bit
+	 * complex because we have to check whether the seek is possible first
+	 * (i.e. whether we are losing information in truncating the bits of
+	 * the offset). Luckily, there's a defined error for what happens when
+	 * trying to go out of the representable range.
 	 */
 
 #ifndef TCL_NO_DEPRECATED

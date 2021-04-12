@@ -43,13 +43,13 @@ static int		ReflectBlock(ClientData clientData, int mode);
 static void		ReflectThread(ClientData clientData, int action);
 static int		ReflectEventRun(Tcl_Event *ev, int flags);
 static int		ReflectEventDelete(Tcl_Event *ev, ClientData cd);
-#endif
+#endif /* TCL_THREADS */
 static long long ReflectSeekWide(ClientData clientData,
 			    long long offset, int mode, int *errorCodePtr);
 #ifndef TCL_NO_DEPRECATED
 static int		ReflectSeek(ClientData clientData, long offset,
 			    int mode, int *errorCodePtr);
-#endif
+#endif /* !TCL_NO_DEPRECATED */
 static int		ReflectGetOption(ClientData clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
@@ -58,8 +58,8 @@ static int		ReflectSetOption(ClientData clientData,
 			    const char *newValue);
 static int		ReflectTruncate(ClientData clientData,
 			    long long length);
-static void     TimerRunRead(ClientData clientData);
-static void     TimerRunWrite(ClientData clientData);
+static void             TimerRunRead(ClientData clientData);
+static void             TimerRunWrite(ClientData clientData);
 
 /*
  * The C layer channel type/driver definition used by the reflection.
@@ -104,33 +104,27 @@ typedef struct {
 				 * Tcl level part of the channel. NULL here
 				 * signals the channel is dead because the
 				 * interpreter/thread containing its Tcl
-				 * command is gone.
-				 */
+				 * command is gone. */
 #if TCL_THREADS
-    Tcl_ThreadId thread;	/* Thread the 'interp' belongs to. == Handler thread */
-    Tcl_ThreadId owner;         /* Thread owning the structure.    == Channel thread */
+    Tcl_ThreadId thread;	/* Thread the 'interp' belongs to.
+                                 * == Handler thread */
+    Tcl_ThreadId owner;         /* Thread owning the structure.
+                                 * == Channel thread */
 #endif
     Tcl_Obj *cmd;		/* Callback command prefix */
     Tcl_Obj *methods;		/* Methods to append to command prefix */
     Tcl_Obj *name;		/* Name of the channel as created */
-
     int mode;			/* Mask of R/W mode */
     int interest;		/* Mask of events the channel is interested
 				 * in. */
-
     int dead;			/* Boolean signal that some operations
 				 * should no longer be attempted. */
-
-    Tcl_TimerToken readTimer;   /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is readable
-			        */
-    Tcl_TimerToken writeTimer;  /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is writable
-			        */
+    Tcl_TimerToken readTimer;   /* A token for the timer that is scheduled in
+                                 * order to call Tcl_NotifyChannel when the
+                                 * channel is readable */
+    Tcl_TimerToken writeTimer;  /* A token for the timer that is scheduled in
+                                 * order to call Tcl_NotifyChannel when the
+                                 * channel is writable */
 
     /*
      * Note regarding the usage of timers.
@@ -696,7 +690,8 @@ TclChanCreateObjCmd(
 	 * as the actual channel type.
 	 */
 
-	Tcl_ChannelType *clonePtr = (Tcl_ChannelType *)ckalloc(sizeof(Tcl_ChannelType));
+	Tcl_ChannelType *clonePtr = (Tcl_ChannelType *)
+                ckalloc(sizeof(Tcl_ChannelType));
 
 	memcpy(clonePtr, &tclRChannelType, sizeof(Tcl_ChannelType));
 
@@ -902,7 +897,7 @@ TclChanPostEventObjCmd(
      * have gone seriously haywire.
      */
 
-    chan = (Tcl_Channel)Tcl_GetHashValue(hPtr);
+    chan = (Tcl_Channel) Tcl_GetHashValue(hPtr);
     chanTypePtr = Tcl_GetChannelType(chan);
 
     /*
@@ -1171,7 +1166,7 @@ static int
 ReflectClose(
     ClientData clientData,
     Tcl_Interp *interp,
-	int flags)
+    int flags)
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
     int result;			/* Result code for 'close' */
@@ -2590,7 +2585,8 @@ static ReflectedChannelMap *
 GetReflectedChannelMap(
     Tcl_Interp *interp)
 {
-    ReflectedChannelMap *rcmPtr = (ReflectedChannelMap *)Tcl_GetAssocData(interp, RCMKEY, NULL);
+    ReflectedChannelMap *rcmPtr = (ReflectedChannelMap *)
+            Tcl_GetAssocData(interp, RCMKEY, NULL);
 
     if (rcmPtr == NULL) {
 	rcmPtr = (ReflectedChannelMap *)ckalloc(sizeof(ReflectedChannelMap));
@@ -2793,7 +2789,8 @@ GetThreadReflectedChannelMap(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->rcmPtr) {
-	tsdPtr->rcmPtr = (ReflectedChannelMap *)ckalloc(sizeof(ReflectedChannelMap));
+	tsdPtr->rcmPtr = (ReflectedChannelMap *)
+                ckalloc(sizeof(ReflectedChannelMap));
 	Tcl_InitHashTable(&tsdPtr->rcmPtr->map, TCL_STRING_KEYS);
 	Tcl_CreateThreadExitHandler(DeleteThreadReflectedChannelMap, NULL);
     }
@@ -2911,7 +2908,8 @@ DeleteThreadReflectedChannelMap(
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch)) {
 	Tcl_Channel chan = (Tcl_Channel)Tcl_GetHashValue(hPtr);
-	ReflectedChannel *rcPtr = (ReflectedChannel *)Tcl_GetChannelInstanceData(chan);
+	ReflectedChannel *rcPtr = (ReflectedChannel *)
+                Tcl_GetChannelInstanceData(chan);
 
 	MarkDead(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
