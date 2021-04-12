@@ -530,11 +530,10 @@ ByteCodeSetIntRep(
     Tcl_StoreIntRep(objPtr, typePtr, &ir);
 }
 
-#define ByteCodeGetIntRep(objPtr, typePtr, codePtr)			\
+#define ByteCodeGetIntRep(objPtr, typePtr, codePtr) \
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), (typePtr));			\
-	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;	\
+	const Tcl_ObjIntRep *irPtr = TclFetchIntRep((objPtr), (typePtr)); \
+	(codePtr) = irPtr ? (ByteCode *) irPtr->twoPtrValue.ptr1 : NULL; \
     } while (0)
 
 /*
@@ -543,318 +542,322 @@ ByteCodeSetIntRep(
  * tclCompile.c. Also, the order and number of the expression opcodes (e.g.,
  * INST_LOR) must match the entries in the array operatorStrings in
  * tclExecute.c.
+ *
+ * We make all uses of deprecated bytecodes warn... except for tclExecute.c,
+ * which has to deal with the consequences (and which normally is the cause of
+ * the deprecation).
  */
 
-/* Opcodes 0 to 9 */
-#define INST_DONE			0
-#define INST_PUSH1			1
-#define INST_PUSH4			2
-#define INST_POP			3
-#define INST_DUP			4
-#define INST_STR_CONCAT1		5
-#define INST_INVOKE_STK1		6
-#define INST_INVOKE_STK4		7
-#define INST_EVAL_STK			8
-#define INST_EXPR_STK			9
+#ifdef _BUILD_TCL_EXECUTE
+#define IS_DEPRECATED /* nothing */
+#else
+#define IS_DEPRECATED TCL_DEPRECATED_API("no longer used")
+#endif /* _BUILD_TCL_EXECUTE*/
 
-/* Opcodes 10 to 23 */
-#define INST_LOAD_SCALAR1		10
-#define INST_LOAD_SCALAR4		11
-#define INST_LOAD_SCALAR_STK		12
-#define INST_LOAD_ARRAY1		13
-#define INST_LOAD_ARRAY4		14
-#define INST_LOAD_ARRAY_STK		15
-#define INST_LOAD_STK			16
-#define INST_STORE_SCALAR1		17
-#define INST_STORE_SCALAR4		18
-#define INST_STORE_SCALAR_STK		19
-#define INST_STORE_ARRAY1		20
-#define INST_STORE_ARRAY4		21
-#define INST_STORE_ARRAY_STK		22
-#define INST_STORE_STK			23
+typedef enum TclBytecodeOpcode {
+    /* Opcodes 0 to 9 */
+    INST_DONE = 0,
+    INST_PUSH1 = 1,
+    INST_PUSH4 = 2,
+    INST_POP = 3,
+    INST_DUP = 4,
+    INST_STR_CONCAT1 = 5,
+    INST_INVOKE_STK1 = 6,
+    INST_INVOKE_STK4 = 7,
+    INST_EVAL_STK = 8,
+    INST_EXPR_STK = 9,
 
-/* Opcodes 24 to 33 */
-#define INST_INCR_SCALAR1		24
-#define INST_INCR_SCALAR_STK		25
-#define INST_INCR_ARRAY1		26
-#define INST_INCR_ARRAY_STK		27
-#define INST_INCR_STK			28
-#define INST_INCR_SCALAR1_IMM		29
-#define INST_INCR_SCALAR_STK_IMM	30
-#define INST_INCR_ARRAY1_IMM		31
-#define INST_INCR_ARRAY_STK_IMM		32
-#define INST_INCR_STK_IMM		33
+    /* Opcodes 10 to 23 */
+    INST_LOAD_SCALAR1 = 10,
+    INST_LOAD_SCALAR4 = 11,
+    INST_LOAD_SCALAR_STK = 12,
+    INST_LOAD_ARRAY1 = 13,
+    INST_LOAD_ARRAY4 = 14,
+    INST_LOAD_ARRAY_STK = 15,
+    INST_LOAD_STK = 16,
+    INST_STORE_SCALAR1 = 17,
+    INST_STORE_SCALAR4 = 18,
+    INST_STORE_SCALAR_STK = 19,
+    INST_STORE_ARRAY1 = 20,
+    INST_STORE_ARRAY4 = 21,
+    INST_STORE_ARRAY_STK = 22,
+    INST_STORE_STK = 23,
 
-/* Opcodes 34 to 39 */
-#define INST_JUMP1			34
-#define INST_JUMP4			35
-#define INST_JUMP_TRUE1			36
-#define INST_JUMP_TRUE4			37
-#define INST_JUMP_FALSE1		38
-#define INST_JUMP_FALSE4		39
+    /* Opcodes 24 to 33 */
+    INST_INCR_SCALAR1 = 24,
+    INST_INCR_SCALAR_STK = 25,
+    INST_INCR_ARRAY1 = 26,
+    INST_INCR_ARRAY_STK = 27,
+    INST_INCR_STK = 28,
+    INST_INCR_SCALAR1_IMM = 29,
+    INST_INCR_SCALAR_STK_IMM = 30,
+    INST_INCR_ARRAY1_IMM = 31,
+    INST_INCR_ARRAY_STK_IMM = 32,
+    INST_INCR_STK_IMM = 33,
 
-/* Opcodes 40 to 64 */
-#define INST_LOR			40
-#define INST_LAND			41
-#define INST_BITOR			42
-#define INST_BITXOR			43
-#define INST_BITAND			44
-#define INST_EQ				45
-#define INST_NEQ			46
-#define INST_LT				47
-#define INST_GT				48
-#define INST_LE				49
-#define INST_GE				50
-#define INST_LSHIFT			51
-#define INST_RSHIFT			52
-#define INST_ADD			53
-#define INST_SUB			54
-#define INST_MULT			55
-#define INST_DIV			56
-#define INST_MOD			57
-#define INST_UPLUS			58
-#define INST_UMINUS			59
-#define INST_BITNOT			60
-#define INST_LNOT			61
-#define INST_CALL_BUILTIN_FUNC1		62
-#define INST_CALL_FUNC1			63
-#define INST_TRY_CVT_TO_NUMERIC		64
+    /* Opcodes 34 to 39 */
+    INST_JUMP1 = 34,
+    INST_JUMP4 = 35,
+    INST_JUMP_TRUE1 = 36,
+    INST_JUMP_TRUE4 = 37,
+    INST_JUMP_FALSE1 = 38,
+    INST_JUMP_FALSE4 = 39,
 
-/* Opcodes 65 to 66 */
-#define INST_BREAK			65
-#define INST_CONTINUE			66
+    /* Opcodes 40 to 64 */
+    INST_LOR = 40,
+    INST_LAND = 41,
+    INST_BITOR = 42,
+    INST_BITXOR = 43,
+    INST_BITAND = 44,
+    INST_EQ = 45,
+    INST_NEQ = 46,
+    INST_LT = 47,
+    INST_GT = 48,
+    INST_LE = 49,
+    INST_GE = 50,
+    INST_LSHIFT = 51,
+    INST_RSHIFT = 52,
+    INST_ADD = 53,
+    INST_SUB = 54,
+    INST_MULT = 55,
+    INST_DIV = 56,
+    INST_MOD = 57,
+    INST_UPLUS = 58,
+    INST_UMINUS = 59,
+    INST_BITNOT = 60,
+    INST_LNOT = 61,
+    INST_CALL_BUILTIN_FUNC1 IS_DEPRECATED = 62,
+    INST_CALL_FUNC1 IS_DEPRECATED = 63,
+    INST_TRY_CVT_TO_NUMERIC = 64,
 
-/* Opcodes 67 to 68 */
-#define INST_FOREACH_START4		67 /* DEPRECATED */
-#define INST_FOREACH_STEP4		68 /* DEPRECATED */
+    /* Opcodes 65 to 66 */
+    INST_BREAK = 65,
+    INST_CONTINUE = 66,
 
-/* Opcodes 69 to 72 */
-#define INST_BEGIN_CATCH4		69
-#define INST_END_CATCH			70
-#define INST_PUSH_RESULT		71
-#define INST_PUSH_RETURN_CODE		72
+    /* Opcodes 67 to 68 */
+    INST_FOREACH_START4 IS_DEPRECATED = 67,
+    INST_FOREACH_STEP4 IS_DEPRECATED = 68,
 
-/* Opcodes 73 to 78 */
-#define INST_STR_EQ			73
-#define INST_STR_NEQ			74
-#define INST_STR_CMP			75
-#define INST_STR_LEN			76
-#define INST_STR_INDEX			77
-#define INST_STR_MATCH			78
+    /* Opcodes 69 to 72 */
+    INST_BEGIN_CATCH4 = 69,
+    INST_END_CATCH = 70,
+    INST_PUSH_RESULT = 71,
+    INST_PUSH_RETURN_CODE = 72,
 
-/* Opcodes 78 to 81 */
-#define INST_LIST			79
-#define INST_LIST_INDEX			80
-#define INST_LIST_LENGTH		81
+    /* Opcodes 73 to 78 */
+    INST_STR_EQ = 73,
+    INST_STR_NEQ = 74,
+    INST_STR_CMP = 75,
+    INST_STR_LEN = 76,
+    INST_STR_INDEX = 77,
+    INST_STR_MATCH = 78,
 
-/* Opcodes 82 to 87 */
-#define INST_APPEND_SCALAR1		82
-#define INST_APPEND_SCALAR4		83
-#define INST_APPEND_ARRAY1		84
-#define INST_APPEND_ARRAY4		85
-#define INST_APPEND_ARRAY_STK		86
-#define INST_APPEND_STK			87
+    /* Opcodes 78 to 81 */
+    INST_LIST = 79,
+    INST_LIST_INDEX = 80,
+    INST_LIST_LENGTH = 81,
 
-/* Opcodes 88 to 93 */
-#define INST_LAPPEND_SCALAR1		88
-#define INST_LAPPEND_SCALAR4		89
-#define INST_LAPPEND_ARRAY1		90
-#define INST_LAPPEND_ARRAY4		91
-#define INST_LAPPEND_ARRAY_STK		92
-#define INST_LAPPEND_STK		93
+    /* Opcodes 82 to 87 */
+    INST_APPEND_SCALAR1 = 82,
+    INST_APPEND_SCALAR4 = 83,
+    INST_APPEND_ARRAY1 = 84,
+    INST_APPEND_ARRAY4 = 85,
+    INST_APPEND_ARRAY_STK = 86,
+    INST_APPEND_STK = 87,
 
-/* TIP #22 - LINDEX operator with flat arg list */
+    /* Opcodes 88 to 93 */
+    INST_LAPPEND_SCALAR1 = 88,
+    INST_LAPPEND_SCALAR4 = 89,
+    INST_LAPPEND_ARRAY1 = 90,
+    INST_LAPPEND_ARRAY4 = 91,
+    INST_LAPPEND_ARRAY_STK = 92,
+    INST_LAPPEND_STK = 93,
 
-#define INST_LIST_INDEX_MULTI		94
+    /* TIP #22 - LINDEX operator with flat arg list */
+    INST_LIST_INDEX_MULTI = 94,
 
-/*
- * TIP #33 - 'lset' command. Code gen also required a Forth-like
- *	     OVER operation.
- */
+    /*
+     * TIP #33 - 'lset' command. Code gen also required a Forth-like
+     *	     OVER operation.
+     */
 
-#define INST_OVER			95
-#define INST_LSET_LIST			96
-#define INST_LSET_FLAT			97
+    INST_OVER = 95,
+    INST_LSET_LIST = 96,
+    INST_LSET_FLAT = 97,
 
-/* TIP#90 - 'return' command. */
+    /* TIP#90 - 'return' command. */
+    INST_RETURN_IMM = 98,
 
-#define INST_RETURN_IMM			98
+    /* TIP#123 - exponentiation operator. */
+    INST_EXPON = 99,
 
-/* TIP#123 - exponentiation operator. */
+    /* TIP #157 - {*}... (word expansion) language syntax support. */
+    INST_EXPAND_START = 100,
+    INST_EXPAND_STKTOP = 101,
+    INST_INVOKE_EXPANDED = 102,
 
-#define INST_EXPON			99
+    /*
+     * TIP #57 - 'lassign' command. Code generation requires immediate
+     *	     LINDEX and LRANGE operators.
+     */
 
-/* TIP #157 - {*}... (word expansion) language syntax support. */
+    INST_LIST_INDEX_IMM = 103,
+    INST_LIST_RANGE_IMM = 104,
 
-#define INST_EXPAND_START		100
-#define INST_EXPAND_STKTOP		101
-#define INST_INVOKE_EXPANDED		102
+    INST_START_CMD = 105,
 
-/*
- * TIP #57 - 'lassign' command. Code generation requires immediate
- *	     LINDEX and LRANGE operators.
- */
+    INST_LIST_IN = 106,
+    INST_LIST_NOT_IN = 107,
 
-#define INST_LIST_INDEX_IMM		103
-#define INST_LIST_RANGE_IMM		104
+    INST_PUSH_RETURN_OPTIONS = 108,
+    INST_RETURN_STK = 109,
 
-#define INST_START_CMD			105
+    /* Dictionary (TIP#111) related commands. */
+    INST_DICT_GET = 110,
+    INST_DICT_SET = 111,
+    INST_DICT_UNSET = 112,
+    INST_DICT_INCR_IMM = 113,
+    INST_DICT_APPEND = 114,
+    INST_DICT_LAPPEND = 115,
+    INST_DICT_FIRST = 116,
+    INST_DICT_NEXT = 117,
+    INST_DICT_DONE = 118,
+    INST_DICT_UPDATE_START = 119,
+    INST_DICT_UPDATE_END = 120,
 
-#define INST_LIST_IN			106
-#define INST_LIST_NOT_IN		107
+    /*
+     * Instruction to support jumps defined by tables (instead of the classic
+     * [switch] technique of chained comparisons).
+     */
 
-#define INST_PUSH_RETURN_OPTIONS	108
-#define INST_RETURN_STK			109
+    INST_JUMP_TABLE = 121,
 
-/*
- * Dictionary (TIP#111) related commands.
- */
+    /*
+     * Instructions to support compilation of global, variable, upvar and
+     * [namespace upvar].
+     */
 
-#define INST_DICT_GET			110
-#define INST_DICT_SET			111
-#define INST_DICT_UNSET			112
-#define INST_DICT_INCR_IMM		113
-#define INST_DICT_APPEND		114
-#define INST_DICT_LAPPEND		115
-#define INST_DICT_FIRST			116
-#define INST_DICT_NEXT			117
-#define INST_DICT_DONE			118
-#define INST_DICT_UPDATE_START		119
-#define INST_DICT_UPDATE_END		120
+    INST_UPVAR = 122,
+    INST_NSUPVAR = 123,
+    INST_VARIABLE = 124,
 
-/*
- * Instruction to support jumps defined by tables (instead of the classic
- * [switch] technique of chained comparisons).
- */
+    /* Instruction to support compiling syntax error to bytecode */
+    INST_SYNTAX = 125,
 
-#define INST_JUMP_TABLE			121
+    /* Instruction to reverse N items on top of stack */
+    INST_REVERSE = 126,
 
-/*
- * Instructions to support compilation of global, variable, upvar and
- * [namespace upvar].
- */
+    /* regexp instruction */
+    INST_REGEXP = 127,
 
-#define INST_UPVAR			122
-#define INST_NSUPVAR			123
-#define INST_VARIABLE			124
+    /* For [info exists] compilation */
+    INST_EXIST_SCALAR = 128,
+    INST_EXIST_ARRAY = 129,
+    INST_EXIST_ARRAY_STK = 130,
+    INST_EXIST_STK = 131,
 
-/* Instruction to support compiling syntax error to bytecode */
+    /* For [subst] compilation */
+    INST_NOP = 132,
+    INST_RETURN_CODE_BRANCH = 133,
 
-#define INST_SYNTAX			125
+    /* For [unset] compilation */
+    INST_UNSET_SCALAR = 134,
+    INST_UNSET_ARRAY = 135,
+    INST_UNSET_ARRAY_STK = 136,
+    INST_UNSET_STK = 137,
 
-/* Instruction to reverse N items on top of stack */
+    /* For [dict with], [dict exists], [dict create] and [dict merge] */
+    INST_DICT_EXPAND = 138,
+    INST_DICT_RECOMBINE_STK = 139,
+    INST_DICT_RECOMBINE_IMM = 140,
+    INST_DICT_EXISTS = 141,
+    INST_DICT_VERIFY = 142,
 
-#define INST_REVERSE			126
+    /* For [string map] and [regsub] compilation */
+    INST_STR_MAP = 143,
+    INST_STR_FIND = 144,
+    INST_STR_FIND_LAST = 145,
+    INST_STR_RANGE_IMM = 146,
+    INST_STR_RANGE = 147,
 
-/* regexp instruction */
+    /* For operations to do with coroutines and other NRE-manipulators */
+    INST_YIELD = 148,
+    INST_COROUTINE_NAME = 149,
+    INST_TAILCALL = 150,
 
-#define INST_REGEXP			127
+    /* For compilation of basic information operations */
+    INST_NS_CURRENT = 151,
+    INST_INFO_LEVEL_NUM = 152,
+    INST_INFO_LEVEL_ARGS = 153,
+    INST_RESOLVE_COMMAND = 154,
 
-/* For [info exists] compilation */
-#define INST_EXIST_SCALAR		128
-#define INST_EXIST_ARRAY		129
-#define INST_EXIST_ARRAY_STK		130
-#define INST_EXIST_STK			131
+    /* For compilation relating to TclOO */
+    INST_TCLOO_SELF = 155,
+    INST_TCLOO_CLASS = 156,
+    INST_TCLOO_NS = 157,
+    INST_TCLOO_IS_OBJECT = 158,
 
-/* For [subst] compilation */
-#define INST_NOP			132
-#define INST_RETURN_CODE_BRANCH		133
+    /* For compilation of [array] subcommands */
+    INST_ARRAY_EXISTS_STK = 159,
+    INST_ARRAY_EXISTS_IMM = 160,
+    INST_ARRAY_MAKE_STK = 161,
+    INST_ARRAY_MAKE_IMM = 162,
 
-/* For [unset] compilation */
-#define INST_UNSET_SCALAR		134
-#define INST_UNSET_ARRAY		135
-#define INST_UNSET_ARRAY_STK		136
-#define INST_UNSET_STK			137
+    INST_INVOKE_REPLACE = 163,
 
-/* For [dict with], [dict exists], [dict create] and [dict merge] */
-#define INST_DICT_EXPAND		138
-#define INST_DICT_RECOMBINE_STK		139
-#define INST_DICT_RECOMBINE_IMM		140
-#define INST_DICT_EXISTS		141
-#define INST_DICT_VERIFY		142
+    INST_LIST_CONCAT = 164,
 
-/* For [string map] and [regsub] compilation */
-#define INST_STR_MAP			143
-#define INST_STR_FIND			144
-#define INST_STR_FIND_LAST		145
-#define INST_STR_RANGE_IMM		146
-#define INST_STR_RANGE			147
+    INST_EXPAND_DROP = 165,
 
-/* For operations to do with coroutines and other NRE-manipulators */
-#define INST_YIELD			148
-#define INST_COROUTINE_NAME		149
-#define INST_TAILCALL			150
+    /* New foreach implementation */
+    INST_FOREACH_START = 166,
+    INST_FOREACH_STEP = 167,
+    INST_FOREACH_END = 168,
+    INST_LMAP_COLLECT = 169,
 
-/* For compilation of basic information operations */
-#define INST_NS_CURRENT			151
-#define INST_INFO_LEVEL_NUM		152
-#define INST_INFO_LEVEL_ARGS		153
-#define INST_RESOLVE_COMMAND		154
+    /* For compilation of [string trim] and related */
+    INST_STR_TRIM = 170,
+    INST_STR_TRIM_LEFT = 171,
+    INST_STR_TRIM_RIGHT = 172,
 
-/* For compilation relating to TclOO */
-#define INST_TCLOO_SELF			155
-#define INST_TCLOO_CLASS		156
-#define INST_TCLOO_NS			157
-#define INST_TCLOO_IS_OBJECT		158
+    INST_CONCAT_STK = 173,
 
-/* For compilation of [array] subcommands */
-#define INST_ARRAY_EXISTS_STK		159
-#define INST_ARRAY_EXISTS_IMM		160
-#define INST_ARRAY_MAKE_STK		161
-#define INST_ARRAY_MAKE_IMM		162
+    INST_STR_UPPER = 174,
+    INST_STR_LOWER = 175,
+    INST_STR_TITLE = 176,
+    INST_STR_REPLACE = 177,
 
-#define INST_INVOKE_REPLACE		163
+    INST_ORIGIN_COMMAND = 178,
 
-#define INST_LIST_CONCAT		164
+    INST_TCLOO_NEXT = 179,
+    INST_TCLOO_NEXT_CLASS = 180,
 
-#define INST_EXPAND_DROP		165
+    INST_YIELD_TO_INVOKE = 181,
 
-/* New foreach implementation */
-#define INST_FOREACH_START              166
-#define INST_FOREACH_STEP               167
-#define INST_FOREACH_END                168
-#define INST_LMAP_COLLECT               169
+    INST_NUM_TYPE = 182,
+    INST_TRY_CVT_TO_BOOLEAN = 183,
+    INST_STR_CLASS = 184,
 
-/* For compilation of [string trim] and related */
-#define INST_STR_TRIM			170
-#define INST_STR_TRIM_LEFT		171
-#define INST_STR_TRIM_RIGHT		172
+    INST_LAPPEND_LIST = 185,
+    INST_LAPPEND_LIST_ARRAY = 186,
+    INST_LAPPEND_LIST_ARRAY_STK = 187,
+    INST_LAPPEND_LIST_STK = 188,
 
-#define INST_CONCAT_STK			173
+    INST_CLOCK_READ = 189,
 
-#define INST_STR_UPPER			174
-#define INST_STR_LOWER			175
-#define INST_STR_TITLE			176
-#define INST_STR_REPLACE		177
+    INST_DICT_GET_DEF = 190,
 
-#define INST_ORIGIN_COMMAND		178
+    /* TIP 461 */
+    INST_STR_LT = 191,
+    INST_STR_GT = 192,
+    INST_STR_LE = 193,
+    INST_STR_GE = 194,
+} TclBytecodeOpcode;
 
-#define INST_TCLOO_NEXT			179
-#define INST_TCLOO_NEXT_CLASS		180
-
-#define INST_YIELD_TO_INVOKE		181
-
-#define INST_NUM_TYPE			182
-#define INST_TRY_CVT_TO_BOOLEAN		183
-#define INST_STR_CLASS			184
-
-#define INST_LAPPEND_LIST		185
-#define INST_LAPPEND_LIST_ARRAY		186
-#define INST_LAPPEND_LIST_ARRAY_STK	187
-#define INST_LAPPEND_LIST_STK		188
-
-#define INST_CLOCK_READ			189
-
-#define INST_DICT_GET_DEF		190
-
-/* TIP 461 */
-#define INST_STR_LT			191
-#define INST_STR_GT			192
-#define INST_STR_LE			193
-#define INST_STR_GE			194
-
-/* The last opcode */
-#define LAST_INST_OPCODE		194
+enum {
+    /* The last opcode was... */
+    LAST_INST_OPCODE = 194
+};
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -1256,9 +1259,9 @@ enum {
 };
 
 /*
- * Macro used to manually adjust the stack requirements; used in cases where
- * the stack effect cannot be computed from the opcode and its operands, but
- * is still known at compile time.
+ * Inline function used to manually adjust the stack requirements; used in
+ * cases where the stack effect cannot be computed from the opcode and its
+ * operands, but is still known at compile time.
  *
  * void TclAdjustStackDepth(int delta, CompileEnv *envPtr);
  */
@@ -1291,18 +1294,25 @@ TclSetStackDepth(
     envPtr->currStackDepth = depth;
 }
 
-#define TclCheckStackDepth(depth, envPtr)				\
-    do {								\
-	int _dd = (depth);						\
-	if (_dd != (envPtr)->currStackDepth) {				\
-	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
-		    (envPtr)->currStackDepth, _dd);			\
-	}								\
-    } while (0)
+static inline void
+TclCheckStackDepthImpl(
+    CompileEnv *envPtr,
+    int depth,
+    const char *file,
+    int line)
+{
+    if (depth != envPtr->currStackDepth) {
+	Tcl_Panic("%s:%i:bad stack depth computations: is %i, should be %i",
+		file, line, envPtr->currStackDepth, depth);
+    }
+}
+
+#define TclCheckStackDepth(depth, envPtr) \
+    TclCheckStackDepthImpl(envPtr, depth, __FILE__, __LINE__)
 
 /*
- * Macro used to update the stack requirements. It is called by the macros
- * TclEmitOpCode, TclEmitInst1 and TclEmitInst4.
+ * Inline function used to update the stack requirements. It is called by the
+ * functions TclEmitOpCode, TclEmitInst1 and TclEmitInst4.
  * Remark that the very last instruction of a bytecode always reduces the
  * stack level: INST_DONE or INST_POP, so that the maxStackdepth is always
  * updated.
@@ -1327,10 +1337,8 @@ TclUpdateStackReqs(
 }
 
 /*
- * Macros used to update the flag that indicates if we are at the start of a
- * command, based on whether the opcode is INST_START_COMMAND.
- *
- * void TclUpdateAtCmdStart(unsigned char op, CompileEnv *envPtr);
+ * Inline function used to update the flag that indicates if we are at the
+ * start of a command, based on whether the opcode is INST_START_COMMAND.
  */
 
 static inline void
@@ -1344,10 +1352,7 @@ TclUpdateAtCmdStart(
 }
 
 /*
- * Macro to emit an opcode byte into a CompileEnv's code array. The ANSI C
- * "prototype" for this macro is:
- *
- * void TclEmitOpcode(unsigned char op, CompileEnv *envPtr);
+ * Inline function to emit an opcode byte into a CompileEnv's code array.
  */
 
 static inline void
@@ -1364,12 +1369,8 @@ TclEmitOpcode(
 }
 
 /*
- * Macros to update a (signed or unsigned) integer starting at a pointer. The
- * two variants depend on the number of bytes. The ANSI C "prototypes" for
- * these macros are:
- *
- * void TclStoreInt1AtPtr(int i, unsigned char *p);
- * void TclStoreInt4AtPtr(int i, unsigned char *p);
+ * Inline functions to update a (signed or unsigned) integer starting at a
+ * pointer. The two variants depend on the number of bytes.
  */
 
 static inline void
@@ -1394,11 +1395,7 @@ TclStoreInt4AtPtr(
 }
 
 /*
- * Macros to emit an integer operand. The ANSI C "prototype" for these macros
- * are:
- *
- * void TclEmitInt1(int i, CompileEnv *envPtr);
- * void TclEmitInt4(int i, CompileEnv *envPtr);
+ * Inline functions to emit an integer operand.
  */
 
 static inline void
@@ -1426,13 +1423,9 @@ TclEmitInt4(
 }
 
 /*
- * Macros to emit an instruction with signed or unsigned integer operands.
- * Four byte integers are stored in "big-endian" order with the high order
- * byte stored at the lowest address. The ANSI C "prototypes" for these macros
- * are:
- *
- * void TclEmitInstInt1(unsigned char op, int i, CompileEnv *envPtr);
- * void TclEmitInstInt4(unsigned char op, int i, CompileEnv *envPtr);
+ * Inline functions to emit an instruction with signed or unsigned integer
+ * operands. Four byte integers are stored in "big-endian" order with the high
+ * order byte stored at the lowest address.
  */
 
 static inline void
@@ -1468,12 +1461,10 @@ TclEmitInstInt4(
 }
 
 /*
- * Macro to push a Tcl object onto the Tcl evaluation stack. It emits the
- * object's one or four byte array index into the CompileEnv's code array.
- * These support, respectively, a maximum of 256 (2**8) and 2**32 objects in a
- * CompileEnv. The ANSI C "prototype" for this macro is:
- *
- * void	TclEmitPush(int objIndex, CompileEnv *envPtr);
+ * Inline function to push a Tcl object onto the Tcl evaluation stack. It
+ * emits the object's one or four byte array index into the CompileEnv's code
+ * array.  These support, respectively, a maximum of 256 (2**8) and 2**32
+ * objects in a CompileEnv.
  */
 
 static inline void
@@ -1490,12 +1481,8 @@ TclEmitPush(
 
 
 /*
- * Macros to update instructions at a particular pc with a new op code and a
- * (signed or unsigned) int operand. The ANSI C "prototypes" for these macros
- * are:
- *
- * void TclUpdateInstInt1AtPc(unsigned char op, int i, unsigned char *pc);
- * void TclUpdateInstInt4AtPc(unsigned char op, int i, unsigned char *pc);
+ * Inline functions to update instructions at a particular pc with a new op
+ * code and a (signed or unsigned) int operand.
  */
 
 static inline void
@@ -1519,12 +1506,9 @@ TclUpdateInstInt4AtPc(
 }
 
 /*
- * Macro to fix up a forward jump to point to the current code-generation
- * position in the bytecode being created (the most common case). The ANSI C
- * "prototypes" for this macro is:
- *
- * int TclFixupForwardJumpToHere(CompileEnv *envPtr, JumpFixup *fixupPtr,
- *				 int threshold);
+ * Inline function to fix up a forward jump to point to the current
+ * code-generation position in the bytecode being created (the most common
+ * case).
  */
 
 static inline int
@@ -1539,15 +1523,9 @@ TclFixupForwardJumpToHere(
 }
 
 /*
- * Macros to get a signed integer (GET_INT{1,2}) or an unsigned int
+ * Inline functions to get a signed integer (GET_INT{1,2}) or an unsigned int
  * (GET_UINT{1,2}) from a pointer. There are two variants for each return type
- * that depend on the number of bytes fetched. The ANSI C "prototypes" for
- * these macros are:
- *
- * int TclGetInt1AtPtr(unsigned char *p);
- * int TclGetInt4AtPtr(unsigned char *p);
- * unsigned int TclGetUInt1AtPtr(unsigned char *p);
- * unsigned int TclGetUInt4AtPtr(unsigned char *p);
+ * that depend on the number of bytes fetched.
  */
 
 static inline int
@@ -1594,11 +1572,7 @@ TclGetUInt4AtPtr(
 }
 
 /*
- * Macros used to compute the minimum and maximum of two integers. The ANSI C
- * "prototypes" for these macros are:
- *
- * int TclMin(int i, int j);
- * int TclMax(int i, int j);
+ * Inline functions used to compute the minimum and maximum of two integers.
  */
 
 static inline int
@@ -1630,11 +1604,7 @@ TclMax(
 	    envPtr)
 
 /*
- * Convenience macro for use when compiling tokens to be pushed. The ANSI C
- * "prototype" for this macro is:
- *
- * static void		CompileTokens(CompileEnv *envPtr, Tcl_Token *tokenPtr,
- *			    Tcl_Interp *interp);
+ * Inline function for use when compiling tokens to be pushed.
  */
 
 static inline void
@@ -1651,13 +1621,12 @@ CompileTokens(
 }
 
 /*
- * Convenience macros for use when pushing literals. The ANSI C "prototype" for
- * these macros are:
+ * Convenience inline function and macro for use when pushing literals. The
+ * ANSI C "prototype" for the macro is (but it can't be written as an inline
+ * function in C as it uses sizeof on its argument):
  *
- * static void		PushLiteral(CompileEnv *envPtr,
- *			    const char *string, int length);
  * static void		PushStringLiteral(CompileEnv *envPtr,
- *			    const char *string);
+ *			    const char string[]);
  */
 
 static inline void
@@ -1673,10 +1642,8 @@ PushLiteral(
     PushLiteral(envPtr, string, (int) (sizeof(string "") - 1))
 
 /*
- * Macro to advance to the next token; it is more mnemonic than the address
- * arithmetic that it replaces. The ANSI C "prototype" for this macro is:
- *
- * static Tcl_Token *	TokenAfter(Tcl_Token *tokenPtr);
+ * Inline function to advance to the next token; it is more mnemonic than the
+ * address arithmetic that it replaces.
  */
 
 static inline Tcl_Token *
@@ -1687,10 +1654,7 @@ TokenAfter(
 }
 
 /*
- * Macro to get the offset to the next instruction to be issued. The ANSI C
- * "prototype" for this macro is:
- *
- * static int	CurrentOffset(CompileEnv *envPtr);
+ * Inline function to get the offset to the next instruction to be issued.
  */
 
 static inline int
@@ -1706,8 +1670,6 @@ CurrentOffset(
  * should compute precisely that? OTOH, the nesting depth of LOOP ranges is an
  * interesting datum for debugging purposes, and that is what we compute now.
  *
- * static int	ExceptionRangeStarts(CompileEnv *envPtr, int index);
- * static void	ExceptionRangeEnds(CompileEnv *envPtr, int index);
  * static void	ExceptionRangeTarget(CompileEnv *envPtr, int index, LABEL);
  */
 
@@ -1737,7 +1699,9 @@ ExceptionRangeEnds(
 }
 
 #define ExceptionRangeTarget(envPtr, index, targetType) \
-    ((envPtr)->exceptArrayPtr[(index)].targetType = CurrentOffset(envPtr))
+    do {								\
+	(envPtr)->exceptArrayPtr[(index)].targetType = CurrentOffset(envPtr); \
+    } while (0)
 
 /*
  * Check if there is an LVT for compiled locals
@@ -1751,7 +1715,7 @@ EnvHasLVT(
 }
 
 /*
- * Macros for making it easier to deal with tokens and DStrings.
+ * Inline functions for making it easier to deal with tokens and DStrings.
  */
 
 static inline void
@@ -1777,6 +1741,8 @@ TclRegisterDStringLiteral(
  *
  * static void		CompileWord(CompileEnv *envPtr, Tcl_Token *tokenPtr,
  *			    Tcl_Interp *interp, int word);
+ *
+ * Can't be an inline function; accesses line information.
  */
 
 #define CompileWord(envPtr, tokenPtr, interp, word) \
@@ -1800,13 +1766,25 @@ TclRegisterDStringLiteral(
     ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
     int eclIndex = mapPtr->nuloc - 1
 
-#define SetLineInformation(word) \
-    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
-    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
+static inline void
+SetLineInformationImpl(
+    CompileEnv *envPtr,
+    ExtCmdLoc *mapPtr,
+    int eclIndex,
+    int word)
+{
+    envPtr->line = mapPtr->loc[eclIndex].line[word];
+    envPtr->clNext = mapPtr->loc[eclIndex].next[word];
+}
 
-#define PushVarNameWord(i,v,e,f,l,sc,word) \
-    SetLineInformation(word);						\
-    TclPushVarName(i,v,e,f,l,sc)
+#define SetLineInformation(word) \
+    SetLineInformationImpl(envPtr, mapPtr, eclIndex, (word))
+
+#define PushVarNameWord(interp,varTokenPtr,envPtr,flag,localIdx,scalar,word) \
+    do {								\
+	SetLineInformation(word);					\
+	TclPushVarName(interp,varTokenPtr,envPtr,flag,localIdx,scalar);	\
+    } while (0)
 
 /*
  * Often want to issue one of two versions of an instruction based on whether
@@ -1815,9 +1793,9 @@ TclRegisterDStringLiteral(
 
 #define Emit14Inst(nm,idx,envPtr) \
     if (idx <= 255) {							\
-	TclEmitInstInt1(nm##1,idx,envPtr);				\
+	TclEmitInstInt1(nm##1, (idx), (envPtr));			\
     } else {								\
-	TclEmitInstInt4(nm##4,idx,envPtr);				\
+	TclEmitInstInt4(nm##4, (idx), (envPtr));			\
     }
 
 /*
@@ -1845,9 +1823,13 @@ enum {
     TCL_NO_LARGE_INDEX = 1,	/* Do not return localIndex value > 255 */
     TCL_NO_ELEMENT = 2		/* Do not push the array element. */
 };
-
+
 /*
+ * ---------------------------------------------------------------------
+ *
  * DTrace probe macros (NOPs if DTrace support is not enabled).
+ *
+ * ---------------------------------------------------------------------
  */
 
 /*
@@ -2014,19 +1996,23 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
 #define TCL_DTRACE_PROC_ARGS_ENABLED()	    1
 #define TCL_DTRACE_PROC_INFO_ENABLED()	    1
 #define TCL_DTRACE_PROC_ENTRY(a0, a1, a2) \
-	tclDTraceDebugIndent++; \
-	TclDTraceDbgMsg("-> proc-entry", "%s %d %p", a0, a1, a2)
+    do {								\
+	tclDTraceDebugIndent++;						\
+	TclDTraceDbgMsg("-> proc-entry", "%s %d %p", a0, a1, a2);	\
+    } while (0)
 #define TCL_DTRACE_PROC_RETURN(a0, a1) \
-	TclDTraceDbgMsg("<- proc-return", "%s %d", a0, a1); \
-	tclDTraceDebugIndent--
+    do {								\
+	TclDTraceDbgMsg("<- proc-return", "%s %d", a0, a1);		\
+	tclDTraceDebugIndent--;						\
+    } while (0)
 #define TCL_DTRACE_PROC_RESULT(a0, a1, a2, a3) \
-	TclDTraceDbgMsg(" | proc-result", "%s %d %s %p", a0, a1, a2, a3)
+    TclDTraceDbgMsg(" | proc-result", "%s %d %s %p", a0, a1, a2, a3)
 #define TCL_DTRACE_PROC_ARGS(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) \
-	TclDTraceDbgMsg(" | proc-args", "%s %s %s %s %s %s %s %s %s %s", a0, \
-		a1, a2, a3, a4, a5, a6, a7, a8, a9)
+    TclDTraceDbgMsg(" | proc-args", "%s %s %s %s %s %s %s %s %s %s", a0, \
+	    a1, a2, a3, a4, a5, a6, a7, a8, a9)
 #define TCL_DTRACE_PROC_INFO(a0, a1, a2, a3, a4, a5, a6, a7) \
-	TclDTraceDbgMsg(" | proc-info", "%s %s %s %s %d %d %s %s", a0, a1, \
-		a2, a3, a4, a5, a6, a7)
+    TclDTraceDbgMsg(" | proc-info", "%s %s %s %s %d %d %s %s", a0, a1,	\
+	    a2, a3, a4, a5, a6, a7)
 
 #define TCL_DTRACE_CMD_ENTRY_ENABLED()	    1
 #define TCL_DTRACE_CMD_RETURN_ENABLED()	    1
@@ -2034,26 +2020,30 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
 #define TCL_DTRACE_CMD_ARGS_ENABLED()	    1
 #define TCL_DTRACE_CMD_INFO_ENABLED()	    1
 #define TCL_DTRACE_CMD_ENTRY(a0, a1, a2) \
-	tclDTraceDebugIndent++; \
-	TclDTraceDbgMsg("-> cmd-entry", "%s %d %p", a0, a1, a2)
+    do {								\
+	tclDTraceDebugIndent++;						\
+	TclDTraceDbgMsg("-> cmd-entry", "%s %d %p", a0, a1, a2);	\
+    } while (0)
 #define TCL_DTRACE_CMD_RETURN(a0, a1) \
-	TclDTraceDbgMsg("<- cmd-return", "%s %d", a0, a1); \
-	tclDTraceDebugIndent--
+    do {								\
+	TclDTraceDbgMsg("<- cmd-return", "%s %d", a0, a1);		\
+	tclDTraceDebugIndent--;						\
+    } while (0)
 #define TCL_DTRACE_CMD_RESULT(a0, a1, a2, a3) \
-	TclDTraceDbgMsg(" | cmd-result", "%s %d %s %p", a0, a1, a2, a3)
+    TclDTraceDbgMsg(" | cmd-result", "%s %d %s %p", a0, a1, a2, a3)
 #define TCL_DTRACE_CMD_ARGS(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) \
-	TclDTraceDbgMsg(" | cmd-args", "%s %s %s %s %s %s %s %s %s %s", a0, \
-		a1, a2, a3, a4, a5, a6, a7, a8, a9)
+    TclDTraceDbgMsg(" | cmd-args", "%s %s %s %s %s %s %s %s %s %s", a0, \
+	    a1, a2, a3, a4, a5, a6, a7, a8, a9)
 #define TCL_DTRACE_CMD_INFO(a0, a1, a2, a3, a4, a5, a6, a7) \
-	TclDTraceDbgMsg(" | cmd-info", "%s %s %s %s %d %d %s %s", a0, a1, \
-		a2, a3, a4, a5, a6, a7)
+    TclDTraceDbgMsg(" | cmd-info", "%s %s %s %s %d %d %s %s", a0, a1,	\
+	    a2, a3, a4, a5, a6, a7)
 
 #define TCL_DTRACE_INST_START_ENABLED()	    TCL_DTRACE_DEBUG_INST_PROBES
 #define TCL_DTRACE_INST_DONE_ENABLED()	    TCL_DTRACE_DEBUG_INST_PROBES
 #define TCL_DTRACE_INST_START(a0, a1, a2) \
-	TclDTraceDbgMsg(" | inst-start", "%s %d %p", a0, a1, a2)
+    TclDTraceDbgMsg(" | inst-start", "%s %d %p", a0, a1, a2)
 #define TCL_DTRACE_INST_DONE(a0, a1, a2) \
-	TclDTraceDbgMsg(" | inst-end", "%s %d %p", a0, a1, a2)
+    TclDTraceDbgMsg(" | inst-end", "%s %d %p", a0, a1, a2)
 
 #define TCL_DTRACE_TCL_PROBE_ENABLED()	    1
 #define TCL_DTRACE_TCL_PROBE(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) \

@@ -15,6 +15,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#define _BUILD_TCL_EXECUTE 1
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclOOInt.h"
@@ -207,11 +208,16 @@ typedef struct TEBCdata {
     } while (0)
 
 /*
- * These variable-access macros have to coincide with those in tclVar.c
+ * These variable-access inline functions have to coincide with those in
+ * tclVar.c
  */
 
-#define VarHashGetValue(hPtr) \
-    ((Var *) ((char *)hPtr - offsetof(VarInHash, entry)))
+static inline Var *
+VarHashGetValue(
+    Tcl_HashEntry *hPtr)
+{
+    return (Var *) ((char *)hPtr - offsetof(VarInHash, entry));
+}
 
 static inline Var *
 VarHashCreateVar(
@@ -228,8 +234,13 @@ VarHashCreateVar(
     return VarHashGetValue(hPtr);
 }
 
-#define VarHashFindVar(tablePtr, key) \
-    VarHashCreateVar((tablePtr), (key), NULL)
+static inline Var *
+VarHashFindVar(
+    TclVarHashTable *tablePtr,
+    Tcl_Obj *key)
+{
+    return VarHashCreateVar((tablePtr), (key), NULL);
+}
 
 /*
  * The new macro for ending an instruction; note that a reasonable C-optimiser
@@ -261,7 +272,7 @@ VarHashCreateVar(
 #define CHECK_STACK()
 #endif
 
-#define NEXT_INST_F(pcAdjustment, nCleanup, resultHandling)	\
+#define NEXT_INST_F(pcAdjustment, nCleanup, resultHandling) \
     do {							\
 	TCL_CT_ASSERT((nCleanup >= 0) && (nCleanup <= 2));	\
 	CHECK_STACK();						\
@@ -343,16 +354,16 @@ VarHashCreateVar(
 	switch (*pc) {							\
 	case INST_JUMP_FALSE1:						\
 	    NEXT_INST_V(((condition)? 2 : TclGetInt1AtPtr(pc+1)), (cleanup), 0); \
-	break; \
+	    break;							\
 	case INST_JUMP_TRUE1:						\
 	    NEXT_INST_V(((condition)? TclGetInt1AtPtr(pc+1) : 2), (cleanup), 0); \
-	break; \
+	    break;							\
 	case INST_JUMP_FALSE4:						\
 	    NEXT_INST_V(((condition)? 5 : TclGetInt4AtPtr(pc+1)), (cleanup), 0); \
-	break; \
+	    break;							\
 	case INST_JUMP_TRUE4:						\
 	    NEXT_INST_V(((condition)? TclGetInt4AtPtr(pc+1) : 5), (cleanup), 0); \
-	break; \
+	    break;							\
 	default:							\
 	    if ((condition) < 0) {					\
 		TclNewIntObj(objResultPtr, -1);				\
@@ -360,12 +371,12 @@ VarHashCreateVar(
 		objResultPtr = TCONST((condition) > 0);			\
 	    }								\
 	    NEXT_INST_V(0, (cleanup), 1);				\
-	break; \
+	    break;							\
 	}								\
     } while (0)
 #else /* TCL_COMPILE_DEBUG */
 #define JUMP_PEEPHOLE_F(condition, pcAdjustment, cleanup) \
-    do{									\
+    do {								\
 	if ((condition) < 0) {						\
 	    TclNewIntObj(objResultPtr, -1);				\
 	} else {							\
@@ -374,7 +385,7 @@ VarHashCreateVar(
 	NEXT_INST_F((pcAdjustment), (cleanup), 1);			\
     } while (0)
 #define JUMP_PEEPHOLE_V(condition, pcAdjustment, cleanup) \
-    do{									\
+    do {								\
 	if ((condition) < 0) {						\
 	    TclNewIntObj(objResultPtr, -1);				\
 	} else {							\
@@ -998,7 +1009,7 @@ static inline int
 wordSkip(
     void *ptr)
 {
-    int mask = TCL_ALLOCALIGN-1;
+    int mask = TCL_ALLOCALIGN - 1;
     int base = PTR2INT(ptr) & mask;
     return (TCL_ALLOCALIGN - base)/sizeof(Tcl_Obj *);
 }

@@ -945,7 +945,7 @@ TclJoinPath(
 	}
     }
 
-    assert ( res == NULL );
+    assert (res == NULL);
 
     for (i = 0; i < elements; i++) {
 	int driveNameLength, strEltLen, length;
@@ -1120,7 +1120,7 @@ TclJoinPath(
 	    Tcl_SetObjLength(res, length);
 	}
     }
-    assert ( res != NULL );
+    assert (res != NULL);
     return res;
 }
 
@@ -1773,7 +1773,9 @@ Tcl_FSGetNormalizedPath(
 	    TclFSNormalizeToUniquePath(interp, copy, cwdLen);
 	}
 
-	/* Now we need to construct the new path object. */
+	/*
+	 * Now we need to construct the new path object.
+	 */
 
 	if (pathType == TCL_PATH_RELATIVE) {
 	    Tcl_Obj *origDir = fsPathPtr->cwdPtr;

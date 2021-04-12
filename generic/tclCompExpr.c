@@ -134,15 +134,16 @@ enum Marks {
  * need not take the form of a bit array.
  */
 
-#define BINARY		0x40	/* This lexeme is a binary operator. An OpNode
+enum {
+    BINARY = 0x40,		/* This lexeme is a binary operator. An OpNode
 				 * representing it should go into the parse
 				 * tree, and two operands should be parsed for
 				 * it in the expression. */
-#define UNARY		0x80	/* This lexeme is a unary operator. An OpNode
+    UNARY = 0x80,		/* This lexeme is a unary operator. An OpNode
 				 * representing it should go into the parse
 				 * tree, and one operand should be parsed for
 				 * it in the expression. */
-#define LEAF		0xC0	/* This lexeme is a leaf operand in the parse
+    LEAF = 0xC0			/* This lexeme is a leaf operand in the parse
 				 * tree. No OpNode will be placed in the tree
 				 * for it. Either a literal value will be
 				 * appended to the list of literals in this
@@ -150,6 +151,7 @@ enum Marks {
 				 * be appended in a Tcl_Parse struct to
 				 * represent those leaves that require some
 				 * form of substitution. */
+};
 
 /* Uncategorized lexemes */
 

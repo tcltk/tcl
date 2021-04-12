@@ -163,6 +163,30 @@ TclCompileGlobalCmd(
  *----------------------------------------------------------------------
  */
 
+static inline int
+IsElseToken(
+    const Tcl_Token *tokenPtr)
+{
+    return (tokenPtr->size == 4) &&
+	    (strncmp(tokenPtr->start, "else", 4) == 0);
+}
+
+static inline int
+IsElseifToken(
+    const Tcl_Token *tokenPtr)
+{
+    return (tokenPtr->size == 6) &&
+	    (strncmp(tokenPtr->start, "elseif", 6) == 0);
+}
+
+static inline int
+IsThenToken(
+    const Tcl_Token *tokenPtr)
+{
+    return (tokenPtr->size == 4) &&
+	    (strncmp(tokenPtr->start, "then", 4) == 0);
+}
+
 int
 TclCompileIfCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
@@ -181,8 +205,7 @@ TclCompileIfCmd(
 				 * determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
     int jumpIndex = 0;		/* Avoid compiler warning. */
-    int jumpFalseDist, numWords, wordIdx, numBytes, j, code;
-    const char *word;
+    int jumpFalseDist, numWords, wordIdx, j, code;
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
     int boolVal;		/* Value of static condition. */
@@ -220,10 +243,7 @@ TclCompileIfCmd(
 	 * Stop looping if the token isn't "if" or "elseif".
 	 */
 
-	word = tokenPtr[1].start;
-	numBytes = tokenPtr[1].size;
-	if ((tokenPtr == parsePtr->tokenPtr)
-		|| ((numBytes == 6) && (strncmp(word, "elseif", 6) == 0))) {
+	if ((tokenPtr == parsePtr->tokenPtr) || IsElseifToken(&tokenPtr[1])) {
 	    tokenPtr = TokenAfter(tokenPtr);
 	    wordIdx++;
 	} else {
@@ -286,16 +306,12 @@ TclCompileIfCmd(
 	    code = TCL_ERROR;
 	    goto done;
 	}
-	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    word = tokenPtr[1].start;
-	    numBytes = tokenPtr[1].size;
-	    if ((numBytes == 4) && (strncmp(word, "then", 4) == 0)) {
-		tokenPtr = TokenAfter(tokenPtr);
-		wordIdx++;
-		if (wordIdx >= numWords) {
-		    code = TCL_ERROR;
-		    goto done;
-		}
+	if (IsThenToken(&tokenPtr[1])) {
+	    tokenPtr = TokenAfter(tokenPtr);
+	    wordIdx++;
+	    if (wordIdx >= numWords) {
+		code = TCL_ERROR;
+		goto done;
 	    }
 	}
 
@@ -363,14 +379,12 @@ TclCompileIfCmd(
      * an "if 1 {...}" case.
      */
 
-    if ((wordIdx < numWords) && (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
+    if (wordIdx < numWords) {
 	/*
 	 * There is an else clause. Skip over the optional "else" word.
 	 */
 
-	word = tokenPtr[1].start;
-	numBytes = tokenPtr[1].size;
-	if ((numBytes == 4) && (strncmp(word, "else", 4) == 0)) {
+	if (IsElseToken(&tokenPtr[1])) {
 	    tokenPtr = TokenAfter(tokenPtr);
 	    wordIdx++;
 	    if (wordIdx >= numWords) {
@@ -2970,9 +2984,9 @@ TclCompileObjectSelfCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     /*
-     * We only handle [self] and [self object] (which is the same operation).
-     * These are the only very common operations on [self] for which
-     * bytecoding is at all reasonable.
+     * We only handle [self], [self object] (which is the same operation) and
+     * [self namespace].  These are the only very common operations on [self]
+     * for which bytecoding is at all reasonable.
      */
 
     if (parsePtr->numWords == 1) {

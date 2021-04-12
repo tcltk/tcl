@@ -119,7 +119,7 @@ const char tclCharTypeTable[] = {
  * Prototypes for local functions defined in this file:
  */
 
-static int	CommandComplete(const char *script, int numBytes);
+static int		CommandComplete(const char *script, int numBytes);
 static int		ParseComment(const char *src, int numBytes,
 			    Tcl_Parse *parsePtr);
 static int		ParseTokens(const char *src, int numBytes, int mask,
@@ -197,7 +197,7 @@ Tcl_ParseCommand(
 				 * NULL, then no error message is provided. */
     const char *start,		/* First character of string containing one or
 				 * more Tcl commands. */
-    int numBytes,	/* Total number of bytes in string. If < 0,
+    int numBytes,		/* Total number of bytes in string. If < 0,
 				 * the script consists of all bytes up to the
 				 * first null character. */
     int nested,			/* Non-zero means this is a nested command:
@@ -209,7 +209,7 @@ Tcl_ParseCommand(
 				 * the parsed command; any previous
 				 * information in the structure is ignored. */
 {
-    const char *src;	/* Points to current character in the
+    const char *src;		/* Points to current character in the
 				 * command. */
     char type;			/* Result returned by CHAR_TYPE(*src). */
     Tcl_Token *tokenPtr;	/* Pointer to token being filled in. */
@@ -786,7 +786,8 @@ TclParseBackslash(
 				 * of bytes scanned should be written. */
     char *dst)			/* NULL, or points to buffer where the UTF-8
 				 * encoding of the backslash sequence is to be
-				 * written. At most 4 bytes will be written there. */
+				 * written. At most 4 bytes will be written
+				 * there. */
 {
     const char *p = src+1;
     int unichar;
@@ -870,10 +871,14 @@ TclParseBackslash(
 	    result = 'u';
 	} else if (((result & 0xFC00) == 0xD800) && (count == 6)
 		    && (p[5] == '\\') && (p[6] == 'u') && (numBytes >= 10)) {
-	    /* If high surrogate is immediately followed by a low surrogate
-	     * escape, combine them into one character. */
+	    /*
+	     * If high surrogate is immediately followed by a low surrogate
+	     * escape, combine them into one character.
+	     */
+
 	    int low;
 	    int count2 = ParseHex(p+7, 4, &low);
+
 	    if ((count2 == 4) && ((low & 0xFC00) == 0xDC00)) {
 		result = ((result & 0x3FF)<<10 | (low & 0x3FF)) + 0x10000;
 		count += count2 + 2;
@@ -888,7 +893,9 @@ TclParseBackslash(
 	     */
 	    result = 'U';
 	} else if ((result | 0x7FF) == 0xDFFF) {
-	    /* Upper or lower surrogate, not allowed in this syntax. */
+	    /*
+	     * Upper or lower surrogate, not allowed in this syntax.
+	     */
 	    result = 0xFFFD;
 	}
 	break;
@@ -954,7 +961,10 @@ TclParseBackslash(
     }
     count = Tcl_UniCharToUtf(result, dst);
     if ((result >= 0xD800) && (count < 3)) {
-	/* Special case for handling high surrogates. */
+	/*
+	 * Special case for handling high surrogates.
+	 */
+
 	count += Tcl_UniCharToUtf(-1, dst + count);
     }
     return count;
@@ -981,7 +991,7 @@ TclParseBackslash(
 static int
 ParseComment(
     const char *src,		/* First character to parse. */
-    int numBytes,	/* Max number of bytes to scan. */
+    int numBytes,		/* Max number of bytes to scan. */
     Tcl_Parse *parsePtr)	/* Information about parse in progress.
 				 * Updated if parsing indicates an incomplete
 				 * command. */
@@ -1053,8 +1063,8 @@ ParseComment(
 
 static int
 ParseTokens(
-    const char *src,	/* First character to parse. */
-    int numBytes,	/* Max number of bytes to scan. */
+    const char *src,		/* First character to parse. */
+    int numBytes,		/* Max number of bytes to scan. */
     int mask,			/* Specifies when to stop parsing. The parse
 				 * stops at the first unquoted character whose
 				 * CHAR_TYPE contains any of the bits in
@@ -1524,7 +1534,7 @@ Tcl_ParseVarName(
 const char *
 Tcl_ParseVar(
     Tcl_Interp *interp,		/* Context for looking up variable. */
-    const char *start,	/* Start of variable substitution. First
+    const char *start,		/* Start of variable substitution. First
 				 * character must be "$". */
     const char **termPtr)	/* If non-NULL, points to word to fill in with
 				 * character just after last one in the
@@ -1609,7 +1619,7 @@ Tcl_ParseBraces(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of string enclosed in braces. The
 				 * first character must be {'. */
-    int numBytes,	/* Total number of bytes in string. If < 0,
+    int numBytes,		/* Total number of bytes in string. If < 0,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr,
@@ -1810,7 +1820,7 @@ Tcl_ParseQuotedString(
 				 * NULL, then no error message is provided. */
     const char *start,		/* Start of the quoted string. The first
 				 * character must be '"'. */
-    int numBytes,	/* Total number of bytes in string. If < 0,
+    int numBytes,		/* Total number of bytes in string. If < 0,
 				 * the string consists of all bytes up to the
 				 * first null character. */
     Tcl_Parse *parsePtr,

@@ -274,16 +274,19 @@ typedef struct ByteArray {
 				 * array. */
     unsigned int allocated;	/* The amount of space actually allocated
 				 * minus 1 byte. */
-    unsigned char bytes[TCLFLEXARRAY];	/* The array of bytes. The actual size of this
+    unsigned char bytes[TCLFLEXARRAY];
+				/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
 				 * above. */
 } ByteArray;
 
 #define BYTEARRAY_SIZE(len) \
-		(offsetof(ByteArray, bytes) + (len))
+    (offsetof(ByteArray, bytes) + (len))
 #define GET_BYTEARRAY(irPtr) ((ByteArray *) (irPtr)->twoPtrValue.ptr1)
 #define SET_BYTEARRAY(irPtr, baPtr) \
-		(irPtr)->twoPtrValue.ptr1 = (void *) (baPtr)
+    do {						\
+	(irPtr)->twoPtrValue.ptr1 = (void *) (baPtr);	\
+    } while (0)
 
 int
 TclIsPureByteArray(

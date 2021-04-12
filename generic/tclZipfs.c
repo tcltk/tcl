@@ -3079,7 +3079,7 @@ ZipFSMkZipOrImg(
 	int isMounted = 0;
 	const char *imgName;
 
-	// TODO: normalize the origin file name
+	/* TODO: normalize the origin file name */
 	imgName = (originFile != NULL) ? Tcl_GetString(originFile) :
 		Tcl_GetNameOfExecutable();
 	if (pwlen) {
@@ -3117,6 +3117,7 @@ ZipFSMkZipOrImg(
 
 	if (!isMounted) {
 	    zf = &zf0;
+	    memset(&zf0, 0, sizeof(ZipFile));
 	}
 	if (isMounted || ZipFSOpenArchive(interp, imgName, 0, zf) == TCL_OK) {
 	    /*

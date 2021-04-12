@@ -101,7 +101,59 @@ const AuxDataType tclJumptableInfoType = {
     if ((idx)<256) {OP1(STORE_SCALAR1,(idx));} else {OP4(STORE_SCALAR4,(idx));}
 #define INVOKE(name) \
     TclEmitInvoke(envPtr,INST_##name)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IsContinuationBody, IsDefaultToken, IsFinallyToken, IsOnToken,
+ * IsTrapToken --
+ *
+ *	Helpers for TclCompileSwitchCmd and TclCompileTryCmd to compare tokens
+ *	to key literals.
+ *
+ * Results:
+ *	Returns 1 if they're equal, 0 if not.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+static inline int
+IsContinuationBody(
+    const Tcl_Token *tokenPtr)
+{
+    return tokenPtr->size == 1 && tokenPtr->start[0] == '-';
+}
+
+static inline int
+IsDefaultToken(
+    const Tcl_Token *tokenPtr)
+{
+    return tokenPtr->size == 7 && memcmp(tokenPtr->start, "default", 7) == 0;
+}
+
+static inline int
+IsFinallyToken(
+    const Tcl_Token *tokenPtr)
+{
+    return tokenPtr->size == 7 && memcmp(tokenPtr->start, "finally", 7) == 0;
+}
+
+static inline int
+IsOnToken(
+    const Tcl_Token *tokenPtr)
+{
+    return tokenPtr->size == 2 && memcmp(tokenPtr->start, "on", 2) == 0;
+}
+
+static inline int
+IsTrapToken(
+    const Tcl_Token *tokenPtr)
+{
+    return tokenPtr->size == 4 && memcmp(tokenPtr->start, "trap", 4) == 0;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -164,33 +216,33 @@ TclCompileSetCmd(
      * Emit instructions to set/get the variable.
      */
 
-	if (isScalar) {
-	    if (localIndex < 0) {
-		TclEmitOpcode((isAssignment?
-			INST_STORE_STK : INST_LOAD_STK), envPtr);
-	    } else if (localIndex <= 255) {
-		TclEmitInstInt1((isAssignment?
-			INST_STORE_SCALAR1 : INST_LOAD_SCALAR1),
-			localIndex, envPtr);
-	    } else {
-		TclEmitInstInt4((isAssignment?
-			INST_STORE_SCALAR4 : INST_LOAD_SCALAR4),
-			localIndex, envPtr);
-	    }
+    if (isScalar) {
+	if (localIndex < 0) {
+	    TclEmitOpcode((isAssignment?
+		    INST_STORE_STK : INST_LOAD_STK), envPtr);
+	} else if (localIndex <= 255) {
+	    TclEmitInstInt1((isAssignment?
+		    INST_STORE_SCALAR1 : INST_LOAD_SCALAR1),
+		    localIndex, envPtr);
 	} else {
-	    if (localIndex < 0) {
-		TclEmitOpcode((isAssignment?
-			INST_STORE_ARRAY_STK : INST_LOAD_ARRAY_STK), envPtr);
-	    } else if (localIndex <= 255) {
-		TclEmitInstInt1((isAssignment?
-			INST_STORE_ARRAY1 : INST_LOAD_ARRAY1),
-			localIndex, envPtr);
-	    } else {
-		TclEmitInstInt4((isAssignment?
-			INST_STORE_ARRAY4 : INST_LOAD_ARRAY4),
-			localIndex, envPtr);
-	    }
+	    TclEmitInstInt4((isAssignment?
+		    INST_STORE_SCALAR4 : INST_LOAD_SCALAR4),
+		    localIndex, envPtr);
 	}
+    } else {
+	if (localIndex < 0) {
+	    TclEmitOpcode((isAssignment?
+		    INST_STORE_ARRAY_STK : INST_LOAD_ARRAY_STK), envPtr);
+	} else if (localIndex <= 255) {
+	    TclEmitInstInt1((isAssignment?
+		    INST_STORE_ARRAY1 : INST_LOAD_ARRAY1),
+		    localIndex, envPtr);
+	} else {
+	    TclEmitInstInt4((isAssignment?
+		    INST_STORE_ARRAY4 : INST_LOAD_ARRAY4),
+		    localIndex, envPtr);
+	}
+    }
 
     return TCL_OK;
 }
@@ -229,13 +281,15 @@ TclCompileStringCatCmd(
 
     /* Trivial case, no arg */
 
-    if (numWords<2) {
+    if (numWords < 2) {
 	PushStringLiteral(envPtr, "");
 	return TCL_OK;
     }
 
-    /* General case: issue CONCAT1's (by chunks of 254 if needed), folding
-       contiguous constants along the way */
+    /*
+     * General case: issue CONCAT1's (by chunks of 254 if needed), folding
+     * contiguous constants along the way.
+     */
 
     numArgs = 0;
     folded = NULL;
@@ -452,20 +506,28 @@ TclCompileStringInsertCmd(
 	return TCL_ERROR;
     }
 
-    /* Compute and push the string in which to insert */
+    /*
+     * Compute and push the string in which to insert.
+     */
+
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 1);
 
-    /* See what can be discovered about index at compile time */
+    /*
+     * See what can be discovered about index at compile time.
+     */
+
     tokenPtr = TokenAfter(tokenPtr);
     if (TCL_OK != TclGetIndexFromToken(tokenPtr, TCL_INDEX_START,
 	    TCL_INDEX_END, &idx)) {
-
 	/* Nothing useful knowable - cease compile; let it direct eval */
 	return TCL_ERROR;
     }
 
-    /* Compute and push the string to be inserted */
+    /*
+     * Compute and push the string to be inserted.
+     */
+
     tokenPtr = TokenAfter(tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 3);
 
@@ -993,6 +1055,7 @@ TclCompileStringRangeCmd(
 	    &idx1) != TCL_OK) {
 	goto nonConstantIndices;
     }
+
     /*
      * Token parsed as an index expression. We treat all indices before
      * the string the same as the start of the string.
@@ -1009,10 +1072,12 @@ TclCompileStringRangeCmd(
 	    &idx2) != TCL_OK) {
 	goto nonConstantIndices;
     }
+
     /*
      * Token parsed as an index expression. We treat all indices after
      * the string the same as the end of the string.
      */
+
     if (idx2 == (int)TCL_INDEX_NONE) {
 	/* [string range $s $first -1] must be empty string */
 	OP(		POP);
@@ -1061,6 +1126,7 @@ TclCompileStringReplaceCmd(
     /*
      * Check for first index known and useful at compile time.
      */
+
     tokenPtr = TokenAfter(valueTokenPtr);
     if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_START, TCL_INDEX_NONE,
 	    &first) != TCL_OK) {
@@ -1070,6 +1136,7 @@ TclCompileStringReplaceCmd(
     /*
      * Check for last index known and useful at compile time.
      */
+
     tokenPtr = TokenAfter(tokenPtr);
     if (TclGetIndexFromToken(tokenPtr, TCL_INDEX_NONE, TCL_INDEX_END,
 	    &last) != TCL_OK) {
@@ -1077,26 +1144,25 @@ TclCompileStringReplaceCmd(
     }
 
     /*
-     * [string replace] is an odd bird.  For many arguments it is
-     * a conventional substring replacer.  However it also goes out
-     * of its way to become a no-op for many cases where it would be
-     * replacing an empty substring.  Precisely, it is a no-op when
+     * [string replace] is an odd bird.  For many arguments it is a
+     * conventional substring replacer.  However it also goes out of its way
+     * to become a no-op for many cases where it would be replacing an empty
+     * substring.  Precisely, it is a no-op when
      *
      *		(last < first)		OR
      *		(last < 0)		OR
      *		(end < first)
      *
-     * For some compile-time values we can detect these cases, and
-     * compile direct to bytecode implementing the no-op.
+     * For some compile-time values we can detect these cases, and compile
+     * direct to bytecode implementing the no-op.
      */
 
     if ((last == (int)TCL_INDEX_NONE)		/* Know (last < 0) */
 	    || (first == (int)TCL_INDEX_NONE)	/* Know (first > end) */
 
 	/*
-	 * Tricky to determine when runtime (last < first) can be
-	 * certainly known based on the encoded values. Consider the
-	 * cases...
+	 * Tricky to determine when runtime (last < first) can be certainly
+	 * known based on the encoded values. Consider the cases...
 	 *
 	 * (first <= TCL_INDEX_END) &&
 	 *	(last <= TCL_INDEX END) && (last < first) => ACCEPT
@@ -1125,74 +1191,72 @@ TclCompileStringReplaceCmd(
     }
 
     if (parsePtr->numWords == 5) {
-    /*
-     * When we have a string replacement, we have to take care about
-     * not replacing empty substrings that [string replace] promises
-     * not to replace
-     *
-     * The remaining index values might be suitable for conventional
-     * string replacement, but only if they cannot possibly meet the
-     * conditions described above at runtime. If there's a chance they
-     * might, we would have to emit bytecode to check and at that point
-     * we're paying more in bytecode execution time than would make
-     * things worthwhile. Trouble is we are very limited in
-     * how much we can detect that at compile time. After decoding,
-     * we need, first:
-     *
-     *		(first <= end)
-     *
-     * The encoded indices (first <= TCL_INDEX END) and
-     * (first == TCL_INDEX_NONE) always meets this condition, but
-     * any other encoded first index has some list for which it fails.
-     *
-     * We also need, second:
-     *
-     *		(last >= 0)
-     *
-     * The encoded index (last >= TCL_INDEX_START) always meet this
-     * condition but any other encoded last index has some list for
-     * which it fails.
-     *
-     * Finally we need, third:
-     *
-     *		(first <= last)
-     *
-     * Considered in combination with the constraints we already have,
-     * we see that we can proceed when (first == TCL_INDEX_NONE).
-     * These also permit simplification of the prefix|replace|suffix
-     * construction. The other constraints, though, interfere with
-     * getting a guarantee that first <= last.
-     */
+	/*
+	 * When we have a string replacement, we have to take care about not
+	 * replacing empty substrings that [string replace] promises not to
+	 * replace.
+	 *
+	 * The remaining index values might be suitable for conventional
+	 * string replacement, but only if they cannot possibly meet the
+	 * conditions described above at runtime. If there's a chance they
+	 * might, we would have to emit bytecode to check and at that point
+	 * we're paying more in bytecode execution time than would make things
+	 * worthwhile. Trouble is we are very limited in how much we can
+	 * detect that at compile time. After decoding, we need, first:
+	 *
+	 *		(first <= end)
+	 *
+	 * The encoded indices (first <= TCL_INDEX END) and (first ==
+	 * TCL_INDEX_NONE) always meets this condition, but any other encoded
+	 * first index has some list for which it fails.
+	 *
+	 * We also need, second:
+	 *
+	 *		(last >= 0)
+	 *
+	 * The encoded index (last >= TCL_INDEX_START) always meet this
+	 * condition but any other encoded last index has some list for which
+	 * it fails.
+	 *
+	 * Finally we need, third:
+	 *
+	 *		(first <= last)
+	 *
+	 * Considered in combination with the constraints we already have, we
+	 * see that we can proceed when (first == TCL_INDEX_NONE).  These also
+	 * permit simplification of the prefix|replace|suffix construction.
+	 * The other constraints, though, interfere with getting a guarantee
+	 * that first <= last.
+	 */
 
-    if ((first == (int)TCL_INDEX_START) && (last >= (int)TCL_INDEX_START)) {
-	/* empty prefix */
-	tokenPtr = TokenAfter(tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp, 4);
-	OP4(		REVERSE, 2);
-	if (last == INT_MAX) {
-	    OP(		POP);		/* Pop  original */
-	} else {
-	    OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
-	    OP1(	STR_CONCAT1, 2);
+	if ((first == (int)TCL_INDEX_START) && (last >= (int)TCL_INDEX_START)) {
+	    /* empty prefix */
+	    tokenPtr = TokenAfter(tokenPtr);
+	    CompileWord(envPtr, tokenPtr, interp, 4);
+	    OP4(	REVERSE, 2);
+	    if (last == INT_MAX) {
+		OP(	POP);		/* Pop  original */
+	    } else {
+		OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
+		OP1(	STR_CONCAT1, 2);
+	    }
+	    return TCL_OK;
 	}
-	return TCL_OK;
-    }
 
-    if ((last == (int)TCL_INDEX_NONE) && (first <= (int)TCL_INDEX_END)) {
-	OP44(		STR_RANGE_IMM, 0, first-1);
-	tokenPtr = TokenAfter(tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp, 4);
-	OP1(		STR_CONCAT1, 2);
-	return TCL_OK;
-    }
+	if ((last == (int)TCL_INDEX_NONE) && (first <= (int)TCL_INDEX_END)) {
+	    OP44(	STR_RANGE_IMM, 0, first-1);
+	    tokenPtr = TokenAfter(tokenPtr);
+	    CompileWord(envPtr, tokenPtr, interp, 4);
+	    OP1(	STR_CONCAT1, 2);
+	    return TCL_OK;
+	}
 
 	/* FLOW THROUGH TO genericReplace */
-
     } else {
 	/*
-	 * When we have no replacement string to worry about, we may
-	 * have more luck, because the forbidden empty string replacements
-	 * are harmless when they are replaced by another empty string.
+	 * When we have no replacement string to worry about, we may have more
+	 * luck, because the forbidden empty string replacements are harmless
+	 * when they are replaced by another empty string.
 	 */
 
 	if (first == (int)TCL_INDEX_START) {
@@ -1201,7 +1265,7 @@ TclCompileStringReplaceCmd(
 	    if (last == (int)TCL_INDEX_END) {
 		/* empty suffix too => empty result */
 		OP(	POP);		/* Pop  original */
-		PUSH	(	"");
+		PUSH(	"");
 		return TCL_OK;
 	    }
 	    OP44(	STR_RANGE_IMM, last + 1, (int)TCL_INDEX_END);
@@ -1221,19 +1285,19 @@ TclCompileStringReplaceCmd(
 	}
     }
 
-    genericReplace:
-	tokenPtr = TokenAfter(valueTokenPtr);
-	CompileWord(envPtr, tokenPtr, interp, 2);
+  genericReplace:
+    tokenPtr = TokenAfter(valueTokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 2);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 3);
+    if (parsePtr->numWords == 5) {
 	tokenPtr = TokenAfter(tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp, 3);
-	if (parsePtr->numWords == 5) {
-	    tokenPtr = TokenAfter(tokenPtr);
-	    CompileWord(envPtr, tokenPtr, interp, 4);
-	} else {
-	    PUSH(	"");
-	}
-	OP(		STR_REPLACE);
-	return TCL_OK;
+	CompileWord(envPtr, tokenPtr, interp, 4);
+    } else {
+	PUSH(		"");
+    }
+    OP(			STR_REPLACE);
+    return TCL_OK;
 }
 
 int
@@ -1477,12 +1541,14 @@ TclCompileSubstCmd(
     }
 */
 
-    /* TODO: Figure out expansion to cover WordKnownAtCompileTime
-     *	The difficulty is that WKACT makes a copy, and if TclSubstParse
-     *	below parses the copy of the original source string, some deep
-     *	parts of the compile machinery get upset.  They want all pointers
-     *	stored in Tcl_Tokens to point back to the same original string.
+    /*
+     * TODO: Figure out expansion to cover WordKnownAtCompileTime. The
+     * difficulty is that WKACT makes a copy, and if TclSubstParse below
+     * parses the copy of the original source string, some deep parts of the
+     * compile machinery get upset. They want all pointers stored in
+     * Tcl_Tokens to point back to the same original string.
      */
+
     if (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	code = TclSubstOptions(NULL, numOpts, objv, &flags);
     }
@@ -2043,8 +2109,7 @@ TclCompileSwitchCmd(
      * illegal, but this makes the error happen at the right time).
      */
 
-    if (bodyToken[numWords-1]->size == 1 &&
-	    bodyToken[numWords-1]->start[0] == '-') {
+    if (IsContinuationBody(bodyToken[numWords-1])) {
 	goto freeTemporaries;
     }
 
@@ -2056,7 +2121,10 @@ TclCompileSwitchCmd(
      * but it handles the most common case well enough.
      */
 
-    /* Both methods push the value to match against onto the stack. */
+    /*
+     * Both methods push the value to match against onto the stack.
+     */
+
     CompileWord(envPtr, valueTokenPtr, interp, valueIndex);
 
     if (mode == Switch_Exact) {
@@ -2140,8 +2208,8 @@ IssueSwitchChainedTests(
     foundDefault = 0;
     for (i=0 ; i<numBodyTokens ; i+=2) {
 	nextArmFixupIndex = -1;
-	if (i!=numBodyTokens-2 || bodyToken[numBodyTokens-2]->size != 7 ||
-		memcmp(bodyToken[numBodyTokens-2]->start, "default", 7)) {
+	if (i != numBodyTokens - 2 ||
+		!IsDefaultToken(bodyToken[numBodyTokens - 2])) {
 	    /*
 	     * Generate the test for the arm.
 	     */
@@ -2223,7 +2291,7 @@ IssueSwitchChainedTests(
 	     * ensured earlier; the final body is never a fall-through).
 	     */
 
-	    if (bodyToken[i+1]->size==1 && bodyToken[i+1]->start[0]=='-') {
+	    if (IsContinuationBody(bodyToken[i + 1])) {
 		if (contFixIndex == -1) {
 		    contFixIndex = fixupCount;
 		    contFixCount = 0;
@@ -2403,8 +2471,8 @@ IssueSwitchJumpTable(
 	 * term.
 	 */
 
-	if (i!=numBodyTokens-2 || bodyToken[numBodyTokens-2]->size != 7 ||
-		memcmp(bodyToken[numBodyTokens-2]->start, "default", 7)) {
+	if (i != numBodyTokens - 2 ||
+		!IsDefaultToken(bodyToken[numBodyTokens - 2])) {
 	    /*
 	     * This is not a default clause, so insert the current location as
 	     * a target in the jump table (assuming it isn't already there,
@@ -2447,7 +2515,7 @@ IssueSwitchJumpTable(
 	 * will also point here, so we advance to the next clause.
 	 */
 
-	if (bodyToken[i+1]->size == 1 && bodyToken[i+1]->start[0] == '-') {
+	if (IsContinuationBody(bodyToken[i + 1])) {
 	    mustGenerate = 1;
 	    continue;
 	}
@@ -2718,9 +2786,10 @@ TclCompileThrowCmd(
     codeKnown = TclWordKnownAtCompileTime(codeToken, objPtr);
 
     /*
-     * First we must emit the code to substitute the arguments.  This
-     * must come first in case substitution raises errors.
+     * First we must emit the code to substitute the arguments.  This must
+     * come first in case substitution raises errors.
      */
+
     if (!codeKnown) {
 	CompileWord(envPtr, codeToken, interp, 1);
 	PUSH(			"-errorcode");
@@ -2744,6 +2813,7 @@ TclCompileThrowCmd(
     /*
      * Simpler bytecodes when we detect invalid arguments at compile time.
      */
+
     if (codeKnown && !codeIsValid) {
 	OP(			POP);
 	if (codeIsList) {
@@ -2756,9 +2826,9 @@ TclCompileThrowCmd(
 
     if (!codeKnown) {
 	/*
-	 * Argument validity checking has to be done by bytecode at
-	 * run time.
+	 * Argument validity checking has to be done by bytecode at run time.
 	 */
+
 	OP4(			REVERSE, 3);
 	OP(			DUP);
 	OP(			LIST_LENGTH);
@@ -2850,8 +2920,7 @@ TclCompileTryCmd(
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		goto failedToCompile;
 	    }
-	    if (tokenPtr[1].size == 4
-		    && !strncmp(tokenPtr[1].start, "trap", 4)) {
+	    if (IsTrapToken(&tokenPtr[1])) {
 		/*
 		 * Parse the list of errorCode words to match against.
 		 */
@@ -2868,8 +2937,7 @@ TclCompileTryCmd(
 		}
 		Tcl_ListObjReplace(NULL, tmpObj, 0, 0, 0, NULL);
 		matchClauses[i] = tmpObj;
-	    } else if (tokenPtr[1].size == 2
-		    && !strncmp(tokenPtr[1].start, "on", 2)) {
+	    } else if (IsOnToken(&tokenPtr[1])) {
 		int code;
 
 		/*
@@ -2943,7 +3011,7 @@ TclCompileTryCmd(
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		goto failedToCompile;
 	    }
-	    if (tokenPtr[1].size == 1 && tokenPtr[1].start[0] == '-') {
+	    if (IsContinuationBody(&tokenPtr[1])) {
 		handlerTokens[i] = NULL;
 	    } else {
 		handlerTokens[i] = tokenPtr;
@@ -2964,8 +3032,8 @@ TclCompileTryCmd(
     if (numWords == 0) {
 	finallyToken = NULL;
     } else if (numWords == 2) {
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || tokenPtr[1].size != 7
-		|| strncmp(tokenPtr[1].start, "finally", 7)) {
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD ||
+		!IsFinallyToken(&tokenPtr[1])) {
 	    goto failedToCompile;
 	}
 	finallyToken = TokenAfter(tokenPtr);

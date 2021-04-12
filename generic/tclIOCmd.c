@@ -40,9 +40,9 @@ static Tcl_ExitProc		FinalizeIOCmdTSD;
 static Tcl_TcpAcceptProc 	AcceptCallbackProc;
 static Tcl_ObjCmdProc		ChanPendingObjCmd;
 static Tcl_ObjCmdProc		ChanTruncateObjCmd;
-static void			RegisterTcpServerInterpCleanup(
-				    Tcl_Interp *interp,
-				    AcceptCallback *acceptCallbackPtr);
+static void		RegisterTcpServerInterpCleanup(
+			    Tcl_Interp *interp,
+			    AcceptCallback *acceptCallbackPtr);
 static Tcl_InterpDeleteProc	TcpAcceptCallbacksDeleteProc;
 static void		TcpServerCloseProc(ClientData callbackData);
 static void		UnregisterTcpServerInterpCleanupProc(
@@ -1219,7 +1219,8 @@ TcpAcceptCallbacksDeleteProc(
 
     for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
-	AcceptCallback *acceptCallbackPtr = (AcceptCallback *)Tcl_GetHashValue(hPtr);
+	AcceptCallback *acceptCallbackPtr = (AcceptCallback *)
+		Tcl_GetHashValue(hPtr);
 
 	acceptCallbackPtr->interp = NULL;
     }
@@ -1307,7 +1308,8 @@ UnregisterTcpServerInterpCleanupProc(
     Tcl_HashTable *hTblPtr;
     Tcl_HashEntry *hPtr;
 
-    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
+    hTblPtr = (Tcl_HashTable *)
+	    Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
     if (hTblPtr == NULL) {
 	return;
     }
@@ -1635,7 +1637,8 @@ Tcl_SocketObjCmd(
     port = TclGetString(objv[a]);
 
     if (server) {
-	AcceptCallback *acceptCallbackPtr = (AcceptCallback *)ckalloc(sizeof(AcceptCallback));
+	AcceptCallback *acceptCallbackPtr = (AcceptCallback *)
+		ckalloc(sizeof(AcceptCallback));
 
 	Tcl_IncrRefCount(script);
 	acceptCallbackPtr->script = script;

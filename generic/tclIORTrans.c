@@ -476,8 +476,10 @@ static int		TransformLimit(ReflectedTransform *rtPtr,
  * Operation codes for TransformFlush().
  */
 
-#define FLUSH_WRITE	1
-#define FLUSH_DISCARD	0
+enum {
+    FLUSH_WRITE = 1,
+    FLUSH_DISCARD = 0
+};
 
 /*
  * Main methods to plug into the 'chan' ensemble'. ==================
@@ -1113,7 +1115,6 @@ ReflectInput(
 	    goto stop;
 	}
 
-
 	/*
 	 * The buffer is exhausted, but the caller wants even more. We now
 	 * have to go to the underlying channel, get more bytes and then
@@ -1149,7 +1150,6 @@ ReflectInput(
 	    goto stop;
 	}
 
-
 	readBytes = Tcl_ReadRaw(rtPtr->parent,
 		(char *) Tcl_SetByteArrayLength(bufObj, toRead), toRead);
 	if (readBytes < 0) {
@@ -1165,11 +1165,10 @@ ReflectInput(
 	    }
 
 	    /*
-	     * Either the down channel is not blocked (a real error)
-	     * or it is and there are gotBytes==0 byte copied so far.
-	     * In either case, pass up the error, so we either report
-	     * any real error, or do not mistakenly signal EOF by
-	     * returning 0 to the caller.
+	     * Either the down channel is not blocked (a real error) or it is
+	     * and there are gotBytes==0 byte copied so far.  In either case,
+	     * pass up the error, so we either report any real error, or do
+	     * not mistakenly signal EOF by returning 0 to the caller.
 	     */
 
 	    *errorCodePtr = Tcl_GetErrno();
@@ -1177,7 +1176,6 @@ ReflectInput(
 	}
 
 	if (readBytes == 0) {
-
 	    /*
 	     * Zero returned from Tcl_ReadRaw() always indicates EOF
 	     * on the down channel.
@@ -1185,26 +1183,26 @@ ReflectInput(
 
 	    rtPtr->eofPending = 1;
 
+	    /*
+	     * Now this is a bit different. The partial data waiting is
+	     * converted and returned.
+	     */
+
+	    if (HAS(rtPtr->methods, METH_DRAIN)) {
+		if (!TransformDrain(rtPtr, errorCodePtr)) {
+		    goto error;
+		}
+	    }
+
+	    if (ResultLength(&rtPtr->result) == 0) {
 		/*
-		 * Now this is a bit different. The partial data waiting is
-		 * converted and returned.
+		 * The drain delivered nothing.
 		 */
 
-		if (HAS(rtPtr->methods, METH_DRAIN)) {
-		    if (!TransformDrain(rtPtr, errorCodePtr)) {
-			goto error;
-		    }
-		}
+		goto stop;
+	    }
 
-		if (ResultLength(&rtPtr->result) == 0) {
-		    /*
-		     * The drain delivered nothing.
-		     */
-
-		    goto stop;
-		}
-
-		continue; /* at: while (toRead > 0) */
+	    continue; /* at: while (toRead > 0) */
 	} /* readBytes == 0 */
 
 	/*
@@ -1261,7 +1259,7 @@ ReflectOutput(
     int toWrite,
     int *errorCodePtr)
 {
-    ReflectedTransform *rtPtr = (ReflectedTransform *)clientData;
+    ReflectedTransform *rtPtr = (ReflectedTransform *) clientData;
 
     /*
      * The following check can be done before thread redirection, because we
@@ -1388,16 +1386,15 @@ ReflectSeekWide(
 	    curPos = -1;
 	} else {
 	    curPos = Tcl_ChannelSeekProc(parent->typePtr)(
-	    parent->instanceData, offset, seekMode,
-	    errorCodePtr);
+		    parent->instanceData, offset, seekMode, errorCodePtr);
 	}
 #else
 	*errorCodePtr = EINVAL;
 	curPos = -1;
 #endif
     } else {
-    	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
-    		seekMode, errorCodePtr);
+    	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData,
+		offset, seekMode, errorCodePtr);
     }
     if (curPos == -1) {
 	Tcl_SetErrno(*errorCodePtr);
@@ -1423,8 +1420,7 @@ ReflectSeek(
      * routine.
      */
 
-    return ReflectSeekWide(clientData, offset, seekMode,
-	    errorCodePtr);
+    return ReflectSeekWide(clientData, offset, seekMode, errorCodePtr);
 }
 #endif
 
@@ -2042,6 +2038,7 @@ InvokeTclMethod(
 	     * This is complex and ugly, and would be completely unnecessary
 	     * if we only added support for a TCL_FORBID_EXCEPTIONS flag.
 	     */
+
 	    if (result != TCL_ERROR) {
 		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rtPtr->argv);
 		int cmdLen;
@@ -2114,10 +2111,12 @@ static ReflectedTransformMap *
 GetReflectedTransformMap(
     Tcl_Interp *interp)
 {
-    ReflectedTransformMap *rtmPtr = (ReflectedTransformMap *)Tcl_GetAssocData(interp, RTMKEY, NULL);
+    ReflectedTransformMap *rtmPtr = (ReflectedTransformMap *)
+	    Tcl_GetAssocData(interp, RTMKEY, NULL);
 
     if (rtmPtr == NULL) {
-	rtmPtr = (ReflectedTransformMap *)ckalloc(sizeof(ReflectedTransformMap));
+	rtmPtr = (ReflectedTransformMap *)
+		ckalloc(sizeof(ReflectedTransformMap));
 	Tcl_InitHashTable(&rtmPtr->map, TCL_STRING_KEYS);
 	Tcl_SetAssocData(interp, RTMKEY,
 		(Tcl_InterpDeleteProc *) DeleteReflectedTransformMap, rtmPtr);
@@ -2280,7 +2279,8 @@ GetThreadReflectedTransformMap(void)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->rtmPtr) {
-	tsdPtr->rtmPtr = (ReflectedTransformMap *)ckalloc(sizeof(ReflectedTransformMap));
+	tsdPtr->rtmPtr = (ReflectedTransformMap *)
+		ckalloc(sizeof(ReflectedTransformMap));
 	Tcl_InitHashTable(&tsdPtr->rtmPtr->map, TCL_STRING_KEYS);
 	Tcl_CreateThreadExitHandler(DeleteThreadReflectedTransformMap, NULL);
     }
@@ -2415,8 +2415,8 @@ ForwardOpToOwnerThread(
      * Create and initialize the event and data structures.
      */
 
-    evPtr = (ForwardingEvent *)ckalloc(sizeof(ForwardingEvent));
-    resultPtr = (ForwardingResult *)ckalloc(sizeof(ForwardingResult));
+    evPtr = (ForwardingEvent *) ckalloc(sizeof(ForwardingEvent));
+    resultPtr = (ForwardingResult *) ckalloc(sizeof(ForwardingResult));
 
     evPtr->event.proc = ForwardProc;
     evPtr->resultPtr = resultPtr;
@@ -2759,7 +2759,7 @@ static void
 SrcExitProc(
     ClientData clientData)
 {
-    ForwardingEvent *evPtr = (ForwardingEvent *)clientData;
+    ForwardingEvent *evPtr = (ForwardingEvent *) clientData;
     ForwardingResult *resultPtr;
     ForwardParam *paramPtr;
 
@@ -3230,7 +3230,7 @@ TransformDrain(
     } else
 #endif /* TCL_THREADS */
     {
-	if (InvokeTclMethod(rtPtr, "drain", NULL, NULL, &resObj)!=TCL_OK) {
+	if (InvokeTclMethod(rtPtr, "drain", NULL, NULL, &resObj) != TCL_OK) {
 	    Tcl_SetChannelError(rtPtr->chan, resObj);
 	    Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	    *errorCodePtr = EINVAL;
@@ -3285,7 +3285,7 @@ TransformFlush(
     } else
 #endif /* TCL_THREADS */
     {
-	if (InvokeTclMethod(rtPtr, "flush", NULL, NULL, &resObj)!=TCL_OK) {
+	if (InvokeTclMethod(rtPtr, "flush", NULL, NULL, &resObj) != TCL_OK) {
 	    Tcl_SetChannelError(rtPtr->chan, resObj);
 	    Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	    *errorCodePtr = EINVAL;
