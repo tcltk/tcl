@@ -377,7 +377,7 @@ TclpInitNotifier(void)
 
 void
 TclpFinalizeNotifier(
-    ClientData clientData)
+    TCL_UNUSED(void *))
 {
 #if TCL_THREADS
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);

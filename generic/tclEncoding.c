@@ -565,6 +565,9 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(0);
     type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
+    type.clientData	= INT2PTR(TCL_ENCODING_UTF|TCL_ENCODING_WTF|TCL_ENCODING_MODIFIED);
+    type.encodingName	= "tcl-8";
+    Tcl_CreateEncoding(&type);
 
     type.toUtfProc	= Utf16ToUtfProc;
     type.fromUtfProc    = UtfToUcs2Proc;

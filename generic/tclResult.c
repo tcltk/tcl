@@ -464,6 +464,7 @@ Tcl_SetResult(
 
     ResetObjResult(iPtr);
 }
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -482,10 +483,12 @@ Tcl_SetResult(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetStringResult
 const char *
 Tcl_GetStringResult(
     Tcl_Interp *interp)/* Interpreter whose result to return. */
 {
+#ifdef TCL_NO_DEPRECATED
     Interp *iPtr = (Interp *) interp;
     /*
      * If the string result is empty, move the object result to the string
@@ -497,8 +500,10 @@ Tcl_GetStringResult(
 		TCL_VOLATILE);
     }
     return iPtr->result;
+#else
+    return TclGetString(Tcl_GetObjResult(interp));
+#endif
 }
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
