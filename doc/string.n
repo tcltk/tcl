@@ -404,7 +404,7 @@ Formally, the \fBstring bytelength\fR operation returns the content of
 the \fIlength\fR field of the \fBTcl_Obj\fR structure, after calling
 \fBTcl_GetString\fR to ensure that the \fIbytes\fR field is populated.
 This is highly unlikely to be useful to Tcl scripts, as Tcl's internal
-encoding is not strict UTF\-8, but rather a modified CESU\-8 with a
+encoding is not strict UTF\-8, but rather a modified WTF\-8 with a
 denormalized NUL (identical to that used in a number of places by
 Java's serialization mechanism) to enable basic processing with
 non-Unicode-aware C functions.  As this representation should only

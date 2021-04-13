@@ -17,6 +17,7 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+::tcltest::loadTestedCommands
 
 testConstraint tcl::test [expr {![catch {package require tcl::test}]}]
 testConstraint memory	    [llength [info commands memory]]
