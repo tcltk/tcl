@@ -528,7 +528,7 @@ TclpCreateFileHandler(
     filePtr->mask = mask;
 
     PlatformEventsControl(filePtr, tsdPtr, EV_ADD, isNew);
-}    
+}
 
 /*
  *----------------------------------------------------------------------
