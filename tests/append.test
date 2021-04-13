@@ -15,6 +15,7 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+::tcltest::loadTestedCommands
 unset -nocomplain x
 
 test append-1.1 {append command} {
