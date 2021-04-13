@@ -2356,7 +2356,7 @@ StatError(
     Tcl_Obj *fileName)		/* The name of the file which caused the
 				 * error. */
 {
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("could not read \"%s\": %s",
 	    TclGetString(fileName), Tcl_PosixError(interp)));
 }

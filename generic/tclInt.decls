@@ -578,7 +578,7 @@ declare 256 {
 }
 declare 257 {
     void TclStaticLibrary(Tcl_Interp *interp, const char *prefix,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 
 # TIP 431: temporary directory creation function
@@ -602,9 +602,10 @@ interface tclIntPlat
 ################################
 # Platform specific functions
 
-declare 0 {unix win} {
-    void TclWinConvertError(int errCode)
-}
+# Removed in 9.0
+#declare 0 {unix win} {
+#    void TclWinConvertError(unsigned errCode)
+#}
 declare 1 {unix win} {
     int TclpCloseFile(TclFile file)
 }

@@ -889,7 +889,7 @@ declare 243 {
 # Removed in 9.0 (stub entry only)
 #declare 244  {
 #    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
-#	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+#	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 #}
 # Removed in 9.0 (stub entry only)
 #declare 245 {
@@ -1643,8 +1643,8 @@ declare 443 {
 }
 declare 444 {
     int	Tcl_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *sym1,
-	    const char *sym2, Tcl_PackageInitProc **proc1Ptr,
-	    Tcl_PackageInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
+	    const char *sym2, Tcl_LibraryInitProc **proc1Ptr,
+	    Tcl_LibraryInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
 	    Tcl_FSUnloadFileProc **unloadProcPtr)
 }
 declare 445 {
@@ -2501,10 +2501,6 @@ interface tclPlat
 #   (none)
 
 ################################
-# Windows specific functions
-#   (none)
-
-################################
 # Mac OS X specific functions
 
 declare 1 {
@@ -2516,6 +2512,12 @@ declare 2 {
     void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
 }
 
+################################
+# Windows specific functions
+declare 3 {
+    void Tcl_WinConvertError(unsigned errCode)
+}
+
 ##############################################################################
 
 # Public functions that are not accessible via the stubs table.
@@ -2525,8 +2527,8 @@ export {
     Tcl_Interp *interp)
 }
 export {
-    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *pkgName,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
     const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
