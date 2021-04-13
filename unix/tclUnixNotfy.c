@@ -211,7 +211,7 @@ LookUpFileHandler(
 
 void
 TclpSetTimer(
-    const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
+    TCL_UNUSED(const Tcl_Time *))		/* Timeout value, may be NULL. */
 {
     /*
      * The interval timer doesn't do anything in this implementation, because

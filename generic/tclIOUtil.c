@@ -3009,7 +3009,7 @@ Tcl_FSLoadFile(
     const char *sym1, const char *sym2,
 				/* Names of two functions to find in the
 				 * dynamic shared object. */
-    Tcl_PackageInitProc **proc1Ptr, Tcl_PackageInitProc **proc2Ptr,
+    Tcl_LibraryInitProc **proc1Ptr, Tcl_LibraryInitProc **proc2Ptr,
 				/* Places to store pointers to the functions
 				 * named by sym1 and sym2. */
     Tcl_LoadHandle *handlePtr,	/* A place to store the token for the loaded
@@ -3027,8 +3027,8 @@ Tcl_FSLoadFile(
 
     res = Tcl_LoadFile(interp, pathPtr, symbols, 0, procPtrs, handlePtr);
     if (res == TCL_OK) {
-	*proc1Ptr = (Tcl_PackageInitProc *) procPtrs[0];
-	*proc2Ptr = (Tcl_PackageInitProc *) procPtrs[1];
+	*proc1Ptr = (Tcl_LibraryInitProc *) procPtrs[0];
+	*proc2Ptr = (Tcl_LibraryInitProc *) procPtrs[1];
     } else {
 	*proc1Ptr = *proc2Ptr = NULL;
     }

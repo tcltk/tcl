@@ -580,46 +580,6 @@ Tcl_Sleep(
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclpCreateFileHandler, TclpDeleteFileHandler --
- *
- *	Stub functions for strictly POSIX-only functionality that panic with a
- *	failure message; they simply don't work at all on Windows so using
- *	them on the platform is always a programming bug.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The process will terminate, violently.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpCreateFileHandler(
-    int fd,			/* Handle of stream to watch. */
-    int mask,			/* OR'ed combination of TCL_READABLE,
-				 * TCL_WRITABLE, and TCL_EXCEPTION: indicates
-				 * conditions under which proc should be
-				 * called. */
-    Tcl_FileProc *proc,		/* Function to call for each selected
-				 * event. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
-{
-    Tcl_Panic("Tcl_CreateFileHandler not supported on this platform");
-}
-
-void
-Tcl_DeleteFileHandler(
-    int fd)			/* Stream id for which to remove callback
-				 * function. */
-{
-    Tcl_Panic("Tcl_DeleteFileHandler not supported on this platform");
-}
-
-/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

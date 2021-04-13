@@ -277,7 +277,7 @@ static Tcl_CmdProc	Testset2Cmd;
 static Tcl_CmdProc	TestseterrorcodeCmd;
 static Tcl_ObjCmdProc	TestsetobjerrorcodeCmd;
 static Tcl_CmdProc	TestsetplatformCmd;
-static Tcl_CmdProc	TeststaticpkgCmd;
+static Tcl_CmdProc	TeststaticlibraryCmd;
 static Tcl_CmdProc	TesttranslatefilenameCmd;
 static Tcl_CmdProc	TestupvarCmd;
 static Tcl_ObjCmdProc	TestWrongNumArgsObjCmd;
@@ -604,7 +604,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsocket", TestSocketCmd,
 	    NULL, NULL);
-    Tcl_CreateCommand(interp, "teststaticpkg", TeststaticpkgCmd,
+    Tcl_CreateCommand(interp, "teststaticlibrary", TeststaticlibraryCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testtranslatefilename",
 	    TesttranslatefilenameCmd, NULL, NULL);
@@ -4217,9 +4217,9 @@ TestsetplatformCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TeststaticpkgCmd --
+ * TeststaticlibraryCmd --
  *
- *	This procedure implements the "teststaticpkg" command.
+ *	This procedure implements the "teststaticlibrary" command.
  *	It is used to test the procedure Tcl_StaticLibrary.
  *
  * Results:
@@ -4233,7 +4233,7 @@ TestsetplatformCmd(
  */
 
 static int
-TeststaticpkgCmd(
+TeststaticlibraryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
