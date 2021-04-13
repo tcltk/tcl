@@ -21,7 +21,13 @@
 
 #ifndef _WIN32
 #include <sys/mman.h>
+#include <sys/stat.h>
 #endif /* _WIN32*/
+
+#ifndef EXPOSE_ZIP_COMMENTS
+/* Tcl API for ZIP comments is disabled for now */
+#define EXPOSE_ZIP_COMMENTS 0
+#endif /* !EXPOSE_ZIP_COMMENTS */
 
 #ifndef MAP_FILE
 #define MAP_FILE 0
@@ -30,7 +36,7 @@
 #define crc32tab crc_table[0]
 #ifndef TBLS
 #define TBLS 1
-#endif
+#endif /* !TBLS */
 
 #ifdef HAVE_ZLIB
 #include "zlib.h"
@@ -57,7 +63,27 @@
 
 /*
  * Local header of ZIP archive member (at very beginning of each member).
+ *
+ * We'd use structs, except we must work in little-endian even on big-endian
+ * architectures. There isn't a way to tell a known compiler to do that for
+ * us. Also, they're not necessarily aligned, which would be bonus fun.
  */
+
+#if 0
+struct LocalHeader {
+    uint32_t signature;		/* == ZIP_LOCAL_HEADER_SIG */
+    uint16_t version;
+    uint16_t flags;
+    uint16_t compMethod;
+    uint16_t modTime;
+    uint16_t modDate;
+    uint32_t crc32;
+    uint32_t compLen;
+    uint32_t uncompLen;
+    uint32_t pathLen;
+    uint16_t extraLen;
+};
+#endif
 
 #define ZIP_LOCAL_HEADER_SIG		0x04034b50
 #define ZIP_LOCAL_HEADER_LEN		30
@@ -78,6 +104,28 @@ enum {
 /*
  * Central header of ZIP archive member at end of ZIP file.
  */
+
+#if 0
+struct CentralHeader {
+    uint32_t signature;		/* == ZIP_CENTRAL_HEADER_SIG */
+    uint16_t versionMade;
+    uint16_t version;
+    uint16_t flags;
+    uint16_t compMethod;
+    uint16_t modTime;
+    uint16_t modDate;
+    uint32_t crc32;
+    uint32_t compLen;
+    uint32_t uncompLen;
+    uint16_t pathLen;
+    uint16_t extraLen;
+    uint16_t commentLen;
+    uint16_t diskFile;
+    uint16_t internalAttributes;/* Don't use; always set to 0 */
+    uint32_t externalAttributes;
+    uint32_t localHeaderOffset;
+};
+#endif
 
 #define ZIP_CENTRAL_HEADER_SIG		0x02014b50
 #define ZIP_CENTRAL_HEADER_LEN		46
@@ -104,6 +152,19 @@ enum {
 /*
  * Central end signature at very end of ZIP file.
  */
+
+#if 0
+struct CentralEnd {
+    uint32_t signature;		/* == ZIP_CENTRAL_END_SIG */
+    uint16_t diskNumber;
+    uint16_t directoryDisk;
+    uint16_t numEntries;
+    uint16_t totalNumEntries;
+    uint32_t dirSize;
+    uint32_t dirLen;
+    uint16_t commentLen;
+};
+#endif
 
 #define ZIP_CENTRAL_END_SIG		0x06054b50
 #define ZIP_CENTRAL_END_LEN		22
@@ -157,15 +218,6 @@ enum {
 	    Tcl_SetErrorCode(interp, "TCL", "ZIPFS", errcode, NULL);	\
 	}								\
     } while (0)
-
-/*
- * Windows drive letters.
- */
-
-#ifdef _WIN32
-static const char drvletters[] =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-#endif /* _WIN32 */
 
 /*
  * Mutex to protect localtime(3) when no reentrant version available.
@@ -840,6 +892,12 @@ CanonicalPath(
     int haveZipfsPath = 1;
 
 #ifdef _WIN32
+    /*
+     * Windows drive letters.
+     */
+    static const char drvletters[] =
+	    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
     if (tail[0] != '\0' && strchr(drvletters, tail[0]) && tail[1] == ':') {
 	tail += 2;
 	haveZipfsPath = 0;
@@ -1198,6 +1256,7 @@ ZipFSFindTOC(
     const unsigned char *p, *q;
     const unsigned char *start = zf->data;
     const unsigned char *end = zf->data + zf->length;
+    int comlen;
 
     /*
      * Scan backwards from the end of the file for the signature. This is
@@ -1247,6 +1306,28 @@ ZipFSFindTOC(
     }
 
     /*
+     * Is there a comment?
+     */
+
+    comlen = ZipReadShort(start, end, p + ZIP_CENTRAL_COMMENTLEN_OFFS);
+    if (comlen) {
+	Tcl_DString ds;
+	const char *c;
+
+	if (p + ZIP_CENTRAL_END_LEN + comlen > end) {
+	    ZIPFS_ERROR(interp, "bad zip comment");
+	    ZIPFS_ERROR_CODE(interp, "BAD_COMMENT");
+	    goto error;
+	}
+	Tcl_DStringInit(&ds);
+	c = DecodeZipEntryText(p + ZIP_CENTRAL_END_LEN, comlen, &ds);
+	comlen = Tcl_DStringLength(&ds) + 1;
+	zf->comment = ckalloc(comlen);
+	memcpy(zf->comment, c, comlen);
+	Tcl_DStringFree(&ds);
+    }
+
+    /*
      * Where does the central directory start?
      */
 
@@ -1271,7 +1352,7 @@ ZipFSFindTOC(
     zf->directoryOffset = p - zf->data;
     q = p;
     for (i = 0; i < zf->numFiles; i++) {
-	int pathlen, comlen, extra;
+	int pathlen, extra;
 
 	if (q + ZIP_CENTRAL_HEADER_LEN > end) {
 	    ZIPFS_ERROR(interp, "wrong header length");
@@ -1358,6 +1439,7 @@ ZipFSOpenArchive(
     zf->numFiles = 0;
     zf->baseOffset = zf->passOffset = 0;
     zf->ptrToFree = NULL;
+    zf->comment = NULL;
     zf->passBuf[0] = 0;
 
     /*
@@ -1445,13 +1527,14 @@ ZipMapArchive(
     ZipFile *zf,		/* The archive descriptor structure. */
     void *handle)		/* The OS handle to the open archive. */
 {
-#ifdef _WIN32
-    HANDLE hFile = (HANDLE) handle;
     int readSuccessful;
 
     /*
      * Determine the file size.
      */
+
+#ifdef _WIN32
+    HANDLE hFile = (HANDLE) handle;
 
 #   ifdef _WIN64
     readSuccessful = GetFileSizeEx(hFile, (PLARGE_INTEGER) &zf->length) != 0;
@@ -1459,8 +1542,21 @@ ZipMapArchive(
     zf->length = GetFileSize(hFile, 0);
     readSuccessful = (zf->length != (size_t) INVALID_FILE_SIZE);
 #   endif /* _WIN64 */
-    if (!readSuccessful || (zf->length < ZIP_CENTRAL_END_LEN)) {
+#else /* !_WIN32 */
+    int fd = PTR2INT(handle);
+    struct stat st;
+
+    readSuccessful = (fstat(fd, &st) == 0);
+    zf->length = st.st_size;
+#endif /* _WIN32 */
+
+    if (!readSuccessful) {
 	ZIPFS_POSIX_ERROR(interp, "invalid file size");
+	return TCL_ERROR;
+    }
+    if (zf->length < ZIP_CENTRAL_END_LEN) {
+	ZIPFS_ERROR(interp, "illegal file size");
+	ZIPFS_ERROR_CODE(interp, "FILE_SIZE");
 	return TCL_ERROR;
     }
 
@@ -1468,11 +1564,11 @@ ZipMapArchive(
      * Map the file.
      */
 
+#ifdef _WIN32
     zf->mountHandle = CreateFileMappingW(hFile, 0, PAGE_READONLY, 0,
 	    zf->length, 0);
     if (zf->mountHandle == INVALID_HANDLE_VALUE) {
-	ZIPFS_POSIX_ERROR(interp, "file mapping failed");
-	return TCL_ERROR;
+	goto badMap;
     }
     zf->data = (unsigned char *)
 	    MapViewOfFile(zf->mountHandle, FILE_MAP_READ, 0, 0, zf->length);
@@ -1481,19 +1577,6 @@ ZipMapArchive(
 	return TCL_ERROR;
     }
 #else /* !_WIN32 */
-    int fd = PTR2INT(handle);
-
-    /*
-     * Determine the file size.
-     */
-
-    zf->length = lseek(fd, 0, SEEK_END);
-    if (zf->length == ERROR_LENGTH || zf->length < ZIP_CENTRAL_END_LEN) {
-	ZIPFS_POSIX_ERROR(interp, "invalid file size");
-	return TCL_ERROR;
-    }
-    lseek(fd, 0, SEEK_SET);
-
     zf->data = (unsigned char *)
 	    mmap(0, zf->length, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
     if (zf->data == MAP_FAILED) {
@@ -1564,7 +1647,7 @@ ZipFSCatalogFilesystem(
     ZipFile *zf;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
-    Tcl_DString ds, dsm, fpBuf;
+    Tcl_DString ds, dsm, dsc, fpBuf;
     unsigned char *q;
 
     /*
@@ -1629,6 +1712,7 @@ ZipFSCatalogFilesystem(
      */
 
     *zf = *zf0;
+    zf0->comment = NULL;	/* Ownership transferred to zf */
     zf->mountPoint = (char *) Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
     Tcl_CreateExitHandler(ZipfsExitHandler, zf);
     zf->mountPointLen = strlen(zf->mountPoint);
@@ -1672,7 +1756,7 @@ ZipFSCatalogFilesystem(
 	int extra, isdir = 0, dosTime, dosDate, nbcompr;
 	size_t offs, pathlen, comlen;
 	unsigned char *lq, *gq = NULL;
-	char *fullpath, *path;
+	char *fullpath, *path, *comment = NULL;
 
 	pathlen = ZipReadShort(start, end, q + ZIP_CENTRAL_PATHLEN_OFFS);
 	comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
@@ -1685,6 +1769,10 @@ ZipFSCatalogFilesystem(
 	}
 	if ((strcmp(path, ".") == 0) || (strcmp(path, "..") == 0)) {
 	    goto nextent;
+	}
+	if (comlen) {
+	    comment = DecodeZipEntryText(
+		    q + ZIP_CENTRAL_HEADER_LEN + pathlen, comlen, &dsc);
 	}
 	lq = zf->data + zf->baseOffset
 		+ ZipReadInt(start, end, q + ZIP_CENTRAL_LOCALHDR_OFFS);
@@ -1744,6 +1832,12 @@ ZipFSCatalogFilesystem(
 	z = AllocateZipEntry();
 	z->depth = CountSlashes(fullpath);
 	z->zipFilePtr = zf;
+	if (comment) {
+	    int clen = strlen(comment) + 1;
+	    z->comment = ckalloc(clen);
+	    memcpy(z->comment, comment, clen);
+	    Tcl_DStringFree(&dsc);
+	}
 	z->isDirectory = isdir;
 	z->isEncrypted =
 		(ZipReadShort(start, end, lq + ZIP_LOCAL_FLAGS_OFFS) & 1)
@@ -2375,8 +2469,10 @@ ZipFSUnmountObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    Tcl_Obj *zipObj;
+
     if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "zipfile");
+	Tcl_WrongNumArgs(interp, 1, objv, "mountpoint");
 	return TCL_ERROR;
     }
     return TclZipfs_Unmount(interp, Tcl_GetString(objv[1]));
@@ -3986,6 +4082,71 @@ ZipFSTclLibraryObjCmd(
 /*
  *-------------------------------------------------------------------------
  *
+ * ZipFSCommentObjCmd --
+ *
+ *	This procedure is invoked to process the [zipfs comment] command. It
+ *	returns the ZIP-level comment of a mounted ZIP, if there is one.
+ *	Errors on no such mount. Does nothing in a safe interp.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+#if EXPOSE_ZIP_COMMENTS
+static int
+ZipFSCommentObjCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int result = TCL_OK;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "mountPoint");
+	return TCL_ERROR;
+    }
+    if (!Tcl_IsSafe(interp)) {
+	Tcl_DString ds;
+	Tcl_Obj *mountPoint;
+	ZipFile *zf;
+
+	mountPoint = Tcl_FSGetNormalizedPath(interp, objv[1]);
+	if (!mountPoint) {
+	    return TCL_ERROR;
+	}
+	Tcl_DStringInit(&ds);
+	ReadLock();
+	if (!ZipFS.initialized) {
+	    goto noMount;
+	}
+	zf = ZipFSLookupZip(Tcl_GetString(mountPoint));
+	if (!zf) {
+	noMount:
+	    ZIPFS_ERROR(interp, "no such mounted zip");
+	    ZIPFS_ERROR_CODE(interp, "NO_ZIP");
+	    result = TCL_ERROR;
+	    goto done;
+	}
+	if (zf->comment) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(zf->comment, -1));
+	}
+    done:
+	Unlock();
+	Tcl_DStringFree(&ds);
+    }
+    return result;
+}
+#endif /* EXPOSE_ZIP_COMMENTS */
+
+/*
+ *-------------------------------------------------------------------------
+ *
  * ZipChannelClose --
  *
  *	This function is called to close a channel.
@@ -5337,7 +5498,8 @@ enum ZipFileAttrs {
     ZIP_ATTR_MOUNT,
     ZIP_ATTR_ARCHIVE,
     ZIP_ATTR_PERMISSIONS,
-    ZIP_ATTR_CRC
+    ZIP_ATTR_CRC,
+    ZIP_ATTR_COMMENT
 };
 
 static const char *const *
@@ -5357,6 +5519,9 @@ ZipFSFileAttrStringsProc(
 	"-archive",
 	"-permissions",
 	"-crc",
+#if EXPOSE_ZIP_COMMENTS
+	"-comment",
+#endif /* EXPOSE_ZIP_COMMENTS */
 	NULL,
     };
 
@@ -5429,6 +5594,9 @@ ZipFSFileAttrsGetProc(
 	break;
     case ZIP_ATTR_CRC:
 	TclNewIntObj(*objPtrRef, z->crc32);
+	break;
+    case ZIP_ATTR_COMMENT:
+	*objPtrRef = Tcl_NewStringObj(z->zipFilePtr->comment, -1);
 	break;
     default:
 	ZIPFS_ERROR(interp, "unknown attribute");
@@ -5643,6 +5811,9 @@ TclZipfs_Init(
 	{"mount_data",	ZipFSMountBufferObjCmd,	NULL, NULL, NULL, 1},
 	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 1},
 	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 1},
+#if EXPOSE_ZIP_COMMENTS
+	{"comment",	ZipFSCommentObjCmd,	NULL, NULL, NULL, 1},
+#endif /* EXPOSE_ZIP_COMMENTS */
 	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 0},
 	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 0},
 	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
