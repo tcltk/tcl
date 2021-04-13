@@ -15,6 +15,7 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+::tcltest::loadTestedCommands
 unset -nocomplain x
 
 test append-1.1 {append command} {
@@ -65,15 +66,15 @@ test append-3.6 {append surrogates} -body {
     set x \uDE02
     set x \uD83D$x
 } -result \uD83D\uDE02
-test append-3.7 {append \xC0 \x80} -body {
+test append-3.7 {append \xC0 \x80} -constraints testbytestring -body {
     set x [testbytestring \xC0]
     string length [append x [testbytestring \x80]]
 } -result 2
-test append-3.8 {append \xC0 \x80} -body {
+test append-3.8 {append \xC0 \x80} -constraints testbytestring -body {
     set x [testbytestring \xC0]
     string length $x[testbytestring \x80]
 } -result 2
-test append-3.9 {append \xC0 \x80} -body {
+test append-3.9 {append \xC0 \x80} -constraints testbytestring -body {
     set x [testbytestring \x80]
     string length [testbytestring \xC0]$x
 } -result 2
