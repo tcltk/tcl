@@ -143,6 +143,12 @@ test format-2.16 {string formatting, width and precision} {
 test format-2.17 {string formatting, width and precision} {
     format "a%5.7sa" foobarbaz
 } "afoobarba"
+test format-2.18 {string formatting, surrogates} {
+    format "\uD83D%s" \uDE02
+} \uD83D\uDE02
+test format-2.19 {string formatting, surrogates} {
+    format "%s\uDE02" \uD83D
+} \uD83D\uDE02
 
 test format-3.1 {Tcl_FormatObjCmd: character formatting} {
     format "|%c|%0c|%-1c|%1c|%-6c|%6c|%*c|%*c|" 65 65 65 65 65 65 3 65 -4 65
