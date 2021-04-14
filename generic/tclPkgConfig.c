@@ -2,7 +2,7 @@
  * tclPkgConfig.c --
  *
  *	This file contains the configuration information to embed into the tcl
- *	binary library.
+ *	library.
  *
  * Copyright © 2002 Andreas Kupries <andreas_kupries@users.sourceforge.net>
  *

@@ -19,6 +19,9 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
+#ifndef TCL_NO_DEPRECATED
+#   define TCL_NO_DEPRECATED
+#endif
 #include "tclInt.h"
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
 #   include "tommath.h"
@@ -275,7 +278,7 @@ static Tcl_CmdProc	Testset2Cmd;
 static Tcl_CmdProc	TestseterrorcodeCmd;
 static Tcl_ObjCmdProc	TestsetobjerrorcodeCmd;
 static Tcl_CmdProc	TestsetplatformCmd;
-static Tcl_CmdProc	TeststaticpkgCmd;
+static Tcl_CmdProc	TeststaticlibraryCmd;
 static Tcl_CmdProc	TesttranslatefilenameCmd;
 static Tcl_CmdProc	TestupvarCmd;
 static Tcl_ObjCmdProc	TestWrongNumArgsObjCmd;
@@ -661,7 +664,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsocket", TestSocketCmd,
 	    NULL, NULL);
-    Tcl_CreateCommand(interp, "teststaticpkg", TeststaticpkgCmd,
+    Tcl_CreateCommand(interp, "teststaticlibrary", TeststaticlibraryCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testtranslatefilename",
 	    TesttranslatefilenameCmd, NULL, NULL);
@@ -4274,10 +4277,10 @@ TestsetplatformCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TeststaticpkgCmd --
+ * TeststaticlibraryCmd --
  *
- *	This procedure implements the "teststaticpkg" command.
- *	It is used to test the procedure Tcl_StaticPackage.
+ *	This procedure implements the "teststaticlibrary" command.
+ *	It is used to test the procedure Tcl_StaticLibrary.
  *
  * Results:
  *	A standard Tcl result.
@@ -4290,7 +4293,7 @@ TestsetplatformCmd(
  */
 
 static int
-TeststaticpkgCmd(
+TeststaticlibraryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
@@ -4300,7 +4303,7 @@ TeststaticpkgCmd(
 
     if (argc != 4) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"",
-		argv[0], " pkgName safe loaded\"", NULL);
+		argv[0], " prefix safe loaded\"", NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetInt(interp, argv[2], &safe) != TCL_OK) {
@@ -4309,7 +4312,7 @@ TeststaticpkgCmd(
     if (Tcl_GetInt(interp, argv[3], &loaded) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage((loaded) ? interp : NULL, argv[1],
+    Tcl_StaticLibrary((loaded) ? interp : NULL, argv[1],
 	    StaticInitProc, (safe) ? StaticInitProc : NULL);
     return TCL_OK;
 }
@@ -7022,7 +7025,7 @@ TestUtfPrevCmd(
     } else {
 	offset = numBytes;
     }
-    result = TclUtfPrev(bytes + offset, bytes);
+    result = Tcl_UtfPrev(bytes + offset, bytes);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
     return TCL_OK;
 }

@@ -671,7 +671,8 @@ UNIX_SRCS = \
 NOTIFY_SRCS = \
 	$(UNIX_DIR)/tclEpollNotfy.c \
 	$(UNIX_DIR)/tclKqueueNotfy.c \
-	$(UNIX_DIR)/tclSelectNotfy.c
+	$(UNIX_DIR)/tclSelectNotfy.c \
+	$(UNIX_DIR)/tclUnixNotfy.c
 
 DL_SRCS = \
 	$(UNIX_DIR)/tclLoadAix.c \
@@ -944,6 +945,9 @@ shell: ${TCL_EXE}
 # This target can be used to run tclsh inside either gdb or insight
 gdb: ${TCL_EXE}
 	$(SHELL_ENV) $(GDB) ./${TCL_EXE}
+
+lldb: ${TCL_EXE}
+	$(SHELL_ENV) $(LLDB) ./${TCL_EXE}
 
 valgrind: ${TCL_EXE} ${TCLTEST_EXE}
 	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} \
@@ -1773,13 +1777,13 @@ tclUnixFCmd.o: $(UNIX_DIR)/tclUnixFCmd.c
 tclUnixFile.o: $(UNIX_DIR)/tclUnixFile.c $(FSHDR)
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixFile.c
 
-tclEpollNotfy.o: $(UNIX_DIR)/tclEpollNotfy.c
+tclEpollNotfy.o: $(UNIX_DIR)/tclEpollNotfy.c $(UNIX_DIR)/tclUnixNotfy.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclEpollNotfy.c
 
-tclKqueueNotfy.o: $(UNIX_DIR)/tclKqueueNotfy.c
+tclKqueueNotfy.o: $(UNIX_DIR)/tclKqueueNotfy.c $(UNIX_DIR)/tclUnixNotfy.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclKqueueNotfy.c
 
-tclSelectNotfy.o: $(UNIX_DIR)/tclSelectNotfy.c
+tclSelectNotfy.o: $(UNIX_DIR)/tclSelectNotfy.c $(UNIX_DIR)/tclUnixNotfy.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclSelectNotfy.c
 
 tclUnixPipe.o: $(UNIX_DIR)/tclUnixPipe.c
