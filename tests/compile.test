@@ -286,10 +286,10 @@ test compile-7.1 {TclCompileWhileCmd: command substituted test expression} {
 } {4}
 
 test compile-8.1 {CollectArgInfo: binary data} {
-    list [catch "string length \000foo" msg] $msg
+    list [catch "string length \x00foo" msg] $msg
 } {0 4}
 test compile-8.2 {CollectArgInfo: binary data} {
-    list [catch "string length foo\000" msg] $msg
+    list [catch "string length foo\x00" msg] $msg
 } {0 4}
 test compile-8.3 {CollectArgInfo: handle "]" at end of command properly} {
     set x ]

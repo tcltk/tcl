@@ -334,7 +334,7 @@ static const unsigned char wsaErrorTable[] = {
 /*
  *----------------------------------------------------------------------
  *
- * TclWinConvertError --
+ * Tcl_WinConvertError --
  *
  *	This routine converts a Win32 error into an errno value.
  *
@@ -348,8 +348,8 @@ static const unsigned char wsaErrorTable[] = {
  */
 
 void
-TclWinConvertError(
-    DWORD errCode)		/* Win32 error code. */
+Tcl_WinConvertError(
+    unsigned errCode)		/* Win32 error code. */
 {
     if (errCode >= sizeof(errorTable)/sizeof(errorTable[0])) {
 	errCode -= WSAEWOULDBLOCK;

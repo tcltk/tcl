@@ -65,6 +65,9 @@ EXTERN TCHAR *		Tcl_WinUtfToTChar(const char *str, int len,
 /* 1 */
 EXTERN char *		Tcl_WinTCharToUtf(const TCHAR *str, int len,
 				Tcl_DString *dsPtr);
+/* Slot 2 is reserved */
+/* 3 */
+EXTERN void		Tcl_WinConvertError(unsigned errCode);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
 /* 0 */
@@ -89,6 +92,8 @@ typedef struct TclPlatStubs {
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     TCHAR * (*tcl_WinUtfToTChar) (const char *str, int len, Tcl_DString *dsPtr); /* 0 */
     char * (*tcl_WinTCharToUtf) (const TCHAR *str, int len, Tcl_DString *dsPtr); /* 1 */
+    void (*reserved2)(void);
+    void (*tcl_WinConvertError) (unsigned errCode); /* 3 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     int (*tcl_MacOSXOpenBundleResources) (Tcl_Interp *interp, const char *bundleName, int hasResourceFile, int maxPathLen, char *libraryPath); /* 0 */
@@ -114,6 +119,9 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 	(tclPlatStubsPtr->tcl_WinUtfToTChar) /* 0 */
 #define Tcl_WinTCharToUtf \
 	(tclPlatStubsPtr->tcl_WinTCharToUtf) /* 1 */
+/* Slot 2 is reserved */
+#define Tcl_WinConvertError \
+	(tclPlatStubsPtr->tcl_WinConvertError) /* 3 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
 #define Tcl_MacOSXOpenBundleResources \

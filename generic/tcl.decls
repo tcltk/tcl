@@ -860,8 +860,8 @@ declare 243 {
     void Tcl_SplitPath(const char *path, int *argcPtr, const char ***argvPtr)
 }
 declare 244 {nostub {Don't use this function in a stub-enabled extension}} {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 declare 245 {deprecated {No longer in use, changed to macro}} {
     int Tcl_StringMatch(const char *str, const char *pattern)
@@ -1163,7 +1163,7 @@ declare 325 {
     const char *Tcl_UtfAtIndex(const char *src, int index)
 }
 declare 326 {
-    int Tcl_UtfCharComplete(const char *src, int length)
+    int TclUtfCharComplete(const char *src, int length)
 }
 declare 327 {
     int Tcl_UtfBackslash(const char *src, int *readPtr, char *dst)
@@ -1175,10 +1175,10 @@ declare 329 {
     const char *Tcl_UtfFindLast(const char *src, int ch)
 }
 declare 330 {
-    const char *Tcl_UtfNext(const char *src)
+    const char *TclUtfNext(const char *src)
 }
 declare 331 {
-    const char *Tcl_UtfPrev(const char *src, const char *start)
+    const char *TclUtfPrev(const char *src, const char *start)
 }
 declare 332 {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding,
@@ -1581,8 +1581,8 @@ declare 443 {
 }
 declare 444 {
     int	Tcl_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *sym1,
-	    const char *sym2, Tcl_PackageInitProc **proc1Ptr,
-	    Tcl_PackageInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
+	    const char *sym2, Tcl_LibraryInitProc **proc1Ptr,
+	    Tcl_LibraryInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
 	    Tcl_FSUnloadFileProc **unloadProcPtr)
 }
 declare 445 {
@@ -2413,6 +2413,17 @@ declare 653 {
     unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 
+# TIP #575
+declare 654 {
+    int Tcl_UtfCharComplete(const char *src, int length)
+}
+declare 655 {
+    const char *Tcl_UtfNext(const char *src)
+}
+declare 656 {
+    const char *Tcl_UtfPrev(const char *src, const char *start)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
@@ -2436,6 +2447,9 @@ declare 0 win {
 }
 declare 1 win {
     char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
+}
+declare 3 win {
+    void Tcl_WinConvertError(unsigned errCode)
 }
 
 ################################
@@ -2467,8 +2481,8 @@ export {
     Tcl_Interp *interp)
 }
 export {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
     void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
@@ -2497,7 +2511,7 @@ export {
 export {
     const char *Tcl_InitSubsystems(void)
 }
-export { 
+export {
     int TclZipfs_AppHook(int *argc, char ***argv)
 }
 

@@ -299,19 +299,19 @@ test cmdMZ-4.10 {Tcl_SplitObjCmd: basic split commands} {
 } {]\n}
 test cmdMZ-4.11 {Tcl_SplitObjCmd: basic split commands} {
     apply {{} {
-        set x ab\000c
+        set x ab\x00c
         set y [split $x {}]
 	binary scan $y c* z
         return $z
     }}
 } {97 32 98 32 0 32 99}
 test cmdMZ-4.12 {Tcl_SplitObjCmd: basic split commands} {
-    split "a0ab1b2bbb3\000c4" ab\000c
+    split "a0ab1b2bbb3\x00c4" ab\x00c
 } {{} 0 {} 1 2 {} {} 3 {} 4}
 test cmdMZ-4.13 {Tcl_SplitObjCmd: basic split commands} {
-    # if not UTF-8 aware, result is "a {} {} b qw\xe5 {} N wq"
-    split "a\u4e4eb qw\u5e4e\x4e wq" " \u4e4e"
-} "a b qw\u5e4eN wq"
+    # if not UTF-8 aware, result is "a {} {} b qwå {} N wq"
+    split "a乎b qw幎N wq" " 乎"
+} "a b qw幎N wq"
 
 # The tests for Tcl_StringObjCmd are in string.test
 # The tests for Tcl_SubstObjCmd are in subst.test

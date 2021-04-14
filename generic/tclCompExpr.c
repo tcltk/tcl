@@ -2145,7 +2145,7 @@ ParseLexeme(
      */
 
     if (!TclIsBareword(*start) || *start == '_') {
-	if (TclUCS4Complete(start, numBytes)) {
+	if (Tcl_UtfCharComplete(start, numBytes)) {
 	    scanned = TclUtfToUCS4(start, &ch);
 	} else {
 	    char utfBytes[8];
