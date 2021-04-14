@@ -1859,7 +1859,8 @@ Tcl_ConcatObj(
 	    TclListObjGetElements(NULL, objPtr, &listc, &listv);
 	    if (listc) {
 		if (resPtr) {
-		    if (TCL_OK != Tcl_ListObjReplace(NULL, resPtr,
+		    if (Tcl_GetString(listv[0])[0] == '#'
+			    || TCL_OK != Tcl_ListObjReplace(NULL, resPtr,
 			    INT_MAX, 0, listc, listv)) {
 			/* Abandon ship! */
 			Tcl_DecrRefCount(resPtr);
