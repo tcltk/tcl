@@ -70,8 +70,8 @@ static void		SetUnicodeObj(Tcl_Obj *objPtr,
 static size_t		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 
-#define ISCONTINUATION(bytes) ((bytes) \
-	&& ((((bytes)[0] & 0xC0) == 0x80) || (((bytes)[0] == '\xED') \
+#define ISCONTINUATION(bytes) (\
+	((((bytes)[0] & 0xC0) == 0x80) || (((bytes)[0] == '\xED') \
 	&& (((bytes)[1] & 0xF0) == 0xB0) && (((bytes)[2] & 0xC0) == 0x80))))
 
 
@@ -1153,7 +1153,7 @@ Tcl_AppendLimitedToObj(
 
     /* If appended string starts with a continuation byte or a lower surrogate,
      * force objPtr to unicode representation. See [7f1162a867] */
-    if (ISCONTINUATION(bytes)) {
+    if (bytes && ISCONTINUATION(bytes)) {
 	Tcl_GetUnicode(objPtr);
     }
     if (stringPtr->hasUnicode && (stringPtr->numChars+1) > 1) {
@@ -1357,7 +1357,7 @@ Tcl_AppendObjToObj(
     /* If appended string starts with a continuation byte or a lower surrogate,
      * force objPtr to unicode representation. See [7f1162a867]
      * This fixes append-3.4, append-3.7 and utf-1.18 testcases. */
-    if (ISCONTINUATION(appendObjPtr->bytes)) {
+    if (ISCONTINUATION(TclGetString(appendObjPtr))) {
 	Tcl_GetUnicode(objPtr);
     }
     /*
@@ -2978,7 +2978,7 @@ TclStringCat(
 		 */
 
 	 	binary = 0;
-	 	if (ov > objv+1 && ISCONTINUATION(objPtr->bytes)) {
+	 	if (ov > objv+1 && ISCONTINUATION(TclGetString(objPtr))) {
 	 	    forceUniChar = 1;
 	 	} else if ((objPtr->typePtr) && (objPtr->typePtr != &tclStringType)) {
 		    /* Prevent shimmer of non-string types. */
