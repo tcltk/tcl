@@ -3101,6 +3101,7 @@ ZipFSMkZipOrImg(
 
 	if (!isMounted) {
 	    zf = &zf0;
+	    memset(&zf0, 0, sizeof(ZipFile));
 	}
 	if (isMounted || ZipFSOpenArchive(interp, imgName, 0, zf) == TCL_OK) {
 	    /*
