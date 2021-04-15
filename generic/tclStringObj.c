@@ -1355,16 +1355,10 @@ Tcl_AppendObjToObj(
     stringPtr = GET_STRING(objPtr);
 
     /* If appended string starts with a continuation byte or a lower surrogate,
-     * append the unicode representation. See [7f1162a867]
+     * force objPtr to unicode representation. See [7f1162a867]
      * This fixes append-3.4, append-3.7 and utf-1.18 testcases. */
     if (ISCONTINUATION(TclGetString(appendObjPtr))) {
-	Tcl_Obj *tmp = Tcl_DuplicateObj(appendObjPtr);
-	Tcl_UniChar *unicode =
-		Tcl_GetUnicodeFromObj(tmp, &numChars);
 	Tcl_GetUnicode(objPtr);
-	AppendUnicodeToUnicodeRep(objPtr, unicode, numChars);
-	Tcl_DecrRefCount(tmp);
-	return;
     }
     /*
      * If objPtr has a valid Unicode rep, then get a Unicode string from
