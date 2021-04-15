@@ -640,6 +640,22 @@ comments were revised to declare for the first time a plan to make
 use of UTF-16.  Nevertheless the encoder remained one patterned after
 FSS-UTF.
 
+The same state of affairs persisted through all the remaining releases of
+Tcl 8.4.  It also remained effectively the same in all releases from
+Tcl 8.5.0 (December 2007) through Tcl 8.5.19 (February 2016).  (A comment
+was added in *tclStringObj.c* during an commit otherwise largely devoted
+to formatting and whitespace issues.  The new comment also made suggestions
+about claiming use of UTF-16 without making any changes in the code that 
+would make it in any way conformant to UTF-16.) It also remained the same
+in releases Tcl 8.6.0 (December 2012) through Tcl 8.6.4 (March 2015).  In
+all these releases, Tcl's encoder into byte sequences continued to be
+implemented on the old FSS-UTF model.  Setting **TCL\_UTF\_MAX** to 6
+might provide representations for astral characters, but nothing would
+encode them into or decode them from their UTF-16 encoding.
+
+
+
+
 
 Routines where TCL\_UTF\_MAX is relevant:
 Tcl\_UtfBackslash, Tcl\_UtfPrev, Tcl\_WinTCharToUtf
