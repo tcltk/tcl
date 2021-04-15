@@ -212,6 +212,9 @@ test util-4.7 {Tcl_ConcatObj - refCount safety} testconcatobj {
     # symptoms was Bug #2055782.
     testconcatobj
 } {}
+test util-4.8 {Tcl_ConcatObj - [Bug 26649439c7]} {
+    concat [list foo] [list #]
+} {foo {#}}
 
 proc Wrapper_Tcl_StringMatch {pattern string} {
     # Forces use of Tcl_StringMatch, not Tcl_UniCharCaseMatch
