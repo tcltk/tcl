@@ -2030,7 +2030,14 @@ Tcl_ConcatObj(
 		continue;
 	    }
 	    if (resPtr) {
-		if (TCL_OK != Tcl_ListObjAppendList(NULL, resPtr, objPtr)) {
+		Tcl_Obj *elemPtr = NULL;
+
+		Tcl_ListObjIndex(NULL, objPtr, 0, &elemPtr);
+		if (elemPtr == NULL) {
+		    continue;
+		}
+		if (Tcl_GetString(elemPtr)[0] == '#' || TCL_OK
+			!= Tcl_ListObjAppendList(NULL, resPtr, objPtr)) {
 		    /* Abandon ship! */
 		    Tcl_DecrRefCount(resPtr);
 		    goto slow;
