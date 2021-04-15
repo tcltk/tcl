@@ -1875,7 +1875,6 @@ NativeIsExec(
     if ((_wcsicmp(path, L"exe") == 0)
 	    || (_wcsicmp(path, L"com") == 0)
 	    || (_wcsicmp(path, L"cmd") == 0)
-	    || (_wcsicmp(path, L"cmd") == 0)
 	    || (_wcsicmp(path, L"bat") == 0)) {
 	return 1;
     }
