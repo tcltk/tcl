@@ -10,16 +10,16 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_Main, Tcl_SetStartupScript, Tcl_GetStartupScript, Tcl_SetMainLoop \- main program, startup script, and event loop definition for Tcl-based applications
+Tcl_Main, Tcl_MainEx, Tcl_MainExW, Tcl_SetStartupScript, Tcl_GetStartupScript, Tcl_SetMainLoop \- main program, startup script, and event loop definition for Tcl-based applications
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
 \fBTcl_Main\fR(\fIargc, argv, appInitProc\fR)
 .sp
-\fBTcl_MainEx\fR(\fIargc, charargv, appInitProc\fR)
+\fBTcl_MainEx\fR(\fIargc, charargv, appInitProc, interp\fR)
 .sp
-\fBTcl_MainExW\fR(\fIargc, wideargv, appInitProc\fR)
+\fBTcl_MainExW\fR(\fIargc, wideargv, appInitProc, interp\fR)
 .sp
 \fBTcl_SetStartupScript\fR(\fIpath, encoding\fR)
 .sp
@@ -50,6 +50,8 @@ If non-NULL, location to write a copy of the (const char *)
 pointing to the encoding name.
 .AP Tcl_MainLoopProc *mainLoopProc in
 Address of an application-specific event loop procedure.
+.AP Tcl_Interp *interp in
+Already created Tcl Interpreter.
 .BE
 .SH DESCRIPTION
 .PP
@@ -200,9 +202,10 @@ the \fBexit\fR command.
 .PP
 \fBTcl_Main\fR can not be used in stub-enabled extensions.
 .PP
-When the TCL library is loaded within an embedded application, \fBTcl_MainEx\fR or \fBTcl_MainExW\fR may be used to call \fBTcl_Main\fR.
-The difference between Tcl_MainEx and Tcl_MainExW is that the arguments are passed as characters or wide characters.
-Remark that the stubs table must be first initialized using one of \fBTcl_InitSubsystems\fR, \fBTcl_SetPanicProc\fR, \fBTcl_FindExecutable\fR or \fBTclZipfs_AppHook\fR.
+The difference between Tcl_MainEx and Tcl_MainExW is that the arguments
+are passed as characters or wide characters. When used in stub-enabled
+embedders, the stubs table must be first initialized using one of
+\fBTcl_InitSubsystems\fR, \fBTcl_SetPanicProc\fR, \fBTcl_FindExecutable\fR or \fBTclZipfs_AppHook\fR.
 .SH "SEE ALSO"
 tclsh(1), Tcl_GetStdChannel(3), Tcl_StandardChannels(3), Tcl_AppInit(3),
 exit(n), encoding(n)

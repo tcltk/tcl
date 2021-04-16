@@ -74,9 +74,12 @@ the procedures \fBTcl_Alloc\fR, \fBTcl_Free\fR, \fBTcl_Realloc\fR,
 \fBTcl_AttemptAlloc\fR, and \fBTcl_AttempRealloc\fR are implemented
 as macros, redefined to be special debugging versions of these procedures.
 
-\fBTcl_GetMemoryInfo\fR appends a list-of-lists of memory stats to the provided DString.
-This procedure may be called when the TCL library is included within an embedded application.
-The stubs table must be first initialized using one of \fBTcl_InitSubsystems\fR, \fBTcl_SetPanicProc\fR, \fBTcl_FindExecutable\fR or \fBTclZipfs_AppHook\fR.
+\fBTcl_GetMemoryInfo\fR appends a list-of-lists of memory stats to the
+provided DString. This function cannot be used in stub-enabled extensions,
+and it is only available if Tcl is compiled with the threaded memory allocator
+When used in stub-enabled embedders, the stubs table must be first initialized
+using one of \fBTcl_InitSubsystems\fR, \fBTcl_SetPanicProc\fR,
+\fBTcl_FindExecutable\fR or \fBTclZipfs_AppHook\fR.
 
 .SH KEYWORDS
 alloc, allocation, free, malloc, memory, realloc, TCL_MEM_DEBUG
