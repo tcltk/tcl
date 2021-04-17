@@ -19,6 +19,7 @@ testConstraint zipfs [expr {
     [llength [info commands zlib]] && [regexp tcltest [info nameofexecutable]]
 }]
 testConstraint zipfslib 1
+testConstraint zipfscomments 0
 
 set ziproot [zipfs root]
 set CWD [pwd]
@@ -96,7 +97,7 @@ test zipfs-1.3 {zipfs errors} -constraints zipfs -returnCodes error -body {
 } -result {wrong # args: should be "zipfs mount ?mountpoint? ?zipfile? ?password?"}
 test zipfs-1.4 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs unmount a b c d e f
-} -result {wrong # args: should be "zipfs unmount zipfile"}
+} -result {wrong # args: should be "zipfs unmount mountpoint"}
 test zipfs-1.5 {zipfs errors} -constraints zipfs -returnCodes error -body {
     zipfs mkkey a b c d e f
 } -result {wrong # args: should be "zipfs mkkey password"}
@@ -380,6 +381,34 @@ test zipfs-4.5 {zipfs lmkimg: making image from mounted} -constraints zipfs -set
     removeFile $targetImage
     removeFile $addFile
 } -result {//zipfs://ziptest/test/add.tcl //zipfs://ziptest/test/ok.tcl}
+test zipfs-4.6 {zipfs lmkimg: making image with comment} -constraints {zipfs zipfscomments} -setup {
+    set baseImage [makeFile "return sourceWorking\n\x1A" base_image.tcl]
+    set targetImage [makeFile "" target_image.tcl]
+    set addFile [makeFile "return mountWorking" add.data]
+    file delete $midImage $targetImage
+    proc addComment {zipfile commentData} {
+	set len [binary format s [string length $commentData]]
+	set f [open $zipfile r+b]
+	try {
+	    chan seek $f -2 end
+	    puts -nonewline $f $len$commentData
+	} finally {
+	    close $f
+	}
+    }
+} -body {
+    zipfs lmkimg $targetImage [list $addFile test/ok.tcl] {} $baseImage
+    addComment $targetImage "gorp"
+    zipfs mount ziptest $targetImage
+    list [glob -directory //zipfs://ziptest/test *.tcl] \
+	[zipfs comment //zipfs://ziptest/]
+} -cleanup {
+    zipfs unmount ziptest
+    removeFile $baseImage
+    removeFile $midImage
+    removeFile $targetImage
+    removeFile $addFile
+} -result {//zipfs://ziptest/test/ok.tcl gorp}
 
 test zipfs-5.1 {zipfs mount_data: short data} -constraints zipfs -body {
     zipfs mount_data gorp {}
@@ -390,9 +419,15 @@ test zipfs-5.2 {zipfs mount_data: short data} -constraints zipfs -body {
 test zipfs-5.3 {zipfs mount_data: short data} -constraints zipfs -body {
     set data PK\x03\x04.....................................
     append data PK\x01\x02.....................................
-    append data PK\x05\x06.....................................
+    append data PK\x05\x06................\x01\x00...................
     zipfs mount_data gorp $data
 } -returnCodes error -result {bad zip data}
+test zipfs-5.4 {zipfs mount_data: short data} -constraints zipfs -body {
+    set data PK\x03\x04.....................................
+    append data PK\x01\x02.....................................
+    append data PK\x05\x06................\x00\x01...................
+    zipfs mount_data gorp $data
+} -returnCodes error -result {bad zip comment}
 test zipfs-5.4 {zipfs mount_data: bad arg count} -constraints zipfs -body {
     zipfs mount_data gorp {} foobar
 } -returnCodes error -result {wrong # args: should be "zipfs mount_data ?mountpoint? ?data?"}
