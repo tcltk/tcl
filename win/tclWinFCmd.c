@@ -17,10 +17,12 @@
  * TraverseWinTree() calls the traverseProc()
  */
 
-#define DOTREE_PRED	1	/* pre-order directory  */
-#define DOTREE_POSTD	2	/* post-order directory */
-#define DOTREE_F	3	/* regular file */
-#define DOTREE_LINK	4	/* symbolic link */
+enum DotreeTypes {
+    DOTREE_PRED = 1,		/* pre-order directory  */
+    DOTREE_POSTD = 2,		/* post-order directory */
+    DOTREE_F = 3,		/* regular file */
+    DOTREE_LINK = 4		/* symbolic link */
+};
 
 /*
  * Callbacks for file attributes code.

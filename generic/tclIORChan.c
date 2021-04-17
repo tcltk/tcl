@@ -44,7 +44,7 @@ static void		ReflectThread(ClientData clientData, int action);
 static int		ReflectEventRun(Tcl_Event *ev, int flags);
 static int		ReflectEventDelete(Tcl_Event *ev, ClientData cd);
 #endif
-static long long ReflectSeekWide(ClientData clientData,
+static long long        ReflectSeekWide(ClientData clientData,
 			    long long offset, int mode, int *errorCodePtr);
 #ifndef TCL_NO_DEPRECATED
 static int		ReflectSeek(ClientData clientData, long offset,
@@ -58,8 +58,8 @@ static int		ReflectSetOption(ClientData clientData,
 			    const char *newValue);
 static int		ReflectTruncate(ClientData clientData,
 			    long long length);
-static void     TimerRunRead(ClientData clientData);
-static void     TimerRunWrite(ClientData clientData);
+static void             TimerRunRead(ClientData clientData);
+static void             TimerRunWrite(ClientData clientData);
 
 /*
  * The C layer channel type/driver definition used by the reflection.
@@ -104,33 +104,27 @@ typedef struct {
 				 * Tcl level part of the channel. NULL here
 				 * signals the channel is dead because the
 				 * interpreter/thread containing its Tcl
-				 * command is gone.
-				 */
+				 * command is gone. */
 #if TCL_THREADS
-    Tcl_ThreadId thread;	/* Thread the 'interp' belongs to. == Handler thread */
-    Tcl_ThreadId owner;         /* Thread owning the structure.    == Channel thread */
+    Tcl_ThreadId thread;	/* Thread the 'interp' belongs to. == Handler
+                                 * thread */
+    Tcl_ThreadId owner;         /* Thread owning the structure.  == Channel
+                                 * thread */
 #endif
     Tcl_Obj *cmd;		/* Callback command prefix */
     Tcl_Obj *methods;		/* Methods to append to command prefix */
     Tcl_Obj *name;		/* Name of the channel as created */
-
     int mode;			/* Mask of R/W mode */
     int interest;		/* Mask of events the channel is interested
 				 * in. */
-
     int dead;			/* Boolean signal that some operations
 				 * should no longer be attempted. */
-
-    Tcl_TimerToken readTimer;   /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is readable
-			        */
-    Tcl_TimerToken writeTimer;  /*
-				   A token for the timer that is scheduled in
-				   order to call Tcl_NotifyChannel when the
-				   channel is writable
-			        */
+    Tcl_TimerToken readTimer;   /* A token for the timer that is scheduled in
+                                 * order to call Tcl_NotifyChannel when the
+                                 * channel is readable */
+    Tcl_TimerToken writeTimer;  /* A token for the timer that is scheduled in
+                                 * order to call Tcl_NotifyChannel when the
+                                 * channel is writable */
 
     /*
      * Note regarding the usage of timers.

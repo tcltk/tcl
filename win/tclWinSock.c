@@ -174,26 +174,27 @@ struct TcpState {
  * structure.
  */
 
-#define TCP_NONBLOCKING		(1<<0)	/* Socket with non-blocking I/O */
-#define TCP_ASYNC_CONNECT	(1<<1)	/* Async connect in progress. */
-#define SOCKET_EOF		(1<<2)	/* A zero read happened on the
-					 * socket. */
-#define SOCKET_PENDING		(1<<3)	/* A message has been sent for this
-					 * socket */
-#define TCP_ASYNC_PENDING	(1<<4)	/* TcpConnect was called to
-					 * process an async connect. This
-					 * flag indicates that reentry is
-					 * still pending */
-#define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
+enum TcpStateFlags {
+    TCP_NONBLOCKING = (1<<0),	/* Socket with non-blocking I/O */
+    TCP_ASYNC_CONNECT = (1<<1),	/* Async connect in progress. */
+    SOCKET_EOF = (1<<2),	/* A zero read happened on the socket. */
+    SOCKET_PENDING = (1<<3),	/* A message has been sent for this socket */
+    TCP_ASYNC_PENDING = (1<<4),	/* TcpConnect was called to process an async
+                                 * connect. This flag indicates that reentry
+                                 * is still pending. */
+    TCP_ASYNC_FAILED = (1<<5)	/* An async connect finally failed */
+};
 
 /*
  * These bits may be ORed together into the "testFlags" field of a TcpState
  * structure.
  */
 
-#define TCP_ASYNC_TEST_MODE	(1<<0)	/* Async testing activated.  Do not
-					 * automatically continue connection
-					 * process */
+enum TcpStateTestFlags {
+    TCP_ASYNC_TEST_MODE = (1<<0)/* Async testing activated.  Do not
+                                 * automatically continue connection
+                                 * process */
+};
 
 /*
  * The following structure is what is added to the Tcl event queue when a
@@ -241,8 +242,7 @@ static WNDCLASSW windowClass;
  * Static routines for this file:
  */
 
-static int		TcpConnect(Tcl_Interp *interp,
-			    TcpState *state);
+static int		TcpConnect(Tcl_Interp *interp, TcpState *state);
 static void		InitSockets(void);
 static TcpState *	NewSocketInfo(SOCKET socket);
 static void		SocketExitHandler(ClientData clientData);
@@ -317,6 +317,11 @@ static ProcessGlobalValue hostName =
     SendMessageW((tsdPtr)->hwnd, SOCKET_SELECT,          \
                 (WPARAM) (message), (LPARAM) (payload))
 
+/*
+ * The name of a variable that may be changed to suppress reverse DNS lookups.
+ */
+
+#define SUPPRESS_RDNS_VAR "::tcl::unsupported::noReverseDNS"
 
 /*
  * Address print debug functions
@@ -372,7 +377,8 @@ InitializeHostName(
     Tcl_DString ds;
 
     Tcl_DStringInit(&ds);
-    if (GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, wbuf, &length) != 0) {
+    if (GetComputerNameExW(ComputerNamePhysicalDnsFullyQualified, wbuf,
+            &length) != 0) {
 	/*
 	 * Convert string from native to UTF then change to lowercase.
 	 */
@@ -1153,11 +1159,13 @@ TcpClose2Proc(
      * TCL_WRITABLE so this should never be called for a server socket.
      */
 
-    if ((flags & TCL_CLOSE_READ) && (shutdown(statePtr->sockets->fd, SD_RECEIVE) == SOCKET_ERROR)) {
+    if ((flags & TCL_CLOSE_READ) &&
+            (shutdown(statePtr->sockets->fd, SD_RECEIVE) == SOCKET_ERROR)) {
 	Tcl_WinConvertError((DWORD) WSAGetLastError());
 	readError = Tcl_GetErrno();
     }
-    if ((flags & TCL_CLOSE_WRITE) && (shutdown(statePtr->sockets->fd, SD_SEND) == SOCKET_ERROR)) {
+    if ((flags & TCL_CLOSE_WRITE) &&
+            (shutdown(statePtr->sockets->fd, SD_SEND) == SOCKET_ERROR)) {
 	Tcl_WinConvertError((DWORD) WSAGetLastError());
 	writeError = Tcl_GetErrno();
     }
@@ -1300,7 +1308,6 @@ TcpGetOptionProc(
     SOCKET sock;
     size_t len = 0;
     int reverseDNS = 0;
-#define SUPPRESS_RDNS_VAR "::tcl::unsupported::noReverseDNS"
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -1383,8 +1390,7 @@ TcpGetOptionProc(
 
 		if (err) {
 		    Tcl_WinConvertError(err);
-		    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()),
-                            -1);
+		    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
 		}
 	    }
 	}
@@ -2444,9 +2450,9 @@ TcpAccept(
 
     if (statePtr->acceptProc != NULL) {
 	getnameinfo(&(addr.sa), len, host, sizeof(host), port, sizeof(port),
-                    NI_NUMERICHOST|NI_NUMERICSERV);
+                NI_NUMERICHOST | NI_NUMERICSERV);
 	statePtr->acceptProc(statePtr->acceptProcData, newInfoPtr->channel,
-			    host, atoi(port));
+		host, atoi(port));
     }
 }
 
@@ -3011,8 +3017,7 @@ AddSocketInfoFd(
     fds->statePtr = statePtr;
     fds->next = NULL;
 }
-
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3067,10 +3072,9 @@ NewSocketInfo(SOCKET socket)
 
 static int
 WaitForSocketEvent(
-    TcpState *statePtr,	/* Information about this socket. */
+    TcpState *statePtr,         /* Information about this socket. */
     int events,			/* Events to look for. May be one of
-				 * FD_READ or FD_WRITE.
-				 */
+				 * FD_READ or FD_WRITE. */
     int *errorCodePtr)		/* Where to store errors? */
 {
     int result = 1;

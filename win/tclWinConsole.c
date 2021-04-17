@@ -31,18 +31,22 @@ TCL_DECLARE_MUTEX(consoleMutex)
  * Bit masks used in the flags field of the ConsoleInfo structure below.
  */
 
-#define CONSOLE_PENDING	 (1<<0)	/* Message is pending in the queue. */
-#define CONSOLE_ASYNC	 (1<<1)	/* Channel is non-blocking. */
-#define CONSOLE_READ_OPS (1<<4)	/* Channel supports read-related ops. */
-#define CONSOLE_RESET    (1<<5)	/* Console mode needs to be reset. */
+enum ConsoleInfoFlags {
+    CONSOLE_PENDING = (1<<0),	/* Message is pending in the queue. */
+    CONSOLE_ASYNC = (1<<1),	/* Channel is non-blocking. */
+    CONSOLE_READ_OPS = (1<<4),	/* Channel supports read-related ops. */
+    CONSOLE_RESET = (1<<5)	/* Console mode needs to be reset. */
+};
 
 /*
  * Bit masks used in the sharedFlags field of the ConsoleInfo structure below.
  */
 
-#define CONSOLE_EOF	  (1<<2)  /* Console has reached EOF. */
-#define CONSOLE_BUFFERED  (1<<3)  /* Data was read into a buffer by the reader
-				   * thread. */
+enum ConsoleInfoSharedFlags {
+    CONSOLE_EOF = (1<<2),	/* Console has reached EOF. */
+    CONSOLE_BUFFERED = (1<<3)	/* Data was read into a buffer by the reader
+				 * thread. */
+};
 
 #define CONSOLE_BUFFER_SIZE (8*1024)
 
@@ -219,19 +223,19 @@ ReadConsoleBytes(
     BOOL result;
 
     /*
-     * If user types a Ctrl-Break or Ctrl-C, ReadConsole will return
-     * success with ntchars == 0 and GetLastError() will be
-     * ERROR_OPERATION_ABORTED. We do not want to treat this case
-     * as EOF so we will loop around again. If no Ctrl signal handlers
-     * have been established, the default signal OS handler in a separate
-     * thread will terminate the program. If a Ctrl signal handler
-     * has been established (through an extension for example), it
-     * will run and take whatever action it deems appropriate.
+     * If user types a Ctrl-Break or Ctrl-C, ReadConsole will return success
+     * with ntchars == 0 and GetLastError() will be ERROR_OPERATION_ABORTED.
+     * We do not want to treat this case as EOF so we will loop around again.
+     * If no Ctrl signal handlers have been established, the default signal OS
+     * handler in a separate thread will terminate the program. If a Ctrl
+     * signal handler has been established (through an extension for example),
+     * it will run and take whatever action it deems appropriate.
      */
     do {
-        result = ReadConsoleW(hConsole, lpBuffer, nbytes / sizeof(WCHAR), &ntchars,
-                             NULL);
-    } while (result && ntchars == 0 && GetLastError() == ERROR_OPERATION_ABORTED);
+        result = ReadConsoleW(hConsole, lpBuffer, nbytes / sizeof(WCHAR),
+		&ntchars, NULL);
+    } while (result && ntchars == 0 &&
+	    GetLastError() == ERROR_OPERATION_ABORTED);
     if (nbytesread != NULL) {
 	*nbytesread = ntchars * sizeof(WCHAR);
     }
@@ -755,8 +759,9 @@ ConsoleOutputProc(
     *errorCode = 0;
 
     /* avoid blocking if pipe-thread exited */
-    timeout = (infoPtr->flags & CONSOLE_ASYNC) || !TclPipeThreadIsAlive(&threadInfo->TI)
-	|| TclInExit() || TclInThreadExit() ? 0 : INFINITE;
+    timeout = ((infoPtr->flags & CONSOLE_ASYNC) ||
+	    !TclPipeThreadIsAlive(&threadInfo->TI) || TclInExit() ||
+	    TclInThreadExit()) ? 0 : INFINITE;
     if (WaitForSingleObject(threadInfo->readyEvent, timeout) == WAIT_TIMEOUT) {
 	/*
 	 * The writer thread is blocked waiting for a write to complete and

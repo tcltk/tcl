@@ -68,25 +68,26 @@ typedef struct {
  * TCL_TRACE_ENTER_DURING_EXEC == 4 * TCL_TRACE_ENTER_EXEC and that
  * TCL_TRACE_LEAVE_DURING_EXEC == 4 * TCL_TRACE_LEAVE_EXEC.
  *
- * TCL_TRACE_ENTER_DURING_EXEC  - Trace each command inside the command
- *				  currently being traced, before execution.
- * TCL_TRACE_LEAVE_DURING_EXEC  - Trace each command inside the command
- *				  currently being traced, after execution.
- * TCL_TRACE_ANY_EXEC		- OR'd combination of all EXEC flags.
- * TCL_TRACE_EXEC_IN_PROGRESS   - The callback function on this trace is
- *				  currently executing. Therefore we don't let
- *				  further traces execute.
- * TCL_TRACE_EXEC_DIRECT	- This execution trace is triggered directly
- *				  by the command being traced, not because of
- *				  an internal trace.
  * The flag 'TCL_TRACE_DESTROYED' may also be used in command execution traces.
  */
 
-#define TCL_TRACE_ENTER_DURING_EXEC	4
-#define TCL_TRACE_LEAVE_DURING_EXEC	8
-#define TCL_TRACE_ANY_EXEC		15
-#define TCL_TRACE_EXEC_IN_PROGRESS	0x10
-#define TCL_TRACE_EXEC_DIRECT		0x20
+enum TraceExecutionFlags {
+    TCL_TRACE_ENTER_DURING_EXEC = 4,
+				/* Trace each command inside the command
+				 * currently being traced, before
+				 * execution. */
+    TCL_TRACE_LEAVE_DURING_EXEC = 8,
+				/* Trace each command inside the command
+				 * currently being traced, after execution. */
+    TCL_TRACE_ANY_EXEC = 15,	/* OR'd combination of all EXEC flags. */
+    TCL_TRACE_EXEC_IN_PROGRESS = 0x10,
+				/* The callback function on this trace is
+				 * currently executing. Therefore we don't let
+				 * further traces execute. */
+    TCL_TRACE_EXEC_DIRECT = 0x20/* This execution trace is triggered directly
+				 * by the command being traced, not because of
+				 * an internal trace. */
+};
 
 /*
  * Forward declarations for functions defined in this file:

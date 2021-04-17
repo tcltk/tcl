@@ -51,13 +51,15 @@ typedef struct {
  * Extra flags used for call chain management.
  */
 
-#define DEFINITE_PROTECTED 0x100000
-#define DEFINITE_PUBLIC    0x200000
-#define KNOWN_STATE	   (DEFINITE_PROTECTED | DEFINITE_PUBLIC)
-#define SPECIAL		   (CONSTRUCTOR | DESTRUCTOR | FORCE_UNKNOWN)
-#define BUILDING_MIXINS	   0x400000
-#define TRAVERSED_MIXIN	   0x800000
-#define OBJECT_MIXIN	   0x1000000
+enum CallChainFlags {
+    DEFINITE_PROTECTED = 0x100000,
+    DEFINITE_PUBLIC =	 0x200000,
+    BUILDING_MIXINS =	 0x400000,
+    TRAVERSED_MIXIN =	 0x800000,
+    OBJECT_MIXIN =	0x1000000,
+    KNOWN_STATE = (DEFINITE_PROTECTED | DEFINITE_PUBLIC),
+    SPECIAL = (CONSTRUCTOR | DESTRUCTOR | FORCE_UNKNOWN)
+};
 #define MIXIN_CONSISTENT(flags) \
     (((flags) & OBJECT_MIXIN) ||					\
 	!((flags) & BUILDING_MIXINS) == !((flags) & TRAVERSED_MIXIN))
@@ -152,7 +154,6 @@ static const Tcl_ObjType methodNameType = {
     NULL,
     NULL
 };
-
 
 /*
  * ----------------------------------------------------------------------
@@ -422,6 +423,14 @@ FinalizeMethodRefs(
  * ----------------------------------------------------------------------
  */
 
+/*
+ * Name the bits used in the names table values.
+ */
+enum NameTableFlags {
+    IN_LIST = 1,
+    NO_IMPLEMENTATION = 2
+};
+
 int
 TclOOGetSortedMethodList(
     Object *oPtr,		/* The object to get the method names for. */
@@ -452,12 +461,6 @@ TclOOGetSortedMethodList(
 
     Tcl_InitObjHashTable(&names);
     Tcl_InitHashTable(&examinedClasses, TCL_ONE_WORD_KEYS);
-
-    /*
-     * Name the bits used in the names table values.
-     */
-#define IN_LIST 1
-#define NO_IMPLEMENTATION 2
 
     /*
      * Process method names due to the object.
@@ -2027,8 +2030,9 @@ AddSimpleClassDefineNamespaces(
 
 static inline void
 AddDefinitionNamespaceToChain(
-    Class *const definerCls,		/* What class defines this entry. */
-    Tcl_Obj *const namespaceName,	/* The name for this entry (or NULL, a
+    Class *const definerCls,	/* What class defines this entry. */
+    Tcl_Obj *const namespaceName,
+				/* The name for this entry (or NULL, a
 				 * no-op). */
     DefineChain *const definePtr,
 				/* The define chain to add the method

@@ -77,23 +77,27 @@ typedef struct FsPath {
  * Flag values for FsPath->flags.
  */
 
-#define TCLPATH_APPENDED 1
-#define TCLPATH_NEEDNORM 4
+enum FsPathFlags {
+    TCLPATH_APPENDED = 1,
+    TCLPATH_NEEDNORM = 4
+};
 
 /*
  * Define some macros to give us convenient access to path-object specific
  * fields.
  */
 
-#define PATHOBJ(pathPtr) ((FsPath *) (TclFetchIntRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
+#define PATHOBJ(pathPtr) \
+    ((FsPath *) (TclFetchIntRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
 #define SETPATHOBJ(pathPtr,fsPathPtr) \
-	do {							\
-		Tcl_ObjIntRep ir;				\
-		ir.twoPtrValue.ptr1 = (void *) (fsPathPtr);	\
-		ir.twoPtrValue.ptr2 = NULL;			\
-		Tcl_StoreIntRep((pathPtr), &fsPathType, &ir);	\
-	} while (0)
-#define PATHFLAGS(pathPtr) (PATHOBJ(pathPtr)->flags)
+    do {							\
+	Tcl_ObjIntRep ir;					\
+	ir.twoPtrValue.ptr1 = (void *) (fsPathPtr);		\
+	ir.twoPtrValue.ptr2 = NULL;				\
+	Tcl_StoreIntRep((pathPtr), &fsPathType, &ir);		\
+    } while (0)
+#define PATHFLAGS(pathPtr) \
+    (PATHOBJ(pathPtr)->flags)
 
 /*
  *---------------------------------------------------------------------------
