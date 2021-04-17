@@ -24,6 +24,8 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
 
 foreach i [interp children] {
     interp delete $i
