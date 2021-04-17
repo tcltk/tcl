@@ -127,10 +127,12 @@ typedef struct {
  * file.
  */
 
-#define ENCODING_SINGLEBYTE	0
-#define ENCODING_DOUBLEBYTE	1
-#define ENCODING_MULTIBYTE	2
-#define ENCODING_ESCAPE		3
+enum EncodingTypes {
+    ENCODING_SINGLEBYTE = 0,
+    ENCODING_DOUBLEBYTE = 1,
+    ENCODING_MULTIBYTE = 2,
+    ENCODING_ESCAPE = 3
+};
 
 /*
  * A list of directories in which Tcl should look for *.enc files. This list
@@ -510,11 +512,17 @@ FillEncodingFileMap(void)
  *---------------------------------------------------------------------------
  */
 
-/* This flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
-#define TCL_ENCODING_MODIFIED	0x20	/* Converting NULL bytes to 0xC0 0x80 */
-/* Since TCL_ENCODING_MODIFIED is only used for utf-8 and
- * TCL_ENCODING_LE is only used for  utf-16/ucs-2, re-use the same value */
-#define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
+/* These flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
+enum EncodingFlags {
+    TCL_ENCODING_MODIFIED = 0x20,
+				/* Converting NULL bytes to 0xC0 0x80 */
+    /*
+     * Since TCL_ENCODING_MODIFIED is only used for utf-8 and TCL_ENCODING_LE
+     * is only used for utf-16/ucs-2, re-use the same value.
+     */
+    TCL_ENCODING_LE = TCL_ENCODING_MODIFIED
+				/* Little-endian encoding */
+};
 
 void
 TclInitEncodingSubsystem(void)

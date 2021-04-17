@@ -15,6 +15,8 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#define _BUILD_TCL_EXECUTE 1	/* Disable some warnings */
+
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclOOInt.h"

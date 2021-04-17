@@ -196,18 +196,18 @@ struct LimitHandler {
 
 /*
  * Values for the LimitHandler flags field.
- *      LIMIT_HANDLER_ACTIVE - Whether the handler is currently being
- *              processed; handlers are never to be entered reentrantly.
- *      LIMIT_HANDLER_DELETED - Whether the handler has been deleted. This
- *              should not normally be observed because when a handler is
- *              deleted it is also spliced out of the list of handlers, but
- *              even so we will be careful.
  */
 
-#define LIMIT_HANDLER_ACTIVE    0x01
-#define LIMIT_HANDLER_DELETED   0x02
-
-
+enum LimitHandlerFlags {
+    LIMIT_HANDLER_ACTIVE = 0x01,/* Whether the handler is currently being
+				 * processed; handlers are never to be entered
+				 * reentrantly. */
+    LIMIT_HANDLER_DELETED = 0x02/* Whether the handler has been deleted. This
+				 * should not normally be observed because
+				 * when a handler is deleted it is also
+				 * spliced out of the list of handlers, but
+				 * even so we will be careful. */
+};
 
 /*
  * Prototypes for local static functions:
@@ -276,7 +276,6 @@ static void		TimeLimitCallback(ClientData clientData);
 static Tcl_NRPostProc	NRPostInvokeHidden;
 static Tcl_ObjCmdProc	NRInterpCmd;
 static Tcl_ObjCmdProc	NRChildCmd;
-
 
 /*
  *----------------------------------------------------------------------

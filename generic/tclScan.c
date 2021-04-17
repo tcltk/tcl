@@ -16,13 +16,14 @@
  * Flag values used by Tcl_ScanObjCmd.
  */
 
-#define SCAN_NOSKIP	0x1		/* Don't skip blanks. */
-#define SCAN_SUPPRESS	0x2		/* Suppress assignment. */
-#define SCAN_UNSIGNED	0x4		/* Read an unsigned value. */
-#define SCAN_WIDTH	0x8		/* A width value was supplied. */
-
-#define SCAN_LONGER	0x400		/* Asked for a wide value. */
-#define SCAN_BIG	0x800		/* Asked for a bignum value. */
+enum ScanFlags {
+    SCAN_NOSKIP = 0x1,		/* Don't skip blanks. */
+    SCAN_SUPPRESS = 0x2,	/* Suppress assignment. */
+    SCAN_UNSIGNED = 0x4,	/* Read an unsigned value. */
+    SCAN_WIDTH = 0x8,		/* A width value was supplied. */
+    SCAN_LONGER = 0x400,	/* Asked for a wide value. */
+    SCAN_BIG = 0x800		/* Asked for a bignum value. */
+};
 
 /*
  * The following structure contains the information associated with a

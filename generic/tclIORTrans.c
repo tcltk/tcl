@@ -476,8 +476,10 @@ static int		TransformLimit(ReflectedTransform *rtPtr,
  * Operation codes for TransformFlush().
  */
 
-#define FLUSH_WRITE	1
-#define FLUSH_DISCARD	0
+enum FlushOperations {
+    FLUSH_WRITE = 1,
+    FLUSH_DISCARD = 0
+};
 
 /*
  * Main methods to plug into the 'chan' ensemble'. ==================
@@ -1113,7 +1115,6 @@ ReflectInput(
 	    goto stop;
 	}
 
-
 	/*
 	 * The buffer is exhausted, but the caller wants even more. We now
 	 * have to go to the underlying channel, get more bytes and then
@@ -1149,12 +1150,10 @@ ReflectInput(
 	    goto stop;
 	}
 
-
 	readBytes = Tcl_ReadRaw(rtPtr->parent,
 		(char *) Tcl_SetByteArrayLength(bufObj, toRead), toRead);
 	if (readBytes < 0) {
 	    if (Tcl_InputBlocked(rtPtr->parent) && (gotBytes > 0)) {
-
 		/*
 		 * Down channel is blocked and offers zero additional bytes.
 		 * The nonzero gotBytes already returned makes the total
@@ -1165,11 +1164,10 @@ ReflectInput(
 	    }
 
 	    /*
-	     * Either the down channel is not blocked (a real error)
-	     * or it is and there are gotBytes==0 byte copied so far.
-	     * In either case, pass up the error, so we either report
-	     * any real error, or do not mistakenly signal EOF by
-	     * returning 0 to the caller.
+	     * Either the down channel is not blocked (a real error) or it is
+	     * and there are gotBytes==0 byte copied so far.  In either case,
+	     * pass up the error, so we either report any real error, or do
+	     * not mistakenly signal EOF by returning 0 to the caller.
 	     */
 
 	    *errorCodePtr = Tcl_GetErrno();
@@ -1177,34 +1175,33 @@ ReflectInput(
 	}
 
 	if (readBytes == 0) {
-
 	    /*
-	     * Zero returned from Tcl_ReadRaw() always indicates EOF
-	     * on the down channel.
+	     * Zero returned from Tcl_ReadRaw() always indicates EOF on the
+	     * down channel.
 	     */
 
 	    rtPtr->eofPending = 1;
 
+	    /*
+	     * Now this is a bit different. The partial data waiting is
+	     * converted and returned.
+	     */
+
+	    if (HAS(rtPtr->methods, METH_DRAIN)) {
+		if (!TransformDrain(rtPtr, errorCodePtr)) {
+		    goto error;
+		}
+	    }
+
+	    if (ResultLength(&rtPtr->result) == 0) {
 		/*
-		 * Now this is a bit different. The partial data waiting is
-		 * converted and returned.
+		 * The drain delivered nothing.
 		 */
 
-		if (HAS(rtPtr->methods, METH_DRAIN)) {
-		    if (!TransformDrain(rtPtr, errorCodePtr)) {
-			goto error;
-		    }
-		}
+		goto stop;
+	    }
 
-		if (ResultLength(&rtPtr->result) == 0) {
-		    /*
-		     * The drain delivered nothing.
-		     */
-
-		    goto stop;
-		}
-
-		continue; /* at: while (toRead > 0) */
+	    continue; /* at: while (toRead > 0) */
 	} /* readBytes == 0 */
 
 	/*
@@ -1388,16 +1385,15 @@ ReflectSeekWide(
 	    curPos = -1;
 	} else {
 	    curPos = Tcl_ChannelSeekProc(parent->typePtr)(
-	    parent->instanceData, offset, seekMode,
-	    errorCodePtr);
+		    parent->instanceData, offset, seekMode, errorCodePtr);
 	}
 #else
 	*errorCodePtr = EINVAL;
 	curPos = -1;
 #endif
     } else {
-    	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData, offset,
-    		seekMode, errorCodePtr);
+    	curPos = Tcl_ChannelWideSeekProc(parent->typePtr)(parent->instanceData,
+		offset, seekMode, errorCodePtr);
     }
     if (curPos == -1) {
 	Tcl_SetErrno(*errorCodePtr);
@@ -1423,8 +1419,7 @@ ReflectSeek(
      * routine.
      */
 
-    return ReflectSeekWide(clientData, offset, seekMode,
-	    errorCodePtr);
+    return ReflectSeekWide(clientData, offset, seekMode, errorCodePtr);
 }
 #endif
 

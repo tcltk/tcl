@@ -57,9 +57,11 @@
  * TraverseUnixTree() calls the traverseProc()
  */
 
-#define DOTREE_PRED	1	/* pre-order directory */
-#define DOTREE_POSTD	2	/* post-order directory */
-#define DOTREE_F	3	/* regular file */
+enum DoTreeOps {
+    DOTREE_PRED = 1,		/* pre-order directory */
+    DOTREE_POSTD = 2,		/* post-order directory */
+    DOTREE_F = 3,		/* regular file */
+};
 
 /*
  * Fallback temporary file location the temporary file generation code. Can be
