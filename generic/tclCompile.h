@@ -1423,9 +1423,12 @@ TclEmitInt4(
 }
 
 /*
- * Inline functions to emit an instruction with signed or unsigned integer
- * operands. Four byte integers are stored in "big-endian" order with the high
- * order byte stored at the lowest address.
+ * Inline functions to emit an instruction with one or two signed or unsigned
+ * integer operands. Four byte integers are stored in "big-endian" order with
+ * the high order byte stored at the lowest address.
+ *
+ * In theory there should also be TclEmitInstInt41(), but no instruction has
+ * that operand width patterns.
  */
 
 static inline void
@@ -1455,6 +1458,63 @@ TclEmitInstInt4(
     }
     *envPtr->codeNext++ = op;
     TclStoreInt4AtPtr(i, envPtr->codeNext);
+    envPtr->codeNext += 4;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, i, envPtr);
+}
+
+static inline void
+TclEmitInstInt11(
+    unsigned char op,
+    int i,
+    int j,
+    CompileEnv *envPtr)
+{
+    if ((envPtr->codeNext + 3) > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    *envPtr->codeNext++ = op;
+    TclStoreInt1AtPtr(i, envPtr->codeNext);
+    envPtr->codeNext++;
+    TclStoreInt4AtPtr(j, envPtr->codeNext);
+    envPtr->codeNext++;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, i, envPtr);
+}
+
+static inline void
+TclEmitInstInt14(
+    unsigned char op,
+    int i,
+    int j,
+    CompileEnv *envPtr)
+{
+    if ((envPtr->codeNext + 6) > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    *envPtr->codeNext++ = op;
+    TclStoreInt1AtPtr(i, envPtr->codeNext);
+    envPtr->codeNext++;
+    TclStoreInt4AtPtr(j, envPtr->codeNext);
+    envPtr->codeNext += 4;
+    TclUpdateAtCmdStart(op, envPtr);
+    TclUpdateStackReqs(op, i, envPtr);
+}
+
+static inline void
+TclEmitInstInt44(
+    unsigned char op,
+    int i,
+    int j,
+    CompileEnv *envPtr)
+{
+    if ((envPtr->codeNext + 9) > envPtr->codeEnd) {
+	TclExpandCodeArray(envPtr);
+    }
+    *envPtr->codeNext++ = op;
+    TclStoreInt4AtPtr(i, envPtr->codeNext);
+    envPtr->codeNext += 4;
+    TclStoreInt4AtPtr(j, envPtr->codeNext);
     envPtr->codeNext += 4;
     TclUpdateAtCmdStart(op, envPtr);
     TclUpdateStackReqs(op, i, envPtr);

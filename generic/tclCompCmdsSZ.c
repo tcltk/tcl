@@ -81,12 +81,9 @@ const AuxDataType tclJumptableInfoType = {
 #define OP(name)	TclEmitOpcode(INST_##name, envPtr)
 #define OP1(name,val)	TclEmitInstInt1(INST_##name,(val),envPtr)
 #define OP4(name,val)	TclEmitInstInt4(INST_##name,(val),envPtr)
-#define OP14(name,val1,val2) \
-    TclEmitInstInt1(INST_##name,(val1),envPtr);TclEmitInt4((val2),envPtr)
-#define OP44(name,val1,val2) \
-    TclEmitInstInt4(INST_##name,(val1),envPtr);TclEmitInt4((val2),envPtr)
-#define PUSH(str) \
-    PushStringLiteral(envPtr, str)
+#define OP14(name,val1,val2) TclEmitInstInt14(INST_##name,(val1),(val2),envPtr)
+#define OP44(name,val1,val2) TclEmitInstInt44(INST_##name,(val1),(val2),envPtr)
+#define PUSH(str)	PushStringLiteral(envPtr, str)
 #define JUMP4(name,var) \
     (var) = CurrentOffset(envPtr);TclEmitInstInt4(INST_##name##4,0,envPtr)
 #define FIXJUMP4(var) \
@@ -99,8 +96,7 @@ const AuxDataType tclJumptableInfoType = {
     if ((idx)<256) {OP1(LOAD_SCALAR1,(idx));} else {OP4(LOAD_SCALAR4,(idx));}
 #define STORE(idx) \
     if ((idx)<256) {OP1(STORE_SCALAR1,(idx));} else {OP4(STORE_SCALAR4,(idx));}
-#define INVOKE(name) \
-    TclEmitInvoke(envPtr,INST_##name)
+#define INVOKE(name)	TclEmitInvoke(envPtr,INST_##name)
 
 /*
  *----------------------------------------------------------------------
@@ -282,7 +278,7 @@ TclCompileStringCatCmd(
     /* Trivial case, no arg */
 
     if (numWords < 2) {
-	PushStringLiteral(envPtr, "");
+	PUSH(		"");
 	return TCL_OK;
     }
 
@@ -317,7 +313,7 @@ TclCompileStringCatCmd(
 	    CompileWord(envPtr, wordTokenPtr, interp, i);
 	    numArgs ++;
 	    if (numArgs >= 254) { /* 254 to take care of the possible +1 of "folded" above */
-		TclEmitInstInt1(INST_STR_CONCAT1, numArgs, envPtr);
+		OP1(	STR_CONCAT1, numArgs);
 		numArgs = 1;	/* concat pushes 1 obj, the result */
 	    }
 	}
@@ -333,7 +329,7 @@ TclCompileStringCatCmd(
 	numArgs ++;
     }
     if (numArgs > 1) {
-	TclEmitInstInt1(INST_STR_CONCAT1, numArgs, envPtr);
+	OP1(		STR_CONCAT1, numArgs);
     }
 
     return TCL_OK;
@@ -366,7 +362,7 @@ TclCompileStringCmpCmd(
     CompileWord(envPtr, tokenPtr, interp, 1);
     tokenPtr = TokenAfter(tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 2);
-    TclEmitOpcode(INST_STR_CMP, envPtr);
+    OP(		STR_CMP);
     return TCL_OK;
 }
 
@@ -397,7 +393,7 @@ TclCompileStringEqualCmd(
     CompileWord(envPtr, tokenPtr, interp, 1);
     tokenPtr = TokenAfter(tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 2);
-    TclEmitOpcode(INST_STR_EQ, envPtr);
+    OP(		STR_EQ);
     return TCL_OK;
 }
 
@@ -428,7 +424,7 @@ TclCompileStringFirstCmd(
     CompileWord(envPtr, tokenPtr, interp, 1);
     tokenPtr = TokenAfter(tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 2);
-    OP(STR_FIND);
+    OP(		STR_FIND);
     return TCL_OK;
 }
 
@@ -459,7 +455,7 @@ TclCompileStringLastCmd(
     CompileWord(envPtr, tokenPtr, interp, 1);
     tokenPtr = TokenAfter(tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 2);
-    OP(STR_FIND_LAST);
+    OP(		STR_FIND_LAST);
     return TCL_OK;
 }
 
@@ -486,7 +482,7 @@ TclCompileStringIndexCmd(
     CompileWord(envPtr, tokenPtr, interp, 1);
     tokenPtr = TokenAfter(tokenPtr);
     CompileWord(envPtr, tokenPtr, interp, 2);
-    TclEmitOpcode(INST_STR_INDEX, envPtr);
+    OP(		STR_INDEX);
     return TCL_OK;
 }
 
@@ -554,6 +550,17 @@ TclCompileStringInsertCmd(
     return TCL_OK;
 }
 
+static inline int
+GotLiteral(
+    const Tcl_Token *tokenPtr,
+    const char *word)
+{
+    return (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD &&
+	    tokenPtr[1].size > 1 &&
+	    tokenPtr[1].start[0] == word[0] &&
+	    strncmp(tokenPtr[1].start, word, tokenPtr[1].size) == 0);
+}
+
 int
 TclCompileStringIsCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
@@ -600,12 +607,6 @@ TclCompileStringIsCmd(
     }
     Tcl_DecrRefCount(isClass);
 
-#define GotLiteral(tokenPtr, word) \
-    ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD &&			\
-     (tokenPtr)[1].size > 1 &&						\
-     (tokenPtr)[1].start[0] == word[0] &&				\
-     strncmp((tokenPtr)[1].start, (word), (tokenPtr)[1].size) == 0)
-
     /*
      * Cannot handle the -failindex option at all, and that's the only legal
      * way to have more than 4 arguments.
@@ -624,7 +625,6 @@ TclCompileStringIsCmd(
 	}
 	tokenPtr = TokenAfter(tokenPtr);
     }
-#undef GotLiteral
 
     /*
      * Compile the code. There are several main classes of check here.
@@ -866,12 +866,7 @@ TclCompileStringMatchCmd(
      */
 
     if (parsePtr->numWords == 4) {
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-	}
-	str = tokenPtr[1].start;
-	length = tokenPtr[1].size;
-	if ((length <= 1) || strncmp(str, "-nocase", length)) {
+	if (!GotLiteral(tokenPtr, "-nocase")) {
 	    /*
 	     * Fail at run time, not in compilation.
 	     */
@@ -905,7 +900,7 @@ TclCompileStringMatchCmd(
 	    }
 	    PushLiteral(envPtr, str, length);
 	} else {
-	    SetLineInformation(i+1+nocase);
+	    SetLineInformation(i + 1 + nocase);
 	    CompileTokens(envPtr, tokenPtr, interp);
 	}
 	tokenPtr = TokenAfter(tokenPtr);
@@ -916,9 +911,9 @@ TclCompileStringMatchCmd(
      */
 
     if (exactMatch) {
-	TclEmitOpcode(INST_STR_EQ, envPtr);
+	OP(	STR_EQ);
     } else {
-	TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
+	OP1(	STR_MATCH, nocase);
     }
     return TCL_OK;
 }
@@ -956,7 +951,7 @@ TclCompileStringLenCmd(
     } else {
 	SetLineInformation(1);
 	CompileTokens(envPtr, tokenPtr, interp);
-	TclEmitOpcode(INST_STR_LEN, envPtr);
+	OP(	STR_LEN);
     }
     TclDecrRefCount(objPtr);
     return TCL_OK;
@@ -1605,16 +1600,14 @@ TclSubstCompile(
 
     for (endTokenPtr = tokenPtr + parse.numTokens;
 	    tokenPtr < endTokenPtr; tokenPtr = TokenAfter(tokenPtr)) {
-	int length, literal, catchRange, breakJump;
+	int length, catchRange, breakJump;
 	char buf[4] = "";
 	JumpFixup startFixup, okFixup, returnFixup, breakFixup;
 	JumpFixup continueFixup, otherFixup, endFixup;
 
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:
-	    literal = TclRegisterLiteral(envPtr,
-		    tokenPtr->start, tokenPtr->size, 0);
-	    TclEmitPush(literal, envPtr);
+	    PushLiteral(envPtr, tokenPtr->start, tokenPtr->size);
 	    TclAdvanceLines(&bline, tokenPtr->start,
 		    tokenPtr->start + tokenPtr->size);
 	    count++;
@@ -1622,8 +1615,7 @@ TclSubstCompile(
 	case TCL_TOKEN_BS:
 	    length = TclParseBackslash(tokenPtr->start, tokenPtr->size,
 		    NULL, buf);
-	    literal = TclRegisterLiteral(envPtr, buf, length, 0);
-	    TclEmitPush(literal, envPtr);
+	    PushLiteral(envPtr, buf, length);
 	    count++;
 	    continue;
 	case TCL_TOKEN_VARIABLE:
@@ -1670,8 +1662,7 @@ TclSubstCompile(
 	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &startFixup);
 
 	    /* Jump to the end (all BREAKs land here) */
-	    breakOffset = CurrentOffset(envPtr);
-	    TclEmitInstInt4(INST_JUMP4, 0, envPtr);
+	    JUMP4(		JUMP, breakOffset);
 
 	    /* Start */
 	    if (TclFixupForwardJumpToHere(envPtr, &startFixup, 127)) {
@@ -1682,7 +1673,7 @@ TclSubstCompile(
 
 	envPtr->line = bline;
 	catchRange = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-	OP4(	BEGIN_CATCH4, catchRange);
+	OP4(			BEGIN_CATCH4, catchRange);
 	ExceptionRangeStarts(envPtr, catchRange);
 
 	switch (tokenPtr->type) {
@@ -1703,21 +1694,21 @@ TclSubstCompile(
 	ExceptionRangeEnds(envPtr, catchRange);
 
 	/* Substitution produced TCL_OK */
-	OP(	END_CATCH);
+	OP(			END_CATCH);
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &okFixup);
 	TclAdjustStackDepth(-1, envPtr);
 
 	/* Exceptional return codes processed here */
 	ExceptionRangeTarget(envPtr, catchRange, catchOffset);
-	OP(	PUSH_RETURN_OPTIONS);
-	OP(	PUSH_RESULT);
-	OP(	PUSH_RETURN_CODE);
-	OP(	END_CATCH);
-	OP(	RETURN_CODE_BRANCH);
+	OP(			PUSH_RETURN_OPTIONS);
+	OP(			PUSH_RESULT);
+	OP(			PUSH_RETURN_CODE);
+	OP(			END_CATCH);
+	OP(			RETURN_CODE_BRANCH);
 
 	/* ERROR -> reraise it; NB: can't require BREAK/CONTINUE handling */
-	OP(	RETURN_STK);
-	OP(	NOP);
+	OP(			RETURN_STK);
+	OP(			NOP);
 
 	/* RETURN */
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &returnFixup);
@@ -1737,14 +1728,14 @@ TclSubstCompile(
 	    Tcl_Panic("TclCompileSubstCmd: bad break jump distance %d",
 		    (int) (CurrentOffset(envPtr) - breakFixup.codeOffset));
 	}
-	OP(	POP);
-	OP(	POP);
+	OP(			POP);
+	OP(			POP);
 
 	breakJump = CurrentOffset(envPtr) - breakOffset;
 	if (breakJump > 127) {
-	    OP4(JUMP4, -breakJump);
+	    OP4(		JUMP4, -breakJump);
 	} else {
-	    OP1(JUMP1, -breakJump);
+	    OP1(		JUMP1, -breakJump);
 	}
 
 	TclAdjustStackDepth(2, envPtr);
@@ -1811,8 +1802,7 @@ TclSubstCompile(
 
     /* Final target of the multi-jump from all BREAKs */
     if (breakOffset > 0) {
-	TclUpdateInstInt4AtPc(INST_JUMP4, CurrentOffset(envPtr) - breakOffset,
-		envPtr->codeStart + breakOffset);
+	FIXJUMP4(breakOffset);
     }
 }
 
@@ -2738,7 +2728,7 @@ TclCompileTailcallCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
-    TclEmitInstInt1(	INST_TAILCALL, parsePtr->numWords,	envPtr);
+    OP1(	TAILCALL, parsePtr->numWords);
     return TCL_OK;
 }
 
@@ -3938,16 +3928,16 @@ TclCompileWhileCmd(
 
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
 	if (jumpDist > 127) {
-	    TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
+	    OP4(JUMP_TRUE4, -jumpDist);
 	} else {
-	    TclEmitInstInt1(INST_JUMP_TRUE1, -jumpDist, envPtr);
+	    OP1(JUMP_TRUE1, -jumpDist);
 	}
     } else {
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
 	if (jumpDist > 127) {
-	    TclEmitInstInt4(INST_JUMP4, -jumpDist, envPtr);
+	    OP4(JUMP4, -jumpDist);
 	} else {
-	    TclEmitInstInt1(INST_JUMP1, -jumpDist, envPtr);
+	    OP1(JUMP1, -jumpDist);
 	}
     }
 
@@ -4236,16 +4226,16 @@ CompileComparisonOpCmd(
 	STORE(tmpIndex);
 	TclEmitOpcode(instruction, envPtr);
 	for (words=3 ; words<parsePtr->numWords ;) {
-	    LOAD(tmpIndex);
+	    LOAD(	tmpIndex);
 	    tokenPtr = TokenAfter(tokenPtr);
 	    CompileWord(envPtr, tokenPtr, interp, words);
 	    if (++words < parsePtr->numWords) {
-		STORE(tmpIndex);
+		STORE(	tmpIndex);
 	    }
 	    TclEmitOpcode(instruction, envPtr);
 	}
 	for (; words>3 ; words--) {
-	    OP(	BITAND);
+	    OP(		BITAND);
 	}
 
 	/*
@@ -4253,7 +4243,7 @@ CompileComparisonOpCmd(
 	 * might be expensive elsewhere.
 	 */
 
-	OP14(	UNSET_SCALAR, 0, tmpIndex);
+	OP14(		UNSET_SCALAR, 0, tmpIndex);
     }
     return TCL_OK;
 }
@@ -4379,7 +4369,7 @@ TclCompilePowOpCmd(
 	words++;
     }
     while (--words > 1) {
-	TclEmitOpcode(INST_EXPON, envPtr);
+	OP(	EXPON);
     }
     return TCL_OK;
 }
@@ -4579,11 +4569,11 @@ TclCompileMinusOpCmd(
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
     if (words == 2) {
-	TclEmitOpcode(INST_UMINUS, envPtr);
+	OP(	UMINUS);
 	return TCL_OK;
     }
     if (words == 3) {
-	TclEmitOpcode(INST_SUB, envPtr);
+	OP(	SUB);
 	return TCL_OK;
     }
 
@@ -4592,10 +4582,10 @@ TclCompileMinusOpCmd(
      * calcuations, including roundoff errors.
      */
 
-    TclEmitInstInt4(INST_REVERSE, words-1, envPtr);
+    OP4(	REVERSE, words - 1);
     while (--words > 1) {
-	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
-	TclEmitOpcode(INST_SUB, envPtr);
+	OP4(	REVERSE, 2);
+	OP(	SUB);
     }
     return TCL_OK;
 }
@@ -4620,14 +4610,14 @@ TclCompileDivOpCmd(
 	return TCL_ERROR;
     }
     if (parsePtr->numWords == 2) {
-	PUSH("1.0");
+	PUSH(	"1.0");
     }
     for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
     if (words <= 3) {
-	TclEmitOpcode(INST_DIV, envPtr);
+	OP(	DIV);
 	return TCL_OK;
     }
 
@@ -4636,10 +4626,10 @@ TclCompileDivOpCmd(
      * calcuations, including roundoff errors.
      */
 
-    TclEmitInstInt4(INST_REVERSE, words-1, envPtr);
+    OP4(	REVERSE, words - 1);
     while (--words > 1) {
-	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
-	TclEmitOpcode(INST_DIV, envPtr);
+	OP4(	REVERSE, 2);
+	OP(	DIV);
     }
     return TCL_OK;
 }
