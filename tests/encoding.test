@@ -414,6 +414,21 @@ test encoding-15.18 {UtfToUtfProc CESU-8 6-byte sequence} {
     binary scan $y H* z
     list [string length $y] $z
 } {6 eda080edb080}
+test encoding-15.19 {UtfToUtfProc CESU-8 upper surrogate} {
+    set y [encoding convertto cesu-8 \uD800]
+    binary scan $y H* z
+    list [string length $y] $z
+} {3 eda080}
+test encoding-15.20 {UtfToUtfProc CESU-8 lower surrogate} {
+    set y [encoding convertto cesu-8 \uDC00]
+    binary scan $y H* z
+    list [string length $y] $z
+} {3 edb080}
+test encoding-15.21 {UtfToUtfProc CESU-8 noncharacter} {
+    set y [encoding convertto cesu-8 \uFFFF]
+    binary scan $y H* z
+    list [string length $y] $z
+} {3 efbfbf}
 
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]
