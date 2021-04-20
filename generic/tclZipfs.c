@@ -282,7 +282,8 @@ typedef struct ZipFile {
     size_t numOpen;		/* Number of open files on archive */
     struct ZipEntry *entries;	/* List of files in archive */
     struct ZipEntry *topEnts;	/* List of top-level dirs in archive */
-    char *mountPoint;		/* Mount point name */
+    const char *mountPoint;	/* Mount point name if actually mounted; owned
+				 * by the ZipFS.zipHash table entry. */
     size_t mountPointLen;	/* Length of mount point name */
 #ifdef _WIN32
     HANDLE mountHandle;		/* Handle used for direct file access. */
@@ -1260,6 +1261,7 @@ ZipFSCloseArchive(
     }
     if (zf->nameLength) {
 	ckfree(zf->name);
+	zf->nameLength = 0;
     }
     if (zf->isMemBuffer) {
 	/* Pointer to memory */
@@ -1279,9 +1281,10 @@ ZipFSCloseArchive(
     if (zf->data && !zf->ptrToFree) {
 	UnmapViewOfFile(zf->data);
 	zf->data = NULL;
-    }
-    if (zf->mountHandle != INVALID_HANDLE_VALUE) {
-	CloseHandle(zf->mountHandle);
+	if (zf->mountHandle != INVALID_HANDLE_VALUE) {
+	    CloseHandle(zf->mountHandle);
+	    zf->mountHandle = INVALID_HANDLE_VALUE;
+	}
     }
 #else /* !_WIN32 */
     if ((zf->data != MAP_FAILED) && !zf->ptrToFree) {
@@ -1305,9 +1308,10 @@ ZipFSCloseArchive(
  *
  * ZipFSFindTOC --
  *
- *	This function takes a memory mapped zip file and indexes the contents.
- *	When "needZip" is zero an embedded ZIP archive in an executable file
- *	is accepted. Note that we do not support ZIP64.
+ *	This function takes a memory mapped zip file and indexes the contents,
+ *	validating the central directory of the ZIP (but NOT the local entry
+ *	headers).  When "needZip" is zero an embedded ZIP archive in an
+ *	executable file is accepted. Note that we do not support ZIP64.
  *
  * Results:
  *	TCL_OK on success, TCL_ERROR otherwise with an error message placed
@@ -1727,13 +1731,15 @@ IsPasswordValid(
 static int
 ZipFSCatalogFilesystem(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    ZipFile *zf0,		/* Temporary buffer hold archive descriptors */
+    ZipFile *zf0,		/* Temporary buffer hold archive descriptors;
+				 * caller is responsible for its memory
+				 * management, but it may be on the stack. */
     const char *mountPoint,	/* Mount point path. */
     const char *passwd,		/* Password for opening the ZIP, or NULL if
 				 * the ZIP is unprotected. */
     const char *zipname)	/* Path to ZIP file to build a catalog of. */
 {
-    int pwlen, isNew;
+    int pwlen, isNew, mountLen;
     size_t i;
     ZipFile *zf;
     ZipEntry *z;
@@ -1778,7 +1784,11 @@ ZipFSCatalogFilesystem(
     } else {
 	mountPoint = CanonicalPath("", mountPoint, &dsm, 1);
     }
+    mountLen = strlen(mountPoint);
     hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, mountPoint, &isNew);
+    Tcl_DStringFree(&dsm);
+    /* Ownership of mountPoint transferred to hash table entry */
+    mountPoint = (char *) Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
     if (!isNew) {
 	if (interp) {
 	    zf = (ZipFile *) Tcl_GetHashValue(hPtr);
@@ -1787,26 +1797,29 @@ ZipFSCatalogFilesystem(
 	    ZIPFS_ERROR_CODE(interp, "MOUNTED");
 	}
 	Unlock();
-	ZipFSCloseArchive(interp, zf0);
 	return TCL_ERROR;
     }
-    zf = AllocateZipFile(interp, strlen(mountPoint));
+    zf = AllocateZipFile(interp, mountLen);
     if (!zf) {
+	Tcl_DeleteHashEntry(hPtr);
 	Unlock();
-	ZipFSCloseArchive(interp, zf0);
 	return TCL_ERROR;
     }
-    Unlock();
 
     /*
-     * Convert to a real archive descriptor.
+     * We now commit to doing the mount. Convert to a real archive descriptor,
+     * transferring ownership of everything existing as allocated things in
+     * the temporary descriptor.
+     *
+     * The memset() makes calling ZipFSCloseArchive() on the descriptor be
+     * basically a no-op.
      */
 
     *zf = *zf0;
-    zf0->comment = NULL;	/* Ownership transferred to zf */
-    zf->mountPoint = (char *) Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
+    memset(zf0, 0, sizeof(*zf0));
+    zf->mountPoint = mountPoint;	/* Owned by hash table by now. */
+    zf->mountPointLen = mountLen;
     Tcl_CreateExitHandler(ZipfsExitHandler, zf);
-    zf->mountPointLen = strlen(zf->mountPoint);
 
     zf->nameLength = strlen(zipname);
     zf->name = (char *) ckalloc(zf->nameLength + 1);
@@ -2173,6 +2186,7 @@ TclZipfs_Mount(
 				 * the ZIP is unprotected. */
 {
     ZipFile *zf;
+    int result;
 
     ReadLock();
     if (!ZipFS.initialized) {
@@ -2213,16 +2227,14 @@ TclZipfs_Mount(
 	return TCL_ERROR;
     }
     if (ZipFSOpenArchive(interp, zipname, 1, zf) != TCL_OK) {
+	ZipFSCloseArchive(interp, zf);
 	ckfree(zf);
 	return TCL_ERROR;
     }
-    if (ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname)
-	    != TCL_OK) {
-	ckfree(zf);
-	return TCL_ERROR;
-    }
+    result = ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname);
+    ZipFSCloseArchive(interp, zf);
     ckfree(zf);
-    return TCL_OK;
+    return result;
 }
 
 /*
@@ -2304,10 +2316,12 @@ TclZipfs_MountBuffer(
 	zf->ptrToFree = NULL;
     }
     if (ZipFSFindTOC(interp, 0, zf) != TCL_OK) {
+	ZipFSCloseArchive(interp, zf);
 	return TCL_ERROR;
     }
     result = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
 	    "Memory Buffer");
+    ZipFSCloseArchive(interp, zf);
     ckfree(zf);
     return result;
 }
