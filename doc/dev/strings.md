@@ -653,6 +653,32 @@ implemented on the old FSS-UTF model.  Setting **TCL\_UTF\_MAX** to 6
 might provide representations for astral characters, but nothing would
 encode them into or decode them from their UTF-16 encoding.
 
+Tcl 8.6.5 (February 2016) for the first time broke away from FSS-UTF
+in its encoder in custom builds with values of **TCL\_UTF\_MAX** greater
+than 3.  Five- and six-byte sequences were no longer generated, though
+the decoder continued to decode them.  The upper limit of U+10FFFF was
+imposed in the encoder with larger values replaced by U+FFFD.  Several
+of the classification functions were extended in custom builds to apply
+to astral characters.  The other novelty in this release was the carving
+out of the **TCL\_UTF\_MAX == 4** custom builds to offer astral character
+support, but not through use of a 32-bit **Tcl\_UniChar**.  For the
+first time, interpretation of surrogate pairs appears in some parts of
+some custom builds.  Also for the first time, the callers
+of **Tcl_UtfToUniChar** were required in some circumstances to manage a
+dance of two calls to decode a single byte sequence, because some byte
+sequences were for the first time represented by a sequence of
+two **Tcl\_UniChar** values.  This was the first step toward use of
+UTF-16 in the Tcl library.  Like most first attempts, it didn't get
+everything right out of the gate, but improvements would continue to come.
+Because these changes were only visible in custom builds, there was little
+controversy about their appearance in a patch release.  Tcl 8.6.6 (July
+2016) remained the same.
+
+
+
+
+
+
 
 
 
