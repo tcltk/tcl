@@ -1430,6 +1430,7 @@ Tcl_AppendObjToObj(
      * This fixes append-3.4, append-3.7 and utf-1.18 testcases. */
     if (ISCONTINUATION(TclGetString(appendObjPtr))) {
 	Tcl_GetUnicode(objPtr);
+	stringPtr = GET_STRING(objPtr);
     }
     /*
      * If objPtr has a valid Unicode rep, then get a Unicode string from
