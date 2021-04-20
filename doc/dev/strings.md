@@ -643,7 +643,7 @@ FSS-UTF.
 The same state of affairs persisted through all the remaining releases of
 Tcl 8.4.  It also remained effectively the same in all releases from
 Tcl 8.5.0 (December 2007) through Tcl 8.5.19 (February 2016).  (A comment
-was added in *tclStringObj.c* during an commit otherwise largely devoted
+was added in *tclStringObj.c* during a commit otherwise largely devoted
 to formatting and whitespace issues.  The new comment also made suggestions
 about claiming use of UTF-16 without making any changes in the code that 
 would make it in any way conformant to UTF-16.) It also remained the same
