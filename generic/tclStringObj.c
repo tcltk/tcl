@@ -1223,12 +1223,6 @@ Tcl_AppendLimitedToObj(
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
-    /* If appended string starts with a continuation byte or a lower surrogate,
-     * force objPtr to unicode representation. See [7f1162a867] */
-    if (bytes && ISCONTINUATION(bytes)) {
-	Tcl_GetUnicode(objPtr);
-	stringPtr = GET_STRING(objPtr);
-    }
     if (stringPtr->hasUnicode && stringPtr->numChars > 0) {
 	AppendUtfToUnicodeRep(objPtr, bytes, toCopy);
     } else {
@@ -3050,7 +3044,7 @@ TclStringCat(
 {
     Tcl_Obj *objResultPtr, * const *ov;
     int oc, length = 0, binary = 1;
-    int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
+    int allowUniChar = 1, requestUniChar = 0;
     int first = objc - 1;	/* Index of first value possibly not empty */
     int last = 0;		/* Index of last value possibly not empty */
     int inPlace = flags & TCL_STRING_IN_PLACE;
@@ -3085,10 +3079,8 @@ TclStringCat(
 		 * create a pure bytearray.
 		 */
 
-	 	binary = 0;
-	 	if (ov > objv+1 && ISCONTINUATION(TclGetString(objPtr))) {
-	 	    forceUniChar = 1;
-	 	} else if ((objPtr->typePtr) && (objPtr->typePtr != &tclStringType)) {
+		binary = 0;
+		if ((objPtr->typePtr) && (objPtr->typePtr != &tclStringType)) {
 		    /* Prevent shimmer of non-string types. */
 		    allowUniChar = 0;
 		}
@@ -3137,7 +3129,7 @@ TclStringCat(
 		}
 	    }
 	} while (--oc);
-    } else if ((allowUniChar && requestUniChar) || forceUniChar) {
+    } else if (allowUniChar && requestUniChar) {
 	/*
 	 * Result will be pure Tcl_UniChar array. Pre-size it.
 	 */
@@ -3290,7 +3282,7 @@ TclStringCat(
 		dst += more;
 	    }
 	}
-    } else if ((allowUniChar && requestUniChar) || forceUniChar) {
+    } else if (allowUniChar && requestUniChar) {
 	/* Efficiently produce a pure Tcl_UniChar array result */
 	Tcl_UniChar *dst;
 
@@ -3351,32 +3343,36 @@ TclStringCat(
 	    objResultPtr = *objv++; objc--;
 
 	    Tcl_GetStringFromObj(objResultPtr, &start);
-	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+	    /* Allocate 2 byte extra for each objc, because a starting
+	     * '\x80' could be expanded to a 3-byte UTF-8 sequence. */
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length + 2 * objc)) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    	"concatenation failed: unable to alloc %u bytes",
-			length));
+			length + 2 * objc));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
 		return NULL;
 	    }
 	    dst = Tcl_GetString(objResultPtr) + start;
+	    objResultPtr->length -= 2 * objc;
 
 	    /* assert ( length > start ) */
 	    TclFreeIntRep(objResultPtr);
 	} else {
 	    TclNewObj(objResultPtr);	/* PANIC? */
-	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
+	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length + 2 * objc)) {
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    	"concatenation failed: unable to alloc %u bytes",
-			length));
+			length + 2 * objc));
 		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 		}
 		return NULL;
 	    }
 	    dst = Tcl_GetString(objResultPtr);
+	    objResultPtr->length -= 2 * objc;
 	}
 	while (objc--) {
 	    Tcl_Obj *objPtr = *objv++;
@@ -3385,7 +3381,22 @@ TclStringCat(
 		int more;
 		char *src = Tcl_GetStringFromObj(objPtr, &more);
 
-		memcpy(dst, src, more);
+		if ((*src & 0xC0) == 0x80) {
+		    /* Continuation byte (0x80-0xBF). Handle as cp1252. */
+		    int len = Tcl_UniCharToUtf(*src, dst);
+		    memcpy(dst + len, src + 1, more - 1);
+		    more += len - 1; objResultPtr->length += len - 1;
+		} else if (ISCONTINUATION(src) && (dst >= Tcl_GetString(objResultPtr) + 3)
+			&& (dst[-3] == '\xED') && ((dst[-2] & 0xF0) == 0xA0)
+			&& ((dst[-1] & 0xC0) == 0x80)) {
+		    /* High/Low surrogate pair. Join them together. */
+		    int ch = ((dst[-2] & 0x0F) << 16) + ((dst[-1] & 0x3F) << 10) + ((src[1] & 0x0F) << 6) + (src[2] & 0x3F) + 0x10000;
+		    Tcl_UniCharToUtf(ch, dst - 3);
+		    more -= 2; objResultPtr->length -= 2;
+		    if (more > 1) {memcpy(dst + 1, src + 3, more - 1);}
+		} else {
+		    memcpy(dst, src, more);
+		}
 		dst += more;
 	    }
 	}
