@@ -1540,7 +1540,7 @@ IsPasswordValid(
 static int
 ZipFSCatalogFilesystem(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    ZipFile *zf0,		/* Temporary buffer hold archive descriptors */
+    ZipFile *zf,		/* Temporary buffer hold archive descriptors */
     const char *mountPoint,	/* Mount point path. */
     const char *passwd,		/* Password for opening the ZIP, or NULL if
 				 * the ZIP is unprotected. */
@@ -1548,7 +1548,7 @@ ZipFSCatalogFilesystem(
 {
     int pwlen, isNew;
     size_t i;
-    ZipFile *zf;
+    ZipFile *zf0;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
     Tcl_DString ds, dsm, fpBuf;
@@ -1570,10 +1570,12 @@ ZipFSCatalogFilesystem(
      * Validate the TOC data. If that's bad, things fall apart.
      */
 
-    if (zf0->baseOffset >= zf0->length || zf0->passOffset >= zf0->length ||
-	    zf0->directoryOffset >= zf0->length) {
+    if (zf->baseOffset >= zf->length || zf->passOffset >= zf->length ||
+	    zf->directoryOffset >= zf->length) {
 	ZIPFS_ERROR(interp, "bad zip data");
 	ZIPFS_ERROR_CODE(interp, "BAD_ZIP");
+	ZipFSCloseArchive(interp, zf);
+	Tcl_Free(zf);
 	return TCL_ERROR;
     }
 
@@ -1594,19 +1596,14 @@ ZipFSCatalogFilesystem(
     hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, mountPoint, &isNew);
     if (!isNew) {
 	if (interp) {
-	    zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+	    zf0 = (ZipFile *) Tcl_GetHashValue(hPtr);
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s is already mounted on %s", zf->name, mountPoint));
+		    "%s is already mounted on %s", zf0->name, mountPoint));
 	    ZIPFS_ERROR_CODE(interp, "MOUNTED");
 	}
 	Unlock();
-	ZipFSCloseArchive(interp, zf0);
-	return TCL_ERROR;
-    }
-    zf = AllocateZipFile(interp, strlen(mountPoint));
-    if (!zf) {
-	Unlock();
-	ZipFSCloseArchive(interp, zf0);
+	ZipFSCloseArchive(interp, zf);
+	Tcl_Free(zf);
 	return TCL_ERROR;
     }
     Unlock();
@@ -1615,7 +1612,6 @@ ZipFSCatalogFilesystem(
      * Convert to a real archive descriptor.
      */
 
-    *zf = *zf0;
     zf->mountPoint = (char *) Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
     Tcl_CreateExitHandler(ZipfsExitHandler, zf);
     zf->mountPointLen = strlen(zf->mountPoint);
@@ -2019,10 +2015,8 @@ TclZipfs_Mount(
     }
     if (ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname)
 	    != TCL_OK) {
-	Tcl_Free(zf);
 	return TCL_ERROR;
     }
-    Tcl_Free(zf);
     return TCL_OK;
 }
 
@@ -2109,7 +2103,6 @@ TclZipfs_MountBuffer(
     }
     result = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
 	    "Memory Buffer");
-    Tcl_Free(zf);
     return result;
 }
 

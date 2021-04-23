@@ -51,11 +51,6 @@ proc mapAndSortList {map listIn} {
 # thus un-autoindexed) APIs in this test result arguments:
 catch {safe::interpConfigure}
 
-# testing that nested and statics do what is advertised (we use a
-# package - tcl::test - but it might be absent if we're in standard tclsh)
-
-testConstraint tcl::test [expr {![catch {package require tcl::test}]}]
-
 # Tests 5.* test the example files before using them to test safe interpreters.
 
 test safe-zipfs-5.1 {example tclIndex commands, test in parent interpreter; zipfs} -setup {

@@ -497,7 +497,7 @@ IsPerfCounterAvailable(void)
 		|| ((regs[0] & 0x00F00000)	/* Extended family */
 		&& (regs[3] & 0x10000000)))	/* Hyperthread */
 		&& (((regs[1]&0x00FF0000) >> 16)/* CPU count */
-			== (int)sy stemInfo.dwNumberOfProcessors)) {
+			== (int)systemInfo.dwNumberOfProcessors)) {
 	    timeInfo.perfCounterAvailable = TRUE;
 	} else {
 	    timeInfo.perfCounterAvailable = FALSE;

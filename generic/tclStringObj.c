@@ -1155,6 +1155,7 @@ Tcl_AppendLimitedToObj(
      * force objPtr to unicode representation. See [7f1162a867] */
     if (bytes && ISCONTINUATION(bytes)) {
 	Tcl_GetUnicode(objPtr);
+	stringPtr = GET_STRING(objPtr);
     }
     if (stringPtr->hasUnicode && (stringPtr->numChars+1) > 1) {
 	AppendUtfToUnicodeRep(objPtr, bytes, toCopy);
@@ -1359,6 +1360,7 @@ Tcl_AppendObjToObj(
      * This fixes append-3.4, append-3.7 and utf-1.18 testcases. */
     if (ISCONTINUATION(TclGetString(appendObjPtr))) {
 	Tcl_GetUnicode(objPtr);
+	stringPtr = GET_STRING(objPtr);
     }
     /*
      * If objPtr has a valid Unicode rep, then get a Unicode string from
@@ -3739,6 +3741,7 @@ TclStringReverse(
 
     if (stringPtr->hasUnicode) {
 	Tcl_UniChar *from = Tcl_GetUnicode(objPtr);
+	stringPtr = GET_STRING(objPtr);
 	Tcl_UniChar *src = from + stringPtr->numChars;
 	Tcl_UniChar *to;
 
@@ -3751,6 +3754,7 @@ TclStringReverse(
 	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
 	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
 	    to = Tcl_GetUnicode(objPtr);
+	    stringPtr = GET_STRING(objPtr);
 	    while (--src >= from) {
 #if TCL_UTF_MAX < 4
 		ch = *src;
