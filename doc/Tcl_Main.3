@@ -10,12 +10,16 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_Main, Tcl_SetStartupScript, Tcl_GetStartupScript, Tcl_SetMainLoop \- main program, startup script, and event loop definition for Tcl-based applications
+Tcl_Main, Tcl_MainEx, Tcl_MainExW, Tcl_SetStartupScript, Tcl_GetStartupScript, Tcl_SetMainLoop \- main program, startup script, and event loop definition for Tcl-based applications
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
 \fBTcl_Main\fR(\fIargc, argv, appInitProc\fR)
+.sp
+\fBTcl_MainEx\fR(\fIargc, charargv, appInitProc, interp\fR)
+.sp
+\fBTcl_MainExW\fR(\fIargc, wideargv, appInitProc, interp\fR)
 .sp
 \fBTcl_SetStartupScript\fR(\fIpath, encoding\fR)
 .sp
@@ -30,6 +34,10 @@ Number of elements in \fIargv\fR.
 .AP char *argv[] in
 Array of strings containing command-line arguments. On Windows, when
 using -DUNICODE, the parameter type changes to wchar_t *.
+.AP char *charargv[] in
+As argv, but does not change type to wchar_t.
+.AP char *wideargv[] in
+As argv, but type is always wchar_t.
 .AP Tcl_AppInitProc *appInitProc in
 Address of an application-specific initialization procedure.
 The value for this argument is usually \fBTcl_AppInit\fR.
@@ -42,6 +50,8 @@ If non-NULL, location to write a copy of the (const char *)
 pointing to the encoding name.
 .AP Tcl_MainLoopProc *mainLoopProc in
 Address of an application-specific event loop procedure.
+.AP Tcl_Interp *interp in
+Already created Tcl Interpreter.
 .BE
 .SH DESCRIPTION
 .PP
