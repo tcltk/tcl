@@ -330,6 +330,8 @@ the values in its \fIobjv\fR argument will have a reference count of
 at least 1, with that guaranteed reference being from the Tcl
 evaluation stack. You should not call \fBTcl_DecrRefCount\fR on any of
 those values unless you call \fBTcl_IncrRefCount\fR on them first.
+Also, when the \fIproc\fR is called, the interpreter result is
+guaranteed to be an empty string value with a reference count of 1.
 .PP
 \fBTcl_GetCommandFullName\fR does not modify the reference count of its
 \fIobjPtr\fR argument, but does require that the object be unshared.
