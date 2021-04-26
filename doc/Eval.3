@@ -190,6 +190,20 @@ the \fBreturn\fR, \fBbreak\fR, or \fBcontinue\fR command was
 invoked in an inappropriate place.
 This means that top-level applications should never see a return code
 from \fBTcl_EvalObjEx\fR other than \fBTCL_OK\fR or \fBTCL_ERROR\fR.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_EvalObjEx\fR and \fBTcl_GlobalEvalObj\fR both increment and
+decrement the reference count of their \fIobjPtr\fR argument; you must
+not pass them any value with a reference count of zero. They also
+manipulate the interpreter result; you must not count on the
+interpreter result to hold the reference count of any value over
+these calls.
+.PP
+\fBTcl_EvalObjv\fR may increment and decrement the reference count of
+any value passed via its \fIobjv\fR argument; you must not pass any
+value with a reference count of zero. This function also manipulates
+the interpreter result; you must not count on the interpreter result
+to hold the reference count of any value over this call.
 
 .SH KEYWORDS
 execute, file, global, result, script, value

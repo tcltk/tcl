@@ -2647,8 +2647,9 @@ Tcl_FSGetCwd(
 		norm = TclFSNormalizeAbsolutePath(interp,retVal);
 		if (norm != NULL) {
 		    /*
-		     * Assign to global storage the pathname of the current directory
-		     * and copy it into thread-local storage as well.
+		     * Assign to global storage the pathname of the current
+		     * directory and copy it into thread-local storage as
+		     * well.
 		     *
 		     * At system startup multiple threads could in principle
 		     * call this function simultaneously, which is a little
@@ -3790,10 +3791,12 @@ Tcl_FSListVolumes(void)
 
 	    if (thisFsVolumes != NULL) {
 		Tcl_ListObjAppendList(NULL, resultPtr, thisFsVolumes);
-		/* The refCount of each list returned by a `listVolumesProc` is
-		 * already incremented.  Do not hang onto the list, though.  It
-		 * belongs to the filesystem.  Add its contents to * the result
-		 * we are building, and then decrement the refCount.  */
+		/*
+		 * The refCount of each list returned by a `listVolumesProc`
+		 * is already incremented.  Do not hang onto the list, though.
+		 * It belongs to the filesystem.  Add its contents to the
+		 * result we are building, and then decrement the refCount.
+		 */
 		Tcl_DecrRefCount(thisFsVolumes);
 	    }
 	}
@@ -4366,15 +4369,14 @@ Tcl_FSCreateDirectory(
 
 int
 Tcl_FSCopyDirectory(
-    Tcl_Obj *srcPathPtr,	/*
-				 * The pathname of the directory to be copied.
-				 */
+    Tcl_Obj *srcPathPtr,	/* The pathname of the directory to be
+				 * copied. */
     Tcl_Obj *destPathPtr,	/* The pathname of the target directory. */
     Tcl_Obj **errorPtr)		/* If not NULL, and there is an error, a place
-				 *  to store a pointer to a new object, with
-				 *  its refCount already incremented, and
-				 *  containing the pathname name of file
-				 *  causing the error. */
+				 * to store a pointer to a new object, with
+				 * its refCount already incremented, and
+				 * containing the pathname name of file
+				 * causing the error. */
 {
     int retVal = -1;
     const Tcl_Filesystem *fsPtr, *fsPtr2;

@@ -187,5 +187,14 @@ There is no way to be notified when the trace created by
 \fBTcl_CreateTrace\fR is deleted.  There is no way for the \fIproc\fR
 associated with a call to \fBTcl_CreateTrace\fR to abort execution of
 \fIcommand\fR.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+When the \fIproc\fR passed to \fBTcl_CreateObjTrace\fR is called,
+the values in its \fIobjv\fR argument will have a reference count of
+at least 1, with that guaranteed reference being from the Tcl
+evaluation stack. You should not call \fBTcl_DecrRefCount\fR on any of
+those values unless you call \fBTcl_IncrRefCount\fR on them first.
+.SH "SEE ALSO"
+trace(n)
 .SH KEYWORDS
 command, create, delete, interpreter, trace
