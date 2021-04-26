@@ -58,6 +58,18 @@ and if \fIinterp\fR is non-NULL, an error message is left in \fIinterp\fR.
 The \fBTcl_ObjType\fR of \fIobjPtr\fR may be changed to make subsequent
 calls to \fBTcl_GetDoubleFromObj\fR more efficient.
 '\" TODO: add discussion of treatment of NaN value
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_NewDoubleObj\fR always returns a zero-reference object, much
+like \fBTcl_NewObj\fR.
+.PP
+\fBTcl_SetDoubleObj\fR does not modify the reference count of its
+\fIobjPtr\fR argument, but does require that the object be unshared.
+.PP
+\fBTcl_GetDoubleFromObj\fR does not modify the reference count of its
+\fIobjPtr\fR argument; it only reads. Note however that this function
+may set the interpreter result; if that is the only place that
+is holding a reference to the object, it will be deleted.
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_GetObjResult
 .SH KEYWORDS
