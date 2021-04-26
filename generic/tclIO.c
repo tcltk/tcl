@@ -10825,15 +10825,17 @@ Tcl_SetChannelErrorInterp(
     Tcl_Obj *msg)		/* Error message to store. */
 {
     Interp *iPtr = (Interp *) interp;
-
-    if (iPtr->chanMsg != NULL) {
-	TclDecrRefCount(iPtr->chanMsg);
-	iPtr->chanMsg = NULL;
-    }
+    Tcl_Obj *disposePtr = iPtr->chanMsg;
 
     if (msg != NULL) {
 	iPtr->chanMsg = FixLevelCode(msg);
 	Tcl_IncrRefCount(iPtr->chanMsg);
+    } else {
+	iPtr->chanMsg = NULL;
+    }
+
+    if (disposePtr != NULL) {
+        TclDecrRefCount(disposePtr);
     }
     return;
 }
@@ -10861,15 +10863,17 @@ Tcl_SetChannelError(
     Tcl_Obj *msg)		/* Error message to store. */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
-
-    if (statePtr->chanMsg != NULL) {
-	TclDecrRefCount(statePtr->chanMsg);
-	statePtr->chanMsg = NULL;
-    }
+    Tcl_Obj *disposePtr = statePtr->chanMsg;
 
     if (msg != NULL) {
 	statePtr->chanMsg = FixLevelCode(msg);
 	Tcl_IncrRefCount(statePtr->chanMsg);
+    } else {
+	statePtr->chanMsg = NULL;
+    }
+
+    if (disposePtr != NULL) {
+        TclDecrRefCount(disposePtr);
     }
     return;
 }
