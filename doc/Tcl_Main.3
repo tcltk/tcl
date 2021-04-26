@@ -201,6 +201,15 @@ procedure (if any) returns, \fBTcl_Main\fR will also evaluate
 the \fBexit\fR command.
 .PP
 \fBTcl_Main\fR can not be used in stub-enabled extensions.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_SetStartupScript\fR takes a value (or NULL) for its \fIpath\fR
+argument, and will increment the reference count of it.
+.PP
+\fBTcl_GetStartupScript\fR returns a value with reference count at least 1, or
+NULL. It's \fIencodingPtr\fR is also used (if non-NULL) to return a value with
+a reference count at least 1, or NULL. In both cases, the owner of the values
+is the current thread.
 .SH "SEE ALSO"
 tclsh(1), Tcl_GetStdChannel(3), Tcl_StandardChannels(3), Tcl_AppInit(3),
 exit(n), encoding(n)
