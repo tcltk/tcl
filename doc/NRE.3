@@ -227,6 +227,25 @@ int
 Any function comprising a routine can push other functions, making it possible
 implement looping and sequencing constructs using the function stack.
 .PP
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The first \fIobjc\fR values in the \fIobjv\fR array passed to the functions
+\fBTcl_NRCallObjProc\fR, \fBTcl_NREvalObjv\fR, and \fBTcl_NRCmdSwap\fR should
+have a reference count of at least 1; they may have additional references
+taken during the execution.
+.PP
+The \fIobjPtr\fR argument to \fBTcl_NREvalObj\fR and \fBTcl_NRExprObj\fR
+should have a reference count of at least 1, and may have additional
+references taken to it during execution.
+.PP
+The \fIresultObj\fR argument to \fBTcl_NRExprObj\fR should be an unshared
+object.
+.PP
+Use \fBTcl_NRAddCallback\fR to schedule any required final decrementing of the
+reference counts of arguments to any of the other functions on this page, as
+with any other post-processing step in the non-recursive execution engine.
+.PP
+The 
 .SH "SEE ALSO"
 Tcl_CreateCommand(3), Tcl_CreateObjCommand(3), Tcl_EvalObjEx(3), Tcl_GetCommandFromObj(3), Tcl_ExprObj(3)
 .SH KEYWORDS

@@ -62,6 +62,13 @@ result of the whole substitution on \fIobjPtr\fR will be truncated at
 the point immediately before the start of the command substitution,
 and no characters will be added to the result or substitutions
 performed after that point.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The \fIobjPtr\fR argument to \fBTcl_SubstObj\fR must not have a reference
+count of zero. This function modifies the interpreter result, both on success
+and on failure; the result of this function on success is exactly the current
+interpreter result. Successful results should have their reference count
+incremented if they are to be retained.
 .SH "SEE ALSO"
 subst(n)
 .SH KEYWORDS
