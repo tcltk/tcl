@@ -44,6 +44,12 @@ allow the user to re-issue recently invoked commands.
 If the \fIflags\fR argument contains the \fBTCL_NO_EVAL\fR bit then
 the command is recorded without being evaluated.
 
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The reference count of the \fIcmdPtr\fR argument to \fBTcl_RecordAndEvalObj\fR
+must be at least 1. This function will modify the interpreter result; do not
+use an existing result as \fIcmdPtr\fR directly without incrementing its
+reference count.
 .SH "SEE ALSO"
 Tcl_EvalObjEx, Tcl_GetObjResult
 
