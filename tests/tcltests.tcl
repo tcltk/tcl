@@ -7,7 +7,7 @@ testConstraint debug         [testdebug]
 testConstraint purify        [testpurify]
 testConstraint debugpurify   [
     expr {
-	![stestConstraint memory]
+	![testConstraint memory]
 	&&
 	[testConstraint debug]
 	&&
