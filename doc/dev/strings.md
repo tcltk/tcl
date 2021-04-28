@@ -674,11 +674,13 @@ Because these changes were only visible in custom builds, there was little
 controversy about their appearance in a patch release.  Tcl 8.6.6 (July
 2016) remained the same.
 
-
-
-
-
-
+Tcl 8.6.7 (August 2017) was the first release since Tcl 8.1.0 to change
+the decoding of string value byte sequences in the default build.  This
+release brought an end to Tcl's acceptance of overlong byte sequences
+(other than the modified encoding for U+0000).  This change fixes many
+EIAS violations created by decoding multiple encoded sequences to mean
+the same symbols.  In custom builds, Tcl 8.6.7 also ended the decoding
+of the five- and six-byte sequences of FSS-UTF.
 
 
 
