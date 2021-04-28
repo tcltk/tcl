@@ -185,9 +185,10 @@ declare 97 {
 declare 98 {
     int TclServiceIdle(void)
 }
-declare 101 {
-    const char *TclSetPreInitScript(const char *string)
-}
+# Removed in 9.0:
+#declare 101 {
+#    const char *TclSetPreInitScript(const char *string)
+#}
 declare 102 {
     void TclSetupEnv(Tcl_Interp *interp)
 }

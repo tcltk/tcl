@@ -249,6 +249,33 @@ test upvar-6.3 {retargeting an upvar} {
     p1
 } {abcde 44}
 
+
+
+test upvar-6.4 {
+	retargeting a variable created by upvar to itself is allowed
+} -body {
+	catch {
+		unset x
+	}
+	catch {
+		unset y
+	}
+	set res {}
+    set x abcde
+	set res [catch {
+		upvar 0 x x
+	} cres copts]
+	lappend res [dict get $copts -errorcode]
+	upvar 0 x y
+	lappend res $y
+	upvar 0 y y
+	lappend res $y
+	return $res
+} -cleanup {
+	upvar 0 {} y
+} -result {1 {TCL UPVAR SELF} abcde abcde}
+
+
 test upvar-7.1 {upvar to same level} {
     set x 44
     set y 55
