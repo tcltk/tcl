@@ -401,7 +401,7 @@ static const TclIntStubs tclIntStubs = {
     TclServiceIdle, /* 98 */
     0, /* 99 */
     0, /* 100 */
-    TclSetPreInitScript, /* 101 */
+    0, /* 101 */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
     0, /* 104 */

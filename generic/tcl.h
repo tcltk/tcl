@@ -2191,6 +2191,7 @@ EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 EXTERN void		Tcl_InitSubsystems(void);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 EXTERN void		Tcl_FindExecutable(const char *argv0);
+EXTERN const char *	Tcl_SetPreInitScript(const char *string);
 EXTERN void		Tcl_SetPanicProc(
 			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
 EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
