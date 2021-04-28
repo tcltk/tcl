@@ -242,6 +242,27 @@ but the array remains.
 If an array name is specified without an index, then the entire
 array is removed.
 
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The result of \fBTcl_SetVar2Ex\fR, \fBTcl_ObjSetVar2\fR, \fBTcl_GetVar2Ex\fR,
+and \fBTcl_ObjGetVar2\fR is (if non-NULL) a value with a reference of at least
+1, where that reference is held by the variable that the function has just
+operated upon.
+.PP
+The \fInewValuePtr\fR argument to \fBTcl_SetVar2Ex\fR and \fBTcl_ObjSetVar2\fR
+may be an arbitrary reference count value; its reference count will be
+incremented on success. However, it is recommended to not use a zero reference
+count value, as that makes correct handling of the error case tricky.
+.PP
+The \fIpart1\fR argument to \fBTcl_ObjSetVar2\fR and \fBTcl_ObjGetVar2\fR can
+have any reference count; these functions never modify it. It is recommended
+to not use a zero reference count for this argument.
+.PP
+The \fIpart2\fR argument to \fBTcl_ObjSetVar2\fR and \fBTcl_ObjGetVar2\fR, if
+non-NULL, should not have a zero reference count as these functions may
+retain a reference to it (particularly when it is used to create an array
+element that did not previously exist).
+
 .SH "SEE ALSO"
 Tcl_GetObjResult, Tcl_GetStringResult, Tcl_TraceVar
 
