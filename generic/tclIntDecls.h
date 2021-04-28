@@ -216,8 +216,7 @@ TCLAPI void		TclResetShadowedCmdRefs(Tcl_Interp *interp,
 TCLAPI int		TclServiceIdle(void);
 /* Slot 99 is reserved */
 /* Slot 100 is reserved */
-/* 101 */
-TCLAPI const char *	TclSetPreInitScript(const char *string);
+/* Slot 101 is reserved */
 /* 102 */
 TCLAPI void		TclSetupEnv(Tcl_Interp *interp);
 /* 103 */
@@ -677,7 +676,7 @@ typedef struct TclIntStubs {
     int (*tclServiceIdle) (void); /* 98 */
     void (*reserved99)(void);
     void (*reserved100)(void);
-    const char * (*tclSetPreInitScript) (const char *string); /* 101 */
+    void (*reserved101)(void);
     void (*tclSetupEnv) (Tcl_Interp *interp); /* 102 */
     int (*tclSockGetPort) (Tcl_Interp *interp, const char *str, const char *proto, int *portPtr); /* 103 */
     void (*reserved104)(void);
@@ -997,8 +996,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclServiceIdle) /* 98 */
 /* Slot 99 is reserved */
 /* Slot 100 is reserved */
-#define TclSetPreInitScript \
-	(tclIntStubsPtr->tclSetPreInitScript) /* 101 */
+/* Slot 101 is reserved */
 #define TclSetupEnv \
 	(tclIntStubsPtr->tclSetupEnv) /* 102 */
 #define TclSockGetPort \

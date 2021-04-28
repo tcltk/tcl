@@ -2156,6 +2156,7 @@ TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 TCLAPI void		Tcl_InitSubsystems(void);
 TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 TCLAPI void		Tcl_FindExecutable(const char *argv0);
+TCLAPI const char *	Tcl_SetPreInitScript(const char *string);
 TCLAPI void		Tcl_SetPanicProc(
 			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
 TCLAPI void		Tcl_StaticLibrary(Tcl_Interp *interp,
