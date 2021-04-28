@@ -2148,8 +2148,6 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 const char *		TclInitStubTable(const char *version);
-void			TclStubMainEx(int index, int argc, const void *argv,
-			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 void *			TclStubCall(void *arg);
 #if defined(_WIN32)
     TCL_NORETURN1 void Tcl_ConsolePanic(const char *format, ...);
