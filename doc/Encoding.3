@@ -556,5 +556,16 @@ been loaded, it attempts to load an encoding file called \fIname\fB.enc\fR
 from the \fBencoding\fR subdirectory of each directory that Tcl searches
 for its script library.  If the encoding file exists, but is
 malformed, an error message will be left in \fIinterp\fR.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_GetEncodingFromObj\fR does not modify the reference count of its
+\fIobjPtr\fR argument; it only reads. Note however that this function may set
+the interpreter result; if that is the only place that is holding a reference
+to the object, it will be deleted.
+.PP
+\fBTcl_GetEncodingSearchPath\fR returns an object with a reference count of at
+least 1.
+.SH "SEE ALSO"
+encoding(n)
 .SH KEYWORDS
 utf, encoding, convert

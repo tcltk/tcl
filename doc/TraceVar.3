@@ -359,6 +359,14 @@ Traces on a variable are always removed whenever the variable
 is deleted;  the only time \fBTCL_TRACE_DESTROYED\fR is not set is for
 a whole-array trace invoked when only a single element of an
 array is unset.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+When a \fIproc\fR callback is invoked, and that callback was installed with
+the \fBTCL_TRACE_RESULT_OBJECT\fR flag, the result of the callback is a
+Tcl_Obj reference when there is an error. The result will have its reference
+count decremented once when no longer needed, or may have additional
+references made to it (e.g., by setting it as the interpreter result with
+\fBTcl_SetObjResult\fR).
 .SH BUGS
 .PP
 Array traces are not yet integrated with the Tcl \fBinfo exists\fR command,

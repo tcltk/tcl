@@ -98,6 +98,15 @@ containing the expression's value at \fI*resultPtrPtr\fR.
 In this case, the caller is responsible for calling
 \fBTcl_DecrRefCount\fR to decrement the value's reference count
 when it is finished with the value.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_ExprLongObj\fR, \fBTcl_ExprDoubleObj\fR,
+\fBTcl_ExprBooleanObj\fR, and \fBTcl_ExprObj\fR all increment and
+decrement the reference count of their \fIobjPtr\fR arguments; you
+must not pass them any value with a reference count of zero. They also
+manipulate the interpreter result; you must not count on the
+interpreter result to hold the reference count of any value over these
+calls.
 
 .SH "SEE ALSO"
 Tcl_ExprLong, Tcl_ExprDouble, Tcl_ExprBoolean, Tcl_ExprString, Tcl_GetObjResult
