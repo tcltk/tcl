@@ -2385,6 +2385,7 @@ EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 EXTERN void		Tcl_InitSubsystems(void);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+EXTERN const char *	Tcl_SetPreInitScript(const char *string);
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_StaticPackage Tcl_StaticLibrary
 #endif

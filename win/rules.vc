@@ -1260,7 +1260,13 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 
 # Various output paths
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
-PRJLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
+PRJLIBNAME8	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
+PRJLIBNAME9	= tcl9$(PROJECT)$(VERSION)$(SUFX).$(EXT)
+!if $(TCL_MAJOR_VERSION) == 8
+PRJLIBNAME	= $(PRJLIBNAME8)
+!else
+PRJLIBNAME	= $(PRJLIBNAME9)
+!endif
 PRJLIB		= $(OUT_DIR)\$(PRJLIBNAME)
 
 PRJSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
@@ -1590,12 +1596,22 @@ default-target: $(DEFAULT_BUILD_TARGET)
 
 !if $(MULTIPLATFORM_INSTALL)
 default-pkgindex:
+	@echo if {[package vsatisfies [package provide Tcl] 9.0-]} { > $(OUT_DIR)\pkgIndex.tcl
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
-	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME9)]] >> $(OUT_DIR)\pkgIndex.tcl
+	@echo } else { >> $(OUT_DIR)\pkgIndex.tcl
+	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
+	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME8)]] >> $(OUT_DIR)\pkgIndex.tcl
+	@echo } >> $(OUT_DIR)\pkgIndex.tcl
 !else
 default-pkgindex:
+	@echo if {[package vsatisfies [package provide Tcl] 9.0-]} { > $(OUT_DIR)\pkgIndex.tcl
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
-	    [list load [file join $$dir $(PRJLIBNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+	    [list load [file join $$dir $(PRJLIBNAME9)]] >> $(OUT_DIR)\pkgIndex.tcl
+	@echo } else { >> $(OUT_DIR)\pkgIndex.tcl
+	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
+	    [list load [file join $$dir $(PRJLIBNAME8)]] >> $(OUT_DIR)\pkgIndex.tcl
+	@echo } >> $(OUT_DIR)\pkgIndex.tcl
 !endif
 
 default-pkgindex-tea:
@@ -1604,6 +1620,8 @@ default-pkgindex-tea:
 @PACKAGE_NAME@       $(PRJ_PACKAGE_TCLNAME)
 @PACKAGE_TCLNAME@    $(PRJ_PACKAGE_TCLNAME)
 @PKG_LIB_FILE@       $(PRJLIBNAME)
+@PKG_LIB_FILE8@      $(PRJLIBNAME8)
+@PKG_LIB_FILE9@      $(PRJLIBNAME9)
 <<
 
 default-install: default-install-binaries default-install-libraries
