@@ -153,7 +153,7 @@ EXTERN int		TclGetOpenMode(Tcl_Interp *interp, const char *str,
 /* 41 */
 EXTERN Tcl_Command	TclGetOriginalCommand(Tcl_Command command);
 /* 42 */
-EXTERN CONST86 char *	TclpGetUserHome(const char *name,
+EXTERN const char *	TclpGetUserHome(const char *name,
 				Tcl_DString *bufferPtr);
 /* Slot 43 is reserved */
 /* 44 */
@@ -264,7 +264,7 @@ EXTERN int		TclServiceIdle(void);
 /* Slot 99 is reserved */
 /* Slot 100 is reserved */
 /* 101 */
-EXTERN CONST86 char *	TclSetPreInitScript(const char *string);
+EXTERN const char *	TclSetPreInitScript(const char *string);
 /* 102 */
 EXTERN void		TclSetupEnv(Tcl_Interp *interp);
 /* 103 */
@@ -707,7 +707,7 @@ typedef struct TclIntStubs {
     TclObjCmdProcType (*tclGetObjInterpProc) (void); /* 39 */
     int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *seekFlagPtr); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) (Tcl_Command command); /* 41 */
-    CONST86 char * (*tclpGetUserHome) (const char *name, Tcl_DString *bufferPtr); /* 42 */
+    const char * (*tclpGetUserHome) (const char *name, Tcl_DString *bufferPtr); /* 42 */
     void (*reserved43)(void);
     int (*tclGuessPackageName) (const char *fileName, Tcl_DString *bufPtr); /* 44 */
     int (*tclHideUnsafeCommands) (Tcl_Interp *interp); /* 45 */
@@ -766,7 +766,7 @@ typedef struct TclIntStubs {
     int (*tclServiceIdle) (void); /* 98 */
     void (*reserved99)(void);
     void (*reserved100)(void);
-    CONST86 char * (*tclSetPreInitScript) (const char *string); /* 101 */
+    const char * (*tclSetPreInitScript) (const char *string); /* 101 */
     void (*tclSetupEnv) (Tcl_Interp *interp); /* 102 */
     int (*tclSockGetPort) (Tcl_Interp *interp, const char *str, const char *proto, int *portPtr); /* 103 */
     TCL_DEPRECATED_API("") int (*tclSockMinimumBuffersOld) (int sock, int size); /* 104 */
@@ -1409,7 +1409,9 @@ extern const TclIntStubs *tclIntStubsPtr;
 
 #undef TclGuessPackageName
 #undef TclUnusedStubEntry
+#undef TclSetPreInitScript
 #ifndef TCL_NO_DEPRECATED
+#   define TclSetPreInitScript Tcl_SetPreInitScript
 #   define TclGuessPackageName(fileName, pkgName) ((void)fileName,(void)pkgName,0)
 #endif
 
