@@ -2148,6 +2148,9 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 const char *		TclInitStubTable(const char *version);
+void			TclStubMainEx(int index, int argc, const void *argv,
+			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
+void *			TclStubCall(void *arg);
 #if defined(_WIN32)
     TCL_NORETURN1 void Tcl_ConsolePanic(const char *format, ...);
 #else
@@ -2189,9 +2192,10 @@ EXTERN TCL_NORETURN void Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
+EXTERN const char *	Tcl_InitSubsystems(void);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 EXTERN const char *	Tcl_FindExecutable(const char *argv0);
-EXTERN const char *	Tcl_InitSubsystems(void);
+EXTERN const char *	Tcl_SetPreInitScript(const char *string);
 EXTERN const char *	Tcl_SetPanicProc(
 			    TCL_NORETURN1 Tcl_PanicProc *panicProc);
 EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
@@ -2207,9 +2211,6 @@ EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #else
 EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #endif
-extern void TclStubMainEx(int index, int argc, const void *argv,
-	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-extern void *TclStubCall(void *arg);
 #if defined(_WIN32) && defined(UNICODE)
 #ifndef USE_TCL_STUBS
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))

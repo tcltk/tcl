@@ -105,6 +105,12 @@ array of characters at \fItablePtr\fR+\fIoffset\fR bytes, etc.)
 This is particularly useful when processing things like
 \fBTk_ConfigurationSpec\fR, whose string keys are in the same place in
 each of several array elements.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_GetIndexFromObj\fR and \fBTcl_GetIndexFromObjStruct\fR do not modify
+the reference count of their \fIobjPtr\fR arguments; they only read. Note
+however that these functions may set the interpreter result; if that is the
+only place that is holding a reference to the object, it will be deleted.
 .SH "SEE ALSO"
 prefix(n), Tcl_WrongNumArgs(3)
 .SH KEYWORDS
