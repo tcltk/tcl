@@ -3,22 +3,17 @@
 package require tcltest 2.5
 namespace import ::tcltest::*
 testConstraint exec          [llength [info commands exec]]
-if {[namespace which testdebug] ne {}} {
-	testConstraint debug         [testdebug]
-	testConstraint purify        [testpurify]
-	testConstraint debugpurify   [
-		expr {
-		![testConstraint memory]
-		&&
-		[testConstraint debug]
-		&&
-		[testConstraint purify]
-	}]
-}
+testConstraint debug [expr {"debug" in [split [package provide tcl] .]}]
+testConstraint purify [expr {"purify" in [split [package provide tcl] .]}]
+testConstraint debugpurify [
+    expr {
+	"memdebug" ni [split [package provide tcl] .]
+	&& [testConstraint debug]
+	&& [testConstraint purify]
+    }]
 testConstraint fcopy         [llength [info commands fcopy]]
 testConstraint fileevent     [llength [info commands fileevent]]
-testConstraint thread        [
-    expr {0 == [catch {package require Thread 2.7-}]}]
+testConstraint thread        [expr {![catch {package require Thread 2.7-}]}]
 testConstraint notValgrind   [expr {![testConstraint valgrind]}]
 
 
