@@ -510,11 +510,10 @@ FillEncodingFileMap(void)
  *---------------------------------------------------------------------------
  */
 
-/* Since TCL_ENCODING_MODIFIED is only used for utf-8/wtf-8/cesu-8 and
- * TCL_ENCODING_LE is only used for  utf-16/wtf-16/ucs-2, re-use the same value */
+/* Since TCL_ENCODING_MODIFIED is only used for utf-8/cesu-8 and
+ * TCL_ENCODING_LE is only used for  utf-16/ucs-2. re-use the same value */
+#define TCL_ENCODING_MODIFIED	0x20	/* Converting NULL bytes to 0xC0 0x80 */
 #define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
-/* Those flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
-#define TCL_ENCODING_WTF	0x100	/* For WTF-8 encoding, don't check for surrogates/noncharacters */
 #define TCL_ENCODING_UTF	0x200	/* For UTF-8 encoding, allow 4-byte output sequences */
 
 void
@@ -559,14 +558,8 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 1;
     type.clientData	= INT2PTR(TCL_ENCODING_UTF);
     Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(TCL_ENCODING_UTF|TCL_ENCODING_WTF);
-    type.encodingName	= "wtf-8";
-    Tcl_CreateEncoding(&type);
     type.clientData	= INT2PTR(0);
     type.encodingName	= "cesu-8";
-    Tcl_CreateEncoding(&type);
-    type.clientData	= INT2PTR(TCL_ENCODING_UTF|TCL_ENCODING_WTF|TCL_ENCODING_MODIFIED);
-    type.encodingName	= "tcl-8";
     Tcl_CreateEncoding(&type);
 
     type.toUtfProc	= Utf16ToUtfProc;
@@ -590,20 +583,11 @@ TclInitEncodingSubsystem(void)
     type.encodingName   = "utf-16le";
     type.clientData	= INT2PTR(TCL_ENCODING_LE);
     Tcl_CreateEncoding(&type);
-    type.encodingName   = "wtf-16le";
-    type.clientData	= INT2PTR(TCL_ENCODING_LE + TCL_ENCODING_WTF);
-    Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16be";
     type.clientData	= INT2PTR(0);
     Tcl_CreateEncoding(&type);
-    type.encodingName   = "wtf-16be";
-    type.clientData	= INT2PTR(TCL_ENCODING_WTF);
-    Tcl_CreateEncoding(&type);
     type.encodingName   = "utf-16";
     type.clientData	= INT2PTR(isLe.c);
-    Tcl_CreateEncoding(&type);
-    type.encodingName   = "wtf-16";
-    type.clientData	= INT2PTR(isLe.c + TCL_ENCODING_WTF);
     Tcl_CreateEncoding(&type);
 
 #ifndef TCL_NO_DEPRECATED
@@ -2354,15 +2338,14 @@ UtfToUtfProc(
 		len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
 
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
-		    if (!(flags & TCL_ENCODING_WTF)) {
-			if (STOPONERROR) {
-			    result = TCL_CONVERT_UNKNOWN;
-			    src = saveSrc;
-			    break;
-			}
-			if (!(flags & TCL_ENCODING_MODIFIED)) {
-			    ch = 0xFFFD;
-			}
+
+		    if (STOPONERROR) {
+			result = TCL_CONVERT_UNKNOWN;
+			src = saveSrc;
+			break;
+		    }
+		    if (!(flags & TCL_ENCODING_MODIFIED)) {
+			ch = 0xFFFD;
 		    }
 		cesu8:
 		    *dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
@@ -2373,7 +2356,7 @@ UtfToUtfProc(
 		src += len;
 		dst += Tcl_UniCharToUtf(ch, dst);
 		ch = low;
-	    } else if (!(flags & TCL_ENCODING_WTF) && !Tcl_UniCharIsUnicode(ch)) {
+	    } else if (!Tcl_UniCharIsUnicode(ch)) {
 		if (STOPONERROR) {
 		    result = TCL_CONVERT_UNKNOWN;
 		    src = saveSrc;
@@ -2569,7 +2552,7 @@ UtfToUtf16Proc(
 	    break;
 	}
 	len = TclUtfToUCS4(src, &ch);
-	if (!(flags & TCL_ENCODING_WTF) && !Tcl_UniCharIsUnicode(ch)) {
+	if (!Tcl_UniCharIsUnicode(ch)) {
 	    if (STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;

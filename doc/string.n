@@ -415,7 +415,7 @@ etc.)
 .PP
 \fICompatibility note:\fR This subcommand is deprecated and will
 be removed in Tcl 9.0. It is better to use the \fBencoding convertto\fR
-command to convert a string to a known encoding (e.g. "wtf-8" or "tcl-8")
+command to convert a string to a known encoding (e.g. "utf-8" or "cesu-8")
 and then apply \fBstring length\fR to that.
 .PP
 .CS

@@ -60,6 +60,10 @@ be unloaded with \fBTcl_FSUnloadFile\fR.
 the symbol cannot be found, it returns NULL and sets an error message in the
 given \fIinterp\fR (if that is non-NULL). Note that it is unsafe to use this
 operation on a handle that has been passed to \fBTcl_FSUnloadFile\fR.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The reference count of the \fIpathPtr\fR argument to \fBTcl_LoadFile\fR may be
+incremented. As such, it should not be given a zero reference count value.
 .SH "SEE ALSO"
 Tcl_FSLoadFile(3), Tcl_FSUnloadFile(3), load(n), unload(n)
 .SH KEYWORDS

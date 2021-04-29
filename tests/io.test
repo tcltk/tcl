@@ -2347,9 +2347,9 @@ test io-28.3 {CloseChannel, not called before output queue is empty} \
         set result ok
     }
 } ok
-test io-28.4 {Tcl_Close} {testchannel} {
+test io-28.4 Tcl_Close testchannel {
     file delete $path(test1)
-    set l ""
+    set l {}
     lappend l [lsort [testchannel open]]
     set f [open $path(test1) w]
     lappend l [lsort [testchannel open]]
@@ -2373,6 +2373,74 @@ test io-28.5 {Tcl_Close vs standard handles} {stdio unix testchannel} {
     close $f
     lsort $l
 } {file1 file2}
+
+
+test io-28.6 {
+	close channel in write event handler
+
+	Should not produce a segmentation fault in a Tcl built with
+	--enable-symbols and -DPURIFY
+} debugpurify {
+    variable done
+    variable res
+    after 0 [list coroutine c1 apply [list {} {
+	variable done
+	set chan [chan create w {apply {args {
+	    list initialize finalize watch write configure blocking
+	}}}]
+	chan configure $chan -blocking 0
+	while 1 {
+	    chan event $chan writable [list [info coroutine]]
+	    yield
+	    close $chan
+	    set done 1
+	    return
+	}
+    } [namespace current]]]
+    vwait [namespace current]::done
+return success
+} success
+
+
+test io-28.7 {
+    close channel in read event handler
+
+	Should not produce a segmentation fault in a Tcl built with
+	--enable-symbols and -DPURIFY
+} debugpurify {
+    variable done
+    variable res
+    after 0 [list coroutine c1 apply [list {} {
+	variable done
+	set chan [chan create r {apply {{cmd chan args} {
+	    switch $cmd {
+		blocking - finalize {
+		}
+		watch {
+		    chan postevent $chan read
+		}
+		initialize {
+		    list initialize finalize watch read write configure blocking
+		}
+		default {
+		    error [list {unexpected command} $cmd]
+		}
+	    }
+	}}}]
+	chan configure $chan -blocking 0
+	while 1 {
+	    chan event $chan readable [list [info coroutine]]
+	    yield
+	    close $chan
+	    set done 1
+	    return
+	}
+    } [namespace current]]]
+    vwait [namespace current]::done
+return success
+} success
+
+
 
 test io-29.1 {Tcl_WriteChars, channel not writable} {
     list [catch {puts stdin hello} msg] $msg
@@ -5311,9 +5379,6 @@ test io-39.1 {Tcl_GetChannelOption} {
     close $f1
     set x
 } 1
-#
-# Test 17.2 was removed.
-#
 test io-39.2 {Tcl_GetChannelOption} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
