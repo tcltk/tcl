@@ -299,6 +299,7 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define Tcl_MacOSXOpenBundleResources 0
 #   define TclGuessPackageName 0
 #   define TclGetLoadedPackages 0
+#   define TclSetPreInitScript 0
 #else
 
 #define TclGuessPackageName guessPackageName
