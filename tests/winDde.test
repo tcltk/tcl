@@ -13,8 +13,8 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+package require tcltests
 
-testConstraint debug [expr {"debug" in [split [package provide tcl] .]}]
 testConstraint dde 0
 if {[testConstraint win]} {
     if {![catch {

@@ -45,6 +45,7 @@ static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetPanicProc
 const char *
 Tcl_SetPanicProc(
     TCL_NORETURN1 Tcl_PanicProc *proc)
