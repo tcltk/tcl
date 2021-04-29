@@ -214,9 +214,9 @@ proc unknown args {
 		set errInfo [dict get $opts -errorinfo]
 		set errCode [dict get $opts -errorcode]
 		set cinfo $args
-		if {[string length [encoding convertto wtf-8 $cinfo]] > 150} {
+		if {[string length [encoding convertto utf-8 $cinfo]] > 150} {
 		    set cinfo [string range $cinfo 0 150]
-		    while {[string length [encoding convertto wtf-8 $cinfo]] > 150} {
+		    while {[string length [encoding convertto utf-8 $cinfo]] > 150} {
 			set cinfo [string range $cinfo 0 end-1]
 		    }
 		    append cinfo ...

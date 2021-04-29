@@ -88,6 +88,18 @@ will lead to a \fBTCL_OK\fR return (and the boolean value 1),
 while the same value passed to \fBTcl_GetBoolean\fR will lead to
 a \fBTCL_ERROR\fR return.
 
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_NewBooleanObj\fR always returns a zero-reference object, much
+like \fBTcl_NewObj\fR.
+.PP
+\fBTcl_SetBooleanObj\fR does not modify the reference count of its
+\fIobjPtr\fR argument, but does require that the object be unshared.
+.PP
+\fBTcl_GetBooleanFromObj\fR does not modify the reference count of its
+\fIobjPtr\fR argument; it only reads. Note however that this function
+may set the interpreter result; if that is the only place that
+is holding a reference to the object, it will be deleted.
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_IsShared, Tcl_GetBoolean
 

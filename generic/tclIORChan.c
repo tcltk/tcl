@@ -80,7 +80,7 @@ static const Tcl_ChannelType tclRChannelType = {
     ReflectGetOption,	   /* Get options.			NULL'able */
     ReflectWatch,	   /* Initialize notifier			  */
     NULL,		   /* Get OS handle from the channel.	NULL'able */
-	ReflectClose,	   /* No close2 support.		NULL'able */
+    ReflectClose,	   /* No close2 support.		NULL'able */
     ReflectBlock,	   /* Set blocking/nonblocking.		NULL'able */
     NULL,		   /* Flush channel. Not used by core.	NULL'able */
     NULL,		   /* Handle events.			NULL'able */
@@ -1156,7 +1156,7 @@ TclChanCaughtErrorBypass(
  * ReflectClose --
  *
  *	This function is invoked when the channel is closed, to delete the
- *	driver specific instance data.
+ *	driver-specific instance data.
  *
  * Results:
  *	A posix error.
@@ -1189,8 +1189,8 @@ ReflectClose(
 	/*
 	 * This call comes from TclFinalizeIOSystem. There are no
 	 * interpreters, and therefore we cannot call upon the handler command
-	 * anymore. Threading is irrelevant as well. We simply clean up all
-	 * our C level data structures and leave the Tcl level to the other
+	 * anymore. Threading is irrelevant as well. Simply clean up all
+	 * the C level data structures and leave the Tcl level to the other
 	 * finalization functions.
 	 */
 

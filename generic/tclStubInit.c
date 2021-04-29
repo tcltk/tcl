@@ -23,6 +23,11 @@
 #pragma GCC dependency "tclTomMath.decls"
 #endif
 
+#ifdef TCL_NO_DEPRECATED
+#   define TclSetPreInitScript Tcl_SetPreInitScript
+#   define TclGuessPackageName(fileName, pkgName) ((void)fileName,(void)pkgName,0)
+#endif
+
 /*
  * Remove macros that will interfere with the definitions below.
  */
@@ -299,6 +304,8 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define Tcl_MacOSXOpenBundleResources 0
 #   define TclGuessPackageName 0
 #   define TclGetLoadedPackages 0
+#   undef TclSetPreInitScript
+#   define TclSetPreInitScript 0
 #else
 
 #define TclGuessPackageName guessPackageName
