@@ -27,14 +27,14 @@ jobs:
         working-directory: unix
       - name: Package
         run: |
-          cp ../unix/tclsh tclsh${TCL_PATCHLEVEL}_unofficial
-          chmod +x tclsh${TCL_PATCHLEVEL}_unofficial
-          tar -cf tclsh${TCL_PATCHLEVEL}_unofficial.tar tclsh${TCL_PATCHLEVEL}_unofficial
+          cp ../unix/tclsh tclsh${TCL_PATCHLEVEL}_snapshot
+          chmod +x tclsh${TCL_PATCHLEVEL}_snapshot
+          tar -cf tclsh${TCL_PATCHLEVEL}_snapshot.tar tclsh${TCL_PATCHLEVEL}_snapshot
         working-directory: 1dist
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          name: Tclsh ${{ env.TCL_PATCHLEVEL }} Linux single-file build (unofficial)
+          name: Tclsh ${{ env.TCL_PATCHLEVEL }} Linux single-file build (snapshot)
           path: 1dist/*.tar
   macos:
     name: macOS
@@ -74,8 +74,8 @@ jobs:
       - name: Package
         run: |
           mkdir contents
-          cp $TCL_BIN contents/tclsh${TCL_PATCHLEVEL}_unofficial
-          chmod +x contents/tclsh${TCL_PATCHLEVEL}_unofficial
+          cp $TCL_BIN contents/tclsh${TCL_PATCHLEVEL}_snapshot
+          chmod +x contents/tclsh${TCL_PATCHLEVEL}_snapshot
           cat > contents/README.txt <<EOF
           This is a single-file executable developer preview of Tcl $TCL_PATCHLEVEL
 
@@ -83,20 +83,20 @@ jobs:
           Use strictly at your own risk.
 
           To run it, you need to copy the executable out and run:
-              xattr -d com.apple.quarantine tclsh${TCL_PATCHLEVEL}_unofficial
+              xattr -d com.apple.quarantine tclsh${TCL_PATCHLEVEL}_snapshot
           to mark the executable as runnable on your machine.
           EOF
           $CREATE_DMG \
-              --volname "Tcl $TCL_PATCHLEVEL (unofficial)" \
+              --volname "Tcl $TCL_PATCHLEVEL (snapshot)" \
               --window-pos 200 120 \
               --window-size 800 400 \
-              "Tcl-$TCL_PATCHLEVEL-(unofficial).dmg" \
+              "Tcl-$TCL_PATCHLEVEL-(snapshot).dmg" \
               "contents/"
         working-directory: 1dist
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          name: Tclsh ${{ env.TCL_PATCHLEVEL }} macOS single-file build (unofficial)
+          name: Tclsh ${{ env.TCL_PATCHLEVEL }} macOS single-file build (snapshot)
           path: 1dist/*.dmg
   win:
     name: Windows
@@ -129,10 +129,10 @@ jobs:
         working-directory: win
       - name: Set Executable Name
         run: |
-          cp ../win/tclsh*.exe tclsh${TCL_PATCHLEVEL}_unofficial.exe
+          cp ../win/tclsh*.exe tclsh${TCL_PATCHLEVEL}_snapshot.exe
         working-directory: 1dist
       - name: Upload
         uses: actions/upload-artifact@v2
         with:
-          name: Tclsh ${{ env.TCL_PATCHLEVEL }} Windows single-file build (unofficial)
-          path: '1dist/*_unofficial.exe'
+          name: Tclsh ${{ env.TCL_PATCHLEVEL }} Windows single-file build (snapshot)
+          path: '1dist/*_snapshot.exe'

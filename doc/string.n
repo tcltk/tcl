@@ -413,10 +413,10 @@ store the representation is of very low value (except to C extension
 code, which has direct access for the purpose of memory management,
 etc.)
 .PP
-\fICompatibility note:\fR it is likely that this subcommand will be
-withdrawn in a future version of Tcl. It is better to use the
-\fBencoding convertto\fR command to convert a string to a known
-encoding and then apply \fBstring length\fR to that.
+\fICompatibility note:\fR This subcommand is deprecated and will
+be removed in Tcl 9.0. It is better to use the \fBencoding convertto\fR
+command to convert a string to a known encoding (e.g. "utf-8" or "cesu-8")
+and then apply \fBstring length\fR to that.
 .PP
 .CS
 \fBstring length\fR [encoding convertto utf-8 $theString]
