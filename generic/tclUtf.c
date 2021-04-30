@@ -2182,6 +2182,36 @@ Tcl_UniCharIsUpper(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_UniCharIsUnicode --
+ *
+ *	Test if a character is a Unicode character.
+ *
+ * Results:
+ *	Returns non-zero if character belongs to the Unicode set.
+ *
+ *	Excluded are:
+ *	  1) All characters > U+10FFFF
+ *	  2) Surrogates U+D800 - U+DFFF
+ *	  3) Last 2 characters of each plane, so U+??FFFE  and U+??FFFF
+ *	  4) The characters in the range U+FDD0 - U+FDEF
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_UniCharIsUnicode(
+    int ch)			/* Unicode character to test. */
+{
+    return ((unsigned int)ch <= 0x10FFFF) && ((ch & 0xFFF800) != 0xD800)
+	    && ((ch & 0xFFFE) != 0xFFFE) && ((unsigned int)(ch - 0xFDD0) >= 32);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_UniCharIsWordChar --
  *
  *	Test if a character is alphanumeric or a connector punctuation mark.
