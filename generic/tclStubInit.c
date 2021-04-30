@@ -1437,6 +1437,7 @@ const TclStubs tclStubs = {
     Tcl_UtfCharComplete, /* 654 */
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
+    Tcl_UniCharIsUnicode, /* 657 */
 };
 
 /* !END!: Do not edit above this line. */

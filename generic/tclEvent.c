@@ -1013,7 +1013,16 @@ Tcl_Exit(
  *-------------------------------------------------------------------------
  */
 
-void
+MODULE_SCOPE const TclStubs tclStubs;
+
+static const struct {
+    const TclStubs *stubs;
+    const char version[12];
+} stubInfo = {
+    &tclStubs, TCL_PATCH_LEVEL
+};
+
+const char *
 Tcl_InitSubsystems(void)
 {
     if (inExit != 0) {
@@ -1060,6 +1069,7 @@ Tcl_InitSubsystems(void)
 	TclpInitUnlock();
     }
     TclInitNotifier();
+    return stubInfo.version;
 }
 
 /*

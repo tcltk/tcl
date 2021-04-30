@@ -1733,6 +1733,8 @@ TCLAPI int		Tcl_UtfCharComplete(const char *src, size_t length);
 TCLAPI const char *	Tcl_UtfNext(const char *src);
 /* 656 */
 TCLAPI const char *	Tcl_UtfPrev(const char *src, const char *start);
+/* 657 */
+TCLAPI int		Tcl_UniCharIsUnicode(int ch);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2403,6 +2405,7 @@ typedef struct TclStubs {
     int (*tcl_UtfCharComplete) (const char *src, size_t length); /* 654 */
     const char * (*tcl_UtfNext) (const char *src); /* 655 */
     const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 656 */
+    int (*tcl_UniCharIsUnicode) (int ch); /* 657 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3664,28 +3667,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfNext) /* 655 */
 #define Tcl_UtfPrev \
 	(tclStubsPtr->tcl_UtfPrev) /* 656 */
+#define Tcl_UniCharIsUnicode \
+	(tclStubsPtr->tcl_UniCharIsUnicode) /* 657 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
 /* !END!: Do not edit above this line. */
-
-#undef TclUnusedStubEntry
-#if defined(USE_TCL_STUBS)
-#   undef Tcl_CreateInterp
-#   undef Tcl_Init
-#   undef Tcl_ObjSetVar2
-#   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
-#   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
-#   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
-	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
-#endif
-
-#if defined(_WIN32) && defined(UNICODE)
-#   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
-#   define Tcl_MainEx Tcl_MainExW
-    TCLAPI TCL_NORETURN void Tcl_MainExW(int argc, wchar_t **argv,
-	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-#endif
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
@@ -3914,6 +3901,7 @@ extern const TclStubs *tclStubsPtr;
 
 #define Tcl_Close(interp, chan) Tcl_CloseEx(interp, chan, 0)
 
+#undef TclUnusedStubEntry
 #undef TclUtfCharComplete
 #undef TclUtfNext
 #undef TclUtfPrev

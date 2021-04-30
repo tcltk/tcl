@@ -2488,6 +2488,9 @@ declare 655 {
 declare 656 {
     const char *Tcl_UtfPrev(const char *src, const char *start)
 }
+declare 657 {
+    int Tcl_UniCharIsUnicode(int ch)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
@@ -2533,13 +2536,13 @@ export {
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
-    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 export {
     Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
 }
 export {
-    void Tcl_FindExecutable(const char *argv0)
+    const char *Tcl_FindExecutable(const char *argv0)
 }
 export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,
