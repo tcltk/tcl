@@ -438,6 +438,8 @@ TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
+	$(TMP_DIR)\tclStubCall.obj \
+	$(TMP_DIR)\tclStubLibTbl.obj \
 	$(TMP_DIR)\tclTomMathStubLib.obj \
 	$(TMP_DIR)\tclOOStubLib.obj \
 	$(TMP_DIR)\tclWinPanic.obj
@@ -850,11 +852,11 @@ $(TMP_DIR)\tclAppInit.obj: $(WIN_DIR)\tclAppInit.c
 ### The following objects should be built using the stub interfaces
 
 $(TMP_DIR)\tclWinReg.obj: $(WIN_DIR)\tclWinReg.c
-	$(cc32) $(appcflags) /DUSE_TCL_STUBS -Fo$@ $?
+	$(cc32) $(appcflags_nostubs) /DUSE_TCL_STUBS=1 -Fo$@ $?
 
 
 $(TMP_DIR)\tclWinDde.obj: $(WIN_DIR)\tclWinDde.c
-	$(cc32) $(appcflags) /DUSE_TCL_STUBS -Fo$@ $?
+	$(cc32) $(appcflags_nostubs) /DUSE_TCL_STUBS=1 -Fo$@ $?
 
 
 ### The following objects are part of the stub library and should not
@@ -863,6 +865,15 @@ $(TMP_DIR)\tclWinDde.obj: $(WIN_DIR)\tclWinDde.c
 
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(stubscflags) -Fo$@ $?
+
+$(TMP_DIR)\tclStubCall.obj: $(GENERICDIR)\tclStubCall.c
+	$(cc32) $(stubscflags) \
+		/DCFG_RUNTIME_DLLFILE="\"$(TCLLIBNAME)\"" \
+		/DCFG_RUNTIME_BINDIR="\"$(BIN_INSTALL_DIR:\=\\)\"" \
+		$(TCL_INCLUDES) -Fo$@ $?
+
+$(TMP_DIR)\tclStubLibTbl.obj: $(GENERICDIR)\tclStubLibTbl.c
+	$(cc32) $(stubscflags) $(TCL_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclTomMathStubLib.obj: $(GENERICDIR)\tclTomMathStubLib.c
 	$(cc32) $(stubscflags) -Fo$@ $?
