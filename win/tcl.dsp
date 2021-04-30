@@ -1288,15 +1288,7 @@ SOURCE=..\generic\tclStubLib.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\generic\tclStubFindExecutable.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\generic\tclStubInitSubsystems.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\generic\tclStubSetPanicProc.c
+SOURCE=..\generic\tclStubCall.c
 # End Source File
 # Begin Source File
 
