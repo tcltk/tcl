@@ -2486,6 +2486,9 @@ declare 655 {
 declare 656 {
     const char *Tcl_UtfPrev(const char *src, const char *start)
 }
+declare 657 {
+    int Tcl_UniCharIsUnicode(int ch)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
