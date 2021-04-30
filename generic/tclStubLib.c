@@ -21,12 +21,16 @@ MODULE_SCOPE const TclIntPlatStubs *tclIntPlatStubsPtr;
 MODULE_SCOPE const TclOOStubs *tclOOStubsPtr;
 MODULE_SCOPE const TclOOIntStubs *tclOOIntStubsPtr;
 
+MODULE_SCOPE void *tclStubsHandle;
+
 const TclStubs *tclStubsPtr = NULL;
 const TclPlatStubs *tclPlatStubsPtr = NULL;
 const TclIntStubs *tclIntStubsPtr = NULL;
 const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 const TclOOStubs *tclOOStubsPtr = NULL;
 const TclOOIntStubs *tclOOIntStubsPtr = NULL;
+
+void *tclStubsHandle = NULL;
 
 /*
  * Use our own ISDIGIT to avoid linking to libc on windows
@@ -110,6 +114,9 @@ Tcl_InitStubs(
     if (((exact&0xFF00) < 0x900)) {
 	/* We are running Tcl 8.x */
 	stubsPtr = (TclStubs *)pkgData;
+    }
+    if (tclStubsHandle == NULL) {
+	tclStubsHandle = INT2PTR(-1);
     }
     tclStubsPtr = stubsPtr;
 

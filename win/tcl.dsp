@@ -1288,6 +1288,22 @@ SOURCE=..\generic\tclStubLib.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\generic\tclStubFindExecutable.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\generic\tclStubInitSubsystems.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\generic\tclStubSetPanicProc.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\generic\tclStubLibTbl.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\generic\tclTomMathStubLib.c
 # End Source File
 # Begin Source File
