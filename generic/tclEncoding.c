@@ -510,11 +510,12 @@ FillEncodingFileMap(void)
  *---------------------------------------------------------------------------
  */
 
-/* This flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
+/* Those flags must not conflict with other TCL_ENCODING_* flags in tcl.h */
+/* Since TCL_ENCODING_MODIFIED is only used for utf-8/cesu-8 and
+ * TCL_ENCODING_LE is only used for  utf-16/ucs-2. re-use the same value */
 #define TCL_ENCODING_MODIFIED	0x20	/* Converting NULL bytes to 0xC0 0x80 */
-/* Since TCL_ENCODING_MODIFIED is only used for utf-8 and
- * TCL_ENCODING_LE is only used for  utf-16/ucs-2, re-use the same value */
 #define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
+#define TCL_ENCODING_UTF	0x200	/* For UTF-8 encoding, allow 4-byte output sequences */
 
 void
 TclInitEncodingSubsystem(void)
@@ -556,7 +557,10 @@ TclInitEncodingSubsystem(void)
     type.fromUtfProc	= UtfToUtfProc;
     type.freeProc	= NULL;
     type.nullSize	= 1;
-    type.clientData	= NULL;
+    type.clientData	= INT2PTR(TCL_ENCODING_UTF);
+    Tcl_CreateEncoding(&type);
+    type.clientData	= INT2PTR(0);
+    type.encodingName	= "cesu-8";
     Tcl_CreateEncoding(&type);
 
     type.toUtfProc	= Utf16ToUtfProc;
@@ -1141,7 +1145,7 @@ Tcl_ExternalToUtfDString(
 
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
-	flags |= TCL_ENCODING_MODIFIED;
+	flags |= TCL_ENCODING_MODIFIED | TCL_ENCODING_UTF;
     }
 
     while (1) {
@@ -1258,7 +1262,7 @@ Tcl_ExternalToUtf(
 	dstLen--;
     }
     if (encodingPtr->toUtfProc == UtfToUtfProc) {
-	flags |= TCL_ENCODING_MODIFIED;
+	flags |= TCL_ENCODING_MODIFIED | TCL_ENCODING_UTF;
     }
     do {
 	Tcl_EncodingState savedState = *statePtr;
@@ -1337,6 +1341,7 @@ Tcl_UtfToExternalDString(
 		&srcRead, &dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 
+	src += srcRead;
 	if (result != TCL_CONVERT_NOSPACE) {
 	    if (encodingPtr->nullSize == 2) {
 		Tcl_DStringSetLength(dstPtr, soFar + 1);
@@ -1346,7 +1351,6 @@ Tcl_UtfToExternalDString(
 	}
 
 	flags &= ~TCL_ENCODING_START;
-	src += srcRead;
 	srcLen -= srcRead;
 	if (Tcl_DStringLength(dstPtr) == 0) {
 	    Tcl_DStringSetLength(dstPtr, dstLen);
@@ -2215,7 +2219,7 @@ UtfToUtfProc(
 
     dstStart = dst;
     flags |= PTR2INT(clientData);
-    dstEnd = dst + dstLen - TCL_UTF_MAX;
+    dstEnd = dst + dstLen - ((flags & TCL_ENCODING_UTF) ? TCL_UTF_MAX : 6);
 
     for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
@@ -2268,6 +2272,7 @@ UtfToUtfProc(
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
 	    int low;
+	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
 	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_STOPONERROR)
 		    && (flags & TCL_ENCODING_MODIFIED)) {
@@ -2275,7 +2280,17 @@ UtfToUtfProc(
 		break;
 	    }
 	    src += len;
-	    if ((ch | 0x7FF) == 0xDFFF) {
+	    if (!(flags & TCL_ENCODING_UTF)) {
+		if (ch > 0xFFFF) {
+		    /* CESU-8 6-byte sequence for chars > U+FFFF */
+		    ch -= 0x10000;
+		    *dst++ = 0xED;
+		    *dst++ = (char) (((ch >> 16) & 0x0F) | 0xA0);
+		    *dst++ = (char) (((ch >> 10) & 0x3F) | 0x80);
+		    ch = (ch & 0x0CFF) | 0xDC00;
+		}
+		goto cesu8;
+	    } else if ((ch | 0x7FF) == 0xDFFF) {
 		/*
 		 * A surrogate character is detected, handle especially.
 		 */
@@ -2284,6 +2299,15 @@ UtfToUtfProc(
 		len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
 
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
+		    if (flags & TCL_ENCODING_STOPONERROR) {
+			result = TCL_CONVERT_UNKNOWN;
+			src = saveSrc;
+			break;
+		    }
+		    if (!(flags & TCL_ENCODING_MODIFIED)) {
+			ch = 0xFFFD;
+		    }
+		cesu8:
 		    *dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
 		    *dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
 		    *dst++ = (char) ((ch | 0x80) & 0xBF);
@@ -2292,6 +2316,15 @@ UtfToUtfProc(
 		src += len;
 		dst += Tcl_UniCharToUtf(ch, dst);
 		ch = low;
+	    } else if (!Tcl_UniCharIsUnicode(ch)) {
+		if (flags & TCL_ENCODING_STOPONERROR) {
+		    result = TCL_CONVERT_UNKNOWN;
+		    src = saveSrc;
+		    break;
+		}
+		if (!(flags & TCL_ENCODING_MODIFIED)) {
+		    ch = 0xFFFD;
+		}
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
@@ -2450,7 +2483,7 @@ UtfToUtf16Proc(
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
     int result, numChars;
-    int ch;
+    int ch, len;
 
     srcStart = src;
     srcEnd = src + srcLen;
@@ -2478,7 +2511,15 @@ UtfToUtf16Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	src += TclUtfToUCS4(src, &ch);
+	len = TclUtfToUCS4(src, &ch);
+	if (!Tcl_UniCharIsUnicode(ch)) {
+	    if (flags & TCL_ENCODING_STOPONERROR) {
+		result = TCL_CONVERT_UNKNOWN;
+		break;
+	    }
+	    ch = 0xFFFD;
+	}
+	src += len;
 	if (flags & TCL_ENCODING_LE) {
 	    if (ch <= 0xFFFF) {
 		*dst++ = (ch & 0xFF);

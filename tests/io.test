@@ -2416,7 +2416,7 @@ test io-28.7 {
 		blocking - finalize {
 		}
 		watch {
-		    chan postevent $chan read 
+		    chan postevent $chan read
 		}
 		initialize {
 		    list initialize finalize watch read write configure blocking
@@ -2437,7 +2437,7 @@ test io-28.7 {
     } [namespace current]]]
     vwait [namespace current]::done
 return success
-} success 
+} success
 
 
 
