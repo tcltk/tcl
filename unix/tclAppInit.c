@@ -12,8 +12,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef BUILD_tcl
-#undef STATIC_BUILD
 #include "tcl.h"
 #if TCL_MAJOR_VERSION < 9 && TCL_MINOR_VERSION < 7
 #   define Tcl_LibraryInitProc Tcl_PackageInitProc
@@ -157,10 +155,10 @@ Tcl_AppInit(
      */
 
 #ifdef DJGPP
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
 	    Tcl_NewStringObj("~/tclsh.rc", -1), TCL_GLOBAL_ONLY);
 #else
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
 	    Tcl_NewStringObj("~/.tclshrc", -1), TCL_GLOBAL_ONLY);
 #endif
 

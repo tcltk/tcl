@@ -3686,24 +3686,6 @@ extern const TclStubs *tclStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
-#undef TclUnusedStubEntry
-#if defined(USE_TCL_STUBS)
-#   undef Tcl_CreateInterp
-#   undef Tcl_Init
-#   undef Tcl_ObjSetVar2
-#   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
-#   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
-#   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
-	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
-#endif
-
-#if defined(_WIN32) && defined(UNICODE)
-#   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
-#   define Tcl_MainEx Tcl_MainExW
-    EXTERN TCL_NORETURN void Tcl_MainExW(int argc, wchar_t **argv,
-	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-#endif
-
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
@@ -3931,6 +3913,7 @@ extern const TclStubs *tclStubsPtr;
 
 #define Tcl_Close(interp, chan) Tcl_CloseEx(interp, chan, 0)
 
+#undef TclUnusedStubEntry
 #undef TclUtfCharComplete
 #undef TclUtfNext
 #undef TclUtfPrev

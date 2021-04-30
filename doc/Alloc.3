@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_Alloc 3 7.5 Tcl "Tcl Library Procedures"
+.TH Tcl_Alloc 3 9.0 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
@@ -76,7 +76,10 @@ as macros, redefined to be special debugging versions of these procedures.
 
 \fBTcl_GetMemoryInfo\fR appends a list-of-lists of memory stats to the
 provided DString. This function cannot be used in stub-enabled extensions,
-and it is only available if Tcl is compiled with the threaded memory allocator.
+and it is only available if Tcl is compiled with the threaded memory allocator
+When used in stub-enabled embedders, the stubs table must be first initialized
+using one of \fBTcl_InitSubsystems\fR, \fBTcl_SetPanicProc\fR,
+\fBTcl_FindExecutable\fR or \fBTclZipfs_AppHook\fR.
 
 .SH KEYWORDS
 alloc, allocation, free, malloc, memory, realloc, TCL_MEM_DEBUG

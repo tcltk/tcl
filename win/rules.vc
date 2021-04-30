@@ -1382,7 +1382,7 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_NO_DEPRECATED
 # Note we do not define USE_TCL_STUBS even when building tk since some
 # test targets in tk do not use stubs
 !if !$(DOING_TCL)
-USE_STUBS_DEFS  = /DUSE_TCL_STUBS /DUSE_TCLOO_STUBS
+USE_STUBS_DEFS  = /DUSE_TCL_STUBS=1 /DUSE_TCLOO_STUBS=1
 !if $(NEED_TK)
 USE_STUBS_DEFS  = $(USE_STUBS_DEFS) /DUSE_TK_STUBS
 !endif
