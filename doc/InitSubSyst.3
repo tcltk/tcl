@@ -21,6 +21,9 @@ The \fBTcl_InitSubsystems\fR procedure initializes the Tcl
 library. This procedure is typically invoked as the very
 first thing in the application's main program.
 .PP
+The result of \fBTcl_InitSubsystems\fR is the full Tcl version (e.g.,
+\fB"9.0.0"\fR).
+.PP
 \fBTcl_InitSubsystems\fR is very similar in use to
 \fBTcl_FindExecutable\fR. It can be used when Tcl is
 used as utility library, no other encodings than utf-8,
