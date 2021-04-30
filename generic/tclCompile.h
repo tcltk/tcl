@@ -900,8 +900,9 @@ typedef enum InstStringClassType {
     STR_CLASS_UPPER,		/* Unicode upper-case alphabet characters. */
     STR_CLASS_WORD,		/* Unicode word (alphabetic, digit, connector
 				 * punctuation) characters. */
-    STR_CLASS_XDIGIT		/* Characters that can be used as digits in
+    STR_CLASS_XDIGIT,		/* Characters that can be used as digits in
 				 * hexadecimal numbers ([0-9A-Fa-f]). */
+    STR_CLASS_UNICODE		/* Unicode characters. */
 } InstStringClassType;
 
 typedef struct StringClassDesc {
