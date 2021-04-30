@@ -211,7 +211,7 @@ Tcl_AppInit(
      * user-specific startup file will be run under any conditions.
      */
 
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
 	    Tcl_NewStringObj("~/tclshrc.tcl", -1), TCL_GLOBAL_ONLY);
     return TCL_OK;
 }

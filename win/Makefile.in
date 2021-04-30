@@ -456,6 +456,8 @@ REG_OBJS = tclWinReg.$(OBJEXT)
 
 STUB_OBJS = \
 	tclStubLib.$(OBJEXT) \
+	tclStubCall.$(OBJEXT) \
+	tclStubLibTbl.$(OBJEXT) \
 	tclTomMathStubLib.$(OBJEXT) \
 	tclOOStubLib.$(OBJEXT) \
 	tclWinPanic.$(OBJEXT)
@@ -681,6 +683,15 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 
 tclStubLib.${OBJEXT}: tclStubLib.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @CFLAGS_NOLTO@ @DEPARG@ $(CC_OBJNAME)
+
+tclStubCall.${OBJEXT}: tclStubCall.c
+	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD \
+		-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
+		-DCFG_RUNTIME_BINDIR="\"$(bindir_native)\"" \
+		@DEPARG@ $(CC_OBJNAME)
+
+tclStubLibTbl.${OBJEXT}: tclStubLibTbl.c
+	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
 
 tclTomMathStubLib.${OBJEXT}: tclTomMathStubLib.c
 	$(CC) -c $(CC_SWITCHES) @CFLAGS_NOLTO@ @DEPARG@ $(CC_OBJNAME)
