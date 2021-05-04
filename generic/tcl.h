@@ -2179,7 +2179,7 @@ TCLAPI const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #endif
 #   define Tcl_MainEx Tcl_MainExW
-    EXTERN TCL_NORETURN void Tcl_MainExW(int argc, wchar_t **argv,
+    TCLAPI TCL_NORETURN void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 #ifdef USE_TCL_STUBS
