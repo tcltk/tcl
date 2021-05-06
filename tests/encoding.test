@@ -605,16 +605,16 @@ test encoding-24.12 {Parse valid or invalid utf-8} {
 } 1
 test encoding-24.13 {Parse valid or invalid utf-8} -body {
     encoding convertfrom -stoponerror utf-8 "\xC0\x81"
-} -returnCodes 1 -result {unexpected byte at index 0: 'À' (\xC0)}
+} -returnCodes 1 -result {unexpected byte at index 0: '\xC0'}
 test encoding-24.14 {Parse valid or invalid utf-8} -body {
     encoding convertfrom -stoponerror utf-8 "\xC1\xBF"
-} -returnCodes 1 -result {unexpected byte at index 0: 'Á' (\xC1)}
+} -returnCodes 1 -result {unexpected byte at index 0: '\xC1'}
 test encoding-24.15 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom -stoponerror utf-8 "\xC2\x80"]
 } 1
 test encoding-24.16 {Parse valid or invalid utf-8} -body {
     encoding convertfrom -stoponerror utf-8 "Z\xE0\x80"
-} -returnCodes 1 -result {unexpected byte at index 1: 'à' (\xE0)}
+} -returnCodes 1 -result {unexpected byte at index 1: '\xE0'}
 test encoding-24.17 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto -stoponerror utf-8 [testbytestring "Z\u4343\x80"]
 } -returnCodes 1 -result {expected byte sequence but character 1 was '䍃' (U+004343)}
@@ -626,7 +626,7 @@ test encoding-24.19 {Parse valid or invalid utf-8} -constraints testbytestring -
 } -result "Z\xC3\xA0\xE2\x82\xACxxxxxx"
 test encoding-24.20 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto -stoponerror utf-8 "ZX\uD800"
-} -returnCodes 1 -match glob -result "unexpected character at index 2: '\uD800' (U+00D800)"
+} -returnCodes 1 -match glob -result "unexpected character at index 2: 'U+00D800'"
 file delete [file join [temporaryDirectory] iso2022.txt]
 
 #
