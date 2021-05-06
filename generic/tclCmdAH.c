@@ -557,12 +557,12 @@ EncodingConvertfromObjCmd(
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
     } else if ((unsigned)(objc - 3) < 2) {
-	if (Tcl_GetEncodingFromObj(interp, objv[1], &encoding) != TCL_OK) {
+	if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	data = objv[2];
+	data = objv[objc - 1];
 	if (objc > 3) {
-	    stopOnError = Tcl_GetString(objv[3]);
+	    stopOnError = Tcl_GetString(objv[1]);
 	    if (!stopOnError[0]) {
 #if TCL_MAJOR_VERSION < 9 && !defined(TCL_NO_DEPRECATED)
 		stopOnError = NULL;
@@ -582,7 +582,7 @@ EncodingConvertfromObjCmd(
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data ?-stoponerror|-nothrow?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-stoponerror|-nothrow? ?encoding? data");
 	return TCL_ERROR;
     }
 
@@ -661,12 +661,12 @@ EncodingConverttoObjCmd(
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
     } else if ((unsigned)(objc - 3) < 2) {
-	if (Tcl_GetEncodingFromObj(interp, objv[1], &encoding) != TCL_OK) {
+	if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	data = objv[2];
+	data = objv[objc - 1];
 	if (objc > 3) {
-	    stopOnError = Tcl_GetString(objv[3]);
+	    stopOnError = Tcl_GetString(objv[1]);
 	    if (!stopOnError[0]) {
 #if TCL_MAJOR_VERSION < 9 && !defined(TCL_NO_DEPRECATED)
 		stopOnError = NULL;
@@ -686,7 +686,7 @@ EncodingConverttoObjCmd(
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?encoding? data ?-stoponerror|-nothrow?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-stoponerror|-nothrow? ?encoding? data");
 	return TCL_ERROR;
     }
 
