@@ -603,7 +603,7 @@ EncodingConvertfromObjCmd(
 	char buf[TCL_INTEGER_SPACE];
 	sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte at index %"
-		TCL_Z_MODIFIER "u: '%c' (\\x%X)", result, UCHAR(bytesPtr[result]), UCHAR(bytesPtr[result])));
+		TCL_Z_MODIFIER "u: '\\x%X'", result, UCHAR(bytesPtr[result])));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "STOPONERROR",
 		buf, NULL);
 	Tcl_DStringFree(&ds);
@@ -704,7 +704,7 @@ EncodingConverttoObjCmd(
 	TclUtfToUCS4(&stringPtr[result], &ucs4);
 	sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected character at index %"
-		TCL_Z_MODIFIER "u: '%c' (U+%06X)", pos, ucs4, ucs4));
+		TCL_Z_MODIFIER "u: 'U+%06X'", pos, ucs4));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "STOPONERROR",
 		buf, NULL);
 	Tcl_DStringFree(&ds);
