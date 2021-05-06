@@ -291,7 +291,7 @@ test encoding-11.9 {encoding: extended Unicode UTF-16} {
 
 test encoding-12.1 {LoadTableEncoding: normal encoding} {
     set x [encoding convertto iso8859-3 Ġ]
-    append x [encoding convertto iso8859-3 Õ -nothrow]
+    append x [encoding convertto -nothrow iso8859-3 Õ]
     append x [encoding convertfrom iso8859-3 Õ]
 } "Õ?Ġ"
 test encoding-12.2 {LoadTableEncoding: single-byte encoding} {
@@ -340,67 +340,67 @@ test encoding-15.5 {UtfToUtfProc emoji character input} {
 } "4 😂"
 test encoding-15.6 {UtfToUtfProc emoji character output} {
     set x \uDE02\uD83D\uDE02\uD83D
-    set y [encoding convertto utf-8 \uDE02\uD83D\uDE02\uD83D -nothrow]
+    set y [encoding convertto -nothrow utf-8 \uDE02\uD83D\uDE02\uD83D]
     binary scan $y H* z
     list [string length $y] $z
 } {10 efbfbdf09f9882efbfbd}
 test encoding-15.7 {UtfToUtfProc emoji character output} {
     set x \uDE02\uD83D\uD83D
-    set y [encoding convertto utf-8 \uDE02\uD83D\uD83D -nothrow]
+    set y [encoding convertto -nothrow utf-8 \uDE02\uD83D\uD83D]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {3 9 efbfbdefbfbdefbfbd}
 test encoding-15.8 {UtfToUtfProc emoji character output} {
     set x \uDE02\uD83Dé
-    set y [encoding convertto utf-8 \uDE02\uD83Dé -nothrow]
+    set y [encoding convertto -nothrow utf-8 \uDE02\uD83Dé]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {3 8 efbfbdefbfbdc3a9}
 test encoding-15.9 {UtfToUtfProc emoji character output} {
     set x \uDE02\uD83DX
-    set y [encoding convertto utf-8 \uDE02\uD83DX -nothrow]
+    set y [encoding convertto -nothrow utf-8 \uDE02\uD83DX]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {3 7 efbfbdefbfbd58}
 test encoding-15.10 {UtfToUtfProc high surrogate character output} {
     set x \uDE02é
-    set y [encoding convertto utf-8 \uDE02é -nothrow]
+    set y [encoding convertto -nothrow utf-8 \uDE02é]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {2 5 efbfbdc3a9}
 test encoding-15.11 {UtfToUtfProc low surrogate character output} {
     set x \uDA02é
-    set y [encoding convertto utf-8 \uDA02é -nothrow]
+    set y [encoding convertto -nothrow utf-8 \uDA02é]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {2 5 efbfbdc3a9}
 test encoding-15.12 {UtfToUtfProc high surrogate character output} {
     set x \uDE02Y
-    set y [encoding convertto utf-8 \uDE02Y -nothrow]
+    set y [encoding convertto -nothrow utf-8 \uDE02Y]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {2 4 efbfbd59}
 test encoding-15.13 {UtfToUtfProc low surrogate character output} {
     set x \uDA02Y
-    set y [encoding convertto utf-8 \uDA02Y -nothrow]
+    set y [encoding convertto -nothrow utf-8 \uDA02Y]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {2 4 efbfbd59}
 test encoding-15.14 {UtfToUtfProc high surrogate character output} {
     set x \uDE02
-    set y [encoding convertto utf-8 \uDE02 -nothrow]
+    set y [encoding convertto -nothrow utf-8 \uDE02]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {1 3 efbfbd}
 test encoding-15.15 {UtfToUtfProc low surrogate character output} {
     set x \uDA02
-    set y [encoding convertto utf-8 \uDA02 -nothrow]
+    set y [encoding convertto -nothrow utf-8 \uDA02]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {1 3 efbfbd}
 test encoding-15.16 {UtfToUtfProc: Invalid 4-byte UTF-8, see [ed29806ba]} {
     set x \xF0\xA0\xA1\xC2
-    set y [encoding convertfrom utf-8 \xF0\xA0\xA1\xC2 -nothrow]
+    set y [encoding convertfrom -nothrow utf-8 \xF0\xA0\xA1\xC2]
     list [string length $x] $y
 } "4 \xF0\xA0\xA1\xC2"
 test encoding-15.17 {UtfToUtfProc emoji character output} {
@@ -458,10 +458,10 @@ test encoding-17.2 {UtfToUcs2Proc} -body {
     encoding convertfrom utf-16 [encoding convertto ucs-2 "\U460DC"]
 } -result "\uFFFD"
 test encoding-17.3 {UtfToUtf16Proc} -body {
-    encoding convertto utf-16be "\uDCDC" -nothrow
+    encoding convertto -nothrow utf-16be "\uDCDC"
 } -result "\xFF\xFD"
 test encoding-17.4 {UtfToUtf16Proc} -body {
-    encoding convertto utf-16le "\uD8D8" -nothrow
+    encoding convertto -nothrow utf-16le "\uD8D8"
 } -result "\xFD\xFF"
 
 test encoding-18.1 {TableToUtfProc} {
@@ -580,52 +580,52 @@ test encoding-24.4 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom utf-8 "\xC0\x80"]
 } 1
 test encoding-24.5 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xC0\x81" -nothrow]
+    string length [encoding convertfrom -nothrow utf-8 "\xC0\x81"]
 } 2
 test encoding-24.6 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xC1\xBF" -nothrow]
+    string length [encoding convertfrom -nothrow utf-8 "\xC1\xBF"]
 } 2
 test encoding-24.7 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom utf-8 "\xC2\x80"]
 } 1
 test encoding-24.8 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xE0\x80\x80" -nothrow]
+    string length [encoding convertfrom -nothrow utf-8 "\xE0\x80\x80"]
 } 3
 test encoding-24.9 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xE0\x9F\xBF" -nothrow]
+    string length [encoding convertfrom -nothrow utf-8 "\xE0\x9F\xBF"]
 } 3
 test encoding-24.10 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom utf-8 "\xE0\xA0\x80"]
 } 1
 test encoding-24.11 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xEF\xBF\xBF" -nothrow]
+    string length [encoding convertfrom -nothrow utf-8 "\xEF\xBF\xBF"]
 } 1
 test encoding-24.12 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xC0\x80" -stoponerror]
+    string length [encoding convertfrom -stoponerror utf-8 "\xC0\x80"]
 } 1
 test encoding-24.13 {Parse valid or invalid utf-8} -body {
-    encoding convertfrom utf-8 "\xC0\x81" -stoponerror
+    encoding convertfrom -stoponerror utf-8 "\xC0\x81"
 } -returnCodes 1 -result {unexpected byte at index 0: 'À' (\xC0)}
 test encoding-24.14 {Parse valid or invalid utf-8} -body {
-    encoding convertfrom utf-8 "\xC1\xBF" -stoponerror
+    encoding convertfrom -stoponerror utf-8 "\xC1\xBF"
 } -returnCodes 1 -result {unexpected byte at index 0: 'Á' (\xC1)}
 test encoding-24.15 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom utf-8 "\xC2\x80" -stoponerror]
+    string length [encoding convertfrom -stoponerror utf-8 "\xC2\x80"]
 } 1
 test encoding-24.16 {Parse valid or invalid utf-8} -body {
-    encoding convertfrom utf-8 "Z\xE0\x80" -stoponerror
+    encoding convertfrom -stoponerror utf-8 "Z\xE0\x80"
 } -returnCodes 1 -result {unexpected byte at index 1: 'à' (\xE0)}
 test encoding-24.17 {Parse valid or invalid utf-8} -constraints testbytestring -body {
-    encoding convertto utf-8 [testbytestring "Z\u4343\x80"] -stoponerror
+    encoding convertto -stoponerror utf-8 [testbytestring "Z\u4343\x80"]
 } -returnCodes 1 -result {expected byte sequence but character 1 was '䍃' (U+004343)}
 test encoding-24.18 {Parse valid or invalid utf-8} -constraints testbytestring -body {
-    encoding convertto utf-8 [testbytestring "Z\xE0\x80"] -stoponerror
+    encoding convertto -stoponerror utf-8 [testbytestring "Z\xE0\x80"]
 } -result "Z\xC3\xA0\xE2\x82\xAC"
 test encoding-24.19 {Parse valid or invalid utf-8} -constraints testbytestring -body {
-    encoding convertto utf-8 [testbytestring "Z\xE0\x80xxxxxx"] -stoponerror
+    encoding convertto -stoponerror utf-8 [testbytestring "Z\xE0\x80xxxxxx"]
 } -result "Z\xC3\xA0\xE2\x82\xACxxxxxx"
 test encoding-24.20 {Parse valid or invalid utf-8} -constraints testbytestring -body {
-    encoding convertto utf-8 "ZX\uD800" -stoponerror
+    encoding convertto -stoponerror utf-8 "ZX\uD800"
 } -returnCodes 1 -match glob -result "unexpected character at index 2: '\uD800' (U+00D800)"
 file delete [file join [temporaryDirectory] iso2022.txt]
 
@@ -781,7 +781,7 @@ test encoding-28.0 {all encodings load} -body {
 	set string hello
 	foreach name [encoding names] {
 		incr count
-		encoding convertto $name $string -nothrow
+		encoding convertto -nothrow $name $string
 
 		# discard the cached internal representation of Tcl_Encoding
 		# Unfortunately, without this, encoding 2-1 fails.
