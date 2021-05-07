@@ -116,7 +116,7 @@ return immediately upon reading a source character that does not exist in
 the target encoding; otherwise a default fallback character will
 automatically be substituted. The flag \fBTCL_ENCODING_MODIFIED\fR makes
 \fBTcl_UtfToExternalDStringEx\fR and \fBTcl_UtfToExternal\fR produce the
-byte sequence \exC0\ex80 in stead of \ex00, for the utf-8/wtf-8/cesu-8 encoders.
+byte sequence \exC0\ex80 in stead of \ex00, for the utf-8/cesu-8 encoders.
 .AP Tcl_EncodingState *statePtr in/out
 Used when converting a (generally long or indefinite length) byte stream
 in a piece-by-piece fashion.  The conversion routine stores its current

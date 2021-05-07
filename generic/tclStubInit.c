@@ -23,11 +23,6 @@
 #pragma GCC dependency "tclTomMath.decls"
 #endif
 
-#ifdef TCL_NO_DEPRECATED
-#   define TclSetPreInitScript Tcl_SetPreInitScript
-#   define TclGuessPackageName(fileName, pkgName) ((void)fileName,(void)pkgName,0)
-#endif
-
 /*
  * Remove macros that will interfere with the definitions below.
  */
