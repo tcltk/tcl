@@ -25,13 +25,13 @@ int
 char *
 \fBTcl_ExternalToUtfDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
 .sp
-char *
+size_t
 \fBTcl_ExternalToUtfDStringEx\fR(\fIencoding, src, srcLen, flags, dstPtr\fR)
 .sp
 char *
 \fBTcl_UtfToExternalDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
 .sp
-char *
+size_t
 \fBTcl_UtfToExternalDStringEx\fR(\fIencoding, src, srcLen, flags, dstPtr\fR)
 .sp
 int
@@ -261,8 +261,8 @@ a pointer to the value stored in the DString.
 .PP
 \fBTcl_UtfToExternalDStringEx\fR is the same as \fBTcl_UtfToExternalDString\fR,
 but it has an additional flags parameter.  The return value is the index of
-the first byte in the input string causing a conversion error.
-Or (size_t)-1 if all is OK.
+the first byte of an utf-8 byte-sequence in the input string causing a
+conversion error. Or (size_t)-1 if all is OK.
 .PP
 \fBTcl_UtfToExternal\fR converts a source buffer \fIsrc\fR from UTF-8 into
 the specified \fIencoding\fR.  Up to \fIsrcLen\fR bytes are converted from
