@@ -551,9 +551,9 @@ EncodingConvertfromObjCmd(
     int length;			/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
 #if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-    const char *stopOnError = "";
+    int flags = TCL_ENCODING_STOPONERROR;
 #else
-    const char *stopOnError = NULL;
+    int flags = TCL_ENCODING_NO_THROW;
 #endif
     size_t result;
 
@@ -566,26 +566,27 @@ EncodingConvertfromObjCmd(
 	}
 	data = objv[objc - 1];
 	if (objc > 3) {
-	    stopOnError = Tcl_GetString(objv[1]);
-	    if (stopOnError[0] == '-' && stopOnError[1] == 'n'
-		    && !strncmp(stopOnError, "-nothrow", strlen(stopOnError))) {
-		stopOnError = NULL;
-	    } else if (stopOnError[0] == '-' && stopOnError[1] == 's'
-		    && !strncmp(stopOnError, "-stoponerror", strlen(stopOnError))) {
+	    bytesPtr = Tcl_GetString(objv[1]);
+	    if (bytesPtr[0] == '-' && bytesPtr[1] == 'n'
+		    && !strncmp(bytesPtr, "-nothrow", strlen(bytesPtr))) {
+		flags = TCL_ENCODING_NO_THROW;
+	    } else if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
+		    && !strncmp(bytesPtr, "-stoponerror", strlen(bytesPtr))) {
+		flags = TCL_ENCODING_STOPONERROR;
 	    } else {
 		goto encConvFromError;
 	    }
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-stoponerror|-nothrow? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nothrow|-stoponerror? ?encoding? data");
 	return TCL_ERROR;
     }
 
     /*
      * Convert the string into a byte array in 'ds'
      */
-    if (stopOnError) {
+    if (flags & TCL_ENCODING_STOPONERROR) {
 	bytesPtr = (char *) TclGetBytesFromObj(interp, data, &length);
 	if (bytesPtr == NULL) {
 	    return TCL_ERROR;
@@ -594,8 +595,8 @@ EncodingConvertfromObjCmd(
 	bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
-	    stopOnError ? TCL_ENCODING_STOPONERROR : TCL_ENCODING_NO_THROW, &ds);
-    if (stopOnError && (result != (size_t)-1)) {
+	    flags, &ds);
+    if ((flags & TCL_ENCODING_STOPONERROR) && (result != (size_t)-1)) {
 	char buf[TCL_INTEGER_SPACE];
 	sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte sequence starting at index %"
@@ -650,9 +651,9 @@ EncodingConverttoObjCmd(
     const char *stringPtr;	/* Pointer to the first byte of the string */
     size_t result;
 #if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-    const char *stopOnError = "";
+    int flags = TCL_ENCODING_STOPONERROR;
 #else
-    const char *stopOnError = NULL;
+    int flags = TCL_ENCODING_NO_THROW;
 #endif
 
     if (objc == 2) {
@@ -664,19 +665,20 @@ EncodingConverttoObjCmd(
 	}
 	data = objv[objc - 1];
 	if (objc > 3) {
-	    stopOnError = Tcl_GetString(objv[1]);
-	    if (stopOnError[0] == '-' && stopOnError[1] == 'n'
-		    && !strncmp(stopOnError, "-nothrow", strlen(stopOnError))) {
-		stopOnError = NULL;
-	    } else if (stopOnError[0] == '-' && stopOnError[1] == 's'
-		    && !strncmp(stopOnError, "-stoponerror", strlen(stopOnError))) {
+	    stringPtr = Tcl_GetString(objv[1]);
+	    if (stringPtr[0] == '-' && stringPtr[1] == 'n'
+		    && !strncmp(stringPtr, "-nothrow", strlen(stringPtr))) {
+		flags = TCL_ENCODING_NO_THROW;
+	    } else if (stringPtr[0] == '-' && stringPtr[1] == 's'
+		    && !strncmp(stringPtr, "-stoponerror", strlen(stringPtr))) {
+		flags = TCL_ENCODING_STOPONERROR;
 	    } else {
 		goto encConvToError;
 	    }
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-stoponerror|-nothrow? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nothrow|-stoponerror? ?encoding? data");
 	return TCL_ERROR;
     }
 
@@ -686,8 +688,8 @@ EncodingConverttoObjCmd(
 
     stringPtr = TclGetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
-	    stopOnError ? TCL_ENCODING_STOPONERROR : TCL_ENCODING_NO_THROW, &ds);
-    if (stopOnError && (result != (size_t)-1)) {
+	    flags, &ds);
+    if ((flags & TCL_ENCODING_STOPONERROR) && (result != (size_t)-1)) {
 	size_t pos = Tcl_NumUtfChars(stringPtr, result);
 	int ucs4;
 	char buf[TCL_INTEGER_SPACE];
