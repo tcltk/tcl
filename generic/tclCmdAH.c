@@ -550,24 +550,24 @@ EncodingConvertfromObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     int length;			/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
+#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
+    const char *stopOnError = "";
+#else
     const char *stopOnError = NULL;
+#endif
     size_t result;
 
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if ((unsigned)(objc - 3) < 2) {
+    } else if ((unsigned)(objc - 2) < 3) {
 	if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	data = objv[objc - 1];
 	if (objc > 3) {
 	    stopOnError = Tcl_GetString(objv[1]);
-	    if (!stopOnError[0]) {
-#if TCL_MAJOR_VERSION < 9 && !defined(TCL_NO_DEPRECATED)
-		stopOnError = NULL;
-#endif
-	    } else if (stopOnError[0] == '-' && stopOnError[1] == 'n'
+	    if (stopOnError[0] == '-' && stopOnError[1] == 'n'
 		    && !strncmp(stopOnError, "-nothrow", strlen(stopOnError))) {
 		stopOnError = NULL;
 	    } else if (stopOnError[0] == '-' && stopOnError[1] == 's'
@@ -575,10 +575,6 @@ EncodingConvertfromObjCmd(
 	    } else {
 		goto encConvFromError;
 	    }
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-	} else {
-		stopOnError = "";
-#endif
 	}
     } else {
     encConvFromError:
@@ -602,7 +598,7 @@ EncodingConvertfromObjCmd(
     if (stopOnError && (result != (size_t)-1)) {
 	char buf[TCL_INTEGER_SPACE];
 	sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte at index %"
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte sequence starting at index %"
 		TCL_Z_MODIFIER "u: '\\x%X'", result, UCHAR(bytesPtr[result])));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "STOPONERROR",
 		buf, NULL);
@@ -653,25 +649,23 @@ EncodingConverttoObjCmd(
     int length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
     size_t result;
+#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
+    const char *stopOnError = "";
+#else
     const char *stopOnError = NULL;
-
-    /* TODO - ADJUST OBJ INDICES WHEN ENSEMBLIFYING THIS */
+#endif
 
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if ((unsigned)(objc - 3) < 2) {
+    } else if ((unsigned)(objc - 2) < 3) {
 	if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	data = objv[objc - 1];
 	if (objc > 3) {
 	    stopOnError = Tcl_GetString(objv[1]);
-	    if (!stopOnError[0]) {
-#if TCL_MAJOR_VERSION < 9 && !defined(TCL_NO_DEPRECATED)
-		stopOnError = NULL;
-#endif
-	    } else if (stopOnError[0] == '-' && stopOnError[1] == 'n'
+	    if (stopOnError[0] == '-' && stopOnError[1] == 'n'
 		    && !strncmp(stopOnError, "-nothrow", strlen(stopOnError))) {
 		stopOnError = NULL;
 	    } else if (stopOnError[0] == '-' && stopOnError[1] == 's'
@@ -679,10 +673,6 @@ EncodingConverttoObjCmd(
 	    } else {
 		goto encConvToError;
 	    }
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-	} else {
-		stopOnError = "";
-#endif
 	}
     } else {
     encConvToError:
