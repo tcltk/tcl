@@ -4351,7 +4351,7 @@ Write(
 
 	    ReleaseChannelBuffer(bufPtr);
 	    if (total == 0) {
-		Tcl_SetErrno(EINVAL);
+		Tcl_SetErrno(EILSEQ);
 		return -1;
 	    }
 	    break;
