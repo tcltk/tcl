@@ -346,6 +346,7 @@ static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
 static int		ZipMapArchive(Tcl_Interp *interp, ZipFile *zf,
 			    void *handle);
 static void		ZipfsExitHandler(ClientData clientData);
+static void		ZipfsMountExitHandler(ClientData clientData);
 static void		ZipfsSetup(void);
 static int		ZipChannelClose(void *instanceData,
 			    Tcl_Interp *interp, int flags);
@@ -1613,7 +1614,7 @@ ZipFSCatalogFilesystem(
      */
 
     zf->mountPoint = (char *) Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
-    Tcl_CreateExitHandler(ZipfsExitHandler, zf);
+    Tcl_CreateExitHandler(ZipfsMountExitHandler, zf);
     zf->mountPointLen = strlen(zf->mountPoint);
 
     zf->nameLength = strlen(zipname);
@@ -1855,6 +1856,7 @@ ZipfsSetup(void)
     strcpy(ZipFS.fallbackEntryEncoding, ZIPFS_FALLBACK_ENCODING);
     ZipFS.utf8 = Tcl_GetEncoding(NULL, "utf-8");
     ZipFS.initialized = 1;
+    Tcl_CreateExitHandler(ZipfsExitHandler, NULL);
 }
 
 /*
@@ -2178,7 +2180,7 @@ TclZipfs_Unmount(
 	ckfree(z);
     }
     ZipFSCloseArchive(interp, zf);
-    Tcl_DeleteExitHandler(ZipfsExitHandler, zf);
+    Tcl_DeleteExitHandler(ZipfsMountExitHandler, zf);
     ckfree(zf);
     unmounted = 1;
 
@@ -5732,11 +5734,21 @@ static void
 ZipfsExitHandler(
     ClientData clientData)
 {
+    ckfree(ZipFS.fallbackEntryEncoding);
+}
+
+
+static void
+ZipfsMountExitHandler(
+    ClientData clientData)
+{
     ZipFile *zf = (ZipFile *) clientData;
 
     if (TCL_OK != TclZipfs_Unmount(NULL, zf->mountPoint)) {
 	Tcl_Panic("tried to unmount busy filesystem");
     }
+
+    ckfree(ZipFS.fallbackEntryEncoding);
 }
 
 /*
