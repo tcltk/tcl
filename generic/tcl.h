@@ -2075,7 +2075,7 @@ typedef struct Tcl_EncodingType {
  *				produced is controlled only by other limiting
  *				factors.
  * TCL_ENCODING_MODIFIED -	Convert NULL bytes to \xC0\x80 in stead of
- *				0x00. Only valid for "utf-8", "wtf-8 and "cesu-8".
+ *				0x00. Only valid for "utf-8" and "cesu-8".
  *				This flag is implicit for external -> internal conversions,
  *				optional for internal -> external conversions.
  * TCL_ENCODING_NO_THROW -	If set, the converter
