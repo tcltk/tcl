@@ -61,7 +61,6 @@ static void VarPtrDeleteProc(void *clientData, Tcl_Interp *interp)
     for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
 	if (varPtr[i]) Tcl_DecrRefCount(varPtr[i]);
     }
-    Tcl_DeleteAssocData(interp, VARPTR_KEY);
     ckfree(varPtr);
 }
 
