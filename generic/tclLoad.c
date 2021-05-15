@@ -12,6 +12,7 @@
 
 #include "tclInt.h"
 
+
 /*
  * The following structure describes a library that has been loaded either
  * dynamically (with the "load" command) or statically (as indicated by a call
@@ -93,8 +94,12 @@ typedef struct InterpLibrary {
  * Prototypes for functions that are private to this file:
  */
 
-static void		LoadCleanupProc(ClientData clientData,
-			    Tcl_Interp *interp);
+static void	LoadCleanupProc(ClientData clientData,
+		    Tcl_Interp *interp);
+static int	UnloadLibrary(Tcl_Interp *interp, Tcl_Interp *target,
+		    LoadedLibrary *library, int keepLibrary,
+		    const char *fullFileName);
+
 
 /*
  *----------------------------------------------------------------------
@@ -549,10 +554,8 @@ Tcl_UnloadObjCmd(
     Tcl_Interp *target;		/* Which interpreter to unload from. */
     LoadedLibrary *libraryPtr, *defaultPtr;
     Tcl_DString pfx, tmp;
-    Tcl_LibraryUnloadProc *unloadProc;
     InterpLibrary *ipFirstPtr, *ipPtr;
     int i, index, code, complain = 1, keepLibrary = 0;
-    int trustedRefCount = -1, safeRefCount = -1;
     const char *fullFileName = "";
     const char *prefix;
     static const char *const options[] = {
@@ -741,6 +744,33 @@ Tcl_UnloadObjCmd(
 	goto done;
     }
 
+    code = UnloadLibrary(interp, target, libraryPtr, keepLibrary, fullFileName);
+
+  done:
+    Tcl_DStringFree(&pfx);
+    Tcl_DStringFree(&tmp);
+    if (!complain && (code != TCL_OK)) {
+	code = TCL_OK;
+	Tcl_ResetResult(interp);
+    }
+    return code;
+}
+
+static int
+UnloadLibrary(
+	Tcl_Interp *interp,
+	Tcl_Interp *target,
+	LoadedLibrary *libraryPtr,
+	int keepLibrary,
+	const char *fullFileName
+)
+{
+    int code;
+    InterpLibrary *ipFirstPtr, *ipPtr;
+    LoadedLibrary *defaultPtr;
+    int trustedRefCount, safeRefCount;
+    Tcl_LibraryUnloadProc *unloadProc;
+
     /*
      * Ensure that the DLL can be unloaded. If it is a trusted interpreter,
      * libraryPtr->unloadProc must not be NULL for the DLL to be unloadable. If
@@ -770,6 +800,9 @@ Tcl_UnloadObjCmd(
 	}
 	unloadProc = libraryPtr->unloadProc;
     }
+
+
+
 
     /*
      * We are ready to unload the library. First, evaluate the unload
@@ -889,8 +922,7 @@ Tcl_UnloadObjCmd(
 			}
 		    }
 		}
-		Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc,
-			ipFirstPtr);
+		Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipFirstPtr);
 		ckfree(defaultPtr->fileName);
 		ckfree(defaultPtr->prefix);
 		ckfree(defaultPtr);
@@ -911,12 +943,6 @@ Tcl_UnloadObjCmd(
     }
 
   done:
-    Tcl_DStringFree(&pfx);
-    Tcl_DStringFree(&tmp);
-    if (!complain && (code != TCL_OK)) {
-	code = TCL_OK;
-	Tcl_ResetResult(interp);
-    }
     return code;
 }
 
