@@ -804,6 +804,31 @@ Tcl_UnloadObjCmd(
 	goto done;
     }
 
+
+    /*
+     * Remove this library from the interpreter's library cache.
+     */
+
+    ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
+    ipPtr = ipFirstPtr;
+    if (ipPtr->libraryPtr == libraryPtr) {
+	ipFirstPtr = ipFirstPtr->nextPtr;
+    } else {
+	InterpLibrary *ipPrevPtr;
+
+	for (ipPrevPtr = ipPtr; ipPtr != NULL;
+		ipPrevPtr = ipPtr, ipPtr = ipPtr->nextPtr) {
+	    if (ipPtr->libraryPtr == libraryPtr) {
+		ipPrevPtr->nextPtr = ipPtr->nextPtr;
+		break;
+	    }
+	}
+    }
+    Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc,
+	    ipFirstPtr);
+
+
+
     /*
      * The unload function executed fine. Examine the reference count to see
      * if we unload the DLL.
@@ -870,27 +895,6 @@ Tcl_UnloadObjCmd(
 		    }
 		}
 
-		/*
-		 * Remove this library from the interpreter's library cache.
-		 */
-
-		ipFirstPtr = (InterpLibrary *)Tcl_GetAssocData(target, "tclLoad", NULL);
-		ipPtr = ipFirstPtr;
-		if (ipPtr->libraryPtr == defaultPtr) {
-		    ipFirstPtr = ipFirstPtr->nextPtr;
-		} else {
-		    InterpLibrary *ipPrevPtr;
-
-		    for (ipPrevPtr = ipPtr; ipPtr != NULL;
-			    ipPrevPtr = ipPtr, ipPtr = ipPtr->nextPtr) {
-			if (ipPtr->libraryPtr == defaultPtr) {
-			    ipPrevPtr->nextPtr = ipPtr->nextPtr;
-			    break;
-			}
-		    }
-		}
-		Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc,
-			ipFirstPtr);
 		ckfree(defaultPtr->fileName);
 		ckfree(defaultPtr->prefix);
 		ckfree(defaultPtr);
