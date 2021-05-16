@@ -1073,6 +1073,83 @@ TclNamespaceDeleted(
     return (nsPtr->flags & NS_DYING) ? 1 : 0;
 }
 
+void
+TclDeleteNamespaceChildren(
+    Namespace *nsPtr	/* Namespace whose children to delete */
+)
+{
+    Interp *iPtr = (Interp *) nsPtr->interp;
+    Tcl_HashEntry *entryPtr;
+    int i, unchecked;
+    Tcl_HashSearch search;
+    /*
+     * Delete all the child namespaces.
+     *
+     * BE CAREFUL: When each child is deleted, it divorces itself from its
+     * parent.  The hash table can't be proplery traversed if its elements are
+     * being deleted.  Because of traces (and the desire to avoid the
+     * quadratic problems of just using Tcl_FirstHashEntry over and over, [Bug
+     * f97d4ee020]) copy to a temporary array and then delete all those
+     * namespaces.
+     *
+     * Important: leave the hash table itself still live.
+     */
+
+#ifndef BREAK_NAMESPACE_COMPAT
+    unchecked = (nsPtr->childTable.numEntries > 0);
+    while (nsPtr->childTable.numEntries > 0 && unchecked) {
+	int length = nsPtr->childTable.numEntries;
+	Namespace **children = (Namespace **)TclStackAlloc((Tcl_Interp *) iPtr,
+		sizeof(Namespace *) * length);
+
+	i = 0;
+	for (entryPtr = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
+		entryPtr != NULL;
+		entryPtr = Tcl_NextHashEntry(&search)) {
+	    children[i] = (Namespace *)Tcl_GetHashValue(entryPtr);
+	    children[i]->refCount++;
+	    i++;
+	}
+	unchecked = 0;
+	for (i = 0 ; i < length ; i++) {
+	    if (!(children[i]->flags & NS_DYING)) {
+		unchecked = 1;
+		Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
+		TclNsDecrRefCount(children[i]);
+	    }
+	}
+	TclStackFree((Tcl_Interp *) iPtr, children);
+    }
+#else
+    if (nsPtr->childTablePtr != NULL) {
+	unchecked = (nsPtr->childTable.numEntries > 0);
+	while (nsPtr->childTable.numEntries > 0 && unchecked) {
+	    int length = nsPtr->childTablePtr->numEntries;
+	    Namespace **children = (Namespace **)TclStackAlloc((Tcl_Interp *) iPtr,
+		    sizeof(Namespace *) * length);
+
+	    i = 0;
+	    for (entryPtr = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
+		    entryPtr != NULL;
+		    entryPtr = Tcl_NextHashEntry(&search)) {
+		children[i] = (Namespace *)Tcl_GetHashValue(entryPtr);
+		children[i]->refCount++;
+		i++;
+	    }
+	    unchecked = 0;
+	    for (i = 0 ; i < length ; i++) {
+		if (!(children[i]->flags & NS_DYING)) {
+		    unchecked = 1;
+		    Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
+		    TclNsDecrRefCount(children[i]);
+		}
+	    }
+	    TclStackFree((Tcl_Interp *) iPtr, children);
+	}
+    }
+#endif
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1181,62 +1258,7 @@ TclTeardownNamespace(
 	nsPtr->commandPathSourceList = NULL;
     }
 
-    /*
-     * Delete all the child namespaces.
-     *
-     * BE CAREFUL: When each child is deleted, it will divorce itself from its
-     * parent. You can't traverse a hash table properly if its elements are
-     * being deleted.  Because of traces (and the desire to avoid the
-     * quadratic problems of just using Tcl_FirstHashEntry over and over, [Bug
-     * f97d4ee020]) we copy to a temporary array and then delete all those
-     * namespaces.
-     *
-     * Important: leave the hash table itself still live.
-     */
-
-#ifndef BREAK_NAMESPACE_COMPAT
-    while (nsPtr->childTable.numEntries > 0) {
-	int length = nsPtr->childTable.numEntries;
-	Namespace **children = (Namespace **)TclStackAlloc((Tcl_Interp *) iPtr,
-		sizeof(Namespace *) * length);
-
-	i = 0;
-	for (entryPtr = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
-		entryPtr != NULL;
-		entryPtr = Tcl_NextHashEntry(&search)) {
-	    children[i] = (Namespace *)Tcl_GetHashValue(entryPtr);
-	    children[i]->refCount++;
-	    i++;
-	}
-	for (i = 0 ; i < length ; i++) {
-	    Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
-	    TclNsDecrRefCount(children[i]);
-	}
-	TclStackFree((Tcl_Interp *) iPtr, children);
-    }
-#else
-    if (nsPtr->childTablePtr != NULL) {
-	while (nsPtr->childTablePtr->numEntries > 0) {
-	    int length = nsPtr->childTablePtr->numEntries;
-	    Namespace **children = (Namespace **)TclStackAlloc((Tcl_Interp *) iPtr,
-		    sizeof(Namespace *) * length);
-
-	    i = 0;
-	    for (entryPtr = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
-		    entryPtr != NULL;
-		    entryPtr = Tcl_NextHashEntry(&search)) {
-		children[i] = Tcl_GetHashValue(entryPtr);
-		children[i]->refCount++;
-		i++;
-	    }
-	    for (i = 0 ; i < length ; i++) {
-		Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
-		TclNsDecrRefCount(children[i]);
-	    }
-	    TclStackFree((Tcl_Interp *) iPtr, children);
-	}
-    }
-#endif
+    TclDeleteNamespaceChildren(nsPtr);
 
     /*
      * Free the namespace's export pattern array.
