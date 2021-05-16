@@ -560,7 +560,7 @@ Tcl_UnloadObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *target;		/* Which interpreter to unload from. */
-    LoadedLibrary *libraryPtr, *defaultPtr;
+    LoadedLibrary *libraryPtr;
     Tcl_DString pfx, tmp;
     InterpLibrary *ipFirstPtr, *ipPtr;
     int i, index, code, complain = 1, keepLibrary = 0;
@@ -662,7 +662,6 @@ Tcl_UnloadObjCmd(
 
     Tcl_MutexLock(&libraryMutex);
 
-    defaultPtr = NULL;
     for (libraryPtr = firstLibraryPtr; libraryPtr != NULL; libraryPtr = libraryPtr->nextPtr) {
 	int namesMatch, filesMatch;
 
@@ -687,9 +686,6 @@ Tcl_UnloadObjCmd(
 	filesMatch = (strcmp(libraryPtr->fileName, fullFileName) == 0);
 	if (filesMatch && (namesMatch || (prefix == NULL))) {
 	    break;
-	}
-	if (namesMatch && (fullFileName[0] == 0)) {
-	    defaultPtr = libraryPtr;
 	}
 	if (filesMatch && !namesMatch && (fullFileName[0] != 0)) {
 	    break;
@@ -776,7 +772,7 @@ UnloadLibrary(
 {
     int code;
     InterpLibrary *ipFirstPtr, *ipPtr;
-    LoadedLibrary *defaultPtr;
+    LoadedLibrary *iterLibraryPtr;
     int trustedRefCount = -1, safeRefCount = -1;
     Tcl_LibraryUnloadProc *unloadProc = NULL;
 
@@ -937,22 +933,22 @@ UnloadLibrary(
 		 * Remove this library from the loaded library cache.
 		 */
 
-		defaultPtr = libraryPtr;
-		if (defaultPtr == firstLibraryPtr) {
+		iterLibraryPtr = libraryPtr;
+		if (iterLibraryPtr == firstLibraryPtr) {
 		    firstLibraryPtr = libraryPtr->nextPtr;
 		} else {
 		    for (libraryPtr = firstLibraryPtr; libraryPtr != NULL;
 			    libraryPtr = libraryPtr->nextPtr) {
-			if (libraryPtr->nextPtr == defaultPtr) {
-			    libraryPtr->nextPtr = defaultPtr->nextPtr;
+			if (libraryPtr->nextPtr == iterLibraryPtr) {
+			    libraryPtr->nextPtr = iterLibraryPtr->nextPtr;
 			    break;
 			}
 		    }
 		}
 
-		ckfree(defaultPtr->fileName);
-		ckfree(defaultPtr->prefix);
-		ckfree(defaultPtr);
+		ckfree(iterLibraryPtr->fileName);
+		ckfree(iterLibraryPtr->prefix);
+		ckfree(iterLibraryPtr);
 		Tcl_MutexUnlock(&libraryMutex);
 	    } else {
 		code = TCL_ERROR;
@@ -1191,7 +1187,7 @@ TclGetLoadedLibraries(
 
 static void
 LoadCleanupProc(
-    ClientData clientData,	/* Pointer to first InterpLibrary structure
+    TCL_UNUSED(ClientData),	/* Pointer to first InterpLibrary structure
 				 * for interp. */
     Tcl_Interp *interp)
 {
