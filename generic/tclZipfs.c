@@ -5753,7 +5753,7 @@ ZipfsExitHandler(
 static void
 ZipfsFinalize(void) {
     Tcl_DeleteHashTable(&ZipFS.fileHash);
-    ckfree(ZipFS.fallbackEntryEncoding);
+    Tcl_Free(ZipFS.fallbackEntryEncoding);
     ZipFS.initialized = -1;
 }
 
