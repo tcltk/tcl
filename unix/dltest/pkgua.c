@@ -15,14 +15,6 @@
 #include "tcl.h"
 
 /*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Pkgua_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-
-/*
  * Prototypes for procedures defined later in this file:
  */
 
@@ -134,6 +126,7 @@ PkguaEqObjCmd(
     int result;
     const char *str1, *str2;
     int len1, len2;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,  "string1 string2");
@@ -175,6 +168,8 @@ PkguaQuoteObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
+    (void)dummy;
+
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
@@ -200,7 +195,7 @@ PkguaQuoteObjCmd(
  *----------------------------------------------------------------------
  */
 
-EXTERN int
+DLLEXPORT int
 Pkgua_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
@@ -208,7 +203,7 @@ Pkgua_Init(
     int code, cmdIndex = 0;
     Tcl_Command *cmdTokens;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
 	return TCL_ERROR;
     }
 
@@ -224,7 +219,7 @@ Pkgua_Init(
 	return code;
     }
 
-    Tcl_SetVar(interp, "::pkgua_loaded", ".", TCL_APPEND_VALUE);
+    Tcl_SetVar2(interp, "::pkgua_loaded", NULL, ".", TCL_APPEND_VALUE);
 
     cmdTokens = PkguaInterpToTokens(interp);
     cmdTokens[cmdIndex++] =
@@ -253,7 +248,7 @@ Pkgua_Init(
  *----------------------------------------------------------------------
  */
 
-EXTERN int
+DLLEXPORT int
 Pkgua_SafeInit(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
@@ -278,7 +273,7 @@ Pkgua_SafeInit(
  *----------------------------------------------------------------------
  */
 
-EXTERN int
+DLLEXPORT int
 Pkgua_Unload(
     Tcl_Interp *interp,		/* Interpreter from which the package is to be
 				 * unloaded. */
@@ -299,7 +294,7 @@ Pkgua_Unload(
 
     PkguaDeleteTokens(interp);
 
-    Tcl_SetVar(interp, "::pkgua_detached", ".", TCL_APPEND_VALUE);
+    Tcl_SetVar2(interp, "::pkgua_detached", NULL, ".", TCL_APPEND_VALUE);
 
     if (flags == TCL_UNLOAD_DETACH_FROM_PROCESS) {
 	/*
@@ -309,7 +304,7 @@ Pkgua_Unload(
 	 */
 
 	PkguaFreeTokensHashTable();
-	Tcl_SetVar(interp, "::pkgua_unloaded", ".", TCL_APPEND_VALUE);
+	Tcl_SetVar2(interp, "::pkgua_unloaded", NULL, ".", TCL_APPEND_VALUE);
     }
     return TCL_OK;
 }
@@ -331,7 +326,7 @@ Pkgua_Unload(
  *----------------------------------------------------------------------
  */
 
-EXTERN int
+DLLEXPORT int
 Pkgua_SafeUnload(
     Tcl_Interp *interp,		/* Interpreter from which the package is to be
 				 * unloaded. */
