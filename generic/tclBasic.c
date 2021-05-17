@@ -1799,6 +1799,7 @@ DeleteInterpProc(
 	    if (dPtr->proc != NULL) {
 		dPtr->proc(dPtr->clientData, interp);
 	    }
+	    Tcl_DeleteHashEntry(hPtr);
 	    Tcl_Free(dPtr);
 	}
 	Tcl_DeleteHashTable(hTablePtr);
