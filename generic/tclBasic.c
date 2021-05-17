@@ -1783,21 +1783,19 @@ DeleteInterpProc(
 	Tcl_Free(hTablePtr);
     }
 
-    /*
-     * Invoke deletion callbacks; note that a callback can create new
-     * callbacks, so we iterate.
-     */
 
-    while (iPtr->assocData != NULL) {
+    if (iPtr->assocData != NULL) {
 	AssocData *dPtr;
 
 	hTablePtr = iPtr->assocData;
-	iPtr->assocData = NULL;
+	/*
+	 * Invoke deletion callbacks; note that a callback can create new
+	 * callbacks, so we iterate.
+	 */
 	for (hPtr = Tcl_FirstHashEntry(hTablePtr, &search);
 		hPtr != NULL;
 		hPtr = Tcl_FirstHashEntry(hTablePtr, &search)) {
 	    dPtr = (AssocData *)Tcl_GetHashValue(hPtr);
-	    Tcl_DeleteHashEntry(hPtr);
 	    if (dPtr->proc != NULL) {
 		dPtr->proc(dPtr->clientData, interp);
 	    }
@@ -1805,6 +1803,7 @@ DeleteInterpProc(
 	}
 	Tcl_DeleteHashTable(hTablePtr);
 	Tcl_Free(hTablePtr);
+	iPtr->assocData = NULL;
     }
 
     /*
