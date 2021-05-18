@@ -5733,7 +5733,8 @@ ZipfsAppHookFindTclInit(
 
 static void
 ZipfsExitHandler(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(ClientData)
+)
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
