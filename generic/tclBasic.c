@@ -3331,7 +3331,6 @@ CallCommandTraces(
 	}
     }
     cmdPtr->flags |= CMD_TRACE_ACTIVE;
-    cmdPtr->refCount++;
 
     result = NULL;
     active.nextPtr = iPtr->activeCmdTracePtr;
