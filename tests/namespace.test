@@ -3344,7 +3344,7 @@ test namespace-56.6 {
 	Namespace deletion traces on both the original routine and the imported
 	routine should run without any memory error under a debug build.
 } -body {
-	variable res 0 
+	variable res 0
 
 	proc ondelete {old new op} {
 		$old
