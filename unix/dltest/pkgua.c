@@ -21,6 +21,7 @@ static int    PkguaEqObjCmd(ClientData clientData,
 		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int    PkguaQuoteObjCmd(ClientData clientData,
 		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+static void    CommandDeleted(ClientData clientData);
 
 /*
  * In the following hash table we are going to store a struct that holds all
@@ -38,6 +39,13 @@ static Tcl_HashTable interpTokenMap;
 static int interpTokenMapInitialised = 0;
 #define MAX_REGISTERED_COMMANDS 2
 
+
+static void
+CommandDeleted(ClientData clientData)
+{
+    Tcl_Command *cmdToken = clientData;
+    *cmdToken = NULL;
+}
 
 static void
 PkguaInitTokensHashTable(void)
@@ -221,12 +229,14 @@ Pkgua_Init(
     Tcl_SetVar2(interp, "::pkgua_loaded", NULL, ".", TCL_APPEND_VALUE);
 
     cmdTokens = PkguaInterpToTokens(interp);
-    cmdTokens[cmdIndex++] =
-	    Tcl_CreateObjCommand(interp, "pkgua_eq", PkguaEqObjCmd, NULL,
-		    NULL);
-    cmdTokens[cmdIndex++] =
+    cmdTokens[cmdIndex] =
+	    Tcl_CreateObjCommand(interp, "pkgua_eq", PkguaEqObjCmd, &cmdTokens[cmdIndex],
+		    CommandDeleted);
+    cmdIndex++;
+    cmdTokens[cmdIndex] =
 	    Tcl_CreateObjCommand(interp, "pkgua_quote", PkguaQuoteObjCmd,
-		    NULL, NULL);
+		    &cmdTokens[cmdIndex], CommandDeleted);
+    cmdIndex++;
     return TCL_OK;
 }
 
