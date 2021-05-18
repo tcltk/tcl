@@ -3331,7 +3331,6 @@ CallCommandTraces(
 	}
     }
     cmdPtr->flags |= CMD_TRACE_ACTIVE;
-    cmdPtr->refCount++;
 
     result = NULL;
     active.nextPtr = iPtr->activeCmdTracePtr;
@@ -3389,7 +3388,6 @@ CallCommandTraces(
      */
 
     cmdPtr->flags &= ~CMD_TRACE_ACTIVE;
-    cmdPtr->refCount--;
     iPtr->activeCmdTracePtr = active.nextPtr;
     Tcl_Release(iPtr);
     return result;
