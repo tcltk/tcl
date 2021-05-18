@@ -3340,6 +3340,38 @@ test namespace-56.5 {Bug 8b9854c3d8} -setup {
 } -result 1
 
 
+test namespace-56.6 {
+	Namespace deletion traces on both the original routine and the imported
+	routine should run without any memory error under a debug build.
+} -body {
+	variable res 0 
+
+	proc ondelete {old new op} {
+		$old
+	}
+
+	namespace eval ns1 {} {
+		namespace export *
+		proc p1 {} {
+			namespace upvar [namespace parent] res res
+			incr res
+		}
+		trace add command p1 delete ondelete
+	}
+
+	namespace eval ns2 {} {
+		namespace import ::ns1::p1
+		trace add command p1 delete ondelete
+	}
+
+	namespace delete ns1
+	namespace delete ns2
+	return $res
+} -cleanup {
+	unset res
+	rename ondelete {}
+} -result 2
+
 
 test namespace-57.0 {
     an imported alias should be usable in the deletion trace for the alias
