@@ -306,7 +306,7 @@ Tcl_PushCallFrame(
 
 	/*
 	 * TODO: Examine whether it would be better to guard based on NS_DYING
-	 * or NS_KILLED. It appears that these are not tested because they can
+	 * or NS_TEARDOWN. It appears that these are not tested because they can
 	 * be set in a global interp that has been [namespace delete]d, but
 	 * which never really completely goes away because of lingering global
 	 * things like ::errorInfo and [::unknown] and hidden commands.
@@ -986,20 +986,21 @@ Tcl_DeleteNamespace(
     }
 
     /*
-     * If the namespace is on the call frame stack, it is marked as "dying"
-     * (NS_DYING is OR'd into its flags): the namespace can't be looked up by
-     * name but its commands and variables are still usable by those active
-     * call frames. When all active call frames referring to the namespace
-     * have been popped from the Tcl stack, Tcl_PopCallFrame will call this
-     * function again to delete everything in the namespace. If no nsName
-     * objects refer to the namespace (i.e., if its refCount is zero), its
-     * commands and variables are deleted and the storage for its namespace
-     * structure is freed. Otherwise, if its refCount is nonzero, the
-     * namespace's commands and variables are deleted but the structure isn't
-     * freed. Instead, NS_DEAD is OR'd into the structure's flags to allow the
-     * namespace resolution code to recognize that the namespace is "deleted".
-     * The structure's storage is freed by FreeNsNameInternalRep when its
-     * refCount reaches 0.
+	 * If the namespace is on the call frame stack, it is marked as "dying"
+	 * (NS_DYING is OR'd into its flags):  Contents of the namespace are
+	 * still available and visible until the namespace is later marked as
+	 * NS_DEAD, and its commands and variables are still usable by any
+	 * active call frames referring to th namespace. When all active call
+	 * frames referring to the namespace have been popped from the Tcl
+	 * stack, Tcl_PopCallFrame calls Tcl_DeleteNamespace again. If no
+	 * nsName objects refer to the namespace (i.e., if its refCount is
+	 * zero), its commands and variables are deleted and the storage for
+	 * its namespace structure is freed.  Otherwise, if its refCount is
+	 * nonzero, the namespace's commands and variables are deleted but the
+	 * structure isn't freed. Instead, NS_DEAD is OR'd into the structure's
+	 * flags to allow the namespace resolution code to recognize that the
+	 * namespace is "deleted".  The structure's storage is freed by
+	 * FreeNsNameInternalRep when its refCount reaches 0.
      */
 
     if (nsPtr->activationCount - (nsPtr == globalNsPtr) > 0) {
@@ -1013,16 +1014,16 @@ Tcl_DeleteNamespace(
 	    }
 	}
 	nsPtr->parentPtr = NULL;
-    } else if (!(nsPtr->flags & NS_KILLED)) {
+    } else if (!(nsPtr->flags & NS_TEARDOWN)) {
 	/*
 	 * Delete the namespace and everything in it. If this is the global
 	 * namespace, then clear it but don't free its storage unless the
-	 * interpreter is being torn down. Set the NS_KILLED flag to avoid
+	 * interpreter is being torn down. Set the NS_TEARDOWN flag to avoid
 	 * recursive calls here - if the namespace is really in the process of
 	 * being deleted, ignore any second call.
 	 */
 
-	nsPtr->flags |= (NS_DYING|NS_KILLED);
+	nsPtr->flags |= (NS_DYING|NS_TEARDOWN);
 
 	TclTeardownNamespace(nsPtr);
 
@@ -1060,7 +1061,7 @@ Tcl_DeleteNamespace(
 	     * get killed later, avoiding mem leaks.
 	     */
 
-	    nsPtr->flags &= ~(NS_DYING|NS_KILLED);
+	    nsPtr->flags &= ~(NS_DYING|NS_TEARDOWN);
 	}
     }
     TclNsDecrRefCount(nsPtr);
@@ -2640,7 +2641,7 @@ Tcl_FindCommand(
 		&simpleName);
 	if ((realNsPtr != NULL) && (simpleName != NULL)) {
 	    if ((cxtNsPtr == realNsPtr)
-		    || !(realNsPtr->flags & NS_DYING)) {
+		    || !(realNsPtr->flags & NS_DEAD)) {
 		entryPtr = Tcl_FindHashEntry(&realNsPtr->cmdTable, simpleName);
 		if (entryPtr != NULL) {
 		    cmdPtr = (Command *)Tcl_GetHashValue(entryPtr);
@@ -2652,7 +2653,7 @@ Tcl_FindCommand(
 	 * Next, check along the path.
 	 */
 
-	for (i=0 ; i<cxtNsPtr->commandPathLength && cmdPtr==NULL ; i++) {
+	for (i=0 ; (cmdPtr == NULL) && i<cxtNsPtr->commandPathLength ; i++) {
 	    pathNsPtr = cxtNsPtr->commandPathArray[i].nsPtr;
 	    if (pathNsPtr == NULL) {
 		continue;
@@ -2661,7 +2662,7 @@ Tcl_FindCommand(
 		    TCL_NAMESPACE_ONLY, &realNsPtr, &dummyNsPtr, &dummyNsPtr,
 		    &simpleName);
 	    if ((realNsPtr != NULL) && (simpleName != NULL)
-		    && !(realNsPtr->flags & NS_DYING)) {
+		    && !(realNsPtr->flags & NS_DEAD)) {
 		entryPtr = Tcl_FindHashEntry(&realNsPtr->cmdTable, simpleName);
 		if (entryPtr != NULL) {
 		    cmdPtr = (Command *)Tcl_GetHashValue(entryPtr);
@@ -2679,7 +2680,7 @@ Tcl_FindCommand(
 		    TCL_GLOBAL_ONLY, &realNsPtr, &dummyNsPtr, &dummyNsPtr,
 		    &simpleName);
 	    if ((realNsPtr != NULL) && (simpleName != NULL)
-		    && !(realNsPtr->flags & NS_DYING)) {
+		    && !(realNsPtr->flags & NS_DEAD)) {
 		entryPtr = Tcl_FindHashEntry(&realNsPtr->cmdTable, simpleName);
 		if (entryPtr != NULL) {
 		    cmdPtr = (Command *)Tcl_GetHashValue(entryPtr);
@@ -3299,7 +3300,7 @@ NamespaceDeleteCmd(
 	name = TclGetString(objv[i]);
 	namespacePtr = Tcl_FindNamespace(interp, name, NULL, /*flags*/ 0);
 	if ((namespacePtr == NULL)
-		|| (((Namespace *) namespacePtr)->flags & NS_KILLED)) {
+		|| (((Namespace *) namespacePtr)->flags & NS_TEARDOWN)) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                     "unknown namespace \"%s\" in namespace delete command",
 		    TclGetString(objv[i])));
