@@ -211,6 +211,68 @@ test namespace-7.8 {Bug ba1419303b4c} -setup {
     namespace delete ns1
 } -result {}
 
+
+test namespace-7.9 {
+	Bug e39cb3f462631a99
+
+	A namespace being deleted should not be removed from other namespace paths
+	until the contents of the namespace are entirely removed.
+} -setup {
+
+
+
+
+} -body {
+
+	variable res {}
+
+
+	namespace eval ns1 {
+		proc p1 caller {
+			lappend [namespace parent]::res $caller
+		}
+	}
+
+
+	namespace eval ns1a {
+		namespace path [namespace parent]::ns1
+
+		proc t1 {old new op} {
+			$old t1
+		}
+	}
+
+	namespace eval ns2 {
+		proc p1 caller {
+			lappend [namespace parent]::res $caller
+		}
+	}
+
+	namespace eval ns2a {
+		namespace path [namespace parent]::ns2
+
+		proc t1 {old new op} {
+			[namespace tail $old] t2
+		}
+	}
+
+
+	trace add command ns1::p1 delete ns1a::t1
+	namespace delete ns1
+
+	trace add command ns2::p1 delete ns2a::t1
+	namespace delete ns2
+
+	return $res
+
+} -cleanup {
+	namespace delete ns1a
+	namespace delete ns2a
+	unset res
+} -result {t1 t2}
+
+
+
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
     catch {interp delete test_interp}
     interp create test_interp
