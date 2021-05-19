@@ -182,8 +182,8 @@ test namespace-7.6 {recursive Tcl_DeleteNamespace, no active call frames in ns} 
 } {}
 test namespace-7.7 {Bug 1655305} -setup {
     interp create child
-    # Can't invoke through the ensemble, since deleting the global namespace
-    # (indirectly, via deleting ::tcl) deletes the ensemble.
+    # Can't invoke through the ensemble, since deleting ::tcl
+    # (indirectly, via deleting the global namespace) deletes the ensemble.
     child eval {rename ::tcl::info::commands ::infocommands}
     child hide infocommands
     child eval {
@@ -207,9 +207,71 @@ test namespace-7.8 {Bug ba1419303b4c} -setup {
 	namespace delete ns1
     }
 } -body {
-    # No segmentation fault given --enable-symbols=mem.
+    # No segmentation fault given --enable-symbols.
     namespace delete ns1
 } -result {}
+
+
+test namespace-7.9 {
+	Bug e39cb3f462631a99
+
+	A namespace being deleted should not be removed from other namespace paths
+	until the contents of the namespace are entirely removed.
+} -setup {
+
+
+
+
+} -body {
+
+	variable res {}
+
+
+	namespace eval ns1 {
+		proc p1 caller {
+			lappend [namespace parent]::res $caller
+		}
+	}
+
+
+	namespace eval ns1a {
+		namespace path [namespace parent]::ns1
+
+		proc t1 {old new op} {
+			$old t1
+		}
+	}
+
+	namespace eval ns2 {
+		proc p1 caller {
+			lappend [namespace parent]::res $caller
+		}
+	}
+
+	namespace eval ns2a {
+		namespace path [namespace parent]::ns2
+
+		proc t1 {old new op} {
+			[namespace tail $old] t2
+		}
+	}
+
+
+	trace add command ns1::p1 delete ns1a::t1
+	namespace delete ns1
+
+	trace add command ns2::p1 delete ns2a::t1
+	namespace delete ns2
+
+	return $res
+
+} -cleanup {
+	namespace delete ns1a
+	namespace delete ns2a
+	unset res
+} -result {t1 t2}
+
+
 
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
     catch {interp delete test_interp}
@@ -2723,7 +2785,11 @@ test namespace-51.12 {name resolution path control} -body {
     catch {namespace delete ::test_ns_3}
     catch {namespace delete ::test_ns_4}
 }
-test namespace-51.13 {name resolution path control} -body {
+test namespace-51.13 {
+    name resolution path control
+    when the trace fires, ns_2 is being deleted but isn't gone yet, and is
+    still visible for the trace
+} -body {
     set ::result {}
     namespace eval ::test_ns_1 {
 	proc foo {} {lappend ::result 1}
@@ -2746,8 +2812,7 @@ test namespace-51.13 {name resolution path control} -body {
 	}
 	bar
     }
-    # Should the result be "2 {} {2 3 2 1}" instead?
-} -result {2 {} {2 3 1 1}} -cleanup {
+} -result {2 {} {2 3 2 1}} -cleanup {
     catch {namespace delete ::test_ns_1}
     catch {namespace delete ::test_ns_2}
     catch {namespace delete ::test_ns_3}
@@ -3339,6 +3404,43 @@ test namespace-56.5 {Bug 8b9854c3d8} -setup {
     namespace delete namespace-56.5
 } -result 1
 
+
+test namespace-56.6 {
+	Namespace deletion traces on both the original routine and the imported
+	routine should run without any memory error under a debug build.
+} -body {
+	variable res {} 
+
+	proc ondelete {old new op} {
+	    variable res
+	    set tail [namespace tail $old] 
+	    set up [namespace tail [namespace qualifiers $old]]
+	    lappend res [list $up $tail]
+	}
+	
+
+	namespace eval ns1 {} {
+		namespace export *
+		proc p1 {} {
+			namespace upvar [namespace parent] res res
+			incr res
+		}
+		trace add command p1 delete ondelete
+	}
+
+	namespace eval ns2 {} {
+		namespace import [namespace parent]::ns1::p1
+		trace add command p1 delete ondelete
+	}
+
+	namespace delete ns1
+	namespace delete ns2
+	after 1
+	return $res
+} -cleanup {
+	unset res
+	rename ondelete {}
+} -result {{ns1 p1} {ns2 p1}}
 
 
 test namespace-57.0 {

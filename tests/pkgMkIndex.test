@@ -577,19 +577,21 @@ test pkgMkIndex-10.1 {package in DLL and script} [list exec $dll] {
     exec [interpreter] << $cmd
     pkgtest::runCreatedIndex {0 {}} -lazy $fullPkgPath pkga[info sharedlibextension] pkga.tcl
 } "0 {{pkga:1.0 {tclPkgSetup {pkga[info sharedlibextension] load {pkga_eq pkga_quote}} {pkga.tcl source pkga_neq}}}}"
+
 test pkgMkIndex-10.2 {package in DLL hidden by -load} [list exec $dll] {
     # Do all [load]ing of shared libraries in another process, so we can
     # delete the file and not get stuck because we're holding a reference to
     # it.
     #
     # This test depends on context from prior test, so repeat it.
+
     set script \
 	"[list pkg_mkIndex -lazy $fullPkgPath [file tail $x] pkga.tcl]"
     append script \n \
 	"[list pkg_mkIndex -lazy -load Pkg* $fullPkgPath [file tail $x]]"
     exec [interpreter] << $script
     pkgtest::runCreatedIndex {0 {}} -lazy -load Pkg* -- $fullPkgPath pkga[info sharedlibextension]
-} {0 {}}
+} "0 {{pkga:1.0 {tclPkgSetup {pkga[info sharedlibextension] load {pkga_eq pkga_quote}}}}}"
 
 if {[testConstraint $dll]} {
     file delete -force [file join $fullPkgPath [file tail $x]]
