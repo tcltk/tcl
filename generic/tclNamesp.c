@@ -3300,7 +3300,7 @@ NamespaceDeleteCmd(
 	name = TclGetString(objv[i]);
 	namespacePtr = Tcl_FindNamespace(interp, name, NULL, /*flags*/ 0);
 	if ((namespacePtr == NULL)
-		|| (((Namespace *) namespacePtr)->flags & NS_TEARDOWN)) {
+		|| (((Namespace *) namespacePtr)->flags & NS_DEAD)) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                     "unknown namespace \"%s\" in namespace delete command",
 		    TclGetString(objv[i])));
