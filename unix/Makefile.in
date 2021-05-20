@@ -268,6 +268,7 @@ TRACE_OPTS		=
 VALGRIND		= valgrind
 VALGRINDARGS		= --tool=memcheck --num-callers=24 \
 	--leak-resolution=high --leak-check=yes --show-reachable=yes -v \
+	--keep-debuginfo=yes \
 	--suppressions=$(TOOL_DIR)/valgrind_suppress
 
 #--------------------------------------------------------------------------
@@ -906,18 +907,13 @@ test-tcl: ${TCLTEST_EXE}
 	$(SHELL_ENV) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
 gdb-test: ${TCLTEST_EXE}
-	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > gdb.run
-	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
-	@echo "set args $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1" >> gdb.run
-	$(GDB) ./${TCLTEST_EXE} --command=gdb.run
-	@rm gdb.run
+	$(SHELL_ENV) $(GDB) --args ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl \
+		$(TESTFLAGS) -singleproc 1
 
 lldb-test: ${TCLTEST_EXE}
-	@echo "settings set target.env-vars @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > lldb.run
-	@echo "settings set target.env-vars TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> lldb.run
-	$(LLDB) --source lldb.run ./${TCLTEST_EXE} -- $(TOP_DIR)/tests/all.tcl \
+	$(SHELL_ENV) $(LLDB) -- ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl \
 		$(TESTFLAGS) -singleproc 1
-	@rm lldb.run
+
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: ${TCLTEST_EXE}
