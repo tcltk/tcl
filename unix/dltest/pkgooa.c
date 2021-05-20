@@ -141,7 +141,7 @@ Pkgooa_Init(
 
     tclOOStubsPtr = &stubsCopy;
 
-    code = Tcl_PkgProvide(interp, "Pkgooa", "1.0");
+    code = Tcl_PkgProvide(interp, "pkgooa", "1.0");
     if (code != TCL_OK) {
 	return code;
     }
