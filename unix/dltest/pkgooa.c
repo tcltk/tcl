@@ -84,10 +84,13 @@ static TclOOStubs stubsCopy = {
     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL
+#ifdef Tcl_MethodIsPrivate
+    ,NULL
+#endif
 };
 
-extern DLLEXPORT int
+DLLEXPORT int
 Pkgooa_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
