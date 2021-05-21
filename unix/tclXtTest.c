@@ -39,7 +39,7 @@ int
 Tclxttest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.4", 0) == NULL) {
 	return TCL_ERROR;
     }
     XtToolkitInitialize();

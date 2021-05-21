@@ -18,9 +18,9 @@
  */
 
 static int    PkguaEqObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int    PkguaQuoteObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 /*
  * In the following hash table we are going to store a struct that holds all
@@ -38,7 +38,6 @@ static Tcl_HashTable interpTokenMap;
 static int interpTokenMapInitialised = 0;
 #define MAX_REGISTERED_COMMANDS 2
 
-
 static void
 PkguaInitTokensHashTable(void)
 {
@@ -49,7 +48,7 @@ PkguaInitTokensHashTable(void)
     interpTokenMapInitialised = 1;
 }
 
-void
+static void
 PkguaFreeTokensHashTable(void)
 {
     Tcl_HashSearch search;
@@ -73,8 +72,8 @@ PkguaInterpToTokens(
 
     if (newEntry) {
 	cmdTokens = (Tcl_Command *)
-		Tcl_Alloc(sizeof(Tcl_Command) * (MAX_REGISTERED_COMMANDS+1));
-	for (newEntry=0 ; newEntry<MAX_REGISTERED_COMMANDS+1 ; ++newEntry) {
+		Tcl_Alloc(sizeof(Tcl_Command) * (MAX_REGISTERED_COMMANDS));
+	for (newEntry=0 ; newEntry<MAX_REGISTERED_COMMANDS ; ++newEntry) {
 	    cmdTokens[newEntry] = NULL;
 	}
 	Tcl_SetHashValue(entryPtr, (ClientData) cmdTokens);
@@ -120,11 +119,12 @@ PkguaEqObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
-    CONST char *str1, *str2;
+    const char *str1, *str2;
     int len1, len2;
+    (void)dummy;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,  "string1 string2");
@@ -164,8 +164,10 @@ PkguaQuoteObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument strings. */
+    Tcl_Obj *const objv[])	/* Argument strings. */
 {
+    (void)dummy;
+
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
@@ -191,39 +193,39 @@ PkguaQuoteObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
+DLLEXPORT int
 Pkgua_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
 {
-    int code, cmdIndex = 0;
+    int code;
     Tcl_Command *cmdTokens;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.4", 0) == NULL) {
 	return TCL_ERROR;
     }
 
     /*
-     * Initialise our Hash table, where we store the registered command tokens
+     * Initialize our Hash table, where we store the registered command tokens
      * for each interpreter.
      */
 
     PkguaInitTokensHashTable();
 
-    code = Tcl_PkgProvide(interp, "Pkgua", "1.0");
+    code = Tcl_PkgProvide(interp, "pkgua", "1.0");
     if (code != TCL_OK) {
 	return code;
     }
 
-    Tcl_SetVar(interp, "::pkgua_loaded", ".", TCL_APPEND_VALUE);
+    Tcl_SetVar2(interp, "::pkgua_loaded", NULL, ".", TCL_APPEND_VALUE);
 
     cmdTokens = PkguaInterpToTokens(interp);
-    cmdTokens[cmdIndex++] =
+    cmdTokens[0] =
 	    Tcl_CreateObjCommand(interp, "pkgua_eq", PkguaEqObjCmd,
-		    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
-    cmdTokens[cmdIndex++] =
+		    NULL, NULL);
+    cmdTokens[1] =
 	    Tcl_CreateObjCommand(interp, "pkgua_quote", PkguaQuoteObjCmd,
-		    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+		    NULL, NULL);
     return TCL_OK;
 }
 
@@ -244,7 +246,7 @@ Pkgua_Init(
  *----------------------------------------------------------------------
  */
 
-int
+DLLEXPORT int
 Pkgua_SafeInit(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
@@ -269,7 +271,7 @@ Pkgua_SafeInit(
  *----------------------------------------------------------------------
  */
 
-int
+DLLEXPORT int
 Pkgua_Unload(
     Tcl_Interp *interp,		/* Interpreter from which the package is to be
 				 * unloaded. */
@@ -290,7 +292,7 @@ Pkgua_Unload(
 
     PkguaDeleteTokens(interp);
 
-    Tcl_SetVar(interp, "::pkgua_detached", ".", TCL_APPEND_VALUE);
+    Tcl_SetVar2(interp, "::pkgua_detached", NULL, ".", TCL_APPEND_VALUE);
 
     if (flags == TCL_UNLOAD_DETACH_FROM_PROCESS) {
 	/*
@@ -300,7 +302,7 @@ Pkgua_Unload(
 	 */
 
 	PkguaFreeTokensHashTable();
-	Tcl_SetVar(interp, "::pkgua_unloaded", ".", TCL_APPEND_VALUE);
+	Tcl_SetVar2(interp, "::pkgua_unloaded", NULL, ".", TCL_APPEND_VALUE);
     }
     return TCL_OK;
 }
@@ -322,7 +324,7 @@ Pkgua_Unload(
  *----------------------------------------------------------------------
  */
 
-int
+DLLEXPORT int
 Pkgua_SafeUnload(
     Tcl_Interp *interp,		/* Interpreter from which the package is to be
 				 * unloaded. */

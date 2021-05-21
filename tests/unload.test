@@ -5,8 +5,8 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1995 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2003-2004 by Georgios Petasis
+# Copyright (c) 1998-1999 Scriptics Corporation.
+# Copyright (c) 2003-2004 Georgios Petasis
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -108,14 +108,14 @@ child eval {
 test unload-3.1 {basic loading of non-unloadable package in a safe interpreter, with package name conversion} \
 	[list $dll $loaded] {
     catch {rename pkgb_sub {}}
-    load [file join $testDir pkgb$ext] pKgB child
+    load [file join $testDir pkgb$ext] Pkgb child
     list [child eval pkgb_sub 44 13] [catch {child eval pkgb_unsafe} msg] $msg \
          [catch {pkgb_sub 12 10} msg2] $msg2
 } {31 1 {invalid command name "pkgb_unsafe"} 1 {invalid command name "pkgb_sub"}}
 test unload-3.2 {basic loading of unloadable package in a safe interpreter, with package name conversion} \
 	[list $dll $loaded] {
     list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
-	    [load [file join $testDir pkgua$ext] pKgUA child] \
+	    [load [file join $testDir pkgua$ext] Pkgua child] \
 	    [child eval pkgua_eq abc def] \
 	    [lsort [child eval info commands pkgua_*]] \
 	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
@@ -148,7 +148,7 @@ test unload-3.6 {reloading of unloaded package in a safe interpreter, with guess
 test unload-3.7 {basic unloading of re-loaded package from a safe interpreter, with package name conversion} \
 	[list $dll $loaded] {
     list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
-	    [unload [file join $testDir pkgua$ext] pKgUa child] \
+	    [unload [file join $testDir pkgua$ext] Pkgua child] \
 	    [child eval info commands pkgua_*] \
 	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
 } {{.. . .} {} {} {.. .. ..}}
@@ -172,7 +172,7 @@ test unload-4.1 {loading of unloadable package in trusted interpreter, with gues
 test unload-4.2 {basic loading of unloadable package in a safe interpreter, with package name conversion} \
 	[list $dll $loaded] {
     list [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
-	    [load [file join $testDir pkgua$ext] pKgUA child] \
+	    [load [file join $testDir pkgua$ext] Pkgua child] \
 	    [child eval pkgua_eq abc def] \
 	    [lsort [child eval info commands pkgua_*]] \
 	    [child eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
@@ -181,7 +181,7 @@ test unload-4.2 {basic loading of unloadable package in a safe interpreter, with
 test unload-4.3 {basic loading of unloadable package in a second trusted interpreter, with package name conversion} \
 	[list $dll $loaded] {
     list [child-trusted eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}] \
-	    [load [file join $testDir pkgua$ext] pkguA child-trusted] \
+	    [load [file join $testDir pkgua$ext] Pkgua child-trusted] \
 	    [child-trusted eval pkgua_eq abc def] \
 	    [lsort [child-trusted eval info commands pkgua_*]] \
 	    [child-trusted eval {list $pkgua_loaded $pkgua_detached $pkgua_unloaded}]
@@ -217,3 +217,7 @@ interp delete child-trusted
 unset ext
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:
