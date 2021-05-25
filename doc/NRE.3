@@ -40,7 +40,7 @@ void
 .AS Tcl_CmdDeleteProc *interp in
 .AP Tcl_Interp *interp in
 The relevant Interpreter.
-.AP char *cmdName in
+.AP "const char" *cmdName in
 Name of the command to create.
 .AP Tcl_ObjCmdProc *proc in
 Called in order to evaluate a command.  Is often just a small wrapper that uses
