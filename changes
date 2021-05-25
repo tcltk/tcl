@@ -9254,4 +9254,22 @@ Changes to 8.7a5 include all changes to the 8.6 line through 8.6.11,
 plus the following, which focuses on the high-level feature changes
 in this changeset (new minor version) rather than bug fixes:
 
-- Released 8.7a5, Jan 21, 2021 --- http://core.tcl-lang.org/tcl/ for details -
+2019-12-13 [TIP 538] Externalize libtommath
+
+2020-01-20 [TIP 542]
+
+2020-01-21 [TIP 543]
+
+2020-01-24 [TIP 559]
+
+2020-02-28 [TIP 557]
+
+2020-02-28 [TIP 562]
+
+
+
+
+
+
+- Released 8.7a5, Jun 1, 2021 --- http://core.tcl-lang.org/tcl/ for details -
+
