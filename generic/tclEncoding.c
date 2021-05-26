@@ -1135,11 +1135,11 @@ Tcl_ExternalToUtfDString(
 *	The parameter flags controls the behavior, if any of the bytes in
  *	the source buffer are invalid or cannot be represented in utf-8.
  *	Possible flags values:
- *	TCLENCODINGSTOPONERROR: don't replace invalid characters/bytes but
+ *	TCL_ENCODING_STOPONERROR: don't replace invalid characters/bytes but
  *	return the first error position (Default in Tcl 9.0).
- *	TCLENCODINGNO_THROW: replace invalid characters/bytes by a default
+ *	TCL_ENCODING_NO_THROW: replace invalid characters/bytes by a default
  *	fallback character. Always return -1 (Default in Tcl 8.7).
- *	TCLENCODINGMODIFIED: convert NULL bytes to \xC0\x80 in stead of 0x00.
+ *	TCL_ENCODING_MODIFIED: convert NULL bytes to \xC0\x80 in stead of 0x00.
  *	Only valid for "utf-8" and "cesu-8". This flag may be used together
  *	with the other flags.
  *
@@ -1375,11 +1375,11 @@ Tcl_UtfToExternalDString(
  *	the source buffer are invalid or cannot be represented in the
  *	target encoding.
  *	Possible flags values:
- *	TCLENCODINGSTOPONERROR: don't replace invalid characters/bytes but
+ *	TCL_ENCODING_STOPONERROR: don't replace invalid characters/bytes but
  *	return the first error position (Default in Tcl 9.0).
- *	TCLENCODINGNO_THROW: replace invalid characters/bytes by a default
+ *	TCL_ENCODING_NO_THROW: replace invalid characters/bytes by a default
  *	fallback character. Always return -1 (Default in Tcl 8.7).
- *	TCLENCODINGMODIFIED: convert NULL bytes to \xC0\x80 in stead of 0x00.
+ *	TCL_ENCODING_MODIFIED: convert NULL bytes to \xC0\x80 in stead of 0x00.
  *	Only valid for "utf-8" and "cesu-8". This flag may be used together
  *	with the other flags.
  *
