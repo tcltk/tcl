@@ -166,8 +166,9 @@ is opened and initialized in a platform-dependent manner.  Acceptable
 values for the \fIfileName\fR to use to open a serial port are described in
 the PORTABILITY ISSUES section.
 .PP
-The \fBfconfigure\fR command can be used to query and set additional
-configuration options specific to serial ports (where supported):
+The \fBchan configure\fR and \fBfconfigure\fR commands can be used to query
+and set additional configuration options specific to serial ports (where
+supported):
 .TP
 \fB\-mode\fR \fIbaud\fB,\fIparity\fB,\fIdata\fB,\fIstop\fR
 .
@@ -275,48 +276,7 @@ In case of a serial communication error, \fBread\fR or \fBputs\fR
 returns a general Tcl file I/O error.
 \fBfconfigure\fR \fB\-lasterror\fR can be called to get a list of error details.
 See below for an explanation of the various error codes.
-.SH "SERIAL PORT SIGNALS"
-.PP
-RS-232 is the most commonly used standard electrical interface for serial
-communications. A negative voltage (-3V..-12V) define a mark (on=1) bit and
-a positive voltage (+3..+12V) define a space (off=0) bit (RS-232C).  The
-following signals are specified for incoming and outgoing data, status
-lines and handshaking. Here we are using the terms \fIworkstation\fR for
-your computer and \fImodem\fR for the external device, because some signal
-names (DCD, RI) come from modems. Of course your external device may use
-these signal lines for other purposes.
-.IP \fBTXD\fR(output)
-\fBTransmitted Data:\fR Outgoing serial data.
-.IP \fBRXD\fR(input)
-\fBReceived Data:\fRIncoming serial data.
-.IP \fBRTS\fR(output)
-\fBRequest To Send:\fR This hardware handshake line informs the modem that
-your workstation is ready to receive data. Your workstation may
-automatically reset this signal to indicate that the input buffer is full.
-.IP \fBCTS\fR(input)
-\fBClear To Send:\fR The complement to RTS. Indicates that the modem is
-ready to receive data.
-.IP \fBDTR\fR(output)
-\fBData Terminal Ready:\fR This signal tells the modem that the workstation
-is ready to establish a link. DTR is often enabled automatically whenever a
-serial port is opened.
-.IP \fBDSR\fR(input)
-\fBData Set Ready:\fR The complement to DTR. Tells the workstation that the
-modem is ready to establish a link.
-.IP \fBDCD\fR(input)
-\fBData Carrier Detect:\fR This line becomes active when a modem detects a
-.QW Carrier
-signal.
-.IP \fBRI\fR(input)
-\fBRing Indicator:\fR Goes active when the modem detects an incoming call.
-.IP \fBBREAK\fR
-A BREAK condition is not a hardware signal line, but a logical zero on the
-TXD or RXD lines for a long period of time, usually 250 to 500
-milliseconds.  Normally a receive or transmit data signal stays at the mark
-(on=1) voltage until the next character is transferred. A BREAK is sometimes
-used to reset the communications line or change the operating mode of
-communications hardware.
-.SH "ERROR CODES (Windows only)"
+.SS "ERROR CODES (Windows only)"
 .PP
 A lot of different errors may occur during serial read operations or during
 event polling in background. The external device may have been switched
@@ -359,7 +319,7 @@ may cause this error.
 \fBBREAK\fR
 .
 A BREAK condition has been detected by your UART (see above).
-.SH "PORTABILITY ISSUES"
+.SS "PORTABILITY ISSUES"
 .TP
 \fBWindows \fR
 .
@@ -428,7 +388,6 @@ Open a file for writing as a log file.
 set myLogFile [\fBopen\fR filename.log "a"]
 fconfigure $myLogFile -buffering line
 .CE
-.PP
 .PP
 Open a command pipeline and catch any errors:
 .PP
