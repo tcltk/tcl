@@ -1103,7 +1103,7 @@ Tcl_CreateEncoding(
  * Results:
  *	The converted bytes are stored in the DString, which is then NULL
  *	terminated. The return value is a pointer to the value stored in the
- *	DString resp. the index of the first erratic byte in 'src'.
+ *	DString.
  *
  * Side effects:
  *	None.
@@ -1341,8 +1341,7 @@ Tcl_ExternalToUtf(
  * Results:
  *	The converted bytes are stored in the DString, which is then NULL
  *	terminated in an encoding-specific manner. The return value is a
- *	pointer to the value stored in the DString resp. the index of the
- *	first erratic byte in 'src'.
+ *	pointer to the value stored in the DString.
  *
  * Side effects:
  *	None.
