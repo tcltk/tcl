@@ -1826,28 +1826,28 @@ DeleteInterpProc(
 	ckfree(hTablePtr);
     }
 
-    /*
-     * Invoke deletion callbacks; note that a callback can create new
-     * callbacks, so we iterate.
-     */
 
-    while (iPtr->assocData != NULL) {
+    if (iPtr->assocData != NULL) {
 	AssocData *dPtr;
 
 	hTablePtr = iPtr->assocData;
-	iPtr->assocData = NULL;
+	/*
+	 * Invoke deletion callbacks; note that a callback can create new
+	 * callbacks, so we iterate.
+	 */
 	for (hPtr = Tcl_FirstHashEntry(hTablePtr, &search);
 		hPtr != NULL;
 		hPtr = Tcl_FirstHashEntry(hTablePtr, &search)) {
 	    dPtr = (AssocData *)Tcl_GetHashValue(hPtr);
-	    Tcl_DeleteHashEntry(hPtr);
 	    if (dPtr->proc != NULL) {
 		dPtr->proc(dPtr->clientData, interp);
 	    }
+	    Tcl_DeleteHashEntry(hPtr);
 	    ckfree(dPtr);
 	}
 	Tcl_DeleteHashTable(hTablePtr);
 	ckfree(hTablePtr);
+	iPtr->assocData = NULL;
     }
 
     /*
@@ -3505,15 +3505,14 @@ Tcl_DeleteCommandFromToken(
     cmdPtr->flags |= CMD_DYING;
 
     /*
-     * Call trace functions for the command being deleted. Then delete its
-     * traces.
+     * Call each functions and then delete the trace.
      */
 
     cmdPtr->nsPtr->refCount++;
 
     if (cmdPtr->tracePtr != NULL) {
 	CommandTrace *tracePtr;
-	/* Note that CallCommandTraces() never frees cmdPtr, that's
+	/* CallCommandTraces() does not cmdPtr, that's
 	 * done just before Tcl_DeleteCommandFromToken() returns  */
 	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
 

@@ -1105,6 +1105,9 @@ Tcl_InitSubsystems(void)
 #endif
 	    STRINGIFY(__GNUC_MINOR__)
 #endif
+#if (defined(_WIN32) && !defined(_WIN64)) || (ULONG_MAX == 0xffffffffUL)
+	    ".ilp32"
+#endif
 #ifdef TCL_MEM_DEBUG
 	    ".memdebug"
 #endif

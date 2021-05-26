@@ -37,6 +37,7 @@ proc createChildProcess {ddeServerName args} {
     file delete -force $::scriptName
 
     set f [open $::scriptName w+]
+    fconfigure $f -encoding utf-8
     puts $f [list set ddeServerName $ddeServerName]
     puts $f [list load $::ddelib Dde]
     puts $f {
@@ -96,7 +97,7 @@ proc createChildProcess {ddeServerName args} {
 
     # run the child server script.
     set f [open |[list [interpreter] $::scriptName] r]
-    fconfigure $f -buffering line
+    fconfigure $f -buffering line -encoding utf-8
     gets $f line
     return $f
 }

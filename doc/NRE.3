@@ -40,7 +40,7 @@ void
 .AS Tcl_CmdDeleteProc *interp in
 .AP Tcl_Interp *interp in
 The relevant Interpreter.
-.AP char *cmdName in
+.AP "const char" *cmdName in
 Name of the command to create.
 .AP Tcl_ObjCmdProc *proc in
 Called in order to evaluate a command.  Is often just a small wrapper that uses
@@ -245,7 +245,7 @@ Use \fBTcl_NRAddCallback\fR to schedule any required final decrementing of the
 reference counts of arguments to any of the other functions on this page, as
 with any other post-processing step in the non-recursive execution engine.
 .PP
-The 
+The
 .SH "SEE ALSO"
 Tcl_CreateCommand(3), Tcl_CreateObjCommand(3), Tcl_EvalObjEx(3), Tcl_GetCommandFromObj(3), Tcl_ExprObj(3)
 .SH KEYWORDS
