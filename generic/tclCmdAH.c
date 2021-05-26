@@ -561,21 +561,26 @@ EncodingConvertfromObjCmd(
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
     } else if ((unsigned)(objc - 2) < 3) {
-	if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
-	    return TCL_ERROR;
-	}
 	data = objv[objc - 1];
-	if (objc > 3) {
-	    bytesPtr = Tcl_GetString(objv[1]);
-	    if (bytesPtr[0] == '-' && bytesPtr[1] == 'n'
-		    && !strncmp(bytesPtr, "-nothrow", strlen(bytesPtr))) {
-		flags = TCL_ENCODING_NO_THROW;
-	    } else if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
-		    && !strncmp(bytesPtr, "-stoponerror", strlen(bytesPtr))) {
-		flags = TCL_ENCODING_STOPONERROR;
-	    } else {
-		goto encConvFromError;
+	bytesPtr = Tcl_GetString(objv[1]);
+	if (bytesPtr[0] == '-' && bytesPtr[1] == 'n'
+		&& !strncmp(bytesPtr, "-nothrow", strlen(bytesPtr))) {
+	    flags = TCL_ENCODING_NO_THROW;
+	} else if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
+		&& !strncmp(bytesPtr, "-stoponerror", strlen(bytesPtr))) {
+	    flags = TCL_ENCODING_STOPONERROR;
+	} else if (objc < 4) {
+	    if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
+		return TCL_ERROR;
 	    }
+	    goto encConvFromOK;
+	} else {
+	    goto encConvFromError;
+	}
+	if (objc < 4) {
+	    encoding = Tcl_GetEncoding(interp, NULL);
+	} else if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
+	    return TCL_ERROR;
 	}
     } else {
     encConvFromError:
@@ -583,16 +588,18 @@ EncodingConvertfromObjCmd(
 	return TCL_ERROR;
     }
 
+encConvFromOK:
     /*
      * Convert the string into a byte array in 'ds'
      */
-    if (flags & TCL_ENCODING_STOPONERROR) {
-	bytesPtr = (char *) TclGetBytesFromObj(interp, data, &length);
-	if (bytesPtr == NULL) {
-	    return TCL_ERROR;
-	}
-    } else {
+#if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
+    if (!(flags & TCL_ENCODING_STOPONERROR)) {
 	bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
+    } else
+#endif
+    bytesPtr = (char *) TclGetBytesFromObj(interp, data, &length);
+    if (bytesPtr == NULL) {
+	return TCL_ERROR;
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
@@ -660,21 +667,26 @@ EncodingConverttoObjCmd(
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
     } else if ((unsigned)(objc - 2) < 3) {
-	if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
-	    return TCL_ERROR;
-	}
 	data = objv[objc - 1];
-	if (objc > 3) {
-	    stringPtr = Tcl_GetString(objv[1]);
-	    if (stringPtr[0] == '-' && stringPtr[1] == 'n'
-		    && !strncmp(stringPtr, "-nothrow", strlen(stringPtr))) {
-		flags = TCL_ENCODING_NO_THROW;
-	    } else if (stringPtr[0] == '-' && stringPtr[1] == 's'
-		    && !strncmp(stringPtr, "-stoponerror", strlen(stringPtr))) {
-		flags = TCL_ENCODING_STOPONERROR;
-	    } else {
-		goto encConvToError;
+	stringPtr = Tcl_GetString(objv[1]);
+	if (stringPtr[0] == '-' && stringPtr[1] == 'n'
+		&& !strncmp(stringPtr, "-nothrow", strlen(stringPtr))) {
+	    flags = TCL_ENCODING_NO_THROW;
+	} else if (stringPtr[0] == '-' && stringPtr[1] == 's'
+		&& !strncmp(stringPtr, "-stoponerror", strlen(stringPtr))) {
+	    flags = TCL_ENCODING_STOPONERROR;
+	} else if (objc < 4) {
+	    if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
+		return TCL_ERROR;
 	    }
+	    goto encConvToOK;
+	} else {
+	    goto encConvToError;
+	}
+	if (objc < 4) {
+	    encoding = Tcl_GetEncoding(interp, NULL);
+	} else if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
+	    return TCL_ERROR;
 	}
     } else {
     encConvToError:
@@ -682,6 +694,7 @@ EncodingConverttoObjCmd(
 	return TCL_ERROR;
     }
 
+encConvToOK:
     /*
      * Convert the string to a byte array in 'ds'
      */
