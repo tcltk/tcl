@@ -1093,7 +1093,7 @@ Tcl_CreateEncoding(
 /*
  *-------------------------------------------------------------------------
  *
- * Tcl_ExternalToUtfDString/Tcl_ExternalToUtfDStringEx --
+ * Tcl_ExternalToUtfDString --
  *
  *	Convert a source buffer from the specified encoding into UTF-8. If any
  *	of the bytes in the source buffer are invalid or cannot be represented
@@ -1125,6 +1125,35 @@ Tcl_ExternalToUtfDString(
     return Tcl_DStringValue(dstPtr);
 }
 
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Tcl_ExternalToUtfDStringEx --
+ *
+ *	Convert a source buffer from the specified encoding into UTF-8.
+*	The parameter flags controls the behavior, if any of the bytes in
+ *	the source buffer are invalid or cannot be represented in utf-8.
+ *	Possible flags values:
+ *	TCLENCODINGSTOPONERROR: don't replace invalid characters/bytes but
+ *	return the first error position (Default in Tcl 9.0).
+ *	TCLENCODINGNO_THROW: replace invalid characters/bytes by a default
+ *	fallback character. Always return -1 (Default in Tcl 8.7).
+ *	TCLENCODINGMODIFIED: convert NULL bytes to \xC0\x80 in stead of 0x00.
+ *	Only valid for "utf-8" and "cesu-8". This flag may be used together
+ *	with the other flags.
+ *
+ * Results:
+ *	The converted bytes are stored in the DString, which is then NULL
+ *	terminated in an encoding-specific manner. The return value is
+ *	the error position in the source string or -1 if no conversion error
+ *	is reported.
+  *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 size_t
 Tcl_ExternalToUtfDStringEx(
@@ -1303,7 +1332,7 @@ Tcl_ExternalToUtf(
 /*
  *-------------------------------------------------------------------------
  *
- * Tcl_UtfToExternalDString/Tcl_UtfToExternalDStringEx --
+ * Tcl_UtfToExternalDString --
  *
  *	Convert a source buffer from UTF-8 to the specified encoding. If any
  *	of the bytes in the source buffer are invalid or cannot be represented
@@ -1334,6 +1363,37 @@ Tcl_UtfToExternalDString(
     Tcl_UtfToExternalDStringEx(encoding, src, srcLen, 0, dstPtr);
     return Tcl_DStringValue(dstPtr);
 }
+
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Tcl_UtfToExternalDStringEx --
+ *
+ *	Convert a source buffer from UTF-8 to the specified encoding.
+ *	The parameter flags controls the behavior, if any of the bytes in
+ *	the source buffer are invalid or cannot be represented in the
+ *	target encoding.
+ *	Possible flags values:
+ *	TCLENCODINGSTOPONERROR: don't replace invalid characters/bytes but
+ *	return the first error position (Default in Tcl 9.0).
+ *	TCLENCODINGNO_THROW: replace invalid characters/bytes by a default
+ *	fallback character. Always return -1 (Default in Tcl 8.7).
+ *	TCLENCODINGMODIFIED: convert NULL bytes to \xC0\x80 in stead of 0x00.
+ *	Only valid for "utf-8" and "cesu-8". This flag may be used together
+ *	with the other flags.
+ *
+ * Results:
+ *	The converted bytes are stored in the DString, which is then NULL
+ *	terminated in an encoding-specific manner. The return value is
+ *	the error position in the source string or -1 if no conversion error
+ *	is reported.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 size_t
 Tcl_UtfToExternalDStringEx(
