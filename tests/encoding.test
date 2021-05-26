@@ -627,6 +627,12 @@ test encoding-24.19 {Parse valid or invalid utf-8} -constraints testbytestring -
 test encoding-24.20 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto -stoponerror utf-8 "ZX\uD800"
 } -returnCodes 1 -match glob -result "unexpected character at index 2: 'U+00D800'"
+test encoding-24.21 {Parse with -nothrow but without providing encoding} {
+    string length [encoding convertfrom -nothrow "\x20"]
+} 1
+test encoding-24.22 {Parse with -nothrow but without providing encoding} {
+    string length [encoding convertto -nothrow "\x20"]
+} 1
 file delete [file join [temporaryDirectory] iso2022.txt]
 
 #
