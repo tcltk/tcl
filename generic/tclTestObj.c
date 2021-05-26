@@ -54,14 +54,13 @@ static Tcl_ObjCmdProc	TeststringobjCmd;
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
 
-static void VarPtrDeleteProc(void *clientData, Tcl_Interp *interp)
+static void VarPtrDeleteProc(void *clientData, TCL_UNUSED(Tcl_Interp *))
 {
     int i;
     Tcl_Obj **varPtr = (Tcl_Obj **) clientData;
     for (i = 0;  i < NUMBER_OF_OBJECT_VARS;  i++) {
 	if (varPtr[i]) Tcl_DecrRefCount(varPtr[i]);
     }
-    Tcl_DeleteAssocData(interp, VARPTR_KEY);
     ckfree(varPtr);
 }
 

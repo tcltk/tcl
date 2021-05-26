@@ -33,6 +33,7 @@ testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
 testConstraint utf16 [expr {[string length \U010000] == 2}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
+testConstraint nodep [info exists tcl_precision]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -72,9 +73,9 @@ if {$noComp} {
 }
 
 
-test string-1.1.$noComp {error conditions} {
+test string-1.1.$noComp {error conditions} -body {
     list [catch {run {string gorp a b}} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -match glob -result {1 {unknown or ambiguous subcommand "gorp": must be *cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2.$noComp {error conditions} {
     list [catch {run {string}} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -525,10 +526,10 @@ test string-6.4.$noComp {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5.$noComp {string is, class check} {
     list [catch {run {string is bogus str}} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, unicode, wideinteger, wordchar, or xdigit}}
 test string-6.6.$noComp {string is, ambiguous class} {
     list [catch {run {string is al str}} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, unicode, wideinteger, wordchar, or xdigit}}
 test string-6.7.$noComp {string is alpha, all ok} {
     run {string is alpha -strict -failindex var abc}
 } 1
@@ -961,6 +962,28 @@ test string-6.130.1.$noComp {string is entier, false on bad octal} {
 test string-6.131.$noComp {string is entier, false on bad hex} {
     list [run {string is entier -fail var 0X12345611234123456123456562345612345612345612345612345612345612345612345612345612345345XYZ}] $var
 } {0 88}
+test string-6.132.$noComp {string is unicode} {
+    run {string is unicode \U10FFFD\uD7FF\uE000\uFDCF\uFDF0}
+} 1
+test string-6.133.$noComp {string is unicode, upper surrogate} {
+    run {string is unicode \uD800}
+} 0
+test string-6.134.$noComp {string is unicode, lower surrogate} {
+    run {string is unicode \uDFFF}
+} 0
+test string-6.135.$noComp {string is unicode, noncharacter} {
+    run {string is unicode \uFFFE}
+} 0
+test string-6.136.$noComp {string is unicode, noncharacter} {
+    run {string is unicode \uFFFF}
+} 0
+test string-6.137.$noComp {string is unicode, noncharacter} {
+    run {string is unicode \uFDD0}
+} 0
+test string-6.138.$noComp {string is unicode, noncharacter} {
+    run {string is unicode \uFDEF}
+} 0
+
 
 test string-7.1.$noComp {string last, not enough args} {
     list [catch {run {string last a}} msg] $msg
@@ -1013,16 +1036,16 @@ test string-7.16.$noComp {string last, start index} {
     run {string last Üa ÜadÜad end-1}
 } 3
 
-test string-8.1.$noComp {string bytelength} {
+test string-8.1.$noComp {string bytelength} nodep {
     list [catch {run {string bytelength}} msg] $msg
 } {1 {wrong # args: should be "string bytelength string"}}
-test string-8.2.$noComp {string bytelength} {
+test string-8.2.$noComp {string bytelength} nodep {
     list [catch {run {string bytelength a b}} msg] $msg
 } {1 {wrong # args: should be "string bytelength string"}}
-test string-8.3.$noComp {string bytelength} {
+test string-8.3.$noComp {string bytelength} nodep {
     run {string bytelength "\xC7"}
 } 2
-test string-8.4.$noComp {string bytelength} {
+test string-8.4.$noComp {string bytelength} nodep {
     run {string b ""}
 } 0
 
@@ -1817,9 +1840,9 @@ test string-19.3.$noComp {string trimleft, unicode default} {
 test string-20.1.$noComp {string trimright errors} {
     list [catch {run {string trimright}} msg] $msg
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
-test string-20.2.$noComp {string trimright errors} {
+test string-20.2.$noComp {string trimright errors} -body {
     list [catch {run {string trimg a}} msg] $msg
-} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -match glob -result {1 {unknown or ambiguous subcommand "trimg": must be *cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3.$noComp {string trimright} {
     run {string trimright "    XYZ      "}
 } {    XYZ}
@@ -1939,7 +1962,7 @@ test string-21.25.$noComp {string trimright, unicode} {
 
 test string-22.1.$noComp {string wordstart} -body {
     list [catch {run {string word a}} msg] $msg
-} -result {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -match glob -result {1 {unknown or ambiguous subcommand "word": must be *cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2.$noComp {string wordstart} -body {
     list [catch {run {string wordstart a}} msg] $msg
 } -result {1 {wrong # args: should be "string wordstart string index"}}
