@@ -209,7 +209,7 @@ TCL_LIB_FLAG		= @TCL_LIB_FLAG@
 #TCL_LIB_FLAG		= -ltcl
 
 # support for embedded libraries on Darwin / Mac OS X
-DYLIB_INSTALL_DIR	= ${LIB_RUNTIME_DIR}
+DYLIB_INSTALL_DIR	= $(libdir)
 
 #--------------------------------------------------------------------------
 # The information below is modified by the configure script when Makefile is
@@ -268,6 +268,7 @@ TRACE_OPTS		=
 VALGRIND		= valgrind
 VALGRINDARGS		= --tool=memcheck --num-callers=24 \
 	--leak-resolution=high --leak-check=yes --show-reachable=yes -v \
+	--keep-debuginfo=yes \
 	--suppressions=$(TOOL_DIR)/valgrind_suppress
 
 #--------------------------------------------------------------------------
