@@ -9256,15 +9256,41 @@ in this changeset (new minor version) rather than bug fixes:
 
 2019-12-13 [TIP 538] Externalize libtommath
 
-2020-01-20 [TIP 542]
+2020-01-20 [TIP 542] Support for switchable Full Unicode support
 
-2020-01-21 [TIP 543]
+2020-01-21 [TIP 543] Eliminate `TCL_INTERP_DESTROYED` flag value
 
-2020-01-24 [TIP 559]
+2020-01-24 [TIP 559] Eliminate public routine `Tcl_FreeResult
 
-2020-02-28 [TIP 557]
+2020-02-28 [TIP 557] C++ support for Tcl
 
-2020-02-28 [TIP 562]
+2020-02-28 [TIP 562] Deprecate channel types 1-4
+
+2020-03-13 [TIP 569] Eliminate Comments That Serve Lint
+
+2020-05-23 [TIP 551] Permit underscore in numerical literals in source code
+
+2020-07-03 [TIP 578] Death to TCL_DBGX
+
+2020-09-13 [TIP 585] Promote the INDEX_TEMP_TABLE flag of Tcl_GetIndexFromObj*() to the public interface
+
+2020-10-23 [TIP 587] Default utf-8 for source command
+
+2020-11-08 [TIP 582] Comments in Expressions
+
+2020-11-16 [TIP 586] C String Parsing Support for binary scan
+
+2020-12-07 [TIP 590] Recommend lowercase Package Names
+
+2021-01-15 [TIP 481] `Tcl_GetStringFromObj()` with `size_t` length parameter
+
+2021-01-15 [TIP 592] Stop support for Windows XP, Server 2003, Vista, Server 2008
+
+2021-03-15 [TIP 575] Switchable Tcl_UtfCharComplete()/Tcl_UtfNext()/Tcl_UtfPrev()
+
+2021-04-30 [TIP 597] "string is unicode" and better utf-8/utf-16/cesu-8 encodings
+
+2021-04-09 [TIP 598] export TclWinConvertError
 
 
 
