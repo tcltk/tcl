@@ -9262,15 +9262,25 @@ in this changeset (new minor version) rather than bug fixes:
 
 2020-01-24 [TIP 559] Eliminate public routine `Tcl_FreeResult
 
+2020-01-31 (new) Implement 64-bit seek on Zip channels. (nijtmans)
+
 2020-02-28 [TIP 557] C++ support for Tcl
 
 2020-02-28 [TIP 562] Deprecate channel types 1-4
 
+2020-03-11 (bug)[234d6c] Segfault in [set l {}; lpop l] (sebres)
+
+2020-03-12 (bug) Crash in tests binary-79.[12] (porter)
+
 2020-03-13 [TIP 569] Eliminate Comments That Serve Lint
 
-2020-05-23 [TIP 551] Permit underscore in numerical literals in source code
+2020-04-06 (bug)[dd010c] [string trim*] on astral characters (porter,nijtmans)
+
+2020-05-30 [TIP 551] Permit underscore in numerical literals in source code
 
 2020-07-03 [TIP 578] Death to TCL_DBGX
+
+2020-08-11 (bug)[e87000] Win32 crash in [fconfigure stdout] (werner,nijtmans)
 
 2020-09-13 [TIP 585] Promote the INDEX_TEMP_TABLE flag of Tcl_GetIndexFromObj*() to the public interface
 
@@ -9291,9 +9301,6 @@ in this changeset (new minor version) rather than bug fixes:
 2021-04-30 [TIP 597] "string is unicode" and better utf-8/utf-16/cesu-8 encodings
 
 2021-04-09 [TIP 598] export TclWinConvertError
-
-
-
 
 
 
