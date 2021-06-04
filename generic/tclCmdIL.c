@@ -1241,7 +1241,7 @@ TclInfoFrame(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *tmpObj;
-    Tcl_Obj *lv[20];		/* Keep uptodate when more keys are added to
+    Tcl_Obj *lv[20] = {NULL};		/* Keep uptodate when more keys are added to
 				 * the dict. */
     int lc = 0;
     /*
