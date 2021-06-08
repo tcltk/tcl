@@ -1786,7 +1786,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	    Darwin-*) ;;
 	    IRIX*) ;;
 	    Linux*|GNU*) ;;
-	    NetBSD-*|DragonFly-*|FreeBSD-*|OpenBSD-*) ;;
+	    NetBSD-*|OpenBSD-*) ;;
 	    OSF1-V*) ;;
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
