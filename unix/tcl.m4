@@ -1782,12 +1782,12 @@ dnl # preprocessing tests use only CPPFLAGS.
 	    AIX-*) ;;
 	    BSD/OS*) ;;
 	    CYGWIN_*|MINGW32_*|MSYS_*) ;;
-	    HP_UX*) ;;
+	    HP-UX*) ;;
 	    Darwin-*) ;;
 	    IRIX*) ;;
 	    Linux*|GNU*) ;;
-	    NetBSD-*|DragonFly-*|FreeBSD-*|OpenBSD-*) ;;
-	    OSF1-V*) ;;
+	    NetBSD-*|OpenBSD-*) ;;
+	    OSF1-*) ;;
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
 	esac])
