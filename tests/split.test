@@ -49,20 +49,20 @@ test split-1.8 {basic split commands} {
 } {]\n}
 test split-1.9 {basic split commands} {
     proc foo {} {
-        set x ab\000c
+        set x ab\x00c
         set y [split $x {}]
         return $y
     }
     foo
-} "a b \000 c"
+} "a b \x00 c"
 test split-1.10 {basic split commands} {
-    split "a0ab1b2bbb3\000c4" ab\000c
+    split "a0ab1b2bbb3\x00c4" ab\x00c
 } {{} 0 {} 1 2 {} {} 3 {} 4}
 test split-1.11 {basic split commands} {
     split "12,3,45" {,}
 } {12 3 45}
 test split-1.12 {basic split commands} {
-    split "\u0001ab\u0001cd\u0001\u0001ef\u0001" \1
+    split "\x01ab\x01cd\x01\x01ef\x01" \x01
 } {{} ab cd {} ef {}}
 test split-1.13 {basic split commands} {
     split "12,34,56," {,}
@@ -71,10 +71,10 @@ test split-1.14 {basic split commands} {
     split ",12,,,34,56," {,}
 } {{} 12 {} {} 34 56 {}}
 test split-1.15 {basic split commands} -body {
-    split "a\U1F4A9b" {}
-} -result "a \U1F4A9 b"
+    split "a💩b" {}
+} -result "a 💩 b"
 test split-1.16 {basic split commands} -body {
-    split "a\U1F4A9b" \U1F4A9
+    split "a💩b" 💩
 } -result "a b"
 
 test split-2.1 {split errors} {

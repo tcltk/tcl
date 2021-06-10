@@ -65,15 +65,22 @@
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
-#undef TclStaticPackage
+#undef TclStaticLibrary
 #undef Tcl_BackgroundError
 #undef TclGuessPackageName
 #undef TclGetLoadedPackages
-#define TclStaticPackage Tcl_StaticPackage
+#define TclStaticLibrary Tcl_StaticLibrary
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
 #undef Tcl_MacOSXOpenBundleResources
+#undef TclWinConvertWSAError
+#undef TclWinConvertError
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define TclWinConvertWSAError (void (*)(DWORD))(void *)Tcl_WinConvertError
+#define TclWinConvertError (void (*)(DWORD))(void *)Tcl_WinConvertError
+#endif
+
 
 #if TCL_UTF_MAX > 3
 static void uniCodePanic(void) {
@@ -89,6 +96,32 @@ static void uniCodePanic(void) {
 #   define Tcl_UniCharLen (int(*)(const Tcl_UniChar *))(void *)uniCodePanic
 #   define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long))(void *)uniCodePanic
 #endif
+
+#define TclUtfCharComplete UtfCharComplete
+#define TclUtfNext UtfNext
+#define TclUtfPrev UtfPrev
+
+static int TclUtfCharComplete(const char *src, int length) {
+    if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
+	return length < 3;
+    }
+    return Tcl_UtfCharComplete(src, length);
+}
+
+static const char *TclUtfNext(const char *src) {
+    if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
+	return src + 1;
+    }
+    return Tcl_UtfNext(src);
+}
+
+static const char *TclUtfPrev(const char *src, const char *start) {
+    if ((src >= start + 3) && ((src[-1] & 0xC0) == 0x80)
+	    && ((src[-2] & 0xC0) == 0x80) && ((src[-3] & 0xC0) == 0x80)) {
+	return src - 3;
+    }
+    return Tcl_UtfPrev(src, start);
+}
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_and mp_and
@@ -142,7 +175,7 @@ static void uniCodePanic(void) {
 #define TclBN_mp_xor mp_xor
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
-#define TclBN_s_mp_balance_mul mp_balance_mul
+#define TclBN_s_mp_balance_mul s_mp_balance_mul
 #define TclBN_mp_karatsuba_mul s_mp_karatsuba_mul
 #define TclBN_mp_karatsuba_sqr s_mp_karatsuba_sqr
 #define TclBN_s_mp_mul_digs s_mp_mul_digs
@@ -266,6 +299,8 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define Tcl_MacOSXOpenBundleResources 0
 #   define TclGuessPackageName 0
 #   define TclGetLoadedPackages 0
+#   undef TclSetPreInitScript
+#   define TclSetPreInitScript 0
 #else
 
 #define TclGuessPackageName guessPackageName
@@ -283,7 +318,7 @@ static int TclGetLoadedPackages(
 				 * otherwise, just return info about this
 				 * interpreter. */
 {
-    return TclGetLoadedPackagesEx(interp, targetName, NULL);
+    return TclGetLoadedLibraries(interp, targetName, NULL);
 }
 
 mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
@@ -602,8 +637,6 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define Tcl_Eval 0
 #   undef Tcl_GlobalEval
 #   define Tcl_GlobalEval 0
-#   undef Tcl_GetStringResult
-#   define Tcl_GetStringResult 0
 #   undef Tcl_SaveResult
 #   define Tcl_SaveResult 0
 #   undef Tcl_RestoreResult
@@ -1006,7 +1039,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
-    TclStaticPackage, /* 257 */
+    TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
     TclGetBytesFromObj, /* 259 */
     TclUnusedStubEntry, /* 260 */
@@ -1122,6 +1155,8 @@ static const TclPlatStubs tclPlatStubs = {
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
+    0, /* 2 */
+    Tcl_WinConvertError, /* 3 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
@@ -1493,7 +1528,7 @@ const TclStubs tclStubs = {
     Tcl_SourceRCFile, /* 241 */
     Tcl_SplitList, /* 242 */
     Tcl_SplitPath, /* 243 */
-    Tcl_StaticPackage, /* 244 */
+    Tcl_StaticLibrary, /* 244 */
     Tcl_StringMatch, /* 245 */
     Tcl_TellOld, /* 246 */
     Tcl_TraceVar, /* 247 */
@@ -1575,12 +1610,12 @@ const TclStubs tclStubs = {
     Tcl_UniCharToUpper, /* 323 */
     Tcl_UniCharToUtf, /* 324 */
     Tcl_UtfAtIndex, /* 325 */
-    Tcl_UtfCharComplete, /* 326 */
+    TclUtfCharComplete, /* 326 */
     Tcl_UtfBackslash, /* 327 */
     Tcl_UtfFindFirst, /* 328 */
     Tcl_UtfFindLast, /* 329 */
-    Tcl_UtfNext, /* 330 */
-    Tcl_UtfPrev, /* 331 */
+    TclUtfNext, /* 330 */
+    TclUtfPrev, /* 331 */
     Tcl_UtfToExternal, /* 332 */
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
@@ -1903,6 +1938,10 @@ const TclStubs tclStubs = {
     TclGetStringFromObj, /* 651 */
     TclGetUnicodeFromObj, /* 652 */
     TclGetByteArrayFromObj, /* 653 */
+    Tcl_UtfCharComplete, /* 654 */
+    Tcl_UtfNext, /* 655 */
+    Tcl_UtfPrev, /* 656 */
+    Tcl_UniCharIsUnicode, /* 657 */
 };
 
 /* !END!: Do not edit above this line. */

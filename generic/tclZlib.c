@@ -3957,7 +3957,7 @@ TclZlibInit(
      * Formally provide the package as a Tcl built-in.
      */
 
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
     Tcl_PkgProvide(interp, "zlib", TCL_ZLIB_VERSION);
 #endif
     return Tcl_PkgProvide(interp, "tcl::zlib", TCL_ZLIB_VERSION);
