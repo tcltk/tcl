@@ -3524,7 +3524,7 @@ test interp-35.19 {interp limit syntax} -body {
     interp limit $i time -seconds -1
 } -cleanup {
     interp delete $i
-} -returnCodes error -result {seconds must be at least 0}
+} -match glob -returnCodes error -result {seconds must be between 0 and *}
 test interp-35.20 {interp limit syntax} -body {
     set i [interp create]
     interp limit $i time -millis foobar
@@ -3536,7 +3536,7 @@ test interp-35.21 {interp limit syntax} -body {
     interp limit $i time -millis -1
 } -cleanup {
     interp delete $i
-} -returnCodes error -result {milliseconds must be at least 0}
+} -match glob -returnCodes error -result {milliseconds must be between 0 and *}
 test interp-35.22 {interp time limits normalize milliseconds} -body {
     set i [interp create]
     interp limit $i time -seconds 1 -millis 1500

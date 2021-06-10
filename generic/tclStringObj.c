@@ -70,6 +70,11 @@ static void		SetUnicodeObj(Tcl_Obj *objPtr,
 static int		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 
+#define ISCONTINUATION(bytes) (\
+	((((bytes)[0] & 0xC0) == 0x80) || (((bytes)[0] == '\xED') \
+	&& (((bytes)[1] & 0xF0) == 0xB0) && (((bytes)[2] & 0xC0) == 0x80))))
+
+
 /*
  * The structure below defines the string Tcl object type by means of
  * functions that can be invoked by generic object code.
@@ -1199,10 +1204,10 @@ Tcl_AppendLimitedToObj(
 	}
 	eLen = strlen(ellipsis);
 	while (eLen > limit) {
-	    eLen = TclUtfPrev(ellipsis+eLen, ellipsis) - ellipsis;
+	    eLen = Tcl_UtfPrev(ellipsis+eLen, ellipsis) - ellipsis;
 	}
 
-	toCopy = TclUtfPrev(bytes+limit+1-eLen, bytes) - bytes;
+	toCopy = Tcl_UtfPrev(bytes+limit+1-eLen, bytes) - bytes;
     }
 
     /*
@@ -1218,6 +1223,12 @@ Tcl_AppendLimitedToObj(
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
+    /* If appended string starts with a continuation byte or a lower surrogate,
+     * force objPtr to unicode representation. See [7f1162a867] */
+    if (bytes && ISCONTINUATION(bytes)) {
+	Tcl_GetUnicode(objPtr);
+	stringPtr = GET_STRING(objPtr);
+    }
     if (stringPtr->hasUnicode && stringPtr->numChars > 0) {
 	AppendUtfToUnicodeRep(objPtr, bytes, toCopy);
     } else {
@@ -1415,6 +1426,13 @@ Tcl_AppendObjToObj(
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
+    /* If appended string starts with a continuation byte or a lower surrogate,
+     * force objPtr to unicode representation. See [7f1162a867]
+     * This fixes append-3.4, append-3.7 and utf-1.18 testcases. */
+    if (ISCONTINUATION(TclGetString(appendObjPtr))) {
+	Tcl_GetUnicode(objPtr);
+	stringPtr = GET_STRING(objPtr);
+    }
     /*
      * If objPtr has a valid Unicode rep, then get a Unicode string from
      * appendObjPtr and append it.
@@ -2644,7 +2662,7 @@ AppendPrintfToObjVA(
 		 * multi-byte characters.
 		 */
 
-		q = TclUtfPrev(end, bytes);
+		q = Tcl_UtfPrev(end, bytes);
 		if (!Tcl_UtfCharComplete(q, (int)(end - q))) {
 		    end = q;
 		}
@@ -3032,7 +3050,7 @@ TclStringCat(
 {
     Tcl_Obj *objResultPtr, * const *ov;
     int oc, length = 0, binary = 1;
-    int allowUniChar = 1, requestUniChar = 0;
+    int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
     int first = objc - 1;	/* Index of first value possibly not empty */
     int last = 0;		/* Index of last value possibly not empty */
     int inPlace = flags & TCL_STRING_IN_PLACE;
@@ -3068,7 +3086,9 @@ TclStringCat(
 		 */
 
 	 	binary = 0;
-		if ((objPtr->typePtr) && (objPtr->typePtr != &tclStringType)) {
+	 	if (ov > objv+1 && ISCONTINUATION(TclGetString(objPtr))) {
+	 	    forceUniChar = 1;
+	 	} else if ((objPtr->typePtr) && (objPtr->typePtr != &tclStringType)) {
 		    /* Prevent shimmer of non-string types. */
 		    allowUniChar = 0;
 		}
@@ -3117,7 +3137,7 @@ TclStringCat(
 		}
 	    }
 	} while (--oc);
-    } else if (allowUniChar && requestUniChar) {
+    } else if ((allowUniChar && requestUniChar) || forceUniChar) {
 	/*
 	 * Result will be pure Tcl_UniChar array. Pre-size it.
 	 */
@@ -3270,7 +3290,7 @@ TclStringCat(
 		dst += more;
 	    }
 	}
-    } else if (allowUniChar && requestUniChar) {
+    } else if ((allowUniChar && requestUniChar) || forceUniChar) {
 	/* Efficiently produce a pure Tcl_UniChar array result */
 	Tcl_UniChar *dst;
 
@@ -3456,7 +3476,7 @@ TclStringCmp(
 		    s1 = (char *) Tcl_GetUnicode(value1Ptr);
 		    s2 = (char *) Tcl_GetUnicode(value2Ptr);
 		    if (
-#ifdef WORDS_BIGENDIAN
+#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
 			    1
 #else
 			    checkEq
@@ -3809,6 +3829,9 @@ TclStringReverse(
     String *stringPtr;
     Tcl_UniChar ch = 0;
     int inPlace = flags & TCL_STRING_IN_PLACE;
+#if TCL_UTF_MAX < 4
+    int needFlip = 0;
+#endif
 
     if (TclIsPureByteArray(objPtr)) {
 	int numBytes;
@@ -3826,11 +3849,11 @@ TclStringReverse(
 
     if (stringPtr->hasUnicode) {
 	Tcl_UniChar *from = Tcl_GetUnicode(objPtr);
+	stringPtr = GET_STRING(objPtr);
 	Tcl_UniChar *src = from + stringPtr->numChars;
+	Tcl_UniChar *to;
 
 	if (!inPlace || Tcl_IsShared(objPtr)) {
-	    Tcl_UniChar *to;
-
 	    /*
 	     * Create a non-empty, pure unicode value, so we can coax
 	     * Tcl_SetObjLength into growing the unicode rep buffer.
@@ -3839,20 +3862,56 @@ TclStringReverse(
 	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
 	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
 	    to = Tcl_GetUnicode(objPtr);
+	    stringPtr = GET_STRING(objPtr);
 	    while (--src >= from) {
+#if TCL_UTF_MAX < 4
+		ch = *src;
+		if ((ch & 0xF800) == 0xD800) {
+		    needFlip = 1;
+		}
+		*to++ = ch;
+#else
 		*to++ = *src;
+#endif
 	    }
 	} else {
 	    /*
 	     * Reversing in place.
 	     */
 
+#if TCL_UTF_MAX < 4
+	    to = src;
+#endif
 	    while (--src > from) {
 		ch = *src;
+#if TCL_UTF_MAX < 4
+		if ((ch & 0xF800) == 0xD800) {
+		    needFlip = 1;
+		}
+#endif
 		*src = *from;
 		*from++ = ch;
 	    }
 	}
+#if TCL_UTF_MAX < 4
+	if (needFlip) {
+	    /*
+	     * Flip back surrogate pairs.
+	     */
+
+	    from = to - stringPtr->numChars;
+	    while (--to >= from) {
+		ch = *to;
+		if ((ch & 0xFC00) == 0xD800) {
+		    if ((to-1 >= from) && ((to[-1] & 0xFC00) == 0xDC00)) {
+			to[0] = to[-1];
+			to[-1] = ch;
+			--to;
+		    }
+		}
+	    }
+	}
+#endif
     }
 
     if (objPtr->bytes) {
@@ -3876,8 +3935,8 @@ TclStringReverse(
 	     * Pass 1. Reverse the bytes of each multi-byte character.
 	     */
 
-	    int charCount = 0;
 	    int bytesLeft = numBytes;
+	    int chw;
 
 	    while (bytesLeft) {
 		/*
@@ -3886,18 +3945,16 @@ TclStringReverse(
 		 * skip calling Tcl_UtfCharComplete() here.
 		 */
 
-		int bytesInChar = TclUtfToUniChar(from, &ch);
+		int bytesInChar = TclUtfToUCS4(from, &chw);
 
 		ReverseBytes((unsigned char *)to, (unsigned char *)from,
 			bytesInChar);
 		to += bytesInChar;
 		from += bytesInChar;
 		bytesLeft -= bytesInChar;
-		charCount++;
 	    }
 
 	    from = to = objPtr->bytes;
-	    stringPtr->numChars = charCount;
 	}
 	/* Pass 2. Reverse all the bytes. */
 	ReverseBytes((unsigned char *)to, (unsigned char *)from, numBytes);
@@ -4110,9 +4167,22 @@ ExtendUnicodeRepWithString(
     } else {
 	numAppendChars = 0;
     }
-    for (dst=stringPtr->unicode + numOrigChars; numAppendChars-- > 0; dst++) {
+    dst = stringPtr->unicode + numOrigChars;
+    if (numAppendChars-- > 0) {
 	bytes += TclUtfToUniChar(bytes, &unichar);
-	*dst = unichar;
+#if TCL_UTF_MAX > 3
+	/* join upper/lower surrogate */
+	if (bytes && (stringPtr->unicode[numOrigChars - 1] | 0x3FF) == 0xDBFF && (unichar | 0x3FF) == 0xDFFF) {
+		stringPtr->numChars--;
+		unichar = ((stringPtr->unicode[numOrigChars - 1] & 0x3FF) << 10) + (unichar & 0x3FF) + 0x10000;
+		dst--;
+	}
+#endif
+	*dst++ = unichar;
+	while (numAppendChars-- > 0) {
+	    bytes += TclUtfToUniChar(bytes, &unichar);
+	    *dst++ = unichar;
+	}
     }
     *dst = 0;
 }

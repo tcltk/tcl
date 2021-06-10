@@ -54,7 +54,7 @@ const char *
 .AS Tcl_CmdDeleteProc *deleteProc in/out
 .AP Tcl_Interp *interp in
 Interpreter in which to create a new command or that contains a command.
-.AP char *cmdName in
+.AP "const char" *cmdName in
 Name of command.
 .AP Tcl_ObjCmdProc *proc in
 Implementation of the new command: \fIproc\fR will be called whenever
@@ -323,6 +323,21 @@ instead. The result from \fBTcl_GetCommandTypeName\fR will be exactly that
 string which was registered, and not a copy; use of a compile-time constant
 string is \fIstrongly recommended\fR.
 .VE "info cmdtype feature"
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+When the \fIproc\fR passed to \fBTcl_CreateObjCommand\fR is called,
+the values in its \fIobjv\fR argument will have a reference count of
+at least 1, with that guaranteed reference being from the Tcl
+evaluation stack. You should not call \fBTcl_DecrRefCount\fR on any of
+those values unless you call \fBTcl_IncrRefCount\fR on them first.
+Also, when the \fIproc\fR is called, the interpreter result is
+guaranteed to be an empty string value with a reference count of 1.
+.PP
+\fBTcl_GetCommandFullName\fR does not modify the reference count of its
+\fIobjPtr\fR argument, but does require that the object be unshared.
+.PP
+\fBTcl_GetCommandFromObj\fR does not modify the reference count of its
+\fIobjPtr\fR argument; it only reads.
 .SH "SEE ALSO"
 Tcl_CreateCommand(3), Tcl_ResetResult(3), Tcl_SetObjResult(3)
 .SH KEYWORDS

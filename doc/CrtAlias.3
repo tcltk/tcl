@@ -243,8 +243,16 @@ any script evaluation mechanism will fail.
 .PP
 For a description of the Tcl interface to multiple interpreters, see
 \fIinterp(n)\fR.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_CreateAliasObj\fR increments the reference counts of the values
+in its \fIobjv\fR argument. (That reference lasts the same length of
+time as the owning alias.)
+.PP
+\fBTcl_GetAliasObj\fR returns (via its \fIobjvPtr\fR argument) a
+pointer to values that it holds a reference to.
 .SH "SEE ALSO"
-interp
+interp(n)
 
 .SH KEYWORDS
 alias, command, exposed commands, hidden commands, interpreter, invoke,

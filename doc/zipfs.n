@@ -84,7 +84,7 @@ Return a list of all files in the mounted zipfs, or just those matching
 \fIpattern\fR (optionally controlled by the option parameters).  The order of
 the names in the list is arbitrary.
 .TP
-\fBzipfs mount ?\fImountpoint\fR? ?\fIzipfile\fR? ?\fIpassword\fR?
+\fBzipfs mount\fR ?\fImountpoint\fR? ?\fIzipfile\fR? ?\fIpassword\fR?
 .
 The \fBzipfs mount\fR command mounts a ZIP archive file as a Tcl virtual
 filesystem at \fImountpoint\fR.  After this command executes, files contained
@@ -146,6 +146,8 @@ the ZIP archive, otherwise the file returned by \fBinfo nameofexecutable\fR
 (see \fBzipfs mkkey\fR) is placed between the image and ZIP chunks of the
 output file and the contents of the ZIP chunk are protected with that
 password.
+If the starting image has a ZIP archive already attached to it, it is removed
+from the copy in \fIoutfile\fR before the new ZIP archive is added.
 .PP
 If there is a file, \fBmain.tcl\fR, in the root directory of the resulting
 archive and the image file that the archive is attached to is a \fBtclsh\fR

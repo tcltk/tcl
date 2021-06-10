@@ -279,7 +279,7 @@ DoRenameFile(
 	return retval;
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
 
     srcAttr = GetFileAttributesW(nativeSrc);
     dstAttr = GetFileAttributesW(nativeDst);
@@ -420,7 +420,7 @@ DoRenameFile(
 		     * be, but report this one.
 		     */
 
-		    TclWinConvertError(GetLastError());
+		    Tcl_WinConvertError(GetLastError());
 		    CreateDirectoryW(nativeDst, NULL);
 		    SetFileAttributesW(nativeDst, dstAttr);
 		    if (Tcl_GetErrno() == EACCES) {
@@ -488,7 +488,7 @@ DoRenameFile(
 		     * error. Could happen if an open file refers to dst.
 		     */
 
-		    TclWinConvertError(GetLastError());
+		    Tcl_WinConvertError(GetLastError());
 		    if (Tcl_GetErrno() == EACCES) {
 			/*
 			 * Decode the EACCES to a more meaningful error.
@@ -669,7 +669,7 @@ DoCopyFile(
 	return retval;
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     if (Tcl_GetErrno() == EBADF) {
 	Tcl_SetErrno(EACCES);
 	return TCL_ERROR;
@@ -706,7 +706,7 @@ DoCopyFile(
 		 * attributes of dst.
 		 */
 
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		SetFileAttributesW(nativeDst, dstAttr);
 	    }
 	}
@@ -766,7 +766,7 @@ TclpDeleteFile(
     if (DeleteFileW(path) != FALSE) {
 	return TCL_OK;
     }
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
 
     if (Tcl_GetErrno() == EACCES) {
 	attr = GetFileAttributesW(path);
@@ -797,7 +797,7 @@ TclpDeleteFile(
 			(DeleteFileW(path) != FALSE)) {
 		    return TCL_OK;
 		}
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		if (res != 0) {
 		    SetFileAttributesW(path, attr);
 		}
@@ -866,7 +866,7 @@ DoCreateDirectory(
     if (CreateDirectoryW(nativePath, NULL) == 0) {
 	DWORD error = GetLastError();
 
-	TclWinConvertError(error);
+	Tcl_WinConvertError(error);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1054,7 +1054,7 @@ DoRemoveJustDirectory(
 	}
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
 
     if (Tcl_GetErrno() == EACCES) {
 	attr = GetFileAttributesW(nativePath);
@@ -1088,7 +1088,7 @@ DoRemoveJustDirectory(
 		if (RemoveDirectoryW(nativePath) != FALSE) {
 		    return TCL_OK;
 		}
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		SetFileAttributesW(nativePath,
 			attr | FILE_ATTRIBUTE_READONLY);
 	    }
@@ -1235,7 +1235,7 @@ TraverseWinTree(
 	 * Can't read directory.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	nativeErrfile = nativeSource;
 	goto end;
     }
@@ -1329,7 +1329,7 @@ TraverseWinTree(
 
   end:
     if (nativeErrfile != NULL) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	if (errorPtr != NULL) {
 	    Tcl_DStringInit(errorPtr);
 	    Tcl_WCharToUtfDString(nativeErrfile, -1, errorPtr);
@@ -1384,7 +1384,7 @@ TraversalCopy(
 		    attr) != FALSE) {
 		return TCL_OK;
 	    }
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	}
 	break;
     case DOTREE_POSTD:
@@ -1482,7 +1482,7 @@ StatError(
     Tcl_Obj *fileName)		/* The name of the file which caused the
 				 * error. */
 {
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("could not read \"%s\": %s",
 	    TclGetString(fileName), Tcl_PosixError(interp)));
 }
@@ -2067,7 +2067,7 @@ TclpCreateTemporaryDirectory(
      */
 
     if (error != ERROR_SUCCESS) {
-	TclWinConvertError(error);
+	Tcl_WinConvertError(error);
 	Tcl_DStringFree(&base);
 	return NULL;
     }

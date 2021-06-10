@@ -427,7 +427,7 @@ next(
 	    if (INCON(L_BBND) && NEXT1('}')) {
 		v->now++;
 		INTOCON(L_BRE);
-		RET('}');
+		RETV('}', 1);
 	    } else {
 		FAILW(REG_BADBR);
 	    }

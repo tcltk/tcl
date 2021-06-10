@@ -1214,7 +1214,7 @@ proc genStubs::init {} {
 # Results:
 #	Returns any values that were not assigned to variables.
 
-if {[string length [namespace which lassign]] == 0} {
+if {[namespace which lassign] ne ""} {
     proc lassign {valueList args} {
 	if {[llength $args] == 0} {
 	    error "wrong # args: should be \"lassign list varName ?varName ...?\""
