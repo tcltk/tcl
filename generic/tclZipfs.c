@@ -16,6 +16,7 @@
  *	projects.
  */
 
+#define _GNU_SOURCE
 #include "tclInt.h"
 #include "tclFileSystem.h"
 
@@ -30,6 +31,10 @@
 #define crc32tab crc_table[0]
 #ifndef TBLS
 #define TBLS 1
+#endif
+
+#if 1 /* HAVE_DLADDR */
+#include <dlfcn.h>
 #endif
 
 #ifdef HAVE_ZLIB
@@ -3905,6 +3910,12 @@ TclZipfs_TclLibrary(void)
 #endif
 
     if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
+	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
+    }
+#elif 1
+    Dl_info dlinfo;
+    if (dladdr(TclZipfs_TclLibrary, &dlinfo) && (dlinfo.dli_fname != NULL)
+	&& (ZipfsAppHookFindTclInit(dlinfo.dli_fname) == TCL_OK)) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
 #else
