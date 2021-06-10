@@ -2278,7 +2278,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	    $(INSTALL_DATA_DIR) $(DISTDIR)/library/$$i;\
 	    $(DIST_INSTALL_DATA) $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
 	done
-	$(DIST_INSTALL_DATA) $(TOP_DIR)/library/cookiejar/*.txt.gz $(DISTDIR)/library/cookiejar
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/library/cookiejar/*.dat.gz $(DISTDIR)/library/cookiejar
 	$(INSTALL_DATA_DIR) $(DISTDIR)/library/encoding
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/library/encoding/*.enc $(DISTDIR)/library/encoding
 	$(INSTALL_DATA_DIR) $(DISTDIR)/library/msgs
