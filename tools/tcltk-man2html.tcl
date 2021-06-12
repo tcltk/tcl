@@ -56,21 +56,23 @@ proc findversion {top name useversion} {
     }
     # Search:
     set upper [string toupper $name]
-    foreach top1 [list $top $top/..] sub {{} generic} {
-	foreach dirname [
-	    glob -nocomplain -tails -type d -directory $top1 *] {
+    foreach top1 [list $top $top/..] {
+	foreach sub {{} generic} {
+	    foreach dirname [
+		glob -nocomplain -tails -type d -directory $top1 *] {
 
-	    set tclh [join [list $top1 $dirname {*}$sub ${name}.h] /]
-	    set v [getversion $tclh $upper]
-	    if {[llength $v]} {
-		lassign $v major minor
-		# to do
-		#     use glob matching instead of string matching or add
-		#     brace handling to [string matcch]
-		if {$useversion eq "" || [string match $useversion $major.$minor]} {
-		    set top [file dirname [file dirname $tclh]]
-		    set prefix [file dirname $top]
-		    return [list $prefix [file tail $top] $major $minor]
+		set tclh [join [list $top1 $dirname {*}$sub ${name}.h] /]
+		set v [getversion $tclh $upper]
+		if {[llength $v]} {
+		    lassign $v major minor
+		    # to do
+		    #     use glob matching instead of string matching or add
+		    #     brace handling to [string matcch]
+		    if {$useversion eq "" || [string match $useversion $major.$minor]} {
+			set top [file dirname [file dirname $tclh]]
+			set prefix [file dirname $top]
+			return [list $prefix [file tail $top] $major $minor]
+		    }
 		}
 	    }
 	}
