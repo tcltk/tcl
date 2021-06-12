@@ -9326,5 +9326,4 @@ in this changeset (new minor version) rather than bug fixes:
 
 2021-05-18 (bug)[688fcc,28027d] namespace teardown reform (coulter)
 
-- Released 8.7a5, Jun 11, 2021 --- http://core.tcl-lang.org/tcl/ for details -
-
+- Released 8.7a5, Jun 15, 2021 --- http://core.tcl-lang.org/tcl/ for details -
