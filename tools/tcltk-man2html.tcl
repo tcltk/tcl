@@ -22,8 +22,8 @@ if {[catch {package require Tcl 8.6-} msg]} {
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 
-set ::Version "50/8.7"
-set ::CSSFILE "docs.css"
+set ::Version 50/8.7
+set ::CSSFILE docs.css
 
 ##
 ## Source the utility functions that provide most of the
@@ -41,11 +41,10 @@ proc getversion {tclh {name {}}} {
 	}
 	# backslash isn't required in front of quote, but it keeps syntax
 	# highlighting straight in some editors
-	if {[regexp -lineanchor \
-	    [string map [list @name@ $name] \
-		{^#define\s+@name@_VERSION\s+\"([^.])+\.([^.\"]+)}] \
-	    $data -> major minor]} {
-		return [list $major $minor]
+	if {[regexp -lineanchor [string map [list @name@ $name
+	    ] {^#define\s+@name@_VERSION\s+\"([^.])+\.([^.\"]+)}
+	] $data -> major minor]} {
+	    return [list $major $minor]
 	}
     }
 }
@@ -152,8 +151,8 @@ proc parse_command_line {} {
 	    }
 
 	    --verbose=* {
-		set verbose [string range $option \
-				 [string length --verbose=] end]
+		set verbose [string range $option [
+		    string length --verbose=] end]
 	    }
 	    default {
 		puts stderr "tcltk-man-html: unrecognized option -- `$option'"
@@ -162,9 +161,13 @@ proc parse_command_line {} {
 	}
     }
 
-    if {!$build_tcl && !$build_tk} {
-	set build_tcl 1;
-	set build_tk 1
+    switch $build_tcl$build_tk {
+	00 {
+	    error [list {either --tcl or --tk must be given}]
+	}
+	11 {
+	    error [list {both --tcl and --tk may not be given}]
+	}
     }
 
     set major ""
@@ -173,7 +176,7 @@ proc parse_command_line {} {
     if {$build_tcl} {
 	# Find Tcl (firstly using glob pattern / backwards compatible way)
 	set tcldir [lindex [lsort [glob -nocomplain -tails -type d \
-		-directory $tcltkdir tcl$useversion]] end]
+	    -directory $tcltkdir tcl$useversion]] end]
 	if {$tcldir ne ""} {
 	    # obtain version from generic header if we can:
 	    lassign [getversion [file join $tcltkdir $tcldir generic tcl.h]] major minor
@@ -185,13 +188,10 @@ proc parse_command_line {} {
 	    exit 1
 	}
 	puts "using Tcl source directory [file join $tcltkdir $tcldir]"
-    }
-
-
-    if {$build_tk} {
+    } elseif {$build_tk} {
 	# Find Tk (firstly using glob pattern / backwards compatible way)
 	set tkdir [lindex [lsort [glob -nocomplain -tails -type d \
-		-directory $tcltkdir tk$useversion]] end]
+	    -directory $tcltkdir tk$useversion]] end]
 	if {$tkdir ne ""} {
 	    if {$major eq ""} {
 		# obtain version from generic header if we can:
@@ -376,7 +376,7 @@ proc make-man-pages {html args} {
     set keyfp [open $html/Keywords/[indexfile] w]
     fconfigure $keyfp -translation lf -encoding utf-8
     puts $keyfp [htmlhead "$tcltkdesc Keywords" "$tcltkdesc Keywords" \
-		     $overall_title "../[indexfile]"]
+	$overall_title "../[indexfile]"]
     set letters {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
     # Create header first
     set keyheader {}
@@ -400,8 +400,7 @@ proc make-man-pages {html args} {
 	set afp [open $html/Keywords/$a.html w]
 	fconfigure $afp -translation lf -encoding utf-8
 	puts $afp [htmlhead "$tcltkdesc Keywords - $a" \
-		       "$tcltkdesc Keywords - $a" \
-		       $overall_title "../[indexfile]"]
+	    "$tcltkdesc Keywords - $a" $overall_title ../[indexfile]]
 	puts $afp $keyheader
 	puts $afp "<dl class=\"keylist\">"
 	foreach k [lsort -dictionary $keys] {
@@ -477,8 +476,8 @@ proc make-man-pages {html args} {
 	    set outfd [open $html/$manual(wing-file)/$manual(name).html w]
 	    fconfigure $outfd -translation lf -encoding utf-8
 	    puts $outfd [htmlhead "$manual($manual(wing-file)-$manual(name)-title)" \
-		    $manual(name) $wing_name "[indexfile]" \
-		    $overall_title "../[indexfile]"]
+		$manual(name) $wing_name "[indexfile]" \
+		$overall_title "../[indexfile]"]
 	    if {($ntext > 60) && ($ntoc > 32)} {
 		foreach item $toc {
 		    puts $outfd $item
@@ -522,7 +521,7 @@ proc plus-base {var root glob name dir desc} {
 	    set d [read $f]
 	    close $f
 	    if {[regexp {This is the \w+ (\S+) source distribution} $d -> version]} {
-	       append name ", version $version"
+		append name ", version $version"
 	    }
 	}
 	set glob $root/$glob
@@ -550,7 +549,7 @@ proc plus-pkgs {type args} {
 		continue
 	    }
 	}
-	set dir [string trimright $dir "0123456789-."]
+	set dir [string trimright $dir 0123456789-.]
 	switch $type {
 	    n {
 		set title "$name Package Commands"
@@ -813,16 +812,16 @@ try {
     #
     make-man-pages $webdir \
 	[list $tcltkdir/{$appdir}/doc/*.1 "$tcltkdesc Applications" UserCmd \
-	     "The interpreters which implement $cmdesc."] \
+	    "The interpreters which implement $cmdesc."] \
 	[plus-base $build_tcl $tcldir doc/*.n {Tcl Commands} TclCmd \
-	     "The commands which the <b>tclsh</b> interpreter implements."] \
+	    "The commands which the <b>tclsh</b> interpreter implements."] \
 	[plus-base $build_tk $tkdir doc/*.n {Tk Commands} TkCmd \
-	     "The additional commands which the <b>wish</b> interpreter implements."] \
+	    "The additional commands which the <b>wish</b> interpreter implements."] \
 	{*}[plus-pkgs n {*}$packageBuildList] \
 	[plus-base $build_tcl $tcldir doc/*.3 {Tcl C API} TclLib \
-	     "The C functions which a Tcl extended C program may use."] \
+	    "The C functions which a Tcl extended C program may use."] \
 	[plus-base $build_tk $tkdir doc/*.3 {Tk C API} TkLib \
-	     "The additional C functions which a Tk extended C program may use."] \
+	    "The additional C functions which a Tk extended C program may use."] \
 	{*}[plus-pkgs 3 {*}$packageBuildList]
 } on error {msg opts} {
     # On failure make sure we show what went wrong. We're not supposed
