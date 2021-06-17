@@ -9228,6 +9228,9 @@ in this changeset (new minor version) rather than bug fixes:
 
 2019-04-16 [TIP 342] [dict getwithdefault]
 
+2019-04-23 (bug)[67a5ea] make [chan postevent] asynchronous
+        *** POTENTIAL INCOMPATIBILITY ***
+
 2019-05-25 [TIP 431] [file tempdir]
 
 2019-05-25 [TIP 383] [coroinject], [coroprobe]
