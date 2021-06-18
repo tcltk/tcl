@@ -57,9 +57,9 @@ namespace eval [info object namespace ::http::cookiejar] {
     variable version 0.2.0
 
     variable domainlist \
-	http://publicsuffix.org/list/effective_tld_names.dat
+	https://publicsuffix.org/list/public_suffix_list.dat
     variable domainfile \
-	[file join [file dirname [info script]] effective_tld_names.txt.gz]
+	[file join [file dirname [info script]] public_suffix_list.dat.gz]
     # The list is directed to from http://publicsuffix.org/list/
     variable loglevel info
     variable vacuumtrigger 200

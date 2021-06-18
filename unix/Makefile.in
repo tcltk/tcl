@@ -1043,9 +1043,9 @@ install-libraries: libraries
 	@for i in $(TOP_DIR)/library/cookiejar/*.gz; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	done
-	@echo "Installing package http 2.10.0a1 as a Tcl Module"
+	@echo "Installing package http 2.10a1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
-		"$(MODULE_INSTALL_DIR)/9.0/http-2.10.0a1.tm"
+		"$(MODULE_INSTALL_DIR)/9.0/http-2.10a1.tm"
 	@echo "Installing package opt 0.4.7"
 	@for i in $(TOP_DIR)/library/opt/*.tcl; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
@@ -2278,7 +2278,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	    $(INSTALL_DATA_DIR) $(DISTDIR)/library/$$i;\
 	    $(DIST_INSTALL_DATA) $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
 	done
-	$(DIST_INSTALL_DATA) $(TOP_DIR)/library/cookiejar/*.txt.gz $(DISTDIR)/library/cookiejar
+	$(DIST_INSTALL_DATA) $(TOP_DIR)/library/cookiejar/*.dat.gz $(DISTDIR)/library/cookiejar
 	$(INSTALL_DATA_DIR) $(DISTDIR)/library/encoding
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/library/encoding/*.enc $(DISTDIR)/library/encoding
 	$(INSTALL_DATA_DIR) $(DISTDIR)/library/msgs
@@ -2298,11 +2298,16 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	@( cd $(COMPAT_DIR)/zlib; find . -type f -print ) \
 	    | ( cd $(COMPAT_DIR)/zlib ; xargs tar cf - ) \
 	    | ( cd $(DISTDIR)/compat/zlib ; tar xfp - )
+	$(INSTALL_DATA_DIR) $(DISTDIR)/libtommath
+	@echo cp -r $(TOP_DIR)/libtommath $(DISTDIR)/libtommath
+	@( cd $(TOP_DIR)/libtommath; find . -type f -print ) \
+	    | ( cd $(TOP_DIR)/libtommath ; xargs tar cf - ) \
+	    | ( cd $(DISTDIR)/libtommath ; tar xfp - )
 	$(INSTALL_DATA_DIR) $(DISTDIR)/tests
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(DISTDIR)/tests
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \
 		$(TOP_DIR)/tests/httpd $(TOP_DIR)/tests/*.tcl \
-		$(DISTDIR)/tests
+		$(TOP_DIR)/tests/auto-files.zip $(DISTDIR)/tests
 	@mkdir $(DISTDIR)/tests/auto0
 	for i in auto1 auto2 ; \
 	    do \
@@ -2358,8 +2363,6 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(DISTDIR)/tools/loadICU.tcl \
 		$(DISTDIR)/tools/makeTestCases.tcl $(DISTDIR)/tools/tclZIC.tcl \
 		$(DISTDIR)/tools/tcltk-man2html.tcl
-	$(INSTALL_DATA_DIR) $(DISTDIR)/libtommath
-	$(DIST_INSTALL_DATA) $(TOMMATH_SRCS) $(TOMMATH_DIR)/*.h $(DISTDIR)/libtommath
 	$(INSTALL_DATA_DIR) $(DISTDIR)/pkgs
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/pkgs/README $(DISTDIR)/pkgs
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/pkgs/package.list.txt $(DISTDIR)/pkgs
@@ -2406,8 +2409,9 @@ html-tk: ${NATIVE_TCLSH}
 
 BUILD_HTML = \
 	@${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
-		--tcl --useversion=$(MAJOR_VERSION).$(MINOR_VERSION) --htmldir="$(HTML_INSTALL_DIR)" \
-		--srcdir=$(TOP_DIR) $(BUILD_HTML_FLAGS)
+		--useversion=$(MAJOR_VERSION).$(MINOR_VERSION)$(PATCH_LEVEL) \
+		--htmldir="$(HTML_INSTALL_DIR)" \
+		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
 
 #--------------------------------------------------------------------------
 # The list of all the targets that do not correspond to real files. This stops
