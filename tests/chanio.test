@@ -50,6 +50,7 @@ namespace eval ::tcl::test::io {
     testConstraint notWinCI       [expr {
 	$::tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
     testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
+    testConstraint specialfiles  [expr {[file exists /dev/zero] || [file exists NUL]}]
 
     # You need a *very* special environment to do some tests.  In particular,
     # many file systems do not support large-files...
@@ -5508,6 +5509,60 @@ test chan-io-41.4 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
 test chan-io-41.5 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
     chan event gorp who-knows
 } -returnCodes error -result {bad event name "who-knows": must be readable or writable}
+
+
+test chan-io-41.6 {Tcl_FileeventCmd: directory} -constraints fileevent -setup {
+    set tempdir [::tcltests::tempdir]
+} -body {
+    set chan [open $tempdir] 
+    chan event $chan readable [list ::apply [list {} {
+	variable success
+	set success 1
+    } [namespace current]]]
+    vwait [namespace current]::success
+    return $success
+} -cleanup {
+    close $chan
+    file delete -force tempdir
+} -result 1
+
+
+test chan-io-41.7 {Tcl_FileeventCmd: special} -constraints {
+    fileevent specialfiles
+} -body {
+    set special /dev/zero
+    if {![file exists $special]} {
+	set special NUL
+    }
+    set chan [open $special]
+    chan event $chan readable [list ::apply [list {} {
+	variable success
+	set success 1
+    } [namespace current]]]
+    vwait [namespace current]::success
+    return $success
+} -cleanup {
+    close $chan
+} -result 1
+
+
+test chan-io-41.8 {Tcl_FileeventCmd: symbolic link} -constraints fileevent -setup {
+    set tempdir [::tcltests::tempdir]
+} -body {
+    set target [makeFile {not again} thefile $tempdir]
+    set link [file join $tempdir thelin]
+    file link -symbolic $link $target 
+    set chan [open $link]
+    chan event $chan readable [list ::apply [list {} {
+	variable success
+	set success 1
+    } [namespace current]]]
+    vwait [namespace current]::success
+    return $success
+} -cleanup {
+    close $chan
+    file delete -force $tempdir
+} -result 1
 
 #
 # Test chan event on a file

@@ -50,10 +50,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   7
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  4
+#define TCL_RELEASE_SERIAL  6
 
 #define TCL_VERSION	    "8.7"
-#define TCL_PATCH_LEVEL	    "8.7a4"
+#define TCL_PATCH_LEVEL	    "8.7a6"
 
 #if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
 /*
@@ -2136,7 +2136,7 @@ typedef struct Tcl_EncodingType {
 #if TCL_UTF_MAX > 3
     /*
      * int isn't 100% accurate as it should be a strict 4-byte value
-     * (perhaps wchar_t). ILP64/SILP64 systems may have troubles. The
+     * (perhaps int32_t). ILP64/SILP64 systems may have troubles. The
      * size of this value must be reflected correctly in regcustom.h.
      */
 typedef int Tcl_UniChar;
