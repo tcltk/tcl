@@ -764,7 +764,7 @@ test encoding-28.0 {all encodings load} -body {
 		llength $name
 	}
 	return $count
-} -result 86
+} -result [expr {[info exists ::tcl_precision] ? 88 : 87}]
 
 runtests
 

@@ -6,14 +6,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH "http" n 2.9 http "Tcl Bundled Packages"
+.TH "http" n 2.10 http "Tcl Bundled Packages"
 .so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 http \- Client-side implementation of the HTTP/1.1 protocol
 .SH SYNOPSIS
-\fBpackage require http\fI ?\fB2.9\fR?
+\fBpackage require http\fI ?\fB2.10\fR?
 .\" See Also -useragent option documentation in body!
 .sp
 \fB::http::config\fR ?\fI\-option value\fR ...?
