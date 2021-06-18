@@ -5744,7 +5744,7 @@ TEBCresume(
     {
 	ClientData ptr1, ptr2;
 	int type1, type2;
-	Tcl_WideInt w1 = 0, w2, wResult;
+	Tcl_WideInt w1, w2, wResult;
 
     case INST_NUM_TYPE:
 	if (GetNumberFromObj(NULL, OBJ_AT_TOS, &ptr1, &type1) != TCL_OK) {
