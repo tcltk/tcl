@@ -8446,7 +8446,7 @@ ExecuteExtendedUnaryMathOp(
     int opcode,			/* What operation to perform. */
     Tcl_Obj *valuePtr)		/* The operand on the stack. */
 {
-    ClientData ptr;
+    ClientData ptr = NULL;
     int type;
     Tcl_WideInt w;
     mp_int big;

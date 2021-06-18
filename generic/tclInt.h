@@ -399,29 +399,27 @@ struct NamespacePathEntry {
  * Flags used to represent the status of a namespace:
  *
  * NS_DYING -	1 means Tcl_DeleteNamespace has been called to delete the
- *		namespace but there are still active call frames on the Tcl
+ *		namespace.  There may still be active call frames on the Tcl
  *		stack that refer to the namespace. When the last call frame
- *		referring to it has been popped, it's variables and command
- *		will be destroyed and it will be marked "dead" (NS_DEAD). The
- *		namespace can no longer be looked up by name.
+ *		referring to it has been popped, its remaining variables and
+ *		commands are destroyed and it is marked "dead" (NS_DEAD).
+ * NS_TEARDOWN  -1 means that TclTeardownNamespace has already been called on
+ *		this namespace and it should not be called again [Bug 1355942].
  * NS_DEAD -	1 means Tcl_DeleteNamespace has been called to delete the
- *		namespace and no call frames still refer to it. Its variables
- *		and command have already been destroyed. This bit allows the
- *		namespace resolution code to recognize that the namespace is
- *		"deleted". When the last namespaceName object in any byte code
- *		unit that refers to the namespace has been freed (i.e., when
- *		the namespace's refCount is 0), the namespace's storage will
- *		be freed.
- * NS_KILLED -	1 means that TclTeardownNamespace has already been called on
- *		this namespace and it should not be called again [Bug 1355942]
+ *		namespace and no call frames still refer to it. It is no longer
+ *		accessible by name. Its variables and commands have already
+ *		been destroyed.  When the last namespaceName object in any byte
+ *		code unit that refers to the namespace has been freed (i.e.,
+ *		when the namespace's refCount is 0), the namespace's storage
+ *		will be freed.
  * NS_SUPPRESS_COMPILATION -
  *		Marks the commands in this namespace for not being compiled,
  *		forcing them to be looked up every time.
  */
 
 #define NS_DYING	0x01
-#define NS_DEAD		0x02
-#define NS_KILLED	0x04
+#define NS_TEARDOWN	0x02
+#define NS_DEAD		0x04
 #define NS_SUPPRESS_COMPILATION	0x08
 
 /*
@@ -2889,6 +2887,7 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 			    const char *name, Tcl_Namespace *nameNamespacePtr,
 			    Tcl_Namespace *ensembleNamespacePtr, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
+MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
 			    const char **elementPtr, const char **nextPtr,

@@ -962,18 +962,8 @@ install-binaries:
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
 install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
-	@if not exist "$(SCRIPT_INSTALL_DIR)" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\opt0.4$(NULL)" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\cookiejar0.2$(NULL)" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\cookiejar0.2"
-	@if not exist "$(MODULE_INSTALL_DIR)$(NULL)" \
-		$(MKDIR) "$(MODULE_INSTALL_DIR)"
-	@if not exist "$(MODULE_INSTALL_DIR)\9.0$(NULL)" \
-		$(MKDIR) "$(MODULE_INSTALL_DIR)\9.0"
-	@if not exist "$(MODULE_INSTALL_DIR)\9.0\platform$(NULL)" \
-		$(MKDIR) "$(MODULE_INSTALL_DIR)\9.0\platform"
+	@if not exist "$(LIB_INSTALL_DIR)\nmake" \
+		$(MKDIR) "$(LIB_INSTALL_DIR)\nmake"
 	@echo Installing header files
 	@$(CPY) "$(GENERICDIR)\tcl.h"             "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclDecls.h"        "$(INCLUDE_INSTALL_DIR)\"
@@ -985,6 +975,8 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(TOMMATHDIR)\tommath.h"         "$(INCLUDE_INSTALL_DIR)\"
 !if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
+	@if not exist "$(SCRIPT_INSTALL_DIR)" \
+	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)"
 	@$(CPY) "$(ROOT)\library\history.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\init.tcl"        "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\clock.tcl"       "$(SCRIPT_INSTALL_DIR)\"
@@ -1005,14 +997,22 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
 !if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing package cookiejar $(PKG_COOKIEJAR_VER)
+	@if not exist "$(SCRIPT_INSTALL_DIR)\cookiejar0.2" \
+	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)\cookiejar0.2"
 	@$(CPY) "$(ROOT)\library\cookiejar\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
 	@$(CPY) "$(ROOT)\library\cookiejar\*.gz" \
 	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
 	@echo Installing package opt $(PKG_OPT_VER)
+	@if not exist "$(SCRIPT_INSTALL_DIR)\opt0.4" \
+	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
+	@if not exist "$(MODULE_INSTALL_DIR)" \
+	    $(MKDIR) "$(MODULE_INSTALL_DIR)"
 	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
+	@if not exist "$(MODULE_INSTALL_DIR)\9.0" \
+	    $(MKDIR) "$(MODULE_INSTALL_DIR)\9.0"
 	@$(COPY) "$(ROOT)\library\http\http.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\http-$(PKG_HTTP_VER).tm"
 	@echo Installing package msgcat $(PKG_MSGCAT_VER) as a Tcl Module
@@ -1022,6 +1022,8 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\tcltest-$(PKG_TCLTEST_VER).tm"
 	@echo Installing package platform $(PKG_PLATFORM_VER) as a Tcl Module
+	@if not exist "$(MODULE_INSTALL_DIR)\9.0\platform" \
+	    $(MKDIR) "$(MODULE_INSTALL_DIR)\9.0\platform"
 	@$(COPY) "$(ROOT)\library\platform\platform.tcl" \
 	    "$(MODULE_INSTALL_DIR)\9.0\platform-$(PKG_PLATFORM_VER).tm"
 	@echo Installing package platform::shell $(PKG_SHELL_VER) as a Tcl Module
