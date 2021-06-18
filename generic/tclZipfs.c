@@ -32,6 +32,10 @@
 #define TBLS 1
 #endif
 
+#if !defined(NO_DLFCN_H)
+#include <dlfcn.h>
+#endif
+
 #ifdef HAVE_ZLIB
 #include "zlib.h"
 #include "crypt.h"
@@ -3905,6 +3909,12 @@ TclZipfs_TclLibrary(void)
 #endif
 
     if (ZipfsAppHookFindTclInit(dllName) == TCL_OK) {
+	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
+    }
+#elif !defined(NO_DLFCN_H)
+    Dl_info dlinfo;
+    if (dladdr(TclZipfs_TclLibrary, &dlinfo) && (dlinfo.dli_fname != NULL)
+	&& (ZipfsAppHookFindTclInit(dlinfo.dli_fname) == TCL_OK)) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }
 #else
