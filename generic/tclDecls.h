@@ -749,10 +749,10 @@ EXTERN int		Tcl_SplitList(Tcl_Interp *interp,
 EXTERN void		Tcl_SplitPath(const char *path, int *argcPtr,
 				const char ***argvPtr);
 /* 244 */
-EXTERN void		Tcl_StaticPackage(Tcl_Interp *interp,
+EXTERN void		Tcl_StaticLibrary(Tcl_Interp *interp,
 				const char *prefix,
-				Tcl_PackageInitProc *initProc,
-				Tcl_PackageInitProc *safeInitProc);
+				Tcl_LibraryInitProc *initProc,
+				Tcl_LibraryInitProc *safeInitProc);
 /* 245 */
 TCL_DEPRECATED("No longer in use, changed to macro")
 int			Tcl_StringMatch(const char *str, const char *pattern);
@@ -1338,8 +1338,8 @@ EXTERN int		Tcl_FSDeleteFile(Tcl_Obj *pathPtr);
 /* 444 */
 EXTERN int		Tcl_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 				const char *sym1, const char *sym2,
-				Tcl_PackageInitProc **proc1Ptr,
-				Tcl_PackageInitProc **proc2Ptr,
+				Tcl_LibraryInitProc **proc1Ptr,
+				Tcl_LibraryInitProc **proc2Ptr,
 				Tcl_LoadHandle *handlePtr,
 				Tcl_FSUnloadFileProc **unloadProcPtr);
 /* 445 */
@@ -1937,6 +1937,8 @@ EXTERN int		Tcl_UtfCharComplete(const char *src, int length);
 EXTERN const char *	Tcl_UtfNext(const char *src);
 /* 656 */
 EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
+/* 657 */
+EXTERN int		Tcl_UniCharIsUnicode(int ch);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2216,7 +2218,7 @@ typedef struct TclStubs {
     void (*tcl_SourceRCFile) (Tcl_Interp *interp); /* 241 */
     int (*tcl_SplitList) (Tcl_Interp *interp, const char *listStr, int *argcPtr, const char ***argvPtr); /* 242 */
     void (*tcl_SplitPath) (const char *path, int *argcPtr, const char ***argvPtr); /* 243 */
-    TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *prefix, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
+    TCL_DEPRECATED_API("Don't use this function in a stub-enabled extension") void (*tcl_StaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc); /* 244 */
     TCL_DEPRECATED_API("No longer in use, changed to macro") int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
     TCL_DEPRECATED_API("") int (*tcl_TellOld) (Tcl_Channel chan); /* 246 */
     TCL_DEPRECATED_API("No longer in use, changed to macro") int (*tcl_TraceVar) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 247 */
@@ -2416,7 +2418,7 @@ typedef struct TclStubs {
     int (*tcl_FSCopyDirectory) (Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr, Tcl_Obj **errorPtr); /* 441 */
     int (*tcl_FSCreateDirectory) (Tcl_Obj *pathPtr); /* 442 */
     int (*tcl_FSDeleteFile) (Tcl_Obj *pathPtr); /* 443 */
-    int (*tcl_FSLoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *sym1, const char *sym2, Tcl_PackageInitProc **proc1Ptr, Tcl_PackageInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr); /* 444 */
+    int (*tcl_FSLoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *sym1, const char *sym2, Tcl_LibraryInitProc **proc1Ptr, Tcl_LibraryInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr); /* 444 */
     int (*tcl_FSMatchInDirectory) (Tcl_Interp *interp, Tcl_Obj *result, Tcl_Obj *pathPtr, const char *pattern, Tcl_GlobTypeData *types); /* 445 */
     Tcl_Obj * (*tcl_FSLink) (Tcl_Obj *pathPtr, Tcl_Obj *toPtr, int linkAction); /* 446 */
     int (*tcl_FSRemoveDirectory) (Tcl_Obj *pathPtr, int recursive, Tcl_Obj **errorPtr); /* 447 */
@@ -2629,6 +2631,7 @@ typedef struct TclStubs {
     int (*tcl_UtfCharComplete) (const char *src, int length); /* 654 */
     const char * (*tcl_UtfNext) (const char *src); /* 655 */
     const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 656 */
+    int (*tcl_UniCharIsUnicode) (int ch); /* 657 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3148,8 +3151,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_SplitList) /* 242 */
 #define Tcl_SplitPath \
 	(tclStubsPtr->tcl_SplitPath) /* 243 */
-#define Tcl_StaticPackage \
-	(tclStubsPtr->tcl_StaticPackage) /* 244 */
+#define Tcl_StaticLibrary \
+	(tclStubsPtr->tcl_StaticLibrary) /* 244 */
 #define Tcl_StringMatch \
 	(tclStubsPtr->tcl_StringMatch) /* 245 */
 #define Tcl_TellOld \
@@ -3971,6 +3974,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfNext) /* 655 */
 #define Tcl_UtfPrev \
 	(tclStubsPtr->tcl_UtfPrev) /* 656 */
+#define Tcl_UniCharIsUnicode \
+	(tclStubsPtr->tcl_UniCharIsUnicode) /* 657 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3985,7 +3990,7 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_SetPanicProc
 #   undef Tcl_SetExitProc
 #   undef Tcl_ObjSetVar2
-#   undef Tcl_StaticPackage
+#   undef Tcl_StaticLibrary
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))

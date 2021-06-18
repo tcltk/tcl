@@ -860,8 +860,8 @@ declare 243 {
     void Tcl_SplitPath(const char *path, int *argcPtr, const char ***argvPtr)
 }
 declare 244 {nostub {Don't use this function in a stub-enabled extension}} {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *prefix,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 declare 245 {deprecated {No longer in use, changed to macro}} {
     int Tcl_StringMatch(const char *str, const char *pattern)
@@ -1581,8 +1581,8 @@ declare 443 {
 }
 declare 444 {
     int	Tcl_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *sym1,
-	    const char *sym2, Tcl_PackageInitProc **proc1Ptr,
-	    Tcl_PackageInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
+	    const char *sym2, Tcl_LibraryInitProc **proc1Ptr,
+	    Tcl_LibraryInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
 	    Tcl_FSUnloadFileProc **unloadProcPtr)
 }
 declare 445 {
@@ -2423,6 +2423,9 @@ declare 655 {
 declare 656 {
     const char *Tcl_UtfPrev(const char *src, const char *start)
 }
+declare 657 {
+    int Tcl_UniCharIsUnicode(int ch)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
@@ -2447,6 +2450,9 @@ declare 0 win {
 }
 declare 1 win {
     char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
+}
+declare 3 win {
+    void Tcl_WinConvertError(unsigned errCode)
 }
 
 ################################
@@ -2478,8 +2484,8 @@ export {
     Tcl_Interp *interp)
 }
 export {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
     void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)

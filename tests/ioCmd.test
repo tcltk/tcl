@@ -494,14 +494,14 @@ test iocmd-12.10 {POSIX open access modes: BINARY} {
 } 5
 test iocmd-12.11 {POSIX open access modes: BINARY} {
     set f [open $path(test1) {WRONLY BINARY TRUNC}]
-    puts $f \u0248		;# gets truncated to \u0048
+    puts $f Ɉ		;# gets truncated to H
     close $f
     set f [open $path(test1) r]
     fconfigure $f -translation binary
     set result [read -nonewline $f]
     close $f
     set result
-} \u0048
+} H
 
 test iocmd-13.1 {errors in open command} {
     list [catch {open} msg] $msg

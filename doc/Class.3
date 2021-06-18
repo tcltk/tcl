@@ -241,6 +241,29 @@ NULL if the whole chain is to be processed (the argument itself is never
 NULL); this variable may be updated by the callback. The \fImethodNameObj\fR
 parameter gives an unshared object containing the name of the method being
 invoked, as provided by the user; this object may be updated by the callback.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The \fIobjPtr\fR argument to \fBTcl_GetObjectFromObj\fR will not have its
+reference count manipulated, but this function may modify the interpreter
+result (to report any error) so interpreter results should not be fed into
+this without an additional reference being used.
+.PP
+The result of \fBTcl_GetObjectName\fR is a value that is owned by the object
+that is regenerated when this function is first called after the object is
+renamed.  If the value is to be retained at all, the caller should increment
+the reference count.
+.PP
+The first \fIobjc\fR values in the \fIobjv\fR argument to
+\fBTcl_NewObjectInstance\fR are the arguments to pass to the constructor. They
+must have a reference count of at least 1, and may have their reference counts
+changed during the running of the constructor. Constructors may modify the
+interpreter result, which consequently means that interpreter results should
+not be used as arguments without an additional reference being taken.
+.PP
+The \fImethodNameObj\fR argument to a Tcl_ObjectMapMethodNameProc
+implementation will be a value with a reference count of at least 1 where at
+least one reference is not held by the interpreter result. It is expected that
+method name mappers will only read their \fImethodNameObj\fR arguments.
 .SH "SEE ALSO"
 Method(3), oo::class(n), oo::copy(n), oo::define(n), oo::object(n)
 .SH KEYWORDS

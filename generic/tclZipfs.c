@@ -249,7 +249,7 @@ typedef struct ZipChannel {
  * Most are kept in single ZipFS struct. When build with threading support
  * this struct is protected by the ZipFSMutex (see below).
  *
- * The "fileHash" component is the process wide global table of all known ZIP
+ * The "fileHash" component is the process-wide global table of all known ZIP
  * archive members in all mounted ZIP archives.
  *
  * The "zipHash" components is the process wide global table of all mounted
@@ -346,7 +346,9 @@ static int		ZipFSLoadFile(Tcl_Interp *interp, Tcl_Obj *path,
 static int		ZipMapArchive(Tcl_Interp *interp, ZipFile *zf,
 			    void *handle);
 static void		ZipfsExitHandler(ClientData clientData);
+static void		ZipfsMountExitHandler(ClientData clientData);
 static void		ZipfsSetup(void);
+static void		ZipfsFinalize(void);
 static int		ZipChannelClose(void *instanceData,
 			    Tcl_Interp *interp, int flags);
 static Tcl_DriverGetHandleProc	ZipChannelGetFile;
@@ -1540,7 +1542,7 @@ IsPasswordValid(
 static int
 ZipFSCatalogFilesystem(
     Tcl_Interp *interp,		/* Current interpreter. NULLable. */
-    ZipFile *zf0,		/* Temporary buffer hold archive descriptors */
+    ZipFile *zf,		/* Temporary buffer hold archive descriptors */
     const char *mountPoint,	/* Mount point path. */
     const char *passwd,		/* Password for opening the ZIP, or NULL if
 				 * the ZIP is unprotected. */
@@ -1548,7 +1550,7 @@ ZipFSCatalogFilesystem(
 {
     int pwlen, isNew;
     size_t i;
-    ZipFile *zf;
+    ZipFile *zf0;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
     Tcl_DString ds, dsm, fpBuf;
@@ -1570,10 +1572,12 @@ ZipFSCatalogFilesystem(
      * Validate the TOC data. If that's bad, things fall apart.
      */
 
-    if (zf0->baseOffset >= zf0->length || zf0->passOffset >= zf0->length ||
-	    zf0->directoryOffset >= zf0->length) {
+    if (zf->baseOffset >= zf->length || zf->passOffset >= zf->length ||
+	    zf->directoryOffset >= zf->length) {
 	ZIPFS_ERROR(interp, "bad zip data");
 	ZIPFS_ERROR_CODE(interp, "BAD_ZIP");
+	ZipFSCloseArchive(interp, zf);
+	ckfree(zf);
 	return TCL_ERROR;
     }
 
@@ -1594,19 +1598,14 @@ ZipFSCatalogFilesystem(
     hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, mountPoint, &isNew);
     if (!isNew) {
 	if (interp) {
-	    zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+	    zf0 = (ZipFile *) Tcl_GetHashValue(hPtr);
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s is already mounted on %s", zf->name, mountPoint));
+		    "%s is already mounted on %s", zf0->name, mountPoint));
 	    ZIPFS_ERROR_CODE(interp, "MOUNTED");
 	}
 	Unlock();
-	ZipFSCloseArchive(interp, zf0);
-	return TCL_ERROR;
-    }
-    zf = AllocateZipFile(interp, strlen(mountPoint));
-    if (!zf) {
-	Unlock();
-	ZipFSCloseArchive(interp, zf0);
+	ZipFSCloseArchive(interp, zf);
+	ckfree(zf);
 	return TCL_ERROR;
     }
     Unlock();
@@ -1615,9 +1614,8 @@ ZipFSCatalogFilesystem(
      * Convert to a real archive descriptor.
      */
 
-    *zf = *zf0;
     zf->mountPoint = (char *) Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
-    Tcl_CreateExitHandler(ZipfsExitHandler, zf);
+    Tcl_CreateExitHandler(ZipfsMountExitHandler, zf);
     zf->mountPointLen = strlen(zf->mountPoint);
 
     zf->nameLength = strlen(zipname);
@@ -1854,11 +1852,12 @@ ZipfsSetup(void)
     Tcl_InitHashTable(&ZipFS.zipHash, TCL_STRING_KEYS);
     ZipFS.idCount = 1;
     ZipFS.wrmax = DEFAULT_WRITE_MAX_SIZE;
-    ZipFS.fallbackEntryEncoding =
-	    Tcl_Alloc(strlen(ZIPFS_FALLBACK_ENCODING) + 1);
+    ZipFS.fallbackEntryEncoding = (char *)
+	    ckalloc(strlen(ZIPFS_FALLBACK_ENCODING) + 1);
     strcpy(ZipFS.fallbackEntryEncoding, ZIPFS_FALLBACK_ENCODING);
     ZipFS.utf8 = Tcl_GetEncoding(NULL, "utf-8");
     ZipFS.initialized = 1;
+    Tcl_CreateExitHandler(ZipfsExitHandler, NULL);
 }
 
 /*
@@ -2019,10 +2018,8 @@ TclZipfs_Mount(
     }
     if (ZipFSCatalogFilesystem(interp, zf, mountPoint, passwd, zipname)
 	    != TCL_OK) {
-	ckfree(zf);
 	return TCL_ERROR;
     }
-    ckfree(zf);
     return TCL_OK;
 }
 
@@ -2109,7 +2106,6 @@ TclZipfs_MountBuffer(
     }
     result = ZipFSCatalogFilesystem(interp, zf, mountPoint, NULL,
 	    "Memory Buffer");
-    ckfree(zf);
     return result;
 }
 
@@ -2185,7 +2181,7 @@ TclZipfs_Unmount(
 	ckfree(z);
     }
     ZipFSCloseArchive(interp, zf);
-    Tcl_DeleteExitHandler(ZipfsExitHandler, zf);
+    Tcl_DeleteExitHandler(ZipfsMountExitHandler, zf);
     ckfree(zf);
     unmounted = 1;
 
@@ -3101,6 +3097,7 @@ ZipFSMkZipOrImg(
 
 	if (!isMounted) {
 	    zf = &zf0;
+	    memset(&zf0, 0, sizeof(ZipFile));
 	}
 	if (isMounted || ZipFSOpenArchive(interp, imgName, 0, zf) == TCL_OK) {
 	    /*
@@ -5736,13 +5733,48 @@ ZipfsAppHookFindTclInit(
 
 static void
 ZipfsExitHandler(
+    TCL_UNUSED(ClientData)
+)
+{
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    if (ZipFS.initialized != -1) {
+	hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
+	if (hPtr == NULL) {
+	    ZipfsFinalize();
+	} else {
+	    /* ZipFS.fallbackEntryEncoding was already freed by
+	     * ZipfsMountExitHandler
+	    */
+	}
+    }
+}
+
+static void
+ZipfsFinalize(void) {
+    Tcl_DeleteHashTable(&ZipFS.fileHash);
+    ckfree(ZipFS.fallbackEntryEncoding);
+    ZipFS.initialized = -1;
+}
+
+static void
+ZipfsMountExitHandler(
     ClientData clientData)
 {
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+
     ZipFile *zf = (ZipFile *) clientData;
 
     if (TCL_OK != TclZipfs_Unmount(NULL, zf->mountPoint)) {
 	Tcl_Panic("tried to unmount busy filesystem");
     }
+
+    hPtr = Tcl_FirstHashEntry(&ZipFS.fileHash, &search);
+    if (hPtr == NULL) {
+	ZipfsFinalize();
+    }
+
 }
 
 /*

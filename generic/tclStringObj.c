@@ -70,6 +70,11 @@ static void		SetUnicodeObj(Tcl_Obj *objPtr,
 static int		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 
+#define ISCONTINUATION(bytes) (\
+	((((bytes)[0] & 0xC0) == 0x80) || (((bytes)[0] == '\xED') \
+	&& (((bytes)[1] & 0xF0) == 0xB0) && (((bytes)[2] & 0xC0) == 0x80))))
+
+
 /*
  * The structure below defines the string Tcl object type by means of
  * functions that can be invoked by generic object code.
@@ -1218,6 +1223,12 @@ Tcl_AppendLimitedToObj(
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
+    /* If appended string starts with a continuation byte or a lower surrogate,
+     * force objPtr to unicode representation. See [7f1162a867] */
+    if (bytes && ISCONTINUATION(bytes)) {
+	Tcl_GetUnicode(objPtr);
+	stringPtr = GET_STRING(objPtr);
+    }
     if (stringPtr->hasUnicode && stringPtr->numChars > 0) {
 	AppendUtfToUnicodeRep(objPtr, bytes, toCopy);
     } else {
@@ -1415,6 +1426,13 @@ Tcl_AppendObjToObj(
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
+    /* If appended string starts with a continuation byte or a lower surrogate,
+     * force objPtr to unicode representation. See [7f1162a867]
+     * This fixes append-3.4, append-3.7 and utf-1.18 testcases. */
+    if (ISCONTINUATION(TclGetString(appendObjPtr))) {
+	Tcl_GetUnicode(objPtr);
+	stringPtr = GET_STRING(objPtr);
+    }
     /*
      * If objPtr has a valid Unicode rep, then get a Unicode string from
      * appendObjPtr and append it.
@@ -3032,7 +3050,7 @@ TclStringCat(
 {
     Tcl_Obj *objResultPtr, * const *ov;
     int oc, length = 0, binary = 1;
-    int allowUniChar = 1, requestUniChar = 0;
+    int allowUniChar = 1, requestUniChar = 0, forceUniChar = 0;
     int first = objc - 1;	/* Index of first value possibly not empty */
     int last = 0;		/* Index of last value possibly not empty */
     int inPlace = flags & TCL_STRING_IN_PLACE;
@@ -3068,7 +3086,9 @@ TclStringCat(
 		 */
 
 	 	binary = 0;
-		if ((objPtr->typePtr) && (objPtr->typePtr != &tclStringType)) {
+	 	if (ov > objv+1 && ISCONTINUATION(TclGetString(objPtr))) {
+	 	    forceUniChar = 1;
+	 	} else if ((objPtr->typePtr) && (objPtr->typePtr != &tclStringType)) {
 		    /* Prevent shimmer of non-string types. */
 		    allowUniChar = 0;
 		}
@@ -3117,7 +3137,7 @@ TclStringCat(
 		}
 	    }
 	} while (--oc);
-    } else if (allowUniChar && requestUniChar) {
+    } else if ((allowUniChar && requestUniChar) || forceUniChar) {
 	/*
 	 * Result will be pure Tcl_UniChar array. Pre-size it.
 	 */
@@ -3270,7 +3290,7 @@ TclStringCat(
 		dst += more;
 	    }
 	}
-    } else if (allowUniChar && requestUniChar) {
+    } else if ((allowUniChar && requestUniChar) || forceUniChar) {
 	/* Efficiently produce a pure Tcl_UniChar array result */
 	Tcl_UniChar *dst;
 
@@ -3829,6 +3849,7 @@ TclStringReverse(
 
     if (stringPtr->hasUnicode) {
 	Tcl_UniChar *from = Tcl_GetUnicode(objPtr);
+	stringPtr = GET_STRING(objPtr);
 	Tcl_UniChar *src = from + stringPtr->numChars;
 	Tcl_UniChar *to;
 
@@ -3841,6 +3862,7 @@ TclStringReverse(
 	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
 	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
 	    to = Tcl_GetUnicode(objPtr);
+	    stringPtr = GET_STRING(objPtr);
 	    while (--src >= from) {
 #if TCL_UTF_MAX < 4
 		ch = *src;
@@ -4145,9 +4167,22 @@ ExtendUnicodeRepWithString(
     } else {
 	numAppendChars = 0;
     }
-    for (dst=stringPtr->unicode + numOrigChars; numAppendChars-- > 0; dst++) {
+    dst = stringPtr->unicode + numOrigChars;
+    if (numAppendChars-- > 0) {
 	bytes += TclUtfToUniChar(bytes, &unichar);
-	*dst = unichar;
+#if TCL_UTF_MAX > 3
+	/* join upper/lower surrogate */
+	if (bytes && (stringPtr->unicode[numOrigChars - 1] | 0x3FF) == 0xDBFF && (unichar | 0x3FF) == 0xDFFF) {
+		stringPtr->numChars--;
+		unichar = ((stringPtr->unicode[numOrigChars - 1] & 0x3FF) << 10) + (unichar & 0x3FF) + 0x10000;
+		dst--;
+	}
+#endif
+	*dst++ = unichar;
+	while (numAppendChars-- > 0) {
+	    bytes += TclUtfToUniChar(bytes, &unichar);
+	    *dst++ = unichar;
+	}
     }
     *dst = 0;
 }

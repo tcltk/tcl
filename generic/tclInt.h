@@ -415,29 +415,27 @@ struct NamespacePathEntry {
  * Flags used to represent the status of a namespace:
  *
  * NS_DYING -	1 means Tcl_DeleteNamespace has been called to delete the
- *		namespace but there are still active call frames on the Tcl
+ *		namespace.  There may still be active call frames on the Tcl
  *		stack that refer to the namespace. When the last call frame
- *		referring to it has been popped, it's variables and command
- *		will be destroyed and it will be marked "dead" (NS_DEAD). The
- *		namespace can no longer be looked up by name.
+ *		referring to it has been popped, its remaining variables and
+ *		commands are destroyed and it is marked "dead" (NS_DEAD).
+ * NS_TEARDOWN  -1 means that TclTeardownNamespace has already been called on
+ *		this namespace and it should not be called again [Bug 1355942].
  * NS_DEAD -	1 means Tcl_DeleteNamespace has been called to delete the
- *		namespace and no call frames still refer to it. Its variables
- *		and command have already been destroyed. This bit allows the
- *		namespace resolution code to recognize that the namespace is
- *		"deleted". When the last namespaceName object in any byte code
- *		unit that refers to the namespace has been freed (i.e., when
- *		the namespace's refCount is 0), the namespace's storage will
- *		be freed.
- * NS_KILLED -	1 means that TclTeardownNamespace has already been called on
- *		this namespace and it should not be called again [Bug 1355942]
+ *		namespace and no call frames still refer to it. It is no longer
+ *		accessible by name. Its variables and commands have already
+ *		been destroyed.  When the last namespaceName object in any byte
+ *		code unit that refers to the namespace has been freed (i.e.,
+ *		when the namespace's refCount is 0), the namespace's storage
+ *		will be freed.
  * NS_SUPPRESS_COMPILATION -
  *		Marks the commands in this namespace for not being compiled,
  *		forcing them to be looked up every time.
  */
 
 #define NS_DYING	0x01
-#define NS_DEAD		0x02
-#define NS_KILLED	0x04
+#define NS_TEARDOWN	0x02
+#define NS_DEAD		0x04
 #define NS_SUPPRESS_COMPILATION	0x08
 
 /*
@@ -2739,7 +2737,6 @@ MODULE_SCOPE char *tclNativeExecutableName;
 MODULE_SCOPE int tclFindExecutableSearchDone;
 MODULE_SCOPE char *tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
-MODULE_SCOPE Tcl_NotifierProcs tclNotifierHooks;
 
 MODULE_SCOPE Tcl_Encoding tclIdentityEncoding;
 
@@ -2959,6 +2956,7 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 			    const char *name, Tcl_Namespace *nameNamespacePtr,
 			    Tcl_Namespace *ensembleNamespacePtr, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
+MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
 			    const char **elementPtr, const char **nextPtr,
@@ -3133,12 +3131,21 @@ MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
-MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp, Tcl_Obj* pathPtr);
+MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp,
+			    Tcl_Obj* pathPtr);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    int len);
+MODULE_SCOPE void	TclpAlertNotifier(ClientData clientData);
+MODULE_SCOPE void	TclpServiceModeHook(int mode);
+MODULE_SCOPE void	TclpSetTimer(const Tcl_Time *timePtr);
+MODULE_SCOPE int	TclpWaitForEvent(const Tcl_Time *timePtr);
+MODULE_SCOPE void	TclpCreateFileHandler(int fd, int mask,
+			    Tcl_FileProc *proc, ClientData clientData);
 MODULE_SCOPE int	TclpDeleteFile(const void *path);
+MODULE_SCOPE void	TclpDeleteFileHandler(int fd);
 MODULE_SCOPE void	TclpFinalizeCondition(Tcl_Condition *condPtr);
 MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
+MODULE_SCOPE void	TclpFinalizeNotifier(ClientData clientData);
 MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
 MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
@@ -3152,6 +3159,7 @@ MODULE_SCOPE int	TclpFindVariable(const char *name, int *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    unsigned int *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
+MODULE_SCOPE ClientData	TclpInitNotifier(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
 MODULE_SCOPE void	TclpInitUnlock(void);
 MODULE_SCOPE Tcl_Obj *	TclpObjListVolumes(void);
@@ -3178,8 +3186,9 @@ MODULE_SCOPE int	TclpObjChdir(Tcl_Obj *pathPtr);
 MODULE_SCOPE Tcl_Channel TclpOpenTemporaryFile(Tcl_Obj *dirObj,
 			    Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
 			    Tcl_Obj *resultingNameObj);
-MODULE_SCOPE void TclPkgFileSeen(Tcl_Interp *interp, const char *fileName);
-MODULE_SCOPE void *TclInitPkgFiles(Tcl_Interp *interp);
+MODULE_SCOPE void	TclPkgFileSeen(Tcl_Interp *interp,
+			    const char *fileName);
+MODULE_SCOPE void *	TclInitPkgFiles(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
 MODULE_SCOPE char *	TclpReadlink(const char *fileName,
@@ -4212,6 +4221,37 @@ MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
 #define TCL_INDEX_START         (0)
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclScaleTime --
+ *
+ *	TIP #233 (Virtualized Time): Wrapper around the time virutalisation
+ *	rescale function to hide the binding of the clientData.
+ *
+ *	This is static inline code; it's like a macro, but a function. It's
+ *	used because this is a piece of code that ends up in places that are a
+ *	bit performance sensitive.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Updates the time structure (given as an argument) with what the time
+ *	should be after virtualisation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline void
+TclScaleTime(
+    Tcl_Time *timePtr)
+{
+    if (timePtr != NULL) {
+	tclScaleTimeProcPtr(timePtr, tclTimeClientData);
+    }
+}
+
+/*
  *----------------------------------------------------------------
  * Macros used by the Tcl core to create and release Tcl objects.
  * TclNewObj(objPtr) creates a new object denoting an empty string.
@@ -4757,7 +4797,7 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_PackageInitProc TclTommath_Init;
+MODULE_SCOPE Tcl_LibraryInitProc TclTommath_Init;
 
 /*
  *----------------------------------------------------------------------
@@ -4769,11 +4809,11 @@ MODULE_SCOPE Tcl_PackageInitProc TclTommath_Init;
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_PackageInitProc TclplatformtestInit;
-MODULE_SCOPE Tcl_PackageInitProc TclObjTest_Init;
-MODULE_SCOPE Tcl_PackageInitProc TclThread_Init;
-MODULE_SCOPE Tcl_PackageInitProc Procbodytest_Init;
-MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
+MODULE_SCOPE Tcl_LibraryInitProc TclplatformtestInit;
+MODULE_SCOPE Tcl_LibraryInitProc TclObjTest_Init;
+MODULE_SCOPE Tcl_LibraryInitProc TclThread_Init;
+MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_Init;
+MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 
 /*
  *----------------------------------------------------------------
@@ -5145,11 +5185,33 @@ typedef struct NRE_callback {
 #endif
 
 /*
+ * Special hack for macOS, where the static linker (technically the 'ar'
+ * command) hates empty object files, and accepts no flags to make it shut up.
+ *
+ * These symbols are otherwise completely useless.
+ *
+ * They can't be written to or written through. They can't be seen by any
+ * other code. They use a separate attribute (supported by all macOS
+ * compilers, which are derivatives of clang or gcc) to stop the compilation
+ * from moaning. They will be excluded during the final linking stage.
+ *
+ * Other platforms get nothing at all. That's good.
+ */
+
+#ifdef MAC_OSX_TCL
+#define TCL_MAC_EMPTY_FILE(name) \
+    static __attribute__((used)) const void *const TclUnusedFile_ ## name; \
+    static const void *const TclUnusedFile_ ## name = NULL;
+#else
+#define TCL_MAC_EMPTY_FILE(name)
+#endif /* MAC_OSX_TCL */
+
+/*
  * Other externals.
  */
 
-MODULE_SCOPE size_t TclEnvEpoch; /* Epoch of the tcl environment
-                                         * (if changed with tcl-env). */
+MODULE_SCOPE size_t TclEnvEpoch;	/* Epoch of the tcl environment
+					 * (if changed with tcl-env). */
 
 #endif /* _TCLINT */
 
