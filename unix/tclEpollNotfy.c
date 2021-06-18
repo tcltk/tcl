@@ -223,22 +223,29 @@ PlatformEventsControl(
 
     if (fstat(filePtr->fd, &fdStat) == -1) {
 	Tcl_Panic("fstat: %s", strerror(errno));
-    } else if ((fdStat.st_mode & S_IFMT) == S_IFREG) {
-	switch (op) {
-	case EPOLL_CTL_ADD:
-	    if (isNew) {
-		LIST_INSERT_HEAD(&tsdPtr->firstReadyFileHandlerPtr, filePtr,
-			readyNode);
-	    }
-	    break;
-	case EPOLL_CTL_DEL:
-	    LIST_REMOVE(filePtr, readyNode);
-	    break;
+    }
+
+   if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
+       switch (errno) {
+	    case EPERM:
+		switch (op) {
+		case EPOLL_CTL_ADD:
+		    if (isNew) {
+			LIST_INSERT_HEAD(&tsdPtr->firstReadyFileHandlerPtr, filePtr,
+				readyNode);
+		    }
+		    break;
+		case EPOLL_CTL_DEL:
+		    LIST_REMOVE(filePtr, readyNode);
+		    break;
+
+		}
+		break;
+	    default:
+		Tcl_Panic("epoll_ctl: %s", strerror(errno));
 	}
-	return;
-   } else if (epoll_ctl(tsdPtr->eventsFd, op, filePtr->fd, &newEvent) == -1) {
-	Tcl_Panic("epoll_ctl: %s", strerror(errno));
-   }
+    }
+    return;
 }
 
 /*
