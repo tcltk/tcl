@@ -22,7 +22,7 @@ if {{::tcltest} ni [namespace children]} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint zlib [llength [info commands zlib]]
-
+testConstraint nodep [info exists tcl_precision]
 # Set up namespaces needed to test operation of "info args", "info body",
 # "info default", and "info procs" with imported procedures.
 
@@ -101,7 +101,7 @@ test info-2.5 {info body option, returning bytecompiled bodies} -body {
 # Fix for problem tested for in info-2.5 caused problems when
 # procedure body had no string rep (i.e. was not yet bytecode)
 # causing an empty string to be returned [Bug #545644]
-test info-2.6 {info body option, returning list bodies} {
+test info-2.6 {info body option, returning list bodies} nodep {
     proc foo args [list subst bar]
     list [string bytelength [info body foo]] \
 	    [foo; string bytelength [info body foo]]

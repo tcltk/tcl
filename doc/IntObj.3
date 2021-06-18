@@ -160,6 +160,27 @@ If anything later in the caller requires
 The \fBTcl_InitBignumFromDouble\fR routine is a utility procedure
 that extracts the integer part of \fIdoubleValue\fR and stores that
 integer value in the \fBmp_int\fR value \fIbigValue\fR.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_NewIntObj\fR, \fBTcl_NewLongObj\fR, \fBTcl_NewWideIntObj\fR, and
+\fBTcl_NewBignumObj\fR always return a zero-reference object, much like
+\fBTcl_NewObj\fR.
+.PP
+\fBTcl_SetIntObj\fR, \fBTcl_SetLongObj\fR, \fBTcl_SetWideIntObj\fR, and
+\fBTcl_SetBignumObj\fR do not modify the reference count of their \fIobjPtr\fR
+arguments, but do require that the object be unshared.
+.PP
+\fBTcl_GetIntFromObj\fR, \fBTcl_GetIntForIndex\fR, \fBTcl_GetLongFromObj\fR,
+\fBTcl_GetWideIntFromObj\fR, \fBTcl_GetBignumFromObj\fR, and
+\fBTcl_TakeBignumFromObj\fR do not modify the reference count of their
+\fIobjPtr\fR arguments; they only read. Note however that this function may
+set the interpreter result; if that is the only place that is holding a
+reference to the object, it will be deleted. Also note that if
+\fBTcl_TakeBignumFromObj\fR is given an unshared value, the value of that
+object may be modified; it is intended to be used when the value is
+.QW consumed
+by the operation at this point.
+
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_GetObjResult
 .SH KEYWORDS

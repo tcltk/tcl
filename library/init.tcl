@@ -19,7 +19,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact tcl 8.7a4
+package require -exact tcl 8.7a6
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -214,9 +214,9 @@ proc unknown args {
 		set errInfo [dict get $opts -errorinfo]
 		set errCode [dict get $opts -errorcode]
 		set cinfo $args
-		if {[string bytelength $cinfo] > 150} {
+		if {[string length [encoding convertto utf-8 $cinfo]] > 150} {
 		    set cinfo [string range $cinfo 0 150]
-		    while {[string bytelength $cinfo] > 150} {
+		    while {[string length [encoding convertto utf-8 $cinfo]] > 150} {
 			set cinfo [string range $cinfo 0 end-1]
 		    }
 		    append cinfo ...

@@ -65,15 +65,22 @@
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
-#undef TclStaticPackage
+#undef TclStaticLibrary
 #undef Tcl_BackgroundError
 #undef TclGuessPackageName
 #undef TclGetLoadedPackages
-#define TclStaticPackage Tcl_StaticPackage
+#define TclStaticLibrary Tcl_StaticLibrary
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
 #undef Tcl_MacOSXOpenBundleResources
+#undef TclWinConvertWSAError
+#undef TclWinConvertError
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define TclWinConvertWSAError (void (*)(DWORD))(void *)Tcl_WinConvertError
+#define TclWinConvertError (void (*)(DWORD))(void *)Tcl_WinConvertError
+#endif
+
 
 #if TCL_UTF_MAX > 3
 static void uniCodePanic(void) {
@@ -292,6 +299,8 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define Tcl_MacOSXOpenBundleResources 0
 #   define TclGuessPackageName 0
 #   define TclGetLoadedPackages 0
+#   undef TclSetPreInitScript
+#   define TclSetPreInitScript 0
 #else
 
 #define TclGuessPackageName guessPackageName
@@ -628,8 +637,6 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define Tcl_Eval 0
 #   undef Tcl_GlobalEval
 #   define Tcl_GlobalEval 0
-#   undef Tcl_GetStringResult
-#   define Tcl_GetStringResult 0
 #   undef Tcl_SaveResult
 #   define Tcl_SaveResult 0
 #   undef Tcl_RestoreResult
@@ -1032,7 +1039,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
-    TclStaticPackage, /* 257 */
+    TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
     TclGetBytesFromObj, /* 259 */
     TclUnusedStubEntry, /* 260 */
@@ -1148,6 +1155,8 @@ static const TclPlatStubs tclPlatStubs = {
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
+    0, /* 2 */
+    Tcl_WinConvertError, /* 3 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
@@ -1519,7 +1528,7 @@ const TclStubs tclStubs = {
     Tcl_SourceRCFile, /* 241 */
     Tcl_SplitList, /* 242 */
     Tcl_SplitPath, /* 243 */
-    Tcl_StaticPackage, /* 244 */
+    Tcl_StaticLibrary, /* 244 */
     Tcl_StringMatch, /* 245 */
     Tcl_TellOld, /* 246 */
     Tcl_TraceVar, /* 247 */
@@ -1932,6 +1941,7 @@ const TclStubs tclStubs = {
     Tcl_UtfCharComplete, /* 654 */
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
+    Tcl_UniCharIsUnicode, /* 657 */
 };
 
 /* !END!: Do not edit above this line. */
