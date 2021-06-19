@@ -2388,9 +2388,9 @@ html-tk: ${NATIVE_TCLSH}
 
 BUILD_HTML = \
 	@${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
-		--useversion=$(MAJOR_VERSION).$(MINOR_VERSION)$(PATCH_LEVEL) \
+		--useversion=$(MAJOR_VERSION).$(MINOR_VERSION) \
 		--htmldir="$(HTML_INSTALL_DIR)" \
-		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
+		--srcdir=$(TOP_DIR) $(BUILD_HTML_FLAGS)
 
 #--------------------------------------------------------------------------
 # The list of all the targets that do not correspond to real files. This stops
