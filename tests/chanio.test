@@ -5511,7 +5511,7 @@ test chan-io-41.5 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
 } -returnCodes error -result {bad event name "who-knows": must be readable or writable}
 
 
-test chan-io-41.6 {Tcl_FileeventCmd: directory} -constraints fileevent -setup {
+test chan-io-41.6 {Tcl_FileeventCmd: directory} -constraints {fileevent unix} -setup {
     set tempdir [::tcltests::tempdir]
 } -body {
     set chan [open $tempdir] 
@@ -5546,7 +5546,7 @@ test chan-io-41.7 {Tcl_FileeventCmd: special} -constraints {
 } -result 1
 
 
-test chan-io-41.8 {Tcl_FileeventCmd: symbolic link} -constraints fileevent -setup {
+test chan-io-41.8 {Tcl_FileeventCmd: symbolic link} -constraints {fileevent unix} -setup {
     set tempdir [::tcltests::tempdir]
 } -body {
     set target [makeFile {not again} thefile $tempdir]
