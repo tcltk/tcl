@@ -639,7 +639,7 @@ StoreElementInDict(
     Tcl_DictObjPut(NULL, dictObj, nameObj, valueObj);
 }
 
-static const char *
+static inline const char *
 GetTypeFromMode(
     int mode)
 {
@@ -673,7 +673,8 @@ static Tcl_Obj *
 StatOpenFile(
     FileState *fsPtr)
 {
-    Tcl_StatBuf statBuf;
+    Tcl_StatBuf statBuf;	/* Not allocated on heap; we're definitely
+				 * API-synchronized with how Tcl is built! */
     Tcl_Obj *dictObj;
     unsigned short mode;
 
@@ -689,17 +690,22 @@ StatOpenFile(
     dictObj = Tcl_NewObj();
 #define STORE_ELEM(name, value) StoreElementInDict(dictObj, name, value)
 
-    STORE_ELEM("dev",     Tcl_NewWideIntObj((long)statBuf.st_dev));
-    STORE_ELEM("ino",     Tcl_NewWideIntObj((Tcl_WideInt)statBuf.st_ino));
-    STORE_ELEM("nlink",   Tcl_NewWideIntObj((long)statBuf.st_nlink));
-    STORE_ELEM("uid",     Tcl_NewWideIntObj((long)statBuf.st_uid));
-    STORE_ELEM("gid",     Tcl_NewWideIntObj((long)statBuf.st_gid));
-    STORE_ELEM("size",    Tcl_NewWideIntObj((Tcl_WideInt)statBuf.st_size));
+    STORE_ELEM("dev",     Tcl_NewWideIntObj((long) statBuf.st_dev));
+    STORE_ELEM("ino",     Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_ino));
+    STORE_ELEM("nlink",   Tcl_NewWideIntObj((long) statBuf.st_nlink));
+    STORE_ELEM("uid",     Tcl_NewWideIntObj((long) statBuf.st_uid));
+    STORE_ELEM("gid",     Tcl_NewWideIntObj((long) statBuf.st_gid));
+    STORE_ELEM("size",    Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_size));
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-    STORE_ELEM("blocks",  Tcl_NewWideIntObj((Tcl_WideInt)statBuf.st_blocks));
+    STORE_ELEM("blocks",  Tcl_NewWideIntObj((Tcl_WideInt) statBuf.st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    STORE_ELEM("blksize", Tcl_NewWideIntObj((long)statBuf.st_blksize));
+    STORE_ELEM("blksize", Tcl_NewWideIntObj((long) statBuf.st_blksize));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_RDEV
+    if (S_ISCHR(statBuf.st_mode) || S_ISBLK(statBuf.st_mode)) {
+	STORE_ELEM("rdev", Tcl_NewWideIntObj((long) statBuf.st_rdev));
+    }
 #endif
     STORE_ELEM("atime",   Tcl_NewWideIntObj(
 	    Tcl_GetAccessTimeFromStat(&statBuf)));
