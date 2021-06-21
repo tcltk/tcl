@@ -9319,7 +9319,7 @@ in this changeset (new minor version) rather than bug fixes:
 
 2020-12-07 [TIP 590] Recommend lowercase Package Names
 
-2021-01-06 Bump to tcltest 2.5.4 
+2021-01-06 Bump to tcltest 2.5.4
 
 2021-01-15 [TIP 481] `Tcl_GetStringFromObj()` with `size_t` length parameter
 

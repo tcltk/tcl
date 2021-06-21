@@ -5514,7 +5514,7 @@ test chan-io-41.5 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
 test chan-io-41.6 {Tcl_FileeventCmd: directory} -constraints {fileevent unix} -setup {
     set tempdir [::tcltests::tempdir]
 } -body {
-    set chan [open $tempdir] 
+    set chan [open $tempdir]
     chan event $chan readable [list ::apply [list {} {
 	variable success
 	set success 1
@@ -5551,7 +5551,7 @@ test chan-io-41.8 {Tcl_FileeventCmd: symbolic link} -constraints {fileevent unix
 } -body {
     set target [makeFile {not again} thefile $tempdir]
     set link [file join $tempdir thelin]
-    file link -symbolic $link $target 
+    file link -symbolic $link $target
     set chan [open $link]
     chan event $chan readable [list ::apply [list {} {
 	variable success
