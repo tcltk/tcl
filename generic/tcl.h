@@ -2320,7 +2320,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 	++(objPtr)->refCount
     /*
      * Use do/while0 idiom for optimum correctness without compiler warnings.
-     * http://c2.com/cgi/wiki?TrivialDoWhileLoop
+     * https://wiki.c2.com/?TrivialDoWhileLoop
      */
 #   undef Tcl_DecrRefCount
 #   define Tcl_DecrRefCount(objPtr) \
