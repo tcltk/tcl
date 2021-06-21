@@ -777,10 +777,8 @@ test coroutine-7.13 {
 	coroutine c2 apply [list {} {
 		variable done
 		yield
-		after 0 [list [info coroutine]]
-		yieldto try {yieldto c1}
-		after 0 [list [info coroutine]]
-		yieldto try {yieldto c1}
+		yieldto try {yieldto c1} on error {} [list after 0 [list [info coroutine]]] 
+		yieldto try {yieldto c1} on error {} [list after 0 [list [info coroutine]]] 
 		set done 1
 	} [namespace current]]
 
@@ -801,22 +799,29 @@ test coroutine-7.14 {
 
 	coroutine c0 ::apply [list {} {
 		yield
-		variable done0
 		after 0 [list [namespace which c1]]
-		vwait [namespace current]::done0
+		vwait [namespace current]::done1
 	} [namespace current]]
 
 	coroutine c1 ::apply [list {} {
-		variable done0
+		variable done1
 		yield
 		yieldto try "yieldto [list [info coroutine]]" on error {} "
 			::set [list [namespace current]]::done1 failure
 			::set [list [namespace current]]::done0 failure
 		"
-		set done0 success
+		set done1 success
+
 	} [namespace current]]
 	after 1 [list [namespace which c0]]
 	vwait [namespace current]::done0
+	if {[namespace which [namespace current]::c1] ne {}} {
+		# prior to the fix for 5106fddd4400e5b9, the nested yieldto turned into a
+		# tailcall which was eventutally activated, causing control to return to
+		# c1.  After the fix, that doesn't happen, so if c1 still exists call it
+		# one final time to allow it to finish and clean up
+		rename c1 {}
+	}
 	return [list $done0 $done1]
 } -result {failure failure} 
 
