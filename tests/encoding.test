@@ -434,12 +434,12 @@ test encoding-15.22 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
     binary scan $y H* z
     list [string length $y] $z
 } {2 c280}
-test encoding-15.22 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
+test encoding-15.23 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
     set y [encoding convertto cesu-8 \u100]
     binary scan $y H* z
     list [string length $y] $z
 } {2 c480}
-test encoding-15.22 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
+test encoding-15.24 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
     set y [encoding convertto cesu-8 \u3FF]
     binary scan $y H* z
     list [string length $y] $z
