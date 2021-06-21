@@ -8893,7 +8893,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2018-11-16 (bug)[00d04c] Repair [binary encode base64] (sebres)
 
-- Released 8.6.9, November 16, 2018 - details at http://core.tcl-lang.org/tcl/ -
+- Released 8.6.9, November 16, 2018 - details at https://core.tcl-lang.org/tcl/ -
 
 2018-11-22 (bug)[7a9dc5] [file normalize ~/~foo] segfault (sebres)
 
@@ -8944,7 +8944,7 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 2019-11-18 (bug)[13657a] application/json us text, not binary (noe,nijtmans)
 => http 2.9.1
 
-- Released 8.6.10, Nov 21, 2019 - details at http://core.tcl-lang.org/tcl/ -
+- Released 8.6.10, Nov 21, 2019 - details at https://core.tcl-lang.org/tcl/ -
 
 2019-12-03 (bug)[3cd9be] Corner case in surrogate handling (nijtmans)
 
@@ -9073,4 +9073,4 @@ See RFC 2045
 
 2020-12-23 tzdata updated to Olson's tzdata2020e (jima)
 
-- Released 8.6.11, Dec 31, 2020 - details at http://core.tcl-lang.org/tcl/ -
+- Released 8.6.11, Dec 31, 2020 - details at https://core.tcl-lang.org/tcl/ -

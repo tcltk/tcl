@@ -824,7 +824,7 @@ the minus sign one west of Greenwich.
 A time zone string conforming to the Posix specification of the \fBTZ\fR
 environment variable will be recognized.  The specification
 may be found at
-\fIhttp://www.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap08.html\fR.
+\fIhttps://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap08.html\fR.
 .PP
 If the Posix time zone string contains a DST (Daylight Savings Time)
 part, but doesn't contain a rule stating when DST starts or ends,
@@ -848,7 +848,7 @@ to use it as a location name, as above.
 .SH "LOCALIZATION"
 .PP
 Developers wishing to localize the date and time formatting and parsing
-are referred to \fIhttp://tip.tcl.tk/173\fR for a
+are referred to \fIhttps://tip.tcl-lang.org/173\fR for a
 specification.
 .SH "FREE FORM SCAN"
 .PP
