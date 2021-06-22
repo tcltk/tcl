@@ -9351,10 +9351,17 @@ Changes to 9.0a3 include all changes to the 8.7 line through 8.7a5,
 plus the following, which focuses on the high-level feature changes
 in this changeset (new major version) rather than bug fixes:
 
+Many of the TIPs in Tcl 8.7 mentioned above are extended further in 9.0
 
+2020-02-28 [TIP 497] Full support for Unicode planes 1-16
 
+2020-08-21 (bug)[43b434] improper calls to stat64()
 
+2021-04-08 [TIP 595] Unicode-aware loadable library handling.
 
+2021-04-30 [TIP 596] Stubs support for embedding Tcl in apps
+
+Many internal changes to broaden support for sizes beyond 32-bits.
 
 - Released 9.0a3, Jun 23, 2021 --- https://core.tcl-lang.org/tcl/ for details -
 
