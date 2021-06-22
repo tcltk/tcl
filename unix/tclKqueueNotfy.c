@@ -182,7 +182,10 @@ PlatformEventsControl(
 
     if (fstat(filePtr->fd, &fdStat) == -1) {
 	Tcl_Panic("fstat: %s", strerror(errno));
-    } else if ((fdStat.st_mode & S_IFMT) == S_IFREG) {
+    } else if ((fdStat.st_mode & S_IFMT) == S_IFREG
+	    || (fdStat.st_mode & S_IFMT) == S_ISDIR
+	    || (fdStat.st_mode & S_IFMT) == S_ISLNK
+	    ) {
 	switch (op) {
 	case EV_ADD:
 	    if (isNew) {
