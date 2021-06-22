@@ -8843,7 +8843,7 @@ in this changeset (new minor version) rather than bug fixes:
 
 2017-09-02 (bug)[0e4d88] replace command, delete trace kills namespace (porter)
 
---- Released 8.7a1, September 8, 2017 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.7a1, September 8, 2017 --- https://core.tcl-lang.org/tcl/ for details
 
 2017-08-10 [array names -regexp] supports backrefs (goth)
 
@@ -8942,7 +8942,7 @@ in this changeset (new minor version) rather than bug fixes:
 
 2018-11-16 (bug)[00d04c] Repair [binary encode base64] (sebres)
 
-- Released 8.6.9, November 16, 2018 - details at http://core.tcl-lang.org/tcl/ -
+- Released 8.6.9, November 16, 2018 - details at https://core.tcl-lang.org/tcl/ -
 
 2018-11-22 (bug)[7a9dc5] [file normalize ~/~foo] segfault (sebres)
 
@@ -8990,7 +8990,7 @@ in this changeset (new minor version) rather than bug fixes:
 
 2019-11-15 (bug)[135804] segfault in [next] after destroy (coulter,sebres)
 
-- Released 8.6.10, Nov 21, 2019 - details at http://core.tcl-lang.org/tcl/ -
+- Released 8.6.10, Nov 21, 2019 - details at https://core.tcl-lang.org/tcl/ -
 
 2019-12-03 (bug)[3cd9be] Corner case in surrogate handling (nijtmans)
 
@@ -9119,7 +9119,7 @@ See RFC 2045
 
 2020-12-23 tzdata updated to Olson's tzdata2020e (jima)
 
-- Released 8.6.11, Dec 31, 2020 - details at http://core.tcl-lang.org/tcl/ -
+- Released 8.6.11, Dec 31, 2020 - details at https://core.tcl-lang.org/tcl/ -
 
 Changes to 8.7a3 include all changes to the 8.6 line through 8.6.10,
 plus the following, which focuses on the high-level feature changes
@@ -9251,7 +9251,7 @@ in this changeset (new minor version) rather than bug fixes:
 
 2019-09-14 [TIP 548] wchar_t conversion functions
 
-- Released 8.7a3, Nov 21, 2019 --- http://core.tcl-lang.org/tcl/ for details -
+- Released 8.7a3, Nov 21, 2019 --- https://core.tcl-lang.org/tcl/ for details -
 
 Changes to 9.0a1 include all changes to the 8.7 line through 8.7a3,
 plus the following, which focuses on the high-level feature changes
@@ -9271,7 +9271,7 @@ in this changeset (new minor version) rather than bug fixes:
 
 2019-05-31 [TIP 537] 64-bit indices in regexp matching
 
-- Released 9.0a1, Nov 25, 2019 --- http://core.tcl-lang.org/tcl/ for details -
+- Released 9.0a1, Nov 25, 2019 --- https://core.tcl-lang.org/tcl/ for details -
 
 2019-12-13 [TIP 538] Externalize libtommath
 
@@ -9319,7 +9319,7 @@ in this changeset (new minor version) rather than bug fixes:
 
 2020-12-07 [TIP 590] Recommend lowercase Package Names
 
-2021-01-06 Bump to tcltest 2.5.4 
+2021-01-06 Bump to tcltest 2.5.4
 
 2021-01-15 [TIP 481] `Tcl_GetStringFromObj()` with `size_t` length parameter
 
@@ -9345,7 +9345,7 @@ in this changeset (new minor version) rather than bug fixes:
 
 2021-05-18 (bug)[688fcc,28027d] namespace teardown reform (coulter)
 
-- Released 8.7a5, Jun 18, 2021 --- http://core.tcl-lang.org/tcl/ for details -
+- Released 8.7a5, Jun 18, 2021 --- https://core.tcl-lang.org/tcl/ for details -
 
 Changes to 9.0a3 include all changes to the 8.7 line through 8.7a5,
 plus the following, which focuses on the high-level feature changes
@@ -9356,5 +9356,5 @@ in this changeset (new major version) rather than bug fixes:
 
 
 
-- Released 9.0a3, Jun 23, 2021 --- http://core.tcl-lang.org/tcl/ for details -
+- Released 9.0a3, Jun 23, 2021 --- https://core.tcl-lang.org/tcl/ for details -
 
