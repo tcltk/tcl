@@ -1039,9 +1039,9 @@ install-libraries: libraries
 	@for i in $(TOP_DIR)/library/cookiejar/*.gz; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	done
-	@echo "Installing package http 2.10.0a1 as a Tcl Module"
+	@echo "Installing package http 2.10a1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
-		"$(MODULE_INSTALL_DIR)/8.6/http-2.10.0a1.tm"
+		"$(MODULE_INSTALL_DIR)/8.6/http-2.10a1.tm"
 	@echo "Installing package opt 0.4.7"
 	@for i in $(TOP_DIR)/library/opt/*.tcl; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
@@ -1520,7 +1520,7 @@ tclZlib.o: $(GENERIC_DIR)/tclZlib.c
 	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
 
 tclZipfs.o: $(GENERIC_DIR)/tclZipfs.c
-	$(CC) -c $(CC_SWITCHES) \
+	$(CC) -c $(CC_SWITCHES) -D_GNU_SOURCE \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
 		-I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip \
@@ -2264,7 +2264,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	    mkdir $(DISTDIR)/library/$$i;\
 	    cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
 	done
-	cp -p $(TOP_DIR)/library/cookiejar/*.txt.gz $(DISTDIR)/library/cookiejar
+	cp -p $(TOP_DIR)/library/cookiejar/*.dat.gz $(DISTDIR)/library/cookiejar
 	@mkdir $(DISTDIR)/library/encoding
 	cp -p $(TOP_DIR)/library/encoding/*.enc $(DISTDIR)/library/encoding
 	@mkdir $(DISTDIR)/library/msgs
@@ -2284,11 +2284,16 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	@( cd $(COMPAT_DIR)/zlib; find . -type f -print ) \
 	    | ( cd $(COMPAT_DIR)/zlib ; xargs tar cf - ) \
 	    | ( cd $(DISTDIR)/compat/zlib ; tar xfp - )
+	@mkdir $(DISTDIR)/libtommath
+	@echo cp -r $(TOP_DIR)/libtommath $(DISTDIR)/libtommath
+	@( cd $(TOP_DIR)/libtommath; find . -type f -print ) \
+	    | ( cd $(TOP_DIR)/libtommath ; xargs tar cf - ) \
+	    | ( cd $(DISTDIR)/libtommath ; tar xfp - )
 	@mkdir $(DISTDIR)/tests
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tests
 	cp -p $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \
 		$(TOP_DIR)/tests/httpd $(TOP_DIR)/tests/*.tcl \
-		$(DISTDIR)/tests
+		$(TOP_DIR)/tests/auto-files.zip $(DISTDIR)/tests
 	@mkdir $(DISTDIR)/tests/auto0
 	for i in auto1 auto2 ; \
 	    do \
@@ -2337,8 +2342,6 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	cp -p $(TOOL_DIR)/README $(TOOL_DIR)/*.c $(TOOL_DIR)/*.svg \
 		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/*.bmp \
 		$(TOOL_DIR)/valgrind_suppress $(DISTDIR)/tools
-	@mkdir $(DISTDIR)/libtommath
-	cp -p $(TOMMATH_SRCS) $(TOMMATH_DIR)/*.h $(DISTDIR)/libtommath
 	@mkdir $(DISTDIR)/pkgs
 	cp -p $(TOP_DIR)/pkgs/README $(DISTDIR)/pkgs
 	cp -p $(TOP_DIR)/pkgs/package.list.txt $(DISTDIR)/pkgs
@@ -2385,7 +2388,8 @@ html-tk: ${NATIVE_TCLSH}
 
 BUILD_HTML = \
 	@${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
-		--tcl --useversion=$(MAJOR_VERSION).$(MINOR_VERSION) --htmldir="$(HTML_INSTALL_DIR)" \
+		--useversion=$(MAJOR_VERSION).$(MINOR_VERSION) \
+		--htmldir="$(HTML_INSTALL_DIR)" \
 		--srcdir=$(TOP_DIR) $(BUILD_HTML_FLAGS)
 
 #--------------------------------------------------------------------------
