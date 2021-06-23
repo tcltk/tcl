@@ -2377,7 +2377,7 @@ UtfToUtfProc(
 		break;
 	    }
 	    src += len;
-	    if (!(flags & TCL_ENCODING_UTF)) {
+	    if (!(flags & TCL_ENCODING_UTF) && (ch > 0x3FF)) {
 		if (ch > 0xFFFF) {
 		    /* CESU-8 6-byte sequence for chars > U+FFFF */
 		    ch -= 0x10000;
