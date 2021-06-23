@@ -765,7 +765,7 @@ test coroutine-7.13 {
 		variable done
 		yield
 		yieldto c1
-		after 0 c2 
+		after 0 c2
 		vwait [namespace current]::done
 	} [namespace current]]
 
@@ -777,19 +777,19 @@ test coroutine-7.13 {
 	coroutine c2 apply [list {} {
 		variable done
 		yield
-		yieldto try {yieldto c1} on error {} [list after 0 [list [info coroutine]]] 
-		yieldto try {yieldto c1} on error {} [list after 0 [list [info coroutine]]] 
+		yieldto try {yieldto c1} on error {} [list after 0 [list [info coroutine]]]
+		yieldto try {yieldto c1} on error {} [list after 0 [list [info coroutine]]]
 		set done 1
 	} [namespace current]]
 
 	after 0 [list [namespace which c0]]
 	vwait [namespace current]::done
 	return $done
-} -result 1 
+} -result 1
 
 
 test coroutine-7.14 {
-	issue 5106fddd4400e5b9 
+	issue 5106fddd4400e5b9
 
 	failure to yieldto is not the same thing as not calling yieldto in the
 	first place
@@ -823,7 +823,7 @@ test coroutine-7.14 {
 		rename c1 {}
 	}
 	return [list $done0 $done1]
-} -result {failure failure} 
+} -result {failure failure}
 
 
 test coroutine-8.0.0 {coro inject executed} -body {
