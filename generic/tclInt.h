@@ -1496,6 +1496,11 @@ typedef struct CoroutineData {
     int nargs;                  /* Number of args required for resuming this
 				 * coroutine; -2 means "0 or 1" (default), -1
 				 * means "any" */
+    Tcl_Obj *yieldPtr;		/* The command to yield to.  Stored here in
+				 * order to reset splice point in
+				 * TclNRCoroutineActivateCallback if the
+				 * coroutine is busy.
+				*/
 } CoroutineData;
 
 typedef struct ExecEnv {
