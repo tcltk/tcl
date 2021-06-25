@@ -1,6 +1,6 @@
 # README:  Tcl
 
-This is the **Tcl 9.0a2** source distribution.
+This is the **Tcl 9.0a3** source distribution.
 
 You can get any source release of Tcl from [our distribution
 site](https://sourceforge.net/projects/tcl/files/Tcl/).
@@ -56,7 +56,7 @@ and selling it either in whole or in part.  See the file
 ## <a id="doc">2.</a> Documentation
 Extensive documentation is available on our website.
 The home page for this release, including new features, is
-[here](https://www.tcl.tk/software/tcltk/9.0.html).
+[here](https://www.tcl-lang.org/software/tcltk/9.0.html).
 Detailed release notes can be found at the
 [file distributions page](https://sourceforge.net/projects/tcl/files/Tcl/)
 by clicking on the relevant version.
@@ -107,7 +107,7 @@ Tcl Dev Kit builds on the earlier TclPro toolset and provides a debugger,
 static code checker, single-file wrapping utility, bytecode compiler, and
 more.  More information can be found at
 
-	http://www.ActiveState.com/Tcl
+	https://www.activestate.com/products/tcl/
 
 ## <a id="complangtcl">5.</a> Tcl newsgroup
 There is a USENET newsgroup, "`comp.lang.tcl`", intended for the exchange of

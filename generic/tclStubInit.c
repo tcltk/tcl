@@ -74,7 +74,6 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
-#define TclUnusedStubEntry 0
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 #undef Tcl_WinConvertError
 #define Tcl_WinConvertError 0
@@ -162,25 +161,16 @@ static void uniCodePanic() {
 #define TclBN_mp_toom_mul s_mp_toom_mul
 #define TclBN_mp_toom_sqr s_mp_toom_sqr
 
-#define TclpCreateTempFile_ TclpCreateTempFile
-#define TclGetAndDetachPids_ TclGetAndDetachPids
-#define TclpCreateCommandChannel_ TclpCreateCommandChannel
-#define TclpCloseFile_ TclpCloseFile
-#define TclpMakeFile_ TclpMakeFile
-#define TclpOpenFile_ TclpOpenFile
 #ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
 #   define Tcl_MacOSXOpenVersionedBundleResources 0
 #   define Tcl_MacOSXNotifierAddRunLoopMode 0
 #endif
-#define TclMacOSXNotifierAddRunLoopMode Tcl_MacOSXNotifierAddRunLoopMode
 #ifdef _WIN32
 #   define Tcl_CreateFileHandler 0
 #   define Tcl_DeleteFileHandler 0
 #   define Tcl_GetOpenFile 0
-#   define TclpCreatePipe_ TclpCreatePipe
 #else
 #   define TclpIsAtty isatty
-#   define TclpCreatePipe_ (int (*)(TclFile *, TclFile *))(void *)TclUnixCopyFile
 #endif
 
 #ifdef _WIN32
@@ -278,8 +268,8 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #endif /* TCL_WIDE_INT_IS_LONG */
 
 #else /* __CYGWIN__ */
-#   define TclWinGetTclInstance (void *(*)(void))(void *)TclpCreateProcess
-#   define TclpGetPid (size_t(*)(Tcl_Pid))(void *)TclUnixWaitForFile
+#   define TclWinGetTclInstance 0
+#   define TclpGetPid 0
 #   define TclWinFlushDirtyChannels 0
 #   define TclWinNoBackslash 0
 #   define TclWinAddProcess 0
@@ -573,7 +563,6 @@ static const TclIntStubs tclIntStubs = {
 static const TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
     0, /* 0 */
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
@@ -588,15 +577,15 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclGetAndDetachPids, /* 11 */
     0, /* 12 */
     0, /* 13 */
-    TclpCreatePipe_, /* 14 */
+    0, /* 14 */
     TclpCreateProcess, /* 15 */
     TclpIsAtty, /* 16 */
     TclUnixCopyFile, /* 17 */
     0, /* 18 */
-    TclMacOSXNotifierAddRunLoopMode, /* 19 */
+    0, /* 19 */
     TclWinAddProcess, /* 20 */
     0, /* 21 */
-    TclpCreateTempFile_, /* 22 */
+    0, /* 22 */
     0, /* 23 */
     TclWinNoBackslash, /* 24 */
     0, /* 25 */
@@ -605,73 +594,6 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 28 */
     TclWinCPUID, /* 29 */
     TclUnixOpenTemporaryFile, /* 30 */
-#endif /* UNIX */
-#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
-    0, /* 0 */
-    TclpCloseFile, /* 1 */
-    TclpCreateCommandChannel, /* 2 */
-    TclpCreatePipe, /* 3 */
-    TclWinGetTclInstance, /* 4 */
-    TclUnixWaitForFile, /* 5 */
-    TclpMakeFile, /* 6 */
-    TclpOpenFile, /* 7 */
-    TclpGetPid, /* 8 */
-    TclpCreateTempFile, /* 9 */
-    0, /* 10 */
-    TclGetAndDetachPids, /* 11 */
-    TclpCloseFile_, /* 12 */
-    TclpCreateCommandChannel_, /* 13 */
-    TclpCreatePipe_, /* 14 */
-    TclpCreateProcess, /* 15 */
-    TclpIsAtty, /* 16 */
-    TclUnixCopyFile, /* 17 */
-    TclpMakeFile_, /* 18 */
-    TclpOpenFile_, /* 19 */
-    TclWinAddProcess, /* 20 */
-    0, /* 21 */
-    TclpCreateTempFile_, /* 22 */
-    0, /* 23 */
-    TclWinNoBackslash, /* 24 */
-    0, /* 25 */
-    0, /* 26 */
-    TclWinFlushDirtyChannels, /* 27 */
-    0, /* 28 */
-    TclWinCPUID, /* 29 */
-    TclUnixOpenTemporaryFile, /* 30 */
-#endif /* WIN */
-#ifdef MAC_OSX_TCL /* MACOSX */
-    0, /* 0 */
-    TclpCloseFile, /* 1 */
-    TclpCreateCommandChannel, /* 2 */
-    TclpCreatePipe, /* 3 */
-    TclWinGetTclInstance, /* 4 */
-    TclUnixWaitForFile, /* 5 */
-    TclpMakeFile, /* 6 */
-    TclpOpenFile, /* 7 */
-    TclpGetPid, /* 8 */
-    TclpCreateTempFile, /* 9 */
-    0, /* 10 */
-    TclGetAndDetachPids, /* 11 */
-    0, /* 12 */
-    0, /* 13 */
-    TclpCreatePipe_, /* 14 */
-    TclpCreateProcess, /* 15 */
-    TclpIsAtty, /* 16 */
-    TclUnixCopyFile, /* 17 */
-    0, /* 18 */
-    TclMacOSXNotifierAddRunLoopMode, /* 19 */
-    TclWinAddProcess, /* 20 */
-    0, /* 21 */
-    TclpCreateTempFile_, /* 22 */
-    0, /* 23 */
-    TclWinNoBackslash, /* 24 */
-    0, /* 25 */
-    0, /* 26 */
-    TclWinFlushDirtyChannels, /* 27 */
-    0, /* 28 */
-    TclWinCPUID, /* 29 */
-    TclUnixOpenTemporaryFile, /* 30 */
-#endif /* MACOSX */
 };
 
 static const TclPlatStubs tclPlatStubs = {
