@@ -607,84 +607,62 @@ interface tclIntPlat
 #declare 0 {unix win} {
 #    void TclWinConvertError(unsigned errCode)
 #}
-declare 1 {unix win} {
+declare 1 {
     int TclpCloseFile(TclFile file)
 }
-declare 2 {unix win} {
+declare 2 {
     Tcl_Channel TclpCreateCommandChannel(TclFile readFile,
 	    TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)
 }
-declare 3 {unix win} {
+declare 3 {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
 }
-declare 4 {unix win} {
+declare 4 {
     void *TclWinGetTclInstance(void)
 }
-declare 5 {unix win} {
+declare 5 {
     int TclUnixWaitForFile(int fd, int mask, int timeout)
 }
-declare 6 {unix win} {
+declare 6 {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
 }
-declare 7 {unix win} {
+declare 7 {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
-declare 8 {unix win} {
+declare 8 {
     size_t TclpGetPid(Tcl_Pid pid)
 }
-declare 9 {unix win} {
+declare 9 {
     TclFile TclpCreateTempFile(const char *contents)
 }
-declare 11 {unix win} {
+declare 11 {
     void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
 }
-declare 12 win {
-    int TclpCloseFile_(TclFile file)
-}
-declare 13 win {
-    Tcl_Channel TclpCreateCommandChannel_(TclFile readFile,
-	    TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)
-}
-declare 14 {unix win} {
-    int TclpCreatePipe_(TclFile *readPipe, TclFile *writePipe)
-}
-declare 15 {unix win} {
+declare 15 {
     int TclpCreateProcess(Tcl_Interp *interp, int argc,
 	    const char **argv, TclFile inputFile, TclFile outputFile,
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
-declare 16 {unix win} {
+declare 16 {
     int TclpIsAtty(int fd)
 }
-declare 17 {unix win} {
+declare 17 {
     int TclUnixCopyFile(const char *src, const char *dst,
 	    const Tcl_StatBuf *statBufPtr, int dontCopyAtts)
 }
-declare 18 win {
-    TclFile TclpMakeFile_(Tcl_Channel channel, int direction)
-}
-declare 19 unix {
-    void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
-}
-declare 19 win {
-    TclFile TclpOpenFile_(const char *fname, int mode)
-}
-declare 20 {unix win} {
+declare 20 {
     void TclWinAddProcess(void *hProcess, size_t id)
 }
-declare 22 {unix win} {
-    TclFile TclpCreateTempFile_(const char *contents)
-}
-declare 24 {unix win} {
+declare 24 {
     char *TclWinNoBackslash(char *path)
 }
-declare 27 {unix win} {
+declare 27 {
     void TclWinFlushDirtyChannels(void)
 }
-declare 29 {unix win} {
+declare 29 {
     int TclWinCPUID(int index, int *regs)
 }
-declare 30 {unix win} {
+declare 30 {
     int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
 	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
 }
