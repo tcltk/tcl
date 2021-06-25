@@ -50,10 +50,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   9
 #define TCL_MINOR_VERSION   0
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  2
+#define TCL_RELEASE_SERIAL  3
 
 #define TCL_VERSION	    "9.0"
-#define TCL_PATCH_LEVEL	    "9.0a2"
+#define TCL_PATCH_LEVEL	    "9.0a3"
 
 /*
  * A special definition used to allow this header file to be included from
@@ -2285,7 +2285,7 @@ TCLAPI const char *TclZipfs_AppHook(int *argc, char ***argv);
 	++(objPtr)->refCount
     /*
      * Use do/while0 idiom for optimum correctness without compiler warnings.
-     * http://c2.com/cgi/wiki?TrivialDoWhileLoop
+     * https://wiki.c2.com/?TrivialDoWhileLoop
      */
 #   undef Tcl_DecrRefCount
 #   define Tcl_DecrRefCount(objPtr) \
