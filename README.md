@@ -1,6 +1,6 @@
 # README:  Tcl
 
-This is the **Tcl 9.0a3** source distribution.
+This is the **Tcl 9.0a4** source distribution.
 
 You can get any source release of Tcl from [our distribution
 site](https://sourceforge.net/projects/tcl/files/Tcl/).
