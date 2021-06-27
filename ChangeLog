@@ -8096,7 +8096,7 @@ a better first place to look now.
 2009-03-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/tclsh.1:		 Bring doc and tools in line with
-	* tools/installData.tcl: http://wiki.tcl.tk/812
+	* tools/installData.tcl: https://wiki.tcl-lang.org/page/exec+magic
 	* tools/str2c
 	* tools/tcltk-man2html.tcl
 
