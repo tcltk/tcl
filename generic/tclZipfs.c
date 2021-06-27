@@ -32,7 +32,7 @@
 #define TBLS 1
 #endif
 
-#if !defined(NO_DLFCN_H)
+#if !defined(_WIN32) && !defined(NO_DLFCN_H)
 #include <dlfcn.h>
 #endif
 
