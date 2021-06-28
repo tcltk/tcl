@@ -230,7 +230,7 @@ test iocmd-8.4 {fconfigure command} -setup {
     fconfigure $f1 froboz
 } -returnCodes error -cleanup {
     close $f1
-} -result [expectedOpts "froboz" {}]
+} -result [expectedOpts "froboz" -stat]
 test iocmd-8.5 {fconfigure command} -returnCodes error -body {
     fconfigure stdin -buffering froboz
 } -result {bad value for -buffering: must be one of full, line, or none}
