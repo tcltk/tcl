@@ -678,7 +678,7 @@ StatOpenFile(
     Tcl_Obj *dictObj;
     unsigned short mode;
 
-    if (fstat(fsPtr->fd, &statBuf) < 0) {
+    if (TclOSfstat(fsPtr->fd, &statBuf) < 0) {
 	return NULL;
     }
 
