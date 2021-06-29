@@ -120,15 +120,18 @@ extern "C" {
 #pragma clang diagnostic pop
 #endif
 #   define timezone _timezone
+    extern int TclOSfstat(int fd, void *statBuf);
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
 #ifdef __cplusplus
 }
 #endif
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
+#   define TclOSfstat(fd, buf) fstat64(fd, (struct stat64 *)buf)
 #   define TclOSstat(name, buf) stat64(name, (struct stat64 *)buf)
 #   define TclOSlstat(name,buf) lstat64(name, (struct stat64 *)buf)
 #else
+#   define TclOSfstat(fd, buf) fstat(fd, (struct stat *)buf)
 #   define TclOSstat(name, buf) stat(name, (struct stat *)buf)
 #   define TclOSlstat(name, buf) lstat(name, (struct stat *)buf)
 #endif
