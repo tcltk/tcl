@@ -507,7 +507,7 @@ Tcltest_Init(
 #ifdef TCL_NO_DEPRECATED
 	    ".no-deprecate"
 #endif
-#ifndef TCL_THREADS
+#if !TCL_THREADS
 	    ".no-thread"
 #endif
 #ifndef TCL_CFG_OPTIMIZED
