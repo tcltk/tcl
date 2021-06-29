@@ -903,17 +903,15 @@ ToCTime(
 
 static Tcl_Obj *
 StatOpenFile(
-    FileState *fsPtr)
+    FileInfo *infoPtr)
 {
     DWORD attr;
     int dev, nlink = 1;
     unsigned short mode;
     unsigned long long size, inode;
     long long atime, ctime, mtime;
-    HANDLE fileHandle;
-    DWORD fileType = FILE_TYPE_UNKNOWN;
     BY_HANDLE_FILE_INFORMATION data;
-    Tcl_DictObj *dictObj;
+    Tcl_Obj *dictObj;
 
     if (GetFileInformationByHandle(infoPtr->handle, &data) != TRUE) {
 	Tcl_SetErrno(ENOENT);
@@ -936,7 +934,7 @@ StatOpenFile(
 
     inode = CombineDwords(data.nFileIndexHigh, data.nFileIndexLow);
 
-    dev = dw.dwVolumeSerialNumber;
+    dev = data.dwVolumeSerialNumber;
 
     /*
      * Note that this code has no idea whether the file can be executed.
@@ -1008,7 +1006,7 @@ FileGetOptionProc(
     }
 
     if (valid) {
-	Tcl_Obj *dictObj = StatOpenFile(fsPtr);
+	Tcl_Obj *dictObj = StatOpenFile(infoPtr);
 	const char *dictContents;
 	int dictLength;
 
