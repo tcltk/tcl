@@ -1198,6 +1198,29 @@ TclpUtime(
 #ifdef __CYGWIN__
 
 int
+TclOSfstat(
+    int fd,
+    void *cygstat)
+{
+    struct stat buf;
+    Tcl_StatBuf *statBuf = (Tcl_StatBuf *)cygstat;
+    int result = fstat(fd, &buf);
+
+    statBuf->st_mode = buf.st_mode;
+    statBuf->st_ino = buf.st_ino;
+    statBuf->st_dev = buf.st_dev;
+    statBuf->st_rdev = buf.st_rdev;
+    statBuf->st_nlink = buf.st_nlink;
+    statBuf->st_uid = buf.st_uid;
+    statBuf->st_gid = buf.st_gid;
+    statBuf->st_size = buf.st_size;
+    statBuf->st_atime = buf.st_atime;
+    statBuf->st_mtime = buf.st_mtime;
+    statBuf->st_ctime = buf.st_ctime;
+    return result;
+}
+
+int
 TclOSstat(
     const char *name,
     void *cygstat)
