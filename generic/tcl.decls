@@ -2515,7 +2515,7 @@ export {
     const char *Tcl_InitSubsystems(void)
 }
 export {
-    int TclZipfs_AppHook(int *argc, char ***argv)
+    const char *TclZipfs_AppHook(int *argc, char ***argv)
 }
 
 # Local Variables:
