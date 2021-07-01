@@ -1139,7 +1139,7 @@ Tcl_InitSubsystems(void)
 	    ".static"
 #endif
 #if TCL_UTF_MAX < 4
-	    ".utf16"
+	    ".utf-16"
 #endif
     ;
 }

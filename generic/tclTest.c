@@ -520,7 +520,7 @@ Tcltest_Init(
 	    ".static"
 #endif
 #if TCL_UTF_MAX < 4
-	    ".utf16"
+	    ".utf-16"
 #endif
 	    , NULL) == TCL_ERROR) {
 	return TCL_ERROR;
