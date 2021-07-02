@@ -1025,60 +1025,18 @@ Tcl_Exit(
  *-------------------------------------------------------------------------
  */
 
-const char *
-Tcl_InitSubsystems(void)
-{
-    if (inExit != 0) {
-	Tcl_Panic("Tcl_InitSubsystems called while exiting");
-    }
-
-    if (subsystemsInitialized == 0) {
-	/*
-	 * Double check inside the mutex. There are definitly calls back into
-	 * this routine from some of the functions below.
-	 */
-
-	TclpInitLock();
-	if (subsystemsInitialized == 0) {
-
-		/*
-	     * Initialize locks used by the memory allocators before anything
-	     * interesting happens so we can use the allocators in the
-	     * implementation of self-initializing locks.
-	     */
-
-	    TclInitThreadStorage();     /* Creates hash table for
-					 * thread local storage */
-#if defined(USE_TCLALLOC) && USE_TCLALLOC
-	    TclInitAlloc();		/* Process wide mutex init */
-#endif
-#if TCL_THREADS && defined(USE_THREAD_ALLOC)
-	    TclInitThreadAlloc();	/* Setup thread allocator caches */
-#endif
-#ifdef TCL_MEM_DEBUG
-	    TclInitDbCkalloc();		/* Process wide mutex init */
-#endif
-
-	    TclpInitPlatform();		/* Creates signal handler(s) */
-	    TclInitDoubleConversion();	/* Initializes constants for
-					 * converting to/from double. */
-	    TclInitObjSubsystem();	/* Register obj types, create
-					 * mutexes. */
-	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
-	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
-	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
-	    subsystemsInitialized = 1;
-	}
-	TclpInitUnlock();
-    }
-    TclInitNotifier();
+MODULE_SCOPE const TclStubs tclStubs;
 
 #ifndef STRINGIFY
 #  define STRINGIFY(x) STRINGIFY1(x)
 #  define STRINGIFY1(x) #x
 #endif
 
-    return TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
+static const struct {
+    const TclStubs *stubs;
+    const char version[];
+} stubInfo = {
+    &tclStubs, TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
 #if defined(__clang__) && defined(__clang_major__)
 	    ".clang-" STRINGIFY(__clang_major__)
 #if __clang_minor__ < 10
@@ -1133,7 +1091,7 @@ Tcl_InitSubsystems(void)
 #endif
 #endif
 #ifdef TCL_CFG_PROFILED
-	    ".profiled"
+	    ".profile"
 #endif
 #ifdef STATIC_BUILD
 	    ".static"
@@ -1141,7 +1099,56 @@ Tcl_InitSubsystems(void)
 #if TCL_UTF_MAX < 4
 	    ".utf-16"
 #endif
-    ;
+};
+
+const char *
+Tcl_InitSubsystems(void)
+{
+    if (inExit != 0) {
+	Tcl_Panic("Tcl_InitSubsystems called while exiting");
+    }
+
+    if (subsystemsInitialized == 0) {
+	/*
+	 * Double check inside the mutex. There are definitly calls back into
+	 * this routine from some of the functions below.
+	 */
+
+	TclpInitLock();
+	if (subsystemsInitialized == 0) {
+
+		/*
+	     * Initialize locks used by the memory allocators before anything
+	     * interesting happens so we can use the allocators in the
+	     * implementation of self-initializing locks.
+	     */
+
+	    TclInitThreadStorage();     /* Creates hash table for
+					 * thread local storage */
+#if defined(USE_TCLALLOC) && USE_TCLALLOC
+	    TclInitAlloc();		/* Process wide mutex init */
+#endif
+#if TCL_THREADS && defined(USE_THREAD_ALLOC)
+	    TclInitThreadAlloc();	/* Setup thread allocator caches */
+#endif
+#ifdef TCL_MEM_DEBUG
+	    TclInitDbCkalloc();		/* Process wide mutex init */
+#endif
+
+	    TclpInitPlatform();		/* Creates signal handler(s) */
+	    TclInitDoubleConversion();	/* Initializes constants for
+					 * converting to/from double. */
+	    TclInitObjSubsystem();	/* Register obj types, create
+					 * mutexes. */
+	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
+	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
+	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
+	    subsystemsInitialized = 1;
+	}
+	TclpInitUnlock();
+    }
+    TclInitNotifier();
+    return stubInfo.version;
 }
 
 /*
