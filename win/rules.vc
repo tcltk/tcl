@@ -442,7 +442,7 @@ This compiler does not support profile guided optimization.
 # Set our defines now armed with our options.
 #----------------------------------------------------------
 
-OPTDEFINES	= /DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) /DSTDC_HEADERS
+OPTDEFINES	= /DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) /DSTDC_HEADERS /DUSE_NMAKE=1
 
 !if $(TCL_MEM_DEBUG)
 OPTDEFINES	= $(OPTDEFINES) /DTCL_MEM_DEBUG
