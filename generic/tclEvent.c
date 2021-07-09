@@ -1036,7 +1036,7 @@ static const struct {
     const TclStubs *stubs;
     const char version[];
 } stubInfo = {
-    &tclStubs, TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
+    &tclStubs, {TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
 #if defined(__clang__) && defined(__clang_major__)
 	    ".clang-" STRINGIFY(__clang_major__)
 #if __clang_minor__ < 10
@@ -1099,7 +1099,7 @@ static const struct {
 #if TCL_UTF_MAX < 4
 	    ".utf-16"
 #endif
-};
+}};
 
 const char *
 Tcl_InitSubsystems(void)
