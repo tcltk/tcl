@@ -3,11 +3,11 @@
 package require tcltest 2.5
 namespace import ::tcltest::*
 testConstraint exec          [llength [info commands exec]]
-testConstraint debug [expr {"debug" in [split [package provide tcl] .]}]
-testConstraint purify [expr {"purify" in [split [package provide tcl] .]}]
+testConstraint debug [tcl::build-info debug]
+testConstraint purify [tcl::build-info purify]
 testConstraint debugpurify [
     expr {
-	"memdebug" ni [split [package provide tcl] .]
+	![tcl::build-info memdebug]
 	&& [testConstraint debug]
 	&& [testConstraint purify]
     }]
