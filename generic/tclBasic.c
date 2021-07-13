@@ -648,7 +648,7 @@ buildInfoObjCmd(
 		Tcl_AppendResult(interp, buf, NULL);
 	    }
 	    return TCL_OK;
-	} else if (len == 11 && !strcmp(arg, "fullversion")) {
+	} else if (len == 10 && !strcmp(arg, "patchlevel")) {
 	    char buf[80];
 	    const char *p = strchr((char *)clientData, '+');
 	    if (p) {
