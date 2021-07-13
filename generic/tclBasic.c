@@ -632,15 +632,73 @@ buildInfoObjCmd(
 	return TCL_ERROR;
     }
     if (objc == 2) {
-	const char *arg = Tcl_GetString(objv[1]);
-	const char *p = strstr((char *)clientData, arg);
-	size_t len = strlen(arg);
-	if ((p > (char *)clientData) && p[-1] == '.'
-		&& ((p[len] == '.') || (p[len] == '\0'))) {
-	    Tcl_AppendResult(interp, "1", NULL);
-	} else {
+	int len;
+	const char *arg = TclGetStringFromObj(objv[1], &len);
+	if (len == 7 && !strcmp(arg, "version")) {
+	    char buf[80];
+	    const char *p = strchr((char *)clientData, '.');
+	    if (p) {
+		const char *q = strchr(p+1, '.');
+		const char *r = strchr(p+1, '+');
+		p = (q < r) ? q : r;
+	    }
+	    if (p) {
+		memcpy(buf, (char *)clientData, p - (char *)clientData);
+		buf[p - (char *)clientData] = '\0';
+		Tcl_AppendResult(interp, buf, NULL);
+	    }
+	    return TCL_OK;
+	} else if (len == 11 && !strcmp(arg, "fullversion")) {
+	    char buf[80];
+	    const char *p = strchr((char *)clientData, '+');
+	    if (p) {
+		memcpy(buf, (char *)clientData, p - (char *)clientData);
+		buf[p - (char *)clientData] = '\0';
+		Tcl_AppendResult(interp, buf, NULL);
+	    }
+	    return TCL_OK;
+	} else if (len == 6 && !strcmp(arg, "commit")) {
+	    const char *q, *p = strchr((char *)clientData, '+');
+	    if (p) {
+		if ((q = strchr(p, '.'))) {
+		    char buf[80];
+		    memcpy(buf, p+1, q - p - 1);
+		    buf[q - p - 1] = '\0';
+		    Tcl_AppendResult(interp, buf, NULL);
+		} else {
+		    Tcl_AppendResult(interp, p+1, NULL);
+		}
+	    }
+	    return TCL_OK;
+	} else if (len == 8 && !strcmp(arg, "compiler")) {
+	    const char *p = strchr((char *)clientData, '.');
+	    while (p) {
+		if (!strncmp(p+1, "clang-", 6) || !strncmp(p+1, "gcc-", 4) || !strncmp(p+1, "msvc-", 5)) {
+		    const char *q = strchr(p+1, '.');
+		    if (q) {
+			char buf[16];
+			memcpy(buf, p+1, q - p - 1);
+			buf[q - p - 1] = '\0';
+			Tcl_AppendResult(interp, buf, NULL);
+		    } else {
+			Tcl_AppendResult(interp, p+1, NULL);
+		    }
+		    return TCL_OK;
+		}
+		p = strchr(p+1, '.');
+	    }
 	    Tcl_AppendResult(interp, "0", NULL);
+	    return TCL_OK;
 	}
+	const char *p = strchr((char *)clientData, '.');
+	while (p) {
+	    if (!strncmp(p+1, arg, len) && ((p[len+1] == '.') || (p[len+1] == '\0'))) {
+		Tcl_AppendResult(interp, "1", NULL);
+		return TCL_OK;
+	    }
+	    p = strchr(p+1, '.');
+	}
+	Tcl_AppendResult(interp, "0", NULL);
 	return TCL_OK;
     }
     Tcl_AppendResult(interp, (char *)clientData, NULL);
