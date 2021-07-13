@@ -1093,6 +1093,9 @@ static const struct {
 #ifdef TCL_CFG_PROFILED
 	    ".profile"
 #endif
+#ifdef PURIFY
+	    ".purify"
+#endif
 #ifdef STATIC_BUILD
 	    ".static"
 #endif

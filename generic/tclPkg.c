@@ -1696,7 +1696,7 @@ CheckVersionAndConvert(
 
     *ip++ = *p;
 
-    for (prevChar = *p, p++; (*p != 0) && (*p != '+'); p++) {
+    for (prevChar = *p, p++; *p != 0; p++) {
 	if (!isdigit(UCHAR(*p)) &&			/* INTL: digit */
 		((*p!='.' && *p!='a' && *p!='b') ||
 		((hasunstable && (*p=='a' || *p=='b')) ||
@@ -2000,10 +2000,10 @@ CheckRequirement(
 
     char *dash = NULL, *buf;
 
-    dash = strchr(string, '+') ? NULL : (char *)strchr(string, '-');
+    dash = (char *)strchr(string, '-');
     if (dash == NULL) {
 	/*
-	 * '+' found or no dash found: has to be a simple version.
+	 * No dash found, has to be a simple version.
 	 */
 
 	return CheckVersionAndConvert(interp, string, NULL, NULL);
