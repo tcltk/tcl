@@ -501,7 +501,7 @@ proc auto_load_index {} {
 	    continue
 	} else {
 	    set error [catch {
-		fconfigure $f -eofchar \032
+		fconfigure $f -eofchar "\032 {}"
 		set id [gets $f]
 		if {$id eq "# Tcl autoload index file, version 2.0"} {
 		    eval [read $f]
@@ -637,7 +637,7 @@ proc auto_import {pattern} {
 if {$tcl_platform(platform) eq "windows"} {
 # Windows version.
 #
-# Note that info executable doesn't work under Windows, so we have to
+# Note that file executable doesn't work under Windows, so we have to
 # look for files with .exe, .com, or .bat extensions.  Also, the path
 # may be in the Path or PATH environment variables, and path
 # components are separated with semicolons, not colons as under Unix.
@@ -650,8 +650,8 @@ proc auto_execok name {
     }
     set auto_execs($name) ""
 
-    set shellBuiltins [list cls copy date del dir echo erase md mkdir \
-	    mklink rd ren rename rmdir start time type ver vol]
+    set shellBuiltins [list assoc cls copy date del dir echo erase exit ftype \
+	    md mkdir mklink move rd ren rename rmdir start time type ver vol]
     if {[info exists env(PATHEXT)]} {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]
@@ -805,7 +805,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    }
 	}
     } else {
-	if {[string first $nsrc $ndest] != -1} {
+	if {[string first $nsrc $ndest] >= 0} {
 	    set srclen [expr {[llength [file split $nsrc]] - 1}]
 	    set ndest [lindex [file split $ndest] $srclen]
 	    if {$ndest eq [file tail $nsrc]} {
