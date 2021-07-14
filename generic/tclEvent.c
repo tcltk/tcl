@@ -1056,12 +1056,15 @@ static const struct {
 #ifndef NDEBUG
 	    ".debug"
 #endif
-#if !defined(__clang__) && defined(__GNUC__)
+#if !defined(__clang__) && !defined(__INTEL_COMPILER) && defined(__GNUC__)
 	    ".gcc-" STRINGIFY(__GNUC__)
 #if __GNUC_MINOR__ < 10
 	    "0"
 #endif
 	    STRINGIFY(__GNUC_MINOR__)
+#endif
+#ifdef __INTEL_COMPILER
+	    ".icc-" STRINGIFY(__INTEL_COMPILER)
 #endif
 #if (defined(_WIN32) && !defined(_WIN64)) || (ULONG_MAX == 0xffffffffUL)
 	    ".ilp32"
