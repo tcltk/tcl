@@ -673,7 +673,8 @@ buildInfoObjCmd(
 	} else if (len == 8 && !strcmp(arg, "compiler")) {
 	    const char *p = strchr((char *)clientData, '.');
 	    while (p) {
-		if (!strncmp(p+1, "clang-", 6) || !strncmp(p+1, "gcc-", 4) || !strncmp(p+1, "msvc-", 5)) {
+		if (!strncmp(p+1, "clang-", 6) || !strncmp(p+1, "gcc-", 4)
+			    || !strncmp(p+1, "icc-", 4) || !strncmp(p+1, "msvc-", 5)) {
 		    const char *q = strchr(p+1, '.');
 		    if (q) {
 			char buf[16];
@@ -1276,7 +1277,7 @@ Tcl_CreateInterp(void)
     /*
      * Register Tcl's version number.
      * TIP #268: Full patchlevel instead of just major.minor
-     * TIP #???: Append build information "+<UUID>.<tag1>.<tag2>...."
+     * TIP #599: Extended build information "+<UUID>.<tag1>.<tag2>...."
      */
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
