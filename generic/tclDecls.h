@@ -3692,6 +3692,12 @@ extern const TclStubs *tclStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+#ifdef _WIN32
+#   undef Tcl_CreateFileHandler
+#   undef Tcl_DeleteFileHandler
+#   undef Tcl_GetOpenFile
+#endif
+
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
@@ -3919,7 +3925,6 @@ extern const TclStubs *tclStubsPtr;
 
 #define Tcl_Close(interp, chan) Tcl_CloseEx(interp, chan, 0)
 
-#undef TclUnusedStubEntry
 #undef TclUtfCharComplete
 #undef TclUtfNext
 #undef TclUtfPrev

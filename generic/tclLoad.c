@@ -339,7 +339,7 @@ Tcl_LoadObjCmd(
 	    }
 #endif /* __CYGWIN__ */
 	    if (((pkgGuess[0] == 't')
-#ifdef MAC_OS_TCL
+#ifdef MAC_OSX_TCL
 		    || (pkgGuess[0] == 'T')
 #endif
 		    ) && (pkgGuess[1] == 'c')

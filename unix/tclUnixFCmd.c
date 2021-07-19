@@ -2245,17 +2245,17 @@ static const char *
 DefaultTempDir(void)
 {
     const char *dir;
-    struct stat buf;
+    Tcl_StatBuf buf;
 
     dir = getenv("TMPDIR");
-    if (dir && dir[0] && stat(dir, &buf) == 0 && S_ISDIR(buf.st_mode)
+    if (dir && dir[0] && TclOSstat(dir, &buf) == 0 && S_ISDIR(buf.st_mode)
 	    && access(dir, W_OK) == 0) {
 	return dir;
     }
 
 #ifdef P_tmpdir
     dir = P_tmpdir;
-    if (stat(dir, &buf)==0 && S_ISDIR(buf.st_mode) && access(dir, W_OK)==0) {
+    if (TclOSstat(dir, &buf)==0 && S_ISDIR(buf.st_mode) && access(dir, W_OK)==0) {
 	return dir;
     }
 #endif
