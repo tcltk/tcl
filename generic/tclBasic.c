@@ -4404,6 +4404,7 @@ NRCommand(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *listPtr;
 
     iPtr->numLevels--;
 
@@ -4412,7 +4413,10 @@ NRCommand(
       */
 
     if (data[1] && (data[1] != INT2PTR(1))) {
-        TclNRAddCallback(interp, TclNRTailcallEval, data[1], NULL, NULL, NULL);
+	listPtr = (Tcl_Obj *)data[1];
+	data[1] = NULL;
+
+	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, NULL, NULL, NULL);
     }
 
     /* OPT ??
@@ -8676,6 +8680,7 @@ TclNRYieldToObjCmd(
 
     iPtr->execEnvPtr = corPtr->callerEEPtr;
     TclSetTailcall(interp, listPtr);
+    corPtr->yieldPtr = listPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
 
     return TclNRYieldObjCmd(INT2PTR(CORO_ACTIVATE_YIELDM), interp, 1, objv);
@@ -8873,6 +8878,22 @@ TclNRCoroutineActivateCallback(
          */
 
         if (corPtr->stackLevel != stackLevel) {
+	    NRE_callback *runPtr;
+
+	    iPtr->execEnvPtr = corPtr->callerEEPtr;
+	    if (corPtr->yieldPtr) {
+		for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
+		    if (runPtr->data[1] == corPtr->yieldPtr) {
+			runPtr->data[1] = NULL;
+			Tcl_DecrRefCount(corPtr->yieldPtr);
+			corPtr->yieldPtr = NULL;
+			break;
+		    }
+		}
+	    }
+	    iPtr->execEnvPtr = corPtr->eePtr;
+
+
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "cannot yield: C stack busy", -1));
             Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD",
@@ -8888,6 +8909,7 @@ TclNRCoroutineActivateCallback(
             Tcl_Panic("Yield received an option which is not implemented");
         }
 
+	corPtr->yieldPtr = NULL;
         corPtr->stackLevel = NULL;
 
         numLevels = iPtr->numLevels;

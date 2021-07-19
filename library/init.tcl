@@ -19,7 +19,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact tcl 9.0a2
+package require -exact tcl 9.0a4
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -591,7 +591,7 @@ proc auto_execok name {
     }
     set auto_execs($name) ""
 
-    set shellBuiltins [list assoc cls copy date del dir echo erase ftype \
+    set shellBuiltins [list assoc cls copy date del dir echo erase exit ftype \
 	    md mkdir mklink move rd ren rename rmdir start time type ver vol]
     if {[info exists env(PATHEXT)]} {
 	# Add an initial ; to have the {} extension check first.

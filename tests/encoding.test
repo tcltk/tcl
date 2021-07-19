@@ -429,6 +429,21 @@ test encoding-15.21 {UtfToUtfProc CESU-8 noncharacter} {
     binary scan $y H* z
     list [string length $y] $z
 } {3 efbfbf}
+test encoding-15.22 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
+    set y [encoding convertto cesu-8 \x80]
+    binary scan $y H* z
+    list [string length $y] $z
+} {2 c280}
+test encoding-15.23 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
+    set y [encoding convertto cesu-8 \u100]
+    binary scan $y H* z
+    list [string length $y] $z
+} {2 c480}
+test encoding-15.24 {UtfToUtfProc CESU-8 bug [048dd20b4171c8da]} {
+    set y [encoding convertto cesu-8 \u3FF]
+    binary scan $y H* z
+    list [string length $y] $z
+} {2 cfbf}
 
 test encoding-16.1 {Utf16ToUtfProc} -body {
     set val [encoding convertfrom utf-16 NN]
@@ -764,7 +779,7 @@ test encoding-28.0 {all encodings load} -body {
 		llength $name
 	}
 	return $count
-} -result [expr {[info exists ::tcl_precision] ? 88 : 87}]
+} -result [expr {[info exists ::tcl_precision] ? 89 : 88}]
 
 runtests
 
