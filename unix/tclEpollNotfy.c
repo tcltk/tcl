@@ -196,7 +196,7 @@ PlatformEventsControl(
 {
     struct epoll_event newEvent;
     struct PlatformEventData *newPedPtr;
-    struct stat fdStat;
+    Tcl_StatBuf fdStat;
 
     newEvent.events = 0;
     if (filePtr->mask & (TCL_READABLE | TCL_EXCEPTION)) {
@@ -221,7 +221,7 @@ PlatformEventsControl(
      * files belonging to tsdPtr.
      */
 
-    if (fstat(filePtr->fd, &fdStat) == -1) {
+    if (TclOSfstat(filePtr->fd, &fdStat) == -1) {
 	Tcl_Panic("fstat: %s", strerror(errno));
     }
 
