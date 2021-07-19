@@ -9,7 +9,7 @@ Release:       2
 License:       BSD
 Group:         Development/Languages
 Source:        http://prdownloads.sourceforge.net/tcl/tcl%{version}-src.tar.gz
-URL:           http://www.tcl.tk/
+URL:           https://www.tcl-lang.org/
 Buildroot:     /var/tmp/%{name}%{version}
 
 %description
