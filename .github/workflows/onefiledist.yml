@@ -111,8 +111,8 @@ jobs:
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
-          install: git mingw-w64-x86_64-toolchain make zip
+          msystem: UCRT64
+          install: git mingw-w64-ucrt-x86_64-toolchain make zip
       - name: Checkout
         uses: actions/checkout@v2
       - name: Prepare
