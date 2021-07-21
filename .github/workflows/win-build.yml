@@ -1,5 +1,7 @@
 name: Windows
 on: [push]
+env:
+  ERROR_ON_FAILURES: 1
 jobs:
   msvc:
     runs-on: windows-latest
@@ -38,13 +40,11 @@ jobs:
           if ($lastexitcode -ne 0) {
              throw "nmake exit code: $lastexitcode"
           }
-        env:
-          ERROR_ON_FAILURES: 1
   gcc:
     runs-on: windows-latest
     defaults:
       run:
-        shell: bash
+        shell: msys2 {0}
         working-directory: win
     strategy:
       matrix:
@@ -55,10 +55,13 @@ jobs:
           - "--enable-symbols=mem"
     # Using powershell means we need to explicitly stop on failure
     steps:
+      - name: Install MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: git mingw-w64-x86_64-toolchain make
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Install MSYS2 and Make
-        run: choco install msys2 make
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c
@@ -75,5 +78,3 @@ jobs:
         run: make tcltest
       - name: Run Tests
         run: make test
-        env:
-          ERROR_ON_FAILURES: 1
