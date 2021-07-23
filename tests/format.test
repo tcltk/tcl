@@ -23,7 +23,7 @@ testConstraint pointerIs64bit [expr {$tcl_platform(pointerSize) >= 8}]
 # MSVC uses a broken libc that gets sprintf("%g") wrong. This is a pain
 # particularly in Continuous Integration, and there isn't anything much we can
 # do about it.
-testConstraint knownMsvcBug [expr {![info exists ::env(CI_BUILD_WITH_MSVC)]}]
+testConstraint knownMsvcBug [string match msvc-* [tcl::build-info compiler]]
 
 test format-1.1 {integer formatting} {
     format "%*d %d %d %d" 6 34 16923 -12 -1

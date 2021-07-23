@@ -29,7 +29,7 @@ testConstraint longFileNames 0
 # Some things fail under all Continuous Integration systems for subtle reasons
 # such as CI often running with elevated privileges in a container.
 testConstraint notInCIenv     [expr {![info exists ::env(CI)]}]
-testConstraint knownMsvcBug   [expr {![info exists ::env(CI_BUILD_WITH_MSVC)]}]
+testConstraint knownMsvcBug [string match msvc-* [tcl::build-info compiler]]
 
 proc createfile {file {string a}} {
     set f [open $file w]
