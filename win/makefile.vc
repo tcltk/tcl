@@ -798,8 +798,19 @@ $(TMP_DIR)\tclMainW.obj: $(GENERICDIR)\tclMain.c
 	$(cc32) $(pkgcflags) /DUNICODE /D_UNICODE \
 	    -Fo$@ $?
 
-$(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
-	$(cc32) $(appcflags) -Fo$@ $?
+$(ROOT)\manifest.uuid:
+   copy $(WIN_DIR)\gitmanifest.in $(ROOT)\manifest.uuid
+   git rev-parse HEAD >>$(ROOT)\manifest.uuid
+
+$(TMP_DIR)\tclUuid.h:	$(ROOT)\manifest.uuid
+	copy $(WIN_DIR)\tclUuid.h.in+$(ROOT)\manifest.uuid $(TMP_DIR)\tclUuid.h
+
+$(TMP_DIR)\tclEvent.obj: $(GENERICDIR)\tclEvent.c $(TMP_DIR)\tclUuid.h
+	$(cc32) $(pkgcflags) -I$(TMP_DIR) \
+	    -Fo$@ $(GENERICDIR)\tclEvent.c
+
+$(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c $(TMP_DIR)\tclUuid.h
+	$(cc32) $(appcflags) -I$(TMP_DIR) -Fo$@ $?
 
 $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 	$(cc32) $(appcflags) -Fo$@ $?
