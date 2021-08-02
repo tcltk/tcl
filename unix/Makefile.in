@@ -1259,6 +1259,10 @@ tclAsync.o: $(GENERIC_DIR)/tclAsync.c
 tclBasic.o: $(GENERIC_DIR)/tclBasic.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBasic.c
 
+tclUuid.h: $(TOP_DIR)/manifest.uuid
+	echo "#define TCL_VERSION_UUID \\" >$@
+	cat $(TOP_DIR)/manifest.uuid >>$@
+
 tclBinary.o: $(GENERIC_DIR)/tclBinary.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBinary.c
 
@@ -1313,7 +1317,7 @@ tclEnsemble.o: $(GENERIC_DIR)/tclEnsemble.c $(COMPILEHDR)
 tclEnv.o: $(GENERIC_DIR)/tclEnv.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEnv.c
 
-tclEvent.o: $(GENERIC_DIR)/tclEvent.c
+tclEvent.o: $(GENERIC_DIR)/tclEvent.c tclUuid.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEvent.c
 
 tclExecute.o: $(GENERIC_DIR)/tclExecute.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR)
@@ -1526,7 +1530,7 @@ tclZipfs.o: $(GENERIC_DIR)/tclZipfs.c
 		-I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip \
 		$(GENERIC_DIR)/tclZipfs.c
 
-tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
+tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS) tclUuid.h
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
 
 tclTestObj.o: $(GENERIC_DIR)/tclTestObj.c $(MATHHDRS)
@@ -2228,8 +2232,8 @@ $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
 	cd $(MAC_OSX_DIR); autoheader; touch $@
 
 $(TOP_DIR)/manifest.uuid:
-	printf "git." >$(TOP_DIR)/manifest.uuid
-	git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid
+	printf "git-" >$(TOP_DIR)/manifest.uuid
+	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid)
 
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in genstubs \
 		$(MAC_OSX_DIR)/configure $(TOP_DIR)/manifest.uuid dist-packages ${NATIVE_TCLSH}

@@ -1024,7 +1024,7 @@ Tcl_Exit(
  *-------------------------------------------------------------------------
  */
 
-void
+const char *
 Tcl_InitSubsystems(void)
 {
     if (inExit != 0) {
@@ -1071,6 +1071,7 @@ Tcl_InitSubsystems(void)
 	TclpInitUnlock();
     }
     TclInitNotifier();
+    return NULL;
 }
 
 /*

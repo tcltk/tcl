@@ -5797,7 +5797,7 @@ ZipfsMountExitHandler(
  *-------------------------------------------------------------------------
  */
 
-int
+const char *
 TclZipfs_AppHook(
 #ifdef SUPPORT_BUILTIN_ZIP_INSTALL
     int *argcPtr,		/* Pointer to argc */
@@ -5811,6 +5811,7 @@ TclZipfs_AppHook(
 #endif /* _WIN32 */
 {
     const char *archive;
+    const char *version = Tcl_InitSubsystems();
 
 #ifdef _WIN32
     Tcl_FindExecutable(NULL);
@@ -5853,7 +5854,7 @@ TclZipfs_AppHook(
 	    Tcl_DecrRefCount(vfsInitScript);
 	    if (found == TCL_OK) {
 		zipfs_literal_tcl_library = ZIPFS_APP_MOUNT "/tcl_library";
-		return TCL_OK;
+		return version;
 	    }
 	}
 #ifdef SUPPORT_BUILTIN_ZIP_INSTALL
@@ -5886,7 +5887,7 @@ TclZipfs_AppHook(
 	    if (Tcl_FSAccess(vfsInitScript, F_OK) == 0) {
 		Tcl_SetStartupScript(vfsInitScript, NULL);
 	    }
-	    return TCL_OK;
+	    return version;
 	} else if (!TclZipfs_Mount(NULL, ZIPFS_APP_MOUNT, archive, NULL)) {
 	    int found;
 	    Tcl_Obj *vfsInitScript;
@@ -5910,7 +5911,7 @@ TclZipfs_AppHook(
 	    Tcl_DecrRefCount(vfsInitScript);
 	    if (found == TCL_OK) {
 		zipfs_literal_tcl_library = ZIPFS_APP_MOUNT "/tcl_library";
-		return TCL_OK;
+		return version;
 	    }
 	}
 #ifdef _WIN32
@@ -5918,7 +5919,7 @@ TclZipfs_AppHook(
 #endif /* _WIN32 */
 #endif /* SUPPORT_BUILTIN_ZIP_INSTALL */
     }
-    return TCL_OK;
+    return version;
 }
 
 #ifndef HAVE_ZLIB
