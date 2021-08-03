@@ -14,6 +14,7 @@
  */
 
 #include "tclInt.h"
+#include "tclUuid.h"
 
 /*
  * The data structure below is used to report background errors. One such
@@ -1016,13 +1017,95 @@ Tcl_Exit(
  *	down another.
  *
  * Results:
- *	None.
+ *	The full Tcl version with build information.
  *
  * Side effects:
  *	Varied, see the respective initialization routines.
  *
  *-------------------------------------------------------------------------
  */
+
+MODULE_SCOPE const TclStubs tclStubs;
+
+#ifndef STRINGIFY
+#  define STRINGIFY(x) STRINGIFY1(x)
+#  define STRINGIFY1(x) #x
+#endif
+
+static const struct {
+    const TclStubs *stubs;
+    const char version[];
+} stubInfo = {
+    &tclStubs, {TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
+#if defined(__clang__) && defined(__clang_major__)
+	    ".clang-" STRINGIFY(__clang_major__)
+#if __clang_minor__ < 10
+	    "0"
+#endif
+	    STRINGIFY(__clang_minor__)
+#endif
+#ifdef TCL_COMPILE_DEBUG
+	    ".compiledebug"
+#endif
+#ifdef TCL_COMPILE_STATS
+	    ".compilestats"
+#endif
+#if defined(__cplusplus) && !defined(__OBJC__)
+	    ".cplusplus"
+#endif
+#ifndef NDEBUG
+	    ".debug"
+#endif
+#if !defined(__clang__) && !defined(__INTEL_COMPILER) && defined(__GNUC__)
+	    ".gcc-" STRINGIFY(__GNUC__)
+#if __GNUC_MINOR__ < 10
+	    "0"
+#endif
+	    STRINGIFY(__GNUC_MINOR__)
+#endif
+#ifdef __INTEL_COMPILER
+	    ".icc-" STRINGIFY(__INTEL_COMPILER)
+#endif
+#if (defined(_WIN32) && !defined(_WIN64)) || (ULONG_MAX == 0xffffffffUL)
+	    ".ilp32"
+#endif
+#ifdef TCL_MEM_DEBUG
+	    ".memdebug"
+#endif
+#if defined(_MSC_VER)
+	    ".msvc-" STRINGIFY(_MSC_VER)
+#endif
+#ifdef USE_NMAKE
+	    ".nmake"
+#endif
+#ifdef TCL_NO_DEPRECATED
+	    ".no-deprecate"
+#endif
+#if !TCL_THREADS
+	    ".no-thread"
+#endif
+#ifndef TCL_CFG_OPTIMIZED
+	    ".no-optimize"
+#endif
+#ifdef __OBJC__
+	    ".objective-c"
+#if defined(__cplusplus)
+	    "plusplus"
+#endif
+#endif
+#ifdef TCL_CFG_PROFILED
+	    ".profile"
+#endif
+#ifdef PURIFY
+	    ".purify"
+#endif
+#ifdef STATIC_BUILD
+	    ".static"
+#endif
+#if TCL_UTF_MAX < 4
+	    ".utf-16"
+#endif
+}};
 
 const char *
 Tcl_InitSubsystems(void)
@@ -1071,7 +1154,7 @@ Tcl_InitSubsystems(void)
 	TclpInitUnlock();
     }
     TclInitNotifier();
-    return NULL;
+    return stubInfo.version;
 }
 
 /*
