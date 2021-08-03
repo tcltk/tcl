@@ -1034,7 +1034,7 @@ MODULE_SCOPE const TclStubs tclStubs;
 
 static const struct {
     const TclStubs *stubs;
-    const char version[];
+    const char version[256];
 } stubInfo = {
     &tclStubs, {TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
 #if defined(__clang__) && defined(__clang_major__)
