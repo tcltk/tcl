@@ -2109,7 +2109,7 @@ TesteventObjCmd(
 	"head", "tail", "mark", NULL
     };
     int posIndex;		/* Index of the chosen position */
-    static const Tcl_QueuePosition posNum[] = {
+    static const int posNum[] = {
 				/* Interpretation of the chosen position */
 	TCL_QUEUE_HEAD,
 	TCL_QUEUE_TAIL,

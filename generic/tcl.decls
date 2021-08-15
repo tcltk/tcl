@@ -732,7 +732,7 @@ declare 204 {
     const char *Tcl_PosixError(Tcl_Interp *interp)
 }
 declare 205 {
-    void Tcl_QueueEvent(Tcl_Event *evPtr, Tcl_QueuePosition position)
+    void Tcl_QueueEvent(Tcl_Event *evPtr, int flags)
 }
 declare 206 {
     int Tcl_Read(Tcl_Channel chan, char *bufPtr, int toRead)
@@ -1142,7 +1142,7 @@ declare 318 {
 }
 declare 319 {
     void Tcl_ThreadQueueEvent(Tcl_ThreadId threadId, Tcl_Event *evPtr,
-	    Tcl_QueuePosition position)
+	    int flags)
 }
 declare 320 {
     int Tcl_UniCharAtIndex(const char *src, int index)

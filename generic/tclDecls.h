@@ -644,8 +644,7 @@ EXTERN int		Tcl_PutEnv(const char *assignment);
 /* 204 */
 EXTERN const char *	Tcl_PosixError(Tcl_Interp *interp);
 /* 205 */
-EXTERN void		Tcl_QueueEvent(Tcl_Event *evPtr,
-				Tcl_QueuePosition position);
+EXTERN void		Tcl_QueueEvent(Tcl_Event *evPtr, int flags);
 /* 206 */
 EXTERN int		Tcl_Read(Tcl_Channel chan, char *bufPtr, int toRead);
 /* 207 */
@@ -985,7 +984,7 @@ EXTERN Tcl_Obj *	Tcl_SetVar2Ex(Tcl_Interp *interp, const char *part1,
 EXTERN void		Tcl_ThreadAlert(Tcl_ThreadId threadId);
 /* 319 */
 EXTERN void		Tcl_ThreadQueueEvent(Tcl_ThreadId threadId,
-				Tcl_Event *evPtr, Tcl_QueuePosition position);
+				Tcl_Event *evPtr, int flags);
 /* 320 */
 EXTERN int		Tcl_UniCharAtIndex(const char *src, int index);
 /* 321 */
@@ -2179,7 +2178,7 @@ typedef struct TclStubs {
     void (*tcl_PrintDouble) (Tcl_Interp *interp, double value, char *dst); /* 202 */
     int (*tcl_PutEnv) (const char *assignment); /* 203 */
     const char * (*tcl_PosixError) (Tcl_Interp *interp); /* 204 */
-    void (*tcl_QueueEvent) (Tcl_Event *evPtr, Tcl_QueuePosition position); /* 205 */
+    void (*tcl_QueueEvent) (Tcl_Event *evPtr, int flags); /* 205 */
     int (*tcl_Read) (Tcl_Channel chan, char *bufPtr, int toRead); /* 206 */
     void (*tcl_ReapDetachedProcs) (void); /* 207 */
     int (*tcl_RecordAndEval) (Tcl_Interp *interp, const char *cmd, int flags); /* 208 */
@@ -2293,7 +2292,7 @@ typedef struct TclStubs {
     int (*tcl_SetSystemEncoding) (Tcl_Interp *interp, const char *name); /* 316 */
     Tcl_Obj * (*tcl_SetVar2Ex) (Tcl_Interp *interp, const char *part1, const char *part2, Tcl_Obj *newValuePtr, int flags); /* 317 */
     void (*tcl_ThreadAlert) (Tcl_ThreadId threadId); /* 318 */
-    void (*tcl_ThreadQueueEvent) (Tcl_ThreadId threadId, Tcl_Event *evPtr, Tcl_QueuePosition position); /* 319 */
+    void (*tcl_ThreadQueueEvent) (Tcl_ThreadId threadId, Tcl_Event *evPtr, int flags); /* 319 */
     int (*tcl_UniCharAtIndex) (const char *src, int index); /* 320 */
     int (*tcl_UniCharToLower) (int ch); /* 321 */
     int (*tcl_UniCharToTitle) (int ch); /* 322 */

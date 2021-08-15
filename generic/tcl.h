@@ -1329,29 +1329,13 @@ struct Tcl_Event {
 };
 
 /*
- * Positions to pass to Tcl_QueueEvent:
+ * Positions to pass to Tcl_QueueEvent/Tcl_ThreadQueueEvent:
  */
 
 typedef enum {
-    TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK
+    TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
+	    TCL_QUEUE_ALERT_IF_EMPTY=4
 } Tcl_QueuePosition;
-
-/*
- * Positions for Tcl_ThreadQueueEvent:
- */
-
-typedef enum {
-    TCL_QUEUE_TAIL_EX = TCL_QUEUE_TAIL,
-    TCL_QUEUE_HEAD_EX = TCL_QUEUE_HEAD,
-    TCL_QUEUE_MARK_EX = TCL_QUEUE_MARK,
-    TCL_QUEUE_TAIL_EX_ALERT_IF_EMPTY,
-    TCL_QUEUE_HEAD_EX_ALERT_IF_EMPTY,
-} Tcl_QueuePositionEx;
-
-#define TCL_QUEUE_TAIL_ALERT_IF_EMPTY \
-    ((Tcl_QueuePosition) TCL_QUEUE_TAIL_EX_ALERT_IF_EMPTY)
-#define TCL_QUEUE_HEAD_ALERT_IF_EMPTY \
-    ((Tcl_QueuePosition) TCL_QUEUE_HEAD_EX_ALERT_IF_EMPTY)
 
 /*
  * Values to pass to Tcl_SetServiceMode to specify the behavior of notifier

@@ -2453,7 +2453,7 @@ ForwardOpToOwnerThread(
      */
 
     Tcl_ThreadQueueEvent(dst, (Tcl_Event *) evPtr,
-	    TCL_QUEUE_TAIL_ALERT_IF_EMPTY);
+	    TCL_QUEUE_TAIL|TCL_QUEUE_ALERT_IF_EMPTY);
 
     /*
      * (*) Block until the other thread has either processed the transfer or
