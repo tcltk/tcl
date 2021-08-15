@@ -95,8 +95,8 @@ TCL_DECLARE_MUTEX(listLock)
  * Declarations for routines used only in this file.
  */
 
-static void		QueueEvent(ThreadSpecificData *tsdPtr,
-			    Tcl_Event *evPtr, Tcl_QueuePosition position);
+static int		QueueEvent(ThreadSpecificData *tsdPtr,
+			    Tcl_Event *evPtr, Tcl_QueuePositionEx position);
 
 /*
  *----------------------------------------------------------------------
@@ -397,7 +397,7 @@ Tcl_QueueEvent(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    QueueEvent(tsdPtr, evPtr, position);
+    (void) QueueEvent(tsdPtr, evPtr, (Tcl_QueuePositionEx) position);
 }
 
 /*
@@ -444,7 +444,9 @@ Tcl_ThreadQueueEvent(
      */
 
     if (tsdPtr) {
-	QueueEvent(tsdPtr, evPtr, position);
+	if (QueueEvent(tsdPtr, evPtr, (Tcl_QueuePositionEx) position)) {
+	    Tcl_AlertNotifier(tsdPtr->clientData);
+	}
     } else {
 	ckfree(evPtr);
     }
@@ -464,7 +466,8 @@ Tcl_ThreadQueueEvent(
  *	last-in-first-out order.
  *
  * Results:
- *	None.
+ *	For TCL_QUEUE_(HEAD|TAIL)_ALERT_IF_EMPTY the empty state before the
+ *	operation is returned.
  *
  * Side effects:
  *	None.
@@ -472,7 +475,7 @@ Tcl_ThreadQueueEvent(
  *----------------------------------------------------------------------
  */
 
-static void
+static int
 QueueEvent(
     ThreadSpecificData *tsdPtr,	/* Handle to thread local data that indicates
 				 * which event queue to use. */
@@ -481,11 +484,17 @@ QueueEvent(
 				 * malloc (ckalloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
-				 * TCL_QUEUE_MARK. */
+    Tcl_QueuePositionEx position)
+				/* One of TCL_QUEUE_TAIL_EX,
+				 * TCL_QUEUE_HEAD_EX, TCL_QUEUE_MARK_EX,
+				 * TCL_QUEUE_TAIL_ALERT_IF_EMPTY, or
+				 * TCL_QUEUE_HEAD_ALERT_IF_EMPTY. */
 {
+    int wasEmpty = 0;
+
     Tcl_MutexLock(&(tsdPtr->queueMutex));
-    if (position == TCL_QUEUE_TAIL) {
+    if ((position == TCL_QUEUE_TAIL_EX) ||
+	    (position == TCL_QUEUE_TAIL_EX_ALERT_IF_EMPTY)) {
 	/*
 	 * Append the event on the end of the queue.
 	 */
@@ -493,11 +502,13 @@ QueueEvent(
 	evPtr->nextPtr = NULL;
 	if (tsdPtr->firstEventPtr == NULL) {
 	    tsdPtr->firstEventPtr = evPtr;
+	    wasEmpty = (position == TCL_QUEUE_TAIL_EX_ALERT_IF_EMPTY) ? 1 : 0;
 	} else {
 	    tsdPtr->lastEventPtr->nextPtr = evPtr;
 	}
 	tsdPtr->lastEventPtr = evPtr;
-    } else if (position == TCL_QUEUE_HEAD) {
+    } else if ((position == TCL_QUEUE_HEAD_EX) ||
+		    (position == TCL_QUEUE_HEAD_EX_ALERT_IF_EMPTY)) {
 	/*
 	 * Push the event on the head of the queue.
 	 */
@@ -505,9 +516,10 @@ QueueEvent(
 	evPtr->nextPtr = tsdPtr->firstEventPtr;
 	if (tsdPtr->firstEventPtr == NULL) {
 	    tsdPtr->lastEventPtr = evPtr;
+	    wasEmpty = (position == TCL_QUEUE_HEAD_EX_ALERT_IF_EMPTY) ? 1 : 0;
 	}
 	tsdPtr->firstEventPtr = evPtr;
-    } else if (position == TCL_QUEUE_MARK) {
+    } else if (position == TCL_QUEUE_MARK_EX) {
 	/*
 	 * Insert the event after the current marker event and advance the
 	 * marker to the new event.
@@ -526,6 +538,7 @@ QueueEvent(
 	}
     }
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
+    return wasEmpty;
 }
 
 /*

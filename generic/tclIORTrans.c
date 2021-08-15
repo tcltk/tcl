@@ -2452,8 +2452,8 @@ ForwardOpToOwnerThread(
      * Queue the event and poke the other thread's notifier.
      */
 
-    Tcl_ThreadQueueEvent(dst, (Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
-    Tcl_ThreadAlert(dst);
+    Tcl_ThreadQueueEvent(dst, (Tcl_Event *) evPtr,
+	    TCL_QUEUE_TAIL_ALERT_IF_EMPTY);
 
     /*
      * (*) Block until the other thread has either processed the transfer or

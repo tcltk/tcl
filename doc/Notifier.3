@@ -92,7 +92,9 @@ An event to add to the event queue.  The storage for the event must
 have been allocated by the caller using \fBTcl_Alloc\fR or \fBckalloc\fR.
 .AP Tcl_QueuePosition position in
 Where to add the new event in the queue:  \fBTCL_QUEUE_TAIL\fR,
-\fBTCL_QUEUE_HEAD\fR, or \fBTCL_QUEUE_MARK\fR.
+\fBTCL_QUEUE_HEAD\fR, \fBTCL_QUEUE_MARK\fR,
+\fBTCL_QUEUE_TAIL_ALERT_IF_EMPTY\fR, or
+\fBTCL_QUEUE_HEAD_ALERT_IF_EMPTY\fR.
 .AP Tcl_ThreadId threadId in
 A unique identifier for a thread.
 .AP Tcl_EventDeleteProc *deleteProc in
@@ -340,14 +342,14 @@ and should not be modified by the event source.
 .PP
 An event may be added to the queue at any of three positions, depending
 on the \fIposition\fR argument to \fBTcl_QueueEvent\fR:
-.IP \fBTCL_QUEUE_TAIL\fR 24
+.IP \fBTCL_QUEUE_TAIL\fR 32
 Add the event at the back of the queue, so that all other pending
 events will be serviced first.  This is almost always the right
 place for new events.
-.IP \fBTCL_QUEUE_HEAD\fR 24
+.IP \fBTCL_QUEUE_HEAD\fR 32
 Add the event at the front of the queue, so that it will be serviced
 before all other queued events.
-.IP \fBTCL_QUEUE_MARK\fR 24
+.IP \fBTCL_QUEUE_MARK\fR 32
 Add the event at the front of the queue, unless there are other
 events at the front whose position is \fBTCL_QUEUE_MARK\fR;  if so,
 add the new event just after all other \fBTCL_QUEUE_MARK\fR events.
@@ -355,6 +357,14 @@ This value of \fIposition\fR is used to insert an ordered sequence of
 events at the front of the queue, such as a series of
 Enter and Leave events synthesized during a grab or ungrab operation
 in Tk.
+.IP \fBTCL_QUEUE_TAIL_ALERT_IF_EMPTY\fR 32
+Like \fBTCL_QUEUE_TAIL\fR but when used in \fBTcl_ThreadQueueEvent\fR
+arranges for an automatic call of \fBTcl_ThreadAlert\fR when the queue was
+empty.
+.IP \fBTCL_QUEUE_HEAD_ALERT_IF_EMPTY\fR 32
+Like \fBTCL_QUEUE_HEAD\fR but when used in \fBTcl_ThreadQueueEvent\fR
+arranges for an automatic call of \fBTcl_ThreadAlert\fR when the queue was
+empty.
 .PP
 When it is time to handle an event from the queue (steps 1 and 4
 above) \fBTcl_ServiceEvent\fR will invoke the \fIproc\fR specified
@@ -408,7 +418,10 @@ threads for those threads to be able to add events to its queue.)
 After adding an event to another thread's queue, you then typically
 need to call \fBTcl_ThreadAlert\fR to
 .QW "wake up"
-that thread's notifier to alert it to the new event.
+that thread's notifier to alert it to the new event. Alternatively,
+the queue positions \fBTCL_QUEUE_TAIL_ALERT_IF_EMPTY\fR and
+\fBTCL_QUEUE_HEAD_ALERT_IF_EMPTY\fR can be used which automatically
+call \fBTcl_ThreadAlert\fR if the thread's queue was empty.
 .PP
 \fBTcl_DeleteEvents\fR can be used to explicitly remove one or more
 events from the event queue.  \fBTcl_DeleteEvents\fR calls \fIproc\fR

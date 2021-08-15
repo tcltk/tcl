@@ -994,8 +994,8 @@ TclChanPostEventObjCmd(
          * XXX Actually, in that case the channel should be dead also !
          */
 
-        Tcl_ThreadQueueEvent(rcPtr->owner, (Tcl_Event *) ev, TCL_QUEUE_TAIL);
-        Tcl_ThreadAlert(rcPtr->owner);
+        Tcl_ThreadQueueEvent(rcPtr->owner, (Tcl_Event *) ev,
+		TCL_QUEUE_TAIL_ALERT_IF_EMPTY);
     }
 #endif
 
@@ -2996,8 +2996,8 @@ ForwardOpToHandlerThread(
      * Queue the event and poke the other thread's notifier.
      */
 
-    Tcl_ThreadQueueEvent(dst, (Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
-    Tcl_ThreadAlert(dst);
+    Tcl_ThreadQueueEvent(dst, (Tcl_Event *) evPtr,
+	    TCL_QUEUE_TAIL_ALERT_IF_EMPTY);
 
     /*
      * (*) Block until the handler thread has either processed the transfer or
