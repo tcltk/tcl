@@ -5143,8 +5143,7 @@ typedef struct NRE_callback {
 
 #ifdef MAC_OSX_TCL
 #define TCL_MAC_EMPTY_FILE(name) \
-    static __attribute__((used)) const void *const TclUnusedFile_ ## name; \
-    static const void *const TclUnusedFile_ ## name = NULL;
+    static __attribute__((used)) const void *const TclUnusedFile_ ## name = NULL;
 #else
 #define TCL_MAC_EMPTY_FILE(name)
 #endif /* MAC_OSX_TCL */
