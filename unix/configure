@@ -9205,6 +9205,41 @@ printf "%s\n" "#define NO_FD_SET 1" >>confdefs.h
 
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for pselect" >&5
+printf %s "checking for pselect... " >&6; }
+if test ${tcl_cv_func_pselect+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/types.h>
+int
+main (void)
+{
+void *func = pselect;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  tcl_cv_func_pselect=yes
+else $as_nop
+  tcl_cv_func_pselect=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_func_pselect" >&5
+printf "%s\n" "$tcl_cv_func_pselect" >&6; }
+tcl_ok=$tcl_cv_func_pselect
+if test $tcl_ok = yes; then
+
+printf "%s\n" "#define HAVE_PSELECT 1" >>confdefs.h
+
+fi
+
 #------------------------------------------------------------------------
 #	Options for the notifier. Checks for epoll(7) on Linux, and
 #	kqueue(2) on {DragonFly,Free,Net,Open}BSD

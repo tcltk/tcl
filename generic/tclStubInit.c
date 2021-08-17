@@ -1942,6 +1942,7 @@ const TclStubs tclStubs = {
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
     Tcl_UniCharIsUnicode, /* 657 */
+    Tcl_AsyncMarkFromSignal, /* 658 */
 };
 
 /* !END!: Do not edit above this line. */
