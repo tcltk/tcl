@@ -921,7 +921,7 @@ TclAsyncNotifier(
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * WARNING:
      * This code most likely runs in a signal handler. Thus,

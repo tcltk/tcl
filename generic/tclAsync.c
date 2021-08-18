@@ -227,7 +227,7 @@ Tcl_AsyncMarkFromSignal(
     Tcl_AsyncHandler async,		/* Token for handler. */
     int sigNumber)			/* Signal number. */
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     AsyncHandler *token = (AsyncHandler *) async;
 
     return TclAsyncNotifier(sigNumber, token->originThrdId,

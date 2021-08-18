@@ -461,7 +461,7 @@ static int notifierThreadRunning;
  * The following static flag indicates that async handlers are pending.
  */
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
 static int asyncPending = 0;
 #endif
 
@@ -1912,7 +1912,7 @@ TclAsyncNotifier(
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
 {
-#ifdef TCL_THREADS
+#if TCL_THREADS
     /*
      * WARNING:
      * This code most likely runs in a signal handler. Thus,
