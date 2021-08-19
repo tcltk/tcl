@@ -1840,7 +1840,11 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 /* Slot 653 is reserved */
 /* Slot 654 is reserved */
 /* Slot 655 is reserved */
-/* 656 */
+/* Slot 656 is reserved */
+/* Slot 657 is reserved */
+/* Slot 658 is reserved */
+/* Slot 659 is reserved */
+/* 660 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct {
@@ -2533,7 +2537,11 @@ typedef struct TclStubs {
     void (*reserved653)(void);
     void (*reserved654)(void);
     void (*reserved655)(void);
-    void (*tclUnusedStubEntry) (void); /* 656 */
+    void (*reserved656)(void);
+    void (*reserved657)(void);
+    void (*reserved658)(void);
+    void (*reserved659)(void);
+    void (*tclUnusedStubEntry) (void); /* 660 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3851,8 +3859,12 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 653 is reserved */
 /* Slot 654 is reserved */
 /* Slot 655 is reserved */
+/* Slot 656 is reserved */
+/* Slot 657 is reserved */
+/* Slot 658 is reserved */
+/* Slot 659 is reserved */
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 656 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 660 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
