@@ -1907,7 +1907,7 @@ TclUnixWaitForFile(
 int
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
-    Tcl_ThreadId threadId,	/* Target thread. */
+    TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
     TCL_UNUSED(ClientData),	/* Notifier data. */
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
@@ -2221,12 +2221,17 @@ AtForkChild(void)
      */
 
 #if defined(USE_OS_UNFAIR_LOCK)
-    tsdPtr->tsdLock = OS_UNFAIR_LOCK_INIT;
+    notifierInitLock = OS_UNFAIR_LOCK_INIT;
+    notifierLock     = OS_UNFAIR_LOCK_INIT;
+    tsdPtr->tsdLock  = OS_UNFAIR_LOCK_INIT;
 #else
-       UNLOCK_NOTIFIER_TSD;
-       UNLOCK_NOTIFIER;
-       UNLOCK_NOTIFIER_INIT;
+    UNLOCK_NOTIFIER_TSD;
+    UNLOCK_NOTIFIER;
+    UNLOCK_NOTIFIER_INIT;
 #endif
+
+    asyncPending = 0;
+
     if (tsdPtr->runLoop) {
 	tsdPtr->runLoop = NULL;
 	if (!noCFafterFork) {
@@ -2256,13 +2261,13 @@ AtForkChild(void)
 	if (!noCFafterFork) {
 	    Tcl_InitNotifier();
 	}
+
+	/*
+	 * Restart the notifier thread for signal handling.
+	 */
+
+	StartNotifierThread();
     }
-
-    /*
-     * Restart the notifier thread for signal handling.
-     */
-
-    StartNotifierThread();
 }
 #endif /* HAVE_PTHREAD_ATFORK */
 

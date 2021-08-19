@@ -1939,7 +1939,9 @@ EXTERN const char *	Tcl_UtfNext(const char *src);
 EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
 /* 657 */
 EXTERN int		Tcl_UniCharIsUnicode(int ch);
-/* 658 */
+/* Slot 658 is reserved */
+/* Slot 659 is reserved */
+/* 660 */
 EXTERN int		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
 				int sigNumber);
 
@@ -2635,7 +2637,9 @@ typedef struct TclStubs {
     const char * (*tcl_UtfNext) (const char *src); /* 655 */
     const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 656 */
     int (*tcl_UniCharIsUnicode) (int ch); /* 657 */
-    int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 658 */
+    void (*reserved658)(void);
+    void (*reserved659)(void);
+    int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3980,8 +3984,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfPrev) /* 656 */
 #define Tcl_UniCharIsUnicode \
 	(tclStubsPtr->tcl_UniCharIsUnicode) /* 657 */
+/* Slot 658 is reserved */
+/* Slot 659 is reserved */
 #define Tcl_AsyncMarkFromSignal \
-	(tclStubsPtr->tcl_AsyncMarkFromSignal) /* 658 */
+	(tclStubsPtr->tcl_AsyncMarkFromSignal) /* 660 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
