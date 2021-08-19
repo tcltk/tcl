@@ -1454,7 +1454,11 @@ TclStubs tclStubs = {
     NULL, /* 653 */
     NULL, /* 654 */
     NULL, /* 655 */
-    TclUnusedStubEntry, /* 656 */
+    NULL, /* 656 */
+    NULL, /* 657 */
+    NULL, /* 658 */
+    NULL, /* 659 */
+    TclUnusedStubEntry, /* 660 */
 };
 
 /* !END!: Do not edit above this line. */
