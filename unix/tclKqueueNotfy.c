@@ -102,6 +102,7 @@ typedef struct ThreadSpecificData {
     struct kevent *readyEvents;	/* Pointer to at most maxReadyEvents events
 				 * returned by kevent(2). */
     size_t maxReadyEvents;	/* Count of kevents in readyEvents. */
+    int asyncPending;		/* True when signal triggered thread. */
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -165,11 +166,11 @@ PlatformEventsControl(
     Tcl_StatBuf fdStat;
 
     if (isNew) {
-        newPedPtr = (struct PlatformEventData *)
+	newPedPtr = (struct PlatformEventData *)
 		Tcl_Alloc(sizeof(struct PlatformEventData));
-        newPedPtr->filePtr = filePtr;
-        newPedPtr->tsdPtr = tsdPtr;
-        filePtr->pedPtr = newPedPtr;
+	newPedPtr->filePtr = filePtr;
+	newPedPtr->tsdPtr = tsdPtr;
+	filePtr->pedPtr = newPedPtr;
     }
 
     /*
@@ -213,7 +214,7 @@ PlatformEventsControl(
 		    EVFILT_WRITE, op, 0, 0, filePtr->pedPtr);
 	    numChanges++;
 	}
-        if (numChanges) {
+	if (numChanges) {
 	    if (kevent(tsdPtr->eventsFd, changeList, numChanges, NULL, 0,
 		    NULL) == -1) {
 		Tcl_Panic("kevent: %s", strerror(errno));
@@ -363,7 +364,7 @@ TclpInitNotifier(void)
     filePtr->mask = TCL_READABLE;
     PlatformEventsControl(filePtr, tsdPtr, EV_ADD, 1);
     if (!tsdPtr->readyEvents) {
-        tsdPtr->maxReadyEvents = 512;
+	tsdPtr->maxReadyEvents = 512;
 	tsdPtr->readyEvents = (struct kevent *) Tcl_Alloc(
 		tsdPtr->maxReadyEvents * sizeof(tsdPtr->readyEvents[0]));
     }
@@ -482,6 +483,10 @@ PlatformEventsWait(
 	    timePtr->tv_sec = 0;
 	    timePtr->tv_usec = 0;
 	}
+    }
+    if (tsdPtr->asyncPending) {
+	tsdPtr->asyncPending = 0;
+	TclAsyncMarkFromNotifier();
     }
     return numFound;
 }
@@ -758,6 +763,60 @@ TclpWaitForEvent(
 	}
 	filePtr->readyMask |= mask;
     }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAsyncNotifier --
+ *
+ *	This procedure sets the async mark of an async handler to a
+ *	given value, if it is called from the target thread.
+ *
+ * Result:
+ *	True, when the handler will be marked, false otherwise.
+ *
+ * Side effects:
+ *	The signal may be resent to the target thread.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclAsyncNotifier(
+    int sigNumber,		/* Signal number. */
+    Tcl_ThreadId threadId,	/* Target thread. */
+    ClientData clientData,	/* Notifier data. */
+    int *flagPtr,		/* Flag to mark. */
+    int value)			/* Value of mark. */
+{
+#if TCL_THREADS
+    /*
+     * WARNING:
+     * This code most likely runs in a signal handler. Thus,
+     * only few async-signal-safe system calls are allowed,
+     * e.g. pthread_self(), sem_post(), write().
+     */
+
+    if (pthread_equal(pthread_self(), (pthread_t) threadId)) {
+	ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
+
+	*flagPtr = value;
+	if (tsdPtr != NULL && !tsdPtr->asyncPending) {
+	    tsdPtr->asyncPending = 1;
+	    TclpAlertNotifier(tsdPtr);
+	    return 1;
+	}
+	return 0;
+    }
+
+    /*
+     * Re-send the signal to the proper target thread.
+     */
+
+    pthread_kill((pthread_t) threadId, sigNumber);
+#endif
     return 0;
 }
 
