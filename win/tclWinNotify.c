@@ -353,6 +353,32 @@ TclpServiceModeHook(
 /*
  *----------------------------------------------------------------------
  *
+ * TclAsyncNotifier --
+ *
+ *	This procedure is a no-op on Windows.
+ *
+ * Result:
+ *	Always true.
+ *
+ * Side effetcs:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+
+int
+TclAsyncNotifier(
+    int sigNumber,		/* Signal number. */
+    Tcl_ThreadId threadId,	/* Target thread. */
+    ClientData clientData,	/* Notifier data. */
+    int *flagPtr,		/* Flag to mark. */
+    int value)			/* Value of mark. */
+{
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NotifierProc --
  *
  *	This procedure is invoked by Windows to process events on the notifier
@@ -391,6 +417,29 @@ NotifierProc(
 
     Tcl_ServiceAll();
     return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpNotifierData --
+ *
+ *	This function returns a ClientData pointer to be associated
+ *	with a Tcl_AsyncHandler.
+ *
+ * Results:
+ *	On Windows, returns always NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+TclpNotifierData(void)
+{
+    return NULL;
 }
 
 /*
