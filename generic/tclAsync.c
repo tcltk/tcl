@@ -115,7 +115,7 @@ TclFinalizeAsync(void)
     while (toDelete != NULL) {
 	token = toDelete;
 	toDelete = toDelete->nextPtr;
-	ckfree(token);
+	Tcl_Free(token);
     }
 }
 
