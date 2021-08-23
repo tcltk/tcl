@@ -4267,6 +4267,7 @@ Tcl_TimeRateObjCmd(
 		     */
 		    threshold = 1;
 		    maxcnt = 0;
+		    /* FALLTHRU */
 		case TCL_CONTINUE:
 		    result = TCL_OK;
 		    break;

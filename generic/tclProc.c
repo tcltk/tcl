@@ -722,7 +722,7 @@ TclGetFrame(
 	}
 	level = curLevel - level;
     } else {
-	/* 
+	/*
 	 * (historical, TODO) If name does not contain a level (#0 or 1),
 	 * TclGetFrame and Tcl_UpVar2 uses current level - 1
 	 */
@@ -1808,9 +1808,7 @@ TclObjInterpProcCore(
 		"\" outside of a loop", NULL);
 	result = TCL_ERROR;
 
-	/*
-	 * Fall through to the TCL_ERROR handling code.
-	 */
+	/* FALLTHRU */
 
     case TCL_ERROR:
 	/*

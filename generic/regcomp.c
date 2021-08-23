@@ -605,7 +605,7 @@ makesearch(
 		break;
 	    }
 	}
- 
+
 	/*
 	 * We want to mark states as being in the list already by having non
 	 * NULL tmp fields, but we can't just store the old slist value in tmp
@@ -922,7 +922,7 @@ parseqatom(
 	 */
 
 	NOTE(REG_UPBOTCH);
-	/* fallthrough into case PLAIN */
+	/* FALLTHRU */
     case PLAIN:
 	onechr(v, v->nextvalue, lp, rp);
 	okcolors(v->nfa, v->cm);

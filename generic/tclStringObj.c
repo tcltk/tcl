@@ -2077,6 +2077,7 @@ Tcl_AppendFormatToObj(
 		msg = "unsigned bignum format is invalid";
 		goto errorMsg;
 	    }
+	    /* FALLTHRU */
 	case 'd':
 	case 'o':
 	case 'x':
@@ -2651,6 +2652,7 @@ AppendPrintfToObjVA(
 		break;
 	    case 'h':
 		size = -1;
+		/* FALLTHRU */
 	    default:
 		p++;
 	    }

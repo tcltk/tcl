@@ -2160,6 +2160,7 @@ Tcl_SubstObj(
 	    return NULL;
 	case TCL_BREAK:
 	    tokensLeft = 0;		/* Halt substitution */
+	    /* FALLTHRU */
 	default:
 	    Tcl_AppendObjToObj(result, Tcl_GetObjResult(interp));
 	}

@@ -801,6 +801,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
+		/* FALLTHRU */
 	case ZERO_B:
 	    if (c == '0') {
 		numTrailZeros++;
@@ -1150,6 +1151,7 @@ TclParseNumber(
 #endif
 	    Tcl_Panic("TclParseNumber: bad acceptState %d parsing '%s'",
 		    acceptState, bytes);
+	    break;
 	case BINARY:
 	    shift = numTrailZeros;
 	    if (!significandOverflow && significandWide != 0 &&
@@ -1307,9 +1309,9 @@ TclParseNumber(
 
 	    objPtr->typePtr = &tclDoubleType;
 	    if (exponentSignum) {
-		/* 
+		/*
 		 * At this point exponent>=0, so the following calculation
-		 * cannot underflow. 
+		 * cannot underflow.
 		 */
 		exponent = -exponent;
 	    }
@@ -1335,7 +1337,7 @@ TclParseNumber(
 		}
 	    }
 
-	    /* 
+	    /*
 	     * The desired number is now significandWide * 10**exponent
 	     * or significandBig * 10**exponent, depending on whether
 	     * the significand has overflowed a wide int.
@@ -1885,7 +1887,7 @@ RefineApproximation(
 
     /*
      * Compute twoMv as 2*M*v, where v is the approximate value.
-     * This is done by bit-whacking to calculate 2**(M2+1)*significand, 
+     * This is done by bit-whacking to calculate 2**(M2+1)*significand,
      * and then multiplying by 5**M5.
      */
 
@@ -1920,7 +1922,7 @@ RefineApproximation(
     }
     mp_mul_2d(&twoMd, M2+exponent+1, &twoMd);
 
-    /* 
+    /*
      * Now let twoMd = twoMd - twoMv, the difference between the exact and
      * approximate values.
      */
@@ -1988,7 +1990,7 @@ RefineApproximation(
 	}
     }
 
-    /* 
+    /*
      * Reduce the numerator and denominator of the corrector term so that
      * they will fit in the floating point precision.
      */

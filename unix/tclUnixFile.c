@@ -42,9 +42,11 @@ TclpFindExecutable(
     Tcl_Encoding encoding;
 #ifdef __CYGWIN__
     int length;
-    char buf[PATH_MAX * 2];
+    wchar_t buf[PATH_MAX] = L"";
     char name[PATH_MAX * 3 + 1];
-    GetModuleFileNameW(NULL, buf, sizeof(buf)/2);
+    (void)argv0;
+
+    GetModuleFileNameW(NULL, (void *)buf, sizeof(buf)/sizeof(wchar_t));
     cygwin_conv_path(3, buf, name, sizeof(name));
     length = strlen(name);
     if ((length > 4) && !strcasecmp(name + length - 4, ".exe")) {
@@ -1188,13 +1190,18 @@ TclpUtime(
     Tcl_Obj *pathPtr,		/* File to modify */
     struct utimbuf *tval)	/* New modification date structure */
 {
-    return utime(Tcl_FSGetNativePath(pathPtr), tval);
+    return utime((const char *)Tcl_FSGetNativePath(pathPtr), tval);
 }
 #ifdef __CYGWIN__
-int TclOSstat(const char *name, void *cygstat) {
+int
+TclOSstat(
+    const char *name,
+    void *cygstat)
+{
     struct stat buf;
-    Tcl_StatBuf *statBuf = cygstat;
+    Tcl_StatBuf *statBuf = (Tcl_StatBuf *)cygstat;
     int result = stat(name, &buf);
+
     statBuf->st_mode = buf.st_mode;
     statBuf->st_ino = buf.st_ino;
     statBuf->st_dev = buf.st_dev;
@@ -1208,10 +1215,16 @@ int TclOSstat(const char *name, void *cygstat) {
     statBuf->st_ctime = buf.st_ctime;
     return result;
 }
-int TclOSlstat(const char *name, void *cygstat) {
+
+int
+TclOSlstat(
+    const char *name,
+    void *cygstat)
+{
     struct stat buf;
-    Tcl_StatBuf *statBuf = cygstat;
+    Tcl_StatBuf *statBuf = (Tcl_StatBuf *)cygstat;
     int result = lstat(name, &buf);
+
     statBuf->st_mode = buf.st_mode;
     statBuf->st_ino = buf.st_ino;
     statBuf->st_dev = buf.st_dev;
@@ -1225,7 +1238,7 @@ int TclOSlstat(const char *name, void *cygstat) {
     statBuf->st_ctime = buf.st_ctime;
     return result;
 }
-#endif
+#endif /* CYGWIN */
 
 /*
  * Local Variables:

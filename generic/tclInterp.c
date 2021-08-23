@@ -923,6 +923,7 @@ Tcl_InterpObjCmd(
 	    return SlaveTimeLimitCmd(interp, slaveInterp, 4, objc, objv);
 	}
     }
+    break;
     case OPT_MARKTRUSTED: {
 	Tcl_Interp *slaveInterp;
 
@@ -2433,6 +2434,7 @@ SlaveObjCmd(
 	    return SlaveTimeLimitCmd(interp, slaveInterp, 3, objc, objv);
 	}
     }
+    break;
     case OPT_MARKTRUSTED:
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);

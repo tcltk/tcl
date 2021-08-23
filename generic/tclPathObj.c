@@ -861,7 +861,7 @@ TclJoinPath(
 	Tcl_PathType type;
 	char *strElt, *ptr;
 	Tcl_Obj *driveName = NULL;
-	
+
 	elt = objv[i];
 
 	/*
@@ -1358,6 +1358,7 @@ TclNewFSPathObj(
                count = 0;
                state = 1;
            }
+           break;
        case 1: /* Scanning for next dirsep */
            switch (*p) {
            case '/':

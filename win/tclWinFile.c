@@ -1467,7 +1467,7 @@ TclpGetUserHome(
 			GetProcAddress(handle, "GetProfilesDirectoryW");
 		Tcl_CreateExitHandler(FreeLoadLibHandle, handle);
 	    }
-	    
+
 	    apistubs = -1;
 	    if ( (netUserGetInfoProc != NULL) && (netGetDCNameProc != NULL)
 	      && (netApiBufferFreeProc != NULL) && (getProfilesDirectoryProc != NULL)
@@ -1492,9 +1492,9 @@ TclpGetUserHome(
 	domain = Tcl_UtfFindFirst(name, '@');
 	if (domain == NULL) {
 	    const char *ptr;
-	    
+
 	    /* no domain - firstly check it's the current user */
-	    if ( (ptr = TclpGetUserName(&ds)) != NULL 
+	    if ( (ptr = TclpGetUserName(&ds)) != NULL
 	      && strcasecmp(name, ptr) == 0
 	    ) {
 		/* try safest and fastest way to get current user home */
@@ -1518,7 +1518,7 @@ TclpGetUserHome(
 	    wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
 	    while ((netUserGetInfoProc)(wDomain, wName, 1,
 		    (LPBYTE *) &uiPtr) != 0) {
-		/* 
+		/*
 		 * user does not exists - if domain was not specified,
 		 * try again using current domain.
 		 */
@@ -1634,7 +1634,7 @@ NativeAccess(
 	return 0;
     }
 
-    /* 
+    /*
      * If it's not a directory (assume file), do several fast checks:
      */
     if (!(attr & FILE_ATTRIBUTE_DIRECTORY)) {
@@ -2100,7 +2100,7 @@ NativeStat(
      */
 
     fileHandle = (tclWinProcs->createFileProc)(nativePath, GENERIC_READ,
-	    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 
+	    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 	    NULL, OPEN_EXISTING,
 	    FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
 
