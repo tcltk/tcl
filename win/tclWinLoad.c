@@ -20,7 +20,9 @@
  */
 
 static WCHAR *dllDirectoryName = NULL;
+#if TCL_THREADS
 static Tcl_Mutex dllDirectoryNameMutex;
+#endif
 
 /*
  * Static functions defined within this file.
