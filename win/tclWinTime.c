@@ -120,7 +120,8 @@ static TimeInfo timeInfo = {
  */
 static struct {
     int initialized;		/* 1 if initialized, 0 otherwise */
-    int perfCounter;		/* 1 if performance counter usable for wide clicks */
+    int perfCounter;		/* 1 if performance counter usable for wide
+				 * clicks */
     double microsecsScale;	/* Denominator scale between clock / microsecs */
 } wideClick = {0, 0, 0.0};
 
@@ -464,7 +465,6 @@ NativeGetMicroseconds(void)
     if (!timeInfo.initialized) {
 	TclpInitLock();
 	if (!timeInfo.initialized) {
-
 	    timeInfo.posixEpoch.LowPart = 0xD53E8000;
 	    timeInfo.posixEpoch.HighPart = 0x019DB1DE;
 
@@ -595,8 +595,12 @@ NativeGetMicroseconds(void)
 	/*
 	 * If calibration cycle occurred after we get curCounter
 	 */
+
 	if (curCounter.QuadPart <= perfCounterLastCall) {
-	    /* Calibrated file-time is saved from posix in 100-ns ticks */
+	    /*
+	     * Calibrated file-time is saved from posix in 100-ns ticks
+	     */
+
 	    return fileTimeLastCall / 10;
 	}
 
@@ -1011,7 +1015,6 @@ CalibrationThread(
 	UpdateTimeEachSecond();
     }
 
-    /* lint */
     return (DWORD) 0;
 }
 
@@ -1042,7 +1045,8 @@ UpdateTimeEachSecond(void)
 				/* Current value returned from
 				 * QueryPerformanceCounter. */
     FILETIME curSysTime;	/* Current system time. */
-    static LARGE_INTEGER lastFileTime; /* File time of the previous calibration */
+    static LARGE_INTEGER lastFileTime;
+				/* File time of the previous calibration */
     LARGE_INTEGER curFileTime;	/* File time at the time this callback was
 				 * scheduled. */
     Tcl_WideInt estFreq;	/* Estimated perf counter frequency. */
