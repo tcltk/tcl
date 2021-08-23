@@ -2437,6 +2437,11 @@ declare 657 {
     int Tcl_UniCharIsUnicode(int ch)
 }
 
+# TIP #511
+declare 660 {
+    int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################

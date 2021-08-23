@@ -163,9 +163,7 @@ static TestChannel *firstDetached;
 
 static int		AsyncHandlerProc(void *clientData,
 			    Tcl_Interp *interp, int code);
-#if TCL_THREADS
 static Tcl_ThreadCreateType AsyncThreadProc(void *);
-#endif
 static void		CleanupTestSetassocdataTests(
 			    void *clientData, Tcl_Interp *interp);
 static void		CmdDelProc1(void *clientData);
@@ -821,7 +819,6 @@ TestasyncCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(argv[3], -1));
 	Tcl_MutexUnlock(&asyncTestMutex);
 	return code;
-#if TCL_THREADS
     } else if (strcmp(argv[1], "marklater") == 0) {
 	if (argc != 3) {
 	    goto wrongNumArgs;
@@ -849,12 +846,6 @@ TestasyncCmd(
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
 		"\": must be create, delete, int, mark, or marklater", NULL);
 	return TCL_ERROR;
-#else /* !TCL_THREADS */
-    } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create, delete, int, or mark", NULL);
-	return TCL_ERROR;
-#endif
     }
     return TCL_OK;
 }
@@ -920,7 +911,6 @@ AsyncHandlerProc(
  *----------------------------------------------------------------------
  */
 
-#if TCL_THREADS
 static Tcl_ThreadCreateType
 AsyncThreadProc(
     void *clientData)	/* Parameter is the id of a
@@ -942,7 +932,6 @@ AsyncThreadProc(
     Tcl_ExitThread(TCL_OK);
     TCL_THREAD_CREATE_RETURN;
 }
-#endif
 
 static int
 TestbumpinterpepochObjCmd(
