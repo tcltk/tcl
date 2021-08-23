@@ -233,6 +233,8 @@ Tcl_AsyncMarkFromSignal(
     return TclAsyncNotifier(sigNumber, token->originThrdId,
 	    token->notifierData, &token->ready, -1);
 #else
+    (void)sigNumber;
+
     Tcl_AsyncMark(async);
     return 1;
 #endif
