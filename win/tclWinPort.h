@@ -14,7 +14,6 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-
 #if !defined(_WIN64) && !defined(__MINGW_USE_VC2005_COMPAT)
 /* See [Bug 3354324]: file mtime sets wrong time */
 #   define __MINGW_USE_VC2005_COMPAT
@@ -230,7 +229,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 #ifndef WTERMSIG
-#   define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7f)
+#   define WTERMSIG(stat)    ((*((int *) &(stat))) & 0x7F)
 #endif
 
 #ifndef WIFSTOPPED
@@ -238,7 +237,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif
 
 #ifndef WSTOPSIG
-#   define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xff)
+#   define WSTOPSIG(stat)    (((*((int *) &(stat))) >> 8) & 0xFF)
 #endif
 
 /*
@@ -395,7 +394,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #	pragma warning(disable:4996)
 #   endif
 #endif
-
 
 /*
  * There is no platform-specific panic routine for Windows in the Tcl internals.
