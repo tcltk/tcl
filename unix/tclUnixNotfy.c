@@ -105,7 +105,7 @@ StartNotifierThread(
 
 void
 TclpAlertNotifier(
-    ClientData clientData)
+    void *clientData)
 {
 #ifdef NOTIFIER_SELECT
 #if TCL_THREADS
@@ -120,6 +120,8 @@ TclpAlertNotifier(
     pthread_cond_broadcast(&tsdPtr->waitCV);
 #   endif /* __CYGWIN__ */
     pthread_mutex_unlock(&notifierMutex);
+#else
+    (void)clientData;
 #endif /* TCL_THREADS */
 #else /* !NOTIFIER_SELECT */
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
@@ -350,24 +352,24 @@ AlertSingleThread(
 {
     tsdPtr->eventReady = 1;
     if (tsdPtr->onList) {
-        /*
-         * Remove the ThreadSpecificData structure of this thread from the
-         * waiting list. This prevents us from continuously spinning on
-         * epoll_wait until the other threads runs and services the file
-         * event.
-         */
+	/*
+	 * Remove the ThreadSpecificData structure of this thread from the
+	 * waiting list. This prevents us from continuously spinning on
+	 * epoll_wait until the other threads runs and services the file
+	 * event.
+	 */
 
-        if (tsdPtr->prevPtr) {
+	if (tsdPtr->prevPtr) {
     	    tsdPtr->prevPtr->nextPtr = tsdPtr->nextPtr;
-        } else {
+	} else {
     	    waitingListPtr = tsdPtr->nextPtr;
-        }
-        if (tsdPtr->nextPtr) {
+	}
+	if (tsdPtr->nextPtr) {
     	    tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
-        }
-        tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
-        tsdPtr->onList = 0;
-        tsdPtr->pollState = 0;
+	}
+	tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
+	tsdPtr->onList = 0;
+	tsdPtr->pollState = 0;
     }
 #ifdef __CYGWIN__
     PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
@@ -403,6 +405,10 @@ AtForkChild(void)
     pthread_mutex_init(&notifierMutex, NULL);
     pthread_cond_init(&notifierCV, NULL);
 
+#ifdef NOTIFIER_SELECT
+    asyncPending = 0;
+#endif
+
     /*
      * notifierThreadRunning == 1: thread is running, (there might be data in
      *		notifier lists)
@@ -420,6 +426,10 @@ AtForkChild(void)
 
 	    close(triggerPipe);
 	    triggerPipe = -1;
+#ifdef NOTIFIER_SELECT
+	    close(otherPipe);
+	    otherPipe = -1;
+#endif
 	    /*
 	     * The waitingListPtr might contain event info from multiple
 	     * threads, which are invalid here, so setting it to NULL is not
@@ -456,10 +466,48 @@ AtForkChild(void)
     }
 
     Tcl_InitNotifier();
+
+#ifdef NOTIFIER_SELECT
+    /*
+     * Restart the notifier thread for signal handling.
+     */
+
+    StartNotifierThread("AtForkChild");
+#endif
 }
 #endif /* HAVE_PTHREAD_ATFORK */
 #endif /* TCL_THREADS */
 #endif /* NOTIFIER_SELECT */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpNotifierData --
+ *
+ *	This function returns a ClientData pointer to be associated
+ *	with a Tcl_AsyncHandler.
+ *
+ * Results:
+ *	For the epoll and kqueue notifiers, this function returns the
+ *	thread specific data. Otherwise NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+TclpNotifierData(void)
+{
+#if defined(NOTIFIER_EPOLL) || defined(NOTIFIER_KQUEUE)
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    return (ClientData) tsdPtr;
+#else
+    return NULL;
+#endif
+}
 
 /*
  *----------------------------------------------------------------------

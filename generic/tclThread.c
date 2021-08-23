@@ -80,7 +80,7 @@ Tcl_GetThreadData(
     if (*keyPtr == NULL) {
 	result = Tcl_Alloc(size);
 	memset(result, 0, size);
-	*keyPtr = result;
+	*keyPtr = (Tcl_ThreadDataKey)result;
 	RememberSyncObject(keyPtr, &keyRecord);
     } else {
 	result = *keyPtr;
@@ -488,30 +488,30 @@ Tcl_ExitThread(
 #undef Tcl_ConditionWait
 void
 Tcl_ConditionWait(
-    Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
-    Tcl_Mutex *mutexPtr,	/* Really (pthread_mutex_t **) */
-    const Tcl_Time *timePtr) /* Timeout on waiting period */
+    TCL_UNUSED(Tcl_Condition *),	/* Really (pthread_cond_t **) */
+    TCL_UNUSED(Tcl_Mutex *),	/* Really (pthread_mutex_t **) */
+    TCL_UNUSED(const Tcl_Time *)) /* Timeout on waiting period */
 {
 }
 
 #undef Tcl_ConditionNotify
 void
 Tcl_ConditionNotify(
-    Tcl_Condition *condPtr)
+    TCL_UNUSED(Tcl_Condition *))
 {
 }
 
 #undef Tcl_MutexLock
 void
 Tcl_MutexLock(
-    Tcl_Mutex *mutexPtr)
+    TCL_UNUSED(Tcl_Mutex *))
 {
 }
 
 #undef Tcl_MutexUnlock
 void
 Tcl_MutexUnlock(
-    Tcl_Mutex *mutexPtr)
+    TCL_UNUSED(Tcl_Mutex *))
 {
 }
 #endif /* !TCL_THREADS */

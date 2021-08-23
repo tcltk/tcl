@@ -111,6 +111,7 @@ typedef struct ThreadSpecificData {
 				/* Pointer to at most maxReadyEvents events
 				 * returned by epoll_wait(2). */
     size_t maxReadyEvents;	/* Count of epoll_events in readyEvents. */
+    int asyncPending;		/* True when signal triggered thread. */
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -478,6 +479,10 @@ PlatformEventsWait(
 	    timePtr->tv_usec = 0;
 	}
     }
+    if (tsdPtr->asyncPending) {
+	tsdPtr->asyncPending = 0;
+	TclAsyncMarkFromNotifier();
+    }
     return numFound;
 }
 
@@ -762,6 +767,66 @@ TclpWaitForEvent(
 	}
 	filePtr->readyMask = mask;
     }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAsyncNotifier --
+ *
+ *	This procedure sets the async mark of an async handler to a
+ *	given value, if it is called from the target thread.
+ *
+ * Result:
+ *	True, when the handler will be marked, false otherwise.
+ *
+ * Side effects:
+ *	The signal may be resent to the target thread.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclAsyncNotifier(
+    int sigNumber,		/* Signal number. */
+    Tcl_ThreadId threadId,	/* Target thread. */
+    ClientData clientData,	/* Notifier data. */
+    int *flagPtr,		/* Flag to mark. */
+    int value)			/* Value of mark. */
+{
+#if TCL_THREADS
+    /*
+     * WARNING:
+     * This code most likely runs in a signal handler. Thus,
+     * only few async-signal-safe system calls are allowed,
+     * e.g. pthread_self(), sem_post(), write().
+     */
+
+    if (pthread_equal(pthread_self(), (pthread_t) threadId)) {
+	ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
+
+	*flagPtr = value;
+	if (tsdPtr != NULL && !tsdPtr->asyncPending) {
+	    tsdPtr->asyncPending = 1;
+	    TclpAlertNotifier(tsdPtr);
+	    return 1;
+	}
+	return 0;
+    }
+
+    /*
+     * Re-send the signal to the proper target thread.
+     */
+
+    pthread_kill((pthread_t) threadId, sigNumber);
+#else
+    (void)sigNumber;
+    (void)threadId;
+    (void)clientData;
+    (void)flagPtr;
+    (void)value;
+#endif
     return 0;
 }
 
