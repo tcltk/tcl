@@ -2735,6 +2735,8 @@ DeleteReflectedChannelMap(
 	MarkDead(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
+#else
+    (void)interp;
 #endif
 }
 
