@@ -820,6 +820,12 @@ TclAsyncNotifier(
      */
 
     pthread_kill((pthread_t) threadId, sigNumber);
+#else
+    (void)sigNumber;
+    (void)threadId;
+    (void)clientData;
+    (void)flagPtr;
+    (void)value;
 #endif
     return 0;
 }

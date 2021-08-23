@@ -203,7 +203,9 @@ static Tcl_ThreadId notifierThread;
  */
 
 static sigset_t notifierSigMask;
+#ifndef HAVE_PSELECT
 static sigset_t allSigMask;
+#endif /* HAVE_PSELECT */
 
 #endif /* TCL_THREADS */
 
@@ -279,9 +281,11 @@ extern unsigned char __stdcall	TranslateMessage(const MSG *);
  * Threaded-cygwin specific constants and functions in this file:
  */
 
+#if TCL_THREADS && defined(__CYGWIN__)
 static const wchar_t className[] = L"TclNotifier";
 static unsigned int __stdcall	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
+#endif /* TCL_THREADS && defined(__CYGWIN__) */
 #ifdef __cplusplus
 }
 #endif
@@ -594,7 +598,7 @@ TclpDeleteFileHandler(
     ckfree(filePtr);
 }
 
-#if defined(__CYGWIN__)
+#if TCL_THREADS && defined(__CYGWIN__)
 
 static unsigned int __stdcall
 NotifierProc(
@@ -916,7 +920,7 @@ TclpWaitForEvent(
 int
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
-    Tcl_ThreadId threadId,	/* Target thread. */
+    TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
     TCL_UNUSED(ClientData),	/* Notifier data. */
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
@@ -946,6 +950,10 @@ TclAsyncNotifier(
      */
 
     pthread_kill((pthread_t) notifierThread, sigNumber);
+#else
+    (void)sigNumber;
+    (void)flagPtr;
+    (void)value;
 #endif
     return 0;
 }

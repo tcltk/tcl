@@ -1618,6 +1618,12 @@ Tcl_CreateThread(
     }
     return result;
 #else
+    (void)idPtr;
+    (void)proc;
+    (void)clientData;
+    (void)stackSize;
+    (void)flags;
+
     return TCL_ERROR;
 #endif /* TCL_THREADS */
 }

@@ -105,7 +105,7 @@ StartNotifierThread(
 
 void
 TclpAlertNotifier(
-    ClientData clientData)
+    void *clientData)
 {
 #ifdef NOTIFIER_SELECT
 #if TCL_THREADS
@@ -120,6 +120,8 @@ TclpAlertNotifier(
     pthread_cond_broadcast(&tsdPtr->waitCV);
 #   endif /* __CYGWIN__ */
     pthread_mutex_unlock(&notifierMutex);
+#else
+    (void)clientData;
 #endif /* TCL_THREADS */
 #else /* !NOTIFIER_SELECT */
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
