@@ -120,7 +120,7 @@ TCLAPI Tcl_Obj *	Tcl_GetObjectName(Tcl_Interp *interp,
 TCLAPI int		Tcl_MethodIsPrivate(Tcl_Method method);
 /* Slot 30 is reserved */
 /* 31 */
-TCLAPI void		TclUnusedStubEntry(void);
+TCLAPI void		TclOOUnusedStubEntry(void);
 
 typedef struct {
     const struct TclOOIntStubs *tclOOIntStubs;
@@ -161,7 +161,7 @@ typedef struct TclOOStubs {
     Tcl_Obj * (*tcl_GetObjectName) (Tcl_Interp *interp, Tcl_Object object); /* 28 */
     int (*tcl_MethodIsPrivate) (Tcl_Method method); /* 29 */
     void (*reserved30)(void);
-    void (*tclUnusedStubEntry) (void); /* 31 */
+    void (*tclOOUnusedStubEntry) (void); /* 31 */
 } TclOOStubs;
 
 extern const TclOOStubs *tclOOStubsPtr;
@@ -237,8 +237,8 @@ extern const TclOOStubs *tclOOStubsPtr;
 #define Tcl_MethodIsPrivate \
 	(tclOOStubsPtr->tcl_MethodIsPrivate) /* 29 */
 /* Slot 30 is reserved */
-#define TclUnusedStubEntry \
-	(tclOOStubsPtr->tclUnusedStubEntry) /* 31 */
+#define TclOOUnusedStubEntry \
+	(tclOOStubsPtr->tclOOUnusedStubEntry) /* 31 */
 
 #endif /* defined(USE_TCLOO_STUBS) */
 
