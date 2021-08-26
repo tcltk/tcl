@@ -58,7 +58,7 @@
 #define TclBN_mp_tc_or TclBN_mp_or
 #define TclBN_mp_tc_xor TclBN_mp_xor
 #define TclStaticPackage Tcl_StaticPackage
-#define TclUnusedStubEntry NULL
+#define TclUnusedStubEntry 0
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
