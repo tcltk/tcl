@@ -127,7 +127,7 @@ declare 28 {
     Tcl_Obj *Tcl_GetObjectName(Tcl_Interp *interp, Tcl_Object object)
 }
 declare 31 {
-    void TclUnusedStubEntry(void)
+    void TclOOUnusedStubEntry(void)
 }
 
 ######################################################################
