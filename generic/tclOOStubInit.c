@@ -14,7 +14,7 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 #pragma GCC dependency "tclOO.decls"
 #endif
 
-#define TclUnusedStubEntry 0
+#define TclOOUnusedStubEntry 0
 
 /* !BEGIN!: Do not edit below this line. */
 
