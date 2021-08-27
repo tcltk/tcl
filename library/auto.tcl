@@ -108,7 +108,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 			catch {lappend paths [::tcl::pkgconfig get bindir,runtime]}
 		    }
 		    if {[catch {::${basename}::pkgconfig get dllfile,runtime} dllfile]} {
-			set dllfile "lib${basename}${version}[info sharedlibextension]"
+			set dllfile "libtcl9${basename}${version}[info sharedlibextension]"
 		    }
 		    set dir [file dirname [file join [pwd] [info nameofexecutable]]]
 		    lappend paths $dir
