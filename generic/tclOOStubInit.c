@@ -77,7 +77,7 @@ const TclOOStubs tclOOStubs = {
     Tcl_GetObjectName, /* 28 */
     Tcl_MethodIsPrivate, /* 29 */
     0, /* 30 */
-    TclUnusedStubEntry, /* 31 */
+    TclOOUnusedStubEntry, /* 31 */
 };
 
 /* !END!: Do not edit above this line. */

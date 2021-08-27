@@ -130,7 +130,7 @@ declare 29 {
     int Tcl_MethodIsPrivate(Tcl_Method method)
 }
 declare 31 {
-    void TclUnusedStubEntry(void)
+    void TclOOUnusedStubEntry(void)
 }
 
 ######################################################################
