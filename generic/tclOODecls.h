@@ -242,4 +242,6 @@ extern const TclOOStubs *tclOOStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+#undef TclOOUnusedStubEntry
+
 #endif /* _TCLOODECLS */
