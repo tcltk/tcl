@@ -1191,7 +1191,8 @@ ZipFSFindTOC(
     const unsigned char *p, *q;
     const unsigned char *start = zf->data;
     const unsigned char *end = zf->data + zf->length;
-
+    size_t pass_offset;
+    
     /*
      * Scan backwards from the end of the file for the signature. This is
      * necessary because ZIP archives aren't the only things that get tagged
@@ -1223,6 +1224,11 @@ ZipFSFindTOC(
 	ZIPFS_ERROR_CODE(interp, "END_SIG");
 	goto error;
     }
+
+    /* 
+     * Remember passOffset 
+     */
+    pass_offset = p - zf->data;
 
     /*
      * How many files in the archive? If that's bogus, we're done here.
@@ -1300,6 +1306,12 @@ ZipFSFindTOC(
 	    zf->passOffset -= i ? (5 + i) : 0;
 	}
     }
+
+    /* 
+     * Restore passOffset 
+     */
+    zf->passOffset = pass_offset;
+    
     return TCL_OK;
 
   error:
@@ -3107,6 +3119,22 @@ ZipFSMkZipOrImg(
 	    /*
 	     * Copy everything up to the ZIP-related suffix.
 	     */
+
+	    if (zf->passOffset == 0) {
+		/*
+		 * Hmm, this mounted archive is local (in this image), but
+		 * zf->passOffset does not have a valid value.  Let's open
+		 * this image and find the passOffset so as to copy the image
+		 * correctly.
+		 */
+		
+		ZipFile zflocal;
+		memset(&zflocal, 0, sizeof(ZipFile));
+		if (ZipFSOpenArchive(interp, imgName, 0, &zflocal) == TCL_OK) {
+		    zf->passOffset = zflocal.passOffset;
+		    ZipFSCloseArchive(interp, &zflocal);
+		}
+	    }
 
 	    if ((size_t) Tcl_Write(out, (char *) zf->data,
 		    zf->passOffset) != zf->passOffset) {
