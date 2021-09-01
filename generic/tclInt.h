@@ -1496,6 +1496,11 @@ typedef struct CoroutineData {
     int nargs;                  /* Number of args required for resuming this
 				 * coroutine; -2 means "0 or 1" (default), -1
 				 * means "any" */
+    Tcl_Obj *yieldPtr;		/* The command to yield to.  Stored here in
+				 * order to reset splice point in
+				 * TclNRCoroutineActivateCallback if the
+				 * coroutine is busy.
+				*/
 } CoroutineData;
 
 typedef struct ExecEnv {
@@ -2921,6 +2926,9 @@ MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
 			    CmdFrame **cfPtrPtr, int *wordPtr);
+MODULE_SCOPE int	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
+			    ClientData clientData, int *flagPtr, int value);
+MODULE_SCOPE void	TclAsyncMarkFromNotifier(void);
 MODULE_SCOPE double	TclBignumToDouble(const void *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
@@ -3136,6 +3144,7 @@ MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    int len);
 MODULE_SCOPE void	TclpAlertNotifier(ClientData clientData);
+MODULE_SCOPE ClientData	TclpNotifierData(void);
 MODULE_SCOPE void	TclpServiceModeHook(int mode);
 MODULE_SCOPE void	TclpSetTimer(const Tcl_Time *timePtr);
 MODULE_SCOPE int	TclpWaitForEvent(const Tcl_Time *timePtr);
@@ -5200,8 +5209,7 @@ typedef struct NRE_callback {
 
 #ifdef MAC_OSX_TCL
 #define TCL_MAC_EMPTY_FILE(name) \
-    static __attribute__((used)) const void *const TclUnusedFile_ ## name; \
-    static const void *const TclUnusedFile_ ## name = NULL;
+    static __attribute__((used)) const void *const TclUnusedFile_ ## name = NULL;
 #else
 #define TCL_MAC_EMPTY_FILE(name)
 #endif /* MAC_OSX_TCL */

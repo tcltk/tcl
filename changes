@@ -8843,7 +8843,7 @@ in this changeset (new minor version) rather than bug fixes:
 
 2017-09-02 (bug)[0e4d88] replace command, delete trace kills namespace (porter)
 
---- Released 8.7a1, September 8, 2017 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.7a1, September 8, 2017 --- https://core.tcl-lang.org/tcl/ for details
 
 2017-08-10 [array names -regexp] supports backrefs (goth)
 
@@ -8942,7 +8942,7 @@ in this changeset (new minor version) rather than bug fixes:
 
 2018-11-16 (bug)[00d04c] Repair [binary encode base64] (sebres)
 
-- Released 8.6.9, November 16, 2018 - details at http://core.tcl-lang.org/tcl/ -
+- Released 8.6.9, November 16, 2018 - details at https://core.tcl-lang.org/tcl/ -
 
 2018-11-22 (bug)[7a9dc5] [file normalize ~/~foo] segfault (sebres)
 
@@ -8990,7 +8990,7 @@ in this changeset (new minor version) rather than bug fixes:
 
 2019-11-15 (bug)[135804] segfault in [next] after destroy (coulter,sebres)
 
-- Released 8.6.10, Nov 21, 2019 - details at http://core.tcl-lang.org/tcl/ -
+- Released 8.6.10, Nov 21, 2019 - details at https://core.tcl-lang.org/tcl/ -
 
 2019-12-03 (bug)[3cd9be] Corner case in surrogate handling (nijtmans)
 
@@ -9119,7 +9119,7 @@ See RFC 2045
 
 2020-12-23 tzdata updated to Olson's tzdata2020e (jima)
 
-- Released 8.6.11, Dec 31, 2020 - details at http://core.tcl-lang.org/tcl/ -
+- Released 8.6.11, Dec 31, 2020 - details at https://core.tcl-lang.org/tcl/ -
 
 Changes to 8.7a3 include all changes to the 8.6 line through 8.6.10,
 plus the following, which focuses on the high-level feature changes
@@ -9228,6 +9228,9 @@ in this changeset (new minor version) rather than bug fixes:
 
 2019-04-16 [TIP 342] [dict getwithdefault]
 
+2019-04-23 (bug)[67a5ea] make [chan postevent] asynchronous
+        *** POTENTIAL INCOMPATIBILITY ***
+
 2019-05-25 [TIP 431] [file tempdir]
 
 2019-05-25 [TIP 383] [coroinject], [coroprobe]
@@ -9254,4 +9257,76 @@ Changes to 8.7a5 include all changes to the 8.6 line through 8.6.11,
 plus the following, which focuses on the high-level feature changes
 in this changeset (new minor version) rather than bug fixes:
 
-- Released 8.7a5, Jan 21, 2021 --- http://core.tcl-lang.org/tcl/ for details -
+2019-12-13 [TIP 538] Externalize libtommath
+
+2020-01-20 [TIP 542] Support for switchable Full Unicode support
+
+2020-01-21 [TIP 543] Eliminate `TCL_INTERP_DESTROYED` flag value
+
+2020-01-24 [TIP 559] Eliminate public routine `Tcl_FreeResult
+
+2020-01-31 (new) Implement 64-bit seek on Zip channels. (nijtmans)
+
+2020-02-28 [TIP 557] C++ support for Tcl
+
+2020-02-28 [TIP 562] Deprecate channel types 1-4
+
+2020-03-11 (bug)[234d6c] Segfault in [set l {}; lpop l] (sebres)
+
+2020-03-12 (bug) Crash in tests binary-79.[12] (porter)
+
+2020-03-13 [TIP 569] Eliminate Comments That Serve Lint
+
+2020-04-06 (bug)[dd010c] [string trim*] on astral characters (porter,nijtmans)
+
+2020-05-30 [TIP 551] Permit underscore in numerical literals in source code
+
+2020-07-03 [TIP 578] Death to TCL_DBGX
+
+2020-08-11 (bug)[e87000] Win32 crash in [fconfigure stdout] (werner,nijtmans)
+
+2020-09-06 (bug)[c1a376] deletion trace on imported ensemble (coulter)
+
+2020-09-13 [TIP 585] Promote the INDEX_TEMP_TABLE flag of Tcl_GetIndexFromObj*() to the public interface
+
+2020-09-15 (bug)[b5777d] crash in [string index abcd 0-0x10000000000000000]
+
+2020-09-19 [b9ecf3] revised stork mgmt [uplevel [list $cmd ...]] (coulter)
+
+2020-10-23 [TIP 587] Default utf-8 for source command
+
+2020-10-27 (bug)[11229b] test string-31.26.* (porter)
+
+2020-11-08 [TIP 582] Comments in Expressions
+
+2020-11-16 [TIP 586] C String Parsing Support for binary scan
+
+2020-12-07 [TIP 590] Recommend lowercase Package Names
+
+2021-01-06 Bump to tcltest 2.5.4
+
+2021-01-15 [TIP 481] `Tcl_GetStringFromObj()` with `size_t` length parameter
+
+2021-01-15 [TIP 592] End support: Windows XP, Server 2003, Vista, Server 2008
+
+2021-01-25 tzdata updated to Olson's tzdata2021a (nijtmans)
+
+2021-01-29 (bug)[113be1] zipfs on mac
+
+2021-03-15 [TIP 575] Switchable Tcl_UtfCharComplete()/Tcl_UtfNext()/Tcl_UtfPrev()
+
+2021-03-19 (new)[0221b9] Drop TCL_WINDOW_EVENTS from Tcl's [update idletasks]
+
+2021-03-30 (new)[4b4830] [chan truncate] for reflected channels
+
+2021-04-30 [TIP 597] "string is unicode" and better utf-8/utf-16/cesu-8 encodings
+
+2021-04-09 [TIP 598] export TclWinConvertError
+
+2021-05-15 (bug)[463b7a] segfault from Tcl_Unload (coulter)
+
+2021-05-15 (bug)[fb2a41] tclZipfs.c free all memory (coulter)
+
+2021-05-18 (bug)[688fcc,28027d] namespace teardown reform (coulter)
+
+- Released 8.7a5, Jun 18, 2021 --- http://core.tcl-lang.org/tcl/ for details -

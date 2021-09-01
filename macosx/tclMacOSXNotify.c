@@ -458,6 +458,20 @@ static int receivePipe = -1; /* Output end of triggerPipe */
 static int notifierThreadRunning;
 
 /*
+ * The following static flag indicates that async handlers are pending.
+ */
+
+#if TCL_THREADS
+static int asyncPending = 0;
+#endif
+
+/*
+ * Signal mask information for notifier thread.
+ */
+static sigset_t notifierSigMask;
+static sigset_t allSigMask;
+
+/*
  * This is the thread ID of the notifier thread that does select. Only valid
  * when notifierThreadRunning is non-zero.
  *
@@ -803,6 +817,15 @@ StartNotifierThread(void)
 	int result;
 	pthread_attr_t attr;
 
+	/*
+	 * Arrange for the notifier thread to start with all
+	 * signals blocked. In its mainloop it unblocks the
+	 * signals at safe points.
+	 */
+
+	sigfillset(&allSigMask);
+	pthread_sigmask(SIG_BLOCK, &allSigMask, &notifierSigMask);
+
 	pthread_attr_init(&attr);
 	pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -814,6 +837,12 @@ StartNotifierThread(void)
 	    Tcl_Panic("StartNotifierThread: unable to start notifier thread");
 	}
 	notifierThreadRunning = 1;
+
+	/*
+	 * Restore original signal mask.
+	 */
+
+	pthread_sigmask(SIG_SETMASK, &notifierSigMask, NULL);
     }
     UNLOCK_NOTIFIER_INIT;
 }
@@ -876,6 +905,14 @@ TclpFinalizeNotifier(
 			    "thread");
 		}
 		notifierThreadRunning = 0;
+
+		/*
+		 * If async marks are outstanding, perform actions now.
+		 */
+		if (asyncPending) {
+		    asyncPending = 0;
+		    TclAsyncMarkFromNotifier();
+		}
 	    }
 
 	    close(receivePipe);
@@ -1278,6 +1315,29 @@ FileHandlerEventProc(
 	}
     }
     return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpNotifierData --
+ *
+ *	This function returns a ClientData pointer to be associated
+ *	with a Tcl_AsyncHandler.
+ *
+ * Results:
+ *	On MacOSX, returns always NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+TclpNotifierData(void)
+{
+    return NULL;
 }
 
 /*
@@ -1829,6 +1889,61 @@ TclUnixWaitForFile(
 /*
  *----------------------------------------------------------------------
  *
+ * TclAsyncNotifier --
+ *
+ *	This procedure sets the async mark of an async handler to a
+ *	given value, if it is called from the notifier thread.
+ *
+ * Result:
+ *	True, when the handler will be marked, false otherwise.
+ *
+ * Side effetcs:
+ *	The trigger pipe is written when called from the notifier
+ *	thread.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclAsyncNotifier(
+    int sigNumber,		/* Signal number. */
+    TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
+    TCL_UNUSED(ClientData),	/* Notifier data. */
+    int *flagPtr,		/* Flag to mark. */
+    int value)			/* Value of mark. */
+{
+#if TCL_THREADS
+    /*
+     * WARNING:
+     * This code most likely runs in a signal handler. Thus,
+     * only few async-signal-safe system calls are allowed,
+     * e.g. pthread_self(), sem_post(), write().
+     */
+
+    if (pthread_equal(pthread_self(), (pthread_t) notifierThread)) {
+	if (notifierThreadRunning) {
+	    *flagPtr = value;
+	    if (!asyncPending) {
+		asyncPending = 1;
+		write(triggerPipe, "S", 1);
+	    }
+	    return 1;
+	}
+	return 0;
+    }
+
+    /*
+     * Re-send the signal to the notifier thread.
+     */
+
+    pthread_kill((pthread_t) notifierThread, sigNumber);
+#endif
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NotifierThreadProc --
  *
  *	This routine is the initial (and only) function executed by the
@@ -1856,7 +1971,7 @@ NotifierThreadProc(
 {
     ThreadSpecificData *tsdPtr;
     fd_set readableMask, writableMask, exceptionalMask;
-    int i, numFdBits = 0, polling;
+    int i, ret, numFdBits = 0, polling;
     struct timeval poll = {0., 0.}, *timePtr;
     char buf[2];
 
@@ -1909,8 +2024,25 @@ NotifierThreadProc(
 	}
 	FD_SET(receivePipe, &readableMask);
 
-	if (select(numFdBits, &readableMask, &writableMask, &exceptionalMask,
-		timePtr) == -1) {
+	/*
+	 * Signals are unblocked only during select().
+	 */
+
+	pthread_sigmask(SIG_SETMASK, &notifierSigMask, NULL);
+	ret = select(numFdBits, &readableMask, &writableMask, &exceptionalMask,
+		    timePtr);
+	pthread_sigmask(SIG_BLOCK, &allSigMask, NULL);
+
+	if (ret == -1) {
+	    /*
+	     * In case a signal was caught during select(),
+	     * perform work on async handlers now.
+	     */
+	    if (errno == EINTR && asyncPending) {
+		asyncPending = 0;
+		TclAsyncMarkFromNotifier();
+	    }
+
 	    /*
 	     * Try again immediately on an error.
 	     */
@@ -1998,6 +2130,11 @@ NotifierThreadProc(
 
 		break;
 	    }
+
+	    if (asyncPending) {
+		asyncPending = 0;
+		TclAsyncMarkFromNotifier();
+	    }
 	}
     }
     pthread_exit(0);
@@ -2084,12 +2221,17 @@ AtForkChild(void)
      */
 
 #if defined(USE_OS_UNFAIR_LOCK)
-    tsdPtr->tsdLock = OS_UNFAIR_LOCK_INIT;
+    notifierInitLock = OS_UNFAIR_LOCK_INIT;
+    notifierLock     = OS_UNFAIR_LOCK_INIT;
+    tsdPtr->tsdLock  = OS_UNFAIR_LOCK_INIT;
 #else
-       UNLOCK_NOTIFIER_TSD;
-       UNLOCK_NOTIFIER;
-       UNLOCK_NOTIFIER_INIT;
+    UNLOCK_NOTIFIER_TSD;
+    UNLOCK_NOTIFIER;
+    UNLOCK_NOTIFIER_INIT;
 #endif
+
+    asyncPending = 0;
+
     if (tsdPtr->runLoop) {
 	tsdPtr->runLoop = NULL;
 	if (!noCFafterFork) {
@@ -2119,6 +2261,12 @@ AtForkChild(void)
 	if (!noCFafterFork) {
 	    Tcl_InitNotifier();
 	}
+
+	/*
+	 * Restart the notifier thread for signal handling.
+	 */
+
+	StartNotifierThread();
     }
 }
 #endif /* HAVE_PTHREAD_ATFORK */

@@ -2090,7 +2090,7 @@ ReflectTruncate(
      * Are we in the correct thread?
      */
 
-#ifdef TCL_THREADS
+#if TCL_THREADS
     if (rcPtr->thread != Tcl_GetCurrentThread()) {
 	ForwardParam p;
 
@@ -2766,6 +2766,8 @@ DeleteReflectedChannelMap(
 	MarkDead(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
+#else
+    (void)interp;
 #endif
 }
 

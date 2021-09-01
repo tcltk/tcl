@@ -5120,15 +5120,15 @@ TryPostHandler(
 {
     Tcl_Obj *resultObj, *cmdObj, *options, *handlerKindObj, **objv;
     Tcl_Obj *finallyObj;
-    int finally;
+    int finallyIndex;
 
     objv = (Tcl_Obj **)data[0];
     options = (Tcl_Obj *)data[1];
     handlerKindObj = (Tcl_Obj *)data[2];
-    finally = PTR2INT(data[3]);
+    finallyIndex = PTR2INT(data[3]);
 
     cmdObj = objv[0];
-    finallyObj = finally ? objv[finally] : 0;
+    finallyObj = finallyIndex ? objv[finallyIndex] : 0;
 
     /*
      * Check for limits/rewinding, which override normal trapping behaviour.
@@ -5172,7 +5172,7 @@ TryPostHandler(
 
 	/* The 'finally' script is always the last argument word. */
 	return TclNREvalObjEx(interp, finallyObj, 0, iPtr->cmdFramePtr,
-		finally);
+		finallyIndex);
     }
 
     /*
