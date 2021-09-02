@@ -2244,7 +2244,7 @@ TclFetchEnsembleRoot(
 	*objcPtr = objc + iPtr->ensembleRewrite.numRemovedObjs
 		- iPtr->ensembleRewrite.numInsertedObjs;
 	if (iPtr->ensembleRewrite.sourceObjs[0] == NULL) {
-	    sourceObjs = iPtr->ensembleRewrite.sourceObjs[1];
+	    sourceObjs = (Tcl_Obj *const *)iPtr->ensembleRewrite.sourceObjs[1];
 	} else {
 	    sourceObjs = iPtr->ensembleRewrite.sourceObjs;
 	}
