@@ -2993,6 +2993,7 @@ MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
 MODULE_SCOPE Tcl_Obj *const *TclFetchEnsembleRoot(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, int objc, int *objcPtr);
+MODULE_SCOPE Tcl_Obj *const *TclEnsembleGetRewriteValues(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Namespace *TclEnsureNamespace(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr);
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
