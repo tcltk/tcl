@@ -3,8 +3,8 @@
 ## functions are specifically intended to work with the format as used
 ## by Tcl and Tk; they do not cope with arbitrary nroff markup.
 ##
-## Copyright (c) 1995-1997 Roger E. Critchlow Jr
-## Copyright (c) 2004-2011 Donal K. Fellows
+## Copyright © 1995-1997 Roger E. Critchlow Jr
+## Copyright © 2004-2011 Donal K. Fellows
 
 set ::manual(report-level) 1
 
