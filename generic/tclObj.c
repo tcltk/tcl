@@ -1857,12 +1857,11 @@ Tcl_HasStringRep(
  *
  * Tcl_StoreIntRep --
  *
- *	This function is called to set the object's internal
- *	representation to match a particular type.
+ *	Called to set the object's internal representation to match a
+ *	particular type.
  *
- *	It is the caller's responsibility to guarantee that
- *	the value of the submitted IntRep is in agreement with
- *	the value of any existing string rep.
+ *	It is the caller's resonsibility to ensure that the given IntRep is
+ *	appropriate for the existing string.
  *
  * Results:
  *	None.
@@ -1880,7 +1879,9 @@ Tcl_StoreIntRep(
     const Tcl_ObjType *typePtr,	/* New type for the object */
     const Tcl_ObjIntRep *irPtr)	/* New IntRep for the object */
 {
-    /* Clear out any existing IntRep ( "shimmer" ) */
+    /* Clear out any existing IntRep.  This is the point where shimmering, i.e.
+     * repeated alteration of the type of the internal representation, may
+     * occur. */
     TclFreeIntRep(objPtr);
 
     /* When irPtr == NULL, just leave objPtr with no IntRep for typePtr */

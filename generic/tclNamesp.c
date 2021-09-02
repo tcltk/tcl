@@ -4900,11 +4900,11 @@ TclGetNamespaceChildTable(
  *
  * TclLogCommandInfo --
  *
- *	This function is invoked after an error occurs in an interpreter. It
- *	adds information to iPtr->errorInfo/errorStack fields to describe the
+ *	Invoked after an error occurs in an interpreter.
+ *	Adds information to iPtr->errorInfo/errorStack fields to describe the
  *	command that was being executed when the error occurred. When pc and
  *	tosPtr are non-NULL, conveying a bytecode execution "inner context",
- *	and the offending instruction is suitable, that inner context is
+ *	and the offending instruction is suitable, and that inner context is
  *	recorded in errorStack.
  *
  * Results:
@@ -4938,8 +4938,8 @@ TclLogCommandInfo(
 
     if (iPtr->flags & ERR_ALREADY_LOGGED) {
 	/*
-	 * Someone else has already logged error information for this command;
-	 * we shouldn't add anything more.
+	 * Someone else has already logged error information for this command.
+	 * Don't add anything more.
 	 */
 
 	return;
