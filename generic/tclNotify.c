@@ -834,9 +834,7 @@ Tcl_SetMaxBlockTime(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (!tsdPtr->blockTimeSet || (timePtr->sec < tsdPtr->blockTime.sec)
-	    || ((timePtr->sec == tsdPtr->blockTime.sec)
-	    && (timePtr->usec < tsdPtr->blockTime.usec))) {
+    if (!tsdPtr->blockTimeSet || (*timePtr < tsdPtr->blockTime)) {
 	tsdPtr->blockTime = *timePtr;
 	tsdPtr->blockTimeSet = 1;
     }
@@ -945,8 +943,7 @@ Tcl_DoOneEvent(
 	 */
 
 	if (flags & TCL_DONT_WAIT) {
-	    tsdPtr->blockTime.sec = 0;
-	    tsdPtr->blockTime.usec = 0;
+	    tsdPtr->blockTime = 0;
 	    tsdPtr->blockTimeSet = 1;
 	} else {
 	    tsdPtr->blockTimeSet = 0;

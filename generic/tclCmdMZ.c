@@ -4057,8 +4057,7 @@ Tcl_TimeObjCmd(
     }
 #ifndef TCL_WIDE_CLICKS
     Tcl_GetTime(&stop);
-    totalMicroSec = ((double) (stop.sec - start.sec)) * 1.0e6
-	    + (stop.usec - start.usec);
+    totalMicroSec = (double) (stop - start);
 #else
     stop = TclpGetWideClicks();
     totalMicroSec = ((double) TclpWideClicksToNanoseconds(stop - start))/1.0e3;
@@ -4349,9 +4348,7 @@ Tcl_TimeRateObjCmd(
     stop = start + (maxms * 1000 / TclpWideClickInMicrosec());
 #else
     Tcl_GetTime(&now);
-    start = now.sec;
-    start *= 1000000;
-    start += now.usec;
+    start = now;
     middle = start;
 
     /*
@@ -4423,9 +4420,7 @@ Tcl_TimeRateObjCmd(
 	    middle = TclpGetWideClicks();
 #else
 	    Tcl_GetTime(&now);
-	    middle = now.sec;
-	    middle *= 1000000;
-	    middle += now.usec;
+	    middle = now;
 #endif /* TCL_WIDE_CLICKS */
 
 	    if (middle >= stop || count >= maxcnt) {

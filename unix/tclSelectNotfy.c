@@ -677,14 +677,14 @@ TclpWaitForEvent(
 	 * handler to do this scaling.
 	 */
 
-	if (timePtr->sec != 0 || timePtr->usec != 0) {
+	if (*timePtr != 0) {
 	    vTime = *timePtr;
 	    TclScaleTime(&vTime);
 	    timePtr = &vTime;
 	}
 #if !TCL_THREADS
-	timeout.tv_sec = timePtr->sec;
-	timeout.tv_usec = timePtr->usec;
+	timeout.tv_sec = *timePtr / 1000000;
+	timeout.tv_usec = *timePtr % 1000000;
 	timeoutPtr = &timeout;
     } else if (tsdPtr->numFdBits == 0) {
 	/*
@@ -712,7 +712,7 @@ TclpWaitForEvent(
 
     pthread_mutex_lock(&notifierMutex);
 
-    if (timePtr != NULL && timePtr->sec == 0 && (timePtr->usec == 0
+    if (timePtr != NULL && (*timePtr == 0
 #if defined(__APPLE__) && defined(__LP64__)
 	    /*
 	     * On 64-bit Darwin, pthread_cond_timedwait() appears to have a
@@ -721,7 +721,7 @@ TclpWaitForEvent(
 	     * workaround, when given a very brief timeout, just do a poll.
 	     * [Bug 1457797]
 	     */
-	    || timePtr->usec < 10
+	    || *timePtr < 10
 #endif /* __APPLE__ && __LP64__ */
 	    )) {
 	/*
@@ -771,7 +771,7 @@ TclpWaitForEvent(
 	    unsigned int timeout;
 
 	    if (timePtr) {
-		timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+		timeout = *timePtr / 1000;
 	    } else {
 		timeout = 0xFFFFFFFF;
 	    }
@@ -785,9 +785,8 @@ TclpWaitForEvent(
 	    struct timespec ptime;
 
 	    Tcl_GetTime(&now);
-	    ptime.tv_sec = timePtr->sec + now.sec +
-		    (timePtr->usec + now.usec) / 1000000;
-	    ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+	    ptime.tv_sec = (*timePtr + now) / 1000000;
+	    ptime.tv_nsec = 1000 * ((*timePtr + now) % 1000000);
 
 	    pthread_cond_timedwait(&tsdPtr->waitCV, &notifierMutex, &ptime);
 	} else {

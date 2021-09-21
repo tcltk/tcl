@@ -43,32 +43,20 @@ Tcl_Sleep(
      */
 
     Tcl_GetTime(&before);
-    after = before;
-    after.sec += ms/1000;
-    after.usec += (ms%1000)*1000;
-    if (after.usec > 1000000) {
-	after.usec -= 1000000;
-	after.sec += 1;
-    }
+    after = before + ms * 1000;
     while (1) {
 	/*
 	 * TIP #233: Scale from virtual time to real-time for select.
 	 */
 
-	vdelay.sec  = after.sec  - before.sec;
-	vdelay.usec = after.usec - before.usec;
+	vdelay = after - before;
 
-	if (vdelay.usec < 0) {
-	    vdelay.usec += 1000000;
-	    vdelay.sec  -= 1;
-	}
-
-	if ((vdelay.sec != 0) || (vdelay.usec != 0)) {
+	if (vdelay != 0) {
 	    TclScaleTime(&vdelay);
 	}
 
-	delay.tv_sec  = vdelay.sec;
-	delay.tv_usec = vdelay.usec;
+	delay.tv_sec  = vdelay / 1000000;
+	delay.tv_usec = vdelay % 1000000;
 
 	/*
 	 * Special note: must convert delay.tv_sec to int before comparing to

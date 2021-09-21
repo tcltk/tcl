@@ -95,7 +95,7 @@ TclpGetMicroseconds(void)
     Tcl_Time time;
 
     GetTime(&time);
-    return ((long long)(unsigned long) time.sec)*1000000 + time.usec;
+    return time;
 }
 
 /*
@@ -127,8 +127,7 @@ TclpGetClicks(void)
 	Tcl_Time time;
 
 	GetTime(&time);
-	now = ((unsigned long long)(unsigned long) time.sec)*1000000 +
-	        time.usec;
+	now = time;
     } else {
 	/*
 	 * A semi-NativeGetTime, specialized to clicks.
@@ -141,7 +140,7 @@ TclpGetClicks(void)
     Tcl_Time time;
 
     GetTime(&time);
-    now = ((unsigned long long) time.sec)*1000000 + time.usec;
+    now = time;
 #endif /* NO_GETTOD */
 
     return now;
@@ -417,8 +416,7 @@ NativeGetTime(
     struct timeval tv;
 
     (void) gettimeofday(&tv, NULL);
-    timePtr->sec = tv.tv_sec;
-    timePtr->usec = tv.tv_usec;
+    *timePtr = tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 /*

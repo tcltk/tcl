@@ -4789,7 +4789,7 @@ GetTimesObjCmd(
 	Tcl_Free(objPtr);
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per alloc+free\n", timePer/100000);
 
     /* alloc 5000 times */
@@ -4800,7 +4800,7 @@ GetTimesObjCmd(
 	objv[i] = (Tcl_Obj *)Tcl_Alloc(sizeof(Tcl_Obj));
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per alloc\n", timePer/5000);
 
     /* free 5000 times */
@@ -4810,7 +4810,7 @@ GetTimesObjCmd(
 	Tcl_Free(objv[i]);
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per free\n", timePer/5000);
 
     /* Tcl_NewObj 5000 times */
@@ -4820,7 +4820,7 @@ GetTimesObjCmd(
 	objv[i] = Tcl_NewObj();
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)(stop - start);;
     fprintf(stderr, "   %.3f usec per Tcl_NewObj\n", timePer/5000);
 
     /* Tcl_DecrRefCount 5000 times */
@@ -4831,7 +4831,7 @@ GetTimesObjCmd(
 	Tcl_DecrRefCount(objPtr);
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)(stop - start);;
     fprintf(stderr, "   %.3f usec per Tcl_DecrRefCount\n", timePer/5000);
     Tcl_Free(objv);
 
@@ -4843,7 +4843,7 @@ GetTimesObjCmd(
 	(void) TclGetString(objPtr);
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)(stop - start);;
     fprintf(stderr, "   %.3f usec per Tcl_GetStringFromObj of \"12345\"\n",
 	    timePer/100000);
 
@@ -4856,7 +4856,7 @@ GetTimesObjCmd(
 	}
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)(stop - start);;
     fprintf(stderr, "   %.3f usec per Tcl_GetIntFromObj of \"12345\"\n",
 	    timePer/100000);
     Tcl_DecrRefCount(objPtr);
@@ -4870,7 +4870,7 @@ GetTimesObjCmd(
 	}
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)(stop - start);
     fprintf(stderr, "   %.3f usec per Tcl_GetInt of \"12345\"\n",
 	    timePer/100000);
 
@@ -4881,7 +4881,7 @@ GetTimesObjCmd(
 	sprintf(newString, "%d", 12345);
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)(stop - start);;
     fprintf(stderr, "   %.3f usec per sprintf of 12345\n",
 	    timePer/100000);
 
@@ -4892,7 +4892,7 @@ GetTimesObjCmd(
 	(void) Tcl_FindHashEntry(&iPtr->globalNsPtr->cmdTable, "gettimes");
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)(stop - start);;
     fprintf(stderr, "   %.3f usec per hashtable lookup of \"gettimes\"\n",
 	    timePer/100000);
 
@@ -4906,7 +4906,7 @@ GetTimesObjCmd(
 	}
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)(stop - start);;
     fprintf(stderr, "   %.3f usec per Tcl_SetVar of a to \"12345\"\n",
 	    timePer/100000);
 
@@ -4920,7 +4920,7 @@ GetTimesObjCmd(
 	}
     }
     Tcl_GetTime(&stop);
-    timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    timePer = (double)(stop - start);;
     fprintf(stderr, "   %.3f usec per Tcl_GetVar of a==\"12345\"\n",
 	    timePer/100000);
 

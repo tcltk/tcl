@@ -278,8 +278,8 @@ TestwinclockCmd(
 	    Tcl_NewWideIntObj(t2.QuadPart / 10000000));
     Tcl_ListObjAppendElement(interp, result,
 	    Tcl_NewWideIntObj((t2.QuadPart / 10) % 1000000));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(tclTime.sec));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(tclTime.usec));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(tclTime / 1000000));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(tclTime % 1000000));
 
     Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(p1.QuadPart));
     Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(p2.QuadPart));

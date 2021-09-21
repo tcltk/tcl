@@ -1780,7 +1780,7 @@ ClockClicksObjCmd(
     switch (index) {
     case CLICKS_MILLIS:
 	Tcl_GetTime(&now);
-	clicks = (Tcl_WideInt)(unsigned long)now.sec * 1000 + now.usec / 1000;
+	clicks = now / 1000;
 	break;
     case CLICKS_NATIVE:
 #ifdef TCL_WIDE_CLICKS
@@ -1831,7 +1831,7 @@ ClockMillisecondsObjCmd(
     }
     Tcl_GetTime(&now);
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)
-	    now.sec * 1000 + now.usec / 1000));
+	    now / 1000));
     return TCL_OK;
 }
 
@@ -2018,7 +2018,7 @@ ClockSecondsObjCmd(
 	return TCL_ERROR;
     }
     Tcl_GetTime(&now);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) now.sec));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) now));
     return TCL_OK;
 }
 
@@ -2065,12 +2065,12 @@ TzsetIfNecessary(void)
      */
     Tcl_Time now;
     Tcl_GetTime(&now);
-    if (now.sec == tzLastRefresh && tzEnvEpoch == TclEnvEpoch) {
+    if (now / 1000000 == tzLastRefresh && tzEnvEpoch == TclEnvEpoch) {
 	return;
     }
 
     tzEnvEpoch = TclEnvEpoch;
-    tzLastRefresh = now.sec;
+    tzLastRefresh = now / 1000000;
 
     Tcl_MutexLock(&clockMutex);
     tzIsNow = getenv("TZ");

@@ -7179,15 +7179,15 @@ TEBCresume(
 		break;
 	    case 1:		/* microseconds */
 		Tcl_GetTime(&now);
-		wval = (Tcl_WideInt) now.sec * 1000000 + now.usec;
+		wval = (Tcl_WideInt) now;
 		break;
 	    case 2:		/* milliseconds */
 		Tcl_GetTime(&now);
-		wval = (Tcl_WideInt) now.sec * 1000 + now.usec / 1000;
+		wval = (Tcl_WideInt) now / 1000;
 		break;
 	    case 3:		/* seconds */
 		Tcl_GetTime(&now);
-		wval = (Tcl_WideInt) now.sec;
+		wval = (Tcl_WideInt) now / 1000000;
 		break;
 	    default:
 		Tcl_Panic("clockRead instruction with unknown clock#");

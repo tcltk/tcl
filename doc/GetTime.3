@@ -20,7 +20,7 @@ Tcl_GetTime, Tcl_SetTimeProc, Tcl_QueryTimeProc \- get date and time
 \fBTcl_QueryTimeProc\fR(\fIgetProcPtr, scaleProcPtr, clientDataPtr\fR)
 .SH ARGUMENTS
 .AS Tcl_GetTimeProc *getProc in
-.AP Tcl_Time *timePtr out
+.AP long long *timePtr out
 Points to memory in which to store the date and time information.
 .AP Tcl_GetTimeProc getProc in
 Pointer to handler function replacing \fBTcl_GetTime\fR's access to the OS.
@@ -38,26 +38,9 @@ Pointer to place the currently registered pass-through value into.
 .BE
 .SH DESCRIPTION
 .PP
-The \fBTcl_GetTime\fR function retrieves the current time as a
-\fITcl_Time\fR structure in memory the caller provides.  This
-structure has the following definition:
-.PP
-.CS
-typedef struct Tcl_Time {
-    long \fIsec\fR;
-    long \fIusec\fR;
-} \fBTcl_Time\fR;
-.CE
-.PP
-On return, the \fIsec\fR member of the structure is filled in with the
-number of seconds that have elapsed since the \fIepoch:\fR the epoch
-is the point in time of 00:00 UTC, 1 January 1970.  This number does
-\fInot\fR count leap seconds \- an interval of one day advances it by
-86400 seconds regardless of whether a leap second has been inserted.
-.PP
-The \fIusec\fR member of the structure is filled in with the number of
-microseconds that have elapsed since the start of the second
-designated by \fIsec\fR.  The Tcl library makes every effort to keep
+The \fBTcl_GetTime\fR function retrieves the current time as the number
+of microseconds that have elapsed since the \fIepoch:\fR the epoch is
+the point in time of 00:00 UTC, 1 January 1970. The Tcl library makes every effort to keep
 this number as precise as possible, subject to the limitations of the
 computer system.  On multiprocessor variants of Windows, this number
 may be limited to the 10- or 20-ms granularity of the system clock.
@@ -82,10 +65,10 @@ The signatures of the handler functions are as follows:
 .PP
 .CS
 typedef void \fBTcl_GetTimeProc\fR(
-        Tcl_Time *\fItimebuf\fR,
+        long long *\fItimebuf\fR,
         void *\fIclientData\fR);
 typedef void \fBTcl_ScaleTimeProc\fR(
-        Tcl_Time *\fItimebuf\fR,
+        long long *\fItimebuf\fR,
         void *\fIclientData\fR);
 .CE
 .PP

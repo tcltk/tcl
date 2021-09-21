@@ -121,15 +121,13 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 #define TCL_TIME_BEFORE(t1, t2) \
-    (((t1).sec<(t2).sec) || ((t1).sec==(t2).sec && (t1).usec<(t2).usec))
+    ((t1)<(t2))
 
 #define TCL_TIME_DIFF_MS(t1, t2) \
-    (1000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
-	    ((long)(t1).usec - (long)(t2).usec)/1000)
+    (((Tcl_WideInt)(t1) - (Tcl_WideInt)(t2))/1000)
 
 #define TCL_TIME_DIFF_MS_CEILING(t1, t2) \
-    (1000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
-	    ((long)(t1).usec - (long)(t2).usec + 999)/1000)
+    (((Tcl_WideInt)(t1) - (Tcl_WideInt)(t2) + 999)/1000)
 
 /*
  * Sleeps under that number of milliseconds don't get double-checked
@@ -260,12 +258,7 @@ Tcl_CreateTimerHandler(
      */
 
     Tcl_GetTime(&time);
-    time.sec += milliseconds/1000;
-    time.usec += (milliseconds%1000)*1000;
-    if (time.usec >= 1000000) {
-	time.usec -= 1000000;
-	time.sec += 1;
-    }
+    time += milliseconds*1000;
     return TclCreateAbsoluteTimerHandler(&time, proc, clientData);
 }
 
@@ -410,24 +403,16 @@ TimerSetupProc(
 	 * There is an idle handler or a pending timer event, so just poll.
 	 */
 
-	blockTime.sec = 0;
-	blockTime.usec = 0;
+	blockTime = 0;
     } else if ((flags & TCL_TIMER_EVENTS) && tsdPtr->firstTimerHandlerPtr) {
 	/*
 	 * Compute the timeout for the next timer on the list.
 	 */
 
 	Tcl_GetTime(&blockTime);
-	blockTime.sec = tsdPtr->firstTimerHandlerPtr->time.sec - blockTime.sec;
-	blockTime.usec = tsdPtr->firstTimerHandlerPtr->time.usec -
-		blockTime.usec;
-	if (blockTime.usec < 0) {
-	    blockTime.sec -= 1;
-	    blockTime.usec += 1000000;
-	}
-	if (blockTime.sec < 0) {
-	    blockTime.sec = 0;
-	    blockTime.usec = 0;
+	blockTime = tsdPtr->firstTimerHandlerPtr->time - blockTime;
+	if (blockTime < 0) {
+	    blockTime = 0;
 	}
     } else {
 	return;
@@ -469,23 +454,16 @@ TimerCheckProc(
 	 */
 
 	Tcl_GetTime(&blockTime);
-	blockTime.sec = tsdPtr->firstTimerHandlerPtr->time.sec - blockTime.sec;
-	blockTime.usec = tsdPtr->firstTimerHandlerPtr->time.usec -
-		blockTime.usec;
-	if (blockTime.usec < 0) {
-	    blockTime.sec -= 1;
-	    blockTime.usec += 1000000;
-	}
-	if (blockTime.sec < 0) {
-	    blockTime.sec = 0;
-	    blockTime.usec = 0;
+	blockTime = tsdPtr->firstTimerHandlerPtr->time - blockTime;
+	if (blockTime < 0) {
+	    blockTime = 0;
 	}
 
 	/*
 	 * If the first timer has expired, stick an event on the queue.
 	 */
 
-	if (blockTime.sec == 0 && blockTime.usec == 0 &&
+	if (blockTime == 0 &&
 		!tsdPtr->timerPending) {
 	    tsdPtr->timerPending = 1;
 	    timerEvPtr = (Tcl_Event *)Tcl_Alloc(sizeof(Tcl_Event));
@@ -637,8 +615,7 @@ Tcl_DoWhenIdle(
     }
     tsdPtr->lastIdlePtr = idlePtr;
 
-    blockTime.sec = 0;
-    blockTime.usec = 0;
+    blockTime = 0;
     Tcl_SetMaxBlockTime(&blockTime);
 }
 
@@ -752,8 +729,7 @@ TclServiceIdle(void)
 	Tcl_Free(idlePtr);
     }
     if (tsdPtr->idleList) {
-	blockTime.sec = 0;
-	blockTime.usec = 0;
+	blockTime = 0;
 	Tcl_SetMaxBlockTime(&blockTime);
     }
     return 1;
@@ -866,12 +842,7 @@ Tcl_AfterObjCmd(
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
 	Tcl_GetTime(&wakeup);
-	wakeup.sec += (long)(ms / 1000);
-	wakeup.usec += ((long)(ms % 1000)) * 1000;
-	if (wakeup.usec > 1000000) {
-	    wakeup.sec++;
-	    wakeup.usec -= 1000000;
-	}
+	wakeup += (long long)(ms * 1000);
 	afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
 		AfterProc, afterPtr);
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
@@ -1014,12 +985,7 @@ AfterDelay(
 
     Tcl_GetTime(&now);
     endTime = now;
-    endTime.sec += (long)(ms / 1000);
-    endTime.usec += ((int)(ms % 1000)) * 1000;
-    if (endTime.usec >= 1000000) {
-	endTime.sec++;
-	endTime.usec -= 1000000;
-    }
+    endTime += (long long)(ms) * 1000;
 
     do {
 	if (Tcl_AsyncReady()) {

@@ -314,7 +314,7 @@ PipeSetupProc(
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
-    Tcl_Time blockTime = { 0, 0 };
+    Tcl_Time blockTime = 0;
     int block = 1;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -2452,7 +2452,7 @@ PipeWatchProc(
 
     infoPtr->watchMask = mask & infoPtr->validMask;
     if (infoPtr->watchMask) {
-	Tcl_Time blockTime = { 0, 0 };
+	Tcl_Time blockTime = 0;
 
 	if (!oldMask) {
 	    infoPtr->nextPtr = tsdPtr->firstPipePtr;

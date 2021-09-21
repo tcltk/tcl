@@ -261,17 +261,11 @@ events already queued.  If there are, it calls
 \fBTcl_WaitForEvent\fR does not block if there is no new data on the X
 connection.
 The \fItimePtr\fR argument to \fBTcl_WaitForEvent\fR points to
-a structure that describes a time interval in seconds and
-microseconds:
+a value that describes a time interval in microseconds:
 .PP
 .CS
-typedef struct Tcl_Time {
-    long \fIsec\fR;
-    long \fIusec\fR;
-} \fBTcl_Time\fR;
+typedef long long \fBTcl_Time\fR;
 .CE
-.PP
-The \fIusec\fR field should be less than 1000000.
 .PP
 Information provided to \fBTcl_SetMaxBlockTime\fR
 is only used for the next call to \fBTcl_WaitForEvent\fR; it is

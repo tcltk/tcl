@@ -1176,14 +1176,11 @@ typedef enum {
 
 /*
  * The following structure keeps is used to hold a time value, either as an
- * absolute time (the number of seconds from the epoch) or as an elapsed time.
+ * absolute time (the number of microseconds from the epoch) or as an elapsed time.
  * On Unix systems the epoch is Midnight Jan 1, 1970 GMT.
  */
 
-typedef struct Tcl_Time {
-    long sec;			/* Seconds. */
-    long usec;			/* Microseconds. */
-} Tcl_Time;
+typedef long long Tcl_Time;
 
 typedef void (Tcl_SetTimerProc) (const Tcl_Time *timePtr);
 typedef int (Tcl_WaitForEventProc) (const Tcl_Time *timePtr);

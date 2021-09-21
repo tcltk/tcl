@@ -287,7 +287,7 @@ TclpSetTimer(
 	 * Windows seems to get confused by zero length timers.
 	 */
 
-	timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+	timeout = *timePtr / 1000;
 	if (timeout == 0) {
 	    timeout = 1;
 	}
@@ -481,16 +481,13 @@ TclpWaitForEvent(
 	 * real-time.
 	 */
 
-	Tcl_Time myTime;
+	Tcl_Time myTime = *timePtr;
 
-	myTime.sec  = timePtr->sec;
-	myTime.usec = timePtr->usec;
-
-	if (myTime.sec != 0 || myTime.usec != 0) {
+	if (myTime != 0) {
 	    TclScaleTime(&myTime);
 	}
 
-	timeout = myTime.sec * 1000 + myTime.usec / 1000;
+	timeout = myTime / 1000;
     } else {
 	timeout = INFINITE;
     }
@@ -594,38 +591,29 @@ Tcl_Sleep(
 				 * real. */
     DWORD sleepTime;		/* Time to sleep, real-time */
 
-    vdelay.sec  = ms / 1000;
-    vdelay.usec = (ms % 1000) * 1000;
+    vdelay = (long long)(ms) * 1000;
 
     Tcl_GetTime(&now);
-    desired.sec  = now.sec  + vdelay.sec;
-    desired.usec = now.usec + vdelay.usec;
-    if (desired.usec > 1000000) {
-	++desired.sec;
-	desired.usec -= 1000000;
-    }
+    desired  = now  + vdelay;
 
     /*
      * TIP #233: Scale delay from virtual to real-time.
      */
 
     TclScaleTime(&vdelay);
-    sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
+    sleepTime = vdelay / 1000;
 
     for (;;) {
 	SleepEx(sleepTime, TRUE);
 	Tcl_GetTime(&now);
-	if (now.sec > desired.sec) {
-	    break;
-	} else if ((now.sec == desired.sec) && (now.usec >= desired.usec)) {
+	if (now > desired) {
 	    break;
 	}
 
-	vdelay.sec  = desired.sec  - now.sec;
-	vdelay.usec = desired.usec - now.usec;
+	vdelay = desired - now;
 
 	TclScaleTime(&vdelay);
-	sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
+	sleepTime = vdelay / 1000;
     }
 }
 

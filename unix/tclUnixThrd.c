@@ -707,9 +707,8 @@ Tcl_ConditionWait(
 	 */
 
 	Tcl_GetTime(&now);
-	ptime.tv_sec = timePtr->sec + now.sec +
-	    (timePtr->usec + now.usec) / 1000000;
-	ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+	ptime.tv_sec = (*timePtr + now) / 1000000;
+	ptime.tv_nsec = 1000 * ((*timePtr + now) % 1000000);
 	PCondTimedWait(pcondPtr, pmutexPtr, &ptime);
     }
 }

@@ -3491,15 +3491,11 @@ Tcl_LimitCheck(
 	Tcl_Time now;
 
 	Tcl_GetTime(&now);
-	if (iPtr->limit.time.sec < now.sec ||
-		(iPtr->limit.time.sec == now.sec &&
-		iPtr->limit.time.usec < now.usec)) {
+	if (iPtr->limit.time < now) {
 	    iPtr->limit.exceeded |= TCL_LIMIT_TIME;
 	    Tcl_Preserve(interp);
 	    RunLimitHandlers(iPtr->limit.timeHandlers, interp);
-	    if (iPtr->limit.time.sec > now.sec ||
-		    (iPtr->limit.time.sec == now.sec &&
-		    iPtr->limit.time.usec >= now.usec)) {
+	    if (iPtr->limit.time > now) {
 		iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 	    } else if (iPtr->limit.exceeded & TCL_LIMIT_TIME) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -4048,12 +4044,7 @@ Tcl_LimitSetTime(
     if (iPtr->limit.timeEvent != NULL) {
 	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
     }
-    nextMoment.sec = timeLimitPtr->sec;
-    nextMoment.usec = timeLimitPtr->usec+10;
-    if (nextMoment.usec >= 1000000) {
-	nextMoment.sec++;
-	nextMoment.usec -= 1000000;
-    }
+    nextMoment = *timeLimitPtr;
     iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(&nextMoment,
 	    TimeLimitCallback, interp);
     iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
@@ -4732,9 +4723,9 @@ ChildTimeLimitCmd(
 
 	    Tcl_LimitGetTime(childInterp, &limitMoment);
 	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
-		    Tcl_NewWideIntObj(limitMoment.usec/1000));
+		    Tcl_NewWideIntObj(((limitMoment / 1000) % 1000)));
 	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[3], -1),
-		    Tcl_NewWideIntObj(limitMoment.sec));
+		    Tcl_NewWideIntObj(limitMoment / 1000000));
 	} else {
 	    Tcl_Obj *empty;
 
@@ -4773,7 +4764,7 @@ ChildTimeLimitCmd(
 
 		Tcl_LimitGetTime(childInterp, &limitMoment);
 		Tcl_SetObjResult(interp,
-			Tcl_NewWideIntObj(limitMoment.usec/1000));
+			Tcl_NewWideIntObj(limitMoment/1000));
 	    }
 	    break;
 	case OPT_SEC:
@@ -4781,7 +4772,7 @@ ChildTimeLimitCmd(
 		Tcl_Time limitMoment;
 
 		Tcl_LimitGetTime(childInterp, &limitMoment);
-		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(limitMoment.sec));
+		Tcl_SetObjResult(interp, Tcl_NewWideIntObj(limitMoment / 1000000));
 	    }
 	    break;
 	}
@@ -4838,7 +4829,7 @@ ChildTimeLimitCmd(
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
 		}
-		limitMoment.usec = ((long)tmp)*1000;
+		limitMoment = ((long)tmp)*1000;
 		break;
 	    case OPT_SEC:
 		secObj = objv[i+1];
@@ -4856,7 +4847,7 @@ ChildTimeLimitCmd(
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
 		}
-		limitMoment.sec = (long)tmp;
+		limitMoment = (long long)tmp * 1000000;
 		break;
 	    }
 	}
@@ -4886,15 +4877,6 @@ ChildTimeLimitCmd(
 	    }
 
 	    if (milliLen > 0 || secLen > 0) {
-		/*
-		 * Force usec to be in range [0..1000000), possibly
-		 * incrementing sec in the process. This makes it much easier
-		 * for people to write scripts that do small time increments.
-		 */
-
-		limitMoment.sec += limitMoment.usec / 1000000;
-		limitMoment.usec %= 1000000;
-
 		Tcl_LimitSetTime(childInterp, &limitMoment);
 		Tcl_LimitTypeSet(childInterp, TCL_LIMIT_TIME);
 	    } else {

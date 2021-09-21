@@ -68,8 +68,8 @@ The type of limit that the operation refers to.  This must be either
 .AP int commandLimit in
 The maximum number of commands (as reported by \fBinfo cmdcount\fR)
 that may be executed in the interpreter.
-.AP Tcl_Time *timeLimitPtr in/out
-A pointer to a structure that will either have the new time limit read
+.AP long long *timeLimitPtr in/out
+A pointer to a value (in microseconds) that will either have the new time limit read
 from (\fBTcl_LimitSetTime\fR) or the current time limit written to
 (\fBTcl_LimitGetTime\fR).
 .AP int granularity in

@@ -1840,7 +1840,7 @@ static void
 ZipfsSetup(void)
 {
 #if TCL_THREADS
-    static const Tcl_Time t = { 0, 0 };
+    static const Tcl_Time t = 0;
 
     /*
      * Inflate condition variable.

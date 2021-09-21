@@ -352,8 +352,7 @@ SerialBlockTime(
 {
     Tcl_Time blockTime;
 
-    blockTime.sec  =  msec / 1000;
-    blockTime.usec = (msec % 1000) * 1000;
+    blockTime = (long long)msec * 1000;
     Tcl_SetMaxBlockTime(&blockTime);
 }
 
@@ -380,7 +379,7 @@ SerialGetMilliseconds(void)
 
     Tcl_GetTime(&time);
 
-    return (time.sec * 1000 + time.usec / 1000);
+    return time / 1000;
 }
 
 /*
