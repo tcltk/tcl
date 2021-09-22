@@ -279,7 +279,7 @@ SetTimer(
 	XtRemoveTimeOut(notifier.currentTimeout);
     }
     if (timePtr) {
-	timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+	timeout = *timePtr / 1000;
 	notifier.currentTimeout = XtAppAddTimeOut(notifier.appContext,
 		timeout, TimerProc, NULL);
     } else {
@@ -641,7 +641,7 @@ WaitForEvent(
     TclSetAppContext(NULL);
 
     if (timePtr) {
-	timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+	timeout = *timePtr / 1000;
 	if (timeout == 0) {
 	    if (XtAppPending(notifier.appContext)) {
 		goto process;

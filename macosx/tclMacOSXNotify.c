@@ -1014,9 +1014,9 @@ TclpSetTimer(
     if (timePtr) {
 	Tcl_Time vTime = *timePtr;
 
-	if (vTime.sec != 0 || vTime.usec != 0) {
+	if (vTime != 0) {
 	    TclScaleTime(&vTime);
-	    waitTime = vTime.sec + 1.0e-6 * vTime.usec;
+	    waitTime = 1.0e-6 * vTime;
 	} else {
 	    waitTime = 0;
 	}
@@ -1390,9 +1390,9 @@ TclpWaitForEvent(
 	 * handler to do this scaling.
 	 */
 
-	if (vTime.sec != 0 || vTime.usec != 0) {
+	if (vTime != 0 ) {
 	    TclScaleTime(&vTime);
-	    waitTime = vTime.sec + 1.0e-6 * vTime.usec;
+	    waitTime = 1.0e-6 * vTime;
 	} else {
 	    /*
 	     * The max block time was set to 0.
@@ -1673,8 +1673,7 @@ Tcl_Sleep(
      * TIP #233: Scale from virtual time to real-time.
      */
 
-    vdelay.sec = ms / 1000;
-    vdelay.usec = (ms % 1000) * 1000;
+    vdelay = ms * 1000;
     TclScaleTime(&vdelay);
 
     if (tsdPtr->runLoop) {
@@ -1683,7 +1682,7 @@ Tcl_Sleep(
 	CFAbsoluteTime nextTimerFire = 0, waitEnd, now;
 	SInt32 runLoopStatus;
 
-	waitTime = vdelay.sec + 1.0e-6 * vdelay.usec;
+	waitTime = 1.0e-6 * vdelay;
  	now = CFAbsoluteTimeGetCurrent();
 	waitEnd = now + waitTime;
 
@@ -1720,8 +1719,8 @@ Tcl_Sleep(
     } else {
 	struct timespec waitTime;
 
-	waitTime.tv_sec = vdelay.sec;
-	waitTime.tv_nsec = vdelay.usec * 1000;
+	waitTime.tv_sec = vdelay / 1000000;
+	waitTime.tv_nsec = vdelay % 1000000 * 1000;
 	while (nanosleep(&waitTime, &waitTime));
     }
 }
@@ -1761,7 +1760,7 @@ TclUnixWaitForFile(
 				 * at all, and a value of -1 means wait
 				 * forever. */
 {
-    Tcl_Time abortTime = {0, 0}, now; /* silence gcc 4 warning */
+    Tcl_Time abortTime = 0, now; /* silence gcc 4 warning */
     struct timeval blockTime, *timeoutPtr;
     int numFound, result = 0;
     fd_set readableMask;
@@ -1789,12 +1788,7 @@ TclUnixWaitForFile(
 
     if (timeout > 0) {
 	Tcl_GetTime(&now);
-	abortTime.sec = now.sec + timeout/1000;
-	abortTime.usec = now.usec + (timeout%1000)*1000;
-	if (abortTime.usec >= 1000000) {
-	    abortTime.usec -= 1000000;
-	    abortTime.sec += 1;
-	}
+	abortTime = now + timeout * 1000;
 	timeoutPtr = &blockTime;
     } else if (timeout == 0) {
 	timeoutPtr = &blockTime;
@@ -1819,8 +1813,8 @@ TclUnixWaitForFile(
 
     while (1) {
 	if (timeout > 0) {
-	    blockTime.tv_sec = abortTime.sec - now.sec;
-	    blockTime.tv_usec = abortTime.usec - now.usec;
+	    blockTime.tv_sec = (abortTime - now) / 1000000;
+	    blockTime.tv_usec = (abortTime - now) % 1000000;
 	    if (blockTime.tv_usec < 0) {
 		blockTime.tv_sec -= 1;
 		blockTime.tv_usec += 1000000;
@@ -1878,8 +1872,7 @@ TclUnixWaitForFile(
 	 */
 
 	Tcl_GetTime(&now);
-	if ((abortTime.sec < now.sec)
-		|| (abortTime.sec==now.sec && abortTime.usec<=now.usec)) {
+	if (abortTime < now) {
 	    break;
 	}
     }

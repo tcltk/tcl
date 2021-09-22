@@ -371,7 +371,7 @@ ConsoleSetupProc(
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     ConsoleInfo *infoPtr;
-    Tcl_Time blockTime = { 0, 0 };
+    Tcl_Time blockTime = 0;
     int block = 1;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -944,7 +944,7 @@ ConsoleWatchProc(
 
     infoPtr->watchMask = mask & infoPtr->validMask;
     if (infoPtr->watchMask) {
-	Tcl_Time blockTime = { 0, 0 };
+	Tcl_Time blockTime = 0;
 
 	if (!oldMask) {
 	    infoPtr->nextPtr = tsdPtr->firstConsolePtr;

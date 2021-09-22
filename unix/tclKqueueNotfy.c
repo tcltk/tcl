@@ -649,13 +649,13 @@ TclpWaitForEvent(
 	 * handler to do this scaling.
 	 */
 
-	if (timePtr->sec != 0 || timePtr->usec != 0) {
+	if (*timePtr != 0) {
 	    vTime = *timePtr;
 	    TclScaleTime(&vTime);
 	    timePtr = &vTime;
 	}
-	timeout.tv_sec = timePtr->sec;
-	timeout.tv_usec = timePtr->usec;
+	timeout.tv_sec = *timePtr / 1000000;
+	timeout.tv_usec = *timePtr % 1000000;
 	timeoutPtr = &timeout;
     } else {
 	timeoutPtr = NULL;

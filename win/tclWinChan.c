@@ -206,7 +206,7 @@ FileSetupProc(
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     FileInfo *infoPtr;
-    Tcl_Time blockTime = { 0, 0 };
+    Tcl_Time blockTime = 0;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!TEST_FLAG(flags, TCL_FILE_EVENTS)) {
@@ -697,7 +697,7 @@ FileWatchProc(
 				 * TCL_EXCEPTION. */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
-    Tcl_Time blockTime = { 0, 0 };
+    Tcl_Time blockTime = 0;
 
     /*
      * Since the file is always ready for events, we set the block time to
