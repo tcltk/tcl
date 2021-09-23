@@ -4764,7 +4764,7 @@ ChildTimeLimitCmd(
 
 		Tcl_LimitGetTime(childInterp, &limitMoment);
 		Tcl_SetObjResult(interp,
-			Tcl_NewWideIntObj(limitMoment/1000));
+			Tcl_NewWideIntObj((limitMoment/1000) % 1000));
 	    }
 	    break;
 	case OPT_SEC:
@@ -4786,7 +4786,7 @@ ChildTimeLimitCmd(
 	Tcl_Obj *scriptObj = NULL, *granObj = NULL;
 	Tcl_Obj *milliObj = NULL, *secObj = NULL;
 	int gran = 0;
-	Tcl_Time limitMoment;
+	Tcl_Time limitMoment = 0, limitMomentMilli = 0;
 	Tcl_WideInt tmp;
 
 	Tcl_LimitGetTime(childInterp, &limitMoment);
@@ -4822,14 +4822,14 @@ ChildTimeLimitCmd(
 		if (TclGetWideIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		if (tmp < 0 || tmp > LONG_MAX) {
+		if (tmp < 0 || tmp > WIDE_MAX / 1000) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "milliseconds must be between 0 and %ld", LONG_MAX));
+			    "milliseconds must be between 0 and %" TCL_LL_MODIFIER "d", WIDE_MAX / 1000));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
 		}
-		limitMoment = ((long)tmp)*1000;
+		limitMomentMilli = tmp * 1000;
 		break;
 	    case OPT_SEC:
 		secObj = objv[i+1];
@@ -4840,14 +4840,14 @@ ChildTimeLimitCmd(
 		if (TclGetWideIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		if (tmp < 0 || tmp > LONG_MAX) {
+		if (tmp < 0 || tmp > WIDE_MAX / 1000000) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "seconds must be between 0 and %ld", LONG_MAX));
+			    "seconds must be between 0 and %" TCL_LL_MODIFIER "d", WIDE_MAX / 1000000));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
 		}
-		limitMoment = (long long)tmp * 1000000;
+		limitMoment = tmp * 1000000;
 		break;
 	    }
 	}
@@ -4877,6 +4877,7 @@ ChildTimeLimitCmd(
 	    }
 
 	    if (milliLen > 0 || secLen > 0) {
+		limitMoment += limitMomentMilli;
 		Tcl_LimitSetTime(childInterp, &limitMoment);
 		Tcl_LimitTypeSet(childInterp, TCL_LIMIT_TIME);
 	    } else {
