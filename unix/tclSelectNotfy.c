@@ -148,6 +148,7 @@ static ThreadSpecificData *waitingListPtr = NULL;
  */
 
 static int triggerPipe = -1;
+static int otherPipe = -1;
 
 /*
  * The notifierMutex locks access to all of the global notifier state.
@@ -164,9 +165,15 @@ static pthread_mutex_t notifierMutex     = PTHREAD_MUTEX_INITIALIZER;
 static int notifierThreadRunning = 0;
 
 /*
+ * The following static flag indicates that async handlers are pending.
+ */
+
+static int asyncPending = 0;
+
+/*
  * The notifier thread signals the notifierCV when it has finished
  * initializing the triggerPipe and right before the notifier thread
- * terminates.
+ * terminates. This condition is used to deal with the signal mask, too.
  */
 
 static pthread_cond_t notifierCV = PTHREAD_COND_INITIALIZER;
@@ -190,6 +197,16 @@ static pthread_cond_t notifierCV = PTHREAD_COND_INITIALIZER;
  */
 
 static Tcl_ThreadId notifierThread;
+
+/*
+ * Signal mask information for notifier thread.
+ */
+
+static sigset_t notifierSigMask;
+#ifndef HAVE_PSELECT
+static sigset_t allSigMask;
+#endif /* HAVE_PSELECT */
+
 #endif /* TCL_THREADS */
 
 /*
@@ -264,9 +281,11 @@ extern unsigned char __stdcall	TranslateMessage(const MSG *);
  * Threaded-cygwin specific constants and functions in this file:
  */
 
+#if TCL_THREADS && defined(__CYGWIN__)
 static const wchar_t className[] = L"TclNotifier";
 static unsigned int __stdcall	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
+#endif /* TCL_THREADS && defined(__CYGWIN__) */
 #ifdef __cplusplus
 }
 #endif
@@ -409,6 +428,14 @@ TclpFinalizeNotifier(
 			"unable to join notifier thread");
 	    }
 	    notifierThreadRunning = 0;
+
+	    /*
+	     * If async marks are outstanding, perform actions now.
+	     */
+	    if (asyncPending) {
+		asyncPending = 0;
+		TclAsyncMarkFromNotifier();
+	    }
 	}
     }
 
@@ -571,7 +598,7 @@ TclpDeleteFileHandler(
     ckfree(filePtr);
 }
 
-#if defined(__CYGWIN__)
+#if TCL_THREADS && defined(__CYGWIN__)
 
 static unsigned int __stdcall
 NotifierProc(
@@ -875,6 +902,65 @@ TclpWaitForEvent(
 /*
  *----------------------------------------------------------------------
  *
+ * TclAsyncNotifier --
+ *
+ *	This procedure sets the async mark of an async handler to a
+ *	given value, if it is called from the notifier thread.
+ *
+ * Result:
+ *	True, when the handler will be marked, false otherwise.
+ *
+ * Side effetcs:
+ *	The trigger pipe is written when called from the notifier
+ *	thread.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclAsyncNotifier(
+    int sigNumber,		/* Signal number. */
+    TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
+    TCL_UNUSED(ClientData),	/* Notifier data. */
+    int *flagPtr,		/* Flag to mark. */
+    int value)			/* Value of mark. */
+{
+#if TCL_THREADS
+    /*
+     * WARNING:
+     * This code most likely runs in a signal handler. Thus,
+     * only few async-signal-safe system calls are allowed,
+     * e.g. pthread_self(), sem_post(), write().
+     */
+
+    if (pthread_equal(pthread_self(), (pthread_t) notifierThread)) {
+	if (notifierThreadRunning) {
+	    *flagPtr = value;
+	    if (!asyncPending) {
+		asyncPending = 1;
+		write(triggerPipe, "S", 1);
+	    }
+	    return 1;
+	}
+	return 0;
+    }
+
+    /*
+     * Re-send the signal to the notifier thread.
+     */
+
+    pthread_kill((pthread_t) notifierThread, sigNumber);
+#else
+    (void)sigNumber;
+    (void)flagPtr;
+    (void)value;
+#endif
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NotifierThreadProc --
  *
  *	This routine is the initial (and only) function executed by the
@@ -906,8 +992,7 @@ NotifierThreadProc(
     fd_set readableMask;
     fd_set writableMask;
     fd_set exceptionMask;
-    int i;
-    int fds[2], receivePipe;
+    int i, fds[2], receivePipe, ret;
     long found;
     struct timeval poll = {0, 0}, *timePtr;
     char buf[2];
@@ -915,6 +1000,14 @@ NotifierThreadProc(
 
     if (pipe(fds) != 0) {
 	Tcl_Panic("NotifierThreadProc: %s", "could not create trigger pipe");
+    }
+
+    /*
+     * Ticket [c6897e6e6a].
+     */
+
+    if (fds[0] >= FD_SETSIZE || fds[1] >= FD_SETSIZE) {
+	Tcl_Panic("NotifierThreadProc: %s", "too many open files");
     }
 
     receivePipe = fds[0];
@@ -942,6 +1035,7 @@ NotifierThreadProc(
 
     pthread_mutex_lock(&notifierMutex);
     triggerPipe = fds[1];
+    otherPipe = fds[0];
 
     /*
      * Signal any threads that are waiting.
@@ -1002,12 +1096,44 @@ NotifierThreadProc(
 	}
 	FD_SET(receivePipe, &readableMask);
 
-	if (select(numFdBits, &readableMask, &writableMask, &exceptionMask,
-		timePtr) == -1) {
-	    /*
-	     * Try again immediately on an error.
-	     */
+	/*
+	 * Signals are unblocked only during select().
+	 */
 
+#ifdef HAVE_PSELECT
+	{
+	    struct timespec tspec, *tspecPtr;
+
+	    if (timePtr == NULL) {
+		tspecPtr = NULL;
+	    } else {
+		tspecPtr = &tspec;
+		tspecPtr->tv_sec = timePtr->tv_sec;
+		tspecPtr->tv_nsec = timePtr->tv_usec * 1000;
+	    }
+	    ret = pselect(numFdBits, &readableMask, &writableMask,
+			    &exceptionMask, tspecPtr, &notifierSigMask);
+	}
+#else
+	pthread_sigmask(SIG_SETMASK, &notifierSigMask, NULL);
+	ret = select(numFdBits, &readableMask, &writableMask, &exceptionMask,
+			timePtr);
+	pthread_sigmask(SIG_BLOCK, &allSigMask, NULL);
+#endif
+
+	if (ret == -1) {
+	    /*
+	     * In case a signal was caught during select(),
+	     * perform work on async handlers now.
+	     */
+	    if (errno == EINTR && asyncPending) {
+		asyncPending = 0;
+		TclAsyncMarkFromNotifier();
+	    }
+
+	    /*
+	     * Try again immediately on select() error.
+	     */
 	    continue;
 	}
 
@@ -1063,6 +1189,12 @@ NotifierThreadProc(
 		break;
 	    }
 	} while (1);
+
+	if (asyncPending) {
+	    asyncPending = 0;
+	    TclAsyncMarkFromNotifier();
+	}
+
 	if ((i == 0) || (buf[0] == 'q')) {
 	    break;
 	}
@@ -1076,6 +1208,7 @@ NotifierThreadProc(
     close(receivePipe);
     pthread_mutex_lock(&notifierMutex);
     triggerPipe = -1;
+    otherPipe = -1;
     pthread_cond_broadcast(&notifierCV);
     pthread_mutex_unlock(&notifierMutex);
 

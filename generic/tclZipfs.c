@@ -3913,7 +3913,7 @@ TclZipfs_TclLibrary(void)
     }
 #elif !defined(NO_DLFCN_H)
     Dl_info dlinfo;
-    if (dladdr(TclZipfs_TclLibrary, &dlinfo) && (dlinfo.dli_fname != NULL)
+    if (dladdr((const void *)TclZipfs_TclLibrary, &dlinfo) && (dlinfo.dli_fname != NULL)
 	&& (ZipfsAppHookFindTclInit(dlinfo.dli_fname) == TCL_OK)) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }

@@ -129,6 +129,9 @@ declare 28 {
 declare 29 {
     int Tcl_MethodIsPrivate(Tcl_Method method)
 }
+declare 31 {
+    void TclOOUnusedStubEntry(void)
+}
 
 ######################################################################
 # Private API, exposed to support advanced OO systems that plug in on top of
