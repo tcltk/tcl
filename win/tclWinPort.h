@@ -493,7 +493,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #	pragma warning(disable:4996)
 #   endif
 #endif
-
 /*
  *---------------------------------------------------------------------------
  * The following macros and declarations represent the interface between

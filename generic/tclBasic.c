@@ -3209,6 +3209,19 @@ Tcl_DeleteCommandFromToken(
 	iPtr->compileEpoch++;
     }
 
+    /*
+     * Delete any imports of this routine elsewhere before calling deleteProc
+     * to that traces on the imports don't reference deallocated storage.
+     */
+    if (!(cmdPtr->flags & CMD_REDEF_IN_PROGRESS)) {
+	for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
+		refPtr = nextRefPtr) {
+	    nextRefPtr = refPtr->nextPtr;
+	    importCmd = (Tcl_Command) refPtr->importedCmdPtr;
+	    Tcl_DeleteCommandFromToken(interp, importCmd);
+	}
+    }
+
     if (cmdPtr->deleteProc != NULL) {
 	/*
 	 * Delete the command's client data. If this was an imported command
@@ -3226,20 +3239,6 @@ Tcl_DeleteCommandFromToken(
 	 */
 
 	cmdPtr->deleteProc(cmdPtr->deleteData);
-    }
-
-    /*
-     * If this command was imported into other namespaces, then imported
-     * commands were created that refer back to this command. Delete these
-     * imported commands now.
-     */
-    if (!(cmdPtr->flags & CMD_REDEF_IN_PROGRESS)) {
-	for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
-		refPtr = nextRefPtr) {
-	    nextRefPtr = refPtr->nextPtr;
-	    importCmd = (Tcl_Command) refPtr->importedCmdPtr;
-	    Tcl_DeleteCommandFromToken(interp, importCmd);
-	}
     }
 
     /*
@@ -3332,7 +3331,6 @@ CallCommandTraces(
 	}
     }
     cmdPtr->flags |= CMD_TRACE_ACTIVE;
-    cmdPtr->refCount++;
 
     result = NULL;
     active.nextPtr = iPtr->activeCmdTracePtr;
@@ -3390,7 +3388,6 @@ CallCommandTraces(
      */
 
     cmdPtr->flags &= ~CMD_TRACE_ACTIVE;
-    cmdPtr->refCount--;
     iPtr->activeCmdTracePtr = active.nextPtr;
     Tcl_Release(iPtr);
     return result;

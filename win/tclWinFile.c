@@ -1893,7 +1893,6 @@ NativeIsExec(
     if ((_wcsicmp(path, L"exe") == 0)
 	    || (_wcsicmp(path, L"com") == 0)
 	    || (_wcsicmp(path, L"cmd") == 0)
-	    || (_wcsicmp(path, L"cmd") == 0)
 	    || (_wcsicmp(path, L"bat") == 0)) {
 	return 1;
     }
@@ -3129,7 +3128,7 @@ TclNativeCreateNativeRep(
      * If there is no "\\?\" prefix but there is a drive or UNC path prefix
      * and the path is larger than MAX_PATH chars, no Win32 API function can
      * handle that unless it is prefixed with the extended path prefix. See:
-     * <http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath>
+     * <https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maxpath>
      */
 
     if (((str[0] >= 'A' && str[0] <= 'Z') || (str[0] >= 'a' && str[0] <= 'z'))

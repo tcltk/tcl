@@ -4185,7 +4185,7 @@ TeststaticpkgCmd(
 
     if (argc != 4) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"",
-		argv[0], " pkgName safe loaded\"", NULL);
+		argv[0], " prefix safe loaded\"", NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetInt(interp, argv[2], &safe) != TCL_OK) {

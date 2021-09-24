@@ -740,8 +740,6 @@ EncodingConverttoObjCmd(
     int length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
 
-    /* TODO - ADJUST OBJ INDICES WHEN ENSEMBLIFYING THIS */
-
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];

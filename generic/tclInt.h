@@ -2942,8 +2942,8 @@ MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
 MODULE_SCOPE Tcl_Obj *const *	TclFetchEnsembleRoot(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, int objc, int *objcPtr);
-MODULE_SCOPE Tcl_Namespace * 	TclEnsureNamespace(
-			    Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Obj *const *TclEnsembleGetRewriteValues(Tcl_Interp *interp);
+MODULE_SCOPE Tcl_Namespace *TclEnsureNamespace(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr);
 
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
@@ -4535,7 +4535,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  *----------------------------------------------------------------
  */
 
-#ifdef WORDS_BIGENDIAN
+#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX != 4)
 #   define TclUniCharNcmp(cs,ct,n) memcmp((cs),(ct),(n)*sizeof(Tcl_UniChar))
 #else /* !WORDS_BIGENDIAN */
 #   define TclUniCharNcmp Tcl_UniCharNcmp
