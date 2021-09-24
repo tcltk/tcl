@@ -383,6 +383,33 @@ white space, then that value is ignored entirely. This white-space
 removal was added to make the output of the \fBconcat\fR command
 cleaner-looking. \fBTcl_ConcatObj\fR returns a pointer to a
 newly-created value whose ref count is zero.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_NewStringObj\fR, \fBTcl_NewUnicodeObj\fR, \fBTcl_Format\fR,
+\fBTcl_ObjPrintf\fR, and \fBTcl_ConcatObj\fR always return a zero-reference
+object, much like \fBTcl_NewObj\fR.
+.PP
+\fBTcl_GetStringFromObj\fR, \fBTcl_GetString\fR, \fBTcl_GetUnicodeFromObj\fR,
+\fBTcl_GetUnicode\fR, \fBTcl_GetUniChar\fR, \fBTcl_GetCharLength\fR, and
+\fBTcl_GetRange\fR all only work with an existing value; they do not
+manipulate its reference count in any way.
+.PP
+\fBTcl_SetStringObj\fR, \fBTcl_SetUnicodeObj\fR, \fBTcl_AppendToObj\fR,
+\fBTcl_AppendUnicodeToObj\fR, \fBTcl_AppendObjToObj\fR,
+\fBTcl_AppendStringsToObj\fR, \fBTcl_AppendStringsToObjVA\fR,
+\fBTcl_AppendLimitedToObj\fR, \fBTcl_AppendFormatToObj\fR,
+\fBTcl_AppendPrintfToObj\fR, \fBTcl_SetObjLength\fR, and
+\fBTcl_AttemptSetObjLength\fR and require their \fIobjPtr\fR to be an unshared
+value (i.e, a reference count no more than 1) as they will modify it.
+.PP
+Additional arguments to the above functions (the \fIappendObjPtr\fR argument
+to \fBTcl_AppendObjToObj\fR, values in the \fIobjv\fR argument to
+\fBTcl_Format\fR, \fBTcl_AppendFormatToObj\fR, and \fBTcl_ConcatObj\fR) can
+have any reference count, but reference counts of zero are not recommended.
+.PP
+\fBTcl_Format\fR and \fBTcl_AppendFormatToObj\fR may modify the interpreter
+result, which involves changing the reference count of a value.
+
 .SH "SEE ALSO"
 Tcl_NewObj(3), Tcl_IncrRefCount(3), Tcl_DecrRefCount(3), format(n), sprintf(3)
 .SH KEYWORDS

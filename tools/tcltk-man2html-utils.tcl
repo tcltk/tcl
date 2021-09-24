@@ -3,8 +3,8 @@
 ## functions are specifically intended to work with the format as used
 ## by Tcl and Tk; they do not cope with arbitrary nroff markup.
 ##
-## Copyright (c) 1995-1997 Roger E. Critchlow Jr
-## Copyright (c) 2004-2011 Donal K. Fellows
+## Copyright © 1995-1997 Roger E. Critchlow Jr
+## Copyright © 2004-2011 Donal K. Fellows
 
 set ::manual(report-level) 1
 
@@ -1314,6 +1314,7 @@ proc make-manpage-section {outputDir sectionDescriptor} {
     set manual(wing-copyrights) {}
     makedirhier $outputDir/$manual(wing-file)
     set manual(wing-toc-fp) [open $outputDir/$manual(wing-file)/[indexfile] w]
+    fconfigure $manual(wing-toc-fp) -translation lf -encoding utf-8
     # whistle
     puts stderr "scanning section $manual(wing-name)"
     # put the entry for this section into the short table of contents
@@ -1364,6 +1365,7 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 	    continue
 	}
 	set manual(infp) [open $manual(page)]
+	fconfigure $manual(infp) -encoding utf-8
 	set manual(text) {}
 	set manual(partial-text) {}
 	foreach p {.RS .DS .CS .SO} {

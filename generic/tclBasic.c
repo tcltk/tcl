@@ -1826,28 +1826,28 @@ DeleteInterpProc(
 	ckfree(hTablePtr);
     }
 
-    /*
-     * Invoke deletion callbacks; note that a callback can create new
-     * callbacks, so we iterate.
-     */
 
-    while (iPtr->assocData != NULL) {
+    if (iPtr->assocData != NULL) {
 	AssocData *dPtr;
 
 	hTablePtr = iPtr->assocData;
-	iPtr->assocData = NULL;
+	/*
+	 * Invoke deletion callbacks; note that a callback can create new
+	 * callbacks, so we iterate.
+	 */
 	for (hPtr = Tcl_FirstHashEntry(hTablePtr, &search);
 		hPtr != NULL;
 		hPtr = Tcl_FirstHashEntry(hTablePtr, &search)) {
 	    dPtr = (AssocData *)Tcl_GetHashValue(hPtr);
-	    Tcl_DeleteHashEntry(hPtr);
 	    if (dPtr->proc != NULL) {
 		dPtr->proc(dPtr->clientData, interp);
 	    }
+	    Tcl_DeleteHashEntry(hPtr);
 	    ckfree(dPtr);
 	}
 	Tcl_DeleteHashTable(hTablePtr);
 	ckfree(hTablePtr);
+	iPtr->assocData = NULL;
     }
 
     /*
@@ -3505,14 +3505,15 @@ Tcl_DeleteCommandFromToken(
     cmdPtr->flags |= CMD_DYING;
 
     /*
-     * Call trace functions for the command being deleted. Then delete its
-     * traces.
+     * Call each functions and then delete the trace.
      */
 
     cmdPtr->nsPtr->refCount++;
 
     if (cmdPtr->tracePtr != NULL) {
 	CommandTrace *tracePtr;
+	/* CallCommandTraces() does not cmdPtr, that's
+	 * done just before Tcl_DeleteCommandFromToken() returns  */
 	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
 
 	/*
@@ -3682,7 +3683,6 @@ CallCommandTraces(
 	}
     }
     cmdPtr->flags |= CMD_TRACE_ACTIVE;
-    cmdPtr->refCount++;
 
     result = NULL;
     active.nextPtr = iPtr->activeCmdTracePtr;
@@ -3740,7 +3740,6 @@ CallCommandTraces(
      */
 
     cmdPtr->flags &= ~CMD_TRACE_ACTIVE;
-    cmdPtr->refCount--;
     iPtr->activeCmdTracePtr = active.nextPtr;
     Tcl_Release(iPtr);
     return result;
@@ -4867,6 +4866,7 @@ NRCommand(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *listPtr;
 
     iPtr->numLevels--;
 
@@ -4875,7 +4875,10 @@ NRCommand(
       */
 
     if (data[1] && (data[1] != INT2PTR(1))) {
-        TclNRAddCallback(interp, TclNRTailcallEval, data[1], NULL, NULL, NULL);
+	listPtr = (Tcl_Obj *)data[1];
+	data[1] = NULL;
+
+	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, NULL, NULL, NULL);
     }
 
     /* OPT ??
@@ -9450,6 +9453,7 @@ TclNRYieldToObjCmd(
 
     iPtr->execEnvPtr = corPtr->callerEEPtr;
     TclSetTailcall(interp, listPtr);
+    corPtr->yieldPtr = listPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
 
     return TclNRYieldObjCmd(INT2PTR(CORO_ACTIVATE_YIELDM), interp, 1, objv);
@@ -9647,6 +9651,22 @@ TclNRCoroutineActivateCallback(
          */
 
         if (corPtr->stackLevel != stackLevel) {
+	    NRE_callback *runPtr;
+
+	    iPtr->execEnvPtr = corPtr->callerEEPtr;
+	    if (corPtr->yieldPtr) {
+		for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
+		    if (runPtr->data[1] == corPtr->yieldPtr) {
+			runPtr->data[1] = NULL;
+			Tcl_DecrRefCount(corPtr->yieldPtr);
+			corPtr->yieldPtr = NULL;
+			break;
+		    }
+		}
+	    }
+	    iPtr->execEnvPtr = corPtr->eePtr;
+
+
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "cannot yield: C stack busy", -1));
             Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD",
@@ -9662,6 +9682,7 @@ TclNRCoroutineActivateCallback(
             Tcl_Panic("Yield received an option which is not implemented");
         }
 
+	corPtr->yieldPtr = NULL;
         corPtr->stackLevel = NULL;
 
         numLevels = iPtr->numLevels;

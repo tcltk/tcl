@@ -26,7 +26,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=8.7
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=7
-TCL_PATCH_LEVEL="a4"
+TCL_PATCH_LEVEL="a6"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -316,6 +316,13 @@ if test $tcl_ok = no; then
 fi
 if test $tcl_ok = no; then
     AC_DEFINE(NO_FD_SET, 1, [Do we have fd_set?])
+fi
+
+AC_CACHE_CHECK([for pselect], tcl_cv_func_pselect, [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[void *func = pselect;]])],[tcl_cv_func_pselect=yes],[tcl_cv_func_pselect=no])])
+tcl_ok=$tcl_cv_func_pselect
+if test $tcl_ok = yes; then
+    AC_DEFINE(HAVE_PSELECT, 1, [Should we use pselect()?])
 fi
 
 #------------------------------------------------------------------------

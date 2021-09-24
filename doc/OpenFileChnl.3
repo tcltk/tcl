@@ -641,6 +641,24 @@ the channel was created with \fBTcl_OpenFileChannel\fR,
 \fBTcl_OpenCommandChannel\fR, or \fBTcl_MakeFileChannel\fR.  Other
 channel types may return a different type of handle on Windows
 platforms.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The \fIreadObjPtr\fR argument to \fBTcl_ReadChars\fR must be an unshared
+value; it will be modified by this function.  Using the interpreter result for
+this purpose is \fIstrongly\fR not recommended; the preferred pattern is to
+use a new value from \fBTcl_NewObj\fR to receive the data and only to pass it
+to \fBTcl_SetObjResult\fR if this function succeeds.
+.PP
+The \fIlineObjPtr\fR argument to \fBTcl_GetsObj\fR must be an unshared value;
+it will be modified by this function.  Using the interpreter result for this
+purpose is \fIstrongly\fR not recommended; the preferred pattern is to use a
+new value from \fBTcl_NewObj\fR to receive the data and only to pass it to
+\fBTcl_SetObjResult\fR if this function succeeds.
+.PP
+The \fIwriteObjPtr\fR argument to \fBTcl_WriteObj\fR should be a value with
+any reference count. This function will not modify the reference count. Using
+the interpreter result without adding an additional reference to it is not
+recommended.
 .SH "SEE ALSO"
 DString(3), fconfigure(n), filename(n), fopen(3), Tcl_CreateChannel(3)
 .SH KEYWORDS

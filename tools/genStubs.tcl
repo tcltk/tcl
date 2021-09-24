@@ -4,8 +4,8 @@
 #	interface.
 #
 #
-# Copyright (c) 1998-1999 Scriptics Corporation.
-# Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1214,7 +1214,7 @@ proc genStubs::init {} {
 # Results:
 #	Returns any values that were not assigned to variables.
 
-if {[string length [namespace which lassign]] == 0} {
+if {[namespace which lassign] ne ""} {
     proc lassign {valueList args} {
 	if {[llength $args] == 0} {
 	    error "wrong # args: should be \"lassign list varName ?varName ...?\""
