@@ -58,8 +58,7 @@ static int		ReflectSetOption(ClientData clientData,
 			    const char *newValue);
 
 /*
- * The C layer channel type/driver definition used by the reflection. This is
- * a version 3 structure.
+ * The C layer channel type/driver definition used by the reflection.
  */
 
 static const Tcl_ChannelType tclRChannelType = {

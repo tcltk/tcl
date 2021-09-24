@@ -519,6 +519,7 @@ AC_DEFUN([SC_ENABLE_SHARED], [
 	SHARED_BUILD=0
 	AC_DEFINE(STATIC_BUILD, 1, [Is this a static build?])
     fi
+    AC_SUBST(SHARED_BUILD)
 ])
 
 #------------------------------------------------------------------------
@@ -1492,7 +1493,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ;;
 	DragonFly-*|FreeBSD-*)
 	    # This configuration from FreeBSD Ports.
-	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
 	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,-soname,\$[@]"
 	    SHLIB_SUFFIX=".so"
@@ -1984,9 +1984,11 @@ dnl # preprocessing tests use only CPPFLAGS.
 	    AIX-*) ;;
 	    BSD/OS*) ;;
 	    CYGWIN_*|MINGW32_*|MSYS_*) ;;
-	    IRIX*) ;;
-	    NetBSD-*|DragonFly-*|FreeBSD-*|OpenBSD-*) ;;
+	    HP-UX*) ;;
 	    Darwin-*) ;;
+	    IRIX*) ;;
+	    NetBSD-*|OpenBSD-*) ;;
+	    OSF1-*) ;;
 	    SCO_SV-3.2*) ;;
 	    *) SHLIB_CFLAGS="-fPIC" ;;
 	esac])

@@ -17,6 +17,7 @@ library tcl
 # Define the unsupported generic interfaces.
 
 interface tclInt
+scspec EXTERN
 
 # Declare each of the functions in the unsupported internal Tcl
 # interface.  These interfaces are allowed to changed between versions.
@@ -1039,7 +1040,7 @@ declare 256 {
 }
 
 declare 257 {
-    void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
+    void TclStaticPackage(Tcl_Interp *interp, const char *prefix,
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
 

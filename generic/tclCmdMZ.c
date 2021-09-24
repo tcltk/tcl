@@ -2755,7 +2755,7 @@ TclStringCmp(
 		s1 = (char *) Tcl_GetUnicode(value1Ptr);
 		s2 = (char *) Tcl_GetUnicode(value2Ptr);
 		if (
-#ifdef WORDS_BIGENDIAN
+#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX != 4)
 			1
 #else
 			checkEq
@@ -5251,15 +5251,15 @@ TryPostHandler(
 {
     Tcl_Obj *resultObj, *cmdObj, *options, *handlerKindObj, **objv;
     Tcl_Obj *finallyObj;
-    int finally;
+    int finallyIndex;
 
     objv = data[0];
     options = data[1];
     handlerKindObj = data[2];
-    finally = PTR2INT(data[3]);
+    finallyIndex = PTR2INT(data[3]);
 
     cmdObj = objv[0];
-    finallyObj = finally ? objv[finally] : 0;
+    finallyObj = finallyIndex ? objv[finallyIndex] : 0;
 
     /*
      * Check for limits/rewinding, which override normal trapping behaviour.
@@ -5303,7 +5303,7 @@ TryPostHandler(
 
 	/* The 'finally' script is always the last argument word. */
 	return TclNREvalObjEx(interp, finallyObj, 0, iPtr->cmdFramePtr,
-		finally);
+		finallyIndex);
     }
 
     /*
