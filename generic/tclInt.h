@@ -2371,6 +2371,7 @@ typedef enum TclEolTranslation {
 #define TCL_INVOKE_NO_UNKNOWN	(1<<1)
 #define TCL_INVOKE_NO_TRACEBACK	(1<<2)
 
+
 /*
  * The structure used as the internal representation of Tcl list objects. This
  * struct is grown (reallocated and copied) as necessary to hold all the
@@ -3027,11 +3028,15 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int indexCount, Tcl_Obj *const indexArray[]);
+MODULE_SCOPE Tcl_Obj *	TclLindexFlatDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
+			    int indexCount, Tcl_Obj *const indexArray[]);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
 			    int *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, size_t fromIdx,
+			    size_t toIdx);
+MODULE_SCOPE Tcl_Obj *	TclListObjRangeDefault(Tcl_Obj *listPtr, size_t fromIdx,
 			    size_t toIdx);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);

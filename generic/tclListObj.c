@@ -44,8 +44,16 @@ const Tcl_ObjType tclListType = {
     FreeListInternalRep,	/* freeIntRepProc */
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
-    SetListFromAny		/* setFromAnyProc */
+    SetListFromAny,		/* setFromAnyProc */
+    2,
+    {
+	{
+	    &TclLindexFlatDefault,
+	    &TclListObjRangeDefault
+	},
+    }
 };
+
 
 /* Macros to manipulate the List internal rep */
 
@@ -423,12 +431,25 @@ TclListObjCopy(
  *
  *----------------------------------------------------------------------
  */
-
 Tcl_Obj *
 TclListObjRange(
     Tcl_Obj *listPtr,		/* List object to take a range from. */
     size_t fromIdx,		/* Index of first element to include. */
     size_t toIdx)			/* Index of last element to include. */
+{
+    if (listPtr->typePtr == NULL || listPtr->typePtr->interface.list.range == NULL) {
+	return TclListObjRangeDefault(listPtr, fromIdx, toIdx);
+    } else {
+	return listPtr->typePtr->interface.list.range(listPtr, fromIdx, toIdx);
+    }
+}
+
+
+Tcl_Obj *
+TclListObjRangeDefault(
+    Tcl_Obj *listPtr,
+    size_t fromIdx,
+    size_t toIdx)
 {
     Tcl_Obj **elemPtrs;
     int listLen;
@@ -1309,6 +1330,29 @@ TclLindexList(
 
 Tcl_Obj *
 TclLindexFlat(
+    Tcl_Interp *interp,		/* Tcl interpreter. */
+    Tcl_Obj *listPtr,		/* Tcl object representing the list. */
+    int indexCount,		/* Count of indices. */
+    Tcl_Obj *const indexArray[])/* Array of pointers to Tcl objects that
+				 * represent the indices in the list. */
+{
+    if (listPtr->typePtr == NULL || listPtr->typePtr->interface.list.lindex == NULL) {
+	return TclLindexFlatDefault(interp, listPtr, indexCount, indexArray);
+    } else {
+	return listPtr->typePtr->interface.list.lindex(interp, listPtr, indexCount, indexArray);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  TclLindexFlat2 --
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclLindexFlatDefault(
     Tcl_Interp *interp,		/* Tcl interpreter. */
     Tcl_Obj *listPtr,		/* Tcl object representing the list. */
     int indexCount,		/* Count of indices. */

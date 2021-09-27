@@ -589,6 +589,9 @@ typedef void (Tcl_MainLoopProc) (void);
  * standard operations on objects of that type.
  */
 
+/* forward declaration */
+typedef struct Tcl_Obj Tcl_Obj;
+
 typedef struct Tcl_ObjType {
     const char *name;		/* Name of the type, e.g. "int". */
     Tcl_FreeInternalRepProc *freeIntRepProc;
@@ -605,6 +608,37 @@ typedef struct Tcl_ObjType {
 				/* Called to convert the object's internal rep
 				 * to this type. Frees the internal rep of the
 				 * old type. Returns TCL_ERROR on failure. */
+    int version;
+    struct {
+	struct list {
+	    int (*all) (
+		Tcl_Interp *interp,	/* Used to report errors if not NULL. */
+		Tcl_Obj *listPtr,	/* List object for which an element array
+					 *  is to be returned. */
+		int *objcPtr,		/* Where to store the count of objects
+					 * referenced by objv. */
+		Tcl_Obj ***objvPtr	/* Where to store the pointer to an
+					 * array of */
+	    );
+
+	    Tcl_Obj* (*lindex) (
+		Tcl_Interp *interp,	/* Tcl interpreter. */
+		Tcl_Obj *listPtr,	/* Tcl object representing the list. */
+		int indexCount,		/* Count of indices. */
+					/* Array of pointers to Tcl objects
+					 * that represent the indices in the
+					 * list. */
+		Tcl_Obj *const indexArray[]
+	    );
+
+	    Tcl_Obj* (*range)(
+		Tcl_Obj *listPtr,	/* List object to take a range from. */
+		size_t fromIdx,		/* Index of first element to
+					    include.  */
+		size_t toIdx		/* Index of last element to include. */
+	    );
+	} list;
+    } interface;
 } Tcl_ObjType;
 
 /*
@@ -636,7 +670,7 @@ typedef union Tcl_ObjIntRep {	/* The internal representation: */
  * or both.
  */
 
-typedef struct Tcl_Obj {
+struct Tcl_Obj {
     size_t refCount;		/* When 0 the object will be freed. */
     char *bytes;		/* This points to the first byte of the
 				 * object's string representation. The array
@@ -656,7 +690,7 @@ typedef struct Tcl_Obj {
 				 * internal rep. NULL indicates the object has
 				 * no internal rep (has no type). */
     Tcl_ObjIntRep internalRep;	/* The internal representation: */
-} Tcl_Obj;
+};
 
 
 /*
