@@ -3032,30 +3032,33 @@ MODULE_SCOPE Tcl_Obj *	TclLindexFlatDefault(Tcl_Interp *interp, Tcl_Obj *listPtr
 			    int indexCount, Tcl_Obj *const indexArray[]);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
-					int *lines, Tcl_Obj *const *elems);
-MODULE_SCOPE int	TclListObjAppendListDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-						Tcl_Obj *elemListPtr);
+			    int *lines, Tcl_Obj *const *elems);
+
+MODULE_SCOPE int	Tcl_ListObjAppendElementDefault(Tcl_Interp *interp,
+			    Tcl_Obj *listPtr, Tcl_Obj *objPtr);
+MODULE_SCOPE int	TclListObjAppendListDefault(Tcl_Interp *interp,
+			    Tcl_Obj *listPtr, Tcl_Obj *elemListPtr);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE int	TclListObjIndexDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-						int index, Tcl_Obj **objPtrPtr);
+			    int index, Tcl_Obj **objPtrPtr);
 MODULE_SCOPE int	TclListObjGetElementsDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-						int *objcPtr, Tcl_Obj ***objvPtr);
+			    int *objcPtr, Tcl_Obj ***objvPtr);
 MODULE_SCOPE int	TclListObjLengthDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-						int *intPtr);
+			    int *intPtr);
 MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, size_t fromIdx,
 			    size_t toIdx);
 MODULE_SCOPE Tcl_Obj *	TclListObjRangeDefault(Tcl_Obj *listPtr, size_t fromIdx,
 			    size_t toIdx);
 MODULE_SCOPE int	TclListObjReplaceDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-						int first, int count, int objc, Tcl_Obj *const objv[]);
+			    int first, int count, int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclListObjSetElementDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-						int index, Tcl_Obj *valuePtr);
+			    int index, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
-						int indexCount, Tcl_Obj *const indexArray[],
-						Tcl_Obj *valuePtr);
+			    int indexCount, Tcl_Obj *const indexArray[],
+			    Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetFlatDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-							int indexCount, Tcl_Obj *const indexArray[],
-							Tcl_Obj *valuePtr);
+			    int indexCount, Tcl_Obj *const indexArray[],
+			    Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,

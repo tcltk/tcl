@@ -622,6 +622,12 @@ typedef struct Tcl_ObjType {
 	    );
 
 	    int (*append) (
+		Tcl_Interp *interp,	/* Used to report errors if not NULL. */
+		Tcl_Obj *listPtr,	/* List object to append objPtr to. */
+		Tcl_Obj *objPtr		/* Object to append to listPtr's list. */
+	    );
+
+	    int (*appendlist) (
 		Tcl_Interp *interp,
 		Tcl_Obj *listPtr,
 		Tcl_Obj *elemListPtr);

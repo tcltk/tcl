@@ -49,6 +49,7 @@ const Tcl_ObjType tclListType = {
     {
 	{
 	    &TclListObjGetElementsDefault,
+	    &Tcl_ListObjAppendElementDefault,
 	    &TclListObjAppendListDefault,
 	    &TclListObjIndexDefault,
 	    &TclLindexFlatDefault,
@@ -629,7 +630,8 @@ Tcl_ListObjAppendList(
     Tcl_Obj *listPtr,
     Tcl_Obj *elemListPtr)
 {
-    return Dispatch(listPtr, TclListObjAppendListDefault, list.append, interp, listPtr, elemListPtr);
+    return Dispatch(listPtr, TclListObjAppendListDefault, list.appendlist, interp,
+	listPtr, elemListPtr);
 }
 
 int
@@ -690,12 +692,21 @@ TclListObjAppendListDefault(
  *
  *----------------------------------------------------------------------
  */
-
 int
 Tcl_ListObjAppendElement(
-    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *listPtr,		/* List object to append objPtr to. */
-    Tcl_Obj *objPtr)		/* Object to append to listPtr's list. */
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    Tcl_Obj *objPtr)
+{
+    return Dispatch(listPtr, Tcl_ListObjAppendElementDefault, list.append, interp,
+	listPtr, objPtr);
+}
+
+int
+Tcl_ListObjAppendElementDefault(
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    Tcl_Obj *objPtr)
 {
     List *listRepPtr, *newPtr = NULL;
     int numElems, numRequired, needGrow, isShared, attempt;
