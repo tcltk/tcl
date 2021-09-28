@@ -48,12 +48,25 @@ const Tcl_ObjType tclListType = {
     2,
     {
 	{
+	    &TclListObjGetElementsDefault,
+	    &TclListObjAppendListDefault,
+	    &TclListObjIndexDefault,
 	    &TclLindexFlatDefault,
-	    &TclListObjRangeDefault
+	    &TclListObjLengthDefault,
+	    &TclListObjRangeDefault,
+	    &TclListObjReplaceDefault,
+	    &TclListObjSetElementDefault,
+	    &TclLsetFlatDefault
 	},
     }
 };
 
+#define Dispatch(objPtr, default, member, ...)				\
+    (listPtr->typePtr == NULL					\
+	    || listPtr->typePtr->interface.list.range == NULL) \
+    ? \
+	(default)(__VA_ARGS__)					\
+    : (objPtr)->typePtr->interface.member(__VA_ARGS__);	
 
 /* Macros to manipulate the List internal rep */
 
@@ -437,11 +450,7 @@ TclListObjRange(
     size_t fromIdx,		/* Index of first element to include. */
     size_t toIdx)			/* Index of last element to include. */
 {
-    if (listPtr->typePtr == NULL || listPtr->typePtr->interface.list.range == NULL) {
-	return TclListObjRangeDefault(listPtr, fromIdx, toIdx);
-    } else {
-	return listPtr->typePtr->interface.list.range(listPtr, fromIdx, toIdx);
-    }
+    return Dispatch(listPtr, TclListObjRangeDefault, list.range, listPtr, fromIdx, toIdx);
 }
 
 
@@ -515,7 +524,7 @@ TclListObjRangeDefault(
  *
  * Tcl_ListObjGetElements --
  *
- *	Retreive the elements in a list 'Tcl_Obj'.
+ *	Retrieve the elements in a list 'Tcl_Obj'.
  *
  * Value
  *
@@ -542,16 +551,23 @@ TclListObjRangeDefault(
  *
  *----------------------------------------------------------------------
  */
-
 int
 Tcl_ListObjGetElements(
-    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *listPtr,	/* List object for which an element array is
-				 * to be returned. */
-    int *objcPtr,		/* Where to store the count of objects
-				 * referenced by objv. */
-    Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
-				 * pointers to the list's objects. */
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int *objcPtr,
+    Tcl_Obj ***objvPtr)
+{
+    return Dispatch(listPtr, TclListObjGetElementsDefault, list.all, interp,
+	listPtr, objcPtr, objvPtr);
+}
+
+int
+TclListObjGetElementsDefault(
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int *objcPtr,
+    Tcl_Obj ***objvPtr)
 {
     List *listRepPtr;
 
@@ -607,9 +623,17 @@ Tcl_ListObjGetElements(
  *
  *----------------------------------------------------------------------
  */
-
 int
 Tcl_ListObjAppendList(
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    Tcl_Obj *elemListPtr)
+{
+    return Dispatch(listPtr, TclListObjAppendListDefault, list.append, interp, listPtr, elemListPtr);
+}
+
+int
+TclListObjAppendListDefault(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *listPtr,	/* List object to append elements to. */
     Tcl_Obj *elemListPtr)	/* List obj with elements to append. */
@@ -845,13 +869,23 @@ Tcl_ListObjAppendElement(
  *
  *----------------------------------------------------------------------
  */
-
 int
 Tcl_ListObjIndex(
-    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *listPtr,	/* List object to index into. */
-    int index,		/* Index of element to return. */
-    Tcl_Obj **objPtrPtr)	/* The resulting Tcl_Obj* is stored here. */
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int index,
+    Tcl_Obj **objPtrPtr)
+{
+    return Dispatch(listPtr, TclListObjIndexDefault, list.index, interp,
+	listPtr, index, objPtrPtr);
+}
+
+int
+TclListObjIndexDefault(
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int index,
+    Tcl_Obj **objPtrPtr)
 {
     List *listRepPtr;
 
@@ -903,12 +937,21 @@ Tcl_ListObjIndex(
  *
  *----------------------------------------------------------------------
  */
-
 int
 Tcl_ListObjLength(
-    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
-    Tcl_Obj *listPtr,	/* List object whose #elements to return. */
-    int *intPtr)	/* The resulting int is stored here. */
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int *intPtr)
+{
+    return Dispatch(listPtr, TclListObjLengthDefault, list.length, interp
+	, listPtr, intPtr);
+}
+
+int
+TclListObjLengthDefault(
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int *intPtr)
 {
     List *listRepPtr;
 
@@ -971,16 +1014,27 @@ Tcl_ListObjLength(
  *
  *----------------------------------------------------------------------
  */
-
 int
 Tcl_ListObjReplace(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    Tcl_Obj *listPtr,		/* List object whose elements to replace. */
-    int first,			/* Index of first element to replace. */
-    int count,			/* Number of elements to replace. */
-    int objc,			/* Number of objects to insert. */
-    Tcl_Obj *const objv[])	/* An array of objc pointers to Tcl objects to
-				 * insert. */
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int first,
+    int count,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    return Dispatch(listPtr, TclListObjReplaceDefault, list.replace, interp,
+	listPtr, first, count, objc, objv);
+}
+
+int
+TclListObjReplaceDefault(
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int first,
+    int count,
+    int objc,
+    Tcl_Obj *const objv[])
 {
     List *listRepPtr;
     Tcl_Obj **elemPtrs;
@@ -1336,11 +1390,8 @@ TclLindexFlat(
     Tcl_Obj *const indexArray[])/* Array of pointers to Tcl objects that
 				 * represent the indices in the list. */
 {
-    if (listPtr->typePtr == NULL || listPtr->typePtr->interface.list.lindex == NULL) {
-	return TclLindexFlatDefault(interp, listPtr, indexCount, indexArray);
-    } else {
-	return listPtr->typePtr->interface.list.lindex(interp, listPtr, indexCount, indexArray);
-    }
+    return Dispatch(listPtr, TclLindexFlatDefault, list.indexlist, interp,
+	listPtr, indexCount, indexArray);
 }
 
 /*
@@ -1437,13 +1488,12 @@ TclLindexFlatDefault(
  *
  *----------------------------------------------------------------------
  */
-
 Tcl_Obj *
 TclLsetList(
-    Tcl_Interp *interp,		/* Tcl interpreter. */
-    Tcl_Obj *listPtr,		/* Pointer to the list being modified. */
+    Tcl_Interp *interp,	/* Tcl interpreter. */
+    Tcl_Obj *listPtr,	/* Pointer to the list being modified. */
     Tcl_Obj *indexArgPtr,	/* Index or index-list arg to 'lset'. */
-    Tcl_Obj *valuePtr)		/* Value arg to 'lset' or NULL to 'lpop'. */
+    Tcl_Obj *valuePtr)	/* Value arg to 'lset' or NULL to 'lpop'. */
 {
     int indexCount = 0;		/* Number of indices in the index list. */
     Tcl_Obj **indices = NULL;	/* Vector of indices in the index list. */
@@ -1536,15 +1586,26 @@ TclLsetList(
  *
  *----------------------------------------------------------------------
  */
-
 Tcl_Obj *
 TclLsetFlat(
-    Tcl_Interp *interp,		/* Tcl interpreter. */
-    Tcl_Obj *listPtr,		/* Pointer to the list being modified. */
-    int indexCount,		/* Number of index args. */
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int indexCount,
     Tcl_Obj *const indexArray[],
-				/* Index args. */
-    Tcl_Obj *valuePtr)		/* Value arg to 'lset' or NULL to 'lpop'. */
+    Tcl_Obj *valuePtr)
+{
+    return Dispatch(listPtr, TclLsetFlatDefault, list.setlist, interp,
+	listPtr, indexCount, indexArray, valuePtr);
+}
+
+
+Tcl_Obj *
+TclLsetFlatDefault(
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int indexCount,
+    Tcl_Obj *const indexArray[],
+    Tcl_Obj *valuePtr)
 {
     size_t index;
     int result, len;
@@ -1799,16 +1860,24 @@ TclLsetFlat(
  *
  *----------------------------------------------------------------------
  */
-
 int
 TclListObjSetElement(
-    Tcl_Interp *interp,		/* Tcl interpreter; used for error reporting
-				 * if not NULL. */
-    Tcl_Obj *listPtr,		/* List object in which element should be
-				 * stored. */
-    int index,			/* Index of element to store. */
-    Tcl_Obj *valuePtr)		/* Tcl object to store in the designated list
-				 * element. */
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int index,
+    Tcl_Obj *valuePtr
+)
+{
+    return Dispatch(listPtr, TclListObjSetElementDefault, list.set, interp,
+	listPtr, index, valuePtr);
+}
+
+int
+TclListObjSetElementDefault(
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int index,
+    Tcl_Obj *valuePtr)
 {
     List *listRepPtr;		/* Internal representation of the list being
 				 * modified. */

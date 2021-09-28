@@ -621,7 +621,19 @@ typedef struct Tcl_ObjType {
 					 * array of */
 	    );
 
-	    Tcl_Obj* (*lindex) (
+	    int (*append) (
+		Tcl_Interp *interp,
+		Tcl_Obj *listPtr,
+		Tcl_Obj *elemListPtr);
+
+	    int (*index) (
+		Tcl_Interp *interp,	/* Used to report errors if not NULL. */
+		Tcl_Obj *listPtr,	/* List object to index into. */
+		int index,		/* Index of element to return. */
+		Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+	    );
+
+	    Tcl_Obj* (*indexlist) (
 		Tcl_Interp *interp,	/* Tcl interpreter. */
 		Tcl_Obj *listPtr,	/* Tcl object representing the list. */
 		int indexCount,		/* Count of indices. */
@@ -631,12 +643,52 @@ typedef struct Tcl_ObjType {
 		Tcl_Obj *const indexArray[]
 	    );
 
+	    int (* length) (
+		Tcl_Interp *interp,	/* Used to report errors if not NULL. */
+		Tcl_Obj *listPtr,	/* List object whose #elements to return. */
+		int *intPtr		/* The resulting int is stored here. */
+	    );
+
 	    Tcl_Obj* (*range)(
 		Tcl_Obj *listPtr,	/* List object to take a range from. */
 		size_t fromIdx,		/* Index of first element to
 					    include.  */
 		size_t toIdx		/* Index of last element to include. */
 	    );
+
+	    int (*replace) (
+		Tcl_Interp *interp, /* Used for error reporting if not NULL. */
+		Tcl_Obj *listPtr,   /* List object whose elements to replace. */
+		int first,	    /* Index of first element to replace. */
+		int count,	    /* Number of elements to replace. */
+		int objc,	    /* Number of objects to insert. */
+				    /* An array of objc pointers to Tcl
+				     * objects to insert. */
+		Tcl_Obj *const objv[]);
+
+
+	    int (*set) (
+		Tcl_Interp *interp, /* Tcl interpreter; used for error reporting
+				     * if not NULL. */
+		Tcl_Obj *listPtr,    /* List object in which element should be
+				     * stored. */
+		int index,	    /* Index of element to store. */
+		Tcl_Obj *valuePtr   /* Tcl object to store in the designated list
+				     * element. */
+	    );
+
+
+	    Tcl_Obj * (*setlist) (
+		Tcl_Interp *interp,	/* Tcl interpreter. */
+		Tcl_Obj *listPtr,	/* Pointer to the list being modified. */
+		int indexCount,		/* Number of index args. */
+		Tcl_Obj *const indexArray[],
+					/* Index args. */
+		Tcl_Obj *valuePtr	/* Value arg to 'lset' or NULL to 'lpop'. */
+	    );
+
+
+
 	} list;
     } interface;
 } Tcl_ObjType;
