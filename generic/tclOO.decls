@@ -129,8 +129,11 @@ declare 28 {
 declare 29 {
     int Tcl_MethodIsPrivate(Tcl_Method method)
 }
+declare 30 {
+    Tcl_Class Tcl_GetClassOfObject(Tcl_Object object)
+}
 declare 31 {
-    void TclOOUnusedStubEntry(void)
+    Tcl_Obj *Tcl_GetObjectClassName(Tcl_Interp *interp, Tcl_Object object)
 }
 
 ######################################################################
