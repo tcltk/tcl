@@ -4654,7 +4654,7 @@ TEBCresume(
 	 */
 
 	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& !TclHasIntRep(value2Ptr, &tclListType)) {
+		&& !TclHasIntRep(value2Ptr, tclListType)) {
 	    int code;
 
 	    DECACHE_STACK_INFO();

@@ -19,6 +19,7 @@
 #include <math.h>
 #include <assert.h>
 
+
 /*
  * Table of all object types.
  */
@@ -26,6 +27,10 @@
 static Tcl_HashTable typeTable;
 static int typeTableInitialized = 0;	/* 0 means not yet initialized. */
 TCL_DECLARE_MUTEX(tableMutex)
+
+TclObjectTypeType TclObjectTypeType0 = {
+	(int *)1
+};
 
 /*
  * Head of the list of free Tcl_Obj structs we maintain.
@@ -363,7 +368,7 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(&tclByteArrayType);
     Tcl_RegisterObjType(&tclDoubleType);
     Tcl_RegisterObjType(&tclStringType);
-    Tcl_RegisterObjType(&tclListType);
+    Tcl_RegisterObjType(tclListType);
     Tcl_RegisterObjType(&tclDictType);
     Tcl_RegisterObjType(&tclByteCodeType);
     Tcl_RegisterObjType(&tclCmdNameType);
@@ -789,6 +794,29 @@ TclThreadFinalizeContLines(
  *--------------------------------------------------------------
  */
 
+int TclObjTypeVersion (
+	const Tcl_ObjType *typePtr)
+{
+    ObjectType *otPtr = (ObjectType *)typePtr;
+    if ((void *)otPtr->name == (void *)&TclObjectTypeType0) {
+	return otPtr->version;
+    }
+    return 1;
+}
+
+
+const char *TclObjTypeName(
+	const Tcl_ObjType *typePtr)
+{
+    ObjectType *otPtr = (ObjectType *)typePtr;
+    if (TclObjTypeVersion(typePtr) == 1) {
+	return otPtr->name;
+    } else {
+	return otPtr->tname;
+    }
+}
+
+
 void
 Tcl_RegisterObjType(
     const Tcl_ObjType *typePtr)	/* Information about object type; storage must
@@ -798,8 +826,9 @@ Tcl_RegisterObjType(
     int isNew;
 
     Tcl_MutexLock(&tableMutex);
+    const char *name = TclObjTypeName(typePtr);
     Tcl_SetHashValue(
-	    Tcl_CreateHashEntry(&typeTable, typePtr->name, &isNew), typePtr);
+	    Tcl_CreateHashEntry(&typeTable, name, &isNew), typePtr);
     Tcl_MutexUnlock(&tableMutex);
 }
 
@@ -4332,9 +4361,10 @@ Tcl_RepresentationCmd(
      * "1872361827361287"
      */
 
+    const char *name = objv[1]->typePtr ?  TclObjTypeName(objv[1]->typePtr) : "pure string";
     descObj = Tcl_ObjPrintf("value is a %s with a refcount of %" TCL_Z_MODIFIER "u,"
 	    " object pointer at %p",
-	    objv[1]->typePtr ? objv[1]->typePtr->name : "pure string",
+	    name,
 	    objv[1]->refCount, objv[1]);
 
     if (objv[1]->typePtr) {
@@ -4359,6 +4389,22 @@ Tcl_RepresentationCmd(
 
     Tcl_SetObjResult(interp, descObj);
     return TCL_OK;
+}
+
+
+TclObjectTypeType * TclGetObjectTypeType () {
+	return &TclObjectTypeType0;
+}
+
+
+int (*TclObjInterfaceGetListIndex (Tcl_Obj *objPtr))
+(tclObjTypeInterfaceArgsListIndex)
+{
+	ObjInterface *interface = (ObjInterface *)((ObjectType *)objPtr->typePtr)->interface;
+	if (interface->version >= 1) {
+		return interface->list.index;
+	}
+	return NULL;
 }
 
 /*

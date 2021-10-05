@@ -600,7 +600,7 @@ SetDictFromAny(
      * the conversion from lists to dictionaries.
      */
 
-    if (TclHasIntRep(objPtr, &tclListType)) {
+    if (TclHasIntRep(objPtr, tclListType)) {
 	int objc, i;
 	Tcl_Obj **objv;
 

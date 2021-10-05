@@ -218,6 +218,153 @@ typedef struct Tcl_ResolverInfo {
 
 /*
  *----------------------------------------------------------------
+ * Object type 
+ *----------------------------------------------------------------
+ */
+
+/* version is a pointer so that it can be overridden if ever needed */
+typedef struct TclObjectTypeType {
+    int *version;
+} TclObjectTypeType;
+
+
+extern TclObjectTypeType TclObjectTypeType0;
+
+/* keep this structure in sync with Tcl_ObjType */
+typedef struct ObjectType {
+    const char *name;		/* Name of the type, e.g. "int". */
+    Tcl_FreeInternalRepProc *freeIntRepProc;
+				/* Called to free any storage for the type's
+				 * internal rep. NULL if the internal rep does
+				 * not need freeing. */
+    Tcl_DupInternalRepProc *dupIntRepProc;
+				/* Called to create a new object as a copy of
+				 * an existing object. */
+    Tcl_UpdateStringProc *updateStringProc;
+				/* Called to update the string rep from the
+				 * type's internal representation. */
+    Tcl_SetFromAnyProc *setFromAnyProc;
+				/* Called to convert the object's internal rep
+				 * to this type. Frees the internal rep of the
+				 * old type. Returns TCL_ERROR on failure. */
+    int version;
+    const char *tname;		/* the name of the type in version >=2, since
+				   the "name" member isn't really the name
+				*/
+    Tcl_ObjInterface *interface;
+} ObjectType;
+
+
+#define TclObjectDispatch(objPtr, default, member, ...)			\
+    ( (objPtr)->typePtr == NULL \
+	|| (void *)(objPtr)->typePtr->name != (void *)&TclObjectTypeType0\
+	|| ((ObjInterface *)((						\
+	    ObjectType *)(objPtr)->typePtr)->interface)			\
+		->member == NULL)					\
+    ? (default)(__VA_ARGS__)						\
+    : ((ObjInterface*)((ObjectType *)(objPtr)->typePtr)->interface)	\
+	->member(__VA_ARGS__);	
+
+
+/*
+ *----------------------------------------------------------------
+ * Object interface data structures and macros
+ *----------------------------------------------------------------
+ */
+
+#define tclObjTypeInterfaceArgsListAll \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object for which an element array \
+			     *  is to be returned. */ \
+    int *objcPtr,		/* Where to store the count of objects \
+			     * referenced by objv. */ \
+    Tcl_Obj ***objvPtr	/* Where to store the pointer to an \
+				     * array of */
+
+#define tclObjTypeInterfaceArgsListAppend \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object to append objPtr to. */ \
+    Tcl_Obj *objPtr		/* Object to append to listPtr's list. */
+
+#define tclObjTypeInterfaceArgsListAppendList \
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object to append elements to. */ \
+    Tcl_Obj *elemListPtr	/* List obj with elements to append. */
+
+#define tclObjTypeInterfaceArgsListIndex \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object to index into. */ \
+    int index,		/* Index of element to return. */ \
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+
+#define tclObjTypeInterfaceArgsListIndexList \
+    Tcl_Interp *interp,	/* Tcl interpreter. */ \
+    Tcl_Obj *listPtr,	/* Tcl object representing the list. */ \
+    int indexCount,		/* Count of indices. */ \
+			    /* Array of pointers to Tcl objects \
+			     * that represent the indices in the \
+			     * list. */ \
+    Tcl_Obj *const indexArray[]
+
+#define tclObjTypeInterfaceArgsListLength \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object whose #elements to return. */ \
+    int *intPtr		/* The resulting int is stored here. */
+
+#define tclObjTypeInterfaceArgsListRange \
+    Tcl_Obj *listPtr,	/* List object to take a range from. */ \
+    size_t fromIdx,		/* Index of first element to \
+				include.  */ \
+    size_t toIdx		/* Index of last element to include. */
+
+#define tclObjTypeInterfaceArgsListReplace \
+    Tcl_Interp *interp, /* Used for error reporting if not NULL. */ \
+    Tcl_Obj *listPtr,   /* List object whose elements to replace. */ \
+    int first,	        /* Index of first element to replace. */ \
+    int count,		/* Number of elements to replace. */ \
+    int objc,		/* Number of objects to insert. */ \
+			/* An array of objc pointers to Tcl \
+			 * objects to insert. */ \
+    Tcl_Obj *const objv[]
+
+
+#define tclObjTypeInterfaceArgsListSet \
+    Tcl_Interp *interp, /* Tcl interpreter; used for error reporting \
+			 * if not NULL. */ \
+    Tcl_Obj *listPtr,    /* List object in which element should be \
+			 * stored. */ \
+    int index,	    /* Index of element to store. */ \
+    Tcl_Obj *valuePtr   /* Tcl object to store in the designated list \
+				 * element. */
+
+#define tclObjTypeInterfaceArgsListSetList \
+    Tcl_Interp *interp,	/* Tcl interpreter. */ \
+    Tcl_Obj *listPtr,	/* Pointer to the list being modified. */ \
+    int indexCount,		/* Number of index args. */ \
+    Tcl_Obj *const indexArray[], \
+			    /* Index args. */ \
+    Tcl_Obj *valuePtr	/* Value arg to 'lset' or NULL to 'lpop'. */
+
+
+typedef struct ObjInterface {
+    int version;
+    struct list {
+	int (*all)(tclObjTypeInterfaceArgsListAll);
+	int (*append)(tclObjTypeInterfaceArgsListAppend);
+	int (*appendlist)(tclObjTypeInterfaceArgsListAppendList);
+	int (*index)(tclObjTypeInterfaceArgsListIndex);
+	Tcl_Obj* (*indexlist)(tclObjTypeInterfaceArgsListIndexList);
+	int (* length)(tclObjTypeInterfaceArgsListLength);
+	Tcl_Obj* (*range)(tclObjTypeInterfaceArgsListRange);
+	int (*replace)(tclObjTypeInterfaceArgsListReplace);
+	int (*set)(tclObjTypeInterfaceArgsListSet);
+	Tcl_Obj * (*setlist)(tclObjTypeInterfaceArgsListSetList);
+    } list;
+} ObjInterface;
+
+
+/*
+ *----------------------------------------------------------------
  * Data structures related to namespaces.
  *----------------------------------------------------------------
  */
@@ -2415,17 +2562,17 @@ typedef struct List {
     (((listPtr)->bytes == NULL) || ListRepPtr(listPtr)->canonicalFlag)
 
 #define TclListObjGetElements(interp, listPtr, objcPtr, objvPtr) \
-    (((listPtr)->typePtr == &tclListType) \
+    (((listPtr)->typePtr == tclListType) \
 	    ? ((ListObjGetElements((listPtr), *(objcPtr), *(objvPtr))), TCL_OK)\
 	    : Tcl_ListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)))
 
 #define TclListObjLength(interp, listPtr, lenPtr) \
-    (((listPtr)->typePtr == &tclListType) \
+    (((listPtr)->typePtr == tclListType) \
 	    ? ((ListObjLength((listPtr), *(lenPtr))), TCL_OK)\
 	    : Tcl_ListObjLength((interp), (listPtr), (lenPtr)))
 
 #define TclListObjIsCanonical(listPtr) \
-    (((listPtr)->typePtr == &tclListType) ? ListObjIsCanonical((listPtr)) : 0)
+    (((listPtr)->typePtr == tclListType) ? ListObjIsCanonical((listPtr)) : 0)
 
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
@@ -2698,7 +2845,7 @@ MODULE_SCOPE const Tcl_ObjType tclByteArrayType;
 MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
-MODULE_SCOPE const Tcl_ObjType tclListType;
+MODULE_SCOPE const Tcl_ObjType *tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
@@ -3043,6 +3190,8 @@ MODULE_SCOPE int	TclListObjIndexDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int index, Tcl_Obj **objPtrPtr);
 MODULE_SCOPE int	TclListObjGetElementsDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int *objcPtr, Tcl_Obj ***objvPtr);
+MODULE_SCOPE int	(*TclObjInterfaceGetListIndex (Tcl_Obj *objPtr))
+			    (tclObjTypeInterfaceArgsListIndex);
 MODULE_SCOPE int	TclListObjLengthDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int *intPtr);
 MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, size_t fromIdx,
@@ -3072,6 +3221,8 @@ MODULE_SCOPE Tcl_Obj *  TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
 MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
+MODULE_SCOPE const char *	TclObjTypeName(const Tcl_ObjType *typePtr);
+MODULE_SCOPE int	 TclObjTypeVersion (const Tcl_ObjType *typePtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
 			    const char *reason, int index);
