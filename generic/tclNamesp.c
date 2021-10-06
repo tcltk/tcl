@@ -133,19 +133,19 @@ static const Tcl_ObjType nsNameType = {
     SetNsNameFromAny		/* setFromAnyProc */
 };
 
-#define NsNameSetIntRep(objPtr, nnPtr)					\
+#define NsNameSetInternalRep(objPtr, nnPtr)					\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	(nnPtr)->refCount++;						\
 	ir.twoPtrValue.ptr1 = (nnPtr);					\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreIntRep((objPtr), &nsNameType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), &nsNameType, &ir);			\
     } while (0)
 
-#define NsNameGetIntRep(objPtr, nnPtr)					\
+#define NsNameGetInternalRep(objPtr, nnPtr)					\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), &nsNameType);			\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), &nsNameType);			\
 	(nnPtr) = irPtr ? (ResolvedNsName *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -2928,7 +2928,7 @@ GetNamespaceFromObj(
 {
     ResolvedNsName *resNamePtr;
 
-    NsNameGetIntRep(objPtr, resNamePtr);
+    NsNameGetInternalRep(objPtr, resNamePtr);
     if (resNamePtr) {
 	Namespace *nsPtr, *refNsPtr;
 
@@ -2945,10 +2945,10 @@ GetNamespaceFromObj(
 	    *nsPtrPtr = (Tcl_Namespace *) nsPtr;
 	    return TCL_OK;
 	}
-	Tcl_StoreIntRep(objPtr, &nsNameType, NULL);
+	Tcl_StoreInternalRep(objPtr, &nsNameType, NULL);
     }
     if (SetNsNameFromAny(interp, objPtr) == TCL_OK) {
-	NsNameGetIntRep(objPtr, resNamePtr);
+	NsNameGetInternalRep(objPtr, resNamePtr);
 	assert(resNamePtr != NULL);
 	*nsPtrPtr = (Tcl_Namespace *) resNamePtr->nsPtr;
 	return TCL_OK;
@@ -4722,7 +4722,7 @@ FreeNsNameInternalRep(
 {
     ResolvedNsName *resNamePtr;
 
-    NsNameGetIntRep(objPtr, resNamePtr);
+    NsNameGetInternalRep(objPtr, resNamePtr);
     assert(resNamePtr != NULL);
 
     /*
@@ -4768,9 +4768,9 @@ DupNsNameInternalRep(
 {
     ResolvedNsName *resNamePtr;
 
-    NsNameGetIntRep(srcPtr, resNamePtr);
+    NsNameGetInternalRep(srcPtr, resNamePtr);
     assert(resNamePtr != NULL);
-    NsNameSetIntRep(copyPtr, resNamePtr);
+    NsNameSetInternalRep(copyPtr, resNamePtr);
 }
 
 /*
@@ -4833,7 +4833,7 @@ SetNsNameFromAny(
 	resNamePtr->refNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     }
     resNamePtr->refCount = 0;
-    NsNameSetIntRep(objPtr, resNamePtr);
+    NsNameSetInternalRep(objPtr, resNamePtr);
     return TCL_OK;
 }
 
@@ -5013,7 +5013,7 @@ TclLogCommandInfo(
 	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
 
 	/*
-	 * Reset while keeping the list intrep as much as possible.
+	 * Reset while keeping the list internalrep as much as possible.
 	 */
 
 	Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);
@@ -5098,7 +5098,7 @@ TclErrorStackResetIf(
 	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
 
 	/*
-	 * Reset while keeping the list intrep as much as possible.
+	 * Reset while keeping the list internalrep as much as possible.
 	 */
 
 	Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);
