@@ -255,16 +255,17 @@ typedef struct ObjectType {
 } ObjectType;
 
 
-#define TclObjectDispatch(objPtr, default, member, ...)			\
-    ( (objPtr)->typePtr == NULL \
-	|| (void *)(objPtr)->typePtr->name != (void *)&TclObjectTypeType0\
-	|| ((ObjInterface *)((						\
-	    ObjectType *)(objPtr)->typePtr)->interface)			\
-		->member == NULL)					\
-    ? (default)(__VA_ARGS__)						\
-    : ((ObjInterface*)((ObjectType *)(objPtr)->typePtr)->interface)	\
-	->member(__VA_ARGS__);	
+#define TclObjectDispatch(objPtr, default, iface, proc, ...)		    \
+    TclObjectHasInterface((objPtr), iface, proc)			    \
+    ? ((ObjInterface *)((ObjectType *)(objPtr)->typePtr)->interface)	    \
+	->iface.proc(__VA_ARGS__)					    \
+    : (default)(__VA_ARGS__)						    
 
+#define TclObjectHasInterface(objPtr, iface, proc)			    \
+    ((objPtr)->typePtr != NULL						    \
+    && (void *)(objPtr)->typePtr->name == (void *)&TclObjectTypeType0	    \
+    && ((ObjInterface *)((ObjectType *)(objPtr)->typePtr)->interface)	    \
+	->iface.proc != NULL)
 
 /*
  *----------------------------------------------------------------
@@ -353,7 +354,6 @@ typedef struct ObjInterface {
 	int (*append)(tclObjTypeInterfaceArgsListAppend);
 	int (*appendlist)(tclObjTypeInterfaceArgsListAppendList);
 	int (*index)(tclObjTypeInterfaceArgsListIndex);
-	Tcl_Obj* (*indexlist)(tclObjTypeInterfaceArgsListIndexList);
 	int (* length)(tclObjTypeInterfaceArgsListLength);
 	Tcl_Obj* (*range)(tclObjTypeInterfaceArgsListRange);
 	int (*replace)(tclObjTypeInterfaceArgsListReplace);
@@ -3175,8 +3175,6 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int indexCount, Tcl_Obj *const indexArray[]);
-MODULE_SCOPE Tcl_Obj *	TclLindexFlatDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    int indexCount, Tcl_Obj *const indexArray[]);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
 			    int *lines, Tcl_Obj *const *elems);
@@ -4929,6 +4927,7 @@ MODULE_SCOPE Tcl_LibraryInitProc TclObjTest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc TclThread_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
+MODULE_SCOPE int TcltestObjectInterfaceInit(Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------
