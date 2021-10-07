@@ -4698,15 +4698,32 @@ TEBCresume(
 	 * in the process.
 	 */
 
-	if (TclListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
-	    TRACE_ERROR(interp);
-	    goto gotError;
+	if (!TclHasIntRep(valuePtr, tclListType)
+	    && TclObjectHasInterface(valuePtr, list, index)) {
+	    if (Tcl_ListObjIndex(interp, valuePtr, opnd, &objResultPtr)
+		!= TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+
+	    /*
+	     * Stash the list element on the stack.
+	     */
+
+	    TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
+	    /* Already has the correct refCount */
+	    NEXT_INST_F(5, 1, -1);
+	} else {
+	    if (TclListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    /* Decode end-offset index values. */
+
+	    index = TclIndexDecode(opnd, objc - 1);
+	    pcAdjustment = 5;
 	}
 
-	/* Decode end-offset index values. */
-
-	index = TclIndexDecode(opnd, objc - 1);
-	pcAdjustment = 5;
 
     lindexFastPath:
 	if (index < (size_t)objc) {
@@ -4890,7 +4907,7 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
+	objResultPtr = TclListObjRange(valuePtr, objc, fromIdx, toIdx);
 
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);

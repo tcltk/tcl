@@ -449,17 +449,19 @@ TclListObjCopy(
 Tcl_Obj *
 TclListObjRange(
     Tcl_Obj *listPtr,		/* List object to take a range from. */
+    int length,			/* the length of the list */
     size_t fromIdx,		/* Index of first element to include. */
     size_t toIdx)			/* Index of last element to include. */
 {
     return TclObjectDispatch(listPtr, TclListObjRangeDefault, list, range,
-	listPtr, fromIdx, toIdx);
+	listPtr, length, fromIdx, toIdx);
 }
 
 
 Tcl_Obj *
 TclListObjRangeDefault(
     Tcl_Obj *listPtr,
+    int length,
     size_t fromIdx,
     size_t toIdx)
 {
@@ -1439,6 +1441,7 @@ TclLindexFlat(
 		    }
 		}
 		TclNewObj(listPtr);
+		Tcl_IncrRefCount(listPtr);
 	    } else {
 		/*
 		 * Extract the pointer to the appropriate element.
@@ -1454,9 +1457,9 @@ TclLindexFlat(
 		    listPtr = sublistPtr;
 		} else {
 		    listPtr = elemPtrs[index];
+		    Tcl_IncrRefCount(listPtr);
 		}
 	    }
-	    Tcl_IncrRefCount(listPtr);
 	}
 	if (!useinterface) {
 	    Tcl_DecrRefCount(sublistPtr);

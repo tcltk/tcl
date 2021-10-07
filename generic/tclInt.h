@@ -314,6 +314,7 @@ typedef struct ObjectType {
 
 #define tclObjTypeInterfaceArgsListRange \
     Tcl_Obj *listPtr,	/* List object to take a range from. */ \
+    int length,			/* Lngth of the list */  \
     size_t fromIdx,		/* Index of first element to \
 				include.  */ \
     size_t toIdx		/* Index of last element to include. */
@@ -3192,9 +3193,9 @@ MODULE_SCOPE int	(*TclObjInterfaceGetListIndex (Tcl_Obj *objPtr))
 			    (tclObjTypeInterfaceArgsListIndex);
 MODULE_SCOPE int	TclListObjLengthDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int *intPtr);
-MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, size_t fromIdx,
+MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, int length, size_t fromIdx,
 			    size_t toIdx);
-MODULE_SCOPE Tcl_Obj *	TclListObjRangeDefault(Tcl_Obj *listPtr, size_t fromIdx,
+MODULE_SCOPE Tcl_Obj *	TclListObjRangeDefault(Tcl_Obj *listPtr, int length, size_t fromIdx,
 			    size_t toIdx);
 MODULE_SCOPE int	TclListObjReplaceDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int first, int count, int objc, Tcl_Obj *const objv[]);
