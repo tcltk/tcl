@@ -749,7 +749,7 @@ TclContinuationsGet(
 
 static void
 TclThreadFinalizeContLines(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     /*
      * Release the hashtable tracking invisible continuation lines.
@@ -1339,7 +1339,7 @@ TclFreeObj(
 
 	    PopObjToDelete(context, objToFree);
 	    TCL_DTRACE_OBJ_FREE(objToFree);
-	    TclFreeIntRep(objToFree);
+	    TclFreeInternalRep(objToFree);
 
 	    Tcl_MutexLock(&tclObjMutex);
 	    Tcl_Free(objToFree);
@@ -1558,7 +1558,7 @@ TclSetDuplicateObj(
 	Tcl_Panic("%s called with shared object", "TclSetDuplicateObj");
     }
     TclInvalidateStringRep(dupPtr);
-    TclFreeIntRep(dupPtr);
+    TclFreeInternalRep(dupPtr);
     SetDuplicateObj(dupPtr, objPtr);
 }
 
@@ -1848,14 +1848,13 @@ Tcl_HasStringRep(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_StoreIntRep --
+ * Tcl_StoreInternalRep --
  *
- *	This function is called to set the object's internal
- *	representation to match a particular type.
+ *	Called to set the object's internal representation to match a
+ *	particular type.
  *
- *	It is the caller's responsibility to guarantee that
- *	the value of the submitted IntRep is in agreement with
- *	the value of any existing string rep.
+ *	It is the caller's resonsibility to ensure that the given IntRep is
+ *	appropriate for the existing string.
  *
  * Results:
  *	None.
@@ -1868,13 +1867,15 @@ Tcl_HasStringRep(
  */
 
 void
-Tcl_StoreIntRep(
+Tcl_StoreInternalRep(
     Tcl_Obj *objPtr,		/* Object whose internal rep should be set. */
     const Tcl_ObjType *typePtr,	/* New type for the object */
-    const Tcl_ObjIntRep *irPtr)	/* New IntRep for the object */
+    const Tcl_ObjInternalRep *irPtr)	/* New IntRep for the object */
 {
-    /* Clear out any existing IntRep ( "shimmer" ) */
-    TclFreeIntRep(objPtr);
+    /* Clear out any existing IntRep.  This is the point where shimmering, i.e.
+     * repeated alteration of the type of the internal representation, may
+     * occur. */
+    TclFreeInternalRep(objPtr);
 
     /* When irPtr == NULL, just leave objPtr with no IntRep for typePtr */
     if (irPtr) {
@@ -1889,13 +1890,13 @@ Tcl_StoreIntRep(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_FetchIntRep --
+ * Tcl_FetchInternalRep --
  *
  *	This function is called to retrieve the object's internal
  *	representation matching a requested type, if any.
  *
  * Results:
- *	A read-only pointer to the associated Tcl_ObjIntRep, or
+ *	A read-only pointer to the associated Tcl_ObjInternalRep, or
  *	NULL if no such internal representation exists.
  *
  * Side effects:
@@ -1905,18 +1906,18 @@ Tcl_StoreIntRep(
  *----------------------------------------------------------------------
  */
 
-Tcl_ObjIntRep *
-Tcl_FetchIntRep(
+Tcl_ObjInternalRep *
+Tcl_FetchInternalRep(
     Tcl_Obj *objPtr,		/* Object to fetch from. */
     const Tcl_ObjType *typePtr)	/* Requested type */
 {
-    return TclFetchIntRep(objPtr, typePtr);
+    return TclFetchInternalRep(objPtr, typePtr);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_FreeIntRep --
+ * Tcl_FreeInternalRep --
  *
  *	This function is called to free an object's internal representation.
  *
@@ -1931,10 +1932,10 @@ Tcl_FetchIntRep(
  */
 
 void
-Tcl_FreeIntRep(
+Tcl_FreeInternalRep(
     Tcl_Obj *objPtr)	/* Object whose internal rep should be freed. */
 {
-    TclFreeIntRep(objPtr);
+    TclFreeInternalRep(objPtr);
 }
 
 /*
@@ -1951,7 +1952,7 @@ Tcl_FreeIntRep(
  *	result unless "interp" is NULL.
  *
  * Side effects:
- *	The intrep of *objPtr may be changed.
+ *	The internalrep of *objPtr may be changed.
  *
  *----------------------------------------------------------------------
  */
@@ -1970,7 +1971,7 @@ Tcl_GetBooleanFromObj(
 	if (objPtr->typePtr == &tclDoubleType) {
 	    /*
 	     * Caution: Don't be tempted to check directly for the "double"
-	     * Tcl_ObjType and then compare the intrep to 0.0. This isn't
+	     * Tcl_ObjType and then compare the internalrep to 0.0. This isn't
 	     * reliable because a "double" Tcl_ObjType can hold the NaN value.
 	     * Use the API Tcl_GetDoubleFromObj, which does the checking and
 	     * sets the proper error message for us.
@@ -2165,13 +2166,13 @@ ParseBoolean(
      */
 
   goodBoolean:
-    TclFreeIntRep(objPtr);
+    TclFreeInternalRep(objPtr);
     objPtr->internalRep.wideValue = newBool;
     objPtr->typePtr = &tclBooleanType;
     return TCL_OK;
 
   numericBoolean:
-    TclFreeIntRep(objPtr);
+    TclFreeInternalRep(objPtr);
     objPtr->internalRep.wideValue = newBool;
     objPtr->typePtr = &tclIntType;
     return TCL_OK;
@@ -3187,7 +3188,7 @@ GetBignumFromObj(
 		}
 	    } else {
 		TclUnpackBignum(objPtr, *bignumValue);
-		/* Optimized TclFreeIntRep */
+		/* Optimized TclFreeInternalRep */
 		objPtr->internalRep.twoPtrValue.ptr1 = NULL;
 		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		objPtr->typePtr = NULL;
@@ -3341,14 +3342,14 @@ Tcl_SetBignumObj(
     return;
   tooLargeForWide:
     TclInvalidateStringRep(objPtr);
-    TclFreeIntRep(objPtr);
-    TclSetBignumIntRep(objPtr, bignumValue);
+    TclFreeInternalRep(objPtr);
+    TclSetBignumInternalRep(objPtr, bignumValue);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclSetBignumIntRep --
+ * TclSetBignumInternalRep --
  *
  *	Install a bignum into the internal representation of an object.
  *
@@ -3364,7 +3365,7 @@ Tcl_SetBignumObj(
  */
 
 void
-TclSetBignumIntRep(
+TclSetBignumInternalRep(
     Tcl_Obj *objPtr,
     void *big)
 {
@@ -4102,7 +4103,7 @@ SetCmdNameObj(
     }
 
     if (resPtr == NULL) {
-	TclFreeIntRep(objPtr);
+	TclFreeInternalRep(objPtr);
 
 	objPtr->internalRep.twoPtrValue.ptr1 = fillPtr;
 	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
@@ -4305,7 +4306,7 @@ SetCmdNameFromAny(
 
 int
 Tcl_RepresentationCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])

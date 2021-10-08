@@ -196,13 +196,13 @@ static unsigned short emptyPage[256];
  */
 
 static Tcl_EncodingConvertProc	BinaryProc;
-static Tcl_DupInternalRepProc	DupEncodingIntRep;
+static Tcl_DupInternalRepProc	DupEncodingInternalRep;
 static Tcl_EncodingFreeProc	EscapeFreeProc;
 static Tcl_EncodingConvertProc	EscapeFromUtfProc;
 static Tcl_EncodingConvertProc	EscapeToUtfProc;
 static void			FillEncodingFileMap(void);
 static void			FreeEncoding(Tcl_Encoding encoding);
-static Tcl_FreeInternalRepProc	FreeEncodingIntRep;
+static Tcl_FreeInternalRepProc	FreeEncodingInternalRep;
 static Encoding *		GetTableEncoding(EscapeEncodingData *dataPtr,
 				    int state);
 static Tcl_Encoding		LoadEncodingFile(Tcl_Interp *interp,
@@ -226,25 +226,25 @@ static Tcl_EncodingConvertProc	Iso88591ToUtfProc;
 
 /*
  * A Tcl_ObjType for holding a cached Tcl_Encoding in the twoPtrValue.ptr1 field
- * of the intrep. This should help the lifetime of encodings be more useful.
+ * of the internalrep. This should help the lifetime of encodings be more useful.
  * See concerns raised in [Bug 1077262].
  */
 
 static const Tcl_ObjType encodingType = {
-    "encoding", FreeEncodingIntRep, DupEncodingIntRep, NULL, NULL
+    "encoding", FreeEncodingInternalRep, DupEncodingInternalRep, NULL, NULL
 };
-#define EncodingSetIntRep(objPtr, encoding)				\
+#define EncodingSetInternalRep(objPtr, encoding)				\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (encoding);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreIntRep((objPtr), &encodingType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), &encodingType, &ir);			\
     } while (0)
 
-#define EncodingGetIntRep(objPtr, encoding)				\
+#define EncodingGetInternalRep(objPtr, encoding)				\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep ((objPtr), &encodingType);		\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep ((objPtr), &encodingType);		\
 	(encoding) = irPtr ? (Tcl_Encoding)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -277,13 +277,13 @@ Tcl_GetEncodingFromObj(
     Tcl_Encoding encoding;
     const char *name = TclGetString(objPtr);
 
-    EncodingGetIntRep(objPtr, encoding);
+    EncodingGetInternalRep(objPtr, encoding);
     if (encoding == NULL) {
 	encoding = Tcl_GetEncoding(interp, name);
 	if (encoding == NULL) {
 	    return TCL_ERROR;
 	}
-	EncodingSetIntRep(objPtr, encoding);
+	EncodingSetInternalRep(objPtr, encoding);
     }
     *encodingPtr = Tcl_GetEncoding(NULL, name);
     return TCL_OK;
@@ -292,7 +292,7 @@ Tcl_GetEncodingFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * FreeEncodingIntRep --
+ * FreeEncodingInternalRep --
  *
  *	The Tcl_FreeInternalRepProc for the "encoding" Tcl_ObjType.
  *
@@ -300,19 +300,19 @@ Tcl_GetEncodingFromObj(
  */
 
 static void
-FreeEncodingIntRep(
+FreeEncodingInternalRep(
     Tcl_Obj *objPtr)
 {
     Tcl_Encoding encoding;
 
-    EncodingGetIntRep(objPtr, encoding);
+    EncodingGetInternalRep(objPtr, encoding);
     Tcl_FreeEncoding(encoding);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * DupEncodingIntRep --
+ * DupEncodingInternalRep --
  *
  *	The Tcl_DupInternalRepProc for the "encoding" Tcl_ObjType.
  *
@@ -320,12 +320,12 @@ FreeEncodingIntRep(
  */
 
 static void
-DupEncodingIntRep(
+DupEncodingInternalRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, TclGetString(srcPtr));
-    EncodingSetIntRep(dupPtr, encoding);
+    EncodingSetInternalRep(dupPtr, encoding);
 }
 
 /*
@@ -2058,7 +2058,7 @@ LoadEscapeEncoding(
 
 static int
 BinaryProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     const char *src,		/* Source string (unknown encoding). */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2841,7 +2841,7 @@ TableFromUtfProc(
 
 static int
 Iso88591ToUtfProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     const char *src,		/* Source string in specified encoding. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2921,7 +2921,7 @@ Iso88591ToUtfProc(
 
 static int
 Iso88591FromUtfProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */

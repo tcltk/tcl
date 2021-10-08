@@ -2411,18 +2411,18 @@ declare 635 {
 
 # TIP #445
 declare 636 {
-    void Tcl_FreeIntRep(Tcl_Obj *objPtr)
+    void Tcl_FreeInternalRep(Tcl_Obj *objPtr)
 }
 declare 637 {
     char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
 	    size_t numBytes)
 }
 declare 638 {
-    Tcl_ObjIntRep *Tcl_FetchIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)
+    Tcl_ObjInternalRep *Tcl_FetchInternalRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)
 }
 declare 639 {
-    void Tcl_StoreIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr,
-	    const Tcl_ObjIntRep *irPtr)
+    void Tcl_StoreInternalRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr,
+	    const Tcl_ObjInternalRep *irPtr)
 }
 declare 640 {
     int Tcl_HasStringRep(Tcl_Obj *objPtr)

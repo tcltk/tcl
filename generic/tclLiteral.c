@@ -1041,7 +1041,7 @@ RebuildLiteralTable(
  *
  * Side effects:
  *	Resets the internal representation of the CmdName Tcl_Obj
- *	using TclFreeIntRep().
+ *	using TclFreeInternalRep().
  *
  *----------------------------------------------------------------------
  */
@@ -1060,8 +1060,8 @@ TclInvalidateCmdLiteral(
 	    strlen(name), -1, NULL, nsPtr, 0, NULL);
 
     if (literalObjPtr != NULL) {
-	if (TclHasIntRep(literalObjPtr, &tclCmdNameType)) {
-	    TclFreeIntRep(literalObjPtr);
+	if (TclHasInternalRep(literalObjPtr, &tclCmdNameType)) {
+	    TclFreeInternalRep(literalObjPtr);
 	}
 	/* Balance the refcount effects of TclCreateLiteral() above */
 	Tcl_IncrRefCount(literalObjPtr);
