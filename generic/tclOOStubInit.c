@@ -14,8 +14,6 @@ MODULE_SCOPE const TclOOStubs tclOOStubs;
 #pragma GCC dependency "tclOO.decls"
 #endif
 
-#define TclOOUnusedStubEntry 0
-
 /* !BEGIN!: Do not edit below this line. */
 
 static const TclOOIntStubs tclOOIntStubs = {
@@ -76,8 +74,8 @@ const TclOOStubs tclOOStubs = {
     Tcl_ClassSetDestructor, /* 27 */
     Tcl_GetObjectName, /* 28 */
     Tcl_MethodIsPrivate, /* 29 */
-    0, /* 30 */
-    TclOOUnusedStubEntry, /* 31 */
+    Tcl_GetClassOfObject, /* 30 */
+    Tcl_GetObjectClassName, /* 31 */
 };
 
 /* !END!: Do not edit above this line. */
