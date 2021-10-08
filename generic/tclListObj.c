@@ -51,22 +51,22 @@ const Tcl_ObjType tclListType = {
 
 #define ListSetIntRep(objPtr, listRepPtr)				\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (listRepPtr);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
 	(listRepPtr)->refCount++;					\
-	Tcl_StoreIntRep((objPtr), &tclListType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), &tclListType, &ir);			\
     } while (0)
 
 #define ListGetIntRep(objPtr, listRepPtr)				\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), &tclListType);		\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), &tclListType);		\
 	(listRepPtr) = irPtr ? (List *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 #define ListResetIntRep(objPtr, listRepPtr) \
-    TclFetchIntRep((objPtr), &tclListType)->twoPtrValue.ptr1 = (listRepPtr)
+    TclFetchInternalRep((objPtr), &tclListType)->twoPtrValue.ptr1 = (listRepPtr)
 
 #ifndef TCL_MIN_ELEMENT_GROWTH
 #define TCL_MIN_ELEMENT_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Obj *)
@@ -343,7 +343,7 @@ Tcl_SetListObj(
      * Free any old string rep and any internal rep for the old type.
      */
 
-    TclFreeIntRep(objPtr);
+    TclFreeInternalRep(objPtr);
     TclInvalidateStringRep(objPtr);
 
     /*
@@ -693,7 +693,7 @@ Tcl_ListObjAppendElement(
 
     if (needGrow && !isShared) {
 	/*
-	 * Need to grow + unshared intrep => try to realloc
+	 * Need to grow + unshared internalrep => try to realloc
 	 */
 
 	attempt = 2 * numRequired;
@@ -721,8 +721,8 @@ Tcl_ListObjAppendElement(
 	Tcl_Obj **dst, **src = &listRepPtr->elements;
 
 	/*
-	 * Either we have a shared intrep and we must copy to write, or we
-	 * need to grow and realloc attempts failed.  Attempt intrep copy.
+	 * Either we have a shared internalrep and we must copy to write, or we
+	 * need to grow and realloc attempts failed.  Attempt internalrep copy.
 	 */
 
 	attempt = 2 * numRequired;
@@ -753,7 +753,7 @@ Tcl_ListObjAppendElement(
 
 	if (isShared) {
 	    /*
-	     * The original intrep must remain undisturbed.  Copy into the new
+	     * The original internalrep must remain undisturbed.  Copy into the new
 	     * one and bump refcounts
 	     */
 	    while (numElems--) {
@@ -763,7 +763,7 @@ Tcl_ListObjAppendElement(
 	    listRepPtr->refCount--;
 	} else {
 	    /*
-	     * Old intrep to be freed, re-use refCounts.
+	     * Old internalrep to be freed, re-use refCounts.
 	     */
 
 	    memcpy(dst, src, numElems * sizeof(Tcl_Obj *));
@@ -773,7 +773,7 @@ Tcl_ListObjAppendElement(
     }
     ListResetIntRep(listPtr, listRepPtr);
     listRepPtr->refCount++;
-    TclFreeIntRep(listPtr);
+    TclFreeInternalRep(listPtr);
     ListSetIntRep(listPtr, listRepPtr);
     listRepPtr->refCount--;
 
@@ -1197,7 +1197,7 @@ Tcl_ListObjReplace(
      */
 
     listRepPtr->refCount++;
-    TclFreeIntRep(listPtr);
+    TclFreeInternalRep(listPtr);
     ListSetIntRep(listPtr, listRepPtr);
     listRepPtr->refCount--;
 
@@ -1214,7 +1214,7 @@ Tcl_ListObjReplace(
  *
  *	Implemented entirely as a wrapper around 'TclLindexFlat'. Reconfigures
  *	the argument format into required form while taking care to manage
- *	shimmering so as to tend to keep the most useful intreps
+ *	shimmering so as to tend to keep the most useful internalreps
  *	and/or avoid the most expensive conversions.
  *
  * Value
@@ -1505,7 +1505,7 @@ TclLsetFlat(
     size_t index;
     int result, len;
     Tcl_Obj *subListPtr, *retValuePtr, *chainPtr;
-    Tcl_ObjIntRep *irPtr;
+    Tcl_ObjInternalRep *irPtr;
 
     /*
      * If there are no indices, simply return the new value.  (Without
@@ -1610,8 +1610,8 @@ TclLsetFlat(
 	    /*
 	     * Replace the original elemPtr[index] in parentList with a copy
 	     * we know to be unshared.  This call will also deal with the
-	     * situation where parentList shares its intrep with other
-	     * Tcl_Obj's.  Dealing with the shared intrep case can cause
+	     * situation where parentList shares its internalrep with other
+	     * Tcl_Obj's.  Dealing with the shared internalrep case can cause
 	     * subListPtr to become shared again, so detect that case and make
 	     * and store another copy.
 	     */
@@ -1636,11 +1636,11 @@ TclLsetFlat(
 	     * variable.  Later on, when we set valuePtr in its proper place,
 	     * then all containing lists will have their values changed, and
 	     * will need their string reps spoiled.  We maintain a list of all
-	     * those Tcl_Obj's (via a little intrep surgery) so we can spoil
+	     * those Tcl_Obj's (via a little internalrep surgery) so we can spoil
 	     * them at that time.
 	     */
 
-	    irPtr = TclFetchIntRep(parentList, &tclListType);
+	    irPtr = TclFetchInternalRep(parentList, &tclListType);
 	    irPtr->twoPtrValue.ptr2 = chainPtr;
 	    chainPtr = parentList;
 	}
@@ -1658,10 +1658,10 @@ TclLsetFlat(
 	List *listRepPtr;
 
 	/*
-	 * Clear away our intrep surgery mess.
+	 * Clear away our internalrep surgery mess.
 	 */
 
-	irPtr = TclFetchIntRep(objPtr, &tclListType);
+	irPtr = TclFetchInternalRep(objPtr, &tclListType);
 	listRepPtr = (List *)irPtr->twoPtrValue.ptr1;
 	chainPtr = (Tcl_Obj *)irPtr->twoPtrValue.ptr2;
 
@@ -1673,7 +1673,7 @@ TclLsetFlat(
 	     */
 
 	    listRepPtr->refCount++;
-	    TclFreeIntRep(objPtr);
+	    TclFreeInternalRep(objPtr);
 	    ListSetIntRep(objPtr, listRepPtr);
 	    listRepPtr->refCount--;
 
@@ -1867,12 +1867,12 @@ TclListObjSetElement(
     elemPtrs[index] = valuePtr;
 
     /*
-     * Invalidate outdated intreps.
+     * Invalidate outdated internalreps.
      */
 
     ListGetIntRep(listPtr, listRepPtr);
     listRepPtr->refCount++;
-    TclFreeIntRep(listPtr);
+    TclFreeInternalRep(listPtr);
     ListSetIntRep(listPtr, listRepPtr);
     listRepPtr->refCount--;
 
@@ -1983,7 +1983,7 @@ SetListFromAny(
      * describe duplicate keys).
      */
 
-    if (!TclHasStringRep(objPtr) && TclHasIntRep(objPtr, &tclDictType)) {
+    if (!TclHasStringRep(objPtr) && TclHasInternalRep(objPtr, &tclDictType)) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done, size;

@@ -810,7 +810,7 @@ Tcl_AttemptRealloc(
  */
 static int
 MemoryCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
@@ -986,7 +986,7 @@ static int		CheckmemCmd(ClientData clientData,
 
 static int
 CheckmemCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
@@ -1242,7 +1242,7 @@ Tcl_ValidateAllMemory(
 
 int
 TclDumpMemoryInfo(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     TCL_UNUSED(int) /*flags*/)
 {
     return 1;

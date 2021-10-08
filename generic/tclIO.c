@@ -324,30 +324,30 @@ typedef struct ResolvedChanName {
     size_t refCount;		/* Share this struct among many Tcl_Obj. */
 } ResolvedChanName;
 
-static void		DupChannelIntRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
-static void		FreeChannelIntRep(Tcl_Obj *objPtr);
+static void		DupChannelInternalRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
+static void		FreeChannelInternalRep(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType chanObjType = {
     "channel",			/* name for this type */
-    FreeChannelIntRep,		/* freeIntRepProc */
-    DupChannelIntRep,		/* dupIntRepProc */
+    FreeChannelInternalRep,		/* freeIntRepProc */
+    DupChannelInternalRep,		/* dupIntRepProc */
     NULL,			/* updateStringProc */
     NULL			/* setFromAnyProc */
 };
 
-#define ChanSetIntRep(objPtr, resPtr)					\
+#define ChanSetInternalRep(objPtr, resPtr)					\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	(resPtr)->refCount++;						\
 	ir.twoPtrValue.ptr1 = (resPtr);					\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreIntRep((objPtr), &chanObjType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), &chanObjType, &ir);			\
     } while (0)
 
-#define ChanGetIntRep(objPtr, resPtr)					\
+#define ChanGetInternalRep(objPtr, resPtr)					\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), &chanObjType);		\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), &chanObjType);		\
 	(resPtr) = irPtr ? (ResolvedChanName *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -1509,7 +1509,7 @@ TclGetChannelFromObj(
 	return TCL_ERROR;
     }
 
-    ChanGetIntRep(objPtr, resPtr);
+    ChanGetInternalRep(objPtr, resPtr);
     if (resPtr) {
 	/*
  	 * Confirm validity of saved lookup results.
@@ -1531,7 +1531,7 @@ TclGetChannelFromObj(
 
     if (chan == NULL) {
 	if (resPtr) {
-	    Tcl_StoreIntRep(objPtr, &chanObjType, NULL);
+	    Tcl_StoreInternalRep(objPtr, &chanObjType, NULL);
 	}
 	return TCL_ERROR;
     }
@@ -1545,7 +1545,7 @@ TclGetChannelFromObj(
     } else {
 	resPtr = (ResolvedChanName *) Tcl_Alloc(sizeof(ResolvedChanName));
 	resPtr->refCount = 0;
-	ChanSetIntRep(objPtr, resPtr);		/* Overwrites, if needed */
+	ChanSetInternalRep(objPtr, resPtr);		/* Overwrites, if needed */
     }
     statePtr = ((Channel *)chan)->state;
     resPtr->statePtr = statePtr;
@@ -11122,7 +11122,7 @@ Tcl_ChannelTruncateProc(
 /*
  *----------------------------------------------------------------------
  *
- * DupChannelIntRep --
+ * DupChannelInternalRep --
  *
  *	Initialize the internal representation of a new Tcl_Obj to a copy of
  *	the internal representation of an existing string object.
@@ -11138,7 +11138,7 @@ Tcl_ChannelTruncateProc(
  */
 
 static void
-DupChannelIntRep(
+DupChannelInternalRep(
     Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
 				 * an internal rep of type "Channel". */
     Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
@@ -11146,15 +11146,15 @@ DupChannelIntRep(
 {
     ResolvedChanName *resPtr;
 
-    ChanGetIntRep(srcPtr, resPtr);
+    ChanGetInternalRep(srcPtr, resPtr);
     assert(resPtr);
-    ChanSetIntRep(copyPtr, resPtr);
+    ChanSetInternalRep(copyPtr, resPtr);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FreeChannelIntRep --
+ * FreeChannelInternalRep --
  *
  *	Release statePtr storage.
  *
@@ -11168,12 +11168,12 @@ DupChannelIntRep(
  */
 
 static void
-FreeChannelIntRep(
+FreeChannelInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
     ResolvedChanName *resPtr;
 
-    ChanGetIntRep(objPtr, resPtr);
+    ChanGetInternalRep(objPtr, resPtr);
     assert(resPtr);
     if (resPtr->refCount-- > 1) {
 	return;

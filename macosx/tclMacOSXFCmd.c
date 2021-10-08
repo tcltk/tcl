@@ -577,7 +577,7 @@ GetOSTypeFromObj(
 {
     int result = TCL_OK;
 
-    if (!TclHasIntRep(objPtr, &tclOSTypeType)) {
+    if (!TclHasInternalRep(objPtr, &tclOSTypeType)) {
 	result = SetOSTypeFromAny(interp, objPtr);
     }
     *osTypePtr = (OSType) objPtr->internalRep.wideValue;
@@ -660,7 +660,7 @@ SetOSTypeFromAny(
 		 (OSType) bytes[1] << 16 |
 		 (OSType) bytes[2] <<  8 |
 		 (OSType) bytes[3];
-	TclFreeIntRep(objPtr);
+	TclFreeInternalRep(objPtr);
 	objPtr->internalRep.wideValue = (Tcl_WideInt) osType;
 	objPtr->typePtr = &tclOSTypeType;
     }
