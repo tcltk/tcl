@@ -580,7 +580,7 @@ GetDouble(
 	return 0;
     } else {
 #ifdef ACCEPT_NAN
-	Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &tclDoubleType);
+	Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &tclDoubleType);
 
 	if (irPtr != NULL) {
 	    *dblPtr = irPtr->doubleValue;
@@ -648,7 +648,7 @@ SetInvalidRealFromAny(
 		double doubleValue = 0.0;
 
 		Tcl_GetDoubleFromObj(NULL, objPtr, &doubleValue);
-		TclFreeIntRep(objPtr);
+		TclFreeInternalRep(objPtr);
 		objPtr->typePtr = &invalidRealType;
 		objPtr->internalRep.doubleValue = doubleValue;
 		return TCL_OK;
@@ -698,7 +698,7 @@ GetInvalidDoubleFromObj(
 {
     int intValue;
 
-    if (TclHasIntRep(objPtr, &invalidRealType)) {
+    if (TclHasInternalRep(objPtr, &invalidRealType)) {
 	goto gotdouble;
     }
     if (GetInvalidIntFromObj(objPtr, &intValue) == TCL_OK) {

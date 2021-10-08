@@ -564,7 +564,7 @@ ValidateFormat(
 
 int
 Tcl_ScanObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1017,8 +1017,8 @@ Tcl_ScanObjCmd(
 		double dvalue;
 		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
 #ifdef ACCEPT_NAN
-		    const Tcl_ObjIntRep *irPtr
-			    = TclFetchIntRep(objPtr, &tclDoubleType);
+		    const Tcl_ObjInternalRep *irPtr
+			    = TclFetchInternalRep(objPtr, &tclDoubleType);
 		    if (irPtr) {
 			dvalue = irPtr->doubleValue;
 		    } else

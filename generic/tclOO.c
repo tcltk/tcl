@@ -3144,6 +3144,26 @@ Tcl_ObjectSetMethodNameMapper(
 {
     ((Object *) object)->mapMethodNameProc = mapMethodNameProc;
 }
+
+Tcl_Class
+Tcl_GetClassOfObject(
+    Tcl_Object object)
+{
+    return (Tcl_Class) ((Object *) object)->selfCls;
+}
+
+Tcl_Obj *
+Tcl_GetObjectClassName(
+    Tcl_Interp *interp,
+    Tcl_Object object)
+{
+    Tcl_Object classObj = (Tcl_Object) (((Object *) object)->selfCls)->thisPtr;
+
+    if (classObj == NULL) {
+	return NULL;
+    }
+    return Tcl_GetObjectName(interp, classObj);
+}
 
 /*
  * Local Variables:

@@ -121,9 +121,11 @@ TCLAPI Tcl_Obj *	Tcl_GetObjectName(Tcl_Interp *interp,
 				Tcl_Object object);
 /* 29 */
 TCLAPI int		Tcl_MethodIsPrivate(Tcl_Method method);
-/* Slot 30 is reserved */
+/* 30 */
+TCLAPI Tcl_Class	Tcl_GetClassOfObject(Tcl_Object object);
 /* 31 */
-TCLAPI void		TclOOUnusedStubEntry(void);
+TCLAPI Tcl_Obj *	Tcl_GetObjectClassName(Tcl_Interp *interp,
+				Tcl_Object object);
 
 typedef struct {
     const struct TclOOPrivateStubs *tclOOPrivateStubs;
@@ -163,8 +165,8 @@ typedef struct TclOOStubs {
     void (*tcl_ClassSetDestructor) (Tcl_Interp *interp, Tcl_Class clazz, Tcl_Method method); /* 27 */
     Tcl_Obj * (*tcl_GetObjectName) (Tcl_Interp *interp, Tcl_Object object); /* 28 */
     int (*tcl_MethodIsPrivate) (Tcl_Method method); /* 29 */
-    void (*reserved30)(void);
-    void (*tclOOUnusedStubEntry) (void); /* 31 */
+    Tcl_Class (*tcl_GetClassOfObject) (Tcl_Object object); /* 30 */
+    Tcl_Obj * (*tcl_GetObjectClassName) (Tcl_Interp *interp, Tcl_Object object); /* 31 */
 } TclOOStubs;
 
 extern const TclOOStubs *tclOOStubsPtr;
@@ -239,14 +241,13 @@ extern const TclOOStubs *tclOOStubsPtr;
 	(tclOOStubsPtr->tcl_GetObjectName) /* 28 */
 #define Tcl_MethodIsPrivate \
 	(tclOOStubsPtr->tcl_MethodIsPrivate) /* 29 */
-/* Slot 30 is reserved */
-#define TclOOUnusedStubEntry \
-	(tclOOStubsPtr->tclOOUnusedStubEntry) /* 31 */
+#define Tcl_GetClassOfObject \
+	(tclOOStubsPtr->tcl_GetClassOfObject) /* 30 */
+#define Tcl_GetObjectClassName \
+	(tclOOStubsPtr->tcl_GetObjectClassName) /* 31 */
 
 #endif /* defined(USE_TCLOO_STUBS) */
 
 /* !END!: Do not edit above this line. */
-
-#undef TclOOUnusedStubEntry
 
 #endif /* _TCLOODECLS */

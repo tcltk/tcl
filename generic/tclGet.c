@@ -53,7 +53,7 @@ Tcl_GetInt(
     if (obj.refCount > 1) {
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
-    TclFreeIntRep(&obj);
+    TclFreeInternalRep(&obj);
     return code;
 }
 
@@ -97,7 +97,7 @@ Tcl_GetDouble(
     if (obj.refCount > 1) {
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
-    TclFreeIntRep(&obj);
+    TclFreeInternalRep(&obj);
     return code;
 }
 
