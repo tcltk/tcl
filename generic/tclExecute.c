@@ -509,11 +509,11 @@ VarHashCreateVar(
  */
 
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
-    ((TclHasIntRep((objPtr), &tclIntType))					\
+    ((TclHasInternalRep((objPtr), &tclIntType))					\
 	?	(*(tPtr) = TCL_NUMBER_INT,				\
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
-    TclHasIntRep((objPtr), &tclDoubleType)				\
+    TclHasInternalRep((objPtr), &tclDoubleType)				\
 	?	(((TclIsNaN((objPtr)->internalRep.doubleValue))		\
 		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
@@ -759,9 +759,9 @@ ReleaseDictIterator(
 {
     Tcl_DictSearch *searchPtr;
     Tcl_Obj *dictPtr;
-    const Tcl_ObjIntRep *irPtr;
+    const Tcl_ObjInternalRep *irPtr;
 
-    irPtr = TclFetchIntRep(objPtr, &dictIteratorType);
+    irPtr = TclFetchInternalRep(objPtr, &dictIteratorType);
     assert(irPtr != NULL);
 
     /*
@@ -1474,7 +1474,7 @@ CompileExprObj(
      * is valid in the current context.
      */
 
-    ByteCodeGetIntRep(objPtr, &exprCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &exprCodeType, codePtr);
 
     if (codePtr != NULL) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
@@ -1484,7 +1484,7 @@ CompileExprObj(
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)
 		|| (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
-	    Tcl_StoreIntRep(objPtr, &exprCodeType, NULL);
+	    Tcl_StoreInternalRep(objPtr, &exprCodeType, NULL);
 	    codePtr = NULL;
 	}
     }
@@ -1538,7 +1538,7 @@ CompileExprObj(
  * DupExprCodeInternalRep --
  *
  *	Part of the Tcl object type implementation for Tcl expression
- *	bytecode. We do not copy the bytecode intrep. Instead, we return
+ *	bytecode. We do not copy the bytecode internalrep. Instead, we return
  *	without setting copyPtr->typePtr, so the copy is a plain string copy
  *	of the expression value, and if it is to be used as a compiled
  *	expression, it will just need a recompile.
@@ -1547,7 +1547,7 @@ CompileExprObj(
  *	usual (only?) time Tcl_DuplicateObj() will be called is when the copy
  *	is about to be modified, which would invalidate any copied bytecode
  *	anyway. The only reason it might make sense to copy the bytecode is if
- *	we had some modifying routines that operated directly on the intrep,
+ *	we had some modifying routines that operated directly on the internalrep,
  *	like we do for lists and dicts.
  *
  * Results:
@@ -1590,7 +1590,7 @@ FreeExprCodeInternalRep(
     Tcl_Obj *objPtr)
 {
     ByteCode *codePtr;
-    ByteCodeGetIntRep(objPtr, &exprCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &exprCodeType, codePtr);
     assert(codePtr != NULL);
 
     TclReleaseByteCode(codePtr);
@@ -1629,7 +1629,7 @@ TclCompileObj(
      * compilation). Otherwise, check that it is "fresh" enough.
      */
 
-    ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
     if (codePtr != NULL) {
 	/*
 	 * Make sure the Bytecode hasn't been invalidated by, e.g., someone
@@ -1775,7 +1775,7 @@ TclCompileObj(
     iPtr->invokeWord = word;
     TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
     iPtr->invokeCmdFramePtr = NULL;
-    ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;
@@ -4864,7 +4864,7 @@ TEBCresume(
 	 */
 
 	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& !TclHasIntRep(value2Ptr, &tclListType)) {
+		&& !TclHasInternalRep(value2Ptr, &tclListType)) {
 	    int code;
 
 	    DECACHE_STACK_INFO();
@@ -5262,7 +5262,7 @@ TEBCresume(
 	} else {
 	    length = Tcl_UtfToUpper(TclGetString(valuePtr));
 	    Tcl_SetObjLength(valuePtr, length);
-	    TclFreeIntRep(valuePtr);
+	    TclFreeInternalRep(valuePtr);
 	    TRACE_APPEND(("\"%.20s\"\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
@@ -5279,7 +5279,7 @@ TEBCresume(
 	} else {
 	    length = Tcl_UtfToLower(TclGetString(valuePtr));
 	    Tcl_SetObjLength(valuePtr, length);
-	    TclFreeIntRep(valuePtr);
+	    TclFreeInternalRep(valuePtr);
 	    TRACE_APPEND(("\"%.20s\"\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
@@ -5296,7 +5296,7 @@ TEBCresume(
 	} else {
 	    length = Tcl_UtfToTitle(TclGetString(valuePtr));
 	    Tcl_SetObjLength(valuePtr, length);
-	    TclFreeIntRep(valuePtr);
+	    TclFreeInternalRep(valuePtr);
 	    TRACE_APPEND(("\"%.20s\"\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
@@ -5610,8 +5610,8 @@ TEBCresume(
 	 * both.
 	 */
 
-	if (TclHasIntRep(valuePtr, &tclStringType)
-		|| TclHasIntRep(value2Ptr, &tclStringType)) {
+	if (TclHasInternalRep(valuePtr, &tclStringType)
+		|| TclHasInternalRep(value2Ptr, &tclStringType)) {
 	    Tcl_UniChar *ustring1, *ustring2;
 
 	    ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
@@ -6400,7 +6400,7 @@ TEBCresume(
 	if (Tcl_IsShared(valuePtr)) {
 	    /*
 	     * Here we do some surgery within the Tcl_Obj internals. We want
-	     * to copy the intrep, but not the string, so we temporarily hide
+	     * to copy the internalrep, but not the string, so we temporarily hide
 	     * the string so we do not copy it.
 	     */
 
@@ -6425,7 +6425,7 @@ TEBCresume(
 
     case INST_TRY_CVT_TO_BOOLEAN:
 	valuePtr = OBJ_AT_TOS;
-	if (TclHasIntRep(valuePtr,  &tclBooleanType)) {
+	if (TclHasInternalRep(valuePtr,  &tclBooleanType)) {
 	    objResultPtr = TCONST(1);
 	} else {
 	    int res = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
@@ -7260,7 +7260,7 @@ TEBCresume(
 
 	    /*
 	     * dictPtr is no longer on the stack, and we're not
-	     * moving it into the intrep of an iterator.  We need
+	     * moving it into the internalrep of an iterator.  We need
 	     * to drop the refcount [Tcl Bug 9b352768e6].
 	     */
 
@@ -7270,15 +7270,15 @@ TEBCresume(
 	    goto gotError;
 	}
 	{
-	    Tcl_ObjIntRep ir;
+	    Tcl_ObjInternalRep ir;
 	    TclNewObj(statePtr);
 	    ir.twoPtrValue.ptr1 = searchPtr;
 	    ir.twoPtrValue.ptr2 = dictPtr;
-	    Tcl_StoreIntRep(statePtr, &dictIteratorType, &ir);
+	    Tcl_StoreInternalRep(statePtr, &dictIteratorType, &ir);
 	}
 	varPtr = LOCAL(opnd);
 	if (varPtr->value.objPtr) {
-	    if (TclHasIntRep(varPtr->value.objPtr, &dictIteratorType)) {
+	    if (TclHasInternalRep(varPtr->value.objPtr, &dictIteratorType)) {
 		Tcl_Panic("mis-issued dictFirst!");
 	    }
 	    TclDecrRefCount(varPtr->value.objPtr);
@@ -7292,10 +7292,10 @@ TEBCresume(
 	TRACE(("%u => ", opnd));
 	statePtr = (*LOCAL(opnd)).value.objPtr;
 	{
-	    const Tcl_ObjIntRep *irPtr;
+	    const Tcl_ObjInternalRep *irPtr;
 
 	    if (statePtr &&
-		    (irPtr = TclFetchIntRep(statePtr, &dictIteratorType))) {
+		    (irPtr = TclFetchInternalRep(statePtr, &dictIteratorType))) {
 		searchPtr = (Tcl_DictSearch *)irPtr->twoPtrValue.ptr1;
 		Tcl_DictObjNext(searchPtr, &keyPtr, &valuePtr, &done);
 	    } else {
@@ -9852,7 +9852,7 @@ EvalStatsCmd(
     for (i = 0;  i < globalTablePtr->numBuckets;  i++) {
 	for (entryPtr = globalTablePtr->buckets[i];  entryPtr != NULL;
 		entryPtr = entryPtr->nextPtr) {
-	    if (TclHasIntRep(entryPtr->objPtr, &tclByteCodeType)) {
+	    if (TclHasInternalRep(entryPtr->objPtr, &tclByteCodeType)) {
 		numByteCodeLits++;
 	    }
 	    (void) TclGetStringFromObj(entryPtr->objPtr, &length);
