@@ -9,6 +9,7 @@
  * Copyright © 2001 ActiveState Corporation.
  * Copyright © 2005 Kevin B. Kenny.  All rights reserved.
  * Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 2021 Nathan Coulter.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -3430,14 +3431,13 @@ TclSetBignumIntRep(
  *      Extracts a number (of any possible numeric type) from an object.
  *
  * Results:
- *      Whether the extraction worked. The type is stored in the variable
- *      referred to by the typePtr argument, and a pointer to the
- *      representation is stored in the variable referred to by the
- *      clientDataPtr.
+ *      A standard Tcl completion code.  On success, the type is stored at the
+ *      address given by typePtr, and a pointer to the representation is stored
+ *      at the address given by clientDataPtr.
  *
  * Side effects:
- *      Can allocate thread-specific data for handling the copy-out space for
- *      bignums; this space is shared within a thread.
+ *      May allocate thread-specific data shared within a thread for handling
+ *      the copy-out space for bignums.
  *
  *----------------------------------------------------------------------
  */

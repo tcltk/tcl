@@ -3447,7 +3447,7 @@ static int
 GetEndOffsetFromObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,            /* Pointer to the object to parse */
-    size_t endValue,            /* The value to be stored at "indexPtr" if
+    size_t endValue,            /* The value to be stored at "widePtr" if
                                  * "objPtr" holds "end". */
     Tcl_WideInt *widePtr)       /* Location filled in with an integer
                                  * representing an index. */
@@ -3468,13 +3468,10 @@ GetEndOffsetFromObj(
 
 	    /* Value doesn't start with "e" */
 
-	    /* If we reach here, the string rep of objPtr exists. */
-
 	    /*
-	     * The valid index syntax does not include any value that is
-	     * a list of more than one element. This is necessary so that
-	     * lists of index values can be reliably distinguished from any
-	     * single index value.
+	     * So that lists of index values can be reliably distinguished from
+	     * any single index value, the valid index syntax does not include
+	     * any value that is a list of more than one element.
 	     */
 
 	    /*
@@ -3793,7 +3790,7 @@ TclIndexEncode(
 size_t
 TclIndexDecode(
     int encoded,	/* Value to decode */
-    size_t endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
+    ssize_t endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
 {
     if (encoded > (int)TCL_INDEX_END) {
 	return encoded;
@@ -3802,6 +3799,35 @@ TclIndexDecode(
 	return endValue + encoded - TCL_INDEX_END;
     }
     return TCL_INDEX_NONE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIndexLast --
+ *
+ *	Determine the last index for an array of length "length", where -1 means N is
+ *	not bounded.
+ *
+ *----------------------------------------------------------------------
+ */
+ssize_t
+TclIndexLast (ssize_t length) {
+    return TclLengthIsFinite(length) ? length - 1 : length;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclLengthIsFinite --
+ *
+ *	True if length is Finite.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclLengthIsFinite(ssize_t length) {
+    return length >= 0;
 }
 
 /*

@@ -448,22 +448,32 @@ TclListObjCopy(
  */
 Tcl_Obj *
 TclListObjRange(
+    Tcl_Interp *interp,
     Tcl_Obj *listPtr,		/* List object to take a range from. */
     int length,			/* the length of the list */
     size_t fromIdx,		/* Index of first element to include. */
     size_t toIdx)			/* Index of last element to include. */
 {
+    if (fromIdx == TCL_INDEX_NONE) {
+	fromIdx = 0;
+    }
+    if (TclLengthIsFinite(length) && toIdx + 1 >= (size_t)length + 1) {
+	toIdx = length-1;
+    }
+
+    if (fromIdx + 1 > toIdx + 1) {
+	Tcl_Obj *obj;
+	TclNewObj(obj);
+	return obj;
+    }
     return TclObjectDispatch(listPtr, TclListObjRangeDefault, list, range,
-	listPtr, length, fromIdx, toIdx);
+	interp, listPtr, length, fromIdx, toIdx);
 }
 
 
 Tcl_Obj *
 TclListObjRangeDefault(
-    Tcl_Obj *listPtr,
-    int length,
-    size_t fromIdx,
-    size_t toIdx)
+    tclObjTypeInterfaceArgsListRange)
 {
     Tcl_Obj **elemPtrs;
     int listLen;
@@ -471,18 +481,6 @@ TclListObjRangeDefault(
     List *listRepPtr;
 
     TclListObjGetElements(NULL, listPtr, &listLen, &elemPtrs);
-
-    if (fromIdx == TCL_INDEX_NONE) {
-	fromIdx = 0;
-    }
-    if (toIdx + 1 >= (size_t)listLen + 1) {
-	toIdx = listLen-1;
-    }
-    if (fromIdx + 1 > toIdx + 1) {
-	Tcl_Obj *obj;
-	TclNewObj(obj);
-	return obj;
-    }
 
     newLen = toIdx - fromIdx + 1;
 
@@ -520,7 +518,6 @@ TclListObjRangeDefault(
 
     listRepPtr = ListRepPtr(listPtr);
     listRepPtr->elemCount = newLen;
-
     return listPtr;
 }
 

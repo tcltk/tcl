@@ -9,6 +9,7 @@
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 by Scriptics Corporation.
  * Copyright (c) 2002 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2021 by Nathan Coulter.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

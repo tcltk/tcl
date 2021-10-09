@@ -2690,7 +2690,8 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    Tcl_SetObjResult(interp, TclListObjRange(objv[1], first, last));
+    Tcl_SetObjResult(interp,
+	TclListObjRange(interp, objv[1], listLen, first, last));
     return TCL_OK;
 }
 

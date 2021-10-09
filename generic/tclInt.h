@@ -11,6 +11,7 @@
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
  * Copyright (c) 2008 by Miguel Sofer. All rights reserved.
+ * Copyright (c) 2021 by Nathan Coulter. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -254,11 +255,13 @@ typedef struct ObjectType {
     Tcl_ObjInterface *interface;
 } ObjectType;
 
+#define TclObjectInterfaceCall(objPtr, iface, proc, ...)		    \
+    ((ObjInterface *)((ObjectType *)(objPtr)->typePtr)->interface)	    \
+	->iface.proc(__VA_ARGS__)
 
 #define TclObjectDispatch(objPtr, default, iface, proc, ...)		    \
     TclObjectHasInterface((objPtr), iface, proc)			    \
-    ? ((ObjInterface *)((ObjectType *)(objPtr)->typePtr)->interface)	    \
-	->iface.proc(__VA_ARGS__)					    \
+    ? TclObjectInterfaceCall(objPtr, iface, proc, __VA_ARGS__)		    \
     : (default)(__VA_ARGS__)						    
 
 #define TclObjectHasInterface(objPtr, iface, proc)			    \
@@ -313,8 +316,9 @@ typedef struct ObjectType {
     int *intPtr		/* The resulting int is stored here. */
 
 #define tclObjTypeInterfaceArgsListRange \
+    Tcl_Interp *interp,		/* Used to report errors */ \
     Tcl_Obj *listPtr,	/* List object to take a range from. */ \
-    int length,			/* Lngth of the list */  \
+    int length,							\
     size_t fromIdx,		/* Index of first element to \
 				include.  */ \
     size_t toIdx		/* Index of last element to include. */
@@ -3139,6 +3143,7 @@ MODULE_SCOPE int	TclGetWideBitsFromObj(Tcl_Interp *, Tcl_Obj *,
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_Obj *unquotedPrefix, int globFlags,
 			    Tcl_GlobTypeData *types);
+MODULE_SCOPE ssize_t	TclIndexLast (ssize_t N);
 MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 			    Tcl_Obj *incrPtr);
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
@@ -3176,6 +3181,7 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int indexCount, Tcl_Obj *const indexArray[]);
+MODULE_SCOPE int	TclLengthIsFinite(ssize_t length);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
 			    int *lines, Tcl_Obj *const *elems);
@@ -3193,10 +3199,10 @@ MODULE_SCOPE int	(*TclObjInterfaceGetListIndex (Tcl_Obj *objPtr))
 			    (tclObjTypeInterfaceArgsListIndex);
 MODULE_SCOPE int	TclListObjLengthDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int *intPtr);
-MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, int length, size_t fromIdx,
-			    size_t toIdx);
-MODULE_SCOPE Tcl_Obj *	TclListObjRangeDefault(Tcl_Obj *listPtr, int length, size_t fromIdx,
-			    size_t toIdx);
+MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Interp *interp, Tcl_Obj *listPtr, int length
+			    , size_t fromIdx, size_t toIdx);
+MODULE_SCOPE Tcl_Obj *	TclListObjRangeDefault(Tcl_Interp *interp, Tcl_Obj *listPtr, int length
+			    , size_t fromIdx, size_t toIdx);
 MODULE_SCOPE int	TclListObjReplaceDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int first, int count, int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclListObjSetElementDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
@@ -4336,7 +4342,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
 
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    size_t before, size_t after, int *indexPtr);
-MODULE_SCOPE size_t	TclIndexDecode(int encoded, size_t endValue);
+MODULE_SCOPE size_t	TclIndexDecode(int encoded, ssize_t endValue);
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           ((size_t)-2)

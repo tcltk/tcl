@@ -10,6 +10,7 @@
  * Copyright © 2005-2007 Donal K. Fellows.
  * Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
  * Copyright © 2006-2008 Joe Mistachkin.  All rights reserved.
+ * Copyright © 2021 Nathan Coulter.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -4888,11 +4889,11 @@ TEBCresume(
 	    TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	    NEXT_INST_F(9, 1, 1);
 	}
-	toIdx = TclIndexDecode(toIdx, objc - 1);
+	toIdx = TclIndexDecode(toIdx, TclIndexLast(objc));
 	if (toIdx == TCL_INDEX_NONE) {
 	    goto emptyList;
-	} else if (toIdx + 1 >= (size_t)objc + 1) {
-	    toIdx = objc - 1;
+	} else if (TclLengthIsFinite(objc) && toIdx + 1 >= (size_t)objc + 1) {
+	    toIdx = TclIndexLast(objc);
 	}
 
 	assert (toIdx < (size_t)objc);
@@ -4907,7 +4908,7 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	objResultPtr = TclListObjRange(valuePtr, objc, fromIdx, toIdx);
+	objResultPtr = TclListObjRange(interp, valuePtr, objc, fromIdx, toIdx);
 
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
