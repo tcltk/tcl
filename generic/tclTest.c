@@ -634,6 +634,9 @@ Tcltest_Init(
     if (TclObjTest_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
     }
+    if (TcltestObjectInterfaceInit(interp) != TCL_OK) {
+	return TCL_ERROR;
+    }
     if (Procbodytest_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
     }

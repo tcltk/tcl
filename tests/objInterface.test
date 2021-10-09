@@ -1,0 +1,46 @@
+# Copyright © 2021 Nathan Coulter
+
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+testConstraint testindexhex [expr {[namespace which testindexhex] ne {}}] 
+
+test {list lindex} {} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	lindex $list 731
+    } -cleanup {
+	catch {unset list}
+    } -result 2db 
+
+
+test {list lindex drill} {} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	lindex $list 731 0 0 0
+    } -cleanup {
+	catch {unset list}
+    } -result 2db 
+
+
+test {list lrange} {} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	lrange $list 10 15
+    } -cleanup {
+	catch {unset list}
+    } -result {a b c d e f}
+
+
+# cleanup
+::tcltest::cleanupTests
+return
