@@ -3813,7 +3813,7 @@ TclIndexDecode(
  */
 ssize_t
 TclIndexLast (ssize_t length) {
-    return TclLengthIsFinite(length) ? length - 1 : length;
+    return TclLengthIsFinite(length) ? length - 1 : TCL_INDEX_NONE;
 }
 
 /*

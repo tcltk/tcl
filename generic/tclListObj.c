@@ -1400,7 +1400,7 @@ TclLindexFlat(
 	    useinterface = 0;
 
 	    /*
-	     * Here we make a private copy of the current sublistkto avoid any
+	     * Make a private copy here of the current sublist to avoid any
 	     * shimmering issues that might invalidate the elemPtr array below
 	     * while we are still using it. See test lindex-8.4.
 	     */
@@ -1424,6 +1424,15 @@ TclLindexFlat(
 		, /*endValue*/ listLen >= 0 ? listLen-1 : listLen
 		, &index) == TCL_OK) {
 
+	    if (index == TCL_INDEX_NONE) {
+		Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("list length indeterminate", -1));
+			if (!useinterface) {
+			    Tcl_DecrRefCount(sublistPtr);
+			}
+			return NULL;
+	    }
+
 	    if (index >= (size_t)listLen) {
 		/*
 		 * Index is out of range. Break out of loop with empty result.
@@ -1433,7 +1442,9 @@ TclLindexFlat(
 		while (++i < indexCount) {
 		    if (TclGetIntForIndexM(interp, indexArray[i], (size_t)WIDE_MAX - 1, &index)
 			!= TCL_OK) {
-			Tcl_DecrRefCount(sublistPtr);
+			if (!useinterface) {
+			    Tcl_DecrRefCount(sublistPtr);
+			}
 			return NULL;
 		    }
 		}

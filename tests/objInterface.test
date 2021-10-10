@@ -11,7 +11,10 @@ if {"::tcltest" ni [namespace children]} {
 ::tcltest::loadTestedCommands
 testConstraint testindexhex [expr {[namespace which testindexhex] ne {}}] 
 
-test {list lindex} {} \
+variable list
+variable res
+
+test {list lindex constant} {INST_LIST_INDEX_IMM} \
     -constraints testindexhex \
     -body {
 	set list [testindexhex]
@@ -19,6 +22,42 @@ test {list lindex} {} \
     } -cleanup {
 	catch {unset list}
     } -result 2db 
+
+
+test {list lindex constant end} {INST_LIST_INDEX_IMM} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	lindex $list end
+    } -cleanup {
+	catch {unset list}
+	catch {unset res}
+    } -returnCodes 1 -result {list length indeterminate}
+
+
+
+test {list lindex dynamic} {INST_LIST_INDEX} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	set val [expr {731 + 0}]
+	after 100
+	lindex $list $val 
+    } -cleanup {
+	catch {unset list}
+    } -result 2db 
+
+
+test {list lindex dynamic end} {INST_LIST_INDEX} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	append index e n d
+	lindex $list $index
+    } -cleanup {
+	catch {unset list}
+	catch {unset res}
+    } -returnCodes 1 -result {list length indeterminate}
 
 
 test {list lindex drill} {} \

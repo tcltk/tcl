@@ -4654,8 +4654,11 @@ TEBCresume(
 	 * Extract the desired list element.
 	 */
 
-	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& !TclHasIntRep(value2Ptr, tclListType)) {
+	if ((TclHasIntRep(valuePtr, tclListType)
+	    || !TclObjectHasInterface(valuePtr, list, index))
+	    && (TclListObjGetElements(interp, valuePtr, &objc, &objv)
+		== TCL_OK)
+	    && !TclHasIntRep(value2Ptr, tclListType)) {
 	    int code;
 
 	    DECACHE_STACK_INFO();
@@ -4701,7 +4704,19 @@ TEBCresume(
 
 	if (!TclHasIntRep(valuePtr, tclListType)
 	    && TclObjectHasInterface(valuePtr, list, index)) {
-	    if (Tcl_ListObjIndex(interp, valuePtr, opnd, &objResultPtr)
+	    if (TclListObjLength(interp, valuePtr, &objc) != TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    index = TclIndexDecode(opnd, TclIndexLast(objc));
+
+	    if (index == TCL_INDEX_NONE) {
+		Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("list length indeterminate", -1));
+		goto gotError;
+	    }
+
+	    if (Tcl_ListObjIndex(interp, valuePtr, index, &objResultPtr)
 		!= TCL_OK) {
 		TRACE_ERROR(interp);
 		goto gotError;
@@ -4721,7 +4736,7 @@ TEBCresume(
 	    }
 	    /* Decode end-offset index values. */
 
-	    index = TclIndexDecode(opnd, objc - 1);
+	    index = TclIndexDecode(opnd, TclIndexLast(objc));
 	    pcAdjustment = 5;
 	}
 
