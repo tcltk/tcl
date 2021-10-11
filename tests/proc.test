@@ -332,7 +332,7 @@ test proc-4.10 {
     }
 } -cleanup {
     catch {rename p1 {}}
-} -result 0 
+} -result 0
 
 test proc-5.1 {Bytecompiling noop; test for correct argument substitution} -body {
     proc p args {} ; # this will be bytecompiled into t
