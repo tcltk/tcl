@@ -1353,9 +1353,6 @@ typedef enum {
 typedef struct Tcl_Time {
     long sec;			/* Seconds. */
     long usec;			/* Microseconds. */
-#if defined(_WIN32) && defined(_WIN64)
-    long long reserved;	/* Not used, except for win64 <-> Cygwin64 interoperability. */
-#endif
 } Tcl_Time;
 
 typedef void (Tcl_SetTimerProc) (CONST86 Tcl_Time *timePtr);
