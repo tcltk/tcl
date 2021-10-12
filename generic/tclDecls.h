@@ -3963,7 +3963,7 @@ extern const TclStubs *tclStubsPtr;
 		    if (_t.reserved != -1) { \
 			_t.now.usec = _t.reserved; \
 		    } \
-		    *t = _t.now; \
+		    *(t) = _t.now; \
 		} while (0)
 #   endif
 #   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
