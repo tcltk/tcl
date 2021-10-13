@@ -1187,11 +1187,10 @@ ZipFSFindTOC(
     int needZip,
     ZipFile *zf)
 {
-    size_t i;
+    size_t i, minoff;
     const unsigned char *p, *q;
     const unsigned char *start = zf->data;
     const unsigned char *end = zf->data + zf->length;
-    size_t pass_offset;
     
     /*
      * Scan backwards from the end of the file for the signature. This is
@@ -1225,11 +1224,6 @@ ZipFSFindTOC(
 	goto error;
     }
 
-    /* 
-     * Remember passOffset 
-     */
-    pass_offset = p - zf->data;
-
     /*
      * How many files in the archive? If that's bogus, we're done here.
      */
@@ -1251,6 +1245,8 @@ ZipFSFindTOC(
 
     q = zf->data + ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSTART_OFFS);
     p -= ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSIZE_OFFS);
+    zf->baseOffset = zf->passOffset = (p>q) ? p - q : 0;
+    zf->directoryOffset = q - zf->data + zf->baseOffset;
     if ((p < q) || (p < zf->data) || (p > zf->data + zf->length)
 	    || (q < zf->data) || (q > zf->data + zf->length)) {
 	if (!needZip) {
@@ -1266,11 +1262,11 @@ ZipFSFindTOC(
      * Read the central directory.
      */
 
-    zf->baseOffset = zf->passOffset = p - q;
-    zf->directoryOffset = p - zf->data;
     q = p;
+    minoff = zf->length;
     for (i = 0; i < zf->numFiles; i++) {
 	int pathlen, comlen, extra;
+	size_t localhdr_off = zf->length;
 
 	if (q + ZIP_CENTRAL_HEADER_LEN > end) {
 	    ZIPFS_ERROR(interp, "wrong header length");
@@ -1285,16 +1281,27 @@ ZipFSFindTOC(
 	pathlen = ZipReadShort(start, end, q + ZIP_CENTRAL_PATHLEN_OFFS);
 	comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
 	extra = ZipReadShort(start, end, q + ZIP_CENTRAL_EXTRALEN_OFFS);
+	localhdr_off = ZipReadInt(start, end, q + ZIP_CENTRAL_LOCALHDR_OFFS);
+ 	if (ZipReadInt(start, end, zf->data + zf->baseOffset + localhdr_off) != ZIP_LOCAL_HEADER_SIG) {
+	    ZIPFS_ERROR(interp, "Failed to find local header");
+	    ZIPFS_ERROR_CODE(interp, "LCL_HDR");
+	    goto error;
+	}
+	if (localhdr_off < minoff) {
+	    minoff = localhdr_off;
+	}
 	q += pathlen + comlen + extra + ZIP_CENTRAL_HEADER_LEN;
     }
 
+    zf->passOffset = minoff + zf->baseOffset;
+    
     /*
      * If there's also an encoded password, extract that too (but don't decode
      * yet).
      */
 
-    q = zf->data + zf->baseOffset;
-    if ((zf->baseOffset >= 6) &&
+    q = zf->data + zf->passOffset;
+    if ((zf->passOffset >= 6) && (start < q-4) &&
 	    (ZipReadInt(start, end, q - 4) == ZIP_PASSWORD_END_SIG)) {
 	const unsigned char *passPtr;
 
@@ -1307,11 +1314,6 @@ ZipFSFindTOC(
 	}
     }
 
-    /* 
-     * Restore passOffset 
-     */
-    zf->passOffset = pass_offset;
-    
     return TCL_OK;
 
   error:
