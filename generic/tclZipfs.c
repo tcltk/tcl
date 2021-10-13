@@ -3122,22 +3122,6 @@ ZipFSMkZipOrImg(
 	     * Copy everything up to the ZIP-related suffix.
 	     */
 
-	    if (zf->passOffset == 0) {
-		/*
-		 * Hmm, this mounted archive is local (in this image), but
-		 * zf->passOffset does not have a valid value.  Let's open
-		 * this image and find the passOffset so as to copy the image
-		 * correctly.
-		 */
-		
-		ZipFile zflocal;
-		memset(&zflocal, 0, sizeof(ZipFile));
-		if (ZipFSOpenArchive(interp, imgName, 0, &zflocal) == TCL_OK) {
-		    zf->passOffset = zflocal.passOffset;
-		    ZipFSCloseArchive(interp, &zflocal);
-		}
-	    }
-
 	    if ((size_t) Tcl_Write(out, (char *) zf->data,
 		    zf->passOffset) != zf->passOffset) {
 		memset(passBuf, 0, sizeof(passBuf));
