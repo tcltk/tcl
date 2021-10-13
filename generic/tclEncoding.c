@@ -2396,7 +2396,7 @@ Utf32ToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    unsigned short ch;
+    int ch;
 
     flags |= PTR2INT(clientData);
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
@@ -2436,7 +2436,7 @@ Utf32ToUtfProc(
 	 * unsigned short-size data.
 	 */
 
-	if (ch && ch < 0x80) {
+	if ((ch > 0) && (ch < 0x80)) {
 	    *dst++ = (ch & 0xFF);
 	} else {
 	    dst += Tcl_UniCharToUtf(ch, dst);
