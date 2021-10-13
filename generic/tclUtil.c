@@ -3447,7 +3447,7 @@ static int
 GetEndOffsetFromObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,            /* Pointer to the object to parse */
-    size_t endValue,            /* The value to be stored at "widePtr" if
+    size_t endValue,           /* The value to be stored at "widePtr" if
                                  * "objPtr" holds "end". */
     Tcl_WideInt *widePtr)       /* Location filled in with an integer
                                  * representing an index. */
@@ -3589,6 +3589,7 @@ GetEndOffsetFromObj(
 	    /* Doesn't start with "end" */
 	    goto parseError;
 	}
+
 	if (length > 4) {
 	    int t;
 
@@ -3683,7 +3684,7 @@ GetEndOffsetFromObj(
  *
  *      Parse objPtr to determine if it is an index value. Two cases
  *	are possible.  The value objPtr might be parsed as an absolute
- *	index value in the C signed int range.  Note that this includes
+ *	index value in the C signed int range.  This includes
  *	index values that are integers as presented and it includes index
  *      arithmetic expressions. The absolute index values that can be
  *	directly meaningful as an index into either a list or a string are
@@ -3745,20 +3746,24 @@ TclIndexEncode(
     if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
 	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &endOffsetType);
 	if (irPtr && irPtr->wideValue >= 0) {
-	    /* "int[+-]int" syntax, works the same here as "int" */
+	    /* NULL indicates the index is not end-relative. */
 	    irPtr = NULL;
+	} else {
+	    /*
+	     * The index is end-relative, and wide holds the offset value in the
+	     * range WIDE_MIN...WIDE_MAX.
+	     */
 	}
-	/*
-	 * We parsed an end+offset index value.
-	 * wide holds the offset value in the range WIDE_MIN...WIDE_MAX.
-	 */
+
+	/* "int[+-]int" expressions have been reduced to a single index. */
+
 	if (wide > (unsigned)(irPtr ? TCL_INDEX_END : INT_MAX)) {
 	    /*
-	     * All end+postive or end-negative expressions
+	     * All end+positive or end-negative expressions
 	     * always indicate "after the end".
 	     */
 	    idx = after;
-	} else if (wide <= (irPtr ? INT_MAX : -1)) {
+	} else if (wide <= (irPtr ? INT_MIN : -1)) {
 	    /* These indices always indicate "before the beginning */
 	    idx = before;
 	} else {
@@ -3790,7 +3795,7 @@ TclIndexEncode(
 size_t
 TclIndexDecode(
     int encoded,	/* Value to decode */
-    ssize_t endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
+    size_t endValue)	/* Meaning of "end" to use, > TCL_INDEX_END */
 {
     if (encoded > (int)TCL_INDEX_END) {
 	return encoded;
@@ -3799,6 +3804,10 @@ TclIndexDecode(
 	return endValue + encoded - TCL_INDEX_END;
     }
     return TCL_INDEX_NONE;
+}
+
+int TclIndexIsFromEnd(int encoded) {
+    return encoded < 0;
 }
 
 /*
@@ -3811,8 +3820,8 @@ TclIndexDecode(
  *
  *----------------------------------------------------------------------
  */
-ssize_t
-TclIndexLast (ssize_t length) {
+size_t
+TclIndexLast (size_t length) {
     return TclLengthIsFinite(length) ? length - 1 : TCL_INDEX_NONE;
 }
 

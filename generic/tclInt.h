@@ -264,6 +264,14 @@ typedef struct ObjectType {
     ? TclObjectInterfaceCall(objPtr, iface, proc, __VA_ARGS__)		    \
     : (default)(__VA_ARGS__)						    
 
+
+#define TclObjectDispatchNoDefault(interp, objPtr, iface, proc, ...)	    \
+    TclObjectHasInterface((objPtr), iface, proc)			    \
+    ? TclObjectInterfaceCall(objPtr, iface, proc, __VA_ARGS__)		    \
+    : (Tcl_SetObjResult((interp),					    \
+	Tcl_NewStringObj("interface not provided", -1)), TCL_ERROR)
+
+
 #define TclObjectHasInterface(objPtr, iface, proc)			    \
     ((objPtr)->typePtr != NULL						    \
     && (void *)(objPtr)->typePtr->name == (void *)&TclObjectTypeType0	    \
@@ -301,14 +309,11 @@ typedef struct ObjectType {
     int index,		/* Index of element to return. */ \
     Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 
-#define tclObjTypeInterfaceArgsListIndexList \
-    Tcl_Interp *interp,	/* Tcl interpreter. */ \
-    Tcl_Obj *listPtr,	/* Tcl object representing the list. */ \
-    int indexCount,		/* Count of indices. */ \
-			    /* Array of pointers to Tcl objects \
-			     * that represent the indices in the \
-			     * list. */ \
-    Tcl_Obj *const indexArray[]
+#define tclObjTypeInterfaceArgsListIndexEnd \
+    Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
+    Tcl_Obj *listPtr,	/* List object to index into. */ \
+    int index,		/* Index of element to return. */ \
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 
 #define tclObjTypeInterfaceArgsListLength \
     Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
@@ -316,7 +321,7 @@ typedef struct ObjectType {
     int *intPtr		/* The resulting int is stored here. */
 
 #define tclObjTypeInterfaceArgsListRange \
-    Tcl_Interp *interp,		/* Used to report errors */ \
+    Tcl_Interp * interp, /* Used to report errors */ \
     Tcl_Obj *listPtr,	/* List object to take a range from. */ \
     int length,							\
     size_t fromIdx,		/* Index of first element to \
@@ -359,7 +364,8 @@ typedef struct ObjInterface {
 	int (*append)(tclObjTypeInterfaceArgsListAppend);
 	int (*appendlist)(tclObjTypeInterfaceArgsListAppendList);
 	int (*index)(tclObjTypeInterfaceArgsListIndex);
-	int (* length)(tclObjTypeInterfaceArgsListLength);
+	int (*indexEnd)(tclObjTypeInterfaceArgsListIndexR);
+	int (*length)(tclObjTypeInterfaceArgsListLength);
 	Tcl_Obj* (*range)(tclObjTypeInterfaceArgsListRange);
 	int (*replace)(tclObjTypeInterfaceArgsListReplace);
 	int (*set)(tclObjTypeInterfaceArgsListSet);
@@ -3143,7 +3149,8 @@ MODULE_SCOPE int	TclGetWideBitsFromObj(Tcl_Interp *, Tcl_Obj *,
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_Obj *unquotedPrefix, int globFlags,
 			    Tcl_GlobTypeData *types);
-MODULE_SCOPE ssize_t	TclIndexLast (ssize_t N);
+MODULE_SCOPE int	TclIndexIsFromEnd(int encoded);
+MODULE_SCOPE size_t	TclIndexLast (size_t N);
 MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 			    Tcl_Obj *incrPtr);
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
@@ -4342,7 +4349,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetArrayDefault(Var *arrayPtr);
 
 MODULE_SCOPE int	TclIndexEncode(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    size_t before, size_t after, int *indexPtr);
-MODULE_SCOPE size_t	TclIndexDecode(int encoded, ssize_t endValue);
+MODULE_SCOPE size_t	TclIndexDecode(int encoded, size_t endValue);
 
 /* Constants used in index value encoding routines. */
 #define TCL_INDEX_END           ((size_t)-2)

@@ -4708,18 +4708,22 @@ TEBCresume(
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    index = TclIndexDecode(opnd, TclIndexLast(objc));
 
-	    if (index == TCL_INDEX_NONE) {
-		Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("list length indeterminate", -1));
-		goto gotError;
-	    }
+	    if (TclIndexIsFromEnd(opnd)
+		&& TclIndexLast(objc) == TCL_INDEX_NONE) {
 
-	    if (Tcl_ListObjIndex(interp, valuePtr, index, &objResultPtr)
-		!= TCL_OK) {
-		TRACE_ERROR(interp);
-		goto gotError;
+		/* end-relative index, and list end is indeterminate */ 
+		if (TclObjectDispatchNoDefault(interp, valuePtr, list, indexEnd,
+		    interp, valuePtr, index, &objResultPtr) != TCL_OK) {
+		    goto gotError;
+		}
+	    } else {
+		index = TclIndexDecode(opnd, TclIndexLast(objc));
+		if (Tcl_ListObjIndex(interp, valuePtr, index, &objResultPtr)
+		    != TCL_OK) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
 	    }
 
 	    /*
