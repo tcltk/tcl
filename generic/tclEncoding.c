@@ -37,7 +37,7 @@ typedef struct {
 				 * end-of-string in this encoding. This number
 				 * is used to determine the source string
 				 * length when the srcLen argument is
-				 * negative. This number can be 1 or 2. */
+				 * negative. This number can be 1, 2, or 4. */
     ClientData clientData;	/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
     LengthProc *lengthProc;	/* Function to compute length of
@@ -46,8 +46,8 @@ typedef struct {
 				 * nullSize is 2, this is a function that
 				 * returns the number of bytes in a 0x0000
 				 * terminated string; if nullSize is 4, this
-				 * is a function that returns the number of bytes
-				 * in a 0x00000000 terminated string. */
+				 * is a function that returns the number of
+				 * bytes in a 0x00000000 terminated string. */
     size_t refCount;		/* Number of uses of this structure. */
     Tcl_HashEntry *hPtr;	/* Hash table entry that owns this encoding. */
 } Encoding;
@@ -218,8 +218,8 @@ static Tcl_Channel		OpenEncodingFileChannel(Tcl_Interp *interp,
 static Tcl_EncodingFreeProc	TableFreeProc;
 static Tcl_EncodingConvertProc	TableFromUtfProc;
 static Tcl_EncodingConvertProc	TableToUtfProc;
-static size_t			char16len(const char *src);
-static size_t			unilen(const char *src);
+static size_t		unilen(const char *src);
+static size_t		unilen4(const char *src);
 static Tcl_EncodingConvertProc	Utf32ToUtfProc;
 static Tcl_EncodingConvertProc	UtfToUtf32Proc;
 static Tcl_EncodingConvertProc	Utf16ToUtfProc;
@@ -1077,9 +1077,9 @@ Tcl_CreateEncoding(
     encodingPtr->nullSize	= typePtr->nullSize;
     encodingPtr->clientData	= typePtr->clientData;
     if (typePtr->nullSize == 2) {
-	encodingPtr->lengthProc = (LengthProc *) char16len;
-    } else if (typePtr->nullSize == 4) {
 	encodingPtr->lengthProc = (LengthProc *) unilen;
+    } else if (typePtr->nullSize == 4) {
+	encodingPtr->lengthProc = (LengthProc *) unilen4;
     } else {
 	encodingPtr->lengthProc = (LengthProc *) strlen;
     }
@@ -1364,7 +1364,7 @@ Tcl_UtfToExternalDString(
 
 	src += srcRead;
 	if (result != TCL_CONVERT_NOSPACE) {
-		int i = soFar + encodingPtr->nullSize - 1;
+	    int i = soFar + encodingPtr->nullSize - 1;
 	    while (i >= soFar) {
 		Tcl_DStringSetLength(dstPtr, i--);
 	    }
@@ -2501,7 +2501,7 @@ UtfToUtf32Proc(
     }
 
     dstStart = dst;
-    dstEnd   = dst + dstLen - sizeof(Tcl_UniChar);
+    dstEnd = dst + dstLen - sizeof(Tcl_UniChar);
     flags |= PTR2INT(clientData);
 
     result = TCL_OK;
@@ -2540,6 +2540,7 @@ UtfToUtf32Proc(
 	    *dst++ = (ch & 0xFF);
 	}
     }
+
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -2861,7 +2862,7 @@ UtfToUcs2Proc(
     *dstCharsPtr = numChars;
     return result;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -3303,7 +3304,7 @@ TableFreeProc(
     ClientData clientData)	/* TableEncodingData that specifies
 				 * encoding. */
 {
-    TableEncodingData *dataPtr = (TableEncodingData *) clientData;
+    TableEncodingData *dataPtr = (TableEncodingData *)clientData;
 
     /*
      * Make sure we aren't freeing twice on shutdown. [Bug 219314]
@@ -3361,7 +3362,7 @@ EscapeToUtfProc(
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
-    EscapeEncodingData *dataPtr = (EscapeEncodingData *) clientData;
+    EscapeEncodingData *dataPtr = (EscapeEncodingData *)clientData;
     const char *prefixBytes, *tablePrefixBytes, *srcStart, *srcEnd;
     const unsigned short *const *tableToUnicode;
     const Encoding *encodingPtr;
@@ -3838,7 +3839,7 @@ GetTableEncoding(
 /*
  *---------------------------------------------------------------------------
  *
- * unilen/char16len --
+ * unilen, unilen4 --
  *
  *	A helper function for the Tcl_ExternalToUtf functions. This function
  *	is similar to strlen for double-byte characters: it returns the number
@@ -3854,7 +3855,7 @@ GetTableEncoding(
  */
 
 static size_t
-char16len(
+unilen(
     const char *src)
 {
     unsigned short *p;
@@ -3867,13 +3868,13 @@ char16len(
 }
 
 static size_t
-unilen(
+unilen4(
     const char *src)
 {
     unsigned int *p;
 
     p = (unsigned int *) src;
-    while (*p != 0x0000) {
+    while (*p != 0x00000000) {
 	p++;
     }
     return (char *) p - src;
@@ -3909,7 +3910,7 @@ InitializeEncodingSearchPath(
     Tcl_Encoding *encodingPtr)
 {
     const char *bytes;
-    int i, numDirs;
+    int i, numDirs, numBytes;
     Tcl_Obj *libPathObj, *encodingObj, *searchPathObj;
 
     TclNewLiteralStringObj(encodingObj, "encoding");
@@ -3939,11 +3940,11 @@ InitializeEncodingSearchPath(
     if (*encodingPtr) {
 	((Encoding *)(*encodingPtr))->refCount++;
     }
-    bytes = TclGetString(searchPathObj);
+    bytes = Tcl_GetStringFromObj(searchPathObj, &numBytes);
 
-    *lengthPtr = searchPathObj->length;
-    *valuePtr = (char *)ckalloc(*lengthPtr + 1);
-    memcpy(*valuePtr, bytes, *lengthPtr + 1);
+    *lengthPtr = numBytes;
+    *valuePtr = (char *)ckalloc(numBytes + 1);
+    memcpy(*valuePtr, bytes, numBytes + 1);
     Tcl_DecrRefCount(searchPathObj);
 }
 
