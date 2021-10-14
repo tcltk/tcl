@@ -51,6 +51,7 @@ ObjInterface tclListInterface = {
 	NULL,
 	&TclListObjLengthDefault,
 	&TclListObjRangeDefault,
+	NULL,
 	&TclListObjReplaceDefault,
 	&TclListObjSetElementDefault,
 	&TclLsetFlatDefault
@@ -1385,13 +1386,13 @@ TclLindexFlat(
     Tcl_Obj *const indexArray[])/* Array of pointers to Tcl objects that
 				 * represent the indices in the list. */
 {
-    int haveindex, operand, status, i;
+    int operand, status, i;
 
     Tcl_IncrRefCount(listPtr);
 
     for (i=0 ; i<indexCount && listPtr ; i++) {
 	size_t index;
-	int listLen = 0, useinterface;
+	int dstatus, listLen = 0, useinterface;
 	Tcl_Obj **elemPtrs = NULL, *sublistPtr;
 	if (!TclHasIntRep(listPtr, tclListType)
 	    && TclObjectHasInterface(listPtr, list, index)) {
@@ -1409,9 +1410,9 @@ TclLindexFlat(
 
 			index = TclIndexDecode(operand, SIZE_MAX);
 
-			status = TclObjectDispatchNoDefault(interp, sublistPtr,
+			dstatus = TclObjectDispatchNoDefault(interp, status, sublistPtr,
 			    list, indexEnd, interp, sublistPtr, index, &listPtr);
-			if (status == TCL_OK) {
+			if (dstatus == TCL_OK && status == TCL_OK) {
 			    Tcl_IncrRefCount(listPtr);
 			    continue;
 			} else {

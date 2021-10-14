@@ -4620,7 +4620,8 @@ TEBCresume(
      */
 
     {
-	int numIndices, nocase, match, cflags;
+	int dstatus, lastIdx, numIndices, nocase, match, cflags,
+	    toIdxAnchor, fromIdxAnchor;
 	size_t slength, length2, fromIdx, toIdx, index, s1len, s2len;
 	const char *s1, *s2;
 
@@ -4709,12 +4710,12 @@ TEBCresume(
 		goto gotError;
 	    }
 
-	    if (TclIndexIsFromEnd(opnd)
-		&& TclIndexLast(objc) == TCL_INDEX_NONE) {
-
+	    if (TclIndexIsFromEnd(opnd) && !TclLengthIsFinite(objc)) {
 		/* end-relative index, and list end is indeterminate */ 
-		if (TclObjectDispatchNoDefault(interp, valuePtr, list, indexEnd,
-		    interp, valuePtr, index, &objResultPtr) != TCL_OK) {
+		if (TclObjectDispatchNoDefault(interp, dstatus, valuePtr, list, indexEnd,
+		    interp, valuePtr, index, &objResultPtr) != TCL_OK 
+		    || dstatus != TCL_OK) {
+		    TRACE_ERROR(interp);
 		    goto gotError;
 		}
 	    } else {
@@ -4908,26 +4909,44 @@ TEBCresume(
 	    TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	    NEXT_INST_F(9, 1, 1);
 	}
-	toIdx = TclIndexDecode(toIdx, TclIndexLast(objc));
-	if (toIdx == TCL_INDEX_NONE) {
-	    goto emptyList;
-	} else if (TclLengthIsFinite(objc) && toIdx + 1 >= (size_t)objc + 1) {
-	    toIdx = TclIndexLast(objc);
+
+	toIdxAnchor = TclIndexIsFromEnd(toIdx);
+	fromIdxAnchor = TclIndexIsFromEnd(fromIdx);
+
+	if (!TclLengthIsFinite(objc)
+	    && (toIdxAnchor == 1 || fromIdxAnchor == 1)) {
+
+	    toIdx = TclIndexDecode(toIdx, SIZE_MAX);
+	    toIdx = TclIndexDecode(fromIdx, SIZE_MAX);
+	    dstatus = TclObjectDispatchNoDefault(interp, objResultPtr,
+		valuePtr, list, rangeEnd, interp, valuePtr, toIdxAnchor,
+		toIdx, fromIdxAnchor, fromIdx);
+	    if (dstatus != TCL_OK || objResultPtr == NULL) {
+		goto gotError;
+	    }
+	} else {
+	    toIdx = TclIndexDecode(toIdx, TclIndexLast(objc));
+	    if (toIdx == TCL_INDEX_NONE) {
+		goto emptyList;
+	    } else if (TclLengthIsFinite(objc) && toIdx + 1 >= (size_t)objc + 1) {
+		toIdx = TclIndexLast(objc);
+	    }
+
+	    assert (toIdx < (size_t)objc);
+	    /*
+	    assert ( fromIdx != TCL_INDEX_NONE );
+	     *
+	     * Extra safety for legacy bytecodes:
+	     */
+	    if (fromIdx == TCL_INDEX_NONE) {
+		fromIdx = TCL_INDEX_START;
+	    }
+
+	    fromIdx = TclIndexDecode(fromIdx, objc - 1);
+
+	    objResultPtr = TclListObjRange(interp, valuePtr, objc, fromIdx, toIdx);
 	}
 
-	assert (toIdx < (size_t)objc);
-	/*
-	assert ( fromIdx != TCL_INDEX_NONE );
-	 *
-	 * Extra safety for legacy bytecodes:
-	 */
-	if (fromIdx == TCL_INDEX_NONE) {
-	    fromIdx = TCL_INDEX_START;
-	}
-
-	fromIdx = TclIndexDecode(fromIdx, objc - 1);
-
-	objResultPtr = TclListObjRange(interp, valuePtr, objc, fromIdx, toIdx);
 
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);

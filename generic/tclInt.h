@@ -265,11 +265,13 @@ typedef struct ObjectType {
     : (default)(__VA_ARGS__)						    
 
 
-#define TclObjectDispatchNoDefault(interp, objPtr, iface, proc, ...)	    \
-    TclObjectHasInterface((objPtr), iface, proc)			    \
-    ? TclObjectInterfaceCall(objPtr, iface, proc, __VA_ARGS__)		    \
-    : (Tcl_SetObjResult((interp),					    \
-	Tcl_NewStringObj("interface not provided", -1)), TCL_ERROR)
+#define TclObjectDispatchNoDefault(interp, res, objPtr, iface, proc, ...)   \
+    (TclObjectHasInterface((objPtr), iface, proc)			    \
+    ?  (res = TclObjectInterfaceCall((objPtr), iface, proc, __VA_ARGS__), \
+	TCL_OK)   \
+    :					    \
+	(Tcl_SetObjResult((interp),					    \
+	    Tcl_NewStringObj("interface not provided", -1)), TCL_ERROR))
 
 
 #define TclObjectHasInterface(objPtr, iface, proc)			    \
@@ -328,6 +330,15 @@ typedef struct ObjectType {
 				include.  */ \
     size_t toIdx		/* Index of last element to include. */
 
+
+#define tclObjTypeInterfaceArgsListRangeEnd \
+    Tcl_Interp * interp, /* Used to report errors */ \
+    Tcl_Obj *listPtr,	/* List object to take a range from. */ \
+    int fromAnchor,	/* 0 for start and 1 for end */ \
+    size_t fromIdx,	/* Index of first element to include. */ \
+    int toAnchor,	/* 0 for start and 1 for end */  \
+    size_t toIdx		/* Index of last element to include. */
+
 #define tclObjTypeInterfaceArgsListReplace \
     Tcl_Interp *interp, /* Used for error reporting if not NULL. */ \
     Tcl_Obj *listPtr,   /* List object whose elements to replace. */ \
@@ -364,9 +375,10 @@ typedef struct ObjInterface {
 	int (*append)(tclObjTypeInterfaceArgsListAppend);
 	int (*appendlist)(tclObjTypeInterfaceArgsListAppendList);
 	int (*index)(tclObjTypeInterfaceArgsListIndex);
-	int (*indexEnd)(tclObjTypeInterfaceArgsListIndexR);
+	int (*indexEnd)(tclObjTypeInterfaceArgsListIndexEnd);
 	int (*length)(tclObjTypeInterfaceArgsListLength);
 	Tcl_Obj* (*range)(tclObjTypeInterfaceArgsListRange);
+	Tcl_Obj* (*rangeEnd)(tclObjTypeInterfaceArgsListRangeEnd);
 	int (*replace)(tclObjTypeInterfaceArgsListReplace);
 	int (*set)(tclObjTypeInterfaceArgsListSet);
 	Tcl_Obj * (*setlist)(tclObjTypeInterfaceArgsListSetList);
