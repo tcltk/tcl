@@ -34,29 +34,34 @@ static int		SetTestIndexHexFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfTestIndexHex(Tcl_Obj *listPtr);
 
 
-static int indexHexListObjGetElementsDefault (tclObjTypeInterfaceArgsListAll);
-static int indexHexListObjAppendElementDefault (tclObjTypeInterfaceArgsListAppend);
-static int indexHexListObjAppendListDefault (tclObjTypeInterfaceArgsListAppendList);
-static int indexHexListObjIndexDefault (tclObjTypeInterfaceArgsListIndex);
-static int indexHexListObjLengthDefault (tclObjTypeInterfaceArgsListLength);
-static Tcl_Obj* indexHexListObjRangeDefault (tclObjTypeInterfaceArgsListRange);
-static int indexHexListObjReplaceDefault (tclObjTypeInterfaceArgsListReplace);
-static int indexHexListObjSetElementDefault (tclObjTypeInterfaceArgsListSet);
-static Tcl_Obj * indexHexLsetFlatDefault (tclObjTypeInterfaceArgsListSetList);
+static int indexHexListErrorIndeterminate (Tcl_Interp *interp);
+static int indexHexListObjGetElements (tclObjTypeInterfaceArgsListAll);
+static int indexHexListObjAppendElement (tclObjTypeInterfaceArgsListAppend);
+static int indexHexListObjAppendList (tclObjTypeInterfaceArgsListAppendList);
+static int indexHexListObjIndex (tclObjTypeInterfaceArgsListIndex);
+static int indexHexListObjIndexEnd (tclObjTypeInterfaceArgsListIndexR);
+static int indexHexListObjLength (tclObjTypeInterfaceArgsListLength);
+static Tcl_Obj* indexHexListObjRange (tclObjTypeInterfaceArgsListRange);
+static Tcl_Obj* indexHexListObjRangeEnd (tclObjTypeInterfaceArgsListRangeEnd);
+static int indexHexListObjReplace (tclObjTypeInterfaceArgsListReplace);
+static int indexHexListObjSetElement (tclObjTypeInterfaceArgsListSet);
+static Tcl_Obj * indexHexLsetFlat (tclObjTypeInterfaceArgsListSetList);
 
 
 ObjInterface IndexHexInterface = {
     1,
     {
-	&indexHexListObjGetElementsDefault,
-	&indexHexListObjAppendElementDefault,
-	&indexHexListObjAppendListDefault,
-	&indexHexListObjIndexDefault,
-	&indexHexListObjLengthDefault,
-	&indexHexListObjRangeDefault,
-	&indexHexListObjReplaceDefault,
-	&indexHexListObjSetElementDefault,
-	&indexHexLsetFlatDefault
+	&indexHexListObjGetElements,
+	&indexHexListObjAppendElement,
+	&indexHexListObjAppendList,
+	&indexHexListObjIndex,
+	&indexHexListObjIndexEnd,
+	&indexHexListObjLength,
+	&indexHexListObjRange,
+	&indexHexListObjRangeEnd,
+	&indexHexListObjReplace,
+	&indexHexListObjSetElement,
+	&indexHexLsetFlat
     }
 };
 
@@ -150,9 +155,15 @@ UpdateStringOfTestIndexHex(Tcl_Obj *listPtr)
     return;
 }
 
+static int indexHexListErrorIndeterminate (Tcl_Interp *interp) {
+    Tcl_SetObjResult(interp,
+	Tcl_NewStringObj("list length indeterminate", -1));
+    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "INDETERMINATE", NULL);
+    return TCL_ERROR;
+}
 
 static int
-indexHexListObjGetElementsDefault(tclObjTypeInterfaceArgsListAll)
+indexHexListObjGetElements(tclObjTypeInterfaceArgsListAll)
 {
     if (interp != NULL) {
 	Tcl_SetObjResult(interp,Tcl_NewStringObj("infinite list", -1));
@@ -162,21 +173,21 @@ indexHexListObjGetElementsDefault(tclObjTypeInterfaceArgsListAll)
 
 
 static int
-indexHexListObjAppendElementDefault(tclObjTypeInterfaceArgsListAppend)
+indexHexListObjAppendElement(tclObjTypeInterfaceArgsListAppend)
 {
     return;
 }
 
 
 static int
-indexHexListObjAppendListDefault(tclObjTypeInterfaceArgsListAppendList)
+indexHexListObjAppendList(tclObjTypeInterfaceArgsListAppendList)
 {
     return;
 }
 
 
 static int
-indexHexListObjIndexDefault(tclObjTypeInterfaceArgsListIndex)
+indexHexListObjIndex(tclObjTypeInterfaceArgsListIndex)
 {
     Tcl_Obj *resPtr;
     resPtr = Tcl_ObjPrintf("%x", index);
@@ -187,7 +198,14 @@ indexHexListObjIndexDefault(tclObjTypeInterfaceArgsListIndex)
 
 
 static int
-indexHexListObjLengthDefault(tclObjTypeInterfaceArgsListLength)
+indexHexListObjIndexEnd(tclObjTypeInterfaceArgsListIndexEnd)
+{
+    return indexHexListErrorIndeterminate(interp);
+}
+
+
+static int
+indexHexListObjLength(tclObjTypeInterfaceArgsListLength)
 {
     *intPtr = -1;
     return TCL_OK;
@@ -195,13 +213,13 @@ indexHexListObjLengthDefault(tclObjTypeInterfaceArgsListLength)
 
 
 static Tcl_Obj*
-indexHexListObjRangeDefault(tclObjTypeInterfaceArgsListRange)
+indexHexListObjRange(tclObjTypeInterfaceArgsListRange)
 {
     int i;
     Tcl_Obj *itemPtr, *resPtr;
     resPtr = Tcl_NewListObj(0, NULL);
     while (fromIdx <= length && fromIdx <= toIdx) {
-	indexHexListObjIndexDefault(interp, listPtr, fromIdx, &itemPtr);
+	indexHexListObjIndex(interp, listPtr, fromIdx, &itemPtr);
 	if (
 	    Tcl_ListObjAppendElement(interp, resPtr, itemPtr) != TCL_OK
 	) {
@@ -213,21 +231,30 @@ indexHexListObjRangeDefault(tclObjTypeInterfaceArgsListRange)
     return resPtr;
 }
 
+static Tcl_Obj*
+indexHexListObjRangeEnd(tclObjTypeInterfaceArgsListRangeEnd) {
+    if (fromAnchor == 1 || toAnchor == 1) {
+	indexHexListErrorIndeterminate(interp);
+	return NULL;
+    }
+    return indexHexListObjRange(interp, listPtr, -1, fromIdx, toIdx);
+}
+
 
 static int
-indexHexListObjReplaceDefault(tclObjTypeInterfaceArgsListReplace)
+indexHexListObjReplace(tclObjTypeInterfaceArgsListReplace)
 {
     return;
 }
 
 
 static int
-indexHexListObjSetElementDefault(tclObjTypeInterfaceArgsListSet)
+indexHexListObjSetElement(tclObjTypeInterfaceArgsListSet)
 {
     return;
 }
 
-static Tcl_Obj * indexHexLsetFlatDefault (tclObjTypeInterfaceArgsListSetList)
+static Tcl_Obj * indexHexLsetFlat (tclObjTypeInterfaceArgsListSetList)
 {
     return NULL;
 }

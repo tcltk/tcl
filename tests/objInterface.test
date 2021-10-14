@@ -28,6 +28,7 @@ test {list lindex constant end} {INST_LIST_INDEX_IMM} \
     -constraints testindexhex \
     -body {
 	set list [testindexhex]
+	after 100
 	lindex $list end
     } -cleanup {
 	catch {unset list}
@@ -70,7 +71,7 @@ test {list lindex drill} {} \
     } -result 2db 
 
 
-test {list lrange} {} \
+test {list lrange constant} {} \
     -constraints testindexhex \
     -body {
 	set list [testindexhex]
@@ -79,6 +80,48 @@ test {list lrange} {} \
 	catch {unset list}
     } -result {a b c d e f}
 
+
+test {list lrange dynamic} {} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	set first [expr {10 + 0}]
+	set last [expr {15 + 0}]
+	lrange $list $first $last
+    } -cleanup {
+	catch {unset list}
+    } -result {a b c d e f}
+
+
+test {list lrange end constant} {} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	lrange $list 10 end 
+    } -cleanup {
+	catch {unset list}
+    } -returnCodes 1 -result {list length indeterminate}
+
+
+test {list lrange end dynamic} {} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	set back [expr {-5 + 0}]
+	lrange $list 10 end-$back 
+    } -cleanup {
+	catch {unset list}
+    } -returnCodes 1 -result {list length indeterminate}
+
+
+test {list lrange end minus constant} {} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	lrange $list 10 end-1
+    } -cleanup {
+	catch {unset list}
+    } -returnCodes 1 -result {list length indeterminate}
 
 # cleanup
 ::tcltest::cleanupTests
