@@ -2665,7 +2665,7 @@ Tcl_LrangeObjCmd(
     Tcl_Obj *const objv[])
 				/* Argument objects. */
 {
-    int listLen, result;
+    int listLen, result, fromAnchor, fromIdx, status, toAnchor, toIdx;
     size_t first, last;
 
     if (objc != 4) {
@@ -2678,20 +2678,50 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
-	    &first);
-    if (result != TCL_OK) {
-	return result;
+    if (TclIndexEncode(
+	interp, objv[2], TCL_INDEX_NONE, TCL_INDEX_END, &toIdx)) {
+	return TCL_ERROR;
     }
 
-    result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
-	    &last);
-    if (result != TCL_OK) {
-	return result;
+    if (TclIndexEncode(
+	interp, objv[3], TCL_INDEX_NONE, TCL_INDEX_END, &fromIdx)) {
+	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp,
-	TclListObjRange(interp, objv[1], listLen, first, last));
+    toAnchor = TclIndexIsFromEnd(toIdx);
+    fromAnchor = TclIndexIsFromEnd(fromIdx);
+
+    if (!TclLengthIsFinite(listLen)
+	&& (toAnchor == 1 || fromAnchor == 1)) {
+	Tcl_Obj *objResultPtr;
+
+	toIdx = TclIndexDecode(toIdx, SIZE_MAX);
+	fromIdx = TclIndexDecode(fromIdx, SIZE_MAX);
+	status = TclObjectDispatchNoDefault(interp, objResultPtr,
+	    objv[1], list, rangeEnd, interp, objv[1], toAnchor,
+	    toIdx, fromAnchor, fromIdx);
+	if (status != TCL_OK || objResultPtr == NULL) {
+	    return TCL_ERROR;
+	} else {
+	    Tcl_SetObjResult(interp, objResultPtr);
+	}
+    } else {
+	result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
+		&first);
+	if (result != TCL_OK) {
+	    return result;
+	}
+
+	result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
+		&last);
+	if (result != TCL_OK) {
+	    return result;
+	}
+
+	Tcl_SetObjResult(interp,
+	    TclListObjRange(interp, objv[1], listLen, first, last));
+    }
+
     return TCL_OK;
 }
 

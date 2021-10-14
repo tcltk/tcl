@@ -4917,7 +4917,7 @@ TEBCresume(
 	    && (toIdxAnchor == 1 || fromIdxAnchor == 1)) {
 
 	    toIdx = TclIndexDecode(toIdx, SIZE_MAX);
-	    toIdx = TclIndexDecode(fromIdx, SIZE_MAX);
+	    fromIdx = TclIndexDecode(fromIdx, SIZE_MAX);
 	    dstatus = TclObjectDispatchNoDefault(interp, objResultPtr,
 		valuePtr, list, rangeEnd, interp, valuePtr, toIdxAnchor,
 		toIdx, fromIdxAnchor, fromIdx);
