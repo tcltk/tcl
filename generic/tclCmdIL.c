@@ -3181,7 +3181,7 @@ Tcl_LsearchObjCmd(
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
     SortInfo sortInfo;
-    Tcl_Obj *patObj, **listv, *listPtr, *startPtr, *itemPtr;
+    Tcl_Obj *patObj, *itemPtr, *listPtr, *subjectPtr, *startPtr;
     SortStrCmpFn_t strCmpFn = TclUtfCmp;
     Tcl_RegExp regexp = NULL;
     static const char *const options[] = {
@@ -3478,7 +3478,8 @@ Tcl_LsearchObjCmd(
      * pointer to its array of element pointers.
      */
 
-    result = TclListObjGetElements(interp, objv[objc - 2], &listc, &listv);
+    subjectPtr = objv[objc-2];
+    result = TclListObjLength(interp, subjectPtr, &listc);
     if (result != TCL_OK) {
 	goto done;
     }
@@ -3579,11 +3580,10 @@ Tcl_LsearchObjCmd(
 	    }
 
 	    /*
-	     * List representation might have been shimmered; restore it. [Bug
-	     * 1844789]
+	     * [Bug 1844789], "lsearch -exact -integer ..." crashes, was
+	     * previously fixed at this point.
 	     */
 
-	    TclListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
 	    break;
 	case REAL:
 	    result = Tcl_GetDoubleFromObj(interp, patObj, &patDouble);
@@ -3592,11 +3592,10 @@ Tcl_LsearchObjCmd(
 	    }
 
 	    /*
-	     * List representation might have been shimmered; restore it. [Bug
-	     * 1844789]
+	     * [Bug 1844789], "lsearch -exact -integer ..." crashes, was
+	     * previously fixed at this point.
 	     */
 
-	    TclListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
 	    break;
 	}
     } else {
@@ -3628,14 +3627,16 @@ Tcl_LsearchObjCmd(
 	while (lower + groupSize != upper && sortInfo.resultCode == TCL_OK) {
 	    i = (lower + upper)/2;
 	    i -= i % groupSize;
+	    result = Tcl_ListObjIndex(interp, subjectPtr, i+groupOffset, &itemPtr);
+	    if (result != TCL_OK) {
+		goto done;
+	    }
 	    if (sortInfo.indexc != 0) {
-		itemPtr = SelectObjFromSublist(listv[i+groupOffset], &sortInfo);
+		itemPtr = SelectObjFromSublist(itemPtr, &sortInfo);
 		if (sortInfo.resultCode != TCL_OK) {
 		    result = sortInfo.resultCode;
 		    goto done;
 		}
-	    } else {
-		itemPtr = listv[i+groupOffset];
 	    }
 	    switch ((enum datatypes) dataType) {
 	    case ASCII:
@@ -3726,8 +3727,12 @@ Tcl_LsearchObjCmd(
 	}
 	for (i = start; i < listc; i += groupSize) {
 	    match = 0;
+	    result = Tcl_ListObjIndex(interp, subjectPtr, i+groupOffset, &itemPtr);
+	    if (result != TCL_OK) {
+		goto done;
+	    }
 	    if (sortInfo.indexc != 0) {
-		itemPtr = SelectObjFromSublist(listv[i+groupOffset], &sortInfo);
+		itemPtr = SelectObjFromSublist(itemPtr, &sortInfo);
 		if (sortInfo.resultCode != TCL_OK) {
 		    if (listPtr != NULL) {
 			Tcl_DecrRefCount(listPtr);
@@ -3735,8 +3740,6 @@ Tcl_LsearchObjCmd(
 		    result = sortInfo.resultCode;
 		    goto done;
 		}
-	    } else {
-		itemPtr = listv[i+groupOffset];
 	    }
 
 	    switch (mode) {
@@ -3821,18 +3824,32 @@ Tcl_LsearchObjCmd(
 		break;
 	    } else if (inlineReturn) {
 		/*
-		 * Note that these appends are not expected to fail.
+		 * These append operations are expected to not fail.
 		 */
 
 		if (returnSubindices && (sortInfo.indexc != 0)) {
-		    itemPtr = SelectObjFromSublist(listv[i+groupOffset],
-			    &sortInfo);
+		    result = Tcl_ListObjIndex(interp, subjectPtr, i+groupOffset, &itemPtr);
+		    if (result != TCL_OK) {
+			goto done;
+		    }
+		    itemPtr = SelectObjFromSublist(itemPtr, &sortInfo);
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		} else if (groupSize > 1) {
-		    Tcl_ListObjReplace(interp, listPtr, LIST_MAX, 0,
-			    groupSize, &listv[i]);
+		    size_t j;
+		    for (j = 0; j < groupSize; j++) {
+			result = Tcl_ListObjIndex(interp, subjectPtr,
+			    i+j, &itemPtr);
+			if (result != TCL_OK) {
+			    goto done;
+			}
+			Tcl_ListObjReplace(interp, listPtr, LIST_MAX, 0,
+				1, &itemPtr);
+		    }
 		} else {
-		    itemPtr = listv[i];
+		    result = Tcl_ListObjIndex(interp, subjectPtr, i, &itemPtr);
+		    if (result != TCL_OK) {
+			goto done;
+		    }
 		    Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 		}
 	    } else if (returnSubindices) {
@@ -3884,12 +3901,30 @@ Tcl_LsearchObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewObj());
     } else {
 	if (returnSubindices) {
-	    Tcl_SetObjResult(interp, SelectObjFromSublist(listv[i+groupOffset],
-		    &sortInfo));
+	    result = Tcl_ListObjIndex(interp, subjectPtr, i+groupOffset, &itemPtr);
+	    if (result != TCL_OK) {
+		goto done;
+	    }
+	    itemPtr = SelectObjFromSublist(itemPtr, &sortInfo);
+	    Tcl_SetObjResult(interp, itemPtr);
 	} else if (groupSize > 1) {
-	    Tcl_SetObjResult(interp, Tcl_NewListObj(groupSize, &listv[index]));
+	    size_t j;
+	    listPtr = Tcl_NewListObj(0, NULL);
+	    for (j = 0; j < groupSize; j++) {
+		result = Tcl_ListObjIndex(interp, subjectPtr, index + j, &itemPtr);
+		if (result != TCL_OK) {
+		    Tcl_DecrRefCount(listPtr);
+		    goto done;
+		}
+		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
+	    }
+	    Tcl_SetObjResult(interp, listPtr);
 	} else {
-	    Tcl_SetObjResult(interp, listv[index]);
+	    result = Tcl_ListObjIndex(interp, subjectPtr, index, &itemPtr);
+	    if (result != TCL_OK) {
+		goto done;
+	    }
+	    Tcl_SetObjResult(interp, itemPtr);
 	}
     }
     result = TCL_OK;
