@@ -37,7 +37,7 @@ typedef struct {
 				 * end-of-string in this encoding. This number
 				 * is used to determine the source string
 				 * length when the srcLen argument is
-				 * negative. This number can be 1 or 2. */
+				 * negative. This number can be 1, 2, or 4. */
     ClientData clientData;	/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
     LengthProc *lengthProc;	/* Function to compute length of
@@ -45,7 +45,9 @@ typedef struct {
 				 * If nullSize is 1, this is strlen; if
 				 * nullSize is 2, this is a function that
 				 * returns the number of bytes in a 0x0000
-				 * terminated string. */
+				 * terminated string; if nullSize is 4, this
+				 * is a function that returns the number of
+				 * bytes in a 0x00000000 terminated string. */
     size_t refCount;		/* Number of uses of this structure. */
     Tcl_HashEntry *hPtr;	/* Hash table entry that owns this encoding. */
 } Encoding;
@@ -216,7 +218,10 @@ static Tcl_Channel		OpenEncodingFileChannel(Tcl_Interp *interp,
 static Tcl_EncodingFreeProc	TableFreeProc;
 static Tcl_EncodingConvertProc	TableFromUtfProc;
 static Tcl_EncodingConvertProc	TableToUtfProc;
-static size_t			unilen(const char *src);
+static size_t		unilen(const char *src);
+static size_t		unilen4(const char *src);
+static Tcl_EncodingConvertProc	Utf32ToUtfProc;
+static Tcl_EncodingConvertProc	UtfToUtf32Proc;
 static Tcl_EncodingConvertProc	Utf16ToUtfProc;
 static Tcl_EncodingConvertProc	UtfToUtf16Proc;
 static Tcl_EncodingConvertProc	UtfToUcs2Proc;
@@ -574,6 +579,20 @@ TclInitEncodingSubsystem(void)
     type.clientData	= INT2PTR(0);
     Tcl_CreateEncoding(&type);
     type.encodingName   = "ucs-2";
+    type.clientData	= INT2PTR(isLe.c);
+    Tcl_CreateEncoding(&type);
+
+    type.toUtfProc	= Utf32ToUtfProc;
+    type.fromUtfProc    = UtfToUtf32Proc;
+    type.freeProc	= NULL;
+    type.nullSize	= 4;
+    type.encodingName   = "utf-32le";
+    type.clientData	= INT2PTR(TCL_ENCODING_LE);
+    Tcl_CreateEncoding(&type);
+    type.encodingName   = "utf-32be";
+    type.clientData	= INT2PTR(0);
+    Tcl_CreateEncoding(&type);
+    type.encodingName   = "utf-32";
     type.clientData	= INT2PTR(isLe.c);
     Tcl_CreateEncoding(&type);
 
@@ -993,10 +1012,12 @@ Tcl_CreateEncoding(
     encodingPtr->freeProc	= typePtr->freeProc;
     encodingPtr->nullSize	= typePtr->nullSize;
     encodingPtr->clientData	= typePtr->clientData;
-    if (typePtr->nullSize == 1) {
-	encodingPtr->lengthProc = (LengthProc *) strlen;
-    } else {
+    if (typePtr->nullSize == 2) {
 	encodingPtr->lengthProc = (LengthProc *) unilen;
+    } else if (typePtr->nullSize == 4) {
+	encodingPtr->lengthProc = (LengthProc *) unilen4;
+    } else {
+	encodingPtr->lengthProc = (LengthProc *) strlen;
     }
     encodingPtr->refCount	= 1;
     encodingPtr->hPtr		= NULL;
@@ -1281,10 +1302,10 @@ Tcl_UtfToExternalDString(
 
 	src += srcRead;
 	if (result != TCL_CONVERT_NOSPACE) {
-	    if (encodingPtr->nullSize == 2) {
-		Tcl_DStringSetLength(dstPtr, soFar + 1);
+	    int i = soFar + encodingPtr->nullSize - 1;
+	    while (i >= soFar) {
+		Tcl_DStringSetLength(dstPtr, i--);
 	    }
-	    Tcl_DStringSetLength(dstPtr, soFar);
 	    return Tcl_DStringValue(dstPtr);
 	}
 
@@ -1379,10 +1400,7 @@ Tcl_UtfToExternal(
     result = encodingPtr->fromUtfProc(encodingPtr->clientData, src, srcLen,
 	    flags, statePtr, dst, dstLen, srcReadPtr,
 	    dstWrotePtr, dstCharsPtr);
-    if (encodingPtr->nullSize == 2) {
-	dst[*dstWrotePtr + 1] = '\0';
-    }
-    dst[*dstWrotePtr] = '\0';
+    memset(&dst[*dstWrotePtr], '\0', encodingPtr->nullSize);
 
     return result;
 }
@@ -2274,6 +2292,199 @@ UtfToUtfProc(
     *dstCharsPtr = numChars;
     return result;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Utf32ToUtfProc --
+ *
+ *	Convert from UTF-32 to UTF-8.
+ *
+ * Results:
+ *	Returns TCL_OK if conversion was successful.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static int
+Utf32ToUtfProc(
+    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    const char *src,		/* Source string in Unicode. */
+    int srcLen,			/* Source string length in bytes. */
+    int flags,			/* Conversion control flags. */
+    TCL_UNUSED(Tcl_EncodingState *),
+    char *dst,			/* Output buffer in which converted string is
+				 * stored. */
+    int dstLen,			/* The maximum length of output buffer in
+				 * bytes. */
+    int *srcReadPtr,		/* Filled with the number of bytes from the
+				 * source string that were converted. This may
+				 * be less than the original source length if
+				 * there was a problem converting some source
+				 * characters. */
+    int *dstWrotePtr,		/* Filled with the number of bytes that were
+				 * stored in the output buffer as a result of
+				 * the conversion. */
+    int *dstCharsPtr)		/* Filled with the number of characters that
+				 * correspond to the bytes stored in the
+				 * output buffer. */
+{
+    const char *srcStart, *srcEnd;
+    const char *dstEnd, *dstStart;
+    int result, numChars, charLimit = INT_MAX;
+    int ch;
+
+    flags |= PTR2INT(clientData);
+    if (flags & TCL_ENCODING_CHAR_LIMIT) {
+	charLimit = *dstCharsPtr;
+    }
+    result = TCL_OK;
+
+    /*
+     * Check alignment with utf-32 (4 == sizeof(UTF-32))
+     */
+
+    if ((srcLen % 4) != 0) {
+	result = TCL_CONVERT_MULTIBYTE;
+	srcLen &= -4;
+    }
+
+    srcStart = src;
+    srcEnd = src + srcLen;
+
+    dstStart = dst;
+    dstEnd = dst + dstLen - TCL_UTF_MAX;
+
+    for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	    break;
+	}
+
+	if (flags & TCL_ENCODING_LE) {
+	    ch = (src[3] & 0xFF) << 24 | (src[2] & 0xFF) << 16 | (src[1] & 0xFF) << 8 | (src[0] & 0xFF);
+	} else {
+	    ch = (src[0] & 0xFF) << 24 | (src[1] & 0xFF) << 16 | (src[2] & 0xFF) << 8 | (src[3] & 0xFF);
+	}
+
+	/*
+	 * Special case for 1-byte utf chars for speed. Make sure we work with
+	 * unsigned short-size data.
+	 */
+
+	if ((ch > 0) && (ch < 0x80)) {
+	    *dst++ = (ch & 0xFF);
+	} else {
+	    dst += Tcl_UniCharToUtf(ch, dst);
+	}
+	src += sizeof(unsigned int);
+    }
+
+    *srcReadPtr = src - srcStart;
+    *dstWrotePtr = dst - dstStart;
+    *dstCharsPtr = numChars;
+    return result;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * UtfToUtf32Proc --
+ *
+ *	Convert from UTF-8 to UTF-32.
+ *
+ * Results:
+ *	Returns TCL_OK if conversion was successful.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static int
+UtfToUtf32Proc(
+    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    const char *src,		/* Source string in UTF-8. */
+    int srcLen,			/* Source string length in bytes. */
+    int flags,			/* Conversion control flags. */
+    TCL_UNUSED(Tcl_EncodingState *),
+    char *dst,			/* Output buffer in which converted string is
+				 * stored. */
+    int dstLen,			/* The maximum length of output buffer in
+				 * bytes. */
+    int *srcReadPtr,		/* Filled with the number of bytes from the
+				 * source string that were converted. This may
+				 * be less than the original source length if
+				 * there was a problem converting some source
+				 * characters. */
+    int *dstWrotePtr,		/* Filled with the number of bytes that were
+				 * stored in the output buffer as a result of
+				 * the conversion. */
+    int *dstCharsPtr)		/* Filled with the number of characters that
+				 * correspond to the bytes stored in the
+				 * output buffer. */
+{
+    const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
+    int result, numChars;
+    int ch, len;
+
+    srcStart = src;
+    srcEnd = src + srcLen;
+    srcClose = srcEnd;
+    if ((flags & TCL_ENCODING_END) == 0) {
+	srcClose -= TCL_UTF_MAX;
+    }
+
+    dstStart = dst;
+    dstEnd = dst + dstLen - sizeof(Tcl_UniChar);
+    flags |= PTR2INT(clientData);
+
+    result = TCL_OK;
+    for (numChars = 0; src < srcEnd; numChars++) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	    /*
+	     * If there is more string to follow, this will ensure that the
+	     * last UTF-8 character in the source buffer hasn't been cut off.
+	     */
+
+	    result = TCL_CONVERT_MULTIBYTE;
+	    break;
+	}
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	    break;
+	}
+	len = TclUtfToUCS4(src, &ch);
+	if (!Tcl_UniCharIsUnicode(ch)) {
+	    if (flags & TCL_ENCODING_STOPONERROR) {
+		result = TCL_CONVERT_UNKNOWN;
+		break;
+	    }
+	    ch = 0xFFFD;
+	}
+	src += len;
+	if (flags & TCL_ENCODING_LE) {
+	    *dst++ = (ch & 0xFF);
+	    *dst++ = ((ch >> 8) & 0xff);
+	    *dst++ = ((ch >> 16) & 0xff);
+	    *dst++ = ((ch >> 24) & 0xff);
+	} else {
+	    *dst++ = ((ch >> 24) & 0xff);
+	    *dst++ = ((ch >> 16) & 0xff);
+	    *dst++ = ((ch >> 8) & 0xff);
+	    *dst++ = (ch & 0xFF);
+	}
+    }
+
+    *srcReadPtr = src - srcStart;
+    *dstWrotePtr = dst - dstStart;
+    *dstCharsPtr = numChars;
+    return result;
+}
 
 /*
  *-------------------------------------------------------------------------
@@ -2590,7 +2801,7 @@ UtfToUcs2Proc(
     *dstCharsPtr = numChars;
     return result;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -3032,7 +3243,7 @@ TableFreeProc(
     ClientData clientData)	/* TableEncodingData that specifies
 				 * encoding. */
 {
-    TableEncodingData *dataPtr = (TableEncodingData *) clientData;
+    TableEncodingData *dataPtr = (TableEncodingData *)clientData;
 
     /*
      * Make sure we aren't freeing twice on shutdown. [Bug 219314]
@@ -3090,7 +3301,7 @@ EscapeToUtfProc(
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
-    EscapeEncodingData *dataPtr = (EscapeEncodingData *) clientData;
+    EscapeEncodingData *dataPtr = (EscapeEncodingData *)clientData;
     const char *prefixBytes, *tablePrefixBytes, *srcStart, *srcEnd;
     const unsigned short *const *tableToUnicode;
     const Encoding *encodingPtr;
@@ -3566,7 +3777,7 @@ GetTableEncoding(
 /*
  *---------------------------------------------------------------------------
  *
- * unilen --
+ * unilen, unilen4 --
  *
  *	A helper function for the Tcl_ExternalToUtf functions. This function
  *	is similar to strlen for double-byte characters: it returns the number
@@ -3589,6 +3800,19 @@ unilen(
 
     p = (unsigned short *) src;
     while (*p != 0x0000) {
+	p++;
+    }
+    return (char *) p - src;
+}
+
+static size_t
+unilen4(
+    const char *src)
+{
+    unsigned int *p;
+
+    p = (unsigned int *) src;
+    while (*p != 0x00000000) {
 	p++;
     }
     return (char *) p - src;
@@ -3625,6 +3849,7 @@ InitializeEncodingSearchPath(
 {
     const char *bytes;
     int i, numDirs;
+    size_t numBytes;
     Tcl_Obj *libPathObj, *encodingObj, *searchPathObj;
 
     TclNewLiteralStringObj(encodingObj, "encoding");
@@ -3654,9 +3879,11 @@ InitializeEncodingSearchPath(
     if (*encodingPtr) {
 	((Encoding *)(*encodingPtr))->refCount++;
     }
-    bytes = Tcl_GetStringFromObj(searchPathObj, lengthPtr);
-    *valuePtr = (char *)Tcl_Alloc(*lengthPtr + 1);
-    memcpy(*valuePtr, bytes, *lengthPtr + 1);
+    bytes = Tcl_GetStringFromObj(searchPathObj, &numBytes);
+
+    *lengthPtr = numBytes;
+    *valuePtr = (char *)Tcl_Alloc(numBytes + 1);
+    memcpy(*valuePtr, bytes, numBytes + 1);
     Tcl_DecrRefCount(searchPathObj);
 }
 
