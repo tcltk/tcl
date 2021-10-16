@@ -4620,7 +4620,7 @@ TEBCresume(
      */
 
     {
-	int dstatus, lastIdx, numIndices, nocase, match, cflags,
+	int dstatus, numIndices, nocase, match, cflags,
 	    toIdxAnchor, fromIdxAnchor;
 	size_t slength, length2, fromIdx, toIdx, index, s1len, s2len;
 	const char *s1, *s2;
@@ -4711,9 +4711,9 @@ TEBCresume(
 	    }
 
 	    if (TclIndexIsFromEnd(opnd) && !TclLengthIsFinite(objc)) {
-		/* end-relative index, and list end is indeterminate */ 
+		/* end-relative index, and list end is indeterminate */
 		if (TclObjectDispatchNoDefault(interp, dstatus, valuePtr, list, indexEnd,
-		    interp, valuePtr, index, &objResultPtr) != TCL_OK 
+		    interp, valuePtr, index, &objResultPtr) != TCL_OK
 		    || dstatus != TCL_OK) {
 		    TRACE_ERROR(interp);
 		    goto gotError;

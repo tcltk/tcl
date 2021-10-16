@@ -2390,7 +2390,7 @@ EnsembleUnknownCallback(
  *
  *	Caches what has been computed so far to minimize string copying.
  *	Starts by deleting any existing representation but reusing the existing
- *	structure if it is an ensembleCmd. 
+ *	structure if it is an ensembleCmd.
  *
  * Results:
  *	None.
@@ -2652,7 +2652,7 @@ BuildEnsembleConfig(
         }
     } else if (mapDict) {
         /*
-         * No subcmd list, but there is a mapping dictionary, so 
+         * No subcmd list, but there is a mapping dictionary, so
          * use the keys of that. Convert the contents of the dictionary into the
          * form required for the internal hashtable of the ensemble.
          */

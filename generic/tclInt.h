@@ -219,7 +219,7 @@ typedef struct Tcl_ResolverInfo {
 
 /*
  *----------------------------------------------------------------
- * Object type 
+ * Object type
  *----------------------------------------------------------------
  */
 
@@ -262,7 +262,7 @@ typedef struct ObjectType {
 #define TclObjectDispatch(objPtr, default, iface, proc, ...)		    \
     TclObjectHasInterface((objPtr), iface, proc)			    \
     ? TclObjectInterfaceCall(objPtr, iface, proc, __VA_ARGS__)		    \
-    : (default)(__VA_ARGS__)						    
+    : (default)(__VA_ARGS__)
 
 
 #define TclObjectDispatchNoDefault(interp, res, objPtr, iface, proc, ...)   \
@@ -3200,7 +3200,7 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int indexCount, Tcl_Obj *const indexArray[]);
-MODULE_SCOPE int	TclLengthIsFinite(ssize_t length);
+MODULE_SCOPE int	TclLengthIsFinite(size_t length);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
 			    int *lines, Tcl_Obj *const *elems);

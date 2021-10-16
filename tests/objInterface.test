@@ -9,7 +9,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-testConstraint testindexhex [expr {[namespace which testindexhex] ne {}}] 
+testConstraint testindexhex [expr {[namespace which testindexhex] ne {}}]
 
 variable list
 variable res
@@ -21,7 +21,7 @@ test {list lindex constant} {INST_LIST_INDEX_IMM} \
 	lindex $list 731
     } -cleanup {
 	catch {unset list}
-    } -result 2db 
+    } -result 2db
 
 
 test {list lindex constant end} {INST_LIST_INDEX_IMM} \
@@ -43,10 +43,10 @@ test {list lindex dynamic} {INST_LIST_INDEX} \
 	set list [testindexhex]
 	set val [expr {731 + 0}]
 	after 100
-	lindex $list $val 
+	lindex $list $val
     } -cleanup {
 	catch {unset list}
-    } -result 2db 
+    } -result 2db
 
 
 test {list lindex dynamic end} {INST_LIST_INDEX} \
@@ -68,7 +68,7 @@ test {list lindex drill} {} \
 	lindex $list 731 0 0 0
     } -cleanup {
 	catch {unset list}
-    } -result 2db 
+    } -result 2db
 
 
 test {list lrange constant} {} \
@@ -97,7 +97,7 @@ test {list lrange end constant} {} \
     -constraints testindexhex \
     -body {
 	set list [testindexhex]
-	lrange $list 10 end 
+	lrange $list 10 end
     } -cleanup {
 	catch {unset list}
     } -returnCodes 1 -result {list length indeterminate}
@@ -108,7 +108,7 @@ test {list lrange end dynamic} {} \
     -body {
 	set list [testindexhex]
 	set back [expr {-5 + 0}]
-	lrange $list 10 end-$back 
+	lrange $list 10 end-$back
     } -cleanup {
 	catch {unset list}
     } -returnCodes 1 -result {list length indeterminate}

@@ -3835,8 +3835,8 @@ TclIndexLast (size_t length) {
  *----------------------------------------------------------------------
  */
 int
-TclLengthIsFinite(ssize_t length) {
-    return length >= 0;
+TclLengthIsFinite(size_t length) {
+    return length != TCL_INDEX_NONE;
 }
 
 /*
