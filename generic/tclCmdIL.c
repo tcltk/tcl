@@ -3533,7 +3533,8 @@ Tcl_LsearchObjCmd(
      */
 
     if (startPtr) {
-	result = TclGetIntForIndexM(interp, startPtr, listc-1, &start);
+	result = TclGetIntForIndexM(interp, startPtr,
+	    TclLengthIsFinite(listc) ? listc - (size_t)1 : TCL_INDEX_END, &start);
 	if (result != TCL_OK) {
 	    goto done;
 	}
@@ -3542,11 +3543,11 @@ Tcl_LsearchObjCmd(
 	}
 
 	/*
-	 * If the search started past the end of the list, we just return a
+	 * If the search started past the end of the list, just return a
 	 * "did not match anything at all" result straight away. [Bug 1374778]
 	 */
 
-	if (start >= (size_t)listc) {
+	if (TclLengthIsFinite(listc) && start >= (size_t)listc) {
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
@@ -3611,6 +3612,7 @@ Tcl_LsearchObjCmd(
     match = 0;
 
     if (mode == SORTED && !allMatches && !negatedMatch) {
+	int isfinite;
 	/*
 	 * If the data is sorted, we can do a more intelligent search. Note
 	 * that there is no point in being smart when -all was specified; in
@@ -3623,13 +3625,43 @@ Tcl_LsearchObjCmd(
 	 */
 
 	lower = start - groupSize;
-	upper = listc;
-	while (lower + groupSize != upper && sortInfo.resultCode == TCL_OK) {
-	    i = (lower + upper)/2;
+	isfinite = TclLengthIsFinite(listc);
+	if (isfinite) {
+	    upper = listc;
+	} else {
+	    upper = 1;
+	}
+	while (
+	    (lower + groupSize < upper && sortInfo.resultCode == TCL_OK)
+	    || !isfinite
+	) {
+	    i = (lower + upper) / 2;
+	    if (i < 0 || upper >= TCL_INDEX_END) {
+		result = TCL_ERROR;
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("sorted list is incoherent", -1));
+		goto done;
+	    }
 	    i -= i % groupSize;
 	    result = Tcl_ListObjIndex(interp, subjectPtr, i+groupOffset, &itemPtr);
 	    if (result != TCL_OK) {
-		goto done;
+		if (isfinite) {
+		    goto done;
+		} else {
+		    if (TclListObjLength(interp, subjectPtr, &listc) == TCL_OK) {
+			isfinite = TclLengthIsFinite(listc);
+			if (isfinite) {
+			    if (listc - 1 > i) {
+				upper = listc = 1;
+			    } else {
+				goto done;
+			    }
+			} else {
+			    goto done;
+			}
+		    } else {
+			goto done;
+		    }
+		}
 	    }
 	    if (sortInfo.indexc != 0) {
 		itemPtr = SelectObjFromSublist(itemPtr, &sortInfo);
@@ -3700,14 +3732,22 @@ Tcl_LsearchObjCmd(
 	    } else if (match > 0) {
 		if (isIncreasing) {
 		    lower = i;
+		    if (!isfinite) {
+			upper *= 2;
+		    }
 		} else {
 		    upper = i;
+		    isfinite = 1;
 		}
 	    } else {
 		if (isIncreasing) {
 		    upper = i;
+		    isfinite = 1;
 		} else {
 		    lower = i;
+		    if (!isfinite) {
+			upper *= 2;
+		    }
 		}
 	    }
 	}
@@ -3725,7 +3765,7 @@ Tcl_LsearchObjCmd(
 	if (allMatches) {
 	    listPtr = Tcl_NewListObj(0, NULL);
 	}
-	for (i = start; i < listc; i += groupSize) {
+	for (i = start; listc < 0 || i < listc; i += groupSize) {
 	    match = 0;
 	    result = Tcl_ListObjIndex(interp, subjectPtr, i+groupOffset, &itemPtr);
 	    if (result != TCL_OK) {
@@ -3941,6 +3981,10 @@ Tcl_LsearchObjCmd(
 	TclStackFree(interp, sortInfo.indexv);
     }
     return result;
+}
+
+int
+lsearchBisectCompare (int dataType) {
 }
 
 /*
@@ -4490,7 +4534,7 @@ Tcl_LsortObjCmd(
 	listRepPtr = ListRepPtr(resultPtr);
 	newArray = &listRepPtr->elements;
 	if (group) {
-	    for (i=0; elementPtr!=NULL ; elementPtr=elementPtr->nextPtr) {
+	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
 		idx = elementPtr->payload.index;
 		for (j = 0; j < groupSize; j++) {
 		    if (indices) {

@@ -49,6 +49,7 @@ ObjInterface tclListInterface = {
 	&TclListObjAppendListDefault,
 	&TclListObjIndexDefault,
 	NULL,
+	NULL,
 	&TclListObjLengthDefault,
 	&TclListObjRangeDefault,
 	NULL,

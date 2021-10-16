@@ -39,7 +39,8 @@ static int indexHexListObjGetElements (tclObjTypeInterfaceArgsListAll);
 static int indexHexListObjAppendElement (tclObjTypeInterfaceArgsListAppend);
 static int indexHexListObjAppendList (tclObjTypeInterfaceArgsListAppendList);
 static int indexHexListObjIndex (tclObjTypeInterfaceArgsListIndex);
-static int indexHexListObjIndexEnd (tclObjTypeInterfaceArgsListIndex);
+static int indexHexListObjIndexEnd (tclObjTypeInterfaceArgsListIndexEnd);
+static int indexHexListObjIsSorted(tclObjTypeInterfaceArgsListIsSorted);
 static int indexHexListObjLength (tclObjTypeInterfaceArgsListLength);
 static Tcl_Obj* indexHexListObjRange (tclObjTypeInterfaceArgsListRange);
 static Tcl_Obj* indexHexListObjRangeEnd (tclObjTypeInterfaceArgsListRangeEnd);
@@ -56,6 +57,7 @@ ObjInterface IndexHexInterface = {
 	&indexHexListObjAppendList,
 	&indexHexListObjIndex,
 	&indexHexListObjIndexEnd,
+	&indexHexListObjIsSorted,
 	&indexHexListObjLength,
 	&indexHexListObjRange,
 	&indexHexListObjRangeEnd,
@@ -203,6 +205,10 @@ indexHexListObjIndexEnd(tclObjTypeInterfaceArgsListIndexEnd)
     return indexHexListErrorIndeterminate(interp);
 }
 
+static int indexHexListObjIsSorted(tclObjTypeInterfaceArgsListIsSorted)
+{
+    return 1;
+}
 
 static int
 indexHexListObjLength(tclObjTypeInterfaceArgsListLength)

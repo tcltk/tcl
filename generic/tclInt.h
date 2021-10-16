@@ -317,6 +317,11 @@ typedef struct ObjectType {
     int index,		/* Index of element to return. */ \
     Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 
+#define tclObjTypeInterfaceArgsListIsSorted \
+    Tcl_Interp * interp, /* Used to report errors */ \
+    Tcl_Obj *listPtr,	/* The list in question */ \
+    size_t flags	/* flags */ 
+
 #define tclObjTypeInterfaceArgsListLength \
     Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \
     Tcl_Obj *listPtr,	/* List object whose #elements to return. */ \
@@ -376,6 +381,7 @@ typedef struct ObjInterface {
 	int (*appendlist)(tclObjTypeInterfaceArgsListAppendList);
 	int (*index)(tclObjTypeInterfaceArgsListIndex);
 	int (*indexEnd)(tclObjTypeInterfaceArgsListIndexEnd);
+	int (*isSorted)(tclObjTypeInterfaceArgsListIsSorted);
 	int (*length)(tclObjTypeInterfaceArgsListLength);
 	Tcl_Obj* (*range)(tclObjTypeInterfaceArgsListRange);
 	Tcl_Obj* (*rangeEnd)(tclObjTypeInterfaceArgsListRangeEnd);
