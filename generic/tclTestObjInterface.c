@@ -89,7 +89,10 @@ int TcltestObjectInterfaceInit(Tcl_Interp *interp) {
 
 
 int NewTestIndexHex (
-    ClientData, Tcl_Interp *interp, int argc, Tcl_Obj *const objv[])
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int argc,
+    Tcl_Obj *const objv[])
 {
     Tcl_WideInt offset;
     Tcl_ObjIntRep intrep;
@@ -122,7 +125,9 @@ int NewTestIndexHex (
 }
 
 static void
-DupTestIndexHexInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
+DupTestIndexHexInternalRep(
+    TCL_UNUSED(Tcl_Obj *),
+    TCL_UNUSED(Tcl_Obj *))
 {
     return;
 }
@@ -152,7 +157,8 @@ SetTestIndexHexFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 
 static void
-UpdateStringOfTestIndexHex(Tcl_Obj *listPtr)
+UpdateStringOfTestIndexHex(
+    TCL_UNUSED(Tcl_Obj *))
 {
     return;
 }

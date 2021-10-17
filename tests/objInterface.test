@@ -128,20 +128,20 @@ test {list lsearch} {} \
     -constraints testindexhex \
     -body {
 	set list [testindexhex]
-	lsearch $list ff 
+	lsearch $list ff
     } -cleanup {
 	catch {unset list}
-    } -result 255 
+    } -result 255
 
 
 test {list lsearch sorted} {} \
     -constraints testindexhex \
     -body {
 	set list [testindexhex]
-	lsearch -sorted $list ff 
+	lsearch -sorted $list ff
     } -cleanup {
 	catch {unset list}
-    } -returnCodes 1 -result {sorted list is incoherent} 
+    } -returnCodes 1 -result {sorted list is incoherent}
 
 
 test {list lsearch start} {} \

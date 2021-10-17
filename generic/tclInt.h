@@ -320,7 +320,7 @@ typedef struct ObjectType {
 #define tclObjTypeInterfaceArgsListIsSorted \
     Tcl_Interp * interp, /* Used to report errors */ \
     Tcl_Obj *listPtr,	/* The list in question */ \
-    size_t flags	/* flags */ 
+    size_t flags	/* flags */
 
 #define tclObjTypeInterfaceArgsListLength \
     Tcl_Interp *interp,	/* Used to report errors if not NULL. */ \

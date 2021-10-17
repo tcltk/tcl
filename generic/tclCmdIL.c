@@ -3982,10 +3982,6 @@ Tcl_LsearchObjCmd(
     }
     return result;
 }
-
-int
-lsearchBisectCompare (int dataType) {
-}
 
 /*
  *----------------------------------------------------------------------
