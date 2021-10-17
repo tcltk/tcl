@@ -221,16 +221,15 @@ indexHexListObjLength(tclObjTypeInterfaceArgsListLength)
 static Tcl_Obj*
 indexHexListObjRange(tclObjTypeInterfaceArgsListRange)
 {
-    int i;
     Tcl_Obj *itemPtr, *resPtr;
     resPtr = Tcl_NewListObj(0, NULL);
-    while (fromIdx <= length && fromIdx <= toIdx) {
+    while (fromIdx <= (size_t)length && fromIdx <= toIdx) {
 	indexHexListObjIndex(interp, listPtr, fromIdx, &itemPtr);
 	if (
 	    Tcl_ListObjAppendElement(interp, resPtr, itemPtr) != TCL_OK
 	) {
 	    Tcl_DecrRefCount(resPtr);
-	    return TCL_ERROR;
+	    return NULL;
 	}
 	fromIdx++;
     }
