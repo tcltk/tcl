@@ -22,6 +22,8 @@ catch {
     package require -exact tcl::test [info patchlevel]
 }
 
+testConstraint deprecated [expr {![info exists tcl_precision]}]
+
 proc toutf {args} {
     variable x
     lappend x "toutf $args"
@@ -287,6 +289,12 @@ test encoding-11.8 {encoding: extended Unicode UTF-16} {
 test encoding-11.9 {encoding: extended Unicode UTF-16} {
     viewable [encoding convertto utf-16be 😹]
 } {Ø=Þ9 (\u00D8=\u00DE9)}
+test encoding-11.10 {encoding: extended Unicode UTF-32} {
+    viewable [encoding convertto utf-32le 😹]
+} "9\xF6\x01\x00 (9\\u00F6\\u0001\\u0000)"
+test encoding-11.11 {encoding: extended Unicode UTF-32} {
+    viewable [encoding convertto utf-32be 😹]
+} "\x00\x01\xF69 (\\u0000\\u0001\\u00F69)"
 # OpenEncodingFile is fully tested by the rest of the tests in this file.
 
 test encoding-12.1 {LoadTableEncoding: normal encoding} {
@@ -461,10 +469,18 @@ test encoding-16.4 {Ucs2ToUtfProc} -body {
     set val [encoding convertfrom ucs-2 NN]
     list $val [format %x [scan $val %c]]
 } -result "乎 4e4e"
-test encoding-16.4 {Ucs2ToUtfProc} -body {
+test encoding-16.5 {Ucs2ToUtfProc} -body {
     set val [encoding convertfrom ucs-2 "\xD8\xD8\xDC\xDC"]
     list $val [format %x [scan $val %c]]
 } -result "\U460DC 460dc"
+test encoding-16.6 {Utf32ToUtfProc} -body {
+    set val [encoding convertfrom utf-32le NN\0\0]
+    list $val [format %x [scan $val %c]]
+} -result "乎 4e4e"
+test encoding-16.7 {Utf32ToUtfProc} -body {
+    set val [encoding convertfrom utf-32be \0\0NN]
+    list $val [format %x [scan $val %c]]
+} -result "乎 4e4e"
 
 test encoding-17.1 {UtfToUtf16Proc} -body {
     encoding convertto utf-16 "\U460DC"
@@ -478,6 +494,12 @@ test encoding-17.3 {UtfToUtf16Proc} -body {
 test encoding-17.4 {UtfToUtf16Proc} -body {
     encoding convertto -nothrow utf-16le "\uD8D8"
 } -result "\xFD\xFF"
+test encoding-17.5 {UtfToUtf16Proc} -body {
+    encoding convertto utf-32le "\U460DC"
+} -result "\xDC\x60\x04\x00"
+test encoding-17.6 {UtfToUtf16Proc} -body {
+    encoding convertto utf-32be "\U460DC"
+} -result "\x00\x04\x60\xDC"
 
 test encoding-18.1 {TableToUtfProc} {
 } {}
@@ -615,51 +637,42 @@ test encoding-24.10 {Parse valid or invalid utf-8} {
 test encoding-24.11 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom -nothrow utf-8 "\xEF\xBF\xBF"]
 } 1
-test encoding-24.12 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom -stoponerror utf-8 "\xC0\x80"]
-} 1
-test encoding-24.13 {Parse valid or invalid utf-8} -body {
-    encoding convertfrom -stoponerror utf-8 "\xC0\x81"
+test encoding-24.12 {Parse valid or invalid utf-8} -constraints deprecated -body {
+    encoding convertfrom utf-8 "\xC0\x81"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
-test encoding-24.14 {Parse valid or invalid utf-8} -body {
-    encoding convertfrom -stoponerror utf-8 "\xC1\xBF"
+test encoding-24.13 {Parse valid or invalid utf-8} -constraints deprecated -body {
+    encoding convertfrom utf-8 "\xC1\xBF"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC1'}
-test encoding-24.15 {Parse valid or invalid utf-8} {
-    string length [encoding convertfrom -stoponerror utf-8 "\xC2\x80"]
+test encoding-24.14 {Parse valid or invalid utf-8} {
+    string length [encoding convertfrom utf-8 "\xC2\x80"]
 } 1
-test encoding-24.16 {Parse valid or invalid utf-8} -body {
-    encoding convertfrom -stoponerror utf-8 "Z\xE0\x80"
+test encoding-24.15 {Parse valid or invalid utf-8} -constraints deprecated -body {
+    encoding convertfrom utf-8 "Z\xE0\x80"
 } -returnCodes 1 -result {unexpected byte sequence starting at index 1: '\xE0'}
-test encoding-24.17 {Parse valid or invalid utf-8} -constraints testbytestring -body {
-    encoding convertto -stoponerror utf-8 [testbytestring "Z\u4343\x80"]
+test encoding-24.16 {Parse valid or invalid utf-8} -constraints {testbytestring deprecated} -body {
+    encoding convertto utf-8 [testbytestring "Z\u4343\x80"]
 } -returnCodes 1 -result {expected byte sequence but character 1 was '䍃' (U+004343)}
-test encoding-24.18 {Parse valid or invalid utf-8} -constraints testbytestring -body {
-    encoding convertto -stoponerror utf-8 [testbytestring "Z\xE0\x80"]
+test encoding-24.17 {Parse valid or invalid utf-8} -constraints {testbytestring deprecated} -body {
+    encoding convertto utf-8 [testbytestring "Z\xE0\x80"]
 } -result "Z\xC3\xA0\xE2\x82\xAC"
-test encoding-24.19 {Parse valid or invalid utf-8} -constraints testbytestring -body {
-    encoding convertto -stoponerror utf-8 [testbytestring "Z\xE0\x80xxxxxx"]
+test encoding-24.18 {Parse valid or invalid utf-8} -constraints {testbytestring deprecated} -body {
+    encoding convertto utf-8 [testbytestring "Z\xE0\x80xxxxxx"]
 } -result "Z\xC3\xA0\xE2\x82\xACxxxxxx"
-test encoding-24.20 {Parse valid or invalid utf-8} -body {
-    encoding convertto -stoponerror utf-8 "ZX\uD800"
+test encoding-24.19 {Parse valid or invalid utf-8} -constraints deprecated -body {
+    encoding convertto utf-8 "ZX\uD800"
 } -returnCodes 1 -match glob -result "unexpected character at index 2: 'U+00D800'"
-test encoding-24.21 {Parse with -nothrow but without providing encoding} {
+test encoding-24.20 {Parse with -nothrow but without providing encoding} {
     string length [encoding convertfrom -nothrow "\x20"]
 } 1
-test encoding-24.22 {Parse with -nothrow but without providing encoding} {
+test encoding-24.21 {Parse with -nothrow but without providing encoding} {
     string length [encoding convertto -nothrow "\x20"]
 } 1
-test encoding-24.23 {Syntax error, two encodings} -body {
+test encoding-24.22 {Syntax error, two encodings} -body {
     encoding convertfrom iso8859-1 utf-8 "ZX\uD800"
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-nothrow|-stoponerror? ?encoding? data"}
-test encoding-24.24 {Syntax error, two encodings} -body {
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-nothrow? ?encoding? data"}
+test encoding-24.23 {Syntax error, two encodings} -body {
     encoding convertto iso8859-1 utf-8 "ZX\uD800"
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-nothrow|-stoponerror? ?encoding? data"}
-test encoding-24.25 {Syntax error, two options} -body {
-    encoding convertfrom -nothrow -stoponerror "ZX\uD800"
-} -returnCodes 1 -result {unknown encoding "-stoponerror"}
-test encoding-24.26 {Syntax error, two options} -body {
-    encoding convertto -nothrow -stoponerror "ZX\uD800"
-} -returnCodes 1 -result {unknown encoding "-stoponerror"}
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-nothrow? ?encoding? data"}
 
 file delete [file join [temporaryDirectory] iso2022.txt]
 
@@ -822,7 +835,7 @@ test encoding-28.0 {all encodings load} -body {
 		llength $name
 	}
 	return $count
-} -result [expr {[info exists ::tcl_precision] ? 88 : 87}]
+} -result [expr {[info exists ::tcl_precision] ? 92 : 91}]
 
 runtests
 

@@ -2926,6 +2926,9 @@ MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
 			    CmdFrame **cfPtrPtr, int *wordPtr);
+MODULE_SCOPE int	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
+			    ClientData clientData, int *flagPtr, int value);
+MODULE_SCOPE void	TclAsyncMarkFromNotifier(void);
 MODULE_SCOPE double	TclBignumToDouble(const void *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
@@ -2990,6 +2993,7 @@ MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
 MODULE_SCOPE Tcl_Obj *const *TclFetchEnsembleRoot(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, int objc, int *objcPtr);
+MODULE_SCOPE Tcl_Obj *const *TclEnsembleGetRewriteValues(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Namespace *TclEnsureNamespace(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr);
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
@@ -3141,6 +3145,7 @@ MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    int len);
 MODULE_SCOPE void	TclpAlertNotifier(ClientData clientData);
+MODULE_SCOPE ClientData	TclpNotifierData(void);
 MODULE_SCOPE void	TclpServiceModeHook(int mode);
 MODULE_SCOPE void	TclpSetTimer(const Tcl_Time *timePtr);
 MODULE_SCOPE int	TclpWaitForEvent(const Tcl_Time *timePtr);
@@ -3214,7 +3219,7 @@ MODULE_SCOPE int	TclScanElement(const char *string, int length,
 			    char *flagPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
-MODULE_SCOPE void	TclSetBignumIntRep(Tcl_Obj *objPtr,
+MODULE_SCOPE void	TclSetBignumInternalRep(Tcl_Obj *objPtr,
 			    void *bignumValue);
 MODULE_SCOPE int	TclSetBooleanFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -4531,17 +4536,21 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * representation. Does not actually reset the rep's bytes. The ANSI C
  * "prototype" for this macro is:
  *
- * MODULE_SCOPE void	TclFreeIntRep(Tcl_Obj *objPtr);
+ * MODULE_SCOPE void	TclFreeInternalRep(Tcl_Obj *objPtr);
  *----------------------------------------------------------------
  */
 
-#define TclFreeIntRep(objPtr) \
+#define TclFreeInternalRep(objPtr) \
     if ((objPtr)->typePtr != NULL) { \
 	if ((objPtr)->typePtr->freeIntRepProc != NULL) { \
 	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
 	} \
 	(objPtr)->typePtr = NULL; \
     }
+
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 8
+#   define TclFreeIntRep(objPtr) TclFreeInternalRep(objPtr)
+#endif
 
 /*
  *----------------------------------------------------------------
@@ -4753,10 +4762,10 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclIsPureDict(objPtr) \
 	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclDictType))
-#define TclHasIntRep(objPtr, type) \
+#define TclHasInternalRep(objPtr, type) \
 	((objPtr)->typePtr == (type))
-#define TclFetchIntRep(objPtr, type) \
-	(TclHasIntRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
+#define TclFetchInternalRep(objPtr, type) \
+	(TclHasInternalRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
 
 
 /*
@@ -4846,18 +4855,18 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 
 #define TclSetIntObj(objPtr, i) \
     do {						\
-	Tcl_ObjIntRep ir;				\
+	Tcl_ObjInternalRep ir;				\
 	ir.wideValue = (Tcl_WideInt) i;			\
 	TclInvalidateStringRep(objPtr);			\
-	Tcl_StoreIntRep(objPtr, &tclIntType, &ir);	\
+	Tcl_StoreInternalRep(objPtr, &tclIntType, &ir);	\
     } while (0)
 
 #define TclSetDoubleObj(objPtr, d) \
     do {						\
-	Tcl_ObjIntRep ir;				\
+	Tcl_ObjInternalRep ir;				\
 	ir.doubleValue = (double) d;			\
 	TclInvalidateStringRep(objPtr);			\
-	Tcl_StoreIntRep(objPtr, &tclDoubleType, &ir);	\
+	Tcl_StoreInternalRep(objPtr, &tclDoubleType, &ir);	\
     } while (0)
 
 /*
@@ -5205,8 +5214,7 @@ typedef struct NRE_callback {
 
 #ifdef MAC_OSX_TCL
 #define TCL_MAC_EMPTY_FILE(name) \
-    static __attribute__((used)) const void *const TclUnusedFile_ ## name; \
-    static const void *const TclUnusedFile_ ## name = NULL;
+    static __attribute__((used)) const void *const TclUnusedFile_ ## name = NULL;
 #else
 #define TCL_MAC_EMPTY_FILE(name)
 #endif /* MAC_OSX_TCL */

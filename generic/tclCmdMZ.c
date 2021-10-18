@@ -1611,7 +1611,7 @@ StringIsCmd(
     case STR_IS_BOOL:
     case STR_IS_TRUE:
     case STR_IS_FALSE:
-	if (!TclHasIntRep(objPtr, &tclBooleanType)
+	if (!TclHasInternalRep(objPtr, &tclBooleanType)
 		&& (TCL_OK != TclSetBooleanFromAny(NULL, objPtr))) {
 	    if (strict) {
 		result = 0;
@@ -1681,9 +1681,9 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	if (TclHasIntRep(objPtr, &tclDoubleType) ||
-		TclHasIntRep(objPtr, &tclIntType) ||
-		TclHasIntRep(objPtr, &tclBignumType)) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType) ||
+		TclHasInternalRep(objPtr, &tclIntType) ||
+		TclHasInternalRep(objPtr, &tclBignumType)) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1702,7 +1702,7 @@ StringIsCmd(
 	    failat = stop - string1;
 	    if (stop < end) {
 		result = 0;
-		TclFreeIntRep(objPtr);
+		TclFreeInternalRep(objPtr);
 	    }
 	}
 	break;
@@ -1712,8 +1712,8 @@ StringIsCmd(
 	break;
     case STR_IS_INT:
     case STR_IS_ENTIER:
-	if (TclHasIntRep(objPtr, &tclIntType) ||
-		TclHasIntRep(objPtr, &tclBignumType)) {
+	if (TclHasInternalRep(objPtr, &tclIntType) ||
+		TclHasInternalRep(objPtr, &tclBignumType)) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1742,7 +1742,7 @@ StringIsCmd(
 
 		result = 0;
 		failat = stop - string1;
-		TclFreeIntRep(objPtr);
+		TclFreeInternalRep(objPtr);
 	    }
 	} else {
 	    /*
@@ -1795,7 +1795,7 @@ StringIsCmd(
 		 */
 
 		failat = stop - string1;
-		TclFreeIntRep(objPtr);
+		TclFreeInternalRep(objPtr);
 	    }
 	} else {
 	    /*
@@ -1990,7 +1990,7 @@ StringMapCmd(
      */
 
     if (!TclHasStringRep(objv[objc-2])
-	    && TclHasIntRep(objv[objc-2], &tclDictType)) {
+	    && TclHasInternalRep(objv[objc-2], &tclDictType)) {
 	int i, done;
 	Tcl_DictSearch search;
 
@@ -5120,15 +5120,15 @@ TryPostHandler(
 {
     Tcl_Obj *resultObj, *cmdObj, *options, *handlerKindObj, **objv;
     Tcl_Obj *finallyObj;
-    int finally;
+    int finallyIndex;
 
     objv = (Tcl_Obj **)data[0];
     options = (Tcl_Obj *)data[1];
     handlerKindObj = (Tcl_Obj *)data[2];
-    finally = PTR2INT(data[3]);
+    finallyIndex = PTR2INT(data[3]);
 
     cmdObj = objv[0];
-    finallyObj = finally ? objv[finally] : 0;
+    finallyObj = finallyIndex ? objv[finallyIndex] : 0;
 
     /*
      * Check for limits/rewinding, which override normal trapping behaviour.
@@ -5172,7 +5172,7 @@ TryPostHandler(
 
 	/* The 'finally' script is always the last argument word. */
 	return TclNREvalObjEx(interp, finallyObj, 0, iPtr->cmdFramePtr,
-		finally);
+		finallyIndex);
     }
 
     /*

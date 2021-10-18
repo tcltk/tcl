@@ -584,7 +584,7 @@ EncodingConvertfromObjCmd(
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nothrow|-stoponerror? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nothrow? ?encoding? data");
 	return TCL_ERROR;
     }
 
@@ -690,7 +690,7 @@ EncodingConverttoObjCmd(
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nothrow|-stoponerror? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nothrow? ?encoding? data");
 	return TCL_ERROR;
     }
 
