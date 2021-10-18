@@ -221,6 +221,7 @@ TCLSHOBJS = \
 TCLTESTOBJS = \
 	$(TMP_DIR)\tclTest.obj \
 	$(TMP_DIR)\tclTestObj.obj \
+	$(TMP_DIR)\tclTestObjInterface.obj \
 	$(TMP_DIR)\tclTestProcBodyObj.obj \
 	$(TMP_DIR)\tclThreadTest.obj \
 	$(TMP_DIR)\tclWinTest.obj \
