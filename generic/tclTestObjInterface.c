@@ -34,7 +34,15 @@ static int		SetTestIndexHexFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfTestIndexHex(Tcl_Obj *listPtr);
 
 
+static int indexHexListStringIndex (tclObjTypeInterfaceArgsStringIndex);
+static int indexHexListStringIndexEnd(tclObjTypeInterfaceArgsStringIndexEnd);
+static int indexHexListStingLength(tclObjTypeInterfaceArgsStringLength);
+ 
+
 static int indexHexListErrorIndeterminate (Tcl_Interp *interp);
+static int indexHexListErrorReadOnly (Tcl_Interp *interp);
+
+
 static int indexHexListObjGetElements (tclObjTypeInterfaceArgsListAll);
 static int indexHexListObjAppendElement (tclObjTypeInterfaceArgsListAppend);
 static int indexHexListObjAppendList (tclObjTypeInterfaceArgsListAppendList);
@@ -51,6 +59,11 @@ static Tcl_Obj * indexHexLsetFlat (tclObjTypeInterfaceArgsListSetList);
 
 ObjInterface IndexHexInterface = {
     1,
+    {
+	&indexHexListStringIndex,
+	&indexHexListStringIndexEnd,
+	&indexHexListStingLength
+    },
     {
 	&indexHexListObjGetElements,
 	&indexHexListObjAppendElement,
@@ -81,13 +94,14 @@ const ObjectType testIndexHexType = {
 
 const Tcl_ObjType *testIndexHexTypePtr = (Tcl_ObjType *)&testIndexHexType;
 
-
+
 int TcltestObjectInterfaceInit(Tcl_Interp *interp) {
     Tcl_CreateObjCommand(interp, "testindexhex", NewTestIndexHex, NULL, NULL);
     return TCL_OK;
 }
 
 
+
 int NewTestIndexHex (
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
@@ -124,6 +138,7 @@ int NewTestIndexHex (
     return TCL_OK;
 }
 
+
 static void
 DupTestIndexHexInternalRep(
     TCL_UNUSED(Tcl_Obj *),
@@ -132,6 +147,7 @@ DupTestIndexHexInternalRep(
     return;
 }
 
+
 static void
 FreeTestIndexHexInternalRep(Tcl_Obj *objPtr)
 {
@@ -142,6 +158,7 @@ FreeTestIndexHexInternalRep(Tcl_Obj *objPtr)
     return;
 }
 
+
 static int
 SetTestIndexHexFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
@@ -156,6 +173,7 @@ SetTestIndexHexFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     }
 }
 
+
 static void
 UpdateStringOfTestIndexHex(
     TCL_UNUSED(Tcl_Obj *))
@@ -163,6 +181,23 @@ UpdateStringOfTestIndexHex(
     return;
 }
 
+
+static int indexHexListStringIndex (tclObjTypeInterfaceArgsStringIndex) {
+    Tcl_Obj *itemPtr, *stringPtr;
+    objPtrPtr = Tcl_NewStringObj("z", -1);
+    return TCL_OK;
+}
+
+
+static int indexHexListStringIndexEnd(tclObjTypeInterfaceArgsStringIndexEnd) {
+    return TCL_ERROR;
+}
+
+static int indexHexListStingLength(tclObjTypeInterfaceArgsStringLength) {
+    return -1;
+}
+
+
 static int indexHexListErrorIndeterminate (Tcl_Interp *interp) {
     Tcl_SetObjResult(interp,
 	Tcl_NewStringObj("list length indeterminate", -1));
@@ -170,6 +205,16 @@ static int indexHexListErrorIndeterminate (Tcl_Interp *interp) {
     return TCL_ERROR;
 }
 
+
+static int indexHexListErrorReadOnly (Tcl_Interp *interp) {
+    Tcl_SetObjResult(interp,
+	Tcl_NewStringObj("list length indeterminate", -1));
+    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", "INTERFACE",
+	"READONLY", NULL);
+    return TCL_ERROR;
+}
+
+
 static int
 indexHexListObjGetElements(tclObjTypeInterfaceArgsListAll)
 {
@@ -179,21 +224,23 @@ indexHexListObjGetElements(tclObjTypeInterfaceArgsListAll)
     return TCL_ERROR;
 }
 
-
+
 static int
 indexHexListObjAppendElement(tclObjTypeInterfaceArgsListAppend)
 {
+    indexHexListErrorReadOnly(interp);
     return TCL_ERROR;
 }
 
-
+
 static int
 indexHexListObjAppendList(tclObjTypeInterfaceArgsListAppendList)
 {
+    indexHexListErrorReadOnly(interp);
     return TCL_ERROR;
 }
 
-
+
 static int
 indexHexListObjIndex(tclObjTypeInterfaceArgsListIndex)
 {
@@ -204,18 +251,20 @@ indexHexListObjIndex(tclObjTypeInterfaceArgsListIndex)
     return TCL_OK;
 }
 
-
+
 static int
 indexHexListObjIndexEnd(tclObjTypeInterfaceArgsListIndexEnd)
 {
     return indexHexListErrorIndeterminate(interp);
 }
 
+
 static int indexHexListObjIsSorted(tclObjTypeInterfaceArgsListIsSorted)
 {
     return 1;
 }
 
+
 static int
 indexHexListObjLength(tclObjTypeInterfaceArgsListLength)
 {
@@ -223,7 +272,7 @@ indexHexListObjLength(tclObjTypeInterfaceArgsListLength)
     return TCL_OK;
 }
 
-
+
 static Tcl_Obj*
 indexHexListObjRange(tclObjTypeInterfaceArgsListRange)
 {
@@ -242,6 +291,7 @@ indexHexListObjRange(tclObjTypeInterfaceArgsListRange)
     return resPtr;
 }
 
+
 static Tcl_Obj*
 indexHexListObjRangeEnd(tclObjTypeInterfaceArgsListRangeEnd) {
     if (fromAnchor == 1 || toAnchor == 1) {
@@ -251,21 +301,25 @@ indexHexListObjRangeEnd(tclObjTypeInterfaceArgsListRangeEnd) {
     return indexHexListObjRange(interp, listPtr, -1, fromIdx, toIdx);
 }
 
-
+
 static int
 indexHexListObjReplace(tclObjTypeInterfaceArgsListReplace)
 {
+    indexHexListErrorReadOnly(interp);
     return TCL_ERROR;
 }
 
-
+
 static int
 indexHexListObjSetElement(tclObjTypeInterfaceArgsListSet)
 {
+    indexHexListErrorReadOnly(interp);
     return TCL_ERROR;
 }
 
+
 static Tcl_Obj * indexHexLsetFlat (tclObjTypeInterfaceArgsListSetList)
 {
+    indexHexListErrorReadOnly(interp);
     return NULL;
 }

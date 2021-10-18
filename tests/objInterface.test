@@ -14,6 +14,16 @@ testConstraint testindexhex [expr {[namespace which testindexhex] ne {}}]
 variable list
 variable res
 
+
+test {list length} {INST_LIST_INDEX_IMM} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	llength $list
+    } -cleanup {
+	catch {unset list}
+    } -result -1 
+
 test {list lindex constant} {INST_LIST_INDEX_IMM} \
     -constraints testindexhex \
     -body {
@@ -152,6 +162,27 @@ test {list lsearch start} {} \
     } -cleanup {
 	catch {unset list}
     } -result 40960
+
+
+test {string index} {} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	lappend res [string index $list 5]
+	return $res
+    } -cleanup {
+	catch {unset list}
+    } -result 40960
+
+
+test {string length} {} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	string length $list
+    } -cleanup {
+	catch {unset list}
+    } -result -1
 
 # cleanup
 ::tcltest::cleanupTests

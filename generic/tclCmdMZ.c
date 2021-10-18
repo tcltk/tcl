@@ -1312,7 +1312,7 @@ StringFirstCmd(
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"needleString haystackString ?startIndex?");
+	    "needleString haystackString ?startIndex?");
 	return TCL_ERROR;
     }
 
@@ -1403,42 +1403,69 @@ StringIndexCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * Get the char length to calculate what 'end' means.
-     */
+    if (TclObjectHasInterface(objv[1], string, index)) {
+	Tcl_Obj *charPtr;
+	int decoded, encoded, status;
 
-    end = Tcl_GetCharLength(objv[1]) - 1;
-    if (TclGetIntForIndexM(interp, objv[2], end, &index) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    if ((index != TCL_INDEX_NONE) && (index + 1 <= end + 1)) {
-	int ch = Tcl_GetUniChar(objv[1], index);
-
-	if (ch == -1) {
-	    return TCL_OK;
+	status = TclIndexEncode(interp, objv[2] , TCL_INDEX_NONE,
+	    TCL_INDEX_NONE, &encoded);
+	if (status != TCL_OK) {
+	    return TCL_ERROR;
 	}
 
+	if (TclIndexIsFromEnd(encoded)) {
+	    decoded = TclIndexDecode(encoded, SIZE_MAX);
+	    if (TclObjectInterfaceCall(objv[1], string, indexEnd,
+		interp, objv[1], decoded, &charPtr) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else {
+	    decoded = TclIndexDecode(encoded, TCL_INDEX_END);
+	    if (TclObjectInterfaceCall(objv[1], string, index, interp, objv[1],
+		decoded, &charPtr) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_SetObjResult(interp, charPtr);
+	return TCL_OK;
+    } else {
 	/*
-	 * If we have a ByteArray object, we're careful to generate a new
-	 * bytearray for a result.
+	 * Get the char length to calculate what 'end' means.
 	 */
 
-	if (TclIsPureByteArray(objv[1])) {
-	    unsigned char uch = UCHAR(ch);
-
-	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
-	} else {
-	    char buf[4] = "";
-
-	    end = Tcl_UniCharToUtf(ch, buf);
-	    if ((ch >= 0xD800) && (end < 3)) {
-		end += Tcl_UniCharToUtf(-1, buf + end);
-	    }
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, end));
+	end = Tcl_GetCharLength(objv[1]) - 1;
+	if (TclGetIntForIndexM(interp, objv[2], end, &index) != TCL_OK) {
+	    return TCL_ERROR;
 	}
+
+	if ((index != TCL_INDEX_NONE) && (index + 1 <= end + 1)) {
+	    int ch = Tcl_GetUniChar(objv[1], index);
+
+	    if (ch == -1) {
+		return TCL_OK;
+	    }
+
+	    /*
+	     * If we have a ByteArray object, we're careful to generate a new
+	     * bytearray for a result.
+	     */
+
+	    if (TclIsPureByteArray(objv[1])) {
+		unsigned char uch = UCHAR(ch);
+
+		Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
+	    } else {
+		char buf[4] = "";
+
+		end = Tcl_UniCharToUtf(ch, buf);
+		if ((ch >= 0xD800) && (end < 3)) {
+		    end += Tcl_UniCharToUtf(-1, buf + end);
+		}
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, end));
+	    }
+	}
+	return TCL_OK;
     }
-    return TCL_OK;
 }
 
 /*

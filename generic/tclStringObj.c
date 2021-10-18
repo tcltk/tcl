@@ -62,6 +62,7 @@ static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
 			    size_t numAppendChars);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
+static size_t		TclGetCharLengthDefault(Tcl_Obj *objPtr);
 static void		GrowStringBuffer(Tcl_Obj *objPtr, size_t needed, int flag);
 static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, size_t needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -393,11 +394,18 @@ Tcl_NewUnicodeObj(
  *
  *----------------------------------------------------------------------
  */
-
 size_t
 Tcl_GetCharLength(
     Tcl_Obj *objPtr)		/* The String object to get the num chars
 				 * of. */
+{
+    return TclObjectDispatch(objPtr, TclGetCharLengthDefault,
+	string, length, objPtr);
+}
+
+size_t
+TclGetCharLengthDefault(
+    Tcl_Obj *objPtr)
 {
     String *stringPtr;
     size_t numChars = 0;

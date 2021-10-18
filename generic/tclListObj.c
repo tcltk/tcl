@@ -26,6 +26,25 @@ static void		DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void		FreeListInternalRep(Tcl_Obj *listPtr);
 static int		SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfList(Tcl_Obj *listPtr);
+static int		ListObjAppendElement(Tcl_Interp *interp,
+			    Tcl_Obj *listPtr, Tcl_Obj *objPtr);
+static int		ListObjAppendList(Tcl_Interp *interp,
+			    Tcl_Obj *listPtr, Tcl_Obj *elemListPtr);
+static int		ListObjAppendIndex(Tcl_Interp *interp, Tcl_Obj *listPtr,
+			    int index, Tcl_Obj **objPtrPtr);
+static int		ListObjInterfaceGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+			    int *objcPtr, Tcl_Obj ***objvPtr);
+static int		ListObjInterfaceLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+			    int *intPtr);
+static int		ListObjSetElement(Tcl_Interp *interp, Tcl_Obj *listPtr,
+			    int index, Tcl_Obj *valuePtr);
+static Tcl_Obj *	LsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
+			    int indexCount, Tcl_Obj *const indexArray[],
+			    Tcl_Obj *valuePtr);
+static Tcl_Obj *	ListObjRange(Tcl_Interp *interp, Tcl_Obj *listPtr, int length
+			    , size_t fromIdx, size_t toIdx);
+static int		ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr,
+			    int first, int count, int objc, Tcl_Obj *const objv[]);
 
 /*
  * The structure below defines the list Tcl object type by means of functions
@@ -43,19 +62,20 @@ static void		UpdateStringOfList(Tcl_Obj *listPtr);
 
 ObjInterface tclListInterface = {
     1,
+    {},
     {
-	&TclListObjGetElementsDefault,
-	&Tcl_ListObjAppendElementDefault,
-	&TclListObjAppendListDefault,
-	&TclListObjIndexDefault,
+	&ListObjInterfaceGetElements,
+	&ListObjAppendElement,
+	&ListObjAppendList,
+	&ListObjAppendIndex,
 	NULL,
 	NULL,
-	&TclListObjLengthDefault,
-	&TclListObjRangeDefault,
+	&ListObjInterfaceLength,
+	&ListObjRange,
 	NULL,
-	&TclListObjReplaceDefault,
-	&TclListObjSetElementDefault,
-	&TclLsetFlatDefault
+	&ListObjReplace,
+	&ListObjSetElement,
+	&LsetFlat
     },
 };
 
@@ -469,13 +489,13 @@ TclListObjRange(
 	TclNewObj(obj);
 	return obj;
     }
-    return TclObjectDispatch(listPtr, TclListObjRangeDefault, list
+    return TclObjectDispatch(listPtr, ListObjRange, list
 	, range, interp, listPtr, length, fromIdx, toIdx);
 }
 
 
 Tcl_Obj *
-TclListObjRangeDefault(
+ListObjRange(
     tclObjTypeInterfaceArgsListRange)
 {
     Tcl_Obj **elemPtrs;
@@ -559,12 +579,12 @@ TclListObjRangeDefault(
 int
 Tcl_ListObjGetElements(tclObjTypeInterfaceArgsListAll)
 {
-    return TclObjectDispatch(listPtr, TclListObjGetElementsDefault,
+    return TclObjectDispatch(listPtr, ListObjInterfaceGetElements,
 	list, all, interp, listPtr, objcPtr, objvPtr);
 }
 
 int
-TclListObjGetElementsDefault(tclObjTypeInterfaceArgsListAll)
+ListObjInterfaceGetElements(tclObjTypeInterfaceArgsListAll)
 {
     List *listRepPtr;
 
@@ -623,12 +643,12 @@ TclListObjGetElementsDefault(tclObjTypeInterfaceArgsListAll)
 int
 Tcl_ListObjAppendList(tclObjTypeInterfaceArgsListAppendList)
 {
-    return TclObjectDispatch(listPtr, TclListObjAppendListDefault,
+    return TclObjectDispatch(listPtr, ListObjAppendList,
 	list, appendlist, interp, listPtr, elemListPtr);
 }
 
 int
-TclListObjAppendListDefault(tclObjTypeInterfaceArgsListAppendList)
+ListObjAppendList(tclObjTypeInterfaceArgsListAppendList)
 {
     int objc;
     Tcl_Obj **objv;
@@ -688,12 +708,12 @@ Tcl_ListObjAppendElement(
     Tcl_Obj *listPtr,
     Tcl_Obj *objPtr)
 {
-    return TclObjectDispatch(listPtr, Tcl_ListObjAppendElementDefault,
+    return TclObjectDispatch(listPtr, ListObjAppendElement,
 	list, append, interp, listPtr, objPtr);
 }
 
 int
-Tcl_ListObjAppendElementDefault(
+ListObjAppendElement(
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
     Tcl_Obj *objPtr)
@@ -875,12 +895,12 @@ Tcl_ListObjIndex(
     tclObjTypeInterfaceArgsListIndex
 )
 {
-    return TclObjectDispatch(listPtr, TclListObjIndexDefault,
+    return TclObjectDispatch(listPtr, ListObjAppendIndex,
 	list, index, interp, listPtr, index, objPtrPtr);
 }
 
 int
-TclListObjIndexDefault(
+ListObjAppendIndex(
     tclObjTypeInterfaceArgsListIndex
 )
 {
@@ -940,12 +960,12 @@ Tcl_ListObjLength(
     Tcl_Obj *listPtr,
     int *intPtr)
 {
-    return TclObjectDispatch(listPtr, TclListObjLengthDefault,
+    return TclObjectDispatch(listPtr, ListObjInterfaceLength,
 	list, length, interp, listPtr, intPtr);
 }
 
 int
-TclListObjLengthDefault(
+ListObjInterfaceLength(
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
     int *intPtr)
@@ -1020,12 +1040,12 @@ Tcl_ListObjReplace(
     int objc,
     Tcl_Obj *const objv[])
 {
-    return TclObjectDispatch(listPtr, TclListObjReplaceDefault,
+    return TclObjectDispatch(listPtr, ListObjReplace,
 	list, replace, interp, listPtr, first, count, objc, objv);
 }
 
 int
-TclListObjReplaceDefault(
+ListObjReplace(
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
     int first,
@@ -1613,13 +1633,13 @@ TclLsetFlat(
     Tcl_Obj *const indexArray[],
     Tcl_Obj *valuePtr)
 {
-    return TclObjectDispatch(listPtr, TclLsetFlatDefault,
+    return TclObjectDispatch(listPtr, LsetFlat,
 	list, setlist, interp, listPtr, indexCount, indexArray, valuePtr);
 }
 
 
 Tcl_Obj *
-TclLsetFlatDefault(
+LsetFlat(
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
     int indexCount,
@@ -1887,12 +1907,12 @@ TclListObjSetElement(
     Tcl_Obj *valuePtr
 )
 {
-    return TclObjectDispatch(listPtr, TclListObjSetElementDefault,
+    return TclObjectDispatch(listPtr, ListObjSetElement,
 	list, set, interp, listPtr, index, valuePtr);
 }
 
 int
-TclListObjSetElementDefault(
+ListObjSetElement(
     Tcl_Interp *interp,
     Tcl_Obj *listPtr,
     int index,

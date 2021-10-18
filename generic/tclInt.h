@@ -372,9 +372,29 @@ typedef struct ObjectType {
 			    /* Index args. */ \
     Tcl_Obj *valuePtr	/* Value arg to 'lset' or NULL to 'lpop'. */
 
+#define tclObjTypeInterfaceArgsStringIndex \
+    Tcl_Interp *interp,	    \
+    Tcl_Obj *objPtr,	    \
+    int index,	\
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+
+#define tclObjTypeInterfaceArgsStringIndexEnd \
+    Tcl_Interp *interp,	    \
+    Tcl_Obj *objPtr,	    \
+    int index,	\
+    Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+
+#define tclObjTypeInterfaceArgsStringLength \
+    Tcl_Obj *objPtr
+
 
 typedef struct ObjInterface {
     int version;
+    struct string {
+	int (*index)(tclObjTypeInterfaceArgsStringIndex);
+	int (*indexEnd)(tclObjTypeInterfaceArgsStringIndexEnd);
+	int (*length)(tclObjTypeInterfaceArgsStringLength);
+    } string;
     struct list {
 	int (*all)(tclObjTypeInterfaceArgsListAll);
 	int (*append)(tclObjTypeInterfaceArgsListAppend);
@@ -3211,31 +3231,12 @@ MODULE_SCOPE int	TclLengthIsFinite(size_t length);
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
 			    int *lines, Tcl_Obj *const *elems);
 
-MODULE_SCOPE int	Tcl_ListObjAppendElementDefault(Tcl_Interp *interp,
-			    Tcl_Obj *listPtr, Tcl_Obj *objPtr);
-MODULE_SCOPE int	TclListObjAppendListDefault(Tcl_Interp *interp,
-			    Tcl_Obj *listPtr, Tcl_Obj *elemListPtr);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
-MODULE_SCOPE int	TclListObjIndexDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    int index, Tcl_Obj **objPtrPtr);
-MODULE_SCOPE int	TclListObjGetElementsDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    int *objcPtr, Tcl_Obj ***objvPtr);
 MODULE_SCOPE int	(*TclObjInterfaceGetListIndex (Tcl_Obj *objPtr))
 			    (tclObjTypeInterfaceArgsListIndex);
-MODULE_SCOPE int	TclListObjLengthDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    int *intPtr);
 MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Interp *interp, Tcl_Obj *listPtr, int length
 			    , size_t fromIdx, size_t toIdx);
-MODULE_SCOPE Tcl_Obj *	TclListObjRangeDefault(Tcl_Interp *interp, Tcl_Obj *listPtr, int length
-			    , size_t fromIdx, size_t toIdx);
-MODULE_SCOPE int	TclListObjReplaceDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    int first, int count, int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclListObjSetElementDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    int index, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    int indexCount, Tcl_Obj *const indexArray[],
-			    Tcl_Obj *valuePtr);
-MODULE_SCOPE Tcl_Obj *	TclLsetFlatDefault(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int indexCount, Tcl_Obj *const indexArray[],
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
