@@ -17,9 +17,8 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 unset -nocomplain foo
-
+package require tcltests
 testConstraint exec [llength [info commands exec]]
-testConstraint nodep [info exists tcl_precision]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
