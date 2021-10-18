@@ -731,7 +731,7 @@ const Tcl_ObjType tclByteCodeType = {
 
 /*
  * subtCodeType provides the standard type managemnt procedures for the
- * substcode type, which represents substiution within a Tcl value. 
+ * substcode type, which represents substiution within a Tcl value.
  */
 
 static const Tcl_ObjType substCodeType = {
@@ -1959,7 +1959,7 @@ CompileCmdCompileProc(
      *
      * atCmdStart == 2	: Don't use the INST_START_CMD instruction.
      * atCmdStart == 1	: INST_START_CMD was the last instruction emitted,
-     *			: so no need to emit another.  Instead 
+     *			: so no need to emit another.  Instead
      *			: increment the number of cmds started at it, except
      *			: for the special case at the start of a script.
      * atCmdStart == 0	: The last instruction was something else.
