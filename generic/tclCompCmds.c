@@ -2641,8 +2641,8 @@ TclCompileLmapCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    Command *cmdPtr,		/* Points to the definition of the command
+				 *  being compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr,
@@ -2703,7 +2703,7 @@ CompileEachloopCmd(
     }
 
     /*
-     * Bail out if the body requires substitutions in order to insure correct
+     * Bail out if the body requires substitutions in order to ensure correct
      * behaviour. [Bug 219166]
      */
 

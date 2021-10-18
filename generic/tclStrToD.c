@@ -553,11 +553,11 @@ TclParseNumber(
 
     if (bytes == NULL) {
 	if (interp == NULL && endPtrPtr == NULL) {
-	    if (TclHasIntRep(objPtr, &tclDictType)) {
+	    if (TclHasInternalRep(objPtr, &tclDictType)) {
 		/* A dict can never be a (single) number */
 		return TCL_ERROR;
 	    }
-	    if (TclHasIntRep(objPtr, &tclListType)) {
+	    if (TclHasInternalRep(objPtr, &tclListType)) {
 		int length;
 		/* A list can only be a (single) number if its length == 1 */
 		TclListObjLength(NULL, objPtr, &length);
@@ -1295,7 +1295,7 @@ TclParseNumber(
      */
 
     if (status == TCL_OK && objPtr != NULL) {
-	TclFreeIntRep(objPtr);
+	TclFreeInternalRep(objPtr);
 	switch (acceptState) {
 	case SIGNUM:
 	case BAD_OCTAL:
@@ -1405,7 +1405,7 @@ TclParseNumber(
 		if (signum) {
 		    err = mp_neg(&octalSignificandBig, &octalSignificandBig);
 		}
-		TclSetBignumIntRep(objPtr, &octalSignificandBig);
+		TclSetBignumInternalRep(objPtr, &octalSignificandBig);
 	    }
 	    if (err != MP_OKAY) {
 		return TCL_ERROR;
@@ -1441,7 +1441,7 @@ TclParseNumber(
 		if (signum) {
 		    err = mp_neg(&significandBig, &significandBig);
 		}
-		TclSetBignumIntRep(objPtr, &significandBig);
+		TclSetBignumInternalRep(objPtr, &significandBig);
 	    }
 	    if (err != MP_OKAY) {
 		return TCL_ERROR;
