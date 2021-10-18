@@ -3,6 +3,7 @@
 package require tcltest 2.5
 namespace import ::tcltest::*
 testConstraint exec          [llength [info commands exec]]
+testConstraint nodep [tcl::build-info no-deprecate]
 testConstraint debug [tcl::build-info debug]
 testConstraint purify [tcl::build-info purify]
 testConstraint debugpurify [
