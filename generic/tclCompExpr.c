@@ -2438,7 +2438,7 @@ CompileExprTree(
 		     * However, the design of the "global" and "local"
 		     * LiteralTable does not permit the value of lePtr->objPtr
 		     * to change. So rather than replace lePtr->objPtr, we do
-		     * surgery to transfer our desired intrep into it.
+		     * surgery to transfer our desired internalrep into it.
 		     */
 
 		    objPtr->typePtr = literal->typePtr;
@@ -2451,9 +2451,9 @@ CompileExprTree(
 		 * When optimize==0, we know the expression is a one-off and
 		 * there's nothing to be gained from sharing literals when
 		 * they won't live long, and the copies we have already have
-		 * an appropriate intrep. In this case, skip literal
+		 * an appropriate internalrep. In this case, skip literal
 		 * registration that would enable sharing, and use the routine
-		 * that preserves intreps.
+		 * that preserves internalreps.
 		 */
 
 		TclEmitPush(TclAddLiteralObj(envPtr, literal, NULL), envPtr);
@@ -2488,7 +2488,7 @@ CompileExprTree(
 			if ((tableValue->typePtr == NULL) &&
 				(objPtr->typePtr != NULL)) {
 			    /*
-			     * Same intrep surgery as for OT_LITERAL.
+			     * Same internalrep surgery as for OT_LITERAL.
 			     */
 
 			    tableValue->typePtr = objPtr->typePtr;

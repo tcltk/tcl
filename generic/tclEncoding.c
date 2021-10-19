@@ -196,13 +196,13 @@ static unsigned short emptyPage[256];
  */
 
 static Tcl_EncodingConvertProc	BinaryProc;
-static Tcl_DupInternalRepProc	DupEncodingIntRep;
+static Tcl_DupInternalRepProc	DupEncodingInternalRep;
 static Tcl_EncodingFreeProc	EscapeFreeProc;
 static Tcl_EncodingConvertProc	EscapeFromUtfProc;
 static Tcl_EncodingConvertProc	EscapeToUtfProc;
 static void			FillEncodingFileMap(void);
 static void			FreeEncoding(Tcl_Encoding encoding);
-static Tcl_FreeInternalRepProc	FreeEncodingIntRep;
+static Tcl_FreeInternalRepProc	FreeEncodingInternalRep;
 static Encoding *		GetTableEncoding(EscapeEncodingData *dataPtr,
 				    int state);
 static Tcl_Encoding		LoadEncodingFile(Tcl_Interp *interp,
@@ -262,12 +262,12 @@ static int		Iso88591ToUtfProc(ClientData clientData,
 
 /*
  * A Tcl_ObjType for holding a cached Tcl_Encoding in the twoPtrValue.ptr1 field
- * of the intrep. This should help the lifetime of encodings be more useful.
+ * of the internalrep. This should help the lifetime of encodings be more useful.
  * See concerns raised in [Bug 1077262].
  */
 
 static const Tcl_ObjType encodingType = {
-    "encoding", FreeEncodingIntRep, DupEncodingIntRep, NULL, NULL
+    "encoding", FreeEncodingInternalRep, DupEncodingInternalRep, NULL, NULL
 };
 
 /*
@@ -314,7 +314,7 @@ Tcl_GetEncodingFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * FreeEncodingIntRep --
+ * FreeEncodingInternalRep --
  *
  *	The Tcl_FreeInternalRepProc for the "encoding" Tcl_ObjType.
  *
@@ -322,7 +322,7 @@ Tcl_GetEncodingFromObj(
  */
 
 static void
-FreeEncodingIntRep(
+FreeEncodingInternalRep(
     Tcl_Obj *objPtr)
 {
     Tcl_FreeEncoding((Tcl_Encoding)objPtr->internalRep.twoPtrValue.ptr1);
@@ -332,7 +332,7 @@ FreeEncodingIntRep(
 /*
  *----------------------------------------------------------------------
  *
- * DupEncodingIntRep --
+ * DupEncodingInternalRep --
  *
  *	The Tcl_DupInternalRepProc for the "encoding" Tcl_ObjType.
  *
@@ -340,7 +340,7 @@ FreeEncodingIntRep(
  */
 
 static void
-DupEncodingIntRep(
+DupEncodingInternalRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {

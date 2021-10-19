@@ -1041,7 +1041,7 @@ test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
     rename getbytes {}
     rename doit {}
 } -result 0
-test var-22.1 {leak in localVarName intrep: Bug 80304238ac} -setup {
+test var-22.1 {leak in localVarName internalrep: Bug 80304238ac} -setup {
     proc getbytes {} {
 	lindex [split [memory info] \n] 3 3
     }
