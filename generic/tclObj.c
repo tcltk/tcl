@@ -1716,11 +1716,7 @@ Tcl_GetStringFromObj(
 	}
     }
     if (lengthPtr != NULL) {
-#if TCL_MAJOR_VERSION > 8
 	*lengthPtr = objPtr->length;
-#else
-	*lengthPtr = ((size_t)(unsigned)(objPtr->length + 1)) - 1;
-#endif
     }
     return objPtr->bytes;
 }
