@@ -262,15 +262,14 @@ typedef struct ObjectType {
 #define TclObjectDispatch(objPtr, default, iface, proc, ...)		    \
     TclObjectHasInterface((objPtr), iface, proc)			    \
     ? TclObjectInterfaceCall(objPtr, iface, proc, __VA_ARGS__)		    \
-    : (default)(__VA_ARGS__)
+    : default(__VA_ARGS__)
 
 
 #define TclObjectDispatchNoDefault(interp, res, objPtr, iface, proc, ...)   \
     (TclObjectHasInterface((objPtr), iface, proc)			    \
-    ?  (res = TclObjectInterfaceCall((objPtr), iface, proc, __VA_ARGS__), \
+    ? (res = TclObjectInterfaceCall((objPtr), iface, proc, __VA_ARGS__), \
 	TCL_OK)   \
-    :					    \
-	(Tcl_SetObjResult((interp),					    \
+    : (Tcl_SetObjResult((interp),					    \
 	    Tcl_NewStringObj("interface not provided", -1)), TCL_ERROR))
 
 
@@ -387,13 +386,25 @@ typedef struct ObjectType {
 #define tclObjTypeInterfaceArgsStringLength \
     Tcl_Obj *objPtr
 
+#define tclObjTypeInterfaceArgsStringRange \
+    Tcl_Obj *objPtr,	/* The Tcl object to find the range of. */ \
+    size_t first,	/* First index of the range. */ \
+    size_t last	/* Last index of the range. */
+
+#define tclObjTypeInterfaceArgsStringRangeEnd \
+    Tcl_Obj *objPtr,	/* The Tcl object to find the range of. */ \
+    size_t first,	/* First index of the range. */ \
+    size_t last	/* Last index of the range. */
+
 
 typedef struct ObjInterface {
     int version;
     struct string {
 	int (*index)(tclObjTypeInterfaceArgsStringIndex);
 	int (*indexEnd)(tclObjTypeInterfaceArgsStringIndexEnd);
-	int (*length)(tclObjTypeInterfaceArgsStringLength);
+	size_t (*length)(tclObjTypeInterfaceArgsStringLength);
+	Tcl_Obj* (*range)(tclObjTypeInterfaceArgsStringRange);
+	Tcl_Obj* (*rangeEnd)(tclObjTypeInterfaceArgsStringRangeEnd);
     } string;
     struct list {
 	int (*all)(tclObjTypeInterfaceArgsListAll);
@@ -3376,6 +3387,8 @@ MODULE_SCOPE int	TclStringCmp(Tcl_Obj *value1Ptr, Tcl_Obj *value2Ptr,
 MODULE_SCOPE int	TclStringCmpOpts(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int *nocase,
 			    int *reqlength);
+MODULE_SCOPE int	TclStringIndexInterface(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    Tcl_Obj *indexPtr, Tcl_Obj **charPtr);
 MODULE_SCOPE int	TclStringMatch(const char *str, size_t strLen,
 			    const char *pattern, int ptnLen, int flags);
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,

@@ -62,7 +62,8 @@ static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
 			    size_t numAppendChars);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
-static size_t		TclGetCharLengthDefault(Tcl_Obj *objPtr);
+static size_t		GetCharLength(Tcl_Obj *objPtr);
+static Tcl_Obj*		GetRange(tclObjTypeInterfaceArgsStringRange);
 static void		GrowStringBuffer(Tcl_Obj *objPtr, size_t needed, int flag);
 static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, size_t needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -399,12 +400,12 @@ Tcl_GetCharLength(
     Tcl_Obj *objPtr)		/* The String object to get the num chars
 				 * of. */
 {
-    return TclObjectDispatch(objPtr, TclGetCharLengthDefault,
+    return TclObjectDispatch(objPtr, GetCharLength,
 	string, length, objPtr);
 }
 
 size_t
-TclGetCharLengthDefault(
+GetCharLength(
     Tcl_Obj *objPtr)
 {
     String *stringPtr;
@@ -671,11 +672,15 @@ Tcl_GetUnicodeFromObj(
  */
 
 Tcl_Obj *
-Tcl_GetRange(
-    Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */
-    size_t first,			/* First index of the range. */
-    size_t last)			/* Last index of the range. */
+Tcl_GetRange(tclObjTypeInterfaceArgsStringRange)
 {
+    return TclObjectDispatch(objPtr, GetRange,
+	string, range, objPtr, first, last);
+}
+
+
+Tcl_Obj *
+GetRange(tclObjTypeInterfaceArgsStringRange) {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
     size_t length = 0;
@@ -3590,6 +3595,34 @@ TclStringFirst(
   firstEnd:
     TclNewIndexObj(obj, value);
     return obj;
+}
+
+int
+TclStringIndexInterface(
+    Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj *indexPtr, Tcl_Obj **charPtrPtr)
+{
+    int decoded, encoded, status;
+
+    status = TclIndexEncode(interp, indexPtr, TCL_INDEX_NONE,
+	TCL_INDEX_NONE, &encoded);
+    if (status != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (TclIndexIsFromEnd(encoded)) {
+	decoded = TclIndexDecode(encoded, SIZE_MAX);
+	if (TclObjectInterfaceCall(objPtr, string, indexEnd,
+	    interp, objPtr, decoded, charPtrPtr) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    } else {
+	decoded = TclIndexDecode(encoded, TCL_INDEX_END);
+	if (TclObjectInterfaceCall(objPtr, string, index, interp, objPtr,
+	    decoded, charPtrPtr) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+    return TCL_OK;
 }
 
 /*

@@ -23,6 +23,7 @@
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
+
 static Tcl_NRPostProc	SwitchPostProc;
 static Tcl_NRPostProc	TryPostBody;
 static Tcl_NRPostProc	TryPostFinal;
@@ -1404,30 +1405,15 @@ StringIndexCmd(
     }
 
     if (TclObjectHasInterface(objv[1], string, index)) {
+	int status;
 	Tcl_Obj *charPtr;
-	int decoded, encoded, status;
-
-	status = TclIndexEncode(interp, objv[2] , TCL_INDEX_NONE,
-	    TCL_INDEX_NONE, &encoded);
+	status = TclStringIndexInterface(interp, objv[1], objv[2], &charPtr) ;
 	if (status != TCL_OK) {
-	    return TCL_ERROR;
-	}
-
-	if (TclIndexIsFromEnd(encoded)) {
-	    decoded = TclIndexDecode(encoded, SIZE_MAX);
-	    if (TclObjectInterfaceCall(objv[1], string, indexEnd,
-		interp, objv[1], decoded, &charPtr) != TCL_OK) {
-		return TCL_ERROR;
-	    }
+	    return status;
 	} else {
-	    decoded = TclIndexDecode(encoded, TCL_INDEX_END);
-	    if (TclObjectInterfaceCall(objv[1], string, index, interp, objv[1],
-		decoded, &charPtr) != TCL_OK) {
-		return TCL_ERROR;
-	    }
+	    Tcl_SetObjResult(interp, charPtr);
+	    return TCL_OK;
 	}
-	Tcl_SetObjResult(interp, charPtr);
-	return TCL_OK;
     } else {
 	/*
 	 * Get the char length to calculate what 'end' means.
@@ -1467,6 +1453,7 @@ StringIndexCmd(
 	return TCL_OK;
     }
 }
+
 
 /*
  *----------------------------------------------------------------------

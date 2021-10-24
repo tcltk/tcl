@@ -14,6 +14,13 @@ testConstraint testindexhex [expr {[namespace which testindexhex] ne {}}]
 variable list
 variable res
 
+proc data1 iterations {
+    for {set i 0} {$i < $iterations} {incr i} {
+	lappend expected [format %x $i]
+    }
+    return $expected
+}
+
 
 test {list length} {INST_LIST_INDEX_IMM} \
     -constraints testindexhex \
@@ -167,12 +174,36 @@ test {list lsearch start} {} \
 test {string index} {} \
     -constraints testindexhex \
     -body {
+	set iterations 4097
+	set expected [data1 $iterations]
 	set list [testindexhex]
-	lappend res [string index $list 5]
-	return $res
+	set progres {}
+	set iterations [string length $expected]
+	for {set i 0} {$i < $iterations} {incr i} {
+	    set eitem [string index $expected $i]
+	    set item [string index $list $i]
+	    if {$item ne $eitem} {
+		error [list {failed at index} $i [
+		    format %x $i] expected $eitem got $item]
+	    }
+	    lappend progress $item
+	}
+	return success
+    } -cleanup {
+	catch {unset i}
+	catch {unset list}
+    } -result success
+
+
+test {string index end} {} \
+    -constraints testindexhex \
+    -body {
+	set list [testindexhex]
+	string index $list end
+	return success
     } -cleanup {
 	catch {unset list}
-    } -result 40960
+    } -returnCodes 1 -result {list length indeterminate}
 
 
 test {string length} {} \
@@ -183,6 +214,55 @@ test {string length} {} \
     } -cleanup {
 	catch {unset list}
     } -result -1
+
+
+test {string range} {} \
+    -constraints testindexhex \
+    -body {
+	set res {}
+	set iterations 4097
+	set data1 [data1 $iterations]
+	set data1Length [string length $data1]
+	set list [testindexhex]
+	for {set first 0} {$first < $data1Length } {
+	    set first [expr {($first + 1) * 2}]} {
+
+	    for {set last $first} {$last < $data1Length} {
+		set last [expr {($last + 1) * 3}]} {
+
+		set expected [string range $data1 $first $last]
+		set range [string range $list $first $last]
+		if {$range ne $expected} {
+		    set length [expr {
+			max([string length $expected], [string length $range])
+		    }]
+		    for {set i 0} {$i < $length} {incr i} {
+			set item1 [string index $range $i]
+			set item2 [string index $expected $i]
+			if {$item1 ne $item2} {
+			    error [list {failed at} $first $last $i \
+				expected $item2 got $item1]
+			}
+		    }
+		}
+	    }
+	}
+	lappend res success
+	after 100
+
+	# The largest string index currently allowed.
+	lappend res [string range $list 2147483640 2147483647]
+
+	# This produces an error until index ranges are expanded in some later
+	# version of Tcl.
+	set status [catch {string range $list 2147483640 2147483648} cres copts]
+
+	lappend res $status $cres
+	return $res
+    } -cleanup {
+	catch {unset list}
+    } -result {success {d73ac8f } 1 {}}
+
 
 # cleanup
 ::tcltest::cleanupTests

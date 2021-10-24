@@ -4726,6 +4726,7 @@ TEBCresume(
 		    goto gotError;
 		}
 	    }
+	    Tcl_IncrRefCount(objResultPtr);
 
 	    /*
 	     * Stash the list element on the stack.
@@ -5157,42 +5158,49 @@ TEBCresume(
 	 */
 
 	slength = Tcl_GetCharLength(valuePtr);
-	DECACHE_STACK_INFO();
-	if (TclGetIntForIndexM(interp, value2Ptr, slength-1, &index)!=TCL_OK) {
-	    CACHE_STACK_INFO();
-	    TRACE_ERROR(interp);
-	    goto gotError;
-	}
-	CACHE_STACK_INFO();
-
-	if (index >= slength) {
-	    TclNewObj(objResultPtr);
-	} else if (TclIsPureByteArray(valuePtr)) {
-	    objResultPtr = Tcl_NewByteArrayObj(
-		    TclGetByteArrayFromObj(valuePtr, NULL)+index, 1);
-	} else if (valuePtr->bytes && slength == valuePtr->length) {
-	    objResultPtr = Tcl_NewStringObj((const char *)
-		    valuePtr->bytes+index, 1);
+	if (TclObjectHasInterface(valuePtr, string, index)) {
+	    int status;
+	    status = TclStringIndexInterface(interp, valuePtr, value2Ptr, &objResultPtr);
+	    if (status != TCL_OK) {
+		goto gotError;
+	    }
 	} else {
-	    char buf[4] = "";
-	    int ch = Tcl_GetUniChar(valuePtr, index);
+	    DECACHE_STACK_INFO();
+	    if (TclGetIntForIndexM(interp, value2Ptr, slength-1, &index)!=TCL_OK) {
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    CACHE_STACK_INFO();
 
-	    /*
-	     * This could be: Tcl_NewUnicodeObj((const Tcl_UniChar *)&ch, 1)
-	     * but creating the object as a string seems to be faster in
-	     * practical use.
-	     */
-	    if (ch == -1) {
+	    if (index >= slength) {
 		TclNewObj(objResultPtr);
+	    } else if (TclIsPureByteArray(valuePtr)) {
+		objResultPtr = Tcl_NewByteArrayObj(
+			TclGetByteArrayFromObj(valuePtr, NULL)+index, 1);
+	    } else if (valuePtr->bytes && slength == valuePtr->length) {
+		objResultPtr = Tcl_NewStringObj((const char *)
+			valuePtr->bytes+index, 1);
 	    } else {
-		slength = Tcl_UniCharToUtf(ch, buf);
-		if ((ch >= 0xD800) && (slength < 3)) {
-		    slength += Tcl_UniCharToUtf(-1, buf + slength);
+		char buf[4] = "";
+		int ch = Tcl_GetUniChar(valuePtr, index);
+
+		/*
+		 * This could be: Tcl_NewUnicodeObj((const Tcl_UniChar *)&ch, 1)
+		 * but creating the object as a string seems to be faster in
+		 * practical use.
+		 */
+		if (ch == -1) {
+		    TclNewObj(objResultPtr);
+		} else {
+		    slength = Tcl_UniCharToUtf(ch, buf);
+		    if ((ch >= 0xD800) && (slength < 3)) {
+			slength += Tcl_UniCharToUtf(-1, buf + slength);
+		    }
+		    objResultPtr = Tcl_NewStringObj(buf, slength);
 		}
-		objResultPtr = Tcl_NewStringObj(buf, slength);
 	    }
 	}
-
 	TRACE_APPEND(("\"%s\"\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
@@ -5243,45 +5251,73 @@ TEBCresume(
 	    NEXT_INST_F(9, 0, 0);
 	}
 
-	/* Decode index operands. */
+	if (TclObjectHasInterface(valuePtr, list, index)) {
+	    if ((TclIndexIsFromEnd(toIdx) || TclIndexIsFromEnd(fromIdx))
+		&& !TclLengthIsFinite(slength)) {
 
-	/*
-	assert ( toIdx != TCL_INDEX_NONE );
-	 *
-	 * Extra safety for legacy bytecodes:
-	 */
-	if (toIdx == TCL_INDEX_NONE) {
-	    goto emptyRange;
-	}
+		fromIdx = TclIndexDecode(fromIdx, TclIndexLast(slength));
+		toIdx = TclIndexDecode(toIdx, TclIndexLast(slength));
 
-	toIdx = TclIndexDecode(toIdx, slength - 1);
-	if (toIdx == TCL_INDEX_NONE) {
-	    goto emptyRange;
-	} else if (toIdx >= slength) {
-	    toIdx = slength - 1;
-	}
-
-	assert ( toIdx != TCL_INDEX_NONE && toIdx < slength );
-
-	/*
-	assert ( fromIdx != TCL_INDEX_NONE );
-	 *
-	 * Extra safety for legacy bytecodes:
-	 */
-	if (fromIdx == TCL_INDEX_NONE) {
-	    fromIdx = TCL_INDEX_START;
-	}
-
-	fromIdx = TclIndexDecode(fromIdx, slength - 1);
-	if (fromIdx == TCL_INDEX_NONE) {
-	    fromIdx = TCL_INDEX_START;
-	}
-
-	if (fromIdx + 1 <= toIdx + 1) {
-	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+		if (TclObjectDispatchNoDefault(interp, objResultPtr, valuePtr,
+		    string, rangeEnd, valuePtr, fromIdx, toIdx) != TCL_OK
+		    || objResultPtr == NULL) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+	    } else {
+		fromIdx = TclIndexDecode(fromIdx, TclIndexLast(slength));
+		toIdx = TclIndexDecode(toIdx, TclIndexLast(slength));
+		if (TclObjectDispatchNoDefault(interp, objResultPtr, valuePtr,
+		    string, range, valuePtr, fromIdx, toIdx) != TCL_OK
+		    || objResultPtr == NULL) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+	    }
 	} else {
-	emptyRange:
-	    TclNewObj(objResultPtr);
+	    /* Decode index operands. */
+
+	    /*
+	    assert ( toIdx != TCL_INDEX_NONE );
+	     *
+	     * Extra safety for legacy bytecodes:
+	     */
+	    if (toIdx == TCL_INDEX_NONE) {
+		goto emptyRange;
+	    }
+
+	    toIdx = TclIndexDecode(toIdx, slength - 1);
+	    if (toIdx == TCL_INDEX_NONE) {
+		goto emptyRange;
+	    } else if (toIdx >= slength) {
+		toIdx = slength - 1;
+	    }
+
+	    assert ( toIdx != TCL_INDEX_NONE && toIdx < slength );
+
+	    /*
+	    assert ( fromIdx != TCL_INDEX_NONE );
+	     *
+	     * Extra safety for legacy bytecodes:
+	     */
+	    if (fromIdx == TCL_INDEX_NONE) {
+		fromIdx = TCL_INDEX_START;
+	    }
+
+	    fromIdx = TclIndexDecode(fromIdx, slength - 1);
+	    if (fromIdx == TCL_INDEX_NONE) {
+		fromIdx = TCL_INDEX_START;
+	    }
+
+	    if (fromIdx + 1 <= toIdx + 1) {
+		objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+		if (objResultPtr == NULL) {
+		    goto gotError;
+		}
+	    } else {
+	    emptyRange:
+		TclNewObj(objResultPtr);
+	    }
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);

@@ -30,7 +30,7 @@ static int		ListObjAppendElement(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *objPtr);
 static int		ListObjAppendList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *elemListPtr);
-static int		ListObjAppendIndex(Tcl_Interp *interp, Tcl_Obj *listPtr,
+static int		ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int index, Tcl_Obj **objPtrPtr);
 static int		ListObjInterfaceGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int *objcPtr, Tcl_Obj ***objvPtr);
@@ -67,7 +67,7 @@ ObjInterface tclListInterface = {
 	&ListObjInterfaceGetElements,
 	&ListObjAppendElement,
 	&ListObjAppendList,
-	&ListObjAppendIndex,
+	&ListObjIndex,
 	NULL,
 	NULL,
 	&ListObjInterfaceLength,
@@ -895,12 +895,12 @@ Tcl_ListObjIndex(
     tclObjTypeInterfaceArgsListIndex
 )
 {
-    return TclObjectDispatch(listPtr, ListObjAppendIndex,
+    return TclObjectDispatch(listPtr, ListObjIndex,
 	list, index, interp, listPtr, index, objPtrPtr);
 }
 
 int
-ListObjAppendIndex(
+ListObjIndex(
     tclObjTypeInterfaceArgsListIndex
 )
 {
@@ -1419,6 +1419,7 @@ TclLindexFlat(
 	    && TclObjectHasInterface(listPtr, list, index)) {
 	    useinterface = 1;
 	    sublistPtr = listPtr;
+	    Tcl_DecrRefCount(listPtr);
 	    listPtr = NULL;
 	    status = Tcl_ListObjLength(interp, sublistPtr, &listLen);
 	    if (status == TCL_OK) {
@@ -1489,7 +1490,6 @@ TclLindexFlat(
 		    }
 		}
 		TclNewObj(listPtr);
-		Tcl_IncrRefCount(listPtr);
 	    } else if (useinterface == 1) {
 		if (Tcl_ListObjIndex(interp, sublistPtr, index, &listPtr)
 		    != TCL_OK) {
