@@ -3428,7 +3428,7 @@ SerializeCentralDirectoryEntry(
     ZipWriteShort(start, end, buf + ZIP_CENTRAL_IATTR_OFFS, 0);
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_EATTR_OFFS, 0);
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_LOCALHDR_OFFS,
-	    z->offset - dataStartOffset);
+	    z->offset);
 }
 
 static void
@@ -3455,7 +3455,7 @@ SerializeCentralDirectorySuffix(
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_DIRSIZE_OFFS,
 	    suffixStartOffset - directoryStartOffset);
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_DIRSTART_OFFS,
-	    directoryStartOffset - dataStartOffset);
+	    directoryStartOffset);
     ZipWriteShort(start, end, buf + ZIP_CENTRAL_COMMENTLEN_OFFS, 0);
 }
 
