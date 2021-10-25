@@ -2,7 +2,7 @@
  * tclBinary.c --
  *
  *	This file contains the implementation of the "binary" Tcl built-in
- *	command and the Tcl binary data object.
+ *	command and the Tcl value internal representation for binary data.
  *
  * Copyright © 1997 Sun Microsystems, Inc.
  * Copyright © 1998-1999 Scriptics Corporation.
@@ -165,12 +165,11 @@ static const EnsembleImplMap decodeMap[] = {
  * images to name just two.
  *
  * It's strange to have two Tcl_ObjTypes in place for this task when one would
- * do, so a bit of detail and history how we got to this point and where we
- * might go from here.
+ * do, so a bit of detail and history will aid understanding.
  *
  * A bytearray is an ordered sequence of bytes. Each byte is an integer value
  * in the range [0-255].  To be a Tcl value type, we need a way to encode each
- * value in the value set as a Tcl string.  The simplest encoding is to
+ * value in the value set as a Tcl string.  A simple encoding is to
  * represent each byte value as the same codepoint value.  A bytearray of N
  * bytes is encoded into a Tcl string of N characters where the codepoint of
  * each character is the value of corresponding byte.  This approach creates a
@@ -181,9 +180,7 @@ static const EnsembleImplMap decodeMap[] = {
  * question arises what to do with strings outside that subset?  That is,
  * those Tcl strings containing at least one codepoint greater than 255?  The
  * obviously correct answer is to raise an error!  That string value does not
- * represent any valid bytearray value. Full Stop.  The setFromAnyProc
- * signature has a completion code return value for just this reason, to
- * reject invalid inputs.
+ * represent any valid bytearray value. 
  *
  * Unfortunately this was not the path taken by the authors of the original
  * tclByteArrayType.  They chose to accept all Tcl string values as acceptable
@@ -191,33 +188,10 @@ static const EnsembleImplMap decodeMap[] = {
  * high bits of any codepoint value at all. This meant that every bytearray
  * value had multiple accepted string representations.
  *
- * The implications of this choice are truly ugly.  When a Tcl value has a
- * string representation, we are required to accept that as the true value.
- * Bytearray values that possess a string representation cannot be processed
- * as bytearrays because we cannot know which true value that bytearray
- * represents.  The consequence is that we drag around an internal rep that we
- * cannot make any use of.  This painful price is extracted at any point after
- * a string rep happens to be generated for the value.  This happens even when
- * the troublesome codepoints outside the byte range never show up.  This
- * happens rather routinely in normal Tcl operations unless we burden the
- * script writer with the cognitive burden of avoiding it.  The price is also
- * paid by callers of the C interface.  The routine
- *
- *	unsigned char *Tcl_GetByteArrayFromObj(objPtr, lenPtr)
- *
- * has a guarantee to always return a non-NULL value, but that value points to
- * a byte sequence that cannot be used by the caller to process the Tcl value
- * absent some sideband testing that objPtr is "pure".  Tcl offers no public
- * interface to perform this test, so callers either break encapsulation or
- * are unavoidably buggy.  Tcl has defined a public interface that cannot be
- * used correctly. The Tcl source code itself suffers the same problem, and
- * has been buggy, but progressively less so as more and more portions of the
- * code have been retrofitted with the required "purity testing".  The set of
- * values able to pass the purity test can be increased via the introduction
- * of a "canonical" flag marker, but the only way the broken interface itself
- * can be discarded is to start over and define the Tcl_ObjType properly.
- * Bytearrays should simply be usable as bytearrays without a kabuki dance of
- * testing.
+ * The implications of this choice are truly ugly, and motivated the proposal
+ * of TIP 568 to migrate away from it and to the more sensible design where
+ * each bytearray value has only one string representation.  Full details are
+ * recorded in that TIP for those who seek them.
  *
  * The Tcl_ObjType "properByteArrayType" is (nearly) a correct implementation
  * of bytearrays.  Any Tcl value with the type properByteArrayType can have
@@ -226,21 +200,24 @@ static const EnsembleImplMap decodeMap[] = {
  * implies a side testing burden -- past mistakes will not let us avoid that
  * immediately, but it is at least a conventional test of type, and can be
  * implemented entirely by examining the objPtr fields, with no need to query
- * the internalrep, as a canonical flag would require.
+ * the internalrep, as a canonical flag would require.  This benefit is made
+ * available to extensions through the public routine Tcl_GetBytesFromObj(),
+ * first available in Tcl 8.7.
  *
- * Until Tcl_GetByteArrayFromObj() and Tcl_SetByteArrayLength() can be revised
- * to admit the possibility of returning NULL when the true value is not a
- * valid bytearray, we need a mechanism to retain compatibility with the
- * deployed callers of the broken interface.  That's what the retained
- * "tclByteArrayType" provides.  In those unusual circumstances where we
- * convert an invalid bytearray value to a bytearray type, it is to this
- * legacy type.  Essentially any time this legacy type gets used, it's a
- * signal of a bug being ignored.  A TIP should be drafted to remove this
- * connection to the broken past so that Tcl 9 will no longer have any trace
- * of it.  Prescribing a migration path will be the key element of that work.
- * The internal changes now in place are the limit of what can be done short
- * of interface repair.  They provide a great expansion of the histories over
- * which bytearray values can be useful in the meanwhile.
+ * The public routines Tcl_GetByteArrayFromObj() and Tcl_SetByteArrayLength()
+ * must continue to follow their documented behavior through the 8.* series of
+ * releases.  To support that legacy operation, we need a mechanism to retain
+ * compatibility with the deployed callers of the broken interface.  That's
+ * what the retained "tclByteArrayType" provides.  In those unusual
+ * circumstances where we convert an invalid bytearray value to a bytearray
+ * type, it is to this legacy type.  Essentially any time this legacy type
+ * shows up, it's a signal of a bug being ignored.  
+ *  
+ * In Tcl 9, the incompatibility in the behavior of these public routines
+ * has been approved, and the legacy internal rep is no longer retained.
+ * The internal changes seen below are the limit of what can be done 
+ * in a Tcl 8.* release.  They provide a great expansion of the histories
+ * over which bytearray values can be useful.
  */
 
 static const Tcl_ObjType properByteArrayType = {
@@ -267,15 +244,16 @@ const Tcl_ObjType tclByteArrayType = {
  */
 
 typedef struct ByteArray {
-    unsigned int bad;		/* Index of the character that is a nonbyte.
-				 * If all characters are bytes, bad = used,
-				 * though then we should never read it. */
+    unsigned int bad;		/* Index of first character that is a nonbyte.
+				 * If all characters are bytes, bad = used. */
     unsigned int used;		/* The number of bytes used in the byte
-				 * array. */
-    unsigned int allocated;	/* The amount of space actually allocated
-				 * minus 1 byte. */
-    unsigned char bytes[TCLFLEXARRAY];	/* The array of bytes. The actual size of this
-				 * field depends on the 'allocated' field
+				 * array.  Must be <= allocated. The bytes
+				 * used to store the value are indexed from
+				 * 0 to used-1. */
+    unsigned int allocated;	/* The number of bytes of space allocated. */
+    unsigned char bytes[TCLFLEXARRAY];
+				/* The array of bytes. The actual size of this
+				 * field is stored in the 'allocated' field
 				 * above. */
 } ByteArray;
 
@@ -301,7 +279,7 @@ TclIsPureByteArray(
  *	from the given array of bytes.
  *
  * Results:
- *	The newly create object is returned. This object will have no initial
+ *	The newly created object is returned. This object has no initial
  *	string representation. The returned object has a ref count of 0.
  *
  * Side effects:
@@ -346,7 +324,7 @@ Tcl_NewByteArrayObj(
  *	result of calling Tcl_NewByteArrayObj.
  *
  * Results:
- *	The newly create object is returned. This object will have no initial
+ *	The newly created object is returned. This object has no initial
  *	string representation. The returned object has a ref count of 0.
  *
  * Side effects:
@@ -444,11 +422,11 @@ Tcl_SetByteArrayObj(
  *
  *	Attempt to extract the value from objPtr in the representation
  *	of a byte sequence. On success return the extracted byte sequence.
- *	On failures, return NULL and record error message and code in
+ *	On failure, return NULL and record error message and code in
  *	interp (if not NULL).
  *
  * Results:
- *	Pointer to array of bytes, or NULL. representing the ByteArray object.
+ *	NULL or pointer to array of bytes representing the ByteArray object.
  *	Writes number of bytes in array to *lengthPtr.
  *
  *----------------------------------------------------------------------
@@ -459,7 +437,7 @@ TclGetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
     int *lengthPtr)		/* If non-NULL, filled with length of the
-				 * array of bytes in the ByteArray object. */
+				 * returned array of bytes. */
 {
     ByteArray *baPtr;
     const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &properByteArrayType);
@@ -599,6 +577,7 @@ TclGetByteArrayFromObj(
 #if TCL_MAJOR_VERSION > 8
 	*lengthPtr = baPtr->used;
 #else
+	/* TODO: What's going on here?  Document or eliminate. */
 	*lengthPtr = ((size_t)(unsigned)(baPtr->used + 1)) - 1;
 #endif
     }
@@ -2162,7 +2141,7 @@ CopyNumber(
  *
  * FormatNumber --
  *
- *	This routine is called by Tcl_BinaryObjCmd to format a number into a
+ *	This routine is called by BinaryFormatCmd to format a number into a
  *	location pointed at by cursor.
  *
  * Results:
@@ -2331,7 +2310,7 @@ FormatNumber(
  *
  * ScanNumber --
  *
- *	This routine is called by Tcl_BinaryObjCmd to scan a number out of a
+ *	This routine is called by BinaryScanCmd to scan a number out of a
  *	buffer.
  *
  * Results:
