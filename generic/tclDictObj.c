@@ -151,16 +151,16 @@ const Tcl_ObjType tclDictType = {
 
 #define DictSetIntRep(objPtr, dictRepPtr)				\
     do {                                                                \
-        Tcl_ObjIntRep ir;                                               \
+        Tcl_ObjInternalRep ir;                                               \
         ir.twoPtrValue.ptr1 = (dictRepPtr);                             \
         ir.twoPtrValue.ptr2 = NULL;                                     \
-        Tcl_StoreIntRep((objPtr), &tclDictType, &ir);                   \
+        Tcl_StoreInternalRep((objPtr), &tclDictType, &ir);                   \
     } while (0)
 
 #define DictGetIntRep(objPtr, dictRepPtr)				\
     do {                                                                \
-        const Tcl_ObjIntRep *irPtr;                                     \
-        irPtr = TclFetchIntRep((objPtr), &tclDictType);                \
+        const Tcl_ObjInternalRep *irPtr;                                     \
+        irPtr = TclFetchInternalRep((objPtr), &tclDictType);                \
         (dictRepPtr) = irPtr ? (Dict *)irPtr->twoPtrValue.ptr1 : NULL;          \
     } while (0)
 
@@ -600,7 +600,7 @@ SetDictFromAny(
      * the conversion from lists to dictionaries.
      */
 
-    if (TclHasIntRep(objPtr, tclListType)) {
+    if (TclHasInternalRep(objPtr, tclListType)) {
 	int objc, i;
 	Tcl_Obj **objv;
 
@@ -886,7 +886,7 @@ InvalidateDictChain(
     do {
 	dict->refCount++;
 	TclInvalidateStringRep(dictObj);
-	TclFreeIntRep(dictObj);
+	TclFreeInternalRep(dictObj);
 	DictSetIntRep(dictObj, dict);
 
 	dict->epoch++;
@@ -941,7 +941,7 @@ Tcl_DictObjPut(
     TclInvalidateStringRep(dictPtr);
     hPtr = CreateChainEntry(dict, keyPtr, &isNew);
     dict->refCount++;
-    TclFreeIntRep(dictPtr)
+    TclFreeInternalRep(dictPtr)
     DictSetIntRep(dictPtr, dict);
     Tcl_IncrRefCount(valuePtr);
     if (!isNew) {

@@ -770,7 +770,7 @@ BBEmitInst1or4(
 
 int
 Tcl_AssembleObjCmd(
-    ClientData clientData,		/* clientData */
+    void *clientData,		/* clientData */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -785,7 +785,7 @@ Tcl_AssembleObjCmd(
 
 int
 TclNRAssembleObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -863,7 +863,7 @@ CompileAssembleObj(
      * is valid in the current context.
      */
 
-    ByteCodeGetIntRep(objPtr, &assembleCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &assembleCodeType, codePtr);
 
     if (codePtr) {
 	namespacePtr = iPtr->varFramePtr->nsPtr;
@@ -880,7 +880,7 @@ CompileAssembleObj(
 	 * Not valid, so free it and regenerate.
 	 */
 
-	Tcl_StoreIntRep(objPtr, &assembleCodeType, NULL);
+	Tcl_StoreInternalRep(objPtr, &assembleCodeType, NULL);
     }
 
     /*
@@ -4287,7 +4287,7 @@ AddBasicBlockRangeToErrorInfo(
  * DupAssembleCodeInternalRep --
  *
  *	Part of the Tcl object type implementation for Tcl assembly language
- *	bytecode. We do not copy the bytecode intrep. Instead, we return
+ *	bytecode. We do not copy the bytecode internalrep. Instead, we return
  *	without setting copyPtr->typePtr, so the copy is a plain string copy
  *	of the assembly source, and if it is to be used as a compiled
  *	expression, it will need to be reprocessed.
@@ -4296,7 +4296,7 @@ AddBasicBlockRangeToErrorInfo(
  *	usual (only?) time Tcl_DuplicateObj() will be called is when the copy
  *	is about to be modified, which would invalidate any copied bytecode
  *	anyway. The only reason it might make sense to copy the bytecode is if
- *	we had some modifying routines that operated directly on the intrep,
+ *	we had some modifying routines that operated directly on the internalrep,
  *	as we do for lists and dicts.
  *
  * Results:
@@ -4340,7 +4340,7 @@ FreeAssembleCodeInternalRep(
 {
     ByteCode *codePtr;
 
-    ByteCodeGetIntRep(objPtr, &assembleCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &assembleCodeType, codePtr);
     assert(codePtr != NULL);
 
     TclReleaseByteCode(codePtr);

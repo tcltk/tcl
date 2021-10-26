@@ -113,7 +113,7 @@ int NewTestIndexHex (
     Tcl_Obj *const objv[])
 {
     Tcl_WideInt offset;
-    Tcl_ObjIntRep intrep;
+    Tcl_ObjInternalRep intrep;
     if (argc > 2) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("too many arguments", -1));
@@ -137,7 +137,7 @@ int NewTestIndexHex (
     indexHexPtr->refCount = 1;
     indexHexPtr->offset = offset;
     intrep.twoPtrValue.ptr1 = indexHexPtr;
-    Tcl_StoreIntRep(objPtr, testIndexHexTypePtr, &intrep);
+    Tcl_StoreInternalRep(objPtr, testIndexHexTypePtr, &intrep);
     Tcl_SetObjResult(interp, objPtr);
     return TCL_OK;
 }
@@ -166,7 +166,7 @@ FreeTestIndexHexInternalRep(Tcl_Obj *objPtr)
 static int
 SetTestIndexHexFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
-    if (TclHasIntRep(objPtr, testIndexHexTypePtr)) {
+    if (TclHasInternalRep(objPtr, testIndexHexTypePtr)) {
 	return TCL_OK;
     } else {
 	if (interp != NULL) {

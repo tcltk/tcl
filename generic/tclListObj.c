@@ -97,22 +97,22 @@ MODULE_SCOPE const Tcl_ObjType *tclListType = (Tcl_ObjType *)&tclListObjType;
 
 #define ListSetIntRep(objPtr, listRepPtr)				\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (listRepPtr);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
 	(listRepPtr)->refCount++;					\
-	Tcl_StoreIntRep((objPtr), tclListType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), tclListType, &ir);			\
     } while (0)
 
 #define ListGetIntRep(objPtr, listRepPtr)				\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), tclListType);		\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), tclListType);		\
 	(listRepPtr) = irPtr ? (List *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 #define ListResetIntRep(objPtr, listRepPtr) \
-    TclFetchIntRep((objPtr), tclListType)->twoPtrValue.ptr1 = (listRepPtr)
+    TclFetchInternalRep((objPtr), tclListType)->twoPtrValue.ptr1 = (listRepPtr)
 
 #ifndef TCL_MIN_ELEMENT_GROWTH
 #define TCL_MIN_ELEMENT_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Obj *)
@@ -389,7 +389,7 @@ Tcl_SetListObj(
      * Free any old string rep and any internal rep for the old type.
      */
 
-    TclFreeIntRep(objPtr);
+    TclFreeInternalRep(objPtr);
     TclInvalidateStringRep(objPtr);
 
     /*
@@ -839,7 +839,7 @@ ListObjAppendElement(
     }
     ListResetIntRep(listPtr, listRepPtr);
     listRepPtr->refCount++;
-    TclFreeIntRep(listPtr);
+    TclFreeInternalRep(listPtr);
     ListSetIntRep(listPtr, listRepPtr);
     listRepPtr->refCount--;
 
@@ -1289,7 +1289,7 @@ ListObjReplace(
      */
 
     listRepPtr->refCount++;
-    TclFreeIntRep(listPtr);
+    TclFreeInternalRep(listPtr);
     ListSetIntRep(listPtr, listRepPtr);
     listRepPtr->refCount--;
 
@@ -1415,7 +1415,7 @@ TclLindexFlat(
 	size_t index;
 	int dstatus, listLen = 0, useinterface;
 	Tcl_Obj **elemPtrs = NULL, *sublistPtr;
-	if (!TclHasIntRep(listPtr, tclListType)
+	if (!TclHasInternalRep(listPtr, tclListType)
 	    && TclObjectHasInterface(listPtr, list, index)) {
 	    useinterface = 1;
 	    sublistPtr = listPtr;
@@ -1649,7 +1649,7 @@ LsetFlat(
     size_t index;
     int result, len;
     Tcl_Obj *subListPtr, *retValuePtr, *chainPtr;
-    Tcl_ObjIntRep *irPtr;
+    Tcl_ObjInternalRep *irPtr;
 
     /*
      * If there are no indices, simply return the new value.  (Without
@@ -1784,7 +1784,7 @@ LsetFlat(
 	     * them at that time.
 	     */
 
-	    irPtr = TclFetchIntRep(parentList, tclListType);
+	    irPtr = TclFetchInternalRep(parentList, tclListType);
 	    irPtr->twoPtrValue.ptr2 = chainPtr;
 	    chainPtr = parentList;
 	}
@@ -1805,7 +1805,7 @@ LsetFlat(
 	 * Clear away our intrep surgery mess.
 	 */
 
-	irPtr = TclFetchIntRep(objPtr, tclListType);
+	irPtr = TclFetchInternalRep(objPtr, tclListType);
 	listRepPtr = (List *)irPtr->twoPtrValue.ptr1;
 	chainPtr = (Tcl_Obj *)irPtr->twoPtrValue.ptr2;
 
@@ -1817,7 +1817,7 @@ LsetFlat(
 	     */
 
 	    listRepPtr->refCount++;
-	    TclFreeIntRep(objPtr);
+	    TclFreeInternalRep(objPtr);
 	    ListSetIntRep(objPtr, listRepPtr);
 	    listRepPtr->refCount--;
 
@@ -2024,7 +2024,7 @@ ListObjSetElement(
 
     ListGetIntRep(listPtr, listRepPtr);
     listRepPtr->refCount++;
-    TclFreeIntRep(listPtr);
+    TclFreeInternalRep(listPtr);
     ListSetIntRep(listPtr, listRepPtr);
     listRepPtr->refCount--;
 
@@ -2135,7 +2135,7 @@ SetListFromAny(
      * describe duplicate keys).
      */
 
-    if (!TclHasStringRep(objPtr) && TclHasIntRep(objPtr, &tclDictType)) {
+    if (!TclHasStringRep(objPtr) && TclHasInternalRep(objPtr, &tclDictType)) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done, size;

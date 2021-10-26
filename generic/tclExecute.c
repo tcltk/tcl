@@ -452,11 +452,11 @@ VarHashCreateVar(
  */
 
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
-    ((TclHasIntRep((objPtr), &tclIntType))					\
+    ((TclHasInternalRep((objPtr), &tclIntType))					\
 	?	(*(tPtr) = TCL_NUMBER_INT,				\
 		*(ptrPtr) = (void *)				\
 		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
-    TclHasIntRep((objPtr), &tclDoubleType)				\
+    TclHasInternalRep((objPtr), &tclDoubleType)				\
 	?	(((TclIsNaN((objPtr)->internalRep.doubleValue))		\
 		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
@@ -702,9 +702,9 @@ ReleaseDictIterator(
 {
     Tcl_DictSearch *searchPtr;
     Tcl_Obj *dictPtr;
-    const Tcl_ObjIntRep *irPtr;
+    const Tcl_ObjInternalRep *irPtr;
 
-    irPtr = TclFetchIntRep(objPtr, &dictIteratorType);
+    irPtr = TclFetchInternalRep(objPtr, &dictIteratorType);
     assert(irPtr != NULL);
 
     /*
@@ -1417,7 +1417,7 @@ CompileExprObj(
      * is valid in the current context.
      */
 
-    ByteCodeGetIntRep(objPtr, &exprCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &exprCodeType, codePtr);
 
     if (codePtr != NULL) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
@@ -1427,7 +1427,7 @@ CompileExprObj(
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)
 		|| (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
-	    Tcl_StoreIntRep(objPtr, &exprCodeType, NULL);
+	    Tcl_StoreInternalRep(objPtr, &exprCodeType, NULL);
 	    codePtr = NULL;
 	}
     }
@@ -1534,7 +1534,7 @@ FreeExprCodeInternalRep(
     Tcl_Obj *objPtr)
 {
     ByteCode *codePtr;
-    ByteCodeGetIntRep(objPtr, &exprCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &exprCodeType, codePtr);
     assert(codePtr != NULL);
 
     TclReleaseByteCode(codePtr);
@@ -1573,7 +1573,7 @@ TclCompileObj(
      * compilation). Otherwise, check that it is "fresh" enough.
      */
 
-    ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
     if (codePtr != NULL) {
 	/*
 	 * Make sure the Bytecode hasn't been invalidated by, e.g., someone
@@ -1719,7 +1719,7 @@ TclCompileObj(
     iPtr->invokeWord = word;
     TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
     iPtr->invokeCmdFramePtr = NULL;
-    ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;
@@ -4655,11 +4655,11 @@ TEBCresume(
 	 * Extract the desired list element.
 	 */
 
-	if ((TclHasIntRep(valuePtr, tclListType)
+	if ((TclHasInternalRep(valuePtr, tclListType)
 	    || !TclObjectHasInterface(valuePtr, list, index))
 	    && (TclListObjGetElements(interp, valuePtr, &objc, &objv)
 		== TCL_OK)
-	    && !TclHasIntRep(value2Ptr, tclListType)) {
+	    && !TclHasInternalRep(value2Ptr, tclListType)) {
 	    int code;
 
 	    DECACHE_STACK_INFO();
@@ -4703,7 +4703,7 @@ TEBCresume(
 	 * in the process.
 	 */
 
-	if (!TclHasIntRep(valuePtr, tclListType)
+	if (!TclHasInternalRep(valuePtr, tclListType)
 	    && TclObjectHasInterface(valuePtr, list, index)) {
 	    if (TclListObjLength(interp, valuePtr, &objc) != TCL_OK) {
 		TRACE_ERROR(interp);
@@ -5109,7 +5109,7 @@ TEBCresume(
 	} else {
 	    slength = Tcl_UtfToUpper(TclGetString(valuePtr));
 	    Tcl_SetObjLength(valuePtr, slength);
-	    TclFreeIntRep(valuePtr);
+	    TclFreeInternalRep(valuePtr);
 	    TRACE_APPEND(("\"%.20s\"\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
@@ -5126,7 +5126,7 @@ TEBCresume(
 	} else {
 	    slength = Tcl_UtfToLower(TclGetString(valuePtr));
 	    Tcl_SetObjLength(valuePtr, slength);
-	    TclFreeIntRep(valuePtr);
+	    TclFreeInternalRep(valuePtr);
 	    TRACE_APPEND(("\"%.20s\"\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
@@ -5143,7 +5143,7 @@ TEBCresume(
 	} else {
 	    slength = Tcl_UtfToTitle(TclGetString(valuePtr));
 	    Tcl_SetObjLength(valuePtr, slength);
-	    TclFreeIntRep(valuePtr);
+	    TclFreeInternalRep(valuePtr);
 	    TRACE_APPEND(("\"%.20s\"\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
@@ -5492,8 +5492,8 @@ TEBCresume(
 	 * both.
 	 */
 
-	if (TclHasIntRep(valuePtr, &tclStringType)
-		|| TclHasIntRep(value2Ptr, &tclStringType)) {
+	if (TclHasInternalRep(valuePtr, &tclStringType)
+		|| TclHasInternalRep(value2Ptr, &tclStringType)) {
 	    Tcl_UniChar *ustring1, *ustring2;
 
 	    ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &slength);
@@ -6308,7 +6308,7 @@ TEBCresume(
 
     case INST_TRY_CVT_TO_BOOLEAN:
 	valuePtr = OBJ_AT_TOS;
-	if (TclHasIntRep(valuePtr,  &tclBooleanType)) {
+	if (TclHasInternalRep(valuePtr,  &tclBooleanType)) {
 	    objResultPtr = TCONST(1);
 	} else {
 	    int res = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
@@ -6989,15 +6989,15 @@ TEBCresume(
 	    goto gotError;
 	}
 	{
-	    Tcl_ObjIntRep ir;
+	    Tcl_ObjInternalRep ir;
 	    TclNewObj(statePtr);
 	    ir.twoPtrValue.ptr1 = searchPtr;
 	    ir.twoPtrValue.ptr2 = dictPtr;
-	    Tcl_StoreIntRep(statePtr, &dictIteratorType, &ir);
+	    Tcl_StoreInternalRep(statePtr, &dictIteratorType, &ir);
 	}
 	varPtr = LOCAL(opnd);
 	if (varPtr->value.objPtr) {
-	    if (TclHasIntRep(varPtr->value.objPtr, &dictIteratorType)) {
+	    if (TclHasInternalRep(varPtr->value.objPtr, &dictIteratorType)) {
 		Tcl_Panic("mis-issued dictFirst!");
 	    }
 	    TclDecrRefCount(varPtr->value.objPtr);
@@ -7011,10 +7011,10 @@ TEBCresume(
 	TRACE(("%u => ", opnd));
 	statePtr = (*LOCAL(opnd)).value.objPtr;
 	{
-	    const Tcl_ObjIntRep *irPtr;
+	    const Tcl_ObjInternalRep *irPtr;
 
 	    if (statePtr &&
-		    (irPtr = TclFetchIntRep(statePtr, &dictIteratorType))) {
+		    (irPtr = TclFetchInternalRep(statePtr, &dictIteratorType))) {
 		searchPtr = (Tcl_DictSearch *)irPtr->twoPtrValue.ptr1;
 		Tcl_DictObjNext(searchPtr, &keyPtr, &valuePtr, &done);
 	    } else {
@@ -9564,7 +9564,7 @@ EvalStatsCmd(
     for (i = 0;  i < globalTablePtr->numBuckets;  i++) {
 	for (entryPtr = globalTablePtr->buckets[i];  entryPtr != NULL;
 		entryPtr = entryPtr->nextPtr) {
-	    if (TclHasIntRep(entryPtr->objPtr, &tclByteCodeType)) {
+	    if (TclHasInternalRep(entryPtr->objPtr, &tclByteCodeType)) {
 		numByteCodeLits++;
 	    }
 	    (void) Tcl_GetStringFromObj(entryPtr->objPtr, &length);

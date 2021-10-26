@@ -804,7 +804,7 @@ Tcl_SetStringObj(
      * Set the type to NULL and free any internal rep for the old type.
      */
 
-    TclFreeIntRep(objPtr);
+    TclFreeInternalRep(objPtr);
 
     /*
      * Free any old string rep, then set the string rep to a copy of the
@@ -1041,7 +1041,7 @@ Tcl_SetUnicodeObj(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetUnicodeObj");
     }
-    TclFreeIntRep(objPtr);
+    TclFreeInternalRep(objPtr);
     SetUnicodeObj(objPtr, unicode, numChars);
 }
 
@@ -1385,7 +1385,7 @@ Tcl_AppendObjToObj(
 	 * If appendObjPtr is not of the "String" type, don't convert it.
 	 */
 
-	if (TclHasIntRep(appendObjPtr, &tclStringType)) {
+	if (TclHasInternalRep(appendObjPtr, &tclStringType)) {
 	    Tcl_UniChar *unicode =
 		    Tcl_GetUnicodeFromObj(appendObjPtr, &numChars);
 
@@ -1406,7 +1406,7 @@ Tcl_AppendObjToObj(
     bytes = Tcl_GetStringFromObj(appendObjPtr, &length);
 
     numChars = stringPtr->numChars;
-    if ((numChars != TCL_INDEX_NONE) && TclHasIntRep(appendObjPtr, &tclStringType)) {
+    if ((numChars != TCL_INDEX_NONE) && TclHasInternalRep(appendObjPtr, &tclStringType)) {
 	String *appendStringPtr = GET_STRING(appendObjPtr);
 
 	appendNumChars = appendStringPtr->numChars;
@@ -2775,7 +2775,7 @@ TclGetStringStorage(
 {
     String *stringPtr;
 
-    if (!TclHasIntRep(objPtr, &tclStringType) || objPtr->bytes == NULL) {
+    if (!TclHasInternalRep(objPtr, &tclStringType) || objPtr->bytes == NULL) {
 	return Tcl_GetStringFromObj(objPtr, sizePtr);
     }
 
@@ -2823,7 +2823,7 @@ TclStringRepeat(
      */
 
     if (!binary) {
-	if (TclHasIntRep(objPtr, &tclStringType)) {
+	if (TclHasInternalRep(objPtr, &tclStringType)) {
 	    String *stringPtr = GET_STRING(objPtr);
 	    if (stringPtr->hasUnicode) {
 		unichar = 1;
@@ -2907,7 +2907,7 @@ TclStringRepeat(
 	if (!inPlace || Tcl_IsShared(objPtr)) {
 	    objResultPtr = Tcl_NewStringObj(TclGetString(objPtr), length);
 	} else {
-	    TclFreeIntRep(objPtr);
+	    TclFreeInternalRep(objPtr);
 	    objResultPtr = objPtr;
 	}
         if (0 == Tcl_AttemptSetObjLength(objResultPtr, count*length)) {
@@ -3003,7 +3003,7 @@ TclStringCat(
 	} else {
 	    /* assert (objPtr->typePtr != NULL) -- stork! */
 	    binary = 0;
-	    if (TclHasIntRep(objPtr, &tclStringType)) {
+	    if (TclHasInternalRep(objPtr, &tclStringType)) {
 		/* Have a pure Unicode value; ask to preserve it */
 		requestUniChar = 1;
 	    } else {
@@ -3267,7 +3267,7 @@ TclStringCat(
 	    dst = TclGetString(objResultPtr) + start;
 
 	    /* assert ( length > start ) */
-	    TclFreeIntRep(objResultPtr);
+	    TclFreeInternalRep(objResultPtr);
 	} else {
 	    TclNewObj(objResultPtr);	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
@@ -3354,8 +3354,8 @@ TclStringCmp(
 	    s1 = (char *) Tcl_GetByteArrayFromObj(value1Ptr, &s1len);
 	    s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
 	    memCmpFn = memcmp;
-	} else if (TclHasIntRep(value1Ptr, &tclStringType)
-		&& TclHasIntRep(value2Ptr, &tclStringType)) {
+	} else if (TclHasInternalRep(value1Ptr, &tclStringType)
+		&& TclHasInternalRep(value2Ptr, &tclStringType)) {
 	    /*
 	     * Do a unicode-specific comparison if both of the args are of
 	     * String type. If the char length == byte length, we can do a
@@ -4212,7 +4212,7 @@ SetStringFromAny(
     TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
-    if (!TclHasIntRep(objPtr, &tclStringType)) {
+    if (!TclHasInternalRep(objPtr, &tclStringType)) {
 	String *stringPtr = stringAlloc(0);
 
 	/*
@@ -4220,10 +4220,10 @@ SetStringFromAny(
 	 */
 
 	(void) TclGetString(objPtr);
-	TclFreeIntRep(objPtr);
+	TclFreeInternalRep(objPtr);
 
 	/*
-	 * Create a basic String intrep that just points to the UTF-8 string
+	 * Create a basic String internalrep that just points to the UTF-8 string
 	 * already in place at objPtr->bytes.
 	 */
 

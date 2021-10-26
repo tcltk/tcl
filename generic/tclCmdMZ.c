@@ -1628,7 +1628,7 @@ StringIsCmd(
     case STR_IS_BOOL:
     case STR_IS_TRUE:
     case STR_IS_FALSE:
-	if (!TclHasIntRep(objPtr, &tclBooleanType)
+	if (!TclHasInternalRep(objPtr, &tclBooleanType)
 		&& (TCL_OK != TclSetBooleanFromAny(NULL, objPtr))) {
 	    if (strict) {
 		result = 0;
@@ -1697,9 +1697,9 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsDigit;
 	break;
     case STR_IS_DOUBLE: {
-	if (TclHasIntRep(objPtr, &tclDoubleType) ||
-		TclHasIntRep(objPtr, &tclIntType) ||
-		TclHasIntRep(objPtr, &tclBignumType)) {
+	if (TclHasInternalRep(objPtr, &tclDoubleType) ||
+		TclHasInternalRep(objPtr, &tclIntType) ||
+		TclHasInternalRep(objPtr, &tclBignumType)) {
 	    break;
 	}
 	string1 = Tcl_GetStringFromObj(objPtr, &length1);
@@ -1718,7 +1718,7 @@ StringIsCmd(
 	    failat = stop - string1;
 	    if (stop < end) {
 		result = 0;
-		TclFreeIntRep(objPtr);
+		TclFreeInternalRep(objPtr);
 	    }
 	}
 	break;
@@ -1728,8 +1728,8 @@ StringIsCmd(
 	break;
     case STR_IS_INT:
     case STR_IS_ENTIER:
-	if (TclHasIntRep(objPtr, &tclIntType) ||
-		TclHasIntRep(objPtr, &tclBignumType)) {
+	if (TclHasInternalRep(objPtr, &tclIntType) ||
+		TclHasInternalRep(objPtr, &tclBignumType)) {
 	    break;
 	}
 	string1 = Tcl_GetStringFromObj(objPtr, &length1);
@@ -1758,7 +1758,7 @@ StringIsCmd(
 
 		result = 0;
 		failat = stop - string1;
-		TclFreeIntRep(objPtr);
+		TclFreeInternalRep(objPtr);
 	    }
 	} else {
 	    /*
@@ -1811,7 +1811,7 @@ StringIsCmd(
 		 */
 
 		failat = stop - string1;
-		TclFreeIntRep(objPtr);
+		TclFreeInternalRep(objPtr);
 	    }
 	} else {
 	    /*
@@ -2007,7 +2007,7 @@ StringMapCmd(
      */
 
     if (!TclHasStringRep(objv[objc-2])
-	    && TclHasIntRep(objv[objc-2], &tclDictType)) {
+	    && TclHasInternalRep(objv[objc-2], &tclDictType)) {
 	int i, done;
 	Tcl_DictSearch search;
 

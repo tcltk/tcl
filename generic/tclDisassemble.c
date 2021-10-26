@@ -44,17 +44,17 @@ static const Tcl_ObjType instNameType = {
     NULL,			/* setFromAnyProc */
 };
 
-#define InstNameSetIntRep(objPtr, inst)				\
+#define InstNameSetInternalRep(objPtr, inst)				\
     do {							\
-	Tcl_ObjIntRep ir;					\
+	Tcl_ObjInternalRep ir;					\
 	ir.wideValue = (inst);					\
-	Tcl_StoreIntRep((objPtr), &instNameType, &ir);		\
+	Tcl_StoreInternalRep((objPtr), &instNameType, &ir);		\
     } while (0)
 
-#define InstNameGetIntRep(objPtr, inst)				\
+#define InstNameGetInternalRep(objPtr, inst)				\
     do {							\
-	const Tcl_ObjIntRep *irPtr;				\
-	irPtr = TclFetchIntRep((objPtr), &instNameType);	\
+	const Tcl_ObjInternalRep *irPtr;				\
+	irPtr = TclFetchInternalRep((objPtr), &instNameType);	\
 	assert(irPtr != NULL);					\
 	(inst) = (size_t)irPtr->wideValue;			\
     } while (0)
@@ -259,7 +259,7 @@ DisassembleByteCodeObj(
     Interp *iPtr;
     Tcl_Obj *bufferObj, *fileObj;
 
-    ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
 
     iPtr = (Interp *) *codePtr->interpHandle;
 
@@ -760,7 +760,7 @@ TclGetInnerContext(
         int len;
 
         /*
-         * Reset while keeping the list intrep as much as possible.
+         * Reset while keeping the list internalrep as much as possible.
          */
 
 	Tcl_ListObjLength(interp, result, &len);
@@ -807,7 +807,7 @@ TclNewInstNameObj(
 
     TclNewObj(objPtr);
     TclInvalidateStringRep(objPtr);
-    InstNameSetIntRep(objPtr, (long) inst);
+    InstNameSetInternalRep(objPtr, (long) inst);
 
     return objPtr;
 }
@@ -829,7 +829,7 @@ UpdateStringOfInstName(
     size_t inst;	/* NOTE: We know this is really an unsigned char */
     char *dst;
 
-    InstNameGetIntRep(objPtr, inst);
+    InstNameGetInternalRep(objPtr, inst);
 
     if (inst > LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
@@ -944,7 +944,7 @@ DisassembleByteCodeAsDicts(
     int codeOffset, codeLength, sourceOffset, sourceLength;
     int i, val, line;
 
-    ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
 
     /*
      * Get the literals from the bytecode.
@@ -1367,7 +1367,7 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 
-	if (!TclHasIntRep(objv[2], &tclByteCodeType) && (TCL_OK
+	if (!TclHasInternalRep(objv[2], &tclByteCodeType) && (TCL_OK
 		!= TclSetByteCodeFromAny(interp, objv[2], NULL, NULL))) {
 	    return TCL_ERROR;
 	}
@@ -1418,7 +1418,7 @@ Tcl_DisassembleObjCmd(
 	 * Compile if necessary.
 	 */
 
-	if (!TclHasIntRep(procPtr->bodyPtr, &tclByteCodeType)) {
+	if (!TclHasInternalRep(procPtr->bodyPtr, &tclByteCodeType)) {
 	    Command cmd;
 
 	    /*
@@ -1483,7 +1483,7 @@ Tcl_DisassembleObjCmd(
 	 * Compile if necessary.
 	 */
 
-	if (!TclHasIntRep(procPtr->bodyPtr, &tclByteCodeType)) {
+	if (!TclHasInternalRep(procPtr->bodyPtr, &tclByteCodeType)) {
 	    Command cmd;
 
 	    /*
@@ -1568,7 +1568,7 @@ Tcl_DisassembleObjCmd(
 		    "METHODTYPE", NULL);
 	    return TCL_ERROR;
 	}
-	if (!TclHasIntRep(procPtr->bodyPtr, &tclByteCodeType)) {
+	if (!TclHasInternalRep(procPtr->bodyPtr, &tclByteCodeType)) {
 	    Command cmd;
 
 	    /*
@@ -1596,7 +1596,7 @@ Tcl_DisassembleObjCmd(
      * Do the actual disassembly.
      */
 
-    ByteCodeGetIntRep(codeObjPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(codeObjPtr, &tclByteCodeType, codePtr);
 
     if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(

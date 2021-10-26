@@ -358,10 +358,6 @@ static int		ZipChannelClose(void *instanceData,
 static Tcl_DriverGetHandleProc	ZipChannelGetFile;
 static int		ZipChannelRead(void *instanceData, char *buf,
 			    int toRead, int *errloc);
-#if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
-static int		ZipChannelSeek(void *instanceData, long offset,
-			    int mode, int *errloc);
-#endif
 static long long	ZipChannelWideSeek(void *instanceData,
 			    long long offset, int mode, int *errloc);
 static void		ZipChannelWatchChannel(void *instanceData,
@@ -417,11 +413,7 @@ static Tcl_ChannelType ZipChannelType = {
     TCL_CLOSE2PROC,		/* Close channel, clean instance data */
     ZipChannelRead,		/* Handle read request */
     ZipChannelWrite,		/* Handle write request */
-#if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
-    ZipChannelSeek,		/* Move location of access point, NULL'able */
-#else
     NULL,			/* Move location of access point, NULL'able */
-#endif
     NULL,			/* Set options, NULL'able */
     NULL,			/* Get options, NULL'able */
     ZipChannelWatchChannel,	/* Initialize notifier */
@@ -4227,18 +4219,6 @@ ZipChannelWideSeek(
     info->numRead = (size_t) offset;
     return info->numRead;
 }
-
-#if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
-static int
-ZipChannelSeek(
-    void *instanceData,
-    long offset,
-    int mode,
-    int *errloc)
-{
-    return ZipChannelWideSeek(instanceData, offset, mode, errloc);
-}
-#endif
 
 /*
  *-------------------------------------------------------------------------

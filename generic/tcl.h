@@ -613,13 +613,13 @@ typedef struct Tcl_ObjType {
 } Tcl_ObjType;
 
 /*
- * The following structure stores an internal representation (intrep) for
- * a Tcl value. An intrep is associated with an Tcl_ObjType when both
+ * The following structure stores an internal representation (internalrep) for
+ * a Tcl value. An internalrep is associated with an Tcl_ObjType when both
  * are stored in the same Tcl_Obj.  The routines of the Tcl_ObjType govern
- * the handling of the intrep.
+ * the handling of the internalrep.
  */
 
-typedef union Tcl_ObjIntRep {	/* The internal representation: */
+typedef union Tcl_ObjInternalRep {	/* The internal representation: */
     long longValue;		/*   - an long integer value. */
     double doubleValue;		/*   - a double-precision floating value. */
     void *otherValuePtr;	/*   - another, type-specific value, */
@@ -633,7 +633,7 @@ typedef union Tcl_ObjIntRep {	/* The internal representation: */
 	void *ptr;		/*     not used internally any more. */
 	unsigned long value;
     } ptrAndLongRep;
-} Tcl_ObjIntRep;
+} Tcl_ObjInternalRep;
 
 /*
  * One of the following structures exists for each object in the Tcl system.
@@ -660,7 +660,7 @@ struct Tcl_Obj {
 				 * corresponds to the type of the object's
 				 * internal rep. NULL indicates the object has
 				 * no internal rep (has no type). */
-    Tcl_ObjIntRep internalRep;	/* The internal representation: */
+    Tcl_ObjInternalRep internalRep;	/* The internal representation: */
 };
 
 
