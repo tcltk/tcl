@@ -9074,3 +9074,12 @@ See RFC 2045
 2020-12-23 tzdata updated to Olson's tzdata2020e (jima)
 
 - Released 8.6.11, Dec 31, 2020 - details at https://core.tcl-lang.org/tcl/ -
+
+!!!! TODO !!!!
+
+2021-10-27 (new) support for MacOS Monterey (nijtmans)
+=> platform 1.0.18
+
+2021-10-27 tzdata updated to Olson's tzdata2021e (nijtmans)
+
+- Released 8.6.12, Nov ??, 2021 - details at https://core.tcl-lang.org/tcl/ -
