@@ -2691,7 +2691,7 @@ Tcl_LrangeObjCmd(
     toAnchor = TclIndexIsFromEnd(toIdx);
     fromAnchor = TclIndexIsFromEnd(fromIdx);
 
-    if (!TclLengthIsFinite(listLen)
+    if (!Tcl_LengthIsFinite(listLen)
 	&& (toAnchor == 1 || fromAnchor == 1)) {
 	Tcl_Obj *objResultPtr;
 
@@ -3535,7 +3535,7 @@ Tcl_LsearchObjCmd(
 
     if (startPtr) {
 	result = TclGetIntForIndexM(interp, startPtr,
-	    TclLengthIsFinite(listc) ? listc - (size_t)1 : TCL_INDEX_END, &start);
+	    Tcl_LengthIsFinite(listc) ? listc - (size_t)1 : TCL_INDEX_END, &start);
 	if (result != TCL_OK) {
 	    goto done;
 	}
@@ -3548,7 +3548,7 @@ Tcl_LsearchObjCmd(
 	 * "did not match anything at all" result straight away. [Bug 1374778]
 	 */
 
-	if (TclLengthIsFinite(listc) && start >= (size_t)listc) {
+	if (Tcl_LengthIsFinite(listc) && start >= (size_t)listc) {
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {
@@ -3627,7 +3627,7 @@ Tcl_LsearchObjCmd(
 	 */
 
 	lower = start - groupSize;
-	isfinite = TclLengthIsFinite(listc);
+	isfinite = Tcl_LengthIsFinite(listc);
 	if (isfinite) {
 	    upper = listc;
 	} else {
@@ -3650,7 +3650,7 @@ Tcl_LsearchObjCmd(
 		    goto done;
 		} else {
 		    if (TclListObjLength(interp, subjectPtr, &listc) == TCL_OK) {
-			isfinite = TclLengthIsFinite(listc);
+			isfinite = Tcl_LengthIsFinite(listc);
 			if (isfinite) {
 			    if (listc - 1 > i) {
 				upper = listc = 1;

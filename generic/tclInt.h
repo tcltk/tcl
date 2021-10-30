@@ -334,7 +334,6 @@ typedef struct ObjectType {
 				include.  */ \
     size_t toIdx		/* Index of last element to include. */
 
-
 #define tclObjTypeInterfaceArgsListRangeEnd \
     Tcl_Interp * interp, /* Used to report errors */ \
     Tcl_Obj *listPtr,	/* List object to take a range from. */ \
@@ -352,6 +351,13 @@ typedef struct ObjectType {
 			/* An array of objc pointers to Tcl \
 			 * objects to insert. */ \
     Tcl_Obj *const objv[]
+
+#define tclObjTypeInterfaceArgsListReplaceList \
+    Tcl_Interp *interp, /* Used for error reporting if not NULL. */ \
+    Tcl_Obj *listPtr,   /* List object whose elements to replace. */ \
+    int first,	        /* Index of first element to replace. */ \
+    int count,		/* Number of elements to replace. */ \
+    Tcl_Obj *newItemsPtr /* a list of new items to insert */
 
 
 #define tclObjTypeInterfaceArgsListSet \
@@ -417,6 +423,7 @@ typedef struct ObjInterface {
 	Tcl_Obj* (*range)(tclObjTypeInterfaceArgsListRange);
 	Tcl_Obj* (*rangeEnd)(tclObjTypeInterfaceArgsListRangeEnd);
 	int (*replace)(tclObjTypeInterfaceArgsListReplace);
+	int (*replaceList)(tclObjTypeInterfaceArgsListReplaceList);
 	int (*set)(tclObjTypeInterfaceArgsListSet);
 	Tcl_Obj * (*setlist)(tclObjTypeInterfaceArgsListSetList);
     } list;
@@ -3237,7 +3244,7 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int indexCount, Tcl_Obj *const indexArray[]);
-MODULE_SCOPE int	TclLengthIsFinite(size_t length);
+MODULE_SCOPE int	Tcl_LengthIsFinite(size_t length);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
 			    int *lines, Tcl_Obj *const *elems);
@@ -4973,7 +4980,8 @@ MODULE_SCOPE Tcl_LibraryInitProc TclObjTest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc TclThread_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_Init;
 MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
-MODULE_SCOPE int TcltestObjectInterfaceInit(Tcl_Interp *interp);
+MODULE_SCOPE Tcl_LibraryInitProc TcltestObjectInterfaceInit;
+MODULE_SCOPE Tcl_LibraryInitProc TcltestObjectInterfaceListIntegerInit;
 
 /*
  *----------------------------------------------------------------

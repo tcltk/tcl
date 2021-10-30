@@ -3807,7 +3807,7 @@ TclIndexDecode(
 }
 
 int TclIndexIsFromEnd(int encoded) {
-    return encoded < 0;
+    return encoded <= (int)TCL_INDEX_END;
 }
 
 /*
@@ -3822,20 +3822,20 @@ int TclIndexIsFromEnd(int encoded) {
  */
 size_t
 TclIndexLast (size_t length) {
-    return TclLengthIsFinite(length) ? length - 1 : TCL_INDEX_NONE;
+    return Tcl_LengthIsFinite(length) ? length - 1 : TCL_INDEX_NONE;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclLengthIsFinite --
+ * Tcl_LengthIsFinite --
  *
  *	True if length is Finite.
  *
  *----------------------------------------------------------------------
  */
 int
-TclLengthIsFinite(size_t length) {
+Tcl_LengthIsFinite(size_t length) {
     return length != TCL_LENGTH_NONE;
 }
 

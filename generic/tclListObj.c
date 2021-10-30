@@ -74,6 +74,7 @@ ObjInterface tclListInterface = {
 	&ListObjRange,
 	NULL,
 	&ListObjReplace,
+	NULL, /* replaceList */
 	&ListObjSetElement,
 	&LsetFlat
     },
@@ -480,7 +481,7 @@ TclListObjRange(
     if (fromIdx == TCL_INDEX_NONE) {
 	fromIdx = 0;
     }
-    if (TclLengthIsFinite(length) && toIdx + 1 >= (size_t)length + 1) {
+    if (Tcl_LengthIsFinite(length) && toIdx + 1 >= (size_t)length + 1) {
 	toIdx = length-1;
     }
 
@@ -650,27 +651,33 @@ Tcl_ListObjAppendList(tclObjTypeInterfaceArgsListAppendList)
 int
 ListObjAppendList(tclObjTypeInterfaceArgsListAppendList)
 {
-    int objc;
+    int objc, status, dstatus;
     Tcl_Obj **objv;
 
     if (Tcl_IsShared(listPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendList");
     }
 
-    /*
-     * Pull the elements to append from elemListPtr.
-     */
+    if (TclObjectHasInterface(listPtr, list, replaceList)) {
+	return TclObjectDispatchNoDefault(interp, status, listPtr, list,
+	    replaceList, interp, listPtr, LIST_MAX, 0, elemListPtr);
+    } else {
+	/*
+	 * Pull the elements to append from elemListPtr.
+	 */
 
-    if (TCL_OK != TclListObjGetElements(interp, elemListPtr, &objc, &objv)) {
-	return TCL_ERROR;
+	if (TCL_OK != TclListObjGetElements(interp, elemListPtr, &objc, &objv)) {
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Insert the new elements starting after the lists's last element.
+	 * Delete zero existing elements.
+	 */
+
+	return Tcl_ListObjReplace(interp, listPtr, LIST_MAX, 0, objc, objv);
     }
 
-    /*
-     * Insert the new elements starting after the lists's last element.
-     * Delete zero existing elements.
-     */
-
-    return Tcl_ListObjReplace(interp, listPtr, LIST_MAX, 0, objc, objv);
 }
 
 /*
@@ -1040,10 +1047,50 @@ Tcl_ListObjReplace(
     int objc,
     Tcl_Obj *const objv[])
 {
+    int length, status;
+    if (Tcl_IsShared(listPtr)) {
+	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
+    }
+
+    if (first < 0) {
+	first = 0;
+    }
+
+    status = Tcl_ListObjLength(interp, listPtr, &length);
+    if (status != TCL_OK) {
+	return status;
+    }
+
+    if (length == 0 && objc == 0) {
+	return TCL_OK;
+    }
+
+    if (first >= length) {
+	first = length;	/* So we'll insert after last element. */
+    }
+
+    if (count < 0) {
+	count = 0;
+    } else if (first > INT_MAX - count /* Handle integer overflow */
+	    || length < first+count) {
+	count = length - first;
+    }
+
+    if (objc > LIST_MAX - (length - count)) {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "max length of a Tcl list (%d elements) exceeded",
+		    LIST_MAX));
+	}
+	return TCL_ERROR;
+    }
+
+
     return TclObjectDispatch(listPtr, ListObjReplace,
 	list, replace, interp, listPtr, first, count, objc, objv);
 }
 
+
 int
 ListObjReplace(
     Tcl_Interp *interp,
@@ -1057,20 +1104,19 @@ ListObjReplace(
     Tcl_Obj **elemPtrs;
     int needGrow, numElems, numRequired, numAfterLast, start, i, j, isShared;
 
-    if (Tcl_IsShared(listPtr)) {
-	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
-    }
-
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
 	size_t length;
 
 	(void) Tcl_GetStringFromObj(listPtr, &length);
 	if (length == 0) {
-	    if (objc == 0) {
-		return TCL_OK;
+	    /* redundant since objc == 0 and length == 0 was checked already in
+	     * Tcl_ListObjReplace, but do it again here in case code changes
+	     * later.
+	     */
+	    if (objc != 0) {
+		Tcl_SetListObj(listPtr, objc, NULL);
 	    }
-	    Tcl_SetListObj(listPtr, objc, NULL);
 	} else {
 	    int result = SetListFromAny(interp, listPtr);
 
@@ -1089,31 +1135,7 @@ ListObjReplace(
      * Resist any temptation to optimize this case.
      */
 
-    elemPtrs = &listRepPtr->elements;
     numElems = listRepPtr->elemCount;
-
-    if (first < 0) {
-	first = 0;
-    }
-    if (first >= numElems) {
-	first = numElems;	/* So we'll insert after last element. */
-    }
-    if (count < 0) {
-	count = 0;
-    } else if (first > INT_MAX - count /* Handle integer overflow */
-	    || numElems < first+count) {
-
-	count = numElems - first;
-    }
-
-    if (objc > LIST_MAX - (numElems - count)) {
-	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max length of a Tcl list (%d elements) exceeded",
-		    LIST_MAX));
-	}
-	return TCL_ERROR;
-    }
     isShared = (listRepPtr->refCount > 1);
     numRequired = numElems - count + objc; /* Known <= LIST_MAX */
     needGrow = numRequired > listRepPtr->maxElemCount;
@@ -1122,6 +1144,7 @@ ListObjReplace(
 	Tcl_IncrRefCount(objv[i]);
     }
 
+    elemPtrs = &listRepPtr->elements;
     if (needGrow && !isShared) {
 	/* Try to use realloc */
 	List *newPtr = NULL;
@@ -1236,7 +1259,7 @@ ListObjReplace(
 	    oldListRepPtr->refCount--;
 	} else {
 	    /*
-	     * The old struct will be removed; use its inherited refCounts.
+	     * The old struct will be removed.  Use its inherited refCounts.
 	     */
 
 	    if (first > 0) {
@@ -1296,6 +1319,7 @@ ListObjReplace(
     TclInvalidateStringRep(listPtr);
     return TCL_OK;
 }
+
 
 /*
  *----------------------------------------------------------------------

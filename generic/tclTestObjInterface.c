@@ -132,6 +132,7 @@ int NewTestIndexHex (
 	offset = 0;
     }
     Tcl_Obj *objPtr = Tcl_NewObj();
+    Tcl_InvalidateStringRep(objPtr);
 
     indexHex *indexHexPtr = (indexHex *)Tcl_Alloc(sizeof(indexHex));
     indexHexPtr->refCount = 1;

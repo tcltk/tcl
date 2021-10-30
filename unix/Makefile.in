@@ -293,9 +293,11 @@ DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
 TCLSH_OBJS = tclAppInit.o
 
 TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestObjInterface.o \
+	tclTestObjInterfaceInteger.o \
 	tclTestProcBodyObj.o tclThreadTest.o tclUnixTest.o
 
 XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestObjInterface.o \
+	tclTestObjInterfaceInteger.o \
 	tclTestProcBodyObj.o tclThreadTest.o tclUnixTest.o tclXtNotify.o \
 	tclXtTest.o
 
@@ -469,6 +471,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestObj.c \
 	$(GENERIC_DIR)/tclTestObjInterface.c \
+	$(GENERIC_DIR)/tclTestObjInterfaceInteger \
 	$(GENERIC_DIR)/tclTestProcBodyObj.c \
 	$(GENERIC_DIR)/tclThread.c \
 	$(GENERIC_DIR)/tclThreadAlloc.c \
@@ -1540,6 +1543,10 @@ tclTestObj.o: $(GENERIC_DIR)/tclTestObj.c $(MATHHDRS)
 
 tclTestObjInterface.o: $(GENERIC_DIR)/tclTestObjInterface.c $(MATHHDRS)
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTestObjInterface.c
+
+tclTestObjInterfaceInteger.o: $(GENERIC_DIR)/tclTestObjInterfaceInteger.c \
+	$(MATHHDRS)
+	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTestObjInterfaceInteger.c
 
 tclTestProcBodyObj.o: $(GENERIC_DIR)/tclTestProcBodyObj.c
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTestProcBodyObj.c

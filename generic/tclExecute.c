@@ -4710,7 +4710,7 @@ TEBCresume(
 		goto gotError;
 	    }
 
-	    if (TclIndexIsFromEnd(opnd) && !TclLengthIsFinite(objc)) {
+	    if (TclIndexIsFromEnd(opnd) && !Tcl_LengthIsFinite(objc)) {
 		/* end-relative index, and list end is indeterminate */
 		if (TclObjectDispatchNoDefault(interp, dstatus, valuePtr, list, indexEnd,
 		    interp, valuePtr, index, &objResultPtr) != TCL_OK
@@ -4725,6 +4725,9 @@ TEBCresume(
 		    TRACE_ERROR(interp);
 		    goto gotError;
 		}
+	    }
+	    if (objResultPtr == NULL) {
+		TclNewObj(objResultPtr);
 	    }
 	    Tcl_IncrRefCount(objResultPtr);
 
@@ -4914,7 +4917,7 @@ TEBCresume(
 	toIdxAnchor = TclIndexIsFromEnd(toIdx);
 	fromIdxAnchor = TclIndexIsFromEnd(fromIdx);
 
-	if (!TclLengthIsFinite(objc)
+	if (!Tcl_LengthIsFinite(objc)
 	    && (toIdxAnchor == 1 || fromIdxAnchor == 1)) {
 
 	    toIdx = TclIndexDecode(toIdx, SIZE_MAX);
@@ -4929,7 +4932,7 @@ TEBCresume(
 	    toIdx = TclIndexDecode(toIdx, TclIndexLast(objc));
 	    if (toIdx == TCL_INDEX_NONE) {
 		goto emptyList;
-	    } else if (TclLengthIsFinite(objc) && toIdx + 1 >= (size_t)objc + 1) {
+	    } else if (Tcl_LengthIsFinite(objc) && toIdx + 1 >= (size_t)objc + 1) {
 		toIdx = TclIndexLast(objc);
 	    }
 
@@ -5253,7 +5256,7 @@ TEBCresume(
 
 	if (TclObjectHasInterface(valuePtr, list, index)) {
 	    if ((TclIndexIsFromEnd(toIdx) || TclIndexIsFromEnd(fromIdx))
-		&& !TclLengthIsFinite(slength)) {
+		&& !Tcl_LengthIsFinite(slength)) {
 
 		fromIdx = TclIndexDecode(fromIdx, TclIndexLast(slength));
 		toIdx = TclIndexDecode(toIdx, TclIndexLast(slength));
