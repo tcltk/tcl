@@ -384,15 +384,20 @@ Tcl_RegexpObjCmd(
 		    if (end >= offset) {
 			end--;
 		    }
+		    TclNewIntObj(objs[0], start);
+		    TclNewIntObj(objs[1], end);
+
+		    newPtr = Tcl_NewListObj(2, objs);
 		} else {
-		    start = -1;
-		    end = -1;
+		    start = TCL_INDEX_NONE;
+		    end = TCL_INDEX_NONE;
+		    TclNewObj(newPtr);
+#if TCL_MAJOR_VERSION < 9 && !defined(TCL_NO_DEPRECATED)
+		    Tcl_ListObjAppendElement(NULL, newPtr, Tcl_NewIntObj(-1));
+		    Tcl_ListObjAppendElement(NULL, newPtr, Tcl_NewIntObj(-1));
+#endif
 		}
 
-		TclNewIntObj(objs[0], start);
-		TclNewIntObj(objs[1], end);
-
-		newPtr = Tcl_NewListObj(2, objs);
 	    } else {
 		if (i <= info.nsubs) {
 		    newPtr = Tcl_GetRange(objPtr,
@@ -3780,17 +3785,22 @@ TclNRSwitchObjCmd(
 		if (info.matches[j].end > 0) {
 		    TclNewIntObj(rangeObjAry[0], info.matches[j].start);
 		    TclNewIntObj(rangeObjAry[1], info.matches[j].end-1);
+		    Tcl_ListObjAppendElement(NULL, indicesObj,
+			    Tcl_NewListObj(2, rangeObjAry));
 		} else {
-		    TclNewIntObj(rangeObjAry[1], TCL_INDEX_NONE);
-		    rangeObjAry[0] = rangeObjAry[1];
+		    TclNewObj(rangeObjAry[0]);
+#if TCL_MAJOR_VERSION < 9 && !defined(TCL_NO_DEPRECATED)
+		    Tcl_ListObjAppendElement(NULL, rangeObjAry[0], Tcl_NewIntObj(-1));
+		    Tcl_ListObjAppendElement(NULL, rangeObjAry[0], Tcl_NewIntObj(-1));
+#endif
+		    Tcl_ListObjAppendElement(NULL, indicesObj,
+			    rangeObjAry[0]);
 		}
 
 		/*
 		 * Never fails; the object is always clean at this point.
 		 */
 
-		Tcl_ListObjAppendElement(NULL, indicesObj,
-			Tcl_NewListObj(2, rangeObjAry));
 	    }
 
 	    if (matchVarObj != NULL) {
