@@ -32,6 +32,18 @@ MANDIR			?= ${PREFIX}/man
 # set to non-empty value to install manpages in addition to html help:
 INSTALL_MANPAGES	?=
 
+# Checks and overrides for subframework builds
+ifeq (${SUBFRAMEWORK},1)
+ifeq (${DYLIB_INSTALL_DIR},)
+	@echo "Cannot install subframework with empty DYLIB_INSTALL_DIR !" && false
+endif
+ifeq (${DESTDIR},)
+	@echo "Cannot install subframework with empty DESTDIR !" && false
+endif
+override BUILD_DIR = ${DESTDIR}/build
+override INSTALL_PATH = /Frameworks
+endif
+
 #-------------------------------------------------------------------------------------------------------
 # meta targets
 
@@ -132,7 +144,7 @@ ${objdir}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure \
 	mkdir -p "${OBJ_DIR}" && cd "${OBJ_DIR}" && \
 	if [ ${UNIX_DIR}/configure -nt config.status ]; then ${UNIX_DIR}/configure -C \
 	--prefix="${PREFIX}" --bindir="${BINDIR}" --libdir="${LIBDIR}" \
-	--mandir="${MANDIR}" --enable-framework --enable-dtrace \
+	--mandir="${MANDIR}" --enable-framework --enable-dtrace --disable-zipfs \
 	${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}; else ./config.status; fi
 
 build-${PROJECT}: ${objdir}/Makefile

@@ -4,7 +4,7 @@
  *	This file contains the method call chain management code for the
  *	object-system core.
  *
- * Copyright (c) 2005-2012 by Donal K. Fellows
+ * Copyright © 2005-2012 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -247,12 +247,12 @@ StashCallChain(
     Tcl_Obj *objPtr,
     CallChain *callPtr)
 {
-    Tcl_ObjIntRep ir;
+    Tcl_ObjInternalRep ir;
 
     callPtr->refCount++;
     TclGetString(objPtr);
     ir.twoPtrValue.ptr1 = callPtr;
-    Tcl_StoreIntRep(objPtr, &methodNameType, &ir);
+    Tcl_StoreInternalRep(objPtr, &methodNameType, &ir);
 }
 
 void
@@ -280,7 +280,7 @@ DupMethodNameRep(
     Tcl_Obj *dstPtr)
 {
     StashCallChain(dstPtr,
-	    (CallChain *)TclFetchIntRep(srcPtr, &methodNameType)->twoPtrValue.ptr1);
+	    (CallChain *)TclFetchInternalRep(srcPtr, &methodNameType)->twoPtrValue.ptr1);
 }
 
 static void
@@ -288,7 +288,7 @@ FreeMethodNameRep(
     Tcl_Obj *objPtr)
 {
     TclOODeleteChain(
-	    (CallChain *)TclFetchIntRep(objPtr, &methodNameType)->twoPtrValue.ptr1);
+	    (CallChain *)TclFetchInternalRep(objPtr, &methodNameType)->twoPtrValue.ptr1);
 }
 
 /*
@@ -1189,16 +1189,16 @@ TclOOGetCallContext(
 	 * the object, and in the class).
 	 */
 
-	const Tcl_ObjIntRep *irPtr;
+	const Tcl_ObjInternalRep *irPtr;
 	const int reuseMask = (WANT_PUBLIC(flags) ? ~0 : ~PUBLIC_METHOD);
 
-	if ((irPtr = TclFetchIntRep(cacheInThisObj, &methodNameType))) {
+	if ((irPtr = TclFetchInternalRep(cacheInThisObj, &methodNameType))) {
 	    callPtr = (CallChain *)irPtr->twoPtrValue.ptr1;
 	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
 		goto returnContext;
 	    }
-	    Tcl_StoreIntRep(cacheInThisObj, &methodNameType, NULL);
+	    Tcl_StoreInternalRep(cacheInThisObj, &methodNameType, NULL);
 	}
 
 	if (oPtr->flags & USE_CLASS_CACHE) {

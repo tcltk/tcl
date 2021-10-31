@@ -7,7 +7,7 @@
 #
 # See the safe.n man page for details.
 #
-# Copyright (c) 1996-1997 Sun Microsystems, Inc.
+# Copyright © 1996-1997 Sun Microsystems, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -131,7 +131,7 @@ proc ::safe::interpConfigure {args} {
 		[list -accessPath $state(access_path)] \
 		[list -statics    $state(staticsok)]   \
 		[list -nested     $state(nestedok)]    \
-	        [list -deleteHook $state(cleanupHook)]]]
+		[list -deleteHook $state(cleanupHook)]]]
 	}
 	2 {
 	    # If we have exactly 2 arguments the semantic is a "configure
@@ -937,7 +937,7 @@ proc ::safe::AliasSource {child args} {
 	}
     } else {
 	set at 0
-	set encoding {}
+	set encoding utf-8
     }
     if {$argc != 1} {
 	set msg "wrong # args: should be \"source ?-encoding E? fileName\""
@@ -980,10 +980,7 @@ proc ::safe::AliasSource {child args} {
     set replacementMsg "script error"
     set code [catch {
 	set f [open $realfile]
-	fconfigure $f -eofchar \032
-	if {$encoding ne ""} {
-	    fconfigure $f -encoding $encoding
-	}
+	fconfigure $f -encoding $encoding -eofchar "\032 {}"
 	set contents [read $f]
 	close $f
 	::interp eval $child [list info script $file]
@@ -1012,8 +1009,8 @@ proc ::safe::AliasLoad {child file args} {
 	return -code error $msg
     }
 
-    # package name (can be empty if file is not).
-    set package [lindex $args 0]
+    # prefix (can be empty if file is not).
+    set prefix [lindex $args 0]
 
     namespace upvar ::safe [VarName $child] state
 
@@ -1025,23 +1022,23 @@ proc ::safe::AliasLoad {child file args} {
 	# authorize that.
 	if {!$state(nestedok)} {
 	    Log $child "loading to a sub interp (nestedok)\
-			disabled (trying to load $package to $target)"
+			disabled (trying to load $prefix to $target)"
 	    return -code error "permission denied (nested load)"
 	}
     }
 
     # Determine what kind of load is requested
     if {$file eq ""} {
-	# static package loading
-	if {$package eq ""} {
-	    set msg "load error: empty filename and no package name"
+	# static loading
+	if {$prefix eq ""} {
+	    set msg "load error: empty filename and no prefix"
 	    Log $child $msg
 	    return -code error $msg
 	}
 	if {!$state(staticsok)} {
-	    Log $child "static packages loading disabled\
-			(trying to load $package to $target)"
-	    return -code error "permission denied (static package)"
+	    Log $child "static loading disabled\
+			(trying to load $prefix to $target)"
+	    return -code error "permission denied (static library)"
 	}
     } else {
 	# file loading
@@ -1064,10 +1061,10 @@ proc ::safe::AliasLoad {child file args} {
     }
 
     try {
-	return [::interp invokehidden $child load $file $package $target]
+	return [::interp invokehidden $child load $file $prefix $target]
     } on error msg {
-	# Some packages return no error message.
-	set msg0 "load of binary library for package $package failed"
+	# Some libraries return no error message.
+	set msg0 "load of library for prefix $prefix failed"
 	if {$msg eq {}} {
 	    set msg $msg0
 	} else {

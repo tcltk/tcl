@@ -4,8 +4,8 @@
  *	This file contains routines for converting file names betwen native
  *	and network form.
  *
- * Copyright (c) 1995-1998 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1995-1998 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -242,7 +242,7 @@ ExtractWinRoot(
 
 		if (path[4] == '\0') {
 		    abs = 4;
-		} else if (path [4] == ':' && path[5] == '\0') {
+		} else if (path[4] == ':' && path[5] == '\0') {
 		    abs = 5;
 		}
 
@@ -264,7 +264,7 @@ ExtractWinRoot(
 
 		if (path[4] == '\0') {
 		    abs = 4;
-		} else if (path [4] == ':' && path[5] == '\0') {
+		} else if (path[4] == ':' && path[5] == '\0') {
 		    abs = 5;
 		}
 	    }
@@ -2600,44 +2600,44 @@ Tcl_GetDeviceTypeFromStat(
     return (int) statPtr->st_rdev;
 }
 
-Tcl_WideInt
+long long
 Tcl_GetAccessTimeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideInt) statPtr->st_atime;
+    return (long long) statPtr->st_atime;
 }
 
-Tcl_WideInt
+long long
 Tcl_GetModificationTimeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideInt) statPtr->st_mtime;
+    return (long long) statPtr->st_mtime;
 }
 
-Tcl_WideInt
+long long
 Tcl_GetChangeTimeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideInt) statPtr->st_ctime;
+    return (long long) statPtr->st_ctime;
 }
 
-Tcl_WideUInt
+unsigned long long
 Tcl_GetSizeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideUInt) statPtr->st_size;
+    return (unsigned long long) statPtr->st_size;
 }
 
-Tcl_WideUInt
+unsigned long long
 Tcl_GetBlocksFromStat(
     const Tcl_StatBuf *statPtr)
 {
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-    return (Tcl_WideUInt) statPtr->st_blocks;
+    return (unsigned long long) statPtr->st_blocks;
 #else
     unsigned blksize = Tcl_GetBlockSizeFromStat(statPtr);
 
-    return ((Tcl_WideUInt) statPtr->st_size + blksize - 1) / blksize;
+    return ((unsigned long long) statPtr->st_size + blksize - 1) / blksize;
 #endif
 }
 

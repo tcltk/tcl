@@ -4,10 +4,10 @@
  *	This file contains compilation procedures that compile various Tcl
  *	commands into a sequence of instructions ("bytecodes").
  *
- * Copyright (c) 1997-1998 Sun Microsystems, Inc.
- * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
- * Copyright (c) 2002 ActiveState Corporation.
- * Copyright (c) 2004-2013 by Donal K. Fellows.
+ * Copyright © 1997-1998 Sun Microsystems, Inc.
+ * Copyright © 2001 Kevin B. Kenny.  All rights reserved.
+ * Copyright © 2002 ActiveState Corporation.
+ * Copyright © 2004-2013 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -2641,8 +2641,8 @@ TclCompileLmapCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    Command *cmdPtr,		/* Points to the definition of the command
+				 *  being compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr,
@@ -2703,7 +2703,7 @@ CompileEachloopCmd(
     }
 
     /*
-     * Bail out if the body requires substitutions in order to insure correct
+     * Bail out if the body requires substitutions in order to ensure correct
      * behaviour. [Bug 219166]
      */
 

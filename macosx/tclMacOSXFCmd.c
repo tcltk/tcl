@@ -4,7 +4,7 @@
  *	This file implements the MacOSX specific portion of file manipulation
  *	subcommands of the "file" command.
  *
- * Copyright (c) 2003-2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 2003-2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -192,11 +192,11 @@ TclMacOSXGetFileAttribute(
 		OSSwapBigToHostInt32(finder->type));
 	break;
     case MACOSX_HIDDEN_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewWideIntObj(
+	TclNewIntObj(*attributePtrPtr,
 		(finder->fdFlags & kFinfoIsInvisible) != 0);
 	break;
     case MACOSX_RSRCLENGTH_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewWideIntObj(*rsrcForkSize);
+	TclNewIntObj(*attributePtrPtr, *rsrcForkSize);
 	break;
     }
     return TCL_OK;
@@ -577,7 +577,7 @@ GetOSTypeFromObj(
 {
     int result = TCL_OK;
 
-    if (!TclHasIntRep(objPtr, &tclOSTypeType)) {
+    if (!TclHasInternalRep(objPtr, &tclOSTypeType)) {
 	result = SetOSTypeFromAny(interp, objPtr);
     }
     *osTypePtr = (OSType) objPtr->internalRep.wideValue;
@@ -659,7 +659,7 @@ SetOSTypeFromAny(
 		 (OSType) bytes[1] << 16 |
 		 (OSType) bytes[2] <<  8 |
 		 (OSType) bytes[3];
-	TclFreeIntRep(objPtr);
+	TclFreeInternalRep(objPtr);
 	objPtr->internalRep.wideValue = (Tcl_WideInt) osType;
 	objPtr->typePtr = &tclOSTypeType;
     }

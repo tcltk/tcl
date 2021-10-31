@@ -7,9 +7,9 @@
  *	is the primary author.  Other signifiant contributors are Karl
  *	Lehenbauer, Mark Diekhans and Peter da Silva.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 2001-2004 Vincent Darley.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 2001-2004 Vincent Darley.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1684,7 +1684,7 @@ Tcl_FSEvalFileEx(
 				 * Tilde-substitution is performed on this
 				 * pathname. */
     const char *encodingName)	/* Either the name of an encoding or NULL to
-				   use the system encoding. */
+				   use the utf-8 encoding. */
 {
     int length, result = TCL_ERROR;
     Tcl_StatBuf statBuf;
@@ -1722,16 +1722,16 @@ Tcl_FSEvalFileEx(
 
     /*
      * If the encoding is specified, set the channel to that encoding.
-     * Otherwise don't touch it, leaving things up to the system encoding.  If
-     * the encoding is unknown report an error.
+     * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
-    if (encodingName != NULL) {
-	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
-		!= TCL_OK) {
-	    Tcl_Close(interp,chan);
-	    return result;
-	}
+    if (encodingName == NULL) {
+	encodingName = "utf-8";
+    }
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+	    != TCL_OK) {
+	Tcl_Close(interp,chan);
+	return result;
     }
 
     TclNewObj(objPtr);
@@ -1756,7 +1756,7 @@ Tcl_FSEvalFileEx(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
+	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1821,7 +1821,7 @@ TclNREvalFile(
 				 * evaluate. Tilde-substitution is performed on
 				 * this pathname. */
     const char *encodingName)	/* The name of an encoding to use, or NULL to
-				 *  use the system encoding. */
+				 *  use the utf-8 encoding. */
 {
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile, *objPtr;
@@ -1858,16 +1858,16 @@ TclNREvalFile(
 
     /*
      * If the encoding is specified, set the channel to that encoding.
-     * Otherwise don't touch it, leaving things up to the system encoding.  If
-     * the encoding is unknown report an error.
+     * Otherwise use utf-8.  If the encoding is unknown report an error.
      */
 
-    if (encodingName != NULL) {
-	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
-		!= TCL_OK) {
-	    Tcl_Close(interp,chan);
-	    return TCL_ERROR;
-	}
+    if (encodingName == NULL) {
+	encodingName = "utf-8";
+    }
+    if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+	    != TCL_OK) {
+	Tcl_Close(interp, chan);
+	return TCL_ERROR;
     }
 
     TclNewObj(objPtr);
@@ -1893,7 +1893,7 @@ TclNREvalFile(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
+	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -2646,8 +2646,9 @@ Tcl_FSGetCwd(
 		norm = TclFSNormalizeAbsolutePath(interp,retVal);
 		if (norm != NULL) {
 		    /*
-		     * Assign to global storage the pathname of the current directory
-		     * and copy it into thread-local storage as well.
+		     * Assign to global storage the pathname of the current
+		     * directory and copy it into thread-local storage as
+		     * well.
 		     *
 		     * At system startup multiple threads could in principle
 		     * call this function simultaneously, which is a little
@@ -3009,7 +3010,7 @@ Tcl_FSLoadFile(
     const char *sym1, const char *sym2,
 				/* Names of two functions to find in the
 				 * dynamic shared object. */
-    Tcl_PackageInitProc **proc1Ptr, Tcl_PackageInitProc **proc2Ptr,
+    Tcl_LibraryInitProc **proc1Ptr, Tcl_LibraryInitProc **proc2Ptr,
 				/* Places to store pointers to the functions
 				 * named by sym1 and sym2. */
     Tcl_LoadHandle *handlePtr,	/* A place to store the token for the loaded
@@ -3027,8 +3028,8 @@ Tcl_FSLoadFile(
 
     res = Tcl_LoadFile(interp, pathPtr, symbols, 0, procPtrs, handlePtr);
     if (res == TCL_OK) {
-	*proc1Ptr = (Tcl_PackageInitProc *) procPtrs[0];
-	*proc2Ptr = (Tcl_PackageInitProc *) procPtrs[1];
+	*proc1Ptr = (Tcl_LibraryInitProc *) procPtrs[0];
+	*proc2Ptr = (Tcl_LibraryInitProc *) procPtrs[1];
     } else {
 	*proc1Ptr = *proc2Ptr = NULL;
     }
@@ -3077,6 +3078,13 @@ Tcl_FSLoadFile(
  *
  */
 
+#ifdef _WIN32
+#define getenv(x) _wgetenv(L##x)
+#define atoi(x) _wtoi(x)
+#else
+#define WCHAR char
+#endif
+
 static int
 skipUnlink(
     Tcl_Obj *shlibFile)
@@ -3098,7 +3106,7 @@ skipUnlink(
     (void)shlibFile;
     return 1;
 #else
-    char *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
+    WCHAR *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
 
     if (skipstr && (skipstr[0] != '\0')) {
 	return atoi(skipstr);
@@ -3782,10 +3790,12 @@ Tcl_FSListVolumes(void)
 
 	    if (thisFsVolumes != NULL) {
 		Tcl_ListObjAppendList(NULL, resultPtr, thisFsVolumes);
-		/* The refCount of each list returned by a `listVolumesProc` is
-		 * already incremented.  Do not hang onto the list, though.  It
-		 * belongs to the filesystem.  Add its contents to * the result
-		 * we are building, and then decrement the refCount.  */
+		/*
+		 * The refCount of each list returned by a `listVolumesProc`
+		 * is already incremented.  Do not hang onto the list, though.
+		 * It belongs to the filesystem.  Add its contents to the
+		 * result we are building, and then decrement the refCount.
+		 */
 		Tcl_DecrRefCount(thisFsVolumes);
 	    }
 	}
@@ -4358,15 +4368,14 @@ Tcl_FSCreateDirectory(
 
 int
 Tcl_FSCopyDirectory(
-    Tcl_Obj *srcPathPtr,	/*
-				 * The pathname of the directory to be copied.
-				 */
+    Tcl_Obj *srcPathPtr,	/* The pathname of the directory to be
+				 * copied. */
     Tcl_Obj *destPathPtr,	/* The pathname of the target directory. */
     Tcl_Obj **errorPtr)		/* If not NULL, and there is an error, a place
-				 *  to store a pointer to a new object, with
-				 *  its refCount already incremented, and
-				 *  containing the pathname name of file
-				 *  causing the error. */
+				 * to store a pointer to a new object, with
+				 * its refCount already incremented, and
+				 * containing the pathname name of file
+				 * causing the error. */
 {
     int retVal = -1;
     const Tcl_Filesystem *fsPtr, *fsPtr2;

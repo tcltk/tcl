@@ -6,8 +6,8 @@
  *	Original version of his file (superseded long ago) provided by
  *	Wilfredo Sanchez (wsanchez@apple.com).
  *
- * Copyright (c) 1995 Apple Computer, Inc.
- * Copyright (c) 2001-2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 1995 Apple Computer, Inc.
+ * Copyright © 2001-2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -292,8 +292,9 @@ TclpDlopen(
 	*loadHandle = newHandle;
 	result = TCL_OK;
     } else {
-	Tcl_Obj *errObj = Tcl_NewObj();
+	Tcl_Obj *errObj;
 
+	TclNewObj(errObj);
 	if (errMsg != NULL) {
 	    Tcl_AppendToObj(errObj, errMsg, -1);
 	}
@@ -335,7 +336,7 @@ FindSymbol(
     const char *symbol)		/* Symbol name to look up. */
 {
     Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *)loadHandle->clientData;
-    Tcl_PackageInitProc *proc = NULL;
+    Tcl_LibraryInitProc *proc = NULL;
     const char *errMsg = NULL;
     Tcl_DString ds;
     const char *native;
@@ -343,7 +344,7 @@ FindSymbol(
     native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
     if (dyldLoadHandle->dlHandle) {
 #if TCL_DYLD_USE_DLFCN
-	proc = (Tcl_PackageInitProc *)dlsym(dyldLoadHandle->dlHandle, native);
+	proc = (Tcl_LibraryInitProc *)dlsym(dyldLoadHandle->dlHandle, native);
 	if (!proc) {
 	    errMsg = dlerror();
 	}
@@ -399,7 +400,7 @@ FindSymbol(
 		    dyldLoadHandle->modulePtr->module, native);
 	}
 	if (nsSymbol) {
-	    proc = (Tcl_PackageInitProc *)NSAddressOfSymbol(nsSymbol);
+	    proc = (Tcl_LibraryInitProc *)NSAddressOfSymbol(nsSymbol);
 	}
 	Tcl_DStringFree(&newName);
 #endif /* TCL_DYLD_USE_NSMODULE */
@@ -462,34 +463,6 @@ UnloadFile(
     }
     ckfree(dyldLoadHandle);
     ckfree(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this procedure is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    TCL_UNUSED(const char *) /*fileName*/,
-    TCL_UNUSED(Tcl_DString *) /*bufPtr*/)
-{
-    return 0;
 }
 
 /*

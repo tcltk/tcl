@@ -67,6 +67,14 @@ other procedures.  If an error is returned and this bit is set in
 result, where it can be retrieved with \fBTcl_GetObjResult\fR or
 \fBTcl_GetStringResult\fR.  If this flag bit is not set then no error
 message is left and the interpreter's result will not be modified.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_CancelEval\fR always decrements the reference count of its
+\fIresultObjPtr\fR argument (if that is non-NULL). It is expected to
+be usually called with an object with zero reference count. If the
+object is shared with some other location (including the Tcl
+evaluation stack) it should have its reference count incremented
+before calling this function.
 .SH "SEE ALSO"
 interp(n), Tcl_Eval(3),
 TIP 285

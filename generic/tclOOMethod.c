@@ -3,7 +3,7 @@
  *
  *	This file contains code to create and manage methods.
  *
- * Copyright (c) 2005-2011 by Donal K. Fellows
+ * Copyright © 2005-2011 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -859,7 +859,7 @@ PushMethodCallFrame(
      * alternative is *so* slow...
      */
 
-    ByteCodeGetIntRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, codePtr);
     if (codePtr) {
 	codePtr->nsPtr = nsPtr;
     }
@@ -1338,7 +1338,7 @@ CloneProcedureMethod(
 
     bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
     Tcl_GetString(bodyObj);
-    Tcl_StoreIntRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, NULL);
+    Tcl_StoreInternalRep(pmPtr->procPtr->bodyPtr, &tclByteCodeType, NULL);
 
     /*
      * Create the actual copy of the method record, manufacturing a new proc

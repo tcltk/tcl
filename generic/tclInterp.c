@@ -4,8 +4,8 @@
  *	This file implements the "interp" command which allows creation and
  *	manipulation of Tcl interpreters from within Tcl scripts.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 2004 Donal K. Fellows
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 2004 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -281,7 +281,7 @@ static Tcl_ObjCmdProc	NRChildCmd;
 /*
  *----------------------------------------------------------------------
  *
- * TclSetPreInitScript --
+ * Tcl_SetPreInitScript --
  *
  *	This routine is used to change the value of the internal variable,
  *	tclPreInitScript.
@@ -296,12 +296,12 @@ static Tcl_ObjCmdProc	NRChildCmd;
  */
 
 const char *
-TclSetPreInitScript(
+Tcl_SetPreInitScript(
     const char *string)		/* Pointer to a script. */
 {
     const char *prevString = tclPreInitScript;
     tclPreInitScript = string;
-    return(prevString);
+    return prevString;
 }
 
 /*
@@ -4785,7 +4785,7 @@ ChildTimeLimitCmd(
 	Tcl_Obj *milliObj = NULL, *secObj = NULL;
 	int gran = 0;
 	Tcl_Time limitMoment;
-	int tmp;
+	Tcl_WideInt tmp;
 
 	Tcl_LimitGetTime(childInterp, &limitMoment);
 	for (i=consumedObjc ; i<objc ; i+=2) {
@@ -4817,17 +4817,17 @@ ChildTimeLimitCmd(
 		if (milliLen == 0) {
 		    break;
 		}
-		if (TclGetIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
+		if (TclGetWideIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		if (tmp < 0) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "milliseconds must be at least 0", -1));
+		if (tmp < 0 || tmp > LONG_MAX) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "milliseconds must be between 0 and %ld", LONG_MAX));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
 		}
-		limitMoment.usec = ((long) tmp)*1000;
+		limitMoment.usec = ((long)tmp)*1000;
 		break;
 	    case OPT_SEC:
 		secObj = objv[i+1];
@@ -4835,17 +4835,17 @@ ChildTimeLimitCmd(
 		if (secLen == 0) {
 		    break;
 		}
-		if (TclGetIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
+		if (TclGetWideIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		if (tmp < 0) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "seconds must be at least 0", -1));
+		if (tmp < 0 || tmp > LONG_MAX) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "seconds must be between 0 and %ld", LONG_MAX));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
 		}
-		limitMoment.sec = tmp;
+		limitMoment.sec = (long)tmp;
 		break;
 	    }
 	}

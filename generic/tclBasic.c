@@ -5,13 +5,13 @@
  *	including interpreter creation and deletion, command creation and
  *	deletion, and command/script execution.
  *
- * Copyright (c) 1987-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
- * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
- * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
- * Copyright (c) 2008 Miguel Sofer <msofer@users.sourceforge.net>
+ * Copyright © 1987-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
+ * Copyright © 2001, 2002 Kevin B. Kenny.  All rights reserved.
+ * Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright © 2006-2008 Joe Mistachkin.  All rights reserved.
+ * Copyright © 2008 Miguel Sofer <msofer@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -774,6 +774,10 @@ Tcl_CreateInterp(void)
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
 
+#ifdef _WIN32
+#   define getenv(x) _wgetenv(L##x) /* On Windows, use _wgetenv below */
+#endif
+
     /* TIP #268 */
 #if (TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE)
     if (getenv("TCL_PKG_PREFER_LATEST") == NULL) {
@@ -1175,6 +1179,7 @@ Tcl_CreateInterp(void)
      */
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
+    Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL, &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
@@ -1821,28 +1826,28 @@ DeleteInterpProc(
 	ckfree(hTablePtr);
     }
 
-    /*
-     * Invoke deletion callbacks; note that a callback can create new
-     * callbacks, so we iterate.
-     */
 
-    while (iPtr->assocData != NULL) {
+    if (iPtr->assocData != NULL) {
 	AssocData *dPtr;
 
 	hTablePtr = iPtr->assocData;
-	iPtr->assocData = NULL;
+	/*
+	 * Invoke deletion callbacks; note that a callback can create new
+	 * callbacks, so we iterate.
+	 */
 	for (hPtr = Tcl_FirstHashEntry(hTablePtr, &search);
 		hPtr != NULL;
 		hPtr = Tcl_FirstHashEntry(hTablePtr, &search)) {
 	    dPtr = (AssocData *)Tcl_GetHashValue(hPtr);
-	    Tcl_DeleteHashEntry(hPtr);
 	    if (dPtr->proc != NULL) {
 		dPtr->proc(dPtr->clientData, interp);
 	    }
+	    Tcl_DeleteHashEntry(hPtr);
 	    ckfree(dPtr);
 	}
 	Tcl_DeleteHashTable(hTablePtr);
 	ckfree(hTablePtr);
+	iPtr->assocData = NULL;
     }
 
     /*
@@ -3500,14 +3505,15 @@ Tcl_DeleteCommandFromToken(
     cmdPtr->flags |= CMD_DYING;
 
     /*
-     * Call trace functions for the command being deleted. Then delete its
-     * traces.
+     * Call each functions and then delete the trace.
      */
 
     cmdPtr->nsPtr->refCount++;
 
     if (cmdPtr->tracePtr != NULL) {
 	CommandTrace *tracePtr;
+	/* CallCommandTraces() does not cmdPtr, that's
+	 * done just before Tcl_DeleteCommandFromToken() returns  */
 	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
 
 	/*
@@ -3677,7 +3683,6 @@ CallCommandTraces(
 	}
     }
     cmdPtr->flags |= CMD_TRACE_ACTIVE;
-    cmdPtr->refCount++;
 
     result = NULL;
     active.nextPtr = iPtr->activeCmdTracePtr;
@@ -3735,7 +3740,6 @@ CallCommandTraces(
      */
 
     cmdPtr->flags &= ~CMD_TRACE_ACTIVE;
-    cmdPtr->refCount--;
     iPtr->activeCmdTracePtr = active.nextPtr;
     Tcl_Release(iPtr);
     return result;
@@ -3955,8 +3959,8 @@ OldMathFuncProc(
 	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
 #ifdef ACCEPT_NAN
 	if (result != TCL_OK) {
-	    const Tcl_ObjIntRep *irPtr
-		    = TclFetchIntRep(valuePtr, &tclDoubleType);
+	    const Tcl_ObjInternalRep *irPtr
+		    = TclFetchInternalRep(valuePtr, &tclDoubleType);
 
 	    if (irPtr) {
 		d = irPtr->doubleValue;
@@ -4862,6 +4866,7 @@ NRCommand(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *listPtr;
 
     iPtr->numLevels--;
 
@@ -4870,7 +4875,10 @@ NRCommand(
       */
 
     if (data[1] && (data[1] != INT2PTR(1))) {
-        TclNRAddCallback(interp, TclNRTailcallEval, data[1], NULL, NULL, NULL);
+	listPtr = (Tcl_Obj *)data[1];
+	data[1] = NULL;
+
+	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, NULL, NULL, NULL);
     }
 
     /* OPT ??
@@ -7529,7 +7537,7 @@ ExprCeilFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -7569,7 +7577,7 @@ ExprFloorFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -7715,7 +7723,7 @@ ExprSqrtFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -7769,7 +7777,7 @@ ExprUnaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    d = irPtr->doubleValue;
@@ -7833,7 +7841,7 @@ ExprBinaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d1);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    d1 = irPtr->doubleValue;
@@ -7848,7 +7856,7 @@ ExprBinaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[2], &d2);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    d2 = irPtr->doubleValue;
@@ -7905,7 +7913,16 @@ ExprAbsFunc(
 	    }
 	    goto unChanged;
 	} else if (l == WIDE_MIN) {
-	    if (mp_init_i64(&big, l) != MP_OKAY) {
+	    if (sizeof(Tcl_WideInt) > sizeof(int64_t)) {
+		Tcl_WideUInt ul = -(Tcl_WideUInt)WIDE_MIN;
+		if (mp_init(&big) != MP_OKAY || mp_unpack(&big, 1, 1,
+			sizeof(Tcl_WideInt), 0, 0, &ul) != MP_OKAY) {
+		    return TCL_ERROR;
+		}
+		if (mp_neg(&big, &big) != MP_OKAY) {
+		    return TCL_ERROR;
+		}
+	    } else if (mp_init_i64(&big, l) != MP_OKAY) {
 		return TCL_ERROR;
 	    }
 	    goto tooLarge;
@@ -8000,7 +8017,7 @@ ExprDoubleFunc(
     }
     if (Tcl_GetDoubleFromObj(interp, objv[1], &dResult) != TCL_OK) {
 #ifdef ACCEPT_NAN
-	if (TclHasIntRep(objv[1], &tclDoubleType)) {
+	if (TclHasInternalRep(objv[1], &tclDoubleType)) {
 	    Tcl_SetObjResult(interp, objv[1]);
 	    return TCL_OK;
 	}
@@ -8790,8 +8807,8 @@ MathFuncWrongNumArgs(
 	}
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "too %s arguments for math function \"%s\"",
-	    (found < expected ? "few" : "many"), name));
+	    "%s arguments for math function \"%s\"",
+	    (found < expected ? "not enough" : "too many"), name));
     Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
 }
 
@@ -9436,6 +9453,7 @@ TclNRYieldToObjCmd(
 
     iPtr->execEnvPtr = corPtr->callerEEPtr;
     TclSetTailcall(interp, listPtr);
+    corPtr->yieldPtr = listPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
 
     return TclNRYieldObjCmd(INT2PTR(CORO_ACTIVATE_YIELDM), interp, 1, objv);
@@ -9633,6 +9651,22 @@ TclNRCoroutineActivateCallback(
          */
 
         if (corPtr->stackLevel != stackLevel) {
+	    NRE_callback *runPtr;
+
+	    iPtr->execEnvPtr = corPtr->callerEEPtr;
+	    if (corPtr->yieldPtr) {
+		for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
+		    if (runPtr->data[1] == corPtr->yieldPtr) {
+			runPtr->data[1] = NULL;
+			Tcl_DecrRefCount(corPtr->yieldPtr);
+			corPtr->yieldPtr = NULL;
+			break;
+		    }
+		}
+	    }
+	    iPtr->execEnvPtr = corPtr->eePtr;
+
+
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "cannot yield: C stack busy", -1));
             Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD",
@@ -9648,6 +9682,7 @@ TclNRCoroutineActivateCallback(
             Tcl_Panic("Yield received an option which is not implemented");
         }
 
+	corPtr->yieldPtr = NULL;
         corPtr->stackLevel = NULL;
 
         numLevels = iPtr->numLevels;

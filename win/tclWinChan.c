@@ -4,7 +4,7 @@
  *	Channel drivers for Windows channels based on files, command pipes and
  *	TCP sockets.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -89,14 +89,14 @@ static int		FileOutputProc(ClientData instanceData,
 static int		FileSeekProc(ClientData instanceData, long offset,
 			    int mode, int *errorCode);
 #endif
-static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCode);
+static long long	FileWideSeekProc(ClientData instanceData,
+			    long long offset, int mode, int *errorCode);
 static void		FileSetupProc(ClientData clientData, int flags);
 static void		FileWatchProc(ClientData instanceData, int mask);
 static void		FileThreadActionProc(ClientData instanceData,
 			    int action);
 static int		FileTruncateProc(ClientData instanceData,
-			    Tcl_WideInt length);
+			    long long length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const WCHAR *nativeName);
 
@@ -421,7 +421,7 @@ FileCloseProc(
 	    &&  (GetStdHandle(STD_OUTPUT_HANDLE) != fileInfoPtr->handle)
 	    &&  (GetStdHandle(STD_ERROR_HANDLE) != fileInfoPtr->handle))) {
 	if (CloseHandle(fileInfoPtr->handle) == FALSE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    errorCode = errno;
 	}
     }
@@ -497,7 +497,7 @@ FileSeekProc(
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
+	    Tcl_WinConvertError(winError);
 	    *errorCodePtr = errno;
 	    return -1;
 	}
@@ -509,7 +509,7 @@ FileSeekProc(
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
+	    Tcl_WinConvertError(winError);
 	    *errorCodePtr = errno;
 	    return -1;
 	}
@@ -546,10 +546,10 @@ FileSeekProc(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 FileWideSeekProc(
     ClientData instanceData,	/* File state. */
-    Tcl_WideInt offset,		/* Offset to seek to. */
+    long long offset,		/* Offset to seek to. */
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
 {
@@ -573,13 +573,13 @@ FileWideSeekProc(
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
+	    Tcl_WinConvertError(winError);
 	    *errorCodePtr = errno;
 	    return -1;
 	}
     }
-    return (((Tcl_WideInt)((unsigned)newPos))
-	    | ((Tcl_WideInt)newPosHigh << 32));
+    return (((long long)((unsigned)newPos))
+	    | ((long long)newPosHigh << 32));
 }
 
 /*
@@ -601,7 +601,7 @@ FileWideSeekProc(
 static int
 FileTruncateProc(
     ClientData instanceData,	/* File state. */
-    Tcl_WideInt length)		/* Length to truncate at. */
+    long long length)		/* Length to truncate at. */
 {
     FileInfo *infoPtr = (FileInfo *)instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;
@@ -616,7 +616,7 @@ FileTruncateProc(
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
+	    Tcl_WinConvertError(winError);
 	    return errno;
 	}
     }
@@ -632,7 +632,7 @@ FileTruncateProc(
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
-	    TclWinConvertError(winError);
+	    Tcl_WinConvertError(winError);
 	    return errno;
 	}
     }
@@ -643,7 +643,7 @@ FileTruncateProc(
      */
 
     if (!SetEndOfFile(infoPtr->handle)) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return errno;
     }
 
@@ -703,7 +703,7 @@ FileInputProc(
 	return bytesRead;
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     *errorCode = errno;
     if (errno == EPIPE) {
 	return 0;
@@ -752,7 +752,7 @@ FileOutputProc(
 
     if (WriteFile(infoPtr->handle, (LPVOID) buf, (DWORD) toWrite,
 	    &bytesWritten, (LPOVERLAPPED) NULL) == FALSE) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	*errorCode = errno;
 	return -1;
     }
@@ -927,7 +927,7 @@ TclpOpenFileChannel(
     if (NativeIsComPort(nativeName)) {
 	handle = TclWinSerialOpen(INVALID_HANDLE_VALUE, nativeName, accessMode);
 	if (handle == INVALID_HANDLE_VALUE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"couldn't open serial \"%s\": %s",
@@ -984,7 +984,7 @@ TclpOpenFileChannel(
 	    err = TEST_FLAG(mode, O_CREAT) ? ERROR_FILE_EXISTS
 		    : ERROR_FILE_NOT_FOUND;
 	}
-	TclWinConvertError(err);
+	Tcl_WinConvertError(err);
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "couldn't open \"%s\": %s",
@@ -1008,7 +1008,7 @@ TclpOpenFileChannel(
 
 	handle = TclWinSerialOpen(handle, nativeName, accessMode);
 	if (handle == INVALID_HANDLE_VALUE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"couldn't reopen serial \"%s\": %s",

@@ -5,7 +5,7 @@
  *	subcommands of the "file" command. All filename arguments should
  *	already be translated to native format.
  *
- * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright © 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -13,7 +13,7 @@
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
  *
- * Copyright (c) 1988, 1993, 1994
+ * Copyright © 1988, 1993, 1994
  *      The Regents of the University of California. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1363,7 +1363,7 @@ GetGroupAttribute(
     groupPtr = TclpGetGrGid(statBuf.st_gid);
 
     if (groupPtr == NULL) {
-	*attributePtrPtr = Tcl_NewWideIntObj(statBuf.st_gid);
+	TclNewIntObj(*attributePtrPtr, statBuf.st_gid);
     } else {
 	Tcl_DString ds;
 	const char *utf;
@@ -1417,7 +1417,7 @@ GetOwnerAttribute(
     pwPtr = TclpGetPwUid(statBuf.st_uid);
 
     if (pwPtr == NULL) {
-	*attributePtrPtr = Tcl_NewWideIntObj(statBuf.st_uid);
+	TclNewIntObj(*attributePtrPtr, statBuf.st_uid);
     } else {
 	Tcl_DString ds;
 
@@ -2239,17 +2239,17 @@ static const char *
 DefaultTempDir(void)
 {
     const char *dir;
-    struct stat buf;
+    Tcl_StatBuf buf;
 
     dir = getenv("TMPDIR");
-    if (dir && dir[0] && stat(dir, &buf) == 0 && S_ISDIR(buf.st_mode)
+    if (dir && dir[0] && TclOSstat(dir, &buf) == 0 && S_ISDIR(buf.st_mode)
 	    && access(dir, W_OK) == 0) {
 	return dir;
     }
 
 #ifdef P_tmpdir
     dir = P_tmpdir;
-    if (stat(dir, &buf)==0 && S_ISDIR(buf.st_mode) && access(dir, W_OK)==0) {
+    if (TclOSstat(dir, &buf)==0 && S_ISDIR(buf.st_mode) && access(dir, W_OK)==0) {
 	return dir;
     }
 #endif
@@ -2350,7 +2350,7 @@ StatError(
     Tcl_Obj *fileName)		/* The name of the file which caused the
 				 * error. */
 {
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     Tcl_SetObjResult(interp, Tcl_ObjPrintf("could not read \"%s\": %s",
 	    TclGetString(fileName), Tcl_PosixError(interp)));
 }
@@ -2411,7 +2411,7 @@ GetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewWideIntObj(
+    TclNewIntObj(*attributePtrPtr,
 	    (fileAttributes & attributeArray[objIndex]) != 0);
     return TCL_OK;
 }
@@ -2511,7 +2511,7 @@ GetUnixFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewWideIntObj((statBuf.st_flags & UF_IMMUTABLE) != 0);
+    TclNewIntObj(*attributePtrPtr, (statBuf.st_flags & UF_IMMUTABLE) != 0);
     return TCL_OK;
 }
 

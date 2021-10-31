@@ -3,7 +3,7 @@
  *
  *	This file contains the implementation of the "scan" command.
  *
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright © 1998 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -716,7 +716,7 @@ Tcl_ScanObjCmd(
 	switch (ch) {
 	case 'n':
 	    if (!(flags & SCAN_SUPPRESS)) {
-		objPtr = Tcl_NewWideIntObj(string - baseString);
+		TclNewIntObj(objPtr, string - baseString);
 		Tcl_IncrRefCount(objPtr);
 		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
@@ -879,7 +879,7 @@ Tcl_ScanObjCmd(
 	    offset = TclUtfToUCS4(string, &i);
 	    string += offset;
 	    if (!(flags & SCAN_SUPPRESS)) {
-		objPtr = Tcl_NewWideIntObj(i);
+		TclNewIntObj(objPtr, i);
 		Tcl_IncrRefCount(objPtr);
 		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
@@ -890,7 +890,7 @@ Tcl_ScanObjCmd(
 	    /*
 	     * Scan an unsigned or signed integer.
 	     */
-	    objPtr = Tcl_NewWideIntObj(0);
+	    TclNewIntObj(objPtr, 0);
 	    Tcl_IncrRefCount(objPtr);
 	    if (width == 0) {
 		width = ~0;
@@ -1017,8 +1017,8 @@ Tcl_ScanObjCmd(
 		double dvalue;
 		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
 #ifdef ACCEPT_NAN
-		    const Tcl_ObjIntRep *irPtr
-			    = TclFetchIntRep(objPtr, &tclDoubleType);
+		    const Tcl_ObjInternalRep *irPtr
+			    = TclFetchInternalRep(objPtr, &tclDoubleType);
 		    if (irPtr) {
 			dvalue = irPtr->doubleValue;
 		    } else
@@ -1089,7 +1089,7 @@ Tcl_ScanObjCmd(
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
-		TclNewIndexObj(objPtr, -1);
+		TclNewIndexObj(objPtr, TCL_INDEX_NONE);
 	    } else {
 		if (objPtr) {
 		    Tcl_SetListObj(objPtr, 0, NULL);
@@ -1098,7 +1098,7 @@ Tcl_ScanObjCmd(
 		}
 	    }
 	} else if (numVars) {
-	    objPtr = Tcl_NewWideIntObj(result);
+	    TclNewIntObj(objPtr, result);
 	}
 	Tcl_SetObjResult(interp, objPtr);
     }

@@ -5,9 +5,9 @@
  *	background errors, exit handlers, and the "vwait" and "update" command
  *	functions.
  *
- * Copyright (c) 1990-1994 The Regents of the University of California.
- * Copyright (c) 1994-1998 Sun Microsystems, Inc.
- * Copyright (c) 2004 by Zoran Vasiljevic.
+ * Copyright © 1990-1994 The Regents of the University of California.
+ * Copyright © 1994-1998 Sun Microsystems, Inc.
+ * Copyright © 2004 Zoran Vasiljevic.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1513,7 +1513,7 @@ Tcl_UpdateObjCmd(
 	}
 	switch ((enum updateOptionsEnum) optionIndex) {
 	case OPT_IDLETASKS:
-	    flags = TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS|TCL_DONT_WAIT;
+	    flags = TCL_IDLE_EVENTS|TCL_DONT_WAIT;
 	    break;
 	default:
 	    Tcl_Panic("Tcl_UpdateObjCmd: bad option index to UpdateOptions");
@@ -1618,6 +1618,12 @@ Tcl_CreateThread(
     }
     return result;
 #else
+    (void)idPtr;
+    (void)proc;
+    (void)clientData;
+    (void)stackSize;
+    (void)flags;
+
     return TCL_ERROR;
 #endif /* TCL_THREADS */
 }

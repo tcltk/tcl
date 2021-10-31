@@ -4,8 +4,8 @@
  *	This file contains the DLL entry point and other low-level bit bashing
  *	code that needs inline assembly.
  *
- * Copyright (c) 1995-1996 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 Scriptics Corporation.
+ * Copyright © 1995-1996 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -23,14 +23,6 @@
  */
 
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
-
-/*
- * VC++ 5.x has no 'cpuid' assembler instruction, so we must emulate it
- */
-
-#if defined(_MSC_VER) && (_MSC_VER <= 1100) && defined (_M_IX86)
-#define cpuid	__asm __emit 0fh __asm __emit 0a2h
-#endif
 
 /*
  * The following declaration is for the VC++ DLL entry point.
@@ -185,12 +177,12 @@ TclWinInit(
     GetVersionExW(&os);
 
     /*
-     * We no longer support Win32s or Win9x or Windows CE, so just in case
-     * someone manages to get a runtime there, make sure they know that.
+     * We no longer support Win32s or Win9x or Windows CE or Windows XP, so just
+     * in case someone manages to get a runtime there, make sure they know that.
      */
 
     if (os.dwPlatformId != VER_PLATFORM_WIN32_NT) {
-	Tcl_Panic("Windows NT is the only supported platform");
+	Tcl_Panic("Windows 7 is the minimum supported platform");
     }
 }
 

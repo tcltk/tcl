@@ -3,12 +3,12 @@
 #	A simple httpd for testing HTTP/1.1 client features.
 #	Not suitable for use on a internet connected port.
 #
-# Copyright (C) 2009 Pat Thoyts <patthoyts@users.sourceforge.net>
+# Copyright © 2009 Pat Thoyts <patthoyts@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.6-
+package require tcl
 
 proc ::tcl::dict::get? {dict key} {
     if {[dict exists $dict $key]} {

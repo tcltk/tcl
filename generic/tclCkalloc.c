@@ -5,9 +5,9 @@
  *    problems involving overwritten, double freeing memory and loss of
  *    memory.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -381,7 +381,7 @@ Tcl_DumpActiveMemory(
  * Tcl_DbCkalloc - debugging ckalloc
  *
  *	Allocate the requested amount of space plus some extra for guard bands
- *	at both ends of the request, plus a size, panicing if there isn't
+ *	at both ends of the request, plus a size, panicking if there isn't
  *	enough space, then write in the guard bands and return the address of
  *	the space in the middle that the user asked for.
  *

@@ -267,7 +267,7 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 		    # of the package file is the last element in the list.
 
 		    package ifneeded $pkgname $pkgversion \
-			"[::list package provide $pkgname $pkgversion];[::list source -encoding utf-8 $file]"
+			"[::list package provide $pkgname $pkgversion];[::list source $file]"
 
 		    # We abort in this unknown handler only if we got a
 		    # satisfying candidate for the requested package.
@@ -316,7 +316,7 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 proc ::tcl::tm::Defaults {} {
     global env tcl_platform
 
-    regexp {^(\d+)\.(\d+)} [package provide Tcl] - major minor
+    regexp {^(\d+)\.(\d+)} [package provide tcl] - major minor
     set exe [file normalize [info nameofexecutable]]
 
     # Note that we're using [::list], not [list] because [list] means
@@ -359,7 +359,7 @@ proc ::tcl::tm::Defaults {} {
 #	Calls 'path add' to paths to the list of module search paths.
 
 proc ::tcl::tm::roots {paths} {
-    regexp {^(\d+)\.(\d+)} [package provide Tcl] - major minor
+    regexp {^(\d+)\.(\d+)} [package provide tcl] - major minor
     foreach pa $paths {
 	set p [file join $pa tcl$major]
 	for {set n $minor} {$n >= 0} {incr n -1} {

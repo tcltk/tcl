@@ -3,7 +3,7 @@
  *
  *	This file contains code to manage the interpreter result.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright © 1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -464,6 +464,7 @@ Tcl_SetResult(
 
     ResetObjResult(iPtr);
 }
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -482,10 +483,12 @@ Tcl_SetResult(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetStringResult
 const char *
 Tcl_GetStringResult(
     Tcl_Interp *interp)/* Interpreter whose result to return. */
 {
+#ifndef TCL_NO_DEPRECATED
     Interp *iPtr = (Interp *) interp;
     /*
      * If the string result is empty, move the object result to the string
@@ -497,8 +500,10 @@ Tcl_GetStringResult(
 		TCL_VOLATILE);
     }
     return iPtr->result;
+#else
+    return TclGetString(Tcl_GetObjResult(interp));
+#endif
 }
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1008,7 +1013,7 @@ ResetObjResult(
 	    objResultPtr->bytes = &tclEmptyString;
 	    objResultPtr->length = 0;
 	}
-	TclFreeIntRep(objResultPtr);
+	TclFreeInternalRep(objResultPtr);
     }
 }
 
@@ -1331,7 +1336,7 @@ TclProcessReturn(
             Tcl_ListObjLength(interp, iPtr->errorStack, &len);
 
             /*
-             * Reset while keeping the list intrep as much as possible.
+             * Reset while keeping the list internalrep as much as possible.
              */
 
             Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, valueObjc,

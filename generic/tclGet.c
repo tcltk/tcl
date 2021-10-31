@@ -5,8 +5,8 @@
  *	integers or floating-point numbers or booleans, doing syntax checking
  *	along the way.
  *
- * Copyright (c) 1990-1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1990-1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -53,7 +53,7 @@ Tcl_GetInt(
     if (obj.refCount > 1) {
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
-    TclFreeIntRep(&obj);
+    TclFreeInternalRep(&obj);
     return code;
 }
 
@@ -97,7 +97,7 @@ Tcl_GetDouble(
     if (obj.refCount > 1) {
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
-    TclFreeIntRep(&obj);
+    TclFreeInternalRep(&obj);
     return code;
 }
 

@@ -4,8 +4,8 @@
  *	This file contains the top-level command routines for most of the Tcl
  *	built-in commands whose names begin with the letters A to H.
  *
- * Copyright (c) 1987-1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1987-1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -612,8 +612,6 @@ EncodingConverttoObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     int length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
-
-    /* TODO - ADJUST OBJ INDICES WHEN ENSEMBLIFYING THIS */
 
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);

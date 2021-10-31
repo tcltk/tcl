@@ -5,9 +5,9 @@
 #	is used to generate the tclIntDecls.h, tclIntPlatDecls.h
 #	and tclStubInit.c files
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
-# Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001 Kevin B. Kenny.  All rights reserved.
+# Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -17,6 +17,7 @@ library tcl
 # Define the unsupported generic interfaces.
 
 interface tclInt
+scspec EXTERN
 
 # Declare each of the functions in the unsupported internal Tcl
 # interface.  These interfaces are allowed to changed between versions.
@@ -183,7 +184,7 @@ declare 41 {
     Tcl_Command TclGetOriginalCommand(Tcl_Command command)
 }
 declare 42 {
-    CONST86 char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
+    const char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
 # Removed in 8.5a2:
 #declare 43 {
@@ -239,8 +240,8 @@ declare 55 {
 # Replaced with TclpLoadFile in 8.1:
 #  declare 56 {
 #      int TclLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
-#  	    char *sym2, Tcl_PackageInitProc **proc1Ptr,
-#  	    Tcl_PackageInitProc **proc2Ptr)
+#  	    char *sym2, Tcl_LibraryInitProc **proc1Ptr,
+#  	    Tcl_LibraryInitProc **proc2Ptr)
 #  }
 # Signature changed to take a length in 8.1:
 #  declare 57 {
@@ -408,7 +409,7 @@ declare 98 {
 #	    Tcl_Obj *objPtr, int flags)
 #}
 declare 101 {
-    CONST86 char *TclSetPreInitScript(const char *string)
+    const char *TclSetPreInitScript(const char *string)
 }
 declare 102 {
     void TclSetupEnv(Tcl_Interp *interp)
@@ -552,8 +553,8 @@ declare 138 {
 }
 #declare 139 {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
-#	    char *sym2, Tcl_PackageInitProc **proc1Ptr,
-#	    Tcl_PackageInitProc **proc2Ptr, void **clientDataPtr)
+#	    char *sym2, Tcl_LibraryInitProc **proc1Ptr,
+#	    Tcl_LibraryInitProc **proc2Ptr, void **clientDataPtr)
 #}
 #declare 140 {
 #    int TclLooksLikeInt(const char *bytes, int length)
@@ -981,7 +982,7 @@ declare 247 {
 
 declare 248 {
     int TclCopyChannel(Tcl_Interp *interp, Tcl_Channel inChan,
-	    Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr)
+	    Tcl_Channel outChan, long long toRead, Tcl_Obj *cmdPtr)
 }
 
 declare 249 {
@@ -1025,8 +1026,8 @@ declare 256 {
 	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
 }
 declare 257 {
-    void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+    void TclStaticLibrary(Tcl_Interp *interp, const char *prefix,
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 
 # TIP 431: temporary directory creation function

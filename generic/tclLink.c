@@ -6,10 +6,10 @@
  *	Andreas Stolcke and this implementation is based heavily on a
  *	prototype implementation provided by him.
  *
- * Copyright (c) 1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 2008 Rene Zaumseil
- * Copyright (c) 2019 Donal K. Fellows
+ * Copyright © 1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 2008 Rene Zaumseil
+ * Copyright © 2019 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -588,7 +588,7 @@ GetDouble(
 	return 0;
     } else {
 #ifdef ACCEPT_NAN
-	Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &tclDoubleType);
+	Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &tclDoubleType);
 
 	if (irPtr != NULL) {
 	    *dblPtr = irPtr->doubleValue;
@@ -656,7 +656,7 @@ SetInvalidRealFromAny(
 		double doubleValue = 0.0;
 
 		Tcl_GetDoubleFromObj(NULL, objPtr, &doubleValue);
-		TclFreeIntRep(objPtr);
+		TclFreeInternalRep(objPtr);
 		objPtr->typePtr = &invalidRealType;
 		objPtr->internalRep.doubleValue = doubleValue;
 		return TCL_OK;
@@ -705,7 +705,7 @@ GetInvalidDoubleFromObj(
 {
     int intValue;
 
-    if (TclHasIntRep(objPtr, &invalidRealType)) {
+    if (TclHasInternalRep(objPtr, &invalidRealType)) {
 	goto gotdouble;
     }
     if (GetInvalidIntFromObj(objPtr, &intValue) == TCL_OK) {
@@ -1309,7 +1309,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewWideIntObj(linkPtr->lastValue.wPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.wPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
@@ -1400,7 +1400,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewWideIntObj(linkPtr->lastValue.uiPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.uiPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
@@ -1414,7 +1414,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewWideIntObj(linkPtr->lastValue.lPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.lPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
@@ -1427,7 +1427,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewWideIntObj(linkPtr->lastValue.ulPtr[i]);
+		TclNewIntObj(objv[i], linkPtr->lastValue.ulPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);
 	    ckfree(objv);
@@ -1454,7 +1454,7 @@ ObjValue(
 	    memcpy(linkPtr->lastValue.aryPtr, linkPtr->addr, linkPtr->bytes);
 	    objv = (Tcl_Obj **)ckalloc(linkPtr->numElems * sizeof(Tcl_Obj *));
 	    for (i=0; i < linkPtr->numElems; i++) {
-		objv[i] = Tcl_NewWideIntObj((Tcl_WideInt)
+		TclNewIntObj(objv[i], (Tcl_WideInt)
 			linkPtr->lastValue.uwPtr[i]);
 	    }
 	    resultObj = Tcl_NewListObj(linkPtr->numElems, objv);

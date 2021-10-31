@@ -4,8 +4,8 @@
  *	This file contains the public interfaces to the Tcl regular expression
  *	mechanism.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -26,7 +26,7 @@
  *	regex.h		regexec.c	regfree.c
  *	regfronts.c	regguts.h
  *
- * Copyright (c) 1998 Henry Spencer.  All rights reserved.
+ * Copyright © 1998 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -109,19 +109,19 @@ const Tcl_ObjType tclRegexpType = {
     SetRegexpFromAny			/* setFromAnyProc */
 };
 
-#define RegexpSetIntRep(objPtr, rePtr)					\
+#define RegexpSetInternalRep(objPtr, rePtr)					\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	(rePtr)->refCount++;						\
 	ir.twoPtrValue.ptr1 = (rePtr);					\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreIntRep((objPtr), &tclRegexpType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), &tclRegexpType, &ir);			\
     } while (0)
 
-#define RegexpGetIntRep(objPtr, rePtr)					\
+#define RegexpGetInternalRep(objPtr, rePtr)					\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), &tclRegexpType);		\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), &tclRegexpType);		\
 	(rePtr) = irPtr ? (TclRegexp *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -598,7 +598,7 @@ Tcl_GetRegExpFromObj(
     TclRegexp *regexpPtr;
     const char *pattern;
 
-    RegexpGetIntRep(objPtr, regexpPtr);
+    RegexpGetInternalRep(objPtr, regexpPtr);
 
     if ((regexpPtr == NULL) || (regexpPtr->flags != flags)) {
 	pattern = TclGetStringFromObj(objPtr, &length);
@@ -608,7 +608,7 @@ Tcl_GetRegExpFromObj(
 	    return NULL;
 	}
 
-	RegexpSetIntRep(objPtr, regexpPtr);
+	RegexpSetInternalRep(objPtr, regexpPtr);
     }
     return (Tcl_RegExp) regexpPtr;
 }
@@ -757,7 +757,7 @@ FreeRegexpInternalRep(
 {
     TclRegexp *regexpRepPtr;
 
-    RegexpGetIntRep(objPtr, regexpRepPtr);
+    RegexpGetInternalRep(objPtr, regexpRepPtr);
 
     assert(regexpRepPtr != NULL);
 
@@ -794,11 +794,11 @@ DupRegexpInternalRep(
 {
     TclRegexp *regexpPtr;
 
-    RegexpGetIntRep(srcPtr, regexpPtr);
+    RegexpGetInternalRep(srcPtr, regexpPtr);
 
     assert(regexpPtr != NULL);
 
-    RegexpSetIntRep(copyPtr, regexpPtr);
+    RegexpSetInternalRep(copyPtr, regexpPtr);
 }
 
 /*

@@ -2,7 +2,7 @@
 #
 # mkdepend : generate dependency information from C/C++ files
 #
-# Copyright (c) 1998, Nat Pryce
+# Copyright © 1998, Nat Pryce
 #
 # Permission is hereby granted, without written agreement and without
 # license or royalty fees, to use, copy, modify, and distribute this

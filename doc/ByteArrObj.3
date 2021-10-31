@@ -37,8 +37,9 @@ byte-array type.  For \fBTcl_GetByteArrayFromObj\fR and
 \fBTcl_SetByteArrayLength\fR, this points to the value from which to get
 the byte-array value; if \fIobjPtr\fR does not already point to a byte-array
 value, it will be converted to one.
-.AP int *lengthPtr out
-If non-NULL, filled with the length of the array of bytes in the value.
+.AP size_t | int *lengthPtr out
+Filled with the length of the array of bytes in the value.
+May be (int *)NULL when not used.
 .BE
 
 .SH DESCRIPTION
@@ -83,6 +84,18 @@ newly allocated bytes at the end of the array have arbitrary values.  If
 \fIlength\fR is less than the space currently allocated for the array,
 the length of array is reduced to the new length.  The return value is a
 pointer to the value's new array of bytes.
+
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_NewByteArrayObj\fR always returns a zero-reference object, much
+like \fBTcl_NewObj\fR.
+.PP
+\fBTcl_SetByteArrayObj\fR and \fBTcl_SetByteArrayLength\fR do not modify the
+reference count of their \fIobjPtr\fR arguments, but do require that the
+object be unshared.
+.PP
+\fBTcl_GetByteArrayFromObj\fR does not modify the reference count of its
+\fIobjPtr\fR argument; it only reads.
 
 .SH "SEE ALSO"
 Tcl_GetStringFromObj, Tcl_NewObj, Tcl_IncrRefCount, Tcl_DecrRefCount

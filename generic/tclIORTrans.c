@@ -10,7 +10,7 @@
  *
  *	See TIP #230 for the specification of this functionality.
  *
- * Copyright (c) 2007-2008 ActiveState.
+ * Copyright © 2007-2008 ActiveState.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -39,8 +39,8 @@ static int		ReflectOutput(ClientData clientData, const char *buf,
 			    int toWrite, int *errorCodePtr);
 static void		ReflectWatch(ClientData clientData, int mask);
 static int		ReflectBlock(ClientData clientData, int mode);
-static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
-			    Tcl_WideInt offset, int mode, int *errorCodePtr);
+static long long	ReflectSeekWide(ClientData clientData,
+			    long long offset, int mode, int *errorCodePtr);
 #ifndef TCL_NO_DEPRECATED
 static int		ReflectSeek(ClientData clientData, long offset,
 			    int mode, int *errorCodePtr);
@@ -1327,10 +1327,10 @@ ReflectOutput(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 ReflectSeekWide(
     ClientData clientData,
-    Tcl_WideInt offset,
+    long long offset,
     int seekMode,
     int *errorCodePtr)
 {
@@ -2158,6 +2158,8 @@ DeleteReflectedTransformMap(
     ForwardingResult *resultPtr;
     ForwardingEvent *evPtr;
     ForwardParam *paramPtr;
+#else
+    (void)interp;
 #endif /* TCL_THREADS */
 
     /*

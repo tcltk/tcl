@@ -3,9 +3,9 @@
  *
  *	This file implements the UNIX-specific thread support.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 2008 by George Peter Staplin
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 2008 George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -277,6 +277,11 @@ TclpThreadCreate(
     pthread_attr_destroy(&attr);
     return result;
 #else
+    (void)idPtr;
+    (void)proc;
+    (void)clientData;
+    (void)stackSize;
+    (void)flags;
     return TCL_ERROR;
 #endif /* TCL_THREADS */
 }
@@ -314,6 +319,9 @@ Tcl_JoinThread(
     }
     return (result == 0) ? TCL_OK : TCL_ERROR;
 #else
+    (void)threadId;
+    (void)state;
+
     return TCL_ERROR;
 #endif
 }

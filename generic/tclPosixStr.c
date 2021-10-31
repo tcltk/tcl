@@ -4,8 +4,8 @@
  *	This file contains procedures that generate strings corresponding to
  *	various POSIX-related codes, such as errno and signals.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1996 Sun Microsystems, Inc.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1996 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -157,6 +157,9 @@ Tcl_ErrnoId(void)
 #endif
 #ifdef EINIT
     case EINIT: return "EINIT";
+#endif
+#ifdef EILSEQ
+    case EILSEQ: return "EILSEQ";
 #endif
 #ifdef EINPROGRESS
     case EINPROGRESS: return "EINPROGRESS";
@@ -616,6 +619,9 @@ Tcl_ErrnoMsg(
 #endif
 #ifdef EINIT
     case EINIT: return "initialization error";
+#endif
+#ifdef EILSEQ
+    case EILSEQ: return "illegal byte sequence";
 #endif
 #ifdef EINPROGRESS
     case EINPROGRESS: return "operation now in progress";

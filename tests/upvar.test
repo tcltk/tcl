@@ -4,9 +4,9 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -17,7 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testupvar [llength [info commands testupvar]]
 
@@ -248,6 +248,33 @@ test upvar-6.3 {retargeting an upvar} {
     }
     p1
 } {abcde 44}
+
+
+
+test upvar-6.4 {
+	retargeting a variable created by upvar to itself is allowed
+} -body {
+	catch {
+		unset x
+	}
+	catch {
+		unset y
+	}
+	set res {}
+    set x abcde
+	set res [catch {
+		upvar 0 x x
+	} cres copts]
+	lappend res [dict get $copts -errorcode]
+	upvar 0 x y
+	lappend res $y
+	upvar 0 y y
+	lappend res $y
+	return $res
+} -cleanup {
+	upvar 0 {} y
+} -result {1 {TCL UPVAR SELF} abcde abcde}
+
 
 test upvar-7.1 {upvar to same level} {
     set x 44

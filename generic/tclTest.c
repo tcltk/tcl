@@ -6,10 +6,10 @@
  *	commands are not normally included in Tcl applications; they're only
  *	used for testing.
  *
- * Copyright (c) 1993-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 Ajuba Solutions.
- * Copyright (c) 2003 by Kevin B. Kenny.  All rights reserved.
+ * Copyright © 1993-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1998-2000 Ajuba Solutions.
+ * Copyright © 2003 Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -18,6 +18,9 @@
 #undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
+#endif
+#ifndef TCL_NO_DEPRECATED
+#   define TCL_NO_DEPRECATED
 #endif
 #include "tclInt.h"
 #ifdef TCL_WITH_EXTERNAL_TOMMATH
@@ -160,9 +163,7 @@ static TestChannel *firstDetached;
 
 static int		AsyncHandlerProc(void *clientData,
 			    Tcl_Interp *interp, int code);
-#if TCL_THREADS
 static Tcl_ThreadCreateType AsyncThreadProc(void *);
-#endif
 static void		CleanupTestSetassocdataTests(
 			    void *clientData, Tcl_Interp *interp);
 static void		CmdDelProc1(void *clientData);
@@ -224,6 +225,7 @@ static Tcl_CmdProc	TestcreatecommandCmd;
 static Tcl_CmdProc	TestdcallCmd;
 static Tcl_CmdProc	TestdelCmd;
 static Tcl_CmdProc	TestdelassocdataCmd;
+static Tcl_ObjCmdProc	TestdebugObjCmd;
 static Tcl_ObjCmdProc	TestdoubledigitsObjCmd;
 static Tcl_CmdProc	TestdstringCmd;
 static Tcl_ObjCmdProc	TestencodingObjCmd;
@@ -262,6 +264,7 @@ static Tcl_ObjCmdProc	TestparsevarObjCmd;
 static Tcl_ObjCmdProc	TestparsevarnameObjCmd;
 static Tcl_ObjCmdProc	TestpreferstableObjCmd;
 static Tcl_ObjCmdProc	TestprintObjCmd;
+static Tcl_ObjCmdProc	TestpurifyObjCmd;
 static Tcl_ObjCmdProc	TestregexpObjCmd;
 static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
@@ -274,7 +277,7 @@ static Tcl_CmdProc	Testset2Cmd;
 static Tcl_CmdProc	TestseterrorcodeCmd;
 static Tcl_ObjCmdProc	TestsetobjerrorcodeCmd;
 static Tcl_CmdProc	TestsetplatformCmd;
-static Tcl_CmdProc	TeststaticpkgCmd;
+static Tcl_CmdProc	TeststaticlibraryCmd;
 static Tcl_CmdProc	TesttranslatefilenameCmd;
 static Tcl_CmdProc	TestupvarCmd;
 static Tcl_ObjCmdProc	TestWrongNumArgsObjCmd;
@@ -460,7 +463,7 @@ Tcltest_Init(
     }
     /* TIP #268: Full patchlevel instead of just major.minor */
 
-    if (Tcl_PkgProvideEx(interp, "Tcltest", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
+    if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -501,6 +504,8 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testcreatecommand", TestcreatecommandCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testdcall", TestdcallCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testdebug", TestdebugObjCmd,
+	    NULL, NULL);
     Tcl_CreateCommand(interp, "testdel", TestdelCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testdelassocdata", TestdelassocdataCmd,
 	    NULL, NULL);
@@ -565,6 +570,8 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testpreferstable", TestpreferstableObjCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testpurify", TestpurifyObjCmd,
+	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testprint", TestprintObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testregexp", TestregexpObjCmd,
@@ -601,7 +608,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsocket", TestSocketCmd,
 	    NULL, NULL);
-    Tcl_CreateCommand(interp, "teststaticpkg", TeststaticpkgCmd,
+    Tcl_CreateCommand(interp, "teststaticlibrary", TeststaticlibraryCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testtranslatefilename",
 	    TesttranslatefilenameCmd, NULL, NULL);
@@ -812,7 +819,6 @@ TestasyncCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(argv[3], -1));
 	Tcl_MutexUnlock(&asyncTestMutex);
 	return code;
-#if TCL_THREADS
     } else if (strcmp(argv[1], "marklater") == 0) {
 	if (argc != 3) {
 	    goto wrongNumArgs;
@@ -840,12 +846,6 @@ TestasyncCmd(
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
 		"\": must be create, delete, int, mark, or marklater", NULL);
 	return TCL_ERROR;
-#else /* !TCL_THREADS */
-    } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create, delete, int, or mark", NULL);
-	return TCL_ERROR;
-#endif
     }
     return TCL_OK;
 }
@@ -911,7 +911,6 @@ AsyncHandlerProc(
  *----------------------------------------------------------------------
  */
 
-#if TCL_THREADS
 static Tcl_ThreadCreateType
 AsyncThreadProc(
     void *clientData)	/* Parameter is the id of a
@@ -933,7 +932,6 @@ AsyncThreadProc(
     Tcl_ExitThread(TCL_OK);
     TCL_THREAD_CREATE_RETURN;
 }
-#endif
 
 static int
 TestbumpinterpepochObjCmd(
@@ -1656,7 +1654,7 @@ TestdoubledigitsObjCmd(
     status = Tcl_GetDoubleFromObj(interp, objv[1], &d);
     if (status != TCL_OK) {
 	doubleType = Tcl_GetObjType("double");
-	if (Tcl_FetchIntRep(objv[1], doubleType)
+	if (Tcl_FetchInternalRep(objv[1], doubleType)
 	    && TclIsNaN(objv[1]->internalRep.doubleValue)) {
 	    status = TCL_OK;
 	    memcpy(&d, &(objv[1]->internalRep.doubleValue), sizeof(double));
@@ -1893,7 +1891,7 @@ TestencodingObjCmd(
 	}
 	Tcl_FreeEncoding(encoding);	/* Free returned reference */
 	Tcl_FreeEncoding(encoding);	/* Free to match CREATE */
-	TclFreeIntRep(objv[2]);		/* Free the cached ref */
+	TclFreeInternalRep(objv[2]);		/* Free the cached ref */
 	break;
     }
     return TCL_OK;
@@ -3361,6 +3359,40 @@ TestlocaleCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TestdebugObjCmd --
+ *
+ *	Implements the "testdebug" command, to detect whether Tcl was built with
+ *	--enabble-symbols.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestdebugObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
+{
+
+#if defined(NDEBUG) && NDEBUG == 1
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+#else
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+#endif
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * CleanupTestSetassocdataTests --
  *
  *	This function is called when an interpreter is deleted to clean
@@ -3756,6 +3788,40 @@ TestprintObjCmd(
     }
     argv2 = (size_t)argv1;
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1, argv2, argv2));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestpurifyObjCmd --
+ *
+ *	Implements the "testpurify" command, to detect whether Tcl was built with
+ *	-DPURIFY.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestpurifyObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
+{
+
+#ifdef PURIFY
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+#else
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+#endif
+
     return TCL_OK;
 }
 
@@ -4214,10 +4280,10 @@ TestsetplatformCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TeststaticpkgCmd --
+ * TeststaticlibraryCmd --
  *
- *	This procedure implements the "teststaticpkg" command.
- *	It is used to test the procedure Tcl_StaticPackage.
+ *	This procedure implements the "teststaticlibrary" command.
+ *	It is used to test the procedure Tcl_StaticLibrary.
  *
  * Results:
  *	A standard Tcl result.
@@ -4230,7 +4296,7 @@ TestsetplatformCmd(
  */
 
 static int
-TeststaticpkgCmd(
+TeststaticlibraryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
@@ -4240,7 +4306,7 @@ TeststaticpkgCmd(
 
     if (argc != 4) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"",
-		argv[0], " pkgName safe loaded\"", NULL);
+		argv[0], " prefix safe loaded\"", NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetInt(interp, argv[2], &safe) != TCL_OK) {
@@ -4249,7 +4315,7 @@ TeststaticpkgCmd(
     if (Tcl_GetInt(interp, argv[3], &loaded) != TCL_OK) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage((loaded) ? interp : NULL, argv[1],
+    Tcl_StaticLibrary((loaded) ? interp : NULL, argv[1],
 	    StaticInitProc, (safe) ? StaticInitProc : NULL);
     return TCL_OK;
 }
@@ -6914,8 +6980,10 @@ TestUtfNextCmd(
 	/* Run Tcl_UtfNext with many more possible bytes at src[end], all should give the same result */
 	result = Tcl_UtfNext(buffer + 1);
 	if (first != result) {
-	    first = buffer;
-	    break;
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "Tcl_UtfNext is not supposed to read src[end]\n"
+		    "Different result when src[end] is %#x", UCHAR(p[-1])));
+	    return TCL_ERROR;
 	}
     }
 
@@ -6960,7 +7028,7 @@ TestUtfPrevCmd(
     } else {
 	offset = numBytes;
     }
-    result = TclUtfPrev(bytes + offset, bytes);
+    result = Tcl_UtfPrev(bytes + offset, bytes);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(result - bytes));
     return TCL_OK;
 }

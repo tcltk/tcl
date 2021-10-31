@@ -4,9 +4,9 @@
  *	This file contains utility functions that are used by many Tcl
  *	commands.
  *
- * Copyright (c) 1987-1993 The Regents of the University of California.
- * Copyright (c) 1994-1998 Sun Microsystems, Inc.
- * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
+ * Copyright © 1987-1993 The Regents of the University of California.
+ * Copyright © 1994-1998 Sun Microsystems, Inc.
+ * Copyright © 2001 Kevin B. Kenny. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -123,7 +123,7 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  * represents a list index in the form, "end-offset". It is used as a
  * performance optimization in Tcl_GetIntForIndex. The internal rep is
  * stored directly in the wideValue, so no memory management is required
- * for it. This is a caching intrep, keeping the result of a parse
+ * for it. This is a caching internalrep, keeping the result of a parse
  * around. The type is unregistered, so has no need of a setFromAnyProc.
  */
 
@@ -1718,7 +1718,7 @@ TclTrimRight(
 	const char *q = trim;
 	int pInc = 0, bytesLeft = numTrim;
 
-	pp = TclUtfPrev(p, bytes);
+	pp = Tcl_UtfPrev(p, bytes);
 	do {
 	    pp += pInc;
  	    pInc = TclUtfToUCS4(pp, &ch1);
@@ -1729,14 +1729,14 @@ TclTrimRight(
 	 */
 
 	do {
-	    int qInc = TclUtfToUCS4(q, &ch2);
+	    pInc = TclUtfToUCS4(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
 	    }
 
-	    q += qInc;
-	    bytesLeft -= qInc;
+	    q += pInc;
+	    bytesLeft -= pInc;
 	} while (bytesLeft);
 
 	if (bytesLeft == 0) {
@@ -1782,7 +1782,7 @@ TclTrimLeft(
 			 * rely on (trim[numTrim] == '\0'). */
 {
     const char *p = bytes;
-	int ch1, ch2;
+    int ch1, ch2;
 
     /* Empty strings -> nothing to do */
     if ((numBytes == 0) || (numTrim == 0)) {
@@ -2041,7 +2041,14 @@ Tcl_ConcatObj(
 		continue;
 	    }
 	    if (resPtr) {
-		if (TCL_OK != Tcl_ListObjAppendList(NULL, resPtr, objPtr)) {
+		Tcl_Obj *elemPtr = NULL;
+
+		Tcl_ListObjIndex(NULL, objPtr, 0, &elemPtr);
+		if (elemPtr == NULL) {
+		    continue;
+		}
+		if (Tcl_GetString(elemPtr)[0] == '#' || TCL_OK
+			!= Tcl_ListObjAppendList(NULL, resPtr, objPtr)) {
 		    /* Abandon ship! */
 		    Tcl_DecrRefCount(resPtr);
 		    goto slow;
@@ -2593,7 +2600,7 @@ TclStringMatchObj(
     trivial = nocase ? 0 : TclMatchIsTrivial(TclGetString(ptnObj));
      */
 
-    if (TclHasIntRep(strObj, &tclStringType) || (strObj->typePtr == NULL)) {
+    if (TclHasInternalRep(strObj, &tclStringType) || (strObj->typePtr == NULL)) {
 	Tcl_UniChar *udata, *uptn;
 
 	udata = Tcl_GetUnicodeFromObj(strObj, &length);
@@ -3039,7 +3046,7 @@ Tcl_DStringGetResult(
 	    dsPtr->string = TclGetString(iPtr->objResultPtr);
 	    dsPtr->length = iPtr->objResultPtr->length;
 	    dsPtr->spaceAvl = dsPtr->length + 1;
-	    TclFreeIntRep(iPtr->objResultPtr);
+	    TclFreeInternalRep(iPtr->objResultPtr);
 	    iPtr->objResultPtr->bytes = &tclEmptyString;
 	    iPtr->objResultPtr->length = 0;
 	}
@@ -3765,12 +3772,12 @@ GetEndOffsetFromObj(
     Tcl_WideInt *widePtr)       /* Location filled in with an integer
                                  * representing an index. */
 {
-    Tcl_ObjIntRep *irPtr;
+    Tcl_ObjInternalRep *irPtr;
     Tcl_WideInt offset = -1;	/* Offset in the "end-offset" expression - 1 */
     ClientData cd;
 
-    while ((irPtr = TclFetchIntRep(objPtr, &tclEndOffsetType)) == NULL) {
-	Tcl_ObjIntRep ir;
+    while ((irPtr = TclFetchInternalRep(objPtr, &tclEndOffsetType)) == NULL) {
+	Tcl_ObjInternalRep ir;
 	int length;
 	const char *bytes = TclGetStringFromObj(objPtr, &length);
 
@@ -3834,8 +3841,8 @@ GetEndOffsetFromObj(
 			}
 		    }
 		}
-		/* Clear invalid intreps left by TclParseNumber */
-		TclFreeIntRep(objPtr);
+		/* Clear invalid internalreps left by TclParseNumber */
+		TclFreeInternalRep(objPtr);
 
 		if (t1 && t2) {
 		    /* We have both integer values */
@@ -3960,7 +3967,7 @@ GetEndOffsetFromObj(
     parseOK:
 	/* Success. Store the new internal rep. */
 	ir.wideValue = offset;
-	Tcl_StoreIntRep(objPtr, &tclEndOffsetType, &ir);
+	Tcl_StoreInternalRep(objPtr, &tclEndOffsetType, &ir);
     }
 
     offset = irPtr->wideValue;
@@ -4065,7 +4072,7 @@ TclIndexEncode(
     int idx;
 
     if (TCL_OK == GetWideForIndex(interp, objPtr, (unsigned)TCL_INDEX_END , &wide)) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &tclEndOffsetType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &tclEndOffsetType);
 	if (irPtr && irPtr->wideValue >= 0) {
 	    /* "int[+-]int" syntax, works the same here as "int" */
 	    irPtr = NULL;
@@ -4348,7 +4355,7 @@ TclSetProcessGlobalValue(
 
     /*
      * Fill the local thread copy directly with the Tcl_Obj value to avoid
-     * loss of the intrep. Increment newValue refCount early to handle case
+     * loss of the internalrep. Increment newValue refCount early to handle case
      * where we set a PGV to itself.
      */
 

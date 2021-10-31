@@ -3,6 +3,19 @@
 package require tcltest 2.5
 namespace import ::tcltest::*
 testConstraint exec          [llength [info commands exec]]
+if {[namespace which testdebug] ne {}} {
+	testConstraint debug         [testdebug]
+	testConstraint purify        [testpurify]
+	testConstraint debugpurify   [
+		expr {
+		![testConstraint memory]
+		&&
+		[testConstraint debug]
+		&&
+		[testConstraint purify]
+	}]
+}
+testConstraint nodep         [info exists tcl_precision]
 testConstraint fcopy         [llength [info commands fcopy]]
 testConstraint fileevent     [llength [info commands fileevent]]
 testConstraint thread        [
