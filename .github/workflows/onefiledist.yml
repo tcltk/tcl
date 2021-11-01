@@ -103,12 +103,18 @@ jobs:
     runs-on: windows-latest
     defaults:
       run:
-        shell: bash
+        shell: msys2 {0}
+    env:
+      CC: gcc
+      CFGOPT: --disable-symbols --disable-shared
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          install: git mingw-w64-ucrt-x86_64-toolchain make zip
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
@@ -116,7 +122,7 @@ jobs:
           mkdir 1dist
         working-directory: .
       - name: Configure
-        run: ./configure --disable-symbols --disable-shared --enable-zipfs
+        run: ./configure $CFGOPT
         working-directory: win
       - name: Build
         run: |

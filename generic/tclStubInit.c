@@ -186,7 +186,7 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 #define TclBN_s_mp_sub s_mp_sub
 #define TclBN_mp_toom_mul s_mp_toom_mul
 #define TclBN_mp_toom_sqr s_mp_toom_sqr
-#define TclUnusedStubEntry NULL
+#define TclUnusedStubEntry 0
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
@@ -1920,10 +1920,10 @@ const TclStubs tclStubs = {
     TclZipfs_Unmount, /* 633 */
     TclZipfs_TclLibrary, /* 634 */
     TclZipfs_MountBuffer, /* 635 */
-    Tcl_FreeIntRep, /* 636 */
+    Tcl_FreeInternalRep, /* 636 */
     Tcl_InitStringRep, /* 637 */
-    Tcl_FetchIntRep, /* 638 */
-    Tcl_StoreIntRep, /* 639 */
+    Tcl_FetchInternalRep, /* 638 */
+    Tcl_StoreInternalRep, /* 639 */
     Tcl_HasStringRep, /* 640 */
     Tcl_IncrRefCount, /* 641 */
     Tcl_DecrRefCount, /* 642 */
@@ -1942,6 +1942,9 @@ const TclStubs tclStubs = {
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
     Tcl_UniCharIsUnicode, /* 657 */
+    0, /* 658 */
+    0, /* 659 */
+    Tcl_AsyncMarkFromSignal, /* 660 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -1886,17 +1886,17 @@ EXTERN int		TclZipfs_MountBuffer(Tcl_Interp *interp,
 				const char *mountPoint, unsigned char *data,
 				size_t datalen, int copy);
 /* 636 */
-EXTERN void		Tcl_FreeIntRep(Tcl_Obj *objPtr);
+EXTERN void		Tcl_FreeInternalRep(Tcl_Obj *objPtr);
 /* 637 */
 EXTERN char *		Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
 				unsigned int numBytes);
 /* 638 */
-EXTERN Tcl_ObjIntRep *	Tcl_FetchIntRep(Tcl_Obj *objPtr,
+EXTERN Tcl_ObjInternalRep * Tcl_FetchInternalRep(Tcl_Obj *objPtr,
 				const Tcl_ObjType *typePtr);
 /* 639 */
-EXTERN void		Tcl_StoreIntRep(Tcl_Obj *objPtr,
+EXTERN void		Tcl_StoreInternalRep(Tcl_Obj *objPtr,
 				const Tcl_ObjType *typePtr,
-				const Tcl_ObjIntRep *irPtr);
+				const Tcl_ObjInternalRep *irPtr);
 /* 640 */
 EXTERN int		Tcl_HasStringRep(Tcl_Obj *objPtr);
 /* 641 */
@@ -1939,6 +1939,11 @@ EXTERN const char *	Tcl_UtfNext(const char *src);
 EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
 /* 657 */
 EXTERN int		Tcl_UniCharIsUnicode(int ch);
+/* Slot 658 is reserved */
+/* Slot 659 is reserved */
+/* 660 */
+EXTERN int		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
+				int sigNumber);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2610,10 +2615,10 @@ typedef struct TclStubs {
     int (*tclZipfs_Unmount) (Tcl_Interp *interp, const char *mountPoint); /* 633 */
     Tcl_Obj * (*tclZipfs_TclLibrary) (void); /* 634 */
     int (*tclZipfs_MountBuffer) (Tcl_Interp *interp, const char *mountPoint, unsigned char *data, size_t datalen, int copy); /* 635 */
-    void (*tcl_FreeIntRep) (Tcl_Obj *objPtr); /* 636 */
+    void (*tcl_FreeInternalRep) (Tcl_Obj *objPtr); /* 636 */
     char * (*tcl_InitStringRep) (Tcl_Obj *objPtr, const char *bytes, unsigned int numBytes); /* 637 */
-    Tcl_ObjIntRep * (*tcl_FetchIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 638 */
-    void (*tcl_StoreIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr, const Tcl_ObjIntRep *irPtr); /* 639 */
+    Tcl_ObjInternalRep * (*tcl_FetchInternalRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 638 */
+    void (*tcl_StoreInternalRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr, const Tcl_ObjInternalRep *irPtr); /* 639 */
     int (*tcl_HasStringRep) (Tcl_Obj *objPtr); /* 640 */
     void (*tcl_IncrRefCount) (Tcl_Obj *objPtr); /* 641 */
     void (*tcl_DecrRefCount) (Tcl_Obj *objPtr); /* 642 */
@@ -2632,6 +2637,9 @@ typedef struct TclStubs {
     const char * (*tcl_UtfNext) (const char *src); /* 655 */
     const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 656 */
     int (*tcl_UniCharIsUnicode) (int ch); /* 657 */
+    void (*reserved658)(void);
+    void (*reserved659)(void);
+    int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3934,14 +3942,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclZipfs_TclLibrary) /* 634 */
 #define TclZipfs_MountBuffer \
 	(tclStubsPtr->tclZipfs_MountBuffer) /* 635 */
-#define Tcl_FreeIntRep \
-	(tclStubsPtr->tcl_FreeIntRep) /* 636 */
+#define Tcl_FreeInternalRep \
+	(tclStubsPtr->tcl_FreeInternalRep) /* 636 */
 #define Tcl_InitStringRep \
 	(tclStubsPtr->tcl_InitStringRep) /* 637 */
-#define Tcl_FetchIntRep \
-	(tclStubsPtr->tcl_FetchIntRep) /* 638 */
-#define Tcl_StoreIntRep \
-	(tclStubsPtr->tcl_StoreIntRep) /* 639 */
+#define Tcl_FetchInternalRep \
+	(tclStubsPtr->tcl_FetchInternalRep) /* 638 */
+#define Tcl_StoreInternalRep \
+	(tclStubsPtr->tcl_StoreInternalRep) /* 639 */
 #define Tcl_HasStringRep \
 	(tclStubsPtr->tcl_HasStringRep) /* 640 */
 #define Tcl_IncrRefCount \
@@ -3976,6 +3984,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfPrev) /* 656 */
 #define Tcl_UniCharIsUnicode \
 	(tclStubsPtr->tcl_UniCharIsUnicode) /* 657 */
+/* Slot 658 is reserved */
+/* Slot 659 is reserved */
+#define Tcl_AsyncMarkFromSignal \
+	(tclStubsPtr->tcl_AsyncMarkFromSignal) /* 660 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4117,7 +4129,24 @@ extern const TclStubs *tclStubsPtr;
 	} while(0)
 #endif /* TCL_NO_DEPRECATED */
 
-#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+#if defined(USE_TCL_STUBS)
+#   if defined(_WIN32) && defined(_WIN64)
+#	undef Tcl_GetTime
+/* Handle Win64 tk.dll being loaded in Cygwin64. */
+#	define Tcl_GetTime(t) \
+		do { \
+		    union { \
+			Tcl_Time now; \
+			long long reserved; \
+		    } _t; \
+		    _t.reserved = -1; \
+		    tclStubsPtr->tcl_GetTime((&_t.now)); \
+		    if (_t.reserved != -1) { \
+			_t.now.usec = _t.reserved; \
+		    } \
+		    *(t) = _t.now; \
+		} while (0)
+#   endif
 #   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
 /* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
  * we have to make sure that all stub entries on Cygwin64 follow the
