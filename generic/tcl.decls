@@ -108,7 +108,7 @@ declare 22 {deprecated {No longer in use, changed to macro}} {
     Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
 }
 declare 23 {
-    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int length,
+    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int numBytes,
 	    const char *file, int line)
 }
 declare 24 {
@@ -143,7 +143,7 @@ declare 32 {
 	    int *boolPtr)
 }
 declare 33 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -202,7 +202,7 @@ declare 49 {deprecated {No longer in use, changed to macro}} {
     Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
 }
 declare 50 {
-    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int length)
+    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int numBytes)
 }
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
@@ -226,11 +226,11 @@ declare 57 {deprecated {No longer in use, changed to macro}} {
     void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
 }
 declare 58 {
-    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int length)
+    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int numBytes)
 }
 declare 59 {
     void Tcl_SetByteArrayObj(Tcl_Obj *objPtr, const unsigned char *bytes,
-	    int length)
+	    int numBytes)
 }
 declare 60 {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
@@ -2405,11 +2405,11 @@ declare 648 {
 # TIP #568
 declare 649 {
     unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *lengthPtr)
+	    int *numBytesPtr)
 }
 declare 650 {
     unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    size_t *lengthPtr)
+	    size_t *numBytesPtr)
 }
 
 # TIP #481
@@ -2420,7 +2420,7 @@ declare 652 {
     Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 declare 653 {
-    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)
 }
 
 # TIP #575

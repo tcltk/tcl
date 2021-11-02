@@ -294,16 +294,16 @@ Tcl_Obj *
 Tcl_NewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    int length)			/* Length of the array of bytes, which must be
-				 * >= 0. */
+    int numBytes)		/* Number of bytes in the array,
+				 * must be >= 0. */
 {
 #ifdef TCL_MEM_DEBUG
-    return Tcl_DbNewByteArrayObj(bytes, length, "unknown", 0);
+    return Tcl_DbNewByteArrayObj(bytes, numBytes, "unknown", 0);
 #else /* if not TCL_MEM_DEBUG */
     Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
-    Tcl_SetByteArrayObj(objPtr, bytes, length);
+    Tcl_SetByteArrayObj(objPtr, bytes, numBytes);
     return objPtr;
 #endif /* TCL_MEM_DEBUG */
 }
@@ -338,8 +338,8 @@ Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    int length,			/* Length of the array of bytes, which must be
-				 * >= 0. */
+    int numBytes,		/* Number of bytes in the array,
+				 * must be >= 0. */
     const char *file,		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line)			/* Line number in the source file; used for
@@ -348,7 +348,7 @@ Tcl_DbNewByteArrayObj(
     Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
-    Tcl_SetByteArrayObj(objPtr, bytes, length);
+    Tcl_SetByteArrayObj(objPtr, bytes, numBytes);
     return objPtr;
 }
 #else /* if not TCL_MEM_DEBUG */
@@ -356,12 +356,12 @@ Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    int length,			/* Length of the array of bytes, which must be
-				 * >= 0. */
+    int numBytes,		/* Number of bytes in the array,
+				 * must be >= 0. */
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
-    return Tcl_NewByteArrayObj(bytes, length);
+    return Tcl_NewByteArrayObj(bytes, numBytes);
 }
 #endif /* TCL_MEM_DEBUG */
 
@@ -387,9 +387,9 @@ void
 Tcl_SetByteArrayObj(
     Tcl_Obj *objPtr,		/* Object to initialize as a ByteArray. */
     const unsigned char *bytes,	/* The array of bytes to use as the new value.
-				 * May be NULL even if length > 0. */
-    int length)			/* Length of the array of bytes, which must
-				 * be >= 0. */
+				 * May be NULL even if numBytes > 0. */
+    int numBytes)		/* Number of bytes in the array,
+				 * must be >= 0. */
 {
     ByteArray *byteArrayPtr;
     Tcl_ObjInternalRep ir;
@@ -399,16 +399,14 @@ Tcl_SetByteArrayObj(
     }
     TclInvalidateStringRep(objPtr);
 
-    if (length < 0) {
-	length = 0;
-    }
-    byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
-    byteArrayPtr->bad = length;
-    byteArrayPtr->used = length;
-    byteArrayPtr->allocated = length;
+    assert(numBytes >= 0);
+    byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(numBytes));
+    byteArrayPtr->bad = numBytes;
+    byteArrayPtr->used = numBytes;
+    byteArrayPtr->allocated = numBytes;
 
-    if ((bytes != NULL) && (length > 0)) {
-	memcpy(byteArrayPtr->bytes, bytes, length);
+    if ((bytes != NULL) && (numBytes > 0)) {
+	memcpy(byteArrayPtr->bytes, bytes, numBytes);
     }
     SET_BYTEARRAY(&ir, byteArrayPtr);
 
@@ -427,7 +425,7 @@ Tcl_SetByteArrayObj(
  *
  * Results:
  *	NULL or pointer to array of bytes representing the ByteArray object.
- *	Writes number of bytes in array to *lengthPtr.
+ *	Writes number of bytes in array to *numBytesPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -436,8 +434,8 @@ unsigned char *
 TclGetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
-    int *lengthPtr)		/* If non-NULL, filled with length of the
-				 * returned array of bytes. */
+    int *numBytesPtr)		/* If non-NULL, write the number of bytes
+				 * in the array here */
 {
     ByteArray *baPtr;
     const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &properByteArrayType);
@@ -465,8 +463,8 @@ TclGetBytesFromObj(
     }
     baPtr = GET_BYTEARRAY(irPtr);
 
-    if (lengthPtr != NULL) {
-	*lengthPtr = baPtr->used;
+    if (numBytesPtr != NULL) {
+	*numBytesPtr = baPtr->used;
     }
     return baPtr->bytes;
 }
@@ -475,8 +473,8 @@ unsigned char *
 Tcl_GetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
-    size_t *lengthPtr)		/* If non-NULL, filled with length of the
-				 * array of bytes in the ByteArray object. */
+    size_t *numBytesPtr)	/* If non-NULL, write the number of bytes
+				 * in the array here */
 {
     ByteArray *baPtr;
     const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &properByteArrayType);
@@ -504,8 +502,8 @@ Tcl_GetBytesFromObj(
     }
     baPtr = GET_BYTEARRAY(irPtr);
 
-    if (lengthPtr != NULL) {
-	*lengthPtr = baPtr->used;
+    if (numBytesPtr != NULL) {
+	*numBytesPtr = baPtr->used;
     }
     return baPtr->bytes;
 }
@@ -532,12 +530,12 @@ Tcl_GetBytesFromObj(
 unsigned char *
 Tcl_GetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    int *lengthPtr)		/* If non-NULL, filled with length of the
-				 * array of bytes in the ByteArray object. */
+    int *numBytesPtr)		/* If non-NULL, write the number of bytes
+				 * in the array here */
 {
     ByteArray *baPtr;
     const Tcl_ObjInternalRep *irPtr;
-    unsigned char *result = TclGetBytesFromObj(NULL, objPtr, lengthPtr);
+    unsigned char *result = TclGetBytesFromObj(NULL, objPtr, numBytesPtr);
 
     if (result) {
 	return result;
@@ -548,8 +546,8 @@ Tcl_GetByteArrayFromObj(
 
     baPtr = GET_BYTEARRAY(irPtr);
 
-    if (lengthPtr != NULL) {
-	*lengthPtr = baPtr->used;
+    if (numBytesPtr != NULL) {
+	*numBytesPtr = baPtr->used;
     }
     return (unsigned char *) baPtr->bytes;
 }
@@ -557,12 +555,12 @@ Tcl_GetByteArrayFromObj(
 unsigned char *
 TclGetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    size_t *lengthPtr)		/* If non-NULL, filled with length of the
-				 * array of bytes in the ByteArray object. */
+    size_t *numBytesPtr)	/* If non-NULL, write the number of bytes
+				 * in the array here */
 {
     ByteArray *baPtr;
     const Tcl_ObjInternalRep *irPtr;
-    unsigned char *result = TclGetBytesFromObj(NULL, objPtr, (int *)NULL);
+    unsigned char *result = Tcl_GetBytesFromObj(NULL, objPtr, numBytesPtr);
 
     if (result) {
 	return result;
@@ -573,12 +571,12 @@ TclGetByteArrayFromObj(
 
     baPtr = GET_BYTEARRAY(irPtr);
 
-    if (lengthPtr != NULL) {
+    if (numBytesPtr != NULL) {
 #if TCL_MAJOR_VERSION > 8
-	*lengthPtr = baPtr->used;
+	*numBytesPtr = baPtr->used;
 #else
 	/* TODO: What's going on here?  Document or eliminate. */
-	*lengthPtr = ((size_t)(unsigned)(baPtr->used + 1)) - 1;
+	*numBytesPtr = ((size_t)(unsigned)(baPtr->used + 1)) - 1;
 #endif
     }
     return baPtr->bytes;
@@ -609,14 +607,14 @@ TclGetByteArrayFromObj(
 unsigned char *
 Tcl_SetByteArrayLength(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    int length)			/* New length for internal byte array. */
+    int numBytes)		/* Number of bytes in resized array */
 {
     ByteArray *byteArrayPtr;
     unsigned newLength;
     Tcl_ObjInternalRep *irPtr;
 
-    assert(length >= 0);
-    newLength = (unsigned int)length;
+    assert(numBytes >= 0);
+    newLength = (unsigned int)numBytes;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayLength");
@@ -633,6 +631,9 @@ Tcl_SetByteArrayLength(
 	    }
 	}
     }
+
+    /* Note that during truncation, the implementation does not free
+     * memory that is no longer needed. */
 
     byteArrayPtr = GET_BYTEARRAY(irPtr);
     if (newLength > byteArrayPtr->allocated) {
@@ -685,6 +686,9 @@ SetByteArrayFromAny(
     src = TclGetString(objPtr);
     length = bad = objPtr->length;
     srcEnd = src + length;
+
+    /* Note the allocation is over-sized, possibly by a factor of four,
+     * or even a factor of two with a proper byte array value. */
 
     byteArrayPtr = (ByteArray *)ckalloc(BYTEARRAY_SIZE(length));
     for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
