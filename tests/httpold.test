@@ -167,7 +167,7 @@ test httpold-4.1 {httpEvent} {
     set token [http_get $url]
     upvar #0 $token data
     array set meta $data(meta)
-    expr ($data(totalsize) == $meta(Content-Length))
+    expr {$data(totalsize) == $meta(Content-Length)}
 } 1
 
 test httpold-4.2 {httpEvent} {
@@ -204,7 +204,7 @@ test httpold-4.5 {httpEvent} {
     close $out
     upvar #0 $token data
     removeFile $testfile
-    expr $data(currentsize) == $data(totalsize)
+    expr {$data(currentsize) == $data(totalsize)}
 } 1
 
 test httpold-4.6 {httpEvent} {

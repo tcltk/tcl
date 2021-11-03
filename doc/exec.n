@@ -22,6 +22,10 @@ of one or more subprocesses to execute.
 The arguments take the form of a standard shell pipeline
 where each \fIarg\fR becomes one word of a command, and
 each distinct command becomes a subprocess.
+The result of the command is the standard output of the final subprocess in
+the pipeline, interpreted using the system \fBencoding\fR; to use any other
+encoding (especially including binary data), the pipeline must be
+\fBopen\fRed, configured and read explicitly.
 .PP
 If the initial arguments to \fBexec\fR start with \fB\-\fR then
 they are treated as command-line switches and are not part
@@ -413,7 +417,9 @@ With the file \fIcmp.bat\fR looking something like:
 .CS
 @gcc %*
 .CE
+.PP
 or like another variant using single parameters:
+.PP
 .CS
 @gcc %1 %2 %3 %4 %5 %6 %7 %8 %9
 .CE

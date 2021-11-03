@@ -3158,6 +3158,13 @@ Tcl_FSLoadFile(
  * present and set to true (any integer > 0) then the unlink is skipped.
  */
 
+#ifdef _WIN32
+#define getenv(x) _wgetenv(L##x)
+#define atoi(x) _wtoi(x)
+#else
+#define WCHAR char
+#endif
+
 static int
 skipUnlink (Tcl_Obj* shlibFile)
 {
@@ -3178,9 +3185,9 @@ skipUnlink (Tcl_Obj* shlibFile)
 #ifdef hpux
     return 1;
 #else
-    char* skipstr;
+    WCHAR *skipstr;
 
-    skipstr = getenv ("TCL_TEMPLOAD_NO_UNLINK");
+    skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
     if (skipstr && (skipstr[0] != '\0')) {
 	return atoi(skipstr);
     }

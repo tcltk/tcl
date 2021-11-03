@@ -5,9 +5,9 @@
 #	is used to generate the tclIntDecls.h, tclIntPlatDecls.h
 #	and tclStubInit.c files
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
-# Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001 Kevin B. Kenny.  All rights reserved.
+# Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -17,6 +17,7 @@ library tcl
 # Define the unsupported generic interfaces.
 
 interface tclInt
+scspec EXTERN
 
 # Declare each of the functions in the unsupported internal Tcl
 # interface.  These interfaces are allowed to changed between versions.
@@ -1039,7 +1040,7 @@ declare 256 {
 }
 
 declare 257 {
-    void TclStaticPackage(Tcl_Interp *interp, const char *pkgName,
+    void TclStaticPackage(Tcl_Interp *interp, const char *prefix,
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
 

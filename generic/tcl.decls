@@ -5,9 +5,9 @@
 #	This file is used to generate the tclDecls.h, tclPlatDecls.h
 #	and tclStubInit.c files.
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
-# Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+# Copyright © 1998-1999 Scriptics Corporation.
+# Copyright © 2001, 2002 Kevin B. Kenny.  All rights reserved.
+# Copyright © 2007 Daniel A. Steffen <das@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -861,7 +861,7 @@ declare 243 {
     void Tcl_SplitPath(const char *path, int *argcPtr, CONST84 char ***argvPtr)
 }
 declare 244 {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
+    void Tcl_StaticPackage(Tcl_Interp *interp, const char *prefix,
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
 declare 245 {
@@ -2325,7 +2325,7 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
-declare 649 {
+declare 660 {
     void TclUnusedStubEntry(void)
 }
 
@@ -2365,6 +2365,9 @@ declare 1 macosx {
 	    const char *bundleName, const char *bundleVersion,
 	    int hasResourceFile, int maxPathLen, char *libraryPath)
 }
+declare 2 macosx {
+    void TclUnusedStubEntry(void)
+}
 
 ##############################################################################
 
@@ -2392,6 +2395,7 @@ export {
 export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
 }
+
 
 # Local Variables:
 # mode: tcl

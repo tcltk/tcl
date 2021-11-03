@@ -39,7 +39,7 @@ testConstraint slowTest     0
 
 set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
 append big $big
-append big $big	
+append big $big
 append big $big
 append big $big
 append big $big

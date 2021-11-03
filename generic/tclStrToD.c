@@ -1285,7 +1285,7 @@ TclParseNumber(
 		if (signum) {
 		    (void)mp_neg(&octalSignificandBig, &octalSignificandBig);
 		}
-		TclSetBignumIntRep(objPtr, &octalSignificandBig);
+		TclSetBignumInternalRep(objPtr, &octalSignificandBig);
 	    }
 	    break;
 
@@ -1332,7 +1332,7 @@ TclParseNumber(
 		if (signum) {
 		    (void)mp_neg(&significandBig, &significandBig);
 		}
-		TclSetBignumIntRep(objPtr, &significandBig);
+		TclSetBignumInternalRep(objPtr, &significandBig);
 	    }
 	    break;
 

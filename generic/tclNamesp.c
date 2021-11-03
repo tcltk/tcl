@@ -4800,7 +4800,7 @@ SetNsNameFromAny(
 
     if ((nsPtr == NULL) || (nsPtr->flags & NS_DYING)) {
 	/*
-	 * Our failed lookup proves any previously cached nsName intrep is no
+	 * Our failed lookup proves any previously cached nsName internalrep is no
 	 * longer valid. Get rid of it so we no longer waste memory storing
 	 * it, nor time determining its invalidity again and again.
 	 */
@@ -5001,7 +5001,7 @@ TclLogCommandInfo(
 	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
 
 	/*
-	 * Reset while keeping the list intrep as much as possible.
+	 * Reset while keeping the list internalrep as much as possible.
 	 */
 
 	Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);
@@ -5086,7 +5086,7 @@ TclErrorStackResetIf(
 	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
 
 	/*
-	 * Reset while keeping the list intrep as much as possible.
+	 * Reset while keeping the list internalrep as much as possible.
 	 */
 
 	Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);

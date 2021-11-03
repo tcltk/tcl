@@ -14,6 +14,9 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+::tcltest::loadTestedCommands
+catch {package require -exact Tcltest [info patchlevel]}
+
 testConstraint bigEndian [expr {$tcl_platform(byteOrder) eq "bigEndian"}]
 testConstraint littleEndian [expr {$tcl_platform(byteOrder) eq "littleEndian"}]
 

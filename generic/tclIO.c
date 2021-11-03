@@ -324,13 +324,13 @@ typedef struct ResolvedChanName {
     int refCount;		/* Share this struct among many Tcl_Obj. */
 } ResolvedChanName;
 
-static void		DupChannelIntRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
-static void		FreeChannelIntRep(Tcl_Obj *objPtr);
+static void		DupChannelInternalRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
+static void		FreeChannelInternalRep(Tcl_Obj *objPtr);
 
 static const Tcl_ObjType chanObjType = {
     "channel",			/* name for this type */
-    FreeChannelIntRep,		/* freeIntRepProc */
-    DupChannelIntRep,		/* dupIntRepProc */
+    FreeChannelInternalRep,		/* freeIntRepProc */
+    DupChannelInternalRep,		/* dupIntRepProc */
     NULL,			/* updateStringProc */
     NULL			/* setFromAnyProc */
 };
@@ -1526,7 +1526,7 @@ TclGetChannelFromObj(
 
     if (chan == NULL) {
 	if (resPtr) {
-	    FreeChannelIntRep(objPtr);
+	    FreeChannelInternalRep(objPtr);
 	}
 	return TCL_ERROR;
     }
@@ -4277,6 +4277,7 @@ Write(
 				/* State info for channel */
     char *nextNewLine = NULL;
     int endEncoding, saved = 0, total = 0, flushed = 0, needNlFlush = 0;
+    char safe[BUFFER_PADDING];
 
     if (srcLen) {
         WillWrite(chanPtr);
@@ -4295,7 +4296,7 @@ Write(
 
     while (srcLen + saved + endEncoding > 0) {
 	ChannelBuffer *bufPtr;
-	char *dst, safe[BUFFER_PADDING];
+	char *dst;
 	int result, srcRead, dstLen, dstWrote, srcLimit = srcLen;
 
 	if (nextNewLine) {
@@ -11211,7 +11212,7 @@ Tcl_ChannelTruncateProc(
 /*
  *----------------------------------------------------------------------
  *
- * DupChannelIntRep --
+ * DupChannelInternalRep --
  *
  *	Initialize the internal representation of a new Tcl_Obj to a copy of
  *	the internal representation of an existing string object.
@@ -11227,7 +11228,7 @@ Tcl_ChannelTruncateProc(
  */
 
 static void
-DupChannelIntRep(
+DupChannelInternalRep(
     Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
 				 * an internal rep of type "Channel". */
     Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
@@ -11243,7 +11244,7 @@ DupChannelIntRep(
 /*
  *----------------------------------------------------------------------
  *
- * FreeChannelIntRep --
+ * FreeChannelInternalRep --
  *
  *	Release statePtr storage.
  *
@@ -11257,7 +11258,7 @@ DupChannelIntRep(
  */
 
 static void
-FreeChannelIntRep(
+FreeChannelInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
     ResolvedChanName *resPtr = objPtr->internalRep.twoPtrValue.ptr1;

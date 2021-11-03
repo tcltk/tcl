@@ -196,13 +196,13 @@ static unsigned short emptyPage[256];
  */
 
 static Tcl_EncodingConvertProc	BinaryProc;
-static Tcl_DupInternalRepProc	DupEncodingIntRep;
+static Tcl_DupInternalRepProc	DupEncodingInternalRep;
 static Tcl_EncodingFreeProc	EscapeFreeProc;
 static Tcl_EncodingConvertProc	EscapeFromUtfProc;
 static Tcl_EncodingConvertProc	EscapeToUtfProc;
 static void			FillEncodingFileMap(void);
 static void			FreeEncoding(Tcl_Encoding encoding);
-static Tcl_FreeInternalRepProc	FreeEncodingIntRep;
+static Tcl_FreeInternalRepProc	FreeEncodingInternalRep;
 static Encoding *		GetTableEncoding(EscapeEncodingData *dataPtr,
 				    int state);
 static Tcl_Encoding		LoadEncodingFile(Tcl_Interp *interp,
@@ -262,12 +262,12 @@ static int		Iso88591ToUtfProc(ClientData clientData,
 
 /*
  * A Tcl_ObjType for holding a cached Tcl_Encoding in the twoPtrValue.ptr1 field
- * of the intrep. This should help the lifetime of encodings be more useful.
+ * of the internalrep. This should help the lifetime of encodings be more useful.
  * See concerns raised in [Bug 1077262].
  */
 
 static const Tcl_ObjType encodingType = {
-    "encoding", FreeEncodingIntRep, DupEncodingIntRep, NULL, NULL
+    "encoding", FreeEncodingInternalRep, DupEncodingInternalRep, NULL, NULL
 };
 
 /*
@@ -314,7 +314,7 @@ Tcl_GetEncodingFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * FreeEncodingIntRep --
+ * FreeEncodingInternalRep --
  *
  *	The Tcl_FreeInternalRepProc for the "encoding" Tcl_ObjType.
  *
@@ -322,7 +322,7 @@ Tcl_GetEncodingFromObj(
  */
 
 static void
-FreeEncodingIntRep(
+FreeEncodingInternalRep(
     Tcl_Obj *objPtr)
 {
     Tcl_FreeEncoding((Tcl_Encoding)objPtr->internalRep.twoPtrValue.ptr1);
@@ -332,7 +332,7 @@ FreeEncodingIntRep(
 /*
  *----------------------------------------------------------------------
  *
- * DupEncodingIntRep --
+ * DupEncodingInternalRep --
  *
  *	The Tcl_DupInternalRepProc for the "encoding" Tcl_ObjType.
  *
@@ -340,7 +340,7 @@ FreeEncodingIntRep(
  */
 
 static void
-DupEncodingIntRep(
+DupEncodingInternalRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
@@ -1241,7 +1241,6 @@ Tcl_ExternalToUtf(
 	dstLen--;
     }
     do {
-	int savedFlags = flags;
 	Tcl_EncodingState savedState = *statePtr;
 
 	result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
@@ -1251,7 +1250,6 @@ Tcl_ExternalToUtf(
 	    break;
 	}
 	dstLen = Tcl_UtfAtIndex(dst, maxChars) - dst + (TCL_UTF_MAX - 1);
-	flags = savedFlags;
 	*statePtr = savedState;
     } while (1);
     if (!noTerminate) {
@@ -2324,7 +2322,7 @@ UtfToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && pureNullMode == 0)) {
+	if (UCHAR(*src) < 0x80 && !((UCHAR(*src) == 0) && (pureNullMode == 0))) {
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to 0xC080.
@@ -2332,8 +2330,8 @@ UtfToUtfProc(
 
 	    *dst++ = *src++;
 	    *chPtr = 0; /* reset surrogate handling */
-	} else if (pureNullMode == 1 && UCHAR(*src) == 0xC0 &&
-		(src + 1 < srcEnd) && UCHAR(*(src+1)) == 0x80) {
+	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
+		&& (UCHAR(src[1]) == 0x80) && (pureNullMode == 1)) {
 	    /*
 	     * Convert 0xC080 to real nulls when we are in output mode.
 	     */
@@ -2345,15 +2343,24 @@ UtfToUtfProc(
 	    /*
 	     * Always check before using TclUtfToUniChar. Not doing can so
 	     * cause it run beyond the end of the buffer! If we happen such an
-	     * incomplete char its bytes are made to represent themselves.
+	     * incomplete char its bytes are made to represent themselves
+	     * unless the user has explicitly asked to be told.
 	     */
 
+	    if ((flags & TCL_ENCODING_STOPONERROR) && (pureNullMode == 0)) {
+		result = TCL_CONVERT_MULTIBYTE;
+		break;
+	    }
 	    *chPtr = UCHAR(*src);
 	    src += 1;
 	    dst += Tcl_UniCharToUtf(*chPtr, dst);
 	} else {
 	    size_t len = TclUtfToUniChar(src, chPtr);
-
+	    if ((len < 2) && (*chPtr != 0) && (flags & TCL_ENCODING_STOPONERROR)
+		    && ((*chPtr & ~0x7FF) != 0xD800) && (pureNullMode == 0)) {
+		result = TCL_CONVERT_SYNTAX;
+		break;
+	    }
 	    src += len;
 	    if ((*chPtr & ~0x7FF) == 0xD800) {
 		Tcl_UniChar low;
@@ -2453,8 +2460,13 @@ UnicodeToUtfProc(
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen--;
     }
-    /* If last code point is a high surrogate, we cannot handle that yet */
-    if ((srcLen >= 2) && ((src[srcLen - (clientData?1:2)] & 0xFC) == 0xD8)) {
+
+    /*
+     * If last code point is a high surrogate, we cannot handle that yet.
+     */
+
+    if ((srcLen >= 2) &&
+	    ((src[srcLen - (clientData?1:2)] & 0xFC) == 0xD8)) {
 	result = TCL_CONVERT_MULTIBYTE;
 	srcLen-= 2;
     }
@@ -2476,10 +2488,12 @@ UnicodeToUtfProc(
 	} else {
 	    ch = (src[0] & 0xFF) << 8 | (src[1] & 0xFF);
 	}
+
 	/*
 	 * Special case for 1-byte utf chars for speed. Make sure we work with
 	 * unsigned short-size data.
 	 */
+
 	if (ch && ch < 0x80) {
 	    *dst++ = (ch & 0xFF);
 	} else {
@@ -2580,7 +2594,7 @@ UtfToUnicodeProc(
 		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
 		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
 		*dst++ = (*chPtr & 0xFF);
-		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
+		*dst++ = ((*chPtr >> 8) & 0x3) | 0xDC;
 	    }
 #else
 	    *dst++ = (*chPtr & 0xFF);
@@ -2592,10 +2606,10 @@ UtfToUnicodeProc(
 		*dst++ = (*chPtr >> 8);
 		*dst++ = (*chPtr & 0xFF);
 	    } else {
-		*dst++ = ((*chPtr & 0x3) >> 8) | 0xDC;
-		*dst++ = (*chPtr & 0xFF);
 		*dst++ = (((*chPtr - 0x10000) >> 18) & 0x3) | 0xD8;
 		*dst++ = (((*chPtr - 0x10000) >> 10) & 0xFF);
+		*dst++ = ((*chPtr >> 8) & 0x3) | 0xDC;
+		*dst++ = (*chPtr & 0xFF);
 	    }
 #else
 	    *dst++ = (*chPtr >> 8);
@@ -3015,7 +3029,9 @@ Iso88591FromUtfProc(
 		break;
 	    }
 #if TCL_UTF_MAX == 4
-	    if ((ch >= 0xD800) && (len < 3)) len = 4;
+	    if ((ch >= 0xD800) && (len < 3)) {
+		len = 4;
+	    }
 #endif
 	    /*
 	     * Plunge on, using '?' as a fallback character.
@@ -3060,7 +3076,7 @@ TableFreeProc(
     ClientData clientData)	/* TableEncodingData that specifies
 				 * encoding. */
 {
-    TableEncodingData *dataPtr = (TableEncodingData *)clientData;
+    TableEncodingData *dataPtr = (TableEncodingData *) clientData;
 
     /*
      * Make sure we aren't freeing twice on shutdown. [Bug 219314]
@@ -3118,7 +3134,7 @@ EscapeToUtfProc(
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
-    EscapeEncodingData *dataPtr = (EscapeEncodingData *)clientData;
+    EscapeEncodingData *dataPtr = (EscapeEncodingData *) clientData;
     const char *prefixBytes, *tablePrefixBytes, *srcStart, *srcEnd;
     const unsigned short *const *tableToUnicode;
     const Encoding *encodingPtr;

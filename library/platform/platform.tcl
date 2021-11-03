@@ -29,8 +29,10 @@
 # are on "Windows NT" or "Windows XP" or whatever.
 #
 # Machine specific
+# % amd64  -> x86_64
 # % arm*   -> arm
 # % sun4*  -> sparc
+# % ia32*  -> ix86
 # % intel  -> ix86
 # % i*86*  -> ix86
 # % Power* -> powerpc
@@ -71,6 +73,7 @@ proc ::platform::generic {} {
 	    set cpu sparc
 	}
 	intel -
+	ia32* -
 	i*86* {
 	    set cpu ix86
 	}
@@ -80,6 +83,7 @@ proc ::platform::generic {} {
 		set cpu ix86
 	    }
 	}
+	ppc -
 	"Power*" {
 	    set cpu powerpc
 	}
@@ -176,8 +180,9 @@ proc ::platform::identify {} {
 	macosx {
 	    set major [lindex [split $tcl_platform(osVersion) .] 0]
 	    if {$major > 19} {
-		incr major -20
-		append plat 11.$major
+		set minor [lindex [split $tcl_platform(osVersion) .] 1]
+		incr major -9
+		append plat $major.[expr {$minor - 1}]
 	    } else {
 		incr major -4
 		append plat 10.$major
@@ -359,6 +364,17 @@ proc ::platform::patterns {id} {
 		    foreach {major minor} [split $v .] break
 
 		    set res {}
+		    if {$major eq 12} {
+			# Add 12.0 to 12.minor to patterns.
+			for {set j $minor} {$j >= 0} {incr j -1} {
+			    lappend res macosx${major}.${j}-${cpu}
+			    foreach a $alt {
+				lappend res macosx${major}.${j}-$a
+			    }
+			}
+			set major 11
+			set minor 5
+		    }
 		    if {$major eq 11} {
 			# Add 11.0 to 11.minor to patterns.
 			for {set j $minor} {$j >= 0} {incr j -1} {
@@ -404,7 +420,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.15
+package provide platform 1.0.18
 
 # ### ### ### ######### ######### #########
 ## Demo application

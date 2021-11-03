@@ -455,14 +455,14 @@ test parseOld-12.4 {comments} {
 
 test parseOld-13.1 {comments at the end of a bracketed script} {
     set x "[
-expr 1+1
+expr {1+1}
 # skip this!
 ]"
 } {2}
 
 test parseOld-15.1 {TclScriptEnd procedure} {
     info complete {puts [
-	expr 1+1
+	expr {1+1}
 	#this is a comment ]}
 } {0}
 test parseOld-15.2 {TclScriptEnd procedure} {

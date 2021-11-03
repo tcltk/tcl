@@ -1686,7 +1686,7 @@ TclTrimRight(
 			 * rely on (trim[numTrim] == '\0'). */
 {
     const char *pp, *p = bytes + numBytes;
-    Tcl_UniChar ch1 = 0;
+    int ch1, ch2;
 
     /* Empty strings -> nothing to do */
     if ((numBytes == 0) || (numTrim == 0)) {
@@ -1700,12 +1700,14 @@ TclTrimRight(
     do {
 	const char *q = trim;
 	int pInc = 0, bytesLeft = numTrim;
-	Tcl_UniChar ch2 = 0;
 
 	pp = TclUtfPrev(p, bytes);
+#if TCL_UTF_MAX < 4
+	pp = TclUtfPrev(pp, bytes);
+#endif
 	do {
 	    pp += pInc;
- 	    pInc = TclUtfToUniChar(pp, &ch1);
+ 	    pInc = TclUtfToUCS4(pp, &ch1);
 	} while (pp + pInc < p);
 
 	/*
@@ -1713,14 +1715,14 @@ TclTrimRight(
 	 */
 
 	do {
-	    int qInc = TclUtfToUniChar(q, &ch2);
+	    pInc = TclUtfToUCS4(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
 	    }
 
-	    q += qInc;
-	    bytesLeft -= qInc;
+	    q += pInc;
+	    bytesLeft -= pInc;
 	} while (bytesLeft);
 
 	if (bytesLeft == 0) {
@@ -1766,7 +1768,7 @@ TclTrimLeft(
 			 * rely on (trim[numTrim] == '\0'). */
 {
     const char *p = bytes;
-    Tcl_UniChar ch1 = 0;
+    int ch1, ch2;
 
     /* Empty strings -> nothing to do */
     if ((numBytes == 0) || (numTrim == 0)) {
@@ -1778,8 +1780,7 @@ TclTrimLeft(
      */
 
     do {
-	Tcl_UniChar ch2 = 0;
-	int pInc = TclUtfToUniChar(p, &ch1);
+	int pInc = TclUtfToUCS4(p, &ch1);
 	const char *q = trim;
 	int bytesLeft = numTrim;
 
@@ -1788,7 +1789,7 @@ TclTrimLeft(
 	 */
 
 	do {
-	    int qInc = TclUtfToUniChar(q, &ch2);
+	    int qInc = TclUtfToUCS4(q, &ch2);
 
 	    if (ch1 == ch2) {
 		break;
@@ -2026,7 +2027,14 @@ Tcl_ConcatObj(
 		continue;
 	    }
 	    if (resPtr) {
-		if (TCL_OK != Tcl_ListObjAppendList(NULL, resPtr, objPtr)) {
+		Tcl_Obj *elemPtr = NULL;
+
+		Tcl_ListObjIndex(NULL, objPtr, 0, &elemPtr);
+		if (elemPtr == NULL) {
+		    continue;
+		}
+		if (Tcl_GetString(elemPtr)[0] == '#' || TCL_OK
+			!= Tcl_ListObjAppendList(NULL, resPtr, objPtr)) {
 		    /* Abandon ship! */
 		    Tcl_DecrRefCount(resPtr);
 		    goto slow;
@@ -4223,7 +4231,7 @@ TclSetProcessGlobalValue(
 
     /*
      * Fill the local thread copy directly with the Tcl_Obj value to avoid
-     * loss of the intrep. Increment newValue refCount early to handle case
+     * loss of the internalrep. Increment newValue refCount early to handle case
      * where we set a PGV to itself.
      */
 

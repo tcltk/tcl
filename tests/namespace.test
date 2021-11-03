@@ -1846,6 +1846,24 @@ test namespace-42.10 {
     unset -nocomplain lst
 } -returnCodes error -match glob -result {invalid command name *three*}
 
+
+test namespace-42.11 {
+	ensembles: prefix matching segmentation fault
+
+	issue ccc448a6bfd59cbd
+} -body {
+    namespace eval n1 {
+        namespace ensemble create
+        namespace export *
+        proc p1 args {error success}
+    }
+    # segmentation fault only occurs in the non-byte-compiled path, so avoid
+    # byte compilation
+    set cmd {namespace eva n1 {[namespace parent]::n1 p1}}
+    {*}$cmd
+} -returnCodes error -result success
+
+
 test namespace-43.1 {ensembles: dict-driven} {
     namespace eval ns {
 	namespace export x*
@@ -3339,6 +3357,38 @@ test namespace-56.5 {Bug 8b9854c3d8} -setup {
     namespace delete namespace-56.5
 } -result 1
 
+
+test namespace-56.6 {
+	Namespace deletion traces on both the original routine and the imported
+	routine should run without any memory error under a debug build.
+} -body {
+	variable res 0
+
+	proc ondelete {old new op} {
+		$old
+	}
+
+	namespace eval ns1 {} {
+		namespace export *
+		proc p1 {} {
+			namespace upvar [namespace parent] res res
+			incr res
+		}
+		trace add command p1 delete ondelete
+	}
+
+	namespace eval ns2 {} {
+		namespace import ::ns1::p1
+		trace add command p1 delete ondelete
+	}
+
+	namespace delete ns1
+	namespace delete ns2
+	return $res
+} -cleanup {
+	unset res
+	rename ondelete {}
+} -result 2
 
 
 test namespace-57.0 {

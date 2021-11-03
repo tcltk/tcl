@@ -2,7 +2,7 @@ name: macOS
 on: [push]
 jobs:
   xcode:
-    runs-on: macos-11.0
+    runs-on: macos-11
     defaults:
       run:
         shell: bash
@@ -22,7 +22,7 @@ jobs:
           ERROR_ON_FAILURES: 1
           MAC_CI: 1
   clang:
-    runs-on: macos-11.0
+    runs-on: macos-11
     strategy:
       matrix:
         cfgopt:

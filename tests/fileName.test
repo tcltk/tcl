@@ -1061,10 +1061,10 @@ test filename-11.45 {Tcl_GlobCmd on root volume} -setup {
     set tmpd [pwd]
 } -body {
     catch {
-	set res1 [glob -dir [lindex [file volumes] 0] -tails *]
+	set res1 [glob -dir [lindex [file volumes] end] -tails *]
     }
     catch {
-	cd [lindex [file volumes] 0]
+	cd [lindex [file volumes] end]
 	set res2 [glob *]
     }
     list $res1 $res2

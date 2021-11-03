@@ -2193,6 +2193,18 @@ TclSpellFix(
     TclNRAddCallback(interp, TclNRReleaseValues, fix, NULL, NULL, NULL);
 }
 
+Tcl_Obj *const *TclEnsembleGetRewriteValues(
+    Tcl_Interp *interp		/* Current interpreter. */
+)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *const *origObjv = iPtr->ensembleRewrite.sourceObjs;
+    if (origObjv[0] == NULL) {
+	origObjv = (Tcl_Obj *const *)origObjv[2];
+    }
+    return origObjv;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2217,12 +2229,18 @@ TclFetchEnsembleRoot(
     int objc,
     int *objcPtr)
 {
+    Tcl_Obj *const *sourceObjs;
     Interp *iPtr = (Interp *) interp;
 
     if (iPtr->ensembleRewrite.sourceObjs) {
 	*objcPtr = objc + iPtr->ensembleRewrite.numRemovedObjs
 		- iPtr->ensembleRewrite.numInsertedObjs;
-	return iPtr->ensembleRewrite.sourceObjs;
+	if (iPtr->ensembleRewrite.sourceObjs[0] == NULL) {
+	    sourceObjs = (Tcl_Obj *const *)iPtr->ensembleRewrite.sourceObjs[1];
+	} else {
+	    sourceObjs = iPtr->ensembleRewrite.sourceObjs;
+	}
+	return sourceObjs;
     }
     *objcPtr = objc;
     return objv;

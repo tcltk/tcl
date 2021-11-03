@@ -5,7 +5,7 @@
 #    Table format:  Format A
 #    Date:          01/5/99
 #
-#    Contact:       cpxlate@microsoft.com
+#    Contact:       Shawn.Steele@microsoft.com
 #
 #    General notes: none
 #

@@ -275,9 +275,9 @@ TclClockInit(
      * Create the client data, which is a refcounted literal pool.
      */
 
-    data = ckalloc(sizeof(ClockClientData));
+    data = (ClockClientData *)ckalloc(sizeof(ClockClientData));
     data->refCount = 0;
-    data->literals = ckalloc(LIT__END * sizeof(Tcl_Obj*));
+    data->literals = (Tcl_Obj **)ckalloc(LIT__END * sizeof(Tcl_Obj*));
     for (i = 0; i < LIT__END; ++i) {
 	data->literals[i] = Tcl_NewStringObj(literals[i], -1);
 	Tcl_IncrRefCount(data->literals[i]);
@@ -336,7 +336,7 @@ ClockConvertlocaltoutcObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const *objv)	/* Parameter vector */
 {
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     Tcl_Obj *secondsObj;
     Tcl_Obj *dict;
@@ -430,7 +430,7 @@ ClockGetdatefieldsObjCmd(
 {
     TclDateFields fields;
     Tcl_Obj *dict;
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
 
@@ -584,7 +584,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 {
     TclDateFields fields;
     Tcl_Obj *dict;
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
     int copied = 0;
@@ -668,7 +668,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 {
     TclDateFields fields;
     Tcl_Obj *dict;
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     Tcl_Obj *const *lit = data->literals;
     int changeover;
     int copied = 0;
@@ -1650,20 +1650,37 @@ ClockGetenvObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+#ifdef _WIN32
+    const WCHAR *varName;
+    const WCHAR *varValue;
+    Tcl_DString ds;
+#else
     const char *varName;
     const char *varValue;
+#endif
     (void)clientData;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
+#ifdef _WIN32
+    varName = (const WCHAR *)Tcl_WinUtfToTChar(TclGetString(objv[1]), -1, &ds);
+    varValue = _wgetenv(varName);
+	Tcl_DStringFree(&ds);
+    if (varValue == NULL) {
+	varValue = L"";
+    }
+    Tcl_WinTCharToUtf((TCHAR *)varValue, -1, &ds);
+    Tcl_DStringResult(interp, &ds);
+#else
     varName = TclGetString(objv[1]);
     varValue = getenv(varName);
     if (varValue == NULL) {
 	varValue = "";
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
+#endif
     return TCL_OK;
 }
 
@@ -1693,7 +1710,7 @@ ThreadSafeLocalTime(
      * Get a thread-local buffer to hold the returned time.
      */
 
-    struct tm *tmPtr = Tcl_GetThreadData(&tmKey, sizeof(struct tm));
+    struct tm *tmPtr = (struct tm *)Tcl_GetThreadData(&tmKey, sizeof(struct tm));
 #ifdef HAVE_LOCALTIME_R
     localtime_r(timePtr, tmPtr);
 #else
@@ -1879,7 +1896,7 @@ ClockParseformatargsObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter vector */
 {
-    ClockClientData *dataPtr = clientData;
+    ClockClientData *dataPtr = (ClockClientData *)clientData;
     Tcl_Obj **litPtr = dataPtr->literals;
     Tcl_Obj *results[3];	/* Format, locale and timezone */
 #define formatObj results[0]
@@ -2026,26 +2043,52 @@ ClockSecondsObjCmd(
  *----------------------------------------------------------------------
  */
 
+#ifdef _WIN32
+#define getenv(x) _wgetenv(L##x)
+#else
+#define WCHAR char
+#define wcslen strlen
+#define wcscmp strcmp
+#define wcscpy strcpy
+#endif
+
 static void
 TzsetIfNecessary(void)
 {
-    static char* tzWas = INT2PTR(-1);	/* Previous value of TZ, protected by
-				 * clockMutex. */
-    const char *tzIsNow;	/* Current value of TZ */
+    static WCHAR* tzWas = (WCHAR *)INT2PTR(-1);	 /* Previous value of TZ, protected by
+					  * clockMutex. */
+    static long	 tzLastRefresh = 0;	 /* Used for latency before next refresh */
+    static size_t tzEnvEpoch = 0;        /* Last env epoch, for faster signaling,
+					    that TZ changed via TCL */
+    const WCHAR *tzIsNow;		 /* Current value of TZ */
+
+    /*
+     * Prevent performance regression on some platforms by resolving of system time zone:
+     * small latency for check whether environment was changed (once per second)
+     * no latency if environment was changed with tcl-env (compare both epoch values)
+     */
+    Tcl_Time now;
+    Tcl_GetTime(&now);
+    if (now.sec == tzLastRefresh && tzEnvEpoch == TclEnvEpoch) {
+	return;
+    }
+
+    tzEnvEpoch = TclEnvEpoch;
+    tzLastRefresh = now.sec;
 
     Tcl_MutexLock(&clockMutex);
     tzIsNow = getenv("TZ");
-    if (tzIsNow != NULL && (tzWas == NULL || tzWas == INT2PTR(-1)
-	    || strcmp(tzIsNow, tzWas) != 0)) {
+    if (tzIsNow != NULL && (tzWas == NULL || tzWas == (WCHAR *)INT2PTR(-1)
+	    || wcscmp(tzIsNow, tzWas) != 0)) {
 	tzset();
-	if (tzWas != NULL && tzWas != INT2PTR(-1)) {
+	if (tzWas != NULL && tzWas != (WCHAR *)INT2PTR(-1)) {
 	    ckfree(tzWas);
 	}
-	tzWas = ckalloc(strlen(tzIsNow) + 1);
-	strcpy(tzWas, tzIsNow);
+	tzWas = (WCHAR *)ckalloc(sizeof(WCHAR) * (wcslen(tzIsNow) + 1));
+	wcscpy(tzWas, tzIsNow);
     } else if (tzIsNow == NULL && tzWas != NULL) {
 	tzset();
-	if (tzWas != INT2PTR(-1)) ckfree(tzWas);
+	if (tzWas != (WCHAR *)INT2PTR(-1)) ckfree(tzWas);
 	tzWas = NULL;
     }
     Tcl_MutexUnlock(&clockMutex);
@@ -2069,7 +2112,7 @@ static void
 ClockDeleteCmdProc(
     ClientData clientData)	/* Opaque pointer to the client data */
 {
-    ClockClientData *data = clientData;
+    ClockClientData *data = (ClockClientData *)clientData;
     int i;
 
     if (data->refCount-- <= 1) {

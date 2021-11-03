@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 8
+RULES_VERSION_MINOR = 9
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -1122,16 +1122,8 @@ STUBPREFIX      = $(PROJECT)stub
 #
 
 # TIP 430. Unused for 8.6 but no harm defining it to allow a common rules.vc
-!if "$(TCL_PATCH_LETTER)" == "."
-TCLSCRIPTZIPNAME = libtcl_$(TCL_MAJOR_VERSION)_$(TCL_MINOR_VERSION)_$(TCL_RELEASE_SERIAL).zip
-!else
-TCLSCRIPTZIPNAME = libtcl_$(TCL_MAJOR_VERSION)_$(TCL_MINOR_VERSION)_$(TCL_PATCH_LETTER)$(TCL_RELEASE_SERIAL).zip
-!endif
-!if "$(TK_PATCH_LETTER)" == "."
-TKSCRIPTZIPNAME = libtk_$(TK_MAJOR_VERSION)_$(TK_MINOR_VERSION)_$(TK_RELEASE_SERIAL).zip
-!else
-TKSCRIPTZIPNAME = libtk_$(TK_MAJOR_VERSION)_$(TK_MINOR_VERSION)_$(TK_PATCH_LETTER)$(TK_RELEASE_SERIAL).zip
-!endif
+TCLSCRIPTZIPNAME = libtcl$(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)$(TCL_PATCH_LETTER)$(TCL_RELEASE_SERIAL).zip
+TKSCRIPTZIPNAME = libtk$(TK_MAJOR_VERSION).$(TK_MINOR_VERSION)$(TK_PATCH_LETTER)$(TK_RELEASE_SERIAL).zip
 
 !if $(DOING_TCL)
 TCLSHNAME       = $(PROJECT)sh$(VERSION)$(SUFX).exe
@@ -1211,9 +1203,16 @@ TCLSH_NATIVE	= $(TCLSH)
 !if $(DOING_TK) || $(NEED_TK)
 WISHNAMEPREFIX = wish
 WISHNAME = $(WISHNAMEPREFIX)$(TK_VERSION)$(SUFX).exe
-TKLIBNAME	= $(PROJECT)$(TK_VERSION)$(SUFX).$(EXT)
-TKSTUBLIBNAME	= tkstub$(TK_VERSION).lib
+TKLIBNAME8	= tk$(TK_VERSION)$(SUFX).$(EXT)
+TKLIBNAME9	= tcl9tk$(TK_VERSION)$(SUFX).$(EXT)
+!if $(TCL_MAJOR_VERSION) == 8
+TKLIBNAME	= tk$(TK_VERSION)$(SUFX).$(EXT)
 TKIMPLIBNAME	= tk$(TK_VERSION)$(SUFX).lib
+!else
+TKLIBNAME	= tcl9tk$(TK_VERSION)$(SUFX).$(EXT)
+TKIMPLIBNAME	= tcl9tk$(TK_VERSION)$(SUFX).lib
+!endif
+TKSTUBLIBNAME	= tkstub$(TK_VERSION).lib
 
 !if $(DOING_TK)
 WISH 		= $(OUT_DIR)\$(WISHNAME)
@@ -1261,7 +1260,13 @@ tklibs = "$(TKSTUBLIB)" "$(TKIMPLIB)"
 
 # Various output paths
 PRJIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
-PRJLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
+PRJLIBNAME8	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
+PRJLIBNAME9	= tcl9$(PROJECT)$(VERSION)$(SUFX).$(EXT)
+!if $(TCL_MAJOR_VERSION) == 8
+PRJLIBNAME	= $(PRJLIBNAME8)
+!else
+PRJLIBNAME	= $(PRJLIBNAME9)
+!endif
 PRJLIB		= $(OUT_DIR)\$(PRJLIBNAME)
 
 PRJSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
@@ -1339,7 +1344,7 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 # baselibs - minimum Windows libraries required. Parent makefile can
 #    define PRJ_LIBS before including rules.rc if additional libs are needed
 
-OPTDEFINES	= /DSTDC_HEADERS
+OPTDEFINES	= /DSTDC_HEADERS /DUSE_NMAKE=1
 !if $(VCVERSION) > 1600
 OPTDEFINES	= $(OPTDEFINES) /DHAVE_STDINT_H=1
 !else
@@ -1510,7 +1515,7 @@ pkgcflags_nostubs = $(appcflags_nostubs) $(PKGNAMEFLAGS) /DBUILD_$(PROJECT)
 # so we do not remove it from cflags. -GL may prevent extensions
 # compiled with one VC version to fail to link against stubs library
 # compiled with another VC version. Check for this and fix accordingly.
-stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) -Zl /DSTATIC_BUILD $(INCLUDES) $(USE_STUBS_DEFS)
+stubscflags = $(cflags) $(PKGNAMEFLAGS) $(PRJ_DEFINES) $(OPTDEFINES) /Zl /GL- /DSTATIC_BUILD $(INCLUDES) $(USE_STUBS_DEFS)
 
 # Link flags
 
@@ -1591,12 +1596,22 @@ default-target: $(DEFAULT_BUILD_TARGET)
 
 !if $(MULTIPLATFORM_INSTALL)
 default-pkgindex:
+	@echo if {[package vsatisfies [package provide Tcl] 9.0-]} { > $(OUT_DIR)\pkgIndex.tcl
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
-	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME)] [string totitle $(PRJ_PACKAGE_TCLNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME9)]] >> $(OUT_DIR)\pkgIndex.tcl
+	@echo } else { >> $(OUT_DIR)\pkgIndex.tcl
+	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
+	    [list load [file join $$dir $(PLATFORM_IDENTIFY) $(PRJLIBNAME8)]] >> $(OUT_DIR)\pkgIndex.tcl
+	@echo } >> $(OUT_DIR)\pkgIndex.tcl
 !else
 default-pkgindex:
+	@echo if {[package vsatisfies [package provide Tcl] 9.0-]} { > $(OUT_DIR)\pkgIndex.tcl
 	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
-	    [list load [file join $$dir $(PRJLIBNAME)] [string totitle $(PRJ_PACKAGE_TCLNAME)]] > $(OUT_DIR)\pkgIndex.tcl
+	    [list load [file join $$dir $(PRJLIBNAME9)]] >> $(OUT_DIR)\pkgIndex.tcl
+	@echo } else { >> $(OUT_DIR)\pkgIndex.tcl
+	@echo package ifneeded $(PRJ_PACKAGE_TCLNAME) $(DOTVERSION) \
+	    [list load [file join $$dir $(PRJLIBNAME8)]] >> $(OUT_DIR)\pkgIndex.tcl
+	@echo } >> $(OUT_DIR)\pkgIndex.tcl
 !endif
 
 default-pkgindex-tea:
@@ -1605,6 +1620,8 @@ default-pkgindex-tea:
 @PACKAGE_NAME@       $(PRJ_PACKAGE_TCLNAME)
 @PACKAGE_TCLNAME@    $(PRJ_PACKAGE_TCLNAME)
 @PKG_LIB_FILE@       $(PRJLIBNAME)
+@PKG_LIB_FILE8@      $(PRJLIBNAME8)
+@PKG_LIB_FILE9@      $(PRJLIBNAME9)
 <<
 
 default-install: default-install-binaries default-install-libraries
