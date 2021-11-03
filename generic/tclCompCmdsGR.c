@@ -1359,6 +1359,11 @@ TclCompileLinsertCmd(
     Tcl_Token *tokenPtr, *listTokenPtr;
     int idx, i;
 
+    /* for now, disable compilation of linsert until Tcl_ObjType interfaces are
+     * fleshed out.  To do:  Figure how to make compilation here play nicely
+     * in a system where object might implement their own linsert */ 
+    return TCL_ERROR;
+
     if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }

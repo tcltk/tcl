@@ -86,6 +86,7 @@ typedef struct ListInteger {
 } ListInteger;
 
 
+static ListInteger* NewTestListIntegerIntrep();
 static void ListIntegerDecrRefCount(ListInteger *listIntegerPtr);
 
 const ObjectType testListIntegerType = {
@@ -125,27 +126,41 @@ int TestListInteger(
     return TCL_OK;
 }
 
+
 Tcl_Obj*
 NewTestListInteger() {
     Tcl_ObjInternalRep intrep;
     Tcl_Obj *listPtr = Tcl_NewObj();
     Tcl_InvalidateStringRep(listPtr);
-    ListInteger *listIntegerPtr = (ListInteger *)Tcl_Alloc(sizeof(ListInteger));
-    listIntegerPtr->refCount = 1;
-    listIntegerPtr->size = 1;
-    listIntegerPtr->used = 0;
+    ListInteger *listIntegerPtr = NewTestListIntegerIntrep();
     intrep.twoPtrValue.ptr1 = listIntegerPtr;
     Tcl_StoreInternalRep(listPtr, testListIntegerTypePtr, &intrep);
     return listPtr;
 }
 
 
+ListInteger*
+NewTestListIntegerIntrep() {
+    ListInteger *listIntegerPtr = (ListInteger *)Tcl_Alloc(sizeof(ListInteger));
+    listIntegerPtr->refCount = 1;
+    listIntegerPtr->size = 1;
+    listIntegerPtr->used = 0;
+    return listIntegerPtr;
+}
+
+
 static void DupTestListIntegerInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr) {
+    Tcl_ObjInternalRep intrep;
+    ListInteger *listRepPtr = srcPtr->internalRep.twoPtrValue.ptr1;
+    listRepPtr->refCount++;
+    intrep.twoPtrValue.ptr1 = listRepPtr;
+    Tcl_StoreInternalRep(copyPtr, testListIntegerTypePtr, &intrep);
+    return;
 }
 
 static void FreeTestListIntegerInternalRep(Tcl_Obj *listPtr) {
-    ListInteger *structPtr = listPtr->internalRep.twoPtrValue.ptr1;
-    ListIntegerDecrRefCount(structPtr);
+    ListInteger *listRepPtr = listPtr->internalRep.twoPtrValue.ptr1;
+    ListIntegerDecrRefCount(listRepPtr);
     return;
 }
 
@@ -162,19 +177,19 @@ static int SetTestListIntegerFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr) {
 }
 
 static void UpdateStringOfTestListInteger(Tcl_Obj *listPtr) {
-    ListInteger *structPtr = listPtr->internalRep.twoPtrValue.ptr1;
-    int i, num, used = structPtr->used;
+    ListInteger *listRepPtr = listPtr->internalRep.twoPtrValue.ptr1;
+    int i, num, used = listRepPtr->used;
     Tcl_Obj *strPtr, *numObjPtr;
     if (used > 0) {
 	strPtr = Tcl_NewObj();
 	Tcl_IncrRefCount(strPtr);
-	num = structPtr->values[0];
+	num = listRepPtr->values[0];
 	numObjPtr = Tcl_NewIntObj(num);
 	Tcl_IncrRefCount(numObjPtr);
 	Tcl_AppendFormatToObj(NULL, strPtr, "%d", 1, &numObjPtr);
 	Tcl_DecrRefCount(numObjPtr);
 	for (i = 1; i < used; i++) {
-	    num = structPtr->values[i];
+	    num = listRepPtr->values[i];
 	    numObjPtr = Tcl_NewIntObj(num);
 	    Tcl_IncrRefCount(numObjPtr);
 	    Tcl_AppendFormatToObj(NULL, strPtr, " %d", 1, &numObjPtr);
@@ -215,27 +230,28 @@ static Tcl_Obj* ListIntegerListStringRange(tclObjTypeInterfaceArgsStringRange) {
     return NULL;
 }
 
-static Tcl_Obj* ListIntegerListStringRangeEnd(tclObjTypeInterfaceArgsStringRangeEnd) {
+static Tcl_Obj* ListIntegerListStringRangeEnd(
+    tclObjTypeInterfaceArgsStringRangeEnd) {
     return NULL;
 }
 
-static int ListIntegerListObjGetElements (tclObjTypeInterfaceArgsListAll) {
+static int ListIntegerListObjGetElements(tclObjTypeInterfaceArgsListAll) {
     return TCL_ERROR;
 }
 
-static int ListIntegerListObjAppendElement (tclObjTypeInterfaceArgsListAppend) {
+static int ListIntegerListObjAppendElement(tclObjTypeInterfaceArgsListAppend) {
     return TCL_ERROR;
 }
 
-static int ListIntegerListObjAppendList (tclObjTypeInterfaceArgsListAppendList) {
+static int ListIntegerListObjAppendList(tclObjTypeInterfaceArgsListAppendList) {
     return TCL_ERROR;
 }
 
-static int ListIntegerListObjIndex (tclObjTypeInterfaceArgsListIndex) {
-    ListInteger *structPtr = listPtr->internalRep.twoPtrValue.ptr1;
+static int ListIntegerListObjIndex(tclObjTypeInterfaceArgsListIndex) {
+    ListInteger *listRepPtr = listPtr->internalRep.twoPtrValue.ptr1;
     int num;
-    if (index >= 0 && index < structPtr->used) {
-	num = structPtr->values[index];
+    if (index >= 0 && index < listRepPtr->used) {
+	num = listRepPtr->values[index];
 	*objPtrPtr = Tcl_NewIntObj(num);
     } else {
 	*objPtrPtr = NULL;
@@ -243,7 +259,7 @@ static int ListIntegerListObjIndex (tclObjTypeInterfaceArgsListIndex) {
     return TCL_OK;
 }
 
-static int ListIntegerListObjIndexEnd (tclObjTypeInterfaceArgsListIndexEnd) {
+static int ListIntegerListObjIndexEnd(tclObjTypeInterfaceArgsListIndexEnd) {
     return TCL_ERROR;
 }
 
@@ -252,14 +268,14 @@ static int ListIntegerListObjIsSorted(tclObjTypeInterfaceArgsListIsSorted) {
 }
 
 static int ListIntegerListObjLength(tclObjTypeInterfaceArgsListLength) {
-    ListInteger *structPtr = listPtr->internalRep.twoPtrValue.ptr1;
-    *intPtr = structPtr->used;
+    ListInteger *listRepPtr = listPtr->internalRep.twoPtrValue.ptr1;
+    *intPtr = listRepPtr->used;
     return TCL_OK;
 }
 
 static Tcl_Obj* ListIntegerListObjRange(tclObjTypeInterfaceArgsListRange) {
-    ListInteger *structPtr = listPtr->internalRep.twoPtrValue.ptr1;
-    int i, j, num, used = structPtr->used;
+    ListInteger *listRepPtr = listPtr->internalRep.twoPtrValue.ptr1;
+    int i, j, num, used = listRepPtr->used;
     Tcl_Obj *numObjPtr, *resPtr;
 
     if ((fromIdx == 0 && toIdx >= used - 1) || used == 0) {
@@ -273,7 +289,7 @@ static Tcl_Obj* ListIntegerListObjRange(tclObjTypeInterfaceArgsListRange) {
 	} else {
 	    resPtr = NewTestListInteger();
 	    for (i = fromIdx, j = 0; i <= toIdx; i++, j++) {
-		num = structPtr->values[i];
+		num = listRepPtr->values[i];
 		numObjPtr = Tcl_NewIntObj(num);
 		Tcl_IncrRefCount(numObjPtr);
 		if (ListIntegerListObjReplace(
@@ -314,14 +330,14 @@ static int ListIntegerListObjReplace(tclObjTypeInterfaceArgsListReplace) {
 
 
 static int listIntegerListObjReplaceList(tclObjTypeInterfaceArgsListReplaceList) {
-    ListInteger *structPtr = listPtr->internalRep.twoPtrValue.ptr1;
-    ListInteger *newStructPtr;
+    ListInteger *listRepPtr = listPtr->internalRep.twoPtrValue.ptr1;
+    ListInteger *newListRepPtr;
     int i, itemInt, newmemsize, itemsLength, j, newsize, newtailindex, newused,
 	    size, status, status2, tailindex, tailsize, used;
     size_t structsize;
     Tcl_Obj *itemPtr;
-    size = structPtr->size;
-    used = structPtr->used;
+    size = listRepPtr->size;
+    used = listRepPtr->used;
     if (first < used) {
 	tailsize = used - first;
     } else {
@@ -372,33 +388,39 @@ static int listIntegerListObjReplaceList(tclObjTypeInterfaceArgsListReplaceList)
 
     if (newused > size && newused > 1) {
 	newsize = (newused + newused / 5 + 1);
-	newmemsize = sizeof(ListInteger) + newsize * sizeof(int) - sizeof(int);
     } else {
 	newsize = size;
     }
-    if (structPtr->refCount > 1) {
+    newmemsize = sizeof(ListInteger) + newsize * sizeof(int) - sizeof(int);
+    if (listRepPtr->refCount > 1) {
+	Tcl_ObjInternalRep intrep;
 	/* copy only the structure and the head of the old array */
 	int movsize = sizeof(ListInteger)
 	    + ((first + 1)  * sizeof(int) - sizeof(int));
-	newStructPtr = Tcl_Alloc(newmemsize);
-	structPtr->refCount--;
-	memmove(newStructPtr, structPtr, movsize);
-	newStructPtr->size = newsize;
-	newStructPtr->refCount = 1;
-	/* move the tail to its new location to make room for the new additions */
-	memmove(newStructPtr->values + newtailindex, structPtr->values + tailindex, tailsize);
-	Tcl_StoreInternalRep(listPtr, testListIntegerTypePtr, newStructPtr);
+	newListRepPtr = Tcl_Alloc(newmemsize);
+	memmove(newListRepPtr, listRepPtr, movsize);
+	newListRepPtr->size = newsize;
+	newListRepPtr->refCount = 1;
+	/* move the tail to its new location to make room for the new additions
+	*/
+	memmove(newListRepPtr->values + newtailindex,
+	    listRepPtr->values + tailindex, tailsize * sizeof(int));
+	intrep.twoPtrValue.ptr1 = newListRepPtr;
+	Tcl_StoreInternalRep(listPtr, testListIntegerTypePtr, &intrep);
     } else {
-	newStructPtr = structPtr;
 	if (newsize > size && newused > 1) {
-	    newStructPtr = Tcl_Realloc(newStructPtr, newmemsize);
+	    newListRepPtr = Tcl_Realloc(listRepPtr, newmemsize);
+	} else {
+	    newListRepPtr = listRepPtr;
 	}
-	newStructPtr->size = newsize;
+	newListRepPtr->size = newsize;
 	if (tailsize > 0 && tailindex != newtailindex) {
-	    /* move the tail to its new location to make room for the new additions */
-	    memmove(newStructPtr->values + newtailindex, structPtr->values + tailindex, tailsize);
+	    /* move the tail to its new location to make room for the new
+	     * additions */
+	    memmove(newListRepPtr->values + newtailindex,
+		    newListRepPtr->values + tailindex, tailsize);
 	}
-	listPtr->internalRep.twoPtrValue.ptr1 = newStructPtr;
+	listPtr->internalRep.twoPtrValue.ptr1 = newListRepPtr;
     }
 
     i = -1;
@@ -413,14 +435,14 @@ static int listIntegerListObjReplaceList(tclObjTypeInterfaceArgsListReplaceList)
 	}
 	if (Tcl_GetIntFromObj(interp, itemPtr, &itemInt)
 	    == TCL_OK) {
-	    newStructPtr->values[first + i] = itemInt;
+	    newListRepPtr->values[first + i] = itemInt;
 	} else {
 	    Tcl_Obj *realListPtr;
 	    /* Fall back to normal list */
 	    realListPtr = Tcl_NewListObj(newsize, NULL);
 	    Tcl_IncrRefCount(realListPtr);
 	    for (j = 0; j < i; j++) {
-		itemPtr = Tcl_NewIntObj(structPtr->values[j]);
+		itemPtr = Tcl_NewIntObj(newListRepPtr->values[j]);
 		status = Tcl_ListObjAppendElement(
 		    interp, realListPtr, itemPtr);
 		if (status != TCL_OK) {
@@ -458,14 +480,14 @@ static int listIntegerListObjReplaceList(tclObjTypeInterfaceArgsListReplaceList)
 	    }
 
 	    for (i = tailindex; i < tailsize; i++) {
-		itemPtr = Tcl_NewIntObj(structPtr->values[i + tailindex]);
+		itemPtr = Tcl_NewIntObj(newListRepPtr->values[i + tailindex]);
 		Tcl_ListObjAppendElement(interp, realListPtr, itemPtr);
 		if (status != TCL_OK) {
 		    Tcl_DecrRefCount(realListPtr);
 		    return status;
 		}
 	    }
-	    ListIntegerDecrRefCount(newStructPtr);
+	    ListIntegerDecrRefCount(newListRepPtr);
 	    listPtr->internalRep = realListPtr->internalRep;
 	    listPtr->typePtr = realListPtr->typePtr;
 	    realListPtr->typePtr = NULL;
@@ -477,17 +499,17 @@ static int listIntegerListObjReplaceList(tclObjTypeInterfaceArgsListReplaceList)
     /* To make the operation transactional, update "used" only after all
      * elemnts have been succesfully added.
     */
-    newStructPtr->used = newused;
+    newListRepPtr->used = newused;
     return TCL_OK;
 }
 
 
-static int ListIntegerListObjSetElement (tclObjTypeInterfaceArgsListSet) {
+static int ListIntegerListObjSetElement(tclObjTypeInterfaceArgsListSet) {
     return TCL_ERROR;
 }
 
 
-static Tcl_Obj * ListIntegerLsetFlat (tclObjTypeInterfaceArgsListSetList) {
+static Tcl_Obj * ListIntegerLsetFlat(tclObjTypeInterfaceArgsListSetList) {
     return NULL;
 }
 

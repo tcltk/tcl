@@ -2433,7 +2433,7 @@ Tcl_LinsertObjCmd(
 
     listPtr = objv[1];
     if (Tcl_IsShared(listPtr)) {
-	listPtr = TclListObjCopy(NULL, listPtr);
+	listPtr = Tcl_DuplicateObj(listPtr);
     }
 
     if ((objc == 4) && (index == (size_t)len)) {
