@@ -36,388 +36,412 @@ apply [list {} {
 	    @lreplace@ {[lindex lreplace]}
 	}
     } {
-	set script [string map $map {
-	    proc data1 iterations {
-		for {set i 0} {$i < $iterations} {incr i} {
-		    @lappend@ expected [format %x $i]
-		}
-		return $expected
-	    }
-
-
-	    test {indexhex llength @mode@} {INST_LIST_INDEX_IMM} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    llength $list
-		} -cleanup {
-		    catch {unset list}
-		} -result -1 
-
-	    test {indexhex lindex constant @mode@} {INST_LIST_INDEX_IMM} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    @lindex@ $list 731
-		} -cleanup {
-		    catch {unset list}
-		} -result 2db
-
-
-	    test {indexhex lindex constant end @mode@} {INST_LIST_INDEX_IMM} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    @lindex@ $list end
-		} -cleanup {
-		    catch {unset list}
-		    catch {unset res}
-		} -returnCodes 1 -result {list length indeterminate}
-
-
-
-	    test {indexhex lindex dynamic @mode@} {INST_LIST_INDEX} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    set val [expr {731 + 0}]
-		    @lindex@ $list $val
-		} -cleanup {
-		    catch {unset list}
-		} -result 2db
-
-
-	    test {indexhex lindex dynamic end @mode@} {INST_LIST_INDEX} \
-		-constraints testindexhex \
-		-body {
-		    set index {}
-		    set list [testindexhex]
-		    append index e n d
-		    @lindex@ $list $index
-		} -cleanup {
-		    catch {unset index}
-		    catch {unset list}
-		    catch {unset res}
-		} -returnCodes 1 -result {list length indeterminate}
-
-
-	    test {indexhex lindex drill @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    @lindex@ $list 731 0 0 0
-		} -cleanup {
-		    catch {unset list}
-		} -result 2db
-
-
-	    test {indexhex lrange constant @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    @lrange@ $list 10 15
-		} -cleanup {
-		    catch {unset list}
-		} -result {a b c d e f}
-
-
-	    test {indexhex lrange dynamic @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    set first [expr {10 + 0}]
-		    set last [expr {15 + 0}]
-		    @lrange@ $list $first $last
-		} -cleanup {
-		    catch {unset list}
-		} -result {a b c d e f}
-
-
-	    test {indexhex lrange end constant @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    @lrange@ $list 10 end
-		} -cleanup {
-		    catch {unset list}
-		} -returnCodes 1 -result {list length indeterminate}
-
-
-	    test {indexhex lrange end dynamic @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    set back [expr {-5 + 0}]
-		    @lrange@ $list 10 end-$back
-		} -cleanup {
-		    catch {unset list}
-		} -returnCodes 1 -result {list length indeterminate}
-
-
-	    test {indexhex lrange end minus constant @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    @lrange@ $list 10 end-1
-		} -cleanup {
-		    catch {unset list}
-		} -returnCodes 1 -result {list length indeterminate}
-
-
-	    test {indexhex lsearch @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    lsearch $list ff
-		} -cleanup {
-		    catch {unset list}
-		} -result 255
-
-
-	    test {indexhex lsearch sorted @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    lsearch -sorted $list ff
-		} -cleanup {
-		    catch {unset list}
-		} -returnCodes 1 -result {sorted list is incoherent}
-
-
-	    test {indexhex lsearch start @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    lsearch -start 5171 -glob $list a*
-		} -cleanup {
-		    catch {unset list}
-		} -result 40960
-
-
-	    test {indexhex string index @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set iterations 4097
-		    set expected [data1 $iterations]
-		    set list [testindexhex]
-		    set progres {}
-		    set iterations [string length $expected]
-		    for {set i 0} {$i < $iterations} {incr i} {
-			set eitem [string index $expected $i]
-			set item [string index $list $i]
-			if {$item ne $eitem} {
-			    error [list {failed at index} $i [
-				format %x $i] expected $eitem got $item]
+		set script [string map $map {
+			proc data1 iterations {
+			for {set i 0} {$i < $iterations} {incr i} {
+				@lappend@ expected [format %x $i]
 			}
-			@lappend@ progress $item
-		    }
-		    return success
-		} -cleanup {
-		    catch {unset i}
-		    catch {unset list}
-		} -result success
+			return $expected
+			}
 
 
-	    test {indexhex string index end @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    string index $list end
-		    return success
-		} -cleanup {
-		    catch {unset list}
-		} -returnCodes 1 -result {list length indeterminate}
+			test {indexhex llength @mode@} {INST_LIST_INDEX_IMM} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				llength $list
+			} -cleanup {
+				catch {unset list}
+			} -result -1 
+
+			test {indexhex lindex constant @mode@} {INST_LIST_INDEX_IMM} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				@lindex@ $list 731
+			} -cleanup {
+				catch {unset list}
+			} -result 2db
 
 
-	    test {indexhex string length @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set list [testindexhex]
-		    string length $list
-		} -cleanup {
-		    catch {unset list}
-		} -result -1
+			test {indexhex lindex constant end @mode@} {INST_LIST_INDEX_IMM} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				@lindex@ $list end
+			} -cleanup {
+				catch {unset list}
+				catch {unset res}
+			} -returnCodes 1 -result {list length indeterminate}
 
 
-	    test {indexhex string range @mode@} {} \
-		-constraints testindexhex \
-		-body {
-		    set res {}
-		    set iterations 4097
-		    set data1 [data1 $iterations]
-		    set data1Length [string length $data1]
-		    set list [testindexhex]
-		    for {set first 0} {$first < $data1Length } {
-			set first [expr {($first + 1) * 2}]} {
 
-			for {set last $first} {$last < $data1Length} {
-			    set last [expr {($last + 1) * 3}]} {
+			test {indexhex lindex dynamic @mode@} {INST_LIST_INDEX} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				set val [expr {731 + 0}]
+				@lindex@ $list $val
+			} -cleanup {
+				catch {unset list}
+			} -result 2db
 
-			    set expected [string range $data1 $first $last]
-			    set range [string range $list $first $last]
-			    if {$range ne $expected} {
-				set length [expr {
-				    max([string length $expected], [string length $range])
-				}]
-				for {set i 0} {$i < $length} {incr i} {
-				    set item1 [string index $range $i]
-				    set item2 [string index $expected $i]
-				    if {$item1 ne $item2} {
-					error [list {failed at} $first $last $i \
-					    expected $item2 got $item1]
-				    }
+
+			test {indexhex lindex dynamic end @mode@} {INST_LIST_INDEX} \
+			-constraints testindexhex \
+			-body {
+				set index {}
+				set list [testindexhex]
+				append index e n d
+				@lindex@ $list $index
+			} -cleanup {
+				catch {unset index}
+				catch {unset list}
+				catch {unset res}
+			} -returnCodes 1 -result {list length indeterminate}
+
+
+			test {indexhex lindex drill @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				@lindex@ $list 731 0 0 0
+			} -cleanup {
+				catch {unset list}
+			} -result 2db
+
+
+			test {indexhex lrange constant @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				@lrange@ $list 10 15
+			} -cleanup {
+				catch {unset list}
+			} -result {a b c d e f}
+
+
+			test {indexhex lrange dynamic @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				set first [expr {10 + 0}]
+				set last [expr {15 + 0}]
+				@lrange@ $list $first $last
+			} -cleanup {
+				catch {unset list}
+			} -result {a b c d e f}
+
+
+			test {indexhex lrange end constant @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				@lrange@ $list 10 end
+			} -cleanup {
+				catch {unset list}
+			} -returnCodes 1 -result {list length indeterminate}
+
+
+			test {indexhex lrange end dynamic @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				set back [expr {-5 + 0}]
+				@lrange@ $list 10 end-$back
+			} -cleanup {
+				catch {unset list}
+			} -returnCodes 1 -result {list length indeterminate}
+
+
+			test {indexhex lrange end minus constant @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				@lrange@ $list 10 end-1
+			} -cleanup {
+				catch {unset list}
+			} -returnCodes 1 -result {list length indeterminate}
+
+
+			test {indexhex lsearch @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				lsearch $list ff
+			} -cleanup {
+				catch {unset list}
+			} -result 255
+
+
+			test {indexhex lsearch sorted @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				lsearch -sorted $list ff
+			} -cleanup {
+				catch {unset list}
+			} -returnCodes 1 -result {sorted list is incoherent}
+
+
+			test {indexhex lsearch start @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				lsearch -start 5171 -glob $list a*
+			} -cleanup {
+				catch {unset list}
+			} -result 40960
+
+
+			test {indexhex string index @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set iterations 4097
+				set expected [data1 $iterations]
+				set list [testindexhex]
+				set progres {}
+				set iterations [string length $expected]
+				for {set i 0} {$i < $iterations} {incr i} {
+				set eitem [string index $expected $i]
+				set item [string index $list $i]
+				if {$item ne $eitem} {
+					error [list {failed at index} $i [
+					format %x $i] expected $eitem got $item]
 				}
-			    }
-			}
-		    }
-		    @lappend@ res success
-
-		    # The largest string index currently allowed.
-		    @lappend@ res [string range $list 2147483640 2147483647]
-
-		    # This produces an error until index ranges are expanded in some later
-		    # version of Tcl.
-		    set status [catch {string range $list 2147483640 2147483648} cres copts]
-
-		    @lappend@ res $status $cres
-		    return $res
-		} -cleanup {
-		    catch {unset list}
-		} -result {success {d73ac8f } 1 {}}
+				@lappend@ progress $item
+				}
+				return success
+			} -cleanup {
+				catch {unset i}
+				catch {unset list}
+			} -result success
 
 
-	    test {integer lappend @mode@} {} \
-		-constraints testlistinteger \
-		-body {
-		    set list [testlistinteger]
-		    @lappend@ list 8 9 10
-		    @lappend@ list 11 12 13
-		} -cleanup {
-		    catch {unset list}
-		} -result {8 9 10 11 12 13}
+			test {indexhex string index end @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				string index $list end
+				return success
+			} -cleanup {
+				catch {unset list}
+			} -returnCodes 1 -result {list length indeterminate}
 
 
-	    test {integer lappend empty @mode@} {} \
-		-constraints testlistinteger \
-		-body {
-		    set list [testlistinteger]
-		    @lappend@ list 8 9 10
-		} -cleanup {
-		    catch {unset list}
-		} -result {8 9 10}
+			test {indexhex string length @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set list [testindexhex]
+				string length $list
+			} -cleanup {
+				catch {unset list}
+			} -result -1
 
 
-	    test {integer lappend noninteger @mode@} {} \
-		-constraints testlistinteger \
-		-body {
-		    set list [testlistinteger]
-		    @lappend@ list {8 9 10 11 12 13}
-		} -cleanup {
-		    catch {unset list}
-		} -result {{8 9 10 11 12 13}}
+			test {indexhex string range @mode@} {} \
+			-constraints testindexhex \
+			-body {
+				set res {}
+				set iterations 4097
+				set data1 [data1 $iterations]
+				set data1Length [string length $data1]
+				set list [testindexhex]
+				for {set first 0} {$first < $data1Length } {
+				set first [expr {($first + 1) * 2}]} {
+
+				for {set last $first} {$last < $data1Length} {
+					set last [expr {($last + 1) * 3}]} {
+
+					set expected [string range $data1 $first $last]
+					set range [string range $list $first $last]
+					if {$range ne $expected} {
+					set length [expr {
+						max([string length $expected], [string length $range])
+					}]
+					for {set i 0} {$i < $length} {incr i} {
+						set item1 [string index $range $i]
+						set item2 [string index $expected $i]
+						if {$item1 ne $item2} {
+						error [list {failed at} $first $last $i \
+							expected $item2 got $item1]
+						}
+					}
+					}
+				}
+				}
+				@lappend@ res success
+
+				# The largest string index currently allowed.
+				@lappend@ res [string range $list 2147483640 2147483647]
+
+				# This produces an error until index ranges are expanded in some later
+				# version of Tcl.
+				set status [catch {string range $list 2147483640 2147483648} cres copts]
+
+				@lappend@ res $status $cres
+				return $res
+			} -cleanup {
+				catch {unset list}
+			} -result {success {d73ac8f } 1 {}}
 
 
-	    test {integer lindex before before after @mode@} {
-		This test just tries to trigger a segmentation fault
-	    } \
-		-constraints testlistinteger \
-		-body {
-		    set list [testlistinteger]
-		    @lappend@ list 8 9 10 11 12 13
-		    @lindex@ $list -1 -1 7 
-		} -cleanup {
-		    catch {unset list}
-		} -result {}
-
-
-	    test {integer lindex middle @mode@} {} \
-		-constraints testlistinteger \
-		-body {
-		    set list [testlistinteger]
-		    @lappend@ list 8 9 10 11 12 13
-		    @lindex@ $list 3 
-		} -cleanup {
-		    catch {unset list}
-		} -result 11 
-
-
-	    test {integer lindex end @mode@} {} \
-		-constraints testlistinteger \
-		-body {
-		    set list [testlistinteger]
-		    @lappend@ list 8 9 10 11 12 13
-		    @lindex@ $list end 
-		} -cleanup {
-		    catch {unset list}
-		} -result 13 
-
-
-	    apply [list {} {
-		for {set i 0} {$i < 7} {incr i} {
-		    set items {8 9 10 11 12 13}
-		    set results {13 12 11 10 9 8}
-
-		    set comment [list integer lindex end-$i @mode@]
-		    set body [string map {@i@ $i @items@ $items} {
-			set list [testlistinteger]
-			@lappend@ list {*}$items
-			@lindex@ $list end-$i
-		    }]
-		    set result [lindex $results $i]
-
-		    test $comment {} \
+			test {integer lappend @mode@} {} \
 			-constraints testlistinteger \
-			-body $body -cleanup {
-			    catch {unset list}
-			} -result $result 
-		}
-		unset i
-	    } [namespace current]]
+			-body {
+				set list [testlistinteger]
+				@lappend@ list 8 9 10
+				@lappend@ list 11 12 13
+			} -cleanup {
+				catch {unset list}
+			} -result {8 9 10 11 12 13}
 
 
-	    test {integer linsert middle one @mode@} {} \
-		-constraints testlistinteger \
-		-body {
-		    set list [testlistinteger]
-		    set res {}
-		    @lappend@ list 8 9 10 12 13
-		    after 100
-		    lappend res [@linsert@ $list 3 11]
-		    set representation [::tcl::unsupported::representation $list]
-		    regsub {(value is a testListInteger).*} $representation {\1} representation
-		    lappend res $representation
-		    return $res
-		} -cleanup {
-		    catch {unset list}
-		    catch {unset res}
-		    catch {unset representation}
-		} -result  {{8 9 10 11 12 13} {value is a testListInteger}}
+			test {integer lappend empty @mode@} {} \
+			-constraints testlistinteger \
+			-body {
+				set list [testlistinteger]
+				@lappend@ list 8 9 10
+			} -cleanup {
+				catch {unset list}
+			} -result {8 9 10}
 
 
-	    test {integer lrange middle @mode@} {} \
-		-constraints testlistinteger \
-		-body {
-		    set list [testlistinteger]
-		    @lappend@ list 8 9 10 11 12 13
-		    @lrange@ $list 3 4
-		} -cleanup {
-		    catch {unset list}
-		} -result {11 12}
+			test {integer lappend noninteger @mode@} {} \
+			-constraints testlistinteger \
+			-body {
+				set list [testlistinteger]
+				@lappend@ list {8 9 10 11 12 13}
+			} -cleanup {
+				catch {unset list}
+			} -result {{8 9 10 11 12 13}}
 
 
-	    test {integer lreplace prepend @mode@} {} \
-		-constraints testlistinteger \
-		-body {
-		    set list [testlistinteger]
-		    @lappend@ list 8 9 10 11 12 13
-		    after 100
-		    @lreplace@ $list -1 -1 7 
-		} -cleanup {
-		    catch {unset list}
-		} -result {7 8 9 10 11 12 13}
-	}]
-	try $script
+			test {integer lindex before before after @mode@} {
+			This test just tries to trigger a segmentation fault
+			} \
+			-constraints testlistinteger \
+			-body {
+				set list [testlistinteger]
+				@lappend@ list 8 9 10 11 12 13
+				@lindex@ $list -1 -1 7 
+			} -cleanup {
+				catch {unset list}
+			} -result {}
+
+
+			test {integer lindex middle @mode@} {} \
+			-constraints testlistinteger \
+			-body {
+				set list [testlistinteger]
+				@lappend@ list 8 9 10 11 12 13
+				@lindex@ $list 3 
+			} -cleanup {
+				catch {unset list}
+			} -result 11 
+
+
+			test {integer lindex end @mode@} {} \
+			-constraints testlistinteger \
+			-body {
+				set list [testlistinteger]
+				@lappend@ list 8 9 10 11 12 13
+				@lindex@ $list end 
+			} -cleanup {
+				catch {unset list}
+			} -result 13 
+
+
+			apply [list {} {
+			for {set i 0} {$i < 7} {incr i} {
+				set items {8 9 10 11 12 13}
+				set results {13 12 11 10 9 8}
+
+				set comment [list integer lindex end-$i @mode@]
+				set body [string map {@i@ $i @items@ $items} {
+				set list [testlistinteger]
+				@lappend@ list {*}$items
+				@lindex@ $list end-$i
+				}]
+				set result [lindex $results $i]
+
+				test $comment {} \
+				-constraints testlistinteger \
+				-body $body -cleanup {
+					catch {unset list}
+				} -result $result 
+			}
+			unset i
+			} [namespace current]]
+
+
+			test {integer linsert middle one @mode@} {} \
+			-constraints testlistinteger \
+			-body {
+				set list [testlistinteger]
+				set res {}
+				@lappend@ list 8 9 10 12 13
+				after 100
+				lappend res [@linsert@ $list 3 11]
+				set representation [::tcl::unsupported::representation $list]
+				regsub {(value is a testListInteger).*} $representation {\1} representation
+				lappend res $representation
+				return $res
+			} -cleanup {
+				catch {unset list}
+				catch {unset res}
+				catch {unset representation}
+			} -result  {{8 9 10 11 12 13} {value is a testListInteger}}
+
+
+			test {integer lrange middle @mode@} {} \
+			-constraints testlistinteger \
+			-body {
+				set list [testlistinteger]
+				@lappend@ list 8 9 10 11 12 13
+				@lrange@ $list 3 4
+			} -cleanup {
+				catch {unset list}
+			} -result {11 12}
+
+
+			test {integer lreplace prepend @mode@} {} \
+			-constraints testlistinteger \
+			-body {
+				set list [testlistinteger]
+				@lappend@ list 8 9 10 11 12 13
+				after 100
+				@lreplace@ $list -1 -1 7 
+			} -cleanup {
+				catch {unset list}
+			} -result {7 8 9 10 11 12 13}
+		}]
+		try $script
+
     }
+
+	namespace eval {linsert tests} {
+		source [file join [file dirname [file dirname [
+			file normalize [file join [info script] ...]]]] linsert.test]
+		proc newlist list {
+			if {[string is list $list]} {
+				set integer 1
+				foreach item $list {
+					if {![string is integer $item]} {
+						set integer 0
+						break
+					}
+				}
+				if {$integer} {
+					testlistinteger $list
+				}
+			}
+			return $list
+		}
+		try $tests
+	}
+	namespace delete {linsert tests}
+
 
     # cleanup
     ::tcltest::cleanupTests

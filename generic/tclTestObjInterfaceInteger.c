@@ -35,19 +35,19 @@ static int ListIntegerStringListIndexFromStringIndex(
 static Tcl_Obj* ListIntegerListStringRange(tclObjTypeInterfaceArgsStringRange);
 static Tcl_Obj* ListIntegerListStringRangeEnd(tclObjTypeInterfaceArgsStringRangeEnd);
 
-static int ListIntegerListObjGetElements (tclObjTypeInterfaceArgsListAll);
-static int ListIntegerListObjAppendElement (tclObjTypeInterfaceArgsListAppend);
-static int ListIntegerListObjAppendList (tclObjTypeInterfaceArgsListAppendList);
-static int ListIntegerListObjIndex (tclObjTypeInterfaceArgsListIndex);
+static int ListIntegerListObjGetElements(tclObjTypeInterfaceArgsListAll);
+static int ListIntegerListObjAppendElement(tclObjTypeInterfaceArgsListAppend);
+static int ListIntegerListObjAppendList(tclObjTypeInterfaceArgsListAppendList);
+static int ListIntegerListObjIndex(tclObjTypeInterfaceArgsListIndex);
 static int ListIntegerListObjIndexEnd (tclObjTypeInterfaceArgsListIndexEnd);
 static int ListIntegerListObjIsSorted(tclObjTypeInterfaceArgsListIsSorted);
-static int ListIntegerListObjLength (tclObjTypeInterfaceArgsListLength);
-static Tcl_Obj* ListIntegerListObjRange (tclObjTypeInterfaceArgsListRange);
-static Tcl_Obj* ListIntegerListObjRangeEnd (tclObjTypeInterfaceArgsListRangeEnd);
-static int ListIntegerListObjReplace (tclObjTypeInterfaceArgsListReplace);
+static int ListIntegerListObjLength(tclObjTypeInterfaceArgsListLength);
+static Tcl_Obj* ListIntegerListObjRange(tclObjTypeInterfaceArgsListRange);
+static Tcl_Obj* ListIntegerListObjRangeEnd(tclObjTypeInterfaceArgsListRangeEnd);
+static int ListIntegerListObjReplace(tclObjTypeInterfaceArgsListReplace);
 static int listIntegerListObjReplaceList(tclObjTypeInterfaceArgsListReplaceList);
-static int ListIntegerListObjSetElement (tclObjTypeInterfaceArgsListSet);
-static Tcl_Obj * ListIntegerLsetFlat (tclObjTypeInterfaceArgsListSetList);
+static int ListIntegerListObjSetElement(tclObjTypeInterfaceArgsListSet);
+static Tcl_Obj * ListIntegerLsetFlat(tclObjTypeInterfaceArgsListSetList);
 
 static int ErrorMaxElementsExceeded(Tcl_Interp *interp);
 
@@ -121,8 +121,11 @@ int TestListInteger(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_Obj *objPtr = NewTestListInteger();
-    Tcl_SetObjResult(interp, objPtr);
+    Tcl_Obj *listPtr = NewTestListInteger();
+    if (argc == 2) {
+	listIntegerListObjReplaceList(interp, listPtr, 0, 0, objv[1]);
+    }
+    Tcl_SetObjResult(interp, listPtr);
     return TCL_OK;
 }
 
