@@ -1031,9 +1031,6 @@ MODULE_SCOPE const TclStubs tclStubs;
 #  define STRINGIFY1(x) #x
 #endif
 
-#ifndef TCL_VERSION_UUID
-#   define TCL_VERSION_UUID unknown
-#endif
 static const struct {
     const TclStubs *stubs;
     const char version[256];
