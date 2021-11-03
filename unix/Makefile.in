@@ -1158,6 +1158,10 @@ tclAsync.o: $(GENERIC_DIR)/tclAsync.c
 tclBasic.o: $(GENERIC_DIR)/tclBasic.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBasic.c
 
+tclUuid.h: $(TOP_DIR)/manifest.uuid
+	echo "#define TCL_VERSION_UUID \\" >$@
+	cat $(TOP_DIR)/manifest.uuid >>$@
+
 tclBinary.o: $(GENERIC_DIR)/tclBinary.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBinary.c
 
@@ -1212,7 +1216,7 @@ tclEnsemble.o: $(GENERIC_DIR)/tclEnsemble.c $(COMPILEHDR)
 tclEnv.o: $(GENERIC_DIR)/tclEnv.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEnv.c
 
-tclEvent.o: $(GENERIC_DIR)/tclEvent.c
+tclEvent.o: $(GENERIC_DIR)/tclEvent.c tclUuid.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEvent.c
 
 tclExecute.o: $(GENERIC_DIR)/tclExecute.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR)
@@ -2042,8 +2046,8 @@ $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
 	cd $(MAC_OSX_DIR); autoheader; touch $@
 
 $(TOP_DIR)/manifest.uuid:
-	printf "git." >$(TOP_DIR)/manifest.uuid
-	git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid
+	printf "git-" >$(TOP_DIR)/manifest.uuid
+	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid)
 
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(MAC_OSX_DIR)/configure $(TOP_DIR)/manifest.uuid genstubs dist-packages ${NATIVE_TCLSH}
 	rm -rf $(DISTDIR)
