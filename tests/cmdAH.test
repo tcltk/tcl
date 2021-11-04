@@ -1407,7 +1407,7 @@ test cmdAH-27.4.1 {
 catch {testsetplatform $platform}
 removeFile $gorpfile
 set gorpfile [makeFile "Test string" gorp.file]
-catch {file attributes $gorpfile -permissions 0o765}
+catch {file attributes $gorpfile -permissions 0o644}
 
 # stat
 test cmdAH-28.1 {Tcl_FileObjCmd: stat} -returnCodes error -body {
