@@ -9121,6 +9121,48 @@ See RFC 2045
 
 - Released 8.6.11, Dec 31, 2020 - details at https://core.tcl-lang.org/tcl/ -
 
+2021-02-02 (new) support for MacOS Big Sur updates (nijtmans)
+=> platform 1.0.17
+
+2021-02-15 (bug)[d43f96] [string trim*] broken for Emoji (werner)
+
+2021-02-16 (bug)[22324b] [string reverse] broken for Emoji (werner)
+
+2021-02-19 (bug)[1dab71,7c64aa] BRE broken by uninitialized value use (lane)
+
+2021-03-09 (bug)[8419c5] Unix tty channels tolerate EINTR (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2021-03-10 (bug)[4c591f] [string compare] EIAS violation (nijtmans)
+
+2021-04-08 (new) dde package installation compatible with Tcl 9 (nijtmans)
+=> dde 1.4.4
+
+2021-04-14 (bug)[266494] [concat foo [list #]] EIAS violation (porter)
+
+2021-05-03 (bug)[24b918] Save IO buffers from modern optimizers (rupprecht)
+
+2021-05-06 (new) support for POSIX error EILSEQ (nijtmans)
+
+2021-05-17 (bug)[688fcc] segfault during traced delete of alias (coulter)
+
+2021-06-22 (bug)[bad6cc] More secure build tool. CVE-2021-35331 (nijtmans)
+
+2021-07-17 (bug)[592a25] Win: segfault in Tcl_PutEnv() (danckaert,nijtmans)
+
+2021-09-02 (bug)[ccc448] segfault in ensemble rewrite machinery (coulter)
+
+2021-09-14 (new) Update to Unicode-14 (nijtmans)
+
+2021-10-08 (bug)[a8579d] failed proc argument spec processing (russell,coulter)
+
+2021-10-27 (new) support for MacOS Monterey (nijtmans)
+=> platform 1.0.18
+
+2021-10-27 tzdata updated to Olson's tzdata2021e (nijtmans)
+
+- Released 8.6.12, Nov 5, 2021 - details at https://core.tcl-lang.org/tcl/ -
+
 Changes to 8.7a3 include all changes to the 8.6 line through 8.6.10,
 plus the following, which focuses on the high-level feature changes
 in this changeset (new minor version) rather than bug fixes:
