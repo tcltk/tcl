@@ -19,12 +19,12 @@ if {"::tcltest" ni [namespace children]} {
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
+package require tcltests
 
 testConstraint testobj [llength [info commands testobj]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testdstring [llength [info commands testdstring]]
 testConstraint tip389 [expr {[string length \U010000] == 2}]
-testConstraint nodep [info exists tcl_precision]
 
 test stringObj-1.1 {string type registration} testobj {
     set t [testobj types]

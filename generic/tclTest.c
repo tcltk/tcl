@@ -1654,7 +1654,7 @@ TestdoubledigitsObjCmd(
     status = Tcl_GetDoubleFromObj(interp, objv[1], &d);
     if (status != TCL_OK) {
 	doubleType = Tcl_GetObjType("double");
-	if (Tcl_FetchIntRep(objv[1], doubleType)
+	if (Tcl_FetchInternalRep(objv[1], doubleType)
 	    && TclIsNaN(objv[1]->internalRep.doubleValue)) {
 	    status = TCL_OK;
 	    memcpy(&d, &(objv[1]->internalRep.doubleValue), sizeof(double));
@@ -1891,7 +1891,7 @@ TestencodingObjCmd(
 	}
 	Tcl_FreeEncoding(encoding);	/* Free returned reference */
 	Tcl_FreeEncoding(encoding);	/* Free to match CREATE */
-	TclFreeIntRep(objv[2]);		/* Free the cached ref */
+	TclFreeInternalRep(objv[2]);		/* Free the cached ref */
 	break;
     }
     return TCL_OK;
@@ -5135,7 +5135,7 @@ TestbytestringObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int n = 0;
+    size_t n = 0;
     const char *p;
 
     if (objc != 2) {
@@ -5143,7 +5143,7 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
 
-    p = (const char *)TclGetBytesFromObj(interp, objv[1], &n);
+    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &n);
     if (p == NULL) {
 	return TCL_ERROR;
     }
