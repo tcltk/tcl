@@ -9386,13 +9386,13 @@ MBWrite(
     if (bufPtr) {
 	/* Split the overflowing buffer in two */
 	int extra = (int) (inBytes - csPtr->toRead);
-        /* Note that going with int for extra assumes that inBytes is not too
-         * much over toRead to require a wide itself. If that gets violated
-         * then the calculations involving extra must be made wide too.
-         *
-         * Noted with Win32/MSVC debug build treating the warning (possible of
-         * data in __int64 to int conversion) as error.
-         */
+	/* Note that going with int for extra assumes that inBytes is not too
+	 * much over toRead to require a wide itself. If that gets violated
+	 * then the calculations involving extra must be made wide too.
+	 *
+	 * Noted with Win32/MSVC debug build treating the warning (possible of
+	 * data in long long to int conversion) as error.
+	 */
 
 	bufPtr = AllocChannelBuffer(extra);
 

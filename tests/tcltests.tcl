@@ -15,6 +15,7 @@ if {[namespace which testdebug] ne {}} {
 		[testConstraint purify]
 	}]
 }
+testConstraint nodep         [info exists tcl_precision]
 testConstraint fcopy         [llength [info commands fcopy]]
 testConstraint fileevent     [llength [info commands fileevent]]
 testConstraint thread        [

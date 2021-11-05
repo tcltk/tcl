@@ -8752,7 +8752,7 @@ test io-73.1 {channel Tcl_Obj SetChannelFromAny} {} {
 } {1}
 
 test io-73.2 {channel Tcl_Obj SetChannelFromAny, bug 2407783} -setup {
-    # Invalidate intrep of 'channel' Tcl_Obj when transiting between interpreters.
+    # Invalidate internalrep of 'channel' Tcl_Obj when transiting between interpreters.
     set f [open [info script] r]
 } -body {
     interp create foo
