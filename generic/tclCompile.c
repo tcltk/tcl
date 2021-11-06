@@ -718,8 +718,8 @@ static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
 static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
 /*
- * The structure below defines the bytecode Tcl object type by means of
- * procedures that can be invoked by generic object code.
+ * tclByteCodeType provides the standard type management procedures for the
+ * bytecode type.
  */
 
 const Tcl_ObjType tclByteCodeType = {
@@ -731,8 +731,8 @@ const Tcl_ObjType tclByteCodeType = {
 };
 
 /*
- * The structure below defines a bytecode Tcl object type to hold the
- * compiled bytecode for the [subst]itution of Tcl values.
+ * subtCodeType provides the standard type managemnt procedures for the
+ * substcode type, which represents substiution within a Tcl value.
  */
 
 static const Tcl_ObjType substCodeType = {
@@ -757,16 +757,14 @@ static const Tcl_ObjType substCodeType = {
  * TclSetByteCodeFromAny --
  *
  *	Part of the bytecode Tcl object type implementation. Attempts to
- *	generate an byte code internal form for the Tcl object "objPtr" by
- *	compiling its string representation. This function also takes a hook
- *	procedure that will be invoked to perform any needed post processing
- *	on the compilation results before generating byte codes. interp is
+ *	compile the string representation of the objPtr into bytecode.  Accepts
+ *	a hook routine that is invoked to perform any needed post-processing on
+ *	the compilation results before generating byte codes.  interp is the
  *	compilation context and may not be NULL.
  *
  * Results:
- *	The return value is a standard Tcl object result. If an error occurs
- *	during compilation, an error message is left in the interpreter's
- *	result.
+ *	A standard Tcl object result. If an error occurs during compilation, an
+ *	error message is left in the interpreter's result.
  *
  * Side effects:
  *	Frees the old internal representation. If no error occurs, then the
@@ -807,7 +805,7 @@ TclSetByteCodeFromAny(
     stringPtr = Tcl_GetStringFromObj(objPtr, &length);
 
     /*
-     * TIP #280: Pick up the CmdFrame in which the BC compiler was invoked and
+     * TIP #280: Pick up the CmdFrame in which the BC compiler was invoked, and
      * use to initialize the tracking in the compiler. This information was
      * stored by TclCompEvalObj and ProcCompileProc.
      */
@@ -816,15 +814,14 @@ TclSetByteCodeFromAny(
 	    iPtr->invokeCmdFramePtr, iPtr->invokeWord);
 
     /*
-     * Now we check if we have data about invisible continuation lines for the
-     * script, and make it available to the compile environment, if so.
+     * Make available to the compilation environment any data about invisible
+     * continuation lines for the script.
      *
      * It is not clear if the script Tcl_Obj* can be free'd while the compiler
      * is using it, leading to the release of the associated ContLineLoc
-     * structure as well. To ensure that the latter doesn't happen we set a
-     * lock on it. We release this lock in the function TclFreeCompileEnv(),
-     * found in this file. The "lineCLPtr" hashtable is managed in the file
-     * "tclObj.c".
+     * structure as well. To ensure that the latter doesn't happen set a lock
+     * on it, which is released in TclFreeCompileEnv().  The "lineCLPtr"
+     * hashtable tclObj.c.
      */
 
     clLocPtr = TclContinuationsGet(objPtr);
@@ -835,7 +832,7 @@ TclSetByteCodeFromAny(
     TclCompileScript(interp, stringPtr, length, &compEnv);
 
     /*
-     * Successful compilation. Add a "done" instruction at the end.
+     * Compilation succeeded. Add a "done" instruction at the end.
      */
 
     TclEmitOpcode(INST_DONE, &compEnv);
@@ -843,9 +840,9 @@ TclSetByteCodeFromAny(
     /*
      * Check for optimizations!
      *
-     * Test if the generated code is free of most hazards; if so, recompile
-     * but with generation of INST_START_CMD disabled. This produces somewhat
-     * faster code in some cases, and more compact code in more.
+     * If the generated code is free of most hazards, recompile with generation
+     * of INST_START_CMD disabled to produce code that more compact in many
+     * cases, and also sometimes more performant.
      */
 
     if (Tcl_GetParent(interp) == NULL &&
@@ -875,7 +872,7 @@ TclSetByteCodeFromAny(
     }
 
     /*
-     * Invoke the compilation hook procedure if one exists.
+     * Invoke the compilation hook procedure if there is one.
      */
 
     if (hookProc) {
@@ -884,7 +881,7 @@ TclSetByteCodeFromAny(
 
     /*
      * Change the object into a ByteCode object. Ownership of the literal
-     * objects and aux data items is given to the ByteCode object.
+     * objects and aux data items passes to the ByteCode object.
      */
 
 #ifdef TCL_COMPILE_DEBUG
@@ -915,12 +912,12 @@ TclSetByteCodeFromAny(
  *	compiling its string representation.
  *
  * Results:
- *	The return value is a standard Tcl object result. If an error occurs
- *	during compilation, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
+ *	A standard Tcl object result. If an error occurs during compilation and
+ *	"interp" is not null, an error message is left in the interpreter's
+ *	result.
  *
  * Side effects:
- *	Frees the old internal representation. If no error occurs, then the
+ *	Frees the old internal representation. If no error occurs then the
  *	compiled code is stored as "objPtr"s bytecode representation. Also, if
  *	debugging, initializes the "tcl_traceCompile" Tcl variable used to
  *	trace compilations.
@@ -932,7 +929,7 @@ static int
 SetByteCodeFromAny(
     Tcl_Interp *interp,		/* The interpreter for which the code is being
 				 * compiled. Must not be NULL. */
-    Tcl_Obj *objPtr)		/* The object to make a ByteCode object. */
+    Tcl_Obj *objPtr)		/* The object to compile to bytecode */
 {
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -946,9 +943,9 @@ SetByteCodeFromAny(
  * DupByteCodeInternalRep --
  *
  *	Part of the bytecode Tcl object type implementation. However, it does
- *	not copy the internal representation of a bytecode Tcl_Obj, but
- *	instead leaves the new object untyped (with a NULL type pointer).
- *	Code will be compiled for the new object only if necessary.
+ *	not copy the internal representation of a bytecode Tcl_Obj, instead
+ *	assigning NULL to the type pointer of the new object.  Code is compiled
+ *	for the new object only if necessary.
  *
  * Results:
  *	None.
@@ -980,9 +977,9 @@ DupByteCodeInternalRep(
  *	None.
  *
  * Side effects:
- *	The bytecode object's internal rep is marked invalid and its code gets
- *	freed unless the code is actively being executed. In that case the
- *	cleanup is delayed until the last execution of the code completes.
+ *	The bytecode object's internal rep is invalidated and its code is freed
+ *	unless the code is actively being executed, in which case cleanup is
+ *	delayed until the last execution of the code completes.
  *
  *----------------------------------------------------------------------
  */
@@ -1004,16 +1001,16 @@ FreeByteCodeInternalRep(
  *
  * TclReleaseByteCode --
  *
- *	This procedure does all the real work of freeing up a bytecode
- *	object's ByteCode structure. It's called only when the structure's
- *	reference count becomes zero.
+ *	Does all the real work of freeing up a bytecode object's ByteCode
+ *	structure. Called only when the structure's reference count
+ *	is zero.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Frees objPtr's bytecode internal representation and sets its type NULL
- *	Also releases its literals and frees its auxiliary data items.
+ *	Frees objPtr's bytecode internal representation and sets its type to
+ *	NULL.  Also releases its literals and frees its auxiliary data items.
  *
  *----------------------------------------------------------------------
  */
@@ -1088,8 +1085,8 @@ CleanupByteCode(
     /*
      * A single heap object holds the ByteCode structure and its code, object,
      * command location, and auxiliary data arrays. This means we only need to
-     * 1) decrement the ref counts of the literal values in its literal array,
-     * 2) call the free procs for the auxiliary data items, 3) free the
+     * 1) decrement the ref counts of each literal value in the literal array,
+     * 2) call the free procedures for the auxiliary data items, 3) free the
      * localCache if it is unused, and finally 4) free the ByteCode
      * structure's heap object.
      *
@@ -1098,11 +1095,11 @@ CleanupByteCode(
      * the global literal table. They instead maintain private references to
      * their literals which must be decremented.
      *
-     * In order to insure a proper and efficient cleanup of the literal array
-     * when it contains non-shared literals [Bug 983660], we also distinguish
-     * the case of an interpreter being deleted (signaled by interp == NULL).
+     * In order to ensure proper and efficient cleanup of the literal array
+     * when it contains non-shared literals [Bug 983660], distinguish the case
+     * of an interpreter being deleted, which is signaled by interp == NULL.
      * Also, as the interp deletion will remove the global literal table
-     * anyway, we avoid the extra cost of updating it for each literal being
+     * anyway, avoid the extra cost of updating it for each literal being
      * released.
      */
 
@@ -1143,9 +1140,9 @@ CleanupByteCode(
     }
 
     /*
-     * TIP #280. Release the location data associated with this byte code
-     * structure, if any. NOTE: The interp we belong to may be gone already,
-     * and the data with it.
+     * TIP #280. Release the location data associated with this bytecode
+     * structure, if any. The associated interp may be gone already, and the
+     * data with it.
      *
      * See also tclBasic.c, DeleteInterpProc
      */
@@ -1173,8 +1170,8 @@ CleanupByteCode(
  *
  * IsCompactibleCompileEnv --
  *
- *	Checks to see if we may apply some basic compaction optimizations to a
- *	piece of bytecode. Idempotent.
+ *	Determines whether some basic compaction optimizations may be applied
+ *	to a piece of bytecode. Idempotent.
  *
  * ---------------------------------------------------------------------
  */
@@ -1188,7 +1185,7 @@ IsCompactibleCompileEnv(
 
     /*
      * Special: procedures in the '::tcl' namespace (or its children) are
-     * considered to be well-behaved and so can have compaction applied even
+     * considered to be well-behaved, so compaction can be applied to them even
      * if it would otherwise be invalid.
      */
 
@@ -1204,10 +1201,10 @@ IsCompactibleCompileEnv(
 
     /*
      * Go through and ensure that no operation involved can cause a desired
-     * change of bytecode sequence during running. This comes down to ensuring
-     * that there are no mapped variables (due to traces) or calls to external
-     * commands (traces, [uplevel] trickery). This is actually a very
-     * conservative check; it turns down a lot of code that is OK in practice.
+     * change of bytecode sequence during its execution. This comes down to
+     * ensuring that there are no mapped variables (due to traces) or calls to
+     * external commands (traces, [uplevel] trickery). This is actually a very
+     * conservative check.  It turns down a lot of code that is OK in practice.
      */
 
     for (pc = envPtr->codeStart ; pc < envPtr->codeNext ; pc += size) {
@@ -1243,8 +1240,8 @@ IsCompactibleCompileEnv(
  *
  * Tcl_SubstObj --
  *
- *	This function performs the substitutions specified on the given string
- *	as described in the user documentation for the "subst" Tcl command.
+ *	Performs substitutions on the given string as described in the user
+ *	documentation for "subst".
  *
  * Results:
  *	A Tcl_Obj* containing the substituted string, or NULL to indicate that
@@ -1276,14 +1273,14 @@ Tcl_SubstObj(
  *
  * Tcl_NRSubstObj --
  *
- *	Request substitution of a Tcl value by the NR stack.
+ *	Adds substitution within the value of objPtr to the NR execution stack.
  *
  * Results:
- *	Returns TCL_OK.
+ *	TCL_OK.
  *
  * Side effects:
  *	Compiles objPtr into bytecode that performs the substitutions as
- *	governed by flags and places callbacks on the NR stack to execute
+ *	governed by flags, adds a callback to the NR execution stack to execute
  *	the bytecode and store the result in the interp.
  *
  *----------------------------------------------------------------------
@@ -1307,11 +1304,11 @@ Tcl_NRSubstObj(
  *
  * CompileSubstObj --
  *
- *	Compile a Tcl value into ByteCode implementing its substitution, as
- *	governed by flags.
+ *	Compiles a value into bytecode that performs substitution within the
+ *	value, as governed by flags.
  *
  * Results:
- *	A (ByteCode *) is returned pointing to the resulting ByteCode.
+ *	A (ByteCode *) is pointing to the resulting ByteCode.
  *
  * Side effects:
  *	The Tcl_ObjType of objPtr is changed to the "substcode" type, and the
@@ -1381,9 +1378,9 @@ CompileSubstObj(
  *
  * FreeSubstCodeInternalRep --
  *
- *	Part of the substcode Tcl object type implementation. Frees the
- *	storage associated with a substcode object's internal representation
- *	unless its code is actively being executed.
+ *	Part of the "substcode" Tcl object type implementation. Frees the
+ *	storage associated with the substcode internal representation of a
+ *	Tcl_Obj unless its code is actively being executed.
  *
  * Results:
  *	None.
@@ -1632,14 +1629,14 @@ TclInitCompileEnv(
  *
  * TclFreeCompileEnv --
  *
- *	Free the storage allocated in a CompileEnv compilation environment
+ *	Frees the storage allocated in a CompileEnv compilation environment
  *	structure.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Allocated storage in the CompileEnv structure is freed. Note that its
+ *	Allocated storage in the CompileEnv structure is freed, although its
  *	local literal table is not deleted and its literal objects are not
  *	released. In addition, storage referenced by its auxiliary data items
  *	is not freed. This is done so that, when compilation is successful,
@@ -1708,10 +1705,11 @@ TclFreeCompileEnv(
  *
  * TclWordKnownAtCompileTime --
  *
- *	Test whether the value of a token is completely known at compile time.
+ *	Determines whether the value of a token is completely known at compile
+ *	time.
  *
  * Results:
- *	Returns true if the tokenPtr argument points to a word value that is
+ *	True if the tokenPtr argument points to a word value that is
  *	completely known at compile time. Generally, values that are known at
  *	compile time can be compiled to their values, while values that cannot
  *	be known until substitution at runtime must be compiled to bytecode
@@ -1788,12 +1786,12 @@ TclWordKnownAtCompileTime(
  *
  * TclCompileScript --
  *
- *	Compile a Tcl script in a string.
+ *	Compiles a Tcl script in a string.
  *
  * Results:
- *	The return value is TCL_OK on a successful compilation and TCL_ERROR
- *	on failure. If TCL_ERROR is returned, then the interpreter's result
- *	contains an error message.
+ *
+ *	A standard Tcl result. If an error occurs, an
+ *	error message is left in the interpreter's result.
  *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the script at runtime.
@@ -1933,14 +1931,14 @@ CompileExpanded(
     /*
      * The stack depth during argument expansion can only be managed at
      * runtime, as the number of elements in the expanded lists is not known
-     * at compile time. We adjust here the stack depth estimate so that it is
+     * at compile time.  Adjust the stack depth estimate here so that it is
      * correct after the command with expanded arguments returns.
      *
      * The end effect of this command's invocation is that all the words of
-     * the command are popped from the stack, and the result is pushed: the
+     * the command are popped from the stack and the result is pushed: The
      * stack top changes by (1-wordIdx).
      *
-     * Note that the estimates are not correct while the command is being
+     * The estimates are not correct while the command is being
      * prepared and run, INST_EXPAND_STKTOP is not stack-neutral in general.
      */
 
@@ -1968,16 +1966,16 @@ CompileCmdCompileProc(
     parse.tokenPtr = tokenPtr + 1;
 
     /*
-     * Emit of the INST_START_CMD instruction is controlled by the value of
+     * Emission of the INST_START_CMD instruction is controlled by the value of
      * envPtr->atCmdStart:
      *
-     * atCmdStart == 2	: We are not using the INST_START_CMD instruction.
-     * atCmdStart == 1	: INST_START_CMD was the last instruction emitted.
-     *			: We do not need to emit another.  Instead we
-     *			: increment the number of cmds started at it (except
-     *			: for the special case at the start of a script.)
-     * atCmdStart == 0	: The last instruction was something else.  We need
-     *			: to emit INST_START_CMD here.
+     * atCmdStart == 2	: Don't use the INST_START_CMD instruction.
+     * atCmdStart == 1	: INST_START_CMD was the last instruction emitted,
+     *			: so no need to emit another.  Instead
+     *			: increment the number of cmds started at it, except
+     *			: for the special case at the start of a script.
+     * atCmdStart == 0	: The last instruction was something else.
+     *			: Emit INST_START_CMD here.
      */
 
     switch (envPtr->atCmdStart) {
@@ -2000,7 +1998,7 @@ CompileCmdCompileProc(
     if (TCL_OK == TclAttemptCompileProc(interp, &parse, 1, cmdPtr, envPtr)) {
 	if (incrOffset >= 0) {
 	    /*
-	     * We successfully compiled a command.  Increment the number of
+	     * Command compiled succesfully.  Increment the number of
 	     * commands that start at the currently active INST_START_CMD.
 	     */
 
@@ -2087,7 +2085,7 @@ CompileCommandTokens(
 
     /*
      * TIP #280. Scan the words and compute the extended location information.
-     * The map first contain full per-word line information for use by the
+     * At first the map first contains full per-word line information for use by the
      * compiler. This is later replaced by a reduced form which signals
      * non-literal words, stored in 'wlines'.
      */
@@ -2127,7 +2125,7 @@ CompileCommandTokens(
 	}
     }
 
-    /* If cmdPtr != NULL, we will try to call cmdPtr->compileProc */
+    /* If cmdPtr != NULL, try to call cmdPtr->compileProc */
     if (cmdPtr) {
 	code = CompileCmdCompileProc(interp, commandTokenPtr, cmdPtr, envPtr);
     }
@@ -2158,8 +2156,8 @@ CompileCommandTokens(
 	    - startCodeOffset;
 
     /*
-     * TIP #280: Free full form of per-word line data and insert the reduced
-     * form now
+     * TIP #280: Free the full form of per-word line data and insert the
+     * reduced form now.
      */
 
     envPtr->line = cmdLine;
@@ -2228,10 +2226,10 @@ CompileScriptTokens(
     }
     /*
      * Check depth to avoid overflow of the C execution stack by too many
-     * nested calls of TclCompileScript (considering interp recursionlimit).
-     * Factor 5/4 (1.25) is used to avoid too mistaken limit recognition
-     * during "mixed" evaluation and compilation process (nested eval+compile)
-     * and is good enough for default recursionlimit (1000).
+     * nested calls of TclCompileScript, considering interp recursionlimit.
+     * Use factor 5/4 (1.25) to avoid being too mistaken when recognizing the
+     * limit during "mixed" evaluation and compilation process (nested
+     * eval+compile) and is good enough for default recursionlimit (1000).
      */
     if (iPtr->numLevels / 5 > iPtr->maxNestingDepth / 4) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -2332,8 +2330,8 @@ CompileScriptTokens(
  *
  * TclCompileTokens --
  *
- *	Given an array of tokens parsed from a Tcl command (e.g., the tokens
- *	that make up a word) this procedure emits instructions to evaluate the
+ *	Given an array of tokens parsed from a Tcl command, e.g. the tokens
+ *	that make up a word, emits instructions to evaluate the
  *	tokens and concatenate their values to form a single result value on
  *	the interpreter's runtime evaluation stack.
  *
@@ -2439,18 +2437,16 @@ TclCompileTokens(
     int depth = TclGetStackDepth(envPtr);
 
     /*
-     * For the handling of continuation lines in literals we first check if
-     * this is actually a literal. For if not we can forego the additional
-     * processing. Otherwise we pre-allocate a small table to store the
-     * locations of all continuation lines we find in this literal, if any.
-     * The table is extended if needed.
+     * if this is actually a literal, handle continuation lines by
+     * preallocating a small table to store the locations of any continuation
+     * lines we find in this literal.  The table is extended if needed.
      *
-     * Note: Different to the equivalent code in function 'TclSubstTokens()'
-     * (see file "tclParse.c") we do not seem to need the 'adjust' variable.
-     * We also do not seem to need code which merges continuation line
-     * information of multiple words which concat'd at runtime. Either that or
-     * I have not managed to find a test case for these two possibilities yet.
-     * It might be a difference between compile- versus run-time processing.
+     * Note: In contrast with the analagous code in 'TclSubstTokens()' the
+     * 'adjust' variable seems unneeded here.  The code which merges
+     * continuation line information of multiple words which concat'd at
+     * runtime also seems unneeded. Either that or I have not managed to find a
+     * test case for these two possibilities yet.  It might be a difference
+     * between compile- versus run-time processing.
      */
 
     numCL = 0;
@@ -2486,18 +2482,17 @@ TclCompileTokens(
 	    Tcl_DStringAppend(&textBuffer, buffer, length);
 
 	    /*
-	     * If the backslash sequence we found is in a literal, and
-	     * represented a continuation line, we compute and store its
+	     * If the identified backslash sequence is in a literal and
+	     * represented a continuation line, compute and store its
 	     * location (as char offset to the beginning of the _result_
 	     * script). We may have to extend the table of locations.
 	     *
-	     * Note that the continuation line information is relevant even if
-	     * the word we are processing is not a literal, as it can affect
-	     * nested commands. See the branch for TCL_TOKEN_COMMAND below,
-	     * where the adjustment we are tracking here is taken into
-	     * account. The good thing is that we do not need a table of
-	     * everything, just the number of lines we have to add as
-	     * correction.
+	     * The continuation line information is relevant even if the word
+	     * being processed is not a literal, as it can affect nested
+	     * commands. See the branch below for TCL_TOKEN_COMMAND, where the
+	     * adjustment being tracked here is taken into account. The good
+	     * thing is a table of everything is not needed, just the number of
+	     * lines to to add as correction.
 	     */
 
 	    if ((length == 1) && (buffer[0] == ' ') &&
@@ -2631,13 +2626,13 @@ done:
  * TclCompileCmdWord --
  *
  *	Given an array of parse tokens for a word containing one or more Tcl
- *	commands, emit inline instructions to execute them. This procedure
- *	differs from TclCompileTokens in that a simple word such as a loop
- *	body enclosed in braces is not just pushed as a string, but is itself
- *	parsed into tokens and compiled.
+ *	commands, emits inline instructions to execute them.  In contrast with
+ *	TclCompileTokens, a simple word such as a loop body enclosed in braces
+ *	is not just pushed as a string, but is itself parsed into tokens and
+ *	compiled.
  *
  * Results:
- *	The return value is a standard Tcl result. If an error occurs, an
+ *	A standard Tcl result. If an error occurs, an
  *	error message is left in the interpreter's result.
  *
  * Side effects:
@@ -2657,16 +2652,16 @@ TclCompileCmdWord(
 {
     if ((count == 1) && (tokenPtr->type == TCL_TOKEN_TEXT)) {
 	/*
-	 * Handle the common case: if there is a single text token, compile it
+	 * The common case that there is a single text token. Compile it
 	 * into an inline sequence of instructions.
 	 */
 
 	TclCompileScript(interp, tokenPtr->start, tokenPtr->size, envPtr);
     } else {
 	/*
-	 * Multiple tokens or the single token involves substitutions. Emit
-	 * instructions to invoke the eval command procedure at runtime on the
-	 * result of evaluating the tokens.
+	 * Either there are multiple tokens, or the single token involves
+	 * substitutions. Emit instructions to invoke the eval command
+	 * procedure at runtime on the result of evaluating the tokens.
 	 */
 
 	TclCompileTokens(interp, tokenPtr, count, envPtr);
@@ -2680,13 +2675,12 @@ TclCompileCmdWord(
  * TclCompileExprWords --
  *
  *	Given an array of parse tokens representing one or more words that
- *	contain a Tcl expression, emit inline instructions to execute the
- *	expression. This procedure differs from TclCompileExpr in that it
- *	supports Tcl's two-level substitution semantics for expressions that
- *	appear as command words.
+ *	contain a Tcl expression, emits inline instructions to execute the
+ *	expression. In contrast with TclCompileExpr, supports Tcl's two-level
+ *	substitution semantics for an expression that appears as command words.
  *
  * Results:
- *	The return value is a standard Tcl result. If an error occurs, an
+ *	A standard Tcl result. If an error occurs, an
  *	error message is left in the interpreter's result.
  *
  * Side effects:
@@ -2748,10 +2742,10 @@ TclCompileExprWords(
  *
  * TclCompileNoOp --
  *
- *	Function called to compile no-op's
+ *	Compiles no-op's
  *
  * Results:
- *	The return value is TCL_OK, indicating successful compilation.
+ *	TCL_OK if completion was successful.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute a no-op at runtime. No
@@ -2790,14 +2784,14 @@ TclCompileNoOp(
  *
  * TclInitByteCodeObj --
  *
- *	Create a ByteCode structure and initialize it from a CompileEnv
+ *	Creates a ByteCode structure and initializes it from a CompileEnv
  *	compilation environment structure. The ByteCode structure is smaller
  *	and contains just that information needed to execute the bytecode
  *	instructions resulting from compiling a Tcl script. The resulting
  *	structure is placed in the specified object.
  *
  * Results:
- *	A newly constructed ByteCode object is stored in the internal
+ *	A newly-constructed ByteCode object is stored in the internal
  *	representation of the objPtr.
  *
  * Side effects:
@@ -3124,16 +3118,15 @@ TclFindCompiledLocal(
  *
  * TclExpandCodeArray --
  *
- *	Procedure that uses malloc to allocate more storage for a CompileEnv's
- *	code array.
+ *	Uses malloc to allocate more storage for a CompileEnv's code array.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The byte code array in *envPtr is reallocated to a new array of double
- *	the size, and if envPtr->mallocedCodeArray is non-zero the old array
- *	is freed. Byte codes are copied from the old array to the new one.
+ *	The size of the bytecode array is doubled. If envPtr->mallocedCodeArray
+ *	is non-zero the old array is freed. Byte codes are copied from the old
+ *	array to the new one.
  *
  *----------------------------------------------------------------------
  */
@@ -3160,8 +3153,8 @@ TclExpandCodeArray(
 	envPtr->codeStart = (unsigned char *)Tcl_Realloc(envPtr->codeStart, newBytes);
     } else {
 	/*
-	 * envPtr->codeStart isn't a Tcl_Alloc'd pointer, so we must code a
-	 * Tcl_Realloc equivalent for ourselves.
+	 * envPtr->exceptArrayPtr isn't a Tcl_Alloc'd pointer, so
+	 * perform the equivalent of Tcl_Realloc directly.
 	 */
 
 	unsigned char *newPtr = (unsigned char *)Tcl_Alloc(newBytes);
@@ -3388,7 +3381,7 @@ TclCreateExceptRange(
  * TclGetInnermostExceptionRange --
  *
  *	Returns the innermost exception range that covers the current code
- *	creation point, and (optionally) the stack depth that is expected at
+ *	creation point, and optionally the stack depth that is expected at
  *	that point. Relies on the fact that the range has a numCodeBytes = -1
  *	when it is being populated and that inner ranges come after outer
  *	ranges.
@@ -3430,7 +3423,7 @@ TclGetInnermostExceptionRange(
  *
  *	Adds a place that wants to break/continue to the loop exception range
  *	tracking that will be fixed up once the loop can be finalized. These
- *	functions will generate an INST_JUMP4 that will be fixed up during the
+ *	functions generate an INST_JUMP4 that is fixed up during the
  *	loop finalization.
  *
  * ---------------------------------------------------------------------
@@ -3494,8 +3487,8 @@ TclAddLoopContinueFixup(
  *
  * TclCleanupStackForBreakContinue --
  *
- *	Ditch the extra elements from the auxiliary stack and the main stack.
- *	How to do this exactly depends on whether there are any elements on
+ *	Removes the extra elements from the auxiliary stack and the main stack.
+ *	How this is done depends on whether there are any elements on
  *	the auxiliary stack to pop.
  *
  * ---------------------------------------------------------------------
@@ -3565,7 +3558,7 @@ StartExpanding(
 	}
 
 	/*
-	 * Adequate condition: further out loops and further in exceptions
+	 * Adequate condition: loops further out and exceptions further in
 	 * don't actually need this information.
 	 */
 
@@ -3575,7 +3568,7 @@ StartExpanding(
     }
 
     /*
-     * There's now one more expansion being processed on the auxiliary stack.
+     * One more expansion is now being processed on the auxiliary stack.
      */
 
     envPtr->expandCount++;
@@ -3588,7 +3581,7 @@ StartExpanding(
  *
  *	Finalizes a loop exception range, binding the registered [break] and
  *	[continue] implementations so that they jump to the correct place.
- *	Note that this must only be called after *all* the exception range
+ *	This must be called only after *all* the exception range
  *	target offsets have been set.
  *
  * ---------------------------------------------------------------------
@@ -3687,20 +3680,16 @@ TclFetchAuxData(
  *
  * TclCreateAuxData --
  *
- *	Procedure that allocates and initializes a new AuxData structure in a
+ *	Allocates and initializes a new AuxData structure in a
  *	CompileEnv's array of compilation auxiliary data records. These
  *	AuxData records hold information created during compilation by
  *	CompileProcs and used by instructions during execution.
  *
  * Results:
- *	Returns the index for the newly created AuxData structure.
+ *	The index of the newly-created AuxData structure in the array.
  *
  * Side effects:
- *	If there is not enough room in the CompileEnv's AuxData array, the
- *	AuxData array in expanded: a new array of double the size is
- *	allocated, if envPtr->mallocedAuxDataArray is non-zero the old array
- *	is freed, and AuxData entries are copied from the old array to the new
- *	one.
+ *	The CompileEnv's AuxData Brodnik array grows as needed.
  *
  *----------------------------------------------------------------------
  */
@@ -3731,10 +3720,11 @@ TclCreateAuxData(
  *
  * TclEmitForwardJump --
  *
- *	Procedure to emit a two-byte forward jump of kind "jumpType". Since
- *	the jump may later have to be grown to five bytes if the jump target
- *	is more than, say, 127 bytes away, this procedure also initializes a
- *	JumpFixup record with information about the jump.
+ *	Emits a two-byte forward jump of kind "jumpType".  Also initializes a
+ *	JumpFixup record with information about the jump.  Since may later be
+ *	necessary to increase the size of the jump instruction to five bytes if
+ *	the jump target is more than, say, 127 bytes away.
+ *
  *
  * Results:
  *	None.
@@ -3789,16 +3779,17 @@ TclEmitForwardJump(
  *
  * TclFixupForwardJump --
  *
- *	Procedure that updates a previously-emitted forward jump to jump a
- *	specified number of bytes, "jumpDist". If necessary, the jump is grown
- *	from two to five bytes; this is done if the jump distance is greater
- *	than "distThreshold" (normally 127 bytes). The jump is described by a
- *	JumpFixup record previously initialized by TclEmitForwardJump.
+ *	Modifies a previously-emitted forward jump to jump a specified number
+ *	of bytes, "jumpDist". If necessary, the size of the jump instruction is
+ *	increased from two to five bytes.  This is done if the jump distance is
+ *	greater than "distThreshold" (normally 127 bytes). The jump is
+ *	described by a JumpFixup record previously initialized by
+ *	TclEmitForwardJump.
  *
  * Results:
- *	1 if the jump was grown and subsequent instructions had to be moved;
- *	otherwise 0. This result is returned to allow callers to update any
- *	additional code offsets they may hold.
+ *	1 if the jump was grown and subsequent instructions had to be moved, or
+ *	0 otherwsie. This allows callers to update any additional code offsets
+ *	they may hold.
  *
  * Side effects:
  *	The jump may be grown and subsequent instructions moved. If this
@@ -3843,10 +3834,10 @@ TclFixupForwardJump(
     }
 
     /*
-     * We must grow the jump then move subsequent instructions down. Note that
-     * if we expand the space for generated instructions, code addresses might
-     * change; be careful about updating any of these addresses held in
-     * variables.
+     * Increase the size of the jump instruction, and then move subsequent
+     * instructions down.  Expanding the space for generated instructions means
+     * that code addresses might change.  Be careful about updating any of
+     * these addresses held in variables.
      */
 
     if ((envPtr->codeNext + 3) > envPtr->codeEnd) {
@@ -3928,7 +3919,7 @@ TclFixupForwardJump(
  *
  * TclEmitInvoke --
  *
- *	Emit one of the invoke-related instructions, wrapping it if necessary
+ *	Emits one of the invoke-related instructions, wrapping it if necessary
  *	in code that ensures that any break or continue operation passing
  *	through it gets the stack unwinding correct, converting it into an
  *	internal jump if in an appropriate context.
@@ -3938,7 +3929,7 @@ TclFixupForwardJump(
  *
  * Side effects:
  *	Issues the jump with all correct stack management. May create another
- *	loop exception range; pointers to ExceptionRange and ExceptionAux
+ *	loop exception range.  Pointers to ExceptionRange and ExceptionAux
  *	structures should not be held across this call.
  *
  *----------------------------------------------------------------------
@@ -3996,12 +3987,11 @@ TclEmitInvoke(
     va_end(argList);
 
     /*
-     * Determine if we need to handle break and continue exceptions with a
-     * special handling exception range (so that we can correctly unwind the
-     * stack).
+     * If the exceptions is for break or continue handle it with special
+     * handling exception range so the stack may be correctly unwound.
      *
-     * These must be done separately; they can be different (especially for
-     * calls from inside a [for] increment clause).
+     * These must be done separately since they can be different, especially
+     * for calls from inside a [for] increment clause.
      */
 
     rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_CONTINUE,
@@ -4247,16 +4237,16 @@ GetCmdLocEncodingSize(
  *
  * EncodeCmdLocMap --
  *
- *	Encode the command location information for some compiled code into a
+ *	Encodes the command location information for some compiled code into a
  *	ByteCode structure. The encoded command location map is stored as
- *	three adjacent byte sequences.
+ *	three-adjacent-byte sequences.
  *
  * Results:
- *	Pointer to the first byte after the encoded command location
+ *	A pointer to the first byte after the encoded command location
  *	information.
  *
  * Side effects:
- *	The encoded information is stored into the block of memory headed by
+ *	Stores encoded information into the block of memory headed by
  *	codePtr. Also records pointers to the start of the four byte sequences
  *	in fields in codePtr's ByteCode header structure.
  *
@@ -4375,9 +4365,9 @@ EncodeCmdLocMap(
  *
  * RecordByteCodeStats --
  *
- *	Accumulates various compilation-related statistics for each newly
- *	compiled ByteCode. Called by the TclInitByteCodeObj when Tcl is
- *	compiled with the -DTCL_COMPILE_STATS flag
+ *	Accumulates compilation-related statistics for each newly-compiled
+ *	ByteCode. Called by the TclInitByteCodeObj when Tcl is compiled with
+ *	the -DTCL_COMPILE_STATS flag
  *
  * Results:
  *	None.
