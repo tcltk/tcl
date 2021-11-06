@@ -143,7 +143,7 @@ for compatibility with codebases written for earlier releases of Tcl.
 It is expected this routine will incompatibly change in Tcl 9 so that
 it also signals failed conversions with a NULL return.
 .PP
-On success, both \fBTcl_GetByteFromObj\fR and \fBTcl_GetByteArrayFromObj\fR
+On success, both \fBTcl_GetBytesFromObj\fR and \fBTcl_GetByteArrayFromObj\fR
 return a pointer into the internal representation of a \fBTcl_Obj\fR.
 That pointer must not be freed by the caller, and should not be retained
 for use beyond the known time the internal representation of the value
