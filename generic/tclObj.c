@@ -1620,7 +1620,7 @@ Tcl_GetString(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetStringFromObj --
+ * Tcl_GetStringFromObj/TclGetStringFromObj --
  *
  *	Returns the string representation's byte array pointer and length for
  *	an object.
@@ -1640,46 +1640,7 @@ Tcl_GetString(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_GetStringFromObj
-char *
-Tcl_GetStringFromObj(
-    Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
-				 * be returned. */
-    size_t *lengthPtr)	/* If non-NULL, the location where the string
-				 * rep's byte array length should * be stored.
-				 * If NULL, no length is stored. */
-{
-    if (objPtr->bytes == NULL) {
-	/*
-	 * Note we do not check for objPtr->typePtr == NULL.  An invariant
-	 * of a properly maintained Tcl_Obj is that at least  one of
-	 * objPtr->bytes and objPtr->typePtr must not be NULL.  If broken
-	 * extensions fail to maintain that invariant, we can crash here.
-	 */
-
-	if (objPtr->typePtr->updateStringProc == NULL) {
-	    /*
-	     * Those Tcl_ObjTypes which choose not to define an
-	     * updateStringProc must be written in such a way that
-	     * (objPtr->bytes) never becomes NULL.
-	     */
-	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
-		    objPtr->typePtr->name);
-	}
-	objPtr->typePtr->updateStringProc(objPtr);
-	if (objPtr->bytes == NULL || objPtr->length == TCL_INDEX_NONE
-		|| objPtr->bytes[objPtr->length] != '\0') {
-	    Tcl_Panic("UpdateStringProc for type '%s' "
-		    "failed to create a valid string rep",
-		    objPtr->typePtr->name);
-	}
-    }
-    if (lengthPtr != NULL) {
-	*lengthPtr = objPtr->length;
-    }
-    return objPtr->bytes;
-}
-
+#undef TclGetStringFromObj
 char *
 TclGetStringFromObj(
     Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
@@ -1719,6 +1680,47 @@ TclGetStringFromObj(
     return objPtr->bytes;
 }
 
+#undef Tcl_GetStringFromObj
+char *
+Tcl_GetStringFromObj(
+    Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
+				 * be returned. */
+    size_t *lengthPtr)	/* If non-NULL, the location where the string
+				 * rep's byte array length should * be stored.
+				 * If NULL, no length is stored. */
+{
+    if (objPtr->bytes == NULL) {
+	/*
+	 * Note we do not check for objPtr->typePtr == NULL.  An invariant
+	 * of a properly maintained Tcl_Obj is that at least  one of
+	 * objPtr->bytes and objPtr->typePtr must not be NULL.  If broken
+	 * extensions fail to maintain that invariant, we can crash here.
+	 */
+
+	if (objPtr->typePtr->updateStringProc == NULL) {
+	    /*
+	     * Those Tcl_ObjTypes which choose not to define an
+	     * updateStringProc must be written in such a way that
+	     * (objPtr->bytes) never becomes NULL.
+	     */
+	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
+		    objPtr->typePtr->name);
+	}
+	objPtr->typePtr->updateStringProc(objPtr);
+	if (objPtr->bytes == NULL
+		|| objPtr->bytes[objPtr->length] != '\0') {
+	    Tcl_Panic("UpdateStringProc for type '%s' "
+		    "failed to create a valid string rep",
+		    objPtr->typePtr->name);
+	}
+    }
+    if (lengthPtr != NULL) {
+	*lengthPtr = objPtr->length;
+    }
+    return objPtr->bytes;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2484,6 +2486,7 @@ Tcl_GetIntFromObj(
     return TCL_OK;
 #endif
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -3909,8 +3912,8 @@ TclHashObjKey(
     void *keyPtr)		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *)keyPtr;
-    const char *string = TclGetString(objPtr);
-    size_t length = objPtr->length;
+    size_t length;
+    const char *string = Tcl_GetStringFromObj(objPtr, &length);
     TCL_HASH_TYPE result = 0;
 
     /*

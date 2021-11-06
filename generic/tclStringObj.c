@@ -578,7 +578,7 @@ Tcl_GetUniChar(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetUnicodeFromObj --
+ * Tcl_GetUnicodeFromObj/TclGetUnicodeFromObj --
  *
  *	Get the Unicode form of the String object with length. If the object
  *	is not already a String object, it will be converted to one. If the
@@ -596,10 +596,10 @@ Tcl_GetUniChar(
 
 #undef Tcl_GetUnicodeFromObj
 Tcl_UniChar *
-Tcl_GetUnicodeFromObj(
+TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the unicode string
 				 * for. */
-    size_t *lengthPtr)		/* If non-NULL, the location where the string
+    int *lengthPtr)		/* If non-NULL, the location where the string
 				 * rep's unichar length should be stored. If
 				 * NULL, no length is stored. */
 {
@@ -620,10 +620,10 @@ Tcl_GetUnicodeFromObj(
 }
 
 Tcl_UniChar *
-TclGetUnicodeFromObj(
+Tcl_GetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the unicode string
 				 * for. */
-    int *lengthPtr)		/* If non-NULL, the location where the string
+    size_t *lengthPtr)		/* If non-NULL, the location where the string
 				 * rep's unichar length should be stored. If
 				 * NULL, no length is stored. */
 {
