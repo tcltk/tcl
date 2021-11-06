@@ -84,18 +84,18 @@ static const Tcl_ObjType ensembleCmdType = {
     NULL			/* setFromAnyProc */
 };
 
-#define ECRSetIntRep(objPtr, ecRepPtr)					\
+#define ECRSetInternalRep(objPtr, ecRepPtr)					\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (ecRepPtr);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreIntRep((objPtr), &ensembleCmdType, &ir);		\
+	Tcl_StoreInternalRep((objPtr), &ensembleCmdType, &ir);		\
     } while (0)
 
-#define ECRGetIntRep(objPtr, ecRepPtr)					\
+#define ECRGetInternalRep(objPtr, ecRepPtr)					\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), &ensembleCmdType);		\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), &ensembleCmdType);		\
 	(ecRepPtr) = irPtr ? (EnsembleCmdRep *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -151,7 +151,7 @@ NewNsObj(
 
 int
 TclNamespaceEnsembleCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1757,7 +1757,7 @@ NsEnsembleImplementationCmdNR(
 	 */
 	EnsembleCmdRep *ensembleCmd;
 
-	ECRGetIntRep(subObj, ensembleCmd);
+	ECRGetInternalRep(subObj, ensembleCmd);
 	if (ensembleCmd) {
 	    if (ensembleCmd->epoch == ensemblePtr->epoch &&
 		    ensembleCmd->token == (Command *)ensemblePtr->token) {
@@ -2411,7 +2411,7 @@ MakeCachedEnsembleCommand(
 {
     EnsembleCmdRep *ensembleCmd;
 
-    ECRGetIntRep(objPtr, ensembleCmd);
+    ECRGetInternalRep(objPtr, ensembleCmd);
     if (ensembleCmd) {
 	TclCleanupCommandMacro(ensembleCmd->token);
 	if (ensembleCmd->fix) {
@@ -2423,7 +2423,7 @@ MakeCachedEnsembleCommand(
 	 */
 
 	ensembleCmd = (EnsembleCmdRep *)Tcl_Alloc(sizeof(EnsembleCmdRep));
-	ECRSetIntRep(objPtr, ensembleCmd);
+	ECRSetInternalRep(objPtr, ensembleCmd);
     }
 
     /*
@@ -2781,7 +2781,7 @@ FreeEnsembleCmdRep(
 {
     EnsembleCmdRep *ensembleCmd;
 
-    ECRGetIntRep(objPtr, ensembleCmd);
+    ECRGetInternalRep(objPtr, ensembleCmd);
     TclCleanupCommandMacro(ensembleCmd->token);
     if (ensembleCmd->fix) {
 	Tcl_DecrRefCount(ensembleCmd->fix);
@@ -2815,8 +2815,8 @@ DupEnsembleCmdRep(
     EnsembleCmdRep *ensembleCmd;
     EnsembleCmdRep *ensembleCopy = (EnsembleCmdRep *)Tcl_Alloc(sizeof(EnsembleCmdRep));
 
-    ECRGetIntRep(objPtr, ensembleCmd);
-    ECRSetIntRep(copyPtr, ensembleCopy);
+    ECRGetInternalRep(objPtr, ensembleCmd);
+    ECRSetInternalRep(copyPtr, ensembleCopy);
 
     ensembleCopy->epoch = ensembleCmd->epoch;
     ensembleCopy->token = ensembleCmd->token;

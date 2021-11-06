@@ -292,7 +292,7 @@ SetHamtFromAny(
 	old = hamt;
     }
 
-    TclFreeIntRep(objPtr);
+    TclFreeInternalRep(objPtr);
     SetHAMTObj(objPtr, old);
     TclHAMTDisclaim(old);
     return TCL_OK;

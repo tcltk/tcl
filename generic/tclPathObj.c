@@ -85,13 +85,13 @@ typedef struct {
  * fields.
  */
 
-#define PATHOBJ(pathPtr) ((FsPath *) (TclFetchIntRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
+#define PATHOBJ(pathPtr) ((FsPath *) (TclFetchInternalRep((pathPtr), &fsPathType)->twoPtrValue.ptr1))
 #define SETPATHOBJ(pathPtr,fsPathPtr) \
 	do {							\
-		Tcl_ObjIntRep ir;				\
+		Tcl_ObjInternalRep ir;				\
 		ir.twoPtrValue.ptr1 = (void *) (fsPathPtr);	\
 		ir.twoPtrValue.ptr2 = NULL;			\
-		Tcl_StoreIntRep((pathPtr), &fsPathType, &ir);	\
+		Tcl_StoreInternalRep((pathPtr), &fsPathType, &ir);	\
 	} while (0)
 #define PATHFLAGS(pathPtr) (PATHOBJ(pathPtr)->flags)
 
@@ -544,7 +544,7 @@ TclPathPart(
     Tcl_Obj *pathPtr,		/* Path to take dirname of */
     Tcl_PathPart portion)	/* Requested portion of name */
 {
-    if (TclHasIntRep(pathPtr, &fsPathType)) {
+    if (TclHasInternalRep(pathPtr, &fsPathType)) {
 	FsPath *fsPathPtr = PATHOBJ(pathPtr);
 
 	if (PATHFLAGS(pathPtr) != 0) {
@@ -841,7 +841,7 @@ TclJoinPath(
 
     if (elements == 2) {
 	Tcl_Obj *elt = objv[0];
-	Tcl_ObjIntRep *eltIr = TclFetchIntRep(elt, &fsPathType);
+	Tcl_ObjInternalRep *eltIr = TclFetchInternalRep(elt, &fsPathType);
 
 	/*
 	 * This is a special case where we can be much more efficient, where
@@ -1148,13 +1148,13 @@ Tcl_FSConvertToPathType(
      * path.
      */
 
-    if (TclHasIntRep(pathPtr, &fsPathType)) {
+    if (TclHasInternalRep(pathPtr, &fsPathType)) {
 	if (TclFSEpochOk(PATHOBJ(pathPtr)->filesystemEpoch)) {
 	    return TCL_OK;
 	}
 
 	TclGetString(pathPtr);
-	Tcl_StoreIntRep(pathPtr, &fsPathType, NULL);
+	Tcl_StoreInternalRep(pathPtr, &fsPathType, NULL);
     }
 
     return SetFsPathFromAny(interp, pathPtr);
@@ -1348,7 +1348,7 @@ AppendPath(
      * that use some character other than "/" as a path separator.  I know
      * of no evidence that such a foolish thing exists.  This solution was
      * chosen so that "JoinPath" operations that pass through either path
-     * intrep produce the same results; that is, bugward compatibility.  If
+     * internalrep produce the same results; that is, bugward compatibility.  If
      * we need to fix that bug here, it needs fixing in TclJoinPath() too.
      */
     bytes = Tcl_GetStringFromObj(tail, &length);
@@ -1390,7 +1390,7 @@ TclFSMakePathRelative(
 {
     size_t cwdLen, len;
     const char *tempStr;
-    Tcl_ObjIntRep *irPtr = TclFetchIntRep(pathPtr, &fsPathType);
+    Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(pathPtr, &fsPathType);
 
     if (irPtr) {
 	FsPath *fsPathPtr = PATHOBJ(pathPtr);
@@ -1460,7 +1460,7 @@ MakePathFromNormalized(
 {
     FsPath *fsPathPtr;
 
-    if (TclHasIntRep(pathPtr, &fsPathType)) {
+    if (TclHasInternalRep(pathPtr, &fsPathType)) {
 	return TCL_OK;
     }
 
@@ -1531,7 +1531,7 @@ Tcl_FSNewNativePath(
      * safe.
      */
 
-    Tcl_StoreIntRep(pathPtr, &fsPathType, NULL);
+    Tcl_StoreInternalRep(pathPtr, &fsPathType, NULL);
     fsPathPtr = (FsPath *)Tcl_Alloc(sizeof(FsPath));
 
     fsPathPtr->translatedPathPtr = NULL;
@@ -1597,7 +1597,7 @@ Tcl_FSGetTranslatedPath(
 
 	    Tcl_Obj *translatedCwdPtr = Tcl_FSGetTranslatedPath(interp,
 		    srcFsPathPtr->cwdPtr);
-	    Tcl_ObjIntRep *translatedCwdIrPtr;
+	    Tcl_ObjInternalRep *translatedCwdIrPtr;
 
 	    if (translatedCwdPtr == NULL) {
 		return NULL;
@@ -1606,7 +1606,7 @@ Tcl_FSGetTranslatedPath(
 	    retObj = Tcl_FSJoinToPath(translatedCwdPtr, 1,
 		    &srcFsPathPtr->normPathPtr);
 	    Tcl_IncrRefCount(srcFsPathPtr->translatedPathPtr = retObj);
-	    translatedCwdIrPtr = TclFetchIntRep(translatedCwdPtr, &fsPathType);
+	    translatedCwdIrPtr = TclFetchInternalRep(translatedCwdPtr, &fsPathType);
 	    if (translatedCwdIrPtr) {
 		srcFsPathPtr->filesystemEpoch
 			= PATHOBJ(translatedCwdPtr)->filesystemEpoch;
@@ -1802,7 +1802,7 @@ Tcl_FSGetNormalizedPath(
     if (fsPathPtr->cwdPtr != NULL) {
 	if (!TclFSCwdPointerEquals(&fsPathPtr->cwdPtr)) {
 	    TclGetString(pathPtr);
-	    Tcl_StoreIntRep(pathPtr, &fsPathType, NULL);
+	    Tcl_StoreInternalRep(pathPtr, &fsPathType, NULL);
 	    if (SetFsPathFromAny(interp, pathPtr) != TCL_OK) {
 		return NULL;
 	    }
@@ -2048,7 +2048,7 @@ TclFSEnsureEpochOk(
 {
     FsPath *srcFsPathPtr;
 
-    if (!TclHasIntRep(pathPtr, &fsPathType)) {
+    if (!TclHasInternalRep(pathPtr, &fsPathType)) {
 	return TCL_OK;
     }
 
@@ -2062,7 +2062,7 @@ TclFSEnsureEpochOk(
 	 */
 
 	TclGetString(pathPtr);
-	Tcl_StoreIntRep(pathPtr, &fsPathType, NULL);
+	Tcl_StoreInternalRep(pathPtr, &fsPathType, NULL);
 	if (SetFsPathFromAny(NULL, pathPtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -2106,7 +2106,7 @@ TclFSSetPathDetails(
      * Make sure pathPtr is of the correct type.
      */
 
-    if (!TclHasIntRep(pathPtr, &fsPathType)) {
+    if (!TclHasInternalRep(pathPtr, &fsPathType)) {
 	if (SetFsPathFromAny(NULL, pathPtr) != TCL_OK) {
 	    return;
 	}
@@ -2207,7 +2207,7 @@ SetFsPathFromAny(
     Tcl_Obj *transPtr;
     const char *name;
 
-    if (TclHasIntRep(pathPtr, &fsPathType)) {
+    if (TclHasInternalRep(pathPtr, &fsPathType)) {
 	return TCL_OK;
     }
 
@@ -2521,7 +2521,7 @@ TclNativePathInFilesystem(
      * semantics of Tcl (at present anyway), so we have to abide by them here.
      */
 
-    if (TclHasIntRep(pathPtr, &fsPathType)) {
+    if (TclHasInternalRep(pathPtr, &fsPathType)) {
 	if (pathPtr->bytes != NULL && pathPtr->bytes[0] == '\0') {
 	    /*
 	     * We reject the empty path "".

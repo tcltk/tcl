@@ -201,7 +201,7 @@ Tcl_GetIndexFromObjStruct(
     const char *const *entryPtr;
     Tcl_Obj *resultPtr;
     IndexRep *indexRep;
-    const Tcl_ObjIntRep *irPtr;
+    const Tcl_ObjInternalRep *irPtr;
 
     /* Protect against invalid values, like -1 or 0. */
     if (offset+1 <= sizeof(char *)) {
@@ -212,7 +212,7 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (!(flags & TCL_INDEX_TEMP_TABLE)) {
-    irPtr = TclFetchIntRep(objPtr, &indexType);
+    irPtr = TclFetchInternalRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
 	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
@@ -276,15 +276,15 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (!(flags & TCL_INDEX_TEMP_TABLE)) {
-    irPtr = TclFetchIntRep(objPtr, &indexType);
+    irPtr = TclFetchInternalRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
     } else {
-	Tcl_ObjIntRep ir;
+	Tcl_ObjInternalRep ir;
 
 	indexRep = (IndexRep*)Tcl_Alloc(sizeof(IndexRep));
 	ir.twoPtrValue.ptr1 = indexRep;
-	Tcl_StoreIntRep(objPtr, &indexType, &ir);
+	Tcl_StoreInternalRep(objPtr, &indexType, &ir);
     }
     indexRep->tablePtr = (void *) tablePtr;
     indexRep->offset = offset;
@@ -354,7 +354,7 @@ static void
 UpdateStringOfIndex(
     Tcl_Obj *objPtr)
 {
-    IndexRep *indexRep = (IndexRep *)TclFetchIntRep(objPtr, &indexType)->twoPtrValue.ptr1;
+    IndexRep *indexRep = (IndexRep *)TclFetchInternalRep(objPtr, &indexType)->twoPtrValue.ptr1;
     const char *indexStr = EXPAND_OF(indexRep);
 
     Tcl_InitStringRep(objPtr, indexStr, strlen(indexStr));
@@ -383,14 +383,14 @@ DupIndex(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    Tcl_ObjIntRep ir;
+    Tcl_ObjInternalRep ir;
     IndexRep *dupIndexRep = (IndexRep *)Tcl_Alloc(sizeof(IndexRep));
 
-    memcpy(dupIndexRep, TclFetchIntRep(srcPtr, &indexType)->twoPtrValue.ptr1,
+    memcpy(dupIndexRep, TclFetchInternalRep(srcPtr, &indexType)->twoPtrValue.ptr1,
 	    sizeof(IndexRep));
 
     ir.twoPtrValue.ptr1 = dupIndexRep;
-    Tcl_StoreIntRep(dupPtr, &indexType, &ir);
+    Tcl_StoreInternalRep(dupPtr, &indexType, &ir);
 }
 
 /*
@@ -414,7 +414,7 @@ static void
 FreeIndex(
     Tcl_Obj *objPtr)
 {
-    Tcl_Free(TclFetchIntRep(objPtr, &indexType)->twoPtrValue.ptr1);
+    Tcl_Free(TclFetchInternalRep(objPtr, &indexType)->twoPtrValue.ptr1);
     objPtr->typePtr = NULL;
 }
 
@@ -833,9 +833,9 @@ Tcl_WrongNumArgs(
 	    /*
 	     * Add the element, quoting it if necessary.
 	     */
-	    const Tcl_ObjIntRep *irPtr;
+	    const Tcl_ObjInternalRep *irPtr;
 
-	    if ((irPtr = TclFetchIntRep(origObjv[i], &indexType))) {
+	    if ((irPtr = TclFetchInternalRep(origObjv[i], &indexType))) {
 		IndexRep *indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
 
 		elementStr = EXPAND_OF(indexRep);
@@ -880,9 +880,9 @@ Tcl_WrongNumArgs(
 	 * the correct error message even if the subcommand was abbreviated.
 	 * Otherwise, just use the string rep.
 	 */
-	const Tcl_ObjIntRep *irPtr;
+	const Tcl_ObjInternalRep *irPtr;
 
-	if ((irPtr = TclFetchIntRep(objv[i], &indexType))) {
+	if ((irPtr = TclFetchInternalRep(objv[i], &indexType))) {
 	    IndexRep *indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
 
 	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), NULL);
@@ -1323,7 +1323,7 @@ TclGetCompletionCodeFromObj(
 	"ok", "error", "return", "break", "continue", NULL
     };
 
-    if (!TclHasIntRep(value, &indexType)
+    if (!TclHasInternalRep(value, &indexType)
 	    && TclGetIntFromObj(NULL, value, codePtr) == TCL_OK) {
 	return TCL_OK;
     }

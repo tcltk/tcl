@@ -320,7 +320,7 @@ SetTokensFromAny (
      * DupTokensInternalRep().
      */
 
-    TclFreeIntRep(objPtr);
+    TclFreeInternalRep(objPtr);
     tirPtr->tokenPtr = TclParseScript(interp, script, numBytes, 0,
 	    &(tirPtr->lastTokenPtr), NULL);
     tirPtr->scriptObjPtr = NULL;

@@ -486,20 +486,20 @@ typedef struct ByteCode {
 #endif /* TCL_COMPILE_STATS */
 } ByteCode;
 
-#define ByteCodeSetIntRep(objPtr, typePtr, codePtr)			\
+#define ByteCodeSetInternalRep(objPtr, typePtr, codePtr)			\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (codePtr);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreIntRep((objPtr), (typePtr), &ir);			\
+	Tcl_StoreInternalRep((objPtr), (typePtr), &ir);			\
     } while (0)
 
 
 
-#define ByteCodeGetIntRep(objPtr, typePtr, codePtr)			\
+#define ByteCodeGetInternalRep(objPtr, typePtr, codePtr)			\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), (typePtr));			\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), (typePtr));			\
 	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
