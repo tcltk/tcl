@@ -3,7 +3,7 @@
 #	Test HTTP/1.1 concurrent requests including
 #	queueing, pipelining and retries.
 #
-# Copyright (C) 2018 Keith Nash <kjnash@users.sourceforge.net>
+# Copyright © 2018 Keith Nash <kjnash@users.sourceforge.net>
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.

@@ -4,7 +4,7 @@
 # spencer2regexp.tcl, which are programs written to convert Henry
 # Spencer's test suite to tcl test files.
 #
-# Copyright (c) 1996 Sun Microsystems, Inc.
+# Copyright © 1996 Sun Microsystems, Inc.
 
 proc readInputFile {} {
     global inFileName
@@ -105,7 +105,7 @@ proc writeOutputFile {numLines fcn} {
     puts $fileId "# errors.  No output means no errors were found.  Setting VERBOSE to"
     puts $fileId "# -1 will run tests that are known to fail."
     puts $fileId "#"
-    puts $fileId "# Copyright (c) 1998 Sun Microsystems, Inc."
+    puts $fileId "# Copyright © 1998 Sun Microsystems, Inc."
     puts $fileId "#"
     puts $fileId "# See the file \"license.terms\" for information on usage and redistribution"
     puts $fileId "# of this file, and for a DISCLAIMER OF ALL WARRANTIES."
