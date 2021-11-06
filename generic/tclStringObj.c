@@ -614,7 +614,7 @@ TclGetUnicodeFromObj(
     }
 
     if (lengthPtr != NULL) {
-	*lengthPtr = stringPtr->numChars;
+	*lengthPtr = (int)stringPtr->numChars;
     }
     return stringPtr->unicode;
 }
@@ -642,7 +642,7 @@ Tcl_GetUnicodeFromObj(
     }
     return stringPtr->unicode;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
