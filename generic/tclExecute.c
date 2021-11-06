@@ -2749,7 +2749,7 @@ TEBCresume(
 	pc += 1;
 	/* yield next instruction */
 	TEBC_YIELD();
-	/* add TEBCResume for object at top of stack */
+	/* add TEBCresume for object at top of stack */
 	return TclNRExecuteByteCode(interp,
 		    TclCompileObj(interp, OBJ_AT_TOS, NULL, 0));
 

@@ -1517,17 +1517,15 @@ Tcl_AppendExportList(
  *
  * TclFillTableWithExports --
  *
- *	Discover what commands are actually exported by *nsPtr.
- *	What we have is an array of patterns and a hash table whose keys
- *	are the command names defined in the namespace (the contents do
- *	not matter here.) We must find out what commands are actually
- *	exported by filtering each command in the namespace against each of
- *	the patterns in the export list.  Store the exported command
- * 	set in hash, with fully qualified command prefix as value.
+ *	Use the array of patterns and the hash table whose keys are the
+ *	commands exported by the namespace.  The corresponding values do not
+ *	matter here.  Filter the commands in the namsapce against the
+ *	patterns in the export list to find out what commands are actually
+ *	exported.  Use an intermediate hash table to make memory management
+ *	easier and to make exact matching much easier.
  *
- *	Suggestion for future enhancement: compute the unique prefixes and
- *	place them in the hash too, which should make for even faster
- *	matching.
+ *	Suggestion for future enhancement: Compute the unique prefixes and
+ *	place them in the hash too for even faster matching.
  *
  * Results:
  *
@@ -5008,11 +5006,11 @@ TclGetNamespaceChildTable(
  *
  * TclLogCommandInfo --
  *
- *	This function is invoked after an error occurs in an interpreter. It
- *	adds information to iPtr->errorInfo/errorStack fields to describe the
+ *	Invoked after an error occurs in an interpreter.
+ *	Adds information to iPtr->errorInfo/errorStack fields to describe the
  *	command that was being executed when the error occurred. When pc and
  *	tosPtr are non-NULL, conveying a bytecode execution "inner context",
- *	and the offending instruction is suitable, that inner context is
+ *	and the offending instruction is suitable, and that inner context is
  *	recorded in errorStack.
  *
  * Results:
@@ -5046,8 +5044,8 @@ TclLogCommandInfo(
 
     if (iPtr->flags & ERR_ALREADY_LOGGED) {
 	/*
-	 * Someone else has already logged error information for this command;
-	 * we shouldn't add anything more.
+	 * Someone else has already logged error information for this command.
+	 * Don't add anything more.
 	 */
 
 	return;
