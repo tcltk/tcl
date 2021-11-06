@@ -75,31 +75,15 @@ static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
 			    size_t length, int type);
 /* Binary ensemble commands */
-static int		BinaryFormatCmd(void *clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryScanCmd(void *clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	BinaryFormatCmd;
+static Tcl_ObjCmdProc	BinaryScanCmd;
 /* Binary encoding sub-ensemble commands */
-static int		BinaryEncodeHex(void *clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryDecodeHex(void *clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryEncode64(void *clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryDecode64(void *clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryEncodeUu(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		BinaryDecodeUu(void *clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	BinaryEncodeHex;
+static Tcl_ObjCmdProc	BinaryDecodeHex;
+static Tcl_ObjCmdProc	BinaryEncode64;
+static Tcl_ObjCmdProc	BinaryDecode64;
+static Tcl_ObjCmdProc	BinaryEncodeUu;
+static Tcl_ObjCmdProc	BinaryDecodeUu;
 
 /*
  * The following tables are used by the binary encoders
@@ -1497,7 +1481,7 @@ BinaryFormatCmd(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 BinaryScanCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
