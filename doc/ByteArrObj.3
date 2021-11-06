@@ -74,14 +74,14 @@ string representation of a byte-array value (by calling
 \fBTcl_GetStringFromObj\fR) produces this string in Tcl's usual
 Modified UTF-8 encoding.
 .PP
-\fBTcl_NewByteArrayObj\fR and \fBTcl_SetByteArrayObj\fR 
+\fBTcl_NewByteArrayObj\fR and \fBTcl_SetByteArrayObj\fR
 create a new value or overwrite an existing unshared value, respectively,
 to hold a byte-array value of \fInumBytes\fR bytes.  When a caller
-passes a non-NULL value of \fIbytes\fR, it must point to memory from 
+passes a non-NULL value of \fIbytes\fR, it must point to memory from
 which \fInumBytes\fR bytes can be read.  These routines
 allocate \fInumBytes\fR bytes of memory, copy \fInumBytes\fR
 bytes from \fIbytes\fR into it, and keep the result in the internal
-representation of the new or overwritten value.  
+representation of the new or overwritten value.
 When the caller passes a NULL value of \fIbytes\fR, the data copying
 step is skipped, and the bytes stored in the value are undefined.
 A \fIbytes\fR value of NULL is useful only when the caller will arrange
@@ -115,11 +115,11 @@ string value that does not include any character codepoints outside
 the range (U+0000 - U+00FF) will successfully translate to a unique
 byte-array value.  With the created byte-array, the routine returns
 as before.  For any string representation which does contain
-a forbidden character codepoint, the conversion fails, and 
+a forbidden character codepoint, the conversion fails, and
 \fBTcl_GetBytesFromObj\fR returns NULL to signal that failure.  On
 failure, nothing will be written to \fInumBytesPtr\fR, and if
 the \fIinterp\fR argument is non-NULL, then error messages and
-codes are left in it recording the error.  
+codes are left in it recording the error.
 .PP
 \fBTcl_GetByteArrayFromObj\fR performs nearly the same function as
 \fBTcl_GetBytesFromObj\fR.  They differ only in the circumstance when

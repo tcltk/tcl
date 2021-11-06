@@ -180,7 +180,7 @@ static const EnsembleImplMap decodeMap[] = {
  * question arises what to do with strings outside that subset?  That is,
  * those Tcl strings containing at least one codepoint greater than 255?  The
  * obviously correct answer is to raise an error!  That string value does not
- * represent any valid bytearray value. 
+ * represent any valid bytearray value.
  *
  * Unfortunately this was not the path taken by the authors of the original
  * tclByteArrayType.  They chose to accept all Tcl string values as acceptable
@@ -211,11 +211,11 @@ static const EnsembleImplMap decodeMap[] = {
  * what the retained "tclByteArrayType" provides.  In those unusual
  * circumstances where we convert an invalid bytearray value to a bytearray
  * type, it is to this legacy type.  Essentially any time this legacy type
- * shows up, it's a signal of a bug being ignored.  
- *  
+ * shows up, it's a signal of a bug being ignored.
+ *
  * In Tcl 9, the incompatibility in the behavior of these public routines
  * has been approved, and the legacy internal rep is no longer retained.
- * The internal changes seen below are the limit of what can be done 
+ * The internal changes seen below are the limit of what can be done
  * in a Tcl 8.* release.  They provide a great expansion of the histories
  * over which bytearray values can be useful.
  */
