@@ -1920,6 +1920,24 @@ test namespace-42.10 {
     unset -nocomplain lst
 } -returnCodes error -match glob -result {invalid command name *three*}
 
+
+test namespace-42.11 {
+	ensembles: prefix matching segmentation fault
+
+	issue ccc448a6bfd59cbd
+} -body {
+    namespace eval n1 {
+        namespace ensemble create
+        namespace export *
+        proc p1 args {error success}
+    }
+    # segmentation fault only occurs in the non-byte-compiled path, so avoid
+    # byte compilation
+    set cmd {namespace eva n1 {[namespace parent]::n1 p1}}
+    {*}$cmd
+} -returnCodes error -result success
+
+
 test namespace-43.1 {ensembles: dict-driven} {
     namespace eval ns {
 	namespace export x*
