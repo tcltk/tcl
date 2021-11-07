@@ -14133,6 +14133,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <time.h>
+#include <stdlib.h>
 int
 main ()
 {
@@ -14199,6 +14200,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <time.h>
+#include <stdlib.h>
 int
 main ()
 {
