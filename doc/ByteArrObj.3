@@ -157,8 +157,9 @@ become \fInumBytes\fR bytes.  This is most often useful after the
 bytes of the internal byte-array have been directly overwritten and it
 has been discovered that the required size differs from the first
 estimate used in the allocation. \fBTcl_SetByteArrayLength\fR returns
-a pointer to the resized byte-array.  Along with such resizing, any
-string representation of \fIobjPtr\fR must be invalidated.  If resizing
+a pointer to the resized byte-array.  Because resizing the byte-array
+changes the internal representation, \fBTcl_SetByteArrayLength\fR
+also invalidates any string representation in \fIobjPtr\fR.  If resizing
 grows the byte-array, the new byte values are undefined.  If \fIobjPtr\fR
 does not already possess an internal byte-array, one is produced in the
 same way that \fBTcl_GetByteArrayFromObj\fR does, with all the cautions
