@@ -4564,7 +4564,7 @@ Tcl_GetsObj(
     if ((statePtr->encoding == NULL)
 	    && ((statePtr->inputTranslation == TCL_TRANSLATE_LF)
 		    || (statePtr->inputTranslation == TCL_TRANSLATE_CR))
-	    && Tcl_GetByteArrayFromObj(objPtr, (size_t *)NULL) != NULL) {
+	    && (Tcl_GetBytesFromObj)(NULL, objPtr, NULL) != NULL) {
 	return TclGetsObjBinary(chan, objPtr);
     }
 

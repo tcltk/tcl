@@ -2351,7 +2351,7 @@ ZlibStreamSubcmd(
     }
 
     if (compDictObj) {
-	if (NULL == Tcl_GetBytesFromObj(interp, compDictObj, NULL)) {
+	if (NULL == (Tcl_GetBytesFromObj)(interp, compDictObj, NULL)) {
 	    return TCL_ERROR;
 	}
     }
@@ -2533,7 +2533,7 @@ ZlibPushSubcmd(
 	}
     }
 
-    if (compDictObj && (NULL == Tcl_GetBytesFromObj(interp, compDictObj, NULL))) {
+    if (compDictObj && (NULL == (Tcl_GetBytesFromObj)(interp, compDictObj, NULL))) {
 	return TCL_ERROR;
     }
 
@@ -3330,7 +3330,7 @@ ZlibTransformSetOption(			/* not used */
 
 	TclNewStringObj(compDictObj, value, strlen(value));
 	Tcl_IncrRefCount(compDictObj);
-	if (NULL == Tcl_GetBytesFromObj(interp, compDictObj, NULL)) {
+	if (NULL == (Tcl_GetBytesFromObj)(interp, compDictObj, NULL)) {
 	    Tcl_DecrRefCount(compDictObj);
 	    return TCL_ERROR;
 	}
@@ -3721,7 +3721,7 @@ ZlibStackChannelTransform(
     if (compDictObj != NULL) {
 	cd->compDictObj = Tcl_DuplicateObj(compDictObj);
 	Tcl_IncrRefCount(cd->compDictObj);
-	Tcl_GetByteArrayFromObj(cd->compDictObj, (size_t *)NULL);
+	(Tcl_GetBytesFromObj)(NULL, cd->compDictObj, NULL);
     }
 
     if (format == TCL_ZLIB_FORMAT_RAW) {
