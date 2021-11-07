@@ -9393,6 +9393,7 @@ else $as_nop
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <time.h>
+#include <stdlib.h>
 int
 main (void)
 {
@@ -9431,6 +9432,7 @@ else $as_nop
 	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <time.h>
+#include <stdlib.h>
 int
 main (void)
 {
