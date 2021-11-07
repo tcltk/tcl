@@ -140,84 +140,21 @@ static const EnsembleImplMap decodeMap[] = {
 };
 
 /*
- * The following object types represent an array of bytes. The intent is to
+ * The following Tcl_ObjType represents an array of bytes. The intent is to
  * allow arbitrary binary data to pass through Tcl as a Tcl value without loss
  * or damage. Such values are useful for things like encoded strings or Tk
  * images to name just two.
  *
  * A bytearray is an ordered sequence of bytes. Each byte is an integer value
  * in the range [0-255].  To be a Tcl value type, we need a way to encode each
- * value in the value set as a Tcl string.  The simplest encoding is to
+ * value in the value set as a Tcl string.  A simple encoding is to
  * represent each byte value as the same codepoint value.  A bytearray of N
  * bytes is encoded into a Tcl string of N characters where the codepoint of
  * each character is the value of corresponding byte.  This approach creates a
  * one-to-one map between all bytearray values and a subset of Tcl string
- * values.
- *
- * When converting a Tcl string value to the bytearray internal rep, the
- * question arises what to do with strings outside that subset?  That is,
- * those Tcl strings containing at least one codepoint greater than 255?  The
- * obviously correct answer is to raise an error!  That string value does not
- * represent any valid bytearray value. Full Stop.  The setFromAnyProc
- * signature has a completion code return value for just this reason, to
- * reject invalid inputs.
- *
- * Unfortunately this was not the path taken by the authors of the original
- * tclByteArrayType.  They chose to accept all Tcl string values as acceptable
- * string encodings of the bytearray values that result from masking away the
- * high bits of any codepoint value at all. This meant that every bytearray
- * value had multiple accepted string representations.
- *
- * The implications of this choice are truly ugly.  When a Tcl value has a
- * string representation, we are required to accept that as the true value.
- * Bytearray values that possess a string representation cannot be processed
- * as bytearrays because we cannot know which true value that bytearray
- * represents.  The consequence is that we drag around an internal rep that we
- * cannot make any use of.  This painful price is extracted at any point after
- * a string rep happens to be generated for the value.  This happens even when
- * the troublesome codepoints outside the byte range never show up.  This
- * happens rather routinely in normal Tcl operations unless we burden the
- * script writer with the cognitive burden of avoiding it.  The price is also
- * paid by callers of the C interface.  The routine
- *
- *	unsigned char *Tcl_GetByteArrayFromObj(objPtr, lenPtr)
- *
- * has a guarantee to always return a non-NULL value, but that value points to
- * a byte sequence that cannot be used by the caller to process the Tcl value
- * absent some sideband testing that objPtr is "pure".  Tcl offers no public
- * interface to perform this test, so callers either break encapsulation or
- * are unavoidably buggy.  Tcl has defined a public interface that cannot be
- * used correctly. The Tcl source code itself suffers the same problem, and
- * has been buggy, but progressively less so as more and more portions of the
- * code have been retrofitted with the required "purity testing".  The set of
- * values able to pass the purity test can be increased via the introduction
- * of a "canonical" flag marker, but the only way the broken interface itself
- * can be discarded is to start over and define the Tcl_ObjType properly.
- * Bytearrays should simply be usable as bytearrays without a kabuki dance of
- * testing.
- *
- * The Tcl_ObjType "properByteArrayType" is (nearly) a correct implementation
- * of bytearrays.  Any Tcl value with the type properByteArrayType can have
- * its bytearray value fetched and used with confidence that acting on that
- * value is equivalent to acting on the true Tcl string value.  This still
- * implies a side testing burden -- past mistakes will not let us avoid that
- * immediately, but it is at least a conventional test of type, and can be
- * implemented entirely by examining the objPtr fields, with no need to query
- * the intrep, as a canonical flag would require.
- *
- * Until Tcl_GetByteArrayFromObj() and Tcl_SetByteArrayLength() can be revised
- * to admit the possibility of returning NULL when the true value is not a
- * valid bytearray, we need a mechanism to retain compatibility with the
- * deployed callers of the broken interface.  That's what the retained
- * "tclByteArrayType" provides.  In those unusual circumstances where we
- * convert an invalid bytearray value to a bytearray type, it is to this
- * legacy type.  Essentially any time this legacy type gets used, it's a
- * signal of a bug being ignored.  A TIP should be drafted to remove this
- * connection to the broken past so that Tcl 9 will no longer have any trace
- * of it.  Prescribing a migration path will be the key element of that work.
- * The internal changes now in place are the limit of what can be done short
- * of interface repair.  They provide a great expansion of the histories over
- * which bytearray values can be useful in the meanwhile.
+ * values.  Tcl string values outside that subset do no represent any valid
+ * bytearray value.  Attempts to treat those values as bytearrays will lead
+ * to errors.  See TIP 568 for how this differs from Tcl 8.
  */
 
 static const Tcl_ObjType properByteArrayType = {
@@ -282,15 +219,15 @@ Tcl_Obj *
 Tcl_NewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    size_t length)		/* Length of the array of bytes */
+    size_t numBytes)		/* Number of bytes in the array */
 {
 #ifdef TCL_MEM_DEBUG
-    return Tcl_DbNewByteArrayObj(bytes, length, "unknown", 0);
+    return Tcl_DbNewByteArrayObj(bytes, numBytes, "unknown", 0);
 #else /* if not TCL_MEM_DEBUG */
     Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
-    Tcl_SetByteArrayObj(objPtr, bytes, length);
+    Tcl_SetByteArrayObj(objPtr, bytes, numBytes);
     return objPtr;
 #endif /* TCL_MEM_DEBUG */
 }
@@ -311,7 +248,7 @@ Tcl_NewByteArrayObj(
  *	result of calling Tcl_NewByteArrayObj.
  *
  * Results:
- *	The newly create object is returned. This object will have no initial
+ *	The newly created object is returned. This object has no initial
  *	string representation. The returned object has a ref count of 0.
  *
  * Side effects:
@@ -325,7 +262,7 @@ Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    size_t length,		/* Length of the array of bytes. */
+    size_t numBytes,		/* Number of bytes in the array */
     const char *file,		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line)			/* Line number in the source file; used for
@@ -334,7 +271,7 @@ Tcl_DbNewByteArrayObj(
     Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
-    Tcl_SetByteArrayObj(objPtr, bytes, length);
+    Tcl_SetByteArrayObj(objPtr, bytes, numBytes);
     return objPtr;
 }
 #else /* if not TCL_MEM_DEBUG */
@@ -342,12 +279,11 @@ Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
-    size_t length,		/* Length of the array of bytes, which must be
-				 * >= 0. */
+    size_t numBytes,		/* Number of bytes in the array */
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
-    return Tcl_NewByteArrayObj(bytes, length);
+    return Tcl_NewByteArrayObj(bytes, numBytes);
 }
 #endif /* TCL_MEM_DEBUG */
 
@@ -373,9 +309,8 @@ void
 Tcl_SetByteArrayObj(
     Tcl_Obj *objPtr,		/* Object to initialize as a ByteArray. */
     const unsigned char *bytes,	/* The array of bytes to use as the new value.
-				 * May be NULL even if length > 0. */
-    size_t length)			/* Length of the array of bytes, which must
-				 * be >= 0. */
+				 * May be NULL even if numBytes > 0. */
+    size_t numBytes)		/* Number of bytes in the array */
 {
     ByteArray *byteArrayPtr;
     Tcl_ObjInternalRep ir;
@@ -385,12 +320,12 @@ Tcl_SetByteArrayObj(
     }
     TclInvalidateStringRep(objPtr);
 
-    byteArrayPtr = (ByteArray *)Tcl_Alloc(BYTEARRAY_SIZE(length));
-    byteArrayPtr->used = length;
-    byteArrayPtr->allocated = length;
+    byteArrayPtr = (ByteArray *)Tcl_Alloc(BYTEARRAY_SIZE(numBytes));
+    byteArrayPtr->used = numBytes;
+    byteArrayPtr->allocated = numBytes;
 
-    if ((bytes != NULL) && (length > 0)) {
-	memcpy(byteArrayPtr->bytes, bytes, length);
+    if ((bytes != NULL) && (numBytes > 0)) {
+	memcpy(byteArrayPtr->bytes, bytes, numBytes);
     }
     SET_BYTEARRAY(&ir, byteArrayPtr);
 
@@ -408,8 +343,8 @@ Tcl_SetByteArrayObj(
  *	interp (if not NULL).
  *
  * Results:
- *	Pointer to array of bytes, or NULL. representing the ByteArray object.
- *	Writes number of bytes in array to *lengthPtr.
+ *	NULL or pointer to array of bytes representing the ByteArray object.
+ *	Writes number of bytes in array to *numBytesPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -419,11 +354,12 @@ unsigned char *
 Tcl_GetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
-    size_t *lengthPtr)		/* If non-NULL, filled with length of the
-				 * array of bytes in the ByteArray object. */
+    size_t *numBytesPtr)	/* If non-NULL, write the number of bytes
+				 * in the array here */
 {
     ByteArray *baPtr;
-    const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &properByteArrayType);
+    const Tcl_ObjInternalRep *irPtr
+	    = TclFetchInternalRep(objPtr, &properByteArrayType);
 
     if (irPtr == NULL) {
 	if (TCL_ERROR == SetByteArrayFromAny(interp, TCL_INDEX_NONE, objPtr)) {
@@ -433,8 +369,8 @@ Tcl_GetBytesFromObj(
     }
     baPtr = GET_BYTEARRAY(irPtr);
 
-    if (lengthPtr != NULL) {
-	*lengthPtr = baPtr->used;
+    if (numBytesPtr != NULL) {
+	*numBytesPtr = baPtr->used;
     }
     return baPtr->bytes;
 }
@@ -443,26 +379,25 @@ unsigned char *
 TclGetBytesFromObj(
     Tcl_Interp *interp,		/* For error reporting */
     Tcl_Obj *objPtr,		/* Value to extract from */
-    int *lengthPtr)		/* If non-NULL, filled with length of the
-				 * array of bytes in the ByteArray object. */
+    int *numBytesPtr)		/* If non-NULL, write the number of bytes
+				 * in the array here */
 {
     size_t numBytes = 0;
     unsigned char *bytes = Tcl_GetBytesFromObj(interp, objPtr, &numBytes);
 
-    if (lengthPtr) {
+    if (bytes && numBytesPtr) {
 	if (numBytes > INT_MAX) {
-	    /* Caller asked for an int length, but true length is outside
-	     * the int range. This case will be developed out of existence
-	     * in Tcl 9. As interim measure, fail. */
+	    /* Caller asked for numBytes to be written to an int, but the
+	     * value is outside the int range. */
 
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"byte sequence length exceeds INT_MAX", -1));
+		Tcl_SetErrorCode(interp, "TCL", "API", "OUTDATED", NULL);
 	    }
-	    *lengthPtr = 0;
 	    return NULL;
 	} else {
-	    *lengthPtr = (int) numBytes;
+	    *numBytesPtr = (int) numBytes;
 	}
     }
     return bytes;
@@ -490,42 +425,19 @@ TclGetBytesFromObj(
 unsigned char *
 TclGetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    int *lengthPtr)		/* If non-NULL, filled with length of the
-				 * array of bytes in the ByteArray object. */
+    int *numBytesPtr)		/* If non-NULL, write the number of bytes
+				 * in the array here */
 {
-    size_t numBytes = 0;
-    unsigned char *bytes = Tcl_GetBytesFromObj(NULL, objPtr, &numBytes);
-
-    /* Macro TclGetByteArrayFromObj passes NULL for lengthPtr as
-     * a trick to get around changing size. */
-    if (lengthPtr) {
-	if (numBytes > INT_MAX) {
-	    /* Caller asked for an int length, but true length is outside
-	     * the int range. */
-	    *lengthPtr = 0;
-	    return NULL;
-	} else {
-	    *lengthPtr = (int) numBytes;
-	}
-    }
-    return bytes;
+    return TclGetBytesFromObj(NULL, objPtr, numBytesPtr);
 }
 
 unsigned char *
 Tcl_GetByteArrayFromObj(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    size_t *lengthPtr)		/* If non-NULL, filled with length of the
-				 * array of bytes in the ByteArray object. */
+    size_t *numBytesPtr)	/* If non-NULL, write the number of bytes
+				 * in the array here */
 {
-    size_t numBytes = 0;
-    unsigned char *bytes = Tcl_GetBytesFromObj(NULL, objPtr, &numBytes);
-
-    /* Macro TclGetByteArrayFromObj passes NULL for lengthPtr as
-     * a trick to get around changing size. */
-    if (lengthPtr) {
-	*lengthPtr = numBytes;
-    }
-    return bytes;
+    return Tcl_GetBytesFromObj(NULL, objPtr, numBytesPtr);
 }
 
 /*
@@ -553,7 +465,7 @@ Tcl_GetByteArrayFromObj(
 unsigned char *
 Tcl_SetByteArrayLength(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    size_t length)		/* New length for internal byte array. */
+    size_t numBytes)		/* Number of bytes in resized array */
 {
     ByteArray *byteArrayPtr;
     Tcl_ObjInternalRep *irPtr;
@@ -564,20 +476,21 @@ Tcl_SetByteArrayLength(
 
     irPtr = TclFetchInternalRep(objPtr, &properByteArrayType);
     if (irPtr == NULL) {
-	if (TCL_ERROR == SetByteArrayFromAny(NULL, length, objPtr)) {
+	if (TCL_ERROR == SetByteArrayFromAny(NULL, numBytes, objPtr)) {
 	    return NULL;
 	}
 	irPtr = TclFetchInternalRep(objPtr, &properByteArrayType);
     }
 
     byteArrayPtr = GET_BYTEARRAY(irPtr);
-    if (length > byteArrayPtr->allocated) {
-	byteArrayPtr = (ByteArray *)Tcl_Realloc(byteArrayPtr, BYTEARRAY_SIZE(length));
-	byteArrayPtr->allocated = length;
+    if (numBytes > byteArrayPtr->allocated) {
+	byteArrayPtr = (ByteArray *)Tcl_Realloc(byteArrayPtr,
+		BYTEARRAY_SIZE(numBytes));
+	byteArrayPtr->allocated = numBytes;
 	SET_BYTEARRAY(irPtr, byteArrayPtr);
     }
     TclInvalidateStringRep(objPtr);
-    byteArrayPtr->used = length;
+    byteArrayPtr->used = numBytes;
     return byteArrayPtr->bytes;
 }
 
@@ -645,7 +558,7 @@ MakeByteArray(
 	*dst++ = UCHAR(ch);
     }
     byteArrayPtr->used = dst - byteArrayPtr->bytes;
-    byteArrayPtr->allocated = length;
+    byteArrayPtr->allocated = numBytes;
 
     *byteArrayPtrPtr = byteArrayPtr;
     return proper;
@@ -873,9 +786,14 @@ TclAppendBytesToByteArray(
     }
     byteArrayPtr = GET_BYTEARRAY(irPtr);
 
+    /* Size limit check now commented out.  Used to protect calls to
+     * Tcl_*Alloc*() limited by unsigned int arguments.
+     *
     if (len > UINT_MAX - byteArrayPtr->used) {
 	Tcl_Panic("max size for a Tcl value (%u bytes) exceeded", UINT_MAX);
     }
+     *
+     */
 
     needed = byteArrayPtr->used + len;
     /*
@@ -899,11 +817,7 @@ TclAppendBytesToByteArray(
 	     * Try to allocate double the increment that is needed (plus).
 	     */
 
-	    size_t limit = UINT_MAX - needed;
-	    size_t extra = len + TCL_MIN_GROWTH;
-	    size_t growth = (extra > limit) ? limit : extra;
-
-	    attempt = needed + growth;
+	    attempt = needed + len + TCL_MIN_GROWTH;
 	    ptr = (ByteArray *)Tcl_AttemptRealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
 	if (ptr == NULL) {
