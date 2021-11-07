@@ -588,10 +588,6 @@ declare 258 {
 	    Tcl_Obj *basenameObj)
 }
 
-declare 259 {
-    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    size_t *lengthPtr)
-}
 
 ##############################################################################
 
