@@ -4492,7 +4492,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * must point to a location from which "len" bytes may be read.  These
  * constraints are not checked here.  The validity of the bytes copied
  * as a value string representation is also not verififed.  This macro
- * must not be called while "objPtr" is being freed.  The caller must use
+ * must not be called while "objPtr" is being freed or when "objPtr"
+ * already has a string representation.  The caller must use
  * this macro properly.  Improper use can lead to dangerous results.
  * Because "len" is referenced multiple times, take care that it is an
  * expression with the same value each use. 

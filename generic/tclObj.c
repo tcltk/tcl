@@ -1815,31 +1815,47 @@ Tcl_InitStringRep(
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
-    /* Allocate */
     if (objPtr->bytes == NULL) {
-	/* Allocate only as empty - extend later if bytes copied */
-	objPtr->length = 0;
-	if (numBytes) {
-	    objPtr->bytes = (char *)attemptckalloc(numBytes + 1);
-	    if (objPtr->bytes == NULL) {
-		return NULL;
-	    }
-	    if (bytes) {
-		/* Copy */
-		memcpy(objPtr->bytes, bytes, numBytes);
-		objPtr->length = (int) numBytes;
-	    }
-	} else {
+	/* Start with no string rep */
+	if (numBytes == 0) {
 	    TclInitStringRep(objPtr, NULL, 0);
+	    return objPtr->bytes;
+	} else {
+	    objPtr->bytes = (char *)attemptckalloc(numBytes + 1);
+	    if (objPtr->bytes) {
+		objPtr->length = (int) numBytes;
+		if (bytes) {
+		    memcpy(objPtr->bytes, bytes, numBytes);
+		}
+		objPtr->bytes[objPtr->length] = '\0';
+	    }
+	}
+    } else if (objPtr->bytes == &tclEmptyString) {
+	/* Start with empty string rep (not allocated) */
+	if (numBytes == 0) {
+	    return objPtr->bytes;
+	} else {
+	    objPtr->bytes = (char *)attemptckalloc(numBytes + 1);
+	    if (objPtr->bytes) {
+		objPtr->length = (int) numBytes;
+		objPtr->bytes[objPtr->length] = '\0';
+	    }
 	}
     } else {
-	/* objPtr->bytes != NULL bytes == NULL - Truncate */
-	objPtr->bytes = (char *)ckrealloc(objPtr->bytes, numBytes + 1);
-	objPtr->length = (int)numBytes;
+	/* Start with non-empty string rep (allocated) */
+	if (numBytes == 0) {
+	    ckfree(objPtr->bytes);
+	    TclInitStringRep(objPtr, NULL, 0);
+	    return objPtr->bytes;
+	} else {
+	    objPtr->bytes = (char *)attemptckrealloc(objPtr->bytes,
+		    numBytes + 1);
+	    if (objPtr->bytes) {
+		objPtr->length = (int) numBytes;
+		objPtr->bytes[objPtr->length] = '\0';
+	    }
+	}
     }
-
-    /* Terminate */
-    objPtr->bytes[objPtr->length] = '\0';
 
     return objPtr->bytes;
 }
@@ -3517,7 +3533,6 @@ UpdateStringOfBignum(
     if (MP_OKAY != mp_to_radix(&bignumVal, stringVal, size, NULL, 10)) {
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");
     }
-    (void) Tcl_InitStringRep(objPtr, NULL, size - 1);
 }
 
 /*
