@@ -308,13 +308,11 @@ static inline int	ListMountPoints(Tcl_Interp *interp);
 static void		SerializeCentralDirectoryEntry(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
-			    ZipEntry *z, size_t nameLength,
-			    long long dataStartOffset);
+			    ZipEntry *z, size_t nameLength);
 static void		SerializeCentralDirectorySuffix(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
-			    int entryCount, long long dataStartOffset,
-			    long long directoryStartOffset,
+			    int entryCount, long long directoryStartOffset,
 			    long long suffixStartOffset);
 static void		SerializeLocalEntryHeader(
 			    const unsigned char *start,
@@ -1183,7 +1181,7 @@ ZipFSFindTOC(
     const unsigned char *p, *q;
     const unsigned char *start = zf->data;
     const unsigned char *end = zf->data + zf->length;
-    
+
     /*
      * Scan backwards from the end of the file for the signature. This is
      * necessary because ZIP archives aren't the only things that get tagged
@@ -1286,7 +1284,7 @@ ZipFSFindTOC(
     }
 
     zf->passOffset = minoff + zf->baseOffset;
-    
+
     /*
      * If there's also an encoded password, extract that too (but don't decode
      * yet).
@@ -2308,7 +2306,7 @@ ZipFSMountBufferObjCmd(
 	return TCL_OK;
     }
 
-    data = TclGetBytesFromObj(interp, objv[2], &length);
+    data = Tcl_GetBytesFromObj(interp, objv[2], &length);
     if (data == NULL) {
 	return TCL_ERROR;
     }
@@ -2414,7 +2412,7 @@ ZipFSMkKeyObjCmd(
     }
 
     passObj = Tcl_NewByteArrayObj(NULL, 264);
-    passBuf = Tcl_GetByteArrayFromObj(passObj, (int *)NULL);
+    passBuf = Tcl_GetBytesFromObj(NULL, passObj, NULL);
     while (len > 0) {
 	int ch = pw[len - 1];
 
@@ -2997,8 +2995,6 @@ ZipFSMkZipOrImg(
     Tcl_Channel out;
     int pwlen = 0, slen = 0, count, ret = TCL_ERROR, lobjc;
     size_t len, i = 0;
-    long long dataStartOffset;	/* The overall file offset of the start of the
-				 * data section of the file. */
     long long directoryStartOffset;
 				/* The overall file offset of the start of the
 				 * central directory. */
@@ -3175,7 +3171,6 @@ ZipFSMkZipOrImg(
      */
 
     Tcl_InitHashTable(&fileHash, TCL_STRING_KEYS);
-    dataStartOffset = Tcl_Tell(out);
     if (mappingList == NULL && stripPrefix != NULL) {
 	strip = TclGetStringFromObj(stripPrefix, &slen);
 	if (!slen) {
@@ -3216,7 +3211,7 @@ ZipFSMkZipOrImg(
 	name = Tcl_UtfToExternalDString(ZipFS.utf8, z->name, -1, &ds);
 	len = Tcl_DStringLength(&ds);
 	SerializeCentralDirectoryEntry(start, end, (unsigned char *) buf,
-		z, len, dataStartOffset);
+		z, len);
 	if ((Tcl_Write(out, buf, ZIP_CENTRAL_HEADER_LEN)
 		!= ZIP_CENTRAL_HEADER_LEN)
 		|| ((size_t) Tcl_Write(out, name, len) != len)) {
@@ -3236,7 +3231,7 @@ ZipFSMkZipOrImg(
     Tcl_Flush(out);
     suffixStartOffset = Tcl_Tell(out);
     SerializeCentralDirectorySuffix(start, end, (unsigned char *) buf,
-	    count, dataStartOffset, directoryStartOffset, suffixStartOffset);
+	    count, directoryStartOffset, suffixStartOffset);
     if (Tcl_Write(out, buf, ZIP_CENTRAL_END_LEN) != ZIP_CENTRAL_END_LEN) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"write error: %s", Tcl_PosixError(interp)));
@@ -3393,9 +3388,7 @@ SerializeCentralDirectoryEntry(
     const unsigned char *end,	/* The end of writable memory. */
     unsigned char *buf,		/* Where to serialize to */
     ZipEntry *z,		/* The description of what to serialize. */
-    size_t nameLength,		/* The length of the name. */
-    long long dataStartOffset)	/* The overall file offset of the start of the
-				 * data section of the file. */
+    size_t nameLength)		/* The length of the name. */
 {
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_SIG_OFFS,
 	    ZIP_CENTRAL_HEADER_SIG);
@@ -3429,8 +3422,6 @@ SerializeCentralDirectorySuffix(
     const unsigned char *end,	/* The end of writable memory. */
     unsigned char *buf,		/* Where to serialize to */
     int entryCount,		/* The number of entries in the directory */
-    long long dataStartOffset,	/* The overall file offset of the start of the
-				 * data section of the file. */
     long long directoryStartOffset,
 				/* The overall file offset of the start of the
 				 * central directory. */

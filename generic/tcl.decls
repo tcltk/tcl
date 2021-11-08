@@ -2467,6 +2467,16 @@ declare 648 {
 	    size_t length, Tcl_DString *dsPtr)
 }
 
+# TIP #568
+declare 649 {
+    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int *lengthPtr)
+}
+declare 650 {
+    unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    size_t *lengthPtr)
+}
+
 # TIP #481
 declare 651 {
     char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
