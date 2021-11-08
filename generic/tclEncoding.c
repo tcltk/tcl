@@ -516,7 +516,7 @@ FillEncodingFileMap(void)
  */
 
 /* Since TCL_ENCODING_MODIFIED is only used for utf-8/cesu-8 and
- * TCL_ENCODING_LE is only used for  utf-16/ucs-2. re-use the same value */
+ * TCL_ENCODING_LE is only used for  utf-16/utf-32/ucs-2. re-use the same value */
 #define TCL_ENCODING_LE		TCL_ENCODING_MODIFIED	/* Little-endian encoding */
 #define TCL_ENCODING_UTF	0x200	/* For UTF-8 encoding, allow 4-byte output sequences */
 
@@ -2350,15 +2350,15 @@ UtfToUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	if (UCHAR(*src) < 0x80 && !(UCHAR(*src) == 0 && (flags & TCL_ENCODING_MODIFIED))) {
+	if (UCHAR(*src) < 0x80 && !((UCHAR(*src) == 0) && (flags & TCL_ENCODING_MODIFIED))) {
 	    /*
 	     * Copy 7bit characters, but skip null-bytes when we are in input
 	     * mode, so that they get converted to 0xC080.
 	     */
 
 	    *dst++ = *src++;
-	} else if (UCHAR(*src) == 0xC0 && (src + 1 < srcEnd)
-		&& UCHAR(src[1]) == 0x80 && !(flags & TCL_ENCODING_MODIFIED)) {
+	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
+		&& (UCHAR(src[1]) == 0x80) && !(flags & TCL_ENCODING_MODIFIED)) {
 	    /*
 	     * Convert 0xC080 to real nulls when we are in output mode.
 	     */
@@ -2451,7 +2451,7 @@ UtfToUtfProc(
     *dstCharsPtr = numChars;
     return result;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -2547,7 +2547,7 @@ Utf32ToUtfProc(
     *dstCharsPtr = numChars;
     return result;
 }
-
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -2628,13 +2628,13 @@ UtfToUtf32Proc(
 	src += len;
 	if (flags & TCL_ENCODING_LE) {
 	    *dst++ = (ch & 0xFF);
-	    *dst++ = ((ch >> 8) & 0xff);
-	    *dst++ = ((ch >> 16) & 0xff);
-	    *dst++ = ((ch >> 24) & 0xff);
+	    *dst++ = ((ch >> 8) & 0xFF);
+	    *dst++ = ((ch >> 16) & 0xFF);
+	    *dst++ = ((ch >> 24) & 0xFF);
 	} else {
-	    *dst++ = ((ch >> 24) & 0xff);
-	    *dst++ = ((ch >> 16) & 0xff);
-	    *dst++ = ((ch >> 8) & 0xff);
+	    *dst++ = ((ch >> 24) & 0xFF);
+	    *dst++ = ((ch >> 16) & 0xFF);
+	    *dst++ = ((ch >> 8) & 0xFF);
 	    *dst++ = (ch & 0xFF);
 	}
     }
@@ -3146,11 +3146,7 @@ TableFromUtfProc(
 	len = TclUtfToUniChar(src, &ch);
 
 #if TCL_UTF_MAX > 3
-	/*
-	 * This prevents a crash condition. More evaluation is required for
-	 * full support of int Tcl_UniChar. [Bug 1004065]
-	 */
-
+	/* Unicode chars > +U0FFFF cannot be represented in any table encoding */
 	if (ch & 0xFFFF0000) {
 	    word = 0;
 	} else
