@@ -75,31 +75,15 @@ static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
 			    unsigned length, int type);
 /* Binary ensemble commands */
-static int		BinaryFormatCmd(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryScanCmd(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	BinaryFormatCmd;
+static Tcl_ObjCmdProc	BinaryScanCmd;
 /* Binary encoding sub-ensemble commands */
-static int		BinaryEncodeHex(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryDecodeHex(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryEncode64(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryDecode64(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryEncodeUu(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		BinaryDecodeUu(ClientData clientData,
-			    Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
+static Tcl_ObjCmdProc	BinaryEncodeHex;
+static Tcl_ObjCmdProc	BinaryDecodeHex;
+static Tcl_ObjCmdProc	BinaryEncode64;
+static Tcl_ObjCmdProc	BinaryDecode64;
+static Tcl_ObjCmdProc	BinaryEncodeUu;
+static Tcl_ObjCmdProc	BinaryDecodeUu;
 
 /*
  * The following tables are used by the binary encoders
@@ -180,7 +164,7 @@ static const EnsembleImplMap decodeMap[] = {
  * question arises what to do with strings outside that subset?  That is,
  * those Tcl strings containing at least one codepoint greater than 255?  The
  * obviously correct answer is to raise an error!  That string value does not
- * represent any valid bytearray value. 
+ * represent any valid bytearray value.
  *
  * Unfortunately this was not the path taken by the authors of the original
  * tclByteArrayType.  They chose to accept all Tcl string values as acceptable
@@ -211,11 +195,11 @@ static const EnsembleImplMap decodeMap[] = {
  * what the retained "tclByteArrayType" provides.  In those unusual
  * circumstances where we convert an invalid bytearray value to a bytearray
  * type, it is to this legacy type.  Essentially any time this legacy type
- * shows up, it's a signal of a bug being ignored.  
- *  
+ * shows up, it's a signal of a bug being ignored.
+ *
  * In Tcl 9, the incompatibility in the behavior of these public routines
  * has been approved, and the legacy internal rep is no longer retained.
- * The internal changes seen below are the limit of what can be done 
+ * The internal changes seen below are the limit of what can be done
  * in a Tcl 8.* release.  They provide a great expansion of the histories
  * over which bytearray values can be useful.
  */
@@ -858,7 +842,6 @@ UpdateStringOfByteArray(
 	for (i = 0; i < length; i++) {
 	    dst += Tcl_UniCharToUtf(src[i], dst);
 	}
-	(void) Tcl_InitStringRep(objPtr, NULL, size);
     }
 }
 
@@ -1525,7 +1508,7 @@ BinaryFormatCmd(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 BinaryScanCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
