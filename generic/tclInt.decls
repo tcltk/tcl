@@ -587,10 +587,6 @@ declare 258 {
     Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 	    Tcl_Obj *basenameObj)
 }
-declare 259 {
-    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    size_t *lengthPtr)
-}
 declare 261 {
     int	TclMSB(size_t n)
 }

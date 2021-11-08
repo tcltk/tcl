@@ -556,6 +556,7 @@ UpdateStringOfDict(
 	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
 	*dst++ = ' ';
     }
+    /* Last space overwrote the terminating NUL; cal T_ISR again to restore */
     (void)Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
 
     if (flagPtr != localFlags) {

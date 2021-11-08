@@ -431,7 +431,11 @@ EncodingConvertfromObjCmd(
     /*
      * Convert the string into a byte array in 'ds'
      */
-    bytesPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
+    bytesPtr = (char *) Tcl_GetBytesFromObj(interp, data, &length);
+    if (bytesPtr == NULL) {
+	Tcl_FreeEncoding(encoding);
+	return TCL_ERROR;
+    }
     Tcl_ExternalToUtfDString(encoding, bytesPtr, length, &ds);
 
     /*

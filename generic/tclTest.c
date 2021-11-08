@@ -5155,7 +5155,10 @@ TestsetbytearraylengthObjCmd(
     } else {
 	obj = objv[1];
     }
-    Tcl_SetByteArrayLength(obj, n);
+    if (NULL == Tcl_SetByteArrayLength(obj, n)) {
+	Tcl_SetResult(interp, "expected bytes", TCL_STATIC);
+	return TCL_ERROR;
+    }
     Tcl_SetObjResult(interp, obj);
     return TCL_OK;
 }
@@ -5192,7 +5195,7 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
 
-    p = (const char *)TclGetBytesFromObj(interp, objv[1], &n);
+    p = (const char *)Tcl_GetBytesFromObj(interp, objv[1], &n);
     if (p == NULL) {
 	return TCL_ERROR;
     }

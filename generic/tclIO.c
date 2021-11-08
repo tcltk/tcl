@@ -4114,7 +4114,7 @@ Tcl_WriteChars(
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;	/* State info for channel */
     int result;
-    Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr, *copy;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
 	return TCL_IO_FAILURE;
@@ -4141,9 +4141,11 @@ Tcl_WriteChars(
     }
 
     objPtr = Tcl_NewStringObj(src, len);
-    src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
-    result = WriteBytes(chanPtr, src, len);
+    copy = TclNarrowToBytes(objPtr);
+    src = (char *) Tcl_GetByteArrayFromObj(copy, &len);
     TclDecrRefCount(objPtr);
+    result = WriteBytes(chanPtr, src, len);
+    TclDecrRefCount(copy);
     return result;
 }
 
@@ -4193,8 +4195,13 @@ Tcl_WriteObj(
 	return TCL_IO_FAILURE;
     }
     if (statePtr->encoding == NULL) {
-	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &srcLen);
-	return WriteBytes(chanPtr, src, srcLen);
+	int result;
+	Tcl_Obj *copy = TclNarrowToBytes(objPtr);
+
+	src = (char *) Tcl_GetByteArrayFromObj(copy, &srcLen);
+	result = WriteBytes(chanPtr, src, srcLen);
+	Tcl_DecrRefCount(copy);
+	return result;
     } else {
 	src = Tcl_GetStringFromObj(objPtr, &srcLen);
 	return WriteChars(chanPtr, src, srcLen);
@@ -4556,7 +4563,8 @@ Tcl_GetsObj(
 
     if ((statePtr->encoding == NULL)
 	    && ((statePtr->inputTranslation == TCL_TRANSLATE_LF)
-		    || (statePtr->inputTranslation == TCL_TRANSLATE_CR))) {
+		    || (statePtr->inputTranslation == TCL_TRANSLATE_CR))
+	    && (Tcl_GetBytesFromObj)(NULL, objPtr, NULL) != NULL) {
 	return TclGetsObjBinary(chan, objPtr);
     }
 
@@ -5826,7 +5834,7 @@ DoReadChars(
 	    && (statePtr->inEofChar == '\0');
 
     if (appendFlag) {
-	if (binaryMode && (NULL == TclGetBytesFromObj(NULL, objPtr, NULL))) {
+	if (binaryMode && (NULL == Tcl_GetBytesFromObj(NULL, objPtr, NULL))) {
 	    binaryMode = 0;
 	}
     } else {

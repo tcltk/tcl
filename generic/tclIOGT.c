@@ -441,9 +441,12 @@ ExecuteCallback(
 	}
 	resObj = Tcl_GetObjResult(eval);
 	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
-	Tcl_WriteRaw(Tcl_GetStackedChannel(dataPtr->self), (char *) resBuf,
-		resLen);
-	break;
+	if (resBuf) {
+	    Tcl_WriteRaw(Tcl_GetStackedChannel(dataPtr->self),
+		    (char *) resBuf, resLen);
+	    break;
+	}
+	goto nonBytes;
 
     case TRANSMIT_SELF:
 	if (dataPtr->self == NULL) {
@@ -451,14 +454,24 @@ ExecuteCallback(
 	}
 	resObj = Tcl_GetObjResult(eval);
 	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
-	Tcl_WriteRaw(dataPtr->self, (char *) resBuf, resLen);
-	break;
+	if (resBuf) {
+	    Tcl_WriteRaw(dataPtr->self, (char *) resBuf, resLen);
+	    break;
+	}
+	goto nonBytes;
 
     case TRANSMIT_IBUF:
 	resObj = Tcl_GetObjResult(eval);
 	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
-	ResultAdd(&dataPtr->result, resBuf, resLen);
-	break;
+	if (resBuf) {
+	    ResultAdd(&dataPtr->result, resBuf, resLen);
+	    break;
+	}
+	nonBytes:
+	Tcl_AppendResult(interp, "chan transform callback received non-bytes",
+		NULL);
+	Tcl_Release(eval);
+	return TCL_ERROR;
 
     case TRANSMIT_NUM:
 	/*

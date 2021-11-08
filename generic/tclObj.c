@@ -360,7 +360,6 @@ TclInitObjSubsystem(void)
     Tcl_InitHashTable(&typeTable, TCL_STRING_KEYS);
     Tcl_MutexUnlock(&tableMutex);
 
-    Tcl_RegisterObjType(&tclByteArrayType);
     Tcl_RegisterObjType(&tclDoubleType);
     Tcl_RegisterObjType(&tclStringType);
     Tcl_RegisterObjType(&tclListType);
@@ -1774,31 +1773,47 @@ Tcl_InitStringRep(
 {
     assert(objPtr->bytes == NULL || bytes == NULL);
 
-    /* Allocate */
     if (objPtr->bytes == NULL) {
-	/* Allocate only as empty - extend later if bytes copied */
-	objPtr->length = 0;
-	if (numBytes) {
-	    objPtr->bytes = (char *)Tcl_AttemptAlloc(numBytes + 1);
-	    if (objPtr->bytes == NULL) {
-		return NULL;
-	    }
-	    if (bytes) {
-		/* Copy */
-		memcpy(objPtr->bytes, bytes, numBytes);
-		objPtr->length = numBytes;
-	    }
-	} else {
+	/* Start with no string rep */
+	if (numBytes == 0) {
 	    TclInitStringRep(objPtr, NULL, 0);
+	    return objPtr->bytes;
+	} else {
+	    objPtr->bytes = (char *)Tcl_AttemptAlloc(numBytes + 1);
+	    if (objPtr->bytes) {
+		objPtr->length = numBytes;
+		if (bytes) {
+		    memcpy(objPtr->bytes, bytes, numBytes);
+		}
+		objPtr->bytes[objPtr->length] = '\0';
+	    }
+	}
+    } else if (objPtr->bytes == &tclEmptyString) {
+	/* Start with empty string rep (not allocated) */
+	if (numBytes == 0) {
+	    return objPtr->bytes;
+	} else {
+	    objPtr->bytes = (char *)Tcl_AttemptAlloc(numBytes + 1);
+	    if (objPtr->bytes) {
+		objPtr->length = numBytes;
+		objPtr->bytes[objPtr->length] = '\0';
+	    }
 	}
     } else {
-	/* objPtr->bytes != NULL bytes == NULL - Truncate */
-	objPtr->bytes = (char *)Tcl_Realloc(objPtr->bytes, numBytes + 1);
-	objPtr->length = numBytes;
+	/* Start with non-empty string rep (allocated) */
+	if (numBytes == 0) {
+	    Tcl_Free(objPtr->bytes);
+	    TclInitStringRep(objPtr, NULL, 0);
+	    return objPtr->bytes;
+	} else {
+	    objPtr->bytes = (char *)Tcl_AttemptRealloc(objPtr->bytes,
+		    numBytes + 1);
+	    if (objPtr->bytes) {
+		objPtr->length = numBytes;
+		objPtr->bytes[objPtr->length] = '\0';
+	    }
+	}
     }
-
-    /* Terminate */
-    objPtr->bytes[objPtr->length] = '\0';
 
     return objPtr->bytes;
 }
@@ -3070,7 +3085,6 @@ UpdateStringOfBignum(
     if (MP_OKAY != mp_to_radix(&bignumVal, stringVal, size, NULL, 10)) {
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");
     }
-    (void) Tcl_InitStringRep(objPtr, NULL, size - 1);
 }
 
 /*

@@ -549,7 +549,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
-    TclGetBytesFromObj, /* 259 */
+    0, /* 259 */
     0, /* 260 */
     TclMSB, /* 261 */
 };
@@ -1343,8 +1343,8 @@ const TclStubs tclStubs = {
     Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
-    0, /* 649 */
-    0, /* 650 */
+    TclGetBytesFromObj, /* 649 */
+    Tcl_GetBytesFromObj, /* 650 */
     Tcl_GetStringFromObj, /* 651 */
     Tcl_GetUnicodeFromObj, /* 652 */
     Tcl_GetByteArrayFromObj, /* 653 */
