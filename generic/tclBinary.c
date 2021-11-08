@@ -729,7 +729,6 @@ UpdateStringOfByteArray(
 	for (i = 0; i < length; i++) {
 	    dst += Tcl_UniCharToUtf(src[i], dst);
 	}
-	(void) Tcl_InitStringRep(objPtr, NULL, size);
     }
 }
 

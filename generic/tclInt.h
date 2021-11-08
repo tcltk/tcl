@@ -4425,15 +4425,22 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to set a Tcl_Obj's string representation to a
- * copy of the "len" bytes starting at "bytePtr". This code works even if the
- * byte array contains NULLs as long as the length is correct. Because "len"
- * is referenced multiple times, it should be as simple an expression as
- * possible. The ANSI C "prototype" for this macro is:
+ * copy of the "len" bytes starting at "bytePtr". The value of "len" must
+ * not be negative.  When "len" is 0, then it is acceptable to pass
+ * "bytePtr" = NULL.  When "len" > 0, "bytePtr" must not be NULL, and it
+ * must point to a location from which "len" bytes may be read.  These
+ * constraints are not checked here.  The validity of the bytes copied
+ * as a value string representation is also not verififed.  This macro
+ * must not be called while "objPtr" is being freed or when "objPtr"
+ * already has a string representation.  The caller must use
+ * this macro properly.  Improper use can lead to dangerous results.
+ * Because "len" is referenced multiple times, take care that it is an
+ * expression with the same value each use. 
+ *
+ * The ANSI C "prototype" for this macro is:
  *
  * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, size_t len);
  *
- * This macro should only be called on an unshared objPtr where
- *  objPtr->typePtr->freeIntRepProc == NULL
  *----------------------------------------------------------------
  */
 
