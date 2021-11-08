@@ -4496,7 +4496,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * already has a string representation.  The caller must use
  * this macro properly.  Improper use can lead to dangerous results.
  * Because "len" is referenced multiple times, take care that it is an
- * expression with the same value each use. 
+ * expression with the same value each use.
  *
  * The ANSI C "prototype" for this macro is:
  *
