@@ -641,7 +641,7 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@for i in dde${DDEDOTVER} reg${REGDOTVER}; \
+	@for i in dde${DDEDOTVER} registry${REGDOTVER}; \
 	    do \
 	    if [ ! -d "$(LIB_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \

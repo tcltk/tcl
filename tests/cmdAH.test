@@ -1435,7 +1435,7 @@ test cmdAH-28.5 {Tcl_FileObjCmd: stat} -constraints {unix} -setup {
 } -body {
     file stat $gorpfile stat
     format 0o%03o [expr {$stat(mode) & 0o777}]
-} -result 0o765
+} -result 0o644
 test cmdAH-28.6 {Tcl_FileObjCmd: stat} {
     list [catch {file stat _bogus_ stat} msg] [string tolower $msg] $errorCode
 } {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
