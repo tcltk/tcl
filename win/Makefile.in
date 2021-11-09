@@ -676,7 +676,7 @@ install-binaries: binaries
 	@if [ -f $(REG_DLL_FILE) ]; then \
 	    echo Installing $(REG_DLL_FILE); \
 	    $(COPY) $(REG_DLL_FILE) "$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
-	    $(COPY) $(ROOT_DIR)/library/registry/pkgIndex.tcl \
+	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl \
 		"$(LIB_INSTALL_DIR)/registry${REGDOTVER}"; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
