@@ -38,10 +38,10 @@ apply [list {} {
     } {
 		set script [string map $map {
 			proc data1 iterations {
-			for {set i 0} {$i < $iterations} {incr i} {
-				@lappend@ expected [format %x $i]
-			}
-			return $expected
+				for {set i 0} {$i < $iterations} {incr i} {
+					@lappend@ expected [format %x $i]
+				}
+				return $expected
 			}
 
 
@@ -289,7 +289,7 @@ apply [list {} {
 			test {integer lappend @mode@} {} \
 			-constraints testlistinteger \
 			-body {
-				set list [testlistinteger]
+				set list [testlistinteger {}]
 				@lappend@ list 8 9 10
 				@lappend@ list 11 12 13
 			} -cleanup {
@@ -300,7 +300,7 @@ apply [list {} {
 			test {integer lappend empty @mode@} {} \
 			-constraints testlistinteger \
 			-body {
-				set list [testlistinteger]
+				set list [testlistinteger {}]
 				@lappend@ list 8 9 10
 			} -cleanup {
 				catch {unset list}
@@ -310,7 +310,7 @@ apply [list {} {
 			test {integer lappend noninteger @mode@} {} \
 			-constraints testlistinteger \
 			-body {
-				set list [testlistinteger]
+				set list [testlistinteger {}]
 				@lappend@ list {8 9 10 11 12 13}
 			} -cleanup {
 				catch {unset list}
@@ -322,7 +322,7 @@ apply [list {} {
 			} \
 			-constraints testlistinteger \
 			-body {
-				set list [testlistinteger]
+				set list [testlistinteger {}]
 				@lappend@ list 8 9 10 11 12 13
 				@lindex@ $list -1 -1 7 
 			} -cleanup {
@@ -333,7 +333,7 @@ apply [list {} {
 			test {integer lindex middle @mode@} {} \
 			-constraints testlistinteger \
 			-body {
-				set list [testlistinteger]
+				set list [testlistinteger {}]
 				@lappend@ list 8 9 10 11 12 13
 				@lindex@ $list 3 
 			} -cleanup {
@@ -344,7 +344,7 @@ apply [list {} {
 			test {integer lindex end @mode@} {} \
 			-constraints testlistinteger \
 			-body {
-				set list [testlistinteger]
+				set list [testlistinteger {}]
 				@lappend@ list 8 9 10 11 12 13
 				@lindex@ $list end 
 			} -cleanup {
@@ -353,32 +353,32 @@ apply [list {} {
 
 
 			apply [list {} {
-			for {set i 0} {$i < 7} {incr i} {
-				set items {8 9 10 11 12 13}
-				set results {13 12 11 10 9 8}
+				for {set i 0} {$i < 7} {incr i} {
+					set items {8 9 10 11 12 13}
+					set results {13 12 11 10 9 8}
 
-				set comment [list integer lindex end-$i @mode@]
-				set body [string map {@i@ $i @items@ $items} {
-				set list [testlistinteger]
-				@lappend@ list {*}$items
-				@lindex@ $list end-$i
-				}]
-				set result [lindex $results $i]
+					set comment [list integer lindex end-$i @mode@]
+					set body [string map {@i@ $i @items@ $items} {
+						set list [testlistinteger {}]
+						@lappend@ list {*}$items
+						@lindex@ $list end-$i
+					}]
+					set result [lindex $results $i]
 
-				test $comment {} \
-				-constraints testlistinteger \
-				-body $body -cleanup {
-					catch {unset list}
-				} -result $result 
-			}
-			unset i
+					test $comment {} \
+					-constraints testlistinteger \
+					-body $body -cleanup {
+						catch {unset list}
+					} -result $result 
+				}
+				unset i
 			} [namespace current]]
 
 
 			test {integer linsert middle one @mode@} {} \
 			-constraints testlistinteger \
 			-body {
-				set list [testlistinteger]
+				set list [testlistinteger {}]
 				set res {}
 				@lappend@ list 8 9 10 12 13
 				after 100
@@ -397,7 +397,7 @@ apply [list {} {
 			test {integer lrange middle @mode@} {} \
 			-constraints testlistinteger \
 			-body {
-				set list [testlistinteger]
+				set list [testlistinteger {}]
 				@lappend@ list 8 9 10 11 12 13
 				@lrange@ $list 3 4
 			} -cleanup {
@@ -408,7 +408,7 @@ apply [list {} {
 			test {integer lreplace prepend @mode@} {} \
 			-constraints testlistinteger \
 			-body {
-				set list [testlistinteger]
+				set list [testlistinteger {}]
 				@lappend@ list 8 9 10 11 12 13
 				after 100
 				@lreplace@ $list -1 -1 7 
@@ -416,31 +416,37 @@ apply [list {} {
 				catch {unset list}
 			} -result {7 8 9 10 11 12 13}
 		}]
-		try $script
+		#try $script
 
     }
 
-	namespace eval {linsert tests} {
-		source [file join [file dirname [file dirname [
-			file normalize [file join [info script] ...]]]] linsert.test]
-		proc newlist list {
-			if {[string is list $list]} {
-				set integer 1
-				foreach item $list {
-					if {![string is integer $item]} {
-						set integer 0
-						break
+	set suites {linsert lset}  
+
+	foreach suite {linsert lset} {
+		set namespace [list $suite tests]
+		namespace eval $namespace [list source [
+			file join [file dirname [file dirname [
+				file normalize [file join [info script] ...]]]] $suite.test]]
+		namespace eval $namespace {
+			proc newlist list {
+				if {[string is list $list]} {
+					set integer 1
+					foreach item $list {
+						if {![string is integer $item]} {
+							set integer 0
+							break
+						}
+					}
+					if {$integer} {
+						testlistinteger $list
 					}
 				}
-				if {$integer} {
-					testlistinteger $list
-				}
+				return $list
 			}
-			return $list
+			try $tests
 		}
-		try $tests
+		namespace delete $namespace
 	}
-	namespace delete {linsert tests}
 
 
     # cleanup

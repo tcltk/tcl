@@ -715,6 +715,10 @@ Tcl_ListObjAppendElement(
     Tcl_Obj *listPtr,
     Tcl_Obj *objPtr)
 {
+    if (Tcl_IsShared(listPtr)) {
+	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendElement");
+    }
+
     return TclObjectDispatch(listPtr, ListObjAppendElement,
 	list, append, interp, listPtr, objPtr);
 }
@@ -727,10 +731,6 @@ ListObjAppendElement(
 {
     List *listRepPtr, *newPtr = NULL;
     int numElems, numRequired, needGrow, isShared, attempt;
-
-    if (Tcl_IsShared(listPtr)) {
-	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendElement");
-    }
 
     ListGetIntRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
@@ -1008,7 +1008,7 @@ ListObjInterfaceLength(
  *	Replace values in a list.
  *
  *	If 'first' is zero or negative, it refers to the first element. If
- *	'first' outside the range of elements in the list, no elements are
+ *	'first' is outside the range of elements in the list, no elements are
  *	deleted.
  *
  *	If 'count' is zero or negative no elements are deleted, and any new

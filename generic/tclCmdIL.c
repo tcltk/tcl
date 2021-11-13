@@ -2400,7 +2400,7 @@ Tcl_LinsertObjCmd(
 {
     Tcl_Obj *listPtr;
     size_t index;
-    int len, result;
+    int len, result, status;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list index ?element ...?");
@@ -2441,7 +2441,10 @@ Tcl_LinsertObjCmd(
 	 * Special case: insert one element at the end of the list.
 	 */
 
-	Tcl_ListObjAppendElement(NULL, listPtr, objv[3]);
+	status = Tcl_ListObjAppendElement(NULL, listPtr, objv[3]);
+	if (status != TCL_OK) {
+	    return status;
+	}
     } else {
 	if (TCL_OK != Tcl_ListObjReplace(interp, listPtr, index, 0,
 		(objc-3), &(objv[3]))) {

@@ -377,11 +377,13 @@ typedef struct ObjectType {
 			    /* Index args. */ \
     Tcl_Obj *valuePtr	/* Value arg to 'lset' or NULL to 'lpop'. */
 
+
 #define tclObjTypeInterfaceArgsStringIndex \
     Tcl_Interp *interp,	    \
     Tcl_Obj *objPtr,	    \
     int index,	\
     Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
+
 
 #define tclObjTypeInterfaceArgsStringIndexEnd \
     Tcl_Interp *interp,	    \
@@ -389,13 +391,16 @@ typedef struct ObjectType {
     int index,	\
     Tcl_Obj **objPtrPtr	/* The resulting Tcl_Obj* is stored here. */
 
+
 #define tclObjTypeInterfaceArgsStringLength \
     Tcl_Obj *objPtr
+
 
 #define tclObjTypeInterfaceArgsStringRange \
     Tcl_Obj *objPtr,	/* The Tcl object to find the range of. */ \
     size_t first,	/* First index of the range. */ \
     size_t last	/* Last index of the range. */
+
 
 #define tclObjTypeInterfaceArgsStringRangeEnd \
     Tcl_Obj *objPtr,	/* The Tcl object to find the range of. */ \
@@ -3347,6 +3352,7 @@ MODULE_SCOPE Tcl_FSDupInternalRepProc TclNativeDupInternalRep;
 MODULE_SCOPE Tcl_Obj *	TclpObjLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
 			    int linkType);
 MODULE_SCOPE int	TclpObjChdir(Tcl_Obj *pathPtr);
+MODULE_SCOPE void Tcl_ObjTypeVersion(Tcl_Obj *objPtr, int *version);
 MODULE_SCOPE Tcl_Channel TclpOpenTemporaryFile(Tcl_Obj *dirObj,
 			    Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
 			    Tcl_Obj *resultingNameObj);

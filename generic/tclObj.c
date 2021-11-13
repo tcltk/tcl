@@ -117,14 +117,14 @@ static ThreadSpecificData *TclGetContLineTable(void);
  */
 
 typedef struct PendingObjData {
-    int deletionCount;		/* Count of the number of invokations of
+    int deletionCount;		/* Count of the number of invocations of
 				 * TclFreeObj() are on the stack (at least
 				 * conceptually; many are actually expanded
 				 * macros). */
     Tcl_Obj *deletionStack;	/* Stack of objects that have had TclFreeObj()
 				 * invoked upon them but which can't be
 				 * deleted yet because they are in a nested
-				 * invokation of TclFreeObj(). By postponing
+				 * invocation of TclFreeObj(). By postponing
 				 * this way, we limit the maximum overall C
 				 * stack depth when deleting a complex object.
 				 * The down-side is that we alter the overall
@@ -955,7 +955,7 @@ Tcl_ConvertToType(
     }
 
     /*
-     * Use the target type's Tcl_SetFromAnyProc to set "objPtr"s internal form
+     * Use the target type's setFromAnyProc to set "objPtr"s internal form
      * as appropriate for the target type. This frees the old internal
      * representation.
      */
@@ -4385,6 +4385,16 @@ Tcl_RepresentationCmd(
 
     Tcl_SetObjResult(interp, descObj);
     return TCL_OK;
+}
+
+
+void Tcl_ObjTypeVersion(Tcl_Obj *objPtr, int *version) {
+    if ((void *)objPtr->typePtr->name == (void *)&TclObjectTypeType0) {
+	*version = ((ObjectType *)objPtr->typePtr)->version;
+    } else {
+	*version = 1;
+    }
+    return;
 }
 
 
