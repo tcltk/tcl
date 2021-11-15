@@ -1105,6 +1105,8 @@ static const struct {
 	    ".static"
 #endif
 #if TCL_UTF_MAX < 4
+	    ".ucs-2"
+#elif TCL_UTF_MAX == 4
 	    ".utf-16"
 #endif
 }};
