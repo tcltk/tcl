@@ -41,10 +41,10 @@ TclpFindExecutable(
 {
     Tcl_Encoding encoding;
     int length;
-    wchar_t buf[PATH_MAX];
+    wchar_t buf[PATH_MAX] = L"";
     char name[PATH_MAX * 3 + 1];
 
-    GetModuleFileNameW(NULL, buf, sizeof(buf)/sizeof(wchar_t));
+    GetModuleFileNameW(NULL, buf, PATH_MAX);
     cygwin_conv_path(3, buf, name, sizeof(name));
     length = strlen(name);
     if ((length > 4) && !strcasecmp(name + length - 4, ".exe")) {

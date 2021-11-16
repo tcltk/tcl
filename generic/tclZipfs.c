@@ -308,13 +308,11 @@ static inline int	ListMountPoints(Tcl_Interp *interp);
 static void		SerializeCentralDirectoryEntry(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
-			    ZipEntry *z, size_t nameLength,
-			    long long dataStartOffset);
+			    ZipEntry *z, size_t nameLength);
 static void		SerializeCentralDirectorySuffix(
 			    const unsigned char *start,
 			    const unsigned char *end, unsigned char *buf,
-			    int entryCount, long long dataStartOffset,
-			    long long directoryStartOffset,
+			    int entryCount, long long directoryStartOffset,
 			    long long suffixStartOffset);
 static void		SerializeLocalEntryHeader(
 			    const unsigned char *start,
@@ -1187,7 +1185,7 @@ ZipFSFindTOC(
     int needZip,
     ZipFile *zf)
 {
-    size_t i;
+    size_t i, minoff;
     const unsigned char *p, *q;
     const unsigned char *start = zf->data;
     const unsigned char *end = zf->data + zf->length;
@@ -1245,6 +1243,8 @@ ZipFSFindTOC(
 
     q = zf->data + ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSTART_OFFS);
     p -= ZipReadInt(start, end, p + ZIP_CENTRAL_DIRSIZE_OFFS);
+    zf->baseOffset = zf->passOffset = (p>q) ? p - q : 0;
+    zf->directoryOffset = q - zf->data + zf->baseOffset;
     if ((p < q) || (p < zf->data) || (p > zf->data + zf->length)
 	    || (q < zf->data) || (q > zf->data + zf->length)) {
 	if (!needZip) {
@@ -1260,11 +1260,11 @@ ZipFSFindTOC(
      * Read the central directory.
      */
 
-    zf->baseOffset = zf->passOffset = p - q;
-    zf->directoryOffset = p - zf->data;
     q = p;
+    minoff = zf->length;
     for (i = 0; i < zf->numFiles; i++) {
 	int pathlen, comlen, extra;
+	size_t localhdr_off = zf->length;
 
 	if (q + ZIP_CENTRAL_HEADER_LEN > end) {
 	    ZIPFS_ERROR(interp, "wrong header length");
@@ -1279,16 +1279,27 @@ ZipFSFindTOC(
 	pathlen = ZipReadShort(start, end, q + ZIP_CENTRAL_PATHLEN_OFFS);
 	comlen = ZipReadShort(start, end, q + ZIP_CENTRAL_FCOMMENTLEN_OFFS);
 	extra = ZipReadShort(start, end, q + ZIP_CENTRAL_EXTRALEN_OFFS);
+	localhdr_off = ZipReadInt(start, end, q + ZIP_CENTRAL_LOCALHDR_OFFS);
+ 	if (ZipReadInt(start, end, zf->data + zf->baseOffset + localhdr_off) != ZIP_LOCAL_HEADER_SIG) {
+	    ZIPFS_ERROR(interp, "Failed to find local header");
+	    ZIPFS_ERROR_CODE(interp, "LCL_HDR");
+	    goto error;
+	}
+	if (localhdr_off < minoff) {
+	    minoff = localhdr_off;
+	}
 	q += pathlen + comlen + extra + ZIP_CENTRAL_HEADER_LEN;
     }
+
+    zf->passOffset = minoff + zf->baseOffset;
 
     /*
      * If there's also an encoded password, extract that too (but don't decode
      * yet).
      */
 
-    q = zf->data + zf->baseOffset;
-    if ((zf->baseOffset >= 6) &&
+    q = zf->data + zf->passOffset;
+    if ((zf->passOffset >= 6) && (start < q-4) &&
 	    (ZipReadInt(start, end, q - 4) == ZIP_PASSWORD_END_SIG)) {
 	const unsigned char *passPtr;
 
@@ -1300,6 +1311,7 @@ ZipFSFindTOC(
 	    zf->passOffset -= i ? (5 + i) : 0;
 	}
     }
+
     return TCL_OK;
 
   error:
@@ -2991,8 +3003,6 @@ ZipFSMkZipOrImg(
     Tcl_Channel out;
     int pwlen = 0, slen = 0, count, ret = TCL_ERROR, lobjc;
     size_t len, i = 0;
-    long long dataStartOffset;	/* The overall file offset of the start of the
-				 * data section of the file. */
     long long directoryStartOffset;
 				/* The overall file offset of the start of the
 				 * central directory. */
@@ -3169,7 +3179,6 @@ ZipFSMkZipOrImg(
      */
 
     Tcl_InitHashTable(&fileHash, TCL_STRING_KEYS);
-    dataStartOffset = Tcl_Tell(out);
     if (mappingList == NULL && stripPrefix != NULL) {
 	strip = Tcl_GetStringFromObj(stripPrefix, &slen);
 	if (!slen) {
@@ -3210,7 +3219,7 @@ ZipFSMkZipOrImg(
 	name = Tcl_UtfToExternalDString(ZipFS.utf8, z->name, -1, &ds);
 	len = Tcl_DStringLength(&ds);
 	SerializeCentralDirectoryEntry(start, end, (unsigned char *) buf,
-		z, len, dataStartOffset);
+		z, len);
 	if ((Tcl_Write(out, buf, ZIP_CENTRAL_HEADER_LEN)
 		!= ZIP_CENTRAL_HEADER_LEN)
 		|| ((size_t) Tcl_Write(out, name, len) != len)) {
@@ -3230,7 +3239,7 @@ ZipFSMkZipOrImg(
     Tcl_Flush(out);
     suffixStartOffset = Tcl_Tell(out);
     SerializeCentralDirectorySuffix(start, end, (unsigned char *) buf,
-	    count, dataStartOffset, directoryStartOffset, suffixStartOffset);
+	    count, directoryStartOffset, suffixStartOffset);
     if (Tcl_Write(out, buf, ZIP_CENTRAL_END_LEN) != ZIP_CENTRAL_END_LEN) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"write error: %s", Tcl_PosixError(interp)));
@@ -3387,9 +3396,7 @@ SerializeCentralDirectoryEntry(
     const unsigned char *end,	/* The end of writable memory. */
     unsigned char *buf,		/* Where to serialize to */
     ZipEntry *z,		/* The description of what to serialize. */
-    size_t nameLength,		/* The length of the name. */
-    long long dataStartOffset)	/* The overall file offset of the start of the
-				 * data section of the file. */
+    size_t nameLength)		/* The length of the name. */
 {
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_SIG_OFFS,
 	    ZIP_CENTRAL_HEADER_SIG);
@@ -3414,7 +3421,7 @@ SerializeCentralDirectoryEntry(
     ZipWriteShort(start, end, buf + ZIP_CENTRAL_IATTR_OFFS, 0);
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_EATTR_OFFS, 0);
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_LOCALHDR_OFFS,
-	    z->offset - dataStartOffset);
+	    z->offset);
 }
 
 static void
@@ -3423,8 +3430,6 @@ SerializeCentralDirectorySuffix(
     const unsigned char *end,	/* The end of writable memory. */
     unsigned char *buf,		/* Where to serialize to */
     int entryCount,		/* The number of entries in the directory */
-    long long dataStartOffset,	/* The overall file offset of the start of the
-				 * data section of the file. */
     long long directoryStartOffset,
 				/* The overall file offset of the start of the
 				 * central directory. */
@@ -3441,7 +3446,7 @@ SerializeCentralDirectorySuffix(
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_DIRSIZE_OFFS,
 	    suffixStartOffset - directoryStartOffset);
     ZipWriteInt(start, end, buf + ZIP_CENTRAL_DIRSTART_OFFS,
-	    directoryStartOffset - dataStartOffset);
+	    directoryStartOffset);
     ZipWriteShort(start, end, buf + ZIP_CENTRAL_COMMENTLEN_OFFS, 0);
 }
 
@@ -3913,7 +3918,7 @@ TclZipfs_TclLibrary(void)
     }
 #elif !defined(NO_DLFCN_H)
     Dl_info dlinfo;
-    if (dladdr(TclZipfs_TclLibrary, &dlinfo) && (dlinfo.dli_fname != NULL)
+    if (dladdr((const void *)TclZipfs_TclLibrary, &dlinfo) && (dlinfo.dli_fname != NULL)
 	&& (ZipfsAppHookFindTclInit(dlinfo.dli_fname) == TCL_OK)) {
 	return Tcl_NewStringObj(zipfs_literal_tcl_library, -1);
     }

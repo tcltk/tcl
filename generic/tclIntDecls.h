@@ -659,9 +659,6 @@ EXTERN void		TclStaticLibrary(Tcl_Interp *interp,
 EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj);
 /* 259 */
-EXTERN unsigned char *	TclGetBytesFromObj(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, int *lengthPtr);
-/* 260 */
 EXTERN void		TclUnusedStubEntry(void);
 
 typedef struct TclIntStubs {
@@ -927,8 +924,7 @@ typedef struct TclIntStubs {
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags); /* 256 */
     void (*tclStaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc); /* 257 */
     Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
-    unsigned char * (*tclGetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *lengthPtr); /* 259 */
-    void (*tclUnusedStubEntry) (void); /* 260 */
+    void (*tclUnusedStubEntry) (void); /* 259 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1374,10 +1370,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclStaticLibrary) /* 257 */
 #define TclpCreateTemporaryDirectory \
 	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
-#define TclGetBytesFromObj \
-	(tclIntStubsPtr->tclGetBytesFromObj) /* 259 */
 #define TclUnusedStubEntry \
-	(tclIntStubsPtr->tclUnusedStubEntry) /* 260 */
+	(tclIntStubsPtr->tclUnusedStubEntry) /* 259 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

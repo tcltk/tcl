@@ -4,9 +4,9 @@
 # 	that the code can be definitely run even in safe interpreters; TclOO's
 # 	core setup is safe.
 #
-# Copyright (c) 2012-2018 Donal K. Fellows
-# Copyright (c) 2013 Andreas Kupries
-# Copyright (c) 2017 Gerald Lester
+# Copyright © 2012-2018 Donal K. Fellows
+# Copyright © 2013 Andreas Kupries
+# Copyright © 2017 Gerald Lester
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.

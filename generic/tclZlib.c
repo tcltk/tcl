@@ -1154,7 +1154,7 @@ Tcl_ZlibStreamSetCompressionDictionary(
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
 
     if (compressionDictionaryObj && (NULL == TclGetBytesFromObj(NULL,
-	    compressionDictionaryObj, NULL))) {
+	    compressionDictionaryObj, (int *)NULL))) {
 	/* Missing or invalid compression dictionary */
 	compressionDictionaryObj = NULL;
     }
