@@ -728,7 +728,7 @@ test encoding-28.0 {all encodings load} -body {
 		llength $name
 	}
 	return $count
-} -result 83
+} -result 84
 
 runtests
 
