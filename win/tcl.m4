@@ -603,6 +603,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	else
 	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
 	fi
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
 	AC_CACHE_CHECK(for working -fno-lto,
 	    ac_cv_nolto,
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
@@ -623,6 +624,18 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	if test $tcl_cv_cc_input_charset = yes; then
 	    extra_cflags="$extra_cflags -finput-charset=UTF-8"
 	fi
+    fi
+
+    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Wl,--enable-auto-image-base"
+    AC_CACHE_CHECK(for working --enable-auto-image-base,
+	ac_cv_enable_auto_image_base,
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+	[ac_cv_enable_auto_image_base=yes],
+	[ac_cv_enable_auto_image_base=no])
+    )
+    CFLAGS=$hold_cflags
+    if test "$ac_cv_enable_auto_image_base" == "yes" ; then
+	extra_ldflags="$extra_ldflags -Wl,--enable-auto-image-base"
     fi
 
     AC_MSG_CHECKING([compiler flags])
