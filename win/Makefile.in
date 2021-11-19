@@ -861,20 +861,18 @@ install-libraries: libraries install-tzdata install-msgs
 		fi; \
 	    done;
 	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)";
-	@for i in $(ROOT_DIR)/library/*.tcl $(ROOT_DIR)/library/tclIndex; \
-	    do \
+	@for i in $(ROOT_DIR)/library/*.tcl $(ROOT_DIR)/library/tclIndex; do \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
 	@echo "Installing package cookiejar 0.2"
-	@for j in $(ROOT_DIR)/library/cookiejar/*.{tcl,gz}; \
-	    do \
+	@for j in $(ROOT_DIR)/library/cookiejar/*.tcl \
+	          $(ROOT_DIR)/library/cookiejar/*.gz; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done;
 	@echo "Installing package http 2.10a1 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/8.6/http-2.10a1.tm";
 	@echo "Installing package opt 0.4.7";
-	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
-	    do \
+	@for j in $(ROOT_DIR)/library/opt/*.tcl; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module";
