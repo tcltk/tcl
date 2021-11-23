@@ -677,11 +677,12 @@ tclEvent.${OBJEXT}: tclEvent.c tclUuid.h
 
 $(TOP_DIR)/manifest.uuid:
 	printf "git-" >$(TOP_DIR)/manifest.uuid
-	git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid
+	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || printf "unknown" >$(TOP_DIR)/manifest.uuid)
 
 tclUuid.h:	$(TOP_DIR)/manifest.uuid
 	echo "#define TCL_VERSION_UUID \\" >$@
 	cat $(TOP_DIR)/manifest.uuid >>$@
+	echo "" >>$@
 
 # The following objects are part of the stub library and should not be built
 # as DLL objects but none of the symbols should be exported
