@@ -608,7 +608,7 @@ encConvFromOK:
 	sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte sequence starting at index %"
 		TCL_Z_MODIFIER "u: '\\x%X'", result, UCHAR(bytesPtr[result])));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "STOPONERROR",
+	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
 		buf, NULL);
 	Tcl_DStringFree(&ds);
 	return TCL_ERROR;
@@ -710,7 +710,7 @@ encConvToOK:
 	sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected character at index %"
 		TCL_Z_MODIFIER "u: 'U+%06X'", pos, ucs4));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "STOPONERROR",
+	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
 		buf, NULL);
 	Tcl_DStringFree(&ds);
 	return TCL_ERROR;
