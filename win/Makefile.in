@@ -579,7 +579,7 @@ ${TCL_LIB_FILE}: ${TCL_OBJS}
 	@MAKE_LIB@ ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@POST_MAKE_LIB@
 
-${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE}
+${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 	$(COPY) tclsh.exe.manifest ${DDE_DLL_FILE}.manifest
 
@@ -674,6 +674,15 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
+
+$(TOP_DIR)/manifest.uuid:
+	printf "git-" >$(TOP_DIR)/manifest.uuid
+	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || printf "unknown" >$(TOP_DIR)/manifest.uuid)
+
+tclUuid.h:	$(TOP_DIR)/manifest.uuid
+	echo "#define TCL_VERSION_UUID \\" >$@
+	cat $(TOP_DIR)/manifest.uuid >>$@
+	echo "" >>$@
 
 # The following objects are part of the stub library and should not be built
 # as DLL objects but none of the symbols should be exported
