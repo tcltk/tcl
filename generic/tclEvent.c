@@ -1028,7 +1028,7 @@ static const struct {
     const char version[256];
 } stubInfo = {
     &tclStubs, {TCL_PATCH_LEVEL}
-}
+};
 
 const char *
 TclInitSubsystems(void)
