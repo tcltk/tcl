@@ -673,9 +673,14 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 
+tclEvent.${OBJEXT}: tclEvent.c tclUuid.h
+
 $(TOP_DIR)/manifest.uuid:
 	printf "git-" >$(TOP_DIR)/manifest.uuid
-	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || printf "unknown" >$(TOP_DIR)/manifest.uuid)
+	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || \
+	    (printf "svn-r" >$(TOP_DIR)/manifest.uuid ; \
+	    svn info --show-item last-changed-revision >>$(TOP_DIR)/manifest.uuid) || \
+	    printf "unknown" >$(TOP_DIR)/manifest.uuid)
 
 tclUuid.h:	$(TOP_DIR)/manifest.uuid
 	echo "#define TCL_VERSION_UUID \\" >$@
