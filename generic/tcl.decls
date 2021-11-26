@@ -532,7 +532,7 @@ declare 143 {
 }
 # Removed in 9.0 (stub entry only)
 #declare 144 {
-#    void Tcl_FindExecutable(const char *argv0)
+#    const char *Tcl_FindExecutable(const char *argv0)
 #}
 declare 145 {
     Tcl_HashEntry *Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
@@ -838,7 +838,7 @@ declare 229 {
 }
 # Removed in 9.0 (stub entry only)
 #declare 230 {
-#    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+#    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 #}
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
@@ -2573,10 +2573,10 @@ export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
 }
 export {
-    void Tcl_InitSubsystems(void)
+    const char *Tcl_InitSubsystems(void)
 }
 export {
-    int TclZipfs_AppHook(int *argc, char ***argv)
+    const char *TclZipfs_AppHook(int *argc, char ***argv)
 }
 
 # Local Variables:
