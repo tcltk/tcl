@@ -2,7 +2,7 @@ name: Windows
 on: [push]
 jobs:
   msvc:
-    runs-on: windows-2016
+    runs-on: windows-2019
     defaults:
       run:
         shell: powershell
@@ -41,7 +41,7 @@ jobs:
         env:
           ERROR_ON_FAILURES: 1
   gcc:
-    runs-on: windows-2016
+    runs-on: windows-2019
     defaults:
       run:
         shell: bash
