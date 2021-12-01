@@ -1188,7 +1188,7 @@ test winFCmd-19.4 {Windows extended path names} -constraints nt -setup {
     catch {file delete $tmpfile}
 } -result [list 0 {}]
 test winFCmd-19.5 {Windows extended path names} -constraints nt -setup {
-    set tmpfile [file join $::env(TEMP) tcl[string repeat x 248].tmp]
+    set tmpfile [file join $::env(TEMP) tcl[string repeat x 200].tmp]
     set tmpfile [file normalize $tmpfile]
 } -body {
     list [catch {
