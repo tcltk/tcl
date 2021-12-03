@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.9.5
+package provide http 2.9.6
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -3457,8 +3457,12 @@ proc http::ContentEncoding {token} {
 		gzip - x-gzip { lappend r gunzip }
 		compress - x-compress { lappend r decompress }
 		identity {}
+		br {
+		    return -code error\
+			    "content-encoding \"br\" not implemented"
+		}
 		default {
-		    return -code error "unsupported content-encoding \"$coding\""
+		    Log "unknown content-encoding \"$coding\" ignored"
 		}
 	    }
 	}
