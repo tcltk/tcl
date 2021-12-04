@@ -109,7 +109,7 @@ declare 21 {
 #    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
 #}
 declare 23 {
-    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, size_t length,
+    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, size_t numBytes,
 	    const char *file, int line)
 }
 declare 24 {
@@ -206,7 +206,7 @@ declare 48 {
 #    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
 #}
 declare 50 {
-    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, size_t length)
+    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, size_t numBytes)
 }
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
@@ -233,11 +233,11 @@ declare 56 {
 #    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
 #}
 declare 58 {
-    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, size_t length)
+    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, size_t numBytes)
 }
 declare 59 {
     void Tcl_SetByteArrayObj(Tcl_Obj *objPtr, const unsigned char *bytes,
-	    size_t length)
+	    size_t numBytes)
 }
 declare 60 {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
@@ -1294,12 +1294,12 @@ declare 351 {
 }
 # Removed in 9.0:
 #declare 352 {
-#    size_t Tcl_UniCharLen(const Tcl_UniChar *uniStr)
+#    int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
 #}
 # Removed in 9.0:
 #declare 353 {
 #    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-#	    size_t numChars)
+#	    unsigned long numChars)
 #}
 declare 354 {
     char *Tcl_Char16ToUtfDString(const unsigned short *uniStr,
@@ -1412,7 +1412,7 @@ declare 383 {
 # Removed in 9.0
 #declare 384 {
 #    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
-#	    size_t length)
+#	    int length)
 #}
 declare 385 {
     int Tcl_RegExpMatchObj(Tcl_Interp *interp, Tcl_Obj *textObj,
@@ -1541,7 +1541,7 @@ declare 418 {
 # Removed in 9.0:
 #declare 419 {
 #    int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-#	    size_t numChars)
+#	    unsigned long numChars)
 #}
 # Removed in 9.0:
 #declare 420 {
@@ -2468,11 +2468,11 @@ declare 648 {
 # TIP #568
 declare 649 {
     unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *lengthPtr)
+	    int *numBytesPtr)
 }
 declare 650 {
     unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    size_t *lengthPtr)
+	    size_t *numBytesPtr)
 }
 
 # TIP #481
@@ -2483,7 +2483,7 @@ declare 652 {
     Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 declare 653 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)
 }
 
 # TIP #575
