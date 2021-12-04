@@ -40,22 +40,22 @@ declare 2 {
     TCL_NORETURN void Tcl_Panic(const char *format, ...)
 }
 declare 3 {
-    void *Tcl_Alloc(size_t size)
+    void *Tcl_Alloc(Tcl_Size size)
 }
 declare 4 {
     void Tcl_Free(void *ptr)
 }
 declare 5 {
-    void *Tcl_Realloc(void *ptr, size_t size)
+    void *Tcl_Realloc(void *ptr, Tcl_Size size)
 }
 declare 6 {
-    void *Tcl_DbCkalloc(size_t size, const char *file, int line)
+    void *Tcl_DbCkalloc(Tcl_Size size, const char *file, int line)
 }
 declare 7 {
     void Tcl_DbCkfree(void *ptr, const char *file, int line)
 }
 declare 8 {
-    void *Tcl_DbCkrealloc(void *ptr, size_t size,
+    void *Tcl_DbCkrealloc(void *ptr, Tcl_Size size,
 	    const char *file, int line)
 }
 
@@ -86,7 +86,7 @@ declare 15 {
     void Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...)
 }
 declare 16 {
-    void Tcl_AppendToObj(Tcl_Obj *objPtr, const char *bytes, size_t length)
+    void Tcl_AppendToObj(Tcl_Obj *objPtr, const char *bytes, Tcl_Size length)
 }
 declare 17 {
     Tcl_Obj *Tcl_ConcatObj(int objc, Tcl_Obj *const objv[])
@@ -109,7 +109,7 @@ declare 21 {
 #    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
 #}
 declare 23 {
-    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, size_t length,
+    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, Tcl_Size numBytes,
 	    const char *file, int line)
 }
 declare 24 {
@@ -128,7 +128,7 @@ declare 27 {
     Tcl_Obj *Tcl_DbNewObj(const char *file, int line)
 }
 declare 28 {
-    Tcl_Obj *Tcl_DbNewStringObj(const char *bytes, size_t length,
+    Tcl_Obj *Tcl_DbNewStringObj(const char *bytes, Tcl_Size length,
 	    const char *file, int line)
 }
 declare 29 {
@@ -206,7 +206,7 @@ declare 48 {
 #    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
 #}
 declare 50 {
-    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, size_t length)
+    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, Tcl_Size numBytes)
 }
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
@@ -226,18 +226,18 @@ declare 55 {
     Tcl_Obj *Tcl_NewObj(void)
 }
 declare 56 {
-    Tcl_Obj *Tcl_NewStringObj(const char *bytes, size_t length)
+    Tcl_Obj *Tcl_NewStringObj(const char *bytes, Tcl_Size length)
 }
 # Removed in 9.0 (changed to macro):
 #declare 57 {
 #    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
 #}
 declare 58 {
-    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, size_t length)
+    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, Tcl_Size numBytes)
 }
 declare 59 {
     void Tcl_SetByteArrayObj(Tcl_Obj *objPtr, const unsigned char *bytes,
-	    size_t length)
+	    Tcl_Size numBytes)
 }
 declare 60 {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
@@ -254,10 +254,10 @@ declare 62 {
 #    void Tcl_SetLongObj(Tcl_Obj *objPtr, long longValue)
 #}
 declare 64 {
-    void Tcl_SetObjLength(Tcl_Obj *objPtr, size_t length)
+    void Tcl_SetObjLength(Tcl_Obj *objPtr, Tcl_Size length)
 }
 declare 65 {
-    void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, size_t length)
+    void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, Tcl_Size length)
 }
 # Removed in 9.0, replaced by macro.
 #declare 66 {
@@ -323,10 +323,10 @@ declare 83 {
     char *Tcl_Concat(int argc, const char *const *argv)
 }
 declare 84 {
-    size_t Tcl_ConvertElement(const char *src, char *dst, int flags)
+    Tcl_Size Tcl_ConvertElement(const char *src, char *dst, int flags)
 }
 declare 85 {
-    size_t Tcl_ConvertCountedElement(const char *src, size_t length, char *dst,
+    Tcl_Size Tcl_ConvertCountedElement(const char *src, Tcl_Size length, char *dst,
 	    int flags)
 }
 declare 86 {
@@ -446,7 +446,7 @@ declare 116 {
     void Tcl_DoWhenIdle(Tcl_IdleProc *proc, void *clientData)
 }
 declare 117 {
-    char *Tcl_DStringAppend(Tcl_DString *dsPtr, const char *bytes, size_t length)
+    char *Tcl_DStringAppend(Tcl_DString *dsPtr, const char *bytes, Tcl_Size length)
 }
 declare 118 {
     char *Tcl_DStringAppendElement(Tcl_DString *dsPtr, const char *element)
@@ -467,7 +467,7 @@ declare 123 {
     void Tcl_DStringResult(Tcl_Interp *interp, Tcl_DString *dsPtr)
 }
 declare 124 {
-    void Tcl_DStringSetLength(Tcl_DString *dsPtr, size_t length)
+    void Tcl_DStringSetLength(Tcl_DString *dsPtr, Tcl_Size length)
 }
 declare 125 {
     void Tcl_DStringStartSublist(Tcl_DString *dsPtr)
@@ -626,10 +626,10 @@ declare 168 {
     Tcl_PathType Tcl_GetPathType(const char *path)
 }
 declare 169 {
-    size_t Tcl_Gets(Tcl_Channel chan, Tcl_DString *dsPtr)
+    Tcl_Size Tcl_Gets(Tcl_Channel chan, Tcl_DString *dsPtr)
 }
 declare 170 {
-    size_t Tcl_GetsObj(Tcl_Channel chan, Tcl_Obj *objPtr)
+    Tcl_Size Tcl_GetsObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
 declare 171 {
     int Tcl_GetServiceMode(void)
@@ -758,7 +758,7 @@ declare 205 {
     void Tcl_QueueEvent(Tcl_Event *evPtr, Tcl_QueuePosition position)
 }
 declare 206 {
-    size_t Tcl_Read(Tcl_Channel chan, char *bufPtr, size_t toRead)
+    Tcl_Size Tcl_Read(Tcl_Channel chan, char *bufPtr, Tcl_Size toRead)
 }
 declare 207 {
     void Tcl_ReapDetachedProcs(void)
@@ -787,7 +787,7 @@ declare 214 {
 	    const char *pattern)
 }
 declare 215 {
-    void Tcl_RegExpRange(Tcl_RegExp regexp, size_t index,
+    void Tcl_RegExpRange(Tcl_RegExp regexp, Tcl_Size index,
 	    const char **startPtr, const char **endPtr)
 }
 declare 216 {
@@ -797,10 +797,10 @@ declare 217 {
     void Tcl_ResetResult(Tcl_Interp *interp)
 }
 declare 218 {
-    size_t Tcl_ScanElement(const char *src, int *flagPtr)
+    Tcl_Size Tcl_ScanElement(const char *src, int *flagPtr)
 }
 declare 219 {
-    size_t Tcl_ScanCountedElement(const char *src, size_t length, int *flagPtr)
+    Tcl_Size Tcl_ScanCountedElement(const char *src, Tcl_Size length, int *flagPtr)
 }
 # Removed in 9.0:
 #declare 220 {
@@ -913,7 +913,7 @@ declare 249 {
 	    Tcl_DString *bufferPtr)
 }
 declare 250 {
-    size_t Tcl_Ungets(Tcl_Channel chan, const char *str, size_t len, int atHead)
+    Tcl_Size Tcl_Ungets(Tcl_Channel chan, const char *str, Tcl_Size len, int atHead)
 }
 declare 251 {
     void Tcl_UnlinkVar(Tcl_Interp *interp, const char *varName)
@@ -965,7 +965,7 @@ declare 262 {
 	    void *prevClientData)
 }
 declare 263 {
-    size_t Tcl_Write(Tcl_Channel chan, const char *s, size_t slen)
+    Tcl_Size Tcl_Write(Tcl_Channel chan, const char *s, Tcl_Size slen)
 }
 declare 264 {
     void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc,
@@ -1089,7 +1089,7 @@ declare 289 {
 #    void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
 #}
 declare 291 {
-    int Tcl_EvalEx(Tcl_Interp *interp, const char *script, size_t numBytes,
+    int Tcl_EvalEx(Tcl_Interp *interp, const char *script, Tcl_Size numBytes,
 	    int flags)
 }
 declare 292 {
@@ -1104,13 +1104,13 @@ declare 294 {
 }
 declare 295 {
     int Tcl_ExternalToUtf(Tcl_Interp *interp, Tcl_Encoding encoding,
-	    const char *src, size_t srcLen, int flags,
-	    Tcl_EncodingState *statePtr, char *dst, size_t dstLen,
+	    const char *src, Tcl_Size srcLen, int flags,
+	    Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen,
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 296 {
     char *Tcl_ExternalToUtfDString(Tcl_Encoding encoding,
-	    const char *src, size_t srcLen, Tcl_DString *dsPtr)
+	    const char *src, Tcl_Size srcLen, Tcl_DString *dsPtr)
 }
 declare 297 {
     void Tcl_FinalizeThread(void)
@@ -1135,11 +1135,11 @@ declare 303 {
 }
 declare 304 {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    const void *tablePtr, size_t offset, const char *msg, int flags,
+	    const void *tablePtr, Tcl_Size offset, const char *msg, int flags,
 	    int *indexPtr)
 }
 declare 305 {
-    void *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, size_t size)
+    void *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, Tcl_Size size)
 }
 declare 306 {
     Tcl_Obj *Tcl_GetVar2Ex(Tcl_Interp *interp, const char *part1,
@@ -1162,11 +1162,11 @@ declare 311 {
 	    const Tcl_Time *timePtr)
 }
 declare 312 {
-    size_t Tcl_NumUtfChars(const char *src, size_t length)
+    Tcl_Size Tcl_NumUtfChars(const char *src, Tcl_Size length)
 }
 declare 313 {
-    size_t Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
-	    size_t charsToRead, int appendFlag)
+    Tcl_Size Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
+	    Tcl_Size charsToRead, int appendFlag)
 }
 # Removed in 9.0, replaced by macro.
 #declare 314 {
@@ -1191,7 +1191,7 @@ declare 319 {
 	    Tcl_QueuePosition position)
 }
 declare 320 {
-    int Tcl_UniCharAtIndex(const char *src, size_t index)
+    int Tcl_UniCharAtIndex(const char *src, Tcl_Size index)
 }
 declare 321 {
     int Tcl_UniCharToLower(int ch)
@@ -1206,13 +1206,13 @@ declare 324 {
     int Tcl_UniCharToUtf(int ch, char *buf)
 }
 declare 325 {
-    const char *Tcl_UtfAtIndex(const char *src, size_t index)
+    const char *Tcl_UtfAtIndex(const char *src, Tcl_Size index)
 }
 declare 326 {
-    int TclUtfCharComplete(const char *src, size_t length)
+    int TclUtfCharComplete(const char *src, Tcl_Size length)
 }
 declare 327 {
-    size_t Tcl_UtfBackslash(const char *src, int *readPtr, char *dst)
+    Tcl_Size Tcl_UtfBackslash(const char *src, int *readPtr, char *dst)
 }
 declare 328 {
     const char *Tcl_UtfFindFirst(const char *src, int ch)
@@ -1228,13 +1228,13 @@ declare 331 {
 }
 declare 332 {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding,
-	    const char *src, size_t srcLen, int flags,
-	    Tcl_EncodingState *statePtr, char *dst, size_t dstLen,
+	    const char *src, Tcl_Size srcLen, int flags,
+	    Tcl_EncodingState *statePtr, char *dst, Tcl_Size dstLen,
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 333 {
     char *Tcl_UtfToExternalDString(Tcl_Encoding encoding,
-	    const char *src, size_t srcLen, Tcl_DString *dsPtr)
+	    const char *src, Tcl_Size srcLen, Tcl_DString *dsPtr)
 }
 declare 334 {
     int Tcl_UtfToLower(char *src)
@@ -1249,10 +1249,10 @@ declare 337 {
     int Tcl_UtfToUpper(char *src)
 }
 declare 338 {
-    size_t Tcl_WriteChars(Tcl_Channel chan, const char *src, size_t srcLen)
+    Tcl_Size Tcl_WriteChars(Tcl_Channel chan, const char *src, Tcl_Size srcLen)
 }
 declare 339 {
-    size_t Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
+    Tcl_Size Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
 declare 340 {
     char *Tcl_GetString(Tcl_Obj *objPtr)
@@ -1294,20 +1294,20 @@ declare 351 {
 }
 # Removed in 9.0:
 #declare 352 {
-#    size_t Tcl_UniCharLen(const Tcl_UniChar *uniStr)
+#    int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
 #}
 # Removed in 9.0:
 #declare 353 {
 #    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-#	    size_t numChars)
+#	    unsigned long numChars)
 #}
 declare 354 {
     char *Tcl_Char16ToUtfDString(const unsigned short *uniStr,
-	    size_t uniLength, Tcl_DString *dsPtr)
+	    Tcl_Size uniLength, Tcl_DString *dsPtr)
 }
 declare 355 {
     unsigned short *Tcl_UtfToChar16DString(const char *src,
-	    size_t length, Tcl_DString *dsPtr)
+	    Tcl_Size length, Tcl_DString *dsPtr)
 }
 declare 356 {
     Tcl_RegExp Tcl_GetRegExpFromObj(Tcl_Interp *interp, Tcl_Obj *patObj,
@@ -1323,29 +1323,29 @@ declare 358 {
 }
 declare 359 {
     void Tcl_LogCommandInfo(Tcl_Interp *interp, const char *script,
-	    const char *command, size_t length)
+	    const char *command, Tcl_Size length)
 }
 declare 360 {
     int Tcl_ParseBraces(Tcl_Interp *interp, const char *start,
-	    size_t numBytes, Tcl_Parse *parsePtr, int append,
+	    Tcl_Size numBytes, Tcl_Parse *parsePtr, int append,
 	    const char **termPtr)
 }
 declare 361 {
     int Tcl_ParseCommand(Tcl_Interp *interp, const char *start,
-	    size_t numBytes, int nested, Tcl_Parse *parsePtr)
+	    Tcl_Size numBytes, int nested, Tcl_Parse *parsePtr)
 }
 declare 362 {
-    int Tcl_ParseExpr(Tcl_Interp *interp, const char *start, size_t numBytes,
+    int Tcl_ParseExpr(Tcl_Interp *interp, const char *start, Tcl_Size numBytes,
 	    Tcl_Parse *parsePtr)
 }
 declare 363 {
     int Tcl_ParseQuotedString(Tcl_Interp *interp, const char *start,
-	    size_t numBytes, Tcl_Parse *parsePtr, int append,
+	    Tcl_Size numBytes, Tcl_Parse *parsePtr, int append,
 	    const char **termPtr)
 }
 declare 364 {
     int Tcl_ParseVarName(Tcl_Interp *interp, const char *start,
-	    size_t numBytes, Tcl_Parse *parsePtr, int append)
+	    Tcl_Size numBytes, Tcl_Parse *parsePtr, int append)
 }
 # These 4 functions are obsolete, use Tcl_FSGetCwd, Tcl_FSChdir,
 # Tcl_FSAccess and Tcl_FSStat
@@ -1384,35 +1384,35 @@ declare 375 {
 }
 declare 376 {
     int Tcl_RegExpExecObj(Tcl_Interp *interp, Tcl_RegExp regexp,
-	    Tcl_Obj *textObj, size_t offset, size_t nmatches, int flags)
+	    Tcl_Obj *textObj, Tcl_Size offset, Tcl_Size nmatches, int flags)
 }
 declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
 declare 378 {
-    Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, size_t numChars)
+    Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, Tcl_Size numChars)
 }
 declare 379 {
     void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
-	    size_t numChars)
+	    Tcl_Size numChars)
 }
 declare 380 {
-    size_t Tcl_GetCharLength(Tcl_Obj *objPtr)
+    Tcl_Size Tcl_GetCharLength(Tcl_Obj *objPtr)
 }
 declare 381 {
-    int Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index)
+    int Tcl_GetUniChar(Tcl_Obj *objPtr, Tcl_Size index)
 }
 # Removed in 9.0, replaced by macro.
 #declare 382 {
 #    Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
 #}
 declare 383 {
-    Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, size_t first, size_t last)
+    Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, Tcl_Size first, Tcl_Size last)
 }
 # Removed in 9.0
 #declare 384 {
 #    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
-#	    size_t length)
+#	    int length)
 #}
 declare 385 {
     int Tcl_RegExpMatchObj(Tcl_Interp *interp, Tcl_Obj *textObj,
@@ -1442,15 +1442,15 @@ declare 392 {
 }
 declare 393 {
     int Tcl_CreateThread(Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc,
-	    void *clientData, size_t stackSize, int flags)
+	    void *clientData, Tcl_Size stackSize, int flags)
 }
 
 # Introduced in 8.3.2
 declare 394 {
-    size_t Tcl_ReadRaw(Tcl_Channel chan, char *dst, size_t bytesToRead)
+    Tcl_Size Tcl_ReadRaw(Tcl_Channel chan, char *dst, Tcl_Size bytesToRead)
 }
 declare 395 {
-    size_t Tcl_WriteRaw(Tcl_Channel chan, const char *src, size_t srcLen)
+    Tcl_Size Tcl_WriteRaw(Tcl_Channel chan, const char *src, Tcl_Size srcLen)
 }
 declare 396 {
     Tcl_Channel Tcl_GetTopChannel(Tcl_Channel chan)
@@ -1541,7 +1541,7 @@ declare 418 {
 # Removed in 9.0:
 #declare 419 {
 #    int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-#	    size_t numChars)
+#	    unsigned long numChars)
 #}
 # Removed in 9.0:
 #declare 420 {
@@ -1578,20 +1578,20 @@ declare 427 {
 	    int flags, Tcl_CommandTraceProc *proc, void *clientData)
 }
 declare 428 {
-    void *Tcl_AttemptAlloc(size_t size)
+    void *Tcl_AttemptAlloc(Tcl_Size size)
 }
 declare 429 {
-    void *Tcl_AttemptDbCkalloc(size_t size, const char *file, int line)
+    void *Tcl_AttemptDbCkalloc(Tcl_Size size, const char *file, int line)
 }
 declare 430 {
-    void *Tcl_AttemptRealloc(void *ptr, size_t size)
+    void *Tcl_AttemptRealloc(void *ptr, Tcl_Size size)
 }
 declare 431 {
-    void *Tcl_AttemptDbCkrealloc(void *ptr, size_t size,
+    void *Tcl_AttemptDbCkrealloc(void *ptr, Tcl_Size size,
 	    const char *file, int line)
 }
 declare 432 {
-    int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, size_t length)
+    int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, Tcl_Size length)
 }
 
 # TIP#10 (thread-aware channels) akupries
@@ -1771,7 +1771,7 @@ declare 480 {
 # TIP#56 (evaluate a parsed script) msofer
 declare 481 {
     int Tcl_EvalTokensStandard(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-	    size_t count)
+	    Tcl_Size count)
 }
 
 # TIP#73 (access to current time) kbk
@@ -2152,7 +2152,7 @@ declare 574 {
 }
 declare 575 {
     void Tcl_AppendLimitedToObj(Tcl_Obj *objPtr, const char *bytes,
-	    size_t length, size_t limit, const char *ellipsis)
+	    Tcl_Size length, Tcl_Size limit, const char *ellipsis)
 }
 declare 576 {
     Tcl_Obj *Tcl_Format(Tcl_Interp *interp, const char *format, int objc,
@@ -2304,15 +2304,15 @@ declare 610 {
 }
 declare 611 {
     int Tcl_ZlibInflate(Tcl_Interp *interp, int format, Tcl_Obj *data,
-	    size_t buffersize, Tcl_Obj *gzipHeaderDictObj)
+	    Tcl_Size buffersize, Tcl_Obj *gzipHeaderDictObj)
 }
 declare 612 {
     unsigned int Tcl_ZlibCRC32(unsigned int crc, const unsigned char *buf,
-	    size_t len)
+	    Tcl_Size len)
 }
 declare 613 {
     unsigned int Tcl_ZlibAdler32(unsigned int adler, const unsigned char *buf,
-	    size_t len)
+	    Tcl_Size len)
 }
 declare 614 {
     int Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode, int format,
@@ -2332,7 +2332,7 @@ declare 618 {
 }
 declare 619 {
     int Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle, Tcl_Obj *data,
-	    size_t count)
+	    Tcl_Size count)
 }
 declare 620 {
     int Tcl_ZlibStreamClose(Tcl_ZlibStream zshandle)
@@ -2415,7 +2415,7 @@ declare 636 {
 }
 declare 637 {
     char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
-	    size_t numBytes)
+	    Tcl_Size numBytes)
 }
 declare 638 {
     Tcl_ObjInternalRep *Tcl_FetchInternalRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)
@@ -2444,12 +2444,12 @@ declare 643 {
 # TIP#312 New Tcl_LinkArray() function
 declare 644 {
     int Tcl_LinkArray(Tcl_Interp *interp, const char *varName, void *addr,
-	    int type, size_t size)
+	    int type, Tcl_Size size)
 }
 
 declare 645 {
     int Tcl_GetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    size_t endValue, size_t *indexPtr)
+	    Tcl_Size endValue, Tcl_Size *indexPtr)
 }
 
 # TIP #548
@@ -2458,21 +2458,21 @@ declare 646 {
 }
 declare 647 {
     char *Tcl_UniCharToUtfDString(const int *uniStr,
-	    size_t uniLength, Tcl_DString *dsPtr)
+	    Tcl_Size uniLength, Tcl_DString *dsPtr)
 }
 declare 648 {
     int *Tcl_UtfToUniCharDString(const char *src,
-	    size_t length, Tcl_DString *dsPtr)
+	    Tcl_Size length, Tcl_DString *dsPtr)
 }
 
 # TIP #568
 declare 649 {
     unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *lengthPtr)
+	    int *numBytesPtr)
 }
 declare 650 {
     unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    size_t *lengthPtr)
+	    size_t *numBytesPtr)
 }
 
 # TIP #481
@@ -2483,12 +2483,12 @@ declare 652 {
     Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 declare 653 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)
 }
 
 # TIP #575
 declare 654 {
-    int Tcl_UtfCharComplete(const char *src, size_t length)
+    int Tcl_UtfCharComplete(const char *src, Tcl_Size length)
 }
 declare 655 {
     const char *Tcl_UtfNext(const char *src)
@@ -2524,7 +2524,7 @@ interface tclPlat
 declare 1 {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
 	    const char *bundleName, const char *bundleVersion,
-	    int hasResourceFile, size_t maxPathLen, char *libraryPath)
+	    int hasResourceFile, Tcl_Size maxPathLen, char *libraryPath)
 }
 declare 2 {
     void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
