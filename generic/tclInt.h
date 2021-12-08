@@ -3220,7 +3220,7 @@ MODULE_SCOPE int	TclScanElement(const char *string, int length,
 			    char *flagPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
-MODULE_SCOPE void	TclSetBignumIntRep(Tcl_Obj *objPtr,
+MODULE_SCOPE void	TclSetBignumInternalRep(Tcl_Obj *objPtr,
 			    void *bignumValue);
 MODULE_SCOPE int	TclSetBooleanFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -4487,15 +4487,22 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to set a Tcl_Obj's string representation to a
- * copy of the "len" bytes starting at "bytePtr". This code works even if the
- * byte array contains NULLs as long as the length is correct. Because "len"
- * is referenced multiple times, it should be as simple an expression as
- * possible. The ANSI C "prototype" for this macro is:
+ * copy of the "len" bytes starting at "bytePtr". The value of "len" must
+ * not be negative.  When "len" is 0, then it is acceptable to pass
+ * "bytePtr" = NULL.  When "len" > 0, "bytePtr" must not be NULL, and it
+ * must point to a location from which "len" bytes may be read.  These
+ * constraints are not checked here.  The validity of the bytes copied
+ * as a value string representation is also not verififed.  This macro
+ * must not be called while "objPtr" is being freed or when "objPtr"
+ * already has a string representation.  The caller must use
+ * this macro properly.  Improper use can lead to dangerous results.
+ * Because "len" is referenced multiple times, take care that it is an
+ * expression with the same value each use.
+ *
+ * The ANSI C "prototype" for this macro is:
  *
  * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, int len);
  *
- * This macro should only be called on an unshared objPtr where
- *  objPtr->typePtr->freeIntRepProc == NULL
  *----------------------------------------------------------------
  */
 
@@ -4537,17 +4544,21 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * representation. Does not actually reset the rep's bytes. The ANSI C
  * "prototype" for this macro is:
  *
- * MODULE_SCOPE void	TclFreeIntRep(Tcl_Obj *objPtr);
+ * MODULE_SCOPE void	TclFreeInternalRep(Tcl_Obj *objPtr);
  *----------------------------------------------------------------
  */
 
-#define TclFreeIntRep(objPtr) \
+#define TclFreeInternalRep(objPtr) \
     if ((objPtr)->typePtr != NULL) { \
 	if ((objPtr)->typePtr->freeIntRepProc != NULL) { \
 	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
 	} \
 	(objPtr)->typePtr = NULL; \
     }
+
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 8
+#   define TclFreeIntRep(objPtr) TclFreeInternalRep(objPtr)
+#endif
 
 /*
  *----------------------------------------------------------------
@@ -4759,10 +4770,10 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclIsPureDict(objPtr) \
 	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclDictType))
-#define TclHasIntRep(objPtr, type) \
+#define TclHasInternalRep(objPtr, type) \
 	((objPtr)->typePtr == (type))
-#define TclFetchIntRep(objPtr, type) \
-	(TclHasIntRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
+#define TclFetchInternalRep(objPtr, type) \
+	(TclHasInternalRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
 
 
 /*
@@ -4852,18 +4863,18 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 
 #define TclSetIntObj(objPtr, i) \
     do {						\
-	Tcl_ObjIntRep ir;				\
+	Tcl_ObjInternalRep ir;				\
 	ir.wideValue = (Tcl_WideInt) i;			\
 	TclInvalidateStringRep(objPtr);			\
-	Tcl_StoreIntRep(objPtr, &tclIntType, &ir);	\
+	Tcl_StoreInternalRep(objPtr, &tclIntType, &ir);	\
     } while (0)
 
 #define TclSetDoubleObj(objPtr, d) \
     do {						\
-	Tcl_ObjIntRep ir;				\
+	Tcl_ObjInternalRep ir;				\
 	ir.doubleValue = (double) d;			\
 	TclInvalidateStringRep(objPtr);			\
-	Tcl_StoreIntRep(objPtr, &tclDoubleType, &ir);	\
+	Tcl_StoreInternalRep(objPtr, &tclDoubleType, &ir);	\
     } while (0)
 
 /*

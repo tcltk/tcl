@@ -1041,8 +1041,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
-    TclGetBytesFromObj, /* 259 */
-    TclUnusedStubEntry, /* 260 */
+    TclUnusedStubEntry, /* 259 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -1920,10 +1919,10 @@ const TclStubs tclStubs = {
     TclZipfs_Unmount, /* 633 */
     TclZipfs_TclLibrary, /* 634 */
     TclZipfs_MountBuffer, /* 635 */
-    Tcl_FreeIntRep, /* 636 */
+    Tcl_FreeInternalRep, /* 636 */
     Tcl_InitStringRep, /* 637 */
-    Tcl_FetchIntRep, /* 638 */
-    Tcl_StoreIntRep, /* 639 */
+    Tcl_FetchInternalRep, /* 638 */
+    Tcl_StoreInternalRep, /* 639 */
     Tcl_HasStringRep, /* 640 */
     Tcl_IncrRefCount, /* 641 */
     Tcl_DecrRefCount, /* 642 */
@@ -1933,8 +1932,8 @@ const TclStubs tclStubs = {
     Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
-    0, /* 649 */
-    0, /* 650 */
+    TclGetBytesFromObj, /* 649 */
+    Tcl_GetBytesFromObj, /* 650 */
     TclGetStringFromObj, /* 651 */
     TclGetUnicodeFromObj, /* 652 */
     TclGetByteArrayFromObj, /* 653 */

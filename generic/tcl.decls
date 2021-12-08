@@ -108,7 +108,7 @@ declare 22 {deprecated {No longer in use, changed to macro}} {
     Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
 }
 declare 23 {
-    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int length,
+    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int numBytes,
 	    const char *file, int line)
 }
 declare 24 {
@@ -143,7 +143,7 @@ declare 32 {
 	    int *boolPtr)
 }
 declare 33 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -202,7 +202,7 @@ declare 49 {deprecated {No longer in use, changed to macro}} {
     Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
 }
 declare 50 {
-    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int length)
+    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int numBytes)
 }
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
@@ -226,11 +226,11 @@ declare 57 {deprecated {No longer in use, changed to macro}} {
     void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
 }
 declare 58 {
-    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int length)
+    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int numBytes)
 }
 declare 59 {
     void Tcl_SetByteArrayObj(Tcl_Obj *objPtr, const unsigned char *bytes,
-	    int length)
+	    int numBytes)
 }
 declare 60 {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
@@ -514,7 +514,7 @@ declare 143 {
     void Tcl_Finalize(void)
 }
 declare 144 {nostub {Don't use this function in a stub-enabled extension}} {
-    void Tcl_FindExecutable(const char *argv0)
+    const char *Tcl_FindExecutable(const char *argv0)
 }
 declare 145 {
     Tcl_HashEntry *Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
@@ -813,7 +813,7 @@ declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
 declare 230 {nostub {Don't use this function in a stub-enabled extension}} {
-    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
@@ -2348,18 +2348,18 @@ declare 635 {
 
 # TIP #445
 declare 636 {
-    void Tcl_FreeIntRep(Tcl_Obj *objPtr)
+    void Tcl_FreeInternalRep(Tcl_Obj *objPtr)
 }
 declare 637 {
     char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
 	    unsigned int numBytes)
 }
 declare 638 {
-    Tcl_ObjIntRep *Tcl_FetchIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)
+    Tcl_ObjInternalRep *Tcl_FetchInternalRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)
 }
 declare 639 {
-    void Tcl_StoreIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr,
-	    const Tcl_ObjIntRep *irPtr)
+    void Tcl_StoreInternalRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr,
+	    const Tcl_ObjInternalRep *irPtr)
 }
 declare 640 {
     int Tcl_HasStringRep(Tcl_Obj *objPtr)
@@ -2402,6 +2402,16 @@ declare 648 {
 	    int length, Tcl_DString *dsPtr)
 }
 
+# TIP #568
+declare 649 {
+    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int *numBytesPtr)
+}
+declare 650 {
+    unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    size_t *numBytesPtr)
+}
+
 # TIP #481
 declare 651 {
     char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
@@ -2410,7 +2420,7 @@ declare 652 {
     Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 declare 653 {
-    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)
 }
 
 # TIP #575
@@ -2493,13 +2503,13 @@ export {
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
-    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 export {
     Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
 }
 export {
-    void Tcl_FindExecutable(const char *argv0)
+    const char *Tcl_FindExecutable(const char *argv0)
 }
 export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,
@@ -2517,10 +2527,10 @@ export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
 }
 export {
-    void Tcl_InitSubsystems(void)
+    const char *Tcl_InitSubsystems(void)
 }
 export {
-    int TclZipfs_AppHook(int *argc, char ***argv)
+    const char *TclZipfs_AppHook(int *argc, char ***argv)
 }
 
 # Local Variables:

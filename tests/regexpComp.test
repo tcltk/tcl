@@ -16,7 +16,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-testConstraint nodep [info exists tcl_precision]
+package require tcltests
 
 # Procedure to evaluate a script within a proc, to test compilation
 # functionality

@@ -579,7 +579,7 @@ ${TCL_LIB_FILE}: ${TCL_OBJS}
 	@MAKE_LIB@ ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@POST_MAKE_LIB@
 
-${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE}
+${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 	$(COPY) tclsh.exe.manifest ${DDE_DLL_FILE}.manifest
 
@@ -674,6 +674,20 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_DLL_FILE)\"" \
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
+
+tclEvent.${OBJEXT}: tclEvent.c tclUuid.h
+
+$(TOP_DIR)/manifest.uuid:
+	printf "git-" >$(TOP_DIR)/manifest.uuid
+	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || \
+	    (printf "svn-r" >$(TOP_DIR)/manifest.uuid ; \
+	    svn info --show-item last-changed-revision >>$(TOP_DIR)/manifest.uuid) || \
+	    printf "unknown" >$(TOP_DIR)/manifest.uuid)
+
+tclUuid.h:	$(TOP_DIR)/manifest.uuid
+	echo "#define TCL_VERSION_UUID \\" >$@
+	cat $(TOP_DIR)/manifest.uuid >>$@
+	echo "" >>$@
 
 # The following objects are part of the stub library and should not be built
 # as DLL objects but none of the symbols should be exported
@@ -853,28 +867,26 @@ install-libraries: libraries install-tzdata install-msgs
 		fi; \
 	    done;
 	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)";
-	@for i in $(ROOT_DIR)/library/*.tcl $(ROOT_DIR)/library/tclIndex; \
-	    do \
+	@for i in $(ROOT_DIR)/library/*.tcl $(ROOT_DIR)/library/tclIndex; do \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
 	@echo "Installing package cookiejar 0.2"
-	@for j in $(ROOT_DIR)/library/cookiejar/*.{tcl,gz}; \
-	    do \
+	@for j in $(ROOT_DIR)/library/cookiejar/*.tcl \
+	          $(ROOT_DIR)/library/cookiejar/*.gz; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done;
 	@echo "Installing package http 2.10a1 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/8.6/http-2.10a1.tm";
 	@echo "Installing package opt 0.4.7";
-	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
-	    do \
+	@for j in $(ROOT_DIR)/library/opt/*.tcl; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl "$(MODULE_INSTALL_DIR)/8.7/msgcat-1.7.1.tm";
 	@echo "Installing package tcltest 2.5.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl "$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.4.tm";
-	@echo "Installing package platform 1.0.17 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/8.4/platform-1.0.17.tm";
+	@echo "Installing package platform 1.0.18 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl "$(MODULE_INSTALL_DIR)/8.4/platform-1.0.18.tm";
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl "$(MODULE_INSTALL_DIR)/8.4/platform/shell-1.1.4.tm";
 	@echo "Installing encodings";

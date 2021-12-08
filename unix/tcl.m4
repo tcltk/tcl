@@ -1105,9 +1105,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    fi
 	    do64bit_ok=yes
 	    if test "x${SHARED_BUILD}" = "x1"; then
-		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
+		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args --enable-64bit --host=x86_64-w64-mingw32"
 		# The eval makes quoting arguments work.
-		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
+		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args --enable-64bit --host=x86_64-w64-mingw32; cd ../unix
 		then :
 		else
 		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
@@ -1262,7 +1262,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	        ])
 	    ])
 	    ;;
-	Linux*|GNU*|NetBSD-Debian)
+	Linux*|GNU*|NetBSD-Debian|DragonFly-*|FreeBSD-*)
 	    SHLIB_CFLAGS="-fPIC -fno-common"
 	    SHLIB_SUFFIX=".so"
 
@@ -1276,6 +1276,17 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
+
+	    case $system in
+	    DragonFly-*|FreeBSD-*)
+		AS_IF([test "${TCL_THREADS}" = "1"], [
+		    # The -pthread needs to go in the LDFLAGS, not LIBS
+		    LIBS=`echo $LIBS | sed s/-pthread//`
+		    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+		    LDFLAGS="$LDFLAGS $PTHREAD_LIBS"])
+	    ;;
+            esac
+
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'])
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
@@ -1284,7 +1295,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		AC_CACHE_CHECK([if compiler accepts -m64 flag], tcl_cv_cc_m64, [
 		    hold_cflags=$CFLAGS
 		    CFLAGS="$CFLAGS -m64"
-		    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[tcl_cv_cc_m64=yes],[tcl_cv_cc_m64=no])
+		    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+			    [tcl_cv_cc_m64=yes],[tcl_cv_cc_m64=no])
 		    CFLAGS=$hold_cflags])
 		AS_IF([test $tcl_cv_cc_m64 = yes], [
 		    CFLAGS="$CFLAGS -m64"
@@ -1356,30 +1368,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CFLAGS="$CFLAGS -pthread"
 	    LDFLAGS="$LDFLAGS -pthread"
 	    ;;
-	DragonFly-*|FreeBSD-*)
-	    # This configuration from FreeBSD Ports.
-	    SHLIB_LD="${CC} -shared"
-	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,-soname,\$[@]"
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS=""
-	    AS_IF([test $doRpath = yes], [
-		CC_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'
-		LD_SEARCH_FLAGS='"-Wl,-rpath,${LIB_RUNTIME_DIR}"'])
-	    # The -pthread needs to go in the LDFLAGS, not LIBS
-	    LIBS=`echo $LIBS | sed s/-pthread//`
-	    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-	    LDFLAGS="$LDFLAGS $PTHREAD_LIBS"
-	    case $system in
-	    FreeBSD-3.*)
-		# Version numbers are dot-stripped by system policy.
-		TCL_TRIM_DOTS=`echo ${VERSION} | tr -d .`
-		UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
-		TCL_LIB_VERSIONS_OK=nodots
-		;;
-	    esac
-	    ;;
 	Darwin-*)
 	    CFLAGS_OPTIMIZE="-Os"
 	    SHLIB_CFLAGS="-fno-common"
@@ -1400,8 +1388,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			    hold_cflags=$CFLAGS
 			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
 			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
-				    [tcl_cv_cc_arch_ppc64=yes],
-				    [tcl_cv_cc_arch_ppc64=no])
+				    [tcl_cv_cc_arch_ppc64=yes],[tcl_cv_cc_arch_ppc64=no])
 			    CFLAGS=$hold_cflags])
 			AS_IF([test $tcl_cv_cc_arch_ppc64 = yes], [
 			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
@@ -1413,8 +1400,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			    hold_cflags=$CFLAGS
 			    CFLAGS="$CFLAGS -arch x86_64"
 			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
-				    [tcl_cv_cc_arch_x86_64=yes],
-				    [tcl_cv_cc_arch_x86_64=no])
+				    [tcl_cv_cc_arch_x86_64=yes],[tcl_cv_cc_arch_x86_64=no])
 			    CFLAGS=$hold_cflags])
 			AS_IF([test $tcl_cv_cc_arch_x86_64 = yes], [
 			    CFLAGS="$CFLAGS -arch x86_64"
@@ -2164,7 +2150,8 @@ AC_DEFUN([SC_TIME_HANDLER], [
     # (like convex) have timezone functions, etc.
     #
     AC_CACHE_CHECK([long timezone variable], tcl_cv_timezone_long, [
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]],
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>
+#include <stdlib.h>]],
 	[[extern long timezone;
 	    timezone += 1;
 	    exit (0);]])],
@@ -2176,7 +2163,8 @@ AC_DEFUN([SC_TIME_HANDLER], [
 	# On some systems (eg IRIX 6.2), timezone is a time_t and not a long.
 	#
 	AC_CACHE_CHECK([time_t timezone variable], tcl_cv_timezone_time, [
-	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]],
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>
+#include <stdlib.h>]],
 	    [[extern time_t timezone;
 		timezone += 1;
 		exit (0);]])],

@@ -1037,11 +1037,6 @@ declare 258 {
 }
 
 declare 259 {
-    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *lengthPtr)
-}
-
-declare 260 {
     void TclUnusedStubEntry(void)
 }
 
