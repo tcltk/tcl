@@ -2086,10 +2086,10 @@ Tcl_DictObjSmartRef(
 	return NULL;
     }
 
-    DictGetIntRep(dictPtr, dict);
+    DictGetInternalRep(dictPtr, dict);
 
     result = Tcl_NewObj();
-    DictSetIntRep(result, dict);
+    DictSetInternalRep(result, dict);
     dict->refCount++;
     result->internalRep.twoPtrValue.ptr2 = NULL;
     result->typePtr = &tclDictType;
