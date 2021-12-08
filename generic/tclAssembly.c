@@ -4279,7 +4279,7 @@ AddBasicBlockRangeToErrorInfo(
  * DupAssembleCodeInternalRep --
  *
  *	Part of the Tcl object type implementation for Tcl assembly language
- *	bytecode. We do not copy the bytecode intrep. Instead, we return
+ *	bytecode. We do not copy the bytecode internalrep. Instead, we return
  *	without setting copyPtr->typePtr, so the copy is a plain string copy
  *	of the assembly source, and if it is to be used as a compiled
  *	expression, it will need to be reprocessed.
@@ -4288,7 +4288,7 @@ AddBasicBlockRangeToErrorInfo(
  *	usual (only?) time Tcl_DuplicateObj() will be called is when the copy
  *	is about to be modified, which would invalidate any copied bytecode
  *	anyway. The only reason it might make sense to copy the bytecode is if
- *	we had some modifying routines that operated directly on the intrep,
+ *	we had some modifying routines that operated directly on the internalrep,
  *	as we do for lists and dicts.
  *
  * Results:

@@ -4231,7 +4231,7 @@ TclSetProcessGlobalValue(
 
     /*
      * Fill the local thread copy directly with the Tcl_Obj value to avoid
-     * loss of the intrep. Increment newValue refCount early to handle case
+     * loss of the internalrep. Increment newValue refCount early to handle case
      * where we set a PGV to itself.
      */
 

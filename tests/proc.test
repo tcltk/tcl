@@ -324,6 +324,15 @@ test proc-4.8 {TclCreateProc, procbody obj, no leak on multiple iterations} -set
 test proc-4.9 {[39fed4dae5] Valid Tcl_PkgPresent return} procbodytest {
     procbodytest::check
 } 1
+test proc-4.10 {
+    TclCreateProc, issue a8579d906a28, argument with no name
+} -body {
+    catch {
+	proc p1 [list [list [expr {1 + 2}] default]] {}
+    }
+} -cleanup {
+    catch {rename p1 {}}
+} -result 0
 
 test proc-5.1 {Bytecompiling noop; test for correct argument substitution} -body {
     proc p args {} ; # this will be bytecompiled into t

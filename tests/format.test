@@ -605,12 +605,12 @@ test format-19.4.2 {Bug d498578df4: width overflow should cause limit exceeded} 
 } -returnCodes error -result "max size for a Tcl value exceeded"
 
 # Note that this test may fail in future versions
-test format-20.1 {Bug 2932421: plain %s caused intrep change of args} -body {
+test format-20.1 {Bug 2932421: plain %s caused internalrep change of args} -body {
     set x [dict create a b c d]
     format %s $x
     # After this, obj in $x should be a dict
     # We are testing to make sure it has not been shimmered to a
-    # different intrep when that is not necessary.
+    # different internalrep when that is not necessary.
     # Whether or not there is a string rep - we should not care!
     tcl::unsupported::representation $x
 } -match glob -result {value is a dict *}

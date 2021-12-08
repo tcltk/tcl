@@ -755,7 +755,7 @@ TclGetInnerContext(
         int len;
 
         /*
-         * Reset while keeping the list intrep as much as possible.
+         * Reset while keeping the list internalrep as much as possible.
          */
 
 	Tcl_ListObjLength(interp, result, &len);
