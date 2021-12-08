@@ -24,7 +24,7 @@ In order to compile Tcl for Windows, you need the following:
 
 	or
 
-	Linux + MinGW-w64 [http://mingw-w64.sourceforge.net/]
+	Linux + MinGW-w64 [https://www.mingw-w64.org/]
 	    (win32 or win64)
 
 	or
@@ -34,12 +34,12 @@ In order to compile Tcl for Windows, you need the following:
 
 	or
 
-	Darwin + MinGW-w64 [http://mingw-w64.sourceforge.net/]
+	Darwin + MinGW-w64 [https://www.mingw-w64.org/]
 	    (win32 or win64)
 
 	or
 
-	Msys + MinGW-w64 [http://mingw-w64.sourceforge.net/]
+	Msys + MinGW-w64 [https://www.mingw-w64.org/]
 	    (win32 or win64)
 
 

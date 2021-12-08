@@ -3241,7 +3241,7 @@ SetStringFromAny(
 	TclFreeIntRep(objPtr);
 
 	/*
-	 * Create a basic String intrep that just points to the UTF-8 string
+	 * Create a basic String internalrep that just points to the UTF-8 string
 	 * already in place at objPtr->bytes.
 	 */
 

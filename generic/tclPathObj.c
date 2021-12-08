@@ -1396,7 +1396,7 @@ AppendPath(
      * that use some character other than "/" as a path separator.  I know
      * of no evidence that such a foolish thing exists.  This solution was
      * chosen so that "JoinPath" operations that pass through either path
-     * intrep produce the same results; that is, bugward compatibility.  If
+     * internalrep produce the same results; that is, bugward compatibility.  If
      * we need to fix that bug here, it needs fixing in TclJoinPath() too.
      */
     bytes = Tcl_GetStringFromObj(tail, &numBytes);

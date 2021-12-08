@@ -3948,7 +3948,24 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_UpVar(interp, frameName, varName, localName, flags) \
 	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
 
-#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+#if defined(USE_TCL_STUBS)
+#   if defined(_WIN32) && defined(_WIN64)
+#	undef Tcl_GetTime
+/* Handle Win64 tk.dll being loaded in Cygwin64. */
+#	define Tcl_GetTime(t) \
+		do { \
+		    union { \
+			Tcl_Time now; \
+			__int64 reserved; \
+		    } _t; \
+		    _t.reserved = -1; \
+		    tclStubsPtr->tcl_GetTime((&_t.now)); \
+		    if (_t.reserved != -1) { \
+			_t.now.usec = _t.reserved; \
+		    } \
+		    *(t) = _t.now; \
+		} while (0)
+#   endif
 #   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
 /* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
  * we have to make sure that all stub entries on Cygwin64 follow the

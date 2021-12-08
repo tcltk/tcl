@@ -1875,7 +1875,7 @@ Tcl_SetBooleanObj(
  *	result unless "interp" is NULL.
  *
  * Side effects:
- *	The intrep of *objPtr may be changed.
+ *	The internalrep of *objPtr may be changed.
  *
  *----------------------------------------------------------------------
  */
@@ -1898,7 +1898,7 @@ Tcl_GetBooleanFromObj(
 	if (objPtr->typePtr == &tclDoubleType) {
 	    /*
 	     * Caution: Don't be tempted to check directly for the "double"
-	     * Tcl_ObjType and then compare the intrep to 0.0. This isn't
+	     * Tcl_ObjType and then compare the internalrep to 0.0. This isn't
 	     * reliable because a "double" Tcl_ObjType can hold the NaN value.
 	     * Use the API Tcl_GetDoubleFromObj, which does the checking and
 	     * sets the proper error message for us.
@@ -3584,13 +3584,13 @@ Tcl_SetBignumObj(
 #endif
     TclInvalidateStringRep(objPtr);
     TclFreeIntRep(objPtr);
-    TclSetBignumIntRep(objPtr, bignumValue);
+    TclSetBignumInternalRep(objPtr, bignumValue);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclSetBignumIntRep --
+ * TclSetBignumInternalRep --
  *
  *	Install a bignum into the internal representation of an object.
  *
@@ -3606,7 +3606,7 @@ Tcl_SetBignumObj(
  */
 
 void
-TclSetBignumIntRep(
+TclSetBignumInternalRep(
     Tcl_Obj *objPtr,
     mp_int *bignumValue)
 {
