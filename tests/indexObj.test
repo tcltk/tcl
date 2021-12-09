@@ -131,6 +131,10 @@ test indexObj-6.4 {Tcl_GetIndexFromObjStruct} testindexobj {
     testgetindexfromobjstruct $x 1
     testgetindexfromobjstruct $x 1
 } "wrong # args: should be \"testgetindexfromobjstruct c 1\""
+test indexObj-6.5 {Tcl_GetIndexFromObjStruct} testindexobj {
+    set x ""
+    testgetindexfromobjstruct $x -1 4
+} "wrong # args: should be \"testgetindexfromobjstruct {} -1 4\""
 
 test indexObj-7.1 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs

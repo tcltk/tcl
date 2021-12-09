@@ -261,7 +261,7 @@ Tcl_GetIndexFromObjStruct(
     int offset,			/* The number of bytes between entries */
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
-    int flags,			/* 0 or TCL_EXACT */
+    int flags,			/* 0, TCL_EXACT, TCL_INDEX_TEMP_TABLE or TCL_INDEX_NULL_OK */
     int *indexPtr)		/* Place to store resulting integer index. */
 {
     int index, idx, numAbbrev;
@@ -280,7 +280,10 @@ Tcl_GetIndexFromObjStruct(
      * See if there is a valid cached result from a previous lookup.
      */
 
-    if (!(flags & TCL_INDEX_TEMP_TABLE)) {
+    if (!objPtr && (flags & TCL_INDEX_NULL_OK)) {
+	*indexPtr = -1;
+	return TCL_OK;
+    } else if (objPtr && !(flags & TCL_INDEX_TEMP_TABLE)) {
     irPtr = TclFetchInternalRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
@@ -296,10 +299,14 @@ Tcl_GetIndexFromObjStruct(
      * abbreviations unless TCL_EXACT is set in flags.
      */
 
-    key = TclGetString(objPtr);
+    key = objPtr ? TclGetString(objPtr) : "";
     index = -1;
     numAbbrev = 0;
 
+    if (!*key && (flags & TCL_INDEX_NULL_OK)) {
+	*indexPtr = -1;
+	return TCL_OK;
+    }
     /*
      * Scan the table looking for one of:
      *  - An exact match (always preferred)
@@ -344,7 +351,7 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (!(flags & TCL_INDEX_TEMP_TABLE)) {
+    if (objPtr && !(flags & TCL_INDEX_TEMP_TABLE)) {
     irPtr = TclFetchInternalRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
@@ -386,7 +393,7 @@ Tcl_GetIndexFromObjStruct(
 		    *entryPtr, NULL);
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    while (*entryPtr != NULL) {
-		if (*NEXT_ENTRY(entryPtr, offset) == NULL) {
+		if ((*NEXT_ENTRY(entryPtr, offset) == NULL) && !(flags & TCL_INDEX_NULL_OK)) {
 		    Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : ""),
 			    " or ", *entryPtr, NULL);
 		} else if (**entryPtr) {
@@ -394,6 +401,9 @@ Tcl_GetIndexFromObjStruct(
 		    count++;
 		}
 		entryPtr = NEXT_ENTRY(entryPtr, offset);
+	    }
+	    if ((flags & TCL_INDEX_NULL_OK)) {
+		Tcl_AppendStringsToObj(resultPtr, ", or \"\"", NULL);
 	    }
 	}
 	Tcl_SetObjResult(interp, resultPtr);
