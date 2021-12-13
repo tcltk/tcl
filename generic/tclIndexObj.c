@@ -261,7 +261,7 @@ Tcl_GetIndexFromObjStruct(
     int offset,			/* The number of bytes between entries */
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
-    int flags,			/* 0 or TCL_EXACT */
+    int flags,			/* 0, TCL_EXACT or TCL_INDEX_TEMP_TABLE */
     int *indexPtr)		/* Place to store resulting integer index. */
 {
     int index, idx, numAbbrev;
@@ -280,7 +280,7 @@ Tcl_GetIndexFromObjStruct(
      * See if there is a valid cached result from a previous lookup.
      */
 
-    if (!(flags & TCL_INDEX_TEMP_TABLE)) {
+    if (objPtr && !(flags & TCL_INDEX_TEMP_TABLE)) {
     irPtr = TclFetchInternalRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
@@ -296,7 +296,7 @@ Tcl_GetIndexFromObjStruct(
      * abbreviations unless TCL_EXACT is set in flags.
      */
 
-    key = TclGetString(objPtr);
+    key = objPtr ? TclGetString(objPtr) : "";
     index = -1;
     numAbbrev = 0;
 
@@ -344,7 +344,7 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (!(flags & TCL_INDEX_TEMP_TABLE)) {
+    if (objPtr && !(flags & TCL_INDEX_TEMP_TABLE)) {
     irPtr = TclFetchInternalRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
