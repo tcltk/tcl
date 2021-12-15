@@ -1738,7 +1738,7 @@ AppendUtfToUtfRep(
 	 */
 
 	if (bytes && objPtr->bytes && (bytes >= objPtr->bytes)
-		&& (bytes <= objPtr->bytes + objPtr->length)) {
+		&& (bytes < objPtr->bytes + objPtr->length)) {
 	    offset = bytes - objPtr->bytes;
 	}
 
