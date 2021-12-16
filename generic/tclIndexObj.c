@@ -105,7 +105,7 @@ int
 Tcl_GetIndexFromObj(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
-    const char *const*tablePtr,	/* Array of strings to compare against the
+    const char *const *tablePtr,	/* Array of strings to compare against the
 				 * value of objPtr; last entry must be NULL
 				 * and there must not be duplicate entries. */
     const char *msg,		/* Identifying word to use in error
@@ -128,7 +128,7 @@ Tcl_GetIndexFromObj(
 	 * on odd platforms like a Cray PVP...
 	 */
 
-	if (indexRep->tablePtr == (void *) tablePtr
+	if (indexRep->tablePtr == (void *)tablePtr
 		&& indexRep->offset == sizeof(char *)) {
 	    *indexPtr = indexRep->index;
 	    return TCL_OK;
@@ -302,7 +302,7 @@ Tcl_GetIndexFromObjStruct(
      *  - Several abbreviations (never allowed, but overridden by exact match)
      */
 
-    for (entryPtr = (const char* const*)tablePtr, idx = 0; *entryPtr != NULL;
+    for (entryPtr = (const char *const *)tablePtr, idx = 0; *entryPtr != NULL;
 	    entryPtr = NEXT_ENTRY(entryPtr, offset), idx++) {
 	for (p1 = key, p2 = *entryPtr; *p1 == *p2; p1++, p2++) {
 	    if (*p1 == '\0') {
@@ -365,7 +365,7 @@ Tcl_GetIndexFromObjStruct(
 	int count = 0;
 
 	TclNewObj(resultPtr);
-	entryPtr = (const char* const *)tablePtr;
+	entryPtr = (const char *const *)tablePtr;
 	while ((*entryPtr != NULL) && !**entryPtr) {
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	}
