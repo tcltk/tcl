@@ -3551,7 +3551,9 @@ Tcl_CreateMathFunc(
     data->proc = proc;
     data->numArgs = numArgs;
     data->argTypes = (Tcl_ValueType *)ckalloc(numArgs * sizeof(Tcl_ValueType));
-    memcpy(data->argTypes, argTypes, numArgs * sizeof(Tcl_ValueType));
+    if ((numArgs > 0) && (argTypes != NULL)) {
+	memcpy(data->argTypes, argTypes, numArgs * sizeof(Tcl_ValueType));
+    }
     data->clientData = clientData;
 
     Tcl_DStringInit(&bigName);
