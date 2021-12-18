@@ -73,7 +73,7 @@ typedef struct {
 #define NEXT_ENTRY(table, offset) \
 	(&(STRING_AT(table, offset)))
 #define EXPAND_OF(indexRep) \
-	STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index)
+	(((indexRep)->index != TCL_INDEX_NONE) ? STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : "")
 
 /*
  *----------------------------------------------------------------------
@@ -195,7 +195,7 @@ Tcl_GetIndexFromObjStruct(
     int flags,			/* 0, TCL_EXACT or TCL_INDEX_TEMP_TABLE */
     int *indexPtr)		/* Place to store resulting integer index. */
 {
-    int index, idx, numAbbrev;
+    size_t index, idx, numAbbrev;
     const char *key, *p1;
     const char *p2;
     const char *const *entryPtr;
@@ -203,7 +203,7 @@ Tcl_GetIndexFromObjStruct(
     IndexRep *indexRep;
     const Tcl_ObjInternalRep *irPtr;
 
-    /* Protect against invalid values, like -1 or 0. */
+    /* Protect against invalid values, like TCL_INDEX_NONE or 0. */
     if (offset+1 <= sizeof(char *)) {
 	offset = sizeof(char *);
     }
@@ -215,8 +215,10 @@ Tcl_GetIndexFromObjStruct(
     irPtr = TclFetchInternalRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
-	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
-	    *indexPtr = indexRep->index;
+	if ((indexRep->tablePtr == tablePtr)
+		&& (indexRep->offset == offset)
+		&& (indexRep->index != TCL_INDEX_NONE)) {
+	    *indexPtr = (int)indexRep->index;
 	    return TCL_OK;
 	}
     }
@@ -228,7 +230,7 @@ Tcl_GetIndexFromObjStruct(
      */
 
     key = objPtr ? TclGetString(objPtr) : "";
-    index = -1;
+    index = TCL_INDEX_NONE;
     numAbbrev = 0;
 
     /*
@@ -275,7 +277,7 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (objPtr && !(flags & TCL_INDEX_TEMP_TABLE)) {
+    if (objPtr && (index != TCL_INDEX_NONE) && !(flags & TCL_INDEX_TEMP_TABLE)) {
     irPtr = TclFetchInternalRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
@@ -291,7 +293,7 @@ Tcl_GetIndexFromObjStruct(
     indexRep->index = index;
     }
 
-    *indexPtr = index;
+    *indexPtr = (int)index;
     return TCL_OK;
 
   error:
