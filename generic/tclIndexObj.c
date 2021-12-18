@@ -73,7 +73,7 @@ typedef struct {
 #define NEXT_ENTRY(table, offset) \
 	(&(STRING_AT(table, offset)))
 #define EXPAND_OF(indexRep) \
-	STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index)
+	(((indexRep)->index >= 0) ? STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : "")
 
 /*
  *----------------------------------------------------------------------
@@ -280,7 +280,9 @@ Tcl_GetIndexFromObjStruct(
 
     if (objPtr && (objPtr->typePtr == &indexType)) {
 	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
-	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
+	if ((indexRep->tablePtr == tablePtr)
+		&& (indexRep->offset == offset)
+		&& (indexRep->index >= 0)) {
 	    *indexPtr = indexRep->index;
 	    return TCL_OK;
 	}
@@ -339,7 +341,7 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (objPtr) {
+    if (objPtr && (index >= 0)) {
 	if (objPtr->typePtr == &indexType) {
 	    indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 	} else {
