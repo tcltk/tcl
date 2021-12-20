@@ -6286,7 +6286,7 @@ TestGetIndexFromObjStructObjCmd(
 	"a", "b", "c", "d", "ee", "ff", NULL, NULL
     };
     int target, flags = 0;
-	signed char idx[8];
+    signed char idx[8];
 
     if (objc != 3 && objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "argument targetvalue ?flags?");
@@ -6300,15 +6300,15 @@ TestGetIndexFromObjStructObjCmd(
     }
     memset(idx, 85, sizeof(idx));
     if (Tcl_GetIndexFromObjStruct(interp, (Tcl_GetString(objv[1])[0] ? objv[1] : NULL), ary, 2*sizeof(char *),
-	    "dummy", flags, &idx[0]) != TCL_OK) {
+	    "dummy", flags, &idx[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (idx[1] != 85) {
-	Tcl_AppendResult(interp, "Tcl_GetIndexFromObjStruct overwrites size", NULL);
+    if (idx[0] != 85 || idx[2] != 85) {
+	Tcl_AppendResult(interp, "Tcl_GetIndexFromObjStruct overwrites bytes near index variable", NULL);
 	return TCL_ERROR;
-    } else if (idx[0] != target) {
+    } else if (idx[1] != target) {
 	char buffer[64];
-	sprintf(buffer, "%d", idx[0]);
+	sprintf(buffer, "%d", idx[1]);
 	Tcl_AppendResult(interp, "index value comparison failed: got ",
 		buffer, NULL);
 	sprintf(buffer, "%d", target);
