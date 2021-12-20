@@ -6020,7 +6020,7 @@ TEBCresume(
 		    if (((size_t) shift < CHAR_BIT*sizeof(long))
 			    && !((w1>0 ? w1 : ~w1) &
 				-(1UL<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
-			wResult = (unsigned long)w1 << shift;
+			wResult = (Tcl_WideUInt)w1 << shift;
 			goto wideResultOfArithmetic;
 		    }
 		}
