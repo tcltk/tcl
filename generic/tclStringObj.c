@@ -1674,10 +1674,10 @@ AppendUtfToUtfRep(
 	objPtr->length = 0;
     }
     oldLength = objPtr->length;
-    newLength = numBytes + oldLength;
-    if (newLength < 0) {
+    if (numBytes > INT_MAX - oldLength) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
+    newLength = numBytes + oldLength;
 
     stringPtr = GET_STRING(objPtr);
     if (newLength > stringPtr->allocated) {

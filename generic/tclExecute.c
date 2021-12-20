@@ -6017,10 +6017,10 @@ TEBCresume(
 		     * Handle shifts within the native long range.
 		     */
 
-		    if ((size_t) shift < CHAR_BIT*sizeof(long) && (w1 != 0)
+		    if (((size_t) shift < CHAR_BIT*sizeof(long))
 			    && !((w1>0 ? w1 : ~w1) &
-				-(1L<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
-			wResult = w1 << shift;
+				-(1UL<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
+			wResult = (unsigned long)w1 << shift;
 			goto wideResultOfArithmetic;
 		    }
 		}

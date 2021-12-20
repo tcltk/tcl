@@ -73,7 +73,7 @@ typedef struct {
 #define NEXT_ENTRY(table, offset) \
 	(&(STRING_AT(table, offset)))
 #define EXPAND_OF(indexRep) \
-	STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index)
+	(((indexRep)->index >= 0) ? STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index) : "")
 
 /*
  *----------------------------------------------------------------------
@@ -249,6 +249,7 @@ GetIndexFromObjList(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetIndexFromObjStruct
 int
 Tcl_GetIndexFromObjStruct(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
@@ -262,7 +263,7 @@ Tcl_GetIndexFromObjStruct(
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
     int flags,			/* 0, TCL_EXACT, TCL_INDEX_TEMP_TABLE or TCL_INDEX_NULL_OK */
-    int *indexPtr)		/* Place to store resulting integer index. */
+    void *indexPtr)		/* Place to store resulting index. */
 {
     int index, idx, numAbbrev;
     const char *key, *p1;
@@ -280,16 +281,15 @@ Tcl_GetIndexFromObjStruct(
      * See if there is a valid cached result from a previous lookup.
      */
 
-    if (!objPtr && (flags & TCL_INDEX_NULL_OK)) {
-	*indexPtr = -1;
-	return TCL_OK;
-    } else if (objPtr && !(flags & TCL_INDEX_TEMP_TABLE)) {
+    if (objPtr && !(flags & TCL_INDEX_TEMP_TABLE)) {
     irPtr = TclFetchInternalRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
-	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
-	    *indexPtr = indexRep->index;
-	    return TCL_OK;
+	if ((indexRep->tablePtr == tablePtr)
+		&& (indexRep->offset == offset)
+		&& (indexRep->index >= 0)) {
+	    index = indexRep->index;
+	    goto uncachedDone;
 	}
     }
     }
@@ -304,8 +304,7 @@ Tcl_GetIndexFromObjStruct(
     numAbbrev = 0;
 
     if (!*key && (flags & TCL_INDEX_NULL_OK)) {
-	*indexPtr = -1;
-	return TCL_OK;
+	goto uncachedDone;
     }
     /*
      * Scan the table looking for one of:
@@ -351,7 +350,7 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (objPtr && !(flags & TCL_INDEX_TEMP_TABLE)) {
+    if (objPtr && (index >= 0) && !(flags & TCL_INDEX_TEMP_TABLE)) {
     irPtr = TclFetchInternalRep(objPtr, &indexType);
     if (irPtr) {
 	indexRep = (IndexRep *)irPtr->twoPtrValue.ptr1;
@@ -367,7 +366,23 @@ Tcl_GetIndexFromObjStruct(
     indexRep->index = index;
     }
 
-    *indexPtr = index;
+  uncachedDone:
+    if ((flags>>8) & (int)~sizeof(int)) {
+	if ((flags>>8) == sizeof(uint64_t)) {
+	    *(uint64_t *)indexPtr = index;
+	    return TCL_OK;
+	} else if ((flags>>8) == sizeof(uint32_t)) {
+	    *(uint32_t *)indexPtr = index;
+	    return TCL_OK;
+	} else if ((flags>>8) == sizeof(uint16_t)) {
+	    *(uint16_t *)indexPtr = index;
+	    return TCL_OK;
+	} else if ((flags>>8) == sizeof(uint8_t)) {
+	    *(uint8_t *)indexPtr = index;
+	    return TCL_OK;
+	}
+    }
+    *(int *)indexPtr = index;
     return TCL_OK;
 
   error:

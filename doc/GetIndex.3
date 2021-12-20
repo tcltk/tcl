@@ -55,9 +55,10 @@ Null-terminated string describing what is being looked up, such as
 OR-ed combination of bits providing additional information for
 operation.  The only bits that are currently defined are \fBTCL_EXACT\fR
 , \fBTCL_INDEX_TEMP_TABLE\fR, and \fBTCL_INDEX_NULL_OK\fR.
-.AP int *indexPtr out
+.AP enum|char|short|int|long *indexPtr out
 The index of the string in \fItablePtr\fR that matches the value of
-\fIobjPtr\fR is returned here.
+\fIobjPtr\fR is returned here. The variable can be any integer type,
+signed or unsigned, char, short, long or long long. It can also be an enum.
 .BE
 .SH DESCRIPTION
 .PP
