@@ -402,8 +402,7 @@ test string-4.11.$noComp {string first, start index} {
 } 3
 test string-4.12.$noComp {string first, start index} -body {
     run {expr {[string first 牦 abc牦x 4]<0}}
-} -result -1
->>
+} -result 1
 test string-4.13.$noComp {string first, start index} -body {
     run {string first 牦 abc牦x end-2}
 } -result 3
@@ -1021,7 +1020,7 @@ test string-7.11.$noComp {string last, start index} {
 } 3
 test string-7.12.$noComp {string last, start index} {
     run {expr {[string last 牦 abc牦x 2]<0}}
-} -1
+} 1
 test string-7.13.$noComp {string last, start index} {
     ## Constrain to last 'a' should work
     run {string last ba badbad end-1}
@@ -1034,7 +1033,7 @@ test string-7.15.$noComp {string last, start index} {
     run {expr {[string last Üa ÜadÜad 0]<0}}
 } 1
 test string-7.16.$noComp {string last, start index} {
-    run {expr {[string last Üa ÜadÜad end-1}
+    run {string last Üa ÜadÜad end-1}
 } 3
 
 test string-8.1.$noComp {string bytelength} nodep {

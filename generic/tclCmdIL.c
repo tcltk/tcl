@@ -2731,8 +2731,8 @@ Tcl_LremoveObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, idxc;
-    int listLen, *idxv, prevIdx, first, num;
+    int i, idxc, listLen, prevIdx, first, num;
+    int *idxv;
     Tcl_Obj *listObj;
 
     /*
@@ -2960,7 +2960,8 @@ Tcl_LreplaceObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
-    int first, last, listLen, numToDelete, result;
+    int first, last;
+    int listLen, numToDelete, result;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2991,8 +2992,7 @@ Tcl_LreplaceObjCmd(
 
     if (first == TCL_INDEX_NONE) {
 	first = 0;
-    }
-    if (first > listLen) {
+    } else if (first > listLen) {
 	first = listLen;
     }
 
@@ -3140,9 +3140,10 @@ Tcl_LsearchObjCmd(
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     const char *bytes, *patternBytes;
-    int i, match, index, result=TCL_OK, listc, length, elemLen, bisect;
+    int i, match, index, result=TCL_OK, listc, bisect;
+    int length, elemLen, start, groupSize, groupOffset, lower, upper;
     int allocatedIndexVector = 0;
-    int dataType, isIncreasing, lower, upper, start, groupSize, groupOffset;
+    int dataType, isIncreasing;
     Tcl_WideInt patWide, objWide;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
@@ -3645,7 +3646,7 @@ Tcl_LsearchObjCmd(
 		 * our first match might not be the first occurrence.
 		 * Consider: 0 0 0 1 1 1 2 2 2
 		 *
-		 * To maintain consistancy with standard lsearch semantics, we
+		 * To maintain consistency with standard lsearch semantics, we
 		 * must find the leftmost occurrence of the pattern in the
 		 * list. Thus we don't just stop searching here. This
 		 * variation means that a search always makes log n
@@ -3719,8 +3720,7 @@ Tcl_LsearchObjCmd(
 			if (noCase) {
 			    match = (TclUtfCasecmp(bytes, patternBytes) == 0);
 			} else {
-			    match = (memcmp(bytes, patternBytes,
-				    (size_t) length) == 0);
+			    match = (memcmp(bytes, patternBytes, length) == 0);
 			}
 		    }
 		    break;
