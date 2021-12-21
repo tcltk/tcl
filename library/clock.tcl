@@ -4171,10 +4171,10 @@ proc ::tcl::clock::WeekdayOnOrBefore { weekday j } {
 
 proc ::tcl::clock::BSearch { list key } {
     if {[llength $list] == 0} {
-	return -1
+	return {}
     }
     if { $key < [lindex $list 0 0] } {
-	return -1
+	return {}
     }
 
     set l 0
