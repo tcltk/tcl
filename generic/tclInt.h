@@ -4903,9 +4903,6 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
-//#define TclNewIndexObj(objPtr, w) \
-//    (objPtr) = ((w < 0) ? Tcl_NewObj() : Tcl_NewWideIntObj(w))
-
 #define TclNewIndexObj(objPtr, w) \
     do {						\
 	TclIncrObjsAllocated();				\

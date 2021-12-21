@@ -134,10 +134,11 @@ UpdateStringOfIndex(
     /* The only situation that the string rep can be missing is when it
      * represents TCL_INDEX_NONE. In all other situations, the string
      * rep is never thrown away. See TclNewIndexObj() */
-	if ((objPtr)->internalRep.wideValue != WIDE_MIN) {
-		Tcl_Panic("String rep of ");
-	}
-	TclInitStringRep(objPtr, NULL, 0);
+    if ((objPtr)->internalRep.wideValue != WIDE_MIN) {
+	Tcl_Panic("String rep of index %" TCL_LL_MODIFIER "d cannot be generated",
+		(long long)(objPtr)->internalRep.wideValue);
+    }
+    TclInitStringRep(objPtr, NULL, 0);
 }
 
 const Tcl_ObjType tclEndOffsetType = {
