@@ -4326,7 +4326,7 @@ TclScaleTime(
 /*
  * Invalidate the string rep first so we can use the bytes value for our
  * pointer chain, and signal an obj deletion (as opposed to shimmering) with
- * 'length == -1'.
+ * 'length == TCL_INDEX_NONE'.
  * Use empty 'if ; else' to handle use in unbraced outer if/else conditions.
  */
 
@@ -4338,7 +4338,7 @@ TclScaleTime(
 		    && ((objPtr)->bytes != &tclEmptyString)) { \
 		ckfree((objPtr)->bytes); \
 	    } \
-	    (objPtr)->length = -1; \
+	    (objPtr)->length = TCL_INDEX_NONE; \
 	    TclFreeObjStorage(objPtr); \
 	    TclIncrObjsFreed(); \
 	} else { \
@@ -4360,7 +4360,7 @@ TclScaleTime(
  */
 
 #  define TclAllocObjStorageEx(interp, objPtr) \
-	(objPtr) = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj))
+	(objPtr) = (Tcl_Obj *)ckalloc(sizeof(Tcl_Obj))
 
 #  define TclFreeObjStorageEx(interp, objPtr) \
 	ckfree(objPtr)
@@ -4510,7 +4510,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *) ckalloc((len) + 1); \
+	(objPtr)->bytes = (char *)ckalloc((len) + 1); \
 	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
@@ -4902,6 +4902,9 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
+#define TclNewIndexObj(objPtr, w) \
+    TclNewIntObj(objPtr, w)
+
 #define TclNewDoubleObj(objPtr, d) \
     do {							\
 	TclIncrObjsAllocated();					\
@@ -4927,6 +4930,9 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 #define TclNewIntObj(objPtr, w) \
     (objPtr) = Tcl_NewWideIntObj(w)
 
+#define TclNewIndexObj(objPtr, w) \
+    TclNewIntObj(objPtr, w)
+
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)
 
@@ -4939,7 +4945,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
  * sizeof(sLiteral "") will fail to compile otherwise.
  */
 #define TclNewLiteralStringObj(objPtr, sLiteral) \
-    TclNewStringObj((objPtr), (sLiteral), (int) (sizeof(sLiteral "") - 1))
+    TclNewStringObj((objPtr), (sLiteral), sizeof(sLiteral "") - 1)
 
 /*
  *----------------------------------------------------------------
@@ -4952,7 +4958,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
  */
 
 #define TclDStringAppendLiteral(dsPtr, sLiteral) \
-    Tcl_DStringAppend((dsPtr), (sLiteral), (int) (sizeof(sLiteral "") - 1))
+    Tcl_DStringAppend((dsPtr), (sLiteral), sizeof(sLiteral "") - 1)
 #define TclDStringClear(dsPtr) \
     Tcl_DStringSetLength((dsPtr), 0)
 
@@ -5093,12 +5099,12 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclIncrObjsAllocated();						\
 	TclAllocObjStorageEx((interp), (_objPtr));			\
-	*(void **)&memPtr = (void *) (_objPtr);					\
+	*(void **)&(memPtr) = (void *) (_objPtr);			\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \
     do {								\
-	TclFreeObjStorageEx((interp), (Tcl_Obj *) (memPtr));		\
+	TclFreeObjStorageEx((interp), (Tcl_Obj *)(memPtr));		\
 	TclIncrObjsFreed();						\
     } while (0)
 
@@ -5108,12 +5114,12 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	Tcl_Obj *_objPtr;						\
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclNewObj(_objPtr);						\
-	*(void **)&memPtr = (void *) _objPtr;					\
+	*(void **)&(memPtr) = (void *)_objPtr;				\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \
     do {								\
-	Tcl_Obj *_objPtr = (Tcl_Obj *) memPtr;				\
+	Tcl_Obj *_objPtr = (Tcl_Obj *)(memPtr);				\
 	_objPtr->bytes = NULL;						\
 	_objPtr->typePtr = NULL;					\
 	_objPtr->refCount = 1;						\
