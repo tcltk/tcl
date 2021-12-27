@@ -4261,6 +4261,7 @@ printf "%s\n" "$ac_cv_municode" >&6; }
 	else
 	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
 	fi
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fno-lto"
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for working -fno-lto" >&5
 printf %s "checking for working -fno-lto... " >&6; }
 if test ${ac_cv_nolto+y}
@@ -4328,6 +4329,40 @@ printf "%s\n" "$tcl_cv_cc_input_charset" >&6; }
 	if test $tcl_cv_cc_input_charset = yes; then
 	    extra_cflags="$extra_cflags -finput-charset=UTF-8"
 	fi
+    fi
+
+    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Wl,--enable-auto-image-base"
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for working --enable-auto-image-base" >&5
+printf %s "checking for working --enable-auto-image-base... " >&6; }
+if test ${ac_cv_enable_auto_image_base+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_enable_auto_image_base=yes
+else $as_nop
+  ac_cv_enable_auto_image_base=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_auto_image_base" >&5
+printf "%s\n" "$ac_cv_enable_auto_image_base" >&6; }
+    CFLAGS=$hold_cflags
+    if test "$ac_cv_enable_auto_image_base" == "yes" ; then
+	extra_ldflags="$extra_ldflags -Wl,--enable-auto-image-base"
     fi
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking compiler flags" >&5

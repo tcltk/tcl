@@ -21,13 +21,13 @@ The \fBTcl_InitSubsystems\fR procedure initializes the Tcl
 library. This procedure is typically invoked as the very
 first thing in the application's main program.
 .PP
-The result of \fBTcl_InitSubsystems\fR is the full Tcl version (e.g.,
-\fB"9.0.0"\fR).
+The result of \fBTcl_InitSubsystems\fR is the full Tcl version with
+build information (e.g., \fB9.0.0+abcdef...abcdef.gcc-1002\fR).
 .PP
 \fBTcl_InitSubsystems\fR is very similar in use to
 \fBTcl_FindExecutable\fR. It can be used when Tcl is
 used as utility library, no other encodings than utf-8,
-iso8859-1 or unicode are used, and no interest exists in the
+iso8859-1 or utf-16 are used, and no interest exists in the
 value of \fBinfo nameofexecutable\fR. The system encoding will not
 be extracted from the environment, but falls back to utf-8.
 .SH KEYWORDS

@@ -32,7 +32,7 @@ int
 \fBTcl_GetIntFromObj\fR(\fIinterp, objPtr, intPtr\fR)
 .sp
 int
-\fBTcl_GetIntForIndex\fR(\fIinterp, objPtr, endValue, intPtr\fR)
+\fBTcl_GetIntForIndex\fR(\fIinterp, objPtr, endValue, indexPtr\fR)
 .sp
 int
 \fBTcl_GetLongFromObj\fR(\fIinterp, objPtr, longPtr\fR)
@@ -58,7 +58,7 @@ int
 \fBTcl_InitBignumFromDouble\fR(\fIinterp, doubleValue, bigValue\fR)
 .SH ARGUMENTS
 .AS Tcl_WideInt doubleValue in/out
-.AP int endValue in
+.AP size_t endValue in
 \fBTcl_GetIntForIndex\fR will return this when the input value is "end".
 .AP int intValue in
 Integer value used to initialize or set a Tcl value.
@@ -80,6 +80,8 @@ retrieval fails.
 Points to place to store the integer value retrieved from \fIobjPtr\fR.
 .AP long *longPtr out
 Points to place to store the long integer value retrieved from \fIobjPtr\fR.
+.AP size_t *indexPtr out
+Points to place to store the size_t value retrieved from \fIobjPtr\fR.
 .AP Tcl_WideInt *widePtr out
 Points to place to store the wide integer value retrieved from \fIobjPtr\fR.
 .AP mp_int *bigValue in/out
