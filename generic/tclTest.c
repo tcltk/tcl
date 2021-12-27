@@ -222,7 +222,6 @@ static Tcl_CmdProc	TestcreatecommandCmd;
 static Tcl_CmdProc	TestdcallCmd;
 static Tcl_CmdProc	TestdelCmd;
 static Tcl_CmdProc	TestdelassocdataCmd;
-static Tcl_ObjCmdProc	TestdebugObjCmd;
 static Tcl_ObjCmdProc	TestdoubledigitsObjCmd;
 static Tcl_CmdProc	TestdstringCmd;
 static Tcl_ObjCmdProc	TestencodingObjCmd;
@@ -262,7 +261,6 @@ static Tcl_ObjCmdProc	TestparsevarObjCmd;
 static Tcl_ObjCmdProc	TestparsevarnameObjCmd;
 static Tcl_ObjCmdProc	TestpreferstableObjCmd;
 static Tcl_ObjCmdProc	TestprintObjCmd;
-static Tcl_ObjCmdProc	TestpurifyObjCmd;
 static Tcl_ObjCmdProc	TestregexpObjCmd;
 static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
@@ -502,8 +500,6 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testcreatecommand", TestcreatecommandCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testdcall", TestdcallCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testdebug", TestdebugObjCmd,
-	    NULL, NULL);
     Tcl_CreateCommand(interp, "testdel", TestdelCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testdelassocdata", TestdelassocdataCmd,
 	    NULL, NULL);
@@ -568,8 +564,6 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testparsevarname", TestparsevarnameObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testpreferstable", TestpreferstableObjCmd,
-	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testpurify", TestpurifyObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testprint", TestprintObjCmd,
 	    NULL, NULL);
@@ -1623,7 +1617,7 @@ TestdoubledigitsObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj* const objv[])	/* Parameter vector */
 {
-    static const char* options[] = {
+    static const char *options[] = {
 	"shortest",
 	"e",
 	"f",
@@ -1642,8 +1636,8 @@ TestdoubledigitsObjCmd(
     int type;
     int decpt;
     int signum;
-    char* str;
-    char* endPtr;
+    char *str;
+    char *endPtr;
     Tcl_Obj* strObj;
     Tcl_Obj* retval;
 
@@ -3359,40 +3353,6 @@ TestlocaleCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestdebugObjCmd --
- *
- *	Implements the "testdebug" command, to detect whether Tcl was built with
- *	--enabble-symbols.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestdebugObjCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) /*objc*/,
-    TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
-{
-
-#if defined(NDEBUG) && NDEBUG == 1
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
-#else
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
-#endif
-
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * CleanupTestSetassocdataTests --
  *
  *	This function is called when an interpreter is deleted to clean
@@ -3835,40 +3795,6 @@ TestprintObjCmd(
     }
     argv2 = (size_t)argv1;
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(Tcl_GetString(objv[1]), argv1, argv2, argv2));
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestpurifyObjCmd --
- *
- *	Implements the "testpurify" command, to detect whether Tcl was built with
- *	-DPURIFY.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestpurifyObjCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) /*objc*/,
-    TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
-{
-
-#ifdef PURIFY
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
-#else
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
-#endif
-
     return TCL_OK;
 }
 
@@ -6405,19 +6331,22 @@ TestGetIndexFromObjStructObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *const ary[] = {
-	"a", "b", "c", "d", "e", "f", NULL, NULL
+	"a", "b", "c", "d", "ee", "ff", NULL, NULL
     };
-    int idx,target;
+    int idx,target, flags = 0;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "argument targetvalue");
-	return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObjStruct(interp, objv[1], ary, 2*sizeof(char *),
-	    "dummy", 0, &idx) != TCL_OK) {
+    if (objc != 3 && objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "argument targetvalue ?flags?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, objv[2], &target) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if ((objc > 3) && (Tcl_GetIntFromObj(interp, objv[3], &flags) != TCL_OK)) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObjStruct(interp, (Tcl_GetString(objv[1])[0] ? objv[1] : NULL), ary, 2*sizeof(char *),
+	    "dummy", flags, &idx) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (idx != target) {
@@ -6429,7 +6358,7 @@ TestGetIndexFromObjStructObjCmd(
 	Tcl_AppendResult(interp, " when ", buffer, " expected", NULL);
 	return TCL_ERROR;
     }
-    Tcl_WrongNumArgs(interp, 3, objv, NULL);
+    Tcl_WrongNumArgs(interp, objc, objv, NULL);
     return TCL_OK;
 }
 

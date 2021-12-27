@@ -1818,7 +1818,7 @@ GetFormatSpec(
 	(*formatPtr)++;
 	*countPtr = BINARY_ALL;
     } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
-	unsigned long int count;
+	unsigned long count;
 
 	errno = 0;
 	count = strtoul(*formatPtr, (char **) formatPtr, 10);
@@ -2783,7 +2783,8 @@ BinaryEncodeUu(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
-    int rawLength, n, i, bits, index;
+    int rawLength, i, bits, index;
+    unsigned int n;
     int lineLength = 61;
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;

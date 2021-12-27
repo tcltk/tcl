@@ -4404,7 +4404,7 @@ TclScaleTime(
  */
 
 #  define TclAllocObjStorageEx(interp, objPtr) \
-	(objPtr) = (Tcl_Obj *) Tcl_Alloc(sizeof(Tcl_Obj))
+	(objPtr) = (Tcl_Obj *)Tcl_Alloc(sizeof(Tcl_Obj))
 
 #  define TclFreeObjStorageEx(interp, objPtr) \
 	Tcl_Free(objPtr)
@@ -4540,7 +4540,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * already has a string representation.  The caller must use
  * this macro properly.  Improper use can lead to dangerous results.
  * Because "len" is referenced multiple times, take care that it is an
- * expression with the same value each use. 
+ * expression with the same value each use.
  *
  * The ANSI C "prototype" for this macro is:
  *
@@ -4713,20 +4713,20 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	    if (allocated > TCL_MAX_TOKENS) {				\
 		allocated = TCL_MAX_TOKENS;				\
 	    }								\
-	    newPtr = (Tcl_Token *) Tcl_AttemptRealloc((char *) oldPtr,	\
-		    (allocated * sizeof(Tcl_Token)));	\
+	    newPtr = (Tcl_Token *)Tcl_AttemptRealloc((char *) oldPtr,	\
+		    allocated * sizeof(Tcl_Token));	\
 	    if (newPtr == NULL) {					\
 		allocated = _needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
 		if (allocated > TCL_MAX_TOKENS) {			\
 		    allocated = TCL_MAX_TOKENS;				\
 		}							\
-		newPtr = (Tcl_Token *) Tcl_Realloc((char *) oldPtr,	\
-			(allocated * sizeof(Tcl_Token))); \
+		newPtr = (Tcl_Token *)Tcl_Realloc((char *) oldPtr,	\
+			allocated * sizeof(Tcl_Token)); \
 	    }								\
 	    (available) = allocated;					\
 	    if (oldPtr == NULL) {					\
 		memcpy(newPtr, staticPtr,				\
-			((used) * sizeof(Tcl_Token)));		\
+			(used) * sizeof(Tcl_Token));		\
 	    }								\
 	    (tokenPtr) = newPtr;					\
 	}								\
@@ -5132,12 +5132,12 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclIncrObjsAllocated();						\
 	TclAllocObjStorageEx((interp), (_objPtr));			\
-	*(void **)&memPtr = (void *) (_objPtr);					\
+	*(void **)&(memPtr) = (void *) (_objPtr);			\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \
     do {								\
-	TclFreeObjStorageEx((interp), (Tcl_Obj *)memPtr);		\
+	TclFreeObjStorageEx((interp), (Tcl_Obj *)(memPtr));		\
 	TclIncrObjsFreed();						\
     } while (0)
 
@@ -5147,12 +5147,12 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	Tcl_Obj *_objPtr;						\
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclNewObj(_objPtr);						\
-	*(void **)&memPtr = (void *) _objPtr;					\
+	*(void **)&(memPtr) = (void *)_objPtr;				\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \
     do {								\
-	Tcl_Obj *_objPtr = (Tcl_Obj *) memPtr;				\
+	Tcl_Obj *_objPtr = (Tcl_Obj *)(memPtr);				\
 	_objPtr->bytes = NULL;						\
 	_objPtr->typePtr = NULL;					\
 	_objPtr->refCount = 1;						\
