@@ -34,7 +34,7 @@ typedef struct {
     Tcl_UniChar end;
 } Range;
 
-typedef struct CharSet {
+typedef struct {
     int exclude;		/* 1 if this is an exclusion set. */
     int nchars;
     Tcl_UniChar *chars;
@@ -1089,7 +1089,7 @@ Tcl_ScanObjCmd(
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
-		TclNewIntObj(objPtr, TCL_INDEX_NONE);
+		TclNewIndexObj(objPtr, TCL_INDEX_NONE);
 	    } else {
 		if (objPtr) {
 		    Tcl_SetListObj(objPtr, 0, NULL);

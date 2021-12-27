@@ -2383,16 +2383,16 @@ EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
-EXTERN void		Tcl_InitSubsystems(void);
+EXTERN const char *	Tcl_InitSubsystems(void);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 EXTERN const char *	Tcl_SetPreInitScript(const char *string);
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_StaticPackage Tcl_StaticLibrary
 #endif
 #ifdef _WIN32
-EXTERN int		TclZipfs_AppHook(int *argc, wchar_t ***argv);
+EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #else
-EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
+EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #endif
 
 /*
