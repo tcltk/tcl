@@ -4072,18 +4072,18 @@ Tcl_ZlibInflate(
 
 unsigned int
 Tcl_ZlibCRC32(
-    unsigned int crc,
-    const char *buf,
-    int len)
+    TCL_UNUSED(unsigned int),
+    TCL_UNUSED(const unsigned char *),
+    TCL_UNUSED(int))
 {
     return 0;
 }
 
 unsigned int
 Tcl_ZlibAdler32(
-    unsigned int adler,
-    const char *buf,
-    int len)
+    TCL_UNUSED(unsigned int),
+    TCL_UNUSED(const unsigned char *),
+    TCL_UNUSED(int))
 {
     return 0;
 }
