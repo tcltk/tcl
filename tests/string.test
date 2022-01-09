@@ -1036,16 +1036,16 @@ test string-7.16.$noComp {string last, start index} {
     run {string last Üa ÜadÜad end-1}
 } 3
 
-test string-8.1.$noComp {string bytelength} nodep {
+test string-8.1.$noComp {string bytelength} deprecated {
     list [catch {run {string bytelength}} msg] $msg
 } {1 {wrong # args: should be "string bytelength string"}}
-test string-8.2.$noComp {string bytelength} nodep {
+test string-8.2.$noComp {string bytelength} deprecated {
     list [catch {run {string bytelength a b}} msg] $msg
 } {1 {wrong # args: should be "string bytelength string"}}
-test string-8.3.$noComp {string bytelength} nodep {
+test string-8.3.$noComp {string bytelength} deprecated {
     run {string bytelength "\xC7"}
 } 2
-test string-8.4.$noComp {string bytelength} nodep {
+test string-8.4.$noComp {string bytelength} deprecated {
     run {string b ""}
 } 0
 
