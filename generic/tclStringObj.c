@@ -3688,7 +3688,7 @@ TclStringFirst(
 	}
     }
   firstEnd:
-    TclNewIntObj(result, value);
+    TclNewIndexObj(result, value);
     return result;
 }
 
@@ -3775,7 +3775,7 @@ TclStringLast(
 	checkStr--;
     }
   lastEnd:
-    TclNewIntObj(result, value);
+    TclNewIndexObj(result, value);
     return result;
 }
 
