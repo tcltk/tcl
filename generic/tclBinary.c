@@ -73,7 +73,7 @@ static void		UpdateStringOfByteArray(Tcl_Obj *listPtr);
 static void		DeleteScanNumberCache(Tcl_HashTable *numberCachePtr);
 static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
-			    unsigned length, int type);
+			    unsigned int length, int type);
 /* Binary ensemble commands */
 static Tcl_ObjCmdProc	BinaryFormatCmd;
 static Tcl_ObjCmdProc	BinaryScanCmd;
@@ -560,7 +560,7 @@ TclGetByteArrayFromObj(
 	*numBytesPtr = baPtr->used;
 #else
 	/* TODO: What's going on here?  Document or eliminate. */
-	*numBytesPtr = ((size_t)(unsigned)(baPtr->used + 1)) - 1;
+	*numBytesPtr = ((size_t)(unsigned int)(baPtr->used + 1)) - 1;
 #endif
     }
     return baPtr->bytes;
@@ -1928,7 +1928,7 @@ GetFormatSpec(
 	(*formatPtr)++;
 	*countPtr = BINARY_ALL;
     } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
-	unsigned long int count;
+	unsigned long count;
 
 	errno = 0;
 	count = strtoul(*formatPtr, (char **) formatPtr, 10);
@@ -2884,7 +2884,8 @@ BinaryEncodeUu(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
-    int offset, count, rawLength, n, i, j, bits, index;
+    int offset, count, rawLength, i, j, bits, index;
+    unsigned int n;
     int lineLength = 61;
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;
