@@ -200,7 +200,7 @@ typedef enum {
 
 #define IMPLIES(a,b)	((!(a)) || (b))
 #define NEGIMPL(a,b)
-#define HAS(x,f)	(x & FLAG(f))
+#define HAS(x,f)	((x) & FLAG(f))
 
 #ifdef TCL_THREADS
 /*

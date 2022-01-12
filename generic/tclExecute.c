@@ -193,10 +193,10 @@ typedef struct TEBCdata {
 #define PUSH_TAUX_OBJ(objPtr) \
     do {							\
 	if (auxObjList) {					\
-	    objPtr->length += auxObjList->length;		\
+	    (objPtr)->length += auxObjList->length;		\
 	}							\
-	objPtr->internalRep.twoPtrValue.ptr1 = auxObjList;	\
-	auxObjList = objPtr;					\
+	(objPtr)->internalRep.twoPtrValue.ptr1 = auxObjList;	\
+	auxObjList = (objPtr);					\
     } while (0)
 
 #define POP_TAUX_OBJ() \
@@ -8462,24 +8462,24 @@ ExecuteExtendedBinaryMathOp(
 {
 #define LONG_RESULT(l) \
     if (Tcl_IsShared(valuePtr)) {		\
-	TclNewLongObj(objResultPtr, l);		\
+	TclNewLongObj(objResultPtr, (l));		\
 	return objResultPtr;			\
     } else {					\
-	Tcl_SetLongObj(valuePtr, l);		\
+	Tcl_SetLongObj(valuePtr, (l));		\
 	return NULL;				\
     }
 #define WIDE_RESULT(w) \
     if (Tcl_IsShared(valuePtr)) {		\
 	return Tcl_NewWideIntObj(w);		\
     } else {					\
-	Tcl_SetWideIntObj(valuePtr, w);		\
+	Tcl_SetWideIntObj(valuePtr, (w));		\
 	return NULL;				\
     }
 #define BIG_RESULT(b) \
     if (Tcl_IsShared(valuePtr)) {		\
 	return Tcl_NewBignumObj(b);		\
     } else {					\
-	Tcl_SetBignumObj(valuePtr, b);		\
+	Tcl_SetBignumObj(valuePtr, (b));		\
 	return NULL;				\
     }
 #define DOUBLE_RESULT(d) \

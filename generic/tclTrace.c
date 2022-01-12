@@ -160,8 +160,8 @@ typedef struct StringTraceData {
 
 #define FOREACH_COMMAND_TRACE(interp, name, clientData) \
     (clientData) = NULL; \
-    while ((clientData = Tcl_CommandTraceInfo(interp, name, 0, \
-	    TraceCommandProc, clientData)) != NULL)
+    while (((clientData) = Tcl_CommandTraceInfo((interp), (name), 0, \
+	    TraceCommandProc, (clientData))) != NULL)
 
 /*
  *----------------------------------------------------------------------
