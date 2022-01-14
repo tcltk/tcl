@@ -91,20 +91,20 @@ static const Tcl_ChannelType tclRTransformType = {
 
 typedef struct {
     unsigned char *buf;		/* Reference to the buffer area. */
-    int allocated;		/* Allocated size of the buffer area. */
-    int used;			/* Number of bytes in the buffer,
+    size_t allocated;		/* Allocated size of the buffer area. */
+    size_t used;			/* Number of bytes in the buffer,
 				 * <= allocated. */
 } ResultBuffer;
 
 #define ResultLength(r) ((r)->used)
 /* static int		ResultLength(ResultBuffer *r); */
 
-static void		ResultClear(ResultBuffer *r);
-static void		ResultInit(ResultBuffer *r);
-static void		ResultAdd(ResultBuffer *r, unsigned char *buf,
-			    int toWrite);
-static int		ResultCopy(ResultBuffer *r, unsigned char *buf,
-			    int toRead);
+static inline void		ResultClear(ResultBuffer *r);
+static inline void		ResultInit(ResultBuffer *r);
+static inline void ResultAdd(ResultBuffer *r, unsigned char *buf,
+			    size_t toWrite);
+static inline size_t	ResultCopy(ResultBuffer *r, unsigned char *buf,
+			    size_t toRead);
 
 #define RB_INCREMENT (512)
 
@@ -2924,7 +2924,7 @@ TimerRun(
  *----------------------------------------------------------------------
  */
 
-static void
+static inline void
 ResultInit(
     ResultBuffer *rPtr)		/* Reference to the structure to
 				 * initialize. */
@@ -2949,7 +2949,7 @@ ResultInit(
  *----------------------------------------------------------------------
  */
 
-static void
+static inline void
 ResultClear(
     ResultBuffer *rPtr)		/* Reference to the buffer to clear out */
 {
@@ -2980,11 +2980,11 @@ ResultClear(
  *----------------------------------------------------------------------
  */
 
-static void
+static inline void
 ResultAdd(
     ResultBuffer *rPtr,		/* The buffer to extend */
     unsigned char *buf,		/* The buffer to read from */
-    int toWrite)		/* The number of bytes in 'buf' */
+    size_t toWrite)		/* The number of bytes in 'buf' */
 {
     if ((rPtr->used + toWrite + 1) > rPtr->allocated) {
 	/*
@@ -3028,11 +3028,11 @@ ResultAdd(
  *----------------------------------------------------------------------
  */
 
-static int
+static inline size_t
 ResultCopy(
     ResultBuffer *rPtr,		/* The buffer to read from */
     unsigned char *buf,		/* The buffer to copy into */
-    int toRead)			/* Number of requested bytes */
+    size_t toRead)			/* Number of requested bytes */
 {
     int copied;
 
