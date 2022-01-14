@@ -2323,9 +2323,6 @@ UtfToUtfProc(
 			src = saveSrc;
 			break;
 		    }
-		    if (!(flags & TCL_ENCODING_MODIFIED)) {
-			ch = 0xFFFD;
-		    }
 		cesu8:
 		    *dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
 		    *dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
