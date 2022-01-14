@@ -67,7 +67,7 @@ typedef struct String {
 #define STRING_MAXCHARS \
     (int)(((size_t)UINT_MAX - 1 - TclOffset(String, unicode))/sizeof(Tcl_UniChar))
 #define STRING_SIZE(numChars) \
-    (TclOffset(String, unicode) + (((numChars) + 1) * sizeof(Tcl_UniChar)))
+    (TclOffset(String, unicode) + (((numChars) + 1U) * sizeof(Tcl_UniChar)))
 #define stringCheckLimits(numChars) \
     do {								\
 	if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) {		\
