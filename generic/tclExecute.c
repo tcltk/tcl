@@ -5330,7 +5330,7 @@ TEBCresume(
 	for (; ustring1 < end; ustring1++) {
 	    if ((*ustring1 == *ustring2) &&
 		/* Fix bug [69218ab7b]: restrict max compare length. */
-		(end-ustring1 >= length2) && (length2==1 ||
+		((size_t)(end-ustring1) >= length2) && (length2==1 ||
 		    memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length2)
 			    == 0)) {
 		if (p != ustring1) {

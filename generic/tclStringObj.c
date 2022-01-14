@@ -147,7 +147,7 @@ GrowStringBuffer(
     }
     if (flag == 0 || stringPtr->allocated > 0) {
 	attempt = 2 * needed;
-	ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1);
+	ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1U);
 	if (ptr == NULL) {
 	    /*
 	     * Take care computing the amount of modest growth to avoid
@@ -159,7 +159,7 @@ GrowStringBuffer(
 	    size_t growth = (extra > limit) ? limit : extra;
 
 	    attempt = needed + growth;
-	    ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1);
+	    ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1U);
 	}
     }
     if (ptr == NULL) {
@@ -168,7 +168,7 @@ GrowStringBuffer(
 	 */
 
 	attempt = needed;
-	ptr = (char *)Tcl_Realloc(objPtr->bytes, attempt + 1);
+	ptr = (char *)Tcl_Realloc(objPtr->bytes, attempt + 1U);
     }
     objPtr->bytes = ptr;
     stringPtr->allocated = attempt;

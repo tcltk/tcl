@@ -532,7 +532,7 @@ TclContinuationsEnter(
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
 	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = (ContLineLoc *)Tcl_Alloc(offsetof(ContLineLoc, loc) + (num + 1) *sizeof(int));
+    ContLineLoc *clLocPtr = (ContLineLoc *)Tcl_Alloc(offsetof(ContLineLoc, loc) + (num + 1U) *sizeof(int));
 
     if (!newEntry) {
 	/*

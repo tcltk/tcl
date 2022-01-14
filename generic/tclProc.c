@@ -633,7 +633,7 @@ TclCreateProc(
 	     */
 
 	    localPtr = (CompiledLocal *)Tcl_Alloc(
-		    offsetof(CompiledLocal, name) + fieldValues[0]->length + 1);
+		    offsetof(CompiledLocal, name) + 1U + fieldValues[0]->length);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
