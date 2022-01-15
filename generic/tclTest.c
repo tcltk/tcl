@@ -3574,8 +3574,9 @@ PrintParse(
 		Tcl_NewIntObj(tokenPtr->numComponents));
     }
     Tcl_ListObjAppendElement(NULL, objPtr,
+	    parsePtr->commandStart ?
 	    Tcl_NewStringObj(parsePtr->commandStart + parsePtr->commandSize,
-	    -1));
+	    -1) : Tcl_NewObj());
 }
 
 /*
