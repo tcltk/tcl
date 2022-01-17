@@ -650,8 +650,7 @@ Tcl_GetUnicodeFromObj(
  *
  *	Create a Tcl Object that contains the chars between first and last of
  *	the object indicated by "objPtr". If the object is not already a
- *	String object, convert it to one. The first and last indices are
- *	assumed to be in the appropriate range.
+ *	String object, convert it to one.
  *
  * Results:
  *	Returns a new Tcl Object of the String type.
@@ -732,8 +731,8 @@ Tcl_GetRange(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-    if (last > stringPtr->numChars) {
-	last = stringPtr->numChars;
+    if (last >= stringPtr->numChars) {
+	last = stringPtr->numChars - 1;
     }
     if (last < first) {
 	return Tcl_NewObj();

@@ -2310,12 +2310,7 @@ StringRangeCmd(
     if (first == TCL_INDEX_NONE) {
 	first = TCL_INDEX_START;
     }
-    if (last + 1 >= end + 1) {
-	last = end;
-    }
-    if (last + 1 >= first + 1) {
-	Tcl_SetObjResult(interp, Tcl_GetRange(objv[1], first, last));
-    }
+    Tcl_SetObjResult(interp, Tcl_GetRange(objv[1], first, last));
     return TCL_OK;
 }
 
