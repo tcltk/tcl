@@ -2208,15 +2208,7 @@ StringRangeCmd(
 	return TCL_ERROR;
     }
 
-    if (first < 0) {
-	first = 0;
-    }
-    if (last >= length) {
-	last = length;
-    }
-    if (last >= first) {
-	Tcl_SetObjResult(interp, Tcl_GetRange(objv[1], first, last));
-    }
+    Tcl_SetObjResult(interp, Tcl_GetRange(objv[1], first, last));
     return TCL_OK;
 }
 
@@ -3474,7 +3466,7 @@ TclInitStringCmd(
 	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL, 0},
 	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, NULL, 0},
 	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, 0},
-	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, NULL, 0},
+	{"range",	StringRangeCmd,	NULL, NULL, NULL, 0},
 	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"replace",	StringRplcCmd,	TclCompileStringReplaceCmd, NULL, NULL, 0},
 	{"reverse",	StringRevCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
