@@ -1880,6 +1880,8 @@ Tcl_ParseExpr(
 	numBytes = (start ? strlen(start) : 0);
     }
 
+    TclNewObj(litList);
+    TclNewObj(funcList);
     code = ParseExpr(interp, start, numBytes, &opTree, litList, funcList,
 	    exprParsePtr, 1 /* parseOnly */);
     Tcl_DecrRefCount(funcList);
