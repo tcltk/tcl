@@ -245,7 +245,7 @@ Tcl_SaveResult(
      */
 
     statePtr->objResultPtr = iPtr->objResultPtr;
-    iPtr->objResultPtr = Tcl_NewObj();
+    TclNewObj(iPtr->objResultPtr);
     Tcl_IncrRefCount(iPtr->objResultPtr);
 
     /*
@@ -1026,13 +1026,14 @@ Tcl_SetErrorCodeVA(
     Tcl_Interp *interp,		/* Interpreter in which to set errorCode */
     va_list argList)		/* Variable argument list. */
 {
-    Tcl_Obj *errorObj = Tcl_NewObj();
+    Tcl_Obj *errorObj;
 
     /*
      * Scan through the arguments one at a time, appending them to the
      * errorCode field as list elements.
      */
 
+    TclNewObj(errorObj);
     while (1) {
 	char *elem = va_arg(argList, char *);
 
@@ -1387,9 +1388,10 @@ TclMergeReturnOptions(
     int code = TCL_OK;
     int level = 1;
     Tcl_Obj *valuePtr;
-    Tcl_Obj *returnOpts = Tcl_NewObj();
+    Tcl_Obj *returnOpts;
     Tcl_Obj **keys = GetKeys();
 
+    TclNewObj(returnOpts);
     for (;  objc > 1;  objv += 2, objc -= 2) {
 	int optLen;
 	const char *opt = TclGetStringFromObj(objv[0], &optLen);
@@ -1585,7 +1587,7 @@ Tcl_GetReturnOptions(
     if (iPtr->returnOpts) {
 	options = Tcl_DuplicateObj(iPtr->returnOpts);
     } else {
-	options = Tcl_NewObj();
+	TclNewObj(options);
     }
 
     if (result == TCL_RETURN) {
