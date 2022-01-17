@@ -901,8 +901,7 @@ Tcl_CreateInterp(void)
     iPtr->activeInterpTracePtr = NULL;
     iPtr->assocData = NULL;
     iPtr->execEnvPtr = NULL;	/* Set after namespaces initialized. */
-    TclNewObj(iPtr->emptyObjPtr);
-				/* Another empty object. */
+    TclNewObj(iPtr->emptyObjPtr); /* Another empty object. */
     Tcl_IncrRefCount(iPtr->emptyObjPtr);
 #ifndef TCL_NO_DEPRECATED
     iPtr->resultSpace[0] = 0;

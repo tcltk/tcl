@@ -3775,7 +3775,6 @@ Tcl_FSListVolumes(void)
     FilesystemRecord *fsRecPtr;
     Tcl_Obj *resultPtr;
 
-    TclNewObj(resultPtr);
     /*
      * Call each "listVolumes" function of each registered filesystem in
      * succession. A non-NULL return value indicates the particular function

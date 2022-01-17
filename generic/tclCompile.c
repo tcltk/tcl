@@ -2044,7 +2044,6 @@ CompileCommandTokens(
     int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
     int depth = TclGetStackDepth(envPtr);
 
-    TclNewObj(cmdObj);
     assert (parsePtr->numWords > 0);
 
     /* Pre-Compile */
