@@ -5370,17 +5370,7 @@ TEBCresume(
 	}
 	CACHE_STACK_INFO();
 
-	if (fromIdx < 0) {
-	    fromIdx = 0;
-	}
-	if (toIdx >= length) {
-	    toIdx = length;
-	}
-	if (toIdx >= fromIdx) {
-	    objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
-	} else {
-	    TclNewObj(objResultPtr);
-	}
+	objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_V(1, 3, 1);
 
@@ -5405,37 +5395,19 @@ TEBCresume(
 	 * Extra safety for legacy bytecodes:
 	 */
 	if (toIdx == TCL_INDEX_NONE) {
-	    goto emptyRange;
-	}
-
-	toIdx = TclIndexDecode(toIdx, length - 1);
-	if (toIdx < 0) {
-	    goto emptyRange;
-	} else if (toIdx >= length) {
-	    toIdx = length - 1;
-	}
-
-	assert ( toIdx >= 0 && toIdx < length );
-
-	/*
-	assert ( fromIdx != TCL_INDEX_NONE );
-	 *
-	 * Extra safety for legacy bytecodes:
-	 */
-	if (fromIdx == TCL_INDEX_NONE) {
-	    fromIdx = TCL_INDEX_START;
-	}
-
-	fromIdx = TclIndexDecode(fromIdx, length - 1);
-	if (fromIdx < 0) {
-	    fromIdx = 0;
-	}
-
-	if (fromIdx <= toIdx) {
-	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
-	} else {
-	emptyRange:
 	    TclNewObj(objResultPtr);
+	} else {
+	    toIdx = TclIndexDecode(toIdx, length - 1);
+	    /*
+	    assert ( fromIdx != TCL_INDEX_NONE );
+	     *
+	     * Extra safety for legacy bytecodes:
+	     */
+	    if (fromIdx == TCL_INDEX_NONE) {
+		fromIdx = TCL_INDEX_START;
+	    }
+	    fromIdx = TclIndexDecode(fromIdx, length - 1);
+	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);

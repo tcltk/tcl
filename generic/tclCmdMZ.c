@@ -2300,15 +2300,7 @@ StringRangeCmd(
 	return TCL_ERROR;
     }
 
-    if (first < 0) {
-	first = 0;
-    }
-    if (last >= length) {
-	last = length;
-    }
-    if (last >= first) {
-	Tcl_SetObjResult(interp, Tcl_GetRange(objv[1], first, last));
-    }
+    Tcl_SetObjResult(interp, Tcl_GetRange(objv[1], first, last));
     return TCL_OK;
 }
 
