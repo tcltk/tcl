@@ -506,18 +506,18 @@ TclCompileStringIsCmd(
     static const char *const isClasses[] = {
 	"alnum",	"alpha",	"ascii",	"control",
 	"boolean",	"dict",		"digit",	"double",
-	"entier",	"false",	"graph",	"integer",
-	"list",		"lower",	"print",	"punct",
-	"space",	"true",		"upper",	"unicode",
-	"wideinteger", "wordchar",	"xdigit",	NULL
+	"entier",	"false",	"graph",	"index",
+	"integer",	"list",		"lower",	"print",
+	"punct",	"space",	"true",		"upper",
+	"unicode",	"wideinteger", "wordchar",	"xdigit",	NULL
     };
     enum isClassesEnum {
 	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
 	STR_IS_BOOL,	STR_IS_DICT,	STR_IS_DIGIT,	STR_IS_DOUBLE,
-	STR_IS_ENTIER,	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,
-	STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,
-	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_UNICODE,
-	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
+	STR_IS_ENTIER,	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INDEX,
+	STR_IS_INT,		STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,
+	STR_IS_PUNCT,	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,
+	STR_IS_UNICODE,	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
     };
     int t, range, allowEmpty = 0, end;
     InstStringClassType strClassType;
@@ -713,6 +713,8 @@ TclCompileStringIsCmd(
 	FIXJUMP1(	end);
 	return TCL_OK;
     }
+    case STR_IS_INDEX:
+	return TCL_ERROR;
 
     case STR_IS_INT:
     case STR_IS_WIDE:

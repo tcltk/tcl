@@ -526,10 +526,10 @@ test string-6.4.$noComp {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5.$noComp {string is, class check} {
     list [catch {run {string is bogus str}} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, unicode, wideinteger, wordchar, or xdigit}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, index, integer, list, lower, print, punct, space, true, upper, unicode, wideinteger, wordchar, or xdigit}}
 test string-6.6.$noComp {string is, ambiguous class} {
     list [catch {run {string is al str}} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, unicode, wideinteger, wordchar, or xdigit}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, index, integer, list, lower, print, punct, space, true, upper, unicode, wideinteger, wordchar, or xdigit}}
 test string-6.7.$noComp {string is alpha, all ok} {
     run {string is alpha -strict -failindex var abc}
 } 1
@@ -2028,6 +2028,7 @@ test string-23.1.$noComp {string is command with empty string} {
         [run {string is double $s}] \
         [run {string is false $s}] \
         [run {string is graph $s}] \
+        [run {string is index $s}] \
         [run {string is integer $s}] \
         [run {string is lower $s}] \
         [run {string is print $s}] \
@@ -2038,7 +2039,7 @@ test string-23.1.$noComp {string is command with empty string} {
         [run {string is wordchar $s}] \
         [run {string is xdigit $s}] \
 
-} {1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1}
+} {1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1}
 test string-23.2.$noComp {string is command with empty string} {
     set s ""
     list \
