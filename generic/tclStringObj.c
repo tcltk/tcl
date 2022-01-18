@@ -1987,7 +1987,11 @@ Tcl_AppendFormatToObj(
 	    if (gotPrecision) {
 		numChars = Tcl_GetCharLength(segment);
 		if (precision < numChars) {
-		    segment = Tcl_GetRange(segment, 0, precision - 1);
+		    if (precision < 1) {
+			TclNewObj(segment);
+		    } else {
+			segment = Tcl_GetRange(segment, 0, precision - 1);
+		    }
 		    numChars = precision;
 		    Tcl_IncrRefCount(segment);
 		    allocSegment = 1;

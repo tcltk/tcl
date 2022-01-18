@@ -3965,7 +3965,7 @@ TestregexpObjCmd(
 	    if (ii == TCL_INDEX_NONE) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
 		newPtr = Tcl_GetRange(objPtr, start, end);
-	    } else if (ii > info.nsubs) {
+	    } else if (ii > info.nsubs || info.matches[ii].end + 1 <= 1) {
 		newPtr = Tcl_NewObj();
 	    } else {
 		newPtr = Tcl_GetRange(objPtr, info.matches[ii].start,
