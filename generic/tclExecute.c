@@ -5370,7 +5370,11 @@ TEBCresume(
 	}
 	CACHE_STACK_INFO();
 
-	objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
+	if (toIdx < 0) {
+	    TclNewObj(objResultPtr);
+	} else {
+	    objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
+	}
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_V(1, 3, 1);
 
@@ -5407,7 +5411,11 @@ TEBCresume(
 		fromIdx = TCL_INDEX_START;
 	    }
 	    fromIdx = TclIndexDecode(fromIdx, length - 1);
-	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+	    if (toIdx < 0) {
+		TclNewObj(objResultPtr);
+	    } else {
+		objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+	    }
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
