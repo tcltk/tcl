@@ -3574,8 +3574,9 @@ PrintParse(
 		Tcl_NewIntObj(tokenPtr->numComponents));
     }
     Tcl_ListObjAppendElement(NULL, objPtr,
+	    parsePtr->commandStart ?
 	    Tcl_NewStringObj(parsePtr->commandStart + parsePtr->commandSize,
-	    -1));
+	    -1) : Tcl_NewObj());
 }
 
 /*
@@ -3965,7 +3966,7 @@ TestregexpObjCmd(
 	    if (ii == -1) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
 		newPtr = Tcl_GetRange(objPtr, start, end);
-	    } else if (ii > info.nsubs) {
+	    } else if (ii > info.nsubs || info.matches[ii].end <= 0) {
 		newPtr = Tcl_NewObj();
 	    } else {
 		newPtr = Tcl_GetRange(objPtr, info.matches[ii].start,

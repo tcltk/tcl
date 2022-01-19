@@ -41,7 +41,7 @@ typedef struct MemTag {
 				 * last field in the structure. */
 } MemTag;
 
-#define TAG_SIZE(bytesInString) ((offsetof(MemTag, string) + 1) + bytesInString)
+#define TAG_SIZE(bytesInString) ((offsetof(MemTag, string) + 1U) + (bytesInString))
 
 static MemTag *curTagPtr = NULL;/* Tag to use in all future mem_headers (set
 				 * by "memory tag" command). */
@@ -131,10 +131,10 @@ static int ckallocInit = 0;
  * Prototypes for procedures defined in this file:
  */
 
-static int		CheckmemCmd(ClientData clientData,
+static int		CheckmemCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		MemoryCmd(ClientData clientData,
+static int		MemoryCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static void		ValidateMemory(struct mem_header *memHeaderP,
@@ -177,7 +177,7 @@ TclInitDbCkalloc(void)
 
 int
 TclDumpMemoryInfo(
-    ClientData clientData,
+    void *clientData,
     int flags)
 {
     char buf[1024];
@@ -810,7 +810,7 @@ Tcl_AttemptRealloc(
  */
 static int
 MemoryCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
@@ -980,13 +980,13 @@ MemoryCmd(
  *
  *----------------------------------------------------------------------
  */
-static int		CheckmemCmd(ClientData clientData,
+static int		CheckmemCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
 static int
 CheckmemCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
@@ -1240,7 +1240,7 @@ Tcl_ValidateAllMemory(
 
 int
 TclDumpMemoryInfo(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     TCL_UNUSED(int) /*flags*/)
 {
     return 1;

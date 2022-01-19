@@ -111,10 +111,12 @@ If negative, all characters up to the first null character are used.
 The index of the Unicode character to return.
 .AP int first in
 The index of the first Unicode character in the Unicode range to be
-returned as a new value.
+returned as a new value. If negative, behave the same as if the
+value was 0.
 .AP int last in
 The index of the last Unicode character in the Unicode range to be
-returned as a new value.
+returned as a new value. If negative, take all characters up to
+the last one available.
 .AP Tcl_Obj *objPtr in/out
 Points to a value to manipulate.
 .AP Tcl_Obj *appendObjPtr in
