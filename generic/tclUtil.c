@@ -3647,12 +3647,15 @@ GetWideForIndex(
 	if (numType == TCL_NUMBER_INT) {
 	    /* objPtr holds an integer in the signed wide range */
 	    *widePtr = *(Tcl_WideInt *)cd;
+	    if (*widePtr < -1) {
+		*widePtr = -1;
+	    }
 	    return TCL_OK;
 	}
 	if (numType == TCL_NUMBER_BIG) {
 	    /* objPtr holds an integer outside the signed wide range */
 	    /* Truncate to the signed wide range. */
-	    *widePtr = ((mp_isneg((mp_int *)cd)) ? WIDE_MIN : WIDE_MAX);
+	    *widePtr = ((mp_isneg((mp_int *)cd)) ? -1 : WIDE_MAX);
 	    return TCL_OK;
 	}
     }
