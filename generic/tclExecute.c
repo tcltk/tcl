@@ -5609,10 +5609,16 @@ TEBCresume(
 	    goto gotError;
 	}
 
-	if (toIdx < 0) {
-	    TclNewObj(objResultPtr);
-	} else {
+	if (fromIdx < 0) {
+	    fromIdx = 0;
+	}
+	if (toIdx >= length) {
+	    toIdx = length;
+	}
+	if (toIdx >= fromIdx) {
 	    objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
+	} else {
+	    TclNewObj(objResultPtr);
 	}
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_V(1, 3, 1);
@@ -5646,6 +5652,13 @@ TEBCresume(
 	}
 
 	toIdx = TclIndexDecode(toIdx, length - 1);
+	if (toIdx < 0) {
+	    goto emptyRange;
+	} else if (toIdx >= length) {
+	    toIdx = length - 1;
+	}
+
+	assert ( toIdx >= 0 && toIdx < length );
 
 	/*
 	assert ( fromIdx != TCL_INDEX_BEFORE );
@@ -5659,8 +5672,13 @@ TEBCresume(
 	if (fromIdx == TCL_INDEX_AFTER) {
 	    goto emptyRange;
 	}
+
 	fromIdx = TclIndexDecode(fromIdx, length - 1);
-	if (toIdx >= 0) {
+	if (fromIdx < 0) {
+	    fromIdx = 0;
+	}
+
+	if (fromIdx <= toIdx) {
 	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
 	} else {
 	emptyRange:

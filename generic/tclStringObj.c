@@ -819,6 +819,7 @@ Tcl_GetRange(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
+
     if (last < 0 || last >= stringPtr->numChars) {
 	last = stringPtr->numChars - 1;
     }
@@ -829,12 +830,12 @@ Tcl_GetRange(
 #if TCL_UTF_MAX == 4
     /* See: bug [11ae2be95dac9417] */
     if ((first > 0) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
-		&& ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
+	    && ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
 	++first;
     }
     if ((last + 1 < stringPtr->numChars)
-		&& ((stringPtr->unicode[last+1] & 0xFC00) == 0xDC00)
-		&& ((stringPtr->unicode[last] & 0xFC00) == 0xD800)) {
+	    && ((stringPtr->unicode[last+1] & 0xFC00) == 0xDC00)
+	    && ((stringPtr->unicode[last] & 0xFC00) == 0xD800)) {
 	++last;
     }
 #endif
