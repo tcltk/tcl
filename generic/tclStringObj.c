@@ -739,7 +739,8 @@ Tcl_GetUnicodeFromObj(
  *
  *	Create a Tcl Object that contains the chars between first and last of
  *	the object indicated by "objPtr". If the object is not already a
- *	String object, convert it to one.
+ *	String object, convert it to one. The first and last indices are
+ *	assumed to be in the appropriate range.
  *
  * Results:
  *	Returns a new Tcl Object of the String type.
@@ -758,11 +759,6 @@ Tcl_GetRange(
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
-    int length;
-
-    if (first < 0) {
-	first = 0;
-    }
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
@@ -770,15 +766,8 @@ Tcl_GetRange(
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
 
-	if (last < 0 || last >= length) {
-	    last = length - 1;
-	}
-	if (last < first) {
-	    TclNewObj(newObjPtr);
-	    return newObjPtr;
-	}
 	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
     }
 
@@ -798,13 +787,6 @@ Tcl_GetRange(
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
-	    if (last < 0 || last >= stringPtr->numChars) {
-		last = stringPtr->numChars - 1;
-	    }
-	    if (last < first) {
-		TclNewObj(newObjPtr);
-		return newObjPtr;
-	    }
 	    newObjPtr = Tcl_NewStringObj(objPtr->bytes + first, last - first + 1);
 
 	    /*
@@ -820,13 +802,6 @@ Tcl_GetRange(
 	stringPtr = GET_STRING(objPtr);
     }
 
-    if (last < 0 || last >= stringPtr->numChars) {
-	last = stringPtr->numChars - 1;
-    }
-    if (last < first) {
-	TclNewObj(newObjPtr);
-	return newObjPtr;
-    }
 #if TCL_UTF_MAX == 4
     /* See: bug [11ae2be95dac9417] */
     if ((first > 0) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
