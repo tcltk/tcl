@@ -113,7 +113,7 @@ connect to terminal-like devices, the default value is \fBline\fR.  For
 \fB\-buffersize\fR \fInewSize\fR
 .
 \fInewSize\fR, an integer no greater than one million, is the size in bytes of
-any input or output buffers subsequently allocated for this channel. 
+any input or output buffers subsequently allocated for this channel.
 .TP
 \fB\-encoding\fR ?\fIname\fR?
 .
@@ -148,7 +148,7 @@ interface with the operating system,
 .
 \fIchar\fR signals the end of the data when it is encountered in the input.
 For output, the character is added when the channel is closed.  If \fIchar\fR
-is the empty string, there is no special character that marks the end of the 
+is the empty string, there is no special character that marks the end of the
 data.  For read-write channels, one end-of-file character for input and another
 for output may be given.  When only one end-of-file character is given it is
 applied to both input and output.  For a read-write channel two values are
@@ -279,14 +279,14 @@ first words of a command that provides the interface for a \fBrefchan\fR.
 \fBImode\fR is a list of one or more of the strings
 .QW \fBread\fR
 or
-.QW \fBwrite\fR 
+.QW \fBwrite\fR
 , indicating whether the channel is a read channel, a write channel, or both.
 It is an error if the handler does not support the chosen mode.
 .PP
 The handler is called as needed from the global namespace at the top level, and
 command resolution happens there at the time of the call.  If the handler is
 renamed or deleted any subsequent attempt to call it is an error, which may
-not be able to describe the failure. 
+not be able to describe the failure.
 .PP
 The handler is always called in the interpreter and thread it was created in,
 even if the channel was shared with or moved into a different interpreter in a
@@ -374,7 +374,7 @@ to the channel at the right time.
 .
 For a channel in blocking mode, flushes all buffered output to the destination,
 and then returns.  For a channel in non-blocking mode, returns immediately
-while all buffered output is flushed in the background as soon as possible. 
+while all buffered output is flushed in the background as soon as possible.
 .TP
 \fBchan gets \fIchannelName\fR ?\fIvarName\fR?
 .
@@ -522,7 +522,7 @@ Reads and returns the next \fInumChars\fR characters from the channel. If
 are read, or if the channel is in non-blocking mode, all currently-available
 characters are read.  If there is an error on the channel, reading ceases and
 an error is returned.  If \fInumChars\fR is not given, \fB\-nonewline\fR
-may be given, causing any any trailing line feed to be trimmed. 
+may be given, causing any any trailing line feed to be trimmed.
 .RS
 .PP
 If the channel is in non-blocking mode, fewer characters than requested may be
@@ -562,7 +562,7 @@ The origin is the current position.
 .TP 10
 \fBend\fR
 .
-The origin is the end of the data. 
+The origin is the end of the data.
 .PP
 \fBChan seek\fR flushes all buffered output even if the channel is in
 non-blocking mode, discards any buffered and unread input, and returns the
