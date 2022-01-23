@@ -1948,6 +1948,13 @@ EXTERN int		Tcl_UniCharIsUnicode(int ch);
 /* 660 */
 EXTERN int		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
 				int sigNumber);
+/* 661 */
+EXTERN int		TclListObjGetElements_(Tcl_Interp *interp,
+				Tcl_Obj *listPtr, size_t *objcPtr,
+				Tcl_Obj ***objvPtr);
+/* 662 */
+EXTERN int		TclListObjLength_(Tcl_Interp *interp,
+				Tcl_Obj *listPtr, size_t *lengthPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2644,6 +2651,8 @@ typedef struct TclStubs {
     void (*reserved658)(void);
     void (*reserved659)(void);
     int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
+    int (*tclListObjGetElements_) (Tcl_Interp *interp, Tcl_Obj *listPtr, size_t *objcPtr, Tcl_Obj ***objvPtr); /* 661 */
+    int (*tclListObjLength_) (Tcl_Interp *interp, Tcl_Obj *listPtr, size_t *lengthPtr); /* 662 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3994,6 +4003,10 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 659 is reserved */
 #define Tcl_AsyncMarkFromSignal \
 	(tclStubsPtr->tcl_AsyncMarkFromSignal) /* 660 */
+#define TclListObjGetElements_ \
+	(tclStubsPtr->tclListObjGetElements_) /* 661 */
+#define TclListObjLength_ \
+	(tclStubsPtr->tclListObjLength_) /* 662 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4271,6 +4284,16 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
 		? (int (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToChar16 \
 		: (int (*)(const char *, wchar_t *))Tcl_UtfToUniChar)
+#   undef Tcl_ListObjGetElements
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*objcPtr) == sizeof(int) \
+		? tclStubsPtr->tcl_ListObjGetElements((interp), (listPtr), (int *)(void *)(objcPtr), (objvPtr)) \
+		: tclStubsPtr->tclListObjGetElements_((interp), (listPtr), (size_t *)(void *)(objcPtr), (objvPtr)))
+#   undef Tcl_ListObjLength
+#   define Tcl_ListObjLength(interp, listPtr, lengthPtr) (sizeof(*lengthPtr) == sizeof(int) \
+		? tclStubsPtr->tcl_ListObjLength((interp), (listPtr), (int *)(void *)(lengthPtr)) \
+		: tclStubsPtr->tclListObjLength_((interp), (listPtr), (size_t *)(void *)(lengthPtr)))
+#endif /* TCL_NO_DEPRECATED */
 #else
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
 		? (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_UniCharToUtfDString \

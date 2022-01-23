@@ -123,6 +123,27 @@ static const char *TclUtfPrev(const char *src, const char *start) {
     return Tcl_UtfPrev(src, start);
 }
 
+#define TclListObjGetElements_ LOGetElements
+#define TclListObjLength_ LOLength
+static int LOGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    size_t *objcPtr, Tcl_Obj ***objvPtr) {
+    int n;
+    int result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
+    if (objcPtr) {
+	*objcPtr = n;
+    }
+    return result;
+}
+static int LOLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    size_t *lengthPtr) {
+    int n;
+    int result = Tcl_ListObjLength(interp, listPtr, &n);
+    if (lengthPtr) {
+	*lengthPtr = n;
+    }
+    return result;
+}
+
 #define TclBN_mp_add mp_add
 #define TclBN_mp_and mp_and
 #define TclBN_mp_clamp mp_clamp
@@ -1944,6 +1965,8 @@ const TclStubs tclStubs = {
     0, /* 658 */
     0, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
+    TclListObjGetElements_, /* 661 */
+    TclListObjLength_, /* 662 */
 };
 
 /* !END!: Do not edit above this line. */
