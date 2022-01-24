@@ -220,9 +220,9 @@ The second of two path values to compare. The value may be converted
 to \fBpath\fR type.
 .AP Tcl_Obj *listObj in
 The list of path elements to operate on with a \fBjoin\fR operation.
-.AP int elements in
-If non-negative, the number of elements in the \fIlistObj\fR which should
-be joined together. If negative, then all elements are joined.
+.AP size_t elements in
+The number of elements in the \fIlistObj\fR which should
+be joined together. If TCL_INDEX_NONE, then all elements are joined.
 .AP Tcl_Obj **errorPtr out
 In the case of an error, filled with a value containing the name of
 the file which caused an error in the various copy/rename operations.

@@ -835,13 +835,13 @@ Tcl_AppendAllObjTypes(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int numElems;
+    size_t numElems;
 
     /*
      * Get the test for a valid list out of the way first.
      */
 
-    if (TclListObjLength_(interp, objPtr, &numElems) != TCL_OK) {
+    if (Tcl_ListObjLength(interp, objPtr, &numElems) != TCL_OK) {
 	return TCL_ERROR;
     }
 

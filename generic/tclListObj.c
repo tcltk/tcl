@@ -1477,8 +1477,8 @@ TclLsetFlat(
 				/* Index args. */
     Tcl_Obj *valuePtr)		/* Value arg to 'lset' or NULL to 'lpop'. */
 {
-    size_t index;
-    int result, len;
+    size_t index, len;
+    int result;
     Tcl_Obj *subListPtr, *retValuePtr, *chainPtr;
     Tcl_ObjInternalRep *irPtr;
 
@@ -1671,13 +1671,13 @@ TclLsetFlat(
     }
 
     /*
-     * Store valuePtr in proper sublist and return. The -1 is to avoid a
-     * compiler warning (not a problem because we checked that we have a
-     * proper list - or something convertible to one - above).
+     * Store valuePtr in proper sublist and return. The TCL_INDEX_NONE is
+     * to avoid a compiler warning (not a problem because we checked that
+     * we have a proper list - or something convertible to one - above).
      */
 
-    len = -1;
-    TclListObjLength_(NULL, subListPtr, &len);
+    len = TCL_INDEX_NONE;
+    Tcl_ListObjLength(NULL, subListPtr, &len);
     if (valuePtr == NULL) {
 	Tcl_ListObjReplace(NULL, subListPtr, index, 1, 0, NULL);
     } else if (index == (size_t)len) {

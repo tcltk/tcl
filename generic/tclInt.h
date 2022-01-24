@@ -3018,7 +3018,7 @@ MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsDigitProc(int byte);
 MODULE_SCOPE int	TclIsBareword(int byte);
-MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[],
+MODULE_SCOPE Tcl_Obj *	TclJoinPath(size_t elements, Tcl_Obj * const objv[],
 			    int forceRelative);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
@@ -3111,9 +3111,9 @@ MODULE_SCOPE int	TclpMatchFiles(Tcl_Interp *interp, char *separators,
 MODULE_SCOPE int	TclpObjNormalizePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, int nextCheckpoint);
 MODULE_SCOPE void	TclpNativeJoinPath(Tcl_Obj *prefix, const char *joining);
-MODULE_SCOPE Tcl_Obj *	TclpNativeSplitPath(Tcl_Obj *pathPtr, int *lenPtr);
+MODULE_SCOPE Tcl_Obj *	TclpNativeSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr);
 MODULE_SCOPE Tcl_PathType TclpGetNativePathType(Tcl_Obj *pathPtr,
-			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
+			    size_t *driveNameLengthPtr, Tcl_Obj **driveNameRef);
 MODULE_SCOPE int	TclCrossFilesystemCopy(Tcl_Interp *interp,
 			    Tcl_Obj *source, Tcl_Obj *target);
 MODULE_SCOPE int	TclpMatchInDirectory(Tcl_Interp *interp,

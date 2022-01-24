@@ -575,7 +575,7 @@ TraceExecutionObjCmd(
 
 	resultListPtr = Tcl_NewListObj(0, NULL);
 	FOREACH_COMMAND_TRACE(interp, name, clientData) {
-	    int numOps = 0;
+	    size_t numOps = 0;
 	    Tcl_Obj *opObj, *eachTraceObjPtr, *elemObjPtr;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
 
@@ -603,7 +603,7 @@ TraceExecutionObjCmd(
 		TclNewLiteralStringObj(opObj, "leavestep");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
-	    TclListObjLength_(NULL, elemObjPtr, &numOps);
+	    Tcl_ListObjLength(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
 		Tcl_DecrRefCount(elemObjPtr);
 		continue;
@@ -778,7 +778,7 @@ TraceCommandObjCmd(
 
 	resultListPtr = Tcl_NewListObj(0, NULL);
 	FOREACH_COMMAND_TRACE(interp, name, clientData) {
-	    int numOps = 0;
+	    size_t numOps = 0;
 	    Tcl_Obj *opObj, *eachTraceObjPtr, *elemObjPtr;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
 
@@ -798,7 +798,7 @@ TraceCommandObjCmd(
 		TclNewLiteralStringObj(opObj, "delete");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
-	    TclListObjLength_(NULL, elemObjPtr, &numOps);
+	    Tcl_ListObjLength(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
 		Tcl_DecrRefCount(elemObjPtr);
 		continue;

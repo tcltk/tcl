@@ -1528,7 +1528,8 @@ CompileDictEachCmd(
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
     int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
     int infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
-    int numVars, endTargetOffset;
+    size_t numVars;
+    int endTargetOffset;
     int collectVar = -1;	/* Index of temp var holding the result
 				 * dict. */
     const char **argv;

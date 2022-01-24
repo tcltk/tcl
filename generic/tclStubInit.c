@@ -86,7 +86,10 @@ static void uniCodePanic() {
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
 
-int TclListObjGetElements_(Tcl_Interp *interp, Tcl_Obj *listPtr,
+#define LOGetElements TclListObjGetElements_
+#define LOLength TclListObjLength_
+#define TclDictObjSize_ DOSize
+int LOGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     int *objcPtr, Tcl_Obj ***objvPtr) {
     size_t n;
     int result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
@@ -95,7 +98,7 @@ int TclListObjGetElements_(Tcl_Interp *interp, Tcl_Obj *listPtr,
     }
     return result;
 }
-int TclListObjLength_(Tcl_Interp *interp, Tcl_Obj *listPtr,
+int LOLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     int *lengthPtr) {
     size_t n;
     int result = Tcl_ListObjLength(interp, listPtr, &n);
@@ -104,7 +107,7 @@ int TclListObjLength_(Tcl_Interp *interp, Tcl_Obj *listPtr,
     }
     return result;
 }
-int TclDictObjSize_(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+static int DOSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
     int *sizePtr) {
     size_t n;
     int result = Tcl_DictObjSize(interp, dictPtr, &n);

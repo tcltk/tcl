@@ -7661,7 +7661,7 @@ Tcl_BadChannelOption(
 	const char *genericopt =
 		"blocking buffering buffersize encoding eofchar translation";
 	const char **argv;
-	int argc, i;
+	size_t argc, i;
 	Tcl_DString ds;
         Tcl_Obj *errObj;
 
@@ -7952,7 +7952,7 @@ Tcl_SetChannelOption(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     size_t len;			/* Length of optionName string. */
-    int argc;
+    size_t argc;
     const char **argv;
 
     /*

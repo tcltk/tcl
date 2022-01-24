@@ -659,10 +659,10 @@ EXTERN const char *	Tcl_SignalMsg(int sig);
 EXTERN void		Tcl_SourceRCFile(Tcl_Interp *interp);
 /* 242 */
 EXTERN int		Tcl_SplitList(Tcl_Interp *interp,
-				const char *listStr, int *argcPtr,
+				const char *listStr, size_t *argcPtr,
 				const char ***argvPtr);
 /* 243 */
-EXTERN void		Tcl_SplitPath(const char *path, int *argcPtr,
+EXTERN void		Tcl_SplitPath(const char *path, size_t *argcPtr,
 				const char ***argvPtr);
 /* Slot 244 is reserved */
 /* Slot 245 is reserved */
@@ -1196,9 +1196,9 @@ EXTERN int		Tcl_FSChdir(Tcl_Obj *pathPtr);
 EXTERN int		Tcl_FSConvertToPathType(Tcl_Interp *interp,
 				Tcl_Obj *pathPtr);
 /* 460 */
-EXTERN Tcl_Obj *	Tcl_FSJoinPath(Tcl_Obj *listObj, int elements);
+EXTERN Tcl_Obj *	Tcl_FSJoinPath(Tcl_Obj *listObj, size_t elements);
 /* 461 */
-EXTERN Tcl_Obj *	Tcl_FSSplitPath(Tcl_Obj *pathPtr, int *lenPtr);
+EXTERN Tcl_Obj *	Tcl_FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr);
 /* 462 */
 EXTERN int		Tcl_FSEqualPaths(Tcl_Obj *firstPtr,
 				Tcl_Obj *secondPtr);
@@ -1206,7 +1206,7 @@ EXTERN int		Tcl_FSEqualPaths(Tcl_Obj *firstPtr,
 EXTERN Tcl_Obj *	Tcl_FSGetNormalizedPath(Tcl_Interp *interp,
 				Tcl_Obj *pathPtr);
 /* 464 */
-EXTERN Tcl_Obj *	Tcl_FSJoinToPath(Tcl_Obj *pathPtr, int objc,
+EXTERN Tcl_Obj *	Tcl_FSJoinToPath(Tcl_Obj *pathPtr, size_t objc,
 				Tcl_Obj *const objv[]);
 /* 465 */
 EXTERN void *		Tcl_FSGetInternalRep(Tcl_Obj *pathPtr,
@@ -2020,8 +2020,8 @@ typedef struct TclStubs {
     const char * (*tcl_SignalId) (int sig); /* 239 */
     const char * (*tcl_SignalMsg) (int sig); /* 240 */
     void (*tcl_SourceRCFile) (Tcl_Interp *interp); /* 241 */
-    int (*tcl_SplitList) (Tcl_Interp *interp, const char *listStr, int *argcPtr, const char ***argvPtr); /* 242 */
-    void (*tcl_SplitPath) (const char *path, int *argcPtr, const char ***argvPtr); /* 243 */
+    int (*tcl_SplitList) (Tcl_Interp *interp, const char *listStr, size_t *argcPtr, const char ***argvPtr); /* 242 */
+    void (*tcl_SplitPath) (const char *path, size_t *argcPtr, const char ***argvPtr); /* 243 */
     void (*reserved244)(void);
     void (*reserved245)(void);
     void (*reserved246)(void);
@@ -2238,11 +2238,11 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_FSGetCwd) (Tcl_Interp *interp); /* 457 */
     int (*tcl_FSChdir) (Tcl_Obj *pathPtr); /* 458 */
     int (*tcl_FSConvertToPathType) (Tcl_Interp *interp, Tcl_Obj *pathPtr); /* 459 */
-    Tcl_Obj * (*tcl_FSJoinPath) (Tcl_Obj *listObj, int elements); /* 460 */
-    Tcl_Obj * (*tcl_FSSplitPath) (Tcl_Obj *pathPtr, int *lenPtr); /* 461 */
+    Tcl_Obj * (*tcl_FSJoinPath) (Tcl_Obj *listObj, size_t elements); /* 460 */
+    Tcl_Obj * (*tcl_FSSplitPath) (Tcl_Obj *pathPtr, size_t *lenPtr); /* 461 */
     int (*tcl_FSEqualPaths) (Tcl_Obj *firstPtr, Tcl_Obj *secondPtr); /* 462 */
     Tcl_Obj * (*tcl_FSGetNormalizedPath) (Tcl_Interp *interp, Tcl_Obj *pathPtr); /* 463 */
-    Tcl_Obj * (*tcl_FSJoinToPath) (Tcl_Obj *pathPtr, int objc, Tcl_Obj *const objv[]); /* 464 */
+    Tcl_Obj * (*tcl_FSJoinToPath) (Tcl_Obj *pathPtr, size_t objc, Tcl_Obj *const objv[]); /* 464 */
     void * (*tcl_FSGetInternalRep) (Tcl_Obj *pathPtr, const Tcl_Filesystem *fsPtr); /* 465 */
     Tcl_Obj * (*tcl_FSGetTranslatedPath) (Tcl_Interp *interp, Tcl_Obj *pathPtr); /* 466 */
     int (*tcl_FSEvalFile) (Tcl_Interp *interp, Tcl_Obj *fileName); /* 467 */

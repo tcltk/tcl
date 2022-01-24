@@ -1966,7 +1966,7 @@ LoadEscapeEncoding(
     Tcl_DStringInit(&escapeData);
 
     while (1) {
-	int argc;
+	size_t argc;
 	const char **argv;
 	char *line;
 	Tcl_DString lineString;

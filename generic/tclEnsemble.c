@@ -1524,7 +1524,8 @@ TclMakeEnsemble(
     Tcl_DString buf, hiddenBuf;
     const char **nameParts = NULL;
     const char *cmdName = NULL;
-    int i, nameCount = 0, ensembleFlags = 0, hiddenLen;
+    size_t i, nameCount = 0;
+    int ensembleFlags = 0, hiddenLen;
 
     /*
      * Construct the path for the ensemble namespace and create it.

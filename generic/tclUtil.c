@@ -847,15 +847,15 @@ Tcl_SplitList(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, no error message is left. */
     const char *list,		/* Pointer to string with list structure. */
-    int *argcPtr,		/* Pointer to location to fill in with the
+    size_t *argcPtr,		/* Pointer to location to fill in with the
 				 * number of elements in the list. */
     const char ***argvPtr)	/* Pointer to place to store pointer to array
 				 * of pointers to list elements. */
 {
     const char **argv, *end, *element;
     char *p;
-    int length, size, i, result;
-    size_t elSize;
+    int result;
+    size_t length, size, i, elSize;
 
     /*
      * Allocate enough space to work in. A (const char *) for each (possible)
@@ -3464,7 +3464,8 @@ GetEndOffsetFromObj(
 	if (*bytes != 'e') {
 	    int numType;
 	    const char *opPtr;
-	    int len, t1 = 0, t2 = 0;
+	    int t1 = 0, t2 = 0;
+	    size_t len;
 
 	    /* Value doesn't start with "e" */
 
@@ -3484,7 +3485,7 @@ GetEndOffsetFromObj(
 	    if ((TclMaxListLength(bytes, -1, NULL) > 1)
 
 		    /* If it's possible, do the full list parse. */
-	            && (TCL_OK == TclListObjLength_(NULL, objPtr, &len))
+	            && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &len))
 	            && (len > 1)) {
 	        goto parseError;
 	    }

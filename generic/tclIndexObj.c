@@ -478,8 +478,8 @@ PrefixMatchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int flags = 0, result, index;
-    int dummyLength, i, errorLength;
+    int flags = 0, result, index, i;
+    size_t dummyLength, errorLength;
     Tcl_Obj *errorPtr = NULL;
     const char *message = "option";
     Tcl_Obj *tablePtr, *objPtr, *resultPtr;
@@ -522,7 +522,7 @@ PrefixMatchObjCmd(
 		return TCL_ERROR;
 	    }
 	    i++;
-	    result = TclListObjLength_(interp, objv[i], &errorLength);
+	    result = Tcl_ListObjLength(interp, objv[i], &errorLength);
 	    if (result != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -546,7 +546,7 @@ PrefixMatchObjCmd(
      * error case regardless of level.
      */
 
-    result = TclListObjLength_(interp, tablePtr, &dummyLength);
+    result = Tcl_ListObjLength(interp, tablePtr, &dummyLength);
     if (result != TCL_OK) {
 	return result;
     }

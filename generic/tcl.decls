@@ -879,12 +879,12 @@ declare 241 {
     void Tcl_SourceRCFile(Tcl_Interp *interp)
 }
 declare 242 {
-    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
+    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
 	    const char ***argvPtr)
 }
 # Obsolete, use Tcl_FSSplitPath
 declare 243 {
-    void Tcl_SplitPath(const char *path, int *argcPtr, const char ***argvPtr)
+    void Tcl_SplitPath(const char *path, size_t *argcPtr, const char ***argvPtr)
 }
 # Removed in 9.0 (stub entry only)
 #declare 244  {
@@ -1699,10 +1699,10 @@ declare 459 {
     int Tcl_FSConvertToPathType(Tcl_Interp *interp, Tcl_Obj *pathPtr)
 }
 declare 460 {
-    Tcl_Obj *Tcl_FSJoinPath(Tcl_Obj *listObj, int elements)
+    Tcl_Obj *Tcl_FSJoinPath(Tcl_Obj *listObj, size_t elements)
 }
 declare 461 {
-    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, int *lenPtr)
+    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr)
 }
 declare 462 {
     int Tcl_FSEqualPaths(Tcl_Obj *firstPtr, Tcl_Obj *secondPtr)
@@ -1711,7 +1711,7 @@ declare 463 {
     Tcl_Obj *Tcl_FSGetNormalizedPath(Tcl_Interp *interp, Tcl_Obj *pathPtr)
 }
 declare 464 {
-    Tcl_Obj *Tcl_FSJoinToPath(Tcl_Obj *pathPtr, int objc,
+    Tcl_Obj *Tcl_FSJoinToPath(Tcl_Obj *pathPtr, size_t objc,
 	    Tcl_Obj *const objv[])
 }
 declare 465 {

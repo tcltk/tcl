@@ -476,7 +476,7 @@ Tcl_PathType
 TclFSGetPathType(
     Tcl_Obj *pathPtr,
     const Tcl_Filesystem **filesystemPtrPtr,
-    int *driveNameLengthPtr)
+    size_t *driveNameLengthPtr)
 {
     FsPath *fsPathPtr;
 
@@ -666,7 +666,7 @@ TclPathPart(
 	    goto standardPath;
 	}
     } else {
-	int splitElements;
+	size_t splitElements;
 	Tcl_Obj *splitPtr, *resultPtr;
 
     standardPath:
@@ -804,31 +804,31 @@ Tcl_Obj *
 Tcl_FSJoinPath(
     Tcl_Obj *listObj,		/* Path elements to join, may have a zero
 				 * reference count. */
-    int elements)		/* Number of elements to use (-1 = all) */
+    size_t elements)		/* Number of elements to use (-1 = all) */
 {
     Tcl_Obj *res;
-    int objc;
+    size_t objc;
     Tcl_Obj **objv;
 
-    if (TclListObjLength_(NULL, listObj, &objc) != TCL_OK) {
+    if (Tcl_ListObjLength(NULL, listObj, &objc) != TCL_OK) {
 	return NULL;
     }
 
-    elements = ((elements >= 0) && (elements <= objc)) ? elements : objc;
-    TclListObjGetElements_(NULL, listObj, &objc, &objv);
+    elements = ((elements != TCL_INDEX_NONE) && (elements <= objc)) ? elements : objc;
+    Tcl_ListObjGetElements(NULL, listObj, &objc, &objv);
     res = TclJoinPath(elements, objv, 0);
     return res;
 }
 
 Tcl_Obj *
 TclJoinPath(
-    int elements,		/* Number of elements to use (-1 = all) */
+    size_t elements,		/* Number of elements to use */
     Tcl_Obj * const objv[],	/* Path elements to join */
     int forceRelative)		/* If non-zero, assume all more paths are
 				 * relative (e. g. simple normalization) */
 {
     Tcl_Obj *res = NULL;
-    int i;
+    size_t i;
     const Tcl_Filesystem *fsPtr = NULL;
 
     assert ( elements >= 0 );
@@ -934,7 +934,7 @@ TclJoinPath(
     assert ( res == NULL );
 
     for (i = 0; i < elements; i++) {
-	int driveNameLength;
+	size_t driveNameLength;
 	size_t strEltLen, length;
 	Tcl_PathType type;
 	char *strElt, *ptr;

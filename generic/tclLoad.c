@@ -310,7 +310,7 @@ Tcl_LoadObjCmd(
 	    Tcl_DStringAppend(&pfx, prefix, -1);
 	} else {
 	    Tcl_Obj *splitPtr, *pkgGuessPtr;
-	    int pElements;
+	    size_t pElements;
 	    const char *pkgGuess;
 
 	    /*

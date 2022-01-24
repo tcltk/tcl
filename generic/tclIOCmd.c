@@ -1117,7 +1117,8 @@ Tcl_OpenObjCmd(
     if (!pipeline) {
 	chan = Tcl_FSOpenFileChannel(interp, objv[1], modeString, prot);
     } else {
-	int mode, seekFlag, cmdObjc, binary;
+	int mode, seekFlag, binary;
+	size_t cmdObjc;
 	const char **cmdArgv;
 
 	if (Tcl_SplitList(interp, what+1, &cmdObjc, &cmdArgv) != TCL_OK) {

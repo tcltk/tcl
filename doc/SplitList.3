@@ -38,14 +38,14 @@ Interpreter to use for error reporting.  If NULL, then no error message
 is left.
 .AP "const char" *list in
 Pointer to a string with proper list structure.
-.AP int *argcPtr out
+.AP size_t | int *argcPtr out
 Filled in with number of elements in \fIlist\fR.
 .AP "const char" ***argvPtr out
 \fI*argvPtr\fR will be filled in with the address of an array of
 pointers to the strings that are the extracted elements of \fIlist\fR.
 There will be \fI*argcPtr\fR valid entries in the array, followed by
 a NULL entry.
-.AP int argc in
+.AP size_t argc in
 Number of elements in \fIargv\fR.
 .AP "const char *const" *argv in
 Array of strings to merge together into a single list.

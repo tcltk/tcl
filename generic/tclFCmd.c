@@ -220,7 +220,8 @@ TclFileMakeDirsCmd(
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     Tcl_Obj *errfile = NULL;
-    int result, i, j, pobjc;
+    int result, i;
+    size_t j, pobjc;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
@@ -873,7 +874,7 @@ FileBasename(
     Tcl_Interp *interp,		/* Interp, for error return. */
     Tcl_Obj *pathPtr)		/* Path whose basename to extract. */
 {
-    int objc;
+    size_t objc;
     Tcl_Obj *splitPtr;
     Tcl_Obj *resultPtr = NULL;
 
@@ -955,7 +956,7 @@ TclFileAttrsCmd(
     const char *const *attributeStrings;
     const char **attributeStringsAllocated = NULL;
     Tcl_Obj *objStrings = NULL;
-    int numObjStrings = -1;
+    size_t numObjStrings = TCL_INDEX_NONE;
     Tcl_Obj *filePtr;
 
     if (objc < 2) {
@@ -979,7 +980,7 @@ TclFileAttrsCmd(
 
     attributeStrings = Tcl_FSFileAttrStrings(filePtr, &objStrings);
     if (attributeStrings == NULL) {
-	int index;
+	size_t index;
 	Tcl_Obj *objPtr;
 
 	if (objStrings == NULL) {
@@ -1006,7 +1007,7 @@ TclFileAttrsCmd(
 	 * Use objStrings as a list object.
 	 */
 
-	if (TclListObjLength_(interp, objStrings, &numObjStrings) != TCL_OK) {
+	if (Tcl_ListObjLength(interp, objStrings, &numObjStrings) != TCL_OK) {
 	    goto end;
 	}
 	attributeStringsAllocated = (const char **)

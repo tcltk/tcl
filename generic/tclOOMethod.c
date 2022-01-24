@@ -335,11 +335,11 @@ TclOONewProcInstanceMethod(
 				 * structure's contents. NULL if caller is not
 				 * interested. */
 {
-    int argsLen;
+    size_t argsLen;
     ProcedureMethod *pmPtr;
     Tcl_Method method;
 
-    if (TclListObjLength_(interp, argsObj, &argsLen) != TCL_OK) {
+    if (Tcl_ListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
 	return NULL;
     }
     pmPtr = (ProcedureMethod *)Tcl_Alloc(sizeof(ProcedureMethod));

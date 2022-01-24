@@ -733,7 +733,7 @@ TclProcessReturn(
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORSTACK],
                 &valuePtr);
 	if (valuePtr != NULL) {
-            int len, valueObjc;
+            size_t len, valueObjc;
             Tcl_Obj **valueObjv;
 
             if (Tcl_IsShared(iPtr->errorStack)) {
@@ -750,12 +750,12 @@ TclProcessReturn(
              * if someone does [return -errorstack [info errorstack]]
              */
 
-            if (TclListObjGetElements_(interp, valuePtr, &valueObjc,
+            if (Tcl_ListObjGetElements(interp, valuePtr, &valueObjc,
                     &valueObjv) == TCL_ERROR) {
                 return TCL_ERROR;
             }
             iPtr->resetErrorStack = 0;
-            TclListObjLength_(interp, iPtr->errorStack, &len);
+            Tcl_ListObjLength(interp, iPtr->errorStack, &len);
 
             /*
              * Reset while keeping the list internalrep as much as possible.
@@ -910,9 +910,9 @@ TclMergeReturnOptions(
 
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_ERRORCODE], &valuePtr);
     if (valuePtr != NULL) {
-	int length;
+	size_t length;
 
-	if (TCL_ERROR == TclListObjLength_(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length )) {
 	    /*
 	     * Value is not a list, which is illegal for -errorcode.
 	     */
@@ -932,9 +932,9 @@ TclMergeReturnOptions(
 
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_ERRORSTACK], &valuePtr);
     if (valuePtr != NULL) {
-	int length;
+	size_t length;
 
-	if (TCL_ERROR == TclListObjLength_(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length)) {
 	    /*
 	     * Value is not a list, which is illegal for -errorstack.
 	     */

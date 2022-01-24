@@ -2378,9 +2378,9 @@ ChildBgerror(
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     if (objc) {
-	int length;
+	size_t length;
 
-	if (TCL_ERROR == TclListObjLength_(NULL, objv[0], &length)
+	if (TCL_ERROR == Tcl_ListObjLength(NULL, objv[0], &length)
 		|| (length < 1)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cmdPrefix must be list of length >= 1", -1));

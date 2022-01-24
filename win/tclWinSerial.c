@@ -1630,7 +1630,7 @@ SerialSetOptionProc(
     size_t len, vlen;
     Tcl_DString ds;
     const WCHAR *native;
-    int argc;
+    size_t argc;
     const char **argv;
 
     infoPtr = (SerialInfo *) instanceData;
