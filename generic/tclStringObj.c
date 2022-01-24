@@ -473,7 +473,7 @@ TclCheckEmptyString(
     }
 
     if (TclListObjIsCanonical(objPtr)) {
-	Tcl_ListObjLength(NULL, objPtr, &length);
+	TclListObjLength_(NULL, objPtr, &length);
 	return length == 0;
     }
 
@@ -2678,7 +2678,7 @@ AppendPrintfToObjVA(
 	    }
 	} while (seekingConversion);
     }
-    TclListObjGetElements(NULL, list, &objc, &objv);
+    TclListObjGetElements_(NULL, list, &objc, &objv);
     code = Tcl_AppendFormatToObj(NULL, objPtr, format, objc, objv);
     if (code != TCL_OK) {
 	Tcl_AppendPrintfToObj(objPtr,

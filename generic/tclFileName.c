@@ -516,7 +516,7 @@ TclpNativeSplitPath(
      */
 
     if (lenPtr != NULL) {
-	Tcl_ListObjLength(NULL, resultPtr, lenPtr);
+	TclListObjLength_(NULL, resultPtr, lenPtr);
     }
     return resultPtr;
 }
@@ -1334,7 +1334,7 @@ Tcl_GlobObjCmd(
 		return TCL_ERROR;
 	    }
 	    typePtr = objv[i+1];
-	    if (Tcl_ListObjLength(interp, typePtr, &length) != TCL_OK) {
+	    if (TclListObjLength_(interp, typePtr, &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -1456,7 +1456,7 @@ Tcl_GlobObjCmd(
 	 * platform.
 	 */
 
-	Tcl_ListObjLength(interp, typePtr, &length);
+	TclListObjLength_(interp, typePtr, &length);
 	if (length <= 0) {
 	    goto skipTypes;
 	}
@@ -1527,7 +1527,7 @@ Tcl_GlobObjCmd(
 		Tcl_Obj *item;
 		int llen;
 
-		if ((Tcl_ListObjLength(NULL, look, &llen) == TCL_OK)
+		if ((TclListObjLength_(NULL, look, &llen) == TCL_OK)
 			&& (llen == 3)) {
 		    Tcl_ListObjIndex(interp, look, 0, &item);
 		    if (!strcmp("macintosh", TclGetString(item))) {
@@ -1634,7 +1634,7 @@ Tcl_GlobObjCmd(
     }
 
     if ((globFlags & TCL_GLOBMODE_NO_COMPLAIN) == 0) {
-	if (Tcl_ListObjLength(interp, Tcl_GetObjResult(interp),
+	if (TclListObjLength_(interp, Tcl_GetObjResult(interp),
 		&length) != TCL_OK) {
 	    /*
 	     * This should never happen. Maybe we should be more dramatic.
@@ -2017,7 +2017,7 @@ TclGlob(
 	    }
 	}
 
-	Tcl_ListObjGetElements(NULL, filenamesObj, &objc, &objv);
+	TclListObjGetElements_(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
 	    size_t len;
 	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
@@ -2346,13 +2346,13 @@ DoGlob(
 	    int subdirc, i, repair = -1;
 	    Tcl_Obj **subdirv;
 
-	    result = Tcl_ListObjGetElements(interp, subdirsPtr,
+	    result = TclListObjGetElements_(interp, subdirsPtr,
 		    &subdirc, &subdirv);
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
 
 		if (pathPtr == NULL && TclGetString(subdirv[i])[0] == '~') {
-		    Tcl_ListObjLength(NULL, matchesObj, &repair);
+		    TclListObjLength_(NULL, matchesObj, &repair);
 		    copy = subdirv[i];
 		    subdirv[i] = Tcl_NewStringObj("./", 2);
 		    Tcl_AppendObjToObj(subdirv[i], copy);
@@ -2365,7 +2365,7 @@ DoGlob(
 
 		    Tcl_DecrRefCount(subdirv[i]);
 		    subdirv[i] = copy;
-		    Tcl_ListObjLength(NULL, matchesObj, &end);
+		    TclListObjLength_(NULL, matchesObj, &end);
 		    while (repair < end) {
 			const char *bytes;
 			size_t numBytes;

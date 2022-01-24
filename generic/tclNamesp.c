@@ -4068,7 +4068,7 @@ NamespacePathCmd(
      * There is a path given, so parse it into an array of namespace pointers.
      */
 
-    if (TclListObjGetElements(interp, objv[1], &nsObjc, &nsObjv) != TCL_OK) {
+    if (TclListObjGetElements_(interp, objv[1], &nsObjc, &nsObjv) != TCL_OK) {
 	goto badNamespace;
     }
     if (nsObjc != 0) {
@@ -4436,7 +4436,7 @@ Tcl_SetNamespaceUnknownHandler(
      */
 
     if (handlerPtr != NULL) {
-	if (TclListObjLength(interp, handlerPtr, &lstlen) != TCL_OK) {
+	if (TclListObjLength_(interp, handlerPtr, &lstlen) != TCL_OK) {
 	    /*
 	     * Not a list.
 	     */
@@ -5013,7 +5013,7 @@ TclLogCommandInfo(
 	int len;
 
 	iPtr->resetErrorStack = 0;
-	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
+	TclListObjLength_(interp, iPtr->errorStack, &len);
 
 	/*
 	 * Reset while keeping the list internalrep as much as possible.
@@ -5098,7 +5098,7 @@ TclErrorStackResetIf(
 	int len;
 
 	iPtr->resetErrorStack = 0;
-	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
+	TclListObjLength_(interp, iPtr->errorStack, &len);
 
 	/*
 	 * Reset while keeping the list internalrep as much as possible.

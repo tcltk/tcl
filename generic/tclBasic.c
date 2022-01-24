@@ -4714,7 +4714,7 @@ TEOV_NotFound(
      * itself.
      */
 
-    Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
+    TclListObjGetElements_(NULL, currNsPtr->unknownHandlerPtr,
 	    &handlerObjc, &handlerObjv);
     newObjc = objc + handlerObjc;
     newObjv = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * newObjc);
@@ -5222,7 +5222,7 @@ TclEvalEx(
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 		    int numElements;
 
-		    code = TclListObjLength(interp, objv[objectsUsed],
+		    code = TclListObjLength_(interp, objv[objectsUsed],
 			    &numElements);
 		    if (code == TCL_ERROR) {
 			/*
@@ -5274,7 +5274,7 @@ TclEvalEx(
 			int numElements;
 			Tcl_Obj **elements, *temp = copy[wordIdx];
 
-			Tcl_ListObjGetElements(NULL, temp, &numElements,
+			TclListObjGetElements_(NULL, temp, &numElements,
 				&elements);
 			objectsUsed += numElements;
 			while (numElements--) {
@@ -6037,7 +6037,7 @@ TclNREvalObjEx(
         TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
 		objPtr, NULL);
 
-	TclListObjGetElements(NULL, listPtr, &objc, &objv);
+	TclListObjGetElements_(NULL, listPtr, &objc, &objv);
 	return TclNREvalObjv(interp, objc, objv, flags, NULL);
     }
 
@@ -8640,7 +8640,7 @@ TclNRTailcallEval(
     int objc;
     Tcl_Obj **objv;
 
-    Tcl_ListObjGetElements(interp, listPtr, &objc, &objv);
+    TclListObjGetElements_(interp, listPtr, &objc, &objv);
     nsObjPtr = objv[0];
 
     if (result == TCL_OK) {
@@ -9070,7 +9070,7 @@ TclNREvalList(
 
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
-    TclListObjGetElements(NULL, listPtr, &objc, &objv);
+    TclListObjGetElements_(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
 
@@ -9358,7 +9358,7 @@ InjectHandler(
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, InjectHandlerPostCall, corPtr, listPtr,
             INT2PTR(nargs), isProbe);
-    TclListObjGetElements(NULL, listPtr, &objc, &objv);
+    TclListObjGetElements_(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
 

@@ -117,7 +117,7 @@ declare 24 {
 	    int line)
 }
 declare 25 {
-    Tcl_Obj *Tcl_DbNewListObj(int objc, Tcl_Obj *const *objv,
+    Tcl_Obj *Tcl_DbNewListObj(size_t objc, Tcl_Obj *const *objv,
 	    const char *file, int line)
 }
 # Removed in 9.0 (changed to macro):
@@ -186,20 +186,20 @@ declare 44 {
 	    Tcl_Obj *objPtr)
 }
 declare 45 {
-    int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    int TclListObjGetElements_(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    int *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 46 {
-    int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, int index,
+    int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, size_t index,
 	    Tcl_Obj **objPtrPtr)
 }
 declare 47 {
-    int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    int TclListObjLength_(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    int *lengthPtr)
 }
 declare 48 {
-    int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, int first,
-	    int count, int objc, Tcl_Obj *const objv[])
+    int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, size_t first,
+	    size_t count, size_t objc, Tcl_Obj *const objv[])
 }
 # Removed in 9.0 (changed to macro):
 #declare 49 {
@@ -216,7 +216,7 @@ declare 51 {
 #    Tcl_Obj *Tcl_NewIntObj(int intValue)
 #}
 declare 53 {
-    Tcl_Obj *Tcl_NewListObj(int objc, Tcl_Obj *const objv[])
+    Tcl_Obj *Tcl_NewListObj(size_t objc, Tcl_Obj *const objv[])
 }
 # Removed in 9.0 (changed to macro):
 #declare 54 {
@@ -247,7 +247,7 @@ declare 60 {
 #    void Tcl_SetIntObj(Tcl_Obj *objPtr, int intValue)
 #}
 declare 62 {
-    void Tcl_SetListObj(Tcl_Obj *objPtr, int objc, Tcl_Obj *const objv[])
+    void Tcl_SetListObj(Tcl_Obj *objPtr, size_t objc, Tcl_Obj *const objv[])
 }
 # Removed in 9.0 (changed to macro):
 #declare 63 {
@@ -2503,6 +2503,16 @@ declare 657 {
 # TIP #511
 declare 660 {
     int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
+}
+
+# TIP #???
+declare 661 {
+    int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+	    size_t *objcPtr, Tcl_Obj ***objvPtr)
+}
+declare 662 {
+    int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+	    size_t *lengthPtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

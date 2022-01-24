@@ -947,7 +947,7 @@ LinkTraceProc(
      */
 
     if (linkPtr->flags & LINK_ALLOC_LAST) {
-	if (Tcl_ListObjGetElements(NULL, (valueObj), &objc, &objv) == TCL_ERROR
+	if (TclListObjGetElements_(NULL, (valueObj), &objc, &objv) == TCL_ERROR
 		|| (size_t)objc != linkPtr->numElems) {
 	    return (char *) "wrong dimension";
 	}

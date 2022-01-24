@@ -3033,7 +3033,7 @@ ZipFSMkZipOrImg(
 	}
     }
     Tcl_IncrRefCount(list);
-    if (Tcl_ListObjGetElements(interp, list, &lobjc, &lobjv) != TCL_OK) {
+    if (TclListObjGetElements_(interp, list, &lobjc, &lobjv) != TCL_OK) {
 	Tcl_DecrRefCount(list);
 	return TCL_ERROR;
     }

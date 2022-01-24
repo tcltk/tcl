@@ -1983,7 +1983,7 @@ CreateMirrorJumpTable(
 				 * table. */
     int i;
 
-    if (Tcl_ListObjGetElements(interp, jumps, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElements_(interp, jumps, &objc, &objv) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (objc % 2 != 0) {

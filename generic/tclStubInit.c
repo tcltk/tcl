@@ -86,6 +86,24 @@ static void uniCodePanic() {
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
 
+int TclListObjGetElements_(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    int *objcPtr, Tcl_Obj ***objvPtr) {
+    size_t n;
+    int result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
+    if (objcPtr) {
+	*objcPtr = n;
+    }
+    return result;
+}
+int TclListObjLength_(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    int *lengthPtr) {
+    size_t n;
+    int result = Tcl_ListObjLength(interp, listPtr, &n);
+    if (lengthPtr) {
+	*lengthPtr = n;
+    }
+    return result;
+}
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
@@ -736,9 +754,9 @@ const TclStubs tclStubs = {
     Tcl_InvalidateStringRep, /* 42 */
     Tcl_ListObjAppendList, /* 43 */
     Tcl_ListObjAppendElement, /* 44 */
-    Tcl_ListObjGetElements, /* 45 */
+    TclListObjGetElements_, /* 45 */
     Tcl_ListObjIndex, /* 46 */
-    Tcl_ListObjLength, /* 47 */
+    TclListObjLength_, /* 47 */
     Tcl_ListObjReplace, /* 48 */
     0, /* 49 */
     Tcl_NewByteArrayObj, /* 50 */
@@ -1352,6 +1370,8 @@ const TclStubs tclStubs = {
     0, /* 658 */
     0, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
+    Tcl_ListObjGetElements, /* 661 */
+    Tcl_ListObjLength, /* 662 */
 };
 
 /* !END!: Do not edit above this line. */

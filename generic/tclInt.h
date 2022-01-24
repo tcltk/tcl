@@ -2381,8 +2381,8 @@ typedef enum TclEolTranslation {
 
 typedef struct List {
     size_t refCount;
-    int maxElemCount;		/* Total number of element array slots. */
-    int elemCount;		/* Current number of list elements. */
+    size_t maxElemCount;		/* Total number of element array slots. */
+    size_t elemCount;		/* Current number of list elements. */
     int canonicalFlag;		/* Set if the string representation was
 				 * derived from the list representation. May
 				 * be ignored if there is no string rep at
@@ -3025,7 +3025,7 @@ MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    int indexCount, Tcl_Obj *const indexArray[]);
+			    size_t indexCount, Tcl_Obj *const indexArray[]);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
 			    int *lines, Tcl_Obj *const *elems);

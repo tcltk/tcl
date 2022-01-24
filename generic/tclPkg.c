@@ -1361,7 +1361,7 @@ TclNRPackageObjCmd(
 	    objvListPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_IncrRefCount(objvListPtr);
 	    Tcl_ListObjAppendElement(interp, objvListPtr, ov);
-	    Tcl_ListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
+	    TclListObjGetElements_(interp, objvListPtr, &newobjc, &newObjvPtr);
 
 	    Tcl_NRAddCallback(interp,
 		    TclNRPackageObjCmdCleanup, objv[3], objvListPtr, NULL,NULL);
@@ -1388,7 +1388,7 @@ TclNRPackageObjCmd(
 		Tcl_ListObjAppendElement(interp, objvListPtr,
 			Tcl_DuplicateObj(newobjv[i]));
 	    }
-	    Tcl_ListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
+	    TclListObjGetElements_(interp, objvListPtr, &newobjc, &newObjvPtr);
 	    Tcl_NRAddCallback(interp,
 		    TclNRPackageObjCmdCleanup, objv[2], objvListPtr, NULL,NULL);
 	    Tcl_NRAddCallback(interp,
