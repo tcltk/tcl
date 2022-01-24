@@ -125,6 +125,7 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 
 #define TclListObjGetElements_ LOGetElements
 #define TclListObjLength_ LOLength
+#define TclDictObjSize_ DOSize
 static int LOGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     size_t *objcPtr, Tcl_Obj ***objvPtr) {
     int n;
@@ -140,6 +141,15 @@ static int LOLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     int result = Tcl_ListObjLength(interp, listPtr, &n);
     if (lengthPtr) {
 	*lengthPtr = n;
+    }
+    return result;
+}
+static int DOSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+	size_t *sizePtr) {
+    int n;
+    int result = Tcl_DictObjSize(interp, dictPtr, &n);
+    if (sizePtr) {
+	*sizePtr = n;
     }
     return result;
 }
@@ -1967,6 +1977,7 @@ const TclStubs tclStubs = {
     Tcl_AsyncMarkFromSignal, /* 660 */
     TclListObjGetElements_, /* 661 */
     TclListObjLength_, /* 662 */
+    TclDictObjSize_, /* 663 */
 };
 
 /* !END!: Do not edit above this line. */

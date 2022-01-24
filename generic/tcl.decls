@@ -2442,7 +2442,7 @@ declare 660 {
     int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
 }
 
-# TIP #???
+# TIP #616
 declare 661 {
     int TclListObjGetElements_(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    size_t *objcPtr, Tcl_Obj ***objvPtr)
@@ -2450,6 +2450,9 @@ declare 661 {
 declare 662 {
     int TclListObjLength_(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    size_t *lengthPtr)
+}
+declare 663 {
+    int TclDictObjSize_(Tcl_Interp *interp, Tcl_Obj *dictPtr, size_t *sizePtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
