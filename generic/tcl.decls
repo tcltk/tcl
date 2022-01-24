@@ -1857,11 +1857,11 @@ declare 500 {
 }
 declare 501 {
     int Tcl_DictObjPutKeyList(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	    int keyc, Tcl_Obj *const *keyv, Tcl_Obj *valuePtr)
+	    size_t keyc, Tcl_Obj *const *keyv, Tcl_Obj *valuePtr)
 }
 declare 502 {
     int Tcl_DictObjRemoveKeyList(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	    int keyc, Tcl_Obj *const *keyv)
+	    size_t keyc, Tcl_Obj *const *keyv)
 }
 declare 503 {
     Tcl_Obj *Tcl_NewDictObj(void)

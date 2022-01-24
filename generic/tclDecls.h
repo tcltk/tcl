@@ -1308,11 +1308,11 @@ EXTERN void		Tcl_DictObjNext(Tcl_DictSearch *searchPtr,
 EXTERN void		Tcl_DictObjDone(Tcl_DictSearch *searchPtr);
 /* 501 */
 EXTERN int		Tcl_DictObjPutKeyList(Tcl_Interp *interp,
-				Tcl_Obj *dictPtr, int keyc,
+				Tcl_Obj *dictPtr, size_t keyc,
 				Tcl_Obj *const *keyv, Tcl_Obj *valuePtr);
 /* 502 */
 EXTERN int		Tcl_DictObjRemoveKeyList(Tcl_Interp *interp,
-				Tcl_Obj *dictPtr, int keyc,
+				Tcl_Obj *dictPtr, size_t keyc,
 				Tcl_Obj *const *keyv);
 /* 503 */
 EXTERN Tcl_Obj *	Tcl_NewDictObj(void);
@@ -2279,8 +2279,8 @@ typedef struct TclStubs {
     int (*tcl_DictObjFirst) (Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_DictSearch *searchPtr, Tcl_Obj **keyPtrPtr, Tcl_Obj **valuePtrPtr, int *donePtr); /* 498 */
     void (*tcl_DictObjNext) (Tcl_DictSearch *searchPtr, Tcl_Obj **keyPtrPtr, Tcl_Obj **valuePtrPtr, int *donePtr); /* 499 */
     void (*tcl_DictObjDone) (Tcl_DictSearch *searchPtr); /* 500 */
-    int (*tcl_DictObjPutKeyList) (Tcl_Interp *interp, Tcl_Obj *dictPtr, int keyc, Tcl_Obj *const *keyv, Tcl_Obj *valuePtr); /* 501 */
-    int (*tcl_DictObjRemoveKeyList) (Tcl_Interp *interp, Tcl_Obj *dictPtr, int keyc, Tcl_Obj *const *keyv); /* 502 */
+    int (*tcl_DictObjPutKeyList) (Tcl_Interp *interp, Tcl_Obj *dictPtr, size_t keyc, Tcl_Obj *const *keyv, Tcl_Obj *valuePtr); /* 501 */
+    int (*tcl_DictObjRemoveKeyList) (Tcl_Interp *interp, Tcl_Obj *dictPtr, size_t keyc, Tcl_Obj *const *keyv); /* 502 */
     Tcl_Obj * (*tcl_NewDictObj) (void); /* 503 */
     Tcl_Obj * (*tcl_DbNewDictObj) (const char *file, int line); /* 504 */
     void (*tcl_RegisterConfig) (Tcl_Interp *interp, const char *pkgName, const Tcl_Config *configuration, const char *valEncoding); /* 505 */

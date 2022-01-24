@@ -940,11 +940,12 @@ Tcl_SetEnsembleMappingDict(
 	return TCL_ERROR;
     }
     if (mapDict != NULL) {
-	int size, done;
+	size_t size;
+	int done;
 	Tcl_DictSearch search;
 	Tcl_Obj *valuePtr;
 
-	if (TclDictObjSize_(interp, mapDict, &size) != TCL_OK) {
+	if (Tcl_DictObjSize(interp, mapDict, &size) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -3377,8 +3378,8 @@ CompileToInvokedCommand(
     Tcl_Token *tokPtr;
     Tcl_Obj *objPtr, **words;
     const char *bytes;
-    int i, numWords, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
-    size_t length;
+    int i, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
+    size_t numWords, length;
 
     /*
      * Push the words of the command. Take care; the command words may be
@@ -3386,10 +3387,10 @@ CompileToInvokedCommand(
      * difference. Hence the call to TclContinuationsEnterDerived...
      */
 
-    TclListObjGetElements_(NULL, replacements, &numWords, &words);
+    Tcl_ListObjGetElements(NULL, replacements, &numWords, &words);
     for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
-	if (i > 0 && i < numWords+1) {
+	if (i > 0 && (size_t)i <= numWords) {
 	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
 	    PushLiteral(envPtr, bytes, length);
 	    continue;

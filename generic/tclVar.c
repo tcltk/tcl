@@ -2812,9 +2812,9 @@ Tcl_LappendObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *varValuePtr, *newValuePtr;
-    int numElems, createdNewObj;
+    size_t numElems;
     Var *varPtr, *arrayPtr;
-    int result;
+    int result, createdNewObj;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value ...?");
@@ -2835,7 +2835,7 @@ Tcl_LappendObjCmd(
 		return TCL_ERROR;
 	    }
 	} else {
-	    result = TclListObjLength_(interp, newValuePtr, &numElems);
+	    result = Tcl_ListObjLength(interp, newValuePtr, &numElems);
 	    if (result != TCL_OK) {
 		return result;
 	    }
@@ -2893,7 +2893,7 @@ Tcl_LappendObjCmd(
 	    createdNewObj = 1;
 	}
 
-	result = TclListObjLength_(interp, varValuePtr, &numElems);
+	result = Tcl_ListObjLength(interp, varValuePtr, &numElems);
 	if (result == TCL_OK) {
 	    result = Tcl_ListObjReplace(interp, varValuePtr, numElems, 0,
 		    (objc-2), (objv+2));
@@ -3030,7 +3030,8 @@ ArrayForNRCmd(
     Tcl_Obj *varListObj, *arrayNameObj, *scriptObj;
     ArraySearch *searchPtr = NULL;
     Var *varPtr;
-    int isArray, numVars;
+    int isArray;
+    size_t numVars;
 
     /*
      * array for {k v} a body
@@ -3045,7 +3046,7 @@ ArrayForNRCmd(
      * Parse arguments.
      */
 
-    if (TclListObjLength_(interp, objv[1], &numVars) != TCL_OK) {
+    if (Tcl_ListObjLength(interp, objv[1], &numVars) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3106,7 +3107,8 @@ ArrayForLoopCallback(
     Tcl_Obj *keyObj, *valueObj;
     Var *varPtr;
     Var *arrayPtr;
-    int done, varc;
+    int done;
+    size_t varc;
 
     /*
      * Process the result from the previous execution of the script body.
@@ -3156,7 +3158,7 @@ ArrayForLoopCallback(
 	goto arrayfordone;
     }
 
-    TclListObjGetElements_(NULL, varListObj, &varc, &varv);
+    Tcl_ListObjGetElements(NULL, varListObj, &varc, &varv);
     if (Tcl_ObjSetVar2(interp, varv[0], NULL, keyObj,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	result = TCL_ERROR;
@@ -3614,7 +3616,8 @@ ArrayGetCmd(
     Tcl_Obj **nameObjPtr, *patternObj;
     Tcl_HashSearch search;
     const char *pattern;
-    int i, count, result, isArray;
+    size_t i, count;
+    int result, isArray;
 
     switch (objc) {
     case 2:
@@ -3696,7 +3699,7 @@ ArrayGetCmd(
      */
 
     TclNewObj(tmpResObj);
-    result = TclListObjGetElements_(interp, nameLstObj, &count, &nameObjPtr);
+    result = Tcl_ListObjGetElements(interp, nameLstObj, &count, &nameObjPtr);
     if (result != TCL_OK) {
 	goto errorInArrayGet;
     }
@@ -3938,7 +3941,8 @@ ArraySetCmd(
     Tcl_Obj *arrayNameObj;
     Tcl_Obj *arrayElemObj;
     Var *varPtr, *arrayPtr;
-    int result, i;
+    int result;
+    size_t i;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName list");
@@ -3973,11 +3977,12 @@ ArraySetCmd(
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
 	int done;
+	size_t size;
 
-	if (TclDictObjSize_(interp, arrayElemObj, &done) != TCL_OK) {
+	if (Tcl_DictObjSize(interp, arrayElemObj, &size) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (done == 0) {
+	if (size == 0) {
 	    /*
 	     * Empty, so we'll just force the array to be properly existing
 	     * instead.
@@ -4016,10 +4021,10 @@ ArraySetCmd(
 	 * -compatibility reasons) a list.
 	 */
 
-	int elemLen;
+	size_t elemLen;
 	Tcl_Obj **elemPtrs, *copyListObj;
 
-	result = TclListObjGetElements_(interp, arrayElemObj,
+	result = Tcl_ListObjGetElements(interp, arrayElemObj,
 		&elemLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;

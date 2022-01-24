@@ -602,11 +602,11 @@ SetDictFromAny(
      */
 
     if (TclHasInternalRep(objPtr, &tclListType)) {
-	int objc, i;
+	size_t objc, i;
 	Tcl_Obj **objv;
 
 	/* Cannot fail, we already know the Tcl_ObjType is "list". */
-	TclListObjGetElements_(NULL, objPtr, &objc, &objv);
+	Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
 	if (objc & 1) {
 	    goto missingValue;
 	}
@@ -777,12 +777,12 @@ Tcl_Obj *
 TclTraceDictPath(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    int keyc,
+    size_t keyc,
     Tcl_Obj *const keyv[],
     int flags)
 {
     Dict *dict, *newDict;
-    int i;
+    size_t i;
 
     DictGetInternalRep(dictPtr, dict);
     if (dict == NULL) {
@@ -1278,7 +1278,7 @@ int
 Tcl_DictObjPutKeyList(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    int keyc,
+    size_t keyc,
     Tcl_Obj *const keyv[],
     Tcl_Obj *valuePtr)
 {
@@ -1289,7 +1289,7 @@ Tcl_DictObjPutKeyList(
     if (Tcl_IsShared(dictPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_DictObjPutKeyList");
     }
-    if (keyc < 1) {
+    if (keyc + 1 < 2) {
 	Tcl_Panic("%s called with empty key list", "Tcl_DictObjPutKeyList");
     }
 
@@ -1339,7 +1339,7 @@ int
 Tcl_DictObjRemoveKeyList(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    int keyc,
+    size_t keyc,
     Tcl_Obj *const keyv[])
 {
     Dict *dict;
@@ -2460,7 +2460,8 @@ DictForNRCmd(
     Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
     Tcl_Obj **varv, *keyObj, *valueObj;
     Tcl_DictSearch *searchPtr;
-    int varc, done;
+    size_t varc;
+    int done;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2472,7 +2473,7 @@ DictForNRCmd(
      * Parse arguments.
      */
 
-    if (TclListObjGetElements_(interp, objv[1], &varc, &varv) != TCL_OK) {
+    if (Tcl_ListObjGetElements(interp, objv[1], &varc, &varv) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (varc != 2) {
@@ -2491,7 +2492,7 @@ DictForNRCmd(
 	TclStackFree(interp, searchPtr);
 	return TCL_OK;
     }
-    TclListObjGetElements_(NULL, objv[1], &varc, &varv);
+    Tcl_ListObjGetElements(NULL, objv[1], &varc, &varv);
     keyVarObj = varv[0];
     valueVarObj = varv[1];
     scriptObj = objv[3];
@@ -2654,7 +2655,8 @@ DictMapNRCmd(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj **varv, *keyObj, *valueObj;
     DictMapStorage *storagePtr;
-    int varc, done;
+    size_t varc;
+    int done;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2666,7 +2668,7 @@ DictMapNRCmd(
      * Parse arguments.
      */
 
-    if (TclListObjGetElements_(interp, objv[1], &varc, &varv) != TCL_OK) {
+    if (Tcl_ListObjGetElements(interp, objv[1], &varc, &varv) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (varc != 2) {
@@ -2692,7 +2694,7 @@ DictMapNRCmd(
 	return TCL_OK;
     }
     TclNewObj(storagePtr->accumulatorObj);
-    TclListObjGetElements_(NULL, objv[1], &varc, &varv);
+    Tcl_ListObjGetElements(NULL, objv[1], &varc, &varv);
     storagePtr->keyVarObj = varv[0];
     storagePtr->valueVarObj = varv[1];
     storagePtr->scriptObj = objv[3];
@@ -2992,7 +2994,8 @@ DictFilterCmd(
     Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
     Tcl_Obj **varv, *keyObj = NULL, *valueObj = NULL, *resultObj, *boolObj;
     Tcl_DictSearch search;
-    int index, varc, done, result, satisfied;
+    int index, done, result, satisfied;
+    size_t varc;
     const char *pattern;
 
     if (objc < 3) {
@@ -3105,7 +3108,7 @@ DictFilterCmd(
 	 * copying from the "dict for" implementation has occurred!
 	 */
 
-	if (TclListObjGetElements_(interp, objv[3], &varc, &varv) != TCL_OK) {
+	if (Tcl_ListObjGetElements(interp, objv[3], &varc, &varv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (varc != 2) {
@@ -3473,7 +3476,7 @@ FinalizeDictWith(
     int result)
 {
     Tcl_Obj **pathv;
-    int pathc;
+    size_t pathc;
     Tcl_InterpState state;
     Tcl_Obj *varName = (Tcl_Obj *)data[0];
     Tcl_Obj *keysPtr = (Tcl_Obj *)data[1];
@@ -3491,7 +3494,7 @@ FinalizeDictWith(
 
     state = Tcl_SaveInterpState(interp, result);
     if (pathPtr != NULL) {
-	TclListObjGetElements_(NULL, pathPtr, &pathc, &pathv);
+	Tcl_ListObjGetElements(NULL, pathPtr, &pathc, &pathv);
     } else {
 	pathc = 0;
 	pathv = NULL;

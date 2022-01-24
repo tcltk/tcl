@@ -438,7 +438,7 @@ declare 224 {
 }
 declare 225 {
     Tcl_Obj *TclTraceDictPath(Tcl_Interp *interp, Tcl_Obj *rootPtr,
-	    int keyc, Tcl_Obj *const keyv[], int flags)
+	    size_t keyc, Tcl_Obj *const keyv[], int flags)
 }
 declare 226 {
     int TclObjBeingDeleted(Tcl_Obj *objPtr)

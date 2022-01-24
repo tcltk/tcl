@@ -2049,7 +2049,8 @@ TEBCresume(
     Tcl_Obj *objPtr, *valuePtr, *value2Ptr, *part1Ptr, *part2Ptr, *tmpPtr;
     Tcl_Obj **objv = NULL;
     int objc = 0;
-    int opnd, length, pcAdjustment;
+    int opnd, pcAdjustment;
+    size_t length;
     Var *varPtr, *arrayPtr;
 #ifdef TCL_COMPILE_DEBUG
     char cmdNameBuf[21];
@@ -4636,7 +4637,7 @@ TEBCresume(
 
     case INST_LIST_LENGTH:
 	TRACE(("\"%.30s\" => ", O2S(OBJ_AT_TOS)));
-	if (TclListObjLength_(interp, OBJ_AT_TOS, &length) != TCL_OK) {
+	if (Tcl_ListObjLength(interp, OBJ_AT_TOS, &length) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -4902,13 +4903,13 @@ TEBCresume(
 
 	s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
-	if (TclListObjLength_(interp, value2Ptr, &length) != TCL_OK) {
+	if (Tcl_ListObjLength(interp, value2Ptr, &length) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
 	match = 0;
 	if (length > 0) {
-	    int i = 0;
+	    size_t i = 0;
 	    Tcl_Obj *o;
 
 	    /*
@@ -6483,22 +6484,25 @@ TEBCresume(
      */
 
     {
-	int opnd2, allocateDict, done, i, allocdict;
+	int opnd2, allocateDict, done, allocdict;
+	size_t i;
 	Tcl_Obj *dictPtr, *statePtr, *keyPtr, *listPtr, *varNamePtr, *keysPtr;
 	Tcl_Obj *emptyPtr, **keyPtrPtr;
 	Tcl_DictSearch *searchPtr;
 	DictUpdateInfo *duiPtr;
 
-    case INST_DICT_VERIFY:
+    case INST_DICT_VERIFY: {
+	size_t size;
 	dictPtr = OBJ_AT_TOS;
 	TRACE(("\"%.30s\" => ", O2S(dictPtr)));
-	if (TclDictObjSize_(interp, dictPtr, &done) != TCL_OK) {
+	if (Tcl_DictObjSize(interp, dictPtr, &size) != TCL_OK) {
 	    TRACE_APPEND(("ERROR verifying dictionary nature of \"%.30s\": %s\n",
 		    O2S(dictPtr), O2S(Tcl_GetObjResult(interp))));
 	    goto gotError;
 	}
 	TRACE_APPEND(("OK\n"));
 	NEXT_INST_F(1, 1, 0);
+    }
     break;
 
     case INST_DICT_EXISTS: {
@@ -6937,12 +6941,12 @@ TEBCresume(
 	    }
 	}
 	Tcl_IncrRefCount(dictPtr);
-	if (TclListObjGetElements_(interp, OBJ_AT_TOS, &length,
+	if (Tcl_ListObjGetElements(interp, OBJ_AT_TOS, &length,
 		&keyPtrPtr) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	if ((size_t)length != duiPtr->length) {
+	if (length != duiPtr->length) {
 	    Tcl_Panic("dictUpdateStart argument length mismatch");
 	}
 	for (i=0 ; i<length ; i++) {
@@ -6996,8 +7000,8 @@ TEBCresume(
 	    TRACE_APPEND(("storage was unset\n"));
 	    NEXT_INST_F(9, 1, 0);
 	}
-	if (TclDictObjSize_(interp, dictPtr, &length) != TCL_OK
-		|| TclListObjGetElements_(interp, OBJ_AT_TOS, &length,
+	if (Tcl_DictObjSize(interp, dictPtr, &length) != TCL_OK
+		|| Tcl_ListObjGetElements(interp, OBJ_AT_TOS, &length,
 			&keyPtrPtr) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;

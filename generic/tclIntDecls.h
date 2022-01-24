@@ -469,7 +469,7 @@ EXTERN void		TclPopStackFrame(Tcl_Interp *interp);
 EXTERN TclPlatformType * TclGetPlatform(void);
 /* 225 */
 EXTERN Tcl_Obj *	TclTraceDictPath(Tcl_Interp *interp,
-				Tcl_Obj *rootPtr, int keyc,
+				Tcl_Obj *rootPtr, size_t keyc,
 				Tcl_Obj *const keyv[], int flags);
 /* 226 */
 EXTERN int		TclObjBeingDeleted(Tcl_Obj *objPtr);
@@ -808,7 +808,7 @@ typedef struct TclIntStubs {
     void (*reserved222)(void);
     void (*reserved223)(void);
     TclPlatformType * (*tclGetPlatform) (void); /* 224 */
-    Tcl_Obj * (*tclTraceDictPath) (Tcl_Interp *interp, Tcl_Obj *rootPtr, int keyc, Tcl_Obj *const keyv[], int flags); /* 225 */
+    Tcl_Obj * (*tclTraceDictPath) (Tcl_Interp *interp, Tcl_Obj *rootPtr, size_t keyc, Tcl_Obj *const keyv[], int flags); /* 225 */
     int (*tclObjBeingDeleted) (Tcl_Obj *objPtr); /* 226 */
     void (*tclSetNsPath) (Namespace *nsPtr, size_t pathLength, Tcl_Namespace *pathAry[]); /* 227 */
     void (*reserved228)(void);

@@ -2399,7 +2399,8 @@ TclCompileReturnCmd(
      * General syntax: [return ?-option value ...? ?result?]
      * An even number of words means an explicit result argument is present.
      */
-    int level, code, objc, size, status = TCL_OK;
+    int level, code, objc, status = TCL_OK;
+    size_t size;
     int numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
@@ -2529,7 +2530,7 @@ TclCompileReturnCmd(
     }
 
     /* Optimize [return -level 0 $x]. */
-    TclDictObjSize_(NULL, returnOpts, &size);
+    Tcl_DictObjSize(NULL, returnOpts, &size);
     if (size == 0 && level == 0 && code == TCL_OK) {
 	Tcl_DecrRefCount(returnOpts);
 	return TCL_OK;

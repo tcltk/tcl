@@ -2994,8 +2994,8 @@ ZipFSMkZipOrImg(
 				 * there's no password protection. */
 {
     Tcl_Channel out;
-    int pwlen = 0, slen = 0, count, ret = TCL_ERROR, lobjc;
-    size_t len, i = 0;
+    int pwlen = 0, slen = 0, count, ret = TCL_ERROR;
+    size_t lobjc, len, i = 0;
     long long directoryStartOffset;
 				/* The overall file offset of the start of the
 				 * central directory. */
@@ -3033,7 +3033,7 @@ ZipFSMkZipOrImg(
 	}
     }
     Tcl_IncrRefCount(list);
-    if (TclListObjGetElements_(interp, list, &lobjc, &lobjv) != TCL_OK) {
+    if (Tcl_ListObjGetElements(interp, list, &lobjc, &lobjv) != TCL_OK) {
 	Tcl_DecrRefCount(list);
 	return TCL_ERROR;
     }

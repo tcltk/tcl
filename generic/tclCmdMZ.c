@@ -487,8 +487,8 @@ Tcl_RegsubObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int result, cflags, all, match, command, numParts;
-    size_t idx, wlen, wsublen = 0, offset, numMatches;
+    int result, cflags, all, match, command;
+    size_t idx, wlen, wsublen = 0, offset, numMatches, numParts;
     size_t start, end, subStart, subEnd;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
@@ -675,7 +675,7 @@ Tcl_RegsubObjCmd(
 	 * object. (If they aren't, that's cheap to do.)
 	 */
 
-	if (TclListObjLength_(interp, objv[2], &numParts) != TCL_OK) {
+	if (Tcl_ListObjLength(interp, objv[2], &numParts) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (numParts < 1) {
@@ -775,9 +775,9 @@ Tcl_RegsubObjCmd(
 
 	if (command) {
 	    Tcl_Obj **args = NULL, **parts;
-	    int numArgs;
+	    size_t numArgs;
 
-	    TclListObjGetElements_(interp, subPtr, &numParts, &parts);
+	    Tcl_ListObjGetElements(interp, subPtr, &numParts, &parts);
 	    numArgs = numParts + info.nsubs + 1;
 	    args = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj*) * numArgs);
 	    memcpy(args, parts, sizeof(Tcl_Obj*) * numParts);
@@ -1631,9 +1631,10 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsControl;
 	break;
     case STR_IS_DICT: {
-	int dresult, dsize;
+	int dresult;
+	size_t dsize;
 
-	dresult = TclDictObjSize_(interp, objPtr, &dsize);
+	dresult = Tcl_DictObjSize(interp, objPtr, &dsize);
 	Tcl_ResetResult(interp);
 	result = (dresult == TCL_OK) ? 1 : 0;
 	if (dresult != TCL_OK && failVarObj != NULL) {
@@ -1994,7 +1995,8 @@ StringMapCmd(
 
     if (!TclHasStringRep(objv[objc-2])
 	    && TclHasInternalRep(objv[objc-2], &tclDictType)) {
-	int i, done;
+	size_t i;
+	int done;
 	Tcl_DictSearch search;
 
 	/*
@@ -2002,7 +2004,7 @@ StringMapCmd(
 	 * sure. This shortens this code quite a bit.
 	 */
 
-	TclDictObjSize_(interp, objv[objc-2], &i);
+	Tcl_DictObjSize(interp, objv[objc-2], &i);
 	if (i == 0) {
 	    /*
 	     * Empty charMap, just return whatever string was given.
@@ -2028,8 +2030,8 @@ StringMapCmd(
 	}
 	Tcl_DictObjDone(&search);
     } else {
-	int i;
-	if (TclListObjGetElements_(interp, objv[objc-2], &i,
+	size_t i;
+	if (Tcl_ListObjGetElements(interp, objv[objc-2], &i,
 		&mapElemv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3576,9 +3578,10 @@ TclNRSwitchObjCmd(
     splitObjs = 0;
     if (objc == 1) {
 	Tcl_Obj **listv;
+	size_t listc;
 
 	blist = objv[0];
-	if (TclListObjGetElements_(interp, objv[0], &objc, &listv) != TCL_OK) {
+	if (Tcl_ListObjGetElements(interp, objv[0], &listc, &listv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -3586,11 +3589,12 @@ TclNRSwitchObjCmd(
 	 * Ensure that the list is non-empty.
 	 */
 
-	if (objc < 1) {
+	if (listc < 1 || listc > INT_MAX) {
 	    Tcl_WrongNumArgs(interp, 1, savedObjv,
 		    "?-option ...? string {?pattern body ...? ?default body?}");
 	    return TCL_ERROR;
 	}
+	objc = listc;
 	objv = listv;
 	splitObjs = 1;
     }
@@ -4865,8 +4869,8 @@ TryPostBody(
     int result)
 {
     Tcl_Obj *resultObj, *options, *handlersObj, *finallyObj, *cmdObj, **objv;
-    int i, code, objc;
-    int numHandlers = 0;
+    int code, objc;
+    size_t i, numHandlers = 0;
 
     handlersObj = (Tcl_Obj *)data[0];
     finallyObj = (Tcl_Obj *)data[1];
@@ -4913,12 +4917,12 @@ TryPostBody(
 	int found = 0;
 	Tcl_Obj **handlers, **info;
 
-	TclListObjGetElements_(NULL, handlersObj, &numHandlers, &handlers);
+	Tcl_ListObjGetElements(NULL, handlersObj, &numHandlers, &handlers);
 	for (i=0 ; i<numHandlers ; i++) {
 	    Tcl_Obj *handlerBodyObj;
-	    int numElems = 0;
+	    size_t numElems = 0;
 
-	    TclListObjGetElements_(NULL, handlers[i], &numElems, &info);
+	    Tcl_ListObjGetElements(NULL, handlers[i], &numElems, &info);
 	    if (!found) {
 		Tcl_GetIntFromObj(NULL, info[1], &code);
 		if (code != result) {
@@ -4934,13 +4938,13 @@ TryPostBody(
 
 		if (code == TCL_ERROR) {
 		    Tcl_Obj *errorCodeName, *errcode, **bits1, **bits2;
-		    int len1, len2, j;
+		    size_t len1, len2, j;
 
 		    TclNewLiteralStringObj(errorCodeName, "-errorcode");
 		    Tcl_DictObjGet(NULL, options, errorCodeName, &errcode);
 		    Tcl_DecrRefCount(errorCodeName);
-		    TclListObjGetElements_(NULL, info[2], &len1, &bits1);
-		    if (TclListObjGetElements_(NULL, errcode, &len2,
+		    Tcl_ListObjGetElements(NULL, info[2], &len1, &bits1);
+		    if (Tcl_ListObjGetElements(NULL, errcode, &len2,
 			    &bits2) != TCL_OK) {
 			continue;
 		    }
@@ -4980,7 +4984,7 @@ TryPostBody(
 
 	    Tcl_ResetResult(interp);
 	    result = TCL_ERROR;
-	    TclListObjLength_(NULL, info[3], &numElems);
+	    Tcl_ListObjLength(NULL, info[3], &numElems);
 	    if (numElems> 0) {
 		Tcl_Obj *varName;
 
