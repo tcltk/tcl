@@ -7046,20 +7046,21 @@ TestGetIntForIndexCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int result, endvalue;
+    int result;
+    Tcl_WideInt endvalue;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "index endvalue");
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIntFromObj(interp, objv[2], &endvalue) != TCL_OK) {
+    if (Tcl_GetWideIntFromObj(interp, objv[2], &endvalue) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (Tcl_GetIntForIndex(interp, objv[1], endvalue, &result) != TCL_OK) {
 	return TCL_ERROR;
     }
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
     return TCL_OK;
 }
 
