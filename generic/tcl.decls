@@ -2454,6 +2454,16 @@ declare 662 {
 declare 663 {
     int TclDictObjSize_(Tcl_Interp *interp, Tcl_Obj *dictPtr, size_t *sizePtr)
 }
+declare 664 {
+    int TclSplitList_(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
+	    const char ***argvPtr)
+}
+declare 665 {
+    void TclSplitPath_(const char *path, size_t *argcPtr, const char ***argvPtr)
+}
+declare 666 {
+    Tcl_Obj *TclFSSplitPath_(Tcl_Obj *pathPtr, size_t *lenPtr)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 

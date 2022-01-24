@@ -126,6 +126,9 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 #define TclListObjGetElements_ LOGetElements
 #define TclListObjLength_ LOLength
 #define TclDictObjSize_ DOSize
+#define TclSplitList_ SplitList
+#define TclSplitPath_ SplitPath
+#define TclFSSplitPath_ FSSplitPath
 static int LOGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     size_t *objcPtr, Tcl_Obj ***objvPtr) {
     int n;
@@ -150,6 +153,30 @@ static int DOSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
     int result = Tcl_DictObjSize(interp, dictPtr, &n);
     if (sizePtr) {
 	*sizePtr = n;
+    }
+    return result;
+}
+static int SplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
+	const char ***argvPtr) {
+    int n;
+    int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
+    if (argcPtr) {
+	*argcPtr = n;
+    }
+    return result;
+}
+static void SplitPath(const char *path, size_t *argcPtr, const char ***argvPtr) {
+    int n;
+    Tcl_SplitPath(path, &n, argvPtr);
+    if (argcPtr) {
+	*argcPtr = n;
+    }
+}
+static Tcl_Obj *FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr) {
+    int n;
+    Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
+    if (lenPtr) {
+	*lenPtr = n;
     }
     return result;
 }
@@ -1978,6 +2005,9 @@ const TclStubs tclStubs = {
     TclListObjGetElements_, /* 661 */
     TclListObjLength_, /* 662 */
     TclDictObjSize_, /* 663 */
+    TclSplitList_, /* 664 */
+    TclSplitPath_, /* 665 */
+    TclFSSplitPath_, /* 666 */
 };
 
 /* !END!: Do not edit above this line. */
