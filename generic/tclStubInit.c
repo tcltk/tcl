@@ -104,6 +104,15 @@ int TclListObjLength_(Tcl_Interp *interp, Tcl_Obj *listPtr,
     }
     return result;
 }
+int TclDictObjSize_(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+    int *sizePtr) {
+    size_t n;
+    int result = Tcl_DictObjSize(interp, dictPtr, &n);
+    if (sizePtr) {
+	*sizePtr = n;
+    }
+    return result;
+}
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
@@ -1206,7 +1215,7 @@ const TclStubs tclStubs = {
     Tcl_DictObjPut, /* 494 */
     Tcl_DictObjGet, /* 495 */
     Tcl_DictObjRemove, /* 496 */
-    Tcl_DictObjSize, /* 497 */
+    TclDictObjSize_, /* 497 */
     Tcl_DictObjFirst, /* 498 */
     Tcl_DictObjNext, /* 499 */
     Tcl_DictObjDone, /* 500 */
@@ -1372,6 +1381,7 @@ const TclStubs tclStubs = {
     Tcl_AsyncMarkFromSignal, /* 660 */
     Tcl_ListObjGetElements, /* 661 */
     Tcl_ListObjLength, /* 662 */
+    Tcl_DictObjSize, /* 663 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -6492,7 +6492,7 @@ TEBCresume(
     case INST_DICT_VERIFY:
 	dictPtr = OBJ_AT_TOS;
 	TRACE(("\"%.30s\" => ", O2S(dictPtr)));
-	if (Tcl_DictObjSize(interp, dictPtr, &done) != TCL_OK) {
+	if (TclDictObjSize_(interp, dictPtr, &done) != TCL_OK) {
 	    TRACE_APPEND(("ERROR verifying dictionary nature of \"%.30s\": %s\n",
 		    O2S(dictPtr), O2S(Tcl_GetObjResult(interp))));
 	    goto gotError;
@@ -6996,7 +6996,7 @@ TEBCresume(
 	    TRACE_APPEND(("storage was unset\n"));
 	    NEXT_INST_F(9, 1, 0);
 	}
-	if (Tcl_DictObjSize(interp, dictPtr, &length) != TCL_OK
+	if (TclDictObjSize_(interp, dictPtr, &length) != TCL_OK
 		|| TclListObjGetElements_(interp, OBJ_AT_TOS, &length,
 			&keyPtrPtr) != TCL_OK) {
 	    TRACE_ERROR(interp);

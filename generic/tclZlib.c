@@ -2492,7 +2492,7 @@ ZlibPushSubcmd(
 	switch ((enum pushOptionsEnum) option) {
 	case poHeader:
 	    headerObj = objv[i];
-	    if (Tcl_DictObjSize(interp, headerObj, &dummy) != TCL_OK) {
+	    if (TclDictObjSize_(interp, headerObj, &dummy) != TCL_OK) {
 		goto genericOptionError;
 	    }
 	    break;

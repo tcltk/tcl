@@ -466,14 +466,14 @@ int
 TclCheckEmptyString(
     Tcl_Obj *objPtr)
 {
-    int length = -1;
+    size_t length = TCL_INDEX_NONE;
 
     if (objPtr->bytes == &tclEmptyString) {
 	return TCL_EMPTYSTRING_YES;
     }
 
     if (TclListObjIsCanonical(objPtr)) {
-	TclListObjLength_(NULL, objPtr, &length);
+	Tcl_ListObjLength(NULL, objPtr, &length);
 	return length == 0;
     }
 

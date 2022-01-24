@@ -272,7 +272,7 @@ QueryConfigObjCmd(
 	    return TCL_ERROR;
 	}
 
-	Tcl_DictObjSize(interp, pkgDict, &m);
+	TclDictObjSize_(interp, pkgDict, &m);
 	listPtr = Tcl_NewListObj(m, NULL);
 
 	if (!listPtr) {

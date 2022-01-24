@@ -1633,7 +1633,7 @@ StringIsCmd(
     case STR_IS_DICT: {
 	int dresult, dsize;
 
-	dresult = Tcl_DictObjSize(interp, objPtr, &dsize);
+	dresult = TclDictObjSize_(interp, objPtr, &dsize);
 	Tcl_ResetResult(interp);
 	result = (dresult == TCL_OK) ? 1 : 0;
 	if (dresult != TCL_OK && failVarObj != NULL) {
@@ -2002,7 +2002,7 @@ StringMapCmd(
 	 * sure. This shortens this code quite a bit.
 	 */
 
-	Tcl_DictObjSize(interp, objv[objc-2], &i);
+	TclDictObjSize_(interp, objv[objc-2], &i);
 	if (i == 0) {
 	    /*
 	     * Empty charMap, just return whatever string was given.

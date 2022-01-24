@@ -944,7 +944,7 @@ Tcl_SetEnsembleMappingDict(
 	Tcl_DictSearch search;
 	Tcl_Obj *valuePtr;
 
-	if (Tcl_DictObjSize(interp, mapDict, &size) != TCL_OK) {
+	if (TclDictObjSize_(interp, mapDict, &size) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 

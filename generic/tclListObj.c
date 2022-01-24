@@ -1961,7 +1961,8 @@ SetListFromAny(
     if (!TclHasStringRep(objPtr) && TclHasInternalRep(objPtr, &tclDictType)) {
 	Tcl_Obj *keyPtr, *valuePtr;
 	Tcl_DictSearch search;
-	int done, size;
+	int done;
+	size_t size;
 
 	/*
 	 * Create the new list representation. Note that we do not need to do

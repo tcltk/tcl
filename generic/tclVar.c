@@ -3974,7 +3974,7 @@ ArraySetCmd(
 	Tcl_DictSearch search;
 	int done;
 
-	if (Tcl_DictObjSize(interp, arrayElemObj, &done) != TCL_OK) {
+	if (TclDictObjSize_(interp, arrayElemObj, &done) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (done == 0) {

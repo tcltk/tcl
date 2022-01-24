@@ -1841,7 +1841,7 @@ declare 496 {
 	    Tcl_Obj *keyPtr)
 }
 declare 497 {
-    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, int *sizePtr)
+    int TclDictObjSize_(Tcl_Interp *interp, Tcl_Obj *dictPtr, int *sizePtr)
 }
 declare 498 {
     int Tcl_DictObjFirst(Tcl_Interp *interp, Tcl_Obj *dictPtr,
@@ -2505,7 +2505,7 @@ declare 660 {
     int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
 }
 
-# TIP #???
+# TIP #616
 declare 661 {
     int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    size_t *objcPtr, Tcl_Obj ***objvPtr)
@@ -2513,6 +2513,9 @@ declare 661 {
 declare 662 {
     int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    size_t *lengthPtr)
+}
+declare 663 {
+    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, size_t *sizePtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

@@ -1065,7 +1065,7 @@ int
 Tcl_DictObjSize(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    int *sizePtr)
+    size_t *sizePtr)
 {
     Dict *dict;
 
@@ -2021,7 +2021,8 @@ DictSizeCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int result, size;
+    int result;
+	size_t size;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
@@ -3268,7 +3269,8 @@ DictUpdateCmd(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *dictPtr, *objPtr;
-    int i, dummy;
+    int i;
+    size_t dummy;
 
     if (objc < 5 || !(objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -3321,7 +3323,7 @@ FinalizeDictUpdate(
 {
     Tcl_Obj *dictPtr, *objPtr, **objv;
     Tcl_InterpState state;
-    int i, objc;
+    size_t i, objc;
     Tcl_Obj *varName = (Tcl_Obj *)data[0];
     Tcl_Obj *argsObj = (Tcl_Obj *)data[1];
 
@@ -3365,7 +3367,7 @@ FinalizeDictUpdate(
      * an instruction to remove the key.
      */
 
-    TclListObjGetElements_(NULL, argsObj, &objc, &objv);
+    Tcl_ListObjGetElements(NULL, argsObj, &objc, &objv);
     for (i=0 ; i<objc ; i+=2) {
 	objPtr = Tcl_ObjGetVar2(interp, objv[i+1], NULL, 0);
 	if (objPtr == NULL) {
@@ -3635,7 +3637,7 @@ TclDictWithFinish(
 				 * the result value from TclDictWithInit. */
 {
     Tcl_Obj *dictPtr, *leafPtr, *valPtr;
-    int i, allocdict, keyc;
+    size_t i, allocdict, keyc;
     Tcl_Obj **keyv;
 
     /*
@@ -3695,7 +3697,7 @@ TclDictWithFinish(
      * Now process our updates on the leaf dictionary.
      */
 
-    TclListObjGetElements_(NULL, keysPtr, &keyc, &keyv);
+    Tcl_ListObjGetElements(NULL, keysPtr, &keyc, &keyv);
     for (i=0 ; i<keyc ; i++) {
 	valPtr = Tcl_ObjGetVar2(interp, keyv[i], NULL, 0);
 	if (valPtr == NULL) {

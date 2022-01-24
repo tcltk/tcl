@@ -1293,7 +1293,7 @@ EXTERN int		Tcl_DictObjGet(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 EXTERN int		Tcl_DictObjRemove(Tcl_Interp *interp,
 				Tcl_Obj *dictPtr, Tcl_Obj *keyPtr);
 /* 497 */
-EXTERN int		Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+EXTERN int		TclDictObjSize_(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 				int *sizePtr);
 /* 498 */
 EXTERN int		Tcl_DictObjFirst(Tcl_Interp *interp,
@@ -1764,6 +1764,9 @@ EXTERN int		Tcl_ListObjGetElements(Tcl_Interp *interp,
 /* 662 */
 EXTERN int		Tcl_ListObjLength(Tcl_Interp *interp,
 				Tcl_Obj *listPtr, size_t *lengthPtr);
+/* 663 */
+EXTERN int		Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+				size_t *sizePtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2272,7 +2275,7 @@ typedef struct TclStubs {
     int (*tcl_DictObjPut) (Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Obj *keyPtr, Tcl_Obj *valuePtr); /* 494 */
     int (*tcl_DictObjGet) (Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Obj *keyPtr, Tcl_Obj **valuePtrPtr); /* 495 */
     int (*tcl_DictObjRemove) (Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Obj *keyPtr); /* 496 */
-    int (*tcl_DictObjSize) (Tcl_Interp *interp, Tcl_Obj *dictPtr, int *sizePtr); /* 497 */
+    int (*tclDictObjSize_) (Tcl_Interp *interp, Tcl_Obj *dictPtr, int *sizePtr); /* 497 */
     int (*tcl_DictObjFirst) (Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_DictSearch *searchPtr, Tcl_Obj **keyPtrPtr, Tcl_Obj **valuePtrPtr, int *donePtr); /* 498 */
     void (*tcl_DictObjNext) (Tcl_DictSearch *searchPtr, Tcl_Obj **keyPtrPtr, Tcl_Obj **valuePtrPtr, int *donePtr); /* 499 */
     void (*tcl_DictObjDone) (Tcl_DictSearch *searchPtr); /* 500 */
@@ -2438,6 +2441,7 @@ typedef struct TclStubs {
     int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
     int (*tcl_ListObjGetElements) (Tcl_Interp *interp, Tcl_Obj *listPtr, size_t *objcPtr, Tcl_Obj ***objvPtr); /* 661 */
     int (*tcl_ListObjLength) (Tcl_Interp *interp, Tcl_Obj *listPtr, size_t *lengthPtr); /* 662 */
+    int (*tcl_DictObjSize) (Tcl_Interp *interp, Tcl_Obj *dictPtr, size_t *sizePtr); /* 663 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3383,8 +3387,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DictObjGet) /* 495 */
 #define Tcl_DictObjRemove \
 	(tclStubsPtr->tcl_DictObjRemove) /* 496 */
-#define Tcl_DictObjSize \
-	(tclStubsPtr->tcl_DictObjSize) /* 497 */
+#define TclDictObjSize_ \
+	(tclStubsPtr->tclDictObjSize_) /* 497 */
 #define Tcl_DictObjFirst \
 	(tclStubsPtr->tcl_DictObjFirst) /* 498 */
 #define Tcl_DictObjNext \
@@ -3712,6 +3716,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ListObjGetElements) /* 661 */
 #define Tcl_ListObjLength \
 	(tclStubsPtr->tcl_ListObjLength) /* 662 */
+#define Tcl_DictObjSize \
+	(tclStubsPtr->tcl_DictObjSize) /* 663 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3917,6 +3923,10 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_ListObjLength(interp, listPtr, lengthPtr) (sizeof(*lengthPtr) != sizeof(int) \
 		? tclStubsPtr->tcl_ListObjLength((interp), (listPtr), (int *)(void *)(lengthPtr)) \
 		: tclStubsPtr->tclListObjLength_((interp), (listPtr), (size_t *)(void *)(lengthPtr)))
+#   undef Tcl_DictObjSize
+#   define Tcl_DictObjSize(interp, dictPtr, sizePtr) (sizeof(*sizePtr) != sizeof(int) \
+		? tclStubsPtr->tcl_DictObjSize((interp), (dictPtr), (int *)(void *)(sizePtr)) \
+		: tclStubsPtr->tclDictObjSize_((interp), (dictPtr), (size_t *)(void *)(sizePtr)))
 #endif /* TCL_NO_DEPRECATED */
 #else
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
