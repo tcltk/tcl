@@ -658,11 +658,11 @@ EXTERN const char *	Tcl_SignalMsg(int sig);
 /* 241 */
 EXTERN void		Tcl_SourceRCFile(Tcl_Interp *interp);
 /* 242 */
-EXTERN int		Tcl_SplitList(Tcl_Interp *interp,
-				const char *listStr, size_t *argcPtr,
+EXTERN int		TclSplitList_(Tcl_Interp *interp,
+				const char *listStr, int *argcPtr,
 				const char ***argvPtr);
 /* 243 */
-EXTERN void		Tcl_SplitPath(const char *path, size_t *argcPtr,
+EXTERN void		TclSplitPath_(const char *path, int *argcPtr,
 				const char ***argvPtr);
 /* Slot 244 is reserved */
 /* Slot 245 is reserved */
@@ -1198,7 +1198,7 @@ EXTERN int		Tcl_FSConvertToPathType(Tcl_Interp *interp,
 /* 460 */
 EXTERN Tcl_Obj *	Tcl_FSJoinPath(Tcl_Obj *listObj, size_t elements);
 /* 461 */
-EXTERN Tcl_Obj *	Tcl_FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr);
+EXTERN Tcl_Obj *	TclFSSplitPath_(Tcl_Obj *pathPtr, int *lenPtr);
 /* 462 */
 EXTERN int		Tcl_FSEqualPaths(Tcl_Obj *firstPtr,
 				Tcl_Obj *secondPtr);
@@ -1767,6 +1767,15 @@ EXTERN int		Tcl_ListObjLength(Tcl_Interp *interp,
 /* 663 */
 EXTERN int		Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 				size_t *sizePtr);
+/* 664 */
+EXTERN int		Tcl_SplitList(Tcl_Interp *interp,
+				const char *listStr, size_t *argcPtr,
+				const char ***argvPtr);
+/* 665 */
+EXTERN void		Tcl_SplitPath(const char *path, size_t *argcPtr,
+				const char ***argvPtr);
+/* 666 */
+EXTERN Tcl_Obj *	Tcl_FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2020,8 +2029,8 @@ typedef struct TclStubs {
     const char * (*tcl_SignalId) (int sig); /* 239 */
     const char * (*tcl_SignalMsg) (int sig); /* 240 */
     void (*tcl_SourceRCFile) (Tcl_Interp *interp); /* 241 */
-    int (*tcl_SplitList) (Tcl_Interp *interp, const char *listStr, size_t *argcPtr, const char ***argvPtr); /* 242 */
-    void (*tcl_SplitPath) (const char *path, size_t *argcPtr, const char ***argvPtr); /* 243 */
+    int (*tclSplitList_) (Tcl_Interp *interp, const char *listStr, int *argcPtr, const char ***argvPtr); /* 242 */
+    void (*tclSplitPath_) (const char *path, int *argcPtr, const char ***argvPtr); /* 243 */
     void (*reserved244)(void);
     void (*reserved245)(void);
     void (*reserved246)(void);
@@ -2239,7 +2248,7 @@ typedef struct TclStubs {
     int (*tcl_FSChdir) (Tcl_Obj *pathPtr); /* 458 */
     int (*tcl_FSConvertToPathType) (Tcl_Interp *interp, Tcl_Obj *pathPtr); /* 459 */
     Tcl_Obj * (*tcl_FSJoinPath) (Tcl_Obj *listObj, size_t elements); /* 460 */
-    Tcl_Obj * (*tcl_FSSplitPath) (Tcl_Obj *pathPtr, size_t *lenPtr); /* 461 */
+    Tcl_Obj * (*tclFSSplitPath_) (Tcl_Obj *pathPtr, int *lenPtr); /* 461 */
     int (*tcl_FSEqualPaths) (Tcl_Obj *firstPtr, Tcl_Obj *secondPtr); /* 462 */
     Tcl_Obj * (*tcl_FSGetNormalizedPath) (Tcl_Interp *interp, Tcl_Obj *pathPtr); /* 463 */
     Tcl_Obj * (*tcl_FSJoinToPath) (Tcl_Obj *pathPtr, size_t objc, Tcl_Obj *const objv[]); /* 464 */
@@ -2442,6 +2451,9 @@ typedef struct TclStubs {
     int (*tcl_ListObjGetElements) (Tcl_Interp *interp, Tcl_Obj *listPtr, size_t *objcPtr, Tcl_Obj ***objvPtr); /* 661 */
     int (*tcl_ListObjLength) (Tcl_Interp *interp, Tcl_Obj *listPtr, size_t *lengthPtr); /* 662 */
     int (*tcl_DictObjSize) (Tcl_Interp *interp, Tcl_Obj *dictPtr, size_t *sizePtr); /* 663 */
+    int (*tcl_SplitList) (Tcl_Interp *interp, const char *listStr, size_t *argcPtr, const char ***argvPtr); /* 664 */
+    void (*tcl_SplitPath) (const char *path, size_t *argcPtr, const char ***argvPtr); /* 665 */
+    Tcl_Obj * (*tcl_FSSplitPath) (Tcl_Obj *pathPtr, size_t *lenPtr); /* 666 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -2912,10 +2924,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_SignalMsg) /* 240 */
 #define Tcl_SourceRCFile \
 	(tclStubsPtr->tcl_SourceRCFile) /* 241 */
-#define Tcl_SplitList \
-	(tclStubsPtr->tcl_SplitList) /* 242 */
-#define Tcl_SplitPath \
-	(tclStubsPtr->tcl_SplitPath) /* 243 */
+#define TclSplitList_ \
+	(tclStubsPtr->tclSplitList_) /* 242 */
+#define TclSplitPath_ \
+	(tclStubsPtr->tclSplitPath_) /* 243 */
 /* Slot 244 is reserved */
 /* Slot 245 is reserved */
 /* Slot 246 is reserved */
@@ -3315,8 +3327,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FSConvertToPathType) /* 459 */
 #define Tcl_FSJoinPath \
 	(tclStubsPtr->tcl_FSJoinPath) /* 460 */
-#define Tcl_FSSplitPath \
-	(tclStubsPtr->tcl_FSSplitPath) /* 461 */
+#define TclFSSplitPath_ \
+	(tclStubsPtr->tclFSSplitPath_) /* 461 */
 #define Tcl_FSEqualPaths \
 	(tclStubsPtr->tcl_FSEqualPaths) /* 462 */
 #define Tcl_FSGetNormalizedPath \
@@ -3718,6 +3730,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ListObjLength) /* 662 */
 #define Tcl_DictObjSize \
 	(tclStubsPtr->tcl_DictObjSize) /* 663 */
+#define Tcl_SplitList \
+	(tclStubsPtr->tcl_SplitList) /* 664 */
+#define Tcl_SplitPath \
+	(tclStubsPtr->tcl_SplitPath) /* 665 */
+#define Tcl_FSSplitPath \
+	(tclStubsPtr->tcl_FSSplitPath) /* 666 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3927,6 +3945,18 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_DictObjSize(interp, dictPtr, sizePtr) (sizeof(*sizePtr) != sizeof(int) \
 		? tclStubsPtr->tcl_DictObjSize((interp), (dictPtr), (int *)(void *)(sizePtr)) \
 		: tclStubsPtr->tclDictObjSize_((interp), (dictPtr), (size_t *)(void *)(sizePtr)))
+#   undef Tcl_SplitList
+#   define Tcl_SplitList(interp, listStr, argcPtr, argvPtr) (sizeof(*argcPtr) != sizeof(int) \
+		? tclStubsPtr->tcl_SplitList((interp), (listStr), (int *)(void *)(argcPtr), (argvPtr)) \
+		: tclStubsPtr->tclSplitList_((interp), (listStr), (size_t *)(void *)(argcPtr), (argvPtr)))
+#   undef Tcl_SplitPath
+#   define Tcl_SplitPath(path, argcPtr, argvPtr) (sizeof(*argcPtr) != sizeof(int) \
+		? tclStubsPtr->tcl_SplitPath((path), (int *)(void *)(argcPtr), (argvPtr)) \
+		: tclStubsPtr->tclSplitPath_((path), (size_t *)(void *)(argcPtr), (argvPtr)))
+#   undef Tcl_FSSplitPath
+#   define Tcl_FSSplitPath(pathPtr, lenPtr) (sizeof(*lenPtr) != sizeof(int) \
+		? tclStubsPtr->tcl_FSSplitPath((pathPtr), (int *)(void *)(lenPtr)) \
+		: tclStubsPtr->tclFSSplitPath_((pathPtr), (size_t *)(void *)(lenPtr)))
 #endif /* TCL_NO_DEPRECATED */
 #else
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \

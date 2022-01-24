@@ -89,6 +89,9 @@ static void uniCodePanic() {
 #define LOGetElements TclListObjGetElements_
 #define LOLength TclListObjLength_
 #define TclDictObjSize_ DOSize
+#define TclSplitList_ SplitList
+#define TclSplitPath_ SplitPath
+#define TclFSSplitPath_ FSSplitPath
 int LOGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     int *objcPtr, Tcl_Obj ***objvPtr) {
     size_t n;
@@ -113,6 +116,30 @@ static int DOSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
     int result = Tcl_DictObjSize(interp, dictPtr, &n);
     if (sizePtr) {
 	*sizePtr = n;
+    }
+    return result;
+}
+static int SplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
+	const char ***argvPtr) {
+    size_t n;
+    int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
+    if (argcPtr) {
+	*argcPtr = n;
+    }
+    return result;
+}
+static void SplitPath(const char *path, int *argcPtr, const char ***argvPtr) {
+    size_t n;
+    Tcl_SplitPath(path, &n, argvPtr);
+    if (argcPtr) {
+	*argcPtr = n;
+    }
+}
+static Tcl_Obj *FSSplitPath(Tcl_Obj *pathPtr, int *lenPtr) {
+    size_t n;
+    Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
+    if (lenPtr) {
+	*lenPtr = n;
     }
     return result;
 }
@@ -963,8 +990,8 @@ const TclStubs tclStubs = {
     Tcl_SignalId, /* 239 */
     Tcl_SignalMsg, /* 240 */
     Tcl_SourceRCFile, /* 241 */
-    Tcl_SplitList, /* 242 */
-    Tcl_SplitPath, /* 243 */
+    TclSplitList_, /* 242 */
+    TclSplitPath_, /* 243 */
     0, /* 244 */
     0, /* 245 */
     0, /* 246 */
@@ -1182,7 +1209,7 @@ const TclStubs tclStubs = {
     Tcl_FSChdir, /* 458 */
     Tcl_FSConvertToPathType, /* 459 */
     Tcl_FSJoinPath, /* 460 */
-    Tcl_FSSplitPath, /* 461 */
+    TclFSSplitPath_, /* 461 */
     Tcl_FSEqualPaths, /* 462 */
     Tcl_FSGetNormalizedPath, /* 463 */
     Tcl_FSJoinToPath, /* 464 */
@@ -1385,6 +1412,9 @@ const TclStubs tclStubs = {
     Tcl_ListObjGetElements, /* 661 */
     Tcl_ListObjLength, /* 662 */
     Tcl_DictObjSize, /* 663 */
+    Tcl_SplitList, /* 664 */
+    Tcl_SplitPath, /* 665 */
+    Tcl_FSSplitPath, /* 666 */
 };
 
 /* !END!: Do not edit above this line. */
