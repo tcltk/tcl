@@ -153,9 +153,7 @@ If there are more \fIsubMatchVar\fRs than parenthesized
 subexpressions within \fIexp\fR, or if a particular subexpression
 in \fIexp\fR does not match the string (e.g. because it was in a
 portion of the expression that was not matched), then the corresponding
-\fIsubMatchVar\fR will be set to
-.QW "\fB\-1 \-1\fR"
-if \fB\-indices\fR has been specified or to an empty string otherwise.
+\fIsubMatchVar\fR will be set to an empty string.
 .SH EXAMPLES
 .PP
 Find the first occurrence of a word starting with \fBfoo\fR in a

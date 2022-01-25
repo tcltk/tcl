@@ -64,7 +64,7 @@ namespace eval ::tcl {
 
 proc tcl_wordBreakAfter {str start} {
     variable ::tcl::WordBreakRE
-    set result {-1 -1}
+    set result {}
     regexp -indices -start $start -- $WordBreakRE(after) $str result
     return [lindex $result 1]
 }
@@ -82,7 +82,7 @@ proc tcl_wordBreakAfter {str start} {
 
 proc tcl_wordBreakBefore {str start} {
     variable ::tcl::WordBreakRE
-    set result {-1 -1}
+    set result {}
     regexp -indices -- $WordBreakRE(before) [string range $str 0 $start] result
     return [lindex $result 1]
 }
@@ -101,7 +101,7 @@ proc tcl_wordBreakBefore {str start} {
 
 proc tcl_endOfWord {str start} {
     variable ::tcl::WordBreakRE
-    set result {-1 -1}
+    set result {}
     regexp -indices -start $start -- $WordBreakRE(end) $str result
     return [lindex $result 1]
 }
@@ -119,7 +119,7 @@ proc tcl_endOfWord {str start} {
 
 proc tcl_startOfNextWord {str start} {
     variable ::tcl::WordBreakRE
-    set result {-1 -1}
+    set result {}
     regexp -indices -start $start -- $WordBreakRE(next) $str result
     return [lindex $result 1]
 }
@@ -135,7 +135,7 @@ proc tcl_startOfNextWord {str start} {
 
 proc tcl_startOfPreviousWord {str start} {
     variable ::tcl::WordBreakRE
-    set word {-1 -1}
+    set word {}
     if {$start > 0} {
 	regexp -indices -- $WordBreakRE(previous) [string range $str 0 $start-1] \
 		result word
