@@ -4308,8 +4308,8 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
 		? (int (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToChar16 \
 		: (int (*)(const char *, wchar_t *))Tcl_UtfToUniChar)
-#   undef Tcl_ListObjGetElements
 #ifdef TCL_NO_DEPRECATED
+#   undef Tcl_ListObjGetElements
 #   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*objcPtr) == sizeof(int) \
 		? tclStubsPtr->tcl_ListObjGetElements((interp), (listPtr), (int *)(void *)(objcPtr), (objvPtr)) \
 		: tclStubsPtr->tclListObjGetElements_((interp), (listPtr), (size_t *)(void *)(objcPtr), (objvPtr)))
