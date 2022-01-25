@@ -3699,11 +3699,11 @@ Tcl_GetIntForIndex(
 {
     Tcl_WideInt wide;
 
-    if (GetWideForIndex(interp, objPtr, (size_t)(endValue + 1) - 1, &wide) == TCL_ERROR) {
+    if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
     if (indexPtr != NULL) {
-	if ((wide < 0) && (endValue > TCL_INDEX_END)) {
+	if ((wide < 0) && (endValue >= 0)) {
 	    *indexPtr = -1;
 	} else if (wide > INT_MAX) {
 	    *indexPtr = INT_MAX;
