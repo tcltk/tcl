@@ -2310,11 +2310,11 @@ SetFsPathFromAny(
 		 * beginning with ~ are part of the native filesystem.
 		 */
 
-		int objc;
+		size_t objc;
 		Tcl_Obj **objv;
 		Tcl_Obj *parts = TclpNativeSplitPath(pathPtr, NULL);
 
-		TclListObjGetElements_(NULL, parts, &objc, &objv);
+		Tcl_ListObjGetElements(NULL, parts, &objc, &objv);
 
 		/*
 		 * Skip '~'. It's replaced by its expansion.

@@ -890,10 +890,9 @@ TclCompileConcatCmd(
     if (listObj != NULL) {
 	Tcl_Obj **objs;
 	const char *bytes;
-	int len;
-	size_t slen;
+	size_t len, slen;
 
-	TclListObjGetElements_(NULL, listObj, &len, &objs);
+	Tcl_ListObjGetElements(NULL, listObj, &len, &objs);
 	objPtr = Tcl_ConcatObj(len, objs);
 	Tcl_DecrRefCount(listObj);
 	bytes = Tcl_GetStringFromObj(objPtr, &slen);

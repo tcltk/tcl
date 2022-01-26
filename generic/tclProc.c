@@ -404,10 +404,10 @@ TclCreateProc(
     Interp *iPtr = (Interp *) interp;
 
     Proc *procPtr = NULL;
-    int i, result, numArgs;
+    size_t i, numArgs;
     CompiledLocal *localPtr = NULL;
     Tcl_Obj **argArray;
-    int precompiled = 0;
+    int precompiled = 0, result;
 
     ProcGetIntRep(bodyPtr, procPtr);
     if (procPtr != NULL) {
@@ -484,15 +484,15 @@ TclCreateProc(
      * in the Proc.
      */
 
-    result = TclListObjGetElements_(interp , argsPtr ,&numArgs ,&argArray);
+    result = Tcl_ListObjGetElements(interp , argsPtr ,&numArgs ,&argArray);
     if (result != TCL_OK) {
 	goto procError;
     }
 
     if (precompiled) {
-	if (numArgs > procPtr->numArgs) {
+	if (numArgs > (size_t)procPtr->numArgs) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "procedure \"%s\": arg list contains %d entries, "
+		    "procedure \"%s\": arg list contains %" TCL_Z_MODIFIER "d entries, "
 		    "precompiled header expects %d", procName, numArgs,
 		    procPtr->numArgs));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
@@ -507,15 +507,14 @@ TclCreateProc(
 
     for (i = 0; i < numArgs; i++) {
 	const char *argname, *argnamei, *argnamelast;
-	int fieldCount;
-	size_t nameLength;
+	size_t fieldCount, nameLength;
 	Tcl_Obj **fieldValues;
 
 	/*
 	 * Now divide the specifier up into name and default.
 	 */
 
-	result = TclListObjGetElements_(interp, argArray[i], &fieldCount,
+	result = Tcl_ListObjGetElements(interp, argArray[i], &fieldCount,
 		&fieldValues);
 	if (result != TCL_OK) {
 	    goto procError;
@@ -583,12 +582,12 @@ TclCreateProc(
 
 	    if ((localPtr->nameLength != nameLength)
 		    || (memcmp(localPtr->name, argname, nameLength) != 0)
-		    || (localPtr->frameIndex != i)
+		    || ((size_t)localPtr->frameIndex != i)
 		    || !(localPtr->flags & VAR_ARGUMENT)
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
 		    || (localPtr->defValuePtr != NULL && fieldCount != 2)) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"procedure \"%s\": formal parameter %d is "
+			"procedure \"%s\": formal parameter %" TCL_Z_MODIFIER "d is "
 			"inconsistent with precompiled body", procName, i));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			"BYTECODELIES", NULL);
@@ -2383,7 +2382,8 @@ SetLambdaFromAny(
     Interp *iPtr = (Interp *) interp;
     const char *name;
     Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv;
-    int isNew, objc, result;
+    int isNew, result;
+    size_t objc;
     CmdFrame *cfPtr = NULL;
     Proc *procPtr;
 
@@ -2396,7 +2396,7 @@ SetLambdaFromAny(
      * length is not 2, then it cannot be converted to lambdaType.
      */
 
-    result = TclListObjGetElements_(NULL, objPtr, &objc, &objv);
+    result = Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",

@@ -463,10 +463,9 @@ ProcessStatusObjCmd(
     Tcl_HashEntry *entry;
     Tcl_HashSearch search;
     ProcessInfo *info;
-    int numPids;
+    size_t i, numPids;
     Tcl_Obj **pidObjs;
     int result;
-    int i;
     int pid;
     Tcl_Obj *const *savedobjv = objv;
     static const char *const switches[] = {
@@ -533,7 +532,7 @@ ProcessStatusObjCmd(
 	 * Only return statuses of provided processes.
 	 */
 
-	result = TclListObjGetElements_(interp, objv[1], &numPids, &pidObjs);
+	result = Tcl_ListObjGetElements(interp, objv[1], &numPids, &pidObjs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -609,11 +608,9 @@ ProcessPurgeObjCmd(
     Tcl_HashEntry *entry;
     Tcl_HashSearch search;
     ProcessInfo *info;
-    int numPids;
+    size_t i, numPids;
     Tcl_Obj **pidObjs;
-    int result;
-    int i;
-    int pid;
+    int result, pid;
 
     if (objc != 1 && objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pids?");
@@ -648,7 +645,7 @@ ProcessPurgeObjCmd(
 	 * Purge only provided processes.
 	 */
 
-	result = TclListObjGetElements_(interp, objv[1], &numPids, &pidObjs);
+	result = Tcl_ListObjGetElements(interp, objv[1], &numPids, &pidObjs);
 	if (result != TCL_OK) {
 	    return result;
 	}

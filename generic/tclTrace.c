@@ -419,8 +419,8 @@ TraceExecutionObjCmd(
     switch ((enum traceOptions) optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
-	int flags = 0;
-	int i, listLen, result;
+	int flags = 0, result;
+	size_t i, listLen;
 	Tcl_Obj **elemPtrs;
 
 	if (objc != 6) {
@@ -433,7 +433,7 @@ TraceExecutionObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjGetElements_(interp, objv[4], &listLen, &elemPtrs);
+	result = Tcl_ListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -660,8 +660,8 @@ TraceCommandObjCmd(
     switch ((enum traceOptions) optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
-	int flags = 0;
-	int i, listLen, result;
+	int flags = 0, result;
+	size_t i, listLen;
 	Tcl_Obj **elemPtrs;
 
 	if (objc != 6) {
@@ -674,7 +674,7 @@ TraceCommandObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjGetElements_(interp, objv[4], &listLen, &elemPtrs);
+	result = Tcl_ListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -859,8 +859,8 @@ TraceVariableObjCmd(
     switch ((enum traceOptions) optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
-	int flags = 0;
-	int i, listLen, result;
+	int flags = 0, result;
+	size_t i, listLen;
 	Tcl_Obj **elemPtrs;
 
 	if (objc != 6) {
@@ -873,7 +873,7 @@ TraceVariableObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjGetElements_(interp, objv[4], &listLen, &elemPtrs);
+	result = Tcl_ListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}

@@ -1079,7 +1079,8 @@ TclNRPackageObjCmd(
 	PKG_VERSIONS, PKG_VSATISFIES
     };
     Interp *iPtr = (Interp *) interp;
-    int optionIndex, exact, i, newobjc, satisfies;
+    int optionIndex, exact, satisfies;
+    size_t i, newobjc;
     PkgAvail *availPtr, *prevPtr;
     Package *pkgPtr;
     Tcl_HashEntry *hPtr;
@@ -1123,7 +1124,7 @@ TclNRPackageObjCmd(
 	PkgFiles *pkgFiles = (PkgFiles *)
 		Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
 
-	for (i = 2; i < objc; i++) {
+	for (i = 2; i < (size_t)objc; i++) {
 	    keyString = TclGetString(objv[i]);
 	    if (pkgFiles) {
 		hPtr = Tcl_FindHashEntry(&pkgFiles->table, keyString);
@@ -1361,7 +1362,7 @@ TclNRPackageObjCmd(
 	    objvListPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_IncrRefCount(objvListPtr);
 	    Tcl_ListObjAppendElement(interp, objvListPtr, ov);
-	    TclListObjGetElements_(interp, objvListPtr, &newobjc, &newObjvPtr);
+	    Tcl_ListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
 
 	    Tcl_NRAddCallback(interp,
 		    TclNRPackageObjCmdCleanup, objv[3], objvListPtr, NULL,NULL);
@@ -1388,7 +1389,7 @@ TclNRPackageObjCmd(
 		Tcl_ListObjAppendElement(interp, objvListPtr,
 			Tcl_DuplicateObj(newobjv[i]));
 	    }
-	    TclListObjGetElements_(interp, objvListPtr, &newobjc, &newObjvPtr);
+	    Tcl_ListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
 	    Tcl_NRAddCallback(interp,
 		    TclNRPackageObjCmdCleanup, objv[2], objvListPtr, NULL,NULL);
 	    Tcl_NRAddCallback(interp,

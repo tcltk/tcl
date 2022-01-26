@@ -1006,14 +1006,14 @@ BinaryFormatCmd(
 		arg++;
 		count = 1;
 	    } else {
-		int listc;
+		size_t listc;
 		Tcl_Obj **listv;
 
 		/*
 		 * The macro evals its args more than once: avoid arg++
 		 */
 
-		if (TclListObjGetElements_(interp, objv[arg], &listc,
+		if (Tcl_ListObjGetElements(interp, objv[arg], &listc,
 			&listv) != TCL_OK) {
 		    return TCL_ERROR;
 		}
@@ -1021,7 +1021,7 @@ BinaryFormatCmd(
 
 		if (count == BINARY_ALL) {
 		    count = listc;
-		} else if (count > (size_t)listc) {
+		} else if (count > listc) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "number of elements in list does not match count",
 			    -1));
@@ -1284,7 +1284,7 @@ BinaryFormatCmd(
 	case 'q':
 	case 'Q':
 	case 'f': {
-	    int listc, i;
+	    size_t listc, i;
 	    Tcl_Obj **listv;
 
 	    if (count == BINARY_NOCOUNT) {
@@ -1297,7 +1297,7 @@ BinaryFormatCmd(
 		listc = 1;
 		count = 1;
 	    } else {
-		TclListObjGetElements_(interp, objv[arg], &listc, &listv);
+		Tcl_ListObjGetElements(interp, objv[arg], &listc, &listv);
 		if (count == BINARY_ALL) {
 		    count = listc;
 		}
