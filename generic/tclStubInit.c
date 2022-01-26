@@ -129,10 +129,10 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 #define TclSplitList_ SplitList
 #define TclSplitPath_ SplitPath
 #define TclFSSplitPath_ FSSplitPath
+#define TclParseArgsObjv_ ParseArgsObjv
 static int LOGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     size_t *objcPtr, Tcl_Obj ***objvPtr) {
-    int n;
-    int result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
+    int n, result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
     if (objcPtr) {
 	*objcPtr = n;
     }
@@ -149,8 +149,7 @@ static int LOLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
 }
 static int DOSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 	size_t *sizePtr) {
-    int n;
-    int result = Tcl_DictObjSize(interp, dictPtr, &n);
+    int n, result = Tcl_DictObjSize(interp, dictPtr, &n);
     if (sizePtr) {
 	*sizePtr = n;
     }
@@ -177,6 +176,15 @@ static Tcl_Obj *FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr) {
     Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
     if (lenPtr) {
 	*lenPtr = n;
+    }
+    return result;
+}
+static int ParseArgsObjv(Tcl_Interp *interp,
+	const Tcl_ArgvInfo *argTable, size_t *objcPtr, Tcl_Obj *const *objv,
+	Tcl_Obj ***remObjv) {
+    int n, result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
+    if (objcPtr) {
+	*objcPtr = n;
     }
     return result;
 }
@@ -2008,6 +2016,7 @@ const TclStubs tclStubs = {
     TclSplitList_, /* 664 */
     TclSplitPath_, /* 665 */
     TclFSSplitPath_, /* 666 */
+    TclParseArgsObjv_, /* 667 */
 };
 
 /* !END!: Do not edit above this line. */

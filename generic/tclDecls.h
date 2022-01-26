@@ -1967,6 +1967,11 @@ EXTERN void		TclSplitPath_(const char *path, size_t *argcPtr,
 				const char ***argvPtr);
 /* 666 */
 EXTERN Tcl_Obj *	TclFSSplitPath_(Tcl_Obj *pathPtr, size_t *lenPtr);
+/* 667 */
+EXTERN int		TclParseArgsObjv_(Tcl_Interp *interp,
+				const Tcl_ArgvInfo *argTable,
+				size_t *objcPtr, Tcl_Obj *const *objv,
+				Tcl_Obj ***remObjv);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2669,6 +2674,7 @@ typedef struct TclStubs {
     int (*tclSplitList_) (Tcl_Interp *interp, const char *listStr, size_t *argcPtr, const char ***argvPtr); /* 664 */
     void (*tclSplitPath_) (const char *path, size_t *argcPtr, const char ***argvPtr); /* 665 */
     Tcl_Obj * (*tclFSSplitPath_) (Tcl_Obj *pathPtr, size_t *lenPtr); /* 666 */
+    int (*tclParseArgsObjv_) (Tcl_Interp *interp, const Tcl_ArgvInfo *argTable, size_t *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv); /* 667 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4031,6 +4037,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclSplitPath_) /* 665 */
 #define TclFSSplitPath_ \
 	(tclStubsPtr->tclFSSplitPath_) /* 666 */
+#define TclParseArgsObjv_ \
+	(tclStubsPtr->tclParseArgsObjv_) /* 667 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4333,6 +4341,10 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_FSSplitPath(pathPtr, lenPtr) (sizeof(*lenPtr) == sizeof(int) \
 		? tclStubsPtr->tcl_FSSplitPath((pathPtr), (int *)(void *)(lenPtr)) \
 		: tclStubsPtr->tclFSSplitPath_((pathPtr), (size_t *)(void *)(lenPtr)))
+#   undef Tcl_ParseArgsObjv
+#   define Tcl_ParseArgsObjv(interp, argTable, objcPtr, objv, remObjv) (sizeof(*objcPtr) == sizeof(int) \
+		? tclStubsPtr->tcl_ParseArgsObjv((interp), (argTable), (int *)(void *)(objcPtr), (objv), (remObjv)) \
+		: tclStubsPtr->tclParseArgsObjv_((interp), (argTable), (size_t *)(void *)(objcPtr), (objv), (remObjv)))
 #endif /* TCL_NO_DEPRECATED */
 #else
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \

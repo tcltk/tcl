@@ -2464,6 +2464,10 @@ declare 665 {
 declare 666 {
     Tcl_Obj *TclFSSplitPath_(Tcl_Obj *pathPtr, size_t *lenPtr)
 }
+declare 667 {
+    int TclParseArgsObjv_(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
+	    size_t *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
