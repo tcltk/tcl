@@ -84,7 +84,7 @@ declare 17 {
     Tcl_Object Tcl_ObjectContextObject(Tcl_ObjectContext context)
 }
 declare 18 {
-    int Tcl_ObjectContextSkippedArgs(Tcl_ObjectContext context)
+    size_t Tcl_ObjectContextSkippedArgs(Tcl_ObjectContext context)
 }
 declare 19 {
     void *Tcl_ClassGetMetadata(Tcl_Class clazz,

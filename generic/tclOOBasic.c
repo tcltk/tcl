@@ -85,11 +85,11 @@ TclOO_Class_Constructor(
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     Tcl_Obj **invoke, *nameObj;
 
-    if (objc-1 > Tcl_ObjectContextSkippedArgs(context)) {
+    if (objc-1 > (int)Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"?definitionScript?");
 	return TCL_ERROR;
-    } else if (objc == Tcl_ObjectContextSkippedArgs(context)) {
+    } else if (objc == (int)Tcl_ObjectContextSkippedArgs(context)) {
 	return TCL_OK;
     }
 
@@ -366,7 +366,7 @@ TclOO_Object_Destroy(
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
     CallContext *contextPtr;
 
-    if (objc != Tcl_ObjectContextSkippedArgs(context)) {
+    if (objc != (int)Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -738,7 +738,7 @@ TclOO_Object_VarName(
     CallFrame *framePtr = ((Interp *) interp)->varFramePtr;
     const char *arg;
 
-    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"varName");
 	return TCL_ERROR;

@@ -1737,14 +1737,14 @@ TclListObjSetElement(
 				 * if not NULL. */
     Tcl_Obj *listPtr,		/* List object in which element should be
 				 * stored. */
-    int index,			/* Index of element to store. */
+    size_t index,			/* Index of element to store. */
     Tcl_Obj *valuePtr)		/* Tcl object to store in the designated list
 				 * element. */
 {
     List *listRepPtr;		/* Internal representation of the list being
 				 * modified. */
     Tcl_Obj **elemPtrs;		/* Pointers to elements of the list. */
-    int elemCount;		/* Number of elements in the list. */
+    size_t elemCount;		/* Number of elements in the list. */
 
     /*
      * Ensure that the listPtr parameter designates an unshared list.
@@ -1763,7 +1763,7 @@ TclListObjSetElement(
 	if (length == 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%d\" out of range", index));
+			"index \"%" TCL_Z_MODIFIER "d\" out of range", index));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX",
 			"OUTOFRANGE", NULL);
 	    }
@@ -1782,10 +1782,10 @@ TclListObjSetElement(
      * Ensure that the index is in bounds.
      */
 
-    if (index<0 || index>=elemCount) {
+    if (index>=elemCount) {
 	if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%d\" out of range", index));
+			"index \"%" TCL_Z_MODIFIER "d\" out of range", index));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX",
 		    "OUTOFRANGE", NULL);
 	}
@@ -1994,7 +1994,7 @@ SetListFromAny(
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
     } else {
-	int estCount;
+	size_t estCount;
 	size_t length;
 	const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
 
@@ -2093,7 +2093,7 @@ UpdateStringOfList(
 {
 #   define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    int numElems, i;
+    size_t numElems, i;
     size_t length, bytesNeeded = 0;
     const char *elem, *start;
     char *dst;

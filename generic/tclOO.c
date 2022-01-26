@@ -3088,7 +3088,7 @@ Tcl_ObjectContextObject(
     return (Tcl_Object) ((CallContext *)context)->oPtr;
 }
 
-int
+size_t
 Tcl_ObjectContextSkippedArgs(
     Tcl_ObjectContext context)
 {

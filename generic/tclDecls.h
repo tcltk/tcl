@@ -714,7 +714,7 @@ EXTERN void *		Tcl_VarTraceInfo2(Tcl_Interp *interp,
 EXTERN size_t		Tcl_Write(Tcl_Channel chan, const char *s,
 				size_t slen);
 /* 264 */
-EXTERN void		Tcl_WrongNumArgs(Tcl_Interp *interp, int objc,
+EXTERN void		Tcl_WrongNumArgs(Tcl_Interp *interp, size_t objc,
 				Tcl_Obj *const objv[], const char *message);
 /* 265 */
 EXTERN int		Tcl_DumpActiveMemory(const char *fileName);
@@ -2056,7 +2056,7 @@ typedef struct TclStubs {
     void (*reserved261)(void);
     void * (*tcl_VarTraceInfo2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *procPtr, void *prevClientData); /* 262 */
     size_t (*tcl_Write) (Tcl_Channel chan, const char *s, size_t slen); /* 263 */
-    void (*tcl_WrongNumArgs) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], const char *message); /* 264 */
+    void (*tcl_WrongNumArgs) (Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[], const char *message); /* 264 */
     int (*tcl_DumpActiveMemory) (const char *fileName); /* 265 */
     void (*tcl_ValidateAllMemory) (const char *file, int line); /* 266 */
     void (*reserved267)(void);

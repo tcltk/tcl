@@ -339,7 +339,7 @@ declare 165 {
 # New function due to TIP #33
 declare 166 {
     int TclListObjSetElement(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    int index, Tcl_Obj *valuePtr)
+	    size_t index, Tcl_Obj *valuePtr)
 }
 
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
@@ -497,7 +497,7 @@ declare 238 {
 }
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
-			    int skip, ProcErrorProc *errorProc)
+			    size_t skip, ProcErrorProc *errorProc)
 }
 declare 240 {
     int TclNRRunCallbacks(Tcl_Interp *interp, int result,

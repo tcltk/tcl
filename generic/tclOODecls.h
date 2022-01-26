@@ -81,7 +81,7 @@ TCLAPI Tcl_Method	Tcl_ObjectContextMethod(Tcl_ObjectContext context);
 /* 17 */
 TCLAPI Tcl_Object	Tcl_ObjectContextObject(Tcl_ObjectContext context);
 /* 18 */
-TCLAPI int		Tcl_ObjectContextSkippedArgs(
+TCLAPI size_t		Tcl_ObjectContextSkippedArgs(
 				Tcl_ObjectContext context);
 /* 19 */
 TCLAPI void *		Tcl_ClassGetMetadata(Tcl_Class clazz,
@@ -150,7 +150,7 @@ typedef struct TclOOStubs {
     int (*tcl_ObjectContextIsFiltering) (Tcl_ObjectContext context); /* 15 */
     Tcl_Method (*tcl_ObjectContextMethod) (Tcl_ObjectContext context); /* 16 */
     Tcl_Object (*tcl_ObjectContextObject) (Tcl_ObjectContext context); /* 17 */
-    int (*tcl_ObjectContextSkippedArgs) (Tcl_ObjectContext context); /* 18 */
+    size_t (*tcl_ObjectContextSkippedArgs) (Tcl_ObjectContext context); /* 18 */
     void * (*tcl_ClassGetMetadata) (Tcl_Class clazz, const Tcl_ObjectMetadataType *typePtr); /* 19 */
     void (*tcl_ClassSetMetadata) (Tcl_Class clazz, const Tcl_ObjectMetadataType *typePtr, void *metadata); /* 20 */
     void * (*tcl_ObjectGetMetadata) (Tcl_Object object, const Tcl_ObjectMetadataType *typePtr); /* 21 */
