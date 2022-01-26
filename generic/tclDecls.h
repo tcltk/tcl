@@ -530,7 +530,7 @@ EXTERN int		Tcl_MakeSafe(Tcl_Interp *interp);
 /* 191 */
 EXTERN Tcl_Channel	Tcl_MakeTcpClientChannel(void *tcpSocket);
 /* 192 */
-EXTERN char *		Tcl_Merge(int argc, const char *const *argv);
+EXTERN char *		Tcl_Merge(size_t argc, const char *const *argv);
 /* 193 */
 EXTERN Tcl_HashEntry *	Tcl_NextHashEntry(Tcl_HashSearch *searchPtr);
 /* 194 */
@@ -1979,7 +1979,7 @@ typedef struct TclStubs {
     Tcl_Channel (*tcl_MakeFileChannel) (void *handle, int mode); /* 189 */
     int (*tcl_MakeSafe) (Tcl_Interp *interp); /* 190 */
     Tcl_Channel (*tcl_MakeTcpClientChannel) (void *tcpSocket); /* 191 */
-    char * (*tcl_Merge) (int argc, const char *const *argv); /* 192 */
+    char * (*tcl_Merge) (size_t argc, const char *const *argv); /* 192 */
     Tcl_HashEntry * (*tcl_NextHashEntry) (Tcl_HashSearch *searchPtr); /* 193 */
     void (*tcl_NotifyChannel) (Tcl_Channel channel, int mask); /* 194 */
     Tcl_Obj * (*tcl_ObjGetVar2) (Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 195 */

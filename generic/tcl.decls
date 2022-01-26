@@ -708,7 +708,7 @@ declare 191 {
     Tcl_Channel Tcl_MakeTcpClientChannel(void *tcpSocket)
 }
 declare 192 {
-    char *Tcl_Merge(int argc, const char *const *argv)
+    char *Tcl_Merge(size_t argc, const char *const *argv)
 }
 declare 193 {
     Tcl_HashEntry *Tcl_NextHashEntry(Tcl_HashSearch *searchPtr)

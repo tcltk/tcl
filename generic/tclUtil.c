@@ -1556,13 +1556,12 @@ TclConvertElement(
 
 char *
 Tcl_Merge(
-    int argc,			/* How many strings to merge. */
+    size_t argc,			/* How many strings to merge. */
     const char *const *argv)	/* Array of string values. */
 {
 #define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    int i;
-    size_t bytesNeeded = 0;
+    size_t i, bytesNeeded = 0;
     char *result, *dst;
 
     /*
