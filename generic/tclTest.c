@@ -7714,7 +7714,7 @@ TestparseargsCmd(
     Tcl_Obj *const objv[])	/* Arguments. */
 {
     static int foo = 0;
-    int count = objc;
+    size_t count = objc;
     Tcl_Obj **remObjv, *result[3];
     Tcl_ArgvInfo argTable[] = {
         {TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},
@@ -7726,7 +7726,7 @@ TestparseargsCmd(
         return TCL_ERROR;
     }
     result[0] = Tcl_NewIntObj(foo);
-    result[1] = Tcl_NewIntObj(count);
+    result[1] = Tcl_NewWideIntObj((Tcl_WideUInt)(count + 1) - 1);
     result[2] = Tcl_NewListObj(count, remObjv);
     Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
     Tcl_Free(remObjv);

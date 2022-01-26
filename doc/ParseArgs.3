@@ -142,16 +142,16 @@ there are no following arguments at all, and the \fIdstPtr\fR argument to the
 \fBTCL_ARGV_GENFUNC\fR
 .
 This argument takes zero or more following arguments; the handler callback
-function passed in \fIsrcPtr\fR returns how many (or a negative number to
+function passed in \fIsrcPtr\fR returns how many (or TCL_INDEX_NONE to
 signal an error, in which case it should also set the interpreter result). The
 function will have the following signature:
 .RS
 .PP
 .CS
-typedef int (\fBTcl_ArgvGenFuncProc\fR)(
+typedef size_t (\fBTcl_ArgvGenFuncProc\fR)(
         void *\fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
-        int \fIobjc\fR,
+        size_t \fIobjc\fR,
         Tcl_Obj *const *\fIobjv\fR,
         void *\fIdstPtr\fR);
 .CE

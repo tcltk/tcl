@@ -2269,7 +2269,7 @@ declare 603 {
 
 # TIP#265 (option parser) dkf for Sam Bromley
 declare 604 {
-    int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
+    int TclParseArgsObjv_(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
 	    int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
@@ -2526,6 +2526,10 @@ declare 665 {
 }
 declare 666 {
     Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr)
+}
+declare 667 {
+    int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
+	    size_t *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
