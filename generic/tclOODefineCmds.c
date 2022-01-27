@@ -309,7 +309,7 @@ void
 TclOOClassSetFilters(
     Tcl_Interp *interp,
     Class *classPtr,
-    int numFilters,
+    size_t numFilters,
     Tcl_Obj *const *filters)
 {
     int i;
@@ -343,7 +343,7 @@ TclOOClassSetFilters(
 	} else {
 	    filtersList = (Tcl_Obj **)Tcl_Realloc(classPtr->filters.list, size);
 	}
-	for (i = 0 ; i < numFilters ; i++) {
+	for (i = 0 ; i < (int)numFilters ; i++) {
 	    filtersList[i] = filters[i];
 	    Tcl_IncrRefCount(filters[i]);
 	}
@@ -1032,7 +1032,8 @@ MagicDefinitionInvoke(
 {
     Tcl_Obj *objPtr, *obj2Ptr, **objs;
     Tcl_Command cmd;
-    int isRoot, dummy, result, offset = cmdIndex + 1;
+    int isRoot, result, offset = cmdIndex + 1;
+    size_t dummy;
 
     /*
      * More than one argument: fire them through the ensemble processing
@@ -1065,7 +1066,7 @@ MagicDefinitionInvoke(
     Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
     /* TODO: overflow? */
     Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc - offset, objv + offset);
-    TclListObjGetElements_(NULL, objPtr, &dummy, &objs);
+    Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
 
     result = Tcl_EvalObjv(interp, objc - cmdIndex, objs, TCL_EVAL_INVOKE);
     if (isRoot) {
@@ -2355,7 +2356,7 @@ ClassFilterSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int filterc;
+    size_t filterc;
     Tcl_Obj **filterv;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
@@ -2372,7 +2373,7 @@ ClassFilterSet(
 		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
-    } else if (TclListObjGetElements_(interp, objv[0], &filterc,
+    } else if (Tcl_ListObjGetElements(interp, objv[0], &filterc,
 	    &filterv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2438,7 +2439,7 @@ ClassMixinSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int mixinc, i;
+    size_t mixinc, i;
     Tcl_Obj **mixinv;
     Class **mixins;
 
@@ -2456,7 +2457,7 @@ ClassMixinSet(
 		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
-    } else if (TclListObjGetElements_(interp, objv[0], &mixinc,
+    } else if (Tcl_ListObjGetElements(interp, objv[0], &mixinc,
 	    &mixinv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2543,7 +2544,8 @@ ClassSuperSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int superc, i, j;
+    size_t superc, j;
+    int i;
     Tcl_Obj **superv;
     Class **superclasses, *superPtr;
 
@@ -2566,7 +2568,7 @@ ClassSuperSet(
 		"may not modify the superclass of the root object", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
-    } else if (TclListObjGetElements_(interp, objv[0], &superc,
+    } else if (Tcl_ListObjGetElements(interp, objv[0], &superc,
 	    &superv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2594,13 +2596,13 @@ ClassSuperSet(
 	superc = 1;
 	AddRef(superclasses[0]->thisPtr);
     } else {
-	for (i = 0; i < superc; i++) {
+	for (i = 0; i < (int)superc; i++) {
 	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
 		    "only a class can be a superclass");
 	    if (superclasses[i] == NULL) {
 		goto failedAfterAlloc;
 	    }
-	    for (j = 0; j < i; j++) {
+	    for (j = 0; (int)j < i; j++) {
 		if (superclasses[j] == superclasses[i]) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "class should only be a direct superclass once",
@@ -2718,9 +2720,9 @@ ClassVarsSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int varc;
-    Tcl_Obj **varv;
     int i;
+    size_t varc;
+    Tcl_Obj **varv;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2736,12 +2738,12 @@ ClassVarsSet(
 		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
-    } else if (TclListObjGetElements_(interp, objv[0], &varc,
+    } else if (Tcl_ListObjGetElements(interp, objv[0], &varc,
 	    &varv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    for (i = 0; i < varc; i++) {
+    for (i = 0; i < (int)varc; i++) {
 	const char *varName = TclGetString(varv[i]);
 
 	if (strstr(varName, "::") != NULL) {
@@ -2817,7 +2819,7 @@ ObjFilterSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int filterc;
+    size_t filterc;
     Tcl_Obj **filterv;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
@@ -2828,7 +2830,7 @@ ObjFilterSet(
 	return TCL_ERROR;
     }
     objv += Tcl_ObjectContextSkippedArgs(context);
-    if (TclListObjGetElements_(interp, objv[0], &filterc,
+    if (Tcl_ListObjGetElements(interp, objv[0], &filterc,
 	    &filterv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2889,10 +2891,10 @@ ObjMixinSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int mixinc;
+    int i;
+    size_t mixinc;
     Tcl_Obj **mixinv;
     Class **mixins;
-    int i;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2902,14 +2904,14 @@ ObjMixinSet(
 	return TCL_ERROR;
     }
     objv += Tcl_ObjectContextSkippedArgs(context);
-    if (TclListObjGetElements_(interp, objv[0], &mixinc,
+    if (Tcl_ListObjGetElements(interp, objv[0], &mixinc,
 	    &mixinv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * mixinc);
 
-    for (i = 0; i < mixinc; i++) {
+    for (i = 0; i < (int)mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
@@ -2981,7 +2983,7 @@ ObjVarsSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int varc, i;
+    size_t varc, i;
     Tcl_Obj **varv;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
@@ -2992,7 +2994,7 @@ ObjVarsSet(
 	return TCL_ERROR;
     }
     objv += Tcl_ObjectContextSkippedArgs(context);
-    if (TclListObjGetElements_(interp, objv[0], &varc,
+    if (Tcl_ListObjGetElements(interp, objv[0], &varc,
 	    &varv) != TCL_OK) {
 	return TCL_ERROR;
     }

@@ -1229,7 +1229,8 @@ Tcl_GlobObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int index, i, globFlags, length, join, dir, result;
+    int index, i, globFlags, join, dir, result;
+    size_t length;
     char *string;
     const char *separators;
     Tcl_Obj *typePtr, *look;
@@ -1333,7 +1334,7 @@ Tcl_GlobObjCmd(
 		return TCL_ERROR;
 	    }
 	    typePtr = objv[i+1];
-	    if (TclListObjLength_(interp, typePtr, &length) != TCL_OK) {
+	    if (Tcl_ListObjLength(interp, typePtr, &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -1455,8 +1456,8 @@ Tcl_GlobObjCmd(
 	 * platform.
 	 */
 
-	TclListObjLength_(interp, typePtr, &length);
-	if (length <= 0) {
+	Tcl_ListObjLength(interp, typePtr, &length);
+	if (length == 0) {
 	    goto skipTypes;
 	}
 	globTypes = (Tcl_GlobTypeData *)TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
@@ -1465,7 +1466,7 @@ Tcl_GlobObjCmd(
 	globTypes->macType = NULL;
 	globTypes->macCreator = NULL;
 
-	while (--length >= 0) {
+	while (length-- > 0) {
 	    size_t len;
 	    const char *str;
 
@@ -1524,9 +1525,9 @@ Tcl_GlobObjCmd(
 
 	    } else {
 		Tcl_Obj *item;
-		int llen;
+		size_t llen;
 
-		if ((TclListObjLength_(NULL, look, &llen) == TCL_OK)
+		if ((Tcl_ListObjLength(NULL, look, &llen) == TCL_OK)
 			&& (llen == 3)) {
 		    Tcl_ListObjIndex(interp, look, 0, &item);
 		    if (!strcmp("macintosh", TclGetString(item))) {
@@ -1633,7 +1634,7 @@ Tcl_GlobObjCmd(
     }
 
     if ((globFlags & TCL_GLOBMODE_NO_COMPLAIN) == 0) {
-	if (TclListObjLength_(interp, Tcl_GetObjResult(interp),
+	if (Tcl_ListObjLength(interp, Tcl_GetObjResult(interp),
 		&length) != TCL_OK) {
 	    /*
 	     * This should never happen. Maybe we should be more dramatic.
@@ -1988,7 +1989,7 @@ TclGlob(
      */
 
     if (globFlags & TCL_GLOBMODE_TAILS) {
-	int objc, i;
+	size_t objc, i;
 	Tcl_Obj **objv;
 	size_t prefixLen;
 	const char *pre;
@@ -2016,7 +2017,7 @@ TclGlob(
 	    }
 	}
 
-	TclListObjGetElements_(NULL, filenamesObj, &objc, &objv);
+	Tcl_ListObjGetElements(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
 	    size_t len;
 	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
@@ -2342,16 +2343,16 @@ DoGlob(
 		pattern, &dirOnly);
 	*p = save;
 	if (result == TCL_OK) {
-	    int subdirc, i, repair = -1;
+	    size_t i, subdirc, repair = TCL_INDEX_NONE;
 	    Tcl_Obj **subdirv;
 
-	    result = TclListObjGetElements_(interp, subdirsPtr,
+	    result = Tcl_ListObjGetElements(interp, subdirsPtr,
 		    &subdirc, &subdirv);
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
 
 		if (pathPtr == NULL && TclGetString(subdirv[i])[0] == '~') {
-		    TclListObjLength_(NULL, matchesObj, &repair);
+		    Tcl_ListObjLength(NULL, matchesObj, &repair);
 		    copy = subdirv[i];
 		    subdirv[i] = Tcl_NewStringObj("./", 2);
 		    Tcl_AppendObjToObj(subdirv[i], copy);
@@ -2360,12 +2361,12 @@ DoGlob(
 		result = DoGlob(interp, matchesObj, separators, subdirv[i],
 			1, p+1, types);
 		if (copy) {
-		    int end;
+		    size_t end;
 
 		    Tcl_DecrRefCount(subdirv[i]);
 		    subdirv[i] = copy;
-		    TclListObjLength_(NULL, matchesObj, &end);
-		    while (repair < end) {
+		    Tcl_ListObjLength(NULL, matchesObj, &end);
+		    while (repair + 1 <= end) {
 			const char *bytes;
 			size_t numBytes;
 			Tcl_Obj *fixme, *newObj;
@@ -2377,7 +2378,7 @@ DoGlob(
 				1, &newObj);
 			repair++;
 		    }
-		    repair = -1;
+		    repair = TCL_INDEX_NONE;
 		}
 	    }
 	}

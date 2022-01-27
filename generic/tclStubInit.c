@@ -86,8 +86,8 @@ static void uniCodePanic() {
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
 
-#define LOGetElements TclListObjGetElements_
-#define LOLength TclListObjLength_
+#define TclListObjGetElements_ LOGetElements
+#define TclListObjLength_ LOLength
 #define TclDictObjSize_ DOSize
 #define TclSplitList_ SplitList
 #define TclSplitPath_ SplitPath

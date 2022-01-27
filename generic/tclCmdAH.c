@@ -27,11 +27,11 @@ struct ForeachState {
     int bodyIdx;		/* The argument index of the body. */
     int j, maxj;		/* Number of loop iterations. */
     int numLists;		/* Count of value lists. */
-    int *index;			/* Array of value list indices. */
-    int *varcList;		/* # loop variables per list. */
+    size_t *index;			/* Array of value list indices. */
+    size_t *varcList;		/* # loop variables per list. */
     Tcl_Obj ***varvList;	/* Array of var name lists. */
     Tcl_Obj **vCopyList;	/* Copies of var name list arguments. */
-    int *argcList;		/* Array of value list sizes. */
+    size_t *argcList;		/* Array of value list sizes. */
     Tcl_Obj ***argvList;	/* Array of value lists. */
     Tcl_Obj **aCopyList;	/* Copies of value list arguments. */
     Tcl_Obj *resultList;	/* List of result values from the loop body,
@@ -2500,16 +2500,16 @@ EachloopCmd(
      */
 
     statePtr = (struct ForeachState *)TclStackAlloc(interp,
-	    sizeof(struct ForeachState) + 3 * numLists * sizeof(int)
+	    sizeof(struct ForeachState) + 3 * numLists * sizeof(size_t)
 	    + 2 * numLists * (sizeof(Tcl_Obj **) + sizeof(Tcl_Obj *)));
     memset(statePtr, 0,
-	    sizeof(struct ForeachState) + 3 * numLists * sizeof(int)
+	    sizeof(struct ForeachState) + 3 * numLists * sizeof(size_t)
 	    + 2 * numLists * (sizeof(Tcl_Obj **) + sizeof(Tcl_Obj *)));
     statePtr->varvList = (Tcl_Obj ***) (statePtr + 1);
     statePtr->argvList = statePtr->varvList + numLists;
     statePtr->vCopyList = (Tcl_Obj **) (statePtr->argvList + numLists);
     statePtr->aCopyList = statePtr->vCopyList + numLists;
-    statePtr->index = (int *) (statePtr->aCopyList + numLists);
+    statePtr->index = (size_t *) (statePtr->aCopyList + numLists);
     statePtr->varcList = statePtr->index + numLists;
     statePtr->argcList = statePtr->varcList + numLists;
 
@@ -2533,7 +2533,7 @@ EachloopCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjGetElements_(NULL, statePtr->vCopyList[i],
+	Tcl_ListObjGetElements(NULL, statePtr->vCopyList[i],
 		&statePtr->varcList[i], &statePtr->varvList[i]);
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2551,7 +2551,7 @@ EachloopCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjGetElements_(NULL, statePtr->aCopyList[i],
+	Tcl_ListObjGetElements(NULL, statePtr->aCopyList[i],
 		&statePtr->argcList[i], &statePtr->argvList[i]);
 
 	j = statePtr->argcList[i] / statePtr->varcList[i];
@@ -2671,7 +2671,8 @@ ForeachAssignments(
     Tcl_Interp *interp,
     struct ForeachState *statePtr)
 {
-    int i, v, k;
+    int i;
+    size_t v, k;
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {

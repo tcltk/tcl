@@ -187,7 +187,8 @@ TclNamespaceEnsembleCmd(
     switch ((enum EnsSubcmds) index) {
     case ENS_CREATE: {
 	const char *name;
-	int len, allocatedMapFlag = 0;
+	size_t len;
+	int allocatedMapFlag = 0;
 	/*
 	 * Defaults
 	 */
@@ -232,7 +233,7 @@ TclNamespaceEnsembleCmd(
 		cxtPtr = nsPtr;
 		continue;
 	    case CRT_SUBCMDS:
-		if (TclListObjLength_(interp, objv[1], &len) != TCL_OK) {
+		if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -241,7 +242,7 @@ TclNamespaceEnsembleCmd(
 		subcmdObj = (len > 0 ? objv[1] : NULL);
 		continue;
 	    case CRT_PARAM:
-		if (TclListObjLength_(interp, objv[1], &len) != TCL_OK) {
+		if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -271,7 +272,7 @@ TclNamespaceEnsembleCmd(
 		    Tcl_Obj **listv;
 		    const char *cmd;
 
-		    if (TclListObjGetElements_(interp, listObj, &len,
+		    if (Tcl_ListObjGetElements(interp, listObj, &len,
 			    &listv) != TCL_OK) {
 			Tcl_DictObjDone(&search);
 			if (patchedDict) {
@@ -336,7 +337,7 @@ TclNamespaceEnsembleCmd(
 		}
 		continue;
 	    case CRT_UNKNOWN:
-		if (TclListObjLength_(interp, objv[1], &len) != TCL_OK) {
+		if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -498,7 +499,8 @@ TclNamespaceEnsembleCmd(
 
 	    Tcl_SetObjResult(interp, resultObj);
 	} else {
-	    int len, allocatedMapFlag = 0;
+	    size_t len;
+	    int allocatedMapFlag = 0;
 	    Tcl_Obj *subcmdObj = NULL, *mapObj = NULL, *paramObj = NULL,
 		    *unknownObj = NULL; /* Defaults, silence gcc 4 warnings */
 	    int permitPrefix, flags = 0;	/* silence gcc 4 warning */
@@ -531,13 +533,13 @@ TclNamespaceEnsembleCmd(
 		}
 		switch ((enum EnsConfigOpts) index) {
 		case CONF_SUBCMDS:
-		    if (TclListObjLength_(interp, objv[1], &len) != TCL_OK) {
+		    if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
 			goto freeMapAndError;
 		    }
 		    subcmdObj = (len > 0 ? objv[1] : NULL);
 		    continue;
 		case CONF_PARAM:
-		    if (TclListObjLength_(interp, objv[1], &len) != TCL_OK) {
+		    if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
 			goto freeMapAndError;
 		    }
 		    paramObj = (len > 0 ? objv[1] : NULL);
@@ -559,7 +561,7 @@ TclNamespaceEnsembleCmd(
 			continue;
 		    }
 		    do {
-			if (TclListObjGetElements_(interp, listObj, &len,
+			if (Tcl_ListObjGetElements(interp, listObj, &len,
 				&listv) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
@@ -621,7 +623,7 @@ TclNamespaceEnsembleCmd(
 		    }
 		    continue;
 		case CONF_UNKNOWN:
-		    if (TclListObjLength_(interp, objv[1], &len) != TCL_OK) {
+		    if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
 			goto freeMapAndError;
 		    }
 		    unknownObj = (len > 0 ? objv[1] : NULL);
@@ -788,9 +790,9 @@ Tcl_SetEnsembleSubcommandList(
 	return TCL_ERROR;
     }
     if (subcmdList != NULL) {
-	int length;
+	size_t length;
 
-	if (TclListObjLength_(interp, subcmdList, &length) != TCL_OK) {
+	if (Tcl_ListObjLength(interp, subcmdList, &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 1) {
@@ -855,7 +857,7 @@ Tcl_SetEnsembleParameterList(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
     Tcl_Obj *oldList;
-    int length;
+    size_t length;
 
     if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -866,7 +868,7 @@ Tcl_SetEnsembleParameterList(
     if (paramList == NULL) {
 	length = 0;
     } else {
-	if (TclListObjLength_(interp, paramList, &length) != TCL_OK) {
+	if (Tcl_ListObjLength(interp, paramList, &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 1) {
@@ -1040,9 +1042,9 @@ Tcl_SetEnsembleUnknownHandler(
 	return TCL_ERROR;
     }
     if (unknownList != NULL) {
-	int length;
+	size_t length;
 
-	if (TclListObjLength_(interp, unknownList, &length) != TCL_OK) {
+	if (Tcl_ListObjLength(interp, unknownList, &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 1) {
@@ -1884,9 +1886,9 @@ NsEnsembleImplementationCmdNR(
 	Tcl_Obj *copyPtr;	/* The list of words to dispatch on.
 				 * Will be freed by the dispatch engine. */
 	Tcl_Obj **copyObjv;
-	int copyObjc, prefixObjc;
+	size_t copyObjc, prefixObjc;
 
-	TclListObjLength_(NULL, prefixObj, &prefixObjc);
+	Tcl_ListObjLength(NULL, prefixObj, &prefixObjc);
 
 	if (objc == 2) {
 	    copyPtr = TclListObjCopy(NULL, prefixObj);
@@ -1920,7 +1922,7 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	TclSkipTailcall(interp);
-	TclListObjGetElements_(NULL, copyPtr, &copyObjc, &copyObjv);
+	Tcl_ListObjGetElements(NULL, copyPtr, &copyObjc, &copyObjv);
 	((Interp *)interp)->lookupNsPtr = ensemblePtr->nsPtr;
 	return TclNREvalObjv(interp, copyObjc, copyObjv, TCL_EVAL_INVOKE, NULL);
     }
@@ -2280,7 +2282,9 @@ EnsembleUnknownCallback(
     Tcl_Obj *const objv[],
     Tcl_Obj **prefixObjPtr)
 {
-    int paramc, i, result, prefixObjc;
+    size_t paramc;
+    int result;
+	size_t i, prefixObjc;
     Tcl_Obj **paramv, *unknownCmd, *ensObj;
 
     /*
@@ -2291,10 +2295,10 @@ EnsembleUnknownCallback(
     TclNewObj(ensObj);
     Tcl_GetCommandFullName(interp, ensemblePtr->token, ensObj);
     Tcl_ListObjAppendElement(NULL, unknownCmd, ensObj);
-    for (i=1 ; i<objc ; i++) {
+    for (i = 1 ; i < (size_t)objc ; i++) {
 	Tcl_ListObjAppendElement(NULL, unknownCmd, objv[i]);
     }
-    TclListObjGetElements_(NULL, unknownCmd, &paramc, &paramv);
+    Tcl_ListObjGetElements(NULL, unknownCmd, &paramc, &paramv);
     Tcl_IncrRefCount(unknownCmd);
 
     /*
@@ -2331,7 +2335,7 @@ EnsembleUnknownCallback(
 
 	/* A non-empty list is the replacement command. */
 
-	if (TclListObjLength_(interp, *prefixObjPtr, &prefixObjc) != TCL_OK) {
+	if (Tcl_ListObjLength(interp, *prefixObjPtr, &prefixObjc) != TCL_OK) {
 	    TclDecrRefCount(*prefixObjPtr);
 	    Tcl_AddErrorInfo(interp, "\n    while parsing result of "
 		    "ensemble unknown subcommand handler");
@@ -2579,7 +2583,7 @@ BuildEnsembleConfig(
     Tcl_InitHashTable(hash, TCL_STRING_KEYS);
 
     if (subList) {
-        int subc;
+        size_t subc;
         Tcl_Obj **subv, *target, *cmdObj, *cmdPrefixObj;
         const char *name;
 
@@ -2588,14 +2592,14 @@ BuildEnsembleConfig(
          * Determine the target for each.
          */
 
-        TclListObjGetElements_(NULL, subList, &subc, &subv);
+        Tcl_ListObjGetElements(NULL, subList, &subc, &subv);
         if (subList == mapDict) {
             /*
              * Unusual case where explicit list of subcommands is same value
              * as the dict mapping to targets.
              */
 
-            for (i = 0; i < (size_t)subc; i += 2) {
+            for (i = 0; i < subc; i += 2) {
                 name = TclGetString(subv[i]);
                 hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
                 if (!isNew) {
@@ -2619,7 +2623,7 @@ BuildEnsembleConfig(
 	     * Usual case where we can freely act on the list and dict.
 	     */
 
-            for (i = 0; i < (size_t)subc; i++) {
+            for (i = 0; i < subc; i++) {
                 name = TclGetString(subv[i]);
                 hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
                 if (!isNew) {
@@ -2909,9 +2913,9 @@ TclCompileEnsemble(
     Tcl_Obj *replaced, *replacement;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
     Command *oldCmdPtr = cmdPtr, *newCmdPtr;
-    int len, result, flags = 0, i, depth = 1, invokeAnyway = 0;
+    int result, flags = 0, depth = 1, invokeAnyway = 0;
     int ourResult = TCL_ERROR;
-    size_t numBytes;
+    size_t i, len, numBytes;
     const char *word;
 
     TclNewObj(replaced);
@@ -2985,7 +2989,7 @@ TclCompileEnsemble(
 	const char *str;
 	Tcl_Obj *matchObj = NULL;
 
-	if (TclListObjGetElements_(NULL, listObj, &len, &elems) != TCL_OK) {
+	if (Tcl_ListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
 	    goto failed;
 	}
 	for (i=0 ; i<len ; i++) {
@@ -3105,7 +3109,7 @@ TclCompileEnsemble(
 
   doneMapLookup:
     Tcl_ListObjAppendElement(NULL, replaced, replacement);
-    if (TclListObjGetElements_(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
+    if (Tcl_ListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
 	goto failed;
     } else if (len != 1) {
 	/*

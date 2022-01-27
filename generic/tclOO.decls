@@ -209,7 +209,7 @@ declare 12 {
 }
 declare 13 {
     void TclOOClassSetFilters(Tcl_Interp *interp, Class *classPtr,
-	    int numFilters, Tcl_Obj *const *filters)
+	    size_t numFilters, Tcl_Obj *const *filters)
 }
 declare 14 {
     void TclOOObjectSetMixins(Object *oPtr, int numMixins,

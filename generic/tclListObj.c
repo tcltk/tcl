@@ -1472,7 +1472,7 @@ Tcl_Obj *
 TclLsetFlat(
     Tcl_Interp *interp,		/* Tcl interpreter. */
     Tcl_Obj *listPtr,		/* Pointer to the list being modified. */
-    int indexCount,		/* Number of index args. */
+    size_t indexCount,		/* Number of index args. */
     Tcl_Obj *const indexArray[],
 				/* Index args. */
     Tcl_Obj *valuePtr)		/* Value arg to 'lset' or NULL to 'lpop'. */
@@ -1551,8 +1551,8 @@ TclLsetFlat(
 	}
 	indexArray++;
 
-	if (index > (size_t)elemCount
-		|| (valuePtr == NULL && index >= (size_t)elemCount)) {
+	if (index > elemCount
+		|| (valuePtr == NULL && index >= elemCount)) {
 	    /* ...the index points outside the sublist. */
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
