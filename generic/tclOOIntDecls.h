@@ -78,8 +78,8 @@ TCLAPI int		TclOOInvokeObject(Tcl_Interp *interp,
 				int publicPrivate, int objc,
 				Tcl_Obj *const *objv);
 /* 12 */
-TCLAPI void		TclOOObjectSetFilters(Object *oPtr, int numFilters,
-				Tcl_Obj *const *filters);
+TCLAPI void		TclOOObjectSetFilters(Object *oPtr,
+				size_t numFilters, Tcl_Obj *const *filters);
 /* 13 */
 TCLAPI void		TclOOClassSetFilters(Tcl_Interp *interp,
 				Class *classPtr, size_t numFilters,
@@ -108,7 +108,7 @@ typedef struct TclOOIntStubs {
     Tcl_Method (*tclOONewProcInstanceMethodEx) (Tcl_Interp *interp, Tcl_Object oPtr, TclOO_PreCallProc *preCallPtr, TclOO_PostCallProc *postCallPtr, ProcErrorProc *errProc, void *clientData, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, int flags, void **internalTokenPtr); /* 9 */
     Tcl_Method (*tclOONewProcMethodEx) (Tcl_Interp *interp, Tcl_Class clsPtr, TclOO_PreCallProc *preCallPtr, TclOO_PostCallProc *postCallPtr, ProcErrorProc *errProc, void *clientData, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, int flags, void **internalTokenPtr); /* 10 */
     int (*tclOOInvokeObject) (Tcl_Interp *interp, Tcl_Object object, Tcl_Class startCls, int publicPrivate, int objc, Tcl_Obj *const *objv); /* 11 */
-    void (*tclOOObjectSetFilters) (Object *oPtr, int numFilters, Tcl_Obj *const *filters); /* 12 */
+    void (*tclOOObjectSetFilters) (Object *oPtr, size_t numFilters, Tcl_Obj *const *filters); /* 12 */
     void (*tclOOClassSetFilters) (Tcl_Interp *interp, Class *classPtr, size_t numFilters, Tcl_Obj *const *filters); /* 13 */
     void (*tclOOObjectSetMixins) (Object *oPtr, int numMixins, Class *const *mixins); /* 14 */
     void (*tclOOClassSetMixins) (Tcl_Interp *interp, Class *classPtr, int numMixins, Class *const *mixins); /* 15 */

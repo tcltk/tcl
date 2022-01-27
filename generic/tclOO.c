@@ -308,7 +308,7 @@ InitFoundation(
     Tcl_Obj *namePtr;
     Tcl_DString buffer;
     Command *cmdPtr;
-    int i;
+    size_t i;
 
     /*
      * Initialize the structure that holds the OO system core. This is
@@ -960,7 +960,7 @@ TclOOReleaseClassContents(
     Object *oPtr)		/* The object representing the class. */
 {
     FOREACH_HASH_DECLS;
-    int i;
+    size_t i;
     Class *clsPtr = oPtr->classPtr, *tmpClsPtr;
     Method *mPtr;
     Foundation *fPtr = oPtr->fPtr;
@@ -1121,7 +1121,7 @@ ObjectNamespaceDeleted(
     Tcl_Obj *filterObj, *variableObj;
     PrivateVariableMapping *privateVariable;
     Tcl_Interp *interp = oPtr->fPtr->interp;
-    int i;
+    size_t i;
 
     if (Destructing(oPtr)) {
 	/*
@@ -1362,7 +1362,8 @@ TclOORemoveFromInstances(
     Class *clsPtr)		/* The class (possibly) containing the
 				 * reference to the instance. */
 {
-    int i, res = 0;
+    size_t i;
+    int res = 0;
     Object *instPtr;
 
     FOREACH(instPtr, clsPtr->instances) {
@@ -1424,7 +1425,8 @@ TclOORemoveFromMixins(
     Object *oPtr)		/* The object (possibly) containing the
 				 * reference to the mixin. */
 {
-    int i, res = 0;
+    size_t i;
+    int res = 0;
     Class *mixPtr;
 
     FOREACH(mixPtr, oPtr->mixins) {
@@ -1459,7 +1461,8 @@ TclOORemoveFromSubclasses(
     Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
-    int i, res = 0;
+    size_t i;
+    int res = 0;
     Class *subclsPtr;
 
     FOREACH(subclsPtr, superPtr->subclasses) {
@@ -1523,7 +1526,8 @@ TclOORemoveFromMixinSubs(
     Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
-    int i, res = 0;
+    size_t i;
+    int res = 0;
     Class *subclsPtr;
 
     FOREACH(subclsPtr, superPtr->mixinSubs) {
@@ -1928,7 +1932,8 @@ Tcl_CopyObjectInstance(
     CallContext *contextPtr;
     Tcl_Obj *keyPtr, *filterObj, *variableObj, *args[3];
     PrivateVariableMapping *privateVariable;
-    int i, result;
+    size_t i;
+    int result;
 
     /*
      * Sanity check.
@@ -2995,7 +3000,7 @@ TclOOIsReachable(
     Class *targetPtr,
     Class *startPtr)
 {
-    int i;
+    size_t i;
     Class *superPtr;
 
   tailRecurse:

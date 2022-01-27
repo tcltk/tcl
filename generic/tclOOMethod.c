@@ -987,8 +987,8 @@ ProcedureMethodCompiledVarConnect(
     Tcl_Obj *variableObj;
     PrivateVariableMapping *privateVar;
     Tcl_HashEntry *hPtr;
-    int i, isNew, cacheIt;
-    size_t varLen, len;
+    int isNew, cacheIt;
+    size_t i, varLen, len;
     const char *match, *varName;
 
     /*

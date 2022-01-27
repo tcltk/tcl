@@ -777,7 +777,7 @@ TclOO_Object_VarName(
 	    Method *mPtr = callerContext->callPtr->chain[
 		    callerContext->index].mPtr;
 	    PrivateVariableMapping *pvPtr;
-	    int i;
+	    size_t i;
 
 	    if (mPtr->declaringObjectPtr == oPtr) {
 		FOREACH_STRUCT(pvPtr, oPtr->privateVariables) {

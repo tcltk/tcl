@@ -6187,7 +6187,8 @@ AppendLocals(
 {
     Interp *iPtr = (Interp *) interp;
     Var *varPtr;
-    int i, localVarCt, added;
+    size_t i, localVarCt;
+    int added;
     Tcl_Obj *objNamePtr;
     const char *varName;
     TclVarHashTable *localVarTablePtr;

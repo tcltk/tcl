@@ -204,7 +204,7 @@ declare 11 {
 	    Tcl_Obj *const *objv)
 }
 declare 12 {
-    void TclOOObjectSetFilters(Object *oPtr, int numFilters,
+    void TclOOObjectSetFilters(Object *oPtr, size_t numFilters,
 	    Tcl_Obj *const *filters)
 }
 declare 13 {

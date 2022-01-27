@@ -149,9 +149,9 @@ typedef struct {
  */
 
 #define LIST_STATIC(listType_t) \
-    struct { int num; listType_t *list; }
+    struct { size_t num; listType_t *list; }
 #define LIST_DYNAMIC(listType_t) \
-    struct { int num, size; listType_t *list; }
+    struct { size_t num, size; listType_t *list; }
 
 /*
  * These types are needed in function arguments.
@@ -604,7 +604,7 @@ MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
 MODULE_SCOPE Tcl_Obj *	TclOOGetMethodBody(Method *mPtr);
-MODULE_SCOPE int	TclOOGetSortedClassMethodList(Class *clsPtr,
+MODULE_SCOPE size_t	TclOOGetSortedClassMethodList(Class *clsPtr,
 			    int flags, const char ***stringsPtr);
 MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
 			    Object *contextObj, Class *contextCls, int flags,

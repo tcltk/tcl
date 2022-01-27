@@ -249,10 +249,10 @@ RecomputeClassCacheFlag(
 void
 TclOOObjectSetFilters(
     Object *oPtr,
-    int numFilters,
+    size_t numFilters,
     Tcl_Obj *const *filters)
 {
-    int i;
+    size_t i;
 
     if (oPtr->filters.num) {
 	Tcl_Obj *filterObj;
@@ -312,7 +312,7 @@ TclOOClassSetFilters(
     size_t numFilters,
     Tcl_Obj *const *filters)
 {
-    int i;
+    size_t i;
 
     if (classPtr->filters.num) {
 	Tcl_Obj *filterObj;
@@ -343,7 +343,7 @@ TclOOClassSetFilters(
 	} else {
 	    filtersList = (Tcl_Obj **)Tcl_Realloc(classPtr->filters.list, size);
 	}
-	for (i = 0 ; i < (int)numFilters ; i++) {
+	for (i = 0 ; i < numFilters ; i++) {
 	    filtersList[i] = filters[i];
 	    Tcl_IncrRefCount(filters[i]);
 	}
@@ -375,7 +375,7 @@ TclOOObjectSetMixins(
     Class *const *mixins)
 {
     Class *mixinPtr;
-    int i;
+    size_t i;
 
     if (numMixins == 0) {
 	if (oPtr->mixins.num != 0) {
@@ -436,7 +436,7 @@ TclOOClassSetMixins(
     Class *const *mixins)
 {
     Class *mixinPtr;
-    int i;
+    size_t i;
 
     if (numMixins == 0) {
 	if (classPtr->mixins.num != 0) {
@@ -485,11 +485,12 @@ TclOOClassSetMixins(
 static inline void
 InstallStandardVariableMapping(
     VariableNameList *vnlPtr,
-    int varc,
+    size_t varc,
     Tcl_Obj *const *varv)
 {
     Tcl_Obj *variableObj;
-    int i, n, created;
+    size_t i, n;
+    int created;
     Tcl_HashTable uniqueTable;
 
     for (i=0 ; i<varc ; i++) {
@@ -534,12 +535,13 @@ InstallStandardVariableMapping(
 static inline void
 InstallPrivateVariableMapping(
     PrivateVariableList *pvlPtr,
-    int varc,
+    size_t varc,
     Tcl_Obj *const *varv,
     int creationEpoch)
 {
     PrivateVariableMapping *privatePtr;
-    int i, n, created;
+    size_t i, n;
+    int created;
     Tcl_HashTable uniqueTable;
 
     for (i=0 ; i<varc ; i++) {
@@ -2323,7 +2325,7 @@ ClassFilterGet(
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj, *filterObj;
-    int i;
+    size_t i;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2404,7 +2406,7 @@ ClassMixinGet(
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj;
     Class *mixinPtr;
-    int i;
+    size_t i;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2510,7 +2512,7 @@ ClassSuperGet(
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj;
     Class *superPtr;
-    int i;
+    size_t i;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2545,7 +2547,7 @@ ClassSuperSet(
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     size_t superc, j;
-    int i;
+    size_t i;
     Tcl_Obj **superv;
     Class **superclasses, *superPtr;
 
@@ -2596,13 +2598,13 @@ ClassSuperSet(
 	superc = 1;
 	AddRef(superclasses[0]->thisPtr);
     } else {
-	for (i = 0; i < (int)superc; i++) {
+	for (i = 0; i < superc; i++) {
 	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
 		    "only a class can be a superclass");
 	    if (superclasses[i] == NULL) {
 		goto failedAfterAlloc;
 	    }
-	    for (j = 0; (int)j < i; j++) {
+	    for (j = 0; j < i; j++) {
 		if (superclasses[j] == superclasses[i]) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "class should only be a direct superclass once",
@@ -2677,7 +2679,7 @@ ClassVarsGet(
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj;
-    int i;
+    size_t i;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2792,7 +2794,7 @@ ObjFilterGet(
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj, *filterObj;
-    int i;
+    size_t i;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2861,7 +2863,7 @@ ObjMixinGet(
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj;
     Class *mixinPtr;
-    int i;
+    size_t i;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -2946,7 +2948,7 @@ ObjVarsGet(
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj;
-    int i;
+    size_t i;
 
     if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
