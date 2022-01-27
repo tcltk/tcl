@@ -147,7 +147,7 @@ static int SplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
 	    if (interp) {
 		Tcl_AppendResult(interp, "List too large to be processed", NULL);
 	    }
-	    Tcl_Free(*argvPtr);
+	    Tcl_Free((void *)*argvPtr);
 	    return TCL_ERROR;
 	}
 	*argcPtr = n;
@@ -160,7 +160,7 @@ static void SplitPath(const char *path, int *argcPtr, const char ***argvPtr) {
     if (argcPtr) {
 	if (n > INT_MAX) {
 	    n = TCL_INDEX_NONE; /* No other way to return an error-situation */
-	    Tcl_Free(*argvPtr);
+	    Tcl_Free((void *)*argvPtr);
 	    *argvPtr = NULL;
 	}
 	*argcPtr = n;

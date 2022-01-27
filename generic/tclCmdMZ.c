@@ -1525,9 +1525,8 @@ StringIsCmd(
 {
     const char *string1, *end, *stop;
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
-    int i, result = 1, strict = 0, index, length3;
-    size_t failat = 0;
-    size_t length1, length2;
+    int i, result = 1, strict = 0, index;
+    size_t failat = 0, length1, length2, length3;
     Tcl_Obj *objPtr, *failVarObj = NULL;
     Tcl_WideInt w;
 
@@ -1814,7 +1813,7 @@ StringIsCmd(
 	 * well-formed lists.
 	 */
 
-	if (TCL_OK == TclListObjLength_(NULL, objPtr, &length3)) {
+	if (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length3)) {
 	    break;
 	}
 
@@ -3956,7 +3955,7 @@ Tcl_ThrowObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *options;
-    int len;
+    size_t len;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "type message");
@@ -3967,7 +3966,7 @@ Tcl_ThrowObjCmd(
      * The type must be a list of at least length 1.
      */
 
-    if (TclListObjLength_(interp, objv[1], &len) != TCL_OK) {
+    if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
 	return TCL_ERROR;
     } else if (len < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -4672,7 +4671,8 @@ TclNRTryObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *bodyObj, *handlersObj, *finallyObj = NULL;
-    int i, bodyShared, haveHandlers, dummy, code;
+    int i, bodyShared, haveHandlers, code;
+    size_t dummy;
     static const char *const handlerNames[] = {
 	"finally", "on", "trap", NULL
     };
@@ -4755,7 +4755,7 @@ TclNRTryObjCmd(
 		return TCL_ERROR;
 	    }
 	    code = 1;
-	    if (TclListObjLength_(NULL, objv[i+1], &dummy) != TCL_OK) {
+	    if (Tcl_ListObjLength(NULL, objv[i+1], &dummy) != TCL_OK) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad prefix '%s': must be a list",
 			TclGetString(objv[i+1])));
@@ -4767,7 +4767,7 @@ TclNRTryObjCmd(
 	    info[2] = objv[i+1];
 
 	commonHandler:
-	    if (TclListObjLength_(interp, objv[i+2], &dummy) != TCL_OK) {
+	    if (Tcl_ListObjLength(interp, objv[i+2], &dummy) != TCL_OK) {
 		Tcl_DecrRefCount(handlersObj);
 		return TCL_ERROR;
 	    }

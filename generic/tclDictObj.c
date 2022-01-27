@@ -3553,14 +3553,14 @@ Tcl_Obj *
 TclDictWithInit(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    int pathc,
+    size_t pathc,
     Tcl_Obj *const pathv[])
 {
     Tcl_DictSearch s;
     Tcl_Obj *keyPtr, *valPtr, *keysPtr;
     int done;
 
-    if (pathc > 0) {
+    if (pathc + 1 > 1) {
 	dictPtr = TclTraceDictPath(interp, dictPtr, pathc, pathv,
 		DICT_PATH_READ);
 	if (dictPtr == NULL) {

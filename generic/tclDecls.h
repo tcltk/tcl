@@ -773,7 +773,7 @@ EXTERN void		Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc,
 EXTERN int		Tcl_EvalEx(Tcl_Interp *interp, const char *script,
 				size_t numBytes, int flags);
 /* 292 */
-EXTERN int		Tcl_EvalObjv(Tcl_Interp *interp, int objc,
+EXTERN int		Tcl_EvalObjv(Tcl_Interp *interp, size_t objc,
 				Tcl_Obj *const objv[], int flags);
 /* 293 */
 EXTERN int		Tcl_EvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -2084,7 +2084,7 @@ typedef struct TclStubs {
     void (*tcl_DeleteThreadExitHandler) (Tcl_ExitProc *proc, void *clientData); /* 289 */
     void (*reserved290)(void);
     int (*tcl_EvalEx) (Tcl_Interp *interp, const char *script, size_t numBytes, int flags); /* 291 */
-    int (*tcl_EvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 292 */
+    int (*tcl_EvalObjv) (Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[], int flags); /* 292 */
     int (*tcl_EvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 293 */
     TCL_NORETURN1 void (*tcl_ExitThread) (int status); /* 294 */
     int (*tcl_ExternalToUtf) (Tcl_Interp *interp, Tcl_Encoding encoding, const char *src, size_t srcLen, int flags, Tcl_EncodingState *statePtr, char *dst, size_t dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr); /* 295 */

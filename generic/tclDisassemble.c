@@ -688,7 +688,7 @@ TclGetInnerContext(
     const unsigned char *pc,
     Tcl_Obj **tosPtr)
 {
-    int objc = 0, off = 0;
+    size_t objc = 0;
     Tcl_Obj *result;
     Interp *iPtr = (Interp *) interp;
 
@@ -757,13 +757,13 @@ TclGetInnerContext(
         iPtr->innerContext = result = Tcl_NewListObj(objc + 1, NULL);
         Tcl_IncrRefCount(result);
     } else {
-        int len;
+        size_t len;
 
         /*
          * Reset while keeping the list internalrep as much as possible.
          */
 
-	TclListObjLength_(interp, result, &len);
+	Tcl_ListObjLength(interp, result, &len);
         Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
     }
     Tcl_ListObjAppendElement(NULL, result, TclNewInstNameObj(*pc));
@@ -771,7 +771,7 @@ TclGetInnerContext(
     for (; objc>0 ; objc--) {
         Tcl_Obj *objPtr;
 
-        objPtr = tosPtr[1 - objc + off];
+        objPtr = tosPtr[1 - objc];
         if (!objPtr) {
             Tcl_Panic("InnerContext: bad tos -- appending null object");
         }

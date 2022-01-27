@@ -4226,7 +4226,7 @@ int
 Tcl_EvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    int objc,			/* Number of words in command. */
+    size_t objc,			/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags)			/* Collection of OR-ed bits that control the
@@ -4245,7 +4245,7 @@ int
 TclNREvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    int objc,			/* Number of words in command. */
+    size_t objc,			/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags,			/* Collection of OR-ed bits that control the
@@ -4682,7 +4682,7 @@ TEOV_NotFound(
 {
     Command * cmdPtr;
     Interp *iPtr = (Interp *) interp;
-    int i, newObjc, handlerObjc;
+    size_t i, newObjc, handlerObjc;
     Tcl_Obj **newObjv, **handlerObjv;
     CallFrame *varFramePtr = iPtr->varFramePtr;
     Namespace *currNsPtr = NULL;/* Used to check for and invoke any registered
@@ -4714,7 +4714,7 @@ TEOV_NotFound(
      * itself.
      */
 
-    TclListObjGetElements_(NULL, currNsPtr->unknownHandlerPtr,
+    Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
 	    &handlerObjc, &handlerObjv);
     newObjc = objc + handlerObjc;
     newObjv = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * newObjc);
@@ -5220,9 +5220,9 @@ TclEvalEx(
 		objv[objectsUsed] = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(objv[objectsUsed]);
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		    int numElements;
+		    size_t numElements;
 
-		    code = TclListObjLength_(interp, objv[objectsUsed],
+		    code = Tcl_ListObjLength(interp, objv[objectsUsed],
 			    &numElements);
 		    if (code == TCL_ERROR) {
 			/*
@@ -5271,10 +5271,10 @@ TclEvalEx(
 		objectsUsed = 0;
 		while (wordIdx--) {
 		    if (expand[wordIdx]) {
-			int numElements;
+			size_t numElements;
 			Tcl_Obj **elements, *temp = copy[wordIdx];
 
-			TclListObjGetElements_(NULL, temp, &numElements,
+			Tcl_ListObjGetElements(NULL, temp, &numElements,
 				&elements);
 			objectsUsed += numElements;
 			while (numElements--) {
@@ -5968,7 +5968,7 @@ TclNREvalObjEx(
 
     if (TclListObjIsCanonical(objPtr)) {
 	CmdFrame *eoFramePtr = NULL;
-	int objc;
+	size_t objc;
 	Tcl_Obj *listPtr, **objv;
 
 	/*
@@ -6037,7 +6037,7 @@ TclNREvalObjEx(
         TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
 		objPtr, NULL);
 
-	TclListObjGetElements_(NULL, listPtr, &objc, &objv);
+	Tcl_ListObjGetElements(NULL, listPtr, &objc, &objv);
 	return TclNREvalObjv(interp, objc, objv, flags, NULL);
     }
 
@@ -8637,10 +8637,10 @@ TclNRTailcallEval(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *listPtr = (Tcl_Obj *)data[0], *nsObjPtr;
     Tcl_Namespace *nsPtr;
-    int objc;
+    size_t objc;
     Tcl_Obj **objv;
 
-    TclListObjGetElements_(interp, listPtr, &objc, &objv);
+    Tcl_ListObjGetElements(interp, listPtr, &objc, &objv);
     nsObjPtr = objv[0];
 
     if (result == TCL_OK) {
@@ -9062,7 +9062,7 @@ TclNREvalList(
     Tcl_Interp *interp,
     TCL_UNUSED(int) /*result*/)
 {
-    int objc;
+    size_t objc;
     Tcl_Obj **objv;
     Tcl_Obj *listPtr = (Tcl_Obj *)data[0];
 
@@ -9070,7 +9070,7 @@ TclNREvalList(
 
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
-    TclListObjGetElements_(NULL, listPtr, &objc, &objv);
+    Tcl_ListObjGetElements(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
 
@@ -9326,7 +9326,7 @@ InjectHandler(
     Tcl_Obj *listPtr = (Tcl_Obj *)data[1];
     int nargs = PTR2INT(data[2]);
     void *isProbe = data[3];
-    int objc;
+    size_t objc;
     Tcl_Obj **objv;
 
     if (!isProbe) {
@@ -9345,7 +9345,7 @@ InjectHandler(
              * I don't think this is reachable...
              */
 
-            Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewIntObj(nargs));
+            Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewWideIntObj(nargs));
         }
         Tcl_ListObjAppendElement(NULL, listPtr, Tcl_GetObjResult(interp));
     }
@@ -9358,7 +9358,7 @@ InjectHandler(
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, InjectHandlerPostCall, corPtr, listPtr,
             INT2PTR(nargs), isProbe);
-    TclListObjGetElements_(NULL, listPtr, &objc, &objv);
+    Tcl_ListObjGetElements(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
 

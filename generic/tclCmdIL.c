@@ -2399,15 +2399,15 @@ Tcl_LinsertObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
-    size_t index;
-    int len, result;
+    size_t len, index;
+    int result;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list index ?element ...?");
 	return TCL_ERROR;
     }
 
-    result = TclListObjLength_(interp, objv[1], &len);
+    result = Tcl_ListObjLength(interp, objv[1], &len);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2422,7 +2422,7 @@ Tcl_LinsertObjCmd(
     if (result != TCL_OK) {
 	return result;
     }
-    if (index + 1 > (size_t)len + 1) {
+    if (index + 1 > len + 1) {
 	index = len;
     }
 
@@ -2436,7 +2436,7 @@ Tcl_LinsertObjCmd(
 	listPtr = TclListObjCopy(NULL, listPtr);
     }
 
-    if ((objc == 4) && (index == (size_t)len)) {
+    if ((objc == 4) && (index == len)) {
 	/*
 	 * Special case: insert one element at the end of the list.
 	 */
@@ -2518,14 +2518,15 @@ Tcl_LlengthObjCmd(
     Tcl_Obj *const objv[])
 				/* Argument objects. */
 {
-    int listLen, result;
+    size_t listLen;
+    int result;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list");
 	return TCL_ERROR;
     }
 
-    result = TclListObjLength_(interp, objv[1], &listLen);
+    result = Tcl_ListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2665,15 +2666,15 @@ Tcl_LrangeObjCmd(
     Tcl_Obj *const objv[])
 				/* Argument objects. */
 {
-    int listLen, result;
-    size_t first, last;
+    int result;
+    size_t listLen, first, last;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
 	return TCL_ERROR;
     }
 
-    result = TclListObjLength_(interp, objv[1], &listLen);
+    result = Tcl_ListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2733,8 +2734,8 @@ Tcl_LremoveObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, idxc, listLen, prevIdx, first, num;
-    size_t *idxv;
+    int i, idxc, prevIdx, first, num;
+    size_t *idxv, listLen;
     Tcl_Obj *listObj;
 
     /*
@@ -2747,7 +2748,7 @@ Tcl_LremoveObjCmd(
     }
 
     listObj = objv[1];
-    if (TclListObjLength_(interp, listObj, &listLen) != TCL_OK) {
+    if (Tcl_ListObjLength(interp, listObj, &listLen) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2794,7 +2795,7 @@ Tcl_LremoveObjCmd(
 	    continue;
 	}
 	prevIdx = idx;
-	if (idx < 0 || idx >= listLen) {
+	if (idx < 0 || idx >= (int)listLen) {
 	    continue;
 	}
 
@@ -2962,8 +2963,8 @@ Tcl_LreplaceObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
-    size_t first, last;
-    int listLen, numToDelete, result;
+    size_t numToDelete, listLen, first, last;
+    int result;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2971,7 +2972,7 @@ Tcl_LreplaceObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjLength_(interp, objv[1], &listLen);
+    result = Tcl_ListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2994,11 +2995,11 @@ Tcl_LreplaceObjCmd(
 
     if (first == TCL_INDEX_NONE) {
 	first = 0;
-    } else if (first > (size_t)listLen) {
+    } else if (first > listLen) {
 	first = listLen;
     }
 
-    if (last + 1 > (size_t)listLen) {
+    if (last + 1 > listLen) {
 	last = listLen - 1;
     }
     if (first + 1 <= last + 1) {
@@ -4626,7 +4627,7 @@ SortCompare(
 	order = ((a >= b) - (a <= b));
     } else {
 	Tcl_Obj **objv, *paramObjv[2];
-	int objc;
+	size_t objc;
 	Tcl_Obj *objPtr1, *objPtr2;
 
 	if (infoPtr->resultCode != TCL_OK) {
@@ -4650,10 +4651,10 @@ SortCompare(
 	 * Replace them and evaluate the result.
 	 */
 
-	TclListObjLength_(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
+	Tcl_ListObjLength(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
 	Tcl_ListObjReplace(infoPtr->interp, infoPtr->compareCmdPtr, objc - 2,
 		2, 2, paramObjv);
-	TclListObjGetElements_(infoPtr->interp, infoPtr->compareCmdPtr,
+	Tcl_ListObjGetElements(infoPtr->interp, infoPtr->compareCmdPtr,
 		&objc, &objv);
 
 	infoPtr->resultCode = Tcl_EvalObjv(infoPtr->interp, objc, objv, 0);
@@ -4860,10 +4861,11 @@ SelectObjFromSublist(
      */
 
     for (i=0 ; i<infoPtr->indexc ; i++) {
-	int listLen, index;
+	size_t listLen;
+	int index;
 	Tcl_Obj *currentObj;
 
-	if (TclListObjLength_(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
+	if (Tcl_ListObjLength(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
 	    infoPtr->resultCode = TCL_ERROR;
 	    return NULL;
 	}

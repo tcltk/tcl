@@ -2320,11 +2320,11 @@ GetInterp(
     Tcl_HashEntry *hPtr;	/* Search element. */
     Child *childPtr;		/* Interim child record. */
     Tcl_Obj **objv;
-    int objc, i;
+    size_t objc, i;
     Tcl_Interp *searchInterp;	/* Interim storage for interp. to find. */
     InterpInfo *parentInfoPtr;
 
-    if (TclListObjGetElements_(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
 
@@ -2424,10 +2424,11 @@ ChildCreate(
     InterpInfo *parentInfoPtr;
     Tcl_HashEntry *hPtr;
     const char *path;
-    int isNew, objc;
+    int isNew;
+    size_t objc;
     Tcl_Obj **objv;
 
-    if (TclListObjGetElements_(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
     if (objc < 2) {

@@ -112,7 +112,8 @@ GetIndexFromObjList(
     int *indexPtr)		/* Place to store resulting integer index. */
 {
 
-    int objc, result, t;
+    size_t objc, t;
+    int result;
     Tcl_Obj **objv;
     const char **tablePtr;
 
@@ -121,7 +122,7 @@ GetIndexFromObjList(
      * of the code there. This is a bit ineffiecient but simpler.
      */
 
-    result = TclListObjGetElements_(interp, tableObjPtr, &objc, &objv);
+    result = Tcl_ListObjGetElements(interp, tableObjPtr, &objc, &objv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -602,8 +603,8 @@ PrefixAllObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int tableObjc, result, t;
-    size_t length, elemLength;
+    int result;
+    size_t length, elemLength, tableObjc, t;
     const char *string, *elemString;
     Tcl_Obj **tableObjv, *resultPtr;
 
@@ -612,7 +613,7 @@ PrefixAllObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjGetElements_(interp, objv[1], &tableObjc, &tableObjv);
+    result = Tcl_ListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -660,8 +661,8 @@ PrefixLongestObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int tableObjc, result, t;
-    size_t i, length, elemLength, resultLength;
+    int result;
+    size_t i, length, elemLength, resultLength, tableObjc, t;
     const char *string, *elemString, *resultString;
     Tcl_Obj **tableObjv;
 
@@ -670,7 +671,7 @@ PrefixLongestObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjGetElements_(interp, objv[1], &tableObjc, &tableObjv);
+    result = Tcl_ListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }

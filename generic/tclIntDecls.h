@@ -519,7 +519,7 @@ EXTERN int		TclNRRunCallbacks(Tcl_Interp *interp, int result,
 EXTERN int		TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				int flags, const CmdFrame *invoker, int word);
 /* 242 */
-EXTERN int		TclNREvalObjv(Tcl_Interp *interp, int objc,
+EXTERN int		TclNREvalObjv(Tcl_Interp *interp, size_t objc,
 				Tcl_Obj *const objv[], int flags,
 				Command *cmdPtr);
 /* 243 */
@@ -825,7 +825,7 @@ typedef struct TclIntStubs {
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, size_t skip, ProcErrorProc *errorProc); /* 239 */
     int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct NRE_callback *rootPtr); /* 240 */
     int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 241 */
-    int (*tclNREvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags, Command *cmdPtr); /* 242 */
+    int (*tclNREvalObjv) (Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[], int flags, Command *cmdPtr); /* 242 */
     void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */
     Tcl_HashTable * (*tclGetNamespaceChildTable) (Tcl_Namespace *nsPtr); /* 244 */
     Tcl_HashTable * (*tclGetNamespaceCommandTable) (Tcl_Namespace *nsPtr); /* 245 */

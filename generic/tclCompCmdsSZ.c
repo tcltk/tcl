@@ -917,8 +917,7 @@ TclCompileStringMapCmd(
     Tcl_Token *mapTokenPtr, *stringTokenPtr;
     Tcl_Obj *mapObj, **objv;
     const char *bytes;
-    int len;
-    size_t slen;
+    size_t len, slen;
 
     /*
      * We only handle the case:
@@ -940,7 +939,7 @@ TclCompileStringMapCmd(
     if (!TclWordKnownAtCompileTime(mapTokenPtr, mapObj)) {
 	Tcl_DecrRefCount(mapObj);
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    } else if (TclListObjGetElements_(NULL, mapObj, &len, &objv) != TCL_OK) {
+    } else if (Tcl_ListObjGetElements(NULL, mapObj, &len, &objv) != TCL_OK) {
 	Tcl_DecrRefCount(mapObj);
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     } else if (len != 2) {
@@ -2711,7 +2710,8 @@ TclCompileThrowCmd(
     int numWords = parsePtr->numWords;
     Tcl_Token *codeToken, *msgToken;
     Tcl_Obj *objPtr;
-    int codeKnown, codeIsList, codeIsValid, len;
+    int codeKnown, codeIsList, codeIsValid;
+    size_t len;
 
     if (numWords != 3) {
 	return TCL_ERROR;
@@ -2735,7 +2735,7 @@ TclCompileThrowCmd(
     CompileWord(envPtr, msgToken, interp, 2);
 
     codeIsList = codeKnown && (TCL_OK ==
-	    TclListObjLength_(interp, objPtr, &len));
+	    Tcl_ListObjLength(interp, objPtr, &len));
     codeIsValid = codeIsList && (len != 0);
 
     if (codeIsValid) {
@@ -2852,7 +2852,7 @@ TclCompileTryCmd(
 
 	for (i=0 ; i<numHandlers ; i++) {
 	    Tcl_Obj *tmpObj, **objv;
-	    int objc;
+	    size_t objc;
 
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		goto failedToCompile;
@@ -2868,7 +2868,7 @@ TclCompileTryCmd(
 		TclNewObj(tmpObj);
 		Tcl_IncrRefCount(tmpObj);
 		if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)
-			|| TclListObjLength_(NULL, tmpObj, &objc) != TCL_OK
+			|| Tcl_ListObjLength(NULL, tmpObj, &objc) != TCL_OK
 			|| (objc == 0)) {
 		    TclDecrRefCount(tmpObj);
 		    goto failedToCompile;
@@ -2911,7 +2911,7 @@ TclCompileTryCmd(
 		TclDecrRefCount(tmpObj);
 		goto failedToCompile;
 	    }
-	    if (TclListObjGetElements_(NULL, tmpObj, &objc, &objv) != TCL_OK
+	    if (Tcl_ListObjGetElements(NULL, tmpObj, &objc, &objv) != TCL_OK
 		    || (objc > 2)) {
 		TclDecrRefCount(tmpObj);
 		goto failedToCompile;
@@ -3047,8 +3047,8 @@ IssueTryClausesInstructions(
 {
     DefineLineInformation;	/* TIP #280 */
     int range, resultVar, optionsVar;
-    int i, j, len, forwardsNeedFixing = 0, trapZero = 0, afterBody = 0;
-    size_t slen;
+    int i, j, forwardsNeedFixing = 0, trapZero = 0, afterBody = 0;
+    size_t slen, len;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     int *noError;
     char buf[TCL_INTEGER_SPACE];
@@ -3123,7 +3123,7 @@ IssueTryClausesInstructions(
 	JUMP4(				JUMP_FALSE, notCodeJumpSource);
 	if (matchClauses[i]) {
 	    const char *p;
-	    TclListObjLength_(NULL, matchClauses[i], &len);
+	    Tcl_ListObjLength(NULL, matchClauses[i], &len);
 
 	    /*
 	     * Match the errorcode according to try/trap rules.
@@ -3258,11 +3258,11 @@ IssueTryClausesFinallyInstructions(
     Tcl_Token *finallyToken)	/* Not NULL */
 {
     DefineLineInformation;	/* TIP #280 */
-    int range, resultVar, optionsVar, i, j, len, forwardsNeedFixing = 0;
+    int range, resultVar, optionsVar, i, j, forwardsNeedFixing = 0;
     int trapZero = 0, afterBody = 0, finalOK, finalError, noFinalError;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     char buf[TCL_INTEGER_SPACE];
-    size_t slen;
+    size_t slen, len;
 
     resultVar = AnonymousLocal(envPtr);
     optionsVar = AnonymousLocal(envPtr);
@@ -3335,7 +3335,7 @@ IssueTryClausesFinallyInstructions(
 	OP(				EQ);
 	JUMP4(				JUMP_FALSE, notCodeJumpSource);
 	if (matchClauses[i]) {
-	    TclListObjLength_(NULL, matchClauses[i], &len);
+	    Tcl_ListObjLength(NULL, matchClauses[i], &len);
 
 	    /*
 	     * Match the errorcode according to try/trap rules.

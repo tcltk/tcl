@@ -1093,7 +1093,7 @@ declare 291 {
 	    int flags)
 }
 declare 292 {
-    int Tcl_EvalObjv(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
+    int Tcl_EvalObjv(Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[],
 	    int flags)
 }
 declare 293 {

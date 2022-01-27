@@ -508,7 +508,7 @@ declare 241 {
 	    const CmdFrame *invoker, int word)
 }
 declare 242 {
-    int TclNREvalObjv(Tcl_Interp *interp, int objc,
+    int TclNREvalObjv(Tcl_Interp *interp, size_t objc,
 	      Tcl_Obj *const objv[], int flags, Command *cmdPtr)
 }
 

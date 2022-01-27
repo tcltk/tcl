@@ -286,7 +286,8 @@ TclCompileArraySetCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *dataTokenPtr;
     int isScalar, localIndex, code = TCL_OK;
-    int isDataLiteral, isDataValid, isDataEven, len;
+    int isDataLiteral, isDataValid, isDataEven;
+    size_t len;
     int keyVar, valVar, infoIndex;
     int fwd, offsetBack, offsetFwd;
     Tcl_Obj *literalObj;
@@ -301,7 +302,7 @@ TclCompileArraySetCmd(
     TclNewObj(literalObj);
     isDataLiteral = TclWordKnownAtCompileTime(dataTokenPtr, literalObj);
     isDataValid = (isDataLiteral
-	    && TclListObjLength_(NULL, literalObj, &len) == TCL_OK);
+	    && Tcl_ListObjLength(NULL, literalObj, &len) == TCL_OK);
     isDataEven = (isDataValid && (len & 1) == 0);
 
     /*
@@ -2688,7 +2689,8 @@ CompileEachloopCmd(
 
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     int jumpBackOffset, infoIndex, range;
-    int numWords, numLists, i, j, code = TCL_OK;
+    int numWords, numLists, i, code = TCL_OK;
+    size_t j;
     Tcl_Obj *varListObj = NULL;
 
     /*
@@ -2740,7 +2742,7 @@ CompileEachloopCmd(
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	ForeachVarList *varListPtr;
-	int numVars;
+	size_t numVars;
 
 	if (i%2 != 1) {
 	    continue;
@@ -2753,7 +2755,7 @@ CompileEachloopCmd(
 	 */
 
 	if (!TclWordKnownAtCompileTime(tokenPtr, varListObj) ||
-		TCL_OK != TclListObjLength_(NULL, varListObj, &numVars) ||
+		TCL_OK != Tcl_ListObjLength(NULL, varListObj, &numVars) ||
 		numVars == 0) {
 	    code = TCL_ERROR;
 	    goto done;
