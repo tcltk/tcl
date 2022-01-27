@@ -1844,11 +1844,10 @@ TclTrim(
 
 char *
 Tcl_Concat(
-    int argc,			/* Number of strings to concatenate. */
+    size_t argc,			/* Number of strings to concatenate. */
     const char *const *argv)	/* Array of strings to concatenate. */
 {
-    int i;
-    size_t needSpace = 0, bytesNeeded = 0;
+    size_t i, needSpace = 0, bytesNeeded = 0;
     char *result, *p;
 
     /*

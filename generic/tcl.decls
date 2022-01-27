@@ -320,7 +320,7 @@ declare 82 {
     int Tcl_CommandComplete(const char *cmd)
 }
 declare 83 {
-    char *Tcl_Concat(int argc, const char *const *argv)
+    char *Tcl_Concat(size_t argc, const char *const *argv)
 }
 declare 84 {
     size_t Tcl_ConvertElement(const char *src, char *dst, int flags)
@@ -685,7 +685,7 @@ declare 185 {
 }
 # Obsolete, use Tcl_FSJoinPath
 declare 186 {
-    char *Tcl_JoinPath(int argc, const char *const *argv,
+    char *Tcl_JoinPath(size_t argc, const char *const *argv,
 	    Tcl_DString *resultPtr)
 }
 declare 187 {
@@ -2155,7 +2155,7 @@ declare 575 {
 	    size_t length, size_t limit, const char *ellipsis)
 }
 declare 576 {
-    Tcl_Obj *Tcl_Format(Tcl_Interp *interp, const char *format, int objc,
+    Tcl_Obj *Tcl_Format(Tcl_Interp *interp, const char *format, size_t objc,
 	    Tcl_Obj *const objv[])
 }
 declare 577 {

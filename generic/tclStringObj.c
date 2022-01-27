@@ -2484,7 +2484,7 @@ Tcl_Obj *
 Tcl_Format(
     Tcl_Interp *interp,
     const char *format,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     int result;

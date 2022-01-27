@@ -975,12 +975,11 @@ TclpNativeJoinPath(
 
 char *
 Tcl_JoinPath(
-    int argc,
+    size_t argc,
     const char *const *argv,
     Tcl_DString *resultPtr)	/* Pointer to previously initialized DString */
 {
-    int i;
-    size_t len;
+    size_t i, len;
     Tcl_Obj *listObj;
     Tcl_Obj *resultObj;
     const char *resultStr;

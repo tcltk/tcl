@@ -246,7 +246,7 @@ EXTERN void		Tcl_CancelIdleCall(Tcl_IdleProc *idleProc,
 /* 82 */
 EXTERN int		Tcl_CommandComplete(const char *cmd);
 /* 83 */
-EXTERN char *		Tcl_Concat(int argc, const char *const *argv);
+EXTERN char *		Tcl_Concat(size_t argc, const char *const *argv);
 /* 84 */
 EXTERN size_t		Tcl_ConvertElement(const char *src, char *dst,
 				int flags);
@@ -517,7 +517,7 @@ EXTERN int		Tcl_InterpDeleted(Tcl_Interp *interp);
 /* 185 */
 EXTERN int		Tcl_IsSafe(Tcl_Interp *interp);
 /* 186 */
-EXTERN char *		Tcl_JoinPath(int argc, const char *const *argv,
+EXTERN char *		Tcl_JoinPath(size_t argc, const char *const *argv,
 				Tcl_DString *resultPtr);
 /* 187 */
 EXTERN int		Tcl_LinkVar(Tcl_Interp *interp, const char *varName,
@@ -1522,7 +1522,7 @@ EXTERN void		Tcl_AppendLimitedToObj(Tcl_Obj *objPtr,
 				size_t limit, const char *ellipsis);
 /* 576 */
 EXTERN Tcl_Obj *	Tcl_Format(Tcl_Interp *interp, const char *format,
-				int objc, Tcl_Obj *const objv[]);
+				size_t objc, Tcl_Obj *const objv[]);
 /* 577 */
 EXTERN int		Tcl_AppendFormatToObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, const char *format,
@@ -1875,7 +1875,7 @@ typedef struct TclStubs {
     void (*tcl_CancelIdleCall) (Tcl_IdleProc *idleProc, void *clientData); /* 80 */
     void (*reserved81)(void);
     int (*tcl_CommandComplete) (const char *cmd); /* 82 */
-    char * (*tcl_Concat) (int argc, const char *const *argv); /* 83 */
+    char * (*tcl_Concat) (size_t argc, const char *const *argv); /* 83 */
     size_t (*tcl_ConvertElement) (const char *src, char *dst, int flags); /* 84 */
     size_t (*tcl_ConvertCountedElement) (const char *src, size_t length, char *dst, int flags); /* 85 */
     int (*tcl_CreateAlias) (Tcl_Interp *childInterp, const char *childCmd, Tcl_Interp *target, const char *targetCmd, int argc, const char *const *argv); /* 86 */
@@ -1978,7 +1978,7 @@ typedef struct TclStubs {
     int (*tcl_InputBuffered) (Tcl_Channel chan); /* 183 */
     int (*tcl_InterpDeleted) (Tcl_Interp *interp); /* 184 */
     int (*tcl_IsSafe) (Tcl_Interp *interp); /* 185 */
-    char * (*tcl_JoinPath) (int argc, const char *const *argv, Tcl_DString *resultPtr); /* 186 */
+    char * (*tcl_JoinPath) (size_t argc, const char *const *argv, Tcl_DString *resultPtr); /* 186 */
     int (*tcl_LinkVar) (Tcl_Interp *interp, const char *varName, void *addr, int type); /* 187 */
     void (*reserved188)(void);
     Tcl_Channel (*tcl_MakeFileChannel) (void *handle, int mode); /* 189 */
@@ -2368,7 +2368,7 @@ typedef struct TclStubs {
     int (*tcl_PkgRequireProc) (Tcl_Interp *interp, const char *name, int objc, Tcl_Obj *const objv[], void *clientDataPtr); /* 573 */
     void (*tcl_AppendObjToErrorInfo) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 574 */
     void (*tcl_AppendLimitedToObj) (Tcl_Obj *objPtr, const char *bytes, size_t length, size_t limit, const char *ellipsis); /* 575 */
-    Tcl_Obj * (*tcl_Format) (Tcl_Interp *interp, const char *format, int objc, Tcl_Obj *const objv[]); /* 576 */
+    Tcl_Obj * (*tcl_Format) (Tcl_Interp *interp, const char *format, size_t objc, Tcl_Obj *const objv[]); /* 576 */
     int (*tcl_AppendFormatToObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, const char *format, size_t objc, Tcl_Obj *const objv[]); /* 577 */
     Tcl_Obj * (*tcl_ObjPrintf) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 578 */
     void (*tcl_AppendPrintfToObj) (Tcl_Obj *objPtr, const char *format, ...) TCL_FORMAT_PRINTF(2, 3); /* 579 */
