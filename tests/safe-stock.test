@@ -160,7 +160,7 @@ test safe-stock-9.8 {test auto-loading in safe interpreters, was safe-5.1} -setu
     interp eval a {tcl_endOfWord "" 0}
 } -cleanup {
     safe::interpDelete a
-} -result -1
+} -result {}
 test safe-stock-9.11 {interpConfigure change the access path; pkgIndex.tcl packages unaffected by token rearrangement, uses pkg opt and tcl::idna} -setup {
 } -body {
     set i [safe::interpCreate -accessPath [list $tcl_library \
