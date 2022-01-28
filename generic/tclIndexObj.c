@@ -235,11 +235,12 @@ GetIndexFromObjList(
  * Results:
  *	If the value of objPtr is identical to or a unique abbreviation for
  *	one of the entries in tablePtr, then the return value is TCL_OK and
- *	the index of the matching entry is stored at *indexPtr. If there isn't
- *	a proper match, then TCL_ERROR is returned and an error message is
- *	left in interp's result (unless interp is NULL). The msg argument is
- *	used in the error message; for example, if msg has the value "option"
- *	then the error message will say something like 'bad option "foo": must
+ *	the index of the matching entry is stored at *indexPtr
+ *	(unless indexPtr is NULL). If there isn't a proper match, then
+ *	TCL_ERROR is returned and an error message is left in interp's
+ *	result (unless interp is NULL). The msg argument is used in the
+ *	error message; for example, if msg has the value "option" then
+ *	the error message will say something like 'bad option "foo": must
  *	be ...'
  *
  * Side effects:
@@ -367,22 +368,24 @@ Tcl_GetIndexFromObjStruct(
     }
 
   uncachedDone:
-    if ((flags>>8) & (int)~sizeof(int)) {
-	if ((flags>>8) == sizeof(uint64_t)) {
-	    *(uint64_t *)indexPtr = index;
-	    return TCL_OK;
-	} else if ((flags>>8) == sizeof(uint32_t)) {
-	    *(uint32_t *)indexPtr = index;
-	    return TCL_OK;
-	} else if ((flags>>8) == sizeof(uint16_t)) {
-	    *(uint16_t *)indexPtr = index;
-	    return TCL_OK;
-	} else if ((flags>>8) == sizeof(uint8_t)) {
-	    *(uint8_t *)indexPtr = index;
-	    return TCL_OK;
+    if (indexPtr != NULL) {
+	if ((flags>>8) & (int)~sizeof(int)) {
+	    if ((flags>>8) == sizeof(uint64_t)) {
+		*(uint64_t *)indexPtr = index;
+		return TCL_OK;
+	    } else if ((flags>>8) == sizeof(uint32_t)) {
+		*(uint32_t *)indexPtr = index;
+		return TCL_OK;
+	    } else if ((flags>>8) == sizeof(uint16_t)) {
+		*(uint16_t *)indexPtr = index;
+		return TCL_OK;
+	    } else if ((flags>>8) == sizeof(uint8_t)) {
+		*(uint8_t *)indexPtr = index;
+		return TCL_OK;
 	}
+	}
+	*(int *)indexPtr = index;
     }
-    *(int *)indexPtr = index;
     return TCL_OK;
 
   error:
