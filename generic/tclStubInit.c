@@ -133,7 +133,7 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 static int LOGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     size_t *objcPtr, Tcl_Obj ***objvPtr) {
     int n, result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
-    if (objcPtr) {
+    if ((result == TCL_OK) && objcPtr) {
 	*objcPtr = n;
     }
     return result;
@@ -142,7 +142,7 @@ static int LOLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     size_t *lengthPtr) {
     int n;
     int result = Tcl_ListObjLength(interp, listPtr, &n);
-    if (lengthPtr) {
+    if ((result == TCL_OK) && lengthPtr) {
 	*lengthPtr = n;
     }
     return result;
@@ -150,7 +150,7 @@ static int LOLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
 static int DOSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 	size_t *sizePtr) {
     int n, result = Tcl_DictObjSize(interp, dictPtr, &n);
-    if (sizePtr) {
+    if ((result == TCL_OK) && sizePtr) {
 	*sizePtr = n;
     }
     return result;
@@ -159,7 +159,7 @@ static int SplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
 	const char ***argvPtr) {
     int n;
     int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
-    if (argcPtr) {
+    if ((result == TCL_OK) && argcPtr) {
 	*argcPtr = n;
     }
     return result;
@@ -174,7 +174,7 @@ static void SplitPath(const char *path, size_t *argcPtr, const char ***argvPtr) 
 static Tcl_Obj *FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr) {
     int n;
     Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
-    if (lenPtr) {
+    if (result && lenPtr) {
 	*lenPtr = n;
     }
     return result;
@@ -182,10 +182,16 @@ static Tcl_Obj *FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr) {
 static int ParseArgsObjv(Tcl_Interp *interp,
 	const Tcl_ArgvInfo *argTable, size_t *objcPtr, Tcl_Obj *const *objv,
 	Tcl_Obj ***remObjv) {
-    int n, result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
-    if (objcPtr) {
-	*objcPtr = n;
+    int n, result;
+    if (*objcPtr > INT_MAX) {
+	if (interp) {
+	    Tcl_AppendResult(interp, "Tcl_ParseArgsObjv cannot handle *objcPtr > INT_MAX", NULL);
+	}
+	return TCL_ERROR;
     }
+    n = (int)*objcPtr;
+    result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
+    *objcPtr = n;
     return result;
 }
 
