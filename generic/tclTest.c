@@ -440,8 +440,7 @@ Tcltest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
     Tcl_Obj **objv, *objPtr;
-    size_t objc;
-    int index;
+    int objc, index;
     static const char *const specialOptions[] = {
 	"-appinitprocerror", "-appinitprocdeleteinterp",
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
@@ -6790,7 +6789,7 @@ SimpleMatchInDirectory(
     origPtr = SimpleRedirect(dirPtr);
     res = Tcl_FSMatchInDirectory(interp, resPtr, origPtr, pattern, types);
     if (res == TCL_OK) {
-	size_t gLength, j;
+	int gLength, j;
 	Tcl_ListObjLength(NULL, resPtr, &gLength);
 	for (j = 0; j < gLength; j++) {
 	    Tcl_Obj *gElt, *nElt;
@@ -7356,8 +7355,7 @@ TestconcatobjCmd(
     TCL_UNUSED(const char **) /*argv*/)
 {
     Tcl_Obj *list1Ptr, *list2Ptr, *emptyPtr, *concatPtr, *tmpPtr;
-    int result = TCL_OK;
-    size_t len;
+    int result = TCL_OK, len;
     Tcl_Obj *objv[3];
 
     /*
@@ -7714,7 +7712,7 @@ TestparseargsCmd(
     Tcl_Obj *const objv[])	/* Arguments. */
 {
     static int foo = 0;
-    size_t count = objc;
+    int count = objc;
     Tcl_Obj **remObjv, *result[3];
     Tcl_ArgvInfo argTable[] = {
         {TCL_ARGV_CONSTANT, "-bool", INT2PTR(1), &foo, "booltest", NULL},
@@ -7726,7 +7724,7 @@ TestparseargsCmd(
         return TCL_ERROR;
     }
     result[0] = Tcl_NewIntObj(foo);
-    result[1] = Tcl_NewWideIntObj((Tcl_WideUInt)(count + 1) - 1);
+    result[1] = Tcl_NewIntObj(count);
     result[2] = Tcl_NewListObj(count, remObjv);
     Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
     Tcl_Free(remObjv);

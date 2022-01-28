@@ -181,19 +181,9 @@ static Tcl_Obj *FSSplitPath(Tcl_Obj *pathPtr, int *lenPtr) {
 static int ParseArgsObjv(Tcl_Interp *interp,
 	const Tcl_ArgvInfo *argTable, int *objcPtr, Tcl_Obj *const *objv,
 	Tcl_Obj ***remObjv) {
-    size_t n = TCL_INDEX_NONE;
+    size_t n = (*objcPtr < 0) ? TCL_INDEX_NONE: (size_t)*objcPtr ;
     int result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
-    if (objcPtr) {
-	if ((result == TCL_OK) && (n > INT_MAX)) {
-	    if (interp) {
-		Tcl_AppendResult(interp, "Too many args to be processed", NULL);
-	    }
-	    Tcl_Free(*remObjv);
-	    *remObjv = NULL;
-	    return TCL_ERROR;
-	}
-	*objcPtr = n;
-    }
+    *objcPtr = (int)n;
     return result;
 }
 

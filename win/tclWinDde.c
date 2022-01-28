@@ -314,8 +314,7 @@ DdeSetServerName(
     Tcl_DString dString;
     const WCHAR *actualName;
     Tcl_Obj *srvListPtr = NULL, **srvPtrPtr = NULL;
-    size_t n, srvCount = 0;
-    int lastSuffix, r = TCL_OK;
+    int n, srvCount = 0, lastSuffix, r = TCL_OK;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
