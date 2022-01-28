@@ -288,6 +288,7 @@ Tcl_MainEx(
 				 * but before starting to execute commands. */
     Tcl_Interp *interp)
 {
+    char *progname = NULL;	/* may/may-not be able to use argv[0] */
     int i=0;			/* argv[i] index */
     Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
     const char *encodingName = NULL;
@@ -298,10 +299,11 @@ Tcl_MainEx(
 
     TclpSetInitialEncodings();
     if (0 < argc) {
+	progname = argv[0];
 	--argc;			/* consume argv[0] */
 	++i;
     }
-    TclpFindExecutable((const char *)argv[0]);		/* nb: this could be NULL
+    TclpFindExecutable ((const char *)progname);	/* nb: this could be NULL
 							 * w/ (eg) a malformed
 							 * execve() */
 
@@ -343,7 +345,7 @@ Tcl_MainEx(
 
     path = Tcl_GetStartupScript(&encodingName);
     if (path == NULL) {
-	appName = NewNativeObj(argv[0]); // nb: argv is _not_ advanced here...
+	appName = NewNativeObj(progname);
     } else {
 	appName = path;
     }
