@@ -394,14 +394,10 @@ Tcl_RegexpObjCmd(
 
 		newPtr = Tcl_NewListObj(2, objs);
 	    } else {
-		if (i <= info.nsubs) {
-		    if (info.matches[i].end <= 0) {
-			TclNewObj(newPtr);
-		    } else {
-			newPtr = Tcl_GetRange(objPtr,
-				offset + info.matches[i].start,
-				offset + info.matches[i].end - 1);
-		    }
+		if ((i <= info.nsubs) && (info.matches[i].end > 0)) {
+		    newPtr = Tcl_GetRange(objPtr,
+			    offset + info.matches[i].start,
+			    offset + info.matches[i].end - 1);
 		} else {
 		    TclNewObj(newPtr);
 		}
@@ -1544,7 +1540,7 @@ StringIsCmd(
 	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
 	STR_IS_BOOL,	STR_IS_DICT,	STR_IS_DIGIT,	STR_IS_DOUBLE,
 	STR_IS_ENTIER,	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INDEX,
-	STR_IS_INT,		STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,
+	STR_IS_INT,	STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,
 	STR_IS_PUNCT,	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,
 	STR_IS_UNICODE,	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
     };
