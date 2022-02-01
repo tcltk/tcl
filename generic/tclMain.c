@@ -43,7 +43,7 @@
 #   define _tcscmp strcmp
 #endif
 
-static Tcl_Obj *
+static inline Tcl_Obj *
 NewNativeObj(
     TCHAR *string)
 {
