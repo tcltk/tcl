@@ -1063,8 +1063,7 @@ EXTERN int		Tcl_UniCharIsUpper(int ch);
 /* 351 */
 EXTERN int		Tcl_UniCharIsWordChar(int ch);
 /* 352 */
-TCL_DEPRECATED("Use Tcl_GetCharLength")
-int			Tcl_UniCharLen(const Tcl_UniChar *uniStr);
+EXTERN int		Tcl_Char16Len(const unsigned short *uniStr);
 /* 353 */
 TCL_DEPRECATED("Use Tcl_UtfNcmp")
 int			Tcl_UniCharNcmp(const Tcl_UniChar *ucs,
@@ -1948,6 +1947,15 @@ EXTERN int		Tcl_UniCharIsUnicode(int ch);
 /* 660 */
 EXTERN int		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
 				int sigNumber);
+/* Slot 661 is reserved */
+/* Slot 662 is reserved */
+/* Slot 663 is reserved */
+/* Slot 664 is reserved */
+/* Slot 665 is reserved */
+/* Slot 666 is reserved */
+/* Slot 667 is reserved */
+/* 668 */
+EXTERN int		Tcl_UniCharLen(const int *uniStr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2335,7 +2343,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsSpace) (int ch); /* 349 */
     int (*tcl_UniCharIsUpper) (int ch); /* 350 */
     int (*tcl_UniCharIsWordChar) (int ch); /* 351 */
-    TCL_DEPRECATED_API("Use Tcl_GetCharLength") int (*tcl_UniCharLen) (const Tcl_UniChar *uniStr); /* 352 */
+    int (*tcl_Char16Len) (const unsigned short *uniStr); /* 352 */
     TCL_DEPRECATED_API("Use Tcl_UtfNcmp") int (*tcl_UniCharNcmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned long numChars); /* 353 */
     char * (*tcl_Char16ToUtfDString) (const unsigned short *uniStr, int uniLength, Tcl_DString *dsPtr); /* 354 */
     unsigned short * (*tcl_UtfToChar16DString) (const char *src, int length, Tcl_DString *dsPtr); /* 355 */
@@ -2644,6 +2652,14 @@ typedef struct TclStubs {
     void (*reserved658)(void);
     void (*reserved659)(void);
     int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
+    void (*reserved661)(void);
+    void (*reserved662)(void);
+    void (*reserved663)(void);
+    void (*reserved664)(void);
+    void (*reserved665)(void);
+    void (*reserved666)(void);
+    void (*reserved667)(void);
+    int (*tcl_UniCharLen) (const int *uniStr); /* 668 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3378,8 +3394,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UniCharIsUpper) /* 350 */
 #define Tcl_UniCharIsWordChar \
 	(tclStubsPtr->tcl_UniCharIsWordChar) /* 351 */
-#define Tcl_UniCharLen \
-	(tclStubsPtr->tcl_UniCharLen) /* 352 */
+#define Tcl_Char16Len \
+	(tclStubsPtr->tcl_Char16Len) /* 352 */
 #define Tcl_UniCharNcmp \
 	(tclStubsPtr->tcl_UniCharNcmp) /* 353 */
 #define Tcl_Char16ToUtfDString \
@@ -3994,6 +4010,15 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 659 is reserved */
 #define Tcl_AsyncMarkFromSignal \
 	(tclStubsPtr->tcl_AsyncMarkFromSignal) /* 660 */
+/* Slot 661 is reserved */
+/* Slot 662 is reserved */
+/* Slot 663 is reserved */
+/* Slot 664 is reserved */
+/* Slot 665 is reserved */
+/* Slot 666 is reserved */
+/* Slot 667 is reserved */
+#define Tcl_UniCharLen \
+	(tclStubsPtr->tcl_UniCharLen) /* 668 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4260,6 +4285,8 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToUniCharDString Tcl_UtfToChar16DString
 #   undef Tcl_UtfToUniChar
 #   define Tcl_UtfToUniChar Tcl_UtfToChar16
+#   undef Tcl_UniCharLen
+#   define Tcl_UniCharLen Tcl_Char16Len
 #endif
 #if defined(USE_TCL_STUBS)
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
@@ -4271,6 +4298,9 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
 		? (int (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToUniChar \
 		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
+#   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
+		? (int (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
+		: (int (*)(wchar_t *))Tcl_Char16Len)
 #else
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
 		? (char *(*)(const wchar_t *, int, Tcl_DString *))Tcl_UniCharToUtfDString \
@@ -4281,6 +4311,9 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
 		? (int (*)(const char *, wchar_t *))Tcl_UtfToUniChar \
 		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
+#   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
+		? (int (*)(wchar_t *))Tcl_UniCharLen \
+		: (int (*)(wchar_t *))Tcl_Char16Len)
 #endif
 
 /*
