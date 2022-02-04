@@ -435,6 +435,8 @@ VCVER=0
     && ![echo ARCH=IX86 >> vercl.x] \
     && ![echo $(_HASH)elif defined(_M_AMD64) >> vercl.x] \
     && ![echo ARCH=AMD64 >> vercl.x] \
+    && ![echo $(_HASH)elif defined(_M_ARM64) >> vercl.x] \
+    && ![echo ARCH=ARM64 >> vercl.x] \
     && ![echo $(_HASH)endif >> vercl.x] \
     && ![$(cc32) -nologo -TC -P vercl.x 2>NUL]
 !include vercl.i
@@ -490,6 +492,8 @@ MULTIPLATFORM_INSTALL = 0
 
 !if ![reg query HKLM\Hardware\Description\System\CentralProcessor\0 /v Identifier | findstr /i x86]
 NATIVE_ARCH=IX86
+!if ![reg query HKLM\Hardware\Description\System\CentralProcessor\0 /v Identifier | findstr /i ARM | findstr /i 64-bit]
+NATIVE_ARCH=ARM64
 !else
 NATIVE_ARCH=AMD64
 !endif
@@ -1474,6 +1478,11 @@ cwarn = $(cwarn) -wd4311 -wd4312
 carch = /D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 !else
 carch =
+!endif
+
+# cpuid is only available on intel machines
+!if "$(MACHINE)" == "IX86" || "$(MACHINE)" == "AMD64"
+carch = $(carch) /DHAVE_CPUID=1
 !endif
 
 !if $(DEBUG)

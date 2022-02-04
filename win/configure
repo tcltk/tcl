@@ -3763,10 +3763,15 @@ echo "$as_me: error: ${CC} does not support the -shared option.
 		echo "$as_me:$LINENO: result:    Using 64-bit $MACHINE mode" >&5
 echo "${ECHO_T}   Using 64-bit $MACHINE mode" >&6
 		;;
+	    arm64)
+		MACHINE="ARM64"
+		echo "$as_me:$LINENO: result:    Using ARM64 $MACHINE mode" >&5
+echo "${ECHO_T}   Using ARM64 $MACHINE mode" >&6
+		;;
 	    ia64)
 		MACHINE="IA64"
-		echo "$as_me:$LINENO: result:    Using 64-bit $MACHINE mode" >&5
-echo "${ECHO_T}   Using 64-bit $MACHINE mode" >&6
+		echo "$as_me:$LINENO: result:    Using IA64 $MACHINE mode" >&5
+echo "${ECHO_T}   Using IA64 $MACHINE mode" >&6
 		;;
 	    *)
 		cat >conftest.$ac_ext <<_ACEOF
@@ -3862,6 +3867,9 @@ echo "${ECHO_T}using shared flags" >&6
 	    case "$do64bit" in
 		amd64|x64|yes)
 		    MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
+		    ;;
+		arm64)
+		    MACHINE="ARM64"
 		    ;;
 		ia64)
 		    MACHINE="IA64"

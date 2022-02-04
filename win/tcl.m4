@@ -783,9 +783,13 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
 		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 		;;
+	    arm64)
+		MACHINE="ARM64"
+		AC_MSG_RESULT([   Using ARM64 $MACHINE mode])
+		;;
 	    ia64)
 		MACHINE="IA64"
-		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		AC_MSG_RESULT([   Using IA64 $MACHINE mode])
 		;;
 	    *)
 		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -836,6 +840,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    case "$do64bit" in
 		amd64|x64|yes)
 		    MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
+		    ;;
+		arm64)
+		    MACHINE="ARM64"
 		    ;;
 		ia64)
 		    MACHINE="IA64"
