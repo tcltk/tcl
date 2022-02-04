@@ -437,6 +437,7 @@ TclWinCPUID(
 {
     int status = TCL_ERROR;
 
+#ifdef HAVE_CPUID
 #if defined(HAVE_INTRIN_H) && defined(_WIN64)
 
     __cpuid((int *)regsPtr, index);
@@ -617,6 +618,7 @@ TclWinCPUID(
      * Don't know how to do assembly code for this compiler and/or
      * architecture.
      */
+#endif
 #endif
     return status;
 }

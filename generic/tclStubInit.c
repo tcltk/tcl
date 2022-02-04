@@ -583,7 +583,11 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 26 */
     TclWinFlushDirtyChannels, /* 27 */
     0, /* 28 */
+#ifdef HAVE_CPUID
     TclWinCPUID, /* 29 */
+#else
+    0, /* 29 */
+#endif
     TclUnixOpenTemporaryFile, /* 30 */
 };
 
