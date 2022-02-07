@@ -394,7 +394,7 @@ Tcl_RegexpObjCmd(
 
 		newPtr = Tcl_NewListObj(2, objs);
 	    } else {
-		if (i <= (int)info.nsubs) {
+		if ((i <= (int)info.nsubs) && (info.matches[i].end + 1 > 1)) {
 		    newPtr = Tcl_GetRange(objPtr,
 			    offset + info.matches[i].start,
 			    offset + info.matches[i].end - 1);
@@ -2307,13 +2307,7 @@ StringRangeCmd(
 	return TCL_ERROR;
     }
 
-    if (first == TCL_INDEX_NONE) {
-	first = TCL_INDEX_START;
-    }
-    if (last + 1 >= end + 1) {
-	last = end;
-    }
-    if (last + 1 >= first + 1) {
+    if (last != TCL_INDEX_NONE) {
 	Tcl_SetObjResult(interp, Tcl_GetRange(objv[1], first, last));
     }
     return TCL_OK;
