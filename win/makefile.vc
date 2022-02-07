@@ -57,11 +57,11 @@
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
-#               noembed   = Without this option, the Tcl core library scripts
+# 		noembed   = Without this option, the Tcl core library scripts
 #			    are embedded into the executable if "static" is
-#                           specified in OPTS, or into the DLL otherwise. If
-#                           "noembed" is specified, the scripts are not embedded
-#                           but copied to the installation target (as in 8.6).
+#			    specified in OPTS, or into the DLL otherwise. If
+#			    "noembed" is specified, the scripts are not embedded
+#			    but copied to the installation target (as in 8.6).
 #		nomsvcrt  = Affects the static option only to switch it from
 #			    using msvcrt(d) as the C runtime [by default] to
 #			    libcmt(d). This is useful for static embedding
@@ -97,7 +97,7 @@
 #		nodep	 = Turns off compatibility macros to ensure the core
 #			    isn't being built with deprecated functions.
 #
-#	MACHINE=(ALPHA|AMD64|IA64|IX86)
+#	MACHINE=(ALPHA|AMD64|ARM64|IA64|IX86)
 #		Set the machine type used for the compiler, linker, and
 #		resource compiler.  This hook is needed to tell the tools
 #		when alternate platforms are requested.  IX86 is the default
@@ -564,7 +564,7 @@ $(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win64\libtommath.dll
 	$(COPY) $(TOMMATHDIR)\win64\libtommath.dll $(OUT_DIR)\libtommath.dll
 $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
 	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
-!else
+!elseif "$(MACHINE)" == "IX86"
 $(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win32\zlib1.dll
 	$(COPY) $(COMPATDIR)\zlib\win32\zlib1.dll $(OUT_DIR)\zlib1.dll
 $(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win32\zdll.lib
