@@ -24,7 +24,7 @@ _RULES_VC = 1
 # For modifications that are not backward-compatible, you *must* change
 # the major version.
 RULES_VERSION_MAJOR = 1
-RULES_VERSION_MINOR = 9
+RULES_VERSION_MINOR = 10
 
 # The PROJECT macro must be defined by parent makefile.
 !if "$(PROJECT)" == ""
@@ -411,8 +411,8 @@ _INSTALLDIR=$(_INSTALLDIR)\lib
 #     compiler version 1200. This is kept only for legacy reasons as it
 #     does not make sense for recent Microsoft compilers. Only used for
 #     output directory names.
-# ARCH - set to IX86 or AMD64 depending on 32- or 64-bit target
-# NATIVE_ARCH - set to IX86 or AMD64 for the host machine
+# ARCH - set to IX86, ARM64 or AMD64 depending on 32- or 64-bit target
+# NATIVE_ARCH - set to IX86, ARM64 or AMD64 for the host machine
 # MACHINE - same as $(ARCH) - legacy
 # _VC_MANIFEST_EMBED_{DLL,EXE} - commands for embedding a manifest if needed
 
@@ -435,6 +435,8 @@ VCVER=0
     && ![echo ARCH=IX86 >> vercl.x] \
     && ![echo $(_HASH)elif defined(_M_AMD64) >> vercl.x] \
     && ![echo ARCH=AMD64 >> vercl.x] \
+    && ![echo $(_HASH)elif defined(_M_ARM64) >> vercl.x] \
+    && ![echo ARCH=ARM64 >> vercl.x] \
     && ![echo $(_HASH)endif >> vercl.x] \
     && ![$(cc32) -nologo -TC -P vercl.x 2>NUL]
 !include vercl.i
@@ -459,6 +461,9 @@ VCVER = $(VCVERSION)
 !if "$(MACHINE)" == "x86"
 !undef MACHINE
 MACHINE = IX86
+!elseif "$(MACHINE)" == "arm64"
+!undef MACHINE
+MACHINE = ARM64
 !elseif "$(MACHINE)" == "x64"
 !undef MACHINE
 MACHINE = AMD64
@@ -475,6 +480,8 @@ MACHINE=$(ARCH)
 # the Tcl platform::identify command
 !if "$(MACHINE)" == "AMD64"
 PLATFORM_IDENTIFY = win32-x86_64
+!elseif "$(MACHINE)" == "ARM64"
+PLATFORM_IDENTIFY = win32-arm
 !else
 PLATFORM_IDENTIFY = win32-ix86
 !endif
@@ -490,6 +497,8 @@ MULTIPLATFORM_INSTALL = 0
 
 !if ![reg query HKLM\Hardware\Description\System\CentralProcessor\0 /v Identifier | findstr /i x86]
 NATIVE_ARCH=IX86
+!elseif ![reg query HKLM\Hardware\Description\System\CentralProcessor\0 /v Identifier | findstr /i ARM | findstr /i 64-bit]
+NATIVE_ARCH=ARM64
 !else
 NATIVE_ARCH=AMD64
 !endif
@@ -1474,6 +1483,11 @@ cwarn = $(cwarn) -wd4311 -wd4312
 carch = /D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 !else
 carch =
+!endif
+
+# cpuid is only available on intel machines
+!if "$(MACHINE)" == "IX86" || "$(MACHINE)" == "AMD64"
+carch = $(carch) /DHAVE_CPUID=1
 !endif
 
 !if $(DEBUG)
