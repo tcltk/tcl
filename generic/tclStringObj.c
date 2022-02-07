@@ -698,8 +698,7 @@ TclGetUnicodeFromObj(
  *
  *	Create a Tcl Object that contains the chars between first and last of
  *	the object indicated by "objPtr". If the object is not already a
- *	String object, convert it to one. The first and last indices are
- *	assumed to be in the appropriate range.
+ *	String object, convert it to one.
  *
  * Results:
  *	Returns a new Tcl Object of the String type.
@@ -732,11 +731,12 @@ Tcl_GetRange(
     if (TclIsPureByteArray(objPtr)) {
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
 
-	if (last >= length) {
+	if (last < 0 || last >= length) {
 	    last = length - 1;
 	}
 	if (last < first) {
-	    return Tcl_NewObj();
+	    TclNewObj(newObjPtr);
+	    return newObjPtr;
 	}
 	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
     }
@@ -757,13 +757,14 @@ Tcl_GetRange(
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
-	    if (last >= stringPtr->numChars) {
+	    if (last < 0 || last >= stringPtr->numChars) {
 		last = stringPtr->numChars - 1;
 	    }
 	    if (last < first) {
-		return Tcl_NewObj();
+		TclNewObj(newObjPtr);
+		return newObjPtr;
 	    }
-	    newObjPtr = Tcl_NewStringObj(objPtr->bytes + first, last-first+1);
+	    newObjPtr = Tcl_NewStringObj(objPtr->bytes + first, last - first + 1);
 
 	    /*
 	     * Since we know the char length of the result, store it.
@@ -777,11 +778,12 @@ Tcl_GetRange(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-    if (last > stringPtr->numChars) {
-	last = stringPtr->numChars;
+    if (last < 0 || last >= stringPtr->numChars) {
+	last = stringPtr->numChars - 1;
     }
     if (last < first) {
-	return Tcl_NewObj();
+	TclNewObj(newObjPtr);
+	return newObjPtr;
     }
 #if TCL_UTF_MAX <= 3
     /* See: bug [11ae2be95dac9417] */
@@ -2085,7 +2087,11 @@ Tcl_AppendFormatToObj(
 	    if (gotPrecision) {
 		numChars = Tcl_GetCharLength(segment);
 		if (precision < numChars) {
-		    segment = Tcl_GetRange(segment, 0, precision - 1);
+		    if (precision < 1) {
+			TclNewObj(segment);
+		    } else {
+			segment = Tcl_GetRange(segment, 0, precision - 1);
+		    }
 		    numChars = precision;
 		    Tcl_IncrRefCount(segment);
 		    allocSegment = 1;

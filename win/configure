@@ -4059,7 +4059,7 @@ fi
     SHLIB_SUFFIX=".dll"
 
     # MACHINE is IX86 for LINK, but this is used by the manifest,
-    # which requires x86|amd64|ia64.
+    # which requires x86|amd64|arm64|ia64.
     MACHINE="X86"
 
     if test "$GCC" = "yes"; then
@@ -4105,6 +4105,13 @@ printf "%s\n" "$ac_cv_cross" >&6; }
 		AR="x86_64-w64-mingw32-ar"
 		RANLIB="x86_64-w64-mingw32-ranlib"
 		RC="x86_64-w64-mingw32-windres"
+	    ;;
+	    arm64)
+		CC="arm64-w64-mingw32-${CC}"
+		LD="arm64-w64-mingw32-ld"
+		AR="arm64-w64-mingw32-ar"
+		RANLIB="arm64-w64-mingw32-ranlib"
+		RC="arm64-w64-mingw32-windres"
 	    ;;
 	    *)
 		CC="i686-w64-mingw32-${CC}"
@@ -4195,6 +4202,9 @@ fi
 printf "%s\n" "$ac_cv_win32" >&6; }
 	if test "$ac_cv_win32" != "yes"; then
 	    as_fn_error $? "${CC} cannot produce win32 executables." "$LINENO" 5
+	fi
+	if test "$MACHINE" != "ARM64"; then
+	    extra_cflags="$extra_cflags -DHAVE_CPUID=1"
 	fi
 
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -mwindows -municode -Dmain=xxmain"
@@ -4488,10 +4498,15 @@ printf "%s\n" "using shared flags" >&6; }
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result:    Using 64-bit $MACHINE mode" >&5
 printf "%s\n" "   Using 64-bit $MACHINE mode" >&6; }
 		;;
+	    arm64)
+		MACHINE="ARM64"
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result:    Using ARM64 $MACHINE mode" >&5
+printf "%s\n" "   Using ARM64 $MACHINE mode" >&6; }
+		;;
 	    ia64)
 		MACHINE="IA64"
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result:    Using 64-bit $MACHINE mode" >&5
-printf "%s\n" "   Using 64-bit $MACHINE mode" >&6; }
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result:    Using IA64 $MACHINE mode" >&5
+printf "%s\n" "   Using IA64 $MACHINE mode" >&6; }
 		;;
 	    *)
 		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -4560,6 +4575,9 @@ printf "%s\n" "using shared flags" >&6; }
 	    case "$do64bit" in
 		amd64|x64|yes)
 		    MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
+		    ;;
+		arm64)
+		    MACHINE="ARM64"
 		    ;;
 		ia64)
 		    MACHINE="IA64"
@@ -5845,7 +5863,7 @@ case "$TCL_PATCH_LEVEL" in
 esac
 TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d ab.`"
 
-# X86|AMD64|IA64 for manifest
+# X86|AMD64|ARM64|IA64 for manifest
 
 
 

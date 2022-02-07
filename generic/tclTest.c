@@ -327,12 +327,13 @@ static Tcl_ObjCmdProc	TestNumUtfCharsCmd;
 static Tcl_ObjCmdProc	TestFindFirstCmd;
 static Tcl_ObjCmdProc	TestFindLastCmd;
 static Tcl_ObjCmdProc	TestHashSystemHashCmd;
+static Tcl_ObjCmdProc	TestGetIntForIndexCmd;
 
 static Tcl_NRPostProc	NREUnwind_callback;
 static Tcl_ObjCmdProc	TestNREUnwind;
 static Tcl_ObjCmdProc	TestNRELevels;
 static Tcl_ObjCmdProc	TestInterpResolverCmd;
-#if defined(HAVE_CPUID) || defined(_WIN32)
+#if defined(HAVE_CPUID)
 static Tcl_ObjCmdProc	TestcpuidCmd;
 #endif
 
@@ -598,6 +599,8 @@ Tcltest_Init(
 	    TestFindFirstCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfindlast",
 	    TestFindLastCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testgetintforindex",
+	    TestGetIntForIndexCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testsetplatform", TestsetplatformCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsocket", TestSocketCmd,
@@ -613,7 +616,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testexitmainloop", TestexitmainloopCmd,
 	    NULL, NULL);
-#if defined(HAVE_CPUID) || defined(_WIN32)
+#if defined(HAVE_CPUID)
     Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
 	    NULL, NULL);
 #endif
@@ -3966,7 +3969,7 @@ TestregexpObjCmd(
 	    if (ii == -1) {
 		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
 		newPtr = Tcl_GetRange(objPtr, start, end);
-	    } else if (ii > info.nsubs) {
+	    } else if (ii > info.nsubs || info.matches[ii].end <= 0) {
 		newPtr = Tcl_NewObj();
 	    } else {
 		newPtr = Tcl_GetRange(objPtr, info.matches[ii].start,
@@ -7036,7 +7039,34 @@ TestFindLastCmd(
     return TCL_OK;
 }
 
-#if defined(HAVE_CPUID) || defined(_WIN32)
+static int
+TestGetIntForIndexCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    int result;
+    Tcl_WideInt endvalue;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "index endvalue");
+	return TCL_ERROR;
+    }
+
+    if (Tcl_GetWideIntFromObj(interp, objv[2], &endvalue) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIntForIndex(interp, objv[1], endvalue, &result) != TCL_OK) {
+	return TCL_ERROR;
+    }
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
+    return TCL_OK;
+}
+
+
+
+#if defined(HAVE_CPUID)
 /*
  *----------------------------------------------------------------------
  *

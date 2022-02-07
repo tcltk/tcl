@@ -836,7 +836,8 @@ TclJoinPath(
     assert ( elements >= 0 );
 
     if (elements == 0) {
-	return Tcl_NewObj();
+	TclNewObj(res);
+	return res;
     }
 
     assert ( elements > 0 );
