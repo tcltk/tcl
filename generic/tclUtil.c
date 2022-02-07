@@ -3405,9 +3405,9 @@ Tcl_GetIntForIndex(
 	return TCL_ERROR;
     }
     if (indexPtr != NULL) {
-	if ((wide < 0) && (endValue != TCL_INDEX_END)) {
+	if ((wide < 0) && (endValue < TCL_INDEX_END)) {
 	    *indexPtr = TCL_INDEX_NONE;
-	} else if ((Tcl_WideUInt)wide > TCL_INDEX_END) {
+	} else if ((Tcl_WideUInt)wide > TCL_INDEX_END && (endValue < TCL_INDEX_END)) {
 	    *indexPtr = TCL_INDEX_END;
 	} else {
 	    *indexPtr = (size_t) wide;
@@ -3651,8 +3651,6 @@ GetEndOffsetFromObj(
 	*widePtr = endValue + 1;
     } else if (offset == WIDE_MIN) {
 	*widePtr = -1;
-    } else if (endValue == (size_t)-1) {
-	*widePtr = offset;
     } else if (offset < 0) {
 	/* Different signs, sum cannot overflow */
 	*widePtr = endValue + offset + 1;

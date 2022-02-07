@@ -147,7 +147,7 @@ GrowStringBuffer(
     }
     if (flag == 0 || stringPtr->allocated > 0) {
 	attempt = 2 * needed;
-	ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1);
+	ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1U);
 	if (ptr == NULL) {
 	    /*
 	     * Take care computing the amount of modest growth to avoid
@@ -159,7 +159,7 @@ GrowStringBuffer(
 	    size_t growth = (extra > limit) ? limit : extra;
 
 	    attempt = needed + growth;
-	    ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1);
+	    ptr = (char *)Tcl_AttemptRealloc(objPtr->bytes, attempt + 1U);
 	}
     }
     if (ptr == NULL) {
@@ -168,7 +168,7 @@ GrowStringBuffer(
 	 */
 
 	attempt = needed;
-	ptr = (char *)Tcl_Realloc(objPtr->bytes, attempt + 1);
+	ptr = (char *)Tcl_Realloc(objPtr->bytes, attempt + 1U);
     }
     objPtr->bytes = ptr;
     stringPtr->allocated = attempt;
@@ -650,8 +650,7 @@ Tcl_GetUnicodeFromObj(
  *
  *	Create a Tcl Object that contains the chars between first and last of
  *	the object indicated by "objPtr". If the object is not already a
- *	String object, convert it to one. The first and last indices are
- *	assumed to be in the appropriate range.
+ *	String object, convert it to one.
  *
  * Results:
  *	Returns a new Tcl Object of the String type.
@@ -691,7 +690,8 @@ Tcl_GetRange(
 	    last = length - 1;
 	}
 	if (last < first) {
-	    return Tcl_NewObj();
+	    TclNewObj(newObjPtr);
+	    return newObjPtr;
 	}
 	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
     }
@@ -716,9 +716,10 @@ Tcl_GetRange(
 		last = stringPtr->numChars - 1;
 	    }
 	    if (last < first) {
-		return Tcl_NewObj();
+		TclNewObj(newObjPtr);
+		return newObjPtr;
 	    }
-	    newObjPtr = Tcl_NewStringObj(objPtr->bytes + first, last-first+1);
+	    newObjPtr = Tcl_NewStringObj(objPtr->bytes + first, last - first + 1);
 
 	    /*
 	     * Since we know the char length of the result, store it.
@@ -732,11 +733,12 @@ Tcl_GetRange(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-    if (last > stringPtr->numChars) {
-	last = stringPtr->numChars;
+    if (last >= stringPtr->numChars) {
+	last = stringPtr->numChars - 1;
     }
     if (last < first) {
-	return Tcl_NewObj();
+	TclNewObj(newObjPtr);
+	return newObjPtr;
     }
 #if TCL_UTF_MAX <= 3
     /* See: bug [11ae2be95dac9417] */
@@ -1985,7 +1987,11 @@ Tcl_AppendFormatToObj(
 	    if (gotPrecision) {
 		numChars = Tcl_GetCharLength(segment);
 		if (precision < numChars) {
-		    segment = Tcl_GetRange(segment, 0, precision - 1);
+		    if (precision < 1) {
+			TclNewObj(segment);
+		    } else {
+			segment = Tcl_GetRange(segment, 0, precision - 1);
+		    }
 		    numChars = precision;
 		    Tcl_IncrRefCount(segment);
 		    allocSegment = 1;
