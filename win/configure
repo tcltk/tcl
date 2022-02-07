@@ -4488,10 +4488,15 @@ printf "%s\n" "using shared flags" >&6; }
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result:    Using 64-bit $MACHINE mode" >&5
 printf "%s\n" "   Using 64-bit $MACHINE mode" >&6; }
 		;;
+	    arm64)
+		MACHINE="ARM64"
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result:    Using ARM64 $MACHINE mode" >&5
+printf "%s\n" "   Using ARM64 $MACHINE mode" >&6; }
+		;;
 	    ia64)
 		MACHINE="IA64"
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result:    Using 64-bit $MACHINE mode" >&5
-printf "%s\n" "   Using 64-bit $MACHINE mode" >&6; }
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result:    Using IA64 $MACHINE mode" >&5
+printf "%s\n" "   Using IA64 $MACHINE mode" >&6; }
 		;;
 	    *)
 		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -4560,6 +4565,9 @@ printf "%s\n" "using shared flags" >&6; }
 	    case "$do64bit" in
 		amd64|x64|yes)
 		    MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
+		    ;;
+		arm64)
+		    MACHINE="ARM64"
 		    ;;
 		ia64)
 		    MACHINE="IA64"
