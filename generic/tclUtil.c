@@ -797,7 +797,7 @@ TclCopyAndCollapse(
 	if (c == '\\') {
 	    char buf[4] = "";
 	    size_t numRead;
-	    size_t backslashCount = TclParseBackslash(src, count, &numRead, &buf);
+	    size_t backslashCount = TclParseBackslash(src, count, &numRead, buf);
 
 	    memcpy(dst, buf, backslashCount);
 	    dst += backslashCount;
