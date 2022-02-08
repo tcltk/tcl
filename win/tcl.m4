@@ -30,7 +30,7 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 	AC_ARG_WITH(tcl,
 	    AS_HELP_STRING([--with-tcl],
 		[directory containing tcl configuration (tclConfig.sh)]),
-	    with_tclconfig="${withval}")
+	    [with_tclconfig="${withval}"])
 	AC_MSG_CHECKING([for Tcl configuration])
 	AC_CACHE_VAL(ac_cv_c_tclconfig,[
 
@@ -148,7 +148,7 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 	AC_ARG_WITH(tk,
 	    AS_HELP_STRING([--with-tk],
 		[directory containing tk configuration (tkConfig.sh)]),
-	    with_tkconfig="${withval}")
+	    [with_tkconfig="${withval}"])
 	AC_MSG_CHECKING([for Tk configuration])
 	AC_CACHE_VAL(ac_cv_c_tkconfig,[
 
@@ -582,12 +582,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		RANLIB="x86_64-w64-mingw32-ranlib"
 		RC="x86_64-w64-mingw32-windres"
 	    ;;
-	    arm64)
-		CC="arm64-w64-mingw32-${CC}"
-		LD="arm64-w64-mingw32-ld"
-		AR="arm64-w64-mingw32-ar"
-		RANLIB="arm64-w64-mingw32-ranlib"
-		RC="arm64-w64-mingw32-windres"
+	    arm64|aarch64)
+		CC="aarch64-w64-mingw32-${CC}"
+		LD="aarch64-w64-mingw32-ld"
+		AR="aarch64-w64-mingw32-ar"
+		RANLIB="aarch64-w64-mingw32-ranlib"
+		RC="aarch64-w64-mingw32-windres"
 	    ;;
 	    *)
 		CC="i686-w64-mingw32-${CC}"
@@ -793,7 +793,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
 		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 		;;
-	    arm64)
+	    arm64|aarch64)
 		MACHINE="ARM64"
 		AC_MSG_RESULT([   Using ARM64 $MACHINE mode])
 		;;
@@ -811,9 +811,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			[tcl_win_64bit=no]
 		)
 		if test "$tcl_win_64bit" = "yes" ; then
-			do64bit=amd64
-			MACHINE="AMD64"
-			AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		    do64bit=amd64
+		    MACHINE="AMD64"
+		    AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 		fi
 		;;
 	esac
@@ -851,7 +851,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		amd64|x64|yes)
 		    MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
 		    ;;
-		arm64)
+		arm64|aarch64)
 		    MACHINE="ARM64"
 		    ;;
 		ia64)

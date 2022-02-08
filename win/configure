@@ -3352,12 +3352,12 @@ echo "${ECHO_T}$ac_cv_cross" >&6
 		RANLIB="x86_64-w64-mingw32-ranlib"
 		RC="x86_64-w64-mingw32-windres"
 	    ;;
-	    arm64)
-		CC="arm64-w64-mingw32-${CC}"
-		LD="arm64-w64-mingw32-ld"
-		AR="arm64-w64-mingw32-ar"
-		RANLIB="arm64-w64-mingw32-ranlib"
-		RC="arm64-w64-mingw32-windres"
+	    arm64|aarch64)
+		CC="aarch64-w64-mingw32-${CC}"
+		LD="aarch64-w64-mingw32-ld"
+		AR="aarch64-w64-mingw32-ar"
+		RANLIB="aarch64-w64-mingw32-ranlib"
+		RC="aarch64-w64-mingw32-windres"
 	    ;;
 	    *)
 		CC="i686-w64-mingw32-${CC}"
@@ -3773,7 +3773,7 @@ echo "$as_me: error: ${CC} does not support the -shared option.
 		echo "$as_me:$LINENO: result:    Using 64-bit $MACHINE mode" >&5
 echo "${ECHO_T}   Using 64-bit $MACHINE mode" >&6
 		;;
-	    arm64)
+	    arm64|aarch64)
 		MACHINE="ARM64"
 		echo "$as_me:$LINENO: result:    Using ARM64 $MACHINE mode" >&5
 echo "${ECHO_T}   Using ARM64 $MACHINE mode" >&6
@@ -3835,9 +3835,9 @@ tcl_win_64bit=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 		if test "$tcl_win_64bit" = "yes" ; then
-			do64bit=amd64
-			MACHINE="AMD64"
-			echo "$as_me:$LINENO: result:    Using 64-bit $MACHINE mode" >&5
+		    do64bit=amd64
+		    MACHINE="AMD64"
+		    echo "$as_me:$LINENO: result:    Using 64-bit $MACHINE mode" >&5
 echo "${ECHO_T}   Using 64-bit $MACHINE mode" >&6
 		fi
 		;;
@@ -3878,7 +3878,7 @@ echo "${ECHO_T}using shared flags" >&6
 		amd64|x64|yes)
 		    MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
 		    ;;
-		arm64)
+		arm64|aarch64)
 		    MACHINE="ARM64"
 		    ;;
 		ia64)
