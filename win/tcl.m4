@@ -874,8 +874,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	if test "$do64bit" != "no" ; then
 	    RC="rc"
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
-	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
-	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
+	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
 	    lflags="${lflags} -nologo -MACHINE:${MACHINE}"
 	    LINKBIN="link"
 	    # Avoid 'unresolved external symbol __security_cookie' errors.
