@@ -557,7 +557,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     SHLIB_SUFFIX=".dll"
 
     # MACHINE is IX86 for LINK, but this is used by the manifest,
-    # which requires x86|amd64|ia64.
+    # which requires x86|amd64|arm64|ia64.
     MACHINE="X86"
 
     if test "$GCC" = "yes"; then
@@ -581,6 +581,13 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		AR="x86_64-w64-mingw32-ar"
 		RANLIB="x86_64-w64-mingw32-ranlib"
 		RC="x86_64-w64-mingw32-windres"
+	    ;;
+	    arm64)
+		CC="arm64-w64-mingw32-${CC}"
+		LD="arm64-w64-mingw32-ld"
+		AR="arm64-w64-mingw32-ar"
+		RANLIB="arm64-w64-mingw32-ranlib"
+		RC="arm64-w64-mingw32-windres"
 	    ;;
 	    *)
 		CC="i686-w64-mingw32-${CC}"
@@ -641,6 +648,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	)
 	if test "$ac_cv_win32" != "yes"; then
 	    AC_MSG_ERROR([${CC} cannot produce win32 executables.])
+	fi
+	if test "$MACHINE" != "ARM64"; then
+	    extra_cflags="$extra_cflags -DHAVE_CPUID=1"
 	fi
 
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -mwindows -municode -Dmain=xxmain"
