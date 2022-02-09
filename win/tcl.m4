@@ -526,12 +526,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		RANLIB="x86_64-w64-mingw32-ranlib"
 		RC="x86_64-w64-mingw32-windres"
 	    ;;
-	    arm64)
-		CC="arm64-w64-mingw32-${CC}"
-		LD="arm64-w64-mingw32-ld"
-		AR="arm64-w64-mingw32-ar"
-		RANLIB="arm64-w64-mingw32-ranlib"
-		RC="arm64-w64-mingw32-windres"
+	    arm64|aarch64)
+		CC="aarch64-w64-mingw32-${CC}"
+		LD="aarch64-w64-mingw32-ld"
+		AR="aarch64-w64-mingw32-ar"
+		RANLIB="aarch64-w64-mingw32-ranlib"
+		RC="aarch64-w64-mingw32-windres"
 	    ;;
 	    *)
 		CC="i686-w64-mingw32-${CC}"
@@ -745,7 +745,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
 		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 		;;
-	    arm64)
+	    arm64|aarch64)
 		MACHINE="ARM64"
 		AC_MSG_RESULT([   Using ARM64 $MACHINE mode])
 		;;
@@ -803,7 +803,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		amd64|x64|yes)
 		    MACHINE="AMD64" ; # assume AMD64 as default 64-bit build
 		    ;;
-		arm64)
+		arm64|aarch64)
 		    MACHINE="ARM64"
 		    ;;
 		ia64)
@@ -826,8 +826,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	if test "$do64bit" != "no" ; then
 	    RC="rc"
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
-	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
-	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
+	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
 	    lflags="${lflags} -nologo -MACHINE:${MACHINE}"
 	    LINKBIN="link"
 	    # Avoid 'unresolved external symbol __security_cookie' errors.
