@@ -555,15 +555,15 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 
-!if "$(MACHINE)" == "AMD64"
-$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64\zlib1.dll
-	$(COPY) $(COMPATDIR)\zlib\win64\zlib1.dll $(OUT_DIR)\zlib1.dll
-$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64\zdll.lib
-	$(COPY) $(COMPATDIR)\zlib\win64\zdll.lib $(OUT_DIR)\zdll.lib
-$(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win64\libtommath.dll
-	$(COPY) $(TOMMATHDIR)\win64\libtommath.dll $(OUT_DIR)\libtommath.dll
-$(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
-	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
+!if "$(MACHINE)" == "ARM64"
+$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64-arm\zlib1.dll
+	$(COPY) $(COMPATDIR)\zlib\win64-arm\zlib1.dll $(OUT_DIR)\zlib1.dll
+$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64-arm\zdll.lib
+	$(COPY) $(COMPATDIR)\zlib\win64-arm\zdll.lib $(OUT_DIR)\zdll.lib
+$(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win64-arm\libtommath.dll
+	$(COPY) $(TOMMATHDIR)\win64-arm\libtommath.dll $(OUT_DIR)\libtommath.dll
+$(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64-arm\tommath.lib
+	$(COPY) $(TOMMATHDIR)\win64-arm\tommath.lib $(OUT_DIR)\tommath.lib
 !elseif "$(MACHINE)" == "IX86"
 $(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win32\zlib1.dll
 	$(COPY) $(COMPATDIR)\zlib\win32\zlib1.dll $(OUT_DIR)\zlib1.dll
@@ -573,6 +573,15 @@ $(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win32\libtommath.dll
 	$(COPY) $(TOMMATHDIR)\win32\libtommath.dll $(OUT_DIR)\libtommath.dll
 $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win32\tommath.lib
 	$(COPY) $(TOMMATHDIR)\win32\tommath.lib $(OUT_DIR)\tommath.lib
+!else
+$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64\zlib1.dll
+	$(COPY) $(COMPATDIR)\zlib\win64\zlib1.dll $(OUT_DIR)\zlib1.dll
+$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64\zdll.lib
+	$(COPY) $(COMPATDIR)\zlib\win64\zdll.lib $(OUT_DIR)\zdll.lib
+$(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win64\libtommath.dll
+	$(COPY) $(TOMMATHDIR)\win64\libtommath.dll $(OUT_DIR)\libtommath.dll
+$(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
+	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
 !endif
 
 $(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
