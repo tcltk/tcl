@@ -2084,7 +2084,7 @@ ReflectTruncate(
 
     Tcl_Preserve(rcPtr);
 
-    lenObj  = Tcl_NewIntObj(length);
+    lenObj  = Tcl_NewWideIntObj(length);
     Tcl_IncrRefCount(lenObj);
 
     if (InvokeTclMethod(rcPtr,METH_TRUNCATE,lenObj,NULL,&resObj)!=TCL_OK) {
@@ -3337,7 +3337,7 @@ ForwardProc(
 	break;
 
     case ForwardedTruncate: {
-	Tcl_Obj *lenObj = Tcl_NewIntObj(paramPtr->truncate.length);
+	Tcl_Obj *lenObj = Tcl_NewWideIntObj(paramPtr->truncate.length);
 
 	Tcl_IncrRefCount(lenObj);
 	Tcl_Preserve(rcPtr);
