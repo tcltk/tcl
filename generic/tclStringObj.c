@@ -485,7 +485,7 @@ TclCheckEmptyString(
     }
 
     if (TclListObjIsCanonical(objPtr)) {
-	Tcl_ListObjLength(NULL, objPtr, &length);
+	TclListObjLength(NULL, objPtr, &length);
 	return length == 0;
     }
 
