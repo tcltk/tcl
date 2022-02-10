@@ -416,7 +416,7 @@ TclListObjRange(
     size_t i, newLen;
     List *listRepPtr;
 
-    Tcl_ListObjGetElements(NULL, listPtr, &listLen, &elemPtrs);
+    TclListObjGetElements(NULL, listPtr, &listLen, &elemPtrs);
 
     if (fromIdx == TCL_INDEX_NONE) {
 	fromIdx = 0;
@@ -585,7 +585,7 @@ Tcl_ListObjAppendList(
      * Pull the elements to append from elemListPtr.
      */
 
-    if (TCL_OK != Tcl_ListObjGetElements(interp, elemListPtr, &objc, &objv)) {
+    if (TCL_OK != TclListObjGetElements(interp, elemListPtr, &objc, &objv)) {
 	return TCL_ERROR;
     }
 
@@ -1316,7 +1316,7 @@ TclLindexFlat(
 
 	    break;
 	}
-	Tcl_ListObjGetElements(NULL, sublistCopy, &listLen, &elemPtrs);
+	TclListObjGetElements(NULL, sublistCopy, &listLen, &elemPtrs);
 
 	if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
 		&index) == TCL_OK) {
@@ -1409,7 +1409,7 @@ TclLsetList(
 
 	return TclLsetFlat(interp, listPtr, 1, &indexArgPtr, valuePtr);
     }
-    Tcl_ListObjGetElements(NULL, indexArgPtr, &indexCount, &indices);
+    TclListObjGetElements(NULL, indexArgPtr, &indexCount, &indices);
 
     /*
      * Let TclLsetFlat handle the actual lset'ting.
@@ -1530,7 +1530,7 @@ TclLsetFlat(
 	 * Check for the possible error conditions...
 	 */
 
-	if (Tcl_ListObjGetElements(interp, subListPtr, &elemCount, &elemPtrs)
+	if (TclListObjGetElements(interp, subListPtr, &elemCount, &elemPtrs)
 		!= TCL_OK) {
 	    /* ...the sublist we're indexing into isn't a list at all. */
 	    result = TCL_ERROR;

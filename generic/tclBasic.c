@@ -4714,7 +4714,7 @@ TEOV_NotFound(
      * itself.
      */
 
-    Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
+    TclListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
 	    &handlerObjc, &handlerObjv);
     newObjc = objc + handlerObjc;
     newObjv = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * newObjc);
@@ -5274,7 +5274,7 @@ TclEvalEx(
 			size_t numElements;
 			Tcl_Obj **elements, *temp = copy[wordIdx];
 
-			Tcl_ListObjGetElements(NULL, temp, &numElements,
+			TclListObjGetElements(NULL, temp, &numElements,
 				&elements);
 			objectsUsed += numElements;
 			while (numElements--) {
@@ -6037,7 +6037,7 @@ TclNREvalObjEx(
         TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
 		objPtr, NULL);
 
-	Tcl_ListObjGetElements(NULL, listPtr, &objc, &objv);
+	TclListObjGetElements(NULL, listPtr, &objc, &objv);
 	return TclNREvalObjv(interp, objc, objv, flags, NULL);
     }
 
@@ -8640,7 +8640,7 @@ TclNRTailcallEval(
     size_t objc;
     Tcl_Obj **objv;
 
-    Tcl_ListObjGetElements(interp, listPtr, &objc, &objv);
+    TclListObjGetElements(interp, listPtr, &objc, &objv);
     nsObjPtr = objv[0];
 
     if (result == TCL_OK) {
@@ -9070,7 +9070,7 @@ TclNREvalList(
 
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
-    Tcl_ListObjGetElements(NULL, listPtr, &objc, &objv);
+    TclListObjGetElements(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
 
@@ -9358,7 +9358,7 @@ InjectHandler(
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, InjectHandlerPostCall, corPtr, listPtr,
             INT2PTR(nargs), isProbe);
-    Tcl_ListObjGetElements(NULL, listPtr, &objc, &objv);
+    TclListObjGetElements(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
 

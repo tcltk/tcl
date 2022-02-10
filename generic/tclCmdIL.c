@@ -2193,7 +2193,7 @@ Tcl_JoinObjCmd(
      * pointer to its array of element pointers.
      */
 
-    if (Tcl_ListObjGetElements(interp, objv[1], &listLen,
+    if (TclListObjGetElements(interp, objv[1], &listLen,
 	    &elemPtrs) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2280,7 +2280,7 @@ Tcl_LassignObjCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_ListObjGetElements(NULL, listCopyPtr, &listObjc, &listObjv);
+    TclListObjGetElements(NULL, listCopyPtr, &listObjc, &listObjv);
 
     objc -= 2;
     objv += 2;
@@ -2579,7 +2579,7 @@ Tcl_LpopObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_ListObjGetElements(interp, listPtr, &listLen, &elemPtrs);
+    result = TclListObjGetElements(interp, listPtr, &listLen, &elemPtrs);
     if (result != TCL_OK) {
 	return result;
     }
@@ -3070,7 +3070,7 @@ Tcl_LreverseObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "list");
 	return TCL_ERROR;
     }
-    if (Tcl_ListObjGetElements(interp, objv[1], &elemc, &elemv) != TCL_OK) {
+    if (TclListObjGetElements(interp, objv[1], &elemc, &elemv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3342,7 +3342,7 @@ Tcl_LsearchObjCmd(
 	     */
 
 	    i++;
-	    if (Tcl_ListObjGetElements(interp, objv[i],
+	    if (TclListObjGetElements(interp, objv[i],
 		    &sortInfo.indexc, &indices) != TCL_OK) {
 		result = TCL_ERROR;
 		goto done;
@@ -3448,7 +3448,7 @@ Tcl_LsearchObjCmd(
      * pointer to its array of element pointers.
      */
 
-    result = Tcl_ListObjGetElements(interp, objv[objc - 2], &listc, &listv);
+    result = TclListObjGetElements(interp, objv[objc - 2], &listc, &listv);
     if (result != TCL_OK) {
 	goto done;
     }
@@ -3553,7 +3553,7 @@ Tcl_LsearchObjCmd(
 	     * 1844789]
 	     */
 
-	    Tcl_ListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
+	    TclListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
 	    break;
 	case REAL:
 	    result = Tcl_GetDoubleFromObj(interp, patObj, &patDouble);
@@ -3566,7 +3566,7 @@ Tcl_LsearchObjCmd(
 	     * 1844789]
 	     */
 
-	    Tcl_ListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
+	    TclListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
 	    break;
 	}
     } else {
@@ -4081,7 +4081,7 @@ Tcl_LsortObjCmd(
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
 	    }
-	    if (Tcl_ListObjGetElements(interp, objv[i+1], &sortindex,
+	    if (TclListObjGetElements(interp, objv[i+1], &sortindex,
 		    &indexv) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done;
@@ -4174,7 +4174,7 @@ Tcl_LsortObjCmd(
     if (indexPtr) {
 	Tcl_Obj **indexv;
 
-	Tcl_ListObjGetElements(interp, indexPtr, &sortInfo.indexc, &indexv);
+	TclListObjGetElements(interp, indexPtr, &sortInfo.indexc, &indexv);
 	switch (sortInfo.indexc) {
 	case 0:
 	    sortInfo.indexv = NULL;
@@ -4234,7 +4234,7 @@ Tcl_LsortObjCmd(
 	sortInfo.compareCmdPtr = newCommandPtr;
     }
 
-    sortInfo.resultCode = Tcl_ListObjGetElements(interp, listObj,
+    sortInfo.resultCode = TclListObjGetElements(interp, listObj,
 	    &length, &listObjPtrs);
     if (sortInfo.resultCode != TCL_OK || length <= 0) {
 	goto done;
@@ -4654,7 +4654,7 @@ SortCompare(
 	TclListObjLength(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
 	Tcl_ListObjReplace(infoPtr->interp, infoPtr->compareCmdPtr, objc - 2,
 		2, 2, paramObjv);
-	Tcl_ListObjGetElements(infoPtr->interp, infoPtr->compareCmdPtr,
+	TclListObjGetElements(infoPtr->interp, infoPtr->compareCmdPtr,
 		&objc, &objv);
 
 	infoPtr->resultCode = Tcl_EvalObjv(infoPtr->interp, objc, objv, 0);

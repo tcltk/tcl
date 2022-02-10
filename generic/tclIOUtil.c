@@ -1066,7 +1066,7 @@ Tcl_FSMatchInDirectory(
 	     * resultPtr and tmpResultPtr are guaranteed to be distinct.
 	     */
 
-	    ret = Tcl_ListObjGetElements(interp, tmpResultPtr,
+	    ret = TclListObjGetElements(interp, tmpResultPtr,
 		    &resLength, &elemsPtr);
 	    for (i=0 ; ret==TCL_OK && i<resLength ; i++) {
 		ret = Tcl_ListObjAppendElement(interp, resultPtr,
@@ -2479,7 +2479,7 @@ TclFSFileAttrIndex(
 	size_t i, objc;
 	Tcl_Obj **objv;
 
-	if (Tcl_ListObjGetElements(NULL, listObj, &objc, &objv) != TCL_OK) {
+	if (TclListObjGetElements(NULL, listObj, &objc, &objv) != TCL_OK) {
 	    TclDecrRefCount(listObj);
 	    return TCL_ERROR;
 	}

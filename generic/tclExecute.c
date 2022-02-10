@@ -2673,7 +2673,7 @@ TEBCresume(
 
 	objPtr = OBJ_AT_TOS;
 	TRACE(("\"%.30s\" => ", O2S(objPtr)));
-	if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
+	if (TclListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -2883,7 +2883,7 @@ TEBCresume(
 
 	TclMarkTailcall(interp);
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
-	Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
+	TclListObjGetElements(NULL, objPtr, &objc, &objv);
 	TclNRAddCallback(interp, TclNRReleaseValues, objPtr, NULL, NULL, NULL);
 	return TclNREvalObjv(interp, objc, objv, TCL_EVAL_INVOKE, NULL);
 
@@ -3295,7 +3295,7 @@ TEBCresume(
 	    varPtr = varPtr->value.linkPtr;
 	}
 	TRACE(("%u <- \"%.30s\" => ", opnd, O2S(valuePtr)));
-	if (Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv)
+	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
 		!= TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -3321,7 +3321,7 @@ TEBCresume(
 	}
 	TRACE(("%u \"%.30s\" \"%.30s\" => ",
 		opnd, O2S(part2Ptr), O2S(valuePtr)));
-	if (Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv)
+	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
 		!= TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -3384,7 +3384,7 @@ TEBCresume(
 
     lappendList:
 	opnd = -1;
-	if (Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv)
+	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
 		!= TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -4655,7 +4655,7 @@ TEBCresume(
 	 * Extract the desired list element.
 	 */
 
-	if ((Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
+	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
 		&& !TclHasInternalRep(value2Ptr, &tclListType)) {
 	    int code;
 
@@ -4700,7 +4700,7 @@ TEBCresume(
 	 * in the process.
 	 */
 
-	if (Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
+	if (TclListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -6326,7 +6326,7 @@ TEBCresume(
 		numVars = varListPtr->numVars;
 
 		listPtr = OBJ_AT_DEPTH(listTmpDepth);
-		Tcl_ListObjGetElements(interp, listPtr, &listLen, &elements);
+		TclListObjGetElements(interp, listPtr, &listLen, &elements);
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
@@ -6941,7 +6941,7 @@ TEBCresume(
 	    }
 	}
 	Tcl_IncrRefCount(dictPtr);
-	if (Tcl_ListObjGetElements(interp, OBJ_AT_TOS, &length,
+	if (TclListObjGetElements(interp, OBJ_AT_TOS, &length,
 		&keyPtrPtr) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -7001,7 +7001,7 @@ TEBCresume(
 	    NEXT_INST_F(9, 1, 0);
 	}
 	if (Tcl_DictObjSize(interp, dictPtr, &length) != TCL_OK
-		|| Tcl_ListObjGetElements(interp, OBJ_AT_TOS, &length,
+		|| TclListObjGetElements(interp, OBJ_AT_TOS, &length,
 			&keyPtrPtr) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -7060,7 +7060,7 @@ TEBCresume(
 	dictPtr = OBJ_UNDER_TOS;
 	listPtr = OBJ_AT_TOS;
 	TRACE(("\"%.30s\" \"%.30s\" =>", O2S(dictPtr), O2S(listPtr)));
-	if (Tcl_ListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -7078,7 +7078,7 @@ TEBCresume(
 	listPtr = OBJ_AT_TOS;
 	TRACE(("\"%.30s\" \"%.30s\" \"%.30s\" => ",
 		O2S(varNamePtr), O2S(valuePtr), O2S(keysPtr)));
-	if (Tcl_ListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    TclDecrRefCount(keysPtr);
 	    goto gotError;
@@ -7109,7 +7109,7 @@ TEBCresume(
 	varPtr = LOCAL(opnd);
 	TRACE(("%u <- \"%.30s\" \"%.30s\" => ", opnd, O2S(valuePtr),
 		O2S(keysPtr)));
-	if (Tcl_ListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}

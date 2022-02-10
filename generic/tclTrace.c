@@ -433,7 +433,7 @@ TraceExecutionObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = Tcl_ListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -674,7 +674,7 @@ TraceCommandObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = Tcl_ListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -873,7 +873,7 @@ TraceVariableObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = Tcl_ListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}

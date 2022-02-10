@@ -10928,7 +10928,7 @@ FixLevelCode(
      * information. Hence an error means that we've got serious breakage.
      */
 
-    res = Tcl_ListObjGetElements(NULL, msg, &lc, &lv);
+    res = TclListObjGetElements(NULL, msg, &lc, &lv);
     if (res != TCL_OK) {
 	Tcl_Panic("Tcl_SetChannelError: bad syntax of message");
     }

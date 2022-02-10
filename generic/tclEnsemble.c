@@ -272,7 +272,7 @@ TclNamespaceEnsembleCmd(
 		    Tcl_Obj **listv;
 		    const char *cmd;
 
-		    if (Tcl_ListObjGetElements(interp, listObj, &len,
+		    if (TclListObjGetElements(interp, listObj, &len,
 			    &listv) != TCL_OK) {
 			Tcl_DictObjDone(&search);
 			if (patchedDict) {
@@ -561,7 +561,7 @@ TclNamespaceEnsembleCmd(
 			continue;
 		    }
 		    do {
-			if (Tcl_ListObjGetElements(interp, listObj, &len,
+			if (TclListObjGetElements(interp, listObj, &len,
 				&listv) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
@@ -1922,7 +1922,7 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	TclSkipTailcall(interp);
-	Tcl_ListObjGetElements(NULL, copyPtr, &copyObjc, &copyObjv);
+	TclListObjGetElements(NULL, copyPtr, &copyObjc, &copyObjv);
 	((Interp *)interp)->lookupNsPtr = ensemblePtr->nsPtr;
 	return TclNREvalObjv(interp, copyObjc, copyObjv, TCL_EVAL_INVOKE, NULL);
     }
@@ -2298,7 +2298,7 @@ EnsembleUnknownCallback(
     for (i = 1 ; i < (size_t)objc ; i++) {
 	Tcl_ListObjAppendElement(NULL, unknownCmd, objv[i]);
     }
-    Tcl_ListObjGetElements(NULL, unknownCmd, &paramc, &paramv);
+    TclListObjGetElements(NULL, unknownCmd, &paramc, &paramv);
     Tcl_IncrRefCount(unknownCmd);
 
     /*
@@ -2592,7 +2592,7 @@ BuildEnsembleConfig(
          * Determine the target for each.
          */
 
-        Tcl_ListObjGetElements(NULL, subList, &subc, &subv);
+        TclListObjGetElements(NULL, subList, &subc, &subv);
         if (subList == mapDict) {
             /*
              * Unusual case where explicit list of subcommands is same value
@@ -2989,7 +2989,7 @@ TclCompileEnsemble(
 	const char *str;
 	Tcl_Obj *matchObj = NULL;
 
-	if (Tcl_ListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
+	if (TclListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
 	    goto failed;
 	}
 	for (i=0 ; i<len ; i++) {
@@ -3109,7 +3109,7 @@ TclCompileEnsemble(
 
   doneMapLookup:
     Tcl_ListObjAppendElement(NULL, replaced, replacement);
-    if (Tcl_ListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
+    if (TclListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
 	goto failed;
     } else if (len != 1) {
 	/*
@@ -3392,7 +3392,7 @@ CompileToInvokedCommand(
      * difference. Hence the call to TclContinuationsEnterDerived...
      */
 
-    Tcl_ListObjGetElements(NULL, replacements, &numWords, &words);
+    TclListObjGetElements(NULL, replacements, &numWords, &words);
     for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && (size_t)i <= numWords) {

@@ -777,7 +777,7 @@ Tcl_RegsubObjCmd(
 	    Tcl_Obj **args = NULL, **parts;
 	    size_t numArgs;
 
-	    Tcl_ListObjGetElements(interp, subPtr, &numParts, &parts);
+	    TclListObjGetElements(interp, subPtr, &numParts, &parts);
 	    numArgs = numParts + info.nsubs + 1;
 	    args = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj*) * numArgs);
 	    memcpy(args, parts, sizeof(Tcl_Obj*) * numParts);
@@ -2030,7 +2030,7 @@ StringMapCmd(
 	Tcl_DictObjDone(&search);
     } else {
 	size_t i;
-	if (Tcl_ListObjGetElements(interp, objv[objc-2], &i,
+	if (TclListObjGetElements(interp, objv[objc-2], &i,
 		&mapElemv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3580,7 +3580,7 @@ TclNRSwitchObjCmd(
 	size_t listc;
 
 	blist = objv[0];
-	if (Tcl_ListObjGetElements(interp, objv[0], &listc, &listv) != TCL_OK) {
+	if (TclListObjGetElements(interp, objv[0], &listc, &listv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -4917,12 +4917,12 @@ TryPostBody(
 	int found = 0;
 	Tcl_Obj **handlers, **info;
 
-	Tcl_ListObjGetElements(NULL, handlersObj, &numHandlers, &handlers);
+	TclListObjGetElements(NULL, handlersObj, &numHandlers, &handlers);
 	for (i=0 ; i<numHandlers ; i++) {
 	    Tcl_Obj *handlerBodyObj;
 	    size_t numElems = 0;
 
-	    Tcl_ListObjGetElements(NULL, handlers[i], &numElems, &info);
+	    TclListObjGetElements(NULL, handlers[i], &numElems, &info);
 	    if (!found) {
 		Tcl_GetIntFromObj(NULL, info[1], &code);
 		if (code != result) {
@@ -4943,8 +4943,8 @@ TryPostBody(
 		    TclNewLiteralStringObj(errorCodeName, "-errorcode");
 		    Tcl_DictObjGet(NULL, options, errorCodeName, &errcode);
 		    Tcl_DecrRefCount(errorCodeName);
-		    Tcl_ListObjGetElements(NULL, info[2], &len1, &bits1);
-		    if (Tcl_ListObjGetElements(NULL, errcode, &len2,
+		    TclListObjGetElements(NULL, info[2], &len1, &bits1);
+		    if (TclListObjGetElements(NULL, errcode, &len2,
 			    &bits2) != TCL_OK) {
 			continue;
 		    }

@@ -1013,7 +1013,7 @@ BinaryFormatCmd(
 		 * The macro evals its args more than once: avoid arg++
 		 */
 
-		if (Tcl_ListObjGetElements(interp, objv[arg], &listc,
+		if (TclListObjGetElements(interp, objv[arg], &listc,
 			&listv) != TCL_OK) {
 		    return TCL_ERROR;
 		}
@@ -1297,7 +1297,7 @@ BinaryFormatCmd(
 		listc = 1;
 		count = 1;
 	    } else {
-		Tcl_ListObjGetElements(interp, objv[arg], &listc, &listv);
+		TclListObjGetElements(interp, objv[arg], &listc, &listv);
 		if (count == BINARY_ALL) {
 		    count = listc;
 		}

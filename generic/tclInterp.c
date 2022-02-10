@@ -2324,7 +2324,7 @@ GetInterp(
     Tcl_Interp *searchInterp;	/* Interim storage for interp. to find. */
     InterpInfo *parentInfoPtr;
 
-    if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
 
@@ -2428,7 +2428,7 @@ ChildCreate(
     size_t objc;
     Tcl_Obj **objv;
 
-    if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
     if (objc < 2) {

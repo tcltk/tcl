@@ -484,7 +484,7 @@ TclCreateProc(
      * in the Proc.
      */
 
-    result = Tcl_ListObjGetElements(interp , argsPtr ,&numArgs ,&argArray);
+    result = TclListObjGetElements(interp , argsPtr ,&numArgs ,&argArray);
     if (result != TCL_OK) {
 	goto procError;
     }
@@ -514,7 +514,7 @@ TclCreateProc(
 	 * Now divide the specifier up into name and default.
 	 */
 
-	result = Tcl_ListObjGetElements(interp, argArray[i], &fieldCount,
+	result = TclListObjGetElements(interp, argArray[i], &fieldCount,
 		&fieldValues);
 	if (result != TCL_OK) {
 	    goto procError;
@@ -2396,7 +2396,7 @@ SetLambdaFromAny(
      * length is not 2, then it cannot be converted to lambdaType.
      */
 
-    result = Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
+    result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",

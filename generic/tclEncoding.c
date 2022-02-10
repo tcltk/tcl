@@ -480,7 +480,7 @@ FillEncodingFileMap(void)
 	Tcl_FSMatchInDirectory(NULL, matchFileList, directory, "*.enc",
 		&readableFiles);
 
-	Tcl_ListObjGetElements(NULL, matchFileList, &numFiles, &filev);
+	TclListObjGetElements(NULL, matchFileList, &numFiles, &filev);
 	for (j=0; j<numFiles; j++) {
 	    Tcl_Obj *encodingName, *fileObj;
 
@@ -1467,7 +1467,7 @@ OpenEncodingFileChannel(
     Tcl_Channel chan = NULL;
     size_t i, numDirs;
 
-    Tcl_ListObjGetElements(NULL, searchPath, &numDirs, &dir);
+    TclListObjGetElements(NULL, searchPath, &numDirs, &dir);
     Tcl_IncrRefCount(nameObj);
     Tcl_AppendToObj(fileNameObj, ".enc", -1);
     Tcl_IncrRefCount(fileNameObj);

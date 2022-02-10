@@ -122,7 +122,7 @@ GetIndexFromObjList(
      * of the code there. This is a bit ineffiecient but simpler.
      */
 
-    result = Tcl_ListObjGetElements(interp, tableObjPtr, &objc, &objv);
+    result = TclListObjGetElements(interp, tableObjPtr, &objc, &objv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -613,7 +613,7 @@ PrefixAllObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_ListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
+    result = TclListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -671,7 +671,7 @@ PrefixLongestObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_ListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
+    result = TclListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }

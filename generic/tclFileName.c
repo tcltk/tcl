@@ -2016,7 +2016,7 @@ TclGlob(
 	    }
 	}
 
-	Tcl_ListObjGetElements(NULL, filenamesObj, &objc, &objv);
+	TclListObjGetElements(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
 	    size_t len;
 	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
@@ -2345,7 +2345,7 @@ DoGlob(
 	    size_t i, subdirc, repair = TCL_INDEX_NONE;
 	    Tcl_Obj **subdirv;
 
-	    result = Tcl_ListObjGetElements(interp, subdirsPtr,
+	    result = TclListObjGetElements(interp, subdirsPtr,
 		    &subdirc, &subdirv);
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;

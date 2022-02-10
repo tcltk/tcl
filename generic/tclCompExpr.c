@@ -2226,8 +2226,8 @@ TclCompileExpr(
 	TclAdvanceLines(&envPtr->line, script,
 		script + TclParseAllWhiteSpace(script, numBytes));
 
-	Tcl_ListObjGetElements(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
-	Tcl_ListObjGetElements(NULL, funcList, &objc, &funcObjv);
+	TclListObjGetElements(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
+	TclListObjGetElements(NULL, funcList, &objc, &funcObjv);
 	CompileExprTree(interp, opTree, 0, &litObjv, funcObjv,
 		parsePtr->tokenPtr, envPtr, optimize);
     } else {

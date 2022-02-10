@@ -2533,7 +2533,7 @@ EachloopCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	Tcl_ListObjGetElements(NULL, statePtr->vCopyList[i],
+	TclListObjGetElements(NULL, statePtr->vCopyList[i],
 		&statePtr->varcList[i], &statePtr->varvList[i]);
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2551,7 +2551,7 @@ EachloopCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	Tcl_ListObjGetElements(NULL, statePtr->aCopyList[i],
+	TclListObjGetElements(NULL, statePtr->aCopyList[i],
 		&statePtr->argcList[i], &statePtr->argvList[i]);
 
 	j = statePtr->argcList[i] / statePtr->varcList[i];
