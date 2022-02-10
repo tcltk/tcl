@@ -2326,7 +2326,7 @@ ChildCreate(
     int isNew, objc;
     Tcl_Obj **objv;
 
-    if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
     if (objc < 2) {

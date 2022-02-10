@@ -1315,12 +1315,12 @@ TclProcessReturn(
              * if someone does [return -errorstack [info errorstack]]
              */
 
-            if (Tcl_ListObjGetElements(interp, valuePtr, &valueObjc,
+            if (TclListObjGetElements(interp, valuePtr, &valueObjc,
                     &valueObjv) == TCL_ERROR) {
                 return TCL_ERROR;
             }
             iPtr->resetErrorStack = 0;
-            Tcl_ListObjLength(interp, iPtr->errorStack, &len);
+            TclListObjLength(interp, iPtr->errorStack, &len);
 
             /*
              * Reset while keeping the list internalrep as much as possible.
@@ -1479,7 +1479,7 @@ TclMergeReturnOptions(
     if (valuePtr != NULL) {
 	int length;
 
-	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length )) {
 	    /*
 	     * Value is not a list, which is illegal for -errorcode.
 	     */
@@ -1501,7 +1501,7 @@ TclMergeReturnOptions(
     if (valuePtr != NULL) {
 	int length;
 
-	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length )) {
 	    /*
 	     * Value is not a list, which is illegal for -errorstack.
 	     */
