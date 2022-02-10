@@ -743,13 +743,19 @@ StdinProc(
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
     Tcl_Interp *interp = isPtr->interp;
+    Tcl_DString savedEncoding;
 
+    Tcl_DStringInit(&savedEncoding);
+    Tcl_GetChannelOption(NULL, chan, "-encoding", &savedEncoding);
+    Tcl_SetChannelOption(NULL, chan, "-encoding", "utf-8");
     if (Tcl_IsShared(commandPtr)) {
 	Tcl_DecrRefCount(commandPtr);
 	commandPtr = Tcl_DuplicateObj(commandPtr);
 	Tcl_IncrRefCount(commandPtr);
     }
     length = Tcl_GetsObj(chan, commandPtr);
+    Tcl_SetChannelOption(NULL, chan, "-encoding", Tcl_DStringValue(&savedEncoding));
+    Tcl_DStringFree(&savedEncoding);
     if (length < 0) {
 	if (Tcl_InputBlocked(chan)) {
 	    return;
