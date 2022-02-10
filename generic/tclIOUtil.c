@@ -1114,10 +1114,10 @@ FsAddMountsToGlobResult(
 	return;
     }
 
-    if (Tcl_ListObjLength(NULL, mounts, &mLength) != TCL_OK || mLength == 0) {
+    if (TclListObjLength(NULL, mounts, &mLength) != TCL_OK || mLength == 0) {
 	goto endOfMounts;
     }
-    if (Tcl_ListObjLength(NULL, resultPtr, &gLength) != TCL_OK) {
+    if (TclListObjLength(NULL, resultPtr, &gLength) != TCL_OK) {
 	goto endOfMounts;
     }
     for (i=0 ; i<mLength ; i++) {
@@ -3952,7 +3952,7 @@ Tcl_FSSplitPath(
     }
 
     if (lenPtr != NULL) {
-	Tcl_ListObjLength(NULL, result, lenPtr);
+	TclListObjLength(NULL, result, lenPtr);
     }
     return result;
 }
@@ -4075,7 +4075,7 @@ TclFSNonnativePathType(
 	    Tcl_Obj *thisFsVolumes = fsRecPtr->fsPtr->listVolumesProc();
 
 	    if (thisFsVolumes != NULL) {
-		if (Tcl_ListObjLength(NULL, thisFsVolumes, &numVolumes)
+		if (TclListObjLength(NULL, thisFsVolumes, &numVolumes)
 			!= TCL_OK) {
 		    /*
 		     * This is VERY bad; the listVolumesProc didn't return a

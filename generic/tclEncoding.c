@@ -370,7 +370,7 @@ Tcl_SetEncodingSearchPath(
 {
     size_t dummy;
 
-    if (TCL_ERROR == Tcl_ListObjLength(NULL, searchPath, &dummy)) {
+    if (TCL_ERROR == TclListObjLength(NULL, searchPath, &dummy)) {
 	return TCL_ERROR;
     }
     TclSetProcessGlobalValue(&encodingSearchPath, searchPath, NULL);
@@ -417,7 +417,7 @@ TclSetLibraryPath(
 {
     size_t dummy;
 
-    if (TCL_ERROR == Tcl_ListObjLength(NULL, path, &dummy)) {
+    if (TCL_ERROR == TclListObjLength(NULL, path, &dummy)) {
 	return;
     }
     TclSetProcessGlobalValue(&libraryPath, path, NULL);
@@ -456,7 +456,7 @@ FillEncodingFileMap(void)
 
     searchPath = Tcl_GetEncodingSearchPath();
     Tcl_IncrRefCount(searchPath);
-    Tcl_ListObjLength(NULL, searchPath, &numDirs);
+    TclListObjLength(NULL, searchPath, &numDirs);
     map = Tcl_NewDictObj();
     Tcl_IncrRefCount(map);
 
@@ -3851,7 +3851,7 @@ InitializeEncodingSearchPath(
     Tcl_IncrRefCount(searchPathObj);
     libPathObj = TclGetLibraryPath();
     Tcl_IncrRefCount(libPathObj);
-    Tcl_ListObjLength(NULL, libPathObj, &numDirs);
+    TclListObjLength(NULL, libPathObj, &numDirs);
 
     for (i = 0; i < numDirs; i++) {
 	Tcl_Obj *directoryObj, *pathObj;

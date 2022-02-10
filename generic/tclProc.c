@@ -920,7 +920,7 @@ TclNRUplevelObjCmd(
     } else if (!TclHasStringRep(objv[1]) && objc == 2) {
 	int status;
 	size_t llength;
-	status = Tcl_ListObjLength(interp, objv[1], &llength);
+	status = TclListObjLength(interp, objv[1], &llength);
 	if (status == TCL_OK && llength > 1) {
 	    /* the first argument can't interpreted as a level. Avoid
 	     * generating a string representation of the script. */

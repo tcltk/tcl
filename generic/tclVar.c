@@ -2835,7 +2835,7 @@ Tcl_LappendObjCmd(
 		return TCL_ERROR;
 	    }
 	} else {
-	    result = Tcl_ListObjLength(interp, newValuePtr, &numElems);
+	    result = TclListObjLength(interp, newValuePtr, &numElems);
 	    if (result != TCL_OK) {
 		return result;
 	    }
@@ -2893,7 +2893,7 @@ Tcl_LappendObjCmd(
 	    createdNewObj = 1;
 	}
 
-	result = Tcl_ListObjLength(interp, varValuePtr, &numElems);
+	result = TclListObjLength(interp, varValuePtr, &numElems);
 	if (result == TCL_OK) {
 	    result = Tcl_ListObjReplace(interp, varValuePtr, numElems, 0,
 		    (objc-2), (objv+2));
@@ -3046,7 +3046,7 @@ ArrayForNRCmd(
      * Parse arguments.
      */
 
-    if (Tcl_ListObjLength(interp, objv[1], &numVars) != TCL_OK) {
+    if (TclListObjLength(interp, objv[1], &numVars) != TCL_OK) {
 	return TCL_ERROR;
     }
 

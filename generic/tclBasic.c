@@ -5222,7 +5222,7 @@ TclEvalEx(
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 		    size_t numElements;
 
-		    code = Tcl_ListObjLength(interp, objv[objectsUsed],
+		    code = TclListObjLength(interp, objv[objectsUsed],
 			    &numElements);
 		    if (code == TCL_ERROR) {
 			/*

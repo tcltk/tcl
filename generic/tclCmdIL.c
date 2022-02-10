@@ -2406,7 +2406,7 @@ Tcl_LinsertObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_ListObjLength(interp, objv[1], &len);
+    result = TclListObjLength(interp, objv[1], &len);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2525,7 +2525,7 @@ Tcl_LlengthObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_ListObjLength(interp, objv[1], &listLen);
+    result = TclListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2674,7 +2674,7 @@ Tcl_LrangeObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_ListObjLength(interp, objv[1], &listLen);
+    result = TclListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2748,7 +2748,7 @@ Tcl_LremoveObjCmd(
     }
 
     listObj = objv[1];
-    if (Tcl_ListObjLength(interp, listObj, &listLen) != TCL_OK) {
+    if (TclListObjLength(interp, listObj, &listLen) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2972,7 +2972,7 @@ Tcl_LreplaceObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_ListObjLength(interp, objv[1], &listLen);
+    result = TclListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -4651,7 +4651,7 @@ SortCompare(
 	 * Replace them and evaluate the result.
 	 */
 
-	Tcl_ListObjLength(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
+	TclListObjLength(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
 	Tcl_ListObjReplace(infoPtr->interp, infoPtr->compareCmdPtr, objc - 2,
 		2, 2, paramObjv);
 	Tcl_ListObjGetElements(infoPtr->interp, infoPtr->compareCmdPtr,
@@ -4865,7 +4865,7 @@ SelectObjFromSublist(
 	int index;
 	Tcl_Obj *currentObj;
 
-	if (Tcl_ListObjLength(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
+	if (TclListObjLength(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
 	    infoPtr->resultCode = TCL_ERROR;
 	    return NULL;
 	}

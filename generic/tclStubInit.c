@@ -111,7 +111,7 @@ int LOGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
 int LOLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     int *lengthPtr) {
     size_t n = TCL_INDEX_NONE;
-    int result = Tcl_ListObjLength(interp, listPtr, &n);
+    int result = TclListObjLength(interp, listPtr, &n);
     if (lengthPtr) {
 	if ((result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {

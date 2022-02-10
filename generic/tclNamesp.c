@@ -4436,7 +4436,7 @@ Tcl_SetNamespaceUnknownHandler(
      */
 
     if (handlerPtr != NULL) {
-	if (Tcl_ListObjLength(interp, handlerPtr, &lstlen) != TCL_OK) {
+	if (TclListObjLength(interp, handlerPtr, &lstlen) != TCL_OK) {
 	    /*
 	     * Not a list.
 	     */
@@ -5013,7 +5013,7 @@ TclLogCommandInfo(
 	size_t len;
 
 	iPtr->resetErrorStack = 0;
-	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
+	TclListObjLength(interp, iPtr->errorStack, &len);
 
 	/*
 	 * Reset while keeping the list internalrep as much as possible.
@@ -5098,7 +5098,7 @@ TclErrorStackResetIf(
 	size_t len;
 
 	iPtr->resetErrorStack = 0;
-	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
+	TclListObjLength(interp, iPtr->errorStack, &len);
 
 	/*
 	 * Reset while keeping the list internalrep as much as possible.

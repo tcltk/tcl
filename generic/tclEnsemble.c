@@ -233,7 +233,7 @@ TclNamespaceEnsembleCmd(
 		cxtPtr = nsPtr;
 		continue;
 	    case CRT_SUBCMDS:
-		if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
+		if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -242,7 +242,7 @@ TclNamespaceEnsembleCmd(
 		subcmdObj = (len > 0 ? objv[1] : NULL);
 		continue;
 	    case CRT_PARAM:
-		if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
+		if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -337,7 +337,7 @@ TclNamespaceEnsembleCmd(
 		}
 		continue;
 	    case CRT_UNKNOWN:
-		if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
+		if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -533,13 +533,13 @@ TclNamespaceEnsembleCmd(
 		}
 		switch ((enum EnsConfigOpts) index) {
 		case CONF_SUBCMDS:
-		    if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
+		    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 			goto freeMapAndError;
 		    }
 		    subcmdObj = (len > 0 ? objv[1] : NULL);
 		    continue;
 		case CONF_PARAM:
-		    if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
+		    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 			goto freeMapAndError;
 		    }
 		    paramObj = (len > 0 ? objv[1] : NULL);
@@ -623,7 +623,7 @@ TclNamespaceEnsembleCmd(
 		    }
 		    continue;
 		case CONF_UNKNOWN:
-		    if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
+		    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 			goto freeMapAndError;
 		    }
 		    unknownObj = (len > 0 ? objv[1] : NULL);
@@ -792,7 +792,7 @@ Tcl_SetEnsembleSubcommandList(
     if (subcmdList != NULL) {
 	size_t length;
 
-	if (Tcl_ListObjLength(interp, subcmdList, &length) != TCL_OK) {
+	if (TclListObjLength(interp, subcmdList, &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 1) {
@@ -868,7 +868,7 @@ Tcl_SetEnsembleParameterList(
     if (paramList == NULL) {
 	length = 0;
     } else {
-	if (Tcl_ListObjLength(interp, paramList, &length) != TCL_OK) {
+	if (TclListObjLength(interp, paramList, &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 1) {
@@ -1044,7 +1044,7 @@ Tcl_SetEnsembleUnknownHandler(
     if (unknownList != NULL) {
 	size_t length;
 
-	if (Tcl_ListObjLength(interp, unknownList, &length) != TCL_OK) {
+	if (TclListObjLength(interp, unknownList, &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 1) {
@@ -1888,7 +1888,7 @@ NsEnsembleImplementationCmdNR(
 	Tcl_Obj **copyObjv;
 	size_t copyObjc, prefixObjc;
 
-	Tcl_ListObjLength(NULL, prefixObj, &prefixObjc);
+	TclListObjLength(NULL, prefixObj, &prefixObjc);
 
 	if (objc == 2) {
 	    copyPtr = TclListObjCopy(NULL, prefixObj);
@@ -2335,7 +2335,7 @@ EnsembleUnknownCallback(
 
 	/* A non-empty list is the replacement command. */
 
-	if (Tcl_ListObjLength(interp, *prefixObjPtr, &prefixObjc) != TCL_OK) {
+	if (TclListObjLength(interp, *prefixObjPtr, &prefixObjc) != TCL_OK) {
 	    TclDecrRefCount(*prefixObjPtr);
 	    Tcl_AddErrorInfo(interp, "\n    while parsing result of "
 		    "ensemble unknown subcommand handler");

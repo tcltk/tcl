@@ -810,7 +810,7 @@ Tcl_FSJoinPath(
     size_t objc;
     Tcl_Obj **objv;
 
-    if (Tcl_ListObjLength(NULL, listObj, &objc) != TCL_OK) {
+    if (TclListObjLength(NULL, listObj, &objc) != TCL_OK) {
 	return NULL;
     }
 

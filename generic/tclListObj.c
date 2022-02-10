@@ -1677,7 +1677,7 @@ TclLsetFlat(
      */
 
     len = TCL_INDEX_NONE;
-    Tcl_ListObjLength(NULL, subListPtr, &len);
+    TclListObjLength(NULL, subListPtr, &len);
     if (valuePtr == NULL) {
 	Tcl_ListObjReplace(NULL, subListPtr, index, 1, 0, NULL);
     } else if (index == (size_t)len) {
