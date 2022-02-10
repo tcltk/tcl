@@ -758,7 +758,7 @@ TclGetInnerContext(
          * Reset while keeping the list internalrep as much as possible.
          */
 
-	Tcl_ListObjLength(interp, result, &len);
+	TclListObjLength(interp, result, &len);
         Tcl_ListObjReplace(interp, result, 0, len, 0, NULL);
     }
     Tcl_ListObjAppendElement(NULL, result, TclNewInstNameObj(*pc));
