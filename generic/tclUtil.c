@@ -802,9 +802,11 @@ TclCopyAndCollapse(
 	char c = *src;
 
 	if (c == '\\') {
+	    char buf[4] = "";
 	    int numRead;
-	    int backslashCount = TclParseBackslash(src, count, &numRead, dst);
+	    int backslashCount = TclParseBackslash(src, count, &numRead, buf);
 
+	    memcpy(dst, buf, backslashCount);
 	    dst += backslashCount;
 	    newCount += backslashCount;
 	    src += numRead;
@@ -3784,7 +3786,7 @@ GetEndOffsetFromObj(
 	    if ((TclMaxListLength(bytes, -1, NULL) > 1)
 
 		    /* If it's possible, do the full list parse. */
-	            && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length))
+	            && (TCL_OK == TclListObjLength(NULL, objPtr, &length))
 	            && (length > 1)) {
 	        goto parseError;
 	    }
