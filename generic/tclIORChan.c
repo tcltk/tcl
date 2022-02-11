@@ -609,7 +609,7 @@ TclChanCreateObjCmd(
      *   Compare open mode against optional r/w.
      */
 
-    if (Tcl_ListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "chan handler \"%s initialize\" returned non-list: %s",
                 TclGetString(cmdObj), TclGetString(resObj)));
@@ -1062,7 +1062,7 @@ UnmarshallErrorResult(
      * information; if we panic here, something has gone badly wrong already.
      */
 
-    if (Tcl_ListObjGetElements(interp, msgObj, &lc, &lv) != TCL_OK) {
+    if (TclListObjGetElements(interp, msgObj, &lc, &lv) != TCL_OK) {
 	Tcl_Panic("TclChanCaughtErrorBypass: Bad syntax of caught result");
     }
     if (interp == NULL) {
@@ -1993,7 +1993,7 @@ ReflectGetOption(
      * result is a valid list. Nor that the list has an even number elements.
      */
 
-    if (Tcl_ListObjGetElements(interp, resObj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElements(interp, resObj, &listc, &listv) != TCL_OK) {
         goto error;
     }
 
@@ -2084,7 +2084,7 @@ ReflectTruncate(
 
     Tcl_Preserve(rcPtr);
 
-    lenObj  = Tcl_NewIntObj(length);
+    lenObj  = Tcl_NewWideIntObj(length);
     Tcl_IncrRefCount(lenObj);
 
     if (InvokeTclMethod(rcPtr,METH_TRUNCATE,lenObj,NULL,&resObj)!=TCL_OK) {
@@ -2139,7 +2139,7 @@ EncodeEventMask(
     int evIndex;		/* Id of event for an element of the eventspec
 				 * list. */
 
-    if (Tcl_ListObjGetElements(interp, obj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElements(interp, obj, &listc, &listv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3307,7 +3307,7 @@ ForwardProc(
 	    int listc;
 	    Tcl_Obj **listv;
 
-	    if (Tcl_ListObjGetElements(interp, resObj, &listc,
+	    if (TclListObjGetElements(interp, resObj, &listc,
                     &listv) != TCL_OK) {
 		Tcl_DecrRefCount(resObj);
 		resObj = MarshallError(interp);
@@ -3337,7 +3337,7 @@ ForwardProc(
 	break;
 
     case ForwardedTruncate: {
-	Tcl_Obj *lenObj = Tcl_NewIntObj(paramPtr->truncate.length);
+	Tcl_Obj *lenObj = Tcl_NewWideIntObj(paramPtr->truncate.length);
 
 	Tcl_IncrRefCount(lenObj);
 	Tcl_Preserve(rcPtr);
