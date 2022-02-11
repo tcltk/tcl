@@ -370,7 +370,7 @@ Tcl_SetEncodingSearchPath(
 {
     int dummy;
 
-    if (TCL_ERROR == Tcl_ListObjLength(NULL, searchPath, &dummy)) {
+    if (TCL_ERROR == TclListObjLength(NULL, searchPath, &dummy)) {
 	return TCL_ERROR;
     }
     TclSetProcessGlobalValue(&encodingSearchPath, searchPath, NULL);
@@ -417,7 +417,7 @@ TclSetLibraryPath(
 {
     int dummy;
 
-    if (TCL_ERROR == Tcl_ListObjLength(NULL, path, &dummy)) {
+    if (TCL_ERROR == TclListObjLength(NULL, path, &dummy)) {
 	return;
     }
     TclSetProcessGlobalValue(&libraryPath, path, NULL);
@@ -456,7 +456,7 @@ FillEncodingFileMap(void)
 
     searchPath = Tcl_GetEncodingSearchPath();
     Tcl_IncrRefCount(searchPath);
-    Tcl_ListObjLength(NULL, searchPath, &numDirs);
+    TclListObjLength(NULL, searchPath, &numDirs);
     map = Tcl_NewDictObj();
     Tcl_IncrRefCount(map);
 
@@ -480,7 +480,7 @@ FillEncodingFileMap(void)
 	Tcl_FSMatchInDirectory(NULL, matchFileList, directory, "*.enc",
 		&readableFiles);
 
-	Tcl_ListObjGetElements(NULL, matchFileList, &numFiles, &filev);
+	TclListObjGetElements(NULL, matchFileList, &numFiles, &filev);
 	for (j=0; j<numFiles; j++) {
 	    Tcl_Obj *encodingName, *fileObj;
 
@@ -726,7 +726,7 @@ Tcl_GetDefaultEncodingDir(void)
     int numDirs;
     Tcl_Obj *first, *searchPath = Tcl_GetEncodingSearchPath();
 
-    Tcl_ListObjLength(NULL, searchPath, &numDirs);
+    TclListObjLength(NULL, searchPath, &numDirs);
     if (numDirs == 0) {
 	return NULL;
     }
@@ -1620,7 +1620,7 @@ OpenEncodingFileChannel(
     Tcl_Channel chan = NULL;
     int i, numDirs;
 
-    Tcl_ListObjGetElements(NULL, searchPath, &numDirs, &dir);
+    TclListObjGetElements(NULL, searchPath, &numDirs, &dir);
     Tcl_IncrRefCount(nameObj);
     Tcl_AppendToObj(fileNameObj, ".enc", -1);
     Tcl_IncrRefCount(fileNameObj);
@@ -4011,7 +4011,7 @@ InitializeEncodingSearchPath(
     Tcl_IncrRefCount(searchPathObj);
     libPathObj = TclGetLibraryPath();
     Tcl_IncrRefCount(libPathObj);
-    Tcl_ListObjLength(NULL, libPathObj, &numDirs);
+    TclListObjLength(NULL, libPathObj, &numDirs);
 
     for (i = 0; i < numDirs; i++) {
 	Tcl_Obj *directoryObj, *pathObj;
