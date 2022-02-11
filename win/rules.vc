@@ -548,9 +548,19 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 
 !endif # NMAKEHLPC
 
+nmakehlp:
+	$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console
+
+# Skip building nmakehlp if flag is set to TRUE
+!if "$(SKIP_NMAKEHLP)" == ""
+SKIP_NMAKEHLP = FALSE
+!endif
+
 # We always build nmakehlp even if it exists since we do not know
 # what source it was built from.
+!if "$(SKIP_NMAKEHLP)" == "FALSE"
 !if [$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
+!endif
 !endif
 
 ################################################################
