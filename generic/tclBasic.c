@@ -5242,7 +5242,7 @@ TclEvalScriptTokens(
 		if (expand[wordIdx]) {
 		    int numElements;
 		    Tcl_Obj **elements, *temp = copy[wordIdx];
-		    Tcl_ListObjGetElements(NULL, temp, &numElements,
+		    TclListObjGetElements(NULL, temp, &numElements,
 			    &elements);
 		    objc += numElements;
 		    while (numElements--) {

@@ -265,7 +265,7 @@ SetHamtFromAny(
 	return TCL_OK;
     }
 
-    if (TCL_OK != Tcl_ListObjGetElements(interp, objPtr, &objc, &objv)) {
+    if (TCL_OK != TclListObjGetElements(interp, objPtr, &objc, &objv)) {
 	return TCL_ERROR;
     }
 
@@ -3205,7 +3205,7 @@ FinalizeDictUpdate(
      * an instruction to remove the key.
      */
 
-    Tcl_ListObjGetElements(NULL, argsObj, &objc, &objv);
+    TclListObjGetElements(NULL, argsObj, &objc, &objv);
     for (i=0 ; i<objc ; i+=2) {
 	objPtr = Tcl_ObjGetVar2(interp, objv[i+1], NULL, 0);
 	if (objPtr == NULL) {
@@ -3329,7 +3329,7 @@ FinalizeDictWith(
 
     state = Tcl_SaveInterpState(interp, result);
     if (pathPtr != NULL) {
-	Tcl_ListObjGetElements(NULL, pathPtr, &pathc, &pathv);
+	TclListObjGetElements(NULL, pathPtr, &pathc, &pathv);
     } else {
 	pathc = 0;
 	pathv = NULL;
