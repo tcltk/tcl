@@ -4714,7 +4714,7 @@ TEOV_NotFound(
      * itself.
      */
 
-    Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
+    TclListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
 	    &handlerObjc, &handlerObjv);
     newObjc = objc + handlerObjc;
     newObjv = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * newObjc);
@@ -5274,7 +5274,7 @@ TclEvalEx(
 			int numElements;
 			Tcl_Obj **elements, *temp = copy[wordIdx];
 
-			Tcl_ListObjGetElements(NULL, temp, &numElements,
+			TclListObjGetElements(NULL, temp, &numElements,
 				&elements);
 			objectsUsed += numElements;
 			while (numElements--) {
@@ -8591,7 +8591,7 @@ TclNRTailcallEval(
     int objc;
     Tcl_Obj **objv;
 
-    Tcl_ListObjGetElements(interp, listPtr, &objc, &objv);
+    TclListObjGetElements(interp, listPtr, &objc, &objv);
     nsObjPtr = objv[0];
 
     if (result == TCL_OK) {

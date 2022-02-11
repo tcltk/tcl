@@ -5013,7 +5013,7 @@ TclLogCommandInfo(
 	int len;
 
 	iPtr->resetErrorStack = 0;
-	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
+	TclListObjLength(interp, iPtr->errorStack, &len);
 
 	/*
 	 * Reset while keeping the list internalrep as much as possible.
@@ -5098,7 +5098,7 @@ TclErrorStackResetIf(
 	int len;
 
 	iPtr->resetErrorStack = 0;
-	Tcl_ListObjLength(interp, iPtr->errorStack, &len);
+	TclListObjLength(interp, iPtr->errorStack, &len);
 
 	/*
 	 * Reset while keeping the list internalrep as much as possible.
