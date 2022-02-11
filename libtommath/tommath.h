@@ -37,7 +37,7 @@ extern "C" {
 #endif
 
 /* detect 64-bit mode if possible */
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64) || \
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64) || defined(_M_ARM64) || \
     defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || \
     defined(__s390x__) || defined(__arch64__) || defined(__aarch64__) || \
     defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
