@@ -6761,11 +6761,11 @@ printf "%s\n" "#define _OE_SOCKETS 1" >>confdefs.h
 	    if test "$SHARED_BUILD" = 1
 then :
 
-	        SHLIB_LD='ld -shared -expect_unresolved "*"'
+	        SHLIB_LD='${CC} -shared'
 
 else $as_nop
 
-	        SHLIB_LD='ld -non_shared -expect_unresolved "*"'
+	        SHLIB_LD='${CC} -non_shared'
 
 fi
 	    SHLIB_SUFFIX=".so"
