@@ -8077,11 +8077,11 @@ fi
 	    SHLIB_CFLAGS=""
 	    if test "$SHARED_BUILD" = 1; then
 
-	        SHLIB_LD='ld -shared -expect_unresolved "*"'
+	        SHLIB_LD='${CC} -shared'
 
 else
 
-	        SHLIB_LD='ld -non_shared -expect_unresolved "*"'
+	        SHLIB_LD='${CC} -non_shared'
 
 fi
 
