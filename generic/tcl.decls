@@ -2325,7 +2325,7 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
-declare 660 {
+declare 668 {
     void TclUnusedStubEntry(void)
 }
 
