@@ -21,26 +21,27 @@ In order to compile Tcl for Windows, you need the following:
 	and
 
 	Visual C++ 6 or newer
+	    (win32 or win64, for IX86/AMD64/ARM64)
 
 	or
 
 	Linux + MinGW-w64 [https://www.mingw-w64.org/]
-	    (win32 or win64)
+	    (win32 or win64, for IX86/AMD64)
 
 	or
 
 	Cygwin + MinGW-w64 [https://cygwin.com/install.html]
-	    (win32 or win64)
+	    (win32 or win64, for IX86/AMD64)
 
 	or
 
 	Darwin + MinGW-w64 [https://www.mingw-w64.org/]
-	    (win32 or win64)
+	    (win32 or win64, for IX86/AMD64)
 
 	or
 
 	Msys + MinGW-w64 [https://www.mingw-w64.org/]
-	    (win32 or win64)
+	    (win32 or win64, for IX86/AMD64)
 
 
 In practice, this release is built with Visual C++ 6.0 and the TEA
@@ -55,13 +56,6 @@ using it, are in the comments of "makefile.vc".  A quick example would be:
 
 There is also a Developer Studio workspace and project file, too, if you
 would like to use them.
-
-If you want to Cross-compile with Visual Studio (e.g. for X86 or ARM64
-targets, but running on AMD64), first set up the environment for
-your host machine and compile nmakehlp.exe:
-	C:\tcl_source\win\>nmake -f makefile.vc nmakehlp
-Then go to your cross-compile environment and run the nmake
-command again for whatever you want to build.
 
 If you are building with Linux, Cygwin or Msys, you can use the configure
 script that lives in the win subdirectory. The Linux/Cygwin/Msys based

@@ -77,7 +77,7 @@ NEED_TK_SOURCE = 0
 # 2. Figure out our build structure in terms of the directory, whether
 #    we are building Tcl or an extension, etc.
 # 3. Determine the compiler and linker versions
-# 4. Build the nmakehlp helper application
+# 4. Build the nmakehlp helper application (if not cross-compiling)
 # 5. Determine the supported compiler options and features
 # 6. Parse the OPTS macro value for user-specified build configuration
 # 7. Parse the STATS macro value for statistics instrumentation
@@ -548,13 +548,12 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 
 !endif # NMAKEHLPC
 
-nmakehlp:
-	$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console
-
 # We always build nmakehlp even if it exists since we do not know
 # what source it was built from.
 !if "$(MACHINE)" == "$(NATIVE_ARCH)"
-!if [$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
+!if [$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console >NUL]
+#else
+!if [COPY "$(NMAKEHLPC)$(NMAKEHLPC:nmakehlp.c=x86_64-w64-mingw32-nmakehlp.exe)" nmakehlp.exe]
 !endif
 !endif
 
