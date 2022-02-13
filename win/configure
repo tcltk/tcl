@@ -3477,7 +3477,7 @@ echo "${ECHO_T}$ac_cv_win32" >&6
 echo "$as_me: error: ${CC} cannot produce win32 executables." >&2;}
    { (exit 1); exit 1; }; }
 	fi
-	if test "$MACHINE" != "ARM64"; then
+	if test "$do64bit" != "arm64"; then
 	    extra_cflags="$extra_cflags -DHAVE_CPUID=1"
 	fi
 
