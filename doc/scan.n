@@ -19,7 +19,7 @@ scan \- Parse string using conversion specifiers in the style of sscanf
 .PP
 This command parses substrings from an input string in a fashion similar
 to the ANSI C \fBsscanf\fR procedure and returns a count of the number of
-conversions performed, or -1 if the end of the input string is reached
+conversions performed, or the empty string if the end of the input string is reached
 before any conversions have been performed.  \fIString\fR gives the input
 to be parsed and \fIformat\fR indicates how to parse it, using \fB%\fR
 conversion specifiers as in \fBsscanf\fR.  Each \fIvarName\fR gives the
