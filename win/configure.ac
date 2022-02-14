@@ -144,17 +144,19 @@ AS_IF([test "$tcl_ok" = "yes"], [
     AS_IF([test "$do64bit" = "arm64"], [
       AS_IF([test "$GCC" == "yes"],[
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.a])
+        AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.a])
       ], [
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64-arm/zdll.lib])
+        AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64-arm/tommath.lib])
       ])
-      AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a])
     ], [
       AS_IF([test "$GCC" == "yes"],[
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/libz.dll.a])
+        AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a])
       ], [
         AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win64/zdll.lib])
+        AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/tommath.lib])
       ])
-      AC_SUBST(TOMMATH_LIBS,[\${TOMMATH_DIR_NATIVE}/win64/tommath.lib])
     ])
   ], [
     AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR_NATIVE}/win32/zdll.lib])
