@@ -3353,7 +3353,7 @@ echo "${ECHO_T}$ac_cv_cross" >&6
 		RC="x86_64-w64-mingw32-windres"
 	    ;;
 	    arm64|aarch64)
-		CC="aarch64-w64-mingw32-${CC}"
+		CC="aarch64-w64-mingw32-clang"
 		LD="aarch64-w64-mingw32-ld"
 		AR="aarch64-w64-mingw32-ar"
 		RANLIB="aarch64-w64-mingw32-ranlib"
