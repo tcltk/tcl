@@ -5201,7 +5201,7 @@ typedef struct NRE_callback {
 #define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
 #else
 #define TCLNR_ALLOC(interp, ptr) \
-    (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
+    ((ptr) = ((void *)ckalloc(sizeof(NRE_callback))))
 #define TCLNR_FREE(interp, ptr)  ckfree(ptr)
 #endif
 

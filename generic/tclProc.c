@@ -484,7 +484,7 @@ TclCreateProc(
      * in the Proc.
      */
 
-    result = Tcl_ListObjGetElements(interp , argsPtr ,&numArgs ,&argArray);
+    result = TclListObjGetElements(interp , argsPtr ,&numArgs ,&argArray);
     if (result != TCL_OK) {
 	goto procError;
     }
@@ -514,7 +514,7 @@ TclCreateProc(
 	 * Now divide the specifier up into name and default.
 	 */
 
-	result = Tcl_ListObjGetElements(interp, argArray[i], &fieldCount,
+	result = TclListObjGetElements(interp, argArray[i], &fieldCount,
 		&fieldValues);
 	if (result != TCL_OK) {
 	    goto procError;
@@ -633,7 +633,7 @@ TclCreateProc(
 	     */
 
 	    localPtr = (CompiledLocal *)ckalloc(
-		    offsetof(CompiledLocal, name) + fieldValues[0]->length + 1);
+		    offsetof(CompiledLocal, name) + 1U + fieldValues[0]->length);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -920,7 +920,7 @@ TclNRUplevelObjCmd(
 	return TCL_ERROR;
     } else if (!TclHasStringRep(objv[1]) && objc == 2) {
 	int status ,llength;
-	status = Tcl_ListObjLength(interp, objv[1], &llength);
+	status = TclListObjLength(interp, objv[1], &llength);
 	if (status == TCL_OK && llength > 1) {
 	    /* the first argument can't interpreted as a level. Avoid
 	     * generating a string representation of the script. */
@@ -1438,7 +1438,6 @@ InitArgsAndLocals(
     numArgs = procPtr->numArgs;
     argCt = framePtr->objc - skip;	/* Set it to the number of args to the
 					 * procedure. */
-    argObjs = framePtr->objv + skip;
     if (numArgs == 0) {
 	if (argCt) {
 	    goto incorrectArgs;
@@ -1446,6 +1445,7 @@ InitArgsAndLocals(
 	    goto correctArgs;
 	}
     }
+    argObjs = framePtr->objv + skip;
     imax = ((argCt < numArgs-1) ? argCt : numArgs-1);
     for (i = 0; i < imax; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
 	/*
