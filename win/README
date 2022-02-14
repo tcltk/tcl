@@ -56,6 +56,13 @@ using it, are in the comments of "makefile.vc".  A quick example would be:
 There is also a Developer Studio workspace and project file, too, if you
 would like to use them.
 
+If you want to Cross-compile with Visual Studio (e.g. for X86 or ARM64
+targets, but running on AMD64), first set up the environment for
+your host machine and compile nmakehlp.exe:
+	C:\tcl_source\win\>nmake -f makefile.vc nmakehlp
+Then go to your cross-compile environment and run the nmake
+command again for whatever you want to build.
+
 If you are building with Linux, Cygwin or Msys, you can use the configure
 script that lives in the win subdirectory. The Linux/Cygwin/Msys based
 configure/build process works just like the UNIX one, so you will want

@@ -314,11 +314,11 @@ test lsearch-10.6 {binary search with offset} {
 test lsearch-10.7 {offset searching with an empty list} {
     # Stop bug #694232 from reocurring
     lsearch -start 0 {} x
-} -1
+} {}
 test lsearch-10.8 {offset searching past the end of the list} {
     # Stop [Bug 1374778] from reoccurring
     lsearch -start 10 {a b c} c
-} -1
+} {}
 test lsearch-10.9 {offset searching past the end of the list} {
     # Stop [Bug 1374778] from reoccurring
     lsearch -start 10 -all {a b c} c

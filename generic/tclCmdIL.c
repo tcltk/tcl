@@ -3515,12 +3515,7 @@ Tcl_LsearchObjCmd(
 	 */
 
 	if (start >= (size_t)listc) {
-	    if (allMatches || inlineReturn) {
-		Tcl_ResetResult(interp);
-	    } else {
-		TclNewIndexObj(itemPtr, TCL_INDEX_NONE);
-		Tcl_SetObjResult(interp, itemPtr);
-	    }
+	    Tcl_ResetResult(interp);
 	    goto done;
 	}
 

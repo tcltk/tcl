@@ -1088,14 +1088,10 @@ Tcl_ScanObjCmd(
     }
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
-	    if (numVars) {
-		TclNewIndexObj(objPtr, TCL_INDEX_NONE);
+	    if (!numVars && objPtr) {
+		Tcl_SetListObj(objPtr, 0, NULL);
 	    } else {
-		if (objPtr) {
-		    Tcl_SetListObj(objPtr, 0, NULL);
-		} else {
-		    TclNewObj(objPtr);
-		}
+		TclNewObj(objPtr);
 	    }
 	} else if (numVars) {
 	    TclNewIntObj(objPtr, result);
