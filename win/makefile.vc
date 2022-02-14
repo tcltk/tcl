@@ -603,7 +603,7 @@ $(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
 !endif
 	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
 	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
-	@cd "$(OUT_DIR)" && $(TCLSH) zipper.tcl
+	@cd "$(OUT_DIR)" && $(TCLSH_NATIVE) zipper.tcl
 
 
 pkgs:
