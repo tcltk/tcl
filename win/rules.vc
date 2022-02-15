@@ -553,7 +553,7 @@ nmakehlp:
 
 # We always build nmakehlp even if it exists since we do not know
 # what source it was built from.
-!if "$(MACHINE)" == "$(NATIVE_ARCH)"
+!if "$(MACHINE)" == "IX86" || "$(MACHINE)" == "$(NATIVE_ARCH)"
 !if [$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
 !endif
 !endif
