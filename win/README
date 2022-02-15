@@ -20,7 +20,7 @@ In order to compile Tcl for Windows, you need the following:
 
 	and
 
-	Visual C++ 6 or newer
+	Visual Studio 2015 or newer
 
 	or
 
