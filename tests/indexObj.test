@@ -170,9 +170,9 @@ test indexObj-8.1 {Tcl_GetIntForIndex integer} testgetintforindex {
     testgetintforindex 0 0
 } 0
 test indexObj-8.2 {Tcl_GetIntForIndex integer} testgetintforindex {
-    testgetintforindex -1 0
+    testgetintforindex {} 0
 } -1
-test indexObj-8.3 {Tcl_GetIntForIndex integer} testgetintforindex {
+test indexObj-8.3 {Tcl_GetIntForIndex integer} {testgetintforindex deprecated} {
     testgetintforindex -2 0
 } -1
 test indexObj-8.4 {Tcl_GetIntForIndex INT_MAX} testgetintforindex {
