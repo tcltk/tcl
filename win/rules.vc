@@ -550,7 +550,12 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 
 # We always build nmakehlp even if it exists since we do not know
 # what source it was built from.
+!if "$(MACHINE)" == "IX86" || "$(MACHINE)" == "$(NATIVE_ARCH)"
 !if [$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
+!endif
+!else
+!if [copy $(NMAKEHLPC:nmakehlp.c=x86_64-w64-mingw32-nmakehlp.exe) nmakehlp.exe >NUL]
+!endif
 !endif
 
 ################################################################
@@ -1379,7 +1384,7 @@ OPTDEFINES	= $(OPTDEFINES) /DUSE_THREAD_ALLOC=1
 OPTDEFINES	= $(OPTDEFINES) /DSTATIC_BUILD
 !elseif $(TCL_VERSION) > 86
 OPTDEFINES	= $(OPTDEFINES) /DTCL_WITH_EXTERNAL_TOMMATH
-!if "$(MACHINE)" == "AMD64"
+!if "$(MACHINE)" == "AMD64" || "$(MACHINE)" == "ARM64"
 OPTDEFINES	= $(OPTDEFINES) /DMP_64BIT
 !endif
 !endif
@@ -1407,7 +1412,7 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_OPTIMIZED
 !if $(PROFILE)
 OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_PROFILED
 !endif
-!if "$(MACHINE)" == "AMD64"
+!if "$(MACHINE)" == "AMD64" || "$(MACHINE)" == "ARM64"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_DO64BIT
 !endif
 !if $(VCVERSION) < 1300
@@ -1469,7 +1474,7 @@ cdebug = $(cdebug) -Zi
 # cwarn includes default warning levels.
 cwarn = $(WARNINGS)
 
-!if "$(MACHINE)" == "AMD64"
+!if "$(MACHINE)" == "AMD64" || "$(MACHINE)" == "ARM64"
 # Disable pointer<->int warnings related to cast between different sizes
 # There are a gadzillion of these due to use of ClientData and
 # clutter up compiler

@@ -2322,7 +2322,8 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(TOP_DIR)/win/tcl.m4 $(TOP_DIR)/win/aclocal.m4 \
 		$(TOP_DIR)/win/tclsh.exe.manifest.in $(TOP_DIR)/win/tclUuid.h.in \
 		$(TOP_DIR)/win/gitmanifest.in $(TOP_DIR)/win/svnmanifest.in \
-		$(DISTDIR)/win
+		$(TOP_DIR)/win/x86_64-w64-mingw32-nmakehlp.exe $(DISTDIR)/win
+	chmod 775 $(DISTDIR)/win/x86_64-w64-mingw32-nmakehlp.exe
 	cp -p $(TOP_DIR)/win/*.[ch] $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
