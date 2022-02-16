@@ -2816,7 +2816,7 @@ Tcl_GetLongFromObj(
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
 		    if (big.sign) {
-			*longPtr = - (long) value;
+			*longPtr = (long) (0-value);
 		    } else {
 			*longPtr = (long) value;
 		    }
@@ -3116,7 +3116,7 @@ Tcl_GetWideIntFromObj(
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
 		    if (big.sign) {
-			*wideIntPtr = - (Tcl_WideInt) value;
+			*wideIntPtr = (Tcl_WideInt) (0-value);
 		    } else {
 			*wideIntPtr = (Tcl_WideInt) value;
 		    }
