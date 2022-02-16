@@ -2816,7 +2816,7 @@ Tcl_GetLongFromObj(
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
 		    if (big.sign) {
-			*longPtr = (long) (0-value);
+			*longPtr = (long) (-value);
 		    } else {
 			*longPtr = (long) value;
 		    }
@@ -3116,7 +3116,7 @@ Tcl_GetWideIntFromObj(
 			value = (value << CHAR_BIT) | *bytes++;
 		    }
 		    if (big.sign) {
-			*wideIntPtr = (Tcl_WideInt) (0-value);
+			*wideIntPtr = (Tcl_WideInt) (-value);
 		    } else {
 			*wideIntPtr = (Tcl_WideInt) value;
 		    }
@@ -3547,7 +3547,7 @@ Tcl_SetBignumObj(
 	    goto tooLargeForLong;
 	}
 	if (bignumValue->sign) {
-	    TclSetLongObj(objPtr, -(long)value);
+	    TclSetLongObj(objPtr, (long)(-value));
 	} else {
 	    TclSetLongObj(objPtr, (long)value);
 	}
@@ -3573,7 +3573,7 @@ Tcl_SetBignumObj(
 	    goto tooLargeForWide;
 	}
 	if (bignumValue->sign) {
-	    TclSetWideIntObj(objPtr, -(Tcl_WideInt)value);
+	    TclSetWideIntObj(objPtr, (Tcl_WideInt)(-value));
 	} else {
 	    TclSetWideIntObj(objPtr, (Tcl_WideInt)value);
 	}
