@@ -3054,7 +3054,7 @@ Tcl_GetLongFromObj(
 
 	    if (w >= (Tcl_WideInt)(LONG_MIN)
 		    && w <= (Tcl_WideInt)(ULONG_MAX)) {
-		*longPtr = (long) w;
+		*longPtr = (long)w;
 		return TCL_OK;
 	    }
 	    goto tooLarge;
@@ -3090,12 +3090,12 @@ Tcl_GetLongFromObj(
 		}
 		if (big.sign) {
 		    if (value <= 1 + (unsigned long)LONG_MAX) {
-			*longPtr = - (long) value;
+			*longPtr = (long)(-value);
 			return TCL_OK;
 		    }
 		} else {
 		    if (value <= (unsigned long)ULONG_MAX) {
-			*longPtr = (long) value;
+			*longPtr = (long)value;
 			return TCL_OK;
 		    }
 		}
@@ -3329,12 +3329,12 @@ Tcl_GetWideIntFromObj(
 		}
 		if (big.sign) {
 		    if (value <= 1 + ~(Tcl_WideUInt)WIDE_MIN) {
-			*wideIntPtr = - (Tcl_WideInt) value;
+			*wideIntPtr = (Tcl_WideInt)(-value);
 			return TCL_OK;
 		    }
 		} else {
 		    if (value <= (Tcl_WideUInt)WIDE_MAX) {
-			*wideIntPtr = (Tcl_WideInt) value;
+			*wideIntPtr = (Tcl_WideInt)value;
 			return TCL_OK;
 		    }
 		}
@@ -3800,7 +3800,7 @@ Tcl_SetBignumObj(
 	goto tooLargeForWide;
     }
     if (bignumValue->sign) {
-	TclSetIntObj(objPtr, -(Tcl_WideInt)value);
+	TclSetIntObj(objPtr, (Tcl_WideInt)(-value));
     } else {
 	TclSetIntObj(objPtr, (Tcl_WideInt)value);
     }

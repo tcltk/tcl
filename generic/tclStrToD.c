@@ -1447,10 +1447,10 @@ TclParseNumber(
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
-				- (Tcl_WideInt) octalSignificandWide;
+				(Tcl_WideInt)(-octalSignificandWide);
 		    } else {
 			objPtr->internalRep.wideValue =
-				(Tcl_WideInt) octalSignificandWide;
+				(Tcl_WideInt)octalSignificandWide;
 		    }
 		}
 	    }
@@ -1483,10 +1483,10 @@ TclParseNumber(
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
-				- (Tcl_WideInt) significandWide;
+				(Tcl_WideInt)(-significandWide);
 		    } else {
 			objPtr->internalRep.wideValue =
-				(Tcl_WideInt) significandWide;
+				(Tcl_WideInt)significandWide;
 		    }
 		}
 	    }
@@ -2189,7 +2189,7 @@ RefineApproximation(
      */
     if (roundToEven) {
 	rteSignificand = frexp(approxResult, &rteExponent);
-	rteSigWide = (Tcl_WideInt) ldexp(rteSignificand, FP_PRECISION);
+	rteSigWide = (Tcl_WideInt)ldexp(rteSignificand, FP_PRECISION);
 	if ((rteSigWide & 1) == 0) {
 	    mp_clear(&twoMd);
 	    mp_clear(&twoMv);
@@ -4852,7 +4852,7 @@ Tcl_InitBignumFromDouble(
 	err = mp_init(b);
 	mp_zero(b);
     } else {
-	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
+	Tcl_WideInt w = (Tcl_WideInt)ldexp(fract, mantBits);
 	int shift = expt - mantBits;
 
 	err = mp_init_i64(b, w);
