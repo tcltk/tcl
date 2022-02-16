@@ -1898,7 +1898,7 @@ TclIncrObj(
     if ((type1 == TCL_NUMBER_LONG) && (type2 == TCL_NUMBER_LONG)) {
 	long augend = *((const long *) ptr1);
 	long addend = *((const long *) ptr2);
-	long sum = augend + addend;
+	long sum = (long)((unsigned long)augend + (unsigned long)addend);
 
 	/*
 	 * Overflow when (augend and sum have different sign) and (augend and
@@ -1949,7 +1949,7 @@ TclIncrObj(
 
 	TclGetWideIntFromObj(NULL, valuePtr, &w1);
 	TclGetWideIntFromObj(NULL, incrPtr, &w2);
-	sum = w1 + w2;
+	sum = (Tcl_WideInt)((Tcl_WideUInt)w1 + (Tcl_WideUInt)w2);
 
 	/*
 	 * Check for overflow.
@@ -3929,7 +3929,7 @@ TEBCresume(
 	    if (GetNumberFromObj(NULL, objPtr, &ptr, &type) == TCL_OK) {
 		if (type == TCL_NUMBER_LONG) {
 		    long augend = *((const long *)ptr);
-		    long sum = augend + increment;
+		    long sum = (long)((unsigned long)augend + (unsigned long)increment);
 
 		    /*
 		     * Overflow when (augend and sum have different sign) and
@@ -3977,7 +3977,7 @@ TEBCresume(
 		    Tcl_WideInt sum;
 
 		    w = *((const Tcl_WideInt *) ptr);
-		    sum = w + increment;
+		    sum = (Tcl_WideInt)((Tcl_WideUInt)w + (Tcl_WideUInt)increment);
 
 		    /*
 		     * Check for overflow.
@@ -6506,7 +6506,7 @@ TEBCresume(
 	    case INST_ADD:
 		w1 = (Tcl_WideInt) l1;
 		w2 = (Tcl_WideInt) l2;
-		wResult = w1 + w2;
+		wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 + (Tcl_WideUInt)w2);
 #ifdef TCL_WIDE_INT_IS_LONG
 		/*
 		 * Check for overflow.
@@ -6521,7 +6521,7 @@ TEBCresume(
 	    case INST_SUB:
 		w1 = (Tcl_WideInt) l1;
 		w2 = (Tcl_WideInt) l2;
-		wResult = w1 - w2;
+		wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 - (Tcl_WideUInt)w2);
 #ifdef TCL_WIDE_INT_IS_LONG
 		/*
 		 * Must check for overflow. The macro tests for overflows in
@@ -9146,7 +9146,7 @@ ExecuteExtendedBinaryMathOp(
 
 	    switch (opcode) {
 	    case INST_ADD:
-		wResult = w1 + w2;
+		wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 + (Tcl_WideUInt)w2);
 #ifndef TCL_WIDE_INT_IS_LONG
 		if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
 #endif
@@ -9162,7 +9162,7 @@ ExecuteExtendedBinaryMathOp(
 		break;
 
 	    case INST_SUB:
-		wResult = w1 - w2;
+		wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 - (Tcl_WideUInt)w2);
 #ifndef TCL_WIDE_INT_IS_LONG
 		if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
 #endif
