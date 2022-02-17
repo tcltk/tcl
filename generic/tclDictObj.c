@@ -777,12 +777,12 @@ Tcl_Obj *
 TclTraceDictPath(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    int keyc,
+    size_t keyc,
     Tcl_Obj *const keyv[],
     int flags)
 {
     Dict *dict, *newDict;
-    int i;
+    size_t i;
 
     DictGetInternalRep(dictPtr, dict);
     if (dict == NULL) {

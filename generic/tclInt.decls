@@ -39,7 +39,7 @@ declare 7 {
 }
 # TclCreatePipeline unofficially exported for use by BLT.
 declare 9 {
-    int TclCreatePipeline(Tcl_Interp *interp, int argc, const char **argv,
+    size_t TclCreatePipeline(Tcl_Interp *interp, size_t argc, const char **argv,
 	    Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr,
 	    TclFile *errFilePtr)
 }
@@ -438,7 +438,7 @@ declare 224 {
 }
 declare 225 {
     Tcl_Obj *TclTraceDictPath(Tcl_Interp *interp, Tcl_Obj *rootPtr,
-	    int keyc, Tcl_Obj *const keyv[], int flags)
+	    size_t keyc, Tcl_Obj *const keyv[], int flags)
 }
 declare 226 {
     int TclObjBeingDeleted(Tcl_Obj *objPtr)
@@ -454,7 +454,7 @@ declare 229 {
 declare 230 {
     Var *TclObjLookupVar(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    const char *part2, int flags, const char *msg,
-	    const int createPart1, const int createPart2, Var **arrayPtrPtr)
+	    int createPart1, int createPart2, Var **arrayPtrPtr)
 }
 declare 231 {
     int	TclGetNamespaceFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -497,7 +497,7 @@ declare 238 {
 }
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
-			    int skip, ProcErrorProc *errorProc)
+			    size_t skip, ProcErrorProc *errorProc)
 }
 declare 240 {
     int TclNRRunCallbacks(Tcl_Interp *interp, int result,
@@ -508,7 +508,7 @@ declare 241 {
 	    const CmdFrame *invoker, int word)
 }
 declare 242 {
-    int TclNREvalObjv(Tcl_Interp *interp, int objc,
+    int TclNREvalObjv(Tcl_Interp *interp, size_t objc,
 	      Tcl_Obj *const objv[], int flags, Command *cmdPtr)
 }
 
@@ -557,17 +557,17 @@ declare 251 {
 declare 252 {
     Tcl_Obj *TclPtrGetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
-	    const int flags)
+	    int flags)
 }
 declare 253 {
     Tcl_Obj *TclPtrSetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
-	    Tcl_Obj *newValuePtr, const int flags)
+	    Tcl_Obj *newValuePtr, int flags)
 }
 declare 254 {
     Tcl_Obj *TclPtrIncrObjVar(Tcl_Interp *interp, Tcl_Var varPtr,
 	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
-	    Tcl_Obj *incrPtr, const int flags)
+	    Tcl_Obj *incrPtr, int flags)
 }
 declare 255 {
     int	TclPtrObjMakeUpvar(Tcl_Interp *interp, Tcl_Var otherPtr,
@@ -575,7 +575,7 @@ declare 255 {
 }
 declare 256 {
     int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
-	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
+	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags)
 }
 declare 257 {
     void TclStaticLibrary(Tcl_Interp *interp, const char *prefix,
@@ -637,7 +637,7 @@ declare 11 {
     void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 15 {
-    int TclpCreateProcess(Tcl_Interp *interp, int argc,
+    int TclpCreateProcess(Tcl_Interp *interp, size_t argc,
 	    const char **argv, TclFile inputFile, TclFile outputFile,
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }

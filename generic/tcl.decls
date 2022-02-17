@@ -1136,7 +1136,7 @@ declare 303 {
 declare 304 {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    const void *tablePtr, size_t offset, const char *msg, int flags,
-	    int *indexPtr)
+	    void *indexPtr)
 }
 declare 305 {
     void *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, size_t size)
