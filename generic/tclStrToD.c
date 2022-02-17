@@ -4764,7 +4764,7 @@ Tcl_InitBignumFromDouble(
      * Infinite values can't convert to bignum.
      */
 
-    if (TclIsInfinite(d)) {
+    if (isinf(d)) {
 	if (interp != NULL) {
 	    const char *s = "integer value too large to represent";
 
