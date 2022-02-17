@@ -331,12 +331,12 @@ declare 85 {
 }
 declare 86 {
     int Tcl_CreateAlias(Tcl_Interp *childInterp, const char *childCmd,
-	    Tcl_Interp *target, const char *targetCmd, int argc,
+	    Tcl_Interp *target, const char *targetCmd, size_t argc,
 	    const char *const *argv)
 }
 declare 87 {
     int Tcl_CreateAliasObj(Tcl_Interp *childInterp, const char *childCmd,
-	    Tcl_Interp *target, const char *targetCmd, int objc,
+	    Tcl_Interp *target, const char *targetCmd, size_t objc,
 	    Tcl_Obj *const objv[])
 }
 declare 88 {
@@ -725,7 +725,7 @@ declare 196 {
 	    Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags)
 }
 declare 197 {
-    Tcl_Channel Tcl_OpenCommandChannel(Tcl_Interp *interp, int argc,
+    Tcl_Channel Tcl_OpenCommandChannel(Tcl_Interp *interp, size_t argc,
 	    const char **argv, int flags)
 }
 # This is obsolete, use Tcl_FSOpenFileChannel
@@ -2143,7 +2143,7 @@ declare 572 {
 # TIP#268 (extended version numbers and requirements) akupries
 declare 573 {
     int Tcl_PkgRequireProc(Tcl_Interp *interp, const char *name,
-	    int objc, Tcl_Obj *const objv[], void *clientDataPtr)
+	    size_t objc, Tcl_Obj *const objv[], void *clientDataPtr)
 }
 
 # TIP#270 (utility C routines for string formatting) dgp
@@ -2197,11 +2197,11 @@ declare 584 {
     int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 585 {
-    int Tcl_NREvalObjv(Tcl_Interp *interp, int objc,
+    int Tcl_NREvalObjv(Tcl_Interp *interp, size_t objc,
 	    Tcl_Obj *const objv[], int flags)
 }
 declare 586 {
-    int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, int objc,
+    int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, size_t objc,
 	    Tcl_Obj *const objv[], int flags)
 }
 declare 587 {
@@ -2213,7 +2213,7 @@ declare 587 {
 # classic objProc
 declare 588 {
     int Tcl_NRCallObjProc(Tcl_Interp *interp, Tcl_ObjCmdProc *objProc,
-	    void *clientData, int objc, Tcl_Obj *const objv[])
+	    void *clientData, size_t objc, Tcl_Obj *const objv[])
 }
 
 # TIP#316 (Tcl_StatBuf reader functions) dkf
