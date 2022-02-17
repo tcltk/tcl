@@ -791,10 +791,13 @@ typedef struct Tcl_DString {
  * TCL_EXACT disallows abbreviated strings.
  * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
  *      a table that will not live long enough to make it worthwhile.
+ * TCL_INDEX_NULL_OK allows the empty string or NULL to return TCL_OK.
+ *      The returned value will be -1;
  */
 
 #define TCL_EXACT		1
 #define TCL_INDEX_TEMP_TABLE	2
+#define TCL_INDEX_NULL_OK	4
 
 /*
  *----------------------------------------------------------------------------

@@ -527,7 +527,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		RC="x86_64-w64-mingw32-windres"
 	    ;;
 	    arm64|aarch64)
-		CC="aarch64-w64-mingw32-${CC}"
+		CC="aarch64-w64-mingw32-clang"
 		LD="aarch64-w64-mingw32-ld"
 		AR="aarch64-w64-mingw32-ar"
 		RANLIB="aarch64-w64-mingw32-ranlib"
@@ -593,7 +593,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	if test "$ac_cv_win32" != "yes"; then
 	    AC_MSG_ERROR([${CC} cannot produce win32 executables.])
 	fi
-	if test "$MACHINE" != "ARM64"; then
+	if test "$do64bit" != "arm64"; then
 	    extra_cflags="$extra_cflags -DHAVE_CPUID=1"
 	fi
 

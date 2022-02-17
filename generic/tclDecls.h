@@ -796,7 +796,7 @@ TCLAPI void		Tcl_GetEncodingNames(Tcl_Interp *interp);
 TCLAPI int		Tcl_GetIndexFromObjStruct(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, const void *tablePtr,
 				size_t offset, const char *msg, int flags,
-				int *indexPtr);
+				void *indexPtr);
 /* 305 */
 TCLAPI void *		Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr,
 				size_t size);
@@ -2061,7 +2061,7 @@ typedef struct TclStubs {
     Tcl_Encoding (*tcl_GetEncoding) (Tcl_Interp *interp, const char *name); /* 301 */
     const char * (*tcl_GetEncodingName) (Tcl_Encoding encoding); /* 302 */
     void (*tcl_GetEncodingNames) (Tcl_Interp *interp); /* 303 */
-    int (*tcl_GetIndexFromObjStruct) (Tcl_Interp *interp, Tcl_Obj *objPtr, const void *tablePtr, size_t offset, const char *msg, int flags, int *indexPtr); /* 304 */
+    int (*tcl_GetIndexFromObjStruct) (Tcl_Interp *interp, Tcl_Obj *objPtr, const void *tablePtr, size_t offset, const char *msg, int flags, void *indexPtr); /* 304 */
     void * (*tcl_GetThreadData) (Tcl_ThreadDataKey *keyPtr, size_t size); /* 305 */
     Tcl_Obj * (*tcl_GetVar2Ex) (Tcl_Interp *interp, const char *part1, const char *part2, int flags); /* 306 */
     void * (*tcl_InitNotifier) (void); /* 307 */
@@ -3820,6 +3820,7 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_GetStringFromObj(objPtr, (size_t *)NULL)
 #define Tcl_GetUnicode(objPtr) \
 	Tcl_GetUnicodeFromObj(objPtr, (size_t *)NULL)
+#undef Tcl_GetIndexFromObjStruct
 #undef Tcl_GetStringFromObj
 #undef Tcl_GetUnicodeFromObj
 #undef Tcl_GetByteArrayFromObj
@@ -3830,6 +3831,8 @@ extern const TclStubs *tclStubsPtr;
 	(sizeof(*sizePtr) <= sizeof(int) ? tclStubsPtr->tclGetBytesFromObj(NULL, objPtr, (int *)sizePtr) : tclStubsPtr->tcl_GetBytesFromObj(NULL, objPtr, (size_t *)sizePtr))
 #define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
 	(sizeof(*sizePtr) <= sizeof(int) ? tclStubsPtr->tclGetUnicodeFromObj(objPtr, (int *)sizePtr) : tclStubsPtr->tcl_GetUnicodeFromObj(objPtr, (size_t *)sizePtr))
+#define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
+	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*indexPtr)<<8), (indexPtr)))
 #else
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*sizePtr) <= sizeof(int) ? (TclGetStringFromObj)(objPtr, (int *)sizePtr) : (Tcl_GetStringFromObj)(objPtr, (size_t *)sizePtr))
@@ -3837,6 +3840,8 @@ extern const TclStubs *tclStubsPtr;
 	(sizeof(*sizePtr) <= sizeof(int) ? (TclGetBytesFromObj)(NULL, objPtr, (int *)sizePtr) : Tcl_GetBytesFromObj(NULL, objPtr, (size_t *)sizePtr))
 #define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
 	(sizeof(*sizePtr) <= sizeof(int) ? (TclGetUnicodeFromObj)(objPtr, (int *)sizePtr) : Tcl_GetUnicodeFromObj(objPtr, (size_t *)sizePtr))
+#define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
+	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*indexPtr)<<8), (indexPtr)))
 #endif
 
 #ifdef TCL_MEM_DEBUG

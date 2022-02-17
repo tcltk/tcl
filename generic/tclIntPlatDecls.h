@@ -58,7 +58,7 @@ TCLAPI void		TclGetAndDetachPids(Tcl_Interp *interp,
 /* Slot 13 is reserved */
 /* Slot 14 is reserved */
 /* 15 */
-TCLAPI int		TclpCreateProcess(Tcl_Interp *interp, int argc,
+TCLAPI int		TclpCreateProcess(Tcl_Interp *interp, size_t argc,
 				const char **argv, TclFile inputFile,
 				TclFile outputFile, TclFile errorFile,
 				Tcl_Pid *pidPtr);
@@ -108,7 +108,7 @@ typedef struct TclIntPlatStubs {
     void (*reserved12)(void);
     void (*reserved13)(void);
     void (*reserved14)(void);
-    int (*tclpCreateProcess) (Tcl_Interp *interp, int argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 15 */
+    int (*tclpCreateProcess) (Tcl_Interp *interp, size_t argc, const char **argv, TclFile inputFile, TclFile outputFile, TclFile errorFile, Tcl_Pid *pidPtr); /* 15 */
     int (*tclpIsAtty) (int fd); /* 16 */
     int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 17 */
     void (*reserved18)(void);

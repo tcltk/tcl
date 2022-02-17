@@ -1650,7 +1650,7 @@ TestdoubledigitsObjCmd(
     if (status != TCL_OK) {
 	doubleType = Tcl_GetObjType("double");
 	if (Tcl_FetchInternalRep(objv[1], doubleType)
-	    && TclIsNaN(objv[1]->internalRep.doubleValue)) {
+	    && isnan(objv[1]->internalRep.doubleValue)) {
 	    status = TCL_OK;
 	    memcpy(&d, &(objv[1]->internalRep.doubleValue), sizeof(double));
 	}
@@ -6288,7 +6288,8 @@ TestGetIndexFromObjStructObjCmd(
     const char *const ary[] = {
 	"a", "b", "c", "d", "ee", "ff", NULL, NULL
     };
-    int idx,target, flags = 0;
+    int target, flags = 0;
+    signed char idx[8];
 
     if (objc != 3 && objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "argument targetvalue ?flags?");
@@ -6300,13 +6301,17 @@ TestGetIndexFromObjStructObjCmd(
     if ((objc > 3) && (Tcl_GetIntFromObj(interp, objv[3], &flags) != TCL_OK)) {
 	return TCL_ERROR;
     }
+    memset(idx, 85, sizeof(idx));
     if (Tcl_GetIndexFromObjStruct(interp, (Tcl_GetString(objv[1])[0] ? objv[1] : NULL), ary, 2*sizeof(char *),
-	    "dummy", flags, &idx) != TCL_OK) {
+	    "dummy", flags, &idx[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (idx != target) {
+    if (idx[0] != 85 || idx[2] != 85) {
+	Tcl_AppendResult(interp, "Tcl_GetIndexFromObjStruct overwrites bytes near index variable", NULL);
+	return TCL_ERROR;
+    } else if (idx[1] != target) {
 	char buffer[64];
-	sprintf(buffer, "%d", idx);
+	sprintf(buffer, "%d", idx[1]);
 	Tcl_AppendResult(interp, "index value comparison failed: got ",
 		buffer, NULL);
 	sprintf(buffer, "%d", target);

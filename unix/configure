@@ -6761,11 +6761,11 @@ printf "%s\n" "#define _OE_SOCKETS 1" >>confdefs.h
 	    if test "$SHARED_BUILD" = 1
 then :
 
-	        SHLIB_LD='ld -shared -expect_unresolved "*"'
+	        SHLIB_LD='${CC} -shared'
 
 else $as_nop
 
-	        SHLIB_LD='ld -non_shared -expect_unresolved "*"'
+	        SHLIB_LD='${CC} -non_shared'
 
 fi
 	    SHLIB_SUFFIX=".so"
@@ -10339,47 +10339,6 @@ then :
 
 fi
 
-
-#--------------------------------------------------------------------
-# Check for support of isnan() function or macro
-#--------------------------------------------------------------------
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking isnan" >&5
-printf %s "checking isnan... " >&6; }
-if test ${tcl_cv_isnan+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <math.h>
-int
-main (void)
-{
-
-isnan(0.0);			/* Generates an error if isnan is missing */
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  tcl_cv_isnan=yes
-else $as_nop
-  tcl_cv_isnan=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_isnan" >&5
-printf "%s\n" "$tcl_cv_isnan" >&6; }
-if test $tcl_cv_isnan = no; then
-
-printf "%s\n" "#define NO_ISNAN 1" >>confdefs.h
-
-fi
 
 #--------------------------------------------------------------------
 # Darwin specific API checks and defines

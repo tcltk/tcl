@@ -598,7 +598,7 @@ EqualDouble(
 {
     return (a == b)
 #ifdef ACCEPT_NAN
-	|| (TclIsNaN(a) && TclIsNaN(b))
+	|| (isnan(a) && isnan(b))
 #endif /* ACCEPT_NAN */
 	;
 }
@@ -607,9 +607,9 @@ static inline int
 IsSpecial(
     double a)
 {
-    return TclIsInfinite(a)
+    return isinf(a)
 #ifdef ACCEPT_NAN
-	|| TclIsNaN(a)
+	|| isnan(a)
 #endif /* ACCEPT_NAN */
 	;
 }
