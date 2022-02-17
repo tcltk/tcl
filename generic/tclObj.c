@@ -3569,7 +3569,7 @@ Tcl_SetBignumObj(
 	while (numBytes-- > 0) {
 	    value = (value << CHAR_BIT) | *bytes++;
 	}
-	if (value > (((~(Tcl_WideUInt)0) >> 1) + bignumValue->sign)) {
+	if (value > ((UWIDE_MAX >> 1) + bignumValue->sign)) {
 	    goto tooLargeForWide;
 	}
 	if (bignumValue->sign) {
