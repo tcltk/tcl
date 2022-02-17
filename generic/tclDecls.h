@@ -945,7 +945,7 @@ EXTERN void		Tcl_GetEncodingNames(Tcl_Interp *interp);
 EXTERN int		Tcl_GetIndexFromObjStruct(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, const void *tablePtr,
 				int offset, const char *msg, int flags,
-				int *indexPtr);
+				void *indexPtr);
 /* 305 */
 EXTERN void *		Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr,
 				int size);
@@ -2287,7 +2287,7 @@ typedef struct TclStubs {
     Tcl_Encoding (*tcl_GetEncoding) (Tcl_Interp *interp, const char *name); /* 301 */
     const char * (*tcl_GetEncodingName) (Tcl_Encoding encoding); /* 302 */
     void (*tcl_GetEncodingNames) (Tcl_Interp *interp); /* 303 */
-    int (*tcl_GetIndexFromObjStruct) (Tcl_Interp *interp, Tcl_Obj *objPtr, const void *tablePtr, int offset, const char *msg, int flags, int *indexPtr); /* 304 */
+    int (*tcl_GetIndexFromObjStruct) (Tcl_Interp *interp, Tcl_Obj *objPtr, const void *tablePtr, int offset, const char *msg, int flags, void *indexPtr); /* 304 */
     void * (*tcl_GetThreadData) (Tcl_ThreadDataKey *keyPtr, int size); /* 305 */
     Tcl_Obj * (*tcl_GetVar2Ex) (Tcl_Interp *interp, const char *part1, const char *part2, int flags); /* 306 */
     ClientData (*tcl_InitNotifier) (void); /* 307 */
@@ -4209,6 +4209,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetUnicode(objPtr) \
 	Tcl_GetUnicodeFromObj(objPtr, (int *)NULL)
 #undef Tcl_GetBytesFromObj
+#undef Tcl_GetIndexFromObjStruct
 #ifdef TCL_NO_DEPRECATED
 #undef Tcl_GetStringFromObj
 #undef Tcl_GetUnicodeFromObj
@@ -4217,6 +4218,8 @@ extern const TclStubs *tclStubsPtr;
 #if defined(USE_TCL_STUBS)
 #define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
 	(sizeof(*sizePtr) <= sizeof(int) ? tclStubsPtr->tclGetBytesFromObj(interp, objPtr, (int *)sizePtr) : tclStubsPtr->tcl_GetBytesFromObj(interp, objPtr, (size_t *)sizePtr))
+#define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
+	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*indexPtr)<<8), (indexPtr)))
 #ifdef TCL_NO_DEPRECATED
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*sizePtr) <= sizeof(int) ? tclStubsPtr->tcl_GetStringFromObj(objPtr, (int *)sizePtr) : tclStubsPtr->tclGetStringFromObj(objPtr, (size_t *)sizePtr))
@@ -4228,6 +4231,8 @@ extern const TclStubs *tclStubsPtr;
 #else
 #define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
 	(sizeof(*sizePtr) <= sizeof(int) ? (TclGetBytesFromObj)(interp, objPtr, (int *)sizePtr) : (Tcl_GetBytesFromObj)(interp, objPtr, (size_t *)sizePtr))
+#define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
+	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*indexPtr)<<8), (indexPtr)))
 #ifdef TCL_NO_DEPRECATED
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*sizePtr) <= sizeof(int) ? (Tcl_GetStringFromObj)(objPtr, (int *)sizePtr) : (TclGetStringFromObj)(objPtr, (size_t *)sizePtr))

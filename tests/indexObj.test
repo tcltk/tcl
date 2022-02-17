@@ -140,6 +140,10 @@ test indexObj-6.6 {Tcl_GetIndexFromObjStruct with NULL input} -constraints testi
     set x ""
     testgetindexfromobjstruct $x 0
 } -returnCodes error -result {ambiguous dummy "": must be a, c, or ee}
+test indexObj-6.7 {Tcl_GetIndexFromObjStruct} testindexobj {
+    set x ""
+    testgetindexfromobjstruct $x -1 4
+} "wrong # args: should be \"testgetindexfromobjstruct {} -1 4\""
 
 test indexObj-7.1 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs
