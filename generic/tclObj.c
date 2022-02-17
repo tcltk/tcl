@@ -2358,7 +2358,7 @@ Tcl_GetDoubleFromObj(
 {
     do {
 	if (objPtr->typePtr == &tclDoubleType) {
-	    if (TclIsNaN(objPtr->internalRep.doubleValue)) {
+	    if (isnan(objPtr->internalRep.doubleValue)) {
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "floating point value is Not a Number", -1));
@@ -3432,7 +3432,7 @@ TclGetNumberFromObj(
 {
     do {
 	if (objPtr->typePtr == &tclDoubleType) {
-	    if (TclIsNaN(objPtr->internalRep.doubleValue)) {
+	    if (isnan(objPtr->internalRep.doubleValue)) {
 		*typePtr = TCL_NUMBER_NAN;
 	    } else {
 		*typePtr = TCL_NUMBER_DOUBLE;
