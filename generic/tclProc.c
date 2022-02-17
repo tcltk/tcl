@@ -1649,7 +1649,7 @@ TclNRInterpProcCore(
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
     Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
-    size_t skip,			/* Number of initial arguments to be skipped,
+    size_t skip1,			/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
     ProcErrorProc *errorProc)	/* How to convert results from the script into
 				 * results of the overall procedure. */
@@ -1659,6 +1659,7 @@ TclNRInterpProcCore(
     int result;
     CallFrame *freePtr;
     ByteCode *codePtr;
+    int skip = skip1;
 
     result = InitArgsAndLocals(interp, skip);
     if (result != TCL_OK) {

@@ -378,7 +378,7 @@ TclCleanupChildren(
  *
  * Results:
  *	The return value is a count of the number of new processes created, or
- *	-1 if an error occurred while creating the pipeline. *pidArrayPtr is
+ *	TCL_INDEX_NONE if an error occurred while creating the pipeline. *pidArrayPtr is
  *	filled in with the address of a dynamically allocated array giving the
  *	ids of all of the processes. It is up to the caller to free this array
  *	when it isn't needed anymore. If inPipePtr is non-NULL, *inPipePtr is
@@ -395,10 +395,10 @@ TclCleanupChildren(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclCreatePipeline(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
-    size_t argc1,			/* Number of entries in argv. */
+    size_t argc,			/* Number of entries in argv. */
     const char **argv,		/* Array of strings describing commands in
 				 * pipeline plus I/O redirection with <, <<,
 				 * >, etc. Argv[argc] must be NULL. */
@@ -431,7 +431,7 @@ TclCreatePipeline(
 {
     Tcl_Pid *pidPtr = NULL;	/* Points to malloc-ed array holding all the
 				 * pids of child processes. */
-    int numPids;		/* Actual number of processes that exist at
+    size_t numPids;		/* Actual number of processes that exist at
 				 * *pidPtr right now. */
     int cmdCount;		/* Count of number of distinct commands found
 				 * in argc/argv. */
@@ -460,12 +460,12 @@ TclCreatePipeline(
     int errorRelease = 0;
     const char *p;
     const char *nextArg;
-    int skip, lastBar, lastArg, i, j, atOK, flags, needCmd, errorToOutput = 0;
+    int skip, atOK, flags, needCmd, errorToOutput = 0;
+    size_t i, j, lastArg, lastBar;
     Tcl_DString execBuffer;
     TclFile pipeIn;
     TclFile curInFile, curOutFile, curErrFile;
     Tcl_Channel channel;
-    int argc = argc1;
 
     if (inPipePtr != NULL) {
 	*inPipePtr = NULL;
@@ -497,7 +497,7 @@ TclCreatePipeline(
      * list.
      */
 
-    lastBar = -1;
+    lastBar = TCL_INDEX_NONE;
     cmdCount = 1;
     needCmd = 1;
     for (i = 0; i < argc; i++) {

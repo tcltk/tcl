@@ -39,7 +39,7 @@ declare 7 {
 }
 # TclCreatePipeline unofficially exported for use by BLT.
 declare 9 {
-    int TclCreatePipeline(Tcl_Interp *interp, size_t argc, const char **argv,
+    size_t TclCreatePipeline(Tcl_Interp *interp, size_t argc, const char **argv,
 	    Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr,
 	    TclFile *errFilePtr)
 }
