@@ -68,7 +68,7 @@ declare 12 {
 }
 declare 13 {
     Tcl_Object Tcl_NewObjectInstance(Tcl_Interp *interp, Tcl_Class cls,
-	    const char *nameStr, const char *nsNameStr, int objc,
+	    const char *nameStr, const char *nsNameStr, size_t objc,
 	    Tcl_Obj *const *objv, int skip)
 }
 declare 14 {
@@ -104,7 +104,7 @@ declare 22 {
 }
 declare 23 {
     int Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
-	    Tcl_ObjectContext context, int objc, Tcl_Obj *const *objv,
+	    Tcl_ObjectContext context, size_t objc, Tcl_Obj *const *objv,
 	    int skip)
 }
 declare 24 {
@@ -170,7 +170,7 @@ declare 4 {
 	    ProcedureMethod **pmPtrPtr)
 }
 declare 5 {
-    int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, int objc,
+    int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, size_t objc,
 	    Tcl_Obj *const *objv, int publicOnly, Class *startCls)
 }
 declare 6 {
@@ -200,7 +200,7 @@ declare 10 {
 }
 declare 11 {
     int TclOOInvokeObject(Tcl_Interp *interp, Tcl_Object object,
-	    Tcl_Class startCls, int publicPrivate, int objc,
+	    Tcl_Class startCls, int publicPrivate, size_t objc,
 	    Tcl_Obj *const *objv)
 }
 declare 12 {

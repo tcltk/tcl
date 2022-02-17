@@ -1667,7 +1667,7 @@ Tcl_NewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    int objc,			/* Number of arguments. Negative value means
+    size_t objc1,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
     int skip)			/* Number of arguments to _not_ pass to the
@@ -1676,6 +1676,7 @@ Tcl_NewObjectInstance(
     Class *classPtr = (Class *) cls;
     Object *oPtr;
     ClientData clientData[4];
+    int objc = objc1;
 
     oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
     if (oPtr == NULL) {
@@ -2556,7 +2557,7 @@ TclOOInvokeObject(
 				 * (PRIVATE_METHOD), or a *really* private
 				 * context (any other value; conventionally
 				 * 0). */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Array of argument objects. It is assumed
 				 * that the name of the method to invoke will
 				 * be at index 1. */
@@ -2627,7 +2628,7 @@ int
 TclOOObjectCmdCore(
     Object *oPtr,		/* The object being invoked. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
-    int objc,			/* How many arguments are being passed in. */
+    size_t objc1,			/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
     int flags,			/* Whether this is an invocation through the
 				 * public or the private command interface. */
@@ -2642,6 +2643,7 @@ TclOOObjectCmdCore(
     Object *callerObjPtr = NULL;
     Class *callerClsPtr = NULL;
     int result;
+    int objc = objc1;
 
     /*
      * If we've no method name, throw this directly into the unknown
@@ -2799,7 +2801,7 @@ int
 Tcl_ObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    int objc,
+    size_t objc1,
     Tcl_Obj *const *objv,
     int skip)
 {
@@ -2807,6 +2809,7 @@ Tcl_ObjectContextInvokeNext(
     int savedIndex = contextPtr->index;
     int savedSkip = contextPtr->skip;
     int result;
+    int objc = objc1;
 
     if (contextPtr->index + 1 >= contextPtr->callPtr->numChain) {
 	/*

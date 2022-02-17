@@ -398,7 +398,7 @@ TclCleanupChildren(
 int
 TclCreatePipeline(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
-    int argc,			/* Number of entries in argv. */
+    size_t argc1,			/* Number of entries in argv. */
     const char **argv,		/* Array of strings describing commands in
 				 * pipeline plus I/O redirection with <, <<,
 				 * >, etc. Argv[argc] must be NULL. */
@@ -465,6 +465,7 @@ TclCreatePipeline(
     TclFile pipeIn;
     TclFile curInFile, curOutFile, curErrFile;
     Tcl_Channel channel;
+    int argc = argc1;
 
     if (inPipePtr != NULL) {
 	*inPipePtr = NULL;

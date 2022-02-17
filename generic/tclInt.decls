@@ -39,7 +39,7 @@ declare 7 {
 }
 # TclCreatePipeline unofficially exported for use by BLT.
 declare 9 {
-    int TclCreatePipeline(Tcl_Interp *interp, int argc, const char **argv,
+    int TclCreatePipeline(Tcl_Interp *interp, size_t argc, const char **argv,
 	    Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr,
 	    TclFile *errFilePtr)
 }
@@ -635,7 +635,7 @@ declare 11 {
     void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 15 {
-    int TclpCreateProcess(Tcl_Interp *interp, int argc,
+    int TclpCreateProcess(Tcl_Interp *interp, size_t argc,
 	    const char **argv, TclFile inputFile, TclFile outputFile,
 	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
