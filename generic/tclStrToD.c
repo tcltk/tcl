@@ -542,8 +542,7 @@ TclParseNumber(
     int under = 0;              /* Flag trailing '_' as error if true once
 				 * number is accepted. */
 
-#define ALL_BITS	UWIDE_MAX
-#define MOST_BITS	(ALL_BITS >> 1)
+#define MOST_BITS	(UWIDE_MAX >> 1)
 
     /*
      * Initialize bytes to start of the object's string rep if the caller
@@ -854,7 +853,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-		/* FALLTHRU */
+	    /* FALLTHRU */
 	case ZERO_B:
 	zerob:
 	    if (c == '0') {
@@ -1383,10 +1382,10 @@ TclParseNumber(
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
-				- (Tcl_WideInt) octalSignificandWide;
+				(Tcl_WideInt)(-octalSignificandWide);
 		    } else {
 			objPtr->internalRep.wideValue =
-				(Tcl_WideInt) octalSignificandWide;
+				(Tcl_WideInt)octalSignificandWide;
 		    }
 		}
 	    }
@@ -1419,10 +1418,10 @@ TclParseNumber(
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
-				- (Tcl_WideInt) significandWide;
+				(Tcl_WideInt)(-significandWide);
 		    } else {
 			objPtr->internalRep.wideValue =
-				(Tcl_WideInt) significandWide;
+				(Tcl_WideInt)significandWide;
 		    }
 		}
 	    }
@@ -2122,7 +2121,7 @@ RefineApproximation(
      */
     if (roundToEven) {
 	rteSignificand = frexp(approxResult, &rteExponent);
-	rteSigWide = (Tcl_WideInt) ldexp(rteSignificand, FP_PRECISION);
+	rteSigWide = (Tcl_WideInt)ldexp(rteSignificand, FP_PRECISION);
 	if ((rteSigWide & 1) == 0) {
 	    mp_clear(&twoMd);
 	    mp_clear(&twoMv);
@@ -3785,15 +3784,13 @@ ShouldBankerRoundUp(
     int r = mp_cmp_mag(twor, S);
 
     switch (r) {
-    case MP_LT:
-	return 0;
     case MP_EQ:
 	return isodd;
     case MP_GT:
 	return 1;
+    default:
+	return 0;
     }
-    Tcl_Panic("in ShouldBankerRoundUp, trichotomy fails!");
-    return 0;
 }
 
 /*
@@ -3831,15 +3828,13 @@ ShouldBankerRoundUpToNext(
     r = mp_cmp_mag(&temp, S);
     mp_clear(&temp);
     switch(r) {
-    case MP_LT:
-	return 0;
     case MP_EQ:
 	return isodd;
     case MP_GT:
 	return 1;
+    default:
+	return 0;
     }
-    Tcl_Panic("in ShouldBankerRoundUpToNext, trichotomy fails!");
-    return 0;
 }
 
 /*
@@ -4784,7 +4779,7 @@ Tcl_InitBignumFromDouble(
 	err = mp_init(b);
 	mp_zero(b);
     } else {
-	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
+	Tcl_WideInt w = (Tcl_WideInt)ldexp(fract, mantBits);
 	int shift = expt - mantBits;
 
 	err = mp_init_i64(b, w);

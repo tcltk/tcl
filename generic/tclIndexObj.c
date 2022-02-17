@@ -167,11 +167,12 @@ GetIndexFromObjList(
  * Results:
  *	If the value of objPtr is identical to or a unique abbreviation for
  *	one of the entries in tablePtr, then the return value is TCL_OK and
- *	the index of the matching entry is stored at *indexPtr. If there isn't
- *	a proper match, then TCL_ERROR is returned and an error message is
- *	left in interp's result (unless interp is NULL). The msg argument is
- *	used in the error message; for example, if msg has the value "option"
- *	then the error message will say something like 'bad option "foo": must
+ *	the index of the matching entry is stored at *indexPtr
+ *	(unless indexPtr is NULL). If there isn't a proper match, then
+ *	TCL_ERROR is returned and an error message is left in interp's
+ *	result (unless interp is NULL). The msg argument is used in the
+ *	error message; for example, if msg has the value "option" then
+ *	the error message will say something like 'bad option "foo": must
  *	be ...'
  *
  * Side effects:
@@ -181,6 +182,7 @@ GetIndexFromObjList(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetIndexFromObjStruct
 int
 Tcl_GetIndexFromObjStruct(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
@@ -193,8 +195,8 @@ Tcl_GetIndexFromObjStruct(
     size_t offset,			/* The number of bytes between entries */
     const char *msg,		/* Identifying word to use in error
 				 * messages. */
-    int flags,			/* 0, TCL_EXACT or TCL_INDEX_TEMP_TABLE */
-    int *indexPtr)		/* Place to store resulting integer index. */
+    int flags,			/* 0, TCL_EXACT, TCL_INDEX_TEMP_TABLE or TCL_INDEX_NULL_OK */
+    void *indexPtr)		/* Place to store resulting index. */
 {
     size_t index, idx, numAbbrev;
     const char *key, *p1;
@@ -219,8 +221,8 @@ Tcl_GetIndexFromObjStruct(
 	if ((indexRep->tablePtr == tablePtr)
 		&& (indexRep->offset == offset)
 		&& (indexRep->index != TCL_INDEX_NONE)) {
-	    *indexPtr = (int)indexRep->index;
-	    return TCL_OK;
+	    index = indexRep->index;
+	    goto uncachedDone;
 	}
     }
     }
@@ -234,6 +236,9 @@ Tcl_GetIndexFromObjStruct(
     index = TCL_INDEX_NONE;
     numAbbrev = 0;
 
+    if (!*key && (flags & TCL_INDEX_NULL_OK)) {
+	goto uncachedDone;
+    }
     /*
      * Scan the table looking for one of:
      *  - An exact match (always preferred)
@@ -294,7 +299,25 @@ Tcl_GetIndexFromObjStruct(
     indexRep->index = index;
     }
 
-    *indexPtr = (int)index;
+  uncachedDone:
+    if (indexPtr != NULL) {
+	if ((flags>>8) & (int)~sizeof(int)) {
+	    if ((flags>>8) == sizeof(uint64_t)) {
+		*(uint64_t *)indexPtr = index;
+		return TCL_OK;
+	    } else if ((flags>>8) == sizeof(uint32_t)) {
+		*(uint32_t *)indexPtr = index;
+		return TCL_OK;
+	    } else if ((flags>>8) == sizeof(uint16_t)) {
+		*(uint16_t *)indexPtr = index;
+		return TCL_OK;
+	    } else if ((flags>>8) == sizeof(uint8_t)) {
+		*(uint8_t *)indexPtr = index;
+		return TCL_OK;
+	}
+	}
+	*(int *)indexPtr = index;
+    }
     return TCL_OK;
 
   error:
@@ -320,7 +343,7 @@ Tcl_GetIndexFromObjStruct(
 		    *entryPtr, NULL);
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    while (*entryPtr != NULL) {
-		if (*NEXT_ENTRY(entryPtr, offset) == NULL) {
+		if ((*NEXT_ENTRY(entryPtr, offset) == NULL) && !(flags & TCL_INDEX_NULL_OK)) {
 		    Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : ""),
 			    " or ", *entryPtr, NULL);
 		} else if (**entryPtr) {
@@ -328,6 +351,9 @@ Tcl_GetIndexFromObjStruct(
 		    count++;
 		}
 		entryPtr = NEXT_ENTRY(entryPtr, offset);
+	    }
+	    if ((flags & TCL_INDEX_NULL_OK)) {
+		Tcl_AppendStringsToObj(resultPtr, ", or \"\"", NULL);
 	    }
 	}
 	Tcl_SetObjResult(interp, resultPtr);
