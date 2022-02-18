@@ -90,7 +90,7 @@ BOOL APIENTRY
 DllEntryPoint(
     HINSTANCE hInst,		/* Library instance handle. */
     DWORD reason,		/* Reason this function is being called. */
-    LPVOID reserved)		/* Not used. */
+    LPVOID reserved)
 {
     return DllMain(hInst, reason, reserved);
 }
@@ -837,6 +837,8 @@ TclWinCPUID(
 
 #   endif
 #else
+    (void)index;
+    (void)regsPtr;
     /*
      * Don't know how to do assembly code for this compiler and/or
      * architecture.
