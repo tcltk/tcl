@@ -2005,7 +2005,7 @@ TclOODefineMethodObjCmd(
     }
     if (objc == 5) {
 	if (Tcl_GetIndexFromObj(interp, objv[2], exportModes, "export flag",
-		0, (int *) &exportMode) != TCL_OK) {
+		0, &exportMode) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (exportMode) {
