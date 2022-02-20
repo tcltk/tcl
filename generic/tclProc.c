@@ -84,7 +84,7 @@ const Tcl_ObjType tclProcBodyType = {
     } while (0)
 
 /*
- * The [upvar]/[uplevel] level reference type. Uses the longValue field
+ * The [upvar]/[uplevel] level reference type. Uses the wideValue field
  * to remember the integer value of a parsed #<integer> format.
  *
  * Uses the default behaviour throughout, and never disposes of the string
