@@ -371,7 +371,7 @@ TclOOClassSetFilters(
 void
 TclOOObjectSetMixins(
     Object *oPtr,
-    int numMixins,
+    size_t numMixins,
     Class *const *mixins)
 {
     Class *mixinPtr;
@@ -432,7 +432,7 @@ void
 TclOOClassSetMixins(
     Tcl_Interp *interp,
     Class *classPtr,
-    int numMixins,
+    size_t numMixins,
     Class *const *mixins)
 {
     Class *mixinPtr;

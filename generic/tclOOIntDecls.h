@@ -85,11 +85,11 @@ TCLAPI void		TclOOClassSetFilters(Tcl_Interp *interp,
 				Class *classPtr, size_t numFilters,
 				Tcl_Obj *const *filters);
 /* 14 */
-TCLAPI void		TclOOObjectSetMixins(Object *oPtr, int numMixins,
+TCLAPI void		TclOOObjectSetMixins(Object *oPtr, size_t numMixins,
 				Class *const *mixins);
 /* 15 */
 TCLAPI void		TclOOClassSetMixins(Tcl_Interp *interp,
-				Class *classPtr, int numMixins,
+				Class *classPtr, size_t numMixins,
 				Class *const *mixins);
 
 typedef struct TclOOIntStubs {
@@ -110,8 +110,8 @@ typedef struct TclOOIntStubs {
     int (*tclOOInvokeObject) (Tcl_Interp *interp, Tcl_Object object, Tcl_Class startCls, int publicPrivate, size_t objc, Tcl_Obj *const *objv); /* 11 */
     void (*tclOOObjectSetFilters) (Object *oPtr, size_t numFilters, Tcl_Obj *const *filters); /* 12 */
     void (*tclOOClassSetFilters) (Tcl_Interp *interp, Class *classPtr, size_t numFilters, Tcl_Obj *const *filters); /* 13 */
-    void (*tclOOObjectSetMixins) (Object *oPtr, int numMixins, Class *const *mixins); /* 14 */
-    void (*tclOOClassSetMixins) (Tcl_Interp *interp, Class *classPtr, int numMixins, Class *const *mixins); /* 15 */
+    void (*tclOOObjectSetMixins) (Object *oPtr, size_t numMixins, Class *const *mixins); /* 14 */
+    void (*tclOOClassSetMixins) (Tcl_Interp *interp, Class *classPtr, size_t numMixins, Class *const *mixins); /* 15 */
 } TclOOIntStubs;
 
 extern const TclOOIntStubs *tclOOIntStubsPtr;

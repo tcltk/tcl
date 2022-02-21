@@ -212,12 +212,12 @@ declare 13 {
 	    size_t numFilters, Tcl_Obj *const *filters)
 }
 declare 14 {
-    void TclOOObjectSetMixins(Object *oPtr, int numMixins,
+    void TclOOObjectSetMixins(Object *oPtr, size_t numMixins,
 	    Class *const *mixins)
 }
 declare 15 {
     void TclOOClassSetMixins(Tcl_Interp *interp, Class *classPtr,
-	    int numMixins, Class *const *mixins)
+	    size_t numMixins, Class *const *mixins)
 }
 
 return
