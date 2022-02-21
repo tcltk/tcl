@@ -7555,7 +7555,7 @@ Tcl_ChannelBuffered(
 void
 Tcl_SetChannelBufferSize(
     Tcl_Channel chan,		/* The channel whose buffer size to set. */
-    int sz)			/* The size to set. */
+    size_t sz)			/* The size to set. */
 {
     ChannelState *statePtr;	/* State of real channel structure. */
 
@@ -7563,7 +7563,7 @@ Tcl_SetChannelBufferSize(
      * Clip the buffer size to force it into the [1,1M] range
      */
 
-    if (sz < 1) {
+    if (sz < 1 || sz > (TCL_INDEX_NONE>>1)) {
 	sz = 1;
     } else if (sz > MAX_CHANNEL_BUFFER_SIZE) {
 	sz = MAX_CHANNEL_BUFFER_SIZE;
@@ -7571,7 +7571,7 @@ Tcl_SetChannelBufferSize(
 
     statePtr = ((Channel *) chan)->state;
 
-    if (statePtr->bufSize == sz) {
+    if ((size_t)statePtr->bufSize == sz) {
 	return;
     }
     statePtr->bufSize = sz;
@@ -8019,9 +8019,19 @@ Tcl_SetChannelOption(
 	}
 	return TCL_OK;
     } else if (HaveOpt(7, "-buffersize")) {
-	int newBufferSize;
+	Tcl_WideInt newBufferSize;
+	Tcl_Obj obj;
+	int code;
 
-	if (Tcl_GetInt(interp, newValue, &newBufferSize) == TCL_ERROR) {
+	obj.refCount = 1;
+	obj.bytes = (char *)newValue;
+	obj.length = strlen(newValue);
+	obj.typePtr = NULL;
+
+	code = Tcl_GetWideIntFromObj(interp, &obj, &newBufferSize);
+	TclFreeInternalRep(&obj);
+
+	if (code == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
 	Tcl_SetChannelBufferSize(chan, newBufferSize);

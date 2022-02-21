@@ -427,7 +427,7 @@ declare 110 {
     void Tcl_DeleteInterp(Tcl_Interp *interp)
 }
 declare 111 {
-    void Tcl_DetachPids(int numPids, Tcl_Pid *pidPtr)
+    void Tcl_DetachPids(size_t numPids, Tcl_Pid *pidPtr)
 }
 declare 112 {
     void Tcl_DeleteTimerHandler(Tcl_TimerToken token)
@@ -817,7 +817,7 @@ declare 223 {
 	    Tcl_InterpDeleteProc *proc, void *clientData)
 }
 declare 224 {
-    void Tcl_SetChannelBufferSize(Tcl_Channel chan, int sz)
+    void Tcl_SetChannelBufferSize(Tcl_Channel chan, size_t sz)
 }
 declare 225 {
     int Tcl_SetChannelOption(Tcl_Interp *interp, Tcl_Channel chan,
@@ -1954,7 +1954,7 @@ declare 524 {
     int Tcl_LimitExceeded(Tcl_Interp *interp)
 }
 declare 525 {
-    void Tcl_LimitSetCommands(Tcl_Interp *interp, int commandLimit)
+    void Tcl_LimitSetCommands(Tcl_Interp *interp, size_t commandLimit)
 }
 declare 526 {
     void Tcl_LimitSetTime(Tcl_Interp *interp, Tcl_Time *timeLimitPtr)

@@ -3984,7 +3984,7 @@ Tcl_LimitTypeReset(
 void
 Tcl_LimitSetCommands(
     Tcl_Interp *interp,
-    int commandLimit)
+    size_t commandLimit)
 {
     Interp *iPtr = (Interp *) interp;
 

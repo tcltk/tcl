@@ -334,7 +334,7 @@ EXTERN void		Tcl_DeleteHashTable(Tcl_HashTable *tablePtr);
 /* 110 */
 EXTERN void		Tcl_DeleteInterp(Tcl_Interp *interp);
 /* 111 */
-EXTERN void		Tcl_DetachPids(int numPids, Tcl_Pid *pidPtr);
+EXTERN void		Tcl_DetachPids(size_t numPids, Tcl_Pid *pidPtr);
 /* 112 */
 EXTERN void		Tcl_DeleteTimerHandler(Tcl_TimerToken token);
 /* 113 */
@@ -617,7 +617,7 @@ EXTERN void		Tcl_SetAssocData(Tcl_Interp *interp,
 				const char *name, Tcl_InterpDeleteProc *proc,
 				void *clientData);
 /* 224 */
-EXTERN void		Tcl_SetChannelBufferSize(Tcl_Channel chan, int sz);
+EXTERN void		Tcl_SetChannelBufferSize(Tcl_Channel chan, size_t sz);
 /* 225 */
 EXTERN int		Tcl_SetChannelOption(Tcl_Interp *interp,
 				Tcl_Channel chan, const char *optionName,
@@ -1379,7 +1379,7 @@ EXTERN int		Tcl_LimitCheck(Tcl_Interp *interp);
 EXTERN int		Tcl_LimitExceeded(Tcl_Interp *interp);
 /* 525 */
 EXTERN void		Tcl_LimitSetCommands(Tcl_Interp *interp,
-				int commandLimit);
+				size_t commandLimit);
 /* 526 */
 EXTERN void		Tcl_LimitSetTime(Tcl_Interp *interp,
 				Tcl_Time *timeLimitPtr);
@@ -1904,7 +1904,7 @@ typedef struct TclStubs {
     void (*tcl_DeleteHashEntry) (Tcl_HashEntry *entryPtr); /* 108 */
     void (*tcl_DeleteHashTable) (Tcl_HashTable *tablePtr); /* 109 */
     void (*tcl_DeleteInterp) (Tcl_Interp *interp); /* 110 */
-    void (*tcl_DetachPids) (int numPids, Tcl_Pid *pidPtr); /* 111 */
+    void (*tcl_DetachPids) (size_t numPids, Tcl_Pid *pidPtr); /* 111 */
     void (*tcl_DeleteTimerHandler) (Tcl_TimerToken token); /* 112 */
     void (*tcl_DeleteTrace) (Tcl_Interp *interp, Tcl_Trace trace); /* 113 */
     void (*tcl_DontCallWhenDeleted) (Tcl_Interp *interp, Tcl_InterpDeleteProc *proc, void *clientData); /* 114 */
@@ -2017,7 +2017,7 @@ typedef struct TclStubs {
     int (*tcl_ServiceAll) (void); /* 221 */
     int (*tcl_ServiceEvent) (int flags); /* 222 */
     void (*tcl_SetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc *proc, void *clientData); /* 223 */
-    void (*tcl_SetChannelBufferSize) (Tcl_Channel chan, int sz); /* 224 */
+    void (*tcl_SetChannelBufferSize) (Tcl_Channel chan, size_t sz); /* 224 */
     int (*tcl_SetChannelOption) (Tcl_Interp *interp, Tcl_Channel chan, const char *optionName, const char *newValue); /* 225 */
     int (*tcl_SetCommandInfo) (Tcl_Interp *interp, const char *cmdName, const Tcl_CmdInfo *infoPtr); /* 226 */
     void (*tcl_SetErrno) (int err); /* 227 */
@@ -2318,7 +2318,7 @@ typedef struct TclStubs {
     int (*tcl_LimitReady) (Tcl_Interp *interp); /* 522 */
     int (*tcl_LimitCheck) (Tcl_Interp *interp); /* 523 */
     int (*tcl_LimitExceeded) (Tcl_Interp *interp); /* 524 */
-    void (*tcl_LimitSetCommands) (Tcl_Interp *interp, int commandLimit); /* 525 */
+    void (*tcl_LimitSetCommands) (Tcl_Interp *interp, size_t commandLimit); /* 525 */
     void (*tcl_LimitSetTime) (Tcl_Interp *interp, Tcl_Time *timeLimitPtr); /* 526 */
     void (*tcl_LimitSetGranularity) (Tcl_Interp *interp, int type, int granularity); /* 527 */
     int (*tcl_LimitTypeEnabled) (Tcl_Interp *interp, int type); /* 528 */

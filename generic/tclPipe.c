@@ -179,12 +179,12 @@ FileForRedirect(
 
 void
 Tcl_DetachPids(
-    int numPids,		/* Number of pids to detach: gives size of
+    size_t numPids,		/* Number of pids to detach: gives size of
 				 * array pointed to by pidPtr. */
     Tcl_Pid *pidPtr)		/* Array of pids to detach. */
 {
     Detached *detPtr;
-    int i;
+    size_t i;
 
     Tcl_MutexLock(&pipeMutex);
     for (i = 0; i < numPids; i++) {
