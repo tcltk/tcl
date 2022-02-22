@@ -136,11 +136,11 @@ declare 30 {
     void TclFreeObj(Tcl_Obj *objPtr)
 }
 declare 31 {
-    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *boolPtr)
+    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, void *boolPtr)
 }
 declare 32 {
     int Tcl_GetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *boolPtr)
+	    void *boolPtr)
 }
 declare 33 {
     unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
@@ -2440,6 +2440,15 @@ declare 657 {
 # TIP #511
 declare 660 {
     int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
+}
+
+declare 668 {
+    int Tcl_GetBool(Tcl_Interp *interp, const char *src, int flags,
+	    void *boolPtr)
+}
+declare 669 {
+    int Tcl_GetBoolFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int flags, void *boolPtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

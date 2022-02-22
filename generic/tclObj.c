@@ -2139,7 +2139,7 @@ Tcl_SetBooleanObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetBooleanFromObj --
+ * Tcl_GetBoolFromObj, Tcl_GetBooleanFromObj --
  *
  *	Attempt to return a boolean from the Tcl object "objPtr". This
  *	includes conversion from any of Tcl's numeric types.
@@ -2155,20 +2155,28 @@ Tcl_SetBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetBoolFromObj
 int
-Tcl_GetBooleanFromObj(
+Tcl_GetBoolFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,	/* The object from which to get boolean. */
-    int *boolPtr)	/* Place to store resulting boolean. */
+    int flags,
+    void *boolPtr)	/* Place to store resulting boolean. */
 {
+    int result;
+
+    if ((flags & TCL_NULL_OK) && (objPtr == NULL || Tcl_GetString(objPtr)[0] == '\0')) {
+	result = -1;
+	goto boolEnd;
+    }
     do {
 	if (objPtr->typePtr == &tclIntType) {
-	    *boolPtr = (objPtr->internalRep.wideValue != 0);
-	    return TCL_OK;
+	    result = (objPtr->internalRep.wideValue != 0);
+	    goto boolEnd;
 	}
 	if (objPtr->typePtr == &tclBooleanType) {
-	    *boolPtr = objPtr->internalRep.longValue != 0;
-	    return TCL_OK;
+	    result = objPtr->internalRep.longValue != 0;
+	    goto boolEnd;
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
 	    /*
@@ -2184,11 +2192,30 @@ Tcl_GetBooleanFromObj(
 	    if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    *boolPtr = (d != 0.0);
-	    return TCL_OK;
+	    result = (d != 0.0);
+	    goto boolEnd;
 	}
 	if (objPtr->typePtr == &tclBignumType) {
-	    *boolPtr = 1;
+	    result = 1;
+	boolEnd:
+	    if (boolPtr != NULL) {
+		if ((flags>>8) & (int)~sizeof(int)) {
+		    if ((flags>>8) == sizeof(uint64_t)) {
+			*(uint64_t *)boolPtr = result;
+			return TCL_OK;
+		    } else if ((flags>>8) == sizeof(uint32_t)) {
+			*(uint32_t *)boolPtr = result;
+			return TCL_OK;
+		    } else if ((flags>>8) == sizeof(uint16_t)) {
+			*(uint16_t *)boolPtr = result;
+			return TCL_OK;
+		    } else if ((flags>>8) == sizeof(uint8_t)) {
+			*(uint8_t *)boolPtr = result;
+			return TCL_OK;
+		}
+		}
+		*(int *)boolPtr = result;
+	    }
 	    return TCL_OK;
 	}
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
@@ -2196,6 +2223,16 @@ Tcl_GetBooleanFromObj(
     return TCL_ERROR;
 }
 
+#undef Tcl_GetBooleanFromObj
+int
+Tcl_GetBooleanFromObj(
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr,	/* The object from which to get boolean. */
+    void *boolPtr)	/* Place to store resulting boolean. */
+{
+    return Tcl_GetBoolFromObj(interp, objPtr, 0, boolPtr);
+}
+
 /*
  *----------------------------------------------------------------------
  *

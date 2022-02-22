@@ -146,10 +146,10 @@ EXTERN Tcl_Obj *	Tcl_DuplicateObj(Tcl_Obj *objPtr);
 EXTERN void		TclFreeObj(Tcl_Obj *objPtr);
 /* 31 */
 EXTERN int		Tcl_GetBoolean(Tcl_Interp *interp, const char *src,
-				int *boolPtr);
+				void *boolPtr);
 /* 32 */
 EXTERN int		Tcl_GetBooleanFromObj(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, int *boolPtr);
+				Tcl_Obj *objPtr, void *boolPtr);
 /* 33 */
 EXTERN unsigned char *	Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr,
 				int *numBytesPtr);
@@ -1948,6 +1948,19 @@ EXTERN int		Tcl_UniCharIsUnicode(int ch);
 /* 660 */
 EXTERN int		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
 				int sigNumber);
+/* Slot 661 is reserved */
+/* Slot 662 is reserved */
+/* Slot 663 is reserved */
+/* Slot 664 is reserved */
+/* Slot 665 is reserved */
+/* Slot 666 is reserved */
+/* Slot 667 is reserved */
+/* 668 */
+EXTERN int		Tcl_GetBool(Tcl_Interp *interp, const char *src,
+				int flags, void *boolPtr);
+/* 669 */
+EXTERN int		Tcl_GetBoolFromObj(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, int flags, void *boolPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2006,8 +2019,8 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DbNewStringObj) (const char *bytes, int length, const char *file, int line); /* 28 */
     Tcl_Obj * (*tcl_DuplicateObj) (Tcl_Obj *objPtr); /* 29 */
     void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
-    int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *boolPtr); /* 31 */
-    int (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *boolPtr); /* 32 */
+    int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, void *boolPtr); /* 31 */
+    int (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, void *boolPtr); /* 32 */
     unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, int *numBytesPtr); /* 33 */
     int (*tcl_GetDouble) (Tcl_Interp *interp, const char *src, double *doublePtr); /* 34 */
     int (*tcl_GetDoubleFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, double *doublePtr); /* 35 */
@@ -2644,6 +2657,15 @@ typedef struct TclStubs {
     void (*reserved658)(void);
     void (*reserved659)(void);
     int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
+    void (*reserved661)(void);
+    void (*reserved662)(void);
+    void (*reserved663)(void);
+    void (*reserved664)(void);
+    void (*reserved665)(void);
+    void (*reserved666)(void);
+    void (*reserved667)(void);
+    int (*tcl_GetBool) (Tcl_Interp *interp, const char *src, int flags, void *boolPtr); /* 668 */
+    int (*tcl_GetBoolFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, void *boolPtr); /* 669 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3994,6 +4016,17 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 659 is reserved */
 #define Tcl_AsyncMarkFromSignal \
 	(tclStubsPtr->tcl_AsyncMarkFromSignal) /* 660 */
+/* Slot 661 is reserved */
+/* Slot 662 is reserved */
+/* Slot 663 is reserved */
+/* Slot 664 is reserved */
+/* Slot 665 is reserved */
+/* Slot 666 is reserved */
+/* Slot 667 is reserved */
+#define Tcl_GetBool \
+	(tclStubsPtr->tcl_GetBool) /* 668 */
+#define Tcl_GetBoolFromObj \
+	(tclStubsPtr->tcl_GetBoolFromObj) /* 669 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4210,6 +4243,10 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_GetUnicodeFromObj(objPtr, (int *)NULL)
 #undef Tcl_GetBytesFromObj
 #undef Tcl_GetIndexFromObjStruct
+#undef Tcl_GetBoolFromObj
+#undef Tcl_GetBool
+#undef Tcl_GetBooleanFromObj
+#undef Tcl_GetBoolean
 #ifdef TCL_NO_DEPRECATED
 #undef Tcl_GetStringFromObj
 #undef Tcl_GetUnicodeFromObj
@@ -4220,6 +4257,14 @@ extern const TclStubs *tclStubsPtr;
 	(sizeof(*sizePtr) <= sizeof(int) ? tclStubsPtr->tclGetBytesFromObj(interp, objPtr, (int *)sizePtr) : tclStubsPtr->tcl_GetBytesFromObj(interp, objPtr, (size_t *)sizePtr))
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*indexPtr)<<8), (indexPtr)))
+#define Tcl_GetBoolFromObj(interp, objPtr, flags, boolPtr) \
+	(tclStubsPtr->tcl_GetBoolFromObj((interp), (objPtr), (flags)|(int)(sizeof(*boolPtr)<<8), (boolPtr)))
+#define Tcl_GetBool(interp, objPtr, flags, boolPtr) \
+	(tclStubsPtr->tcl_GetBool((interp), (objPtr), (flags)|(int)(sizeof(*boolPtr)<<8), (boolPtr)))
+#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
+	(sizeof(*boolPtr) == sizeof(int) ? tclStubsPtr->tcl_GetBooleanFromObj(interp, objPtr, (int *)boolPtr) : Tcl_GetBoolFromObj(interp, objPtr, 0, boolPtr))
+#define Tcl_GetBoolean(interp, src, boolPtr) \
+	(sizeof(*boolPtr) == sizeof(int) ? tclStubsPtr->tcl_GetBoolean(interp, src, (int *)boolPtr) : Tcl_GetBool(interp, src, 0, boolPtr))
 #ifdef TCL_NO_DEPRECATED
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*sizePtr) <= sizeof(int) ? tclStubsPtr->tcl_GetStringFromObj(objPtr, (int *)sizePtr) : tclStubsPtr->tclGetStringFromObj(objPtr, (size_t *)sizePtr))
@@ -4233,6 +4278,14 @@ extern const TclStubs *tclStubsPtr;
 	(sizeof(*sizePtr) <= sizeof(int) ? (TclGetBytesFromObj)(interp, objPtr, (int *)sizePtr) : (Tcl_GetBytesFromObj)(interp, objPtr, (size_t *)sizePtr))
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*indexPtr)<<8), (indexPtr)))
+#define Tcl_GetBoolFromObj(interp, objPtr, flags, boolPtr) \
+	((Tcl_GetBoolFromObj)((interp), (objPtr), (flags)|(int)(sizeof(*boolPtr)<<8), (boolPtr)))
+#define Tcl_GetBool(interp, objPtr, flags, boolPtr) \
+	((Tcl_GetBool)((interp), (objPtr), (flags)|(int)(sizeof(*boolPtr)<<8), (boolPtr)))
+#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
+	(sizeof(*boolPtr) == sizeof(int) ? (Tcl_GetBooleanFromObj)(interp, objPtr, (int *)boolPtr) : Tcl_GetBoolFromObj(interp, objPtr, 0, boolPtr))
+#define Tcl_GetBoolean(interp, src, boolPtr) \
+	(sizeof(*boolPtr) == sizeof(int) ? (Tcl_GetBoolean)(interp, src, (int *)boolPtr) : Tcl_GetBool(interp, src, 0, boolPtr))
 #ifdef TCL_NO_DEPRECATED
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*sizePtr) <= sizeof(int) ? (Tcl_GetStringFromObj)(objPtr, (int *)sizePtr) : (TclGetStringFromObj)(objPtr, (size_t *)sizePtr))

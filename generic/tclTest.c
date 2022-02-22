@@ -2174,7 +2174,7 @@ TesteventProc(
     Tcl_Obj *command = ev->command;
     int result = Tcl_EvalObjEx(interp, command,
 	    TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
-    int retval;
+    char retval[3];
 
     if (result != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
@@ -2183,18 +2183,18 @@ TesteventProc(
 	return 1;		/* Avoid looping on errors */
     }
     if (Tcl_GetBooleanFromObj(interp, Tcl_GetObjResult(interp),
-	    &retval) != TCL_OK) {
+	    &retval[1]) != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
 		"    (return value from \"testevent\" callback)");
 	Tcl_BackgroundException(interp, TCL_ERROR);
 	return 1;
     }
-    if (retval) {
+    if (retval[1]) {
 	Tcl_DecrRefCount(ev->tag);
 	Tcl_DecrRefCount(ev->command);
     }
 
-    return retval;
+    return retval[1];
 }
 
 /*
@@ -5188,7 +5188,8 @@ TestsaveresultCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Interp* iPtr = (Interp*) interp;
-    int discard, result, index;
+    int result, index;
+    short discard[3];
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
     static const char *const optionStrings[] = {
@@ -5210,7 +5211,7 @@ TestsaveresultCmd(
 	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetBooleanFromObj(interp, objv[3], &discard) != TCL_OK) {
+    if (Tcl_GetBooleanFromObj(interp, objv[3], &discard[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -5247,7 +5248,7 @@ TestsaveresultCmd(
 	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), -1, 0);
     }
 
-    if (discard) {
+    if (discard[1]) {
 	Tcl_DiscardResult(&state);
     } else {
 	Tcl_RestoreResult(interp, &state);

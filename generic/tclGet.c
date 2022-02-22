@@ -121,17 +121,22 @@ Tcl_GetDouble(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetBool
 int
-Tcl_GetBoolean(
+Tcl_GetBool(
     Tcl_Interp *interp,		/* Interpreter used for error reporting. */
     const char *src,		/* String containing one of the boolean values
 				 * 1, 0, true, false, yes, no, on, off. */
-    int *boolPtr)		/* Place to store converted result, which will
+    int flags,
+    void *boolPtr)		/* Place to store converted result, which will
 				 * be 0 or 1. */
 {
     Tcl_Obj obj;
     int code;
 
+    if (((src == NULL) || (*src == '\0')) && (flags & TCL_NULL_OK)) {
+	return (Tcl_GetBoolFromObj)(NULL, NULL, flags, boolPtr);
+    }
     obj.refCount = 1;
     obj.bytes = (char *) src;
     obj.length = strlen(src);
@@ -142,9 +147,21 @@ Tcl_GetBoolean(
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
     if (code == TCL_OK) {
-	TclGetBooleanFromObj(NULL, &obj, boolPtr);
+	(Tcl_GetBoolFromObj)(NULL, &obj, flags, boolPtr);
     }
     return code;
+}
+
+#undef Tcl_GetBoolean
+int
+Tcl_GetBoolean(
+    Tcl_Interp *interp,		/* Interpreter used for error reporting. */
+    const char *src,		/* String containing one of the boolean values
+				 * 1, 0, true, false, yes, no, on, off. */
+    void *boolPtr)		/* Place to store converted result, which will
+				 * be 0 or 1. */
+{
+    return Tcl_GetBool(interp, src, 0, boolPtr);
 }
 
 /*

@@ -1944,6 +1944,15 @@ const TclStubs tclStubs = {
     0, /* 658 */
     0, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
+    0, /* 661 */
+    0, /* 662 */
+    0, /* 663 */
+    0, /* 664 */
+    0, /* 665 */
+    0, /* 666 */
+    0, /* 667 */
+    Tcl_GetBool, /* 668 */
+    Tcl_GetBoolFromObj, /* 669 */
 };
 
 /* !END!: Do not edit above this line. */

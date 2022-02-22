@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NewBooleanObj, Tcl_SetBooleanObj, Tcl_GetBooleanFromObj \- store/retrieve boolean value in a Tcl_Obj
+Tcl_NewBooleanObj, Tcl_SetBooleanObj, Tcl_GetBooleanFromObj, Tcl_GetBoolFromObj \- store/retrieve boolean value in a Tcl_Obj
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -21,6 +21,9 @@ Tcl_Obj *
 .sp
 int
 \fBTcl_GetBooleanFromObj\fR(\fIinterp, objPtr, boolPtr\fR)
+.sp
+int
+\fBTcl_GetBoolFromObj\fR(\fIinterp, objPtr, flags. boolPtr\fR)
 .SH ARGUMENTS
 .AS Tcl_Interp boolValue in/out
 .AP int boolValue in
@@ -32,9 +35,13 @@ retrieve a boolean value.
 If a boolean value cannot be retrieved,
 an error message is left in the interpreter's result value
 unless \fIinterp\fR is NULL.
-.AP int *boolPtr out
-Points to place where \fBTcl_GetBooleanFromObj\fR
+.AP int | short | char *boolPtr out
+Points to place where \fBTcl_GetBooleanFromObj\fR/\fBTcl_GetBoolFromObj\fR
 stores the boolean value (0 or 1) obtained from \fIobjPtr\fR.
+.AP int flags in
+Value 0 or TCL_NULL_OK. If TCL_NULL_OK, then the empty
+string or NULL will result in \fBTcl_GetBoolFromObj\fR return
+TCL_OK, the *boolPtr filled with the value -1;
 .BE
 
 .SH DESCRIPTION
