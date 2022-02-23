@@ -3500,9 +3500,11 @@ EXTERN void		Tcl_AppendPrintfToObj(Tcl_Obj *objPtr,
 /* Slot 665 is reserved */
 /* Slot 666 is reserved */
 /* Slot 667 is reserved */
+/* Slot 668 is reserved */
+/* Slot 669 is reserved */
 #ifndef TclUnusedStubEntry_TCL_DECLARED
 #define TclUnusedStubEntry_TCL_DECLARED
-/* 668 */
+/* 670 */
 EXTERN void		TclUnusedStubEntry(void);
 #endif
 
@@ -4208,7 +4210,9 @@ typedef struct TclStubs {
     VOID *reserved665;
     VOID *reserved666;
     VOID *reserved667;
-    void (*tclUnusedStubEntry) (void); /* 668 */
+    VOID *reserved668;
+    VOID *reserved669;
+    void (*tclUnusedStubEntry) (void); /* 670 */
 } TclStubs;
 
 extern TclStubs *tclStubsPtr;
@@ -6649,9 +6653,11 @@ extern TclStubs *tclStubsPtr;
 /* Slot 665 is reserved */
 /* Slot 666 is reserved */
 /* Slot 667 is reserved */
+/* Slot 668 is reserved */
+/* Slot 669 is reserved */
 #ifndef TclUnusedStubEntry
 #define TclUnusedStubEntry \
-	(tclStubsPtr->tclUnusedStubEntry) /* 668 */
+	(tclStubsPtr->tclUnusedStubEntry) /* 670 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
