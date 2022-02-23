@@ -46,7 +46,7 @@ EXTERN int		TclpCloseFile(TclFile file);
 /* 2 */
 EXTERN Tcl_Channel	TclpCreateCommandChannel(TclFile readFile,
 				TclFile writeFile, TclFile errorFile,
-				int numPids, Tcl_Pid *pidPtr);
+				size_t numPids, Tcl_Pid *pidPtr);
 /* 3 */
 EXTERN int		TclpCreatePipe(TclFile *readPipe, TclFile *writePipe);
 /* 4 */
@@ -106,7 +106,7 @@ typedef struct TclIntPlatStubs {
 
     void (*reserved0)(void);
     int (*tclpCloseFile) (TclFile file); /* 1 */
-    Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
+    Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, size_t numPids, Tcl_Pid *pidPtr); /* 2 */
     int (*tclpCreatePipe) (TclFile *readPipe, TclFile *writePipe); /* 3 */
     void * (*tclWinGetTclInstance) (void); /* 4 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 5 */
