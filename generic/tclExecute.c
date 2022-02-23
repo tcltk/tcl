@@ -6286,7 +6286,8 @@ TEBCresume(
 			    (lResult * l2 != l1)) {
 			lResult -= 1;
 		    }
-		    lResult = l1 - l2*lResult;
+		    lResult = (long)((unsigned long)l1 -
+			    (unsigned long)l2*(unsigned long)lResult);
 		    goto longResultOfArithmetic;
 		}
 		break;
@@ -8544,7 +8545,8 @@ ExecuteExtendedBinaryMathOp(
 			&& (wQuotient * w2 != w1)) {
 		    wQuotient -= (Tcl_WideInt) 1;
 		}
-		wRemainder = w1 - w2*wQuotient;
+		wRemainder = (Tcl_WideInt)((Tcl_WideUInt)w1 -
+			(Tcl_WideUInt)w2*(Tcl_WideUInt)wQuotient);
 		WIDE_RESULT(wRemainder);
 	    }
 
