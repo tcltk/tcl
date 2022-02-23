@@ -1220,17 +1220,6 @@ Tcl_CreateInterp(void)
     Tcl_SetVar2(interp, "tcl_version", NULL, TCL_VERSION, TCL_GLOBAL_ONLY);
     TclpSetVariables(interp);
 
-#if TCL_THREADS && !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-    /*
-     * The existence of the "threaded" element of the tcl_platform array
-     * indicates that this particular Tcl shell has been compiled with threads
-     * turned on. Using "info exists tcl_platform(threaded)" a Tcl script can
-     * introspect on the interpreter level of thread safety.
-     */
-
-    Tcl_SetVar2(interp, "tcl_platform", "threaded", "1", TCL_GLOBAL_ONLY);
-#endif
-
     /*
      * Register Tcl's version number.
      * TIP #268: Full patchlevel instead of just major.minor

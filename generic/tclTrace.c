@@ -1423,7 +1423,7 @@ TclCheckExecutionTraces(
     Command *cmdPtr,		/* Points to command's Command struct. */
     int code,			/* The current result code. */
     int traceFlags,		/* Current tracing situation. */
-    int objc,			/* Number of arguments for the command. */
+    size_t objc,			/* Number of arguments for the command. */
     Tcl_Obj *const objv[])	/* Pointers to Tcl_Obj of each argument. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1529,7 +1529,7 @@ TclCheckInterpTraces(
     Command *cmdPtr,		/* Points to command's Command struct. */
     int code,			/* The current result code. */
     int traceFlags,		/* Current tracing situation. */
-    int objc,			/* Number of arguments for the command. */
+    size_t objc,			/* Number of arguments for the command. */
     Tcl_Obj *const objv[])	/* Pointers to Tcl_Obj of each argument. */
 {
     Interp *iPtr = (Interp *) interp;

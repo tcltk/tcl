@@ -39,8 +39,9 @@ extern "C" {
 TCLAPI void		TclAllocateFreeObjects(void);
 /* Slot 4 is reserved */
 /* 5 */
-TCLAPI int		TclCleanupChildren(Tcl_Interp *interp, int numPids,
-				Tcl_Pid *pidPtr, Tcl_Channel errorChan);
+TCLAPI int		TclCleanupChildren(Tcl_Interp *interp,
+				size_t numPids, Tcl_Pid *pidPtr,
+				Tcl_Channel errorChan);
 /* 6 */
 TCLAPI void		TclCleanupCommand(Command *cmdPtr);
 /* 7 */
@@ -231,7 +232,7 @@ TCLAPI void		TclTeardownNamespace(Namespace *nsPtr);
 /* 109 */
 TCLAPI int		TclUpdateReturnInfo(Interp *iPtr);
 /* 110 */
-TCLAPI int		TclSockMinimumBuffers(void *sock, int size);
+TCLAPI int		TclSockMinimumBuffers(void *sock, size_t size);
 /* 111 */
 TCLAPI void		Tcl_AddInterpResolvers(Tcl_Interp *interp,
 				const char *name,
@@ -357,12 +358,12 @@ TCLAPI int		TclpUtfNcmp2(const char *s1, const char *s2,
 TCLAPI int		TclCheckInterpTraces(Tcl_Interp *interp,
 				const char *command, size_t numChars,
 				Command *cmdPtr, int result, int traceFlags,
-				int objc, Tcl_Obj *const objv[]);
+				size_t objc, Tcl_Obj *const objv[]);
 /* 171 */
 TCLAPI int		TclCheckExecutionTraces(Tcl_Interp *interp,
 				const char *command, size_t numChars,
 				Command *cmdPtr, int result, int traceFlags,
-				int objc, Tcl_Obj *const objv[]);
+				size_t objc, Tcl_Obj *const objv[]);
 /* 172 */
 TCLAPI int		TclInThreadExit(void);
 /* 173 */
@@ -576,7 +577,7 @@ typedef struct TclIntStubs {
     void (*reserved2)(void);
     void (*tclAllocateFreeObjects) (void); /* 3 */
     void (*reserved4)(void);
-    int (*tclCleanupChildren) (Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan); /* 5 */
+    int (*tclCleanupChildren) (Tcl_Interp *interp, size_t numPids, Tcl_Pid *pidPtr, Tcl_Channel errorChan); /* 5 */
     void (*tclCleanupCommand) (Command *cmdPtr); /* 6 */
     size_t (*tclCopyAndCollapse) (size_t count, const char *src, char *dst); /* 7 */
     void (*reserved8)(void);
@@ -681,7 +682,7 @@ typedef struct TclIntStubs {
     void (*reserved107)(void);
     void (*tclTeardownNamespace) (Namespace *nsPtr); /* 108 */
     int (*tclUpdateReturnInfo) (Interp *iPtr); /* 109 */
-    int (*tclSockMinimumBuffers) (void *sock, int size); /* 110 */
+    int (*tclSockMinimumBuffers) (void *sock, size_t size); /* 110 */
     void (*tcl_AddInterpResolvers) (Tcl_Interp *interp, const char *name, Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, Tcl_ResolveCompiledVarProc *compiledVarProc); /* 111 */
     void (*reserved112)(void);
     void (*reserved113)(void);
@@ -741,8 +742,8 @@ typedef struct TclIntStubs {
     void (*reserved167)(void);
     void (*reserved168)(void);
     int (*tclpUtfNcmp2) (const char *s1, const char *s2, size_t n); /* 169 */
-    int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, size_t numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 170 */
-    int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, size_t numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 171 */
+    int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, size_t numChars, Command *cmdPtr, int result, int traceFlags, size_t objc, Tcl_Obj *const objv[]); /* 170 */
+    int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, size_t numChars, Command *cmdPtr, int result, int traceFlags, size_t objc, Tcl_Obj *const objv[]); /* 171 */
     int (*tclInThreadExit) (void); /* 172 */
     int (*tclUniCharMatch) (const Tcl_UniChar *string, size_t strLen, const Tcl_UniChar *pattern, size_t ptnLen, int flags); /* 173 */
     void (*reserved174)(void);
