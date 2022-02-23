@@ -269,16 +269,16 @@ Tcl_ReapDetachedProcs(void)
 int
 TclCleanupChildren(
     Tcl_Interp *interp,		/* Used for error messages. */
-    int numPids,		/* Number of entries in pidPtr array. */
+    size_t numPids,		/* Number of entries in pidPtr array. */
     Tcl_Pid *pidPtr,		/* Array of process ids of children. */
     Tcl_Channel errorChan)	/* Channel for file containing stderr output
 				 * from pipeline. NULL means there isn't any
 				 * stderr output. */
 {
     int result = TCL_OK;
-    int i, abnormalExit, anyErrorInfo;
+    int code, abnormalExit, anyErrorInfo;
     TclProcessWaitStatus waitStatus;
-    int code;
+    size_t i;
     Tcl_Obj *msg, *error;
 
     abnormalExit = 0;

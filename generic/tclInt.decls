@@ -28,7 +28,7 @@ declare 3 {
     void TclAllocateFreeObjects(void)
 }
 declare 5 {
-    int TclCleanupChildren(Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr,
+    int TclCleanupChildren(Tcl_Interp *interp, size_t numPids, Tcl_Pid *pidPtr,
 	    Tcl_Channel errorChan)
 }
 declare 6 {
@@ -203,7 +203,7 @@ declare 109 {
     int TclUpdateReturnInfo(Interp *iPtr)
 }
 declare 110 {
-    int TclSockMinimumBuffers(void *sock, int size)
+    int TclSockMinimumBuffers(void *sock, size_t size)
 }
 # Removed in 8.1:
 #  declare 110 {
@@ -349,12 +349,12 @@ declare 169 {
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
 	    size_t numChars, Command *cmdPtr, int result, int traceFlags,
-	    int objc, Tcl_Obj *const objv[])
+	    size_t objc, Tcl_Obj *const objv[])
 }
 declare 171 {
     int TclCheckExecutionTraces(Tcl_Interp *interp, const char *command,
 	    size_t numChars, Command *cmdPtr, int result, int traceFlags,
-	    int objc, Tcl_Obj *const objv[])
+	    size_t objc, Tcl_Obj *const objv[])
 }
 declare 172 {
     int TclInThreadExit(void)
@@ -610,7 +610,7 @@ declare 1 {
 }
 declare 2 {
     Tcl_Channel TclpCreateCommandChannel(TclFile readFile,
-	    TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)
+	    TclFile writeFile, TclFile errorFile, size_t numPids, Tcl_Pid *pidPtr)
 }
 declare 3 {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
