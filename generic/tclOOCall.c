@@ -1149,7 +1149,8 @@ TclOOGetCallContext(
     CallContext *contextPtr;
     CallChain *callPtr;
     struct ChainBuilder cb;
-    int i, count, doFilters, donePrivate = 0;
+    size_t count;
+    int i, doFilters, donePrivate = 0;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
 
@@ -1332,6 +1333,7 @@ TclOOGetCallContext(
 	}
     } else if (doFilters && !donePrivate) {
 	if (hPtr == NULL) {
+	    int isNew;
 	    if (oPtr->flags & USE_CLASS_CACHE) {
 		if (oPtr->selfCls->classChainCache == NULL) {
 		    oPtr->selfCls->classChainCache =
@@ -1340,7 +1342,7 @@ TclOOGetCallContext(
 		    Tcl_InitObjHashTable(oPtr->selfCls->classChainCache);
 		}
 		hPtr = Tcl_CreateHashEntry(oPtr->selfCls->classChainCache,
-			(char *) methodNameObj, &i);
+			(char *) methodNameObj, &isNew);
 	    } else {
 		if (oPtr->chainCache == NULL) {
 		    oPtr->chainCache = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
@@ -1348,7 +1350,7 @@ TclOOGetCallContext(
 		    Tcl_InitObjHashTable(oPtr->chainCache);
 		}
 		hPtr = Tcl_CreateHashEntry(oPtr->chainCache,
-			(char *) methodNameObj, &i);
+			(char *) methodNameObj, &isNew);
 	    }
 	}
 	callPtr->refCount++;
@@ -1795,7 +1797,7 @@ TclOORenderCallChain(
     Tcl_Obj *filterLiteral, *methodLiteral, *objectLiteral, *privateLiteral;
     Tcl_Obj *resultObj, *descObjs[4], **objv;
     Foundation *fPtr = TclOOGetFoundation(interp);
-    int i;
+    size_t i;
 
     /*
      * Allocate the literals (potentially) used in our description.
