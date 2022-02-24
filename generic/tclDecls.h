@@ -918,7 +918,8 @@ EXTERN int		Tcl_UniCharIsSpace(int ch);
 EXTERN int		Tcl_UniCharIsUpper(int ch);
 /* 351 */
 EXTERN int		Tcl_UniCharIsWordChar(int ch);
-/* Slot 352 is reserved */
+/* 352 */
+EXTERN size_t		Tcl_Char16Len(const unsigned short *uniStr);
 /* Slot 353 is reserved */
 /* 354 */
 EXTERN char *		Tcl_Char16ToUtfDString(const unsigned short *uniStr,
@@ -1782,6 +1783,8 @@ EXTERN int		Tcl_ParseArgsObjv(Tcl_Interp *interp,
 				const Tcl_ArgvInfo *argTable,
 				size_t *objcPtr, Tcl_Obj *const *objv,
 				Tcl_Obj ***remObjv);
+/* 668 */
+EXTERN size_t		Tcl_UniCharLen(const int *uniStr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2145,7 +2148,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsSpace) (int ch); /* 349 */
     int (*tcl_UniCharIsUpper) (int ch); /* 350 */
     int (*tcl_UniCharIsWordChar) (int ch); /* 351 */
-    void (*reserved352)(void);
+    size_t (*tcl_Char16Len) (const unsigned short *uniStr); /* 352 */
     void (*reserved353)(void);
     char * (*tcl_Char16ToUtfDString) (const unsigned short *uniStr, size_t uniLength, Tcl_DString *dsPtr); /* 354 */
     unsigned short * (*tcl_UtfToChar16DString) (const char *src, size_t length, Tcl_DString *dsPtr); /* 355 */
@@ -2461,6 +2464,7 @@ typedef struct TclStubs {
     void (*tcl_SplitPath) (const char *path, size_t *argcPtr, const char ***argvPtr); /* 665 */
     Tcl_Obj * (*tcl_FSSplitPath) (Tcl_Obj *pathPtr, size_t *lenPtr); /* 666 */
     int (*tcl_ParseArgsObjv) (Tcl_Interp *interp, const Tcl_ArgvInfo *argTable, size_t *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv); /* 667 */
+    size_t (*tcl_UniCharLen) (const int *uniStr); /* 668 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3129,7 +3133,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UniCharIsUpper) /* 350 */
 #define Tcl_UniCharIsWordChar \
 	(tclStubsPtr->tcl_UniCharIsWordChar) /* 351 */
-/* Slot 352 is reserved */
+#define Tcl_Char16Len \
+	(tclStubsPtr->tcl_Char16Len) /* 352 */
 /* Slot 353 is reserved */
 #define Tcl_Char16ToUtfDString \
 	(tclStubsPtr->tcl_Char16ToUtfDString) /* 354 */
@@ -3745,6 +3750,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FSSplitPath) /* 666 */
 #define Tcl_ParseArgsObjv \
 	(tclStubsPtr->tcl_ParseArgsObjv) /* 667 */
+#define Tcl_UniCharLen \
+	(tclStubsPtr->tcl_UniCharLen) /* 668 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3928,13 +3935,15 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_BackgroundError(interp)	Tcl_BackgroundException((interp), TCL_ERROR)
 #define Tcl_StringMatch(str, pattern) Tcl_StringCaseMatch((str), (pattern), 0)
 
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
 #   undef Tcl_UniCharToUtfDString
 #   define Tcl_UniCharToUtfDString Tcl_Char16ToUtfDString
 #   undef Tcl_UtfToUniCharDString
 #   define Tcl_UtfToUniCharDString Tcl_UtfToChar16DString
 #   undef Tcl_UtfToUniChar
 #   define Tcl_UtfToUniChar Tcl_UtfToChar16
+#   undef Tcl_UniCharLen
+#   define Tcl_UniCharLen Tcl_Char16Len
 #endif
 #if defined(USE_TCL_STUBS)
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
@@ -3946,6 +3955,9 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
 		? (int (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToUniChar \
 		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
+#   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
+		? (size_t (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
+		: (size_t (*)(wchar_t *))Tcl_Char16Len)
 #   undef Tcl_ListObjGetElements
 #   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*objcPtr) != sizeof(int) \
 		? tclStubsPtr->tcl_ListObjGetElements((interp), (listPtr), (size_t *)(void *)(objcPtr), (objvPtr)) \
@@ -3984,6 +3996,9 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToWChar (sizeof(wchar_t) != sizeof(short) \
 		? (int (*)(const char *, wchar_t *))Tcl_UtfToUniChar \
 		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
+#   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
+		? (size_t (*)(wchar_t *))Tcl_UniCharLen \
+		: (size_t (*)(wchar_t *))Tcl_Char16Len)
 #endif
 
 /*
