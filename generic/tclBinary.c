@@ -2273,12 +2273,12 @@ ScanNumber(
 	    value = (long) (buffer[0]
 		    + (buffer[1] << 8)
 		    + (buffer[2] << 16)
-		    + (((long)buffer[3]) << 24));
+		    + (((unsigned long)buffer[3]) << 24));
 	} else {
 	    value = (long) (buffer[3]
 		    + (buffer[2] << 8)
 		    + (buffer[1] << 16)
-		    + (((long) buffer[0]) << 24));
+		    + (((unsigned long) buffer[0]) << 24));
 	}
 
 	/*

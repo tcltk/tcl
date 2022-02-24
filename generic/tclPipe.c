@@ -433,7 +433,7 @@ TclCreatePipeline(
 				 * pids of child processes. */
     size_t numPids;		/* Actual number of processes that exist at
 				 * *pidPtr right now. */
-    int cmdCount;		/* Count of number of distinct commands found
+    size_t cmdCount;		/* Count of number of distinct commands found
 				 * in argc/argv. */
     const char *inputLiteral = NULL;
 				/* If non-null, then this points to a string
@@ -1029,7 +1029,7 @@ Tcl_OpenCommandChannel(
     TclFile *inPipePtr, *outPipePtr, *errFilePtr;
     TclFile inPipe, outPipe, errFile;
     size_t numPids;
-    Tcl_Pid *pidPtr;
+    Tcl_Pid *pidPtr = NULL;
     Tcl_Channel channel;
 
     inPipe = outPipe = errFile = NULL;
@@ -1041,7 +1041,7 @@ Tcl_OpenCommandChannel(
     numPids = TclCreatePipeline(interp, argc, argv, &pidPtr, inPipePtr,
 	    outPipePtr, errFilePtr);
 
-    if (numPids < 0) {
+    if (numPids == TCL_INDEX_NONE) {
 	goto error;
     }
 
@@ -1081,7 +1081,7 @@ Tcl_OpenCommandChannel(
     return channel;
 
   error:
-    if (numPids > 0) {
+    if (pidPtr) {
 	Tcl_DetachPids(numPids, pidPtr);
 	Tcl_Free(pidPtr);
     }
