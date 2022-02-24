@@ -72,7 +72,7 @@
 #endif
 
 
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
 static void uniCodePanic() {
     Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
 }
