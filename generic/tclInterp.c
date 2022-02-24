@@ -4315,7 +4315,7 @@ SetScriptLimitCallback(
     key.type = type;
 
     if (scriptObj == NULL) {
-	hashPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
+	hashPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, &key);
 	if (hashPtr != NULL) {
 	    Tcl_LimitRemoveHandler(targetInterp, type, CallScriptLimitCallback,
 		    Tcl_GetHashValue(hashPtr));
@@ -4519,7 +4519,7 @@ ChildCommandLimitCmd(
 	TclNewObj(dictPtr);
 	key.interp = childInterp;
 	key.type = TCL_LIMIT_COMMANDS;
-	hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
+	hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, &key);
 	if (hPtr != NULL) {
 	    limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
@@ -4561,7 +4561,7 @@ ChildCommandLimitCmd(
 	case OPT_CMD:
 	    key.interp = childInterp;
 	    key.type = TCL_LIMIT_COMMANDS;
-	    hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
+	    hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, &key);
 	    if (hPtr != NULL) {
 		limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 		if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
@@ -4708,7 +4708,7 @@ ChildTimeLimitCmd(
 	TclNewObj(dictPtr);
 	key.interp = childInterp;
 	key.type = TCL_LIMIT_TIME;
-	hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
+	hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, &key);
 	if (hPtr != NULL) {
 	    limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
@@ -4756,7 +4756,7 @@ ChildTimeLimitCmd(
 	case OPT_CMD:
 	    key.interp = childInterp;
 	    key.type = TCL_LIMIT_TIME;
-	    hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
+	    hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, &key);
 	    if (hPtr != NULL) {
 		limitCBPtr = (ScriptLimitCallback *)Tcl_GetHashValue(hPtr);
 		if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {

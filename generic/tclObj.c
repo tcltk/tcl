@@ -1277,7 +1277,7 @@ TclFreeObj(
 	if (!tablePtr) {
 	    Tcl_Panic("TclFreeObj: object table not initialized");
 	}
-	hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
+	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (hPtr) {
 	    /*
 	     * As the Tcl_Obj is going to be deleted we remove the entry.

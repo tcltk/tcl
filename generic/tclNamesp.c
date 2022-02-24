@@ -4977,7 +4977,7 @@ TclLogCommandInfo(
 	    return;
 	} else {
 	    Tcl_HashEntry *hPtr
-		    = Tcl_FindHashEntry(&iPtr->varTraces, (char *) varPtr);
+		    = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
 	    VarTrace *tracePtr = (VarTrace *)Tcl_GetHashValue(hPtr);
 
 	    if (tracePtr->traceProc != EstablishErrorInfoTraces) {

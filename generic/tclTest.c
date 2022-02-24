@@ -7909,7 +7909,7 @@ MyCompiledVarFetch(
     }
 
     hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) &iPtr->globalNsPtr->varTable,
-            (char *) resVarInfo->nameObj, &isNewVar);
+            resVarInfo->nameObj, &isNewVar);
     if (hPtr) {
         var = (Tcl_Var) TclVarHashGetValue(hPtr);
     } else {

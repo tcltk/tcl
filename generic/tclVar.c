@@ -3909,7 +3909,7 @@ TclFindArrayPtrElements(
 	    continue;
 	}
 	nameObj = VarHashGetKey(varPtr);
-	hPtr = Tcl_CreateHashEntry(tablePtr, (char *) nameObj, &dummy);
+	hPtr = Tcl_CreateHashEntry(tablePtr, nameObj, &dummy);
 	Tcl_SetHashValue(hPtr, nameObj);
     }
 }

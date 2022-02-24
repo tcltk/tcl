@@ -623,12 +623,12 @@ RenameDeleteMethod(
 		    TclGetString(fromPtr), NULL);
 	    return TCL_ERROR;
 	}
-	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) fromPtr);
+	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, fromPtr);
 	if (hPtr == NULL) {
 	    goto noSuchMethod;
 	}
 	if (toPtr) {
-	    newHPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *) toPtr,
+	    newHPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, toPtr,
 		    &isNew);
 	    if (hPtr == newHPtr) {
 	    renameToSelf:
@@ -646,8 +646,7 @@ RenameDeleteMethod(
 	    }
 	}
     } else {
-	hPtr = Tcl_FindHashEntry(&oPtr->classPtr->classMethods,
-		(char *) fromPtr);
+	hPtr = Tcl_FindHashEntry(&oPtr->classPtr->classMethods, fromPtr);
 	if (hPtr == NULL) {
 	    goto noSuchMethod;
 	}
@@ -1848,10 +1847,10 @@ TclOODefineExportObjCmd(
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
-	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *)objv[i],
+	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, objv[i],
 		    &isNew);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *)objv[i],
+	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, objv[i],
 		    &isNew);
 	}
 
@@ -2161,10 +2160,10 @@ TclOODefineUnexportObjCmd(
 		Tcl_InitObjHashTable(oPtr->methodsPtr);
 		oPtr->flags &= ~USE_CLASS_CACHE;
 	    }
-	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *)objv[i],
+	    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, objv[i],
 		    &isNew);
 	} else {
-	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *)objv[i],
+	    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, objv[i],
 		    &isNew);
 	}
 

@@ -252,7 +252,7 @@ InfoObjectDefnCmd(
     if (!oPtr->methodsPtr) {
 	goto unknownMethod;
     }
-    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) objv[2]);
+    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[2]);
     if (hPtr == NULL) {
     unknownMethod:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -363,7 +363,7 @@ InfoObjectForwardCmd(
     if (!oPtr->methodsPtr) {
 	goto unknownMethod;
     }
-    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) objv[2]);
+    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[2]);
     if (hPtr == NULL) {
     unknownMethod:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -660,7 +660,7 @@ InfoObjectMethodTypeCmd(
     if (!oPtr->methodsPtr) {
 	goto unknownMethod;
     }
-    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) objv[2]);
+    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[2]);
     if (hPtr == NULL) {
     unknownMethod:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -999,7 +999,7 @@ InfoClassDefnCmd(
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[2]);
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, objv[2]);
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unknown method \"%s\"", TclGetString(objv[2])));
@@ -1197,7 +1197,7 @@ InfoClassForwardCmd(
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[2]);
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, objv[2]);
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unknown method \"%s\"", TclGetString(objv[2])));
@@ -1413,7 +1413,7 @@ InfoClassMethodTypeCmd(
 	return TCL_ERROR;
     }
 
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[2]);
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, objv[2]);
     if (hPtr == NULL) {
     unknownMethod:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(

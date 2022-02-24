@@ -909,7 +909,7 @@ TclOONextToObjCmd(
     CallFrame *framePtr = iPtr->varFramePtr;
     Class *classPtr;
     CallContext *contextPtr;
-    int i;
+    size_t i;
     Tcl_Object object;
     const char *methodType;
 
@@ -985,7 +985,7 @@ TclOONextToObjCmd(
 	methodType = "method";
     }
 
-    for (i=contextPtr->index ; i>=0 ; i--) {
+    for (i=contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
 	struct MInvoke *miPtr = contextPtr->callPtr->chain + i;
 
 	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {
@@ -1218,7 +1218,7 @@ TclOOSelfObjCmd(
 	} else {
 	    Method *mPtr;
 	    Object *declarerPtr;
-	    int i;
+	    size_t i;
 
 	    for (i=contextPtr->index ; i<contextPtr->callPtr->numChain ; i++){
 		if (!contextPtr->callPtr->chain[i].isFilter) {

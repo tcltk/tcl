@@ -157,7 +157,7 @@ Tcl_NewInstanceMethod(
 	Tcl_InitObjHashTable(oPtr->methodsPtr);
 	oPtr->flags &= ~USE_CLASS_CACHE;
     }
-    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *) nameObj, &isNew);
+    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, nameObj, &isNew);
     if (isNew) {
 	mPtr = (Method *)Tcl_Alloc(sizeof(Method));
 	mPtr->namePtr = nameObj;
@@ -224,7 +224,7 @@ Tcl_NewMethod(
 	mPtr->refCount = 1;
 	goto populate;
     }
-    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *)nameObj,&isNew);
+    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, nameObj,&isNew);
     if (isNew) {
 	mPtr = (Method *)Tcl_Alloc(sizeof(Method));
 	mPtr->refCount = 1;
@@ -515,7 +515,7 @@ TclOOMakeProcInstanceMethod(
 		cfPtr->len = 0;
 
 		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew);
+			procPtr, &isNew);
 		Tcl_SetHashValue(hPtr, cfPtr);
 	    }
 
@@ -628,7 +628,7 @@ TclOOMakeProcMethod(
 		cfPtr->len = 0;
 
 		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew);
+			procPtr, &isNew);
 		Tcl_SetHashValue(hPtr, cfPtr);
 	    }
 
@@ -1062,7 +1062,7 @@ ProcedureMethodCompiledVarConnect(
 
   gotMatch:
     hPtr = Tcl_CreateHashEntry(TclVarTable(contextPtr->oPtr->namespacePtr),
-	    (char *) variableObj, &isNew);
+	    variableObj, &isNew);
     if (isNew) {
 	TclSetVarNamespaceVar((Var *) TclVarHashGetValue(hPtr));
     }
@@ -1468,9 +1468,8 @@ InvokeForwardMethod(
     CallContext *contextPtr = (CallContext *) context;
     ForwardMethod *fmPtr = (ForwardMethod *)clientData;
     Tcl_Obj **argObjs, **prefixObjs;
-    size_t numPrefixes;
+    size_t numPrefixes, skip = contextPtr->skip;
     int len;
-    int skip = contextPtr->skip;
 
     /*
      * Build the real list of arguments to use. Note that we know that the

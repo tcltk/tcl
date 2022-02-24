@@ -1296,11 +1296,11 @@ TclRegisterCommandTypeName(
         int isNew;
 
         hPtr = Tcl_CreateHashEntry(&commandTypeTable,
-                (void *) implementationProc, &isNew);
+                implementationProc, &isNew);
         Tcl_SetHashValue(hPtr, (void *) nameStr);
     } else {
         hPtr = Tcl_FindHashEntry(&commandTypeTable,
-                (void *) implementationProc);
+                implementationProc);
         if (hPtr != NULL) {
             Tcl_DeleteHashEntry(hPtr);
         }
@@ -1811,7 +1811,7 @@ DeleteInterpProc(
      */
 
     Tcl_MutexLock(&cancelLock);
-    hPtr = Tcl_FindHashEntry(&cancelTable, (char *) iPtr);
+    hPtr = Tcl_FindHashEntry(&cancelTable, iPtr);
     if (hPtr != NULL) {
 	CancelInfo *cancelInfo = (CancelInfo *)Tcl_GetHashValue(hPtr);
 
@@ -4132,7 +4132,7 @@ Tcl_CancelEval(
 
 	goto done;
     }
-    hPtr = Tcl_FindHashEntry(&cancelTable, (char *) interp);
+    hPtr = Tcl_FindHashEntry(&cancelTable, interp);
     if (hPtr == NULL) {
 	/*
 	 * No CancelInfo record for this interpreter.
@@ -5624,7 +5624,7 @@ TclArgumentRelease(
     for (i = 1; i < objc; i++) {
 	CFWord *cfwPtr;
 	Tcl_HashEntry *hPtr =
-		Tcl_FindHashEntry(iPtr->lineLAPtr, (char *) objv[i]);
+		Tcl_FindHashEntry(iPtr->lineLAPtr, objv[i]);
 
 	if (!hPtr) {
 	    continue;
@@ -5676,7 +5676,7 @@ TclArgumentBCEnter(
     CFWordBC *lastPtr = NULL;
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hePtr =
-	    Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
+	    Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
 
     if (!hePtr) {
 	return;
@@ -5782,7 +5782,7 @@ TclArgumentBCRelease(
     while (cfwPtr) {
 	CFWordBC *nextPtr = cfwPtr->nextPtr;
 	Tcl_HashEntry *hPtr =
-		Tcl_FindHashEntry(iPtr->lineLABCPtr, (char *) cfwPtr->obj);
+		Tcl_FindHashEntry(iPtr->lineLABCPtr, cfwPtr->obj);
 	CFWordBC *xPtr = (CFWordBC *)Tcl_GetHashValue(hPtr);
 
 	if (xPtr != cfwPtr) {
@@ -5847,7 +5847,7 @@ TclArgumentGet(
      * stack. That is nearest.
      */
 
-    hPtr = Tcl_FindHashEntry(iPtr->lineLAPtr, (char *) obj);
+    hPtr = Tcl_FindHashEntry(iPtr->lineLAPtr, obj);
     if (hPtr) {
 	CFWord *cfwPtr = (CFWord *)Tcl_GetHashValue(hPtr);
 
@@ -5861,7 +5861,7 @@ TclArgumentGet(
      * that stack.
      */
 
-    hPtr = Tcl_FindHashEntry(iPtr->lineLABCPtr, (char *) obj);
+    hPtr = Tcl_FindHashEntry(iPtr->lineLABCPtr, obj);
     if (hPtr) {
 	CFWordBC *cfwPtr = (CFWordBC *)Tcl_GetHashValue(hPtr);
 

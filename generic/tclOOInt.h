@@ -396,7 +396,7 @@ typedef struct CallChain {
 				 * snapshot. */
     int flags;			/* Assorted flags, see below. */
     size_t refCount;		/* Reference count. */
-    int numChain;		/* Size of the call chain. */
+    size_t numChain;		/* Size of the call chain. */
     struct MInvoke *chain;	/* Array of call chain entries. May point to
 				 * staticChain if the number of entries is
 				 * small. */
@@ -405,9 +405,9 @@ typedef struct CallChain {
 
 typedef struct CallContext {
     Object *oPtr;		/* The object associated with this call. */
-    int index;			/* Index into the call chain of the currently
+    size_t index;			/* Index into the call chain of the currently
 				 * executing method implementation. */
-    int skip;			/* Current number of arguments to skip; can
+    size_t skip;			/* Current number of arguments to skip; can
 				 * vary depending on whether it is a direct
 				 * method call or a continuation via the
 				 * [next] command. */
@@ -615,8 +615,8 @@ MODULE_SCOPE int	TclOOInvokeContext(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
-			    Tcl_ObjectContext context, int objc,
-			    Tcl_Obj *const *objv, int skip);
+			    Tcl_ObjectContext context, size_t objc,
+			    Tcl_Obj *const *objv, size_t skip);
 MODULE_SCOPE void	TclOONewBasicMethod(Tcl_Interp *interp, Class *clsPtr,
 			    const DeclaredClassMethod *dcm);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
@@ -649,7 +649,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 /*
  * A convenience macro for iterating through the lists used in the internal
  * memory management of objects.
- * REQUIRES DECLARATION: int i;
+ * REQUIRES DECLARATION: size_t i;
  */
 
 #define FOREACH(var,ary) \
@@ -661,7 +661,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
  * A variation where the array is an array of structs. There's no issue with
  * possible NULLs; every element of the array will be iterated over and the
  * varable set to a pointer to each of those elements in turn.
- * REQUIRES DECLARATION: int i;
+ * REQUIRES DECLARATION: size_t i;
  */
 
 #define FOREACH_STRUCT(var,ary) \

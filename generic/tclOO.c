@@ -2351,7 +2351,7 @@ Tcl_ClassGetMetadata(
      * There is a metadata store, so look in it for the given type.
      */
 
-    hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, (char *) typePtr);
+    hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, typePtr);
 
     /*
      * Return the metadata value if we found it, otherwise NULL.
@@ -2390,7 +2390,7 @@ Tcl_ClassSetMetadata(
      */
 
     if (metadata == NULL) {
-	hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, (char *) typePtr);
+	hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, typePtr);
 	if (hPtr != NULL) {
 	    typePtr->deleteProc(Tcl_GetHashValue(hPtr));
 	    Tcl_DeleteHashEntry(hPtr);
@@ -2403,7 +2403,7 @@ Tcl_ClassSetMetadata(
      * some metadata attached of this type, we delete that first.
      */
 
-    hPtr = Tcl_CreateHashEntry(clsPtr->metadataPtr, (char *) typePtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(clsPtr->metadataPtr, typePtr, &isNew);
     if (!isNew) {
 	typePtr->deleteProc(Tcl_GetHashValue(hPtr));
     }
@@ -2431,7 +2431,7 @@ Tcl_ObjectGetMetadata(
      * There is a metadata store, so look in it for the given type.
      */
 
-    hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, (char *) typePtr);
+    hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, typePtr);
 
     /*
      * Return the metadata value if we found it, otherwise NULL.
@@ -2470,7 +2470,7 @@ Tcl_ObjectSetMetadata(
      */
 
     if (metadata == NULL) {
-	hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, (char *) typePtr);
+	hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, typePtr);
 	if (hPtr != NULL) {
 	    typePtr->deleteProc(Tcl_GetHashValue(hPtr));
 	    Tcl_DeleteHashEntry(hPtr);
@@ -2483,7 +2483,7 @@ Tcl_ObjectSetMetadata(
      * some metadata attached of this type, we delete that first.
      */
 
-    hPtr = Tcl_CreateHashEntry(oPtr->metadataPtr, (char *) typePtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(oPtr->metadataPtr, typePtr, &isNew);
     if (!isNew) {
 	typePtr->deleteProc(Tcl_GetHashValue(hPtr));
     }
@@ -2806,8 +2806,8 @@ Tcl_ObjectContextInvokeNext(
     int skip)
 {
     CallContext *contextPtr = (CallContext *) context;
-    int savedIndex = contextPtr->index;
-    int savedSkip = contextPtr->skip;
+    size_t savedIndex = contextPtr->index;
+    size_t savedSkip = contextPtr->skip;
     int result;
     int objc = objc1;
 
@@ -2874,9 +2874,9 @@ int
 TclNRObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv,
-    int skip)
+    size_t skip)
 {
     CallContext *contextPtr = (CallContext *) context;
 

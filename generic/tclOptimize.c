@@ -28,7 +28,7 @@ static void		TrimUnreachable(CompileEnv *envPtr);
  */
 
 #define DefineTargetAddress(tablePtr, address) \
-    ((void) Tcl_CreateHashEntry((tablePtr), (void *) (address), &isNew))
+    ((void) Tcl_CreateHashEntry((tablePtr), (address), &isNew))
 #define IsTargetAddress(tablePtr, address) \
     (Tcl_FindHashEntry((tablePtr), (void *) (address)) != NULL)
 #define AddrLength(address) \

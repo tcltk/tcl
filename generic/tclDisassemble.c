@@ -1526,7 +1526,7 @@ Tcl_DisassembleObjCmd(
 	    return TCL_ERROR;
 	}
 	hPtr = Tcl_FindHashEntry(&oPtr->classPtr->classMethods,
-		(char *) objv[3]);
+		objv[3]);
 	goto methodBody;
     case DISAS_OBJECT_METHOD:
 	if (objc != 4) {
@@ -1545,7 +1545,7 @@ Tcl_DisassembleObjCmd(
 	if (oPtr->methodsPtr == NULL) {
 	    goto unknownMethod;
 	}
-	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) objv[3]);
+	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[3]);
 
 	/*
 	 * Compile (if necessary) and disassemble a method body.
