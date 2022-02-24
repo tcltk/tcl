@@ -1244,8 +1244,8 @@ declare 350 {
 declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
-declare 352 {deprecated {Use Tcl_GetCharLength}} {
-    int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
+declare 352 {
+    int Tcl_Char16Len(const unsigned short *uniStr)
 }
 declare 353 {deprecated {Use Tcl_UtfNcmp}} {
     int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
@@ -2442,11 +2442,16 @@ declare 660 {
     int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
 }
 
+# TIP #617
 declare 668 {
+    int Tcl_UniCharLen(const int *uniStr)
+}
+
+declare 669 {
     int Tcl_GetBool(Tcl_Interp *interp, const char *src, int flags,
 	    void *boolPtr)
 }
-declare 669 {
+declare 670 {
     int Tcl_GetBoolFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int flags, void *boolPtr)
 }

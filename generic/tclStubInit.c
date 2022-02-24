@@ -1635,7 +1635,7 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsSpace, /* 349 */
     Tcl_UniCharIsUpper, /* 350 */
     Tcl_UniCharIsWordChar, /* 351 */
-    Tcl_UniCharLen, /* 352 */
+    Tcl_Char16Len, /* 352 */
     Tcl_UniCharNcmp, /* 353 */
     Tcl_Char16ToUtfDString, /* 354 */
     Tcl_UtfToChar16DString, /* 355 */
@@ -1951,8 +1951,9 @@ const TclStubs tclStubs = {
     0, /* 665 */
     0, /* 666 */
     0, /* 667 */
-    Tcl_GetBool, /* 668 */
-    Tcl_GetBoolFromObj, /* 669 */
+    Tcl_UniCharLen, /* 668 */
+    Tcl_GetBool, /* 669 */
+    Tcl_GetBoolFromObj, /* 670 */
 };
 
 /* !END!: Do not edit above this line. */
