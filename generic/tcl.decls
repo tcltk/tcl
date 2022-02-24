@@ -1292,10 +1292,9 @@ declare 350 {
 declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
-# Removed in 9.0:
-#declare 352 {
-#    int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
-#}
+declare 352 {
+    size_t Tcl_Char16Len(const unsigned short *uniStr)
+}
 # Removed in 9.0:
 #declare 353 {
 #    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
@@ -2504,6 +2503,12 @@ declare 657 {
 declare 660 {
     int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
 }
+
+# TIP #617
+declare 668 {
+    size_t Tcl_UniCharLen(const int *uniStr)
+}
+
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
