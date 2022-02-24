@@ -3931,8 +3931,8 @@ extern const TclStubs *tclStubsPtr;
 		? (int (*)(const char *, wchar_t *))tclStubsPtr->tcl_UtfToUniChar \
 		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
-		? (int (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
-		: (int (*)(wchar_t *))Tcl_Char16Len)
+		? (size_t (*)(wchar_t *))tclStubsPtr->tcl_UniCharLen \
+		: (size_t (*)(wchar_t *))Tcl_Char16Len)
 #else
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
 		? (char *(*)(const wchar_t *, size_t, Tcl_DString *))Tcl_UniCharToUtfDString \
@@ -3944,8 +3944,8 @@ extern const TclStubs *tclStubsPtr;
 		? (int (*)(const char *, wchar_t *))Tcl_UtfToUniChar \
 		: (int (*)(const char *, wchar_t *))Tcl_UtfToChar16)
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
-		? (int (*)(wchar_t *))Tcl_UniCharLen \
-		: (int (*)(wchar_t *))Tcl_Char16Len)
+		? (size_t (*)(wchar_t *))Tcl_UniCharLen \
+		: (size_t (*)(wchar_t *))Tcl_Char16Len)
 #endif
 
 /*
