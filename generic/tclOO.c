@@ -2799,8 +2799,8 @@ Tcl_ObjectContextInvokeNext(
     int skip)
 {
     CallContext *contextPtr = (CallContext *) context;
-    int savedIndex = contextPtr->index;
-    int savedSkip = contextPtr->skip;
+    size_t savedIndex = contextPtr->index;
+    size_t savedSkip = contextPtr->skip;
     int result;
 
     if (contextPtr->index + 1 >= contextPtr->callPtr->numChain) {
