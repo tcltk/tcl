@@ -24,7 +24,7 @@
 
 struct ChainBuilder {
     CallChain *callChainPtr;	/* The call chain being built. */
-    int filterLength;		/* Number of entries in the call chain that
+    size_t filterLength;		/* Number of entries in the call chain that
 				 * are due to processing filters and not the
 				 * main call chain. */
     Object *oPtr;		/* The object that we are building the chain
@@ -326,7 +326,7 @@ TclOOInvokeContext(
      */
 
     if (contextPtr->index == 0) {
-	int i;
+	size_t i;
 
 	for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	    AddRef(contextPtr->callPtr->chain[i].mPtr);
@@ -404,7 +404,7 @@ FinalizeMethodRefs(
     int result)
 {
     CallContext *contextPtr = (CallContext *)data[0];
-    int i;
+    size_t i;
 
     for (i = 0 ; i < contextPtr->callPtr->numChain ; i++) {
 	TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);
@@ -969,7 +969,7 @@ AddMethodToCallChain(
 				 * not passed a mixin. */
 {
     CallChain *callPtr = cbPtr->callChainPtr;
-    int i;
+    size_t i;
 
     /*
      * Return if this is just an entry used to record whether this is a public
@@ -1149,7 +1149,8 @@ TclOOGetCallContext(
     CallContext *contextPtr;
     CallChain *callPtr;
     struct ChainBuilder cb;
-    int i, count, doFilters, donePrivate = 0;
+    size_t count;
+    int i, doFilters, donePrivate = 0;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
 
@@ -1332,6 +1333,7 @@ TclOOGetCallContext(
 	}
     } else if (doFilters && !donePrivate) {
 	if (hPtr == NULL) {
+	    int isNew;
 	    if (oPtr->flags & USE_CLASS_CACHE) {
 		if (oPtr->selfCls->classChainCache == NULL) {
 		    oPtr->selfCls->classChainCache =
@@ -1340,7 +1342,7 @@ TclOOGetCallContext(
 		    Tcl_InitObjHashTable(oPtr->selfCls->classChainCache);
 		}
 		hPtr = Tcl_CreateHashEntry(oPtr->selfCls->classChainCache,
-			(char *) methodNameObj, &i);
+			(char *) methodNameObj, &isNew);
 	    } else {
 		if (oPtr->chainCache == NULL) {
 		    oPtr->chainCache = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
@@ -1348,7 +1350,7 @@ TclOOGetCallContext(
 		    Tcl_InitObjHashTable(oPtr->chainCache);
 		}
 		hPtr = Tcl_CreateHashEntry(oPtr->chainCache,
-			(char *) methodNameObj, &i);
+			(char *) methodNameObj, &isNew);
 	    }
 	}
 	callPtr->refCount++;
@@ -1408,7 +1410,7 @@ TclOOGetStereotypeCallChain(
 {
     CallChain *callPtr;
     struct ChainBuilder cb;
-    int i, count;
+    size_t count;
     Foundation *fPtr = clsPtr->thisPtr->fPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
@@ -1504,12 +1506,13 @@ TclOOGetStereotypeCallChain(
 	}
     } else {
 	if (hPtr == NULL) {
+	    int isNew;
 	    if (clsPtr->classChainCache == NULL) {
 		clsPtr->classChainCache = (Tcl_HashTable *)Tcl_Alloc(sizeof(Tcl_HashTable));
 		Tcl_InitObjHashTable(clsPtr->classChainCache);
 	    }
 	    hPtr = Tcl_CreateHashEntry(clsPtr->classChainCache,
-		    (char *) methodNameObj, &i);
+		    (char *) methodNameObj, &isNew);
 	}
 	callPtr->refCount++;
 	Tcl_SetHashValue(hPtr, callPtr);
@@ -1794,7 +1797,7 @@ TclOORenderCallChain(
     Tcl_Obj *filterLiteral, *methodLiteral, *objectLiteral, *privateLiteral;
     Tcl_Obj *resultObj, *descObjs[4], **objv;
     Foundation *fPtr = TclOOGetFoundation(interp);
-    int i;
+    size_t i;
 
     /*
      * Allocate the literals (potentially) used in our description.

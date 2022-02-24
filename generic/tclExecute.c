@@ -4349,7 +4349,7 @@ TEBCresume(
 	Object *oPtr;
 	CallFrame *framePtr;
 	CallContext *contextPtr;
-	int skip, newDepth;
+	size_t skip, newDepth;
 
     case INST_TCLOO_SELF:
 	framePtr = iPtr->varFramePtr;
@@ -4401,7 +4401,7 @@ TEBCresume(
 	} else {
 	    Class *classPtr = oPtr->classPtr;
 	    struct MInvoke *miPtr;
-	    int i;
+	    size_t i;
 	    const char *methodType;
 
 	    if (classPtr == NULL) {
@@ -4450,7 +4450,7 @@ TEBCresume(
 
 	    TRACE_APPEND(("ERROR: \"%.30s\" not on reachable chain\n",
 		    O2S(valuePtr)));
-	    for (i=contextPtr->index ; i>=0 ; i--) {
+	    for (i=contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
 		miPtr = contextPtr->callPtr->chain + i;
 		if (miPtr->isFilter
 			|| miPtr->mPtr->declaringClassPtr != classPtr) {
