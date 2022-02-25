@@ -2189,7 +2189,7 @@ void *			TclStubCall(void *arg);
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp())))
-EXTERN TCL_NORETURN void Tcl_MainEx(int argc, char **argv,
+EXTERN TCL_NORETURN void Tcl_MainEx(size_t argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
@@ -2217,7 +2217,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #endif
 #   define Tcl_MainEx Tcl_MainExW
-    EXTERN TCL_NORETURN void Tcl_MainExW(int argc, wchar_t **argv,
+    EXTERN TCL_NORETURN void Tcl_MainExW(size_t argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 #ifdef USE_TCL_STUBS
@@ -2230,11 +2230,11 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #define TclZipfs_AppHook(argcp, argvp) \
 	TclInitStubTable(((const char *(*)(int *, void *))TclStubCall((void *)3))(argcp, argvp))
 #define Tcl_MainExW(argc, argv, appInitProc, interp) \
-	(void)((const char *(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	(void)((const char *(*)(size_t, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
 	TclStubCall((void *)4))(argc, argv, appInitProc, interp)
 #if !defined(_WIN32) || !defined(UNICODE)
 #define Tcl_MainEx(argc, argv, appInitProc, interp) \
-	(void)((const char *(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	(void)((const char *(*)(size_t, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
 	TclStubCall((void *)5))(argc, argv, appInitProc, interp)
 #endif
 #define Tcl_StaticLibrary(interp, pkgName, initProc, safeInitProc) \
