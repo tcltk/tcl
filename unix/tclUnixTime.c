@@ -155,7 +155,7 @@ TclpGetClicks(void)
 	Tcl_Time time;
 
 	GetTime(&time);
-	now = time.sec*1000000 + time.usec;
+	now = ((unsigned long)(time.sec)*1000000UL) + (unsigned long)(time.usec);
     } else {
 	/*
 	 * A semi-NativeGetTime, specialized to clicks.
@@ -168,7 +168,7 @@ TclpGetClicks(void)
     Tcl_Time time;
 
     GetTime(&time);
-    now = time.sec*1000000 + time.usec;
+    now = ((unsigned long)(time.sec)*1000000UL) + (unsigned long)(time.usec);
 #endif /* NO_GETTOD */
 
     return now;

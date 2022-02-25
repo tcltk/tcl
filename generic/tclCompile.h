@@ -1008,11 +1008,11 @@ typedef struct ForeachVarList {
  */
 
 typedef struct ForeachInfo {
-    int numLists;		/* The number of both the variable and value
+    size_t numLists1;		/* The number of both the variable and value
 				 * lists of the foreach command. */
-    int firstValueTemp;		/* Index of the first temp var in a proc frame
+    size_t firstValueTemp1;		/* Index of the first temp var in a proc frame
 				 * used to point to a value list. */
-    int loopCtTemp;		/* Index of temp var in a proc frame holding
+    size_t loopCtTemp1;		/* Index of temp var in a proc frame holding
 				 * the loop's iteration count. Used to
 				 * determine next value list element to assign
 				 * each loop var. */
