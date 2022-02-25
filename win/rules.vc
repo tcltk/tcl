@@ -550,8 +550,11 @@ NMAKEHLPC = $(_TCLDIR)\win\nmakehlp.c
 
 # We always build nmakehlp even if it exists since we do not know
 # what source it was built from.
-!if "$(MACHINE)" == "$(NATIVE_ARCH)"
+!if "$(MACHINE)" == "IX86" || "$(MACHINE)" == "$(NATIVE_ARCH)"
 !if [$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console > nul]
+!endif
+!else
+!if [copy $(NMAKEHLPC:nmakehlp.c=x86_64-w64-mingw32-nmakehlp.exe) nmakehlp.exe >NUL]
 !endif
 !endif
 
@@ -1609,9 +1612,6 @@ DEFAULT_BUILD_TARGET = $(PROJECT)
 !endif
 
 default-target: $(DEFAULT_BUILD_TARGET)
-
-nmakehlp:
-	$(cc32) -nologo "$(NMAKEHLPC)" -link -subsystem:console
 
 !if $(MULTIPLATFORM_INSTALL)
 default-pkgindex:

@@ -72,7 +72,7 @@
 #endif
 
 
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
 static void uniCodePanic() {
     Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
 }
@@ -1043,7 +1043,7 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsSpace, /* 349 */
     Tcl_UniCharIsUpper, /* 350 */
     Tcl_UniCharIsWordChar, /* 351 */
-    0, /* 352 */
+    Tcl_Char16Len, /* 352 */
     0, /* 353 */
     Tcl_Char16ToUtfDString, /* 354 */
     Tcl_UtfToChar16DString, /* 355 */
@@ -1352,6 +1352,14 @@ const TclStubs tclStubs = {
     0, /* 658 */
     0, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
+    0, /* 661 */
+    0, /* 662 */
+    0, /* 663 */
+    0, /* 664 */
+    0, /* 665 */
+    0, /* 666 */
+    0, /* 667 */
+    Tcl_UniCharLen, /* 668 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -104,7 +104,7 @@ typedef struct PipeInfo {
     TclFile readFile;		/* Output from pipe. */
     TclFile writeFile;		/* Input from pipe. */
     TclFile errorFile;		/* Error output from pipe. */
-    int numPids;		/* Number of processes attached to pipe. */
+    size_t numPids;		/* Number of processes attached to pipe. */
     Tcl_Pid *pidPtr;		/* Pids of attached processes. */
     Tcl_ThreadId threadId;	/* Thread to which events should be reported.
 				 * This value is used by the reader/writer
@@ -911,7 +911,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    int argc,			/* Number of arguments in following array. */
+    size_t argc1,			/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings. argv[0] contains
 				 * the name of the executable converted to
 				 * native format (using the
@@ -943,6 +943,7 @@ TclpCreateProcess(
     HANDLE hProcess, h, inputHandle, outputHandle, errorHandle;
     char execPath[MAX_PATH * 3];
     WinFile *filePtr;
+    int argc = argc1;
 
     PipeInit();
 
@@ -1759,7 +1760,7 @@ TclpCreateCommandChannel(
     TclFile writeFile,		/* If non-null, gives the file for writing. */
     TclFile errorFile,		/* If non-null, gives the file where errors
 				 * can be read. */
-    int numPids,		/* The number of pids in the pid array. */
+    size_t numPids,		/* The number of pids in the pid array. */
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -1906,7 +1907,7 @@ TclGetAndDetachPids(
     PipeInfo *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
     Tcl_Obj *pidsObj;
-    int i;
+    size_t i;
 
     /*
      * Punt if the channel is not a command channel.
@@ -2750,7 +2751,7 @@ Tcl_PidObjCmd(
     Tcl_Channel chan;
     const Tcl_ChannelType *chanTypePtr;
     PipeInfo *pipePtr;
-    int i;
+    size_t i;
     Tcl_Obj *resultPtr;
 
     if (objc > 2) {

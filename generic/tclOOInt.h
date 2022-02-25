@@ -396,7 +396,7 @@ typedef struct CallChain {
 				 * snapshot. */
     int flags;			/* Assorted flags, see below. */
     size_t refCount;		/* Reference count. */
-    int numChain;		/* Size of the call chain. */
+    size_t numChain;		/* Size of the call chain. */
     struct MInvoke *chain;	/* Array of call chain entries. May point to
 				 * staticChain if the number of entries is
 				 * small. */
@@ -405,9 +405,9 @@ typedef struct CallChain {
 
 typedef struct CallContext {
     Object *oPtr;		/* The object associated with this call. */
-    int index;			/* Index into the call chain of the currently
+    size_t index;			/* Index into the call chain of the currently
 				 * executing method implementation. */
-    int skip;			/* Current number of arguments to skip; can
+    size_t skip;			/* Current number of arguments to skip; can
 				 * vary depending on whether it is a direct
 				 * method call or a continuation via the
 				 * [next] command. */

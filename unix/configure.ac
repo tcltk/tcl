@@ -562,18 +562,6 @@ SC_ENABLE_LANGINFO
 AC_CHECK_FUNCS(cfmakeraw chflags mkstemps)
 
 #--------------------------------------------------------------------
-# Check for support of isnan() function or macro
-#--------------------------------------------------------------------
-
-AC_CACHE_CHECK([isnan], tcl_cv_isnan, [
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <math.h>]], [[
-isnan(0.0);			/* Generates an error if isnan is missing */
-]])],[tcl_cv_isnan=yes],[tcl_cv_isnan=no])])
-if test $tcl_cv_isnan = no; then
-    AC_DEFINE(NO_ISNAN, 1, [Do we have a usable 'isnan'?])
-fi
-
-#--------------------------------------------------------------------
 # Darwin specific API checks and defines
 #--------------------------------------------------------------------
 

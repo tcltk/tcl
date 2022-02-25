@@ -1468,7 +1468,8 @@ InvokeForwardMethod(
     CallContext *contextPtr = (CallContext *) context;
     ForwardMethod *fmPtr = (ForwardMethod *)clientData;
     Tcl_Obj **argObjs, **prefixObjs;
-    int numPrefixes, len, skip = contextPtr->skip;
+    size_t skip = contextPtr->skip;
+    int numPrefixes, len;
 
     /*
      * Build the real list of arguments to use. Note that we know that the

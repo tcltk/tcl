@@ -1136,7 +1136,7 @@ declare 303 {
 declare 304 {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    const void *tablePtr, size_t offset, const char *msg, int flags,
-	    int *indexPtr)
+	    void *indexPtr)
 }
 declare 305 {
     void *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, size_t size)
@@ -1292,10 +1292,9 @@ declare 350 {
 declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
-# Removed in 9.0:
-#declare 352 {
-#    int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
-#}
+declare 352 {
+    size_t Tcl_Char16Len(const unsigned short *uniStr)
+}
 # Removed in 9.0:
 #declare 353 {
 #    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
@@ -2504,6 +2503,12 @@ declare 657 {
 declare 660 {
     int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
 }
+
+# TIP #617
+declare 668 {
+    size_t Tcl_UniCharLen(const int *uniStr)
+}
+
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 

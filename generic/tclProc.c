@@ -84,7 +84,7 @@ const Tcl_ObjType tclProcBodyType = {
     } while (0)
 
 /*
- * The [upvar]/[uplevel] level reference type. Uses the longValue field
+ * The [upvar]/[uplevel] level reference type. Uses the wideValue field
  * to remember the integer value of a parsed #<integer> format.
  *
  * Uses the default behaviour throughout, and never disposes of the string
@@ -1649,7 +1649,7 @@ TclNRInterpProcCore(
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
     Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
-    int skip,			/* Number of initial arguments to be skipped,
+    size_t skip1,			/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
     ProcErrorProc *errorProc)	/* How to convert results from the script into
 				 * results of the overall procedure. */
@@ -1659,6 +1659,7 @@ TclNRInterpProcCore(
     int result;
     CallFrame *freePtr;
     ByteCode *codePtr;
+    int skip = skip1;
 
     result = InitArgsAndLocals(interp, skip);
     if (result != TCL_OK) {
