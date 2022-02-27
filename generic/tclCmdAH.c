@@ -2474,9 +2474,9 @@ EachloopCmd(
     int objc,			/* The arguments being passed in... */
     Tcl_Obj *const objv[])
 {
-    int numLists = (objc-2) / 2;
+    size_t i, j, numLists = (objc-2) / 2;
     struct ForeachState *statePtr;
-    int i, j, result;
+    int result;
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2558,7 +2558,7 @@ EachloopCmd(
 	if ((statePtr->argcList[i] % statePtr->varcList[i]) != 0) {
 	    j++;
 	}
-	if (j > statePtr->maxj) {
+	if (j > (size_t)statePtr->maxj) {
 	    statePtr->maxj = j;
 	}
     }

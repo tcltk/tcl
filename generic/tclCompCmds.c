@@ -2845,9 +2845,9 @@ CompileEachloopCmd(
      * body's code. Misuse loopCtTemp for storing the jump size.
      */
 
-    jumpBackOffset = envPtr->exceptArrayPtr[range].continueOffset -
-	    envPtr->exceptArrayPtr[range].codeOffset;
-    infoPtr->loopCtTemp = -jumpBackOffset;
+    jumpBackOffset = envPtr->exceptArrayPtr[range].codeOffset -
+	    envPtr->exceptArrayPtr[range].continueOffset;
+    infoPtr->loopCtTemp = jumpBackOffset;
 
     /*
      * The command's result is an empty string if not collecting. If
@@ -2895,7 +2895,7 @@ DupForeachInfo(
     ForeachInfo *srcPtr = (ForeachInfo *)clientData;
     ForeachInfo *dupPtr;
     ForeachVarList *srcListPtr, *dupListPtr;
-    int numVars, i, j, numLists = srcPtr->numLists;
+    size_t numVars, i, j, numLists = srcPtr->numLists;
 
     dupPtr = (ForeachInfo *)Tcl_Alloc(offsetof(ForeachInfo, varLists)
 	    + numLists * sizeof(ForeachVarList *));
@@ -2943,8 +2943,7 @@ FreeForeachInfo(
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *listPtr;
-    int numLists = infoPtr->numLists;
-    int i;
+    size_t i, numLists = infoPtr->numLists;
 
     for (i = 0;  i < numLists;  i++) {
 	listPtr = infoPtr->varLists[i];
@@ -2979,7 +2978,7 @@ PrintForeachInfo(
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
-    int i, j;
+    size_t i, j;
 
     Tcl_AppendToObj(appendObj, "data=[", -1);
 
@@ -2987,24 +2986,24 @@ PrintForeachInfo(
 	if (i) {
 	    Tcl_AppendToObj(appendObj, ", ", -1);
 	}
-	Tcl_AppendPrintfToObj(appendObj, "%%v%u",
-		(unsigned) (infoPtr->firstValueTemp + i));
+	Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
+		(infoPtr->firstValueTemp + i));
     }
-    Tcl_AppendPrintfToObj(appendObj, "], loop=%%v%u",
-	    (unsigned) infoPtr->loopCtTemp);
+    Tcl_AppendPrintfToObj(appendObj, "], loop=%%v%" TCL_Z_MODIFIER "u",
+	    infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
 	    Tcl_AppendToObj(appendObj, ",", -1);
 	}
-	Tcl_AppendPrintfToObj(appendObj, "\n\t\t it%%v%u\t[",
-		(unsigned) (infoPtr->firstValueTemp + i));
+	Tcl_AppendPrintfToObj(appendObj, "\n\t\t it%%v%" TCL_Z_MODIFIER "u\t[",
+		(infoPtr->firstValueTemp + i));
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
 		Tcl_AppendToObj(appendObj, ", ", -1);
 	    }
-	    Tcl_AppendPrintfToObj(appendObj, "%%v%u",
-		    (unsigned) varsPtr->varIndexes[j]);
+	    Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
+		    (size_t)varsPtr->varIndexes[j]);
 	}
 	Tcl_AppendToObj(appendObj, "]", -1);
     }
@@ -3019,9 +3018,9 @@ PrintNewForeachInfo(
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
-    int i, j;
+    size_t i, j;
 
-    Tcl_AppendPrintfToObj(appendObj, "jumpOffset=%+d, vars=",
+    Tcl_AppendPrintfToObj(appendObj, "jumpOffset=%+" TCL_Z_MODIFIER "d, vars=",
 	    infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
@@ -3049,7 +3048,7 @@ DisassembleForeachInfo(
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
-    int i, j;
+    size_t i, j;
     Tcl_Obj *objPtr, *innerPtr;
 
     /*
@@ -3096,7 +3095,7 @@ DisassembleNewForeachInfo(
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
-    int i, j;
+    size_t i, j;
     Tcl_Obj *objPtr, *innerPtr;
 
     /*

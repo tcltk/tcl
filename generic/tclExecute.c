@@ -4424,11 +4424,11 @@ TEBCresume(
 			if (traceInstructions) {
 			    strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 			} else {
-			    fprintf(stdout, "%d: (%u) invoking ",
+			    fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) invoking ",
 				    iPtr->numLevels,
-				    (unsigned)(pc - codePtr->codeStart));
+				    (size_t)(pc - codePtr->codeStart));
 			}
-			for (i = 0;  i < opnd;  i++) {
+			for (i = 0;  i < (size_t)opnd;  i++) {
 			    TclPrintObject(stdout, objv[i], 15);
 			    fprintf(stdout, " ");
 			}
@@ -6218,11 +6218,11 @@ TEBCresume(
 	ForeachInfo *infoPtr;
 	Tcl_Obj *listPtr, **elements;
 	ForeachVarList *varListPtr;
-	int numLists, listLen, numVars;
-	int listTmpDepth;
+	size_t numLists, numVars;
+	int listTmpDepth, listLen;
 	size_t iterNum, iterMax, iterTmp;
-	int varIndex, valIndex, j;
-	long i;
+	size_t varIndex, valIndex, j;
+	size_t i;
 
     case INST_FOREACH_START:
 	/*
@@ -6330,7 +6330,7 @@ TEBCresume(
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
-		    if (valIndex >= listLen) {
+		    if (valIndex >= (size_t)listLen) {
 			TclNewObj(valuePtr);
 		    } else {
 			valuePtr = elements[valIndex];
@@ -6355,7 +6355,7 @@ TEBCresume(
 			if (TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL,
 				valuePtr, TCL_LEAVE_ERR_MSG, varIndex)==NULL){
 			    CACHE_STACK_INFO();
-			    TRACE_APPEND(("ERROR init. index temp %d: %.30s",
+			    TRACE_APPEND(("ERROR init. index temp %" TCL_Z_MODIFIER "d: %.30s",
 				    varIndex, O2S(Tcl_GetObjResult(interp))));
 			    goto gotError;
 			}
@@ -6402,7 +6402,7 @@ TEBCresume(
 	tmpPtr = OBJ_AT_DEPTH(1);
 	infoPtr = (ForeachInfo *)tmpPtr->internalRep.twoPtrValue.ptr1;
 	numLists = infoPtr->numLists;
-	TRACE_APPEND(("=> appending to list at depth %d\n", 3 + numLists));
+	TRACE_APPEND(("=> appending to list at depth %" TCL_Z_MODIFIER "d\n", 3 + numLists));
 
 	objPtr = OBJ_AT_DEPTH(3 + numLists);
 	Tcl_ListObjAppendElement(NULL, objPtr, OBJ_AT_TOS);
