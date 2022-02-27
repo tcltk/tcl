@@ -871,7 +871,7 @@ typedef struct InstructionDesc {
 				 * computations. The value INT_MIN signals
 				 * that the instruction's worst case effect is
 				 * (1-opnd1). */
-    int numOperands;		/* Number of operands. */
+    size_t numOperands;		/* Number of operands. */
     InstOperandType opTypes[MAX_INSTRUCTION_OPERANDS];
 				/* The type of each operand. */
 } InstructionDesc;
@@ -934,14 +934,14 @@ typedef enum {
 
 typedef struct JumpFixup {
     TclJumpType jumpType;	/* Indicates the kind of jump. */
-    unsigned int codeOffset;	/* Offset of the first byte of the one-byte
+    size_t codeOffset;	/* Offset of the first byte of the one-byte
 				 * forward jump's code. */
-    int cmdIndex;		/* Index of the first command after the one
+    size_t cmdIndex;		/* Index of the first command after the one
 				 * for which the jump was emitted. Used to
 				 * update the code offsets for subsequent
 				 * commands if the two-byte jump at jumpPc
 				 * must be replaced with a five-byte one. */
-    int exceptIndex;		/* Index of the first range entry in the
+    size_t exceptIndex;		/* Index of the first range entry in the
 				 * ExceptionRange array after the current one.
 				 * This field is used to adjust the code
 				 * offsets in subsequent ExceptionRange
@@ -953,8 +953,8 @@ typedef struct JumpFixup {
 
 typedef struct JumpFixupArray {
     JumpFixup *fixup;		/* Points to start of jump fixup array. */
-    int next;			/* Index of next free array entry. */
-    int end;			/* Index of last usable entry in array. */
+    size_t next;			/* Index of next free array entry. */
+    size_t end;			/* Index of last usable entry in array. */
     int mallocedArray;		/* 1 if array was expanded and fixups points
 				 * into the heap, else 0. */
     JumpFixup staticFixupSpace[JUMPFIXUP_INIT_ENTRIES];
@@ -969,7 +969,7 @@ typedef struct JumpFixupArray {
  */
 
 typedef struct ForeachVarList {
-    int numVars;		/* The number of variables in the list. */
+    size_t numVars;		/* The number of variables in the list. */
     int varIndexes[TCLFLEXARRAY];/* An array of the indexes ("slot numbers")
 				 * for each variable in the procedure's array
 				 * of local variables. Only scalar variables
@@ -986,11 +986,11 @@ typedef struct ForeachVarList {
  */
 
 typedef struct ForeachInfo {
-    int numLists;		/* The number of both the variable and value
+    size_t numLists;		/* The number of both the variable and value
 				 * lists of the foreach command. */
-    int firstValueTemp;		/* Index of the first temp var in a proc frame
+    size_t firstValueTemp;		/* Index of the first temp var in a proc frame
 				 * used to point to a value list. */
-    int loopCtTemp;		/* Index of temp var in a proc frame holding
+    size_t loopCtTemp;		/* Index of temp var in a proc frame holding
 				 * the loop's iteration count. Used to
 				 * determine next value list element to assign
 				 * each loop var. */
