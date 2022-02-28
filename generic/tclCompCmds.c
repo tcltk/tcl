@@ -2845,9 +2845,9 @@ CompileEachloopCmd(
      * body's code. Misuse loopCtTemp for storing the jump size.
      */
 
-    jumpBackOffset = envPtr->exceptArrayPtr[range].codeOffset -
-	    envPtr->exceptArrayPtr[range].continueOffset;
-    infoPtr->loopCtTemp = jumpBackOffset;
+    jumpBackOffset = envPtr->exceptArrayPtr[range].continueOffset -
+	    envPtr->exceptArrayPtr[range].codeOffset;
+    infoPtr->loopCtTemp = -jumpBackOffset;
 
     /*
      * The command's result is an empty string if not collecting. If
@@ -2895,7 +2895,7 @@ DupForeachInfo(
     ForeachInfo *srcPtr = (ForeachInfo *)clientData;
     ForeachInfo *dupPtr;
     ForeachVarList *srcListPtr, *dupListPtr;
-    size_t numVars, i, j, numLists = srcPtr->numLists;
+    int numVars, i, j, numLists = srcPtr->numLists;
 
     dupPtr = (ForeachInfo *)Tcl_Alloc(offsetof(ForeachInfo, varLists)
 	    + numLists * sizeof(ForeachVarList *));
@@ -3002,8 +3002,8 @@ PrintForeachInfo(
 	    if (j) {
 		Tcl_AppendToObj(appendObj, ", ", -1);
 	    }
-	    Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
-		    (size_t)varsPtr->varIndexes[j]);
+	    Tcl_AppendPrintfToObj(appendObj, "%%v%u",
+		    (unsigned) varsPtr->varIndexes[j]);
 	}
 	Tcl_AppendToObj(appendObj, "]", -1);
     }

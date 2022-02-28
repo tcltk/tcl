@@ -541,8 +541,7 @@ FormatInstruction(
     const InstructionDesc *instDesc = &tclInstructionTable[opCode];
     unsigned char *codeStart = codePtr->codeStart;
     unsigned pcOffset = pc - codeStart;
-    int opnd = 0, j, numBytes = 1;
-    size_t i;
+    int opnd = 0, i, j, numBytes = 1;
     int localCt = procPtr ? procPtr->numCompiledLocals : 0;
     CompiledLocal *localPtr = procPtr ? procPtr->firstLocalPtr : NULL;
     char suffixBuffer[128];	/* Additional info to print after main opcode
@@ -942,8 +941,8 @@ DisassembleByteCodeAsDicts(
     Tcl_Obj *description, *literals, *variables, *instructions, *inst;
     Tcl_Obj *aux, *exn, *commands, *file;
     unsigned char *pc, *opnd, *codeOffPtr, *codeLenPtr, *srcOffPtr, *srcLenPtr;
-    int val, line, codeOffset, codeLength, sourceOffset, sourceLength;
-    size_t i;
+    int codeOffset, codeLength, sourceOffset, sourceLength;
+    int i, val, line;
 
     ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);
 
@@ -952,7 +951,7 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(literals);
-    for (i=0 ; i<(size_t)codePtr->numLitObjects ; i++) {
+    for (i=0 ; i<codePtr->numLitObjects ; i++) {
 	Tcl_ListObjAppendElement(NULL, literals, codePtr->objArrayPtr[i]);
     }
 
@@ -962,7 +961,7 @@ DisassembleByteCodeAsDicts(
 
     TclNewObj(variables);
     if (codePtr->procPtr) {
-	size_t localCount = codePtr->procPtr->numCompiledLocals;
+	int localCount = codePtr->procPtr->numCompiledLocals;
 	CompiledLocal *localPtr = codePtr->procPtr->firstLocalPtr;
 
 	for (i=0 ; i<localCount ; i++,localPtr=localPtr->nextPtr) {
@@ -1112,7 +1111,7 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(aux);
-    for (i=0 ; i<(size_t)codePtr->numAuxDataItems ; i++) {
+    for (i=0 ; i<codePtr->numAuxDataItems ; i++) {
 	AuxData *auxData = &codePtr->auxDataArrayPtr[i];
 	Tcl_Obj *auxDesc = Tcl_NewStringObj(auxData->type->name, -1);
 
@@ -1139,7 +1138,7 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(exn);
-    for (i=0 ; i<(size_t)codePtr->numExceptRanges ; i++) {
+    for (i=0 ; i<codePtr->numExceptRanges ; i++) {
 	ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
 
 	switch (rangePtr->type) {
@@ -1179,7 +1178,7 @@ DisassembleByteCodeAsDicts(
     srcOffPtr = codePtr->srcDeltaStart;
     srcLenPtr = codePtr->srcLengthStart;
     codeOffset = sourceOffset = 0;
-    for (i=0 ; i<(size_t)codePtr->numCommands ; i++) {
+    for (i=0 ; i<codePtr->numCommands ; i++) {
 	Tcl_Obj *cmd;
 
 	codeOffset += Decode(codeOffPtr);
