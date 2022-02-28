@@ -4428,7 +4428,7 @@ TEBCresume(
 				    iPtr->numLevels,
 				    (unsigned)(pc - codePtr->codeStart));
 			}
-			for (i = 0;  i < opnd;  i++) {
+			for (i = 0;  i < (size_t)opnd;  i++) {
 			    TclPrintObject(stdout, objv[i], 15);
 			    fprintf(stdout, " ");
 			}
