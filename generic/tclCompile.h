@@ -969,7 +969,7 @@ typedef struct JumpFixupArray {
  */
 
 typedef struct ForeachVarList {
-    int numVars;		/* The number of variables in the list. */
+    size_t numVars;		/* The number of variables in the list. */
     int varIndexes[TCLFLEXARRAY];/* An array of the indexes ("slot numbers")
 				 * for each variable in the procedure's array
 				 * of local variables. Only scalar variables
@@ -986,11 +986,11 @@ typedef struct ForeachVarList {
  */
 
 typedef struct ForeachInfo {
-    int numLists;		/* The number of both the variable and value
+    size_t numLists;		/* The number of both the variable and value
 				 * lists of the foreach command. */
-    int firstValueTemp;		/* Index of the first temp var in a proc frame
+    size_t firstValueTemp;		/* Index of the first temp var in a proc frame
 				 * used to point to a value list. */
-    int loopCtTemp;		/* Index of temp var in a proc frame holding
+    size_t loopCtTemp;		/* Index of temp var in a proc frame holding
 				 * the loop's iteration count. Used to
 				 * determine next value list element to assign
 				 * each loop var. */
