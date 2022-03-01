@@ -1289,7 +1289,7 @@ Tcl_PidObjCmd(
 	TclNewObj(resultPtr);
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
-		    Tcl_NewWideIntObj(PTR2INT(TclpGetPid(pipePtr->pidPtr[i]))));
+		    Tcl_NewWideIntObj(TclpGetPid(pipePtr->pidPtr[i])));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }

@@ -206,7 +206,7 @@ typedef void *(AuxDataDupProc)  (void *clientData);
 typedef void	   (AuxDataFreeProc) (void *clientData);
 typedef void	   (AuxDataPrintProc)(void *clientData,
 			    Tcl_Obj *appendObj, struct ByteCode *codePtr,
-			    unsigned int pcOffset);
+			    size_t pcOffset);
 
 /*
  * We define a separate AuxDataType struct to hold type-related information
@@ -1754,8 +1754,8 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
     FILE *tclDTraceDebugLog = NULL;				\
     void TclDTraceOpenDebugLog(void) {				\
 	char n[35];						\
-	sprintf(n, "/tmp/tclDTraceDebug-%" TCL_Z_MODIFIER "u.log",		\
-		(size_t) getpid());			\
+	sprintf(n, "/tmp/tclDTraceDebug-%d.log",		\
+		getpid());			\
 	tclDTraceDebugLog = fopen(n, "a");			\
     }
 
