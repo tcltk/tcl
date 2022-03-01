@@ -970,7 +970,7 @@ typedef struct JumpFixupArray {
 
 typedef struct ForeachVarList {
     size_t numVars;		/* The number of variables in the list. */
-    int varIndexes[TCLFLEXARRAY];/* An array of the indexes ("slot numbers")
+    size_t varIndexes[TCLFLEXARRAY];/* An array of the indexes ("slot numbers")
 				 * for each variable in the procedure's array
 				 * of local variables. Only scalar variables
 				 * are supported. The actual size of this
@@ -1025,7 +1025,7 @@ MODULE_SCOPE const AuxDataType tclJumptableInfoType;
 
 typedef struct {
     size_t length;		/* Size of array */
-    int varIndices[TCLFLEXARRAY];		/* Array of variable indices to manage when
+    size_t varIndices[TCLFLEXARRAY];		/* Array of variable indices to manage when
 				 * processing the start and end of a [dict
 				 * update]. There is really more than one
 				 * entry, and the structure is allocated to

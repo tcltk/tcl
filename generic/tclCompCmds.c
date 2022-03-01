@@ -393,7 +393,7 @@ TclCompileArraySetCmd(
 
     infoPtr = (ForeachInfo *)Tcl_Alloc(offsetof(ForeachInfo, varLists) + sizeof(ForeachVarList *));
     infoPtr->numLists = 1;
-    infoPtr->varLists[0] = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes) + 2 * sizeof(int));
+    infoPtr->varLists[0] = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes) + 2 * sizeof(size_t));
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
     infoPtr->varLists[0]->varIndexes[1] = valVar;
@@ -1793,7 +1793,7 @@ TclCompileDictUpdateCmd(
      * that are to be used.
      */
 
-    duiPtr = (DictUpdateInfo *)Tcl_Alloc(offsetof(DictUpdateInfo, varIndices) + sizeof(int) * numVars);
+    duiPtr = (DictUpdateInfo *)Tcl_Alloc(offsetof(DictUpdateInfo, varIndices) + sizeof(size_t) * numVars);
     duiPtr->length = numVars;
     keyTokenPtrs = (Tcl_Token **)TclStackAlloc(interp, sizeof(Tcl_Token *) * numVars);
     tokenPtr = TokenAfter(dictVarTokenPtr);
@@ -1812,7 +1812,7 @@ TclCompileDictUpdateCmd(
 	 */
 
 	duiPtr->varIndices[i] = LocalScalarFromToken(tokenPtr, envPtr);
-	if (duiPtr->varIndices[i] < 0) {
+	if (duiPtr->varIndices[i] == TCL_INDEX_NONE) {
 	    goto failedUpdateInfoAssembly;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
@@ -2275,7 +2275,7 @@ DupDictUpdateInfo(
     size_t len;
 
     dui1Ptr = (DictUpdateInfo *)clientData;
-    len = offsetof(DictUpdateInfo, varIndices) + sizeof(int) * dui1Ptr->length;
+    len = offsetof(DictUpdateInfo, varIndices) + sizeof(size_t) * dui1Ptr->length;
     dui2Ptr = (DictUpdateInfo *)Tcl_Alloc(len);
     memcpy(dui2Ptr, dui1Ptr, len);
     return dui2Ptr;
@@ -2302,7 +2302,7 @@ PrintDictUpdateInfo(
 	if (i) {
 	    Tcl_AppendToObj(appendObj, ", ", -1);
 	}
-	Tcl_AppendPrintfToObj(appendObj, "%%v%u", duiPtr->varIndices[i]);
+	Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u", duiPtr->varIndices[i]);
     }
 }
 
@@ -2712,7 +2712,7 @@ CompileEachloopCmd(
      * behaviour. [Bug 219166]
      */
 
-    for (i = 0, tokenPtr = parsePtr->tokenPtr; i < numWords-1; i++) {
+    for (i = 0, tokenPtr = parsePtr->tokenPtr; i+1 < numWords; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
     }
     bodyTokenPtr = tokenPtr;
@@ -2739,7 +2739,7 @@ CompileEachloopCmd(
 
     TclNewObj(varListObj);
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
-	    i < numWords-1;
+	    i+1 < numWords;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	ForeachVarList *varListPtr;
 	size_t numVars;
@@ -2762,7 +2762,7 @@ CompileEachloopCmd(
 	}
 
 	varListPtr = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes)
-		+ numVars * sizeof(int));
+		+ numVars * sizeof(size_t));
 	varListPtr->numVars = numVars;
 	infoPtr->varLists[i/2] = varListPtr;
 	infoPtr->numLists++;
@@ -2897,7 +2897,7 @@ DupForeachInfo(
     ForeachInfo *srcPtr = (ForeachInfo *)clientData;
     ForeachInfo *dupPtr;
     ForeachVarList *srcListPtr, *dupListPtr;
-    int numVars, i, j, numLists = srcPtr->numLists;
+    size_t numVars, i, j, numLists = srcPtr->numLists;
 
     dupPtr = (ForeachInfo *)Tcl_Alloc(offsetof(ForeachInfo, varLists)
 	    + numLists * sizeof(ForeachVarList *));
@@ -2909,7 +2909,7 @@ DupForeachInfo(
 	srcListPtr = srcPtr->varLists[i];
 	numVars = srcListPtr->numVars;
 	dupListPtr = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes)
-		+ numVars * sizeof(int));
+		+ numVars * sizeof(size_t));
 	dupListPtr->numVars = numVars;
 	for (j = 0;  j < numVars;  j++) {
 	    dupListPtr->varIndexes[j] =	srcListPtr->varIndexes[j];
@@ -3004,8 +3004,8 @@ PrintForeachInfo(
 	    if (j) {
 		Tcl_AppendToObj(appendObj, ", ", -1);
 	    }
-	    Tcl_AppendPrintfToObj(appendObj, "%%v%u",
-		    (unsigned) varsPtr->varIndexes[j]);
+	    Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
+		    varsPtr->varIndexes[j]);
 	}
 	Tcl_AppendToObj(appendObj, "]", -1);
     }
@@ -3034,8 +3034,8 @@ PrintNewForeachInfo(
 	    if (j) {
 		Tcl_AppendToObj(appendObj, ",", -1);
 	    }
-	    Tcl_AppendPrintfToObj(appendObj, "%%v%u",
-		    (unsigned) varsPtr->varIndexes[j]);
+	    Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u",
+		    varsPtr->varIndexes[j]);
 	}
 	Tcl_AppendToObj(appendObj, "]", -1);
     }
