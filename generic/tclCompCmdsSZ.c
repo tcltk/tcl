@@ -2586,13 +2586,13 @@ PrintJumptableInfo(
     ClientData clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
-    unsigned int pcOffset)
+    size_t pcOffset)
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     const char *keyPtr;
-    int offset, i = 0;
+    size_t offset, i = 0;
 
     hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
@@ -2605,7 +2605,7 @@ PrintJumptableInfo(
 		Tcl_AppendToObj(appendObj, "\n\t\t", -1);
 	    }
 	}
-	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %d",
+	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %" TCL_Z_MODIFIER "u",
 		keyPtr, pcOffset + offset);
     }
 }
@@ -2615,7 +2615,7 @@ DisassembleJumptableInfo(
     ClientData clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(unsigned int))
+    TCL_UNUSED(size_t))
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
     Tcl_Obj *mapping;
