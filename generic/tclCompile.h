@@ -1071,7 +1071,7 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  */
 
 MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
+			    Tcl_Parse *parsePtr, size_t depth, Command *cmdPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
@@ -1117,7 +1117,7 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, size_t index);
-MODULE_SCOPE int	TclFindCompiledLocal(const char *name, size_t nameChars,
+MODULE_SCOPE size_t	TclFindCompiledLocal(const char *name, size_t nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
@@ -1146,9 +1146,9 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
-MODULE_SCOPE int	TclLocalScalar(const char *bytes, size_t numBytes,
+MODULE_SCOPE size_t	TclLocalScalar(const char *bytes, size_t numBytes,
 			    CompileEnv *envPtr);
-MODULE_SCOPE int	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
+MODULE_SCOPE size_t	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG

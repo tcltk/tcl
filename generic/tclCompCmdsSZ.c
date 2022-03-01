@@ -1787,7 +1787,7 @@ TclCompileSwitchCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;	/* Pointer to tokens in command. */
-    int numWords;		/* Number of words in command. */
+    size_t numWords;		/* Number of words in command. */
 
     Tcl_Token *valueTokenPtr;	/* Token for the value to switch on. */
     enum {Switch_Exact, Switch_Glob, Switch_Regexp} mode;
@@ -1800,7 +1800,7 @@ TclCompileSwitchCmd(
     int **bodyContLines;	/* Array of continuation line info. */
     int noCase;			/* Has the -nocase flag been given? */
     int foundMode = 0;		/* Have we seen a mode flag yet? */
-    int i, valueIndex;
+    size_t i, valueIndex;
     int result = TCL_ERROR;
     int *clNext = envPtr->clNext;
 
@@ -2662,7 +2662,7 @@ TclCompileTailcallCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    int i;
+    size_t i;
 
     if (parsePtr->numWords < 2 || parsePtr->numWords > 256
 	    || envPtr->procPtr == NULL) {
@@ -2672,7 +2672,7 @@ TclCompileTailcallCmd(
     /* make room for the nsObjPtr */
     /* TODO: Doesn't this have to be a known value? */
     CompileWord(envPtr, tokenPtr, interp, 0);
-    for (i=1 ; i<(int)parsePtr->numWords ; i++) {
+    for (i=1 ; i<parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
@@ -3623,7 +3623,8 @@ TclCompileUnsetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;
-    int isScalar, localIndex, flags = 1, i, varCount = 0, haveFlags = 0;
+    int isScalar, localIndex, flags = 1, varCount = 0, haveFlags = 0;
+    size_t i;
 
     /* TODO: Consider support for compiling expanded args. */
 
@@ -3633,7 +3634,7 @@ TclCompileUnsetCmd(
      * push/rotate. [Bug 3970f54c4e]
      */
 
-    for (i=1,varTokenPtr=parsePtr->tokenPtr ; i<(int)parsePtr->numWords ; i++) {
+    for (i=1,varTokenPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
 	Tcl_Obj *leadingWord;
 
 	TclNewObj(leadingWord);
@@ -3678,7 +3679,7 @@ TclCompileUnsetCmd(
 	    if (i == 1 && len == 11 && !strncmp("-nocomplain", bytes, 11)) {
 		flags = 0;
 		haveFlags++;
-	    } else if (i == (2 - flags) && len == 2 && !strncmp("--", bytes, 2)) {
+	    } else if (i == (2 - (size_t)flags) && len == 2 && !strncmp("--", bytes, 2)) {
 		haveFlags++;
 	    } else {
 		varCount++;
@@ -3694,10 +3695,10 @@ TclCompileUnsetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    for (i=0; i<haveFlags;i++) {
+    for (i=0; i<(size_t)haveFlags;i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
     }
-    for (i=1+haveFlags ; i<(int)parsePtr->numWords ; i++) {
+    for (i=1+haveFlags ; i<parsePtr->numWords ; i++) {
 	/*
 	 * Decide if we can use a frame slot for the var/array name or if we
 	 * need to emit code to compute and push the name at runtime. We use a
@@ -3980,14 +3981,14 @@ TclCompileYieldToCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    int i;
+    size_t i;
 
-    if ((int)parsePtr->numWords < 2) {
+    if (parsePtr->numWords + 1 < 3) {
 	return TCL_ERROR;
     }
 
     OP(		NS_CURRENT);
-    for (i = 1 ; i < (int)parsePtr->numWords ; i++) {
+    for (i = 1 ; i < parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -4065,14 +4066,14 @@ CompileAssociativeBinaryOpCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    int words;
+    size_t words;
 
     /* TODO: Consider support for compiling expanded args. */
-    for (words=1 ; words<(int)parsePtr->numWords ; words++) {
+    for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
-    if ((int)parsePtr->numWords <= 2) {
+    if (parsePtr->numWords + 1 < 4) {
 	PushLiteral(envPtr, identity, -1);
 	words++;
     }
@@ -4168,7 +4169,7 @@ CompileComparisonOpCmd(
 	return TCL_ERROR;
     } else {
 	int tmpIndex = AnonymousLocal(envPtr);
-	int words;
+	size_t words;
 
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 1);
@@ -4176,11 +4177,11 @@ CompileComparisonOpCmd(
 	CompileWord(envPtr, tokenPtr, interp, 2);
 	STORE(tmpIndex);
 	TclEmitOpcode(instruction, envPtr);
-	for (words=3 ; words<(int)parsePtr->numWords ;) {
+	for (words=3 ; words<parsePtr->numWords ;) {
 	    LOAD(tmpIndex);
 	    tokenPtr = TokenAfter(tokenPtr);
 	    CompileWord(envPtr, tokenPtr, interp, words);
-	    if (++words < (int)parsePtr->numWords) {
+	    if (++words < parsePtr->numWords) {
 		STORE(tmpIndex);
 	    }
 	    TclEmitOpcode(instruction, envPtr);
@@ -4304,18 +4305,18 @@ TclCompilePowOpCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    int words;
+    size_t words;
 
     /*
      * This one has its own implementation because the ** operator is the only
      * one with right associativity.
      */
 
-    for (words=1 ; words<(int)parsePtr->numWords ; words++) {
+    for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
-    if ((int)parsePtr->numWords <= 2) {
+    if (parsePtr->numWords + 1 < 4) {
 	PUSH("1");
 	words++;
     }
@@ -4505,7 +4506,7 @@ TclCompileMinusOpCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    int words;
+    size_t words;
 
     /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords == 1) {
@@ -4515,7 +4516,7 @@ TclCompileMinusOpCmd(
 
 	return TCL_ERROR;
     }
-    for (words=1 ; words<(int)parsePtr->numWords ; words++) {
+    for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
@@ -4550,7 +4551,7 @@ TclCompileDivOpCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    int words;
+    size_t words;
 
     /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords == 1) {
@@ -4563,7 +4564,7 @@ TclCompileDivOpCmd(
     if (parsePtr->numWords == 2) {
 	PUSH("1.0");
     }
-    for (words=1 ; words<(int)parsePtr->numWords ; words++) {
+    for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }

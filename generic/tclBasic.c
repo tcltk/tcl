@@ -5013,8 +5013,8 @@ TclEvalEx(
     Tcl_Obj **objv, **objvSpace;
     int *expand, *lines, *lineSpace;
     Tcl_Token *tokenPtr;
-    int bytesLeft, expandRequested, code = TCL_OK;
-    size_t commandLength;
+    int expandRequested, code = TCL_OK;
+    size_t bytesLeft, commandLength;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
@@ -5359,7 +5359,7 @@ TclEvalEx(
 	TclAdvanceLines(&line, parsePtr->commandStart, p);
 	Tcl_FreeParse(parsePtr);
 	gotParse = 0;
-    } while (bytesLeft > 0);
+    } while (bytesLeft + 1 > 1);
     iPtr->varFramePtr = savedVarFramePtr;
     code = TCL_OK;
     goto cleanup_return;

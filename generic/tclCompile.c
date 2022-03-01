@@ -2801,9 +2801,9 @@ TclInitByteCode(
 #ifdef TCL_COMPILE_DEBUG
     unsigned char *nextPtr;
 #endif
-    int numLitObjects = envPtr->literalArrayNext;
+    size_t i, numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
-    int i, isNew;
+    int isNew;
     Interp *iPtr;
 
     if (envPtr->iPtr == NULL) {
@@ -2964,7 +2964,7 @@ TclInitByteCodeObj(
  * Results:
  *	If create is 0 and the name is non-NULL, then if the variable is
  *	found, the index of its entry in the procedure's array of local
- *	variables is returned; otherwise -1 is returned. If name is NULL, the
+ *	variables is returned; otherwise TCL_INDEX_NONE is returned. If name is NULL, the
  *	index of a new temporary variable is returned. Finally, if create is 1
  *	and name is non-NULL, the index of a new entry is returned.
  *
@@ -2975,7 +2975,7 @@ TclInitByteCodeObj(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclFindCompiledLocal(
     const char *name,	/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
@@ -2986,8 +2986,7 @@ TclFindCompiledLocal(
     CompileEnv *envPtr)		/* Points to the current compile environment*/
 {
     CompiledLocal *localPtr;
-    int localVar = -1;
-    int i;
+    size_t i, localVar = TCL_INDEX_NONE;
     Proc *procPtr;
 
     /*
@@ -3009,11 +3008,11 @@ TclFindCompiledLocal(
 	size_t len;
 
 	if (!cachePtr || !name) {
-	    return -1;
+	    return TCL_INDEX_NONE;
 	}
 
 	varNamePtr = &cachePtr->varName0;
-	for (i=0; i < cachePtr->numVars; varNamePtr++, i++) {
+	for (i=0; i < (size_t)cachePtr->numVars; varNamePtr++, i++) {
 	    if (*varNamePtr) {
 		localName = Tcl_GetStringFromObj(*varNamePtr, &len);
 		if ((len == nameBytes) && !strncmp(name, localName, len)) {
@@ -3021,11 +3020,11 @@ TclFindCompiledLocal(
 		}
 	    }
 	}
-	return -1;
+	return TCL_INDEX_NONE;
     }
 
     if (name != NULL) {
-	int localCt = procPtr->numCompiledLocals;
+	size_t localCt = procPtr->numCompiledLocals;
 
 	localPtr = procPtr->firstLocalPtr;
 	for (i = 0;  i < localCt;  i++) {

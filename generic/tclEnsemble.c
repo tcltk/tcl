@@ -2920,7 +2920,7 @@ TclCompileEnsemble(
 
     TclNewObj(replaced);
     Tcl_IncrRefCount(replaced);
-    if ((int)parsePtr->numWords < depth + 1) {
+    if (parsePtr->numWords + 1 < (size_t)depth + 2) {
 	goto failed;
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -3147,8 +3147,8 @@ TclCompileEnsemble(
 
     if (cmdPtr->compileProc == TclCompileEnsemble) {
 	tokenPtr = TokenAfter(tokenPtr);
-	if ((int)parsePtr->numWords < depth + 1
-		|| tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	if ((parsePtr->numWords + 1 < (size_t)depth + 2)
+		|| (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD)) {
 	    /*
 	     * Too hard because the user has done something unpleasant like
 	     * omitting the sub-ensemble's command name or used a non-constant
@@ -3242,20 +3242,21 @@ int
 TclAttemptCompileProc(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    int depth,
+    size_t depth,
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;
-    int result, i;
+    int result;
     Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
     int savedStackDepth = envPtr->currStackDepth;
     unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
     int savedAuxDataArrayNext = envPtr->auxDataArrayNext;
-    int savedExceptArrayNext = envPtr->exceptArrayNext;
+    size_t savedExceptArrayNext = envPtr->exceptArrayNext;
 #ifdef TCL_COMPILE_DEBUG
     int savedExceptDepth = envPtr->exceptDepth;
 #endif
+    size_t i;
 
     if (cmdPtr->compileProc == NULL) {
 	return TCL_ERROR;
@@ -3383,8 +3384,8 @@ CompileToInvokedCommand(
     Tcl_Token *tokPtr;
     Tcl_Obj *objPtr, **words;
     const char *bytes;
-    int i, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
-    size_t numWords, length;
+    int cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
+    size_t i, numWords, length;
 
     /*
      * Push the words of the command. Take care; the command words may be
@@ -3393,7 +3394,7 @@ CompileToInvokedCommand(
      */
 
     TclListObjGetElements(NULL, replacements, &numWords, &words);
-    for (i = 0, tokPtr = parsePtr->tokenPtr; i < (int)parsePtr->numWords;
+    for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && (size_t)i <= numWords) {
 	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
@@ -3686,7 +3687,7 @@ TclCompileBasicMin0ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if ((int)parsePtr->numWords < 1) {
+    if (parsePtr->numWords + 1 < 2) {
 	return TCL_ERROR;
     }
 
@@ -3708,7 +3709,7 @@ TclCompileBasicMin1ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if ((int)parsePtr->numWords < 2) {
+    if (parsePtr->numWords + 1 < 3) {
 	return TCL_ERROR;
     }
 
@@ -3730,7 +3731,7 @@ TclCompileBasicMin2ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if ((int)parsePtr->numWords < 3) {
+    if (parsePtr->numWords + 1 < 4) {
 	return TCL_ERROR;
     }
 
