@@ -1359,7 +1359,7 @@ TclCompileLinsertCmd(
     Tcl_Token *tokenPtr, *listTokenPtr;
     int idx, i;
 
-    if (parsePtr->numWords < 3) {
+    if ((int)parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1398,7 +1398,7 @@ TclCompileLinsertCmd(
 	return TCL_OK;
     }
 
-    for (i=3 ; i<parsePtr->numWords ; i++) {
+    for (i=3 ; i<(int)parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
@@ -1462,7 +1462,7 @@ TclCompileLreplaceCmd(
     int idx1, idx2, i;
     int emptyPrefix=1, suffixStart = 0;
 
-    if (parsePtr->numWords < 4) {
+    if ((int)parsePtr->numWords < 4) {
 	return TCL_ERROR;
     }
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1510,10 +1510,10 @@ TclCompileLreplaceCmd(
      * Push all the replacement values next so any errors raised in
      * creating them get raised first.
      */
-    if (parsePtr->numWords > 4) {
+    if ((int)parsePtr->numWords > 4) {
 	/* Push the replacement arguments */
 	tokenPtr = TokenAfter(tokenPtr);
-	for (i=4 ; i<parsePtr->numWords ; i++) {
+	for (i=4 ; i<(int)parsePtr->numWords ; i++) {
 	    CompileWord(envPtr, tokenPtr, interp, i);
 	    tokenPtr = TokenAfter(tokenPtr);
 	}
@@ -1634,7 +1634,7 @@ TclCompileLsetCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords < 3) {
+    if ((int)parsePtr->numWords < 3) {
 	/*
 	 * Fail at run time, not in compilation.
 	 */
@@ -1658,7 +1658,7 @@ TclCompileLsetCmd(
      * Push the "index" args and the new element value.
      */
 
-    for (i=2 ; i<parsePtr->numWords ; ++i) {
+    for (i=2 ; i<(int)parsePtr->numWords ; ++i) {
 	varTokenPtr = TokenAfter(varTokenPtr);
 	CompileWord(envPtr, varTokenPtr, interp, i);
     }
@@ -2083,7 +2083,7 @@ TclCompileRegexpCmd(
      * handling, but satisfies our stricter needs.
      */
 
-    for (i = 1; i < parsePtr->numWords - 2; i++) {
+    for (i = 1; i < (int)parsePtr->numWords - 2; i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
 	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    /*
@@ -2930,11 +2930,11 @@ TclCompileObjectNextCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     int i;
 
-    if (parsePtr->numWords > 255) {
+    if ((int)parsePtr->numWords > 255) {
 	return TCL_ERROR;
     }
 
-    for (i=0 ; i<parsePtr->numWords ; i++) {
+    for (i=0 ; i<(int)parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -2958,7 +2958,7 @@ TclCompileObjectNextToCmd(
 	return TCL_ERROR;
     }
 
-    for (i=0 ; i<parsePtr->numWords ; i++) {
+    for (i=0 ; i<(int)parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }

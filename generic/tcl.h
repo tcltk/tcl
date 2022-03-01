@@ -1770,7 +1770,7 @@ typedef struct Tcl_Parse {
 				 * character of first word, up through the
 				 * terminating newline, close bracket, or
 				 * semicolon. */
-    int numWords;		/* Total number of words in command. May be
+    size_t numWords;		/* Total number of words in command. May be
 				 * 0. */
     Tcl_Token *tokenPtr;	/* Pointer to first token representing the
 				 * words of the command. Initially points to

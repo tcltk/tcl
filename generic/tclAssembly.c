@@ -1074,7 +1074,7 @@ TclAssembleCode(
 	 * Process the line of code.
 	 */
 
-	if (parsePtr->numWords > 0) {
+	if ((int)parsePtr->numWords > 0) {
 	    size_t instLen = parsePtr->commandSize;
 		    /* Length in bytes of the current command */
 

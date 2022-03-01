@@ -2672,7 +2672,7 @@ TclCompileTailcallCmd(
     /* make room for the nsObjPtr */
     /* TODO: Doesn't this have to be a known value? */
     CompileWord(envPtr, tokenPtr, interp, 0);
-    for (i=1 ; i<parsePtr->numWords ; i++) {
+    for (i=1 ; i<(int)parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
@@ -3633,7 +3633,7 @@ TclCompileUnsetCmd(
      * push/rotate. [Bug 3970f54c4e]
      */
 
-    for (i=1,varTokenPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
+    for (i=1,varTokenPtr=parsePtr->tokenPtr ; i<(int)parsePtr->numWords ; i++) {
 	Tcl_Obj *leadingWord;
 
 	TclNewObj(leadingWord);
@@ -3697,7 +3697,7 @@ TclCompileUnsetCmd(
     for (i=0; i<haveFlags;i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
     }
-    for (i=1+haveFlags ; i<parsePtr->numWords ; i++) {
+    for (i=1+haveFlags ; i<(int)parsePtr->numWords ; i++) {
 	/*
 	 * Decide if we can use a frame slot for the var/array name or if we
 	 * need to emit code to compute and push the name at runtime. We use a
@@ -3982,12 +3982,12 @@ TclCompileYieldToCmd(
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     int i;
 
-    if (parsePtr->numWords < 2) {
+    if ((int)parsePtr->numWords < 2) {
 	return TCL_ERROR;
     }
 
     OP(		NS_CURRENT);
-    for (i = 1 ; i < parsePtr->numWords ; i++) {
+    for (i = 1 ; i < (int)parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -4068,11 +4068,11 @@ CompileAssociativeBinaryOpCmd(
     int words;
 
     /* TODO: Consider support for compiling expanded args. */
-    for (words=1 ; words<parsePtr->numWords ; words++) {
+    for (words=1 ; words<(int)parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
-    if (parsePtr->numWords <= 2) {
+    if ((int)parsePtr->numWords <= 2) {
 	PushLiteral(envPtr, identity, -1);
 	words++;
     }
@@ -4176,11 +4176,11 @@ CompileComparisonOpCmd(
 	CompileWord(envPtr, tokenPtr, interp, 2);
 	STORE(tmpIndex);
 	TclEmitOpcode(instruction, envPtr);
-	for (words=3 ; words<parsePtr->numWords ;) {
+	for (words=3 ; words<(int)parsePtr->numWords ;) {
 	    LOAD(tmpIndex);
 	    tokenPtr = TokenAfter(tokenPtr);
 	    CompileWord(envPtr, tokenPtr, interp, words);
-	    if (++words < parsePtr->numWords) {
+	    if (++words < (int)parsePtr->numWords) {
 		STORE(tmpIndex);
 	    }
 	    TclEmitOpcode(instruction, envPtr);
@@ -4311,11 +4311,11 @@ TclCompilePowOpCmd(
      * one with right associativity.
      */
 
-    for (words=1 ; words<parsePtr->numWords ; words++) {
+    for (words=1 ; words<(int)parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
-    if (parsePtr->numWords <= 2) {
+    if ((int)parsePtr->numWords <= 2) {
 	PUSH("1");
 	words++;
     }
@@ -4515,7 +4515,7 @@ TclCompileMinusOpCmd(
 
 	return TCL_ERROR;
     }
-    for (words=1 ; words<parsePtr->numWords ; words++) {
+    for (words=1 ; words<(int)parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
@@ -4563,7 +4563,7 @@ TclCompileDivOpCmd(
     if (parsePtr->numWords == 2) {
 	PUSH("1.0");
     }
-    for (words=1 ; words<parsePtr->numWords ; words++) {
+    for (words=1 ; words<(int)parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }

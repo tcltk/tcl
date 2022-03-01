@@ -5146,7 +5146,7 @@ TclEvalEx(
 		parsePtr->commandStart - outerScript);
 
 	gotParse = 1;
-	if (parsePtr->numWords > 0) {
+	if (parsePtr->numWords + 1 > 1) {
 	    /*
 	     * TIP #280. Track lines within the words of the current
 	     * command. We use a separate pointer into the table of

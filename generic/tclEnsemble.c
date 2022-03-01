@@ -2920,7 +2920,7 @@ TclCompileEnsemble(
 
     TclNewObj(replaced);
     Tcl_IncrRefCount(replaced);
-    if (parsePtr->numWords < depth + 1) {
+    if ((int)parsePtr->numWords < depth + 1) {
 	goto failed;
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -3147,7 +3147,7 @@ TclCompileEnsemble(
 
     if (cmdPtr->compileProc == TclCompileEnsemble) {
 	tokenPtr = TokenAfter(tokenPtr);
-	if (parsePtr->numWords < depth + 1
+	if ((int)parsePtr->numWords < depth + 1
 		|| tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    /*
 	     * Too hard because the user has done something unpleasant like
@@ -3393,7 +3393,7 @@ CompileToInvokedCommand(
      */
 
     TclListObjGetElements(NULL, replacements, &numWords, &words);
-    for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
+    for (i = 0, tokPtr = parsePtr->tokenPtr; i < (int)parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && (size_t)i <= numWords) {
 	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
@@ -3686,7 +3686,7 @@ TclCompileBasicMin0ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords < 1) {
+    if ((int)parsePtr->numWords < 1) {
 	return TCL_ERROR;
     }
 
@@ -3708,7 +3708,7 @@ TclCompileBasicMin1ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords < 2) {
+    if ((int)parsePtr->numWords < 2) {
 	return TCL_ERROR;
     }
 
@@ -3730,7 +3730,7 @@ TclCompileBasicMin2ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords < 3) {
+    if ((int)parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
 

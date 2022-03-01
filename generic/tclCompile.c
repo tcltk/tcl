@@ -2026,7 +2026,7 @@ CompileCommandTokens(
     int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
     int depth = TclGetStackDepth(envPtr);
 
-    assert (parsePtr->numWords > 0);
+    assert (parsePtr->numWords + 1 > 01);
 
     /* Pre-Compile */
 
@@ -2717,7 +2717,7 @@ TclCompileNoOp(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int i;
+    size_t i;
 
     tokenPtr = parsePtr->tokenPtr;
     for (i = 1; i < parsePtr->numWords; i++) {
