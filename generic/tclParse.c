@@ -1069,7 +1069,7 @@ ParseTokens(
 				 * termination information. */
 {
     char type;
-    int originalTokens;
+    size_t originalTokens;
     int noSubstCmds = !(flags & TCL_SUBST_COMMANDS);
     int noSubstVars = !(flags & TCL_SUBST_VARIABLES);
     int noSubstBS = !(flags & TCL_SUBST_BACKSLASHES);
@@ -1679,7 +1679,7 @@ Tcl_ParseBraces(
 		 */
 
 		if ((src != tokenPtr->start)
-			|| (parsePtr->numTokens == startIndex)) {
+			|| (parsePtr->numTokens == (size_t)startIndex)) {
 		    tokenPtr->size = (src - tokenPtr->start);
 		    parsePtr->numTokens++;
 		}

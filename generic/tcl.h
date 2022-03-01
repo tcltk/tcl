@@ -1766,7 +1766,7 @@ typedef struct Tcl_Parse {
 				 * field is 0. */
     const char *commandStart;	/* First character in first word of
 				 * command. */
-    int commandSize;		/* Number of bytes in command, including first
+    size_t commandSize;		/* Number of bytes in command, including first
 				 * character of first word, up through the
 				 * terminating newline, close bracket, or
 				 * semicolon. */
@@ -1777,11 +1777,17 @@ typedef struct Tcl_Parse {
 				 * staticTokens, but may change to point to
 				 * malloc-ed space if command exceeds space in
 				 * staticTokens. */
-    int numTokens;		/* Total number of tokens in command. */
-    int tokensAvailable;	/* Total number of tokens available at
+    size_t numTokens;		/* Total number of tokens in command. */
+    size_t tokensAvailable;	/* Total number of tokens available at
 				 * *tokenPtr. */
     int errorType;		/* One of the parsing error types defined
 				 * above. */
+#if TCL_MAJOR_VERSION > 8
+    int incomplete;		/* This field is set to 1 by Tcl_ParseCommand
+				 * if the command appears to be incomplete.
+				 * This information is used by
+				 * Tcl_CommandComplete. */
+#endif
 
     /*
      * The fields below are intended only for the private use of the parser.
@@ -1800,10 +1806,9 @@ typedef struct Tcl_Parse {
 				 * beginning of region where the error
 				 * occurred (e.g. the open brace if the close
 				 * brace is missing). */
-    int incomplete;		/* This field is set to 1 by Tcl_ParseCommand
-				 * if the command appears to be incomplete.
-				 * This information is used by
-				 * Tcl_CommandComplete. */
+#if TCL_MAJOR_VERSION < 9
+    int incomplete;
+#endif
     Tcl_Token staticTokens[NUM_STATIC_TOKENS];
 				/* Initial space for tokens for command. This
 				 * space should be large enough to accommodate

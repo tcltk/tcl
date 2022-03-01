@@ -286,7 +286,7 @@ TestbignumobjCmd(
 	if (!Tcl_IsShared(varPtr[varIndex])) {
 	    Tcl_SetIntObj(varPtr[varIndex], mp_iszero(&bignumValue));
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(mp_iszero(&bignumValue)));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(mp_iszero(&bignumValue)));
 	}
 	mp_clear(&bignumValue);
 	break;
@@ -309,7 +309,7 @@ TestbignumobjCmd(
 	if (!Tcl_IsShared(varPtr[varIndex])) {
 	    Tcl_SetIntObj(varPtr[varIndex], index);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(index));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(index));
 	}
 	mp_clear(&bignumValue);
 	break;
@@ -691,7 +691,7 @@ TestintobjCmd(
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
 	    Tcl_SetIntObj(varPtr[varIndex], intValue);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(intValue));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(intValue));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else if (strcmp(subCmd, "set2") == 0) { /* doesn't set result */
@@ -706,7 +706,7 @@ TestintobjCmd(
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
 	    Tcl_SetIntObj(varPtr[varIndex], intValue);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(intValue));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(intValue));
 	}
     } else if (strcmp(subCmd, "setint") == 0) {
 	if (objc != 4) {
@@ -802,7 +802,7 @@ TestintobjCmd(
 	if (!Tcl_IsShared(varPtr[varIndex])) {
 	    Tcl_SetIntObj(varPtr[varIndex], intValue * 10);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(intValue * 10));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(intValue * 10));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else if (strcmp(subCmd, "div10") == 0) {
@@ -819,7 +819,7 @@ TestintobjCmd(
 	if (!Tcl_IsShared(varPtr[varIndex])) {
 	    Tcl_SetIntObj(varPtr[varIndex], intValue / 10);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(intValue / 10));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(intValue / 10));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
@@ -988,7 +988,7 @@ TestobjCmd(
 	if (objc != 2) {
 	    goto wrongNumArgs;
 	}
-	elemObjPtr = Tcl_NewIntObj(123);
+	elemObjPtr = Tcl_NewWideIntObj(123);
 	listObjPtr = Tcl_NewListObj(1, &elemObjPtr);
 	/* Replace the single list element through itself, nonsense but legal. */
 	Tcl_ListObjReplace(interp, listObjPtr, 0, 1, 1, &elemObjPtr);
