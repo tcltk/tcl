@@ -2293,7 +2293,7 @@ PrintDictUpdateInfo(
     ClientData clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(unsigned int))
+    TCL_UNUSED(size_t))
 {
     DictUpdateInfo *duiPtr = (DictUpdateInfo *)clientData;
     size_t i;
@@ -2311,7 +2311,7 @@ DisassembleDictUpdateInfo(
     ClientData clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(unsigned int))
+    TCL_UNUSED(size_t))
 {
     DictUpdateInfo *duiPtr = (DictUpdateInfo *)clientData;
     size_t i;
@@ -2976,7 +2976,7 @@ PrintForeachInfo(
     ClientData clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(unsigned int))
+    TCL_UNUSED(size_t))
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
@@ -3016,7 +3016,7 @@ PrintNewForeachInfo(
     ClientData clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(unsigned int))
+    TCL_UNUSED(size_t))
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
@@ -3046,7 +3046,7 @@ DisassembleForeachInfo(
     ClientData clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(unsigned int))
+    TCL_UNUSED(size_t))
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;
@@ -3093,7 +3093,7 @@ DisassembleNewForeachInfo(
     ClientData clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
-    TCL_UNUSED(unsigned int))
+    TCL_UNUSED(size_t))
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
     ForeachVarList *varsPtr;

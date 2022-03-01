@@ -2292,9 +2292,9 @@ ScanNumber(
 	if (flags & BINARY_UNSIGNED) {
 	    return Tcl_NewWideIntObj((Tcl_WideInt)(unsigned long)value);
 	}
-	if ((value & (((unsigned) 1) << 31)) && (value > 0)) {
-	    value -= (((unsigned) 1) << 31);
-	    value -= (((unsigned) 1) << 31);
+	if ((value & (1U << 31)) && (value > 0)) {
+	    value -= (1U << 31);
+	    value -= (1U << 31);
 	}
 
     returnNumericObject:
