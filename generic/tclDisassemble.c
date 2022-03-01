@@ -942,7 +942,7 @@ DisassembleByteCodeAsDicts(
     Tcl_Obj *description, *literals, *variables, *instructions, *inst;
     Tcl_Obj *aux, *exn, *commands, *file;
     unsigned char *pc, *opnd, *codeOffPtr, *codeLenPtr, *srcOffPtr, *srcLenPtr;
-    int val, line, codeOffset, codeLength, sourceOffset, sourceLength;
+    int codeOffset, codeLength, sourceOffset, sourceLength, val, line;
     size_t i;
 
     ByteCodeGetInternalRep(objPtr, &tclByteCodeType, codePtr);

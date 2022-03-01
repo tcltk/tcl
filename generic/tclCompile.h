@@ -871,7 +871,7 @@ typedef struct InstructionDesc {
 				 * computations. The value INT_MIN signals
 				 * that the instruction's worst case effect is
 				 * (1-opnd1). */
-    size_t numOperands;		/* Number of operands. */
+    size_t numOperands;	/* Number of operands. */
     InstOperandType opTypes[MAX_INSTRUCTION_OPERANDS];
 				/* The type of each operand. */
 } InstructionDesc;
@@ -936,12 +936,12 @@ typedef struct JumpFixup {
     TclJumpType jumpType;	/* Indicates the kind of jump. */
     size_t codeOffset;	/* Offset of the first byte of the one-byte
 				 * forward jump's code. */
-    size_t cmdIndex;		/* Index of the first command after the one
+    int cmdIndex;		/* Index of the first command after the one
 				 * for which the jump was emitted. Used to
 				 * update the code offsets for subsequent
 				 * commands if the two-byte jump at jumpPc
 				 * must be replaced with a five-byte one. */
-    size_t exceptIndex;		/* Index of the first range entry in the
+    int exceptIndex;		/* Index of the first range entry in the
 				 * ExceptionRange array after the current one.
 				 * This field is used to adjust the code
 				 * offsets in subsequent ExceptionRange
@@ -953,8 +953,8 @@ typedef struct JumpFixup {
 
 typedef struct JumpFixupArray {
     JumpFixup *fixup;		/* Points to start of jump fixup array. */
-    size_t next;			/* Index of next free array entry. */
-    size_t end;			/* Index of last usable entry in array. */
+    int next;			/* Index of next free array entry. */
+    int end;			/* Index of last usable entry in array. */
     int mallocedArray;		/* 1 if array was expanded and fixups points
 				 * into the heap, else 0. */
     JumpFixup staticFixupSpace[JUMPFIXUP_INIT_ENTRIES];

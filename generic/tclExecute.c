@@ -379,9 +379,9 @@ VarHashCreateVar(
 #ifdef TCL_COMPILE_DEBUG
 #   define TRACE(a) \
     while (traceInstructions) {					\
-	fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels,	\
+	fprintf(stdout, "%2d: %2d (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
 		(int) CURR_DEPTH,				\
-		(unsigned) (pc - codePtr->codeStart),		\
+		(size_t) (pc - codePtr->codeStart),		\
 		GetOpcodeName(pc));				\
 	printf a;						\
 	break;							\
@@ -395,9 +395,9 @@ VarHashCreateVar(
     TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 #   define TRACE_WITH_OBJ(a, objPtr) \
     while (traceInstructions) {					\
-	fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels,	\
+	fprintf(stdout, "%2d: %2d (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
 		(int) CURR_DEPTH,				\
-		(unsigned) (pc - codePtr->codeStart),		\
+		(size_t) (pc - codePtr->codeStart),		\
 		GetOpcodeName(pc));				\
 	printf a;						\
 	TclPrintObject(stdout, objPtr, 30);			\
@@ -2125,7 +2125,7 @@ TEBCresume(
 	 * instruction.
 	 */
 
-	TRACE_WITH_OBJ(("%u => ... after \"%.20s\": TCL_OK, result=",
+	TRACE_WITH_OBJ(("%" TCL_Z_MODIFIER "u => ... after \"%.20s\": TCL_OK, result=",
 		objc, cmdNameBuf), Tcl_GetObjResult(interp));
 
 	/*
@@ -2390,8 +2390,8 @@ TEBCresume(
 	    if (traceInstructions) {
 		TRACE_APPEND(("YIELD...\n"));
 	    } else {
-		fprintf(stdout, "%d: (%u) yielding value \"%.30s\"\n",
-			iPtr->numLevels, (unsigned)(pc - codePtr->codeStart),
+		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) yielding value \"%.30s\"\n",
+			iPtr->numLevels, (size_t)(pc - codePtr->codeStart),
 			Tcl_GetString(OBJ_AT_TOS));
 	    }
 	    fflush(stdout);
@@ -2433,8 +2433,8 @@ TEBCresume(
 		TRACE(("[%.30s] => YIELD...\n", O2S(valuePtr)));
 	    } else {
 		/* FIXME: What is the right thing to trace? */
-		fprintf(stdout, "%d: (%u) yielding to [%.30s]\n",
-			iPtr->numLevels, (unsigned)(pc - codePtr->codeStart),
+		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) yielding to [%.30s]\n",
+			iPtr->numLevels, (size_t)(pc - codePtr->codeStart),
 			TclGetString(valuePtr));
 	    }
 	    fflush(stdout);
@@ -2792,8 +2792,8 @@ TEBCresume(
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 		TRACE(("%" TCL_Z_MODIFIER "u => call ", objc));
 	    } else {
-		fprintf(stdout, "%d: (%u) invoking ", iPtr->numLevels,
-			(unsigned)(pc - codePtr->codeStart));
+		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) invoking ", iPtr->numLevels,
+			(size_t)(pc - codePtr->codeStart));
 	    }
 	    for (i = 0;  i < objc;  i++) {
 		TclPrintObject(stdout, objv[i], 15);
@@ -2840,12 +2840,12 @@ TEBCresume(
 		TRACE(("%" TCL_Z_MODIFIER "u => call (implementation %s) ", objc, O2S(objPtr)));
 	    } else {
 		fprintf(stdout,
-			"%d: (%u) invoking (using implementation %s) ",
-			iPtr->numLevels, (unsigned)(pc - codePtr->codeStart),
+			"%d: (%" TCL_Z_MODIFIER "u) invoking (using implementation %s) ",
+			iPtr->numLevels, (size_t)(pc - codePtr->codeStart),
 			O2S(objPtr));
 	    }
 	    for (i = 0;  i < objc;  i++) {
-		if (i < opnd) {
+		if (i < (size_t)opnd) {
 		    fprintf(stdout, "<");
 		    TclPrintObject(stdout, objv[i], 15);
 		    fprintf(stdout, ">");
@@ -4141,15 +4141,15 @@ TEBCresume(
 
     case INST_JUMP1:
 	opnd = TclGetInt1AtPtr(pc+1);
-	TRACE(("%d => new pc %u\n", opnd,
-		(unsigned)(pc + opnd - codePtr->codeStart)));
+	TRACE(("%d => new pc %" TCL_Z_MODIFIER "u\n", opnd,
+		(size_t)(pc + opnd - codePtr->codeStart)));
 	NEXT_INST_F(opnd, 0, 0);
     break;
 
     case INST_JUMP4:
 	opnd = TclGetInt4AtPtr(pc+1);
-	TRACE(("%d => new pc %u\n", opnd,
-		(unsigned)(pc + opnd - codePtr->codeStart)));
+	TRACE(("%d => new pc %" TCL_Z_MODIFIER "u\n", opnd,
+		(size_t)(pc + opnd - codePtr->codeStart)));
 	NEXT_INST_F(opnd, 0, 0);
 
     {
@@ -4191,8 +4191,8 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
 	if (b) {
 	    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
-		TRACE_APPEND(("%.20s true, new pc %u\n", O2S(valuePtr),
-			(unsigned)(pc + jmpOffset[1] - codePtr->codeStart)));
+		TRACE_APPEND(("%.20s true, new pc %" TCL_Z_MODIFIER "u\n", O2S(valuePtr),
+			(size_t)(pc + jmpOffset[1] - codePtr->codeStart)));
 	    } else {
 		TRACE_APPEND(("%.20s true\n", O2S(valuePtr)));
 	    }
@@ -4200,8 +4200,8 @@ TEBCresume(
 	    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
 		TRACE_APPEND(("%.20s false\n", O2S(valuePtr)));
 	    } else {
-		TRACE_APPEND(("%.20s false, new pc %u\n", O2S(valuePtr),
-			(unsigned)(pc + jmpOffset[0] - codePtr->codeStart)));
+		TRACE_APPEND(("%.20s false, new pc %" TCL_Z_MODIFIER "u\n", O2S(valuePtr),
+			(size_t)(pc + jmpOffset[0] - codePtr->codeStart)));
 	    }
 	}
 #endif
@@ -4225,8 +4225,8 @@ TEBCresume(
 	if (hPtr != NULL) {
 	    int jumpOffset = PTR2INT(Tcl_GetHashValue(hPtr));
 
-	    TRACE_APPEND(("found in table, new pc %u\n",
-		    (unsigned)(pc - codePtr->codeStart + jumpOffset)));
+	    TRACE_APPEND(("found in table, new pc %" TCL_Z_MODIFIER "u\n",
+		    (size_t)(pc - codePtr->codeStart + jumpOffset)));
 	    NEXT_INST_F(jumpOffset, 1, 0);
 	} else {
 	    TRACE_APPEND(("not found in table\n"));
@@ -4528,8 +4528,8 @@ TEBCresume(
 	    if (traceInstructions) {
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 	    } else {
-		fprintf(stdout, "%d: (%u) invoking ",
-			iPtr->numLevels, (unsigned)(pc - codePtr->codeStart));
+		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) invoking ",
+			iPtr->numLevels, (size_t)(pc - codePtr->codeStart));
 	    }
 	    for (i = 0;  i < opnd;  i++) {
 		TclPrintObject(stdout, objv[i], 15);
@@ -4643,7 +4643,7 @@ TEBCresume(
 	    goto gotError;
 	}
 	TclNewIntObj(objResultPtr, length);
-	TRACE_APPEND(("%d\n", length));
+	TRACE_APPEND(("%" TCL_Z_MODIFIER "d\n", length));
 	NEXT_INST_F(1, 1, 1);
 
     case INST_LIST_INDEX:	/* lindex with objc == 3 */
@@ -6330,7 +6330,7 @@ TEBCresume(
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
-		    if (valIndex >= (size_t)listLen) {
+		    if (valIndex >= listLen) {
 			TclNewObj(valuePtr);
 		    } else {
 			valuePtr = elements[valIndex];
@@ -7415,9 +7415,9 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
 	if (traceInstructions) {
 	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
-		    "unwound to %ld, new pc %u\n",
+		    "unwound to %ld, new pc %" TCL_Z_MODIFIER "u\n",
 		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
-		    (long)*catchTop, (unsigned) rangePtr->catchOffset);
+		    (long)*catchTop, (size_t) rangePtr->catchOffset);
 	}
 #endif
 	pc = (codePtr->codeStart + rangePtr->catchOffset);
@@ -7453,10 +7453,10 @@ TEBCresume(
 
 	if (tosPtr < initTosPtr) {
 	    fprintf(stderr,
-		    "\nTclNRExecuteByteCode: abnormal return at pc %u: "
+		    "\nTclNRExecuteByteCode: abnormal return at pc %" TCL_Z_MODIFIER "u: "
 		    "stack top %d < entry stack top %d\n",
-		    (unsigned)(pc - codePtr->codeStart),
-		    (unsigned) CURR_DEPTH, (unsigned) 0);
+		    (size_t)(pc - codePtr->codeStart),
+		    (int) CURR_DEPTH, 0);
 	    Tcl_Panic("TclNRExecuteByteCode execution failure: end stack top < start stack top");
 	}
 	CLANG_ASSERT(bcFramePtr);
