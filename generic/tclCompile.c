@@ -3492,11 +3492,11 @@ TclAddLoopBreakFixup(
 	auxPtr->allocBreakTargets *= 2;
 	auxPtr->allocBreakTargets += 2;
 	if (auxPtr->breakTargets) {
-	    auxPtr->breakTargets = (unsigned int *)Tcl_Realloc(auxPtr->breakTargets,
-		    sizeof(int) * auxPtr->allocBreakTargets);
+	    auxPtr->breakTargets = (size_t *)Tcl_Realloc(auxPtr->breakTargets,
+		    sizeof(size_t) * auxPtr->allocBreakTargets);
 	} else {
 	    auxPtr->breakTargets =
-		    (unsigned int *)Tcl_Alloc(sizeof(int) * auxPtr->allocBreakTargets);
+		    (size_t *)Tcl_Alloc(sizeof(size_t) * auxPtr->allocBreakTargets);
 	}
     }
     auxPtr->breakTargets[auxPtr->numBreakTargets - 1] = CurrentOffset(envPtr);
@@ -3518,11 +3518,11 @@ TclAddLoopContinueFixup(
 	auxPtr->allocContinueTargets *= 2;
 	auxPtr->allocContinueTargets += 2;
 	if (auxPtr->continueTargets) {
-	    auxPtr->continueTargets = (unsigned int *)Tcl_Realloc(auxPtr->continueTargets,
-		    sizeof(int) * auxPtr->allocContinueTargets);
+	    auxPtr->continueTargets = (size_t *)Tcl_Realloc(auxPtr->continueTargets,
+		    sizeof(size_t) * auxPtr->allocContinueTargets);
 	} else {
 	    auxPtr->continueTargets =
-		    (unsigned int *)Tcl_Alloc(sizeof(int) * auxPtr->allocContinueTargets);
+		    (size_t *)Tcl_Alloc(sizeof(size_t) * auxPtr->allocContinueTargets);
 	}
     }
     auxPtr->continueTargets[auxPtr->numContinueTargets - 1] =
