@@ -7230,7 +7230,7 @@ TEBCresume(
 	    if (result == TCL_BREAK) {
 		result = TCL_OK;
 		pc = (codePtr->codeStart + rangePtr->breakOffset);
-		TRACE_APPEND(("%s, range at %d, new pc %d\n",
+		TRACE_APPEND(("%s, range at %" TCL_Z_MODIFIER "u, new pc %d\n",
 			StringForResultCode(result),
 			rangePtr->codeOffset, rangePtr->breakOffset));
 		NEXT_INST_F(0, 0, 0);
@@ -7242,7 +7242,7 @@ TEBCresume(
 	    }
 	    result = TCL_OK;
 	    pc = (codePtr->codeStart + rangePtr->continueOffset);
-	    TRACE_APPEND(("%s, range at %d, new pc %d\n",
+	    TRACE_APPEND(("%s, range at %" TCL_Z_MODIFIER "u, new pc %d\n",
 		    StringForResultCode(result),
 		    rangePtr->codeOffset, rangePtr->continueOffset));
 	    NEXT_INST_F(0, 0, 0);
@@ -7414,7 +7414,7 @@ TEBCresume(
 	}
 #ifdef TCL_COMPILE_DEBUG
 	if (traceInstructions) {
-	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
+	    fprintf(stdout, "  ... found catch at %" TCL_Z_MODIFIER "u, catchTop=%d, "
 		    "unwound to %ld, new pc %" TCL_Z_MODIFIER "u\n",
 		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
 		    (long)*catchTop, (size_t) rangePtr->catchOffset);

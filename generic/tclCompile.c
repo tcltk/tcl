@@ -3449,8 +3449,8 @@ TclGetInnermostExceptionRange(
     while (i > 0) {
 	rangePtr--; i--;
 
-	if (CurrentOffset(envPtr) >= rangePtr->codeOffset &&
-		(rangePtr->numCodeBytes == -1 || CurrentOffset(envPtr) <
+	if ((size_t)CurrentOffset(envPtr) >= rangePtr->codeOffset &&
+		(rangePtr->numCodeBytes == -1 || (size_t)CurrentOffset(envPtr) <
 			rangePtr->codeOffset+rangePtr->numCodeBytes) &&
 		(returnCode != TCL_CONTINUE ||
 			envPtr->exceptAuxArrayPtr[i].supportsContinue)) {
@@ -3598,7 +3598,7 @@ StartExpanding(
 	 * Ignore loops unless they're still being built.
 	 */
 
-	if (rangePtr->codeOffset > CurrentOffset(envPtr)) {
+	if (rangePtr->codeOffset > (size_t)CurrentOffset(envPtr)) {
 	    continue;
 	}
 	if (rangePtr->numCodeBytes != -1) {

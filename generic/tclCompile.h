@@ -92,7 +92,7 @@ typedef struct {
     int nestingLevel;		/* Static depth of the exception range. Used
 				 * to find the most deeply-nested range
 				 * surrounding a PC at runtime. */
-    int codeOffset;		/* Offset of the first instruction byte of the
+    size_t codeOffset;		/* Offset of the first instruction byte of the
 				 * code range. */
     int numCodeBytes;		/* Number of bytes in the code range. */
     int breakOffset;		/* If LOOP_EXCEPTION_RANGE, the target PC
