@@ -673,9 +673,9 @@ static void		DupByteCodeInternalRep(Tcl_Obj *srcPtr,
 static unsigned char *	EncodeCmdLocMap(CompileEnv *envPtr,
 			    ByteCode *codePtr, unsigned char *startPtr);
 static void		EnterCmdExtentData(CompileEnv *envPtr,
-			    int cmdNumber, int numSrcBytes, int numCodeBytes);
+			    size_t cmdNumber, size_t numSrcBytes, size_t numCodeBytes);
 static void		EnterCmdStartData(CompileEnv *envPtr,
-			    int cmdNumber, int srcOffset, int codeOffset);
+			    size_t cmdNumber, size_t srcOffset, size_t codeOffset);
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
@@ -3152,18 +3152,18 @@ EnterCmdStartData(
     CompileEnv *envPtr,		/* Points to the compilation environment
 				 * structure in which to enter command
 				 * location information. */
-    int cmdIndex,		/* Index of the command whose start data is
+    size_t cmdIndex,		/* Index of the command whose start data is
 				 * being set. */
-    int srcOffset,		/* Offset of first char of the command. */
-    int codeOffset)		/* Offset of first byte of command code. */
+    size_t srcOffset,		/* Offset of first char of the command. */
+    size_t codeOffset)		/* Offset of first byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
-    if ((cmdIndex < 0) || (cmdIndex >= envPtr->numCommands)) {
-	Tcl_Panic("EnterCmdStartData: bad command index %d", cmdIndex);
+    if (cmdIndex >= envPtr->numCommands) {
+	Tcl_Panic("EnterCmdStartData: bad command index %" TCL_Z_MODIFIER "d", cmdIndex);
     }
 
-    if (cmdIndex >= envPtr->cmdMapEnd) {
+    if (cmdIndex >= (size_t)envPtr->cmdMapEnd) {
 	/*
 	 * Expand the command location array by allocating more storage from
 	 * the heap. The currently allocated CmdLocation entries are stored
@@ -3192,7 +3192,7 @@ EnterCmdStartData(
 	envPtr->cmdMapEnd = newElems;
     }
 
-    if (cmdIndex > 0) {
+    if (cmdIndex + 1 > 1) {
 	if (codeOffset < envPtr->cmdMapPtr[cmdIndex-1].codeOffset) {
 	    Tcl_Panic("EnterCmdStartData: cmd map not sorted by code offset");
 	}
@@ -3201,8 +3201,8 @@ EnterCmdStartData(
     cmdLocPtr = &envPtr->cmdMapPtr[cmdIndex];
     cmdLocPtr->codeOffset = codeOffset;
     cmdLocPtr->srcOffset = srcOffset;
-    cmdLocPtr->numSrcBytes = -1;
-    cmdLocPtr->numCodeBytes = -1;
+    cmdLocPtr->numSrcBytes = TCL_INDEX_NONE;
+    cmdLocPtr->numCodeBytes = TCL_INDEX_NONE;
 }
 
 /*
@@ -3231,19 +3231,19 @@ EnterCmdExtentData(
     CompileEnv *envPtr,		/* Points to the compilation environment
 				 * structure in which to enter command
 				 * location information. */
-    int cmdIndex,		/* Index of the command whose source and code
+    size_t cmdIndex,		/* Index of the command whose source and code
 				 * length data is being set. */
-    int numSrcBytes,		/* Number of command source chars. */
-    int numCodeBytes)		/* Offset of last byte of command code. */
+    size_t numSrcBytes,		/* Number of command source chars. */
+    size_t numCodeBytes)		/* Offset of last byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
-    if ((cmdIndex < 0) || (cmdIndex >= envPtr->numCommands)) {
-	Tcl_Panic("EnterCmdExtentData: bad command index %d", cmdIndex);
+    if (cmdIndex >= envPtr->numCommands) {
+	Tcl_Panic("EnterCmdExtentData: bad command index %" TCL_Z_MODIFIER "u", cmdIndex);
     }
 
-    if (cmdIndex > envPtr->cmdMapEnd) {
-	Tcl_Panic("EnterCmdExtentData: missing start data for command %d",
+    if (cmdIndex > (size_t)envPtr->cmdMapEnd) {
+	Tcl_Panic("EnterCmdExtentData: missing start data for command %" TCL_Z_MODIFIER "u",
 		cmdIndex);
     }
 
@@ -3404,11 +3404,11 @@ TclCreateExceptRange(
     rangePtr = &envPtr->exceptArrayPtr[index];
     rangePtr->type = type;
     rangePtr->nestingLevel = envPtr->exceptDepth;
-    rangePtr->codeOffset = -1;
-    rangePtr->numCodeBytes = -1;
-    rangePtr->breakOffset = -1;
-    rangePtr->continueOffset = -1;
-    rangePtr->catchOffset = -1;
+    rangePtr->codeOffset = TCL_INDEX_NONE;
+    rangePtr->numCodeBytes = TCL_INDEX_NONE;
+    rangePtr->breakOffset = TCL_INDEX_NONE;
+    rangePtr->continueOffset = TCL_INDEX_NONE;
+    rangePtr->catchOffset = TCL_INDEX_NONE;
     auxPtr = &envPtr->exceptAuxArrayPtr[index];
     auxPtr->supportsContinue = 1;
     auxPtr->stackDepth = envPtr->currStackDepth;

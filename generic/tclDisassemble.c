@@ -255,7 +255,8 @@ DisassembleByteCodeObj(
     unsigned char *codeStart, *codeLimit, *pc;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
-    int codeOffset, codeLen, srcOffset, srcLen, numCmds, delta, i, line;
+    size_t codeOffset;
+    int codeLen, srcOffset, srcLen, numCmds, delta, i, line;
     Interp *iPtr;
     Tcl_Obj *bufferObj, *fileObj;
 
@@ -288,7 +289,7 @@ DisassembleByteCodeObj(
 		TclGetString(fileObj), line);
     }
     Tcl_AppendPrintfToObj(bufferObj,
-	    "\n  Cmds %d, src %d, inst %d, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
+	    "\n  Cmds %d, src %" TCL_Z_MODIFIER "u, inst %" TCL_Z_MODIFIER "u, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
 	    numCmds, codePtr->numSrcBytes, codePtr->numCodeBytes,
 	    codePtr->numLitObjects, codePtr->numAuxDataItems,
 	    codePtr->maxStackDepth,
@@ -443,7 +444,7 @@ DisassembleByteCodeObj(
 	    srcLengthNext++;
 	}
 
-	Tcl_AppendPrintfToObj(bufferObj, "%s%4d: pc %d-%d, src %d-%d",
+	Tcl_AppendPrintfToObj(bufferObj, "%s%4d: pc %" TCL_Z_MODIFIER "u-%" TCL_Z_MODIFIER "u, src %d-%d",
 		((i % 2)? "     " : "\n   "),
 		(i+1), codeOffset, (codeOffset + codeLen - 1),
 		srcOffset, (srcOffset + srcLen - 1));
@@ -497,7 +498,7 @@ DisassembleByteCodeObj(
 	 * Print instructions before command i.
 	 */
 
-	while ((pc-codeStart) < codeOffset) {
+	while ((size_t)(pc-codeStart) < codeOffset) {
 	    Tcl_AppendToObj(bufferObj, "    ", -1);
 	    pc += FormatInstruction(codePtr, pc, bufferObj);
 	}

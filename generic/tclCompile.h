@@ -163,10 +163,10 @@ typedef struct ExceptionAux {
  */
 
 typedef struct {
-    int codeOffset;		/* Offset of first byte of command code. */
-    int numCodeBytes;		/* Number of bytes for command's code. */
-    int srcOffset;		/* Offset of first char of the command. */
-    int numSrcBytes;		/* Number of command source chars. */
+    size_t codeOffset;		/* Offset of first byte of command code. */
+    size_t numCodeBytes;		/* Number of bytes for command's code. */
+    size_t srcOffset;		/* Offset of first char of the command. */
+    size_t numSrcBytes;		/* Number of command source chars. */
 } CmdLocation;
 
 /*
@@ -290,13 +290,13 @@ typedef struct CompileEnv {
 				 * SetByteCodeFromAny. This pointer is not
 				 * owned by the CompileEnv and must not be
 				 * freed or changed by it. */
-    int numSrcBytes;		/* Number of bytes in source. */
+    size_t numSrcBytes;		/* Number of bytes in source. */
     Proc *procPtr;		/* If a procedure is being compiled, a pointer
 				 * to its Proc structure; otherwise NULL. Used
 				 * to compile local variables. Set from
 				 * information provided by ObjInterpProc in
 				 * tclProc.c. */
-    int numCommands;		/* Number of commands compiled. */
+    size_t numCommands;		/* Number of commands compiled. */
     int exceptDepth;		/* Current exception range nesting level; -1
 				 * if not in any range currently. */
     int maxExceptDepth;		/* Max nesting level of exception ranges; -1
@@ -450,8 +450,8 @@ typedef struct ByteCode {
 				 * literal Tcl objects or storage referenced
 				 * by AuxData entries. */
     int numCommands;		/* Number of commands compiled. */
-    int numSrcBytes;		/* Number of source bytes compiled. */
-    int numCodeBytes;		/* Number of code bytes. */
+    size_t numSrcBytes;		/* Number of source bytes compiled. */
+    size_t numCodeBytes;		/* Number of code bytes. */
     int numLitObjects;		/* Number of objects in literal array. */
     int numExceptRanges;	/* Number of ExceptionRange array elems. */
     int numAuxDataItems;	/* Number of AuxData items. */
