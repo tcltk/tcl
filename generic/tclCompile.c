@@ -3443,14 +3443,14 @@ TclGetInnermostExceptionRange(
     int returnCode,
     ExceptionAux **auxPtrPtr)
 {
-    int i = envPtr->exceptArrayNext;
+    size_t i = envPtr->exceptArrayNext;
     ExceptionRange *rangePtr = envPtr->exceptArrayPtr + i;
 
     while (i > 0) {
 	rangePtr--; i--;
 
 	if ((size_t)CurrentOffset(envPtr) >= rangePtr->codeOffset &&
-		(rangePtr->numCodeBytes == -1 || (size_t)CurrentOffset(envPtr) <
+		(rangePtr->numCodeBytes == TCL_INDEX_NONE || (size_t)CurrentOffset(envPtr) <
 			rangePtr->codeOffset+rangePtr->numCodeBytes) &&
 		(returnCode != TCL_CONTINUE ||
 			envPtr->exceptAuxArrayPtr[i].supportsContinue)) {
@@ -3482,7 +3482,7 @@ TclAddLoopBreakFixup(
     CompileEnv *envPtr,
     ExceptionAux *auxPtr)
 {
-    int range = auxPtr - envPtr->exceptAuxArrayPtr;
+    size_t range = auxPtr - envPtr->exceptAuxArrayPtr;
 
     if (envPtr->exceptArrayPtr[range].type != LOOP_EXCEPTION_RANGE) {
 	Tcl_Panic("trying to add 'break' fixup to full exception range");
@@ -3508,7 +3508,7 @@ TclAddLoopContinueFixup(
     CompileEnv *envPtr,
     ExceptionAux *auxPtr)
 {
-    int range = auxPtr - envPtr->exceptAuxArrayPtr;
+    size_t range = auxPtr - envPtr->exceptAuxArrayPtr;
 
     if (envPtr->exceptArrayPtr[range].type != LOOP_EXCEPTION_RANGE) {
 	Tcl_Panic("trying to add 'continue' fixup to full exception range");
@@ -3547,8 +3547,8 @@ TclCleanupStackForBreakContinue(
     CompileEnv *envPtr,
     ExceptionAux *auxPtr)
 {
-    int savedStackDepth = envPtr->currStackDepth;
-    int toPop = envPtr->expandCount - auxPtr->expandTarget;
+    size_t savedStackDepth = envPtr->currStackDepth;
+    size_t toPop = envPtr->expandCount - auxPtr->expandTarget;
 
     if (toPop > 0) {
 	while (toPop --> 0) {
@@ -3601,7 +3601,7 @@ StartExpanding(
 	if (rangePtr->codeOffset > (size_t)CurrentOffset(envPtr)) {
 	    continue;
 	}
-	if (rangePtr->numCodeBytes != -1) {
+	if (rangePtr->numCodeBytes != TCL_INDEX_NONE) {
 	    continue;
 	}
 
@@ -3642,7 +3642,7 @@ TclFinalizeLoopExceptionRange(
 {
     ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[range];
     ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[range];
-    int i, offset;
+    size_t i, offset;
     unsigned char *site;
 
     if (rangePtr->type != LOOP_EXCEPTION_RANGE) {
@@ -3661,7 +3661,7 @@ TclFinalizeLoopExceptionRange(
     }
     for (i=0 ; i<auxPtr->numContinueTargets ; i++) {
 	site = envPtr->codeStart + auxPtr->continueTargets[i];
-	if (rangePtr->continueOffset == -1) {
+	if (rangePtr->continueOffset == TCL_INDEX_NONE) {
 	    int j;
 
 	    /*
@@ -4039,7 +4039,7 @@ TclFixupForwardJump(
 	switch (rangePtr->type) {
 	case LOOP_EXCEPTION_RANGE:
 	    rangePtr->breakOffset += 3;
-	    if (rangePtr->continueOffset != -1) {
+	    if (rangePtr->continueOffset != TCL_INDEX_NONE) {
 		rangePtr->continueOffset += 3;
 	    }
 	    break;
@@ -4054,7 +4054,7 @@ TclFixupForwardJump(
 
     for (k = 0 ; k < envPtr->exceptArrayNext ; k++) {
 	ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[k];
-	int i;
+	size_t i;
 
 	for (i=0 ; i<auxPtr->numBreakTargets ; i++) {
 	    if (jumpFixupPtr->codeOffset < auxPtr->breakTargets[i]) {

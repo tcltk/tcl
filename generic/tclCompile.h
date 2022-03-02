@@ -94,15 +94,15 @@ typedef struct {
 				 * surrounding a PC at runtime. */
     size_t codeOffset;		/* Offset of the first instruction byte of the
 				 * code range. */
-    int numCodeBytes;		/* Number of bytes in the code range. */
-    int breakOffset;		/* If LOOP_EXCEPTION_RANGE, the target PC
+    size_t numCodeBytes;		/* Number of bytes in the code range. */
+    size_t breakOffset;		/* If LOOP_EXCEPTION_RANGE, the target PC
 				 * offset for a break command in the range. */
-    int continueOffset;		/* If LOOP_EXCEPTION_RANGE and not -1, the
+    size_t continueOffset;		/* If LOOP_EXCEPTION_RANGE and not -1, the
 				 * target PC offset for a continue command in
 				 * the code range. Otherwise, ignore this
 				 * range when processing a continue
 				 * command. */
-    int catchOffset;		/* If a CATCH_EXCEPTION_RANGE, the target PC
+    size_t catchOffset;		/* If a CATCH_EXCEPTION_RANGE, the target PC
 				 * offset for any "exception" in range. */
 } ExceptionRange;
 
@@ -132,7 +132,7 @@ typedef struct ExceptionAux {
 				 * if there are no open expansions between the
 				 * looping level and the point of jump
 				 * issue. */
-    int numBreakTargets;	/* The number of [break]s that want to be
+    size_t numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
     unsigned int *breakTargets;	/* The offsets of the INST_JUMP4 instructions
@@ -141,8 +141,8 @@ typedef struct ExceptionAux {
 				 * TclFixupForwardJump) can cause the contents
 				 * of this array to be updated. When
 				 * numBreakTargets==0, this is NULL. */
-    int allocBreakTargets;	/* The size of the breakTargets array. */
-    int numContinueTargets;	/* The number of [continue]s that want to be
+    size_t allocBreakTargets;	/* The size of the breakTargets array. */
+    size_t numContinueTargets;	/* The number of [continue]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
     unsigned int *continueTargets; /* The offsets of the INST_JUMP4 instructions
@@ -151,7 +151,7 @@ typedef struct ExceptionAux {
 				 * TclFixupForwardJump) can cause the contents
 				 * of this array to be updated. When
 				 * numContinueTargets==0, this is NULL. */
-    int allocContinueTargets;	/* The size of the continueTargets array. */
+    size_t allocContinueTargets;	/* The size of the continueTargets array. */
 } ExceptionAux;
 
 /*
