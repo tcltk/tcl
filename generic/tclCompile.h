@@ -198,8 +198,8 @@ typedef struct {
     Tcl_Obj *path;		/* Path of the sourced file the command is
 				 * in. */
     ECL *loc;			/* Command word locations (lines). */
-    int nloc;			/* Number of allocated entries in 'loc'. */
-    int nuloc;			/* Number of used entries in 'loc'. */
+    size_t nloc;			/* Number of allocated entries in 'loc'. */
+    size_t nuloc;			/* Number of used entries in 'loc'. */
 } ExtCmdLoc;
 
 /*

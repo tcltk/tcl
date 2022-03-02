@@ -1776,7 +1776,7 @@ DeleteInterpProc(
     Tcl_HashSearch search;
     Tcl_HashTable *hTablePtr;
     ResolverScheme *resPtr, *nextResPtr;
-    int i;
+    size_t i;
 
     /*
      * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup,
