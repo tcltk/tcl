@@ -163,7 +163,8 @@ TclNamespaceEnsembleCmd(
     Tcl_DictSearch search;
     Tcl_Obj *listObj;
     const char *simpleName;
-    int index, done;
+    enum EnsSubcmds index;
+    int done;
 
     if (nsPtr == NULL || nsPtr->flags & NS_DEAD) {
 	if (!Tcl_InterpDeleted(interp)) {
@@ -184,7 +185,7 @@ TclNamespaceEnsembleCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum EnsSubcmds) index) {
+    switch (index) {
     case ENS_CREATE: {
 	const char *name;
 	int len, allocatedMapFlag = 0;

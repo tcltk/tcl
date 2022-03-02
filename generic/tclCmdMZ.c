@@ -141,7 +141,7 @@ Tcl_RegexpObjCmd(
 	REGEXP_ALL,	REGEXP_ABOUT,	REGEXP_INDICES,	REGEXP_INLINE,
 	REGEXP_EXPANDED,REGEXP_LINE,	REGEXP_LINESTOP,REGEXP_LINEANCHOR,
 	REGEXP_NOCASE,	REGEXP_START,	REGEXP_LAST
-    };
+    } index;
 
     indices = 0;
     about = 0;
@@ -152,7 +152,6 @@ Tcl_RegexpObjCmd(
 
     for (i = 1; i < objc; i++) {
 	const char *name;
-	int index;
 
 	name = TclGetString(objv[i]);
 	if (name[0] != '-') {
@@ -162,7 +161,7 @@ Tcl_RegexpObjCmd(
 		&index) != TCL_OK) {
 	    goto optionError;
 	}
-	switch ((enum regexpoptions) index) {
+	switch (index) {
 	case REGEXP_ALL:
 	    all = 1;
 	    break;
@@ -503,7 +502,7 @@ Tcl_RegsubObjCmd(
 	REGSUB_ALL,	 REGSUB_COMMAND,    REGSUB_EXPANDED, REGSUB_LINE,
 	REGSUB_LINESTOP, REGSUB_LINEANCHOR, REGSUB_NOCASE,   REGSUB_START,
 	REGSUB_LAST
-    };
+    } index;
 
     cflags = TCL_REG_ADVANCED;
     all = 0;
@@ -513,7 +512,6 @@ Tcl_RegsubObjCmd(
 
     for (idx = 1; idx < objc; idx++) {
 	const char *name;
-	int index;
 
 	name = TclGetString(objv[idx]);
 	if (name[0] != '-') {
@@ -523,7 +521,7 @@ Tcl_RegsubObjCmd(
 		TCL_EXACT, &index) != TCL_OK) {
 	    goto optionError;
 	}
-	switch ((enum regsubobjoptions) index) {
+	switch (index) {
 	case REGSUB_ALL:
 	    all = 1;
 	    break;
@@ -1524,7 +1522,7 @@ StringIsCmd(
 {
     const char *string1, *end, *stop;
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
-    int i, failat = 0, result = 1, strict = 0, index, length1, length2;
+    int i, failat = 0, result = 1, strict = 0, length1, length2;
     Tcl_Obj *objPtr, *failVarObj = NULL;
     Tcl_WideInt w;
 
@@ -1543,13 +1541,13 @@ StringIsCmd(
 	STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,
 	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_UNICODE,
 	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
-    };
+    } index;
     static const char *const isOptions[] = {
 	"-strict", "-failindex", NULL
     };
     enum isOptionsEnum {
 	OPT_STRICT, OPT_FAILIDX
-    };
+    } idx2;
 
     if (objc < 3 || objc > 6) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1563,13 +1561,11 @@ StringIsCmd(
 
     if (objc != 3) {
 	for (i = 2; i < objc-1; i++) {
-	    int idx2;
-
 	    if (Tcl_GetIndexFromObj(interp, objv[i], isOptions, "option", 0,
 		    &idx2) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    switch ((enum isOptionsEnum) idx2) {
+	    switch (idx2) {
 	    case OPT_STRICT:
 		strict = 1;
 		break;
@@ -1598,7 +1594,7 @@ StringIsCmd(
      * When entering here, result == 1 and failat == 0.
      */
 
-    switch ((enum isClassesEnum) index) {
+    switch (index) {
     case STR_IS_ALNUM:
 	chcomp = Tcl_UniCharIsAlnum;
 	break;
@@ -3459,7 +3455,7 @@ TclNRSwitchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i,j, index, mode, foundmode, splitObjs, numMatchesSaved;
+    int i,j, mode, foundmode, splitObjs, numMatchesSaved;
     int noCase, patternLength;
     const char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
@@ -3484,7 +3480,7 @@ TclNRSwitchObjCmd(
     enum switchOptionsEnum {
 	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_MATCHV, OPT_NOCASE, OPT_REGEXP,
 	OPT_LAST
-    };
+    } index;
     typedef int (*strCmpFn_t)(const char *, const char *);
     strCmpFn_t strCmpFn = TclUtfCmp;
 
@@ -3502,7 +3498,7 @@ TclNRSwitchObjCmd(
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum switchOptionsEnum) index) {
+	switch (index) {
 	    /*
 	     * General options.
 	     */

@@ -1834,7 +1834,7 @@ TestencodingObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Encoding encoding;
-    int index, length;
+    int length;
     const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
@@ -1842,14 +1842,14 @@ TestencodingObjCmd(
     };
     enum options {
 	ENC_CREATE,	ENC_DELETE
-    };
+    } index;
 
     if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
 	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    switch ((enum options) index) {
+    switch (index) {
     case ENC_CREATE: {
 	Tcl_EncodingType type;
 
@@ -3201,7 +3201,7 @@ TestlinkarrayCmd(
     static const char *LinkOption[] = {
         "update", "remove", "create", NULL
     };
-    enum LinkOptionEnum { LINK_UPDATE, LINK_REMOVE, LINK_CREATE };
+    enum LinkOptionEnum {LINK_UPDATE, LINK_REMOVE, LINK_CREATE} optionIndex;
     static const char *LinkType[] = {
 	"char", "uchar", "short", "ushort", "int", "uint", "long", "ulong",
 	"wide", "uwide", "float", "double", "string", "char*", "binary", NULL
@@ -3214,7 +3214,7 @@ TestlinkarrayCmd(
 	TCL_LINK_FLOAT, TCL_LINK_DOUBLE, TCL_LINK_STRING, TCL_LINK_CHARS,
 	TCL_LINK_BINARY
     };
-    int optionIndex, typeIndex, readonly, i, size, length;
+    int typeIndex, readonly, i, size, length;
     char *name, *arg;
     Tcl_WideInt addr;
 
@@ -3226,7 +3226,7 @@ TestlinkarrayCmd(
 	    &optionIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch ((enum LinkOptionEnum) optionIndex) {
+    switch (optionIndex) {
     case LINK_UPDATE:
 	for (i=2; i<objc; i++) {
 	    Tcl_UpdateLinkedVar(interp, Tcl_GetString(objv[i]));
@@ -3798,7 +3798,7 @@ TestregexpObjCmd(
 	REGEXP_MULTI,	REGEXP_NOCROSS,	REGEXP_NEWL,
 	REGEXP_XFLAGS,
 	REGEXP_LAST
-    };
+    } index;
 
     indices = 0;
     about = 0;
@@ -3808,7 +3808,6 @@ TestregexpObjCmd(
 
     for (i = 1; i < objc; i++) {
 	const char *name;
-	int index;
 
 	name = Tcl_GetString(objv[i]);
 	if (name[0] != '-') {
@@ -3818,7 +3817,7 @@ TestregexpObjCmd(
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum optionsEnum) index) {
+	switch (index) {
 	case REGEXP_INDICES:
 	    indices = 1;
 	    break;
@@ -5188,7 +5187,7 @@ TestsaveresultCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     Interp* iPtr = (Interp*) interp;
-    int discard, result, index;
+    int discard, result;
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
     static const char *const optionStrings[] = {
@@ -5196,7 +5195,7 @@ TestsaveresultCmd(
     };
     enum options {
 	RESULT_APPEND, RESULT_DYNAMIC, RESULT_FREE, RESULT_OBJECT, RESULT_SMALL
-    };
+    } index;
 
     /*
      * Parse arguments
@@ -5215,8 +5214,8 @@ TestsaveresultCmd(
     }
 
     freeCount = 0;
-    objPtr = NULL;		/* Lint. */
-    switch ((enum options) index) {
+    objPtr = NULL;
+    switch (index) {
     case RESULT_SMALL:
 	Tcl_AppendResult(interp, "small result", NULL);
 	break;
@@ -5241,7 +5240,7 @@ TestsaveresultCmd(
 
     Tcl_SaveResult(interp, &state);
 
-    if (((enum options) index) == RESULT_OBJECT) {
+    if (index == RESULT_OBJECT) {
 	result = Tcl_EvalObjEx(interp, objv[2], 0);
     } else {
 	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), -1, 0);
@@ -5254,7 +5253,7 @@ TestsaveresultCmd(
 	result = TCL_OK;
     }
 
-    switch ((enum options) index) {
+    switch (index) {
     case RESULT_DYNAMIC: {
 	int presentOrFreed = (iPtr->freeProc == TestsaveresultFree) ^ freeCount;
 

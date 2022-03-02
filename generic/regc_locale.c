@@ -999,12 +999,12 @@ cclass(
     const chr *endp,		/* just past the end of the name */
     int cases)			/* case-independent? */
 {
-    size_t len;
+    size_t i, len;
     struct cvec *cv = NULL;
     Tcl_DString ds;
     const char *np;
     const char *const *namePtr;
-    int i, index;
+    int index;
 
     /*
      * The following arrays define the valid character class names.
@@ -1062,14 +1062,14 @@ cclass(
     case CC_ALNUM:
 	cv = getcvec(v, NUM_ALPHA_CHAR, NUM_DIGIT_RANGE + NUM_ALPHA_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_ALPHA_CHAR ; i++) {
+	    for (i=0 ; i<NUM_ALPHA_CHAR ; i++) {
 		addchr(cv, alphaCharTable[i]);
 	    }
-	    for (i=0 ; (size_t)i<NUM_ALPHA_RANGE ; i++) {
+	    for (i=0 ; i<NUM_ALPHA_RANGE ; i++) {
 		addrange(cv, alphaRangeTable[i].start,
 			alphaRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_DIGIT_RANGE ; i++) {
+	    for (i=0 ; i<NUM_DIGIT_RANGE ; i++) {
 		addrange(cv, digitRangeTable[i].start,
 			digitRangeTable[i].end);
 	    }
@@ -1078,11 +1078,11 @@ cclass(
     case CC_ALPHA:
 	cv = getcvec(v, NUM_ALPHA_CHAR, NUM_ALPHA_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_ALPHA_RANGE ; i++) {
+	    for (i=0 ; i<NUM_ALPHA_RANGE ; i++) {
 		addrange(cv, alphaRangeTable[i].start,
 			alphaRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_ALPHA_CHAR ; i++) {
+	    for (i=0 ; i<NUM_ALPHA_CHAR ; i++) {
 		addchr(cv, alphaCharTable[i]);
 	    }
 	}
@@ -1101,11 +1101,11 @@ cclass(
     case CC_CNTRL:
 	cv = getcvec(v, NUM_CONTROL_CHAR, NUM_CONTROL_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_CONTROL_RANGE ; i++) {
+	    for (i=0 ; i<NUM_CONTROL_RANGE ; i++) {
 		addrange(cv, controlRangeTable[i].start,
 			controlRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_CONTROL_CHAR ; i++) {
+	    for (i=0 ; i<NUM_CONTROL_CHAR ; i++) {
 		addchr(cv, controlCharTable[i]);
 	    }
 	}
@@ -1113,7 +1113,7 @@ cclass(
     case CC_DIGIT:
 	cv = getcvec(v, 0, NUM_DIGIT_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_DIGIT_RANGE ; i++) {
+	    for (i=0 ; i<NUM_DIGIT_RANGE ; i++) {
 		addrange(cv, digitRangeTable[i].start,
 			digitRangeTable[i].end);
 	    }
@@ -1122,11 +1122,11 @@ cclass(
     case CC_PUNCT:
 	cv = getcvec(v, NUM_PUNCT_CHAR, NUM_PUNCT_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_PUNCT_RANGE ; i++) {
+	    for (i=0 ; i<NUM_PUNCT_RANGE ; i++) {
 		addrange(cv, punctRangeTable[i].start,
 			punctRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_PUNCT_CHAR ; i++) {
+	    for (i=0 ; i<NUM_PUNCT_CHAR ; i++) {
 		addchr(cv, punctCharTable[i]);
 	    }
 	}
@@ -1151,11 +1151,11 @@ cclass(
     case CC_SPACE:
 	cv = getcvec(v, NUM_SPACE_CHAR, NUM_SPACE_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_SPACE_RANGE ; i++) {
+	    for (i=0 ; i<NUM_SPACE_RANGE ; i++) {
 		addrange(cv, spaceRangeTable[i].start,
 			spaceRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_SPACE_CHAR ; i++) {
+	    for (i=0 ; i<NUM_SPACE_CHAR ; i++) {
 		addchr(cv, spaceCharTable[i]);
 	    }
 	}
@@ -1163,11 +1163,11 @@ cclass(
     case CC_LOWER:
 	cv  = getcvec(v, NUM_LOWER_CHAR, NUM_LOWER_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_LOWER_RANGE ; i++) {
+	    for (i=0 ; i<NUM_LOWER_RANGE ; i++) {
 		addrange(cv, lowerRangeTable[i].start,
 			lowerRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_LOWER_CHAR ; i++) {
+	    for (i=0 ; i<NUM_LOWER_CHAR ; i++) {
 		addchr(cv, lowerCharTable[i]);
 	    }
 	}
@@ -1175,11 +1175,11 @@ cclass(
     case CC_UPPER:
 	cv  = getcvec(v, NUM_UPPER_CHAR, NUM_UPPER_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_UPPER_RANGE ; i++) {
+	    for (i=0 ; i<NUM_UPPER_RANGE ; i++) {
 		addrange(cv, upperRangeTable[i].start,
 			upperRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_UPPER_CHAR ; i++) {
+	    for (i=0 ; i<NUM_UPPER_CHAR ; i++) {
 		addchr(cv, upperCharTable[i]);
 	    }
 	}
@@ -1187,18 +1187,18 @@ cclass(
     case CC_PRINT:
     	cv  = getcvec(v, NUM_SPACE_CHAR + NUM_GRAPH_CHAR, NUM_SPACE_RANGE + NUM_GRAPH_RANGE  - 1);
     	if (cv) {
-    	    for (i=1 ; (size_t)i<NUM_SPACE_RANGE ; i++) {
+    	    for (i=1 ; i<NUM_SPACE_RANGE ; i++) {
     		addrange(cv, spaceRangeTable[i].start,
     				spaceRangeTable[i].end);
     	    }
-    	    for (i=0 ; (size_t)i<NUM_SPACE_CHAR ; i++) {
+    	    for (i=0 ; i<NUM_SPACE_CHAR ; i++) {
     		addchr(cv, spaceCharTable[i]);
     	    }
-    	    for (i=0 ; (size_t)i<NUM_GRAPH_RANGE ; i++) {
+    	    for (i=0 ; i<NUM_GRAPH_RANGE ; i++) {
     		addrange(cv, graphRangeTable[i].start,
     				graphRangeTable[i].end);
     	    }
-    	    for (i=0 ; (size_t)i<NUM_GRAPH_CHAR ; i++) {
+    	    for (i=0 ; i<NUM_GRAPH_CHAR ; i++) {
     		addchr(cv, graphCharTable[i]);
     	    }
     	}
@@ -1206,11 +1206,11 @@ cclass(
     case CC_GRAPH:
 	cv  = getcvec(v, NUM_GRAPH_CHAR, NUM_GRAPH_RANGE);
 	if (cv) {
-	    for (i=0 ; (size_t)i<NUM_GRAPH_RANGE ; i++) {
+	    for (i=0 ; i<NUM_GRAPH_RANGE ; i++) {
 		addrange(cv, graphRangeTable[i].start,
 			graphRangeTable[i].end);
 	    }
-	    for (i=0 ; (size_t)i<NUM_GRAPH_CHAR ; i++) {
+	    for (i=0 ; i<NUM_GRAPH_CHAR ; i++) {
 		addchr(cv, graphCharTable[i]);
 	    }
 	}

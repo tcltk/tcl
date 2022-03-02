@@ -2390,7 +2390,7 @@ ZlibPushSubcmd(
 	FMT_INFLATE
     };
     Tcl_Channel chan;
-    int chanMode, format, mode = 0, level, i, option;
+    int chanMode, format, mode = 0, level, i;
     static const char *const pushCompressOptions[] = {
 	"-dictionary", "-header", "-level", NULL
     };
@@ -2398,7 +2398,7 @@ ZlibPushSubcmd(
 	"-dictionary", "-header", "-level", "-limit", NULL
     };
     const char *const *pushOptions = pushDecompressOptions;
-    enum pushOptionsEnum {poDictionary, poHeader, poLevel, poLimit};
+    enum pushOptionsEnum {poDictionary, poHeader, poLevel, poLimit} option;
     Tcl_Obj *headerObj = NULL, *compDictObj = NULL;
     int limit = DEFAULT_BUFFER_SIZE, dummy;
 
@@ -2480,7 +2480,7 @@ ZlibPushSubcmd(
 	    Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 	    return TCL_ERROR;
 	}
-	switch ((enum pushOptionsEnum) option) {
+	switch (option) {
 	case poHeader:
 	    headerObj = objv[i];
 	    if (Tcl_DictObjSize(interp, headerObj, &dummy) != TCL_OK) {
@@ -2560,7 +2560,7 @@ ZlibStreamCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream)cd;
-    int command, count, code;
+    int count, code;
     Tcl_Obj *obj;
     static const char *const cmds[] = {
 	"add", "checksum", "close", "eof", "finalize", "flush",
@@ -2570,7 +2570,7 @@ ZlibStreamCmd(
     enum zlibStreamCommands {
 	zs_add, zs_checksum, zs_close, zs_eof, zs_finalize, zs_flush,
 	zs_fullflush, zs_get, zs_header, zs_put, zs_reset
-    };
+    } command;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option data ?...?");
@@ -2582,7 +2582,7 @@ ZlibStreamCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum zlibStreamCommands) command) {
+    switch (command) {
     case zs_add:		/* $strm add ?$flushopt? $data */
 	return ZlibStreamAddCmd(zstream, interp, objc, objv);
     case zs_header:		/* $strm header */
@@ -2686,14 +2686,14 @@ ZlibStreamAddCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream)cd;
-    int index, code, buffersize = -1, flush = -1, i;
+    int code, buffersize = -1, flush = -1, i;
     Tcl_Obj *obj, *compDictObj = NULL;
     static const char *const add_options[] = {
 	"-buffer", "-dictionary", "-finalize", "-flush", "-fullflush", NULL
     };
     enum addOptions {
 	ao_buffer, ao_dictionary, ao_finalize, ao_flush, ao_fullflush
-    };
+    } index;
 
     for (i=2; i<objc-1; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], add_options, "option", 0,
@@ -2701,7 +2701,7 @@ ZlibStreamAddCmd(
 	    return TCL_ERROR;
 	}
 
-	switch ((enum addOptions) index) {
+	switch (index) {
 	case ao_flush: /* -flush */
 	    if (flush >= 0) {
 		flush = -2;
@@ -2813,14 +2813,14 @@ ZlibStreamPutCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_ZlibStream zstream = (Tcl_ZlibStream)cd;
-    int index, flush = -1, i;
+    int flush = -1, i;
     Tcl_Obj *compDictObj = NULL;
     static const char *const put_options[] = {
 	"-dictionary", "-finalize", "-flush", "-fullflush", NULL
     };
     enum putOptions {
 	po_dictionary, po_finalize, po_flush, po_fullflush
-    };
+    } index;
 
     for (i=2; i<objc-1; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], put_options, "option", 0,
@@ -2828,7 +2828,7 @@ ZlibStreamPutCmd(
 	    return TCL_ERROR;
 	}
 
-	switch ((enum putOptions) index) {
+	switch (index) {
 	case po_flush: /* -flush */
 	    if (flush >= 0) {
 		flush = -2;
