@@ -2228,7 +2228,6 @@ UtfToUtfProc(
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
-	    int low;
 	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
 	    if ((len < 2) && (ch != 0) && (flags & TCL_ENCODING_STOPONERROR)
@@ -2246,13 +2245,20 @@ UtfToUtfProc(
 		    *dst++ = (char) (((ch >> 10) & 0x3F) | 0x80);
 		    ch = (ch & 0x0CFF) | 0xDC00;
 		}
-		goto cesu8;
+#if TCL_UTF_MAX < 4
+	    cesu8:
+#endif
+		*dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
+		*dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
+		*dst++ = (char) ((ch | 0x80) & 0xBF);
+		continue;
+#if TCL_UTF_MAX < 4
 	    } else if ((ch | 0x7FF) == 0xDFFF) {
 		/*
 		 * A surrogate character is detected, handle especially.
 		 */
 
-		low = ch;
+		int low = ch;
 		len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
 
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
@@ -2261,15 +2267,12 @@ UtfToUtfProc(
 			src = saveSrc;
 			break;
 		    }
-		cesu8:
-		    *dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
-		    *dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
-		    *dst++ = (char) ((ch | 0x80) & 0xBF);
-		    continue;
+		    goto cesu8;
 		}
 		src += len;
 		dst += Tcl_UniCharToUtf(ch, dst);
 		ch = low;
+#endif
 	    } else if (!Tcl_UniCharIsUnicode(ch)) {
 		if (flags & TCL_ENCODING_STOPONERROR) {
 		    result = TCL_CONVERT_UNKNOWN;
@@ -2578,7 +2581,7 @@ Utf16ToUtfProc(
 	if (ch && ch < 0x80) {
 	    *dst++ = (ch & 0xFF);
 	} else {
-	    dst += Tcl_UniCharToUtf(ch, dst);
+	    dst += Tcl_UniCharToUtf(ch | TCL_COMBINE, dst);
 	}
 	src += sizeof(unsigned short);
     }
