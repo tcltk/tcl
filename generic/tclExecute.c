@@ -381,7 +381,7 @@ VarHashCreateVar(
     while (traceInstructions) {					\
 	fprintf(stdout, "%2d: %2d (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
 		(int) CURR_DEPTH,				\
-		(size_t) (pc - codePtr->codeStart),		\
+		(pc - codePtr->codeStart),		\
 		GetOpcodeName(pc));				\
 	printf a;						\
 	break;							\
@@ -395,9 +395,9 @@ VarHashCreateVar(
     TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 #   define TRACE_WITH_OBJ(a, objPtr) \
     while (traceInstructions) {					\
-	fprintf(stdout, "%2d: %2d (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
-		(int) CURR_DEPTH,				\
-		(size_t) (pc - codePtr->codeStart),		\
+	fprintf(stdout, "%2d: %2" TCL_Z_MODIFIER "u (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
+		(size_t) CURR_DEPTH,				\
+		(pc - codePtr->codeStart),		\
 		GetOpcodeName(pc));				\
 	printf a;						\
 	TclPrintObject(stdout, objPtr, 30);			\
@@ -2391,7 +2391,7 @@ TEBCresume(
 		TRACE_APPEND(("YIELD...\n"));
 	    } else {
 		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) yielding value \"%.30s\"\n",
-			iPtr->numLevels, (size_t)(pc - codePtr->codeStart),
+			iPtr->numLevels, (pc - codePtr->codeStart),
 			Tcl_GetString(OBJ_AT_TOS));
 	    }
 	    fflush(stdout);
@@ -2434,7 +2434,7 @@ TEBCresume(
 	    } else {
 		/* FIXME: What is the right thing to trace? */
 		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) yielding to [%.30s]\n",
-			iPtr->numLevels, (size_t)(pc - codePtr->codeStart),
+			iPtr->numLevels, (pc - codePtr->codeStart),
 			TclGetString(valuePtr));
 	    }
 	    fflush(stdout);
@@ -2793,7 +2793,7 @@ TEBCresume(
 		TRACE(("%" TCL_Z_MODIFIER "u => call ", objc));
 	    } else {
 		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) invoking ", iPtr->numLevels,
-			(size_t)(pc - codePtr->codeStart));
+			(pc - codePtr->codeStart));
 	    }
 	    for (i = 0;  i < objc;  i++) {
 		TclPrintObject(stdout, objv[i], 15);
@@ -2841,7 +2841,7 @@ TEBCresume(
 	    } else {
 		fprintf(stdout,
 			"%d: (%" TCL_Z_MODIFIER "u) invoking (using implementation %s) ",
-			iPtr->numLevels, (size_t)(pc - codePtr->codeStart),
+			iPtr->numLevels, (pc - codePtr->codeStart),
 			O2S(objPtr));
 	    }
 	    for (i = 0;  i < objc;  i++) {
@@ -4142,14 +4142,14 @@ TEBCresume(
     case INST_JUMP1:
 	opnd = TclGetInt1AtPtr(pc+1);
 	TRACE(("%d => new pc %" TCL_Z_MODIFIER "u\n", opnd,
-		(size_t)(pc + opnd - codePtr->codeStart)));
+		(pc + opnd - codePtr->codeStart)));
 	NEXT_INST_F(opnd, 0, 0);
     break;
 
     case INST_JUMP4:
 	opnd = TclGetInt4AtPtr(pc+1);
 	TRACE(("%d => new pc %" TCL_Z_MODIFIER "u\n", opnd,
-		(size_t)(pc + opnd - codePtr->codeStart)));
+		(pc + opnd - codePtr->codeStart)));
 	NEXT_INST_F(opnd, 0, 0);
 
     {
@@ -4192,7 +4192,7 @@ TEBCresume(
 	if (b) {
 	    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
 		TRACE_APPEND(("%.20s true, new pc %" TCL_Z_MODIFIER "u\n", O2S(valuePtr),
-			(size_t)(pc + jmpOffset[1] - codePtr->codeStart)));
+			(pc + jmpOffset[1] - codePtr->codeStart)));
 	    } else {
 		TRACE_APPEND(("%.20s true\n", O2S(valuePtr)));
 	    }
@@ -4201,7 +4201,7 @@ TEBCresume(
 		TRACE_APPEND(("%.20s false\n", O2S(valuePtr)));
 	    } else {
 		TRACE_APPEND(("%.20s false, new pc %" TCL_Z_MODIFIER "u\n", O2S(valuePtr),
-			(size_t)(pc + jmpOffset[0] - codePtr->codeStart)));
+			(pc + jmpOffset[0] - codePtr->codeStart)));
 	    }
 	}
 #endif
@@ -4226,7 +4226,7 @@ TEBCresume(
 	    int jumpOffset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	    TRACE_APPEND(("found in table, new pc %" TCL_Z_MODIFIER "u\n",
-		    (size_t)(pc - codePtr->codeStart + jumpOffset)));
+		    (pc - codePtr->codeStart + jumpOffset)));
 	    NEXT_INST_F(jumpOffset, 1, 0);
 	} else {
 	    TRACE_APPEND(("not found in table\n"));
@@ -4529,7 +4529,7 @@ TEBCresume(
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 	    } else {
 		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) invoking ",
-			iPtr->numLevels, (size_t)(pc - codePtr->codeStart));
+			iPtr->numLevels, (pc - codePtr->codeStart));
 	    }
 	    for (i = 0;  i < opnd;  i++) {
 		TclPrintObject(stdout, objv[i], 15);
@@ -4643,7 +4643,7 @@ TEBCresume(
 	    goto gotError;
 	}
 	TclNewIntObj(objResultPtr, length);
-	TRACE_APPEND(("%" TCL_Z_MODIFIER "d\n", length));
+	TRACE_APPEND(("%" TCL_Z_MODIFIER "u\n", length));
 	NEXT_INST_F(1, 1, 1);
 
     case INST_LIST_INDEX:	/* lindex with objc == 3 */
@@ -6330,7 +6330,7 @@ TEBCresume(
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
-		    if (valIndex >= listLen) {
+		    if (valIndex >= (size_t)listLen) {
 			TclNewObj(valuePtr);
 		    } else {
 			valuePtr = elements[valIndex];
@@ -7230,7 +7230,7 @@ TEBCresume(
 	    if (result == TCL_BREAK) {
 		result = TCL_OK;
 		pc = (codePtr->codeStart + rangePtr->breakOffset);
-		TRACE_APPEND(("%s, range at %" TCL_Z_MODIFIER "u, new pc %d\n",
+		TRACE_APPEND(("%s, range at %" TCL_Z_MODIFIER "u, new pc %" TCL_Z_MODIFIER "u\n",
 			StringForResultCode(result),
 			rangePtr->codeOffset, rangePtr->breakOffset));
 		NEXT_INST_F(0, 0, 0);
@@ -7242,7 +7242,7 @@ TEBCresume(
 	    }
 	    result = TCL_OK;
 	    pc = (codePtr->codeStart + rangePtr->continueOffset);
-	    TRACE_APPEND(("%s, range at %" TCL_Z_MODIFIER "u, new pc %d\n",
+	    TRACE_APPEND(("%s, range at %" TCL_Z_MODIFIER "u, new pc %" TCL_Z_MODIFIER "u\n",
 		    StringForResultCode(result),
 		    rangePtr->codeOffset, rangePtr->continueOffset));
 	    NEXT_INST_F(0, 0, 0);
@@ -7417,7 +7417,7 @@ TEBCresume(
 	    fprintf(stdout, "  ... found catch at %" TCL_Z_MODIFIER "u, catchTop=%d, "
 		    "unwound to %ld, new pc %" TCL_Z_MODIFIER "u\n",
 		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
-		    (long)*catchTop, (size_t) rangePtr->catchOffset);
+		    (long)*catchTop, rangePtr->catchOffset);
 	}
 #endif
 	pc = (codePtr->codeStart + rangePtr->catchOffset);
@@ -7454,9 +7454,9 @@ TEBCresume(
 	if (tosPtr < initTosPtr) {
 	    fprintf(stderr,
 		    "\nTclNRExecuteByteCode: abnormal return at pc %" TCL_Z_MODIFIER "u: "
-		    "stack top %d < entry stack top %d\n",
-		    (size_t)(pc - codePtr->codeStart),
-		    (int) CURR_DEPTH, 0);
+		    "stack top %" TCL_Z_MODIFIER "u < entry stack top %d\n",
+		    (pc - codePtr->codeStart),
+		    CURR_DEPTH, 0);
 	    Tcl_Panic("TclNRExecuteByteCode execution failure: end stack top < start stack top");
 	}
 	CLANG_ASSERT(bcFramePtr);
@@ -8682,7 +8682,7 @@ PrintByteCodeInfo(
     fprintf(stdout, "  Source: ");
     TclPrintSource(stdout, codePtr->source, 60);
 
-    fprintf(stdout, "\n  Cmds %d, src %d, inst %u, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
+    fprintf(stdout, "\n  Cmds %d, src %" TCL_Z_MODIFIER "u, inst %" TCL_Z_MODIFIER "u, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
 	    codePtr->numCommands, codePtr->numSrcBytes,
 	    codePtr->numCodeBytes, codePtr->numLitObjects,
 	    codePtr->numAuxDataItems, codePtr->maxStackDepth,
@@ -8693,13 +8693,13 @@ PrintByteCodeInfo(
 	    0.0);
 
 #ifdef TCL_COMPILE_STATS
-    fprintf(stdout, "  Code %lu = header %lu+inst %d+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
-	    (unsigned long) codePtr->structureSize,
-	    (unsigned long) (sizeof(ByteCode)-sizeof(size_t)-sizeof(Tcl_Time)),
+    fprintf(stdout, "  Code %" TCL_Z_MODIFIER "u = header %" TCL_Z_MODIFIER "u+inst %" TCL_Z_MODIFIER "u+litObj %" TCL_Z_MODIFIER "u+exc %" TCL_Z_MODIFIER "u+aux %" TCL_Z_MODIFIER "u+cmdMap %d\n",
+	    codePtr->structureSize,
+	    (sizeof(ByteCode)-sizeof(size_t)-sizeof(Tcl_Time)),
 	    codePtr->numCodeBytes,
-	    (unsigned long) (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
-	    (unsigned long) (codePtr->numExceptRanges*sizeof(ExceptionRange)),
-	    (unsigned long) (codePtr->numAuxDataItems * sizeof(AuxData)),
+	    (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
+	    (codePtr->numExceptRanges*sizeof(ExceptionRange)),
+	    (codePtr->numAuxDataItems * sizeof(AuxData)),
 	    codePtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
     if (procPtr != NULL) {
@@ -8756,9 +8756,9 @@ ValidatePcAndStackTop(
 		pc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad pc");
     }
-    if ((unsigned) opCode >= LAST_INST_OPCODE) {
+    if ((size_t) opCode >= LAST_INST_OPCODE) {
 	fprintf(stderr, "\nBad opcode %d at pc %" TCL_Z_MODIFIER "u in TclNRExecuteByteCode\n",
-		(unsigned) opCode, relativePc);
+		opCode, relativePc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad opcode");
     }
     if (checkStack &&

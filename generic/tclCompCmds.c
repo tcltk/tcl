@@ -2849,9 +2849,9 @@ CompileEachloopCmd(
      * body's code. Misuse loopCtTemp for storing the jump size.
      */
 
-    jumpBackOffset = envPtr->exceptArrayPtr[range].continueOffset -
-	    envPtr->exceptArrayPtr[range].codeOffset;
-    infoPtr->loopCtTemp = -jumpBackOffset;
+    jumpBackOffset = envPtr->exceptArrayPtr[range].codeOffset -
+	    envPtr->exceptArrayPtr[range].continueOffset;
+    infoPtr->loopCtTemp = jumpBackOffset;
 
     /*
      * The command's result is an empty string if not collecting. If
