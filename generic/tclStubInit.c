@@ -74,6 +74,7 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
+#undef Tcl_UniCharLen
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 #undef Tcl_WinConvertError
 #define Tcl_WinConvertError 0
