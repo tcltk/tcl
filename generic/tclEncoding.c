@@ -2896,7 +2896,7 @@ UtfToUcs2Proc(
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
     int result, numChars;
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
     int len;
 #endif
     Tcl_UniChar ch = 0;
@@ -2927,7 +2927,7 @@ UtfToUcs2Proc(
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
 	src += (len = TclUtfToUniChar(src, &ch));
 	if ((ch >= 0xD800) && (len < 3)) {
 	    src += TclUtfToUniChar(src, &ch);
@@ -3340,7 +3340,7 @@ Iso88591FromUtfProc(
 	 */
 
 	if (ch > 0xFF
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
 		|| ((ch >= 0xD800) && (len < 3))
 #endif
 		) {
@@ -3348,7 +3348,7 @@ Iso88591FromUtfProc(
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
 	    if ((ch >= 0xD800) && (len < 3)) {
 		len = 4;
 	    }
