@@ -2081,7 +2081,7 @@ typedef struct Tcl_EncodingType {
  *				0x00. Only valid for "utf-8" and "cesu-8".
  *				This flag is implicit for external -> internal conversions,
  *				optional for internal -> external conversions.
- * TCL_ENCODING_NO_THROW -	If set, the converter
+ * TCL_ENCODING_NOCOMPLAIN -	If set, the converter
  *				substitutes the problematic character(s) with
  *				one or more "close" characters in the
  *				destination buffer and then continues to
@@ -2097,7 +2097,7 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
 #define TCL_ENCODING_MODIFIED		0x20
-#define TCL_ENCODING_NO_THROW		0x40
+#define TCL_ENCODING_NOCOMPLAIN		0x40
 
 /*
  * The following definitions are the error codes returned by the conversion

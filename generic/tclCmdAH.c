@@ -553,7 +553,7 @@ EncodingConvertfromObjCmd(
 #if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
     int flags = TCL_ENCODING_STOPONERROR;
 #else
-    int flags = TCL_ENCODING_NO_THROW;
+    int flags = TCL_ENCODING_NOCOMPLAIN;
 #endif
     size_t result;
 
@@ -564,11 +564,8 @@ EncodingConvertfromObjCmd(
 	data = objv[objc - 1];
 	bytesPtr = Tcl_GetString(objv[1]);
 	if (bytesPtr[0] == '-' && bytesPtr[1] == 'n'
-		&& !strncmp(bytesPtr, "-nothrow", strlen(bytesPtr))) {
-	    flags = TCL_ENCODING_NO_THROW;
-	} else if (bytesPtr[0] == '-' && bytesPtr[1] == 's'
-		&& !strncmp(bytesPtr, "-stoponerror", strlen(bytesPtr))) {
-	    flags = TCL_ENCODING_STOPONERROR;
+		&& !strncmp(bytesPtr, "-nocomplain", strlen(bytesPtr))) {
+	    flags = TCL_ENCODING_NOCOMPLAIN;
 	} else if (objc < 4) {
 	    if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
 		return TCL_ERROR;
@@ -584,7 +581,7 @@ EncodingConvertfromObjCmd(
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nothrow? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?encoding? data");
 	return TCL_ERROR;
     }
 
@@ -660,7 +657,7 @@ EncodingConverttoObjCmd(
 #if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
     int flags = TCL_ENCODING_STOPONERROR;
 #else
-    int flags = TCL_ENCODING_NO_THROW;
+    int flags = TCL_ENCODING_NOCOMPLAIN;
 #endif
 
     if (objc == 2) {
@@ -670,11 +667,8 @@ EncodingConverttoObjCmd(
 	data = objv[objc - 1];
 	stringPtr = Tcl_GetString(objv[1]);
 	if (stringPtr[0] == '-' && stringPtr[1] == 'n'
-		&& !strncmp(stringPtr, "-nothrow", strlen(stringPtr))) {
-	    flags = TCL_ENCODING_NO_THROW;
-	} else if (stringPtr[0] == '-' && stringPtr[1] == 's'
-		&& !strncmp(stringPtr, "-stoponerror", strlen(stringPtr))) {
-	    flags = TCL_ENCODING_STOPONERROR;
+		&& !strncmp(stringPtr, "-nocomplain", strlen(stringPtr))) {
+	    flags = TCL_ENCODING_NOCOMPLAIN;
 	} else if (objc < 4) {
 	    if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
 		return TCL_ERROR;
@@ -690,7 +684,7 @@ EncodingConverttoObjCmd(
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nothrow? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?encoding? data");
 	return TCL_ERROR;
     }
 

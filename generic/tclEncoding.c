@@ -1158,7 +1158,7 @@ Tcl_ExternalToUtfDString(
  *	Possible flags values:
  *	TCL_ENCODING_STOPONERROR: don't replace invalid characters/bytes but
  *	return the first error position (Default in Tcl 9.0).
- *	TCL_ENCODING_NO_THROW: replace invalid characters/bytes by a default
+ *	TCL_ENCODING_NOCOMPLAIN: replace invalid characters/bytes by a default
  *	fallback character. Always return -1 (Default in Tcl 8.7).
  *	TCL_ENCODING_MODIFIED: convert NULL bytes to \xC0\x80 in stead of 0x00.
  *	Only valid for "utf-8" and "cesu-8". This flag may be used together
@@ -1397,7 +1397,7 @@ Tcl_UtfToExternalDString(
  *	Possible flags values:
  *	TCL_ENCODING_STOPONERROR: don't replace invalid characters/bytes but
  *	return the first error position (Default in Tcl 9.0).
- *	TCL_ENCODING_NO_THROW: replace invalid characters/bytes by a default
+ *	TCL_ENCODING_NOCOMPLAIN: replace invalid characters/bytes by a default
  *	fallback character. Always return -1 (Default in Tcl 8.7).
  *	TCL_ENCODING_MODIFIED: convert NULL bytes to \xC0\x80 in stead of 0x00.
  *	Only valid for "utf-8" and "cesu-8". This flag may be used together
@@ -2288,7 +2288,7 @@ BinaryProc(
  */
 
 #if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-#   define STOPONERROR !(flags & TCL_ENCODING_NO_THROW)
+#   define STOPONERROR !(flags & TCL_ENCODING_NOCOMPLAIN)
 #else
 #   define STOPONERROR (flags & TCL_ENCODING_STOPONERROR)
 #endif
