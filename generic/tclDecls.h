@@ -1164,7 +1164,8 @@ void			Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr,
 EXTERN int		Tcl_RegExpMatchObj(Tcl_Interp *interp,
 				Tcl_Obj *textObj, Tcl_Obj *patternObj);
 /* 386 */
-EXTERN void		Tcl_SetNotifier(Tcl_NotifierProcs *notifierProcPtr);
+EXTERN void		Tcl_SetNotifier(
+				const Tcl_NotifierProcs *notifierProcPtr);
 /* 387 */
 EXTERN Tcl_Mutex *	Tcl_GetAllocMutex(void);
 /* 388 */
@@ -2377,7 +2378,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_GetRange) (Tcl_Obj *objPtr, int first, int last); /* 383 */
     TCL_DEPRECATED_API("Use Tcl_AppendStringsToObj") void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int length); /* 384 */
     int (*tcl_RegExpMatchObj) (Tcl_Interp *interp, Tcl_Obj *textObj, Tcl_Obj *patternObj); /* 385 */
-    void (*tcl_SetNotifier) (Tcl_NotifierProcs *notifierProcPtr); /* 386 */
+    void (*tcl_SetNotifier) (const Tcl_NotifierProcs *notifierProcPtr); /* 386 */
     Tcl_Mutex * (*tcl_GetAllocMutex) (void); /* 387 */
     int (*tcl_GetChannelNames) (Tcl_Interp *interp); /* 388 */
     int (*tcl_GetChannelNamesEx) (Tcl_Interp *interp, const char *pattern); /* 389 */

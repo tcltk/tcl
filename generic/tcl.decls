@@ -1365,7 +1365,7 @@ declare 385 {
 	    Tcl_Obj *patternObj)
 }
 declare 386 {
-    void Tcl_SetNotifier(Tcl_NotifierProcs *notifierProcPtr)
+    void Tcl_SetNotifier(const Tcl_NotifierProcs *notifierProcPtr)
 }
 declare 387 {
     Tcl_Mutex *Tcl_GetAllocMutex(void)
