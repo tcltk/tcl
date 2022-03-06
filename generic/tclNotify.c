@@ -226,7 +226,7 @@ TclFinalizeNotifier(void)
 
 void
 Tcl_SetNotifier(
-    Tcl_NotifierProcs *notifierProcPtr)
+    const Tcl_NotifierProcs *notifierProcPtr)
 {
     tclNotifierHooks = *notifierProcPtr;
 

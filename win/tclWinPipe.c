@@ -2759,7 +2759,7 @@ Tcl_PidObjCmd(
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((unsigned) getpid()));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(getpid()));
     } else {
 	chan = Tcl_GetChannel(interp, TclGetString(objv[1]),
 		NULL);
@@ -2775,7 +2775,7 @@ Tcl_PidObjCmd(
 	TclNewObj(resultPtr);
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(/*interp*/ NULL, resultPtr,
-		    Tcl_NewWideIntObj((unsigned)
+		    Tcl_NewWideIntObj(
 			    TclpGetPid(pipePtr->pidPtr[i])));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
