@@ -3568,10 +3568,10 @@ PrintParse(
     Tcl_Obj *objPtr;
     const char *typeString;
     Tcl_Token *tokenPtr;
-    int i;
+    size_t i;
 
     objPtr = Tcl_GetObjResult(interp);
-    if (parsePtr->commentSize > 0) {
+    if (parsePtr->commentSize + 1 > 1) {
 	Tcl_ListObjAppendElement(NULL, objPtr,
 		Tcl_NewStringObj(parsePtr->commentStart,
 			parsePtr->commentSize));
@@ -3581,8 +3581,8 @@ PrintParse(
     Tcl_ListObjAppendElement(NULL, objPtr,
 	    Tcl_NewStringObj(parsePtr->commandStart, parsePtr->commandSize));
     Tcl_ListObjAppendElement(NULL, objPtr,
-	    Tcl_NewIntObj(parsePtr->numWords));
-    for (i = 0; i < parsePtr->numTokens; i++) {
+	    Tcl_NewWideIntObj(parsePtr->numWords));
+    for (i = 0; i < (size_t)parsePtr->numTokens; i++) {
 	tokenPtr = &parsePtr->tokenPtr[i];
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_EXPAND_WORD:
@@ -7958,7 +7958,7 @@ MyCompiledVarFetch(
     }
 
     hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) &iPtr->globalNsPtr->varTable,
-            (char *) resVarInfo->nameObj, &isNewVar);
+            resVarInfo->nameObj, &isNewVar);
     if (hPtr) {
         var = (Tcl_Var) TclVarHashGetValue(hPtr);
     } else {
