@@ -4590,14 +4590,9 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 #define TCL_MIN_TOKEN_GROWTH TCL_MIN_GROWTH/sizeof(Tcl_Token)
 #endif
 
-#define TCL_MAX_TOKENS (int)(UINT_MAX / sizeof(Tcl_Token))
 #define TclGrowTokenArray(tokenPtr, used, available, append, staticPtr)	\
     do {								\
 	size_t _needed = (used) + (append);					\
-	if (_needed > TCL_MAX_TOKENS) {					\
-	    Tcl_Panic("max # of tokens for a Tcl parse (%d) exceeded",	\
-		    TCL_MAX_TOKENS);					\
-	}								\
 	if (_needed > (available)) {					\
 	    size_t allocated = 2 * _needed;					\
 	    Tcl_Token *oldPtr = (tokenPtr);				\
@@ -4605,16 +4600,10 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	    if (oldPtr == (staticPtr)) {				\
 		oldPtr = NULL;						\
 	    }								\
-	    if (allocated > TCL_MAX_TOKENS) {				\
-		allocated = TCL_MAX_TOKENS;				\
-	    }								\
 	    newPtr = (Tcl_Token *)Tcl_AttemptRealloc((char *) oldPtr,	\
 		    allocated * sizeof(Tcl_Token));	\
 	    if (newPtr == NULL) {					\
 		allocated = _needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
-		if (allocated > TCL_MAX_TOKENS) {			\
-		    allocated = TCL_MAX_TOKENS;				\
-		}							\
 		newPtr = (Tcl_Token *)Tcl_Realloc((char *) oldPtr,	\
 			allocated * sizeof(Tcl_Token)); \
 	    }								\

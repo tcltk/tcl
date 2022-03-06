@@ -3522,7 +3522,7 @@ PrintParse(
     size_t i;
 
     objPtr = Tcl_GetObjResult(interp);
-    if (parsePtr->commentSize > 0) {
+    if (parsePtr->commentSize + 1 > 1) {
 	Tcl_ListObjAppendElement(NULL, objPtr,
 		Tcl_NewStringObj(parsePtr->commentStart,
 			parsePtr->commentSize));
