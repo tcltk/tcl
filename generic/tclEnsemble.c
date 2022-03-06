@@ -2920,7 +2920,7 @@ TclCompileEnsemble(
 
     TclNewObj(replaced);
     Tcl_IncrRefCount(replaced);
-    if (parsePtr->numWords < depth + 1) {
+    if ((int)parsePtr->numWords < depth + 1) {
 	goto failed;
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -3147,7 +3147,7 @@ TclCompileEnsemble(
 
     if (cmdPtr->compileProc == TclCompileEnsemble) {
 	tokenPtr = TokenAfter(tokenPtr);
-	if (parsePtr->numWords < depth + 1
+	if ((int)parsePtr->numWords < depth + 1
 		|| tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    /*
 	     * Too hard because the user has done something unpleasant like
@@ -3393,7 +3393,7 @@ CompileToInvokedCommand(
      */
 
     TclListObjGetElements(NULL, replacements, &numWords, &words);
-    for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
+    for (i = 0, tokPtr = parsePtr->tokenPtr; i < (int)parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && (size_t)i <= numWords) {
 	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
@@ -3438,7 +3438,7 @@ CompileToInvokedCommand(
      * Do the replacing dispatch.
      */
 
-    TclEmitInvoke(envPtr, INST_INVOKE_REPLACE, parsePtr->numWords,numWords+1);
+    TclEmitInvoke(envPtr, INST_INVOKE_REPLACE, (int)parsePtr->numWords,numWords+1);
 }
 
 /*
@@ -3468,7 +3468,7 @@ CompileBasicNArgCommand(
     Tcl_IncrRefCount(objPtr);
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
     TclCompileInvocation(interp, parsePtr->tokenPtr, objPtr,
-	    parsePtr->numWords, envPtr);
+	    (int)parsePtr->numWords, envPtr);
     Tcl_DecrRefCount(objPtr);
     return TCL_OK;
 }
@@ -3488,7 +3488,7 @@ TclCompileBasic0ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords != 1) {
+    if ((int)parsePtr->numWords != 1) {
 	return TCL_ERROR;
     }
 
@@ -3510,7 +3510,7 @@ TclCompileBasic1ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords != 2) {
+    if ((int)parsePtr->numWords != 2) {
 	return TCL_ERROR;
     }
 
@@ -3532,7 +3532,7 @@ TclCompileBasic2ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords != 3) {
+    if ((int)parsePtr->numWords != 3) {
 	return TCL_ERROR;
     }
 
@@ -3554,7 +3554,7 @@ TclCompileBasic3ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords != 4) {
+    if ((int)parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
 
@@ -3576,7 +3576,7 @@ TclCompileBasic0Or1ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords != 1 && parsePtr->numWords != 2) {
+    if ((int)parsePtr->numWords != 1 && (int)parsePtr->numWords != 2) {
 	return TCL_ERROR;
     }
 
@@ -3598,7 +3598,7 @@ TclCompileBasic1Or2ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords != 2 && parsePtr->numWords != 3) {
+    if ((int)parsePtr->numWords != 2 && (int)parsePtr->numWords != 3) {
 	return TCL_ERROR;
     }
 
@@ -3620,7 +3620,7 @@ TclCompileBasic2Or3ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords != 3 && parsePtr->numWords != 4) {
+    if ((int)parsePtr->numWords != 3 && (int)parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
 
@@ -3642,7 +3642,7 @@ TclCompileBasic0To2ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords < 1 || parsePtr->numWords > 3) {
+    if ((int)parsePtr->numWords < 1 || (int)parsePtr->numWords > 3) {
 	return TCL_ERROR;
     }
 
@@ -3664,7 +3664,7 @@ TclCompileBasic1To3ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords < 2 || parsePtr->numWords > 4) {
+    if ((int)parsePtr->numWords < 2 || (int)parsePtr->numWords > 4) {
 	return TCL_ERROR;
     }
 
@@ -3686,7 +3686,7 @@ TclCompileBasicMin0ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords < 1) {
+    if ((int)parsePtr->numWords < 1) {
 	return TCL_ERROR;
     }
 
@@ -3708,7 +3708,7 @@ TclCompileBasicMin1ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords < 2) {
+    if ((int)parsePtr->numWords < 2) {
 	return TCL_ERROR;
     }
 
@@ -3730,7 +3730,7 @@ TclCompileBasicMin2ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if (parsePtr->numWords < 3) {
+    if ((int)parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
 

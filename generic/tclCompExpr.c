@@ -915,7 +915,7 @@ ParseExpr(
 	     */
 
 	    TclGrowParseTokenArray(parsePtr, 2);
-	    wordIndex = parsePtr->numTokens;
+	    wordIndex = (int)parsePtr->numTokens;
 	    tokenPtr = parsePtr->tokenPtr + wordIndex;
 	    tokenPtr->type = TCL_TOKEN_WORD;
 	    tokenPtr->start = start;
@@ -955,7 +955,7 @@ ParseExpr(
 		Tcl_Parse *nestedPtr = (Tcl_Parse *)
 			TclStackAlloc(interp, sizeof(Tcl_Parse));
 
-		tokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+		tokenPtr = parsePtr->tokenPtr + (int)parsePtr->numTokens;
 		tokenPtr->type = TCL_TOKEN_COMMAND;
 		tokenPtr->start = start;
 		tokenPtr->numComponents = 0;
@@ -1023,7 +1023,7 @@ ParseExpr(
 
 	    tokenPtr = parsePtr->tokenPtr + wordIndex;
 	    tokenPtr->size = scanned;
-	    tokenPtr->numComponents = parsePtr->numTokens - wordIndex - 1;
+	    tokenPtr->numComponents = (int)parsePtr->numTokens - wordIndex - 1;
 	    if (!parseOnly && ((lexeme == QUOTED) || (lexeme == BRACED))) {
 		/*
 		 * When this expression is destined to be compiled, and a
@@ -1560,7 +1560,7 @@ ConvertTreeToTokens(
 	    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
 
 	    TclGrowParseTokenArray(parsePtr, 2);
-	    subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+	    subExprTokenPtr = parsePtr->tokenPtr + (int)parsePtr->numTokens;
 	    subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
 	    subExprTokenPtr->start = start;
 	    subExprTokenPtr->size = scanned;
@@ -1599,7 +1599,7 @@ ConvertTreeToTokens(
 		 */
 
 		TclGrowParseTokenArray(parsePtr, toCopy);
-		subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+		subExprTokenPtr = parsePtr->tokenPtr + (int)parsePtr->numTokens;
 		memcpy(subExprTokenPtr, tokenPtr,
 			toCopy * sizeof(Tcl_Token));
 		subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
@@ -1612,7 +1612,7 @@ ConvertTreeToTokens(
 		 */
 
 		TclGrowParseTokenArray(parsePtr, toCopy+1);
-		subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+		subExprTokenPtr = parsePtr->tokenPtr + (int)parsePtr->numTokens;
 		*subExprTokenPtr = *tokenPtr;
 		subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
 		subExprTokenPtr->numComponents++;
@@ -1678,7 +1678,7 @@ ConvertTreeToTokens(
 		 */
 
 		TclGrowParseTokenArray(parsePtr, 2);
-		subExprTokenIdx = parsePtr->numTokens;
+		subExprTokenIdx = (int)parsePtr->numTokens;
 		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
 		parsePtr->numTokens += 2;
 		subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
@@ -1806,7 +1806,7 @@ ConvertTreeToTokens(
 		 */
 
 		subExprTokenPtr->numComponents =
-			(parsePtr->numTokens - subExprTokenIdx) - 1;
+			((int)parsePtr->numTokens - subExprTokenIdx) - 1;
 
 		/*
 		 * Finally, as we return up the tree to our parent, pop the

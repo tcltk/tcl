@@ -196,12 +196,12 @@ return parse information in two data structures, Tcl_Parse and Tcl_Token:
 .CS
 typedef struct Tcl_Parse {
     const char *\fIcommentStart\fR;
-    int \fIcommentSize\fR;
+    size_t \fIcommentSize\fR;
     const char *\fIcommandStart\fR;
-    int \fIcommandSize\fR;
-    int \fInumWords\fR;
+    size_t \fIcommandSize\fR;
+    size_t \fInumWords\fR;
     Tcl_Token *\fItokenPtr\fR;
-    int \fInumTokens\fR;
+    size_t \fInumTokens\fR;
     ...
 } \fBTcl_Parse\fR;
 

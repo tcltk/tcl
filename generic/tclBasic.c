@@ -5146,7 +5146,7 @@ TclEvalEx(
 		parsePtr->commandStart - outerScript);
 
 	gotParse = 1;
-	if (parsePtr->numWords > 0) {
+	if ((int)parsePtr->numWords > 0) {
 	    /*
 	     * TIP #280. Track lines within the words of the current
 	     * command. We use a separate pointer into the table of
@@ -5302,7 +5302,7 @@ TclEvalEx(
 	    eeFramePtr->len = parsePtr->commandSize;
 
 	    if (parsePtr->term ==
-		    parsePtr->commandStart + parsePtr->commandSize - 1) {
+		    parsePtr->commandStart + (int)parsePtr->commandSize - 1) {
 		eeFramePtr->len--;
 	    }
 
@@ -5353,7 +5353,7 @@ TclEvalEx(
 	 * executed command.
 	 */
 
-	next = parsePtr->commandStart + parsePtr->commandSize;
+	next = parsePtr->commandStart + (int)parsePtr->commandSize;
 	bytesLeft -= next - p;
 	p = next;
 	TclAdvanceLines(&line, parsePtr->commandStart, p);
@@ -5379,7 +5379,7 @@ TclEvalEx(
 	}
     }
     if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-	commandLength = parsePtr->commandSize;
+	commandLength = (int)parsePtr->commandSize;
 	if (parsePtr->term == parsePtr->commandStart + commandLength - 1) {
 	    /*
 	     * The terminator character (such as ; or ]) of the command where
