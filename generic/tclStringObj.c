@@ -55,6 +55,8 @@ static void		AppendUtfToUtfRep(Tcl_Obj *objPtr,
 			    const char *bytes, int numBytes);
 static void		DupStringInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
+static void		DupUCS4InternalRep(Tcl_Obj *objPtr,
+			    Tcl_Obj *copyPtr);
 static int		ExtendStringRepWithUnicode(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
 static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
@@ -62,13 +64,16 @@ static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
 			    int numAppendChars);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
+static void		FreeUCS4InternalRep(Tcl_Obj *objPtr);
 static void		GrowStringBuffer(Tcl_Obj *objPtr, int needed, int flag);
 static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, int needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static int		SetUCS4FromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		SetUnicodeObj(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
 static int		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
+static void		UpdateStringOfUCS4(Tcl_Obj *objPtr);
 
 #define ISCONTINUATION(bytes) (\
 	((((bytes)[0] & 0xC0) == 0x80) || (((bytes)[0] == '\xED') \
@@ -87,6 +92,19 @@ const Tcl_ObjType tclStringType = {
     UpdateStringOfString,	/* updateStringProc */
     SetStringFromAny		/* setFromAnyProc */
 };
+
+#if TCL_UTF_MAX < 4
+
+const Tcl_ObjType ucs4Type = {
+    "ucs4",			/* name */
+    FreeUCS4InternalRep,	/* freeIntRepPro */
+    DupUCS4InternalRep,		/* dupIntRepProc */
+    UpdateStringOfUCS4,		/* updateStringProc */
+    SetUCS4FromAny		/* setFromAnyProc */
+}
+
+#endif
+
 
 /*
  * TCL STRING GROWTH ALGORITHM
@@ -388,6 +406,52 @@ Tcl_NewUnicodeObj(
 }
 
 /*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_NewUCS4Obj --
+ *
+ *	This function is creates a new UCS4 object and initializes it from
+ *	the ucs4 argument.
+ *
+ * Results:
+ *	The newly created object is returned. This object will have no initial
+ *	string representation. The returned object has a ref count of 0.
+ *
+ * Side effects:
+ *	Memory allocated for new object and its internal rep.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+#if TCL_UTF_MAX < 4
+
+/* TODO: Consider size_t for numChars */
+
+Tcl_Obj *
+Tcl_NewUCS4Obj(
+    const int *ucs4,	/* The initial value in the UCS4 encoding */
+    int numChars)	/* Number of characters in the initial value */ 
+{
+    Tcl_Obj *objPtr;
+
+    TclNewObj(objPtr);
+    SetUCS4Obj(objPtr, ucs4, numChars);
+    return objPtr;
+}
+
+#else
+
+Tcl_Obj *
+Tcl_NewUCS4Obj(
+    const int *ucs4,	/* The initial value in the UCS4 encoding */
+    int numChars)	/* Number of characters in the initial value */ 
+{
+    return Tcl_NewUnicodeObj((Tcl_UniChar *)ucs4, numChars);
+}
+
+#endif
+
+/*
  *----------------------------------------------------------------------
  *
  * Tcl_GetCharLength --
@@ -438,6 +502,9 @@ Tcl_GetCharLength(
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
 	return length;
     }
+
+
+    /* TODO: Handle UCS4 */
 
     /*
      * OK, need to work with the object as a string.
