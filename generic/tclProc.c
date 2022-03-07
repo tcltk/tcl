@@ -1504,7 +1504,7 @@ TclPushProcCallFrame(
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
-    int objc,			/* Count of number of arguments to this
+    size_t objc1,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[],	/* Argument value objects. */
     int isLambda)		/* 1 if this is a call by ApplyObjCmd: it
@@ -1515,6 +1515,7 @@ TclPushProcCallFrame(
     CallFrame *framePtr, **framePtrPtr;
     int result;
     ByteCode *codePtr;
+    int objc = objc1;
 
     /*
      * If necessary (i.e. if we haven't got a suitable compilation already

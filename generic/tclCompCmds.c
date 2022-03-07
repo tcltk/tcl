@@ -3354,7 +3354,7 @@ TclCompileFormatCmd(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclLocalScalarFromToken(
     Tcl_Token *tokenPtr,
     CompileEnv *envPtr)
@@ -3368,7 +3368,7 @@ TclLocalScalarFromToken(
     return index;
 }
 
-int
+size_t
 TclLocalScalar(
     const char *bytes,
     size_t numBytes,

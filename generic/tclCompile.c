@@ -2382,7 +2382,7 @@ TclCompileTokens(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * compile. */
-    int count,			/* Number of tokens to consider at tokenPtr.
+    size_t count1,			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
@@ -2396,6 +2396,7 @@ TclCompileTokens(
     int isLiteral, maxNumCL, numCL;
     int *clPosition = NULL;
     int depth = TclGetStackDepth(envPtr);
+    int count = count1;
 
     /*
      * if this is actually a literal, handle continuation lines by
@@ -2599,10 +2600,12 @@ TclCompileCmdWord(
     Tcl_Interp *interp,		/* Used for error and status reporting. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens for
 				 * a command word to compile inline. */
-    int count,			/* Number of tokens to consider at tokenPtr.
+    size_t count1,			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
+    int count = count1;
+
     if ((count == 1) && (tokenPtr->type == TCL_TOKEN_TEXT)) {
 	/*
 	 * The common case that there is a single text token. Compile it
@@ -2648,13 +2651,14 @@ TclCompileExprWords(
     Tcl_Token *tokenPtr,	/* Points to first in an array of word tokens
 				 * tokens for the expression to compile
 				 * inline. */
-    int numWords,		/* Number of word tokens starting at tokenPtr.
+    size_t numWords1,		/* Number of word tokens starting at tokenPtr.
 				 * Must be at least 1. Each word token
 				 * contains one or more subtokens. */
     CompileEnv *envPtr)		/* Holds the resulting instructions. */
 {
     Tcl_Token *wordPtr;
     int i, concatItems;
+    int numWords = numWords1;
 
     /*
      * If the expression is a single word that doesn't require substitutions,
@@ -2975,7 +2979,7 @@ TclInitByteCodeObj(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclFindCompiledLocal(
     const char *name,	/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
@@ -3009,7 +3013,7 @@ TclFindCompiledLocal(
 	size_t len;
 
 	if (!cachePtr || !name) {
-	    return -1;
+	    return TCL_INDEX_NONE;
 	}
 
 	varNamePtr = &cachePtr->varName0;
@@ -3021,7 +3025,7 @@ TclFindCompiledLocal(
 		}
 	    }
 	}
-	return -1;
+	return TCL_INDEX_NONE;
     }
 
     if (name != NULL) {

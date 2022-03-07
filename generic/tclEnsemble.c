@@ -2920,7 +2920,7 @@ TclCompileEnsemble(
 
     TclNewObj(replaced);
     Tcl_IncrRefCount(replaced);
-    if ((int)parsePtr->numWords < depth + 1) {
+    if ((int)parsePtr->numWords <= depth) {
 	goto failed;
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -3242,7 +3242,7 @@ int
 TclAttemptCompileProc(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    int depth,
+    size_t depth1,
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
@@ -3256,6 +3256,7 @@ TclAttemptCompileProc(
 #ifdef TCL_COMPILE_DEBUG
     int savedExceptDepth = envPtr->exceptDepth;
 #endif
+    int depth = depth1;
 
     if (cmdPtr->compileProc == NULL) {
 	return TCL_ERROR;

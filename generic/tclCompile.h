@@ -1071,17 +1071,17 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  */
 
 MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
+			    Tcl_Parse *parsePtr, size_t depth, Command *cmdPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, int count,
+			    Tcl_Token *tokenPtr, size_t count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
 			    size_t numBytes, CompileEnv *envPtr, int optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, int numWords,
+			    Tcl_Token *tokenPtr, size_t numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileInvocation(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, size_t numWords,
@@ -1092,7 +1092,7 @@ MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, int count,
+			    Tcl_Token *tokenPtr, size_t count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
@@ -1117,7 +1117,7 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, size_t index);
-MODULE_SCOPE int	TclFindCompiledLocal(const char *name, size_t nameChars,
+MODULE_SCOPE size_t	TclFindCompiledLocal(const char *name, size_t nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
@@ -1146,9 +1146,9 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
-MODULE_SCOPE int	TclLocalScalar(const char *bytes, size_t numBytes,
+MODULE_SCOPE size_t	TclLocalScalar(const char *bytes, size_t numBytes,
 			    CompileEnv *envPtr);
-MODULE_SCOPE int	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
+MODULE_SCOPE size_t	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG
@@ -1196,7 +1196,7 @@ MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
 
@@ -1246,10 +1246,10 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 
 #define TclCheckStackDepth(depth, envPtr)				\
     do {								\
-	int _dd = (depth);						\
-	if (_dd != (envPtr)->currStackDepth) {				\
-	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
-		    (envPtr)->currStackDepth, _dd);		\
+	size_t _dd = (depth);						\
+	if (_dd != (size_t)(envPtr)->currStackDepth) {				\
+	    Tcl_Panic("bad stack depth computations: is %" TCL_Z_MODIFIER "u, should be %" TCL_Z_MODIFIER "u", \
+		    (size_t)(envPtr)->currStackDepth, _dd);		\
 	}								\
     } while (0)
 
