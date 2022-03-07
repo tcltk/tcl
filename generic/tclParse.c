@@ -2092,7 +2092,7 @@ TclSubstTokens(
 				 * errors. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * evaluate and concatenate. */
-    int count,			/* Number of tokens to consider at tokenPtr.
+    size_t count1,			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     int *tokensLeftPtr,		/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
@@ -2123,6 +2123,7 @@ TclSubstTokens(
     int *clPosition = NULL;
     Interp *iPtr = (Interp *) interp;
     int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
+    int count = count1;
 
     /*
      * Each pass through this loop will substitute one token, and its

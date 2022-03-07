@@ -107,7 +107,7 @@ static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		GetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    size_t endValue, Tcl_WideInt *widePtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
-			    int stringLength, const char *typeStr,
+			    size_t stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
 			    const char **nextPtr, size_t *sizePtr,
 			    int *literalPtr);
@@ -521,7 +521,7 @@ TclFindDictElement(
 				 * containing a Tcl dictionary with zero or
 				 * more keys and values (possibly in
 				 * braces). */
-    int dictLength,		/* Number of bytes in the dict's string. */
+    size_t dictLength,		/* Number of bytes in the dict's string. */
     const char **elementPtr,	/* Where to put address of first significant
 				 * character in the first element (i.e., key
 				 * or value) of dict. */
@@ -550,7 +550,7 @@ FindElement(
 				 * containing a Tcl list or dictionary with
 				 * zero or more elements (possibly in
 				 * braces). */
-    int stringLength,		/* Number of bytes in the string. */
+    size_t stringLength1,		/* Number of bytes in the string. */
     const char *typeStr,	/* The name of the type of thing we are
 				 * parsing, for error messages. */
     const char *typeCode,	/* The type code for thing we are parsing, for
@@ -578,6 +578,7 @@ FindElement(
     size_t numChars;
     int literal = 1;
     const char *p2;
+    int stringLength = stringLength1;
 
     /*
      * Skim off leading white space and check for an opening brace or quote.

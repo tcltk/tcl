@@ -2896,7 +2896,7 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
-			    const char *dict, int dictLength,
+			    const char *dict, size_t dictLength,
 			    const char **elementPtr, const char **nextPtr,
 			    size_t *sizePtr, int *literalPtr);
 /* TIP #280 - Modified token based evaluation, with line information. */
@@ -3178,13 +3178,13 @@ MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 MODULE_SCOPE void	TclSubstCompile(Tcl_Interp *interp, const char *bytes,
 			    size_t numBytes, int flags, int line,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE int	TclSubstOptions(Tcl_Interp *interp, int numOpts,
+MODULE_SCOPE int	TclSubstOptions(Tcl_Interp *interp, size_t numOpts,
 			    Tcl_Obj *const opts[], int *flagPtr);
 MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 			    size_t numBytes, int flags, Tcl_Parse *parsePtr,
 			    Tcl_InterpState *statePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-			    int count, int *tokensLeftPtr, int line,
+			    size_t count, int *tokensLeftPtr, int line,
 			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE size_t	TclTrim(const char *bytes, size_t numBytes,
 			    const char *trim, size_t numTrim, size_t *trimRight);
