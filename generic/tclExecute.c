@@ -8661,9 +8661,9 @@ ExecuteExtendedBinaryMathOp(
 		    && ((size_t)shift < CHAR_BIT*sizeof(Tcl_WideInt))) {
 		TclGetWideIntFromObj(NULL, valuePtr, &w1);
 		if (!((w1>0 ? w1 : ~w1)
-			& -(((Tcl_WideInt)1)
+			& -(((Tcl_WideUInt)1)
 			<< (CHAR_BIT*sizeof(Tcl_WideInt) - 1 - shift)))) {
-		    WIDE_RESULT(w1 << shift);
+		    WIDE_RESULT((Tcl_WideUInt)w1 << shift);
 		}
 	    }
 	} else {
