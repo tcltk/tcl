@@ -4510,7 +4510,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *)ckalloc((len) + 1); \
+	(objPtr)->bytes = (char *)ckalloc((unsigned int)(len) + 1U); \
 	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
