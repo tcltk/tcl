@@ -510,6 +510,9 @@ test string-5.20.$noComp {string index, bytearray object out of bounds} -body {
 test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints fullutf -body {
     run {list [string index a\U100000b 1] [string index a\U100000b 2] [string index a\U100000b 3]}
 } -result [list \U100000 b {}]
+test string-5.22.$noComp {string index} -constraints testbytestring -body {
+    run {list [scan [string index [testbytestring \xFF] 0] %c var] $var}
+} -result {1 255}
 
 
 test string-6.1.$noComp {string is, not enough args} {
