@@ -2231,8 +2231,8 @@ Tcl_Obj *const *
 TclFetchEnsembleRoot(
     Tcl_Interp *interp,
     Tcl_Obj *const *objv,
-    int objc,
-    int *objcPtr)
+    size_t objc,
+    size_t *objcPtr)
 {
     Tcl_Obj *const *sourceObjs;
     Interp *iPtr = (Interp *) interp;

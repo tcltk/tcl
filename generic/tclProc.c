@@ -1675,7 +1675,7 @@ TclNRInterpProcCore(
 #if defined(TCL_COMPILE_DEBUG)
     if (tclTraceExec >= 1) {
 	CallFrame *framePtr = iPtr->varFramePtr;
-	int i;
+	size_t i;
 
 	if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	    fprintf(stdout, "Calling lambda ");

@@ -1110,7 +1110,13 @@ typedef struct CallFrame {
 				 * If FRAME_IS_PROC is set, the frame was
 				 * pushed to execute a Tcl procedure and may
 				 * have local vars. */
-    int objc;			/* This and objv below describe the arguments
+#if TCL_MAJOR_VERSION > 8
+    int level;			/* Level of this procedure, for "uplevel"
+				 * purposes (i.e. corresponds to nesting of
+				 * callerVarPtr's, not callerPtr's). 1 for
+				 * outermost procedure, 0 for top-level. */
+#endif
+    size_t objc;			/* This and objv below describe the arguments
 				 * for this procedure call. */
     Tcl_Obj *const *objv;	/* Array of argument objects. */
     struct CallFrame *callerPtr;
@@ -1124,10 +1130,9 @@ typedef struct CallFrame {
 				 * callerPtr unless an "uplevel" command or
 				 * something equivalent was active in the
 				 * caller). */
-    int level;			/* Level of this procedure, for "uplevel"
-				 * purposes (i.e. corresponds to nesting of
-				 * callerVarPtr's, not callerPtr's). 1 for
-				 * outermost procedure, 0 for top-level. */
+#if TCL_MAJOR_VERSION < 9
+    int level;
+#endif
     Proc *procPtr;		/* Points to the structure defining the called
 				 * procedure. Used to get information such as
 				 * the number of compiled local variables
@@ -1138,8 +1143,8 @@ typedef struct CallFrame {
 				 * recognized by the compiler, or created at
 				 * execution time through, e.g., upvar.
 				 * Initially NULL and created if needed. */
-    int numCompiledLocals;	/* Count of local variables recognized by the
-				 * compiler including arguments. */
+    size_t numCompiledLocals;	/* Count of local variables recognized
+				 * by the compiler including arguments. */
     Var *compiledLocals;	/* Points to the array of local variables
 				 * recognized by the compiler. The compiler
 				 * emits code that refers to these variables
@@ -2922,7 +2927,7 @@ MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 			    Tcl_DString *toAppendPtr);
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
 MODULE_SCOPE Tcl_Obj *const *TclFetchEnsembleRoot(Tcl_Interp *interp,
-			    Tcl_Obj *const *objv, int objc, int *objcPtr);
+			    Tcl_Obj *const *objv, size_t objc, size_t *objcPtr);
 MODULE_SCOPE Tcl_Obj *const *TclEnsembleGetRewriteValues(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Namespace *TclEnsureNamespace(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr);

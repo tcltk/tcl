@@ -619,7 +619,7 @@ TclObjLookupVarEx(
     if (localIndex >= 0) {
 	if (HasLocalVars(varFramePtr)
 		&& !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
-		&& (localIndex < varFramePtr->numCompiledLocals)) {
+		&& (localIndex < (int)varFramePtr->numCompiledLocals)) {
 	    /*
 	     * Use the cached index if the names coincide.
 	     */
@@ -4763,9 +4763,9 @@ Tcl_GetVariableFullName(
 	    Tcl_AppendObjToObj(objPtr, namePtr);
 	}
     } else if (iPtr->varFramePtr->procPtr) {
-	int index = varPtr - iPtr->varFramePtr->compiledLocals;
+	size_t index = varPtr - iPtr->varFramePtr->compiledLocals;
 
-	if (index >= 0 && index < iPtr->varFramePtr->numCompiledLocals) {
+	if (index < iPtr->varFramePtr->numCompiledLocals) {
 	    namePtr = localName(iPtr->varFramePtr, index);
 	    Tcl_AppendObjToObj(objPtr, namePtr);
 	}
@@ -5389,7 +5389,7 @@ TclDeleteCompiledLocalVars(
 				 * assigned local variables to delete. */
 {
     Var *varPtr;
-    int numLocals, i;
+    size_t numLocals, i;
     Tcl_Obj **namePtrPtr;
 
     numLocals = framePtr->numCompiledLocals;
