@@ -3164,7 +3164,7 @@ EnterCmdStartData(
 {
     CmdLocation *cmdLocPtr;
 
-    if ((cmdIndex < 0) || (cmdIndex >= envPtr->numCommands)) {
+    if ((size_t)cmdIndex >= envPtr->numCommands) {
 	Tcl_Panic("EnterCmdStartData: bad command index %d", cmdIndex);
     }
 
@@ -3243,7 +3243,7 @@ EnterCmdExtentData(
 {
     CmdLocation *cmdLocPtr;
 
-    if ((cmdIndex < 0) || (cmdIndex >= envPtr->numCommands)) {
+    if ((size_t)cmdIndex >= envPtr->numCommands) {
 	Tcl_Panic("EnterCmdExtentData: bad command index %d", cmdIndex);
     }
 
@@ -4028,7 +4028,7 @@ TclFixupForwardJump(
      */
 
     firstCmd = jumpFixupPtr->cmdIndex;
-    lastCmd = envPtr->numCommands - 1;
+    lastCmd = (int)envPtr->numCommands - 1;
     if (firstCmd < lastCmd) {
 	for (k = firstCmd;  k <= lastCmd;  k++) {
 	    envPtr->cmdMapPtr[k].codeOffset += 3;

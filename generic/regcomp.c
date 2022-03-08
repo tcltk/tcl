@@ -410,7 +410,7 @@ compile(
     assert(v->nlacons == 0 || v->lacons != NULL);
     for (i = 1; i < v->nlacons; i++) {
 	if (debug != NULL) {
-	    fprintf(debug, "\n\n\n========= LA%" TCL_Z_MODIFIER "d ==========\n", i);
+	    fprintf(debug, "\n\n\n========= LA%" TCL_Z_MODIFIER "u ==========\n", i);
 	}
 	nfanode(v, &v->lacons[i], debug);
     }
@@ -2064,7 +2064,7 @@ dump(
     }
 
     fprintf(f, "\n\n\n========= DUMP ==========\n");
-    fprintf(f, "nsub %" TCL_Z_MODIFIER "d, info 0%lo, ntree %d\n",
+    fprintf(f, "nsub %" TCL_Z_MODIFIER "u, info 0%lo, ntree %d\n",
 	    re->re_nsub, re->re_info, g->ntree);
 
     dumpcolors(&g->cmap, f);

@@ -893,7 +893,7 @@ TclCompileStringLenCmd(
 	char buf[TCL_INTEGER_SPACE];
 	size_t len = Tcl_GetCharLength(objPtr);
 
-	len = sprintf(buf, "%" TCL_Z_MODIFIER "d", len);
+	len = sprintf(buf, "%" TCL_Z_MODIFIER "u", len);
 	PushLiteral(envPtr, buf, len);
     } else {
 	SetLineInformation(1);

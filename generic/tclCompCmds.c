@@ -3022,7 +3022,7 @@ PrintNewForeachInfo(
     ForeachVarList *varsPtr;
     size_t i, j;
 
-    Tcl_AppendPrintfToObj(appendObj, "jumpOffset=%+" TCL_Z_MODIFIER "d, vars=",
+    Tcl_AppendPrintfToObj(appendObj, "jumpOffset=%+" TCL_Z_MODIFIER "u, vars=",
 	    infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {

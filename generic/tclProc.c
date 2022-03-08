@@ -492,7 +492,7 @@ TclCreateProc(
     if (precompiled) {
 	if (numArgs > (size_t)procPtr->numArgs) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "procedure \"%s\": arg list contains %" TCL_Z_MODIFIER "d entries, "
+		    "procedure \"%s\": arg list contains %" TCL_Z_MODIFIER "u entries, "
 		    "precompiled header expects %d", procName, numArgs,
 		    procPtr->numArgs));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
@@ -587,7 +587,7 @@ TclCreateProc(
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
 		    || (localPtr->defValuePtr != NULL && fieldCount != 2)) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"procedure \"%s\": formal parameter %" TCL_Z_MODIFIER "d is "
+			"procedure \"%s\": formal parameter %" TCL_Z_MODIFIER "u is "
 			"inconsistent with precompiled body", procName, i));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 			"BYTECODELIES", NULL);

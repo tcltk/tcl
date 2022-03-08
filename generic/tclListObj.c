@@ -1763,7 +1763,7 @@ TclListObjSetElement(
 	if (length == 0) {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%" TCL_Z_MODIFIER "d\" out of range", index));
+			"index \"%" TCL_Z_MODIFIER "u\" out of range", index));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX",
 			"OUTOFRANGE", NULL);
 	    }
@@ -1785,7 +1785,7 @@ TclListObjSetElement(
     if (index>=elemCount) {
 	if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"index \"%" TCL_Z_MODIFIER "d\" out of range", index));
+			"index \"%" TCL_Z_MODIFIER "u\" out of range", index));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX",
 		    "OUTOFRANGE", NULL);
 	}

@@ -290,13 +290,13 @@ typedef struct CompileEnv {
 				 * SetByteCodeFromAny. This pointer is not
 				 * owned by the CompileEnv and must not be
 				 * freed or changed by it. */
-    int numSrcBytes;		/* Number of bytes in source. */
+    size_t numSrcBytes;		/* Number of bytes in source. */
     Proc *procPtr;		/* If a procedure is being compiled, a pointer
 				 * to its Proc structure; otherwise NULL. Used
 				 * to compile local variables. Set from
 				 * information provided by ObjInterpProc in
 				 * tclProc.c. */
-    int numCommands;		/* Number of commands compiled. */
+    size_t numCommands;		/* Number of commands compiled. */
     int exceptDepth;		/* Current exception range nesting level; -1
 				 * if not in any range currently. */
     int maxExceptDepth;		/* Max nesting level of exception ranges; -1
@@ -316,6 +316,10 @@ typedef struct CompileEnv {
 				 * array byte. */
     int mallocedCodeArray;	/* Set 1 if code array was expanded and
 				 * codeStart points into the heap.*/
+#if TCL_MAJOR_VERSION > 8
+    int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
+				 * exceptArrayPtr points in heap, else 0. */
+#endif
     LiteralEntry *literalArrayPtr;
     				/* Points to start of LiteralEntry array. */
     int literalArrayNext;	/* Index of next free object array entry. */
@@ -331,8 +335,9 @@ typedef struct CompileEnv {
 				 * current range's array entry. */
     int exceptArrayEnd;		/* Index after the last ExceptionRange array
 				 * entry. */
-    int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
-				 * exceptArrayPtr points in heap, else 0. */
+#if TCL_MAJOR_VERSION < 9
+    int mallocedExceptArray;
+#endif
     ExceptionAux *exceptAuxArrayPtr;
 				/* Array of information used to restore the
 				 * state when processing BREAK/CONTINUE
@@ -345,14 +350,19 @@ typedef struct CompileEnv {
     int cmdMapEnd;		/* Index after last CmdLocation entry. */
     int mallocedCmdMap;		/* 1 if command map array was expanded and
 				 * cmdMapPtr points in the heap, else 0. */
+#if TCL_MAJOR_VERSION > 8
+    int mallocedAuxDataArray;	/* 1 if aux data array was expanded and
+				 * auxDataArrayPtr points in heap else 0. */
+#endif
     AuxData *auxDataArrayPtr;	/* Points to auxiliary data array start. */
     int auxDataArrayNext;	/* Next free compile aux data array index.
 				 * auxDataArrayNext is the number of aux data
 				 * items and (auxDataArrayNext-1) is index of
 				 * current aux data array entry. */
     int auxDataArrayEnd;	/* Index after last aux data array entry. */
-    int mallocedAuxDataArray;	/* 1 if aux data array was expanded and
-				 * auxDataArrayPtr points in heap else 0. */
+#if TCL_MAJOR_VERSION < 9
+    int mallocedAuxDataArray;
+#endif
     unsigned char staticCodeSpace[COMPILEENV_INIT_CODE_BYTES];
 				/* Initial storage for code. */
     LiteralEntry staticLiteralSpace[COMPILEENV_INIT_NUM_OBJECTS];

@@ -2658,7 +2658,7 @@ TEBCresume(
 	/* Ugly abuse! */
 	starting = 1;
 #endif
-	TRACE(("=> drop %" TCL_Z_MODIFIER "d items\n", objc));
+	TRACE(("=> drop %" TCL_Z_MODIFIER "u items\n", objc));
 	NEXT_INST_V(1, objc, 0);
 
     case INST_EXPAND_STKTOP: {
