@@ -565,14 +565,14 @@ UpdateStringOfByteArray(
     size = length;
     for (i = 0; i < length && size >= 0; i++) {
 	if ((src[i] == 0) || (src[i] > 127)) {
-	    size++;
+	    size = (int)((unsigned int)size + 1U);
 	}
     }
     if (size < 0) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
-    dst = (char *)ckalloc(size + 1);
+    dst = (char *)ckalloc((unsigned int)size + 1U);
     objPtr->bytes = dst;
     objPtr->length = size;
 
