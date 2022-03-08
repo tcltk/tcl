@@ -101,7 +101,7 @@ const Tcl_ObjType ucs4Type = {
     DupUCS4InternalRep,		/* dupIntRepProc */
     UpdateStringOfUCS4,		/* updateStringProc */
     SetUCS4FromAny		/* setFromAnyProc */
-}
+};
 
 #endif
 
@@ -628,7 +628,7 @@ Tcl_GetUniChar(
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
-	    return (Tcl_UniChar) objPtr->bytes[index];
+	    return (int) objPtr->bytes[index];
 	}
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
