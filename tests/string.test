@@ -323,6 +323,13 @@ test string-5.20 {string index, bytearray object out of bounds} {
     string index [binary format I* {0x50515253 0x52}] 20
 } {}
 
+test string-5.22 {string index} -constraints testbytestring -setup {
+    set string string
+} -body {
+    list [scan [$string index [testbytestring \xFF] 0] %c var] $var
+} -cleanup {
+    unset string
+} -result {1 255}
 
 proc largest_int {} {
     # This will give us what the largest valid int on this machine is,
