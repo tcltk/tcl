@@ -1075,7 +1075,7 @@ Tcl_ExternalToUtfDString(
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
-    size_t srcLen,		/* Source string length in bytes, or -1 for
+    ssize_t srcLen,		/* Source string length in bytes, or -1 for
 				 * encoding-specific string length. */
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
@@ -1151,7 +1151,7 @@ Tcl_ExternalToUtf(
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
-    size_t srcLen,		/* Source string length in bytes, or -1
+    ssize_t srcLen,		/* Source string length in bytes, or -1
 				 * for encoding-specific string length. */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
@@ -1268,7 +1268,7 @@ Tcl_UtfToExternalDString(
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
-    size_t srcLen,		/* Source string length in bytes, or -1 for
+    ssize_t srcLen,		/* Source string length in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
@@ -1344,7 +1344,7 @@ Tcl_UtfToExternal(
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
-    size_t srcLen,		/* Source string length in bytes, or -1
+    ssize_t srcLen,		/* Source string length in bytes, or -1
 				 * for strlen(). */
     int flags,			/* Conversion control flags. */
     Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
@@ -1730,7 +1730,7 @@ LoadTableEncoding(
     for (i = 0; i < numPages; i++) {
 	int ch;
 	const char *p;
-	size_t expected = 3 + 16 * (16 * 4 + 1);
+	ssize_t expected = 3 + 16 * (16 * 4 + 1);
 
 	if (Tcl_ReadChars(chan, objPtr, expected, 0) != expected) {
 	    return NULL;

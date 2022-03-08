@@ -521,11 +521,11 @@ static int
 MakeByteArray(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
-    size_t limit,
+    ssize_t limit,
     int demandProper,
     ByteArray **byteArrayPtrPtr)
 {
-    size_t length;
+    ssize_t length;
     const char *src = Tcl_GetStringFromObj(objPtr, &length);
     size_t numBytes
 	    = (limit != TCL_INDEX_NONE && limit < length) ? limit : length;
@@ -755,7 +755,7 @@ void
 TclAppendBytesToByteArray(
     Tcl_Obj *objPtr,
     const unsigned char *bytes,
-    size_t len)
+    ssize_t len)
 {
     ByteArray *byteArrayPtr;
     size_t needed;

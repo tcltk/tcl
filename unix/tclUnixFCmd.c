@@ -549,7 +549,7 @@ TclUnixCopyFile(
     int srcFd, dstFd;
     size_t blockSize;		/* Optimal I/O blocksize for filesystem */
     char *buffer;		/* Data buffer for copy */
-    size_t nread;
+    ssize_t nread;
 
 #ifdef DJGPP
 #define BINMODE |O_BINARY
@@ -609,7 +609,7 @@ TclUnixCopyFile(
 	if ((nread == TCL_IO_FAILURE) || (nread == 0)) {
 	    break;
 	}
-	if ((size_t) write(dstFd, buffer, nread) != nread) {
+	if (write(dstFd, buffer, nread) != nread) {
 	    nread = TCL_IO_FAILURE;
 	    break;
 	}

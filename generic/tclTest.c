@@ -3780,7 +3780,7 @@ TestregexpObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int i, indices, stringLength, match, about;
-    size_t ii;
+    ssize_t ii;
     int hasxflags, cflags, eflags;
     Tcl_RegExp regExpr;
     const char *string;
@@ -3937,7 +3937,7 @@ TestregexpObjCmd(
 	Tcl_Obj *newPtr, *varPtr, *valuePtr;
 
 	varPtr = objv[i];
-	ii = ((cflags&REG_EXPECT) && i == objc-1) ? TCL_INDEX_NONE : (size_t)i;
+	ii = ((cflags&REG_EXPECT) && i == objc-1) ? TCL_INDEX_NONE : (ssize_t)i;
 	if (indices) {
 	    Tcl_Obj *objs[2];
 

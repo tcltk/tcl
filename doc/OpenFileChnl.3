@@ -47,34 +47,34 @@ int
 int
 \fBTcl_Close\fR(\fIinterp, channel\fR)
 .sp
-int
+ssize_t
 \fBTcl_ReadChars\fR(\fIchannel, readObjPtr, charsToRead, appendFlag\fR)
 .sp
 int
 \fBTcl_Read\fR(\fIchannel, readBuf, bytesToRead\fR)
 .sp
-size_t
+ssize_t
 \fBTcl_GetsObj\fR(\fIchannel, lineObjPtr\fR)
 .sp
-size_t
+ssize_t
 \fBTcl_Gets\fR(\fIchannel, lineRead\fR)
 .sp
-size_t
+ssize_t
 \fBTcl_Ungets\fR(\fIchannel, input, inputLen, addAtEnd\fR)
 .sp
-size_t
+ssize_t
 \fBTcl_WriteObj\fR(\fIchannel, writeObjPtr\fR)
 .sp
-size_t
+ssize_t
 \fBTcl_WriteChars\fR(\fIchannel, charBuf, bytesToWrite\fR)
 .sp
-size_t
+ssize_t
 \fBTcl_Write\fR(\fIchannel, byteBuf, bytesToWrite\fR)
 .sp
-size_t
+ssize_t
 \fBTcl_ReadRaw\fR(\fIchannel, readBuf, bytesToRead\fR)
 .sp
-size_t
+ssize_t
 \fBTcl_WriteRaw\fR(\fIchannel, byteBuf, bytesToWrite\fR)
 .sp
 int
@@ -92,7 +92,7 @@ int
 int
 \fBTcl_OutputBuffered\fR(\fIchannel\fR)
 .sp
-long long
+off_t
 \fBTcl_Seek\fR(\fIchannel, offset, seekMode\fR)
 .sp
 long long
@@ -154,7 +154,7 @@ from a procedure such as \fBTcl_OpenFileChannel\fR.
 .AP Tcl_Obj *readObjPtr in/out
 A pointer to a Tcl value in which to store the characters read from the
 channel.
-.AP size_t charsToRead in
+.AP ssize_t charsToRead in
 The number of characters to read from the channel.  If the channel's encoding
 is \fBbinary\fR, this is equivalent to the number of bytes to read from the
 channel.
@@ -163,7 +163,7 @@ If non-zero, data read from the channel will be appended to the value.
 Otherwise, the data will replace the existing contents of the value.
 .AP char *readBuf out
 A buffer in which to store the bytes read from the channel.
-.AP size_t bytesToRead in
+.AP ssize_t bytesToRead in
 The number of bytes to read from the channel.  The buffer \fIreadBuf\fR must
 be large enough to hold this many bytes.
 .AP Tcl_Obj *lineObjPtr in/out
@@ -176,7 +176,7 @@ channel.  Must have been initialized by the caller.  The line read will be
 appended to any data already in the dynamic string.
 .AP "const char" *input in
 The input to add to a channel buffer.
-.AP size_t inputLen in
+.AP ssize_t inputLen in
 Length of the input
 .AP int addAtEnd in
 Flag indicating whether the input should be added to the end or
@@ -187,7 +187,7 @@ A pointer to a Tcl value whose contents will be output to the channel.
 A buffer containing the characters to output to the channel.
 .AP "const char" *byteBuf in
 A buffer containing the bytes to output to the channel.
-.AP size_t bytesToWrite in
+.AP ssize_t bytesToWrite in
 The number of bytes to consume from \fIcharBuf\fR or \fIbyteBuf\fR and
 output to the channel.
 .AP "long long" offset in

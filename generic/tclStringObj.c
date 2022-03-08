@@ -56,10 +56,10 @@ static void		AppendUtfToUtfRep(Tcl_Obj *objPtr,
 static void		DupStringInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static size_t		ExtendStringRepWithUnicode(Tcl_Obj *objPtr,
-			    const Tcl_UniChar *unicode, size_t numChars);
+			    const Tcl_UniChar *unicode, ssize_t numChars);
 static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
 			    const char *bytes, size_t numBytes,
-			    size_t numAppendChars);
+			    ssize_t numAppendChars);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
 static void		GrowStringBuffer(Tcl_Obj *objPtr, size_t needed, int flag);
@@ -252,7 +252,7 @@ Tcl_Obj *
 Tcl_NewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    size_t length)			/* The number of bytes to copy from "bytes"
+    ssize_t length)			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
 				 * negative, use bytes up to the first NUL
 				 * byte. */
@@ -264,7 +264,7 @@ Tcl_Obj *
 Tcl_NewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    size_t length)		/* The number of bytes to copy from "bytes"
+    ssize_t length)		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If -1,
 				 * use bytes up to the first NUL byte. */
 {
@@ -312,7 +312,7 @@ Tcl_Obj *
 Tcl_DbNewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    size_t length,		/* The number of bytes to copy from "bytes"
+    ssize_t length,		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If -1,
 				 * use bytes up to the first NUL byte. */
     const char *file,		/* The name of the source file calling this
@@ -334,7 +334,7 @@ Tcl_Obj *
 Tcl_DbNewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    size_t length,		/* The number of bytes to copy from "bytes"
+    ssize_t length,		/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If -1,
 				 * use bytes up to the first NUL byte. */
     TCL_UNUSED(const char *) /*file*/,
@@ -1608,7 +1608,7 @@ AppendUtfToUtfRep(
 
     stringPtr = GET_STRING(objPtr);
     if (newLength > stringPtr->allocated) {
-	size_t offset = TCL_INDEX_NONE;
+	off_t offset = TCL_INDEX_NONE;
 
 	/*
 	 * Protect against case where unicode points into the existing
@@ -3322,7 +3322,7 @@ TclStringCmp(
     Tcl_Obj *value2Ptr,
     int checkEq,		/* comparison is only for equality */
     int nocase,			/* comparison is not case sensitive */
-    size_t reqlength)		/* requested length */
+    ssize_t reqlength)		/* requested length */
 {
     char *s1, *s2;
     int empty, match;
@@ -3505,7 +3505,7 @@ Tcl_Obj *
 TclStringFirst(
     Tcl_Obj *needle,
     Tcl_Obj *haystack,
-    size_t start)
+    ssize_t start)
 {
     size_t lh = 0, ln = Tcl_GetCharLength(needle);
     size_t value = TCL_INDEX_NONE;
@@ -3813,7 +3813,7 @@ TclStringReverse(
     }
 
     if (objPtr->bytes) {
-	size_t numChars = stringPtr->numChars;
+	ssize_t numChars = stringPtr->numChars;
 	size_t numBytes = objPtr->length;
 	char *to, *from = objPtr->bytes;
 
@@ -4035,7 +4035,7 @@ ExtendUnicodeRepWithString(
     Tcl_Obj *objPtr,
     const char *bytes,
     size_t numBytes,
-    size_t numAppendChars)
+    ssize_t numAppendChars)
 {
     String *stringPtr = GET_STRING(objPtr);
     size_t needed, numOrigChars = 0;
@@ -4248,13 +4248,13 @@ static size_t
 ExtendStringRepWithUnicode(
     Tcl_Obj *objPtr,
     const Tcl_UniChar *unicode,
-    size_t numChars)
+    ssize_t numChars)
 {
     /*
      * Pre-condition: this is the "string" Tcl_ObjType.
      */
 
-    size_t i, origLength, size = 0;
+    ssize_t i, origLength, size = 0;
     char *dst;
     String *stringPtr = GET_STRING(objPtr);
 
@@ -4275,6 +4275,8 @@ ExtendStringRepWithUnicode(
      * Quick cheap check in case we have more than enough room.
      */
 
+    // SIZE_T_MAX SIZE_MAX SSIZE_MAX  XXX -bch
+    // ssize_t = -1 <--> SSIZE_MAX
     if (numChars <= (INT_MAX - size)/TCL_UTF_MAX
 	    && stringPtr->allocated >= size + numChars * TCL_UTF_MAX) {
 	goto copyBytes;
@@ -4288,8 +4290,8 @@ ExtendStringRepWithUnicode(
      * Grow space if needed.
      */
 
-    if (size > stringPtr->allocated) {
-	GrowStringBuffer(objPtr, size, 1);
+    if (size > 0 && (size_t) size > stringPtr->allocated) {
+	GrowStringBuffer (objPtr, size, 1);
     }
 
   copyBytes:

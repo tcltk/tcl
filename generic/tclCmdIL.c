@@ -2962,7 +2962,7 @@ Tcl_LreplaceObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
-    size_t first, last;
+    ssize_t first, last;
     int listLen, numToDelete, result;
 
     if (objc < 4) {
@@ -2994,11 +2994,11 @@ Tcl_LreplaceObjCmd(
 
     if (first == TCL_INDEX_NONE) {
 	first = 0;
-    } else if (first > (size_t)listLen) {
+    } else if (first > listLen) {
 	first = listLen;
     }
 
-    if (last + 1 > (size_t)listLen) {
+    if (last + 1 > listLen) {
 	last = listLen - 1;
     }
     if (first + 1 <= last + 1) {
@@ -3143,7 +3143,8 @@ Tcl_LsearchObjCmd(
 {
     const char *bytes, *patternBytes;
     int i, match, index, result=TCL_OK, listc, bisect;
-    size_t length = 0, elemLen, start, groupSize, groupOffset, lower, upper;
+    size_t length = 0, elemLen, groupSize, groupOffset, lower, upper;
+    ssize_t start;
     int allocatedIndexVector = 0;
     int dataType, isIncreasing;
     Tcl_WideInt patWide, objWide, wide;
@@ -3514,7 +3515,7 @@ Tcl_LsearchObjCmd(
 	 * "did not match anything at all" result straight away. [Bug 1374778]
 	 */
 
-	if (start >= (size_t)listc) {
+	if (start >= listc) {
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
 	    } else {

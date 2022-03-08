@@ -427,23 +427,23 @@ TclListObjCopy(
 Tcl_Obj *
 TclListObjRange(
     Tcl_Obj *listPtr,		/* List object to take a range from. */
-    size_t fromIdx,		/* Index of first element to include. */
-    size_t toIdx)			/* Index of last element to include. */
+    ssize_t fromIdx,		/* Index of first element to include. */
+    ssize_t toIdx)		/* Index of last element to include. */
 {
     Tcl_Obj **elemPtrs;
     int listLen;
-    size_t i, newLen;
+    ssize_t i, newLen;
     List *listRepPtr;
 
     TclListObjGetElements(NULL, listPtr, &listLen, &elemPtrs);
 
-    if (fromIdx == TCL_INDEX_NONE) {
-	fromIdx = 0;
+    if (fromIdx == TCL_INDEX_NONE) { // -bch
+	fromIdx = TCL_INDEX_START;
     }
-    if (toIdx + 1 >= (size_t)listLen + 1) {
+    if (toIdx >= listLen) {
 	toIdx = listLen-1;
     }
-    if (fromIdx + 1 > toIdx + 1) {
+    if (fromIdx > toIdx) {
 	Tcl_Obj *obj;
 	TclNewObj(obj);
 	return obj;
@@ -451,9 +451,10 @@ TclListObjRange(
 
     newLen = toIdx - fromIdx + 1;
 
-    if (Tcl_IsShared(listPtr) ||
-	    ((ListRepPtr(listPtr)->refCount > 1))) {
-	return Tcl_NewListObj(newLen, &elemPtrs[fromIdx]);
+    if (Tcl_IsShared (listPtr) ||
+	((ListRepPtr (listPtr)->refCount > 1))) {
+	assert ("XXX -bch" && 0 <= fromIdx);
+	return Tcl_NewListObj (newLen, &elemPtrs [fromIdx]);
     }
 
     /*
@@ -474,7 +475,7 @@ TclListObjRange(
     for (i = 0; i < fromIdx; i++) {
 	TclDecrRefCount(elemPtrs[i]);
     }
-    for (i = toIdx + 1; i < (size_t)listLen; i++) {
+    for (i = toIdx + 1; i < listLen; i++) {
 	TclDecrRefCount(elemPtrs[i]);
     }
 

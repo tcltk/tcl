@@ -15,6 +15,8 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+
+testConstraint tempNotNetBSD [expr { ![ string equal "NetBSD" [ exec uname -s ]]}
 testConstraint zlib [llength [info commands zlib]]
 testConstraint recentZlib 0
 catch {
@@ -528,7 +530,7 @@ test zlib-9.2 "socket fcopy with push" -constraints zlib -setup {
     close $srv
     removeFile $file
 } -result {read 81920 size 81920}
-test zlib-9.3 "socket fcopy bg (identity)" -constraints {tempNotWin zlib} -setup {
+test zlib-9.3 "socket fcopy bg (identity)" -constraints {tempNotNetBSD tempNotWin zlib} -setup {
     set srv [socket -myaddr localhost -server {apply {{c a p} {
         #puts "connection from $a:$p on $c"
         chan configure $c -translation binary -buffering none -blocking 0

@@ -254,7 +254,8 @@ TclSetEnv(
 {
     Tcl_DString envString;
     size_t nameLength, valueLength;
-    size_t index, length;
+    ssize_t index;
+    size_t  length;
     char *p, *oldValue;
     const techar *p2;
 
@@ -462,7 +463,8 @@ TclUnsetEnv(
     const char *name)		/* Name of variable to remove (UTF-8). */
 {
     char *oldValue;
-    size_t length, index;
+    ssize_t index;
+    size_t length;
 #ifdef USE_PUTENV_FOR_UNSET
     Tcl_DString envString;
     char *string;
@@ -577,7 +579,8 @@ TclGetEnv(
 				 * value of the environment variable is
 				 * stored. */
 {
-    size_t length, index;
+    size_t length;
+    ssize_t index;
     const char *result;
 
     Tcl_MutexLock(&envMutex);

@@ -299,8 +299,8 @@ three:
 #undef Tcl_UniCharToUtfDString
 char *
 Tcl_UniCharToUtfDString(
-    const int *uniStr,	/* Unicode string to convert to UTF-8. */
-    size_t uniLength,		/* Length of Unicode string. */
+    const int *uniStr,		/* Unicode string to convert to UTF-8. */
+    ssize_t uniLength,		/* Length of Unicode string. */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
@@ -341,7 +341,7 @@ Tcl_UniCharToUtfDString(
 char *
 Tcl_Char16ToUtfDString(
     const unsigned short *uniStr,/* Utf-16 string to convert to UTF-8. */
-    size_t uniLength,		/* Length of Utf-16 string. */
+    ssize_t uniLength,		/* Length of Utf-16 string. */
     Tcl_DString *dsPtr)		/* UTF-8 representation of string is appended
 				 * to this previously initialized DString. */
 {
@@ -641,7 +641,7 @@ Tcl_UtfToChar16(
 int *
 Tcl_UtfToUniCharDString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
-    size_t length,			/* Length of UTF-8 string in bytes, or -1 for
+    ssize_t length,		/* Length of UTF-8 string in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Unicode representation of string is
 				 * appended to this previously initialized
@@ -698,7 +698,7 @@ Tcl_UtfToUniCharDString(
 unsigned short *
 Tcl_UtfToChar16DString(
     const char *src,		/* UTF-8 string to convert to Unicode. */
-    size_t length,			/* Length of UTF-8 string in bytes, or -1 for
+    ssize_t length,		/* Length of UTF-8 string in bytes, or -1 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Unicode representation of string is
 				 * appended to this previously initialized
@@ -802,7 +802,7 @@ Tcl_UtfCharComplete(
 size_t
 Tcl_NumUtfChars(
     const char *src,	/* The UTF-8 string to measure. */
-    size_t length)	/* The length of the string in bytes, or
+    ssize_t length)	/* The length of the string in bytes, or
 			 * TCL_INDEX_NONE for strlen(src). */
 {
     Tcl_UniChar ch = 0;
@@ -1125,8 +1125,8 @@ Tcl_UtfPrev(
 
 int
 Tcl_UniCharAtIndex(
-    const char *src,	/* The UTF-8 string to dereference. */
-    size_t index)		/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string to dereference. */
+    ssize_t index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
     int i = 0;
@@ -1169,8 +1169,8 @@ Tcl_UniCharAtIndex(
 
 const char *
 Tcl_UtfAtIndex(
-    const char *src,	/* The UTF-8 string. */
-    size_t index)		/* The position of the desired character. */
+    const char *src,		/* The UTF-8 string. */
+    ssize_t index)		/* The position of the desired character. */
 {
     Tcl_UniChar ch = 0;
 #if TCL_UTF_MAX < 4

@@ -387,7 +387,7 @@ static const Tcl_ObjType endOffsetType = {
 int
 TclMaxListLength(
     const char *bytes,
-    size_t numBytes,
+    ssize_t numBytes,
     const char **endPtr)
 {
     size_t count = 0;
@@ -1013,7 +1013,7 @@ Tcl_ScanCountedElement(
 size_t
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
-    size_t length,		/* Number of bytes in src, or -1. */
+    ssize_t length,		/* Number of bytes in src, or -1. */
     char *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
@@ -1377,8 +1377,8 @@ Tcl_ConvertCountedElement(
 
 size_t
 TclConvertElement(
-    const char *src,	/* Source information for list element. */
-    size_t length,		/* Number of bytes in src, or -1. */
+    const char *src,		/* Source information for list element. */
+    ssize_t length,		/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
@@ -1431,8 +1431,8 @@ TclConvertElement(
 	    }
 	    return p - dst;
 	} else {
-	    memcpy(dst, src, length);
-	    return length;
+	    memcpy(dst, src, length); // XXXX -bch
+	    return (size_t)length;
 	}
     }
 
@@ -2570,14 +2570,14 @@ Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
     const char *bytes,		/* String to append. If length is
 				 * TCL_INDEX_NONE then this must be null-terminated. */
-    size_t length)			/* Number of bytes from "bytes" to append. If
+    ssize_t length)		/* Number of bytes from "bytes" to append. If
 				 * TCL_INDEX_NONE, then append all of bytes, up to null
 				 * at end. */
 {
     size_t newSize;
 
     if (length == TCL_INDEX_NONE) {
-	length = strlen(bytes);
+	length = strlen(bytes); // XXX -bch
     }
     newSize = length + dsPtr->length;
 
@@ -2595,7 +2595,7 @@ Tcl_DStringAppend(
 	    memcpy(newString, dsPtr->string, dsPtr->length);
 	    dsPtr->string = newString;
 	} else {
-	    size_t index = TCL_INDEX_NONE;
+	    ssize_t index = TCL_INDEX_NONE;
 
 	    /* See [16896d49fd] */
 	    if (bytes >= dsPtr->string

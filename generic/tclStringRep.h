@@ -51,7 +51,7 @@
  */
 
 typedef struct {
-    size_t numChars;		/* The number of chars in the string. -1 means
+    ssize_t numChars;		/* The number of chars in the string. -1 means
 				 * this value has not been calculated. Any other
 				 * means that there is a valid Unicode rep, or
 				 * that the number of UTF bytes == the number

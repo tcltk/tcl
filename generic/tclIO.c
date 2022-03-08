@@ -3992,11 +3992,11 @@ Tcl_ClearChannelHandlers(
  *----------------------------------------------------------------------
  */
 
-size_t
+ssize_t
 Tcl_Write(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* Data to queue in output buffer. */
-    size_t srcLen)			/* Length of data in bytes, or -1 for
+    ssize_t srcLen)		/* Length of data in bytes, or -1 for
 				 * strlen(). */
 {
     /*
@@ -4014,8 +4014,9 @@ Tcl_Write(
     }
 
     if (srcLen == TCL_INDEX_NONE) {
-	srcLen = strlen(src);
+	srcLen = strlen(src); // XXX -bch
     }
+    // XXX -bch WriteBytes srcLen at risk of overflow
     if (WriteBytes(chanPtr, src, srcLen) == -1) {
 	return TCL_IO_FAILURE;
     }
@@ -4046,18 +4047,23 @@ Tcl_Write(
  *----------------------------------------------------------------------
  */
 
-size_t
+/*
+ * XXX  the pickle -- objs can be size_t if one wants to emit size_t, (or
+ * anything size_t/2), ssize_t allows for -1, but what of all other potential
+ * requests in "top-half" of size_t rank? -bch
+ */
+ssize_t
 Tcl_WriteRaw(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* Data to queue in output buffer. */
-    size_t srcLen)		/* Length of data in bytes, or -1 for
+    ssize_t srcLen)		/* Length of data in bytes, or -1 for
 				 * strlen(). */
 {
     Channel *chanPtr = ((Channel *) chan);
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     int errorCode;
-    size_t written;
+    ssize_t written;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | CHANNEL_RAW_MODE) != 0) {
 	return TCL_IO_FAILURE;
@@ -4103,12 +4109,12 @@ Tcl_WriteRaw(
  *----------------------------------------------------------------------
  */
 
-size_t
+ssize_t
 Tcl_WriteChars(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     const char *src,		/* UTF-8 characters to queue in output
 				 * buffer. */
-    size_t len)			/* Length of string in bytes, or -1 for
+    ssize_t len)		/* Length of string in bytes, or -1 for
 				 * strlen(). */
 {
     Channel *chanPtr = (Channel *) chan;
@@ -4123,7 +4129,7 @@ Tcl_WriteChars(
     chanPtr = statePtr->topChanPtr;
 
     if (len == TCL_INDEX_NONE) {
-	len = strlen(src);
+	len = strlen (src);	// XXXX	 -bch
     }
     if (statePtr->encoding) {
 	return WriteChars(chanPtr, src, len);
@@ -4144,7 +4150,7 @@ Tcl_WriteChars(
     copy = TclNarrowToBytes(objPtr);
     src = (char *) Tcl_GetByteArrayFromObj(copy, &len);
     TclDecrRefCount(objPtr);
-    result = WriteBytes(chanPtr, src, len);
+    result = WriteBytes (chanPtr, src, len);	//WriteBytes "len" is risking overflow
     TclDecrRefCount(copy);
     return result;
 }
@@ -4174,7 +4180,7 @@ Tcl_WriteChars(
  *----------------------------------------------------------------------
  */
 
-size_t
+ssize_t
 Tcl_WriteObj(
     Tcl_Channel chan,		/* The channel to buffer output for. */
     Tcl_Obj *objPtr)		/* The object to write. */
@@ -4476,7 +4482,7 @@ Write(
  *---------------------------------------------------------------------------
  */
 
-size_t
+ssize_t
 Tcl_Gets(
     Tcl_Channel chan,		/* Channel from which to read. */
     Tcl_DString *lineRead)	/* The line read will be appended to this
@@ -4519,7 +4525,7 @@ Tcl_Gets(
  *---------------------------------------------------------------------------
  */
 
-size_t
+ssize_t
 Tcl_GetsObj(
     Tcl_Channel chan,		/* Channel from which to read. */
     Tcl_Obj *objPtr)		/* The line read will be appended to this
@@ -4537,7 +4543,7 @@ Tcl_GetsObj(
     Tcl_EncodingState oldState;
 
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	return TCL_IO_FAILURE;
+        return TCL_IO_FAILURE;  // -bch XXX this is an abuse; size_t is _unsigned_, TCL_IO_FAILURE is defined "-1" see read(2)
     }
 
     /*
@@ -5634,7 +5640,11 @@ Tcl_Read(
  *----------------------------------------------------------------------
  */
 
-size_t
+/*
+ * XXXX these are same semantics as read(2) -- how does read allow asking for
+ * size_t and report result in ssize_t?
+ */
+ssize_t
 Tcl_ReadRaw(
     Tcl_Channel chan,		/* The channel from which to read. */
     char *readBuf,		/* Where to store input read. */
@@ -5752,11 +5762,11 @@ Tcl_ReadRaw(
  *---------------------------------------------------------------------------
  */
 
-size_t
+ssize_t
 Tcl_ReadChars(
     Tcl_Channel chan,		/* The channel to read. */
     Tcl_Obj *objPtr,		/* Input data is stored in this object. */
-    size_t toRead,		/* Maximum number of characters to store, or
+    ssize_t toRead,		/* Maximum number of characters to store, or
 				 * -1 to read all available data (up to EOF or
 				 * when channel blocks). */
     int appendFlag)		/* If non-zero, data read from the channel
@@ -6635,11 +6645,11 @@ TranslateInputEOL(
  *----------------------------------------------------------------------
  */
 
-size_t
+ssize_t
 Tcl_Ungets(
     Tcl_Channel chan,		/* The channel for which to add the input. */
     const char *str,		/* The input itself. */
-    size_t len,			/* The length of the input. */
+    ssize_t len,		/* The length of the input. */
     int atEnd)			/* If non-zero, add at end of queue; otherwise
 				 * add at head of queue. */
 {
@@ -6961,7 +6971,7 @@ GetInput(
  *----------------------------------------------------------------------
  */
 
-long long
+off_t
 Tcl_Seek(
     Tcl_Channel chan,		/* The channel on which to seek. */
     long long offset,		/* Offset to seek to. */
@@ -9491,7 +9501,7 @@ CopyData(
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
     int result = TCL_OK, size;
-    size_t sizeb;
+    ssize_t sizeb;
     Tcl_WideInt total;
     const char *buffer;
     int inBinary, outBinary, sameEncoding;
@@ -9567,7 +9577,7 @@ CopyData(
 		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
 			0 /* No append */);
 	    }
-	    underflow = (size >= 0) && ((size_t)size < sizeb);	/* Input underflow */
+	    underflow = (size >= 0) && (size < sizeb);	/* Input underflow */
 	}
 
 	if (size < 0) {

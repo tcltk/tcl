@@ -4620,7 +4620,8 @@ TEBCresume(
 
     {
 	int numIndices, nocase, match, cflags;
-	size_t slength, length2, fromIdx, toIdx, index, s1len, s2len;
+	ssize_t toIdx, fromIdx;
+	size_t slength, length2, index, s1len, s2len;
 	const char *s1, *s2;
 
     case INST_LIST:
@@ -4874,11 +4875,11 @@ TEBCresume(
 	toIdx = TclIndexDecode(toIdx, objc - 1);
 	if (toIdx == TCL_INDEX_NONE) {
 	    goto emptyList;
-	} else if (toIdx + 1 >= (size_t)objc + 1) {
+	} else if (toIdx >= objc) {
 	    toIdx = objc - 1;
 	}
 
-	assert (toIdx < (size_t)objc);
+	assert (toIdx < objc);
 	/*
 	assert ( fromIdx != TCL_INDEX_NONE );
 	 *
@@ -5221,8 +5222,8 @@ TEBCresume(
 	(void) POP_OBJECT();
 
 	if ((toIdx == TCL_INDEX_NONE) ||
-		(fromIdx + 1 > slength + 1) ||
-		(toIdx + 1 < fromIdx + 1)) {
+		((size_t)fromIdx > slength) ||
+		(toIdx < fromIdx)) {
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
 	    TclDecrRefCount(value3Ptr);
 	    NEXT_INST_F(1, 0, 0);
@@ -5232,11 +5233,11 @@ TEBCresume(
 	    fromIdx = TCL_INDEX_START;
 	}
 
-	if (toIdx + 1 > slength + 1) {
-	    toIdx = slength;
+	if ((size_t)toIdx > slength) {
+	    toIdx = (ssize_t)slength;
 	}
 
-	if ((fromIdx == TCL_INDEX_START) && (toIdx == slength)) {
+	if ((fromIdx == TCL_INDEX_START) && ((size_t)toIdx == slength)) {
 	    TclDecrRefCount(OBJ_AT_TOS);
 	    OBJ_AT_TOS = value3Ptr;
 	    TRACE_APPEND(("\"%.30s\"\n", O2S(value3Ptr)));

@@ -449,7 +449,7 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  */
 
 typedef struct Tcl_RegExpIndices {
-    size_t start;			/* Character offset of first character in
+    ssize_t start;		/* Character offset of first character in
 				 * match. */
     size_t end;			/* Character offset of first character after
 				 * the match. */
@@ -2116,12 +2116,12 @@ typedef int (Tcl_ArgvGenFuncProc)(void *clientData, Tcl_Interp *interp,
 #define TCL_TCPSERVER_REUSEPORT (1<<1)
 
 /*
- * Constants for special size_t-typed values, see TIP #494
+ * Constants for special ssize_t-typed values, see TIP #494
  */
 
-#define TCL_IO_FAILURE	((size_t)-1)
-#define TCL_AUTO_LENGTH	((size_t)-1)
-#define TCL_INDEX_NONE  ((size_t)-1)
+#define TCL_IO_FAILURE	((ssize_t)-1)
+#define TCL_AUTO_LENGTH	((ssize_t)-1)
+#define TCL_INDEX_NONE  ((ssize_t)-1)
 
 /*
  *----------------------------------------------------------------------------
