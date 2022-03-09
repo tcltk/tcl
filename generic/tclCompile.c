@@ -2044,7 +2044,7 @@ CompileCommandTokens(
 
     EnterCmdWordData(eclPtr, parsePtr->commandStart - envPtr->source,
 	    parsePtr->tokenPtr, parsePtr->commandStart,
-	    (int)parsePtr->numWords, cmdLine,
+	    parsePtr->numWords, cmdLine,
 	    clNext, &wlines, envPtr);
     wlineat = eclPtr->nuloc - 1;
 
@@ -2071,7 +2071,7 @@ CompileCommandTokens(
 	    }
 	}
 	if (cmdPtr && !(cmdPtr->flags & CMD_COMPILES_EXPANDED)) {
-	    expand = ExpandRequested(parsePtr->tokenPtr, (int)parsePtr->numWords);
+	    expand = ExpandRequested(parsePtr->tokenPtr, parsePtr->numWords);
 	    if (expand) {
 		/* We need to expand, but compileProc cannot. */
 		cmdPtr = NULL;
@@ -2086,15 +2086,15 @@ CompileCommandTokens(
 
     if (code == TCL_ERROR) {
 	if (expand < 0) {
-	    expand = ExpandRequested(parsePtr->tokenPtr, (int)parsePtr->numWords);
+	    expand = ExpandRequested(parsePtr->tokenPtr, parsePtr->numWords);
 	}
 
 	if (expand) {
 	    CompileExpanded(interp, parsePtr->tokenPtr,
-		    cmdKnown ? cmdObj : NULL, (int)parsePtr->numWords, envPtr);
+		    cmdKnown ? cmdObj : NULL, parsePtr->numWords, envPtr);
 	} else {
 	    TclCompileInvocation(interp, parsePtr->tokenPtr,
-		    cmdKnown ? cmdObj : NULL, (int)parsePtr->numWords, envPtr);
+		    cmdKnown ? cmdObj : NULL, parsePtr->numWords, envPtr);
 	}
     }
 
@@ -2215,7 +2215,7 @@ TclCompileScript(
 	numBytes -= next - p;
 	p = next;
 
-	if ((int)parsePtr->numWords == 0) {
+	if (parsePtr->numWords == 0) {
 	    /*
 	     * The "command" parsed has no words.  In this case we can skip
 	     * the rest of the loop body.  With no words, clearly
@@ -3198,7 +3198,7 @@ EnterCmdStartData(
     }
 
     if (cmdIndex > 0) {
-	if (codeOffset < envPtr->cmdMapPtr[cmdIndex-1].codeOffset) {
+	if (codeOffset < (int)envPtr->cmdMapPtr[cmdIndex-1].codeOffset) {
 	    Tcl_Panic("EnterCmdStartData: cmd map not sorted by code offset");
 	}
     }
@@ -3207,7 +3207,7 @@ EnterCmdStartData(
     cmdLocPtr->codeOffset = codeOffset;
     cmdLocPtr->srcOffset = srcOffset;
     cmdLocPtr->numSrcBytes = -1;
-    cmdLocPtr->numCodeBytes = -1;
+    cmdLocPtr->numCodeBytes = TCL_INDEX_NONE;
 }
 
 /*
@@ -3378,7 +3378,7 @@ TclCreateExceptRange(
 	size_t currBytes =
 		envPtr->exceptArrayNext * sizeof(ExceptionRange);
 	size_t currBytes2 = envPtr->exceptArrayNext * sizeof(ExceptionAux);
-	int newElems = 2*envPtr->exceptArrayEnd;
+	size_t newElems = 2*envPtr->exceptArrayEnd;
 	size_t newBytes = newElems * sizeof(ExceptionRange);
 	size_t newBytes2 = newElems * sizeof(ExceptionAux);
 
@@ -3409,8 +3409,8 @@ TclCreateExceptRange(
     rangePtr = &envPtr->exceptArrayPtr[index];
     rangePtr->type = type;
     rangePtr->nestingLevel = envPtr->exceptDepth;
-    rangePtr->codeOffset = -1;
-    rangePtr->numCodeBytes = -1;
+    rangePtr->codeOffset = TCL_INDEX_NONE;
+    rangePtr->numCodeBytes = TCL_INDEX_NONE;
     rangePtr->breakOffset = -1;
     rangePtr->continueOffset = -1;
     rangePtr->catchOffset = -1;
@@ -3435,9 +3435,9 @@ TclCreateExceptRange(
  *
  *	Returns the innermost exception range that covers the current code
  *	creation point, and optionally the stack depth that is expected at
- *	that point. Relies on the fact that the range has a numCodeBytes = -1
- *	when it is being populated and that inner ranges come after outer
- *	ranges.
+ *	that point. Relies on the fact that the range has a numCodeBytes =
+ *	TCL_INDEX_NONE when it is being populated and that inner ranges
+ *	come after outer ranges.
  *
  * ---------------------------------------------------------------------
  */
@@ -3448,15 +3448,15 @@ TclGetInnermostExceptionRange(
     int returnCode,
     ExceptionAux **auxPtrPtr)
 {
-    int i = envPtr->exceptArrayNext;
+    size_t i = envPtr->exceptArrayNext;
     ExceptionRange *rangePtr = envPtr->exceptArrayPtr + i;
 
     while (i > 0) {
 	rangePtr--; i--;
 
-	if (CurrentOffset(envPtr) >= rangePtr->codeOffset &&
-		(rangePtr->numCodeBytes == -1 || CurrentOffset(envPtr) <
-			rangePtr->codeOffset+rangePtr->numCodeBytes) &&
+	if (CurrentOffset(envPtr) >= (int)rangePtr->codeOffset &&
+		(rangePtr->numCodeBytes == TCL_INDEX_NONE || CurrentOffset(envPtr) <
+			(int)rangePtr->codeOffset+(int)rangePtr->numCodeBytes) &&
 		(returnCode != TCL_CONTINUE ||
 			envPtr->exceptAuxArrayPtr[i].supportsContinue)) {
 
@@ -3603,10 +3603,10 @@ StartExpanding(
 	 * Ignore loops unless they're still being built.
 	 */
 
-	if (rangePtr->codeOffset > CurrentOffset(envPtr)) {
+	if ((int)rangePtr->codeOffset > CurrentOffset(envPtr)) {
 	    continue;
 	}
-	if (rangePtr->numCodeBytes != -1) {
+	if (rangePtr->numCodeBytes != TCL_INDEX_NONE) {
 	    continue;
 	}
 

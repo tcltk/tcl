@@ -92,9 +92,9 @@ typedef struct {
     int nestingLevel;		/* Static depth of the exception range. Used
 				 * to find the most deeply-nested range
 				 * surrounding a PC at runtime. */
-    int codeOffset;		/* Offset of the first instruction byte of the
+    size_t codeOffset;		/* Offset of the first instruction byte of the
 				 * code range. */
-    int numCodeBytes;		/* Number of bytes in the code range. */
+    size_t numCodeBytes;		/* Number of bytes in the code range. */
     int breakOffset;		/* If LOOP_EXCEPTION_RANGE, the target PC
 				 * offset for a break command in the range. */
     int continueOffset;		/* If LOOP_EXCEPTION_RANGE and not -1, the
@@ -163,8 +163,8 @@ typedef struct ExceptionAux {
  */
 
 typedef struct {
-    int codeOffset;		/* Offset of first byte of command code. */
-    int numCodeBytes;		/* Number of bytes for command's code. */
+    size_t codeOffset;		/* Offset of first byte of command code. */
+    size_t numCodeBytes;		/* Number of bytes for command's code. */
     int srcOffset;		/* Offset of first char of the command. */
     int numSrcBytes;		/* Number of command source chars. */
 } CmdLocation;
@@ -297,7 +297,7 @@ typedef struct CompileEnv {
 				 * information provided by ObjInterpProc in
 				 * tclProc.c. */
     size_t numCommands;		/* Number of commands compiled. */
-    int exceptDepth;		/* Current exception range nesting level; -1
+    size_t exceptDepth;		/* Current exception range nesting level; -1
 				 * if not in any range currently. */
     int maxExceptDepth;		/* Max nesting level of exception ranges; -1
 				 * if no ranges have been compiled. */
@@ -461,7 +461,7 @@ typedef struct ByteCode {
 				 * by AuxData entries. */
     int numCommands;		/* Number of commands compiled. */
     int numSrcBytes;		/* Number of source bytes compiled. */
-    int numCodeBytes;		/* Number of code bytes. */
+    size_t numCodeBytes;		/* Number of code bytes. */
     int numLitObjects;		/* Number of objects in literal array. */
     int numExceptRanges;	/* Number of ExceptionRange array elems. */
     int numAuxDataItems;	/* Number of AuxData items. */
@@ -944,7 +944,7 @@ typedef enum {
 
 typedef struct JumpFixup {
     TclJumpType jumpType;	/* Indicates the kind of jump. */
-    unsigned int codeOffset;	/* Offset of the first byte of the one-byte
+    TCL_HASH_TYPE codeOffset;	/* Offset of the first byte of the one-byte
 				 * forward jump's code. */
     int cmdIndex;		/* Index of the first command after the one
 				 * for which the jump was emitted. Used to
@@ -1584,7 +1584,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 #define ExceptionRangeStarts(envPtr, index) \
     (((envPtr)->exceptDepth++),						\
     ((envPtr)->maxExceptDepth =						\
-	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)),	\
+	    TclMax((int)(envPtr)->exceptDepth, (envPtr)->maxExceptDepth)),	\
     ((envPtr)->exceptArrayPtr[(index)].codeOffset = CurrentOffset(envPtr)))
 #define ExceptionRangeEnds(envPtr, index) \
     (((envPtr)->exceptDepth--),						\

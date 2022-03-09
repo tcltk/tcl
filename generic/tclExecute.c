@@ -7230,7 +7230,7 @@ TEBCresume(
 	    if (result == TCL_BREAK) {
 		result = TCL_OK;
 		pc = (codePtr->codeStart + rangePtr->breakOffset);
-		TRACE_APPEND(("%s, range at %d, new pc %d\n",
+		TRACE_APPEND(("%s, range at %" TCL_Z_MODIFIER "u, new pc %d\n",
 			StringForResultCode(result),
 			rangePtr->codeOffset, rangePtr->breakOffset));
 		NEXT_INST_F(0, 0, 0);
@@ -7242,7 +7242,7 @@ TEBCresume(
 	    }
 	    result = TCL_OK;
 	    pc = (codePtr->codeStart + rangePtr->continueOffset);
-	    TRACE_APPEND(("%s, range at %d, new pc %d\n",
+	    TRACE_APPEND(("%s, range at %" TCL_Z_MODIFIER "u, new pc %d\n",
 		    StringForResultCode(result),
 		    rangePtr->codeOffset, rangePtr->continueOffset));
 	    NEXT_INST_F(0, 0, 0);
@@ -7414,7 +7414,7 @@ TEBCresume(
 	}
 #ifdef TCL_COMPILE_DEBUG
 	if (traceInstructions) {
-	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
+	    fprintf(stdout, "  ... found catch at %" TCL_Z_MODIFIER "u, catchTop=%d, "
 		    "unwound to %ld, new pc %" TCL_Z_MODIFIER "u\n",
 		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
 		    (long)*catchTop, (size_t) rangePtr->catchOffset);
@@ -8682,7 +8682,7 @@ PrintByteCodeInfo(
     fprintf(stdout, "  Source: ");
     TclPrintSource(stdout, codePtr->source, 60);
 
-    fprintf(stdout, "\n  Cmds %d, src %d, inst %u, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
+    fprintf(stdout, "\n  Cmds %d, src %d, inst %" TCL_Z_MODIFIER "u, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
 	    codePtr->numCommands, codePtr->numSrcBytes,
 	    codePtr->numCodeBytes, codePtr->numLitObjects,
 	    codePtr->numAuxDataItems, codePtr->maxStackDepth,
@@ -8693,7 +8693,7 @@ PrintByteCodeInfo(
 	    0.0);
 
 #ifdef TCL_COMPILE_STATS
-    fprintf(stdout, "  Code %lu = header %lu+inst %d+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
+    fprintf(stdout, "  Code %lu = header %lu+inst %" TCL_Z_MODIFIER "u+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
 	    (unsigned long) codePtr->structureSize,
 	    (unsigned long) (sizeof(ByteCode)-sizeof(size_t)-sizeof(Tcl_Time)),
 	    codePtr->numCodeBytes,
@@ -8980,7 +8980,7 @@ GetSrcInfoForPc(
     int bestCmdIdx = -1;
 
     /* The pc must point within the bytecode */
-    assert (pcOffset < (size_t)codePtr->numCodeBytes);
+    assert (pcOffset < codePtr->numCodeBytes);
 
     /*
      * Decode the code and source offset and length for each command. The
@@ -9141,7 +9141,7 @@ GetExceptRangeForPc(
     while (--rangePtr >= rangeArrayPtr) {
 	start = rangePtr->codeOffset;
 	if ((start <= pcOffset) &&
-		(pcOffset < (start + rangePtr->numCodeBytes))) {
+		(pcOffset < (start + (int)rangePtr->numCodeBytes))) {
 	    if (rangePtr->type == CATCH_EXCEPTION_RANGE) {
 		return rangePtr;
 	    }
