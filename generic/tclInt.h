@@ -415,29 +415,27 @@ struct NamespacePathEntry {
  * Flags used to represent the status of a namespace:
  *
  * NS_DYING -	1 means Tcl_DeleteNamespace has been called to delete the
- *		namespace but there are still active call frames on the Tcl
+ *		namespace.  There may still be active call frames on the Tcl
  *		stack that refer to the namespace. When the last call frame
- *		referring to it has been popped, it's variables and command
- *		will be destroyed and it will be marked "dead" (NS_DEAD). The
- *		namespace can no longer be looked up by name.
+ *		referring to it has been popped, its remaining variables and
+ *		commands are destroyed and it is marked "dead" (NS_DEAD).
+ * NS_TEARDOWN  -1 means that TclTeardownNamespace has already been called on
+ *		this namespace and it should not be called again [Bug 1355942].
  * NS_DEAD -	1 means Tcl_DeleteNamespace has been called to delete the
- *		namespace and no call frames still refer to it. Its variables
- *		and command have already been destroyed. This bit allows the
- *		namespace resolution code to recognize that the namespace is
- *		"deleted". When the last namespaceName object in any byte code
- *		unit that refers to the namespace has been freed (i.e., when
- *		the namespace's refCount is 0), the namespace's storage will
- *		be freed.
- * NS_KILLED -	1 means that TclTeardownNamespace has already been called on
- *		this namespace and it should not be called again [Bug 1355942]
+ *		namespace and no call frames still refer to it. It is no longer
+ *		accessible by name. Its variables and commands have already
+ *		been destroyed.  When the last namespaceName object in any byte
+ *		code unit that refers to the namespace has been freed (i.e.,
+ *		when the namespace's refCount is 0), the namespace's storage
+ *		will be freed.
  * NS_SUPPRESS_COMPILATION -
  *		Marks the commands in this namespace for not being compiled,
  *		forcing them to be looked up every time.
  */
 
 #define NS_DYING	0x01
-#define NS_DEAD		0x02
-#define NS_KILLED	0x04
+#define NS_TEARDOWN	0x02
+#define NS_DEAD		0x04
 #define NS_SUPPRESS_COMPILATION	0x08
 
 /*
@@ -1498,6 +1496,11 @@ typedef struct CoroutineData {
     int nargs;                  /* Number of args required for resuming this
 				 * coroutine; -2 means "0 or 1" (default), -1
 				 * means "any" */
+    Tcl_Obj *yieldPtr;		/* The command to yield to.  Stored here in
+				 * order to reset splice point in
+				 * TclNRCoroutineActivateCallback if the
+				 * coroutine is busy.
+				*/
 } CoroutineData;
 
 typedef struct ExecEnv {
@@ -2739,7 +2742,6 @@ MODULE_SCOPE char *tclNativeExecutableName;
 MODULE_SCOPE int tclFindExecutableSearchDone;
 MODULE_SCOPE char *tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
-MODULE_SCOPE Tcl_NotifierProcs tclNotifierHooks;
 
 MODULE_SCOPE Tcl_Encoding tclIdentityEncoding;
 
@@ -2924,6 +2926,9 @@ MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
 			    CmdFrame **cfPtrPtr, int *wordPtr);
+MODULE_SCOPE int	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
+			    ClientData clientData, int *flagPtr, int value);
+MODULE_SCOPE void	TclAsyncMarkFromNotifier(void);
 MODULE_SCOPE double	TclBignumToDouble(const void *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
@@ -2959,6 +2964,7 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 			    const char *name, Tcl_Namespace *nameNamespacePtr,
 			    Tcl_Namespace *ensembleNamespacePtr, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
+MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
 			    const char **elementPtr, const char **nextPtr,
@@ -2987,6 +2993,7 @@ MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
 MODULE_SCOPE Tcl_Obj *const *TclFetchEnsembleRoot(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, int objc, int *objcPtr);
+MODULE_SCOPE Tcl_Obj *const *TclEnsembleGetRewriteValues(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Namespace *TclEnsureNamespace(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr);
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
@@ -3133,12 +3140,22 @@ MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
-MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp, Tcl_Obj* pathPtr);
+MODULE_SCOPE Tcl_Obj *  TclpTempFileNameForLibrary(Tcl_Interp *interp,
+			    Tcl_Obj* pathPtr);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
 			    int len);
+MODULE_SCOPE void	TclpAlertNotifier(ClientData clientData);
+MODULE_SCOPE ClientData	TclpNotifierData(void);
+MODULE_SCOPE void	TclpServiceModeHook(int mode);
+MODULE_SCOPE void	TclpSetTimer(const Tcl_Time *timePtr);
+MODULE_SCOPE int	TclpWaitForEvent(const Tcl_Time *timePtr);
+MODULE_SCOPE void	TclpCreateFileHandler(int fd, int mask,
+			    Tcl_FileProc *proc, ClientData clientData);
 MODULE_SCOPE int	TclpDeleteFile(const void *path);
+MODULE_SCOPE void	TclpDeleteFileHandler(int fd);
 MODULE_SCOPE void	TclpFinalizeCondition(Tcl_Condition *condPtr);
 MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
+MODULE_SCOPE void	TclpFinalizeNotifier(ClientData clientData);
 MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
 MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
@@ -3152,6 +3169,7 @@ MODULE_SCOPE int	TclpFindVariable(const char *name, int *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    unsigned int *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
+MODULE_SCOPE ClientData	TclpInitNotifier(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
 MODULE_SCOPE void	TclpInitUnlock(void);
 MODULE_SCOPE Tcl_Obj *	TclpObjListVolumes(void);
@@ -3178,8 +3196,9 @@ MODULE_SCOPE int	TclpObjChdir(Tcl_Obj *pathPtr);
 MODULE_SCOPE Tcl_Channel TclpOpenTemporaryFile(Tcl_Obj *dirObj,
 			    Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
 			    Tcl_Obj *resultingNameObj);
-MODULE_SCOPE void TclPkgFileSeen(Tcl_Interp *interp, const char *fileName);
-MODULE_SCOPE void *TclInitPkgFiles(Tcl_Interp *interp);
+MODULE_SCOPE void	TclPkgFileSeen(Tcl_Interp *interp,
+			    const char *fileName);
+MODULE_SCOPE void *	TclInitPkgFiles(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
 MODULE_SCOPE char *	TclpReadlink(const char *fileName,
@@ -3200,7 +3219,7 @@ MODULE_SCOPE int	TclScanElement(const char *string, int length,
 			    char *flagPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
-MODULE_SCOPE void	TclSetBignumIntRep(Tcl_Obj *objPtr,
+MODULE_SCOPE void	TclSetBignumInternalRep(Tcl_Obj *objPtr,
 			    void *bignumValue);
 MODULE_SCOPE int	TclSetBooleanFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -4212,6 +4231,37 @@ MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
 #define TCL_INDEX_START         (0)
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclScaleTime --
+ *
+ *	TIP #233 (Virtualized Time): Wrapper around the time virutalisation
+ *	rescale function to hide the binding of the clientData.
+ *
+ *	This is static inline code; it's like a macro, but a function. It's
+ *	used because this is a piece of code that ends up in places that are a
+ *	bit performance sensitive.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Updates the time structure (given as an argument) with what the time
+ *	should be after virtualisation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline void
+TclScaleTime(
+    Tcl_Time *timePtr)
+{
+    if (timePtr != NULL) {
+	tclScaleTimeProcPtr(timePtr, tclTimeClientData);
+    }
+}
+
+/*
  *----------------------------------------------------------------
  * Macros used by the Tcl core to create and release Tcl objects.
  * TclNewObj(objPtr) creates a new object denoting an empty string.
@@ -4276,7 +4326,7 @@ MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
 /*
  * Invalidate the string rep first so we can use the bytes value for our
  * pointer chain, and signal an obj deletion (as opposed to shimmering) with
- * 'length == -1'.
+ * 'length == TCL_INDEX_NONE'.
  * Use empty 'if ; else' to handle use in unbraced outer if/else conditions.
  */
 
@@ -4288,7 +4338,7 @@ MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
 		    && ((objPtr)->bytes != &tclEmptyString)) { \
 		ckfree((objPtr)->bytes); \
 	    } \
-	    (objPtr)->length = -1; \
+	    (objPtr)->length = TCL_INDEX_NONE; \
 	    TclFreeObjStorage(objPtr); \
 	    TclIncrObjsFreed(); \
 	} else { \
@@ -4310,7 +4360,7 @@ MODULE_SCOPE int	TclIndexDecode(int encoded, int endValue);
  */
 
 #  define TclAllocObjStorageEx(interp, objPtr) \
-	(objPtr) = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj))
+	(objPtr) = (Tcl_Obj *)ckalloc(sizeof(Tcl_Obj))
 
 #  define TclFreeObjStorageEx(interp, objPtr) \
 	ckfree(objPtr)
@@ -4436,15 +4486,22 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 /*
  *----------------------------------------------------------------
  * Macro used by the Tcl core to set a Tcl_Obj's string representation to a
- * copy of the "len" bytes starting at "bytePtr". This code works even if the
- * byte array contains NULLs as long as the length is correct. Because "len"
- * is referenced multiple times, it should be as simple an expression as
- * possible. The ANSI C "prototype" for this macro is:
+ * copy of the "len" bytes starting at "bytePtr". The value of "len" must
+ * not be negative.  When "len" is 0, then it is acceptable to pass
+ * "bytePtr" = NULL.  When "len" > 0, "bytePtr" must not be NULL, and it
+ * must point to a location from which "len" bytes may be read.  These
+ * constraints are not checked here.  The validity of the bytes copied
+ * as a value string representation is also not verififed.  This macro
+ * must not be called while "objPtr" is being freed or when "objPtr"
+ * already has a string representation.  The caller must use
+ * this macro properly.  Improper use can lead to dangerous results.
+ * Because "len" is referenced multiple times, take care that it is an
+ * expression with the same value each use.
+ *
+ * The ANSI C "prototype" for this macro is:
  *
  * MODULE_SCOPE void TclInitStringRep(Tcl_Obj *objPtr, char *bytePtr, int len);
  *
- * This macro should only be called on an unshared objPtr where
- *  objPtr->typePtr->freeIntRepProc == NULL
  *----------------------------------------------------------------
  */
 
@@ -4453,7 +4510,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *) ckalloc((len) + 1); \
+	(objPtr)->bytes = (char *)ckalloc((unsigned int)(len) + 1U); \
 	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
@@ -4486,17 +4543,21 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  * representation. Does not actually reset the rep's bytes. The ANSI C
  * "prototype" for this macro is:
  *
- * MODULE_SCOPE void	TclFreeIntRep(Tcl_Obj *objPtr);
+ * MODULE_SCOPE void	TclFreeInternalRep(Tcl_Obj *objPtr);
  *----------------------------------------------------------------
  */
 
-#define TclFreeIntRep(objPtr) \
+#define TclFreeInternalRep(objPtr) \
     if ((objPtr)->typePtr != NULL) { \
 	if ((objPtr)->typePtr->freeIntRepProc != NULL) { \
 	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
 	} \
 	(objPtr)->typePtr = NULL; \
     }
+
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 8
+#   define TclFreeIntRep(objPtr) TclFreeInternalRep(objPtr)
+#endif
 
 /*
  *----------------------------------------------------------------
@@ -4708,10 +4769,10 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclIsPureDict(objPtr) \
 	(((objPtr)->bytes==NULL) && ((objPtr)->typePtr==&tclDictType))
-#define TclHasIntRep(objPtr, type) \
+#define TclHasInternalRep(objPtr, type) \
 	((objPtr)->typePtr == (type))
-#define TclFetchIntRep(objPtr, type) \
-	(TclHasIntRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
+#define TclFetchInternalRep(objPtr, type) \
+	(TclHasInternalRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
 
 
 /*
@@ -4757,7 +4818,7 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_PackageInitProc TclTommath_Init;
+MODULE_SCOPE Tcl_LibraryInitProc TclTommath_Init;
 
 /*
  *----------------------------------------------------------------------
@@ -4769,11 +4830,11 @@ MODULE_SCOPE Tcl_PackageInitProc TclTommath_Init;
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_PackageInitProc TclplatformtestInit;
-MODULE_SCOPE Tcl_PackageInitProc TclObjTest_Init;
-MODULE_SCOPE Tcl_PackageInitProc TclThread_Init;
-MODULE_SCOPE Tcl_PackageInitProc Procbodytest_Init;
-MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
+MODULE_SCOPE Tcl_LibraryInitProc TclplatformtestInit;
+MODULE_SCOPE Tcl_LibraryInitProc TclObjTest_Init;
+MODULE_SCOPE Tcl_LibraryInitProc TclThread_Init;
+MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_Init;
+MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 
 /*
  *----------------------------------------------------------------
@@ -4801,18 +4862,18 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #define TclSetIntObj(objPtr, i) \
     do {						\
-	Tcl_ObjIntRep ir;				\
+	Tcl_ObjInternalRep ir;				\
 	ir.wideValue = (Tcl_WideInt) i;			\
 	TclInvalidateStringRep(objPtr);			\
-	Tcl_StoreIntRep(objPtr, &tclIntType, &ir);	\
+	Tcl_StoreInternalRep(objPtr, &tclIntType, &ir);	\
     } while (0)
 
 #define TclSetDoubleObj(objPtr, d) \
     do {						\
-	Tcl_ObjIntRep ir;				\
+	Tcl_ObjInternalRep ir;				\
 	ir.doubleValue = (double) d;			\
 	TclInvalidateStringRep(objPtr);			\
-	Tcl_StoreIntRep(objPtr, &tclDoubleType, &ir);	\
+	Tcl_StoreInternalRep(objPtr, &tclDoubleType, &ir);	\
     } while (0)
 
 /*
@@ -4841,6 +4902,9 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
+#define TclNewIndexObj(objPtr, w) \
+    TclNewIntObj(objPtr, w)
+
 #define TclNewDoubleObj(objPtr, d) \
     do {							\
 	TclIncrObjsAllocated();					\
@@ -4866,6 +4930,9 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #define TclNewIntObj(objPtr, w) \
     (objPtr) = Tcl_NewWideIntObj(w)
 
+#define TclNewIndexObj(objPtr, w) \
+    TclNewIntObj(objPtr, w)
+
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)
 
@@ -4878,7 +4945,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  * sizeof(sLiteral "") will fail to compile otherwise.
  */
 #define TclNewLiteralStringObj(objPtr, sLiteral) \
-    TclNewStringObj((objPtr), (sLiteral), (int) (sizeof(sLiteral "") - 1))
+    TclNewStringObj((objPtr), (sLiteral), sizeof(sLiteral "") - 1)
 
 /*
  *----------------------------------------------------------------
@@ -4891,29 +4958,22 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  */
 
 #define TclDStringAppendLiteral(dsPtr, sLiteral) \
-    Tcl_DStringAppend((dsPtr), (sLiteral), (int) (sizeof(sLiteral "") - 1))
+    Tcl_DStringAppend((dsPtr), (sLiteral), sizeof(sLiteral "") - 1)
 #define TclDStringClear(dsPtr) \
     Tcl_DStringSetLength((dsPtr), 0)
 
 /*
  *----------------------------------------------------------------
  * Macros used by the Tcl core to test for some special double values.
- * The ANSI C "prototypes" for these macros are:
+ * (deprecated) The ANSI C "prototypes" for these macros are:
  *
  * MODULE_SCOPE int	TclIsInfinite(double d);
  * MODULE_SCOPE int	TclIsNaN(double d);
  */
 
-#ifdef _MSC_VER
-#    define TclIsInfinite(d)	(!(_finite((d))))
-#    define TclIsNaN(d)		(_isnan((d)))
-#else
-#    define TclIsInfinite(d)	((d) > DBL_MAX || (d) < -DBL_MAX)
-#    ifdef NO_ISNAN
-#	 define TclIsNaN(d)	((d) != (d))
-#    else
-#	 define TclIsNaN(d)	(isnan(d))
-#    endif
+#if !defined(TCL_NO_DEPRECATED) && !defined(BUILD_tcl)
+#   define TclIsInfinite(d)	isinf(d)
+#   define TclIsNaN(d)		isnan(d)
 #endif
 
 /*
@@ -5032,12 +5092,12 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclIncrObjsAllocated();						\
 	TclAllocObjStorageEx((interp), (_objPtr));			\
-	*(void **)&memPtr = (void *) (_objPtr);					\
+	*(void **)&(memPtr) = (void *) (_objPtr);			\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \
     do {								\
-	TclFreeObjStorageEx((interp), (Tcl_Obj *) (memPtr));		\
+	TclFreeObjStorageEx((interp), (Tcl_Obj *)(memPtr));		\
 	TclIncrObjsFreed();						\
     } while (0)
 
@@ -5047,12 +5107,12 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 	Tcl_Obj *_objPtr;						\
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclNewObj(_objPtr);						\
-	*(void **)&memPtr = (void *) _objPtr;					\
+	*(void **)&(memPtr) = (void *)_objPtr;				\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \
     do {								\
-	Tcl_Obj *_objPtr = (Tcl_Obj *) memPtr;				\
+	Tcl_Obj *_objPtr = (Tcl_Obj *)(memPtr);				\
 	_objPtr->bytes = NULL;						\
 	_objPtr->typePtr = NULL;					\
 	_objPtr->refCount = 1;						\
@@ -5125,7 +5185,7 @@ typedef struct NRE_callback {
 #define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
 #else
 #define TCLNR_ALLOC(interp, ptr) \
-    (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
+    ((ptr) = ((void *)ckalloc(sizeof(NRE_callback))))
 #define TCLNR_FREE(interp, ptr)  ckfree(ptr)
 #endif
 
@@ -5145,11 +5205,32 @@ typedef struct NRE_callback {
 #endif
 
 /*
+ * Special hack for macOS, where the static linker (technically the 'ar'
+ * command) hates empty object files, and accepts no flags to make it shut up.
+ *
+ * These symbols are otherwise completely useless.
+ *
+ * They can't be written to or written through. They can't be seen by any
+ * other code. They use a separate attribute (supported by all macOS
+ * compilers, which are derivatives of clang or gcc) to stop the compilation
+ * from moaning. They will be excluded during the final linking stage.
+ *
+ * Other platforms get nothing at all. That's good.
+ */
+
+#ifdef MAC_OSX_TCL
+#define TCL_MAC_EMPTY_FILE(name) \
+    static __attribute__((used)) const void *const TclUnusedFile_ ## name = NULL;
+#else
+#define TCL_MAC_EMPTY_FILE(name)
+#endif /* MAC_OSX_TCL */
+
+/*
  * Other externals.
  */
 
-MODULE_SCOPE size_t TclEnvEpoch; /* Epoch of the tcl environment
-                                         * (if changed with tcl-env). */
+MODULE_SCOPE size_t TclEnvEpoch;	/* Epoch of the tcl environment
+					 * (if changed with tcl-env). */
 
 #endif /* _TCLINT */
 

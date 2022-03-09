@@ -420,6 +420,16 @@ Tcl_PutEnv(
 
     if ((value != NULL) && (value != name)) {
 	value[0] = '\0';
+#if defined(_WIN32)
+	if (tenviron == NULL) {
+	    /*
+	     * When we are started from main(), the _wenviron array could
+	     * be NULL and will be initialized by the first _wgetenv() call.
+	     */
+
+	(void) _wgetenv(L"WINDIR");
+	}
+#endif
 	TclSetEnv(name, value+1);
     }
     TclEnvEpoch++;

@@ -38,14 +38,14 @@ extern "C" {
 #endif
 
 /* detect 64-bit mode if possible */
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64) || \
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64) || defined(_M_ARM64) || \
     defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || \
     defined(__s390x__) || defined(__arch64__) || defined(__aarch64__) || \
     defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
     defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
     defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
 #   if !(defined(MP_64BIT) || defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
-#      if defined(__GNUC__) && !defined(__hppa)
+#      if defined(__GNUC__) && defined(__SIZEOF_INT128__) && !defined(__hppa)
 /* we support 128bit integers only via: __attribute__((mode(TI))) */
 #         define MP_64BIT
 #      else

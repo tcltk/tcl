@@ -67,19 +67,19 @@ const Tcl_ObjType tclProcBodyType = {
 				 * should panic instead. */
 };
 
-#define ProcSetIntRep(objPtr, procPtr)					\
+#define ProcSetInternalRep(objPtr, procPtr)					\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	(procPtr)->refCount++;						\
 	ir.twoPtrValue.ptr1 = (procPtr);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreIntRep((objPtr), &tclProcBodyType, &ir);		\
+	Tcl_StoreInternalRep((objPtr), &tclProcBodyType, &ir);		\
     } while (0)
 
-#define ProcGetIntRep(objPtr, procPtr)					\
+#define ProcGetInternalRep(objPtr, procPtr)					\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), &tclProcBodyType);		\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), &tclProcBodyType);		\
 	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -113,19 +113,19 @@ static const Tcl_ObjType lambdaType = {
     SetLambdaFromAny		/* setFromAnyProc */
 };
 
-#define LambdaSetIntRep(objPtr, procPtr, nsObjPtr)			\
+#define LambdaSetInternalRep(objPtr, procPtr, nsObjPtr)			\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (procPtr);				\
 	ir.twoPtrValue.ptr2 = (nsObjPtr);				\
 	Tcl_IncrRefCount((nsObjPtr));					\
-	Tcl_StoreIntRep((objPtr), &lambdaType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), &lambdaType, &ir);			\
     } while (0)
 
-#define LambdaGetIntRep(objPtr, procPtr, nsObjPtr)			\
+#define LambdaGetInternalRep(objPtr, procPtr, nsObjPtr)			\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), &lambdaType);			\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), &lambdaType);			\
 	(procPtr) = irPtr ? (Proc *)irPtr->twoPtrValue.ptr1 : NULL;		\
 	(nsObjPtr) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr2 : NULL;		\
     } while (0)
@@ -327,7 +327,7 @@ Tcl_ProcObjCmd(
      *	   of all procs whose argument list is just _args_
      */
 
-    if (TclHasIntRep(objv[3], &tclProcBodyType)) {
+    if (TclHasInternalRep(objv[3], &tclProcBodyType)) {
 	goto done;
     }
 
@@ -409,7 +409,7 @@ TclCreateProc(
     Tcl_Obj **argArray;
     int precompiled = 0;
 
-    ProcGetIntRep(bodyPtr, procPtr);
+    ProcGetInternalRep(bodyPtr, procPtr);
     if (procPtr != NULL) {
 	/*
 	 * Because the body is a TclProProcBody, the actual body is already
@@ -484,7 +484,7 @@ TclCreateProc(
      * in the Proc.
      */
 
-    result = Tcl_ListObjGetElements(interp , argsPtr ,&numArgs ,&argArray);
+    result = TclListObjGetElements(interp , argsPtr ,&numArgs ,&argArray);
     if (result != TCL_OK) {
 	goto procError;
     }
@@ -514,7 +514,7 @@ TclCreateProc(
 	 * Now divide the specifier up into name and default.
 	 */
 
-	result = Tcl_ListObjGetElements(interp, argArray[i], &fieldCount,
+	result = TclListObjGetElements(interp, argArray[i], &fieldCount,
 		&fieldValues);
 	if (result != TCL_OK) {
 	    goto procError;
@@ -529,7 +529,7 @@ TclCreateProc(
 		    "FORMALARGUMENTFORMAT", NULL);
 	    goto procError;
 	}
-	if ((fieldCount == 0) || (fieldValues[0]->length == 0)) {
+	if ((fieldCount == 0) || (Tcl_GetCharLength(fieldValues[0]) == 0)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument with no name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
@@ -633,7 +633,7 @@ TclCreateProc(
 	     */
 
 	    localPtr = (CompiledLocal *)ckalloc(
-		    offsetof(CompiledLocal, name) + fieldValues[0]->length + 1);
+		    offsetof(CompiledLocal, name) + 1U + fieldValues[0]->length);
 	    if (procPtr->firstLocalPtr == NULL) {
 		procPtr->firstLocalPtr = procPtr->lastLocalPtr = localPtr;
 	    } else {
@@ -724,7 +724,7 @@ TclGetFrame(
 	obj.length = strlen(name);
 	obj.typePtr = NULL;
 	result = TclObjGetFrame(interp, &obj, framePtrPtr);
-	TclFreeIntRep(&obj);
+	TclFreeInternalRep(&obj);
 	return result;
 }
 
@@ -762,7 +762,7 @@ TclObjGetFrame(
 {
     Interp *iPtr = (Interp *) interp;
     int curLevel, level, result;
-    const Tcl_ObjIntRep *irPtr;
+    const Tcl_ObjInternalRep *irPtr;
     const char *name = NULL;
     Tcl_WideInt w;
 
@@ -788,7 +788,7 @@ TclObjGetFrame(
 	    level = curLevel - level;
 	    result = 1;
 	}
-    } else if ((irPtr = TclFetchIntRep(objPtr, &levelReferenceType))) {
+    } else if ((irPtr = TclFetchInternalRep(objPtr, &levelReferenceType))) {
 	level = irPtr->wideValue;
 	result = 1;
     } else {
@@ -798,10 +798,10 @@ TclObjGetFrame(
 		if (level < 0 || (level > 0 && name[1] == '-')) {
 		    result = -1;
 		} else {
-		    Tcl_ObjIntRep ir;
+		    Tcl_ObjInternalRep ir;
 
 		    ir.wideValue = level;
-		    Tcl_StoreIntRep(objPtr, &levelReferenceType, &ir);
+		    Tcl_StoreInternalRep(objPtr, &levelReferenceType, &ir);
 		    result = 1;
 		}
 	    } else {
@@ -920,7 +920,7 @@ TclNRUplevelObjCmd(
 	return TCL_ERROR;
     } else if (!TclHasStringRep(objv[1]) && objc == 2) {
 	int status ,llength;
-	status = Tcl_ListObjLength(interp, objv[1], &llength);
+	status = TclListObjLength(interp, objv[1], &llength);
 	if (status == TCL_OK && llength > 1) {
 	    /* the first argument can't interpreted as a level. Avoid
 	     * generating a string representation of the script. */
@@ -1151,7 +1151,7 @@ TclInitCompiledLocals(
     ByteCode *codePtr;
 
     bodyPtr = framePtr->procPtr->bodyPtr;
-    ByteCodeGetIntRep(bodyPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(bodyPtr, &tclByteCodeType, codePtr);
     if (codePtr == NULL) {
 	Tcl_Panic("body object for proc attached to frame is not a byte code type");
     }
@@ -1327,7 +1327,7 @@ InitLocalCache(
     CompiledLocal *localPtr;
     int isNew;
 
-    ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
     /*
      * Cache the names and initial values of local variables; store the
@@ -1400,7 +1400,7 @@ InitArgsAndLocals(
     int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
 
-    ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
     /*
      * Make sure that the local cache of variable names and initial values has
@@ -1438,7 +1438,6 @@ InitArgsAndLocals(
     numArgs = procPtr->numArgs;
     argCt = framePtr->objc - skip;	/* Set it to the number of args to the
 					 * procedure. */
-    argObjs = framePtr->objv + skip;
     if (numArgs == 0) {
 	if (argCt) {
 	    goto incorrectArgs;
@@ -1446,6 +1445,7 @@ InitArgsAndLocals(
 	    goto correctArgs;
 	}
     }
+    argObjs = framePtr->objv + skip;
     imax = ((argCt < numArgs-1) ? argCt : numArgs-1);
     for (i = 0; i < imax; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
 	/*
@@ -1576,7 +1576,7 @@ TclPushProcCallFrame(
      * local variables are found while compiling.
      */
 
-    ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
     if (codePtr != NULL) {
 	Interp *iPtr = (Interp *) interp;
 
@@ -1786,7 +1786,7 @@ TclNRInterpProcCore(
      */
 
     procPtr->refCount++;
-    ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
     TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
 	    NULL, NULL);
@@ -1920,7 +1920,7 @@ TclProcCompileProc(
     Tcl_CallFrame *framePtr;
     ByteCode *codePtr;
 
-    ByteCodeGetIntRep(bodyPtr, &tclByteCodeType, codePtr);
+    ByteCodeGetInternalRep(bodyPtr, &tclByteCodeType, codePtr);
 
     /*
      * If necessary, compile the procedure's body. The compiler will allocate
@@ -1955,7 +1955,7 @@ TclProcCompileProc(
 	    codePtr->compileEpoch = iPtr->compileEpoch;
 	    codePtr->nsPtr = nsPtr;
 	} else {
-	    Tcl_StoreIntRep(bodyPtr, &tclByteCodeType, NULL);
+	    Tcl_StoreInternalRep(bodyPtr, &tclByteCodeType, NULL);
 	    codePtr = NULL;
 	}
     }
@@ -2312,7 +2312,7 @@ TclNewProcBodyObj(
 
     TclNewObj(objPtr);
     if (objPtr) {
-	ProcSetIntRep(objPtr, procPtr);
+	ProcSetInternalRep(objPtr, procPtr);
     }
 
     return objPtr;
@@ -2341,9 +2341,9 @@ ProcBodyDup(
     Tcl_Obj *dupPtr)		/* Target object for the duplication. */
 {
     Proc *procPtr;
-    ProcGetIntRep(srcPtr, procPtr);
+    ProcGetInternalRep(srcPtr, procPtr);
 
-    ProcSetIntRep(dupPtr, procPtr);
+    ProcSetInternalRep(dupPtr, procPtr);
 }
 
 /*
@@ -2371,7 +2371,7 @@ ProcBodyFree(
 {
     Proc *procPtr;
 
-    ProcGetIntRep(objPtr, procPtr);
+    ProcGetInternalRep(objPtr, procPtr);
 
     if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
@@ -2400,12 +2400,12 @@ DupLambdaInternalRep(
     Proc *procPtr;
     Tcl_Obj *nsObjPtr;
 
-    LambdaGetIntRep(srcPtr, procPtr, nsObjPtr);
+    LambdaGetInternalRep(srcPtr, procPtr, nsObjPtr);
     assert(procPtr != NULL);
 
     procPtr->refCount++;
 
-    LambdaSetIntRep(copyPtr, procPtr, nsObjPtr);
+    LambdaSetInternalRep(copyPtr, procPtr, nsObjPtr);
 }
 
 static void
@@ -2416,7 +2416,7 @@ FreeLambdaInternalRep(
     Proc *procPtr;
     Tcl_Obj *nsObjPtr;
 
-    LambdaGetIntRep(objPtr, procPtr, nsObjPtr);
+    LambdaGetInternalRep(objPtr, procPtr, nsObjPtr);
     assert(procPtr != NULL);
 
     if (procPtr->refCount-- <= 1) {
@@ -2590,7 +2590,7 @@ SetLambdaFromAny(
      * conversion to lambdaType.
      */
 
-    LambdaSetIntRep(objPtr, procPtr, nsObjPtr);
+    LambdaSetInternalRep(objPtr, procPtr, nsObjPtr);
     return TCL_OK;
 }
 
@@ -2603,13 +2603,13 @@ TclGetLambdaFromObj(
     Proc *procPtr;
     Tcl_Obj *nsObjPtr;
 
-    LambdaGetIntRep(objPtr, procPtr, nsObjPtr);
+    LambdaGetInternalRep(objPtr, procPtr, nsObjPtr);
 
     if (procPtr == NULL) {
 	if (SetLambdaFromAny(interp, objPtr) != TCL_OK) {
 	    return NULL;
 	}
-	LambdaGetIntRep(objPtr, procPtr, nsObjPtr);
+	LambdaGetInternalRep(objPtr, procPtr, nsObjPtr);
     }
 
     assert(procPtr != NULL);

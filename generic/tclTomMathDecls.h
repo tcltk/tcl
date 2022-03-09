@@ -167,11 +167,11 @@ MODULE_SCOPE mp_err	TclBN_mp_set_int(mp_int *a, unsigned long b);
 #define s_mp_toom_sqr TclBN_mp_toom_sqr
 #endif /* !TCL_WITH_EXTERNAL_TOMMATH */
 
-#define mp_init_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_init_ul") TclBN_mp_init_u64(a,(unsigned int)(b)))
-#define mp_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_u64((a),((unsigned int)(b))),MP_OKAY))
-#define mp_set_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (TclBN_mp_set_u64((a),(long)(b)),MP_OKAY))
-#define mp_set_long_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_u64") (TclBN_mp_set_u64((a),(b)),MP_OKAY))
-#define mp_unsigned_bin_size(mp) (MP_DEPRECATED_PRAGMA("replaced by mp_ubin_size") (int)TclBN_mp_ubin_size(mp))
+#define mp_init_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_init_ul") mp_init_u64(a,(unsigned int)(b)))
+#define mp_set_int(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (mp_set_u64((a),((unsigned int)(b))),MP_OKAY))
+#define mp_set_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_ul") (mp_set_u64((a),(long)(b)),MP_OKAY))
+#define mp_set_long_long(a,b) (MP_DEPRECATED_PRAGMA("replaced by mp_set_u64") (mp_set_u64((a),(b)),MP_OKAY))
+#define mp_unsigned_bin_size(mp) (MP_DEPRECATED_PRAGMA("replaced by mp_ubin_size") (int)mp_ubin_size(mp))
 
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl

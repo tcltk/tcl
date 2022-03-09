@@ -464,6 +464,7 @@ Tcl_SetResult(
 
     ResetObjResult(iPtr);
 }
+#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -482,10 +483,12 @@ Tcl_SetResult(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetStringResult
 const char *
 Tcl_GetStringResult(
     Tcl_Interp *interp)/* Interpreter whose result to return. */
 {
+#ifndef TCL_NO_DEPRECATED
     Interp *iPtr = (Interp *) interp;
     /*
      * If the string result is empty, move the object result to the string
@@ -497,8 +500,10 @@ Tcl_GetStringResult(
 		TCL_VOLATILE);
     }
     return iPtr->result;
+#else
+    return TclGetString(Tcl_GetObjResult(interp));
+#endif
 }
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -1008,7 +1013,7 @@ ResetObjResult(
 	    objResultPtr->bytes = &tclEmptyString;
 	    objResultPtr->length = 0;
 	}
-	TclFreeIntRep(objResultPtr);
+	TclFreeInternalRep(objResultPtr);
     }
 }
 
@@ -1323,15 +1328,15 @@ TclProcessReturn(
              * if someone does [return -errorstack [info errorstack]]
              */
 
-            if (Tcl_ListObjGetElements(interp, valuePtr, &valueObjc,
+            if (TclListObjGetElements(interp, valuePtr, &valueObjc,
                     &valueObjv) == TCL_ERROR) {
                 return TCL_ERROR;
             }
             iPtr->resetErrorStack = 0;
-            Tcl_ListObjLength(interp, iPtr->errorStack, &len);
+            TclListObjLength(interp, iPtr->errorStack, &len);
 
             /*
-             * Reset while keeping the list intrep as much as possible.
+             * Reset while keeping the list internalrep as much as possible.
              */
 
             Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, valueObjc,
@@ -1485,7 +1490,7 @@ TclMergeReturnOptions(
     if (valuePtr != NULL) {
 	int length;
 
-	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length )) {
 	    /*
 	     * Value is not a list, which is illegal for -errorcode.
 	     */
@@ -1507,7 +1512,7 @@ TclMergeReturnOptions(
     if (valuePtr != NULL) {
 	int length;
 
-	if (TCL_ERROR == Tcl_ListObjLength(NULL, valuePtr, &length )) {
+	if (TCL_ERROR == TclListObjLength(NULL, valuePtr, &length )) {
 	    /*
 	     * Value is not a list, which is illegal for -errorstack.
 	     */

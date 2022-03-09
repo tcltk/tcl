@@ -57,11 +57,11 @@
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
-#               noembed   = Without this option, the Tcl core library scripts
+# 		noembed   = Without this option, the Tcl core library scripts
 #			    are embedded into the executable if "static" is
-#                           specified in OPTS, or into the DLL otherwise. If
-#                           "noembed" is specified, the scripts are not embedded
-#                           but copied to the installation target (as in 8.6).
+#			    specified in OPTS, or into the DLL otherwise. If
+#			    "noembed" is specified, the scripts are not embedded
+#			    but copied to the installation target (as in 8.6).
 #		nomsvcrt  = Affects the static option only to switch it from
 #			    using msvcrt(d) as the C runtime [by default] to
 #			    libcmt(d). This is useful for static embedding
@@ -100,7 +100,7 @@
 #		nodep	 = Turns off compatibility macros to ensure the core
 #			    isn't being built with deprecated functions.
 #
-#	MACHINE=(ALPHA|AMD64|IA64|IX86)
+#	MACHINE=(ALPHA|AMD64|ARM64|IA64|IX86)
 #		Set the machine type used for the compiler, linker, and
 #		resource compiler.  This hook is needed to tell the tools
 #		when alternate platforms are requested.  IX86 is the default
@@ -556,16 +556,16 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 	$(_VC_MANIFEST_EMBED_DLL)
 !endif
 
-!if "$(MACHINE)" == "AMD64"
-$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64\zlib1.dll
-	$(COPY) $(COMPATDIR)\zlib\win64\zlib1.dll $(OUT_DIR)\zlib1.dll
-$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64\zdll.lib
-	$(COPY) $(COMPATDIR)\zlib\win64\zdll.lib $(OUT_DIR)\zdll.lib
-$(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win64\libtommath.dll
-	$(COPY) $(TOMMATHDIR)\win64\libtommath.dll $(OUT_DIR)\libtommath.dll
-$(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
-	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
-!else
+!if "$(MACHINE)" == "ARM64"
+$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64-arm\zlib1.dll
+	$(COPY) $(COMPATDIR)\zlib\win64-arm\zlib1.dll $(OUT_DIR)\zlib1.dll
+$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64-arm\zdll.lib
+	$(COPY) $(COMPATDIR)\zlib\win64-arm\zdll.lib $(OUT_DIR)\zdll.lib
+$(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win64-arm\libtommath.dll
+	$(COPY) $(TOMMATHDIR)\win64-arm\libtommath.dll $(OUT_DIR)\libtommath.dll
+$(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64-arm\tommath.lib
+	$(COPY) $(TOMMATHDIR)\win64-arm\tommath.lib $(OUT_DIR)\tommath.lib
+!elseif "$(MACHINE)" == "IX86"
 $(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win32\zlib1.dll
 	$(COPY) $(COMPATDIR)\zlib\win32\zlib1.dll $(OUT_DIR)\zlib1.dll
 $(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win32\zdll.lib
@@ -574,6 +574,15 @@ $(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win32\libtommath.dll
 	$(COPY) $(TOMMATHDIR)\win32\libtommath.dll $(OUT_DIR)\libtommath.dll
 $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win32\tommath.lib
 	$(COPY) $(TOMMATHDIR)\win32\tommath.lib $(OUT_DIR)\tommath.lib
+!else
+$(OUT_DIR)\zlib1.dll:	$(COMPATDIR)\zlib\win64\zlib1.dll
+	$(COPY) $(COMPATDIR)\zlib\win64\zlib1.dll $(OUT_DIR)\zlib1.dll
+$(OUT_DIR)\zdll.lib:	$(COMPATDIR)\zlib\win64\zdll.lib
+	$(COPY) $(COMPATDIR)\zlib\win64\zdll.lib $(OUT_DIR)\zdll.lib
+$(OUT_DIR)\libtommath.dll:	$(TOMMATHDIR)\win64\libtommath.dll
+	$(COPY) $(TOMMATHDIR)\win64\libtommath.dll $(OUT_DIR)\libtommath.dll
+$(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
+	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
 !endif
 
 $(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
@@ -594,7 +603,7 @@ $(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
 !endif
 	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
 	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
-	@cd "$(OUT_DIR)" && $(TCLSH) zipper.tcl
+	@cd "$(OUT_DIR)" && $(TCLSH_NATIVE) zipper.tcl
 
 
 pkgs:
@@ -798,8 +807,19 @@ $(TMP_DIR)\tclMainW.obj: $(GENERICDIR)\tclMain.c
 	$(cc32) $(pkgcflags) /DUNICODE /D_UNICODE \
 	    -Fo$@ $?
 
-$(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
-	$(cc32) $(appcflags) -Fo$@ $?
+$(ROOT)\manifest.uuid:
+	copy $(WIN_DIR)\gitmanifest.in $(ROOT)\manifest.uuid
+	git rev-parse HEAD >>$(ROOT)\manifest.uuid
+
+$(TMP_DIR)\tclUuid.h:	$(ROOT)\manifest.uuid
+	copy $(WIN_DIR)\tclUuid.h.in+$(ROOT)\manifest.uuid $(TMP_DIR)\tclUuid.h
+
+$(TMP_DIR)\tclEvent.obj: $(GENERICDIR)\tclEvent.c $(TMP_DIR)\tclUuid.h
+	$(cc32) $(pkgcflags) -I$(TMP_DIR) \
+	    -Fo$@ $(GENERICDIR)\tclEvent.c
+
+$(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c $(TMP_DIR)\tclUuid.h
+	$(cc32) $(appcflags) -I$(TMP_DIR) -Fo$@ $?
 
 $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 	$(cc32) $(appcflags) -Fo$@ $?
@@ -954,24 +974,6 @@ install-binaries:
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
 install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
-	@if not exist "$(SCRIPT_INSTALL_DIR)" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\opt0.4" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\cookiejar0.2" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\cookiejar0.2"
-	@if not exist "$(MODULE_INSTALL_DIR)" \
-		$(MKDIR) "$(MODULE_INSTALL_DIR)"
-	@if not exist "$(MODULE_INSTALL_DIR)\8.4" \
-		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.4"
-	@if not exist "$(MODULE_INSTALL_DIR)\8.4\platform" \
-		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.4\platform"
-	@if not exist "$(MODULE_INSTALL_DIR)\8.5" \
-		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.5"
-	@if not exist "$(MODULE_INSTALL_DIR)\8.6" \
-		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.6"
-	@if not exist "$(MODULE_INSTALL_DIR)\8.7" \
-		$(MKDIR) "$(MODULE_INSTALL_DIR)\8.7"
 	@if not exist "$(LIB_INSTALL_DIR)\nmake" \
 		$(MKDIR) "$(LIB_INSTALL_DIR)\nmake"
 	@echo Installing header files
@@ -985,6 +987,8 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(TOMMATHDIR)\tommath.h"         "$(INCLUDE_INSTALL_DIR)\"
 !if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing library files to $(SCRIPT_INSTALL_DIR)
+	@if not exist "$(SCRIPT_INSTALL_DIR)" \
+	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)"
 	@$(CPY) "$(ROOT)\library\history.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\init.tcl"        "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\clock.tcl"       "$(SCRIPT_INSTALL_DIR)\"
@@ -1002,26 +1006,43 @@ install-libraries: tclConfig tcl-nmake install-msgs install-tzdata
 	@$(CPY) "$(WIN_DIR)\rules.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\targets.vc"              "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(WIN_DIR)\nmakehlp.c"            "$(LIB_INSTALL_DIR)\nmake\"
+	@$(CPY) "$(WIN_DIR)\x86_64-w64-mingw32-nmakehlp.exe" "$(LIB_INSTALL_DIR)\nmake\"
 	@$(CPY) "$(OUT_DIR)\tcl.nmake"            "$(LIB_INSTALL_DIR)\nmake\"
 !if !$(TCL_EMBED_SCRIPTS)
 	@echo Installing package cookiejar $(PKG_COOKIEJAR_VER)
+	@if not exist "$(SCRIPT_INSTALL_DIR)\cookiejar0.2" \
+	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)\cookiejar0.2"
 	@$(CPY) "$(ROOT)\library\cookiejar\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
 	@$(CPY) "$(ROOT)\library\cookiejar\*.gz" \
 	    "$(SCRIPT_INSTALL_DIR)\cookiejar0.2\"
 	@echo Installing package opt $(PKG_OPT_VER)
+	@if not exist "$(SCRIPT_INSTALL_DIR)\opt0.4" \
+	    $(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
+	@if not exist "$(MODULE_INSTALL_DIR)" \
+	    $(MKDIR) "$(MODULE_INSTALL_DIR)"
 	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
+	@if not exist "$(MODULE_INSTALL_DIR)\8.6" \
+	    $(MKDIR) "$(MODULE_INSTALL_DIR)\8.6"
 	@$(COPY) "$(ROOT)\library\http\http.tcl" \
 	    "$(MODULE_INSTALL_DIR)\8.6\http-$(PKG_HTTP_VER).tm"
 	@echo Installing package msgcat $(PKG_MSGCAT_VER) as a Tcl Module
+	@if not exist "$(MODULE_INSTALL_DIR)\8.7" \
+	    $(MKDIR) "$(MODULE_INSTALL_DIR)\8.7"
 	@$(COPY) "$(ROOT)\library\msgcat\msgcat.tcl" \
 	    "$(MODULE_INSTALL_DIR)\8.7\msgcat-$(PKG_MSGCAT_VER).tm"
 	@echo Installing package tcltest $(PKG_TCLTEST_VER) as a Tcl Module
+	@if not exist "$(MODULE_INSTALL_DIR)\8.5" \
+	    $(MKDIR) "$(MODULE_INSTALL_DIR)\8.5"
 	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
 	    "$(MODULE_INSTALL_DIR)\8.5\tcltest-$(PKG_TCLTEST_VER).tm"
 	@echo Installing package platform $(PKG_PLATFORM_VER) as a Tcl Module
+	@if not exist "$(MODULE_INSTALL_DIR)\8.4" \
+	    $(MKDIR) "$(MODULE_INSTALL_DIR)\8.4"
+	@if not exist "$(MODULE_INSTALL_DIR)\8.4\platform" \
+	    $(MKDIR) "$(MODULE_INSTALL_DIR)\8.4\platform"
 	@$(COPY) "$(ROOT)\library\platform\platform.tcl" \
 	    "$(MODULE_INSTALL_DIR)\8.4\platform-$(PKG_PLATFORM_VER).tm"
 	@echo Installing package platform::shell $(PKG_SHELL_VER) as a Tcl Module

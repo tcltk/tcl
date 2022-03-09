@@ -2,11 +2,19 @@
 
 package require tcltest 2.5
 namespace import ::tcltest::*
-testConstraint exec          [llength [info commands exec]]
+testConstraint exec [llength [info commands exec]]
+testConstraint deprecated [expr {![tcl::build-info no-deprecate]}]
+testConstraint debug [tcl::build-info debug]
+testConstraint purify [tcl::build-info purify]
+testConstraint debugpurify [
+    expr {
+	![tcl::build-info memdebug]
+	&& [testConstraint debug]
+	&& [testConstraint purify]
+    }]
 testConstraint fcopy         [llength [info commands fcopy]]
 testConstraint fileevent     [llength [info commands fileevent]]
-testConstraint thread        [
-    expr {0 == [catch {package require Thread 2.7-}]}]
+testConstraint thread        [expr {![catch {package require Thread 2.7-}]}]
 testConstraint notValgrind   [expr {![testConstraint valgrind]}]
 
 

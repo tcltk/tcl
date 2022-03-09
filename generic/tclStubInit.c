@@ -65,15 +65,22 @@
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
-#undef TclStaticPackage
+#undef TclStaticLibrary
 #undef Tcl_BackgroundError
 #undef TclGuessPackageName
 #undef TclGetLoadedPackages
-#define TclStaticPackage Tcl_StaticPackage
+#define TclStaticLibrary Tcl_StaticLibrary
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
 #undef Tcl_MacOSXOpenBundleResources
+#undef TclWinConvertWSAError
+#undef TclWinConvertError
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define TclWinConvertWSAError (void (*)(DWORD))(void *)Tcl_WinConvertError
+#define TclWinConvertError (void (*)(DWORD))(void *)Tcl_WinConvertError
+#endif
+
 
 #if TCL_UTF_MAX > 3
 static void uniCodePanic(void) {
@@ -179,7 +186,7 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 #define TclBN_s_mp_sub s_mp_sub
 #define TclBN_mp_toom_mul s_mp_toom_mul
 #define TclBN_mp_toom_sqr s_mp_toom_sqr
-#define TclUnusedStubEntry NULL
+#define TclUnusedStubEntry 0
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #if defined(_WIN64) || defined(TCL_NO_DEPRECATED) || TCL_MAJOR_VERSION > 8
@@ -292,6 +299,8 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define Tcl_MacOSXOpenBundleResources 0
 #   define TclGuessPackageName 0
 #   define TclGetLoadedPackages 0
+#   undef TclSetPreInitScript
+#   define TclSetPreInitScript 0
 #else
 
 #define TclGuessPackageName guessPackageName
@@ -628,8 +637,6 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define Tcl_Eval 0
 #   undef Tcl_GlobalEval
 #   define Tcl_GlobalEval 0
-#   undef Tcl_GetStringResult
-#   define Tcl_GetStringResult 0
 #   undef Tcl_SaveResult
 #   define Tcl_SaveResult 0
 #   undef Tcl_RestoreResult
@@ -1032,10 +1039,9 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
-    TclStaticPackage, /* 257 */
+    TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
-    TclGetBytesFromObj, /* 259 */
-    TclUnusedStubEntry, /* 260 */
+    TclUnusedStubEntry, /* 259 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -1148,6 +1154,8 @@ static const TclPlatStubs tclPlatStubs = {
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
+    0, /* 2 */
+    Tcl_WinConvertError, /* 3 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
@@ -1519,7 +1527,7 @@ const TclStubs tclStubs = {
     Tcl_SourceRCFile, /* 241 */
     Tcl_SplitList, /* 242 */
     Tcl_SplitPath, /* 243 */
-    Tcl_StaticPackage, /* 244 */
+    Tcl_StaticLibrary, /* 244 */
     Tcl_StringMatch, /* 245 */
     Tcl_TellOld, /* 246 */
     Tcl_TraceVar, /* 247 */
@@ -1627,7 +1635,7 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsSpace, /* 349 */
     Tcl_UniCharIsUpper, /* 350 */
     Tcl_UniCharIsWordChar, /* 351 */
-    Tcl_UniCharLen, /* 352 */
+    Tcl_Char16Len, /* 352 */
     Tcl_UniCharNcmp, /* 353 */
     Tcl_Char16ToUtfDString, /* 354 */
     Tcl_UtfToChar16DString, /* 355 */
@@ -1911,10 +1919,10 @@ const TclStubs tclStubs = {
     TclZipfs_Unmount, /* 633 */
     TclZipfs_TclLibrary, /* 634 */
     TclZipfs_MountBuffer, /* 635 */
-    Tcl_FreeIntRep, /* 636 */
+    Tcl_FreeInternalRep, /* 636 */
     Tcl_InitStringRep, /* 637 */
-    Tcl_FetchIntRep, /* 638 */
-    Tcl_StoreIntRep, /* 639 */
+    Tcl_FetchInternalRep, /* 638 */
+    Tcl_StoreInternalRep, /* 639 */
     Tcl_HasStringRep, /* 640 */
     Tcl_IncrRefCount, /* 641 */
     Tcl_DecrRefCount, /* 642 */
@@ -1924,14 +1932,26 @@ const TclStubs tclStubs = {
     Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
-    0, /* 649 */
-    0, /* 650 */
+    TclGetBytesFromObj, /* 649 */
+    Tcl_GetBytesFromObj, /* 650 */
     TclGetStringFromObj, /* 651 */
     TclGetUnicodeFromObj, /* 652 */
     TclGetByteArrayFromObj, /* 653 */
     Tcl_UtfCharComplete, /* 654 */
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
+    Tcl_UniCharIsUnicode, /* 657 */
+    0, /* 658 */
+    0, /* 659 */
+    Tcl_AsyncMarkFromSignal, /* 660 */
+    0, /* 661 */
+    0, /* 662 */
+    0, /* 663 */
+    0, /* 664 */
+    0, /* 665 */
+    0, /* 666 */
+    0, /* 667 */
+    Tcl_UniCharLen, /* 668 */
 };
 
 /* !END!: Do not edit above this line. */

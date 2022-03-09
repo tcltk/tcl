@@ -50,10 +50,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   7
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  4
+#define TCL_RELEASE_SERIAL  6
 
 #define TCL_VERSION	    "8.7"
-#define TCL_PATCH_LEVEL	    "8.7a4"
+#define TCL_PATCH_LEVEL	    "8.7a6"
 
 #if !defined(TCL_NO_DEPRECATED) || defined(RC_INVOKED)
 /*
@@ -697,8 +697,8 @@ typedef int (Tcl_MathProc) (ClientData clientData, Tcl_Interp *interp,
 typedef void (Tcl_NamespaceDeleteProc) (ClientData clientData);
 typedef int (Tcl_ObjCmdProc) (ClientData clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
-typedef int (Tcl_PackageInitProc) (Tcl_Interp *interp);
-typedef int (Tcl_PackageUnloadProc) (Tcl_Interp *interp, int flags);
+typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
+typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
 typedef void (Tcl_TcpAcceptProc) (ClientData callbackData, Tcl_Channel chan,
 	char *address, int port);
@@ -717,7 +717,12 @@ typedef void (Tcl_ServiceModeHookProc) (int mode);
 typedef ClientData (Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (ClientData clientData);
 typedef void (Tcl_MainLoopProc) (void);
-
+
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_PackageInitProc Tcl_LibraryInitProc
+#   define Tcl_PackageUnloadProc Tcl_LibraryUnloadProc
+#endif
+
 /*
  *----------------------------------------------------------------------------
  * The following structure represents a type of object, which is a particular
@@ -744,13 +749,13 @@ typedef struct Tcl_ObjType {
 } Tcl_ObjType;
 
 /*
- * The following structure stores an internal representation (intrep) for
- * a Tcl value. An intrep is associated with an Tcl_ObjType when both
+ * The following structure stores an internal representation (internalrep) for
+ * a Tcl value. An internalrep is associated with an Tcl_ObjType when both
  * are stored in the same Tcl_Obj.  The routines of the Tcl_ObjType govern
- * the handling of the intrep.
+ * the handling of the internalrep.
  */
 
-typedef union Tcl_ObjIntRep {	/* The internal representation: */
+typedef union Tcl_ObjInternalRep {	/* The internal representation: */
     long longValue;		/*   - an long integer value. */
     double doubleValue;		/*   - a double-precision floating value. */
     void *otherValuePtr;	/*   - another, type-specific value, */
@@ -764,7 +769,7 @@ typedef union Tcl_ObjIntRep {	/* The internal representation: */
 	void *ptr;		/*     not used internally any more. */
 	unsigned long value;
     } ptrAndLongRep;
-} Tcl_ObjIntRep;
+} Tcl_ObjInternalRep;
 
 /*
  * One of the following structures exists for each object in the Tcl system.
@@ -791,7 +796,7 @@ typedef struct Tcl_Obj {
 				 * corresponds to the type of the object's
 				 * internal rep. NULL indicates the object has
 				 * no internal rep (has no type). */
-    Tcl_ObjIntRep internalRep;	/* The internal representation: */
+    Tcl_ObjInternalRep internalRep;	/* The internal representation: */
 } Tcl_Obj;
 
 
@@ -974,10 +979,13 @@ typedef struct Tcl_DString {
  * TCL_EXACT disallows abbreviated strings.
  * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
  *      a table that will not live long enough to make it worthwhile.
+ * TCL_INDEX_NULL_OK allows the empty string or NULL to return TCL_OK.
+ *      The returned value will be -1;
  */
 
 #define TCL_EXACT		1
 #define TCL_INDEX_TEMP_TABLE	2
+#define TCL_INDEX_NULL_OK	4
 
 /*
  *----------------------------------------------------------------------------
@@ -2131,7 +2139,7 @@ typedef struct Tcl_EncodingType {
 #if TCL_UTF_MAX > 3
     /*
      * int isn't 100% accurate as it should be a strict 4-byte value
-     * (perhaps wchar_t). ILP64/SILP64 systems may have troubles. The
+     * (perhaps int32_t). ILP64/SILP64 systems may have troubles. The
      * size of this value must be reflected correctly in regcustom.h.
      */
 typedef int Tcl_UniChar;
@@ -2378,12 +2386,16 @@ EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
-EXTERN void		Tcl_InitSubsystems(void);
+EXTERN const char *	Tcl_InitSubsystems(void);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+EXTERN const char *	Tcl_SetPreInitScript(const char *string);
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_StaticPackage Tcl_StaticLibrary
+#endif
 #ifdef _WIN32
-EXTERN int		TclZipfs_AppHook(int *argc, wchar_t ***argv);
+EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #else
-EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
+EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #endif
 
 /*
@@ -2470,7 +2482,7 @@ EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 	++(objPtr)->refCount
     /*
      * Use do/while0 idiom for optimum correctness without compiler warnings.
-     * http://c2.com/cgi/wiki?TrivialDoWhileLoop
+     * https://wiki.c2.com/?TrivialDoWhileLoop
      */
 #   undef Tcl_DecrRefCount
 #   define Tcl_DecrRefCount(objPtr) \

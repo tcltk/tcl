@@ -607,6 +607,108 @@ TclFinalizeEvaluation(void)
 /*
  *----------------------------------------------------------------------
  *
+ * buildInfoObjCmd --
+ *
+ *	Implements tcl::build-info command.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+buildInfoObjCmd(
+    void *clientData,
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?option?");
+	return TCL_ERROR;
+    }
+    if (objc == 2) {
+	int len;
+	const char *arg = TclGetStringFromObj(objv[1], &len);
+	if (len == 7 && !strcmp(arg, "version")) {
+	    char buf[80];
+	    const char *p = strchr((char *)clientData, '.');
+	    if (p) {
+		const char *q = strchr(p+1, '.');
+		const char *r = strchr(p+1, '+');
+		p = (q < r) ? q : r;
+	    }
+	    if (p) {
+		memcpy(buf, (char *)clientData, p - (char *)clientData);
+		buf[p - (char *)clientData] = '\0';
+		Tcl_AppendResult(interp, buf, NULL);
+	    }
+	    return TCL_OK;
+	} else if (len == 10 && !strcmp(arg, "patchlevel")) {
+	    char buf[80];
+	    const char *p = strchr((char *)clientData, '+');
+	    if (p) {
+		memcpy(buf, (char *)clientData, p - (char *)clientData);
+		buf[p - (char *)clientData] = '\0';
+		Tcl_AppendResult(interp, buf, NULL);
+	    }
+	    return TCL_OK;
+	} else if (len == 6 && !strcmp(arg, "commit")) {
+	    const char *q, *p = strchr((char *)clientData, '+');
+	    if (p) {
+		if ((q = strchr(p, '.'))) {
+		    char buf[80];
+		    memcpy(buf, p+1, q - p - 1);
+		    buf[q - p - 1] = '\0';
+		    Tcl_AppendResult(interp, buf, NULL);
+		} else {
+		    Tcl_AppendResult(interp, p+1, NULL);
+		}
+	    }
+	    return TCL_OK;
+	} else if (len == 8 && !strcmp(arg, "compiler")) {
+	    const char *p = strchr((char *)clientData, '.');
+	    while (p) {
+		if (!strncmp(p+1, "clang-", 6) || !strncmp(p+1, "gcc-", 4)
+			    || !strncmp(p+1, "icc-", 4) || !strncmp(p+1, "msvc-", 5)) {
+		    const char *q = strchr(p+1, '.');
+		    if (q) {
+			char buf[16];
+			memcpy(buf, p+1, q - p - 1);
+			buf[q - p - 1] = '\0';
+			Tcl_AppendResult(interp, buf, NULL);
+		    } else {
+			Tcl_AppendResult(interp, p+1, NULL);
+		    }
+		    return TCL_OK;
+		}
+		p = strchr(p+1, '.');
+	    }
+	    Tcl_AppendResult(interp, "0", NULL);
+	    return TCL_OK;
+	}
+	const char *p = strchr((char *)clientData, '.');
+	while (p) {
+	    if (!strncmp(p+1, arg, len) && ((p[len+1] == '.') || (p[len+1] == '\0'))) {
+		Tcl_AppendResult(interp, "1", NULL);
+		return TCL_OK;
+	    }
+	    p = strchr(p+1, '.');
+	}
+	Tcl_AppendResult(interp, "0", NULL);
+	return TCL_OK;
+    }
+    Tcl_AppendResult(interp, (char *)clientData, NULL);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_CreateInterp --
  *
  *	Create a new TCL command interpreter.
@@ -644,8 +746,7 @@ Tcl_CreateInterp(void)
 #endif /* TCL_COMPILE_STATS */
     char mathFuncName[32];
     CallFrame *framePtr;
-
-    Tcl_InitSubsystems();
+    const char *version = Tcl_InitSubsystems();
 
     /*
      * Panic if someone updated the CallFrame structure without also updating
@@ -1162,7 +1263,7 @@ Tcl_CreateInterp(void)
 #endif /* !TCL_NO_DEPRECATED */
     TclpSetVariables(interp);
 
-#if TCL_THREADS
+#if TCL_THREADS && !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
     /*
      * The existence of the "threaded" element of the tcl_platform array
      * indicates that this particular Tcl shell has been compiled with threads
@@ -1176,10 +1277,14 @@ Tcl_CreateInterp(void)
     /*
      * Register Tcl's version number.
      * TIP #268: Full patchlevel instead of just major.minor
+     * TIP #599: Extended build information "+<UUID>.<tag1>.<tag2>...."
      */
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
     Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL, &tclStubs);
+    Tcl_CreateObjCommand(interp, "::tcl::build-info",
+	    buildInfoObjCmd, (void *)version, NULL);
+
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", TclGetString(Tcl_GetObjResult(interp)));
@@ -1826,28 +1931,28 @@ DeleteInterpProc(
 	ckfree(hTablePtr);
     }
 
-    /*
-     * Invoke deletion callbacks; note that a callback can create new
-     * callbacks, so we iterate.
-     */
 
-    while (iPtr->assocData != NULL) {
+    if (iPtr->assocData != NULL) {
 	AssocData *dPtr;
 
 	hTablePtr = iPtr->assocData;
-	iPtr->assocData = NULL;
+	/*
+	 * Invoke deletion callbacks; note that a callback can create new
+	 * callbacks, so we iterate.
+	 */
 	for (hPtr = Tcl_FirstHashEntry(hTablePtr, &search);
 		hPtr != NULL;
 		hPtr = Tcl_FirstHashEntry(hTablePtr, &search)) {
 	    dPtr = (AssocData *)Tcl_GetHashValue(hPtr);
-	    Tcl_DeleteHashEntry(hPtr);
 	    if (dPtr->proc != NULL) {
 		dPtr->proc(dPtr->clientData, interp);
 	    }
+	    Tcl_DeleteHashEntry(hPtr);
 	    ckfree(dPtr);
 	}
 	Tcl_DeleteHashTable(hTablePtr);
 	ckfree(hTablePtr);
+	iPtr->assocData = NULL;
     }
 
     /*
@@ -3505,14 +3610,15 @@ Tcl_DeleteCommandFromToken(
     cmdPtr->flags |= CMD_DYING;
 
     /*
-     * Call trace functions for the command being deleted. Then delete its
-     * traces.
+     * Call each functions and then delete the trace.
      */
 
     cmdPtr->nsPtr->refCount++;
 
     if (cmdPtr->tracePtr != NULL) {
 	CommandTrace *tracePtr;
+	/* CallCommandTraces() does not cmdPtr, that's
+	 * done just before Tcl_DeleteCommandFromToken() returns  */
 	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
 
 	/*
@@ -3682,7 +3788,6 @@ CallCommandTraces(
 	}
     }
     cmdPtr->flags |= CMD_TRACE_ACTIVE;
-    cmdPtr->refCount++;
 
     result = NULL;
     active.nextPtr = iPtr->activeCmdTracePtr;
@@ -3740,7 +3845,6 @@ CallCommandTraces(
      */
 
     cmdPtr->flags &= ~CMD_TRACE_ACTIVE;
-    cmdPtr->refCount--;
     iPtr->activeCmdTracePtr = active.nextPtr;
     Tcl_Release(iPtr);
     return result;
@@ -3897,7 +4001,9 @@ Tcl_CreateMathFunc(
     data->proc = proc;
     data->numArgs = numArgs;
     data->argTypes = (Tcl_ValueType *)ckalloc(numArgs * sizeof(Tcl_ValueType));
-    memcpy(data->argTypes, argTypes, numArgs * sizeof(Tcl_ValueType));
+    if ((numArgs > 0) && (argTypes != NULL)) {
+	memcpy(data->argTypes, argTypes, numArgs * sizeof(Tcl_ValueType));
+    }
     data->clientData = clientData;
 
     Tcl_DStringInit(&bigName);
@@ -3960,8 +4066,8 @@ OldMathFuncProc(
 	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
 #ifdef ACCEPT_NAN
 	if (result != TCL_OK) {
-	    const Tcl_ObjIntRep *irPtr
-		    = TclFetchIntRep(valuePtr, &tclDoubleType);
+	    const Tcl_ObjInternalRep *irPtr
+		    = TclFetchInternalRep(valuePtr, &tclDoubleType);
 
 	    if (irPtr) {
 		d = irPtr->doubleValue;
@@ -4867,6 +4973,7 @@ NRCommand(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *listPtr;
 
     iPtr->numLevels--;
 
@@ -4875,7 +4982,10 @@ NRCommand(
       */
 
     if (data[1] && (data[1] != INT2PTR(1))) {
-        TclNRAddCallback(interp, TclNRTailcallEval, data[1], NULL, NULL, NULL);
+	listPtr = (Tcl_Obj *)data[1];
+	data[1] = NULL;
+
+	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, NULL, NULL, NULL);
     }
 
     /* OPT ??
@@ -5069,7 +5179,7 @@ TEOV_NotFound(
      * itself.
      */
 
-    Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
+    TclListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
 	    &handlerObjc, &handlerObjv);
     newObjc = objc + handlerObjc;
     newObjv = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * newObjc);
@@ -5678,7 +5788,7 @@ TclEvalEx(
 			int numElements;
 			Tcl_Obj **elements, *temp = copy[wordIdx];
 
-			Tcl_ListObjGetElements(NULL, temp, &numElements,
+			TclListObjGetElements(NULL, temp, &numElements,
 				&elements);
 			objectsUsed += numElements;
 			while (numElements--) {
@@ -7534,7 +7644,7 @@ ExprCeilFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -7574,7 +7684,7 @@ ExprFloorFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -7720,7 +7830,7 @@ ExprSqrtFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    Tcl_SetObjResult(interp, objv[1]);
@@ -7731,7 +7841,7 @@ ExprSqrtFunc(
     if (code != TCL_OK) {
 	return TCL_ERROR;
     }
-    if ((d >= 0.0) && TclIsInfinite(d)
+    if ((d >= 0.0) && isinf(d)
 	    && (Tcl_GetBignumFromObj(NULL, objv[1], &big) == TCL_OK)) {
 	mp_int root;
 	mp_err err;
@@ -7774,7 +7884,7 @@ ExprUnaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    d = irPtr->doubleValue;
@@ -7796,12 +7906,12 @@ CheckDoubleResult(
     double dResult)
 {
 #ifndef ACCEPT_NAN
-    if (TclIsNaN(dResult)) {
+    if (isnan(dResult)) {
 	TclExprFloatError(interp, dResult);
 	return TCL_ERROR;
     }
 #endif
-    if ((errno == ERANGE) && ((dResult == 0.0) || TclIsInfinite(dResult))) {
+    if ((errno == ERANGE) && ((dResult == 0.0) || isinf(dResult))) {
 	/*
 	 * When ERANGE signals under/overflow, just accept 0.0 or +/-Inf
 	 */
@@ -7838,7 +7948,7 @@ ExprBinaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d1);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    d1 = irPtr->doubleValue;
@@ -7853,7 +7963,7 @@ ExprBinaryFunc(
     code = Tcl_GetDoubleFromObj(interp, objv[2], &d2);
 #ifdef ACCEPT_NAN
     if (code != TCL_OK) {
-	const Tcl_ObjIntRep *irPtr = TclFetchIntRep(objv[1], &tclDoubleType);
+	const Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objv[1], &tclDoubleType);
 
 	if (irPtr) {
 	    d2 = irPtr->doubleValue;
@@ -8014,7 +8124,7 @@ ExprDoubleFunc(
     }
     if (Tcl_GetDoubleFromObj(interp, objv[1], &dResult) != TCL_OK) {
 #ifdef ACCEPT_NAN
-	if (TclHasIntRep(objv[1], &tclDoubleType)) {
+	if (TclHasInternalRep(objv[1], &tclDoubleType)) {
 	    Tcl_SetObjResult(interp, objv[1]);
 	    return TCL_OK;
 	}
@@ -8191,15 +8301,15 @@ ExprRandFunc(
 	 * take into consideration the thread this interp is running in.
 	 */
 
-	iPtr->randSeed = TclpGetClicks() + (PTR2INT(Tcl_GetCurrentThread())<<12);
+	iPtr->randSeed = TclpGetClicks() + PTR2UINT(Tcl_GetCurrentThread())*4093U;
 
 	/*
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
 	 */
 
-	iPtr->randSeed &= 0x7FFFFFFF;
-	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFF)) {
-	    iPtr->randSeed ^= 123459876;
+	iPtr->randSeed &= 0x7FFFFFFFL;
+	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFFL)) {
+	    iPtr->randSeed ^= 123459876L;
 	}
     }
 
@@ -9287,7 +9397,7 @@ TclNRTailcallEval(
     int objc;
     Tcl_Obj **objv;
 
-    Tcl_ListObjGetElements(interp, listPtr, &objc, &objv);
+    TclListObjGetElements(interp, listPtr, &objc, &objv);
     nsObjPtr = objv[0];
 
     if (result == TCL_OK) {
@@ -9450,6 +9560,7 @@ TclNRYieldToObjCmd(
 
     iPtr->execEnvPtr = corPtr->callerEEPtr;
     TclSetTailcall(interp, listPtr);
+    corPtr->yieldPtr = listPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
 
     return TclNRYieldObjCmd(INT2PTR(CORO_ACTIVATE_YIELDM), interp, 1, objv);
@@ -9647,6 +9758,22 @@ TclNRCoroutineActivateCallback(
          */
 
         if (corPtr->stackLevel != stackLevel) {
+	    NRE_callback *runPtr;
+
+	    iPtr->execEnvPtr = corPtr->callerEEPtr;
+	    if (corPtr->yieldPtr) {
+		for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
+		    if (runPtr->data[1] == corPtr->yieldPtr) {
+			runPtr->data[1] = NULL;
+			Tcl_DecrRefCount(corPtr->yieldPtr);
+			corPtr->yieldPtr = NULL;
+			break;
+		    }
+		}
+	    }
+	    iPtr->execEnvPtr = corPtr->eePtr;
+
+
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "cannot yield: C stack busy", -1));
             Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD",
@@ -9662,6 +9789,7 @@ TclNRCoroutineActivateCallback(
             Tcl_Panic("Yield received an option which is not implemented");
         }
 
+	corPtr->yieldPtr = NULL;
         corPtr->stackLevel = NULL;
 
         numLevels = iPtr->numLevels;

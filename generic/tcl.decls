@@ -108,7 +108,7 @@ declare 22 {deprecated {No longer in use, changed to macro}} {
     Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
 }
 declare 23 {
-    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int length,
+    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int numBytes,
 	    const char *file, int line)
 }
 declare 24 {
@@ -143,7 +143,7 @@ declare 32 {
 	    int *boolPtr)
 }
 declare 33 {
-    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -202,7 +202,7 @@ declare 49 {deprecated {No longer in use, changed to macro}} {
     Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
 }
 declare 50 {
-    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int length)
+    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int numBytes)
 }
 declare 51 {
     Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
@@ -226,11 +226,11 @@ declare 57 {deprecated {No longer in use, changed to macro}} {
     void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
 }
 declare 58 {
-    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int length)
+    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int numBytes)
 }
 declare 59 {
     void Tcl_SetByteArrayObj(Tcl_Obj *objPtr, const unsigned char *bytes,
-	    int length)
+	    int numBytes)
 }
 declare 60 {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
@@ -514,7 +514,7 @@ declare 143 {
     void Tcl_Finalize(void)
 }
 declare 144 {nostub {Don't use this function in a stub-enabled extension}} {
-    void Tcl_FindExecutable(const char *argv0)
+    const char *Tcl_FindExecutable(const char *argv0)
 }
 declare 145 {
     Tcl_HashEntry *Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
@@ -813,7 +813,7 @@ declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
 declare 230 {nostub {Don't use this function in a stub-enabled extension}} {
-    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
@@ -860,8 +860,8 @@ declare 243 {
     void Tcl_SplitPath(const char *path, int *argcPtr, const char ***argvPtr)
 }
 declare 244 {nostub {Don't use this function in a stub-enabled extension}} {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *prefix,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 declare 245 {deprecated {No longer in use, changed to macro}} {
     int Tcl_StringMatch(const char *str, const char *pattern)
@@ -1092,7 +1092,7 @@ declare 303 {
 declare 304 {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    const void *tablePtr, int offset, const char *msg, int flags,
-	    int *indexPtr)
+	    void *indexPtr)
 }
 declare 305 {
     void *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
@@ -1244,8 +1244,8 @@ declare 350 {
 declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
-declare 352 {deprecated {Use Tcl_GetCharLength}} {
-    int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
+declare 352 {
+    int Tcl_Char16Len(const unsigned short *uniStr)
 }
 declare 353 {deprecated {Use Tcl_UtfNcmp}} {
     int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
@@ -1365,7 +1365,7 @@ declare 385 {
 	    Tcl_Obj *patternObj)
 }
 declare 386 {
-    void Tcl_SetNotifier(Tcl_NotifierProcs *notifierProcPtr)
+    void Tcl_SetNotifier(const Tcl_NotifierProcs *notifierProcPtr)
 }
 declare 387 {
     Tcl_Mutex *Tcl_GetAllocMutex(void)
@@ -1581,8 +1581,8 @@ declare 443 {
 }
 declare 444 {
     int	Tcl_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *sym1,
-	    const char *sym2, Tcl_PackageInitProc **proc1Ptr,
-	    Tcl_PackageInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
+	    const char *sym2, Tcl_LibraryInitProc **proc1Ptr,
+	    Tcl_LibraryInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
 	    Tcl_FSUnloadFileProc **unloadProcPtr)
 }
 declare 445 {
@@ -2348,18 +2348,18 @@ declare 635 {
 
 # TIP #445
 declare 636 {
-    void Tcl_FreeIntRep(Tcl_Obj *objPtr)
+    void Tcl_FreeInternalRep(Tcl_Obj *objPtr)
 }
 declare 637 {
     char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
 	    unsigned int numBytes)
 }
 declare 638 {
-    Tcl_ObjIntRep *Tcl_FetchIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)
+    Tcl_ObjInternalRep *Tcl_FetchInternalRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)
 }
 declare 639 {
-    void Tcl_StoreIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr,
-	    const Tcl_ObjIntRep *irPtr)
+    void Tcl_StoreInternalRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr,
+	    const Tcl_ObjInternalRep *irPtr)
 }
 declare 640 {
     int Tcl_HasStringRep(Tcl_Obj *objPtr)
@@ -2402,6 +2402,16 @@ declare 648 {
 	    int length, Tcl_DString *dsPtr)
 }
 
+# TIP #568
+declare 649 {
+    unsigned char *TclGetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int *numBytesPtr)
+}
+declare 650 {
+    unsigned char *Tcl_GetBytesFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    size_t *numBytesPtr)
+}
+
 # TIP #481
 declare 651 {
     char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
@@ -2410,7 +2420,7 @@ declare 652 {
     Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 declare 653 {
-    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)
 }
 
 # TIP #575
@@ -2423,6 +2433,20 @@ declare 655 {
 declare 656 {
     const char *Tcl_UtfPrev(const char *src, const char *start)
 }
+declare 657 {
+    int Tcl_UniCharIsUnicode(int ch)
+}
+
+# TIP #511
+declare 660 {
+    int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
+}
+
+# TIP #617
+declare 668 {
+    int Tcl_UniCharLen(const int *uniStr)
+}
+
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
@@ -2447,6 +2471,9 @@ declare 0 win {
 }
 declare 1 win {
     char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
+}
+declare 3 win {
+    void Tcl_WinConvertError(unsigned errCode)
 }
 
 ################################
@@ -2478,17 +2505,17 @@ export {
     Tcl_Interp *interp)
 }
 export {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
-    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
+    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 export {
     Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
 }
 export {
-    void Tcl_FindExecutable(const char *argv0)
+    const char *Tcl_FindExecutable(const char *argv0)
 }
 export {
     const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,
@@ -2506,10 +2533,10 @@ export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
 }
 export {
-    void Tcl_InitSubsystems(void)
+    const char *Tcl_InitSubsystems(void)
 }
 export {
-    int TclZipfs_AppHook(int *argc, char ***argv)
+    const char *TclZipfs_AppHook(int *argc, char ***argv)
 }
 
 # Local Variables:

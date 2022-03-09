@@ -281,7 +281,7 @@ static Tcl_ObjCmdProc	NRChildCmd;
 /*
  *----------------------------------------------------------------------
  *
- * TclSetPreInitScript --
+ * Tcl_SetPreInitScript --
  *
  *	This routine is used to change the value of the internal variable,
  *	tclPreInitScript.
@@ -296,12 +296,12 @@ static Tcl_ObjCmdProc	NRChildCmd;
  */
 
 const char *
-TclSetPreInitScript(
+Tcl_SetPreInitScript(
     const char *string)		/* Pointer to a script. */
 {
     const char *prevString = tclPreInitScript;
     tclPreInitScript = string;
-    return(prevString);
+    return prevString;
 }
 
 /*
@@ -2418,7 +2418,7 @@ ChildCreate(
     int isNew, objc;
     Tcl_Obj **objv;
 
-    if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
     if (objc < 2) {

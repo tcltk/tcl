@@ -33,9 +33,9 @@ proc testIEEE {} {
     switch -exact -- $c {
 	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
 	    # little endian
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\xFF d \
 		ieeeValues(-Infinity)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\xBF d \
 		ieeeValues(-Normal)
 	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
 		ieeeValues(-Subnormal)
@@ -45,23 +45,23 @@ proc testIEEE {} {
 		ieeeValues(+0)
 	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
 		ieeeValues(+Subnormal)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\x3F d \
 		ieeeValues(+Normal)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF0\x7F d \
 		ieeeValues(+Infinity)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF8\x7F d \
 		ieeeValues(NaN)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf8\xff d \
+	    binary scan \x00\x00\x00\x00\x00\x00\xF8\xFF d \
 		ieeeValues(-NaN)
-	    binary scan \xef\xcd\xab\x89\x67\x45\xfb\xff d \
+	    binary scan \xEF\xCD\xAB\x89\x67\x45\xFB\xFF d \
 		ieeeValues(-NaN(3456789abcdef))
 	    set ieeeValues(littleEndian) 1
 	    return 1
 	}
 	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
-	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \xFF\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Infinity)
-	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \xBF\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Normal)
 	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-Subnormal)
@@ -71,15 +71,15 @@ proc testIEEE {} {
 		ieeeValues(+0)
 	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Subnormal)
-	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x3F\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Normal)
-	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x7F\xF0\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(+Infinity)
-	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \x7F\xF8\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(NaN)
-	    binary scan \xff\xf8\x00\x00\x00\x00\x00\x00 d \
+	    binary scan \xFF\xF8\x00\x00\x00\x00\x00\x00 d \
 		ieeeValues(-NaN)
-	    binary scan \xff\xfb\x45\x67\x89\xab\xcd\xef d \
+	    binary scan \xFF\xFB\x45\x67\x89\xAB\xCD\xEF d \
 		ieeeValues(-NaN(3456789abcdef))
 	    set ieeeValues(littleEndian) 0
 	    return 1
@@ -207,14 +207,17 @@ test util-4.5 {Tcl_ConcatObj - backslash-space at end of argument} {
     concat a { } c
 } {a c}
 test util-4.6 {Tcl_ConcatObj - utf-8 sequence with "whitespace" char} {
-    # Check for Bug #227512.  If this violates C isspace, then it returns \xc3.
-    concat \xe0
-} \xe0
+    # Check for Bug #227512.  If this violates C isspace, then it returns \xC3.
+    concat \xE0
+} \xE0
 test util-4.7 {Tcl_ConcatObj - refCount safety} testconcatobj {
     # Check for Bug #1447328 (actually, bugs in its original "fix"). One of the
     # symptoms was Bug #2055782.
     testconcatobj
 } {}
+test util-4.8 {Tcl_ConcatObj - [Bug 26649439c7]} {
+    concat [list foo] [list #]
+} {foo {#}}
 
 proc Wrapper_Tcl_StringMatch {pattern string} {
     # Forces use of Tcl_StringMatch, not Tcl_UniCharCaseMatch
@@ -239,14 +242,14 @@ test util-5.6 {Tcl_StringMatch} {
     Wrapper_Tcl_StringMatch *3*6*9 01234567890
 } 0
 test util-5.7 {Tcl_StringMatch: UTF-8} {
-    Wrapper_Tcl_StringMatch *u \u4e4fu
+    Wrapper_Tcl_StringMatch *u 乏u
 } 1
 test util-5.8 {Tcl_StringMatch} {
     Wrapper_Tcl_StringMatch a?c abc
 } 1
 test util-5.9 {Tcl_StringMatch: UTF-8} {
     # skip one character in string
-    Wrapper_Tcl_StringMatch a?c a\u4e4fc
+    Wrapper_Tcl_StringMatch a?c a乏c
 } 1
 test util-5.10 {Tcl_StringMatch} {
     Wrapper_Tcl_StringMatch a??c abc
@@ -259,15 +262,15 @@ test util-5.12 {Tcl_StringMatch} {
 } 1
 test util-5.13 {Tcl_StringMatch: UTF-8} {
     # string += Tcl_UtfToUniChar(string, &ch);
-    Wrapper_Tcl_StringMatch "\[\u4e4fxy\]bc" "\u4e4fbc"
+    Wrapper_Tcl_StringMatch "\[乏xy\]bc" "乏bc"
 } 1
 test util-5.14 {Tcl_StringMatch} {
-    # if ((*pattern == ']') || (*pattern == '\0'))
+    # if ((*pattern == ']') || (*pattern == '\x00'))
     # badly formed pattern
     Wrapper_Tcl_StringMatch {[]} {[]}
 } 0
 test util-5.15 {Tcl_StringMatch} {
-    # if ((*pattern == ']') || (*pattern == '\0'))
+    # if ((*pattern == ']') || (*pattern == '\x00'))
     # badly formed pattern
     Wrapper_Tcl_StringMatch {[} {[}
 } 0
@@ -277,17 +280,17 @@ test util-5.16 {Tcl_StringMatch} {
 test util-5.17 {Tcl_StringMatch: UTF-8} {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
     # get 1 UTF-8 character
-    Wrapper_Tcl_StringMatch "a\[a\u4e4fc]c" "a\u4e4fc"
+    Wrapper_Tcl_StringMatch "a\[a乏c]c" "a乏c"
 } 1
 test util-5.18 {Tcl_StringMatch: UTF-8} testbytestring {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
-    # proper advance: wrong answer would match on UTF trail byte of \u4e4f
-    Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} [testbytestring a\x8fc]
+    # proper advance: wrong answer would match on UTF trail byte of 乏
+    Wrapper_Tcl_StringMatch {a[a乏c]c} [testbytestring a\x8Fc]
 } 0
 test util-5.19 {Tcl_StringMatch: UTF-8} {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
     # proper advance.
-    Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} "acc"
+    Wrapper_Tcl_StringMatch {a[a乏c]c} "acc"
 } 1
 test util-5.20 {Tcl_StringMatch} {
     Wrapper_Tcl_StringMatch {a[xyz]c} abc
@@ -296,13 +299,13 @@ test util-5.21 {Tcl_StringMatch} {
     Wrapper_Tcl_StringMatch {12[2-7]45} 12345
 } 1
 test util-5.22 {Tcl_StringMatch: UTF-8 range} {
-    Wrapper_Tcl_StringMatch "\[\u4e00-\u4e4f]" "0"
+    Wrapper_Tcl_StringMatch "\[一-乏]" "0"
 } 0
 test util-5.23 {Tcl_StringMatch: UTF-8 range} {
-    Wrapper_Tcl_StringMatch "\[\u4e00-\u4e4f]" "\u4e33"
+    Wrapper_Tcl_StringMatch "\[一-乏]" "丳"
 } 1
 test util-5.24 {Tcl_StringMatch: UTF-8 range} {
-    Wrapper_Tcl_StringMatch "\[\u4e00-\u4e4f]" "\uff08"
+    Wrapper_Tcl_StringMatch "\[一-乏]" "（"
 } 0
 test util-5.25 {Tcl_StringMatch} {
     Wrapper_Tcl_StringMatch {12[ab2-4cd]45} 12345
@@ -356,16 +359,16 @@ test util-5.41 {Tcl_StringMatch: skip correct number of ']'} {
     Wrapper_Tcl_StringMatch {[A-]]x} Ax
 } 1
 test util-5.42 {Tcl_StringMatch: skip correct number of ']'} {
-    Wrapper_Tcl_StringMatch {[A-]]x} \ue1x
+    Wrapper_Tcl_StringMatch {[A-]]x} \xE1x
 } 0
 test util-5.43 {Tcl_StringMatch: skip correct number of ']'} {
-    Wrapper_Tcl_StringMatch \[A-]\ue1]x \ue1x
+    Wrapper_Tcl_StringMatch \[A-]\xE1]x \xE1x
 } 1
 test util-5.44 {Tcl_StringMatch: skip correct number of ']'} {
     Wrapper_Tcl_StringMatch {[A-]h]x} hx
 } 1
 test util-5.45 {Tcl_StringMatch} {
-    # if (*pattern == '\0')
+    # if (*pattern == '\x00')
     # badly formed pattern, still treats as a set
     Wrapper_Tcl_StringMatch {[a} a
 } 1
@@ -388,7 +391,7 @@ test util-5.51 {Tcl_StringMatch} {
     Wrapper_Tcl_StringMatch "" ""
 } 1
 test util-5.52 {Tcl_StringMatch} {
-    Wrapper_Tcl_StringMatch \[a\u0000 a\x80
+    Wrapper_Tcl_StringMatch \[a\x00 a\x80
 } 0
 
 
@@ -483,27 +486,27 @@ test util-8.1 {TclNeedSpace - correct utf-8 handling} {
     # which calls on TclNeedSpace().  If [interp target]
     # is ever updated, this test will no longer test
     # TclNeedSpace.
-    interp create \u5420
-    interp create [list \u5420 foo]
-    interp alias {} fooset [list \u5420 foo] set
+    interp create 吠
+    interp create [list 吠 foo]
+    interp alias {} fooset [list 吠 foo] set
     set result [interp target {} fooset]
-    interp delete \u5420
+    interp delete 吠
     set result
-} "\u5420 foo"
+} "吠 foo"
 test util-8.2 {TclNeedSpace - correct utf-8 handling} testdstring {
     # Bug 411825
     # This tests the same bug as the previous test, but
     # should be more future-proof, as the DString
     # operations will likely continue to call TclNeedSpace
     testdstring free
-    testdstring append \u5420 -1
+    testdstring append 吠 -1
     testdstring element foo
     llength [testdstring get]
 } 2
 test util-8.3 {TclNeedSpace - correct utf-8 handling} testdstring {
     # Bug 411825 - new variant reported by Dossy Shiobara
     testdstring free
-    testdstring append \u00A0 -1
+    testdstring append \xA0 -1
     testdstring element foo
     llength [testdstring get]
 } 2

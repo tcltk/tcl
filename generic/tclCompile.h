@@ -217,9 +217,9 @@ typedef struct ExtCmdLoc {
  * the AuxData structure.
  */
 
-typedef ClientData (AuxDataDupProc)  (ClientData clientData);
-typedef void	   (AuxDataFreeProc) (ClientData clientData);
-typedef void	   (AuxDataPrintProc)(ClientData clientData,
+typedef void      *(AuxDataDupProc)  (void *clientData);
+typedef void	   (AuxDataFreeProc) (void *clientData);
+typedef void	   (AuxDataPrintProc)(void *clientData,
 			    Tcl_Obj *appendObj, struct ByteCode *codePtr,
 			    unsigned int pcOffset);
 
@@ -515,20 +515,20 @@ typedef struct ByteCode {
 #endif /* TCL_COMPILE_STATS */
 } ByteCode;
 
-#define ByteCodeSetIntRep(objPtr, typePtr, codePtr)			\
+#define ByteCodeSetInternalRep(objPtr, typePtr, codePtr)			\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (codePtr);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreIntRep((objPtr), (typePtr), &ir);			\
+	Tcl_StoreInternalRep((objPtr), (typePtr), &ir);			\
     } while (0)
 
 
 
-#define ByteCodeGetIntRep(objPtr, typePtr, codePtr)			\
+#define ByteCodeGetInternalRep(objPtr, typePtr, codePtr)			\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), (typePtr));			\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), (typePtr));			\
 	(codePtr) = irPtr ? (ByteCode*)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -922,8 +922,9 @@ typedef enum InstStringClassType {
     STR_CLASS_UPPER,		/* Unicode upper-case alphabet characters. */
     STR_CLASS_WORD,		/* Unicode word (alphabetic, digit, connector
 				 * punctuation) characters. */
-    STR_CLASS_XDIGIT		/* Characters that can be used as digits in
+    STR_CLASS_XDIGIT,		/* Characters that can be used as digits in
 				 * hexadecimal numbers ([0-9A-Fa-f]). */
+    STR_CLASS_UNICODE		/* Unicode characters. */
 } InstStringClassType;
 
 typedef struct StringClassDesc {
@@ -1117,7 +1118,7 @@ MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
-MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
+MODULE_SCOPE int	TclCreateAuxData(void *clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
@@ -1191,16 +1192,16 @@ MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
-MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
+MODULE_SCOPE int	TclSingleOpCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclSortingOpCmd(ClientData clientData,
+MODULE_SCOPE int	TclSortingOpCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclVariadicOpCmd(ClientData clientData,
+MODULE_SCOPE int	TclVariadicOpCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclNoIdentOpCmd(ClientData clientData,
+MODULE_SCOPE int	TclNoIdentOpCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 #ifdef TCL_COMPILE_DEBUG
@@ -1216,7 +1217,7 @@ MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
-MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
+MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
@@ -1231,7 +1232,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 /*
  * Simplified form to access AuxData.
  *
- * ClientData TclFetchAuxData(CompileEng *envPtr, int index);
+ * void *TclFetchAuxData(CompileEng *envPtr, int index);
  */
 
 #define TclFetchAuxData(envPtr, index) \
@@ -1494,22 +1495,22 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 #   define TclGetInt1AtPtr(p) ((int) *((signed char *) p))
 #else
 #   define TclGetInt1AtPtr(p) \
-    (((int) *((char *) p)) | ((*(p) & 0200) ? (-256) : 0))
+    ((int) ((*((char *) p)) | ((*(p) & 0200) ? (-256) : 0)))
 #endif
 
 #define TclGetInt4AtPtr(p) \
-    (((int) (TclGetUInt1AtPtr(p) << 24)) |				\
-		     (*((p)+1) << 16) |				\
-		     (*((p)+2) <<  8) |				\
-		     (*((p)+3)))
+    ((int) ((TclGetUInt1AtPtr(p) << 24) |			\
+		       (*((p)+1) << 16) |			\
+		       (*((p)+2) <<  8) |			\
+		       (*((p)+3))))
 
 #define TclGetUInt1AtPtr(p) \
     ((unsigned int) *(p))
 #define TclGetUInt4AtPtr(p) \
-    ((unsigned int) (*(p)     << 24) |				\
-		    (*((p)+1) << 16) |				\
-		    (*((p)+2) <<  8) |				\
-		    (*((p)+3)))
+    ((unsigned int) ((*(p)     << 24) |				\
+		     (*((p)+1) << 16) |				\
+		     (*((p)+2) <<  8) |				\
+		     (*((p)+3))))
 
 /*
  * Macros used to compute the minimum and maximum of two integers. The ANSI C
@@ -1556,9 +1557,9 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  */
 
 #define PushLiteral(envPtr, string, length) \
-    TclEmitPush(TclRegisterLiteral(envPtr, string, length, 0), (envPtr))
+    TclEmitPush(TclRegisterLiteral((envPtr), (string), (length), 0), (envPtr))
 #define PushStringLiteral(envPtr, string) \
-    PushLiteral(envPtr, string, (int) (sizeof(string "") - 1))
+    PushLiteral((envPtr), (string), (int) (sizeof(string "") - 1))
 
 /*
  * Macro to advance to the next token; it is more mnemonic than the address

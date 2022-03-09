@@ -20,7 +20,9 @@
  */
 
 static WCHAR *dllDirectoryName = NULL;
+#if TCL_THREADS
 static Tcl_Mutex dllDirectoryNameMutex;
+#endif
 
 /*
  * Static functions defined within this file.
@@ -159,7 +161,7 @@ TclpDlopen(
 		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", -1);
                 break;
             default:
-		TclWinConvertError(lastError);
+		Tcl_WinConvertError(lastError);
 		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), -1);
 	    }
 	    Tcl_SetObjResult(interp, errMsg);
@@ -379,7 +381,7 @@ InitDLLDirectoryName(void)
 	id *= 16777619;
     }
 
-    TclWinConvertError(lastError);
+    Tcl_WinConvertError(lastError);
     return TCL_ERROR;
 
     /*

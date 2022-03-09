@@ -588,7 +588,7 @@ GetDouble(
 	return 0;
     } else {
 #ifdef ACCEPT_NAN
-	Tcl_ObjIntRep *irPtr = TclFetchIntRep(objPtr, &tclDoubleType);
+	Tcl_ObjInternalRep *irPtr = TclFetchInternalRep(objPtr, &tclDoubleType);
 
 	if (irPtr != NULL) {
 	    *dblPtr = irPtr->doubleValue;
@@ -606,7 +606,7 @@ EqualDouble(
 {
     return (a == b)
 #ifdef ACCEPT_NAN
-	|| (TclIsNaN(a) && TclIsNaN(b))
+	|| (isnan(a) && isnan(b))
 #endif /* ACCEPT_NAN */
 	;
 }
@@ -615,9 +615,9 @@ static inline int
 IsSpecial(
     double a)
 {
-    return TclIsInfinite(a)
+    return isinf(a)
 #ifdef ACCEPT_NAN
-	|| TclIsNaN(a)
+	|| isnan(a)
 #endif /* ACCEPT_NAN */
 	;
 }
@@ -656,7 +656,7 @@ SetInvalidRealFromAny(
 		double doubleValue = 0.0;
 
 		Tcl_GetDoubleFromObj(NULL, objPtr, &doubleValue);
-		TclFreeIntRep(objPtr);
+		TclFreeInternalRep(objPtr);
 		objPtr->typePtr = &invalidRealType;
 		objPtr->internalRep.doubleValue = doubleValue;
 		return TCL_OK;
@@ -705,7 +705,7 @@ GetInvalidDoubleFromObj(
 {
     int intValue;
 
-    if (TclHasIntRep(objPtr, &invalidRealType)) {
+    if (TclHasInternalRep(objPtr, &invalidRealType)) {
 	goto gotdouble;
     }
     if (GetInvalidIntFromObj(objPtr, &intValue) == TCL_OK) {
@@ -947,7 +947,7 @@ LinkTraceProc(
      */
 
     if (linkPtr->flags & LINK_ALLOC_LAST) {
-	if (Tcl_ListObjGetElements(NULL, (valueObj), &objc, &objv) == TCL_ERROR
+	if (TclListObjGetElements(NULL, (valueObj), &objc, &objv) == TCL_ERROR
 		|| objc != linkPtr->numElems) {
 	    return (char *) "wrong dimension";
 	}

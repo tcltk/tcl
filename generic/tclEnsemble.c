@@ -84,18 +84,18 @@ static const Tcl_ObjType ensembleCmdType = {
     NULL			/* setFromAnyProc */
 };
 
-#define ECRSetIntRep(objPtr, ecRepPtr)					\
+#define ECRSetInternalRep(objPtr, ecRepPtr)					\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (ecRepPtr);				\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreIntRep((objPtr), &ensembleCmdType, &ir);		\
+	Tcl_StoreInternalRep((objPtr), &ensembleCmdType, &ir);		\
     } while (0)
 
-#define ECRGetIntRep(objPtr, ecRepPtr)					\
+#define ECRGetInternalRep(objPtr, ecRepPtr)					\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), &ensembleCmdType);		\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), &ensembleCmdType);		\
 	(ecRepPtr) = irPtr ? (EnsembleCmdRep *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
@@ -165,7 +165,7 @@ TclNamespaceEnsembleCmd(
     const char *simpleName;
     int index, done;
 
-    if (nsPtr == NULL || nsPtr->flags & NS_DYING) {
+    if (nsPtr == NULL || nsPtr->flags & NS_DEAD) {
 	if (!Tcl_InterpDeleted(interp)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "tried to manipulate ensemble of deleted namespace",
@@ -1730,7 +1730,7 @@ NsEnsembleImplementationCmdNR(
 	return TCL_ERROR;
     }
 
-    if (ensemblePtr->nsPtr->flags & NS_DYING) {
+    if (ensemblePtr->nsPtr->flags & NS_DEAD) {
 	/*
 	 * Don't know how we got here, but make things give up quickly.
 	 */
@@ -1759,7 +1759,7 @@ NsEnsembleImplementationCmdNR(
 	 */
 	EnsembleCmdRep *ensembleCmd;
 
-	ECRGetIntRep(subObj, ensembleCmd);
+	ECRGetInternalRep(subObj, ensembleCmd);
 	if (ensembleCmd) {
 	    if (ensembleCmd->epoch == ensemblePtr->epoch &&
 		    ensembleCmd->token == (Command *)ensemblePtr->token) {
@@ -1890,7 +1890,7 @@ NsEnsembleImplementationCmdNR(
 	Tcl_Obj **copyObjv;
 	int copyObjc, prefixObjc;
 
-	Tcl_ListObjLength(NULL, prefixObj, &prefixObjc);
+	TclListObjLength(NULL, prefixObj, &prefixObjc);
 
 	if (objc == 2) {
 	    copyPtr = TclListObjCopy(NULL, prefixObj);
@@ -1924,7 +1924,7 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	TclSkipTailcall(interp);
-	Tcl_ListObjGetElements(NULL, copyPtr, &copyObjc, &copyObjv);
+	TclListObjGetElements(NULL, copyPtr, &copyObjc, &copyObjv);
 	((Interp *)interp)->lookupNsPtr = ensemblePtr->nsPtr;
 	return TclNREvalObjv(interp, copyObjc, copyObjv, TCL_EVAL_INVOKE, NULL);
     }
@@ -2201,6 +2201,18 @@ TclSpellFix(
     TclNRAddCallback(interp, TclNRReleaseValues, fix, NULL, NULL, NULL);
 }
 
+Tcl_Obj *const *TclEnsembleGetRewriteValues(
+    Tcl_Interp *interp		/* Current interpreter. */
+)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *const *origObjv = iPtr->ensembleRewrite.sourceObjs;
+    if (origObjv[0] == NULL) {
+	origObjv = (Tcl_Obj *const *)origObjv[2];
+    }
+    return origObjv;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2225,12 +2237,18 @@ TclFetchEnsembleRoot(
     int objc,
     int *objcPtr)
 {
+    Tcl_Obj *const *sourceObjs;
     Interp *iPtr = (Interp *) interp;
 
     if (iPtr->ensembleRewrite.sourceObjs) {
 	*objcPtr = objc + iPtr->ensembleRewrite.numRemovedObjs
 		- iPtr->ensembleRewrite.numInsertedObjs;
-	return iPtr->ensembleRewrite.sourceObjs;
+	if (iPtr->ensembleRewrite.sourceObjs[0] == NULL) {
+	    sourceObjs = (Tcl_Obj *const *)iPtr->ensembleRewrite.sourceObjs[1];
+	} else {
+	    sourceObjs = iPtr->ensembleRewrite.sourceObjs;
+	}
+	return sourceObjs;
     }
     *objcPtr = objc;
     return objv;
@@ -2406,7 +2424,7 @@ MakeCachedEnsembleCommand(
 {
     EnsembleCmdRep *ensembleCmd;
 
-    ECRGetIntRep(objPtr, ensembleCmd);
+    ECRGetInternalRep(objPtr, ensembleCmd);
     if (ensembleCmd) {
 	TclCleanupCommandMacro(ensembleCmd->token);
 	if (ensembleCmd->fix) {
@@ -2419,7 +2437,7 @@ MakeCachedEnsembleCommand(
 	 */
 
 	ensembleCmd = (EnsembleCmdRep *)ckalloc(sizeof(EnsembleCmdRep));
-	ECRSetIntRep(objPtr, ensembleCmd);
+	ECRSetInternalRep(objPtr, ensembleCmd);
     }
 
     /*
@@ -2587,7 +2605,7 @@ BuildEnsembleConfig(
          * Must determine the target for each.
          */
 
-        Tcl_ListObjGetElements(NULL, subList, &subc, &subv);
+        TclListObjGetElements(NULL, subList, &subc, &subv);
         if (subList == mapDict) {
             /*
              * Strange case where explicit list of subcommands is same value
@@ -2829,7 +2847,7 @@ FreeEnsembleCmdRep(
 {
     EnsembleCmdRep *ensembleCmd;
 
-    ECRGetIntRep(objPtr, ensembleCmd);
+    ECRGetInternalRep(objPtr, ensembleCmd);
     TclCleanupCommandMacro(ensembleCmd->token);
     if (ensembleCmd->fix) {
 	Tcl_DecrRefCount(ensembleCmd->fix);
@@ -2863,8 +2881,8 @@ DupEnsembleCmdRep(
     EnsembleCmdRep *ensembleCmd;
     EnsembleCmdRep *ensembleCopy = (EnsembleCmdRep *)ckalloc(sizeof(EnsembleCmdRep));
 
-    ECRGetIntRep(objPtr, ensembleCmd);
-    ECRSetIntRep(copyPtr, ensembleCopy);
+    ECRGetInternalRep(objPtr, ensembleCmd);
+    ECRSetInternalRep(copyPtr, ensembleCopy);
 
     ensembleCopy->epoch = ensembleCmd->epoch;
     ensembleCopy->token = ensembleCmd->token;
@@ -2988,7 +3006,7 @@ TclCompileEnsemble(
 	const char *str;
 	Tcl_Obj *matchObj = NULL;
 
-	if (Tcl_ListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
+	if (TclListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
 	    goto failed;
 	}
 	for (i=0 ; i<len ; i++) {
@@ -3108,7 +3126,7 @@ TclCompileEnsemble(
 
   doneMapLookup:
     Tcl_ListObjAppendElement(NULL, replaced, replacement);
-    if (Tcl_ListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
+    if (TclListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
 	goto failed;
     } else if (len != 1) {
 	/*
@@ -3390,7 +3408,7 @@ CompileToInvokedCommand(
      * difference. Hence the call to TclContinuationsEnterDerived...
      */
 
-    Tcl_ListObjGetElements(NULL, replacements, &numWords, &words);
+    TclListObjGetElements(NULL, replacements, &numWords, &words);
     for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && i < numWords+1) {

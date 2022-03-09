@@ -1137,7 +1137,7 @@ Tcl_UniCharAtIndex(
 	i = TclUtfToUniChar(src, &ch);
 	src += i;
     }
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
     if ((ch >= 0xD800) && (i < 3)) {
 	/* Index points at character following high Surrogate */
 	return -1;
@@ -1153,7 +1153,7 @@ Tcl_UniCharAtIndex(
  * Tcl_UtfAtIndex --
  *
  *	Returns a pointer to the specified character (not byte) position in
- *	the UTF-8 string. If TCL_UTF_MAX <= 3, characters > U+FFFF count as
+ *	the UTF-8 string. If TCL_UTF_MAX < 4, characters > U+FFFF count as
  *	2 positions, but then the pointer should never be placed between
  *	the two positions.
  *
@@ -1178,7 +1178,7 @@ Tcl_UtfAtIndex(
 	len = TclUtfToUniChar(src, &ch);
 	src += len;
     }
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
     if ((ch >= 0xD800) && (len < 3)) {
 	/* Index points at character following high Surrogate */
 	src += TclUtfToUniChar(src, &ch);
@@ -1500,7 +1500,7 @@ Tcl_UtfNcmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
 	    /* Surrogates always report higher than non-surrogates */
 	    if (((ch1 & 0xFC00) == 0xD800)) {
 	    if ((ch2 & 0xFC00) != 0xD800) {
@@ -1551,7 +1551,7 @@ Tcl_UtfNcasecmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
 	    /* Surrogates always report higher than non-surrogates */
 	    if (((ch1 & 0xFC00) == 0xD800)) {
 	    if ((ch2 & 0xFC00) != 0xD800) {
@@ -1600,7 +1600,7 @@ TclUtfCmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
 	    /* Surrogates always report higher than non-surrogates */
 	    if (((ch1 & 0xFC00) == 0xD800)) {
 	    if ((ch2 & 0xFC00) != 0xD800) {
@@ -1646,7 +1646,7 @@ TclUtfCasecmp(
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
 	    /* Surrogates always report higher than non-surrogates */
 	    if (((ch1 & 0xFC00) == 0xD800)) {
 	    if ((ch2 & 0xFC00) != 0xD800) {
@@ -1773,7 +1773,7 @@ Tcl_UniCharToTitle(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UniCharLen --
+ * Tcl_Char16Len --
  *
  *	Find the length of a UniChar string. The str input must be null
  *	terminated.
@@ -1788,8 +1788,39 @@ Tcl_UniCharToTitle(
  */
 
 int
+Tcl_Char16Len(
+    const unsigned short *uniStr)	/* Unicode string to find length of. */
+{
+    int len = 0;
+
+    while (*uniStr != '\0') {
+	len++;
+	uniStr++;
+    }
+    return len;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UniCharLen --
+ *
+ *	Find the length of a UniChar string. The str input must be null
+ *	terminated.
+ *
+ * Results:
+ *	Returns the length of str in UniChars (not bytes).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#undef Tcl_UniCharLen
+int
 Tcl_UniCharLen(
-    const Tcl_UniChar *uniStr)	/* Unicode string to find length of. */
+    const int *uniStr)	/* Unicode string to find length of. */
 {
     int len = 0;
 
@@ -2179,6 +2210,36 @@ Tcl_UniCharIsUpper(
     return (GetCategory(ch) == UPPERCASE_LETTER);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UniCharIsUnicode --
+ *
+ *	Test if a character is a Unicode character.
+ *
+ * Results:
+ *	Returns non-zero if character belongs to the Unicode set.
+ *
+ *	Excluded are:
+ *	  1) All characters > U+10FFFF
+ *	  2) Surrogates U+D800 - U+DFFF
+ *	  3) Last 2 characters of each plane, so U+??FFFE  and U+??FFFF
+ *	  4) The characters in the range U+FDD0 - U+FDEF
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_UniCharIsUnicode(
+    int ch)			/* Unicode character to test. */
+{
+    return ((unsigned int)ch <= 0x10FFFF) && ((ch & 0xFFF800) != 0xD800)
+	    && ((ch & 0xFFFE) != 0xFFFE) && ((unsigned int)(ch - 0xFDD0) >= 32);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2612,7 +2673,7 @@ TclUniCharMatch(
  *---------------------------------------------------------------------------
  */
 
-#if TCL_UTF_MAX <= 3
+#if TCL_UTF_MAX < 4
 int
 TclUtfToUCS4(
     const char *src,	/* The UTF-8 string. */

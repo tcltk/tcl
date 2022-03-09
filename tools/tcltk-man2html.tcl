@@ -19,8 +19,8 @@ if {[catch {package require Tcl 8.6-} msg]} {
 # into hypertext, not as a general solution to the problem.  If you
 # try to use this, you'll be very much on your own.
 #
-# Copyright (c) 1995-1997 Roger E. Critchlow Jr
-# Copyright (c) 2004-2010 Donal K. Fellows
+# Copyright © 1995-1997 Roger E. Critchlow Jr
+# Copyright © 2004-2010 Donal K. Fellows
 
 set ::Version "50/8.7"
 set ::CSSFILE "docs.css"
@@ -682,7 +682,7 @@ array set exclude_refs_map {
     ttk_scale.n		{variable}
     ttk_scrollbar.n	{set}
     ttk_spinbox.n	{format}
-    ttk_treeview.n	{text open}
+    ttk_treeview.n	{text open focus selection}
     ttk_widget.n	{image text variable}
     TclZlib.3		{binary flush filename text}
 }

@@ -56,7 +56,7 @@ on Safe\-Tcl, see the \fBsafe\fR manual entry.
 The initialization procedure must match the following prototype:
 .PP
 .CS
-typedef int \fBTcl_PackageInitProc\fR(
+typedef int \fBTcl_LibraryInitProc\fR(
         Tcl_Interp *\fIinterp\fR);
 .CE
 .PP
@@ -79,7 +79,7 @@ Tcl's unloading mechanism.
 .PP
 The \fBload\fR command also supports libraries that are statically
 linked with the application, if those libraries have been registered
-by calling the \fBTcl_StaticPackage\fR procedure.
+by calling the \fBTcl_StaticLibrary\fR procedure.
 If \fIfileName\fR is an empty string, then \fIprefix\fR must
 be specified.
 .PP
@@ -98,7 +98,7 @@ prefix \fBLast\fR.
 If \fIfileName\fR is an empty string, then \fIprefix\fR must
 be specified.
 The \fBload\fR command first searches for a statically loaded library
-(one that has been registered by calling the \fBTcl_StaticPackage\fR
+(one that has been registered by calling the \fBTcl_StaticLibrary\fR
 procedure) by that name; if one is found, it is used.
 Otherwise, the \fBload\fR command searches for a dynamically loaded
 library by that name, and uses it if it is found.  If several
@@ -188,7 +188,7 @@ switch $tcl_platform(platform) {
 foo
 .CE
 .SH "SEE ALSO"
-info sharedlibextension, package(n), Tcl_StaticPackage(3), safe(n)
+info sharedlibextension, package(n), Tcl_StaticLibrary(3), safe(n)
 .SH KEYWORDS
 binary code, dynamic library, load, safe interpreter, shared library
 '\"Local Variables:
