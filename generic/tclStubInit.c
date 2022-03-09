@@ -1707,7 +1707,7 @@ const TclStubs tclStubs = {
     Tcl_UniCharIsSpace, /* 349 */
     Tcl_UniCharIsUpper, /* 350 */
     Tcl_UniCharIsWordChar, /* 351 */
-    Tcl_UniCharLen, /* 352 */
+    Tcl_Char16Len, /* 352 */
     Tcl_UniCharNcmp, /* 353 */
     Tcl_Char16ToUtfDString, /* 354 */
     Tcl_UtfToChar16DString, /* 355 */
@@ -2023,6 +2023,7 @@ const TclStubs tclStubs = {
     TclSplitPath_, /* 665 */
     TclFSSplitPath_, /* 666 */
     TclParseArgsObjv_, /* 667 */
+    Tcl_UniCharLen, /* 668 */
 };
 
 /* !END!: Do not edit above this line. */

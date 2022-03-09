@@ -100,7 +100,7 @@ jobs:
           path: 1dist/*.dmg
   win:
     name: Windows
-    runs-on: windows-latest
+    runs-on: windows-2019
     defaults:
       run:
         shell: msys2 {0}

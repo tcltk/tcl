@@ -1092,7 +1092,7 @@ declare 303 {
 declare 304 {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    const void *tablePtr, int offset, const char *msg, int flags,
-	    int *indexPtr)
+	    void *indexPtr)
 }
 declare 305 {
     void *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
@@ -1244,8 +1244,8 @@ declare 350 {
 declare 351 {
     int Tcl_UniCharIsWordChar(int ch)
 }
-declare 352 {deprecated {Use Tcl_GetCharLength}} {
-    int Tcl_UniCharLen(const Tcl_UniChar *uniStr)
+declare 352 {
+    int Tcl_Char16Len(const unsigned short *uniStr)
 }
 declare 353 {deprecated {Use Tcl_UtfNcmp}} {
     int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
@@ -1365,7 +1365,7 @@ declare 385 {
 	    Tcl_Obj *patternObj)
 }
 declare 386 {
-    void Tcl_SetNotifier(Tcl_NotifierProcs *notifierProcPtr)
+    void Tcl_SetNotifier(const Tcl_NotifierProcs *notifierProcPtr)
 }
 declare 387 {
     Tcl_Mutex *Tcl_GetAllocMutex(void)
@@ -2467,6 +2467,11 @@ declare 666 {
 declare 667 {
     int TclParseArgsObjv_(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
 	    size_t *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
+}
+
+# TIP #617
+declare 668 {
+    int Tcl_UniCharLen(const int *uniStr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

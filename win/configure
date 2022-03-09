@@ -4107,7 +4107,7 @@ printf "%s\n" "$ac_cv_cross" >&6; }
 		RC="x86_64-w64-mingw32-windres"
 	    ;;
 	    arm64|aarch64)
-		CC="aarch64-w64-mingw32-${CC}"
+		CC="aarch64-w64-mingw32-clang"
 		LD="aarch64-w64-mingw32-ld"
 		AR="aarch64-w64-mingw32-ar"
 		RANLIB="aarch64-w64-mingw32-ranlib"
@@ -4203,7 +4203,7 @@ printf "%s\n" "$ac_cv_win32" >&6; }
 	if test "$ac_cv_win32" != "yes"; then
 	    as_fn_error $? "${CC} cannot produce win32 executables." "$LINENO" 5
 	fi
-	if test "$MACHINE" != "ARM64"; then
+	if test "$do64bit" != "arm64"; then
 	    extra_cflags="$extra_cflags -DHAVE_CPUID=1"
 	fi
 
@@ -4958,15 +4958,17 @@ then :
 
         ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64-arm/libz.dll.a
 
+        TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64-arm/libtommath.dll.a
+
 
 else $as_nop
 
         ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64-arm/zdll.lib
 
+        TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64-arm/tommath.lib
+
 
 fi
-      TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a
-
 
 else $as_nop
 
@@ -4975,15 +4977,17 @@ then :
 
         ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64/libz.dll.a
 
+        TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/libtommath.dll.a
+
 
 else $as_nop
 
         ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64/zdll.lib
 
+        TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/tommath.lib
+
 
 fi
-      TOMMATH_LIBS=\${TOMMATH_DIR_NATIVE}/win64/tommath.lib
-
 
 fi
 

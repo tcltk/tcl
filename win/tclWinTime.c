@@ -249,7 +249,7 @@ TclpGetClicks(void)
 	Tcl_Time now;		/* Current Tcl time */
 
 	GetTime(&now);
-	return (unsigned long) (now.sec * 1000000) + now.usec;
+	return ((unsigned long)(now.sec)*1000000UL) + (unsigned long)(now.usec);
     }
 }
 

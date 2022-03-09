@@ -349,9 +349,6 @@
 /* Do we have getwd() */
 #undef NO_GETWD
 
-/* Do we have a usable 'isnan'? */
-#undef NO_ISNAN
-
 /* Do we have memmove()? */
 #undef NO_MEMMOVE
 
