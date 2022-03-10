@@ -45,7 +45,7 @@ For \fBTcl_EvalTokensStandard\fR, determines the context for evaluating
 the script and also is used for error reporting; must not be NULL.
 .AP "const char" *start in
 Pointer to first character in string to parse.
-.AP int numBytes in
+.AP size_t numBytes in
 Number of bytes in string to parse, not including any terminating null
 character.  If less than 0 then the script consists of all characters
 following \fIstart\fR up to the first null character.
