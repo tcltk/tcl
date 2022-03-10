@@ -841,7 +841,7 @@ declare 229 {
 #    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 #}
 declare 231 {
-    int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
+    size_t Tcl_SetRecursionLimit(Tcl_Interp *interp, size_t depth)
 }
 # Removed in 9.0, replaced by macro.
 #declare 232 {

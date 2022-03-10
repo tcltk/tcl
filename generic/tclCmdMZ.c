@@ -3326,7 +3326,7 @@ TclInitStringCmd(
 int
 TclSubstOptions(
     Tcl_Interp *interp,
-    int numOpts,
+    size_t numOpts1,
     Tcl_Obj *const opts[],
     int *flagPtr)
 {
@@ -3337,6 +3337,7 @@ TclSubstOptions(
 	SUBST_NOBACKSLASHES, SUBST_NOCOMMANDS, SUBST_NOVARS
     };
     int i, flags = TCL_SUBST_ALL;
+    int numOpts = numOpts1;
 
     for (i = 0; i < numOpts; i++) {
 	int optionIndex;

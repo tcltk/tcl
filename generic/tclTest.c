@@ -38,6 +38,8 @@
  */
 #include "tclIO.h"
 
+#include "tclUuid.h"
+
 /*
  * Declare external functions used in Windows tests.
  */
@@ -435,10 +437,87 @@ static const Tcl_Filesystem simpleFilesystem = {
  *----------------------------------------------------------------------
  */
 
+#ifndef STRINGIFY
+#  define STRINGIFY(x) STRINGIFY1(x)
+#  define STRINGIFY1(x) #x
+#endif
+
+static const char version[] = TCL_PATCH_LEVEL "+" STRINGIFY(TCL_VERSION_UUID)
+#if defined(__clang__) && defined(__clang_major__)
+	    ".clang-" STRINGIFY(__clang_major__)
+#if __clang_minor__ < 10
+	    "0"
+#endif
+	    STRINGIFY(__clang_minor__)
+#endif
+#ifdef TCL_COMPILE_DEBUG
+	    ".compiledebug"
+#endif
+#ifdef TCL_COMPILE_STATS
+	    ".compilestats"
+#endif
+#if defined(__cplusplus) && !defined(__OBJC__)
+	    ".cplusplus"
+#endif
+#ifndef NDEBUG
+	    ".debug"
+#endif
+#if !defined(__clang__) && !defined(__INTEL_COMPILER) && defined(__GNUC__)
+	    ".gcc-" STRINGIFY(__GNUC__)
+#if __GNUC_MINOR__ < 10
+	    "0"
+#endif
+	    STRINGIFY(__GNUC_MINOR__)
+#endif
+#ifdef __INTEL_COMPILER
+	    ".icc-" STRINGIFY(__INTEL_COMPILER)
+#endif
+#if (defined(_WIN32) && !defined(_WIN64)) || (ULONG_MAX == 0xffffffffUL)
+	    ".ilp32"
+#endif
+#ifdef TCL_MEM_DEBUG
+	    ".memdebug"
+#endif
+#if defined(_MSC_VER)
+	    ".msvc-" STRINGIFY(_MSC_VER)
+#endif
+#ifdef USE_NMAKE
+	    ".nmake"
+#endif
+#ifdef TCL_NO_DEPRECATED
+	    ".no-deprecate"
+#endif
+#if !TCL_THREADS
+	    ".no-thread"
+#endif
+#ifndef TCL_CFG_OPTIMIZED
+	    ".no-optimize"
+#endif
+#ifdef __OBJC__
+	    ".objective-c"
+#if defined(__cplusplus)
+	    "plusplus"
+#endif
+#endif
+#ifdef TCL_CFG_PROFILED
+	    ".profile"
+#endif
+#ifdef PURIFY
+	    ".purify"
+#endif
+#ifdef STATIC_BUILD
+	    ".static"
+#endif
+#if TCL_UTF_MAX < 4
+	    ".utf-16"
+#endif
+;
+
 int
 Tcltest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
+    Tcl_CmdInfo info;
     Tcl_Obj **objv, *objPtr;
     int objc, index;
     static const char *const specialOptions[] = {
@@ -446,19 +525,22 @@ Tcltest_Init(
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
 
-    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
 	return TCL_ERROR;
     }
 #ifndef TCL_WITH_EXTERNAL_TOMMATH
-    if (Tcl_TomMath_InitStubs(interp, "8.5-") == NULL) {
+    if (Tcl_TomMath_InitStubs(interp, "8.7-") == NULL) {
 	return TCL_ERROR;
     }
 #endif
     if (Tcl_OOInitStubs(interp) == NULL) {
 	return TCL_ERROR;
     }
-    /* TIP #268: Full patchlevel instead of just major.minor */
 
+    if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
+	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
+		info.objProc, (void *)version, NULL);
+    }
     if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
     }
@@ -703,7 +785,16 @@ int
 Tcltest_SafeInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
+    Tcl_CmdInfo info;
+
+    if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
+	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
+		info.objProc, (void *)version, NULL);
+    }
+    if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
     }
     return Procbodytest_SafeInit(interp);
@@ -3889,7 +3980,7 @@ TestregexpObjCmd(
 	 * value 0.
 	 */
 
-	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
+	Tcl_SetWideIntObj(Tcl_GetObjResult(interp), 0);
 	if (objc > 2 && (cflags&REG_EXPECT) && indices) {
 	    const char *varName;
 	    const char *value;
@@ -3898,7 +3989,7 @@ TestregexpObjCmd(
 
 	    varName = Tcl_GetString(objv[2]);
 	    TclRegExpRangeUniChar(regExpr, -1, &start, &end);
-	    sprintf(resinfo, "%d %d", (int)start, (int)(end-1));
+	    sprintf(resinfo, "%" TCL_Z_MODIFIER "d %" TCL_Z_MODIFIER "d", start, (end-1));
 	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
@@ -3912,7 +4003,7 @@ TestregexpObjCmd(
 
 	    Tcl_RegExpGetInfo(regExpr, &info);
 	    varName = Tcl_GetString(objv[2]);
-	    sprintf(resinfo, "%d", (int)info.extendStart);
+	    sprintf(resinfo, "%" TCL_Z_MODIFIER "d", info.extendStart);
 	    value = Tcl_SetVar2(interp, varName, NULL, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
@@ -3960,8 +4051,8 @@ TestregexpObjCmd(
 		end--;
 	    }
 
-	    objs[0] = Tcl_NewWideIntObj(start);
-	    objs[1] = Tcl_NewWideIntObj(end);
+	    objs[0] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(start + 1U)) - 1);
+	    objs[1] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(end + 1U)) - 1);
 
 	    newPtr = Tcl_NewListObj(2, objs);
 	} else {
@@ -3985,7 +4076,7 @@ TestregexpObjCmd(
      * Set the interpreter's object result to an integer object w/ value 1.
      */
 
-    Tcl_SetIntObj(Tcl_GetObjResult(interp), 1);
+    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), 1);
     return TCL_OK;
 }
 
@@ -6894,10 +6985,10 @@ TestUtfNextCmd(
 	bytes = Tcl_GetString(objv[1]);
 	numBytes = objv[1]->length;
 
-    if (numBytes > (int)sizeof(buffer) - 4) {
+    if (numBytes + 4 > sizeof(buffer)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"\"testutfnext\" can only handle %d bytes",
-		(int)sizeof(buffer) - 4));
+		"\"testutfnext\" can only handle %" TCL_Z_MODIFIER "u bytes",
+		sizeof(buffer) - 4));
 	return TCL_ERROR;
     }
 
@@ -7307,7 +7398,7 @@ TestNRELevels(
     static ptrdiff_t *refDepth = NULL;
     ptrdiff_t depth;
     Tcl_Obj *levels[6];
-    int i = 0;
+    size_t i = 0;
     NRE_callback *cbPtr = iPtr->execEnvPtr->callbackPtr;
 
     if (refDepth == NULL) {
@@ -7317,9 +7408,9 @@ TestNRELevels(
     depth = (refDepth - &depth);
 
     levels[0] = Tcl_NewWideIntObj(depth);
-    levels[1] = Tcl_NewWideIntObj(iPtr->numLevels);
-    levels[2] = Tcl_NewWideIntObj(iPtr->cmdFramePtr->level);
-    levels[3] = Tcl_NewWideIntObj(iPtr->varFramePtr->level);
+    levels[1] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(iPtr->numLevels + 1U)) - 1);
+    levels[2] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(iPtr->cmdFramePtr->level + 1U)) - 1);
+    levels[3] = Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(iPtr->varFramePtr->level + 1U)) - 1);
     levels[4] = Tcl_NewWideIntObj(iPtr->execEnvPtr->execStackPtr->tosPtr
 	    - iPtr->execEnvPtr->execStackPtr->stackWords);
 

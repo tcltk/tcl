@@ -963,7 +963,7 @@ TclCompileAssembleCmd(
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
 
-    int numCommands = envPtr->numCommands;
+    size_t numCommands = envPtr->numCommands;
     int offset = envPtr->codeNext - envPtr->codeStart;
     int depth = envPtr->currStackDepth;
     /*

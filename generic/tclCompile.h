@@ -316,6 +316,10 @@ typedef struct CompileEnv {
 				 * array byte. */
     int mallocedCodeArray;	/* Set 1 if code array was expanded and
 				 * codeStart points into the heap.*/
+#if TCL_MAJOR_VERSION > 8
+    int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
+				 * exceptArrayPtr points in heap, else 0. */
+#endif
     LiteralEntry *literalArrayPtr;
     				/* Points to start of LiteralEntry array. */
     int literalArrayNext;	/* Index of next free object array entry. */
@@ -331,8 +335,9 @@ typedef struct CompileEnv {
 				 * current range's array entry. */
     int exceptArrayEnd;		/* Index after the last ExceptionRange array
 				 * entry. */
-    int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
-				 * exceptArrayPtr points in heap, else 0. */
+#if TCL_MAJOR_VERSION < 9
+    int mallocedExceptArray;
+#endif
     ExceptionAux *exceptAuxArrayPtr;
 				/* Array of information used to restore the
 				 * state when processing BREAK/CONTINUE
@@ -345,14 +350,19 @@ typedef struct CompileEnv {
     int cmdMapEnd;		/* Index after last CmdLocation entry. */
     int mallocedCmdMap;		/* 1 if command map array was expanded and
 				 * cmdMapPtr points in the heap, else 0. */
+#if TCL_MAJOR_VERSION > 8
+    int mallocedAuxDataArray;	/* 1 if aux data array was expanded and
+				 * auxDataArrayPtr points in heap else 0. */
+#endif
     AuxData *auxDataArrayPtr;	/* Points to auxiliary data array start. */
     int auxDataArrayNext;	/* Next free compile aux data array index.
 				 * auxDataArrayNext is the number of aux data
 				 * items and (auxDataArrayNext-1) is index of
 				 * current aux data array entry. */
     int auxDataArrayEnd;	/* Index after last aux data array entry. */
-    int mallocedAuxDataArray;	/* 1 if aux data array was expanded and
-				 * auxDataArrayPtr points in heap else 0. */
+#if TCL_MAJOR_VERSION < 9
+    int mallocedAuxDataArray;
+#endif
     unsigned char staticCodeSpace[COMPILEENV_INIT_CODE_BYTES];
 				/* Initial storage for code. */
     LiteralEntry staticLiteralSpace[COMPILEENV_INIT_NUM_OBJECTS];
@@ -1076,12 +1086,12 @@ MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, int count,
+			    Tcl_Token *tokenPtr, size_t count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
 			    size_t numBytes, CompileEnv *envPtr, int optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, int numWords,
+			    Tcl_Token *tokenPtr, size_t numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileInvocation(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, size_t numWords,
@@ -1092,7 +1102,7 @@ MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, int count,
+			    Tcl_Token *tokenPtr, size_t count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
@@ -1196,7 +1206,7 @@ MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
 
@@ -1246,10 +1256,10 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 
 #define TclCheckStackDepth(depth, envPtr)				\
     do {								\
-	int _dd = (depth);						\
-	if (_dd != (envPtr)->currStackDepth) {				\
-	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
-		    (envPtr)->currStackDepth, _dd);		\
+	size_t _dd = (depth);						\
+	if (_dd != (size_t)(envPtr)->currStackDepth) {				\
+	    Tcl_Panic("bad stack depth computations: is %" TCL_Z_MODIFIER "u, should be %" TCL_Z_MODIFIER "u", \
+		    (size_t)(envPtr)->currStackDepth, _dd);		\
 	}								\
     } while (0)
 

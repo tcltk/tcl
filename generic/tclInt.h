@@ -1110,7 +1110,13 @@ typedef struct CallFrame {
 				 * If FRAME_IS_PROC is set, the frame was
 				 * pushed to execute a Tcl procedure and may
 				 * have local vars. */
-    int objc;			/* This and objv below describe the arguments
+#if TCL_MAJOR_VERSION > 8
+    int level;			/* Level of this procedure, for "uplevel"
+				 * purposes (i.e. corresponds to nesting of
+				 * callerVarPtr's, not callerPtr's). 1 for
+				 * outermost procedure, 0 for top-level. */
+#endif
+    size_t objc;			/* This and objv below describe the arguments
 				 * for this procedure call. */
     Tcl_Obj *const *objv;	/* Array of argument objects. */
     struct CallFrame *callerPtr;
@@ -1124,10 +1130,9 @@ typedef struct CallFrame {
 				 * callerPtr unless an "uplevel" command or
 				 * something equivalent was active in the
 				 * caller). */
-    int level;			/* Level of this procedure, for "uplevel"
-				 * purposes (i.e. corresponds to nesting of
-				 * callerVarPtr's, not callerPtr's). 1 for
-				 * outermost procedure, 0 for top-level. */
+#if TCL_MAJOR_VERSION < 9
+    int level;
+#endif
     Proc *procPtr;		/* Points to the structure defining the called
 				 * procedure. Used to get information such as
 				 * the number of compiled local variables
@@ -1138,8 +1143,8 @@ typedef struct CallFrame {
 				 * recognized by the compiler, or created at
 				 * execution time through, e.g., upvar.
 				 * Initially NULL and created if needed. */
-    int numCompiledLocals;	/* Count of local variables recognized by the
-				 * compiler including arguments. */
+    size_t numCompiledLocals;	/* Count of local variables recognized
+				 * by the compiler including arguments. */
     Var *compiledLocals;	/* Points to the array of local variables
 				 * recognized by the compiler. The compiler
 				 * emits code that refers to these variables
@@ -1473,13 +1478,13 @@ typedef struct CoroutineData {
     CorContext running;
     Tcl_HashTable *lineLABCPtr;    /* See Interp.lineLABCPtr */
     void *stackLevel;
-    int auxNumLevels;		/* While the coroutine is running the
+    size_t auxNumLevels;		/* While the coroutine is running the
 				 * numLevels of the create/resume command is
 				 * stored here; for suspended coroutines it
 				 * holds the nesting numLevels at yield. */
-    int nargs;                  /* Number of args required for resuming this
-				 * coroutine; -2 means "0 or 1" (default), -1
-				 * means "any" */
+    size_t nargs;                  /* Number of args required for resuming this
+				 * coroutine; COROUTINE_ARGUMENTS_SINGLE_OPTIONAL means "0 or 1"
+				 * (default), COROUTINE_ARGUMENTS_ARBITRARY means "any" */
     Tcl_Obj *yieldPtr;		/* The command to yield to.  Stored here in
 				 * order to reset splice point in
 				 * TclNRCoroutineActivateCallback if the
@@ -1848,12 +1853,12 @@ typedef struct Interp {
      * tclVar.c for usage.
      */
 
-    int numLevels;		/* Keeps track of how many nested calls to
+    size_t numLevels;		/* Keeps track of how many nested calls to
 				 * Tcl_Eval are in progress for this
 				 * interpreter. It's used to delay deletion of
 				 * the table until all Tcl_Eval invocations
 				 * are completed. */
-    int maxNestingDepth;	/* If numLevels exceeds this value then Tcl
+    size_t maxNestingDepth;	/* If numLevels exceeds this value then Tcl
 				 * assumes that infinite recursion has
 				 * occurred and it generates an error. */
     CallFrame *framePtr;	/* Points to top-most in stack of all nested
@@ -2896,7 +2901,7 @@ MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 MODULE_SCOPE void	TclDeleteNamespaceChildren(Namespace *nsPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
-			    const char *dict, int dictLength,
+			    const char *dict, size_t dictLength,
 			    const char **elementPtr, const char **nextPtr,
 			    size_t *sizePtr, int *literalPtr);
 /* TIP #280 - Modified token based evaluation, with line information. */
@@ -2922,7 +2927,7 @@ MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 			    Tcl_DString *toAppendPtr);
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
 MODULE_SCOPE Tcl_Obj *const *TclFetchEnsembleRoot(Tcl_Interp *interp,
-			    Tcl_Obj *const *objv, int objc, int *objcPtr);
+			    Tcl_Obj *const *objv, size_t objc, size_t *objcPtr);
 MODULE_SCOPE Tcl_Obj *const *TclEnsembleGetRewriteValues(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Namespace *TclEnsureNamespace(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr);
@@ -3178,13 +3183,13 @@ MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 MODULE_SCOPE void	TclSubstCompile(Tcl_Interp *interp, const char *bytes,
 			    size_t numBytes, int flags, int line,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE int	TclSubstOptions(Tcl_Interp *interp, int numOpts,
+MODULE_SCOPE int	TclSubstOptions(Tcl_Interp *interp, size_t numOpts,
 			    Tcl_Obj *const opts[], int *flagPtr);
 MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 			    size_t numBytes, int flags, Tcl_Parse *parsePtr,
 			    Tcl_InterpState *statePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-			    int count, int *tokensLeftPtr, int line,
+			    size_t count, int *tokensLeftPtr, int line,
 			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE size_t	TclTrim(const char *bytes, size_t numBytes,
 			    const char *trim, size_t numTrim, size_t *trimRight);
@@ -4449,7 +4454,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *)Tcl_Alloc((len) + 1); \
+	(objPtr)->bytes = (char *)Tcl_Alloc((size_t)(len) + 1U); \
 	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \

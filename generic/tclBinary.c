@@ -714,7 +714,7 @@ UpdateStringOfByteArray(
 
     for (i = 0; i < length; i++) {
 	if ((src[i] == 0) || (src[i] > 127)) {
-	    size++;
+	    size += 1U;
 	}
     }
 

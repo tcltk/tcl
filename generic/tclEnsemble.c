@@ -2231,8 +2231,8 @@ Tcl_Obj *const *
 TclFetchEnsembleRoot(
     Tcl_Interp *interp,
     Tcl_Obj *const *objv,
-    int objc,
-    int *objcPtr)
+    size_t objc,
+    size_t *objcPtr)
 {
     Tcl_Obj *const *sourceObjs;
     Interp *iPtr = (Interp *) interp;
@@ -3252,11 +3252,10 @@ TclAttemptCompileProc(
     int savedStackDepth = envPtr->currStackDepth;
     unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
     int savedAuxDataArrayNext = envPtr->auxDataArrayNext;
-    size_t savedExceptArrayNext = envPtr->exceptArrayNext;
+    size_t i, savedExceptArrayNext = envPtr->exceptArrayNext;
 #ifdef TCL_COMPILE_DEBUG
     int savedExceptDepth = envPtr->exceptDepth;
 #endif
-    size_t i;
 
     if (cmdPtr->compileProc == NULL) {
 	return TCL_ERROR;
@@ -3269,7 +3268,7 @@ TclAttemptCompileProc(
      * allocate a synthetic Tcl_Parse struct or copy tokens around.
      */
 
-    for (i = 0; i < depth - 1; i++) {
+    for (i = 0; i + 1 < depth; i++) {
 	parsePtr->tokenPtr = TokenAfter(parsePtr->tokenPtr);
     }
     parsePtr->numWords -= (depth - 1);

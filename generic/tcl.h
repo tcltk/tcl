@@ -718,14 +718,19 @@ typedef struct Tcl_Namespace {
 typedef struct Tcl_CallFrame {
     Tcl_Namespace *nsPtr;
     int dummy1;
-    int dummy2;
+#if TCL_MAJOR_VERSION > 8
+    int dummy6;
+#endif
+    size_t dummy2;
     void *dummy3;
     void *dummy4;
     void *dummy5;
+#if TCL_MAJOR_VERSION < 9
     int dummy6;
+#endif
     void *dummy7;
     void *dummy8;
-    int dummy9;
+    size_t dummy9;
     void *dummy10;
     void *dummy11;
     void *dummy12;

@@ -2995,7 +2995,7 @@ ChildRecursionLimit(
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     Interp *iPtr;
-    int limit;
+    Tcl_WideInt limit;
 
     if (objc) {
 	if (Tcl_IsSafe(interp)) {
@@ -3005,19 +3005,19 @@ ChildRecursionLimit(
 		    NULL);
 	    return TCL_ERROR;
 	}
-	if (TclGetIntFromObj(interp, objv[0], &limit) == TCL_ERROR) {
+	if (TclGetWideIntFromObj(interp, objv[0], &limit) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
-	if (limit <= 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "recursion limit must be > 0", -1));
+	if (limit <= 0 || (size_t)limit >= ((Tcl_WideUInt)WIDE_MAX & TCL_INDEX_NONE)) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "recursion limit must be > 0 and < %" TCL_LL_MODIFIER "u", (Tcl_WideUInt)WIDE_MAX & TCL_INDEX_NONE));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "BADLIMIT",
 		    NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetRecursionLimit(childInterp, limit);
 	iPtr = (Interp *) childInterp;
-	if (interp == childInterp && iPtr->numLevels > limit) {
+	if (interp == childInterp && iPtr->numLevels > (size_t)limit) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "falling back due to new recursion limit", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "RECURSION", NULL);

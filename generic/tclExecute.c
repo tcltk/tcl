@@ -379,7 +379,7 @@ VarHashCreateVar(
 #ifdef TCL_COMPILE_DEBUG
 #   define TRACE(a) \
     while (traceInstructions) {					\
-	fprintf(stdout, "%2d: %2d (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
+	fprintf(stdout, "%2" TCL_Z_MODIFIER "d: %2d (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
 		(int) CURR_DEPTH,				\
 		(pc - codePtr->codeStart),		\
 		GetOpcodeName(pc));				\
@@ -395,9 +395,9 @@ VarHashCreateVar(
     TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 #   define TRACE_WITH_OBJ(a, objPtr) \
     while (traceInstructions) {					\
-	fprintf(stdout, "%2d: %2" TCL_Z_MODIFIER "u (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
-		(size_t) CURR_DEPTH,				\
-		(pc - codePtr->codeStart),		\
+	fprintf(stdout, "%2" TCL_Z_MODIFIER "d: %2d (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
+		(int) CURR_DEPTH,				\
+		(size_t) (pc - codePtr->codeStart),		\
 		GetOpcodeName(pc));				\
 	printf a;						\
 	TclPrintObject(stdout, objPtr, 30);			\
@@ -2270,7 +2270,7 @@ TEBCresume(
 
     CHECK_STACK();
     if (traceInstructions) {
-	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
+	fprintf(stdout, "%2" TCL_Z_MODIFIER "d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
 	TclPrintInstruction(codePtr, pc);
 	fflush(stdout);
     }
@@ -2390,7 +2390,7 @@ TEBCresume(
 	    if (traceInstructions) {
 		TRACE_APPEND(("YIELD...\n"));
 	    } else {
-		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) yielding value \"%.30s\"\n",
+		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) yielding value \"%.30s\"\n",
 			iPtr->numLevels, (pc - codePtr->codeStart),
 			Tcl_GetString(OBJ_AT_TOS));
 	    }
@@ -2433,7 +2433,7 @@ TEBCresume(
 		TRACE(("[%.30s] => YIELD...\n", O2S(valuePtr)));
 	    } else {
 		/* FIXME: What is the right thing to trace? */
-		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) yielding to [%.30s]\n",
+		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) yielding to [%.30s]\n",
 			iPtr->numLevels, (pc - codePtr->codeStart),
 			TclGetString(valuePtr));
 	    }
@@ -2658,7 +2658,7 @@ TEBCresume(
 	/* Ugly abuse! */
 	starting = 1;
 #endif
-	TRACE(("=> drop %" TCL_Z_MODIFIER "d items\n", objc));
+	TRACE(("=> drop %" TCL_Z_MODIFIER "u items\n", objc));
 	NEXT_INST_V(1, objc, 0);
 
     case INST_EXPAND_STKTOP: {
@@ -2792,7 +2792,7 @@ TEBCresume(
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 		TRACE(("%" TCL_Z_MODIFIER "u => call ", objc));
 	    } else {
-		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) invoking ", iPtr->numLevels,
+		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) invoking ", iPtr->numLevels,
 			(pc - codePtr->codeStart));
 	    }
 	    for (i = 0;  i < objc;  i++) {
@@ -2840,7 +2840,7 @@ TEBCresume(
 		TRACE(("%" TCL_Z_MODIFIER "u => call (implementation %s) ", objc, O2S(objPtr)));
 	    } else {
 		fprintf(stdout,
-			"%d: (%" TCL_Z_MODIFIER "u) invoking (using implementation %s) ",
+			"%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) invoking (using implementation %s) ",
 			iPtr->numLevels, (pc - codePtr->codeStart),
 			O2S(objPtr));
 	    }
@@ -4426,7 +4426,7 @@ TEBCresume(
 			if (traceInstructions) {
 			    strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 			} else {
-			    fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) invoking ",
+			    fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) invoking ",
 				    iPtr->numLevels,
 				    (size_t)(pc - codePtr->codeStart));
 			}
@@ -4528,7 +4528,7 @@ TEBCresume(
 	    if (traceInstructions) {
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 	    } else {
-		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) invoking ",
+		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) invoking ",
 			iPtr->numLevels, (pc - codePtr->codeStart));
 	    }
 	    for (i = 0;  i < opnd;  i++) {
@@ -7892,9 +7892,9 @@ ExecuteExtendedBinaryMathOp(
 		    && ((size_t)shift < CHAR_BIT*sizeof(Tcl_WideInt))) {
 		w1 = *((const Tcl_WideInt *)ptr1);
 		if (!((w1>0 ? w1 : ~w1)
-			& -(((Tcl_WideInt)1)
+			& -(((Tcl_WideUInt)1)
 			<< (CHAR_BIT*sizeof(Tcl_WideInt) - 1 - shift)))) {
-		    WIDE_RESULT(w1 << shift);
+		    WIDE_RESULT((Tcl_WideUInt)w1 << shift);
 		}
 	    }
 	} else {
