@@ -1478,13 +1478,13 @@ typedef struct CoroutineData {
     CorContext running;
     Tcl_HashTable *lineLABCPtr;    /* See Interp.lineLABCPtr */
     void *stackLevel;
-    int auxNumLevels;		/* While the coroutine is running the
+    size_t auxNumLevels;		/* While the coroutine is running the
 				 * numLevels of the create/resume command is
 				 * stored here; for suspended coroutines it
 				 * holds the nesting numLevels at yield. */
-    int nargs;                  /* Number of args required for resuming this
-				 * coroutine; -2 means "0 or 1" (default), -1
-				 * means "any" */
+    size_t nargs;                  /* Number of args required for resuming this
+				 * coroutine; COROUTINE_ARGUMENTS_SINGLE_OPTIONAL means "0 or 1"
+				 * (default), COROUTINE_ARGUMENTS_ARBITRARY means "any" */
     Tcl_Obj *yieldPtr;		/* The command to yield to.  Stored here in
 				 * order to reset splice point in
 				 * TclNRCoroutineActivateCallback if the
@@ -1853,12 +1853,12 @@ typedef struct Interp {
      * tclVar.c for usage.
      */
 
-    int numLevels;		/* Keeps track of how many nested calls to
+    size_t numLevels;		/* Keeps track of how many nested calls to
 				 * Tcl_Eval are in progress for this
 				 * interpreter. It's used to delay deletion of
 				 * the table until all Tcl_Eval invocations
 				 * are completed. */
-    int maxNestingDepth;	/* If numLevels exceeds this value then Tcl
+    size_t maxNestingDepth;	/* If numLevels exceeds this value then Tcl
 				 * assumes that infinite recursion has
 				 * occurred and it generates an error. */
     CallFrame *framePtr;	/* Points to top-most in stack of all nested

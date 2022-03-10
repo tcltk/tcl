@@ -651,7 +651,7 @@ TestintobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     size_t varIndex;
-#if (INT_MAX != LONG_MAX)   /* int is not the same size as long int */
+#if (INT_MAX != LONG_MAX)   /* int is not the same size as long */
     int i;
 #endif
     Tcl_WideInt wideValue;

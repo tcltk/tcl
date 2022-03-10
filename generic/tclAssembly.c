@@ -1074,7 +1074,7 @@ TclAssembleCode(
 	 * Process the line of code.
 	 */
 
-	if (parsePtr->numWords + 1 > 1) {
+	if ((int)parsePtr->numWords > 0) {
 	    size_t instLen = (int)parsePtr->commandSize;
 		    /* Length in bytes of the current command */
 
@@ -1304,7 +1304,7 @@ AssembleOneLine(
     switch (instType) {
 
     case ASSEM_PUSH:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "value");
 	    goto cleanup;
 	}
@@ -1317,7 +1317,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_1BYTE:
-	if (parsePtr->numWords != 1) {
+	if ((int)parsePtr->numWords != 1) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "");
 	    goto cleanup;
 	}
@@ -1332,7 +1332,7 @@ AssembleOneLine(
 	 * are being resolved.
 	 */
 
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "label");
 	    goto cleanup;
 	}
@@ -1347,7 +1347,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_BOOL:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "boolean");
 	    goto cleanup;
 	}
@@ -1358,7 +1358,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_BOOL_LVT4:
-	if (parsePtr->numWords != 3) {
+	if ((int)parsePtr->numWords != 3) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "boolean varName");
 	    goto cleanup;
 	}
@@ -1374,7 +1374,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_CLOCK_READ:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "imm8");
 	    goto cleanup;
 	}
@@ -1391,7 +1391,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_CONCAT1:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "imm8");
 	    goto cleanup;
 	}
@@ -1405,7 +1405,7 @@ AssembleOneLine(
 
     case ASSEM_DICT_GET:
     case ASSEM_DICT_GET_DEF:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
 	    goto cleanup;
 	}
@@ -1417,7 +1417,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_DICT_SET:
-	if (parsePtr->numWords != 3) {
+	if ((int)parsePtr->numWords != 3) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count varName");
 	    goto cleanup;
 	}
@@ -1434,7 +1434,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_DICT_UNSET:
-	if (parsePtr->numWords != 3) {
+	if ((int)parsePtr->numWords != 3) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count varName");
 	    goto cleanup;
 	}
@@ -1451,7 +1451,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_END_CATCH:
-	if (parsePtr->numWords != 1) {
+	if ((int)parsePtr->numWords != 1) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "");
 	    goto cleanup;
 	}
@@ -1465,7 +1465,7 @@ AssembleOneLine(
 	 * code, the message ("script" or "expression") and an evaluator
 	 * callback that calls TclCompileScript or TclCompileExpr. */
 
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj,
 		    ((TalInstructionTable[tblIdx].tclInstCode
 		    == INST_EVAL_STK) ? "script" : "expression"));
@@ -1491,7 +1491,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_INVOKE:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
 	    goto cleanup;
 	}
@@ -1505,7 +1505,7 @@ AssembleOneLine(
 
     case ASSEM_JUMP:
     case ASSEM_JUMP4:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "label");
 	    goto cleanup;
 	}
@@ -1533,7 +1533,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_JUMPTABLE:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "table");
 	    goto cleanup;
 	}
@@ -1561,7 +1561,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_LABEL:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "name");
 	    goto cleanup;
 	}
@@ -1579,7 +1579,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_LINDEX_MULTI:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
 	    goto cleanup;
 	}
@@ -1591,7 +1591,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_LIST:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
 	    goto cleanup;
 	}
@@ -1603,7 +1603,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_INDEX:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
 	    goto cleanup;
 	}
@@ -1614,7 +1614,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_LSET_FLAT:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
 	    goto cleanup;
 	}
@@ -1633,7 +1633,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_LVT:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname");
 	    goto cleanup;
 	}
@@ -1645,7 +1645,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_LVT1:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname");
 	    goto cleanup;
 	}
@@ -1657,7 +1657,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_LVT1_SINT1:
-	if (parsePtr->numWords != 3) {
+	if ((int)parsePtr->numWords != 3) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varName imm8");
 	    goto cleanup;
 	}
@@ -1672,7 +1672,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_LVT4:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "varname");
 	    goto cleanup;
 	}
@@ -1684,7 +1684,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_OVER:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
 	    goto cleanup;
 	}
@@ -1696,7 +1696,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_REGEXP:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "boolean");
 	    goto cleanup;
 	}
@@ -1709,7 +1709,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_REVERSE:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count");
 	    goto cleanup;
 	}
@@ -1721,7 +1721,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_SINT1:
-	if (parsePtr->numWords != 2) {
+	if ((int)parsePtr->numWords != 2) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "imm8");
 	    goto cleanup;
 	}
@@ -1733,7 +1733,7 @@ AssembleOneLine(
 	break;
 
     case ASSEM_SINT4_LVT4:
-	if (parsePtr->numWords != 3) {
+	if ((int)parsePtr->numWords != 3) {
 	    Tcl_WrongNumArgs(interp, 1, &instNameObj, "count varName");
 	    goto cleanup;
 	}

@@ -634,7 +634,8 @@ EXTERN void		Tcl_SetErrorCode(Tcl_Interp *interp, ...);
 EXTERN void		Tcl_SetMaxBlockTime(const Tcl_Time *timePtr);
 /* Slot 230 is reserved */
 /* 231 */
-EXTERN int		Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth);
+EXTERN size_t		Tcl_SetRecursionLimit(Tcl_Interp *interp,
+				size_t depth);
 /* Slot 232 is reserved */
 /* 233 */
 EXTERN int		Tcl_SetServiceMode(int mode);
@@ -2028,7 +2029,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrorCode) (Tcl_Interp *interp, ...); /* 228 */
     void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
     void (*reserved230)(void);
-    int (*tcl_SetRecursionLimit) (Tcl_Interp *interp, int depth); /* 231 */
+    size_t (*tcl_SetRecursionLimit) (Tcl_Interp *interp, size_t depth); /* 231 */
     void (*reserved232)(void);
     int (*tcl_SetServiceMode) (int mode); /* 233 */
     void (*tcl_SetObjErrorCode) (Tcl_Interp *interp, Tcl_Obj *errorObjPtr); /* 234 */
