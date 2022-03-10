@@ -3016,7 +3016,7 @@ ChildRecursionLimit(
 	}
 	Tcl_SetRecursionLimit(childInterp, limit);
 	iPtr = (Interp *) childInterp;
-	if (interp == childInterp && iPtr->numLevels > limit) {
+	if (interp == childInterp && iPtr->numLevels > (size_t)limit) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "falling back due to new recursion limit", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "RECURSION", NULL);
