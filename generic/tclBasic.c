@@ -220,8 +220,8 @@ MODULE_SCOPE const TclStubs tclStubs;
 #define CORO_ACTIVATE_YIELD    PTR2INT(NULL)
 #define CORO_ACTIVATE_YIELDM   PTR2INT(NULL)+1
 
-#define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL     (-1)
-#define COROUTINE_ARGUMENTS_ARBITRARY           (-2)
+#define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL     ((size_t)-1)
+#define COROUTINE_ARGUMENTS_ARBITRARY           ((size_t)-2)
 
 /*
  * The following structure define the commands in the Tcl core.
@@ -8956,9 +8956,8 @@ TclNRCoroutineActivateCallback(
     TCL_UNUSED(int) /*result*/)
 {
     CoroutineData *corPtr = (CoroutineData *)data[0];
-    int type = PTR2INT(data[1]);
-    int numLevels, unused;
-    int *stackLevel = &unused;
+    int unused, type = PTR2INT(data[1]);
+    size_t numLevels;
 
     if (!corPtr->stackLevel) {
         /*
@@ -8975,7 +8974,7 @@ TclNRCoroutineActivateCallback(
          * the interp's environment to make it suitable to run this coroutine.
          */
 
-        corPtr->stackLevel = stackLevel;
+        corPtr->stackLevel = &unused;
         numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = iPtr->numLevels;
 
@@ -8989,7 +8988,7 @@ TclNRCoroutineActivateCallback(
          * Coroutine is active: yield
          */
 
-        if (corPtr->stackLevel != stackLevel) {
+        if (corPtr->stackLevel != &unused) {
 	    NRE_callback *runPtr;
 
 	    iPtr->execEnvPtr = corPtr->callerEEPtr;
@@ -9217,8 +9216,8 @@ TclNRCoroProbeObjCmd(
 {
     CoroutineData *corPtr;
     ExecEnv *savedEEPtr = iPtr->execEnvPtr;
-    int numLevels, unused;
-    int *stackLevel = &unused;
+    size_t numLevels;
+    int unused;
 
     /*
      * Usage more or less like tailcall:
@@ -9268,7 +9267,7 @@ TclNRCoroProbeObjCmd(
      * the interp's environment to make it suitable to run this coroutine.
      */
 
-    corPtr->stackLevel = stackLevel;
+    corPtr->stackLevel = &unused;
     numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = iPtr->numLevels;
 
@@ -9313,7 +9312,7 @@ InjectHandler(
 {
     CoroutineData *corPtr = (CoroutineData *)data[0];
     Tcl_Obj *listPtr = (Tcl_Obj *)data[1];
-    int nargs = PTR2INT(data[2]);
+    size_t nargs = PTR2INT(data[2]);
     void *isProbe = data[3];
     int objc;
     Tcl_Obj **objv;
@@ -9334,7 +9333,7 @@ InjectHandler(
              * I don't think this is reachable...
              */
 
-            Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewIntObj(nargs));
+            Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewWideIntObj((Tcl_WideInt)(nargs + 1U) - 1));
         }
         Tcl_ListObjAppendElement(NULL, listPtr, Tcl_GetObjResult(interp));
     }
@@ -9359,7 +9358,7 @@ InjectHandlerPostCall(
 {
     CoroutineData *corPtr = (CoroutineData *)data[0];
     Tcl_Obj *listPtr = (Tcl_Obj *)data[1];
-    int nargs = PTR2INT(data[2]);
+    size_t nargs = PTR2INT(data[2]);
     void *isProbe = data[3];
     int numLevels;
 
@@ -9479,7 +9478,7 @@ TclNRInterpCoroutine(
         }
         break;
     default:
-        if (corPtr->nargs != objc-1) {
+        if (corPtr->nargs + 1 != (size_t)objc) {
             Tcl_SetObjResult(interp,
                     Tcl_NewStringObj("wrong coro nargs; how did we get here? "
                     "not implemented!", -1));
