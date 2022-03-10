@@ -1501,15 +1501,15 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 		     (*((p)+3))))
 
 /*
- * Macros used to compute the minimum and maximum of two integers. The ANSI C
+ * Macros used to compute the minimum and maximum of two values. The ANSI C
  * "prototypes" for these macros are:
  *
- * int TclMin(int i, int j);
- * int TclMax(int i, int j);
+ * size_t TclMin(size_t i, size_t j);
+ * size_t TclMax(size_t i, size_t j);
  */
 
-#define TclMin(i, j)	((((int) i) < ((int) j))? (i) : (j))
-#define TclMax(i, j)	((((int) i) > ((int) j))? (i) : (j))
+#define TclMin(i, j)	((((size_t) i) + 1 < ((size_t) j) + 1 )? (i) : (j))
+#define TclMax(i, j)	((((size_t) i) + 1 > ((size_t) j) + 1 )? (i) : (j))
 
 /*
  * Convenience macros for use when compiling bodies of commands. The ANSI C
