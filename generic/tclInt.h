@@ -1478,8 +1478,8 @@ typedef struct CoroutineData {
 				 * stored here; for suspended coroutines it
 				 * holds the nesting numLevels at yield. */
     int nargs;                  /* Number of args required for resuming this
-				 * coroutine; -2 means "0 or 1" (default), -1
-				 * means "any" */
+				 * coroutine; COROUTINE_ARGUMENTS_SINGLE_OPTIONAL means "0 or 1"
+				 * (default), COROUTINE_ARGUMENTS_ARBITRARY means "any" */
     Tcl_Obj *yieldPtr;		/* The command to yield to.  Stored here in
 				 * order to reset splice point in
 				 * TclNRCoroutineActivateCallback if the
