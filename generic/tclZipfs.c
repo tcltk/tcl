@@ -428,12 +428,6 @@ static Tcl_ChannelType ZipChannelType = {
 };
 
 /*
- * Miscellaneous constants.
- */
-
-#define ERROR_LENGTH	((size_t) -1)
-
-/*
  *-------------------------------------------------------------------------
  *
  * ZipReadInt, ZipReadShort, ZipWriteInt, ZipWriteShort --
@@ -1387,7 +1381,7 @@ ZipFSOpenArchive(
 	 */
 
 	zf->length = Tcl_Seek(zf->chan, 0, SEEK_END);
-	if (zf->length == ERROR_LENGTH) {
+	if (zf->length == TCL_INDEX_NONE) {
 	    ZIPFS_POSIX_ERROR(interp, "seek error");
 	    goto error;
 	}
@@ -1486,7 +1480,7 @@ ZipMapArchive(
      */
 
     zf->length = lseek(fd, 0, SEEK_END);
-    if (zf->length == ERROR_LENGTH || zf->length < ZIP_CENTRAL_END_LEN) {
+    if (zf->length == TCL_INDEX_NONE || zf->length < ZIP_CENTRAL_END_LEN) {
 	ZIPFS_POSIX_ERROR(interp, "invalid file size");
 	return TCL_ERROR;
     }
@@ -2582,7 +2576,7 @@ ZipAddFile(
     nbyte = nbytecompr = 0;
     while (1) {
 	len = Tcl_Read(in, buf, bufsize);
-	if (len == ERROR_LENGTH) {
+	if (len == TCL_INDEX_NONE) {
 	    Tcl_DStringFree(&zpathDs);
 	    if (nbyte == 0 && errno == EISDIR) {
 		Tcl_Close(interp, in);
@@ -2712,7 +2706,7 @@ ZipAddFile(
 
     do {
 	len = Tcl_Read(in, buf, bufsize);
-	if (len == ERROR_LENGTH) {
+	if (len == TCL_INDEX_NONE) {
 	    deflateEnd(&stream);
 	    goto readErrorWithChannelOpen;
 	}
@@ -2776,7 +2770,7 @@ ZipAddFile(
 	nbytecompr = (passwd ? 12 : 0);
 	while (1) {
 	    len = Tcl_Read(in, buf, bufsize);
-	    if (len == ERROR_LENGTH) {
+	    if (len == TCL_INDEX_NONE) {
 		goto readErrorWithChannelOpen;
 	    } else if (len == 0) {
 		break;
@@ -3299,7 +3293,7 @@ CopyImageFile(
      */
 
     i = Tcl_Seek(in, 0, SEEK_END);
-    if (i == ERROR_LENGTH) {
+    if (i == TCL_INDEX_NONE) {
 	errMsg = "seek error";
 	goto copyError;
     }
