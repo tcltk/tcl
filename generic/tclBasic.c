@@ -8955,9 +8955,8 @@ TclNRCoroutineActivateCallback(
     Tcl_Interp *interp,
     TCL_UNUSED(int) /*result*/)
 {
+    size_t numLevels, type = PTR2INT(data[1]);
     CoroutineData *corPtr = (CoroutineData *)data[0];
-    int unused, type = PTR2INT(data[1]);
-    size_t numLevels;
 
     if (!corPtr->stackLevel) {
         /*
@@ -8974,7 +8973,7 @@ TclNRCoroutineActivateCallback(
          * the interp's environment to make it suitable to run this coroutine.
          */
 
-        corPtr->stackLevel = &unused;
+        corPtr->stackLevel = &corPtr;
         numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = iPtr->numLevels;
 
@@ -8988,7 +8987,7 @@ TclNRCoroutineActivateCallback(
          * Coroutine is active: yield
          */
 
-        if (corPtr->stackLevel != &unused) {
+        if (corPtr->stackLevel != &corPtr) {
 	    NRE_callback *runPtr;
 
 	    iPtr->execEnvPtr = corPtr->callerEEPtr;
@@ -9214,10 +9213,9 @@ TclNRCoroProbeObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    CoroutineData *corPtr;
     ExecEnv *savedEEPtr = iPtr->execEnvPtr;
     size_t numLevels;
-    int unused;
+    CoroutineData *corPtr;
 
     /*
      * Usage more or less like tailcall:
@@ -9267,7 +9265,7 @@ TclNRCoroProbeObjCmd(
      * the interp's environment to make it suitable to run this coroutine.
      */
 
-    corPtr->stackLevel = &unused;
+    corPtr->stackLevel = &corPtr;
     numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = iPtr->numLevels;
 
@@ -9360,7 +9358,7 @@ InjectHandlerPostCall(
     Tcl_Obj *listPtr = (Tcl_Obj *)data[1];
     size_t nargs = PTR2INT(data[2]);
     void *isProbe = data[3];
-    int numLevels;
+    size_t numLevels;
 
     /*
      * Delete the command words for what we just executed.
