@@ -566,12 +566,12 @@ UpdateStringOfByteArray(
      */
 
     size = length;
-    for (i = 0; i < length && size < INT_MAX; i++) {
+    for (i = 0; i < length && size <= INT_MAX; i++) {
 	if ((src[i] == 0) || (src[i] > 127)) {
 	    size++;
 	}
     }
-    if (i < length) {
+    if (size > INT_MAX) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
