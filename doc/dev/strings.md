@@ -204,18 +204,7 @@ expectations.
 	128
 	% string equal $s $t
 	0
-	% string bytelength $s
-	2
-	% string bytelength $t
-	1
 ```
-This example also demonstrates the mis-step of **string bytelength**
-that exposes differences in internal representation of values that
-should be treated as equivalent.
-
-(As of this writing, TIP 345 has purged the **identity** encoding
-from the development of Tcl 8.7, but **string bytelength** is still
-present in current snapshots of Tcl 9.0.)
 
 While scripts can avoid use of the **identity** encoding (perhaps treating
 any use of it as introducing *undefined* behavior), the underlying
@@ -286,11 +275,16 @@ encodings to be used.  Fundamentally each distinguishable Unicode text
 that exists *or that ever will exist under future revisions of Unicode*
 became defined as a sequence of zero or more symbols from the
 alphabet of ***unicode scalar values***.  A unicode scalar value is
-associated in the Unicode character set with a code value that can
-be expressed as a 21-bit integer, but also constrained to exclude
-the values associated with the surrogate extension mechanism.  The
-code values of unicode scalar values are in the integer ranges
-0 to 55,295 (0x0000 to 0xD7FF) and 57,344 to 1,114,111 (0xE000 to 0x10FFFF).
+associated in the Unicode character set with a code value less than
+1,114,112 and also constrained to exclude the code values associated
+with the surrogate extension mechanism.  The code values of unicode
+scalar values are in the integer ranges 0 to 55,295 (0x0000 to 0xD7FF)
+and 57,344 to 1,114,111 (0xE000 to 0x10FFFF).  The code values of
+unicode scalar values are all representable as 21-bit integers.  The
+21-bit integers which are not the code value of any unicode scalar
+value are the ranges 55,296 to 57,343 (0xD800 to 0xDFFF)
+and 1,114,112 to 2,097,151 (0x110000 to 0x1FFFFF).  
+
 From this perspective, the Tcl 8.1 string values were no longer seen as
 proper Unicode, but as a legacy system called UCS-2 which suffered from
 two flaws.  It lacked support for the supplemntary planes of the full
