@@ -326,7 +326,7 @@ static Tcl_NRPostProc	NREUnwind_callback;
 static Tcl_ObjCmdProc	TestNREUnwind;
 static Tcl_ObjCmdProc	TestNRELevels;
 static Tcl_ObjCmdProc	TestInterpResolverCmd;
-#if defined(HAVE_CPUID)
+#if defined(HAVE_CPUID) && !defined(MAC_OSX_TCL)
 static Tcl_ObjCmdProc	TestcpuidCmd;
 #endif
 
@@ -600,7 +600,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testexitmainloop", TestexitmainloopCmd,
 	    NULL, NULL);
-#if defined(HAVE_CPUID)
+#if defined(HAVE_CPUID) && !defined(MAC_OSX_TCL)
     Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
 	    NULL, NULL);
 #endif
@@ -6955,7 +6955,7 @@ TestFindLastCmd(
     return TCL_OK;
 }
 
-#if defined(HAVE_CPUID)
+#if defined(HAVE_CPUID) && !defined(MAC_OSX_TCL)
 /*
  *----------------------------------------------------------------------
  *
