@@ -233,8 +233,8 @@ MODULE_SCOPE const TclStubs tclStubs;
  * after particular kinds of [yield].
  */
 
-#define CORO_ACTIVATE_YIELD    (0)
-#define CORO_ACTIVATE_YIELDM   (1)
+#define CORO_ACTIVATE_YIELD    NULL
+#define CORO_ACTIVATE_YIELDM   INT2PTR(1)
 
 #define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL     (-1)
 #define COROUTINE_ARGUMENTS_ARBITRARY           (-2)
@@ -9563,7 +9563,7 @@ TclNRYieldToObjCmd(
     corPtr->yieldPtr = listPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
 
-    return TclNRYieldObjCmd(INT2PTR(CORO_ACTIVATE_YIELDM), interp, 1, objv);
+    return TclNRYieldObjCmd(CORO_ACTIVATE_YIELDM, interp, 1, objv);
 }
 
 static int
@@ -9778,7 +9778,7 @@ TclNRCoroutineActivateCallback(
             return TCL_ERROR;
         }
 
-        int type = PTR2INT(data[1]);
+        void *type = data[1];
         if (type == CORO_ACTIVATE_YIELD) {
             corPtr->nargs = COROUTINE_ARGUMENTS_SINGLE_OPTIONAL;
         } else if (type == CORO_ACTIVATE_YIELDM) {
