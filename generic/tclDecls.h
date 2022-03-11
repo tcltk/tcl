@@ -4122,7 +4122,6 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GetStringResult
 #undef Tcl_GetDefaultEncodingDir
 #undef Tcl_SetDefaultEncodingDir
-#undef Tcl_UniCharLen
 #undef Tcl_UniCharNcmp
 #undef Tcl_EvalTokens
 #undef Tcl_UniCharNcasecmp
