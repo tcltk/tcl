@@ -1066,8 +1066,8 @@ EXTERN int		Tcl_UniCharIsWordChar(int ch);
 EXTERN int		Tcl_Char16Len(const unsigned short *uniStr);
 /* 353 */
 TCL_DEPRECATED("Use Tcl_UtfNcmp")
-int			Tcl_UniCharNcmp(const Tcl_UniChar *ucs,
-				const Tcl_UniChar *uct,
+int			Tcl_UniCharNcmp(const unsigned short *ucs,
+				const unsigned short *uct,
 				unsigned long numChars);
 /* 354 */
 EXTERN char *		Tcl_Char16ToUtfDString(const unsigned short *uniStr,
@@ -2345,7 +2345,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsUpper) (int ch); /* 350 */
     int (*tcl_UniCharIsWordChar) (int ch); /* 351 */
     int (*tcl_Char16Len) (const unsigned short *uniStr); /* 352 */
-    TCL_DEPRECATED_API("Use Tcl_UtfNcmp") int (*tcl_UniCharNcmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned long numChars); /* 353 */
+    TCL_DEPRECATED_API("Use Tcl_UtfNcmp") int (*tcl_UniCharNcmp) (const unsigned short *ucs, const unsigned short *uct, unsigned long numChars); /* 353 */
     char * (*tcl_Char16ToUtfDString) (const unsigned short *uniStr, int uniLength, Tcl_DString *dsPtr); /* 354 */
     unsigned short * (*tcl_UtfToChar16DString) (const char *src, int length, Tcl_DString *dsPtr); /* 355 */
     Tcl_RegExp (*tcl_GetRegExpFromObj) (Tcl_Interp *interp, Tcl_Obj *patObj, int flags); /* 356 */

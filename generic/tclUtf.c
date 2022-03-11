@@ -1849,9 +1849,9 @@ Tcl_UniCharLen(
  */
 
 int
-Tcl_UniCharNcmp(
-    const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
-    const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
+TclUniCharNcmp(
+    const int *ucs,	/* Unicode string to compare to uct. */
+    const int *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
 {
 #if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
@@ -1868,14 +1868,6 @@ Tcl_UniCharNcmp(
 
     for ( ; numChars != 0; ucs++, uct++, numChars--) {
 	if (*ucs != *uct) {
-#if TCL_UTF_MAX < 4
-	    /* special case for handling upper surrogates */
-	    if (((*ucs & 0xFC00) == 0xD800) && ((*uct & 0xFC00) != 0xD800)) {
-		return 1;
-	    } else if (((*uct & 0xFC00) == 0xD800)) {
-		return -1;
-	    }
-#endif
 	    return (*ucs - *uct);
 	}
     }
@@ -1883,6 +1875,38 @@ Tcl_UniCharNcmp(
 #endif /* WORDS_BIGENDIAN */
 }
 
+int
+Tcl_UniCharNcmp(
+    const unsigned short *ucs,	/* Unicode string to compare to uct. */
+    const unsigned short *uct,	/* Unicode string ucs is compared to. */
+    unsigned long numChars)	/* Number of unichars to compare. */
+{
+#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
+    /*
+     * We are definitely on a big-endian machine; memcmp() is safe
+     */
+
+    return memcmp(ucs, uct, numChars*sizeof(Tcl_UniChar));
+
+#else /* !WORDS_BIGENDIAN */
+    /*
+     * We can't simply call memcmp() because that is not lexically correct.
+     */
+
+    for ( ; numChars != 0; ucs++, uct++, numChars--) {
+	if (*ucs != *uct) {
+	    /* special case for handling upper surrogates */
+	    if (((*ucs & 0xFC00) == 0xD800) && ((*uct & 0xFC00) != 0xD800)) {
+		return 1;
+	    } else if (((*uct & 0xFC00) == 0xD800)) {
+		return -1;
+	    }
+	    return (*ucs - *uct);
+	}
+    }
+    return 0;
+#endif /* WORDS_BIGENDIAN */
+}
 /*
  *----------------------------------------------------------------------
  *

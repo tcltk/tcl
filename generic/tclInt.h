@@ -3319,6 +3319,16 @@ MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
 MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
 
 
+MODULE_SCOPE int *TclGetUnicode(Tcl_Obj *);
+MODULE_SCOPE int *TclGetUnicodeFromObj_(Tcl_Obj *, int *);
+MODULE_SCOPE Tcl_Obj *TclNewUnicodeObj(const int *, int);
+MODULE_SCOPE void TclSetUnicodeObj(Tcl_Obj *, const int *, int);
+MODULE_SCOPE void TclAppendUnicodeToObj(Tcl_Obj *, const int *, int);
+MODULE_SCOPE int TclUniCharNcasecmp(const int *, const int *, unsigned long);
+MODULE_SCOPE int TclUniCharCaseMatch(const int *, const int *, int);
+MODULE_SCOPE int TclUniCharNcmp(const int *, const int *, unsigned long);
+
+
 /*
  * Many parsing tasks need a common definition of whitespace.
  * Use this routine and macro to achieve that and place
@@ -4774,24 +4784,6 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclFetchInternalRep(objPtr, type) \
 	(TclHasInternalRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
 
-
-/*
- *----------------------------------------------------------------
- * Macro used by the Tcl core to compare Unicode strings. On big-endian
- * systems we can use the more efficient memcmp, but this would not be
- * lexically correct on little-endian systems. The ANSI C "prototype" for
- * this macro is:
- *
- * MODULE_SCOPE int	TclUniCharNcmp(const Tcl_UniChar *cs,
- *			    const Tcl_UniChar *ct, unsigned long n);
- *----------------------------------------------------------------
- */
-
-#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
-#   define TclUniCharNcmp(cs,ct,n) memcmp((cs),(ct),(n)*sizeof(Tcl_UniChar))
-#else /* !WORDS_BIGENDIAN */
-#   define TclUniCharNcmp Tcl_UniCharNcmp
-#endif /* WORDS_BIGENDIAN */
 
 /*
  *----------------------------------------------------------------

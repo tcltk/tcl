@@ -3492,7 +3492,7 @@ TclStringCmp(
 			s1len *= sizeof(Tcl_UniChar);
 			s2len *= sizeof(Tcl_UniChar);
 		    } else {
-			memCmpFn = (memCmpFn_t)(void *)Tcl_UniCharNcmp;
+			memCmpFn = (memCmpFn_t)(void *)TclUniCharNcmp;
 		    }
 		}
 	    }

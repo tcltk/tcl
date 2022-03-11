@@ -1248,7 +1248,7 @@ declare 352 {
     int Tcl_Char16Len(const unsigned short *uniStr)
 }
 declare 353 {deprecated {Use Tcl_UtfNcmp}} {
-    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
+    int Tcl_UniCharNcmp(const unsigned short *ucs, const unsigned short *uct,
 	    unsigned long numChars)
 }
 declare 354 {
