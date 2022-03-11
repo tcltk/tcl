@@ -283,7 +283,11 @@ and 57,344 to 1,114,111 (0xE000 to 0x10FFFF).  The code values of
 unicode scalar values are all representable as 21-bit integers.  The
 21-bit integers which are not the code value of any unicode scalar
 value are the ranges 55,296 to 57,343 (0xD800 to 0xDFFF)
-and 1,114,112 to 2,097,151 (0x110000 to 0x1FFFFF).  
+and 1,114,112 to 2,097,151 (0x110000 to 0x1FFFFF).  (Note that 21-bit
+code values are exactly what can be encoded by the lead and trail byte
+scheme of UTF-8 restricted to 4-byte sequences. Note also that code
+value 0x10FFFF is the largest value that can be decoded from a
+surrogate pair.)
 
 From this perspective, the Tcl 8.1 string values were no longer seen as
 proper Unicode, but as a legacy system called UCS-2 which suffered from
@@ -319,7 +323,7 @@ Note the difficulties if we try to design an encoding with 2-octet code
 units to encode all sequences over the union of the UCS-2 and Unicode
 alphabets.  This can certainly be done, but the result will bear little
 resemblence to UTF-16.  All valid UTF-16 sequences are used up representing
-valid Unicode.  To also represent the strings of UCS-2 that are not validi
+valid Unicode.  To also represent the strings of UCS-2 that are not valid
 Unicode, we would need to use 2-octet sequences that are not valid UTF-16.
 Any such scheme will have some point of discontinuity with the legacy UCS-2
 system.  Likewise, since every 2-octet code unit sequence is used in UCS-2
@@ -538,7 +542,7 @@ overlong sequences otherwise structured with appropriate sequences
 of lead bytes and trail bytes.  The decoder did not decode any byte
 sequences of length greater than three.  Any byte leading a sequence not
 recognized by those rules would be decoded as itself, effectively making
-use of ISO-88591-1 as a fallback encoding.  All of these conventions of
+use of ISO-8859-1 as a fallback encoding.  All of these conventions of
 the decoder provided opportunities for very different byte sequences
 to be seen as representations of the same string after decoding, with
 all of the risks of violations of fundmental string behavior that
