@@ -9981,8 +9981,6 @@ TclNRCoroProbeObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
-    int numLevels;
     CoroutineData *corPtr;
 
     /*
@@ -10013,6 +10011,7 @@ TclNRCoroProbeObjCmd(
      * to happen when the coro is resumed.
      */
 
+    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
     TclNRAddCallback(interp, InjectHandler, corPtr,
             Tcl_NewListObj(objc - 2, objv + 2), INT2PTR(corPtr->nargs), corPtr);
@@ -10034,7 +10033,7 @@ TclNRCoroProbeObjCmd(
      */
 
     corPtr->stackLevel = &corPtr;
-    numLevels = corPtr->auxNumLevels;
+    int numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = iPtr->numLevels;
 
     /*
@@ -10079,7 +10078,7 @@ InjectHandler(
     CoroutineData *corPtr = (CoroutineData *)data[0];
     Tcl_Obj *listPtr = (Tcl_Obj *)data[1];
     int nargs = PTR2INT(data[2]);
-    ClientData isProbe = data[3];
+    void *isProbe = data[3];
     int objc;
     Tcl_Obj **objv;
 
@@ -10125,8 +10124,7 @@ InjectHandlerPostCall(
     CoroutineData *corPtr = (CoroutineData *)data[0];
     Tcl_Obj *listPtr = (Tcl_Obj *)data[1];
     int nargs = PTR2INT(data[2]);
-    ClientData isProbe = data[3];
-    int numLevels;
+    void *isProbe = data[3];
 
     /*
      * Delete the command words for what we just executed.
@@ -10148,7 +10146,7 @@ InjectHandlerPostCall(
         }
         corPtr->nargs = nargs;
         corPtr->stackLevel = NULL;
-        numLevels = iPtr->numLevels;
+        int numLevels = iPtr->numLevels;
         iPtr->numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
         iPtr->execEnvPtr = corPtr->callerEEPtr;

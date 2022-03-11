@@ -93,7 +93,6 @@ static void uniCodePanic(void) {
 #   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, int))(void *)uniCodePanic
 #   define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long))(void *)uniCodePanic
 #   define Tcl_UniCharCaseMatch (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, int))(void *)uniCodePanic
-#   define Tcl_UniCharLen (int(*)(const Tcl_UniChar *))(void *)uniCodePanic
 #   define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long))(void *)uniCodePanic
 #endif
 
@@ -688,7 +687,6 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #if TCL_UTF_MAX < 4
 #   define Tcl_AppendUnicodeToObj 0
 #   define Tcl_UniCharCaseMatch 0
-#   define Tcl_UniCharLen 0
 #   define Tcl_UniCharNcasecmp 0
 #   define Tcl_UniCharNcmp 0
 #endif
