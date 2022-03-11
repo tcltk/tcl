@@ -1256,13 +1256,13 @@ EXTERN void		Tcl_ClearChannelHandlers(Tcl_Channel channel);
 EXTERN int		Tcl_IsChannelExisting(const char *channelName);
 /* 419 */
 TCL_DEPRECATED("Use Tcl_UtfNcasecmp")
-int			Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs,
-				const Tcl_UniChar *uct,
+int			Tcl_UniCharNcasecmp(const unsigned short *ucs,
+				const unsigned short *uct,
 				unsigned long numChars);
 /* 420 */
 TCL_DEPRECATED("Use Tcl_StringCaseMatch")
-int			Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
-				const Tcl_UniChar *uniPattern, int nocase);
+int			Tcl_UniCharCaseMatch(const unsigned short *uniStr,
+				const unsigned short *uniPattern, int nocase);
 /* 421 */
 EXTERN Tcl_HashEntry *	Tcl_FindHashEntry(Tcl_HashTable *tablePtr,
 				const void *key);
@@ -2411,8 +2411,8 @@ typedef struct TclStubs {
     void (*tcl_SpliceChannel) (Tcl_Channel channel); /* 416 */
     void (*tcl_ClearChannelHandlers) (Tcl_Channel channel); /* 417 */
     int (*tcl_IsChannelExisting) (const char *channelName); /* 418 */
-    TCL_DEPRECATED_API("Use Tcl_UtfNcasecmp") int (*tcl_UniCharNcasecmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned long numChars); /* 419 */
-    TCL_DEPRECATED_API("Use Tcl_StringCaseMatch") int (*tcl_UniCharCaseMatch) (const Tcl_UniChar *uniStr, const Tcl_UniChar *uniPattern, int nocase); /* 420 */
+    TCL_DEPRECATED_API("Use Tcl_UtfNcasecmp") int (*tcl_UniCharNcasecmp) (const unsigned short *ucs, const unsigned short *uct, unsigned long numChars); /* 419 */
+    TCL_DEPRECATED_API("Use Tcl_StringCaseMatch") int (*tcl_UniCharCaseMatch) (const unsigned short *uniStr, const unsigned short *uniPattern, int nocase); /* 420 */
     Tcl_HashEntry * (*tcl_FindHashEntry) (Tcl_HashTable *tablePtr, const void *key); /* 421 */
     Tcl_HashEntry * (*tcl_CreateHashEntry) (Tcl_HashTable *tablePtr, const void *key, int *newPtr); /* 422 */
     void (*tcl_InitCustomHashTable) (Tcl_HashTable *tablePtr, int keyType, const Tcl_HashKeyType *typePtr); /* 423 */

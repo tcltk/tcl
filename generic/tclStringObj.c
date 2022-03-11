@@ -3467,7 +3467,7 @@ TclStringCmp(
 	    if (nocase) {
 		s1 = (char *) Tcl_GetUnicodeFromObj(value1Ptr, &s1len);
 		s2 = (char *) Tcl_GetUnicodeFromObj(value2Ptr, &s2len);
-		memCmpFn = (memCmpFn_t)(void *)Tcl_UniCharNcasecmp;
+		memCmpFn = (memCmpFn_t)(void *)TclUniCharNcasecmp;
 	    } else {
 		s1len = Tcl_GetCharLength(value1Ptr);
 		s2len = Tcl_GetCharLength(value2Ptr);

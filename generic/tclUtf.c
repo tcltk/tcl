@@ -1927,30 +1927,48 @@ Tcl_UniCharNcmp(
 
 int
 Tcl_UniCharNcasecmp(
-    const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
-    const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
+    const unsigned short *ucs,	/* Unicode string to compare to uct. */
+    const unsigned short *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
 {
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
 	if (*ucs != *uct) {
-	    Tcl_UniChar lcs = Tcl_UniCharToLower(*ucs);
-	    Tcl_UniChar lct = Tcl_UniCharToLower(*uct);
+	    unsigned short lcs = Tcl_UniCharToLower(*ucs);
+	    unsigned short lct = Tcl_UniCharToLower(*uct);
 
 	    if (lcs != lct) {
-#if TCL_UTF_MAX < 4
 	    /* special case for handling upper surrogates */
 	    if (((lcs & 0xFC00) == 0xD800) && ((lct & 0xFC00) != 0xD800)) {
 		return 1;
 	    } else if (((lct & 0xFC00) == 0xD800)) {
 		return -1;
 	    }
-#endif
 		return (lcs - lct);
 	    }
 	}
     }
     return 0;
 }
+
+int
+TclUniCharNcasecmp(
+    const int *ucs,	/* Unicode string to compare to uct. */
+    const int *uct,	/* Unicode string ucs is compared to. */
+    unsigned long numChars)	/* Number of unichars to compare. */
+{
+    for ( ; numChars != 0; numChars--, ucs++, uct++) {
+	if (*ucs != *uct) {
+	    int lcs = Tcl_UniCharToLower(*ucs);
+	    int lct = Tcl_UniCharToLower(*uct);
+
+	    if (lcs != lct) {
+		return (lcs - lct);
+	    }
+	}
+    }
+    return 0;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -2314,14 +2332,181 @@ Tcl_UniCharIsWordChar(
  */
 
 int
-Tcl_UniCharCaseMatch(
-    const Tcl_UniChar *uniStr,	/* Unicode String. */
-    const Tcl_UniChar *uniPattern,
+TclUniCharCaseMatch(
+    const int *uniStr,	/* Unicode String. */
+    const int *uniPattern,
 				/* Pattern, which may contain special
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
-    Tcl_UniChar ch1 = 0, p;
+    int ch1 = 0, p;
+
+    while (1) {
+	p = *uniPattern;
+
+	/*
+	 * See if we're at the end of both the pattern and the string. If so,
+	 * we succeeded. If we're at the end of the pattern but not at the end
+	 * of the string, we failed.
+	 */
+
+	if (p == 0) {
+	    return (*uniStr == 0);
+	}
+	if ((*uniStr == 0) && (p != '*')) {
+	    return 0;
+	}
+
+	/*
+	 * Check for a "*" as the next pattern character. It matches any
+	 * substring. We handle this by skipping all the characters up to the
+	 * next matching one in the pattern, and then calling ourselves
+	 * recursively for each postfix of string, until either we match or we
+	 * reach the end of the string.
+	 */
+
+	if (p == '*') {
+	    /*
+	     * Skip all successive *'s in the pattern
+	     */
+
+	    while (*(++uniPattern) == '*') {
+		/* empty body */
+	    }
+	    p = *uniPattern;
+	    if (p == 0) {
+		return 1;
+	    }
+	    if (nocase) {
+		p = Tcl_UniCharToLower(p);
+	    }
+	    while (1) {
+		/*
+		 * Optimization for matching - cruise through the string
+		 * quickly if the next char in the pattern isn't a special
+		 * character
+		 */
+
+		if ((p != '[') && (p != '?') && (p != '\\')) {
+		    if (nocase) {
+			while (*uniStr && (p != *uniStr)
+				&& (p != Tcl_UniCharToLower(*uniStr))) {
+			    uniStr++;
+			}
+		    } else {
+			while (*uniStr && (p != *uniStr)) {
+			    uniStr++;
+			}
+		    }
+		}
+		if (TclUniCharCaseMatch(uniStr, uniPattern, nocase)) {
+		    return 1;
+		}
+		if (*uniStr == 0) {
+		    return 0;
+		}
+		uniStr++;
+	    }
+	}
+
+	/*
+	 * Check for a "?" as the next pattern character. It matches any
+	 * single character.
+	 */
+
+	if (p == '?') {
+	    uniPattern++;
+	    uniStr++;
+	    continue;
+	}
+
+	/*
+	 * Check for a "[" as the next pattern character. It is followed by a
+	 * list of characters that are acceptable, or by a range (two
+	 * characters separated by "-").
+	 */
+
+	if (p == '[') {
+	    int startChar, endChar;
+
+	    uniPattern++;
+	    ch1 = (nocase ? Tcl_UniCharToLower(*uniStr) : *uniStr);
+	    uniStr++;
+	    while (1) {
+		if ((*uniPattern == ']') || (*uniPattern == 0)) {
+		    return 0;
+		}
+		startChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
+			: *uniPattern);
+		uniPattern++;
+		if (*uniPattern == '-') {
+		    uniPattern++;
+		    if (*uniPattern == 0) {
+			return 0;
+		    }
+		    endChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
+			    : *uniPattern);
+		    uniPattern++;
+		    if (((startChar <= ch1) && (ch1 <= endChar))
+			    || ((endChar <= ch1) && (ch1 <= startChar))) {
+			/*
+			 * Matches ranges of form [a-z] or [z-a].
+			 */
+			break;
+		    }
+		} else if (startChar == ch1) {
+		    break;
+		}
+	    }
+	    while (*uniPattern != ']') {
+		if (*uniPattern == 0) {
+		    uniPattern--;
+		    break;
+		}
+		uniPattern++;
+	    }
+	    uniPattern++;
+	    continue;
+	}
+
+	/*
+	 * If the next pattern character is '\', just strip off the '\' so we
+	 * do exact matching on the character that follows.
+	 */
+
+	if (p == '\\') {
+	    if (*(++uniPattern) == '\0') {
+		return 0;
+	    }
+	}
+
+	/*
+	 * There's no special character. Just make sure that the next bytes of
+	 * each string match.
+	 */
+
+	if (nocase) {
+	    if (Tcl_UniCharToLower(*uniStr) !=
+		    Tcl_UniCharToLower(*uniPattern)) {
+		return 0;
+	    }
+	} else if (*uniStr != *uniPattern) {
+	    return 0;
+	}
+	uniStr++;
+	uniPattern++;
+    }
+}
+
+int
+Tcl_UniCharCaseMatch(
+    const unsigned short *uniStr,	/* Unicode String. */
+    const unsigned short *uniPattern,
+				/* Pattern, which may contain special
+				 * characters. */
+    int nocase)			/* 0 for case sensitive, 1 for insensitive */
+{
+    unsigned short ch1 = 0, p;
 
     while (1) {
 	p = *uniPattern;
@@ -2409,7 +2594,7 @@ Tcl_UniCharCaseMatch(
 	 */
 
 	if (p == '[') {
-	    Tcl_UniChar startChar, endChar;
+	    unsigned short startChar, endChar;
 
 	    uniPattern++;
 	    ch1 = (nocase ? Tcl_UniCharToLower(*uniStr) : *uniStr);
@@ -2480,6 +2665,7 @@ Tcl_UniCharCaseMatch(
     }
 }
 
+
 /*
  *----------------------------------------------------------------------
  *

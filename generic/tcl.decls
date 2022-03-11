@@ -1483,12 +1483,12 @@ declare 418 {
     int Tcl_IsChannelExisting(const char *channelName)
 }
 declare 419 {deprecated {Use Tcl_UtfNcasecmp}} {
-    int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
+    int Tcl_UniCharNcasecmp(const unsigned short *ucs, const unsigned short *uct,
 	    unsigned long numChars)
 }
 declare 420 {deprecated {Use Tcl_StringCaseMatch}} {
-    int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
-	    const Tcl_UniChar *uniPattern, int nocase)
+    int Tcl_UniCharCaseMatch(const unsigned short *uniStr,
+	    const unsigned short *uniPattern, int nocase)
 }
 declare 421 {
     Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
