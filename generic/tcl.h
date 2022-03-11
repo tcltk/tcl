@@ -839,7 +839,7 @@ typedef struct Tcl_DString {
  * TCL_COMBINE Combine surrogates
  */
 
-#define TCL_COMBINE		0x200000
+#define TCL_COMBINE		0x1000000
 
 /*
  *----------------------------------------------------------------------------
