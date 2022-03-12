@@ -374,8 +374,8 @@ Tcl_DbNewStringObj(
  */
 
 Tcl_Obj *
-Tcl_NewUnicodeObj(
-    const Tcl_UniChar *unicode,	/* The unicode string used to initialize the
+TclNewUnicodeObj(
+    const int *unicode,	/* The unicode string used to initialize the
 				 * new object. */
     int numChars)		/* Number of characters in the unicode
 				 * string. */
@@ -387,6 +387,22 @@ Tcl_NewUnicodeObj(
     return objPtr;
 }
 
+Tcl_Obj *
+Tcl_NewUnicodeObj(
+    const unsigned char *unicode,	/* The unicode string used to initialize the
+				 * new object. */
+    int numChars)		/* Number of characters in the unicode
+				 * string. */
+{
+    Tcl_Obj *objPtr;
+    (void)unicode;
+    (void)numChars;
+
+    TclNewObj(objPtr);
+    /* TODO JN */
+    return objPtr;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -612,12 +628,12 @@ Tcl_GetUniChar(
 #undef Tcl_GetUnicodeFromObj
 #ifndef TCL_NO_DEPRECATED
 #undef Tcl_GetUnicode
-Tcl_UniChar *
+unsigned short *
 Tcl_GetUnicode(
     Tcl_Obj *objPtr)		/* The object to find the unicode string
 				 * for. */
 {
-    return Tcl_GetUnicodeFromObj(objPtr, (int *)NULL);
+    return TclGetUnicodeFromObj(objPtr, NULL);
 }
 #endif /* TCL_NO_DEPRECATED */
 
@@ -663,7 +679,7 @@ Tcl_GetUnicodeFromObj(
     }
     return stringPtr->unicode;
 }
-Tcl_UniChar *
+unsigned short *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the unicode string
 				 * for. */
@@ -671,24 +687,10 @@ TclGetUnicodeFromObj(
 				 * rep's unichar length should be stored. If
 				 * NULL, no length is stored. */
 {
-    String *stringPtr;
-
-    SetStringFromAny(NULL, objPtr);
-    stringPtr = GET_STRING(objPtr);
-
-    if (stringPtr->hasUnicode == 0) {
-	FillUnicodeRep(objPtr);
-	stringPtr = GET_STRING(objPtr);
-    }
-
-    if (lengthPtr != NULL) {
-#if TCL_MAJOR_VERSION > 8
-	*lengthPtr = stringPtr->numChars;
-#else
-	*lengthPtr = ((size_t)(unsigned)(stringPtr->numChars + 1)) - 1;
-#endif
-    }
-    return stringPtr->unicode;
+    (void)objPtr;
+    (void)lengthPtr;
+    /* TODO JN */
+    return NULL;
 }
 
 /*
@@ -797,7 +799,7 @@ Tcl_GetRange(
 	++last;
     }
 #endif
-    return Tcl_NewUnicodeObj(stringPtr->unicode + first, last - first + 1);
+    return TclNewUnicodeObj(stringPtr->unicode + first, last - first + 1);
 }
 
 /*
@@ -1092,16 +1094,16 @@ Tcl_AttemptSetObjLength(
 void
 Tcl_SetUnicodeObj(
     Tcl_Obj *objPtr,		/* The object to set the string of. */
-    const Tcl_UniChar *unicode,	/* The unicode string used to initialize the
+    const unsigned short *unicode,	/* The unicode string used to initialize the
 				 * object. */
     int numChars)		/* Number of characters in the unicode
 				 * string. */
 {
-    if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "Tcl_SetUnicodeObj");
-    }
-    TclFreeInternalRep(objPtr);
-    SetUnicodeObj(objPtr, unicode, numChars);
+    (void)objPtr;
+    (void)unicode;
+    (void)numChars;
+
+    /* TODO JN */
 }
 
 static int
@@ -1228,7 +1230,7 @@ Tcl_AppendLimitedToObj(
     /* If appended string starts with a continuation byte or a lower surrogate,
      * force objPtr to unicode representation. See [7f1162a867] */
     if (bytes && ISCONTINUATION(bytes)) {
-	Tcl_GetUnicode(objPtr);
+	Tcl_GetUnicodeFromObj(objPtr, NULL);
 	stringPtr = GET_STRING(objPtr);
     }
     if (stringPtr->hasUnicode && stringPtr->numChars > 0) {
@@ -1432,7 +1434,7 @@ Tcl_AppendObjToObj(
      * force objPtr to unicode representation. See [7f1162a867]
      * This fixes append-3.4, append-3.7 and utf-1.18 testcases. */
     if (ISCONTINUATION(TclGetString(appendObjPtr))) {
-	Tcl_GetUnicode(objPtr);
+	Tcl_GetUnicodeFromObj(objPtr, NULL);
 	stringPtr = GET_STRING(objPtr);
     }
     /*
@@ -2976,7 +2978,7 @@ TclStringRepeat(
 	 */
 
 	if (!inPlace || Tcl_IsShared(objPtr)) {
-	    objResultPtr = Tcl_NewUnicodeObj(Tcl_GetUnicode(objPtr), length);
+	    objResultPtr = TclNewUnicodeObj(Tcl_GetUnicodeFromObj(objPtr, NULL), length);
 	} else {
 	    TclInvalidateStringRep(objPtr);
 	    objResultPtr = objPtr;
@@ -2997,7 +2999,7 @@ TclStringRepeat(
 	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
 	    done *= 2;
 	}
-	Tcl_AppendUnicodeToObj(objResultPtr, Tcl_GetUnicode(objResultPtr),
+	Tcl_AppendUnicodeToObj(objResultPtr, Tcl_GetUnicodeFromObj(objResultPtr, NULL),
 		(count - done) * length);
     } else {
 	/*
@@ -3318,12 +3320,12 @@ TclStringCat(
 		}
 		return NULL;
 	    }
-	    dst = Tcl_GetUnicode(objResultPtr) + start;
+	    dst = Tcl_GetUnicodeFromObj(objResultPtr, NULL) + start;
 	} else {
 	    Tcl_UniChar ch = 0;
 
 	    /* Ugly interface! No scheme to init array size. */
-	    objResultPtr = Tcl_NewUnicodeObj(&ch, 0);	/* PANIC? */
+	    objResultPtr = TclNewUnicodeObj(&ch, 0);	/* PANIC? */
 	    if (0 == Tcl_AttemptSetObjLength(objResultPtr, length)) {
 		Tcl_DecrRefCount(objResultPtr);
 		if (interp) {
@@ -3335,7 +3337,7 @@ TclStringCat(
 		}
 		return NULL;
 	    }
-	    dst = Tcl_GetUnicode(objResultPtr);
+	    dst = Tcl_GetUnicodeFromObj(objResultPtr, NULL);
 	}
 	while (objc--) {
 	    Tcl_Obj *objPtr = *objv++;
@@ -3479,8 +3481,8 @@ TclStringCmp(
 		    s2 = value2Ptr->bytes;
 		    memCmpFn = memcmp;
 		} else {
-		    s1 = (char *) Tcl_GetUnicode(value1Ptr);
-		    s2 = (char *) Tcl_GetUnicode(value2Ptr);
+		    s1 = (char *) Tcl_GetUnicodeFromObj(value1Ptr, NULL);
+		    s2 = (char *) Tcl_GetUnicodeFromObj(value2Ptr, NULL);
 		    if (
 #if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
 			    1
@@ -3854,7 +3856,7 @@ TclStringReverse(
     stringPtr = GET_STRING(objPtr);
 
     if (stringPtr->hasUnicode) {
-	Tcl_UniChar *from = Tcl_GetUnicode(objPtr);
+	Tcl_UniChar *from = Tcl_GetUnicodeFromObj(objPtr, NULL);
 	stringPtr = GET_STRING(objPtr);
 	Tcl_UniChar *src = from + stringPtr->numChars;
 	Tcl_UniChar *to;
@@ -3865,9 +3867,9 @@ TclStringReverse(
 	     * Tcl_SetObjLength into growing the unicode rep buffer.
 	     */
 
-	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
+	    objPtr = TclNewUnicodeObj(&ch, 1);
 	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
-	    to = Tcl_GetUnicode(objPtr);
+	    to = Tcl_GetUnicodeFromObj(objPtr, NULL);
 	    stringPtr = GET_STRING(objPtr);
 	    while (--src >= from) {
 #if TCL_UTF_MAX < 4
@@ -4101,7 +4103,7 @@ TclStringReplace(
 
 	/* TODO: Is there an in-place option worth pursuing here? */
 
-	result = Tcl_NewUnicodeObj(ustring, first);
+	result = TclNewUnicodeObj(ustring, first);
 	if (insertPtr) {
 	    Tcl_AppendObjToObj(result, insertPtr);
 	}

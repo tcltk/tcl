@@ -619,7 +619,7 @@ Tcl_RegsubObjCmd(
 	     */
 
 	    if (wstring < wend) {
-		resultPtr = Tcl_NewUnicodeObj(wstring, 0);
+		resultPtr = TclNewUnicodeObj(wstring, 0);
 		Tcl_IncrRefCount(resultPtr);
 		for (; wstring < wend; wstring++) {
 		    Tcl_AppendUnicodeToObj(resultPtr, wsubspec, wsublen);
@@ -636,7 +636,7 @@ Tcl_RegsubObjCmd(
 			(slen==1 || (strCmpFn(wstring, wsrc,
 				(unsigned long) slen) == 0))) {
 		    if (numMatches == 0) {
-			resultPtr = Tcl_NewUnicodeObj(wstring, 0);
+			resultPtr = TclNewUnicodeObj(wstring, 0);
 			Tcl_IncrRefCount(resultPtr);
 		    }
 		    if (p != wstring) {
@@ -742,7 +742,7 @@ Tcl_RegsubObjCmd(
 	    break;
 	}
 	if (numMatches == 0) {
-	    resultPtr = Tcl_NewUnicodeObj(wstring, 0);
+	    resultPtr = TclNewUnicodeObj(wstring, 0);
 	    Tcl_IncrRefCount(resultPtr);
 	    if (offset > 0) {
 		/*
@@ -785,7 +785,7 @@ Tcl_RegsubObjCmd(
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
 		if ((subStart >= 0) && (subEnd >= 0)) {
-		    args[idx + numParts] = Tcl_NewUnicodeObj(
+		    args[idx + numParts] = TclNewUnicodeObj(
 			    wstring + offset + subStart, subEnd - subStart);
 		} else {
 		    TclNewObj(args[idx + numParts]);
@@ -2076,7 +2076,7 @@ StringMapCmd(
      * Force result to be Unicode
      */
 
-    resultPtr = Tcl_NewUnicodeObj(ustring1, 0);
+    resultPtr = TclNewUnicodeObj(ustring1, 0);
 
     if (mapElemc == 2) {
 	/*

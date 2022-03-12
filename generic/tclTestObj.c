@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
-
+#undef BUILD_tcl
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
@@ -1153,7 +1153,7 @@ TeststringobjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *unicode;
+    unsigned short *unicode;
     size_t varIndex;
     int size, option, i;
     Tcl_WideInt length;

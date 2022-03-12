@@ -1338,10 +1338,10 @@ declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
 declare 378 {
-    Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, int numChars)
+    Tcl_Obj *Tcl_NewUnicodeObj(const unsigned char *unicode, int numChars)
 }
 declare 379 {
-    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
+    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const unsigned short *unicode,
 	    int numChars)
 }
 declare 380 {
@@ -1351,7 +1351,7 @@ declare 381 {
     int Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
 }
 declare 382 {deprecated {No longer in use, changed to macro}} {
-    Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
+    unsigned short *Tcl_GetUnicode(Tcl_Obj *objPtr)
 }
 declare 383 {
     Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
@@ -2417,7 +2417,7 @@ declare 651 {
     char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 declare 652 {
-    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+    unsigned short *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 declare 653 {
     unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)

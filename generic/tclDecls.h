@@ -1142,18 +1142,18 @@ EXTERN int		Tcl_RegExpExecObj(Tcl_Interp *interp,
 EXTERN void		Tcl_RegExpGetInfo(Tcl_RegExp regexp,
 				Tcl_RegExpInfo *infoPtr);
 /* 378 */
-EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const Tcl_UniChar *unicode,
+EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const unsigned char *unicode,
 				int numChars);
 /* 379 */
 EXTERN void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
-				const Tcl_UniChar *unicode, int numChars);
+				const unsigned short *unicode, int numChars);
 /* 380 */
 EXTERN int		Tcl_GetCharLength(Tcl_Obj *objPtr);
 /* 381 */
 EXTERN int		Tcl_GetUniChar(Tcl_Obj *objPtr, int index);
 /* 382 */
 TCL_DEPRECATED("No longer in use, changed to macro")
-Tcl_UniChar *		Tcl_GetUnicode(Tcl_Obj *objPtr);
+unsigned short *	Tcl_GetUnicode(Tcl_Obj *objPtr);
 /* 383 */
 EXTERN Tcl_Obj *	Tcl_GetRange(Tcl_Obj *objPtr, int first, int last);
 /* 384 */
@@ -1930,7 +1930,7 @@ EXTERN unsigned char *	Tcl_GetBytesFromObj(Tcl_Interp *interp,
 EXTERN char *		TclGetStringFromObj(Tcl_Obj *objPtr,
 				size_t *lengthPtr);
 /* 652 */
-EXTERN Tcl_UniChar *	TclGetUnicodeFromObj(Tcl_Obj *objPtr,
+EXTERN unsigned short *	 TclGetUnicodeFromObj(Tcl_Obj *objPtr,
 				size_t *lengthPtr);
 /* 653 */
 EXTERN unsigned char *	TclGetByteArrayFromObj(Tcl_Obj *objPtr,
@@ -2370,11 +2370,11 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsPunct) (int ch); /* 375 */
     int (*tcl_RegExpExecObj) (Tcl_Interp *interp, Tcl_RegExp regexp, Tcl_Obj *textObj, int offset, int nmatches, int flags); /* 376 */
     void (*tcl_RegExpGetInfo) (Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr); /* 377 */
-    Tcl_Obj * (*tcl_NewUnicodeObj) (const Tcl_UniChar *unicode, int numChars); /* 378 */
-    void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int numChars); /* 379 */
+    Tcl_Obj * (*tcl_NewUnicodeObj) (const unsigned char *unicode, int numChars); /* 378 */
+    void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const unsigned short *unicode, int numChars); /* 379 */
     int (*tcl_GetCharLength) (Tcl_Obj *objPtr); /* 380 */
     int (*tcl_GetUniChar) (Tcl_Obj *objPtr, int index); /* 381 */
-    TCL_DEPRECATED_API("No longer in use, changed to macro") Tcl_UniChar * (*tcl_GetUnicode) (Tcl_Obj *objPtr); /* 382 */
+    TCL_DEPRECATED_API("No longer in use, changed to macro") unsigned short * (*tcl_GetUnicode) (Tcl_Obj *objPtr); /* 382 */
     Tcl_Obj * (*tcl_GetRange) (Tcl_Obj *objPtr, int first, int last); /* 383 */
     TCL_DEPRECATED_API("Use Tcl_AppendStringsToObj") void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int length); /* 384 */
     int (*tcl_RegExpMatchObj) (Tcl_Interp *interp, Tcl_Obj *textObj, Tcl_Obj *patternObj); /* 385 */
@@ -2644,7 +2644,7 @@ typedef struct TclStubs {
     unsigned char * (*tclGetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *numBytesPtr); /* 649 */
     unsigned char * (*tcl_GetBytesFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, size_t *numBytesPtr); /* 650 */
     char * (*tclGetStringFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 651 */
-    Tcl_UniChar * (*tclGetUnicodeFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 652 */
+    unsigned short * (*tclGetUnicodeFromObj) (Tcl_Obj *objPtr, size_t *lengthPtr); /* 652 */
     unsigned char * (*tclGetByteArrayFromObj) (Tcl_Obj *objPtr, size_t *numBytesPtr); /* 653 */
     int (*tcl_UtfCharComplete) (const char *src, int length); /* 654 */
     const char * (*tcl_UtfNext) (const char *src); /* 655 */

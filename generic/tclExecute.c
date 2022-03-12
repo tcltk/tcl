@@ -5514,7 +5514,7 @@ TEBCresume(
 	}
 	ustring3 = Tcl_GetUnicodeFromObj(value3Ptr, &length3);
 
-	objResultPtr = Tcl_NewUnicodeObj(ustring1, 0);
+	objResultPtr = TclNewUnicodeObj(ustring1, 0);
 	p = ustring1;
 	end = ustring1 + length;
 	for (; ustring1 < end; ustring1++) {
