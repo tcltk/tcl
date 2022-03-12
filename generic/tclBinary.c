@@ -406,7 +406,7 @@ Tcl_SetByteArrayLength(
 	length = 0;
     }
     byteArrayPtr = GET_BYTEARRAY(objPtr);
-    if (length > byteArrayPtr->allocated) {
+    if ((unsigned int)length > byteArrayPtr->allocated) {
 	byteArrayPtr = (ByteArray *)ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(length));
 	byteArrayPtr->allocated = length;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
@@ -637,7 +637,7 @@ TclAppendBytesToByteArray(
     }
     byteArrayPtr = GET_BYTEARRAY(objPtr);
 
-    if (len > INT_MAX - byteArrayPtr->used) {
+    if ((unsigned int)len > INT_MAX - byteArrayPtr->used) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
