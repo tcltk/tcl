@@ -1076,6 +1076,7 @@ TestobjCmd(
 #ifndef TCL_WIDE_INT_IS_LONG
 	    if (!strcmp(typeName, "wideInt")) typeName = "int";
 #endif
+	    if (!strcmp(typeName, "utf32string")) typeName = "string";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
 	}
     } else if (strcmp(subCmd, "refcount") == 0) {
