@@ -55,6 +55,8 @@ static void		AppendUtfToUtfRep(Tcl_Obj *objPtr,
 			    const char *bytes, int numBytes);
 static void		DupStringInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
+static void		DupUTF16StringInternalRep(Tcl_Obj *objPtr,
+			    Tcl_Obj *copyPtr);
 static int		ExtendStringRepWithUnicode(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
 static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
@@ -65,10 +67,12 @@ static void		FreeStringInternalRep(Tcl_Obj *objPtr);
 static void		GrowStringBuffer(Tcl_Obj *objPtr, int needed, int flag);
 static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, int needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static int		SetUTF16StringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		SetUnicodeObj(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
 static int		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
+static void		UpdateStringOfUTF16String(Tcl_Obj *objPtr);
 
 #define ISCONTINUATION(bytes) (\
 	((((bytes)[0] & 0xC0) == 0x80) || (((bytes)[0] == '\xED') \
@@ -105,15 +109,68 @@ typedef struct {
 const Tcl_ObjType tclStringType = {
     "string",			/* name */
     FreeStringInternalRep,	/* freeIntRepPro */
-#if 0
-    /* TODO JN */
     DupUTF16StringInternalRep,	/* dupIntRepProc */
-    UpdateUTF16StringOfString,	/* updateStringProc */
+    UpdateStringOfUTF16String,	/* updateStringProc */
     SetUTF16StringFromAny		/* setFromAnyProc */
-#endif
-    NULL, NULL, NULL
 };
 
+static void
+DupUTF16StringInternalRep(
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. Must have
+				 * an internal rep of type "String". */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. Must not
+				 * currently have an internal rep.*/
+{
+    UTF16String *srcStringPtr = ((UTF16String *) (srcPtr)->internalRep.twoPtrValue.ptr1);
+    size_t size = offsetof(UTF16String, unicode) + (((srcStringPtr->numChars) + 1U) * sizeof(unsigned short));
+    UTF16String *copyStringPtr = (UTF16String *)ckalloc(size);
+    memcpy(copyStringPtr, srcStringPtr, size);
+    copyStringPtr->allocated = srcStringPtr->numChars;
+    copyStringPtr->maxChars = srcStringPtr->numChars;
+
+    copyPtr->internalRep.twoPtrValue.ptr1 = copyStringPtr;
+    copyPtr->typePtr = &tclStringType;
+}
+
+static int
+SetUTF16StringFromAny(
+    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Obj *objPtr)		/* The object to convert. */
+{
+    if (!TclHasInternalRep(objPtr, &tclStringType)) {
+
+	/*
+	 * Convert whatever we have into an untyped value. Just A String.
+	 */
+
+	(void) TclGetString(objPtr);
+	TclFreeInternalRep(objPtr);
+
+	size_t size = offsetof(UTF16String, unicode) + (((objPtr->length) + 1U) * sizeof(unsigned short));
+
+	UTF16String *stringPtr = (UTF16String *)ckalloc(size);
+
+	/*
+	 * Create a basic String internalrep that just points to the UTF-8 string
+	 * already in place at objPtr->bytes.
+	 */
+
+	stringPtr->numChars = 0;
+	stringPtr->allocated = objPtr->length;
+	stringPtr->maxChars = objPtr->length;
+	stringPtr->hasUnicode = 1;
+	objPtr->internalRep.twoPtrValue.ptr1 = stringPtr;
+	objPtr->typePtr = &tclStringType;
+    }
+    return TCL_OK;
+}
+
+static void
+UpdateStringOfUTF16String(
+    Tcl_Obj *objPtr)		/* Object with string rep to update. */
+{
+    (void)objPtr;
+}
 
 /*
  * TCL STRING GROWTH ALGORITHM
