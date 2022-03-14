@@ -555,7 +555,7 @@ EncodingConvertfromObjCmd(
 #else
     int flags = TCL_ENCODING_NOCOMPLAIN;
 #endif
-    size_t result;
+    size_t result, errorPosition = 0;
     Tcl_Obj *failVarObj = NULL;
     /*
      * Decode parameters:
@@ -571,7 +571,7 @@ EncodingConvertfromObjCmd(
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if ((unsigned)(objc - 2) < 4) {
+    } else if (objc > 2 && objc < 6) {
 	int objcUnprocessed = objc;
 	data = objv[objc - 1];
 	bytesPtr = Tcl_GetString(objv[1]);
@@ -586,16 +586,16 @@ EncodingConvertfromObjCmd(
 		goto encConvFromError;
 	    }
 	    failVarObj = objv[2];
-	    flags = TCL_ENCODING_NOCOMPLAIN;
+	    flags = TCL_ENCODING_STOPONERROR;
 	    objcUnprocessed -= 2;
 	}
 	switch (objcUnprocessed) {
-	    case 2:
+	    case 3:
 		if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		break;
-	    case 1:
+	    case 2:
 		encoding = Tcl_GetEncoding(interp, NULL);
 		break;
 	    default:
@@ -622,14 +622,25 @@ EncodingConvertfromObjCmd(
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
     if ((flags & TCL_ENCODING_STOPONERROR) && (result != (size_t)-1)) {
-	char buf[TCL_INTEGER_SPACE];
-	sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte sequence starting at index %"
-		TCL_Z_MODIFIER "u: '\\x%X'", result, UCHAR(bytesPtr[result])));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-		buf, NULL);
-	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
+	if (failVarObj != NULL) {
+	    /* I hope, wide int will cover size_t data type */
+	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	} else {
+	    char buf[TCL_INTEGER_SPACE];
+	    sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte sequence starting at index %"
+		    TCL_Z_MODIFIER "u: '\\x%X'", result, UCHAR(bytesPtr[result])));
+	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
+		    buf, NULL);
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+    } else if (failVarObj != NULL) {
+	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIntObj(-1), TCL_LEAVE_ERR_MSG) == NULL) {
+	    return TCL_ERROR;
+	}
     }
 
     /*
