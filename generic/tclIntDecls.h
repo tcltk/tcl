@@ -484,8 +484,8 @@ EXTERN int		TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
 /* 230 */
 EXTERN Var *		TclObjLookupVar(Tcl_Interp *interp,
 				Tcl_Obj *part1Ptr, const char *part2,
-				int flags, const char *msg, int createPart1,
-				int createPart2, Var **arrayPtrPtr);
+				int flags, const char *msg, const int createPart1,
+				const int createPart2, Var **arrayPtrPtr);
 /* 231 */
 EXTERN int		TclGetNamespaceFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
