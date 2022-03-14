@@ -557,7 +557,6 @@ EncodingConvertfromObjCmd(
 #endif
     size_t result;
     Tcl_Obj *failVarObj = NULL;
-    int i, encodingSeen = 0;
     /*
      * Decode parameters:
      * Possible combinations:
@@ -567,52 +566,44 @@ EncodingConvertfromObjCmd(
      * 4) -nocomplain encoding data			-> objc = 4 (8.7)
      * 5) -failindex val data				-> objc = 4
      * 6) -failindex val encoding data			-> objc = 5
-     * 7a) -nocomplain -failindex val data		-> objc = 5
-     * 7b) -failindex val -nocomplain data		-> objc = 5
-     * 8a) -nocomplain -failindex val encoding data	-> objc = 6
-     * 8b) -failindex val -nocomplain encoding data	-> objc = 6
      */
 
-    if (objc > 1 && objc < 7) {
-	int noComplaintSeen = 0;
-	int encodingSeen = 0;
+    if (objc == 2) {
+	encoding = Tcl_GetEncoding(interp, NULL);
+	data = objv[1];
+    } else if ((unsigned)(objc - 2) < 4) {
+	int objcUnprocessed = objc;
 	data = objv[objc - 1];
-	for(i = 1; i < objc-1 ; i++ ) {
-	    bytesPtr = Tcl_GetString(objv[i]);
-	    if (bytesPtr[0] == '-' && bytesPtr[1] == 'n'
-		    && !strncmp(bytesPtr, "-nocomplain", strlen(bytesPtr))) {
-		if (noComplaintSeen) {
-		    goto encConvFromError;
-		}
-		flags = TCL_ENCODING_NOCOMPLAIN;
-		noComplaintSeen = 1;
-	    } else if (bytesPtr[0] == '-' && bytesPtr[1] == 'f'
-		    && !strncmp(bytesPtr, "-failindex", strlen(bytesPtr))) {
-		/* at least two additional arguments needed */
-		if (objc < i + 3) {
-		    goto encConvFromError;
-		}
-		if (failVarObj != NULL) {
-		    goto encConvFromError;
-		}
-		i++;
-		failVarObj = objv[i];
-		flags = TCL_ENCODING_NOCOMPLAIN;
-	    } else if (i == objc - 2) {
-		if (Tcl_GetEncodingFromObj(interp, objv[i], &encoding) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		encodingSeen = 1;
-	    } else {
+	bytesPtr = Tcl_GetString(objv[1]);
+	if (bytesPtr[0] == '-' && bytesPtr[1] == 'n'
+		&& !strncmp(bytesPtr, "-nocomplain", strlen(bytesPtr))) {
+	    flags = TCL_ENCODING_NOCOMPLAIN;
+	    objcUnprocessed--;
+	} else if (bytesPtr[0] == '-' && bytesPtr[1] == 'f'
+		&& !strncmp(bytesPtr, "-failindex", strlen(bytesPtr))) {
+	    /* at least two additional arguments needed */
+	    if (objc < 4) {
 		goto encConvFromError;
 	    }
+	    failVarObj = objv[2];
+	    flags = TCL_ENCODING_NOCOMPLAIN;
+	    objcUnprocessed -= 2;
 	}
-	if (!encodingSeen) {
-	    encoding = Tcl_GetEncoding(interp, NULL);
+	switch (objcUnprocessed) {
+	    case 2:
+		if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		break;
+	    case 1:
+		encoding = Tcl_GetEncoding(interp, NULL);
+		break;
+	    default:
+		goto encConvFromError;
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain|-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 
