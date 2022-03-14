@@ -551,17 +551,17 @@ EXTERN int		TclRegisterLiteral(void *envPtr, const char *bytes,
 /* 252 */
 EXTERN Tcl_Obj *	TclPtrGetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
-				Tcl_Obj *part2Ptr, int flags);
+				Tcl_Obj *part2Ptr, const int flags);
 /* 253 */
 EXTERN Tcl_Obj *	TclPtrSetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
 				Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr,
-				int flags);
+				const int flags);
 /* 254 */
 EXTERN Tcl_Obj *	TclPtrIncrObjVar(Tcl_Interp *interp, Tcl_Var varPtr,
 				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
 				Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr,
-				int flags);
+				const int flags);
 /* 255 */
 EXTERN int		TclPtrObjMakeUpvar(Tcl_Interp *interp,
 				Tcl_Var otherPtr, Tcl_Obj *myNamePtr,
@@ -569,7 +569,7 @@ EXTERN int		TclPtrObjMakeUpvar(Tcl_Interp *interp,
 /* 256 */
 EXTERN int		TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 				Tcl_Var arrayPtr, Tcl_Obj *part1Ptr,
-				Tcl_Obj *part2Ptr, int flags);
+				Tcl_Obj *part2Ptr, const int flags);
 /* 257 */
 EXTERN void		TclStaticLibrary(Tcl_Interp *interp,
 				const char *prefix,
