@@ -1850,8 +1850,8 @@ Tcl_UniCharLen(
 
 int
 TclUniCharNcmp(
-    const int *ucs,	/* Unicode string to compare to uct. */
-    const int *uct,	/* Unicode string ucs is compared to. */
+    const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
+    const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
     unsigned long numChars)	/* Number of unichars to compare. */
 {
 #if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
@@ -1875,6 +1875,7 @@ TclUniCharNcmp(
 #endif /* WORDS_BIGENDIAN */
 }
 
+#if TCL_UTF_MAX > 3
 int
 Tcl_UniCharNcmp(
     const unsigned short *ucs,	/* Unicode string to compare to uct. */
@@ -1907,6 +1908,7 @@ Tcl_UniCharNcmp(
     return 0;
 #endif /* WORDS_BIGENDIAN */
 }
+#endif
 /*
  *----------------------------------------------------------------------
  *
@@ -1925,6 +1927,26 @@ Tcl_UniCharNcmp(
  *----------------------------------------------------------------------
  */
 
+int
+TclUniCharNcasecmp(
+    const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
+    const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
+    unsigned long numChars)	/* Number of unichars to compare. */
+{
+    for ( ; numChars != 0; numChars--, ucs++, uct++) {
+	if (*ucs != *uct) {
+	    int lcs = Tcl_UniCharToLower(*ucs);
+	    int lct = Tcl_UniCharToLower(*uct);
+
+	    if (lcs != lct) {
+		return (lcs - lct);
+	    }
+	}
+    }
+    return 0;
+}
+
+#if TCL_UTF_MAX > 3
 int
 Tcl_UniCharNcasecmp(
     const unsigned short *ucs,	/* Unicode string to compare to uct. */
@@ -1949,25 +1971,7 @@ Tcl_UniCharNcasecmp(
     }
     return 0;
 }
-
-int
-TclUniCharNcasecmp(
-    const int *ucs,	/* Unicode string to compare to uct. */
-    const int *uct,	/* Unicode string ucs is compared to. */
-    unsigned long numChars)	/* Number of unichars to compare. */
-{
-    for ( ; numChars != 0; numChars--, ucs++, uct++) {
-	if (*ucs != *uct) {
-	    int lcs = Tcl_UniCharToLower(*ucs);
-	    int lct = Tcl_UniCharToLower(*uct);
-
-	    if (lcs != lct) {
-		return (lcs - lct);
-	    }
-	}
-    }
-    return 0;
-}
+#endif
 
 
 /*
@@ -2333,8 +2337,8 @@ Tcl_UniCharIsWordChar(
 
 int
 TclUniCharCaseMatch(
-    const int *uniStr,	/* Unicode String. */
-    const int *uniPattern,
+    const Tcl_UniChar *uniStr,	/* Unicode String. */
+    const Tcl_UniChar *uniPattern,
 				/* Pattern, which may contain special
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
@@ -2498,6 +2502,7 @@ TclUniCharCaseMatch(
     }
 }
 
+#if TCL_UTF_MAX > 3
 int
 Tcl_UniCharCaseMatch(
     const unsigned short *uniStr,	/* Unicode String. */
@@ -2664,6 +2669,7 @@ Tcl_UniCharCaseMatch(
 	uniPattern++;
     }
 }
+#endif
 
 
 /*

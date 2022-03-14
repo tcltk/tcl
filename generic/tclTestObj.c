@@ -1073,8 +1073,9 @@ TestobjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("none", -1));
 	} else {
 	    typeName = objv[2]->typePtr->name;
+	    if (!strcmp(typeName, "utf32string")) typeName = "string";
 #ifndef TCL_WIDE_INT_IS_LONG
-	    if (!strcmp(typeName, "wideInt")) typeName = "int";
+	    else if (!strcmp(typeName, "wideInt")) typeName = "int";
 #endif
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
 	}

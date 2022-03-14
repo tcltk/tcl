@@ -190,12 +190,12 @@ test stringObj-7.3 {SetStringFromAny called with non-string obj} testobj {
     set x 2345
     list [incr x] [testobj objtype $x] [string index $x end] \
 	    [testobj objtype $x]
-} {2346 int 6 utf32string}
+} {2346 int 6 string}
 test stringObj-7.4 {SetStringFromAny called with string obj} testobj {
     set x "abcdef"
     list [string length $x] [testobj objtype $x] \
 	    [string length $x] [testobj objtype $x]
-} {6 utf32string 6 utf32string}
+} {6 string 6 string}
 
 test stringObj-8.1 {DupStringInternalRep procedure} testobj {
     testobj freeallvars
@@ -213,28 +213,28 @@ test stringObj-8.2 {DupUnicodeInternalRep, mixed width chars} testobj {
     set y $x
     list [testobj objtype $x] [testobj objtype $y] [append x "\xAE\xBF\xEF"] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} "utf32string utf32string abc\xEF\xBF\xAEghi\xAE\xBF\xEF abc\xEF\xBF\xAEghi utf32string utf32string"
+} "string string abc\xEF\xBF\xAEghi\xAE\xBF\xEF abc\xEF\xBF\xAEghi string string"
 test stringObj-8.3 {DupUnicodeInternalRep, mixed width chars} testobj {
     set x abc\xEF\xBF\xAEghi
     set y $x
     string length $x
     list [testobj objtype $x] [testobj objtype $y] [append x "\xAE\xBF\xEF"] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} "utf32string utf32string abc\xEF\xBF\xAEghi\xAE\xBF\xEF abc\xEF\xBF\xAEghi utf32string utf32string"
+} "string string abc\xEF\xBF\xAEghi\xAE\xBF\xEF abc\xEF\xBF\xAEghi string string"
 test stringObj-8.4 {DupUnicodeInternalRep, all byte-size chars} testobj {
     set x abcdefghi
     string length $x
     set y $x
     list [testobj objtype $x] [testobj objtype $y] [append x jkl] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} {utf32string utf32string abcdefghijkl abcdefghi utf32string utf32string}
+} {string string abcdefghijkl abcdefghi string string}
 test stringObj-8.5 {DupUnicodeInternalRep, all byte-size chars} testobj {
     set x abcdefghi
     set y $x
     string length $x
     list [testobj objtype $x] [testobj objtype $y] [append x jkl] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} {utf32string utf32string abcdefghijkl abcdefghi utf32string utf32string}
+} {string string abcdefghijkl abcdefghi string string}
 
 test stringObj-9.1 {TclAppendObjToObj, mixed src & dest} {testobj testdstring} {
     set x abc\xEF\xBF\xAEghi
@@ -244,15 +244,15 @@ test stringObj-9.1 {TclAppendObjToObj, mixed src & dest} {testobj testdstring} {
     string length $x
     list [testobj objtype $x] [testobj objtype $y] [append x $y] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} "utf32string none abc\xEF\xBF\xAEghi\xAE\xBF\xEF \xAE\xBF\xEF utf32string none"
+} "string none abc\xEF\xBF\xAEghi\xAE\xBF\xEF \xAE\xBF\xEF string none"
 test stringObj-9.2 {TclAppendObjToObj, mixed src & dest} testobj {
     set x abc\xEF\xBF\xAEghi
     string length $x
     list [testobj objtype $x] [append x $x] [testobj objtype $x] \
 	    [append x $x] [testobj objtype $x]
-} "utf32string abc\xEF\xBF\xAEghiabc\xEF\xBF\xAEghi utf32string\
+} "string abc\xEF\xBF\xAEghiabc\xEF\xBF\xAEghi string\
 abc\xEF\xBF\xAEghiabc\xEF\xBF\xAEghiabc\xEF\xBF\xAEghiabc\xEF\xBF\xAEghi\
-utf32string"
+string"
 test stringObj-9.3 {TclAppendObjToObj, mixed src & 1-byte dest} {testobj testdstring} {
     set x abcdefghi
     testdstring free
@@ -261,7 +261,7 @@ test stringObj-9.3 {TclAppendObjToObj, mixed src & 1-byte dest} {testobj testdst
     string length $x
     list [testobj objtype $x] [testobj objtype $y] [append x $y] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} "utf32string none abcdefghi\xAE\xBF\xEF \xAE\xBF\xEF utf32string none"
+} "string none abcdefghi\xAE\xBF\xEF \xAE\xBF\xEF string none"
 test stringObj-9.4 {TclAppendObjToObj, 1-byte src & dest} {testobj testdstring} {
     set x abcdefghi
     testdstring free
@@ -270,14 +270,14 @@ test stringObj-9.4 {TclAppendObjToObj, 1-byte src & dest} {testobj testdstring} 
     string length $x
     list [testobj objtype $x] [testobj objtype $y] [append x $y] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} {utf32string none abcdefghijkl jkl utf32string none}
+} {string none abcdefghijkl jkl string none}
 test stringObj-9.5 {TclAppendObjToObj, 1-byte src & dest} testobj {
     set x abcdefghi
     string length $x
     list [testobj objtype $x] [append x $x] [testobj objtype $x] \
 	    [append x $x] [testobj objtype $x]
-} {utf32string abcdefghiabcdefghi utf32string abcdefghiabcdefghiabcdefghiabcdefghi\
-utf32string}
+} {string abcdefghiabcdefghi string abcdefghiabcdefghiabcdefghiabcdefghi\
+string}
 test stringObj-9.6 {TclAppendObjToObj, 1-byte src & mixed dest} {testobj testdstring} {
     set x abc\xEF\xBF\xAEghi
     testdstring free
@@ -286,33 +286,33 @@ test stringObj-9.6 {TclAppendObjToObj, 1-byte src & mixed dest} {testobj testdst
     string length $x
     list [testobj objtype $x] [testobj objtype $y] [append x $y] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} "utf32string none abc\xEF\xBF\xAEghijkl jkl utf32string none"
+} "string none abc\xEF\xBF\xAEghijkl jkl string none"
 test stringObj-9.7 {TclAppendObjToObj, integer src & dest} testobj {
     set x [expr {4 * 5}]
     set y [expr {4 + 5}]
     list [testobj objtype $x] [testobj objtype $y] [append x $y] \
 	    [testobj objtype $x] [append x $y] [testobj objtype $x] \
 	    [testobj objtype $y]
-} {int int 209 utf32string 2099 utf32string int}
+} {int int 209 string 2099 string int}
 test stringObj-9.8 {TclAppendObjToObj, integer src & dest} testobj {
     set x [expr {4 * 5}]
     list [testobj objtype $x] [append x $x] [testobj objtype $x] \
 	    [append x $x] [testobj objtype $x]
-} {int 2020 utf32string 20202020 utf32string}
+} {int 2020 string 20202020 string}
 test stringObj-9.9 {TclAppendObjToObj, integer src & 1-byte dest} testobj {
     set x abcdefghi
     set y [expr {4 + 5}]
     string length $x
     list [testobj objtype $x] [testobj objtype $y] [append x $y] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} {utf32string int abcdefghi9 9 utf32string int}
+} {string int abcdefghi9 9 string int}
 test stringObj-9.10 {TclAppendObjToObj, integer src & mixed dest} testobj {
     set x abc\xEF\xBF\xAEghi
     set y [expr {4 + 5}]
     string length $x
     list [testobj objtype $x] [testobj objtype $y] [append x $y] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
-} "utf32string int abc\xEF\xBF\xAEghi9 9 utf32string int"
+} "string int abc\xEF\xBF\xAEghi9 9 string int"
 test stringObj-9.11 {TclAppendObjToObj, mixed src & 1-byte dest index check} testobj {
     # bug 2678, in <=8.2.0, the second obj (the one to append) in
     # Tcl_AppendObjToObj was not correctly checked to see if it was all one
@@ -336,20 +336,20 @@ test stringObj-10.1 {Tcl_GetRange with all byte-size chars} {testobj testdstring
     set x [testdstring get]
     list [testobj objtype $x] [set y [string range $x 1 end-1]] \
 	    [testobj objtype $x] [testobj objtype $y]
-} [list none bcde utf32string utf32string]
+} [list none bcde string string]
 test stringObj-10.2 {Tcl_GetRange with some mixed width chars} {testobj testdstring} {
     testdstring free
     testdstring append "abcïïdef" -1
     set x [testdstring get]
     list [testobj objtype $x] [set y [string range $x 1 end-1]] \
 	    [testobj objtype $x] [testobj objtype $y]
-} [list none "bcïïde" utf32string utf32string]
+} [list none "bcïïde" string string]
 test stringObj-10.3 {Tcl_GetRange with some mixed width chars} testobj {
     set x "abcïïdef"
     string length $x
     list [testobj objtype $x] [set y [string range $x 1 end-1]] \
 	    [testobj objtype $x] [testobj objtype $y]
-} [list utf32string "bcïïde" utf32string utf32string]
+} [list string "bcïïde" string string]
 test stringObj-10.4 {Tcl_GetRange with some mixed width chars} testobj {
     set a "ïa¿b®cï¿d®"
     set result [list]
@@ -368,7 +368,7 @@ test stringObj-11.1 {UpdateStringOfString} testobj {
     set x 2345
     list [string index $x end] [testobj objtype $x] [incr x] \
 	    [testobj objtype $x]
-} {5 utf32string 2346 int}
+} {5 string 2346 int}
 
 test stringObj-12.1 {Tcl_GetUniChar with byte-size chars} testobj {
     set x "abcdefghi"

@@ -55,8 +55,6 @@ static void		AppendUtfToUtfRep(Tcl_Obj *objPtr,
 			    const char *bytes, int numBytes);
 static void		DupStringInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
-static void		DupUTF16StringInternalRep(Tcl_Obj *objPtr,
-			    Tcl_Obj *copyPtr);
 static int		ExtendStringRepWithUnicode(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
 static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
@@ -67,12 +65,16 @@ static void		FreeStringInternalRep(Tcl_Obj *objPtr);
 static void		GrowStringBuffer(Tcl_Obj *objPtr, int needed, int flag);
 static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, int needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static int		SetUTF16StringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		SetUnicodeObj(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
 static int		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
+#if TCL_UTF_MAX < 4
+static void		DupUTF16StringInternalRep(Tcl_Obj *objPtr,
+			    Tcl_Obj *copyPtr);
+static int		SetUTF16StringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfUTF16String(Tcl_Obj *objPtr);
+#endif
 
 #define ISCONTINUATION(bytes) (\
 	((((bytes)[0] & 0xC0) == 0x80) || (((bytes)[0] == '\xED') \
@@ -83,6 +85,12 @@ static void		UpdateStringOfUTF16String(Tcl_Obj *objPtr);
  * The structure below defines the string Tcl object type by means of
  * functions that can be invoked by generic object code.
  */
+
+#if TCL_UTF_MAX > 3
+
+#define utf32StringType tclStringType
+
+#else
 
 static const Tcl_ObjType utf32StringType = {
     "utf32string",			/* name */
@@ -125,7 +133,7 @@ DupUTF16StringInternalRep(
     size_t size = offsetof(UTF16String, unicode) + (((srcStringPtr->numChars) + 1U) * sizeof(unsigned short));
     UTF16String *copyStringPtr = (UTF16String *)ckalloc(size);
     memcpy(copyStringPtr, srcStringPtr, size);
-    copyStringPtr->allocated = srcStringPtr->numChars;
+    copyStringPtr->allocated = srcStringPtr->numChars + 1;
     copyStringPtr->maxChars = srcStringPtr->numChars;
 
     copyPtr->internalRep.twoPtrValue.ptr1 = copyStringPtr;
@@ -156,7 +164,7 @@ SetUTF16StringFromAny(
 	 */
 
 	stringPtr->numChars = 0;
-	stringPtr->allocated = objPtr->length;
+	stringPtr->allocated = objPtr->length + 1;
 	stringPtr->maxChars = objPtr->length;
 	stringPtr->hasUnicode = 1;
 	objPtr->internalRep.twoPtrValue.ptr1 = stringPtr;
@@ -171,6 +179,8 @@ UpdateStringOfUTF16String(
 {
     (void)objPtr;
 }
+
+#endif
 
 /*
  * TCL STRING GROWTH ALGORITHM
@@ -459,7 +469,7 @@ Tcl_DbNewStringObj(
 
 Tcl_Obj *
 TclNewUnicodeObj(
-    const int *unicode,	/* The unicode string used to initialize the
+    const Tcl_UniChar *unicode,	/* The unicode string used to initialize the
 				 * new object. */
     int numChars)		/* Number of characters in the unicode
 				 * string. */
@@ -471,9 +481,10 @@ TclNewUnicodeObj(
     return objPtr;
 }
 
+#if TCL_UTF_MAX > 3
 Tcl_Obj *
 Tcl_NewUnicodeObj(
-    const unsigned char *unicode,	/* The unicode string used to initialize the
+    const unsigned short *unicode,	/* The unicode string used to initialize the
 				 * new object. */
     int numChars)		/* Number of characters in the unicode
 				 * string. */
@@ -486,6 +497,7 @@ Tcl_NewUnicodeObj(
     /* TODO JN */
     return objPtr;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -740,7 +752,7 @@ Tcl_GetUnicode(
  *----------------------------------------------------------------------
  */
 
-int *
+Tcl_UniChar *
 TclGetUnicodeFromObj_(
     Tcl_Obj *objPtr,		/* The object to find the unicode string
 				 * for. */
@@ -764,6 +776,7 @@ TclGetUnicodeFromObj_(
     return stringPtr->unicode;
 }
 
+#if TCL_UTF_MAX > 3
 unsigned short *
 Tcl_GetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the unicode string
@@ -778,6 +791,7 @@ Tcl_GetUnicodeFromObj(
     /* TODO JN */
     return NULL;
 }
+#endif
 
 unsigned short *
 TclGetUnicodeFromObj(
@@ -1400,7 +1414,7 @@ Tcl_AppendToObj(
 void
 TclAppendUnicodeToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
-    const int *unicode,	/* The unicode string to append to the
+    const Tcl_UniChar *unicode,	/* The unicode string to append to the
 				 * object. */
     int length)			/* Number of chars in "unicode". */
 {
@@ -1430,6 +1444,7 @@ TclAppendUnicodeToObj(
     }
 }
 
+#if TCL_UTF_MAX > 3
 void
 Tcl_AppendUnicodeToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
@@ -1443,6 +1458,7 @@ Tcl_AppendUnicodeToObj(
 
     /* TODO JN */
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

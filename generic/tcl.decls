@@ -1338,7 +1338,7 @@ declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
 declare 378 {
-    Tcl_Obj *Tcl_NewUnicodeObj(const unsigned char *unicode, int numChars)
+    Tcl_Obj *Tcl_NewUnicodeObj(const unsigned short *unicode, int numChars)
 }
 declare 379 {
     void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const unsigned short *unicode,

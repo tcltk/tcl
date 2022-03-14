@@ -1142,7 +1142,7 @@ EXTERN int		Tcl_RegExpExecObj(Tcl_Interp *interp,
 EXTERN void		Tcl_RegExpGetInfo(Tcl_RegExp regexp,
 				Tcl_RegExpInfo *infoPtr);
 /* 378 */
-EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const unsigned char *unicode,
+EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const unsigned short *unicode,
 				int numChars);
 /* 379 */
 EXTERN void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
@@ -2370,7 +2370,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsPunct) (int ch); /* 375 */
     int (*tcl_RegExpExecObj) (Tcl_Interp *interp, Tcl_RegExp regexp, Tcl_Obj *textObj, int offset, int nmatches, int flags); /* 376 */
     void (*tcl_RegExpGetInfo) (Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr); /* 377 */
-    Tcl_Obj * (*tcl_NewUnicodeObj) (const unsigned char *unicode, int numChars); /* 378 */
+    Tcl_Obj * (*tcl_NewUnicodeObj) (const unsigned short *unicode, int numChars); /* 378 */
     void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const unsigned short *unicode, int numChars); /* 379 */
     int (*tcl_GetCharLength) (Tcl_Obj *objPtr); /* 380 */
     int (*tcl_GetUniChar) (Tcl_Obj *objPtr, int index); /* 381 */
