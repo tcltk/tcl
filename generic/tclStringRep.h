@@ -39,11 +39,6 @@
  * Unicode reps of the String object with fewer mallocs. To optimize string
  * length and indexing operations, this structure also stores the number of
  * characters (same of UTF and Unicode!) once that value has been computed.
- *
- * Under normal configurations, what Tcl calls "Unicode" is actually UTF-16
- * restricted to the Basic Multilingual Plane (i.e. U+00000 to U+0FFFF). This
- * can be officially modified by altering the definition of Tcl_UniChar in
- * tcl.h, but do not do that unless you are sure what you're doing!
  */
 
 typedef struct {
@@ -59,15 +54,15 @@ typedef struct {
 				 * space allocated for the unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has
 				 * a Unicode representation. */
-    Tcl_UniChar unicode[TCLFLEXARRAY];	/* The array of Unicode chars. The actual size
+    unsigned short unicode[TCLFLEXARRAY];	/* The array of Unicode chars. The actual size
 				 * of this field depends on the 'maxChars'
 				 * field above. */
 } String;
 
 #define STRING_MAXCHARS \
-    (int)(((size_t)UINT_MAX - 1 - offsetof(String, unicode))/sizeof(Tcl_UniChar))
+    (int)(((size_t)UINT_MAX - 1 - offsetof(String, unicode))/sizeof(unsigned short))
 #define STRING_SIZE(numChars) \
-    (offsetof(String, unicode) + (((numChars) + 1U) * sizeof(Tcl_UniChar)))
+    (offsetof(String, unicode) + (((numChars) + 1U) * sizeof(unsigned short)))
 #define stringCheckLimits(numChars) \
     do {								\
 	if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) {		\
