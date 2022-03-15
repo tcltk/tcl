@@ -829,7 +829,7 @@ TclObjGetFrame(
 	    CallFrame *framePtr;
 	    for (framePtr = iPtr->varFramePtr; framePtr != NULL;
 		    framePtr = framePtr->callerVarPtr) {
-		if (framePtr->level == level) {
+		if ((int)framePtr->level == level) {
 		    *framePtrPtr = framePtr;
 		    return result;
 		}

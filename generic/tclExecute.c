@@ -4265,7 +4265,7 @@ TEBCresume(
     }
     break;
     case INST_INFO_LEVEL_NUM:
-	TclNewIntObj(objResultPtr, iPtr->varFramePtr->level);
+	TclNewIntObj(objResultPtr, (int)iPtr->varFramePtr->level);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
     break;
@@ -4282,7 +4282,7 @@ TEBCresume(
 	if (level <= 0) {
 	    level += framePtr->level;
 	}
-	for (; (framePtr->level!=level) && (framePtr!=rootFramePtr) ;
+	for (; ((int)framePtr->level!=level) && (framePtr!=rootFramePtr) ;
 		framePtr = framePtr->callerVarPtr) {
 	    /* Empty loop body */
 	}

@@ -722,7 +722,7 @@ typedef struct Tcl_CallFrame {
     void *dummy3;
     void *dummy4;
     void *dummy5;
-    int dummy6;
+    size_t dummy6;
     void *dummy7;
     void *dummy8;
     size_t dummy9;

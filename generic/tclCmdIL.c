@@ -1564,7 +1564,7 @@ InfoLevelCmd(
     Interp *iPtr = (Interp *) interp;
 
     if (objc == 1) {		/* Just "info level" */
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(iPtr->varFramePtr->level));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((int)iPtr->varFramePtr->level));
 	return TCL_OK;
     }
 
@@ -1583,7 +1583,7 @@ InfoLevelCmd(
 	}
 	for (framePtr=iPtr->varFramePtr ; framePtr!=rootFramePtr;
 		framePtr=framePtr->callerVarPtr) {
-	    if (framePtr->level == level) {
+	    if ((int)framePtr->level == level) {
 		break;
 	    }
 	}

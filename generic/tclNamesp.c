@@ -326,7 +326,7 @@ Tcl_PushCallFrame(
     framePtr->callerPtr = iPtr->framePtr;
     framePtr->callerVarPtr = iPtr->varFramePtr;
     if (iPtr->varFramePtr != NULL) {
-	framePtr->level = (iPtr->varFramePtr->level + 1);
+	framePtr->level = iPtr->varFramePtr->level + 1U;
     } else {
 	framePtr->level = 0;
     }
@@ -5048,7 +5048,7 @@ TclLogCommandInfo(
 
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewWideIntObj(
-		iPtr->framePtr->level - iPtr->varFramePtr->level));
+		(int)(iPtr->framePtr->level - iPtr->varFramePtr->level)));
     } else if (iPtr->framePtr != iPtr->rootFramePtr) {
 	/*
 	 * normal case, [lappend errorstack CALL [info level 0]]
