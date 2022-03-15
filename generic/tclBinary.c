@@ -183,7 +183,9 @@ typedef struct {
 } ByteArray;
 
 #define BYTEARRAY_SIZE(len) \
-		(offsetof(ByteArray, bytes) + (len))
+	( (offsetof(ByteArray, bytes) + (len) < offsetof(ByteArray, bytes)) \
+	? (Tcl_Panic("max size of a Tcl value exceeded"), 0) \
+	: (offsetof(ByteArray, bytes) + (len)) )
 #define GET_BYTEARRAY(irPtr) ((ByteArray *) (irPtr)->twoPtrValue.ptr1)
 #define SET_BYTEARRAY(irPtr, baPtr) \
 		(irPtr)->twoPtrValue.ptr1 = (baPtr)
@@ -714,7 +716,7 @@ UpdateStringOfByteArray(
 
     for (i = 0; i < length; i++) {
 	if ((src[i] == 0) || (src[i] > 127)) {
-	    size += 1U;
+	    size++;
 	}
     }
 
@@ -785,31 +787,28 @@ TclAppendBytesToByteArray(
     }
     byteArrayPtr = GET_BYTEARRAY(irPtr);
 
-    /* Size limit check now commented out.  Used to protect calls to
-     * Tcl_*Alloc*() limited by unsigned int arguments.
-     *
-    if (len > UINT_MAX - byteArrayPtr->used) {
-	Tcl_Panic("max size for a Tcl value (%u bytes) exceeded", UINT_MAX);
-    }
-     *
-     */
-
-    needed = byteArrayPtr->used + len;
     /*
      * If we need to, resize the allocated space in the byte array.
      */
 
+    needed = byteArrayPtr->used + len;
+    if (needed < byteArrayPtr->used) {
+	/* Wrapped around SIZE_MAX!! */
+	Tcl_Panic("max size of a Tcl value exceeded");
+    }
     if (needed > byteArrayPtr->allocated) {
 	ByteArray *ptr = NULL;
-	size_t attempt;
 
-	if (needed <= INT_MAX/2) {
-	    /*
-	     * Try to allocate double the total space that is needed.
-	     */
+        /*
+	 * Try to allocate double the total space that is needed.
+	 */
 
-	    attempt = 2 * needed;
-	    ptr = (ByteArray *)Tcl_AttemptRealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	size_t attempt = 2 * needed;
+
+	/* Protection just in case we wrapped around SIZE_MAX */
+	if (attempt >= needed) {
+	    ptr = (ByteArray *) Tcl_AttemptRealloc(byteArrayPtr,
+		    BYTEARRAY_SIZE(attempt));
 	}
 	if (ptr == NULL) {
 	    /*
@@ -817,7 +816,10 @@ TclAppendBytesToByteArray(
 	     */
 
 	    attempt = needed + len + TCL_MIN_GROWTH;
-	    ptr = (ByteArray *)Tcl_AttemptRealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
+	    if (attempt >= needed) {
+		ptr = (ByteArray *) Tcl_AttemptRealloc(byteArrayPtr,
+			BYTEARRAY_SIZE(attempt));
+	    }
 	}
 	if (ptr == NULL) {
 	    /*
