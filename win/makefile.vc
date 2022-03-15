@@ -584,6 +584,7 @@ $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
 	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
 !endif
 
+!if $(TCL_EMBED_SCRIPTS)
 $(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
 	@echo Building Tcl library zip file
 	@if exist "$(LIBTCLVFS)" $(RMDIR) "$(LIBTCLVFS)"
@@ -603,7 +604,7 @@ $(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
 	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
 	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
 	@cd "$(OUT_DIR)" && $(TCLSH_NATIVE) zipper.tcl
-
+!endif
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
