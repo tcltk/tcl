@@ -217,8 +217,8 @@ MODULE_SCOPE const TclStubs tclStubs;
  * after particular kinds of [yield].
  */
 
-#define CORO_ACTIVATE_YIELD    PTR2INT(NULL)
-#define CORO_ACTIVATE_YIELDM   PTR2INT(NULL)+1
+#define CORO_ACTIVATE_YIELD    NULL
+#define CORO_ACTIVATE_YIELDM   INT2PTR(1)
 
 #define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL     ((size_t)-1)
 #define COROUTINE_ARGUMENTS_ARBITRARY           ((size_t)-2)
@@ -1643,7 +1643,7 @@ Tcl_DeleteAssocData(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 Tcl_GetAssocData(
     Tcl_Interp *interp,		/* Interpreter associated with. */
     const char *name,		/* Name of association. */
@@ -4565,7 +4565,7 @@ TEOV_PushExceptionHandlers(
 	 */
 
 	TclNRAddCallback(interp, TEOV_Error, INT2PTR(objc),
-		(ClientData) objv, NULL, NULL);
+		objv, NULL, NULL);
     }
 
     if (iPtr->numLevels == 1) {
@@ -8795,7 +8795,7 @@ TclNRYieldToObjCmd(
     corPtr->yieldPtr = listPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
 
-    return TclNRYieldObjCmd(INT2PTR(CORO_ACTIVATE_YIELDM), interp, 1, objv);
+    return TclNRYieldObjCmd(CORO_ACTIVATE_YIELDM, interp, 1, objv);
 }
 
 static int
@@ -8955,7 +8955,6 @@ TclNRCoroutineActivateCallback(
     Tcl_Interp *interp,
     TCL_UNUSED(int) /*result*/)
 {
-    size_t numLevels, type = PTR2INT(data[1]);
     CoroutineData *corPtr = (CoroutineData *)data[0];
 
     if (!corPtr->stackLevel) {
@@ -8974,7 +8973,7 @@ TclNRCoroutineActivateCallback(
          */
 
         corPtr->stackLevel = &corPtr;
-        numLevels = corPtr->auxNumLevels;
+        size_t numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = iPtr->numLevels;
 
         SAVE_CONTEXT(corPtr->caller);
@@ -9011,6 +9010,7 @@ TclNRCoroutineActivateCallback(
             return TCL_ERROR;
         }
 
+        void *type = data[1];
         if (type == CORO_ACTIVATE_YIELD) {
             corPtr->nargs = COROUTINE_ARGUMENTS_SINGLE_OPTIONAL;
         } else if (type == CORO_ACTIVATE_YIELDM) {
@@ -9022,7 +9022,7 @@ TclNRCoroutineActivateCallback(
 	corPtr->yieldPtr = NULL;
         corPtr->stackLevel = NULL;
 
-        numLevels = iPtr->numLevels;
+        size_t numLevels = iPtr->numLevels;
         iPtr->numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
 
@@ -9169,7 +9169,6 @@ TclNRCoroInjectObjCmd(
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr;
-    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
 
     /*
      * Usage more or less like tailcall:
@@ -9198,6 +9197,7 @@ TclNRCoroInjectObjCmd(
      * to happen when the coro is resumed.
      */
 
+    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
     TclNRAddCallback(interp, InjectHandler, corPtr,
             Tcl_NewListObj(objc - 2, objv + 2), INT2PTR(corPtr->nargs), NULL);
@@ -9213,8 +9213,6 @@ TclNRCoroProbeObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
-    size_t numLevels;
     CoroutineData *corPtr;
 
     /*
@@ -9245,6 +9243,7 @@ TclNRCoroProbeObjCmd(
      * to happen when the coro is resumed.
      */
 
+    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
     TclNRAddCallback(interp, InjectHandler, corPtr,
             Tcl_NewListObj(objc - 2, objv + 2), INT2PTR(corPtr->nargs), corPtr);
@@ -9266,7 +9265,7 @@ TclNRCoroProbeObjCmd(
      */
 
     corPtr->stackLevel = &corPtr;
-    numLevels = corPtr->auxNumLevels;
+    size_t numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = iPtr->numLevels;
 
     /*
@@ -9358,7 +9357,6 @@ InjectHandlerPostCall(
     Tcl_Obj *listPtr = (Tcl_Obj *)data[1];
     size_t nargs = PTR2INT(data[2]);
     void *isProbe = data[3];
-    size_t numLevels;
 
     /*
      * Delete the command words for what we just executed.
@@ -9380,7 +9378,7 @@ InjectHandlerPostCall(
         }
         corPtr->nargs = nargs;
         corPtr->stackLevel = NULL;
-        numLevels = iPtr->numLevels;
+        size_t numLevels = iPtr->numLevels;
         iPtr->numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
         iPtr->execEnvPtr = corPtr->callerEEPtr;

@@ -2048,9 +2048,8 @@ TEBCresume(
 
     Tcl_Obj *objPtr, *valuePtr, *value2Ptr, *part1Ptr, *part2Ptr, *tmpPtr;
     Tcl_Obj **objv = NULL;
-    size_t objc = 0;
+    size_t length, objc = 0;
     int opnd, pcAdjustment;
-    size_t length;
     Var *varPtr, *arrayPtr;
 #ifdef TCL_COMPILE_DEBUG
     char cmdNameBuf[21];
@@ -2369,7 +2368,7 @@ TEBCresume(
 
     {
 	CoroutineData *corPtr;
-	size_t yieldParameter;
+	void *yieldParameter;
 
     case INST_YIELD:
 	corPtr = iPtr->execEnvPtr->corPtr;
@@ -2397,7 +2396,7 @@ TEBCresume(
 	    fflush(stdout);
 	}
 #endif
-	yieldParameter = PTR2INT(NULL);	/*==CORO_ACTIVATE_YIELD*/
+	yieldParameter = NULL;	/*==CORO_ACTIVATE_YIELD*/
 	Tcl_SetObjResult(interp, OBJ_AT_TOS);
 	goto doYield;
 
@@ -2452,7 +2451,7 @@ TEBCresume(
 	TclSetTailcall(interp, valuePtr);
 	corPtr->yieldPtr = valuePtr;
 	iPtr->execEnvPtr = corPtr->eePtr;
-	yieldParameter = PTR2INT(NULL)+1;	/*==CORO_ACTIVATE_YIELDM*/
+	yieldParameter = INT2PTR(1);	/*==CORO_ACTIVATE_YIELDM*/
 
     doYield:
 	/* TIP #280: Record the last piece of info needed by
@@ -2470,7 +2469,7 @@ TEBCresume(
 	cleanup = 1;
 	TEBC_YIELD();
 	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
-		INT2PTR(yieldParameter), NULL, NULL);
+		yieldParameter, NULL, NULL);
 	return TCL_OK;
     }
 

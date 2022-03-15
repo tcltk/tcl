@@ -91,7 +91,7 @@ typedef struct {
 static void		AddClassFiltersToCallContext(Object *const oPtr,
 			    Class *clsPtr, struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters, int flags);
-static void		AddClassMethodNames(Class *clsPtr, const int flags,
+static void		AddClassMethodNames(Class *clsPtr, int flags,
 			    Tcl_HashTable *const namesPtr,
 			    Tcl_HashTable *const examinedClassesPtr);
 static inline void	AddDefinitionNamespaceToChain(Class *const definerCls,
@@ -306,7 +306,7 @@ FreeMethodNameRep(
 
 int
 TclOOInvokeContext(
-    ClientData clientData,	/* The method call context. */
+    void *clientData,	/* The method call context. */
     Tcl_Interp *interp,		/* Interpreter for error reporting, and many
 				 * other sorts of context handling (e.g.,
 				 * commands, variables) depending on method
@@ -375,7 +375,7 @@ TclOOInvokeContext(
 
 static int
 SetFilterFlags(
-    ClientData data[],
+    void *data[],
     TCL_UNUSED(Tcl_Interp *),
     int result)
 {
@@ -387,7 +387,7 @@ SetFilterFlags(
 
 static int
 ResetFilterFlags(
-    ClientData data[],
+    void *data[],
     TCL_UNUSED(Tcl_Interp *),
     int result)
 {
@@ -399,7 +399,7 @@ ResetFilterFlags(
 
 static int
 FinalizeMethodRefs(
-    ClientData data[],
+    void *data[],
     TCL_UNUSED(Tcl_Interp *),
     int result)
 {
@@ -671,7 +671,7 @@ CmpStr(
 static void
 AddClassMethodNames(
     Class *clsPtr,		/* Class to get method names from. */
-    const int flags,		/* Whether we are interested in just the
+    int flags,		/* Whether we are interested in just the
 				 * public method names. */
     Tcl_HashTable *const namesPtr,
 				/* Reference to the hash table to put the
