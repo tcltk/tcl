@@ -884,9 +884,9 @@ USE_THREAD_ALLOC= 0
 _USE_64BIT_TIME_T = 1
 !endif
 
-!if [nmakehlp -f $(OPTS) "utfmax"]
-!message *** Force allowing 4-byte UTF-8 sequences internally
-TCL_UTF_MAX = 4
+!if [nmakehlp -f $(OPTS) "utf16"]
+!message *** Force UTF-16 internally
+TCL_UTF_MAX = 3
 !endif
 !endif
 
