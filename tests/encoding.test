@@ -696,7 +696,7 @@ test encoding-24.30 {convertrom -failindex with correct data} -body {
     set test
 } -returnCodes 0 -result -1
 test encoding-24.31 {convertrom -failindex with incomplete utf8} -body {
-    set x [encoding convertfrom -failindex i A\xc3]
+    set x [encoding convertfrom -failindex i utf-8 A\xc3]
     binary scan $x H* y
     list $y $i
 } -returnCodes 0 -result {41 1}
