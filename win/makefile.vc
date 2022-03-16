@@ -52,7 +52,7 @@
 # turn on the 64-bit compiler, if your SDK has it.
 #
 # Basic macros and options usable on the commandline (see rules.vc for more info):
-#	OPTS=nomsvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,unchecked,none
+#	OPTS=nomsvcrt,noembed,nothreads,pdbs,profile,static,symbols,thrdalloc,unchecked,utf16,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -584,7 +584,6 @@ $(OUT_DIR)\tommath.lib:	$(TOMMATHDIR)\win64\tommath.lib
 	$(COPY) $(TOMMATHDIR)\win64\tommath.lib $(OUT_DIR)\tommath.lib
 !endif
 
-!if $(TCL_EMBED_SCRIPTS)
 $(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
 	@echo Building Tcl library zip file
 	@if exist "$(LIBTCLVFS)" $(RMDIR) "$(LIBTCLVFS)"
@@ -604,7 +603,7 @@ $(TCLSCRIPTZIP): $(TCLDDELIB) $(TCLREGLIB)
 	@echo file delete -force {$@} > "$(OUT_DIR)\zipper.tcl"
 	@echo zipfs mkzip {$@} {$(LIBTCLVFS)} {$(LIBTCLVFS)} >> "$(OUT_DIR)\zipper.tcl"
 	@cd "$(OUT_DIR)" && $(TCLSH_NATIVE) zipper.tcl
-!endif
+
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
