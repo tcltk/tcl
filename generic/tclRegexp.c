@@ -271,8 +271,8 @@ Tcl_RegExpRange(
 	} else {
 	    string = regexpPtr->string;
 	}
-	*startPtr = Tcl_UtfAtIndex(string, regexpPtr->matches[index].rm_so);
-	*endPtr = Tcl_UtfAtIndex(string, regexpPtr->matches[index].rm_eo);
+	*startPtr = TclUtfAtIndex(string, regexpPtr->matches[index].rm_so);
+	*endPtr = TclUtfAtIndex(string, regexpPtr->matches[index].rm_eo);
     }
 }
 

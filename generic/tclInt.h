@@ -3327,6 +3327,7 @@ MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
     MODULE_SCOPE int TclUniCharNcasecmp(const int *, const int *, unsigned long);
     MODULE_SCOPE int TclUniCharCaseMatch(const int *, const int *, int);
     MODULE_SCOPE int TclUniCharNcmp(const int *, const int *, unsigned long);
+    MODULE_SCOPE const char *TclUtfAtIndex(const char *, int);
 #else
 #   define TclGetUnicodeFromObj_ Tcl_GetUnicodeFromObj
 #   define TclNewUnicodeObj Tcl_NewUnicodeObj
@@ -3335,6 +3336,7 @@ MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
 #   define TclUniCharNcasecmp Tcl_UniCharNcasecmp
 #   define TclUniCharCaseMatch Tcl_UniCharCaseMatch
 #   define TclUniCharNcmp Tcl_UniCharNcmp
+#   define TclUtfAtIndex Tcl_UtfAtIndex
 #endif
 
 
@@ -4741,8 +4743,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	    : Tcl_UtfToUniChar(str, chPtr))
 #else
 #define TclUtfToUniChar(str, chPtr) \
-	((((unsigned char) *(str)) < 0x80) ?		\
-	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
+	(((UCHAR(*(str))) < 0x80) ?		\
+	    ((*(chPtr) = UCHAR(*(str))), 1)	\
 	    : Tcl_UtfToChar16(str, chPtr))
 #endif
 

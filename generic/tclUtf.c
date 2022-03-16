@@ -1166,27 +1166,55 @@ Tcl_UniCharAtIndex(
  *---------------------------------------------------------------------------
  */
 
+#if TCL_UTF_MAX < 4
+#   undef Tcl_UtfToUniChar
+#   define Tcl_UtfToUniChar Tcl_UtfToChar16
+#endif
+
 const char *
-Tcl_UtfAtIndex(
+TclUtfAtIndex(
     const char *src,	/* The UTF-8 string. */
     int index)		/* The position of the desired character. */
 {
-    Tcl_UniChar ch = 0;
+	Tcl_UniChar ch = 0;
     int len = 0;
 
     while (index-- > 0) {
-	len = TclUtfToUniChar(src, &ch);
+	len = (Tcl_UtfToUniChar)(src, &ch);
 	src += len;
     }
 #if TCL_UTF_MAX < 4
     if ((ch >= 0xD800) && (len < 3)) {
 	/* Index points at character following high Surrogate */
-	src += TclUtfToUniChar(src, &ch);
+	src += (Tcl_UtfToUniChar)(src, &ch);
     }
 #endif
     return src;
 }
 
+#if TCL_UTF_MAX > 3
+const char *
+Tcl_UtfAtIndex(
+    const char *src,	/* The UTF-8 string. */
+    int index)		/* The position of the desired character. */
+{
+    unsigned short ch = 0;
+    int len = 0;
+
+    while (index-- > 0) {
+	len = Tcl_UtfToChar16(src, &ch);
+	src += len;
+    }
+    if ((ch >= 0xD800) && (len < 3)) {
+	/* Index points at character following high Surrogate */
+	src += Tcl_UtfToChar16(src, &ch);
+    }
+    return src;
+}
+
+
+#endif
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -2896,7 +2924,7 @@ TclUtfToUCS4(
     int *ucs4Ptr)	/* Filled with the UCS4 codepoint represented
 			 * by the UTF-8 string. */
 {
-    /* Make use of the #undef Tcl_UtfToUniChar above, which already handles UCS4. */
+#   undef Tcl_UtfToUniChar
     return Tcl_UtfToUniChar(src, ucs4Ptr);
 }
 

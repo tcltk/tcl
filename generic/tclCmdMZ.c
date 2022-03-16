@@ -2954,8 +2954,8 @@ StringLowerCmd(
 	}
 
 	string1 = TclGetStringFromObj(objv[1], &length1);
-	start = Tcl_UtfAtIndex(string1, first);
-	end = Tcl_UtfAtIndex(start, last - first + 1);
+	start = TclUtfAtIndex(string1, first);
+	end = TclUtfAtIndex(start, last - first + 1);
 	resultPtr = Tcl_NewStringObj(string1, end - string1);
 	string2 = TclGetString(resultPtr) + (start - string1);
 
@@ -3039,8 +3039,8 @@ StringUpperCmd(
 	}
 
 	string1 = TclGetStringFromObj(objv[1], &length1);
-	start = Tcl_UtfAtIndex(string1, first);
-	end = Tcl_UtfAtIndex(start, last - first + 1);
+	start = TclUtfAtIndex(string1, first);
+	end = TclUtfAtIndex(start, last - first + 1);
 	resultPtr = Tcl_NewStringObj(string1, end - string1);
 	string2 = TclGetString(resultPtr) + (start - string1);
 
@@ -3124,8 +3124,8 @@ StringTitleCmd(
 	}
 
 	string1 = TclGetStringFromObj(objv[1], &length1);
-	start = Tcl_UtfAtIndex(string1, first);
-	end = Tcl_UtfAtIndex(start, last - first + 1);
+	start = TclUtfAtIndex(string1, first);
+	end = TclUtfAtIndex(start, last - first + 1);
 	resultPtr = Tcl_NewStringObj(string1, end - string1);
 	string2 = TclGetString(resultPtr) + (start - string1);
 
