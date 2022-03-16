@@ -89,6 +89,16 @@ static void		UpdateStringOfUTF16String(Tcl_Obj *objPtr);
 #if TCL_UTF_MAX < 4
 
 #define uniCharStringType tclStringType
+#define GET_UNICHAR_STRING GET_STRING
+#define UniCharString String
+#define UNICHAR_STRING_MAXCHARS STRING_MAXCHARS
+#define uniCharStringAlloc stringAlloc
+#define uniCharStringRealloc stringRealloc
+#define uniCharStringAttemptAlloc stringAttemptAlloc
+#define uniCharStringAttemptRealloc stringAttemptRealloc
+#define uniCharStringCheckLimits stringCheckLimits
+#define SET_UNICHAR_STRING SET_STRING
+#define UNICHAR_STRING_SIZE STRING_SIZE
 
 const Tcl_ObjType tclStringType = {
     "string",			/* name */
@@ -168,11 +178,9 @@ DupUTF16StringInternalRep(
 				 * currently have an internal rep.*/
 {
     String *srcStringPtr = ((String *) (srcPtr)->internalRep.twoPtrValue.ptr1);
-    size_t size = offsetof(String, unicode) + (((srcStringPtr->numChars) + 1U) * sizeof(unsigned short));
+    size_t size = offsetof(String, unicode) + (((srcStringPtr->allocated) + 1U) * sizeof(unsigned short));
     String *copyStringPtr = (String *)ckalloc(size);
     memcpy(copyStringPtr, srcStringPtr, size);
-    copyStringPtr->allocated = srcStringPtr->numChars + 1;
-    copyStringPtr->maxChars = srcStringPtr->numChars;
 
     copyPtr->internalRep.twoPtrValue.ptr1 = copyStringPtr;
     copyPtr->typePtr = &tclStringType;
@@ -184,6 +192,7 @@ SetUTF16StringFromAny(
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
     if (!TclHasInternalRep(objPtr, &tclStringType)) {
+	Tcl_DString ds;
 
 	/*
 	 * Convert whatever we have into an untyped value. Just A String.
@@ -192,30 +201,46 @@ SetUTF16StringFromAny(
 	(void) TclGetString(objPtr);
 	TclFreeInternalRep(objPtr);
 
-	size_t size = offsetof(String, unicode) + (((objPtr->length) + 1U) * sizeof(unsigned short));
-
-	String *stringPtr = (String *)ckalloc(size);
-
 	/*
 	 * Create a basic String internalrep that just points to the UTF-8 string
 	 * already in place at objPtr->bytes.
 	 */
 
-	stringPtr->numChars = 0;
-	stringPtr->allocated = objPtr->length + 1;
-	stringPtr->maxChars = objPtr->length;
+	Tcl_DStringInit(&ds);
+	unsigned short *utf16string = Tcl_UtfToChar16DString(objPtr->bytes, objPtr->length, &ds);
+	size_t size = Tcl_DStringLength(&ds);
+	String *stringPtr = (String *)ckalloc((offsetof(String, unicode) + 2U) + size);
+	memcpy(stringPtr->unicode, utf16string, size);
+	stringPtr->unicode[size] = 0;
+	Tcl_DStringFree(&ds);
+
+	size /= sizeof(unsigned short);
+	stringPtr->numChars = size;
+	stringPtr->allocated = size;
+	stringPtr->maxChars = size;
 	stringPtr->hasUnicode = 1;
 	objPtr->internalRep.twoPtrValue.ptr1 = stringPtr;
 	objPtr->typePtr = &tclStringType;
     }
-    return TCL_OK;
+     return TCL_OK;
 }
 
 static void
 UpdateStringOfUTF16String(
     Tcl_Obj *objPtr)		/* Object with string rep to update. */
 {
-    (void)objPtr;
+    Tcl_DString ds;
+    String *stringPtr = ((String *) (objPtr)->internalRep.twoPtrValue.ptr1);
+
+	Tcl_DStringInit(&ds);
+	const char *string = Tcl_Char16ToUtfDString(stringPtr->unicode, stringPtr->numChars, &ds);
+
+	char *bytes = (char *)ckalloc(Tcl_DStringLength(&ds) + 1U);
+	memcpy(bytes, string, Tcl_DStringLength(&ds));
+	Tcl_DStringFree(&ds);
+	objPtr->bytes = bytes;
+	objPtr->length = Tcl_DStringLength(&ds);
+	printf("UpdateStringOfUTF16String %d %d\n", stringPtr->unicode[0], stringPtr->unicode[1]);
 }
 
 #endif
@@ -528,11 +553,21 @@ Tcl_NewUnicodeObj(
 				 * string. */
 {
     Tcl_Obj *objPtr;
-    (void)unicode;
-    (void)numChars;
 
     TclNewObj(objPtr);
-    /* TODO JN */
+	TclFreeInternalRep(objPtr);
+
+	String *stringPtr = (String *)ckalloc((offsetof(String, unicode) + 2U) + numChars * sizeof(unsigned short));
+	memcpy(stringPtr->unicode, unicode, numChars);
+	stringPtr->unicode[numChars] = 0;
+
+	stringPtr->numChars = numChars;
+	stringPtr->allocated = numChars;
+	stringPtr->maxChars = numChars;
+	stringPtr->hasUnicode = 1;
+	objPtr->internalRep.twoPtrValue.ptr1 = stringPtr;
+	objPtr->typePtr = &tclStringType;
+
     return objPtr;
 }
 #endif
@@ -823,11 +858,15 @@ Tcl_GetUnicodeFromObj(
 				 * rep's unichar length should be stored. If
 				 * NULL, no length is stored. */
 {
-    (void)objPtr;
-    (void)lengthPtr;
+    String *stringPtr;
 
-    /* TODO JN */
-    return NULL;
+    SetUTF16StringFromAny(NULL, objPtr);
+    stringPtr = GET_STRING(objPtr);
+
+    if (lengthPtr != NULL) {
+	*lengthPtr = stringPtr->numChars;
+    }
+    return stringPtr->unicode;
 }
 #endif
 
@@ -839,12 +878,17 @@ TclGetUnicodeFromObj(
 				 * rep's unichar length should be stored. If
 				 * NULL, no length is stored. */
 {
-    (void)objPtr;
-    (void)lengthPtr;
-    /* TODO JN */
-    return NULL;
+    String *stringPtr;
+
+    SetStringFromAny(NULL, objPtr);
+    stringPtr = GET_STRING(objPtr);
+
+    if (lengthPtr != NULL) {
+	*lengthPtr = stringPtr->numChars;
+    }
+    return stringPtr->unicode;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1251,11 +1295,36 @@ Tcl_SetUnicodeObj(
     int numChars)		/* Number of characters in the unicode
 				 * string. */
 {
-    (void)objPtr;
-    (void)unicode;
-    (void)numChars;
+    String *stringPtr;
 
-    /* TODO JN */
+    if (numChars < 0) {
+        numChars = 0;
+
+        if (unicode) {
+    	while (numChars >= 0 && unicode[numChars] != 0) {
+    	    numChars++;
+    	}
+        }
+        stringCheckLimits(numChars);
+    }
+
+    /*
+     * Allocate enough space for the String structure + Unicode string.
+     */
+
+    stringCheckLimits(numChars);
+    stringPtr = stringAlloc(numChars);
+    SET_STRING(objPtr, stringPtr);
+    objPtr->typePtr = &tclStringType;
+
+    stringPtr->maxChars = numChars;
+    memcpy(stringPtr->unicode, unicode, numChars * sizeof(unsigned char));
+    stringPtr->unicode[numChars] = 0;
+    stringPtr->numChars = numChars;
+    stringPtr->hasUnicode = 1;
+
+    TclInvalidateStringRep(objPtr);
+    stringPtr->allocated = numChars;
 }
 
 static int
@@ -1490,11 +1559,23 @@ Tcl_AppendUnicodeToObj(
 				 * object. */
     int length)			/* Number of chars in "unicode". */
 {
-    (void)objPtr;
-    (void)unicode;
-    (void)length;
+    String *stringPtr;
 
-    /* TODO JN */
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object", "Tcl_AppendUnicodeToObj");
+    }
+
+    if (length == 0) {
+	return;
+    }
+
+    SetStringFromAny(NULL, objPtr);
+    stringPtr = GET_STRING(objPtr);
+    stringPtr = stringAttemptRealloc(stringPtr, stringPtr->numChars + length);
+    memcpy(&stringPtr->unicode[stringPtr->numChars], unicode, length);
+    stringPtr->maxChars = stringPtr->allocated = stringPtr->numChars += length;
+    stringPtr->unicode[stringPtr->numChars] = 0;
+    SET_STRING(objPtr, stringPtr);
 }
 #endif
 
