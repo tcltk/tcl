@@ -5244,7 +5244,7 @@ TEBCresume(
 
     case INST_STR_LEN:
 	valuePtr = OBJ_AT_TOS;
-	length = Tcl_GetCharLength(valuePtr);
+	length = TclGetCharLength(valuePtr);
 	TclNewIntObj(objResultPtr, length);
 	TRACE(("\"%.20s\" => %d\n", O2S(valuePtr), length));
 	NEXT_INST_F(1, 1, 1);
@@ -5310,7 +5310,7 @@ TEBCresume(
 	 * Get char length to calulate what 'end' means.
 	 */
 
-	length = Tcl_GetCharLength(valuePtr);
+	length = TclGetCharLength(valuePtr);
 	DECACHE_STACK_INFO();
 	if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 	    CACHE_STACK_INFO();
@@ -5353,7 +5353,7 @@ TEBCresume(
     case INST_STR_RANGE:
 	TRACE(("\"%.20s\" %.20s %.20s =>",
 		O2S(OBJ_AT_DEPTH(2)), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
-	length = Tcl_GetCharLength(OBJ_AT_DEPTH(2)) - 1;
+	length = TclGetCharLength(OBJ_AT_DEPTH(2)) - 1;
 
 	DECACHE_STACK_INFO();
 	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
@@ -5382,7 +5382,7 @@ TEBCresume(
 	valuePtr = OBJ_AT_TOS;
 	fromIdx = TclGetInt4AtPtr(pc+1);
 	toIdx = TclGetInt4AtPtr(pc+5);
-	length = Tcl_GetCharLength(valuePtr);
+	length = TclGetCharLength(valuePtr);
 	TRACE(("\"%.20s\" %d %d => ", O2S(valuePtr), fromIdx, toIdx));
 
 	/* Every range of an empty value is an empty value */
@@ -5428,7 +5428,7 @@ TEBCresume(
     case INST_STR_REPLACE:
 	value3Ptr = POP_OBJECT();
 	valuePtr = OBJ_AT_DEPTH(2);
-	endIdx = Tcl_GetCharLength(valuePtr) - 1;
+	endIdx = TclGetCharLength(valuePtr) - 1;
 	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
 	DECACHE_STACK_INFO();

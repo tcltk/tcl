@@ -3556,7 +3556,7 @@ Tcl_Close(
 	result = flushcode;
     }
     if ((result != 0) && (result != TCL_ERROR) && (interp != NULL)
-	    && 0 == Tcl_GetCharLength(Tcl_GetObjResult(interp))) {
+	    && 0 == TclGetCharLength(Tcl_GetObjResult(interp))) {
 	Tcl_SetErrno(result);
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj(Tcl_PosixError(interp), -1));

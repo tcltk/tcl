@@ -590,7 +590,7 @@ Tcl_NewUnicodeObj(
  */
 
 int
-Tcl_GetCharLength(
+TclGetCharLength(
     Tcl_Obj *objPtr)		/* The String object to get the num chars
 				 * of. */
 {
@@ -643,6 +643,52 @@ Tcl_GetCharLength(
     return numChars;
 }
 
+#if TCL_UTF_MAX > 3
+int
+Tcl_GetCharLength(
+    Tcl_Obj *objPtr)		/* The String object to get the num chars
+				 * of. */
+{
+    String *stringPtr;
+    int numChars;
+
+    /*
+     * Quick, no-shimmer return for short string reps.
+     */
+
+    if ((objPtr->bytes) && (objPtr->length < 2)) {
+	/* 0 bytes -> 0 chars; 1 byte -> 1 char */
+	return objPtr->length;
+    }
+
+    /*
+     * Optimize the case where we're really dealing with a bytearray object;
+     * we don't need to convert to a string to perform the get-length operation.
+     *
+     * Starting in Tcl 8.7, we check for a "pure" bytearray, because the
+     * machinery behind that test is using a proper bytearray ObjType.  We
+     * could also compute length of an improper bytearray without shimmering
+     * but there's no value in that. We *want* to shimmer an improper bytearray
+     * because improper bytearrays have worthless internal reps.
+     */
+
+    if (TclIsPureByteArray(objPtr)) {
+	int length;
+
+	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
+	return length;
+    }
+
+    /*
+     * OK, need to work with the object as a string.
+     */
+
+    SetUTF16StringFromAny(NULL, objPtr);
+    stringPtr = GET_STRING(objPtr);
+    return stringPtr->numChars;
+}
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2336,7 +2382,7 @@ Tcl_AppendFormatToObj(
 	    goto errorMsg;
 	case 's':
 	    if (gotPrecision) {
-		numChars = Tcl_GetCharLength(segment);
+		numChars = TclGetCharLength(segment);
 		if (precision < numChars) {
 		    if (precision < 1) {
 			TclNewObj(segment);
@@ -2521,7 +2567,7 @@ Tcl_AppendFormatToObj(
 		    gotZero = 0;
 		}
 		if (gotZero) {
-		    length += Tcl_GetCharLength(segment);
+		    length += TclGetCharLength(segment);
 		    if (length < width) {
 			segmentLimit -= width - length;
 		    }
@@ -2652,7 +2698,7 @@ Tcl_AppendFormatToObj(
 		    gotZero = 0;
 		}
 		if (gotZero) {
-		    length += Tcl_GetCharLength(segment);
+		    length += TclGetCharLength(segment);
 		    if (length < width) {
 			segmentLimit -= width - length;
 		    }
@@ -2763,7 +2809,7 @@ Tcl_AppendFormatToObj(
 	}
 
 	if (width>0 && numChars<0) {
-	    numChars = Tcl_GetCharLength(segment);
+	    numChars = TclGetCharLength(segment);
 	}
 	if (!gotMinus && width>0) {
 	    if (numChars < width) {
@@ -3720,8 +3766,8 @@ TclStringCmp(
 		s2 = (char *) TclGetUnicodeFromObj_(value2Ptr, &s2len);
 		memCmpFn = (memCmpFn_t)(void *)TclUniCharNcasecmp;
 	    } else {
-		s1len = Tcl_GetCharLength(value1Ptr);
-		s2len = Tcl_GetCharLength(value2Ptr);
+		s1len = TclGetCharLength(value1Ptr);
+		s2len = TclGetCharLength(value2Ptr);
 		if ((s1len == value1Ptr->length)
 			&& (value1Ptr->bytes != NULL)
 			&& (s2len == value2Ptr->length)
@@ -3866,7 +3912,7 @@ TclStringFirst(
     Tcl_Obj *haystack,
     int start)
 {
-    int lh, ln = Tcl_GetCharLength(needle);
+    int lh, ln = TclGetCharLength(needle);
     Tcl_Obj *result;
     int value = -1;
     Tcl_UniChar *checkStr, *endStr, *uh, *un;
@@ -3973,7 +4019,7 @@ TclStringLast(
     Tcl_Obj *haystack,
     int last)
 {
-    int lh, ln = Tcl_GetCharLength(needle);
+    int lh, ln = TclGetCharLength(needle);
     Tcl_Obj *result;
     int value = -1;
     Tcl_UniChar *checkStr, *uh, *un;

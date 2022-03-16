@@ -3322,6 +3322,7 @@ MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
 #if TCL_UTF_MAX > 3
     MODULE_SCOPE int *TclGetUnicodeFromObj_(Tcl_Obj *, int *);
     MODULE_SCOPE Tcl_Obj *TclNewUnicodeObj(const int *, int);
+    MODULE_SCOPE int TclGetCharLength(Tcl_Obj *);
     MODULE_SCOPE void TclAppendUnicodeToObj(Tcl_Obj *, const int *, int);
     MODULE_SCOPE int TclUniCharNcasecmp(const int *, const int *, unsigned long);
     MODULE_SCOPE int TclUniCharCaseMatch(const int *, const int *, int);
@@ -3329,6 +3330,7 @@ MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
 #else
 #   define TclGetUnicodeFromObj_ Tcl_GetUnicodeFromObj
 #   define TclNewUnicodeObj Tcl_NewUnicodeObj
+#   define TclGetCharLength Tcl_GetCharLength
 #   define TclAppendUnicodeToObj Tcl_AppendUnicodeToObj
 #   define TclUniCharNcasecmp Tcl_UniCharNcasecmp
 #   define TclUniCharCaseMatch Tcl_UniCharCaseMatch

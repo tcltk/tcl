@@ -256,7 +256,7 @@ Tcl_RegexpObjCmd(
      */
 
     objPtr = objv[1];
-    stringLength = Tcl_GetCharLength(objPtr);
+    stringLength = TclGetCharLength(objPtr);
 
     if (startIndex) {
 	TclGetIntForIndexM(interp, startIndex, stringLength, &offset);
@@ -581,7 +581,7 @@ Tcl_RegsubObjCmd(
     objv += idx;
 
     if (startIndex) {
-	int stringLength = Tcl_GetCharLength(objv[1]);
+	int stringLength = TclGetCharLength(objv[1]);
 
 	TclGetIntForIndexM(interp, startIndex, stringLength, &offset);
 	Tcl_DecrRefCount(startIndex);
@@ -1316,7 +1316,7 @@ StringFirstCmd(
     }
 
     if (objc == 4) {
-	int size = Tcl_GetCharLength(objv[2]);
+	int size = TclGetCharLength(objv[2]);
 
 	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &start)) {
 	    return TCL_ERROR;
@@ -1360,7 +1360,7 @@ StringLastCmd(
     }
 
     if (objc == 4) {
-	int size = Tcl_GetCharLength(objv[2]);
+	int size = TclGetCharLength(objv[2]);
 
 	if (TCL_OK != TclGetIntForIndexM(interp, objv[3], size - 1, &last)) {
 	    return TCL_ERROR;
@@ -1406,7 +1406,7 @@ StringIndexCmd(
      * Get the char length to calculate what 'end' means.
      */
 
-    length = Tcl_GetCharLength(objv[1]);
+    length = TclGetCharLength(objv[1]);
     if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1474,7 +1474,7 @@ StringInsertCmd(
 	return TCL_ERROR;
     }
 
-    length = Tcl_GetCharLength(objv[1]);
+    length = TclGetCharLength(objv[1]);
     if (TclGetIntForIndexM(interp, objv[2], length, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1669,7 +1669,7 @@ StringIsCmd(
 			p++;
 		    }
 		    TclNewStringObj(tmpStr, string1, p-string1);
-		    failat = Tcl_GetCharLength(tmpStr);
+		    failat = TclGetCharLength(tmpStr);
 		    TclDecrRefCount(tmpStr);
 		    break;
 		}
@@ -1849,7 +1849,7 @@ StringIsCmd(
 			p++;
 		    }
 		    TclNewStringObj(tmpStr, string1, p-string1);
-		    failat = Tcl_GetCharLength(tmpStr);
+		    failat = TclGetCharLength(tmpStr);
 		    TclDecrRefCount(tmpStr);
 		    break;
 		}
@@ -2293,7 +2293,7 @@ StringRangeCmd(
      * 'end' refers to the last character, not one past it.
      */
 
-    length = Tcl_GetCharLength(objv[1]) - 1;
+    length = TclGetCharLength(objv[1]) - 1;
 
     if (TclGetIntForIndexM(interp, objv[2], length, &first) != TCL_OK ||
 	    TclGetIntForIndexM(interp, objv[3], length, &last) != TCL_OK) {
@@ -2394,7 +2394,7 @@ StringRplcCmd(
 	return TCL_ERROR;
     }
 
-    length = Tcl_GetCharLength(objv[1]);
+    length = TclGetCharLength(objv[1]);
     end = length - 1;
 
     if (TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK ||
@@ -2880,7 +2880,7 @@ StringLenCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(Tcl_GetCharLength(objv[1])));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(TclGetCharLength(objv[1])));
     return TCL_OK;
 }
 

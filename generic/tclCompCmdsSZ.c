@@ -890,7 +890,7 @@ TclCompileStringLenCmd(
 	 */
 
 	char buf[TCL_INTEGER_SPACE];
-	int len = Tcl_GetCharLength(objPtr);
+	int len = TclGetCharLength(objPtr);
 
 	len = sprintf(buf, "%d", len);
 	PushLiteral(envPtr, buf, len);
