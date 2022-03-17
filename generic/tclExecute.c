@@ -7228,20 +7228,20 @@ TEBCresume(
 	    }
 	    if (result == TCL_BREAK) {
 		result = TCL_OK;
-		pc = (codePtr->codeStart + rangePtr->breakOffset);
-		TRACE_APPEND(("%s, range at %d, new pc %d\n",
+		pc = (codePtr->codeStart + (int)rangePtr->breakOffset);
+		TRACE_APPEND(("%s, range at %" TCL_Z_MODIFIER "u, new pc %" TCL_Z_MODIFIER "u\n",
 			StringForResultCode(result),
 			rangePtr->codeOffset, rangePtr->breakOffset));
 		NEXT_INST_F(0, 0, 0);
 	    }
-	    if (rangePtr->continueOffset == -1) {
+	    if (rangePtr->continueOffset == TCL_INDEX_NONE) {
 		TRACE_APPEND(("%s, loop w/o continue, checking for catch\n",
 			StringForResultCode(result)));
 		goto checkForCatch;
 	    }
 	    result = TCL_OK;
-	    pc = (codePtr->codeStart + rangePtr->continueOffset);
-	    TRACE_APPEND(("%s, range at %d, new pc %d\n",
+	    pc = (codePtr->codeStart + (int)rangePtr->continueOffset);
+	    TRACE_APPEND(("%s, range at %" TCL_Z_MODIFIER "u, new pc %" TCL_Z_MODIFIER "u\n",
 		    StringForResultCode(result),
 		    rangePtr->codeOffset, rangePtr->continueOffset));
 	    NEXT_INST_F(0, 0, 0);
@@ -7413,13 +7413,13 @@ TEBCresume(
 	}
 #ifdef TCL_COMPILE_DEBUG
 	if (traceInstructions) {
-	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
+	    fprintf(stdout, "  ... found catch at %" TCL_Z_MODIFIER "u, catchTop=%d, "
 		    "unwound to %ld, new pc %" TCL_Z_MODIFIER "u\n",
 		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
-		    (long)*catchTop, (size_t) rangePtr->catchOffset);
+		    (long)*catchTop, rangePtr->catchOffset);
 	}
 #endif
-	pc = (codePtr->codeStart + rangePtr->catchOffset);
+	pc = (codePtr->codeStart + (int)rangePtr->catchOffset);
 	NEXT_INST_F(0, 0, 0);	/* Restart the execution loop at pc. */
 
 	/*
@@ -9120,7 +9120,7 @@ GetExceptRangeForPc(
 				 * for the enclosing ExceptionRange. */
 {
     ExceptionRange *rangeArrayPtr;
-    int numRanges = codePtr->numExceptRanges;
+    size_t numRanges = codePtr->numExceptRanges;
     ExceptionRange *rangePtr;
     size_t pcOffset = pc - codePtr->codeStart;
     size_t start;
@@ -9147,7 +9147,7 @@ GetExceptRangeForPc(
 	    if (searchMode == TCL_BREAK) {
 		return rangePtr;
 	    }
-	    if (searchMode == TCL_CONTINUE && rangePtr->continueOffset != -1){
+	    if (searchMode == TCL_CONTINUE && rangePtr->continueOffset != TCL_INDEX_NONE){
 		return rangePtr;
 	    }
 	}

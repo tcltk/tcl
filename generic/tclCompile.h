@@ -92,17 +92,17 @@ typedef struct {
     int nestingLevel;		/* Static depth of the exception range. Used
 				 * to find the most deeply-nested range
 				 * surrounding a PC at runtime. */
-    int codeOffset;		/* Offset of the first instruction byte of the
+    size_t codeOffset;		/* Offset of the first instruction byte of the
 				 * code range. */
-    int numCodeBytes;		/* Number of bytes in the code range. */
-    int breakOffset;		/* If LOOP_EXCEPTION_RANGE, the target PC
+    size_t numCodeBytes;		/* Number of bytes in the code range. */
+    size_t breakOffset;		/* If LOOP_EXCEPTION_RANGE, the target PC
 				 * offset for a break command in the range. */
-    int continueOffset;		/* If LOOP_EXCEPTION_RANGE and not -1, the
+    size_t continueOffset;		/* If LOOP_EXCEPTION_RANGE and not -1, the
 				 * target PC offset for a continue command in
 				 * the code range. Otherwise, ignore this
 				 * range when processing a continue
 				 * command. */
-    int catchOffset;		/* If a CATCH_EXCEPTION_RANGE, the target PC
+    size_t catchOffset;		/* If a CATCH_EXCEPTION_RANGE, the target PC
 				 * offset for any "exception" in range. */
 } ExceptionRange;
 
@@ -1585,11 +1585,11 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
     (((envPtr)->exceptDepth++),						\
     ((envPtr)->maxExceptDepth =						\
 	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)),	\
-    ((envPtr)->exceptArrayPtr[(index)].codeOffset = CurrentOffset(envPtr)))
+    ((envPtr)->exceptArrayPtr[(index)].codeOffset= CurrentOffset(envPtr)))
 #define ExceptionRangeEnds(envPtr, index) \
     (((envPtr)->exceptDepth--),						\
     ((envPtr)->exceptArrayPtr[(index)].numCodeBytes =			\
-	CurrentOffset(envPtr) - (envPtr)->exceptArrayPtr[(index)].codeOffset))
+	CurrentOffset(envPtr) - (int)(envPtr)->exceptArrayPtr[(index)].codeOffset))
 #define ExceptionRangeTarget(envPtr, index, targetType) \
     ((envPtr)->exceptArrayPtr[(index)].targetType = CurrentOffset(envPtr))
 

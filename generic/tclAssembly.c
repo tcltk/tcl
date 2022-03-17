@@ -4011,7 +4011,7 @@ UnstackExpiredCatches(
 	--catchDepth;
 	if (catches[catchDepth] != NULL) {
 	    range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
-	    range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
+	    range->numCodeBytes = bbPtr->startOffset - (int)range->codeOffset;
 	    catches[catchDepth] = NULL;
 	    catchIndices[catchDepth] = -1;
 	}
@@ -4030,7 +4030,7 @@ UnstackExpiredCatches(
 	if (catches[catchDepth] != NULL) {
 	    if (catches[catchDepth] != block || catchState >= BBCS_CAUGHT) {
 		range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
-		range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
+		range->numCodeBytes = bbPtr->startOffset - (int)range->codeOffset;
 		catches[catchDepth] = NULL;
 		catchIndices[catchDepth] = -1;
 	    }

@@ -3409,11 +3409,11 @@ TclCreateExceptRange(
     rangePtr = &envPtr->exceptArrayPtr[index];
     rangePtr->type = type;
     rangePtr->nestingLevel = envPtr->exceptDepth;
-    rangePtr->codeOffset = -1;
-    rangePtr->numCodeBytes = -1;
-    rangePtr->breakOffset = -1;
-    rangePtr->continueOffset = -1;
-    rangePtr->catchOffset = -1;
+    rangePtr->codeOffset = TCL_INDEX_NONE;
+    rangePtr->numCodeBytes = TCL_INDEX_NONE;
+    rangePtr->breakOffset = TCL_INDEX_NONE;
+    rangePtr->continueOffset = TCL_INDEX_NONE;
+    rangePtr->catchOffset = TCL_INDEX_NONE;
     auxPtr = &envPtr->exceptAuxArrayPtr[index];
     auxPtr->supportsContinue = 1;
     auxPtr->stackDepth = envPtr->currStackDepth;
@@ -3454,9 +3454,9 @@ TclGetInnermostExceptionRange(
     while (i > 0) {
 	rangePtr--; i--;
 
-	if (CurrentOffset(envPtr) >= rangePtr->codeOffset &&
-		(rangePtr->numCodeBytes == -1 || CurrentOffset(envPtr) <
-			rangePtr->codeOffset+rangePtr->numCodeBytes) &&
+	if (CurrentOffset(envPtr) >= (int)rangePtr->codeOffset &&
+		(rangePtr->numCodeBytes == TCL_INDEX_NONE || CurrentOffset(envPtr) <
+			(int)rangePtr->codeOffset+(int)rangePtr->numCodeBytes) &&
 		(returnCode != TCL_CONTINUE ||
 			envPtr->exceptAuxArrayPtr[i].supportsContinue)) {
 
@@ -3603,10 +3603,10 @@ StartExpanding(
 	 * Ignore loops unless they're still being built.
 	 */
 
-	if (rangePtr->codeOffset > CurrentOffset(envPtr)) {
+	if ((int)rangePtr->codeOffset > CurrentOffset(envPtr)) {
 	    continue;
 	}
-	if (rangePtr->numCodeBytes != -1) {
+	if (rangePtr->numCodeBytes != TCL_INDEX_NONE) {
 	    continue;
 	}
 
@@ -3661,12 +3661,12 @@ TclFinalizeLoopExceptionRange(
 
     for (i=0 ; i<auxPtr->numBreakTargets ; i++) {
 	site = envPtr->codeStart + auxPtr->breakTargets[i];
-	offset = rangePtr->breakOffset - auxPtr->breakTargets[i];
+	offset = (int)rangePtr->breakOffset - auxPtr->breakTargets[i];
 	TclUpdateInstInt4AtPc(INST_JUMP4, offset, site);
     }
     for (i=0 ; i<auxPtr->numContinueTargets ; i++) {
 	site = envPtr->codeStart + auxPtr->continueTargets[i];
-	if (rangePtr->continueOffset == -1) {
+	if (rangePtr->continueOffset == TCL_INDEX_NONE) {
 	    int j;
 
 	    /*
@@ -3679,7 +3679,7 @@ TclFinalizeLoopExceptionRange(
 		*++site = INST_NOP;
 	    }
 	} else {
-	    offset = rangePtr->continueOffset - auxPtr->continueTargets[i];
+	    offset = (int)rangePtr->continueOffset - auxPtr->continueTargets[i];
 	    TclUpdateInstInt4AtPc(INST_JUMP4, offset, site);
 	}
     }
@@ -4044,7 +4044,7 @@ TclFixupForwardJump(
 	switch (rangePtr->type) {
 	case LOOP_EXCEPTION_RANGE:
 	    rangePtr->breakOffset += 3;
-	    if (rangePtr->continueOffset != -1) {
+	    if (rangePtr->continueOffset != TCL_INDEX_NONE) {
 		rangePtr->continueOffset += 3;
 	    }
 	    break;
