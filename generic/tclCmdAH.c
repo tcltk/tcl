@@ -600,7 +600,7 @@ encConvFromOK:
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
-    if ((flags & TCL_ENCODING_STOPONERROR) && (result != (size_t)-1)) {
+    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != (size_t)-1)) {
 	char buf[TCL_INTEGER_SPACE];
 	sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte sequence starting at index %"
@@ -696,7 +696,7 @@ encConvToOK:
     stringPtr = TclGetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    flags, &ds);
-    if ((flags & TCL_ENCODING_STOPONERROR) && (result != (size_t)-1)) {
+    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != (size_t)-1)) {
 	size_t pos = Tcl_NumUtfChars(stringPtr, result);
 	int ucs4;
 	char buf[TCL_INTEGER_SPACE];
