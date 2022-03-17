@@ -1451,8 +1451,8 @@ const TclStubs tclStubs = {
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
     Tcl_UniCharIsUnicode, /* 657 */
-    0, /* 658 */
-    0, /* 659 */
+    Tcl_ExternalToUtfDStringEx, /* 658 */
+    Tcl_UtfToExternalDStringEx, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
     Tcl_ListObjGetElements, /* 661 */
     Tcl_ListObjLength, /* 662 */
