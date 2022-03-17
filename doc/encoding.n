@@ -14,16 +14,10 @@ encoding \- Manipulate encodings
 .BE
 .SH INTRODUCTION
 .PP
-Strings in Tcl are logically a sequence of 16-bit Unicode characters.
+Strings in Tcl are logically a sequence of Unicode characters.
 These strings are represented in memory as a sequence of bytes that
-may be in one of several encodings: modified UTF\-8 (which uses 1 to 3
-bytes per character), 16-bit
-.QW Unicode
-(which uses 2 bytes per character, with an endianness that is
-dependent on the host architecture), and binary (which uses a single
-byte per character but only handles a restricted range of characters).
-Tcl does not guarantee to always use the same encoding for the same
-string.
+may be in one of several encodings: modified UTF\-8 (which uses 1 to 4
+bytes per character), or a custom encoding start as 8 bit binary data.
 .PP
 Different operating system interfaces or applications may generate
 strings in other encodings such as Shift\-JIS.  The \fBencoding\fR
@@ -34,16 +28,30 @@ formats.
 Performs one of several encoding related operations, depending on
 \fIoption\fR.  The legal \fIoption\fRs are:
 .TP
-\fBencoding convertfrom\fR ?\fIencoding\fR? \fIdata\fR
+\fBencoding convertfrom\fR ?\fB-nocomplain\fR? ?\fB-failindex var\fR?
+?\fIencoding\fR? \fIdata\fR
 .
-Convert \fIdata\fR to Unicode from the specified \fIencoding\fR.  The
-characters in \fIdata\fR are treated as binary data where the lower
-8-bits of each character is taken as a single byte.  The resulting
-sequence of bytes is treated as a string in the specified
-\fIencoding\fR.  If \fIencoding\fR is not specified, the current
+Convert \fIdata\fR to a Unicode string from the specified \fIencoding\fR.  The
+characters in \fIdata\fR are 8 bit binary data.  The resulting
+sequence of bytes is a string created by applying the given \fIencoding\fR
+to the data. If \fIencoding\fR is not specified, the current
 system encoding is used.
+.
+The call fails on convertion errors, like an incomplete utf-8 sequence.
+The option \fB-failindex\fR is followed by a variable name. The variable
+is set to \fI-1\fR if no conversion error occured. It is set to the
+first error location in \fIdata\fR in case of a conversion error. All data
+until this error location is transformed and retured. This option may not
+be used together with \fB-nocomplain\fR.
+.
+The call does not fail on conversion errors, if the option
+\fB-nocomplain\fR is given. In this case, any error locations are replaced
+by \fB?\fR. Incomplete sequences are written verbatim to the output string.
+The purpose of this switch is to gain compatibility to prior versions of TCL.
+It is not recommended for any other usage.
 .TP
-\fBencoding convertto\fR ?\fIencoding\fR? \fIstring\fR
+\fBencoding convertto\fR ?\fB-nocomplain\fR? ?\fB-failindex var\fR?
+?\fIencoding\fR? \fIstring\fR
 .
 Convert \fIstring\fR from Unicode to the specified \fIencoding\fR.
 The result is a sequence of bytes that represents the converted
@@ -51,6 +59,21 @@ string.  Each byte is stored in the lower 8-bits of a Unicode
 character (indeed, the resulting string is a binary string as far as
 Tcl is concerned, at least initially).  If \fIencoding\fR is not
 specified, the current system encoding is used.
+.
+The call fails on convertion errors, like a Unicode character not representable
+in the given \fIencoding\fR.
+.
+The option \fB-failindex\fR is followed by a variable name. The variable
+is set to \fI-1\fR if no conversion error occured. It is set to the
+first error location in \fIdata\fR in case of a conversion error. All data
+until this error location is transformed and retured. This option may not
+be used together with \fB-nocomplain\fR.
+.
+The call does not fail on conversion errors, if the option
+\fB-nocomplain\fR is given. In this case, any error locations are replaced
+by \fB?\fR. Incomplete sequences are written verbatim to the output string.
+The purpose of this switch is to gain compatibility to prior versions of TCL.
+It is not recommended for any other usage.
 .TP
 \fBencoding dirs\fR ?\fIdirectoryList\fR?
 .
@@ -90,6 +113,26 @@ set s [\fBencoding convertfrom\fR euc-jp "\exA4\exCF"]
 The result is the unicode codepoint:
 .QW "\eu306F" ,
 which is the Hiragana letter HA.
+.PP
+The following example detects the error location in an incomplete UTF-8 sequence:
+.PP
+.CS
+% set s [\fBencoding convertfrom\fR -failindex i utf-8 "A\xc3"]
+A
+% set i
+1
+.CE
+.PP
+The following example detects the error location while transforming to ISO8859-1
+(ISO-Latin 1):
+.PP
+.CS
+% set s [\fBencoding convertto\fR -failindex i utf-8 "A\u0141"]
+A
+% set i
+1
+.CE
+.PP
 .SH "SEE ALSO"
 Tcl_GetEncoding(3)
 .SH KEYWORDS
