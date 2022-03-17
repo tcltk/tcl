@@ -194,7 +194,7 @@ test cmdAH-4.6 {Tcl_EncodingObjCmd} -setup {
 } -result 8C
 test cmdAH-4.7 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertfrom
-} -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?encoding? data"}
+} -result {wrong # args: should be "encoding convertfrom ?-nocomplain|-failindex var? ?encoding? data"}
 test cmdAH-4.8 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertfrom foo bar
 } -result {unknown encoding "foo"}

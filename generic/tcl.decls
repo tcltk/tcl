@@ -2500,11 +2500,11 @@ declare 657 {
 }
 declare 658 {
     size_t Tcl_ExternalToUtfDStringEx(Tcl_Encoding encoding,
-	    const char *src, int srcLen, int flags, Tcl_DString *dsPtr)
+	    const char *src, size_t srcLen, int flags, Tcl_DString *dsPtr)
 }
 declare 659 {
     size_t Tcl_UtfToExternalDStringEx(Tcl_Encoding encoding,
-	    const char *src, int srcLen, int flags, Tcl_DString *dsPtr)
+	    const char *src, size_t srcLen, int flags, Tcl_DString *dsPtr)
 }
 
 # TIP #511

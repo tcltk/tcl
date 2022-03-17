@@ -419,7 +419,7 @@ EncodingConvertfromObjCmd(
 #else
     int flags = TCL_ENCODING_NOCOMPLAIN;
 #endif
-    size_t result, errorPosition = 0;
+    size_t result;
     Tcl_Obj *failVarObj = NULL;
     /*
      * Decode parameters:
@@ -474,7 +474,7 @@ EncodingConvertfromObjCmd(
     /*
      * Convert the string into a byte array in 'ds'
      */
-    bytesPtr = (char *) TclGetBytesFromObj(interp, data, &length);
+    bytesPtr = (char *) Tcl_GetBytesFromObj(interp, data, &length);
     if (bytesPtr == NULL) {
 	return TCL_ERROR;
     }
