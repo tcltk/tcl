@@ -667,37 +667,10 @@ test encoding-24.21 {Parse with -nocomplain but without providing encoding} {
 } 1
 test encoding-24.22 {Syntax error, two encodings} -body {
     encoding convertfrom iso8859-1 utf-8 "ZX\uD800"
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-nocomplain|-failindex var? ?encoding? data"}
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-nocomplain? ?-failindex var? ?encoding? data"}
 test encoding-24.23 {Syntax error, two encodings} -body {
     encoding convertto iso8859-1 utf-8 "ZX\uD800"
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-nocomplain? ?encoding? data"}
-test encoding-24.24 {Syntax error, no parameter} -body {
-    encoding convertfrom
-} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-nocomplain|-failindex var? ?encoding? data"}
-test encoding-24.25 {Syntax error, -nocomplain and -failindex, no encoding} -body {
-    encoding convertfrom -nocomplain -failindex 2 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-nocomplain|-failindex var? ?encoding? data"}
-test encoding-24.26 {Syntax error, -failindex and -nocomplain, no encoding} -body {
-    encoding convertfrom -failindex 2 -nocomplain ABC
-} -returnCodes 1 -result {unknown encoding "-nocomplain"}
-test encoding-24.27 {Syntax error, -nocomplain and -failindex, encoding} -body {
-    encoding convertfrom -nocomplain -failindex 2 utf-8 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-nocomplain|-failindex var? ?encoding? data"}
-test encoding-24.28 {Syntax error, -failindex and -nocomplain, encoding} -body {
-    encoding convertfrom -failindex 2 -nocomplain utf-8 ABC
-} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-nocomplain|-failindex var? ?encoding? data"}
-test encoding-24.29 {Syntax error, -failindex with no var, no encoding} -body {
-    encoding convertfrom -failindex ABC
-} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-nocomplain|-failindex var? ?encoding? data"}
-test encoding-24.30 {convertrom -failindex with correct data} -body {
-    encoding convertfrom -failindex test ABC
-    set test
-} -returnCodes 0 -result -1
-test encoding-24.31 {convertrom -failindex with incomplete utf8} -body {
-    set x [encoding convertfrom -failindex i utf-8 A\xc3]
-    binary scan $x H* y
-    list $y $i
-} -returnCodes 0 -result {41 1}
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-nocomplain? ?-failindex var? ?encoding? data"}
 
 file delete [file join [temporaryDirectory] iso2022.txt]
 

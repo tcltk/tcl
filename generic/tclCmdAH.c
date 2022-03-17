@@ -426,8 +426,8 @@ EncodingConvertfromObjCmd(
      * Possible combinations:
      * 1) data						-> objc = 2
      * 2) encoding data					-> objc = 3
-     * 3) -nocomplain data				-> objc = 3 (8.7)
-     * 4) -nocomplain encoding data			-> objc = 4 (8.7)
+     * 3) -nocomplain data				-> objc = 3
+     * 4) -nocomplain encoding data			-> objc = 4
      * 5) -failindex val data				-> objc = 4
      * 6) -failindex val encoding data			-> objc = 5
      */
@@ -467,7 +467,7 @@ EncodingConvertfromObjCmd(
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain|-failindex var? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 
@@ -544,42 +544,64 @@ EncodingConverttoObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     size_t length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
-    size_t result;
+    size_t result, errorPosition = 0;
+    Tcl_Obj *failVarObj = NULL;
 #if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
     int flags = TCL_ENCODING_STOPONERROR;
 #else
     int flags = TCL_ENCODING_NOCOMPLAIN;
 #endif
 
+    /*
+     * Decode parameters:
+     * Possible combinations:
+     * 1) data						-> objc = 2
+     * 2) encoding data					-> objc = 3
+     * 3) -nocomplain data				-> objc = 3
+     * 4) -nocomplain encoding data			-> objc = 4
+     * 5) -failindex val data				-> objc = 4
+     * 6) -failindex val encoding data			-> objc = 5
+     */
+
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if ((unsigned)(objc - 2) < 3) {
+    } else if (objc > 2 && objc < 6) {
+	int objcUnprocessed = objc;
 	data = objv[objc - 1];
 	stringPtr = Tcl_GetString(objv[1]);
 	if (stringPtr[0] == '-' && stringPtr[1] == 'n'
 		&& !strncmp(stringPtr, "-nocomplain", strlen(stringPtr))) {
 	    flags = TCL_ENCODING_NOCOMPLAIN;
-	} else if (objc < 4) {
-	    if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
-		return TCL_ERROR;
+	    objcUnprocessed--;
+	} else if (stringPtr[0] == '-' && stringPtr[1] == 'f'
+		&& !strncmp(stringPtr, "-failindex", strlen(stringPtr))) {
+	    /* at least two additional arguments needed */
+	    if (objc < 4) {
+		goto encConvToError;
 	    }
-	    goto encConvToOK;
-	} else {
-	    goto encConvToError;
+	    failVarObj = objv[2];
+	    flags = TCL_ENCODING_STOPONERROR;
+	    objcUnprocessed -= 2;
 	}
-	if (objc < 4) {
-	    encoding = Tcl_GetEncoding(interp, NULL);
-	} else if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
-	    return TCL_ERROR;
+	switch (objcUnprocessed) {
+	    case 3:
+		if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		break;
+	    case 2:
+		encoding = Tcl_GetEncoding(interp, NULL);
+		break;
+	    default:
+		goto encConvToError;
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 
-encConvToOK:
     /*
      * Convert the string to a byte array in 'ds'
      */
@@ -588,17 +610,28 @@ encConvToOK:
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    flags, &ds);
     if ((flags & TCL_ENCODING_STOPONERROR) && (result != (size_t)-1)) {
-	size_t pos = Tcl_NumUtfChars(stringPtr, result);
-	int ucs4;
-	char buf[TCL_INTEGER_SPACE];
-	TclUtfToUCS4(&stringPtr[result], &ucs4);
-	sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected character at index %"
-		TCL_Z_MODIFIER "u: 'U+%06X'", pos, ucs4));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-		buf, NULL);
-	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
+	if (failVarObj != NULL) {
+	    /* I hope, wide int will cover size_t data type */
+	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	} else {
+	    size_t pos = Tcl_NumUtfChars(stringPtr, result);
+	    int ucs4;
+	    char buf[TCL_INTEGER_SPACE];
+	    TclUtfToUCS4(&stringPtr[result], &ucs4);
+	    sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected character at index %"
+		    TCL_Z_MODIFIER "u: 'U+%06X'", pos, ucs4));
+	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
+		    buf, NULL);
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+    } else if (failVarObj != NULL) {
+	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIntObj(-1), TCL_LEAVE_ERR_MSG) == NULL) {
+	    return TCL_ERROR;
+	}
     }
     Tcl_SetObjResult(interp,
 		     Tcl_NewByteArrayObj((unsigned char*) Tcl_DStringValue(&ds),
