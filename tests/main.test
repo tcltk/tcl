@@ -143,7 +143,7 @@ namespace eval ::tcl::test::main {
     test Tcl_Main-1.8 {
 	Tcl_Main: startup script - -encoding option - mismatched encodings
     } -constraints {
-	stdio deprecated
+	stdio
     } -setup {
 	set script [makeFile {} script]
 	file delete $script
@@ -153,7 +153,7 @@ namespace eval ::tcl::test::main {
 	puts -nonewline $f {puts [string equal \u20ac }
 	puts $f "€]"
 	close $f
-	catch {set f [open "|[list [interpreter] -encoding ascii script]" r]}
+	catch {set f [open "|[list [interpreter] -encoding iso8859-1 script]" r]}
     } -body {
 	read $f
     } -cleanup {

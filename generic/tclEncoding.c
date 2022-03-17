@@ -1117,7 +1117,7 @@ Tcl_ExternalToUtfDStringEx(
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
     const char *src,		/* Source string in specified encoding. */
-    int srcLen,			/* Source string length in bytes, or < 0 for
+    size_t srcLen,			/* Source string length in bytes, or TCL_INDEX_NONE for
 				 * encoding-specific string length. */
     int flags,			/* Conversion control flags. */
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
@@ -1126,8 +1126,8 @@ Tcl_ExternalToUtfDStringEx(
     char *dst;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
-    size_t dstLen;
     int result, soFar, srcRead, dstWrote, dstChars;
+    size_t dstLen;
     const char *srcStart = src;
 
     Tcl_DStringInit(dstPtr);
@@ -1158,7 +1158,7 @@ Tcl_ExternalToUtfDStringEx(
 	src += srcRead;
 	if (result != TCL_CONVERT_NOSPACE) {
 	    Tcl_DStringSetLength(dstPtr, soFar);
-	    return (result == TCL_OK) ? (size_t)-1 : (size_t)(src - srcStart);
+	    return (result == TCL_OK) ? TCL_INDEX_NONE : (size_t)(src - srcStart);
 	}
 	flags &= ~TCL_ENCODING_START;
 	srcLen -= srcRead;
@@ -1357,7 +1357,7 @@ Tcl_UtfToExternalDStringEx(
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
     const char *src,		/* Source string in UTF-8. */
-    int srcLen,			/* Source string length in bytes, or < 0 for
+    size_t srcLen,			/* Source string length in bytes, or < 0 for
 				 * strlen(). */
     int flags,	/* Conversion control flags. */
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
@@ -1366,9 +1366,9 @@ Tcl_UtfToExternalDStringEx(
     char *dst;
     Tcl_EncodingState state;
     const Encoding *encodingPtr;
-    size_t dstLen;
     int result, soFar, srcRead, dstWrote, dstChars;
     const char *srcStart = src;
+    size_t dstLen;
 
     Tcl_DStringInit(dstPtr);
     dst = Tcl_DStringValue(dstPtr);
@@ -1397,7 +1397,7 @@ Tcl_UtfToExternalDStringEx(
 	    while (i >= soFar) {
 		Tcl_DStringSetLength(dstPtr, i--);
 	    }
-	    return (result == TCL_OK) ? (size_t)-1 : (size_t)(src - srcStart);
+	    return (result == TCL_OK) ? TCL_INDEX_NONE : (size_t)(src - srcStart);
 	}
 
 	flags &= ~TCL_ENCODING_START;

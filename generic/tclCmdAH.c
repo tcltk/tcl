@@ -474,13 +474,13 @@ EncodingConvertfromObjCmd(
     /*
      * Convert the string into a byte array in 'ds'
      */
-    bytesPtr = (char *) TclGetBytesFromObj(interp, data, &length);
+    bytesPtr = (char *) Tcl_GetBytesFromObj(interp, data, &length);
     if (bytesPtr == NULL) {
 	return TCL_ERROR;
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
-    if ((flags & TCL_ENCODING_STOPONERROR) && (result != (size_t)-1)) {
+    if ((flags & TCL_ENCODING_STOPONERROR) && (result != TCL_INDEX_NONE)) {
 	if (failVarObj != NULL) {
 	    /* I hope, wide int will cover size_t data type */
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
@@ -587,7 +587,7 @@ encConvToOK:
     stringPtr = Tcl_GetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    flags, &ds);
-    if ((flags & TCL_ENCODING_STOPONERROR) && (result != (size_t)-1)) {
+    if ((flags & TCL_ENCODING_STOPONERROR) && (result != TCL_INDEX_NONE)) {
 	size_t pos = Tcl_NumUtfChars(stringPtr, result);
 	int ucs4;
 	char buf[TCL_INTEGER_SPACE];
