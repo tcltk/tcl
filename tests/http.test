@@ -661,7 +661,7 @@ test http-7.3 {http::formatQuery} -setup {
 } -cleanup {
     http::config -urlencoding $enc
 } -result "can't read \"formMap(∈)\": no such element in array"
-test http-7.4 {http::formatQuery} -constraints deprecated -setup {
+test http-7.4 {http::formatQuery} -setup {
     set enc [http::config -urlencoding]
 } -body {
     http::config -urlencoding "iso8859-1"

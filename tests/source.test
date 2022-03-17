@@ -275,7 +275,7 @@ test source-7.5 {source -encoding: correct operation} -setup {
     removeFile source.file
     rename € {}
 } -result foo
-test source-7.6 {source -encoding: mismatch encoding error} -constraints deprecated -setup {
+test source-7.6 {source -encoding: mismatch encoding error} -setup {
     set sourcefile [makeFile {} source.file]
     file delete $sourcefile
     set f [open $sourcefile w]

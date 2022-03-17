@@ -539,7 +539,7 @@ EncodingConverttoObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     size_t length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
-    size_t result, errorPosition = 0;
+    size_t result;
     Tcl_Obj *failVarObj = NULL;
     int flags = 0;
 
