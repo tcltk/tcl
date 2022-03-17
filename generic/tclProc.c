@@ -490,10 +490,10 @@ TclCreateProc(
     }
 
     if (precompiled) {
-	if (numArgs > (size_t)procPtr->numArgs) {
+	if (numArgs > procPtr->numArgs) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "procedure \"%s\": arg list contains %" TCL_Z_MODIFIER "u entries, "
-		    "precompiled header expects %d", procName, numArgs,
+		    "precompiled header expects %" TCL_Z_MODIFIER "u", procName, numArgs,
 		    procPtr->numArgs));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
 		    "BYTECODELIES", NULL);
@@ -1946,7 +1946,7 @@ TclProcCompileProc(
 
 	iPtr->compiledProcPtr = procPtr;
 
-	if (procPtr->numCompiledLocals > procPtr->numArgs) {
+	if ((int)procPtr->numCompiledLocals > (int)procPtr->numArgs) {
 	    CompiledLocal *clPtr = procPtr->firstLocalPtr;
 	    CompiledLocal *lastPtr = NULL;
 	    int i, numArgs = procPtr->numArgs;
