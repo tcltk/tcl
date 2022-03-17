@@ -467,7 +467,7 @@ EncodingConvertfromObjCmd(
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain|-failindex var? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 
