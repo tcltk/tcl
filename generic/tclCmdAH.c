@@ -414,11 +414,7 @@ EncodingConvertfromObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     size_t length = 0;			/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-    int flags = TCL_ENCODING_STOPONERROR;
-#else
-    int flags = TCL_ENCODING_NOCOMPLAIN;
-#endif
+    int flags = 0;
     size_t result;
     Tcl_Obj *failVarObj = NULL;
     /*
@@ -450,7 +446,6 @@ EncodingConvertfromObjCmd(
 		goto encConvFromError;
 	    }
 	    failVarObj = objv[2];
-	    flags = TCL_ENCODING_STOPONERROR;
 	    objcUnprocessed -= 2;
 	}
 	switch (objcUnprocessed) {
@@ -480,7 +475,7 @@ EncodingConvertfromObjCmd(
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
-    if ((flags & TCL_ENCODING_STOPONERROR) && (result != (size_t)-1)) {
+    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != (size_t)-1)) {
 	if (failVarObj != NULL) {
 	    /* I hope, wide int will cover size_t data type */
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
@@ -546,11 +541,7 @@ EncodingConverttoObjCmd(
     const char *stringPtr;	/* Pointer to the first byte of the string */
     size_t result, errorPosition = 0;
     Tcl_Obj *failVarObj = NULL;
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-    int flags = TCL_ENCODING_STOPONERROR;
-#else
-    int flags = TCL_ENCODING_NOCOMPLAIN;
-#endif
+    int flags = 0;
 
     /*
      * Decode parameters:
@@ -581,7 +572,6 @@ EncodingConverttoObjCmd(
 		goto encConvToError;
 	    }
 	    failVarObj = objv[2];
-	    flags = TCL_ENCODING_STOPONERROR;
 	    objcUnprocessed -= 2;
 	}
 	switch (objcUnprocessed) {
@@ -609,7 +599,7 @@ EncodingConverttoObjCmd(
     stringPtr = Tcl_GetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    flags, &ds);
-    if ((flags & TCL_ENCODING_STOPONERROR) && (result != (size_t)-1)) {
+    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != (size_t)-1)) {
 	if (failVarObj != NULL) {
 	    /* I hope, wide int will cover size_t data type */
 	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
