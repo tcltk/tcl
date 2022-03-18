@@ -268,7 +268,7 @@ test io-3.3 {WriteChars: compatibility with WriteBytes: flush on line} {
     close $f
     set x
 } "\r\n12"
-test io-3.4 {WriteChars: loop over stage buffer} deprecated {
+test io-3.4 {WriteChars: loop over stage buffer} -constraints deprecated -body {
     # stage buffer maps to more than can be queued at once.
 
     set f [open $path(test1) w]
@@ -277,8 +277,10 @@ test io-3.4 {WriteChars: loop over stage buffer} deprecated {
     set x [list [contents $path(test1)]]
     close $f
     lappend x [contents $path(test1)]
-} [list "!)!)!)!)!)!)!)!)" "!)!)!)!)!)!)!)!)!)!)!)!)!)!)!)"]
-test io-3.5 {WriteChars: saved != 0} deprecated {
+} -cleanup {
+    catch {close $f}
+} -result [list "!)!)!)!)!)!)!)!)" "!)!)!)!)!)!)!)!)!)!)!)!)!)!)!)"]
+test io-3.5 {WriteChars: saved != 0} -constraints deprecated -body {
     # Bytes produced by UtfToExternal from end of last channel buffer
     # had to be moved to beginning of next channel buffer to preserve
     # requested buffersize.
@@ -289,7 +291,9 @@ test io-3.5 {WriteChars: saved != 0} deprecated {
     set x [list [contents $path(test1)]]
     close $f
     lappend x [contents $path(test1)]
-} [list "!)!)!)!)!)!)!)!)!" "!)!)!)!)!)!)!)!)!)!)!)!)!)!)!)"]
+} -cleanup {
+    catch {close $f}
+} -result [list "!)!)!)!)!)!)!)!)!" "!)!)!)!)!)!)!)!)!)!)!)!)!)!)!)"]
 test io-3.6 {WriteChars: (stageRead + dstWrote == 0)} {
     # One incomplete UTF-8 character at end of staging buffer.  Backup
     # in src to the beginning of that UTF-8 character and try again.
@@ -307,7 +311,7 @@ test io-3.6 {WriteChars: (stageRead + dstWrote == 0)} {
     close $f
     lappend x [contents $path(test1)]
 } [list "12345678901234\x82\x60" "12345678901234\x82\x60\x82\x61"]
-test io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} deprecated {
+test io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} -constraints deprecated -body {
     # When translating UTF-8 to external, the produced bytes went past end
     # of the channel buffer.  This is done purpose -- we then truncate the
     # bytes at the end of the partial character to preserve the requested
@@ -320,7 +324,9 @@ test io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} deprecated {
     set x [list [contents $path(test1)]]
     close $f
     lappend x [contents $path(test1)]
-} [list "!)!)!)!)!)!)!)!)!" "!)!)!)!)!)!)!)!)!)!)!)!)!)!)!)"]
+} -cleanup {
+    catch {close $f}
+} -result [list "!)!)!)!)!)!)!)!)!" "!)!)!)!)!)!)!)!)!)!)!)!)!)!)!)"]
 test io-3.8 {WriteChars: reset sawLF after each buffer} {
     set f [open $path(test1) w]
     fconfigure $f -encoding ascii -buffering line -translation lf \
@@ -1532,7 +1538,7 @@ test io-12.8 {ReadChars: multibyte chars split} {
     close $f
     scan [string index $in end] %c
 } 160
-test io-12.9 {ReadChars: multibyte chars split} deprecated {
+test io-12.9 {ReadChars: multibyte chars split} -constraints deprecated -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
@@ -1542,8 +1548,10 @@ test io-12.9 {ReadChars: multibyte chars split} deprecated {
     set in [read $f]
     close $f
     scan [string index $in end] %c
-} 194
-test io-12.10 {ReadChars: multibyte chars split} deprecated {
+} -cleanup {
+    catch {close $f}
+} -result 194
+test io-12.10 {ReadChars: multibyte chars split} -constraints deprecated -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
@@ -1553,7 +1561,9 @@ test io-12.10 {ReadChars: multibyte chars split} deprecated {
     set in [read $f]
     close $f
     scan [string index $in end] %c
-} 194
+} -cleanup {
+    catch {close $f}
+} -result 194
 
 test io-13.1 {TranslateInputEOL: cr mode} {} {
     set f [open $path(test1) w]
