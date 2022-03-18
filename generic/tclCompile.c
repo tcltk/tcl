@@ -1036,7 +1036,7 @@ CleanupByteCode(
 	statsPtr = &iPtr->stats;
 
 	statsPtr->numByteCodesFreed++;
-	statsPtr->currentSrcBytes -= (double) codePtr->numSrcBytes;
+	statsPtr->currentSrcBytes -= (double) (int)codePtr->numSrcBytes;
 	statsPtr->currentByteCodeBytes -= (double) codePtr->structureSize;
 
 	statsPtr->currentInstBytes -= (double) codePtr->numCodeBytes;
@@ -4527,12 +4527,12 @@ RecordByteCodeStats(
     statsPtr = &(iPtr->stats);
 
     statsPtr->numCompilations++;
-    statsPtr->totalSrcBytes += (double) codePtr->numSrcBytes;
+    statsPtr->totalSrcBytes += (double) (int)codePtr->numSrcBytes;
     statsPtr->totalByteCodeBytes += (double) codePtr->structureSize;
-    statsPtr->currentSrcBytes += (double) codePtr->numSrcBytes;
+    statsPtr->currentSrcBytes += (double) (int)codePtr->numSrcBytes;
     statsPtr->currentByteCodeBytes += (double) codePtr->structureSize;
 
-    statsPtr->srcCount[TclLog2(codePtr->numSrcBytes)]++;
+    statsPtr->srcCount[TclLog2((int)codePtr->numSrcBytes)]++;
     statsPtr->byteCodeCount[TclLog2((int) codePtr->structureSize)]++;
 
     statsPtr->currentInstBytes += (double) codePtr->numCodeBytes;

@@ -270,7 +270,7 @@ DisassembleByteCodeObj(
 
     codeStart = codePtr->codeStart;
     codeLimit = codeStart + codePtr->numCodeBytes;
-    numCmds = codePtr->numCommands;
+    numCmds = (int)codePtr->numCommands;
 
     /*
      * Print header lines describing the ByteCode.
@@ -281,7 +281,7 @@ DisassembleByteCodeObj(
 	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr, iPtr->compileEpoch);
     Tcl_AppendToObj(bufferObj, "  Source ", -1);
     PrintSourceToObj(bufferObj, codePtr->source,
-	    TclMin(codePtr->numSrcBytes, 55));
+	    TclMin((int)codePtr->numSrcBytes, 55));
     GetLocationInformation(codePtr->procPtr, &fileObj, &line);
     if (line >= 0 && fileObj != NULL) {
 	Tcl_AppendPrintfToObj(bufferObj, "\n  File \"%s\" Line %d",
@@ -289,12 +289,12 @@ DisassembleByteCodeObj(
     }
     Tcl_AppendPrintfToObj(bufferObj,
 	    "\n  Cmds %d, src %d, inst %d, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
-	    numCmds, codePtr->numSrcBytes, codePtr->numCodeBytes,
+	    numCmds, (int)codePtr->numSrcBytes, codePtr->numCodeBytes,
 	    codePtr->numLitObjects, codePtr->numAuxDataItems,
 	    codePtr->maxStackDepth,
 #ifdef TCL_COMPILE_STATS
-	    codePtr->numSrcBytes?
-		    codePtr->structureSize/(float)codePtr->numSrcBytes :
+	    (int)codePtr->numSrcBytes?
+		    codePtr->structureSize/(float)(int)codePtr->numSrcBytes :
 #endif
 	    0.0);
 
@@ -1178,7 +1178,7 @@ DisassembleByteCodeAsDicts(
     srcOffPtr = codePtr->srcDeltaStart;
     srcLenPtr = codePtr->srcLengthStart;
     codeOffset = sourceOffset = 0;
-    for (i=0 ; i<codePtr->numCommands ; i++) {
+    for (i=0 ; i<(int)codePtr->numCommands ; i++) {
 	Tcl_Obj *cmd;
 
 	codeOffset += Decode(codeOffPtr);
@@ -1232,7 +1232,7 @@ DisassembleByteCodeAsDicts(
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("commands", -1),
 	    commands);
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("script", -1),
-	    Tcl_NewStringObj(codePtr->source, codePtr->numSrcBytes));
+	    Tcl_NewStringObj(codePtr->source, (int)codePtr->numSrcBytes));
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("namespace", -1),
 	    Tcl_NewStringObj(codePtr->nsPtr->fullName, -1));
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("stackdepth", -1),

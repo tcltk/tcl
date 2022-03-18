@@ -459,8 +459,8 @@ typedef struct ByteCode {
 				 * itself. Does not include heap space for
 				 * literal Tcl objects or storage referenced
 				 * by AuxData entries. */
-    int numCommands;		/* Number of commands compiled. */
-    int numSrcBytes;		/* Number of source bytes compiled. */
+    size_t numCommands;		/* Number of commands compiled. */
+    size_t numSrcBytes;		/* Number of source bytes compiled. */
     int numCodeBytes;		/* Number of code bytes. */
     int numLitObjects;		/* Number of objects in literal array. */
     int numExceptRanges;	/* Number of ExceptionRange array elems. */

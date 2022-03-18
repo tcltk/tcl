@@ -8682,12 +8682,12 @@ PrintByteCodeInfo(
     TclPrintSource(stdout, codePtr->source, 60);
 
     fprintf(stdout, "\n  Cmds %d, src %d, inst %u, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
-	    codePtr->numCommands, codePtr->numSrcBytes,
+	    (int)codePtr->numCommands, (int)codePtr->numSrcBytes,
 	    codePtr->numCodeBytes, codePtr->numLitObjects,
 	    codePtr->numAuxDataItems, codePtr->maxStackDepth,
 #ifdef TCL_COMPILE_STATS
-	    codePtr->numSrcBytes?
-		    ((float)codePtr->structureSize)/codePtr->numSrcBytes :
+	    (int)codePtr->numSrcBytes?
+		    ((float)codePtr->structureSize)/(int)codePtr->numSrcBytes :
 #endif
 	    0.0);
 
