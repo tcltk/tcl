@@ -1867,14 +1867,7 @@ typedef struct Tcl_EncodingType {
  *				reset to an initial state. If the source
  *				buffer contains the entire input stream to be
  *				converted, this flag should be set.
- * TCL_ENCODING_STOPONERROR -	If set, the converter returns immediately upon
- *				encountering an invalid byte sequence or a
- *				source character that has no mapping in the
- *				target encoding. If clear, the converter
- *				substitues the problematic character(s) with
- *				one or more "close" characters in the
- *				destination buffer and then continues to
- *				convert the source.
+ * TCL_ENCODING_STOPONERROR -	Not used any more.
  * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf does not append a
  *				terminating NUL byte.  Since it does not need
  *				an extra byte for a terminating NUL, it fills
@@ -1889,13 +1882,27 @@ typedef struct Tcl_EncodingType {
  *				content.  Otherwise, the number of chars
  *				produced is controlled only by other limiting
  *				factors.
+ * TCL_ENCODING_MODIFIED -	Convert NULL bytes to \xC0\x80 in stead of
+ *				0x00. Only valid for "utf-8" and "cesu-8".
+ *				This flag is implicit for external -> internal conversions,
+ *				optional for internal -> external conversions.
+ * TCL_ENCODING_NOCOMPLAIN -	If set, the converter
+ *				substitutes the problematic character(s) with
+ *				one or more "close" characters in the
+ *				destination buffer and then continues to
+ *				convert the source. If clear, the converter returns
+ *				immediately upon encountering an invalid byte sequence
+ *				or a source character that has no mapping in the
+ *				target encoding. Only for Tcl 9.x.
  */
 
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
-#define TCL_ENCODING_STOPONERROR	0x04
+#define TCL_ENCODING_STOPONERROR	0x0 /* Not used any more */
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
+#define TCL_ENCODING_MODIFIED		0x20
+#define TCL_ENCODING_NOCOMPLAIN		0x40
 
 /*
  * The following definitions are the error codes returned by the conversion
@@ -1917,12 +1924,12 @@ typedef struct Tcl_EncodingType {
  *				character sequence. This may occur if the
  *				input stream has been damaged or if the input
  *				encoding method was misidentified. This error
- *				is reported only if TCL_ENCODING_STOPONERROR
+ *				is reported unless if TCL_ENCODING_NOCOMPLAIN
  *				was specified.
  * TCL_CONVERT_UNKNOWN -	The source string contained a character that
  *				could not be represented in the target
- *				encoding. This error is reported only if
- *				TCL_ENCODING_STOPONERROR was specified.
+ *				encoding. This error is reported unless if
+ *				TCL_ENCODING_NOCOMPLAIN was specified.
  */
 
 #define TCL_CONVERT_MULTIBYTE	(-1)

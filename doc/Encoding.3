@@ -25,8 +25,14 @@ int
 char *
 \fBTcl_ExternalToUtfDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
 .sp
+size_t
+\fBTcl_ExternalToUtfDStringEx\fR(\fIencoding, src, srcLen, flags, dstPtr\fR)
+.sp
 char *
 \fBTcl_UtfToExternalDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
+.sp
+size_t
+\fBTcl_UtfToExternalDStringEx\fR(\fIencoding, src, srcLen, flags, dstPtr\fR)
 .sp
 int
 \fBTcl_ExternalToUtf\fR(\fIinterp, encoding, src, srcLen, flags, statePtr,
@@ -93,10 +99,13 @@ converted. \fBTCL_ENCODING_END\fR signifies that the source buffer is the last
 block in a (potentially multi-block) input stream, telling the conversion
 routine to perform any finalization that needs to occur after the last
 byte is converted and then to reset to an initial state.
-\fBTCL_ENCODING_STOPONERROR\fR signifies that the conversion routine should
-return immediately upon reading a source character that does not exist in
-the target encoding; otherwise a default fallback character will
-automatically be substituted.
+\fBTCL_ENCODING_NOCOMPLAIN\fR signifies that the conversion routine should
+not return immediately upon reading a source character that does not exist in
+the target encoding, but it will substitute a default fallback character for
+all of such characters. The flag \fBTCL_ENCODING_STOPONERROR\fR has no effect,
+it only has meaning in Tcl 8.x. The flag \fBTCL_ENCODING_MODIFIED\fR makes
+\fBTcl_UtfToExternalDStringEx\fR and \fBTcl_UtfToExternal\fR produce the byte
+sequence \exC0\ex80 in stead of \ex00, for the utf-8/cesu-8 encoders.
 .AP Tcl_EncodingState *statePtr in/out
 Used when converting a (generally long or indefinite length) byte stream
 in a piece-by-piece fashion.  The conversion routine stores its current
@@ -196,6 +205,11 @@ When converting, if any of the characters in the source buffer cannot be
 represented in the target encoding, a default fallback character will be
 used.  The return value is a pointer to the value stored in the DString.
 .PP
+\fBTcl_ExternalToUtfDStringEx\fR is the same as \fBTcl_ExternalToUtfDString\fR,
+but it has an additional flags parameter.  The return value is the index of
+the first byte in the input string causing a conversion error.
+Or (size_t)-1 if all is OK.
+.PP
 \fBTcl_ExternalToUtf\fR converts a source buffer \fIsrc\fR from the specified
 \fIencoding\fR into UTF-8.  Up to \fIsrcLen\fR bytes are converted from the
 source buffer and up to \fIdstLen\fR converted bytes are stored in \fIdst\fR.
@@ -222,7 +236,7 @@ if the input stream has been damaged or if the input encoding method was
 misidentified.
 .IP \fBTCL_CONVERT_UNKNOWN\fR 29
 The source buffer contained a character that could not be represented in
-the target encoding and \fBTCL_ENCODING_STOPONERROR\fR was specified.
+the target encoding and \fBTCL_ENCODING_NOCOMPLAIN\fR was not specified.
 .RE
 .LP
 \fBTcl_UtfToExternalDString\fR converts a source buffer \fIsrc\fR from UTF-8
@@ -233,6 +247,11 @@ information stored in \fIdstPtr\fR.  When converting, if any of the
 characters in the source buffer cannot be represented in the target
 encoding, a default fallback character will be used.  The return value is
 a pointer to the value stored in the DString.
+.PP
+\fBTcl_UtfToExternalDStringEx\fR is the same as \fBTcl_UtfToExternalDString\fR,
+but it has an additional flags parameter.  The return value is the index of
+the first byte of an utf-8 byte-sequence in the input string causing a
+conversion error. Or (size_t)-1 if all is OK.
 .PP
 \fBTcl_UtfToExternal\fR converts a source buffer \fIsrc\fR from UTF-8 into
 the specified \fIencoding\fR.  Up to \fIsrcLen\fR bytes are converted from
