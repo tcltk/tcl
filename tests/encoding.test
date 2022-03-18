@@ -22,7 +22,7 @@ catch {
     package require -exact tcl::test [info patchlevel]
 }
 
-testConstraint deprecated [expr {![info exists tcl_precision]}]
+package require tcltests
 
 proc toutf {args} {
     variable x
@@ -639,28 +639,28 @@ test encoding-24.11 {Parse valid or invalid utf-8} {
 } 1
 test encoding-24.12 {Parse valid or invalid utf-8} -constraints deprecated -body {
     encoding convertfrom utf-8 "\xC0\x81"
-} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC0'}
+} -result \xC0\x81
 test encoding-24.13 {Parse valid or invalid utf-8} -constraints deprecated -body {
     encoding convertfrom utf-8 "\xC1\xBF"
-} -returnCodes 1 -result {unexpected byte sequence starting at index 0: '\xC1'}
+} -result \xC1\xBF
 test encoding-24.14 {Parse valid or invalid utf-8} {
     string length [encoding convertfrom utf-8 "\xC2\x80"]
 } 1
 test encoding-24.15 {Parse valid or invalid utf-8} -constraints deprecated -body {
     encoding convertfrom utf-8 "Z\xE0\x80"
-} -returnCodes 1 -result {unexpected byte sequence starting at index 1: '\xE0'}
-test encoding-24.16 {Parse valid or invalid utf-8} -constraints {testbytestring deprecated} -body {
+} -result Z\xE0\x80
+test encoding-24.16 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\u4343\x80"]
 } -returnCodes 1 -result {expected byte sequence but character 1 was '䍃' (U+004343)}
-test encoding-24.17 {Parse valid or invalid utf-8} -constraints {testbytestring deprecated} -body {
+test encoding-24.17 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\xE0\x80"]
 } -result "Z\xC3\xA0\xE2\x82\xAC"
-test encoding-24.18 {Parse valid or invalid utf-8} -constraints {testbytestring deprecated} -body {
+test encoding-24.18 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\xE0\x80xxxxxx"]
 } -result "Z\xC3\xA0\xE2\x82\xACxxxxxx"
 test encoding-24.19 {Parse valid or invalid utf-8} -constraints deprecated -body {
     encoding convertto utf-8 "ZX\uD800"
-} -returnCodes 1 -match glob -result "unexpected character at index 2: 'U+00D800'"
+} -result ZX\xED\xA0\x80
 test encoding-24.20 {Parse with -nocomplain but without providing encoding} {
     string length [encoding convertfrom -nocomplain "\x20"]
 } 1
