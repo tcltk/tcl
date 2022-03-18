@@ -414,11 +414,7 @@ EncodingConvertfromObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     size_t length = 0;			/* Length of the byte array being converted */
     const char *bytesPtr;	/* Pointer to the first byte of the array */
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-    int flags = TCL_ENCODING_STOPONERROR;
-#else
-    int flags = TCL_ENCODING_NOCOMPLAIN;
-#endif
+    int flags = 0;
     size_t result;
 
     if (objc == 2) {
@@ -459,7 +455,7 @@ encConvFromOK:
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
-    if ((flags & TCL_ENCODING_STOPONERROR) && (result != TCL_INDEX_NONE)) {
+    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != (size_t)-1)) {
 	char buf[TCL_INTEGER_SPACE];
 	sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte sequence starting at index %"
@@ -513,11 +509,7 @@ EncodingConverttoObjCmd(
     size_t length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
     size_t result;
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-    int flags = TCL_ENCODING_STOPONERROR;
-#else
-    int flags = TCL_ENCODING_NOCOMPLAIN;
-#endif
+    int flags = 0;
 
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
@@ -555,7 +547,7 @@ encConvToOK:
     stringPtr = Tcl_GetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    flags, &ds);
-    if ((flags & TCL_ENCODING_STOPONERROR) && (result != TCL_INDEX_NONE)) {
+    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != (size_t)-1)) {
 	size_t pos = Tcl_NumUtfChars(stringPtr, result);
 	int ucs4;
 	char buf[TCL_INTEGER_SPACE];

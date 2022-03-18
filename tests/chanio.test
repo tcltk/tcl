@@ -255,8 +255,8 @@ test chan-io-3.4 {WriteChars: loop over stage buffer} -body {
     chan configure $f -encoding jis0208 -buffersize 16
     chan puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
+} -cleanup {
     chan close $f
-    lappend x [contents $path(test1)]
 } -errorCode {POSIX EILSEQ {illegal byte sequence}} -match glob -result {error writing "*": illegal byte sequence}
 test chan-io-3.5 {WriteChars: saved != 0} -body {
     # Bytes produced by UtfToExternal from end of last channel buffer had to
@@ -266,8 +266,8 @@ test chan-io-3.5 {WriteChars: saved != 0} -body {
     chan configure $f -encoding jis0208 -buffersize 17
     chan puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
+} -cleanup {
     chan close $f
-    lappend x [contents $path(test1)]
 } -errorCode {POSIX EILSEQ {illegal byte sequence}} -match glob -result {error writing "*": illegal byte sequence}
 test chan-io-3.6 {WriteChars: (stageRead + dstWrote == 0)} {
     # One incomplete UTF-8 character at end of staging buffer. Backup in src
@@ -295,8 +295,8 @@ test chan-io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} -body {
     chan configure $f -encoding jis0208 -buffersize 17
     chan puts -nonewline $f "\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
     set x [list [contents $path(test1)]]
+} -cleanup {
     chan close $f
-    lappend x [contents $path(test1)]
 } -errorCode {POSIX EILSEQ {illegal byte sequence}} -match glob -result {error writing "*": illegal byte sequence}
 test chan-io-3.8 {WriteChars: reset sawLF after each buffer} {
     set f [open $path(test1) w]

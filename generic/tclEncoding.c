@@ -1089,11 +1089,9 @@ Tcl_ExternalToUtfDString(
  * Tcl_ExternalToUtfDStringEx --
  *
  *	Convert a source buffer from the specified encoding into UTF-8.
-*	The parameter flags controls the behavior, if any of the bytes in
+ *	The parameter flags controls the behavior, if any of the bytes in
  *	the source buffer are invalid or cannot be represented in utf-8.
  *	Possible flags values:
- *	TCL_ENCODING_STOPONERROR: don't replace invalid characters/bytes but
- *	return the first error position (Default in Tcl 9.0).
  *	TCL_ENCODING_NOCOMPLAIN: replace invalid characters/bytes by a default
  *	fallback character. Always return -1 (Default in Tcl 8.7).
  *	TCL_ENCODING_MODIFIED: convert NULL bytes to \xC0\x80 in stead of 0x00.
@@ -1332,8 +1330,6 @@ Tcl_UtfToExternalDString(
  *	the source buffer are invalid or cannot be represented in the
  *	target encoding.
  *	Possible flags values:
- *	TCL_ENCODING_STOPONERROR: don't replace invalid characters/bytes but
- *	return the first error position (Default in Tcl 9.0).
  *	TCL_ENCODING_NOCOMPLAIN: replace invalid characters/bytes by a default
  *	fallback character. Always return -1 (Default in Tcl 8.7).
  *	TCL_ENCODING_MODIFIED: convert NULL bytes to \xC0\x80 in stead of 0x00.
@@ -2225,12 +2221,6 @@ BinaryProc(
  *-------------------------------------------------------------------------
  */
 
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-#   define STOPONERROR !(flags & TCL_ENCODING_NOCOMPLAIN)
-#else
-#   define STOPONERROR (flags & TCL_ENCODING_STOPONERROR)
-#endif
-
 static int
 UtfToUtfProc(
     ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_MODIFIED */
@@ -2313,7 +2303,7 @@ UtfToUtfProc(
 	     */
 
 	    if (flags & TCL_ENCODING_MODIFIED) {
-		if (STOPONERROR) {
+		if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
@@ -2328,7 +2318,7 @@ UtfToUtfProc(
 	    int low;
 	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
-	    if ((len < 2) && (ch != 0) && STOPONERROR
+	    if ((len < 2) && (ch != 0) && !(flags & TCL_ENCODING_NOCOMPLAIN)
 		    && (flags & TCL_ENCODING_MODIFIED)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
@@ -2354,7 +2344,7 @@ UtfToUtfProc(
 
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
 
-		    if (STOPONERROR) {
+		    if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
 			result = TCL_CONVERT_UNKNOWN;
 			src = saveSrc;
 			break;
@@ -2369,7 +2359,7 @@ UtfToUtfProc(
 		dst += Tcl_UniCharToUtf(ch, dst);
 		ch = low;
 	    } else if (!Tcl_UniCharIsUnicode(ch)) {
-		if (STOPONERROR) {
+		if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
 		    result = TCL_CONVERT_UNKNOWN;
 		    src = saveSrc;
 		    break;
@@ -2555,7 +2545,7 @@ UtfToUtf32Proc(
 	}
 	len = TclUtfToUCS4(src, &ch);
 	if (!Tcl_UniCharIsUnicode(ch)) {
-	    if (STOPONERROR) {
+	    if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -2758,7 +2748,7 @@ UtfToUtf16Proc(
 	}
 	len = TclUtfToUCS4(src, &ch);
 	if (!Tcl_UniCharIsUnicode(ch)) {
-	    if (STOPONERROR) {
+	    if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -2978,7 +2968,7 @@ TableToUtfProc(
 	    ch = pageZero[byte];
 	}
 	if ((ch == 0) && (byte != 0)) {
-	    if (STOPONERROR) {
+	    if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
 		result = TCL_CONVERT_SYNTAX;
 		break;
 	    }
@@ -3094,7 +3084,7 @@ TableFromUtfProc(
 	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
-	    if (STOPONERROR) {
+	    if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -3282,7 +3272,7 @@ Iso88591FromUtfProc(
 		|| ((ch >= 0xD800) && (len < 3))
 #endif
 		) {
-	    if (STOPONERROR) {
+	    if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
@@ -3509,7 +3499,7 @@ EscapeToUtfProc(
 
 	    if ((checked == dataPtr->numSubTables + 2)
 		    || (flags & TCL_ENCODING_END)) {
-		if (!STOPONERROR) {
+		if (!!(flags & TCL_ENCODING_NOCOMPLAIN)) {
 		    /*
 		     * Skip the unknown escape sequence.
 		     */
@@ -3684,7 +3674,7 @@ EscapeFromUtfProc(
 
 	    if (word == 0) {
 		state = oldState;
-		if (STOPONERROR) {
+		if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
 		    result = TCL_CONVERT_UNKNOWN;
 		    break;
 		}
