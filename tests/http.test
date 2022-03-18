@@ -15,6 +15,7 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+package require tcltests
 
 if {[catch {package require http 2} version]} {
     if {[info exists http2]} {
