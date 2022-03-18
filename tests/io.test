@@ -277,6 +277,8 @@ test io-3.4 {WriteChars: loop over stage buffer} -body {
     set x [list [contents $path(test1)]]
     close $f
     lappend x [contents $path(test1)]
+} -cleanup {
+    catch {close $f}
 } -errorCode {POSIX EILSEQ {illegal byte sequence}} -match glob -result {error writing "*": illegal byte sequence}
 test io-3.5 {WriteChars: saved != 0} -body {
     # Bytes produced by UtfToExternal from end of last channel buffer
@@ -289,6 +291,8 @@ test io-3.5 {WriteChars: saved != 0} -body {
     set x [list [contents $path(test1)]]
     close $f
     lappend x [contents $path(test1)]
+} -cleanup {
+    catch {close $f}
 } -errorCode {POSIX EILSEQ {illegal byte sequence}} -match glob -result {error writing "*": illegal byte sequence}
 test io-3.6 {WriteChars: (stageRead + dstWrote == 0)} {
     # One incomplete UTF-8 character at end of staging buffer.  Backup
@@ -320,6 +324,8 @@ test io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} -body {
     set x [list [contents $path(test1)]]
     close $f
     lappend x [contents $path(test1)]
+} -cleanup {
+    catch {close $f}
 } -errorCode {POSIX EILSEQ {illegal byte sequence}} -match glob -result {error writing "*": illegal byte sequence}
 test io-3.8 {WriteChars: reset sawLF after each buffer} {
     set f [open $path(test1) w]
@@ -1532,7 +1538,7 @@ test io-12.8 {ReadChars: multibyte chars split} {
     close $f
     scan [string index $in end] %c
 } 160
-test io-12.9 {ReadChars: multibyte chars split} knownBug {
+test io-12.9 {ReadChars: multibyte chars split} -constraints knownBug -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
@@ -1542,8 +1548,10 @@ test io-12.9 {ReadChars: multibyte chars split} knownBug {
     set in [read $f]
     close $f
     scan [string index $in end] %c
-} 194
-test io-12.10 {ReadChars: multibyte chars split} knownBug {
+} -cleanup {
+    catch {close $f}
+} -result 194
+test io-12.10 {ReadChars: multibyte chars split} -constraints knownBug -body {
     set f [open $path(test1) w]
     fconfigure $f -translation binary
     puts -nonewline $f [string repeat a 9]\xC2
@@ -1553,7 +1561,9 @@ test io-12.10 {ReadChars: multibyte chars split} knownBug {
     set in [read $f]
     close $f
     scan [string index $in end] %c
-} 194
+} -cleanup {
+    catch {close $f}
+} -result 194
 
 test io-13.1 {TranslateInputEOL: cr mode} {} {
     set f [open $path(test1) w]

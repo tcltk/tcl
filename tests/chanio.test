@@ -269,7 +269,7 @@ test chan-io-3.5 {WriteChars: saved != 0} -body {
 } -cleanup {
     chan close $f
 } -errorCode {POSIX EILSEQ {illegal byte sequence}} -match glob -result {error writing "*": illegal byte sequence}
-test chan-io-3.6 {WriteChars: (stageRead + dstWrote == 0)} {
+test chan-io-3.6 {WriteChars: (stageRead + dstWrote == 0)} -body {
     # One incomplete UTF-8 character at end of staging buffer. Backup in src
     # to the beginning of that UTF-8 character and try again.
     #
@@ -284,7 +284,9 @@ test chan-io-3.6 {WriteChars: (stageRead + dstWrote == 0)} {
     set x [list [contents $path(test1)]]
     chan close $f
     lappend x [contents $path(test1)]
-} [list "12345678901234\x82\x60" "12345678901234\x82\x60\x82\x61"]
+} -cleanup {
+    catch {chan close $f}
+} -result [list "12345678901234\x82\x60" "12345678901234\x82\x60\x82\x61"]
 test chan-io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} -body {
     # When translating UTF-8 to external, the produced bytes went past end of
     # the channel buffer. This is done on purpose - we then truncate the bytes
@@ -298,7 +300,7 @@ test chan-io-3.7 {WriteChars: (bufPtr->nextAdded > bufPtr->length)} -body {
 } -cleanup {
     chan close $f
 } -errorCode {POSIX EILSEQ {illegal byte sequence}} -match glob -result {error writing "*": illegal byte sequence}
-test chan-io-3.8 {WriteChars: reset sawLF after each buffer} {
+test chan-io-3.8 {WriteChars: reset sawLF after each buffer} -body {
     set f [open $path(test1) w]
     chan configure $f -encoding ascii -buffering line -translation lf \
 	     -buffersize 16
@@ -306,7 +308,9 @@ test chan-io-3.8 {WriteChars: reset sawLF after each buffer} {
     set x [list [contents $path(test1)]]
     chan close $f
     lappend x [contents $path(test1)]
-} [list "abcdefg\nhijklmno" "abcdefg\nhijklmnopqrstuvwxyz"]
+} -cleanup {
+    catch {chan close $f}
+} -result [list "abcdefg\nhijklmno" "abcdefg\nhijklmnopqrstuvwxyz"]
 
 test chan-io-4.1 {TranslateOutputEOL: lf} {
     # search for \n
