@@ -525,7 +525,7 @@ TclGetContLineTable(void)
 ContLineLoc *
 TclContinuationsEnter(
     Tcl_Obj *objPtr,
-    int num,
+    size_t num,
     int *loc)
 {
     int newEntry;

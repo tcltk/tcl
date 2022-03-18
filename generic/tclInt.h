@@ -1090,7 +1090,7 @@ typedef struct AssocData {
 
 typedef struct LocalCache {
     size_t refCount;
-    int numVars;
+    size_t numVars;
     Tcl_Obj *varName0;
 } LocalCache;
 
@@ -1292,7 +1292,7 @@ typedef struct CFWordBC {
 #define CLL_END		(-1)
 
 typedef struct ContLineLoc {
-    int num;			/* Number of entries in loc, not counting the
+    size_t num;			/* Number of entries in loc, not counting the
 				 * final -1 marker entry. */
     int loc[TCLFLEXARRAY];/* Table of locations, as character offsets.
 				 * The table is allocated as part of the
@@ -2877,7 +2877,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
 MODULE_SCOPE Tcl_NRPostProc TclClearRootEnsemble;
 MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
 			    Tcl_Obj *value2Ptr);
-MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, int num,
+MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, size_t num,
 			    int *loc);
 MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
 			    int start, int *clNext);

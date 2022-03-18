@@ -2215,7 +2215,7 @@ TclCompileScript(
 	numBytes -= next - p;
 	p = next;
 
-	if ((int)parsePtr->numWords == 0) {
+	if (parsePtr->numWords == 0) {
 	    /*
 	     * The "command" parsed has no words.  In this case we can skip
 	     * the rest of the loop body.  With no words, clearly
@@ -2991,7 +2991,7 @@ TclFindCompiledLocal(
 {
     CompiledLocal *localPtr;
     int localVar = -1;
-    int i;
+    size_t i;
     Proc *procPtr;
 
     /*
@@ -3029,7 +3029,7 @@ TclFindCompiledLocal(
     }
 
     if (name != NULL) {
-	int localCt = procPtr->numCompiledLocals;
+	size_t localCt = procPtr->numCompiledLocals;
 
 	localPtr = procPtr->firstLocalPtr;
 	for (i = 0;  i < localCt;  i++) {

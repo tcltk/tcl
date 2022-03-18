@@ -1543,7 +1543,7 @@ Tcl_ParseVar(
     if (termPtr != NULL) {
 	*termPtr = start + parsePtr->tokenPtr->size;
     }
-    if ((int)parsePtr->numTokens == 1) {
+    if (parsePtr->numTokens == 1) {
 	/*
 	 * There isn't a variable name after all: the $ is just a $.
 	 */

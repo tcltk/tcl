@@ -1246,7 +1246,7 @@ TclFreeLocalCache(
     Tcl_Interp *interp,
     LocalCache *localCachePtr)
 {
-    int i;
+    size_t i;
     Tcl_Obj **namePtrPtr = &localCachePtr->varName0;
 
     for (i = 0; i < localCachePtr->numVars; i++, namePtrPtr++) {
@@ -1266,8 +1266,8 @@ InitLocalCache(
 {
     Interp *iPtr = procPtr->iPtr;
     ByteCode *codePtr;
-    int localCt = procPtr->numCompiledLocals;
-    int numArgs = procPtr->numArgs, i = 0;
+    size_t localCt = procPtr->numCompiledLocals;
+    size_t numArgs = procPtr->numArgs, i = 0;
 
     Tcl_Obj **namePtr;
     Var *varPtr;

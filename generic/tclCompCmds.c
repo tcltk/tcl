@@ -255,7 +255,7 @@ TclCompileArrayExistsCmd(
     Tcl_Token *tokenPtr;
     int isScalar, localIndex;
 
-    if ((int)parsePtr->numWords != 2) {
+    if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
     }
 
@@ -293,7 +293,7 @@ TclCompileArraySetCmd(
     Tcl_Obj *literalObj;
     ForeachInfo *infoPtr;
 
-    if ((int)parsePtr->numWords != 3) {
+    if (parsePtr->numWords != 3) {
 	return TCL_ERROR;
     }
 
@@ -461,7 +461,7 @@ TclCompileArrayUnsetCmd(
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     int isScalar, localIndex;
 
-    if ((int)parsePtr->numWords != 2) {
+    if (parsePtr->numWords != 2) {
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
@@ -519,7 +519,7 @@ TclCompileBreakCmd(
     ExceptionRange *rangePtr;
     ExceptionAux *auxPtr;
 
-    if ((int)parsePtr->numWords != 1) {
+    if (parsePtr->numWords != 1) {
 	return TCL_ERROR;
     }
 
@@ -613,7 +613,7 @@ TclCompileCatchCmd(
 	}
 
 	/* DKF */
-	if ((int)parsePtr->numWords == 4) {
+	if (parsePtr->numWords == 4) {
 	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
 	    optsIndex = LocalScalarFromToken(optsNameTokenPtr, envPtr);
 	    if (optsIndex < 0) {
@@ -821,7 +821,7 @@ TclCompileClockReadingCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    if ((int)parsePtr->numWords != 1) {
+    if (parsePtr->numWords != 1) {
 	return TCL_ERROR;
     }
 
@@ -862,7 +862,7 @@ TclCompileConcatCmd(
     int i;
 
     /* TODO: Consider compiling expansion case. */
-    if ((int)parsePtr->numWords == 1) {
+    if (parsePtr->numWords == 1) {
 	/*
 	 * [concat] without arguments just pushes an empty object.
 	 */
@@ -949,7 +949,7 @@ TclCompileContinueCmd(
      * There should be no argument after the "continue".
      */
 
-    if ((int)parsePtr->numWords != 1) {
+    if (parsePtr->numWords != 1) {
 	return TCL_ERROR;
     }
 
@@ -1076,7 +1076,7 @@ TclCompileDictIncrCmd(
      * Parse the increment amount, if present.
      */
 
-    if ((int)parsePtr->numWords == 4) {
+    if (parsePtr->numWords == 4) {
 	const char *word;
 	size_t numBytes;
 	int code;
@@ -1295,7 +1295,7 @@ TclCompileDictCreateCmd(
     int i;
     size_t len;
 
-    if (((int)parsePtr->numWords & 1) == 0) {
+    if ((parsePtr->numWords & 1) == 0) {
 	return TCL_ERROR;
     }
 
@@ -1394,7 +1394,7 @@ TclCompileDictMergeCmd(
     if ((int)parsePtr->numWords < 2) {
 	PushStringLiteral(envPtr, "");
 	return TCL_OK;
-    } else if ((int)parsePtr->numWords == 2) {
+    } else if (parsePtr->numWords == 2) {
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 1);
 	TclEmitOpcode(		INST_DUP,			envPtr);
@@ -1539,7 +1539,7 @@ CompileDictEachCmd(
      * There must be three arguments after the command.
      */
 
-    if ((int)parsePtr->numWords != 4) {
+    if (parsePtr->numWords != 4) {
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
@@ -1967,7 +1967,7 @@ TclCompileDictLappendCmd(
 
     /* TODO: Consider support for compiling expanded args. */
     /* Probably not.  Why is INST_DICT_LAPPEND limited to one value? */
-    if ((int)parsePtr->numWords != 4) {
+    if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
 
@@ -2374,13 +2374,13 @@ TclCompileErrorCmd(
      * Construct the options. Note that -code and -level are not here.
      */
 
-    if ((int)parsePtr->numWords == 2) {
+    if (parsePtr->numWords == 2) {
 	PushStringLiteral(envPtr, "");
     } else {
 	PushStringLiteral(envPtr, "-errorinfo");
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 2);
-	if ((int)parsePtr->numWords == 3) {
+	if (parsePtr->numWords == 3) {
 	    TclEmitInstInt4(	INST_LIST, 2,			envPtr);
 	} else {
 	    PushStringLiteral(envPtr, "-errorcode");
@@ -2427,7 +2427,7 @@ TclCompileExprCmd(
 {
     Tcl_Token *firstWordPtr;
 
-    if ((int)parsePtr->numWords == 1) {
+    if (parsePtr->numWords == 1) {
 	return TCL_ERROR;
     }
 
@@ -2475,7 +2475,7 @@ TclCompileForCmd(
     int bodyCodeOffset, nextCodeOffset, jumpDist;
     int bodyRange, nextRange;
 
-    if ((int)parsePtr->numWords != 5) {
+    if (parsePtr->numWords != 5) {
 	return TCL_ERROR;
     }
 
