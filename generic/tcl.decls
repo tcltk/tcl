@@ -564,7 +564,7 @@ declare 151 {
 	    int *modePtr)
 }
 declare 152 {
-    int Tcl_GetChannelBufferSize(Tcl_Channel chan)
+    size_t Tcl_GetChannelBufferSize(Tcl_Channel chan)
 }
 declare 153 {
     int Tcl_GetChannelHandle(Tcl_Channel chan, int direction,

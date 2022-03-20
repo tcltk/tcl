@@ -102,7 +102,7 @@ typedef struct CopyState {
     Tcl_WideInt total;		/* Total bytes transferred (written). */
     Tcl_Interp *interp;		/* Interp that started the copy. */
     Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
-    int bufSize;		/* Size of appended buffer. */
+    size_t bufSize;		/* Size of appended buffer. */
     char buffer[1];		/* Copy buffer, this must be the last
                                  * field. */
 } CopyState;
@@ -125,12 +125,12 @@ typedef struct {
 				 * ChannelState exists per set of stacked
 				 * channels. */
     Tcl_Channel stdinChannel;	/* Static variable for the stdin channel. */
-    int stdinInitialized;
     Tcl_Channel stdoutChannel;	/* Static variable for the stdout channel. */
-    int stdoutInitialized;
     Tcl_Channel stderrChannel;	/* Static variable for the stderr channel. */
-    int stderrInitialized;
     Tcl_Encoding binaryEncoding;
+    int stdinInitialized;
+    int stdoutInitialized;
+    int stderrInitialized;
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -151,7 +151,7 @@ typedef struct CloseCallback {
  * Static functions in this file:
  */
 
-static ChannelBuffer *	AllocChannelBuffer(int length);
+static ChannelBuffer *	AllocChannelBuffer(size_t length);
 static void		PreserveChannelBuffer(ChannelBuffer *bufPtr);
 static void		ReleaseChannelBuffer(ChannelBuffer *bufPtr);
 static int		IsShared(ChannelBuffer *bufPtr);
@@ -275,17 +275,17 @@ static int              WillRead(Channel *chanPtr);
  * --------------------------------------------------------------------------
  */
 
-#define BytesLeft(bufPtr)	((size_t)((bufPtr)->nextAdded - (bufPtr)->nextRemoved))
+#define BytesLeft(bufPtr)	(((size_t)(bufPtr)->nextAdded - (size_t)(bufPtr)->nextRemoved))
 
-#define SpaceLeft(bufPtr)	((size_t)((bufPtr)->bufLength - (bufPtr)->nextAdded))
+#define SpaceLeft(bufPtr)	(((bufPtr)->bufLength - (size_t)(bufPtr)->nextAdded))
 
 #define IsBufferReady(bufPtr)	((bufPtr)->nextAdded > (bufPtr)->nextRemoved)
 
 #define IsBufferEmpty(bufPtr)	((bufPtr)->nextAdded == (bufPtr)->nextRemoved)
 
-#define IsBufferFull(bufPtr)	((bufPtr) && (bufPtr)->nextAdded >= (bufPtr)->bufLength)
+#define IsBufferFull(bufPtr)	((bufPtr) && (size_t)(bufPtr)->nextAdded >= (bufPtr)->bufLength)
 
-#define IsBufferOverflowing(bufPtr) ((bufPtr)->nextAdded>(bufPtr)->bufLength)
+#define IsBufferOverflowing(bufPtr) ((size_t)(bufPtr)->nextAdded>(bufPtr)->bufLength)
 
 #define InsertPoint(bufPtr)	(&(bufPtr)->buf[(bufPtr)->nextAdded])
 
@@ -2446,10 +2446,10 @@ Tcl_GetChannelHandle(
 
 static ChannelBuffer *
 AllocChannelBuffer(
-    int length)			/* Desired length of channel buffer. */
+    size_t length)			/* Desired length of channel buffer. */
 {
     ChannelBuffer *bufPtr;
-    int n;
+    size_t n;
 
     n = length + CHANNELBUFFER_HEADER_SIZE + BUFFER_PADDING + BUFFER_PADDING;
     bufPtr = (ChannelBuffer *)Tcl_Alloc(n);
@@ -2532,7 +2532,7 @@ RecycleBuffer(
      * This is to honor dynamic changes of the buffersize made by the user.
      */
 
-    if ((bufPtr->bufLength - BUFFER_PADDING) != statePtr->bufSize) {
+    if ((bufPtr->bufLength) != statePtr->bufSize + BUFFER_PADDING) {
 	ReleaseChannelBuffer(bufPtr);
 	return;
     }
@@ -6906,7 +6906,7 @@ GetInput(
 	 */
 
 	if ((bufPtr != NULL)
-		&& (bufPtr->bufLength - BUFFER_PADDING != statePtr->bufSize)) {
+		&& (bufPtr->bufLength != statePtr->bufSize + BUFFER_PADDING)) {
 	    ReleaseChannelBuffer(bufPtr);
 	    bufPtr = NULL;
 	}
@@ -6917,7 +6917,7 @@ GetInput(
 	bufPtr->nextPtr = NULL;
 
 	toRead = SpaceLeft(bufPtr);
-	assert(toRead == statePtr->bufSize);
+	assert((size_t)toRead == statePtr->bufSize);
 
 	if (statePtr->inQueueTail == NULL) {
 	    statePtr->inQueueHead = bufPtr;
@@ -7571,7 +7571,7 @@ Tcl_SetChannelBufferSize(
 
     statePtr = ((Channel *) chan)->state;
 
-    if ((size_t)statePtr->bufSize == sz) {
+    if (statePtr->bufSize == sz) {
 	return;
     }
     statePtr->bufSize = sz;
@@ -7609,7 +7609,7 @@ Tcl_SetChannelBufferSize(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_GetChannelBufferSize(
     Tcl_Channel chan)		/* The channel for which to find the buffer
 				 * size. */

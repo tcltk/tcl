@@ -441,7 +441,7 @@ EXTERN void *		Tcl_GetAssocData(Tcl_Interp *interp,
 EXTERN Tcl_Channel	Tcl_GetChannel(Tcl_Interp *interp,
 				const char *chanName, int *modePtr);
 /* 152 */
-EXTERN int		Tcl_GetChannelBufferSize(Tcl_Channel chan);
+EXTERN size_t		Tcl_GetChannelBufferSize(Tcl_Channel chan);
 /* 153 */
 EXTERN int		Tcl_GetChannelHandle(Tcl_Channel chan, int direction,
 				void **handlePtr);
@@ -1956,7 +1956,7 @@ typedef struct TclStubs {
     int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *childCmd, Tcl_Interp **targetInterpPtr, const char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objv); /* 149 */
     void * (*tcl_GetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc **procPtr); /* 150 */
     Tcl_Channel (*tcl_GetChannel) (Tcl_Interp *interp, const char *chanName, int *modePtr); /* 151 */
-    int (*tcl_GetChannelBufferSize) (Tcl_Channel chan); /* 152 */
+    size_t (*tcl_GetChannelBufferSize) (Tcl_Channel chan); /* 152 */
     int (*tcl_GetChannelHandle) (Tcl_Channel chan, int direction, void **handlePtr); /* 153 */
     void * (*tcl_GetChannelInstanceData) (Tcl_Channel chan); /* 154 */
     int (*tcl_GetChannelMode) (Tcl_Channel chan); /* 155 */
