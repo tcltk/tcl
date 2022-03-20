@@ -1142,7 +1142,7 @@ Tcl_ExternalToUtfDString(
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    Tcl_ExternalToUtfDStringEx(encoding, src, srcLen, 0, dstPtr);
+    Tcl_ExternalToUtfDStringEx(encoding, src, srcLen, TCL_ENCODING_NOCOMPLAIN, dstPtr);
     return Tcl_DStringValue(dstPtr);
 }
 
@@ -1176,7 +1176,7 @@ Tcl_ExternalToUtfDString(
  *-------------------------------------------------------------------------
  */
 
-size_t
+int
 Tcl_ExternalToUtfDStringEx(
     Tcl_Encoding encoding,	/* The encoding for the source string, or NULL
 				 * for the default system encoding. */
@@ -1221,7 +1221,7 @@ Tcl_ExternalToUtfDStringEx(
 	src += srcRead;
 	if (result != TCL_CONVERT_NOSPACE) {
 	    Tcl_DStringSetLength(dstPtr, soFar);
-	    return (result == TCL_OK) ? (size_t)-1 : (size_t)(src - srcStart);
+	    return (result == TCL_OK) ? TCL_INDEX_NONE : (int)(src - srcStart);
 	}
 	flags &= ~TCL_ENCODING_START;
 	srcLen -= srcRead;
@@ -1380,7 +1380,7 @@ Tcl_UtfToExternalDString(
     Tcl_DString *dstPtr)	/* Uninitialized or free DString in which the
 				 * converted string is stored. */
 {
-    Tcl_UtfToExternalDStringEx(encoding, src, srcLen, 0, dstPtr);
+    Tcl_UtfToExternalDStringEx(encoding, src, srcLen, TCL_ENCODING_NOCOMPLAIN, dstPtr);
     return Tcl_DStringValue(dstPtr);
 }
 
@@ -1415,7 +1415,7 @@ Tcl_UtfToExternalDString(
  *-------------------------------------------------------------------------
  */
 
-size_t
+int
 Tcl_UtfToExternalDStringEx(
     Tcl_Encoding encoding,	/* The encoding for the converted string, or
 				 * NULL for the default system encoding. */
@@ -1459,7 +1459,7 @@ Tcl_UtfToExternalDStringEx(
 	    while (i >= soFar) {
 		Tcl_DStringSetLength(dstPtr, i--);
 	    }
-	    return (result == TCL_OK) ? (size_t)-1 : (size_t)(src - srcStart);
+	    return (result == TCL_OK) ? TCL_INDEX_NONE : (int)(src - srcStart);
 	}
 
 	flags &= ~TCL_ENCODING_START;
@@ -2375,7 +2375,7 @@ UtfToUtfProc(
 	     */
 
 	    if (flags & TCL_ENCODING_MODIFIED) {
-		if (STOPONERROR) {
+		if ((STOPONERROR) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
@@ -3156,7 +3156,7 @@ TableFromUtfProc(
 	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
-	    if (STOPONERROR) {
+	    if ((STOPONERROR) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
