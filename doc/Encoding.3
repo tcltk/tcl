@@ -208,7 +208,7 @@ used.  The return value is a pointer to the value stored in the DString.
 \fBTcl_ExternalToUtfDStringEx\fR is the same as \fBTcl_ExternalToUtfDString\fR,
 but it has an additional flags parameter.  The return value is the index of
 the first byte in the input string causing a conversion error.
-Or (size_t)-1 if all is OK.
+Or TCL_INDEX_NONE if all is OK.
 .PP
 \fBTcl_ExternalToUtf\fR converts a source buffer \fIsrc\fR from the specified
 \fIencoding\fR into UTF-8.  Up to \fIsrcLen\fR bytes are converted from the
@@ -251,7 +251,7 @@ a pointer to the value stored in the DString.
 \fBTcl_UtfToExternalDStringEx\fR is the same as \fBTcl_UtfToExternalDString\fR,
 but it has an additional flags parameter.  The return value is the index of
 the first byte of an utf-8 byte-sequence in the input string causing a
-conversion error. Or (size_t)-1 if all is OK.
+conversion error. Or TCL_INDEX_NONE if all is OK.
 .PP
 \fBTcl_UtfToExternal\fR converts a source buffer \fIsrc\fR from UTF-8 into
 the specified \fIencoding\fR.  Up to \fIsrcLen\fR bytes are converted from
