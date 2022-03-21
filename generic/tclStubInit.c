@@ -85,10 +85,11 @@ MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 static void uniCodePanic() {
     Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
 }
-#   define Tcl_GetUnicode (int *(*)(Tcl_Obj *))(void *)uniCodePanic
 #   define Tcl_GetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, size_t *))(void *)uniCodePanic
+#   define TclGetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, int *))(void *)uniCodePanic
 #   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const Tcl_UniChar *, size_t))(void *)uniCodePanic
 #   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, size_t))(void *)uniCodePanic
+#   define TclAppendUnicodeToObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, size_t))(void *)uniCodePanic
 #endif
 
 #define TclUtfCharComplete Tcl_UtfCharComplete
@@ -1360,8 +1361,8 @@ const TclStubs tclStubs = {
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
     Tcl_UniCharIsUnicode, /* 657 */
-    0, /* 658 */
-    0, /* 659 */
+    Tcl_ExternalToUtfDStringEx, /* 658 */
+    Tcl_UtfToExternalDStringEx, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
     0, /* 661 */
     0, /* 662 */

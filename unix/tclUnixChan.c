@@ -1027,11 +1027,11 @@ TtyGetOptionProc(
 	tcgetattr(fsPtr->fileState.fd, &iostate);
 	Tcl_DStringInit(&ds);
 
-	Tcl_ExternalToUtfDString(NULL, (char *) &iostate.c_cc[VSTART], 1, &ds);
+	Tcl_ExternalToUtfDStringEx(NULL, (char *) &iostate.c_cc[VSTART], 1, TCL_ENCODING_NOCOMPLAIN, &ds);
 	Tcl_DStringAppendElement(dsPtr, Tcl_DStringValue(&ds));
 	TclDStringClear(&ds);
 
-	Tcl_ExternalToUtfDString(NULL, (char *) &iostate.c_cc[VSTOP], 1, &ds);
+	Tcl_ExternalToUtfDStringEx(NULL, (char *) &iostate.c_cc[VSTOP], 1, TCL_ENCODING_NOCOMPLAIN, &ds);
 	Tcl_DStringAppendElement(dsPtr, Tcl_DStringValue(&ds));
 	Tcl_DStringFree(&ds);
     }

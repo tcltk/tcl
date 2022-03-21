@@ -7,8 +7,8 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "CFLAGS=-DTCL_UTF_MAX=3"
+          - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"

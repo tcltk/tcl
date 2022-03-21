@@ -2500,6 +2500,14 @@ declare 656 {
 declare 657 {
     int Tcl_UniCharIsUnicode(int ch)
 }
+declare 658 {
+    size_t Tcl_ExternalToUtfDStringEx(Tcl_Encoding encoding,
+	    const char *src, size_t srcLen, int flags, Tcl_DString *dsPtr)
+}
+declare 659 {
+    size_t Tcl_UtfToExternalDStringEx(Tcl_Encoding encoding,
+	    const char *src, size_t srcLen, int flags, Tcl_DString *dsPtr)
+}
 
 # TIP #511
 declare 660 {
