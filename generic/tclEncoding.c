@@ -2304,7 +2304,7 @@ UtfToUtfProc(
 	     */
 
 	    if (flags & TCL_ENCODING_MODIFIED) {
-		if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
+		if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
 		    result = TCL_CONVERT_MULTIBYTE;
 		    break;
 		}
@@ -3085,7 +3085,7 @@ TableFromUtfProc(
 	    word = fromUnicode[(ch >> 8)][ch & 0xFF];
 
 	if ((word == 0) && (ch != 0)) {
-	    if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
+	    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (flags & TCL_ENCODING_CHAR_LIMIT)) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
 	    }
