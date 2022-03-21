@@ -737,8 +737,7 @@ DecodeZipEntryText(
     src = (const char *) inputBytes;
     dst = Tcl_DStringValue(dstPtr);
     dstLen = dstPtr->spaceAvl - 1;
-    flags = TCL_ENCODING_START | TCL_ENCODING_END |
-	    TCL_ENCODING_STOPONERROR;	/* Special flag! */
+    flags = TCL_ENCODING_START | TCL_ENCODING_END;	/* Special flag! */
 
     while (1) {
 	int srcRead, dstWrote;
