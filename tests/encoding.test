@@ -646,7 +646,7 @@ test encoding-24.14 {Parse valid or invalid utf-8} {
 } 1
 test encoding-24.15 {Parse valid or invalid utf-8} -body {
     encoding convertfrom utf-8 "Z\xE0\x80"
-} -returnCodes 1 -result {unexpected byte sequence starting at index 1: '\xE0'}
+} -result Z\xE0\x80
 test encoding-24.16 {Parse valid or invalid utf-8} -constraints testbytestring -body {
     encoding convertto utf-8 [testbytestring "Z\u4343\x80"]
 } -returnCodes 1 -result {expected byte sequence but character 1 was '䍃' (U+004343)}
