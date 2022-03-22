@@ -394,6 +394,7 @@ Tcl_NewUnicodeObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetCharLength
 size_t
 Tcl_GetCharLength(
     Tcl_Obj *objPtr)		/* The String object to get the num chars
@@ -440,12 +441,49 @@ Tcl_GetCharLength(
      */
 
     if (numChars == TCL_INDEX_NONE) {
-	TclNumUtfChars(numChars, objPtr->bytes, objPtr->length);
+	numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
 	stringPtr->numChars = numChars;
     }
     return numChars;
 }
 
+size_t
+TclGetCharLength(
+    Tcl_Obj *objPtr)		/* The String object to get the num chars
+				 * of. */
+{
+    size_t numChars = 0;
+
+    /*
+     * Quick, no-shimmer return for short string reps.
+     */
+
+    if ((objPtr->bytes) && (objPtr->length < 2)) {
+	/* 0 bytes -> 0 chars; 1 byte -> 1 char */
+	return objPtr->length;
+    }
+
+    /*
+     * Optimize the case where we're really dealing with a bytearray object;
+     * we don't need to convert to a string to perform the get-length operation.
+     *
+     * Starting in Tcl 8.7, we check for a "pure" bytearray, because the
+     * machinery behind that test is using a proper bytearray ObjType.  We
+     * could also compute length of an improper bytearray without shimmering
+     * but there's no value in that. We *want* to shimmer an improper bytearray
+     * because improper bytearrays have worthless internal reps.
+     */
+
+    if (TclIsPureByteArray(objPtr)) {
+	(void) Tcl_GetByteArrayFromObj(objPtr, &numChars);
+    } else {
+	numChars = TclNumUtfChars(objPtr->bytes, objPtr->length);
+    }
+
+    return numChars;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -543,7 +581,7 @@ Tcl_GetUniChar(
 	 */
 
 	if (stringPtr->numChars == TCL_INDEX_NONE) {
-	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
+	    stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    return (unsigned char) objPtr->bytes[index];
@@ -709,7 +747,7 @@ Tcl_GetRange(
 	 */
 
 	if (stringPtr->numChars == TCL_INDEX_NONE) {
-	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
+	    stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    if (last >= stringPtr->numChars) {
@@ -4045,7 +4083,7 @@ ExtendUnicodeRepWithString(
 	numOrigChars = stringPtr->numChars;
     }
     if (numAppendChars == TCL_INDEX_NONE) {
-	TclNumUtfChars(numAppendChars, bytes, numBytes);
+	numAppendChars = Tcl_NumUtfChars(bytes, numBytes);
     }
     needed = numOrigChars + numAppendChars;
 

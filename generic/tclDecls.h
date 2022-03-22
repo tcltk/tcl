@@ -828,7 +828,7 @@ EXTERN void		Tcl_ConditionNotify(Tcl_Condition *condPtr);
 EXTERN void		Tcl_ConditionWait(Tcl_Condition *condPtr,
 				Tcl_Mutex *mutexPtr, const Tcl_Time *timePtr);
 /* 312 */
-EXTERN size_t		Tcl_NumUtfChars(const char *src, size_t length);
+EXTERN size_t		TclNumUtfChars(const char *src, size_t length);
 /* 313 */
 EXTERN size_t		Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
 				size_t charsToRead, int appendFlag);
@@ -857,7 +857,7 @@ EXTERN int		Tcl_UniCharToUpper(int ch);
 /* 324 */
 EXTERN int		Tcl_UniCharToUtf(int ch, char *buf);
 /* 325 */
-EXTERN const char *	Tcl_UtfAtIndex(const char *src, size_t index);
+EXTERN const char *	TclUtfAtIndex(const char *src, size_t index);
 /* 326 */
 EXTERN int		TclUtfCharComplete(const char *src, size_t length);
 /* 327 */
@@ -996,7 +996,7 @@ EXTERN Tcl_Obj *	Tcl_NewUnicodeObj(const Tcl_UniChar *unicode,
 EXTERN void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
 				const Tcl_UniChar *unicode, size_t numChars);
 /* 380 */
-EXTERN size_t		Tcl_GetCharLength(Tcl_Obj *objPtr);
+EXTERN size_t		TclGetCharLength(Tcl_Obj *objPtr);
 /* 381 */
 EXTERN int		Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index);
 /* Slot 382 is reserved */
@@ -1774,6 +1774,12 @@ EXTERN int		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
 /* Slot 667 is reserved */
 /* 668 */
 EXTERN size_t		Tcl_UniCharLen(const int *uniStr);
+/* 669 */
+EXTERN size_t		Tcl_NumUtfChars(const char *src, size_t length);
+/* 670 */
+EXTERN size_t		Tcl_GetCharLength(Tcl_Obj *objPtr);
+/* 671 */
+EXTERN const char *	Tcl_UtfAtIndex(const char *src, size_t index);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2097,7 +2103,7 @@ typedef struct TclStubs {
     void (*tcl_MutexUnlock) (Tcl_Mutex *mutexPtr); /* 309 */
     void (*tcl_ConditionNotify) (Tcl_Condition *condPtr); /* 310 */
     void (*tcl_ConditionWait) (Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr, const Tcl_Time *timePtr); /* 311 */
-    size_t (*tcl_NumUtfChars) (const char *src, size_t length); /* 312 */
+    size_t (*tclNumUtfChars) (const char *src, size_t length); /* 312 */
     size_t (*tcl_ReadChars) (Tcl_Channel channel, Tcl_Obj *objPtr, size_t charsToRead, int appendFlag); /* 313 */
     void (*reserved314)(void);
     void (*reserved315)(void);
@@ -2110,7 +2116,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharToTitle) (int ch); /* 322 */
     int (*tcl_UniCharToUpper) (int ch); /* 323 */
     int (*tcl_UniCharToUtf) (int ch, char *buf); /* 324 */
-    const char * (*tcl_UtfAtIndex) (const char *src, size_t index); /* 325 */
+    const char * (*tclUtfAtIndex) (const char *src, size_t index); /* 325 */
     int (*tclUtfCharComplete) (const char *src, size_t length); /* 326 */
     size_t (*tcl_UtfBackslash) (const char *src, int *readPtr, char *dst); /* 327 */
     const char * (*tcl_UtfFindFirst) (const char *src, int ch); /* 328 */
@@ -2165,7 +2171,7 @@ typedef struct TclStubs {
     void (*tcl_RegExpGetInfo) (Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr); /* 377 */
     Tcl_Obj * (*tcl_NewUnicodeObj) (const Tcl_UniChar *unicode, size_t numChars); /* 378 */
     void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, size_t numChars); /* 379 */
-    size_t (*tcl_GetCharLength) (Tcl_Obj *objPtr); /* 380 */
+    size_t (*tclGetCharLength) (Tcl_Obj *objPtr); /* 380 */
     int (*tcl_GetUniChar) (Tcl_Obj *objPtr, size_t index); /* 381 */
     void (*reserved382)(void);
     Tcl_Obj * (*tcl_GetRange) (Tcl_Obj *objPtr, size_t first, size_t last); /* 383 */
@@ -2454,6 +2460,9 @@ typedef struct TclStubs {
     void (*reserved666)(void);
     void (*reserved667)(void);
     size_t (*tcl_UniCharLen) (const int *uniStr); /* 668 */
+    size_t (*tcl_NumUtfChars) (const char *src, size_t length); /* 669 */
+    size_t (*tcl_GetCharLength) (Tcl_Obj *objPtr); /* 670 */
+    const char * (*tcl_UtfAtIndex) (const char *src, size_t index); /* 671 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3046,8 +3055,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ConditionNotify) /* 310 */
 #define Tcl_ConditionWait \
 	(tclStubsPtr->tcl_ConditionWait) /* 311 */
-#define Tcl_NumUtfChars \
-	(tclStubsPtr->tcl_NumUtfChars) /* 312 */
+#define TclNumUtfChars \
+	(tclStubsPtr->tclNumUtfChars) /* 312 */
 #define Tcl_ReadChars \
 	(tclStubsPtr->tcl_ReadChars) /* 313 */
 /* Slot 314 is reserved */
@@ -3070,8 +3079,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UniCharToUpper) /* 323 */
 #define Tcl_UniCharToUtf \
 	(tclStubsPtr->tcl_UniCharToUtf) /* 324 */
-#define Tcl_UtfAtIndex \
-	(tclStubsPtr->tcl_UtfAtIndex) /* 325 */
+#define TclUtfAtIndex \
+	(tclStubsPtr->tclUtfAtIndex) /* 325 */
 #define TclUtfCharComplete \
 	(tclStubsPtr->tclUtfCharComplete) /* 326 */
 #define Tcl_UtfBackslash \
@@ -3176,8 +3185,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_NewUnicodeObj) /* 378 */
 #define Tcl_SetUnicodeObj \
 	(tclStubsPtr->tcl_SetUnicodeObj) /* 379 */
-#define Tcl_GetCharLength \
-	(tclStubsPtr->tcl_GetCharLength) /* 380 */
+#define TclGetCharLength \
+	(tclStubsPtr->tclGetCharLength) /* 380 */
 #define Tcl_GetUniChar \
 	(tclStubsPtr->tcl_GetUniChar) /* 381 */
 /* Slot 382 is reserved */
@@ -3736,6 +3745,12 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 667 is reserved */
 #define Tcl_UniCharLen \
 	(tclStubsPtr->tcl_UniCharLen) /* 668 */
+#define Tcl_NumUtfChars \
+	(tclStubsPtr->tcl_NumUtfChars) /* 669 */
+#define Tcl_GetCharLength \
+	(tclStubsPtr->tcl_GetCharLength) /* 670 */
+#define Tcl_UtfAtIndex \
+	(tclStubsPtr->tcl_UtfAtIndex) /* 671 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3937,6 +3952,14 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToUniChar Tcl_UtfToChar16
 #   undef Tcl_UniCharLen
 #   define Tcl_UniCharLen Tcl_Char16Len
+#if !defined(BUILD_tcl)
+#   undef Tcl_NumUtfChars
+#   define Tcl_NumUtfChars TclNumUtfChars
+#   undef Tcl_GetCharLength
+#   define Tcl_GetCharLength TclGetCharLength
+#   undef Tcl_UtfAtIndex
+#   define Tcl_UtfAtIndex TclUtfAtIndex
+#endif
 #endif
 #if defined(USE_TCL_STUBS)
 #   define Tcl_WCharToUtfDString (sizeof(wchar_t) != sizeof(short) \
