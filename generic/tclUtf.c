@@ -1226,25 +1226,12 @@ Tcl_UtfAtIndex(
     const char *src,	/* The UTF-8 string. */
     size_t index)		/* The position of the desired character. */
 {
-    Tcl_UniChar ch = 0;
-#if TCL_UTF_MAX < 4
-    size_t len = 0;
-#endif
+    int ch = 0;
 
     if (index != TCL_INDEX_NONE) {
 	while (index--) {
-#if TCL_UTF_MAX < 4
-	    src += (len = TclUtfToUniChar(src, &ch));
-#else
-	    src += TclUtfToUniChar(src, &ch);
-#endif
+	    src += Tcl_UtfToUniChar(src, &ch);
 	}
-#if TCL_UTF_MAX < 4
-    if ((ch >= 0xD800) && (len < 3)) {
-	/* Index points at character following high Surrogate */
-	src += TclUtfToUniChar(src, &ch);
-    }
-#endif
     }
     return src;
 }
@@ -1261,10 +1248,10 @@ TclUtfAtIndex(
 	while (index--) {
 	    src += (len = Tcl_UtfToChar16(src, &ch));
 	}
-    if ((ch >= 0xD800) && (len < 3)) {
-	/* Index points at character following high Surrogate */
-	src += Tcl_UtfToChar16(src, &ch);
-    }
+	if ((ch >= 0xD800) && (len < 3)) {
+	    /* Index points at character following high Surrogate */
+	    src += Tcl_UtfToChar16(src, &ch);
+	}
     }
     return src;
 }
