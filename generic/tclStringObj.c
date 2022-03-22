@@ -145,14 +145,14 @@ typedef struct {
 } UniCharString;
 
 #define UNICHAR_STRING_MAXCHARS \
-    (int)(((size_t)UINT_MAX - 1 - offsetof(UniCharString, unicode))/sizeof(Tcl_UniChar))
+    (int)(((size_t)UINT_MAX  - offsetof(UniCharString, unicode))/sizeof(Tcl_UniChar) - 1)
 #define UNICHAR_STRING_SIZE(numChars) \
-    (offsetof(UniCharString, unicode) + (((numChars) + 1U) * sizeof(Tcl_UniChar)))
+    (offsetof(UniCharString, unicode) + sizeof(Tcl_UniChar) + ((numChars) * sizeof(Tcl_UniChar)))
 #define uniCharStringCheckLimits(numChars) \
     do {								\
 	if ((numChars) < 0 || (numChars) > UNICHAR_STRING_MAXCHARS) {		\
 	    Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
-		      (int)UNICHAR_STRING_MAXCHARS);					\
+		      UNICHAR_STRING_MAXCHARS);					\
 	}								\
     } while (0)
 #define uniCharStringAttemptAlloc(numChars) \
