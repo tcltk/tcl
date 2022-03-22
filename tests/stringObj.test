@@ -25,7 +25,8 @@ testConstraint testobj [llength [info commands testobj]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testdstring [llength [info commands testdstring]]
 testConstraint tip389 [expr {[string length \U010000] == 2}]
-
+testConstraint utf32 [expr {[string length [format %c 0x10000]] == 1}]
+
 test stringObj-1.1 {string type registration} testobj {
     set t [testobj types]
     set first [string first "string" $t]
@@ -57,7 +58,7 @@ test stringObj-3.2 {Tcl_SetStringObj, existing non-"empty string" object} testob
     lappend result [testobj refcount 1]
 } {{} 512 foo string 2}
 
-test stringObj-4.1 {Tcl_SetObjLength procedure, string gets shorter} {testobj fullutf} {
+test stringObj-4.1 {Tcl_SetObjLength procedure, string gets shorter} {testobj utf32} {
     testobj freeallvars
     teststringobj set 1 test
     teststringobj setlength 1 3
@@ -70,7 +71,7 @@ test stringObj-4.2 {Tcl_SetObjLength procedure, string gets longer} testobj {
     teststringobj setlength 1 10
     list [teststringobj length 1] [teststringobj length2 1]
 } {10 10}
-test stringObj-4.3 {Tcl_SetObjLength procedure, string gets longer} {testobj fullutf} {
+test stringObj-4.3 {Tcl_SetObjLength procedure, string gets longer} {testobj utf32} {
     testobj freeallvars
     teststringobj set 1 abcdef
     teststringobj append 1 xyzq -1
@@ -97,7 +98,7 @@ test stringObj-5.2 {Tcl_AppendToObj procedure, length calculation} testobj {
     teststringobj append 1 123 -1
     teststringobj get 1
 } {x y bbCC123}
-test stringObj-5.3 {Tcl_AppendToObj procedure, reallocating space} {testobj fullutf} {
+test stringObj-5.3 {Tcl_AppendToObj procedure, reallocating space} {testobj utf32} {
     testobj freeallvars
     teststringobj set 1 xyz
     teststringobj setlength 1 15
@@ -135,7 +136,7 @@ test stringObj-6.4 {Tcl_AppendStringsToObj procedure, counting space} testobj {
     teststringobj appendstrings 1 { 123 } abcdefg
     list [teststringobj length 1] [teststringobj get 1]
 } {15 {abc 123 abcdefg}}
-test stringObj-6.5 {Tcl_AppendStringsToObj procedure, don't double space if initial string empty} {testobj fullutf} {
+test stringObj-6.5 {Tcl_AppendStringsToObj procedure, don't double space if initial string empty} {testobj utf32} {
     testobj freeallvars
     testobj newobj 1
     teststringobj appendstrings 1 123 abcdefg
@@ -150,7 +151,7 @@ test stringObj-6.6 {Tcl_AppendStringsToObj procedure, space reallocation} testob
     list [teststringobj length 1] [teststringobj length2 1] \
 	    [teststringobj get 1]
 } {10 10 ab34567890}
-test stringObj-6.7 {Tcl_AppendStringsToObj procedure, space reallocation} {testobj fullutf} {
+test stringObj-6.7 {Tcl_AppendStringsToObj procedure, space reallocation} {testobj utf32} {
     testobj freeallvars
     teststringobj set 1 abc
     teststringobj setlength 1 10
@@ -172,7 +173,7 @@ test stringObj-6.9 {Tcl_AppendStringToObj, pure unicode} testobj {
     teststringobj get 1
 } adcfoobarsoom
 
-test stringObj-7.1 {SetStringFromAny procedure} {testobj fullutf} {
+test stringObj-7.1 {SetStringFromAny procedure} {testobj utf32} {
     testobj freeallvars
     teststringobj set2 1 [list a b]
     teststringobj append 1 x -1
@@ -197,7 +198,7 @@ test stringObj-7.4 {SetStringFromAny called with string obj} testobj {
 	    [string length $x] [testobj objtype $x]
 } {6 string 6 string}
 
-test stringObj-8.1 {DupStringInternalRep procedure} {testobj fullutf} {
+test stringObj-8.1 {DupStringInternalRep procedure} {testobj utf32} {
     testobj freeallvars
     teststringobj set 1 {}
     teststringobj append 1 abcde -1
