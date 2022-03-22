@@ -3328,6 +3328,10 @@ MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
     MODULE_SCOPE int TclUniCharCaseMatch(const int *, const int *, int);
     MODULE_SCOPE int TclUniCharNcmp(const int *, const int *, unsigned long);
     MODULE_SCOPE const char *TclUtfAtIndex(const char *, int);
+#   undef Tcl_GetCharLength
+#   define Tcl_GetCharLength TclGetCharLength
+#   undef Tcl_UtfAtIndex
+#   define Tcl_UtfAtIndex TclUtfAtIndex
 #else
 #   define TclGetUnicodeFromObj_ Tcl_GetUnicodeFromObj
 #   define TclNewUnicodeObj Tcl_NewUnicodeObj

@@ -644,12 +644,12 @@ TclGetCharLength(
 }
 
 #if TCL_UTF_MAX > 3
+#undef Tcl_GetCharLength
 int
 Tcl_GetCharLength(
     Tcl_Obj *objPtr)		/* The String object to get the num chars
 				 * of. */
 {
-    String *stringPtr;
     int numChars;
 
     /*
@@ -673,19 +673,12 @@ Tcl_GetCharLength(
      */
 
     if (TclIsPureByteArray(objPtr)) {
-	int length;
 
-	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
-	return length;
+	(void) Tcl_GetByteArrayFromObj(objPtr, &numChars);
+    } else {
+	numChars = Tcl_NumUtfChars(Tcl_GetString(objPtr), -1);
     }
-
-    /*
-     * OK, need to work with the object as a string.
-     */
-
-    SetUTF16StringFromAny(NULL, objPtr);
-    stringPtr = GET_STRING(objPtr);
-    return stringPtr->numChars;
+    return numChars;
 }
 #endif
 

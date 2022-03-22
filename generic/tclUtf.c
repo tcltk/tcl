@@ -1193,6 +1193,7 @@ TclUtfAtIndex(
 }
 
 #if TCL_UTF_MAX > 3
+#undef Tcl_UtfAtIndex
 const char *
 Tcl_UtfAtIndex(
     const char *src,	/* The UTF-8 string. */
