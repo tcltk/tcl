@@ -441,7 +441,7 @@ Tcl_GetCharLength(
      */
 
     if (numChars == TCL_INDEX_NONE) {
-	numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+	TclNumUtfCharsM(numChars, objPtr->bytes, objPtr->length);
 	stringPtr->numChars = numChars;
     }
     return numChars;
@@ -581,7 +581,7 @@ Tcl_GetUniChar(
 	 */
 
 	if (stringPtr->numChars == TCL_INDEX_NONE) {
-	    stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    return (unsigned char) objPtr->bytes[index];
@@ -747,7 +747,7 @@ Tcl_GetRange(
 	 */
 
 	if (stringPtr->numChars == TCL_INDEX_NONE) {
-	    stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    if (last >= stringPtr->numChars) {
@@ -4083,7 +4083,7 @@ ExtendUnicodeRepWithString(
 	numOrigChars = stringPtr->numChars;
     }
     if (numAppendChars == TCL_INDEX_NONE) {
-	numAppendChars = Tcl_NumUtfChars(bytes, numBytes);
+	TclNumUtfCharsM(numAppendChars, bytes, numBytes);
     }
     needed = numOrigChars + numAppendChars;
 

@@ -4668,7 +4668,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  *----------------------------------------------------------------
  */
 
-#define TclNumUtfChars_NOTUSED(numChars, bytes, numBytes) \
+#define TclNumUtfCharsM(numChars, bytes, numBytes) \
     do { \
 	size_t _count, _i = (numBytes); \
 	unsigned char *_str = (unsigned char *) (bytes); \
