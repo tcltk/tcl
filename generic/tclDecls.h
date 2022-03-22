@@ -1957,6 +1957,12 @@ EXTERN int		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
 /* Slot 667 is reserved */
 /* 668 */
 EXTERN int		Tcl_UniCharLen(const int *uniStr);
+/* 669 */
+EXTERN int		TclNumUtfChars(const char *src, int length);
+/* 670 */
+EXTERN int		TclGetCharLength(Tcl_Obj *objPtr);
+/* 671 */
+EXTERN const char *	TclUtfAtIndex(const char *src, int index);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2661,6 +2667,9 @@ typedef struct TclStubs {
     void (*reserved666)(void);
     void (*reserved667)(void);
     int (*tcl_UniCharLen) (const int *uniStr); /* 668 */
+    int (*tclNumUtfChars) (const char *src, int length); /* 669 */
+    int (*tclGetCharLength) (Tcl_Obj *objPtr); /* 670 */
+    const char * (*tclUtfAtIndex) (const char *src, int index); /* 671 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4020,6 +4029,12 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 667 is reserved */
 #define Tcl_UniCharLen \
 	(tclStubsPtr->tcl_UniCharLen) /* 668 */
+#define TclNumUtfChars \
+	(tclStubsPtr->tclNumUtfChars) /* 669 */
+#define TclGetCharLength \
+	(tclStubsPtr->tclGetCharLength) /* 670 */
+#define TclUtfAtIndex \
+	(tclStubsPtr->tclUtfAtIndex) /* 671 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

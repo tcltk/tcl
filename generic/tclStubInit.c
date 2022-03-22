@@ -1937,6 +1937,9 @@ const TclStubs tclStubs = {
     0, /* 666 */
     0, /* 667 */
     Tcl_UniCharLen, /* 668 */
+    TclNumUtfChars, /* 669 */
+    TclGetCharLength, /* 670 */
+    TclUtfAtIndex, /* 671 */
 };
 
 /* !END!: Do not edit above this line. */

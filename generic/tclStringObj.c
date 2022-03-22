@@ -637,7 +637,7 @@ TclGetCharLength(
      */
 
     if (numChars == -1) {
-	TclNumUtfChars(numChars, objPtr->bytes, objPtr->length);
+	numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
 	stringPtr->numChars = numChars;
     }
     return numChars;
@@ -782,7 +782,7 @@ Tcl_GetUniChar(
 	 */
 
 	if (stringPtr->numChars == -1) {
-	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
+	    stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    return (unsigned char) objPtr->bytes[index];
@@ -991,7 +991,7 @@ Tcl_GetRange(
 	 */
 
 	if (stringPtr->numChars == -1) {
-	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
+	    stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    if (last < 0 || last >= stringPtr->numChars) {
@@ -4447,7 +4447,7 @@ ExtendUnicodeRepWithString(
 	numOrigChars = stringPtr->numChars;
     }
     if (numAppendChars == -1) {
-	TclNumUtfChars(numAppendChars, bytes, numBytes);
+	numAppendChars = Tcl_NumUtfChars(bytes, numBytes);
     }
     needed = numOrigChars + numAppendChars;
     uniCharStringCheckLimits(needed);

@@ -3322,12 +3322,12 @@ MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
 #if TCL_UTF_MAX > 3
     MODULE_SCOPE int *TclGetUnicodeFromObj_(Tcl_Obj *, int *);
     MODULE_SCOPE Tcl_Obj *TclNewUnicodeObj(const int *, int);
-    MODULE_SCOPE int TclGetCharLength(Tcl_Obj *);
     MODULE_SCOPE void TclAppendUnicodeToObj(Tcl_Obj *, const int *, int);
     MODULE_SCOPE int TclUniCharNcasecmp(const int *, const int *, unsigned long);
     MODULE_SCOPE int TclUniCharCaseMatch(const int *, const int *, int);
     MODULE_SCOPE int TclUniCharNcmp(const int *, const int *, unsigned long);
-    MODULE_SCOPE const char *TclUtfAtIndex(const char *, int);
+#   undef Tcl_NumUtfChars
+#   define Tcl_NumUtfChars TclNumUtfChars
 #   undef Tcl_GetCharLength
 #   define Tcl_GetCharLength TclGetCharLength
 #   undef Tcl_UtfAtIndex
@@ -3335,11 +3335,15 @@ MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
 #else
 #   define TclGetUnicodeFromObj_ Tcl_GetUnicodeFromObj
 #   define TclNewUnicodeObj Tcl_NewUnicodeObj
-#   define TclGetCharLength Tcl_GetCharLength
 #   define TclAppendUnicodeToObj Tcl_AppendUnicodeToObj
 #   define TclUniCharNcasecmp Tcl_UniCharNcasecmp
 #   define TclUniCharCaseMatch Tcl_UniCharCaseMatch
 #   define TclUniCharNcmp Tcl_UniCharNcmp
+#   undef TclNumUtfChars
+#   define TclNumUtfChars Tcl_NumUtfChars
+#   undef TclGetCharLength
+#   define TclGetCharLength Tcl_GetCharLength
+#   undef TclUtfAtIndex
 #   define TclUtfAtIndex Tcl_UtfAtIndex
 #endif
 
@@ -4764,7 +4768,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  *----------------------------------------------------------------
  */
 
-#define TclNumUtfChars(numChars, bytes, numBytes) \
+#define TclNumUtfChars_UNUSED(numChars, bytes, numBytes) \
     do { \
 	int _count, _i = (numBytes); \
 	unsigned char *_str = (unsigned char *) (bytes); \

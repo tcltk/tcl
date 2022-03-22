@@ -2446,6 +2446,15 @@ declare 660 {
 declare 668 {
     int Tcl_UniCharLen(const int *uniStr)
 }
+declare 669 {
+    int TclNumUtfChars(const char *src, int length)
+}
+declare 670 {
+    int TclGetCharLength(Tcl_Obj *objPtr)
+}
+declare 671 {
+    const char *TclUtfAtIndex(const char *src, int index)
+}
 
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
