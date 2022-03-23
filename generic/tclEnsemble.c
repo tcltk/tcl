@@ -2106,7 +2106,7 @@ void
 TclSpellFix(
     Tcl_Interp *interp,
     Tcl_Obj *const *objv,
-    int objc,
+    size_t objc,
     size_t badIdx,
     Tcl_Obj *bad,
     Tcl_Obj *fix)

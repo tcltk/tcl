@@ -536,7 +536,7 @@ Tcl_LoadObjCmd(
  *
  * Tcl_UnloadObjCmd --
  *
- *	This function is invoked to process the "unload" Tcl command. See the
+ *	Implements the the "unload" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -754,6 +754,23 @@ Tcl_UnloadObjCmd(
     return code;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UnloadLibrary --
+ *
+ *	Unloads a library from an interpreter, and also from the process if it
+ *	is unloadable, i.e. if it provides an "unload" function.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See description.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 UnloadLibrary(
 	Tcl_Interp *interp,
@@ -874,10 +891,8 @@ UnloadLibrary(
     }
 
     /*
-     * The unload function executed fine. Examine the reference count to see
-     * if we unload the DLL.
+     * The unload function was called succesfully.
      */
-
 
     Tcl_MutexLock(&libraryMutex);
     if (Tcl_IsSafe(target)) {
@@ -907,7 +922,7 @@ UnloadLibrary(
 
     code = TCL_OK;
     if (libraryPtr->safeInterpRefCount <= 0 && libraryPtr->interpRefCount <= 0
-	    && !keepLibrary) {
+	    && (unloadProc != NULL) && !keepLibrary) {
 	/*
 	 * Unload the shared library from the application memory...
 	 */
