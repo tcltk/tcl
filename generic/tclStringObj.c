@@ -208,13 +208,14 @@ SetUTF16StringFromAny(
 
 	Tcl_DStringInit(&ds);
 	unsigned short *utf16string = Tcl_UtfToChar16DString(objPtr->bytes, objPtr->length, &ds);
-	size_t size = Tcl_DStringLength(&ds);
-	String *stringPtr = (String *)ckalloc((offsetof(String, unicode) + 2U) + size);
-	memcpy(stringPtr->unicode, utf16string, size);
-	stringPtr->unicode[size] = 0;
-	Tcl_DStringFree(&ds);
+	int size = Tcl_DStringLength(&ds);
+	String *stringPtr = (String *)ckalloc((offsetof(String, unicode) + sizeof(unsigned short)) + size);
 
+	memcpy(stringPtr->unicode, utf16string, size);
+	Tcl_DStringFree(&ds);
 	size /= sizeof(unsigned short);
+	stringPtr->unicode[size] = 0;
+
 	stringPtr->numChars = size;
 	stringPtr->allocated = size;
 	stringPtr->maxChars = size;
@@ -222,7 +223,7 @@ SetUTF16StringFromAny(
 	objPtr->internalRep.twoPtrValue.ptr1 = stringPtr;
 	objPtr->typePtr = &tclStringType;
     }
-     return TCL_OK;
+    return TCL_OK;
 }
 
 static void
@@ -237,10 +238,10 @@ UpdateStringOfUTF16String(
 
 	char *bytes = (char *)ckalloc(Tcl_DStringLength(&ds) + 1U);
 	memcpy(bytes, string, Tcl_DStringLength(&ds));
+	bytes[Tcl_DStringLength(&ds)] = 0;
 	Tcl_DStringFree(&ds);
 	objPtr->bytes = bytes;
 	objPtr->length = Tcl_DStringLength(&ds);
-	printf("UpdateStringOfUTF16String %d %d\n", stringPtr->unicode[0], stringPtr->unicode[1]);
 }
 
 #endif
