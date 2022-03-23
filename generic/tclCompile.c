@@ -2315,7 +2315,8 @@ TclCompileVarSubst(
 {
     const char *p, *name = tokenPtr[1].start;
     size_t i, nameBytes = tokenPtr[1].size;
-    int localVar, localVarName = 1;
+    size_t localVar;
+    int localVarName = 1;
 
     /*
      * Determine how the variable name should be handled: if it contains any
@@ -2342,11 +2343,11 @@ TclCompileVarSubst(
      * of local variables in a procedure frame.
      */
 
-    localVar = -1;
+    localVar = TCL_INDEX_NONE;
     if (localVarName != -1) {
 	localVar = TclFindCompiledLocal(name, nameBytes, localVarName, envPtr);
     }
-    if (localVar < 0) {
+    if (localVar == TCL_INDEX_NONE) {
 	PushLiteral(envPtr, name, nameBytes);
     }
 
@@ -2358,7 +2359,7 @@ TclCompileVarSubst(
 	    tokenPtr[1].start + tokenPtr[1].size);
 
     if (tokenPtr->numComponents == 1) {
-	if (localVar < 0) {
+	if (localVar == TCL_INDEX_NONE) {
 	    TclEmitOpcode(INST_LOAD_STK, envPtr);
 	} else if (localVar <= 255) {
 	    TclEmitInstInt1(INST_LOAD_SCALAR1, localVar, envPtr);
@@ -2367,7 +2368,7 @@ TclCompileVarSubst(
 	}
     } else {
 	TclCompileTokens(interp, tokenPtr+2, tokenPtr->numComponents-1, envPtr);
-	if (localVar < 0) {
+	if (localVar == TCL_INDEX_NONE) {
 	    TclEmitOpcode(INST_LOAD_ARRAY_STK, envPtr);
 	} else if (localVar <= 255) {
 	    TclEmitInstInt1(INST_LOAD_ARRAY1, localVar, envPtr);

@@ -980,7 +980,7 @@ typedef struct JumpFixupArray {
 
 typedef struct ForeachVarList {
     size_t numVars;		/* The number of variables in the list. */
-    int varIndexes[TCLFLEXARRAY];/* An array of the indexes ("slot numbers")
+    size_t varIndexes[TCLFLEXARRAY];/* An array of the indexes ("slot numbers")
 				 * for each variable in the procedure's array
 				 * of local variables. Only scalar variables
 				 * are supported. The actual size of this
