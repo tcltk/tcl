@@ -239,9 +239,9 @@ UpdateStringOfUTF16String(
 	char *bytes = (char *)ckalloc(Tcl_DStringLength(&ds) + 1U);
 	memcpy(bytes, string, Tcl_DStringLength(&ds));
 	bytes[Tcl_DStringLength(&ds)] = 0;
-	Tcl_DStringFree(&ds);
 	objPtr->bytes = bytes;
 	objPtr->length = Tcl_DStringLength(&ds);
+	Tcl_DStringFree(&ds);
 }
 
 #endif
