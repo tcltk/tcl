@@ -2990,7 +2990,7 @@ TclFindCompiledLocal(
     CompileEnv *envPtr)		/* Points to the current compile environment*/
 {
     CompiledLocal *localPtr;
-    int localVar = -1;
+    size_t localVar = TCL_INDEX_NONE;
     size_t i;
     Proc *procPtr;
 

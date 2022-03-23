@@ -582,7 +582,7 @@ TclCreateProc(
 
 	    if ((localPtr->nameLength != nameLength)
 		    || (memcmp(localPtr->name, argname, nameLength) != 0)
-		    || ((size_t)localPtr->frameIndex != i)
+		    || (localPtr->frameIndex != i)
 		    || !(localPtr->flags & VAR_ARGUMENT)
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
 		    || (localPtr->defValuePtr != NULL && fieldCount != 2)) {

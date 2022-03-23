@@ -203,11 +203,11 @@ struct colormap {
 
 /* Representation of a set of characters. */
 struct cvec {
-    int nchrs;			/* number of chrs */
-    int chrspace;		/* number of chrs possible */
+    size_t nchrs;			/* number of chrs */
+    size_t chrspace;		/* number of chrs possible */
     chr *chrs;			/* pointer to vector of chrs */
-    int nranges;		/* number of ranges (chr pairs) */
-    int rangespace;		/* number of chrs possible */
+    size_t nranges;		/* number of ranges (chr pairs) */
+    size_t rangespace;		/* number of chrs possible */
     chr *ranges;		/* pointer to vector of chr pairs */
 };
 
@@ -245,16 +245,16 @@ struct state {
     int no;
 #define	FREESTATE	(-1)
     char flag;			/* marks special states */
-    int nins;			/* number of inarcs */
+    size_t nins;			/* number of inarcs */
     struct arc *ins;		/* chain of inarcs */
-    int nouts;			/* number of outarcs */
+    size_t nouts;			/* number of outarcs */
     struct arc *outs;		/* chain of outarcs */
     struct arc *free;		/* chain of free arcs */
     struct state *tmp;		/* temporary for traversal algorithms */
     struct state *next;		/* chain for traversing all */
     struct state *prev;		/* back chain */
     struct arcbatch oas;	/* first arcbatch, avoid malloc in easy case */
-    int noas;			/* number of arcs used in first arcbatch */
+    size_t noas;			/* number of arcs used in first arcbatch */
 };
 
 struct nfa {
@@ -396,11 +396,11 @@ struct guts {
     size_t nsub;		/* copy of re_nsub */
     struct subre *tree;
     struct cnfa search;		/* for fast preliminary search */
-    int ntree;			/* number of subre's, plus one */
+    size_t ntree;			/* number of subre's, plus one */
     struct colormap cmap;
     int (*compare) (const chr *, const chr *, size_t);
     struct subre *lacons;	/* lookahead-constraint vector */
-    int nlacons;		/* size of lacons */
+    size_t nlacons;		/* size of lacons */
 };
 
 /*

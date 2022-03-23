@@ -179,8 +179,8 @@ static void dumpcstate(int, struct cnfa *, FILE *);
 static struct cvec *clearcvec(struct cvec *);
 static void addchr(struct cvec *, pchr);
 static void addrange(struct cvec *, pchr, pchr);
-static struct cvec *newcvec(int, int);
-static struct cvec *getcvec(struct vars *, int, int);
+static struct cvec *newcvec(size_t, size_t);
+static struct cvec *getcvec(struct vars *, size_t, size_t);
 static void freecvec(struct cvec *);
 /* === regc_locale.c === */
 static celt element(struct vars *, const chr *, const chr *);

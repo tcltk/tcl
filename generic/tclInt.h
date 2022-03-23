@@ -940,12 +940,11 @@ typedef struct CompiledLocal {
 				 * local. */
     size_t nameLength;		/* The number of bytes in local variable's name.
 				 * Among others used to speed up var lookups. */
-    int frameIndex;		/* Index in the array of compiler-assigned
+    size_t frameIndex;		/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
-    int flags;			/* Flag bits for the local variable. Same as
-				 * the flags for the Var structure above,
-				 * although only VAR_ARGUMENT, VAR_TEMPORARY,
-				 * and VAR_RESOLVED make sense. */
+#if TCL_UTF_MAX < 9
+    int flags;
+#endif
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
 				 * argument, if any. NULL if not an argument
 				 * or, if an argument, no default value. */
@@ -956,6 +955,12 @@ typedef struct CompiledLocal {
 				 * is marked by a unique tag during
 				 * compilation, and that same tag is used to
 				 * find the variable at runtime. */
+#if TCL_UTF_MAX > 8
+    int flags;			/* Flag bits for the local variable. Same as
+				 * the flags for the Var structure above,
+				 * although only VAR_ARGUMENT, VAR_TEMPORARY,
+				 * and VAR_RESOLVED make sense. */
+#endif
     char name[TCLFLEXARRAY];		/* Name of the local variable starts here. If
 				 * the name is NULL, this will just be '\0'.
 				 * The actual size of this field will be large
