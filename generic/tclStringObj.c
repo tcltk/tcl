@@ -55,14 +55,14 @@ static void		AppendUtfToUtfRep(Tcl_Obj *objPtr,
 			    const char *bytes, int numBytes);
 static void		DupStringInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
-static int		ExtendUniCharStringRepWithUniCharString(Tcl_Obj *objPtr,
+static int		ExtendStringRepWithUnicode(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
 static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
 			    const char *bytes, int numBytes,
 			    int numAppendChars);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
-static void		GrowUniCharStringBuffer(Tcl_Obj *objPtr, int needed, int flag);
+static void		GrowStringBuffer(Tcl_Obj *objPtr, int needed, int flag);
 static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, int needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		SetUnicodeObj(Tcl_Obj *objPtr,
@@ -284,7 +284,7 @@ UpdateStringOfUTF16String(
 #endif
 
 static void
-GrowUniCharStringBuffer(
+GrowStringBuffer(
     Tcl_Obj *objPtr,
     int needed,
     int flag)
@@ -638,7 +638,7 @@ TclGetCharLength(
      */
 
     if (numChars == -1) {
-	numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+	TclNumUtfCharsM(numChars, objPtr->bytes, objPtr->length);
 	stringPtr->numChars = numChars;
     }
     return numChars;
@@ -783,7 +783,7 @@ Tcl_GetUniChar(
 	 */
 
 	if (stringPtr->numChars == -1) {
-	    stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    return (unsigned char) objPtr->bytes[index];
@@ -928,7 +928,7 @@ TclGetUnicodeFromObj(
     }
     return stringPtr->unicode;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -992,7 +992,7 @@ Tcl_GetRange(
 	 */
 
 	if (stringPtr->numChars == -1) {
-	    stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    if (last < 0 || last >= stringPtr->numChars) {
@@ -1884,7 +1884,7 @@ AppendUnicodeToUtfRep(
 {
     UniCharString *stringPtr = GET_UNICHAR_STRING(objPtr);
 
-    numChars = ExtendUniCharStringRepWithUniCharString(objPtr, unicode, numChars);
+    numChars = ExtendStringRepWithUnicode(objPtr, unicode, numChars);
 
     if (stringPtr->numChars != -1) {
 	stringPtr->numChars += numChars;
@@ -1992,7 +1992,7 @@ AppendUtfToUtfRep(
 	 * would make test stringObj-8.1 fail.
 	 */
 
-	GrowUniCharStringBuffer(objPtr, newLength, 0);
+	GrowStringBuffer(objPtr, newLength, 0);
 
 	/*
 	 * Relocate bytes if needed; see above.
@@ -4448,7 +4448,7 @@ ExtendUnicodeRepWithString(
 	numOrigChars = stringPtr->numChars;
     }
     if (numAppendChars == -1) {
-	numAppendChars = Tcl_NumUtfChars(bytes, numBytes);
+	TclNumUtfCharsM(numAppendChars, bytes, numBytes);
     }
     needed = numOrigChars + numAppendChars;
     uniCharStringCheckLimits(needed);
@@ -4643,13 +4643,13 @@ UpdateStringOfString(
     if (stringPtr->numChars == 0) {
 	TclInitStringRep(objPtr, NULL, 0);
     } else {
-	(void) ExtendUniCharStringRepWithUniCharString(objPtr, stringPtr->unicode,
+	(void) ExtendStringRepWithUnicode(objPtr, stringPtr->unicode,
 		stringPtr->numChars);
     }
 }
 
 static int
-ExtendUniCharStringRepWithUniCharString(
+ExtendStringRepWithUnicode(
     Tcl_Obj *objPtr,
     const Tcl_UniChar *unicode,
     int numChars)
@@ -4696,7 +4696,7 @@ ExtendUniCharStringRepWithUniCharString(
      */
 
     if (size > stringPtr->allocated) {
-	GrowUniCharStringBuffer(objPtr, size, 1);
+	GrowStringBuffer(objPtr, size, 1);
     }
 
   copyBytes:

@@ -4768,14 +4768,14 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  *----------------------------------------------------------------
  */
 
-#define TclNumUtfChars_UNUSED(numChars, bytes, numBytes) \
+#define TclNumUtfCharsM(numChars, bytes, numBytes) \
     do { \
 	int _count, _i = (numBytes); \
 	unsigned char *_str = (unsigned char *) (bytes); \
 	while (_i && (*_str < 0xC0)) { _i--; _str++; } \
 	_count = (numBytes) - _i; \
 	if (_i) { \
-	    _count += Tcl_NumUtfChars((bytes) + _count, _i); \
+	    _count += TclNumUtfChars((bytes) + _count, _i); \
 	} \
 	(numChars) = _count; \
     } while (0);
