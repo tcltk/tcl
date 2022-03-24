@@ -1957,7 +1957,7 @@ TclUniCharNcmp(
 #endif /* WORDS_BIGENDIAN */
 }
 
-#if TCL_UTF_MAX > 3
+#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
 int
 Tcl_UniCharNcmp(
     const unsigned short *ucs,	/* Unicode string to compare to uct. */
@@ -2028,7 +2028,7 @@ TclUniCharNcasecmp(
     return 0;
 }
 
-#if TCL_UTF_MAX > 3
+#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
 int
 Tcl_UniCharNcasecmp(
     const unsigned short *ucs,	/* Unicode string to compare to uct. */
@@ -2584,7 +2584,7 @@ TclUniCharCaseMatch(
     }
 }
 
-#if TCL_UTF_MAX > 3
+#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
 int
 Tcl_UniCharCaseMatch(
     const unsigned short *uniStr,	/* Unicode String. */

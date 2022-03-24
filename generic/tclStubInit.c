@@ -83,18 +83,26 @@
 #define TclWinConvertError (void (*)(DWORD))(void *)Tcl_WinConvertError
 #endif
 
+
+#if TCL_UTF_MAX > 3 && defined(TCL_NO_DEPRECATED)
+static void uniCodePanic(void) {
+    Tcl_Panic("Tcl is compiled without the the UTF16 compatibility layer (-DTCL_NO_DEPRECATED)");
+}
+#   define Tcl_GetUnicode (unsigned short *(*)(Tcl_Obj *))(void *)uniCodePanic
+#   define Tcl_GetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, int *))(void *)uniCodePanic
+#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const unsigned short *, int))(void *)uniCodePanic
+#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const unsigned short *, int))(void *)uniCodePanic
+#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const unsigned short *, int))(void *)uniCodePanic
+#   define Tcl_UtfAtIndex (const char *(*)(const char *, int))(void *)uniCodePanic
+#   define Tcl_GetCharLength (int(*)(Tcl_Obj *))(void *)uniCodePanic
+#   define Tcl_UniCharNcmp (int(*)(const unsigned short *, const unsigned short *, unsigned long))(void *)uniCodePanic
+#   define Tcl_UniCharNcasecmp (int(*)(const unsigned short *, const unsigned short *, unsigned long))(void *)uniCodePanic
+#   define Tcl_UniCharCaseMatch (int(*)(const unsigned short *, const unsigned short *, int))(void *)uniCodePanic
+#endif
+
 #define TclUtfCharComplete UtfCharComplete
 #define TclUtfNext UtfNext
 #define TclUtfPrev UtfPrev
-
-#if TCL_UTF_MAX > 3 && defined(TCL_NO_DEPRECATED)
-#define Tcl_GetUnicodeFromObj 0
-#define Tcl_AppendUnicodeToObj 0
-#define Tcl_NewUnicodeObj 0
-#define Tcl_SetUnicodeObj 0
-#define Tcl_UtfAtIndex 0
-#define Tcl_GetCharLength 0
-#endif
 
 static int TclUtfCharComplete(const char *src, int length) {
     if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
@@ -679,8 +687,8 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define Tcl_SetExitProc 0
 #   define Tcl_SetPanicProc 0
 #   define Tcl_FindExecutable 0
-#   define Tcl_GetUnicode 0
 #if TCL_UTF_MAX < 4
+#   define Tcl_GetUnicode 0
 #   define Tcl_AppendUnicodeToObj 0
 #   define Tcl_UniCharCaseMatch 0
 #   define Tcl_UniCharNcasecmp 0
