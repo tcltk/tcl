@@ -3347,6 +3347,8 @@ MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
 #   define TclNumUtfChars Tcl_NumUtfChars
 #   undef TclGetCharLength
 #   define TclGetCharLength Tcl_GetCharLength
+#   undef TclUtfAtIndex
+#   define TclUtfAtIndex Tcl_UtfAtIndex
 #   undef TclGetRange
 #   define TclGetRange Tcl_GetRange
 #endif

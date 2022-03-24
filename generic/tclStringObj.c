@@ -2449,7 +2449,7 @@ Tcl_AppendFormatToObj(
 		    if (precision < 1) {
 			TclNewObj(segment);
 		    } else {
-			segment = Tcl_GetRange(segment, 0, precision - 1);
+			segment = TclGetRange(segment, 0, precision - 1);
 		    }
 		    numChars = precision;
 		    Tcl_IncrRefCount(segment);

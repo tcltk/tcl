@@ -5373,7 +5373,7 @@ TEBCresume(
 	if (toIdx < 0) {
 	    TclNewObj(objResultPtr);
 	} else {
-	    objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
+	    objResultPtr = TclGetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
 	}
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_V(1, 3, 1);
@@ -5414,7 +5414,7 @@ TEBCresume(
 	    if (toIdx < 0) {
 		TclNewObj(objResultPtr);
 	    } else {
-		objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+		objResultPtr = TclGetRange(valuePtr, fromIdx, toIdx);
 	    }
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
