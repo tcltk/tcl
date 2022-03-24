@@ -110,7 +110,6 @@ const Tcl_ObjType tclStringType = {
 
 #else
 
-#define tclStringType xxx
 #ifndef TCL_NO_DEPRECATED
 const Tcl_ObjType tclStringType = {
     "string",			/* name */
@@ -952,8 +951,70 @@ TclGetUnicodeFromObj(
  *----------------------------------------------------------------------
  */
 
+#if TCL_UTF_MAX > 3 && !defined(TCL_NO_DEPRECATED)
+#undef Tcl_GetRange
 Tcl_Obj *
 Tcl_GetRange(
+    Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */
+    int first,			/* First index of the range. */
+    int last)			/* Last index of the range. */
+{
+    Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
+    String *stringPtr;
+    int length;
+
+    if (first < 0) {
+	first = 0;
+    }
+
+    /*
+     * Optimize the case where we're really dealing with a bytearray object
+     * we don't need to convert to a string to perform the substring operation.
+     */
+
+    if (TclIsPureByteArray(objPtr)) {
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+
+	if (last < 0 || last >= length) {
+	    last = length - 1;
+	}
+	if (last < first) {
+	    TclNewObj(newObjPtr);
+	    return newObjPtr;
+	}
+	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
+    }
+
+    /*
+     * OK, need to work with the object as a utf16 string.
+     */
+
+    SetUTF16StringFromAny(NULL, objPtr);
+    stringPtr = GET_STRING(objPtr);
+
+    if (last < 0 || last >= stringPtr->numChars) {
+	last = stringPtr->numChars - 1;
+    }
+    if (last < first) {
+	TclNewObj(newObjPtr);
+	return newObjPtr;
+    }
+    /* See: bug [11ae2be95dac9417] */
+    if ((first > 0) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
+	    && ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
+	++first;
+    }
+    if ((last + 1 < stringPtr->numChars)
+	    && ((stringPtr->unicode[last+1] & 0xFC00) == 0xDC00)
+	    && ((stringPtr->unicode[last] & 0xFC00) == 0xD800)) {
+	++last;
+    }
+    return Tcl_NewUnicodeObj(stringPtr->unicode + first, last - first + 1);
+}
+#endif
+
+Tcl_Obj *
+TclGetRange(
     Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */
     int first,			/* First index of the range. */
     int last)			/* Last index of the range. */

@@ -3333,6 +3333,8 @@ MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
 #   define Tcl_GetCharLength TclGetCharLength
 #   undef Tcl_UtfAtIndex
 #   define Tcl_UtfAtIndex TclUtfAtIndex
+#   undef Tcl_GetRange
+#   define Tcl_GetRange TclGetRange
 #else
 #   define tclUniCharStringType tclStringType
 #   define TclGetUnicodeFromObj_ Tcl_GetUnicodeFromObj
@@ -3345,8 +3347,8 @@ MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
 #   define TclNumUtfChars Tcl_NumUtfChars
 #   undef TclGetCharLength
 #   define TclGetCharLength Tcl_GetCharLength
-#   undef TclUtfAtIndex
-#   define TclUtfAtIndex Tcl_UtfAtIndex
+#   undef TclGetRange
+#   define TclGetRange Tcl_GetRange
 #endif
 
 

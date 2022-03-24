@@ -48,6 +48,7 @@
 #undef Tcl_UniCharCaseMatch
 #undef Tcl_UniCharLen
 #undef Tcl_UniCharNcmp
+#undef Tcl_GetRange
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
@@ -98,6 +99,7 @@ static void uniCodePanic(void) {
 #   define Tcl_UniCharNcmp (int(*)(const unsigned short *, const unsigned short *, unsigned long))(void *)uniCodePanic
 #   define Tcl_UniCharNcasecmp (int(*)(const unsigned short *, const unsigned short *, unsigned long))(void *)uniCodePanic
 #   define Tcl_UniCharCaseMatch (int(*)(const unsigned short *, const unsigned short *, int))(void *)uniCodePanic
+#   define Tcl_GetRange (Tcl_Obj *(*)(Tcl_Obj *, int, int))(void *)uniCodePanic
 #endif
 
 #define TclUtfCharComplete UtfCharComplete
@@ -1957,6 +1959,7 @@ const TclStubs tclStubs = {
     TclNumUtfChars, /* 669 */
     TclGetCharLength, /* 670 */
     TclUtfAtIndex, /* 671 */
+    TclGetRange, /* 672 */
 };
 
 /* !END!: Do not edit above this line. */

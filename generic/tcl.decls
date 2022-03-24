@@ -2463,6 +2463,9 @@ declare 670 {
 declare 671 {
     const char *TclUtfAtIndex(const char *src, int index)
 }
+declare 672 {
+    Tcl_Obj *TclGetRange(Tcl_Obj *objPtr, int first, int last)
+}
 
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
