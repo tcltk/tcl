@@ -681,7 +681,8 @@ Tcl_GetCharLength(
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &numChars);
     } else {
-	numChars = Tcl_NumUtfChars(Tcl_GetString(objPtr), -1);
+	Tcl_GetString(objPtr);
+	numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
     }
     return numChars;
 }
