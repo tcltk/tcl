@@ -1971,6 +1971,8 @@ EXTERN int		TclGetCharLength(Tcl_Obj *objPtr);
 EXTERN const char *	TclUtfAtIndex(const char *src, int index);
 /* 672 */
 EXTERN Tcl_Obj *	TclGetRange(Tcl_Obj *objPtr, int first, int last);
+/* 673 */
+EXTERN int		TclGetUniChar(Tcl_Obj *objPtr, int index);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2679,6 +2681,7 @@ typedef struct TclStubs {
     int (*tclGetCharLength) (Tcl_Obj *objPtr); /* 670 */
     const char * (*tclUtfAtIndex) (const char *src, int index); /* 671 */
     Tcl_Obj * (*tclGetRange) (Tcl_Obj *objPtr, int first, int last); /* 672 */
+    int (*tclGetUniChar) (Tcl_Obj *objPtr, int index); /* 673 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4048,6 +4051,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclUtfAtIndex) /* 671 */
 #define TclGetRange \
 	(tclStubsPtr->tclGetRange) /* 672 */
+#define TclGetUniChar \
+	(tclStubsPtr->tclGetUniChar) /* 673 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

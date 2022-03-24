@@ -49,6 +49,7 @@
 #undef Tcl_UniCharLen
 #undef Tcl_UniCharNcmp
 #undef Tcl_GetRange
+#undef Tcl_GetUniChar
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
@@ -79,6 +80,10 @@
 #undef TclWinConvertError
 #undef Tcl_GetCharLength
 #undef Tcl_UtfAtIndex
+#undef TclNumUtfChars
+#undef TclGetCharLength
+#undef TclUtfAtIndex
+#undef TclGetUniChar
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define TclWinConvertWSAError (void (*)(DWORD))(void *)Tcl_WinConvertError
 #define TclWinConvertError (void (*)(DWORD))(void *)Tcl_WinConvertError
@@ -100,6 +105,7 @@ static void uniCodePanic(void) {
 #   define Tcl_UniCharNcasecmp (int(*)(const unsigned short *, const unsigned short *, unsigned long))(void *)uniCodePanic
 #   define Tcl_UniCharCaseMatch (int(*)(const unsigned short *, const unsigned short *, int))(void *)uniCodePanic
 #   define Tcl_GetRange (Tcl_Obj *(*)(Tcl_Obj *, int, int))(void *)uniCodePanic
+#   define Tcl_GetUniChar (int(*)(Tcl_Obj *, int))(void *)uniCodePanic
 #endif
 
 #define TclUtfCharComplete UtfCharComplete
@@ -1960,6 +1966,7 @@ const TclStubs tclStubs = {
     TclGetCharLength, /* 670 */
     TclUtfAtIndex, /* 671 */
     TclGetRange, /* 672 */
+    TclGetUniChar, /* 673 */
 };
 
 /* !END!: Do not edit above this line. */

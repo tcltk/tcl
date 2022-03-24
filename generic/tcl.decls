@@ -2466,6 +2466,9 @@ declare 671 {
 declare 672 {
     Tcl_Obj *TclGetRange(Tcl_Obj *objPtr, int first, int last)
 }
+declare 673 {
+    int TclGetUniChar(Tcl_Obj *objPtr, int index)
+}
 
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

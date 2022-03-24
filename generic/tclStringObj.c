@@ -747,8 +747,66 @@ TclCheckEmptyString(
  *----------------------------------------------------------------------
  */
 
+#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
+#undef Tcl_GetUniChar
 int
 Tcl_GetUniChar(
+    Tcl_Obj *objPtr,		/* The object to get the Unicode charater
+				 * from. */
+    int index)			/* Get the index'th Unicode character. */
+{
+    String *stringPtr;
+    int ch, length;
+
+    if (index < 0) {
+	return -1;
+    }
+
+    /*
+     * Optimize the case where we're really dealing with a bytearray object
+     * we don't need to convert to a string to perform the indexing operation.
+     */
+
+    if (TclIsPureByteArray(objPtr)) {
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+	if (index >= length) {
+		return -1;
+	}
+
+	return (int) bytes[index];
+    }
+
+    /*
+     * OK, need to work with the object as a string.
+     */
+
+    SetUTF16StringFromAny(NULL, objPtr);
+    stringPtr = GET_STRING(objPtr);
+
+    if (index >= stringPtr->numChars) {
+	return -1;
+    }
+    ch = stringPtr->unicode[index];
+    /* See: bug [11ae2be95dac9417] */
+    if ((ch & 0xF800) == 0xD800) {
+	if (ch & 0x400) {
+	    if ((index > 0)
+		    && ((stringPtr->unicode[index-1] & 0xFC00) == 0xD800)) {
+		ch = -1; /* low surrogate preceded by high surrogate */
+	    }
+	} else if ((++index < stringPtr->numChars)
+		&& ((stringPtr->unicode[index] & 0xFC00) == 0xDC00)) {
+	    /* high surrogate followed by low surrogate */
+	    ch = (((ch & 0x3FF) << 10) |
+			(stringPtr->unicode[index] & 0x3FF)) + 0x10000;
+	}
+    }
+    return ch;
+}
+#endif
+
+int
+TclGetUniChar(
     Tcl_Obj *objPtr,		/* The object to get the Unicode charater
 				 * from. */
     int index)			/* Get the index'th Unicode character. */

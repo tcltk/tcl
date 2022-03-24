@@ -310,7 +310,7 @@ Tcl_RegexpObjCmd(
 	    eflags = 0;
 	} else if (offset > stringLength) {
 	    eflags = TCL_REG_NOTBOL;
-	} else if (Tcl_GetUniChar(objPtr, offset-1) == '\n') {
+	} else if (TclGetUniChar(objPtr, offset-1) == '\n') {
 	    eflags = 0;
 	} else {
 	    eflags = TCL_REG_NOTBOL;
@@ -1412,7 +1412,7 @@ StringIndexCmd(
     }
 
     if ((index >= 0) && (index < length)) {
-	int ch = Tcl_GetUniChar(objv[1], index);
+	int ch = TclGetUniChar(objv[1], index);
 
 	if (ch == -1) {
 	    return TCL_OK;

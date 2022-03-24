@@ -5329,7 +5329,7 @@ TEBCresume(
 		    valuePtr->bytes+index, 1);
 	} else {
 	    char buf[4] = "";
-	    int ch = Tcl_GetUniChar(valuePtr, index);
+	    int ch = TclGetUniChar(valuePtr, index);
 
 	    /*
 	     * This could be: Tcl_NewUnicodeObj((const Tcl_UniChar *)&ch, 1)
