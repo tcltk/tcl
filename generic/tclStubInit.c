@@ -87,6 +87,15 @@
 #define TclUtfNext UtfNext
 #define TclUtfPrev UtfPrev
 
+#if TCL_UTF_MAX > 3 && defined(TCL_NO_DEPRECATED)
+#define Tcl_GetUnicodeFromObj 0
+#define Tcl_AppendUnicodeToObj 0
+#define Tcl_NewUnicodeObj 0
+#define Tcl_SetUnicodeObj 0
+#define Tcl_UtfAtIndex 0
+#define Tcl_GetCharLength 0
+#endif
+
 static int TclUtfCharComplete(const char *src, int length) {
     if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
 	return length < 3;

@@ -2591,7 +2591,7 @@ TclStringMatchObj(
     trivial = nocase ? 0 : TclMatchIsTrivial(TclGetString(ptnObj));
      */
 
-    if (TclHasInternalRep(strObj, &tclStringType) || (strObj->typePtr == NULL)) {
+    if (TclHasInternalRep(strObj, &tclUniCharStringType) || (strObj->typePtr == NULL)) {
 	Tcl_UniChar *udata, *uptn;
 
 	udata = TclGetUnicodeFromObj_(strObj, &length);

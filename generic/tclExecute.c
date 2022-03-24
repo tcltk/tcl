@@ -5592,8 +5592,8 @@ TEBCresume(
 	 * both.
 	 */
 
-	if (TclHasInternalRep(valuePtr, &tclStringType)
-		|| TclHasInternalRep(value2Ptr, &tclStringType)) {
+	if (TclHasInternalRep(valuePtr, &tclUniCharStringType)
+		|| TclHasInternalRep(value2Ptr, &tclUniCharStringType)) {
 	    Tcl_UniChar *ustring1, *ustring2;
 
 	    ustring1 = TclGetUnicodeFromObj_(valuePtr, &length);

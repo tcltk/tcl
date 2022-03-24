@@ -850,7 +850,7 @@ TclNumUtfChars(
     return i;
 }
 
-#if TCL_UTF_MAX > 3
+#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
 #undef Tcl_NumUtfChars
 int
 Tcl_NumUtfChars(
@@ -1245,7 +1245,7 @@ TclUtfAtIndex(
     return src;
 }
 
-#if TCL_UTF_MAX > 3
+#if (TCL_UTF_MAX > 3) && !defined(TCL_NO_DEPRECATED)
 #undef Tcl_UtfAtIndex
 const char *
 Tcl_UtfAtIndex(

@@ -1264,10 +1264,14 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
-		Tcl_ConvertToType(NULL, varPtr[varIndex],
-			Tcl_GetObjType("string"));
-		strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
-		length = (int) strPtr->allocated;
+		const Tcl_ObjType *objType = Tcl_GetObjType("string");
+		if (objType != NULL) {
+		    Tcl_ConvertToType(NULL, varPtr[varIndex], objType);
+		    strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
+		    length = (int) strPtr->allocated;
+		} else {
+		    length = -1;
+		}
 	    } else {
 		length = -1;
 	    }
@@ -1318,10 +1322,14 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
-		Tcl_ConvertToType(NULL, varPtr[varIndex],
-			Tcl_GetObjType("string"));
-		strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
-		length = strPtr->maxChars;
+		const Tcl_ObjType *objType = Tcl_GetObjType("string");
+		if (objType != NULL) {
+		    Tcl_ConvertToType(NULL, varPtr[varIndex],objType);
+		    strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
+		    length = strPtr->maxChars;
+		} else {
+		    length = -1;
+		}
 	    } else {
 		length = -1;
 	    }

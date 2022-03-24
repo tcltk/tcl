@@ -2768,6 +2768,7 @@ MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
+MODULE_SCOPE const Tcl_ObjType tclUniCharStringType;
 MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
 MODULE_SCOPE const Tcl_ObjType tclRegexpType;
 MODULE_SCOPE Tcl_ObjType tclCmdNameType;
@@ -3333,6 +3334,7 @@ MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
 #   undef Tcl_UtfAtIndex
 #   define Tcl_UtfAtIndex TclUtfAtIndex
 #else
+#   define tclUniCharStringType tclStringType
 #   define TclGetUnicodeFromObj_ Tcl_GetUnicodeFromObj
 #   define TclNewUnicodeObj Tcl_NewUnicodeObj
 #   define TclAppendUnicodeToObj Tcl_AppendUnicodeToObj
