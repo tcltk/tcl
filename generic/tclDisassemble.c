@@ -288,25 +288,25 @@ DisassembleByteCodeObj(
 		TclGetString(fileObj), line);
     }
     Tcl_AppendPrintfToObj(bufferObj,
-	    "\n  Cmds %d, src %d, inst %d, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
-	    numCmds, (int)codePtr->numSrcBytes, codePtr->numCodeBytes,
+	    "\n  Cmds %d, src %" TCL_Z_MODIFIER "u, inst %" TCL_Z_MODIFIER "u, litObjs %" TCL_Z_MODIFIER "u, aux %" TCL_Z_MODIFIER "u, stkDepth %u, code/src %.2f\n",
+	    numCmds, codePtr->numSrcBytes, codePtr->numCodeBytes,
 	    codePtr->numLitObjects, codePtr->numAuxDataItems,
 	    codePtr->maxStackDepth,
 #ifdef TCL_COMPILE_STATS
-	    (int)codePtr->numSrcBytes?
+	    codePtr->numSrcBytes?
 		    codePtr->structureSize/(float)(int)codePtr->numSrcBytes :
 #endif
 	    0.0);
 
 #ifdef TCL_COMPILE_STATS
     Tcl_AppendPrintfToObj(bufferObj,
-	    "  Code %lu = header %lu+inst %d+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
-	    (unsigned long) codePtr->structureSize,
-	    (unsigned long) (sizeof(ByteCode) - sizeof(size_t) - sizeof(Tcl_Time)),
+	    "  Code %" TCL_Z_MODIFIER "u = header %" TCL_Z_MODIFIER "u+inst %" TCL_Z_MODIFIER "u+litObj %" TCL_Z_MODIFIER "u+exc %" TCL_Z_MODIFIER "u+aux %" TCL_Z_MODIFIER "u+cmdMap %" TCL_Z_MODIFIER "u\n",
+	    codePtr->structureSize,
+	    sizeof(ByteCode) - sizeof(size_t) - sizeof(Tcl_Time),
 	    codePtr->numCodeBytes,
-	    (unsigned long) (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
-	    (unsigned long) (codePtr->numExceptRanges*sizeof(ExceptionRange)),
-	    (unsigned long) (codePtr->numAuxDataItems * sizeof(AuxData)),
+	    codePtr->numLitObjects * sizeof(Tcl_Obj *),
+	    codePtr->numExceptRanges*sizeof(ExceptionRange),
+	    codePtr->numAuxDataItems * sizeof(AuxData),
 	    codePtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
 
@@ -351,10 +351,10 @@ DisassembleByteCodeObj(
      * Print the ExceptionRange array.
      */
 
-    if (codePtr->numExceptRanges > 0) {
-	Tcl_AppendPrintfToObj(bufferObj, "  Exception ranges %d, depth %d:\n",
+    if ((int)codePtr->numExceptRanges > 0) {
+	Tcl_AppendPrintfToObj(bufferObj, "  Exception ranges %" TCL_Z_MODIFIER "u, depth %d:\n",
 		codePtr->numExceptRanges, codePtr->maxExceptDepth);
-	for (i = 0;  i < codePtr->numExceptRanges;  i++) {
+	for (i = 0;  i < (int)codePtr->numExceptRanges;  i++) {
 	    ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
 
 	    Tcl_AppendPrintfToObj(bufferObj,
@@ -951,7 +951,7 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(literals);
-    for (i=0 ; i<codePtr->numLitObjects ; i++) {
+    for (i=0 ; i<(int)codePtr->numLitObjects ; i++) {
 	Tcl_ListObjAppendElement(NULL, literals, codePtr->objArrayPtr[i]);
     }
 
@@ -1111,7 +1111,7 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(aux);
-    for (i=0 ; i<codePtr->numAuxDataItems ; i++) {
+    for (i=0 ; i<(int)codePtr->numAuxDataItems ; i++) {
 	AuxData *auxData = &codePtr->auxDataArrayPtr[i];
 	Tcl_Obj *auxDesc = Tcl_NewStringObj(auxData->type->name, -1);
 
@@ -1138,7 +1138,7 @@ DisassembleByteCodeAsDicts(
      */
 
     TclNewObj(exn);
-    for (i=0 ; i<codePtr->numExceptRanges ; i++) {
+    for (i=0 ; i<(int)codePtr->numExceptRanges ; i++) {
 	ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
 
 	switch (rangePtr->type) {

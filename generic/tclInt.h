@@ -1259,7 +1259,7 @@ typedef struct CmdFrame {
 
 typedef struct CFWord {
     CmdFrame *framePtr;		/* CmdFrame to access. */
-    int word;			/* Index of the word in the command. */
+    size_t word;			/* Index of the word in the command. */
     size_t refCount;		/* Number of times the word is on the
 				 * stack. */
 } CFWord;
@@ -1268,7 +1268,7 @@ typedef struct CFWordBC {
     CmdFrame *framePtr;		/* CmdFrame to access. */
     size_t pc;			/* Instruction pointer of a command in
 				 * ExtCmdLoc.loc[.] */
-    int word;			/* Index of word in
+    size_t word;			/* Index of word in
 				 * ExtCmdLoc.loc[cmd]->line[.] */
     struct CFWordBC *prevPtr;	/* Previous entry in stack for same Tcl_Obj. */
     struct CFWordBC *nextPtr;	/* Next entry for same command call. See
@@ -1947,7 +1947,7 @@ typedef struct Interp {
 				/* First in list of active traces for interp,
 				 * or NULL if no active traces. */
 
-    int tracesForbiddingInline;	/* Count of traces (in the list headed by
+    size_t tracesForbiddingInline;	/* Count of traces (in the list headed by
 				 * tracePtr) that forbid inline bytecode
 				 * compilation. */
 

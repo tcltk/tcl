@@ -461,11 +461,11 @@ typedef struct ByteCode {
 				 * by AuxData entries. */
     size_t numCommands;		/* Number of commands compiled. */
     size_t numSrcBytes;		/* Number of source bytes compiled. */
-    int numCodeBytes;		/* Number of code bytes. */
-    int numLitObjects;		/* Number of objects in literal array. */
-    int numExceptRanges;	/* Number of ExceptionRange array elems. */
-    int numAuxDataItems;	/* Number of AuxData items. */
-    int numCmdLocBytes;		/* Number of bytes needed for encoded command
+    size_t numCodeBytes;		/* Number of code bytes. */
+    size_t numLitObjects;		/* Number of objects in literal array. */
+    size_t numExceptRanges;	/* Number of ExceptionRange array elems. */
+    size_t numAuxDataItems;	/* Number of AuxData items. */
+    size_t numCmdLocBytes;		/* Number of bytes needed for encoded command
 				 * location information. */
     int maxExceptDepth;		/* Maximum nesting level of ExceptionRanges;
 				 * -1 if no ranges were compiled. */
