@@ -612,6 +612,40 @@ Tcl_GetUniChar(
 #endif
     return ch;
 }
+
+int
+TclGetUniChar(
+    Tcl_Obj *objPtr,		/* The object to get the Unicode charater
+				 * from. */
+    size_t index)		/* Get the index'th Unicode character. */
+{
+    int ch = 0;
+
+    /*
+     * Optimize the case where we're really dealing with a bytearray object
+     * we don't need to convert to a string to perform the indexing operation.
+     */
+
+    if (TclIsPureByteArray(objPtr)) {
+	size_t length = 0;
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+	if (index >= length) {
+		return -1;
+	}
+
+	return bytes[index];
+    }
+
+    size_t numChars = TclNumUtfChars(objPtr->bytes, objPtr->length);
+
+    if (index >= numChars) {
+	return -1;
+    }
+    const char *begin = TclUtfAtIndex(objPtr->bytes, index);
+    Tcl_UtfToUniChar(begin, &ch);
+    return ch;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -792,6 +826,55 @@ Tcl_GetRange(
 #endif
     return Tcl_NewUnicodeObj(stringPtr->unicode + first, last - first + 1);
 }
+
+Tcl_Obj *
+TclGetRange(
+    Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */
+    size_t first,			/* First index of the range. */
+    size_t last)			/* Last index of the range. */
+{
+    Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
+    size_t length = 0;
+
+    if (first == TCL_INDEX_NONE) {
+	first = TCL_INDEX_START;
+    }
+    if (last + 2 <= first + 1) {
+	return Tcl_NewObj();
+    }
+
+    /*
+     * Optimize the case where we're really dealing with a bytearray object
+     * we don't need to convert to a string to perform the substring operation.
+     */
+
+    if (TclIsPureByteArray(objPtr)) {
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+
+	if (last >= length) {
+	    last = length - 1;
+	}
+	if (last < first) {
+	    TclNewObj(newObjPtr);
+	    return newObjPtr;
+	}
+	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
+    }
+
+    size_t numChars = TclNumUtfChars(objPtr->bytes, objPtr->length);
+
+    if (last >= numChars) {
+	last = numChars - 1;
+    }
+    if (last < first) {
+	TclNewObj(newObjPtr);
+	return newObjPtr;
+    }
+    const char *begin = TclUtfAtIndex(objPtr->bytes, first);
+    const char *end = TclUtfAtIndex(objPtr->bytes, last + 1);
+    return Tcl_NewStringObj(begin, end - begin);
+}
+
 
 /*
  *----------------------------------------------------------------------

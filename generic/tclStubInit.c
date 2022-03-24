@@ -1074,9 +1074,9 @@ const TclStubs tclStubs = {
     Tcl_NewUnicodeObj, /* 378 */
     Tcl_SetUnicodeObj, /* 379 */
     TclGetCharLength, /* 380 */
-    Tcl_GetUniChar, /* 381 */
+    TclGetUniChar, /* 381 */
     0, /* 382 */
-    Tcl_GetRange, /* 383 */
+    TclGetRange, /* 383 */
     0, /* 384 */
     Tcl_RegExpMatchObj, /* 385 */
     Tcl_SetNotifier, /* 386 */
@@ -1365,6 +1365,8 @@ const TclStubs tclStubs = {
     Tcl_NumUtfChars, /* 669 */
     Tcl_GetCharLength, /* 670 */
     Tcl_UtfAtIndex, /* 671 */
+    Tcl_GetRange, /* 672 */
+    Tcl_GetUniChar, /* 673 */
 };
 
 /* !END!: Do not edit above this line. */

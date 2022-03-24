@@ -1399,14 +1399,14 @@ declare 380 {
     size_t TclGetCharLength(Tcl_Obj *objPtr)
 }
 declare 381 {
-    int Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index)
+    int TclGetUniChar(Tcl_Obj *objPtr, size_t index)
 }
 # Removed in 9.0, replaced by macro.
 #declare 382 {
 #    Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
 #}
 declare 383 {
-    Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, size_t first, size_t last)
+    Tcl_Obj *TclGetRange(Tcl_Obj *objPtr, size_t first, size_t last)
 }
 # Removed in 9.0
 #declare 384 {
@@ -2524,6 +2524,12 @@ declare 670 {
 }
 declare 671 {
     const char *Tcl_UtfAtIndex(const char *src, size_t index)
+}
+declare 672 {
+    Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, size_t first, size_t last)
+}
+declare 673 {
+    int Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index)
 }
 
 
