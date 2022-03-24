@@ -477,6 +477,7 @@ TclGetCharLength(
     if (TclIsPureByteArray(objPtr)) {
 	(void) Tcl_GetByteArrayFromObj(objPtr, &numChars);
     } else {
+	Tcl_GetString(objPtr);
 	numChars = TclNumUtfChars(objPtr->bytes, objPtr->length);
     }
 
