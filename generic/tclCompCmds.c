@@ -1793,7 +1793,7 @@ TclCompileDictUpdateCmd(
      * that are to be used.
      */
 
-    duiPtr = (DictUpdateInfo *)Tcl_Alloc(offsetof(DictUpdateInfo, varIndices) + sizeof(int) * numVars);
+    duiPtr = (DictUpdateInfo *)Tcl_Alloc(offsetof(DictUpdateInfo, varIndices) + sizeof(size_t) * numVars);
     duiPtr->length = numVars;
     keyTokenPtrs = (Tcl_Token **)TclStackAlloc(interp, sizeof(Tcl_Token *) * numVars);
     tokenPtr = TokenAfter(dictVarTokenPtr);
@@ -1812,7 +1812,7 @@ TclCompileDictUpdateCmd(
 	 */
 
 	duiPtr->varIndices[i] = LocalScalarFromToken(tokenPtr, envPtr);
-	if (duiPtr->varIndices[i] < 0) {
+	if (duiPtr->varIndices[i] == TCL_INDEX_NONE) {
 	    goto failedUpdateInfoAssembly;
 	}
 	tokenPtr = TokenAfter(tokenPtr);
@@ -2275,7 +2275,7 @@ DupDictUpdateInfo(
     size_t len;
 
     dui1Ptr = (DictUpdateInfo *)clientData;
-    len = offsetof(DictUpdateInfo, varIndices) + sizeof(int) * dui1Ptr->length;
+    len = offsetof(DictUpdateInfo, varIndices) + sizeof(size_t) * dui1Ptr->length;
     dui2Ptr = (DictUpdateInfo *)Tcl_Alloc(len);
     memcpy(dui2Ptr, dui1Ptr, len);
     return dui2Ptr;
@@ -2302,7 +2302,7 @@ PrintDictUpdateInfo(
 	if (i) {
 	    Tcl_AppendToObj(appendObj, ", ", -1);
 	}
-	Tcl_AppendPrintfToObj(appendObj, "%%v%u", duiPtr->varIndices[i]);
+	Tcl_AppendPrintfToObj(appendObj, "%%v%" TCL_Z_MODIFIER "u", duiPtr->varIndices[i]);
     }
 }
 

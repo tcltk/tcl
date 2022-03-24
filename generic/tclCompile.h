@@ -198,8 +198,8 @@ typedef struct {
     Tcl_Obj *path;		/* Path of the sourced file the command is
 				 * in. */
     ECL *loc;			/* Command word locations (lines). */
-    int nloc;			/* Number of allocated entries in 'loc'. */
-    int nuloc;			/* Number of used entries in 'loc'. */
+    size_t nloc;			/* Number of allocated entries in 'loc'. */
+    size_t nuloc;			/* Number of used entries in 'loc'. */
 } ExtCmdLoc;
 
 /*
@@ -1035,7 +1035,7 @@ MODULE_SCOPE const AuxDataType tclJumptableInfoType;
 
 typedef struct {
     size_t length;		/* Size of array */
-    int varIndices[TCLFLEXARRAY];		/* Array of variable indices to manage when
+    size_t varIndices[TCLFLEXARRAY];		/* Array of variable indices to manage when
 				 * processing the start and end of a [dict
 				 * update]. There is really more than one
 				 * entry, and the structure is allocated to
@@ -1637,7 +1637,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 
 #define DefineLineInformation \
     ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
-    int eclIndex = mapPtr->nuloc - 1
+    size_t eclIndex = mapPtr->nuloc - 1
 
 #define SetLineInformation(word) \
     envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\

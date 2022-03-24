@@ -8923,7 +8923,7 @@ TclGetSrcInfoForPc(
 	srcOffset = cfPtr->cmd - codePtr->source;
 	eclPtr = (ExtCmdLoc *)Tcl_GetHashValue(hePtr);
 
-	for (i=0; i < eclPtr->nuloc; i++) {
+	for (i=0; i < (int)eclPtr->nuloc; i++) {
 	    if (eclPtr->loc[i].srcOffset == srcOffset) {
 		locPtr = eclPtr->loc+i;
 		break;

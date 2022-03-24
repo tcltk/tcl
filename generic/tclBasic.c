@@ -2006,7 +2006,7 @@ DeleteInterpProc(
 	if (eclPtr->type == TCL_LOCATION_SOURCE) {
 	    Tcl_DecrRefCount(eclPtr->path);
 	}
-	for (i=0; i< eclPtr->nuloc; i++) {
+	for (i=0; i< (int)eclPtr->nuloc; i++) {
 	    Tcl_Free(eclPtr->loc[i].line);
 	}
 
