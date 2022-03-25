@@ -80,10 +80,7 @@
 #undef TclWinConvertError
 #undef Tcl_GetCharLength
 #undef Tcl_UtfAtIndex
-#undef TclNumUtfChars
-#undef TclGetCharLength
-#undef TclUtfAtIndex
-#undef TclGetUniChar
+
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define TclWinConvertWSAError (void (*)(DWORD))(void *)Tcl_WinConvertError
 #define TclWinConvertError (void (*)(DWORD))(void *)Tcl_WinConvertError
