@@ -1226,7 +1226,7 @@
 1999-06-09  Scott Stanton  <stanton@scriptics.com>
 
 	* generic/tclUnicodeObj.c: Lots of cleanup and simplification. Fixed
-	several memory bugs. Added TclAppendUnicodeToObj.
+	several memory bugs. Added Tcl_AppendUnicodeToObj.
 
 	* generic/tclInt.h: Added declarations for various Unicode string
 	functions.

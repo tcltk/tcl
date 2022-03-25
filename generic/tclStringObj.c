@@ -1331,7 +1331,7 @@ Tcl_AppendToObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclAppendUnicodeToObj --
+ * Tcl_AppendUnicodeToObj --
  *
  *	This function appends a Unicode string to an object in the most
  *	efficient manner possible. Length must be >= 0.
@@ -1346,7 +1346,7 @@ Tcl_AppendToObj(
  */
 
 void
-TclAppendUnicodeToObj(
+Tcl_AppendUnicodeToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const Tcl_UniChar *unicode,	/* The unicode string to append to the
 				 * object. */
@@ -1355,7 +1355,7 @@ TclAppendUnicodeToObj(
     String *stringPtr;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "TclAppendUnicodeToObj");
+	Tcl_Panic("%s called with shared object", "Tcl_AppendUnicodeToObj");
     }
 
     if (length == 0) {
@@ -3012,7 +3012,7 @@ TclStringRepeat(
 	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
 	    done *= 2;
 	}
-	TclAppendUnicodeToObj(objResultPtr, Tcl_GetUnicode(objResultPtr),
+	Tcl_AppendUnicodeToObj(objResultPtr, Tcl_GetUnicode(objResultPtr),
 		(count - done) * length);
     } else {
 	/*
@@ -4116,7 +4116,7 @@ TclStringReplace(
 	    Tcl_AppendObjToObj(result, insertPtr);
 	}
 	if (first + count < (size_t)numChars) {
-	    TclAppendUnicodeToObj(result, ustring + first + count,
+	    Tcl_AppendUnicodeToObj(result, ustring + first + count,
 		    numChars - first - count);
 	}
 
