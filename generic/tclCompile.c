@@ -1382,7 +1382,7 @@ static void
 ReleaseCmdWordData(
     ExtCmdLoc *eclPtr)
 {
-    int i;
+    size_t i;
 
     if (eclPtr->type == TCL_LOCATION_SOURCE) {
 	Tcl_DecrRefCount(eclPtr->path);

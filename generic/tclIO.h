@@ -37,9 +37,9 @@
 
 typedef struct ChannelBuffer {
     size_t refCount;		/* Current uses count */
-    size_t nextAdded1;		/* The next position into which a character
+    size_t nextAdded;		/* The next position into which a character
 				 * will be put in the buffer. */
-    size_t nextRemoved1;		/* Position of next byte to be removed from
+    size_t nextRemoved;		/* Position of next byte to be removed from
 				 * the buffer. */
     size_t bufLength;		/* How big is the buffer? */
     struct ChannelBuffer *nextPtr;
