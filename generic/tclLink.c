@@ -1063,7 +1063,7 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetInt(objv[i], &valueInt)
-		        || !InRange(0, valueInt, UCHAR_MAX)) {
+		        || !InRange(0, valueInt, (int)UCHAR_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		    return (char *)
@@ -1073,7 +1073,7 @@ LinkTraceProc(
 	    }
 	} else {
 	    if (GetInt(valueObj, &valueInt)
-		    || !InRange(0, valueInt, UCHAR_MAX)) {
+		    || !InRange(0, valueInt, (int)UCHAR_MAX)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned char value";
@@ -1109,7 +1109,7 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetInt(objv[i], &valueInt)
-		        || !InRange(0, valueInt, USHRT_MAX)) {
+		        || !InRange(0, valueInt, (int)USHRT_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 	            return (char *)
@@ -1119,7 +1119,7 @@ LinkTraceProc(
 	    }
 	} else {
 	    if (GetInt(valueObj, &valueInt)
-		    || !InRange(0, valueInt, USHRT_MAX)) {
+		    || !InRange(0, valueInt, (int)USHRT_MAX)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned short value";
@@ -1133,7 +1133,7 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetWide(objv[i], &valueWide)
-			|| !InRange(0, valueWide, UINT_MAX)) {
+			|| !InRange(0, valueWide, (Tcl_WideInt)UINT_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 	            return (char *)
@@ -1143,7 +1143,7 @@ LinkTraceProc(
 	    }
 	} else {
 	    if (GetWide(valueObj, &valueWide)
-		    || !InRange(0, valueWide, UINT_MAX)) {
+		    || !InRange(0, valueWide, (Tcl_WideInt)UINT_MAX)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned int value";
