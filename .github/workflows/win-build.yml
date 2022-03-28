@@ -15,7 +15,7 @@ jobs:
           - ""
           - "OPTS=static,msvcrt"
           - "OPTS=symbols"
-          - "OPTS=memdbg"
+          - "OPTS=symbols STATS=compdbg,memdbg"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
@@ -53,6 +53,7 @@ jobs:
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
+          - "--enable-symbols=all"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Install MSYS2
