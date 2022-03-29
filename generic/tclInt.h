@@ -115,21 +115,24 @@ typedef int ptrdiff_t;
  * to/from pointer from/to integer of different size".
  */
 
-#if !defined(INT2PTR) && !defined(PTR2INT)
+#if !defined(INT2PTR)
 #   if defined(HAVE_INTPTR_T) || defined(intptr_t)
 #	define INT2PTR(p) ((void *)(intptr_t)(p))
-#	define PTR2INT(p) ((intptr_t)(p))
 #   else
 #	define INT2PTR(p) ((void *)(p))
+#   endif
+#endif
+#if !defined(PTR2INT)
+#   if defined(HAVE_INTPTR_T) || defined(intptr_t)
+#	define PTR2INT(p) ((intptr_t)(p))
+#   else
 #	define PTR2INT(p) ((long)(p))
 #   endif
 #endif
-#if !defined(UINT2PTR) && !defined(PTR2UINT)
+#if !defined(PTR2UINT)
 #   if defined(HAVE_UINTPTR_T) || defined(uintptr_t)
-#	define UINT2PTR(p) ((void *)(uintptr_t)(p))
 #	define PTR2UINT(p) ((uintptr_t)(p))
 #   else
-#	define UINT2PTR(p) ((void *)(p))
 #	define PTR2UINT(p) ((unsigned long)(p))
 #   endif
 #endif
@@ -4663,12 +4666,12 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  * of counting along a string of all one-byte characters.  The ANSI C
  * "prototype" for this macro is:
  *
- * MODULE_SCOPE void	TclNumUtfChars(int numChars, const char *bytes,
+ * MODULE_SCOPE void	TclNumUtfCharsM(int numChars, const char *bytes,
  *				size_t numBytes);
  *----------------------------------------------------------------
  */
 
-#define TclNumUtfChars(numChars, bytes, numBytes) \
+#define TclNumUtfCharsM(numChars, bytes, numBytes) \
     do { \
 	size_t _count, _i = (numBytes); \
 	unsigned char *_str = (unsigned char *) (bytes); \

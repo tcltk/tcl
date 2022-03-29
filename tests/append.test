@@ -20,6 +20,9 @@ unset -nocomplain x
 catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testbytestring [llength [info commands testbytestring]]
+testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
+testConstraint ucs4 [expr {[testConstraint fullutf]
+		&& [string length [format %c 0x10000]] == 1}]
 
 test append-1.1 {append command} {
     unset -nocomplain x
@@ -57,15 +60,15 @@ test append-3.3 {append errors} -returnCodes error -body {
     unset -nocomplain x
     append x
 } -result {can't read "x": no such variable}
-test append-3.4 {append surrogates} -body {
+test append-3.4 {append surrogates} -constraints ucs4 -body {
     set x \uD83D
     append x \uDE02
 } -result \uD83D\uDE02
-test append-3.5 {append surrogates} -body {
+test append-3.5 {append surrogates} -constraints ucs4 -body {
     set x \uD83D
     set x $x\uDE02
 } -result \uD83D\uDE02
-test append-3.6 {append surrogates} -body {
+test append-3.6 {append surrogates} -constraints ucs4 -body {
     set x \uDE02
     set x \uD83D$x
 } -result \uD83D\uDE02
