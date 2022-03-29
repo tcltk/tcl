@@ -268,7 +268,7 @@ static const Tcl_ObjType localVarNameType = {
 	const Tcl_ObjInternalRep *irPtr;					\
 	irPtr = TclFetchInternalRep((objPtr), &localVarNameType);		\
 	(name) = irPtr ? (Tcl_Obj *)irPtr->twoPtrValue.ptr1 : NULL;		\
-	(index) = irPtr ? PTR2INT(irPtr->twoPtrValue.ptr2) : -1;	\
+	(index) = irPtr ? PTR2UINT(irPtr->twoPtrValue.ptr2) : TCL_INDEX_NONE;	\
     } while (0)
 
 static const Tcl_ObjType parsedVarNameType = {
@@ -609,17 +609,17 @@ TclObjLookupVarEx(
     const char *errMsg = NULL;
     int index, parsed = 0;
 
-    int localIndex;
+    size_t localIndex;
     Tcl_Obj *namePtr, *arrayPtr, *elem;
 
     *arrayPtrPtr = NULL;
 
   restart:
     LocalGetInternalRep(part1Ptr, localIndex, namePtr);
-    if (localIndex >= 0) {
+    if (localIndex != TCL_INDEX_NONE) {
 	if (HasLocalVars(varFramePtr)
 		&& !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
-		&& (localIndex < (int)varFramePtr->numCompiledLocals)) {
+		&& (localIndex < varFramePtr->numCompiledLocals)) {
 	    /*
 	     * Use the cached index if the names coincide.
 	     */
@@ -5587,7 +5587,7 @@ static void
 FreeLocalVarName(
     Tcl_Obj *objPtr)
 {
-    int index;
+    size_t index;
     Tcl_Obj *namePtr;
 
     LocalGetInternalRep(objPtr, index, namePtr);
@@ -5603,7 +5603,7 @@ DupLocalVarName(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    int index;
+    size_t index;
     Tcl_Obj *namePtr;
 
     LocalGetInternalRep(srcPtr, index, namePtr);

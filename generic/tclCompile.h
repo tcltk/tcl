@@ -163,10 +163,10 @@ typedef struct ExceptionAux {
  */
 
 typedef struct {
-    int codeOffset;		/* Offset of first byte of command code. */
-    int numCodeBytes;		/* Number of bytes for command's code. */
-    int srcOffset;		/* Offset of first char of the command. */
-    int numSrcBytes;		/* Number of command source chars. */
+    size_t codeOffset;		/* Offset of first byte of command code. */
+    size_t numCodeBytes;		/* Number of bytes for command's code. */
+    size_t srcOffset;		/* Offset of first char of the command. */
+    size_t numSrcBytes;		/* Number of command source chars. */
 } CmdLocation;
 
 /*
@@ -347,7 +347,7 @@ typedef struct CompileEnv {
 				 * numCommands is the index of the next entry
 				 * to use; (numCommands-1) is the entry index
 				 * for the last command. */
-    int cmdMapEnd;		/* Index after last CmdLocation entry. */
+    size_t cmdMapEnd;		/* Index after last CmdLocation entry. */
     int mallocedCmdMap;		/* 1 if command map array was expanded and
 				 * cmdMapPtr points in the heap, else 0. */
 #if TCL_MAJOR_VERSION > 8
@@ -359,7 +359,7 @@ typedef struct CompileEnv {
 				 * auxDataArrayNext is the number of aux data
 				 * items and (auxDataArrayNext-1) is index of
 				 * current aux data array entry. */
-    int auxDataArrayEnd;	/* Index after last aux data array entry. */
+    size_t auxDataArrayEnd;	/* Index after last aux data array entry. */
 #if TCL_MAJOR_VERSION < 9
     int mallocedAuxDataArray;
 #endif
@@ -1106,7 +1106,7 @@ MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
-MODULE_SCOPE int	TclCreateAuxData(void *clientData,
+MODULE_SCOPE size_t	TclCreateAuxData(void *clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);

@@ -918,8 +918,8 @@ CompileRegexp(
     regexpPtr = (TclRegexp*)Tcl_Alloc(sizeof(TclRegexp));
     regexpPtr->objPtr = NULL;
     regexpPtr->string = NULL;
-    regexpPtr->details.rm_extend.rm_so = -1;
-    regexpPtr->details.rm_extend.rm_eo = -1;
+    regexpPtr->details.rm_extend.rm_so = TCL_INDEX_NONE;
+    regexpPtr->details.rm_extend.rm_eo = TCL_INDEX_NONE;
 
     /*
      * Get the up-to-date string representation and map to unicode.

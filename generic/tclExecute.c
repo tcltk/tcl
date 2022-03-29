@@ -6245,7 +6245,7 @@ TEBCresume(
 	    numVars = varListPtr->numVars;
 	    listPtr = OBJ_AT_DEPTH(listTmpDepth);
 	    if (TclListObjLength(interp, listPtr, &listLen) != TCL_OK) {
-		TRACE_APPEND(("ERROR converting list %ld, \"%s\": %s",
+		TRACE_APPEND(("ERROR converting list %" TCL_Z_MODIFIER "d, \"%s\": %s",
 			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
 		goto gotError;
 	    }
@@ -8686,8 +8686,8 @@ PrintByteCodeInfo(
 	    codePtr->numCodeBytes, codePtr->numLitObjects,
 	    codePtr->numAuxDataItems, codePtr->maxStackDepth,
 #ifdef TCL_COMPILE_STATS
-	    (int)codePtr->numSrcBytes?
-		    ((float)codePtr->structureSize)/(int)codePtr->numSrcBytes :
+	    codePtr->numSrcBytes?
+		    ((float)codePtr->structureSize)/codePtr->numSrcBytes :
 #endif
 	    0.0);
 
@@ -9580,7 +9580,7 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i != (size_t)-1;  i--) {
+    for (i = 31;  i != TCL_INDEX_NONE;  i--) {
 	if (statsPtr->srcCount[i] > 0) {
 	    break;		/* maxSizeDecade to consume 'i' value
 				 * below... */
@@ -9604,7 +9604,7 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i != (size_t)-1;  i--) {
+    for (i = 31;  i != TCL_INDEX_NONE;  i--) {
 	if (statsPtr->byteCodeCount[i] > 0) {
 	    break;		/* maxSizeDecade to consume 'i' value
 				 * below... */
@@ -9628,7 +9628,7 @@ EvalStatsCmd(
 	    break;
 	}
     }
-    for (i = 31;  i != (size_t)-1;  i--) {
+    for (i = 31;  i != TCL_INDEX_NONE;  i--) {
 	if (statsPtr->lifetimeCount[i] > 0) {
 	    break;		/* maxSizeDecade to consume 'i' value
 				 * below... */

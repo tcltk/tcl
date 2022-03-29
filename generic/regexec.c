@@ -545,8 +545,8 @@ zapallsubs(
     size_t i;
 
     for (i = n-1; i > 0; i--) {
-	p[i].rm_so = -1;
-	p[i].rm_eo = -1;
+	p[i].rm_so = TCL_INDEX_NONE;
+	p[i].rm_eo = TCL_INDEX_NONE;
     }
 }
 
@@ -560,11 +560,11 @@ zaptreesubs(
     struct subre *const t)
 {
     if (t->op == '(') {
-	int n = t->subno;
+	size_t n = t->subno;
 	assert(n > 0);
-	if ((size_t) n < v->nmatch) {
-	    v->pmatch[n].rm_so = -1;
-	    v->pmatch[n].rm_eo = -1;
+	if (n < v->nmatch) {
+	    v->pmatch[n].rm_so = TCL_INDEX_NONE;
+	    v->pmatch[n].rm_eo = TCL_INDEX_NONE;
 	}
     }
 

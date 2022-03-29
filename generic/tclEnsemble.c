@@ -3384,8 +3384,8 @@ CompileToInvokedCommand(
     Tcl_Token *tokPtr;
     Tcl_Obj *objPtr, **words;
     const char *bytes;
-    int i, cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
-    size_t numWords, length;
+    int cmdLit, extraLiteralFlags = LITERAL_CMD_NAME;
+    size_t i, numWords, length;
 
     /*
      * Push the words of the command. Take care; the command words may be
@@ -3394,9 +3394,9 @@ CompileToInvokedCommand(
      */
 
     TclListObjGetElements(NULL, replacements, &numWords, &words);
-    for (i = 0, tokPtr = parsePtr->tokenPtr; i < (int)parsePtr->numWords;
+    for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
-	if (i > 0 && (size_t)i <= numWords) {
+	if (i > 0 && i <= numWords) {
 	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
 	    PushLiteral(envPtr, bytes, length);
 	    continue;

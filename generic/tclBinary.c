@@ -909,7 +909,7 @@ BinaryFormatCmd(
 				 * cursor has visited.*/
     const char *errorString;
     const char *errorValue, *str;
-    int offset, size;
+    size_t offset, size;
     size_t length;
 
     if (objc < 2) {
@@ -1047,16 +1047,16 @@ BinaryFormatCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    if ((count > (size_t)offset) || (count == BINARY_ALL)) {
+	    if ((count > offset) || (count == BINARY_ALL)) {
 		count = offset;
 	    }
-	    if (offset > (int)length) {
+	    if (offset > length) {
 		length = offset;
 	    }
 	    offset -= count;
 	    break;
 	case '@':
-	    if (offset > (int)length) {
+	    if (offset > length) {
 		length = offset;
 	    }
 	    if (count == BINARY_ALL) {
@@ -1072,7 +1072,7 @@ BinaryFormatCmd(
 	    goto badField;
 	}
     }
-    if (offset > (int)length) {
+    if (offset > length) {
 	length = offset;
     }
     if (length == 0) {
@@ -1151,7 +1151,7 @@ BinaryFormatCmd(
 	    value = 0;
 	    errorString = "binary";
 	    if (cmd == 'B') {
-		for (offset = 0; (size_t)offset < count; offset++) {
+		for (offset = 0; offset < count; offset++) {
 		    value <<= 1;
 		    if (str[offset] == '1') {
 			value |= 1;
@@ -1166,7 +1166,7 @@ BinaryFormatCmd(
 		    }
 		}
 	    } else {
-		for (offset = 0; (size_t)offset < count; offset++) {
+		for (offset = 0; offset < count; offset++) {
 		    value >>= 1;
 		    if (str[offset] == '1') {
 			value |= 128;
@@ -1213,7 +1213,7 @@ BinaryFormatCmd(
 	    value = 0;
 	    errorString = "hexadecimal";
 	    if (cmd == 'H') {
-		for (offset = 0; (size_t)offset < count; offset++) {
+		for (offset = 0; offset < count; offset++) {
 		    value <<= 4;
 		    if (!isxdigit(UCHAR(str[offset]))) {     /* INTL: digit */
 			errorValue = str;
@@ -1234,7 +1234,7 @@ BinaryFormatCmd(
 		    }
 		}
 	    } else {
-		for (offset = 0; (size_t)offset < count; offset++) {
+		for (offset = 0; offset < count; offset++) {
 		    value >>= 4;
 
 		    if (!isxdigit(UCHAR(str[offset]))) {     /* INTL: digit */
@@ -1305,7 +1305,7 @@ BinaryFormatCmd(
 		}
 	    }
 	    arg++;
-	    for (i = 0; (size_t)i < count; i++) {
+	    for (i = 0; i < count; i++) {
 		if (FormatNumber(interp, cmd, listv[i], &cursor) != TCL_OK) {
 		    Tcl_DecrRefCount(resultPtr);
 		    return TCL_ERROR;
@@ -1416,7 +1416,7 @@ BinaryScanCmd(
     unsigned char *buffer;	/* Start of result buffer. */
     const char *errorString;
     const char *str;
-    int offset, size, i;
+    size_t offset, size, i;
     size_t length = 0;
 
     Tcl_Obj *valuePtr, *elementPtr;
@@ -1536,7 +1536,7 @@ BinaryScanCmd(
 	    dest = TclGetString(valuePtr);
 
 	    if (cmd == 'b') {
-		for (i = 0; (size_t)i < count; i++) {
+		for (i = 0; i < count; i++) {
 		    if (i % 8) {
 			value >>= 1;
 		    } else {
@@ -1545,7 +1545,7 @@ BinaryScanCmd(
 		    *dest++ = (char) ((value & 1) ? '1' : '0');
 		}
 	    } else {
-		for (i = 0; (size_t)i < count; i++) {
+		for (i = 0; i < count; i++) {
 		    if (i % 8) {
 			value <<= 1;
 		    } else {
@@ -1591,7 +1591,7 @@ BinaryScanCmd(
 	    dest = TclGetString(valuePtr);
 
 	    if (cmd == 'h') {
-		for (i = 0; (size_t)i < count; i++) {
+		for (i = 0; i < count; i++) {
 		    if (i % 2) {
 			value >>= 4;
 		    } else {
@@ -1600,7 +1600,7 @@ BinaryScanCmd(
 		    *dest++ = hexdigit[value & 0xF];
 		}
 	    } else {
-		for (i = 0; (size_t)i < count; i++) {
+		for (i = 0; i < count; i++) {
 		    if (i % 2) {
 			value <<= 4;
 		    } else {
@@ -1657,7 +1657,7 @@ BinaryScanCmd(
 		goto badIndex;
 	    }
 	    if (count == BINARY_NOCOUNT) {
-		if ((length - offset) < (size_t)size) {
+		if (length < (size_t)size + offset) {
 		    goto done;
 		}
 		valuePtr = ScanNumber(buffer+offset, cmd, flags,
@@ -1672,7 +1672,7 @@ BinaryScanCmd(
 		}
 		TclNewObj(valuePtr);
 		src = buffer + offset;
-		for (i = 0; (size_t)i < count; i++) {
+		for (i = 0; i < count; i++) {
 		    elementPtr = ScanNumber(src, cmd, flags, &numberCachePtr);
 		    src += size;
 		    Tcl_ListObjAppendElement(NULL, valuePtr, elementPtr);
@@ -1703,7 +1703,7 @@ BinaryScanCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    if ((count == BINARY_ALL) || (count > (size_t)offset)) {
+	    if ((count == BINARY_ALL) || (count > offset)) {
 		offset = 0;
 	    } else {
 		offset -= count;

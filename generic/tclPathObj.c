@@ -831,8 +831,6 @@ TclJoinPath(
     size_t i;
     const Tcl_Filesystem *fsPtr = NULL;
 
-    assert ( elements >= 0 );
-
     if (elements == 0) {
 	TclNewObj(res);
 	return res;

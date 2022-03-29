@@ -673,9 +673,9 @@ static void		DupByteCodeInternalRep(Tcl_Obj *srcPtr,
 static unsigned char *	EncodeCmdLocMap(CompileEnv *envPtr,
 			    ByteCode *codePtr, unsigned char *startPtr);
 static void		EnterCmdExtentData(CompileEnv *envPtr,
-			    int cmdNumber, int numSrcBytes, int numCodeBytes);
+			    size_t cmdNumber, size_t numSrcBytes, size_t numCodeBytes);
 static void		EnterCmdStartData(CompileEnv *envPtr,
-			    int cmdNumber, int srcOffset, int codeOffset);
+			    size_t cmdNumber, size_t srcOffset, size_t codeOffset);
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
@@ -3158,15 +3158,15 @@ EnterCmdStartData(
     CompileEnv *envPtr,		/* Points to the compilation environment
 				 * structure in which to enter command
 				 * location information. */
-    int cmdIndex,		/* Index of the command whose start data is
+    size_t cmdIndex,		/* Index of the command whose start data is
 				 * being set. */
-    int srcOffset,		/* Offset of first char of the command. */
-    int codeOffset)		/* Offset of first byte of command code. */
+    size_t srcOffset,		/* Offset of first char of the command. */
+    size_t codeOffset)		/* Offset of first byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
-    if ((size_t)cmdIndex >= envPtr->numCommands) {
-	Tcl_Panic("EnterCmdStartData: bad command index %d", cmdIndex);
+    if (cmdIndex >= envPtr->numCommands) {
+	Tcl_Panic("EnterCmdStartData: bad command index %" TCL_Z_MODIFIER "u", cmdIndex);
     }
 
     if (cmdIndex >= envPtr->cmdMapEnd) {
@@ -3207,8 +3207,8 @@ EnterCmdStartData(
     cmdLocPtr = &envPtr->cmdMapPtr[cmdIndex];
     cmdLocPtr->codeOffset = codeOffset;
     cmdLocPtr->srcOffset = srcOffset;
-    cmdLocPtr->numSrcBytes = -1;
-    cmdLocPtr->numCodeBytes = -1;
+    cmdLocPtr->numSrcBytes = TCL_INDEX_NONE;
+    cmdLocPtr->numCodeBytes = TCL_INDEX_NONE;
 }
 
 /*
@@ -3237,19 +3237,19 @@ EnterCmdExtentData(
     CompileEnv *envPtr,		/* Points to the compilation environment
 				 * structure in which to enter command
 				 * location information. */
-    int cmdIndex,		/* Index of the command whose source and code
+    size_t cmdIndex,		/* Index of the command whose source and code
 				 * length data is being set. */
-    int numSrcBytes,		/* Number of command source chars. */
-    int numCodeBytes)		/* Offset of last byte of command code. */
+    size_t numSrcBytes,		/* Number of command source chars. */
+    size_t numCodeBytes)		/* Offset of last byte of command code. */
 {
     CmdLocation *cmdLocPtr;
 
-    if ((size_t)cmdIndex >= envPtr->numCommands) {
-	Tcl_Panic("EnterCmdExtentData: bad command index %d", cmdIndex);
+    if (cmdIndex >= envPtr->numCommands) {
+	Tcl_Panic("EnterCmdExtentData: bad command index %" TCL_Z_MODIFIER "u", cmdIndex);
     }
 
     if (cmdIndex > envPtr->cmdMapEnd) {
-	Tcl_Panic("EnterCmdExtentData: missing start data for command %d",
+	Tcl_Panic("EnterCmdExtentData: missing start data for command %" TCL_Z_MODIFIER "u",
 		cmdIndex);
     }
 
@@ -3720,7 +3720,7 @@ TclFinalizeLoopExceptionRange(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclCreateAuxData(
     ClientData clientData,	/* The compilation auxiliary data to store in
 				 * the new aux data record. */
@@ -3729,7 +3729,7 @@ TclCreateAuxData(
     CompileEnv *envPtr)/* Points to the CompileEnv for which a new
 				 * aux data structure is to be allocated. */
 {
-    int index;			/* Index for the new AuxData structure. */
+    size_t index;			/* Index for the new AuxData structure. */
     AuxData *auxDataPtr;
 				/* Points to the new AuxData structure */
 
@@ -3742,7 +3742,7 @@ TclCreateAuxData(
 	 */
 
 	size_t currBytes = envPtr->auxDataArrayNext * sizeof(AuxData);
-	int newElems = 2*envPtr->auxDataArrayEnd;
+	size_t newElems = 2*envPtr->auxDataArrayEnd;
 	size_t newBytes = newElems * sizeof(AuxData);
 
 	if (envPtr->mallocedAuxDataArray) {
@@ -4402,10 +4402,10 @@ EncodeCmdLocMap(
 				 * is to be stored. */
 {
     CmdLocation *mapPtr = envPtr->cmdMapPtr;
-    int numCmds = envPtr->numCommands;
+    size_t i, codeDelta, codeLen, srcLen, prevOffset;
+    size_t numCmds = envPtr->numCommands;
     unsigned char *p = startPtr;
-    int codeDelta, codeLen, srcDelta, srcLen, prevOffset;
-    int i;
+    int srcDelta;
 
     /*
      * Encode the code offset for each command as a sequence of deltas.
@@ -4415,7 +4415,7 @@ EncodeCmdLocMap(
     prevOffset = 0;
     for (i = 0;  i < numCmds;  i++) {
 	codeDelta = mapPtr[i].codeOffset - prevOffset;
-	if (codeDelta < 0) {
+	if (codeDelta == TCL_INDEX_NONE) {
 	    Tcl_Panic("EncodeCmdLocMap: bad code offset");
 	} else if (codeDelta <= 127) {
 	    TclStoreInt1AtPtr(codeDelta, p);
@@ -4436,7 +4436,7 @@ EncodeCmdLocMap(
     codePtr->codeLengthStart = p;
     for (i = 0;  i < numCmds;  i++) {
 	codeLen = mapPtr[i].numCodeBytes;
-	if (codeLen < 0) {
+	if (codeLen == TCL_INDEX_NONE) {
 	    Tcl_Panic("EncodeCmdLocMap: bad code length");
 	} else if (codeLen <= 127) {
 	    TclStoreInt1AtPtr(codeLen, p);
@@ -4476,7 +4476,7 @@ EncodeCmdLocMap(
     codePtr->srcLengthStart = p;
     for (i = 0;  i < numCmds;  i++) {
 	srcLen = mapPtr[i].numSrcBytes;
-	if (srcLen < 0) {
+	if (srcLen == TCL_INDEX_NONE) {
 	    Tcl_Panic("EncodeCmdLocMap: bad source length");
 	} else if (srcLen <= 127) {
 	    TclStoreInt1AtPtr(srcLen, p);

@@ -3694,7 +3694,7 @@ Tcl_LsearchObjCmd(
 	if (allMatches) {
 	    listPtr = Tcl_NewListObj(0, NULL);
 	}
-	for (i = start; i < (size_t)listc; i += groupSize) {
+	for (i = start; i < listc; i += groupSize) {
 	    match = 0;
 	    if (sortInfo.indexc != 0) {
 		itemPtr = SelectObjFromSublist(listv[i+groupOffset], &sortInfo);
@@ -4188,7 +4188,7 @@ Tcl_LsortObjCmd(
 	    allocatedIndexVector = 1;	/* Cannot use indexc field, as it
 					 * might be decreased by 1 later. */
 	}
-	for (j=0 ; j<(size_t)sortInfo.indexc ; j++) {
+	for (j=0 ; j<sortInfo.indexc ; j++) {
 	    /* Prescreened values, no errors or out of range possible */
 	    TclIndexEncode(NULL, indexv[j], TCL_INDEX_NONE,
 		    TCL_INDEX_NONE, &sortInfo.indexv[j]);

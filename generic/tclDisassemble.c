@@ -56,7 +56,7 @@ static const Tcl_ObjType instNameType = {
 	const Tcl_ObjInternalRep *irPtr;				\
 	irPtr = TclFetchInternalRep((objPtr), &instNameType);	\
 	assert(irPtr != NULL);					\
-	(inst) = (size_t)irPtr->wideValue;			\
+	(inst) = irPtr->wideValue;			\
     } while (0)
 
 
@@ -833,7 +833,7 @@ UpdateStringOfInstName(
 
     if (inst > LAST_INST_OPCODE) {
 	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
-	TclOOM(dst, (size_t)TCL_INTEGER_SPACE + 5);
+	TclOOM(dst, TCL_INTEGER_SPACE + 5);
         sprintf(dst, "inst_%" TCL_Z_MODIFIER "u", inst);
 	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
     } else {
