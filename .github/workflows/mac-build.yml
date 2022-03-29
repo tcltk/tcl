@@ -30,6 +30,7 @@ jobs:
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
+          - "--enable-symbols=all"
     defaults:
       run:
         shell: bash
