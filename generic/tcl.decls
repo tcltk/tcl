@@ -1356,7 +1356,7 @@ declare 382 {deprecated {No longer in use, changed to macro}} {
 declare 383 {
     Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
 }
-declare 384 {deprecated {Use Tcl_AppendStringsToObj}} {
+declare 384 {
     void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const unsigned short *unicode,
 	    int length)
 }

@@ -1157,8 +1157,7 @@ unsigned short *	Tcl_GetUnicode(Tcl_Obj *objPtr);
 /* 383 */
 EXTERN Tcl_Obj *	Tcl_GetRange(Tcl_Obj *objPtr, int first, int last);
 /* 384 */
-TCL_DEPRECATED("Use Tcl_AppendStringsToObj")
-void			Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr,
+EXTERN void		Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr,
 				const unsigned short *unicode, int length);
 /* 385 */
 EXTERN int		Tcl_RegExpMatchObj(Tcl_Interp *interp,
@@ -2392,7 +2391,7 @@ typedef struct TclStubs {
     int (*tcl_GetUniChar) (Tcl_Obj *objPtr, int index); /* 381 */
     TCL_DEPRECATED_API("No longer in use, changed to macro") unsigned short * (*tcl_GetUnicode) (Tcl_Obj *objPtr); /* 382 */
     Tcl_Obj * (*tcl_GetRange) (Tcl_Obj *objPtr, int first, int last); /* 383 */
-    TCL_DEPRECATED_API("Use Tcl_AppendStringsToObj") void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const unsigned short *unicode, int length); /* 384 */
+    void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const unsigned short *unicode, int length); /* 384 */
     int (*tcl_RegExpMatchObj) (Tcl_Interp *interp, Tcl_Obj *textObj, Tcl_Obj *patternObj); /* 385 */
     void (*tcl_SetNotifier) (const Tcl_NotifierProcs *notifierProcPtr); /* 386 */
     Tcl_Mutex * (*tcl_GetAllocMutex) (void); /* 387 */
