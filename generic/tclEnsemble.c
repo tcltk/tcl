@@ -3314,12 +3314,12 @@ TclAttemptCompileProc(
 	ExceptionAux *auxPtr = envPtr->exceptAuxArrayPtr;
 
 	for (i = 0; i < savedExceptArrayNext; i++) {
-	    while (auxPtr->numBreakTargets > 0
+	    while ((int)auxPtr->numBreakTargets > 0
 		    && auxPtr->breakTargets[auxPtr->numBreakTargets - 1]
 		    >= savedCodeNext) {
 		auxPtr->numBreakTargets--;
 	    }
-	    while (auxPtr->numContinueTargets > 0
+	    while ((int)auxPtr->numContinueTargets > 0
 		    && auxPtr->continueTargets[auxPtr->numContinueTargets - 1]
 		    >= savedCodeNext) {
 		auxPtr->numContinueTargets--;
@@ -3439,7 +3439,7 @@ CompileToInvokedCommand(
      * Do the replacing dispatch.
      */
 
-    TclEmitInvoke(envPtr, INST_INVOKE_REPLACE, (int)parsePtr->numWords,numWords+1);
+    TclEmitInvoke(envPtr, INST_INVOKE_REPLACE, parsePtr->numWords,numWords+1);
 }
 
 /*
@@ -3469,7 +3469,7 @@ CompileBasicNArgCommand(
     Tcl_IncrRefCount(objPtr);
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
     TclCompileInvocation(interp, parsePtr->tokenPtr, objPtr,
-	    (int)parsePtr->numWords, envPtr);
+	    parsePtr->numWords, envPtr);
     Tcl_DecrRefCount(objPtr);
     return TCL_OK;
 }
@@ -3643,7 +3643,7 @@ TclCompileBasic0To2ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if ((int)parsePtr->numWords < 1 || (int)parsePtr->numWords > 3) {
+    if (parsePtr->numWords < 1 || parsePtr->numWords > 3) {
 	return TCL_ERROR;
     }
 
@@ -3665,7 +3665,7 @@ TclCompileBasic1To3ArgCmd(
      * which is the only code that sees the shenanigans of ensemble dispatch.
      */
 
-    if ((int)parsePtr->numWords < 2 || (int)parsePtr->numWords > 4) {
+    if (parsePtr->numWords < 2 || parsePtr->numWords > 4) {
 	return TCL_ERROR;
     }
 

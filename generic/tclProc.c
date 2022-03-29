@@ -1946,7 +1946,7 @@ TclProcCompileProc(
 
 	iPtr->compiledProcPtr = procPtr;
 
-	if ((int)procPtr->numCompiledLocals > (int)procPtr->numArgs) {
+	if (procPtr->numCompiledLocals > procPtr->numArgs) {
 	    CompiledLocal *clPtr = procPtr->firstLocalPtr;
 	    CompiledLocal *lastPtr = NULL;
 	    int i, numArgs = procPtr->numArgs;

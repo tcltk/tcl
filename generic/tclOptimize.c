@@ -129,13 +129,13 @@ LocateTargetAddresses(
 	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
 
 	if (rangePtr->type == CATCH_EXCEPTION_RANGE) {
-	    targetInstPtr = envPtr->codeStart + (int)rangePtr->catchOffset;
+	    targetInstPtr = envPtr->codeStart + rangePtr->catchOffset;
 	    DefineTargetAddress(tablePtr, targetInstPtr);
 	} else {
-	    targetInstPtr = envPtr->codeStart + (int)rangePtr->breakOffset;
+	    targetInstPtr = envPtr->codeStart + rangePtr->breakOffset;
 	    DefineTargetAddress(tablePtr, targetInstPtr);
 	    if (rangePtr->continueOffset != TCL_INDEX_NONE) {
-		targetInstPtr = envPtr->codeStart + (int)rangePtr->continueOffset;
+		targetInstPtr = envPtr->codeStart + rangePtr->continueOffset;
 		DefineTargetAddress(tablePtr, targetInstPtr);
 	    }
 	}

@@ -133,7 +133,7 @@ TclCompileSetCmd(
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int isAssignment, isScalar, localIndex, numWords;
 
-    numWords = (int)parsePtr->numWords;
+    numWords = parsePtr->numWords;
     if ((numWords != 2) && (numWords != 3)) {
 	return TCL_ERROR;
     }
@@ -223,7 +223,7 @@ TclCompileStringCatCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int i, numWords = (int)parsePtr->numWords, numArgs;
+    int i, numWords = parsePtr->numWords, numArgs;
     Tcl_Token *wordTokenPtr;
     Tcl_Obj *obj, *folded;
 
@@ -523,7 +523,7 @@ TclCompileStringIsCmd(
     InstStringClassType strClassType;
     Tcl_Obj *isClass;
 
-    if ((int)parsePtr->numWords < 3 || (int)parsePtr->numWords > 6) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
     }
     TclNewObj(isClass);
@@ -798,7 +798,7 @@ TclCompileStringMatchCmd(
     int i, exactMatch = 0, nocase = 0;
     const char *str;
 
-    if ((int)parsePtr->numWords < 3 || (int)parsePtr->numWords > 4) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > 4) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1452,7 +1452,7 @@ TclCompileSubstCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int numArgs = (int)parsePtr->numWords - 1;
+    int numArgs = parsePtr->numWords - 1;
     int numOpts = numArgs - 1;
     int objc, flags = TCL_SUBST_ALL;
     Tcl_Obj **objv/*, *toSubst = NULL*/;
@@ -1822,7 +1822,7 @@ TclCompileSwitchCmd(
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     valueIndex = 1;
-    numWords = (int)parsePtr->numWords-1;
+    numWords = parsePtr->numWords-1;
 
     /*
      * Check for options.
@@ -2664,7 +2664,7 @@ TclCompileTailcallCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     int i;
 
-    if ((int)parsePtr->numWords < 2 || (int)parsePtr->numWords > 256
+    if (parsePtr->numWords < 2 || parsePtr->numWords > 256
 	    || envPtr->procPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -2707,7 +2707,7 @@ TclCompileThrowCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int numWords = (int)parsePtr->numWords;
+    int numWords = parsePtr->numWords;
     Tcl_Token *codeToken, *msgToken;
     Tcl_Obj *objPtr;
     int codeKnown, codeIsList, codeIsValid;
@@ -2810,7 +2810,7 @@ TclCompileTryCmd(
     TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    int numWords = (int)parsePtr->numWords, numHandlers, result = TCL_ERROR;
+    int numWords = parsePtr->numWords, numHandlers, result = TCL_ERROR;
     Tcl_Token *bodyToken, *finallyToken, *tokenPtr;
     Tcl_Token **handlerTokens = NULL;
     Tcl_Obj **matchClauses = NULL;
@@ -3936,7 +3936,7 @@ TclCompileYieldCmd(
     TCL_UNUSED(Command *),
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    if ((int)parsePtr->numWords < 1 || (int)parsePtr->numWords > 2) {
+    if (parsePtr->numWords < 1 || parsePtr->numWords > 2) {
 	return TCL_ERROR;
     }
 

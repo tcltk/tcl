@@ -303,7 +303,7 @@ Tcl_ParseCommand(
 	 */
 
 	TclGrowParseTokenArray(parsePtr, 1);
-	wordIndex = (int)parsePtr->numTokens;
+	wordIndex = parsePtr->numTokens;
 	tokenPtr = &parsePtr->tokenPtr[wordIndex];
 	tokenPtr->type = TCL_TOKEN_WORD;
 
@@ -344,7 +344,7 @@ Tcl_ParseCommand(
 	    expPtr = &parsePtr->tokenPtr[expIdx];
 	    if ((0 == expandWord)
 		    /* Haven't seen prefix already */
-		    && (1 == (int)parsePtr->numTokens - expIdx)
+		    && (expIdx + 1 == (int)parsePtr->numTokens)
 		    /* Only one token */
 		    && (((1 == expPtr->size)
 			    /* Same length as prefix */
@@ -1082,10 +1082,10 @@ ParseTokens(
      * for the parsed variable name.
      */
 
-    originalTokens = (int)parsePtr->numTokens;
+    originalTokens = parsePtr->numTokens;
     while (numBytes && !((type = CHAR_TYPE(*src)) & mask)) {
 	TclGrowParseTokenArray(parsePtr, 1);
-	tokenPtr = &parsePtr->tokenPtr[(int)parsePtr->numTokens];
+	tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
 	tokenPtr->start = src;
 	tokenPtr->numComponents = 0;
 
@@ -1119,7 +1119,7 @@ ParseTokens(
 	     * the dirty work of parsing the name.
 	     */
 
-	    varToken = (int)parsePtr->numTokens;
+	    varToken = parsePtr->numTokens;
 	    if (Tcl_ParseVarName(parsePtr->interp, src, numBytes, parsePtr,
 		    1) != TCL_OK) {
 		return TCL_ERROR;
@@ -1258,7 +1258,7 @@ ParseTokens(
 	 */
 
 	TclGrowParseTokenArray(parsePtr, 1);
-	tokenPtr = &parsePtr->tokenPtr[(int)parsePtr->numTokens];
+	tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
 	tokenPtr->start = src;
 	tokenPtr->numComponents = 0;
 
@@ -1365,10 +1365,10 @@ Tcl_ParseVarName(
 
     src = start;
     TclGrowParseTokenArray(parsePtr, 2);
-    tokenPtr = &parsePtr->tokenPtr[(int)parsePtr->numTokens];
+    tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
     tokenPtr->type = TCL_TOKEN_VARIABLE;
     tokenPtr->start = src;
-    varIndex = (int)parsePtr->numTokens;
+    varIndex = parsePtr->numTokens;
     parsePtr->numTokens++;
     tokenPtr++;
     src++;
@@ -1480,7 +1480,7 @@ Tcl_ParseVarName(
     }
     tokenPtr = &parsePtr->tokenPtr[varIndex];
     tokenPtr->size = src - tokenPtr->start;
-    tokenPtr->numComponents = (int)parsePtr->numTokens - (varIndex + 1);
+    tokenPtr->numComponents = parsePtr->numTokens - (varIndex + 1);
     return TCL_OK;
 
     /*
@@ -1552,7 +1552,7 @@ Tcl_ParseVar(
 	return "$";
     }
 
-    code = TclSubstTokens(interp, parsePtr->tokenPtr, (int)parsePtr->numTokens,
+    code = TclSubstTokens(interp, parsePtr->tokenPtr, parsePtr->numTokens,
 	    NULL, 1, NULL, NULL);
     Tcl_FreeParse(parsePtr);
     TclStackFree(interp, parsePtr);
@@ -1641,7 +1641,7 @@ Tcl_ParseBraces(
     }
 
     src = start;
-    startIndex = (int)parsePtr->numTokens;
+    startIndex = parsePtr->numTokens;
 
     TclGrowParseTokenArray(parsePtr, 1);
     tokenPtr = &parsePtr->tokenPtr[startIndex];

@@ -270,7 +270,7 @@ DisassembleByteCodeObj(
 
     codeStart = codePtr->codeStart;
     codeLimit = codeStart + codePtr->numCodeBytes;
-    numCmds = (int)codePtr->numCommands;
+    numCmds = codePtr->numCommands;
 
     /*
      * Print header lines describing the ByteCode.
@@ -294,7 +294,7 @@ DisassembleByteCodeObj(
 	    codePtr->maxStackDepth,
 #ifdef TCL_COMPILE_STATS
 	    codePtr->numSrcBytes?
-		    codePtr->structureSize/(float)(int)codePtr->numSrcBytes :
+		    codePtr->structureSize/(float)codePtr->numSrcBytes :
 #endif
 	    0.0);
 

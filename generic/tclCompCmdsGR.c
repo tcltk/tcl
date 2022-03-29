@@ -1669,9 +1669,9 @@ TclCompileLsetCmd(
 
     if (localIndex < 0) {
 	if (isScalar) {
-	    tempDepth = (int)parsePtr->numWords - 2;
+	    tempDepth = parsePtr->numWords - 2;
 	} else {
-	    tempDepth = (int)parsePtr->numWords - 1;
+	    tempDepth = parsePtr->numWords - 1;
 	}
 	TclEmitInstInt4(	INST_OVER, tempDepth,		envPtr);
     }
@@ -1682,9 +1682,9 @@ TclCompileLsetCmd(
 
     if (!isScalar) {
 	if (localIndex < 0) {
-	    tempDepth = (int)parsePtr->numWords - 1;
+	    tempDepth = parsePtr->numWords - 1;
 	} else {
-	    tempDepth = (int)parsePtr->numWords - 2;
+	    tempDepth = parsePtr->numWords - 2;
 	}
 	TclEmitInstInt4(	INST_OVER, tempDepth,		envPtr);
     }
@@ -1714,7 +1714,7 @@ TclCompileLsetCmd(
     if (parsePtr->numWords == 4) {
 	TclEmitOpcode(		INST_LSET_LIST,			envPtr);
     } else {
-	TclEmitInstInt4(	INST_LSET_FLAT, (int)parsePtr->numWords-1, envPtr);
+	TclEmitInstInt4(	INST_LSET_FLAT, parsePtr->numWords-1, envPtr);
     }
 
     /*

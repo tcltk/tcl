@@ -1036,7 +1036,7 @@ CleanupByteCode(
 	statsPtr = &iPtr->stats;
 
 	statsPtr->numByteCodesFreed++;
-	statsPtr->currentSrcBytes -= (double) (int)codePtr->numSrcBytes;
+	statsPtr->currentSrcBytes -= (double)codePtr->numSrcBytes;
 	statsPtr->currentByteCodeBytes -= (double) codePtr->structureSize;
 
 	statsPtr->currentInstBytes -= (double) codePtr->numCodeBytes;
@@ -3660,12 +3660,12 @@ TclFinalizeLoopExceptionRange(
      * there is no need to fuss around with updating code offsets.
      */
 
-    for (i=0 ; i<auxPtr->numBreakTargets ; i++) {
+    for (i=0 ; i<(int)auxPtr->numBreakTargets ; i++) {
 	site = envPtr->codeStart + auxPtr->breakTargets[i];
 	offset = (int)rangePtr->breakOffset - auxPtr->breakTargets[i];
 	TclUpdateInstInt4AtPc(INST_JUMP4, offset, site);
     }
-    for (i=0 ; i<auxPtr->numContinueTargets ; i++) {
+    for (i=0 ; i<(int)auxPtr->numContinueTargets ; i++) {
 	site = envPtr->codeStart + auxPtr->continueTargets[i];
 	if (rangePtr->continueOffset == TCL_INDEX_NONE) {
 	    int j;
@@ -4062,12 +4062,12 @@ TclFixupForwardJump(
 	ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[k];
 	int i;
 
-	for (i=0 ; i<auxPtr->numBreakTargets ; i++) {
+	for (i=0 ; i<(int)auxPtr->numBreakTargets ; i++) {
 	    if (jumpFixupPtr->codeOffset < auxPtr->breakTargets[i]) {
 		auxPtr->breakTargets[i] += 3;
 	    }
 	}
-	for (i=0 ; i<auxPtr->numContinueTargets ; i++) {
+	for (i=0 ; i<(int)auxPtr->numContinueTargets ; i++) {
 	    if (jumpFixupPtr->codeOffset < auxPtr->continueTargets[i]) {
 		auxPtr->continueTargets[i] += 3;
 	    }
@@ -4528,7 +4528,7 @@ RecordByteCodeStats(
     statsPtr = &(iPtr->stats);
 
     statsPtr->numCompilations++;
-    statsPtr->totalSrcBytes += (double) (int)codePtr->numSrcBytes;
+    statsPtr->totalSrcBytes += (double)codePtr->numSrcBytes;
     statsPtr->totalByteCodeBytes += (double) codePtr->structureSize;
     statsPtr->currentSrcBytes += (double) (int)codePtr->numSrcBytes;
     statsPtr->currentByteCodeBytes += (double) codePtr->structureSize;

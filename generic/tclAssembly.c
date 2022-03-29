@@ -1075,7 +1075,7 @@ TclAssembleCode(
 	 */
 
 	if ((int)parsePtr->numWords > 0) {
-	    size_t instLen = (int)parsePtr->commandSize;
+	    size_t instLen = parsePtr->commandSize;
 		    /* Length in bytes of the current command */
 
 	    if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
@@ -4011,7 +4011,7 @@ UnstackExpiredCatches(
 	--catchDepth;
 	if (catches[catchDepth] != NULL) {
 	    range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
-	    range->numCodeBytes = bbPtr->startOffset - (int)range->codeOffset;
+	    range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
 	    catches[catchDepth] = NULL;
 	    catchIndices[catchDepth] = -1;
 	}
@@ -4030,7 +4030,7 @@ UnstackExpiredCatches(
 	if (catches[catchDepth] != NULL) {
 	    if (catches[catchDepth] != block || catchState >= BBCS_CAUGHT) {
 		range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
-		range->numCodeBytes = bbPtr->startOffset - (int)range->codeOffset;
+		range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
 		catches[catchDepth] = NULL;
 		catchIndices[catchDepth] = -1;
 	    }

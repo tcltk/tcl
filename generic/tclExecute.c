@@ -7228,7 +7228,7 @@ TEBCresume(
 	    }
 	    if (result == TCL_BREAK) {
 		result = TCL_OK;
-		pc = (codePtr->codeStart + (int)rangePtr->breakOffset);
+		pc = (codePtr->codeStart + rangePtr->breakOffset);
 		TRACE_APPEND(("%s, range at %" TCL_Z_MODIFIER "u, new pc %" TCL_Z_MODIFIER "u\n",
 			StringForResultCode(result),
 			rangePtr->codeOffset, rangePtr->breakOffset));
@@ -7240,7 +7240,7 @@ TEBCresume(
 		goto checkForCatch;
 	    }
 	    result = TCL_OK;
-	    pc = (codePtr->codeStart + (int)rangePtr->continueOffset);
+	    pc = (codePtr->codeStart + rangePtr->continueOffset);
 	    TRACE_APPEND(("%s, range at %" TCL_Z_MODIFIER "u, new pc %" TCL_Z_MODIFIER "u\n",
 		    StringForResultCode(result),
 		    rangePtr->codeOffset, rangePtr->continueOffset));
@@ -7419,7 +7419,7 @@ TEBCresume(
 		    (long)*catchTop, rangePtr->catchOffset);
 	}
 #endif
-	pc = (codePtr->codeStart + (int)rangePtr->catchOffset);
+	pc = (codePtr->codeStart + rangePtr->catchOffset);
 	NEXT_INST_F(0, 0, 0);	/* Restart the execution loop at pc. */
 
 	/*

@@ -5302,7 +5302,7 @@ TclEvalEx(
 	    eeFramePtr->len = parsePtr->commandSize;
 
 	    if (parsePtr->term ==
-		    parsePtr->commandStart + (int)parsePtr->commandSize - 1) {
+		    parsePtr->commandStart + parsePtr->commandSize - 1) {
 		eeFramePtr->len--;
 	    }
 
@@ -5353,7 +5353,7 @@ TclEvalEx(
 	 * executed command.
 	 */
 
-	next = parsePtr->commandStart + (int)parsePtr->commandSize;
+	next = parsePtr->commandStart + parsePtr->commandSize;
 	bytesLeft -= next - p;
 	p = next;
 	TclAdvanceLines(&line, parsePtr->commandStart, p);
@@ -5379,7 +5379,7 @@ TclEvalEx(
 	}
     }
     if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-	commandLength = (int)parsePtr->commandSize;
+	commandLength = parsePtr->commandSize;
 	if (parsePtr->term == parsePtr->commandStart + commandLength - 1) {
 	    /*
 	     * The terminator character (such as ; or ]) of the command where

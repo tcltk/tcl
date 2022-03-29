@@ -759,7 +759,7 @@ TclCompileClockClicksCmd(
 {
     Tcl_Token* tokenPtr;
 
-    switch ((int)parsePtr->numWords) {
+    switch (parsePtr->numWords) {
     case 1:
 	/*
 	 * No args
@@ -1773,7 +1773,7 @@ TclCompileDictUpdateCmd(
     if (((int)parsePtr->numWords - 1) & 1) {
 	return TCL_ERROR;
     }
-    numVars = ((int)parsePtr->numWords - 3) / 2;
+    numVars = (parsePtr->numWords - 3) / 2;
 
     /*
      * The dictionary variable must be a local scalar that is knowable at
@@ -1840,7 +1840,7 @@ TclCompileDictUpdateCmd(
     TclEmitInstInt4(	INST_BEGIN_CATCH4, range,		envPtr);
 
     ExceptionRangeStarts(envPtr, range);
-    BODY(bodyTokenPtr, (int)parsePtr->numWords - 1);
+    BODY(bodyTokenPtr, parsePtr->numWords - 1);
     ExceptionRangeEnds(envPtr, range);
 
     /*
@@ -2184,7 +2184,7 @@ TclCompileDictWithCmd(
     TclEmitInstInt4(		INST_BEGIN_CATCH4, range,	envPtr);
 
     ExceptionRangeStarts(envPtr, range);
-    BODY(tokenPtr, (int)parsePtr->numWords - 1);
+    BODY(tokenPtr, parsePtr->numWords - 1);
     ExceptionRangeEnds(envPtr, range);
 
     /*

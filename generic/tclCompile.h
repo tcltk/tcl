@@ -132,7 +132,7 @@ typedef struct ExceptionAux {
 				 * if there are no open expansions between the
 				 * looping level and the point of jump
 				 * issue. */
-    int numBreakTargets;	/* The number of [break]s that want to be
+    size_t numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
     unsigned int *breakTargets;	/* The offsets of the INST_JUMP4 instructions
@@ -141,8 +141,8 @@ typedef struct ExceptionAux {
 				 * TclFixupForwardJump) can cause the contents
 				 * of this array to be updated. When
 				 * numBreakTargets==0, this is NULL. */
-    int allocBreakTargets;	/* The size of the breakTargets array. */
-    int numContinueTargets;	/* The number of [continue]s that want to be
+    size_t allocBreakTargets;	/* The size of the breakTargets array. */
+    size_t numContinueTargets;	/* The number of [continue]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
     unsigned int *continueTargets; /* The offsets of the INST_JUMP4 instructions
@@ -151,7 +151,7 @@ typedef struct ExceptionAux {
 				 * TclFixupForwardJump) can cause the contents
 				 * of this array to be updated. When
 				 * numContinueTargets==0, this is NULL. */
-    int allocContinueTargets;	/* The size of the continueTargets array. */
+    size_t allocContinueTargets;	/* The size of the continueTargets array. */
 } ExceptionAux;
 
 /*
