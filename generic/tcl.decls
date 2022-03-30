@@ -1162,7 +1162,7 @@ declare 311 {
 	    const Tcl_Time *timePtr)
 }
 declare 312 {
-    size_t Tcl_NumUtfChars(const char *src, size_t length)
+    size_t TclNumUtfChars(const char *src, size_t length)
 }
 declare 313 {
     size_t Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
@@ -1206,7 +1206,7 @@ declare 324 {
     int Tcl_UniCharToUtf(int ch, char *buf)
 }
 declare 325 {
-    const char *Tcl_UtfAtIndex(const char *src, size_t index)
+    const char *TclUtfAtIndex(const char *src, size_t index)
 }
 declare 326 {
     int TclUtfCharComplete(const char *src, size_t length)
@@ -2515,6 +2515,12 @@ declare 660 {
 # TIP #617
 declare 668 {
     size_t Tcl_UniCharLen(const int *uniStr)
+}
+declare 669 {
+    size_t Tcl_NumUtfChars(const char *src, size_t length)
+}
+declare 671 {
+    const char *Tcl_UtfAtIndex(const char *src, size_t index)
 }
 
 

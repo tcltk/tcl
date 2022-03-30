@@ -440,7 +440,7 @@ Tcl_GetCharLength(
      */
 
     if (numChars == TCL_INDEX_NONE) {
-	TclNumUtfChars(numChars, objPtr->bytes, objPtr->length);
+	TclNumUtfCharsM(numChars, objPtr->bytes, objPtr->length);
 	stringPtr->numChars = numChars;
     }
     return numChars;
@@ -543,7 +543,7 @@ Tcl_GetUniChar(
 	 */
 
 	if (stringPtr->numChars == TCL_INDEX_NONE) {
-	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
+	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    return (unsigned char) objPtr->bytes[index];
@@ -674,9 +674,6 @@ Tcl_GetRange(
     if (first == TCL_INDEX_NONE) {
 	first = TCL_INDEX_START;
     }
-    if (last + 2 <= first + 1) {
-	return Tcl_NewObj();
-    }
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
@@ -689,7 +686,7 @@ Tcl_GetRange(
 	if (last >= length) {
 	    last = length - 1;
 	}
-	if (last < first) {
+	if (last + 1 < first + 1) {
 	    TclNewObj(newObjPtr);
 	    return newObjPtr;
 	}
@@ -709,13 +706,13 @@ Tcl_GetRange(
 	 */
 
 	if (stringPtr->numChars == TCL_INDEX_NONE) {
-	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
+	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    if (last >= stringPtr->numChars) {
 		last = stringPtr->numChars - 1;
 	    }
-	    if (last < first) {
+	    if (last + 1 < first + 1) {
 		TclNewObj(newObjPtr);
 		return newObjPtr;
 	    }
@@ -736,7 +733,7 @@ Tcl_GetRange(
     if (last >= stringPtr->numChars) {
 	last = stringPtr->numChars - 1;
     }
-    if (last < first) {
+    if (last + 1 < first + 1) {
 	TclNewObj(newObjPtr);
 	return newObjPtr;
     }
@@ -4045,7 +4042,7 @@ ExtendUnicodeRepWithString(
 	numOrigChars = stringPtr->numChars;
     }
     if (numAppendChars == TCL_INDEX_NONE) {
-	TclNumUtfChars(numAppendChars, bytes, numBytes);
+	TclNumUtfCharsM(numAppendChars, bytes, numBytes);
     }
     needed = numOrigChars + numAppendChars;
 
