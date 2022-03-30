@@ -3560,7 +3560,7 @@ TclCleanupStackForBreakContinue(
 	while (toPop --> 0) {
 	    TclEmitOpcode(INST_EXPAND_DROP, envPtr);
 	}
-	TclAdjustStackDepth(auxPtr->expandTargetDepth - envPtr->currStackDepth,
+	TclAdjustStackDepth((int)(auxPtr->expandTargetDepth - envPtr->currStackDepth),
 		envPtr);
 	envPtr->currStackDepth = auxPtr->expandTargetDepth;
     }
@@ -4161,7 +4161,7 @@ TclEmitInvoke(
 	    &auxContinuePtr);
     if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
 	auxContinuePtr = NULL;
-    } else if (auxContinuePtr->stackDepth == envPtr->currStackDepth-wordCount
+    } else if (auxContinuePtr->stackDepth == (int)envPtr->currStackDepth-wordCount
 	    && auxContinuePtr->expandTarget == envPtr->expandCount-expandCount) {
 	auxContinuePtr = NULL;
     } else {
@@ -4172,7 +4172,7 @@ TclEmitInvoke(
     if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
 	auxBreakPtr = NULL;
     } else if (auxContinuePtr == NULL
-	    && auxBreakPtr->stackDepth == envPtr->currStackDepth-wordCount
+	    && auxBreakPtr->stackDepth == (int)envPtr->currStackDepth-wordCount
 	    && auxBreakPtr->expandTarget == envPtr->expandCount-expandCount) {
 	auxBreakPtr = NULL;
     } else {

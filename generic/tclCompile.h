@@ -297,14 +297,14 @@ typedef struct CompileEnv {
 				 * information provided by ObjInterpProc in
 				 * tclProc.c. */
     size_t numCommands;		/* Number of commands compiled. */
-    int exceptDepth;		/* Current exception range nesting level; -1
+    size_t exceptDepth;		/* Current exception range nesting level; -1
 				 * if not in any range currently. */
-    int maxExceptDepth;		/* Max nesting level of exception ranges; -1
+    size_t maxExceptDepth;		/* Max nesting level of exception ranges; -1
 				 * if no ranges have been compiled. */
-    int maxStackDepth;		/* Maximum number of stack elements needed to
+    size_t maxStackDepth;		/* Maximum number of stack elements needed to
 				 * execute the code. Set by compilation
 				 * procedures before returning. */
-    int currStackDepth;		/* Current stack depth. */
+    size_t currStackDepth;		/* Current stack depth. */
     LiteralTable localLitTable;	/* Contains LiteralEntry's describing all Tcl
 				 * objects referenced by this compiled code.
 				 * Indexed by the string representations of
@@ -467,9 +467,9 @@ typedef struct ByteCode {
     size_t numAuxDataItems;	/* Number of AuxData items. */
     size_t numCmdLocBytes;		/* Number of bytes needed for encoded command
 				 * location information. */
-    int maxExceptDepth;		/* Maximum nesting level of ExceptionRanges;
+    size_t maxExceptDepth;		/* Maximum nesting level of ExceptionRanges;
 				 * -1 if no ranges were compiled. */
-    int maxStackDepth;		/* Maximum number of stack elements needed to
+    size_t maxStackDepth;		/* Maximum number of stack elements needed to
 				 * execute the code. */
     unsigned char *codeStart;	/* Points to the first byte of the code. This
 				 * is just after the final ByteCode member
@@ -1241,7 +1241,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 #define TclAdjustStackDepth(delta, envPtr) \
     do {								\
 	if ((delta) < 0) {						\
-	    if ((envPtr)->maxStackDepth < (envPtr)->currStackDepth) {	\
+	    if ((int)(envPtr)->maxStackDepth < (int)(envPtr)->currStackDepth) {	\
 		(envPtr)->maxStackDepth = (envPtr)->currStackDepth;	\
 	    }								\
 	}								\
@@ -1257,9 +1257,9 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 #define TclCheckStackDepth(depth, envPtr)				\
     do {								\
 	size_t _dd = (depth);						\
-	if (_dd != (size_t)(envPtr)->currStackDepth) {				\
+	if (_dd != (envPtr)->currStackDepth) {				\
 	    Tcl_Panic("bad stack depth computations: is %" TCL_Z_MODIFIER "u, should be %" TCL_Z_MODIFIER "u", \
-		    (size_t)(envPtr)->currStackDepth, _dd);		\
+		    (envPtr)->currStackDepth, _dd);		\
 	}								\
     } while (0)
 
@@ -1576,15 +1576,15 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
  * of LOOP ranges is an interesting datum for debugging purposes, and that is
  * what we compute now.
  *
- * static int	ExceptionRangeStarts(CompileEnv *envPtr, int index);
- * static void	ExceptionRangeEnds(CompileEnv *envPtr, int index);
- * static void	ExceptionRangeTarget(CompileEnv *envPtr, int index, LABEL);
+ * static int	ExceptionRangeStarts(CompileEnv *envPtr, size_t index);
+ * static void	ExceptionRangeEnds(CompileEnv *envPtr, size_t index);
+ * static void	ExceptionRangeTarget(CompileEnv *envPtr, size_t index, LABEL);
  */
 
 #define ExceptionRangeStarts(envPtr, index) \
     (((envPtr)->exceptDepth++),						\
     ((envPtr)->maxExceptDepth =						\
-	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)),	\
+	    TclMax((int)(envPtr)->exceptDepth, (int)(envPtr)->maxExceptDepth)),	\
     ((envPtr)->exceptArrayPtr[(index)].codeOffset= CurrentOffset(envPtr)))
 #define ExceptionRangeEnds(envPtr, index) \
     (((envPtr)->exceptDepth--),						\

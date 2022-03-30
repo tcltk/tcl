@@ -965,7 +965,7 @@ TclCompileAssembleCmd(
 
     size_t numCommands = envPtr->numCommands;
     int offset = envPtr->codeNext - envPtr->codeStart;
-    int depth = envPtr->currStackDepth;
+    size_t depth = envPtr->currStackDepth;
     /*
      * Make sure that the command has a single arg that is a simple word.
      */
@@ -1811,8 +1811,8 @@ CompileEmbeddedScript(
      * code.
      */
 
-    int savedStackDepth = envPtr->currStackDepth;
-    int savedMaxStackDepth = envPtr->maxStackDepth;
+    size_t savedStackDepth = envPtr->currStackDepth;
+    size_t savedMaxStackDepth = envPtr->maxStackDepth;
     int savedExceptArrayNext = envPtr->exceptArrayNext;
 
     envPtr->currStackDepth = 0;
@@ -3334,7 +3334,7 @@ CheckStack(
      */
 
     maxDepth = assemEnvPtr->maxDepth + envPtr->currStackDepth;
-    if (maxDepth > envPtr->maxStackDepth) {
+    if (maxDepth > (int)envPtr->maxStackDepth) {
 	envPtr->maxStackDepth = maxDepth;
     }
 
@@ -4126,8 +4126,8 @@ StackFreshCatches(
 		    TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 	    range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
 	    range->nestingLevel = envPtr->exceptDepth + catchDepth;
-	    envPtr->maxExceptDepth =
-		    TclMax(range->nestingLevel + 1, envPtr->maxExceptDepth);
+	    envPtr->maxExceptDepth=
+		    TclMax(range->nestingLevel + 1, (int)envPtr->maxExceptDepth);
 	    range->codeOffset = bbPtr->startOffset;
 
 	    entryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
@@ -4190,7 +4190,7 @@ RestoreEmbeddedExceptionRanges(
 		range->nestingLevel += envPtr->exceptDepth + bbPtr->catchDepth;
 		memcpy(envPtr->exceptArrayPtr + rangeIndex, range,
 			sizeof(ExceptionRange));
-		if (range->nestingLevel >= envPtr->maxExceptDepth) {
+		if (range->nestingLevel >= (int)envPtr->maxExceptDepth) {
 		    envPtr->maxExceptDepth = range->nestingLevel + 1;
 		}
 	    }

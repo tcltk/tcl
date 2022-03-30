@@ -3255,7 +3255,7 @@ TclAttemptCompileProc(
     int savedAuxDataArrayNext = envPtr->auxDataArrayNext;
     size_t savedExceptArrayNext = envPtr->exceptArrayNext;
 #ifdef TCL_COMPILE_DEBUG
-    int savedExceptDepth = envPtr->exceptDepth;
+    size_t savedExceptDepth = envPtr->exceptDepth;
 #endif
 
     if (cmdPtr->compileProc == NULL) {

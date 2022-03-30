@@ -288,7 +288,7 @@ DisassembleByteCodeObj(
 		TclGetString(fileObj), line);
     }
     Tcl_AppendPrintfToObj(bufferObj,
-	    "\n  Cmds %d, src %" TCL_Z_MODIFIER "u, inst %" TCL_Z_MODIFIER "u, litObjs %" TCL_Z_MODIFIER "u, aux %" TCL_Z_MODIFIER "u, stkDepth %u, code/src %.2f\n",
+	    "\n  Cmds %d, src %" TCL_Z_MODIFIER "u, inst %" TCL_Z_MODIFIER "u, litObjs %" TCL_Z_MODIFIER "u, aux %" TCL_Z_MODIFIER "u, stkDepth %" TCL_Z_MODIFIER "u, code/src %.2f\n",
 	    numCmds, codePtr->numSrcBytes, codePtr->numCodeBytes,
 	    codePtr->numLitObjects, codePtr->numAuxDataItems,
 	    codePtr->maxStackDepth,
@@ -352,7 +352,7 @@ DisassembleByteCodeObj(
      */
 
     if ((int)codePtr->numExceptRanges > 0) {
-	Tcl_AppendPrintfToObj(bufferObj, "  Exception ranges %" TCL_Z_MODIFIER "u, depth %d:\n",
+	Tcl_AppendPrintfToObj(bufferObj, "  Exception ranges %" TCL_Z_MODIFIER "u, depth %" TCL_Z_MODIFIER "u:\n",
 		codePtr->numExceptRanges, codePtr->maxExceptDepth);
 	for (i = 0;  i < (int)codePtr->numExceptRanges;  i++) {
 	    ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
@@ -1232,7 +1232,7 @@ DisassembleByteCodeAsDicts(
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("commands", -1),
 	    commands);
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("script", -1),
-	    Tcl_NewStringObj(codePtr->source, (int)codePtr->numSrcBytes));
+	    Tcl_NewStringObj(codePtr->source, codePtr->numSrcBytes));
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("namespace", -1),
 	    Tcl_NewStringObj(codePtr->nsPtr->fullName, -1));
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("stackdepth", -1),
