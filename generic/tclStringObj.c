@@ -180,12 +180,12 @@ DupUTF16StringInternalRep(
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
-    String *srcStringPtr = ((String *) (srcPtr)->internalRep.twoPtrValue.ptr1);
+    String *srcStringPtr = GET_STRING(srcPtr);
     size_t size = offsetof(String, unicode) + (((srcStringPtr->allocated) + 1U) * sizeof(unsigned short));
     String *copyStringPtr = (String *)ckalloc(size);
     memcpy(copyStringPtr, srcStringPtr, size);
 
-    copyPtr->internalRep.twoPtrValue.ptr1 = copyStringPtr;
+    SET_STRING(copyPtr, copyStringPtr);
     copyPtr->typePtr = &tclStringType;
 }
 
@@ -223,7 +223,7 @@ SetUTF16StringFromAny(
 	stringPtr->allocated = size;
 	stringPtr->maxChars = size;
 	stringPtr->hasUnicode = 1;
-	objPtr->internalRep.twoPtrValue.ptr1 = stringPtr;
+	SET_STRING(objPtr, stringPtr);
 	objPtr->typePtr = &tclStringType;
     }
     return TCL_OK;
@@ -234,7 +234,7 @@ UpdateStringOfUTF16String(
     Tcl_Obj *objPtr)		/* Object with string rep to update. */
 {
     Tcl_DString ds;
-    String *stringPtr = ((String *) (objPtr)->internalRep.twoPtrValue.ptr1);
+    String *stringPtr = GET_STRING(objPtr);
 
 	Tcl_DStringInit(&ds);
 	const char *string = Tcl_Char16ToUtfDString(stringPtr->unicode, stringPtr->numChars, &ds);
@@ -560,18 +560,19 @@ Tcl_NewUnicodeObj(
     Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
-	TclFreeInternalRep(objPtr);
+    TclInvalidateStringRep(objPtr);
 
-	String *stringPtr = (String *)ckalloc((offsetof(String, unicode) + 2U) + numChars * sizeof(unsigned short));
-	memcpy(stringPtr->unicode, unicode, numChars);
-	stringPtr->unicode[numChars] = 0;
+    String *stringPtr = (String *)ckalloc((offsetof(String, unicode)
+	    + sizeof(unsigned short)) + numChars * sizeof(unsigned short));
+    memcpy(stringPtr->unicode, unicode, numChars);
+    stringPtr->unicode[numChars] = 0;
 
-	stringPtr->numChars = numChars;
-	stringPtr->allocated = numChars;
-	stringPtr->maxChars = numChars;
-	stringPtr->hasUnicode = 1;
-	objPtr->internalRep.twoPtrValue.ptr1 = stringPtr;
-	objPtr->typePtr = &tclStringType;
+    stringPtr->numChars = numChars;
+    stringPtr->allocated = numChars;
+    stringPtr->maxChars = numChars;
+    stringPtr->hasUnicode = 1;
+    SET_STRING(objPtr, stringPtr);
+    objPtr->typePtr = &tclStringType;
 
     return objPtr;
 }
@@ -1019,7 +1020,6 @@ Tcl_GetRange(
     int last)			/* Last index of the range. */
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
-    String *stringPtr;
     int length;
 
     if (first < 0) {
@@ -1044,31 +1044,18 @@ Tcl_GetRange(
 	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
     }
 
-    /*
-     * OK, need to work with the object as a utf16 string.
-     */
+    int numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
 
-    SetUTF16StringFromAny(NULL, objPtr);
-    stringPtr = GET_STRING(objPtr);
-
-    if (last < 0 || last >= stringPtr->numChars) {
-	last = stringPtr->numChars - 1;
+    if (last >= numChars) {
+	last = numChars - 1;
     }
     if (last < first) {
 	TclNewObj(newObjPtr);
 	return newObjPtr;
     }
-    /* See: bug [11ae2be95dac9417] */
-    if ((first > 0) && ((stringPtr->unicode[first] & 0xFC00) == 0xDC00)
-	    && ((stringPtr->unicode[first-1] & 0xFC00) == 0xD800)) {
-	++first;
-    }
-    if ((last + 1 < stringPtr->numChars)
-	    && ((stringPtr->unicode[last+1] & 0xFC00) == 0xDC00)
-	    && ((stringPtr->unicode[last] & 0xFC00) == 0xD800)) {
-	++last;
-    }
-    return Tcl_NewUnicodeObj(stringPtr->unicode + first, last - first + 1);
+    const char *begin = Tcl_UtfAtIndex(objPtr->bytes, first);
+    const char *end = Tcl_UtfAtIndex(objPtr->bytes, last + 1);
+    return Tcl_NewStringObj(begin, end - begin);
 }
 #endif
 

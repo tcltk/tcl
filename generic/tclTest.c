@@ -16,6 +16,7 @@
  */
 
 #undef STATIC_BUILD
+#undef BUILD_tcl
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
@@ -6971,7 +6972,7 @@ TestUtfNextCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    size_t numBytes;
+    int numBytes;
     char *bytes;
     const char *result, *first;
     char buffer[32];
