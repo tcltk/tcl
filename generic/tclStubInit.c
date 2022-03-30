@@ -1105,7 +1105,7 @@ const TclStubs tclStubs = {
     Tcl_MutexUnlock, /* 309 */
     Tcl_ConditionNotify, /* 310 */
     Tcl_ConditionWait, /* 311 */
-    Tcl_NumUtfChars, /* 312 */
+    TclNumUtfChars, /* 312 */
     Tcl_ReadChars, /* 313 */
     0, /* 314 */
     0, /* 315 */
@@ -1118,7 +1118,7 @@ const TclStubs tclStubs = {
     Tcl_UniCharToTitle, /* 322 */
     Tcl_UniCharToUpper, /* 323 */
     Tcl_UniCharToUtf, /* 324 */
-    Tcl_UtfAtIndex, /* 325 */
+    TclUtfAtIndex, /* 325 */
     TclUtfCharComplete, /* 326 */
     Tcl_UtfBackslash, /* 327 */
     Tcl_UtfFindFirst, /* 328 */
@@ -1462,6 +1462,9 @@ const TclStubs tclStubs = {
     Tcl_FSSplitPath, /* 666 */
     Tcl_ParseArgsObjv, /* 667 */
     Tcl_UniCharLen, /* 668 */
+    Tcl_NumUtfChars, /* 669 */
+    0, /* 670 */
+    Tcl_UtfAtIndex, /* 671 */
 };
 
 /* !END!: Do not edit above this line. */
