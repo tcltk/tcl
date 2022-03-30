@@ -747,9 +747,6 @@ Tcl_GetRange(
     if (first == TCL_INDEX_NONE) {
 	first = TCL_INDEX_START;
     }
-    if (last + 2 <= first + 1) {
-	return Tcl_NewObj();
-    }
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
@@ -762,7 +759,7 @@ Tcl_GetRange(
 	if (last >= length) {
 	    last = length - 1;
 	}
-	if (last < first) {
+	if (last + 1 < first + 1) {
 	    TclNewObj(newObjPtr);
 	    return newObjPtr;
 	}
@@ -788,7 +785,7 @@ Tcl_GetRange(
 	    if (last >= stringPtr->numChars) {
 		last = stringPtr->numChars - 1;
 	    }
-	    if (last < first) {
+	    if (last + 1 < first + 1) {
 		TclNewObj(newObjPtr);
 		return newObjPtr;
 	    }
@@ -809,7 +806,7 @@ Tcl_GetRange(
     if (last >= stringPtr->numChars) {
 	last = stringPtr->numChars - 1;
     }
-    if (last < first) {
+    if (last + 1 < first + 1) {
 	TclNewObj(newObjPtr);
 	return newObjPtr;
     }
@@ -840,9 +837,6 @@ TclGetRange(
     if (first == TCL_INDEX_NONE) {
 	first = TCL_INDEX_START;
     }
-    if (last + 2 <= first + 1) {
-	return Tcl_NewObj();
-    }
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
@@ -855,7 +849,7 @@ TclGetRange(
 	if (last >= length) {
 	    last = length - 1;
 	}
-	if (last < first) {
+	if (last + 1 < first + 1) {
 	    TclNewObj(newObjPtr);
 	    return newObjPtr;
 	}
@@ -867,7 +861,7 @@ TclGetRange(
     if (last >= numChars) {
 	last = numChars - 1;
     }
-    if (last < first) {
+    if (last + 1 < first + 1) {
 	TclNewObj(newObjPtr);
 	return newObjPtr;
     }
@@ -875,7 +869,6 @@ TclGetRange(
     const char *end = TclUtfAtIndex(objPtr->bytes, last + 1);
     return Tcl_NewStringObj(begin, end - begin);
 }
-
 
 /*
  *----------------------------------------------------------------------
