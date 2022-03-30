@@ -3359,7 +3359,7 @@ EnterCmdWordData(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclCreateExceptRange(
     ExceptionRangeType type,	/* The kind of ExceptionRange desired. */
     CompileEnv *envPtr)/* Points to CompileEnv for which to create a
@@ -3367,9 +3367,9 @@ TclCreateExceptRange(
 {
     ExceptionRange *rangePtr;
     ExceptionAux *auxPtr;
-    int index = envPtr->exceptArrayNext;
+    size_t index = envPtr->exceptArrayNext;
 
-    if (index >= envPtr->exceptArrayEnd) {
+    if (index >= (size_t)envPtr->exceptArrayEnd) {
 	/*
 	 * Expand the ExceptionRange array. The currently allocated entries
 	 * are stored between elements 0 and (envPtr->exceptArrayNext - 1)
@@ -3449,7 +3449,7 @@ TclGetInnermostExceptionRange(
     int returnCode,
     ExceptionAux **auxPtrPtr)
 {
-    int i = envPtr->exceptArrayNext;
+    size_t i = envPtr->exceptArrayNext;
     ExceptionRange *rangePtr = envPtr->exceptArrayPtr + i;
 
     while (i > 0) {
@@ -3498,11 +3498,11 @@ TclAddLoopBreakFixup(
 	auxPtr->allocBreakTargets *= 2;
 	auxPtr->allocBreakTargets += 2;
 	if (auxPtr->breakTargets) {
-	    auxPtr->breakTargets = (unsigned int *)Tcl_Realloc(auxPtr->breakTargets,
-		    sizeof(int) * auxPtr->allocBreakTargets);
+	    auxPtr->breakTargets = (size_t *)Tcl_Realloc(auxPtr->breakTargets,
+		    sizeof(size_t) * auxPtr->allocBreakTargets);
 	} else {
 	    auxPtr->breakTargets =
-		    (unsigned int *)Tcl_Alloc(sizeof(int) * auxPtr->allocBreakTargets);
+		    (size_t *)Tcl_Alloc(sizeof(size_t) * auxPtr->allocBreakTargets);
 	}
     }
     auxPtr->breakTargets[auxPtr->numBreakTargets - 1] = CurrentOffset(envPtr);
@@ -3524,11 +3524,11 @@ TclAddLoopContinueFixup(
 	auxPtr->allocContinueTargets *= 2;
 	auxPtr->allocContinueTargets += 2;
 	if (auxPtr->continueTargets) {
-	    auxPtr->continueTargets = (unsigned int *)Tcl_Realloc(auxPtr->continueTargets,
-		    sizeof(int) * auxPtr->allocContinueTargets);
+	    auxPtr->continueTargets = (size_t *)Tcl_Realloc(auxPtr->continueTargets,
+		    sizeof(size_t) * auxPtr->allocContinueTargets);
 	} else {
 	    auxPtr->continueTargets =
-		    (unsigned int *)Tcl_Alloc(sizeof(int) * auxPtr->allocContinueTargets);
+		    (size_t *)Tcl_Alloc(sizeof(size_t) * auxPtr->allocContinueTargets);
 	}
     }
     auxPtr->continueTargets[auxPtr->numContinueTargets - 1] =
@@ -3596,7 +3596,7 @@ StartExpanding(
      * where this expansion started.
      */
 
-    for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
+    for (i=0 ; i<(int)envPtr->exceptArrayNext ; i++) {
 	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
 	ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[i];
 
@@ -3662,7 +3662,7 @@ TclFinalizeLoopExceptionRange(
 
     for (i=0 ; i<(int)auxPtr->numBreakTargets ; i++) {
 	site = envPtr->codeStart + auxPtr->breakTargets[i];
-	offset = (int)rangePtr->breakOffset - auxPtr->breakTargets[i];
+	offset = rangePtr->breakOffset - auxPtr->breakTargets[i];
 	TclUpdateInstInt4AtPc(INST_JUMP4, offset, site);
     }
     for (i=0 ; i<(int)auxPtr->numContinueTargets ; i++) {
@@ -3680,7 +3680,7 @@ TclFinalizeLoopExceptionRange(
 		*++site = INST_NOP;
 	    }
 	} else {
-	    offset = (int)rangePtr->continueOffset - auxPtr->continueTargets[i];
+	    offset = rangePtr->continueOffset - auxPtr->continueTargets[i];
 	    TclUpdateInstInt4AtPc(INST_JUMP4, offset, site);
 	}
     }
@@ -4029,7 +4029,7 @@ TclFixupForwardJump(
      */
 
     firstCmd = jumpFixupPtr->cmdIndex;
-    lastCmd = (int)envPtr->numCommands - 1;
+    lastCmd = envPtr->numCommands - 1;
     if (firstCmd < lastCmd) {
 	for (k = firstCmd;  k <= lastCmd;  k++) {
 	    envPtr->cmdMapPtr[k].codeOffset += 3;
@@ -4058,7 +4058,7 @@ TclFixupForwardJump(
 	}
     }
 
-    for (k = 0 ; k < envPtr->exceptArrayNext ; k++) {
+    for (k = 0 ; k < (int)envPtr->exceptArrayNext ; k++) {
 	ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[k];
 	int i;
 

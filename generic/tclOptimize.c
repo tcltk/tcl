@@ -125,7 +125,7 @@ LocateTargetAddresses(
      * Enter in the targets of exception ranges.
      */
 
-    for (i=0 ; i<(size_t)envPtr->exceptArrayNext ; i++) {
+    for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
 	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
 
 	if (rangePtr->type == CATCH_EXCEPTION_RANGE) {
