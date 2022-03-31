@@ -81,7 +81,7 @@ test utf-1.12 {Tcl_UniCharToUtf: 4 byte sequence, high/low surrogate} {pairsTo4b
 test utf-1.13.0 {Tcl_UniCharToUtf: Invalid surrogate} {Uesc} {
     expr {"\UD842" eq "\uD842"}
 } 1
-test utf-1.13.1 {Tcl_UniCharToUtf: Invalid surrogate} {testbytestring} {
+test utf-1.13.1 {Tcl_UniCharToUtf: Invalid surrogate} {fullutf testbytestring} {
     expr {"\UD842" eq [testbytestring \xED\xA1\x82]}
 } 1
 test utf-1.14 {Tcl_UniCharToUtf: surrogate pairs from concat} {
