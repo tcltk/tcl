@@ -24,9 +24,6 @@ testConstraint pointerIs64bit [expr {$tcl_platform(pointerSize) >= 8}]
 # particularly in Continuous Integration, and there isn't anything much we can
 # do about it.
 testConstraint knownMsvcBug [expr {![string match msvc-* [tcl::build-info compiler]]}]
-testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
-testConstraint ucs4 [expr {[testConstraint fullutf]
-		&& [string length [format %c 0x10000]] == 1}]
 
 test format-1.1 {integer formatting} {
     format "%*d %d %d %d" 6 34 16923 -12 -1
@@ -146,10 +143,10 @@ test format-2.16 {string formatting, width and precision} {
 test format-2.17 {string formatting, width and precision} {
     format "a%5.7sa" foobarbaz
 } "afoobarba"
-test format-2.18 {string formatting, surrogates} ucs4 {
+test format-2.18 {string formatting, surrogates} {
     format "\uD83D%s" \uDE02
 } \uD83D\uDE02
-test format-2.19 {string formatting, surrogates} ucs4 {
+test format-2.19 {string formatting, surrogates} {
     format "%s\uDE02" \uD83D
 } \uD83D\uDE02
 

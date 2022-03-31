@@ -70,8 +70,14 @@ static void		SetUnicodeObj(Tcl_Obj *objPtr,
 static size_t		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 
+#if TCL+UTF_MAX > 3
 #define ISCONTINUATION(bytes) (\
 	((bytes)[0] & 0xC0) == 0x80)
+#else
+#define ISCONTINUATION(bytes) (\
+	((((bytes)[0] & 0xC0) == 0x80) || (((bytes)[0] == '\xED') \
+	&& (((bytes)[1] & 0xF0) == 0xB0) && (((bytes)[2] & 0xC0) == 0x80))))
+#endif
 
 
 /*
@@ -673,9 +679,6 @@ Tcl_GetRange(
     if (first == TCL_INDEX_NONE) {
 	first = TCL_INDEX_START;
     }
-    if (last + 2 <= first + 1) {
-	return Tcl_NewObj();
-    }
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
@@ -688,7 +691,7 @@ Tcl_GetRange(
 	if (last >= length) {
 	    last = length - 1;
 	}
-	if (last < first) {
+	if (last + 1 < first + 1) {
 	    TclNewObj(newObjPtr);
 	    return newObjPtr;
 	}
@@ -714,7 +717,7 @@ Tcl_GetRange(
 	    if (last >= stringPtr->numChars) {
 		last = stringPtr->numChars - 1;
 	    }
-	    if (last < first) {
+	    if (last + 1 < first + 1) {
 		TclNewObj(newObjPtr);
 		return newObjPtr;
 	    }
@@ -735,7 +738,7 @@ Tcl_GetRange(
     if (last >= stringPtr->numChars) {
 	last = stringPtr->numChars - 1;
     }
-    if (last < first) {
+    if (last + 1 < first + 1) {
 	TclNewObj(newObjPtr);
 	return newObjPtr;
     }
