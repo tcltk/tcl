@@ -181,8 +181,8 @@ TclCompileIfCmd(
 				 * determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
     int jumpIndex = 0;		/* Avoid compiler warning. */
-	size_t numBytes;
-    int jumpFalseDist, numWords, wordIdx, j, code;
+	size_t numBytes, j;
+    int jumpFalseDist, numWords, wordIdx, code;
     const char *word;
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
