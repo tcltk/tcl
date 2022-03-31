@@ -340,13 +340,13 @@ test encoding-15.3 {UtfToUtfProc null character input} teststringbytes {
 test encoding-15.4 {UtfToUtfProc emoji character input} -body {
     set x \xED\xA0\xBD\xED\xB8\x82
     set y [encoding convertfrom -nocomplain utf-8 \xED\xA0\xBD\xED\xB8\x82]
-    list [string length $y] $y
-} -result "2 \uD83D\uDE02"
-test encoding-15.5 {UtfToUtfProc emoji character input} ucs4 {
+    list [string length $x] $y
+} -result "6 \uD83D\uDE02"
+test encoding-15.5 {UtfToUtfProc emoji character input} {
     set x \xF0\x9F\x98\x82
     set y [encoding convertfrom utf-8 \xF0\x9F\x98\x82]
-    list [string length $y] $y
-} "1 😂"
+    list [string length $x] $y
+} "4 😂"
 test encoding-15.6 {UtfToUtfProc emoji character output} ucs4 {
     set x \uDE02\uD83D\uDE02\uD83D
     set y [encoding convertto -nocomplain utf-8 \uDE02\uD83D\uDE02\uD83D]
