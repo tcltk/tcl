@@ -2803,7 +2803,7 @@ typedef struct ForIterData {
     Tcl_Obj *body;		/* Loop body. */
     Tcl_Obj *next;		/* Loop step script, NULL for 'while'. */
     const char *msg;		/* Error message part. */
-    int word;			/* Index of the body script in the command */
+    size_t word;			/* Index of the body script in the command */
 } ForIterData;
 
 /* TIP #357 - Structure doing the bookkeeping of handles for Tcl_LoadFile
