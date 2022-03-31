@@ -2200,17 +2200,17 @@ Tcl_GetBoolFromObj(
 	boolEnd:
 	    if (boolPtr != NULL) {
 		if ((flags>>8) & (int)~sizeof(int)) {
-		    if ((flags>>8) == sizeof(uint64_t)) {
-			*(uint64_t *)boolPtr = result;
+		    if ((flags>>8) == sizeof(int64_t)) {
+			*(int64_t *)boolPtr = result;
 			return TCL_OK;
-		    } else if ((flags>>8) == sizeof(uint32_t)) {
-			*(uint32_t *)boolPtr = result;
+		    } else if ((flags>>8) == sizeof(int32_t)) {
+			*(int32_t *)boolPtr = result;
 			return TCL_OK;
-		    } else if ((flags>>8) == sizeof(uint16_t)) {
-			*(uint16_t *)boolPtr = result;
+		    } else if ((flags>>8) == sizeof(int16_t)) {
+			*(int16_t *)boolPtr = result;
 			return TCL_OK;
-		    } else if ((flags>>8) == sizeof(uint8_t)) {
-			*(uint8_t *)boolPtr = result;
+		    } else if ((flags>>8) == sizeof(int8_t)) {
+			*(int8_t *)boolPtr = result;
 			return TCL_OK;
 		}
 		}
