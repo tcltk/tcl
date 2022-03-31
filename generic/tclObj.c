@@ -2168,6 +2168,13 @@ Tcl_GetBoolFromObj(
     if ((flags & TCL_NULL_OK) && (objPtr == NULL || Tcl_GetString(objPtr)[0] == '\0')) {
 	result = -1;
 	goto boolEnd;
+    } else if (objPtr == NULL) {
+	if (interp) {
+	    TclNewObj(objPtr);
+	    TclParseNumber(interp, objPtr, "boolean value", NULL,-1,NULL,0);
+	    Tcl_DecrRefCount(objPtr);
+	}
+	return TCL_ERROR;
     }
     do {
 	if (objPtr->typePtr == &tclIntType) {
