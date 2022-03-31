@@ -3419,7 +3419,7 @@ TclCreateExceptRange(
     auxPtr->supportsContinue = 1;
     auxPtr->stackDepth = envPtr->currStackDepth;
     auxPtr->expandTarget = envPtr->expandCount;
-    auxPtr->expandTargetDepth = -1;
+    auxPtr->expandTargetDepth = TCL_INDEX_NONE;
     auxPtr->numBreakTargets = 0;
     auxPtr->breakTargets = NULL;
     auxPtr->allocBreakTargets = 0;
@@ -3553,7 +3553,7 @@ TclCleanupStackForBreakContinue(
     CompileEnv *envPtr,
     ExceptionAux *auxPtr)
 {
-    int savedStackDepth = envPtr->currStackDepth;
+    size_t savedStackDepth = envPtr->currStackDepth;
     int toPop = envPtr->expandCount - auxPtr->expandTarget;
 
     if (toPop > 0) {
@@ -4161,8 +4161,8 @@ TclEmitInvoke(
 	    &auxContinuePtr);
     if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
 	auxContinuePtr = NULL;
-    } else if (auxContinuePtr->stackDepth == (int)envPtr->currStackDepth-wordCount
-	    && auxContinuePtr->expandTarget == envPtr->expandCount-expandCount) {
+    } else if (auxContinuePtr->stackDepth == envPtr->currStackDepth-wordCount
+	    && (auxContinuePtr->expandTarget+expandCount == envPtr->expandCount)) {
 	auxContinuePtr = NULL;
     } else {
 	continueRange = auxContinuePtr - envPtr->exceptAuxArrayPtr;
@@ -4172,8 +4172,8 @@ TclEmitInvoke(
     if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
 	auxBreakPtr = NULL;
     } else if (auxContinuePtr == NULL
-	    && auxBreakPtr->stackDepth == (int)envPtr->currStackDepth-wordCount
-	    && auxBreakPtr->expandTarget == envPtr->expandCount-expandCount) {
+	    && auxBreakPtr->stackDepth+wordCount == envPtr->currStackDepth
+	    && auxBreakPtr->expandTarget+expandCount == envPtr->expandCount) {
 	auxBreakPtr = NULL;
     } else {
 	breakRange = auxBreakPtr - envPtr->exceptAuxArrayPtr;
@@ -4219,8 +4219,8 @@ TclEmitInvoke(
      */
 
     if (auxBreakPtr != NULL || auxContinuePtr != NULL) {
-	int savedStackDepth = envPtr->currStackDepth;
-	int savedExpandCount = envPtr->expandCount;
+	size_t savedStackDepth = envPtr->currStackDepth;
+	size_t savedExpandCount = envPtr->expandCount;
 	JumpFixup nonTrapFixup;
 
 	if (auxBreakPtr != NULL) {

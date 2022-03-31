@@ -3250,7 +3250,7 @@ TclAttemptCompileProc(
     int result;
     size_t i;
     Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
-    int savedStackDepth = envPtr->currStackDepth;
+    size_t savedStackDepth = envPtr->currStackDepth;
     unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
     int savedAuxDataArrayNext = envPtr->auxDataArrayNext;
     size_t savedExceptArrayNext = envPtr->exceptArrayNext;

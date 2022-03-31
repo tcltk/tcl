@@ -118,16 +118,16 @@ typedef struct ExceptionAux {
 				 * one (see [for] next-clause) then we must
 				 * not pick up the range when scanning for a
 				 * target to continue to. */
-    int stackDepth;		/* The stack depth at the point where the
+    size_t stackDepth;		/* The stack depth at the point where the
 				 * exception range was created. This is used
 				 * to calculate the number of POPs required to
 				 * restore the stack to its prior state. */
-    int expandTarget;		/* The number of expansions expected on the
+    size_t expandTarget;		/* The number of expansions expected on the
 				 * auxData stack at the time the loop starts;
 				 * we can't currently discard them except by
 				 * doing INST_INVOKE_EXPANDED; this is a known
 				 * problem. */
-    int expandTargetDepth;	/* The stack depth expected at the outermost
+    size_t expandTargetDepth;	/* The stack depth expected at the outermost
 				 * expansion within the loop. Not meaningful
 				 * if there are no open expansions between the
 				 * looping level and the point of jump
@@ -388,7 +388,7 @@ typedef struct CompileEnv {
 				 * inefficient. If set to 2, that instruction
 				 * should not be issued at all (by the generic
 				 * part of the command compiler). */
-    int expandCount;		/* Number of INST_EXPAND_START instructions
+    size_t expandCount;		/* Number of INST_EXPAND_START instructions
 				 * encountered that have not yet been paired
 				 * with a corresponding
 				 * INST_INVOKE_EXPANDED. */
