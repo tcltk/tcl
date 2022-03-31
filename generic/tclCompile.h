@@ -322,8 +322,8 @@ typedef struct CompileEnv {
 #endif
     LiteralEntry *literalArrayPtr;
     				/* Points to start of LiteralEntry array. */
-    int literalArrayNext;	/* Index of next free object array entry. */
-    int literalArrayEnd;	/* Index just after last obj array entry. */
+    size_t literalArrayNext1;	/* Index of next free object array entry. */
+    size_t literalArrayEnd1;	/* Index just after last obj array entry. */
     int mallocedLiteralArray;	/* 1 if object array was expanded and objArray
 				 * points into the heap, else 0. */
     ExceptionRange *exceptArrayPtr;
@@ -355,7 +355,7 @@ typedef struct CompileEnv {
 				 * auxDataArrayPtr points in heap else 0. */
 #endif
     AuxData *auxDataArrayPtr;	/* Points to auxiliary data array start. */
-    int auxDataArrayNext;	/* Next free compile aux data array index.
+    size_t auxDataArrayNext1;	/* Next free compile aux data array index.
 				 * auxDataArrayNext is the number of aux data
 				 * items and (auxDataArrayNext-1) is index of
 				 * current aux data array entry. */

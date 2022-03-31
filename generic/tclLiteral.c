@@ -28,7 +28,7 @@
  * Function prototypes for static functions in this file:
  */
 
-static int		AddLocalLiteralEntry(CompileEnv *envPtr,
+static size_t		AddLocalLiteralEntry(CompileEnv *envPtr,
 			    Tcl_Obj *objPtr, int localHash);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
 static size_t		HashString(const char *string, size_t length);
@@ -354,7 +354,7 @@ TclFetchLiteral(
     size_t index)		/* Index of the desired literal, as returned
 				 * by prior call to TclRegisterLiteral() */
 {
-    if (index >= (size_t) envPtr->literalArrayNext) {
+    if (index >= envPtr->literalArrayNext1) {
 	return NULL;
     }
     return envPtr->literalArrayPtr[index].objPtr;
@@ -387,7 +387,7 @@ TclFetchLiteral(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclRegisterLiteral(
     void *ePtr,		/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
@@ -607,7 +607,7 @@ TclHideLiteral(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclAddLiteralObj(
     CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
@@ -617,13 +617,13 @@ TclAddLiteralObj(
 				 * NULL. */
 {
     LiteralEntry *lPtr;
-    int objIndex;
+    size_t objIndex;
 
-    if (envPtr->literalArrayNext >= envPtr->literalArrayEnd) {
+    if (envPtr->literalArrayNext1 >= envPtr->literalArrayEnd1) {
 	ExpandLocalLiteralArray(envPtr);
     }
-    objIndex = envPtr->literalArrayNext;
-    envPtr->literalArrayNext++;
+    objIndex = envPtr->literalArrayNext1;
+    envPtr->literalArrayNext1++;
 
     lPtr = &envPtr->literalArrayPtr[objIndex];
     lPtr->objPtr = objPtr;
@@ -656,7 +656,7 @@ TclAddLiteralObj(
  *----------------------------------------------------------------------
  */
 
-static int
+static size_t
 AddLocalLiteralEntry(
     CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
@@ -665,7 +665,7 @@ AddLocalLiteralEntry(
 {
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *localPtr;
-    int objIndex;
+    size_t objIndex;
 
     objIndex = TclAddLiteralObj(envPtr, objPtr, &localPtr);
 
@@ -745,7 +745,7 @@ ExpandLocalLiteralArray(
      */
 
     LiteralTable *localTablePtr = &envPtr->localLitTable;
-    size_t currElems = envPtr->literalArrayNext;
+    size_t currElems = envPtr->literalArrayNext1;
     size_t currBytes = (currElems * sizeof(LiteralEntry));
     LiteralEntry *currArrayPtr = envPtr->literalArrayPtr;
     LiteralEntry *newArrayPtr;
@@ -790,7 +790,7 @@ ExpandLocalLiteralArray(
     }
 
     envPtr->literalArrayPtr = newArrayPtr;
-    envPtr->literalArrayEnd = newSize / sizeof(LiteralEntry);
+    envPtr->literalArrayEnd1 = newSize / sizeof(LiteralEntry);
 }
 
 /*

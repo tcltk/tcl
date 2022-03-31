@@ -264,7 +264,7 @@ declare 142 {
 	    CompileHookProc *hookProc, void *clientData)
 }
 declare 143 {
-    int TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr,
+    size_t TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr,
 	    LiteralEntry **litPtrPtr)
 }
 declare 144 {
@@ -548,7 +548,7 @@ declare 250 {
 
 # Allow extensions for optimization
 declare 251 {
-    int TclRegisterLiteral(void *envPtr,
+    size_t TclRegisterLiteral(void *envPtr,
 	    const char *bytes, size_t length, int flags)
 }
 
