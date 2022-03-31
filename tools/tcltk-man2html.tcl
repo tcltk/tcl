@@ -682,7 +682,7 @@ array set exclude_refs_map {
     ttk_scale.n		{variable}
     ttk_scrollbar.n	{set}
     ttk_spinbox.n	{format}
-    ttk_treeview.n	{text open}
+    ttk_treeview.n	{text open focus selection}
     ttk_widget.n	{image text variable}
     TclZlib.3		{binary flush filename text}
 }

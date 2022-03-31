@@ -128,21 +128,24 @@ typedef int ptrdiff_t;
  * to/from pointer from/to integer of different size".
  */
 
-#if !defined(INT2PTR) && !defined(PTR2INT)
+#if !defined(INT2PTR)
 #   if defined(HAVE_INTPTR_T) || defined(intptr_t)
 #	define INT2PTR(p) ((void *)(intptr_t)(p))
-#	define PTR2INT(p) ((intptr_t)(p))
 #   else
 #	define INT2PTR(p) ((void *)(p))
+#   endif
+#endif
+#if !defined(PTR2INT)
+#   if defined(HAVE_INTPTR_T) || defined(intptr_t)
+#	define PTR2INT(p) ((intptr_t)(p))
+#   else
 #	define PTR2INT(p) ((long)(p))
 #   endif
 #endif
-#if !defined(UINT2PTR) && !defined(PTR2UINT)
+#if !defined(PTR2UINT)
 #   if defined(HAVE_UINTPTR_T) || defined(uintptr_t)
-#	define UINT2PTR(p) ((void *)(uintptr_t)(p))
 #	define PTR2UINT(p) ((uintptr_t)(p))
 #   else
-#	define UINT2PTR(p) ((void *)(p))
 #	define PTR2UINT(p) ((unsigned long)(p))
 #   endif
 #endif
@@ -4126,30 +4129,30 @@ MODULE_SCOPE Tcl_Obj *	TclStringReverse(Tcl_Obj *objPtr, int flags);
 
 MODULE_SCOPE Var *	TclObjLookupVarEx(Tcl_Interp * interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags,
-			    const char *msg, const int createPart1,
-			    const int createPart2, Var **arrayPtrPtr);
+			    const char *msg, int createPart1,
+			    int createPart2, Var **arrayPtrPtr);
 MODULE_SCOPE Var *	TclLookupArrayElement(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNamePtr, Tcl_Obj *elNamePtr,
-			    const int flags, const char *msg,
-			    const int createPart1, const int createPart2,
+			    int flags, const char *msg,
+			    int createPart1, int createPart2,
 			    Var *arrayPtr, int index);
 MODULE_SCOPE Tcl_Obj *	TclPtrGetVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
-			    Tcl_Obj *part2Ptr, const int flags, int index);
+			    Tcl_Obj *part2Ptr, int flags, int index);
 MODULE_SCOPE Tcl_Obj *	TclPtrSetVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr,
-			    const int flags, int index);
+			    int flags, int index);
 MODULE_SCOPE Tcl_Obj *	TclPtrIncrObjVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr,
-			    const int flags, int index);
+			    int flags, int index);
 MODULE_SCOPE int	TclPtrObjMakeUpvarIdx(Tcl_Interp *interp,
 			    Var *otherPtr, Tcl_Obj *myNamePtr, int myFlags,
 			    int index);
 MODULE_SCOPE int	TclPtrUnsetVarIdx(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *part1Ptr,
-			    Tcl_Obj *part2Ptr, const int flags,
+			    Tcl_Obj *part2Ptr, int flags,
 			    int index);
 MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 MODULE_SCOPE void	TclFindArrayPtrElements(Var *arrayPtr,
@@ -4510,7 +4513,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *)ckalloc((len) + 1); \
+	(objPtr)->bytes = (char *)ckalloc((unsigned int)(len) + 1U); \
 	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \

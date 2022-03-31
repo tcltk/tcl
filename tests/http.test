@@ -15,6 +15,7 @@ if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
+package require tcltests
 
 if {[catch {package require http 2} version]} {
     if {[info exists http2]} {
@@ -661,7 +662,7 @@ test http-7.3 {http::formatQuery} -setup {
 } -cleanup {
     http::config -urlencoding $enc
 } -result "can't read \"formMap(∈)\": no such element in array"
-test http-7.4 {http::formatQuery} -setup {
+test http-7.4 {http::formatQuery} -constraints deprecated -setup {
     set enc [http::config -urlencoding]
 } -body {
     # this would be reverting to http <=2.4 behavior w/o errors

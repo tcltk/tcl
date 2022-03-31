@@ -1164,7 +1164,8 @@ void			Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr,
 EXTERN int		Tcl_RegExpMatchObj(Tcl_Interp *interp,
 				Tcl_Obj *textObj, Tcl_Obj *patternObj);
 /* 386 */
-EXTERN void		Tcl_SetNotifier(Tcl_NotifierProcs *notifierProcPtr);
+EXTERN void		Tcl_SetNotifier(
+				const Tcl_NotifierProcs *notifierProcPtr);
 /* 387 */
 EXTERN Tcl_Mutex *	Tcl_GetAllocMutex(void);
 /* 388 */
@@ -1942,8 +1943,14 @@ EXTERN const char *	Tcl_UtfNext(const char *src);
 EXTERN const char *	Tcl_UtfPrev(const char *src, const char *start);
 /* 657 */
 EXTERN int		Tcl_UniCharIsUnicode(int ch);
-/* Slot 658 is reserved */
-/* Slot 659 is reserved */
+/* 658 */
+EXTERN int		Tcl_ExternalToUtfDStringEx(Tcl_Encoding encoding,
+				const char *src, int srcLen, int flags,
+				Tcl_DString *dsPtr);
+/* 659 */
+EXTERN int		Tcl_UtfToExternalDStringEx(Tcl_Encoding encoding,
+				const char *src, int srcLen, int flags,
+				Tcl_DString *dsPtr);
 /* 660 */
 EXTERN int		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
 				int sigNumber);
@@ -1956,10 +1963,15 @@ EXTERN int		Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async,
 /* Slot 667 is reserved */
 /* 668 */
 EXTERN int		Tcl_UniCharLen(const int *uniStr);
-/* 669 */
+/* Slot 669 is reserved */
+/* Slot 670 is reserved */
+/* Slot 671 is reserved */
+/* Slot 672 is reserved */
+/* Slot 673 is reserved */
+/* 674 */
 EXTERN int		Tcl_GetBool(Tcl_Interp *interp, const char *src,
 				int flags, void *boolPtr);
-/* 670 */
+/* 675 */
 EXTERN int		Tcl_GetBoolFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, int flags, void *boolPtr);
 
@@ -2383,7 +2395,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_GetRange) (Tcl_Obj *objPtr, int first, int last); /* 383 */
     TCL_DEPRECATED_API("Use Tcl_AppendStringsToObj") void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int length); /* 384 */
     int (*tcl_RegExpMatchObj) (Tcl_Interp *interp, Tcl_Obj *textObj, Tcl_Obj *patternObj); /* 385 */
-    void (*tcl_SetNotifier) (Tcl_NotifierProcs *notifierProcPtr); /* 386 */
+    void (*tcl_SetNotifier) (const Tcl_NotifierProcs *notifierProcPtr); /* 386 */
     Tcl_Mutex * (*tcl_GetAllocMutex) (void); /* 387 */
     int (*tcl_GetChannelNames) (Tcl_Interp *interp); /* 388 */
     int (*tcl_GetChannelNamesEx) (Tcl_Interp *interp, const char *pattern); /* 389 */
@@ -2655,8 +2667,8 @@ typedef struct TclStubs {
     const char * (*tcl_UtfNext) (const char *src); /* 655 */
     const char * (*tcl_UtfPrev) (const char *src, const char *start); /* 656 */
     int (*tcl_UniCharIsUnicode) (int ch); /* 657 */
-    void (*reserved658)(void);
-    void (*reserved659)(void);
+    int (*tcl_ExternalToUtfDStringEx) (Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_DString *dsPtr); /* 658 */
+    int (*tcl_UtfToExternalDStringEx) (Tcl_Encoding encoding, const char *src, int srcLen, int flags, Tcl_DString *dsPtr); /* 659 */
     int (*tcl_AsyncMarkFromSignal) (Tcl_AsyncHandler async, int sigNumber); /* 660 */
     void (*reserved661)(void);
     void (*reserved662)(void);
@@ -2666,8 +2678,13 @@ typedef struct TclStubs {
     void (*reserved666)(void);
     void (*reserved667)(void);
     int (*tcl_UniCharLen) (const int *uniStr); /* 668 */
-    int (*tcl_GetBool) (Tcl_Interp *interp, const char *src, int flags, void *boolPtr); /* 669 */
-    int (*tcl_GetBoolFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, void *boolPtr); /* 670 */
+    void (*reserved669)(void);
+    void (*reserved670)(void);
+    void (*reserved671)(void);
+    void (*reserved672)(void);
+    void (*reserved673)(void);
+    int (*tcl_GetBool) (Tcl_Interp *interp, const char *src, int flags, void *boolPtr); /* 674 */
+    int (*tcl_GetBoolFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, void *boolPtr); /* 675 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4014,8 +4031,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UtfPrev) /* 656 */
 #define Tcl_UniCharIsUnicode \
 	(tclStubsPtr->tcl_UniCharIsUnicode) /* 657 */
-/* Slot 658 is reserved */
-/* Slot 659 is reserved */
+#define Tcl_ExternalToUtfDStringEx \
+	(tclStubsPtr->tcl_ExternalToUtfDStringEx) /* 658 */
+#define Tcl_UtfToExternalDStringEx \
+	(tclStubsPtr->tcl_UtfToExternalDStringEx) /* 659 */
 #define Tcl_AsyncMarkFromSignal \
 	(tclStubsPtr->tcl_AsyncMarkFromSignal) /* 660 */
 /* Slot 661 is reserved */
@@ -4027,10 +4046,15 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 667 is reserved */
 #define Tcl_UniCharLen \
 	(tclStubsPtr->tcl_UniCharLen) /* 668 */
+/* Slot 669 is reserved */
+/* Slot 670 is reserved */
+/* Slot 671 is reserved */
+/* Slot 672 is reserved */
+/* Slot 673 is reserved */
 #define Tcl_GetBool \
-	(tclStubsPtr->tcl_GetBool) /* 669 */
+	(tclStubsPtr->tcl_GetBool) /* 674 */
 #define Tcl_GetBoolFromObj \
-	(tclStubsPtr->tcl_GetBoolFromObj) /* 670 */
+	(tclStubsPtr->tcl_GetBoolFromObj) /* 675 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4133,7 +4157,6 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GetStringResult
 #undef Tcl_GetDefaultEncodingDir
 #undef Tcl_SetDefaultEncodingDir
-#undef Tcl_UniCharLen
 #undef Tcl_UniCharNcmp
 #undef Tcl_EvalTokens
 #undef Tcl_UniCharNcasecmp

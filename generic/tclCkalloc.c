@@ -36,7 +36,7 @@
 typedef struct MemTag {
     size_t refCount;		/* Number of mem_headers referencing this
 				 * tag. */
-    char string[1];		/* Actual size of string will be as large as
+    char string[TCLFLEXARRAY];	/* Actual size of string will be as large as
 				 * needed for actual tag. This must be the
 				 * last field in the structure. */
 } MemTag;
@@ -65,7 +65,7 @@ struct mem_header {
 				/* Aligns body on 8-byte boundary, plus
 				 * provides at least 8 additional guard bytes
 				 * to detect underruns. */
-    char body[1];		/* First byte of client's space. Actual size
+    char body[TCLFLEXARRAY];	/* First byte of client's space. Actual size
 				 * of this field will be larger than one. */
 };
 
@@ -93,8 +93,8 @@ static unsigned int total_mallocs = 0;
 static unsigned int total_frees = 0;
 static size_t current_bytes_malloced = 0;
 static size_t maximum_bytes_malloced = 0;
-static unsigned int current_malloc_packets = 0;
-static unsigned int  maximum_malloc_packets = 0;
+static size_t current_malloc_packets = 0;
+static size_t  maximum_malloc_packets = 0;
 static unsigned int break_on_malloc = 0;
 static unsigned int trace_on_at_malloc = 0;
 static int alloc_tracing = FALSE;
@@ -188,9 +188,9 @@ TclDumpMemoryInfo(
     sprintf(buf,
 	    "total mallocs             %10u\n"
 	    "total frees               %10u\n"
-	    "current packets allocated %10u\n"
+	    "current packets allocated %10" TCL_Z_MODIFIER "u\n"
 	    "current bytes allocated   %10" TCL_Z_MODIFIER "u\n"
-	    "maximum packets allocated %10u\n"
+	    "maximum packets allocated %10" TCL_Z_MODIFIER "u\n"
 	    "maximum bytes allocated   %10" TCL_Z_MODIFIER "u\n",
 	    total_mallocs,
 	    total_frees,
@@ -252,7 +252,7 @@ ValidateMemory(
 	}
     }
     if (guard_failed) {
-	TclDumpMemoryInfo((ClientData) stderr, 0);
+	TclDumpMemoryInfo(stderr, 0);
 	fprintf(stderr, "low guard failed at %p, %s %d\n",
 		memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
@@ -274,7 +274,7 @@ ValidateMemory(
     }
 
     if (guard_failed) {
-	TclDumpMemoryInfo((ClientData) stderr, 0);
+	TclDumpMemoryInfo(stderr, 0);
 	fprintf(stderr, "high guard failed at %p, %s %d\n",
 		memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
@@ -406,13 +406,13 @@ Tcl_DbCkalloc(
     }
 
     /* Don't let size argument to TclpAlloc overflow */
-    if (size <= UINT_MAX - HIGH_GUARD_SIZE -sizeof(struct mem_header)) {
+    if (size <= UINT_MAX - offsetof(struct mem_header, body) - 1U - HIGH_GUARD_SIZE) {
 	result = (struct mem_header *) TclpAlloc(size +
-		sizeof(struct mem_header) + HIGH_GUARD_SIZE);
+		offsetof(struct mem_header, body) + 1U + HIGH_GUARD_SIZE);
     }
     if (result == NULL) {
 	fflush(stdout);
-	TclDumpMemoryInfo((ClientData) stderr, 0);
+	TclDumpMemoryInfo(stderr, 0);
 	Tcl_Panic("unable to alloc %u bytes, %s line %d", size, file, line);
     }
 
@@ -424,7 +424,7 @@ Tcl_DbCkalloc(
 
     if (init_malloced_bodies) {
 	memset(result, GUARD_VALUE,
-		size + sizeof(struct mem_header) + HIGH_GUARD_SIZE);
+		offsetof(struct mem_header, body) + 1U + HIGH_GUARD_SIZE + size);
     } else {
 	memset(result->low_guard, GUARD_VALUE, LOW_GUARD_SIZE);
 	memset(result->body + size, GUARD_VALUE, HIGH_GUARD_SIZE);
@@ -496,13 +496,13 @@ Tcl_AttemptDbCkalloc(
     }
 
     /* Don't let size argument to TclpAlloc overflow */
-    if (size <= UINT_MAX - HIGH_GUARD_SIZE - sizeof(struct mem_header)) {
+    if (size <= UINT_MAX - offsetof(struct mem_header, body) - 1U - HIGH_GUARD_SIZE) {
 	result = (struct mem_header *) TclpAlloc(size +
-		sizeof(struct mem_header) + HIGH_GUARD_SIZE);
+		offsetof(struct mem_header, body) + 1U + HIGH_GUARD_SIZE);
     }
     if (result == NULL) {
 	fflush(stdout);
-	TclDumpMemoryInfo((ClientData) stderr, 0);
+	TclDumpMemoryInfo(stderr, 0);
 	return NULL;
     }
 
@@ -513,7 +513,7 @@ Tcl_AttemptDbCkalloc(
      */
     if (init_malloced_bodies) {
 	memset(result, GUARD_VALUE,
-		size + sizeof(struct mem_header) + HIGH_GUARD_SIZE);
+		offsetof(struct mem_header, body) + 1U + HIGH_GUARD_SIZE + size);
     } else {
 	memset(result->low_guard, GUARD_VALUE, LOW_GUARD_SIZE);
 	memset(result->body + size, GUARD_VALUE, HIGH_GUARD_SIZE);
@@ -857,7 +857,7 @@ MemoryCmd(
     }
     if (strcmp(TclGetString(objv[1]),"info") == 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%-25s %10u\n%-25s %10u\n%-25s %10u\n%-25s %10" TCL_Z_MODIFIER"u\n%-25s %10u\n%-25s %10" TCL_Z_MODIFIER "u\n",
+		"%-25s %10u\n%-25s %10u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
 		"current packets allocated", current_malloc_packets,
 		"current bytes allocated", current_bytes_malloced,

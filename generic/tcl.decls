@@ -1365,7 +1365,7 @@ declare 385 {
 	    Tcl_Obj *patternObj)
 }
 declare 386 {
-    void Tcl_SetNotifier(Tcl_NotifierProcs *notifierProcPtr)
+    void Tcl_SetNotifier(const Tcl_NotifierProcs *notifierProcPtr)
 }
 declare 387 {
     Tcl_Mutex *Tcl_GetAllocMutex(void)
@@ -2436,6 +2436,14 @@ declare 656 {
 declare 657 {
     int Tcl_UniCharIsUnicode(int ch)
 }
+declare 658 {
+    int Tcl_ExternalToUtfDStringEx(Tcl_Encoding encoding,
+	    const char *src, int srcLen, int flags, Tcl_DString *dsPtr)
+}
+declare 659 {
+    int Tcl_UtfToExternalDStringEx(Tcl_Encoding encoding,
+	    const char *src, int srcLen, int flags, Tcl_DString *dsPtr)
+}
 
 # TIP #511
 declare 660 {
@@ -2447,14 +2455,15 @@ declare 668 {
     int Tcl_UniCharLen(const int *uniStr)
 }
 
-declare 669 {
+declare 674 {
     int Tcl_GetBool(Tcl_Interp *interp, const char *src, int flags,
 	    void *boolPtr)
 }
-declare 670 {
+declare 675 {
     int Tcl_GetBoolFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int flags, void *boolPtr)
 }
+
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
