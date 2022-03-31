@@ -89,7 +89,7 @@ typedef enum {
 
 typedef struct {
     ExceptionRangeType type;	/* The kind of ExceptionRange. */
-    int nestingLevel;		/* Static depth of the exception range. Used
+    size_t nestingLevel1;		/* Static depth of the exception range. Used
 				 * to find the most deeply-nested range
 				 * surrounding a PC at runtime. */
     size_t codeOffset;		/* Offset of the first instruction byte of the
@@ -1584,7 +1584,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(void *clientData,
 #define ExceptionRangeStarts(envPtr, index) \
     (((envPtr)->exceptDepth++),						\
     ((envPtr)->maxExceptDepth =						\
-	    TclMax((int)(envPtr)->exceptDepth, (int)(envPtr)->maxExceptDepth)),	\
+	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)),	\
     ((envPtr)->exceptArrayPtr[(index)].codeOffset= CurrentOffset(envPtr)))
 #define ExceptionRangeEnds(envPtr, index) \
     (((envPtr)->exceptDepth--),						\

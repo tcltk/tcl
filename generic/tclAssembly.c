@@ -1940,7 +1940,7 @@ MoveExceptionRangesToBasicBlock(
 	    envPtr->exceptArrayPtr + savedExceptArrayNext,
 	    exceptionCount * sizeof(ExceptionRange));
     for (i = 0; i < exceptionCount; ++i) {
-	curr_bb->foreignExceptions[i].nestingLevel -= envPtr->exceptDepth;
+	curr_bb->foreignExceptions[i].nestingLevel1 -= envPtr->exceptDepth;
     }
     envPtr->exceptArrayNext = savedExceptArrayNext;
 }
@@ -4125,9 +4125,9 @@ StackFreshCatches(
 	    catchIndices[catchDepth] =
 		    TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 	    range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
-	    range->nestingLevel = envPtr->exceptDepth + catchDepth;
+	    range->nestingLevel1 = envPtr->exceptDepth + catchDepth;
 	    envPtr->maxExceptDepth=
-		    TclMax(range->nestingLevel + 1, (int)envPtr->maxExceptDepth);
+		    TclMax(range->nestingLevel1 + 1, envPtr->maxExceptDepth);
 	    range->codeOffset = bbPtr->startOffset;
 
 	    entryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
@@ -4187,11 +4187,11 @@ RestoreEmbeddedExceptionRanges(
 	    for (i = 0; i < bbPtr->foreignExceptionCount; ++i) {
 		range = bbPtr->foreignExceptions + i;
 		rangeIndex = TclCreateExceptRange(range->type, envPtr);
-		range->nestingLevel += envPtr->exceptDepth + bbPtr->catchDepth;
+		range->nestingLevel1 += envPtr->exceptDepth + bbPtr->catchDepth;
 		memcpy(envPtr->exceptArrayPtr + rangeIndex, range,
 			sizeof(ExceptionRange));
-		if (range->nestingLevel >= (int)envPtr->maxExceptDepth) {
-		    envPtr->maxExceptDepth = range->nestingLevel + 1;
+		if ((int)range->nestingLevel1 >= (int)envPtr->maxExceptDepth) {
+		    envPtr->maxExceptDepth = range->nestingLevel1 + 1;
 		}
 	    }
 
