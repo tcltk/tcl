@@ -70,7 +70,7 @@ static void		SetUnicodeObj(Tcl_Obj *objPtr,
 static size_t		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 
-#if TCL+UTF_MAX > 3
+#if TCL_UTF_MAX > 3
 #define ISCONTINUATION(bytes) (\
 	((bytes)[0] & 0xC0) == 0x80)
 #else
