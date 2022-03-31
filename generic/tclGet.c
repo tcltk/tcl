@@ -134,8 +134,8 @@ Tcl_GetBool(
     Tcl_Obj obj;
     int code;
 
-    if (((src == NULL) || (*src == '\0')) && (flags & TCL_NULL_OK)) {
-	return (Tcl_GetBoolFromObj)(NULL, NULL, flags, boolPtr);
+    if ((src == NULL) || (*src == '\0')) {
+	return (Tcl_GetBoolFromObj)(interp, NULL, flags, boolPtr);
     }
     obj.refCount = 1;
     obj.bytes = (char *) src;
