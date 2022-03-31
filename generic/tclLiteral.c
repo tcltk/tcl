@@ -354,7 +354,7 @@ TclFetchLiteral(
     size_t index)		/* Index of the desired literal, as returned
 				 * by prior call to TclRegisterLiteral() */
 {
-    if (index >= envPtr->literalArrayNext1) {
+    if (index >= envPtr->literalArrayNext) {
 	return NULL;
     }
     return envPtr->literalArrayPtr[index].objPtr;
@@ -619,11 +619,11 @@ TclAddLiteralObj(
     LiteralEntry *lPtr;
     size_t objIndex;
 
-    if (envPtr->literalArrayNext1 >= envPtr->literalArrayEnd1) {
+    if (envPtr->literalArrayNext >= envPtr->literalArrayEnd) {
 	ExpandLocalLiteralArray(envPtr);
     }
-    objIndex = envPtr->literalArrayNext1;
-    envPtr->literalArrayNext1++;
+    objIndex = envPtr->literalArrayNext;
+    envPtr->literalArrayNext++;
 
     lPtr = &envPtr->literalArrayPtr[objIndex];
     lPtr->objPtr = objPtr;
@@ -745,7 +745,7 @@ ExpandLocalLiteralArray(
      */
 
     LiteralTable *localTablePtr = &envPtr->localLitTable;
-    size_t currElems = envPtr->literalArrayNext1;
+    size_t currElems = envPtr->literalArrayNext;
     size_t currBytes = (currElems * sizeof(LiteralEntry));
     LiteralEntry *currArrayPtr = envPtr->literalArrayPtr;
     LiteralEntry *newArrayPtr;
@@ -790,7 +790,7 @@ ExpandLocalLiteralArray(
     }
 
     envPtr->literalArrayPtr = newArrayPtr;
-    envPtr->literalArrayEnd1 = newSize / sizeof(LiteralEntry);
+    envPtr->literalArrayEnd = newSize / sizeof(LiteralEntry);
 }
 
 /*

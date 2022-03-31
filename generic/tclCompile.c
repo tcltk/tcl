@@ -692,9 +692,9 @@ static void		StartExpanding(CompileEnv *envPtr);
  * TIP #280: Helper for building the per-word line information of all compiled
  * commands.
  */
-static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
+static void		EnterCmdWordData(ExtCmdLoc *eclPtr, size_t srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd,
-			    int numWords, int line, int *clNext, int **lines,
+			    size_t numWords, int line, int *clNext, int **lines,
 			    CompileEnv *envPtr);
 static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
@@ -1449,8 +1449,8 @@ TclInitCompileEnv(
     envPtr->mallocedCodeArray = 0;
 
     envPtr->literalArrayPtr = envPtr->staticLiteralSpace;
-    envPtr->literalArrayNext1 = 0;
-    envPtr->literalArrayEnd1 = COMPILEENV_INIT_NUM_OBJECTS;
+    envPtr->literalArrayNext = 0;
+    envPtr->literalArrayEnd = COMPILEENV_INIT_NUM_OBJECTS;
     envPtr->mallocedLiteralArray = 0;
 
     envPtr->exceptArrayPtr = envPtr->staticExceptArraySpace;
@@ -1544,7 +1544,7 @@ TclInitCompileEnv(
 	    pc = 1;
 	}
 
-	if ((ctxPtr->nline <= word) || (ctxPtr->line[word] < 0)) {
+	if ((ctxPtr->nline <= (size_t)word) || (ctxPtr->line[word] < 0)) {
 	    /*
 	     * Word is not a literal, relative counting.
 	     */
@@ -1642,7 +1642,7 @@ TclFreeCompileEnv(
 	LiteralEntry *entryPtr = envPtr->literalArrayPtr;
 	AuxData *auxDataPtr = envPtr->auxDataArrayPtr;
 
-	for (i = 0;  i < envPtr->literalArrayNext1;  i++) {
+	for (i = 0;  i < envPtr->literalArrayNext;  i++) {
 	    TclReleaseLiteral((Tcl_Interp *)envPtr->iPtr, entryPtr->objPtr);
 	    entryPtr++;
 	}
@@ -2769,7 +2769,7 @@ PreventCycle(
 {
     size_t i;
 
-    for (i = 0;  i < envPtr->literalArrayNext1; i++) {
+    for (i = 0;  i < envPtr->literalArrayNext; i++) {
 	if (objPtr == TclFetchLiteral(envPtr, i)) {
 	    /*
 	     * Prevent circular reference where the bytecode internalrep of
@@ -2806,7 +2806,7 @@ TclInitByteCode(
 #ifdef TCL_COMPILE_DEBUG
     unsigned char *nextPtr;
 #endif
-    int numLitObjects = envPtr->literalArrayNext1;
+    int numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
     int i, isNew;
     Interp *iPtr;
@@ -2818,7 +2818,7 @@ TclInitByteCode(
     iPtr = envPtr->iPtr;
 
     codeBytes = envPtr->codeNext - envPtr->codeStart;
-    objArrayBytes = envPtr->literalArrayNext1 * sizeof(Tcl_Obj *);
+    objArrayBytes = envPtr->literalArrayNext * sizeof(Tcl_Obj *);
     exceptArrayBytes = envPtr->exceptArrayNext * sizeof(ExceptionRange);
     auxDataArrayBytes = envPtr->auxDataArrayNext1 * sizeof(AuxData);
     cmdLocBytes = GetCmdLocEncodingSize(envPtr);
@@ -3283,10 +3283,10 @@ EnterCmdWordData(
     ExtCmdLoc *eclPtr,		/* Points to the map environment structure in
 				 * which to enter command location
 				 * information. */
-    int srcOffset,		/* Offset of first char of the command. */
+    size_t srcOffset,		/* Offset of first char of the command. */
     Tcl_Token *tokenPtr,
     const char *cmd,
-    int numWords,
+    size_t numWords,
     int line,
     int *clNext,
     int **wlines,
@@ -3294,7 +3294,8 @@ EnterCmdWordData(
 {
     ECL *ePtr;
     const char *last;
-    int wordIdx, wordLine, *wwlines, *wordNext;
+    size_t wordIdx;
+    int wordLine, *wwlines, *wordNext;
 
     if (eclPtr->nuloc >= eclPtr->nloc) {
 	/*
@@ -3369,7 +3370,7 @@ TclCreateExceptRange(
     ExceptionAux *auxPtr;
     size_t index = envPtr->exceptArrayNext;
 
-    if (index >= (size_t)envPtr->exceptArrayEnd) {
+    if (index >= envPtr->exceptArrayEnd) {
 	/*
 	 * Expand the ExceptionRange array. The currently allocated entries
 	 * are stored between elements 0 and (envPtr->exceptArrayNext - 1)
@@ -3379,7 +3380,7 @@ TclCreateExceptRange(
 	size_t currBytes =
 		envPtr->exceptArrayNext * sizeof(ExceptionRange);
 	size_t currBytes2 = envPtr->exceptArrayNext * sizeof(ExceptionAux);
-	int newElems = 2*envPtr->exceptArrayEnd;
+	size_t newElems = 2*envPtr->exceptArrayEnd;
 	size_t newBytes = newElems * sizeof(ExceptionRange);
 	size_t newBytes2 = newElems * sizeof(ExceptionAux);
 

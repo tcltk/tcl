@@ -182,7 +182,7 @@ typedef struct {
 
 typedef struct {
     size_t srcOffset;		/* Command location to find the entry. */
-    int nline;			/* Number of words in the command */
+    size_t nline;			/* Number of words in the command */
     int *line;			/* Line information for all words in the
 				 * command. */
     int **next;			/* Transient information used by the compiler
@@ -322,8 +322,8 @@ typedef struct CompileEnv {
 #endif
     LiteralEntry *literalArrayPtr;
     				/* Points to start of LiteralEntry array. */
-    size_t literalArrayNext1;	/* Index of next free object array entry. */
-    size_t literalArrayEnd1;	/* Index just after last obj array entry. */
+    size_t literalArrayNext;	/* Index of next free object array entry. */
+    size_t literalArrayEnd;	/* Index just after last obj array entry. */
     int mallocedLiteralArray;	/* 1 if object array was expanded and objArray
 				 * points into the heap, else 0. */
     ExceptionRange *exceptArrayPtr;
@@ -333,7 +333,7 @@ typedef struct CompileEnv {
 				 * exceptArrayNext is the number of ranges and
 				 * (exceptArrayNext-1) is the index of the
 				 * current range's array entry. */
-    int exceptArrayEnd;		/* Index after the last ExceptionRange array
+    size_t exceptArrayEnd;		/* Index after the last ExceptionRange array
 				 * entry. */
 #if TCL_MAJOR_VERSION < 9
     int mallocedExceptArray;

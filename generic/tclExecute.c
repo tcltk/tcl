@@ -1680,7 +1680,7 @@ TclCompileObj(
 		}
 	    }
 
-	    if (word < ctxCopyPtr->nline) {
+	    if ((size_t)word < ctxCopyPtr->nline) {
 		/*
 		 * Note: We do not care if the line[word] is -1. This is a
 		 * difference and requires a recompile (location changed from
