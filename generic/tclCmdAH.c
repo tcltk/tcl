@@ -555,7 +555,7 @@ EncodingConvertfromObjCmd(
 #else
     int flags = TCL_ENCODING_NOCOMPLAIN;
 #endif
-    size_t result;
+    int result;
 
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
@@ -600,11 +600,11 @@ encConvFromOK:
     }
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
-    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != (size_t)-1)) {
+    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != TCL_INDEX_NONE)) {
 	char buf[TCL_INTEGER_SPACE];
-	sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
+	sprintf(buf, "%u", result);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte sequence starting at index %"
-		TCL_Z_MODIFIER "u: '\\x%X'", result, UCHAR(bytesPtr[result])));
+		"u: '\\x%X'", result, UCHAR(bytesPtr[result])));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
 		buf, NULL);
 	Tcl_DStringFree(&ds);
@@ -653,7 +653,7 @@ EncodingConverttoObjCmd(
     Tcl_Encoding encoding;	/* Encoding to use */
     int length;			/* Length of the string being converted */
     const char *stringPtr;	/* Pointer to the first byte of the string */
-    size_t result;
+    int result;
 #if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
     int flags = TCL_ENCODING_STOPONERROR;
 #else
@@ -696,14 +696,14 @@ encConvToOK:
     stringPtr = TclGetStringFromObj(data, &length);
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    flags, &ds);
-    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != (size_t)-1)) {
-	size_t pos = Tcl_NumUtfChars(stringPtr, result);
+    if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != TCL_INDEX_NONE)) {
+	int pos = Tcl_NumUtfChars(stringPtr, result);
 	int ucs4;
 	char buf[TCL_INTEGER_SPACE];
 	TclUtfToUCS4(&stringPtr[result], &ucs4);
-	sprintf(buf, "%" TCL_Z_MODIFIER "u", result);
+	sprintf(buf, "%u", result);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected character at index %"
-		TCL_Z_MODIFIER "u: 'U+%06X'", pos, ucs4));
+		"u: 'U+%06X'", pos, ucs4));
 	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
 		buf, NULL);
 	Tcl_DStringFree(&ds);
