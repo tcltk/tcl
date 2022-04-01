@@ -394,7 +394,6 @@ Tcl_NewUnicodeObj(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_GetCharLength
 size_t
 Tcl_GetCharLength(
     Tcl_Obj *objPtr)		/* The String object to get the num chars
@@ -643,10 +642,10 @@ TclGetUniChar(
 	return -1;
     }
     const char *begin = TclUtfAtIndex(objPtr->bytes, index);
+#undef Tcl_UtfToUniChar
     Tcl_UtfToUniChar(begin, &ch);
     return ch;
 }
-
 
 /*
  *----------------------------------------------------------------------
