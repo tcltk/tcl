@@ -2687,6 +2687,10 @@ Tcl_LrangeObjCmd(
     if (result != TCL_OK) {
 	return result;
     }
+    if ((last == -1) && Tcl_GetString(objv[3])[0] == '\0') {
+       /* TIP #615: empty string for 'last' means 'end' */
+       last = listLen - 1;
+    }
 
     Tcl_SetObjResult(interp, TclListObjRange(objv[1], first, last));
     return TCL_OK;

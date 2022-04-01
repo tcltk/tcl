@@ -2309,6 +2309,10 @@ StringRangeCmd(
 	    TclGetIntForIndexM(interp, objv[3], length, &last) != TCL_OK) {
 	return TCL_ERROR;
     }
+    if ((last == -1) && Tcl_GetString(objv[3])[0] == '\0') {
+	/* TIP #615: empty string for 'last' means 'end' */
+	last = length;
+    }
 
     if (last >= 0) {
 	Tcl_SetObjResult(interp, Tcl_GetRange(objv[1], first, last));
@@ -2410,6 +2414,10 @@ StringRplcCmd(
     if (TclGetIntForIndexM(interp, objv[2], end, &first) != TCL_OK ||
 	    TclGetIntForIndexM(interp, objv[3], end, &last) != TCL_OK) {
 	return TCL_ERROR;
+    }
+    if ((last == -1) && Tcl_GetString(objv[3])[0] == '\0') {
+	/* TIP #615: empty string for 'last' means 'end' */
+	last = end;
     }
 
     /*
