@@ -354,7 +354,7 @@ CreateHashEntry(
     }
 
     hPtr->tablePtr = tablePtr;
-    hPtr->hash = UINT2PTR(hash);
+    hPtr->hash = INT2PTR(hash);
     hPtr->nextPtr = tablePtr->buckets[index];
     tablePtr->buckets[index] = hPtr;
     tablePtr->numEntries++;

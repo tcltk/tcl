@@ -2425,7 +2425,7 @@ TEBCresume(
 
     {
 	CoroutineData *corPtr;
-	int yieldParameter;
+	void *yieldParameter;
 
     case INST_YIELD:
 	corPtr = iPtr->execEnvPtr->corPtr;
@@ -2453,7 +2453,7 @@ TEBCresume(
 	    fflush(stdout);
 	}
 #endif
-	yieldParameter = 0;
+	yieldParameter = NULL;	/*==CORO_ACTIVATE_YIELD*/
 	Tcl_SetObjResult(interp, OBJ_AT_TOS);
 	goto doYield;
 
@@ -2508,7 +2508,7 @@ TEBCresume(
 	TclSetTailcall(interp, valuePtr);
 	corPtr->yieldPtr = valuePtr;
 	iPtr->execEnvPtr = corPtr->eePtr;
-	yieldParameter = (PTR2INT(NULL)+1);	/*==CORO_ACTIVATE_YIELDM*/
+	yieldParameter = INT2PTR(1);	/*==CORO_ACTIVATE_YIELDM*/
 
     doYield:
 	/* TIP #280: Record the last piece of info needed by
@@ -2526,7 +2526,7 @@ TEBCresume(
 	cleanup = 1;
 	TEBC_YIELD();
 	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
-		INT2PTR(yieldParameter), NULL, NULL);
+		yieldParameter, NULL, NULL);
 	return TCL_OK;
     }
 
@@ -8277,9 +8277,9 @@ ExecuteExtendedBinaryMathOp(
 		    && ((size_t)shift < CHAR_BIT*sizeof(Tcl_WideInt))) {
 		w1 = *((const Tcl_WideInt *)ptr1);
 		if (!((w1>0 ? w1 : ~w1)
-			& -(((Tcl_WideInt)1)
+			& -(((Tcl_WideUInt)1)
 			<< (CHAR_BIT*sizeof(Tcl_WideInt) - 1 - shift)))) {
-		    WIDE_RESULT(w1 << shift);
+		    WIDE_RESULT((Tcl_WideUInt)w1 << shift);
 		}
 	    }
 	} else {

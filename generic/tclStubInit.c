@@ -86,14 +86,13 @@
 static void uniCodePanic(void) {
     Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
 }
-#   define Tcl_GetUnicode (int *(*)(Tcl_Obj *))(void *)uniCodePanic
-#   define Tcl_GetUnicodeFromObj (int *(*)(Tcl_Obj *, Tcl_UniChar *))(void *)uniCodePanic
-#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const int *, Tcl_UniChar))(void *)uniCodePanic
+#   define Tcl_GetUnicode (Tcl_UniChar *(*)(Tcl_Obj *))(void *)uniCodePanic
+#   define Tcl_GetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, int *))(void *)uniCodePanic
+#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const int *, int))(void *)uniCodePanic
 #   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, int))(void *)uniCodePanic
 #   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, int))(void *)uniCodePanic
 #   define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long))(void *)uniCodePanic
 #   define Tcl_UniCharCaseMatch (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, int))(void *)uniCodePanic
-#   define Tcl_UniCharLen (int(*)(const Tcl_UniChar *))(void *)uniCodePanic
 #   define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long))(void *)uniCodePanic
 #endif
 
@@ -688,7 +687,6 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #if TCL_UTF_MAX < 4
 #   define Tcl_AppendUnicodeToObj 0
 #   define Tcl_UniCharCaseMatch 0
-#   define Tcl_UniCharLen 0
 #   define Tcl_UniCharNcasecmp 0
 #   define Tcl_UniCharNcmp 0
 #endif
@@ -1941,8 +1939,8 @@ const TclStubs tclStubs = {
     Tcl_UtfNext, /* 655 */
     Tcl_UtfPrev, /* 656 */
     Tcl_UniCharIsUnicode, /* 657 */
-    0, /* 658 */
-    0, /* 659 */
+    Tcl_ExternalToUtfDStringEx, /* 658 */
+    Tcl_UtfToExternalDStringEx, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
     0, /* 661 */
     0, /* 662 */

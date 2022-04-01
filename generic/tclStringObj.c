@@ -561,7 +561,7 @@ Tcl_GetUniChar(
 	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
-	    return (Tcl_UniChar) objPtr->bytes[index];
+	    return (unsigned char) objPtr->bytes[index];
 	}
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
@@ -914,9 +914,9 @@ Tcl_SetObjLength(
 	     * Need to enlarge the buffer.
 	     */
 	    if (objPtr->bytes == &tclEmptyString) {
-		objPtr->bytes = (char *)ckalloc(length + 1);
+		objPtr->bytes = (char *)ckalloc((unsigned int)length + 1U);
 	    } else {
-		objPtr->bytes = (char *)ckrealloc(objPtr->bytes, length + 1);
+		objPtr->bytes = (char *)ckrealloc(objPtr->bytes, (unsigned int)length + 1U);
 	    }
 	    stringPtr->allocated = length;
 	}
@@ -1020,9 +1020,9 @@ Tcl_AttemptSetObjLength(
 	    char *newBytes;
 
 	    if (objPtr->bytes == &tclEmptyString) {
-		newBytes = (char *)attemptckalloc(length + 1);
+		newBytes = (char *)attemptckalloc((unsigned int)length + 1U);
 	    } else {
-		newBytes = (char *)attemptckrealloc(objPtr->bytes, length + 1);
+		newBytes = (char *)attemptckrealloc(objPtr->bytes, (unsigned int)length + 1U);
 	    }
 	    if (newBytes == NULL) {
 		return 0;

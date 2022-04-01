@@ -1365,7 +1365,7 @@ declare 385 {
 	    Tcl_Obj *patternObj)
 }
 declare 386 {
-    void Tcl_SetNotifier(Tcl_NotifierProcs *notifierProcPtr)
+    void Tcl_SetNotifier(const Tcl_NotifierProcs *notifierProcPtr)
 }
 declare 387 {
     Tcl_Mutex *Tcl_GetAllocMutex(void)
@@ -2435,6 +2435,14 @@ declare 656 {
 }
 declare 657 {
     int Tcl_UniCharIsUnicode(int ch)
+}
+declare 658 {
+    int Tcl_ExternalToUtfDStringEx(Tcl_Encoding encoding,
+	    const char *src, int srcLen, int flags, Tcl_DString *dsPtr)
+}
+declare 659 {
+    int Tcl_UtfToExternalDStringEx(Tcl_Encoding encoding,
+	    const char *src, int srcLen, int flags, Tcl_DString *dsPtr)
 }
 
 # TIP #511
