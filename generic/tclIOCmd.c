@@ -1446,8 +1446,8 @@ Tcl_SocketObjCmd(
     enum socketOptionsEnum {
 	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_REUSEADDR, SKT_REUSEPORT,
 	SKT_SERVER
-    };
-    int optionIndex, a, server = 0, myport = 0, async = 0, reusep = -1,
+    } optionIndex;
+    int a, server = 0, myport = 0, async = 0, reusep = -1,
 	reusea = -1;
     unsigned int flags = 0;
     const char *host, *port, *myaddr = NULL;
@@ -1468,7 +1468,7 @@ Tcl_SocketObjCmd(
 		TCL_EXACT, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum socketOptionsEnum) optionIndex) {
+	switch (optionIndex) {
 	case SKT_ASYNC:
 	    if (server == 1) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -1777,9 +1777,9 @@ ChanPendingObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;
-    int index, mode;
+    int mode;
     static const char *const options[] = {"input", "output", NULL};
-    enum pendingOptionsEnum {PENDING_INPUT, PENDING_OUTPUT};
+    enum pendingOptionsEnum {PENDING_INPUT, PENDING_OUTPUT} index;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode channelId");
@@ -1795,7 +1795,7 @@ ChanPendingObjCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum pendingOptionsEnum) index) {
+    switch (index) {
     case PENDING_INPUT:
 	if (!(mode & TCL_READABLE)) {
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-1));

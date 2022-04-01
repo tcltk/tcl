@@ -997,12 +997,11 @@ cclass(
     const chr *endp,		/* just past the end of the name */
     int cases)			/* case-independent? */
 {
-    size_t len;
+    size_t i, len;
     struct cvec *cv = NULL;
     Tcl_DString ds;
     const char *np;
     const char *const *namePtr;
-    size_t i;
     int index;
 
     /*
