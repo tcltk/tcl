@@ -811,7 +811,6 @@ Tcl_UtfCharComplete(
  *---------------------------------------------------------------------------
  */
 
-#undef Tcl_NumUtfChars
 size_t
 Tcl_NumUtfChars(
     const char *src,	/* The UTF-8 string to measure. */
@@ -1232,7 +1231,6 @@ Tcl_UniCharAtIndex(
  *---------------------------------------------------------------------------
  */
 
-#undef Tcl_UtfAtIndex
 const char *
 Tcl_UtfAtIndex(
     const char *src,	/* The UTF-8 string. */
@@ -1242,6 +1240,7 @@ Tcl_UtfAtIndex(
 
     if (index != TCL_INDEX_NONE) {
 	while (index--) {
+	    /* Make use of the #undef Tcl_UtfToUniChar above, which already handles UCS4. */
 	    src += Tcl_UtfToUniChar(src, &ch);
 	}
     }
