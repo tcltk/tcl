@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.9.5
+package provide http 2.9.6
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -1310,8 +1310,7 @@ proc http::Connected {token proto phost srvurl} {
     set sock $state(sock)
     set isQueryChannel [info exists state(-querychannel)]
     set isQuery [info exists state(-query)]
-    set host [lindex [split $state(socketinfo) :] 0]
-    set port [lindex [split $state(socketinfo) :] 1]
+    regexp {^(.+):([^:]+)$} $state(socketinfo) {} host port
 
     set lower [string tolower $proto]
     set defport [lindex $urlTypes($lower) 0]
