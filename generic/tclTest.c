@@ -5300,11 +5300,17 @@ TestsaveresultCmd(
 	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetBoolFromObj(interp, objv[3], 0, b+1) != TCL_OK) {
-	return TCL_ERROR;
-    }
+	b[0] = b[1] = b[2] = 100;
+	if (Tcl_GetBoolFromObj(interp, objv[3], 0, b + 1) != TCL_OK)
+	{
+		return TCL_ERROR;
+	}
+	if (b[0] != 100 || b[2] != 100) {
+		Tcl_Panic("MEMORY OVERWRITE IN Tcl_GetBoolFromObj");
+		return TCL_ERROR;
+	}
 
-    freeCount = 0;
+	freeCount = 0;
     objPtr = NULL;		/* Lint. */
     switch ((enum options) index) {
     case RESULT_SMALL:
