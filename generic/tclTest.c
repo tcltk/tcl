@@ -30,7 +30,6 @@
 #endif
 #include "tclOO.h"
 #include <math.h>
-#include <stdbool.h>
 
 /*
  * Required for Testregexp*Cmd
@@ -5278,7 +5277,7 @@ TestsaveresultCmd(
 {
     Interp* iPtr = (Interp*) interp;
     int result, index;
-    bool b[3];
+    char b[3];
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
     static const char *const optionStrings[] = {
