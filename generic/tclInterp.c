@@ -2468,7 +2468,7 @@ ChildCreate(
 	    ((Interp *) parentInterp)->maxNestingDepth;
 
     if (safe) {
-	if (Tcl_MakeSafe(childInterp) == TCL_ERROR) {
+	if (TclMakeSafe(childInterp) == TCL_ERROR) {
 	    goto error;
 	}
     } else {
@@ -3253,7 +3253,7 @@ Tcl_IsSafe(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_MakeSafe --
+ * TclMakeSafe --
  *
  *	Makes its argument interpreter contain only functionality that is
  *	defined to be part of Safe Tcl. Unsafe commands are hidden, the env
@@ -3270,7 +3270,7 @@ Tcl_IsSafe(
  */
 
 int
-Tcl_MakeSafe(
+TclMakeSafe(
     Tcl_Interp *interp)		/* Interpreter to be made safe. */
 {
     Tcl_Channel chan;		/* Channel to remove from safe interpreter. */

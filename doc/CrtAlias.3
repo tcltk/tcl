@@ -160,6 +160,7 @@ parts, so safety is not guaranteed after calling \fBTcl_MakeSafe\fR.
 Callers will want to take care with their use of \fBTcl_MakeSafe\fR
 to avoid false claims of safety.  For many situations, \fBTcl_CreateChild\fR
 may be a better choice, since it creates interpreters in a known-safe state.
+\fBTcl_MakeSafe\fR is deprecated and will be removed in Tcl 9.0.
 .PP
 \fBTcl_GetChild\fR returns a pointer to a child interpreter of
 \fIinterp\fR. The child interpreter is identified by \fIname\fR.
