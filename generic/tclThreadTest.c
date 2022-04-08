@@ -335,11 +335,11 @@ ThreadObjCmd(
 	     */
 
 	    if (objc == 2) {
-		idObj = Tcl_NewWideIntObj((Tcl_WideInt)INT2PTR(Tcl_GetCurrentThread()));
+		idObj = Tcl_NewWideIntObj((Tcl_WideInt)PTR2INT(Tcl_GetCurrentThread()));
 	    } else if (objc == 3
 		    && strcmp("-main", Tcl_GetString(objv[2])) == 0) {
 		Tcl_MutexLock(&threadMutex);
-		idObj = Tcl_NewWideIntObj((Tcl_WideInt)INT2PTR(mainThreadId));
+		idObj = Tcl_NewWideIntObj((Tcl_WideInt)PTR2INT(mainThreadId));
 		Tcl_MutexUnlock(&threadMutex);
 	    } else {
 		Tcl_WrongNumArgs(interp, 2, objv, NULL);
