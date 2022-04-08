@@ -7158,7 +7158,8 @@ TestGetIntForIndexCmd(
     if (Tcl_GetIntForIndex(interp, objv[1], endvalue, &result) != TCL_OK) {
 	return TCL_ERROR;
     }
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(result));
+    /* Make sure that (size_t)-2 is output as "-2" and (size_t)-3 as "-3", even for 32-bit */
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(result + 3U)) - 3));
     return TCL_OK;
 }
 
