@@ -3341,7 +3341,7 @@ ExtendStringRepWithUnicode(
     }
 
     for (i = 0; i < numChars && size >= 0; i++) {
-	size += Tcl_UniCharToUtf((int) unicode[i], buf);
+	size += (unsigned int)Tcl_UniCharToUtf((int) unicode[i], buf);
     }
     if (size < 0) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
