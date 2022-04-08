@@ -2125,10 +2125,12 @@ Tcl_AppendFormatToObj(
 		goto error;
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
+#if TCL_UTF_MAX < 4
 	    if ((code >= 0xD800) && (length < 3)) {
 		/* Special case for handling high surrogates. */
 		length += Tcl_UniCharToUtf(-1, buf + length);
 	    }
+#endif
 	    segment = Tcl_NewStringObj(buf, length);
 	    Tcl_IncrRefCount(segment);
 	    allocSegment = 1;
