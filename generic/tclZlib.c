@@ -496,8 +496,8 @@ GenerateHeader(
 
     if (GetValue(interp, dictObj, "type", &value) != TCL_OK) {
 	goto error;
-    } else if (value != NULL && Tcl_GetIndexFromObj(interp, value, types,
-	    "type", TCL_EXACT, &headerPtr->header.text) != TCL_OK) {
+    } else if (value != NULL && Tcl_GetIndexFromObjStruct(interp, value, types,
+	    sizeof(char *), "type", TCL_EXACT, &headerPtr->header.text) != TCL_OK) {
 	goto error;
     }
 
@@ -1952,7 +1952,7 @@ ZlibCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int command, i, option, level = -1;
+    int i, option, level = -1;
     size_t dlen = 0, start, buffersize = 0;
     Tcl_WideInt wideLen;
     Byte *data;
@@ -1966,18 +1966,18 @@ ZlibCmd(
     enum zlibCommands {
 	CMD_ADLER, CMD_COMPRESS, CMD_CRC, CMD_DECOMPRESS, CMD_DEFLATE,
 	CMD_GUNZIP, CMD_GZIP, CMD_INFLATE, CMD_PUSH, CMD_STREAM
-    };
+    } command;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command arg ?...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], commands, "command", 0,
-	    &command) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], commands,
+	    sizeof(char *), "command", 0, &command) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    switch ((enum zlibCommands) command) {
+    switch (command) {
     case CMD_ADLER:			/* adler32 str ?startvalue?
 					 * -> checksum */
 	if (objc < 3 || objc > 4) {
