@@ -2237,7 +2237,7 @@ ZlibStreamSubcmd(
     enum zlibFormats {
 	FMT_COMPRESS, FMT_DECOMPRESS, FMT_DEFLATE, FMT_GUNZIP, FMT_GZIP,
 	FMT_INFLATE
-    };
+    } fmt;
     int i, format, mode = 0, option, level;
     enum objIndices {
 	OPT_COMPRESSION_DICTIONARY = 0,
@@ -2278,7 +2278,7 @@ ZlibStreamSubcmd(
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[2], stream_formats, "mode", 0,
-	    &format) != TCL_OK) {
+	    &fmt) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2287,7 +2287,7 @@ ZlibStreamSubcmd(
      * specified.
      */
 
-    switch ((enum zlibFormats) format) {
+    switch (fmt) {
     case FMT_DEFLATE:
 	desc = compressionOpts;
 	mode = TCL_ZLIB_STREAM_DEFLATE;
@@ -2397,7 +2397,7 @@ ZlibPushSubcmd(
     enum zlibFormats {
 	FMT_COMPRESS, FMT_DECOMPRESS, FMT_DEFLATE, FMT_GUNZIP, FMT_GZIP,
 	FMT_INFLATE
-    };
+    } fmt;
     Tcl_Channel chan;
     int chanMode, format, mode = 0, level, i;
     static const char *const pushCompressOptions[] = {
@@ -2417,10 +2417,10 @@ ZlibPushSubcmd(
     }
 
     if (Tcl_GetIndexFromObj(interp, objv[2], stream_formats, "mode", 0,
-	    &format) != TCL_OK) {
+	    &fmt) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch ((enum zlibFormats) format) {
+    switch (fmt) {
     case FMT_DEFLATE:
 	mode = TCL_ZLIB_STREAM_DEFLATE;
 	format = TCL_ZLIB_FORMAT_RAW;

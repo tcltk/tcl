@@ -3145,7 +3145,7 @@ Tcl_LsearchObjCmd(
     int i, match, index, result=TCL_OK, listc, bisect;
     size_t length = 0, elemLen, start, groupSize, groupOffset, lower, upper;
     int allocatedIndexVector = 0;
-    int dataType, isIncreasing;
+    int isIncreasing;
     Tcl_WideInt patWide, objWide, wide;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
@@ -3169,7 +3169,7 @@ Tcl_LsearchObjCmd(
     };
     enum datatypes {
 	ASCII, DICTIONARY, INTEGER, REAL
-    };
+    } dataType;
     enum modes {
 	EXACT, GLOB, REGEXP, SORTED
     };
@@ -3203,12 +3203,13 @@ Tcl_LsearchObjCmd(
     }
 
     for (i = 1; i < objc-2; i++) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &index)
+	enum lsearchoptions idx;
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &idx)
 		!= TCL_OK) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	switch ((enum lsearchoptions) index) {
+	switch (idx) {
 	case LSEARCH_ALL:		/* -all */
 	    allMatches = 1;
 	    break;
@@ -3536,7 +3537,7 @@ Tcl_LsearchObjCmd(
     patObj = objv[objc - 1];
     patternBytes = NULL;
     if (mode == EXACT || mode == SORTED) {
-	switch ((enum datatypes) dataType) {
+	switch (dataType) {
 	case ASCII:
 	case DICTIONARY:
 	    patternBytes = Tcl_GetStringFromObj(patObj, &length);
@@ -3606,7 +3607,7 @@ Tcl_LsearchObjCmd(
 	    } else {
 		itemPtr = listv[i+groupOffset];
 	    }
-	    switch ((enum datatypes) dataType) {
+	    switch (dataType) {
 	    case ASCII:
 		bytes = TclGetString(itemPtr);
 		match = strCmpFn(patternBytes, bytes);
@@ -3711,7 +3712,7 @@ Tcl_LsearchObjCmd(
 	    switch (mode) {
 	    case SORTED:
 	    case EXACT:
-		switch ((enum datatypes) dataType) {
+		switch (dataType) {
 		case ASCII:
 		    bytes = Tcl_GetStringFromObj(itemPtr, &elemLen);
 		    if (length == elemLen) {
@@ -3986,7 +3987,7 @@ Tcl_LsortObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    int i, index, indices, length, nocase = 0, indexc;
+    int i, indices, length, nocase = 0, indexc;
     int sortMode = SORTMODE_ASCII;
     int group, allocatedIndexVector = 0;
     size_t j, idx, groupSize, groupOffset;
@@ -4012,7 +4013,7 @@ Tcl_LsortObjCmd(
 	LSORT_ASCII, LSORT_COMMAND, LSORT_DECREASING, LSORT_DICTIONARY,
 	LSORT_INCREASING, LSORT_INDEX, LSORT_INDICES, LSORT_INTEGER,
 	LSORT_NOCASE, LSORT_REAL, LSORT_STRIDE, LSORT_UNIQUE
-    };
+    } index;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-option value ...? list");
@@ -4042,7 +4043,7 @@ Tcl_LsortObjCmd(
 	    sortInfo.resultCode = TCL_ERROR;
 	    goto done;
 	}
-	switch ((enum Lsort_Switches) index) {
+	switch (index) {
 	case LSORT_ASCII:
 	    sortInfo.sortMode = SORTMODE_ASCII;
 	    break;

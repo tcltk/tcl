@@ -151,7 +151,7 @@ TestbignumobjCmd(
     enum options {
 	BIGNUM_SET, BIGNUM_GET, BIGNUM_MULT10, BIGNUM_DIV10, BIGNUM_ISEVEN,
 	BIGNUM_RADIXSIZE
-    };
+    } idx;
     int index;
     size_t varIndex;
     const char *string;
@@ -163,7 +163,7 @@ TestbignumobjCmd(
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "option", 0,
-	    &index) != TCL_OK) {
+	    &idx) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
@@ -171,7 +171,7 @@ TestbignumobjCmd(
     }
     varPtr = GetVarPtr(interp);
 
-    switch ((enum options)index) {
+    switch (idx) {
     case BIGNUM_SET:
 	if (objc != 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "var value");

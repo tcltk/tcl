@@ -4139,7 +4139,7 @@ Tcl_TimeRateObjCmd(
     ByteCode *codePtr = NULL;
 
     for (i = 1; i < objc - 1; i++) {
-	int index;
+	enum timeRateOptionsEnum index;
 
 	if (Tcl_GetIndexFromObj(NULL, objv[i], options, "option", TCL_EXACT,
 		&index) != TCL_OK) {
@@ -4149,7 +4149,7 @@ Tcl_TimeRateObjCmd(
 	    i++;
 	    break;
 	}
-	switch ((enum timeRateOptionsEnum)index) {
+	switch (index) {
 	case TMRT_EV_DIRECT:
 	    direct = objv[i];
 	    break;
@@ -4688,7 +4688,7 @@ TclNRTryObjCmd(
     bodyShared = 0;
     haveHandlers = 0;
     for (i=2 ; i<objc ; i++) {
-	int type;
+	enum Handlers type;
 	Tcl_Obj *info[5];
 
 	if (Tcl_GetIndexFromObj(interp, objv[i], handlerNames, "handler type",
@@ -4696,7 +4696,7 @@ TclNRTryObjCmd(
 	    Tcl_DecrRefCount(handlersObj);
 	    return TCL_ERROR;
 	}
-	switch ((enum Handlers) type) {
+	switch (type) {
 	case TryFinally:	/* finally script */
 	    if (i < objc-2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
