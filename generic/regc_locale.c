@@ -1013,7 +1013,7 @@ cclass(
     };
 
     enum classes {
-	CC_NONE = -1,
+	CC_NULL = -1,
 	CC_ALNUM, CC_ALPHA, CC_ASCII, CC_BLANK, CC_CNTRL, CC_DIGIT, CC_GRAPH,
 	CC_LOWER, CC_PRINT, CC_PUNCT, CC_SPACE, CC_UPPER, CC_XDIGIT
     } index;
@@ -1031,7 +1031,7 @@ cclass(
      * Map the name to the corresponding enumerated value.
      */
 
-    index = CC_NONE;
+    index = CC_NULL;
     for (namePtr=classNames,i=0 ; *namePtr!=NULL ; namePtr++,i++) {
 	if ((strlen(*namePtr) == len) && (strncmp(*namePtr, np, len) == 0)) {
 	    index = (enum classes)i;
@@ -1053,7 +1053,7 @@ cclass(
      */
 
     switch(index) {
-    case CC_NONE:
+    case CC_NULL:
 	ERR(REG_ECTYPE);
 	return NULL;
     case CC_ALNUM:
