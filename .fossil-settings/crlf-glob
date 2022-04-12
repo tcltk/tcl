@@ -2,8 +2,11 @@ compat/zlib/contrib/dotzlib/DotZLib/UnitTests.cs
 compat/zlib/contrib/vstudio/readme.txt
 compat/zlib/contrib/vstudio/*/zlib.rc
 compat/zlib/contrib/vstudio/*/*.sln
+compat/zlib/contrib/vstudio/*/zlibvc.def
 compat/zlib/win32/*.txt
 compat/zlib/win64/*.txt
+compat/zlib/win32/zlib.def
+compat/zlib/zlib.map
 libtommath/*.dsp
 libtommath/*.sln
 libtommath/*.vcproj
