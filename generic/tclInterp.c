@@ -617,7 +617,6 @@ NRInterpCmd(
     Tcl_Obj *const objv[])		/* Argument objects. */
 {
     Tcl_Interp *childInterp;
-    int index;
     static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"cancel",
 	"children",	"create",	"debug",	"delete",
@@ -649,20 +648,20 @@ NRInterpCmd(
 	OPT_SLAVES,
 #endif
 	OPT_TARGET,	OPT_TRANSFER
-    } index1;
+    } index;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(NULL, objv[1], options,
-	    "option", 0, &index1) != TCL_OK) {
+	    "option", 0, &index) != TCL_OK) {
 	/* Don't report the "slaves" option as possibility */
 	Tcl_GetIndexFromObj(interp, objv[1], optionsNoSlaves,
-		"option", 0, &index1);
+		"option", 0, &index);
 	return TCL_ERROR;
     }
-    switch (index1) {
+    switch (index) {
     case OPT_ALIAS: {
 	Tcl_Interp *parentInterp;
 
@@ -717,12 +716,11 @@ NRInterpCmd(
 	};
 	enum optionCancelEnum {
 	    OPT_UNWIND,	OPT_LAST
-	};
+	} idx;
 
 	flags = 0;
 
 	for (i = 2; i < objc; i++) {
-		enum optionCancelEnum idx;
 	    if (TclGetString(objv[i])[0] != '-') {
 		break;
 	    }
@@ -950,7 +948,7 @@ NRInterpCmd(
 	};
 	enum hiddenOption {
 	    OPT_GLOBAL,	OPT_NAMESPACE,	OPT_LAST
-	};
+	} idx;
 
 	namespaceName = NULL;
 	for (i = 3; i < objc; i++) {
@@ -958,12 +956,12 @@ NRInterpCmd(
 		break;
 	    }
 	    if (Tcl_GetIndexFromObj(interp, objv[i], hiddenOptions, "option",
-		    0, &index) != TCL_OK) {
+		    0, &idx) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (index == OPT_GLOBAL) {
+	    if (idx == OPT_GLOBAL) {
 		namespaceName = "::";
-	    } else if (index == OPT_NAMESPACE) {
+	    } else if (idx == OPT_NAMESPACE) {
 		if (++i == objc) { /* There must be more arguments. */
 		    break;
 		} else {
@@ -4677,9 +4675,8 @@ ChildTimeLimitCmd(
     };
     enum Options {
 	OPT_CMD, OPT_GRAN, OPT_MILLI, OPT_SEC
-    };
+    } index;
     Interp *iPtr = (Interp *) interp;
-    int index;
     ScriptLimitCallbackKey key;
     ScriptLimitCallback *limitCBPtr;
     Tcl_HashEntry *hPtr;
