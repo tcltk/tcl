@@ -1052,7 +1052,7 @@ cclass(
      * Now compute the character class contents.
      */
 
-    switch(index) {
+    switch (index) {
     case CC_NULL:
 	ERR(REG_ECTYPE);
 	return NULL;

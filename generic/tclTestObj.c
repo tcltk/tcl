@@ -878,7 +878,7 @@ TestlistobjCmd(
 			    0, &cmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch(cmdIndex) {
+    switch (cmdIndex) {
     case LISTOBJ_SET:
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
 	    Tcl_SetListObj(varPtr[varIndex], objc-3, objv+3);
