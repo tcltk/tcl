@@ -1572,10 +1572,9 @@ Tcl_UpdateObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int optionIndex;
     int flags = 0;		/* Initialized to avoid compiler warning. */
     static const char *const updateOptions[] = {"idletasks", NULL};
-    enum updateOptionsEnum {OPT_IDLETASKS};
+    enum updateOptionsEnum {OPT_IDLETASKS} optionIndex;
 
     if (objc == 1) {
 	flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
@@ -1584,7 +1583,7 @@ Tcl_UpdateObjCmd(
 		"option", 0, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum updateOptionsEnum) optionIndex) {
+	switch (optionIndex) {
 	case OPT_IDLETASKS:
 	    flags = TCL_IDLE_EVENTS|TCL_DONT_WAIT;
 	    break;
