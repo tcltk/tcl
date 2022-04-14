@@ -41,7 +41,7 @@ testConstraint teststringbytes [llength [info commands teststringbytes]]
 testConstraint exec [llength [info commands exec]]
 testConstraint testgetencpath [llength [info commands testgetencpath]]
 testConstraint fullutf [expr {[format %c 0x010000] ne "\uFFFD"}]
-testConstraint ucs4 [expr {[testConstraint fullutf]
+testConstraint utf32 [expr {[testConstraint fullutf]
 		&& [string length [format %c 0x10000]] == 1}]
 
 # TclInitEncodingSubsystem is tested by the rest of this file
@@ -347,61 +347,61 @@ test encoding-15.5 {UtfToUtfProc emoji character input} {
     set y [encoding convertfrom utf-8 \xF0\x9F\x98\x82]
     list [string length $x] $y
 } "4 😂"
-test encoding-15.6 {UtfToUtfProc emoji character output} ucs4 {
+test encoding-15.6 {UtfToUtfProc emoji character output} utf32 {
     set x \uDE02\uD83D\uDE02\uD83D
     set y [encoding convertto -nocomplain utf-8 \uDE02\uD83D\uDE02\uD83D]
     binary scan $y H* z
     list [string length $y] $z
 } {12 efbfbdefbfbdefbfbdefbfbd}
-test encoding-15.7 {UtfToUtfProc emoji character output} ucs4 {
+test encoding-15.7 {UtfToUtfProc emoji character output} utf32 {
     set x \uDE02\uD83D\uD83D
     set y [encoding convertto -nocomplain utf-8 \uDE02\uD83D\uD83D]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {3 9 efbfbdefbfbdefbfbd}
-test encoding-15.8 {UtfToUtfProc emoji character output} ucs4 {
+test encoding-15.8 {UtfToUtfProc emoji character output} utf32 {
     set x \uDE02\uD83Dé
     set y [encoding convertto -nocomplain utf-8 \uDE02\uD83Dé]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {3 8 efbfbdefbfbdc3a9}
-test encoding-15.9 {UtfToUtfProc emoji character output} ucs4 {
+test encoding-15.9 {UtfToUtfProc emoji character output} utf32 {
     set x \uDE02\uD83DX
     set y [encoding convertto -nocomplain utf-8 \uDE02\uD83DX]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {3 7 efbfbdefbfbd58}
-test encoding-15.10 {UtfToUtfProc high surrogate character output} ucs4 {
+test encoding-15.10 {UtfToUtfProc high surrogate character output} utf32 {
     set x \uDE02é
     set y [encoding convertto -nocomplain utf-8 \uDE02é]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {2 5 efbfbdc3a9}
-test encoding-15.11 {UtfToUtfProc low surrogate character output} ucs4 {
+test encoding-15.11 {UtfToUtfProc low surrogate character output} utf32 {
     set x \uDA02é
     set y [encoding convertto -nocomplain utf-8 \uDA02é]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {2 5 efbfbdc3a9}
-test encoding-15.12 {UtfToUtfProc high surrogate character output} ucs4 {
+test encoding-15.12 {UtfToUtfProc high surrogate character output} utf32 {
     set x \uDE02Y
     set y [encoding convertto -nocomplain utf-8 \uDE02Y]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {2 4 efbfbd59}
-test encoding-15.13 {UtfToUtfProc low surrogate character output} ucs4 {
+test encoding-15.13 {UtfToUtfProc low surrogate character output} utf32 {
     set x \uDA02Y
     set y [encoding convertto -nocomplain utf-8 \uDA02Y]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {2 4 efbfbd59}
-test encoding-15.14 {UtfToUtfProc high surrogate character output} ucs4 {
+test encoding-15.14 {UtfToUtfProc high surrogate character output} utf32 {
     set x \uDE02
     set y [encoding convertto -nocomplain utf-8 \uDE02]
     binary scan $y H* z
     list [string length $x] [string length $y] $z
 } {1 3 efbfbd}
-test encoding-15.15 {UtfToUtfProc low surrogate character output} ucs4 {
+test encoding-15.15 {UtfToUtfProc low surrogate character output} utf32 {
     set x \uDA02
     set y [encoding convertto -nocomplain utf-8 \uDA02]
     binary scan $y H* z
