@@ -1045,12 +1045,11 @@ TclOOSelfObjCmd(
     enum SelfCmds {
 	SELF_CALL, SELF_CALLER, SELF_CLASS, SELF_FILTER, SELF_METHOD, SELF_NS,
 	SELF_NEXT, SELF_OBJECT, SELF_TARGET
-    };
+    } index;
     Interp *iPtr = (Interp *) interp;
     CallFrame *framePtr = iPtr->varFramePtr;
     CallContext *contextPtr;
     Tcl_Obj *result[3];
-    int index;
 
 #define CurrentlyInvoked(contextPtr) \
     ((contextPtr)->callPtr->chain[(contextPtr)->index])
@@ -1084,7 +1083,7 @@ TclOOSelfObjCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum SelfCmds) index) {
+    switch (index) {
     case SELF_OBJECT:
 	Tcl_SetObjResult(interp, TclOOObjectName(interp, contextPtr->oPtr));
 	return TCL_OK;

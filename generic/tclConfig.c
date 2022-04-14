@@ -200,13 +200,12 @@ QueryConfigObjCmd(
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
     size_t m, n = 0;
-    int index;
     static const char *const subcmdStrings[] = {
 	"get", "list", NULL
     };
     enum subcmds {
 	CFG_GET, CFG_LIST
-    };
+    } index;
     Tcl_DString conv;
     Tcl_Encoding venc = NULL;
     const char *value;
@@ -234,7 +233,7 @@ QueryConfigObjCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum subcmds) index) {
+    switch (index) {
     case CFG_GET:
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "key");

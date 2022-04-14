@@ -408,9 +408,9 @@ InfoObjectIsACmd(
     };
     enum IsACats {
 	IsClass, IsMetaclass, IsMixin, IsObject, IsType
-    };
+    } idx;
     Object *oPtr, *o2Ptr;
-    int idx, result = 0;
+    int result = 0;
     size_t i;
 
     if (objc < 3) {
@@ -427,7 +427,7 @@ InfoObjectIsACmd(
      * number of arguments.
      */
 
-    switch ((enum IsACats) idx) {
+    switch (idx) {
     case IsObject:
     case IsClass:
     case IsMetaclass:
@@ -455,7 +455,7 @@ InfoObjectIsACmd(
 	goto failPrecondition;
     }
 
-    switch ((enum IsACats) idx) {
+    switch (idx) {
     case IsObject:
 	result = 1;
 	break;
@@ -533,7 +533,7 @@ InfoObjectMethodsCmd(
     };
     enum Options {
 	OPT_ALL, OPT_LOCALPRIVATE, OPT_PRIVATE, OPT_SCOPE
-    };
+    } idx;
     static const char *const scopes[] = {
 	"private", "public", "unexported"
     };
@@ -551,14 +551,14 @@ InfoObjectMethodsCmd(
 	return TCL_ERROR;
     }
     if (objc != 2) {
-	int i, idx;
+	int i;
 
 	for (i=2 ; i<objc ; i++) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		    &idx) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    switch ((enum Options) idx) {
+	    switch (idx) {
 	    case OPT_ALL:
 		recurse = 1;
 		break;
@@ -1293,7 +1293,7 @@ InfoClassMethodsCmd(
     };
     enum Options {
 	OPT_ALL, OPT_LOCALPRIVATE, OPT_PRIVATE, OPT_SCOPE
-    };
+    } idx;
     static const char *const scopes[] = {
 	"private", "public", "unexported"
     };
@@ -1310,14 +1310,14 @@ InfoClassMethodsCmd(
 	return TCL_ERROR;
     }
     if (objc != 2) {
-	int i, idx;
+	int i;
 
 	for (i=2 ; i<objc ; i++) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		    &idx) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    switch ((enum Options) idx) {
+	    switch (idx) {
 	    case OPT_ALL:
 		recurse = 1;
 		break;

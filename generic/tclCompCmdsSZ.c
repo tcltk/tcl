@@ -518,8 +518,8 @@ TclCompileStringIsCmd(
 	STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,
 	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_UNICODE,
 	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
-    };
-    int t, range, allowEmpty = 0, end;
+    } t;
+    int range, allowEmpty = 0, end;
     InstStringClassType strClassType;
     Tcl_Obj *isClass;
 
@@ -575,7 +575,7 @@ TclCompileStringIsCmd(
 
     CompileWord(envPtr, tokenPtr, interp, (int)parsePtr->numWords-1);
 
-    switch ((enum isClassesEnum) t) {
+    switch (t) {
     case STR_IS_ALNUM:
 	strClassType = STR_CLASS_ALNUM;
 	goto compileStrClass;
@@ -683,6 +683,8 @@ TclCompileStringIsCmd(
 	    FIXJUMP1(	over);
 	    OP(		LNOT);
 	    return TCL_OK;
+	default:
+	    break;
 	}
     break;
 
@@ -747,6 +749,8 @@ TclCompileStringIsCmd(
 	case STR_IS_ENTIER:
 	    PUSH(	"3");
 	    OP(		LE);
+	    break;
+	default:
 	    break;
 	}
 	FIXJUMP1(	end);

@@ -1077,9 +1077,9 @@ TclNRPackageObjCmd(
 	PKG_FILES,  PKG_FORGET,  PKG_IFNEEDED, PKG_NAMES,   PKG_PREFER,
 	PKG_PRESENT, PKG_PROVIDE, PKG_REQUIRE,  PKG_UNKNOWN, PKG_VCOMPARE,
 	PKG_VERSIONS, PKG_VSATISFIES
-    };
+    } optionIndex;
     Interp *iPtr = (Interp *) interp;
-    int optionIndex, exact, satisfies;
+    int exact, satisfies;
     size_t i, newobjc;
     PkgAvail *availPtr, *prevPtr;
     Package *pkgPtr;
@@ -1100,7 +1100,7 @@ TclNRPackageObjCmd(
 	    &optionIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch ((enum pkgOptionsEnum) optionIndex) {
+    switch (optionIndex) {
     case PKG_FILES: {
 	PkgFiles *pkgFiles;
 

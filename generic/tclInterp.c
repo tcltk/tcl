@@ -617,7 +617,6 @@ NRInterpCmd(
     Tcl_Obj *const objv[])		/* Argument objects. */
 {
     Tcl_Interp *childInterp;
-    int index;
     static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"cancel",
 	"children",	"create",	"debug",	"delete",
@@ -649,7 +648,7 @@ NRInterpCmd(
 	OPT_SLAVES,
 #endif
 	OPT_TARGET,	OPT_TRANSFER
-    };
+    } index;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
@@ -662,7 +661,7 @@ NRInterpCmd(
 		"option", 0, &index);
 	return TCL_ERROR;
     }
-    switch ((enum interpOptionEnum)index) {
+    switch (index) {
     case OPT_ALIAS: {
 	Tcl_Interp *parentInterp;
 
@@ -717,7 +716,7 @@ NRInterpCmd(
 	};
 	enum optionCancelEnum {
 	    OPT_UNWIND,	OPT_LAST
-	};
+	} idx;
 
 	flags = 0;
 
@@ -726,11 +725,11 @@ NRInterpCmd(
 		break;
 	    }
 	    if (Tcl_GetIndexFromObj(interp, objv[i], cancelOptions, "option",
-		    0, &index) != TCL_OK) {
+		    0, &idx) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 
-	    switch ((enum optionCancelEnum) index) {
+	    switch (idx) {
 	    case OPT_UNWIND:
 		/*
 		 * The evaluation stack in the target interp is to be unwound.
@@ -949,7 +948,7 @@ NRInterpCmd(
 	};
 	enum hiddenOption {
 	    OPT_GLOBAL,	OPT_NAMESPACE,	OPT_LAST
-	};
+	} idx;
 
 	namespaceName = NULL;
 	for (i = 3; i < objc; i++) {
@@ -957,12 +956,12 @@ NRInterpCmd(
 		break;
 	    }
 	    if (Tcl_GetIndexFromObj(interp, objv[i], hiddenOptions, "option",
-		    0, &index) != TCL_OK) {
+		    0, &idx) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (index == OPT_GLOBAL) {
+	    if (idx == OPT_GLOBAL) {
 		namespaceName = "::";
-	    } else if (index == OPT_NAMESPACE) {
+	    } else if (idx == OPT_NAMESPACE) {
 		if (++i == objc) { /* There must be more arguments. */
 		    break;
 		} else {
@@ -991,8 +990,7 @@ NRInterpCmd(
 	};
 	enum LimitTypes {
 	    LIMIT_TYPE_COMMANDS, LIMIT_TYPE_TIME
-	};
-	int limitType;
+	} limitType;
 
 	if (objc < 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv,
@@ -1007,7 +1005,7 @@ NRInterpCmd(
 		&limitType) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum LimitTypes) limitType) {
+	switch (limitType) {
 	case LIMIT_TYPE_COMMANDS:
 	    return ChildCommandLimitCmd(interp, childInterp, 4, objc,objv);
 	case LIMIT_TYPE_TIME:
@@ -2565,7 +2563,6 @@ NRChildCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Interp *childInterp = (Tcl_Interp *)clientData;
-    int index;
     static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"debug",
 	"eval",		"expose",	"hide",		"hidden",
@@ -2577,7 +2574,7 @@ NRChildCmd(
 	OPT_EVAL,	OPT_EXPOSE,	OPT_HIDE,	OPT_HIDDEN,
 	OPT_ISSAFE,	OPT_INVOKEHIDDEN, OPT_LIMIT,	OPT_MARKTRUSTED,
 	OPT_RECLIMIT
-    };
+    } index;
 
     if (childInterp == NULL) {
 	Tcl_Panic("TclChildObjCmd: interpreter has been deleted");
@@ -2592,7 +2589,7 @@ NRChildCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum childCmdOptionsEnum) index) {
+    switch (index) {
     case OPT_ALIAS:
 	if (objc > 2) {
 	    if (objc == 3) {
@@ -2670,7 +2667,7 @@ NRChildCmd(
 	};
 	enum hiddenOption {
 	    OPT_GLOBAL,	OPT_NAMESPACE,	OPT_LAST
-	};
+	} idx;
 
 	namespaceName = NULL;
 	for (i = 2; i < objc; i++) {
@@ -2678,12 +2675,12 @@ NRChildCmd(
 		break;
 	    }
 	    if (Tcl_GetIndexFromObj(interp, objv[i], hiddenOptions, "option",
-		    0, &index) != TCL_OK) {
+		    0, &idx) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (index == OPT_GLOBAL) {
+	    if (idx == OPT_GLOBAL) {
 		namespaceName = "::";
-	    } else if (index == OPT_NAMESPACE) {
+	    } else if (idx == OPT_NAMESPACE) {
 		if (++i == objc) { /* There must be more arguments. */
 		    break;
 		} else {
@@ -2708,8 +2705,7 @@ NRChildCmd(
 	};
 	enum LimitTypes {
 	    LIMIT_TYPE_COMMANDS, LIMIT_TYPE_TIME
-	};
-	int limitType;
+	} limitType;
 
 	if (objc < 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "limitType ?-option value ...?");
@@ -2719,7 +2715,7 @@ NRChildCmd(
 		&limitType) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum LimitTypes) limitType) {
+	switch (limitType) {
 	case LIMIT_TYPE_COMMANDS:
 	    return ChildCommandLimitCmd(interp, childInterp, 3, objc,objv);
 	case LIMIT_TYPE_TIME:
@@ -4492,9 +4488,8 @@ ChildCommandLimitCmd(
     };
     enum Options {
 	OPT_CMD, OPT_GRAN, OPT_VAL
-    };
+    } index;
     Interp *iPtr = (Interp *) interp;
-    int index;
     ScriptLimitCallbackKey key;
     ScriptLimitCallback *limitCBPtr;
     Tcl_HashEntry *hPtr;
@@ -4557,7 +4552,7 @@ ChildCommandLimitCmd(
 		0, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum Options) index) {
+	switch (index) {
 	case OPT_CMD:
 	    key.interp = childInterp;
 	    key.type = TCL_LIMIT_COMMANDS;
@@ -4595,7 +4590,7 @@ ChildCommandLimitCmd(
 		    &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    switch ((enum Options) index) {
+	    switch (index) {
 	    case OPT_CMD:
 		scriptObj = objv[i+1];
 		(void) Tcl_GetStringFromObj(scriptObj, &scriptLen);
@@ -4681,9 +4676,8 @@ ChildTimeLimitCmd(
     };
     enum Options {
 	OPT_CMD, OPT_GRAN, OPT_MILLI, OPT_SEC
-    };
+    } index;
     Interp *iPtr = (Interp *) interp;
-    int index;
     ScriptLimitCallbackKey key;
     ScriptLimitCallback *limitCBPtr;
     Tcl_HashEntry *hPtr;
@@ -4752,7 +4746,7 @@ ChildTimeLimitCmd(
 		0, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	switch ((enum Options) index) {
+	switch (index) {
 	case OPT_CMD:
 	    key.interp = childInterp;
 	    key.type = TCL_LIMIT_TIME;
@@ -4805,7 +4799,7 @@ ChildTimeLimitCmd(
 		    &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    switch ((enum Options) index) {
+	    switch (index) {
 	    case OPT_CMD:
 		scriptObj = objv[i+1];
 		(void) Tcl_GetStringFromObj(objv[i+1], &scriptLen);

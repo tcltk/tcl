@@ -163,7 +163,8 @@ TclNamespaceEnsembleCmd(
     Tcl_DictSearch search;
     Tcl_Obj *listObj;
     const char *simpleName;
-    int index, done;
+    enum EnsSubcmds index;
+    int done;
 
     if (nsPtr == NULL || nsPtr->flags & NS_DEAD) {
 	if (!Tcl_InterpDeleted(interp)) {
@@ -184,7 +185,7 @@ TclNamespaceEnsembleCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum EnsSubcmds) index) {
+    switch (index) {
     case ENS_CREATE: {
 	const char *name;
 	size_t len;
@@ -220,14 +221,15 @@ TclNamespaceEnsembleCmd(
 	 */
 
 	for (; objc>1 ; objc-=2,objv+=2) {
+	    enum EnsCreateOpts idx;
 	    if (Tcl_GetIndexFromObj(interp, objv[0], ensembleCreateOptions,
-		    "option", 0, &index) != TCL_OK) {
+		    "option", 0, &idx) != TCL_OK) {
 		if (allocatedMapFlag) {
 		    Tcl_DecrRefCount(mapObj);
 		}
 		return TCL_ERROR;
 	    }
-	    switch ((enum EnsCreateOpts) index) {
+	    switch (idx) {
 	    case CRT_CMD:
 		name = TclGetString(objv[1]);
 		cxtPtr = nsPtr;
@@ -399,13 +401,14 @@ TclNamespaceEnsembleCmd(
 	}
 
 	if (objc == 4) {
+	    enum EnsConfigOpts idx;
 	    Tcl_Obj *resultObj = NULL;		/* silence gcc 4 warning */
 
 	    if (Tcl_GetIndexFromObj(interp, objv[3], ensembleConfigOptions,
-		    "option", 0, &index) != TCL_OK) {
+		    "option", 0, &idx) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    switch ((enum EnsConfigOpts) index) {
+	    switch (idx) {
 	    case CONF_SUBCMDS:
 		Tcl_GetEnsembleSubcommandList(NULL, token, &resultObj);
 		if (resultObj != NULL) {
@@ -523,15 +526,16 @@ TclNamespaceEnsembleCmd(
 	     */
 
 	    for (; objc>0 ; objc-=2,objv+=2) {
+		enum EnsConfigOpts idx;
 		if (Tcl_GetIndexFromObj(interp, objv[0],ensembleConfigOptions,
-			"option", 0, &index) != TCL_OK) {
+			"option", 0, &idx) != TCL_OK) {
 		freeMapAndError:
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
 		    return TCL_ERROR;
 		}
-		switch ((enum EnsConfigOpts) index) {
+		switch (idx) {
 		case CONF_SUBCMDS:
 		    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 			goto freeMapAndError;

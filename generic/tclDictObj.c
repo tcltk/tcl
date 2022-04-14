@@ -2990,11 +2990,11 @@ DictFilterCmd(
     };
     enum FilterTypes {
 	FILTER_KEYS, FILTER_SCRIPT, FILTER_VALUES
-    };
+    } index;
     Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
     Tcl_Obj **varv, *keyObj = NULL, *valueObj = NULL, *resultObj, *boolObj;
     Tcl_DictSearch search;
-    int index, done, result, satisfied;
+    int done, result, satisfied;
     size_t varc;
     const char *pattern;
 
@@ -3007,7 +3007,7 @@ DictFilterCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum FilterTypes) index) {
+    switch (index) {
     case FILTER_KEYS:
 	/*
 	 * Create a dictionary whose keys all match a certain pattern.
