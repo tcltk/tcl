@@ -2271,7 +2271,7 @@ TesteventProc(
 	return 1;		/* Avoid looping on errors */
     }
     if (Tcl_GetBoolFromObj(interp, Tcl_GetObjResult(interp),
-	    0, &retval[1]) != TCL_OK) {
+	    sizeof(retval[1]), &retval[1]) != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
 		"    (return value from \"testevent\" callback)");
 	Tcl_BackgroundException(interp, TCL_ERROR);
@@ -5300,7 +5300,7 @@ TestsaveresultCmd(
 	return TCL_ERROR;
     }
 	b[0] = b[1] = b[2] = 100;
-	if (Tcl_GetBoolFromObj(interp, objv[3], 0, b + 1) != TCL_OK)
+	if (Tcl_GetBoolFromObj(interp, objv[3], sizeof(b[1]), b + 1) != TCL_OK)
 	{
 		return TCL_ERROR;
 	}
