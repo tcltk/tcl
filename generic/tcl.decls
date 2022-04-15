@@ -136,11 +136,11 @@ declare 30 {
     void TclFreeObj(Tcl_Obj *objPtr)
 }
 declare 31 {
-    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, void *boolPtr)
+    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *boolPtr)
 }
 declare 32 {
     int Tcl_GetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    void *boolPtr)
+	    int *boolPtr)
 }
 declare 33 {
     unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)

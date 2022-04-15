@@ -146,10 +146,10 @@ EXTERN Tcl_Obj *	Tcl_DuplicateObj(Tcl_Obj *objPtr);
 EXTERN void		TclFreeObj(Tcl_Obj *objPtr);
 /* 31 */
 EXTERN int		Tcl_GetBoolean(Tcl_Interp *interp, const char *src,
-				void *boolPtr);
+				int *boolPtr);
 /* 32 */
 EXTERN int		Tcl_GetBooleanFromObj(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, void *boolPtr);
+				Tcl_Obj *objPtr, int *boolPtr);
 /* 33 */
 EXTERN unsigned char *	Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr,
 				int *numBytesPtr);
@@ -2032,8 +2032,8 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DbNewStringObj) (const char *bytes, int length, const char *file, int line); /* 28 */
     Tcl_Obj * (*tcl_DuplicateObj) (Tcl_Obj *objPtr); /* 29 */
     void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
-    int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, void *boolPtr); /* 31 */
-    int (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, void *boolPtr); /* 32 */
+    int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *boolPtr); /* 31 */
+    int (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *boolPtr); /* 32 */
     unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, int *numBytesPtr); /* 33 */
     int (*tcl_GetDouble) (Tcl_Interp *interp, const char *src, double *doublePtr); /* 34 */
     int (*tcl_GetDoubleFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, double *doublePtr); /* 35 */
@@ -4288,10 +4288,6 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetBoolFromObj((interp), (objPtr), (flags)|(int)(sizeof(*(boolPtr))), (boolPtr)))
 #define Tcl_GetBool(interp, objPtr, flags, boolPtr) \
 	(tclStubsPtr->tcl_GetBool((interp), (objPtr), (flags)|(int)(sizeof(*(boolPtr))), (boolPtr)))
-#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
-	(sizeof(*(boolPtr)) == sizeof(int) ? tclStubsPtr->tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : Tcl_GetBoolFromObj(interp, objPtr, 0, boolPtr))
-#define Tcl_GetBoolean(interp, src, boolPtr) \
-	(sizeof(*(boolPtr)) == sizeof(int) ? tclStubsPtr->tcl_GetBoolean(interp, src, (int *)(boolPtr)) : Tcl_GetBool(interp, src, 0, boolPtr))
 #ifdef TCL_NO_DEPRECATED
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? tclStubsPtr->tcl_GetStringFromObj(objPtr, (int *)(sizePtr)) : tclStubsPtr->tclGetStringFromObj(objPtr, (size_t *)(sizePtr)))
@@ -4309,10 +4305,6 @@ extern const TclStubs *tclStubsPtr;
 	((Tcl_GetBoolFromObj)((interp), (objPtr), (flags)|(int)(sizeof(*(boolPtr))), (boolPtr)))
 #define Tcl_GetBool(interp, objPtr, flags, boolPtr) \
 	((Tcl_GetBool)((interp), (objPtr), (flags)|(int)(sizeof(*(boolPtr))), (boolPtr)))
-#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
-	(sizeof(*(boolPtr)) == sizeof(int) ? (Tcl_GetBooleanFromObj)(interp, objPtr, (int *)(boolPtr)) : Tcl_GetBoolFromObj(interp, objPtr, 0, boolPtr))
-#define Tcl_GetBoolean(interp, src, boolPtr) \
-	(sizeof(*(boolPtr)) == sizeof(int) ? (Tcl_GetBoolean)(interp, src, (int *)(boolPtr)) : Tcl_GetBool(interp, src, 0, boolPtr))
 #ifdef TCL_NO_DEPRECATED
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? (Tcl_GetStringFromObj)(objPtr, (int *)(sizePtr)) : (TclGetStringFromObj)(objPtr, (size_t *)(sizePtr)))

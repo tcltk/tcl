@@ -2233,9 +2233,9 @@ int
 Tcl_GetBooleanFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,	/* The object from which to get boolean. */
-    void *boolPtr)	/* Place to store resulting boolean. */
+    int *boolPtr)	/* Place to store resulting boolean. */
 {
-    return Tcl_GetBoolFromObj(interp, objPtr, 0, boolPtr);
+    return Tcl_GetBoolFromObj(interp, objPtr, sizeof(int), boolPtr);
 }
 
 /*
