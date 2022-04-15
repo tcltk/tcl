@@ -3835,7 +3835,7 @@ ShouldBankerRoundUpToNext(
     }
     r = mp_cmp_mag(&temp, S);
     mp_clear(&temp);
-    switch(r) {
+    switch (r) {
     case MP_EQ:
 	return isodd;
     case MP_GT:

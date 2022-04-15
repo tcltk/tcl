@@ -211,7 +211,6 @@ ThreadObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    int option;
     static const char *const threadOptions[] = {
 	"cancel", "create", "event", "exit", "id",
 	"join", "names", "send", "wait", "errorproc",
@@ -221,7 +220,7 @@ ThreadObjCmd(
 	THREAD_CANCEL, THREAD_CREATE, THREAD_EVENT, THREAD_EXIT,
 	THREAD_ID, THREAD_JOIN, THREAD_NAMES, THREAD_SEND,
 	THREAD_WAIT, THREAD_ERRORPROC
-    };
+    } option;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -244,7 +243,7 @@ ThreadObjCmd(
 	Tcl_MutexUnlock(&threadMutex);
     }
 
-    switch ((enum options)option) {
+    switch (option) {
     case THREAD_CANCEL: {
 	Tcl_WideInt id;
 	const char *result;

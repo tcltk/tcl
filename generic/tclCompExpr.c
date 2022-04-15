@@ -1724,7 +1724,7 @@ ConvertTreeToTokens(
 
 	    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
 
-	    switch(nodePtr->lexeme) {
+	    switch (nodePtr->lexeme) {
 	    case OPEN_PAREN:
 	    case COMMA:
 	    case COLON:

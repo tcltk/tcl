@@ -1820,7 +1820,7 @@ CompileEmbeddedScript(
     envPtr->maxStackDepth = 0;
 
     StartBasicBlock(assemEnvPtr, BB_FALLTHRU, NULL);
-    switch(instPtr->tclInstCode) {
+    switch (instPtr->tclInstCode) {
     case INST_EVAL_STK:
 	TclCompileScript(interp, tokenPtr->start, tokenPtr->size, envPtr);
 	break;
