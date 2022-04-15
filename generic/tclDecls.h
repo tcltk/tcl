@@ -4285,9 +4285,9 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<8), (indexPtr)))
 #define Tcl_GetBoolFromObj(interp, objPtr, flags, boolPtr) \
-	(tclStubsPtr->tcl_GetBoolFromObj((interp), (objPtr), (flags)|(int)(sizeof(*(boolPtr))<<8), (boolPtr)))
+	(tclStubsPtr->tcl_GetBoolFromObj((interp), (objPtr), (flags)|(int)(sizeof(*(boolPtr))), (boolPtr)))
 #define Tcl_GetBool(interp, objPtr, flags, boolPtr) \
-	(tclStubsPtr->tcl_GetBool((interp), (objPtr), (flags)|(int)(sizeof(*(boolPtr))<<8), (boolPtr)))
+	(tclStubsPtr->tcl_GetBool((interp), (objPtr), (flags)|(int)(sizeof(*(boolPtr))), (boolPtr)))
 #define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
 	(sizeof(*(boolPtr)) == sizeof(int) ? tclStubsPtr->tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : Tcl_GetBoolFromObj(interp, objPtr, 0, boolPtr))
 #define Tcl_GetBoolean(interp, src, boolPtr) \
@@ -4306,9 +4306,9 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<8), (indexPtr)))
 #define Tcl_GetBoolFromObj(interp, objPtr, flags, boolPtr) \
-	((Tcl_GetBoolFromObj)((interp), (objPtr), (flags)|(int)(sizeof(*(boolPtr))<<8), (boolPtr)))
+	((Tcl_GetBoolFromObj)((interp), (objPtr), (flags)|(int)(sizeof(*(boolPtr))), (boolPtr)))
 #define Tcl_GetBool(interp, objPtr, flags, boolPtr) \
-	((Tcl_GetBool)((interp), (objPtr), (flags)|(int)(sizeof(*(boolPtr))<<8), (boolPtr)))
+	((Tcl_GetBool)((interp), (objPtr), (flags)|(int)(sizeof(*(boolPtr))), (boolPtr)))
 #define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
 	(sizeof(*(boolPtr)) == sizeof(int) ? (Tcl_GetBooleanFromObj)(interp, objPtr, (int *)(boolPtr)) : Tcl_GetBoolFromObj(interp, objPtr, 0, boolPtr))
 #define Tcl_GetBoolean(interp, src, boolPtr) \
