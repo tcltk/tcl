@@ -27,7 +27,6 @@
 #define MAP_FILE 0
 #endif /* !MAP_FILE */
 #define NOBYFOUR
-#define crc32tab crc_table[0]
 #ifndef TBLS
 #define TBLS 1
 #endif
@@ -74,6 +73,8 @@
 #include "crypt.h"
 #include "zutil.h"
 #include "crc32.h"
+
+static const z_crc_t* crc32tab;
 
 /*
 ** We are compiling as part of the core.
@@ -1864,6 +1865,7 @@ ZipfsSetup(void)
     Tcl_MutexUnlock(&ZipFSMutex);
 #endif /* TCL_THREADS */
 
+    crc32tab = get_crc_table();
     Tcl_FSRegister(NULL, &zipfsFilesystem);
     Tcl_InitHashTable(&ZipFS.fileHash, TCL_STRING_KEYS);
     Tcl_InitHashTable(&ZipFS.zipHash, TCL_STRING_KEYS);
