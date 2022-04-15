@@ -997,13 +997,11 @@ cclass(
     const chr *endp,		/* just past the end of the name */
     int cases)			/* case-independent? */
 {
-    size_t len;
+    size_t i, len;
     struct cvec *cv = NULL;
     Tcl_DString ds;
     const char *np;
     const char *const *namePtr;
-    size_t i;
-    int index;
 
     /*
      * The following arrays define the valid character class names.
@@ -1015,9 +1013,10 @@ cclass(
     };
 
     enum classes {
+	CC_NULL = -1,
 	CC_ALNUM, CC_ALPHA, CC_ASCII, CC_BLANK, CC_CNTRL, CC_DIGIT, CC_GRAPH,
 	CC_LOWER, CC_PRINT, CC_PUNCT, CC_SPACE, CC_UPPER, CC_XDIGIT
-    };
+    } index;
 
 
     /*
@@ -1032,18 +1031,14 @@ cclass(
      * Map the name to the corresponding enumerated value.
      */
 
-    index = -1;
+    index = CC_NULL;
     for (namePtr=classNames,i=0 ; *namePtr!=NULL ; namePtr++,i++) {
 	if ((strlen(*namePtr) == len) && (strncmp(*namePtr, np, len) == 0)) {
-	    index = i;
+	    index = (enum classes)i;
 	    break;
 	}
     }
     Tcl_DStringFree(&ds);
-    if (index == -1) {
-	ERR(REG_ECTYPE);
-	return NULL;
-    }
 
     /*
      * Remap lower and upper to alpha if the match is case insensitive.
@@ -1057,7 +1052,10 @@ cclass(
      * Now compute the character class contents.
      */
 
-    switch((enum classes) index) {
+    switch (index) {
+    case CC_NULL:
+	ERR(REG_ECTYPE);
+	return NULL;
     case CC_ALNUM:
 	cv = getcvec(v, NUM_ALPHA_CHAR, NUM_DIGIT_RANGE + NUM_ALPHA_RANGE);
 	if (cv) {

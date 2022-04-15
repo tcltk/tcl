@@ -459,7 +459,7 @@ ProcessStatusObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *dict;
-    int index, options = WNOHANG;
+    int options = WNOHANG;
     Tcl_HashEntry *entry;
     Tcl_HashSearch search;
     ProcessInfo *info;
@@ -474,7 +474,7 @@ ProcessStatusObjCmd(
     };
     enum switchesEnum {
 	STATUS_WAIT, STATUS_LAST
-    };
+    } index;
 
     while (objc > 1) {
 	if (TclGetString(objv[1])[0] != '-') {
@@ -485,7 +485,7 @@ ProcessStatusObjCmd(
 	    return TCL_ERROR;
 	}
 	++objv; --objc;
-	if (STATUS_WAIT == (enum switchesEnum) index) {
+	if (STATUS_WAIT == index) {
 	    options = 0;
 	} else {
 	    break;

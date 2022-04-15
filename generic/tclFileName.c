@@ -1239,7 +1239,7 @@ Tcl_GlobObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int index, i, globFlags, length, join, dir, result;
+    int i, globFlags, length, join, dir, result;
     char *string;
     const char *separators;
     Tcl_Obj *typePtr, *look;
@@ -1252,7 +1252,7 @@ Tcl_GlobObjCmd(
     enum globOptionsEnum {
 	GLOB_DIR, GLOB_JOIN, GLOB_NOCOMPLAIN, GLOB_PATH, GLOB_TAILS,
 	GLOB_TYPE, GLOB_LAST
-    };
+    } index;
     enum pathDirOptions {PATH_NONE = -1 , PATH_GENERAL = 0, PATH_DIR = 1};
     Tcl_GlobTypeData *globTypes = NULL;
 
@@ -1282,7 +1282,7 @@ Tcl_GlobObjCmd(
 	    }
 	}
 
-	switch ((enum globOptionsEnum) index) {
+	switch (index) {
 	case GLOB_NOCOMPLAIN:			/* -nocomplain */
 	    /*
 	     * Do nothing; This is normal operations in Tcl 9.

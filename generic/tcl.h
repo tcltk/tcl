@@ -797,7 +797,7 @@ typedef struct Tcl_DString {
 
 #define TCL_EXACT		1
 #define TCL_INDEX_TEMP_TABLE	2
-#define TCL_INDEX_NULL_OK	4
+#define TCL_INDEX_NULL_OK	32
 
 /*
  *----------------------------------------------------------------------------
