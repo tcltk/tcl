@@ -1730,7 +1730,7 @@ Tcl_InvalidateStringRep(
  *
  *	This function is normally called when not debugging: i.e., when
  *	TCL_MEM_DEBUG is not defined. It creates a new Tcl_Obj and
- *	initializes it from the argument boolean value. A nonzero "boolValue"
+ *	initializes it from the argument boolean value. A nonzero "intValue"
  *	is coerced to 1.
  *
  *	When TCL_MEM_DEBUG is defined, this function just returns the result
@@ -1751,20 +1751,20 @@ Tcl_InvalidateStringRep(
 
 Tcl_Obj *
 Tcl_NewBooleanObj(
-    int boolValue)	/* Boolean used to initialize new object. */
+    int intValue)	/* Boolean used to initialize new object. */
 {
-    return Tcl_DbNewBooleanObj(boolValue, "unknown", 0);
+    return Tcl_DbNewBooleanObj(intValue, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
 
 Tcl_Obj *
 Tcl_NewBooleanObj(
-    int boolValue)	/* Boolean used to initialize new object. */
+    int intValue)	/* Boolean used to initialize new object. */
 {
     Tcl_Obj *objPtr;
 
-    TclNewBooleanObj(objPtr, boolValue);
+    TclNewBooleanObj(objPtr, intValue);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -1800,7 +1800,7 @@ Tcl_NewBooleanObj(
 
 Tcl_Obj *
 Tcl_DbNewBooleanObj(
-    int boolValue,	/* Boolean used to initialize new object. */
+    int intValue,	/* Boolean used to initialize new object. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
     int line)			/* Line number in the source file; used for
@@ -1811,7 +1811,7 @@ Tcl_DbNewBooleanObj(
     TclDbNewObj(objPtr, file, line);
     objPtr->bytes = NULL;
 
-    objPtr->internalRep.longValue = (boolValue? 1 : 0);
+    objPtr->internalRep.longValue = (intValue? 1 : 0);
     objPtr->typePtr = &tclIntType;
     return objPtr;
 }
@@ -1820,13 +1820,13 @@ Tcl_DbNewBooleanObj(
 
 Tcl_Obj *
 Tcl_DbNewBooleanObj(
-    int boolValue,	/* Boolean used to initialize new object. */
+    int intValue,	/* Boolean used to initialize new object. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
-    return Tcl_NewBooleanObj(boolValue);
+    return Tcl_NewBooleanObj(intValue);
 }
 #endif /* TCL_MEM_DEBUG */
 
@@ -1836,7 +1836,7 @@ Tcl_DbNewBooleanObj(
  * Tcl_SetBooleanObj --
  *
  *	Modify an object to be a boolean object and to have the specified
- *	boolean value. A nonzero "boolValue" is coerced to 1.
+ *	boolean value. A nonzero "intValue" is coerced to 1.
  *
  * Results:
  *	None.
@@ -1852,13 +1852,13 @@ Tcl_DbNewBooleanObj(
 void
 Tcl_SetBooleanObj(
     Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
-    int boolValue)	/* Boolean used to set object's value. */
+    int intValue)	/* Boolean used to set object's value. */
 {
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetBooleanObj");
     }
 
-    TclSetBooleanObj(objPtr, boolValue);
+    TclSetLongObj(objPtr, (intValue)!=0);
 }
 
 /*
@@ -1884,15 +1884,15 @@ int
 Tcl_GetBooleanFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,	/* The object from which to get boolean. */
-    int *boolPtr)	/* Place to store resulting boolean. */
+    int *intPtr)	/* Place to store resulting boolean. */
 {
     do {
 	if (objPtr->typePtr == &tclIntType) {
-	    *boolPtr = (objPtr->internalRep.longValue != 0);
+	    *intPtr = (objPtr->internalRep.longValue != 0);
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclBooleanType) {
-	    *boolPtr = (int) objPtr->internalRep.longValue;
+	    *intPtr = (int) objPtr->internalRep.longValue;
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
@@ -1909,16 +1909,16 @@ Tcl_GetBooleanFromObj(
 	    if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    *boolPtr = (d != 0.0);
+	    *intPtr = (d != 0.0);
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclBignumType) {
-	    *boolPtr = 1;
+	    *intPtr = 1;
 	    return TCL_OK;
 	}
 #ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
-	    *boolPtr = (objPtr->internalRep.wideValue != 0);
+	    *intPtr = (objPtr->internalRep.wideValue != 0);
 	    return TCL_OK;
 	}
 #endif
