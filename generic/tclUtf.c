@@ -851,6 +851,58 @@ Tcl_NumUtfChars(
     return i;
 }
 
+size_t
+TclNumUtfChars(
+    const char *src,	/* The UTF-8 string to measure. */
+    size_t length)	/* The length of the string in bytes, or
+			 * TCL_INDEX_NONE for strlen(src). */
+{
+    unsigned short ch = 0;
+    size_t i = 0;
+
+    if (length == TCL_INDEX_NONE) {
+	/* string is NUL-terminated, so TclUtfToUniChar calls are safe. */
+	while (*src != '\0') {
+	    src += Tcl_UtfToChar16(src, &ch);
+	    i++;
+	}
+    } else {
+	/* Will return value between 0 and length. No overflow checks. */
+
+	/* Pointer to the end of string. Never read endPtr[0] */
+	const char *endPtr = src + length;
+	/* Pointer to last byte where optimization still can be used */
+	const char *optPtr = endPtr - 4;
+
+	/*
+	 * Optimize away the call in this loop. Justified because...
+	 * when (src <= optPtr), (endPtr - src) >= (endPtr - optPtr)
+	 * By initialization above (endPtr - optPtr) = TCL_UTF_MAX
+	 * So (endPtr - src) >= TCL_UTF_MAX, and passing that to
+	 * Tcl_UtfCharComplete we know will cause return of 1.
+	 */
+	while (src <= optPtr
+		/* && Tcl_UtfCharComplete(src, endPtr - src) */ ) {
+	    src += Tcl_UtfToChar16(src, &ch);
+	    i++;
+	}
+	/* Loop over the remaining string where call must happen */
+	while (src < endPtr) {
+	    if (Tcl_UtfCharComplete(src, endPtr - src)) {
+		src += Tcl_UtfToChar16(src, &ch);
+	    } else {
+		/*
+		 * src points to incomplete UTF-8 sequence
+		 * Treat first byte as character and count it
+		 */
+		src++;
+	    }
+	    i++;
+	}
+    }
+    return i;
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -1172,29 +1224,37 @@ Tcl_UtfAtIndex(
     const char *src,		/* The UTF-8 string. */
     ssize_t index)		/* The position of the desired character. */
 {
-    Tcl_UniChar ch = 0;
-#if TCL_UTF_MAX < 4
-    size_t len = 0;
-#endif
+    int ch = 0;
 
     if (index != TCL_INDEX_NONE) {
 	while (index--) {
-#if TCL_UTF_MAX < 4
-	    src += (len = TclUtfToUniChar(src, &ch));
-#else
-	    src += TclUtfToUniChar(src, &ch);
-#endif
+	    /* Make use of the #undef Tcl_UtfToUniChar above, which already handles UCS4. */
+	    src += Tcl_UtfToUniChar(src, &ch);
 	}
-#if TCL_UTF_MAX < 4
-    if ((ch >= 0xD800) && (len < 3)) {
-	/* Index points at character following high Surrogate */
-	src += TclUtfToUniChar(src, &ch);
-    }
-#endif
     }
     return src;
 }
 
+const char *
+TclUtfAtIndex(
+    const char *src,	/* The UTF-8 string. */
+    size_t index)		/* The position of the desired character. */
+{
+    unsigned short ch = 0;
+    size_t len = 0;
+
+    if (index != TCL_INDEX_NONE) {
+	while (index--) {
+	    src += (len = Tcl_UtfToChar16(src, &ch));
+	}
+	if ((ch >= 0xD800) && (len < 3)) {
+	    /* Index points at character following high Surrogate */
+	    src += Tcl_UtfToChar16(src, &ch);
+	}
+    }
+    return src;
+}
+
 /*
  *---------------------------------------------------------------------------
  *

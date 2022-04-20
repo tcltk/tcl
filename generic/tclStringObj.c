@@ -440,12 +440,50 @@ Tcl_GetCharLength(
      */
 
     if (numChars == TCL_INDEX_NONE) {
-	TclNumUtfChars(numChars, objPtr->bytes, objPtr->length);
+	TclNumUtfCharsM(numChars, objPtr->bytes, objPtr->length);
 	stringPtr->numChars = numChars;
     }
     return numChars;
 }
 
+size_t
+TclGetCharLength(
+    Tcl_Obj *objPtr)		/* The String object to get the num chars
+				 * of. */
+{
+    size_t numChars = 0;
+
+    /*
+     * Quick, no-shimmer return for short string reps.
+     */
+
+    if ((objPtr->bytes) && (objPtr->length < 2)) {
+	/* 0 bytes -> 0 chars; 1 byte -> 1 char */
+	return objPtr->length;
+    }
+
+    /*
+     * Optimize the case where we're really dealing with a bytearray object;
+     * we don't need to convert to a string to perform the get-length operation.
+     *
+     * Starting in Tcl 8.7, we check for a "pure" bytearray, because the
+     * machinery behind that test is using a proper bytearray ObjType.  We
+     * could also compute length of an improper bytearray without shimmering
+     * but there's no value in that. We *want* to shimmer an improper bytearray
+     * because improper bytearrays have worthless internal reps.
+     */
+
+    if (TclIsPureByteArray(objPtr)) {
+	(void) Tcl_GetByteArrayFromObj(objPtr, &numChars);
+    } else {
+	Tcl_GetString(objPtr);
+	numChars = TclNumUtfChars(objPtr->bytes, objPtr->length);
+    }
+
+    return numChars;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -543,7 +581,7 @@ Tcl_GetUniChar(
 	 */
 
 	if (stringPtr->numChars == TCL_INDEX_NONE) {
-	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
+	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    return (unsigned char) objPtr->bytes[index];
@@ -572,6 +610,40 @@ Tcl_GetUniChar(
 	}
     }
 #endif
+    return ch;
+}
+
+int
+TclGetUniChar(
+    Tcl_Obj *objPtr,		/* The object to get the Unicode charater
+				 * from. */
+    size_t index)		/* Get the index'th Unicode character. */
+{
+    int ch = 0;
+
+    /*
+     * Optimize the case where we're really dealing with a bytearray object
+     * we don't need to convert to a string to perform the indexing operation.
+     */
+
+    if (TclIsPureByteArray(objPtr)) {
+	size_t length = 0;
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+	if (index >= length) {
+		return -1;
+	}
+
+	return bytes[index];
+    }
+
+    size_t numChars = TclNumUtfChars(objPtr->bytes, objPtr->length);
+
+    if (index >= numChars) {
+	return -1;
+    }
+    const char *begin = TclUtfAtIndex(objPtr->bytes, index);
+#undef Tcl_UtfToUniChar
+    Tcl_UtfToUniChar(begin, &ch);
     return ch;
 }
 
@@ -674,9 +746,6 @@ Tcl_GetRange(
     if (first == TCL_INDEX_NONE) {
 	first = TCL_INDEX_START;
     }
-    if (last + 2 <= first + 1) {
-	return Tcl_NewObj();
-    }
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
@@ -689,7 +758,7 @@ Tcl_GetRange(
 	if (last >= length) {
 	    last = length - 1;
 	}
-	if (last < first) {
+	if (last + 1 < first + 1) {
 	    TclNewObj(newObjPtr);
 	    return newObjPtr;
 	}
@@ -709,13 +778,13 @@ Tcl_GetRange(
 	 */
 
 	if (stringPtr->numChars == TCL_INDEX_NONE) {
-	    TclNumUtfChars(stringPtr->numChars, objPtr->bytes, objPtr->length);
+	    TclNumUtfCharsM(stringPtr->numChars, objPtr->bytes, objPtr->length);
 	}
 	if (stringPtr->numChars == objPtr->length) {
 	    if (last >= stringPtr->numChars) {
 		last = stringPtr->numChars - 1;
 	    }
-	    if (last < first) {
+	    if (last + 1 < first + 1) {
 		TclNewObj(newObjPtr);
 		return newObjPtr;
 	    }
@@ -736,7 +805,7 @@ Tcl_GetRange(
     if (last >= stringPtr->numChars) {
 	last = stringPtr->numChars - 1;
     }
-    if (last < first) {
+    if (last + 1 < first + 1) {
 	TclNewObj(newObjPtr);
 	return newObjPtr;
     }
@@ -753,6 +822,51 @@ Tcl_GetRange(
     }
 #endif
     return Tcl_NewUnicodeObj(stringPtr->unicode + first, last - first + 1);
+}
+
+Tcl_Obj *
+TclGetRange(
+    Tcl_Obj *objPtr,		/* The Tcl object to find the range of. */
+    size_t first,			/* First index of the range. */
+    size_t last)			/* Last index of the range. */
+{
+    Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
+    size_t length = 0;
+
+    if (first == TCL_INDEX_NONE) {
+	first = TCL_INDEX_START;
+    }
+
+    /*
+     * Optimize the case where we're really dealing with a bytearray object
+     * we don't need to convert to a string to perform the substring operation.
+     */
+
+    if (TclIsPureByteArray(objPtr)) {
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, &length);
+
+	if (last >= length) {
+	    last = length - 1;
+	}
+	if (last + 1 < first + 1) {
+	    TclNewObj(newObjPtr);
+	    return newObjPtr;
+	}
+	return Tcl_NewByteArrayObj(bytes + first, last - first + 1);
+    }
+
+    size_t numChars = TclNumUtfChars(objPtr->bytes, objPtr->length);
+
+    if (last >= numChars) {
+	last = numChars - 1;
+    }
+    if (last + 1 < first + 1) {
+	TclNewObj(newObjPtr);
+	return newObjPtr;
+    }
+    const char *begin = TclUtfAtIndex(objPtr->bytes, first);
+    const char *end = TclUtfAtIndex(objPtr->bytes, last + 1);
+    return Tcl_NewStringObj(begin, end - begin);
 }
 
 /*
@@ -1209,7 +1323,7 @@ Tcl_AppendToObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclAppendUnicodeToObj --
+ * Tcl_AppendUnicodeToObj --
  *
  *	This function appends a Unicode string to an object in the most
  *	efficient manner possible. Length must be >= 0.
@@ -1233,7 +1347,7 @@ TclAppendUnicodeToObj(
     String *stringPtr;
 
     if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "TclAppendUnicodeToObj");
+	Tcl_Panic("%s called with shared object", "Tcl_AppendUnicodeToObj");
     }
 
     if (length == 0) {
@@ -4045,7 +4159,7 @@ ExtendUnicodeRepWithString(
 	numOrigChars = stringPtr->numChars;
     }
     if (numAppendChars == TCL_INDEX_NONE) {
-	TclNumUtfChars(numAppendChars, bytes, numBytes);
+	TclNumUtfCharsM(numAppendChars, bytes, numBytes);
     }
     needed = numOrigChars + numAppendChars;
 

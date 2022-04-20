@@ -1279,8 +1279,8 @@ Tcl_DisassembleObjCmd(
 	DISAS_CLASS_CONSTRUCTOR, DISAS_CLASS_DESTRUCTOR,
 	DISAS_LAMBDA, DISAS_CLASS_METHOD, DISAS_OBJECT_METHOD, DISAS_PROC,
 	DISAS_SCRIPT
-    };
-    int idx, result;
+    } idx;
+    int result;
     Tcl_Obj *codeObjPtr = NULL;
     Proc *procPtr = NULL;
     Tcl_HashEntry *hPtr;
@@ -1296,7 +1296,7 @@ Tcl_DisassembleObjCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum Types) idx) {
+    switch (idx) {
     case DISAS_LAMBDA: {
 	Command cmd;
 	Tcl_Obj *nsObjPtr;

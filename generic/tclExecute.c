@@ -379,7 +379,7 @@ VarHashCreateVar(
 #ifdef TCL_COMPILE_DEBUG
 #   define TRACE(a) \
     while (traceInstructions) {					\
-	fprintf(stdout, "%2d: %2d (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
+	fprintf(stdout, "%2" TCL_Z_MODIFIER "d: %2d (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
 		(int) CURR_DEPTH,				\
 		(size_t) (pc - codePtr->codeStart),		\
 		GetOpcodeName(pc));				\
@@ -395,7 +395,7 @@ VarHashCreateVar(
     TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 #   define TRACE_WITH_OBJ(a, objPtr) \
     while (traceInstructions) {					\
-	fprintf(stdout, "%2d: %2d (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
+	fprintf(stdout, "%2" TCL_Z_MODIFIER "d: %2d (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
 		(int) CURR_DEPTH,				\
 		(size_t) (pc - codePtr->codeStart),		\
 		GetOpcodeName(pc));				\
@@ -2269,7 +2269,7 @@ TEBCresume(
 
     CHECK_STACK();
     if (traceInstructions) {
-	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
+	fprintf(stdout, "%2" TCL_Z_MODIFIER "d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
 	TclPrintInstruction(codePtr, pc);
 	fflush(stdout);
     }
@@ -2368,7 +2368,7 @@ TEBCresume(
 
     {
 	CoroutineData *corPtr;
-	int yieldParameter;
+	void *yieldParameter;
 
     case INST_YIELD:
 	corPtr = iPtr->execEnvPtr->corPtr;
@@ -2389,14 +2389,14 @@ TEBCresume(
 	    if (traceInstructions) {
 		TRACE_APPEND(("YIELD...\n"));
 	    } else {
-		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) yielding value \"%.30s\"\n",
+		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) yielding value \"%.30s\"\n",
 			iPtr->numLevels, (size_t)(pc - codePtr->codeStart),
 			Tcl_GetString(OBJ_AT_TOS));
 	    }
 	    fflush(stdout);
 	}
 #endif
-	yieldParameter = 0;
+	yieldParameter = NULL;	/*==CORO_ACTIVATE_YIELD*/
 	Tcl_SetObjResult(interp, OBJ_AT_TOS);
 	goto doYield;
 
@@ -2432,7 +2432,7 @@ TEBCresume(
 		TRACE(("[%.30s] => YIELD...\n", O2S(valuePtr)));
 	    } else {
 		/* FIXME: What is the right thing to trace? */
-		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) yielding to [%.30s]\n",
+		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) yielding to [%.30s]\n",
 			iPtr->numLevels, (size_t)(pc - codePtr->codeStart),
 			TclGetString(valuePtr));
 	    }
@@ -2451,7 +2451,7 @@ TEBCresume(
 	TclSetTailcall(interp, valuePtr);
 	corPtr->yieldPtr = valuePtr;
 	iPtr->execEnvPtr = corPtr->eePtr;
-	yieldParameter = (PTR2INT(NULL)+1);	/*==CORO_ACTIVATE_YIELDM*/
+	yieldParameter = INT2PTR(1);	/*==CORO_ACTIVATE_YIELDM*/
 
     doYield:
 	/* TIP #280: Record the last piece of info needed by
@@ -2469,7 +2469,7 @@ TEBCresume(
 	cleanup = 1;
 	TEBC_YIELD();
 	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
-		INT2PTR(yieldParameter), NULL, NULL);
+		yieldParameter, NULL, NULL);
 	return TCL_OK;
     }
 
@@ -2791,7 +2791,7 @@ TEBCresume(
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 		TRACE(("%u => call ", objc));
 	    } else {
-		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) invoking ", iPtr->numLevels,
+		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) invoking ", iPtr->numLevels,
 			(size_t)(pc - codePtr->codeStart));
 	    }
 	    for (i = 0;  i < objc;  i++) {
@@ -2839,7 +2839,7 @@ TEBCresume(
 		TRACE(("%u => call (implementation %s) ", objc, O2S(objPtr)));
 	    } else {
 		fprintf(stdout,
-			"%d: (%" TCL_Z_MODIFIER "u) invoking (using implementation %s) ",
+			"%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) invoking (using implementation %s) ",
 			iPtr->numLevels, (size_t)(pc - codePtr->codeStart),
 			O2S(objPtr));
 	    }
@@ -4424,7 +4424,7 @@ TEBCresume(
 			if (traceInstructions) {
 			    strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 			} else {
-			    fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) invoking ",
+			    fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) invoking ",
 				    iPtr->numLevels,
 				    (size_t)(pc - codePtr->codeStart));
 			}
@@ -4526,7 +4526,7 @@ TEBCresume(
 	    if (traceInstructions) {
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 	    } else {
-		fprintf(stdout, "%d: (%" TCL_Z_MODIFIER "u) invoking ",
+		fprintf(stdout, "%" TCL_Z_MODIFIER "d: (%" TCL_Z_MODIFIER "u) invoking ",
 			iPtr->numLevels, (size_t)(pc - codePtr->codeStart));
 	    }
 	    for (i = 0;  i < opnd;  i++) {
@@ -7136,7 +7136,7 @@ TEBCresume(
 	{			/* Read the wall clock */
 	    Tcl_WideInt wval;
 	    Tcl_Time now;
-	    switch(TclGetUInt1AtPtr(pc+1)) {
+	    switch (TclGetUInt1AtPtr(pc+1)) {
 	    case 0:		/* clicks */
 #ifdef TCL_WIDE_CLICKS
 		wval = TclpGetWideClicks();

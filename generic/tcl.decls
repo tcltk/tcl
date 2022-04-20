@@ -106,7 +106,7 @@ declare 21 {
 }
 # Removed in 9.0 (changed to macro):
 #declare 22 {
-#    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
+#    Tcl_Obj *Tcl_DbNewBooleanObj(int intValue, const char *file, int line)
 #}
 declare 23 {
     Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, size_t numBytes,
@@ -138,11 +138,11 @@ declare 30 {
     void TclFreeObj(Tcl_Obj *objPtr)
 }
 declare 31 {
-    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *boolPtr)
+    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *intPtr)
 }
 declare 32 {
     int Tcl_GetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *boolPtr)
+	    int *intPtr)
 }
 declare 33 {
     unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
@@ -203,7 +203,7 @@ declare 48 {
 }
 # Removed in 9.0 (changed to macro):
 #declare 49 {
-#    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
+#    Tcl_Obj *Tcl_NewBooleanObj(int intValue)
 #}
 declare 50 {
     Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, size_t numBytes)
@@ -230,7 +230,7 @@ declare 56 {
 }
 # Removed in 9.0 (changed to macro):
 #declare 57 {
-#    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
+#    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int intValue)
 #}
 declare 58 {
     unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, size_t numBytes)
@@ -1162,7 +1162,7 @@ declare 311 {
 	    const Tcl_Time *timePtr)
 }
 declare 312 {
-    size_t Tcl_NumUtfChars(const char *src, size_t length)
+    size_t TclNumUtfChars(const char *src, size_t length)
 }
 declare 313 {
     size_t Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
@@ -1206,7 +1206,7 @@ declare 324 {
     int Tcl_UniCharToUtf(int ch, char *buf)
 }
 declare 325 {
-    const char *Tcl_UtfAtIndex(const char *src, size_t index)
+    const char *TclUtfAtIndex(const char *src, size_t index)
 }
 declare 326 {
     int TclUtfCharComplete(const char *src, size_t length)
@@ -1396,17 +1396,17 @@ declare 379 {
 	    size_t numChars)
 }
 declare 380 {
-    size_t Tcl_GetCharLength(Tcl_Obj *objPtr)
+    size_t TclGetCharLength(Tcl_Obj *objPtr)
 }
 declare 381 {
-    int Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index)
+    int TclGetUniChar(Tcl_Obj *objPtr, size_t index)
 }
 # Removed in 9.0, replaced by macro.
 #declare 382 {
 #    Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
 #}
 declare 383 {
-    Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, size_t first, size_t last)
+    Tcl_Obj *TclGetRange(Tcl_Obj *objPtr, size_t first, size_t last)
 }
 # Removed in 9.0
 #declare 384 {
@@ -2498,6 +2498,14 @@ declare 656 {
 declare 657 {
     int Tcl_UniCharIsUnicode(int ch)
 }
+declare 658 {
+    size_t Tcl_ExternalToUtfDStringEx(Tcl_Encoding encoding,
+	    const char *src, size_t srcLen, int flags, Tcl_DString *dsPtr)
+}
+declare 659 {
+    size_t Tcl_UtfToExternalDStringEx(Tcl_Encoding encoding,
+	    const char *src, size_t srcLen, int flags, Tcl_DString *dsPtr)
+}
 
 # TIP #511
 declare 660 {
@@ -2507,6 +2515,21 @@ declare 660 {
 # TIP #617
 declare 668 {
     size_t Tcl_UniCharLen(const int *uniStr)
+}
+declare 669 {
+    size_t Tcl_NumUtfChars(const char *src, size_t length)
+}
+declare 670 {
+    size_t Tcl_GetCharLength(Tcl_Obj *objPtr)
+}
+declare 671 {
+    const char *Tcl_UtfAtIndex(const char *src, size_t index)
+}
+declare 672 {
+    Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, size_t first, size_t last)
+}
+declare 673 {
+    int Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index)
 }
 
 

@@ -69,7 +69,7 @@ typedef struct {
 } String;
 
 #define STRING_SIZE(numChars) \
-    (offsetof(String, unicode) + (((numChars) + 1U) * sizeof(Tcl_UniChar)))
+    (offsetof(String, unicode) + sizeof(Tcl_UniChar) + ((numChars) * sizeof(Tcl_UniChar)))
 #define stringAttemptAlloc(numChars) \
     (String *) Tcl_AttemptAlloc(STRING_SIZE(numChars))
 #define stringAlloc(numChars) \

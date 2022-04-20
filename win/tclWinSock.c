@@ -388,8 +388,8 @@ InitializeHostName(
 	    Tcl_DStringSetLength(&inDs, 256);
 	    if (gethostname(Tcl_DStringValue(&inDs),
 		    Tcl_DStringLength(&inDs)) == 0) {
-		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs), -1,
-			&ds);
+		Tcl_ExternalToUtfDStringEx(NULL, Tcl_DStringValue(&inDs), -1,
+			TCL_ENCODING_NOCOMPLAIN, &ds);
 	    }
 	    Tcl_DStringFree(&inDs);
 	}

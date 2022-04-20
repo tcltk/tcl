@@ -92,7 +92,13 @@ typedef struct {
  * Forward declarations for functions defined in this file:
  */
 
-typedef int (Tcl_TraceTypeObjCmd)(Tcl_Interp *interp, int optionIndex,
+enum traceOptions {
+    TRACE_ADD, TRACE_INFO, TRACE_REMOVE
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
+    ,TRACE_OLD_VARIABLE, TRACE_OLD_VDELETE, TRACE_OLD_VINFO
+#endif
+};
+typedef int (Tcl_TraceTypeObjCmd)(Tcl_Interp *interp, enum traceOptions optionIndex,
 	int objc, Tcl_Obj *const objv[]);
 
 static Tcl_TraceTypeObjCmd TraceVariableObjCmd;
@@ -188,7 +194,6 @@ Tcl_TraceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int optionIndex;
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
     const char *name;
     const char *flagOps, *p;
@@ -202,12 +207,7 @@ Tcl_TraceObjCmd(
 	NULL
     };
     /* 'OLD' options are pre-Tcl-8.4 style */
-    enum traceOptionsEnum {
-	TRACE_ADD, TRACE_INFO, TRACE_REMOVE,
-#ifndef TCL_REMOVE_OBSOLETE_TRACES
-	TRACE_OLD_VARIABLE, TRACE_OLD_VDELETE, TRACE_OLD_VINFO
-#endif
-    };
+    enum traceOptions optionIndex;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -218,7 +218,7 @@ Tcl_TraceObjCmd(
 	    &optionIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch ((enum traceOptionsEnum) optionIndex) {
+    switch (optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
 	/*
@@ -398,25 +398,21 @@ Tcl_TraceObjCmd(
 static int
 TraceExecutionObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-    int optionIndex,		/* Add, info or remove */
+	enum traceOptions optionIndex,		/* Add, info or remove */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int index;
     const char *name, *command;
     size_t commandLength, length;
-    enum traceOptions {
-	TRACE_ADD, TRACE_INFO, TRACE_REMOVE
-    };
     static const char *const opStrings[] = {
 	"enter", "leave", "enterstep", "leavestep", NULL
     };
     enum operations {
 	TRACE_EXEC_ENTER, TRACE_EXEC_LEAVE,
 	TRACE_EXEC_ENTER_STEP, TRACE_EXEC_LEAVE_STEP
-    };
+    } index;
 
-    switch ((enum traceOptions) optionIndex) {
+    switch (optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
 	int flags = 0;
@@ -450,7 +446,7 @@ TraceExecutionObjCmd(
 		    "operation", TCL_EXACT, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    switch ((enum operations) index) {
+	    switch (index) {
 	    case TRACE_EXEC_ENTER:
 		flags |= TCL_TRACE_ENTER_EXEC;
 		break;
@@ -467,7 +463,7 @@ TraceExecutionObjCmd(
 	}
 	command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	length = commandLength;
-	if ((enum traceOptions) optionIndex == TRACE_ADD) {
+	if (optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)Tcl_Alloc(
 		    offsetof(TraceCommandInfo, command) + 1 + length);
 
@@ -620,6 +616,10 @@ TraceExecutionObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
+    default:
+	break;
+#endif
     }
     return TCL_OK;
 }
@@ -646,18 +646,16 @@ TraceExecutionObjCmd(
 static int
 TraceCommandObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-    int optionIndex,		/* Add, info or remove */
+	enum traceOptions optionIndex,		/* Add, info or remove */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int index;
     const char *name, *command;
     size_t commandLength, length;
-    enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
     static const char *const opStrings[] = { "delete", "rename", NULL };
-    enum operations { TRACE_CMD_DELETE, TRACE_CMD_RENAME };
+    enum operations { TRACE_CMD_DELETE, TRACE_CMD_RENAME } index;
 
-    switch ((enum traceOptions) optionIndex) {
+    switch (optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
 	int flags = 0;
@@ -692,7 +690,7 @@ TraceCommandObjCmd(
 		    "operation", TCL_EXACT, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    switch ((enum operations) index) {
+	    switch (index) {
 	    case TRACE_CMD_RENAME:
 		flags |= TCL_TRACE_RENAME;
 		break;
@@ -704,7 +702,7 @@ TraceCommandObjCmd(
 
 	command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	length = commandLength;
-	if ((enum traceOptions) optionIndex == TRACE_ADD) {
+	if (optionIndex == TRACE_ADD) {
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)Tcl_Alloc(
 		    offsetof(TraceCommandInfo, command) + 1 + length);
 
@@ -814,6 +812,10 @@ TraceCommandObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
+    default:
+	break;
+#endif
     }
     return TCL_OK;
 }
@@ -840,23 +842,21 @@ TraceCommandObjCmd(
 static int
 TraceVariableObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
-    int optionIndex,		/* Add, info or remove */
+	enum traceOptions optionIndex,		/* Add, info or remove */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int index;
     const char *name, *command;
     size_t commandLength, length;
     ClientData clientData;
-    enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
     static const char *const opStrings[] = {
 	"array", "read", "unset", "write", NULL
     };
     enum operations {
 	TRACE_VAR_ARRAY, TRACE_VAR_READ, TRACE_VAR_UNSET, TRACE_VAR_WRITE
-    };
+    } index;
 
-    switch ((enum traceOptions) optionIndex) {
+    switch (optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
 	int flags = 0;
@@ -890,7 +890,7 @@ TraceVariableObjCmd(
 		    "operation", TCL_EXACT, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    switch ((enum operations) index) {
+	    switch (index) {
 	    case TRACE_VAR_ARRAY:
 		flags |= TCL_TRACE_ARRAY;
 		break;
@@ -907,7 +907,7 @@ TraceVariableObjCmd(
 	}
 	command = Tcl_GetStringFromObj(objv[5], &commandLength);
 	length = commandLength;
-	if ((enum traceOptions) optionIndex == TRACE_ADD) {
+	if (optionIndex == TRACE_ADD) {
 	    CombinedTraceVarInfo *ctvarPtr = (CombinedTraceVarInfo *)Tcl_Alloc(
 		    offsetof(CombinedTraceVarInfo, traceCmdInfo.command)
 		    + 1 + length);
@@ -1006,6 +1006,10 @@ TraceVariableObjCmd(
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
     }
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
+    default:
+	break;
+#endif
     }
     return TCL_OK;
 }
