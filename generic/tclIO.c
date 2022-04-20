@@ -2685,6 +2685,7 @@ FlushChannel(
     int wroteSome = 0;		/* Set to one if any data was written to the
 				 * driver. */
 
+    int bufExists;
     /*
      * Prevent writing on a dead channel -- a channel that has been closed but
      * not yet deallocated. This can occur if the exit handler for the channel
@@ -2853,8 +2854,8 @@ FlushChannel(
 	     * queued.
 	     */
 
-	    DiscardOutputQueued(statePtr);
 	    ReleaseChannelBuffer(bufPtr);
+	    DiscardOutputQueued(statePtr);
 	    break;
 	} else {
 	    /*
@@ -2865,20 +2866,32 @@ FlushChannel(
 	    wroteSome = 1;
 	}
 
-	bufPtr->nextRemoved += written;
-
-	/*
-	 * If this buffer is now empty, recycle it.
-	 */
-
-	if (IsBufferEmpty(bufPtr)) {
-	    statePtr->outQueueHead = bufPtr->nextPtr;
-	    if (statePtr->outQueueHead == NULL) {
-		statePtr->outQueueTail = NULL;
-	    }
-	    RecycleBuffer(statePtr, bufPtr, 0);
-	}
+	bufExists = bufPtr->refCount > 1;
 	ReleaseChannelBuffer(bufPtr);
+	if (bufExists) {
+	    /* There is still a reference to this buffer other than the one
+	     * this routine just released, meaning that final cleanup of the
+	     * buffer hasn't been ordered by, e.g. by a reflected channel
+	     * closing the channel from within one of its handler scripts (not
+	     * something one would expecte, but it must be considered).  Normal
+	     * operations on the buffer can proceed.
+	     */
+
+	    bufPtr->nextRemoved += written;
+
+	    /*
+	     * If this buffer is now empty, recycle it.
+	     */
+
+	    if (IsBufferEmpty(bufPtr)) {
+		statePtr->outQueueHead = bufPtr->nextPtr;
+		if (statePtr->outQueueHead == NULL) {
+		    statePtr->outQueueTail = NULL;
+		}
+		RecycleBuffer(statePtr, bufPtr, 0);
+	    }
+	}
+
     }	/* Closes "while". */
 
     /*
@@ -6927,15 +6940,17 @@ GetInput(
 
     PreserveChannelBuffer(bufPtr);
     nread = ChanRead(chanPtr, InsertPoint(bufPtr), toRead);
+    ReleaseChannelBuffer(bufPtr);
 
     if (nread < 0) {
 	result = Tcl_GetErrno();
     } else {
 	result = 0;
-	bufPtr->nextAdded += nread;
+	if (statePtr->inQueueTail != NULL) {
+	    statePtr->inQueueTail->nextAdded += nread;
+	}
     }
 
-    ReleaseChannelBuffer(bufPtr);
     return result;
 }
 

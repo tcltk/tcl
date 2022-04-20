@@ -118,13 +118,10 @@ your ${USER}.pbxuser file (located inside the Tcl.xcodeproj bundle directory)
 with a text editor.
 
 - To build universal binaries outside of the Xcode IDE, set CFLAGS as follows:
-	export CFLAGS="-arch i386 -arch x86_64 -arch ppc"
-This requires Mac OS X 10.4 and Xcode 2.4 (or Xcode 2.2 if -arch x86_64 is
-omitted, but _not_ Xcode 2.1) and will work on any architecture (on PowerPC
-Tiger you need to add "-isysroot /Developer/SDKs/MacOSX10.4u.sdk").
+	export CFLAGS="-arch x86_64 -arch arm64e"
+This requires Mac OS X 10.4 and Xcode 2.4 and will work on any architecture.
 Note that configure requires CFLAGS to contain a least one architecture that can
-be run on the build machine (i.e. ppc on G3/G4, ppc or ppc64 on G5, ppc or i386
-on Core and ppc, i386 or x86_64 on Core2/Xeon).
+be run on the build machine (i.e. x86_64 on Core2/Xeon).
 Universal builds of Tcl TEA extensions are also possible with CFLAGS set as
 above, they will be [load]able by universal as well as thin binaries of Tcl.
 
@@ -141,7 +138,7 @@ If you are building from CVS, omit this step (CVS source tree names usually do
 not contain a version number).
 
 - Setup environment variables as desired, e.g. for a universal build on 10.5:
-	CFLAGS="-arch i386 -arch x86_64 -arch ppc -mmacosx-version-min=10.5"
+	CFLAGS="-arch x86_64 -arch arm64e -mmacosx-version-min=10.5"
 	export CFLAGS
 
 - Change to the directory containing the Tcl source tree and build:
