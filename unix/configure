@@ -6420,23 +6420,20 @@ fi
 		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
 		if ($i~/^(isysroot|mmacosx-version-min)/) print "-"$i}'`"
 	    CFLAGS="`echo " ${CFLAGS}" | \
-		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
-		if (!($i~/^(isysroot|mmacosx-version-min)/)) print "-"$i}'`"
-	    if test $do64bit = yes
-then :
-
-		case `arch` in
-		    x86_64)
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if compiler accepts -arch x86_64 flag" >&5
+	    awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
+	    if (!($i~/^(isysroot|mmacosx-version-min)/)) print "-"$i}'`"
+	    case `arch` in
+		i386|x86_64)
+		    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if compiler accepts -arch x86_64 flag" >&5
 printf %s "checking if compiler accepts -arch x86_64 flag... " >&6; }
 if test ${tcl_cv_cc_arch_x86_64+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
 
-			    hold_cflags=$CFLAGS
-			    CFLAGS="$CFLAGS -arch x86_64"
-			    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+			hold_cflags=$CFLAGS
+			CFLAGS="$CFLAGS -arch x86_64"
+			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -6455,25 +6452,59 @@ else $as_nop
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
-			    CFLAGS=$hold_cflags
+			CFLAGS=$hold_cflags
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_arch_x86_64" >&5
 printf "%s\n" "$tcl_cv_cc_arch_x86_64" >&6; }
-			if test $tcl_cv_cc_arch_x86_64 = yes
+		    if test $tcl_cv_cc_arch_x86_64 = yes
 then :
 
-			    CFLAGS="$CFLAGS -arch x86_64"
-			    do64bit_ok=yes
+			CFLAGS="$CFLAGS -arch x86_64"
 
 fi;;
-		    arm64e)
-			do64bit_ok=yes;;
-		    *)
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&5
-printf "%s\n" "$as_me: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&2;};;
-		esac
+		arm64|arm64e)
+		    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if compiler accepts -arch arm64e flag" >&5
+printf %s "checking if compiler accepts -arch arm64e flag... " >&6; }
+if test ${tcl_cv_cc_arch_arm64e+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
 
+			hold_cflags=$CFLAGS
+			CFLAGS="$CFLAGS -arch arm64e"
+			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  tcl_cv_cc_arch_arm64e=yes
+else $as_nop
+  tcl_cv_cc_arch_arm64e=no
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+			CFLAGS=$hold_cflags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_arch_arm64e" >&5
+printf "%s\n" "$tcl_cv_cc_arch_arm64e" >&6; }
+		    if test $tcl_cv_cc_arch_arm64e = yes
+then :
+
+			CFLAGS="$CFLAGS -arch arm64e"
+
+fi;;
+		*)
+		    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&5
+printf "%s\n" "$as_me: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&2;};;
+	    esac
 	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
 	    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if ld accepts -single_module flag" >&5
 printf %s "checking if ld accepts -single_module flag... " >&6; }
