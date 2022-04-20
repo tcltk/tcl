@@ -1620,7 +1620,7 @@ StringIsCmd(
 		result = length1 == 0;
 	    }
 	} else if (index != STR_IS_BOOL) {
-	    TclGetBoolFromObj(NULL, objPtr, 0, &i);
+	    TclGetBoolFromObj(NULL, objPtr, sizeof(i), &i);
 	    if ((index == STR_IS_TRUE) ^ i) {
 		result = 0;
 	    }

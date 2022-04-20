@@ -2208,14 +2208,14 @@ Tcl_GetBoolFromObj(
 	    if (boolPtr != NULL) {
 		flags &= (TCL_NULL_OK - 1);
 		if (flags & (int)~sizeof(int8_t)) {
-		    if (flags == sizeof(int64_t)) {
-			*(int64_t *)boolPtr = result;
+		    if (flags == sizeof(int16_t)) {
+			*(int16_t *)boolPtr = result;
 			return TCL_OK;
 		    } else if (flags == sizeof(int32_t)) {
 			*(int32_t *)boolPtr = result;
 			return TCL_OK;
-		    } else if (flags == sizeof(int16_t)) {
-			*(int16_t *)boolPtr = result;
+		    } else if (flags == sizeof(int64_t)) {
+			*(int64_t *)boolPtr = result;
 			return TCL_OK;
 		    }
 		}
@@ -2233,9 +2233,9 @@ int
 Tcl_GetBooleanFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,	/* The object from which to get boolean. */
-    int *boolPtr)	/* Place to store resulting boolean. */
+    int *intPtr)	/* Place to store resulting boolean. */
 {
-    return Tcl_GetBoolFromObj(interp, objPtr, sizeof(int), boolPtr);
+    return Tcl_GetBoolFromObj(interp, objPtr, sizeof(int), intPtr);
 }
 
 /*

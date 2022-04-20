@@ -2133,8 +2133,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CFLAGS = "-arch i386 -arch x86_64 -arch ppc $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CFLAGS = "-arch x86_64 -arch arm64e $(CFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				PREBINDING = NO;
 			};
@@ -2598,8 +2598,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CFLAGS = "-arch i386 -arch x86_64 -arch ppc $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CFLAGS = "-arch x86_64 -arch arm64e $(CFLAGS)";
 				GCC_VERSION = 4.0;
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				PREBINDING = NO;
@@ -2636,8 +2636,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CFLAGS = "-arch i386 -arch x86_64 -arch ppc $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CFLAGS = "-arch x86_64 -arch arm64e $(CFLAGS)";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC = "llvm-gcc";
 				GCC_OPTIMIZATION_LEVEL = 4;
@@ -2790,8 +2790,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
-				CFLAGS = "-arch i386 -arch x86_64 -arch ppc $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CFLAGS = "-arch x86_64 -arch arm64e $(CFLAGS)";
 				CPPFLAGS = "-isysroot $(SDKROOT) $(CPPFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				PREBINDING = NO;

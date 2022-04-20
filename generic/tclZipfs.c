@@ -467,7 +467,8 @@ ZipReadInt(
 	Tcl_Panic("out of bounds read(4): start=%p, end=%p, ptr=%p",
 		bufferStart, bufferEnd, ptr);
     }
-    return ptr[0] | (ptr[1] << 8) | (ptr[2] << 16) | (ptr[3] << 24);
+    return ptr[0] | (ptr[1] << 8) | (ptr[2] << 16) |
+	    ((unsigned int)ptr[3] << 24);
 }
 
 static inline unsigned short

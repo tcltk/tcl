@@ -4346,7 +4346,7 @@ TEBCresume(
 
 	/* TODO - check claim that taking address of b harms performance */
 	/* TODO - consider optimization search for constants */
-	if (TclGetBoolFromObj(interp, valuePtr, 0, &b) != TCL_OK) {
+	if (TclGetBoolFromObj(interp, valuePtr, sizeof(b), &b) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
@@ -4414,7 +4414,7 @@ TEBCresume(
 
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
-	if (TclGetBoolFromObj(NULL, valuePtr, 0, &i1) != TCL_OK) {
+	if (TclGetBoolFromObj(NULL, valuePtr, sizeof(i1), &i1) != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
 	    DECACHE_STACK_INFO();
@@ -4423,7 +4423,7 @@ TEBCresume(
 	    goto gotError;
 	}
 
-	if (TclGetBoolFromObj(NULL, value2Ptr, 0, &i2) != TCL_OK) {
+	if (TclGetBoolFromObj(NULL, value2Ptr, sizeof(i2), &i2) != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name : "null")));
 	    DECACHE_STACK_INFO();
@@ -6223,7 +6223,7 @@ TEBCresume(
 
 	/* TODO - check claim that taking address of b harms performance */
 	/* TODO - consider optimization search for constants */
-	if (TclGetBoolFromObj(NULL, valuePtr, 0, &b) != TCL_OK) {
+	if (TclGetBoolFromObj(NULL, valuePtr, sizeof(b), &b) != TCL_OK) {
 	    TRACE(("\"%.20s\" => ERROR: illegal type %s\n", O2S(valuePtr),
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
 	    DECACHE_STACK_INFO();
