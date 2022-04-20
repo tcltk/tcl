@@ -120,7 +120,7 @@ EXTERN int		Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file,
 				int line);
 /* 22 */
 TCL_DEPRECATED("No longer in use, changed to macro")
-Tcl_Obj *		Tcl_DbNewBooleanObj(int boolValue, const char *file,
+Tcl_Obj *		Tcl_DbNewBooleanObj(int intValue, const char *file,
 				int line);
 /* 23 */
 EXTERN Tcl_Obj *	Tcl_DbNewByteArrayObj(const unsigned char *bytes,
@@ -146,10 +146,10 @@ EXTERN Tcl_Obj *	Tcl_DuplicateObj(Tcl_Obj *objPtr);
 EXTERN void		TclFreeObj(Tcl_Obj *objPtr);
 /* 31 */
 EXTERN int		Tcl_GetBoolean(Tcl_Interp *interp, const char *src,
-				int *boolPtr);
+				int *intPtr);
 /* 32 */
 EXTERN int		Tcl_GetBooleanFromObj(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, int *boolPtr);
+				Tcl_Obj *objPtr, int *intPtr);
 /* 33 */
 EXTERN unsigned char *	Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr,
 				int *numBytesPtr);
@@ -202,7 +202,7 @@ EXTERN int		Tcl_ListObjReplace(Tcl_Interp *interp,
 				int objc, Tcl_Obj *const objv[]);
 /* 49 */
 TCL_DEPRECATED("No longer in use, changed to macro")
-Tcl_Obj *		Tcl_NewBooleanObj(int boolValue);
+Tcl_Obj *		Tcl_NewBooleanObj(int intValue);
 /* 50 */
 EXTERN Tcl_Obj *	Tcl_NewByteArrayObj(const unsigned char *bytes,
 				int numBytes);
@@ -222,7 +222,7 @@ EXTERN Tcl_Obj *	Tcl_NewObj(void);
 EXTERN Tcl_Obj *	Tcl_NewStringObj(const char *bytes, int length);
 /* 57 */
 TCL_DEPRECATED("No longer in use, changed to macro")
-void			Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue);
+void			Tcl_SetBooleanObj(Tcl_Obj *objPtr, int intValue);
 /* 58 */
 EXTERN unsigned char *	Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int numBytes);
 /* 59 */
@@ -2012,7 +2012,7 @@ typedef struct TclStubs {
     void (*tcl_DbDecrRefCount) (Tcl_Obj *objPtr, const char *file, int line); /* 19 */
     void (*tcl_DbIncrRefCount) (Tcl_Obj *objPtr, const char *file, int line); /* 20 */
     int (*tcl_DbIsShared) (Tcl_Obj *objPtr, const char *file, int line); /* 21 */
-    TCL_DEPRECATED_API("No longer in use, changed to macro") Tcl_Obj * (*tcl_DbNewBooleanObj) (int boolValue, const char *file, int line); /* 22 */
+    TCL_DEPRECATED_API("No longer in use, changed to macro") Tcl_Obj * (*tcl_DbNewBooleanObj) (int intValue, const char *file, int line); /* 22 */
     Tcl_Obj * (*tcl_DbNewByteArrayObj) (const unsigned char *bytes, int numBytes, const char *file, int line); /* 23 */
     Tcl_Obj * (*tcl_DbNewDoubleObj) (double doubleValue, const char *file, int line); /* 24 */
     Tcl_Obj * (*tcl_DbNewListObj) (int objc, Tcl_Obj *const *objv, const char *file, int line); /* 25 */
@@ -2021,8 +2021,8 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DbNewStringObj) (const char *bytes, int length, const char *file, int line); /* 28 */
     Tcl_Obj * (*tcl_DuplicateObj) (Tcl_Obj *objPtr); /* 29 */
     void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
-    int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *boolPtr); /* 31 */
-    int (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *boolPtr); /* 32 */
+    int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *intPtr); /* 31 */
+    int (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *intPtr); /* 32 */
     unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, int *numBytesPtr); /* 33 */
     int (*tcl_GetDouble) (Tcl_Interp *interp, const char *src, double *doublePtr); /* 34 */
     int (*tcl_GetDoubleFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, double *doublePtr); /* 35 */
@@ -2039,7 +2039,7 @@ typedef struct TclStubs {
     int (*tcl_ListObjIndex) (Tcl_Interp *interp, Tcl_Obj *listPtr, int index, Tcl_Obj **objPtrPtr); /* 46 */
     int (*tcl_ListObjLength) (Tcl_Interp *interp, Tcl_Obj *listPtr, int *lengthPtr); /* 47 */
     int (*tcl_ListObjReplace) (Tcl_Interp *interp, Tcl_Obj *listPtr, int first, int count, int objc, Tcl_Obj *const objv[]); /* 48 */
-    TCL_DEPRECATED_API("No longer in use, changed to macro") Tcl_Obj * (*tcl_NewBooleanObj) (int boolValue); /* 49 */
+    TCL_DEPRECATED_API("No longer in use, changed to macro") Tcl_Obj * (*tcl_NewBooleanObj) (int intValue); /* 49 */
     Tcl_Obj * (*tcl_NewByteArrayObj) (const unsigned char *bytes, int numBytes); /* 50 */
     Tcl_Obj * (*tcl_NewDoubleObj) (double doubleValue); /* 51 */
     TCL_DEPRECATED_API("No longer in use, changed to macro") Tcl_Obj * (*tcl_NewIntObj) (int intValue); /* 52 */
@@ -2047,7 +2047,7 @@ typedef struct TclStubs {
     TCL_DEPRECATED_API("No longer in use, changed to macro") Tcl_Obj * (*tcl_NewLongObj) (long longValue); /* 54 */
     Tcl_Obj * (*tcl_NewObj) (void); /* 55 */
     Tcl_Obj * (*tcl_NewStringObj) (const char *bytes, int length); /* 56 */
-    TCL_DEPRECATED_API("No longer in use, changed to macro") void (*tcl_SetBooleanObj) (Tcl_Obj *objPtr, int boolValue); /* 57 */
+    TCL_DEPRECATED_API("No longer in use, changed to macro") void (*tcl_SetBooleanObj) (Tcl_Obj *objPtr, int intValue); /* 57 */
     unsigned char * (*tcl_SetByteArrayLength) (Tcl_Obj *objPtr, int numBytes); /* 58 */
     void (*tcl_SetByteArrayObj) (Tcl_Obj *objPtr, const unsigned char *bytes, int numBytes); /* 59 */
     void (*tcl_SetDoubleObj) (Tcl_Obj *objPtr, double doubleValue); /* 60 */
@@ -4085,14 +4085,14 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, \
 	sizeof(char *), msg, flags, indexPtr)
 #undef Tcl_NewBooleanObj
-#define Tcl_NewBooleanObj(boolValue) \
-	Tcl_NewWideIntObj((boolValue)!=0)
+#define Tcl_NewBooleanObj(intValue) \
+	Tcl_NewWideIntObj((intValue)!=0)
 #undef Tcl_DbNewBooleanObj
-#define Tcl_DbNewBooleanObj(boolValue, file, line) \
-	Tcl_DbNewWideIntObj((boolValue)!=0, file, line)
+#define Tcl_DbNewBooleanObj(intValue, file, line) \
+	Tcl_DbNewWideIntObj((intValue)!=0, file, line)
 #undef Tcl_SetBooleanObj
-#define Tcl_SetBooleanObj(objPtr, boolValue) \
-	Tcl_SetWideIntObj(objPtr, (boolValue)!=0)
+#define Tcl_SetBooleanObj(objPtr, intValue) \
+	Tcl_SetWideIntObj(objPtr, (intValue)!=0)
 #undef Tcl_SetVar
 #define Tcl_SetVar(interp, varName, newValue, flags) \
 	Tcl_SetVar2(interp, varName, NULL, newValue, flags)
