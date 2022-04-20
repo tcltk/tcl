@@ -4363,7 +4363,6 @@ Write(
 	    bufPtr->nextAdded += saved;
 	    saved = 0;
 	}
-	PreserveChannelBuffer(bufPtr);
 	dst = InsertPoint(bufPtr);
 	dstLen = SpaceLeft(bufPtr);
 
@@ -4383,7 +4382,6 @@ Write(
 	     * We're reading from invalid/incomplete UTF-8.
 	     */
 
-	    ReleaseChannelBuffer(bufPtr);
 	    if (total == 0) {
 		Tcl_SetErrno(EILSEQ);
 		return -1;
@@ -4457,7 +4455,6 @@ Write(
 
 	if (IsBufferFull(bufPtr)) {
 	    if (FlushChannel(NULL, chanPtr, 0) != 0) {
-		ReleaseChannelBuffer(bufPtr);
 		return -1;
 	    }
 	    flushed += statePtr->bufSize;
@@ -4477,7 +4474,6 @@ Write(
 		needNlFlush = 0;
 	    }
 	}
-	ReleaseChannelBuffer(bufPtr);
     }
     if ((flushed < total) && (GotFlag(statePtr, CHANNEL_UNBUFFERED) ||
 	    (needNlFlush && GotFlag(statePtr, CHANNEL_LINEBUFFERED)))) {
