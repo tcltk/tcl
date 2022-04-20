@@ -1378,28 +1378,34 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
 		if ([$]i~/^(isysroot|mmacosx-version-min)/) print "-"[$]i}'`"
 	    CFLAGS="`echo " ${CFLAGS}" | \
-		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
-		if (!([$]i~/^(isysroot|mmacosx-version-min)/)) print "-"[$]i}'`"
-	    AS_IF([test $do64bit = yes], [
-		case `arch` in
-		    x86_64)
-			AC_CACHE_CHECK([if compiler accepts -arch x86_64 flag],
-				tcl_cv_cc_arch_x86_64, [
-			    hold_cflags=$CFLAGS
-			    CFLAGS="$CFLAGS -arch x86_64"
-			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
-				    [tcl_cv_cc_arch_x86_64=yes],[tcl_cv_cc_arch_x86_64=no])
-			    CFLAGS=$hold_cflags])
-			AS_IF([test $tcl_cv_cc_arch_x86_64 = yes], [
-			    CFLAGS="$CFLAGS -arch x86_64"
-			    do64bit_ok=yes
-			]);;
-		    arm64e)
-			do64bit_ok=yes;;
-		    *)
-			AC_MSG_WARN([Don't know how enable 64-bit on architecture `arch`]);;
-		esac
-	    ], [])
+	    awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
+	    if (!([$]i~/^(isysroot|mmacosx-version-min)/)) print "-"[$]i}'`"
+	    case `arch` in
+		i386|x86_64)
+		    AC_CACHE_CHECK([if compiler accepts -arch x86_64 flag],
+			    tcl_cv_cc_arch_x86_64, [
+			hold_cflags=$CFLAGS
+			CFLAGS="$CFLAGS -arch x86_64"
+			AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+				[tcl_cv_cc_arch_x86_64=yes],[tcl_cv_cc_arch_x86_64=no])
+			CFLAGS=$hold_cflags])
+		    AS_IF([test $tcl_cv_cc_arch_x86_64 = yes], [
+			CFLAGS="$CFLAGS -arch x86_64"
+		    ]);;
+		arm64|arm64e)
+		    AC_CACHE_CHECK([if compiler accepts -arch arm64e flag],
+			    tcl_cv_cc_arch_arm64e, [
+			hold_cflags=$CFLAGS
+			CFLAGS="$CFLAGS -arch arm64e"
+			AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+				[tcl_cv_cc_arch_arm64e=yes],[tcl_cv_cc_arch_arm64e=no])
+			CFLAGS=$hold_cflags])
+		    AS_IF([test $tcl_cv_cc_arch_arm64e = yes], [
+			CFLAGS="$CFLAGS -arch arm64e"
+		    ]);;
+		*)
+		    AC_MSG_WARN([Don't know how enable 64-bit on architecture `arch`]);;
+	    esac
 	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
 	    AC_CACHE_CHECK([if ld accepts -single_module flag], tcl_cv_ld_single_module, [
 		hold_ldflags=$LDFLAGS
