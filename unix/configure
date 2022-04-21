@@ -6411,7 +6411,7 @@ fi
 	    LDFLAGS="$LDFLAGS -pthread"
 	    ;;
 	Darwin-*)
-	    CFLAGS_OPTIMIZE="-Os"
+	    CFLAGS_OPTIMIZE="-O2"
 	    SHLIB_CFLAGS="-fno-common"
 	    # To avoid discrepancies between what headers configure sees during
 	    # preprocessing tests and compiling tests, move any -isysroot and
