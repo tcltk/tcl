@@ -1504,7 +1504,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ])
 	    ;;
 	Darwin-*)
-	    CFLAGS_OPTIMIZE="-Os"
+	    CFLAGS_OPTIMIZE="-O2"
 	    SHLIB_CFLAGS="-fno-common"
 	    # To avoid discrepancies between what headers configure sees during
 	    # preprocessing tests and compiling tests, move any -isysroot and
@@ -1529,7 +1529,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
 			    do64bit_ok=yes
 			]);;
-		    i386)
+		    i386|x86_64)
 			AC_CACHE_CHECK([if compiler accepts -arch x86_64 flag],
 				tcl_cv_cc_arch_x86_64, [
 			    hold_cflags=$CFLAGS
@@ -1541,12 +1541,24 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			    CFLAGS="$CFLAGS -arch x86_64"
 			    do64bit_ok=yes
 			]);;
+		    arm64|arm64e)
+			AC_CACHE_CHECK([if compiler accepts -arch arm64e flag],
+				tcl_cv_cc_arch_arm64e, [
+			    hold_cflags=$CFLAGS
+			    CFLAGS="$CFLAGS -arch arm64e"
+			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+				    [tcl_cv_cc_arch_arm64e=yes],[tcl_cv_cc_arch_arm64e=no])
+			    CFLAGS=$hold_cflags])
+			AS_IF([test $tcl_cv_cc_arch_arm64e = yes], [
+			    CFLAGS="$CFLAGS -arch arm64e"
+			    do64bit_ok=yes
+			]);;
 		    *)
 			AC_MSG_WARN([Don't know how enable 64-bit on architecture `arch`]);;
 		esac
 	    ], [
 		# Check for combined 32-bit and 64-bit fat build
-		AS_IF([echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64) ' \
+		AS_IF([echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64|arm64e) ' \
 		    && echo "$CFLAGS " |grep -E -q -- '-arch (ppc|i386) '], [
 		    fat_32_64=yes])
 	    ])
@@ -1568,7 +1580,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    tcl_cv_ld_search_paths_first, [
 		hold_ldflags=$LDFLAGS
 		LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
-		AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int i;]])],[tcl_cv_ld_search_paths_first=yes],
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[int i;]])],
+			[tcl_cv_ld_search_paths_first=yes],
 		    [tcl_cv_ld_search_paths_first=no])
 		LDFLAGS=$hold_ldflags])
 	    AS_IF([test $tcl_cv_ld_search_paths_first = yes], [
