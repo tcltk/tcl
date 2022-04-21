@@ -2337,10 +2337,6 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(MAC_OSX_DIR)/*.ac $(MAC_OSX_DIR)/*.xcconfig \
 		$(MAC_OSX_DIR)/configure $(DISTDIR)/macosx
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/macosx
-	@mkdir $(DISTDIR)/macosx/Tcl.xcode
-	cp -p $(MAC_OSX_DIR)/Tcl.xcode/project.pbxproj \
-		$(MAC_OSX_DIR)/Tcl.xcode/default.pbxuser \
-		$(DISTDIR)/macosx/Tcl.xcode
 	@mkdir $(DISTDIR)/macosx/Tcl.xcodeproj
 	cp -p $(MAC_OSX_DIR)/Tcl.xcodeproj/project.pbxproj \
 		$(MAC_OSX_DIR)/Tcl.xcodeproj/default.pbxuser \

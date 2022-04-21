@@ -36,7 +36,7 @@ Points to place to store integer value converted from \fIsrc\fR.
 .AP double *doublePtr out
 Points to place to store double-precision floating-point
 value converted from \fIsrc\fR.
-.AP int | short | char *boolPtr out
+.AP int | short | char | enum | bool *boolPtr out
 Points to place to store boolean value (0 or 1) value converted from \fIsrc\fR.
 .AP int flags in
 sizeof(*(boolPtr)), possibly combined with TCL_NULL_OK. If TCL_NULL_OK
@@ -109,7 +109,8 @@ are also acceptable.
 .PP
 \fBTcl_GetBool\fR functions almost the same as \fBTcl_GetBoolean\fR,
 but it has an additional parameter \fBflags\fR, which can be used
-to specify the size of the \fBboolPtr\fR variable, and also whether
+to specify the size of the \fBbool\fR variable, and also whether
 the empty string or NULL is accepted as valid.
+
 .SH KEYWORDS
 boolean, conversion, double, floating-point, integer

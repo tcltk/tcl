@@ -1382,7 +1382,19 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		if (!([$]i~/^(isysroot|mmacosx-version-min)/)) print "-"[$]i}'`"
 	    AS_IF([test $do64bit = yes], [
 		case `arch` in
-		    x86_64)
+		    ppc)
+			AC_CACHE_CHECK([if compiler accepts -arch ppc64 flag],
+				tcl_cv_cc_arch_ppc64, [
+			    hold_cflags=$CFLAGS
+			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+				    [tcl_cv_cc_arch_ppc64=yes],[tcl_cv_cc_arch_ppc64=no])
+			    CFLAGS=$hold_cflags])
+			AS_IF([test $tcl_cv_cc_arch_ppc64 = yes], [
+			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+			    do64bit_ok=yes
+			]);;
+		    i386|x86_64)
 			AC_CACHE_CHECK([if compiler accepts -arch x86_64 flag],
 				tcl_cv_cc_arch_x86_64, [
 			    hold_cflags=$CFLAGS
@@ -1394,12 +1406,27 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 			    CFLAGS="$CFLAGS -arch x86_64"
 			    do64bit_ok=yes
 			]);;
-		    arm64e)
-			do64bit_ok=yes;;
+		    arm64|arm64e)
+			AC_CACHE_CHECK([if compiler accepts -arch arm64e flag],
+				tcl_cv_cc_arch_arm64e, [
+			    hold_cflags=$CFLAGS
+			    CFLAGS="$CFLAGS -arch arm64e"
+			    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+				    [tcl_cv_cc_arch_arm64e=yes],[tcl_cv_cc_arch_arm64e=no])
+			    CFLAGS=$hold_cflags])
+			AS_IF([test $tcl_cv_cc_arch_arm64e = yes], [
+			    CFLAGS="$CFLAGS -arch arm64e"
+			    do64bit_ok=yes
+			]);;
 		    *)
 			AC_MSG_WARN([Don't know how enable 64-bit on architecture `arch`]);;
 		esac
-	    ], [])
+	    ], [
+		# Check for combined 32-bit and 64-bit fat build
+		AS_IF([echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64|arm64e) ' \
+		    && echo "$CFLAGS " |grep -E -q -- '-arch (ppc|i386) '], [
+		    fat_32_64=yes])
+	    ])
 	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
 	    AC_CACHE_CHECK([if ld accepts -single_module flag], tcl_cv_ld_single_module, [
 		hold_ldflags=$LDFLAGS
@@ -1446,17 +1473,48 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		AC_CACHE_CHECK([for CoreFoundation.framework],
 			tcl_cv_lib_corefoundation, [
 		    hold_libs=$LIBS
+		    AS_IF([test "$fat_32_64" = yes], [
+			for v in CFLAGS CPPFLAGS LDFLAGS; do
+			    # On Tiger there is no 64-bit CF, so remove 64-bit
+			    # archs from CFLAGS et al. while testing for
+			    # presence of CF. 64-bit CF is disabled in
+			    # tclUnixPort.h if necessary.
+			    eval 'hold_'$v'="$'$v'";'$v'="`echo "$'$v' "|sed -e "s/-arch ppc64 / /g" -e "s/-arch x86_64 / /g"`"'
+			done])
 		    LIBS="$LIBS -framework CoreFoundation"
 		    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <CoreFoundation/CoreFoundation.h>]],
 			[[CFBundleRef b = CFBundleGetMainBundle();]])],
 			[tcl_cv_lib_corefoundation=yes],
 			[tcl_cv_lib_corefoundation=no])
+		    AS_IF([test "$fat_32_64" = yes], [
+			for v in CFLAGS CPPFLAGS LDFLAGS; do
+			    eval $v'="$hold_'$v'"'
+		        done])
 		    LIBS=$hold_libs])
 		AS_IF([test $tcl_cv_lib_corefoundation = yes], [
 		    LIBS="$LIBS -framework CoreFoundation"
 		    AC_DEFINE(HAVE_COREFOUNDATION, 1,
 			[Do we have access to Darwin CoreFoundation.framework?])
 		], [tcl_corefoundation=no])
+		AS_IF([test "$fat_32_64" = yes -a $tcl_corefoundation = yes],[
+		    AC_CACHE_CHECK([for 64-bit CoreFoundation],
+			    tcl_cv_lib_corefoundation_64, [
+			for v in CFLAGS CPPFLAGS LDFLAGS; do
+			    eval 'hold_'$v'="$'$v'";'$v'="`echo "$'$v' "|sed -e "s/-arch ppc / /g" -e "s/-arch i386 / /g"`"'
+			done
+			AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <CoreFoundation/CoreFoundation.h>]],
+			    [[CFBundleRef b = CFBundleGetMainBundle();]])],
+			    [tcl_cv_lib_corefoundation_64=yes],
+			    [tcl_cv_lib_corefoundation_64=no])
+			for v in CFLAGS CPPFLAGS LDFLAGS; do
+			    eval $v'="$hold_'$v'"'
+			done])
+		    AS_IF([test $tcl_cv_lib_corefoundation_64 = no], [
+			AC_DEFINE(NO_COREFOUNDATION_64, 1,
+			    [Is Darwin CoreFoundation unavailable for 64-bit?])
+                        LDFLAGS="$LDFLAGS -Wl,-no_arch_warnings"
+		    ])
+		])
 	    ])
 	    ;;
 	OS/390-*)

@@ -80,7 +80,6 @@ select based notifier).
 
 - It is also possible to build with the Xcode IDE via the projects in
 tcl/macosx, take care to use the project matching your DevTools and OS version:
-	Tcl.xcode: 		    for Xcode 3.1 on 10.5
 	Tcl.xcodeproj:		    for Xcode 3.2 on 10.6
 These have the following targets:
 	Tcl:			    calls through to tcl/macosx/GNUMakefile.
@@ -93,14 +92,10 @@ The following build configurations are available:
 	Debug llvm-gcc:		    use llvm-gcc compiler.
 	Debug gcc40:		    use gcc 4.0 compiler.
 	DebugNoFixAndContinue:      disable Fix & Continue.
-	DebugUnthreaded:	    disable threading.
 	DebugNoCF:		    disable corefoundation.
-	DebugNoCFUnthreaded:	    disable corefoundation an threading.
 	DebugMemCompile:	    enable memory and bytecode debugging.
 	DebugLeaks:		    define PURIFY.
 	DebugGCov:		    enable generation of gcov data files.
-	Debug64bit:		    configure with --enable-64bit (requires
-				    building on a 64bit capable processor).
 	Release:		    release build for the active architecture.
 	ReleaseUniversal:	    32/64-bit universal build.
 	ReleaseUniversal clang:	    use clang compiler.
@@ -109,7 +104,7 @@ The following build configurations are available:
 	ReleaseUniversal10.5SDK:    build against the 10.5 SDK (with 10.5
 				    deployment target).
 	Note that the non-SDK configurations have their deployment target set to
-	10.5 (Tcl.xcode) resp. 10.6 (Tcl.xcodeproj).
+	10.6 (Tcl.xcodeproj).
 The Xcode projects refer to the toplevel tcl source directory via the
 TCL_SRCROOT user build setting, by default this is set to the project-relative
 path '../../tcl', if your tcl source directory is named differently, e.g.
@@ -119,7 +114,7 @@ with a text editor.
 
 - To build universal binaries outside of the Xcode IDE, set CFLAGS as follows:
 	export CFLAGS="-arch x86_64 -arch arm64e"
-This requires Mac OS X 10.4 and Xcode 2.4 and will work on any architecture.
+This requires Mac OS X 10.6 and Xcode 10.2 and will work on any architecture.
 Note that configure requires CFLAGS to contain a least one architecture that can
 be run on the build machine (i.e. x86_64 on Core2/Xeon).
 Universal builds of Tcl TEA extensions are also possible with CFLAGS set as
