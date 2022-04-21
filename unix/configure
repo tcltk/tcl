@@ -6411,7 +6411,7 @@ fi
 	    LDFLAGS="$LDFLAGS -pthread"
 	    ;;
 	Darwin-*)
-	    CFLAGS_OPTIMIZE="-O2"
+	    CFLAGS_OPTIMIZE="-Os"
 	    SHLIB_CFLAGS="-fno-common"
 	    # To avoid discrepancies between what headers configure sees during
 	    # preprocessing tests and compiling tests, move any -isysroot and
@@ -6420,20 +6420,63 @@ fi
 		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
 		if ($i~/^(isysroot|mmacosx-version-min)/) print "-"$i}'`"
 	    CFLAGS="`echo " ${CFLAGS}" | \
-	    awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
-	    if (!($i~/^(isysroot|mmacosx-version-min)/)) print "-"$i}'`"
-	    case `arch` in
-		i386|x86_64)
-		    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if compiler accepts -arch x86_64 flag" >&5
+		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
+		if (!($i~/^(isysroot|mmacosx-version-min)/)) print "-"$i}'`"
+	    if test $do64bit = yes
+then :
+
+		case `arch` in
+		    ppc)
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if compiler accepts -arch ppc64 flag" >&5
+printf %s "checking if compiler accepts -arch ppc64 flag... " >&6; }
+if test ${tcl_cv_cc_arch_ppc64+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+			    hold_cflags=$CFLAGS
+			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+			    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  tcl_cv_cc_arch_ppc64=yes
+else $as_nop
+  tcl_cv_cc_arch_ppc64=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+			    CFLAGS=$hold_cflags
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_arch_ppc64" >&5
+printf "%s\n" "$tcl_cv_cc_arch_ppc64" >&6; }
+			if test $tcl_cv_cc_arch_ppc64 = yes
+then :
+
+			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+			    do64bit_ok=yes
+
+fi;;
+		    i386|x86_64)
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if compiler accepts -arch x86_64 flag" >&5
 printf %s "checking if compiler accepts -arch x86_64 flag... " >&6; }
 if test ${tcl_cv_cc_arch_x86_64+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
 
-			hold_cflags=$CFLAGS
-			CFLAGS="$CFLAGS -arch x86_64"
-			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+			    hold_cflags=$CFLAGS
+			    CFLAGS="$CFLAGS -arch x86_64"
+			    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -6452,27 +6495,28 @@ else $as_nop
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
-			CFLAGS=$hold_cflags
+			    CFLAGS=$hold_cflags
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_arch_x86_64" >&5
 printf "%s\n" "$tcl_cv_cc_arch_x86_64" >&6; }
-		    if test $tcl_cv_cc_arch_x86_64 = yes
+			if test $tcl_cv_cc_arch_x86_64 = yes
 then :
 
-			CFLAGS="$CFLAGS -arch x86_64"
+			    CFLAGS="$CFLAGS -arch x86_64"
+			    do64bit_ok=yes
 
 fi;;
-		arm64|arm64e)
-		    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if compiler accepts -arch arm64e flag" >&5
+		    arm64|arm64e)
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if compiler accepts -arch arm64e flag" >&5
 printf %s "checking if compiler accepts -arch arm64e flag... " >&6; }
 if test ${tcl_cv_cc_arch_arm64e+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
 
-			hold_cflags=$CFLAGS
-			CFLAGS="$CFLAGS -arch arm64e"
-			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+			    hold_cflags=$CFLAGS
+			    CFLAGS="$CFLAGS -arch arm64e"
+			    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
@@ -6491,20 +6535,33 @@ else $as_nop
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
-			CFLAGS=$hold_cflags
+			    CFLAGS=$hold_cflags
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_cc_arch_arm64e" >&5
 printf "%s\n" "$tcl_cv_cc_arch_arm64e" >&6; }
-		    if test $tcl_cv_cc_arch_arm64e = yes
+			if test $tcl_cv_cc_arch_arm64e = yes
 then :
 
-			CFLAGS="$CFLAGS -arch arm64e"
+			    CFLAGS="$CFLAGS -arch arm64e"
+			    do64bit_ok=yes
 
 fi;;
-		*)
-		    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&5
+		    *)
+			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&5
 printf "%s\n" "$as_me: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&2;};;
-	    esac
+		esac
+
+else $as_nop
+
+		# Check for combined 32-bit and 64-bit fat build
+		if echo "$CFLAGS " |grep -E -q -- '-arch (ppc64|x86_64|arm64e) ' \
+		    && echo "$CFLAGS " |grep -E -q -- '-arch (ppc|i386) '
+then :
+
+		    fat_32_64=yes
+fi
+
+fi
 	    SHLIB_LD='${CC} -dynamiclib ${CFLAGS} ${LDFLAGS}'
 	    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if ld accepts -single_module flag" >&5
 printf %s "checking if ld accepts -single_module flag... " >&6; }
@@ -6626,6 +6683,17 @@ then :
 else $as_nop
 
 		    hold_libs=$LIBS
+		    if test "$fat_32_64" = yes
+then :
+
+			for v in CFLAGS CPPFLAGS LDFLAGS; do
+			    # On Tiger there is no 64-bit CF, so remove 64-bit
+			    # archs from CFLAGS et al. while testing for
+			    # presence of CF. 64-bit CF is disabled in
+			    # tclUnixPort.h if necessary.
+			    eval 'hold_'$v'="$'$v'";'$v'="`echo "$'$v' "|sed -e "s/-arch ppc64 / /g" -e "s/-arch x86_64 / /g"`"'
+			done
+fi
 		    LIBS="$LIBS -framework CoreFoundation"
 		    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6646,6 +6714,13 @@ else $as_nop
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
+		    if test "$fat_32_64" = yes
+then :
+
+			for v in CFLAGS CPPFLAGS LDFLAGS; do
+			    eval $v'="$hold_'$v'"'
+		        done
+fi
 		    LIBS=$hold_libs
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_lib_corefoundation" >&5
@@ -6660,6 +6735,55 @@ printf "%s\n" "#define HAVE_COREFOUNDATION 1" >>confdefs.h
 
 else $as_nop
   tcl_corefoundation=no
+fi
+		if test "$fat_32_64" = yes -a $tcl_corefoundation = yes
+then :
+
+		    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for 64-bit CoreFoundation" >&5
+printf %s "checking for 64-bit CoreFoundation... " >&6; }
+if test ${tcl_cv_lib_corefoundation_64+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+			for v in CFLAGS CPPFLAGS LDFLAGS; do
+			    eval 'hold_'$v'="$'$v'";'$v'="`echo "$'$v' "|sed -e "s/-arch ppc / /g" -e "s/-arch i386 / /g"`"'
+			done
+			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <CoreFoundation/CoreFoundation.h>
+int
+main (void)
+{
+CFBundleRef b = CFBundleGetMainBundle();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  tcl_cv_lib_corefoundation_64=yes
+else $as_nop
+  tcl_cv_lib_corefoundation_64=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+			for v in CFLAGS CPPFLAGS LDFLAGS; do
+			    eval $v'="$hold_'$v'"'
+			done
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_lib_corefoundation_64" >&5
+printf "%s\n" "$tcl_cv_lib_corefoundation_64" >&6; }
+		    if test $tcl_cv_lib_corefoundation_64 = no
+then :
+
+
+printf "%s\n" "#define NO_COREFOUNDATION_64 1" >>confdefs.h
+
+                        LDFLAGS="$LDFLAGS -Wl,-no_arch_warnings"
+
+fi
+
 fi
 
 fi
