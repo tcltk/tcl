@@ -2409,7 +2409,7 @@ ZipFSMkKeyObjCmd(
     }
 
     passObj = Tcl_NewByteArrayObj(NULL, 264);
-    passBuf = Tcl_GetBytesFromObj(NULL, passObj, NULL);
+    passBuf = Tcl_GetBytesFromObj(NULL, passObj, (size_t *)NULL);
     while (len > 0) {
 	int ch = pw[len - 1];
 
@@ -3776,8 +3776,8 @@ ZipFSListObjCmd(
     if (objc == 3) {
 	int idx;
 
-	if (Tcl_GetIndexFromObjStruct(interp, objv[1], options,
-		sizeof(char *), "option", 0, &idx) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[1], options, "option",
+		0, &idx) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (idx) {
@@ -4998,8 +4998,7 @@ ZipFSMatchInDirectoryProc(
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_Obj *normPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-    int scnt, l, dirOnly = -1, prefixLen, strip = 0, mounts = 0;
-    int len;
+    int scnt, l, dirOnly = -1, prefixLen, strip = 0, mounts = 0, len;
     char *pat, *prefix, *path;
     Tcl_DString dsPref, *prefixBuf = NULL;
 
