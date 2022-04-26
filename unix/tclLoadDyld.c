@@ -106,7 +106,7 @@ static const char *
 DyldOFIErrorMsg(
     int err)
 {
-    switch(err) {
+    switch (err) {
     case NSObjectFileImageSuccess:
 	return NULL;
     case NSObjectFileImageFailure:

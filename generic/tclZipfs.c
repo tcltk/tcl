@@ -27,7 +27,6 @@
 #define MAP_FILE 0
 #endif /* !MAP_FILE */
 #define NOBYFOUR
-#define crc32tab crc_table[0]
 #ifndef TBLS
 #define TBLS 1
 #endif
@@ -74,6 +73,8 @@
 #include "crypt.h"
 #include "zutil.h"
 #include "crc32.h"
+
+static const z_crc_t* crc32tab;
 
 /*
 ** We are compiling as part of the core.
@@ -452,7 +453,8 @@ ZipReadInt(
 	Tcl_Panic("out of bounds read(4): start=%p, end=%p, ptr=%p",
 		bufferStart, bufferEnd, ptr);
     }
-    return ptr[0] | (ptr[1] << 8) | (ptr[2] << 16) | (ptr[3] << 24);
+    return ptr[0] | (ptr[1] << 8) | (ptr[2] << 16) |
+	    ((unsigned int)ptr[3] << 24);
 }
 
 static inline unsigned short
@@ -1849,6 +1851,7 @@ ZipfsSetup(void)
     Tcl_MutexUnlock(&ZipFSMutex);
 #endif /* TCL_THREADS */
 
+    crc32tab = get_crc_table();
     Tcl_FSRegister(NULL, &zipfsFilesystem);
     Tcl_InitHashTable(&ZipFS.fileHash, TCL_STRING_KEYS);
     Tcl_InitHashTable(&ZipFS.zipHash, TCL_STRING_KEYS);
@@ -3773,8 +3776,8 @@ ZipFSListObjCmd(
     if (objc == 3) {
 	int idx;
 
-	if (Tcl_GetIndexFromObj(interp, objv[1], options, "option",
-		0, &idx) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[1], options,
+		sizeof(char *), "option", 0, &idx) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (idx) {
