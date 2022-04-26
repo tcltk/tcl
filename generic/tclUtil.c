@@ -802,9 +802,11 @@ TclCopyAndCollapse(
 	char c = *src;
 
 	if (c == '\\') {
+	    char buf[4] = "";
 	    int numRead;
-	    int backslashCount = TclParseBackslash(src, count, &numRead, dst);
+	    int backslashCount = TclParseBackslash(src, count, &numRead, buf);
 
+	    memcpy(dst, buf, backslashCount);
 	    dst += backslashCount;
 	    newCount += backslashCount;
 	    src += numRead;
@@ -3229,7 +3231,7 @@ Tcl_PrintDouble(
      * Handle NaN.
      */
 
-    if (TclIsNaN(value)) {
+    if (isnan(value)) {
 	TclFormatNaN(value, dst);
 	return;
     }
@@ -3238,7 +3240,7 @@ Tcl_PrintDouble(
      * Handle infinities.
      */
 
-    if (TclIsInfinite(value)) {
+    if (isinf(value)) {
 	/*
 	 * Remember to copy the terminating NUL too.
 	 */
@@ -3699,11 +3701,11 @@ Tcl_GetIntForIndex(
 {
     Tcl_WideInt wide;
 
-    if (GetWideForIndex(interp, objPtr, (size_t)(endValue + 1) - 1, &wide) == TCL_ERROR) {
+    if (GetWideForIndex(interp, objPtr, endValue, &wide) == TCL_ERROR) {
 	return TCL_ERROR;
     }
     if (indexPtr != NULL) {
-	if ((wide < 0) && (endValue > TCL_INDEX_END)) {
+	if ((wide < 0) && (endValue >= 0)) {
 	    *indexPtr = -1;
 	} else if (wide > INT_MAX) {
 	    *indexPtr = INT_MAX;
@@ -3784,7 +3786,7 @@ GetEndOffsetFromObj(
 	    if ((TclMaxListLength(bytes, -1, NULL) > 1)
 
 		    /* If it's possible, do the full list parse. */
-	            && (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length))
+	            && (TCL_OK == TclListObjLength(NULL, objPtr, &length))
 	            && (length > 1)) {
 	        goto parseError;
 	    }

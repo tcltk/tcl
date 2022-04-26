@@ -562,18 +562,6 @@ SC_ENABLE_LANGINFO
 AC_CHECK_FUNCS(cfmakeraw chflags mkstemps)
 
 #--------------------------------------------------------------------
-# Check for support of isnan() function or macro
-#--------------------------------------------------------------------
-
-AC_CACHE_CHECK([isnan], tcl_cv_isnan, [
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <math.h>]], [[
-isnan(0.0);			/* Generates an error if isnan is missing */
-]])],[tcl_cv_isnan=yes],[tcl_cv_isnan=no])])
-if test $tcl_cv_isnan = no; then
-    AC_DEFINE(NO_ISNAN, 1, [Do we have a usable 'isnan'?])
-fi
-
-#--------------------------------------------------------------------
 # Darwin specific API checks and defines
 #--------------------------------------------------------------------
 
@@ -814,7 +802,6 @@ if test "`uname -s`" = "Darwin" ; then
     echo "$LDFLAGS " | grep -q -- '-prebind ' && TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -seg1addr 0xA000000'
     TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -sectcreate __TEXT __info_plist Tcl-Info.plist'
     EXTRA_TCLSH_LIBS='-sectcreate __TEXT __info_plist Tclsh-Info.plist'
-    EXTRA_APP_CC_SWITCHES='-mdynamic-no-pic'
     AC_CONFIG_FILES([Tcl-Info.plist:../macosx/Tcl-Info.plist.in Tclsh-Info.plist:../macosx/Tclsh-Info.plist.in])
     TCL_YEAR="`date +%Y`"
 fi

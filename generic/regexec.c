@@ -145,7 +145,7 @@ static chr *shortest(struct vars *const, struct dfa *const, chr *const, chr *con
 static chr *lastCold(struct vars *const, struct dfa *const);
 static struct dfa *newDFA(struct vars *const, struct cnfa *const, struct colormap *const, struct smalldfa *);
 static void freeDFA(struct dfa *const);
-static unsigned hash(unsigned *const, const int);
+static unsigned hash(unsigned *const, int);
 static struct sset *initialize(struct vars *const, struct dfa *const, chr *const);
 static struct sset *miss(struct vars *const, struct dfa *const, struct sset *const, const pcolor, chr *const, chr *const);
 static int checkLAConstraint(struct vars *const, struct cnfa *const, chr *const, const pcolor);

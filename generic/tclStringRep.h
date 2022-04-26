@@ -65,14 +65,14 @@ typedef struct {
 } String;
 
 #define STRING_MAXCHARS \
-    (int)(((size_t)UINT_MAX - 1 - offsetof(String, unicode))/sizeof(Tcl_UniChar))
+    (int)(((size_t)UINT_MAX - offsetof(String, unicode))/sizeof(Tcl_UniChar) - 1)
 #define STRING_SIZE(numChars) \
-    (offsetof(String, unicode) + ((numChars + 1) * sizeof(Tcl_UniChar)))
+    (offsetof(String, unicode) + sizeof(Tcl_UniChar) + ((numChars) * sizeof(Tcl_UniChar)))
 #define stringCheckLimits(numChars) \
     do {								\
 	if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) {		\
 	    Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
-		      (int)STRING_MAXCHARS);					\
+		      STRING_MAXCHARS);					\
 	}								\
     } while (0)
 #define stringAttemptAlloc(numChars) \

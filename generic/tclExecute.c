@@ -193,10 +193,10 @@ typedef struct TEBCdata {
 #define PUSH_TAUX_OBJ(objPtr) \
     do {							\
 	if (auxObjList) {					\
-	    objPtr->length += auxObjList->length;		\
+	    (objPtr)->length += auxObjList->length;		\
 	}							\
-	objPtr->internalRep.twoPtrValue.ptr1 = auxObjList;	\
-	auxObjList = objPtr;					\
+	(objPtr)->internalRep.twoPtrValue.ptr1 = auxObjList;	\
+	auxObjList = (objPtr);					\
     } while (0)
 
 #define POP_TAUX_OBJ() \
@@ -505,7 +505,7 @@ VarHashCreateVar(
  * TclGetNumberFromObj(). The ANSI C "prototype" is:
  *
  * MODULE_SCOPE int GetNumberFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
- *			ClientData *ptrPtr, int *tPtr);
+ *			void **ptrPtr, int *tPtr);
  */
 
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
@@ -514,7 +514,7 @@ VarHashCreateVar(
 		*(ptrPtr) = (ClientData)				\
 		    (&((objPtr)->internalRep.wideValue)), TCL_OK) :	\
     TclHasInternalRep((objPtr), &tclDoubleType)				\
-	?	(((TclIsNaN((objPtr)->internalRep.doubleValue))		\
+	?	(((isnan((objPtr)->internalRep.doubleValue))		\
 		    ?	(*(tPtr) = TCL_NUMBER_NAN)			\
 		    :	(*(tPtr) = TCL_NUMBER_DOUBLE)),			\
 		*(ptrPtr) = (ClientData)				\
@@ -669,7 +669,7 @@ static const size_t Exp64ValueSize = sizeof(Exp64Value) / sizeof(Tcl_WideInt);
  */
 
 #ifdef TCL_COMPILE_STATS
-static int		EvalStatsCmd(ClientData clientData,
+static int		EvalStatsCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 #endif /* TCL_COMPILE_STATS */
@@ -1365,7 +1365,7 @@ Tcl_ExprObj(
 
 static int
 CopyCallback(
-    ClientData data[],
+    void *data[],
     TCL_UNUSED(Tcl_Interp *),
     int result)
 {
@@ -1423,7 +1423,7 @@ Tcl_NRExprObj(
 
 static int
 ExprObjCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -1809,7 +1809,7 @@ TclIncrObj(
     Tcl_Obj *valuePtr,
     Tcl_Obj *incrPtr)
 {
-    ClientData ptr1, ptr2;
+    void *ptr1, *ptr2;
     int type1, type2;
     mp_int value, incr;
     mp_err err;
@@ -1857,7 +1857,7 @@ TclIncrObj(
 
 	w1 = *((const Tcl_WideInt *)ptr1);
 	w2 = *((const Tcl_WideInt *)ptr2);
-	sum = w1 + w2;
+	sum = (Tcl_WideInt)((Tcl_WideUInt)w1 + (Tcl_WideUInt)w2);
 
 	/*
 	 * Check for overflow.
@@ -2019,7 +2019,7 @@ TclNRExecuteByteCode(
 
 static int
 TEBCresume(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -2425,7 +2425,7 @@ TEBCresume(
 
     {
 	CoroutineData *corPtr;
-	int yieldParameter;
+	void *yieldParameter;
 
     case INST_YIELD:
 	corPtr = iPtr->execEnvPtr->corPtr;
@@ -2453,7 +2453,7 @@ TEBCresume(
 	    fflush(stdout);
 	}
 #endif
-	yieldParameter = 0;
+	yieldParameter = NULL;	/*==CORO_ACTIVATE_YIELD*/
 	Tcl_SetObjResult(interp, OBJ_AT_TOS);
 	goto doYield;
 
@@ -2508,7 +2508,7 @@ TEBCresume(
 	TclSetTailcall(interp, valuePtr);
 	corPtr->yieldPtr = valuePtr;
 	iPtr->execEnvPtr = corPtr->eePtr;
-	yieldParameter = (PTR2INT(NULL)+1);	/*==CORO_ACTIVATE_YIELDM*/
+	yieldParameter = INT2PTR(1);	/*==CORO_ACTIVATE_YIELDM*/
 
     doYield:
 	/* TIP #280: Record the last piece of info needed by
@@ -2526,7 +2526,7 @@ TEBCresume(
 	cleanup = 1;
 	TEBC_YIELD();
 	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
-		INT2PTR(yieldParameter), NULL, NULL);
+		yieldParameter, NULL, NULL);
 	return TCL_OK;
     }
 
@@ -3024,7 +3024,7 @@ TEBCresume(
 
 	TclMarkTailcall(interp);
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
-	Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
+	TclListObjGetElements(NULL, objPtr, &objc, &objv);
 	TclNRAddCallback(interp, TclNRReleaseValues, objPtr, NULL, NULL, NULL);
 	return TclNREvalObjv(interp, objc, objv, TCL_EVAL_INVOKE, NULL);
 
@@ -3704,14 +3704,14 @@ TEBCresume(
 	}
 
 	if (TclIsVarDirectModifyable(varPtr)) {
-	    ClientData ptr;
+	    void *ptr;
 	    int type;
 
 	    objPtr = varPtr->value.objPtr;
 	    if (GetNumberFromObj(NULL, objPtr, &ptr, &type) == TCL_OK) {
 		if (type == TCL_NUMBER_INT) {
 		    Tcl_WideInt augend = *((const Tcl_WideInt *)ptr);
-		    Tcl_WideInt sum = augend + increment;
+		    Tcl_WideInt sum = (Tcl_WideInt)((Tcl_WideUInt)augend + (Tcl_WideUInt)increment);
 
 		    /*
 		     * Overflow when (augend and sum have different sign) and
@@ -5370,16 +5370,10 @@ TEBCresume(
 	}
 	CACHE_STACK_INFO();
 
-	if (fromIdx < 0) {
-	    fromIdx = 0;
-	}
-	if (toIdx >= length) {
-	    toIdx = length;
-	}
-	if (toIdx >= fromIdx) {
-	    objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
-	} else {
+	if (toIdx < 0) {
 	    TclNewObj(objResultPtr);
+	} else {
+	    objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
 	}
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_V(1, 3, 1);
@@ -5405,37 +5399,23 @@ TEBCresume(
 	 * Extra safety for legacy bytecodes:
 	 */
 	if (toIdx == TCL_INDEX_NONE) {
-	    goto emptyRange;
-	}
-
-	toIdx = TclIndexDecode(toIdx, length - 1);
-	if (toIdx < 0) {
-	    goto emptyRange;
-	} else if (toIdx >= length) {
-	    toIdx = length - 1;
-	}
-
-	assert ( toIdx >= 0 && toIdx < length );
-
-	/*
-	assert ( fromIdx != TCL_INDEX_NONE );
-	 *
-	 * Extra safety for legacy bytecodes:
-	 */
-	if (fromIdx == TCL_INDEX_NONE) {
-	    fromIdx = TCL_INDEX_START;
-	}
-
-	fromIdx = TclIndexDecode(fromIdx, length - 1);
-	if (fromIdx < 0) {
-	    fromIdx = 0;
-	}
-
-	if (fromIdx <= toIdx) {
-	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
-	} else {
-	emptyRange:
 	    TclNewObj(objResultPtr);
+	} else {
+	    toIdx = TclIndexDecode(toIdx, length - 1);
+	    /*
+	    assert ( fromIdx != TCL_INDEX_NONE );
+	     *
+	     * Extra safety for legacy bytecodes:
+	     */
+	    if (fromIdx == TCL_INDEX_NONE) {
+		fromIdx = TCL_INDEX_START;
+	    }
+	    fromIdx = TclIndexDecode(fromIdx, length - 1);
+	    if (toIdx < 0) {
+		TclNewObj(objResultPtr);
+	    } else {
+		objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+	    }
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
@@ -5538,7 +5518,9 @@ TEBCresume(
 	p = ustring1;
 	end = ustring1 + length;
 	for (; ustring1 < end; ustring1++) {
-	    if ((*ustring1 == *ustring2) && (length2==1 ||
+	    if ((*ustring1 == *ustring2) &&
+		/* Fix bug [69218ab7b]: restrict max compare length. */
+		(end-ustring1 >= length2) && (length2==1 ||
 		    memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length2)
 			    == 0)) {
 		if (p != ustring1) {
@@ -5743,7 +5725,7 @@ TEBCresume(
      */
 
     {
-	ClientData ptr1, ptr2;
+	void *ptr1, *ptr2;
 	int type1, type2;
 	Tcl_WideInt w1, w2, wResult;
 
@@ -5922,7 +5904,8 @@ TEBCresume(
 			    (wResult * w2 != w1)) {
 			wResult -= 1;
 		    }
-		    wResult = w1 - w2*wResult;
+		    wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 -
+			    (Tcl_WideUInt)w2*(Tcl_WideUInt)wResult);
 		    goto wideResultOfArithmetic;
 		}
 		break;
@@ -6017,10 +6000,10 @@ TEBCresume(
 		     * Handle shifts within the native long range.
 		     */
 
-		    if ((size_t) shift < CHAR_BIT*sizeof(long) && (w1 != 0)
+		    if (((size_t) shift < CHAR_BIT*sizeof(long))
 			    && !((w1>0 ? w1 : ~w1) &
-				-(1L<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
-			wResult = w1 << shift;
+				-(1UL<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
+			wResult = (Tcl_WideUInt)w1 << shift;
 			goto wideResultOfArithmetic;
 		    }
 		}
@@ -6129,7 +6112,7 @@ TEBCresume(
 
 	    switch (*pc) {
 	    case INST_ADD:
-		wResult = w1 + w2;
+		wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 + (Tcl_WideUInt)w2);
 		/*
 		 * Check for overflow.
 		 */
@@ -6140,7 +6123,7 @@ TEBCresume(
 		goto wideResultOfArithmetic;
 
 	    case INST_SUB:
-		wResult = w1 - w2;
+		wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 - (Tcl_WideUInt)w2);
 		/*
 		 * Must check for overflow. The macro tests for overflows in
 		 * sums by looking at the sign bits. As we have a subtraction
@@ -7547,20 +7530,20 @@ TEBCresume(
 #ifdef TCL_WIDE_CLICKS
 		wval = TclpGetWideClicks();
 #else
-		wval = (Tcl_WideInt) TclpGetClicks();
+		wval = (Tcl_WideInt)TclpGetClicks();
 #endif
 		break;
 	    case 1:		/* microseconds */
 		Tcl_GetTime(&now);
-		wval = (Tcl_WideInt) now.sec * 1000000 + now.usec;
+		wval = (Tcl_WideInt)now.sec * 1000000 + now.usec;
 		break;
 	    case 2:		/* milliseconds */
 		Tcl_GetTime(&now);
-		wval = (Tcl_WideInt) now.sec * 1000 + now.usec / 1000;
+		wval = (Tcl_WideInt)now.sec * 1000 + now.usec / 1000;
 		break;
 	    case 3:		/* seconds */
 		Tcl_GetTime(&now);
-		wval = (Tcl_WideInt) now.sec;
+		wval = (Tcl_WideInt)now.sec;
 		break;
 	    default:
 		Tcl_Panic("clockRead instruction with unknown clock#");
@@ -7820,7 +7803,7 @@ TEBCresume(
 	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
 		    "unwound to %ld, new pc %u\n",
 		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
-		    (long) *catchTop, (unsigned) rangePtr->catchOffset);
+		    (long)*catchTop, (unsigned) rangePtr->catchOffset);
 	}
 #endif
 	pc = (codePtr->codeStart + rangePtr->catchOffset);
@@ -7924,7 +7907,7 @@ TEBCresume(
 
 static int
 FinalizeOONext(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -7950,7 +7933,7 @@ FinalizeOONext(
 
 static int
 FinalizeOONextFilter(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -8096,14 +8079,14 @@ ExecuteExtendedBinaryMathOp(
     if (Tcl_IsShared(valuePtr)) {		\
 	return Tcl_NewWideIntObj(w);		\
     } else {					\
-	TclSetIntObj(valuePtr, w);		\
+	TclSetIntObj(valuePtr, (w));		\
 	return NULL;				\
     }
 #define BIG_RESULT(b) \
     if (Tcl_IsShared(valuePtr)) {		\
 	return Tcl_NewBignumObj(b);		\
     } else {					\
-	Tcl_SetBignumObj(valuePtr, b);		\
+	Tcl_SetBignumObj(valuePtr, (b));		\
 	return NULL;				\
     }
 #define DOUBLE_RESULT(d) \
@@ -8116,7 +8099,7 @@ ExecuteExtendedBinaryMathOp(
     }
 
     int type1, type2;
-    ClientData ptr1, ptr2;
+    void *ptr1, *ptr2;
     double d1, d2, dResult;
     Tcl_WideInt w1, w2, wResult;
     mp_int big1, big2, bigResult, bigRemainder;
@@ -8166,21 +8149,22 @@ ExecuteExtendedBinaryMathOp(
 		 * TODO: examine for logic simplification
 		 */
 
-		if (((wQuotient < (Tcl_WideInt) 0)
-			|| ((wQuotient == (Tcl_WideInt) 0)
+		if (((wQuotient < 0)
+			|| ((wQuotient == 0)
 			&& ((w1 < 0 && w2 > 0)
 			|| (w1 > 0 && w2 < 0))))
 			&& (wQuotient * w2 != w1)) {
-		    wQuotient -= (Tcl_WideInt) 1;
+		    wQuotient -= 1;
 		}
-		wRemainder = w1 - w2*wQuotient;
+		wRemainder = (Tcl_WideInt)((Tcl_WideUInt)w1 -
+			(Tcl_WideUInt)w2*(Tcl_WideUInt)wQuotient);
 		WIDE_RESULT(wRemainder);
 	    }
 
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
 	    /* TODO: internals intrusion */
-	    if ((w1 > ((Tcl_WideInt) 0)) ^ !mp_isneg(&big2)) {
+	    if ((w1 > ((Tcl_WideInt)0)) ^ !mp_isneg(&big2)) {
 		/*
 		 * Arguments are opposite sign; remainder is sum.
 		 */
@@ -8293,9 +8277,9 @@ ExecuteExtendedBinaryMathOp(
 		    && ((size_t)shift < CHAR_BIT*sizeof(Tcl_WideInt))) {
 		w1 = *((const Tcl_WideInt *)ptr1);
 		if (!((w1>0 ? w1 : ~w1)
-			& -(((Tcl_WideInt)1)
+			& -(((Tcl_WideUInt)1)
 			<< (CHAR_BIT*sizeof(Tcl_WideInt) - 1 - shift)))) {
-		    WIDE_RESULT(w1 << shift);
+		    WIDE_RESULT((Tcl_WideUInt)w1 << shift);
 		}
 	    }
 	} else {
@@ -8450,7 +8434,7 @@ ExecuteExtendedBinaryMathOp(
 	    }
 
 	    negativeExponent = (w2 < 0);
-	    oddExponent = (int) (w2 & (Tcl_WideInt)1);
+	    oddExponent = (int)w2 & 1;
 	} else {
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    negativeExponent = mp_isneg(&big2);
@@ -8540,8 +8524,8 @@ ExecuteExtendedBinaryMathOp(
 	     * Reduce small powers of 2 to shifts.
 	     */
 
-	    if ((Tcl_WideUInt) w2 < (Tcl_WideUInt) CHAR_BIT*sizeof(Tcl_WideInt) - 1) {
-		WIDE_RESULT(((Tcl_WideInt) 1) << (int)w2);
+	    if ((Tcl_WideUInt)w2 < (Tcl_WideUInt)CHAR_BIT*sizeof(Tcl_WideInt) - 1) {
+		WIDE_RESULT(((Tcl_WideInt)1) << (int)w2);
 	    }
 	    goto overflowExpon;
 	}
@@ -8552,8 +8536,8 @@ ExecuteExtendedBinaryMathOp(
 	     * Reduce small powers of 2 to shifts.
 	     */
 
-	    if ((Tcl_WideUInt) w2 < CHAR_BIT * sizeof(Tcl_WideInt) - 1) {
-		WIDE_RESULT(signum * (((Tcl_WideInt) 1) << (int) w2));
+	    if ((Tcl_WideUInt)w2 < CHAR_BIT * sizeof(Tcl_WideInt) - 1) {
+		WIDE_RESULT(signum * (((Tcl_WideInt)1) << (int) w2));
 	    }
 	    goto overflowExpon;
 	}
@@ -8671,7 +8655,7 @@ ExecuteExtendedBinaryMathOp(
 	     * Check now for IEEE floating-point error.
 	     */
 
-	    if (TclIsNaN(dResult)) {
+	    if (isnan(dResult)) {
 		TclExprFloatError(interp, dResult);
 		return GENERAL_ARITHMETIC_ERROR;
 	    }
@@ -8684,7 +8668,7 @@ ExecuteExtendedBinaryMathOp(
 
 	    switch (opcode) {
 	    case INST_ADD:
-		wResult = w1 + w2;
+		wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 + (Tcl_WideUInt)w2);
 		if ((type1 == TCL_NUMBER_INT) || (type2 == TCL_NUMBER_INT))
 		{
 		    /*
@@ -8698,7 +8682,7 @@ ExecuteExtendedBinaryMathOp(
 		break;
 
 	    case INST_SUB:
-		wResult = w1 - w2;
+		wResult = (Tcl_WideInt)((Tcl_WideUInt)w1 - (Tcl_WideUInt)w2);
 		if ((type1 == TCL_NUMBER_INT) || (type2 == TCL_NUMBER_INT))
 		{
 		    /*
@@ -8818,7 +8802,7 @@ ExecuteExtendedUnaryMathOp(
     int opcode,			/* What operation to perform. */
     Tcl_Obj *valuePtr)		/* The operand on the stack. */
 {
-    ClientData ptr = NULL;
+    void *ptr = NULL;
     int type;
     Tcl_WideInt w;
     mp_int big;
@@ -8898,7 +8882,7 @@ TclCompareTwoNumbers(
     Tcl_Obj *value2Ptr)
 {
     int type1 = TCL_NUMBER_NAN, type2 = TCL_NUMBER_NAN, compare;
-    ClientData ptr1, ptr2;
+    void *ptr1, *ptr2;
     mp_int big1, big2;
     double d1, d2, tmp;
     Tcl_WideInt w1, w2;
@@ -8924,7 +8908,7 @@ TclCompareTwoNumbers(
 	     * doubles.
 	     */
 
-	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt) || w1 == (Tcl_WideInt) d1
+	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt) || w1 == (Tcl_WideInt)d1
 		    || modf(d2, &tmp) != 0.0) {
 		goto doubleCompare;
 	    }
@@ -8947,7 +8931,7 @@ TclCompareTwoNumbers(
 	    if (d2 > (double)WIDE_MAX) {
 		return MP_LT;
 	    }
-	    w2 = (Tcl_WideInt) d2;
+	    w2 = (Tcl_WideInt)d2;
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
@@ -8972,7 +8956,7 @@ TclCompareTwoNumbers(
 	    w2 = *((const Tcl_WideInt *)ptr2);
 	    d2 = (double) w2;
 	    if (DBL_MANT_DIG > CHAR_BIT*sizeof(Tcl_WideInt)
-		    || w2 == (Tcl_WideInt) d2 || modf(d1, &tmp) != 0.0) {
+		    || w2 == (Tcl_WideInt)d2 || modf(d1, &tmp) != 0.0) {
 		goto doubleCompare;
 	    }
 	    if (d1 < (double)WIDE_MIN) {
@@ -8981,10 +8965,10 @@ TclCompareTwoNumbers(
 	    if (d1 > (double)WIDE_MAX) {
 		return MP_GT;
 	    }
-	    w1 = (Tcl_WideInt) d1;
+	    w1 = (Tcl_WideInt)d1;
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
-	    if (TclIsInfinite(d1)) {
+	    if (isinf(d1)) {
 		return (d1 > 0.0) ? MP_GT : MP_LT;
 	    }
 	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
@@ -9017,7 +9001,7 @@ TclCompareTwoNumbers(
 	    return compare;
 	case TCL_NUMBER_DOUBLE:
 	    d2 = *((const double *)ptr2);
-	    if (TclIsInfinite(d2)) {
+	    if (isinf(d2)) {
 		compare = (d2 > 0.0) ? MP_LT : MP_GT;
 		mp_clear(&big1);
 		return compare;
@@ -9213,7 +9197,7 @@ IllegalExprOperandType(
     Tcl_Obj *opndPtr)		/* Points to the operand holding the value
 				 * with the illegal type. */
 {
-    ClientData ptr;
+    void *ptr;
     int type;
     const unsigned char opcode = *pc;
     const char *description, *op = "unknown";
@@ -9620,11 +9604,11 @@ TclExprFloatError(
 {
     const char *s;
 
-    if ((errno == EDOM) || TclIsNaN(value)) {
+    if ((errno == EDOM) || isnan(value)) {
 	s = "domain error: argument not in valid range";
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, NULL);
-    } else if ((errno == ERANGE) || TclIsInfinite(value)) {
+    } else if ((errno == ERANGE) || isinf(value)) {
 	if (value == 0.0) {
 	    s = "floating-point value too small to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));

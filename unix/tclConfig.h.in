@@ -184,14 +184,14 @@
 /* Define to 1 if you have the `OSSpinLockLock' function. */
 #undef HAVE_OSSPINLOCKLOCK
 
+/* Should we use pselect()? */
+#undef HAVE_PSELECT
+
 /* Define to 1 if you have the `pthread_atfork' function. */
 #undef HAVE_PTHREAD_ATFORK
 
 /* Define to 1 if you have the `pthread_attr_setstacksize' function. */
 #undef HAVE_PTHREAD_ATTR_SETSTACKSIZE
-
-/* Define to 1 if you have the `pselect' function */
-#undef HAVE_PSELECT
 
 /* Does putenv() copy strings or incorporate them by reference? */
 #undef HAVE_PUTENV_THAT_COPIES
@@ -348,9 +348,6 @@
 
 /* Do we have getwd() */
 #undef NO_GETWD
-
-/* Do we have a usable 'isnan'? */
-#undef NO_ISNAN
 
 /* Do we have memmove()? */
 #undef NO_MEMMOVE

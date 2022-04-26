@@ -1890,7 +1890,7 @@ NsEnsembleImplementationCmdNR(
 	Tcl_Obj **copyObjv;
 	int copyObjc, prefixObjc;
 
-	Tcl_ListObjLength(NULL, prefixObj, &prefixObjc);
+	TclListObjLength(NULL, prefixObj, &prefixObjc);
 
 	if (objc == 2) {
 	    copyPtr = TclListObjCopy(NULL, prefixObj);
@@ -1924,7 +1924,7 @@ NsEnsembleImplementationCmdNR(
 	 */
 
 	TclSkipTailcall(interp);
-	Tcl_ListObjGetElements(NULL, copyPtr, &copyObjc, &copyObjv);
+	TclListObjGetElements(NULL, copyPtr, &copyObjc, &copyObjv);
 	((Interp *)interp)->lookupNsPtr = ensemblePtr->nsPtr;
 	return TclNREvalObjv(interp, copyObjc, copyObjv, TCL_EVAL_INVOKE, NULL);
     }
@@ -2605,7 +2605,7 @@ BuildEnsembleConfig(
          * Must determine the target for each.
          */
 
-        Tcl_ListObjGetElements(NULL, subList, &subc, &subv);
+        TclListObjGetElements(NULL, subList, &subc, &subv);
         if (subList == mapDict) {
             /*
              * Strange case where explicit list of subcommands is same value
@@ -3006,7 +3006,7 @@ TclCompileEnsemble(
 	const char *str;
 	Tcl_Obj *matchObj = NULL;
 
-	if (Tcl_ListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
+	if (TclListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
 	    goto failed;
 	}
 	for (i=0 ; i<len ; i++) {
@@ -3126,7 +3126,7 @@ TclCompileEnsemble(
 
   doneMapLookup:
     Tcl_ListObjAppendElement(NULL, replaced, replacement);
-    if (Tcl_ListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
+    if (TclListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
 	goto failed;
     } else if (len != 1) {
 	/*
@@ -3408,7 +3408,7 @@ CompileToInvokedCommand(
      * difference. Hence the call to TclContinuationsEnterDerived...
      */
 
-    Tcl_ListObjGetElements(NULL, replacements, &numWords, &words);
+    TclListObjGetElements(NULL, replacements, &numWords, &words);
     for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
 	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && i < numWords+1) {

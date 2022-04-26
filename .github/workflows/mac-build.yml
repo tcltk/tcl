@@ -32,6 +32,7 @@ jobs:
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
+          - "--enable-symbols=all"
     defaults:
       run:
         shell: bash
@@ -46,7 +47,7 @@ jobs:
         working-directory: generic
       - name: Configure ${{ matrix.cfgopt }}
         # Note that macOS is always a 64 bit platform
-        run: ./configure --enable-64bit --enable-dtrace --enable-framework ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
+        run: ./configure --enable-dtrace --enable-framework ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
         env:
           CFLAGS: -arch x86_64 -arch arm64e
           CFGOPT: ${{ matrix.cfgopt }}

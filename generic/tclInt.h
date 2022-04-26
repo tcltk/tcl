@@ -128,21 +128,24 @@ typedef int ptrdiff_t;
  * to/from pointer from/to integer of different size".
  */
 
-#if !defined(INT2PTR) && !defined(PTR2INT)
+#if !defined(INT2PTR)
 #   if defined(HAVE_INTPTR_T) || defined(intptr_t)
 #	define INT2PTR(p) ((void *)(intptr_t)(p))
-#	define PTR2INT(p) ((intptr_t)(p))
 #   else
 #	define INT2PTR(p) ((void *)(p))
+#   endif
+#endif
+#if !defined(PTR2INT)
+#   if defined(HAVE_INTPTR_T) || defined(intptr_t)
+#	define PTR2INT(p) ((intptr_t)(p))
+#   else
 #	define PTR2INT(p) ((long)(p))
 #   endif
 #endif
-#if !defined(UINT2PTR) && !defined(PTR2UINT)
+#if !defined(PTR2UINT)
 #   if defined(HAVE_UINTPTR_T) || defined(uintptr_t)
-#	define UINT2PTR(p) ((void *)(uintptr_t)(p))
 #	define PTR2UINT(p) ((uintptr_t)(p))
 #   else
-#	define UINT2PTR(p) ((void *)(p))
 #	define PTR2UINT(p) ((unsigned long)(p))
 #   endif
 #endif
@@ -2504,12 +2507,12 @@ typedef struct List {
  * WARNING: these macros eval their args more than once.
  */
 
-#define TclGetBooleanFromObj(interp, objPtr, boolPtr) \
+#define TclGetBooleanFromObj(interp, objPtr, intPtr) \
     (((objPtr)->typePtr == &tclIntType)			\
-	? (*(boolPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
+	? (*(intPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
 	: ((objPtr)->typePtr == &tclBooleanType)			\
-	? (*(boolPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
-	: Tcl_GetBooleanFromObj((interp), (objPtr), (boolPtr)))
+	? (*(intPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
+	: Tcl_GetBooleanFromObj((interp), (objPtr), (intPtr)))
 
 #ifdef TCL_WIDE_INT_IS_LONG
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
@@ -4126,30 +4129,30 @@ MODULE_SCOPE Tcl_Obj *	TclStringReverse(Tcl_Obj *objPtr, int flags);
 
 MODULE_SCOPE Var *	TclObjLookupVarEx(Tcl_Interp * interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags,
-			    const char *msg, const int createPart1,
-			    const int createPart2, Var **arrayPtrPtr);
+			    const char *msg, int createPart1,
+			    int createPart2, Var **arrayPtrPtr);
 MODULE_SCOPE Var *	TclLookupArrayElement(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNamePtr, Tcl_Obj *elNamePtr,
-			    const int flags, const char *msg,
-			    const int createPart1, const int createPart2,
+			    int flags, const char *msg,
+			    int createPart1, int createPart2,
 			    Var *arrayPtr, int index);
 MODULE_SCOPE Tcl_Obj *	TclPtrGetVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
-			    Tcl_Obj *part2Ptr, const int flags, int index);
+			    Tcl_Obj *part2Ptr, int flags, int index);
 MODULE_SCOPE Tcl_Obj *	TclPtrSetVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr,
-			    const int flags, int index);
+			    int flags, int index);
 MODULE_SCOPE Tcl_Obj *	TclPtrIncrObjVarIdx(Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr,
-			    const int flags, int index);
+			    int flags, int index);
 MODULE_SCOPE int	TclPtrObjMakeUpvarIdx(Tcl_Interp *interp,
 			    Var *otherPtr, Tcl_Obj *myNamePtr, int myFlags,
 			    int index);
 MODULE_SCOPE int	TclPtrUnsetVarIdx(Tcl_Interp *interp, Var *varPtr,
 			    Var *arrayPtr, Tcl_Obj *part1Ptr,
-			    Tcl_Obj *part2Ptr, const int flags,
+			    Tcl_Obj *part2Ptr, int flags,
 			    int index);
 MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 MODULE_SCOPE void	TclFindArrayPtrElements(Var *arrayPtr,
@@ -4326,7 +4329,7 @@ TclScaleTime(
 /*
  * Invalidate the string rep first so we can use the bytes value for our
  * pointer chain, and signal an obj deletion (as opposed to shimmering) with
- * 'length == -1'.
+ * 'length == TCL_INDEX_NONE'.
  * Use empty 'if ; else' to handle use in unbraced outer if/else conditions.
  */
 
@@ -4338,7 +4341,7 @@ TclScaleTime(
 		    && ((objPtr)->bytes != &tclEmptyString)) { \
 		ckfree((objPtr)->bytes); \
 	    } \
-	    (objPtr)->length = -1; \
+	    (objPtr)->length = TCL_INDEX_NONE; \
 	    TclFreeObjStorage(objPtr); \
 	    TclIncrObjsFreed(); \
 	} else { \
@@ -4360,7 +4363,7 @@ TclScaleTime(
  */
 
 #  define TclAllocObjStorageEx(interp, objPtr) \
-	(objPtr) = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj))
+	(objPtr) = (Tcl_Obj *)ckalloc(sizeof(Tcl_Obj))
 
 #  define TclFreeObjStorageEx(interp, objPtr) \
 	ckfree(objPtr)
@@ -4510,7 +4513,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *) ckalloc((len) + 1); \
+	(objPtr)->bytes = (char *)ckalloc((unsigned int)(len) + 1U); \
 	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \
@@ -4902,6 +4905,9 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
 
+#define TclNewIndexObj(objPtr, w) \
+    TclNewIntObj(objPtr, w)
+
 #define TclNewDoubleObj(objPtr, d) \
     do {							\
 	TclIncrObjsAllocated();					\
@@ -4927,6 +4933,9 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 #define TclNewIntObj(objPtr, w) \
     (objPtr) = Tcl_NewWideIntObj(w)
 
+#define TclNewIndexObj(objPtr, w) \
+    TclNewIntObj(objPtr, w)
+
 #define TclNewDoubleObj(objPtr, d) \
     (objPtr) = Tcl_NewDoubleObj(d)
 
@@ -4939,7 +4948,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
  * sizeof(sLiteral "") will fail to compile otherwise.
  */
 #define TclNewLiteralStringObj(objPtr, sLiteral) \
-    TclNewStringObj((objPtr), (sLiteral), (int) (sizeof(sLiteral "") - 1))
+    TclNewStringObj((objPtr), (sLiteral), sizeof(sLiteral "") - 1)
 
 /*
  *----------------------------------------------------------------
@@ -4952,29 +4961,22 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
  */
 
 #define TclDStringAppendLiteral(dsPtr, sLiteral) \
-    Tcl_DStringAppend((dsPtr), (sLiteral), (int) (sizeof(sLiteral "") - 1))
+    Tcl_DStringAppend((dsPtr), (sLiteral), sizeof(sLiteral "") - 1)
 #define TclDStringClear(dsPtr) \
     Tcl_DStringSetLength((dsPtr), 0)
 
 /*
  *----------------------------------------------------------------
  * Macros used by the Tcl core to test for some special double values.
- * The ANSI C "prototypes" for these macros are:
+ * (deprecated) The ANSI C "prototypes" for these macros are:
  *
  * MODULE_SCOPE int	TclIsInfinite(double d);
  * MODULE_SCOPE int	TclIsNaN(double d);
  */
 
-#ifdef _MSC_VER
-#    define TclIsInfinite(d)	(!(_finite((d))))
-#    define TclIsNaN(d)		(_isnan((d)))
-#else
-#    define TclIsInfinite(d)	((d) > DBL_MAX || (d) < -DBL_MAX)
-#    ifdef NO_ISNAN
-#	 define TclIsNaN(d)	((d) != (d))
-#    else
-#	 define TclIsNaN(d)	(isnan(d))
-#    endif
+#if !defined(TCL_NO_DEPRECATED) && !defined(BUILD_tcl)
+#   define TclIsInfinite(d)	isinf(d)
+#   define TclIsNaN(d)		isnan(d)
 #endif
 
 /*
@@ -5093,12 +5095,12 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclIncrObjsAllocated();						\
 	TclAllocObjStorageEx((interp), (_objPtr));			\
-	*(void **)&memPtr = (void *) (_objPtr);					\
+	*(void **)&(memPtr) = (void *) (_objPtr);			\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \
     do {								\
-	TclFreeObjStorageEx((interp), (Tcl_Obj *) (memPtr));		\
+	TclFreeObjStorageEx((interp), (Tcl_Obj *)(memPtr));		\
 	TclIncrObjsFreed();						\
     } while (0)
 
@@ -5108,12 +5110,12 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	Tcl_Obj *_objPtr;						\
 	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclNewObj(_objPtr);						\
-	*(void **)&memPtr = (void *) _objPtr;					\
+	*(void **)&(memPtr) = (void *)_objPtr;				\
     } while (0)
 
 #define TclSmallFreeEx(interp, memPtr) \
     do {								\
-	Tcl_Obj *_objPtr = (Tcl_Obj *) memPtr;				\
+	Tcl_Obj *_objPtr = (Tcl_Obj *)(memPtr);				\
 	_objPtr->bytes = NULL;						\
 	_objPtr->typePtr = NULL;					\
 	_objPtr->refCount = 1;						\
@@ -5186,7 +5188,7 @@ typedef struct NRE_callback {
 #define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
 #else
 #define TCLNR_ALLOC(interp, ptr) \
-    (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
+    ((ptr) = ((void *)ckalloc(sizeof(NRE_callback))))
 #define TCLNR_FREE(interp, ptr)  ckfree(ptr)
 #endif
 

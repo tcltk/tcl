@@ -35,7 +35,7 @@
  */
 
 #define RANDOM_INDEX(tablePtr, i) \
-    ((((i)*1103515245L) >> (tablePtr)->downShift) & (tablePtr)->mask)
+    ((((i)*1103515245UL) >> (tablePtr)->downShift) & (tablePtr)->mask)
 
 /*
  * Prototypes for the array hash key methods.
@@ -354,7 +354,7 @@ CreateHashEntry(
     }
 
     hPtr->tablePtr = tablePtr;
-    hPtr->hash = UINT2PTR(hash);
+    hPtr->hash = INT2PTR(hash);
     hPtr->nextPtr = tablePtr->buckets[index];
     tablePtr->buckets[index] = hPtr;
     tablePtr->numEntries++;

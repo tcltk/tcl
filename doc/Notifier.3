@@ -104,7 +104,7 @@ passed to \fBTcl_DoOneEvent\fR.
 .AP int mode in
 Indicates whether events should be serviced by \fBTcl_ServiceAll\fR.
 Must be one of \fBTCL_SERVICE_NONE\fR or \fBTCL_SERVICE_ALL\fR.
-.AP Tcl_NotifierProcs* notifierProcPtr in
+.AP const Tcl_NotifierProcs* notifierProcPtr in
 Structure of function pointers describing notifier procedures that are
 to replace the ones installed in the executable.  See
 \fBREPLACING THE NOTIFIER\fR for details.

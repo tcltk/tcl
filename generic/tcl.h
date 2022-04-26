@@ -979,10 +979,13 @@ typedef struct Tcl_DString {
  * TCL_EXACT disallows abbreviated strings.
  * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
  *      a table that will not live long enough to make it worthwhile.
+ * TCL_INDEX_NULL_OK allows the empty string or NULL to return TCL_OK.
+ *      The returned value will be -1;
  */
 
 #define TCL_EXACT		1
 #define TCL_INDEX_TEMP_TABLE	2
+#define TCL_INDEX_NULL_OK	32
 
 /*
  *----------------------------------------------------------------------------
@@ -2057,10 +2060,10 @@ typedef struct Tcl_EncodingType {
  *				encountering an invalid byte sequence or a
  *				source character that has no mapping in the
  *				target encoding. If clear, the converter
- *				substitues the problematic character(s) with
+ *				substitutes the problematic character(s) with
  *				one or more "close" characters in the
  *				destination buffer and then continues to
- *				convert the source.
+ *				convert the source. Only for Tcl 8.x.
  * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf does not append a
  *				terminating NUL byte.  Since it does not need
  *				an extra byte for a terminating NUL, it fills
@@ -2075,6 +2078,18 @@ typedef struct Tcl_EncodingType {
  *				content.  Otherwise, the number of chars
  *				produced is controlled only by other limiting
  *				factors.
+ * TCL_ENCODING_MODIFIED -	Convert NULL bytes to \xC0\x80 in stead of
+ *				0x00. Only valid for "utf-8" and "cesu-8".
+ *				This flag is implicit for external -> internal conversions,
+ *				optional for internal -> external conversions.
+ * TCL_ENCODING_NOCOMPLAIN -	If set, the converter
+ *				substitutes the problematic character(s) with
+ *				one or more "close" characters in the
+ *				destination buffer and then continues to
+ *				convert the source. If clear, the converter returns
+ *				immediately upon encountering an invalid byte sequence
+ *				or a source character that has no mapping in the
+ *				target encoding. Only for Tcl 9.x.
  */
 
 #define TCL_ENCODING_START		0x01
@@ -2082,6 +2097,8 @@ typedef struct Tcl_EncodingType {
 #define TCL_ENCODING_STOPONERROR	0x04
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
+#define TCL_ENCODING_MODIFIED		0x20
+#define TCL_ENCODING_NOCOMPLAIN		0x40
 
 /*
  * The following definitions are the error codes returned by the conversion
@@ -2384,16 +2401,16 @@ EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
-EXTERN void		Tcl_InitSubsystems(void);
+EXTERN const char *	Tcl_InitSubsystems(void);
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 EXTERN const char *	Tcl_SetPreInitScript(const char *string);
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_StaticPackage Tcl_StaticLibrary
 #endif
 #ifdef _WIN32
-EXTERN int		TclZipfs_AppHook(int *argc, wchar_t ***argv);
+EXTERN const char *TclZipfs_AppHook(int *argc, wchar_t ***argv);
 #else
-EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
+EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #endif
 
 /*

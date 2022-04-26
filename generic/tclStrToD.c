@@ -543,8 +543,7 @@ TclParseNumber(
     int under = 0;              /* Flag trailing '_' as error if true once
 				 * number is accepted. */
 
-#define ALL_BITS	UWIDE_MAX
-#define MOST_BITS	(ALL_BITS >> 1)
+#define MOST_BITS	(UWIDE_MAX >> 1)
 
     /*
      * Initialize bytes to start of the object's string rep if the caller
@@ -721,9 +720,9 @@ TclParseNumber(
 
 		    if (!octalSignificandOverflow) {
 			/*
-			 * Shifting by more bits than are in the value being
-			 * shifted is at least de facto nonportable. Check for
-			 * too large shifts first.
+			 * Shifting by as many or more bits than are in the
+			 * value being shifted is undefined behavior. Check
+			 * for too large shifts first.
 			 */
 
 			if ((octalSignificandWide != 0)
@@ -737,8 +736,17 @@ TclParseNumber(
 			}
 		    }
 		    if (!octalSignificandOverflow) {
-			octalSignificandWide =
-				(octalSignificandWide << shift) + (c - '0');
+			/*
+			 * When the significand is 0, it is possible for the
+			 * amount to be shifted to equal or exceed the width
+			 * of the significand. Do not shift when the
+			 * significand is 0 to avoid undefined behavior.
+			 */
+
+			if (octalSignificandWide != 0) {
+			    octalSignificandWide <<= shift;
+			}
+			octalSignificandWide += c - '0';
 		    } else {
 			if (err == MP_OKAY) {
 			    err = mp_mul_2d(&octalSignificandBig, shift,
@@ -863,9 +871,9 @@ TclParseNumber(
 		shift = 4 * (numTrailZeros + 1);
 		if (!significandOverflow) {
 		    /*
-		     * Shifting by more bits than are in the value being
-		     * shifted is at least de facto nonportable. Check for too
-		     * large shifts first.
+		     * Shifting by as many or more bits than are in the
+		     * value being shifted is undefined behavior. Check
+		     * for too large shifts first.
 		     */
 
 		    if (significandWide != 0 &&
@@ -877,7 +885,17 @@ TclParseNumber(
 		    }
 		}
 		if (!significandOverflow) {
-		    significandWide = (significandWide << shift) + d;
+		    /*
+		     * When the significand is 0, it is possible for the
+		     * amount to be shifted to equal or exceed the width
+		     * of the significand. Do not shift when the
+		     * significand is 0 to avoid undefined behavior.
+		     */
+
+		    if (significandWide != 0) {
+			significandWide <<= shift;
+		    }
+		    significandWide += d;
 		} else if (err == MP_OKAY) {
 		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		    if (err == MP_OKAY) {
@@ -896,7 +914,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-		/* FALLTHRU */
+	    /* FALLTHRU */
 	case ZERO_B:
 	zerob:
 	    if (c == '0') {
@@ -917,9 +935,9 @@ TclParseNumber(
 		shift = numTrailZeros + 1;
 		if (!significandOverflow) {
 		    /*
-		     * Shifting by more bits than are in the value being
-		     * shifted is at least de facto nonportable. Check for too
-		     * large shifts first.
+		     * Shifting by as many or more bits than are in the
+		     * value being shifted is undefined behavior. Check
+		     * for too large shifts first.
 		     */
 
 		    if (significandWide != 0 &&
@@ -931,7 +949,17 @@ TclParseNumber(
 		    }
 		}
 		if (!significandOverflow) {
-		    significandWide = (significandWide << shift) + 1;
+		    /*
+		     * When the significand is 0, it is possible for the
+		     * amount to be shifted to equal or exceed the width
+		     * of the significand. Do not shift when the
+		     * significand is 0 to avoid undefined behavior.
+		     */
+
+		    if (significandWide != 0) {
+			significandWide <<= shift;
+		    }
+		    significandWide += 1;
 		} else if (err == MP_OKAY) {
 		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		    if (err == MP_OKAY) {
@@ -1330,7 +1358,15 @@ TclParseNumber(
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
-		    significandWide <<= shift;
+		    /*
+		     * When the significand is 0, it is possible for the
+		     * amount to be shifted to equal or exceed the width
+		     * of the significand. Do not shift when the
+		     * significand is 0 to avoid undefined behavior.
+		     */
+		    if (significandWide != 0) {
+			significandWide <<= shift;
+		    }
 		} else if (err == MP_OKAY) {
 		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		}
@@ -1354,7 +1390,15 @@ TclParseNumber(
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
-		    significandWide <<= shift;
+		    /*
+		     * When the significand is 0, it is possible for the
+		     * amount to be shifted to equal or exceed the width
+		     * of the significand. Do not shift when the
+		     * significand is 0 to avoid undefined behavior.
+		     */
+		    if (significandWide != 0) {
+			significandWide <<= shift;
+		    }
 		} else if (err == MP_OKAY) {
 		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		}
@@ -1379,7 +1423,15 @@ TclParseNumber(
 	    }
 	    if (shift) {
 		if (!octalSignificandOverflow) {
-		    octalSignificandWide <<= shift;
+		    /*
+		     * When the significand is 0, it is possible for the
+		     * amount to be shifted to equal or exceed the width
+		     * of the significand. Do not shift when the
+		     * significand is 0 to avoid undefined behavior.
+		     */
+		    if (octalSignificandWide != 0) {
+			octalSignificandWide <<= shift;
+		    }
 		} else if (err == MP_OKAY) {
 		    err = mp_mul_2d(&octalSignificandBig, shift,
 			    &octalSignificandBig);
@@ -1394,10 +1446,10 @@ TclParseNumber(
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
-				- (Tcl_WideInt) octalSignificandWide;
+				(Tcl_WideInt)(-octalSignificandWide);
 		    } else {
 			objPtr->internalRep.wideValue =
-				(Tcl_WideInt) octalSignificandWide;
+				(Tcl_WideInt)octalSignificandWide;
 		    }
 		}
 	    }
@@ -1430,10 +1482,10 @@ TclParseNumber(
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
-				- (Tcl_WideInt) significandWide;
+				(Tcl_WideInt)(-significandWide);
 		    } else {
 			objPtr->internalRep.wideValue =
-				(Tcl_WideInt) significandWide;
+				(Tcl_WideInt)significandWide;
 		    }
 		}
 	    }
@@ -2136,7 +2188,7 @@ RefineApproximation(
      */
     if (roundToEven) {
 	rteSignificand = frexp(approxResult, &rteExponent);
-	rteSigWide = (Tcl_WideInt) ldexp(rteSignificand, FP_PRECISION);
+	rteSigWide = (Tcl_WideInt)ldexp(rteSignificand, FP_PRECISION);
 	if ((rteSigWide & 1) == 0) {
 	    mp_clear(&twoMd);
 	    mp_clear(&twoMv);
@@ -3799,15 +3851,13 @@ ShouldBankerRoundUp(
     int r = mp_cmp_mag(twor, S);
 
     switch (r) {
-    case MP_LT:
-	return 0;
     case MP_EQ:
 	return isodd;
     case MP_GT:
 	return 1;
+    default:
+	return 0;
     }
-    Tcl_Panic("in ShouldBankerRoundUp, trichotomy fails!");
-    return 0;
 }
 
 /*
@@ -3845,15 +3895,13 @@ ShouldBankerRoundUpToNext(
     r = mp_cmp_mag(&temp, S);
     mp_clear(&temp);
     switch(r) {
-    case MP_LT:
-	return 0;
     case MP_EQ:
 	return isodd;
     case MP_GT:
 	return 1;
+    default:
+	return 0;
     }
-    Tcl_Panic("in ShouldBankerRoundUpToNext, trichotomy fails!");
-    return 0;
 }
 
 /*
@@ -4784,7 +4832,7 @@ Tcl_InitBignumFromDouble(
      * Infinite values can't convert to bignum.
      */
 
-    if (TclIsInfinite(d)) {
+    if (isinf(d)) {
 	if (interp != NULL) {
 	    const char *s = "integer value too large to represent";
 
@@ -4799,7 +4847,7 @@ Tcl_InitBignumFromDouble(
 	err = mp_init(b);
 	mp_zero(b);
     } else {
-	Tcl_WideInt w = (Tcl_WideInt) ldexp(fract, mantBits);
+	Tcl_WideInt w = (Tcl_WideInt)ldexp(fract, mantBits);
 	int shift = expt - mantBits;
 
 	err = mp_init_i64(b, w);

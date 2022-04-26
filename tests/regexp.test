@@ -765,7 +765,7 @@ test regexp-19.2 {regsub null replacement} {
     string equal $result $expected
 } 1
 
-test regexp-20.1 {regsub shared object shimmering} -constraints nodep -body {
+test regexp-20.1 {regsub shared object shimmering} -constraints deprecated -body {
     # Bug #461322
     set a abcdefghijklmnopqurstuvwxyz
     set b $a
