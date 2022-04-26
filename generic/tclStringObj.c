@@ -1465,7 +1465,7 @@ Tcl_AppendObjToObj(
 	 */
 
 	TclAppendBytesToByteArray(objPtr,
-		(Tcl_GetBytesFromObj)(NULL, appendObjPtr, NULL), lengthSrc);
+		Tcl_GetBytesFromObj(NULL, appendObjPtr, (size_t *)NULL), lengthSrc);
 	return;
     }
 
@@ -2982,7 +2982,7 @@ TclStringRepeat(
 	    done *= 2;
 	}
 	TclAppendBytesToByteArray(objResultPtr,
-		(Tcl_GetBytesFromObj)(NULL, objResultPtr, NULL),
+		Tcl_GetBytesFromObj(NULL, objResultPtr, (size_t *)NULL),
 		(count - done) * length);
     } else if (unichar) {
 	/*
@@ -3859,7 +3859,7 @@ TclStringReverse(
 	if (!inPlace || Tcl_IsShared(objPtr)) {
 	    objPtr = Tcl_NewByteArrayObj(NULL, numBytes);
 	}
-	ReverseBytes((Tcl_GetBytesFromObj)(NULL, objPtr, NULL), from, numBytes);
+	ReverseBytes(Tcl_GetBytesFromObj(NULL, objPtr, (size_t *)NULL), from, numBytes);
 	return objPtr;
     }
 
