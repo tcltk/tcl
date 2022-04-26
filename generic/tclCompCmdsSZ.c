@@ -2972,6 +2972,9 @@ TclCompileTryCmd(
 	    goto failedToCompile;
 	}
 	finallyToken = TokenAfter(tokenPtr);
+	if (finallyToken->type != TCL_TOKEN_SIMPLE_WORD) {
+	    goto failedToCompile;
+	}
     } else {
 	goto failedToCompile;
     }
