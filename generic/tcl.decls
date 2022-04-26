@@ -106,7 +106,7 @@ declare 21 {
 }
 # Removed in 9.0 (changed to macro):
 #declare 22 {
-#    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
+#    Tcl_Obj *Tcl_DbNewBooleanObj(int intValue, const char *file, int line)
 #}
 declare 23 {
     Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, size_t numBytes,
@@ -138,11 +138,11 @@ declare 30 {
     void TclFreeObj(Tcl_Obj *objPtr)
 }
 declare 31 {
-    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *boolPtr)
+    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *intPtr)
 }
 declare 32 {
     int Tcl_GetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *boolPtr)
+	    int *intPtr)
 }
 declare 33 {
     unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
@@ -203,7 +203,7 @@ declare 48 {
 }
 # Removed in 9.0 (changed to macro):
 #declare 49 {
-#    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
+#    Tcl_Obj *Tcl_NewBooleanObj(int intValue)
 #}
 declare 50 {
     Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, size_t numBytes)
@@ -230,7 +230,7 @@ declare 56 {
 }
 # Removed in 9.0 (changed to macro):
 #declare 57 {
-#    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
+#    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int intValue)
 #}
 declare 58 {
     unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, size_t numBytes)
