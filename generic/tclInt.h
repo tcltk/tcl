@@ -2507,12 +2507,12 @@ typedef struct List {
  * WARNING: these macros eval their args more than once.
  */
 
-#define TclGetBooleanFromObj(interp, objPtr, boolPtr) \
+#define TclGetBooleanFromObj(interp, objPtr, intPtr) \
     (((objPtr)->typePtr == &tclIntType)			\
-	? (*(boolPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
+	? (*(intPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
 	: ((objPtr)->typePtr == &tclBooleanType)			\
-	? (*(boolPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
-	: Tcl_GetBooleanFromObj((interp), (objPtr), (boolPtr)))
+	? (*(intPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
+	: Tcl_GetBooleanFromObj((interp), (objPtr), (intPtr)))
 
 #ifdef TCL_WIDE_INT_IS_LONG
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
