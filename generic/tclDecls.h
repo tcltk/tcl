@@ -12,6 +12,8 @@
 #ifndef _TCLDECLS
 #define _TCLDECLS
 
+#include <stddef.h> /* for size_t */
+
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
 #   define TCL_STORAGE_CLASS DLLEXPORT
