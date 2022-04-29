@@ -425,8 +425,8 @@ test expr-old-22.2 {embedded variables} {
     expr {$x + $y}
 } {5}
 test expr-old-22.3 {embedded variables} {
-    set x "  -5"
-    set y "  +10"
+    set x "-5"
+    set y "+10"
     expr {$x + $y}
 } {5}
 test expr-old-22.4 {embedded commands and variables} {expr {[set a] - 14}} 2
@@ -959,11 +959,11 @@ test expr-old-36.4 {ExprLooksLikeInt procedure} {
     list [catch {expr {$x+1}} msg] $msg
 } {0 290.1}
 test expr-old-36.5 {ExprLooksLikeInt procedure} {
-    set x {  +22}
+    set x {+22}
     list [catch {expr {$x+1}} msg] $msg
 } {0 23}
 test expr-old-36.6 {ExprLooksLikeInt procedure} {
-    set x {	-22}
+    set x {-22}
     list [catch {expr {$x+1}} msg] $msg
 } {0 -21}
 test expr-old-36.7 {ExprLooksLikeInt procedure} {
@@ -996,7 +996,7 @@ test expr-old-36.13 {ExprLooksLikeInt procedure} {
     list [catch {expr {$x+1}} msg] $msg
 } {1 {can't use non-numeric string " +" as operand of "+"}}
 test expr-old-36.14 {ExprLooksLikeInt procedure} {
-    set x "123456789012345678901234567890 "
+    set x "123456789012345678901234567890"
     expr {$x+1}
 } 123456789012345678901234567891
 test expr-old-36.15 {ExprLooksLikeInt procedure} {
@@ -1004,7 +1004,7 @@ test expr-old-36.15 {ExprLooksLikeInt procedure} {
     list [catch {expr {$x+1}} msg] $msg
 } {1 {can't use non-numeric string "0o99 " as operand of "+"}}
 test expr-old-36.16 {ExprLooksLikeInt procedure} {
-    set x " 0xffffffffffffffffffffffffffffffffffffff  "
+    set x "0xffffffffffffffffffffffffffffffffffffff"
     expr {$x+1}
 } [expr 0x100000000000000000000000000000000000000]
 

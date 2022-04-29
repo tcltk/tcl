@@ -50,8 +50,7 @@ test compExpr-2.4 {CompileSubExpr procedure, empty TCL_TOKEN_TEXT parse token} {
     expr {{}}
 } {}
 test compExpr-2.5 {CompileSubExpr procedure, TCL_TOKEN_BS parse token} {
-    expr "\{  \\
- +123 \}"
+    expr "\{+123\}"
 } 123
 test compExpr-2.6 {CompileSubExpr procedure, TCL_TOKEN_COMMAND parse token} {
     expr {[info tclversion] != ""}

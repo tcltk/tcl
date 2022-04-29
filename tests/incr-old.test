@@ -29,11 +29,11 @@ test incr-old-1.2 {basic incr operation} {
     list [incr x -5] $x
 } {101 101}
 test incr-old-1.3 {basic incr operation} {
-    set x "  -106"
+    set x "-106"
     list [incr x 1] $x
 } {-105 -105}
 test incr-old-1.4 {basic incr operation} {
-    set x "  +106"
+    set x "+106"
     list [incr x 1] $x
 } {107 107}
 

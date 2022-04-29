@@ -605,10 +605,10 @@ test string-6.30.$noComp {string is double, true} {
     run {string is double [run {string compare a a}]}
 } 1
 test string-6.31.$noComp {string is double, true} {
-    run {string is double "   +1.0e-1  "}
+    run {string is double "+1.0e-1"}
 } 1
 test string-6.32.$noComp {string is double, true} {
-    run {string is double "\n1.0\v"}
+    run {string is double "1.0"}
 } 1
 test string-6.33.$noComp {string is double, false} {
     list [run {string is double -fail var 1abc}] $var
@@ -617,8 +617,8 @@ test string-6.34.$noComp {string is double, false} {
     list [run {string is double -fail var abc}] $var
 } {0 0}
 test string-6.35.$noComp {string is double, false} {
-    list [run {string is double -fail var "   1.0e4e4  "}] $var
-} {0 8}
+    list [run {string is double -fail var "1.0e4e4"}] $var
+} {0 5}
 test string-6.36.$noComp {string is double, false} {
     list [run {string is double -fail var "\n"}] $var
 } {0 0}
@@ -683,7 +683,7 @@ test string-6.52.$noComp {string is integer, true as octal} {
     run {string is integer 012345}
 } 1
 test string-6.53.$noComp {string is integer, true with whitespace} {
-    run {string is integer "  \n1234\v"}
+    run {string is integer "1234"}
 } 1
 test string-6.54.$noComp {string is integer, false} {
     list [run {string is integer -fail var 123abc}] $var
@@ -853,7 +853,7 @@ test string-6.99.$noComp {string is wideinteger, true as octal} {
     run {string is wideinteger 0123456}
 } 1
 test string-6.100.$noComp {string is wideinteger, true with whitespace} {
-    run {string is wideinteger "  \n1234\v"}
+    run {string is wideinteger "1234"}
 } 1
 test string-6.101.$noComp {string is wideinteger, false} {
     list [run {string is wideinteger -fail var 123abc}] $var
@@ -909,7 +909,7 @@ test string-6.114.$noComp {string is entier, true as octal} {
     run {string is entier 0123456}
 } 1
 test string-6.115.$noComp {string is entier, true with whitespace} {
-    run {string is entier "  \n1234\v"}
+    run {string is entier "1234"}
 } 1
 test string-6.116.$noComp {string is entier, false} {
     list [run {string is entier -fail var 123abc}] $var
@@ -954,7 +954,7 @@ test string-6.127.$noComp {string is entier, true as octal} {
     run {string is entier 0123456112341234561234565623456123456123456123456123456123456123456123456123456123456}
 } 1
 test string-6.128.$noComp {string is entier, true with whitespace} {
-    run {string is entier "  \n12340000000000000000000000000000000000000000000000000000000000000000000000000000000000000\v"}
+    run {string is entier "12340000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}
 } 1
 test string-6.129.$noComp {string is entier, false on bad octal} {
     list [run {string is entier -fail var 0o1234561123412345612345656234561234561234561234561234561234561234561234561234561234536963}] $var

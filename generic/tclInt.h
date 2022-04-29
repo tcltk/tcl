@@ -2636,7 +2636,7 @@ typedef struct ProcessGlobalValue {
 #define TCL_PARSE_SCAN_PREFIXES		16
 				/* Use [scan] rules dealing with 0?
 				 * prefixes. */
-#define TCL_PARSE_NO_WHITESPACE		32
+#define TCL_PARSE_NO_WHITESPACE		0 /* Not used any more */
 				/* Reject leading/trailing whitespace. */
 #define TCL_PARSE_BINARY_ONLY	64
 				/* Parse binary even without prefix. */

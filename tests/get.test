@@ -24,7 +24,7 @@ testConstraint longIs32bit [expr {$tcl_platform(wordSize) == 4}]
 testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 test get-1.1 {Tcl_GetInt procedure} testgetint {
-    testgetint 44 { 	  22}
+    testgetint 44 {22}
 } {66}
 test get-1.2 {Tcl_GetInt procedure} testgetint {
     testgetint 44 -3
@@ -36,7 +36,7 @@ test get-1.4 {Tcl_GetInt procedure} testgetint {
     list [catch {testgetint 44 foo} msg] $msg
 } {1 {expected integer but got "foo"}}
 test get-1.5 {Tcl_GetInt procedure} testgetint {
-    list [catch {testgetint 44 {16	 }} msg] $msg
+    list [catch {testgetint 44 {16}} msg] $msg
 } {0 60}
 test get-1.6 {Tcl_GetInt procedure} testgetint {
     list [catch {testgetint 44 {16	 x}} msg] $msg
@@ -70,7 +70,7 @@ test get-2.1 {Tcl_GetInt procedure} {
     format %g 1.23
 } {1.23}
 test get-2.2 {Tcl_GetInt procedure} {
-    format %g { 	 1.23 	}
+    format %g {1.23}
 } {1.23}
 test get-2.3 {Tcl_GetInt procedure} {
     list [catch {format %g clip} msg] $msg
@@ -98,23 +98,23 @@ test get-3.2 {Tcl_GetDouble(FromObj), bad numbers} {
 } {0 1 0 1 1 {expected floating-point number but got "++1.0"} 1 {expected floating-point number but got "+-1.0"} 1 {expected floating-point number but got "-+1.0"} 0 -1 1 {expected floating-point number but got "--1.0"} 1 {expected floating-point number but got "- +1.0"}}
 # Bug 7114ac6141
 test get-3.3 {tcl_GetInt with iffy numbers} testgetint {
-    lmap x {0 " 0" "0 " " 0 " " 0xa " " 010 " " 0o10 " " 0b10 "} {
+    lmap x {0 "0" "0" "0" "0xa" "010" "0o10" "0b10"} {
 	catch {testgetint 44 $x} x
 	set x
     }
 } {44 44 44 44 54 54 52 46}
 test get-3.4 {Tcl_GetDouble with iffy numbers} testdoubleobj {
-    lmap x {0 0.0 " .0" ".0 " " 0e0 " "09" "- 0" "-0" "0o12" "0b10"} {
+    lmap x {0 0.0 ".0" ".0" "0e0" "09" "- 0" "-0" "0o12" "0b10"} {
 	catch {testdoubleobj set 1 $x} x
 	set x
     }
 } {0.0 0.0 0.0 0.0 0.0 9.0 {expected floating-point number but got "- 0"} 0.0 10.0 2.0}
 test get-3.5 {tcl_GetInt with numeric whitespace (i.e. '_')} testgetint {
-    lmap x {0_0 " 1_0" "0_2 " " 3_3 " 14__23__32___4 " 0x_a " 0b1111_1111 " 0_07 " " 0o_1_0 " " 0b_1_0 " " 0_b1_0 " _33 42_ 0_x15 0_o17 0_d19 } {
+    lmap x {0_0 "1_0" "0_2" "3_3" 14__23__32___4 "0x_a" 0b1111_1111 "0_07" "0o_1_0" "0b_1_0" "0_b1_0" _33 42_ 0_x15 0_o17 0_d19} {
 	catch {testgetint $x} x
 	set x
     }
-} {0 10 2 33 1423324 10 255 7 8 2 {expected integer but got " 0_b1_0 "} {expected integer but got "_33"} {expected integer but got "42_"} {expected integer but got "0_x15"} {expected integer but got "0_o17"} {expected integer but got "0_d19"}}
+} {0 10 2 33 1423324 10 255 7 8 2 {expected integer but got "0_b1_0"} {expected integer but got "_33"} {expected integer but got "42_"} {expected integer but got "0_x15"} {expected integer but got "0_o17"} {expected integer but got "0_d19"}}
 
 # cleanup
 ::tcltest::cleanupTests

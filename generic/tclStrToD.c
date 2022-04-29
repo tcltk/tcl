@@ -581,12 +581,7 @@ TclParseNumber(
 	     * I, N, and whitespace.
 	     */
 
-	    if (TclIsSpaceProcM(c)) {
-		if (flags & TCL_PARSE_NO_WHITESPACE) {
-		    goto endgame;
-		}
-		break;
-	    } else if (c == '+') {
+	    if (c == '+') {
 		state = SIGNUM;
 		break;
 	    } else if (c == '-') {
@@ -1236,16 +1231,6 @@ TclParseNumber(
 	p = under ? acceptPoint-1 : acceptPoint;
 	len = under ? acceptLen-1 : acceptLen;
 
-	if (!(flags & TCL_PARSE_NO_WHITESPACE)) {
-	    /*
-	     * Accept trailing whitespace.
-	     */
-
-	    while (len != 0 && TclIsSpaceProcM(*p)) {
-		p++;
-		len--;
-	    }
-	}
 	if (endPtrPtr == NULL) {
 	    if ((len != 0) && ((numBytes + 1 > 1) || (*p != '\0'))) {
 		status = TCL_ERROR;
