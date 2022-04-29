@@ -18,6 +18,7 @@
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclStringTrim.h"
+#include <stdbool.h>
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -3759,7 +3760,8 @@ TclCompileWhileCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *testTokenPtr, *bodyTokenPtr;
     JumpFixup jumpEvalCondFixup;
-    int testCodeOffset, bodyCodeOffset, jumpDist, range, code, boolVal;
+    int testCodeOffset, bodyCodeOffset, jumpDist, range, code;
+    bool boolVal;
     int loopMayEnd = 1;		/* This is set to 0 if it is recognized as an
 				 * infinite loop. */
     Tcl_Obj *boolObj;

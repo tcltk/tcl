@@ -2161,7 +2161,7 @@ Tcl_GetBoolFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,	/* The object from which to get boolean. */
     int flags,
-    void *boolPtr)	/* Place to store resulting boolean. */
+    char *boolPtr)	/* Place to store resulting boolean. */
 {
     int result;
 
@@ -2171,7 +2171,8 @@ Tcl_GetBoolFromObj(
     } else if (objPtr == NULL) {
 	if (interp) {
 	    TclNewObj(objPtr);
-	    TclParseNumber(interp, objPtr, "boolean value", NULL,-1,NULL,0);
+	    TclParseNumber(interp, objPtr, (flags & TCL_NULL_OK)
+		    ? "boolean value or \"\"" : "boolean value", NULL, -1, NULL, 0);
 	    Tcl_DecrRefCount(objPtr);
 	}
 	return TCL_ERROR;
@@ -2206,25 +2207,13 @@ Tcl_GetBoolFromObj(
 	    result = 1;
 	boolEnd:
 	    if (boolPtr != NULL) {
-		flags &= (TCL_NULL_OK - 1);
-		if (flags & (int)~sizeof(int8_t)) {
-		    if (flags == sizeof(int16_t)) {
-			*(int16_t *)boolPtr = result;
-			return TCL_OK;
-		    } else if (flags == sizeof(int32_t)) {
-			*(int32_t *)boolPtr = result;
-			return TCL_OK;
-		    } else if (flags == sizeof(int64_t)) {
-			*(int64_t *)boolPtr = result;
-			return TCL_OK;
-		    }
-		}
-		*(int8_t *)boolPtr = result;
+		*boolPtr = result;
 	    }
 	    return TCL_OK;
 	}
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
-	    TclParseNumber(interp, objPtr, "boolean value", NULL,-1,NULL,0)));
+	    TclParseNumber(interp, objPtr, (flags & TCL_NULL_OK)
+		    ? "boolean value or \"\"" : "boolean value", NULL,-1,NULL,0)));
     return TCL_ERROR;
 }
 
@@ -2235,7 +2224,12 @@ Tcl_GetBooleanFromObj(
     Tcl_Obj *objPtr,	/* The object from which to get boolean. */
     int *intPtr)	/* Place to store resulting boolean. */
 {
-    return Tcl_GetBoolFromObj(interp, objPtr, sizeof(int), intPtr);
+    char boolValue;
+    int result = Tcl_GetBoolFromObj(interp, objPtr, 0, &boolValue);
+    if (intPtr) {
+	*intPtr = boolValue;
+    }
+    return result;
 }
 
 /*

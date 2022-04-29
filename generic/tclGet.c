@@ -128,7 +128,7 @@ Tcl_GetBool(
     const char *src,		/* String containing one of the boolean values
 				 * 1, 0, true, false, yes, no, on, off. */
     int flags,
-    void *boolPtr)		/* Place to store converted result, which will
+    char *boolPtr)		/* Place to store converted result, which will
 				 * be 0 or 1. */
 {
     Tcl_Obj obj;
@@ -161,7 +161,12 @@ Tcl_GetBoolean(
     int *intPtr)		/* Place to store converted result, which will
 				 * be 0 or 1. */
 {
-    return Tcl_GetBool(interp, src, sizeof(int), intPtr);
+    char boolValue;
+    int result = Tcl_GetBool(interp, src, 0, &boolValue);
+    if (intPtr) {
+	*intPtr = boolValue;
+    }
+    return result;
 }
 
 /*

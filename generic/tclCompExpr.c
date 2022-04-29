@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"		/* CompileEnv */
+#include <stdbool.h>
 
 /*
  * Expression parsing takes place in the routine ParseExpr(). It takes a
@@ -708,7 +709,7 @@ ParseExpr(
 	 */
 
 	if ((NODE_TYPE & lexeme) == 0) {
-	    int b;
+	    bool b;
 
 	    switch (lexeme) {
 	    case COMMENT:

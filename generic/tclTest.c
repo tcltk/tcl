@@ -30,6 +30,7 @@
 #endif
 #include "tclOO.h"
 #include <math.h>
+#include <stdbool.h>
 
 /*
  * Required for Testregexp*Cmd
@@ -2262,7 +2263,7 @@ TesteventProc(
     Tcl_Obj *command = ev->command;
     int result = Tcl_EvalObjEx(interp, command,
 	    TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
-    char retval[3];
+    bool retval;
 
     if (result != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
@@ -2270,19 +2271,19 @@ TesteventProc(
 	Tcl_BackgroundException(interp, TCL_ERROR);
 	return 1;		/* Avoid looping on errors */
     }
-    if (Tcl_GetBoolFromObj(interp, Tcl_GetObjResult(interp),
-	    sizeof(retval[1]), &retval[1]) != TCL_OK) {
+    if (Tcl_GetBooleanFromObj(interp, Tcl_GetObjResult(interp),
+	    &retval) != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
 		"    (return value from \"testevent\" callback)");
 	Tcl_BackgroundException(interp, TCL_ERROR);
 	return 1;
     }
-    if (retval[1]) {
+    if (retval) {
 	Tcl_DecrRefCount(ev->tag);
 	Tcl_DecrRefCount(ev->command);
     }
 
-    return retval[1];
+    return retval;
 }
 
 /*
@@ -5277,7 +5278,7 @@ TestsaveresultCmd(
 {
     Interp* iPtr = (Interp*) interp;
     int result, index;
-    char b[3];
+    bool discard;
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
     static const char *const optionStrings[] = {
@@ -5299,17 +5300,11 @@ TestsaveresultCmd(
 	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-	b[0] = b[1] = b[2] = 100;
-	if (Tcl_GetBoolFromObj(interp, objv[3], sizeof(b[1]), b + 1) != TCL_OK)
-	{
-		return TCL_ERROR;
-	}
-	if (b[0] != 100 || b[2] != 100) {
-		Tcl_Panic("MEMORY OVERWRITE IN Tcl_GetBoolFromObj");
-		return TCL_ERROR;
-	}
+    if (Tcl_GetBooleanFromObj(interp, objv[3], &discard) != TCL_OK) {
+	return TCL_ERROR;
+    }
 
-	freeCount = 0;
+    freeCount = 0;
     objPtr = NULL;		/* Lint. */
     switch ((enum options) index) {
     case RESULT_SMALL:
@@ -5342,7 +5337,7 @@ TestsaveresultCmd(
 	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), -1, 0);
     }
 
-    if (b[1]) {
+    if (discard) {
 	Tcl_DiscardResult(&state);
     } else {
 	Tcl_RestoreResult(interp, &state);
