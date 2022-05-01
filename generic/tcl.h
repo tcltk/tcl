@@ -99,6 +99,7 @@ extern "C" {
  */
 
 #include <stdio.h>
+#include <stddef.h>
 
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   if defined(_WIN32) && defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO
@@ -824,15 +825,15 @@ typedef struct Tcl_DString {
 /*
  * Flags that may be passed to Tcl_GetIndexFromObj.
  * TCL_EXACT disallows abbreviated strings.
- * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
- *      a table that will not live long enough to make it worthwhile.
  * TCL_INDEX_NULL_OK allows the empty string or NULL to return TCL_OK.
  *      The returned value will be -1;
+ * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
+ *      a table that will not live long enough to make it worthwhile.
  */
 
 #define TCL_EXACT		1
-#define TCL_INDEX_TEMP_TABLE	2
 #define TCL_INDEX_NULL_OK	32
+#define TCL_INDEX_TEMP_TABLE	64
 
 /*
  *----------------------------------------------------------------------------
@@ -969,7 +970,7 @@ struct Tcl_HashEntry {
     Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this hash bucket,
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
-    size_t hash;		/* Hash value. */
+    TCL_HASH_TYPE hash;		/* Hash value. */
     void *clientData;		/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
