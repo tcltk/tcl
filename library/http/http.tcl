@@ -3575,8 +3575,12 @@ proc http::ContentEncoding {token} {
 		gzip - x-gzip { lappend r gunzip }
 		compress - x-compress { lappend r decompress }
 		identity {}
+		br {
+		    return -code error\
+			    "content-encoding \"br\" not implemented"
+		}
 		default {
-		    return -code error "unsupported content-encoding \"$coding\""
+		    Log "unknown content-encoding \"$coding\" ignored"
 		}
 	    }
 	}
