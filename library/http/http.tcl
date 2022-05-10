@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.9.6
+package provide http 2.9.7
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -255,10 +255,49 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     if {[info commands ${token}EventCoroutine] ne {}} {
 	rename ${token}EventCoroutine {}
     }
+
+    # Is this an upgrade request/response?
+    set upgradeResponse 0
+    if {    [info exists state(upgradeRequest)]
+         && [info exists state(http)]
+         && $state(upgradeRequest)
+         && ([ncode $token] eq {101})
+    } {
+        # An upgrade must be requested by the client.
+        # If 101 response, test server response headers for an upgrade.
+        set connectionHd {}
+        set upgradeHd {}
+        if {[dict exists $state(meta) connection]} {
+            set connectionHd [string tolower [dict get $state(meta) connection]]
+        }
+        if {[dict exists $state(meta) upgrade]} {
+            set upgradeHd [string tolower [dict get $state(meta) upgrade]]
+        }
+        if {($connectionHd eq {upgrade}) && ($upgradeHd ne {})} {
+            set upgradeResponse 1
+        }
+    }
+
     if {  ($state(status) eq "timeout")
        || ($state(status) eq "error")
        || ($state(status) eq "eof")
-       || ([info exists state(-keepalive)] && !$state(-keepalive))
+    } {
+	set closeQueue 1
+	set connId $state(socketinfo)
+	set sock $state(sock)
+	CloseSocket $state(sock) $token
+    } elseif {$upgradeResponse} {
+	# Special handling for an upgrade request/response.
+	# - geturl ensures that this is not a "persistent" socket used for
+	#   multiple HTTP requests, so a call to KeepSocket is not needed.
+	# - Leave socket open, so a call to CloseSocket is not needed either.
+	# - Remove fileevent bindings.  The caller will set its own bindings.
+	# - THE CALLER MUST PROCESS THE UPGRADED SOCKET IN THE CALLBACK COMMAND
+	#   PASSED TO http::geturl AS -command callback.
+	catch {fileevent $state(sock) readable {}}
+	catch {fileevent $state(sock) writable {}}
+    } elseif {
+          ([info exists state(-keepalive)] && !$state(-keepalive))
        || ([info exists state(connection)] && ($state(connection) eq "close"))
     } {
 	set closeQueue 1
@@ -946,6 +985,13 @@ proc http::geturl {url args} {
     # c11a51c482]
     set state(accept-types) $http(-accept)
 
+    set state(upgradeRequest) [expr {
+           [dict exists $state(-headers) Upgrade]
+        && [dict exists $state(-headers) Connection]
+        && ([dict get $state(-headers) Connection] eq {Upgrade})
+        && ([dict get $state(-headers) Upgrade] ne {})
+    }]
+
     if {$isQuery || $isQueryChannel} {
 	# It's a POST.
 	# A client wishing to send a non-idempotent request SHOULD wait to send
@@ -961,8 +1007,13 @@ proc http::geturl {url args} {
 	    # There is a small risk of a race against server timeout.
 	    set state(-pipeline) 0
 	}
+    } elseif {$state(upgradeRequest)} {
+	# It's an upgrade request.  Method must be GET (untested).
+	# Force -keepalive to 0 so the connection is not made over a persistent
+	# socket, i.e. one used for multiple HTTP requests.
+	set state(-keepalive) 0
     } else {
-	# It's a GET or HEAD.
+	# It's a non-upgrade GET or HEAD.
 	set state(-pipeline) $http(-pipeline)
     }
 
