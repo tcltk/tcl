@@ -931,8 +931,12 @@ proc http::geturl {url args} {
 	    }
 	    return -code error "Illegal characters in URL path"
 	}
+	if {![regexp {^[^?#]+} $srvurl state(path)]} {
+	    set state(path) /
+	}
     } else {
 	set srvurl /
+	set state(path) /
     }
     if {$proto eq ""} {
 	set proto http
@@ -1409,12 +1413,16 @@ proc http::Connected {token proto phost srvurl} {
 	puts $sock "$how $srvurl HTTP/$state(-protocol)"
 	if {[dict exists $state(-headers) Host]} {
 	    # Allow Host spoofing. [Bug 928154]
-	    puts $sock "Host: [dict get $state(-headers) Host]"
+	    set hostHdr [dict get $state(-headers) Host]
+	    regexp {^[^:]+} $hostHdr state(host)
+	    puts $sock "Host: $hostHdr"
 	} elseif {$port == $defport} {
 	    # Don't add port in this case, to handle broken servers. [Bug
 	    # #504508]
+	    set state(host) $host
 	    puts $sock "Host: $host"
 	} else {
+	    set state(host) $host
 	    puts $sock "Host: $host:$port"
 	}
 	puts $sock "User-Agent: $http(-useragent)"
@@ -3175,7 +3183,7 @@ proc http::BlockingGets {sock} {
     while 1 {
 	set count [gets $sock line]
 	set eof [eof $sock]
-	if {$count > -1 || $eof} {
+	if {$count >= 0 || $eof} {
 	    return $line
 	} else {
 	    yield
