@@ -2457,11 +2457,11 @@ declare 668 {
 
 declare 674 {
     int Tcl_GetBool(Tcl_Interp *interp, const char *src, int flags,
-	    char *boolPtr)
+	    char *charPtr)
 }
 declare 675 {
     int Tcl_GetBoolFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int flags, char *boolPtr)
+	    int flags, char *charPtr)
 }
 
 

@@ -30,7 +30,6 @@
 #endif
 #include "tclOO.h"
 #include <math.h>
-#include <stdbool.h>
 
 /*
  * Required for Testregexp*Cmd
@@ -2263,7 +2262,7 @@ TesteventProc(
     Tcl_Obj *command = ev->command;
     int result = Tcl_EvalObjEx(interp, command,
 	    TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
-    bool retval;
+    char retval;
 
     if (result != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
@@ -2271,8 +2270,8 @@ TesteventProc(
 	Tcl_BackgroundException(interp, TCL_ERROR);
 	return 1;		/* Avoid looping on errors */
     }
-    if (Tcl_GetBooleanFromObj(interp, Tcl_GetObjResult(interp),
-	    &retval) != TCL_OK) {
+    if (Tcl_GetBoolFromObj(interp, Tcl_GetObjResult(interp),
+	    0, &retval) != TCL_OK) {
 	Tcl_AddErrorInfo(interp,
 		"    (return value from \"testevent\" callback)");
 	Tcl_BackgroundException(interp, TCL_ERROR);
@@ -5278,7 +5277,7 @@ TestsaveresultCmd(
 {
     Interp* iPtr = (Interp*) interp;
     int result, index;
-    bool discard;
+    char discard;
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
     static const char *const optionStrings[] = {
@@ -5300,7 +5299,7 @@ TestsaveresultCmd(
 	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetBooleanFromObj(interp, objv[3], &discard) != TCL_OK) {
+    if (Tcl_GetBoolFromObj(interp, objv[3], 0, &discard) != TCL_OK) {
 	return TCL_ERROR;
     }
 

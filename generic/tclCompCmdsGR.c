@@ -17,7 +17,6 @@
 #include "tclInt.h"
 #include "tclCompile.h"
 #include <assert.h>
-#include <stdbool.h>
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -186,7 +185,7 @@ TclCompileIfCmd(
     const char *word;
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
-    bool boolVal;		/* Value of static condition. */
+    int boolVal;		/* Value of static condition. */
     int compileScripts = 1;
 
     /*

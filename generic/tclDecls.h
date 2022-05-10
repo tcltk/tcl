@@ -1972,10 +1972,10 @@ EXTERN int		Tcl_UniCharLen(const int *uniStr);
 /* Slot 673 is reserved */
 /* 674 */
 EXTERN int		Tcl_GetBool(Tcl_Interp *interp, const char *src,
-				int flags, char *boolPtr);
+				int flags, char *charPtr);
 /* 675 */
 EXTERN int		Tcl_GetBoolFromObj(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, int flags, char *boolPtr);
+				Tcl_Obj *objPtr, int flags, char *charPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2685,8 +2685,8 @@ typedef struct TclStubs {
     void (*reserved671)(void);
     void (*reserved672)(void);
     void (*reserved673)(void);
-    int (*tcl_GetBool) (Tcl_Interp *interp, const char *src, int flags, char *boolPtr); /* 674 */
-    int (*tcl_GetBoolFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, char *boolPtr); /* 675 */
+    int (*tcl_GetBool) (Tcl_Interp *interp, const char *src, int flags, char *charPtr); /* 674 */
+    int (*tcl_GetBoolFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, char *charPtr); /* 675 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4272,22 +4272,12 @@ extern const TclStubs *tclStubsPtr;
 	Tcl_GetUnicodeFromObj(objPtr, (int *)NULL)
 #undef Tcl_GetBytesFromObj
 #undef Tcl_GetIndexFromObjStruct
-#undef Tcl_GetBoolean
-#undef Tcl_GetBooleanFromObj
 #ifdef TCL_NO_DEPRECATED
 #undef Tcl_GetStringFromObj
 #undef Tcl_GetUnicodeFromObj
 #undef Tcl_GetByteArrayFromObj
 #endif
 #if defined(USE_TCL_STUBS)
-#define Tcl_GetBoolean(interp, objPtr, boolPtr) \
-	(sizeof(*(boolPtr)) == sizeof(int) ? tclStubsPtr->tcl_GetBoolean(interp, objPtr, (int *)(boolPtr)) : \
-	(sizeof(*(boolPtr)) == sizeof(char) ? tclStubsPtr->tcl_GetBool(interp, objPtr, 0, (char *)(boolPtr)) : \
-	(Tcl_Panic("Invalid boolean variable: sizeof() must be 1 or 4"), TCL_ERROR)))
-#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
-	(sizeof(*(boolPtr)) == sizeof(int) ? tclStubsPtr->tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : \
-	(sizeof(*(boolPtr)) == sizeof(char) ? tclStubsPtr->tcl_GetBoolFromObj(interp, objPtr, 0, (char *)(boolPtr)) : \
-	(Tcl_Panic("Invalid boolean variable: sizeof() must be 1 or 4"), TCL_ERROR)))
 #define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? tclStubsPtr->tclGetBytesFromObj(interp, objPtr, (int *)(sizePtr)) : tclStubsPtr->tcl_GetBytesFromObj(interp, objPtr, (size_t *)(sizePtr)))
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
@@ -4301,14 +4291,6 @@ extern const TclStubs *tclStubsPtr;
 	(sizeof(*(sizePtr)) <= sizeof(int) ? tclStubsPtr->tcl_GetUnicodeFromObj(objPtr, (int *)(sizePtr)) : tclStubsPtr->tclGetUnicodeFromObj(objPtr, (size_t *)(sizePtr)))
 #endif
 #else
-#define Tcl_GetBoolean(interp, objPtr, boolPtr) \
-	(sizeof(*(boolPtr)) == sizeof(int) ? (Tcl_GetBoolean)(interp, objPtr, (int *)(boolPtr)) : \
-	(sizeof(*(boolPtr)) == sizeof(char) ? (Tcl_GetBool)(interp, objPtr, 0, (char *)(boolPtr)) : \
-	(Tcl_Panic("Invalid boolean variable: sizeof() must be 1 or 4"), TCL_ERROR)))
-#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
-	(sizeof(*(boolPtr)) == sizeof(int) ? (Tcl_GetBooleanFromObj)(interp, objPtr, (int *)(boolPtr)) : \
-	(sizeof(*(boolPtr)) == sizeof(char) ? (Tcl_GetBoolFromObj)(interp, objPtr, 0, (char *)(boolPtr)) : \
-	(Tcl_Panic("Invalid boolean variable: sizeof() must be 1 or 4"), TCL_ERROR)))
 #define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? (TclGetBytesFromObj)(interp, objPtr, (int *)(sizePtr)) : (Tcl_GetBytesFromObj)(interp, objPtr, (size_t *)(sizePtr)))
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \

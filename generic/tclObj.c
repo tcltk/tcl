@@ -2161,7 +2161,7 @@ Tcl_GetBoolFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,	/* The object from which to get boolean. */
     int flags,
-    char *boolPtr)	/* Place to store resulting boolean. */
+    char *charPtr)	/* Place to store resulting boolean. */
 {
     int result;
 
@@ -2206,8 +2206,8 @@ Tcl_GetBoolFromObj(
 	if (objPtr->typePtr == &tclBignumType) {
 	    result = 1;
 	boolEnd:
-	    if (boolPtr != NULL) {
-		*boolPtr = result;
+	    if (charPtr != NULL) {
+		*charPtr = result;
 	    }
 	    return TCL_OK;
 	}
