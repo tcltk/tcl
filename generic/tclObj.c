@@ -2004,7 +2004,7 @@ Tcl_FreeInternalRep(
  *
  *	This function is normally called when not debugging: i.e., when
  *	TCL_MEM_DEBUG is not defined. It creates a new Tcl_Obj and
- *	initializes it from the argument boolean value. A nonzero "boolValue"
+ *	initializes it from the argument boolean value. A nonzero "intValue"
  *	is coerced to 1.
  *
  *	When TCL_MEM_DEBUG is defined, this function just returns the result
@@ -2025,20 +2025,20 @@ Tcl_FreeInternalRep(
 
 Tcl_Obj *
 Tcl_NewBooleanObj(
-    int boolValue)	/* Boolean used to initialize new object. */
+    int intValue)	/* Boolean used to initialize new object. */
 {
-    return Tcl_DbNewWideIntObj(boolValue!=0, "unknown", 0);
+    return Tcl_DbNewWideIntObj(intValue!=0, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
 
 Tcl_Obj *
 Tcl_NewBooleanObj(
-    int boolValue)	/* Boolean used to initialize new object. */
+    int intValue)	/* Boolean used to initialize new object. */
 {
     Tcl_Obj *objPtr;
 
-    TclNewIntObj(objPtr, boolValue!=0);
+    TclNewIntObj(objPtr, intValue!=0);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -2075,7 +2075,7 @@ Tcl_NewBooleanObj(
 
 Tcl_Obj *
 Tcl_DbNewBooleanObj(
-    int boolValue,	/* Boolean used to initialize new object. */
+    int intValue,	/* Boolean used to initialize new object. */
     const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
     int line)			/* Line number in the source file; used for
@@ -2087,7 +2087,7 @@ Tcl_DbNewBooleanObj(
     /* Optimized TclInvalidateStringRep() */
     objPtr->bytes = NULL;
 
-    objPtr->internalRep.wideValue = (boolValue != 0);
+    objPtr->internalRep.wideValue = (intValue != 0);
     objPtr->typePtr = &tclIntType;
     return objPtr;
 }
@@ -2096,11 +2096,11 @@ Tcl_DbNewBooleanObj(
 
 Tcl_Obj *
 Tcl_DbNewBooleanObj(
-    int boolValue,	/* Boolean used to initialize new object. */
+    int intValue,	/* Boolean used to initialize new object. */
     TCL_UNUSED(const char *) /*file*/,
     TCL_UNUSED(int) /*line*/)
 {
-    return Tcl_NewBooleanObj(boolValue);
+    return Tcl_NewBooleanObj(intValue);
 }
 #endif /* TCL_MEM_DEBUG */
 
@@ -2110,7 +2110,7 @@ Tcl_DbNewBooleanObj(
  * Tcl_SetBooleanObj --
  *
  *	Modify an object to be a boolean object and to have the specified
- *	boolean value. A nonzero "boolValue" is coerced to 1.
+ *	boolean value. A nonzero "intValue" is coerced to 1.
  *
  * Results:
  *	None.
@@ -2126,13 +2126,13 @@ Tcl_DbNewBooleanObj(
 void
 Tcl_SetBooleanObj(
     Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
-    int boolValue)	/* Boolean used to set object's value. */
+    int intValue)	/* Boolean used to set object's value. */
 {
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetBooleanObj");
     }
 
-    TclSetIntObj(objPtr, boolValue!=0);
+    TclSetIntObj(objPtr, intValue!=0);
 }
 #endif /* TCL_NO_DEPRECATED */
 
@@ -2224,10 +2224,10 @@ Tcl_GetBooleanFromObj(
     Tcl_Obj *objPtr,	/* The object from which to get boolean. */
     int *intPtr)	/* Place to store resulting boolean. */
 {
-    char boolValue;
-    int result = Tcl_GetBoolFromObj(interp, objPtr, 0, &boolValue);
+    char charValue;
+    int result = Tcl_GetBoolFromObj(interp, objPtr, 0, &charValue);
     if (intPtr) {
-	*intPtr = boolValue;
+	*intPtr = charValue;
     }
     return result;
 }

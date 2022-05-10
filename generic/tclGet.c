@@ -161,10 +161,10 @@ Tcl_GetBoolean(
     int *intPtr)		/* Place to store converted result, which will
 				 * be 0 or 1. */
 {
-    char boolValue;
-    int result = Tcl_GetBool(interp, src, 0, &boolValue);
+    char charValue;
+    int result = Tcl_GetBool(interp, src, 0, &charValue);
     if (intPtr) {
-	*intPtr = boolValue;
+	*intPtr = charValue;
     }
     return result;
 }
