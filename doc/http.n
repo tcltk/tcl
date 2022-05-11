@@ -306,8 +306,16 @@ multiple requests.  Default is 0.
 \fB\-method\fR \fItype\fR
 .
 Force the HTTP request method to \fItype\fR. \fB::http::geturl\fR will
-auto-select GET, POST or HEAD based on other options, but this option
-enables choices like PUT and DELETE for webdav support.
+auto-select GET, POST or HEAD based on other options, but this option overrides
+that selection and enables choices like PUT and DELETE for WebDAV support.
+.RS
+.PP
+It is the caller's responsibility to ensure that the headers and request body
+(if any) conform to the requirements of the request method.  For example, if
+using \fB\-method\fR \fIPOST\fR to send a POST with an empty request body, the
+caller must also supply the option
+.QW "-headers {Content-Length 0}" .
+.RE
 .TP
 \fB\-myaddr\fR \fIaddress\fR
 .
