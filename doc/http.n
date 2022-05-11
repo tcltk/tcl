@@ -135,6 +135,13 @@ the proxy server and proxy port.  Otherwise the filter should return
 an empty list.  The default filter returns the values of the
 \fB\-proxyhost\fR and \fB\-proxyport\fR settings if they are
 non-empty.
+.RS
+.PP
+The \fB::http::geturl\fR command runs the \fB-proxyfilter\fR callback inside
+a \fBcatch\fR command.  Therefore an error in the callback command does
+not call the \fBbgerror\fR handler.  See the \fBERRORS\fR section for
+details.
+.RE
 .TP
 \fB\-repost\fR \fIboolean\fR
 .
@@ -228,6 +235,11 @@ proc httpCallback {token} {
     # Access state as a Tcl array
 }
 .CE
+.PP
+The \fB::http::geturl\fR command runs the \fB-command\fR callback inside
+a \fBcatch\fR command.  Therefore an error in the callback command does
+not call the \fBbgerror\fR handler.  See the \fBERRORS\fR section for
+details.
 .RE
 .TP
 \fB\-handler\fR \fIcallback\fR
@@ -257,6 +269,11 @@ proc httpHandlerCallback {socket token} {
 The \fBhttp::geturl\fR code for the \fB-handler\fR option is not compatible with either compression or chunked transfer-encoding.  If \fB-handler\fR is specified, then to work around these issues \fBhttp::geturl\fR will reduce the HTTP protocol to 1.0, and override the \fB-zip\fR option (i.e. it will not send the header "\fBAccept-Encoding: gzip,deflate,compress\fR").
 .PP
 If options \fB-handler\fR and \fB-channel\fR are used together, the handler is responsible for copying the data from the HTTP socket to the specified channel.  The name of the channel is available to the handler as element \fB-channel\fR of the token array.
+.PP
+The \fB::http::geturl\fR command runs the \fB-handler\fR callback inside
+a \fBcatch\fR command.  Therefore an error in the callback command does
+not call the \fBbgerror\fR handler.  See the \fBERRORS\fR section for
+details.
 .RE
 .TP
 \fB\-headers\fR \fIkeyvaluelist\fR
@@ -522,6 +539,14 @@ Alternatively, if the main program flow reaches a point where it needs
 to know the result of the asynchronous HTTP request, it can call
 \fB::http::wait\fR and then check status and error, just as the
 callback does.
+.PP
+The \fB::http::geturl\fR command runs the \fB-command\fR, \fB-handler\fR,
+and \fB-proxyfilter\fR callbacks inside a \fBcatch\fR command.  Therefore
+an error in the callback command does not call the \fBbgerror\fR handler.
+When debugging one of these
+callbacks, it may be convenient to report errors by using a
+\fBcatch\fR command within the callback command itself, e.g. to write
+an error message to stdout.
 .PP
 In any case, you must still call
 \fB::http::cleanup\fR to delete the state array when you are done.
