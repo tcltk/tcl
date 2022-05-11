@@ -51,9 +51,12 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 \fB::http::unregister \fIproto\fR
 .SH "EXPORTED COMMANDS"
 .PP
-Namespace \fBhttp\fR exports the commands \fBconfig\fR, \fBformatQuery\fR, \fBgeturl\fR, \fBquoteString\fR, \fBregister\fR, \fBregisterError\fR, \fBreset\fR, \fBunregister\fR, and \fBwait\fR.
+Namespace \fBhttp\fR exports the commands \fBconfig\fR, \fBformatQuery\fR,
+\fBgeturl\fR, \fBquoteString\fR, \fBregister\fR, \fBregisterError\fR,
+\fBreset\fR, \fBunregister\fR, and \fBwait\fR.
 .PP
-It does not export the commands \fBcleanup\fR, \fBcode\fR, \fBdata\fR, \fBerror\fR, \fBmeta\fR, \fBncode\fR, \fBsize\fR, or \fBstatus\fR.
+It does not export the commands \fBcleanup\fR, \fBcode\fR, \fBdata\fR,
+\fBerror\fR, \fBmeta\fR, \fBncode\fR, \fBsize\fR, or \fBstatus\fR.
 .BE
 .SH DESCRIPTION
 .PP
@@ -85,7 +88,8 @@ applications, the caller can use \fB::http::wait\fR after calling
 \fB::http::geturl\fR to start the event loop.
 .PP
 \fBNote:\fR The event queue is even used without the \fB\-command\fR option.
-As a side effect, arbitrary commands may be processed while \fBhttp::geturl\fR is running.
+As a side effect, arbitrary commands may be processed while \fBhttp::geturl\fR
+is running.
 .SH COMMANDS
 .TP
 \fB::http::config\fR ?\fIoptions\fR?
@@ -117,8 +121,8 @@ is 1.
 .
 Specifies whether requests that use the \fBPOST\fR method will always use a
 fresh socket, overriding the \fB\-keepalive\fR option of
-command \fBhttp::geturl\fR.  See the \fBPERSISTENT SOCKETS\fR section for details.
-The default is 0.
+command \fBhttp::geturl\fR.  See the \fBPERSISTENT SOCKETS\fR section for
+details. The default is 0.
 .TP
 \fB\-proxyhost\fR \fIhostname\fR
 .
@@ -185,8 +189,8 @@ numbers of \fBhttp\fR and \fBTcl\fR.
 .
 If the value is boolean \fBtrue\fR, then by default requests will send a header
 .QW "\fBAccept-Encoding: gzip,deflate,compress\fR" .
-If the value is boolean \fBfalse\fR, then by default this header will not be sent.
-In either case the default can be overridden for an individual request by
+If the value is boolean \fBfalse\fR, then by default this header will not be
+sent.  In either case the default can be overridden for an individual request by
 supplying a custom \fBAccept-Encoding\fR header in the \fB\-headers\fR option
 of \fBhttp::geturl\fR. The default is 1.
 .RE
@@ -271,9 +275,16 @@ proc httpHandlerCallback {socket token} {
 }
 .CE
 .PP
-The \fBhttp::geturl\fR code for the \fB\-handler\fR option is not compatible with either compression or chunked transfer-encoding.  If \fB\-handler\fR is specified, then to work around these issues \fBhttp::geturl\fR will reduce the HTTP protocol to 1.0, and override the \fB\-zip\fR option (i.e. it will not send the header "\fBAccept-Encoding: gzip,deflate,compress\fR").
+The \fBhttp::geturl\fR code for the \fB\-handler\fR option is not compatible
+with either compression or chunked transfer-encoding.  If \fB\-handler\fR is
+specified, then to work around these issues \fBhttp::geturl\fR will reduce the
+HTTP protocol to 1.0, and override the \fB\-zip\fR option (i.e. it will not
+send the header "\fBAccept-Encoding: gzip,deflate,compress\fR").
 .PP
-If options \fB\-handler\fR and \fB\-channel\fR are used together, the handler is responsible for copying the data from the HTTP socket to the specified channel.  The name of the channel is available to the handler as element \fB\-channel\fR of the token array.
+If options \fB\-handler\fR and \fB\-channel\fR are used together, the handler
+is responsible for copying the data from the HTTP socket to the specified
+channel.  The name of the channel is available to the handler as element
+\fB\-channel\fR of the token array.
 .PP
 The \fB::http::geturl\fR command runs the \fB\-handler\fR callback inside
 a \fBcatch\fR command.  Therefore an error in the callback command does
@@ -639,7 +650,8 @@ if the HTTP response is text.
 \fBbody\fR
 .
 The contents of the URL.  This will be empty if the \fB\-channel\fR
-option has been specified.  This value is returned by the \fB::http::data\fR command.
+option has been specified.  This value is returned by the \fB::http::data\fR
+command.
 .TP
 \fBcharset\fR
 .
@@ -775,8 +787,8 @@ In accordance with RFC 7230, \fBhttp::geturl\fR does not pipeline
 requests that use the POST method.  If a POST uses a persistent
 connection and is not the first request on that connection,
 \fBhttp::geturl\fR waits until it has received the response for the previous
-request; or (if \fBhttp::config\fR option \fB\-postfresh\fR is boolean \fBtrue\fR) it
-uses a new connection for each POST.
+request; or (if \fBhttp::config\fR option \fB\-postfresh\fR is boolean
+\fBtrue\fR) it uses a new connection for each POST.
 .PP
 If the server is processing a number of pipelined requests, and sends a
 response header
@@ -813,16 +825,17 @@ request header asking to keep the connection open for future requests.
 The \fBhttp::config\fR options \fB\-pipeline\fR, \fB\-postfresh\fR, and
 \fB\-repost\fR relate to persistent connections.
 .PP
-Option \fB\-pipeline\fR, if boolean \fBtrue\fR, will pipeline GET and HEAD requests
-made
-over a persistent connection.  POST requests will not be pipelined - if the
+Option \fB\-pipeline\fR, if boolean \fBtrue\fR, will pipeline GET and HEAD
+requests made over a persistent connection.  POST requests will not be
+pipelined - if the
 POST is not the first transaction on the connection, its request will not
 be sent until the previous response has finished.  GET and HEAD requests
 made after a POST will not be sent until the POST response has been
 delivered, and will not be sent if the POST fails.
 .PP
-Option \fB\-postfresh\fR, if boolean \fBtrue\fR, will override the \fBhttp::geturl\fR option
-\fB\-keepalive\fR, and always open a fresh connection for a POST request.
+Option \fB\-postfresh\fR, if boolean \fBtrue\fR, will override the
+\fBhttp::geturl\fR option \fB\-keepalive\fR, and always open a fresh connection
+for a POST request.
 .PP
 Option \fB\-repost\fR, if \fBtrue\fR, permits automatic retry of a POST request
 that fails because it uses a persistent connection that the server has
@@ -831,8 +844,8 @@ half-closed (an
 Subsequent GET and HEAD requests in a failed pipeline will also be retried.
 \fIThe \-repost option should be used only if the application understands
 that the retry is appropriate\fR - specifically, the application must know
-that if the failed POST successfully modified the state of the server, a repeat POST
-would have no adverse effect.
+that if the failed POST successfully modified the state of the server, a repeat
+POST would have no adverse effect.
 .SH "PROTOCOL UPGRADES"
 .PP
 The HTTP/1.1 \fBConnection\fR and \fBUpgrade\fR client headers inform the server
