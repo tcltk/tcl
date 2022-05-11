@@ -49,6 +49,11 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 \fB::http::registerError \fIport\fR ?\fImessage\fR?
 .sp
 \fB::http::unregister \fIproto\fR
+.SH "EXPORTED COMMANDS"
+.PP
+Namespace \fBhttp\fR exports the commands \fBconfig\fR, \fBformatQuery\fR, \fBgeturl\fR, \fBquoteString\fR, \fBregister\fR, \fBregisterError\fR, \fBreset\fR, \fBunregister\fR, and \fBwait\fR.
+.PP
+It does not export the commands \fBcleanup\fR, \fBcode\fR, \fBdata\fR, \fBerror\fR, \fBmeta\fR, \fBncode\fR, \fBsize\fR, or \fBstatus\fR.
 .BE
 .SH DESCRIPTION
 .PP
