@@ -318,7 +318,8 @@ otherwise complain about HTTP/1.1.
 .TP
 \fB\-query\fR \fIquery\fR
 .
-This flag causes \fB::http::geturl\fR to do a POST request that passes the
+This flag (if the value is non-empty) causes \fB::http::geturl\fR to do a
+POST request that passes the
 \fIquery\fR as payload verbatim to the server.
 The content format (and encoding) of \fIquery\fR is announced by the header
 field \fBcontent-type\fR set by the option \fB-type\fR.
