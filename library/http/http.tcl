@@ -3491,6 +3491,9 @@ proc http::CharsetToEncoding {charset} {
 	    1 - 2 - 3 {
 		set encoding "iso8859-$num"
 	    }
+	    default {
+		set encoding "binary"
+	    }
 	}
     } else {
 	# other charset, like euc-xx, utf-8,...  may directly map to encoding
