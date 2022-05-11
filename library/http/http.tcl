@@ -3479,7 +3479,7 @@ proc http::CharsetToEncoding {charset} {
 	set encoding "iso8859-$num"
     } elseif {[regexp {iso-?2022-(jp|kr)} $charset -> ext]} {
 	set encoding "iso2022-$ext"
-    } elseif {[regexp {shift[-_]?js} $charset]} {
+    } elseif {[regexp {shift[-_]?jis} $charset]} {
 	set encoding "shiftjis"
     } elseif {[regexp {(?:windows|cp)-?([0-9]+)} $charset -> num]} {
 	set encoding "cp$num"
@@ -3490,6 +3490,9 @@ proc http::CharsetToEncoding {charset} {
 	    5 {set encoding "iso8859-9"}
 	    1 - 2 - 3 {
 		set encoding "iso8859-$num"
+	    }
+	    default {
+		set encoding "binary"
 	    }
 	}
     } else {
