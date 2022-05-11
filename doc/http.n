@@ -341,12 +341,20 @@ otherwise complain about HTTP/1.1.
 \fB\-query\fR \fIquery\fR
 .
 This flag (if the value is non-empty) causes \fB::http::geturl\fR to do a
-POST request that passes the
-\fIquery\fR as payload verbatim to the server.
-The content format (and encoding) of \fIquery\fR is announced by the header
-field \fBcontent-type\fR set by the option \fB-type\fR.
-\fIquery\fR is an x-url-encoding formatted query, if used for html forms.
-The \fB::http::formatQuery\fR procedure can be used to do the formatting.
+POST request that passes the string
+\fIquery\fR verbatim to the server as the request payload.
+The content format (and encoding) of \fIquery\fR is announced by the request
+header \fBContent-Type\fR which is set by the option \fB-type\fR.  Any value
+of \fB-type\fR is permitted, and it is the responsibility of the caller to
+supply \fIquery\fR in the correct format.
+.RS
+.PP
+If \fB-type\fR is not specified, it defaults to
+\fIapplication/x-www-form-urlencoded\fR, which requires \fIquery\fR to be an
+x-url-encoding formatted query-string (this \fB-type\fR and query format are
+used in a POST submitted from an html form).  The \fB::http::formatQuery\fR
+procedure can be used to do the formatting.
+.RE
 .TP
 \fB\-queryblocksize\fR \fIsize\fR
 .
