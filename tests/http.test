@@ -113,6 +113,27 @@ test http-1.6 {http::config} -setup {
 test http-2.1 {http::reset} {
     catch {http::reset http#1}
 } 0
+test http-2.2 {http::CharsetToEncoding} {
+    http::CharsetToEncoding iso-8859-11
+} iso8859-11
+test http-2.3 {http::CharsetToEncoding} {
+    http::CharsetToEncoding iso-2022-kr
+} iso2022-kr
+test http-2.4 {http::CharsetToEncoding} {
+    http::CharsetToEncoding shift-jis
+} shiftjis
+test http-2.5 {http::CharsetToEncoding} {
+    http::CharsetToEncoding windows-437
+} cp437
+test http-2.6 {http::CharsetToEncoding} {
+    http::CharsetToEncoding latin5
+} iso8859-9
+test http-2.7 {http::CharsetToEncoding} {
+    http::CharsetToEncoding latin1
+} iso8859-1
+test http-2.8 {http::CharsetToEncoding} {
+    http::CharsetToEncoding latin4
+} binary
 
 test http-3.1 {http::geturl} -returnCodes error -body {
     http::geturl -bogus flag
