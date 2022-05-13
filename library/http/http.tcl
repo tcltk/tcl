@@ -3539,18 +3539,8 @@ proc http::mapReply {string} {
     # a pre-computed map and [string map] to do the conversion (much faster
     # than [regsub]/[subst]). [Bug 1020491]
 
-    if {$http(-urlencoding) ne ""} {
-	set string [encoding convertto $http(-urlencoding) $string]
-	return [string map $formMap $string]
-    }
-    set converted [string map $formMap $string]
-    if {[string match "*\[\u0100-\uffff\]*" $converted]} {
-	regexp "\[\u0100-\uffff\]" $converted badChar
-	# Return this error message for maximum compatibility... :^/
-	return -code error \
-	    "can't read \"formMap($badChar)\": no such element in array"
-    }
-    return $converted
+    set string [encoding convertto $http(-urlencoding) $string]
+    return [string map $formMap $string]
 }
 interp alias {} http::quoteString {} http::mapReply
 
