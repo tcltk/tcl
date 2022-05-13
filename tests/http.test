@@ -676,15 +676,18 @@ test http-7.2 {http::mapReply} {
 test http-7.3 {http::formatQuery} -setup {
     set enc [http::config -urlencoding]
 } -returnCodes error -body {
-    # this would be reverting to http <=2.4 behavior
+    # -urlencoding "" no longer supported. Use "iso8859-1".
     http::config -urlencoding ""
     http::mapReply "∈"
 } -cleanup {
     http::config -urlencoding $enc
-} -result "can't read \"formMap(∈)\": no such element in array"
+} -result {unknown encoding ""}
 test http-7.4 {http::formatQuery} -setup {
     set enc [http::config -urlencoding]
 } -body {
+    # this would be reverting to http <=2.4 behavior w/o errors
+    # with Tcl 8.x (unknown chars become '?'), generating a 
+    # proper exception with Tcl 9.0
     http::config -urlencoding "iso8859-1"
     http::mapReply "∈"
 } -cleanup {

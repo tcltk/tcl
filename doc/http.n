@@ -161,12 +161,7 @@ default is 0.
 .
 The \fIencoding\fR used for creating the x-url-encoded URLs with
 \fB::http::formatQuery\fR and \fB::http::quoteString\fR.
-The default is \fButf-8\fR, as specified by RFC
-2718.  Prior to http 2.5 this was unspecified, and that behavior can be
-returned by specifying the empty string (\fB{}\fR), although
-\fIiso8859-1\fR is recommended to restore similar behavior but without the
-\fB::http::formatQuery\fR or \fB::http::quoteString\fR
-throwing an error processing non-latin-1 characters.
+The default is \fButf-8\fR, as specified by RFC 2718.
 .TP
 \fB\-useragent\fR \fIstring\fR
 .
