@@ -851,7 +851,7 @@ POST would have no adverse effect.
 The HTTP/1.1 \fBConnection\fR and \fBUpgrade\fR client headers inform the server
 that the client wishes to change the protocol used over the existing connection
 (RFC 7230).  This mechanism can be used to request a WebSocket (RFC 6455), a
-higher version of the HTTP protocol (HTTP 2 or 3), or TLS encryption.  If the
+higher version of the HTTP protocol (HTTP 2), or TLS encryption.  If the
 server accepts the upgrade request, its response code will be 101.
 .PP
 To request a protocol upgrade when calling \fBhttp::geturl\fR, the \fB\-headers\fR
@@ -865,7 +865,7 @@ request is not made over a connection that is intended for multiple HTTP request
 The Tcllib library \fBwebsocket\fR implements WebSockets, and makes the necessary
 calls to commands in the \fBhttp\fR package.
 .PP
-There is currently no native Tcl client library for HTTP/2 or HTTP/3.
+There is currently no native Tcl client library for HTTP/2.
 .PP
 The \fBUpgrade\fR mechanism is not used to request TLS in web browsers, because
 \fBhttp\fR and \fBhttps\fR are served over different ports.  It is used by
