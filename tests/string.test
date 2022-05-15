@@ -422,7 +422,7 @@ test string-4.16.$noComp {string first, normal string vs pure unicode string} -b
     # Representation checks are canaries
     run {list [representationpoke $s] [representationpoke $m] \
 	[string first $m $s]}
-} -result {{string 1} {string 0} 2}
+} -match glob -result {{*string 1} {*string 0} 2}
 test string-4.17.$noComp {string first, corner case} -body {
     run {string first a aaa 4294967295}
 } -result {-1}

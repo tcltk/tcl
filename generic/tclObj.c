@@ -387,7 +387,9 @@ TclInitObjSubsystem(void)
 
     Tcl_RegisterObjType(&tclByteArrayType);
     Tcl_RegisterObjType(&tclDoubleType);
+#if (TCL_UTF_MAX < 4) || !defined(TCL_NO_DEPRECATED)
     Tcl_RegisterObjType(&tclStringType);
+#endif
     Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclDictType);
     Tcl_RegisterObjType(&tclByteCodeType);

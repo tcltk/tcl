@@ -48,6 +48,8 @@
 #undef Tcl_UniCharCaseMatch
 #undef Tcl_UniCharLen
 #undef Tcl_UniCharNcmp
+#undef Tcl_GetRange
+#undef Tcl_GetUniChar
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
@@ -76,24 +78,31 @@
 #undef Tcl_MacOSXOpenBundleResources
 #undef TclWinConvertWSAError
 #undef TclWinConvertError
+#undef Tcl_GetCharLength
+#undef Tcl_UtfAtIndex
+
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define TclWinConvertWSAError (void (*)(DWORD))(void *)Tcl_WinConvertError
 #define TclWinConvertError (void (*)(DWORD))(void *)Tcl_WinConvertError
 #endif
 
 
-#if TCL_UTF_MAX > 3
+#if TCL_UTF_MAX > 3 && defined(TCL_NO_DEPRECATED)
 static void uniCodePanic(void) {
-    Tcl_Panic("This extension uses a deprecated function, not available now: Tcl is compiled with -DTCL_UTF_MAX==%d", TCL_UTF_MAX);
+    Tcl_Panic("Tcl is compiled without the the UTF16 compatibility layer (-DTCL_NO_DEPRECATED)");
 }
-#   define Tcl_GetUnicode (Tcl_UniChar *(*)(Tcl_Obj *))(void *)uniCodePanic
-#   define Tcl_GetUnicodeFromObj (Tcl_UniChar *(*)(Tcl_Obj *, int *))(void *)uniCodePanic
-#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const int *, int))(void *)uniCodePanic
-#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, int))(void *)uniCodePanic
-#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const Tcl_UniChar *, int))(void *)uniCodePanic
-#   define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long))(void *)uniCodePanic
-#   define Tcl_UniCharCaseMatch (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, int))(void *)uniCodePanic
-#   define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long))(void *)uniCodePanic
+#   define Tcl_GetUnicode (unsigned short *(*)(Tcl_Obj *))(void *)uniCodePanic
+#   define Tcl_GetUnicodeFromObj (unsigned short *(*)(Tcl_Obj *, int *))(void *)uniCodePanic
+#   define Tcl_NewUnicodeObj (Tcl_Obj *(*)(const unsigned short *, int))(void *)uniCodePanic
+#   define Tcl_SetUnicodeObj (void(*)(Tcl_Obj *, const unsigned short *, int))(void *)uniCodePanic
+#   define Tcl_AppendUnicodeToObj (void(*)(Tcl_Obj *, const unsigned short *, int))(void *)uniCodePanic
+#   define Tcl_UtfAtIndex (const char *(*)(const char *, int))(void *)uniCodePanic
+#   define Tcl_GetCharLength (int(*)(Tcl_Obj *))(void *)uniCodePanic
+#   define Tcl_UniCharNcmp (int(*)(const unsigned short *, const unsigned short *, unsigned long))(void *)uniCodePanic
+#   define Tcl_UniCharNcasecmp (int(*)(const unsigned short *, const unsigned short *, unsigned long))(void *)uniCodePanic
+#   define Tcl_UniCharCaseMatch (int(*)(const unsigned short *, const unsigned short *, int))(void *)uniCodePanic
+#   define Tcl_GetRange (Tcl_Obj *(*)(Tcl_Obj *, int, int))(void *)uniCodePanic
+#   define Tcl_GetUniChar (int(*)(Tcl_Obj *, int))(void *)uniCodePanic
 #endif
 
 #define TclUtfCharComplete UtfCharComplete
@@ -683,8 +692,8 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define Tcl_SetExitProc 0
 #   define Tcl_SetPanicProc 0
 #   define Tcl_FindExecutable 0
-#   define Tcl_GetUnicode 0
 #if TCL_UTF_MAX < 4
+#   define Tcl_GetUnicode 0
 #   define Tcl_AppendUnicodeToObj 0
 #   define Tcl_UniCharCaseMatch 0
 #   define Tcl_UniCharNcasecmp 0
@@ -1950,6 +1959,11 @@ const TclStubs tclStubs = {
     0, /* 666 */
     0, /* 667 */
     Tcl_UniCharLen, /* 668 */
+    TclNumUtfChars, /* 669 */
+    TclGetCharLength, /* 670 */
+    TclUtfAtIndex, /* 671 */
+    TclGetRange, /* 672 */
+    TclGetUniChar, /* 673 */
 };
 
 /* !END!: Do not edit above this line. */

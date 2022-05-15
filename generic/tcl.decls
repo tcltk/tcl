@@ -1248,7 +1248,7 @@ declare 352 {
     int Tcl_Char16Len(const unsigned short *uniStr)
 }
 declare 353 {deprecated {Use Tcl_UtfNcmp}} {
-    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
+    int Tcl_UniCharNcmp(const unsigned short *ucs, const unsigned short *uct,
 	    unsigned long numChars)
 }
 declare 354 {
@@ -1338,10 +1338,10 @@ declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
 declare 378 {
-    Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, int numChars)
+    Tcl_Obj *Tcl_NewUnicodeObj(const unsigned short *unicode, int numChars)
 }
 declare 379 {
-    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
+    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const unsigned short *unicode,
 	    int numChars)
 }
 declare 380 {
@@ -1351,13 +1351,13 @@ declare 381 {
     int Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
 }
 declare 382 {deprecated {No longer in use, changed to macro}} {
-    Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
+    unsigned short *Tcl_GetUnicode(Tcl_Obj *objPtr)
 }
 declare 383 {
     Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
 }
-declare 384 {deprecated {Use Tcl_AppendStringsToObj}} {
-    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
+declare 384 {
+    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const unsigned short *unicode,
 	    int length)
 }
 declare 385 {
@@ -1483,12 +1483,12 @@ declare 418 {
     int Tcl_IsChannelExisting(const char *channelName)
 }
 declare 419 {deprecated {Use Tcl_UtfNcasecmp}} {
-    int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
+    int Tcl_UniCharNcasecmp(const unsigned short *ucs, const unsigned short *uct,
 	    unsigned long numChars)
 }
 declare 420 {deprecated {Use Tcl_StringCaseMatch}} {
-    int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
-	    const Tcl_UniChar *uniPattern, int nocase)
+    int Tcl_UniCharCaseMatch(const unsigned short *uniStr,
+	    const unsigned short *uniPattern, int nocase)
 }
 declare 421 {
     Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
@@ -1541,7 +1541,7 @@ declare 433 {
 
 # introduced in 8.4a3
 declare 434 {
-    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned short *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 
 # TIP#15 (math function introspection) dkf
@@ -2417,7 +2417,7 @@ declare 651 {
     char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 declare 652 {
-    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+    unsigned short *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 declare 653 {
     unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)
@@ -2453,6 +2453,21 @@ declare 660 {
 # TIP #617
 declare 668 {
     int Tcl_UniCharLen(const int *uniStr)
+}
+declare 669 {
+    int TclNumUtfChars(const char *src, int length)
+}
+declare 670 {
+    int TclGetCharLength(Tcl_Obj *objPtr)
+}
+declare 671 {
+    const char *TclUtfAtIndex(const char *src, int index)
+}
+declare 672 {
+    Tcl_Obj *TclGetRange(Tcl_Obj *objPtr, int first, int last)
+}
+declare 673 {
+    int TclGetUniChar(Tcl_Obj *objPtr, int index)
 }
 
 
