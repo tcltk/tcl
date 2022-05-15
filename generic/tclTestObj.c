@@ -1377,7 +1377,7 @@ TeststringobjCmd(
 		return TCL_ERROR;
 	    }
 
-	    TclAppendUnicodeToObj(varPtr[varIndex], unicode + length, size - length);
+	    Tcl_AppendUnicodeToObj(varPtr[varIndex], unicode + length, size - length);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
     }
