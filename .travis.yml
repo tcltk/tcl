@@ -197,15 +197,6 @@ jobs:
       script:
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x64 '&&' nmake '-f' makefile.vc test
-    - name: "Windows/MSVC/Shared: UTF_MAX=4"
-      os: windows
-      compiler: cl
-      env: *vcenv
-      before_install: *vcpreinst
-      install: []
-      script:
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=utfmax' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x64 '&&' nmake 'OPTS=utfmax' '-f' makefile.vc test
     - name: "Windows/MSVC/Static"
       os: windows
       compiler: cl
@@ -252,15 +243,6 @@ jobs:
       script:
         - cmd.exe //C vcvarsall.bat x86 '&&' nmake '-f' makefile.vc all tcltest
         - cmd.exe //C vcvarsall.bat x86 '&&' nmake '-f' makefile.vc test
-    - name: "Windows/MSVC-x86/Shared: UTF_MAX=4"
-      os: windows
-      compiler: cl
-      env: *vcenv
-      before_install: *vcpreinst
-      install: []
-      script:
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=utfmax' '-f' makefile.vc all tcltest
-        - cmd.exe //C vcvarsall.bat x86 '&&' nmake 'OPTS=utfmax' '-f' makefile.vc test
     - name: "Windows/MSVC-x86/Static"
       os: windows
       compiler: cl
