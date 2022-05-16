@@ -1338,7 +1338,7 @@ Tcl_AppendToObj(
  */
 
 void
-TclAppendUnicodeToObj(
+Tcl_AppendUnicodeToObj(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const Tcl_UniChar *unicode,	/* The unicode string to append to the
 				 * object. */
@@ -3005,7 +3005,7 @@ TclStringRepeat(
 	    Tcl_AppendObjToObj(objResultPtr, objResultPtr);
 	    done *= 2;
 	}
-	TclAppendUnicodeToObj(objResultPtr, Tcl_GetUnicode(objResultPtr),
+	Tcl_AppendUnicodeToObj(objResultPtr, Tcl_GetUnicode(objResultPtr),
 		(count - done) * length);
     } else {
 	/*
@@ -4109,7 +4109,7 @@ TclStringReplace(
 	    Tcl_AppendObjToObj(result, insertPtr);
 	}
 	if (first + count < (size_t)numChars) {
-	    TclAppendUnicodeToObj(result, ustring + first + count,
+	    Tcl_AppendUnicodeToObj(result, ustring + first + count,
 		    numChars - first - count);
 	}
 

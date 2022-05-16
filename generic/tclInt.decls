@@ -478,11 +478,6 @@ declare 234 {
 declare 235 {
     void TclInitVarHashTable(TclVarHashTable *tablePtr, Namespace *nsPtr)
 }
-# TIP 542
-declare 236 {
-    void TclAppendUnicodeToObj(Tcl_Obj *objPtr,
-	    const Tcl_UniChar *unicode, size_t length)
-}
 
 # TIP #285: Script cancellation support.
 declare 237 {

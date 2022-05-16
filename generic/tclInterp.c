@@ -789,7 +789,7 @@ NRInterpCmd(
 	};
 	enum option {
 	    OPT_SAFE,	OPT_LAST
-	};
+	} idx;
 
 	safe = Tcl_IsSafe(interp);
 
@@ -802,10 +802,10 @@ NRInterpCmd(
 	for (i = 2; i < objc; i++) {
 	    if ((last == 0) && (TclGetString(objv[i])[0] == '-')) {
 		if (Tcl_GetIndexFromObj(interp, objv[i], createOptions,
-			"option", 0, &index) != TCL_OK) {
+			"option", 0, &idx) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		if (index == OPT_SAFE) {
+		if (idx == OPT_SAFE) {
 		    safe = 1;
 		    continue;
 		}

@@ -1408,11 +1408,10 @@ declare 381 {
 declare 383 {
     Tcl_Obj *TclGetRange(Tcl_Obj *objPtr, size_t first, size_t last)
 }
-# Removed in 9.0
-#declare 384 {
-#    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
-#	    int length)
-#}
+declare 384 {
+    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
+	    size_t length)
+}
 declare 385 {
     int Tcl_RegExpMatchObj(Tcl_Interp *interp, Tcl_Obj *textObj,
 	    Tcl_Obj *patternObj)
