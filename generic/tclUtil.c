@@ -851,6 +851,7 @@ TclCopyAndCollapse(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SplitList
 int
 Tcl_SplitList(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
@@ -2591,11 +2592,11 @@ TclStringMatchObj(
     trivial = nocase ? 0 : TclMatchIsTrivial(TclGetString(ptnObj));
      */
 
-    if (TclHasInternalRep(strObj, &tclStringType) || (strObj->typePtr == NULL)) {
+    if (TclHasInternalRep(strObj, &tclUniCharStringType) || (strObj->typePtr == NULL)) {
 	Tcl_UniChar *udata, *uptn;
 
-	udata = Tcl_GetUnicodeFromObj(strObj, &length);
-	uptn  = Tcl_GetUnicodeFromObj(ptnObj, &plen);
+	udata = TclGetUnicodeFromObj_(strObj, &length);
+	uptn  = TclGetUnicodeFromObj_(ptnObj, &plen);
 	match = TclUniCharMatch(udata, length, uptn, plen, flags);
     } else if (TclIsPureByteArray(strObj) && TclIsPureByteArray(ptnObj)
 		&& !flags) {

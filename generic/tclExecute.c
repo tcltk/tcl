@@ -5244,7 +5244,7 @@ TEBCresume(
 
     case INST_STR_LEN:
 	valuePtr = OBJ_AT_TOS;
-	length = Tcl_GetCharLength(valuePtr);
+	length = TclGetCharLength(valuePtr);
 	TclNewIntObj(objResultPtr, length);
 	TRACE(("\"%.20s\" => %d\n", O2S(valuePtr), length));
 	NEXT_INST_F(1, 1, 1);
@@ -5310,7 +5310,7 @@ TEBCresume(
 	 * Get char length to calulate what 'end' means.
 	 */
 
-	length = Tcl_GetCharLength(valuePtr);
+	length = TclGetCharLength(valuePtr);
 	DECACHE_STACK_INFO();
 	if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 	    CACHE_STACK_INFO();
@@ -5329,7 +5329,7 @@ TEBCresume(
 		    valuePtr->bytes+index, 1);
 	} else {
 	    char buf[4] = "";
-	    int ch = Tcl_GetUniChar(valuePtr, index);
+	    int ch = TclGetUniChar(valuePtr, index);
 
 	    /*
 	     * This could be: Tcl_NewUnicodeObj((const Tcl_UniChar *)&ch, 1)
@@ -5353,7 +5353,7 @@ TEBCresume(
     case INST_STR_RANGE:
 	TRACE(("\"%.20s\" %.20s %.20s =>",
 		O2S(OBJ_AT_DEPTH(2)), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
-	length = Tcl_GetCharLength(OBJ_AT_DEPTH(2)) - 1;
+	length = TclGetCharLength(OBJ_AT_DEPTH(2)) - 1;
 
 	DECACHE_STACK_INFO();
 	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
@@ -5373,7 +5373,7 @@ TEBCresume(
 	if (toIdx < 0) {
 	    TclNewObj(objResultPtr);
 	} else {
-	    objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
+	    objResultPtr = TclGetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
 	}
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_V(1, 3, 1);
@@ -5382,7 +5382,7 @@ TEBCresume(
 	valuePtr = OBJ_AT_TOS;
 	fromIdx = TclGetInt4AtPtr(pc+1);
 	toIdx = TclGetInt4AtPtr(pc+5);
-	length = Tcl_GetCharLength(valuePtr);
+	length = TclGetCharLength(valuePtr);
 	TRACE(("\"%.20s\" %d %d => ", O2S(valuePtr), fromIdx, toIdx));
 
 	/* Every range of an empty value is an empty value */
@@ -5414,7 +5414,7 @@ TEBCresume(
 	    if (toIdx < 0) {
 		TclNewObj(objResultPtr);
 	    } else {
-		objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+		objResultPtr = TclGetRange(valuePtr, fromIdx, toIdx);
 	    }
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
@@ -5428,7 +5428,7 @@ TEBCresume(
     case INST_STR_REPLACE:
 	value3Ptr = POP_OBJECT();
 	valuePtr = OBJ_AT_DEPTH(2);
-	endIdx = Tcl_GetCharLength(valuePtr) - 1;
+	endIdx = TclGetCharLength(valuePtr) - 1;
 	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
 	DECACHE_STACK_INFO();
@@ -5495,12 +5495,12 @@ TEBCresume(
 	    objResultPtr = value3Ptr;
 	    goto doneStringMap;
 	}
-	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
+	ustring1 = TclGetUnicodeFromObj_(valuePtr, &length);
 	if (length == 0) {
 	    objResultPtr = valuePtr;
 	    goto doneStringMap;
 	}
-	ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
+	ustring2 = TclGetUnicodeFromObj_(value2Ptr, &length2);
 	if (length2 > length || length2 == 0) {
 	    objResultPtr = valuePtr;
 	    goto doneStringMap;
@@ -5512,9 +5512,9 @@ TEBCresume(
 	    }
 	    goto doneStringMap;
 	}
-	ustring3 = Tcl_GetUnicodeFromObj(value3Ptr, &length3);
+	ustring3 = TclGetUnicodeFromObj_(value3Ptr, &length3);
 
-	objResultPtr = Tcl_NewUnicodeObj(ustring1, 0);
+	objResultPtr = TclNewUnicodeObj(ustring1, 0);
 	p = ustring1;
 	end = ustring1 + length;
 	for (; ustring1 < end; ustring1++) {
@@ -5524,14 +5524,14 @@ TEBCresume(
 		    memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length2)
 			    == 0)) {
 		if (p != ustring1) {
-		    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1-p);
+		    TclAppendUnicodeToObj(objResultPtr, p, ustring1-p);
 		    p = ustring1 + length2;
 		} else {
 		    p += length2;
 		}
 		ustring1 = p - 1;
 
-		Tcl_AppendUnicodeToObj(objResultPtr, ustring3, length3);
+		TclAppendUnicodeToObj(objResultPtr, ustring3, length3);
 	    }
 	}
 	if (p != ustring1) {
@@ -5539,7 +5539,7 @@ TEBCresume(
 	     * Put the rest of the unmapped chars onto result.
 	     */
 
-	    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1 - p);
+	    TclAppendUnicodeToObj(objResultPtr, p, ustring1 - p);
 	}
     doneStringMap:
 	TRACE_WITH_OBJ(("%.20s %.20s %.20s => ",
@@ -5565,7 +5565,7 @@ TEBCresume(
 	valuePtr = OBJ_AT_TOS;
 	TRACE(("%s \"%.30s\" => ", tclStringClassTable[opnd].name,
 		O2S(valuePtr)));
-	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
+	ustring1 = TclGetUnicodeFromObj_(valuePtr, &length);
 	match = 1;
 	if (length > 0) {
 	    int ch;
@@ -5592,12 +5592,12 @@ TEBCresume(
 	 * both.
 	 */
 
-	if (TclHasInternalRep(valuePtr, &tclStringType)
-		|| TclHasInternalRep(value2Ptr, &tclStringType)) {
+	if (TclHasInternalRep(valuePtr, &tclUniCharStringType)
+		|| TclHasInternalRep(value2Ptr, &tclUniCharStringType)) {
 	    Tcl_UniChar *ustring1, *ustring2;
 
-	    ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
-	    ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
+	    ustring1 = TclGetUnicodeFromObj_(valuePtr, &length);
+	    ustring2 = TclGetUnicodeFromObj_(value2Ptr, &length2);
 	    match = TclUniCharMatch(ustring1, length, ustring2, length2,
 		    nocase);
 	} else if (TclIsPureByteArray(valuePtr) && !nocase) {
