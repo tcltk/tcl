@@ -131,14 +131,7 @@ static const char *TclUtfPrev(const char *src, const char *start) {
     return Tcl_UtfPrev(src, start);
 }
 
-#define TclListObjGetElements_ LOGetElements
-#define TclListObjLength_ LOLength
-#define TclDictObjSize_ DOSize
-#define TclSplitList_ SplitList
-#define TclSplitPath_ SplitPath
-#define TclFSSplitPath_ FSSplitPath
-#define TclParseArgsObjv_ ParseArgsObjv
-static int LOGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+int TclListObjGetElements_(Tcl_Interp *interp, Tcl_Obj *listPtr,
     size_t *objcPtr, Tcl_Obj ***objvPtr) {
     int n, result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
     if ((result == TCL_OK) && objcPtr) {
@@ -146,7 +139,7 @@ static int LOGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     }
     return result;
 }
-static int LOLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+int TclListObjLength_(Tcl_Interp *interp, Tcl_Obj *listPtr,
     size_t *lengthPtr) {
     int n;
     int result = Tcl_ListObjLength(interp, listPtr, &n);
@@ -155,7 +148,7 @@ static int LOLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     }
     return result;
 }
-static int DOSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 	size_t *sizePtr) {
     int n, result = Tcl_DictObjSize(interp, dictPtr, &n);
     if ((result == TCL_OK) && sizePtr) {
@@ -163,7 +156,7 @@ static int DOSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
     }
     return result;
 }
-static int SplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
+int TclSplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
 	const char ***argvPtr) {
     int n;
     int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
@@ -172,14 +165,14 @@ static int SplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
     }
     return result;
 }
-static void SplitPath(const char *path, size_t *argcPtr, const char ***argvPtr) {
+void TclSplitPath(const char *path, size_t *argcPtr, const char ***argvPtr) {
     int n;
     Tcl_SplitPath(path, &n, argvPtr);
     if (argcPtr) {
 	*argcPtr = n;
     }
 }
-static Tcl_Obj *FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr) {
+Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr) {
     int n;
     Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
     if (result && lenPtr) {
@@ -187,7 +180,7 @@ static Tcl_Obj *FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr) {
     }
     return result;
 }
-static int ParseArgsObjv(Tcl_Interp *interp,
+int TclParseArgsObjv(Tcl_Interp *interp,
 	const Tcl_ArgvInfo *argTable, size_t *objcPtr, Tcl_Obj *const *objv,
 	Tcl_Obj ***remObjv) {
     int n, result;
@@ -2025,11 +2018,11 @@ const TclStubs tclStubs = {
     Tcl_AsyncMarkFromSignal, /* 660 */
     TclListObjGetElements_, /* 661 */
     TclListObjLength_, /* 662 */
-    TclDictObjSize_, /* 663 */
-    TclSplitList_, /* 664 */
-    TclSplitPath_, /* 665 */
-    TclFSSplitPath_, /* 666 */
-    TclParseArgsObjv_, /* 667 */
+    TclDictObjSize, /* 663 */
+    TclSplitList, /* 664 */
+    TclSplitPath, /* 665 */
+    TclFSSplitPath, /* 666 */
+    TclParseArgsObjv, /* 667 */
     Tcl_UniCharLen, /* 668 */
     TclNumUtfChars, /* 669 */
     TclGetCharLength, /* 670 */
