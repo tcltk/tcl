@@ -4066,6 +4066,27 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_WCharLen (sizeof(wchar_t) != sizeof(short) \
 		? (size_t (*)(wchar_t *))Tcl_UniCharLen \
 		: (size_t (*)(wchar_t *))Tcl_Char16Len)
+#   define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) (sizeof(*(objcPtr)) != sizeof(int) \
+		? (Tcl_ListObjGetElements)((interp), (listPtr), (size_t *)(void *)(objcPtr), (objvPtr)) \
+		: TclListObjGetElements_((interp), (listPtr), (int *)(void *)(objcPtr), (objvPtr)))
+#   define Tcl_ListObjLength(interp, listPtr, lengthPtr) (sizeof(*(lengthPtr)) != sizeof(int) \
+		? (Tcl_ListObjLength)((interp), (listPtr), (size_t *)(void *)(lengthPtr)) \
+		: TclListObjLength_((interp), (listPtr), (int *)(void *)(lengthPtr)))
+#   define Tcl_DictObjSize(interp, dictPtr, sizePtr) (sizeof(*(sizePtr)) != sizeof(int) \
+		? (Tcl_DictObjSize)((interp), (dictPtr), (size_t *)(void *)(sizePtr)) \
+		: TclDictObjSize_((interp), (dictPtr), (int *)(void *)(sizePtr)))
+#   define Tcl_SplitList(interp, listStr, argcPtr, argvPtr) (sizeof(*(argcPtr)) != sizeof(int) \
+		? (Tcl_SplitList)((interp), (listStr), (size_t *)(void *)(argcPtr), (argvPtr)) \
+		: TclSplitList_((interp), (listStr), (int *)(void *)(argcPtr), (argvPtr)))
+#   define Tcl_SplitPath(path, argcPtr, argvPtr) (sizeof(*(argcPtr)) != sizeof(int) \
+		? (Tcl_SplitPath)((path), (size_t *)(void *)(argcPtr), (argvPtr)) \
+		: TclSplitPath_((path), (int *)(void *)(argcPtr), (argvPtr)))
+#   define Tcl_FSSplitPath(pathPtr, lenPtr) (sizeof(*(lenPtr)) != sizeof(int) \
+		? (Tcl_FSSplitPath)((pathPtr), (size_t *)(void *)(lenPtr)) \
+		: TclFSSplitPath_((pathPtr), (int *)(void *)(lenPtr)))
+#   define Tcl_ParseArgsObjv(interp, argTable, objcPtr, objv, remObjv) (sizeof(*(objcPtr)) != sizeof(int) \
+		? (Tcl_ParseArgsObjv)((interp), (argTable), (size_t *)(void *)(objcPtr), (objv), (remObjv)) \
+		: TclParseArgsObjv_((interp), (argTable), (int *)(void *)(objcPtr), (objv), (remObjv)))
 #endif
 
 /*
