@@ -616,7 +616,7 @@ SetDictFromAny(
 	Tcl_Obj **objv;
 
 	/* Cannot fail, we already know the Tcl_ObjType is "list". */
-	TclListObjGetElements(NULL, objPtr, &objc, &objv);
+	TclListObjGetElementsM(NULL, objPtr, &objc, &objv);
 	if (objc & 1) {
 	    goto missingValue;
 	}
@@ -2480,7 +2480,7 @@ DictForNRCmd(
      * Parse arguments.
      */
 
-    if (TclListObjGetElements(interp, objv[1], &varc, &varv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, objv[1], &varc, &varv) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (varc != 2) {
@@ -2499,7 +2499,7 @@ DictForNRCmd(
 	TclStackFree(interp, searchPtr);
 	return TCL_OK;
     }
-    TclListObjGetElements(NULL, objv[1], &varc, &varv);
+    TclListObjGetElementsM(NULL, objv[1], &varc, &varv);
     keyVarObj = varv[0];
     valueVarObj = varv[1];
     scriptObj = objv[3];
@@ -2674,7 +2674,7 @@ DictMapNRCmd(
      * Parse arguments.
      */
 
-    if (TclListObjGetElements(interp, objv[1], &varc, &varv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, objv[1], &varc, &varv) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (varc != 2) {
@@ -2700,7 +2700,7 @@ DictMapNRCmd(
 	return TCL_OK;
     }
     TclNewObj(storagePtr->accumulatorObj);
-    TclListObjGetElements(NULL, objv[1], &varc, &varv);
+    TclListObjGetElementsM(NULL, objv[1], &varc, &varv);
     storagePtr->keyVarObj = varv[0];
     storagePtr->valueVarObj = varv[1];
     storagePtr->scriptObj = objv[3];
@@ -3113,7 +3113,7 @@ DictFilterCmd(
 	 * copying from the "dict for" implementation has occurred!
 	 */
 
-	if (TclListObjGetElements(interp, objv[3], &varc, &varv) != TCL_OK) {
+	if (TclListObjGetElementsM(interp, objv[3], &varc, &varv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (varc != 2) {
@@ -3374,7 +3374,7 @@ FinalizeDictUpdate(
      * an instruction to remove the key.
      */
 
-    TclListObjGetElements(NULL, argsObj, &objc, &objv);
+    TclListObjGetElementsM(NULL, argsObj, &objc, &objv);
     for (i=0 ; i<objc ; i+=2) {
 	objPtr = Tcl_ObjGetVar2(interp, objv[i+1], NULL, 0);
 	if (objPtr == NULL) {
@@ -3498,7 +3498,7 @@ FinalizeDictWith(
 
     state = Tcl_SaveInterpState(interp, result);
     if (pathPtr != NULL) {
-	TclListObjGetElements(NULL, pathPtr, &pathc, &pathv);
+	TclListObjGetElementsM(NULL, pathPtr, &pathc, &pathv);
     } else {
 	pathc = 0;
 	pathv = NULL;
@@ -3704,7 +3704,7 @@ TclDictWithFinish(
      * Now process our updates on the leaf dictionary.
      */
 
-    TclListObjGetElements(NULL, keysPtr, &keyc, &keyv);
+    TclListObjGetElementsM(NULL, keysPtr, &keyc, &keyv);
     for (i=0 ; i<keyc ; i++) {
 	valPtr = Tcl_ObjGetVar2(interp, keyv[i], NULL, 0);
 	if (valPtr == NULL) {

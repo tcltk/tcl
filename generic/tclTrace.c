@@ -432,7 +432,7 @@ TraceExecutionObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -602,7 +602,7 @@ TraceExecutionObjCmd(
 		TclNewLiteralStringObj(opObj, "leavestep");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
-	    TclListObjLength(NULL, elemObjPtr, &numOps);
+	    TclListObjLengthM(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
 		Tcl_DecrRefCount(elemObjPtr);
 		continue;
@@ -673,7 +673,7 @@ TraceCommandObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -797,7 +797,7 @@ TraceCommandObjCmd(
 		TclNewLiteralStringObj(opObj, "delete");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
-	    TclListObjLength(NULL, elemObjPtr, &numOps);
+	    TclListObjLengthM(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
 		Tcl_DecrRefCount(elemObjPtr);
 		continue;
@@ -872,7 +872,7 @@ TraceVariableObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
