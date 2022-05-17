@@ -2464,12 +2464,12 @@ typedef struct List {
 #define ListObjIsCanonical(listPtr) \
     (((listPtr)->bytes == NULL) || ListRepPtr(listPtr)->canonicalFlag)
 
-#define TclListObjGetElements(interp, listPtr, objcPtr, objvPtr) \
+#define TclListObjGetElementsM(interp, listPtr, objcPtr, objvPtr) \
     (((listPtr)->typePtr == &tclListType) \
 	    ? ((ListObjGetElements((listPtr), *(objcPtr), *(objvPtr))), TCL_OK)\
 	    : Tcl_ListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)))
 
-#define TclListObjLength(interp, listPtr, lenPtr) \
+#define TclListObjLengthM(interp, listPtr, lenPtr) \
     (((listPtr)->typePtr == &tclListType) \
 	    ? ((ListObjLength((listPtr), *(lenPtr))), TCL_OK)\
 	    : Tcl_ListObjLength((interp), (listPtr), (lenPtr)))

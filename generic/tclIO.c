@@ -11079,7 +11079,7 @@ FixLevelCode(
      * information. Hence an error means that we've got serious breakage.
      */
 
-    res = TclListObjGetElements(NULL, msg, &lc, &lv);
+    res = TclListObjGetElementsM(NULL, msg, &lc, &lv);
     if (res != TCL_OK) {
 	Tcl_Panic("Tcl_SetChannelError: bad syntax of message");
     }

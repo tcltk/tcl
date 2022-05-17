@@ -3787,7 +3787,7 @@ GetEndOffsetFromObj(
 	    if ((TclMaxListLength(bytes, -1, NULL) > 1)
 
 		    /* If it's possible, do the full list parse. */
-	            && (TCL_OK == TclListObjLength(NULL, objPtr, &length))
+	            && (TCL_OK == TclListObjLengthM(NULL, objPtr, &length))
 	            && (length > 1)) {
 	        goto parseError;
 	    }

@@ -2452,11 +2452,11 @@ declare 660 {
 
 # TIP #616
 declare 661 {
-    int TclListObjGetElements_(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    size_t *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 662 {
-    int TclListObjLength_(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    size_t *lengthPtr)
 }
 declare 663 {

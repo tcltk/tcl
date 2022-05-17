@@ -131,7 +131,7 @@ static const char *TclUtfPrev(const char *src, const char *start) {
     return Tcl_UtfPrev(src, start);
 }
 
-int TclListObjGetElements_(Tcl_Interp *interp, Tcl_Obj *listPtr,
+int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     size_t *objcPtr, Tcl_Obj ***objvPtr) {
     int n, result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
     if ((result == TCL_OK) && objcPtr) {
@@ -139,7 +139,7 @@ int TclListObjGetElements_(Tcl_Interp *interp, Tcl_Obj *listPtr,
     }
     return result;
 }
-int TclListObjLength_(Tcl_Interp *interp, Tcl_Obj *listPtr,
+int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     size_t *lengthPtr) {
     int n;
     int result = Tcl_ListObjLength(interp, listPtr, &n);
@@ -2016,8 +2016,8 @@ const TclStubs tclStubs = {
     Tcl_ExternalToUtfDStringEx, /* 658 */
     Tcl_UtfToExternalDStringEx, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
-    TclListObjGetElements_, /* 661 */
-    TclListObjLength_, /* 662 */
+    TclListObjGetElements, /* 661 */
+    TclListObjLength, /* 662 */
     TclDictObjSize, /* 663 */
     TclSplitList, /* 664 */
     TclSplitPath, /* 665 */
