@@ -754,7 +754,7 @@ ConvertLocalToUTC(
      * Unpack the tz data.
      */
 
-    if (TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, tzdata, &rowc, &rowv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -819,7 +819,7 @@ ConvertLocalToUTCUsingTable(
     while (!found) {
 	row = LookupLastTransition(interp, fields->seconds, rowc, rowv);
 	if ((row == NULL)
-		|| TclListObjGetElements(interp, row, &cellc,
+		|| TclListObjGetElementsM(interp, row, &cellc,
 		    &cellv) != TCL_OK
 		|| TclGetIntFromObj(interp, cellv[1],
 		    &fields->tzOffset) != TCL_OK) {
@@ -957,7 +957,7 @@ ConvertUTCToLocal(
      * Unpack the tz data.
      */
 
-    if (TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, tzdata, &rowc, &rowv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1009,7 +1009,7 @@ ConvertUTCToLocalUsingTable(
 
     row = LookupLastTransition(interp, fields->seconds, rowc, rowv);
     if (row == NULL ||
-	    TclListObjGetElements(interp, row, &cellc, &cellv) != TCL_OK ||
+	    TclListObjGetElementsM(interp, row, &cellc, &cellv) != TCL_OK ||
 	    TclGetIntFromObj(interp, cellv[1], &fields->tzOffset) != TCL_OK) {
 	return TCL_ERROR;
     }

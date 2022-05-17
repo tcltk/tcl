@@ -810,12 +810,12 @@ Tcl_FSJoinPath(
     int objc;
     Tcl_Obj **objv;
 
-    if (TclListObjLength(NULL, listObj, &objc) != TCL_OK) {
+    if (TclListObjLengthM(NULL, listObj, &objc) != TCL_OK) {
 	return NULL;
     }
 
     elements = ((elements >= 0) && (elements <= objc)) ? elements : objc;
-    TclListObjGetElements(NULL, listObj, &objc, &objv);
+    TclListObjGetElementsM(NULL, listObj, &objc, &objv);
     res = TclJoinPath(elements, objv, 0);
     return res;
 }
@@ -2314,7 +2314,7 @@ SetFsPathFromAny(
 		Tcl_Obj **objv;
 		Tcl_Obj *parts = TclpNativeSplitPath(pathPtr, NULL);
 
-		TclListObjGetElements(NULL, parts, &objc, &objv);
+		TclListObjGetElementsM(NULL, parts, &objc, &objv);
 
 		/*
 		 * Skip '~'. It's replaced by its expansion.
