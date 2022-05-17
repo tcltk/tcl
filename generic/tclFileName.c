@@ -546,6 +546,7 @@ TclpNativeSplitPath(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SplitPath
 void
 Tcl_SplitPath(
     const char *path,		/* Pointer to string containing a path. */
