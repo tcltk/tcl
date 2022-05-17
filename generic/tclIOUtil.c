@@ -1066,7 +1066,7 @@ Tcl_FSMatchInDirectory(
 	     * resultPtr and tmpResultPtr are guaranteed to be distinct.
 	     */
 
-	    ret = TclListObjGetElements(interp, tmpResultPtr,
+	    ret = TclListObjGetElementsM(interp, tmpResultPtr,
 		    &resLength, &elemsPtr);
 	    for (i=0 ; ret==TCL_OK && i<resLength ; i++) {
 		ret = Tcl_ListObjAppendElement(interp, resultPtr,
@@ -1114,10 +1114,10 @@ FsAddMountsToGlobResult(
 	return;
     }
 
-    if (TclListObjLength(NULL, mounts, &mLength) != TCL_OK || mLength == 0) {
+    if (TclListObjLengthM(NULL, mounts, &mLength) != TCL_OK || mLength == 0) {
 	goto endOfMounts;
     }
-    if (TclListObjLength(NULL, resultPtr, &gLength) != TCL_OK) {
+    if (TclListObjLengthM(NULL, resultPtr, &gLength) != TCL_OK) {
 	goto endOfMounts;
     }
     for (i=0 ; i<mLength ; i++) {
@@ -2479,7 +2479,7 @@ TclFSFileAttrIndex(
 	size_t i, objc;
 	Tcl_Obj **objv;
 
-	if (TclListObjGetElements(NULL, listObj, &objc, &objv) != TCL_OK) {
+	if (TclListObjGetElementsM(NULL, listObj, &objc, &objv) != TCL_OK) {
 	    TclDecrRefCount(listObj);
 	    return TCL_ERROR;
 	}
@@ -3953,7 +3953,7 @@ Tcl_FSSplitPath(
     }
 
     if (lenPtr != NULL) {
-	TclListObjLength(NULL, result, lenPtr);
+	TclListObjLengthM(NULL, result, lenPtr);
     }
     return result;
 }
@@ -4076,7 +4076,7 @@ TclFSNonnativePathType(
 	    Tcl_Obj *thisFsVolumes = fsRecPtr->fsPtr->listVolumesProc();
 
 	    if (thisFsVolumes != NULL) {
-		if (TclListObjLength(NULL, thisFsVolumes, &numVolumes)
+		if (TclListObjLengthM(NULL, thisFsVolumes, &numVolumes)
 			!= TCL_OK) {
 		    /*
 		     * This is VERY bad; the listVolumesProc didn't return a

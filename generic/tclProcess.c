@@ -532,7 +532,7 @@ ProcessStatusObjCmd(
 	 * Only return statuses of provided processes.
 	 */
 
-	result = TclListObjGetElements(interp, objv[1], &numPids, &pidObjs);
+	result = TclListObjGetElementsM(interp, objv[1], &numPids, &pidObjs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -645,7 +645,7 @@ ProcessPurgeObjCmd(
 	 * Purge only provided processes.
 	 */
 
-	result = TclListObjGetElements(interp, objv[1], &numPids, &pidObjs);
+	result = TclListObjGetElementsM(interp, objv[1], &numPids, &pidObjs);
 	if (result != TCL_OK) {
 	    return result;
 	}

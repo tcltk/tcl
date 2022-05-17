@@ -88,14 +88,7 @@ static void uniCodePanic() {
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
 
-#define TclListObjGetElements_ LOGetElements
-#define TclListObjLength_ LOLength
-#define TclDictObjSize_ DOSize
-#define TclSplitList_ SplitList
-#define TclSplitPath_ SplitPath
-#define TclFSSplitPath_ FSSplitPath
-#define TclParseArgsObjv_ ParseArgsObjv
-int LOGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     int *objcPtr, Tcl_Obj ***objvPtr) {
     size_t n = TCL_INDEX_NONE;
     int result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
@@ -110,10 +103,10 @@ int LOGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     }
     return result;
 }
-int LOLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     int *lengthPtr) {
     size_t n = TCL_INDEX_NONE;
-    int result = TclListObjLength(interp, listPtr, &n);
+    int result = Tcl_ListObjLength(interp, listPtr, &n);
     if (lengthPtr) {
 	if ((result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
@@ -125,7 +118,7 @@ int LOLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     }
     return result;
 }
-static int DOSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
     int *sizePtr) {
     size_t n = TCL_INDEX_NONE;
     int result = Tcl_DictObjSize(interp, dictPtr, &n);
@@ -140,7 +133,7 @@ static int DOSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
     }
     return result;
 }
-static int SplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
+int TclSplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
 	const char ***argvPtr) {
     size_t n = TCL_INDEX_NONE;
     int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
@@ -156,7 +149,7 @@ static int SplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
     }
     return result;
 }
-static void SplitPath(const char *path, int *argcPtr, const char ***argvPtr) {
+void TclSplitPath(const char *path, int *argcPtr, const char ***argvPtr) {
     size_t n = TCL_INDEX_NONE;
     Tcl_SplitPath(path, &n, argvPtr);
     if (argcPtr) {
@@ -168,7 +161,7 @@ static void SplitPath(const char *path, int *argcPtr, const char ***argvPtr) {
 	*argcPtr = n;
     }
 }
-static Tcl_Obj *FSSplitPath(Tcl_Obj *pathPtr, int *lenPtr) {
+Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, int *lenPtr) {
     size_t n = TCL_INDEX_NONE;
     Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
     if (lenPtr) {
@@ -180,7 +173,7 @@ static Tcl_Obj *FSSplitPath(Tcl_Obj *pathPtr, int *lenPtr) {
     }
     return result;
 }
-static int ParseArgsObjv(Tcl_Interp *interp,
+int TclParseArgsObjv(Tcl_Interp *interp,
 	const Tcl_ArgvInfo *argTable, int *objcPtr, Tcl_Obj *const *objv,
 	Tcl_Obj ***remObjv) {
     size_t n = (*objcPtr < 0) ? TCL_INDEX_NONE: (size_t)*objcPtr ;
@@ -838,9 +831,9 @@ const TclStubs tclStubs = {
     Tcl_InvalidateStringRep, /* 42 */
     Tcl_ListObjAppendList, /* 43 */
     Tcl_ListObjAppendElement, /* 44 */
-    TclListObjGetElements_, /* 45 */
+    TclListObjGetElements, /* 45 */
     Tcl_ListObjIndex, /* 46 */
-    TclListObjLength_, /* 47 */
+    TclListObjLength, /* 47 */
     Tcl_ListObjReplace, /* 48 */
     0, /* 49 */
     Tcl_NewByteArrayObj, /* 50 */
@@ -1035,8 +1028,8 @@ const TclStubs tclStubs = {
     Tcl_SignalId, /* 239 */
     Tcl_SignalMsg, /* 240 */
     Tcl_SourceRCFile, /* 241 */
-    TclSplitList_, /* 242 */
-    TclSplitPath_, /* 243 */
+    TclSplitList, /* 242 */
+    TclSplitPath, /* 243 */
     0, /* 244 */
     0, /* 245 */
     0, /* 246 */
@@ -1254,7 +1247,7 @@ const TclStubs tclStubs = {
     Tcl_FSChdir, /* 458 */
     Tcl_FSConvertToPathType, /* 459 */
     Tcl_FSJoinPath, /* 460 */
-    TclFSSplitPath_, /* 461 */
+    TclFSSplitPath, /* 461 */
     Tcl_FSEqualPaths, /* 462 */
     Tcl_FSGetNormalizedPath, /* 463 */
     Tcl_FSJoinToPath, /* 464 */
@@ -1290,7 +1283,7 @@ const TclStubs tclStubs = {
     Tcl_DictObjPut, /* 494 */
     Tcl_DictObjGet, /* 495 */
     Tcl_DictObjRemove, /* 496 */
-    TclDictObjSize_, /* 497 */
+    TclDictObjSize, /* 497 */
     Tcl_DictObjFirst, /* 498 */
     Tcl_DictObjNext, /* 499 */
     Tcl_DictObjDone, /* 500 */
@@ -1397,7 +1390,7 @@ const TclStubs tclStubs = {
     Tcl_GetBlockSizeFromStat, /* 601 */
     Tcl_SetEnsembleParameterList, /* 602 */
     Tcl_GetEnsembleParameterList, /* 603 */
-    TclParseArgsObjv_, /* 604 */
+    TclParseArgsObjv, /* 604 */
     Tcl_GetErrorLine, /* 605 */
     Tcl_SetErrorLine, /* 606 */
     Tcl_TransferResult, /* 607 */

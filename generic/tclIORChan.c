@@ -609,7 +609,7 @@ TclChanCreateObjCmd(
      *   Compare open mode against optional r/w.
      */
 
-    if (TclListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElementsM(NULL, resObj, &listc, &listv) != TCL_OK) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "chan handler \"%s initialize\" returned non-list: %s",
                 TclGetString(cmdObj), TclGetString(resObj)));
@@ -1062,7 +1062,7 @@ UnmarshallErrorResult(
      * information; if we panic here, something has gone badly wrong already.
      */
 
-    if (TclListObjGetElements(interp, msgObj, &lc, &lv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, msgObj, &lc, &lv) != TCL_OK) {
 	Tcl_Panic("TclChanCaughtErrorBypass: Bad syntax of caught result");
     }
     if (interp == NULL) {
@@ -1994,7 +1994,7 @@ ReflectGetOption(
      * result is a valid list. Nor that the list has an even number elements.
      */
 
-    if (TclListObjGetElements(interp, resObj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, resObj, &listc, &listv) != TCL_OK) {
         goto error;
     }
 
@@ -2140,7 +2140,7 @@ EncodeEventMask(
     int evIndex;		/* Id of event for an element of the eventspec
 				 * list. */
 
-    if (TclListObjGetElements(interp, obj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, obj, &listc, &listv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3308,7 +3308,7 @@ ForwardProc(
 	    size_t listc;
 	    Tcl_Obj **listv;
 
-	    if (TclListObjGetElements(interp, resObj, &listc,
+	    if (TclListObjGetElementsM(interp, resObj, &listc,
                     &listv) != TCL_OK) {
 		Tcl_DecrRefCount(resObj);
 		resObj = MarshallError(interp);

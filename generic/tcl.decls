@@ -186,7 +186,7 @@ declare 44 {
 	    Tcl_Obj *objPtr)
 }
 declare 45 {
-    int TclListObjGetElements_(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    int *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 46 {
@@ -194,7 +194,7 @@ declare 46 {
 	    Tcl_Obj **objPtrPtr)
 }
 declare 47 {
-    int TclListObjLength_(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    int *lengthPtr)
 }
 declare 48 {
@@ -879,12 +879,12 @@ declare 241 {
     void Tcl_SourceRCFile(Tcl_Interp *interp)
 }
 declare 242 {
-    int TclSplitList_(Tcl_Interp *interp, const char *listStr, int *argcPtr,
+    int TclSplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
 	    const char ***argvPtr)
 }
 # Obsolete, use Tcl_FSSplitPath
 declare 243 {
-    void TclSplitPath_(const char *path, int *argcPtr, const char ***argvPtr)
+    void TclSplitPath(const char *path, int *argcPtr, const char ***argvPtr)
 }
 # Removed in 9.0 (stub entry only)
 #declare 244  {
@@ -1700,7 +1700,7 @@ declare 460 {
     Tcl_Obj *Tcl_FSJoinPath(Tcl_Obj *listObj, size_t elements)
 }
 declare 461 {
-    Tcl_Obj *TclFSSplitPath_(Tcl_Obj *pathPtr, int *lenPtr)
+    Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, int *lenPtr)
 }
 declare 462 {
     int Tcl_FSEqualPaths(Tcl_Obj *firstPtr, Tcl_Obj *secondPtr)
@@ -1839,7 +1839,7 @@ declare 496 {
 	    Tcl_Obj *keyPtr)
 }
 declare 497 {
-    int TclDictObjSize_(Tcl_Interp *interp, Tcl_Obj *dictPtr, int *sizePtr)
+    int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, int *sizePtr)
 }
 declare 498 {
     int Tcl_DictObjFirst(Tcl_Interp *interp, Tcl_Obj *dictPtr,
@@ -2267,7 +2267,7 @@ declare 603 {
 
 # TIP#265 (option parser) dkf for Sam Bromley
 declare 604 {
-    int TclParseArgsObjv_(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
+    int TclParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
 	    int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
