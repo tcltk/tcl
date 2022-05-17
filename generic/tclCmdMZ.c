@@ -622,8 +622,8 @@ Tcl_RegsubObjCmd(
 		resultPtr = Tcl_NewUnicodeObj(wstring, 0);
 		Tcl_IncrRefCount(resultPtr);
 		for (; wstring < wend; wstring++) {
-		    TclAppendUnicodeToObj(resultPtr, wsubspec, wsublen);
-		    TclAppendUnicodeToObj(resultPtr, wstring, 1);
+		    Tcl_AppendUnicodeToObj(resultPtr, wsubspec, wsublen);
+		    Tcl_AppendUnicodeToObj(resultPtr, wstring, 1);
 		    numMatches++;
 		}
 		wlen = 0;
@@ -639,14 +639,14 @@ Tcl_RegsubObjCmd(
 			Tcl_IncrRefCount(resultPtr);
 		    }
 		    if (p != wstring) {
-			TclAppendUnicodeToObj(resultPtr, p, wstring - p);
+			Tcl_AppendUnicodeToObj(resultPtr, p, wstring - p);
 			p = wstring + slen;
 		    } else {
 			p += slen;
 		    }
 		    wstring = p - 1;
 
-		    TclAppendUnicodeToObj(resultPtr, wsubspec, wsublen);
+		    Tcl_AppendUnicodeToObj(resultPtr, wsubspec, wsublen);
 		    numMatches++;
 		}
 	    }
@@ -673,7 +673,7 @@ Tcl_RegsubObjCmd(
 	 * object. (If they aren't, that's cheap to do.)
 	 */
 
-	if (TclListObjLength(interp, objv[2], &numParts) != TCL_OK) {
+	if (TclListObjLengthM(interp, objv[2], &numParts) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (numParts < 1) {
@@ -749,7 +749,7 @@ Tcl_RegsubObjCmd(
 		 * specified.
 		 */
 
-		TclAppendUnicodeToObj(resultPtr, wstring, offset);
+		Tcl_AppendUnicodeToObj(resultPtr, wstring, offset);
 	    }
 	}
 	numMatches++;
@@ -762,7 +762,7 @@ Tcl_RegsubObjCmd(
 	Tcl_RegExpGetInfo(regExpr, &info);
 	start = info.matches[0].start;
 	end = info.matches[0].end;
-	TclAppendUnicodeToObj(resultPtr, wstring + offset, start);
+	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, start);
 
 	/*
 	 * In command-prefix mode, the substitutions are added as quoted
@@ -775,7 +775,7 @@ Tcl_RegsubObjCmd(
 	    Tcl_Obj **args = NULL, **parts;
 	    int numArgs;
 
-	    TclListObjGetElements(interp, subPtr, &numParts, &parts);
+	    TclListObjGetElementsM(interp, subPtr, &numParts, &parts);
 	    numArgs = numParts + info.nsubs + 1;
 	    args = (Tcl_Obj **)Tcl_Alloc(sizeof(Tcl_Obj*) * numArgs);
 	    memcpy(args, parts, sizeof(Tcl_Obj*) * numParts);
@@ -837,7 +837,7 @@ Tcl_RegsubObjCmd(
 		 */
 
 		if (offset < wlen) {
-		    TclAppendUnicodeToObj(resultPtr, wstring + offset, 1);
+		    Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
 		}
 		offset++;
 	    }
@@ -866,7 +866,7 @@ Tcl_RegsubObjCmd(
 		    idx = ch - '0';
 		} else if ((ch == '\\') || (ch == '&')) {
 		    *wsrc = ch;
-		    TclAppendUnicodeToObj(resultPtr, wfirstChar,
+		    Tcl_AppendUnicodeToObj(resultPtr, wfirstChar,
 			    wsrc - wfirstChar + 1);
 		    *wsrc = '\\';
 		    wfirstChar = wsrc + 2;
@@ -880,7 +880,7 @@ Tcl_RegsubObjCmd(
 	    }
 
 	    if (wfirstChar != wsrc) {
-		TclAppendUnicodeToObj(resultPtr, wfirstChar,
+		Tcl_AppendUnicodeToObj(resultPtr, wfirstChar,
 			wsrc - wfirstChar);
 	    }
 
@@ -888,7 +888,7 @@ Tcl_RegsubObjCmd(
 		subStart = info.matches[idx].start;
 		subEnd = info.matches[idx].end;
 		if ((subStart != TCL_INDEX_NONE) && (subEnd != TCL_INDEX_NONE)) {
-		    TclAppendUnicodeToObj(resultPtr,
+		    Tcl_AppendUnicodeToObj(resultPtr,
 			    wstring + offset + subStart, subEnd - subStart);
 		}
 	    }
@@ -900,7 +900,7 @@ Tcl_RegsubObjCmd(
 	}
 
 	if (wfirstChar != wsrc) {
-	    TclAppendUnicodeToObj(resultPtr, wfirstChar, wsrc - wfirstChar);
+	    Tcl_AppendUnicodeToObj(resultPtr, wfirstChar, wsrc - wfirstChar);
 	}
 
 	if (end == 0) {
@@ -910,7 +910,7 @@ Tcl_RegsubObjCmd(
 	     */
 
 	    if (offset < wlen) {
-		TclAppendUnicodeToObj(resultPtr, wstring + offset, 1);
+		Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
 	    }
 	    offset++;
 	} else {
@@ -922,7 +922,7 @@ Tcl_RegsubObjCmd(
 		 */
 
 		if (offset < wlen) {
-		    TclAppendUnicodeToObj(resultPtr, wstring + offset, 1);
+		    Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
 		}
 		offset++;
 	    }
@@ -947,7 +947,7 @@ Tcl_RegsubObjCmd(
 	resultPtr = objv[1];
 	Tcl_IncrRefCount(resultPtr);
     } else if (offset < wlen) {
-	TclAppendUnicodeToObj(resultPtr, wstring + offset, wlen - offset);
+	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, wlen - offset);
     }
     if (objc == 4) {
 	if (Tcl_ObjSetVar2(interp, objv[3], NULL, resultPtr,
@@ -1811,7 +1811,7 @@ StringIsCmd(
 	 * well-formed lists.
 	 */
 
-	if (TCL_OK == TclListObjLength(NULL, objPtr, &length3)) {
+	if (TCL_OK == TclListObjLengthM(NULL, objPtr, &length3)) {
 	    break;
 	}
 
@@ -2027,7 +2027,7 @@ StringMapCmd(
 	Tcl_DictObjDone(&search);
     } else {
 	int i;
-	if (TclListObjGetElements(interp, objv[objc-2], &i,
+	if (TclListObjGetElementsM(interp, objv[objc-2], &i,
 		&mapElemv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -2110,14 +2110,14 @@ StringMapCmd(
 			(length2==1 || strCmpFn(ustring1, ustring2,
 				length2) == 0)) {
 		    if (p != ustring1) {
-			TclAppendUnicodeToObj(resultPtr, p, ustring1-p);
+			Tcl_AppendUnicodeToObj(resultPtr, p, ustring1-p);
 			p = ustring1 + length2;
 		    } else {
 			p += length2;
 		    }
 		    ustring1 = p - 1;
 
-		    TclAppendUnicodeToObj(resultPtr, mapString, mapLen);
+		    Tcl_AppendUnicodeToObj(resultPtr, mapString, mapLen);
 		}
 	    }
 	}
@@ -2163,7 +2163,7 @@ StringMapCmd(
 			 * Put the skipped chars onto the result first.
 			 */
 
-			TclAppendUnicodeToObj(resultPtr, p, ustring1-p);
+			Tcl_AppendUnicodeToObj(resultPtr, p, ustring1-p);
 			p = ustring1 + length2;
 		    } else {
 			p += length2;
@@ -2179,7 +2179,7 @@ StringMapCmd(
 		     * Append the map value to the unicode string.
 		     */
 
-		    TclAppendUnicodeToObj(resultPtr,
+		    Tcl_AppendUnicodeToObj(resultPtr,
 			    mapStrings[index+1], mapLens[index+1]);
 		    break;
 		}
@@ -2196,7 +2196,7 @@ StringMapCmd(
 	 * Put the rest of the unmapped chars onto result.
 	 */
 
-	TclAppendUnicodeToObj(resultPtr, p, ustring1 - p);
+	Tcl_AppendUnicodeToObj(resultPtr, p, ustring1 - p);
     }
     Tcl_SetObjResult(interp, resultPtr);
   done:
@@ -3576,7 +3576,7 @@ TclNRSwitchObjCmd(
 	Tcl_Obj **listv;
 
 	blist = objv[0];
-	if (TclListObjGetElements(interp, objv[0], &objc, &listv) != TCL_OK) {
+	if (TclListObjGetElementsM(interp, objv[0], &objc, &listv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -3961,7 +3961,7 @@ Tcl_ThrowObjCmd(
      * The type must be a list of at least length 1.
      */
 
-    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
+    if (TclListObjLengthM(interp, objv[1], &len) != TCL_OK) {
 	return TCL_ERROR;
     } else if (len < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -4749,7 +4749,7 @@ TclNRTryObjCmd(
 		return TCL_ERROR;
 	    }
 	    code = 1;
-	    if (TclListObjLength(NULL, objv[i+1], &dummy) != TCL_OK) {
+	    if (TclListObjLengthM(NULL, objv[i+1], &dummy) != TCL_OK) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"bad prefix '%s': must be a list",
 			TclGetString(objv[i+1])));
@@ -4761,7 +4761,7 @@ TclNRTryObjCmd(
 	    info[2] = objv[i+1];
 
 	commonHandler:
-	    if (TclListObjLength(interp, objv[i+2], &dummy) != TCL_OK) {
+	    if (TclListObjLengthM(interp, objv[i+2], &dummy) != TCL_OK) {
 		Tcl_DecrRefCount(handlersObj);
 		return TCL_ERROR;
 	    }
@@ -4911,12 +4911,12 @@ TryPostBody(
 	int found = 0;
 	Tcl_Obj **handlers, **info;
 
-	TclListObjGetElements(NULL, handlersObj, &numHandlers, &handlers);
+	TclListObjGetElementsM(NULL, handlersObj, &numHandlers, &handlers);
 	for (i=0 ; i<numHandlers ; i++) {
 	    Tcl_Obj *handlerBodyObj;
 	    int numElems = 0;
 
-	    TclListObjGetElements(NULL, handlers[i], &numElems, &info);
+	    TclListObjGetElementsM(NULL, handlers[i], &numElems, &info);
 	    if (!found) {
 		Tcl_GetIntFromObj(NULL, info[1], &code);
 		if (code != result) {
@@ -4937,8 +4937,8 @@ TryPostBody(
 		    TclNewLiteralStringObj(errorCodeName, "-errorcode");
 		    Tcl_DictObjGet(NULL, options, errorCodeName, &errcode);
 		    Tcl_DecrRefCount(errorCodeName);
-		    TclListObjGetElements(NULL, info[2], &len1, &bits1);
-		    if (TclListObjGetElements(NULL, errcode, &len2,
+		    TclListObjGetElementsM(NULL, info[2], &len1, &bits1);
+		    if (TclListObjGetElementsM(NULL, errcode, &len2,
 			    &bits2) != TCL_OK) {
 			continue;
 		    }
@@ -4978,7 +4978,7 @@ TryPostBody(
 
 	    Tcl_ResetResult(interp);
 	    result = TCL_ERROR;
-	    TclListObjLength(NULL, info[3], &numElems);
+	    TclListObjLengthM(NULL, info[3], &numElems);
 	    if (numElems> 0) {
 		Tcl_Obj *varName;
 

@@ -6984,7 +6984,7 @@ TestUtfNextCmd(
 	bytes = Tcl_GetString(objv[1]);
 	numBytes = objv[1]->length;
 
-    if (numBytes + 4 > sizeof(buffer)) {
+    if (numBytes + 4U > sizeof(buffer)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"testutfnext\" can only handle %" TCL_Z_MODIFIER "u bytes",
 		sizeof(buffer) - 4));

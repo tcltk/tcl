@@ -76,11 +76,6 @@
 #else
 #include <string.h>
 #endif
-#if !defined(STDC_HEADERS) && !defined(__STDC__) && !defined(__C99__FUNC__) \
-     && !defined(__cplusplus) && !defined(_MSC_VER) && !defined(__ICC)
-typedef int ptrdiff_t;
-#endif
-#include <stddef.h>
 #include <locale.h>
 
 /*
@@ -116,25 +111,16 @@ typedef int ptrdiff_t;
  */
 
 #if !defined(INT2PTR)
-#   if defined(HAVE_INTPTR_T) || defined(intptr_t)
-#	define INT2PTR(p) ((void *)(intptr_t)(p))
-#   else
-#	define INT2PTR(p) ((void *)(p))
-#   endif
+#   define INT2PTR(p) ((void *)(ptrdiff_t)(p))
 #endif
 #if !defined(PTR2INT)
-#   if defined(HAVE_INTPTR_T) || defined(intptr_t)
-#	define PTR2INT(p) ((intptr_t)(p))
-#   else
-#	define PTR2INT(p) ((long)(p))
-#   endif
+#   define PTR2INT(p) ((ptrdiff_t)(p))
+#endif
+#if !defined(UINT2PTR)
+#   define UINT2PTR(p) ((void *)(size_t)(p))
 #endif
 #if !defined(PTR2UINT)
-#   if defined(HAVE_UINTPTR_T) || defined(uintptr_t)
-#	define PTR2UINT(p) ((uintptr_t)(p))
-#   else
-#	define PTR2UINT(p) ((unsigned long)(p))
-#   endif
+#   define PTR2UINT(p) ((size_t)(p))
 #endif
 
 #if defined(_WIN32) && defined(_MSC_VER)
@@ -2416,12 +2402,12 @@ typedef struct List {
 #define ListObjIsCanonical(listPtr) \
     (((listPtr)->bytes == NULL) || ListRepPtr(listPtr)->canonicalFlag)
 
-#define TclListObjGetElements(interp, listPtr, objcPtr, objvPtr) \
+#define TclListObjGetElementsM(interp, listPtr, objcPtr, objvPtr) \
     (((listPtr)->typePtr == &tclListType) \
 	    ? ((ListObjGetElements((listPtr), *(objcPtr), *(objvPtr))), TCL_OK)\
 	    : Tcl_ListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)))
 
-#define TclListObjLength(interp, listPtr, lenPtr) \
+#define TclListObjLengthM(interp, listPtr, lenPtr) \
     (((listPtr)->typePtr == &tclListType) \
 	    ? ((ListObjLength((listPtr), *(lenPtr))), TCL_OK)\
 	    : Tcl_ListObjLength((interp), (listPtr), (lenPtr)))
