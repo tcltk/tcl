@@ -153,7 +153,9 @@ address \fIobjcPtr\fR.  Similarly, it returns the array pointer by storing
 it in the address \fIobjvPtr\fR.
 The memory pointed to is managed by Tcl and should not be freed or written
 to by the caller. If the list is empty, 0 is stored at \fIobjcPtr\fR
-and NULL at \fIobjvPtr\fR.
+and NULL at \fIobjvPtr\fR. If \fIobjcPtr\fR points to a variable
+of type \fBint\fR and the list contains more than 2**31 elements, the
+function returns \fBTCL_ERROR\fR.
 If \fIlistPtr\fR is not already a list value, \fBTcl_ListObjGetElements\fR
 will attempt to convert it to one; if the conversion fails, it returns
 \fBTCL_ERROR\fR and leaves an error message in the interpreter's result
@@ -163,6 +165,8 @@ Otherwise it returns \fBTCL_OK\fR after storing the count and array pointer.
 \fBTcl_ListObjLength\fR returns the number of elements in the list value
 referenced by \fIlistPtr\fR.
 It returns this count by storing a value in the address \fIlengthPtr\fR.
+If \fIlengthPtr\fR points to a variable of type \fBint\fR and the list
+contains more than 2**31 elements, the function returns \fBTCL_ERROR\fR.
 If the value is not already a list value,
 \fBTcl_ListObjLength\fR will attempt to convert it to one;
 if the conversion fails, it returns \fBTCL_ERROR\fR

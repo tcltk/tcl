@@ -97,8 +97,9 @@ Tcl_Free(argv);
 .CE
 .PP
 \fBTcl_SplitList\fR normally returns \fBTCL_OK\fR, which means the list was
-successfully parsed.
-If there was a syntax error in \fIlist\fR, then \fBTCL_ERROR\fR is returned
+successfully parsed. If \fIsizePtr\fR points to a variable of type
+\fBint\fR and the list contains more than 2**31 key/value pairs, or there was
+a syntax error in \fIlist\fR, then \fBTCL_ERROR\fR is returned
 and the interpreter's result will point to an error message describing the
 problem (if \fIinterp\fR was not NULL).
 If \fBTCL_ERROR\fR is returned then no memory is allocated and \fI*argvPtr\fR

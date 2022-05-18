@@ -138,7 +138,8 @@ converted to a dictionary.
 \fBTcl_DictObjSize\fR updates the given variable with the number of
 key/value pairs currently in the given dictionary. The result of this
 procedure is \fBTCL_OK\fR, or \fBTCL_ERROR\fR if the \fIdictPtr\fR cannot be
-converted to a dictionary.
+converted to a dictionary or if \fIsizePtr\fR points to a variable of type
+\fBint\fR and the dict contains more than 2**31 key/value pairs.
 .PP
 \fBTcl_DictObjFirst\fR commences an iteration across all the key/value
 pairs in the given dictionary, placing the key and value in the
