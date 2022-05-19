@@ -2981,7 +2981,7 @@ Tcl_LappendObjCmd(
 		return TCL_ERROR;
 	    }
 	} else {
-	    result = TclListObjLength(interp, newValuePtr, &numElems);
+	    result = TclListObjLengthM(interp, newValuePtr, &numElems);
 	    if (result != TCL_OK) {
 		return result;
 	    }
@@ -3039,7 +3039,7 @@ Tcl_LappendObjCmd(
 	    createdNewObj = 1;
 	}
 
-	result = TclListObjLength(interp, varValuePtr, &numElems);
+	result = TclListObjLengthM(interp, varValuePtr, &numElems);
 	if (result == TCL_OK) {
 	    result = Tcl_ListObjReplace(interp, varValuePtr, numElems, 0,
 		    (objc-2), (objv+2));
@@ -3191,7 +3191,7 @@ ArrayForNRCmd(
      * Parse arguments.
      */
 
-    if (TclListObjLength(interp, objv[1], &numVars) != TCL_OK) {
+    if (TclListObjLengthM(interp, objv[1], &numVars) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3302,7 +3302,7 @@ ArrayForLoopCallback(
 	goto arrayfordone;
     }
 
-    TclListObjGetElements(NULL, varListObj, &varc, &varv);
+    TclListObjGetElementsM(NULL, varListObj, &varc, &varv);
     if (Tcl_ObjSetVar2(interp, varv[0], NULL, keyObj,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	result = TCL_ERROR;
@@ -3842,7 +3842,7 @@ ArrayGetCmd(
      */
 
     TclNewObj(tmpResObj);
-    result = TclListObjGetElements(interp, nameLstObj, &count, &nameObjPtr);
+    result = TclListObjGetElementsM(interp, nameLstObj, &count, &nameObjPtr);
     if (result != TCL_OK) {
 	goto errorInArrayGet;
     }
@@ -4165,7 +4165,7 @@ ArraySetCmd(
 	int elemLen;
 	Tcl_Obj **elemPtrs, *copyListObj;
 
-	result = TclListObjGetElements(interp, arrayElemObj,
+	result = TclListObjGetElementsM(interp, arrayElemObj,
 		&elemLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;

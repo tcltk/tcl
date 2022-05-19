@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
-
+#undef BUILD_tcl
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
@@ -1073,8 +1073,9 @@ TestobjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("none", -1));
 	} else {
 	    typeName = objv[2]->typePtr->name;
+	    if (!strcmp(typeName, "utf32string")) typeName = "string";
 #ifndef TCL_WIDE_INT_IS_LONG
-	    if (!strcmp(typeName, "wideInt")) typeName = "int";
+	    else if (!strcmp(typeName, "wideInt")) typeName = "int";
 #endif
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
 	}
@@ -1153,7 +1154,7 @@ TeststringobjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *unicode;
+    unsigned short *unicode;
     size_t varIndex;
     int size, option, i;
     Tcl_WideInt length;
@@ -1263,10 +1264,14 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
-		Tcl_ConvertToType(NULL, varPtr[varIndex],
-			Tcl_GetObjType("string"));
-		strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
-		length = (int) strPtr->allocated;
+		const Tcl_ObjType *objType = Tcl_GetObjType("string");
+		if (objType != NULL) {
+		    Tcl_ConvertToType(NULL, varPtr[varIndex], objType);
+		    strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
+		    length = (int) strPtr->allocated;
+		} else {
+		    length = -1;
+		}
 	    } else {
 		length = -1;
 	    }
@@ -1317,10 +1322,14 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
-		Tcl_ConvertToType(NULL, varPtr[varIndex],
-			Tcl_GetObjType("string"));
-		strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
-		length = strPtr->maxChars;
+		const Tcl_ObjType *objType = Tcl_GetObjType("string");
+		if (objType != NULL) {
+		    Tcl_ConvertToType(NULL, varPtr[varIndex],objType);
+		    strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
+		    length = strPtr->maxChars;
+		} else {
+		    length = -1;
+		}
 	    } else {
 		length = -1;
 	    }

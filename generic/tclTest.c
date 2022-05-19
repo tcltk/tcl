@@ -16,10 +16,13 @@
  */
 
 #undef STATIC_BUILD
+#undef BUILD_tcl
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
-#ifndef TCL_NO_DEPRECATED
+#ifdef TCL_NO_DEPRECATED
+#   define TCL_UTF_MAX 4
+#else
 #   define TCL_NO_DEPRECATED
 #endif
 #include "tclInt.h"
@@ -6969,7 +6972,7 @@ TestUtfNextCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    size_t numBytes;
+    int numBytes;
     char *bytes;
     const char *result, *first;
     char buffer[32];
@@ -6982,7 +6985,7 @@ TestUtfNextCmd(
     }
 	bytes = Tcl_GetStringFromObj(objv[1], &numBytes);
 
-    if (numBytes + 4 > sizeof(buffer)) {
+    if (numBytes + 4U > sizeof(buffer)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"\"testutfnext\" can only handle %" TCL_Z_MODIFIER "u bytes",
 		sizeof(buffer) - 4));
