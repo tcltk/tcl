@@ -1662,7 +1662,9 @@ const TclStubs tclStubs = {
     0, /* 670 */
     0, /* 671 */
     0, /* 672 */
-    TclUnusedStubEntry, /* 673 */
+    0, /* 673 */
+    0, /* 674 */
+    TclUnusedStubEntry, /* 675 */
 };
 
 /* !END!: Do not edit above this line. */
