@@ -2500,21 +2500,29 @@ Tcl_GetIntFromObj(
 #if (LONG_MAX == INT_MAX)
     return TclGetLongFromObj(interp, objPtr, (long *) intPtr);
 #else
-    long l;
+    void *p;
+    int type;
 
-    if (TclGetLongFromObj(interp, objPtr, &l) != TCL_OK) {
+    if ((TclGetNumberFromObj(NULL, objPtr, &p, &type) != TCL_OK)
+	    || (type == TCL_NUMBER_DOUBLE)) {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "expected integer but got \"%s\"", Tcl_GetString(objPtr)));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
+	}
 	return TCL_ERROR;
     }
-    if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < -(long)UINT_MAX))) {
+    if ((type != TCL_NUMBER_LONG) || ((ULONG_MAX > UINT_MAX)
+	    && ((*(long *)p > UINT_MAX) || (*(long *)p < -(long)UINT_MAX)))) {
 	if (interp != NULL) {
 	    const char *s =
-		    "integer value too large to represent as non-long integer";
+		    "integer value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}
 	return TCL_ERROR;
     }
-    *intPtr = (int) l;
+    *intPtr = (int)*(long *)p;
     return TCL_OK;
 #endif
 }

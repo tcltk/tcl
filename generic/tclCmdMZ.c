@@ -1451,7 +1451,6 @@ StringIsCmd(
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
     int i, failat = 0, result = 1, strict = 0, index, length1, length2;
     Tcl_Obj *objPtr, *failVarObj = NULL;
-    Tcl_WideInt w;
 
     static const char *const isClasses[] = {
 	"alnum",	"alpha",	"ascii",	"control",
@@ -1590,9 +1589,13 @@ StringIsCmd(
     case STR_IS_GRAPH:
 	chcomp = Tcl_UniCharIsGraph;
 	break;
-    case STR_IS_INT:
-	if (TCL_OK == TclGetIntFromObj(NULL, objPtr, &i)) {
-	    break;
+    case STR_IS_INT: {
+	    void *p;
+	    int type;
+	    if (TCL_OK == TclGetNumberFromObj(NULL, objPtr, &p, &type)
+		    && (type == TCL_NUMBER_LONG) && (*(long *)p <= INT_MAX) && (*(long *)p >= INT_MIN)) {
+		break;
+	    }
 	}
 	goto failedIntParse;
     case STR_IS_ENTIER:
@@ -1640,9 +1643,13 @@ StringIsCmd(
 	    failat = 0;
 	}
 	break;
-    case STR_IS_WIDE:
-	if (TCL_OK == TclGetWideIntFromObj(NULL, objPtr, &w)) {
-	    break;
+    case STR_IS_WIDE: {
+	    void *p;
+	    int type;
+	    if (TCL_OK == TclGetNumberFromObj(NULL, objPtr, &p, &type)
+		    && (type == TCL_NUMBER_WIDE)) {
+		break;
+	    }
 	}
 
     failedIntParse:
