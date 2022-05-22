@@ -1,5 +1,7 @@
 name: Windows
 on: [push]
+permissions:
+  contents: read
 jobs:
   msvc:
     runs-on: windows-2019
