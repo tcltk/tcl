@@ -2,6 +2,9 @@ name: Windows
 on: [push]
 env:
   ERROR_ON_FAILURES: 1
+permissions:
+  contents: read
+
 jobs:
   msvc:
     runs-on: windows-2022

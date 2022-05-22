@@ -1,5 +1,8 @@
 name: macOS
 on: [push]
+permissions:
+  contents: read
+
 jobs:
   xcode:
     runs-on: macos-11

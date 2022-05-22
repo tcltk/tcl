@@ -1,5 +1,8 @@
 name: Linux
 on: [push]
+permissions:
+  contents: read
+
 jobs:
   gcc:
     runs-on: ubuntu-20.04
