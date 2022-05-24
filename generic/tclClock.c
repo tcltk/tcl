@@ -202,7 +202,7 @@ struct ClockCommand {
     const char *name;		/* The tail of the command name. The full name
 				 * is "::tcl::clock::<name>". When NULL marks
 				 * the end of the table. */
-    Tcl_ObjCmdProc *objCmdProc;	/* Function that implements the command. This
+    Tcl_ObjCmdProc2 *objCmdProc;	/* Function that implements the command. This
 				 * will always have the ClockClientData sent
 				 * to it, but may well ignore this data. */
 };
@@ -293,7 +293,7 @@ TclClockInit(
     for (clockCmdPtr=clockCommands ; clockCmdPtr->name!=NULL ; clockCmdPtr++) {
 	strcpy(cmdName + TCL_CLOCK_PREFIX_LEN, clockCmdPtr->name);
 	data->refCount++;
-	Tcl_CreateObjCommand(interp, cmdName, clockCmdPtr->objCmdProc, data,
+	Tcl_CreateObjCommand2(interp, cmdName, clockCmdPtr->objCmdProc, data,
 		ClockDeleteCmdProc);
     }
 

@@ -37,7 +37,7 @@ static const char checkCommand[] = "check";
 
 typedef struct {
     const char *cmdName;		/* command name */
-    Tcl_ObjCmdProc *proc;	/* command proc */
+    Tcl_ObjCmdProc2 *proc;	/* command proc */
     int exportIt;		/* if 1, export the command */
 } CmdTable;
 
@@ -154,7 +154,7 @@ RegisterCommand(
     }
 
     sprintf(buf, "%s::%s", namesp, cmdTablePtr->cmdName);
-    Tcl_CreateObjCommand(interp, buf, cmdTablePtr->proc, 0, 0);
+    Tcl_CreateObjCommand2(interp, buf, cmdTablePtr->proc, 0, 0);
     return TCL_OK;
 }
 

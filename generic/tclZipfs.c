@@ -5672,7 +5672,7 @@ TclZipfs_Init(
 	Tcl_GetEnsembleMappingDict(NULL, ensemble, &mapObj);
 	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj("find", -1),
 		Tcl_NewStringObj("::tcl::zipfs::find", -1));
-	Tcl_CreateObjCommand(interp, "::tcl::zipfs::tcl_library_init",
+	Tcl_CreateObjCommand2(interp, "::tcl::zipfs::tcl_library_init",
 		ZipFSTclLibraryObjCmd, NULL, NULL);
 	Tcl_PkgProvide(interp, "tcl::zipfs", "2.0");
     }

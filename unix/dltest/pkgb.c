@@ -156,9 +156,9 @@ Pkgb_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkgb_sub", Pkgb_SubObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "pkgb_unsafe", Pkgb_UnsafeObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "pkgb_demo", Pkgb_DemoObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "pkgb_sub", Pkgb_SubObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "pkgb_unsafe", Pkgb_UnsafeObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "pkgb_demo", Pkgb_DemoObjCmd, NULL, NULL);
     return TCL_OK;
 }
 
@@ -193,6 +193,6 @@ Pkgb_SafeInit(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkgb_sub", Pkgb_SubObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "pkgb_sub", Pkgb_SubObjCmd, NULL, NULL);
     return TCL_OK;
 }

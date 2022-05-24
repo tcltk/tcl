@@ -171,11 +171,11 @@ static Tcl_DriverInputProc	ZlibTransformInput;
 static Tcl_DriverOutputProc	ZlibTransformOutput;
 static Tcl_DriverSetOptionProc	ZlibTransformSetOption;
 static Tcl_DriverWatchProc	ZlibTransformWatch;
-static Tcl_ObjCmdProc		ZlibCmd;
-static Tcl_ObjCmdProc		ZlibStreamCmd;
-static Tcl_ObjCmdProc		ZlibStreamAddCmd;
-static Tcl_ObjCmdProc		ZlibStreamHeaderCmd;
-static Tcl_ObjCmdProc		ZlibStreamPutCmd;
+static Tcl_ObjCmdProc2		ZlibCmd;
+static Tcl_ObjCmdProc2		ZlibStreamCmd;
+static Tcl_ObjCmdProc2		ZlibStreamAddCmd;
+static Tcl_ObjCmdProc2		ZlibStreamHeaderCmd;
+static Tcl_ObjCmdProc2		ZlibStreamPutCmd;
 
 static void		ConvertError(Tcl_Interp *interp, int code,
 			    uLong adler);
@@ -824,7 +824,7 @@ Tcl_ZlibStreamInit(
 	 * Create the command.
 	 */
 
-	zshPtr->cmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&cmdname),
+	zshPtr->cmd = Tcl_CreateObjCommand2(interp, Tcl_DStringValue(&cmdname),
 		ZlibStreamCmd, zshPtr, ZlibStreamCmdDelete);
 	Tcl_DStringFree(&cmdname);
 	if (zshPtr->cmd == NULL) {
@@ -3946,7 +3946,7 @@ TclZlibInit(
      * Create the public scripted interface to this file's functionality.
      */
 
-    Tcl_CreateObjCommand(interp, "zlib", ZlibCmd, 0, 0);
+    Tcl_CreateObjCommand2(interp, "zlib", ZlibCmd, 0, 0);
 
     /*
      * Store the underlying configuration information.

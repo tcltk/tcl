@@ -145,6 +145,6 @@ Pkgooa_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkgooa_stubsok", Pkgooa_StubsOKObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "pkgooa_stubsok", Pkgooa_StubsOKObjCmd, NULL, NULL);
     return TCL_OK;
 }

@@ -235,10 +235,10 @@ Pkgua_Init(
 
     cmdTokens = PkguaInterpToTokens(interp);
     cmdTokens[0] =
-	    Tcl_CreateObjCommand(interp, "pkgua_eq", PkguaEqObjCmd, &cmdTokens[0],
+	    Tcl_CreateObjCommand2(interp, "pkgua_eq", PkguaEqObjCmd, &cmdTokens[0],
 		    CommandDeleted);
     cmdTokens[1] =
-	    Tcl_CreateObjCommand(interp, "pkgua_quote", PkguaQuoteObjCmd,
+	    Tcl_CreateObjCommand2(interp, "pkgua_quote", PkguaQuoteObjCmd,
 		    &cmdTokens[1], CommandDeleted);
     return TCL_OK;
 }

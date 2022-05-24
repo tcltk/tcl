@@ -150,7 +150,7 @@ static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
 
 typedef struct {
     ClientData clientData;	/* Client data from Tcl_CreateTrace */
-    Tcl_CmdTraceProc *proc;	/* Trace function from Tcl_CreateTrace */
+    Tcl_CmdTraceProc2 *proc;	/* Trace function from Tcl_CreateTrace */
 } StringTraceData;
 
 /*
@@ -2220,11 +2220,11 @@ Tcl_CreateObjTrace(
  */
 
 Tcl_Trace
-Tcl_CreateTrace(
+Tcl_CreateTrace2(
     Tcl_Interp *interp,		/* Interpreter in which to create trace. */
     int level,			/* Only call proc for commands at nesting
 				 * level<=argument level (1=>top level). */
-    Tcl_CmdTraceProc *proc,	/* Function to call before executing each
+    Tcl_CmdTraceProc2 *proc,	/* Function to call before executing each
 				 * command. */
     ClientData clientData)	/* Arbitrary value word to pass to proc. */
 {

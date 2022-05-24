@@ -72,15 +72,15 @@ static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
 			    size_t length, int type);
 /* Binary ensemble commands */
-static Tcl_ObjCmdProc	BinaryFormatCmd;
-static Tcl_ObjCmdProc	BinaryScanCmd;
+static Tcl_ObjCmdProc2	BinaryFormatCmd;
+static Tcl_ObjCmdProc2	BinaryScanCmd;
 /* Binary encoding sub-ensemble commands */
-static Tcl_ObjCmdProc	BinaryEncodeHex;
-static Tcl_ObjCmdProc	BinaryDecodeHex;
-static Tcl_ObjCmdProc	BinaryEncode64;
-static Tcl_ObjCmdProc	BinaryDecode64;
-static Tcl_ObjCmdProc	BinaryEncodeUu;
-static Tcl_ObjCmdProc	BinaryDecodeUu;
+static Tcl_ObjCmdProc2	BinaryEncodeHex;
+static Tcl_ObjCmdProc2	BinaryDecodeHex;
+static Tcl_ObjCmdProc2	BinaryEncode64;
+static Tcl_ObjCmdProc2	BinaryDecode64;
+static Tcl_ObjCmdProc2	BinaryEncodeUu;
+static Tcl_ObjCmdProc2	BinaryDecodeUu;
 
 /*
  * The following tables are used by the binary encoders

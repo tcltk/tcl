@@ -121,7 +121,7 @@ Tcl_RecordAndEvalObj(
 				 * current procedure. */
 {
     int result, call = 1;
-    Tcl_CmdInfo info;
+    Tcl_CmdInfo2 info;
     HistoryObjs *histObjsPtr =
 	    (HistoryObjs *)Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
 
@@ -143,7 +143,7 @@ Tcl_RecordAndEvalObj(
      * Do not call [history] if it has been replaced by an empty proc
      */
 
-    result = Tcl_GetCommandInfo(interp, "::history", &info);
+    result = Tcl_GetCommandInfo2(interp, "::history", &info);
     if (result && (info.deleteProc == TclProcDeleteProc)) {
 	Proc *procPtr = (Proc *) info.objClientData;
 	call = (procPtr->cmdPtr->compileProc != TclCompileNoOp);

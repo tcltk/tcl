@@ -133,7 +133,7 @@ TCL_DECLARE_MUTEX(commandTypeLock);
  * Static functions in this file:
  */
 
-static Tcl_ObjCmdProc   BadEnsembleSubcommand;
+static Tcl_ObjCmdProc2   BadEnsembleSubcommand;
 static char *		CallCommandTraces(Interp *iPtr, Command *cmdPtr,
 			    const char *oldName, const char *newName,
 			    int flags);
@@ -144,34 +144,34 @@ static void		DeleteCoroutine(void *clientData);
 static void		DeleteInterpProc(Tcl_Interp *interp);
 static void		DeleteOpCmdClientData(void *clientData);
 #ifdef USE_DTRACE
-static Tcl_ObjCmdProc	DTraceObjCmd;
+static Tcl_ObjCmdProc2	DTraceObjCmd;
 static Tcl_NRPostProc	DTraceCmdReturn;
 #else
 #   define DTraceCmdReturn	NULL
 #endif /* USE_DTRACE */
-static Tcl_ObjCmdProc	ExprAbsFunc;
-static Tcl_ObjCmdProc	ExprBinaryFunc;
-static Tcl_ObjCmdProc	ExprBoolFunc;
-static Tcl_ObjCmdProc	ExprCeilFunc;
-static Tcl_ObjCmdProc	ExprDoubleFunc;
-static Tcl_ObjCmdProc	ExprFloorFunc;
-static Tcl_ObjCmdProc	ExprIntFunc;
-static Tcl_ObjCmdProc	ExprIsqrtFunc;
-static Tcl_ObjCmdProc   ExprIsFiniteFunc;
-static Tcl_ObjCmdProc   ExprIsInfinityFunc;
-static Tcl_ObjCmdProc   ExprIsNaNFunc;
-static Tcl_ObjCmdProc   ExprIsNormalFunc;
-static Tcl_ObjCmdProc   ExprIsSubnormalFunc;
-static Tcl_ObjCmdProc   ExprIsUnorderedFunc;
-static Tcl_ObjCmdProc	ExprMaxFunc;
-static Tcl_ObjCmdProc	ExprMinFunc;
-static Tcl_ObjCmdProc	ExprRandFunc;
-static Tcl_ObjCmdProc	ExprRoundFunc;
-static Tcl_ObjCmdProc	ExprSqrtFunc;
-static Tcl_ObjCmdProc	ExprSrandFunc;
-static Tcl_ObjCmdProc	ExprUnaryFunc;
-static Tcl_ObjCmdProc	ExprWideFunc;
-static Tcl_ObjCmdProc   FloatClassifyObjCmd;
+static Tcl_ObjCmdProc2	ExprAbsFunc;
+static Tcl_ObjCmdProc2	ExprBinaryFunc;
+static Tcl_ObjCmdProc2	ExprBoolFunc;
+static Tcl_ObjCmdProc2	ExprCeilFunc;
+static Tcl_ObjCmdProc2	ExprDoubleFunc;
+static Tcl_ObjCmdProc2	ExprFloorFunc;
+static Tcl_ObjCmdProc2	ExprIntFunc;
+static Tcl_ObjCmdProc2	ExprIsqrtFunc;
+static Tcl_ObjCmdProc2   ExprIsFiniteFunc;
+static Tcl_ObjCmdProc2   ExprIsInfinityFunc;
+static Tcl_ObjCmdProc2   ExprIsNaNFunc;
+static Tcl_ObjCmdProc2   ExprIsNormalFunc;
+static Tcl_ObjCmdProc2   ExprIsSubnormalFunc;
+static Tcl_ObjCmdProc2   ExprIsUnorderedFunc;
+static Tcl_ObjCmdProc2	ExprMaxFunc;
+static Tcl_ObjCmdProc2	ExprMinFunc;
+static Tcl_ObjCmdProc2	ExprRandFunc;
+static Tcl_ObjCmdProc2	ExprRoundFunc;
+static Tcl_ObjCmdProc2	ExprSqrtFunc;
+static Tcl_ObjCmdProc2	ExprSrandFunc;
+static Tcl_ObjCmdProc2	ExprUnaryFunc;
+static Tcl_ObjCmdProc2	ExprWideFunc;
+static Tcl_ObjCmdProc2   FloatClassifyObjCmd;
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
@@ -202,11 +202,11 @@ static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	EvalObjvCore;
 static Tcl_NRPostProc	Dispatch;
 
-static Tcl_ObjCmdProc NRInjectObjCmd;
+static Tcl_ObjCmdProc2 NRInjectObjCmd;
 static Tcl_NRPostProc NRPostInvoke;
-static Tcl_ObjCmdProc CoroTypeObjCmd;
-static Tcl_ObjCmdProc TclNRCoroInjectObjCmd;
-static Tcl_ObjCmdProc TclNRCoroProbeObjCmd;
+static Tcl_ObjCmdProc2 CoroTypeObjCmd;
+static Tcl_ObjCmdProc2 TclNRCoroInjectObjCmd;
+static Tcl_ObjCmdProc2 TclNRCoroProbeObjCmd;
 static Tcl_NRPostProc InjectHandler;
 static Tcl_NRPostProc InjectHandlerPostCall;
 
@@ -229,9 +229,9 @@ MODULE_SCOPE const TclStubs tclStubs;
 
 typedef struct {
     const char *name;		/* Name of object-based command. */
-    Tcl_ObjCmdProc *objProc;	/* Object-based function for command. */
+    Tcl_ObjCmdProc2 *objProc;	/* Object-based function for command. */
     CompileProc *compileProc;	/* Function called to compile command. */
-    Tcl_ObjCmdProc *nreProc;	/* NR-based function for command */
+    Tcl_ObjCmdProc2 *nreProc;	/* NR-based function for command */
     int flags;			/* Various flag bits, as defined below. */
 } CmdInfo;
 
@@ -433,7 +433,7 @@ static const UnsafeEnsembleInfo unsafeEnsembleCommands[] = {
 typedef struct {
     const char *name;		/* Name of the function. The full name is
 				 * "::tcl::mathfunc::<name>". */
-    Tcl_ObjCmdProc *objCmdProc;	/* Function that evaluates the function */
+    Tcl_ObjCmdProc2 *objCmdProc;	/* Function that evaluates the function */
     double (*fn)(double x);	/* Real function pointer */
 } BuiltinFuncDef;
 static const BuiltinFuncDef BuiltinFuncTable[] = {
@@ -483,7 +483,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
 
 typedef struct {
     const char *name;		/* Name of object-based command. */
-    Tcl_ObjCmdProc *objProc;	/* Object-based function for command. */
+    Tcl_ObjCmdProc2 *objProc;	/* Object-based function for command. */
     CompileProc *compileProc;	/* Function called to compile command. */
     union {
 	int numArgs;
@@ -1013,10 +1013,10 @@ Tcl_CreateInterp(void)
      * Create the core commands. Do it here, rather than calling
      * Tcl_CreateCommand, because it's faster (there's no need to check for a
      * pre-existing command by the same name). If a command has a Tcl_CmdProc
-     * but no Tcl_ObjCmdProc, set the Tcl_ObjCmdProc to
+     * but no Tcl_ObjCmdProc2, set the Tcl_ObjCmdProc2 to
      * TclInvokeStringCommand. This is an object-based wrapper function that
      * extracts strings, calls the string function, and creates an object for
-     * the result. Similarly, if a command has a Tcl_ObjCmdProc but no
+     * the result. Similarly, if a command has a Tcl_ObjCmdProc2 but no
      * Tcl_CmdProc, set the Tcl_CmdProc to TclInvokeObjectCommand.
      */
 
@@ -1089,30 +1089,30 @@ Tcl_CreateInterp(void)
      * Register the default [interp bgerror] handler.
      */
 
-    Tcl_CreateObjCommand(interp, "::tcl::Bgerror",
+    Tcl_CreateObjCommand2(interp, "::tcl::Bgerror",
 	    TclDefaultBgErrorHandlerObjCmd, NULL, NULL);
 
     /*
      * Create unsupported commands for debugging bytecode and objects.
      */
 
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::disassemble",
 	    Tcl_DisassembleObjCmd, INT2PTR(0), NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::getbytecode",
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::getbytecode",
 	    Tcl_DisassembleObjCmd, INT2PTR(1), NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::representation",
 	    Tcl_RepresentationCmd, NULL, NULL);
 
     /* Adding the bytecode assembler command */
-    cmdPtr = (Command *) Tcl_NRCreateCommand(interp,
+    cmdPtr = (Command *) Tcl_NRCreateCommand2(interp,
             "::tcl::unsupported::assemble", Tcl_AssembleObjCmd,
             TclNRAssembleObjCmd, NULL, NULL);
     cmdPtr->compileProc = &TclCompileAssembleCmd;
 
     /* Coroutine monkeybusiness */
-    Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
+    Tcl_NRCreateCommand2(interp, "::tcl::unsupported::inject", NULL,
 	    NRInjectObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::corotype",
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::corotype",
             CoroTypeObjCmd, NULL, NULL);
 
     /* Export unsupported commands */
@@ -1127,7 +1127,7 @@ Tcl_CreateInterp(void)
      * Register the tcl::dtrace command.
      */
 
-    Tcl_CreateObjCommand(interp, "::tcl::dtrace", DTraceObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::dtrace", DTraceObjCmd, NULL, NULL);
 #endif /* USE_DTRACE */
 
     /*
@@ -1143,7 +1143,7 @@ Tcl_CreateInterp(void)
     for (builtinFuncPtr = BuiltinFuncTable; builtinFuncPtr->name != NULL;
 	    builtinFuncPtr++) {
 	strcpy(mathFuncName+MATH_FUNC_PREFIX_LEN, builtinFuncPtr->name);
-	Tcl_CreateObjCommand(interp, mathFuncName,
+	Tcl_CreateObjCommand2(interp, mathFuncName,
 		builtinFuncPtr->objCmdProc, (void *)builtinFuncPtr->fn, NULL);
 	Tcl_Export(interp, nsPtr, builtinFuncPtr->name, 0);
     }
@@ -1166,7 +1166,7 @@ Tcl_CreateInterp(void)
 	occdPtr->i.numArgs = opcmdInfoPtr->i.numArgs;
 	occdPtr->expected = opcmdInfoPtr->expected;
 	strcpy(mathFuncName + MATH_OP_PREFIX_LEN, opcmdInfoPtr->name);
-	cmdPtr = (Command *) Tcl_CreateObjCommand(interp, mathFuncName,
+	cmdPtr = (Command *) Tcl_CreateObjCommand2(interp, mathFuncName,
 		opcmdInfoPtr->objProc, occdPtr, DeleteOpCmdClientData);
 	if (cmdPtr == NULL) {
 	    Tcl_Panic("failed to create math operator %s",
@@ -1228,7 +1228,7 @@ Tcl_CreateInterp(void)
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
     Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL, &tclStubs);
-    Tcl_CreateObjCommand(interp, "::tcl::build-info",
+    Tcl_CreateObjCommand2(interp, "::tcl::build-info",
 	    buildInfoObjCmd, (void *)version, NULL);
 
 
@@ -1273,7 +1273,7 @@ DeleteOpCmdClientData(
  * TclRegisterCommandTypeName, TclGetCommandTypeName --
  *
  *      Command type registration and lookup mechanism. Everything is keyed by
- *      the Tcl_ObjCmdProc for the command, and that is used as the *key* into
+ *      the Tcl_ObjCmdProc2 for the command, and that is used as the *key* into
  *      the hash table that maps to constant strings that are names. (It is
  *      recommended that those names be ASCII.)
  *
@@ -1282,7 +1282,7 @@ DeleteOpCmdClientData(
 
 void
 TclRegisterCommandTypeName(
-    Tcl_ObjCmdProc *implementationProc,
+    Tcl_ObjCmdProc2 *implementationProc,
     const char *nameStr)
 {
     Tcl_HashEntry *hPtr;
@@ -1313,7 +1313,7 @@ TclGetCommandTypeName(
     Tcl_Command command)
 {
     Command *cmdPtr = (Command *) command;
-    Tcl_ObjCmdProc *procPtr = cmdPtr->objProc;
+    Tcl_ObjCmdProc2 *procPtr = cmdPtr->objProc;
     const char *name = "native";
 
     if (procPtr == NULL) {
@@ -1384,7 +1384,7 @@ TclHideUnsafeCommands(
                         unsafePtr->ensembleNsName, unsafePtr->commandName,
                         Tcl_GetStringResult(interp));
             }
-            Tcl_CreateObjCommand(interp, TclGetString(cmdName),
+            Tcl_CreateObjCommand2(interp, TclGetString(cmdName),
                     BadEnsembleSubcommand, (void *)unsafePtr, NULL);
             TclDecrRefCount(cmdName);
             TclDecrRefCount(hideName);
@@ -2420,7 +2420,7 @@ Tcl_ExposeCommand(
  *	If a command named cmdName already exists for interp, it is deleted.
  *	In the future, when cmdName is seen as the name of a command by
  *	Tcl_Eval, proc will be called. To support the bytecode interpreter,
- *	the command is created with a wrapper Tcl_ObjCmdProc
+ *	the command is created with a wrapper Tcl_ObjCmdProc2
  *	(TclInvokeStringCommand) that eventially calls proc. When the command
  *	is deleted from the table, deleteProc will be called. See the manual
  *	entry for details on the calling sequence.
@@ -2429,14 +2429,14 @@ Tcl_ExposeCommand(
  */
 
 Tcl_Command
-Tcl_CreateCommand(
+Tcl_CreateCommand2(
     Tcl_Interp *interp,		/* Token for command interpreter returned by a
 				 * previous call to Tcl_CreateInterp. */
     const char *cmdName,	/* Name of command. If it contains namespace
 				 * qualifiers, the new command is put in the
 				 * specified namespace; otherwise it is put in
 				 * the global namespace. */
-    Tcl_CmdProc *proc,		/* Function to associate with cmdName. */
+    Tcl_CmdProc2 *proc,		/* Function to associate with cmdName. */
     void *clientData,	/* Arbitrary value passed to string proc. */
     Tcl_CmdDeleteProc *deleteProc)
 				/* If not NULL, gives a function to call when
@@ -2617,7 +2617,7 @@ Tcl_CreateCommand(
  *
  *	In the future, during bytecode evaluation when "cmdName" is seen as
  *	the name of a command by Tcl_EvalObj or Tcl_Eval, the object-based
- *	Tcl_ObjCmdProc proc will be called. When the command is deleted from
+ *	Tcl_ObjCmdProc2 proc will be called. When the command is deleted from
  *	the table, deleteProc will be called. See the manual entry for details
  *	on the calling sequence.
  *
@@ -2625,14 +2625,14 @@ Tcl_CreateCommand(
  */
 
 Tcl_Command
-Tcl_CreateObjCommand(
+Tcl_CreateObjCommand2(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * previous call to Tcl_CreateInterp). */
     const char *cmdName,	/* Name of command. If it contains namespace
 				 * qualifiers, the new command is put in the
 				 * specified namespace; otherwise it is put in
 				 * the global namespace. */
-    Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
+    Tcl_ObjCmdProc2 *proc,	/* Object-based function to associate with
 				 * name. */
     void *clientData,	/* Arbitrary value to pass to object
 				 * function. */
@@ -2682,7 +2682,7 @@ TclCreateObjCommandInNs(
     const char *cmdName,	/* Name of command, without any namespace
                                  * components. */
     Tcl_Namespace *namesp,   /* The namespace to create the command in */
-    Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
+    Tcl_ObjCmdProc2 *proc,	/* Object-based function to associate with
 				 * name. */
     void *clientData,	/* Arbitrary value to pass to object
 				 * function. */
@@ -2835,9 +2835,9 @@ TclCreateObjCommandInNs(
  *
  * TclInvokeStringCommand --
  *
- *	"Wrapper" Tcl_ObjCmdProc used to call an existing string-based
+ *	"Wrapper" Tcl_ObjCmdProc2 used to call an existing string-based
  *	Tcl_CmdProc if no object-based function exists for a command. A
- *	pointer to this function is stored as the Tcl_ObjCmdProc in a Command
+ *	pointer to this function is stored as the Tcl_ObjCmdProc2 in a Command
  *	structure. It simply turns around and calls the string Tcl_CmdProc in
  *	the Command structure.
  *
@@ -2884,16 +2884,16 @@ TclInvokeStringCommand(
  * TclInvokeObjectCommand --
  *
  *	"Wrapper" Tcl_CmdProc used to call an existing object-based
- *	Tcl_ObjCmdProc if no string-based function exists for a command. A
+ *	Tcl_ObjCmdProc2 if no string-based function exists for a command. A
  *	pointer to this function is stored as the Tcl_CmdProc in a Command
- *	structure. It simply turns around and calls the object Tcl_ObjCmdProc
+ *	structure. It simply turns around and calls the object Tcl_ObjCmdProc2
  *	in the Command structure.
  *
  * Results:
  *	A standard Tcl result value.
  *
  * Side effects:
- *	Besides those side effects of the called Tcl_ObjCmdProc,
+ *	Besides those side effects of the called Tcl_ObjCmdProc2,
  *	TclInvokeObjectCommand allocates and frees storage.
  *
  *----------------------------------------------------------------------
@@ -2920,13 +2920,13 @@ TclInvokeObjectCommand(
     }
 
     /*
-     * Invoke the command's object-based Tcl_ObjCmdProc.
+     * Invoke the command's object-based Tcl_ObjCmdProc2.
      */
 
     if (cmdPtr->objProc != NULL) {
 	result = cmdPtr->objProc(cmdPtr->objClientData, interp, argc, objv);
     } else {
-	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
+	result = Tcl_NRCallObjProc2(interp, cmdPtr->nreProc,
 		cmdPtr->objClientData, argc, objv);
     }
 
@@ -3170,17 +3170,17 @@ TclRenameCommand(
  */
 
 int
-Tcl_SetCommandInfo(
+Tcl_SetCommandInfo2(
     Tcl_Interp *interp,		/* Interpreter in which to look for
 				 * command. */
     const char *cmdName,	/* Name of desired command. */
-    const Tcl_CmdInfo *infoPtr)	/* Where to find information to store in the
+    const Tcl_CmdInfo2 *infoPtr)	/* Where to find information to store in the
 				 * command. */
 {
     Tcl_Command cmd;
 
     cmd = Tcl_FindCommand(interp, cmdName, NULL, /*flags*/ 0);
-    return Tcl_SetCommandInfoFromToken(cmd, infoPtr);
+    return Tcl_SetCommandInfoFromToken2(cmd, infoPtr);
 }
 
 /*
@@ -3205,9 +3205,9 @@ Tcl_SetCommandInfo(
  */
 
 int
-Tcl_SetCommandInfoFromToken(
+Tcl_SetCommandInfoFromToken2(
     Tcl_Command cmd,
-    const Tcl_CmdInfo *infoPtr)
+    const Tcl_CmdInfo2 *infoPtr)
 {
     Command *cmdPtr;		/* Internal representation of the command */
 
@@ -3257,17 +3257,17 @@ Tcl_SetCommandInfoFromToken(
  */
 
 int
-Tcl_GetCommandInfo(
+Tcl_GetCommandInfo2(
     Tcl_Interp *interp,		/* Interpreter in which to look for
 				 * command. */
     const char *cmdName,	/* Name of desired command. */
-    Tcl_CmdInfo *infoPtr)	/* Where to store information about
+    Tcl_CmdInfo2 *infoPtr)	/* Where to store information about
 				 * command. */
 {
     Tcl_Command cmd;
 
     cmd = Tcl_FindCommand(interp, cmdName, NULL, /*flags*/ 0);
-    return Tcl_GetCommandInfoFromToken(cmd, infoPtr);
+    return Tcl_GetCommandInfoFromToken2(cmd, infoPtr);
 }
 
 /*
@@ -3289,9 +3289,9 @@ Tcl_GetCommandInfo(
  */
 
 int
-Tcl_GetCommandInfoFromToken(
+Tcl_GetCommandInfoFromToken2(
     Tcl_Command cmd,
-    Tcl_CmdInfo *infoPtr)
+    Tcl_CmdInfo2 *infoPtr)
 {
     Command *cmdPtr;		/* Internal representation of the command */
 
@@ -4432,7 +4432,7 @@ Dispatch(
     Tcl_Interp *interp,
     TCL_UNUSED(int) /*result*/)
 {
-    Tcl_ObjCmdProc *objProc = (Tcl_ObjCmdProc *)data[0];
+    Tcl_ObjCmdProc2 *objProc = (Tcl_ObjCmdProc2 *)data[0];
     void *clientData = data[1];
     int objc = PTR2INT(data[2]);
     Tcl_Obj **objv = (Tcl_Obj **)data[3];
@@ -6524,7 +6524,7 @@ TclObjInvoke(
     if ((flags & TCL_INVOKE_HIDDEN) == 0) {
 	Tcl_Panic("TclObjInvoke: called without TCL_INVOKE_HIDDEN");
     }
-    return Tcl_NRCallObjProc(interp, TclNRInvoke, NULL, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRInvoke, NULL, objc, objv);
 }
 
 int
@@ -8315,9 +8315,9 @@ TCL_DTRACE_DEBUG_LOG()
  */
 
 int
-Tcl_NRCallObjProc(
+Tcl_NRCallObjProc2(
     Tcl_Interp *interp,
-    Tcl_ObjCmdProc *objProc,
+    Tcl_ObjCmdProc2 *objProc,
     void *clientData,
     size_t objc,
     Tcl_Obj *const objv[])
@@ -8343,14 +8343,14 @@ Tcl_NRCallObjProc(
  * Side effects:
  *	If no command named "cmdName" already exists for interp, one is
  *	created. Otherwise, if a command does exist, then if the object-based
- *	Tcl_ObjCmdProc is TclInvokeStringCommand, we assume Tcl_CreateCommand
+ *	Tcl_ObjCmdProc2 is TclInvokeStringCommand, we assume Tcl_CreateCommand
  *	was called previously for the same command and just set its
- *	Tcl_ObjCmdProc to the argument "proc"; otherwise, we delete the old
+ *	Tcl_ObjCmdProc2 to the argument "proc"; otherwise, we delete the old
  *	command.
  *
  *	In the future, during bytecode evaluation when "cmdName" is seen as
  *	the name of a command by Tcl_EvalObj or Tcl_Eval, the object-based
- *	Tcl_ObjCmdProc proc will be called. When the command is deleted from
+ *	Tcl_ObjCmdProc2 proc will be called. When the command is deleted from
  *	the table, deleteProc will be called. See the manual entry for details
  *	on the calling sequence.
  *
@@ -8358,17 +8358,17 @@ Tcl_NRCallObjProc(
  */
 
 Tcl_Command
-Tcl_NRCreateCommand(
+Tcl_NRCreateCommand2(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * previous call to Tcl_CreateInterp). */
     const char *cmdName,	/* Name of command. If it contains namespace
 				 * qualifiers, the new command is put in the
 				 * specified namespace; otherwise it is put in
 				 * the global namespace. */
-    Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
+    Tcl_ObjCmdProc2 *proc,	/* Object-based function to associate with
 				 * name, provides direct access for direct
 				 * calls. */
-    Tcl_ObjCmdProc *nreProc,	/* Object-based function to associate with
+    Tcl_ObjCmdProc2 *nreProc,	/* Object-based function to associate with
 				 * name, provides NR implementation */
     void *clientData,	/* Arbitrary value to pass to object
 				 * function. */
@@ -8377,7 +8377,7 @@ Tcl_NRCreateCommand(
 				 * this command is deleted. */
 {
     Command *cmdPtr = (Command *)
-	    Tcl_CreateObjCommand(interp, cmdName, proc, clientData,
+	    Tcl_CreateObjCommand2(interp, cmdName, proc, clientData,
                     deleteProc);
 
     cmdPtr->nreProc = nreProc;
@@ -8389,8 +8389,8 @@ TclNRCreateCommandInNs(
     Tcl_Interp *interp,
     const char *cmdName,
     Tcl_Namespace *nsPtr,
-    Tcl_ObjCmdProc *proc,
-    Tcl_ObjCmdProc *nreProc,
+    Tcl_ObjCmdProc2 *proc,
+    Tcl_ObjCmdProc2 *nreProc,
     void *clientData,
     Tcl_CmdDeleteProc *deleteProc)
 {

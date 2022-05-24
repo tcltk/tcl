@@ -34,14 +34,14 @@ static int		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr, size_t varInde
 static int		GetVariableIndex(Tcl_Interp *interp,
 			    Tcl_Obj *obj, size_t *indexPtr);
 static void		SetVarToObj(Tcl_Obj **varPtr, size_t varIndex, Tcl_Obj *objPtr);
-static Tcl_ObjCmdProc	TestbignumobjCmd;
-static Tcl_ObjCmdProc	TestbooleanobjCmd;
-static Tcl_ObjCmdProc	TestdoubleobjCmd;
-static Tcl_ObjCmdProc	TestindexobjCmd;
-static Tcl_ObjCmdProc	TestintobjCmd;
-static Tcl_ObjCmdProc	TestlistobjCmd;
-static Tcl_ObjCmdProc	TestobjCmd;
-static Tcl_ObjCmdProc	TeststringobjCmd;
+static Tcl_ObjCmdProc2	TestbignumobjCmd;
+static Tcl_ObjCmdProc2	TestbooleanobjCmd;
+static Tcl_ObjCmdProc2	TestdoubleobjCmd;
+static Tcl_ObjCmdProc2	TestindexobjCmd;
+static Tcl_ObjCmdProc2	TestintobjCmd;
+static Tcl_ObjCmdProc2	TestlistobjCmd;
+static Tcl_ObjCmdProc2	TestobjCmd;
+static Tcl_ObjCmdProc2	TeststringobjCmd;
 
 #define VARPTR_KEY "TCLOBJTEST_VARPTR"
 #define NUMBER_OF_OBJECT_VARS 20
@@ -102,20 +102,20 @@ TclObjTest_Init(
 	varPtr[i] = NULL;
     }
 
-    Tcl_CreateObjCommand(interp, "testbignumobj", TestbignumobjCmd,
+    Tcl_CreateObjCommand2(interp, "testbignumobj", TestbignumobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testbooleanobj", TestbooleanobjCmd,
+    Tcl_CreateObjCommand2(interp, "testbooleanobj", TestbooleanobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testdoubleobj", TestdoubleobjCmd,
+    Tcl_CreateObjCommand2(interp, "testdoubleobj", TestdoubleobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testintobj", TestintobjCmd,
+    Tcl_CreateObjCommand2(interp, "testintobj", TestintobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testindexobj", TestindexobjCmd,
+    Tcl_CreateObjCommand2(interp, "testindexobj", TestindexobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testlistobj", TestlistobjCmd,
+    Tcl_CreateObjCommand2(interp, "testlistobj", TestlistobjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testobj", TestobjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "teststringobj", TeststringobjCmd,
+    Tcl_CreateObjCommand2(interp, "testobj", TestobjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "teststringobj", TeststringobjCmd,
 	    NULL, NULL);
     return TCL_OK;
 }

@@ -436,7 +436,7 @@ Tcl_PkgRequireProc(
 
     args.name = name;
     args.clientDataPtr = clientDataPtr;
-    return Tcl_NRCallObjProc(interp,
+    return Tcl_NRCallObjProc2(interp,
 	    TclNRPkgRequireProc, (void *) &args, reqc, reqv);
 }
 
@@ -1058,7 +1058,7 @@ Tcl_PackageObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRPackageObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRPackageObjCmd, clientData, objc, objv);
 }
 
 int

@@ -527,10 +527,17 @@ typedef int (Tcl_AsyncProc) (void *clientData, Tcl_Interp *interp,
 typedef void (Tcl_ChannelProc) (void *clientData, int mask);
 typedef void (Tcl_CloseProc) (void *data);
 typedef void (Tcl_CmdDeleteProc) (void *clientData);
+#if 0
 typedef int (Tcl_CmdProc) (void *clientData, Tcl_Interp *interp,
 	int argc, const char *argv[]);
 typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
+	void *cmdClientData, int argc, const char *argv[]);
+#endif
+typedef int (Tcl_CmdProc2) (void *clientData, Tcl_Interp *interp,
+	int argc, const char *argv[]);
+typedef void (Tcl_CmdTraceProc2) (void *clientData, Tcl_Interp *interp,
+	int level, char *command, Tcl_CmdProc2 *proc,
 	void *cmdClientData, int argc, const char *argv[]);
 typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
@@ -555,7 +562,11 @@ typedef void (Tcl_IdleProc) (void *clientData);
 typedef void (Tcl_InterpDeleteProc) (void *clientData,
 	Tcl_Interp *interp);
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
+#if 0
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
+	int objc, struct Tcl_Obj *const *objv);
+#endif
+typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
@@ -748,6 +759,7 @@ typedef struct Tcl_CallFrame {
  * then calls the other function.
  */
 
+#if 0
 typedef struct Tcl_CmdInfo {
     int isNativeObjectProc;	/* 1 if objProc was registered by a call to
 				 * Tcl_CreateObjCommand; 0 otherwise.
@@ -768,6 +780,28 @@ typedef struct Tcl_CmdInfo {
 				 * TclRenameCommand or Tcl_Eval (of 'rename')
 				 * to do that. */
 } Tcl_CmdInfo;
+#endif
+
+typedef struct {
+    int isNativeObjectProc;	/* 1 if objProc was registered by a call to
+				 * Tcl_CreateObjCommand; 0 otherwise.
+				 * Tcl_SetCmdInfo does not modify this
+				 * field. */
+    Tcl_ObjCmdProc2 *objProc;	/* Command's object-based function. */
+    void *objClientData;	/* ClientData for object proc. */
+    Tcl_CmdProc2 *proc;		/* Command's string-based function. */
+    void *clientData;	/* ClientData for string proc. */
+    Tcl_CmdDeleteProc *deleteProc;
+				/* Function to call when command is
+				 * deleted. */
+    void *deleteData;	/* Value to pass to deleteProc (usually the
+				 * same as clientData). */
+    Tcl_Namespace *namespacePtr;/* Points to the namespace that contains this
+				 * command. Note that Tcl_SetCmdInfo will not
+				 * change a command's namespace; use
+				 * TclRenameCommand or Tcl_Eval (of 'rename')
+				 * to do that. */
+} Tcl_CmdInfo2;
 
 /*
  *----------------------------------------------------------------------------

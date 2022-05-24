@@ -1590,9 +1590,9 @@ typedef struct ByteCodeStats {
 
 typedef struct {
     const char *name;		/* The name of the subcommand. */
-    Tcl_ObjCmdProc *proc;	/* The implementation of the subcommand. */
+    Tcl_ObjCmdProc2 *proc;	/* The implementation of the subcommand. */
     CompileProc *compileProc;	/* The compiler for the subcommand. */
-    Tcl_ObjCmdProc *nreProc;	/* NRE implementation of this command. */
+    Tcl_ObjCmdProc2 *nreProc;	/* NRE implementation of this command. */
     void *clientData;	/* Any clientData to give the command. */
     int unsafe;			/* Whether this command is to be hidden by
 				 * default in a safe interpreter. */
@@ -1669,9 +1669,11 @@ typedef struct Command {
 				 * renamed, deleted, hidden, or exposed. */
     CompileProc *compileProc;	/* Procedure called to compile command. NULL
 				 * if no compile proc exists for command. */
-    Tcl_ObjCmdProc *objProc;	/* Object-based command procedure. */
+    void *oldObjProc;	/* Object-based command procedure. */
+    Tcl_ObjCmdProc2 *objProc;	/* Object-based command procedure. */
     void *objClientData;	/* Arbitrary value passed to object proc. */
-    Tcl_CmdProc *proc;		/* String-based command procedure. */
+    void *oldProc;		/* String-based command procedure. */
+    Tcl_CmdProc2 *proc;		/* String-based command procedure. */
     void *clientData;	/* Arbitrary value passed to string proc. */
     Tcl_CmdDeleteProc *deleteProc;
 				/* Procedure invoked when deleting command to,
@@ -1688,7 +1690,8 @@ typedef struct Command {
 				 * command. */
     CommandTrace *tracePtr;	/* First in list of all traces set for this
 				 * command. */
-    Tcl_ObjCmdProc *nreProc;	/* NRE implementation of this command. */
+    void *nreOldProc;
+    Tcl_ObjCmdProc2 *nreProc;	/* NRE implementation of this command. */
 } Command;
 
 /*
@@ -2582,15 +2585,6 @@ typedef Tcl_Channel (TclOpenFileChannelProc_)(Tcl_Interp *interp,
 
 /*
  *----------------------------------------------------------------
- * Data structures related to procedures
- *----------------------------------------------------------------
- */
-
-typedef Tcl_CmdProc *TclCmdProcType;
-typedef Tcl_ObjCmdProc *TclObjCmdProcType;
-
-/*
- *----------------------------------------------------------------
  * Data structures for process-global values.
  *----------------------------------------------------------------
  */
@@ -2740,31 +2734,31 @@ enum CheckEmptyStringResult {
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_ObjCmdProc TclNRApplyObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNREvalObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRCatchObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRExprObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRForObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRForeachCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRIfObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRLmapCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRPackageObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRSourceObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRSubstObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRSwitchObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRTryObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRApplyObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNREvalObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRCatchObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRExprObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRForObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRForeachCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRIfObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRLmapCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRPackageObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRSourceObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRSubstObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRSwitchObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRTryObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRUplevelObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRWhileObjCmd;
 
 MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
 MODULE_SCOPE Tcl_NRPostProc TclNRCoroutineActivateCallback;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRTailcallObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRTailcallObjCmd;
 MODULE_SCOPE Tcl_NRPostProc TclNRTailcallEval;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRInvoke;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRCoroutineObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRYieldObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRYieldmObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRYieldToObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclNRInvoke;
 MODULE_SCOPE Tcl_NRPostProc TclNRReleaseValues;
 
 MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Tcl_Obj *tailcallPtr);
@@ -2867,7 +2861,7 @@ MODULE_SCOPE int	TclCheckArrayTraces(Tcl_Interp *interp, Var *varPtr,
 MODULE_SCOPE int	TclCheckEmptyString(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
-MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclChannelNamesCmd;
 MODULE_SCOPE Tcl_NRPostProc TclClearRootEnsemble;
 MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
 			    Tcl_Obj *value2Ptr);
@@ -2882,7 +2876,7 @@ MODULE_SCOPE size_t	TclConvertElement(const char *src, size_t length,
 			    char *dst, int flags);
 MODULE_SCOPE Tcl_Command TclCreateObjCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
-			    Tcl_ObjCmdProc *proc, void *clientData,
+			    Tcl_ObjCmdProc2 *proc, void *clientData,
 			    Tcl_CmdDeleteProc *deleteProc);
 MODULE_SCOPE Tcl_Command TclCreateEnsembleInNs(Tcl_Interp *interp,
 			    const char *name, Tcl_Namespace *nameNamespacePtr,
@@ -2897,15 +2891,15 @@ MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    size_t numBytes, int flags, int line,
 			    int *clNextOuter, const char *outerScript);
-MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileCopyCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileDeleteCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileLinkCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileMakeDirsCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileReadLinkCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileRenameCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileTempDirCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclFileTemporaryCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileAttrsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileCopyCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileDeleteCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileLinkCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileMakeDirsCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileReadLinkCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileRenameCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileTempDirCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclFileTemporaryCmd;
 MODULE_SCOPE void	TclCreateLateExitHandler(Tcl_ExitProc *proc,
 			    void *clientData);
 MODULE_SCOPE void	TclDeleteLateExitHandler(Tcl_ExitProc *proc,
@@ -2948,7 +2942,7 @@ MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
 MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
-			    Tcl_ObjCmdProc *proc, Tcl_ObjCmdProc *nreProc,
+			    Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc,
 			    void *clientData,
 			    Tcl_CmdDeleteProc *deleteProc);
 MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -3188,7 +3182,7 @@ MODULE_SCOPE size_t	TclTrimRight(const char *bytes, size_t numBytes,
 			    const char *trim, size_t numTrim);
 MODULE_SCOPE const char*TclGetCommandTypeName(Tcl_Command command);
 MODULE_SCOPE void	TclRegisterCommandTypeName(
-			    Tcl_ObjCmdProc *implementationProc,
+			    Tcl_ObjCmdProc2 *implementationProc,
 			    const char *nameStr);
 MODULE_SCOPE int	TclUtfCmp(const char *cs, const char *ct);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
@@ -4110,14 +4104,14 @@ MODULE_SCOPE int TclUniCharCaseMatch(const Tcl_UniChar *uniStr,
  * Just for the purposes of command-type registration.
  */
 
-MODULE_SCOPE Tcl_ObjCmdProc TclEnsembleImplementationCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclAliasObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclLocalAliasObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclChildObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclInvokeImportedCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclOOPublicObjectCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclOOPrivateObjectCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclOOMyClassObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclEnsembleImplementationCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclAliasObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclLocalAliasObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclChildObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclInvokeImportedCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclOOPublicObjectCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclOOPrivateObjectCmd;
+MODULE_SCOPE Tcl_ObjCmdProc2 TclOOMyClassObjCmd;
 
 /*
  * TIP #462.

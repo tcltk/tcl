@@ -45,11 +45,11 @@ struct ForeachState {
 
 static int		CheckAccess(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    int mode);
-static Tcl_ObjCmdProc	EncodingConvertfromObjCmd;
-static Tcl_ObjCmdProc	EncodingConverttoObjCmd;
-static Tcl_ObjCmdProc	EncodingDirsObjCmd;
-static Tcl_ObjCmdProc	EncodingNamesObjCmd;
-static Tcl_ObjCmdProc	EncodingSystemObjCmd;
+static Tcl_ObjCmdProc2	EncodingConvertfromObjCmd;
+static Tcl_ObjCmdProc2	EncodingConverttoObjCmd;
+static Tcl_ObjCmdProc2	EncodingDirsObjCmd;
+static Tcl_ObjCmdProc2	EncodingNamesObjCmd;
+static Tcl_ObjCmdProc2	EncodingSystemObjCmd;
 static inline int	ForeachAssignments(Tcl_Interp *interp,
 			    struct ForeachState *statePtr);
 static inline void	ForeachCleanup(Tcl_Interp *interp,
@@ -70,31 +70,31 @@ static Tcl_NRPostProc	ForPostNextCallback;
 static Tcl_NRPostProc	ForeachLoopStep;
 static Tcl_NRPostProc	EvalCmdErrMsg;
 
-static Tcl_ObjCmdProc FileAttrAccessTimeCmd;
-static Tcl_ObjCmdProc FileAttrIsDirectoryCmd;
-static Tcl_ObjCmdProc FileAttrIsExecutableCmd;
-static Tcl_ObjCmdProc FileAttrIsExistingCmd;
-static Tcl_ObjCmdProc FileAttrIsFileCmd;
-static Tcl_ObjCmdProc FileAttrIsOwnedCmd;
-static Tcl_ObjCmdProc FileAttrIsReadableCmd;
-static Tcl_ObjCmdProc FileAttrIsWritableCmd;
-static Tcl_ObjCmdProc FileAttrLinkStatCmd;
-static Tcl_ObjCmdProc FileAttrModifyTimeCmd;
-static Tcl_ObjCmdProc FileAttrSizeCmd;
-static Tcl_ObjCmdProc FileAttrStatCmd;
-static Tcl_ObjCmdProc FileAttrTypeCmd;
-static Tcl_ObjCmdProc FilesystemSeparatorCmd;
-static Tcl_ObjCmdProc FilesystemVolumesCmd;
-static Tcl_ObjCmdProc PathDirNameCmd;
-static Tcl_ObjCmdProc PathExtensionCmd;
-static Tcl_ObjCmdProc PathFilesystemCmd;
-static Tcl_ObjCmdProc PathJoinCmd;
-static Tcl_ObjCmdProc PathNativeNameCmd;
-static Tcl_ObjCmdProc PathNormalizeCmd;
-static Tcl_ObjCmdProc PathRootNameCmd;
-static Tcl_ObjCmdProc PathSplitCmd;
-static Tcl_ObjCmdProc PathTailCmd;
-static Tcl_ObjCmdProc PathTypeCmd;
+static Tcl_ObjCmdProc2 FileAttrAccessTimeCmd;
+static Tcl_ObjCmdProc2 FileAttrIsDirectoryCmd;
+static Tcl_ObjCmdProc2 FileAttrIsExecutableCmd;
+static Tcl_ObjCmdProc2 FileAttrIsExistingCmd;
+static Tcl_ObjCmdProc2 FileAttrIsFileCmd;
+static Tcl_ObjCmdProc2 FileAttrIsOwnedCmd;
+static Tcl_ObjCmdProc2 FileAttrIsReadableCmd;
+static Tcl_ObjCmdProc2 FileAttrIsWritableCmd;
+static Tcl_ObjCmdProc2 FileAttrLinkStatCmd;
+static Tcl_ObjCmdProc2 FileAttrModifyTimeCmd;
+static Tcl_ObjCmdProc2 FileAttrSizeCmd;
+static Tcl_ObjCmdProc2 FileAttrStatCmd;
+static Tcl_ObjCmdProc2 FileAttrTypeCmd;
+static Tcl_ObjCmdProc2 FilesystemSeparatorCmd;
+static Tcl_ObjCmdProc2 FilesystemVolumesCmd;
+static Tcl_ObjCmdProc2 PathDirNameCmd;
+static Tcl_ObjCmdProc2 PathExtensionCmd;
+static Tcl_ObjCmdProc2 PathFilesystemCmd;
+static Tcl_ObjCmdProc2 PathJoinCmd;
+static Tcl_ObjCmdProc2 PathNativeNameCmd;
+static Tcl_ObjCmdProc2 PathNormalizeCmd;
+static Tcl_ObjCmdProc2 PathRootNameCmd;
+static Tcl_ObjCmdProc2 PathSplitCmd;
+static Tcl_ObjCmdProc2 PathTailCmd;
+static Tcl_ObjCmdProc2 PathTypeCmd;
 
 /*
  *----------------------------------------------------------------------
@@ -155,7 +155,7 @@ Tcl_CatchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRCatchObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRCatchObjCmd, clientData, objc, objv);
 }
 
 int
@@ -771,7 +771,7 @@ Tcl_EvalObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNREvalObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNREvalObjCmd, clientData, objc, objv);
 }
 
 int
@@ -887,7 +887,7 @@ Tcl_ExprObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRExprObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRExprObjCmd, clientData, objc, objv);
 }
 
 int
@@ -2298,7 +2298,7 @@ Tcl_ForObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRForObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRForObjCmd, clientData, objc, objv);
 }
 
 int
@@ -2492,7 +2492,7 @@ Tcl_ForeachObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRForeachCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRForeachCmd, clientData, objc, objv);
 }
 
 int
@@ -2512,7 +2512,7 @@ Tcl_LmapObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRLmapCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRLmapCmd, clientData, objc, objv);
 }
 
 int

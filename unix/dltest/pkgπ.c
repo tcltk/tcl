@@ -90,6 +90,6 @@ Pkg\u03C0_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "π", Pkg\u03C0_\u03A0ObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "π", Pkg\u03C0_\u03A0ObjCmd, NULL, NULL);
     return TCL_OK;
 }

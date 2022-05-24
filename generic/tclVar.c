@@ -188,7 +188,7 @@ static void		ArrayPopulateSearch(Tcl_Interp *interp,
 static void		ArrayDoneSearch(Interp *iPtr, Var *varPtr,
 			    ArraySearch *searchPtr);
 static Tcl_NRPostProc   ArrayForLoopCallback;
-static Tcl_ObjCmdProc	ArrayForNRCmd;
+static Tcl_ObjCmdProc2	ArrayForNRCmd;
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
 			    Var *varPtr, int flags, int index);
@@ -3017,7 +3017,7 @@ ArrayForObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, ArrayForNRCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, ArrayForNRCmd, clientData, objc, objv);
 }
 
 static int

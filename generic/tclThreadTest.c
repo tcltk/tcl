@@ -171,7 +171,7 @@ TclThread_Init(
     }
     Tcl_MutexUnlock(&threadMutex);
 
-    Tcl_CreateObjCommand(interp, "testthread", ThreadObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testthread", ThreadObjCmd, NULL, NULL);
     return TCL_OK;
 }
 

@@ -99,28 +99,28 @@ typedef struct {
 
 static int		DictionaryCompare(const char *left, const char *right);
 static Tcl_NRPostProc	IfConditionCallback;
-static Tcl_ObjCmdProc	InfoArgsCmd;
-static Tcl_ObjCmdProc	InfoBodyCmd;
-static Tcl_ObjCmdProc	InfoCmdCountCmd;
-static Tcl_ObjCmdProc	InfoCommandsCmd;
-static Tcl_ObjCmdProc	InfoCompleteCmd;
-static Tcl_ObjCmdProc	InfoDefaultCmd;
+static Tcl_ObjCmdProc2	InfoArgsCmd;
+static Tcl_ObjCmdProc2	InfoBodyCmd;
+static Tcl_ObjCmdProc2	InfoCmdCountCmd;
+static Tcl_ObjCmdProc2	InfoCommandsCmd;
+static Tcl_ObjCmdProc2	InfoCompleteCmd;
+static Tcl_ObjCmdProc2	InfoDefaultCmd;
 /* TIP #348 - New 'info' subcommand 'errorstack' */
-static Tcl_ObjCmdProc	InfoErrorStackCmd;
+static Tcl_ObjCmdProc2	InfoErrorStackCmd;
 /* TIP #280 - New 'info' subcommand 'frame' */
-static Tcl_ObjCmdProc	InfoFrameCmd;
-static Tcl_ObjCmdProc	InfoFunctionsCmd;
-static Tcl_ObjCmdProc	InfoHostnameCmd;
-static Tcl_ObjCmdProc	InfoLevelCmd;
-static Tcl_ObjCmdProc	InfoLibraryCmd;
-static Tcl_ObjCmdProc	InfoLoadedCmd;
-static Tcl_ObjCmdProc	InfoNameOfExecutableCmd;
-static Tcl_ObjCmdProc	InfoPatchLevelCmd;
-static Tcl_ObjCmdProc	InfoProcsCmd;
-static Tcl_ObjCmdProc	InfoScriptCmd;
-static Tcl_ObjCmdProc	InfoSharedlibCmd;
-static Tcl_ObjCmdProc	InfoCmdTypeCmd;
-static Tcl_ObjCmdProc	InfoTclVersionCmd;
+static Tcl_ObjCmdProc2	InfoFrameCmd;
+static Tcl_ObjCmdProc2	InfoFunctionsCmd;
+static Tcl_ObjCmdProc2	InfoHostnameCmd;
+static Tcl_ObjCmdProc2	InfoLevelCmd;
+static Tcl_ObjCmdProc2	InfoLibraryCmd;
+static Tcl_ObjCmdProc2	InfoLoadedCmd;
+static Tcl_ObjCmdProc2	InfoNameOfExecutableCmd;
+static Tcl_ObjCmdProc2	InfoPatchLevelCmd;
+static Tcl_ObjCmdProc2	InfoProcsCmd;
+static Tcl_ObjCmdProc2	InfoScriptCmd;
+static Tcl_ObjCmdProc2	InfoSharedlibCmd;
+static Tcl_ObjCmdProc2	InfoCmdTypeCmd;
+static Tcl_ObjCmdProc2	InfoTclVersionCmd;
 static SortElement *	MergeLists(SortElement *leftPtr, SortElement *rightPtr,
 			    SortInfo *infoPtr);
 static int		SortCompare(SortElement *firstPtr, SortElement *second,
@@ -190,7 +190,7 @@ Tcl_IfObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRIfObjCmd, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, TclNRIfObjCmd, clientData, objc, objv);
 }
 
 int

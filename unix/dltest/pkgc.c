@@ -125,8 +125,8 @@ Pkgc_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkgc_sub", Pkgc_SubObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "pkgc_unsafe", Pkgc_UnsafeObjCmd, NULL,
+    Tcl_CreateObjCommand2(interp, "pkgc_sub", Pkgc_SubObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "pkgc_unsafe", Pkgc_UnsafeObjCmd, NULL,
 	    NULL);
     return TCL_OK;
 }
@@ -162,6 +162,6 @@ Pkgc_SafeInit(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkgc_sub", Pkgc_SubObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "pkgc_sub", Pkgc_SubObjCmd, NULL, NULL);
     return TCL_OK;
 }

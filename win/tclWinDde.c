@@ -179,7 +179,7 @@ Dde_Init(
 	return TCL_ERROR;
     }
 
-    Tcl_CreateObjCommand(interp, "dde", DdeObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "dde", DdeObjCmd, NULL, NULL);
     Tcl_CreateExitHandler(DdeExitProc, NULL);
     return Tcl_PkgProvideEx(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION, NULL);
 }
@@ -440,7 +440,7 @@ DdeSetServerName(
 	Tcl_ExposeCommand(interp, "dde", "dde");
     }
 
-    Tcl_CreateObjCommand(interp, "dde", DdeObjCmd,
+    Tcl_CreateObjCommand2(interp, "dde", DdeObjCmd,
 	    riPtr, DeleteProc);
     if (Tcl_IsSafe(interp)) {
 	Tcl_HideCommand(interp, "dde", "dde");

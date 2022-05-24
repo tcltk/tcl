@@ -877,15 +877,15 @@ const TclStubs tclStubs = {
     Tcl_CreateChannel, /* 88 */
     Tcl_CreateChannelHandler, /* 89 */
     Tcl_CreateCloseHandler, /* 90 */
-    Tcl_CreateCommand, /* 91 */
+    0, /* 91 */
     Tcl_CreateEventSource, /* 92 */
     Tcl_CreateExitHandler, /* 93 */
     Tcl_CreateInterp, /* 94 */
     0, /* 95 */
-    Tcl_CreateObjCommand, /* 96 */
+    0, /* 96 */
     Tcl_CreateChild, /* 97 */
     Tcl_CreateTimerHandler, /* 98 */
-    Tcl_CreateTrace, /* 99 */
+    0, /* 99 */
     Tcl_DeleteAssocData, /* 100 */
     Tcl_DeleteChannelHandler, /* 101 */
     Tcl_DeleteCloseHandler, /* 102 */
@@ -945,7 +945,7 @@ const TclStubs tclStubs = {
     Tcl_GetChannelName, /* 156 */
     Tcl_GetChannelOption, /* 157 */
     Tcl_GetChannelType, /* 158 */
-    Tcl_GetCommandInfo, /* 159 */
+    0, /* 159 */
     Tcl_GetCommandName, /* 160 */
     Tcl_GetErrno, /* 161 */
     Tcl_GetHostName, /* 162 */
@@ -1012,7 +1012,7 @@ const TclStubs tclStubs = {
     Tcl_SetAssocData, /* 223 */
     Tcl_SetChannelBufferSize, /* 224 */
     Tcl_SetChannelOption, /* 225 */
-    Tcl_SetCommandInfo, /* 226 */
+    0, /* 226 */
     Tcl_SetErrno, /* 227 */
     Tcl_SetErrorCode, /* 228 */
     Tcl_SetMaxBlockTime, /* 229 */
@@ -1270,8 +1270,8 @@ const TclStubs tclStubs = {
     Tcl_EvalTokensStandard, /* 481 */
     Tcl_GetTime, /* 482 */
     Tcl_CreateObjTrace, /* 483 */
-    Tcl_GetCommandInfoFromToken, /* 484 */
-    Tcl_SetCommandInfoFromToken, /* 485 */
+    0, /* 484 */
+    0, /* 485 */
     Tcl_DbNewWideIntObj, /* 486 */
     Tcl_GetWideIntFromObj, /* 487 */
     Tcl_NewWideIntObj, /* 488 */
@@ -1369,12 +1369,12 @@ const TclStubs tclStubs = {
     Tcl_CancelEval, /* 580 */
     Tcl_Canceled, /* 581 */
     Tcl_CreatePipe, /* 582 */
-    Tcl_NRCreateCommand, /* 583 */
+    0, /* 583 */
     Tcl_NREvalObj, /* 584 */
     Tcl_NREvalObjv, /* 585 */
     Tcl_NRCmdSwap, /* 586 */
     Tcl_NRAddCallback, /* 587 */
-    Tcl_NRCallObjProc, /* 588 */
+    0, /* 588 */
     Tcl_GetFSDeviceFromStat, /* 589 */
     Tcl_GetFSInodeFromStat, /* 590 */
     Tcl_GetModeFromStat, /* 591 */
@@ -1460,6 +1460,17 @@ const TclStubs tclStubs = {
     Tcl_UtfAtIndex, /* 671 */
     Tcl_GetRange, /* 672 */
     Tcl_GetUniChar, /* 673 */
+    0, /* 674 */
+    0, /* 675 */
+    Tcl_CreateCommand2, /* 676 */
+    Tcl_CreateObjCommand2, /* 677 */
+    Tcl_NRCreateCommand2, /* 678 */
+    Tcl_NRCallObjProc2, /* 679 */
+    Tcl_GetCommandInfo2, /* 680 */
+    Tcl_SetCommandInfo2, /* 681 */
+    Tcl_GetCommandInfoFromToken2, /* 682 */
+    Tcl_SetCommandInfoFromToken2, /* 683 */
+    Tcl_CreateTrace2, /* 684 */
 };
 
 /* !END!: Do not edit above this line. */

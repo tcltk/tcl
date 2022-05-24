@@ -133,8 +133,8 @@ Pkga_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkga_eq", Pkga_EqObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "pkga_quote", Pkga_QuoteObjCmd, NULL,
+    Tcl_CreateObjCommand2(interp, "pkga_eq", Pkga_EqObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "pkga_quote", Pkga_QuoteObjCmd, NULL,
 	    NULL);
     return TCL_OK;
 }

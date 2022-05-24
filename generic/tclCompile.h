@@ -1062,7 +1062,7 @@ typedef struct {
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
+MODULE_SCOPE Tcl_ObjCmdProc2	TclNRInterpCoroutine;
 
 /*
  *----------------------------------------------------------------

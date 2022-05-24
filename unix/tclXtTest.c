@@ -15,7 +15,7 @@
 #include <X11/Intrinsic.h>
 #include "tcl.h"
 
-static Tcl_ObjCmdProc TesteventloopCmd;
+static Tcl_ObjCmdProc2 TesteventloopCmd;
 
 /*
  * Functions defined in tclXtNotify.c for use by users of the Xt Notifier:

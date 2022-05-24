@@ -41,7 +41,7 @@ typedef struct {
  * Static functions in this file:
  */
 
-static Tcl_ObjCmdProc		QueryConfigObjCmd;
+static Tcl_ObjCmdProc2		QueryConfigObjCmd;
 static Tcl_CmdDeleteProc	QueryConfigDelete;
 static Tcl_InterpDeleteProc	ConfigDictDeleteProc;
 static Tcl_Obj *	GetConfigDict(Tcl_Interp *interp);
@@ -163,7 +163,7 @@ Tcl_RegisterConfig(
 
     TclDStringAppendLiteral(&cmdName, "::pkgconfig");
 
-    if (Tcl_CreateObjCommand(interp, Tcl_DStringValue(&cmdName),
+    if (Tcl_CreateObjCommand2(interp, Tcl_DStringValue(&cmdName),
 	    QueryConfigObjCmd, cdPtr, QueryConfigDelete) == NULL) {
 	Tcl_Panic("%s: %s", "Tcl_RegisterConfig",
 		"Unable to create query command for package configuration");
