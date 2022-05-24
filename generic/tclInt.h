@@ -2423,59 +2423,177 @@ typedef enum TclEolTranslation {
 #define TCL_INVOKE_NO_TRACEBACK	(1<<2)
 
 /*
- * The structure used as the internal representation of Tcl list objects. This
- * struct is grown (reallocated and copied) as necessary to hold all the
- * list's element pointers. The struct might contain more slots than currently
- * used to hold all element pointers. This is done to make append operations
- * faster.
+ * A Tcl list's internal representation is defined through three structures.
+ *
+ * A ListStore struct is a structure that includes a variable size array that
+ * serves as storage for a Tcl list. A contiguous sequence of slots in the
+ * array, the "in-use" area, holds valid pointers to Tcl_Obj values that
+ * belong to one or more Tcl lists. The unused slots before and after these
+ * are free slots that may be used to prepend and append without having to
+ * reallocate the struct. The ListStore may be shared amongst multiple lists
+ * and reference counted.
+ *
+ * A ListSpan struct defines a sequence of slots within a ListStore. This sequence
+ * always lies within the "in-use" area of the ListStore. Like ListStore, the
+ * structure may be shared among multiple lists and is reference counted.
+ *
+ * A ListRep struct holds the internal representation of a Tcl list as stored
+ * in a Tcl_Obj. It is composed of a ListStore and a ListSpan that together
+ * define the content of the list. The ListSpan specifies the range of slots
+ * within the ListStore that hold elements for this list. The ListSpan is
+ * optional in which case the list includes all the "in-use" slots of the
+ * ListStore.
+ *
  */
+typedef struct ListStore {
+    int refCount;
+    int firstUsed;     /* Index of first slot in use within the slots[] array */
+    int numUsed;       /* Number of slots in use (starting at index firstUsed) */
+    int numAllocated;  /* Total number of slots[] array slots. */
+    int flags;         /* LISTSTORE_* flags */
+    Tcl_Obj *slots[1]; /* Variable size array. The struct is grown as needed */
+} ListStore;
 
-typedef struct List {
-    unsigned int refCount;
-    int maxElemCount;		/* Total number of element array slots. */
-    int elemCount;		/* Current number of list elements. */
-    int canonicalFlag;		/* Set if the string representation was
-				 * derived from the list representation. May
-				 * be ignored if there is no string rep at
-				 * all.*/
-    Tcl_Obj *elements;		/* First list element; the struct is grown to
-				 * accommodate all elements. */
-} List;
+#define LISTSTORE_CANONICAL 0x1 /* All Tcl_Obj's referencing this
+                                   store have their string representation
+                                   derived from the list representation */
 
+/* TODO - should the limit not be based on INT_MAX and not UINT_MAX? */
 #define LIST_MAX \
-	(1 + (int)(((size_t)UINT_MAX - sizeof(List))/sizeof(Tcl_Obj *)))
-#define LIST_SIZE(numElems) \
-	(unsigned)(sizeof(List) + (((numElems) - 1) * sizeof(Tcl_Obj *)))
+	(1 + (int)(((size_t)UINT_MAX - sizeof(ListStore))/sizeof(Tcl_Obj *)))
+#define LIST_SIZE(numSlots_) \
+	(unsigned)(sizeof(ListStore) + (((numSlots_) - 1) * sizeof(Tcl_Obj *)))
+
+/* See comments above */
+typedef struct ListSpan {
+    int refCount;     /* Count of references to this span record */
+    int spanStart;    /* Starting index within parentList where the span */
+    int spanLength;   /* Number of elements in the span */
+} ListSpan;
+
+/* See comments above */
+typedef struct ListRep {
+    ListStore *storePtr;/* element array shared amongst different lists */
+    ListSpan *spanPtr;  /* If not NULL, the span holds the range of slots
+                           within *storePtr that contain this list elements. */
+} ListRep;
 
 /*
- * Macro used to get the elements of a list object.
+ * Macros used to get access list internal representations.
+ *
+ * Naming conventions:
+ * ListRep* - expect a pointer to a valid ListRep
+ * ListObj* - expect a pointer to a Tcl_Obj whose internal type is known to
+ *            be a list (tclListType). Will crash otherwise.
+ * TclListObj* - expect a pointer to a Tcl_Obj whose internal type may or may not
+ *            be tclListType. These will convert as needed and return error if
+ *            conversion not possible.
  */
 
-#define ListRepPtr(listPtr) \
-    ((List *) (listPtr)->internalRep.twoPtrValue.ptr1)
+/* Returns the starting slot for this listRep in the contained ListStore */
+#define ListRepStart(listRepPtr_)                               \
+    ((listRepPtr_)->spanPtr ? (listRepPtr_)->spanPtr->spanStart \
+			    : (listRepPtr_)->storePtr->firstUsed)
 
-#define ListObjGetElements(listPtr, objc, objv) \
-    ((objv) = &(ListRepPtr(listPtr)->elements), \
-     (objc) = ListRepPtr(listPtr)->elemCount)
+/* Returns the number of elements in this listRep */
+#define ListRepLength(listRepPtr_)                               \
+    ((listRepPtr_)->spanPtr ? (listRepPtr_)->spanPtr->spanLength \
+			    : (listRepPtr_)->storePtr->numUsed)
 
-#define ListObjLength(listPtr, len) \
-    ((len) = ListRepPtr(listPtr)->elemCount)
+/* Returns a pointer to the first slot containing this ListRep elements */
+#define ListRepElementsBase(listRepPtr_) \
+    (&(listRepPtr_)->storePtr->slots[ListRepStart(listRepPtr_)])
 
-#define ListObjIsCanonical(listPtr) \
-    (((listPtr)->bytes == NULL) || ListRepPtr(listPtr)->canonicalFlag)
+/* Stores the number of elements and base address of the element array */
+#define ListRepElements(listRepPtr_, objc_, objv_) \
+    (((objv_) = ListRepElementsBase(listRepPtr_)), \
+     ((objc_) = ListRepLength(listRepPtr_)))
 
-#define TclListObjGetElementsM(interp, listPtr, objcPtr, objvPtr) \
-    (((listPtr)->typePtr == &tclListType) \
-	    ? ((ListObjGetElements((listPtr), *(objcPtr), *(objvPtr))), TCL_OK)\
-	    : Tcl_ListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)))
+/* Returns 1/0 whether the ListRep's ListStore is shared. */
+#define ListRepIsShared(listRepPtr_) ((listRepPtr_)->storePtr->refCount > 1)
 
-#define TclListObjLengthM(interp, listPtr, lenPtr) \
-    (((listPtr)->typePtr == &tclListType) \
-	    ? ((ListObjLength((listPtr), *(lenPtr))), TCL_OK)\
-	    : Tcl_ListObjLength((interp), (listPtr), (lenPtr)))
+/* Returns a pointer to the ListStore component */
+#define ListObjStorePtr(listObj_) \
+    ((ListStore *)((listObj_)->internalRep.twoPtrValue.ptr1))
 
-#define TclListObjIsCanonical(listPtr) \
-    (((listPtr)->typePtr == &tclListType) ? ListObjIsCanonical((listPtr)) : 0)
+/* Returns a pointer to the ListSpan component */
+#define ListObjSpanPtr(listObj_) \
+    ((ListSpan *)((listObj_)->internalRep.twoPtrValue.ptr2))
+
+/* Returns the ListRep internal representaton in a Tcl_Obj */
+#define ListObjGetRep(listObj_, listRepPtr_)                 \
+    do {                                                     \
+	(listRepPtr_)->storePtr = ListObjStorePtr(listObj_); \
+	(listRepPtr_)->spanPtr = ListObjSpanPtr(listObj_);   \
+    } while (0)
+
+/* Returns the length of the list */
+#define ListObjLength(listObj_, len_)                                         \
+    ((len_) = ListObjSpanPtr(listObj_) ? ListObjSpanPtr(listObj_)->spanLength \
+				       : ListObjStorePtr(listObj_)->numUsed)
+
+/* Returns the starting slot index of this list's elements in the ListStore */
+#define ListObjStart(listObj_)                                      \
+    (ListObjSpanPtr(listObj_) ? ListObjSpanPtr(listObj_)->spanStart \
+			      : ListObjStorePtr(listObj_)->firstUsed)
+
+/* Stores the element count and base address of this list's elements */
+#define ListObjGetElements(listObj_, objc_, objv_) \
+    (((objv_) = &ListObjStorePtr(listObj_)->slots[ListObjStart(listObj_)]), \
+     (ListObjLength(listObj_, (objc_))))
+
+/*
+ * Returns 1/0 whether the internal representation (not the Tcl_Obj itself)
+ * is shared.  Note by intent this only checks for sharing of ListStore,
+ * not spans.
+ */
+#define ListObjRepIsShared(listObj_) (ListObjStorePtr(listObj_)->refCount > 1)
+
+/*
+ * Certain commands like concat are optimized if an existing string
+ * representation of a list object is known to be in canonical format (i.e.
+ * generated from the list representation). There are three conditions when
+ * this will be the case:
+ * (1) No string representation exists which means it will obviously have
+ * to be generated from the list representation when needed
+ * (2) The ListStore flags is marked canonical. This is done at the time
+ * the string representation is generated from the list IF the list
+ * representation does not have a span (see comments in UpdateStringOfList).
+ * (3) The list representation does not have a span component. This is
+ * because list Tcl_Obj's with spans are always created from existing lists
+ * and never from strings (see SetListFromAny) and thus their string
+ * representation will always be canonical.
+ */
+#define ListObjIsCanonical(listObj_)                             \
+    (((listObj_)->bytes == NULL)                                 \
+     || (ListObjStorePtr(listObj_)->flags & LISTSTORE_CANONICAL) \
+     || ListObjSpanPtr(listObj_) != NULL)
+
+/*
+ * Converts the Tcl_Obj to a list if it isn't one and stores the element
+ * count and base address of this list's elements in objcPtr_ and objvPtr_.
+ * Return TCL_OK on success or TCL_ERROR if the Tcl_Obj cannot be
+ * converted to a list.
+ */
+#define TclListObjGetElementsM(interp_, listObj_, objcPtr_, objvPtr_)    \
+    (((listObj_)->typePtr == &tclListType)                              \
+	 ? ((ListObjGetElements((listObj_), *(objcPtr_), *(objvPtr_))), \
+	    TCL_OK)                                                     \
+	 : Tcl_ListObjGetElements(                                      \
+	     (interp_), (listObj_), (objcPtr_), (objvPtr_)))
+
+/*
+ * Converts the Tcl_Obj to a list if it isn't one and stores the element
+ * count in lenPtr_.  Returns TCL_OK on success or TCL_ERROR if the
+ * Tcl_Obj cannot be converted to a list.
+ */
+#define TclListObjLengthM(interp_, listObj_, lenPtr_)         \
+    (((listObj_)->typePtr == &tclListType)                   \
+	 ? ((ListObjLength((listObj_), *(lenPtr_))), TCL_OK) \
+	 : Tcl_ListObjLength((interp_), (listObj_), (lenPtr_)))
+
+#define TclListObjIsCanonical(listObj_) \
+    (((listObj_)->typePtr == &tclListType) ? ListObjIsCanonical((listObj_)) : 0)
 
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
@@ -3092,6 +3210,9 @@ MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, int fromIdx,
 			    int toIdx);
+MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
+			    Tcl_Obj *toObj, int elemCount,
+			    Tcl_Obj *const elemObjv[]);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
@@ -5207,6 +5328,7 @@ typedef struct NRE_callback {
 
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
+
 
 #if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
 #define Tcl_AttemptAlloc(size)        TclpAlloc(size)

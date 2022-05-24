@@ -2029,6 +2029,7 @@ Tcl_ConcatObj(
 	for (i = 0;  i < objc;  i++) {
 	    objPtr = objv[i];
 	    if (!TclListObjIsCanonical(objPtr)) {
+		/* Because of above loop, only possible if empty string. Skip */
 		continue;
 	    }
 	    if (resPtr) {
