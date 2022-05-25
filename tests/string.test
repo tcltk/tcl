@@ -795,10 +795,10 @@ test string-6.130.1.$noComp {string is entier, false on bad octal} {
 test string-6.131.$noComp {string is entier, false on bad hex} {
     list [run {string is entier -fail var 0X12345611234123456123456562345612345612345612345612345612345612345612345612345612345345XYZ}] $var
 } {0 88}
-test string-6.132.$noComp {string is integer, bug [76ad7aeba3]} {
+test string-6.139.$noComp {string is integer, bug [76ad7aeba3]} {
     run {string is integer 18446744073709551615}
 } 0
-test string-6.133.$noComp {string is integer, bug [76ad7aeba3]} {
+test string-6.140.$noComp {string is integer, bug [76ad7aeba3]} {
     run {string is integer -18446744073709551615}
 } 0
 
