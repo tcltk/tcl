@@ -1451,6 +1451,7 @@ StringIsCmd(
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
     int i, failat = 0, result = 1, strict = 0, index, length1, length2;
     Tcl_Obj *objPtr, *failVarObj = NULL;
+    Tcl_WideInt w;
 
     static const char *const isClasses[] = {
 	"alnum",	"alpha",	"ascii",	"control",
@@ -1592,9 +1593,17 @@ StringIsCmd(
     case STR_IS_INT: {
 	    void *p;
 	    int type;
-	    if (TCL_OK == TclGetNumberFromObj(NULL, objPtr, &p, &type)
-		    && (type == TCL_NUMBER_LONG) && (*(long *)p <= INT_MAX) && (*(long *)p >= INT_MIN)) {
-		break;
+	    if (TCL_OK == TclGetNumberFromObj(NULL, objPtr, &p, &type)) {
+		if (type == TCL_NUMBER_LONG
+#ifndef TCL_WIDE_INT_IS_LONG
+			|| type == TCL_NUMBER_WIDE
+#endif
+			|| type == TCL_NUMBER_BIG) {
+		    /* [string is integer] is -UINT_MAX to UINT_MAX range */
+		    if (TclGetIntFromObj(NULL, objPtr, &i) == TCL_OK) {
+	    	break;
+		    }
+		}
 	    }
 	}
 	goto failedIntParse;
@@ -1643,13 +1652,9 @@ StringIsCmd(
 	    failat = 0;
 	}
 	break;
-    case STR_IS_WIDE: {
-	    void *p;
-	    int type;
-	    if (TCL_OK == TclGetNumberFromObj(NULL, objPtr, &p, &type)
-		    && (type == TCL_NUMBER_WIDE)) {
-		break;
-	    }
+    case STR_IS_WIDE:
+	if (TCL_OK == TclGetWideIntFromObj(NULL, objPtr, &w)) {
+	    break;
 	}
 
     failedIntParse:
