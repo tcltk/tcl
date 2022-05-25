@@ -52,7 +52,7 @@ Tclxttest_Init(
     }
     XtToolkitInitialize();
     InitNotifier();
-    Tcl_CreateObjCommand(interp, "testeventloop", TesteventloopCmd,
+    Tcl_CreateObjCommand2(interp, "testeventloop", TesteventloopCmd,
 	    NULL, NULL);
     return TCL_OK;
 }

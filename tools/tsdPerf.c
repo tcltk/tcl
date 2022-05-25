@@ -44,8 +44,8 @@ Tsdperf_Init(Tcl_Interp *interp) {
 	return TCL_ERROR;
     }
 
-    Tcl_CreateObjCommand(interp, "tsdPerfSet", tsdPerfSetObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "tsdPerfGet", tsdPerfGetObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "tsdPerfSet", tsdPerfSetObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "tsdPerfGet", tsdPerfGetObjCmd, NULL, NULL);
 
     return TCL_OK;
 }
