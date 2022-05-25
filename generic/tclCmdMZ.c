@@ -1590,9 +1590,21 @@ StringIsCmd(
     case STR_IS_GRAPH:
 	chcomp = Tcl_UniCharIsGraph;
 	break;
-    case STR_IS_INT:
-	if (TCL_OK == TclGetIntFromObj(NULL, objPtr, &i)) {
-	    break;
+    case STR_IS_INT: {
+	    void *p;
+	    int type;
+	    if (TCL_OK == TclGetNumberFromObj(NULL, objPtr, &p, &type)) {
+		if (type == TCL_NUMBER_LONG
+#ifndef TCL_WIDE_INT_IS_LONG
+			|| type == TCL_NUMBER_WIDE
+#endif
+			|| type == TCL_NUMBER_BIG) {
+		    /* [string is integer] is -UINT_MAX to UINT_MAX range */
+		    if (TclGetIntFromObj(NULL, objPtr, &i) == TCL_OK) {
+	    	break;
+		    }
+		}
+	    }
 	}
 	goto failedIntParse;
     case STR_IS_ENTIER:
