@@ -2644,8 +2644,10 @@ typedef Tcl_Channel (TclOpenFileChannelProc_)(Tcl_Interp *interp,
  *----------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 typedef Tcl_CmdProc *TclCmdProcType;
 typedef Tcl_ObjCmdProc *TclObjCmdProcType;
+#endif
 
 /*
  *----------------------------------------------------------------
