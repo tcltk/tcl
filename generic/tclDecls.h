@@ -1242,11 +1242,7 @@ EXTERN int		Tcl_EvalTokensStandard(Tcl_Interp *interp,
 				Tcl_Token *tokenPtr, size_t count);
 /* 482 */
 EXTERN void		Tcl_GetTime(Tcl_Time *timeBuf);
-/* 483 */
-EXTERN Tcl_Trace	Tcl_CreateObjTrace(Tcl_Interp *interp, int level,
-				int flags, Tcl_CmdObjTraceProc *objProc,
-				void *clientData,
-				Tcl_CmdObjTraceDeleteProc *delProc);
+/* Slot 483 is reserved */
 /* Slot 484 is reserved */
 /* Slot 485 is reserved */
 /* 486 */
@@ -1810,12 +1806,17 @@ EXTERN int		Tcl_SetCommandInfo2(Tcl_Interp *interp,
 				const char *cmdName,
 				const Tcl_CmdInfo2 *infoPtr);
 /* 682 */
+EXTERN Tcl_Trace	Tcl_CreateObjTrace2(Tcl_Interp *interp, int level,
+				int flags, Tcl_CmdObjTraceProc2 *objProc,
+				void *clientData,
+				Tcl_CmdObjTraceDeleteProc *delProc);
+/* 683 */
 EXTERN int		Tcl_GetCommandInfoFromToken2(Tcl_Command token,
 				Tcl_CmdInfo2 *infoPtr);
-/* 683 */
+/* 684 */
 EXTERN int		Tcl_SetCommandInfoFromToken2(Tcl_Command token,
 				const Tcl_CmdInfo2 *infoPtr);
-/* 684 */
+/* 685 */
 EXTERN Tcl_Trace	Tcl_CreateTrace2(Tcl_Interp *interp, int level,
 				Tcl_CmdTraceProc2 *proc, void *clientData);
 
@@ -2312,7 +2313,7 @@ typedef struct TclStubs {
     void (*tcl_FSMountsChanged) (const Tcl_Filesystem *fsPtr); /* 480 */
     int (*tcl_EvalTokensStandard) (Tcl_Interp *interp, Tcl_Token *tokenPtr, size_t count); /* 481 */
     void (*tcl_GetTime) (Tcl_Time *timeBuf); /* 482 */
-    Tcl_Trace (*tcl_CreateObjTrace) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc *objProc, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 483 */
+    void (*reserved483)(void);
     void (*reserved484)(void);
     void (*reserved485)(void);
     Tcl_Obj * (*tcl_DbNewWideIntObj) (Tcl_WideInt wideValue, const char *file, int line); /* 486 */
@@ -2511,9 +2512,10 @@ typedef struct TclStubs {
     int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 679 */
     int (*tcl_GetCommandInfo2) (Tcl_Interp *interp, const char *cmdName, Tcl_CmdInfo2 *infoPtr); /* 680 */
     int (*tcl_SetCommandInfo2) (Tcl_Interp *interp, const char *cmdName, const Tcl_CmdInfo2 *infoPtr); /* 681 */
-    int (*tcl_GetCommandInfoFromToken2) (Tcl_Command token, Tcl_CmdInfo2 *infoPtr); /* 682 */
-    int (*tcl_SetCommandInfoFromToken2) (Tcl_Command token, const Tcl_CmdInfo2 *infoPtr); /* 683 */
-    Tcl_Trace (*tcl_CreateTrace2) (Tcl_Interp *interp, int level, Tcl_CmdTraceProc2 *proc, void *clientData); /* 684 */
+    Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 682 */
+    int (*tcl_GetCommandInfoFromToken2) (Tcl_Command token, Tcl_CmdInfo2 *infoPtr); /* 683 */
+    int (*tcl_SetCommandInfoFromToken2) (Tcl_Command token, const Tcl_CmdInfo2 *infoPtr); /* 684 */
+    Tcl_Trace (*tcl_CreateTrace2) (Tcl_Interp *interp, int level, Tcl_CmdTraceProc2 *proc, void *clientData); /* 685 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3428,8 +3430,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_EvalTokensStandard) /* 481 */
 #define Tcl_GetTime \
 	(tclStubsPtr->tcl_GetTime) /* 482 */
-#define Tcl_CreateObjTrace \
-	(tclStubsPtr->tcl_CreateObjTrace) /* 483 */
+/* Slot 483 is reserved */
 /* Slot 484 is reserved */
 /* Slot 485 is reserved */
 #define Tcl_DbNewWideIntObj \
@@ -3819,12 +3820,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetCommandInfo2) /* 680 */
 #define Tcl_SetCommandInfo2 \
 	(tclStubsPtr->tcl_SetCommandInfo2) /* 681 */
+#define Tcl_CreateObjTrace2 \
+	(tclStubsPtr->tcl_CreateObjTrace2) /* 682 */
 #define Tcl_GetCommandInfoFromToken2 \
-	(tclStubsPtr->tcl_GetCommandInfoFromToken2) /* 682 */
+	(tclStubsPtr->tcl_GetCommandInfoFromToken2) /* 683 */
 #define Tcl_SetCommandInfoFromToken2 \
-	(tclStubsPtr->tcl_SetCommandInfoFromToken2) /* 683 */
+	(tclStubsPtr->tcl_SetCommandInfoFromToken2) /* 684 */
 #define Tcl_CreateTrace2 \
-	(tclStubsPtr->tcl_CreateTrace2) /* 684 */
+	(tclStubsPtr->tcl_CreateTrace2) /* 685 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

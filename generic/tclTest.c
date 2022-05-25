@@ -1300,7 +1300,7 @@ TestcmdtraceCmd(
 	static int deleteCalled;
 
 	deleteCalled = 0;
-	cmdTrace = Tcl_CreateObjTrace(interp, 50000,
+	cmdTrace = Tcl_CreateObjTrace2(interp, 50000,
 		TCL_ALLOW_INLINE_COMPILATION, ObjTraceProc,
 		&deleteCalled, ObjTraceDeleteProc);
 	result = Tcl_EvalEx(interp, argv[2], -1, 0);

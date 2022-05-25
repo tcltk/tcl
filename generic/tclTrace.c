@@ -133,7 +133,7 @@ static char *		TraceVarProc(ClientData clientData, Tcl_Interp *interp,
 static void		TraceCommandProc(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
-static Tcl_CmdObjTraceProc TraceExecutionProc;
+static Tcl_CmdObjTraceProc2 TraceExecutionProc;
 static int		StringTraceProc(ClientData clientData,
 			    Tcl_Interp *interp, int level,
 			    const char *command, Tcl_Command commandInfo,
@@ -1925,7 +1925,7 @@ TraceExecutionProc(
 	    tcmdPtr->startCmd = (char *)Tcl_Alloc(len);
 	    memcpy(tcmdPtr->startCmd, command, len);
 	    tcmdPtr->refCount++;
-	    tcmdPtr->stepTrace = Tcl_CreateObjTrace(interp, 0,
+	    tcmdPtr->stepTrace = Tcl_CreateObjTrace2(interp, 0,
 		   (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) >> 2,
 		   TraceExecutionProc, tcmdPtr, CommandObjTraceDeleted);
 	}
@@ -2131,11 +2131,11 @@ TraceVarProc(
  */
 
 Tcl_Trace
-Tcl_CreateObjTrace(
+Tcl_CreateObjTrace2(
     Tcl_Interp *interp,		/* Tcl interpreter */
     int level,			/* Maximum nesting level */
     int flags,			/* Flags, see above */
-    Tcl_CmdObjTraceProc *proc,	/* Trace callback */
+    Tcl_CmdObjTraceProc2 *proc,	/* Trace callback */
     ClientData clientData,	/* Client data for the callback */
     Tcl_CmdObjTraceDeleteProc *delProc)
 				/* Function to call when trace is deleted */
@@ -2232,7 +2232,7 @@ Tcl_CreateTrace2(
 
     data->clientData = clientData;
     data->proc = proc;
-    return Tcl_CreateObjTrace(interp, level, 0, StringTraceProc,
+    return Tcl_CreateObjTrace2(interp, level, 0, StringTraceProc,
 	    data, StringTraceDeleteProc);
 }
 

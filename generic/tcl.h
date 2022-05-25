@@ -539,7 +539,12 @@ typedef int (Tcl_CmdProc2) (void *clientData, Tcl_Interp *interp,
 typedef void (Tcl_CmdTraceProc2) (void *clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc2 *proc,
 	void *cmdClientData, int argc, const char *argv[]);
+#if 0
 typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
+	int level, const char *command, Tcl_Command commandInfo, int objc,
+	struct Tcl_Obj *const *objv);
+#endif
+typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);

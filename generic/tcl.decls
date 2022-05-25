@@ -1788,12 +1788,12 @@ declare 482 {
 }
 
 # TIP#32 (object-enabled traces) kbk
+if 0 {
 declare 483 {
     Tcl_Trace Tcl_CreateObjTrace(Tcl_Interp *interp, int level, int flags,
 	    Tcl_CmdObjTraceProc *objProc, void *clientData,
 	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
-if 0 {
 declare 484 {
     int Tcl_GetCommandInfoFromToken(Tcl_Command token, Tcl_CmdInfo *infoPtr)
 }
@@ -2604,13 +2604,18 @@ declare 681 {
 	    const Tcl_CmdInfo2 *infoPtr)
 }
 declare 682 {
-    int Tcl_GetCommandInfoFromToken2(Tcl_Command token, Tcl_CmdInfo2 *infoPtr)
+    Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, int level, int flags,
+	    Tcl_CmdObjTraceProc2 *objProc, void *clientData,
+	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
 declare 683 {
+    int Tcl_GetCommandInfoFromToken2(Tcl_Command token, Tcl_CmdInfo2 *infoPtr)
+}
+declare 684 {
     int Tcl_SetCommandInfoFromToken2(Tcl_Command token,
 	    const Tcl_CmdInfo2 *infoPtr)
 }
-declare 684 {
+declare 685 {
     Tcl_Trace Tcl_CreateTrace2(Tcl_Interp *interp, int level,
 	    Tcl_CmdTraceProc2 *proc, void *clientData)
 }

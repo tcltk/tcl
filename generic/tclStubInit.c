@@ -1269,7 +1269,7 @@ const TclStubs tclStubs = {
     Tcl_FSMountsChanged, /* 480 */
     Tcl_EvalTokensStandard, /* 481 */
     Tcl_GetTime, /* 482 */
-    Tcl_CreateObjTrace, /* 483 */
+    0, /* 483 */
     0, /* 484 */
     0, /* 485 */
     Tcl_DbNewWideIntObj, /* 486 */
@@ -1468,9 +1468,10 @@ const TclStubs tclStubs = {
     Tcl_NRCallObjProc2, /* 679 */
     Tcl_GetCommandInfo2, /* 680 */
     Tcl_SetCommandInfo2, /* 681 */
-    Tcl_GetCommandInfoFromToken2, /* 682 */
-    Tcl_SetCommandInfoFromToken2, /* 683 */
-    Tcl_CreateTrace2, /* 684 */
+    Tcl_CreateObjTrace2, /* 682 */
+    Tcl_GetCommandInfoFromToken2, /* 683 */
+    Tcl_SetCommandInfoFromToken2, /* 684 */
+    Tcl_CreateTrace2, /* 685 */
 };
 
 /* !END!: Do not edit above this line. */
