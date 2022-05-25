@@ -205,7 +205,7 @@ Tcl_ProcObjCmd(
     }
 
     cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
-	TclObjInterpProc, TclNRInterpProc, procPtr, TclProcDeleteProc);
+	TclObjInterpProc2, TclNRInterpProc, procPtr, TclProcDeleteProc);
 
     /*
      * Now initialize the new procedure's cmdPtr field. This will be used
@@ -1592,7 +1592,7 @@ TclPushProcCallFrame(
  */
 
 int
-TclObjInterpProc(
+TclObjInterpProc2(
     ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was
@@ -1693,9 +1693,9 @@ TclNRInterpProcCore(
 
 #ifdef USE_DTRACE
     if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
-	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	size_t l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 	const char *a[10];
-	int i;
+	size_t i;
 
 	for (i = 0 ; i < 10 ; i++) {
 	    a[i] = (l < iPtr->varFramePtr->objc ?
@@ -1714,7 +1714,7 @@ TclNRInterpProcCore(
 	TclDecrRefCount(info);
     }
     if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
-	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	size_t l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 
 	TCL_DTRACE_PROC_ENTRY(l < iPtr->varFramePtr->objc ?
 		TclGetString(iPtr->varFramePtr->objv[l]) : NULL,
@@ -1722,7 +1722,7 @@ TclNRInterpProcCore(
 		(Tcl_Obj **)(iPtr->varFramePtr->objv + l + 1));
     }
     if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
-	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	size_t l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 
 	TCL_DTRACE_PROC_ENTRY(l < iPtr->varFramePtr->objc ?
 		TclGetString(iPtr->varFramePtr->objv[l]) : NULL,
@@ -2228,7 +2228,7 @@ TclUpdateReturnInfo(
 Tcl_ObjCmdProc2 *
 TclGetObjInterpProc(void)
 {
-    return (Tcl_ObjCmdProc2 *) TclObjInterpProc;
+    return (Tcl_ObjCmdProc2 *) TclObjInterpProc2;
 }
 
 /*

@@ -138,7 +138,7 @@ declare 62 {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
 declare 63 {
-    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
+    int TclObjInterpProc2(void *clientData, Tcl_Interp *interp,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 64 {
