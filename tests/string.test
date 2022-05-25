@@ -985,6 +985,12 @@ test string-6.137.$noComp {string is unicode, noncharacter} {
 test string-6.138.$noComp {string is unicode, noncharacter} {
     run {string is unicode \uFDEF}
 } 0
+test string-6.139.$noComp {string is integer, bug [76ad7aeba3]} {
+    run {string is integer 18446744073709551615}
+} 1
+test string-6.140.$noComp {string is integer, bug [76ad7aeba3]} {
+    run {string is integer -18446744073709551615}
+} 1
 
 
 test string-7.1.$noComp {string last, not enough args} {
