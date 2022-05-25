@@ -2582,15 +2582,6 @@ typedef Tcl_Channel (TclOpenFileChannelProc_)(Tcl_Interp *interp,
 
 /*
  *----------------------------------------------------------------
- * Data structures related to procedures
- *----------------------------------------------------------------
- */
-
-typedef Tcl_CmdProc *TclCmdProcType;
-typedef Tcl_ObjCmdProc *TclObjCmdProcType;
-
-/*
- *----------------------------------------------------------------
  * Data structures for process-global values.
  *----------------------------------------------------------------
  */
