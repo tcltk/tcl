@@ -1008,7 +1008,7 @@ EXTERN int		Tcl_GetChannelNamesEx(Tcl_Interp *interp,
 				const char *pattern);
 /* 390 */
 EXTERN int		Tcl_ProcObjCmd(void *clientData, Tcl_Interp *interp,
-				int objc, Tcl_Obj *const objv[]);
+				size_t objc, Tcl_Obj *const objv[]);
 /* 391 */
 EXTERN void		Tcl_ConditionFinalize(Tcl_Condition *condPtr);
 /* 392 */
@@ -2220,7 +2220,7 @@ typedef struct TclStubs {
     Tcl_Mutex * (*tcl_GetAllocMutex) (void); /* 387 */
     int (*tcl_GetChannelNames) (Tcl_Interp *interp); /* 388 */
     int (*tcl_GetChannelNamesEx) (Tcl_Interp *interp, const char *pattern); /* 389 */
-    int (*tcl_ProcObjCmd) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 390 */
+    int (*tcl_ProcObjCmd) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 390 */
     void (*tcl_ConditionFinalize) (Tcl_Condition *condPtr); /* 391 */
     void (*tcl_MutexFinalize) (Tcl_Mutex *mutex); /* 392 */
     int (*tcl_CreateThread) (Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc, void *clientData, size_t stackSize, int flags); /* 393 */

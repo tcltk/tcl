@@ -137,7 +137,7 @@ static Tcl_CmdObjTraceProc2 TraceExecutionProc;
 static int		StringTraceProc(ClientData clientData,
 			    Tcl_Interp *interp, int level,
 			    const char *command, Tcl_Command commandInfo,
-			    int objc, Tcl_Obj *const objv[]);
+			    size_t objc, Tcl_Obj *const objv[]);
 static void		StringTraceDeleteProc(ClientData clientData);
 static void		DisposeTraceResult(int flags, char *result);
 static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
@@ -191,7 +191,7 @@ int
 Tcl_TraceObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
@@ -1763,7 +1763,7 @@ TraceExecutionProc(
     int level,
     const char *command,
     TCL_UNUSED(Tcl_Command),
-    int objc,
+    size_t objc,
     struct Tcl_Obj *const objv[])
 {
     int call = 0;
@@ -1818,7 +1818,7 @@ TraceExecutionProc(
 
 	if (call) {
 	    Tcl_DString cmd, sub;
-	    int i, saveInterpFlags;
+	    size_t i, saveInterpFlags;
 
 	    Tcl_DStringInit(&cmd);
 	    Tcl_DStringAppend(&cmd, tcmdPtr->command, tcmdPtr->length);
@@ -2259,13 +2259,13 @@ StringTraceProc(
     int level,
     const char *command,
     Tcl_Command commandInfo,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     StringTraceData *data = (StringTraceData *)clientData;
     Command *cmdPtr = (Command *) commandInfo;
     const char **argv;		/* Args to pass to string trace proc */
-    int i;
+    size_t i;
 
     /*
      * This is a bit messy because we have to emulate the old trace interface,

@@ -772,7 +772,7 @@ int
 Tcl_AssembleObjCmd(
     void *clientData,		/* clientData */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     /*
@@ -787,7 +787,7 @@ int
 TclNRAssembleObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ByteCode *codePtr;		/* Pointer to the bytecode to execute */

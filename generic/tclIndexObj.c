@@ -26,13 +26,13 @@ static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
 static void		DupIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		FreeIndex(Tcl_Obj *objPtr);
 static int		PrefixAllObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static int		PrefixLongestObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static int		PrefixMatchObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static void		PrintUsage(Tcl_Interp *interp,
 			    const Tcl_ArgvInfo *argTable);
@@ -506,11 +506,11 @@ static int
 PrefixMatchObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int flags = 0, result, dummy, i;
-    size_t dummyLength, errorLength;
+    int flags = 0, result, dummy;
+    size_t dummyLength, errorLength, i;
     Tcl_Obj *errorPtr = NULL;
     const char *message = "option";
     Tcl_Obj *tablePtr, *objPtr, *resultPtr;
@@ -630,7 +630,7 @@ static int
 PrefixAllObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
@@ -688,7 +688,7 @@ static int
 PrefixLongestObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;

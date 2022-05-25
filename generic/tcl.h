@@ -545,7 +545,7 @@ typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	struct Tcl_Obj *const *objv);
 #endif
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
-	int level, const char *command, Tcl_Command commandInfo, int objc,
+	int level, const char *command, Tcl_Command commandInfo, size_t objc,
 	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
@@ -569,10 +569,10 @@ typedef void (Tcl_InterpDeleteProc) (void *clientData,
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
 #if 0
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
-	int objc, struct Tcl_Obj *const *objv);
+	size_t objc, struct Tcl_Obj *const *objv);
 #endif
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
-	int objc, struct Tcl_Obj *const *objv);
+	size_t objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);

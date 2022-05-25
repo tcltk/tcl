@@ -193,7 +193,7 @@ static int
 QueryConfigObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     struct Tcl_Obj *const *objv)
 {
     QCCD *cdPtr = (QCCD *)clientData;

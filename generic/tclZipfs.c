@@ -2218,7 +2218,7 @@ static int
 ZipFSMountObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *mountPoint = NULL, *zipFile = NULL, *password = NULL;
@@ -2275,7 +2275,7 @@ static int
 ZipFSMountBufferObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *mountPoint;	/* Mount point path. */
@@ -2330,7 +2330,7 @@ static int
 ZipFSRootObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(size_t) /*objc*/,
     TCL_UNUSED(Tcl_Obj *const *)) /*objv*/
 {
     Tcl_SetObjResult(interp, Tcl_NewStringObj(ZIPFS_VOLUME, -1));
@@ -2357,7 +2357,7 @@ static int
 ZipFSUnmountObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 2) {
@@ -2388,7 +2388,7 @@ static int
 ZipFSMkKeyObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int len, i = 0;
@@ -3460,7 +3460,7 @@ static int
 ZipFSMkZipObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *stripPrefix, *password;
@@ -3485,7 +3485,7 @@ static int
 ZipFSLMkZipObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *password;
@@ -3526,7 +3526,7 @@ static int
 ZipFSMkImgObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *originFile, *stripPrefix, *password;
@@ -3553,7 +3553,7 @@ static int
 ZipFSLMkImgObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *originFile, *password;
@@ -3595,7 +3595,7 @@ static int
 ZipFSCanonicalObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     char *mntpoint = NULL;
@@ -3651,7 +3651,7 @@ static int
 ZipFSExistsObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     char *filename;
@@ -3704,7 +3704,7 @@ static int
 ZipFSInfoObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     char *filename;
@@ -3754,7 +3754,7 @@ static int
 ZipFSListObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     char *pattern = NULL;
@@ -3953,7 +3953,7 @@ static int
 ZipFSTclLibraryObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(size_t) /*objc*/,
     TCL_UNUSED(Tcl_Obj *const *)) /*objv*/
 {
     if (!Tcl_IsSafe(interp)) {

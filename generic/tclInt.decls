@@ -118,7 +118,7 @@ declare 53 {
 }
 declare 54 {
     int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
+	    size_t objc, Tcl_Obj *const objv[])
 }
 declare 55 {
     Proc *TclIsProc(Command *cmdPtr)
@@ -139,10 +139,10 @@ declare 62 {
 }
 declare 63 {
     int TclObjInterpProc2(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
+	    size_t objc, Tcl_Obj *const objv[])
 }
 declare 64 {
-    int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
+    int TclObjInvoke(Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[],
 	    int flags)
 }
 declare 69 {
@@ -488,7 +488,7 @@ declare 237 {
 # include NRE.h too.
 declare 238 {
     int TclNRInterpProc(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
+	    size_t objc, Tcl_Obj *const objv[])
 }
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,

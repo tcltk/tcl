@@ -63,18 +63,18 @@ typedef struct {
  * Function declarations for things defined in this file.
  */
 
-static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
+static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const *objv, int toRewrite,
 			    int rewriteLength, Tcl_Obj *const *rewriteObjs,
 			    int *lengthPtr);
 static int		InvokeProcedureMethod(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+			    size_t objc, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	FinalizeForwardCall;
 static Tcl_NRPostProc	FinalizePMCall;
 static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    CallContext *contextPtr, ProcedureMethod *pmPtr,
-			    int objc, Tcl_Obj *const *objv,
+			    size_t objc, Tcl_Obj *const *objv,
 			    PMFrameData *fdPtr);
 static void		DeleteProcedureMethodRecord(ProcedureMethod *pmPtr);
 static void		DeleteProcedureMethod(void *clientData);
@@ -86,7 +86,7 @@ static ProcErrorProc	DestructorErrorHandler;
 static Tcl_Obj *	RenderDeclarerName(void *clientData);
 static int		InvokeForwardMethod(void *clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+			    size_t objc, Tcl_Obj *const *objv);
 static void		DeleteForwardMethod(void *clientData);
 static int		CloneForwardMethod(Tcl_Interp *interp,
 			    void *clientData, void **newClientData);
@@ -661,7 +661,7 @@ InvokeProcedureMethod(
     void *clientData,	/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
     ProcedureMethod *pmPtr = (ProcedureMethod *)clientData;
@@ -784,7 +784,7 @@ PushMethodCallFrame(
     CallContext *contextPtr,	/* Current method call context. */
     ProcedureMethod *pmPtr,	/* Information about this procedure-like
 				 * method. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv,	/* Array of arguments. */
     PMFrameData *fdPtr)		/* Place to store information about the call
 				 * frame. */
@@ -1462,7 +1462,7 @@ InvokeForwardMethod(
     void *clientData,	/* Pointer to some per-method context. */
     Tcl_Interp *interp,
     Tcl_ObjectContext context,	/* The method calling context. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Arguments as actually seen. */
 {
     CallContext *contextPtr = (CallContext *) context;
@@ -1613,7 +1613,7 @@ TclOOGetFwdFromMethod(
 static Tcl_Obj **
 InitEnsembleRewrite(
     Tcl_Interp *interp,		/* Place to log the rewrite info. */
-    int objc,			/* Number of real arguments. */
+    size_t objc,			/* Number of real arguments. */
     Tcl_Obj *const *objv,	/* The real arguments. */
     int toRewrite,		/* Number of real arguments to replace. */
     int rewriteLength,		/* Number of arguments to insert instead. */

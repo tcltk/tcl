@@ -142,7 +142,7 @@ static int
 TestbignumobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Argument count */
+    size_t objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
 {
     const char *const subcmds[] = {
@@ -341,7 +341,7 @@ static int
 TestbooleanobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     size_t varIndex;
@@ -441,7 +441,7 @@ static int
 TestdoubleobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     size_t varIndex;
@@ -557,10 +557,11 @@ static int
 TestindexobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int allowAbbrev, index, setError, i, result;
+    int allowAbbrev, index, setError, result;
+    size_t i;
     Tcl_WideInt index2;
     const char **argv;
     static const char *const tablePtr[] = {"a", "b", "check", NULL};
@@ -647,7 +648,7 @@ static int
 TestintobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     size_t varIndex;
@@ -846,7 +847,7 @@ static int
 TestlistobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Number of arguments */
+    size_t objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument objects */
 {
     /* Subcommands supported by this command */
@@ -940,7 +941,7 @@ static int
 TestobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     size_t varIndex, destIndex;
@@ -1142,12 +1143,12 @@ static int
 TeststringobjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_UniChar *unicode;
-    size_t size, varIndex;
-    int option, i;
+    size_t size, varIndex, i;
+    int option;
     Tcl_WideInt length;
 #define MAX_STRINGS 11
     const char *string, *strings[MAX_STRINGS+1];

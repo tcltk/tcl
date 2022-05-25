@@ -152,7 +152,7 @@ int
 Tcl_ProcObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -887,7 +887,7 @@ int
 Tcl_UplevelObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, TclNRUplevelObjCmd, clientData, objc, objv);
@@ -897,7 +897,7 @@ int
 TclNRUplevelObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
 
@@ -1597,7 +1597,7 @@ TclObjInterpProc2(
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
-    int objc,			/* Count of number of arguments to this
+    size_t objc,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -1614,7 +1614,7 @@ TclNRInterpProc(
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
-    int objc,			/* Count of number of arguments to this
+    size_t objc,			/* Count of number of arguments to this
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
@@ -2594,7 +2594,7 @@ int
 Tcl_ApplyObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc2(interp, TclNRApplyObjCmd, clientData, objc, objv);
@@ -2604,7 +2604,7 @@ int
 TclNRApplyObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Proc *procPtr = NULL;

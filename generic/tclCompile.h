@@ -1181,16 +1181,16 @@ MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
 MODULE_SCOPE int	TclSingleOpCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclSortingOpCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclVariadicOpCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclNoIdentOpCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);

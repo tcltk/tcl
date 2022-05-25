@@ -8857,7 +8857,7 @@ IllegalExprOperandType(
 Tcl_Obj *
 TclGetSourceFromFrame(
     CmdFrame *cfPtr,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     if (cfPtr == NULL) {

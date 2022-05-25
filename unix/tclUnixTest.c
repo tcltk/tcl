@@ -131,7 +131,7 @@ static int
 TestfilehandlerCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Pipe *pipePtr;
@@ -345,7 +345,7 @@ static int
 TestfilewaitCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     int mask, result, timeout;
@@ -413,7 +413,7 @@ static int
 TestfindexecutableCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Obj *saveName;
@@ -455,7 +455,7 @@ static int
 TestforkCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     pid_t pid;
@@ -501,7 +501,7 @@ static int
 TestalarmCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
 #ifdef SA_RESTART
@@ -579,7 +579,7 @@ static int
 TestgotsigCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(size_t) /*objc*/,
     TCL_UNUSED(Tcl_Obj *const *))
 {
     Tcl_AppendResult(interp, gotsig, NULL);
@@ -610,10 +610,11 @@ static int
 TestchmodCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)		/* Argument strings. */
 {
-    int i, mode;
+    size_t i;
+    int mode;
 
     if (objc < 2) {
     Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");

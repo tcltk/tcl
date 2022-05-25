@@ -86,13 +86,13 @@ static inline void	RemoveObject(Object **list, int num, int idx);
 static inline void	SquelchCachedName(Object *oPtr);
 
 static int		PublicNRObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const *objv);
 static int		PrivateNRObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const *objv);
 static int		MyClassNRObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const *objv);
 static void		MyClassDeleted(ClientData clientData);
 
@@ -1736,9 +1736,9 @@ TclNRNewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    int objc,			/* Number of arguments. Negative value means
+    size_t objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
-    Tcl_Obj *const *objv,	/* Argument list. */
+    Tcl_Obj *const objv[],	/* Argument list. */
     int skip,			/* Number of arguments to _not_ pass to the
 				 * constructor. */
     Tcl_Object *objectPtr)	/* Place to write the object reference upon
@@ -2507,7 +2507,7 @@ int
 TclOOPublicObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     return Tcl_NRCallObjProc2(interp, PublicNRObjectCmd, clientData,objc,objv);
@@ -2517,7 +2517,7 @@ static int
 PublicNRObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     return TclOOObjectCmdCore((Object *)clientData, interp, objc, objv, PUBLIC_METHOD,
@@ -2528,7 +2528,7 @@ int
 TclOOPrivateObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     return Tcl_NRCallObjProc2(interp, PrivateNRObjectCmd,clientData,objc,objv);
@@ -2538,7 +2538,7 @@ static int
 PrivateNRObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     return TclOOObjectCmdCore((Object *)clientData, interp, objc, objv, 0, NULL);
@@ -2589,7 +2589,7 @@ int
 TclOOMyClassObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     return Tcl_NRCallObjProc2(interp, MyClassNRObjCmd, clientData, objc, objv);
@@ -2599,7 +2599,7 @@ static int
 MyClassNRObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *)clientData;

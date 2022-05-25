@@ -155,7 +155,7 @@ AttemptNewList(
     if (interp != NULL && listRepPtr == NULL) {
 	if (objc > LIST_MAX) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max length of a Tcl list (%d elements) exceeded",
+		    "max length of a Tcl list (%" TCL_Z_MODIFIER "u elements) exceeded",
 		    LIST_MAX));
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -635,8 +635,8 @@ Tcl_ListObjAppendElement(
     Tcl_Obj *objPtr)		/* Object to append to listPtr's list. */
 {
     List *listRepPtr, *newPtr = NULL;
-    size_t numElems, numRequired;
-    int needGrow, isShared, attempt;
+    size_t numElems, numRequired, attempt;
+    int needGrow, isShared;
 
     if (Tcl_IsShared(listPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendElement");
@@ -667,7 +667,7 @@ Tcl_ListObjAppendElement(
     if (numRequired > LIST_MAX) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "max length of a Tcl list (%d elements) exceeded",
+		    "max length of a Tcl list (%" TCL_Z_MODIFIER "u elements) exceeded",
 		    LIST_MAX));
 	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	}

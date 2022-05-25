@@ -1226,11 +1226,11 @@ int
 Tcl_GlobObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, globFlags, join, dir, result;
-    size_t length;
+    int globFlags, join, dir, result;
+    size_t i, length;
     char *string;
     const char *separators;
     Tcl_Obj *typePtr, *look;

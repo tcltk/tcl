@@ -19,10 +19,10 @@
 
 static inline Tcl_Obj *	NewNsObj(Tcl_Namespace *namespacePtr);
 static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
-			    EnsembleConfig *ensemblePtr, int objc,
+			    EnsembleConfig *ensemblePtr, size_t objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
 static int		NsEnsembleImplementationCmdNR(ClientData clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+			    Tcl_Interp *interp,size_t objc,Tcl_Obj *const objv[]);
 static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
 static int		NsEnsembleStringOrder(const void *strPtr1,
 			    const void *strPtr2);
@@ -153,7 +153,7 @@ int
 TclNamespaceEnsembleCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Namespace *namespacePtr;
@@ -1684,7 +1684,7 @@ int
 TclEnsembleImplementationCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     return Tcl_NRCallObjProc2(interp, NsEnsembleImplementationCmdNR,
@@ -1695,7 +1695,7 @@ static int
 NsEnsembleImplementationCmdNR(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     EnsembleConfig *ensemblePtr = (EnsembleConfig *)clientData;
@@ -2282,7 +2282,7 @@ static inline int
 EnsembleUnknownCallback(
     Tcl_Interp *interp,
     EnsembleConfig *ensemblePtr,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[],
     Tcl_Obj **prefixObjPtr)
 {

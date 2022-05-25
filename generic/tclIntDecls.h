@@ -149,7 +149,7 @@ EXTERN int		TclInvokeObjectCommand(void *clientData,
 				const char **argv);
 /* 54 */
 EXTERN int		TclInvokeStringCommand(void *clientData,
-				Tcl_Interp *interp, int objc,
+				Tcl_Interp *interp, size_t objc,
 				Tcl_Obj *const objv[]);
 /* 55 */
 EXTERN Proc *		TclIsProc(Command *cmdPtr);
@@ -169,10 +169,10 @@ EXTERN Tcl_Obj *	TclNewProcBodyObj(Proc *procPtr);
 EXTERN int		TclObjCommandComplete(Tcl_Obj *cmdPtr);
 /* 63 */
 EXTERN int		TclObjInterpProc2(void *clientData,
-				Tcl_Interp *interp, int objc,
+				Tcl_Interp *interp, size_t objc,
 				Tcl_Obj *const objv[]);
 /* 64 */
-EXTERN int		TclObjInvoke(Tcl_Interp *interp, int objc,
+EXTERN int		TclObjInvoke(Tcl_Interp *interp, size_t objc,
 				Tcl_Obj *const objv[], int flags);
 /* Slot 65 is reserved */
 /* Slot 66 is reserved */
@@ -505,7 +505,7 @@ EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
 EXTERN int		TclResetCancellation(Tcl_Interp *interp, int force);
 /* 238 */
 EXTERN int		TclNRInterpProc(void *clientData, Tcl_Interp *interp,
-				int objc, Tcl_Obj *const objv[]);
+				size_t objc, Tcl_Obj *const objv[]);
 /* 239 */
 EXTERN int		TclNRInterpProcCore(Tcl_Interp *interp,
 				Tcl_Obj *procNameObj, size_t skip,
@@ -635,7 +635,7 @@ typedef struct TclIntStubs {
     int (*tclInterpInit) (Tcl_Interp *interp); /* 51 */
     void (*reserved52)(void);
     int (*tclInvokeObjectCommand) (void *clientData, Tcl_Interp *interp, int argc, const char **argv); /* 53 */
-    int (*tclInvokeStringCommand) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 54 */
+    int (*tclInvokeStringCommand) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 54 */
     Proc * (*tclIsProc) (Command *cmdPtr); /* 55 */
     void (*reserved56)(void);
     void (*reserved57)(void);
@@ -644,8 +644,8 @@ typedef struct TclIntStubs {
     int (*tclNeedSpace) (const char *start, const char *end); /* 60 */
     Tcl_Obj * (*tclNewProcBodyObj) (Proc *procPtr); /* 61 */
     int (*tclObjCommandComplete) (Tcl_Obj *cmdPtr); /* 62 */
-    int (*tclObjInterpProc2) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 63 */
-    int (*tclObjInvoke) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 64 */
+    int (*tclObjInterpProc2) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 63 */
+    int (*tclObjInvoke) (Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[], int flags); /* 64 */
     void (*reserved65)(void);
     void (*reserved66)(void);
     void (*reserved67)(void);
@@ -819,7 +819,7 @@ typedef struct TclIntStubs {
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
     void (*reserved236)(void);
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
-    int (*tclNRInterpProc) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
+    int (*tclNRInterpProc) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 238 */
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, size_t skip, ProcErrorProc *errorProc); /* 239 */
     int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct NRE_callback *rootPtr); /* 240 */
     int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 241 */

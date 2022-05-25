@@ -311,7 +311,7 @@ TclOOInvokeContext(
 				 * other sorts of context handling (e.g.,
 				 * commands, variables) depending on method
 				 * implementation. */
-    int objc,			/* The number of arguments. */
+    size_t objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The arguments as actually seen. */
 {
     CallContext *const contextPtr = (CallContext *)clientData;

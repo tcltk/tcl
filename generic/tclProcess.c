@@ -52,16 +52,16 @@ static TclProcessWaitStatus WaitProcessStatus(Tcl_Pid pid, size_t resolvedPid,
 			    Tcl_Obj **errorObjPtr);
 static Tcl_Obj *	BuildProcessStatusObj(ProcessInfo *info);
 static int		ProcessListObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static int		ProcessStatusObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static int		ProcessPurgeObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static int		ProcessAutopurgeObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 
 /*
@@ -404,7 +404,7 @@ static int
 ProcessListObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *list;
@@ -455,7 +455,7 @@ static int
 ProcessStatusObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *dict;
@@ -602,7 +602,7 @@ static int
 ProcessPurgeObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_HashEntry *entry;
@@ -700,7 +700,7 @@ static int
 ProcessAutopurgeObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
 
