@@ -78,8 +78,11 @@
 #undef Tcl_MacOSXOpenBundleResources
 #undef TclWinConvertWSAError
 #undef TclWinConvertError
+#undef Tcl_NumUtfChars
 #undef Tcl_GetCharLength
 #undef Tcl_UtfAtIndex
+#undef Tcl_GetRange
+#undef Tcl_GetUniChar
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define TclWinConvertWSAError (void (*)(DWORD))(void *)Tcl_WinConvertError
@@ -103,6 +106,7 @@ static void uniCodePanic(void) {
 #   define Tcl_UniCharCaseMatch (int(*)(const unsigned short *, const unsigned short *, int))(void *)uniCodePanic
 #   define Tcl_GetRange (Tcl_Obj *(*)(Tcl_Obj *, int, int))(void *)uniCodePanic
 #   define Tcl_GetUniChar (int(*)(Tcl_Obj *, int))(void *)uniCodePanic
+#   define Tcl_NumUtfChars (int(*)(const char *, int))(void *)uniCodePanic
 #endif
 
 #define TclUtfCharComplete UtfCharComplete
