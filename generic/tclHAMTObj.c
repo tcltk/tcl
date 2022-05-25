@@ -265,7 +265,7 @@ SetHamtFromAny(
 	return TCL_OK;
     }
 
-    if (TCL_OK != TclListObjGetElements(interp, objPtr, &objc, &objv)) {
+    if (TCL_OK != TclListObjGetElementsM(interp, objPtr, &objc, &objv)) {
 	return TCL_ERROR;
     }
 

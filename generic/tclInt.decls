@@ -92,7 +92,7 @@ declare 38 {
 	    const char **simpleNamePtr)
 }
 declare 39 {
-    TclObjCmdProcType TclGetObjInterpProc(void)
+    Tcl_ObjCmdProc *TclGetObjInterpProc(void)
 }
 declare 40 {
     int TclGetOpenMode(Tcl_Interp *interp, const char *str, int *seekFlagPtr)
@@ -477,11 +477,6 @@ declare 234 {
 }
 declare 235 {
     void TclInitVarHashTable(TclVarHashTable *tablePtr, Namespace *nsPtr)
-}
-# TIP 542
-declare 236 {
-    void TclAppendUnicodeToObj(Tcl_Obj *objPtr,
-	    const Tcl_UniChar *unicode, size_t length)
 }
 
 # TIP #285: Script cancellation support.

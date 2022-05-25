@@ -1428,7 +1428,7 @@ Tcl_Export(
 	int objc;
 	Tcl_Obj **objv;
 
-	TclListObjGetElements(NULL, nsPtr->exportPatternList, &objc, &objv);
+	TclListObjGetElementsM(NULL, nsPtr->exportPatternList, &objc, &objv);
 	while (objc--) {
 	    if (strcmp(pattern, Tcl_GetString(*objv++)) == 0) {
 		/*
@@ -1552,7 +1552,7 @@ TclFillTableWithExports(
 	Tcl_Obj **objv;
 	char *nsCmdName = (char *)Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
 
-	TclListObjGetElements(NULL, nsPtr->exportPatternList, &objc, &objv);
+	TclListObjGetElementsM(NULL, nsPtr->exportPatternList, &objc, &objv);
 	while (objc--) {
 	    if (Tcl_StringMatch(nsCmdName, Tcl_GetString(*objv++))) {
 		int isNew;
@@ -1775,7 +1775,7 @@ DoImport(
 	return TCL_OK;
     }
 
-    TclListObjGetElements(NULL, importNsPtr->exportPatternList, &objc, &objv);
+    TclListObjGetElementsM(NULL, importNsPtr->exportPatternList, &objc, &objv);
     while (!exported && objc--) {
 	exported |= Tcl_StringMatch(cmdName, Tcl_GetString(*objv++));
     }
@@ -3652,7 +3652,7 @@ NamespaceExportCmd(
 	int epc;
 	Tcl_Obj **epv;
 
-	TclListObjGetElements(NULL, nsPtr->exportPatternList, &epc, &epv);
+	TclListObjGetElementsM(NULL, nsPtr->exportPatternList, &epc, &epv);
 	while (epc--) {
 	    Tcl_DictObjPut(NULL, dict, *epv++, value);
 	}
@@ -4174,7 +4174,7 @@ NamespacePathCmd(
      * There is a path given, so parse it into an array of namespace pointers.
      */
 
-    if (TclListObjGetElements(interp, objv[1], &nsObjc, &nsObjv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, objv[1], &nsObjc, &nsObjv) != TCL_OK) {
 	goto badNamespace;
     }
     if (nsObjc != 0) {
@@ -4542,7 +4542,7 @@ Tcl_SetNamespaceUnknownHandler(
      */
 
     if (handlerPtr != NULL) {
-	if (TclListObjLength(interp, handlerPtr, &lstlen) != TCL_OK) {
+	if (TclListObjLengthM(interp, handlerPtr, &lstlen) != TCL_OK) {
 	    /*
 	     * Not a list.
 	     */
@@ -5119,7 +5119,7 @@ TclLogCommandInfo(
 	int len;
 
 	iPtr->resetErrorStack = 0;
-	TclListObjLength(interp, iPtr->errorStack, &len);
+	TclListObjLengthM(interp, iPtr->errorStack, &len);
 
 	/*
 	 * Reset while keeping the list internalrep as much as possible.
@@ -5204,7 +5204,7 @@ TclErrorStackResetIf(
 	int len;
 
 	iPtr->resetErrorStack = 0;
-	TclListObjLength(interp, iPtr->errorStack, &len);
+	TclListObjLengthM(interp, iPtr->errorStack, &len);
 
 	/*
 	 * Reset while keeping the list internalrep as much as possible.

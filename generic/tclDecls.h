@@ -12,6 +12,8 @@
 #ifndef _TCLDECLS
 #define _TCLDECLS
 
+#include <stddef.h> /* for size_t */
+
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
 #   define TCL_STORAGE_CLASS DLLEXPORT
@@ -1003,7 +1005,9 @@ EXTERN int		TclGetUniChar(Tcl_Obj *objPtr, size_t index);
 /* 383 */
 EXTERN Tcl_Obj *	TclGetRange(Tcl_Obj *objPtr, size_t first,
 				size_t last);
-/* Slot 384 is reserved */
+/* 384 */
+EXTERN void		Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr,
+				const Tcl_UniChar *unicode, size_t length);
 /* 385 */
 EXTERN int		Tcl_RegExpMatchObj(Tcl_Interp *interp,
 				Tcl_Obj *textObj, Tcl_Obj *patternObj);
@@ -2180,7 +2184,7 @@ typedef struct TclStubs {
     int (*tclGetUniChar) (Tcl_Obj *objPtr, size_t index); /* 381 */
     void (*reserved382)(void);
     Tcl_Obj * (*tclGetRange) (Tcl_Obj *objPtr, size_t first, size_t last); /* 383 */
-    void (*reserved384)(void);
+    void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, size_t length); /* 384 */
     int (*tcl_RegExpMatchObj) (Tcl_Interp *interp, Tcl_Obj *textObj, Tcl_Obj *patternObj); /* 385 */
     void (*tcl_SetNotifier) (const Tcl_NotifierProcs *notifierProcPtr); /* 386 */
     Tcl_Mutex * (*tcl_GetAllocMutex) (void); /* 387 */
@@ -3199,7 +3203,8 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 382 is reserved */
 #define TclGetRange \
 	(tclStubsPtr->tclGetRange) /* 383 */
-/* Slot 384 is reserved */
+#define Tcl_AppendUnicodeToObj \
+	(tclStubsPtr->tcl_AppendUnicodeToObj) /* 384 */
 #define Tcl_RegExpMatchObj \
 	(tclStubsPtr->tcl_RegExpMatchObj) /* 385 */
 #define Tcl_SetNotifier \
@@ -3911,26 +3916,44 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GetBytesFromObj
 #if defined(USE_TCL_STUBS)
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? tclStubsPtr->tclGetStringFromObj(objPtr, (int *)(sizePtr)) : tclStubsPtr->tcl_GetStringFromObj(objPtr, (size_t *)(sizePtr)))
+	((sizePtr) && (sizeof(*(sizePtr)) == sizeof(int) && sizeof(int) != sizeof(size_t)) ? \
+		tclStubsPtr->tclGetStringFromObj(objPtr, (int *)(void *)(sizePtr)) : \
+		tclStubsPtr->tcl_GetStringFromObj(objPtr, (size_t *)(void *)(sizePtr)))
 #define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? tclStubsPtr->tclGetBytesFromObj(interp, objPtr, (int *)(sizePtr)) : tclStubsPtr->tcl_GetBytesFromObj(interp, objPtr, (size_t *)(sizePtr)))
+	((sizePtr) && (sizeof(*(sizePtr)) == sizeof(int) && sizeof(int) != sizeof(size_t)) ? \
+		tclStubsPtr->tclGetBytesFromObj(interp, objPtr, (int *)(void *)(sizePtr)) : \
+		tclStubsPtr->tcl_GetBytesFromObj(interp, objPtr, (size_t *)(void *)(sizePtr)))
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? tclStubsPtr->tclGetBytesFromObj(NULL, objPtr, (int *)(sizePtr)) : tclStubsPtr->tcl_GetBytesFromObj(NULL, objPtr, (size_t *)(sizePtr)))
+	((sizePtr) && (sizeof(*(sizePtr)) == sizeof(int) && sizeof(int) != sizeof(size_t)) ? \
+		tclStubsPtr->tclGetBytesFromObj(NULL, objPtr, (int *)(void *)(sizePtr)) : \
+		tclStubsPtr->tcl_GetBytesFromObj(NULL, objPtr, (size_t *)(void *)(sizePtr)))
 #define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? tclStubsPtr->tclGetUnicodeFromObj(objPtr, (int *)(sizePtr)) : tclStubsPtr->tcl_GetUnicodeFromObj(objPtr, (size_t *)(sizePtr)))
+	((sizePtr) && (sizeof(*(sizePtr)) == sizeof(int) && sizeof(int) != sizeof(size_t)) ? \
+		tclStubsPtr->tclGetUnicodeFromObj(objPtr, (int *)(void *)(sizePtr)) : \
+		tclStubsPtr->tcl_GetUnicodeFromObj(objPtr, (size_t *)(void *)(sizePtr)))
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
-	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), \
+		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
 #else
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? (TclGetStringFromObj)(objPtr, (int *)(sizePtr)) : (Tcl_GetStringFromObj)(objPtr, (size_t *)(sizePtr)))
+	((sizePtr) && (sizeof(*(sizePtr)) == sizeof(int) && sizeof(int) != sizeof(size_t)) ? \
+		(TclGetStringFromObj)(objPtr, (int *)(void *)(sizePtr)) : \
+		(Tcl_GetStringFromObj)(objPtr, (size_t *)(void *)(sizePtr)))
 #define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? (TclGetBytesFromObj)(interp, objPtr, (int *)(sizePtr)) : (Tcl_GetBytesFromObj)(interp, objPtr, (size_t *)(sizePtr)))
+	((sizePtr) && (sizeof(*(sizePtr)) == sizeof(int) && sizeof(int) != sizeof(size_t)) ? \
+		(TclGetBytesFromObj)(interp, objPtr, (int *)(void *)(sizePtr)) : \
+		(Tcl_GetBytesFromObj)(interp, objPtr, (size_t *)(void *)(sizePtr)))
 #define Tcl_GetByteArrayFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? (TclGetBytesFromObj)(NULL, objPtr, (int *)(sizePtr)) : (Tcl_GetBytesFromObj)(NULL, objPtr, (size_t *)(sizePtr)))
+	((sizePtr) && (sizeof(*(sizePtr)) == sizeof(int) && sizeof(int) != sizeof(size_t)) ? \
+		(TclGetBytesFromObj)(NULL, objPtr, (int *)(void *)(sizePtr)) : \
+		(Tcl_GetBytesFromObj)(NULL, objPtr, (size_t *)(void *)(sizePtr)))
 #define Tcl_GetUnicodeFromObj(objPtr, sizePtr) \
-	(sizeof(*(sizePtr)) <= sizeof(int) ? (TclGetUnicodeFromObj)(objPtr, (int *)(sizePtr)) : Tcl_GetUnicodeFromObj(objPtr, (size_t *)(sizePtr)))
+	((sizePtr) && (sizeof(*(sizePtr)) == sizeof(int) && sizeof(int) != sizeof(size_t)) ? \
+		(TclGetUnicodeFromObj)(objPtr, (int *)(void *)(sizePtr)) : \
+		Tcl_GetUnicodeFromObj(objPtr, (size_t *)(void *)(sizePtr)))
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
-	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), \
+		(flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
 #endif
 
 #ifdef TCL_MEM_DEBUG

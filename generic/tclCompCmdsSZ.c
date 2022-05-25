@@ -944,7 +944,7 @@ TclCompileStringMapCmd(
     if (!TclWordKnownAtCompileTime(mapTokenPtr, mapObj)) {
 	Tcl_DecrRefCount(mapObj);
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    } else if (TclListObjGetElements(NULL, mapObj, &len, &objv) != TCL_OK) {
+    } else if (TclListObjGetElementsM(NULL, mapObj, &len, &objv) != TCL_OK) {
 	Tcl_DecrRefCount(mapObj);
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     } else if (len != 2) {
@@ -2745,7 +2745,7 @@ TclCompileThrowCmd(
     CompileWord(envPtr, msgToken, interp, 2);
 
     codeIsList = codeKnown && (TCL_OK ==
-	    TclListObjLength(interp, objPtr, &len));
+	    TclListObjLengthM(interp, objPtr, &len));
     codeIsValid = codeIsList && (len != 0);
 
     if (codeIsValid) {
@@ -2878,7 +2878,7 @@ TclCompileTryCmd(
 		TclNewObj(tmpObj);
 		Tcl_IncrRefCount(tmpObj);
 		if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)
-			|| TclListObjLength(NULL, tmpObj, &objc) != TCL_OK
+			|| TclListObjLengthM(NULL, tmpObj, &objc) != TCL_OK
 			|| (objc == 0)) {
 		    TclDecrRefCount(tmpObj);
 		    goto failedToCompile;
@@ -2921,7 +2921,7 @@ TclCompileTryCmd(
 		TclDecrRefCount(tmpObj);
 		goto failedToCompile;
 	    }
-	    if (TclListObjGetElements(NULL, tmpObj, &objc, &objv) != TCL_OK
+	    if (TclListObjGetElementsM(NULL, tmpObj, &objc, &objv) != TCL_OK
 		    || (objc > 2)) {
 		TclDecrRefCount(tmpObj);
 		goto failedToCompile;
@@ -3136,7 +3136,7 @@ IssueTryClausesInstructions(
 	JUMP4(				JUMP_FALSE, notCodeJumpSource);
 	if (matchClauses[i]) {
 	    const char *p;
-	    TclListObjLength(NULL, matchClauses[i], &len);
+	    TclListObjLengthM(NULL, matchClauses[i], &len);
 
 	    /*
 	     * Match the errorcode according to try/trap rules.
@@ -3348,7 +3348,7 @@ IssueTryClausesFinallyInstructions(
 	OP(				EQ);
 	JUMP4(				JUMP_FALSE, notCodeJumpSource);
 	if (matchClauses[i]) {
-	    TclListObjLength(NULL, matchClauses[i], &len);
+	    TclListObjLengthM(NULL, matchClauses[i], &len);
 
 	    /*
 	     * Match the errorcode according to try/trap rules.

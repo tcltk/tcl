@@ -247,7 +247,7 @@ CreateHashEntry(
 {
     Tcl_HashEntry *hPtr;
     const Tcl_HashKeyType *typePtr;
-    size_t hash, index;
+    TCL_HASH_TYPE hash, index;
 
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -268,7 +268,7 @@ CreateHashEntry(
 	    index = hash & tablePtr->mask;
 	}
     } else {
-	hash = (size_t) key;
+	hash = PTR2UINT(key);
 	index = RANDOM_INDEX(tablePtr, hash);
     }
 
@@ -369,7 +369,7 @@ Tcl_DeleteHashEntry(
     const Tcl_HashKeyType *typePtr;
     Tcl_HashTable *tablePtr;
     Tcl_HashEntry **bucketPtr;
-    size_t index;
+    TCL_HASH_TYPE index;
 
     tablePtr = entryPtr->tablePtr;
 
@@ -587,7 +587,8 @@ Tcl_HashStats(
     Tcl_HashTable *tablePtr)	/* Table for which to produce stats. */
 {
 #define NUM_COUNTERS 10
-    size_t count[NUM_COUNTERS], overflow, i, j;
+    size_t i;
+    TCL_HASH_TYPE count[NUM_COUNTERS], overflow, j;
     double average, tmp;
     Tcl_HashEntry *hPtr;
     char *result, *p;
@@ -661,12 +662,9 @@ AllocArrayEntry(
     int *array = (int *) keyPtr;
     int *iPtr1, *iPtr2;
     Tcl_HashEntry *hPtr;
-    int count;
-    size_t size;
+    int count = tablePtr->keyType;
+    TCL_HASH_TYPE size = sizeof(Tcl_HashEntry) + (count*sizeof(int)) - sizeof(hPtr->key);
 
-    count = tablePtr->keyType;
-
-    size = sizeof(Tcl_HashEntry) + (count*sizeof(int)) - sizeof(hPtr->key);
     if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
     }
@@ -955,7 +953,7 @@ static void
 RebuildTable(
     Tcl_HashTable *tablePtr)	/* Table to enlarge. */
 {
-    size_t count, index, oldSize = tablePtr->numBuckets;
+    TCL_HASH_TYPE count, index, oldSize = tablePtr->numBuckets;
     Tcl_HashEntry **oldBuckets = tablePtr->buckets;
     Tcl_HashEntry **oldChainPtr, **newChainPtr;
     Tcl_HashEntry *hPtr;
