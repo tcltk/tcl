@@ -83,6 +83,7 @@ extern "C" {
  */
 
 #include <stdio.h>
+#include <stddef.h>
 
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   if defined(_WIN32) && defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO
@@ -934,7 +935,7 @@ struct Tcl_HashEntry {
     Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this hash bucket,
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
-    size_t hash;		/* Hash value. */
+    TCL_HASH_TYPE hash;		/* Hash value. */
     void *clientData;		/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */

@@ -527,7 +527,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		RC="x86_64-w64-mingw32-windres"
 	    ;;
 	    arm64|aarch64)
-		CC="aarch64-w64-mingw32-clang"
+		CC="aarch64-w64-mingw32-${CC}"
 		LD="aarch64-w64-mingw32-ld"
 		AR="aarch64-w64-mingw32-ar"
 		RANLIB="aarch64-w64-mingw32-ranlib"

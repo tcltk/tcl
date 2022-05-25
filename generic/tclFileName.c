@@ -525,7 +525,7 @@ TclpNativeSplitPath(
      */
 
     if (lenPtr != NULL) {
-	TclListObjLength(NULL, resultPtr, lenPtr);
+	TclListObjLengthM(NULL, resultPtr, lenPtr);
     }
     return resultPtr;
 }
@@ -1346,7 +1346,7 @@ Tcl_GlobObjCmd(
 		return TCL_ERROR;
 	    }
 	    typePtr = objv[i+1];
-	    if (TclListObjLength(interp, typePtr, &length) != TCL_OK) {
+	    if (TclListObjLengthM(interp, typePtr, &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -1468,7 +1468,7 @@ Tcl_GlobObjCmd(
 	 * platform.
 	 */
 
-	TclListObjLength(interp, typePtr, &length);
+	TclListObjLengthM(interp, typePtr, &length);
 	if (length <= 0) {
 	    goto skipTypes;
 	}
@@ -1539,7 +1539,7 @@ Tcl_GlobObjCmd(
 		Tcl_Obj *item;
 		int llen;
 
-		if ((TclListObjLength(NULL, look, &llen) == TCL_OK)
+		if ((TclListObjLengthM(NULL, look, &llen) == TCL_OK)
 			&& (llen == 3)) {
 		    Tcl_ListObjIndex(interp, look, 0, &item);
 		    if (!strcmp("macintosh", TclGetString(item))) {
@@ -1994,7 +1994,7 @@ TclGlob(
 	    }
 	}
 
-	TclListObjGetElements(NULL, filenamesObj, &objc, &objv);
+	TclListObjGetElementsM(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
 	    size_t len;
 	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
@@ -2323,13 +2323,13 @@ DoGlob(
 	    int subdirc, i, repair = -1;
 	    Tcl_Obj **subdirv;
 
-	    result = TclListObjGetElements(interp, subdirsPtr,
+	    result = TclListObjGetElementsM(interp, subdirsPtr,
 		    &subdirc, &subdirv);
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
 
 		if (pathPtr == NULL && TclGetString(subdirv[i])[0] == '~') {
-		    TclListObjLength(NULL, matchesObj, &repair);
+		    TclListObjLengthM(NULL, matchesObj, &repair);
 		    copy = subdirv[i];
 		    subdirv[i] = Tcl_NewStringObj("./", 2);
 		    Tcl_AppendObjToObj(subdirv[i], copy);
@@ -2342,7 +2342,7 @@ DoGlob(
 
 		    Tcl_DecrRefCount(subdirv[i]);
 		    subdirv[i] = copy;
-		    TclListObjLength(NULL, matchesObj, &end);
+		    TclListObjLengthM(NULL, matchesObj, &end);
 		    while (repair < end) {
 			const char *bytes;
 			size_t numBytes;

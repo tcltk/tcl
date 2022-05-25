@@ -1,5 +1,7 @@
 name: Windows
 on: [push]
+permissions:
+  contents: read
 env:
   ERROR_ON_FAILURES: 1
 jobs:

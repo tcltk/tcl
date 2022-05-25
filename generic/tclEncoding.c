@@ -370,7 +370,7 @@ Tcl_SetEncodingSearchPath(
 {
     int dummy;
 
-    if (TCL_ERROR == TclListObjLength(NULL, searchPath, &dummy)) {
+    if (TCL_ERROR == TclListObjLengthM(NULL, searchPath, &dummy)) {
 	return TCL_ERROR;
     }
     TclSetProcessGlobalValue(&encodingSearchPath, searchPath, NULL);
@@ -417,7 +417,7 @@ TclSetLibraryPath(
 {
     int dummy;
 
-    if (TCL_ERROR == TclListObjLength(NULL, path, &dummy)) {
+    if (TCL_ERROR == TclListObjLengthM(NULL, path, &dummy)) {
 	return;
     }
     TclSetProcessGlobalValue(&libraryPath, path, NULL);
@@ -456,7 +456,7 @@ FillEncodingFileMap(void)
 
     searchPath = Tcl_GetEncodingSearchPath();
     Tcl_IncrRefCount(searchPath);
-    TclListObjLength(NULL, searchPath, &numDirs);
+    TclListObjLengthM(NULL, searchPath, &numDirs);
     map = Tcl_NewDictObj();
     Tcl_IncrRefCount(map);
 
@@ -480,7 +480,7 @@ FillEncodingFileMap(void)
 	Tcl_FSMatchInDirectory(NULL, matchFileList, directory, "*.enc",
 		&readableFiles);
 
-	TclListObjGetElements(NULL, matchFileList, &numFiles, &filev);
+	TclListObjGetElementsM(NULL, matchFileList, &numFiles, &filev);
 	for (j=0; j<numFiles; j++) {
 	    Tcl_Obj *encodingName, *fileObj;
 
@@ -1555,7 +1555,7 @@ OpenEncodingFileChannel(
     Tcl_Channel chan = NULL;
     int i, numDirs;
 
-    TclListObjGetElements(NULL, searchPath, &numDirs, &dir);
+    TclListObjGetElementsM(NULL, searchPath, &numDirs, &dir);
     Tcl_IncrRefCount(nameObj);
     Tcl_AppendToObj(fileNameObj, ".enc", -1);
     Tcl_IncrRefCount(fileNameObj);
@@ -3940,7 +3940,7 @@ InitializeEncodingSearchPath(
     Tcl_IncrRefCount(searchPathObj);
     libPathObj = TclGetLibraryPath();
     Tcl_IncrRefCount(libPathObj);
-    TclListObjLength(NULL, libPathObj, &numDirs);
+    TclListObjLengthM(NULL, libPathObj, &numDirs);
 
     for (i = 0; i < numDirs; i++) {
 	Tcl_Obj *directoryObj, *pathObj;
