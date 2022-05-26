@@ -73,7 +73,7 @@ the application source code.  New languages
 or locales may be provided by adding a new file to
 the message catalog.
 .PP
-\fBmsgcat\fR distinguises packages by its namespace.
+\fBmsgcat\fR distinguishes packages by its namespace.
 Each package has its own message catalog and configuration settings in \fBmsgcat\fR.
 .PP
 A \fIlocale\fR is a specification string describing a user language like \fBde_ch\fR for Swiss German.
