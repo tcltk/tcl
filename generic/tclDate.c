@@ -2749,7 +2749,7 @@ int
 TclClockOldscanObjCmd(
     ClientData clientData,	/* Unused */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Count of paraneters */
+    int objc,			/* Count of parameters */
     Tcl_Obj *CONST *objv)	/* Parameters */
 {
     Tcl_Obj *result, *resultElement;
