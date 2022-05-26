@@ -2746,7 +2746,7 @@ int
 TclClockOldscanObjCmd(
     void *dummy,		/* Unused */
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Count of paraneters */
+    int objc,			/* Count of parameters */
     Tcl_Obj *const *objv)	/* Parameters */
 {
     Tcl_Obj *result, *resultElement;
