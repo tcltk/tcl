@@ -167,22 +167,22 @@ static void		CleanupTestSetassocdataTests(
 			    void *clientData, Tcl_Interp *interp);
 static void		CmdDelProc1(void *clientData);
 static void		CmdDelProc2(void *clientData);
-static Tcl_CmdProc2	CmdProc1;
-static Tcl_CmdProc2	CmdProc2;
+static Tcl_CmdProc	CmdProc1;
+static Tcl_CmdProc	CmdProc2;
 static void		CmdTraceDeleteProc(
 			    void *clientData, Tcl_Interp *interp,
-			    int level, char *command, Tcl_CmdProc2 *cmdProc,
+			    int level, char *command, Tcl_CmdProc *cmdProc,
 			    void *cmdClientData, int argc,
 			    const char *argv[]);
 static void		CmdTraceProc(void *clientData,
 			    Tcl_Interp *interp, int level, char *command,
-			    Tcl_CmdProc2 *cmdProc, void *cmdClientData,
+			    Tcl_CmdProc *cmdProc, void *cmdClientData,
 			    int argc, const char *argv[]);
-static Tcl_CmdProc2	CreatedCommandProc;
-static Tcl_CmdProc2	CreatedCommandProc2;
+static Tcl_CmdProc	CreatedCommandProc;
+static Tcl_CmdProc	CreatedCommandProc2;
 static void		DelCallbackProc(void *clientData,
 			    Tcl_Interp *interp);
-static Tcl_CmdProc2	DelCmdProc;
+static Tcl_CmdProc	DelCmdProc;
 static void		DelDeleteProc(void *clientData);
 static void		EncodingFreeProc(void *clientData);
 static int		EncodingToUtfProc(void *clientData,
@@ -200,7 +200,7 @@ static void		ExitProcOdd(void *clientData);
 static Tcl_ObjCmdProc2	GetTimesObjCmd;
 static Tcl_ResolveCompiledVarProc	InterpCompiledVarResolver;
 static void		MainLoop(void);
-static Tcl_CmdProc2	NoopCmd;
+static Tcl_CmdProc	NoopCmd;
 static Tcl_ObjCmdProc2	NoopObjCmd;
 static int		ObjTraceProc(void *clientData,
 			    Tcl_Interp *interp, int level, const char *command,
@@ -210,22 +210,22 @@ static void		ObjTraceDeleteProc(void *clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
 static void		SpecialFree(void *blockPtr);
 static int		StaticInitProc(Tcl_Interp *interp);
-static Tcl_CmdProc2	TestasyncCmd;
+static Tcl_CmdProc	TestasyncCmd;
 static Tcl_ObjCmdProc2	TestbumpinterpepochObjCmd;
 static Tcl_ObjCmdProc2	TestbytestringObjCmd;
 static Tcl_ObjCmdProc2	TestsetbytearraylengthObjCmd;
 static Tcl_ObjCmdProc2	TestpurebytesobjObjCmd;
 static Tcl_ObjCmdProc2	TeststringbytesObjCmd;
-static Tcl_CmdProc2	TestcmdinfoCmd;
-static Tcl_CmdProc2	TestcmdtokenCmd;
-static Tcl_CmdProc2	TestcmdtraceCmd;
-static Tcl_CmdProc2	TestconcatobjCmd;
-static Tcl_CmdProc2	TestcreatecommandCmd;
-static Tcl_CmdProc2	TestdcallCmd;
-static Tcl_CmdProc2	TestdelCmd;
-static Tcl_CmdProc2	TestdelassocdataCmd;
+static Tcl_CmdProc	TestcmdinfoCmd;
+static Tcl_CmdProc	TestcmdtokenCmd;
+static Tcl_CmdProc	TestcmdtraceCmd;
+static Tcl_CmdProc	TestconcatobjCmd;
+static Tcl_CmdProc	TestcreatecommandCmd;
+static Tcl_CmdProc	TestdcallCmd;
+static Tcl_CmdProc	TestdelCmd;
+static Tcl_CmdProc	TestdelassocdataCmd;
 static Tcl_ObjCmdProc2	TestdoubledigitsObjCmd;
-static Tcl_CmdProc2	TestdstringCmd;
+static Tcl_CmdProc	TestdstringCmd;
 static Tcl_ObjCmdProc2	TestencodingObjCmd;
 static Tcl_ObjCmdProc2	TestevalexObjCmd;
 static Tcl_ObjCmdProc2	TestevalobjvObjCmd;
@@ -233,29 +233,29 @@ static Tcl_ObjCmdProc2	TesteventObjCmd;
 static int		TesteventProc(Tcl_Event *event, int flags);
 static int		TesteventDeleteProc(Tcl_Event *event,
 			    void *clientData);
-static Tcl_CmdProc2	TestexithandlerCmd;
-static Tcl_CmdProc2	TestexprlongCmd;
+static Tcl_CmdProc	TestexithandlerCmd;
+static Tcl_CmdProc	TestexprlongCmd;
 static Tcl_ObjCmdProc2	TestexprlongobjCmd;
-static Tcl_CmdProc2	TestexprdoubleCmd;
+static Tcl_CmdProc	TestexprdoubleCmd;
 static Tcl_ObjCmdProc2	TestexprdoubleobjCmd;
 static Tcl_ObjCmdProc2	TestexprparserObjCmd;
-static Tcl_CmdProc2	TestexprstringCmd;
+static Tcl_CmdProc	TestexprstringCmd;
 static Tcl_ObjCmdProc2	TestfileCmd;
 static Tcl_ObjCmdProc2	TestfilelinkCmd;
-static Tcl_CmdProc2	TestfeventCmd;
-static Tcl_CmdProc2	TestgetassocdataCmd;
-static Tcl_CmdProc2	TestgetintCmd;
-static Tcl_CmdProc2	TestlongsizeCmd;
-static Tcl_CmdProc2	TestgetplatformCmd;
+static Tcl_CmdProc	TestfeventCmd;
+static Tcl_CmdProc	TestgetassocdataCmd;
+static Tcl_CmdProc	TestgetintCmd;
+static Tcl_CmdProc	TestlongsizeCmd;
+static Tcl_CmdProc	TestgetplatformCmd;
 static Tcl_ObjCmdProc2	TestgetvarfullnameCmd;
-static Tcl_CmdProc2	TestinterpdeleteCmd;
-static Tcl_CmdProc2	TestlinkCmd;
+static Tcl_CmdProc	TestinterpdeleteCmd;
+static Tcl_CmdProc	TestlinkCmd;
 static Tcl_ObjCmdProc2	TestlinkarrayCmd;
 static Tcl_ObjCmdProc2	TestlocaleCmd;
-static Tcl_CmdProc2	TestmainthreadCmd;
-static Tcl_CmdProc2	TestsetmainloopCmd;
-static Tcl_CmdProc2	TestexitmainloopCmd;
-static Tcl_CmdProc2	TestpanicCmd;
+static Tcl_CmdProc	TestmainthreadCmd;
+static Tcl_CmdProc	TestsetmainloopCmd;
+static Tcl_CmdProc	TestexitmainloopCmd;
+static Tcl_CmdProc	TestpanicCmd;
 static Tcl_ObjCmdProc2	TestparseargsCmd;
 static Tcl_ObjCmdProc2	TestparserObjCmd;
 static Tcl_ObjCmdProc2	TestparsevarObjCmd;
@@ -268,20 +268,20 @@ static void		TestregexpXflags(const char *string,
 			    size_t length, int *cflagsPtr, int *eflagsPtr);
 static Tcl_ObjCmdProc2	TestsaveresultCmd;
 static void		TestsaveresultFree(void *blockPtr);
-static Tcl_CmdProc2	TestsetassocdataCmd;
-static Tcl_CmdProc2	TestsetCmd;
-static Tcl_CmdProc2	Testset2Cmd;
-static Tcl_CmdProc2	TestseterrorcodeCmd;
+static Tcl_CmdProc	TestsetassocdataCmd;
+static Tcl_CmdProc	TestsetCmd;
+static Tcl_CmdProc	Testset2Cmd;
+static Tcl_CmdProc	TestseterrorcodeCmd;
 static Tcl_ObjCmdProc2	TestsetobjerrorcodeCmd;
-static Tcl_CmdProc2	TestsetplatformCmd;
-static Tcl_CmdProc2	TeststaticlibraryCmd;
-static Tcl_CmdProc2	TesttranslatefilenameCmd;
-static Tcl_CmdProc2	TestupvarCmd;
+static Tcl_CmdProc	TestsetplatformCmd;
+static Tcl_CmdProc	TeststaticlibraryCmd;
+static Tcl_CmdProc	TesttranslatefilenameCmd;
+static Tcl_CmdProc	TestupvarCmd;
 static Tcl_ObjCmdProc2	TestWrongNumArgsObjCmd;
 static Tcl_ObjCmdProc2	TestGetIndexFromObjStructObjCmd;
-static Tcl_CmdProc2	TestChannelCmd;
-static Tcl_CmdProc2	TestChannelEventCmd;
-static Tcl_CmdProc2	TestSocketCmd;
+static Tcl_CmdProc	TestChannelCmd;
+static Tcl_CmdProc	TestChannelEventCmd;
+static Tcl_CmdProc	TestSocketCmd;
 static Tcl_ObjCmdProc2	TestFilesystemObjCmd;
 static Tcl_ObjCmdProc2	TestSimpleFilesystemObjCmd;
 static void		TestReport(const char *cmd, Tcl_Obj *arg1,
@@ -312,7 +312,7 @@ static Tcl_FSNormalizePathProc TestReportNormalizePath;
 static Tcl_FSPathInFilesystemProc TestReportInFilesystem;
 static Tcl_FSFreeInternalRepProc TestReportFreeInternalRep;
 static Tcl_FSDupInternalRepProc TestReportDupInternalRep;
-static Tcl_CmdProc2 TestServiceModeCmd;
+static Tcl_CmdProc TestServiceModeCmd;
 static Tcl_FSStatProc SimpleStat;
 static Tcl_FSAccessProc SimpleAccess;
 static Tcl_FSOpenFileChannelProc SimpleOpenFileChannel;
@@ -517,7 +517,7 @@ int
 Tcltest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    Tcl_CmdInfo2 info;
+    Tcl_CmdInfo info;
     Tcl_Obj **objv, *objPtr;
     size_t objc, index;
     static const char *const specialOptions[] = {
@@ -537,9 +537,9 @@ Tcltest_Init(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetCommandInfo2(interp, "::tcl::build-info", &info)) {
+    if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
 	Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
-		info.objProc, (void *)version, NULL);
+		info.objProc2, (void *)version, NULL);
     }
     if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
@@ -785,14 +785,14 @@ int
 Tcltest_SafeInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    Tcl_CmdInfo2 info;
+    Tcl_CmdInfo info;
 
     if (Tcl_InitStubs(interp, "8.7-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetCommandInfo2(interp, "::tcl::build-info", &info)) {
+    if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
 	Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
-		info.objProc, (void *)version, NULL);
+		info.objProc2, (void *)version, NULL);
     }
     if (Tcl_PkgProvideEx(interp, "tcl::test", TCL_PATCH_LEVEL, NULL) == TCL_ERROR) {
 	return TCL_ERROR;
@@ -1061,7 +1061,7 @@ TestcmdinfoCmd(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-    Tcl_CmdInfo2 info;
+    Tcl_CmdInfo info;
 
     if (argc != 3) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -1076,7 +1076,7 @@ TestcmdinfoCmd(
 	Tcl_DeleteCommand(interp, argv[2]);
 	Tcl_DStringResult(interp, &delString);
     } else if (strcmp(argv[1], "get") == 0) {
-	if (Tcl_GetCommandInfo2(interp, argv[2], &info) ==0) {
+	if (Tcl_GetCommandInfo(interp, argv[2], &info) ==0) {
 	    Tcl_AppendResult(interp, "??", NULL);
 	    return TCL_OK;
 	}
@@ -1099,7 +1099,9 @@ TestcmdinfoCmd(
 	    Tcl_AppendResult(interp, " unknown", NULL);
 	}
 	Tcl_AppendResult(interp, " ", info.namespacePtr->fullName, NULL);
-	if (info.isNativeObjectProc) {
+	if (info.isNativeObjectProc2 == 2) {
+	    Tcl_AppendResult(interp, " nativeObjectProc2", NULL);
+	} else if (info.isNativeObjectProc2) {
 	    Tcl_AppendResult(interp, " nativeObjectProc", NULL);
 	} else {
 	    Tcl_AppendResult(interp, " stringProc", NULL);
@@ -1107,11 +1109,11 @@ TestcmdinfoCmd(
     } else if (strcmp(argv[1], "modify") == 0) {
 	info.proc = CmdProc2;
 	info.clientData = (void *) "new_command_data";
-	info.objProc = NULL;
-	info.objClientData = NULL;
+	info.objProc2 = NULL;
+	info.objClientData2 = NULL;
 	info.deleteProc = CmdDelProc2;
 	info.deleteData = (void *) "new_delete_data";
-	if (Tcl_SetCommandInfo2(interp, argv[2], &info) == 0) {
+	if (Tcl_SetCommandInfo(interp, argv[2], &info) == 0) {
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(0));
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(1));
@@ -1342,7 +1344,7 @@ CmdTraceProc(
     TCL_UNUSED(int) /*level*/,
     char *command,		/* The command being traced (after
 				 * substitutions). */
-    TCL_UNUSED(Tcl_CmdProc2 *) /*cmdProc*/,
+    TCL_UNUSED(Tcl_CmdProc *) /*cmdProc*/,
     TCL_UNUSED(void *),
     int argc,			/* Number of arguments. */
     const char *argv[])		/* Argument strings. */
@@ -1365,7 +1367,7 @@ CmdTraceDeleteProc(
     Tcl_Interp *interp,		/* Current interpreter. */
     TCL_UNUSED(int) /*level*/,
     TCL_UNUSED(char *) /*command*/,
-    TCL_UNUSED(Tcl_CmdProc2 *),
+    TCL_UNUSED(Tcl_CmdProc *),
     TCL_UNUSED(void *),
     TCL_UNUSED(int) /*argc*/,
     TCL_UNUSED(const char **) /*argv*/)
@@ -1473,10 +1475,10 @@ CreatedCommandProc(
     TCL_UNUSED(int) /*argc*/,
     TCL_UNUSED(const char **) /*argv*/)
 {
-    Tcl_CmdInfo2 info;
+    Tcl_CmdInfo info;
     int found;
 
-    found = Tcl_GetCommandInfo2(interp, "test_ns_basic::createdcommand",
+    found = Tcl_GetCommandInfo(interp, "test_ns_basic::createdcommand",
 	    &info);
     if (!found) {
 	Tcl_AppendResult(interp, "CreatedCommandProc could not get command info for test_ns_basic::createdcommand",
@@ -1495,10 +1497,10 @@ CreatedCommandProc2(
     TCL_UNUSED(int) /*argc*/,
     TCL_UNUSED(const char **) /*argv*/)
 {
-    Tcl_CmdInfo2 info;
+    Tcl_CmdInfo info;
     int found;
 
-    found = Tcl_GetCommandInfo2(interp, "value:at:", &info);
+    found = Tcl_GetCommandInfo(interp, "value:at:", &info);
     if (!found) {
 	Tcl_AppendResult(interp, "CreatedCommandProc2 could not get command info for test_ns_basic::createdcommand",
 		NULL);

@@ -1673,7 +1673,7 @@ typedef struct Command {
     Tcl_ObjCmdProc2 *objProc;	/* Object-based command procedure. */
     void *objClientData;	/* Arbitrary value passed to object proc. */
     void *oldProc;		/* String-based command procedure. */
-    Tcl_CmdProc2 *proc;		/* String-based command procedure. */
+    Tcl_CmdProc *proc;		/* String-based command procedure. */
     void *clientData;	/* Arbitrary value passed to string proc. */
     Tcl_CmdDeleteProc *deleteProc;
 				/* Procedure invoked when deleting command to,

@@ -592,11 +592,9 @@ declare 157 {
 declare 158 {
     const Tcl_ChannelType *Tcl_GetChannelType(Tcl_Channel chan)
 }
-if 0 {
 declare 159 {
     int Tcl_GetCommandInfo(Tcl_Interp *interp, const char *cmdName,
 	    Tcl_CmdInfo *infoPtr)
-}
 }
 declare 160 {
     const char *Tcl_GetCommandName(Tcl_Interp *interp,
@@ -831,11 +829,9 @@ declare 225 {
     int Tcl_SetChannelOption(Tcl_Interp *interp, Tcl_Channel chan,
 	    const char *optionName, const char *newValue)
 }
-if 0 {
 declare 226 {
     int Tcl_SetCommandInfo(Tcl_Interp *interp, const char *cmdName,
 	    const Tcl_CmdInfo *infoPtr)
-}
 }
 declare 227 {
     void Tcl_SetErrno(int err)
@@ -1794,13 +1790,13 @@ declare 483 {
 	    Tcl_CmdObjTraceProc *objProc, void *clientData,
 	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
+}
 declare 484 {
     int Tcl_GetCommandInfoFromToken(Tcl_Command token, Tcl_CmdInfo *infoPtr)
 }
 declare 485 {
     int Tcl_SetCommandInfoFromToken(Tcl_Command token,
 	    const Tcl_CmdInfo *infoPtr)
-}
 }
 
 ### New functions on 64-bit dev branch ###
@@ -2576,7 +2572,7 @@ declare 673 {
 
 declare 676 {
     Tcl_Command Tcl_CreateCommand2(Tcl_Interp *interp, const char *cmdName,
-	    Tcl_CmdProc2 *proc, void *clientData,
+	    Tcl_CmdProc *proc, void *clientData,
 	    Tcl_CmdDeleteProc *deleteProc)
 }
 declare 677 {
@@ -2596,28 +2592,13 @@ declare 679 {
 	    void *clientData, size_t objc, Tcl_Obj *const objv[])
 }
 declare 680 {
-    int Tcl_GetCommandInfo2(Tcl_Interp *interp, const char *cmdName,
-	    Tcl_CmdInfo2 *infoPtr)
-}
-declare 681 {
-    int Tcl_SetCommandInfo2(Tcl_Interp *interp, const char *cmdName,
-	    const Tcl_CmdInfo2 *infoPtr)
-}
-declare 682 {
     Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, int level, int flags,
 	    Tcl_CmdObjTraceProc2 *objProc, void *clientData,
 	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
-declare 683 {
-    int Tcl_GetCommandInfoFromToken2(Tcl_Command token, Tcl_CmdInfo2 *infoPtr)
-}
-declare 684 {
-    int Tcl_SetCommandInfoFromToken2(Tcl_Command token,
-	    const Tcl_CmdInfo2 *infoPtr)
-}
-declare 685 {
+declare 681 {
     Tcl_Trace Tcl_CreateTrace2(Tcl_Interp *interp, int level,
-	    Tcl_CmdTraceProc2 *proc, void *clientData)
+	    Tcl_CmdTraceProc *proc, void *clientData)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

@@ -2436,7 +2436,7 @@ Tcl_CreateCommand2(
 				 * qualifiers, the new command is put in the
 				 * specified namespace; otherwise it is put in
 				 * the global namespace. */
-    Tcl_CmdProc2 *proc,		/* Function to associate with cmdName. */
+    Tcl_CmdProc *proc,		/* Function to associate with cmdName. */
     void *clientData,	/* Arbitrary value passed to string proc. */
     Tcl_CmdDeleteProc *deleteProc)
 				/* If not NULL, gives a function to call when
@@ -3171,17 +3171,17 @@ TclRenameCommand(
  */
 
 int
-Tcl_SetCommandInfo2(
+Tcl_SetCommandInfo(
     Tcl_Interp *interp,		/* Interpreter in which to look for
 				 * command. */
     const char *cmdName,	/* Name of desired command. */
-    const Tcl_CmdInfo2 *infoPtr)	/* Where to find information to store in the
+    const Tcl_CmdInfo *infoPtr)	/* Where to find information to store in the
 				 * command. */
 {
     Tcl_Command cmd;
 
     cmd = Tcl_FindCommand(interp, cmdName, NULL, /*flags*/ 0);
-    return Tcl_SetCommandInfoFromToken2(cmd, infoPtr);
+    return Tcl_SetCommandInfoFromToken(cmd, infoPtr);
 }
 
 /*
@@ -3206,9 +3206,9 @@ Tcl_SetCommandInfo2(
  */
 
 int
-Tcl_SetCommandInfoFromToken2(
+Tcl_SetCommandInfoFromToken(
     Tcl_Command cmd,
-    const Tcl_CmdInfo2 *infoPtr)
+    const Tcl_CmdInfo *infoPtr)
 {
     Command *cmdPtr;		/* Internal representation of the command */
 
@@ -3223,16 +3223,16 @@ Tcl_SetCommandInfoFromToken2(
     cmdPtr = (Command *) cmd;
     cmdPtr->proc = infoPtr->proc;
     cmdPtr->clientData = infoPtr->clientData;
-    if (infoPtr->objProc == NULL) {
+    if (infoPtr->objProc2 == NULL) {
 	cmdPtr->objProc = TclInvokeStringCommand;
 	cmdPtr->objClientData = cmdPtr;
 	cmdPtr->nreProc = NULL;
     } else {
-	if (infoPtr->objProc != cmdPtr->objProc) {
+	if (infoPtr->objProc2 != cmdPtr->objProc) {
 	    cmdPtr->nreProc = NULL;
-	    cmdPtr->objProc = infoPtr->objProc;
+	    cmdPtr->objProc = infoPtr->objProc2;
 	}
-	cmdPtr->objClientData = infoPtr->objClientData;
+	cmdPtr->objClientData = infoPtr->objClientData2;
     }
     cmdPtr->deleteProc = infoPtr->deleteProc;
     cmdPtr->deleteData = infoPtr->deleteData;
@@ -3258,17 +3258,17 @@ Tcl_SetCommandInfoFromToken2(
  */
 
 int
-Tcl_GetCommandInfo2(
+Tcl_GetCommandInfo(
     Tcl_Interp *interp,		/* Interpreter in which to look for
 				 * command. */
     const char *cmdName,	/* Name of desired command. */
-    Tcl_CmdInfo2 *infoPtr)	/* Where to store information about
+    Tcl_CmdInfo *infoPtr)	/* Where to store information about
 				 * command. */
 {
     Tcl_Command cmd;
 
     cmd = Tcl_FindCommand(interp, cmdName, NULL, /*flags*/ 0);
-    return Tcl_GetCommandInfoFromToken2(cmd, infoPtr);
+    return Tcl_GetCommandInfoFromToken(cmd, infoPtr);
 }
 
 /*
@@ -3290,9 +3290,9 @@ Tcl_GetCommandInfo2(
  */
 
 int
-Tcl_GetCommandInfoFromToken2(
+Tcl_GetCommandInfoFromToken(
     Tcl_Command cmd,
-    Tcl_CmdInfo2 *infoPtr)
+    Tcl_CmdInfo *infoPtr)
 {
     Command *cmdPtr;		/* Internal representation of the command */
 
@@ -3306,10 +3306,10 @@ Tcl_GetCommandInfoFromToken2(
      */
 
     cmdPtr = (Command *) cmd;
-    infoPtr->isNativeObjectProc =
-	    (cmdPtr->objProc != TclInvokeStringCommand);
-    infoPtr->objProc = cmdPtr->objProc;
-    infoPtr->objClientData = cmdPtr->objClientData;
+    infoPtr->isNativeObjectProc2 =
+	    (cmdPtr->objProc != TclInvokeStringCommand) ? 2 : 0;
+    infoPtr->objProc2 = cmdPtr->objProc;
+    infoPtr->objClientData2 = cmdPtr->objClientData;
     infoPtr->proc = cmdPtr->proc;
     infoPtr->clientData = cmdPtr->clientData;
     infoPtr->deleteProc = cmdPtr->deleteProc;

@@ -1937,11 +1937,11 @@ Tcl_ForgetImport(
 
     for (hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search); (hPtr != NULL);
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_CmdInfo2 info;
+	Tcl_CmdInfo info;
 	Tcl_Command token = (Tcl_Command)Tcl_GetHashValue(hPtr);
 	Tcl_Command origin = TclGetOriginalCommand(token);
 
-	if (Tcl_GetCommandInfoFromToken2(origin, &info) == 0) {
+	if (Tcl_GetCommandInfoFromToken(origin, &info) == 0) {
 	    continue;			/* Not an imported command. */
 	}
 	if (info.namespacePtr != (Tcl_Namespace *) sourceNsPtr) {
@@ -1957,7 +1957,7 @@ Tcl_ForgetImport(
 	    if (firstToken == origin) {
 		continue;
 	    }
-	    Tcl_GetCommandInfoFromToken2(firstToken, &info);
+	    Tcl_GetCommandInfoFromToken(firstToken, &info);
 	    if (info.namespacePtr != (Tcl_Namespace *) sourceNsPtr) {
 		continue;
 	    }

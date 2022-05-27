@@ -18,7 +18,7 @@
  */
 
 static int    Pkg\u03C0_\u03A0ObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+		Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]);
 
 /*
  *----------------------------------------------------------------------
@@ -42,7 +42,7 @@ static int
 Pkg\u03C0_\u03A0ObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;

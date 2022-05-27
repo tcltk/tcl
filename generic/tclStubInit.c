@@ -945,7 +945,7 @@ const TclStubs tclStubs = {
     Tcl_GetChannelName, /* 156 */
     Tcl_GetChannelOption, /* 157 */
     Tcl_GetChannelType, /* 158 */
-    0, /* 159 */
+    Tcl_GetCommandInfo, /* 159 */
     Tcl_GetCommandName, /* 160 */
     Tcl_GetErrno, /* 161 */
     Tcl_GetHostName, /* 162 */
@@ -1012,7 +1012,7 @@ const TclStubs tclStubs = {
     Tcl_SetAssocData, /* 223 */
     Tcl_SetChannelBufferSize, /* 224 */
     Tcl_SetChannelOption, /* 225 */
-    0, /* 226 */
+    Tcl_SetCommandInfo, /* 226 */
     Tcl_SetErrno, /* 227 */
     Tcl_SetErrorCode, /* 228 */
     Tcl_SetMaxBlockTime, /* 229 */
@@ -1270,8 +1270,8 @@ const TclStubs tclStubs = {
     Tcl_EvalTokensStandard, /* 481 */
     Tcl_GetTime, /* 482 */
     0, /* 483 */
-    0, /* 484 */
-    0, /* 485 */
+    Tcl_GetCommandInfoFromToken, /* 484 */
+    Tcl_SetCommandInfoFromToken, /* 485 */
     Tcl_DbNewWideIntObj, /* 486 */
     Tcl_GetWideIntFromObj, /* 487 */
     Tcl_NewWideIntObj, /* 488 */
@@ -1466,12 +1466,8 @@ const TclStubs tclStubs = {
     Tcl_CreateObjCommand2, /* 677 */
     Tcl_NRCreateCommand2, /* 678 */
     Tcl_NRCallObjProc2, /* 679 */
-    Tcl_GetCommandInfo2, /* 680 */
-    Tcl_SetCommandInfo2, /* 681 */
-    Tcl_CreateObjTrace2, /* 682 */
-    Tcl_GetCommandInfoFromToken2, /* 683 */
-    Tcl_SetCommandInfoFromToken2, /* 684 */
-    Tcl_CreateTrace2, /* 685 */
+    Tcl_CreateObjTrace2, /* 680 */
+    Tcl_CreateTrace2, /* 681 */
 };
 
 /* !END!: Do not edit above this line. */
