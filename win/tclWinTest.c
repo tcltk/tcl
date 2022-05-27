@@ -102,7 +102,7 @@ static int
 TesteventloopCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
@@ -178,7 +178,7 @@ static int
 TestvolumetypeCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
 #define VOL_BUF_SIZE 32
@@ -244,7 +244,7 @@ static int
 TestwinclockCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp* interp,		/* Tcl interpreter */
-    int objc,			/* Argument count */
+    size_t objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
 {
     static const FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
@@ -293,7 +293,7 @@ static int
 TestwinsleepCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp* interp,		/* Tcl interpreter */
-    int objc,			/* Parameter count */
+    size_t objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int ms;
@@ -336,7 +336,7 @@ static int
 TestExceptionCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp* interp,			/* Tcl interpreter */
-    int objc,				/* Argument count */
+    size_t objc,				/* Argument count */
     Tcl_Obj *const objv[])		/* Argument vector */
 {
     static const char *const cmds[] = {
@@ -624,10 +624,11 @@ static int
 TestchmodCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Parameter count */
+    size_t objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
-    int i, mode;
+    size_t i;
+    int mode;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");

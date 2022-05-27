@@ -118,7 +118,7 @@ static int		ParseKeyName(Tcl_Interp *interp, char *name,
 static DWORD		RecursiveDeleteKey(HKEY hStartKey,
 			    const WCHAR * pKeyName, REGSAM mode);
 static int		RegistryObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
@@ -286,7 +286,7 @@ static int
 RegistryObjCmd(
     void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     int n = 1;

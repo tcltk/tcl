@@ -1736,7 +1736,7 @@ TclNRNewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    size_t objc,			/* Number of arguments. Negative value means
+    size_t objc,			/* Number of arguments. TCL_INDEX_NONE means
 				 * do not call constructor. */
     Tcl_Obj *const objv[],	/* Argument list. */
     int skip,			/* Number of arguments to _not_ pass to the
@@ -1755,11 +1755,11 @@ TclNRNewObjectInstance(
     }
 
     /*
-     * Run constructors, except when objc < 0 (a special flag case used for
+     * Run constructors, except when objc == TCL_INDEX_NONE (a special flag case used for
      * object cloning only). If there aren't any constructors, we do nothing.
      */
 
-    if (objc < 0) {
+    if (objc == TCL_INDEX_NONE) {
 	*objectPtr = (Tcl_Object) oPtr;
 	return TCL_OK;
     }

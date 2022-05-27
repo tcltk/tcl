@@ -127,8 +127,8 @@ Tcl_RegexpObjCmd(
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    size_t i, about, offset, stringLength, matchLength, cflags, eflags;
-    int indices, match, all, doinline, numMatchesSaved;
+    size_t i, about, all, offset, stringLength, matchLength, cflags, eflags;
+    int indices, match, doinline, numMatchesSaved;
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
     Tcl_RegExpInfo info;
@@ -4173,7 +4173,7 @@ Tcl_TimeRateObjCmd(
 	}
     }
 
-    if (i >= objc || i < objc - 3) {
+    if (i >= objc || i + 3 < objc) {
     usage:
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-direct? ?-calibrate? ?-overhead double? "
@@ -4703,14 +4703,14 @@ TclNRTryObjCmd(
 	}
 	switch (type) {
 	case TryFinally:	/* finally script */
-	    if (i < objc-2) {
+	    if (i+2 < objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"finally clause must be last", -1));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "FINALLY",
 			"NONTERMINAL", NULL);
 		return TCL_ERROR;
-	    } else if (i == objc-1) {
+	    } else if (i+1 == objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong # args to finally clause: must be"
 			" \"... finally script\"", -1));
@@ -4723,7 +4723,7 @@ TclNRTryObjCmd(
 	    break;
 
 	case TryOn:		/* on code variableList script */
-	    if (i > objc-4) {
+	    if (i+4 > objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong # args to on clause: must be \"... on code"
 			" variableList script\"", -1));
@@ -4741,7 +4741,7 @@ TclNRTryObjCmd(
 	    goto commonHandler;
 
 	case TryTrap:		/* trap pattern variableList script */
-	    if (i > objc-4) {
+	    if (i+4 > objc) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong # args to trap clause: "
 			"must be \"... trap pattern variableList script\"",

@@ -114,7 +114,7 @@ static int		MakeDdeConnection(Tcl_Interp *interp,
 			    const WCHAR *name, HCONV *ddeConvPtr);
 static void		SetDdeError(Tcl_Interp *interp);
 static int		DdeObjCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 
 #if (TCL_MAJOR_VERSION < 9) && (TCL_MINOR_VERSION < 7)
@@ -1295,7 +1295,7 @@ static int
 DdeObjCmd(
     void *dummy,	/* Not used. */
     Tcl_Interp *interp,		/* The interp we are sending from */
-    int objc,			/* Number of arguments */
+    size_t objc,			/* Number of arguments */
     Tcl_Obj *const *objv)	/* The arguments */
 {
     static const char *const ddeCommands[] = {
@@ -1324,9 +1324,9 @@ DdeObjCmd(
 	"-binary", NULL
     };
 
-    int index, i, argIndex;
-    size_t length;
-    int flags = 0, result = TCL_OK, firstArg = 0;
+    int index, argIndex;
+    size_t length, i, firstArg = 0;
+    int flags = 0, result = TCL_OK;
     HSZ ddeService = NULL, ddeTopic = NULL, ddeItem = NULL, ddeCookie = NULL;
     HDDEDATA ddeData = NULL, ddeItemData = NULL, ddeReturn;
     HCONV hConv = NULL;
