@@ -1776,7 +1776,7 @@ DoImport(
 	    Command *linkCmd = cmdPtr;
 
 	    while (linkCmd->deleteProc == DeleteImportedCmd) {
-		dataPtr = (ImportedCmdData *)linkCmd->objClientData;
+		dataPtr = (ImportedCmdData *)linkCmd->objClientData2;
 		linkCmd = dataPtr->realCmdPtr;
 		if (overwrite == linkCmd) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1814,7 +1814,7 @@ DoImport(
 	Command *overwrite = (Command *)Tcl_GetHashValue(found);
 
 	if (overwrite->deleteProc == DeleteImportedCmd) {
-	    ImportedCmdData *dataPtr = (ImportedCmdData *)overwrite->objClientData;
+	    ImportedCmdData *dataPtr = (ImportedCmdData *)overwrite->objClientData2;
 
 	    if (dataPtr->realCmdPtr == Tcl_GetHashValue(hPtr)) {
 		/*
@@ -1951,7 +1951,7 @@ Tcl_ForgetImport(
 	     */
 
 	    Command *cmdPtr = (Command *) token;
-	    ImportedCmdData *dataPtr = (ImportedCmdData *)cmdPtr->objClientData;
+	    ImportedCmdData *dataPtr = (ImportedCmdData *)cmdPtr->objClientData2;
 	    Tcl_Command firstToken = (Tcl_Command) dataPtr->realCmdPtr;
 
 	    if (firstToken == origin) {
@@ -2006,7 +2006,7 @@ TclGetOriginalCommand(
     }
 
     while (cmdPtr->deleteProc == DeleteImportedCmd) {
-	dataPtr = (ImportedCmdData *)cmdPtr->objClientData;
+	dataPtr = (ImportedCmdData *)cmdPtr->objClientData2;
 	cmdPtr = dataPtr->realCmdPtr;
     }
     return (Tcl_Command) cmdPtr;

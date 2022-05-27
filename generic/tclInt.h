@@ -1669,10 +1669,8 @@ typedef struct Command {
 				 * renamed, deleted, hidden, or exposed. */
     CompileProc *compileProc;	/* Procedure called to compile command. NULL
 				 * if no compile proc exists for command. */
-    void *oldObjProc;	/* Object-based command procedure. */
-    Tcl_ObjCmdProc2 *objProc;	/* Object-based command procedure. */
-    void *objClientData;	/* Arbitrary value passed to object proc. */
-    void *oldProc;		/* String-based command procedure. */
+    void *objProcNotUsed;	/* Object-based command procedure. */
+    void *objClientDataNotUsed;	/* Arbitrary value passed to object proc. */
     Tcl_CmdProc *proc;		/* String-based command procedure. */
     void *clientData;	/* Arbitrary value passed to string proc. */
     Tcl_CmdDeleteProc *deleteProc;
@@ -1690,8 +1688,9 @@ typedef struct Command {
 				 * command. */
     CommandTrace *tracePtr;	/* First in list of all traces set for this
 				 * command. */
-    void *nreOldProc;
     Tcl_ObjCmdProc2 *nreProc;	/* NRE implementation of this command. */
+    Tcl_ObjCmdProc2 *objProc2;	/* Object-based command procedure. */
+    void *objClientData2;	/* Arbitrary value passed to object proc. */
 } Command;
 
 /*

@@ -1099,9 +1099,9 @@ TestcmdinfoCmd(
 	    Tcl_AppendResult(interp, " unknown", NULL);
 	}
 	Tcl_AppendResult(interp, " ", info.namespacePtr->fullName, NULL);
-	if (info.isNativeObjectProc2 == 2) {
+	if (info.isNativeObjectProc == 2) {
 	    Tcl_AppendResult(interp, " nativeObjectProc2", NULL);
-	} else if (info.isNativeObjectProc2) {
+	} else if (info.isNativeObjectProc == 1) {
 	    Tcl_AppendResult(interp, " nativeObjectProc", NULL);
 	} else {
 	    Tcl_AppendResult(interp, " stringProc", NULL);

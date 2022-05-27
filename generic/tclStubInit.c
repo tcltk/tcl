@@ -644,6 +644,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
+    TclInvokeStringCommand2, /* 259 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

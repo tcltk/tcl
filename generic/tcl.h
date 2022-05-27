@@ -562,7 +562,7 @@ typedef void (Tcl_InterpDeleteProc) (void *clientData,
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
 #if 0
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
-	size_t objc, struct Tcl_Obj *const *objv);
+	int objc, struct Tcl_Obj *const *objv);
 #endif
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
 	size_t objc, struct Tcl_Obj *const *objv);
@@ -758,13 +758,13 @@ typedef struct Tcl_CallFrame {
  */
 
 typedef struct {
-    int isNativeObjectProc2;	/* 1 if objProc was registered by a call to
+    int isNativeObjectProc;	/* 1 if objProc was registered by a call to
 				 * Tcl_CreateObjCommand; 2 if objProc was registered by
 				 * a call to Tcl_CreateObjCommand2; 0 otherwise.
 				 * Tcl_SetCmdInfo does not modify this
 				 * field. */
-    char objProc1;	/* Command's object-based function. */
-    char objClientData1;	/* ClientData for object proc. */
+    void *objProcNotUsed;	/* Command's object-based function. */
+    void *objClientDataNotUsed;	/* ClientData for object proc. */
     Tcl_CmdProc *proc;		/* Command's string-based function. */
     void *clientData;	/* ClientData for string proc. */
     Tcl_CmdDeleteProc *deleteProc;

@@ -2971,13 +2971,13 @@ Tcl_GetObjectFromObj(
     if (cmdPtr == NULL) {
 	goto notAnObject;
     }
-    if (cmdPtr->objProc != TclOOPublicObjectCmd) {
+    if (cmdPtr->objProc2 != TclOOPublicObjectCmd) {
 	cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
-	if (cmdPtr == NULL || cmdPtr->objProc != TclOOPublicObjectCmd) {
+	if (cmdPtr == NULL || cmdPtr->objProc2 != TclOOPublicObjectCmd) {
 	    goto notAnObject;
 	}
     }
-    return (Tcl_Object)cmdPtr->objClientData;
+    return (Tcl_Object)cmdPtr->objClientData2;
 
   notAnObject:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(

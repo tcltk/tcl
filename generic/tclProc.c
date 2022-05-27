@@ -1052,7 +1052,7 @@ TclIsProc(
 	cmdPtr = (Command *) origCmd;
     }
     if (cmdPtr->deleteProc == TclProcDeleteProc) {
-	return (Proc *)cmdPtr->objClientData;
+	return (Proc *)cmdPtr->objClientData2;
     }
     return NULL;
 }

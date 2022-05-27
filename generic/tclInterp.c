@@ -1433,8 +1433,8 @@ TclPreventAliasLoop(
      * create or rename the command.
      */
 
-    if (cmdPtr->objProc != TclAliasObjCmd
-	    && cmdPtr->objProc != TclLocalAliasObjCmd) {
+    if (cmdPtr->objProc2 != TclAliasObjCmd
+	    && cmdPtr->objProc2 != TclLocalAliasObjCmd) {
 	return TCL_OK;
     }
 
@@ -1444,7 +1444,7 @@ TclPreventAliasLoop(
      * chain then we have a loop.
      */
 
-    aliasPtr = (Alias *)cmdPtr->objClientData;
+    aliasPtr = (Alias *)cmdPtr->objClientData2;
     nextAliasPtr = aliasPtr;
     while (1) {
 	Tcl_Obj *cmdNamePtr;
@@ -1489,11 +1489,11 @@ TclPreventAliasLoop(
 	 * Otherwise we do not have a loop.
 	 */
 
-	if (aliasCmdPtr->objProc != TclAliasObjCmd
-		&& aliasCmdPtr->objProc != TclLocalAliasObjCmd) {
+	if (aliasCmdPtr->objProc2 != TclAliasObjCmd
+		&& aliasCmdPtr->objProc2 != TclLocalAliasObjCmd) {
 	    return TCL_OK;
 	}
-	nextAliasPtr = (Alias *)aliasCmdPtr->objClientData;
+	nextAliasPtr = (Alias *)aliasCmdPtr->objClientData2;
     }
 }
 

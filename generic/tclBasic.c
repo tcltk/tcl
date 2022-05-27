@@ -1038,8 +1038,8 @@ Tcl_CreateInterp(void)
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
 	    cmdPtr->proc = TclInvokeObjectCommand;
 	    cmdPtr->clientData = cmdPtr;
-	    cmdPtr->objProc = cmdInfoPtr->objProc;
-	    cmdPtr->objClientData = NULL;
+	    cmdPtr->objProc2 = cmdInfoPtr->objProc;
+	    cmdPtr->objClientData2 = NULL;
 	    cmdPtr->deleteProc = NULL;
 	    cmdPtr->deleteData = NULL;
 	    cmdPtr->flags = 0;
@@ -1313,7 +1313,7 @@ TclGetCommandTypeName(
     Tcl_Command command)
 {
     Command *cmdPtr = (Command *) command;
-    Tcl_ObjCmdProc2 *procPtr = cmdPtr->objProc;
+    Tcl_ObjCmdProc2 *procPtr = cmdPtr->objProc2;
     const char *name = "native";
 
     if (procPtr == NULL) {
@@ -2563,8 +2563,8 @@ Tcl_CreateCommand2(
     cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
-    cmdPtr->objProc = TclInvokeStringCommand;
-    cmdPtr->objClientData = cmdPtr;
+    cmdPtr->objProc2 = TclInvokeStringCommand2;
+    cmdPtr->objClientData2 = cmdPtr;
     cmdPtr->proc = proc;
     cmdPtr->clientData = clientData;
     cmdPtr->deleteProc = deleteProc;
@@ -2583,7 +2583,7 @@ Tcl_CreateCommand2(
 	cmdPtr->importRefPtr = oldRefPtr;
 	while (oldRefPtr != NULL) {
 	    Command *refCmdPtr = oldRefPtr->importedCmdPtr;
-	    dataPtr = (ImportedCmdData *)refCmdPtr->objClientData;
+	    dataPtr = (ImportedCmdData *)refCmdPtr->objClientData2;
 	    dataPtr->realCmdPtr = cmdPtr;
 	    oldRefPtr = oldRefPtr->nextPtr;
 	}
@@ -2790,8 +2790,8 @@ TclCreateObjCommandInNs(
     cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
-    cmdPtr->objProc = proc;
-    cmdPtr->objClientData = clientData;
+    cmdPtr->objProc2 = proc;
+    cmdPtr->objClientData2 = clientData;
     cmdPtr->proc = TclInvokeObjectCommand;
     cmdPtr->clientData = cmdPtr;
     cmdPtr->deleteProc = deleteProc;
@@ -2811,7 +2811,7 @@ TclCreateObjCommandInNs(
 	while (oldRefPtr != NULL) {
 	    Command *refCmdPtr = oldRefPtr->importedCmdPtr;
 
-	    dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
+	    dataPtr = (ImportedCmdData*)refCmdPtr->objClientData2;
 	    cmdPtr->refCount++;
 	    TclCleanupCommandMacro(dataPtr->realCmdPtr);
 	    dataPtr->realCmdPtr = cmdPtr;
@@ -2855,16 +2855,47 @@ int
 TclInvokeStringCommand(
     void *clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,		/* Number of arguments. */
+    int objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Command *cmdPtr = (Command *)clientData;
-    size_t i;
-    int result;
+    int i, result;
     const char **argv = (const char **)
 	    TclStackAlloc(interp, (objc + 1) * sizeof(char *));
 
     for (i = 0; i < objc; i++) {
+	argv[i] = TclGetString(objv[i]);
+    }
+    argv[objc] = 0;
+
+    /*
+     * Invoke the command's string-based Tcl_CmdProc.
+     */
+
+    result = cmdPtr->proc(cmdPtr->clientData, interp, objc, argv);
+
+    TclStackFree(interp, (void *) argv);
+    return result;
+}
+
+int
+TclInvokeStringCommand2(
+    void *clientData,	/* Points to command's Command structure. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    size_t objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Command *cmdPtr = (Command *)clientData;
+    int i, result;
+    const char **argv;
+
+    if (objc > INT_MAX) {
+	Tcl_Panic("TclInvokeStringCommand2 cannot handle > INT_MAX arguments");
+    }
+    argv = (const char **)
+	    TclStackAlloc(interp, (objc + 1) * sizeof(char *));
+
+    for (i = 0; i < (int)objc; i++) {
 	argv[i] = TclGetString(objv[i]);
     }
     argv[objc] = 0;
@@ -2924,11 +2955,11 @@ TclInvokeObjectCommand(
      * Invoke the command's object-based Tcl_ObjCmdProc2.
      */
 
-    if (cmdPtr->objProc != NULL) {
-	result = cmdPtr->objProc(cmdPtr->objClientData, interp, argc, objv);
+    if (cmdPtr->objProc2 != NULL) {
+	result = cmdPtr->objProc2(cmdPtr->objClientData2, interp, argc, objv);
     } else {
 	result = Tcl_NRCallObjProc2(interp, cmdPtr->nreProc,
-		cmdPtr->objClientData, argc, objv);
+		cmdPtr->objClientData2, argc, objv);
     }
 
     /*
@@ -3224,15 +3255,15 @@ Tcl_SetCommandInfoFromToken(
     cmdPtr->proc = infoPtr->proc;
     cmdPtr->clientData = infoPtr->clientData;
     if (infoPtr->objProc2 == NULL) {
-	cmdPtr->objProc = TclInvokeStringCommand;
-	cmdPtr->objClientData = cmdPtr;
+	cmdPtr->objProc2 = TclInvokeStringCommand2;
+	cmdPtr->objClientData2 = cmdPtr;
 	cmdPtr->nreProc = NULL;
     } else {
-	if (infoPtr->objProc2 != cmdPtr->objProc) {
+	if (infoPtr->objProc2 != cmdPtr->objProc2) {
 	    cmdPtr->nreProc = NULL;
-	    cmdPtr->objProc = infoPtr->objProc2;
+	    cmdPtr->objProc2 = infoPtr->objProc2;
 	}
-	cmdPtr->objClientData = infoPtr->objClientData2;
+	cmdPtr->objClientData2 = infoPtr->objClientData2;
     }
     cmdPtr->deleteProc = infoPtr->deleteProc;
     cmdPtr->deleteData = infoPtr->deleteData;
@@ -3302,19 +3333,22 @@ Tcl_GetCommandInfoFromToken(
 
     /*
      * Set isNativeObjectProc 1 if objProc was registered by a call to
-     * Tcl_CreateObjCommand. Otherwise set it to 0.
+     * Tcl_CreateObjCommand. Set isNativeObjectProc 2 if objProc was
+     * registered by a call to Tcl_CreateObjCommand. Otherwise set it to 0.
      */
 
     cmdPtr = (Command *) cmd;
-    infoPtr->isNativeObjectProc2 =
-	    (cmdPtr->objProc != TclInvokeStringCommand) ? 2 : 0;
-    infoPtr->objProc2 = cmdPtr->objProc;
-    infoPtr->objClientData2 = cmdPtr->objClientData;
+    infoPtr->isNativeObjectProc =
+	    (cmdPtr->objProc2 != TclInvokeStringCommand2) ? 2 : 0;
+    /*infoPtr->objProc = cmdPtr->objProc;
+    infoPtr->objClientData = cmdPtr->objClientData;*/
     infoPtr->proc = cmdPtr->proc;
     infoPtr->clientData = cmdPtr->clientData;
     infoPtr->deleteProc = cmdPtr->deleteProc;
     infoPtr->deleteData = cmdPtr->deleteData;
     infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
+    infoPtr->objProc2 = cmdPtr->objProc2;
+    infoPtr->objClientData2 = cmdPtr->objClientData2;
 
     return 1;
 }
@@ -3629,7 +3663,7 @@ Tcl_DeleteCommandFromToken(
      * commands.
      */
 
-    cmdPtr->objProc = NULL;
+    cmdPtr->objProc2 = NULL;
 
     /*
      * Now free the Command structure, unless there is another reference to it
@@ -4422,8 +4456,8 @@ EvalObjvCore(
     }
 
     TclNRAddCallback(interp, Dispatch,
-	    cmdPtr->nreProc ? cmdPtr->nreProc : cmdPtr->objProc,
-	    cmdPtr->objClientData, INT2PTR(objc), objv);
+	    cmdPtr->nreProc ? cmdPtr->nreProc : cmdPtr->objProc2,
+	    cmdPtr->objClientData2, INT2PTR(objc), objv);
     return TCL_OK;
 }
 
@@ -9107,7 +9141,7 @@ CoroTypeObjCmd(
      * future.
      */
 
-    corPtr = (CoroutineData *)cmdPtr->objClientData;
+    corPtr = (CoroutineData *)cmdPtr->objClientData2;
     if (!COR_IS_SUSPENDED(corPtr)) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj("active", -1));
         return TCL_OK;
@@ -9161,7 +9195,7 @@ GetCoroutineFromObj(
                 TclGetString(objPtr), NULL);
         return NULL;
     }
-    return (CoroutineData *)cmdPtr->objClientData;
+    return (CoroutineData *)cmdPtr->objClientData2;
 }
 
 static int

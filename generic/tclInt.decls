@@ -118,7 +118,7 @@ declare 53 {
 }
 declare 54 {
     int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
-	    size_t objc, Tcl_Obj *const objv[])
+	    int objc, Tcl_Obj *const objv[])
 }
 declare 55 {
     Proc *TclIsProc(Command *cmdPtr)
@@ -581,6 +581,10 @@ declare 257 {
 declare 258 {
     Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 	    Tcl_Obj *basenameObj)
+}
+declare 259 {
+    int TclInvokeStringCommand2(void *clientData, Tcl_Interp *interp,
+	    size_t objc, Tcl_Obj *const objv[])
 }
 
 

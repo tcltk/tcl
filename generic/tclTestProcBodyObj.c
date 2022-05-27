@@ -263,7 +263,7 @@ ProcBodyTestProcObjCmd(
      * If a procedure, cmdPtr->objClientData is TclIsProc(cmdPtr).
      */
 
-    if (cmdPtr->objClientData != TclIsProc(cmdPtr)) {
+    if (cmdPtr->objClientData2 != TclIsProc(cmdPtr)) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"command \"", fullName, "\" is not a Tcl procedure", NULL);
 	return TCL_ERROR;
@@ -273,7 +273,7 @@ ProcBodyTestProcObjCmd(
      * it is a Tcl procedure: the client data is the Proc structure
      */
 
-    procPtr = (Proc *) cmdPtr->objClientData;
+    procPtr = (Proc *) cmdPtr->objClientData2;
     if (procPtr == NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "procedure \"",
 		fullName, "\" does not have a Proc struct!", NULL);

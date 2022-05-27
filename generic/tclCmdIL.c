@@ -2147,7 +2147,7 @@ InfoCmdTypeCmd(
      */
 
     if (Tcl_IsSafe(interp)
-	    && (((Command *) command)->objProc == TclAliasObjCmd)) {
+	    && (((Command *) command)->objProc2 == TclAliasObjCmd)) {
 	Tcl_AppendResult(interp, "native", NULL);
     } else {
 	Tcl_SetObjResult(interp,

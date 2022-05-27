@@ -149,7 +149,7 @@ EXTERN int		TclInvokeObjectCommand(void *clientData,
 				const char **argv);
 /* 54 */
 EXTERN int		TclInvokeStringCommand(void *clientData,
-				Tcl_Interp *interp, size_t objc,
+				Tcl_Interp *interp, int objc,
 				Tcl_Obj *const objv[]);
 /* 55 */
 EXTERN Proc *		TclIsProc(Command *cmdPtr);
@@ -576,6 +576,10 @@ EXTERN void		TclStaticLibrary(Tcl_Interp *interp,
 /* 258 */
 EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj);
+/* 259 */
+EXTERN int		TclInvokeStringCommand2(void *clientData,
+				Tcl_Interp *interp, size_t objc,
+				Tcl_Obj *const objv[]);
 
 typedef struct TclIntStubs {
     int magic;
@@ -635,7 +639,7 @@ typedef struct TclIntStubs {
     int (*tclInterpInit) (Tcl_Interp *interp); /* 51 */
     void (*reserved52)(void);
     int (*tclInvokeObjectCommand) (void *clientData, Tcl_Interp *interp, int argc, const char **argv); /* 53 */
-    int (*tclInvokeStringCommand) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 54 */
+    int (*tclInvokeStringCommand) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 54 */
     Proc * (*tclIsProc) (Command *cmdPtr); /* 55 */
     void (*reserved56)(void);
     void (*reserved57)(void);
@@ -840,6 +844,7 @@ typedef struct TclIntStubs {
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 256 */
     void (*tclStaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc); /* 257 */
     Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
+    int (*tclInvokeStringCommand2) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 259 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1254,6 +1259,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclStaticLibrary) /* 257 */
 #define TclpCreateTemporaryDirectory \
 	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
+#define TclInvokeStringCommand2 \
+	(tclIntStubsPtr->tclInvokeStringCommand2) /* 259 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
