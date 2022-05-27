@@ -249,93 +249,122 @@ namespace eval perf::list {
 
         print_separator linsert
 
-        comment == Insert into empty lists
-        comment Insert one element into empty list
-        measure [linsert_describe empty 0 "0 (const)" 1 1] {linsert {} 0 ""}
-
         ListPerf create perf -overhead {set L {}} -time 1000
 
         # Note: Const indices take different path through bytecode than variable
         # indices hence separate cases below
-        foreach len $Lengths {
-            if {$len >= 10000} {
-                set reps 100
+
+
+        # Var case
+        foreach share_mode {shared unshared} {
+            set idx 0
+            if {$share_mode eq "shared"} {
+                comment == Insert into empty lists
+                comment Insert one element into empty list
+                measure [linsert_describe shared 0 "0 (var)" 1 1] {linsert $L $idx ""} -setup {set idx 0; set L {}}
             } else {
-                set reps [expr {100000/$len}]
+                comment == Insert into empty lists
+                comment Insert one element into empty list
+                measure [linsert_describe unshared 0 "0 (var)" 1 1] {linsert {} $idx ""} -setup {set idx 0}
             }
-            perf option -reps $reps
-            foreach idx [list 0 1 [expr {$len/2}] end-1 end] {
+            foreach idx_str [list 0 1 mid end-1 end] {
+                foreach len $Lengths {
+                    if {$len >= 10000} {
+                        set reps 100
+                    } else {
+                        set reps [expr {100000/$len}]
+                    }
+                    if {$idx_str eq "mid"} {
+                        set idx [expr {$len/2}]
+                    } else {
+                        set idx $idx_str
+                    }
+                    # perf option -reps $reps
+                    set reps 100
+                    if {$share_mode eq "shared"} {
+                        comment Insert once to shared list with variable index
+                        perf measure [linsert_describe shared $len "$idx (var)" 1 1] \
+                            {linsert $L $idx x} [list len $len idx $idx] -overhead {} -reps 10000
 
-                # Const index
-                comment Insert once to shared list with const index
-                perf measure [linsert_describe shared $len "$idx (const)" 1 1] \
-                    "linsert \$L $idx x" [list len $len] -overhead {}
+                        comment Insert multiple times to shared list with variable index
+                        perf measure [linsert_describe shared $len "$idx (var)" 1 $reps] {
+                            set L [linsert $L $idx X]
+                        } [list len $len idx $idx] -reps $reps
 
-                comment Insert multiple times to shared list with const index
-                perf measure [linsert_describe shared $len "$idx (const)" 1 $reps] \
-                    "set L \[linsert \$L $idx X\]" [list len $len]
-
-                # Variable index
-                comment Insert once to shared list with variable index
-                perf measure [linsert_describe shared $len "$idx (var)" 1 1] \
-                    {linsert $L $idx x} [list len $len idx $idx] -overhead {}
-
-                comment Insert multiple times to shared list with variable index
-                perf measure [linsert_describe shared $len "$idx (var)" 1 $reps] {
-                    set L [linsert $L $idx X]
-                } [list len $len idx $idx]
+                        comment Insert multiple items multiple times to shared list with variable index
+                        perf measure [linsert_describe shared $len "$idx (var)" 5 $reps] {
+                            set L [linsert $L $idx X X X X X]
+                        } [list len $len idx $idx] -reps $reps
+                    } else {
+                        # NOTE : the Insert once case is left out for unshared lists
+                        # because it requires re-init on every iteration resulting
+                        # in a lot of measurement noise
+                        comment Insert multiple times to unshared list with variable index
+                        perf measure [linsert_describe unshared $len "$idx (var)" 1 $reps] {
+                            set L [linsert $L[set L {}] $idx X]
+                        } [list len $len idx $idx] -reps $reps
+                        comment Insert multiple items multiple times to unshared list with variable index
+                        perf measure [linsert_describe unshared $len "$idx (var)" 5 $reps] {
+                            set L [linsert $L[set L {}] $idx X X X X X]
+                        } [list len $len idx $idx] -reps $reps
+                    }
+                }
             }
-
-            # Multiple items at a time
-            # Not in loop above because of desired output ordering
-            foreach idx [list 0 1 [expr {$len/2}] end-1 end] {
-                comment Insert multiple items multiple times to shared list with const index
-                perf measure [linsert_describe shared $len "$idx (const)" 5 $reps] \
-                    "set L \[linsert \$L $idx X X X X X\]" [list len $len]
-
-                comment Insert multiple items multiple times to shared list with variable index
-                perf measure [linsert_describe shared $len "$idx (var)" 5 $reps] {
-                    set L [linsert $L $idx X X X X X]
-                } [list len $len idx $idx]
-            }
-
         }
 
-        # Not in loop above because of how we want order in output
-
-        foreach len $Lengths {
-            if {$len > 100000} {
-                set reps 10
+        # Const index
+        foreach share_mode {shared unshared} {
+            if {$share_mode eq "shared"} {
+                comment == Insert into empty lists
+                comment Insert one element into empty list
+                measure [linsert_describe shared 0 "0 (const)" 1 1] {linsert $L 0 ""} -setup {set L {}}
             } else {
-                set reps [expr {100000/$len}]
+                comment == Insert into empty lists
+                comment Insert one element into empty list
+                measure [linsert_describe unshared 0 "0 (const)" 1 1] {linsert {} 0 ""}
             }
-            perf option -reps $reps
-            foreach idx [list 0 1 [expr {$len/2}] end-1 end] {
-                # NOTE : the Insert once case is left out for unshared lists
-                # because it requires re-init on every iteration resulting
-                # in a lot of measurement noise
+            foreach idx_str [list 0 1 mid end end-1] {
+                foreach len $Lengths {
+                    if {$len >= 10000} {
+                        set reps 100
+                    } else {
+                        set reps [expr {100000/$len}]
+                    }
+                    # Note end, end-1 explicitly calculated as otherwise they
+                    # are not treated as const
+                    if {$idx_str eq "mid"} {
+                        set idx [expr {$len/2}]
+                    } elseif {$idx_str eq "end"} {
+                        set idx [expr {$len-1}]
+                    } elseif {$idx_str eq "end-1"} {
+                        set idx [expr {$len-2}]
+                    } else {
+                        set idx $idx_str
+                    }
+                    #perf option -reps $reps
+                    set reps 100
+                    if {$share_mode eq "shared"} {
+                        comment Insert once to shared list with const index
+                        perf measure [linsert_describe shared $len "$idx (const)" 1 1] \
+                            "linsert \$L $idx x" [list len $len] -overhead {} -reps 10000
 
-                # Const index
-                comment Insert multiple times to unshared list with const index
-                perf measure [linsert_describe unshared $len "$idx (const)" 1 $reps] \
-                    "set L \[linsert \$L\[set L {}\] $idx X]" [list len $len]
+                        comment Insert multiple times to shared list with const index
+                        perf measure [linsert_describe shared $len "$idx (const)" 1 $reps] \
+                            "set L \[linsert \$L $idx X\]" [list len $len] -reps $reps
 
-                comment Insert multiple items multiple times to unshared list with const index
-                perf measure [linsert_describe unshared $len "$idx (const)" 5 $reps] \
-                    "set L \[linsert \$L\[set L {}\] $idx X X X X X]" [list len $len]
+                        comment Insert multiple items multiple times to shared list with const index
+                        perf measure [linsert_describe shared $len "$idx (const)" 5 $reps] \
+                            "set L \[linsert \$L $idx X X X X X\]" [list len $len] -reps $reps
+                    } else {
+                        comment Insert multiple times to unshared list with const index
+                        perf measure [linsert_describe unshared $len "$idx (const)" 1 $reps] \
+                            "set L \[linsert \$L\[set L {}\] $idx X]" [list len $len] -reps $reps
 
-                # Variable index
-
-                comment Insert multiple times to unshared list with variable index
-                perf measure [linsert_describe unshared $len "$idx (var)" 1 $reps] {
-                    set L [linsert $L[set L {}] $idx X]
-                } [list len $len idx $idx]
-
-                comment Insert multiple items multiple times to unshared list with variable index
-                perf measure [linsert_describe unshared $len "$idx (var)" 5 $reps] {
-                    set L [linsert $L[set L {}] $idx X X X X X]
-                } [list len $len idx $idx]
-
+                        comment Insert multiple items multiple times to unshared list with const index
+                        perf measure [linsert_describe unshared $len "$idx (const)" 5 $reps] \
+                            "set L \[linsert \$L\[set L {}\] $idx X X X X X]" [list len $len] -reps $reps
+                    }
+                }
             }
         }
 
@@ -350,7 +379,7 @@ namespace eval perf::list {
     }
     proc lappend_perf {} {
         variable Lengths
-        
+
         print_separator lappend
 
         ListPerf create perf -setup {set L [lrepeat [expr {$len/4}] x]}
