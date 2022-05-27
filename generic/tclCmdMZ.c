@@ -3420,12 +3420,13 @@ int
 TclNRSwitchObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    size_t objc1,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int mode, foundmode, splitObjs, numMatchesSaved;
+    int i, mode, foundmode, splitObjs, numMatchesSaved;
     int noCase;
-    size_t patternLength, i, j;
+    int objc = objc1;
+    size_t patternLength, j;
     const char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *const *savedObjv = objv;
@@ -3847,7 +3848,7 @@ TclNRSwitchObjCmd(
 	     * which triggers reversion to the old behavior.
 	     */
 
-	    size_t k;
+	    int k;
 
 	    ctxPtr->line = (int *)Tcl_Alloc(objc * sizeof(int));
 	    ctxPtr->nline = objc;
