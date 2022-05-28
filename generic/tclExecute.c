@@ -612,7 +612,7 @@ static const size_t Exp64ValueSize = sizeof(Exp64Value) / sizeof(Tcl_WideInt);
 
 #ifdef TCL_COMPILE_STATS
 static int		EvalStatsCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 #endif /* TCL_COMPILE_STATS */
 #ifdef TCL_COMPILE_DEBUG
@@ -9281,7 +9281,7 @@ static int
 EvalStatsCmd(
     TCL_UNUSED(void *),		/* Unused. */
     Tcl_Interp *interp,		/* The current interpreter. */
-    int objc,			/* The number of arguments. */
+    size_t objc,			/* The number of arguments. */
     Tcl_Obj *const objv[])	/* The argument strings. */
 {
     Interp *iPtr = (Interp *) interp;

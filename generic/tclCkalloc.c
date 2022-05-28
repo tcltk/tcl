@@ -132,10 +132,10 @@ static int ckallocInit = 0;
  */
 
 static int		CheckmemCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static int		MemoryCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 static void		ValidateMemory(struct mem_header *memHeaderP,
 			    const char *file, int line, int nukeGuards);
@@ -812,7 +812,7 @@ static int
 MemoryCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     const char *fileName;
@@ -981,14 +981,14 @@ MemoryCmd(
  *----------------------------------------------------------------------
  */
 static int		CheckmemCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
+			    Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
 
 static int
 CheckmemCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
 {
     if (objc != 2) {
