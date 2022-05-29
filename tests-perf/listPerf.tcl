@@ -269,22 +269,17 @@ namespace eval perf::list {
             }
             foreach idx_str [list 0 1 mid end-1 end] {
                 foreach len $Lengths {
-                    if {$len >= 10000} {
-                        set reps 100
-                    } else {
-                        set reps [expr {100000/$len}]
-                    }
                     if {$idx_str eq "mid"} {
                         set idx [expr {$len/2}]
                     } else {
                         set idx $idx_str
                     }
                     # perf option -reps $reps
-                    set reps 100
+                    set reps 1000
                     if {$share_mode eq "shared"} {
                         comment Insert once to shared list with variable index
                         perf measure [linsert_describe shared $len "$idx (var)" 1 1] \
-                            {linsert $L $idx x} [list len $len idx $idx] -overhead {} -reps 10000
+                            {linsert $L $idx x} [list len $len idx $idx] -overhead {} -reps 100000
 
                         comment Insert multiple times to shared list with variable index
                         perf measure [linsert_describe shared $len "$idx (var)" 1 $reps] {
@@ -325,11 +320,6 @@ namespace eval perf::list {
             }
             foreach idx_str [list 0 1 mid end end-1] {
                 foreach len $Lengths {
-                    if {$len >= 10000} {
-                        set reps 100
-                    } else {
-                        set reps [expr {100000/$len}]
-                    }
                     # Note end, end-1 explicitly calculated as otherwise they
                     # are not treated as const
                     if {$idx_str eq "mid"} {

@@ -89,7 +89,7 @@ static int ListRepInit(int objc, Tcl_Obj *const objv[], int flags, ListRep *);
 static int ListRepInitAttempt(Tcl_Interp *, int objc, Tcl_Obj *const objv[],
                               ListRep *);
 static void ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr, int flags);
-static void ListRepUnsharedFreeZombies(const ListRep *repPtr);
+static void ListRepUnsharedFreeUnreferenced(const ListRep *repPtr);
 static int TclListObjGetRep(Tcl_Interp *, Tcl_Obj *listPtr, ListRep *repPtr);
 static void ListRepRange(ListRep *srcRepPtr, int rangeStart, int rangeEnd,
                          int preserveSrcRep, ListRep *rangeRepPtr);
@@ -299,7 +299,7 @@ ListSpanMerited(
        to do even a small span.
      */
 #ifndef TCL_LIST_SPAN_MINSIZE /* May be set on build line */
-#define TCL_LIST_SPAN_MINSIZE 10
+#define TCL_LIST_SPAN_MINSIZE 101
 #endif
 
     if (length < TCL_LIST_SPAN_MINSIZE)
@@ -339,9 +339,9 @@ ListStoreUpSize(int numSlotsRequested) {
 /*
  *------------------------------------------------------------------------
  *
- * ListRepFreeZombies --
+ * ListRepFreeUnreferenced --
  *
- *    Inline wrapper for ListRepUnsharedFreeZombies that does quick checks
+ *    Inline wrapper for ListRepUnsharedFreeUnreferenced that does quick checks
  *    before calling it.
  *
  *    IMPORTANT: this function must not be called on an internal
@@ -351,15 +351,15 @@ ListStoreUpSize(int numSlotsRequested) {
  *    None.
  *
  * Side effects:
- *    See comments for ListRepUnsharedFreeZombies.
+ *    See comments for ListRepUnsharedFreeUnreferenced.
  *
  *------------------------------------------------------------------------
  */
 static inline void
-ListRepFreeZombies(const ListRep *repPtr)
+ListRepFreeUnreferenced(const ListRep *repPtr)
 {
-    if (! ListRepIsShared(repPtr)) {
-	ListRepUnsharedFreeZombies(repPtr);
+    if (! ListRepIsShared(repPtr) && repPtr->spanPtr) {
+	ListRepUnsharedFreeUnreferenced(repPtr);
     }
 }
 
@@ -963,7 +963,7 @@ ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr, int flags)
 /*
  *------------------------------------------------------------------------
  *
- * ListRepUnsharedFreeZombies --
+ * ListRepUnsharedFreeUnreferenced --
  *
  *    Frees any Tcl_Obj's from the "in-use" area of the ListStore for a
  *    ListRep that are not actually references from any lists.
@@ -981,7 +981,7 @@ ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr, int flags)
  *------------------------------------------------------------------------
  */
 
-static void ListRepUnsharedFreeZombies(const ListRep *repPtr)
+static void ListRepUnsharedFreeUnreferenced(const ListRep *repPtr)
 {
     int count;
     ListStore *storePtr;
@@ -997,6 +997,7 @@ static void ListRepUnsharedFreeZombies(const ListRep *repPtr)
 	return;
     }
 
+    /* Collect garbage at front */
     count = spanPtr->spanStart - storePtr->firstUsed;
     LIST_ASSERT(count >= 0);
     if (count > 0) {
@@ -1005,6 +1006,7 @@ static void ListRepUnsharedFreeZombies(const ListRep *repPtr)
 	storePtr->numUsed -= count;
     }
 
+    /* Collect garbage at back */
     count = (storePtr->firstUsed + storePtr->numUsed)
 	  - (spanPtr->spanStart + spanPtr->spanLength);
     LIST_ASSERT(count >= 0);
@@ -1385,7 +1387,7 @@ ListRepRange(
     /* Take the opportunity to garbage collect */
     /* TODO - we probably do not need the preserveSrcRep here unlike later */
     if (!preserveSrcRep) {
-	ListRepFreeZombies(srcRepPtr);
+	ListRepFreeUnreferenced(srcRepPtr);
     }
 
     if (rangeStart < 0) {
@@ -1445,7 +1447,7 @@ ListRepRange(
          * is mandated.
          */
 	if (!preserveSrcRep) {
-	    ListRepFreeZombies(rangeRepPtr);
+	    ListRepFreeUnreferenced(rangeRepPtr);
 	}
     }
     else if (preserveSrcRep || ListRepIsShared(srcRepPtr)) {
@@ -1467,7 +1469,7 @@ ListRepRange(
 	 */
 	int numAfterRangeEnd;
 
-	/* Asserts follow from call to ListRepFreeZombies earlier */
+	/* Asserts follow from call to ListRepFreeUnreferenced earlier */
 	LIST_ASSERT(!preserveSrcRep);
 	LIST_ASSERT(!ListRepIsShared(srcRepPtr));
 	LIST_ASSERT(ListRepStart(srcRepPtr) == srcRepPtr->storePtr->firstUsed);
@@ -1703,7 +1705,7 @@ Tcl_ListObjAppendList(
 	 */
 	int numTailFree;
 
-	ListRepFreeZombies(&listRep); /* Collect garbage before checking room */
+	ListRepFreeUnreferenced(&listRep); /* Collect garbage before checking room */
 
 	LIST_ASSERT(ListRepStart(&listRep) == listRep.storePtr->firstUsed);
 	LIST_ASSERT(ListRepLength(&listRep) == listRep.storePtr->numUsed);
@@ -2055,7 +2057,7 @@ Tcl_ListObjReplace(
     }
 
     /* Garbage collect before checking the pure insert optimization */
-    ListRepFreeZombies(&listRep);
+    ListRepFreeUnreferenced(&listRep);
 
     /*
      * Check Case (2) - pure inserts under certain conditions:
@@ -2187,7 +2189,7 @@ Tcl_ListObjReplace(
      * TODO - what about appends to unshared ? Is below sufficiently optimal?
      */
 
-    /* Following must hold for unshared listreps after ListRepFreeZombies above */
+    /* Following must hold for unshared listreps after ListRepFreeUnreferenced above */
     LIST_ASSERT(origListLen == listRep.storePtr->numUsed);
     LIST_ASSERT(origListLen == ListRepLength(&listRep));
     LIST_ASSERT(ListRepStart(&listRep) == listRep.storePtr->firstUsed);
@@ -2241,11 +2243,13 @@ Tcl_ListObjReplace(
 	}
     }
     else {
+	LIST_ASSERT(lenChange > 0); /* Reminder */
+
 	/*
-	 * lenChange > 0 as numToDelete < numToInsert. We need to make room
-	 * for the insertions. Again we have multiple possibilities. We may
-	 * be able to get by just shifting one segment or need to shift
-	 * both. In the former case, favor shifting the smaller segment.
+	 * We need to make room for the insertions. Again we have multiple
+	 * possibilities. We may be able to get by just shifting one segment
+	 * or need to shift both. In the former case, favor shifting the
+	 * smaller segment.
 	 */
 	int leadSpace = ListRepNumFreeHead(&listRep);
 	int tailSpace = ListRepNumFreeTail(&listRep);
@@ -2258,32 +2262,35 @@ Tcl_ListObjReplace(
 	    leadShift = -lenChange;
 	    tailShift = 0;
 	    /*
-	     * Note: we do not need the equivalent of the redistribution of
-	     * free space as below since pure appending is handled earlier
-	     * in this function.
+	     * Redistribute the remaining free space between the front and
+	     * back if either there is no tail space left or if the
+	     * entire list is the head anyways. This is an important
+	     * optimization for further operations like further asymmetric
+	     * insertions.
 	     */
+	    if (finalFreeSpace > 1 && (tailSpace == 0 || tailSegmentLen == 0)) {
+		int postShiftLeadSpace = leadSpace - lenChange;
+		if (postShiftLeadSpace > (finalFreeSpace/2)) {
+		    int extraShift = postShiftLeadSpace - (finalFreeSpace / 2);
+		    leadShift -= extraShift;
+		    tailShift = -extraShift; /* Move tail to the front as well */
+		}
+	    }
+	    LIST_ASSERT(leadShift >= 0 || leadSpace >= -leadShift);
 	}
 	else if (tailSpace >= lenChange) {
 	    /* Move only tail segment to the back to make more room. */
 	    leadShift = 0;
 	    tailShift = lenChange;
 	    /*
-	     * Redistribute the remaining free space between the front and
-	     * back but only if there is no leading segment since we do not
-	     * want to unnecessarily move two segments instead of one. This
-	     * is an important optimization for continuous prepending.
+	     * See comments above. This is analogous.
 	     */
-	    if (leadSegmentLen == 0) {
-		int postShiftTailSpace = tailSpace - tailShift;
+	    if (finalFreeSpace > 1 && (leadSpace == 0 || leadSegmentLen == 0)) {
+		int postShiftTailSpace = tailSpace - lenChange;
 		if (postShiftTailSpace > (finalFreeSpace/2)) {
 		    int extraShift = postShiftTailSpace - (finalFreeSpace / 2);
 		    tailShift += extraShift;
-		    /*
-		     * Though leadSegmentLen is 0, we will need to update the
-		     * start of used area fields. So update leadShift as well
-		     */
-		    leadShift = extraShift; /* Yes, even though leadSegment
-		                               is 0 len, need to update h */
+		    leadShift = extraShift; /* Move head to the back as well */
 		}
 	    }
 	    LIST_ASSERT(tailShift <= tailSpace);
@@ -2321,16 +2328,32 @@ Tcl_ListObjReplace(
 	}
     }
 
-    if (leadShift != 0 && leadSegmentLen != 0) {
-	memmove(&listObjs[leadShift],
-		&listObjs[0],
-		leadSegmentLen * sizeof(Tcl_Obj *));
-    }
-    if (tailShift != 0 && tailSegmentLen != 0) {
-	int tailStart = leadSegmentLen + numToDelete;
-	memmove(&listObjs[tailStart + tailShift],
-		&listObjs[tailStart],
-		tailSegmentLen * sizeof(Tcl_Obj *));
+    /* Careful about order of moves! */
+    if (leadShift > 0) {
+	/* Will happen when we have to make room at bottom */
+	if (tailShift != 0 && tailSegmentLen != 0) {
+	    int tailStart = leadSegmentLen + numToDelete;
+	    memmove(&listObjs[tailStart + tailShift],
+		    &listObjs[tailStart],
+		    tailSegmentLen * sizeof(Tcl_Obj *));
+	}
+	if (leadSegmentLen != 0) {
+	    memmove(&listObjs[leadShift],
+		    &listObjs[0],
+		    leadSegmentLen * sizeof(Tcl_Obj *));
+	}
+    } else {
+	if (leadShift != 0 && leadSegmentLen != 0) {
+	    memmove(&listObjs[leadShift],
+		    &listObjs[0],
+		    leadSegmentLen * sizeof(Tcl_Obj *));
+	}
+	if (tailShift != 0 && tailSegmentLen != 0) {
+	    int tailStart = leadSegmentLen + numToDelete;
+	    memmove(&listObjs[tailStart + tailShift],
+		    &listObjs[tailStart],
+		    tailSegmentLen * sizeof(Tcl_Obj *));
+	}
     }
     if (numToInsert) {
 	/* Do NOT use ObjArrayCopy here since we have already incr'ed ref counts */
