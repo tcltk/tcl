@@ -2131,6 +2131,20 @@ TraceVarProc(
  */
 
 Tcl_Trace
+Tcl_CreateObjTrace(
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int level,			/* Maximum nesting level */
+    int flags,			/* Flags, see above */
+    Tcl_CmdObjTraceProc *proc,	/* Trace callback */
+    ClientData clientData,	/* Client data for the callback */
+    Tcl_CmdObjTraceDeleteProc *delProc)
+				/* Function to call when trace is deleted */
+{
+    Tcl_Panic("Tcl_CreateObjTrace Not Implemented Yet");
+    return NULL;
+}
+
+Tcl_Trace
 Tcl_CreateObjTrace2(
     Tcl_Interp *interp,		/* Tcl interpreter */
     int level,			/* Maximum nesting level */
@@ -2220,7 +2234,7 @@ Tcl_CreateObjTrace2(
  */
 
 Tcl_Trace
-Tcl_CreateTrace2(
+Tcl_CreateTrace(
     Tcl_Interp *interp,		/* Interpreter in which to create trace. */
     int level,			/* Only call proc for commands at nesting
 				 * level<=argument level (1=>top level). */

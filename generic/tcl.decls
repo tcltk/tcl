@@ -351,12 +351,10 @@ declare 90 {
     void Tcl_CreateCloseHandler(Tcl_Channel chan, Tcl_CloseProc *proc,
 	    void *clientData)
 }
-if 0 {
 declare 91 {
     Tcl_Command Tcl_CreateCommand(Tcl_Interp *interp, const char *cmdName,
 	    Tcl_CmdProc *proc, void *clientData,
 	    Tcl_CmdDeleteProc *deleteProc)
-}
 }
 declare 92 {
     void Tcl_CreateEventSource(Tcl_EventSetupProc *setupProc,
@@ -374,13 +372,11 @@ declare 94 {
 #	    int numArgs, Tcl_ValueType *argTypes,
 #	    Tcl_MathProc *proc, void *clientData)
 #}
-if 0 {
 declare 96 {
     Tcl_Command Tcl_CreateObjCommand(Tcl_Interp *interp,
 	    const char *cmdName,
 	    Tcl_ObjCmdProc *proc, void *clientData,
 	    Tcl_CmdDeleteProc *deleteProc)
-}
 }
 declare 97 {
     Tcl_Interp *Tcl_CreateChild(Tcl_Interp *interp, const char *name,
@@ -390,11 +386,9 @@ declare 98 {
     Tcl_TimerToken Tcl_CreateTimerHandler(int milliseconds,
 	    Tcl_TimerProc *proc, void *clientData)
 }
-if 0 {
 declare 99 {
     Tcl_Trace Tcl_CreateTrace(Tcl_Interp *interp, int level,
 	    Tcl_CmdTraceProc *proc, void *clientData)
-}
 }
 declare 100 {
     void Tcl_DeleteAssocData(Tcl_Interp *interp, const char *name)
@@ -1436,7 +1430,7 @@ declare 389 {
 }
 declare 390 {
     int Tcl_ProcObjCmd(void *clientData, Tcl_Interp *interp,
-	    size_t objc, Tcl_Obj *const objv[])
+	    int objc, Tcl_Obj *const objv[])
 }
 declare 391 {
     void Tcl_ConditionFinalize(Tcl_Condition *condPtr)
@@ -1784,12 +1778,10 @@ declare 482 {
 }
 
 # TIP#32 (object-enabled traces) kbk
-if 0 {
 declare 483 {
     Tcl_Trace Tcl_CreateObjTrace(Tcl_Interp *interp, int level, int flags,
 	    Tcl_CmdObjTraceProc *objProc, void *clientData,
 	    Tcl_CmdObjTraceDeleteProc *delProc)
-}
 }
 declare 484 {
     int Tcl_GetCommandInfoFromToken(Tcl_Command token, Tcl_CmdInfo *infoPtr)
@@ -2193,13 +2185,11 @@ declare 582 {
 }
 
 # TIP #322 (NRE public interface) msofer
-if 0 {
 declare 583 {
     Tcl_Command Tcl_NRCreateCommand(Tcl_Interp *interp,
 	    const char *cmdName, Tcl_ObjCmdProc *proc,
 	    Tcl_ObjCmdProc *nreProc, void *clientData,
 	    Tcl_CmdDeleteProc *deleteProc)
-}
 }
 declare 584 {
     int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
@@ -2219,11 +2209,9 @@ declare 587 {
 }
 # For use by NR extenders, to have a simple way to also provide a (required!)
 # classic objProc
-if 0 {
 declare 588 {
     int Tcl_NRCallObjProc(Tcl_Interp *interp, Tcl_ObjCmdProc *objProc,
 	    void *clientData, size_t objc, Tcl_Obj *const objv[])
-}
 }
 
 # TIP#316 (Tcl_StatBuf reader functions) dkf
@@ -2571,34 +2559,29 @@ declare 673 {
 }
 
 declare 676 {
-    Tcl_Command Tcl_CreateCommand2(Tcl_Interp *interp, const char *cmdName,
-	    Tcl_CmdProc *proc, void *clientData,
-	    Tcl_CmdDeleteProc *deleteProc)
-}
-declare 677 {
     Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
 	    const char *cmdName,
 	    Tcl_ObjCmdProc2 *proc, void *clientData,
 	    Tcl_CmdDeleteProc *deleteProc)
 }
-declare 678 {
+declare 677 {
     Tcl_Command Tcl_NRCreateCommand2(Tcl_Interp *interp,
 	    const char *cmdName, Tcl_ObjCmdProc2 *proc,
 	    Tcl_ObjCmdProc2 *nreProc, void *clientData,
 	    Tcl_CmdDeleteProc *deleteProc)
 }
-declare 679 {
+declare 678 {
     int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc,
 	    void *clientData, size_t objc, Tcl_Obj *const objv[])
 }
-declare 680 {
+declare 679 {
     Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, int level, int flags,
 	    Tcl_CmdObjTraceProc2 *objProc, void *clientData,
 	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
-declare 681 {
-    Tcl_Trace Tcl_CreateTrace2(Tcl_Interp *interp, int level,
-	    Tcl_CmdTraceProc *proc, void *clientData)
+declare 680 {
+    int Tcl_ProcObjCmd2(void *clientData, Tcl_Interp *interp,
+	    size_t objc, Tcl_Obj *const objv[])
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

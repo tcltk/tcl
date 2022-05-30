@@ -275,7 +275,11 @@ EXTERN void		Tcl_CreateChannelHandler(Tcl_Channel chan, int mask,
 /* 90 */
 EXTERN void		Tcl_CreateCloseHandler(Tcl_Channel chan,
 				Tcl_CloseProc *proc, void *clientData);
-/* Slot 91 is reserved */
+/* 91 */
+EXTERN Tcl_Command	Tcl_CreateCommand(Tcl_Interp *interp,
+				const char *cmdName, Tcl_CmdProc *proc,
+				void *clientData,
+				Tcl_CmdDeleteProc *deleteProc);
 /* 92 */
 EXTERN void		Tcl_CreateEventSource(Tcl_EventSetupProc *setupProc,
 				Tcl_EventCheckProc *checkProc,
@@ -286,14 +290,20 @@ EXTERN void		Tcl_CreateExitHandler(Tcl_ExitProc *proc,
 /* 94 */
 EXTERN Tcl_Interp *	Tcl_CreateInterp(void);
 /* Slot 95 is reserved */
-/* Slot 96 is reserved */
+/* 96 */
+EXTERN Tcl_Command	Tcl_CreateObjCommand(Tcl_Interp *interp,
+				const char *cmdName, Tcl_ObjCmdProc *proc,
+				void *clientData,
+				Tcl_CmdDeleteProc *deleteProc);
 /* 97 */
 EXTERN Tcl_Interp *	Tcl_CreateChild(Tcl_Interp *interp, const char *name,
 				int isSafe);
 /* 98 */
 EXTERN Tcl_TimerToken	Tcl_CreateTimerHandler(int milliseconds,
 				Tcl_TimerProc *proc, void *clientData);
-/* Slot 99 is reserved */
+/* 99 */
+EXTERN Tcl_Trace	Tcl_CreateTrace(Tcl_Interp *interp, int level,
+				Tcl_CmdTraceProc *proc, void *clientData);
 /* 100 */
 EXTERN void		Tcl_DeleteAssocData(Tcl_Interp *interp,
 				const char *name);
@@ -1013,7 +1023,7 @@ EXTERN int		Tcl_GetChannelNamesEx(Tcl_Interp *interp,
 				const char *pattern);
 /* 390 */
 EXTERN int		Tcl_ProcObjCmd(void *clientData, Tcl_Interp *interp,
-				size_t objc, Tcl_Obj *const objv[]);
+				int objc, Tcl_Obj *const objv[]);
 /* 391 */
 EXTERN void		Tcl_ConditionFinalize(Tcl_Condition *condPtr);
 /* 392 */
@@ -1247,7 +1257,11 @@ EXTERN int		Tcl_EvalTokensStandard(Tcl_Interp *interp,
 				Tcl_Token *tokenPtr, size_t count);
 /* 482 */
 EXTERN void		Tcl_GetTime(Tcl_Time *timeBuf);
-/* Slot 483 is reserved */
+/* 483 */
+EXTERN Tcl_Trace	Tcl_CreateObjTrace(Tcl_Interp *interp, int level,
+				int flags, Tcl_CmdObjTraceProc *objProc,
+				void *clientData,
+				Tcl_CmdObjTraceDeleteProc *delProc);
 /* 484 */
 EXTERN int		Tcl_GetCommandInfoFromToken(Tcl_Command token,
 				Tcl_CmdInfo *infoPtr);
@@ -1534,7 +1548,11 @@ EXTERN int		Tcl_Canceled(Tcl_Interp *interp, int flags);
 EXTERN int		Tcl_CreatePipe(Tcl_Interp *interp,
 				Tcl_Channel *rchan, Tcl_Channel *wchan,
 				int flags);
-/* Slot 583 is reserved */
+/* 583 */
+EXTERN Tcl_Command	Tcl_NRCreateCommand(Tcl_Interp *interp,
+				const char *cmdName, Tcl_ObjCmdProc *proc,
+				Tcl_ObjCmdProc *nreProc, void *clientData,
+				Tcl_CmdDeleteProc *deleteProc);
 /* 584 */
 EXTERN int		Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				int flags);
@@ -1549,7 +1567,10 @@ EXTERN int		Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd,
 EXTERN void		Tcl_NRAddCallback(Tcl_Interp *interp,
 				Tcl_NRPostProc *postProcPtr, void *data0,
 				void *data1, void *data2, void *data3);
-/* Slot 588 is reserved */
+/* 588 */
+EXTERN int		Tcl_NRCallObjProc(Tcl_Interp *interp,
+				Tcl_ObjCmdProc *objProc, void *clientData,
+				size_t objc, Tcl_Obj *const objv[]);
 /* 589 */
 EXTERN unsigned		Tcl_GetFSDeviceFromStat(const Tcl_StatBuf *statPtr);
 /* 590 */
@@ -1789,32 +1810,27 @@ EXTERN int		Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index);
 /* Slot 674 is reserved */
 /* Slot 675 is reserved */
 /* 676 */
-EXTERN Tcl_Command	Tcl_CreateCommand2(Tcl_Interp *interp,
-				const char *cmdName, Tcl_CmdProc *proc,
-				void *clientData,
-				Tcl_CmdDeleteProc *deleteProc);
-/* 677 */
 EXTERN Tcl_Command	Tcl_CreateObjCommand2(Tcl_Interp *interp,
 				const char *cmdName, Tcl_ObjCmdProc2 *proc,
 				void *clientData,
 				Tcl_CmdDeleteProc *deleteProc);
-/* 678 */
+/* 677 */
 EXTERN Tcl_Command	Tcl_NRCreateCommand2(Tcl_Interp *interp,
 				const char *cmdName, Tcl_ObjCmdProc2 *proc,
 				Tcl_ObjCmdProc2 *nreProc, void *clientData,
 				Tcl_CmdDeleteProc *deleteProc);
-/* 679 */
+/* 678 */
 EXTERN int		Tcl_NRCallObjProc2(Tcl_Interp *interp,
 				Tcl_ObjCmdProc2 *objProc, void *clientData,
 				size_t objc, Tcl_Obj *const objv[]);
-/* 680 */
+/* 679 */
 EXTERN Tcl_Trace	Tcl_CreateObjTrace2(Tcl_Interp *interp, int level,
 				int flags, Tcl_CmdObjTraceProc2 *objProc,
 				void *clientData,
 				Tcl_CmdObjTraceDeleteProc *delProc);
-/* 681 */
-EXTERN Tcl_Trace	Tcl_CreateTrace2(Tcl_Interp *interp, int level,
-				Tcl_CmdTraceProc *proc, void *clientData);
+/* 680 */
+EXTERN int		Tcl_ProcObjCmd2(void *clientData, Tcl_Interp *interp,
+				size_t objc, Tcl_Obj *const objv[]);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -1917,15 +1933,15 @@ typedef struct TclStubs {
     Tcl_Channel (*tcl_CreateChannel) (const Tcl_ChannelType *typePtr, const char *chanName, void *instanceData, int mask); /* 88 */
     void (*tcl_CreateChannelHandler) (Tcl_Channel chan, int mask, Tcl_ChannelProc *proc, void *clientData); /* 89 */
     void (*tcl_CreateCloseHandler) (Tcl_Channel chan, Tcl_CloseProc *proc, void *clientData); /* 90 */
-    void (*reserved91)(void);
+    Tcl_Command (*tcl_CreateCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_CmdProc *proc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 91 */
     void (*tcl_CreateEventSource) (Tcl_EventSetupProc *setupProc, Tcl_EventCheckProc *checkProc, void *clientData); /* 92 */
     void (*tcl_CreateExitHandler) (Tcl_ExitProc *proc, void *clientData); /* 93 */
     Tcl_Interp * (*tcl_CreateInterp) (void); /* 94 */
     void (*reserved95)(void);
-    void (*reserved96)(void);
+    Tcl_Command (*tcl_CreateObjCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc *proc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 96 */
     Tcl_Interp * (*tcl_CreateChild) (Tcl_Interp *interp, const char *name, int isSafe); /* 97 */
     Tcl_TimerToken (*tcl_CreateTimerHandler) (int milliseconds, Tcl_TimerProc *proc, void *clientData); /* 98 */
-    void (*reserved99)(void);
+    Tcl_Trace (*tcl_CreateTrace) (Tcl_Interp *interp, int level, Tcl_CmdTraceProc *proc, void *clientData); /* 99 */
     void (*tcl_DeleteAssocData) (Tcl_Interp *interp, const char *name); /* 100 */
     void (*tcl_DeleteChannelHandler) (Tcl_Channel chan, Tcl_ChannelProc *proc, void *clientData); /* 101 */
     void (*tcl_DeleteCloseHandler) (Tcl_Channel chan, Tcl_CloseProc *proc, void *clientData); /* 102 */
@@ -2216,7 +2232,7 @@ typedef struct TclStubs {
     Tcl_Mutex * (*tcl_GetAllocMutex) (void); /* 387 */
     int (*tcl_GetChannelNames) (Tcl_Interp *interp); /* 388 */
     int (*tcl_GetChannelNamesEx) (Tcl_Interp *interp, const char *pattern); /* 389 */
-    int (*tcl_ProcObjCmd) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 390 */
+    int (*tcl_ProcObjCmd) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 390 */
     void (*tcl_ConditionFinalize) (Tcl_Condition *condPtr); /* 391 */
     void (*tcl_MutexFinalize) (Tcl_Mutex *mutex); /* 392 */
     int (*tcl_CreateThread) (Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc, void *clientData, size_t stackSize, int flags); /* 393 */
@@ -2309,7 +2325,7 @@ typedef struct TclStubs {
     void (*tcl_FSMountsChanged) (const Tcl_Filesystem *fsPtr); /* 480 */
     int (*tcl_EvalTokensStandard) (Tcl_Interp *interp, Tcl_Token *tokenPtr, size_t count); /* 481 */
     void (*tcl_GetTime) (Tcl_Time *timeBuf); /* 482 */
-    void (*reserved483)(void);
+    Tcl_Trace (*tcl_CreateObjTrace) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc *objProc, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 483 */
     int (*tcl_GetCommandInfoFromToken) (Tcl_Command token, Tcl_CmdInfo *infoPtr); /* 484 */
     int (*tcl_SetCommandInfoFromToken) (Tcl_Command token, const Tcl_CmdInfo *infoPtr); /* 485 */
     Tcl_Obj * (*tcl_DbNewWideIntObj) (Tcl_WideInt wideValue, const char *file, int line); /* 486 */
@@ -2409,12 +2425,12 @@ typedef struct TclStubs {
     int (*tcl_CancelEval) (Tcl_Interp *interp, Tcl_Obj *resultObjPtr, void *clientData, int flags); /* 580 */
     int (*tcl_Canceled) (Tcl_Interp *interp, int flags); /* 581 */
     int (*tcl_CreatePipe) (Tcl_Interp *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags); /* 582 */
-    void (*reserved583)(void);
+    Tcl_Command (*tcl_NRCreateCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc *proc, Tcl_ObjCmdProc *nreProc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 583 */
     int (*tcl_NREvalObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 584 */
     int (*tcl_NREvalObjv) (Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[], int flags); /* 585 */
     int (*tcl_NRCmdSwap) (Tcl_Interp *interp, Tcl_Command cmd, size_t objc, Tcl_Obj *const objv[], int flags); /* 586 */
     void (*tcl_NRAddCallback) (Tcl_Interp *interp, Tcl_NRPostProc *postProcPtr, void *data0, void *data1, void *data2, void *data3); /* 587 */
-    void (*reserved588)(void);
+    int (*tcl_NRCallObjProc) (Tcl_Interp *interp, Tcl_ObjCmdProc *objProc, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 588 */
     unsigned (*tcl_GetFSDeviceFromStat) (const Tcl_StatBuf *statPtr); /* 589 */
     unsigned (*tcl_GetFSInodeFromStat) (const Tcl_StatBuf *statPtr); /* 590 */
     unsigned (*tcl_GetModeFromStat) (const Tcl_StatBuf *statPtr); /* 591 */
@@ -2502,12 +2518,11 @@ typedef struct TclStubs {
     int (*tcl_GetUniChar) (Tcl_Obj *objPtr, size_t index); /* 673 */
     void (*reserved674)(void);
     void (*reserved675)(void);
-    Tcl_Command (*tcl_CreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_CmdProc *proc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 676 */
-    Tcl_Command (*tcl_CreateObjCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 677 */
-    Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 678 */
-    int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 679 */
-    Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 680 */
-    Tcl_Trace (*tcl_CreateTrace2) (Tcl_Interp *interp, int level, Tcl_CmdTraceProc *proc, void *clientData); /* 681 */
+    Tcl_Command (*tcl_CreateObjCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 676 */
+    Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 677 */
+    int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 678 */
+    Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 679 */
+    int (*tcl_ProcObjCmd2) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 680 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -2690,7 +2705,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_CreateChannelHandler) /* 89 */
 #define Tcl_CreateCloseHandler \
 	(tclStubsPtr->tcl_CreateCloseHandler) /* 90 */
-/* Slot 91 is reserved */
+#define Tcl_CreateCommand \
+	(tclStubsPtr->tcl_CreateCommand) /* 91 */
 #define Tcl_CreateEventSource \
 	(tclStubsPtr->tcl_CreateEventSource) /* 92 */
 #define Tcl_CreateExitHandler \
@@ -2698,12 +2714,14 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_CreateInterp \
 	(tclStubsPtr->tcl_CreateInterp) /* 94 */
 /* Slot 95 is reserved */
-/* Slot 96 is reserved */
+#define Tcl_CreateObjCommand \
+	(tclStubsPtr->tcl_CreateObjCommand) /* 96 */
 #define Tcl_CreateChild \
 	(tclStubsPtr->tcl_CreateChild) /* 97 */
 #define Tcl_CreateTimerHandler \
 	(tclStubsPtr->tcl_CreateTimerHandler) /* 98 */
-/* Slot 99 is reserved */
+#define Tcl_CreateTrace \
+	(tclStubsPtr->tcl_CreateTrace) /* 99 */
 #define Tcl_DeleteAssocData \
 	(tclStubsPtr->tcl_DeleteAssocData) /* 100 */
 #define Tcl_DeleteChannelHandler \
@@ -3424,7 +3442,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_EvalTokensStandard) /* 481 */
 #define Tcl_GetTime \
 	(tclStubsPtr->tcl_GetTime) /* 482 */
-/* Slot 483 is reserved */
+#define Tcl_CreateObjTrace \
+	(tclStubsPtr->tcl_CreateObjTrace) /* 483 */
 #define Tcl_GetCommandInfoFromToken \
 	(tclStubsPtr->tcl_GetCommandInfoFromToken) /* 484 */
 #define Tcl_SetCommandInfoFromToken \
@@ -3622,7 +3641,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_Canceled) /* 581 */
 #define Tcl_CreatePipe \
 	(tclStubsPtr->tcl_CreatePipe) /* 582 */
-/* Slot 583 is reserved */
+#define Tcl_NRCreateCommand \
+	(tclStubsPtr->tcl_NRCreateCommand) /* 583 */
 #define Tcl_NREvalObj \
 	(tclStubsPtr->tcl_NREvalObj) /* 584 */
 #define Tcl_NREvalObjv \
@@ -3631,7 +3651,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_NRCmdSwap) /* 586 */
 #define Tcl_NRAddCallback \
 	(tclStubsPtr->tcl_NRAddCallback) /* 587 */
-/* Slot 588 is reserved */
+#define Tcl_NRCallObjProc \
+	(tclStubsPtr->tcl_NRCallObjProc) /* 588 */
 #define Tcl_GetFSDeviceFromStat \
 	(tclStubsPtr->tcl_GetFSDeviceFromStat) /* 589 */
 #define Tcl_GetFSInodeFromStat \
@@ -3804,18 +3825,16 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetUniChar) /* 673 */
 /* Slot 674 is reserved */
 /* Slot 675 is reserved */
-#define Tcl_CreateCommand2 \
-	(tclStubsPtr->tcl_CreateCommand2) /* 676 */
 #define Tcl_CreateObjCommand2 \
-	(tclStubsPtr->tcl_CreateObjCommand2) /* 677 */
+	(tclStubsPtr->tcl_CreateObjCommand2) /* 676 */
 #define Tcl_NRCreateCommand2 \
-	(tclStubsPtr->tcl_NRCreateCommand2) /* 678 */
+	(tclStubsPtr->tcl_NRCreateCommand2) /* 677 */
 #define Tcl_NRCallObjProc2 \
-	(tclStubsPtr->tcl_NRCallObjProc2) /* 679 */
+	(tclStubsPtr->tcl_NRCallObjProc2) /* 678 */
 #define Tcl_CreateObjTrace2 \
-	(tclStubsPtr->tcl_CreateObjTrace2) /* 680 */
-#define Tcl_CreateTrace2 \
-	(tclStubsPtr->tcl_CreateTrace2) /* 681 */
+	(tclStubsPtr->tcl_CreateObjTrace2) /* 679 */
+#define Tcl_ProcObjCmd2 \
+	(tclStubsPtr->tcl_ProcObjCmd2) /* 680 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

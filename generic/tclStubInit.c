@@ -878,15 +878,15 @@ const TclStubs tclStubs = {
     Tcl_CreateChannel, /* 88 */
     Tcl_CreateChannelHandler, /* 89 */
     Tcl_CreateCloseHandler, /* 90 */
-    0, /* 91 */
+    Tcl_CreateCommand, /* 91 */
     Tcl_CreateEventSource, /* 92 */
     Tcl_CreateExitHandler, /* 93 */
     Tcl_CreateInterp, /* 94 */
     0, /* 95 */
-    0, /* 96 */
+    Tcl_CreateObjCommand, /* 96 */
     Tcl_CreateChild, /* 97 */
     Tcl_CreateTimerHandler, /* 98 */
-    0, /* 99 */
+    Tcl_CreateTrace, /* 99 */
     Tcl_DeleteAssocData, /* 100 */
     Tcl_DeleteChannelHandler, /* 101 */
     Tcl_DeleteCloseHandler, /* 102 */
@@ -1270,7 +1270,7 @@ const TclStubs tclStubs = {
     Tcl_FSMountsChanged, /* 480 */
     Tcl_EvalTokensStandard, /* 481 */
     Tcl_GetTime, /* 482 */
-    0, /* 483 */
+    Tcl_CreateObjTrace, /* 483 */
     Tcl_GetCommandInfoFromToken, /* 484 */
     Tcl_SetCommandInfoFromToken, /* 485 */
     Tcl_DbNewWideIntObj, /* 486 */
@@ -1370,12 +1370,12 @@ const TclStubs tclStubs = {
     Tcl_CancelEval, /* 580 */
     Tcl_Canceled, /* 581 */
     Tcl_CreatePipe, /* 582 */
-    0, /* 583 */
+    Tcl_NRCreateCommand, /* 583 */
     Tcl_NREvalObj, /* 584 */
     Tcl_NREvalObjv, /* 585 */
     Tcl_NRCmdSwap, /* 586 */
     Tcl_NRAddCallback, /* 587 */
-    0, /* 588 */
+    Tcl_NRCallObjProc, /* 588 */
     Tcl_GetFSDeviceFromStat, /* 589 */
     Tcl_GetFSInodeFromStat, /* 590 */
     Tcl_GetModeFromStat, /* 591 */
@@ -1463,12 +1463,11 @@ const TclStubs tclStubs = {
     Tcl_GetUniChar, /* 673 */
     0, /* 674 */
     0, /* 675 */
-    Tcl_CreateCommand2, /* 676 */
-    Tcl_CreateObjCommand2, /* 677 */
-    Tcl_NRCreateCommand2, /* 678 */
-    Tcl_NRCallObjProc2, /* 679 */
-    Tcl_CreateObjTrace2, /* 680 */
-    Tcl_CreateTrace2, /* 681 */
+    Tcl_CreateObjCommand2, /* 676 */
+    Tcl_NRCreateCommand2, /* 677 */
+    Tcl_NRCallObjProc2, /* 678 */
+    Tcl_CreateObjTrace2, /* 679 */
+    Tcl_ProcObjCmd2, /* 680 */
 };
 
 /* !END!: Do not edit above this line. */

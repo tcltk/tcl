@@ -306,7 +306,7 @@ static const CmdInfo builtInCmds[] = {
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"package",		Tcl_PackageObjCmd,	NULL,			TclNRPackageObjCmd,	CMD_IS_SAFE},
-    {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
+    {"proc",		Tcl_ProcObjCmd2,		NULL,			NULL,	CMD_IS_SAFE},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
     {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	CMD_IS_SAFE},
     {"rename",		Tcl_RenameObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
@@ -605,7 +605,7 @@ static int
 buildInfoObjCmd(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc > 2) {
@@ -1228,7 +1228,7 @@ Tcl_CreateInterp(void)
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
     Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL, &tclStubs);
-    Tcl_CreateObjCommand2(interp, "::tcl::build-info",
+    Tcl_CreateObjCommand(interp, "::tcl::build-info",
 	    buildInfoObjCmd, (void *)version, NULL);
 
 
@@ -2429,7 +2429,7 @@ Tcl_ExposeCommand(
  */
 
 Tcl_Command
-Tcl_CreateCommand2(
+Tcl_CreateCommand(
     Tcl_Interp *interp,		/* Token for command interpreter returned by a
 				 * previous call to Tcl_CreateInterp. */
     const char *cmdName,	/* Name of command. If it contains namespace
@@ -2623,6 +2623,64 @@ Tcl_CreateCommand2(
  *
  *----------------------------------------------------------------------
  */
+
+typedef struct {
+    void *clientData; /* Arbitrary value to pass to object function. */
+    Tcl_ObjCmdProc *proc;
+    Tcl_CmdDeleteProc *deleteProc;
+} CmdWrapperInfo;
+
+
+static int cmdWrapperProc(void *clientData,
+	Tcl_Interp *interp,
+	size_t objc,
+	struct Tcl_Obj * const *objv)
+{
+    CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
+    if (objc > INT_MAX) {
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "Too Many arguments");
+	}
+	return TCL_ERROR;
+    }
+    return info->proc(info->clientData, interp, objc, objv);
+}
+
+static void cmdWrapperDeleteProc(void *clientData) {
+    CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
+
+    clientData = info->clientData;
+    Tcl_CmdDeleteProc *deleteProc = info->deleteProc;
+    Tcl_Free(info);
+    if (deleteProc) {
+	deleteProc(clientData);
+    }
+}
+
+Tcl_Command
+Tcl_CreateObjCommand(
+    Tcl_Interp *interp,		/* Token for command interpreter (returned by
+				 * previous call to Tcl_CreateInterp). */
+    const char *cmdName,	/* Name of command. If it contains namespace
+				 * qualifiers, the new command is put in the
+				 * specified namespace; otherwise it is put in
+				 * the global namespace. */
+    Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
+				 * name. */
+    void *clientData,	/* Arbitrary value to pass to object
+				 * function. */
+    Tcl_CmdDeleteProc *deleteProc
+				/* If not NULL, gives a function to call when
+				 * this command is deleted. */
+)
+{
+	CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
+	info->proc = proc;
+	info->deleteProc = deleteProc;
+	info->clientData = clientData;
+
+	return Tcl_CreateObjCommand2(interp, cmdName, cmdWrapperProc, info, cmdWrapperDeleteProc);
+}
 
 Tcl_Command
 Tcl_CreateObjCommand2(
@@ -8352,6 +8410,18 @@ TCL_DTRACE_DEBUG_LOG()
  */
 
 int
+Tcl_NRCallObjProc(
+    Tcl_Interp *interp,
+    Tcl_ObjCmdProc *objProc,
+    void *clientData,
+    size_t objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Panic("Tcl_NRCallObjProc Not Implemented Yet");
+    return TCL_ERROR;
+}
+
+int
 Tcl_NRCallObjProc2(
     Tcl_Interp *interp,
     Tcl_ObjCmdProc2 *objProc,
@@ -8393,6 +8463,30 @@ Tcl_NRCallObjProc2(
  *
  *----------------------------------------------------------------------
  */
+
+Tcl_Command
+Tcl_NRCreateCommand(
+    Tcl_Interp *interp,		/* Token for command interpreter (returned by
+				 * previous call to Tcl_CreateInterp). */
+    const char *cmdName,	/* Name of command. If it contains namespace
+				 * qualifiers, the new command is put in the
+				 * specified namespace; otherwise it is put in
+				 * the global namespace. */
+    Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
+				 * name, provides direct access for direct
+				 * calls. */
+    Tcl_ObjCmdProc *nreProc,	/* Object-based function to associate with
+				 * name, provides NR implementation */
+    void *clientData,	/* Arbitrary value to pass to object
+				 * function. */
+    Tcl_CmdDeleteProc *deleteProc)
+				/* If not NULL, gives a function to call when
+				 * this command is deleted. */
+{
+    Tcl_Panic("Tcl_NRCreateCommand Not implemented Yet");
+    return NULL;
+}
+
 
 Tcl_Command
 Tcl_NRCreateCommand2(
