@@ -3415,7 +3415,7 @@ Tcl_GetCommandInfoFromToken(
     infoPtr->objProc2 = cmdPtr->objProc2;
     infoPtr->objClientData2 = cmdPtr->objClientData2;
     if (infoPtr->objProc2 == cmdWrapperProc) {
-	CmdWrapperInfo *info = (CmdWrapperInfo *)infoPtr;
+	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->objClientData2;
 	infoPtr->objProc = info->proc;
 	infoPtr->objClientData = info->clientData;
 	infoPtr->isNativeObjectProc = 1;
