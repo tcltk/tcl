@@ -537,7 +537,7 @@ Tcltest_Init(
 	return TCL_ERROR;
     }
 
-    if ((Tcl_GetCommandInfo(interp, "::tcl::build-info", &info) == TCL_OK) && (info.isNativeObjectProc == 1)) {
+    if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
 	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
 		info.objProc, (void *)version, NULL);
     }

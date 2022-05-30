@@ -2652,7 +2652,7 @@ static void cmdWrapperDeleteProc(void *clientData) {
     clientData = info->clientData;
     Tcl_CmdDeleteProc *deleteProc = info->deleteProc;
     Tcl_Free(info);
-    if (deleteProc) {
+    if (deleteProc != NULL) {
 	deleteProc(clientData);
     }
 }
@@ -2674,10 +2674,10 @@ Tcl_CreateObjCommand(
 				 * this command is deleted. */
 )
 {
-	CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
-	info->proc = proc;
-	info->deleteProc = deleteProc;
-	info->clientData = clientData;
+    CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
+    info->proc = proc;
+    info->deleteProc = deleteProc;
+    info->clientData = clientData;
 
 	return Tcl_CreateObjCommand2(interp, cmdName, cmdWrapperProc, info, cmdWrapperDeleteProc);
 }
@@ -3378,6 +3378,15 @@ Tcl_GetCommandInfo(
  *----------------------------------------------------------------------
  */
 
+static int cmdWrapper2Proc(void *clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Command *cmdPtr = (Command *)clientData;
+    return cmdPtr->objProc2(cmdPtr->objClientData2, interp, objc, objv);
+}
+
 int
 Tcl_GetCommandInfoFromToken(
     Tcl_Command cmd,
@@ -3398,8 +3407,6 @@ Tcl_GetCommandInfoFromToken(
     cmdPtr = (Command *) cmd;
     infoPtr->isNativeObjectProc =
 	    (cmdPtr->objProc2 != TclInvokeStringCommand2) ? 2 : 0;
-    /*infoPtr->objProc = cmdPtr->objProc;
-    infoPtr->objClientData = cmdPtr->objClientData;*/
     infoPtr->proc = cmdPtr->proc;
     infoPtr->clientData = cmdPtr->clientData;
     infoPtr->deleteProc = cmdPtr->deleteProc;
@@ -3407,7 +3414,15 @@ Tcl_GetCommandInfoFromToken(
     infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
     infoPtr->objProc2 = cmdPtr->objProc2;
     infoPtr->objClientData2 = cmdPtr->objClientData2;
-
+    if (infoPtr->objProc2 == cmdWrapperProc) {
+	CmdWrapperInfo *info = (CmdWrapperInfo *)infoPtr;
+	infoPtr->objProc = info->proc;
+	infoPtr->objClientData = info->clientData;
+	infoPtr->isNativeObjectProc = 1;
+    } else {
+	infoPtr->objProc = cmdWrapper2Proc;
+	infoPtr->objClientData = cmdPtr;
+    }
     return 1;
 }
 
