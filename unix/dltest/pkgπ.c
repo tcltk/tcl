@@ -14,13 +14,6 @@
 #include "tcl.h"
 
 /*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    Pkg\u03C0_\u03A0ObjCmd(ClientData clientData,
-		Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]);
-
-/*
  *----------------------------------------------------------------------
  *
  * Pkga_EqObjCmd --
@@ -42,7 +35,7 @@ static int
 Pkg\u03C0_\u03A0ObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
@@ -90,6 +83,6 @@ Pkg\u03C0_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand2(interp, "π", Pkg\u03C0_\u03A0ObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "π", Pkg\u03C0_\u03A0ObjCmd, NULL, NULL);
     return TCL_OK;
 }

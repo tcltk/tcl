@@ -31,7 +31,7 @@ static Tcl_ThreadDataKey dataKey;
 #define MAX_REGISTERED_COMMANDS 2
 
 static void
-CommandDeleted(ClientData clientData)
+CommandDeleted(void *clientData)
 {
     Tcl_Command *cmdToken = (Tcl_Command *)clientData;
     *cmdToken = NULL;
@@ -120,9 +120,9 @@ PkguaDeleteTokens(
 
 static int
 PkguaEqObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
@@ -165,9 +165,9 @@ PkguaEqObjCmd(
 
 static int
 PkguaQuoteObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
     (void)dummy;
@@ -225,10 +225,10 @@ Pkgua_Init(
 
     cmdTokens = PkguaInterpToTokens(interp);
     cmdTokens[0] =
-	    Tcl_CreateObjCommand2(interp, "pkgua_eq", PkguaEqObjCmd, &cmdTokens[0],
+	    Tcl_CreateObjCommand(interp, "pkgua_eq", PkguaEqObjCmd, &cmdTokens[0],
 		    CommandDeleted);
     cmdTokens[1] =
-	    Tcl_CreateObjCommand2(interp, "pkgua_quote", PkguaQuoteObjCmd,
+	    Tcl_CreateObjCommand(interp, "pkgua_quote", PkguaQuoteObjCmd,
 		    &cmdTokens[1], CommandDeleted);
     return TCL_OK;
 }

@@ -33,9 +33,9 @@
 
 static int
 Pkgooa_StubsOKObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     (void)dummy;
@@ -145,6 +145,6 @@ Pkgooa_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand2(interp, "pkgooa_stubsok", Pkgooa_StubsOKObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "pkgooa_stubsok", Pkgooa_StubsOKObjCmd, NULL, NULL);
     return TCL_OK;
 }
