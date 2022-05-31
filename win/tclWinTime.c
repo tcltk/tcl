@@ -213,11 +213,15 @@ NativeCalc100NsOffs(
     LONGLONG curCounter
 ) {
     curCounter -= ciPerfCounter; /* current distance */
-    if (!curCounter) {
-    	return 0; /* virtual time without offset */
+    /* virtual time without offset (or nominal frequency equals 10000000) */
+    if (!curCounter || timeInfo.nominalFreq == 10000000) {
+	return (Tcl_WideInt)curCounter;
     }
-    /* virtual time with offset */
-    return curCounter * 10000000 / timeInfo.nominalFreq;
+    /* virtual time with offset, try to avoid overflow in signed wide int */
+    if (curCounter < WIDE_MAX / 10000000) {
+	return (Tcl_WideInt)curCounter * 10000000 / timeInfo.nominalFreq;
+    }
+    return (Tcl_WideInt)(curCounter / ((double)timeInfo.nominalFreq / 10000000));
 }
 
 /*
@@ -427,13 +431,15 @@ TclpGetMicroseconds(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetMicroseconds --
+ * TclpGetUTimeMonotonic --
  *
- *	This procedure returns a WideInt value that represents the highest
- *	resolution clock in microseconds available on the system.
+ *	This procedure returns the number of microseconds from some unspecified
+ *	starting point.
+ *	This time is monotonic (not affected by the time-jumps), so can be used
+ *	for relative wait purposes and relative time calculation.
  *
  * Results:
- *	Number of microseconds (from the epoch).
+ *	Monotonic time in microseconds.
  *
  * Side effects:
  *	None.
