@@ -2033,6 +2033,11 @@ const TclStubs tclStubs = {
     TclUtfAtIndex, /* 671 */
     TclGetRange, /* 672 */
     TclGetUniChar, /* 673 */
+    0, /* 674 */
+    0, /* 675 */
+    0, /* 676 */
+    0, /* 677 */
+    Tcl_ProcObjCmd2, /* 678 */
 };
 
 /* !END!: Do not edit above this line. */
