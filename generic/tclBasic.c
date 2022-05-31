@@ -8426,13 +8426,13 @@ TCL_DTRACE_DEBUG_LOG()
 
 int
 Tcl_NRCallObjProc(
-    Tcl_Interp *interp,
-    Tcl_ObjCmdProc *objProc,
-    void *clientData,
-    size_t objc,
-    Tcl_Obj *const objv[])
+    TCL_UNUSED(Tcl_Interp *),
+    TCL_UNUSED(Tcl_ObjCmdProc *),
+    TCL_UNUSED(void *),
+    TCL_UNUSED(int),
+    TCL_UNUSED(Tcl_Obj *const *))
 {
-    Tcl_Panic("Tcl_NRCallObjProc Not Implemented Yet");
+    Tcl_Panic("Tcl_NRCallObjProc Not Implemented Yet, please use Tcl_NRCallObjProc2()");
     return TCL_ERROR;
 }
 
@@ -8479,6 +8479,50 @@ Tcl_NRCallObjProc2(
  *----------------------------------------------------------------------
  */
 
+typedef struct {
+	Tcl_ObjCmdProc *proc;
+	Tcl_ObjCmdProc *nreProc;
+	Tcl_CmdDeleteProc *delProc;
+    void *clientData;
+} NRCommandWrapper;
+
+static int wrapperProc2(
+    void *clientData,
+    Tcl_Interp *interp,
+    size_t objc,
+	struct Tcl_Obj *const objv[])
+{
+    NRCommandWrapper *wrapper = (NRCommandWrapper *)clientData;
+    if (objc > INT_MAX) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
+	return TCL_ERROR;
+    }
+    return wrapper->proc(wrapper->clientData, interp, objc, objv);
+}
+
+static int wrapperNRProc2(
+    void *clientData,
+    Tcl_Interp *interp,
+    size_t objc,
+	struct Tcl_Obj *const objv[])
+{
+    NRCommandWrapper *wrapper = (NRCommandWrapper *)clientData;
+    if (objc > INT_MAX) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
+	return TCL_ERROR;
+    }
+    return wrapper->nreProc(wrapper->clientData, interp, objc, objv);
+}
+
+static void wrapperDelProc2(void *clientData)
+{
+	NRCommandWrapper *wrapper = (NRCommandWrapper *)clientData;
+    clientData = wrapper->clientData;
+    wrapper->delProc(clientData);
+    Tcl_Free(wrapper);
+}
+
+
 Tcl_Command
 Tcl_NRCreateCommand(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
@@ -8498,8 +8542,12 @@ Tcl_NRCreateCommand(
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
 {
-    Tcl_Panic("Tcl_NRCreateCommand Not implemented Yet");
-    return NULL;
+	NRCommandWrapper *wrapper = (NRCommandWrapper *)Tcl_Alloc(sizeof(NRCommandWrapper));
+    wrapper->proc = proc;
+    wrapper->nreProc = nreProc;
+    wrapper->delProc = deleteProc;
+    wrapper->clientData = clientData;
+    return Tcl_NRCreateCommand2(interp, cmdName, wrapperProc2, wrapperNRProc2, wrapper, wrapperDelProc2);
 }
 
 

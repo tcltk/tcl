@@ -2126,6 +2126,36 @@ TraceVarProc(
  *----------------------------------------------------------------------
  */
 
+typedef struct {
+	Tcl_CmdObjTraceProc *proc;
+    Tcl_CmdObjTraceDeleteProc *delProc;
+    void *clientData;
+} TraceWrapper;
+
+static int wrapperProc2(
+    void *clientData,
+    Tcl_Interp *interp,
+	int level,
+    const char *command,
+    Tcl_Command commandInfo,
+    size_t objc,
+	struct Tcl_Obj *const objv[])
+{
+    TraceWrapper *wrapper = (TraceWrapper *)clientData;
+    if (objc > INT_MAX) {
+	objc = -1; /* Signal Tcl_CmdObjTraceProc that objc is out of range */
+    }
+    return wrapper->proc(wrapper->clientData, interp, level, command, commandInfo, objc, objv);
+}
+
+static void wrapperDelProc2(void *clientData)
+{
+    TraceWrapper *wrapper = (TraceWrapper *)clientData;
+    clientData = wrapper->clientData;
+    wrapper->delProc(clientData);
+    Tcl_Free(wrapper);
+}
+
 Tcl_Trace
 Tcl_CreateObjTrace(
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -2136,8 +2166,11 @@ Tcl_CreateObjTrace(
     Tcl_CmdObjTraceDeleteProc *delProc)
 				/* Function to call when trace is deleted */
 {
-    Tcl_Panic("Tcl_CreateObjTrace Not Implemented Yet");
-    return NULL;
+	TraceWrapper *wrapper = (TraceWrapper *)Tcl_Alloc(sizeof(TraceWrapper));
+    wrapper->proc = proc;
+    wrapper->delProc = delProc;
+    wrapper->clientData = clientData;
+    return Tcl_CreateObjTrace2(interp, level, flags, wrapperProc2, wrapper, wrapperDelProc2);
 }
 
 Tcl_Trace

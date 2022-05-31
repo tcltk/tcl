@@ -2211,7 +2211,7 @@ declare 587 {
 # classic objProc
 declare 588 {
     int Tcl_NRCallObjProc(Tcl_Interp *interp, Tcl_ObjCmdProc *objProc,
-	    void *clientData, size_t objc, Tcl_Obj *const objv[])
+	    void *clientData, int objc, Tcl_Obj *const objv[])
 }
 
 # TIP#316 (Tcl_StatBuf reader functions) dkf

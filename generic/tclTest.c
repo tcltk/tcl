@@ -204,7 +204,7 @@ static Tcl_CmdProc	NoopCmd;
 static Tcl_ObjCmdProc	NoopObjCmd;
 static int		ObjTraceProc(void *clientData,
 			    Tcl_Interp *interp, int level, const char *command,
-			    Tcl_Command commandToken, size_t objc,
+			    Tcl_Command commandToken, int objc,
 			    Tcl_Obj *const objv[]);
 static void		ObjTraceDeleteProc(void *clientData);
 static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
@@ -1304,7 +1304,7 @@ TestcmdtraceCmd(
 	static int deleteCalled;
 
 	deleteCalled = 0;
-	cmdTrace = Tcl_CreateObjTrace2(interp, 50000,
+	cmdTrace = Tcl_CreateObjTrace(interp, 50000,
 		TCL_ALLOW_INLINE_COMPILATION, ObjTraceProc,
 		&deleteCalled, ObjTraceDeleteProc);
 	result = Tcl_EvalEx(interp, argv[2], -1, 0);
@@ -1390,7 +1390,7 @@ ObjTraceProc(
     TCL_UNUSED(int) /*level*/,
     const char *command,
     TCL_UNUSED(Tcl_Command),
-    TCL_UNUSED(size_t) /*objc*/,
+    TCL_UNUSED(int) /*objc*/,
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *word = Tcl_GetString(objv[0]);
