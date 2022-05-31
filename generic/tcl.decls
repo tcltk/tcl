@@ -2558,6 +2558,10 @@ declare 673 {
     int Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index)
 }
 
+declare 678 {
+    int Tcl_ProcObjCmd2(void *clientData, Tcl_Interp *interp,
+	    size_t objc, Tcl_Obj *const objv[])
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
