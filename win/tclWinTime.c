@@ -213,11 +213,15 @@ NativeCalc100NsOffs(
     LONGLONG curCounter
 ) {
     curCounter -= ciPerfCounter; /* current distance */
-    if (!curCounter) {
-    	return 0; /* virtual time without offset */
+    /* virtual time without offset (or nominal frequency equals 10000000) */
+    if (!curCounter || timeInfo.nominalFreq == 10000000) {
+	return (Tcl_WideInt)curCounter;
     }
-    /* virtual time with offset */
-    return curCounter * 10000000 / timeInfo.nominalFreq;
+    /* virtual time with offset, try to avoid overflow in signed wide int */
+    if (curCounter < WIDE_MAX / 10000000) {
+	return (Tcl_WideInt)curCounter * 10000000 / timeInfo.nominalFreq;
+    }
+    return (Tcl_WideInt)(curCounter / ((double)timeInfo.nominalFreq / 10000000));
 }
 
 /*
