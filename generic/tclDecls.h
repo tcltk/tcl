@@ -1811,25 +1811,25 @@ EXTERN int		Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index);
 /* Slot 675 is reserved */
 /* 676 */
 EXTERN Tcl_Command	Tcl_CreateObjCommand2(Tcl_Interp *interp,
-				const char *cmdName, Tcl_ObjCmdProc2 *proc,
+				const char *cmdName, Tcl_ObjCmdProc2 *proc2,
 				void *clientData,
 				Tcl_CmdDeleteProc *deleteProc);
 /* 677 */
-EXTERN Tcl_Command	Tcl_NRCreateCommand2(Tcl_Interp *interp,
-				const char *cmdName, Tcl_ObjCmdProc2 *proc,
-				Tcl_ObjCmdProc2 *nreProc, void *clientData,
-				Tcl_CmdDeleteProc *deleteProc);
-/* 678 */
-EXTERN int		Tcl_NRCallObjProc2(Tcl_Interp *interp,
-				Tcl_ObjCmdProc2 *objProc, void *clientData,
-				size_t objc, Tcl_Obj *const objv[]);
-/* 679 */
 EXTERN Tcl_Trace	Tcl_CreateObjTrace2(Tcl_Interp *interp, int level,
-				int flags, Tcl_CmdObjTraceProc2 *objProc,
+				int flags, Tcl_CmdObjTraceProc2 *objProc2,
 				void *clientData,
 				Tcl_CmdObjTraceDeleteProc *delProc);
-/* 680 */
+/* 678 */
 EXTERN int		Tcl_ProcObjCmd2(void *clientData, Tcl_Interp *interp,
+				size_t objc, Tcl_Obj *const objv[]);
+/* 679 */
+EXTERN Tcl_Command	Tcl_NRCreateCommand2(Tcl_Interp *interp,
+				const char *cmdName, Tcl_ObjCmdProc2 *proc,
+				Tcl_ObjCmdProc2 *nreProc2, void *clientData,
+				Tcl_CmdDeleteProc *deleteProc);
+/* 680 */
+EXTERN int		Tcl_NRCallObjProc2(Tcl_Interp *interp,
+				Tcl_ObjCmdProc2 *objProc, void *clientData,
 				size_t objc, Tcl_Obj *const objv[]);
 
 typedef struct {
@@ -2518,11 +2518,11 @@ typedef struct TclStubs {
     int (*tcl_GetUniChar) (Tcl_Obj *objPtr, size_t index); /* 673 */
     void (*reserved674)(void);
     void (*reserved675)(void);
-    Tcl_Command (*tcl_CreateObjCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 676 */
-    Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 677 */
-    int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 678 */
-    Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 679 */
-    int (*tcl_ProcObjCmd2) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 680 */
+    Tcl_Command (*tcl_CreateObjCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 676 */
+    Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
+    int (*tcl_ProcObjCmd2) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 678 */
+    Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 679 */
+    int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 680 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3827,14 +3827,14 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 675 is reserved */
 #define Tcl_CreateObjCommand2 \
 	(tclStubsPtr->tcl_CreateObjCommand2) /* 676 */
-#define Tcl_NRCreateCommand2 \
-	(tclStubsPtr->tcl_NRCreateCommand2) /* 677 */
-#define Tcl_NRCallObjProc2 \
-	(tclStubsPtr->tcl_NRCallObjProc2) /* 678 */
 #define Tcl_CreateObjTrace2 \
-	(tclStubsPtr->tcl_CreateObjTrace2) /* 679 */
+	(tclStubsPtr->tcl_CreateObjTrace2) /* 677 */
 #define Tcl_ProcObjCmd2 \
-	(tclStubsPtr->tcl_ProcObjCmd2) /* 680 */
+	(tclStubsPtr->tcl_ProcObjCmd2) /* 678 */
+#define Tcl_NRCreateCommand2 \
+	(tclStubsPtr->tcl_NRCreateCommand2) /* 679 */
+#define Tcl_NRCallObjProc2 \
+	(tclStubsPtr->tcl_NRCallObjProc2) /* 680 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

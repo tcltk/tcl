@@ -2561,27 +2561,27 @@ declare 673 {
 declare 676 {
     Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
 	    const char *cmdName,
-	    Tcl_ObjCmdProc2 *proc, void *clientData,
+	    Tcl_ObjCmdProc2 *proc2, void *clientData,
 	    Tcl_CmdDeleteProc *deleteProc)
 }
 declare 677 {
-    Tcl_Command Tcl_NRCreateCommand2(Tcl_Interp *interp,
-	    const char *cmdName, Tcl_ObjCmdProc2 *proc,
-	    Tcl_ObjCmdProc2 *nreProc, void *clientData,
-	    Tcl_CmdDeleteProc *deleteProc)
-}
-declare 678 {
-    int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc,
-	    void *clientData, size_t objc, Tcl_Obj *const objv[])
-}
-declare 679 {
     Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, int level, int flags,
-	    Tcl_CmdObjTraceProc2 *objProc, void *clientData,
+	    Tcl_CmdObjTraceProc2 *objProc2, void *clientData,
 	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
-declare 680 {
+declare 678 {
     int Tcl_ProcObjCmd2(void *clientData, Tcl_Interp *interp,
 	    size_t objc, Tcl_Obj *const objv[])
+}
+declare 679 {
+    Tcl_Command Tcl_NRCreateCommand2(Tcl_Interp *interp,
+	    const char *cmdName, Tcl_ObjCmdProc2 *proc,
+	    Tcl_ObjCmdProc2 *nreProc2, void *clientData,
+	    Tcl_CmdDeleteProc *deleteProc)
+}
+declare 680 {
+    int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc,
+	    void *clientData, size_t objc, Tcl_Obj *const objv[])
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

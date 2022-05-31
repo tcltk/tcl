@@ -37,13 +37,13 @@
  * Forward declarations of functions defined later in this file:
  */
 
-static Tcl_ObjCmdProc2	TesteventloopCmd;
-static Tcl_ObjCmdProc2	TestvolumetypeCmd;
-static Tcl_ObjCmdProc2	TestwinclockCmd;
-static Tcl_ObjCmdProc2	TestwinsleepCmd;
-static Tcl_ObjCmdProc2	TestExceptionCmd;
+static Tcl_ObjCmdProc	TesteventloopCmd;
+static Tcl_ObjCmdProc	TestvolumetypeCmd;
+static Tcl_ObjCmdProc	TestwinclockCmd;
+static Tcl_ObjCmdProc	TestwinsleepCmd;
+static Tcl_ObjCmdProc	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
-static Tcl_ObjCmdProc2	TestchmodCmd;
+static Tcl_ObjCmdProc	TestchmodCmd;
 
 /*
  *----------------------------------------------------------------------
@@ -70,13 +70,13 @@ TclplatformtestInit(
      * Add commands for platform specific tests for Windows here.
      */
 
-    Tcl_CreateObjCommand2(interp, "testchmod", TestchmodCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testeventloop", TesteventloopCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testvolumetype", TestvolumetypeCmd,
+    Tcl_CreateObjCommand(interp, "testchmod", TestchmodCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testeventloop", TesteventloopCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testvolumetype", TestvolumetypeCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testwinclock", TestwinclockCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testwinsleep", TestwinsleepCmd, NULL, NULL);
-    Tcl_CreateObjCommand2(interp, "testexcept", TestExceptionCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testwinclock", TestwinclockCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testwinsleep", TestwinsleepCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testexcept", TestExceptionCmd, NULL, NULL);
     return TCL_OK;
 }
 
@@ -102,7 +102,7 @@ static int
 TesteventloopCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
@@ -178,7 +178,7 @@ static int
 TestvolumetypeCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
 #define VOL_BUF_SIZE 32
@@ -244,7 +244,7 @@ static int
 TestwinclockCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp* interp,		/* Tcl interpreter */
-    size_t objc,			/* Argument count */
+    int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
 {
     static const FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
@@ -293,7 +293,7 @@ static int
 TestwinsleepCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp* interp,		/* Tcl interpreter */
-    size_t objc,			/* Parameter count */
+    int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int ms;
@@ -336,7 +336,7 @@ static int
 TestExceptionCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp* interp,			/* Tcl interpreter */
-    size_t objc,				/* Argument count */
+    int objc,				/* Argument count */
     Tcl_Obj *const objv[])		/* Argument vector */
 {
     static const char *const cmds[] = {
@@ -624,11 +624,10 @@ static int
 TestchmodCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Parameter count */
+    int objc,			/* Parameter count */
     Tcl_Obj *const * objv)	/* Parameter vector */
 {
-    size_t i;
-    int mode;
+    int i, mode;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");

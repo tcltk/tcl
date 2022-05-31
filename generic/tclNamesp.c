@@ -947,7 +947,7 @@ Tcl_DeleteNamespace(
     for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
 	    entryPtr != NULL;) {
 	cmdPtr = (Command *)Tcl_GetHashValue(entryPtr);
-	if (cmdPtr->nreProc == TclNRInterpCoroutine) {
+	if (cmdPtr->nreProc2 == TclNRInterpCoroutine) {
 	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
 		    (Tcl_Command) cmdPtr);
 	    entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);

@@ -1688,7 +1688,7 @@ typedef struct Command {
 				 * command. */
     CommandTrace *tracePtr;	/* First in list of all traces set for this
 				 * command. */
-    Tcl_ObjCmdProc2 *nreProc;	/* NRE implementation of this command. */
+    Tcl_ObjCmdProc2 *nreProc2;	/* NRE implementation of this command. */
     Tcl_ObjCmdProc2 *objProc2;	/* Object-based command procedure. */
     void *objClientData2;	/* Arbitrary value passed to object proc. */
 } Command;

@@ -737,7 +737,7 @@ AllocObject(
      */
 
     cmdPtr = (Command *) oPtr->command;
-    cmdPtr->nreProc = PublicNRObjectCmd;
+    cmdPtr->nreProc2 = PublicNRObjectCmd;
     cmdPtr->tracePtr = tracePtr = (CommandTrace *)Tcl_Alloc(sizeof(CommandTrace));
     tracePtr->traceProc = ObjectRenamedTrace;
     tracePtr->clientData = oPtr;

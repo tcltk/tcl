@@ -1464,10 +1464,10 @@ const TclStubs tclStubs = {
     0, /* 674 */
     0, /* 675 */
     Tcl_CreateObjCommand2, /* 676 */
-    Tcl_NRCreateCommand2, /* 677 */
-    Tcl_NRCallObjProc2, /* 678 */
-    Tcl_CreateObjTrace2, /* 679 */
-    Tcl_ProcObjCmd2, /* 680 */
+    Tcl_CreateObjTrace2, /* 677 */
+    Tcl_ProcObjCmd2, /* 678 */
+    Tcl_NRCreateCommand2, /* 679 */
+    Tcl_NRCallObjProc2, /* 680 */
 };
 
 /* !END!: Do not edit above this line. */

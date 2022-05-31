@@ -1048,7 +1048,7 @@ Tcl_CreateInterp(void)
             }
 	    cmdPtr->importRefPtr = NULL;
 	    cmdPtr->tracePtr = NULL;
-	    cmdPtr->nreProc = cmdInfoPtr->nreProc;
+	    cmdPtr->nreProc2 = cmdInfoPtr->nreProc;
 	    Tcl_SetHashValue(hPtr, cmdPtr);
 	}
     }
@@ -1317,7 +1317,7 @@ TclGetCommandTypeName(
     const char *name = "native";
 
     if (procPtr == NULL) {
-        procPtr = cmdPtr->nreProc;
+        procPtr = cmdPtr->nreProc2;
     }
     Tcl_MutexLock(&commandTypeLock);
     if (commandTypeInit) {
@@ -2572,7 +2572,7 @@ Tcl_CreateCommand(
     cmdPtr->flags = 0;
     cmdPtr->importRefPtr = NULL;
     cmdPtr->tracePtr = NULL;
-    cmdPtr->nreProc = NULL;
+    cmdPtr->nreProc2 = NULL;
 
     /*
      * Plug in any existing import references found above. Be sure to update
@@ -2857,7 +2857,7 @@ TclCreateObjCommandInNs(
     cmdPtr->flags = 0;
     cmdPtr->importRefPtr = NULL;
     cmdPtr->tracePtr = NULL;
-    cmdPtr->nreProc = NULL;
+    cmdPtr->nreProc2 = NULL;
 
     /*
      * Plug in any existing import references found above. Be sure to update
@@ -3016,7 +3016,7 @@ TclInvokeObjectCommand(
     if (cmdPtr->objProc2 != NULL) {
 	result = cmdPtr->objProc2(cmdPtr->objClientData2, interp, argc, objv);
     } else {
-	result = Tcl_NRCallObjProc2(interp, cmdPtr->nreProc,
+	result = Tcl_NRCallObjProc2(interp, cmdPtr->nreProc2,
 		cmdPtr->objClientData2, argc, objv);
     }
 
@@ -3315,10 +3315,10 @@ Tcl_SetCommandInfoFromToken(
     if (infoPtr->objProc2 == NULL) {
 	cmdPtr->objProc2 = TclInvokeStringCommand2;
 	cmdPtr->objClientData2 = cmdPtr;
-	cmdPtr->nreProc = NULL;
+	cmdPtr->nreProc2 = NULL;
     } else {
 	if (infoPtr->objProc2 != cmdPtr->objProc2) {
-	    cmdPtr->nreProc = NULL;
+	    cmdPtr->nreProc2 = NULL;
 	    cmdPtr->objProc2 = infoPtr->objProc2;
 	}
 	cmdPtr->objClientData2 = infoPtr->objClientData2;
@@ -4529,7 +4529,7 @@ EvalObjvCore(
     }
 
     TclNRAddCallback(interp, Dispatch,
-	    cmdPtr->nreProc ? cmdPtr->nreProc : cmdPtr->objProc2,
+	    cmdPtr->nreProc2 ? cmdPtr->nreProc2 : cmdPtr->objProc2,
 	    cmdPtr->objClientData2, INT2PTR(objc), objv);
     return TCL_OK;
 }
@@ -8526,7 +8526,7 @@ Tcl_NRCreateCommand2(
 	    Tcl_CreateObjCommand2(interp, cmdName, proc, clientData,
                     deleteProc);
 
-    cmdPtr->nreProc = nreProc;
+    cmdPtr->nreProc2 = nreProc;
     return (Tcl_Command) cmdPtr;
 }
 
@@ -8544,7 +8544,7 @@ TclNRCreateCommandInNs(
             TclCreateObjCommandInNs(interp, cmdName, nsPtr, proc, clientData,
                     deleteProc);
 
-    cmdPtr->nreProc = nreProc;
+    cmdPtr->nreProc2 = nreProc;
     return (Tcl_Command) cmdPtr;
 }
 
@@ -9237,7 +9237,7 @@ CoroTypeObjCmd(
      */
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
-    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
+    if ((!cmdPtr) || (cmdPtr->nreProc2 != TclNRInterpCoroutine)) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "can only get coroutine type of a coroutine", -1));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
@@ -9298,7 +9298,7 @@ GetCoroutineFromObj(
 
     Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objPtr);
 
-    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
+    if ((!cmdPtr) || (cmdPtr->nreProc2 != TclNRInterpCoroutine)) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, -1));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
                 TclGetString(objPtr), NULL);
