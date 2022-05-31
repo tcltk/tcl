@@ -427,13 +427,15 @@ TclpGetMicroseconds(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetMicroseconds --
+ * TclpGetUTimeMonotonic --
  *
- *	This procedure returns a WideInt value that represents the highest
- *	resolution clock in microseconds available on the system.
+ *	This procedure returns the number of microseconds from some unspecified
+ *	starting point.
+ *	This time is monotonic (not affected by the time-jumps), so can be used
+ *	for relative wait purposes and relative time calculation.
  *
  * Results:
- *	Number of microseconds (from the epoch).
+ *	Monotonic time in microseconds.
  *
  * Side effects:
  *	None.
