@@ -71,7 +71,6 @@ namespace eval perf::list {
                     }
                     set argv [lassign $argv val]
                     set Lengths $val
-                    
                 }
                 -- {
                     # Remaining will be passed back to the caller
@@ -364,6 +363,28 @@ namespace eval perf::list {
         perf destroy
     }
 
+    proc list_describe {len text} {
+        return "list L\[$len\] $text"
+    }
+    proc list_perf {} {
+        variable Lengths
+
+        print_separator list
+
+        ListPerf create perf
+        foreach len $Lengths {
+            set s [join [lrepeat $len x]]
+            comment Create a list from a string
+            perf measure [list_describe $len "from a string"] {list $s} [list s $s len $len]
+        }
+        foreach len $Lengths {
+            comment Create a list from expansion - single list (special optimal case)
+            perf measure [list_describe $len "from a {*}list"] {list {*}$L} [list len $len]
+            comment Create a list from two lists - real test of expansion speed
+            perf measure [list_describe $len "from a {*}list {*}list"] {list {*}$L {*}$L} [list len [expr {$len/2}]]
+        }
+    }
+
     proc lappend_describe {share_mode len num iters} {
         return "lappend L\[$len\] $share_mode $num elems $iters times"
     }
@@ -474,26 +495,29 @@ namespace eval perf::list {
 
         ListPerf create perf
 
-        foreach len $Lengths {
-            set reps 1000
-            comment Reflexive lassign - shared
-            perf measure [lassign_describe shared $len 1 $reps] {
-                set L2 $L
-                set L2 [lassign $L2 v]
-            } [list len $len] -overhead {set L2 $L} -reps $reps
+        foreach share_mode {shared unshared} {
+            foreach len $Lengths {
+                if {$share_mode eq "shared"} {
+                    set reps 1000
+                    comment Reflexive lassign - shared
+                    perf measure [lassign_describe shared $len 1 $reps] {
+                        set L2 $L
+                        set L2 [lassign $L2 v]
+                    } [list len $len] -overhead {set L2 $L} -reps $reps
 
-            set reps [expr {($len >= 1000 ? ($len/2) : $len) - 2}]
-            comment Reflexive lassign - unshared
-            perf measure [lassign_describe unshared $len 1 $reps] {
-                set L [lassign $L v]
-            } [list len $len] -reps $reps
-
-            set reps 1000
-            comment Reflexive lassign - shared, multiple
-            perf measure [lassign_describe shared $len 5 $reps] {
-                set L2 $L
-                set L2 [lassign $L2 a b c d e]
-            } [list len $len] -overhead {set L2 $L} -reps $reps
+                    comment Reflexive lassign - shared, multiple
+                    perf measure [lassign_describe shared $len 5 $reps] {
+                        set L2 $L
+                        set L2 [lassign $L2 a b c d e]
+                    } [list len $len] -overhead {set L2 $L} -reps $reps
+                } else {
+                    set reps [expr {($len >= 1000 ? ($len/2) : $len) - 2}]
+                    comment Reflexive lassign - unshared
+                    perf measure [lassign_describe unshared $len 1 $reps] {
+                        set L [lassign $L v]
+                    } [list len $len] -reps $reps
+                }
+            }
         }
         perf destroy
     }
@@ -532,27 +556,33 @@ namespace eval perf::list {
 
         ListPerf create perf -reps 10000
 
-        foreach len $Lengths {
-            comment Reverse a shared list
-            perf measure [lreverse_describe shared $len] {
-                lreverse $L
-            } [list len $len]
+        foreach share_mode {shared unshared} {
+            foreach len $Lengths {
+                if {$share_mode eq "shared"} {
+                    comment Reverse a shared list
+                    perf measure [lreverse_describe shared $len] {
+                        lreverse $L
+                    } [list len $len]
 
-            comment Reverse a unshared list
-            perf measure [lreverse_describe unshared $len] {
-                set L [lreverse $L[set L {}]]
-            } [list len $len] -overhead {set L $L; set L {}}
+                    if {$len > 100} {
+                        comment Reverse a shared-span list
+                        perf measure [lreverse_describe shared-span $len] {
+                            lreverse $Lspan
+                        } [list len $len]
+                    }
+                } else {
+                    comment Reverse a unshared list
+                    perf measure [lreverse_describe unshared $len] {
+                        set L [lreverse $L[set L {}]]
+                    } [list len $len] -overhead {set L $L; set L {}}
 
-            if {$len >= 100} {
-                comment Reverse a shared-span list
-                perf measure [lreverse_describe shared-span $len] {
-                    lreverse $Lspan
-                } [list len $len]
-
-                comment Reverse a unshared-span list
-                perf measure [lreverse_describe unshared-span $len] {
-                    set Lspan [lreverse $Lspan[set Lspan {}]]
-                } [list len $len] -overhead {set Lspan $Lspan; set Lspan {}}
+                    if {$len >= 100} {
+                        comment Reverse a unshared-span list
+                        perf measure [lreverse_describe unshared-span $len] {
+                            set Lspan [lreverse $Lspan[set Lspan {}]]
+                        } [list len $len] -overhead {set Lspan $Lspan; set Lspan {}}
+                    }
+                }
             }
         }
 
@@ -953,6 +983,22 @@ namespace eval perf::list {
         perf destroy
     }
 
+    proc split_describe {len} {
+        return "split L\[$len\]"
+    }
+    proc split_perf {} {
+        variable Lengths
+        print_separator split
+
+        ListPerf create perf -setup {set S [string repeat "x " $len]}
+        foreach len $Lengths {
+            comment Split a string
+            perf measure [split_describe $len] {
+                split $S " "
+            } [list len $len]
+        }
+    }
+
     proc join_describe {share_mode len} {
         return "join L\[$len\] $share_mode"
     }
@@ -1080,15 +1126,15 @@ namespace eval perf::list {
             lsort $L
         } {} -setup {set L [perf::list::get_sort_sample]}
 
-        comment Sort an unshared list
-        perf measure [lsort_describe unshared [llength [perf::list::get_sort_sample]]] {
-            lsort [perf::list::get_sort_sample]
-        } {} -overhead {perf::list::get_sort_sample}
-
         comment Sort a shared-span list
         perf measure [lsort_describe shared-span [llength [perf::list::get_sort_sample 1]]] {
             lsort $L
         } {} -setup {set L [perf::list::get_sort_sample 1]}
+
+        comment Sort an unshared list
+        perf measure [lsort_describe unshared [llength [perf::list::get_sort_sample]]] {
+            lsort [perf::list::get_sort_sample]
+        } {} -overhead {perf::list::get_sort_sample}
 
         comment Sort an unshared-span list
         perf measure [lsort_describe unshared-span [llength [perf::list::get_sort_sample 1]]] {
