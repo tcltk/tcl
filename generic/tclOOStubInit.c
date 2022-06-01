@@ -53,10 +53,10 @@ const TclOOStubs tclOOStubs = {
     Tcl_MethodDeclarerClass, /* 6 */
     Tcl_MethodDeclarerObject, /* 7 */
     Tcl_MethodIsPublic, /* 8 */
-    Tcl_MethodIsType, /* 9 */
+    0, /* 9 */
     Tcl_MethodName, /* 10 */
-    Tcl_NewInstanceMethod, /* 11 */
-    Tcl_NewMethod, /* 12 */
+    0, /* 11 */
+    0, /* 12 */
     Tcl_NewObjectInstance, /* 13 */
     Tcl_ObjectDeleted, /* 14 */
     Tcl_ObjectContextIsFiltering, /* 15 */
@@ -76,6 +76,9 @@ const TclOOStubs tclOOStubs = {
     Tcl_MethodIsPrivate, /* 29 */
     Tcl_GetClassOfObject, /* 30 */
     Tcl_GetObjectClassName, /* 31 */
+    Tcl_MethodIsType, /* 32 */
+    Tcl_NewInstanceMethod, /* 33 */
+    Tcl_NewMethod, /* 34 */
 };
 
 /* !END!: Do not edit above this line. */

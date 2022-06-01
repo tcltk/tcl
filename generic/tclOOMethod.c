@@ -97,12 +97,12 @@ static Tcl_ResolveCompiledVarProc	ProcedureMethodCompiledVarResolver;
  * The types of methods defined by the core OO system.
  */
 
-static const Tcl_MethodType procMethodType = {
-    TCL_OO_METHOD_VERSION_CURRENT, "method",
+static const Tcl_MethodType2 procMethodType = {
+    TCL_OO_METHOD_VERSION_SIZE_T, "method",
     InvokeProcedureMethod, DeleteProcedureMethod, CloneProcedureMethod
 };
-static const Tcl_MethodType fwdMethodType = {
-    TCL_OO_METHOD_VERSION_CURRENT, "forward",
+static const Tcl_MethodType2 fwdMethodType = {
+    TCL_OO_METHOD_VERSION_SIZE_T, "forward",
     InvokeForwardMethod, DeleteForwardMethod, CloneForwardMethod
 };
 
@@ -134,7 +134,7 @@ Tcl_NewInstanceMethod(
 				 * up to caller to manage storage (e.g., when
 				 * it is a constructor or destructor). */
     int flags,			/* Whether this is a public method. */
-    const Tcl_MethodType *typePtr,
+    const Tcl_MethodType2 *typePtr,
 				/* The type of method this is, which defines
 				 * how to invoke, delete and clone the
 				 * method. */
@@ -206,7 +206,7 @@ Tcl_NewMethod(
 				 * for constructors or destructors); if so, up
 				 * to caller to manage storage. */
     int flags,			/* Whether this is a public method. */
-    const Tcl_MethodType *typePtr,
+    const Tcl_MethodType2 *typePtr,
 				/* The type of method this is, which defines
 				 * how to invoke, delete and clone the
 				 * method. */
@@ -448,7 +448,7 @@ TclOOMakeProcInstanceMethod(
 				 * which _must not_ be NULL. */
     Tcl_Obj *bodyObj,		/* The body of the method, which _must not_ be
 				 * NULL. */
-    const Tcl_MethodType *typePtr,
+    const Tcl_MethodType2 *typePtr,
 				/* The type of the method to create. */
     void *clientData,	/* The per-method type-specific data. */
     Proc **procPtrPtr)		/* A pointer to the variable in which to write
@@ -561,7 +561,7 @@ TclOOMakeProcMethod(
 				 * which _must not_ be NULL. */
     Tcl_Obj *bodyObj,		/* The body of the method, which _must not_ be
 				 * NULL. */
-    const Tcl_MethodType *typePtr,
+    const Tcl_MethodType2 *typePtr,
 				/* The type of the method to create. */
     void *clientData,	/* The per-method type-specific data. */
     Proc **procPtrPtr)		/* A pointer to the variable in which to write
@@ -1676,7 +1676,7 @@ Tcl_MethodName(
 int
 Tcl_MethodIsType(
     Tcl_Method method,
-    const Tcl_MethodType *typePtr,
+    const Tcl_MethodType2 *typePtr,
     void **clientDataPtr)
 {
     Method *mPtr = (Method *) method;

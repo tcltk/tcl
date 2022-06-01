@@ -106,7 +106,7 @@ static void		MyClassDeleted(ClientData clientData);
 
 #define DCM(name,visibility,proc) \
     {name,visibility,\
-	{TCL_OO_METHOD_VERSION_CURRENT,"core method: "#name,proc,NULL,NULL}}
+	{TCL_OO_METHOD_VERSION_SIZE_T,"core method: "#name,proc,NULL,NULL}}
 
 static const DeclaredClassMethod objMethods[] = {
     DCM("destroy", 1,	TclOO_Object_Destroy),
@@ -126,8 +126,8 @@ static const DeclaredClassMethod objMethods[] = {
  * And for the oo::class constructor...
  */
 
-static const Tcl_MethodType classConstructor = {
-    TCL_OO_METHOD_VERSION_CURRENT,
+static const Tcl_MethodType2 classConstructor = {
+    TCL_OO_METHOD_VERSION_SIZE_T,
     "oo::class constructor",
     TclOO_Class_Constructor, NULL, NULL
 };

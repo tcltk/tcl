@@ -50,22 +50,11 @@ TCLAPI Tcl_Class	Tcl_MethodDeclarerClass(Tcl_Method method);
 TCLAPI Tcl_Object	Tcl_MethodDeclarerObject(Tcl_Method method);
 /* 8 */
 TCLAPI int		Tcl_MethodIsPublic(Tcl_Method method);
-/* 9 */
-TCLAPI int		Tcl_MethodIsType(Tcl_Method method,
-				const Tcl_MethodType *typePtr,
-				void **clientDataPtr);
+/* Slot 9 is reserved */
 /* 10 */
 TCLAPI Tcl_Obj *	Tcl_MethodName(Tcl_Method method);
-/* 11 */
-TCLAPI Tcl_Method	Tcl_NewInstanceMethod(Tcl_Interp *interp,
-				Tcl_Object object, Tcl_Obj *nameObj,
-				int flags, const Tcl_MethodType *typePtr,
-				void *clientData);
-/* 12 */
-TCLAPI Tcl_Method	Tcl_NewMethod(Tcl_Interp *interp, Tcl_Class cls,
-				Tcl_Obj *nameObj, int flags,
-				const Tcl_MethodType *typePtr,
-				void *clientData);
+/* Slot 11 is reserved */
+/* Slot 12 is reserved */
 /* 13 */
 TCLAPI Tcl_Object	Tcl_NewObjectInstance(Tcl_Interp *interp,
 				Tcl_Class cls, const char *nameStr,
@@ -123,6 +112,20 @@ TCLAPI Tcl_Class	Tcl_GetClassOfObject(Tcl_Object object);
 /* 31 */
 TCLAPI Tcl_Obj *	Tcl_GetObjectClassName(Tcl_Interp *interp,
 				Tcl_Object object);
+/* 32 */
+TCLAPI int		Tcl_MethodIsType(Tcl_Method method,
+				const Tcl_MethodType2 *typePtr,
+				void **clientDataPtr);
+/* 33 */
+TCLAPI Tcl_Method	Tcl_NewInstanceMethod(Tcl_Interp *interp,
+				Tcl_Object object, Tcl_Obj *nameObj,
+				int flags, const Tcl_MethodType2 *typePtr,
+				void *clientData);
+/* 34 */
+TCLAPI Tcl_Method	Tcl_NewMethod(Tcl_Interp *interp, Tcl_Class cls,
+				Tcl_Obj *nameObj, int flags,
+				const Tcl_MethodType2 *typePtr,
+				void *clientData);
 
 typedef struct {
     const struct TclOOIntStubs *tclOOIntStubs;
@@ -141,10 +144,10 @@ typedef struct TclOOStubs {
     Tcl_Class (*tcl_MethodDeclarerClass) (Tcl_Method method); /* 6 */
     Tcl_Object (*tcl_MethodDeclarerObject) (Tcl_Method method); /* 7 */
     int (*tcl_MethodIsPublic) (Tcl_Method method); /* 8 */
-    int (*tcl_MethodIsType) (Tcl_Method method, const Tcl_MethodType *typePtr, void **clientDataPtr); /* 9 */
+    void (*reserved9)(void);
     Tcl_Obj * (*tcl_MethodName) (Tcl_Method method); /* 10 */
-    Tcl_Method (*tcl_NewInstanceMethod) (Tcl_Interp *interp, Tcl_Object object, Tcl_Obj *nameObj, int flags, const Tcl_MethodType *typePtr, void *clientData); /* 11 */
-    Tcl_Method (*tcl_NewMethod) (Tcl_Interp *interp, Tcl_Class cls, Tcl_Obj *nameObj, int flags, const Tcl_MethodType *typePtr, void *clientData); /* 12 */
+    void (*reserved11)(void);
+    void (*reserved12)(void);
     Tcl_Object (*tcl_NewObjectInstance) (Tcl_Interp *interp, Tcl_Class cls, const char *nameStr, const char *nsNameStr, size_t objc, Tcl_Obj *const *objv, int skip); /* 13 */
     int (*tcl_ObjectDeleted) (Tcl_Object object); /* 14 */
     int (*tcl_ObjectContextIsFiltering) (Tcl_ObjectContext context); /* 15 */
@@ -164,6 +167,9 @@ typedef struct TclOOStubs {
     int (*tcl_MethodIsPrivate) (Tcl_Method method); /* 29 */
     Tcl_Class (*tcl_GetClassOfObject) (Tcl_Object object); /* 30 */
     Tcl_Obj * (*tcl_GetObjectClassName) (Tcl_Interp *interp, Tcl_Object object); /* 31 */
+    int (*tcl_MethodIsType) (Tcl_Method method, const Tcl_MethodType2 *typePtr, void **clientDataPtr); /* 32 */
+    Tcl_Method (*tcl_NewInstanceMethod) (Tcl_Interp *interp, Tcl_Object object, Tcl_Obj *nameObj, int flags, const Tcl_MethodType2 *typePtr, void *clientData); /* 33 */
+    Tcl_Method (*tcl_NewMethod) (Tcl_Interp *interp, Tcl_Class cls, Tcl_Obj *nameObj, int flags, const Tcl_MethodType2 *typePtr, void *clientData); /* 34 */
 } TclOOStubs;
 
 extern const TclOOStubs *tclOOStubsPtr;
@@ -196,14 +202,11 @@ extern const TclOOStubs *tclOOStubsPtr;
 	(tclOOStubsPtr->tcl_MethodDeclarerObject) /* 7 */
 #define Tcl_MethodIsPublic \
 	(tclOOStubsPtr->tcl_MethodIsPublic) /* 8 */
-#define Tcl_MethodIsType \
-	(tclOOStubsPtr->tcl_MethodIsType) /* 9 */
+/* Slot 9 is reserved */
 #define Tcl_MethodName \
 	(tclOOStubsPtr->tcl_MethodName) /* 10 */
-#define Tcl_NewInstanceMethod \
-	(tclOOStubsPtr->tcl_NewInstanceMethod) /* 11 */
-#define Tcl_NewMethod \
-	(tclOOStubsPtr->tcl_NewMethod) /* 12 */
+/* Slot 11 is reserved */
+/* Slot 12 is reserved */
 #define Tcl_NewObjectInstance \
 	(tclOOStubsPtr->tcl_NewObjectInstance) /* 13 */
 #define Tcl_ObjectDeleted \
@@ -242,6 +245,12 @@ extern const TclOOStubs *tclOOStubsPtr;
 	(tclOOStubsPtr->tcl_GetClassOfObject) /* 30 */
 #define Tcl_GetObjectClassName \
 	(tclOOStubsPtr->tcl_GetObjectClassName) /* 31 */
+#define Tcl_MethodIsType \
+	(tclOOStubsPtr->tcl_MethodIsType) /* 32 */
+#define Tcl_NewInstanceMethod \
+	(tclOOStubsPtr->tcl_NewInstanceMethod) /* 33 */
+#define Tcl_NewMethod \
+	(tclOOStubsPtr->tcl_NewMethod) /* 34 */
 
 #endif /* defined(USE_TCLOO_STUBS) */
 

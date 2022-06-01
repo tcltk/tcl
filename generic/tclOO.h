@@ -79,9 +79,27 @@ typedef int (Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
  * how to create a clone of it (when the object or class is copied).
  */
 
+#if 0
 typedef struct {
     int version;		/* Structure version field. Always to be equal
 				 * to TCL_OO_METHOD_VERSION_CURRENT in
+				 * declarations. */
+    const char *name;		/* Name of this type of method, mostly for
+				 * debugging purposes. */
+    Tcl_MethodCallProc *callProc;
+				/* How to invoke this method. */
+    Tcl_MethodDeleteProc *deleteProc;
+				/* How to delete this method's type-specific
+				 * data, or NULL if the type-specific data
+				 * does not need deleting. */
+    Tcl_CloneProc *cloneProc;	/* How to copy this method's type-specific
+				 * data, or NULL if the type-specific data can
+				 * be copied directly. */
+} Tcl_MethodType;
+#endif
+typedef struct {
+    int version;		/* Structure version field. Always to be equal
+				 * to TCL_OO_METHOD_VERSION_SIZE_T in
 				 * declarations. */
     const char *name;		/* Name of this type of method, mostly for
 				 * debugging purposes. */
@@ -94,7 +112,7 @@ typedef struct {
     Tcl_CloneProc *cloneProc;	/* How to copy this method's type-specific
 				 * data, or NULL if the type-specific data can
 				 * be copied directly. */
-} Tcl_MethodType;
+} Tcl_MethodType2;
 
 /*
  * The correct value for the version field of the Tcl_MethodType structure.
@@ -102,7 +120,8 @@ typedef struct {
  * binary compatibility.
  */
 
-#define TCL_OO_METHOD_VERSION_CURRENT 1
+#define TCL_OO_METHOD_VERSION_CURRENT_XXX 1
+#define TCL_OO_METHOD_VERSION_SIZE_T 2
 
 /*
  * Visibility constants for the flags parameter to Tcl_NewMethod and

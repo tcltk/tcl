@@ -35,18 +35,18 @@
 
 struct DeclaredSlot {
     const char *name;
-    const Tcl_MethodType getterType;
-    const Tcl_MethodType setterType;
-    const Tcl_MethodType resolverType;
+    const Tcl_MethodType2 getterType;
+    const Tcl_MethodType2 setterType;
+    const Tcl_MethodType2 resolverType;
 };
 
 #define SLOT(name,getter,setter,resolver)				\
     {"::oo::" name,							\
-	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Getter", \
+	    {TCL_OO_METHOD_VERSION_SIZE_T, "core method: " name " Getter", \
 		    getter, NULL, NULL},				\
-	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Setter", \
+	    {TCL_OO_METHOD_VERSION_SIZE_T, "core method: " name " Setter", \
 		    setter, NULL, NULL},				\
-	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Resolver", \
+	    {TCL_OO_METHOD_VERSION_SIZE_T, "core method: " name " Resolver", \
 		    resolver, NULL, NULL}}
 
 /*

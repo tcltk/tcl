@@ -42,7 +42,7 @@ struct Object;
  */
 
 typedef struct Method {
-    const Tcl_MethodType *typePtr;
+    const Tcl_MethodType2 *typePtr;
 				/* The type of method. If NULL, this is a
 				 * special flag record which is just used for
 				 * the setting of the flags field. */
@@ -437,7 +437,7 @@ typedef struct CallContext {
 typedef struct {
     const char *name;		/* Name of the method in question. */
     int isPublic;		/* Whether the method is public by default. */
-    Tcl_MethodType definition;	/* How to call the method. */
+    Tcl_MethodType2 definition;	/* How to call the method. */
 } DeclaredClassMethod;
 
 /*
