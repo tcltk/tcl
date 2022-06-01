@@ -1974,6 +1974,24 @@ EXTERN const char *	TclUtfAtIndex(const char *src, int index);
 EXTERN Tcl_Obj *	TclGetRange(Tcl_Obj *objPtr, int first, int last);
 /* 673 */
 EXTERN int		TclGetUniChar(Tcl_Obj *objPtr, int index);
+/* Slot 674 is reserved */
+/* Slot 675 is reserved */
+/* 676 */
+EXTERN Tcl_Command	Tcl_CreateObjCommand2(Tcl_Interp *interp,
+				const char *cmdName, Tcl_ObjCmdProc2 *proc2,
+				void *clientData,
+				Tcl_CmdDeleteProc *deleteProc);
+/* 677 */
+EXTERN Tcl_Trace	Tcl_CreateObjTrace2(Tcl_Interp *interp, int level,
+				int flags, Tcl_CmdObjTraceProc2 *objProc2,
+				void *clientData,
+				Tcl_CmdObjTraceDeleteProc *delProc);
+/* Slot 678 is reserved */
+/* 679 */
+EXTERN Tcl_Command	Tcl_NRCreateCommand2(Tcl_Interp *interp,
+				const char *cmdName, Tcl_ObjCmdProc2 *proc,
+				Tcl_ObjCmdProc2 *nreProc2, void *clientData,
+				Tcl_CmdDeleteProc *deleteProc);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2683,6 +2701,12 @@ typedef struct TclStubs {
     const char * (*tclUtfAtIndex) (const char *src, int index); /* 671 */
     Tcl_Obj * (*tclGetRange) (Tcl_Obj *objPtr, int first, int last); /* 672 */
     int (*tclGetUniChar) (Tcl_Obj *objPtr, int index); /* 673 */
+    void (*reserved674)(void);
+    void (*reserved675)(void);
+    Tcl_Command (*tcl_CreateObjCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 676 */
+    Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
+    void (*reserved678)(void);
+    Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 679 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4054,6 +4078,15 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclGetRange) /* 672 */
 #define TclGetUniChar \
 	(tclStubsPtr->tclGetUniChar) /* 673 */
+/* Slot 674 is reserved */
+/* Slot 675 is reserved */
+#define Tcl_CreateObjCommand2 \
+	(tclStubsPtr->tcl_CreateObjCommand2) /* 676 */
+#define Tcl_CreateObjTrace2 \
+	(tclStubsPtr->tcl_CreateObjTrace2) /* 677 */
+/* Slot 678 is reserved */
+#define Tcl_NRCreateCommand2 \
+	(tclStubsPtr->tcl_NRCreateCommand2) /* 679 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
