@@ -120,7 +120,7 @@ static char *errorProcString;
 TCL_DECLARE_MUTEX(threadMutex)
 
 static int		ThreadObjCmd(void *clientData,
-			    Tcl_Interp *interp, size_t objc,
+			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static int		ThreadCreate(Tcl_Interp *interp, const char *script,
 			    int joinable);
@@ -171,7 +171,7 @@ TclThread_Init(
     }
     Tcl_MutexUnlock(&threadMutex);
 
-    Tcl_CreateObjCommand2(interp, "testthread", ThreadObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testthread", ThreadObjCmd, NULL, NULL);
     return TCL_OK;
 }
 
@@ -207,7 +207,7 @@ static int
 ThreadObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
+    int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -247,8 +247,7 @@ ThreadObjCmd(
     case THREAD_CANCEL: {
 	Tcl_WideInt id;
 	const char *result;
-	int flags;
-	size_t arg;
+	int flags, arg;
 
 	if ((objc < 3) || (objc > 5)) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "?-unwind? id ?result?");
