@@ -49,16 +49,13 @@ declare 7 {
 declare 8 {
     int Tcl_MethodIsPublic(Tcl_Method method)
 }
-if 0 {
 declare 9 {
     int Tcl_MethodIsType(Tcl_Method method, const Tcl_MethodType *typePtr,
 	    void **clientDataPtr)
 }
-}
 declare 10 {
     Tcl_Obj *Tcl_MethodName(Tcl_Method method)
 }
-if 0 {
 declare 11 {
     Tcl_Method Tcl_NewInstanceMethod(Tcl_Interp *interp, Tcl_Object object,
 	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType *typePtr,
@@ -68,7 +65,6 @@ declare 12 {
     Tcl_Method Tcl_NewMethod(Tcl_Interp *interp, Tcl_Class cls,
 	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType *typePtr,
 	    void *clientData)
-}
 }
 declare 13 {
     Tcl_Object Tcl_NewObjectInstance(Tcl_Interp *interp, Tcl_Class cls,
@@ -140,16 +136,16 @@ declare 31 {
     Tcl_Obj *Tcl_GetObjectClassName(Tcl_Interp *interp, Tcl_Object object)
 }
 declare 32 {
-    int Tcl_MethodIsType(Tcl_Method method, const Tcl_MethodType2 *typePtr,
+    int Tcl_MethodIsType2(Tcl_Method method, const Tcl_MethodType2 *typePtr,
 	    void **clientDataPtr)
 }
 declare 33 {
-    Tcl_Method Tcl_NewInstanceMethod(Tcl_Interp *interp, Tcl_Object object,
+    Tcl_Method Tcl_NewInstanceMethod2(Tcl_Interp *interp, Tcl_Object object,
 	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType2 *typePtr,
 	    void *clientData)
 }
 declare 34 {
-    Tcl_Method Tcl_NewMethod(Tcl_Interp *interp, Tcl_Class cls,
+    Tcl_Method Tcl_NewMethod2(Tcl_Interp *interp, Tcl_Class cls,
 	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType2 *typePtr,
 	    void *clientData)
 }

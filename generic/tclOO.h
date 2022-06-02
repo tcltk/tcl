@@ -60,10 +60,8 @@ typedef struct Tcl_ObjectContext_ *Tcl_ObjectContext;
  * and to allow the attachment of arbitrary data to objects and classes.
  */
 
-#if 0
 typedef int (Tcl_MethodCallProc)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
-#endif
 typedef int (Tcl_MethodCallProc2)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, size_t objc, Tcl_Obj *const *objv);
 typedef void (Tcl_MethodDeleteProc)(void *clientData);
@@ -79,10 +77,9 @@ typedef int (Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
  * how to create a clone of it (when the object or class is copied).
  */
 
-#if 0
 typedef struct {
     int version;		/* Structure version field. Always to be equal
-				 * to TCL_OO_METHOD_VERSION_CURRENT in
+				 * to TCL_OO_METHOD_VERSION_1 in
 				 * declarations. */
     const char *name;		/* Name of this type of method, mostly for
 				 * debugging purposes. */
@@ -96,10 +93,9 @@ typedef struct {
 				 * data, or NULL if the type-specific data can
 				 * be copied directly. */
 } Tcl_MethodType;
-#endif
 typedef struct {
     int version;		/* Structure version field. Always to be equal
-				 * to TCL_OO_METHOD_VERSION_SIZE_T in
+				 * to TCL_OO_METHOD_VERSION_2 or TCL_OO_METHOD_VERSION_CURRENT in
 				 * declarations. */
     const char *name;		/* Name of this type of method, mostly for
 				 * debugging purposes. */
@@ -120,8 +116,9 @@ typedef struct {
  * binary compatibility.
  */
 
-#define TCL_OO_METHOD_VERSION_CURRENT_XXX 1
-#define TCL_OO_METHOD_VERSION_SIZE_T 2
+#define TCL_OO_METHOD_VERSION_1 1
+#define TCL_OO_METHOD_VERSION_2 2
+#define TCL_OO_METHOD_VERSION_CURRENT 2
 
 /*
  * Visibility constants for the flags parameter to Tcl_NewMethod and

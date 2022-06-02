@@ -42,11 +42,11 @@ struct DeclaredSlot {
 
 #define SLOT(name,getter,setter,resolver)				\
     {"::oo::" name,							\
-	    {TCL_OO_METHOD_VERSION_SIZE_T, "core method: " name " Getter", \
+	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Getter", \
 		    getter, NULL, NULL},				\
-	    {TCL_OO_METHOD_VERSION_SIZE_T, "core method: " name " Setter", \
+	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Setter", \
 		    setter, NULL, NULL},				\
-	    {TCL_OO_METHOD_VERSION_SIZE_T, "core method: " name " Resolver", \
+	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Resolver", \
 		    resolver, NULL, NULL}}
 
 /*
@@ -2290,12 +2290,12 @@ TclOODefineSlots(
 	if (slotObject == NULL) {
 	    continue;
 	}
-	Tcl_NewInstanceMethod(fPtr->interp, slotObject, getName, 0,
+	Tcl_NewInstanceMethod2(fPtr->interp, slotObject, getName, 0,
 		&slotInfoPtr->getterType, NULL);
-	Tcl_NewInstanceMethod(fPtr->interp, slotObject, setName, 0,
+	Tcl_NewInstanceMethod2(fPtr->interp, slotObject, setName, 0,
 		&slotInfoPtr->setterType, NULL);
 	if (slotInfoPtr->resolverType.callProc) {
-	    Tcl_NewInstanceMethod(fPtr->interp, slotObject, resolveName, 0,
+	    Tcl_NewInstanceMethod2(fPtr->interp, slotObject, resolveName, 0,
 		    &slotInfoPtr->resolverType, NULL);
 	}
     }

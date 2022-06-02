@@ -4579,6 +4579,14 @@ TEBCresume(
 	    Method *const mPtr =
 		    contextPtr->callPtr->chain[newDepth].mPtr;
 
+	    if (mPtr->typePtr->version == TCL_OO_METHOD_VERSION_1) {
+		if (objc > INT_MAX) {
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
+		return ((Tcl_MethodCallProc *)mPtr->typePtr->callProc)(mPtr->clientData, interp,
+			    (Tcl_ObjectContext) contextPtr, objc, objv);
+	    }
 	    return mPtr->typePtr->callProc(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, opnd, objv);
 	}

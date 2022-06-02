@@ -369,6 +369,14 @@ TclOOInvokeContext(
      * Run the method implementation.
      */
 
+    if (mPtr->typePtr->version == TCL_OO_METHOD_VERSION_1) {
+	if (objc > INT_MAX) {
+	    Tcl_WrongNumArgs(interp, 1, objv, "?args?");
+	    return TCL_ERROR;
+	}
+	return ((Tcl_MethodCallProc *)mPtr->typePtr->callProc)(mPtr->clientData, interp,
+		    (Tcl_ObjectContext) contextPtr, objc, objv);
+    }
     return mPtr->typePtr->callProc(mPtr->clientData, interp,
 	    (Tcl_ObjectContext) contextPtr, objc, objv);
 }
