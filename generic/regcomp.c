@@ -156,7 +156,7 @@ static void fixconstraintloops(struct nfa *, FILE *);
 static int	findconstraintloop(struct nfa *, struct state *);
 static void breakconstraintloop(struct nfa *, struct state *);
 static void clonesuccessorstates(struct nfa *, struct state *, struct state *,
-		 struct state *, struct arc *, char *, char *, int);
+		 struct state *, struct arc *, char *, char *, size_t);
 static void cleanup(struct nfa *);
 static void markreachable(struct nfa *, struct state *, struct state *, struct state *);
 static void markcanreach(struct nfa *, struct state *, struct state *, struct state *);
@@ -2047,7 +2047,7 @@ dump(
 {
 #ifdef REG_DEBUG
     struct guts *g;
-    int i;
+    size_t i;
 
     if (re->re_magic != REMAGIC) {
 	fprintf(f, "bad magic number (0x%x not 0x%x)\n",
@@ -2064,7 +2064,7 @@ dump(
     }
 
     fprintf(f, "\n\n\n========= DUMP ==========\n");
-    fprintf(f, "nsub %" TCL_Z_MODIFIER "u, info 0%lo, ntree %d\n",
+    fprintf(f, "nsub %" TCL_Z_MODIFIER "u, info 0%lo, ntree %" TCL_Z_MODIFIER "u\n",
 	    re->re_nsub, re->re_info, g->ntree);
 
     dumpcolors(&g->cmap, f);
@@ -2073,7 +2073,7 @@ dump(
 	dumpcnfa(&g->search, f);
     }
     for (i = 1; i < g->nlacons; i++) {
-	fprintf(f, "\nla%d (%s):\n", i,
+	fprintf(f, "\nla%" TCL_Z_MODIFIER "u (%s):\n", i,
 		(g->lacons[i].subno) ? "positive" : "negative");
 	dumpcnfa(&g->lacons[i].cnfa, f);
     }
@@ -2145,7 +2145,7 @@ stdump(
 	fprintf(f, "}");
     }
     if (nfapresent) {
-	fprintf(f, " %ld-%ld", (long)t->begin->no, (long)t->end->no);
+	fprintf(f, " %" TCL_Z_MODIFIER "u-%" TCL_Z_MODIFIER "u", t->begin->no, t->end->no);
     }
     if (t->left != NULL) {
 	fprintf(f, " L:%s", stid(t->left, idbuf, sizeof(idbuf)));

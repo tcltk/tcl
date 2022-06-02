@@ -40,7 +40,7 @@
  */
 static struct cvec *
 newcvec(
-    size_t nchrs,			/* to hold this many chrs... */
+    size_t nchrs,		/* to hold this many chrs... */
     size_t nranges)		/* ... and this many ranges... */
 {
     size_t nc = nchrs + nranges*2;
@@ -108,7 +108,7 @@ addrange(
 static struct cvec *
 getcvec(
     struct vars *v,		/* context */
-    size_t nchrs,			/* to hold this many chrs... */
+    size_t nchrs,		/* to hold this many chrs... */
     size_t nranges)		/* ... and this many ranges... */
 {
     if ((v->cv != NULL) && (nchrs <= v->cv->chrspace) &&

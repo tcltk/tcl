@@ -2185,17 +2185,17 @@ StoreStatData(
      * cast might fail when there isn't a real arithmetic 'long long' type...
      */
 
-    STORE_ARY("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
-    STORE_ARY("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
-    STORE_ARY("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
-    STORE_ARY("uid",	Tcl_NewWideIntObj((long)statPtr->st_uid));
-    STORE_ARY("gid",	Tcl_NewWideIntObj((long)statPtr->st_gid));
-    STORE_ARY("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
+    STORE_ARY("dev",	Tcl_NewWideIntObj(statPtr->st_dev));
+    STORE_ARY("ino",	Tcl_NewWideIntObj(statPtr->st_ino));
+    STORE_ARY("nlink",	Tcl_NewWideIntObj(statPtr->st_nlink));
+    STORE_ARY("uid",	Tcl_NewWideIntObj(statPtr->st_uid));
+    STORE_ARY("gid",	Tcl_NewWideIntObj(statPtr->st_gid));
+    STORE_ARY("size",	Tcl_NewWideIntObj(statPtr->st_size));
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-    STORE_ARY("blocks",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
+    STORE_ARY("blocks",	Tcl_NewWideIntObj(statPtr->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    STORE_ARY("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
+    STORE_ARY("blksize", Tcl_NewWideIntObj(statPtr->st_blksize));
 #endif
     STORE_ARY("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
     STORE_ARY("mtime",	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
