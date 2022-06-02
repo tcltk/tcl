@@ -2676,7 +2676,7 @@ Tcl_Obj *
 Tcl_NewIntObj(
     int intValue)	/* Int used to initialize the new object. */
 {
-    return Tcl_DbNewWideIntObj((long)intValue, "unknown", 0);
+    return Tcl_DbNewWideIntObj(intValue, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
