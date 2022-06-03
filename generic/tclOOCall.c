@@ -374,7 +374,7 @@ TclOOInvokeContext(
 	    Tcl_WrongNumArgs(interp, 1, objv, "?args?");
 	    return TCL_ERROR;
 	}
-	return ((Tcl_MethodCallProc *)mPtr->typePtr->callProc)(mPtr->clientData, interp,
+	return ((Tcl_MethodCallProc *)(void *)mPtr->typePtr->callProc)(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, objc, objv);
     }
     return mPtr->typePtr->callProc(mPtr->clientData, interp,

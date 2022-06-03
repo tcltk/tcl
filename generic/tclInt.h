@@ -2873,7 +2873,7 @@ MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 			    Tcl_Obj *originObjPtr);
 MODULE_SCOPE size_t	TclConvertElement(const char *src, size_t length,
 			    char *dst, int flags);
-MODULE_SCOPE Tcl_Command TclCreateObjCommandInNs(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Command TclCreateObjCommandInNs2(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
 			    Tcl_ObjCmdProc2 *proc, void *clientData,
 			    Tcl_CmdDeleteProc *deleteProc);
@@ -2940,6 +2940,11 @@ MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
 MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
+			    const char *cmdName, Tcl_Namespace *nsPtr,
+			    Tcl_ObjCmdProc *proc, Tcl_ObjCmdProc *nreProc,
+			    void *clientData,
+			    Tcl_CmdDeleteProc *deleteProc);
+MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs2(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
 			    Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc,
 			    void *clientData,

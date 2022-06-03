@@ -2730,12 +2730,12 @@ Tcl_CreateObjCommand2(
 	tail = cmdName;
     }
 
-    return TclCreateObjCommandInNs(interp, tail, (Tcl_Namespace *) nsPtr,
+    return TclCreateObjCommandInNs2(interp, tail, (Tcl_Namespace *) nsPtr,
 	proc, clientData, deleteProc);
 }
 
 Tcl_Command
-TclCreateObjCommandInNs(
+TclCreateObjCommandInNs2(
     Tcl_Interp *interp,
     const char *cmdName,	/* Name of command, without any namespace
                                  * components. */
@@ -8583,13 +8583,31 @@ TclNRCreateCommandInNs(
     Tcl_Interp *interp,
     const char *cmdName,
     Tcl_Namespace *nsPtr,
+    Tcl_ObjCmdProc *proc,
+    Tcl_ObjCmdProc *nreProc,
+    void *clientData,
+    Tcl_CmdDeleteProc *deleteProc)
+{
+	NRCommandWrapper *wrapper = (NRCommandWrapper *)Tcl_Alloc(sizeof(NRCommandWrapper));
+    wrapper->proc = proc;
+    wrapper->nreProc = nreProc;
+    wrapper->delProc = deleteProc;
+    wrapper->clientData = clientData;
+    return TclNRCreateCommandInNs2(interp, cmdName, nsPtr, wrapperProc2, wrapperNRProc2, wrapper, wrapperDelProc2);
+}
+
+Tcl_Command
+TclNRCreateCommandInNs2(
+    Tcl_Interp *interp,
+    const char *cmdName,
+    Tcl_Namespace *nsPtr,
     Tcl_ObjCmdProc2 *proc,
     Tcl_ObjCmdProc2 *nreProc,
     void *clientData,
     Tcl_CmdDeleteProc *deleteProc)
 {
     Command *cmdPtr = (Command *)
-            TclCreateObjCommandInNs(interp, cmdName, nsPtr, proc, clientData,
+            TclCreateObjCommandInNs2(interp, cmdName, nsPtr, proc, clientData,
                     deleteProc);
 
     cmdPtr->nreProc2 = nreProc;
@@ -9744,7 +9762,7 @@ TclNRCoroutineObjCmd(
 
     corPtr = (CoroutineData *)Tcl_Alloc(sizeof(CoroutineData));
 
-    cmdPtr = (Command *) TclNRCreateCommandInNs(interp, simpleName,
+    cmdPtr = (Command *) TclNRCreateCommandInNs2(interp, simpleName,
 	    (Tcl_Namespace *)nsPtr, /*objProc*/ NULL, TclNRInterpCoroutine,
 	    corPtr, DeleteCoroutine);
 
