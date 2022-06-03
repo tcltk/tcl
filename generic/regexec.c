@@ -57,11 +57,12 @@ struct sset {			/* state set */
 };
 
 struct dfa {
-    int nssets;			/* size of cache */
-    int nssused;		/* how many entries occupied yet */
-    int nstates;		/* number of states */
+    size_t nssets;			/* size of cache */
+    size_t nssused;		/* how many entries occupied yet */
+    size_t nstates;		/* number of states */
+    size_t wordsper;		/* length of state-set bitvectors */
     int ncolors;		/* length of outarc and inchain vectors */
-    int wordsper;		/* length of state-set bitvectors */
+    int cptsmalloced;		/* were the areas individually malloced? */
     struct sset *ssets;		/* state-set cache */
     unsigned *statesarea;	/* bitvector storage */
     unsigned *work;		/* pointer to work area within statesarea */
@@ -72,7 +73,6 @@ struct dfa {
     chr *lastpost;		/* location of last cache-flushed success */
     chr *lastnopr;		/* location of last cache-flushed NOPROGRESS */
     struct sset *search;	/* replacement-search-pointer memory */
-    int cptsmalloced;		/* were the areas individually malloced? */
     char *mallocarea;		/* self, or malloced area, or NULL */
 };
 
@@ -116,7 +116,7 @@ struct vars {
 #define	ERR(e)	VERR(v, e)	/* record an error */
 #define	NOERR()	{if (ISERR()) return v->err;}	/* if error seen, return it */
 #define	OFF(p)	((p) - v->start)
-#define	LOFF(p)	((long)OFF(p))
+#define	LOFF(p)	((size_t)OFF(p))
 
 /*
  * forward declarations
@@ -326,7 +326,7 @@ simpleFind(
     s = newDFA(v, &v->g->search, cm, &v->dfa1);
     assert(!(ISERR() && s != NULL));
     NOERR();
-    MDEBUG(("\nsearch at %ld\n", LOFF(v->start)));
+    MDEBUG(("\nsearch at %" TCL_Z_MODIFIER "u\n", LOFF(v->start)));
     cold = NULL;
     close = shortest(v, s, v->start, v->start, v->stop, &cold, NULL);
     freeDFA(s);
@@ -354,12 +354,12 @@ simpleFind(
     assert(cold != NULL);
     open = cold;
     cold = NULL;
-    MDEBUG(("between %ld and %ld\n", LOFF(open), LOFF(close)));
+    MDEBUG(("between %" TCL_Z_MODIFIER "u and %" TCL_Z_MODIFIER "u\n", LOFF(open), LOFF(close)));
     d = newDFA(v, cnfa, cm, &v->dfa1);
     assert(!(ISERR() && d != NULL));
     NOERR();
     for (begin = open; begin <= close; begin++) {
-	MDEBUG(("\nfind trying at %ld\n", LOFF(begin)));
+	MDEBUG(("\nfind trying at %" TCL_Z_MODIFIER "u\n", LOFF(begin)));
 	if (shorter) {
 	    end = shortest(v, d, begin, begin, v->stop, NULL, &hitend);
 	} else {
@@ -470,7 +470,7 @@ complicatedFindLoop(
     cold = NULL;
     close = v->start;
     do {
-	MDEBUG(("\ncsearch at %ld\n", LOFF(close)));
+	MDEBUG(("\ncsearch at %" TCL_Z_MODIFIER "u\n", LOFF(close)));
 	close = shortest(v, s, close, close, v->stop, &cold, NULL);
 	if (close == NULL) {
 	    break;		/* NOTE BREAK */
@@ -478,9 +478,9 @@ complicatedFindLoop(
 	assert(cold != NULL);
 	open = cold;
 	cold = NULL;
-	MDEBUG(("cbetween %ld and %ld\n", LOFF(open), LOFF(close)));
+	MDEBUG(("cbetween %" TCL_Z_MODIFIER "u and %" TCL_Z_MODIFIER "u\n", LOFF(open), LOFF(close)));
 	for (begin = open; begin <= close; begin++) {
-	    MDEBUG(("\ncomplicatedFind trying at %ld\n", LOFF(begin)));
+	    MDEBUG(("\ncomplicatedFind trying at %" TCL_Z_MODIFIER "u\n", LOFF(begin)));
 	    estart = begin;
 	    estop = v->stop;
 	    for (;;) {
@@ -496,7 +496,7 @@ complicatedFindLoop(
 		    break;	/* NOTE BREAK OUT */
 		}
 
-		MDEBUG(("tentative end %ld\n", LOFF(end)));
+		MDEBUG(("tentative end %" TCL_Z_MODIFIER "u\n", LOFF(end)));
 		zapallsubs(v->pmatch, v->nmatch);
 		er = cdissect(v, v->g->tree, begin, end);
 		if (er == REG_OKAY) {
@@ -545,8 +545,8 @@ zapallsubs(
     size_t i;
 
     for (i = n-1; i > 0; i--) {
-	p[i].rm_so = -1;
-	p[i].rm_eo = -1;
+	p[i].rm_so = FREESTATE;
+	p[i].rm_eo = FREESTATE;
     }
 }
 
@@ -560,11 +560,11 @@ zaptreesubs(
     struct subre *const t)
 {
     if (t->op == '(') {
-	int n = t->subno;
+	size_t n = t->subno;
 	assert(n > 0);
-	if ((size_t) n < v->nmatch) {
-	    v->pmatch[n].rm_so = -1;
-	    v->pmatch[n].rm_eo = -1;
+	if (n < v->nmatch) {
+	    v->pmatch[n].rm_so = FREESTATE;
+	    v->pmatch[n].rm_eo = FREESTATE;
 	}
     }
 
@@ -623,7 +623,7 @@ cdissect(
     int er;
 
     assert(t != NULL);
-    MDEBUG(("cdissect %ld-%ld %c\n", LOFF(begin), LOFF(end), t->op));
+    MDEBUG(("cdissect %" TCL_Z_MODIFIER "u-%" TCL_Z_MODIFIER "u %c\n", LOFF(begin), LOFF(end), t->op));
 
     switch (t->op) {
     case '=':			/* terminal node */
@@ -708,7 +708,7 @@ ccondissect(
     if (mid == NULL) {
 	return REG_NOMATCH;
     }
-    MDEBUG(("tentative midpoint %ld\n", LOFF(mid)));
+    MDEBUG(("tentative midpoint %" TCL_Z_MODIFIER "u\n", LOFF(mid)));
 
     /*
      * Iterate until satisfaction or failure.
@@ -759,7 +759,7 @@ ccondissect(
 	    MDEBUG(("%d failed midpoint\n", t->id));
 	    return REG_NOMATCH;
 	}
-	MDEBUG(("%d: new midpoint %ld\n", t->id, LOFF(mid)));
+	MDEBUG(("%d: new midpoint %" TCL_Z_MODIFIER "u\n", t->id, LOFF(mid)));
 	zaptreesubs(v, t->left);
 	zaptreesubs(v, t->right);
     }
@@ -799,7 +799,7 @@ crevcondissect(
     if (mid == NULL) {
 	return REG_NOMATCH;
     }
-    MDEBUG(("tentative midpoint %ld\n", LOFF(mid)));
+    MDEBUG(("tentative midpoint %" TCL_Z_MODIFIER "u\n", LOFF(mid)));
 
     /*
      * Iterate until satisfaction or failure.
@@ -850,7 +850,7 @@ crevcondissect(
 	    MDEBUG(("%d failed midpoint\n", t->id));
 	    return REG_NOMATCH;
 	}
-	MDEBUG(("%d: new midpoint %ld\n", t->id, LOFF(mid)));
+	MDEBUG(("%d: new midpoint %" TCL_Z_MODIFIER "u\n", t->id, LOFF(mid)));
 	zaptreesubs(v, t->left);
 	zaptreesubs(v, t->right);
     }
@@ -882,7 +882,7 @@ cbrdissect(
     MDEBUG(("cbackref n%d %d{%d-%d}\n", t->id, n, min, max));
 
     /* get the backreferenced string */
-    if (v->pmatch[n].rm_so == TCL_INDEX_NONE) {
+    if (v->pmatch[n].rm_so == FREESTATE) {
 	return REG_NOMATCH;
     }
     brstring = v->start + v->pmatch[n].rm_so;
@@ -1058,7 +1058,7 @@ citerdissect(struct vars * v,
 	    k--;
 	    goto backtrack;
 	}
-	MDEBUG(("%d: working endpoint %d: %ld\n",
+	MDEBUG(("%d: working endpoint %d: %" TCL_Z_MODIFIER "u\n",
 		t->id, k, LOFF(endpts[k])));
 
 	/* k'th sub-match can no longer be considered verified */
@@ -1242,7 +1242,7 @@ creviterdissect(struct vars * v,
 	    k--;
 	    goto backtrack;
 	}
-	MDEBUG(("%d: working endpoint %d: %ld\n",
+	MDEBUG(("%d: working endpoint %d: %" TCL_Z_MODIFIER "u\n",
 		t->id, k, LOFF(endpts[k])));
 
 	/* k'th sub-match can no longer be considered verified */
