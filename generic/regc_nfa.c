@@ -108,7 +108,7 @@ freenfa(
     }
 
     nfa->slast = NULL;
-    nfa->nstates = -1;
+    nfa->nstates = FREESTATE;
     nfa->pre = NULL;
     nfa->post = NULL;
     FREE(nfa);
@@ -143,7 +143,7 @@ newstate(
 	s->noas = 0;
     }
 
-    assert(nfa->nstates >= 0);
+    assert(nfa->nstates != FREESTATE);
     s->no = nfa->nstates++;
     s->flag = 0;
     if (nfa->states == NULL) {
@@ -2494,7 +2494,7 @@ clonesuccessorstates(
     struct arc * refarc,
     char *curdonemap,
     char *outerdonemap,
-    int nstates)
+    size_t nstates)
 {
     char *donemap;
     struct arc *a;
@@ -2691,7 +2691,7 @@ cleanup(
 {
     struct state *s;
     struct state *nexts;
-    int n;
+    size_t n;
 
     /*
      * Clear out unreachable or dead-end states. Use pre to mark reachable,
@@ -2847,7 +2847,7 @@ compact(
 
     ca = cnfa->arcs;
     for (s = nfa->states; s != NULL; s = s->next) {
-	assert((size_t) s->no < nstates);
+	assert(s->no < nstates);
 	cnfa->stflags[s->no] = 0;
 	cnfa->states[s->no] = ca;
 	first = ca;
@@ -2951,10 +2951,10 @@ dumpnfa(
 {
 #ifdef REG_DEBUG
     struct state *s;
-    int nstates = 0;
-    int narcs = 0;
+    size_t nstates = 0;
+    size_t narcs = 0;
 
-    fprintf(f, "pre %d, post %d", nfa->pre->no, nfa->post->no);
+    fprintf(f, "pre %" TCL_Z_MODIFIER "u, post %" TCL_Z_MODIFIER "u", nfa->pre->no, nfa->post->no);
     if (nfa->bos[0] != COLORLESS) {
 	fprintf(f, ", bos [%ld]", (long) nfa->bos[0]);
     }
@@ -2973,7 +2973,7 @@ dumpnfa(
 	nstates++;
 	narcs += s->nouts;
     }
-    fprintf(f, "total of %d states, %d arcs\n", nstates, narcs);
+    fprintf(f, "total of %" TCL_Z_MODIFIER "u states, %" TCL_Z_MODIFIER "u arcs\n", nstates, narcs);
     if (nfa->parent == NULL) {
 	dumpcolors(nfa->cm, f);
     }
@@ -3000,7 +3000,7 @@ dumpstate(
 {
     struct arc *a;
 
-    fprintf(f, "%d%s%c", s->no, (s->tmp != NULL) ? "T" : "",
+    fprintf(f, "%" TCL_Z_MODIFIER "u%s%c", s->no, (s->tmp != NULL) ? "T" : "",
 	    (s->flag) ? s->flag : '.');
     if (s->prev != NULL && s->prev->next != s) {
 	fprintf(f, "\tstate chain bad\n");
@@ -3013,7 +3013,7 @@ dumpstate(
     fflush(f);
     for (a = s->ins; a != NULL; a = a->inchain) {
 	if (a->to != s) {
-	    fprintf(f, "\tlink from %d to %d on %d's in-chain\n",
+	    fprintf(f, "\tlink from %" TCL_Z_MODIFIER "u to %" TCL_Z_MODIFIER "u on %" TCL_Z_MODIFIER "u's in-chain\n",
 		    a->from->no, a->to->no, s->no);
 	}
     }
@@ -3091,7 +3091,7 @@ dumparc(
 	break;
     }
     if (a->from != s) {
-	fprintf(f, "?%d?", a->from->no);
+	fprintf(f, "?%" TCL_Z_MODIFIER "u?", a->from->no);
     }
     for (ab = &a->from->oas; ab != NULL; ab = ab->next) {
 	for (aa = &ab->a[0]; aa < &ab->a[ABSIZE]; aa++) {
@@ -3111,7 +3111,7 @@ dumparc(
 	fprintf(f, "NULL");
 	return;
     }
-    fprintf(f, "%d", a->to->no);
+    fprintf(f, "%" TCL_Z_MODIFIER "u", a->to->no);
     for (aa = a->to->ins; aa != NULL; aa = aa->inchain) {
 	if (aa == a) {
 	    break;		/* NOTE BREAK OUT */
@@ -3137,9 +3137,9 @@ dumpcnfa(
     FILE *f)
 {
 #ifdef REG_DEBUG
-    int st;
+    size_t st;
 
-    fprintf(f, "pre %d, post %d", cnfa->pre, cnfa->post);
+    fprintf(f, "pre %" TCL_Z_MODIFIER "u, post %" TCL_Z_MODIFIER "u", cnfa->pre, cnfa->post);
     if (cnfa->bos[0] != COLORLESS) {
 	fprintf(f, ", bos [%ld]", (long) cnfa->bos[0]);
     }
@@ -3182,15 +3182,15 @@ dumpcstate(
     FILE *f)
 {
     struct carc *ca;
-    int pos;
+    size_t pos;
 
     fprintf(f, "%d%s", st, (cnfa->stflags[st] & CNFA_NOPROGRESS) ? ":" : ".");
     pos = 1;
     for (ca = cnfa->states[st]; ca->co != COLORLESS; ca++) {
 	if (ca->co < cnfa->ncolors) {
-	    fprintf(f, "\t[%ld]->%d", (long) ca->co, ca->to);
+	    fprintf(f, "\t[%d]->%" TCL_Z_MODIFIER "u", ca->co, ca->to);
 	} else {
-	    fprintf(f, "\t:%ld:->%d", (long) (ca->co - cnfa->ncolors), ca->to);
+	    fprintf(f, "\t:%d:->%" TCL_Z_MODIFIER "u", ca->co - cnfa->ncolors, ca->to);
 	}
 	if (pos == 5) {
 	    fprintf(f, "\n");
