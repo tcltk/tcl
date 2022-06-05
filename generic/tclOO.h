@@ -79,7 +79,7 @@ typedef int (Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
 
 typedef struct {
     int version;		/* Structure version field. Always to be equal
-				 * to TCL_OO_METHOD_VERSION_1 in
+				 * to TCL_OO_METHOD_VERSION_CURRENT in
 				 * declarations. */
     const char *name;		/* Name of this type of method, mostly for
 				 * debugging purposes. */
@@ -93,9 +93,10 @@ typedef struct {
 				 * data, or NULL if the type-specific data can
 				 * be copied directly. */
 } Tcl_MethodType;
+
 typedef struct {
     int version;		/* Structure version field. Always to be equal
-				 * to TCL_OO_METHOD_VERSION_2 or TCL_OO_METHOD_VERSION_CURRENT in
+				 * to TCL_OO_METHOD_VERSION_CURRENT in
 				 * declarations. */
     const char *name;		/* Name of this type of method, mostly for
 				 * debugging purposes. */
@@ -118,7 +119,7 @@ typedef struct {
 
 #define TCL_OO_METHOD_VERSION_1 1
 #define TCL_OO_METHOD_VERSION_2 2
-#define TCL_OO_METHOD_VERSION_CURRENT 2
+#define TCL_OO_METHOD_VERSION_CURRENT 1
 
 /*
  * Visibility constants for the flags parameter to Tcl_NewMethod and

@@ -22,7 +22,7 @@
 
 static const struct {
     const char *name;
-    Tcl_ObjCmdProc2 *objProc;
+    Tcl_ObjCmdProc *objProc;
     int flag;
 } defineCmds[] = {
     {"constructor", TclOODefineConstructorObjCmd, 0},
@@ -126,7 +126,7 @@ static const DeclaredClassMethod objMethods[] = {
  * And for the oo::class constructor...
  */
 
-static const Tcl_MethodType2 classConstructor = {
+static const Tcl_MethodType classConstructor = {
     TCL_OO_METHOD_VERSION_CURRENT,
     "oo::class constructor",
     TclOO_Class_Constructor, NULL, NULL
@@ -339,7 +339,7 @@ InitFoundation(
     Tcl_IncrRefCount(fPtr->destructorName);
     Tcl_IncrRefCount(fPtr->clonedName);
     Tcl_IncrRefCount(fPtr->defineName);
-    Tcl_CreateObjCommand2(interp, "::oo::UnknownDefinition",
+    Tcl_CreateObjCommand(interp, "::oo::UnknownDefinition",
 	    TclOOUnknownDefinition, NULL, NULL);
     TclNewLiteralStringObj(namePtr, "::oo::UnknownDefinition");
     Tcl_SetNamespaceUnknownHandler(interp, fPtr->defineNs, namePtr);
@@ -353,14 +353,14 @@ InitFoundation(
     for (i = 0 ; defineCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::define::");
 	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
-	Tcl_CreateObjCommand2(interp, Tcl_DStringValue(&buffer),
+	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
     for (i = 0 ; objdefCmds[i].name ; i++) {
 	TclDStringAppendLiteral(&buffer, "::oo::objdefine::");
 	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
-	Tcl_CreateObjCommand2(interp, Tcl_DStringValue(&buffer),
+	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
@@ -391,9 +391,9 @@ InitFoundation(
      */
 
     TclNewLiteralStringObj(namePtr, "new");
-    Tcl_NewInstanceMethod2(interp, (Tcl_Object) fPtr->classCls->thisPtr,
+    Tcl_NewInstanceMethod(interp, (Tcl_Object) fPtr->classCls->thisPtr,
 	    namePtr /* keeps ref */, 0 /* private */, NULL, NULL);
-    fPtr->classCls->constructorPtr = (Method *) Tcl_NewMethod2(interp,
+    fPtr->classCls->constructorPtr = (Method *) Tcl_NewMethod(interp,
 	    (Tcl_Class) fPtr->classCls, NULL, 0, &classConstructor, NULL);
 
     /*
@@ -401,20 +401,20 @@ InitFoundation(
      * ensemble.
      */
 
-    cmdPtr = (Command *) Tcl_NRCreateCommand2(interp, "::oo::Helpers::next",
+    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, "::oo::Helpers::next",
 	    NULL, TclOONextObjCmd, NULL, NULL);
     cmdPtr->compileProc = TclCompileObjectNextCmd;
-    cmdPtr = (Command *) Tcl_NRCreateCommand2(interp, "::oo::Helpers::nextto",
+    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, "::oo::Helpers::nextto",
 	    NULL, TclOONextToObjCmd, NULL, NULL);
     cmdPtr->compileProc = TclCompileObjectNextToCmd;
-    cmdPtr = (Command *) Tcl_CreateObjCommand2(interp, "::oo::Helpers::self",
+    cmdPtr = (Command *) Tcl_CreateObjCommand(interp, "::oo::Helpers::self",
 	    TclOOSelfObjCmd, NULL, NULL);
     cmdPtr->compileProc = TclCompileObjectSelfCmd;
-    Tcl_CreateObjCommand2(interp, "::oo::define", TclOODefineObjCmd, NULL,
+    Tcl_CreateObjCommand(interp, "::oo::define", TclOODefineObjCmd, NULL,
 	    NULL);
-    Tcl_CreateObjCommand2(interp, "::oo::objdefine", TclOOObjDefObjCmd, NULL,
+    Tcl_CreateObjCommand(interp, "::oo::objdefine", TclOOObjDefObjCmd, NULL,
 	    NULL);
-    Tcl_CreateObjCommand2(interp, "::oo::copy", TclOOCopyObjectCmd, NULL,NULL);
+    Tcl_CreateObjCommand(interp, "::oo::copy", TclOOCopyObjectCmd, NULL,NULL);
     TclOOInitInfo(interp);
 
     /*
@@ -1667,7 +1667,7 @@ Tcl_NewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    size_t objc1,			/* Number of arguments. Negative value means
+    size_t objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
     int skip)			/* Number of arguments to _not_ pass to the
@@ -1676,7 +1676,6 @@ Tcl_NewObjectInstance(
     Class *classPtr = (Class *) cls;
     Object *oPtr;
     ClientData clientData[4];
-    int objc = objc1;
 
     oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
     if (oPtr == NULL) {
@@ -1684,11 +1683,11 @@ Tcl_NewObjectInstance(
     }
 
     /*
-     * Run constructors, except when objc < 0, which is a special flag case
+     * Run constructors, except when objc == TCL_INDEX_NONE, which is a special flag case
      * used for object cloning only.
      */
 
-    if (objc >= 0) {
+    if (objc != TCL_INDEX_NONE) {
 	CallContext *contextPtr =
 		TclOOGetCallContext(oPtr, NULL, CONSTRUCTOR, NULL, NULL, NULL);
 
@@ -1736,9 +1735,9 @@ TclNRNewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    size_t objc,			/* Number of arguments. TCL_INDEX_NONE means
+    int objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
-    Tcl_Obj *const objv[],	/* Argument list. */
+    Tcl_Obj *const *objv,	/* Argument list. */
     int skip,			/* Number of arguments to _not_ pass to the
 				 * constructor. */
     Tcl_Object *objectPtr)	/* Place to write the object reference upon
@@ -1755,11 +1754,11 @@ TclNRNewObjectInstance(
     }
 
     /*
-     * Run constructors, except when objc == TCL_INDEX_NONE (a special flag case used for
+     * Run constructors, except when objc < 0 (a special flag case used for
      * object cloning only). If there aren't any constructors, we do nothing.
      */
 
-    if (objc == TCL_INDEX_NONE) {
+    if (objc < 0) {
 	*objectPtr = (Tcl_Object) oPtr;
 	return TCL_OK;
     }
@@ -2252,7 +2251,7 @@ CloneObjectMethod(
     Tcl_Obj *namePtr)
 {
     if (mPtr->typePtr == NULL) {
-	Tcl_NewInstanceMethod2(interp, (Tcl_Object) oPtr, namePtr,
+	Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, NULL, NULL);
     } else if (mPtr->typePtr->cloneProc) {
 	ClientData newClientData;
@@ -2261,10 +2260,10 @@ CloneObjectMethod(
 		&newClientData) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	Tcl_NewInstanceMethod2(interp, (Tcl_Object) oPtr, namePtr,
+	Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, newClientData);
     } else {
-	Tcl_NewInstanceMethod2(interp, (Tcl_Object) oPtr, namePtr,
+	Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, namePtr,
 		mPtr->flags & PUBLIC_METHOD, mPtr->typePtr, mPtr->clientData);
     }
     return TCL_OK;
@@ -2281,7 +2280,7 @@ CloneClassMethod(
     Method *m2Ptr;
 
     if (mPtr->typePtr == NULL) {
-	m2Ptr = (Method *) Tcl_NewMethod2(interp, (Tcl_Class) clsPtr,
+	m2Ptr = (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, NULL, NULL);
     } else if (mPtr->typePtr->cloneProc) {
 	ClientData newClientData;
@@ -2290,11 +2289,11 @@ CloneClassMethod(
 		&newClientData) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	m2Ptr = (Method *) Tcl_NewMethod2(interp, (Tcl_Class) clsPtr,
+	m2Ptr = (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
 		newClientData);
     } else {
-	m2Ptr = (Method *) Tcl_NewMethod2(interp, (Tcl_Class) clsPtr,
+	m2Ptr = (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr,
 		namePtr, mPtr->flags & PUBLIC_METHOD, mPtr->typePtr,
 		mPtr->clientData);
     }
@@ -2611,7 +2610,7 @@ MyClassNRObjCmd(
     return TclOOObjectCmdCore(oPtr->selfCls->thisPtr, interp, objc, objv, 0,
 	    NULL);
 }
-
+
 /*
  * ----------------------------------------------------------------------
  *
@@ -2628,7 +2627,7 @@ int
 TclOOObjectCmdCore(
     Object *oPtr,		/* The object being invoked. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
-    size_t objc1,			/* How many arguments are being passed in. */
+    size_t objc,			/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
     int flags,			/* Whether this is an invocation through the
 				 * public or the private command interface. */
@@ -2643,7 +2642,6 @@ TclOOObjectCmdCore(
     Object *callerObjPtr = NULL;
     Class *callerClsPtr = NULL;
     int result;
-    int objc = objc1;
 
     /*
      * If we've no method name, throw this directly into the unknown
@@ -2801,7 +2799,7 @@ int
 Tcl_ObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc1,
+    size_t objc,
     Tcl_Obj *const *objv,
     int skip)
 {
@@ -2809,7 +2807,6 @@ Tcl_ObjectContextInvokeNext(
     size_t savedIndex = contextPtr->index;
     size_t savedSkip = contextPtr->skip;
     int result;
-    int objc = objc1;
 
     if (contextPtr->index + 1 >= contextPtr->callPtr->numChain) {
 	/*

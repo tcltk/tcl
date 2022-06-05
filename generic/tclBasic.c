@@ -2679,7 +2679,9 @@ Tcl_CreateObjCommand(
     info->deleteProc = deleteProc;
     info->clientData = clientData;
 
-	return Tcl_CreateObjCommand2(interp, cmdName, cmdWrapperProc, info, cmdWrapperDeleteProc);
+	return Tcl_CreateObjCommand2(interp, cmdName,
+		(proc ? cmdWrapperProc : NULL),
+		info, cmdWrapperDeleteProc);
 }
 
 Tcl_Command
@@ -8518,7 +8520,9 @@ static void wrapperDelProc2(void *clientData)
 {
 	NRCommandWrapper *wrapper = (NRCommandWrapper *)clientData;
     clientData = wrapper->clientData;
-    wrapper->delProc(clientData);
+    if (wrapper->delProc) {
+	wrapper->delProc(clientData);
+    }
     Tcl_Free(wrapper);
 }
 
@@ -8547,7 +8551,10 @@ Tcl_NRCreateCommand(
     wrapper->nreProc = nreProc;
     wrapper->delProc = deleteProc;
     wrapper->clientData = clientData;
-    return Tcl_NRCreateCommand2(interp, cmdName, wrapperProc2, wrapperNRProc2, wrapper, wrapperDelProc2);
+    return Tcl_NRCreateCommand2(interp, cmdName,
+	    proc ? wrapperProc2 : NULL,
+	    nreProc ? wrapperNRProc2 : NULL, wrapper,
+	    wrapperDelProc2);
 }
 
 
@@ -8593,7 +8600,10 @@ TclNRCreateCommandInNs(
     wrapper->nreProc = nreProc;
     wrapper->delProc = deleteProc;
     wrapper->clientData = clientData;
-    return TclNRCreateCommandInNs2(interp, cmdName, nsPtr, wrapperProc2, wrapperNRProc2, wrapper, wrapperDelProc2);
+    return TclNRCreateCommandInNs2(interp, cmdName, nsPtr,
+	    (proc ? wrapperProc2 : NULL),
+	    (nreProc ? wrapperNRProc2 : NULL),
+	    wrapper, wrapperDelProc2);
 }
 
 Tcl_Command

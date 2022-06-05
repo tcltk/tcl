@@ -2152,7 +2152,9 @@ static void wrapperDelProc2(void *clientData)
 {
     TraceWrapper *wrapper = (TraceWrapper *)clientData;
     clientData = wrapper->clientData;
-    wrapper->delProc(clientData);
+    if (wrapper->delProc) {
+	wrapper->delProc(clientData);
+    }
     Tcl_Free(wrapper);
 }
 

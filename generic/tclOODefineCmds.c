@@ -35,9 +35,9 @@
 
 struct DeclaredSlot {
     const char *name;
-    const Tcl_MethodType2 getterType;
-    const Tcl_MethodType2 setterType;
-    const Tcl_MethodType2 resolverType;
+    const Tcl_MethodType getterType;
+    const Tcl_MethodType setterType;
+    const Tcl_MethodType resolverType;
 };
 
 #define SLOT(name,getter,setter,resolver)				\
@@ -66,63 +66,63 @@ static inline void	GenerateErrorInfo(Tcl_Interp *interp, Object *oPtr,
 			    Tcl_Obj *savedNameObj, const char *typeOfSubject);
 static inline int	MagicDefinitionInvoke(Tcl_Interp *interp,
 			    Tcl_Namespace *nsPtr, int cmdIndex,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static inline Class *	GetClassInOuterContext(Tcl_Interp *interp,
 			    Tcl_Obj *className, const char *errMsg);
 static inline Tcl_Namespace *GetNamespaceInOuterContext(Tcl_Interp *interp,
 			    Tcl_Obj *namespaceName);
 static inline int	InitDefineContext(Tcl_Interp *interp,
 			    Tcl_Namespace *namespacePtr, Object *oPtr,
-			    size_t objc, Tcl_Obj *const objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static inline void	RecomputeClassCacheFlag(Object *oPtr);
 static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
 			    int useClass, Tcl_Obj *const fromPtr,
 			    Tcl_Obj *const toPtr);
 static int		ClassFilterGet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ClassFilterSet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ClassMixinGet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ClassMixinSet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ClassSuperGet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ClassSuperSet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ClassVarsGet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ClassVarsSet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ObjFilterGet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ObjFilterSet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ObjMixinGet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ObjMixinSet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ObjVarsGet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ObjVarsSet(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 static int		ResolveClass(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    size_t objc, Tcl_Obj *const *objv);
+			    int objc, Tcl_Obj *const *objv);
 
 /*
  * Now define the slots used in declarations.
@@ -698,7 +698,7 @@ int
 TclOOUnknownDefinition(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Namespace *nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
@@ -839,7 +839,7 @@ InitDefineContext(
     Tcl_Interp *interp,
     Tcl_Namespace *namespacePtr,
     Object *oPtr,
-    size_t objc,
+    int objc,
     Tcl_Obj *const objv[])
 {
     CallFrame *framePtr, **framePtrPtr = &framePtr;
@@ -1028,7 +1028,7 @@ MagicDefinitionInvoke(
     Tcl_Interp *interp,
     Tcl_Namespace *nsPtr,
     int cmdIndex,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *objPtr, *obj2Ptr, **objs;
@@ -1096,7 +1096,7 @@ int
 TclOODefineObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Namespace *nsPtr;
@@ -1172,7 +1172,7 @@ int
 TclOOObjDefObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Namespace *nsPtr;
@@ -1241,7 +1241,7 @@ int
 TclOODefineSelfObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Tcl_Namespace *nsPtr;
@@ -1312,7 +1312,7 @@ int
 TclOODefineObjSelfObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr;
@@ -1346,7 +1346,7 @@ int
 TclOODefinePrivateObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     int isInstancePrivate = (clientData != NULL);
@@ -1419,7 +1419,7 @@ int
 TclOODefineClassObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr;
@@ -1528,7 +1528,7 @@ int
 TclOODefineConstructorObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr;
@@ -1597,7 +1597,7 @@ int
 TclOODefineDefnNsObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     static const char *kindList[] = {
@@ -1682,12 +1682,12 @@ int
 TclOODefineDeleteMethodObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     int isInstanceDeleteMethod = (clientData != NULL);
     Object *oPtr;
-    size_t i;
+    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -1739,7 +1739,7 @@ int
 TclOODefineDestructorObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr;
@@ -1804,7 +1804,7 @@ int
 TclOODefineExportObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     int isInstanceExport = (clientData != NULL);
@@ -1812,8 +1812,7 @@ TclOODefineExportObjCmd(
     Method *mPtr;
     Tcl_HashEntry *hPtr;
     Class *clsPtr;
-    size_t i;
-    int isNew, changed = 0;
+    int i, isNew, changed = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -1901,7 +1900,7 @@ int
 TclOODefineForwardObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     int isInstanceForward = (clientData != NULL);
@@ -1965,7 +1964,7 @@ int
 TclOODefineMethodObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     /*
@@ -2061,7 +2060,7 @@ int
 TclOODefineRenameMethodObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     int isInstanceRenameMethod = (clientData != NULL);
@@ -2118,7 +2117,7 @@ int
 TclOODefineUnexportObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     int isInstanceUnexport = (clientData != NULL);
@@ -2126,8 +2125,7 @@ TclOODefineUnexportObjCmd(
     Method *mPtr;
     Tcl_HashEntry *hPtr;
     Class *clsPtr;
-    size_t i;
-    int isNew, changed = 0;
+    int i, isNew, changed = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name ?name ...?");
@@ -2290,12 +2288,12 @@ TclOODefineSlots(
 	if (slotObject == NULL) {
 	    continue;
 	}
-	Tcl_NewInstanceMethod2(fPtr->interp, slotObject, getName, 0,
+	Tcl_NewInstanceMethod(fPtr->interp, slotObject, getName, 0,
 		&slotInfoPtr->getterType, NULL);
-	Tcl_NewInstanceMethod2(fPtr->interp, slotObject, setName, 0,
+	Tcl_NewInstanceMethod(fPtr->interp, slotObject, setName, 0,
 		&slotInfoPtr->setterType, NULL);
 	if (slotInfoPtr->resolverType.callProc) {
-	    Tcl_NewInstanceMethod2(fPtr->interp, slotObject, resolveName, 0,
+	    Tcl_NewInstanceMethod(fPtr->interp, slotObject, resolveName, 0,
 		    &slotInfoPtr->resolverType, NULL);
 	}
     }
@@ -2321,14 +2319,14 @@ ClassFilterGet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj, *filterObj;
     size_t i;
 
-    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2355,14 +2353,14 @@ ClassFilterSet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     size_t filterc;
     Tcl_Obj **filterv;
 
-    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"filterList");
 	return TCL_ERROR;
@@ -2401,7 +2399,7 @@ ClassMixinGet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
@@ -2409,7 +2407,7 @@ ClassMixinGet(
     Class *mixinPtr;
     size_t i;
 
-    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2438,7 +2436,7 @@ ClassMixinSet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
@@ -2446,7 +2444,7 @@ ClassMixinSet(
     Tcl_Obj **mixinv;
     Class **mixins;
 
-    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"mixinList");
 	return TCL_ERROR;
@@ -2507,7 +2505,7 @@ ClassSuperGet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
@@ -2515,7 +2513,7 @@ ClassSuperGet(
     Class *superPtr;
     size_t i;
 
-    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2543,7 +2541,7 @@ ClassSuperSet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
@@ -2552,7 +2550,7 @@ ClassSuperSet(
     Tcl_Obj **superv;
     Class **superclasses, *superPtr;
 
-    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"superclassList");
 	return TCL_ERROR;
@@ -2675,14 +2673,14 @@ ClassVarsGet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj;
     size_t i;
 
-    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2719,7 +2717,7 @@ ClassVarsSet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
@@ -2727,7 +2725,7 @@ ClassVarsSet(
     size_t varc;
     Tcl_Obj **varv;
 
-    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"filterList");
 	return TCL_ERROR;
@@ -2790,14 +2788,14 @@ ObjFilterGet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj, *filterObj;
     size_t i;
 
-    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2818,14 +2816,14 @@ ObjFilterSet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     size_t filterc;
     Tcl_Obj **filterv;
 
-    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"filterList");
 	return TCL_ERROR;
@@ -2858,7 +2856,7 @@ ObjMixinGet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
@@ -2866,7 +2864,7 @@ ObjMixinGet(
     Class *mixinPtr;
     size_t i;
 
-    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2890,7 +2888,7 @@ ObjMixinSet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
@@ -2899,7 +2897,7 @@ ObjMixinSet(
     Tcl_Obj **mixinv;
     Class **mixins;
 
-    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"mixinList");
 	return TCL_ERROR;
@@ -2944,14 +2942,14 @@ ObjVarsGet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Tcl_Obj *resultObj;
     size_t i;
 
-    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2982,14 +2980,14 @@ ObjVarsSet(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     size_t varc, i;
     Tcl_Obj **varv;
 
-    if (Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"variableList");
 	return TCL_ERROR;
@@ -3047,10 +3045,10 @@ ResolveClass(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    size_t objc,
+    int objc,
     Tcl_Obj *const *objv)
 {
-    size_t idx = Tcl_ObjectContextSkippedArgs(context);
+    int idx = Tcl_ObjectContextSkippedArgs(context);
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
     Class *clsPtr;
 
