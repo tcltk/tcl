@@ -2627,6 +2627,7 @@ Tcl_CreateCommand(
 typedef struct {
     void *clientData; /* Arbitrary value to pass to object function. */
     Tcl_ObjCmdProc *proc;
+    Tcl_ObjCmdProc *nreProc;
     Tcl_CmdDeleteProc *deleteProc;
 } CmdWrapperInfo;
 
@@ -2638,9 +2639,7 @@ static int cmdWrapperProc(void *clientData,
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
     if (objc > INT_MAX) {
-	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "Too Many arguments");
-	}
+	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
 	return TCL_ERROR;
     }
     return info->proc(info->clientData, interp, objc, objv);
@@ -2950,7 +2949,8 @@ TclInvokeStringCommand2(
     const char **argv;
 
     if (objc > INT_MAX) {
-	Tcl_Panic("TclInvokeStringCommand2 cannot handle > INT_MAX arguments");
+	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
+	return TCL_ERROR;
     }
     argv = (const char **)
 	    TclStackAlloc(interp, (objc + 1) * sizeof(char *));
@@ -8481,51 +8481,19 @@ Tcl_NRCallObjProc2(
  *----------------------------------------------------------------------
  */
 
-typedef struct {
-	Tcl_ObjCmdProc *proc;
-	Tcl_ObjCmdProc *nreProc;
-	Tcl_CmdDeleteProc *delProc;
-    void *clientData;
-} NRCommandWrapper;
-
-static int wrapperProc2(
+static int cmdWrapperNreProc(
     void *clientData,
     Tcl_Interp *interp,
     size_t objc,
 	struct Tcl_Obj *const objv[])
 {
-    NRCommandWrapper *wrapper = (NRCommandWrapper *)clientData;
+    CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
     if (objc > INT_MAX) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
 	return TCL_ERROR;
     }
-    return wrapper->proc(wrapper->clientData, interp, objc, objv);
+    return info->nreProc(info->clientData, interp, objc, objv);
 }
-
-static int wrapperNRProc2(
-    void *clientData,
-    Tcl_Interp *interp,
-    size_t objc,
-	struct Tcl_Obj *const objv[])
-{
-    NRCommandWrapper *wrapper = (NRCommandWrapper *)clientData;
-    if (objc > INT_MAX) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
-	return TCL_ERROR;
-    }
-    return wrapper->nreProc(wrapper->clientData, interp, objc, objv);
-}
-
-static void wrapperDelProc2(void *clientData)
-{
-	NRCommandWrapper *wrapper = (NRCommandWrapper *)clientData;
-    clientData = wrapper->clientData;
-    if (wrapper->delProc) {
-	wrapper->delProc(clientData);
-    }
-    Tcl_Free(wrapper);
-}
-
 
 Tcl_Command
 Tcl_NRCreateCommand(
@@ -8546,15 +8514,15 @@ Tcl_NRCreateCommand(
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
 {
-	NRCommandWrapper *wrapper = (NRCommandWrapper *)Tcl_Alloc(sizeof(NRCommandWrapper));
-    wrapper->proc = proc;
-    wrapper->nreProc = nreProc;
-    wrapper->delProc = deleteProc;
-    wrapper->clientData = clientData;
+	CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
+    info->proc = proc;
+    info->nreProc = nreProc;
+    info->deleteProc = deleteProc;
+    info->clientData = clientData;
     return Tcl_NRCreateCommand2(interp, cmdName,
-	    proc ? wrapperProc2 : NULL,
-	    nreProc ? wrapperNRProc2 : NULL, wrapper,
-	    wrapperDelProc2);
+	    proc ? cmdWrapperProc : NULL,
+	    nreProc ? cmdWrapperNreProc : NULL, info,
+	    cmdWrapperDeleteProc);
 }
 
 
@@ -8587,27 +8555,6 @@ Tcl_NRCreateCommand2(
 
 Tcl_Command
 TclNRCreateCommandInNs(
-    Tcl_Interp *interp,
-    const char *cmdName,
-    Tcl_Namespace *nsPtr,
-    Tcl_ObjCmdProc *proc,
-    Tcl_ObjCmdProc *nreProc,
-    void *clientData,
-    Tcl_CmdDeleteProc *deleteProc)
-{
-	NRCommandWrapper *wrapper = (NRCommandWrapper *)Tcl_Alloc(sizeof(NRCommandWrapper));
-    wrapper->proc = proc;
-    wrapper->nreProc = nreProc;
-    wrapper->delProc = deleteProc;
-    wrapper->clientData = clientData;
-    return TclNRCreateCommandInNs2(interp, cmdName, nsPtr,
-	    (proc ? wrapperProc2 : NULL),
-	    (nreProc ? wrapperNRProc2 : NULL),
-	    wrapper, wrapperDelProc2);
-}
-
-Tcl_Command
-TclNRCreateCommandInNs2(
     Tcl_Interp *interp,
     const char *cmdName,
     Tcl_Namespace *nsPtr,
@@ -9772,7 +9719,7 @@ TclNRCoroutineObjCmd(
 
     corPtr = (CoroutineData *)Tcl_Alloc(sizeof(CoroutineData));
 
-    cmdPtr = (Command *) TclNRCreateCommandInNs2(interp, simpleName,
+    cmdPtr = (Command *) TclNRCreateCommandInNs(interp, simpleName,
 	    (Tcl_Namespace *)nsPtr, /*objProc*/ NULL, TclNRInterpCoroutine,
 	    corPtr, DeleteCoroutine);
 

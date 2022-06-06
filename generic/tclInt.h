@@ -2941,11 +2941,6 @@ MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    const char *attributeName, int *indexPtr);
 MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
-			    Tcl_ObjCmdProc *proc, Tcl_ObjCmdProc *nreProc,
-			    void *clientData,
-			    Tcl_CmdDeleteProc *deleteProc);
-MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs2(Tcl_Interp *interp,
-			    const char *cmdName, Tcl_Namespace *nsPtr,
 			    Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc,
 			    void *clientData,
 			    Tcl_CmdDeleteProc *deleteProc);

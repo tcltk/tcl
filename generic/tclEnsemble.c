@@ -682,7 +682,7 @@ TclCreateEnsembleInNs(
     Tcl_Command token;
 
     ensemblePtr = (EnsembleConfig *)Tcl_Alloc(sizeof(EnsembleConfig));
-    token = TclNRCreateCommandInNs2(interp, name,
+    token = TclNRCreateCommandInNs(interp, name,
 	    (Tcl_Namespace *) nameNsPtr, TclEnsembleImplementationCmd,
 	    NsEnsembleImplementationCmdNR, ensemblePtr, DeleteEnsembleConfig);
     if (token == NULL) {

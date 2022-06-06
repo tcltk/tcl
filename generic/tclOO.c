@@ -745,9 +745,9 @@ AllocObject(
     tracePtr->nextPtr = NULL;
     tracePtr->refCount = 1;
 
-    oPtr->myCommand = TclNRCreateCommandInNs2(interp, "my", oPtr->namespacePtr,
+    oPtr->myCommand = TclNRCreateCommandInNs(interp, "my", oPtr->namespacePtr,
 	    TclOOPrivateObjectCmd, PrivateNRObjectCmd, oPtr, MyDeleted);
-    oPtr->myclassCommand = TclNRCreateCommandInNs2(interp, "myclass",
+    oPtr->myclassCommand = TclNRCreateCommandInNs(interp, "myclass",
 	    oPtr->namespacePtr, TclOOMyClassObjCmd, MyClassNRObjCmd, oPtr,
             MyClassDeleted);
     return oPtr;

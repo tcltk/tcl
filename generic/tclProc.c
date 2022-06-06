@@ -214,7 +214,7 @@ Tcl_ProcObjCmd2(
 	return TCL_ERROR;
     }
 
-    cmd = TclNRCreateCommandInNs2(interp, simpleName, (Tcl_Namespace *) nsPtr,
+    cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
 	TclObjInterpProc2, TclNRInterpProc, procPtr, TclProcDeleteProc);
 
     /*
