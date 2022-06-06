@@ -150,16 +150,6 @@ static const Tcl_ObjType lambdaType = {
 
 int
 Tcl_ProcObjCmd(
-    void *clientData,
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    return Tcl_ProcObjCmd2(clientData, interp, objc, objv);
-}
-
-int
-Tcl_ProcObjCmd2(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */

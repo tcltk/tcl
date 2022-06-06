@@ -1430,7 +1430,7 @@ declare 389 {
 }
 declare 390 {
     int Tcl_ProcObjCmd(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
+	    size_t objc, Tcl_Obj *const objv[])
 }
 declare 391 {
     void Tcl_ConditionFinalize(Tcl_Condition *condPtr)
@@ -2570,16 +2570,12 @@ declare 677 {
 	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
 declare 678 {
-    int Tcl_ProcObjCmd2(void *clientData, Tcl_Interp *interp,
-	    size_t objc, Tcl_Obj *const objv[])
-}
-declare 679 {
     Tcl_Command Tcl_NRCreateCommand2(Tcl_Interp *interp,
 	    const char *cmdName, Tcl_ObjCmdProc2 *proc,
 	    Tcl_ObjCmdProc2 *nreProc2, void *clientData,
 	    Tcl_CmdDeleteProc *deleteProc)
 }
-declare 680 {
+declare 679 {
     int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc,
 	    void *clientData, size_t objc, Tcl_Obj *const objv[])
 }

@@ -306,7 +306,7 @@ static const CmdInfo builtInCmds[] = {
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"package",		Tcl_PackageObjCmd,	NULL,			TclNRPackageObjCmd,	CMD_IS_SAFE},
-    {"proc",		Tcl_ProcObjCmd2,		NULL,			NULL,	CMD_IS_SAFE},
+    {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
     {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	CMD_IS_SAFE},
     {"rename",		Tcl_RenameObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
@@ -2678,9 +2678,9 @@ Tcl_CreateObjCommand(
     info->deleteProc = deleteProc;
     info->clientData = clientData;
 
-	return Tcl_CreateObjCommand2(interp, cmdName,
-		(proc ? cmdWrapperProc : NULL),
-		info, cmdWrapperDeleteProc);
+    return Tcl_CreateObjCommand2(interp, cmdName,
+	    (proc ? cmdWrapperProc : NULL),
+	    info, cmdWrapperDeleteProc);
 }
 
 Tcl_Command
@@ -8514,7 +8514,7 @@ Tcl_NRCreateCommand(
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
 {
-	CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
+    CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->proc = proc;
     info->nreProc = nreProc;
     info->deleteProc = deleteProc;
