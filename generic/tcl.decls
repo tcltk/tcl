@@ -2481,7 +2481,7 @@ declare 677 {
 	    Tcl_CmdObjTraceProc2 *objProc2, void *clientData,
 	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
-declare 679 {
+declare 678 {
     Tcl_Command Tcl_NRCreateCommand2(Tcl_Interp *interp,
 	    const char *cmdName, Tcl_ObjCmdProc2 *proc,
 	    Tcl_ObjCmdProc2 *nreProc2, void *clientData,

@@ -808,7 +808,7 @@ TclNewInstNameObj(
 
     TclNewObj(objPtr);
     TclInvalidateStringRep(objPtr);
-    InstNameSetInternalRep(objPtr, (long) inst);
+    InstNameSetInternalRep(objPtr, inst);
 
     return objPtr;
 }

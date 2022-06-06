@@ -2692,6 +2692,7 @@ Tcl_CreateCommand(
 typedef struct {
     void *clientData; /* Arbitrary value to pass to object function. */
     Tcl_ObjCmdProc2 *proc;
+    Tcl_ObjCmdProc2 *nreProc;
     Tcl_CmdDeleteProc *deleteProc;
 } CmdWrapperInfo;
 
@@ -2710,7 +2711,7 @@ static void cmdWrapperDeleteProc(void *clientData) {
 
     clientData = info->clientData;
     Tcl_CmdDeleteProc *deleteProc = info->deleteProc;
-    Tcl_Free(info);
+    ckfree(info);
     if (deleteProc != NULL) {
 	deleteProc(clientData);
     }
@@ -2733,12 +2734,14 @@ Tcl_CreateObjCommand2(
 				 * this command is deleted. */
 )
 {
-    CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
+    CmdWrapperInfo *info = (CmdWrapperInfo *)ckalloc(sizeof(CmdWrapperInfo));
     info->proc = proc;
     info->deleteProc = deleteProc;
     info->clientData = clientData;
 
-	return Tcl_CreateObjCommand(interp, cmdName, cmdWrapperProc, info, cmdWrapperDeleteProc);
+    return Tcl_CreateObjCommand(interp, cmdName,
+	    (proc ? cmdWrapperProc : NULL),
+	    info, cmdWrapperDeleteProc);
 }
 
 Tcl_Command
@@ -9202,41 +9205,15 @@ Tcl_NRCallObjProc(
  *----------------------------------------------------------------------
  */
 
-typedef struct {
-	Tcl_ObjCmdProc2 *proc;
-	Tcl_ObjCmdProc2 *nreProc;
-	Tcl_CmdDeleteProc *delProc;
-    void *clientData;
-} NRCommandWrapper;
-
-static int wrapperProc2(
+static int cmdWrapperNreProc(
     void *clientData,
     Tcl_Interp *interp,
     int objc,
 	struct Tcl_Obj *const objv[])
 {
-    NRCommandWrapper *wrapper = (NRCommandWrapper *)clientData;
-    return wrapper->proc(wrapper->clientData, interp, objc, objv);
+    CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
+    return info->nreProc(info->clientData, interp, objc, objv);
 }
-
-static int wrapperNRProc2(
-    void *clientData,
-    Tcl_Interp *interp,
-    int objc,
-	struct Tcl_Obj *const objv[])
-{
-    NRCommandWrapper *wrapper = (NRCommandWrapper *)clientData;
-    return wrapper->nreProc(wrapper->clientData, interp, objc, objv);
-}
-
-static void wrapperDelProc2(void *clientData)
-{
-	NRCommandWrapper *wrapper = (NRCommandWrapper *)clientData;
-    clientData = wrapper->clientData;
-    wrapper->delProc(clientData);
-    Tcl_Free(wrapper);
-}
-
 
 Tcl_Command
 Tcl_NRCreateCommand2(
@@ -9257,12 +9234,15 @@ Tcl_NRCreateCommand2(
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
 {
-	NRCommandWrapper *wrapper = (NRCommandWrapper *)Tcl_Alloc(sizeof(NRCommandWrapper));
-    wrapper->proc = proc;
-    wrapper->nreProc = nreProc;
-    wrapper->delProc = deleteProc;
-    wrapper->clientData = clientData;
-    return Tcl_NRCreateCommand(interp, cmdName, wrapperProc2, wrapperNRProc2, wrapper, wrapperDelProc2);
+    CmdWrapperInfo *info = (CmdWrapperInfo *)ckalloc(sizeof(CmdWrapperInfo));
+    info->proc = proc;
+    info->nreProc = nreProc;
+    info->deleteProc = deleteProc;
+    info->clientData = clientData;
+    return Tcl_NRCreateCommand(interp, cmdName,
+	    (proc ? cmdWrapperProc : NULL),
+	    (nreProc ? cmdWrapperNreProc : NULL),
+	    info, cmdWrapperDeleteProc);
 }
 
 Tcl_Command
