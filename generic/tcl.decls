@@ -1430,7 +1430,7 @@ declare 389 {
 }
 declare 390 {
     int Tcl_ProcObjCmd(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
+	    size_t objc, Tcl_Obj *const objv[])
 }
 declare 391 {
     void Tcl_ConditionFinalize(Tcl_Condition *condPtr)
@@ -2558,10 +2558,6 @@ declare 673 {
     int Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index)
 }
 
-declare 678 {
-    int Tcl_ProcObjCmd2(void *clientData, Tcl_Interp *interp,
-	    size_t objc, Tcl_Obj *const objv[])
-}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 

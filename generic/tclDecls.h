@@ -1023,7 +1023,7 @@ EXTERN int		Tcl_GetChannelNamesEx(Tcl_Interp *interp,
 				const char *pattern);
 /* 390 */
 EXTERN int		Tcl_ProcObjCmd(void *clientData, Tcl_Interp *interp,
-				int objc, Tcl_Obj *const objv[]);
+				size_t objc, Tcl_Obj *const objv[]);
 /* 391 */
 EXTERN void		Tcl_ConditionFinalize(Tcl_Condition *condPtr);
 /* 392 */
@@ -1807,13 +1807,6 @@ EXTERN Tcl_Obj *	Tcl_GetRange(Tcl_Obj *objPtr, size_t first,
 				size_t last);
 /* 673 */
 EXTERN int		Tcl_GetUniChar(Tcl_Obj *objPtr, size_t index);
-/* Slot 674 is reserved */
-/* Slot 675 is reserved */
-/* Slot 676 is reserved */
-/* Slot 677 is reserved */
-/* 678 */
-EXTERN int		Tcl_ProcObjCmd2(void *clientData, Tcl_Interp *interp,
-				size_t objc, Tcl_Obj *const objv[]);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2215,7 +2208,7 @@ typedef struct TclStubs {
     Tcl_Mutex * (*tcl_GetAllocMutex) (void); /* 387 */
     int (*tcl_GetChannelNames) (Tcl_Interp *interp); /* 388 */
     int (*tcl_GetChannelNamesEx) (Tcl_Interp *interp, const char *pattern); /* 389 */
-    int (*tcl_ProcObjCmd) (void *clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 390 */
+    int (*tcl_ProcObjCmd) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 390 */
     void (*tcl_ConditionFinalize) (Tcl_Condition *condPtr); /* 391 */
     void (*tcl_MutexFinalize) (Tcl_Mutex *mutex); /* 392 */
     int (*tcl_CreateThread) (Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc *proc, void *clientData, size_t stackSize, int flags); /* 393 */
@@ -2499,11 +2492,6 @@ typedef struct TclStubs {
     const char * (*tcl_UtfAtIndex) (const char *src, size_t index); /* 671 */
     Tcl_Obj * (*tcl_GetRange) (Tcl_Obj *objPtr, size_t first, size_t last); /* 672 */
     int (*tcl_GetUniChar) (Tcl_Obj *objPtr, size_t index); /* 673 */
-    void (*reserved674)(void);
-    void (*reserved675)(void);
-    void (*reserved676)(void);
-    void (*reserved677)(void);
-    int (*tcl_ProcObjCmd2) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 678 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3804,12 +3792,6 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetRange) /* 672 */
 #define Tcl_GetUniChar \
 	(tclStubsPtr->tcl_GetUniChar) /* 673 */
-/* Slot 674 is reserved */
-/* Slot 675 is reserved */
-/* Slot 676 is reserved */
-/* Slot 677 is reserved */
-#define Tcl_ProcObjCmd2 \
-	(tclStubsPtr->tcl_ProcObjCmd2) /* 678 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

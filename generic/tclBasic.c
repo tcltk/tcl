@@ -264,6 +264,12 @@ typedef struct {
  * The built-in commands, and the functions that implement them:
  */
 
+int procObjCmd(void *clientData, Tcl_Interp *interp,
+    int objc, Tcl_Obj *const objv[]) {
+    return Tcl_ProcObjCmd(clientData, interp, objc, objv);
+}
+
+
 static const CmdInfo builtInCmds[] = {
     /*
      * Commands in the generic core.
@@ -306,7 +312,7 @@ static const CmdInfo builtInCmds[] = {
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"package",		Tcl_PackageObjCmd,	NULL,			TclNRPackageObjCmd,	CMD_IS_SAFE},
-    {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
+    {"proc",		procObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
     {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	CMD_IS_SAFE},
     {"rename",		Tcl_RenameObjCmd,	NULL,			NULL,	CMD_IS_SAFE},

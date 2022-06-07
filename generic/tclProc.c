@@ -149,23 +149,10 @@ static const Tcl_ObjType lambdaType = {
  */
 
 int
-Tcl_ProcObjCmd2(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,		/* Current interpreter. */
-    size_t objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    if (objc > INT_MAX) {
-	objc = TCL_INDEX_NONE; /* Let Tcl_ProcObjCmd generate Tcl_WrongNumArgs() */
-    }
-    return Tcl_ProcObjCmd(NULL, interp, objc, objv);
-}
-
-int
 Tcl_ProcObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
