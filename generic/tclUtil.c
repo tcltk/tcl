@@ -851,6 +851,7 @@ TclCopyAndCollapse(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SplitList
 int
 Tcl_SplitList(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If

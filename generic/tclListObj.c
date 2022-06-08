@@ -554,6 +554,7 @@ TclListObjRange(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_ListObjGetElements
 int
 Tcl_ListObjGetElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
@@ -897,6 +898,7 @@ Tcl_ListObjIndex(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_ListObjLength
 int
 Tcl_ListObjLength(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
