@@ -58,7 +58,7 @@ Tcl_Method
 Tcl_Object
 \fBTcl_ObjectContextObject\fR(\fIcontext\fR)
 .sp
-int
+size_t
 \fBTcl_ObjectContextSkippedArgs\fR(\fIcontext\fR)
 .SH ARGUMENTS
 .AS void *clientData in
@@ -95,7 +95,7 @@ A reference to a method to query.
 .AP Tcl_ObjectContext context in
 A reference to a method-call context. Note that client code \fImust not\fR
 retain a reference to a context.
-.AP int objc in
+.AP size_t objc in
 The number of arguments to pass to the method implementation.
 .AP "Tcl_Obj *const" *objv in
 An array of arguments to pass to the method implementation.

@@ -344,7 +344,7 @@ Tcl_ParseCommand(
 	    expPtr = &parsePtr->tokenPtr[expIdx];
 	    if ((0 == expandWord)
 		    /* Haven't seen prefix already */
-		    && (1 == parsePtr->numTokens - expIdx)
+		    && (expIdx + 1 == (int)parsePtr->numTokens)
 		    /* Only one token */
 		    && (((1 == expPtr->size)
 			    /* Same length as prefix */
@@ -379,7 +379,7 @@ Tcl_ParseCommand(
 
 	tokenPtr = &parsePtr->tokenPtr[wordIndex];
 	tokenPtr->size = src - tokenPtr->start;
-	tokenPtr->numComponents = parsePtr->numTokens - (wordIndex + 1);
+	tokenPtr->numComponents = (int)parsePtr->numTokens - (wordIndex + 1);
 	if (expandWord) {
 	    size_t i;
 	    int isLiteral = 1;
@@ -471,7 +471,7 @@ Tcl_ParseCommand(
 
 		    const char *listStart;
 		    int growthNeeded = wordIndex + 2*elemCount
-			    - parsePtr->numTokens;
+			    - (int)parsePtr->numTokens;
 
 		    parsePtr->numWords += elemCount - 1;
 		    if (growthNeeded > 0) {
@@ -1230,7 +1230,7 @@ ParseTokens(
 		 */
 
 		if (mask & TYPE_SPACE) {
-		    if (parsePtr->numTokens == originalTokens) {
+		    if ((int)parsePtr->numTokens == originalTokens) {
 			goto finishToken;
 		    }
 		    break;
@@ -1251,7 +1251,7 @@ ParseTokens(
 	    Tcl_Panic("ParseTokens encountered unknown character");
 	}
     }
-    if (parsePtr->numTokens == originalTokens) {
+    if ((int)parsePtr->numTokens == originalTokens) {
 	/*
 	 * There was nothing in this range of text. Add an empty token for the
 	 * empty range, so that there is always at least one token added.
@@ -1679,7 +1679,7 @@ Tcl_ParseBraces(
 		 */
 
 		if ((src != tokenPtr->start)
-			|| (parsePtr->numTokens == startIndex)) {
+			|| ((int)parsePtr->numTokens == startIndex)) {
 		    tokenPtr->size = (src - tokenPtr->start);
 		    parsePtr->numTokens++;
 		}
@@ -1707,7 +1707,7 @@ Tcl_ParseBraces(
 		    parsePtr->numTokens++;
 		}
 		TclGrowParseTokenArray(parsePtr, 2);
-		tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
+		tokenPtr = &parsePtr->tokenPtr[(int)parsePtr->numTokens];
 		tokenPtr->type = TCL_TOKEN_BS;
 		tokenPtr->start = src;
 		tokenPtr->size = length;
@@ -1978,7 +1978,7 @@ TclSubstParse(
 		 */
 
 		Tcl_Token *varTokenPtr =
-			parsePtr->tokenPtr + parsePtr->numTokens - 2;
+			parsePtr->tokenPtr + (int)parsePtr->numTokens - 2;
 
 		if (varTokenPtr->type != TCL_TOKEN_VARIABLE) {
 		    Tcl_Panic("TclSubstParse: programming error");
@@ -2048,7 +2048,7 @@ TclSubstParse(
 		 */
 
 		TclGrowParseTokenArray(parsePtr, 1);
-		tokenPtr = &(parsePtr->tokenPtr[parsePtr->numTokens]);
+		tokenPtr = &(parsePtr->tokenPtr[(int)parsePtr->numTokens]);
 		tokenPtr->start = parsePtr->term;
 		tokenPtr->numComponents = 0;
 		tokenPtr->type = TCL_TOKEN_COMMAND;
@@ -2092,7 +2092,7 @@ TclSubstTokens(
 				 * errors. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * evaluate and concatenate. */
-    int count,			/* Number of tokens to consider at tokenPtr.
+    size_t count1,			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     int *tokensLeftPtr,		/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
@@ -2123,6 +2123,7 @@ TclSubstTokens(
     int *clPosition = NULL;
     Interp *iPtr = (Interp *) interp;
     int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
+    int count = count1;
 
     /*
      * Each pass through this loop will substitute one token, and its

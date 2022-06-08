@@ -763,9 +763,8 @@ LinkTraceProc(
     Tcl_WideInt valueWide;
     Tcl_WideUInt valueUWide;
     double valueDouble;
-    int objc;
+    size_t objc, i;
     Tcl_Obj **objv;
-    int i;
 
     /*
      * If the variable is being unset, then just re-create it (with a trace)
@@ -948,7 +947,7 @@ LinkTraceProc(
 
     if (linkPtr->flags & LINK_ALLOC_LAST) {
 	if (TclListObjGetElementsM(NULL, (valueObj), &objc, &objv) == TCL_ERROR
-		|| (size_t)objc != linkPtr->numElems) {
+		|| objc != linkPtr->numElems) {
 	    return (char *) "wrong dimension";
 	}
     }
@@ -956,7 +955,7 @@ LinkTraceProc(
     switch (linkPtr->type) {
     case TCL_LINK_INT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    for (i=0; i < objc; i++) {
+	    for (i = 0; i < objc; i++) {
 		int *varPtr = &linkPtr->lastValue.iPtr[i];
 
 		if (GetInt(objv[i], varPtr)) {

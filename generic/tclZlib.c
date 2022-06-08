@@ -1327,8 +1327,8 @@ Tcl_ZlibStreamGet(
 				 * may get less! */
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
-    int e, i, listLen;
-    size_t itemLen = 0, dataPos = 0;
+    int e;
+    size_t listLen, i, itemLen = 0, dataPos = 0;
     Tcl_Obj *itemObj;
     unsigned char *dataPtr, *itemPtr;
     size_t existing = 0;
@@ -2409,7 +2409,8 @@ ZlibPushSubcmd(
     const char *const *pushOptions = pushDecompressOptions;
     enum pushOptionsEnum {poDictionary, poHeader, poLevel, poLimit} option;
     Tcl_Obj *headerObj = NULL, *compDictObj = NULL;
-    int limit = DEFAULT_BUFFER_SIZE, dummy;
+    int limit = DEFAULT_BUFFER_SIZE;
+    size_t dummy;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "mode channel ?options...?");

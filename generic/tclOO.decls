@@ -68,7 +68,7 @@ declare 12 {
 }
 declare 13 {
     Tcl_Object Tcl_NewObjectInstance(Tcl_Interp *interp, Tcl_Class cls,
-	    const char *nameStr, const char *nsNameStr, int objc,
+	    const char *nameStr, const char *nsNameStr, size_t objc,
 	    Tcl_Obj *const *objv, int skip)
 }
 declare 14 {
@@ -84,7 +84,7 @@ declare 17 {
     Tcl_Object Tcl_ObjectContextObject(Tcl_ObjectContext context)
 }
 declare 18 {
-    int Tcl_ObjectContextSkippedArgs(Tcl_ObjectContext context)
+    size_t Tcl_ObjectContextSkippedArgs(Tcl_ObjectContext context)
 }
 declare 19 {
     void *Tcl_ClassGetMetadata(Tcl_Class clazz,
@@ -104,7 +104,7 @@ declare 22 {
 }
 declare 23 {
     int Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
-	    Tcl_ObjectContext context, int objc, Tcl_Obj *const *objv,
+	    Tcl_ObjectContext context, size_t objc, Tcl_Obj *const *objv,
 	    int skip)
 }
 declare 24 {
@@ -170,7 +170,7 @@ declare 4 {
 	    ProcedureMethod **pmPtrPtr)
 }
 declare 5 {
-    int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, int objc,
+    int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, size_t objc,
 	    Tcl_Obj *const *objv, int publicOnly, Class *startCls)
 }
 declare 6 {
@@ -200,24 +200,24 @@ declare 10 {
 }
 declare 11 {
     int TclOOInvokeObject(Tcl_Interp *interp, Tcl_Object object,
-	    Tcl_Class startCls, int publicPrivate, int objc,
+	    Tcl_Class startCls, int publicPrivate, size_t objc,
 	    Tcl_Obj *const *objv)
 }
 declare 12 {
-    void TclOOObjectSetFilters(Object *oPtr, int numFilters,
+    void TclOOObjectSetFilters(Object *oPtr, size_t numFilters,
 	    Tcl_Obj *const *filters)
 }
 declare 13 {
     void TclOOClassSetFilters(Tcl_Interp *interp, Class *classPtr,
-	    int numFilters, Tcl_Obj *const *filters)
+	    size_t numFilters, Tcl_Obj *const *filters)
 }
 declare 14 {
-    void TclOOObjectSetMixins(Object *oPtr, int numMixins,
+    void TclOOObjectSetMixins(Object *oPtr, size_t numMixins,
 	    Class *const *mixins)
 }
 declare 15 {
     void TclOOClassSetMixins(Tcl_Interp *interp, Class *classPtr,
-	    int numMixins, Class *const *mixins)
+	    size_t numMixins, Class *const *mixins)
 }
 
 return

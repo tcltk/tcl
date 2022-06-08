@@ -277,7 +277,7 @@ static void		DeleteMirrorJumpTable(JumptableInfo* jtPtr);
 static void		FillInJumpOffsets(AssemblyEnv*);
 static int		CreateMirrorJumpTable(AssemblyEnv* assemEnvPtr,
 			    Tcl_Obj* jumpTable);
-static int		FindLocalVar(AssemblyEnv* envPtr,
+static size_t	FindLocalVar(AssemblyEnv* envPtr,
 			    Tcl_Token** tokenPtrPtr);
 static int		FinishAssembly(AssemblyEnv*);
 static void		FreeAssemblyEnv(AssemblyEnv*);
@@ -963,9 +963,9 @@ TclCompileAssembleCmd(
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
 
-    int numCommands = envPtr->numCommands;
+    size_t numCommands = envPtr->numCommands;
     int offset = envPtr->codeNext - envPtr->codeStart;
-    int depth = envPtr->currStackDepth;
+    size_t depth = envPtr->currStackDepth;
     /*
      * Make sure that the command has a single arg that is a simple word.
      */
@@ -1074,7 +1074,7 @@ TclAssembleCode(
 	 * Process the line of code.
 	 */
 
-	if (parsePtr->numWords > 0) {
+	if ((int)parsePtr->numWords > 0) {
 	    size_t instLen = parsePtr->commandSize;
 		    /* Length in bytes of the current command */
 
@@ -1271,7 +1271,7 @@ AssembleOneLine(
     size_t operand1Len;		/* String length of the operand */
     int opnd;			/* Integer representation of an operand */
     int litIndex;		/* Literal pool index of a constant */
-    int localVar;		/* LVT index of a local variable */
+    size_t localVar;		/* LVT index of a local variable */
     int flags;			/* Flags for a basic block */
     JumptableInfo* jtPtr;	/* Pointer to a jumptable */
     int infoIndex;		/* Index of the jumptable in auxdata */
@@ -1366,7 +1366,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0) {
+	if (localVar == TCL_INDEX_NONE) {
 	    goto cleanup;
 	}
 	BBEmitInstInt1(assemEnvPtr, tblIdx, opnd, 0);
@@ -1426,7 +1426,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0) {
+	if (localVar == TCL_INDEX_NONE) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, opnd+1);
@@ -1443,7 +1443,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0) {
+	if (localVar == TCL_INDEX_NONE) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, opnd);
@@ -1638,7 +1638,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0) {
+	if (localVar == TCL_INDEX_NONE) {
 	    goto cleanup;
 	}
 	BBEmitInst1or4(assemEnvPtr, tblIdx, localVar, 0);
@@ -1650,7 +1650,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0 || CheckOneByte(interp, localVar)) {
+	if (localVar == TCL_INDEX_NONE || CheckOneByte(interp, localVar)) {
 	    goto cleanup;
 	}
 	BBEmitInstInt1(assemEnvPtr, tblIdx, localVar, 0);
@@ -1662,7 +1662,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0 || CheckOneByte(interp, localVar)
+	if (localVar == TCL_INDEX_NONE || CheckOneByte(interp, localVar)
 		|| GetIntegerOperand(assemEnvPtr, &tokenPtr, &opnd) != TCL_OK
 		|| CheckSignedOneByte(interp, opnd)) {
 	    goto cleanup;
@@ -1677,7 +1677,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0) {
+	if (localVar == TCL_INDEX_NONE) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, localVar, 0);
@@ -1741,7 +1741,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 	localVar = FindLocalVar(assemEnvPtr, &tokenPtr);
-	if (localVar < 0) {
+	if (localVar == TCL_INDEX_NONE) {
 	    goto cleanup;
 	}
 	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, 0);
@@ -1811,8 +1811,8 @@ CompileEmbeddedScript(
      * code.
      */
 
-    int savedStackDepth = envPtr->currStackDepth;
-    int savedMaxStackDepth = envPtr->maxStackDepth;
+    size_t savedStackDepth = envPtr->currStackDepth;
+    size_t savedMaxStackDepth = envPtr->maxStackDepth;
     int savedExceptArrayNext = envPtr->exceptArrayNext;
 
     envPtr->currStackDepth = 0;
@@ -1940,7 +1940,7 @@ MoveExceptionRangesToBasicBlock(
 	    envPtr->exceptArrayPtr + savedExceptArrayNext,
 	    exceptionCount * sizeof(ExceptionRange));
     for (i = 0; i < exceptionCount; ++i) {
-	curr_bb->foreignExceptions[i].nestingLevel -= envPtr->exceptDepth;
+	curr_bb->foreignExceptions[i].nestingLevel1 -= envPtr->exceptDepth;
     }
     envPtr->exceptArrayNext = savedExceptArrayNext;
 }
@@ -1968,7 +1968,7 @@ CreateMirrorJumpTable(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Obj* jumps)		/* List of alternating keywords and labels */
 {
-    int objc;			/* Number of elements in the 'jumps' list */
+    size_t objc;			/* Number of elements in the 'jumps' list */
     Tcl_Obj** objv;		/* Pointers to the elements in the list */
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
@@ -1981,7 +1981,7 @@ CreateMirrorJumpTable(
     Tcl_HashEntry* hashEntry;	/* Entry for a key in the hashtable */
     int isNew;			/* Flag==1 if the key is not yet in the
 				 * table. */
-    int i;
+    size_t i;
 
     if (TclListObjGetElementsM(interp, jumps, &objc, &objv) != TCL_OK) {
 	return TCL_ERROR;
@@ -2295,7 +2295,7 @@ GetListIndexOperand(
  *-----------------------------------------------------------------------------
  */
 
-static int
+static size_t
 FindLocalVar(
     AssemblyEnv* assemEnvPtr,	/* Assembly environment */
     Tcl_Token** tokenPtrPtr)
@@ -2310,26 +2310,26 @@ FindLocalVar(
     Tcl_Obj* varNameObj;	/* Name of the variable */
     const char* varNameStr;
     size_t varNameLen;
-    int localVar;		/* Index of the variable in the LVT */
+    size_t localVar;		/* Index of the variable in the LVT */
 
     if (GetNextOperand(assemEnvPtr, tokenPtrPtr, &varNameObj) != TCL_OK) {
-	return -1;
+	return TCL_INDEX_NONE;
     }
     varNameStr = Tcl_GetStringFromObj(varNameObj, &varNameLen);
     if (CheckNamespaceQualifiers(interp, varNameStr, varNameLen)) {
 	Tcl_DecrRefCount(varNameObj);
-	return -1;
+	return TCL_INDEX_NONE;
     }
     localVar = TclFindCompiledLocal(varNameStr, varNameLen, 1, envPtr);
     Tcl_DecrRefCount(varNameObj);
-    if (localVar == -1) {
+    if (localVar == TCL_INDEX_NONE) {
 	if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cannot use this instruction to create a variable"
 		    " in a non-proc context", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "ASSEM", "LVT", NULL);
 	}
-	return -1;
+	return TCL_INDEX_NONE;
     }
     *tokenPtrPtr = TokenAfter(tokenPtr);
     return localVar;
@@ -3334,7 +3334,7 @@ CheckStack(
      */
 
     maxDepth = assemEnvPtr->maxDepth + envPtr->currStackDepth;
-    if (maxDepth > envPtr->maxStackDepth) {
+    if (maxDepth > (int)envPtr->maxStackDepth) {
 	envPtr->maxStackDepth = maxDepth;
     }
 
@@ -4125,9 +4125,9 @@ StackFreshCatches(
 	    catchIndices[catchDepth] =
 		    TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 	    range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
-	    range->nestingLevel = envPtr->exceptDepth + catchDepth;
-	    envPtr->maxExceptDepth =
-		    TclMax(range->nestingLevel + 1, envPtr->maxExceptDepth);
+	    range->nestingLevel1 = envPtr->exceptDepth + catchDepth;
+	    envPtr->maxExceptDepth=
+		    TclMax(range->nestingLevel1 + 1, envPtr->maxExceptDepth);
 	    range->codeOffset = bbPtr->startOffset;
 
 	    entryPtr = Tcl_FindHashEntry(&assemEnvPtr->labelHash,
@@ -4163,7 +4163,7 @@ RestoreEmbeddedExceptionRanges(
     BasicBlock* bbPtr;		/* Current basic block */
     int rangeBase;		/* Base of the foreign exception ranges when
 				 * they are reinstalled */
-    int rangeIndex;		/* Index of the current foreign exception
+    size_t rangeIndex;		/* Index of the current foreign exception
 				 * range as reinstalled */
     ExceptionRange* range;	/* Current foreign exception range */
     unsigned char opcode;	/* Current instruction's opcode */
@@ -4187,11 +4187,11 @@ RestoreEmbeddedExceptionRanges(
 	    for (i = 0; i < bbPtr->foreignExceptionCount; ++i) {
 		range = bbPtr->foreignExceptions + i;
 		rangeIndex = TclCreateExceptRange(range->type, envPtr);
-		range->nestingLevel += envPtr->exceptDepth + bbPtr->catchDepth;
+		range->nestingLevel1 += envPtr->exceptDepth + bbPtr->catchDepth;
 		memcpy(envPtr->exceptArrayPtr + rangeIndex, range,
 			sizeof(ExceptionRange));
-		if (range->nestingLevel >= envPtr->maxExceptDepth) {
-		    envPtr->maxExceptDepth = range->nestingLevel + 1;
+		if ((int)range->nestingLevel1 >= (int)envPtr->maxExceptDepth) {
+		    envPtr->maxExceptDepth = range->nestingLevel1 + 1;
 		}
 	    }
 

@@ -179,12 +179,12 @@ FileForRedirect(
 
 void
 Tcl_DetachPids(
-    int numPids,		/* Number of pids to detach: gives size of
+    size_t numPids,		/* Number of pids to detach: gives size of
 				 * array pointed to by pidPtr. */
     Tcl_Pid *pidPtr)		/* Array of pids to detach. */
 {
     Detached *detPtr;
-    int i;
+    size_t i;
 
     Tcl_MutexLock(&pipeMutex);
     for (i = 0; i < numPids; i++) {
@@ -433,7 +433,7 @@ TclCreatePipeline(
 				 * pids of child processes. */
     size_t numPids;		/* Actual number of processes that exist at
 				 * *pidPtr right now. */
-    int cmdCount;		/* Count of number of distinct commands found
+    size_t cmdCount;		/* Count of number of distinct commands found
 				 * in argc/argv. */
     const char *inputLiteral = NULL;
 				/* If non-null, then this points to a string
@@ -1021,15 +1021,15 @@ Tcl_Channel
 Tcl_OpenCommandChannel(
     Tcl_Interp *interp,		/* Interpreter for error reporting. Can NOT be
 				 * NULL. */
-    int argc,			/* How many arguments. */
+    size_t argc,			/* How many arguments. */
     const char **argv,		/* Array of arguments for command pipe. */
     int flags)			/* Or'ed combination of TCL_STDIN, TCL_STDOUT,
 				 * TCL_STDERR, and TCL_ENFORCE_MODE. */
 {
     TclFile *inPipePtr, *outPipePtr, *errFilePtr;
     TclFile inPipe, outPipe, errFile;
-    int numPids;
-    Tcl_Pid *pidPtr;
+    size_t numPids;
+    Tcl_Pid *pidPtr = NULL;
     Tcl_Channel channel;
 
     inPipe = outPipe = errFile = NULL;
@@ -1041,7 +1041,7 @@ Tcl_OpenCommandChannel(
     numPids = TclCreatePipeline(interp, argc, argv, &pidPtr, inPipePtr,
 	    outPipePtr, errFilePtr);
 
-    if (numPids < 0) {
+    if (numPids == TCL_INDEX_NONE) {
 	goto error;
     }
 
@@ -1081,7 +1081,7 @@ Tcl_OpenCommandChannel(
     return channel;
 
   error:
-    if (numPids > 0) {
+    if (pidPtr) {
 	Tcl_DetachPids(numPids, pidPtr);
 	Tcl_Free(pidPtr);
     }
