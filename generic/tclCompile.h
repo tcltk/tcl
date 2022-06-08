@@ -89,7 +89,7 @@ typedef enum {
 
 typedef struct {
     ExceptionRangeType type;	/* The kind of ExceptionRange. */
-    size_t nestingLevel1;		/* Static depth of the exception range. Used
+    size_t nestingLevel;		/* Static depth of the exception range. Used
 				 * to find the most deeply-nested range
 				 * surrounding a PC at runtime. */
     size_t codeOffset;		/* Offset of the first instruction byte of the

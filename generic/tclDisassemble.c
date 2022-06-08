@@ -359,7 +359,7 @@ DisassembleByteCodeObj(
 
 	    Tcl_AppendPrintfToObj(bufferObj,
 		    "      %d: level %" TCL_Z_MODIFIER "u, %s, pc %" TCL_Z_MODIFIER "u-%" TCL_Z_MODIFIER "u, ",
-		    i, rangePtr->nestingLevel1,
+		    i, rangePtr->nestingLevel,
 		    (rangePtr->type==LOOP_EXCEPTION_RANGE ? "loop" : "catch"),
 		    rangePtr->codeOffset,
 		    (rangePtr->codeOffset + rangePtr->numCodeBytes - 1));
@@ -1145,14 +1145,14 @@ DisassembleByteCodeAsDicts(
 	case LOOP_EXCEPTION_RANGE:
 	    Tcl_ListObjAppendElement(NULL, exn, Tcl_ObjPrintf(
 		    "type %s level %" TCL_Z_MODIFIER "u from %" TCL_Z_MODIFIER "u to %" TCL_Z_MODIFIER "u break %" TCL_Z_MODIFIER "u continue %" TCL_Z_MODIFIER "u",
-		    "loop", rangePtr->nestingLevel1, rangePtr->codeOffset,
+		    "loop", rangePtr->nestingLevel, rangePtr->codeOffset,
 		    rangePtr->codeOffset + rangePtr->numCodeBytes - 1,
 		    rangePtr->breakOffset, rangePtr->continueOffset));
 	    break;
 	case CATCH_EXCEPTION_RANGE:
 	    Tcl_ListObjAppendElement(NULL, exn, Tcl_ObjPrintf(
 		    "type %s level %" TCL_Z_MODIFIER "u from %" TCL_Z_MODIFIER "u to %" TCL_Z_MODIFIER "u catch %" TCL_Z_MODIFIER "u",
-		    "catch", rangePtr->nestingLevel1, rangePtr->codeOffset,
+		    "catch", rangePtr->nestingLevel, rangePtr->codeOffset,
 		    rangePtr->codeOffset + rangePtr->numCodeBytes - 1,
 		    rangePtr->catchOffset));
 	    break;

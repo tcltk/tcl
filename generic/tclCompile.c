@@ -3410,7 +3410,7 @@ TclCreateExceptRange(
 
     rangePtr = &envPtr->exceptArrayPtr[index];
     rangePtr->type = type;
-    rangePtr->nestingLevel1 = envPtr->exceptDepth;
+    rangePtr->nestingLevel = envPtr->exceptDepth;
     rangePtr->codeOffset = TCL_INDEX_NONE;
     rangePtr->numCodeBytes = TCL_INDEX_NONE;
     rangePtr->breakOffset = TCL_INDEX_NONE;
