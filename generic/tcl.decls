@@ -91,7 +91,7 @@ declare 16 {
     void Tcl_AppendToObj(Tcl_Obj *objPtr, const char *bytes, size_t length)
 }
 declare 17 {
-    Tcl_Obj *Tcl_ConcatObj(int objc, Tcl_Obj *const objv[])
+    Tcl_Obj *Tcl_ConcatObj(size_t objc, Tcl_Obj *const objv[])
 }
 declare 18 {
     int Tcl_ConvertToType(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -119,7 +119,7 @@ declare 24 {
 	    int line)
 }
 declare 25 {
-    Tcl_Obj *Tcl_DbNewListObj(int objc, Tcl_Obj *const *objv,
+    Tcl_Obj *Tcl_DbNewListObj(size_t objc, Tcl_Obj *const *objv,
 	    const char *file, int line)
 }
 # Removed in 9.0 (changed to macro):
@@ -188,20 +188,20 @@ declare 44 {
 	    Tcl_Obj *objPtr)
 }
 declare 45 {
-    int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    int *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 46 {
-    int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, int index,
+    int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, size_t index,
 	    Tcl_Obj **objPtrPtr)
 }
 declare 47 {
-    int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
 	    int *lengthPtr)
 }
 declare 48 {
-    int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, int first,
-	    int count, int objc, Tcl_Obj *const objv[])
+    int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, size_t first,
+	    size_t count, size_t objc, Tcl_Obj *const objv[])
 }
 # Removed in 9.0 (changed to macro):
 #declare 49 {
@@ -218,7 +218,7 @@ declare 51 {
 #    Tcl_Obj *Tcl_NewIntObj(int intValue)
 #}
 declare 53 {
-    Tcl_Obj *Tcl_NewListObj(int objc, Tcl_Obj *const objv[])
+    Tcl_Obj *Tcl_NewListObj(size_t objc, Tcl_Obj *const objv[])
 }
 # Removed in 9.0 (changed to macro):
 #declare 54 {
@@ -249,7 +249,7 @@ declare 60 {
 #    void Tcl_SetIntObj(Tcl_Obj *objPtr, int intValue)
 #}
 declare 62 {
-    void Tcl_SetListObj(Tcl_Obj *objPtr, int objc, Tcl_Obj *const objv[])
+    void Tcl_SetListObj(Tcl_Obj *objPtr, size_t objc, Tcl_Obj *const objv[])
 }
 # Removed in 9.0 (changed to macro):
 #declare 63 {
@@ -322,7 +322,7 @@ declare 82 {
     int Tcl_CommandComplete(const char *cmd)
 }
 declare 83 {
-    char *Tcl_Concat(int argc, const char *const *argv)
+    char *Tcl_Concat(size_t argc, const char *const *argv)
 }
 declare 84 {
     size_t Tcl_ConvertElement(const char *src, char *dst, int flags)
@@ -333,12 +333,12 @@ declare 85 {
 }
 declare 86 {
     int Tcl_CreateAlias(Tcl_Interp *childInterp, const char *childCmd,
-	    Tcl_Interp *target, const char *targetCmd, int argc,
+	    Tcl_Interp *target, const char *targetCmd, size_t argc,
 	    const char *const *argv)
 }
 declare 87 {
     int Tcl_CreateAliasObj(Tcl_Interp *childInterp, const char *childCmd,
-	    Tcl_Interp *target, const char *targetCmd, int objc,
+	    Tcl_Interp *target, const char *targetCmd, size_t objc,
 	    Tcl_Obj *const objv[])
 }
 declare 88 {
@@ -429,7 +429,7 @@ declare 110 {
     void Tcl_DeleteInterp(Tcl_Interp *interp)
 }
 declare 111 {
-    void Tcl_DetachPids(int numPids, Tcl_Pid *pidPtr)
+    void Tcl_DetachPids(size_t numPids, Tcl_Pid *pidPtr)
 }
 declare 112 {
     void Tcl_DeleteTimerHandler(Tcl_TimerToken token)
@@ -566,7 +566,7 @@ declare 151 {
 	    int *modePtr)
 }
 declare 152 {
-    int Tcl_GetChannelBufferSize(Tcl_Channel chan)
+    size_t Tcl_GetChannelBufferSize(Tcl_Channel chan)
 }
 declare 153 {
     int Tcl_GetChannelHandle(Tcl_Channel chan, int direction,
@@ -687,7 +687,7 @@ declare 185 {
 }
 # Obsolete, use Tcl_FSJoinPath
 declare 186 {
-    char *Tcl_JoinPath(int argc, const char *const *argv,
+    char *Tcl_JoinPath(size_t argc, const char *const *argv,
 	    Tcl_DString *resultPtr)
 }
 declare 187 {
@@ -710,7 +710,7 @@ declare 191 {
     Tcl_Channel Tcl_MakeTcpClientChannel(void *tcpSocket)
 }
 declare 192 {
-    char *Tcl_Merge(int argc, const char *const *argv)
+    char *Tcl_Merge(size_t argc, const char *const *argv)
 }
 declare 193 {
     Tcl_HashEntry *Tcl_NextHashEntry(Tcl_HashSearch *searchPtr)
@@ -727,7 +727,7 @@ declare 196 {
 	    Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags)
 }
 declare 197 {
-    Tcl_Channel Tcl_OpenCommandChannel(Tcl_Interp *interp, int argc,
+    Tcl_Channel Tcl_OpenCommandChannel(Tcl_Interp *interp, size_t argc,
 	    const char **argv, int flags)
 }
 # This is obsolete, use Tcl_FSOpenFileChannel
@@ -819,7 +819,7 @@ declare 223 {
 	    Tcl_InterpDeleteProc *proc, void *clientData)
 }
 declare 224 {
-    void Tcl_SetChannelBufferSize(Tcl_Channel chan, int sz)
+    void Tcl_SetChannelBufferSize(Tcl_Channel chan, size_t sz)
 }
 declare 225 {
     int Tcl_SetChannelOption(Tcl_Interp *interp, Tcl_Channel chan,
@@ -843,7 +843,7 @@ declare 229 {
 #    const char *Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 #}
 declare 231 {
-    int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
+    size_t Tcl_SetRecursionLimit(Tcl_Interp *interp, size_t depth)
 }
 # Removed in 9.0, replaced by macro.
 #declare 232 {
@@ -881,12 +881,12 @@ declare 241 {
     void Tcl_SourceRCFile(Tcl_Interp *interp)
 }
 declare 242 {
-    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
+    int TclSplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
 	    const char ***argvPtr)
 }
 # Obsolete, use Tcl_FSSplitPath
 declare 243 {
-    void Tcl_SplitPath(const char *path, int *argcPtr, const char ***argvPtr)
+    void TclSplitPath(const char *path, int *argcPtr, const char ***argvPtr)
 }
 # Removed in 9.0 (stub entry only)
 #declare 244  {
@@ -971,7 +971,7 @@ declare 263 {
     size_t Tcl_Write(Tcl_Channel chan, const char *s, size_t slen)
 }
 declare 264 {
-    void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc,
+    void Tcl_WrongNumArgs(Tcl_Interp *interp, size_t objc,
 	    Tcl_Obj *const objv[], const char *message)
 }
 declare 265 {
@@ -1096,7 +1096,7 @@ declare 291 {
 	    int flags)
 }
 declare 292 {
-    int Tcl_EvalObjv(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
+    int Tcl_EvalObjv(Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[],
 	    int flags)
 }
 declare 293 {
@@ -1433,7 +1433,7 @@ declare 389 {
 }
 declare 390 {
     int Tcl_ProcObjCmd(void *clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
+	    size_t objc, Tcl_Obj *const objv[])
 }
 declare 391 {
     void Tcl_ConditionFinalize(Tcl_Condition *condPtr)
@@ -1699,10 +1699,10 @@ declare 459 {
     int Tcl_FSConvertToPathType(Tcl_Interp *interp, Tcl_Obj *pathPtr)
 }
 declare 460 {
-    Tcl_Obj *Tcl_FSJoinPath(Tcl_Obj *listObj, int elements)
+    Tcl_Obj *Tcl_FSJoinPath(Tcl_Obj *listObj, size_t elements)
 }
 declare 461 {
-    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, int *lenPtr)
+    Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, int *lenPtr)
 }
 declare 462 {
     int Tcl_FSEqualPaths(Tcl_Obj *firstPtr, Tcl_Obj *secondPtr)
@@ -1711,7 +1711,7 @@ declare 463 {
     Tcl_Obj *Tcl_FSGetNormalizedPath(Tcl_Interp *interp, Tcl_Obj *pathPtr)
 }
 declare 464 {
-    Tcl_Obj *Tcl_FSJoinToPath(Tcl_Obj *pathPtr, int objc,
+    Tcl_Obj *Tcl_FSJoinToPath(Tcl_Obj *pathPtr, size_t objc,
 	    Tcl_Obj *const objv[])
 }
 declare 465 {
@@ -1841,7 +1841,7 @@ declare 496 {
 	    Tcl_Obj *keyPtr)
 }
 declare 497 {
-    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, int *sizePtr)
+    int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, int *sizePtr)
 }
 declare 498 {
     int Tcl_DictObjFirst(Tcl_Interp *interp, Tcl_Obj *dictPtr,
@@ -1857,11 +1857,11 @@ declare 500 {
 }
 declare 501 {
     int Tcl_DictObjPutKeyList(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	    int keyc, Tcl_Obj *const *keyv, Tcl_Obj *valuePtr)
+	    size_t keyc, Tcl_Obj *const *keyv, Tcl_Obj *valuePtr)
 }
 declare 502 {
     int Tcl_DictObjRemoveKeyList(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	    int keyc, Tcl_Obj *const *keyv)
+	    size_t keyc, Tcl_Obj *const *keyv)
 }
 declare 503 {
     Tcl_Obj *Tcl_NewDictObj(void)
@@ -1954,7 +1954,7 @@ declare 524 {
     int Tcl_LimitExceeded(Tcl_Interp *interp)
 }
 declare 525 {
-    void Tcl_LimitSetCommands(Tcl_Interp *interp, int commandLimit)
+    void Tcl_LimitSetCommands(Tcl_Interp *interp, size_t commandLimit)
 }
 declare 526 {
     void Tcl_LimitSetTime(Tcl_Interp *interp, Tcl_Time *timeLimitPtr)
@@ -2143,7 +2143,7 @@ declare 572 {
 # TIP#268 (extended version numbers and requirements) akupries
 declare 573 {
     int Tcl_PkgRequireProc(Tcl_Interp *interp, const char *name,
-	    int objc, Tcl_Obj *const objv[], void *clientDataPtr)
+	    size_t objc, Tcl_Obj *const objv[], void *clientDataPtr)
 }
 
 # TIP#270 (utility C routines for string formatting) dgp
@@ -2155,12 +2155,12 @@ declare 575 {
 	    size_t length, size_t limit, const char *ellipsis)
 }
 declare 576 {
-    Tcl_Obj *Tcl_Format(Tcl_Interp *interp, const char *format, int objc,
+    Tcl_Obj *Tcl_Format(Tcl_Interp *interp, const char *format, size_t objc,
 	    Tcl_Obj *const objv[])
 }
 declare 577 {
     int Tcl_AppendFormatToObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    const char *format, int objc, Tcl_Obj *const objv[])
+	    const char *format, size_t objc, Tcl_Obj *const objv[])
 }
 declare 578 {
     Tcl_Obj *Tcl_ObjPrintf(const char *format, ...)
@@ -2197,11 +2197,11 @@ declare 584 {
     int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 585 {
-    int Tcl_NREvalObjv(Tcl_Interp *interp, int objc,
+    int Tcl_NREvalObjv(Tcl_Interp *interp, size_t objc,
 	    Tcl_Obj *const objv[], int flags)
 }
 declare 586 {
-    int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, int objc,
+    int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, size_t objc,
 	    Tcl_Obj *const objv[], int flags)
 }
 declare 587 {
@@ -2213,7 +2213,7 @@ declare 587 {
 # classic objProc
 declare 588 {
     int Tcl_NRCallObjProc(Tcl_Interp *interp, Tcl_ObjCmdProc *objProc,
-	    void *clientData, int objc, Tcl_Obj *const objv[])
+	    void *clientData, size_t objc, Tcl_Obj *const objv[])
 }
 
 # TIP#316 (Tcl_StatBuf reader functions) dkf
@@ -2269,7 +2269,7 @@ declare 603 {
 
 # TIP#265 (option parser) dkf for Sam Bromley
 declare 604 {
-    int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
+    int TclParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
 	    int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
@@ -2513,6 +2513,33 @@ declare 660 {
     int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
 }
 
+# TIP #616
+declare 661 {
+    int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+	    size_t *objcPtr, Tcl_Obj ***objvPtr)
+}
+declare 662 {
+    int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+	    size_t *lengthPtr)
+}
+declare 663 {
+    int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, size_t *sizePtr)
+}
+declare 664 {
+    int Tcl_SplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
+	    const char ***argvPtr)
+}
+declare 665 {
+    void Tcl_SplitPath(const char *path, size_t *argcPtr, const char ***argvPtr)
+}
+declare 666 {
+    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr)
+}
+declare 667 {
+    int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
+	    size_t *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
+}
+
 # TIP #617
 declare 668 {
     size_t Tcl_UniCharLen(const int *uniStr)
@@ -2570,7 +2597,7 @@ declare 3 {
 # Public functions that are not accessible via the stubs table.
 
 export {
-    void Tcl_MainEx(int argc, char **argv, Tcl_AppInitProc *appInitProc,
+    void Tcl_MainEx(size_t argc, char **argv, Tcl_AppInitProc *appInitProc,
     Tcl_Interp *interp)
 }
 export {

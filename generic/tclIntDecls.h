@@ -298,7 +298,7 @@ TCLAPI int		TclSetByteCodeFromAny(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, CompileHookProc *hookProc,
 				void *clientData);
 /* 143 */
-TCLAPI int		TclAddLiteralObj(struct CompileEnv *envPtr,
+TCLAPI size_t		TclAddLiteralObj(struct CompileEnv *envPtr,
 				Tcl_Obj *objPtr, LiteralEntry **litPtrPtr);
 /* 144 */
 TCLAPI void		TclHideLiteral(Tcl_Interp *interp,
@@ -347,7 +347,7 @@ TCLAPI void		TclExpandCodeArray(void *envPtr);
 TCLAPI void		TclpSetInitialEncodings(void);
 /* 166 */
 TCLAPI int		TclListObjSetElement(Tcl_Interp *interp,
-				Tcl_Obj *listPtr, int index,
+				Tcl_Obj *listPtr, size_t index,
 				Tcl_Obj *valuePtr);
 /* Slot 167 is reserved */
 /* Slot 168 is reserved */
@@ -533,7 +533,7 @@ TCLAPI char *		TclDoubleDigits(double dv, int ndigits, int flags,
 TCLAPI void		TclSetChildCancelFlags(Tcl_Interp *interp, int flags,
 				int force);
 /* 251 */
-TCLAPI int		TclRegisterLiteral(void *envPtr, const char *bytes,
+TCLAPI size_t		TclRegisterLiteral(void *envPtr, const char *bytes,
 				size_t length, int flags);
 /* 252 */
 TCLAPI Tcl_Obj *	TclPtrGetVar(Tcl_Interp *interp, Tcl_Var varPtr,
@@ -713,7 +713,7 @@ typedef struct TclIntStubs {
     void (*reserved140)(void);
     const char * (*tclpGetCwd) (Tcl_Interp *interp, Tcl_DString *cwdPtr); /* 141 */
     int (*tclSetByteCodeFromAny) (Tcl_Interp *interp, Tcl_Obj *objPtr, CompileHookProc *hookProc, void *clientData); /* 142 */
-    int (*tclAddLiteralObj) (struct CompileEnv *envPtr, Tcl_Obj *objPtr, LiteralEntry **litPtrPtr); /* 143 */
+    size_t (*tclAddLiteralObj) (struct CompileEnv *envPtr, Tcl_Obj *objPtr, LiteralEntry **litPtrPtr); /* 143 */
     void (*tclHideLiteral) (Tcl_Interp *interp, struct CompileEnv *envPtr, int index); /* 144 */
     const struct AuxDataType * (*tclGetAuxDataType) (const char *typeName); /* 145 */
     TclHandle (*tclHandleCreate) (void *ptr); /* 146 */
@@ -736,7 +736,7 @@ typedef struct TclIntStubs {
     const void * (*tclGetInstructionTable) (void); /* 163 */
     void (*tclExpandCodeArray) (void *envPtr); /* 164 */
     void (*tclpSetInitialEncodings) (void); /* 165 */
-    int (*tclListObjSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, int index, Tcl_Obj *valuePtr); /* 166 */
+    int (*tclListObjSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, size_t index, Tcl_Obj *valuePtr); /* 166 */
     void (*reserved167)(void);
     void (*reserved168)(void);
     int (*tclpUtfNcmp2) (const char *s1, const char *s2, size_t n); /* 169 */
@@ -821,7 +821,7 @@ typedef struct TclIntStubs {
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, long long toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetChildCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
-    int (*tclRegisterLiteral) (void *envPtr, const char *bytes, size_t length, int flags); /* 251 */
+    size_t (*tclRegisterLiteral) (void *envPtr, const char *bytes, size_t length, int flags); /* 251 */
     Tcl_Obj * (*tclPtrGetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 252 */
     Tcl_Obj * (*tclPtrSetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags); /* 253 */
     Tcl_Obj * (*tclPtrIncrObjVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags); /* 254 */

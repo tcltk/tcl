@@ -102,7 +102,7 @@ typedef struct CopyState {
     Tcl_WideInt total;		/* Total bytes transferred (written). */
     Tcl_Interp *interp;		/* Interp that started the copy. */
     Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
-    int bufSize;		/* Size of appended buffer. */
+    size_t bufSize;		/* Size of appended buffer. */
     char buffer[TCLFLEXARRAY];		/* Copy buffer, this must be the last
                                  * field. */
 } CopyState;
@@ -125,12 +125,12 @@ typedef struct {
 				 * ChannelState exists per set of stacked
 				 * channels. */
     Tcl_Channel stdinChannel;	/* Static variable for the stdin channel. */
-    int stdinInitialized;
     Tcl_Channel stdoutChannel;	/* Static variable for the stdout channel. */
-    int stdoutInitialized;
     Tcl_Channel stderrChannel;	/* Static variable for the stderr channel. */
-    int stderrInitialized;
     Tcl_Encoding binaryEncoding;
+    int stdinInitialized;
+    int stdoutInitialized;
+    int stderrInitialized;
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -151,7 +151,7 @@ typedef struct CloseCallback {
  * Static functions in this file:
  */
 
-static ChannelBuffer *	AllocChannelBuffer(int length);
+static ChannelBuffer *	AllocChannelBuffer(size_t length);
 static void		PreserveChannelBuffer(ChannelBuffer *bufPtr);
 static void		ReleaseChannelBuffer(ChannelBuffer *bufPtr);
 static int		IsShared(ChannelBuffer *bufPtr);
@@ -275,9 +275,9 @@ static int              WillRead(Channel *chanPtr);
  * --------------------------------------------------------------------------
  */
 
-#define BytesLeft(bufPtr)	((size_t)((bufPtr)->nextAdded - (bufPtr)->nextRemoved))
+#define BytesLeft(bufPtr)	(((bufPtr)->nextAdded - (bufPtr)->nextRemoved))
 
-#define SpaceLeft(bufPtr)	((size_t)((bufPtr)->bufLength - (bufPtr)->nextAdded))
+#define SpaceLeft(bufPtr)	(((bufPtr)->bufLength - (bufPtr)->nextAdded))
 
 #define IsBufferReady(bufPtr)	((bufPtr)->nextAdded > (bufPtr)->nextRemoved)
 
@@ -2446,10 +2446,10 @@ Tcl_GetChannelHandle(
 
 static ChannelBuffer *
 AllocChannelBuffer(
-    int length)			/* Desired length of channel buffer. */
+    size_t length)			/* Desired length of channel buffer. */
 {
     ChannelBuffer *bufPtr;
-    int n;
+    size_t n;
 
     n = length + CHANNELBUFFER_HEADER_SIZE + BUFFER_PADDING + BUFFER_PADDING;
     bufPtr = (ChannelBuffer *)Tcl_Alloc(n);
@@ -2532,7 +2532,7 @@ RecycleBuffer(
      * This is to honor dynamic changes of the buffersize made by the user.
      */
 
-    if ((bufPtr->bufLength - BUFFER_PADDING) != statePtr->bufSize) {
+    if ((bufPtr->bufLength) != statePtr->bufSize + BUFFER_PADDING) {
 	ReleaseChannelBuffer(bufPtr);
 	return;
     }
@@ -5210,7 +5210,7 @@ TclGetsObjBinary(
 
 static void
 FreeBinaryEncoding(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -6421,7 +6421,7 @@ ReadChars(
 	     * precautions.
 	     */
 
-	    if (nextPtr->nextRemoved - srcLen < 0) {
+	    if (nextPtr->nextRemoved < (size_t)srcLen) {
 		Tcl_Panic("Buffer Underflow, BUFFER_PADDING not enough");
 	    }
 
@@ -6915,7 +6915,7 @@ GetInput(
 	 */
 
 	if ((bufPtr != NULL)
-		&& (bufPtr->bufLength - BUFFER_PADDING != statePtr->bufSize)) {
+		&& (bufPtr->bufLength != statePtr->bufSize + BUFFER_PADDING)) {
 	    ReleaseChannelBuffer(bufPtr);
 	    bufPtr = NULL;
 	}
@@ -6926,7 +6926,7 @@ GetInput(
 	bufPtr->nextPtr = NULL;
 
 	toRead = SpaceLeft(bufPtr);
-	assert(toRead == statePtr->bufSize);
+	assert((size_t)toRead == statePtr->bufSize);
 
 	if (statePtr->inQueueTail == NULL) {
 	    statePtr->inQueueHead = bufPtr;
@@ -7566,7 +7566,7 @@ Tcl_ChannelBuffered(
 void
 Tcl_SetChannelBufferSize(
     Tcl_Channel chan,		/* The channel whose buffer size to set. */
-    int sz)			/* The size to set. */
+    size_t sz)			/* The size to set. */
 {
     ChannelState *statePtr;	/* State of real channel structure. */
 
@@ -7574,7 +7574,7 @@ Tcl_SetChannelBufferSize(
      * Clip the buffer size to force it into the [1,1M] range
      */
 
-    if (sz < 1) {
+    if (sz < 1 || sz > (TCL_INDEX_NONE>>1)) {
 	sz = 1;
     } else if (sz > MAX_CHANNEL_BUFFER_SIZE) {
 	sz = MAX_CHANNEL_BUFFER_SIZE;
@@ -7620,7 +7620,7 @@ Tcl_SetChannelBufferSize(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_GetChannelBufferSize(
     Tcl_Channel chan)		/* The channel for which to find the buffer
 				 * size. */
@@ -7672,7 +7672,7 @@ Tcl_BadChannelOption(
 	const char *genericopt =
 		"blocking buffering buffersize encoding eofchar translation";
 	const char **argv;
-	int argc, i;
+	size_t argc, i;
 	Tcl_DString ds;
         Tcl_Obj *errObj;
 
@@ -7963,7 +7963,7 @@ Tcl_SetChannelOption(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     size_t len;			/* Length of optionName string. */
-    int argc;
+    size_t argc;
     const char **argv;
 
     /*
@@ -8030,9 +8030,19 @@ Tcl_SetChannelOption(
 	}
 	return TCL_OK;
     } else if (HaveOpt(7, "-buffersize")) {
-	int newBufferSize;
+	Tcl_WideInt newBufferSize;
+	Tcl_Obj obj;
+	int code;
 
-	if (Tcl_GetInt(interp, newValue, &newBufferSize) == TCL_ERROR) {
+	obj.refCount = 1;
+	obj.bytes = (char *)newValue;
+	obj.length = strlen(newValue);
+	obj.typePtr = NULL;
+
+	code = Tcl_GetWideIntFromObj(interp, &obj, &newBufferSize);
+	TclFreeInternalRep(&obj);
+
+	if (code == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
 	Tcl_SetChannelBufferSize(chan, newBufferSize);
@@ -9002,7 +9012,7 @@ TclChannelEventScriptInvoker(
 
 int
 Tcl_FileEventObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which the channel for which
 				 * to create the handler is found. */
     int objc,			/* Number of arguments. */
@@ -10921,7 +10931,8 @@ static Tcl_Obj *
 FixLevelCode(
     Tcl_Obj *msg)
 {
-    int explicitResult, numOptions, lc, lcn;
+    int explicitResult, numOptions, lcn;
+    size_t lc;
     Tcl_Obj **lv, **lvn;
     int res, i, j, val, lignore, cignore;
     int newlevel = -1, newcode = -1;

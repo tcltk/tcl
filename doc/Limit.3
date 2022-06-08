@@ -65,7 +65,7 @@ its limits checked.
 .AP int type in
 The type of limit that the operation refers to.  This must be either
 \fBTCL_LIMIT_COMMANDS\fR or \fBTCL_LIMIT_TIME\fR.
-.AP int commandLimit in
+.AP size_t commandLimit in
 The maximum number of commands (as reported by \fBinfo cmdcount\fR)
 that may be executed in the interpreter.
 .AP Tcl_Time *timeLimitPtr in/out

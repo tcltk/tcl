@@ -625,7 +625,7 @@ TclGetEnv(
 
 static char *
 EnvTraceProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter whose "env" variable is being
 				 * modified. */
     const char *name1,		/* Better be "env". */

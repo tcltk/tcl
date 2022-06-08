@@ -400,7 +400,7 @@ Tcl_PkgRequireProc(
     Tcl_Interp *interp,		/* Interpreter in which package is now
 				 * available. */
     const char *name,		/* Name of desired package. */
-    int reqc,			/* Requirements constraining the desired
+    size_t reqc,			/* Requirements constraining the desired
 				 * version. */
     Tcl_Obj *const reqv[],	/* 0 means to use the latest version
 				 * available. */
@@ -1022,7 +1022,7 @@ Tcl_PackageObjCmd(
 
 int
 TclNRPackageObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1038,7 +1038,8 @@ TclNRPackageObjCmd(
 	PKG_VERSIONS, PKG_VSATISFIES
     } optionIndex;
     Interp *iPtr = (Interp *) interp;
-    int exact, i, newobjc, satisfies;
+    int exact, satisfies;
+    size_t i, newobjc;
     PkgAvail *availPtr, *prevPtr;
     Package *pkgPtr;
     Tcl_HashEntry *hPtr;
@@ -1082,7 +1083,7 @@ TclNRPackageObjCmd(
 	PkgFiles *pkgFiles = (PkgFiles *)
 		Tcl_GetAssocData(interp, "tclPkgFiles", NULL);
 
-	for (i = 2; i < objc; i++) {
+	for (i = 2; i < (size_t)objc; i++) {
 	    keyString = TclGetString(objv[i]);
 	    if (pkgFiles) {
 		hPtr = Tcl_FindHashEntry(&pkgFiles->table, keyString);

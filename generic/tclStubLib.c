@@ -65,7 +65,7 @@ Tcl_InitStubs(
 {
     Interp *iPtr = (Interp *)interp;
     const char *actualVersion = NULL;
-    ClientData pkgData = NULL;
+    void *pkgData = NULL;
     const TclStubs *stubsPtr = iPtr->stubTable;
     const char *tclName = (((exact&0xFF00) >= 0x900) ? "tcl" : "Tcl");
 
