@@ -14,14 +14,14 @@ Tcl_SetRecursionLimit \- set maximum allowable nesting depth in interpreter
 .nf
 \fB#include <tcl.h>\fR
 .sp
-int
+size_t
 \fBTcl_SetRecursionLimit\fR(\fIinterp, depth\fR)
 .SH ARGUMENTS
 .AS Tcl_Interp *interp
 .AP Tcl_Interp *interp in
 Interpreter whose recursion limit is to be set.
 Must be greater than zero.
-.AP int depth in
+.AP size_t depth in
 New limit for nested calls to \fBTcl_Eval\fR for \fIinterp\fR.
 .BE
 

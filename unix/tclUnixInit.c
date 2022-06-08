@@ -478,7 +478,7 @@ TclpInitLibraryPath(
 
     if ((str != NULL) && (str[0] != '\0')) {
 	Tcl_DString ds;
-	int pathc;
+	size_t pathc;
 	const char **pathv;
 	char installLib[LIBRARY_SIZE];
 

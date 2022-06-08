@@ -258,7 +258,7 @@ TclChannelTransform(
     Channel *chanPtr;		/* The actual channel. */
     ChannelState *statePtr;	/* State info for channel. */
     int mode;			/* Read/write mode of the channel. */
-    int objc;
+    size_t objc;
     TransformChannelData *dataPtr;
     Tcl_DString ds;
 
