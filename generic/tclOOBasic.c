@@ -76,7 +76,7 @@ FinalizeConstruction(
 
 int
 TclOO_Class_Constructor(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -174,7 +174,7 @@ DecrRefsPostClassConstructor(
 
 int
 TclOO_Class_Create(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -239,7 +239,7 @@ TclOO_Class_Create(
 
 int
 TclOO_Class_CreateNs(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -312,7 +312,7 @@ TclOO_Class_CreateNs(
 
 int
 TclOO_Class_New(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -356,7 +356,7 @@ TclOO_Class_New(
 
 int
 TclOO_Object_Destroy(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -417,7 +417,7 @@ AfterNRDestructor(
 
 int
 TclOO_Object_Eval(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -518,7 +518,7 @@ FinalizeEval(
 
 int
 TclOO_Object_Unknown(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -624,7 +624,7 @@ TclOO_Object_Unknown(
 
 int
 TclOO_Object_LinkVar(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -726,7 +726,7 @@ TclOO_Object_LinkVar(
 
 int
 TclOO_Object_VarName(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which to create the object;
 				 * also used for error reporting. */
     Tcl_ObjectContext context,	/* The object/call context. */
@@ -864,7 +864,7 @@ TclOO_Object_VarName(
 
 int
 TclOONextObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -900,7 +900,7 @@ TclOONextObjCmd(
 
 int
 TclOONextToObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1033,7 +1033,7 @@ NextRestoreFrame(
 
 int
 TclOOSelfObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1269,7 +1269,7 @@ TclOOSelfObjCmd(
 
 int
 TclOOCopyObjectCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)

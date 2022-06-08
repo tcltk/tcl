@@ -5210,7 +5210,7 @@ TclGetsObjBinary(
 
 static void
 FreeBinaryEncoding(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -9012,7 +9012,7 @@ TclChannelEventScriptInvoker(
 
 int
 Tcl_FileEventObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter in which the channel for which
 				 * to create the handler is found. */
     size_t objc,			/* Number of arguments. */

@@ -185,7 +185,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
 
 int
 Tcl_IfObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -195,7 +195,7 @@ Tcl_IfObjCmd(
 
 int
 TclNRIfObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -218,13 +218,13 @@ TclNRIfObjCmd(
 
     TclNewObj(boolObj);
     Tcl_NRAddCallback(interp, IfConditionCallback, INT2PTR(objc),
-	    (ClientData) objv, INT2PTR(1), boolObj);
+	    (void *) objv, INT2PTR(1), boolObj);
     return Tcl_NRExprObj(interp, objv[1], boolObj);
 }
 
 static int
 IfConditionCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -368,7 +368,7 @@ IfConditionCallback(
 
 int
 Tcl_IncrObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -449,7 +449,7 @@ TclInitInfoCmd(
 
 static int
 InfoArgsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -512,7 +512,7 @@ InfoArgsCmd(
 
 static int
 InfoBodyCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -573,7 +573,7 @@ InfoBodyCmd(
 
 static int
 InfoCmdCountCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -615,7 +615,7 @@ InfoCmdCountCmd(
 
 static int
 InfoCommandsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -892,7 +892,7 @@ InfoCommandsCmd(
 
 static int
 InfoCompleteCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -929,7 +929,7 @@ InfoCompleteCmd(
 
 static int
 InfoDefaultCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1011,7 +1011,7 @@ InfoDefaultCmd(
 
 static int
 InfoErrorStackCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1060,7 +1060,7 @@ InfoErrorStackCmd(
 
 int
 TclInfoExistsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1105,7 +1105,7 @@ TclInfoExistsCmd(
 
 static int
 InfoFrameCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1445,7 +1445,7 @@ TclInfoFrame(
 
 static int
 InfoFunctionsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1510,7 +1510,7 @@ InfoFunctionsCmd(
 
 static int
 InfoHostnameCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1556,7 +1556,7 @@ InfoHostnameCmd(
 
 static int
 InfoLevelCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1630,7 +1630,7 @@ InfoLevelCmd(
 
 static int
 InfoLibraryCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1677,7 +1677,7 @@ InfoLibraryCmd(
 
 static int
 InfoLoadedCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1725,7 +1725,7 @@ InfoLoadedCmd(
 
 static int
 InfoNameOfExecutableCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1761,7 +1761,7 @@ InfoNameOfExecutableCmd(
 
 static int
 InfoPatchLevelCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1808,7 +1808,7 @@ InfoPatchLevelCmd(
 
 static int
 InfoProcsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1995,7 +1995,7 @@ InfoProcsCmd(
 
 static int
 InfoScriptCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2043,7 +2043,7 @@ InfoScriptCmd(
 
 static int
 InfoSharedlibCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2081,7 +2081,7 @@ InfoSharedlibCmd(
 
 static int
 InfoTclVersionCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2124,7 +2124,7 @@ InfoTclVersionCmd(
 
 static int
 InfoCmdTypeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2175,7 +2175,7 @@ InfoCmdTypeCmd(
 
 int
 Tcl_JoinObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
@@ -2260,7 +2260,7 @@ Tcl_JoinObjCmd(
 
 int
 Tcl_LassignObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2334,7 +2334,7 @@ Tcl_LassignObjCmd(
 
 int
 Tcl_LindexObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2392,7 +2392,7 @@ Tcl_LindexObjCmd(
 
 int
 Tcl_LinsertObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2475,7 +2475,7 @@ Tcl_LinsertObjCmd(
 
 int
 Tcl_ListObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])
@@ -2511,7 +2511,7 @@ Tcl_ListObjCmd(
 
 int
 Tcl_LlengthObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])
@@ -2558,7 +2558,7 @@ Tcl_LlengthObjCmd(
 
 int
 Tcl_LpopObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])
@@ -2660,7 +2660,7 @@ Tcl_LpopObjCmd(
 
 int
 Tcl_LrangeObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])
@@ -2729,7 +2729,7 @@ LremoveIndexCompare(
 
 int
 Tcl_LremoveObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2848,7 +2848,7 @@ Tcl_LremoveObjCmd(
 
 int
 Tcl_LrepeatObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])
@@ -2957,7 +2957,7 @@ Tcl_LrepeatObjCmd(
 
 int
 Tcl_LreplaceObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -3058,7 +3058,7 @@ Tcl_LreplaceObjCmd(
 
 int
 Tcl_LreverseObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
@@ -3137,7 +3137,7 @@ Tcl_LreverseObjCmd(
 
 int
 Tcl_LsearchObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
@@ -3898,7 +3898,7 @@ Tcl_LsearchObjCmd(
 
 int
 Tcl_LsetObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
@@ -3983,7 +3983,7 @@ Tcl_LsetObjCmd(
 
 int
 Tcl_LsortObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */

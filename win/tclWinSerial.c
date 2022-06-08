@@ -285,7 +285,7 @@ SerialInit(void)
 
 static void
 SerialExitHandler(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     SerialInfo *infoPtr;
@@ -323,7 +323,7 @@ SerialExitHandler(
 
 static void
 ProcExitHandler(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     Tcl_MutexLock(&serialMutex);
     initialized = 0;
@@ -406,7 +406,7 @@ SerialGetMilliseconds(void)
 
 void
 SerialSetupProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     SerialInfo *infoPtr;
@@ -461,7 +461,7 @@ SerialSetupProc(
 
 static void
 SerialCheckProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     SerialInfo *infoPtr;

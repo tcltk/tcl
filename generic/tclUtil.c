@@ -99,8 +99,8 @@ static ProcessGlobalValue executableName = {
  */
 
 static void		ClearHash(Tcl_HashTable *tablePtr);
-static void		FreeProcessGlobalValue(ClientData clientData);
-static void		FreeThreadHash(ClientData clientData);
+static void		FreeProcessGlobalValue(void *clientData);
+static void		FreeThreadHash(void *clientData);
 static int		GetEndOffsetFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    size_t endValue, Tcl_WideInt *indexPtr);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
@@ -3337,7 +3337,7 @@ GetWideForIndex(
                                  * representing an index. */
 {
     int numType;
-    ClientData cd;
+    void *cd;
     int code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
 
     if (code == TCL_OK) {
@@ -3456,7 +3456,7 @@ GetEndOffsetFromObj(
 {
     Tcl_ObjInternalRep *irPtr;
     Tcl_WideInt offset = -1;	/* Offset in the "end-offset" expression - 1 */
-    ClientData cd;
+    void *cd;
 
     while ((irPtr = TclFetchInternalRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjInternalRep ir;
@@ -3880,7 +3880,7 @@ GetThreadHash(
 
 static void
 FreeThreadHash(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_HashTable *tablePtr = (Tcl_HashTable *)clientData;
 
@@ -3902,7 +3902,7 @@ FreeThreadHash(
 
 static void
 FreeProcessGlobalValue(
-    ClientData clientData)
+    void *clientData)
 {
     ProcessGlobalValue *pgvPtr = (ProcessGlobalValue *)clientData;
 

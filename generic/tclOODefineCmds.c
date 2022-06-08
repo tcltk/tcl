@@ -696,7 +696,7 @@ RenameDeleteMethod(
 
 int
 TclOOUnknownDefinition(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1094,7 +1094,7 @@ MagicDefinitionInvoke(
 
 int
 TclOODefineObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1170,7 +1170,7 @@ TclOODefineObjCmd(
 
 int
 TclOOObjDefObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1239,7 +1239,7 @@ TclOOObjDefObjCmd(
 
 int
 TclOODefineSelfObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1310,7 +1310,7 @@ TclOODefineSelfObjCmd(
 
 int
 TclOODefineObjSelfObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1417,7 +1417,7 @@ TclOODefinePrivateObjCmd(
 
 int
 TclOODefineClassObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1526,7 +1526,7 @@ TclOODefineClassObjCmd(
 
 int
 TclOODefineConstructorObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1595,7 +1595,7 @@ TclOODefineConstructorObjCmd(
 
 int
 TclOODefineDefnNsObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1737,7 +1737,7 @@ TclOODefineDeleteMethodObjCmd(
 
 int
 TclOODefineDestructorObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2316,7 +2316,7 @@ TclOODefineSlots(
 
 static int
 ClassFilterGet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2350,7 +2350,7 @@ ClassFilterGet(
 
 static int
 ClassFilterSet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2396,7 +2396,7 @@ ClassFilterSet(
 
 static int
 ClassMixinGet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2433,7 +2433,7 @@ ClassMixinGet(
 
 static int
 ClassMixinSet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2502,7 +2502,7 @@ ClassMixinSet(
 
 static int
 ClassSuperGet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2538,7 +2538,7 @@ ClassSuperGet(
 
 static int
 ClassSuperSet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2670,7 +2670,7 @@ ClassSuperSet(
 
 static int
 ClassVarsGet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2714,7 +2714,7 @@ ClassVarsGet(
 
 static int
 ClassVarsSet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2785,7 +2785,7 @@ ClassVarsSet(
 
 static int
 ObjFilterGet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2813,7 +2813,7 @@ ObjFilterGet(
 
 static int
 ObjFilterSet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2853,7 +2853,7 @@ ObjFilterSet(
 
 static int
 ObjMixinGet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2885,7 +2885,7 @@ ObjMixinGet(
 
 static int
 ObjMixinSet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2939,7 +2939,7 @@ ObjMixinSet(
 
 static int
 ObjVarsGet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -2977,7 +2977,7 @@ ObjVarsGet(
 
 static int
 ObjVarsSet(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -3042,7 +3042,7 @@ ObjVarsSet(
 
 static int
 ResolveClass(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,

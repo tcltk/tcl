@@ -762,7 +762,7 @@ TclSetByteCodeFromAny(
 				 * compiled. Must not be NULL. */
     Tcl_Obj *objPtr,		/* The object to make a ByteCode object. */
     CompileHookProc *hookProc,	/* Procedure to invoke after compilation. */
-    ClientData clientData)	/* Hook procedure private data. */
+    void *clientData)	/* Hook procedure private data. */
 {
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
@@ -3410,7 +3410,7 @@ TclCreateExceptRange(
 
     rangePtr = &envPtr->exceptArrayPtr[index];
     rangePtr->type = type;
-    rangePtr->nestingLevel1 = envPtr->exceptDepth;
+    rangePtr->nestingLevel = envPtr->exceptDepth;
     rangePtr->codeOffset = TCL_INDEX_NONE;
     rangePtr->numCodeBytes = TCL_INDEX_NONE;
     rangePtr->breakOffset = TCL_INDEX_NONE;
@@ -3723,7 +3723,7 @@ TclFinalizeLoopExceptionRange(
 
 size_t
 TclCreateAuxData(
-    ClientData clientData,	/* The compilation auxiliary data to store in
+    void *clientData,	/* The compilation auxiliary data to store in
 				 * the new aux data record. */
     const AuxDataType *typePtr,	/* Pointer to the type to attach to this
 				 * AuxData */

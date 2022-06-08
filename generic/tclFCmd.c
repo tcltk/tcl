@@ -47,7 +47,7 @@ static size_t		FileForceOption(Tcl_Interp *interp,
 
 int
 TclFileRenameCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interp for error reporting or recursive
 				 * calls in the case of a tricky rename. */
     size_t objc,			/* Number of arguments. */
@@ -76,7 +76,7 @@ TclFileRenameCmd(
 
 int
 TclFileCopyCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting or recursive calls
 				 * in the case of a tricky copy. */
     size_t objc,			/* Number of arguments. */
@@ -215,7 +215,7 @@ FileCopyRename(
 
 int
 TclFileMakeDirsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting. */
     size_t objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
@@ -340,7 +340,7 @@ TclFileMakeDirsCmd(
 
 int
 TclFileDeleteCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting */
     size_t objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
@@ -950,7 +950,7 @@ FileBasename(
 
 int
 TclFileAttrsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter for error reporting. */
     size_t objc,			/* Number of command line arguments. */
     Tcl_Obj *const objv[])	/* The command line objects. */
@@ -1167,7 +1167,7 @@ TclFileAttrsCmd(
 
 int
 TclFileLinkCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     size_t objc,
     Tcl_Obj *const objv[])
@@ -1318,7 +1318,7 @@ TclFileLinkCmd(
 
 int
 TclFileReadLinkCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     size_t objc,
     Tcl_Obj *const objv[])
@@ -1369,7 +1369,7 @@ TclFileReadLinkCmd(
 
 int
 TclFileTemporaryCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     size_t objc,
     Tcl_Obj *const objv[])
@@ -1528,7 +1528,7 @@ TclFileTemporaryCmd(
 
 int
 TclFileTempDirCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     size_t objc,
     Tcl_Obj *const objv[])

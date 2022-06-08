@@ -1146,7 +1146,7 @@ static int
 ProcedureMethodCompiledVarResolver(
     TCL_UNUSED(Tcl_Interp *),
     const char *varName,
-    int length,
+    size_t length,
     TCL_UNUSED(Tcl_Namespace *),
     Tcl_ResolvedVarInfo **rPtrPtr)
 {

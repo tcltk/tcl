@@ -2549,7 +2549,7 @@ DictForNRCmd(
 
 static int
 DictForLoopCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -2754,7 +2754,7 @@ DictMapNRCmd(
 
 static int
 DictMapLoopCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -3321,7 +3321,7 @@ DictUpdateCmd(
 
 static int
 FinalizeDictUpdate(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -3472,7 +3472,7 @@ DictWithCmd(
 
 static int
 FinalizeDictWith(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {

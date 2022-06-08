@@ -88,7 +88,7 @@ static TclRegexp *	CompileRegexp(Tcl_Interp *interp, const char *pattern,
 			    size_t length, int flags);
 static void		DupRegexpInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
-static void		FinalizeRegexp(ClientData clientData);
+static void		FinalizeRegexp(void *clientData);
 static void		FreeRegexp(TclRegexp *regexpPtr);
 static void		FreeRegexpInternalRep(Tcl_Obj *objPtr);
 static int		RegExpExecUniChar(Tcl_Interp *interp, Tcl_RegExp re,

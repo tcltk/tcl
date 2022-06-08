@@ -402,7 +402,7 @@ BuildProcessStatusObj(
 
 static int
 ProcessListObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -453,7 +453,7 @@ ProcessListObjCmd(
 
 static int
 ProcessStatusObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -600,7 +600,7 @@ ProcessStatusObjCmd(
 
 static int
 ProcessPurgeObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -698,7 +698,7 @@ ProcessPurgeObjCmd(
 
 static int
 ProcessAutopurgeObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

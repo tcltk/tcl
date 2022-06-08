@@ -25,7 +25,7 @@ enum returnKeys {
  */
 
 static Tcl_Obj **	GetKeys(void);
-static void		ReleaseKeys(ClientData clientData);
+static void		ReleaseKeys(void *clientData);
 static void		ResetObjResult(Interp *iPtr);
 
 /*
@@ -659,7 +659,7 @@ GetKeys(void)
 
 static void
 ReleaseKeys(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_Obj **keys = (Tcl_Obj **)clientData;
     int i;

@@ -1195,7 +1195,7 @@ TclGetLoadedLibraries(
 
 static void
 LoadCleanupProc(
-    TCL_UNUSED(ClientData),	/* Pointer to first InterpLibrary structure
+    TCL_UNUSED(void *),	/* Pointer to first InterpLibrary structure
 				 * for interp. */
     Tcl_Interp *interp)
 {

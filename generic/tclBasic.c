@@ -8289,7 +8289,7 @@ DTraceObjCmd(
 {
     if (TCL_DTRACE_TCL_PROBE_ENABLED()) {
 	char *a[10];
-	int i = 0;
+	size_t i = 0;
 
 	while (i++ < 10) {
 	    a[i-1] = i < objc ? TclGetString(objv[i]) : NULL;

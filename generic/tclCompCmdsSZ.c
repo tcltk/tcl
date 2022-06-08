@@ -2554,9 +2554,9 @@ IssueSwitchJumpTable(
  *----------------------------------------------------------------------
  */
 
-static ClientData
+static void *
 DupJumptableInfo(
-    ClientData clientData)
+    void *clientData)
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
     JumptableInfo *newJtPtr = (JumptableInfo *)Tcl_Alloc(sizeof(JumptableInfo));
@@ -2576,7 +2576,7 @@ DupJumptableInfo(
 
 static void
 FreeJumptableInfo(
-    ClientData clientData)
+    void *clientData)
 {
     JumptableInfo *jtPtr = (JumptableInfo *)clientData;
 
@@ -2586,7 +2586,7 @@ FreeJumptableInfo(
 
 static void
 PrintJumptableInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
     size_t pcOffset)
@@ -2615,7 +2615,7 @@ PrintJumptableInfo(
 
 static void
 DisassembleJumptableInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(size_t))

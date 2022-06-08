@@ -8025,7 +8025,7 @@ static int
 InterpCompiledVarResolver(
     TCL_UNUSED(Tcl_Interp *),
     const char *name,
-    TCL_UNUSED(int) /*length*/,
+    TCL_UNUSED(size_t) /*length*/,
     TCL_UNUSED(Tcl_Namespace *),
     Tcl_ResolvedVarInfo **rPtr)
 {

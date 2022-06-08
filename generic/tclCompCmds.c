@@ -2267,9 +2267,9 @@ TclCompileDictWithCmd(
  *----------------------------------------------------------------------
  */
 
-static ClientData
+static void *
 DupDictUpdateInfo(
-    ClientData clientData)
+    void *clientData)
 {
     DictUpdateInfo *dui1Ptr, *dui2Ptr;
     size_t len;
@@ -2283,14 +2283,14 @@ DupDictUpdateInfo(
 
 static void
 FreeDictUpdateInfo(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_Free(clientData);
 }
 
 static void
 PrintDictUpdateInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(size_t))
@@ -2308,7 +2308,7 @@ PrintDictUpdateInfo(
 
 static void
 DisassembleDictUpdateInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(size_t))
@@ -2889,9 +2889,9 @@ CompileEachloopCmd(
  *----------------------------------------------------------------------
  */
 
-static ClientData
+static void *
 DupForeachInfo(
-    ClientData clientData)	/* The foreach command's compilation auxiliary
+    void *clientData)	/* The foreach command's compilation auxiliary
 				 * data to duplicate. */
 {
     ForeachInfo *srcPtr = (ForeachInfo *)clientData;
@@ -2940,7 +2940,7 @@ DupForeachInfo(
 
 static void
 FreeForeachInfo(
-    ClientData clientData)	/* The foreach command's compilation auxiliary
+    void *clientData)	/* The foreach command's compilation auxiliary
 				 * data to free. */
 {
     ForeachInfo *infoPtr = (ForeachInfo *)clientData;
@@ -2973,7 +2973,7 @@ FreeForeachInfo(
 
 static void
 PrintForeachInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(size_t))
@@ -3013,7 +3013,7 @@ PrintForeachInfo(
 
 static void
 PrintNewForeachInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *appendObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(size_t))
@@ -3043,7 +3043,7 @@ PrintNewForeachInfo(
 
 static void
 DisassembleForeachInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(size_t))
@@ -3090,7 +3090,7 @@ DisassembleForeachInfo(
 
 static void
 DisassembleNewForeachInfo(
-    ClientData clientData,
+    void *clientData,
     Tcl_Obj *dictObj,
     TCL_UNUSED(ByteCode *),
     TCL_UNUSED(size_t))
