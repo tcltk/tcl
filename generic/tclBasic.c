@@ -3440,7 +3440,7 @@ static int cmdWrapper2Proc(void *clientData,
 {
     Command *cmdPtr = (Command *)clientData;
     if (objc > INT_MAX) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?arg ...?");
 	return TCL_ERROR;
     }
     return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
