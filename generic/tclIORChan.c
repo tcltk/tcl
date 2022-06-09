@@ -513,7 +513,7 @@ TclChanCreateObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Channel chan;		/* Token for the new channel */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    int listc;			/* Result of 'initialize', and of */
+    size_t listc;			/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -1047,10 +1047,10 @@ UnmarshallErrorResult(
     Tcl_Interp *interp,
     Tcl_Obj *msgObj)
 {
-    int lc;
+    size_t lc;
     Tcl_Obj **lv;
     int explicitResult;
-    int numOptions;
+    size_t numOptions;
 
     /*
      * Process the caught message.
@@ -1912,7 +1912,8 @@ ReflectGetOption(
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
     Tcl_Obj *optionObj;
     Tcl_Obj *resObj;		/* Result data for 'configure' */
-    int listc, result = TCL_OK;
+    size_t listc;
+    int result = TCL_OK;
     Tcl_Obj **listv;
     MethodName method;
 
@@ -2005,7 +2006,7 @@ ReflectGetOption(
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Expected list with even number of "
-		"elements, got %d element%s instead", listc,
+		"elements, got %" TCL_Z_MODIFIER "u element%s instead", listc,
 		(listc == 1 ? "" : "s")));
         goto error;
     } else {
@@ -2134,7 +2135,7 @@ EncodeEventMask(
     int *mask)
 {
     int events;			/* Mask of events to post */
-    int listc;			/* #elements in eventspec list */
+    size_t listc;			/* #elements in eventspec list */
     Tcl_Obj **listv;		/* Elements of eventspec list */
     int evIndex;		/* Id of event for an element of the eventspec
 				 * list. */
@@ -3304,7 +3305,7 @@ ForwardProc(
 	     * NOTE (4) as well.
 	     */
 
-	    int listc;
+	    size_t listc;
 	    Tcl_Obj **listv;
 
 	    if (TclListObjGetElementsM(interp, resObj, &listc,
@@ -3319,7 +3320,7 @@ ForwardProc(
 
 		char *buf = (char *)Tcl_Alloc(200);
 		sprintf(buf,
-			"{Expected list with even number of elements, got %d %s instead}",
+			"{Expected list with even number of elements, got %" TCL_Z_MODIFIER "u %s instead}",
 			listc, (listc == 1 ? "element" : "elements"));
 
 		ForwardSetDynamicError(paramPtr, buf);

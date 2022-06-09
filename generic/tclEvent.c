@@ -207,7 +207,8 @@ HandleBgErrors(
     Tcl_Preserve(assocPtr);
     Tcl_Preserve(interp);
     while (assocPtr->firstBgPtr != NULL) {
-	int code, prefixObjc;
+	int code;
+	size_t prefixObjc;
 	Tcl_Obj **prefixObjv, **tempObjv;
 
 	/*

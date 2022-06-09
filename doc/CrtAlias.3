@@ -72,12 +72,12 @@ Name of source command for alias.
 Interpreter that contains the target command for an alias.
 .AP "const char" *targetCmd in
 Name of target command for alias in \fItargetInterp\fR.
-.AP int argc in
+.AP size_t argc in
 Count of additional arguments to pass to the alias command.
 .AP "const char *const" *argv in
 Vector of strings, the additional arguments to pass to the alias command.
 This storage is owned by the caller.
-.AP int objc in
+.AP size_t objc in
 Count of additional value arguments to pass to the aliased command.
 .AP Tcl_Obj **objv in
 Vector of Tcl_Obj structures, the additional value arguments to pass to

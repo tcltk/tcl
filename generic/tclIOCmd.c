@@ -67,7 +67,7 @@ static void		UnregisterTcpServerInterpCleanupProc(
 
 static void
 FinalizeIOCmdTSD(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -97,7 +97,7 @@ FinalizeIOCmdTSD(
 
 int
 Tcl_PutsObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -210,7 +210,7 @@ Tcl_PutsObjCmd(
 
 int
 Tcl_FlushObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -274,13 +274,13 @@ Tcl_FlushObjCmd(
 
 int
 Tcl_GetsObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to read from. */
-    int lineLen;		/* Length of line just read. */
+    size_t lineLen;		/* Length of line just read. */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *linePtr, *chanObjPtr;
     int code = TCL_OK;
@@ -303,7 +303,7 @@ Tcl_GetsObjCmd(
     TclChannelPreserve(chan);
     TclNewObj(linePtr);
     lineLen = Tcl_GetsObj(chan, linePtr);
-    if (lineLen < 0) {
+    if (lineLen == TCL_IO_FAILURE) {
 	if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
 	    Tcl_DecrRefCount(linePtr);
 
@@ -322,7 +322,7 @@ Tcl_GetsObjCmd(
 	    code = TCL_ERROR;
 	    goto done;
 	}
-	lineLen = -1;
+	lineLen = TCL_IO_FAILURE;
     }
     if (objc == 3) {
 	if (Tcl_ObjSetVar2(interp, objv[2], NULL, linePtr,
@@ -330,7 +330,7 @@ Tcl_GetsObjCmd(
 	    code = TCL_ERROR;
 	    goto done;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(lineLen));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(lineLen + 1U)) - 1));
     } else {
 	Tcl_SetObjResult(interp, linePtr);
     }
@@ -358,15 +358,15 @@ Tcl_GetsObjCmd(
 
 int
 Tcl_ReadObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to read from. */
     int newline, i;		/* Discard newline at end? */
-    int toRead;			/* How many bytes to read? */
-    int charactersRead;		/* How many characters were read? */
+    Tcl_WideInt toRead;			/* How many bytes to read? */
+    size_t charactersRead;		/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *resultPtr, *chanObjPtr;
 
@@ -416,7 +416,7 @@ Tcl_ReadObjCmd(
 
     toRead = -1;
     if (i < objc) {
-	if ((TclGetIntFromObj(interp, objv[i], &toRead) != TCL_OK)
+	if ((TclGetWideIntFromObj(NULL, objv[i], &toRead) != TCL_OK)
 		|| (toRead < 0)) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected non-negative integer but got \"%s\"",
@@ -430,7 +430,7 @@ Tcl_ReadObjCmd(
     Tcl_IncrRefCount(resultPtr);
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
-    if (charactersRead < 0) {
+    if (charactersRead == TCL_IO_FAILURE) {
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
@@ -487,7 +487,7 @@ Tcl_ReadObjCmd(
 
 int
 Tcl_SeekObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -562,7 +562,7 @@ Tcl_SeekObjCmd(
 
 int
 Tcl_TellObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -624,7 +624,7 @@ Tcl_TellObjCmd(
 
 int
 Tcl_CloseObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -732,7 +732,7 @@ Tcl_CloseObjCmd(
 
 int
 Tcl_FconfigureObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -807,7 +807,7 @@ Tcl_FconfigureObjCmd(
 
 int
 Tcl_EofObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -846,7 +846,7 @@ Tcl_EofObjCmd(
 
 int
 Tcl_ExecObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1013,7 +1013,7 @@ Tcl_ExecObjCmd(
 
 int
 Tcl_FblockedObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1059,7 +1059,7 @@ Tcl_FblockedObjCmd(
 
 int
 Tcl_OpenObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1117,7 +1117,8 @@ Tcl_OpenObjCmd(
     if (!pipeline) {
 	chan = Tcl_FSOpenFileChannel(interp, objv[1], modeString, prot);
     } else {
-	int mode, seekFlag, cmdObjc, binary;
+	int mode, seekFlag, binary;
+	size_t cmdObjc;
 	const char **cmdArgv;
 
 	if (Tcl_SplitList(interp, what+1, &cmdObjc, &cmdArgv) != TCL_OK) {
@@ -1285,7 +1286,7 @@ UnregisterTcpServerInterpCleanupProc(
 	return;
     }
 
-    hPtr = Tcl_FindHashEntry(hTblPtr, (char *) acceptCallbackPtr);
+    hPtr = Tcl_FindHashEntry(hTblPtr, acceptCallbackPtr);
     if (hPtr != NULL) {
 	Tcl_DeleteHashEntry(hPtr);
     }
@@ -1434,7 +1435,7 @@ TcpServerCloseProc(
 
 int
 Tcl_SocketObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1676,7 +1677,7 @@ Tcl_SocketObjCmd(
 
 int
 Tcl_FcopyObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1771,7 +1772,7 @@ Tcl_FcopyObjCmd(
 
 static int
 ChanPendingObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1833,7 +1834,7 @@ ChanPendingObjCmd(
 
 static int
 ChanTruncateObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1906,7 +1907,7 @@ ChanTruncateObjCmd(
 
 static int
 ChanPipeObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1957,7 +1958,7 @@ ChanPipeObjCmd(
 
 int
 TclChannelNamesCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])

@@ -602,7 +602,7 @@ SetDictFromAny(
      */
 
     if (TclHasInternalRep(objPtr, &tclListType)) {
-	int objc, i;
+	size_t objc, i;
 	Tcl_Obj **objv;
 
 	/* Cannot fail, we already know the Tcl_ObjType is "list". */
@@ -1061,11 +1061,12 @@ Tcl_DictObjRemove(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_DictObjSize
 int
 Tcl_DictObjSize(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    int *sizePtr)
+    size_t *sizePtr)
 {
     Dict *dict;
 
@@ -1278,7 +1279,7 @@ int
 Tcl_DictObjPutKeyList(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    int keyc,
+    size_t keyc,
     Tcl_Obj *const keyv[],
     Tcl_Obj *valuePtr)
 {
@@ -1289,7 +1290,7 @@ Tcl_DictObjPutKeyList(
     if (Tcl_IsShared(dictPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_DictObjPutKeyList");
     }
-    if (keyc < 1) {
+    if (keyc + 1 < 2) {
 	Tcl_Panic("%s called with empty key list", "Tcl_DictObjPutKeyList");
     }
 
@@ -1339,7 +1340,7 @@ int
 Tcl_DictObjRemoveKeyList(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    int keyc,
+    size_t keyc,
     Tcl_Obj *const keyv[])
 {
     Dict *dict;
@@ -2021,7 +2022,8 @@ DictSizeCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    int result, size;
+    int result;
+	size_t size;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary");
@@ -2459,7 +2461,8 @@ DictForNRCmd(
     Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
     Tcl_Obj **varv, *keyObj, *valueObj;
     Tcl_DictSearch *searchPtr;
-    int varc, done;
+    size_t varc;
+    int done;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2545,7 +2548,7 @@ DictForNRCmd(
 
 static int
 DictForLoopCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -2653,7 +2656,8 @@ DictMapNRCmd(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj **varv, *keyObj, *valueObj;
     DictMapStorage *storagePtr;
-    int varc, done;
+    size_t varc;
+    int done;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2749,7 +2753,7 @@ DictMapNRCmd(
 
 static int
 DictMapLoopCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -2991,7 +2995,8 @@ DictFilterCmd(
     Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
     Tcl_Obj **varv, *keyObj = NULL, *valueObj = NULL, *resultObj, *boolObj;
     Tcl_DictSearch search;
-    int varc, done, result, satisfied;
+    int done, result, satisfied;
+    size_t varc;
     const char *pattern;
 
     if (objc < 3) {
@@ -3268,7 +3273,8 @@ DictUpdateCmd(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *dictPtr, *objPtr;
-    int i, dummy;
+    int i;
+    size_t dummy;
 
     if (objc < 5 || !(objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -3315,13 +3321,13 @@ DictUpdateCmd(
 
 static int
 FinalizeDictUpdate(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
     Tcl_Obj *dictPtr, *objPtr, **objv;
     Tcl_InterpState state;
-    int i, objc;
+    size_t i, objc;
     Tcl_Obj *varName = (Tcl_Obj *)data[0];
     Tcl_Obj *argsObj = (Tcl_Obj *)data[1];
 
@@ -3466,12 +3472,12 @@ DictWithCmd(
 
 static int
 FinalizeDictWith(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
     Tcl_Obj **pathv;
-    int pathc;
+    size_t pathc;
     Tcl_InterpState state;
     Tcl_Obj *varName = (Tcl_Obj *)data[0];
     Tcl_Obj *keysPtr = (Tcl_Obj *)data[1];
@@ -3548,14 +3554,14 @@ Tcl_Obj *
 TclDictWithInit(
     Tcl_Interp *interp,
     Tcl_Obj *dictPtr,
-    int pathc,
+    size_t pathc,
     Tcl_Obj *const pathv[])
 {
     Tcl_DictSearch s;
     Tcl_Obj *keyPtr, *valPtr, *keysPtr;
     int done;
 
-    if (pathc > 0) {
+    if (pathc + 1 > 1) {
 	dictPtr = TclTraceDictPath(interp, dictPtr, pathc, pathv,
 		DICT_PATH_READ);
 	if (dictPtr == NULL) {
@@ -3635,7 +3641,7 @@ TclDictWithFinish(
 				 * the result value from TclDictWithInit. */
 {
     Tcl_Obj *dictPtr, *leafPtr, *valPtr;
-    int i, allocdict, keyc;
+    size_t i, allocdict, keyc;
     Tcl_Obj **keyv;
 
     /*

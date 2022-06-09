@@ -415,8 +415,8 @@ TraceExecutionObjCmd(
     switch (optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
-	int flags = 0;
-	int i, listLen, result;
+	int flags = 0, result;
+	size_t i, listLen;
 	Tcl_Obj **elemPtrs;
 
 	if (objc != 6) {
@@ -571,7 +571,7 @@ TraceExecutionObjCmd(
 
 	resultListPtr = Tcl_NewListObj(0, NULL);
 	FOREACH_COMMAND_TRACE(interp, name, clientData) {
-	    int numOps = 0;
+	    size_t numOps = 0;
 	    Tcl_Obj *opObj, *eachTraceObjPtr, *elemObjPtr;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
 
@@ -658,8 +658,8 @@ TraceCommandObjCmd(
     switch (optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
-	int flags = 0;
-	int i, listLen, result;
+	int flags = 0, result;
+	size_t i, listLen;
 	Tcl_Obj **elemPtrs;
 
 	if (objc != 6) {
@@ -776,7 +776,7 @@ TraceCommandObjCmd(
 
 	resultListPtr = Tcl_NewListObj(0, NULL);
 	FOREACH_COMMAND_TRACE(interp, name, clientData) {
-	    int numOps = 0;
+	    size_t numOps = 0;
 	    Tcl_Obj *opObj, *eachTraceObjPtr, *elemObjPtr;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)clientData;
 
@@ -859,8 +859,8 @@ TraceVariableObjCmd(
     switch (optionIndex) {
     case TRACE_ADD:
     case TRACE_REMOVE: {
-	int flags = 0;
-	int i, listLen, result;
+	int flags = 0, result;
+	size_t i, listLen;
 	Tcl_Obj **elemPtrs;
 
 	if (objc != 6) {
@@ -2103,10 +2103,6 @@ TraceVarProc(
  *	gives a handle to the command procedure that will be evaluated. The
  *	'objc' and 'objv' parameters give the parameter vector that will be
  *	passed to the command procedure. Proc does not return a value.
- *
- *	It is permissible for 'proc' to call Tcl_SetCommandTokenInfo to change
- *	the command procedure or client data for the command being evaluated,
- *	and these changes will take effect with the current evaluation.
  *
  *	The 'level' argument specifies the maximum nesting level of calls to
  *	be traced. If the execution depth of the interpreter exceeds 'level',

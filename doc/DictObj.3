@@ -70,7 +70,7 @@ Points to a variable that will have the value from a key/value pair
 placed within it.  For \fBTcl_DictObjFirst\fR and
 \fBTcl_DictObjNext\fR, this may be NULL to indicate that the caller is
 not interested in the value.
-.AP int *sizePtr out
+.AP size_t | int *sizePtr out
 Points to a variable that will have the number of key/value pairs
 contained within the dictionary placed within it.
 .AP Tcl_DictSearch *searchPtr in/out
@@ -84,7 +84,7 @@ returned, the search record \fImust\fR be passed to
 Points to a variable that will have a non-zero value written into it
 when the enumeration of the key/value pairs in a dictionary has
 completed, and a zero otherwise.
-.AP int keyc in
+.AP size_t keyc in
 Indicates the number of keys that will be supplied in the \fIkeyv\fR
 array.
 .AP "Tcl_Obj *const" *keyv in
@@ -138,7 +138,8 @@ converted to a dictionary.
 \fBTcl_DictObjSize\fR updates the given variable with the number of
 key/value pairs currently in the given dictionary. The result of this
 procedure is \fBTCL_OK\fR, or \fBTCL_ERROR\fR if the \fIdictPtr\fR cannot be
-converted to a dictionary.
+converted to a dictionary or if \fIsizePtr\fR points to a variable of type
+\fBint\fR and the dict contains more than 2**31 key/value pairs.
 .PP
 \fBTcl_DictObjFirst\fR commences an iteration across all the key/value
 pairs in the given dictionary, placing the key and value in the

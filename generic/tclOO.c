@@ -308,7 +308,7 @@ InitFoundation(
     Tcl_Obj *namePtr;
     Tcl_DString buffer;
     Command *cmdPtr;
-    int i;
+    size_t i;
 
     /*
      * Initialize the structure that holds the OO system core. This is
@@ -960,7 +960,7 @@ TclOOReleaseClassContents(
     Object *oPtr)		/* The object representing the class. */
 {
     FOREACH_HASH_DECLS;
-    int i;
+    size_t i;
     Class *clsPtr = oPtr->classPtr, *tmpClsPtr;
     Method *mPtr;
     Foundation *fPtr = oPtr->fPtr;
@@ -1121,7 +1121,7 @@ ObjectNamespaceDeleted(
     Tcl_Obj *filterObj, *variableObj;
     PrivateVariableMapping *privateVariable;
     Tcl_Interp *interp = oPtr->fPtr->interp;
-    int i;
+    size_t i;
 
     if (Destructing(oPtr)) {
 	/*
@@ -1362,7 +1362,8 @@ TclOORemoveFromInstances(
     Class *clsPtr)		/* The class (possibly) containing the
 				 * reference to the instance. */
 {
-    int i, res = 0;
+    size_t i;
+    int res = 0;
     Object *instPtr;
 
     FOREACH(instPtr, clsPtr->instances) {
@@ -1424,7 +1425,8 @@ TclOORemoveFromMixins(
     Object *oPtr)		/* The object (possibly) containing the
 				 * reference to the mixin. */
 {
-    int i, res = 0;
+    size_t i;
+    int res = 0;
     Class *mixPtr;
 
     FOREACH(mixPtr, oPtr->mixins) {
@@ -1459,7 +1461,8 @@ TclOORemoveFromSubclasses(
     Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
-    int i, res = 0;
+    size_t i;
+    int res = 0;
     Class *subclsPtr;
 
     FOREACH(subclsPtr, superPtr->subclasses) {
@@ -1523,7 +1526,8 @@ TclOORemoveFromMixinSubs(
     Class *superPtr)		/* The superclass to possibly remove the
 				 * subclass reference from. */
 {
-    int i, res = 0;
+    size_t i;
+    int res = 0;
     Class *subclsPtr;
 
     FOREACH(subclsPtr, superPtr->mixinSubs) {
@@ -1663,7 +1667,7 @@ Tcl_NewObjectInstance(
     const char *nsNameStr,	/* Name of namespace to create inside object,
 				 * or NULL to ask the code to pick its own
 				 * unique name. */
-    int objc,			/* Number of arguments. Negative value means
+    size_t objc1,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
     int skip)			/* Number of arguments to _not_ pass to the
@@ -1672,6 +1676,7 @@ Tcl_NewObjectInstance(
     Class *classPtr = (Class *) cls;
     Object *oPtr;
     ClientData clientData[4];
+    int objc = objc1;
 
     oPtr = TclNewObjectInstanceCommon(interp, classPtr, nameStr, nsNameStr);
     if (oPtr == NULL) {
@@ -1928,7 +1933,8 @@ Tcl_CopyObjectInstance(
     CallContext *contextPtr;
     Tcl_Obj *keyPtr, *filterObj, *variableObj, *args[3];
     PrivateVariableMapping *privateVariable;
-    int i, result;
+    size_t i;
+    int result;
 
     /*
      * Sanity check.
@@ -2345,7 +2351,7 @@ Tcl_ClassGetMetadata(
      * There is a metadata store, so look in it for the given type.
      */
 
-    hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, (char *) typePtr);
+    hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, typePtr);
 
     /*
      * Return the metadata value if we found it, otherwise NULL.
@@ -2384,7 +2390,7 @@ Tcl_ClassSetMetadata(
      */
 
     if (metadata == NULL) {
-	hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, (char *) typePtr);
+	hPtr = Tcl_FindHashEntry(clsPtr->metadataPtr, typePtr);
 	if (hPtr != NULL) {
 	    typePtr->deleteProc(Tcl_GetHashValue(hPtr));
 	    Tcl_DeleteHashEntry(hPtr);
@@ -2397,7 +2403,7 @@ Tcl_ClassSetMetadata(
      * some metadata attached of this type, we delete that first.
      */
 
-    hPtr = Tcl_CreateHashEntry(clsPtr->metadataPtr, (char *) typePtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(clsPtr->metadataPtr, typePtr, &isNew);
     if (!isNew) {
 	typePtr->deleteProc(Tcl_GetHashValue(hPtr));
     }
@@ -2425,7 +2431,7 @@ Tcl_ObjectGetMetadata(
      * There is a metadata store, so look in it for the given type.
      */
 
-    hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, (char *) typePtr);
+    hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, typePtr);
 
     /*
      * Return the metadata value if we found it, otherwise NULL.
@@ -2464,7 +2470,7 @@ Tcl_ObjectSetMetadata(
      */
 
     if (metadata == NULL) {
-	hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, (char *) typePtr);
+	hPtr = Tcl_FindHashEntry(oPtr->metadataPtr, typePtr);
 	if (hPtr != NULL) {
 	    typePtr->deleteProc(Tcl_GetHashValue(hPtr));
 	    Tcl_DeleteHashEntry(hPtr);
@@ -2477,7 +2483,7 @@ Tcl_ObjectSetMetadata(
      * some metadata attached of this type, we delete that first.
      */
 
-    hPtr = Tcl_CreateHashEntry(oPtr->metadataPtr, (char *) typePtr, &isNew);
+    hPtr = Tcl_CreateHashEntry(oPtr->metadataPtr, typePtr, &isNew);
     if (!isNew) {
 	typePtr->deleteProc(Tcl_GetHashValue(hPtr));
     }
@@ -2551,7 +2557,7 @@ TclOOInvokeObject(
 				 * (PRIVATE_METHOD), or a *really* private
 				 * context (any other value; conventionally
 				 * 0). */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Array of argument objects. It is assumed
 				 * that the name of the method to invoke will
 				 * be at index 1. */
@@ -2622,7 +2628,7 @@ int
 TclOOObjectCmdCore(
     Object *oPtr,		/* The object being invoked. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
-    int objc,			/* How many arguments are being passed in. */
+    size_t objc1,			/* How many arguments are being passed in. */
     Tcl_Obj *const *objv,	/* The array of arguments. */
     int flags,			/* Whether this is an invocation through the
 				 * public or the private command interface. */
@@ -2637,6 +2643,7 @@ TclOOObjectCmdCore(
     Object *callerObjPtr = NULL;
     Class *callerClsPtr = NULL;
     int result;
+    int objc = objc1;
 
     /*
      * If we've no method name, throw this directly into the unknown
@@ -2794,7 +2801,7 @@ int
 Tcl_ObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    int objc,
+    size_t objc1,
     Tcl_Obj *const *objv,
     int skip)
 {
@@ -2802,6 +2809,7 @@ Tcl_ObjectContextInvokeNext(
     size_t savedIndex = contextPtr->index;
     size_t savedSkip = contextPtr->skip;
     int result;
+    int objc = objc1;
 
     if (contextPtr->index + 1 >= contextPtr->callPtr->numChain) {
 	/*
@@ -2866,9 +2874,9 @@ int
 TclNRObjectContextInvokeNext(
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
-    int objc,
+    size_t objc,
     Tcl_Obj *const *objv,
-    int skip)
+    size_t skip)
 {
     CallContext *contextPtr = (CallContext *) context;
 
@@ -2995,7 +3003,7 @@ TclOOIsReachable(
     Class *targetPtr,
     Class *startPtr)
 {
-    int i;
+    size_t i;
     Class *superPtr;
 
   tailRecurse:
@@ -3088,7 +3096,7 @@ Tcl_ObjectContextObject(
     return (Tcl_Object) ((CallContext *)context)->oPtr;
 }
 
-int
+size_t
 Tcl_ObjectContextSkippedArgs(
     Tcl_ObjectContext context)
 {

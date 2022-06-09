@@ -4309,7 +4309,7 @@ TestsetplatformCmd(
  *	A standard Tcl result.
  *
  * Side effects:
- *	When the packge given by argv[1] is loaded into an interpeter,
+ *	When the packge given by argv[1] is loaded into an interpreter,
  *	variable "x" in that interpreter is set to "loaded".
  *
  *----------------------------------------------------------------------
@@ -8021,7 +8021,7 @@ static int
 InterpCompiledVarResolver(
     TCL_UNUSED(Tcl_Interp *),
     const char *name,
-    TCL_UNUSED(int) /*length*/,
+    TCL_UNUSED(size_t) /*length*/,
     TCL_UNUSED(Tcl_Namespace *),
     Tcl_ResolvedVarInfo **rPtr)
 {

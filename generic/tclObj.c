@@ -525,7 +525,7 @@ TclGetContLineTable(void)
 ContLineLoc *
 TclContinuationsEnter(
     Tcl_Obj *objPtr,
-    int num,
+    size_t num,
     int *loc)
 {
     int newEntry;
@@ -835,7 +835,7 @@ Tcl_AppendAllObjTypes(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int numElems;
+    size_t numElems;
 
     /*
      * Get the test for a valid list out of the way first.
@@ -1277,7 +1277,7 @@ TclFreeObj(
 	if (!tablePtr) {
 	    Tcl_Panic("TclFreeObj: object table not initialized");
 	}
-	hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
+	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (hPtr) {
 	    /*
 	     * As the Tcl_Obj is going to be deleted we remove the entry.
@@ -2496,7 +2496,7 @@ Tcl_GetIntFromObj(
     if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < INT_MIN))) {
 	if (interp != NULL) {
 	    const char *s =
-		    "integer value too large to represent as non-long integer";
+		    "integer value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}

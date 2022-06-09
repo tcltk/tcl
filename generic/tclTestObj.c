@@ -1258,7 +1258,7 @@ TeststringobjCmd(
 		Tcl_ConvertToType(NULL, varPtr[varIndex],
 			Tcl_GetObjType("string"));
 		strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
-		length = (int) strPtr->allocated;
+		length = strPtr->allocated;
 	    } else {
 		length = -1;
 	    }
