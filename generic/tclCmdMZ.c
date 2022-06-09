@@ -5289,7 +5289,7 @@ TclListLines(
     Tcl_Obj *listObj,		/* Pointer to obj holding a string with list
 				 * structure. Assumed to be valid. Assumed to
 				 * contain n elements. */
-    int line,			/* Line the list as a whole starts on. */
+    size_t line,			/* Line the list as a whole starts on. */
     int n,			/* #elements in lines */
     int *lines,			/* Array of line numbers, to fill. */
     Tcl_Obj *const *elems)      /* The list elems as Tcl_Obj*, in need of

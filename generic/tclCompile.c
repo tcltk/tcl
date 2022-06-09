@@ -694,7 +694,7 @@ static void		StartExpanding(CompileEnv *envPtr);
  */
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, size_t srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd,
-			    size_t numWords, int line, int *clNext, int **lines,
+			    size_t numWords, size_t line, int *clNext, int **lines,
 			    CompileEnv *envPtr);
 static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
@@ -2044,7 +2044,7 @@ CompileCommandTokens(
 
     EnterCmdWordData(eclPtr, parsePtr->commandStart - envPtr->source,
 	    parsePtr->tokenPtr, parsePtr->commandStart,
-	    (int)parsePtr->numWords, cmdLine,
+	    parsePtr->numWords, cmdLine,
 	    clNext, &wlines, envPtr);
     wlineat = eclPtr->nuloc - 1;
 
@@ -3287,15 +3287,15 @@ EnterCmdWordData(
     Tcl_Token *tokenPtr,
     const char *cmd,
     size_t numWords,
-    int line,
+    size_t line,
     int *clNext,
     int **wlines,
     CompileEnv *envPtr)
 {
     ECL *ePtr;
     const char *last;
-    size_t wordIdx;
-    int wordLine, *wwlines, *wordNext;
+    size_t wordIdx, wordLine;
+    int *wwlines, *wordNext;
 
     if (eclPtr->nuloc >= eclPtr->nloc) {
 	/*

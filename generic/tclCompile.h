@@ -379,7 +379,7 @@ typedef struct CompileEnv {
     /* TIP #280 */
     ExtCmdLoc *extCmdMapPtr;	/* Extended command location information for
 				 * 'info frame'. */
-    int line;			/* First line of the script, based on the
+    size_t line;			/* First line of the script, based on the
 				 * invoking context, then the line of the
 				 * command currently compiled. */
     int atCmdStart;		/* Flag to say whether an INST_START_CMD
@@ -468,7 +468,7 @@ typedef struct ByteCode {
     size_t numCmdLocBytes;		/* Number of bytes needed for encoded command
 				 * location information. */
     size_t maxExceptDepth;		/* Maximum nesting level of ExceptionRanges;
-				 * -1 if no ranges were compiled. */
+				 * TCL_INDEX_NONE if no ranges were compiled. */
     size_t maxStackDepth;		/* Maximum number of stack elements needed to
 				 * execute the code. */
     unsigned char *codeStart;	/* Points to the first byte of the code. This

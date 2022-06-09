@@ -1707,7 +1707,7 @@ Tcl_ParseBraces(
 		    parsePtr->numTokens++;
 		}
 		TclGrowParseTokenArray(parsePtr, 2);
-		tokenPtr = &parsePtr->tokenPtr[(int)parsePtr->numTokens];
+		tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
 		tokenPtr->type = TCL_TOKEN_BS;
 		tokenPtr->start = src;
 		tokenPtr->size = length;
@@ -1978,7 +1978,7 @@ TclSubstParse(
 		 */
 
 		Tcl_Token *varTokenPtr =
-			parsePtr->tokenPtr + (int)parsePtr->numTokens - 2;
+			parsePtr->tokenPtr + parsePtr->numTokens - 2;
 
 		if (varTokenPtr->type != TCL_TOKEN_VARIABLE) {
 		    Tcl_Panic("TclSubstParse: programming error");
@@ -2048,7 +2048,7 @@ TclSubstParse(
 		 */
 
 		TclGrowParseTokenArray(parsePtr, 1);
-		tokenPtr = &(parsePtr->tokenPtr[(int)parsePtr->numTokens]);
+		tokenPtr = &(parsePtr->tokenPtr[parsePtr->numTokens]);
 		tokenPtr->start = parsePtr->term;
 		tokenPtr->numComponents = 0;
 		tokenPtr->type = TCL_TOKEN_COMMAND;
@@ -2092,12 +2092,12 @@ TclSubstTokens(
 				 * errors. */
     Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
 				 * evaluate and concatenate. */
-    size_t count1,			/* Number of tokens to consider at tokenPtr.
+    size_t count,			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
     int *tokensLeftPtr,		/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
-    int line,			/* The line the script starts on. */
+    size_t line,			/* The line the script starts on. */
     int *clNextOuter,		/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set by
 				 * EvalEx() to properly handle [...]-nested
@@ -2119,11 +2119,11 @@ TclSubstTokens(
     Tcl_Obj *result;
     int code = TCL_OK;
 #define NUM_STATIC_POS 20
-    int isLiteral, maxNumCL, numCL, i, adjust;
+    int isLiteral;
+    size_t i, maxNumCL, numCL, adjust;
     int *clPosition = NULL;
     Interp *iPtr = (Interp *) interp;
     int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
-    int count = count1;
 
     /*
      * Each pass through this loop will substitute one token, and its
@@ -2225,7 +2225,7 @@ TclSubstTokens(
 		 * Test cases: info-30.{6,8,9}
 		 */
 
-		int theline;
+		size_t theline;
 
 		TclAdvanceContinuations(&line, &clNextOuter,
 			tokenPtr->start - outerScript);
@@ -2450,7 +2450,7 @@ int
 Tcl_CommandComplete(
     const char *script)		/* Script to check. */
 {
-    return CommandComplete(script, (int) strlen(script));
+    return CommandComplete(script, strlen(script));
 }
 
 /*

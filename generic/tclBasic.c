@@ -1782,7 +1782,7 @@ DeleteInterpProc(
     Tcl_HashSearch search;
     Tcl_HashTable *hTablePtr;
     ResolverScheme *resPtr, *nextResPtr;
-    int i;
+    size_t i;
 
     /*
      * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup,
@@ -2012,7 +2012,7 @@ DeleteInterpProc(
 	if (eclPtr->type == TCL_LOCATION_SOURCE) {
 	    Tcl_DecrRefCount(eclPtr->path);
 	}
-	for (i=0; i< (int)eclPtr->nuloc; i++) {
+	for (i=0; i<eclPtr->nuloc; i++) {
 	    Tcl_Free(eclPtr->loc[i].line);
 	}
 
@@ -4994,7 +4994,7 @@ TclEvalEx(
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
-    int line,			/* The line the script starts on. */
+    size_t line,			/* The line the script starts on. */
     int *clNextOuter,		/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set only in
 				 * TclSubstTokens(), to properly handle
@@ -5152,7 +5152,7 @@ TclEvalEx(
 		parsePtr->commandStart - outerScript);
 
 	gotParse = 1;
-	if ((int)parsePtr->numWords > 0) {
+	if (parsePtr->numWords > 0) {
 	    /*
 	     * TIP #280. Track lines within the words of the current
 	     * command. We use a separate pointer into the table of
@@ -5160,7 +5160,7 @@ TclEvalEx(
 	     * per-command parsing.
 	     */
 
-	    int wordLine = line;
+	    size_t wordLine = line;
 	    const char *wordStart = parsePtr->commandStart;
 	    int *wordCLNext = clNext;
 	    unsigned int objectsNeeded = 0;
@@ -5459,7 +5459,7 @@ TclEvalEx(
 
 void
 TclAdvanceLines(
-    int *line,
+    size_t *line,
     const char *start,
     const char *end)
 {
@@ -5494,7 +5494,7 @@ TclAdvanceLines(
 
 void
 TclAdvanceContinuations(
-    int *line,
+    size_t *line,
     int **clNextPtrPtr,
     int loc)
 {
