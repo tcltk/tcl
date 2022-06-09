@@ -1519,11 +1519,12 @@ TclSubstCompile(
     const char *bytes,
     size_t numBytes,
     int flags,
-    int line,
+    size_t line,
     CompileEnv *envPtr)
 {
     Tcl_Token *endTokenPtr, *tokenPtr;
-    int breakOffset = 0, count = 0, bline = line;
+    int breakOffset = 0, count = 0;
+    size_t bline = line;
     Tcl_Parse parse;
     Tcl_InterpState state = NULL;
 
@@ -1945,7 +1946,7 @@ TclCompileSwitchCmd(
     if (numWords == 1) {
 	const char *bytes;
 	size_t maxLen, numBytes;
-	int bline;		/* TIP #280: line of the pattern/action list,
+	size_t bline;		/* TIP #280: line of the pattern/action list,
 				 * and start of list for when tracking the
 				 * location. This list comes immediately after
 				 * the value we switch on. */
@@ -4072,14 +4073,14 @@ CompileAssociativeBinaryOpCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    int words;
+    size_t words;
 
     /* TODO: Consider support for compiling expanded args. */
-    for (words=1 ; words<(int)parsePtr->numWords ; words++) {
+    for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
-    if ((int)parsePtr->numWords <= 2) {
+    if (parsePtr->numWords <= 2) {
 	PushLiteral(envPtr, identity, -1);
 	words++;
     }
@@ -4175,7 +4176,7 @@ CompileComparisonOpCmd(
 	return TCL_ERROR;
     } else {
 	int tmpIndex = AnonymousLocal(envPtr);
-	int words;
+	size_t words;
 
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 1);
@@ -4183,11 +4184,11 @@ CompileComparisonOpCmd(
 	CompileWord(envPtr, tokenPtr, interp, 2);
 	STORE(tmpIndex);
 	TclEmitOpcode(instruction, envPtr);
-	for (words=3 ; words<(int)parsePtr->numWords ;) {
+	for (words=3 ; words<parsePtr->numWords ;) {
 	    LOAD(tmpIndex);
 	    tokenPtr = TokenAfter(tokenPtr);
 	    CompileWord(envPtr, tokenPtr, interp, words);
-	    if (++words < (int)parsePtr->numWords) {
+	    if (++words < parsePtr->numWords) {
 		STORE(tmpIndex);
 	    }
 	    TclEmitOpcode(instruction, envPtr);
@@ -4311,18 +4312,18 @@ TclCompilePowOpCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    int words;
+    size_t words;
 
     /*
      * This one has its own implementation because the ** operator is the only
      * one with right associativity.
      */
 
-    for (words=1 ; words<(int)parsePtr->numWords ; words++) {
+    for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
-    if ((int)parsePtr->numWords <= 2) {
+    if (parsePtr->numWords <= 2) {
 	PUSH("1");
 	words++;
     }
@@ -4512,7 +4513,7 @@ TclCompileMinusOpCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    int words;
+    size_t words;
 
     /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords == 1) {
@@ -4522,7 +4523,7 @@ TclCompileMinusOpCmd(
 
 	return TCL_ERROR;
     }
-    for (words=1 ; words<(int)parsePtr->numWords ; words++) {
+    for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
@@ -4557,7 +4558,7 @@ TclCompileDivOpCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    int words;
+    size_t words;
 
     /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords == 1) {
@@ -4570,7 +4571,7 @@ TclCompileDivOpCmd(
     if (parsePtr->numWords == 2) {
 	PUSH("1.0");
     }
-    for (words=1 ; words<(int)parsePtr->numWords ; words++) {
+    for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }

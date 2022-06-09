@@ -2326,7 +2326,7 @@ ClassFilterGet(
     Tcl_Obj *resultObj, *filterObj;
     size_t i;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2360,7 +2360,7 @@ ClassFilterSet(
     size_t filterc;
     Tcl_Obj **filterv;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"filterList");
 	return TCL_ERROR;
@@ -2407,7 +2407,7 @@ ClassMixinGet(
     Class *mixinPtr;
     size_t i;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2444,7 +2444,7 @@ ClassMixinSet(
     Tcl_Obj **mixinv;
     Class **mixins;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"mixinList");
 	return TCL_ERROR;
@@ -2513,7 +2513,7 @@ ClassSuperGet(
     Class *superPtr;
     size_t i;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2550,7 +2550,7 @@ ClassSuperSet(
     Tcl_Obj **superv;
     Class **superclasses, *superPtr;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"superclassList");
 	return TCL_ERROR;
@@ -2680,7 +2680,7 @@ ClassVarsGet(
     Tcl_Obj *resultObj;
     size_t i;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2721,11 +2721,11 @@ ClassVarsSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int i;
+    size_t i;
     size_t varc;
     Tcl_Obj **varv;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"filterList");
 	return TCL_ERROR;
@@ -2744,7 +2744,7 @@ ClassVarsSet(
 	return TCL_ERROR;
     }
 
-    for (i = 0; i < (int)varc; i++) {
+    for (i = 0; i < varc; i++) {
 	const char *varName = TclGetString(varv[i]);
 
 	if (strstr(varName, "::") != NULL) {
@@ -2795,7 +2795,7 @@ ObjFilterGet(
     Tcl_Obj *resultObj, *filterObj;
     size_t i;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2823,7 +2823,7 @@ ObjFilterSet(
     size_t filterc;
     Tcl_Obj **filterv;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"filterList");
 	return TCL_ERROR;
@@ -2864,7 +2864,7 @@ ObjMixinGet(
     Class *mixinPtr;
     size_t i;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2892,12 +2892,12 @@ ObjMixinSet(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    int i;
+    size_t i;
     size_t mixinc;
     Tcl_Obj **mixinv;
     Class **mixins;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"mixinList");
 	return TCL_ERROR;
@@ -2912,7 +2912,7 @@ ObjMixinSet(
 
     mixins = (Class **)TclStackAlloc(interp, sizeof(Class *) * mixinc);
 
-    for (i = 0; i < (int)mixinc; i++) {
+    for (i = 0; i < mixinc; i++) {
 	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
 		"may only mix in classes");
 	if (mixins[i] == NULL) {
@@ -2949,7 +2949,7 @@ ObjVarsGet(
     Tcl_Obj *resultObj;
     size_t i;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
@@ -2987,7 +2987,7 @@ ObjVarsSet(
     size_t varc, i;
     Tcl_Obj **varv;
 
-    if ((int)Tcl_ObjectContextSkippedArgs(context) + 1 != objc) {
+    if (Tcl_ObjectContextSkippedArgs(context) + 1 != (size_t)objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"variableList");
 	return TCL_ERROR;
