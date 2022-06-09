@@ -3871,6 +3871,7 @@ FsListMounts(
  *---------------------------------------------------------------------------
  */
 
+#undef Tcl_FSSplitPath
 Tcl_Obj *
 Tcl_FSSplitPath(
     Tcl_Obj *pathPtr,		/* The pathname to split. */

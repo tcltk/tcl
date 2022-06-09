@@ -1759,7 +1759,7 @@ TraceExecutionProc(
     const char *command,
     TCL_UNUSED(Tcl_Command),
     int objc,
-    struct Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[])
 {
     int call = 0;
     Interp *iPtr = (Interp *) interp;
@@ -2122,7 +2122,7 @@ TraceVarProc(
  */
 
 typedef struct {
-	Tcl_CmdObjTraceProc2 *proc;
+    Tcl_CmdObjTraceProc2 *proc;
     Tcl_CmdObjTraceDeleteProc *delProc;
     void *clientData;
 } TraceWrapperInfo;
@@ -2134,7 +2134,7 @@ static int traceWrapperProc(
     const char *command,
     Tcl_Command commandInfo,
     int objc,
-	struct Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[])
 {
     TraceWrapperInfo *info = (TraceWrapperInfo *)clientData;
     return info->proc(info->clientData, interp, level, command, commandInfo, objc, objv);
@@ -2160,7 +2160,7 @@ Tcl_CreateObjTrace2(
     Tcl_CmdObjTraceDeleteProc *delProc)
 				/* Function to call when trace is deleted */
 {
-	TraceWrapperInfo *info = (TraceWrapperInfo *)ckalloc(sizeof(TraceWrapperInfo));
+    TraceWrapperInfo *info = (TraceWrapperInfo *)ckalloc(sizeof(TraceWrapperInfo));
     info->proc = proc;
     info->delProc = delProc;
     info->clientData = clientData;

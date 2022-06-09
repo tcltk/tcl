@@ -2700,7 +2700,7 @@ typedef struct {
 static int cmdWrapperProc(void *clientData,
 	Tcl_Interp *interp,
 	int objc,
-	struct Tcl_Obj * const *objv)
+    Tcl_Obj * const *objv)
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
     return info->proc(info->clientData, interp, objc, objv);
@@ -9209,7 +9209,7 @@ static int cmdWrapperNreProc(
     void *clientData,
     Tcl_Interp *interp,
     int objc,
-	struct Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[])
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
     return info->nreProc(info->clientData, interp, objc, objv);
