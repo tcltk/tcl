@@ -301,6 +301,10 @@ typedef struct CompileEnv {
 				 * array byte. */
     int mallocedCodeArray;	/* Set 1 if code array was expanded and
 				 * codeStart points into the heap.*/
+#if TCL_MAJOR_VERSION > 8
+    int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
+				 * exceptArrayPtr points in heap, else 0. */
+#endif
     Tcl_Obj **literalArrayPtr;
     				/* Points of array of literal values. */
     size_t literalArrayNext;	/* Index of next free object array entry. */
@@ -316,8 +320,9 @@ typedef struct CompileEnv {
 				 * current range's array entry. */
     size_t exceptArrayEnd;		/* Index after the last ExceptionRange array
 				 * entry. */
-    int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
-				 * exceptArrayPtr points in heap, else 0. */
+#if TCL_MAJOR_VERSION < 9
+    int mallocedExceptArray;
+#endif
     ExceptionAux *exceptAuxArrayPtr;
 				/* Array of information used to restore the
 				 * state when processing BREAK/CONTINUE
