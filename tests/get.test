@@ -20,6 +20,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testgetint [llength [info commands testgetint]]
 testConstraint testdoubleobj [llength [info commands testdoubleobj]]
+testConstraint longIs64bit [expr {$tcl_platform(wordSize) == 8}]
 
 test get-1.1 {Tcl_GetInt procedure} testgetint {
     testgetint 44 { 	  22}
@@ -42,10 +43,10 @@ test get-1.6 {Tcl_GetInt procedure} testgetint {
 test get-1.7 {Tcl_GetInt procedure} testgetint {
     list [catch {testgetint 44 18446744073709551616} msg] $msg $errorCode
 } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
-test get-1.8 {Tcl_GetInt procedure} testgetint {
+test get-1.8 {Tcl_GetInt procedure} {testgetint longIs64bit} {
     testgetint 18446744073709551614
 } {-2}
-test get-1.9 {Tcl_GetInt procedure} testgetint {
+test get-1.9 {Tcl_GetInt procedure} {testgetint longIs64bit} {
     testgetint +18446744073709551614
 } {-2}
 test get-1.10 {Tcl_GetInt procedure} testgetint {
