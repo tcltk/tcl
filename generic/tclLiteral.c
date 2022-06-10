@@ -387,7 +387,7 @@ TclFetchLiteral(
     size_t index)		/* Index of the desired literal, as returned
 				 * by prior call to TclRegisterLiteral() */
 {
-    if (index >= (size_t) envPtr->literalArrayNext) {
+    if (index >= envPtr->literalArrayNext) {
 	return NULL;
     }
     return envPtr->literalArrayPtr[index];
@@ -420,7 +420,7 @@ TclFetchLiteral(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclRegisterLiteral(
     void *ePtr,		/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
@@ -576,7 +576,7 @@ TclHideLiteral(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 TclAddLiteralObj(
     CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
@@ -585,7 +585,7 @@ TclAddLiteralObj(
 				 * in the internal stubs table, and use by
 				 * tclcompiler. */
 {
-    int objIndex;
+    size_t objIndex;
 
     if (envPtr->literalArrayNext >= envPtr->literalArrayEnd) {
 	ExpandLocalLiteralArray(envPtr);

@@ -220,9 +220,9 @@ The second of two path values to compare. The value may be converted
 to \fBpath\fR type.
 .AP Tcl_Obj *listObj in
 The list of path elements to operate on with a \fBjoin\fR operation.
-.AP int elements in
-If non-negative, the number of elements in the \fIlistObj\fR which should
-be joined together. If negative, then all elements are joined.
+.AP size_t elements in
+The number of elements in the \fIlistObj\fR which should
+be joined together. If TCL_INDEX_NONE, then all elements are joined.
 .AP Tcl_Obj **errorPtr out
 In the case of an error, filled with a value containing the name of
 the file which caused an error in the various copy/rename operations.
@@ -269,11 +269,11 @@ allowed for the \fImode\fR argument to the Tcl \fBopen\fR command.
 .AP int permissions in
 POSIX-style permission flags such as 0644. If a new file is created, these
 permissions will be set on the created file.
-.AP int *lenPtr out
+.AP size_t | int *lenPtr out
 If non-NULL, filled with the number of elements in the split path.
 .AP Tcl_Obj *basePtr in
 The base path on to which to join the given elements. May be NULL.
-.AP int objc in
+.AP size_t objc in
 The number of elements in \fIobjv\fR.
 .AP "Tcl_Obj *const" objv[] in
 The elements to join to the given base path.

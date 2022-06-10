@@ -825,7 +825,7 @@ TclParseCommand(
 	    expPtr = &parsePtr->tokenPtr[expIdx];
 	    if ((0 == expandWord)
 		    /* Haven't seen prefix already */
-		    && (1 == parsePtr->numTokens - expIdx)
+		    && (expIdx + 1 == (int)parsePtr->numTokens)
 		    /* Only one token */
 		    && (((1 == expPtr->size)
 			    /* Same length as prefix */
@@ -860,7 +860,7 @@ TclParseCommand(
 
 	tokenPtr = &parsePtr->tokenPtr[wordIndex];
 	tokenPtr->size = src - tokenPtr->start;
-	tokenPtr->numComponents = parsePtr->numTokens - (wordIndex + 1);
+	tokenPtr->numComponents = (int)parsePtr->numTokens - (wordIndex + 1);
 	if (expandWord) {
 	    size_t i;
 	    int isLiteral = 1;
@@ -952,7 +952,7 @@ TclParseCommand(
 
 		    const char *listStart;
 		    int growthNeeded = wordIndex + 2*elemCount
-			    - parsePtr->numTokens;
+			    - (int)parsePtr->numTokens;
 
 		    numWords += elemCount - 1;
 		    if (growthNeeded > 0) {
@@ -1723,7 +1723,7 @@ ParseTokens(
 		 */
 
 		if (mask & TYPE_SPACE) {
-		    if (parsePtr->numTokens == originalTokens) {
+		    if ((int)parsePtr->numTokens == originalTokens) {
 			goto finishToken;
 		    }
 		    break;
@@ -1744,7 +1744,7 @@ ParseTokens(
 	    Tcl_Panic("ParseTokens encountered unknown character");
 	}
     }
-    if (parsePtr->numTokens == originalTokens) {
+    if ((int)parsePtr->numTokens == originalTokens) {
 	/*
 	 * There was nothing in this range of text. Add an empty token for the
 	 * empty range, so that there is always at least one token added.
@@ -2259,7 +2259,7 @@ ParseBraces(
 		 */
 
 		if ((src != tokenPtr->start)
-			|| (parsePtr->numTokens == startIndex)) {
+			|| ((int)parsePtr->numTokens == startIndex)) {
 		    tokenPtr->size = (src - tokenPtr->start);
 		    parsePtr->numTokens++;
 		}
@@ -2531,7 +2531,7 @@ TclSubstTokens(
     int *tokensLeftPtr,		/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
-    int line,			/* The line the script starts on. */
+    size_t line,			/* The line the script starts on. */
     int *clNextOuter,		/* Information about an outer context for */
     const char *outerScript,	/* continuation line data. This is set by
 				 * EvalEx() to properly handle [...]-nested
@@ -2554,8 +2554,8 @@ TclSubstTokens(
     Tcl_Obj *result;
     int code = TCL_OK;
 #define NUM_STATIC_POS 20
-    size_t i;
-    int isLiteral, maxNumCL, numCL, adjust;
+    int isLiteral;
+    size_t i, maxNumCL, numCL, adjust;
     int *clPosition = NULL;
     Interp *iPtr = (Interp *) interp;
     int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
@@ -2666,7 +2666,7 @@ TclSubstTokens(
 		 * Test cases: info-30.{6,8,9}
 		 */
 
-		int theline;
+		size_t theline;
 
 		TclAdvanceContinuations(&line, &clNextOuter,
 			tokenPtr->start - outerScript);
@@ -2934,7 +2934,7 @@ int
 Tcl_CommandComplete(
     const char *script)		/* Script to check. */
 {
-    return CommandComplete(script, (int) strlen(script));
+    return CommandComplete(script, strlen(script));
 }
 
 /*

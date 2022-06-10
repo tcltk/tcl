@@ -1800,7 +1800,7 @@ ConvertTreeToTokens(
 		 */
 
 		subExprTokenPtr->numComponents =
-			(parsePtr->numTokens - subExprTokenIdx) - 1;
+			((int)parsePtr->numTokens - subExprTokenIdx) - 1;
 
 		/*
 		 * Finally, as we return up the tree to our parent, pop the
@@ -2212,7 +2212,7 @@ TclCompileExpr(
 	 * Valid parse; compile the tree.
 	 */
 
-	int objc;
+	size_t objc;
 	Tcl_Obj *const *litObjv;
 	Tcl_Obj **funcObjv;
 

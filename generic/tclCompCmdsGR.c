@@ -96,7 +96,7 @@ TclCompileGlobalCmd(
     int localIndex, numWords, i;
 
     /* TODO: Consider support for compiling expanded args. */
-    numWords = parsePtr->numWords;
+    numWords = (int)parsePtr->numWords;
     if (numWords < 2) {
 	return TCL_ERROR;
     }
@@ -199,7 +199,7 @@ TclCompileIfCmd(
 
     tokenPtr = parsePtr->tokenPtr;
     wordIdx = 0;
-    numWords = parsePtr->numWords;
+    numWords = (int)parsePtr->numWords;
 
     for (wordIdx = 0; wordIdx < numWords; wordIdx++) {
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -839,7 +839,7 @@ TclCompileLappendCmd(
     int isScalar, localIndex, numWords, i;
 
     /* TODO: Consider support for compiling expanded args. */
-    numWords = parsePtr->numWords;
+    numWords = (int)parsePtr->numWords;
     if (numWords < 3) {
 	return TCL_ERROR;
     }
@@ -953,7 +953,7 @@ TclCompileLassignCmd(
     Tcl_Token *tokenPtr;
     int isScalar, localIndex, numWords, idx;
 
-    numWords = parsePtr->numWords;
+    numWords = (int)parsePtr->numWords;
 
     /*
      * Check for command syntax error, but we'll punt that to runtime.
@@ -1054,7 +1054,7 @@ TclCompileLindexCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *idxTokenPtr, *valTokenPtr;
-    int i, idx, numWords = parsePtr->numWords;
+    int i, idx, numWords = (int)parsePtr->numWords;
 
     /*
      * Quit if not enough args.
@@ -1161,7 +1161,7 @@ TclCompileListCmd(
      * implement with a simple push.
      */
 
-    numWords = parsePtr->numWords;
+    numWords = (int)parsePtr->numWords;
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
     TclNewObj(listObj);
     for (i = 1; i < numWords && listObj != NULL; i++) {
@@ -1184,7 +1184,7 @@ TclCompileListCmd(
      * Push the all values onto the stack.
      */
 
-    numWords = parsePtr->numWords;
+    numWords = (int)parsePtr->numWords;
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
     concat = build = 0;
     for (i = 1; i < numWords; i++) {
@@ -1351,7 +1351,7 @@ TclCompileLinsertCmd(
     Tcl_Token *tokenPtr, *listTokenPtr;
     int idx, i;
 
-    if (parsePtr->numWords < 3) {
+    if ((int)parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1390,7 +1390,7 @@ TclCompileLinsertCmd(
 	return TCL_OK;
     }
 
-    for (i=3 ; i<parsePtr->numWords ; i++) {
+    for (i=3 ; i<(int)parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
@@ -1454,7 +1454,7 @@ TclCompileLreplaceCmd(
     int idx1, idx2, i;
     int emptyPrefix=1, suffixStart = 0;
 
-    if (parsePtr->numWords < 4) {
+    if ((int)parsePtr->numWords < 4) {
 	return TCL_ERROR;
     }
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1502,10 +1502,10 @@ TclCompileLreplaceCmd(
      * Push all the replacement values next so any errors raised in
      * creating them get raised first.
      */
-    if (parsePtr->numWords > 4) {
+    if ((int)parsePtr->numWords > 4) {
 	/* Push the replacement arguments */
 	tokenPtr = TokenAfter(tokenPtr);
-	for (i=4 ; i<parsePtr->numWords ; i++) {
+	for (i=4 ; i<(int)parsePtr->numWords ; i++) {
 	    CompileWord(envPtr, tokenPtr, interp, i);
 	    tokenPtr = TokenAfter(tokenPtr);
 	}
@@ -1626,7 +1626,7 @@ TclCompileLsetCmd(
      */
 
     /* TODO: Consider support for compiling expanded args. */
-    if (parsePtr->numWords < 3) {
+    if ((int)parsePtr->numWords < 3) {
 	/*
 	 * Fail at run time, not in compilation.
 	 */
@@ -1650,7 +1650,7 @@ TclCompileLsetCmd(
      * Push the "index" args and the new element value.
      */
 
-    for (i=2 ; i<parsePtr->numWords ; ++i) {
+    for (i=2 ; i<(int)parsePtr->numWords ; ++i) {
 	varTokenPtr = TokenAfter(varTokenPtr);
 	CompileWord(envPtr, varTokenPtr, interp, i);
     }
@@ -1935,7 +1935,7 @@ TclCompileNamespaceUpvarCmd(
      * Only compile [namespace upvar ...]: needs an even number of args, >=4
      */
 
-    numWords = parsePtr->numWords;
+    numWords = (int)parsePtr->numWords;
     if ((numWords % 2) || (numWords < 4)) {
 	return TCL_ERROR;
     }
@@ -1987,7 +1987,7 @@ TclCompileNamespaceWhichCmd(
     Tcl_Token *tokenPtr, *opt;
     int idx;
 
-    if (parsePtr->numWords < 2 || parsePtr->numWords > 3) {
+    if ((int)parsePtr->numWords < 2 || (int)parsePtr->numWords > 3) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -2060,7 +2060,7 @@ TclCompileRegexpCmd(
      *   regexp ?-nocase? ?--? {^staticString$} $var
      */
 
-    if (parsePtr->numWords < 3) {
+    if ((int)parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
 
@@ -2075,7 +2075,7 @@ TclCompileRegexpCmd(
      * handling, but satisfies our stricter needs.
      */
 
-    for (i = 1; i < parsePtr->numWords - 2; i++) {
+    for (i = 1; i < (int)parsePtr->numWords - 2; i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
 	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    /*
@@ -2101,7 +2101,7 @@ TclCompileRegexpCmd(
 	}
     }
 
-    if ((parsePtr->numWords - i) != 2) {
+    if (((int)parsePtr->numWords - i) != 2) {
 	/*
 	 * We don't support capturing to variables.
 	 */
@@ -2154,7 +2154,7 @@ TclCompileRegexpCmd(
     }
 
     if (!simple) {
-	CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords - 2);
+	CompileWord(envPtr, varTokenPtr, interp, (int)parsePtr->numWords - 2);
     }
 
     /*
@@ -2162,7 +2162,7 @@ TclCompileRegexpCmd(
      */
 
     varTokenPtr = TokenAfter(varTokenPtr);
-    CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords - 1);
+    CompileWord(envPtr, varTokenPtr, interp, (int)parsePtr->numWords - 1);
 
     if (simple) {
 	if (exact && !nocase) {
@@ -2239,7 +2239,7 @@ TclCompileRegsubCmd(
     int exact, quantified, result = TCL_ERROR;
     size_t len;
 
-    if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
+    if ((int)parsePtr->numWords < 5 || (int)parsePtr->numWords > 6) {
 	return TCL_ERROR;
     }
 
@@ -2346,7 +2346,7 @@ TclCompileRegsubCmd(
     PushLiteral(envPtr,	bytes, len);
     bytes = Tcl_GetStringFromObj(replacementObj, &len);
     PushLiteral(envPtr,	bytes, len);
-    CompileWord(envPtr,	stringTokenPtr, interp, parsePtr->numWords - 2);
+    CompileWord(envPtr,	stringTokenPtr, interp, (int)parsePtr->numWords - 2);
     TclEmitOpcode(	INST_STR_MAP,	envPtr);
 
   done:
@@ -2391,8 +2391,9 @@ TclCompileReturnCmd(
      * General syntax: [return ?-option value ...? ?result?]
      * An even number of words means an explicit result argument is present.
      */
-    int level, code, objc, size, status = TCL_OK;
-    int numWords = parsePtr->numWords;
+    int level, code, objc, status = TCL_OK;
+    size_t size;
+    int numWords = (int)parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
     Tcl_Obj *returnOpts, **objv;
@@ -2501,7 +2502,7 @@ TclCompileReturnCmd(
 	    ExceptionRange range = envPtr->exceptArrayPtr[index];
 
 	    if ((range.type == CATCH_EXCEPTION_RANGE)
-		    && (range.catchOffset == -1)) {
+		    && (range.catchOffset == TCL_INDEX_NONE)) {
 		enclosingCatch = 1;
 		break;
 	    }
@@ -2646,7 +2647,7 @@ TclCompileUpvarCmd(
 	return TCL_ERROR;
     }
 
-    numWords = parsePtr->numWords;
+    numWords = (int)parsePtr->numWords;
     if (numWords < 3) {
 	return TCL_ERROR;
     }
@@ -2747,7 +2748,7 @@ TclCompileVariableCmd(
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int localIndex, numWords, i;
 
-    numWords = parsePtr->numWords;
+    numWords = (int)parsePtr->numWords;
     if (numWords < 2) {
 	return TCL_ERROR;
     }
@@ -2921,11 +2922,11 @@ TclCompileObjectNextCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     int i;
 
-    if (parsePtr->numWords > 255) {
+    if ((int)parsePtr->numWords > 255) {
 	return TCL_ERROR;
     }
 
-    for (i=0 ; i<parsePtr->numWords ; i++) {
+    for (i=0 ; i<(int)parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -2945,11 +2946,11 @@ TclCompileObjectNextToCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     int i;
 
-    if (parsePtr->numWords < 2 || parsePtr->numWords > 255) {
+    if ((int)parsePtr->numWords < 2 || (int)parsePtr->numWords > 255) {
 	return TCL_ERROR;
     }
 
-    for (i=0 ; i<parsePtr->numWords ; i++) {
+    for (i=0 ; i<(int)parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }

@@ -38,14 +38,14 @@ Interpreter to use for error reporting.  If NULL, then no error message
 is left.
 .AP "const char" *list in
 Pointer to a string with proper list structure.
-.AP int *argcPtr out
+.AP size_t | int *argcPtr out
 Filled in with number of elements in \fIlist\fR.
 .AP "const char" ***argvPtr out
 \fI*argvPtr\fR will be filled in with the address of an array of
 pointers to the strings that are the extracted elements of \fIlist\fR.
 There will be \fI*argcPtr\fR valid entries in the array, followed by
 a NULL entry.
-.AP int argc in
+.AP size_t argc in
 Number of elements in \fIargv\fR.
 .AP "const char *const" *argv in
 Array of strings to merge together into a single list.
@@ -81,7 +81,8 @@ For example, suppose that you have called \fBTcl_SplitList\fR with
 the following code:
 .PP
 .CS
-int argc, code;
+size_t argc;
+int code;
 char *string;
 char **argv;
 \&...
@@ -92,12 +93,13 @@ Then you should eventually free the storage with a call like the
 following:
 .PP
 .CS
-Tcl_Free((char *) argv);
+Tcl_Free(argv);
 .CE
 .PP
 \fBTcl_SplitList\fR normally returns \fBTCL_OK\fR, which means the list was
-successfully parsed.
-If there was a syntax error in \fIlist\fR, then \fBTCL_ERROR\fR is returned
+successfully parsed. If \fIsizePtr\fR points to a variable of type
+\fBint\fR and the list contains more than 2**31 key/value pairs, or there was
+a syntax error in \fIlist\fR, then \fBTCL_ERROR\fR is returned
 and the interpreter's result will point to an error message describing the
 problem (if \fIinterp\fR was not NULL).
 If \fBTCL_ERROR\fR is returned then no memory is allocated and \fI*argvPtr\fR

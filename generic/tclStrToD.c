@@ -556,7 +556,7 @@ TclParseNumber(
 		return TCL_ERROR;
 	    }
 	    if (TclHasInternalRep(objPtr, &tclListType)) {
-		int length;
+		size_t length;
 		/* A list can only be a (single) number if its length == 1 */
 		TclListObjLengthM(NULL, objPtr, &length);
 		if (length != 1) {

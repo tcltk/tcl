@@ -88,6 +88,99 @@ static void uniCodePanic() {
 #define TclUtfNext Tcl_UtfNext
 #define TclUtfPrev Tcl_UtfPrev
 
+int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    int *objcPtr, Tcl_Obj ***objvPtr) {
+    size_t n = TCL_INDEX_NONE;
+    int result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
+    if (objcPtr) {
+	if ((result == TCL_OK) && (n > INT_MAX)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, "List too large to be processed", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	*objcPtr = n;
+    }
+    return result;
+}
+int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    int *lengthPtr) {
+    size_t n = TCL_INDEX_NONE;
+    int result = Tcl_ListObjLength(interp, listPtr, &n);
+    if (lengthPtr) {
+	if ((result == TCL_OK) && (n > INT_MAX)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, "List too large to be processed", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	*lengthPtr = n;
+    }
+    return result;
+}
+int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+    int *sizePtr) {
+    size_t n = TCL_INDEX_NONE;
+    int result = Tcl_DictObjSize(interp, dictPtr, &n);
+    if (sizePtr) {
+	if ((result == TCL_OK) && (n > INT_MAX)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, "Dict too large to be processed", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+	*sizePtr = n;
+    }
+    return result;
+}
+int TclSplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
+	const char ***argvPtr) {
+    size_t n = TCL_INDEX_NONE;
+    int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
+    if (argcPtr) {
+	if ((result == TCL_OK) && (n > INT_MAX)) {
+	    if (interp) {
+		Tcl_AppendResult(interp, "List too large to be processed", NULL);
+	    }
+	    Tcl_Free((void *)*argvPtr);
+	    return TCL_ERROR;
+	}
+	*argcPtr = n;
+    }
+    return result;
+}
+void TclSplitPath(const char *path, int *argcPtr, const char ***argvPtr) {
+    size_t n = TCL_INDEX_NONE;
+    Tcl_SplitPath(path, &n, argvPtr);
+    if (argcPtr) {
+	if (n > INT_MAX) {
+	    n = TCL_INDEX_NONE; /* No other way to return an error-situation */
+	    Tcl_Free((void *)*argvPtr);
+	    *argvPtr = NULL;
+	}
+	*argcPtr = n;
+    }
+}
+Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, int *lenPtr) {
+    size_t n = TCL_INDEX_NONE;
+    Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
+    if (lenPtr) {
+	if (result && (n > INT_MAX)) {
+	    Tcl_DecrRefCount(result);
+	    return NULL;
+	}
+	*lenPtr = n;
+    }
+    return result;
+}
+int TclParseArgsObjv(Tcl_Interp *interp,
+	const Tcl_ArgvInfo *argTable, int *objcPtr, Tcl_Obj *const *objv,
+	Tcl_Obj ***remObjv) {
+    size_t n = (*objcPtr < 0) ? TCL_INDEX_NONE: (size_t)*objcPtr ;
+    int result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
+    *objcPtr = (int)n;
+    return result;
+}
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_add_d mp_add_d
@@ -741,9 +834,9 @@ const TclStubs tclStubs = {
     Tcl_InvalidateStringRep, /* 42 */
     Tcl_ListObjAppendList, /* 43 */
     Tcl_ListObjAppendElement, /* 44 */
-    Tcl_ListObjGetElements, /* 45 */
+    TclListObjGetElements, /* 45 */
     Tcl_ListObjIndex, /* 46 */
-    Tcl_ListObjLength, /* 47 */
+    TclListObjLength, /* 47 */
     Tcl_ListObjReplace, /* 48 */
     0, /* 49 */
     Tcl_NewByteArrayObj, /* 50 */
@@ -938,8 +1031,8 @@ const TclStubs tclStubs = {
     Tcl_SignalId, /* 239 */
     Tcl_SignalMsg, /* 240 */
     Tcl_SourceRCFile, /* 241 */
-    Tcl_SplitList, /* 242 */
-    Tcl_SplitPath, /* 243 */
+    TclSplitList, /* 242 */
+    TclSplitPath, /* 243 */
     0, /* 244 */
     0, /* 245 */
     0, /* 246 */
@@ -1157,7 +1250,7 @@ const TclStubs tclStubs = {
     Tcl_FSChdir, /* 458 */
     Tcl_FSConvertToPathType, /* 459 */
     Tcl_FSJoinPath, /* 460 */
-    Tcl_FSSplitPath, /* 461 */
+    TclFSSplitPath, /* 461 */
     Tcl_FSEqualPaths, /* 462 */
     Tcl_FSGetNormalizedPath, /* 463 */
     Tcl_FSJoinToPath, /* 464 */
@@ -1193,7 +1286,7 @@ const TclStubs tclStubs = {
     Tcl_DictObjPut, /* 494 */
     Tcl_DictObjGet, /* 495 */
     Tcl_DictObjRemove, /* 496 */
-    Tcl_DictObjSize, /* 497 */
+    TclDictObjSize, /* 497 */
     Tcl_DictObjFirst, /* 498 */
     Tcl_DictObjNext, /* 499 */
     Tcl_DictObjDone, /* 500 */
@@ -1300,7 +1393,7 @@ const TclStubs tclStubs = {
     Tcl_GetBlockSizeFromStat, /* 601 */
     Tcl_SetEnsembleParameterList, /* 602 */
     Tcl_GetEnsembleParameterList, /* 603 */
-    Tcl_ParseArgsObjv, /* 604 */
+    TclParseArgsObjv, /* 604 */
     Tcl_GetErrorLine, /* 605 */
     Tcl_SetErrorLine, /* 606 */
     Tcl_TransferResult, /* 607 */
@@ -1357,13 +1450,13 @@ const TclStubs tclStubs = {
     Tcl_ExternalToUtfDStringEx, /* 658 */
     Tcl_UtfToExternalDStringEx, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
-    0, /* 661 */
-    0, /* 662 */
-    0, /* 663 */
-    0, /* 664 */
-    0, /* 665 */
-    0, /* 666 */
-    0, /* 667 */
+    Tcl_ListObjGetElements, /* 661 */
+    Tcl_ListObjLength, /* 662 */
+    Tcl_DictObjSize, /* 663 */
+    Tcl_SplitList, /* 664 */
+    Tcl_SplitPath, /* 665 */
+    Tcl_FSSplitPath, /* 666 */
+    Tcl_ParseArgsObjv, /* 667 */
     Tcl_UniCharLen, /* 668 */
     Tcl_NumUtfChars, /* 669 */
     Tcl_GetCharLength, /* 670 */
