@@ -150,7 +150,7 @@ declare 32 {
 }
 # Removed in 8.5:
 #declare 33 {
-#    TclCmdProcType TclGetInterpProc(void)
+#    Tcl_CmdProc *TclGetInterpProc(void)
 #}
 declare 34 {deprecated {Use Tcl_GetIntForIndex}} {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -175,7 +175,7 @@ declare 38 {
 	    const char **simpleNamePtr)
 }
 declare 39 {
-    TclObjCmdProcType TclGetObjInterpProc(void)
+    Tcl_ObjCmdProc *TclGetObjInterpProc(void)
 }
 declare 40 {
     int TclGetOpenMode(Tcl_Interp *interp, const char *str, int *seekFlagPtr)

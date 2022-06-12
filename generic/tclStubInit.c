@@ -78,8 +78,11 @@
 #undef Tcl_MacOSXOpenBundleResources
 #undef TclWinConvertWSAError
 #undef TclWinConvertError
+#undef Tcl_NumUtfChars
 #undef Tcl_GetCharLength
 #undef Tcl_UtfAtIndex
+#undef Tcl_GetRange
+#undef Tcl_GetUniChar
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define TclWinConvertWSAError (void (*)(DWORD))(void *)Tcl_WinConvertError
@@ -103,6 +106,7 @@ static void uniCodePanic(void) {
 #   define Tcl_UniCharCaseMatch (int(*)(const unsigned short *, const unsigned short *, int))(void *)uniCodePanic
 #   define Tcl_GetRange (Tcl_Obj *(*)(Tcl_Obj *, int, int))(void *)uniCodePanic
 #   define Tcl_GetUniChar (int(*)(Tcl_Obj *, int))(void *)uniCodePanic
+#   define Tcl_NumUtfChars (int(*)(const char *, int))(void *)uniCodePanic
 #endif
 
 #define TclUtfCharComplete UtfCharComplete
@@ -129,6 +133,71 @@ static const char *TclUtfPrev(const char *src, const char *start) {
 	return src - 3;
     }
     return Tcl_UtfPrev(src, start);
+}
+
+int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    size_t *objcPtr, Tcl_Obj ***objvPtr) {
+    int n, result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
+    if ((result == TCL_OK) && objcPtr) {
+	*objcPtr = n;
+    }
+    return result;
+}
+int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+    size_t *lengthPtr) {
+    int n;
+    int result = Tcl_ListObjLength(interp, listPtr, &n);
+    if ((result == TCL_OK) && lengthPtr) {
+	*lengthPtr = n;
+    }
+    return result;
+}
+int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
+	size_t *sizePtr) {
+    int n, result = Tcl_DictObjSize(interp, dictPtr, &n);
+    if ((result == TCL_OK) && sizePtr) {
+	*sizePtr = n;
+    }
+    return result;
+}
+int TclSplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
+	const char ***argvPtr) {
+    int n;
+    int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
+    if ((result == TCL_OK) && argcPtr) {
+	*argcPtr = n;
+    }
+    return result;
+}
+void TclSplitPath(const char *path, size_t *argcPtr, const char ***argvPtr) {
+    int n;
+    Tcl_SplitPath(path, &n, argvPtr);
+    if (argcPtr) {
+	*argcPtr = n;
+    }
+}
+Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr) {
+    int n;
+    Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
+    if (result && lenPtr) {
+	*lenPtr = n;
+    }
+    return result;
+}
+int TclParseArgsObjv(Tcl_Interp *interp,
+	const Tcl_ArgvInfo *argTable, size_t *objcPtr, Tcl_Obj *const *objv,
+	Tcl_Obj ***remObjv) {
+    int n, result;
+    if (*objcPtr > INT_MAX) {
+	if (interp) {
+	    Tcl_AppendResult(interp, "Tcl_ParseArgsObjv cannot handle *objcPtr > INT_MAX", NULL);
+	}
+	return TCL_ERROR;
+    }
+    n = (int)*objcPtr;
+    result = Tcl_ParseArgsObjv(interp, argTable, &n, objv, remObjv);
+    *objcPtr = n;
+    return result;
 }
 
 #define TclBN_mp_add mp_add
@@ -559,7 +628,7 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
 	    *ptr = (int)longValue;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "integer value too large to represent as non-long integer", -1));
+		    "integer value too large to represent", -1));
 	    result = TCL_ERROR;
 	}
     }
@@ -575,7 +644,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
 	    *ptr = (int)longValue;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "integer value too large to represent as non-long integer", -1));
+		    "integer value too large to represent", -1));
 	    result = TCL_ERROR;
 	}
     }
@@ -1951,13 +2020,13 @@ const TclStubs tclStubs = {
     Tcl_ExternalToUtfDStringEx, /* 658 */
     Tcl_UtfToExternalDStringEx, /* 659 */
     Tcl_AsyncMarkFromSignal, /* 660 */
-    0, /* 661 */
-    0, /* 662 */
-    0, /* 663 */
-    0, /* 664 */
-    0, /* 665 */
-    0, /* 666 */
-    0, /* 667 */
+    TclListObjGetElements, /* 661 */
+    TclListObjLength, /* 662 */
+    TclDictObjSize, /* 663 */
+    TclSplitList, /* 664 */
+    TclSplitPath, /* 665 */
+    TclFSSplitPath, /* 666 */
+    TclParseArgsObjv, /* 667 */
     Tcl_UniCharLen, /* 668 */
     TclNumUtfChars, /* 669 */
     TclGetCharLength, /* 670 */

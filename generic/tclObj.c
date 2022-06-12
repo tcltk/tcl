@@ -2676,7 +2676,7 @@ Tcl_Obj *
 Tcl_NewIntObj(
     int intValue)	/* Int used to initialize the new object. */
 {
-    return Tcl_DbNewWideIntObj((long)intValue, "unknown", 0);
+    return Tcl_DbNewWideIntObj(intValue, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
@@ -2768,7 +2768,7 @@ Tcl_GetIntFromObj(
     if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < INT_MIN))) {
 	if (interp != NULL) {
 	    const char *s =
-		    "integer value too large to represent as non-long integer";
+		    "integer value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}

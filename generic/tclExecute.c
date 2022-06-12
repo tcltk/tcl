@@ -5732,14 +5732,6 @@ TEBCresume(
     case INST_NUM_TYPE:
 	if (GetNumberFromObj(NULL, OBJ_AT_TOS, &ptr1, &type1) != TCL_OK) {
 	    type1 = 0;
-	} else if (type1 == TCL_NUMBER_BIG) {
-	    /* value is an integer outside the WIDE_MIN to WIDE_MAX range */
-	    /* [string is wideinteger] is WIDE_MIN to WIDE_MAX range */
-	    Tcl_WideInt w;
-
-	    if (TclGetWideIntFromObj(NULL, OBJ_AT_TOS, &w) == TCL_OK) {
-		type1 = TCL_NUMBER_INT;
-	    }
 	}
 	TclNewIntObj(objResultPtr, type1);
 	TRACE(("\"%.20s\" => %d\n", O2S(OBJ_AT_TOS), type1));
