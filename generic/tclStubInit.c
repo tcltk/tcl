@@ -73,6 +73,10 @@
 #endif
 #undef Tcl_Close
 #define Tcl_Close 0
+#undef TclGetByteArrayFromObj
+#define TclGetByteArrayFromObj 0
+#undef Tcl_GetByteArrayFromObj
+#define Tcl_GetByteArrayFromObj 0
 
 
 #if TCL_UTF_MAX < 4

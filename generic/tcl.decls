@@ -144,6 +144,7 @@ declare 32 {
     int Tcl_GetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int *intPtr)
 }
+# Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 33 {
     unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
 }
@@ -2480,6 +2481,7 @@ declare 651 {
 declare 652 {
     Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
+# Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 653 {
     unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)
 }
