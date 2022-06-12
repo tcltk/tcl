@@ -35,7 +35,7 @@ typedef struct {
     TclFile inFile;		/* Output from pipe. */
     TclFile outFile;		/* Input to pipe. */
     TclFile errorFile;		/* Error output from pipe. */
-    int numPids;		/* How many processes are attached to this
+    size_t numPids;		/* How many processes are attached to this
 				 * pipe? */
     Tcl_Pid *pidPtr;		/* The process IDs themselves. Allocated by
 				 * the creator of the pipe. */
@@ -381,7 +381,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    int argc,			/* Number of arguments in following array. */
+    size_t argc1,			/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings in UTF-8.
 				 * argv[0] contains the name of the executable
 				 * translated using Tcl_TranslateFileName
@@ -411,6 +411,7 @@ TclpCreateProcess(
     Tcl_DString *dsArray;
     char **newArgv;
     int pid, i;
+    int argc = argc1;
 
     errPipeIn = NULL;
     errPipeOut = NULL;
@@ -736,7 +737,7 @@ TclpCreateCommandChannel(
     TclFile writeFile,		/* If non-null, gives the file for writing. */
     TclFile errorFile,		/* If non-null, gives the file where errors
 				 * can be read. */
-    int numPids,		/* The number of pids in the pid array. */
+    size_t numPids,		/* The number of pids in the pid array. */
     Tcl_Pid *pidPtr)		/* An array of process identifiers. Allocated
 				 * by the caller, freed when the channel is
 				 * closed or the processes are detached (in a
@@ -858,7 +859,7 @@ TclGetAndDetachPids(
     PipeState *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
     Tcl_Obj *pidsObj;
-    int i;
+    size_t i;
 
     /*
      * Punt if the channel is not a command channel.
@@ -1257,7 +1258,7 @@ Tcl_PidObjCmd(
 {
     Tcl_Channel chan;
     PipeState *pipePtr;
-    int i;
+    size_t i;
     Tcl_Obj *resultPtr;
 
     if (objc > 2) {
@@ -1288,7 +1289,7 @@ Tcl_PidObjCmd(
 	TclNewObj(resultPtr);
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
-		    Tcl_NewWideIntObj(PTR2INT(TclpGetPid(pipePtr->pidPtr[i]))));
+		    Tcl_NewWideIntObj(TclpGetPid(pipePtr->pidPtr[i])));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }

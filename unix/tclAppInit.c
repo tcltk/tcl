@@ -81,8 +81,8 @@ main(
 
 #ifdef TCL_LOCAL_MAIN_HOOK
     TCL_LOCAL_MAIN_HOOK(&argc, &argv);
-#elif !defined(_WIN32) || defined(UNICODE)
-    /* This doesn't work on Windows without UNICODE */
+#elif (TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6) && (!defined(_WIN32) || defined(UNICODE))
+    /* New in Tcl 8.7. This doesn't work on Windows without UNICODE */
     TclZipfs_AppHook(&argc, &argv);
 #endif
 

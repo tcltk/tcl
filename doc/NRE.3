@@ -55,7 +55,7 @@ and \fIobjProc\fR.
 .AP Tcl_CmdDeleteProc *deleteProc in/out
 Called before \fIcmdName\fR is deleted from the interpreter, allowing for
 command-specific cleanup. May be NULL.
-.AP int objc in
+.AP size_t objc in
 Number of items in \fIobjv\fR.
 .AP Tcl_Obj **objv in
 Words in the command.

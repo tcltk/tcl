@@ -47,7 +47,7 @@ static int		FileForceOption(Tcl_Interp *interp,
 
 int
 TclFileRenameCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interp for error reporting or recursive
 				 * calls in the case of a tricky rename. */
     int objc,			/* Number of arguments. */
@@ -76,7 +76,7 @@ TclFileRenameCmd(
 
 int
 TclFileCopyCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting or recursive calls
 				 * in the case of a tricky copy. */
     int objc,			/* Number of arguments. */
@@ -214,13 +214,14 @@ FileCopyRename(
 
 int
 TclFileMakeDirsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting. */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     Tcl_Obj *errfile = NULL;
-    int result, i, j, pobjc;
+    int result, i;
+    size_t j, pobjc;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
@@ -338,7 +339,7 @@ TclFileMakeDirsCmd(
 
 int
 TclFileDeleteCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Used for error reporting */
     int objc,			/* Number of arguments */
     Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
@@ -873,7 +874,7 @@ FileBasename(
     Tcl_Interp *interp,		/* Interp, for error return. */
     Tcl_Obj *pathPtr)		/* Path whose basename to extract. */
 {
-    int objc;
+    size_t objc;
     Tcl_Obj *splitPtr;
     Tcl_Obj *resultPtr = NULL;
 
@@ -946,7 +947,7 @@ FileBasename(
 
 int
 TclFileAttrsCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* The interpreter for error reporting. */
     int objc,			/* Number of command line arguments. */
     Tcl_Obj *const objv[])	/* The command line objects. */
@@ -955,7 +956,7 @@ TclFileAttrsCmd(
     const char *const *attributeStrings;
     const char **attributeStringsAllocated = NULL;
     Tcl_Obj *objStrings = NULL;
-    int numObjStrings = -1;
+    size_t numObjStrings = TCL_INDEX_NONE;
     Tcl_Obj *filePtr;
 
     if (objc < 2) {
@@ -979,7 +980,7 @@ TclFileAttrsCmd(
 
     attributeStrings = Tcl_FSFileAttrStrings(filePtr, &objStrings);
     if (attributeStrings == NULL) {
-	int index;
+	size_t index;
 	Tcl_Obj *objPtr;
 
 	if (objStrings == NULL) {
@@ -1006,7 +1007,7 @@ TclFileAttrsCmd(
 	 * Use objStrings as a list object.
 	 */
 
-	if (Tcl_ListObjLength(interp, objStrings, &numObjStrings) != TCL_OK) {
+	if (TclListObjLengthM(interp, objStrings, &numObjStrings) != TCL_OK) {
 	    goto end;
 	}
 	attributeStringsAllocated = (const char **)
@@ -1162,7 +1163,7 @@ TclFileAttrsCmd(
 
 int
 TclFileLinkCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1313,7 +1314,7 @@ TclFileLinkCmd(
 
 int
 TclFileReadLinkCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1364,7 +1365,7 @@ TclFileReadLinkCmd(
 
 int
 TclFileTemporaryCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1523,7 +1524,7 @@ TclFileTemporaryCmd(
 
 int
 TclFileTempDirCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])

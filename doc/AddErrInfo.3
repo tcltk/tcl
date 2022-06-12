@@ -76,8 +76,8 @@ The line number of a script where an error occurred.
 Pointer to first character in script containing command (must be <= command)
 .AP "const char" *command in
 Pointer to first character in command that generated the error
-.AP int commandLength in
-Number of bytes in command; -1 means use all bytes up to first null byte
+.AP size_t commandLength in
+Number of bytes in command; TCL_INDEX_NONE means use all bytes up to first null byte
 .BE
 .SH DESCRIPTION
 .PP

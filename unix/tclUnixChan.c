@@ -596,7 +596,7 @@ TtySetOptionProc(
     TtyState *fsPtr = (TtyState *)instanceData;
     size_t len, vlen;
     TtyAttrs tty;
-    int argc;
+    size_t argc;
     const char **argv;
     struct termios iostate;
 
@@ -731,7 +731,8 @@ TtySetOptionProc(
 
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
 #if defined(TIOCMGET) && defined(TIOCMSET)
-	int i, control, flag;
+	int control, flag;
+	size_t i;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
@@ -1027,11 +1028,11 @@ TtyGetOptionProc(
 	tcgetattr(fsPtr->fileState.fd, &iostate);
 	Tcl_DStringInit(&ds);
 
-	Tcl_ExternalToUtfDString(NULL, (char *) &iostate.c_cc[VSTART], 1, &ds);
+	Tcl_ExternalToUtfDStringEx(NULL, (char *) &iostate.c_cc[VSTART], 1, TCL_ENCODING_NOCOMPLAIN, &ds);
 	Tcl_DStringAppendElement(dsPtr, Tcl_DStringValue(&ds));
 	TclDStringClear(&ds);
 
-	Tcl_ExternalToUtfDString(NULL, (char *) &iostate.c_cc[VSTOP], 1, &ds);
+	Tcl_ExternalToUtfDStringEx(NULL, (char *) &iostate.c_cc[VSTOP], 1, TCL_ENCODING_NOCOMPLAIN, &ds);
 	Tcl_DStringAppendElement(dsPtr, Tcl_DStringValue(&ds));
 	Tcl_DStringFree(&ds);
     }

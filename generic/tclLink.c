@@ -606,7 +606,7 @@ EqualDouble(
 {
     return (a == b)
 #ifdef ACCEPT_NAN
-	|| (TclIsNaN(a) && TclIsNaN(b))
+	|| (isnan(a) && isnan(b))
 #endif /* ACCEPT_NAN */
 	;
 }
@@ -615,9 +615,9 @@ static inline int
 IsSpecial(
     double a)
 {
-    return TclIsInfinite(a)
+    return isinf(a)
 #ifdef ACCEPT_NAN
-	|| TclIsNaN(a)
+	|| isnan(a)
 #endif /* ACCEPT_NAN */
 	;
 }
@@ -763,9 +763,8 @@ LinkTraceProc(
     Tcl_WideInt valueWide;
     Tcl_WideUInt valueUWide;
     double valueDouble;
-    int objc;
+    size_t objc, i;
     Tcl_Obj **objv;
-    int i;
 
     /*
      * If the variable is being unset, then just re-create it (with a trace)
@@ -947,8 +946,8 @@ LinkTraceProc(
      */
 
     if (linkPtr->flags & LINK_ALLOC_LAST) {
-	if (Tcl_ListObjGetElements(NULL, (valueObj), &objc, &objv) == TCL_ERROR
-		|| (size_t)objc != linkPtr->numElems) {
+	if (TclListObjGetElementsM(NULL, (valueObj), &objc, &objv) == TCL_ERROR
+		|| objc != linkPtr->numElems) {
 	    return (char *) "wrong dimension";
 	}
     }
@@ -956,7 +955,7 @@ LinkTraceProc(
     switch (linkPtr->type) {
     case TCL_LINK_INT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    for (i=0; i < objc; i++) {
+	    for (i = 0; i < objc; i++) {
 		int *varPtr = &linkPtr->lastValue.iPtr[i];
 
 		if (GetInt(objv[i], varPtr)) {
@@ -1071,7 +1070,7 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetInt(objv[i], &valueInt)
-		        || !InRange(0, valueInt, UCHAR_MAX)) {
+		        || !InRange(0, valueInt, (int)UCHAR_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		    return (char *)
@@ -1081,7 +1080,7 @@ LinkTraceProc(
 	    }
 	} else {
 	    if (GetInt(valueObj, &valueInt)
-		    || !InRange(0, valueInt, UCHAR_MAX)) {
+		    || !InRange(0, valueInt, (int)UCHAR_MAX)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned char value";
@@ -1117,7 +1116,7 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetInt(objv[i], &valueInt)
-		        || !InRange(0, valueInt, USHRT_MAX)) {
+		        || !InRange(0, valueInt, (int)USHRT_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 	            return (char *)
@@ -1127,7 +1126,7 @@ LinkTraceProc(
 	    }
 	} else {
 	    if (GetInt(valueObj, &valueInt)
-		    || !InRange(0, valueInt, USHRT_MAX)) {
+		    || !InRange(0, valueInt, (int)USHRT_MAX)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned short value";
@@ -1141,7 +1140,7 @@ LinkTraceProc(
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
 	    for (i=0; i < objc; i++) {
 		if (GetWide(objv[i], &valueWide)
-			|| !InRange(0, valueWide, UINT_MAX)) {
+			|| !InRange(0, valueWide, (Tcl_WideInt)UINT_MAX)) {
 		    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			    ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 	            return (char *)
@@ -1151,7 +1150,7 @@ LinkTraceProc(
 	    }
 	} else {
 	    if (GetWide(valueObj, &valueWide)
-		    || !InRange(0, valueWide, UINT_MAX)) {
+		    || !InRange(0, valueWide, (Tcl_WideInt)UINT_MAX)) {
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have unsigned int value";

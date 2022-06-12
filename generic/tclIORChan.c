@@ -31,31 +31,31 @@
  * Signatures of all functions used in the C layer of the reflection.
  */
 
-static int		ReflectClose(ClientData clientData,
+static int		ReflectClose(void *clientData,
 			    Tcl_Interp *interp, int flags);
-static int		ReflectInput(ClientData clientData, char *buf,
+static int		ReflectInput(void *clientData, char *buf,
 			    int toRead, int *errorCodePtr);
-static int		ReflectOutput(ClientData clientData, const char *buf,
+static int		ReflectOutput(void *clientData, const char *buf,
 			    int toWrite, int *errorCodePtr);
-static void		ReflectWatch(ClientData clientData, int mask);
-static int		ReflectBlock(ClientData clientData, int mode);
+static void		ReflectWatch(void *clientData, int mask);
+static int		ReflectBlock(void *clientData, int mode);
 #if TCL_THREADS
-static void		ReflectThread(ClientData clientData, int action);
+static void		ReflectThread(void *clientData, int action);
 static int		ReflectEventRun(Tcl_Event *ev, int flags);
-static int		ReflectEventDelete(Tcl_Event *ev, ClientData cd);
+static int		ReflectEventDelete(Tcl_Event *ev, void *cd);
 #endif
-static long long ReflectSeekWide(ClientData clientData,
+static long long ReflectSeekWide(void *clientData,
 			    long long offset, int mode, int *errorCodePtr);
-static int		ReflectGetOption(ClientData clientData,
+static int		ReflectGetOption(void *clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
-static int		ReflectSetOption(ClientData clientData,
+static int		ReflectSetOption(void *clientData,
 			    Tcl_Interp *interp, const char *optionName,
 			    const char *newValue);
-static int		ReflectTruncate(ClientData clientData,
+static int		ReflectTruncate(void *clientData,
 			    long long length);
-static void     TimerRunRead(ClientData clientData);
-static void     TimerRunWrite(ClientData clientData);
+static void     TimerRunRead(void *clientData);
+static void     TimerRunWrite(void *clientData);
 
 /*
  * The C layer channel type/driver definition used by the reflection.
@@ -212,7 +212,7 @@ typedef enum {
 
 #define IMPLIES(a,b)	((!(a)) || (b))
 #define NEGIMPL(a,b)
-#define HAS(x,f)	(x & FLAG(f))
+#define HAS(x,f)	((x) & FLAG(f))
 
 #if TCL_THREADS
 /*
@@ -400,7 +400,7 @@ TCL_DECLARE_MUTEX(rcForwardMutex)
 static void		ForwardOpToHandlerThread(ReflectedChannel *rcPtr,
 			    ForwardedOperation op, const void *param);
 static int		ForwardProc(Tcl_Event *evPtr, int mask);
-static void		SrcExitProc(ClientData clientData);
+static void		SrcExitProc(void *clientData);
 
 #define FreeReceivedError(p) \
 	if ((p)->base.mustFree) {                               \
@@ -500,7 +500,7 @@ static const char *msg_dstlost    = "-code 1 -level 0 -errorcode NONE -errorinfo
 
 int
 TclChanCreateObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -513,7 +513,7 @@ TclChanCreateObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Channel chan;		/* Token for the new channel */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    int listc;			/* Result of 'initialize', and of */
+    size_t listc;			/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -609,7 +609,7 @@ TclChanCreateObjCmd(
      *   Compare open mode against optional r/w.
      */
 
-    if (Tcl_ListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElementsM(NULL, resObj, &listc, &listv) != TCL_OK) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "chan handler \"%s initialize\" returned non-list: %s",
                 TclGetString(cmdObj), TclGetString(resObj)));
@@ -799,7 +799,7 @@ ReflectEventRun(
 static int
 ReflectEventDelete(
     Tcl_Event *ev,
-    ClientData cd)
+    void *cd)
 {
     /* OWNER thread
      *
@@ -819,7 +819,7 @@ ReflectEventDelete(
 
 int
 TclChanPostEventObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1002,7 +1002,7 @@ TclChanPostEventObjCmd(
 
 static void
 TimerRunRead(
-    ClientData clientData)
+    void *clientData)
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
     rcPtr->readTimer = NULL;
@@ -1011,7 +1011,7 @@ TimerRunRead(
 
 static void
 TimerRunWrite(
-    ClientData clientData)
+    void *clientData)
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
     rcPtr->writeTimer = NULL;
@@ -1047,10 +1047,10 @@ UnmarshallErrorResult(
     Tcl_Interp *interp,
     Tcl_Obj *msgObj)
 {
-    int lc;
+    size_t lc;
     Tcl_Obj **lv;
     int explicitResult;
-    int numOptions;
+    size_t numOptions;
 
     /*
      * Process the caught message.
@@ -1062,7 +1062,7 @@ UnmarshallErrorResult(
      * information; if we panic here, something has gone badly wrong already.
      */
 
-    if (Tcl_ListObjGetElements(interp, msgObj, &lc, &lv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, msgObj, &lc, &lv) != TCL_OK) {
 	Tcl_Panic("TclChanCaughtErrorBypass: Bad syntax of caught result");
     }
     if (interp == NULL) {
@@ -1159,7 +1159,7 @@ TclChanCaughtErrorBypass(
 
 static int
 ReflectClose(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
 	int flags)
 {
@@ -1319,7 +1319,7 @@ ReflectClose(
 
 static int
 ReflectInput(
-    ClientData clientData,
+    void *clientData,
     char *buf,
     int toRead,
     int *errorCodePtr)
@@ -1429,7 +1429,7 @@ ReflectInput(
 
 static int
 ReflectOutput(
-    ClientData clientData,
+    void *clientData,
     const char *buf,
     int toWrite,
     int *errorCodePtr)
@@ -1558,7 +1558,7 @@ ReflectOutput(
 
 static long long
 ReflectSeekWide(
-    ClientData clientData,
+    void *clientData,
     long long offset,
     int seekMode,
     int *errorCodePtr)
@@ -1651,7 +1651,7 @@ ReflectSeekWide(
 
 static void
 ReflectWatch(
-    ClientData clientData,
+    void *clientData,
     int mask)
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
@@ -1723,7 +1723,7 @@ ReflectWatch(
 
 static int
 ReflectBlock(
-    ClientData clientData,
+    void *clientData,
     int nonblocking)
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
@@ -1790,7 +1790,7 @@ ReflectBlock(
 
 static void
 ReflectThread(
-    ClientData clientData,
+    void *clientData,
     int action)
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
@@ -1827,7 +1827,7 @@ ReflectThread(
 
 static int
 ReflectSetOption(
-    ClientData clientData,	/* Channel to query */
+    void *clientData,	/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of requested option */
     const char *newValue)	/* The new value */
@@ -1899,7 +1899,7 @@ ReflectSetOption(
 
 static int
 ReflectGetOption(
-    ClientData clientData,	/* Channel to query */
+    void *clientData,	/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
     const char *optionName,	/* Name of reuqested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
@@ -1912,7 +1912,8 @@ ReflectGetOption(
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
     Tcl_Obj *optionObj;
     Tcl_Obj *resObj;		/* Result data for 'configure' */
-    int listc, result = TCL_OK;
+    size_t listc;
+    int result = TCL_OK;
     Tcl_Obj **listv;
     MethodName method;
 
@@ -1993,7 +1994,7 @@ ReflectGetOption(
      * result is a valid list. Nor that the list has an even number elements.
      */
 
-    if (Tcl_ListObjGetElements(interp, resObj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, resObj, &listc, &listv) != TCL_OK) {
         goto error;
     }
 
@@ -2005,7 +2006,7 @@ ReflectGetOption(
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Expected list with even number of "
-		"elements, got %d element%s instead", listc,
+		"elements, got %" TCL_Z_MODIFIER "u element%s instead", listc,
 		(listc == 1 ? "" : "s")));
         goto error;
     } else {
@@ -2051,7 +2052,7 @@ ReflectGetOption(
 
 static int
 ReflectTruncate(
-    ClientData clientData,	/* Channel to query */
+    void *clientData,	/* Channel to query */
     long long length)		/* Length to truncate to. */
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
@@ -2084,7 +2085,7 @@ ReflectTruncate(
 
     Tcl_Preserve(rcPtr);
 
-    lenObj  = Tcl_NewIntObj(length);
+    lenObj  = Tcl_NewWideIntObj(length);
     Tcl_IncrRefCount(lenObj);
 
     if (InvokeTclMethod(rcPtr,METH_TRUNCATE,lenObj,NULL,&resObj)!=TCL_OK) {
@@ -2134,12 +2135,12 @@ EncodeEventMask(
     int *mask)
 {
     int events;			/* Mask of events to post */
-    int listc;			/* #elements in eventspec list */
+    size_t listc;			/* #elements in eventspec list */
     Tcl_Obj **listv;		/* Elements of eventspec list */
     int evIndex;		/* Id of event for an element of the eventspec
 				 * list. */
 
-    if (Tcl_ListObjGetElements(interp, obj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, obj, &listc, &listv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2617,7 +2618,7 @@ MarkDead(
 
 static void
 DeleteReflectedChannelMap(
-    ClientData clientData,	/* The per-interpreter data structure. */
+    void *clientData,	/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     ReflectedChannelMap *rcmPtr = (ReflectedChannelMap *)clientData;
@@ -2796,7 +2797,7 @@ GetThreadReflectedChannelMap(void)
 
 static void
 DeleteThreadReflectedChannelMap(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     Tcl_HashSearch hSearch;	 /* Search variable. */
     Tcl_HashEntry *hPtr;	 /* Search variable. */
@@ -3304,10 +3305,10 @@ ForwardProc(
 	     * NOTE (4) as well.
 	     */
 
-	    int listc;
+	    size_t listc;
 	    Tcl_Obj **listv;
 
-	    if (Tcl_ListObjGetElements(interp, resObj, &listc,
+	    if (TclListObjGetElementsM(interp, resObj, &listc,
                     &listv) != TCL_OK) {
 		Tcl_DecrRefCount(resObj);
 		resObj = MarshallError(interp);
@@ -3319,7 +3320,7 @@ ForwardProc(
 
 		char *buf = (char *)Tcl_Alloc(200);
 		sprintf(buf,
-			"{Expected list with even number of elements, got %d %s instead}",
+			"{Expected list with even number of elements, got %" TCL_Z_MODIFIER "u %s instead}",
 			listc, (listc == 1 ? "element" : "elements"));
 
 		ForwardSetDynamicError(paramPtr, buf);
@@ -3337,7 +3338,7 @@ ForwardProc(
 	break;
 
     case ForwardedTruncate: {
-	Tcl_Obj *lenObj = Tcl_NewIntObj(paramPtr->truncate.length);
+	Tcl_Obj *lenObj = Tcl_NewWideIntObj(paramPtr->truncate.length);
 
 	Tcl_IncrRefCount(lenObj);
 	Tcl_Preserve(rcPtr);
@@ -3385,7 +3386,7 @@ ForwardProc(
 
 static void
 SrcExitProc(
-    ClientData clientData)
+    void *clientData)
 {
     ForwardingEvent *evPtr = (ForwardingEvent *)clientData;
     ForwardingResult *resultPtr;

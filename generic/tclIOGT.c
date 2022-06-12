@@ -104,7 +104,7 @@ typedef struct ResultBuffer ResultBuffer;
 static inline void	ResultClear(ResultBuffer *r);
 static inline void	ResultInit(ResultBuffer *r);
 static inline int	ResultEmpty(ResultBuffer *r);
-static inline int	ResultCopy(ResultBuffer *r, unsigned char *buf,
+static inline size_t	ResultCopy(ResultBuffer *r, unsigned char *buf,
 			    size_t toRead);
 static inline void	ResultAdd(ResultBuffer *r, unsigned char *buf,
 			    size_t toWrite);
@@ -258,7 +258,7 @@ TclChannelTransform(
     Channel *chanPtr;		/* The actual channel. */
     ChannelState *statePtr;	/* State info for channel. */
     int mode;			/* Read/write mode of the channel. */
-    int objc;
+    size_t objc;
     TransformChannelData *dataPtr;
     Tcl_DString ds;
 
@@ -266,7 +266,7 @@ TclChannelTransform(
 	return TCL_ERROR;
     }
 
-    if (TCL_OK != Tcl_ListObjLength(interp, cmdObjPtr, &objc)) {
+    if (TCL_OK != TclListObjLengthM(interp, cmdObjPtr, &objc)) {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("-command value is not a list", -1));
 	return TCL_ERROR;
@@ -1279,13 +1279,13 @@ ResultEmpty(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline size_t
 ResultCopy(
     ResultBuffer *r,		/* The buffer to read from. */
     unsigned char *buf,		/* The buffer to copy into. */
     size_t toRead)		/* Number of requested bytes. */
 {
-    if (r->used == 0) {
+    if (ResultEmpty(r)) {
 	/*
 	 * Nothing to copy in the case of an empty buffer.
 	 */
@@ -1342,7 +1342,7 @@ ResultAdd(
     unsigned char *buf,		/* The buffer to read from. */
     size_t toWrite)		/* The number of bytes in 'buf'. */
 {
-    if (r->used + toWrite > r->allocated) {
+    if ((r->used + toWrite + 1) > r->allocated) {
 	/*
 	 * Extension of the internal buffer is required.
 	 */

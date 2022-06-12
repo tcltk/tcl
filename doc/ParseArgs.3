@@ -21,7 +21,7 @@ int
 Where to store error messages.
 .AP "const Tcl_ArgvInfo" *argTable in
 Pointer to array of option descriptors.
-.AP int *objcPtr in/out
+.AP size_t | int *objcPtr in/out
 A pointer to variable holding number of arguments in \fIobjv\fR. Will be
 modified to hold number of arguments left in the unprocessed argument list
 stored in \fIremObjv\fR.

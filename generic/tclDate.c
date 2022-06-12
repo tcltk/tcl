@@ -185,9 +185,9 @@ typedef struct DateInfo {
 
 #define TM_YEAR_BASE	1900
 
-#define HOUR(x)		((int) (60 * x))
+#define HOUR(x)		((int) (60 * (x)))
 #define SECSPERDAY	(24L * 60L * 60L)
-#define IsLeapYear(x)	((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))
+#define IsLeapYear(x)	(((x) % 4 == 0) && ((x) % 100 != 0 || (x) % 400 == 0))
 
 /*
  * An entry in the lexical lookup table.
@@ -352,7 +352,6 @@ typedef short yytype_int16;
 # elif defined size_t
 #  define YYSIZE_T size_t
 # elif ! defined YYSIZE_T
-#  include <stddef.h> /* INFRINGES ON USER NAME SPACE */
 #  define YYSIZE_T size_t
 # else
 #  define YYSIZE_T unsigned
@@ -2746,7 +2745,7 @@ int
 TclClockOldscanObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Tcl interpreter */
-    int objc,			/* Count of paraneters */
+    int objc,			/* Count of parameters */
     Tcl_Obj *const *objv)	/* Parameters */
 {
     Tcl_Obj *result, *resultElement;

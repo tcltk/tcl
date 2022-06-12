@@ -101,6 +101,7 @@ extern "C" {
  */
 
 #include <stdio.h>
+#include <stddef.h>
 
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   if defined(_WIN32) && defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO
@@ -744,14 +745,14 @@ typedef struct Tcl_Namespace {
 typedef struct Tcl_CallFrame {
     Tcl_Namespace *nsPtr;
     int dummy1;
-    int dummy2;
+    size_t dummy2;
     void *dummy3;
     void *dummy4;
     void *dummy5;
-    int dummy6;
+    size_t dummy6;
     void *dummy7;
     void *dummy8;
-    int dummy9;
+    size_t dummy9;
     void *dummy10;
     void *dummy11;
     void *dummy12;
@@ -850,12 +851,15 @@ typedef struct Tcl_DString {
 /*
  * Flags that may be passed to Tcl_GetIndexFromObj.
  * TCL_EXACT disallows abbreviated strings.
+ * TCL_INDEX_NULL_OK allows the empty string or NULL to return TCL_OK.
+ *      The returned value will be -1;
  * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
  *      a table that will not live long enough to make it worthwhile.
  */
 
 #define TCL_EXACT		1
-#define TCL_INDEX_TEMP_TABLE	2
+#define TCL_INDEX_NULL_OK	32
+#define TCL_INDEX_TEMP_TABLE	64
 
 /*
  *----------------------------------------------------------------------------
@@ -996,7 +1000,7 @@ struct Tcl_HashEntry {
     Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this hash bucket,
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
-    size_t hash;		/* Hash value. */
+    TCL_HASH_TYPE hash;		/* Hash value. */
     void *clientData;	/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
@@ -1798,22 +1802,28 @@ typedef struct Tcl_Parse {
 				 * field is 0. */
     const char *commandStart;	/* First character in first word of
 				 * command. */
-    int commandSize;		/* Number of bytes in command, including first
+    size_t commandSize;		/* Number of bytes in command, including first
 				 * character of first word, up through the
 				 * terminating newline, close bracket, or
 				 * semicolon. */
-    int numWords;		/* Total number of words in command. May be
+    size_t numWords;		/* Total number of words in command. May be
 				 * 0. */
     Tcl_Token *tokenPtr;	/* Pointer to first token representing the
 				 * words of the command. Initially points to
 				 * staticTokens, but may change to point to
 				 * malloc-ed space if command exceeds space in
 				 * staticTokens. */
-    int numTokens;		/* Total number of tokens in command. */
-    int tokensAvailable;	/* Total number of tokens available at
+    size_t numTokens;		/* Total number of tokens in command. */
+    size_t tokensAvailable;	/* Total number of tokens available at
 				 * *tokenPtr. */
     int errorType;		/* One of the parsing error types defined
 				 * above. */
+#if TCL_MAJOR_VERSION > 8
+    int incomplete;		/* This field is set to 1 by Tcl_ParseCommand
+				 * if the command appears to be incomplete.
+				 * This information is used by
+				 * Tcl_CommandComplete. */
+#endif
 
     /*
      * The fields below are intended only for the private use of the parser.
@@ -1832,10 +1842,9 @@ typedef struct Tcl_Parse {
 				 * beginning of region where the error
 				 * occurred (e.g. the open brace if the close
 				 * brace is missing). */
-    int incomplete;		/* This field is set to 1 by Tcl_ParseCommand
-				 * if the command appears to be incomplete.
-				 * This information is used by
-				 * Tcl_CommandComplete. */
+#if TCL_MAJOR_VERSION < 9
+    int incomplete;
+#endif
     Tcl_Token staticTokens[NUM_STATIC_TOKENS];
 				/* Initial space for tokens for command. This
 				 * space should be large enough to accommodate
@@ -1892,14 +1901,7 @@ typedef struct Tcl_EncodingType {
  *				reset to an initial state. If the source
  *				buffer contains the entire input stream to be
  *				converted, this flag should be set.
- * TCL_ENCODING_STOPONERROR -	If set, the converter returns immediately upon
- *				encountering an invalid byte sequence or a
- *				source character that has no mapping in the
- *				target encoding. If clear, the converter
- *				substitues the problematic character(s) with
- *				one or more "close" characters in the
- *				destination buffer and then continues to
- *				convert the source.
+ * TCL_ENCODING_STOPONERROR -	Not used any more.
  * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf does not append a
  *				terminating NUL byte.  Since it does not need
  *				an extra byte for a terminating NUL, it fills
@@ -1914,13 +1916,27 @@ typedef struct Tcl_EncodingType {
  *				content.  Otherwise, the number of chars
  *				produced is controlled only by other limiting
  *				factors.
+ * TCL_ENCODING_MODIFIED -	Convert NULL bytes to \xC0\x80 in stead of
+ *				0x00. Only valid for "utf-8" and "cesu-8".
+ *				This flag is implicit for external -> internal conversions,
+ *				optional for internal -> external conversions.
+ * TCL_ENCODING_NOCOMPLAIN -	If set, the converter
+ *				substitutes the problematic character(s) with
+ *				one or more "close" characters in the
+ *				destination buffer and then continues to
+ *				convert the source. If clear, the converter returns
+ *				immediately upon encountering an invalid byte sequence
+ *				or a source character that has no mapping in the
+ *				target encoding. Only for Tcl 9.x.
  */
 
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
-#define TCL_ENCODING_STOPONERROR	0x04
+#define TCL_ENCODING_STOPONERROR	0x0 /* Not used any more */
 #define TCL_ENCODING_NO_TERMINATE	0x08
 #define TCL_ENCODING_CHAR_LIMIT		0x10
+#define TCL_ENCODING_MODIFIED		0x20
+#define TCL_ENCODING_NOCOMPLAIN		0x40
 
 /*
  * The following definitions are the error codes returned by the conversion
@@ -1942,12 +1958,12 @@ typedef struct Tcl_EncodingType {
  *				character sequence. This may occur if the
  *				input stream has been damaged or if the input
  *				encoding method was misidentified. This error
- *				is reported only if TCL_ENCODING_STOPONERROR
+ *				is reported unless if TCL_ENCODING_NOCOMPLAIN
  *				was specified.
  * TCL_CONVERT_UNKNOWN -	The source string contained a character that
  *				could not be represented in the target
- *				encoding. This error is reported only if
- *				TCL_ENCODING_STOPONERROR was specified.
+ *				encoding. This error is reported unless if
+ *				TCL_ENCODING_NOCOMPLAIN was specified.
  */
 
 #define TCL_CONVERT_MULTIBYTE	(-1)
@@ -2229,7 +2245,7 @@ void *			TclStubCall(void *arg);
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp())))
-EXTERN TCL_NORETURN void Tcl_MainEx(int argc, char **argv,
+EXTERN TCL_NORETURN void Tcl_MainEx(size_t argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
@@ -2257,7 +2273,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #endif
 #   define Tcl_MainEx Tcl_MainExW
-    EXTERN TCL_NORETURN void Tcl_MainExW(int argc, wchar_t **argv,
+    EXTERN TCL_NORETURN void Tcl_MainExW(size_t argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 #ifdef USE_TCL_STUBS
@@ -2270,11 +2286,11 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
 #define TclZipfs_AppHook(argcp, argvp) \
 	TclInitStubTable(((const char *(*)(int *, void *))TclStubCall((void *)3))(argcp, argvp))
 #define Tcl_MainExW(argc, argv, appInitProc, interp) \
-	(void)((const char *(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	(void)((const char *(*)(size_t, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
 	TclStubCall((void *)4))(argc, argv, appInitProc, interp)
 #if !defined(_WIN32) || !defined(UNICODE)
 #define Tcl_MainEx(argc, argv, appInitProc, interp) \
-	(void)((const char *(*)(int, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
+	(void)((const char *(*)(size_t, const void *, Tcl_AppInitProc *, Tcl_Interp *)) \
 	TclStubCall((void *)5))(argc, argv, appInitProc, interp)
 #endif
 #define Tcl_StaticLibrary(interp, pkgName, initProc, safeInitProc) \

@@ -473,12 +473,12 @@ TclpInitLibraryPath(
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
-    Tcl_ExternalToUtfDString(NULL, str, -1, &buffer);
+    Tcl_ExternalToUtfDStringEx(NULL, str, -1, TCL_ENCODING_NOCOMPLAIN, &buffer);
     str = Tcl_DStringValue(&buffer);
 
     if ((str != NULL) && (str[0] != '\0')) {
 	Tcl_DString ds;
-	int pathc;
+	size_t pathc;
 	const char **pathv;
 	char installLib[LIBRARY_SIZE];
 

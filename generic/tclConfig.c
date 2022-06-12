@@ -191,7 +191,7 @@ Tcl_RegisterConfig(
 
 static int
 QueryConfigObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     struct Tcl_Obj *const *objv)
@@ -199,14 +199,13 @@ QueryConfigObjCmd(
     QCCD *cdPtr = (QCCD *)clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
-    size_t n = 0;
-    int index, m;
+    size_t m, n = 0;
     static const char *const subcmdStrings[] = {
 	"get", "list", NULL
     };
     enum subcmds {
 	CFG_GET, CFG_LIST
-    };
+    } index;
     Tcl_DString conv;
     Tcl_Encoding venc = NULL;
     const char *value;
@@ -234,7 +233,7 @@ QueryConfigObjCmd(
 	return TCL_ERROR;
     }
 
-    switch ((enum subcmds) index) {
+    switch (index) {
     case CFG_GET:
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "key");
@@ -322,7 +321,7 @@ QueryConfigObjCmd(
 
 static void
 QueryConfigDelete(
-    ClientData clientData)
+    void *clientData)
 {
     QCCD *cdPtr = (QCCD *)clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
@@ -389,7 +388,7 @@ GetConfigDict(
 
 static void
 ConfigDictDeleteProc(
-    ClientData clientData,	/* Pointer to Tcl_Obj. */
+    void *clientData,	/* Pointer to Tcl_Obj. */
     TCL_UNUSED(Tcl_Interp *))
 {
     Tcl_DecrRefCount((Tcl_Obj *)clientData);

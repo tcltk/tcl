@@ -36,48 +36,6 @@ typedef struct {
 } OemId;
 
 /*
- * The following macros are missing from some versions of winnt.h.
- */
-
-#ifndef PROCESSOR_ARCHITECTURE_INTEL
-#define PROCESSOR_ARCHITECTURE_INTEL		0
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_MIPS
-#define PROCESSOR_ARCHITECTURE_MIPS		1
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_ALPHA
-#define PROCESSOR_ARCHITECTURE_ALPHA		2
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_PPC
-#define PROCESSOR_ARCHITECTURE_PPC		3
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_SHX
-#define PROCESSOR_ARCHITECTURE_SHX		4
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_ARM
-#define PROCESSOR_ARCHITECTURE_ARM		5
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_IA64
-#define PROCESSOR_ARCHITECTURE_IA64		6
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_ALPHA64
-#define PROCESSOR_ARCHITECTURE_ALPHA64		7
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_MSIL
-#define PROCESSOR_ARCHITECTURE_MSIL		8
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_AMD64
-#define PROCESSOR_ARCHITECTURE_AMD64		9
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_IA32_ON_WIN64
-#define PROCESSOR_ARCHITECTURE_IA32_ON_WIN64	10
-#endif
-#ifndef PROCESSOR_ARCHITECTURE_UNKNOWN
-#define PROCESSOR_ARCHITECTURE_UNKNOWN		0xFFFF
-#endif
-
-
-/*
  * The following arrays contain the human readable strings for the
  * processor values.
  */
@@ -240,7 +198,7 @@ AppendEnvironment(
     Tcl_Obj *pathPtr,
     const char *lib)
 {
-    int pathc;
+    size_t pathc;
     WCHAR wBuf[MAX_PATH];
     char buf[MAX_PATH * 3];
     Tcl_Obj *objPtr;
@@ -534,20 +492,6 @@ TclpSetVariables(
 		processors[sys.oemId.wProcessorArchitecture],
 		TCL_GLOBAL_ONLY);
     }
-
-#if !defined(NDEBUG) && !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-
-    /*
-     * The existence of the "debug" element of the tcl_platform array
-     * indicates that this particular Tcl shell has been compiled with debug
-     * information. Using "info exists tcl_platform(debug)" a Tcl script can
-     * direct the interpreter to load debug versions of DLLs with the load
-     * command.
-     */
-
-    Tcl_SetVar2(interp, "tcl_platform", "debug", "1",
-	    TCL_GLOBAL_ONLY);
-#endif
 
     /*
      * Set up the HOME environment variable from the HOMEDRIVE & HOMEPATH

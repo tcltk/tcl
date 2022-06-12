@@ -525,14 +525,14 @@ TclGetContLineTable(void)
 ContLineLoc *
 TclContinuationsEnter(
     Tcl_Obj *objPtr,
-    int num,
+    size_t num,
     int *loc)
 {
     int newEntry;
     ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr =
 	    Tcl_CreateHashEntry(tsdPtr->lineCLPtr, objPtr, &newEntry);
-    ContLineLoc *clLocPtr = (ContLineLoc *)Tcl_Alloc(offsetof(ContLineLoc, loc) + (num + 1) *sizeof(int));
+    ContLineLoc *clLocPtr = (ContLineLoc *)Tcl_Alloc(offsetof(ContLineLoc, loc) + (num + 1U) *sizeof(int));
 
     if (!newEntry) {
 	/*
@@ -835,13 +835,13 @@ Tcl_AppendAllObjTypes(
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int numElems;
+    size_t numElems;
 
     /*
      * Get the test for a valid list out of the way first.
      */
 
-    if (TclListObjLength(interp, objPtr, &numElems) != TCL_OK) {
+    if (TclListObjLengthM(interp, objPtr, &numElems) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1277,7 +1277,7 @@ TclFreeObj(
 	if (!tablePtr) {
 	    Tcl_Panic("TclFreeObj: object table not initialized");
 	}
-	hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
+	hPtr = Tcl_FindHashEntry(tablePtr, objPtr);
 	if (hPtr) {
 	    /*
 	     * As the Tcl_Obj is going to be deleted we remove the entry.
@@ -1675,7 +1675,11 @@ TclGetStringFromObj(
 	}
     }
     if (lengthPtr != NULL) {
-	*lengthPtr = (objPtr->length < INT_MAX)? objPtr->length: INT_MAX;
+	if (objPtr->length > INT_MAX) {
+	    Tcl_Panic("Tcl_GetStringFromObj with 'int' lengthPtr"
+		    "cannot handle such long strings. Please use 'size_t'");
+	}
+	*lengthPtr = (int)objPtr->length;
     }
     return objPtr->bytes;
 }
@@ -1979,11 +1983,11 @@ int
 Tcl_GetBooleanFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,	/* The object from which to get boolean. */
-    int *boolPtr)	/* Place to store resulting boolean. */
+    int *intPtr)	/* Place to store resulting boolean. */
 {
     do {
 	if (objPtr->typePtr == &tclIntType || objPtr->typePtr == &tclBooleanType) {
-	    *boolPtr = (objPtr->internalRep.wideValue != 0);
+	    *intPtr = (objPtr->internalRep.wideValue != 0);
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
@@ -2000,11 +2004,11 @@ Tcl_GetBooleanFromObj(
 	    if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    *boolPtr = (d != 0.0);
+	    *intPtr = (d != 0.0);
 	    return TCL_OK;
 	}
 	if (objPtr->typePtr == &tclBignumType) {
-	    *boolPtr = 1;
+	    *intPtr = 1;
 	    return TCL_OK;
 	}
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
@@ -2358,7 +2362,7 @@ Tcl_GetDoubleFromObj(
 {
     do {
 	if (objPtr->typePtr == &tclDoubleType) {
-	    if (TclIsNaN(objPtr->internalRep.doubleValue)) {
+	    if (isnan(objPtr->internalRep.doubleValue)) {
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			    "floating point value is Not a Number", -1));
@@ -2492,7 +2496,7 @@ Tcl_GetIntFromObj(
     if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < INT_MIN))) {
 	if (interp != NULL) {
 	    const char *s =
-		    "integer value too large to represent as non-long integer";
+		    "integer value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}
@@ -2606,7 +2610,7 @@ Tcl_GetLongFromObj(
 
 	    if (w >= (Tcl_WideInt)(LONG_MIN)
 		    && w <= (Tcl_WideInt)(ULONG_MAX)) {
-		*longPtr = (long) w;
+		*longPtr = (long)w;
 		return TCL_OK;
 	    }
 	    goto tooLarge;
@@ -2642,12 +2646,12 @@ Tcl_GetLongFromObj(
 		}
 		if (big.sign) {
 		    if (value <= 1 + (unsigned long)LONG_MAX) {
-			*longPtr = - (long) value;
+			*longPtr = (long)(-value);
 			return TCL_OK;
 		    }
 		} else {
 		    if (value <= (unsigned long)ULONG_MAX) {
-			*longPtr = (long) value;
+			*longPtr = (long)value;
 			return TCL_OK;
 		    }
 		}
@@ -2881,12 +2885,12 @@ Tcl_GetWideIntFromObj(
 		}
 		if (big.sign) {
 		    if (value <= 1 + ~(Tcl_WideUInt)WIDE_MIN) {
-			*wideIntPtr = - (Tcl_WideInt) value;
+			*wideIntPtr = (Tcl_WideInt)(-value);
 			return TCL_OK;
 		    }
 		} else {
 		    if (value <= (Tcl_WideUInt)WIDE_MAX) {
-			*wideIntPtr = (Tcl_WideInt) value;
+			*wideIntPtr = (Tcl_WideInt)value;
 			return TCL_OK;
 		    }
 		}
@@ -3352,7 +3356,7 @@ Tcl_SetBignumObj(
 	goto tooLargeForWide;
     }
     if (bignumValue->sign) {
-	TclSetIntObj(objPtr, -(Tcl_WideInt)value);
+	TclSetIntObj(objPtr, (Tcl_WideInt)(-value));
     } else {
 	TclSetIntObj(objPtr, (Tcl_WideInt)value);
     }
@@ -3432,7 +3436,7 @@ TclGetNumberFromObj(
 {
     do {
 	if (objPtr->typePtr == &tclDoubleType) {
-	    if (TclIsNaN(objPtr->internalRep.doubleValue)) {
+	    if (isnan(objPtr->internalRep.doubleValue)) {
 		*typePtr = TCL_NUMBER_NAN;
 	    } else {
 		*typePtr = TCL_NUMBER_DOUBLE;

@@ -88,7 +88,7 @@ static TclRegexp *	CompileRegexp(Tcl_Interp *interp, const char *pattern,
 			    size_t length, int flags);
 static void		DupRegexpInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
-static void		FinalizeRegexp(ClientData clientData);
+static void		FinalizeRegexp(void *clientData);
 static void		FreeRegexp(TclRegexp *regexpPtr);
 static void		FreeRegexpInternalRep(Tcl_Obj *objPtr);
 static int		RegExpExecUniChar(Tcl_Interp *interp, Tcl_RegExp re,
@@ -155,7 +155,7 @@ Tcl_RegExpCompile(
     const char *pattern)	/* String for which to produce compiled
 				 * regular expression. */
 {
-    return (Tcl_RegExp) CompileRegexp(interp, pattern, (int) strlen(pattern),
+    return (Tcl_RegExp) CompileRegexp(interp, pattern, strlen(pattern),
 	    REG_ADVANCED);
 }
 
@@ -918,8 +918,8 @@ CompileRegexp(
     regexpPtr = (TclRegexp*)Tcl_Alloc(sizeof(TclRegexp));
     regexpPtr->objPtr = NULL;
     regexpPtr->string = NULL;
-    regexpPtr->details.rm_extend.rm_so = -1;
-    regexpPtr->details.rm_extend.rm_eo = -1;
+    regexpPtr->details.rm_extend.rm_so = TCL_INDEX_NONE;
+    regexpPtr->details.rm_extend.rm_eo = TCL_INDEX_NONE;
 
     /*
      * Get the up-to-date string representation and map to unicode.

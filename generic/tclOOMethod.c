@@ -157,7 +157,7 @@ Tcl_NewInstanceMethod(
 	Tcl_InitObjHashTable(oPtr->methodsPtr);
 	oPtr->flags &= ~USE_CLASS_CACHE;
     }
-    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, (char *) nameObj, &isNew);
+    hPtr = Tcl_CreateHashEntry(oPtr->methodsPtr, nameObj, &isNew);
     if (isNew) {
 	mPtr = (Method *)Tcl_Alloc(sizeof(Method));
 	mPtr->namePtr = nameObj;
@@ -224,7 +224,7 @@ Tcl_NewMethod(
 	mPtr->refCount = 1;
 	goto populate;
     }
-    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *)nameObj,&isNew);
+    hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, nameObj,&isNew);
     if (isNew) {
 	mPtr = (Method *)Tcl_Alloc(sizeof(Method));
 	mPtr->refCount = 1;
@@ -335,11 +335,11 @@ TclOONewProcInstanceMethod(
 				 * structure's contents. NULL if caller is not
 				 * interested. */
 {
-    int argsLen;
+    size_t argsLen;
     ProcedureMethod *pmPtr;
     Tcl_Method method;
 
-    if (Tcl_ListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
+    if (TclListObjLengthM(interp, argsObj, &argsLen) != TCL_OK) {
 	return NULL;
     }
     pmPtr = (ProcedureMethod *)Tcl_Alloc(sizeof(ProcedureMethod));
@@ -387,17 +387,17 @@ TclOONewProcMethod(
 				 * structure's contents. NULL if caller is not
 				 * interested. */
 {
-    int argsLen;		/* -1 => delete argsObj before exit */
+    size_t argsLen;		/* TCL_INDEX_NONE => delete argsObj before exit */
     ProcedureMethod *pmPtr;
     const char *procName;
     Tcl_Method method;
 
     if (argsObj == NULL) {
-	argsLen = -1;
+	argsLen = TCL_INDEX_NONE;
 	TclNewObj(argsObj);
 	Tcl_IncrRefCount(argsObj);
 	procName = "<destructor>";
-    } else if (Tcl_ListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
+    } else if (TclListObjLengthM(interp, argsObj, &argsLen) != TCL_OK) {
 	return NULL;
     } else {
 	procName = (nameObj==NULL ? "<constructor>" : TclGetString(nameObj));
@@ -412,7 +412,7 @@ TclOONewProcMethod(
     method = TclOOMakeProcMethod(interp, clsPtr, flags, nameObj, procName,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
 
-    if (argsLen == -1) {
+    if (argsLen == TCL_INDEX_NONE) {
 	Tcl_DecrRefCount(argsObj);
     }
     if (method == NULL) {
@@ -515,7 +515,7 @@ TclOOMakeProcInstanceMethod(
 		cfPtr->len = 0;
 
 		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew);
+			procPtr, &isNew);
 		Tcl_SetHashValue(hPtr, cfPtr);
 	    }
 
@@ -628,7 +628,7 @@ TclOOMakeProcMethod(
 		cfPtr->len = 0;
 
 		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew);
+			procPtr, &isNew);
 		Tcl_SetHashValue(hPtr, cfPtr);
 	    }
 
@@ -987,8 +987,8 @@ ProcedureMethodCompiledVarConnect(
     Tcl_Obj *variableObj;
     PrivateVariableMapping *privateVar;
     Tcl_HashEntry *hPtr;
-    int i, isNew, cacheIt;
-    size_t varLen, len;
+    int isNew, cacheIt;
+    size_t i, varLen, len;
     const char *match, *varName;
 
     /*
@@ -1062,7 +1062,7 @@ ProcedureMethodCompiledVarConnect(
 
   gotMatch:
     hPtr = Tcl_CreateHashEntry(TclVarTable(contextPtr->oPtr->namespacePtr),
-	    (char *) variableObj, &isNew);
+	    variableObj, &isNew);
     if (isNew) {
 	TclSetVarNamespaceVar((Var *) TclVarHashGetValue(hPtr));
     }
@@ -1102,7 +1102,7 @@ static int
 ProcedureMethodCompiledVarResolver(
     TCL_UNUSED(Tcl_Interp *),
     const char *varName,
-    int length,
+    size_t length,
     TCL_UNUSED(Tcl_Namespace *),
     Tcl_ResolvedVarInfo **rPtrPtr)
 {
@@ -1387,10 +1387,10 @@ TclOONewForwardInstanceMethod(
     Tcl_Obj *prefixObj)		/* List of arguments that form the command
 				 * prefix to forward to. */
 {
-    int prefixLen;
+    size_t prefixLen;
     ForwardMethod *fmPtr;
 
-    if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
+    if (TclListObjLengthM(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
     }
     if (prefixLen < 1) {
@@ -1426,10 +1426,10 @@ TclOONewForwardMethod(
     Tcl_Obj *prefixObj)		/* List of arguments that form the command
 				 * prefix to forward to. */
 {
-    int prefixLen;
+    size_t prefixLen;
     ForwardMethod *fmPtr;
 
-    if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
+    if (TclListObjLengthM(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
     }
     if (prefixLen < 1) {
@@ -1468,7 +1468,8 @@ InvokeForwardMethod(
     CallContext *contextPtr = (CallContext *) context;
     ForwardMethod *fmPtr = (ForwardMethod *)clientData;
     Tcl_Obj **argObjs, **prefixObjs;
-    int numPrefixes, len, skip = contextPtr->skip;
+    size_t numPrefixes, skip = contextPtr->skip;
+    int len;
 
     /*
      * Build the real list of arguments to use. Note that we know that the
@@ -1477,7 +1478,7 @@ InvokeForwardMethod(
      * can ignore here.
      */
 
-    Tcl_ListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
+    TclListObjGetElementsM(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
     Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);

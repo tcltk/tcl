@@ -217,11 +217,11 @@ MODULE_SCOPE const TclStubs tclStubs;
  * after particular kinds of [yield].
  */
 
-#define CORO_ACTIVATE_YIELD    PTR2INT(NULL)
-#define CORO_ACTIVATE_YIELDM   PTR2INT(NULL)+1
+#define CORO_ACTIVATE_YIELD    NULL
+#define CORO_ACTIVATE_YIELDM   INT2PTR(1)
 
-#define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL     (-1)
-#define COROUTINE_ARGUMENTS_ARBITRARY           (-2)
+#define COROUTINE_ARGUMENTS_SINGLE_OPTIONAL     ((size_t)-1)
+#define COROUTINE_ARGUMENTS_ARBITRARY           ((size_t)-2)
 
 /*
  * The following structure define the commands in the Tcl core.
@@ -263,6 +263,12 @@ typedef struct {
 /*
  * The built-in commands, and the functions that implement them:
  */
+
+int procObjCmd(void *clientData, Tcl_Interp *interp,
+    int objc, Tcl_Obj *const objv[]) {
+    return Tcl_ProcObjCmd(clientData, interp, objc, objv);
+}
+
 
 static const CmdInfo builtInCmds[] = {
     /*
@@ -306,7 +312,7 @@ static const CmdInfo builtInCmds[] = {
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"package",		Tcl_PackageObjCmd,	NULL,			TclNRPackageObjCmd,	CMD_IS_SAFE},
-    {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
+    {"proc",		procObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
     {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	CMD_IS_SAFE},
     {"rename",		Tcl_RenameObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
@@ -1220,17 +1226,6 @@ Tcl_CreateInterp(void)
     Tcl_SetVar2(interp, "tcl_version", NULL, TCL_VERSION, TCL_GLOBAL_ONLY);
     TclpSetVariables(interp);
 
-#if TCL_THREADS && !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
-    /*
-     * The existence of the "threaded" element of the tcl_platform array
-     * indicates that this particular Tcl shell has been compiled with threads
-     * turned on. Using "info exists tcl_platform(threaded)" a Tcl script can
-     * introspect on the interpreter level of thread safety.
-     */
-
-    Tcl_SetVar2(interp, "tcl_platform", "threaded", "1", TCL_GLOBAL_ONLY);
-#endif
-
     /*
      * Register Tcl's version number.
      * TIP #268: Full patchlevel instead of just major.minor
@@ -1307,11 +1302,11 @@ TclRegisterCommandTypeName(
         int isNew;
 
         hPtr = Tcl_CreateHashEntry(&commandTypeTable,
-                (void *) implementationProc, &isNew);
+                implementationProc, &isNew);
         Tcl_SetHashValue(hPtr, (void *) nameStr);
     } else {
         hPtr = Tcl_FindHashEntry(&commandTypeTable,
-                (void *) implementationProc);
+                implementationProc);
         if (hPtr != NULL) {
             Tcl_DeleteHashEntry(hPtr);
         }
@@ -1654,7 +1649,7 @@ Tcl_DeleteAssocData(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 Tcl_GetAssocData(
     Tcl_Interp *interp,		/* Interpreter associated with. */
     const char *name,		/* Name of association. */
@@ -1787,7 +1782,7 @@ DeleteInterpProc(
     Tcl_HashSearch search;
     Tcl_HashTable *hTablePtr;
     ResolverScheme *resPtr, *nextResPtr;
-    int i;
+    size_t i;
 
     /*
      * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup,
@@ -1822,7 +1817,7 @@ DeleteInterpProc(
      */
 
     Tcl_MutexLock(&cancelLock);
-    hPtr = Tcl_FindHashEntry(&cancelTable, (char *) iPtr);
+    hPtr = Tcl_FindHashEntry(&cancelTable, iPtr);
     if (hPtr != NULL) {
 	CancelInfo *cancelInfo = (CancelInfo *)Tcl_GetHashValue(hPtr);
 
@@ -2017,7 +2012,7 @@ DeleteInterpProc(
 	if (eclPtr->type == TCL_LOCATION_SOURCE) {
 	    Tcl_DecrRefCount(eclPtr->path);
 	}
-	for (i=0; i< eclPtr->nuloc; i++) {
+	for (i=0; i<eclPtr->nuloc; i++) {
 	    Tcl_Free(eclPtr->loc[i].line);
 	}
 
@@ -3941,7 +3936,7 @@ TclInterpReady(
      * probably because of an infinite loop somewhere.
      */
 
-    if (((iPtr->numLevels) <= iPtr->maxNestingDepth)) {
+    if ((iPtr->numLevels <= iPtr->maxNestingDepth)) {
 	return TCL_OK;
     }
 
@@ -4143,7 +4138,7 @@ Tcl_CancelEval(
 
 	goto done;
     }
-    hPtr = Tcl_FindHashEntry(&cancelTable, (char *) interp);
+    hPtr = Tcl_FindHashEntry(&cancelTable, interp);
     if (hPtr == NULL) {
 	/*
 	 * No CancelInfo record for this interpreter.
@@ -4226,7 +4221,7 @@ int
 Tcl_EvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    int objc,			/* Number of words in command. */
+    size_t objc,			/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags)			/* Collection of OR-ed bits that control the
@@ -4245,7 +4240,7 @@ int
 TclNREvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    int objc,			/* Number of words in command. */
+    size_t objc,			/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags,			/* Collection of OR-ed bits that control the
@@ -4576,7 +4571,7 @@ TEOV_PushExceptionHandlers(
 	 */
 
 	TclNRAddCallback(interp, TEOV_Error, INT2PTR(objc),
-		(ClientData) objv, NULL, NULL);
+		objv, NULL, NULL);
     }
 
     if (iPtr->numLevels == 1) {
@@ -4682,7 +4677,7 @@ TEOV_NotFound(
 {
     Command * cmdPtr;
     Interp *iPtr = (Interp *) interp;
-    int i, newObjc, handlerObjc;
+    size_t i, newObjc, handlerObjc;
     Tcl_Obj **newObjv, **handlerObjv;
     CallFrame *varFramePtr = iPtr->varFramePtr;
     Namespace *currNsPtr = NULL;/* Used to check for and invoke any registered
@@ -4714,7 +4709,7 @@ TEOV_NotFound(
      * itself.
      */
 
-    Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
+    TclListObjGetElementsM(NULL, currNsPtr->unknownHandlerPtr,
 	    &handlerObjc, &handlerObjv);
     newObjc = objc + handlerObjc;
     newObjv = (Tcl_Obj **)TclStackAlloc(interp, sizeof(Tcl_Obj *) * newObjc);
@@ -4999,7 +4994,7 @@ TclEvalEx(
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
-    int line,			/* The line the script starts on. */
+    size_t line,			/* The line the script starts on. */
     int *clNextOuter,		/* Information about an outer context for */
     const char *outerScript)	/* continuation line data. This is set only in
 				 * TclSubstTokens(), to properly handle
@@ -5030,7 +5025,7 @@ TclEvalEx(
 				 * TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
     int gotParse = 0;
-    unsigned int i, objectsUsed = 0;
+    size_t i, objectsUsed = 0;
 				/* These variables keep track of how much
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed
@@ -5165,7 +5160,7 @@ TclEvalEx(
 	     * per-command parsing.
 	     */
 
-	    int wordLine = line;
+	    size_t wordLine = line;
 	    const char *wordStart = parsePtr->commandStart;
 	    int *wordCLNext = clNext;
 	    unsigned int objectsNeeded = 0;
@@ -5220,9 +5215,9 @@ TclEvalEx(
 		objv[objectsUsed] = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(objv[objectsUsed]);
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		    int numElements;
+		    size_t numElements;
 
-		    code = TclListObjLength(interp, objv[objectsUsed],
+		    code = TclListObjLengthM(interp, objv[objectsUsed],
 			    &numElements);
 		    if (code == TCL_ERROR) {
 			/*
@@ -5230,7 +5225,7 @@ TclEvalEx(
 			 */
 
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-				"\n    (expanding word %d)", objectsUsed));
+				"\n    (expanding word %" TCL_Z_MODIFIER "u)", objectsUsed));
 			Tcl_DecrRefCount(objv[objectsUsed]);
 			break;
 		    }
@@ -5271,10 +5266,10 @@ TclEvalEx(
 		objectsUsed = 0;
 		while (wordIdx--) {
 		    if (expand[wordIdx]) {
-			int numElements;
+			size_t numElements;
 			Tcl_Obj **elements, *temp = copy[wordIdx];
 
-			Tcl_ListObjGetElements(NULL, temp, &numElements,
+			TclListObjGetElementsM(NULL, temp, &numElements,
 				&elements);
 			objectsUsed += numElements;
 			while (numElements--) {
@@ -5464,7 +5459,7 @@ TclEvalEx(
 
 void
 TclAdvanceLines(
-    int *line,
+    size_t *line,
     const char *start,
     const char *end)
 {
@@ -5499,7 +5494,7 @@ TclAdvanceLines(
 
 void
 TclAdvanceContinuations(
-    int *line,
+    size_t *line,
     int **clNextPtrPtr,
     int loc)
 {
@@ -5635,7 +5630,7 @@ TclArgumentRelease(
     for (i = 1; i < objc; i++) {
 	CFWord *cfwPtr;
 	Tcl_HashEntry *hPtr =
-		Tcl_FindHashEntry(iPtr->lineLAPtr, (char *) objv[i]);
+		Tcl_FindHashEntry(iPtr->lineLAPtr, objv[i]);
 
 	if (!hPtr) {
 	    continue;
@@ -5687,7 +5682,7 @@ TclArgumentBCEnter(
     CFWordBC *lastPtr = NULL;
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hePtr =
-	    Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
+	    Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
 
     if (!hePtr) {
 	return;
@@ -5708,7 +5703,7 @@ TclArgumentBCEnter(
      * housekeeping, and can escape now.
      */
 
-    if (ePtr->nline != objc) {
+    if (ePtr->nline != (size_t)objc) {
         return;
     }
 
@@ -5793,7 +5788,7 @@ TclArgumentBCRelease(
     while (cfwPtr) {
 	CFWordBC *nextPtr = cfwPtr->nextPtr;
 	Tcl_HashEntry *hPtr =
-		Tcl_FindHashEntry(iPtr->lineLABCPtr, (char *) cfwPtr->obj);
+		Tcl_FindHashEntry(iPtr->lineLABCPtr, cfwPtr->obj);
 	CFWordBC *xPtr = (CFWordBC *)Tcl_GetHashValue(hPtr);
 
 	if (xPtr != cfwPtr) {
@@ -5858,7 +5853,7 @@ TclArgumentGet(
      * stack. That is nearest.
      */
 
-    hPtr = Tcl_FindHashEntry(iPtr->lineLAPtr, (char *) obj);
+    hPtr = Tcl_FindHashEntry(iPtr->lineLAPtr, obj);
     if (hPtr) {
 	CFWord *cfwPtr = (CFWord *)Tcl_GetHashValue(hPtr);
 
@@ -5872,7 +5867,7 @@ TclArgumentGet(
      * that stack.
      */
 
-    hPtr = Tcl_FindHashEntry(iPtr->lineLABCPtr, (char *) obj);
+    hPtr = Tcl_FindHashEntry(iPtr->lineLABCPtr, obj);
     if (hPtr) {
 	CFWordBC *cfwPtr = (CFWordBC *)Tcl_GetHashValue(hPtr);
 
@@ -5968,7 +5963,7 @@ TclNREvalObjEx(
 
     if (TclListObjIsCanonical(objPtr)) {
 	CmdFrame *eoFramePtr = NULL;
-	int objc;
+	size_t objc;
 	Tcl_Obj *listPtr, **objv;
 
 	/*
@@ -6037,7 +6032,7 @@ TclNREvalObjEx(
         TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
 		objPtr, NULL);
 
-	TclListObjGetElements(NULL, listPtr, &objc, &objv);
+	TclListObjGetElementsM(NULL, listPtr, &objc, &objv);
 	return TclNREvalObjv(interp, objc, objv, flags, NULL);
     }
 
@@ -6767,17 +6762,17 @@ Tcl_VarEval(
  *----------------------------------------------------------------------
  */
 
-int
+size_t
 Tcl_SetRecursionLimit(
     Tcl_Interp *interp,		/* Interpreter whose nesting limit is to be
 				 * set. */
-    int depth)			/* New value for maximimum depth. */
+    size_t depth)			/* New value for maximimum depth. */
 {
     Interp *iPtr = (Interp *) interp;
-    int old;
+    size_t old;
 
     old = iPtr->maxNestingDepth;
-    if (depth > 0) {
+    if (depth + 1 > 1) {
 	iPtr->maxNestingDepth = depth;
     }
     return old;
@@ -7084,7 +7079,7 @@ ExprSqrtFunc(
     if (code != TCL_OK) {
 	return TCL_ERROR;
     }
-    if ((d >= 0.0) && TclIsInfinite(d)
+    if ((d >= 0.0) && isinf(d)
 	    && (Tcl_GetBignumFromObj(NULL, objv[1], &big) == TCL_OK)) {
 	mp_int root;
 	mp_err err;
@@ -7149,12 +7144,12 @@ CheckDoubleResult(
     double dResult)
 {
 #ifndef ACCEPT_NAN
-    if (TclIsNaN(dResult)) {
+    if (isnan(dResult)) {
 	TclExprFloatError(interp, dResult);
 	return TCL_ERROR;
     }
 #endif
-    if ((errno == ERANGE) && ((dResult == 0.0) || TclIsInfinite(dResult))) {
+    if ((errno == ERANGE) && ((dResult == 0.0) || isinf(dResult))) {
 	/*
 	 * When ERANGE signals under/overflow, just accept 0.0 or +/-Inf
 	 */
@@ -7544,15 +7539,15 @@ ExprRandFunc(
 	 * take into consideration the thread this interp is running in.
 	 */
 
-	iPtr->randSeed = TclpGetClicks() + (PTR2INT(Tcl_GetCurrentThread())<<12);
+	iPtr->randSeed = TclpGetClicks() + PTR2UINT(Tcl_GetCurrentThread())*4093U;
 
 	/*
 	 * Make sure 1 <= randSeed <= (2^31) - 2. See below.
 	 */
 
-	iPtr->randSeed &= 0x7FFFFFFF;
-	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFF)) {
-	    iPtr->randSeed ^= 123459876;
+	iPtr->randSeed &= 0x7FFFFFFFL;
+	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7FFFFFFFL)) {
+	    iPtr->randSeed ^= 123459876L;
 	}
     }
 
@@ -8330,7 +8325,7 @@ Tcl_NRCallObjProc(
     Tcl_Interp *interp,
     Tcl_ObjCmdProc *objProc,
     void *clientData,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     NRE_callback *rootPtr = TOP_CB(interp);
@@ -8430,7 +8425,7 @@ int
 Tcl_NREvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
-    int objc,			/* Number of words in command. */
+    size_t objc,			/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags)			/* Collection of OR-ed bits that control the
@@ -8445,7 +8440,7 @@ int
 Tcl_NRCmdSwap(
     Tcl_Interp *interp,
     Tcl_Command cmd,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[],
     int flags)
 {
@@ -8637,10 +8632,10 @@ TclNRTailcallEval(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *listPtr = (Tcl_Obj *)data[0], *nsObjPtr;
     Tcl_Namespace *nsPtr;
-    int objc;
+    size_t objc;
     Tcl_Obj **objv;
 
-    Tcl_ListObjGetElements(interp, listPtr, &objc, &objv);
+    TclListObjGetElementsM(interp, listPtr, &objc, &objv);
     nsObjPtr = objv[0];
 
     if (result == TCL_OK) {
@@ -8806,7 +8801,7 @@ TclNRYieldToObjCmd(
     corPtr->yieldPtr = listPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
 
-    return TclNRYieldObjCmd(INT2PTR(CORO_ACTIVATE_YIELDM), interp, 1, objv);
+    return TclNRYieldObjCmd(CORO_ACTIVATE_YIELDM, interp, 1, objv);
 }
 
 static int
@@ -8967,9 +8962,6 @@ TclNRCoroutineActivateCallback(
     TCL_UNUSED(int) /*result*/)
 {
     CoroutineData *corPtr = (CoroutineData *)data[0];
-    int type = PTR2INT(data[1]);
-    int numLevels, unused;
-    int *stackLevel = &unused;
 
     if (!corPtr->stackLevel) {
         /*
@@ -8986,8 +8978,8 @@ TclNRCoroutineActivateCallback(
          * the interp's environment to make it suitable to run this coroutine.
          */
 
-        corPtr->stackLevel = stackLevel;
-        numLevels = corPtr->auxNumLevels;
+        corPtr->stackLevel = &corPtr;
+        size_t numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = iPtr->numLevels;
 
         SAVE_CONTEXT(corPtr->caller);
@@ -9000,7 +8992,7 @@ TclNRCoroutineActivateCallback(
          * Coroutine is active: yield
          */
 
-        if (corPtr->stackLevel != stackLevel) {
+        if (corPtr->stackLevel != &corPtr) {
 	    NRE_callback *runPtr;
 
 	    iPtr->execEnvPtr = corPtr->callerEEPtr;
@@ -9024,6 +9016,7 @@ TclNRCoroutineActivateCallback(
             return TCL_ERROR;
         }
 
+        void *type = data[1];
         if (type == CORO_ACTIVATE_YIELD) {
             corPtr->nargs = COROUTINE_ARGUMENTS_SINGLE_OPTIONAL;
         } else if (type == CORO_ACTIVATE_YIELDM) {
@@ -9035,7 +9028,7 @@ TclNRCoroutineActivateCallback(
 	corPtr->yieldPtr = NULL;
         corPtr->stackLevel = NULL;
 
-        numLevels = iPtr->numLevels;
+        size_t numLevels = iPtr->numLevels;
         iPtr->numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
 
@@ -9062,7 +9055,7 @@ TclNREvalList(
     Tcl_Interp *interp,
     TCL_UNUSED(int) /*result*/)
 {
-    int objc;
+    size_t objc;
     Tcl_Obj **objv;
     Tcl_Obj *listPtr = (Tcl_Obj *)data[0];
 
@@ -9070,7 +9063,7 @@ TclNREvalList(
 
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, TclNRReleaseValues, listPtr, NULL, NULL,NULL);
-    TclListObjGetElements(NULL, listPtr, &objc, &objv);
+    TclListObjGetElementsM(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
 
@@ -9182,7 +9175,6 @@ TclNRCoroInjectObjCmd(
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr;
-    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
 
     /*
      * Usage more or less like tailcall:
@@ -9211,6 +9203,7 @@ TclNRCoroInjectObjCmd(
      * to happen when the coro is resumed.
      */
 
+    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
     TclNRAddCallback(interp, InjectHandler, corPtr,
             Tcl_NewListObj(objc - 2, objv + 2), INT2PTR(corPtr->nargs), NULL);
@@ -9227,9 +9220,6 @@ TclNRCoroProbeObjCmd(
     Tcl_Obj *const objv[])
 {
     CoroutineData *corPtr;
-    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
-    int numLevels, unused;
-    int *stackLevel = &unused;
 
     /*
      * Usage more or less like tailcall:
@@ -9259,6 +9249,7 @@ TclNRCoroProbeObjCmd(
      * to happen when the coro is resumed.
      */
 
+    ExecEnv *savedEEPtr = iPtr->execEnvPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
     TclNRAddCallback(interp, InjectHandler, corPtr,
             Tcl_NewListObj(objc - 2, objv + 2), INT2PTR(corPtr->nargs), corPtr);
@@ -9279,8 +9270,8 @@ TclNRCoroProbeObjCmd(
      * the interp's environment to make it suitable to run this coroutine.
      */
 
-    corPtr->stackLevel = stackLevel;
-    numLevels = corPtr->auxNumLevels;
+    corPtr->stackLevel = &corPtr;
+    size_t numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = iPtr->numLevels;
 
     /*
@@ -9324,9 +9315,9 @@ InjectHandler(
 {
     CoroutineData *corPtr = (CoroutineData *)data[0];
     Tcl_Obj *listPtr = (Tcl_Obj *)data[1];
-    int nargs = PTR2INT(data[2]);
+    size_t nargs = PTR2INT(data[2]);
     void *isProbe = data[3];
-    int objc;
+    size_t objc;
     Tcl_Obj **objv;
 
     if (!isProbe) {
@@ -9345,7 +9336,7 @@ InjectHandler(
              * I don't think this is reachable...
              */
 
-            Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewIntObj(nargs));
+            Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewWideIntObj((Tcl_WideInt)(nargs + 1U) - 1));
         }
         Tcl_ListObjAppendElement(NULL, listPtr, Tcl_GetObjResult(interp));
     }
@@ -9358,7 +9349,7 @@ InjectHandler(
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, InjectHandlerPostCall, corPtr, listPtr,
             INT2PTR(nargs), isProbe);
-    TclListObjGetElements(NULL, listPtr, &objc, &objv);
+    TclListObjGetElementsM(NULL, listPtr, &objc, &objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
 }
 
@@ -9370,9 +9361,8 @@ InjectHandlerPostCall(
 {
     CoroutineData *corPtr = (CoroutineData *)data[0];
     Tcl_Obj *listPtr = (Tcl_Obj *)data[1];
-    int nargs = PTR2INT(data[2]);
+    size_t nargs = PTR2INT(data[2]);
     void *isProbe = data[3];
-    int numLevels;
 
     /*
      * Delete the command words for what we just executed.
@@ -9394,7 +9384,7 @@ InjectHandlerPostCall(
         }
         corPtr->nargs = nargs;
         corPtr->stackLevel = NULL;
-        numLevels = iPtr->numLevels;
+        size_t numLevels = iPtr->numLevels;
         iPtr->numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
         iPtr->execEnvPtr = corPtr->callerEEPtr;
@@ -9490,7 +9480,7 @@ TclNRInterpCoroutine(
         }
         break;
     default:
-        if (corPtr->nargs != objc-1) {
+        if (corPtr->nargs + 1 != (size_t)objc) {
             Tcl_SetObjResult(interp,
                     Tcl_NewStringObj("wrong coro nargs; how did we get here? "
                     "not implemented!", -1));

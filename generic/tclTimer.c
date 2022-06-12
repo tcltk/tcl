@@ -211,7 +211,7 @@ InitTimer(void)
 
 static void
 TimerExitProc(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
@@ -398,7 +398,7 @@ Tcl_DeleteTimerHandler(
 
 static void
 TimerSetupProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     Tcl_Time blockTime;
@@ -456,7 +456,7 @@ TimerSetupProc(
 
 static void
 TimerCheckProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     Tcl_Event *timerEvPtr;
@@ -778,7 +778,7 @@ TclServiceIdle(void)
 
 int
 Tcl_AfterObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -820,7 +820,7 @@ Tcl_AfterObjCmd(
     if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
 	if (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0, &index)
 		!= TCL_OK) {
-            const char *arg = TclGetString(objv[1]);
+	    const char *arg = TclGetString(objv[1]);
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                     "bad argument \"%s\": must be"
@@ -948,8 +948,8 @@ Tcl_AfterObjCmd(
 	    for (afterPtr = assocPtr->firstAfterPtr; afterPtr != NULL;
 		    afterPtr = afterPtr->nextPtr) {
 		if (assocPtr->interp == interp) {
-                    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_ObjPrintf(
-                            "after#%d", afterPtr->id));
+		    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_ObjPrintf(
+			    "after#%d", afterPtr->id));
 		}
 	    }
             Tcl_SetObjResult(interp, resultObj);
@@ -968,15 +968,15 @@ Tcl_AfterObjCmd(
             Tcl_SetErrorCode(interp, "TCL","LOOKUP","EVENT", eventStr, NULL);
 	    return TCL_ERROR;
 	} else {
-            Tcl_Obj *resultListPtr;
+	    Tcl_Obj *resultListPtr;
 
-            TclNewObj(resultListPtr);
-            Tcl_ListObjAppendElement(interp, resultListPtr,
-                    afterPtr->commandPtr);
-            Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
+	    TclNewObj(resultListPtr);
+	    Tcl_ListObjAppendElement(interp, resultListPtr,
+		    afterPtr->commandPtr);
+	    Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
 		    (afterPtr->token == NULL) ? "idle" : "timer", -1));
             Tcl_SetObjResult(interp, resultListPtr);
-        }
+	}
 	break;
     default:
 	Tcl_Panic("Tcl_AfterObjCmd: bad subcommand index to afterSubCmds");

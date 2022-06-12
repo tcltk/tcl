@@ -15,17 +15,6 @@
 #include "tcl.h"
 
 /*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    Pkgb_SubObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkgb_UnsafeObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkgb_DemoObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-
-/*
  *----------------------------------------------------------------------
  *
  * Pkgb_SubObjCmd --
@@ -48,7 +37,7 @@ static int    Pkgb_DemoObjCmd(ClientData clientData,
 
 static int
 Pkgb_SubObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -90,7 +79,7 @@ Pkgb_SubObjCmd(
 
 static int
 Pkgb_UnsafeObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -104,24 +93,12 @@ Pkgb_UnsafeObjCmd(
 
 static int
 Pkgb_DemoObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-#if (TCL_MAJOR_VERSION > 8) || (TCL_MINOR_VERSION > 4)
-    Tcl_Obj *first;
-    (void)dummy;
-    (void)objc;
-    (void)objv;
-
-    if (Tcl_ListObjIndex(NULL, Tcl_GetEncodingSearchPath(), 0, &first)
-	    == TCL_OK) {
-	Tcl_SetObjResult(interp, first);
-    }
-#else
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetDefaultEncodingDir(), -1));
-#endif
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetEncodingSearchPath(), -1));
     return TCL_OK;
 }
 
