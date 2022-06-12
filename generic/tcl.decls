@@ -312,10 +312,9 @@ declare 79 {
 declare 80 {
     void Tcl_CancelIdleCall(Tcl_IdleProc *idleProc, void *clientData)
 }
-# Removed in 9.0:
-#declare 81 {
-#    int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
-#}
+declare 81 {
+    int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
+}
 declare 82 {
     int Tcl_CommandComplete(const char *cmd)
 }

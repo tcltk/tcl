@@ -310,7 +310,15 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
 #ifdef _WIN32
-    typedef struct __stat64 Tcl_StatBuf;
+#   if TCL_MAJOR_VERSION > 8
+	typedef struct __stat64 Tcl_StatBuf;
+#   elif defined(_WIN64) || defined(_USE_64BIT_TIME_T)
+	typedef struct __stat64 Tcl_StatBuf;
+#   elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
+	typedef struct _stati64	Tcl_StatBuf;
+#   else
+	typedef struct _stat32i64 Tcl_StatBuf;
+#   endif
 #elif defined(__CYGWIN__)
     typedef struct {
 	dev_t st_dev;
@@ -323,9 +331,16 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	dev_t st_rdev;
 	/* Here is a 4-byte gap */
 	long long st_size;
+#if TCL_MAJOR_VERSION > 8
 	struct {long long tv_sec;} st_atim;
 	struct {long long tv_sec;} st_mtim;
 	struct {long long tv_sec;} st_ctim;
+#else
+	struct {long tv_sec;} st_atim;
+	struct {long tv_sec;} st_mtim;
+	struct {long tv_sec;} st_ctim;
+	/* Here is a 4-byte gap */
+#endif
     } Tcl_StatBuf;
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;
@@ -451,7 +466,7 @@ typedef void (Tcl_ThreadCreateProc) (void *clientData);
  * string.
  */
 
-#if TCL_MAJOR_VERSION >= 9
+#if TCL_MAJOR_VERSION > 8
 typedef struct Tcl_RegExpIndices {
     size_t start;			/* Character offset of first character in
 				 * match. */
@@ -656,7 +671,7 @@ typedef union Tcl_ObjInternalRep {	/* The internal representation: */
  * An object stores a value as either a string, some internal representation,
  * or both.
  */
-#if TCL_MAJOR_VERSION >= 9
+#if TCL_MAJOR_VERSION > 8
 #   define Tcl_Size size_t
 #else
 #   define Tcl_Size int
@@ -745,14 +760,14 @@ typedef struct Tcl_Namespace {
 typedef struct Tcl_CallFrame {
     Tcl_Namespace *nsPtr;
     int dummy1;
-    size_t dummy2;
+    Tcl_Size dummy2;
     void *dummy3;
     void *dummy4;
     void *dummy5;
-    size_t dummy6;
+    Tcl_Size dummy6;
     void *dummy7;
     void *dummy8;
-    size_t dummy9;
+    Tcl_Size dummy9;
     void *dummy10;
     void *dummy11;
     void *dummy12;
@@ -974,7 +989,7 @@ typedef struct Tcl_DString {
  */
 
 #ifndef TCL_HASH_TYPE
-#if TCL_MAJOR_VERSION >= 9
+#if TCL_MAJOR_VERSION > 8
 #  define TCL_HASH_TYPE size_t
 #else
 #  define TCL_HASH_TYPE unsigned
@@ -1000,7 +1015,7 @@ struct Tcl_HashEntry {
     Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this hash bucket,
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
-    TCL_HASH_TYPE hash;		/* Hash value. */
+    size_t hash;		/* Hash value. */
     void *clientData;	/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
@@ -1095,13 +1110,13 @@ struct Tcl_HashTable {
 				 * table. */
     Tcl_Size rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
-#if TCL_MAJOR_VERSION >= 9
-    Tcl_Size mask;		/* Mask value used in hashing function. */
+#if TCL_MAJOR_VERSION > 8
+    size_t mask;		/* Mask value used in hashing function. */
 #endif
     int downShift;		/* Shift count used in hashing function.
 				 * Designed to use high-order bits of
 				 * randomized keys. */
-#if TCL_MAJOR_VERSION <= 8
+#if TCL_MAJOR_VERSION < 9
     int mask;		/* Mask value used in hashing function. */
 #endif
     int keyType;		/* Type of keys used in this table. It's
@@ -1802,19 +1817,19 @@ typedef struct Tcl_Parse {
 				 * field is 0. */
     const char *commandStart;	/* First character in first word of
 				 * command. */
-    size_t commandSize;		/* Number of bytes in command, including first
+    Tcl_Size commandSize;		/* Number of bytes in command, including first
 				 * character of first word, up through the
 				 * terminating newline, close bracket, or
 				 * semicolon. */
-    size_t numWords;		/* Total number of words in command. May be
+    Tcl_Size numWords;		/* Total number of words in command. May be
 				 * 0. */
     Tcl_Token *tokenPtr;	/* Pointer to first token representing the
 				 * words of the command. Initially points to
 				 * staticTokens, but may change to point to
 				 * malloc-ed space if command exceeds space in
 				 * staticTokens. */
-    size_t numTokens;		/* Total number of tokens in command. */
-    size_t tokensAvailable;	/* Total number of tokens available at
+    Tcl_Size numTokens;		/* Total number of tokens in command. */
+    Tcl_Size tokensAvailable;	/* Total number of tokens available at
 				 * *tokenPtr. */
     int errorType;		/* One of the parsing error types defined
 				 * above. */
@@ -1981,7 +1996,7 @@ typedef struct Tcl_EncodingType {
  */
 
 #ifndef TCL_UTF_MAX
-#if TCL_MAJOR_VERSION >= 9
+#if TCL_MAJOR_VERSION > 8
 #define TCL_UTF_MAX		4
 #else
 #define TCL_UTF_MAX		3
@@ -2189,7 +2204,7 @@ typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#if TCL_MAJOR_VERSION >= 9
+#if TCL_MAJOR_VERSION > 8
 #   define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *))
 #else
 #   define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
@@ -2252,7 +2267,7 @@ void *			TclStubCall(void *arg);
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp())))
-EXTERN TCL_NORETURN void Tcl_MainEx(size_t argc, char **argv,
+EXTERN TCL_NORETURN void Tcl_MainEx(Tcl_Size argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
