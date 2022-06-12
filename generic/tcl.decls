@@ -109,8 +109,8 @@ declare 21 {
 #    Tcl_Obj *Tcl_DbNewBooleanObj(int intValue, const char *file, int line)
 #}
 declare 23 {
-    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, Tcl_Size numBytes,
-	    const char *file, int line)
+    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes,
+	    Tcl_Size numBytes, const char *file, int line)
 }
 declare 24 {
     Tcl_Obj *Tcl_DbNewDoubleObj(double doubleValue, const char *file,
@@ -617,8 +617,8 @@ declare 166 {
 # generic interface, so we include it here for compatibility reasons.
 
 declare 167 {
-    int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID, int forWriting,
-	    int checkUsage, void **filePtr)
+    int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID,
+	    int forWriting, int checkUsage, void **filePtr)
 }
 # Obsolete.  Should now use Tcl_FSGetPathType which is objectified
 # and therefore usually faster.
