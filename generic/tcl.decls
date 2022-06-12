@@ -312,6 +312,7 @@ declare 79 {
 declare 80 {
     void Tcl_CancelIdleCall(Tcl_IdleProc *idleProc, void *clientData)
 }
+# Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 81 {
     int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
 }

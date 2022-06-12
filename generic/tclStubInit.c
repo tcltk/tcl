@@ -95,7 +95,7 @@ int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
     size_t n = TCL_INDEX_NONE;
     int result = Tcl_ListObjGetElements(interp, listPtr, &n, objvPtr);
     if (objcPtr) {
-	if ((result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "List too large to be processed", NULL);
 	    }
@@ -110,7 +110,7 @@ int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
     size_t n = TCL_INDEX_NONE;
     int result = Tcl_ListObjLength(interp, listPtr, &n);
     if (lengthPtr) {
-	if ((result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "List too large to be processed", NULL);
 	    }
@@ -125,7 +125,7 @@ int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr,
     size_t n = TCL_INDEX_NONE;
     int result = Tcl_DictObjSize(interp, dictPtr, &n);
     if (sizePtr) {
-	if ((result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "Dict too large to be processed", NULL);
 	    }
@@ -140,7 +140,7 @@ int TclSplitList(Tcl_Interp *interp, const char *listStr, int *argcPtr,
     size_t n = TCL_INDEX_NONE;
     int result = Tcl_SplitList(interp, listStr, &n, argvPtr);
     if (argcPtr) {
-	if ((result == TCL_OK) && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(size_t)) && (result == TCL_OK) && (n > INT_MAX)) {
 	    if (interp) {
 		Tcl_AppendResult(interp, "List too large to be processed", NULL);
 	    }
@@ -155,7 +155,7 @@ void TclSplitPath(const char *path, int *argcPtr, const char ***argvPtr) {
     size_t n = TCL_INDEX_NONE;
     Tcl_SplitPath(path, &n, argvPtr);
     if (argcPtr) {
-	if (n > INT_MAX) {
+	if ((sizeof(int) != sizeof(size_t)) && (n > INT_MAX)) {
 	    n = TCL_INDEX_NONE; /* No other way to return an error-situation */
 	    Tcl_Free((void *)*argvPtr);
 	    *argvPtr = NULL;
@@ -167,7 +167,7 @@ Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, int *lenPtr) {
     size_t n = TCL_INDEX_NONE;
     Tcl_Obj *result = Tcl_FSSplitPath(pathPtr, &n);
     if (lenPtr) {
-	if (result && (n > INT_MAX)) {
+	if ((sizeof(int) != sizeof(size_t)) && result && (n > INT_MAX)) {
 	    Tcl_DecrRefCount(result);
 	    return NULL;
 	}
