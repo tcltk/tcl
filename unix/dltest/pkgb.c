@@ -100,6 +100,7 @@ Pkgb_DemoObjCmd(
 {
     Tcl_WideInt numChars;
     int result;
+    (void)dummy;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg1 arg2 num");
