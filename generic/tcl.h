@@ -2215,7 +2215,12 @@ void *			TclStubCall(void *arg);
 #endif
 
 #ifdef USE_TCL_STUBS
-#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#if TCL_MAJOR_VERSION < 9
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)(interp, version, \
+	    (exact)|(TCL_MAJOR_VERSION<<8)|(0xFF<<16), \
+	    TCL_STUB_MAGIC)
+#elif TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)(interp, version, \
 	    (exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16), \
@@ -2227,7 +2232,9 @@ void *			TclStubCall(void *arg);
 	    TCL_STUB_MAGIC)
 #endif
 #else
-#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#if TCL_MAJOR_VERSION < 9
+#   error "Please define -DUSE_TCL_STUBS"
+#elif TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
 	Tcl_PkgInitStubsCheck(interp, version, \
 		(exact)|(TCL_MAJOR_VERSION<<8)|(TCL_MINOR_VERSION<<16))
@@ -2276,7 +2283,7 @@ EXTERN const char *TclZipfs_AppHook(int *argc, char ***argv);
     EXTERN TCL_NORETURN void Tcl_MainExW(size_t argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
-#ifdef USE_TCL_STUBS
+#if defined(USE_TCL_STUBS) && (TCL_MAJOR_VERSION > 8)
 #define Tcl_SetPanicProc(panicProc) \
     TclInitStubTable(((const char *(*)(Tcl_PanicProc *))TclStubCall((void *)panicProc))(panicProc))
 #define Tcl_InitSubsystems() \
