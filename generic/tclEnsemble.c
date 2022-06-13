@@ -3256,7 +3256,7 @@ TclAttemptCompileProc(
     Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
     size_t savedStackDepth = envPtr->currStackDepth;
     unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
-    size_t savedAuxDataArrayNext = envPtr->auxDataArrayNext1;
+    size_t savedAuxDataArrayNext = envPtr->auxDataArrayNext;
     size_t savedExceptArrayNext = envPtr->exceptArrayNext;
 #ifdef TCL_COMPILE_DEBUG
     size_t savedExceptDepth = envPtr->exceptDepth;
@@ -3332,12 +3332,12 @@ TclAttemptCompileProc(
 	}
 	envPtr->exceptArrayNext = savedExceptArrayNext;
 
-	if (savedAuxDataArrayNext != envPtr->auxDataArrayNext1) {
+	if (savedAuxDataArrayNext != envPtr->auxDataArrayNext) {
 	    AuxData *auxDataPtr = envPtr->auxDataArrayPtr;
 	    AuxData *auxDataEnd = auxDataPtr;
 
 	    auxDataPtr += savedAuxDataArrayNext;
-	    auxDataEnd += envPtr->auxDataArrayNext1;
+	    auxDataEnd += envPtr->auxDataArrayNext;
 
 	    while (auxDataPtr < auxDataEnd) {
 		if (auxDataPtr->type->freeProc != NULL) {
@@ -3345,7 +3345,7 @@ TclAttemptCompileProc(
 		}
 		auxDataPtr++;
 	    }
-	    envPtr->auxDataArrayNext1 = savedAuxDataArrayNext;
+	    envPtr->auxDataArrayNext = savedAuxDataArrayNext;
 	}
 	envPtr->currStackDepth = savedStackDepth;
 	envPtr->codeNext = envPtr->codeStart + savedCodeNext;

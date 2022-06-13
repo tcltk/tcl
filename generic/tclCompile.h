@@ -355,7 +355,7 @@ typedef struct CompileEnv {
 				 * auxDataArrayPtr points in heap else 0. */
 #endif
     AuxData *auxDataArrayPtr;	/* Points to auxiliary data array start. */
-    size_t auxDataArrayNext1;	/* Next free compile aux data array index.
+    size_t auxDataArrayNext;	/* Next free compile aux data array index.
 				 * auxDataArrayNext is the number of aux data
 				 * items and (auxDataArrayNext-1) is index of
 				 * current aux data array entry. */
