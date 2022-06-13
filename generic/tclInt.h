@@ -2423,6 +2423,29 @@ typedef enum TclEolTranslation {
 #define TCL_INVOKE_NO_TRACEBACK	(1<<2)
 
 /*
+ * TclListSizeT is the type for holding list element counts. It's defined
+ * simplify sharing source between Tcl8 and Tcl9.
+ */
+#if TCL_MAJOR_VERSION > 8
+
+typedef ptrdiff_t ListSizeT; /* TODO - may need to fix to match Tcl9's API */
+
+/*
+ * SSIZE_MAX, NOT SIZE_MAX as negative differences need to be expressed
+ * between values of the ListSizeT type so limit the range to signed
+ */
+#define ListSizeT_MAX PTRDIFF_MAX
+
+#else
+
+typedef int ListSizeT;
+#define ListSizeT_MAX INT_MAX
+
+#endif
+
+/*
+ * ListStore --
+ *
  * A Tcl list's internal representation is defined through three structures.
  *
  * A ListStore struct is a structure that includes a variable size array that
@@ -2446,32 +2469,41 @@ typedef enum TclEolTranslation {
  *
  */
 typedef struct ListStore {
-    int refCount;
-    int firstUsed;     /* Index of first slot in use within the slots[] array */
-    int numUsed;       /* Number of slots in use (starting at index firstUsed) */
-    int numAllocated;  /* Total number of slots[] array slots. */
-    int flags;         /* LISTSTORE_* flags */
-    Tcl_Obj *slots[1]; /* Variable size array. The struct is grown as needed */
+    ListSizeT firstUsed;    /* Index of first slot in use within slots[] */
+    ListSizeT numUsed;      /* Number of slots in use (starting firstUsed) */
+    ListSizeT numAllocated; /* Total number of slots[] array slots. */
+    int refCount;           /* Number of references to this instance */
+    int flags;              /* LISTSTORE_* flags */
+    Tcl_Obj *slots[1];      /* Variable size array. Grown as needed */
 } ListStore;
 
 #define LISTSTORE_CANONICAL 0x1 /* All Tcl_Obj's referencing this
                                    store have their string representation
                                    derived from the list representation */
 
-/* TODO - should the limit not be based on INT_MAX and not UINT_MAX? */
-#define LIST_MAX \
-	(1 + (int)(((size_t)UINT_MAX - sizeof(ListStore))/sizeof(Tcl_Obj *)))
+/* Max number of elements that can be contained in a list */
+#define LIST_MAX                                               \
+    (1                                                         \
+     + (ListSizeT)(((size_t)ListSizeT_MAX - sizeof(ListStore)) \
+		   / sizeof(Tcl_Obj *)))
+/* Memory size needed for a ListStore to hold numSlots_ elements */
 #define LIST_SIZE(numSlots_) \
 	(unsigned)(sizeof(ListStore) + (((numSlots_) - 1) * sizeof(Tcl_Obj *)))
 
-/* See comments above */
+/*
+ * ListSpan --
+ * See comments above for ListStore
+ */
 typedef struct ListSpan {
+    ListSizeT spanStart;    /* Starting index of the span */
+    ListSizeT spanLength;   /* Number of elements in the span */
     int refCount;     /* Count of references to this span record */
-    int spanStart;    /* Starting index within parentList where the span */
-    int spanLength;   /* Number of elements in the span */
 } ListSpan;
 
-/* See comments above */
+/*
+ * ListRep --
+ * See comments above for ListStore
+ */
 typedef struct ListRep {
     ListStore *storePtr;/* element array shared amongst different lists */
     ListSpan *spanPtr;  /* If not NULL, the span holds the range of slots
