@@ -155,7 +155,7 @@ Tcl_RegExpCompile(
     const char *pattern)	/* String for which to produce compiled
 				 * regular expression. */
 {
-    return (Tcl_RegExp) CompileRegexp(interp, pattern, (int) strlen(pattern),
+    return (Tcl_RegExp) CompileRegexp(interp, pattern, strlen(pattern),
 	    REG_ADVANCED);
 }
 

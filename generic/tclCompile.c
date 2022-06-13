@@ -694,7 +694,7 @@ static void		StartExpanding(CompileEnv *envPtr);
  */
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, size_t srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd,
-			    size_t numWords, int line, int *clNext, int **lines,
+			    size_t numWords, size_t line, int *clNext, int **lines,
 			    CompileEnv *envPtr);
 static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
@@ -1597,7 +1597,7 @@ TclInitCompileEnv(
     envPtr->clNext = NULL;
 
     envPtr->auxDataArrayPtr = envPtr->staticAuxDataArraySpace;
-    envPtr->auxDataArrayNext1 = 0;
+    envPtr->auxDataArrayNext = 0;
     envPtr->auxDataArrayEnd = COMPILEENV_INIT_AUX_DATA_SIZE;
     envPtr->mallocedAuxDataArray = 0;
 }
@@ -1651,7 +1651,7 @@ TclFreeCompileEnv(
 	TclVerifyGlobalLiteralTable(envPtr->iPtr);
 #endif /*TCL_COMPILE_DEBUG*/
 
-	for (i = 0;  i < envPtr->auxDataArrayNext1;  i++) {
+	for (i = 0;  i < envPtr->auxDataArrayNext;  i++) {
 	    if (auxDataPtr->type->freeProc != NULL) {
 		auxDataPtr->type->freeProc(auxDataPtr->clientData);
 	    }
@@ -2044,7 +2044,7 @@ CompileCommandTokens(
 
     EnterCmdWordData(eclPtr, parsePtr->commandStart - envPtr->source,
 	    parsePtr->tokenPtr, parsePtr->commandStart,
-	    (int)parsePtr->numWords, cmdLine,
+	    parsePtr->numWords, cmdLine,
 	    clNext, &wlines, envPtr);
     wlineat = eclPtr->nuloc - 1;
 
@@ -2820,7 +2820,7 @@ TclInitByteCode(
     codeBytes = envPtr->codeNext - envPtr->codeStart;
     objArrayBytes = envPtr->literalArrayNext * sizeof(Tcl_Obj *);
     exceptArrayBytes = envPtr->exceptArrayNext * sizeof(ExceptionRange);
-    auxDataArrayBytes = envPtr->auxDataArrayNext1 * sizeof(AuxData);
+    auxDataArrayBytes = envPtr->auxDataArrayNext * sizeof(AuxData);
     cmdLocBytes = GetCmdLocEncodingSize(envPtr);
 
     /*
@@ -2861,7 +2861,7 @@ TclInitByteCode(
     codePtr->numCodeBytes = codeBytes;
     codePtr->numLitObjects = numLitObjects;
     codePtr->numExceptRanges = envPtr->exceptArrayNext;
-    codePtr->numAuxDataItems = envPtr->auxDataArrayNext1;
+    codePtr->numAuxDataItems = envPtr->auxDataArrayNext;
     codePtr->numCmdLocBytes = cmdLocBytes;
     codePtr->maxExceptDepth = envPtr->maxExceptDepth;
     codePtr->maxStackDepth = envPtr->maxStackDepth;
@@ -3287,15 +3287,15 @@ EnterCmdWordData(
     Tcl_Token *tokenPtr,
     const char *cmd,
     size_t numWords,
-    int line,
+    size_t line,
     int *clNext,
     int **wlines,
     CompileEnv *envPtr)
 {
     ECL *ePtr;
     const char *last;
-    size_t wordIdx;
-    int wordLine, *wwlines, *wordNext;
+    size_t wordIdx, wordLine;
+    int *wwlines, *wordNext;
 
     if (eclPtr->nuloc >= eclPtr->nloc) {
 	/*
@@ -3330,7 +3330,7 @@ EnterCmdWordData(
 	/* See Ticket 4b61afd660 */
 	wwlines[wordIdx] =
 		((wordIdx == 0) || TclWordKnownAtCompileTime(tokenPtr, NULL))
-		? wordLine : -1;
+		? wordLine : TCL_INDEX_NONE;
 	ePtr->line[wordIdx] = wordLine;
 	ePtr->next[wordIdx] = wordNext;
 	last = tokenPtr->start;
@@ -3734,7 +3734,7 @@ TclCreateAuxData(
     AuxData *auxDataPtr;
 				/* Points to the new AuxData structure */
 
-    index = envPtr->auxDataArrayNext1;
+    index = envPtr->auxDataArrayNext;
     if (index >= envPtr->auxDataArrayEnd) {
 	/*
 	 * Expand the AuxData array. The currently allocated entries are
@@ -3742,7 +3742,7 @@ TclCreateAuxData(
 	 * [inclusive].
 	 */
 
-	size_t currBytes = envPtr->auxDataArrayNext1 * sizeof(AuxData);
+	size_t currBytes = envPtr->auxDataArrayNext * sizeof(AuxData);
 	size_t newElems = 2*envPtr->auxDataArrayEnd;
 	size_t newBytes = newElems * sizeof(AuxData);
 
@@ -3763,7 +3763,7 @@ TclCreateAuxData(
 	}
 	envPtr->auxDataArrayEnd = newElems;
     }
-    envPtr->auxDataArrayNext1++;
+    envPtr->auxDataArrayNext++;
 
     auxDataPtr = &envPtr->auxDataArrayPtr[index];
     auxDataPtr->clientData = clientData;

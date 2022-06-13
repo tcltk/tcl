@@ -222,7 +222,7 @@ typedef struct AssemblyEnv {
     Tcl_HashTable labelHash;	/* Hash table whose keys are labels and whose
 				 * values are 'label' objects storing the code
 				 * offsets of the labels. */
-    int cmdLine;		/* Current line number within the assembly
+    size_t cmdLine;		/* Current line number within the assembly
 				 * code */
     int* clNext;		/* Invisible continuation line for
 				 * [info frame] */
@@ -1074,7 +1074,7 @@ TclAssembleCode(
 	 * Process the line of code.
 	 */
 
-	if ((int)parsePtr->numWords > 0) {
+	if (parsePtr->numWords > 0) {
 	    size_t instLen = parsePtr->commandSize;
 		    /* Length in bytes of the current command */
 
@@ -3317,7 +3317,7 @@ CheckStack(
 {
     CompileEnv* envPtr = assemEnvPtr->envPtr;
 				/* Compilation environment */
-    int maxDepth;		/* Maximum stack depth overall */
+    size_t maxDepth;		/* Maximum stack depth overall */
 
     /*
      * Checking the head block will check all the other blocks recursively.
@@ -3334,7 +3334,7 @@ CheckStack(
      */
 
     maxDepth = assemEnvPtr->maxDepth + envPtr->currStackDepth;
-    if (maxDepth > (int)envPtr->maxStackDepth) {
+    if (maxDepth > envPtr->maxStackDepth) {
 	envPtr->maxStackDepth = maxDepth;
     }
 
@@ -4190,7 +4190,7 @@ RestoreEmbeddedExceptionRanges(
 		range->nestingLevel += envPtr->exceptDepth + bbPtr->catchDepth;
 		memcpy(envPtr->exceptArrayPtr + rangeIndex, range,
 			sizeof(ExceptionRange));
-		if ((int)range->nestingLevel >= (int)envPtr->maxExceptDepth) {
+		if (range->nestingLevel + 1 >= envPtr->maxExceptDepth + 1) {
 		    envPtr->maxExceptDepth = range->nestingLevel + 1;
 		}
 	    }

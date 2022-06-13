@@ -2818,9 +2818,9 @@ MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, size_t len);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
-MODULE_SCOPE void	TclAdvanceContinuations(int *line, int **next,
+MODULE_SCOPE void	TclAdvanceContinuations(size_t *line, int **next,
 			    int loc);
-MODULE_SCOPE void	TclAdvanceLines(int *line, const char *start,
+MODULE_SCOPE void	TclAdvanceLines(size_t *line, const char *start,
 			    const char *end);
 MODULE_SCOPE void	TclArgumentEnter(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc, CmdFrame *cf);
@@ -2876,7 +2876,7 @@ MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    size_t *sizePtr, int *literalPtr);
 /* TIP #280 - Modified token based evaluation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
-			    size_t numBytes, int flags, int line,
+			    size_t numBytes, int flags, size_t line,
 			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileCopyCmd;
@@ -2999,7 +2999,7 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    size_t indexCount, Tcl_Obj *const indexArray[]);
 /* TIP #280 */
-MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
+MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, size_t line, int n,
 			    int *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, size_t fromIdx,
@@ -3148,7 +3148,7 @@ MODULE_SCOPE int	TclStringMatch(const char *str, size_t strLen,
 MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 			    Tcl_Obj *patternObj, int flags);
 MODULE_SCOPE void	TclSubstCompile(Tcl_Interp *interp, const char *bytes,
-			    size_t numBytes, int flags, int line,
+			    size_t numBytes, int flags, size_t line,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclSubstOptions(Tcl_Interp *interp, size_t numOpts,
 			    Tcl_Obj *const opts[], int *flagPtr);
@@ -3156,7 +3156,7 @@ MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 			    size_t numBytes, int flags, Tcl_Parse *parsePtr,
 			    Tcl_InterpState *statePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-			    size_t count, int *tokensLeftPtr, int line,
+			    size_t count, int *tokensLeftPtr, size_t line,
 			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE size_t	TclTrim(const char *bytes, size_t numBytes,
 			    const char *trim, size_t numTrim, size_t *trimRight);

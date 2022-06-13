@@ -280,7 +280,7 @@ Tcl_GetsObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel chan;		/* The channel to read from. */
-    int lineLen;		/* Length of line just read. */
+    size_t lineLen;		/* Length of line just read. */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *linePtr, *chanObjPtr;
     int code = TCL_OK;
@@ -303,7 +303,7 @@ Tcl_GetsObjCmd(
     TclChannelPreserve(chan);
     TclNewObj(linePtr);
     lineLen = Tcl_GetsObj(chan, linePtr);
-    if (lineLen < 0) {
+    if (lineLen == TCL_IO_FAILURE) {
 	if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
 	    Tcl_DecrRefCount(linePtr);
 
@@ -322,7 +322,7 @@ Tcl_GetsObjCmd(
 	    code = TCL_ERROR;
 	    goto done;
 	}
-	lineLen = -1;
+	lineLen = TCL_IO_FAILURE;
     }
     if (objc == 3) {
 	if (Tcl_ObjSetVar2(interp, objv[2], NULL, linePtr,
@@ -330,7 +330,7 @@ Tcl_GetsObjCmd(
 	    code = TCL_ERROR;
 	    goto done;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(lineLen));
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)((Tcl_WideUInt)(lineLen + 1U)) - 1));
     } else {
 	Tcl_SetObjResult(interp, linePtr);
     }
@@ -365,8 +365,8 @@ Tcl_ReadObjCmd(
 {
     Tcl_Channel chan;		/* The channel to read from. */
     int newline, i;		/* Discard newline at end? */
-    int toRead;			/* How many bytes to read? */
-    int charactersRead;		/* How many characters were read? */
+    Tcl_WideInt toRead;			/* How many bytes to read? */
+    size_t charactersRead;		/* How many characters were read? */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *resultPtr, *chanObjPtr;
 
@@ -416,7 +416,7 @@ Tcl_ReadObjCmd(
 
     toRead = -1;
     if (i < objc) {
-	if ((TclGetIntFromObj(interp, objv[i], &toRead) != TCL_OK)
+	if ((TclGetWideIntFromObj(NULL, objv[i], &toRead) != TCL_OK)
 		|| (toRead < 0)) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected non-negative integer but got \"%s\"",
@@ -430,7 +430,7 @@ Tcl_ReadObjCmd(
     Tcl_IncrRefCount(resultPtr);
     TclChannelPreserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
-    if (charactersRead < 0) {
+    if (charactersRead == TCL_IO_FAILURE) {
 	/*
 	 * TIP #219.
 	 * Capture error messages put by the driver into the bypass area and
