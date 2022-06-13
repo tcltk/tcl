@@ -671,10 +671,15 @@ typedef union Tcl_ObjInternalRep {	/* The internal representation: */
  * An object stores a value as either a string, some internal representation,
  * or both.
  */
-#if TCL_MAJOR_VERSION > 8
-#   define Tcl_Size size_t
-#else
+#if TCL_MAJOR_VERSION < 9
 #   define Tcl_Size int
+#elif defined(TCL_8_COMPAT)
+#   ifdef BUILD_tcl
+#	error "TCL_8_COMPAT not supported when building Tcl"
+#   endif
+#   define Tcl_Size ptrdiff_t
+#else
+#   define Tcl_Size size_t
 #endif
 
 
