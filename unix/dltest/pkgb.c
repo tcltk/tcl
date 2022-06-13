@@ -98,19 +98,19 @@ Pkgb_DemoObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-#if (TCL_MAJOR_VERSION > 8) || (TCL_MINOR_VERSION > 4)
-    Tcl_Obj *first;
+    Tcl_WideInt numChars;
+    int result;
     (void)dummy;
-    (void)objc;
-    (void)objv;
 
-    if (Tcl_ListObjIndex(NULL, Tcl_GetEncodingSearchPath(), 0, &first)
-	    == TCL_OK) {
-	Tcl_SetObjResult(interp, first);
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "arg1 arg2 num");
+	return TCL_ERROR;
     }
-#else
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetDefaultEncodingDir(), -1));
-#endif
+    if (Tcl_GetWideIntFromObj(interp, objv[3], &numChars) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    result = Tcl_UtfNcmp(Tcl_GetString(objv[1]), Tcl_GetString(objv[2]), numChars);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
     return TCL_OK;
 }
 
