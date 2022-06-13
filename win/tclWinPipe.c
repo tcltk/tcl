@@ -171,7 +171,7 @@ typedef struct {
 
 static int		ApplicationType(Tcl_Interp *interp,
 			    const char *fileName, char *fullName);
-static void		BuildCommandLine(const char *executable, int argc,
+static void		BuildCommandLine(const char *executable, size_t argc,
 			    const char **argv, Tcl_DString *linePtr);
 static BOOL		HasConsole(void);
 static int		PipeBlockModeProc(ClientData instanceData, int mode);
@@ -911,7 +911,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    size_t argc1,			/* Number of arguments in following array. */
+    size_t argc,			/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings. argv[0] contains
 				 * the name of the executable converted to
 				 * native format (using the
@@ -943,7 +943,6 @@ TclpCreateProcess(
     HANDLE hProcess, h, inputHandle, outputHandle, errorHandle;
     char execPath[MAX_PATH * 3];
     WinFile *filePtr;
-    int argc = argc1;
 
     PipeInit();
 
@@ -1537,13 +1536,14 @@ static void
 BuildCommandLine(
     const char *executable,	/* Full path of executable (including
 				 * extension). Replacement for argv[0]. */
-    int argc,			/* Number of arguments. */
+    size_t argc,			/* Number of arguments. */
     const char **argv,		/* Argument strings in UTF. */
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
 				 * command line (WCHAR). */
 {
     const char *arg, *start, *special, *bspos;
-    int quote = 0, i;
+    int quote = 0;
+    size_t i;
     Tcl_DString ds;
     static const char specMetaChars[] = "&|^<>!()%";
 				/* Characters to enclose in quotes if unpaired
