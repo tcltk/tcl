@@ -5197,7 +5197,7 @@ TclEvalEx(
 		wordStart = tokenPtr->start;
 
 		lines[objectsUsed] = TclWordKnownAtCompileTime(tokenPtr, NULL)
-			? wordLine : TCL_INDEX_NONE;
+			? (int)wordLine : -1;
 
 		if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
 		    iPtr->evalFlags |= TCL_EVAL_FILE;
