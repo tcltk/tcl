@@ -125,26 +125,8 @@ static int		DdeObjCmd(void *clientData,
 #   define Tcl_WCharToUtfDString Tcl_UniCharToUtfDString
 #   define Tcl_UtfToWCharDString Tcl_UtfToUniCharDString
 # endif
+# define Tcl_Size int
 #endif
-
-static unsigned char *
-getByteArrayFromObj(
-	Tcl_Obj *objPtr,
-	size_t *lengthPtr
-) {
-    int length;
-
-    unsigned char *result = Tcl_GetByteArrayFromObj(objPtr, &length);
-#if TCL_MAJOR_VERSION > 8
-    if (sizeof(TCL_HASH_TYPE) > sizeof(int)) {
-	/* 64-bit and TIP #494 situation: */
-	 *lengthPtr = *(TCL_HASH_TYPE *) objPtr->internalRep.twoPtrValue.ptr1;
-    } else
-#endif
-	/* 32-bit or without TIP #494 */
-    *lengthPtr = (size_t) (unsigned) length;
-    return result;
-}
 
 #ifdef __cplusplus
 extern "C" {
@@ -647,7 +629,7 @@ DdeServerProc(
 				/* Transaction-dependent data. */
 {
     Tcl_DString dString;
-    size_t len;
+    Tcl_Size len;
     DWORD dlen;
     WCHAR *utilString;
     Tcl_Obj *ddeObjectPtr;
@@ -767,8 +749,7 @@ DdeServerProc(
 		    CP_WINUNICODE);
 	    if (_wcsicmp(utilString, TCL_DDE_EXECUTE_RESULT) == 0) {
 		returnString =
-			Tcl_GetString(convPtr->returnPackagePtr);
-		len = convPtr->returnPackagePtr->length;
+			Tcl_GetStringFromObj(convPtr->returnPackagePtr, &len);
 		if (uFmt != CF_TEXT) {
 		    Tcl_DStringInit(&dsBuf);
 		    Tcl_UtfToWCharDString(returnString, len, &dsBuf);
@@ -790,8 +771,7 @@ DdeServerProc(
 			    convPtr->riPtr->interp, Tcl_DStringValue(&ds), NULL,
 			    TCL_GLOBAL_ONLY);
 		    if (variableObjPtr != NULL) {
-			returnString = Tcl_GetString(variableObjPtr);
-			len = variableObjPtr->length;
+			returnString = Tcl_GetStringFromObj(variableObjPtr, &len);
 			if (uFmt != CF_TEXT) {
 			    Tcl_DStringInit(&dsBuf);
 			    Tcl_UtfToWCharDString(returnString, len, &dsBuf);
@@ -939,8 +919,7 @@ DdeServerProc(
 	 */
 
 	HSZPAIR *returnPtr;
-	int i;
-	int numItems;
+	Tcl_Size i, numItems;
 
 	for (i = 0, riPtr = tsdPtr->interpListPtr; riPtr != NULL;
 		i++, riPtr = riPtr->nextPtr) {
@@ -1325,7 +1304,7 @@ DdeObjCmd(
     };
 
     int index, i, argIndex;
-    size_t length;
+    Tcl_Size length;
     int flags = 0, result = TCL_OK, firstArg = 0;
     HSZ ddeService = NULL, ddeTopic = NULL, ddeItem = NULL, ddeCookie = NULL;
     HDDEDATA ddeData = NULL, ddeItemData = NULL, ddeReturn;
@@ -1488,9 +1467,8 @@ DdeObjCmd(
     Initialize();
 
     if (firstArg != 1) {
-	const char *src = Tcl_GetString(objv[firstArg]);
+	const char *src = Tcl_GetStringFromObj(objv[firstArg], &length);
 
-	length = objv[firstArg]->length;
 	Tcl_DStringInit(&serviceBuf);
 	Tcl_UtfToWCharDString(src, length, &serviceBuf);
 	serviceName = (WCHAR *) Tcl_DStringValue(&serviceBuf);
@@ -1507,9 +1485,8 @@ DdeObjCmd(
     }
 
     if ((index != DDE_SERVERNAME) && (index != DDE_EVAL)) {
-	const char *src = Tcl_GetString(objv[firstArg + 1]);
+	const char *src = Tcl_GetStringFromObj(objv[firstArg + 1], &length);
 
-	length = objv[firstArg + 1]->length;
 	Tcl_DStringInit(&topicBuf);
 	topicName = Tcl_UtfToWCharDString(src, length, &topicBuf);
 	length = Tcl_DStringLength(&topicBuf) / sizeof(WCHAR);
@@ -1539,19 +1516,18 @@ DdeObjCmd(
 	break;
 
     case DDE_EXECUTE: {
-	size_t dataLength;
+	Tcl_Size dataLength;
 	const void *dataString;
 	Tcl_DString dsBuf;
 
 	Tcl_DStringInit(&dsBuf);
 	if (flags & DDE_FLAG_BINARY) {
 	    dataString =
-		    getByteArrayFromObj(objv[firstArg + 2], &dataLength);
+		    Tcl_GetByteArrayFromObj(objv[firstArg + 2], &dataLength);
 	} else {
 	    const char *src;
 
-	    src = Tcl_GetString(objv[firstArg + 2]);
-	    dataLength = objv[firstArg + 2]->length;
+	    src = Tcl_GetStringFromObj(objv[firstArg + 2], &dataLength);
 	    Tcl_DStringInit(&dsBuf);
 	    dataString =
 		    Tcl_UtfToWCharDString(src, dataLength, &dsBuf);
@@ -1604,8 +1580,7 @@ DdeObjCmd(
 	const WCHAR *itemString;
 	const char *src;
 
-	src = Tcl_GetString(objv[firstArg + 2]);
-	length = objv[firstArg + 2]->length;
+	src = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
 	Tcl_DStringInit(&itemBuf);
 	itemString = Tcl_UtfToWCharDString(src, length, &itemBuf);
 	length = Tcl_DStringLength(&itemBuf) / sizeof(WCHAR);
@@ -1672,8 +1647,7 @@ DdeObjCmd(
 	BYTE *dataString;
 	const char *src;
 
-	src = Tcl_GetString(objv[firstArg + 2]);
-	length = objv[firstArg + 2]->length;
+	src = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
 	Tcl_DStringInit(&itemBuf);
 	itemString = Tcl_UtfToWCharDString(src, length, &itemBuf);
 	length = Tcl_DStringLength(&itemBuf) / sizeof(WCHAR);
@@ -1687,11 +1661,10 @@ DdeObjCmd(
 	Tcl_DStringInit(&dsBuf);
 	if (flags & DDE_FLAG_BINARY) {
 	    dataString = (BYTE *)
-		    getByteArrayFromObj(objv[firstArg + 3], &length);
+		    Tcl_GetByteArrayFromObj(objv[firstArg + 3], &length);
 	} else {
 	    const char *data =
-		    Tcl_GetString(objv[firstArg + 3]);
-	    length = objv[firstArg + 3]->length;
+		    Tcl_GetStringFromObj(objv[firstArg + 3], &length);
 	    Tcl_DStringInit(&dsBuf);
 	    dataString = (BYTE *)
 		    Tcl_UtfToWCharDString(data, length, &dsBuf);
@@ -1855,8 +1828,7 @@ DdeObjCmd(
 	    }
 
 	    objPtr = Tcl_ConcatObj(objc, objv);
-	    string = Tcl_GetString(objPtr);
-	    length = objPtr->length;
+	    string = Tcl_GetStringFromObj(objPtr, &length);
 	    Tcl_DStringInit(&dsBuf);
 	    Tcl_UtfToWCharDString(string, length, &dsBuf);
 	    string = Tcl_DStringValue(&dsBuf);

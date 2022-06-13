@@ -134,25 +134,6 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 # endif
 #endif
 
-static unsigned char *
-getByteArrayFromObj(
-	Tcl_Obj *objPtr,
-	size_t *lengthPtr
-) {
-    int length;
-
-    unsigned char *result = Tcl_GetByteArrayFromObj(objPtr, &length);
-#if TCL_MAJOR_VERSION > 8
-    if (sizeof(TCL_HASH_TYPE) > sizeof(int)) {
-	/* 64-bit and TIP #494 situation: */
-	 *lengthPtr = *(TCL_HASH_TYPE *) objPtr->internalRep.twoPtrValue.ptr1;
-    } else
-#endif
-	/* 32-bit or without TIP #494 */
-    *lengthPtr = (size_t) (unsigned) length;
-    return result;
-}
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1289,8 +1270,8 @@ SetValue(
     if (typeObj == NULL) {
 	type = REG_SZ;
     } else if (Tcl_GetIndexFromObj(interp, typeObj, typeNames, "type",
-	    0, (int *) &type) != TCL_OK) {
-	if (Tcl_GetIntFromObj(NULL, typeObj, (int *) &type) != TCL_OK) {
+	    0, &type) != TCL_OK) {
+	if (Tcl_GetIntFromObj(NULL, typeObj, &type) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	Tcl_ResetResult(interp);
@@ -1318,7 +1299,7 @@ SetValue(
 		(DWORD) type, (BYTE *) &value, sizeof(DWORD));
     } else if (type == REG_MULTI_SZ) {
 	Tcl_DString data, buf;
-	int objc, i;
+	Tcl_Size objc, i;
 	Tcl_Obj **objv;
 
 	if (Tcl_ListObjGetElements(interp, dataObj, &objc, &objv) != TCL_OK) {
@@ -1372,13 +1353,13 @@ SetValue(
 	Tcl_DStringFree(&buf);
     } else {
 	BYTE *data;
-	size_t bytelength;
+	Tcl_Size bytelength;
 
 	/*
 	 * Store binary data in the registry.
 	 */
 
-	data = (BYTE *) getByteArrayFromObj(dataObj, &bytelength);
+	data = (BYTE *) Tcl_GetByteArrayFromObj(dataObj, &bytelength);
 	result = RegSetValueExW(key, (WCHAR *) valueName, 0,
 		(DWORD) type, data, (DWORD) bytelength);
     }
@@ -1421,15 +1402,14 @@ BroadcastValue(
     LRESULT result;
     DWORD_PTR sendResult;
     int timeout = 3000;
-    size_t len;
+    Tcl_Size len;
     const char *str;
     Tcl_Obj *objPtr;
     WCHAR *wstr;
     Tcl_DString ds;
 
     if (objc == 3) {
-	str = Tcl_GetString(objv[1]);
-	len = objv[1]->length;
+	str = Tcl_GetStringFromObj(objv[1], &len);
 	if ((len < 2) || (*str != '-') || strncmp(str, "-timeout", len)) {
 	    return TCL_BREAK;
 	}
@@ -1438,9 +1418,9 @@ BroadcastValue(
 	}
     }
 
-    str = Tcl_GetString(objv[0]);
+    str = Tcl_GetStringFromObj(objv[0], &len);
     Tcl_DStringInit(&ds);
-    wstr = Tcl_UtfToWCharDString(str, objv[0]->length, &ds);
+    wstr = Tcl_UtfToWCharDString(str, len, &ds);
     if (Tcl_DStringLength(&ds) == 0) {
 	wstr = NULL;
     }
