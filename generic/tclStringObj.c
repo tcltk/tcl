@@ -1046,7 +1046,7 @@ Tcl_GetRange(
 
     int numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
 
-    if (last >= numChars) {
+    if (last < 0 || last >= numChars) {
 	last = numChars - 1;
     }
     if (last < first) {
