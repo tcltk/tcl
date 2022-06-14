@@ -1319,12 +1319,12 @@ TeststringobjCmd(
 	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), length);
 	    break;
 	case 10: {				/* range */
-	    int first, last;
+	    Tcl_WideInt first, last;
 	    if (objc != 5) {
 		goto wrongNumArgs;
 	    }
-	    if ((Tcl_GetIntFromObj(interp, objv[3], &first) != TCL_OK)
-		    || (Tcl_GetIntFromObj(interp, objv[4], &last) != TCL_OK)) {
+	    if ((Tcl_GetWideIntFromObj(interp, objv[3], &first) != TCL_OK)
+		    || (Tcl_GetWideIntFromObj(interp, objv[4], &last) != TCL_OK)) {
 		return TCL_ERROR;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_GetRange(varPtr[varIndex], first, last));
