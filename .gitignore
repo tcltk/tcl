@@ -30,7 +30,8 @@ _FOSSIL_
 */versions.vc
 */version.vc
 */libtcl.vfs
-*/libtcl_*.zip
+*/libtcl*.zip
+*/tclUuid.h
 libtommath/bn.ilg
 libtommath/bn.ind
 libtommath/pretty.build
