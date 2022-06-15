@@ -62,13 +62,15 @@ Tcl_InitStubs(
     const TclStubs *stubsPtr = iPtr->stubTable;
     const char *tclName = (((exact&0xFF00) >= 0x900) ? "tcl" : "Tcl");
 
+#undef TCL_STUB_MAGIC /* We need the TCL_STUB_MAGIC from Tcl 8.x here */
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
     /*
      * We can't optimize this check by caching tclStubsPtr because that
      * prevents apps from being able to load/unload Tcl dynamically multiple
      * times. [Bug 615304]
      */
 
-    if (!stubsPtr || (stubsPtr->magic != (((exact&0xFF00) >= 0x900) ? magic : -56378673))) {
+    if (!stubsPtr || (stubsPtr->magic != (((exact&0xFF00) >= 0x900) ? magic : TCL_STUB_MAGIC))) {
 	iPtr->legacyResult = "interpreter uses an incompatible stubs mechanism";
 	iPtr->legacyFreeProc = 0; /* TCL_STATIC */
 	return NULL;
