@@ -2597,7 +2597,7 @@ declare 3 {
 # Public functions that are not accessible via the stubs table.
 
 export {
-    void Tcl_MainEx(size_t argc, char **argv, Tcl_AppInitProc *appInitProc,
+    void Tcl_MainEx(Tcl_Size argc, char **argv, Tcl_AppInitProc *appInitProc,
     Tcl_Interp *interp)
 }
 export {
