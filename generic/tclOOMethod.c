@@ -187,6 +187,28 @@ Tcl_NewInstanceMethod(
     oPtr->epoch++;
     return (Tcl_Method) mPtr;
 }
+Tcl_Method
+Tcl_NewInstanceMethod2(
+    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Object object,		/* The object that has the method attached to
+				 * it. */
+    Tcl_Obj *nameObj,		/* The name of the method. May be NULL; if so,
+				 * up to caller to manage storage (e.g., when
+				 * it is a constructor or destructor). */
+    int flags,			/* Whether this is a public method. */
+    const Tcl_MethodType2 *typePtr,
+				/* The type of method this is, which defines
+				 * how to invoke, delete and clone the
+				 * method. */
+    void *clientData)		/* Some data associated with the particular
+				 * method to be created. */
+{
+    if (typePtr->version == TCL_OO_METHOD_VERSION_1) {
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_2", "Tcl_NewInstanceMethod2");
+    }
+    return Tcl_NewInstanceMethod(NULL, object, nameObj, flags,
+	    (const Tcl_MethodType *)typePtr, clientData);
+}
 
 /*
  * ----------------------------------------------------------------------
@@ -254,6 +276,27 @@ Tcl_NewMethod(
     }
 
     return (Tcl_Method) mPtr;
+}
+
+Tcl_Method
+Tcl_NewMethod2(
+    TCL_UNUSED(Tcl_Interp *),
+    Tcl_Class cls,		/* The class to attach the method to. */
+    Tcl_Obj *nameObj,		/* The name of the object. May be NULL (e.g.,
+				 * for constructors or destructors); if so, up
+				 * to caller to manage storage. */
+    int flags,			/* Whether this is a public method. */
+    const Tcl_MethodType2 *typePtr,
+				/* The type of method this is, which defines
+				 * how to invoke, delete and clone the
+				 * method. */
+    void *clientData)		/* Some data associated with the particular
+				 * method to be created. */
+{
+    if (typePtr->version == TCL_OO_METHOD_VERSION_1) {
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_2", "Tcl_NewMethod2");
+    }
+    return Tcl_NewMethod(NULL, cls, nameObj, flags, (const Tcl_MethodType *)typePtr, clientData);
 }
 
 /*
@@ -1680,6 +1723,26 @@ Tcl_MethodIsType(
     Method *mPtr = (Method *) method;
 
     if (mPtr->typePtr == typePtr) {
+	if (clientDataPtr != NULL) {
+	    *clientDataPtr = mPtr->clientData;
+	}
+	return 1;
+    }
+    return 0;
+}
+
+int
+Tcl_MethodIsType2(
+    Tcl_Method method,
+    const Tcl_MethodType2 *typePtr,
+    void **clientDataPtr)
+{
+    Method *mPtr = (Method *) method;
+
+    if (typePtr->version == TCL_OO_METHOD_VERSION_1) {
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_2", "Tcl_NewInstanceMethod2");
+    }
+    if (mPtr->typePtr == (const Tcl_MethodType *)typePtr) {
 	if (clientDataPtr != NULL) {
 	    *clientDataPtr = mPtr->clientData;
 	}
