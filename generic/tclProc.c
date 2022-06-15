@@ -484,7 +484,7 @@ TclCreateProc(
      * in the Proc.
      */
 
-    result = TclListObjGetElements(interp , argsPtr ,&numArgs ,&argArray);
+    result = TclListObjGetElementsM(interp , argsPtr ,&numArgs ,&argArray);
     if (result != TCL_OK) {
 	goto procError;
     }
@@ -514,7 +514,7 @@ TclCreateProc(
 	 * Now divide the specifier up into name and default.
 	 */
 
-	result = TclListObjGetElements(interp, argArray[i], &fieldCount,
+	result = TclListObjGetElementsM(interp, argArray[i], &fieldCount,
 		&fieldValues);
 	if (result != TCL_OK) {
 	    goto procError;
@@ -529,7 +529,7 @@ TclCreateProc(
 		    "FORMALARGUMENTFORMAT", NULL);
 	    goto procError;
 	}
-	if ((fieldCount == 0) || (Tcl_GetCharLength(fieldValues[0]) == 0)) {
+	if ((fieldCount == 0) || (TclGetCharLength(fieldValues[0]) == 0)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument with no name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
@@ -920,7 +920,7 @@ TclNRUplevelObjCmd(
 	return TCL_ERROR;
     } else if (!TclHasStringRep(objv[1]) && objc == 2) {
 	int status ,llength;
-	status = TclListObjLength(interp, objv[1], &llength);
+	status = TclListObjLengthM(interp, objv[1], &llength);
 	if (status == TCL_OK && llength > 1) {
 	    /* the first argument can't interpreted as a level. Avoid
 	     * generating a string representation of the script. */
@@ -2274,10 +2274,10 @@ TclUpdateReturnInfo(
  *----------------------------------------------------------------------
  */
 
-TclObjCmdProcType
+Tcl_ObjCmdProc *
 TclGetObjInterpProc(void)
 {
-    return (TclObjCmdProcType) TclObjInterpProc;
+    return (Tcl_ObjCmdProc *) TclObjInterpProc;
 }
 
 /*
@@ -2446,7 +2446,7 @@ SetLambdaFromAny(
      * length is not 2, then it cannot be converted to lambdaType.
      */
 
-    result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
+    result = TclListObjGetElementsM(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",

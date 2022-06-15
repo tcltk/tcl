@@ -33,7 +33,7 @@
 
 static int
 Pkgooa_StubsOKObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -86,6 +86,12 @@ static TclOOStubs stubsCopy = {
     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL, NULL, NULL, NULL
 #ifdef Tcl_MethodIsPrivate
+    ,NULL
+#endif
+#ifdef Tcl_GetClassOfObject
+    ,NULL
+#endif
+#ifdef Tcl_GetObjectClassName
     ,NULL
 #endif
 };

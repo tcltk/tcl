@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
-
+#undef BUILD_tcl
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
@@ -1073,8 +1073,9 @@ TestobjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("none", -1));
 	} else {
 	    typeName = objv[2]->typePtr->name;
+	    if (!strcmp(typeName, "utf32string")) typeName = "string";
 #ifndef TCL_WIDE_INT_IS_LONG
-	    if (!strcmp(typeName, "wideInt")) typeName = "int";
+	    else if (!strcmp(typeName, "wideInt")) typeName = "int";
 #endif
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
 	}
@@ -1153,7 +1154,7 @@ TeststringobjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *unicode;
+    unsigned short *unicode;
     size_t varIndex;
     int size, option, i;
     Tcl_WideInt length;
@@ -1163,7 +1164,7 @@ TeststringobjCmd(
     Tcl_Obj **varPtr;
     static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
-	"set", "set2", "setlength", "maxchars", "appendself",
+	"set", "set2", "setlength", "maxchars", "range", "appendself",
 	"appendself2", NULL
     };
 
@@ -1263,10 +1264,14 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
-		Tcl_ConvertToType(NULL, varPtr[varIndex],
-			Tcl_GetObjType("string"));
-		strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
-		length = (int) strPtr->allocated;
+		const Tcl_ObjType *objType = Tcl_GetObjType("string");
+		if (objType != NULL) {
+		    Tcl_ConvertToType(NULL, varPtr[varIndex], objType);
+		    strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
+		    length = (int) strPtr->allocated;
+		} else {
+		    length = -1;
+		}
 	    } else {
 		length = -1;
 	    }
@@ -1317,16 +1322,32 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
-		Tcl_ConvertToType(NULL, varPtr[varIndex],
-			Tcl_GetObjType("string"));
-		strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
-		length = strPtr->maxChars;
+		const Tcl_ObjType *objType = Tcl_GetObjType("string");
+		if (objType != NULL) {
+		    Tcl_ConvertToType(NULL, varPtr[varIndex],objType);
+		    strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
+		    length = strPtr->maxChars;
+		} else {
+		    length = -1;
+		}
 	    } else {
 		length = -1;
 	    }
 	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), length);
 	    break;
-	case 10:			/* appendself */
+	case 10: {				/* range */
+	    int first, last;
+	    if (objc != 5) {
+		goto wrongNumArgs;
+	    }
+	    if ((Tcl_GetIntFromObj(interp, objv[3], &first) != TCL_OK)
+		    || (Tcl_GetIntFromObj(interp, objv[4], &last) != TCL_OK)) {
+		return TCL_ERROR;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_GetRange(varPtr[varIndex], first, last));
+	    break;
+	}
+	case 11:			/* appendself */
 	    if (objc != 4) {
 		goto wrongNumArgs;
 	    }
@@ -1357,7 +1378,7 @@ TeststringobjCmd(
 	    Tcl_AppendToObj(varPtr[varIndex], string + length, size - length);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
-	case 11:			/* appendself2 */
+	case 12:			/* appendself2 */
 	    if (objc != 4) {
 		goto wrongNumArgs;
 	    }

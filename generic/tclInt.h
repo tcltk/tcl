@@ -89,11 +89,6 @@
 #else
 #include <string.h>
 #endif
-#if !defined(STDC_HEADERS) && !defined(__STDC__) && !defined(__C99__FUNC__) \
-     && !defined(__cplusplus) && !defined(_MSC_VER) && !defined(__ICC)
-typedef int ptrdiff_t;
-#endif
-#include <stddef.h>
 #include <locale.h>
 
 /*
@@ -128,23 +123,17 @@ typedef int ptrdiff_t;
  * to/from pointer from/to integer of different size".
  */
 
-#if !defined(INT2PTR) && !defined(PTR2INT)
-#   if defined(HAVE_INTPTR_T) || defined(intptr_t)
-#	define INT2PTR(p) ((void *)(intptr_t)(p))
-#	define PTR2INT(p) ((intptr_t)(p))
-#   else
-#	define INT2PTR(p) ((void *)(p))
-#	define PTR2INT(p) ((long)(p))
-#   endif
+#if !defined(INT2PTR)
+#   define INT2PTR(p) ((void *)(ptrdiff_t)(p))
 #endif
-#if !defined(UINT2PTR) && !defined(PTR2UINT)
-#   if defined(HAVE_UINTPTR_T) || defined(uintptr_t)
-#	define UINT2PTR(p) ((void *)(uintptr_t)(p))
-#	define PTR2UINT(p) ((uintptr_t)(p))
-#   else
-#	define UINT2PTR(p) ((void *)(p))
-#	define PTR2UINT(p) ((unsigned long)(p))
-#   endif
+#if !defined(PTR2INT)
+#   define PTR2INT(p) ((ptrdiff_t)(p))
+#endif
+#if !defined(UINT2PTR)
+#   define UINT2PTR(p) ((void *)(size_t)(p))
+#endif
+#if !defined(PTR2UINT)
+#   define PTR2UINT(p) ((size_t)(p))
 #endif
 
 #if defined(_WIN32) && defined(_MSC_VER)
@@ -2475,12 +2464,12 @@ typedef struct List {
 #define ListObjIsCanonical(listPtr) \
     (((listPtr)->bytes == NULL) || ListRepPtr(listPtr)->canonicalFlag)
 
-#define TclListObjGetElements(interp, listPtr, objcPtr, objvPtr) \
+#define TclListObjGetElementsM(interp, listPtr, objcPtr, objvPtr) \
     (((listPtr)->typePtr == &tclListType) \
 	    ? ((ListObjGetElements((listPtr), *(objcPtr), *(objvPtr))), TCL_OK)\
 	    : Tcl_ListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)))
 
-#define TclListObjLength(interp, listPtr, lenPtr) \
+#define TclListObjLengthM(interp, listPtr, lenPtr) \
     (((listPtr)->typePtr == &tclListType) \
 	    ? ((ListObjLength((listPtr), *(lenPtr))), TCL_OK)\
 	    : Tcl_ListObjLength((interp), (listPtr), (lenPtr)))
@@ -2504,12 +2493,12 @@ typedef struct List {
  * WARNING: these macros eval their args more than once.
  */
 
-#define TclGetBooleanFromObj(interp, objPtr, boolPtr) \
+#define TclGetBooleanFromObj(interp, objPtr, intPtr) \
     (((objPtr)->typePtr == &tclIntType)			\
-	? (*(boolPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
+	? (*(intPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
 	: ((objPtr)->typePtr == &tclBooleanType)			\
-	? (*(boolPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
-	: Tcl_GetBooleanFromObj((interp), (objPtr), (boolPtr)))
+	? (*(intPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
+	: Tcl_GetBooleanFromObj((interp), (objPtr), (intPtr)))
 
 #ifdef TCL_WIDE_INT_IS_LONG
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
@@ -2655,8 +2644,10 @@ typedef Tcl_Channel (TclOpenFileChannelProc_)(Tcl_Interp *interp,
  *----------------------------------------------------------------
  */
 
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 typedef Tcl_CmdProc *TclCmdProcType;
 typedef Tcl_ObjCmdProc *TclObjCmdProcType;
+#endif
 
 /*
  *----------------------------------------------------------------
@@ -2768,6 +2759,7 @@ MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
+MODULE_SCOPE const Tcl_ObjType tclUniCharStringType;
 MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
 MODULE_SCOPE const Tcl_ObjType tclRegexpType;
 MODULE_SCOPE Tcl_ObjType tclCmdNameType;
@@ -3317,6 +3309,44 @@ MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp,
 			    const char *msg, int length);
 /* Tip 430 */
 MODULE_SCOPE int    TclZipfs_Init(Tcl_Interp *interp);
+
+
+#if TCL_UTF_MAX > 3
+    MODULE_SCOPE int *TclGetUnicodeFromObj_(Tcl_Obj *, int *);
+    MODULE_SCOPE Tcl_Obj *TclNewUnicodeObj(const int *, int);
+    MODULE_SCOPE void TclAppendUnicodeToObj(Tcl_Obj *, const int *, int);
+    MODULE_SCOPE int TclUniCharNcasecmp(const int *, const int *, unsigned long);
+    MODULE_SCOPE int TclUniCharCaseMatch(const int *, const int *, int);
+    MODULE_SCOPE int TclUniCharNcmp(const int *, const int *, unsigned long);
+#   undef Tcl_NumUtfChars
+#   define Tcl_NumUtfChars TclNumUtfChars
+#   undef Tcl_GetCharLength
+#   define Tcl_GetCharLength TclGetCharLength
+#   undef Tcl_UtfAtIndex
+#   define Tcl_UtfAtIndex TclUtfAtIndex
+#   undef Tcl_GetRange
+#   define Tcl_GetRange TclGetRange
+#   undef Tcl_GetUniChar
+#   define Tcl_GetUniChar TclGetUniChar
+#else
+#   define tclUniCharStringType tclStringType
+#   define TclGetUnicodeFromObj_ Tcl_GetUnicodeFromObj
+#   define TclNewUnicodeObj Tcl_NewUnicodeObj
+#   define TclAppendUnicodeToObj Tcl_AppendUnicodeToObj
+#   define TclUniCharNcasecmp Tcl_UniCharNcasecmp
+#   define TclUniCharCaseMatch Tcl_UniCharCaseMatch
+#   define TclUniCharNcmp Tcl_UniCharNcmp
+#   undef TclNumUtfChars
+#   define TclNumUtfChars Tcl_NumUtfChars
+#   undef TclGetCharLength
+#   define TclGetCharLength Tcl_GetCharLength
+#   undef TclUtfAtIndex
+#   define TclUtfAtIndex Tcl_UtfAtIndex
+#   undef TclGetRange
+#   define TclGetRange Tcl_GetRange
+#   undef TclGetUniChar
+#   define TclGetUniChar Tcl_GetUniChar
+#endif
 
 
 /*
@@ -4722,8 +4752,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	    : Tcl_UtfToUniChar(str, chPtr))
 #else
 #define TclUtfToUniChar(str, chPtr) \
-	((((unsigned char) *(str)) < 0x80) ?		\
-	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
+	(((UCHAR(*(str))) < 0x80) ?		\
+	    ((*(chPtr) = UCHAR(*(str))), 1)	\
 	    : Tcl_UtfToChar16(str, chPtr))
 #endif
 
@@ -4739,14 +4769,14 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  *----------------------------------------------------------------
  */
 
-#define TclNumUtfChars(numChars, bytes, numBytes) \
+#define TclNumUtfCharsM(numChars, bytes, numBytes) \
     do { \
 	int _count, _i = (numBytes); \
 	unsigned char *_str = (unsigned char *) (bytes); \
 	while (_i && (*_str < 0xC0)) { _i--; _str++; } \
 	_count = (numBytes) - _i; \
 	if (_i) { \
-	    _count += Tcl_NumUtfChars((bytes) + _count, _i); \
+	    _count += TclNumUtfChars((bytes) + _count, _i); \
 	} \
 	(numChars) = _count; \
     } while (0);
@@ -4774,24 +4804,6 @@ MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
 #define TclFetchInternalRep(objPtr, type) \
 	(TclHasInternalRep((objPtr), (type)) ? &((objPtr)->internalRep) : NULL)
 
-
-/*
- *----------------------------------------------------------------
- * Macro used by the Tcl core to compare Unicode strings. On big-endian
- * systems we can use the more efficient memcmp, but this would not be
- * lexically correct on little-endian systems. The ANSI C "prototype" for
- * this macro is:
- *
- * MODULE_SCOPE int	TclUniCharNcmp(const Tcl_UniChar *cs,
- *			    const Tcl_UniChar *ct, unsigned long n);
- *----------------------------------------------------------------
- */
-
-#if defined(WORDS_BIGENDIAN) && (TCL_UTF_MAX > 3)
-#   define TclUniCharNcmp(cs,ct,n) memcmp((cs),(ct),(n)*sizeof(Tcl_UniChar))
-#else /* !WORDS_BIGENDIAN */
-#   define TclUniCharNcmp Tcl_UniCharNcmp
-#endif /* WORDS_BIGENDIAN */
 
 /*
  *----------------------------------------------------------------

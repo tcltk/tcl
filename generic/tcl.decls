@@ -105,11 +105,11 @@ declare 21 {
     int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
 declare 22 {deprecated {No longer in use, changed to macro}} {
-    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
+    Tcl_Obj *Tcl_DbNewBooleanObj(int intValue, const char *file, int line)
 }
 declare 23 {
-    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int numBytes,
-	    const char *file, int line)
+    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes,
+	    int numBytes, const char *file, int line)
 }
 declare 24 {
     Tcl_Obj *Tcl_DbNewDoubleObj(double doubleValue, const char *file,
@@ -136,12 +136,13 @@ declare 30 {
     void TclFreeObj(Tcl_Obj *objPtr)
 }
 declare 31 {
-    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *boolPtr)
+    int Tcl_GetBoolean(Tcl_Interp *interp, const char *src, int *intPtr)
 }
 declare 32 {
     int Tcl_GetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int *boolPtr)
+	    int *intPtr)
 }
+# Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 33 {
     unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
 }
@@ -199,7 +200,7 @@ declare 48 {
 	    int count, int objc, Tcl_Obj *const objv[])
 }
 declare 49 {deprecated {No longer in use, changed to macro}} {
-    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
+    Tcl_Obj *Tcl_NewBooleanObj(int intValue)
 }
 declare 50 {
     Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int numBytes)
@@ -223,7 +224,7 @@ declare 56 {
     Tcl_Obj *Tcl_NewStringObj(const char *bytes, int length)
 }
 declare 57 {deprecated {No longer in use, changed to macro}} {
-    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
+    void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int intValue)
 }
 declare 58 {
     unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int numBytes)
@@ -299,6 +300,7 @@ declare 79 {
 declare 80 {
     void Tcl_CancelIdleCall(Tcl_IdleProc *idleProc, ClientData clientData)
 }
+# Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 81 {
     int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
 }
@@ -598,8 +600,8 @@ declare 166 {
 # generic interface, so we include it here for compatibility reasons.
 
 declare 167 unix {
-    int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID, int forWriting,
-	    int checkUsage, ClientData *filePtr)
+    int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID,
+	    int forWriting, int checkUsage, ClientData *filePtr)
 }
 # Obsolete.  Should now use Tcl_FSGetPathType which is objectified
 # and therefore usually faster.
@@ -1121,8 +1123,8 @@ declare 312 {
     int Tcl_NumUtfChars(const char *src, int length)
 }
 declare 313 {
-    int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead,
-	    int appendFlag)
+    int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
+	    int charsToRead, int appendFlag)
 }
 declare 314 {
     void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
@@ -1248,7 +1250,7 @@ declare 352 {
     int Tcl_Char16Len(const unsigned short *uniStr)
 }
 declare 353 {deprecated {Use Tcl_UtfNcmp}} {
-    int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
+    int Tcl_UniCharNcmp(const unsigned short *ucs, const unsigned short *uct,
 	    unsigned long numChars)
 }
 declare 354 {
@@ -1275,16 +1277,17 @@ declare 359 {
 	    const char *command, int length)
 }
 declare 360 {
-    int Tcl_ParseBraces(Tcl_Interp *interp, const char *start, int numBytes,
-	    Tcl_Parse *parsePtr, int append, const char **termPtr)
+    int Tcl_ParseBraces(Tcl_Interp *interp, const char *start,
+	    int numBytes, Tcl_Parse *parsePtr, int append,
+	    const char **termPtr)
 }
 declare 361 {
-    int Tcl_ParseCommand(Tcl_Interp *interp, const char *start, int numBytes,
-	    int nested, Tcl_Parse *parsePtr)
+    int Tcl_ParseCommand(Tcl_Interp *interp, const char *start,
+	    int numBytes, int nested, Tcl_Parse *parsePtr)
 }
 declare 362 {
-    int Tcl_ParseExpr(Tcl_Interp *interp, const char *start, int numBytes,
-	    Tcl_Parse *parsePtr)
+    int Tcl_ParseExpr(Tcl_Interp *interp, const char *start,
+	    int numBytes, Tcl_Parse *parsePtr)
 }
 declare 363 {
     int Tcl_ParseQuotedString(Tcl_Interp *interp, const char *start,
@@ -1292,8 +1295,8 @@ declare 363 {
 	    const char **termPtr)
 }
 declare 364 {
-    int Tcl_ParseVarName(Tcl_Interp *interp, const char *start, int numBytes,
-	    Tcl_Parse *parsePtr, int append)
+    int Tcl_ParseVarName(Tcl_Interp *interp, const char *start,
+	    int numBytes, Tcl_Parse *parsePtr, int append)
 }
 # These 4 functions are obsolete, use Tcl_FSGetCwd, Tcl_FSChdir,
 # Tcl_FSAccess and Tcl_FSStat
@@ -1338,10 +1341,10 @@ declare 377 {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
 declare 378 {
-    Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, int numChars)
+    Tcl_Obj *Tcl_NewUnicodeObj(const unsigned short *unicode, int numChars)
 }
 declare 379 {
-    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
+    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const unsigned short *unicode,
 	    int numChars)
 }
 declare 380 {
@@ -1351,13 +1354,13 @@ declare 381 {
     int Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
 }
 declare 382 {deprecated {No longer in use, changed to macro}} {
-    Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
+    unsigned short *Tcl_GetUnicode(Tcl_Obj *objPtr)
 }
 declare 383 {
     Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
 }
-declare 384 {deprecated {Use Tcl_AppendStringsToObj}} {
-    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
+declare 384 {
+    void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const unsigned short *unicode,
 	    int length)
 }
 declare 385 {
@@ -1483,12 +1486,12 @@ declare 418 {
     int Tcl_IsChannelExisting(const char *channelName)
 }
 declare 419 {deprecated {Use Tcl_UtfNcasecmp}} {
-    int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
+    int Tcl_UniCharNcasecmp(const unsigned short *ucs, const unsigned short *uct,
 	    unsigned long numChars)
 }
 declare 420 {deprecated {Use Tcl_StringCaseMatch}} {
-    int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
-	    const Tcl_UniChar *uniPattern, int nocase)
+    int Tcl_UniCharCaseMatch(const unsigned short *uniStr,
+	    const unsigned short *uniPattern, int nocase)
 }
 declare 421 {
     Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
@@ -1541,7 +1544,7 @@ declare 433 {
 
 # introduced in 8.4a3
 declare 434 {
-    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned short *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 
 # TIP#15 (math function introspection) dkf
@@ -2089,8 +2092,8 @@ declare 574 {
     void Tcl_AppendObjToErrorInfo(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 declare 575 {
-    void Tcl_AppendLimitedToObj(Tcl_Obj *objPtr, const char *bytes, int length,
-	    int limit, const char *ellipsis)
+    void Tcl_AppendLimitedToObj(Tcl_Obj *objPtr, const char *bytes,
+	    int length, int limit, const char *ellipsis)
 }
 declare 576 {
     Tcl_Obj *Tcl_Format(Tcl_Interp *interp, const char *format, int objc,
@@ -2135,8 +2138,8 @@ declare 584 {
     int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 585 {
-    int Tcl_NREvalObjv(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
-	    int flags)
+    int Tcl_NREvalObjv(Tcl_Interp *interp, int objc,
+	    Tcl_Obj *const objv[], int flags)
 }
 declare 586 {
     int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, int objc,
@@ -2269,7 +2272,8 @@ declare 618 {
     int Tcl_ZlibStreamPut(Tcl_ZlibStream zshandle, Tcl_Obj *data, int flush)
 }
 declare 619 {
-    int Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle, Tcl_Obj *data, int count)
+    int Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle, Tcl_Obj *data,
+	    int count)
 }
 declare 620 {
     int Tcl_ZlibStreamClose(Tcl_ZlibStream zshandle)
@@ -2417,8 +2421,9 @@ declare 651 {
     char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
 declare 652 {
-    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+    unsigned short *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
+# Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 653 {
     unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)
 }
@@ -2450,9 +2455,51 @@ declare 660 {
     int Tcl_AsyncMarkFromSignal(Tcl_AsyncHandler async, int sigNumber)
 }
 
+# TIP #616
+declare 661 {
+    int TclListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
+	    size_t *objcPtr, Tcl_Obj ***objvPtr)
+}
+declare 662 {
+    int TclListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+	    size_t *lengthPtr)
+}
+declare 663 {
+    int TclDictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, size_t *sizePtr)
+}
+declare 664 {
+    int TclSplitList(Tcl_Interp *interp, const char *listStr, size_t *argcPtr,
+	    const char ***argvPtr)
+}
+declare 665 {
+    void TclSplitPath(const char *path, size_t *argcPtr, const char ***argvPtr)
+}
+declare 666 {
+    Tcl_Obj *TclFSSplitPath(Tcl_Obj *pathPtr, size_t *lenPtr)
+}
+declare 667 {
+    int TclParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
+	    size_t *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
+}
+
 # TIP #617
 declare 668 {
     int Tcl_UniCharLen(const int *uniStr)
+}
+declare 669 {
+    int TclNumUtfChars(const char *src, int length)
+}
+declare 670 {
+    int TclGetCharLength(Tcl_Obj *objPtr)
+}
+declare 671 {
+    const char *TclUtfAtIndex(const char *src, int index)
+}
+declare 672 {
+    Tcl_Obj *TclGetRange(Tcl_Obj *objPtr, int first, int last)
+}
+declare 673 {
+    int TclGetUniChar(Tcl_Obj *objPtr, int index)
 }
 
 

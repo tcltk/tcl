@@ -190,7 +190,7 @@ GetIndexFromObjList(
      * of the code there. This is a bit ineffiecient but simpler.
      */
 
-    result = TclListObjGetElements(interp, tableObjPtr, &objc, &objv);
+    result = TclListObjGetElementsM(interp, tableObjPtr, &objc, &objv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -369,20 +369,21 @@ Tcl_GetIndexFromObjStruct(
 
   uncachedDone:
     if (indexPtr != NULL) {
-	if ((flags>>8) & (int)~sizeof(int)) {
-	    if ((flags>>8) == sizeof(uint64_t)) {
-		*(uint64_t *)indexPtr = index;
-		return TCL_OK;
-	    } else if ((flags>>8) == sizeof(uint32_t)) {
-		*(uint32_t *)indexPtr = index;
-		return TCL_OK;
-	    } else if ((flags>>8) == sizeof(uint16_t)) {
+	flags &= (30-(int)(sizeof(int)<<1));
+	if (flags) {
+	    if (flags == sizeof(uint16_t)<<1) {
 		*(uint16_t *)indexPtr = index;
 		return TCL_OK;
-	    } else if ((flags>>8) == sizeof(uint8_t)) {
+	    } else if (flags == (int)(sizeof(uint8_t)<<1)) {
 		*(uint8_t *)indexPtr = index;
 		return TCL_OK;
-	}
+	    } else if (flags == (int)(sizeof(int64_t)<<1)) {
+		*(int64_t *)indexPtr = index;
+		return TCL_OK;
+	    } else if (flags == (int)(sizeof(int32_t)<<1)) {
+		*(int32_t *)indexPtr = index;
+		return TCL_OK;
+	    }
 	}
 	*(int *)indexPtr = index;
     }
@@ -617,7 +618,7 @@ PrefixMatchObjCmd(
 		return TCL_ERROR;
 	    }
 	    i++;
-	    result = TclListObjLength(interp, objv[i], &errorLength);
+	    result = TclListObjLengthM(interp, objv[i], &errorLength);
 	    if (result != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -641,7 +642,7 @@ PrefixMatchObjCmd(
      * error case regardless of level.
      */
 
-    result = TclListObjLength(interp, tablePtr, &dummyLength);
+    result = TclListObjLengthM(interp, tablePtr, &dummyLength);
     if (result != TCL_OK) {
 	return result;
     }
@@ -706,7 +707,7 @@ PrefixAllObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
+    result = TclListObjGetElementsM(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -763,7 +764,7 @@ PrefixLongestObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
+    result = TclListObjGetElementsM(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -1077,6 +1078,7 @@ Tcl_WrongNumArgs(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_ParseArgsObjv
 int
 Tcl_ParseArgsObjv(
     Tcl_Interp *interp,		/* Place to store error message. */

@@ -1,5 +1,7 @@
 name: Build Binaries
 on: [push]
+permissions:
+  contents: read
 jobs:
   linux:
     name: Linux
@@ -9,7 +11,7 @@ jobs:
         shell: bash
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
@@ -32,7 +34,7 @@ jobs:
           tar -cf tclsh${TCL_PATCHLEVEL}_snapshot.tar tclsh${TCL_PATCHLEVEL}_snapshot
         working-directory: 1dist
       - name: Upload
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Tclsh ${{ env.TCL_PATCHLEVEL }} Linux single-file build (snapshot)
           path: 1dist/*.tar
@@ -44,9 +46,9 @@ jobs:
         shell: bash
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Checkout create-dmg
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: create-dmg/create-dmg
           ref: v1.0.8
@@ -94,7 +96,7 @@ jobs:
               "contents/"
         working-directory: 1dist
       - name: Upload
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Tclsh ${{ env.TCL_PATCHLEVEL }} macOS single-file build (snapshot)
           path: 1dist/*.dmg
@@ -114,7 +116,7 @@ jobs:
           msystem: UCRT64
           install: git mingw-w64-ucrt-x86_64-toolchain make zip
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Prepare
         run: |
           touch generic/tclStubInit.c generic/tclOOStubInit.c
@@ -138,7 +140,7 @@ jobs:
           cp ../win/tclsh*.exe tclsh${TCL_PATCHLEVEL}_snapshot.exe
         working-directory: 1dist
       - name: Upload
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Tclsh ${{ env.TCL_PATCHLEVEL }} Windows single-file build (snapshot)
           path: '1dist/*_snapshot.exe'

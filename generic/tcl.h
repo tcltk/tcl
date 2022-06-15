@@ -977,15 +977,15 @@ typedef struct Tcl_DString {
 /*
  * Flags that may be passed to Tcl_GetIndexFromObj.
  * TCL_EXACT disallows abbreviated strings.
- * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
- *      a table that will not live long enough to make it worthwhile.
  * TCL_INDEX_NULL_OK allows the empty string or NULL to return TCL_OK.
  *      The returned value will be -1;
+ * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
+ *      a table that will not live long enough to make it worthwhile.
  */
 
 #define TCL_EXACT		1
-#define TCL_INDEX_TEMP_TABLE	2
-#define TCL_INDEX_NULL_OK	4
+#define TCL_INDEX_NULL_OK	32
+#define TCL_INDEX_TEMP_TABLE	64
 
 /*
  *----------------------------------------------------------------------------
@@ -2142,7 +2142,11 @@ typedef struct Tcl_EncodingType {
  */
 
 #ifndef TCL_UTF_MAX
-#define TCL_UTF_MAX		3
+#   ifdef BUILD_tcl
+#	define TCL_UTF_MAX		4
+#   else
+#	define TCL_UTF_MAX		3
+#   endif
 #endif
 
 /*
