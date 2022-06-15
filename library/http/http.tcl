@@ -291,7 +291,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 	CloseSocket $state(sock) $token
     } elseif {
 	  ([info exists state(-keepalive)] && $state(-keepalive))
-       && ([info exists state(connection)] && ("close" in $state(connection)))
+       && ([info exists state(connection)] && ("close" ni $state(connection)))
     } {
 	KeepSocket $token
     }
@@ -771,12 +771,17 @@ proc http::geturl {url args} {
     foreach {flag value} $args {
 	if {[regexp -- $pat $flag]} {
 	    # Validate numbers
-	    if {    ([info exists type($flag)] && ![string is $type($flag) -strict $value])
-		 || ($flag eq "-headers" && [llength $value] % 2 != 0)
+	    if {    [info exists type($flag)]
+	        && (![string is $type($flag) -strict $value])
 	    } {
 		unset $token
 		return -code error \
 		    "Bad value for $flag ($value), must be $type($flag)"
+	    }
+	    if {($flag eq "-headers") && ([llength $value] % 2 != 0)} {
+		unset $token
+		return -code error \
+		    "Bad value for $flag ($value), number of list elements must be even"
 	    }
 	    set state($flag) $value
 	} else {
@@ -981,7 +986,7 @@ proc http::geturl {url args} {
     set upgradeValues [SplitCommaSeparatedFieldValue \
 			   [GetFieldValue $state(-headers) Upgrade]]
     set state(upgradeRequest) [expr {    "upgrade" in $connectionValues
-				      && [llength $upgradeValue] >= 1}]
+				      && [llength $upgradeValues] >= 1}]
 
     if {$isQuery || $isQueryChannel} {
 	# It's a POST.
@@ -2701,6 +2706,19 @@ proc http::Event {sock token} {
 
 		set state(state) body
 
+		# According to
+		# https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Connection
+		# any comma-separated "Connection:" list implies keep-alive, but I
+		# don't see this in the RFC so we'll play safe and
+		# scan any list for "close".
+		# Done here to support combining duplicate header field's values.
+		if {   [info exists state(connection)]
+		    && ("close" ni $state(connection))
+		    && ("keep-alive" ni $state(connection))
+		} {
+		    lappend state(connection) "keep-alive"
+		}
+
 		# If doing a HEAD, then we won't get any body
 		if {$state(-validate)} {
 		    Log ^F$tk end of response for HEAD request - token $token
@@ -2794,18 +2812,6 @@ proc http::Event {sock token} {
 			    # list is an acceptable value.
 			    foreach el [SplitCommaSeparatedFieldValue $value] {
 				lappend state(connection) [string tolower $el]
-			    }
-
-			    # According to
-			    # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Connection
-			    # any comma-separated list implies keep-alive, but I
-			    # don't see this in the RFC so we'll play safe and
-			    # scan any list for "close".
-			    # FIXME: support combining duplicate header field's values.
-			    if {   "close" ni $state(connection)
-				&& "keep-alive" ni $state(connection)
-			    } {
-				lappend state(connection) "keep-alive"
 			    }
 			}
 			upgrade {
