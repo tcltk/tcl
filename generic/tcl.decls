@@ -109,8 +109,8 @@ declare 21 {
 #    Tcl_Obj *Tcl_DbNewBooleanObj(int intValue, const char *file, int line)
 #}
 declare 23 {
-    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, size_t numBytes,
-	    const char *file, int line)
+    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes,
+	    size_t numBytes, const char *file, int line)
 }
 declare 24 {
     Tcl_Obj *Tcl_DbNewDoubleObj(double doubleValue, const char *file,
@@ -144,8 +144,9 @@ declare 32 {
     int Tcl_GetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int *intPtr)
 }
+# Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 33 {
-    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -312,10 +313,10 @@ declare 79 {
 declare 80 {
     void Tcl_CancelIdleCall(Tcl_IdleProc *idleProc, void *clientData)
 }
-# Removed in 9.0:
-#declare 81 {
-#    int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
-#}
+# Only available in Tcl 8.x, NULL in Tcl 9.0
+declare 81 {
+    int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
+}
 declare 82 {
     int Tcl_CommandComplete(const char *cmd)
 }
@@ -617,8 +618,8 @@ declare 166 {
 # generic interface, so we include it here for compatibility reasons.
 
 declare 167 {
-    int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID, int forWriting,
-	    int checkUsage, void **filePtr)
+    int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID,
+	    int forWriting, int checkUsage, void **filePtr)
 }
 # Obsolete.  Should now use Tcl_FSGetPathType which is objectified
 # and therefore usually faster.
@@ -1334,8 +1335,8 @@ declare 361 {
 	    size_t numBytes, int nested, Tcl_Parse *parsePtr)
 }
 declare 362 {
-    int Tcl_ParseExpr(Tcl_Interp *interp, const char *start, size_t numBytes,
-	    Tcl_Parse *parsePtr)
+    int Tcl_ParseExpr(Tcl_Interp *interp, const char *start,
+	    size_t numBytes, Tcl_Parse *parsePtr)
 }
 declare 363 {
     int Tcl_ParseQuotedString(Tcl_Interp *interp, const char *start,
@@ -2480,6 +2481,7 @@ declare 651 {
 declare 652 {
     Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
+# Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 653 {
     unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)
 }
