@@ -408,43 +408,6 @@ TclGetBytesFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetByteArrayFromObj --
- *
- *	Attempt to get the array of bytes from the Tcl object. If the object
- *	is not already a ByteArray object, an attempt will be made to convert
- *	it to one.
- *
- * Results:
- *	Pointer to array of bytes representing the ByteArray object.
- *
- * Side effects:
- *	Frees old internal rep. Allocates memory for new internal rep.
- *
- *----------------------------------------------------------------------
- */
-
-#undef Tcl_GetByteArrayFromObj
-unsigned char *
-TclGetByteArrayFromObj(
-    Tcl_Obj *objPtr,		/* The ByteArray object. */
-    int *numBytesPtr)		/* If non-NULL, write the number of bytes
-				 * in the array here */
-{
-    return TclGetBytesFromObj(NULL, objPtr, numBytesPtr);
-}
-
-unsigned char *
-Tcl_GetByteArrayFromObj(
-    Tcl_Obj *objPtr,		/* The ByteArray object. */
-    size_t *numBytesPtr)	/* If non-NULL, write the number of bytes
-				 * in the array here */
-{
-    return Tcl_GetBytesFromObj(NULL, objPtr, numBytesPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_SetByteArrayLength --
  *
  *	This procedure changes the length of the byte array for this object.

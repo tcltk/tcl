@@ -24,7 +24,8 @@
 */versions.vc
 */version.vc
 */libtcl.vfs
-*/libtcl_*.zip
+*/libtcl*.zip
+*/tclUuid.h
 html
 libtommath/bn.ilg
 libtommath/bn.ind
@@ -54,11 +55,9 @@ unix/dltest/*.o
 unix/dltest/*.sl
 unix/dltest/*.so
 unix/tcl.pc
-unix/tclUuid.h
 unix/tclIndex
 unix/Tcl-Info.plist
 unix/Tclsh-Info.plist
-unix/*.zip
 unix/pkgs/*
 win/Debug*
 win/Release*
@@ -66,7 +65,5 @@ win/*.manifest
 win/pkgs/*
 win/coffbase.txt
 win/tcl.hpj
-win/tclUuid.h
 win/nmakehlp.out
 win/nmhlp-out.txt
-win/*.zip
