@@ -47,14 +47,16 @@ extern "C" {
  * unix/tcl.spec	(1 LOC patch)
  */
 
-#if !defined(TCL_MAJOR_VERSION) || (TCL_MAJOR_VERSION == 9)
-#define TCL_MAJOR_VERSION   9
-#define TCL_MINOR_VERSION   0
-#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  4
+#if !defined(TCL_MAJOR_VERSION)
+#   define TCL_MAJOR_VERSION   9
+#endif
+#if (TCL_MAJOR_VERSION == 9)
+#   define TCL_MINOR_VERSION   0
+#   define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
+#   define TCL_RELEASE_SERIAL  4
 
-#define TCL_VERSION	    "9.0"
-#define TCL_PATCH_LEVEL	    "9.0a4"
+#   define TCL_VERSION	    "9.0"
+#   define TCL_PATCH_LEVEL	    "9.0a4"
 #endif /* TCL_MAJOR_VERSION */
 
 #if defined(RC_INVOKED)

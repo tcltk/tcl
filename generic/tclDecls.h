@@ -3946,6 +3946,7 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GetIndexFromObjStruct
 #undef Tcl_GetStringFromObj
 #undef Tcl_GetUnicodeFromObj
+#undef TclGetByteArrayFromObj
 #undef Tcl_GetByteArrayFromObj
 #if defined(USE_TCL_STUBS)
 #define Tcl_GetBytesFromObj(interp, objPtr, sizePtr) \
