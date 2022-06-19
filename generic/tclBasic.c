@@ -8427,18 +8427,6 @@ TCL_DTRACE_DEBUG_LOG()
  */
 
 int
-Tcl_NRCallObjProc(
-    TCL_UNUSED(Tcl_Interp *),
-    TCL_UNUSED(Tcl_ObjCmdProc *),
-    TCL_UNUSED(void *),
-    TCL_UNUSED(int),
-    TCL_UNUSED(Tcl_Obj *const *))
-{
-    Tcl_Panic("Tcl_NRCallObjProc Not Implemented Yet, please use Tcl_NRCallObjProc2()");
-    return TCL_ERROR;
-}
-
-int
 Tcl_NRCallObjProc2(
     Tcl_Interp *interp,
     Tcl_ObjCmdProc2 *objProc,
@@ -8453,6 +8441,41 @@ Tcl_NRCallObjProc2(
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
 }
 
+int wrapperNRObjProc(
+    void *clientData,
+    Tcl_Interp *interp,
+    size_t objc,
+    Tcl_Obj *const objv[])
+{
+    CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
+    clientData = info->clientData;
+    Tcl_ObjCmdProc *proc = info->proc;
+    Tcl_Free(info);
+    if (objc > INT_MAX) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
+	return TCL_ERROR;
+    }
+    return proc(clientData, interp, objc, objv);
+}
+
+int
+Tcl_NRCallObjProc(
+    Tcl_Interp *interp,
+    Tcl_ObjCmdProc *objProc,
+    void *clientData,
+    size_t objc,
+    Tcl_Obj *const objv[])
+{
+    NRE_callback *rootPtr = TOP_CB(interp);
+    CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
+    info->clientData = clientData;
+    info->proc = objProc;
+
+    TclNRAddCallback(interp, Dispatch, wrapperNRObjProc, info,
+	    INT2PTR(objc), objv);
+    return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
+}
+
 /*
  *----------------------------------------------------------------------
  *
