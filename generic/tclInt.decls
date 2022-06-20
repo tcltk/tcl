@@ -62,7 +62,7 @@ declare 16 {
 }
 declare 22 {
     int TclFindElement(Tcl_Interp *interp, const char *listStr,
-	    int listLength, const char **elementPtr, const char **nextPtr,
+	    size_t listLength, const char **elementPtr, const char **nextPtr,
 	    size_t *sizePtr, int *bracePtr)
 }
 declare 23 {
