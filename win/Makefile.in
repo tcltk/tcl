@@ -575,9 +575,9 @@ ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@ ${TCL
 		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
-${TCL_LIB_FILE}: ${TCL_OBJS}
+${TCL_LIB_FILE}: ${TCL_OBJS} tclWinPanic.$(OBJEXT) ${DDE_OBJS} ${REG_OBJS}
 	@$(RM) ${TCL_LIB_FILE}
-	@MAKE_LIB@ ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
+	@MAKE_LIB@ ${TCL_OBJS} tclWinPanic.$(OBJEXT) ${DDE_OBJS} ${REG_OBJS}
 	@POST_MAKE_LIB@
 
 ${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
@@ -889,8 +889,8 @@ install-libraries: libraries install-tzdata install-msgs
 	          $(ROOT_DIR)/library/cookiejar/*.gz; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done;
-	@echo "Installing package http 2.10a3 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/9.0/http-2.10a3.tm";
+	@echo "Installing package http 2.10a4 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl "$(MODULE_INSTALL_DIR)/9.0/http-2.10a4.tm";
 	@echo "Installing package opt 0.4.7";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \

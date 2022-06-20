@@ -759,7 +759,7 @@ Tcl_CreateInterp(void)
     }
 
     if (commandTypeInit == 0) {
-        TclRegisterCommandTypeName(TclObjInterpProc2, "proc");
+        TclRegisterCommandTypeName(TclObjInterpProc, "proc");
         TclRegisterCommandTypeName(TclEnsembleImplementationCmd, "ensemble");
         TclRegisterCommandTypeName(TclAliasObjCmd, "alias");
         TclRegisterCommandTypeName(TclLocalAliasObjCmd, "alias");

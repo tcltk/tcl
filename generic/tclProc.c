@@ -205,7 +205,7 @@ Tcl_ProcObjCmd(
     }
 
     cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
-	TclObjInterpProc2, TclNRInterpProc, procPtr, TclProcDeleteProc);
+	TclObjInterpProc, TclNRInterpProc, procPtr, TclProcDeleteProc);
 
     /*
      * Now initialize the new procedure's cmdPtr field. This will be used
@@ -1591,7 +1591,7 @@ TclPushProcCallFrame(
  */
 
 int
-TclObjInterpProc2(
+TclObjInterpProc(
     ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was
@@ -2227,7 +2227,7 @@ TclUpdateReturnInfo(
 Tcl_ObjCmdProc2 *
 TclGetObjInterpProc(void)
 {
-    return (Tcl_ObjCmdProc2 *) TclObjInterpProc2;
+    return TclObjInterpProc;
 }
 
 /*

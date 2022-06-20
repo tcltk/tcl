@@ -87,7 +87,7 @@ EXTERN void		TclExprFloatError(Tcl_Interp *interp, double value);
 /* Slot 21 is reserved */
 /* 22 */
 EXTERN int		TclFindElement(Tcl_Interp *interp,
-				const char *listStr, int listLength,
+				const char *listStr, size_t listLength,
 				const char **elementPtr,
 				const char **nextPtr, size_t *sizePtr,
 				int *bracePtr);
@@ -168,7 +168,7 @@ EXTERN Tcl_Obj *	TclNewProcBodyObj(Proc *procPtr);
 /* 62 */
 EXTERN int		TclObjCommandComplete(Tcl_Obj *cmdPtr);
 /* 63 */
-EXTERN int		TclObjInterpProc2(void *clientData,
+EXTERN int		TclObjInterpProc(void *clientData,
 				Tcl_Interp *interp, size_t objc,
 				Tcl_Obj *const objv[]);
 /* 64 */
@@ -607,7 +607,7 @@ typedef struct TclIntStubs {
     void (*reserved19)(void);
     void (*reserved20)(void);
     void (*reserved21)(void);
-    int (*tclFindElement) (Tcl_Interp *interp, const char *listStr, int listLength, const char **elementPtr, const char **nextPtr, size_t *sizePtr, int *bracePtr); /* 22 */
+    int (*tclFindElement) (Tcl_Interp *interp, const char *listStr, size_t listLength, const char **elementPtr, const char **nextPtr, size_t *sizePtr, int *bracePtr); /* 22 */
     Proc * (*tclFindProc) (Interp *iPtr, const char *procName); /* 23 */
     size_t (*tclFormatInt) (char *buffer, Tcl_WideInt n); /* 24 */
     void (*tclFreePackageInfo) (Interp *iPtr); /* 25 */
@@ -648,7 +648,7 @@ typedef struct TclIntStubs {
     int (*tclNeedSpace) (const char *start, const char *end); /* 60 */
     Tcl_Obj * (*tclNewProcBodyObj) (Proc *procPtr); /* 61 */
     int (*tclObjCommandComplete) (Tcl_Obj *cmdPtr); /* 62 */
-    int (*tclObjInterpProc2) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 63 */
+    int (*tclObjInterpProc) (void *clientData, Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]); /* 63 */
     int (*tclObjInvoke) (Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[], int flags); /* 64 */
     void (*reserved65)(void);
     void (*reserved66)(void);
@@ -954,8 +954,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclNewProcBodyObj) /* 61 */
 #define TclObjCommandComplete \
 	(tclIntStubsPtr->tclObjCommandComplete) /* 62 */
-#define TclObjInterpProc2 \
-	(tclIntStubsPtr->tclObjInterpProc2) /* 63 */
+#define TclObjInterpProc \
+	(tclIntStubsPtr->tclObjInterpProc) /* 63 */
 #define TclObjInvoke \
 	(tclIntStubsPtr->tclObjInvoke) /* 64 */
 /* Slot 65 is reserved */
