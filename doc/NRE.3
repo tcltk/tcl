@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_NRCreateCommand, Tcl_NRCallObjProc, Tcl_NREvalObj, Tcl_NREvalObjv, Tcl_NRCmdSwap, Tcl_NRExprObj, Tcl_NRAddCallback \- Non-Recursive (stackless) evaluation of Tcl scripts.
+Tcl_NRCreateCommand, Tcl_NRCreateCommand2, Tcl_NRCallObjProc, Tcl_NRCallObjProc2, Tcl_NREvalObj, Tcl_NREvalObjv, Tcl_NRCmdSwap, Tcl_NRExprObj, Tcl_NRAddCallback \- Non-Recursive (stackless) evaluation of Tcl scripts.
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -24,6 +24,9 @@ Tcl_Command
 .sp
 int
 \fBTcl_NRCallObjProc\fR(\fIinterp, nreProc, clientData, objc, objv\fR)
+.sp
+int
+\fBTcl_NRCallObjProc2\fR(\fIinterp, nreProc2, clientData, objc, objv\fR)
 .sp
 int
 \fBTcl_NREvalObj\fR(\fIinterp, objPtr, flags\fR)
@@ -52,7 +55,10 @@ Called in order to evaluate a command.  Is often just a small wrapper that uses
 in the same way as the \fIproc\fR argument to \fBTcl_CreateObjCommand\fR(3)
 (\fIq.v.\fR).
 .AP Tcl_ObjCmdProc2 *proc2 in
-Same as \fIproc\fR, but handles more arguments.
+Called in order to evaluate a command.  Is often just a small wrapper that uses
+\fBTcl_NRCallObjProc2\fR to call \fInreProc2\fR using a new trampoline.  Behaves
+in the same way as the \fIproc2\fR argument to \fBTcl_CreateObjCommand2\fR(3)
+(\fIq.v.\fR).
 .AP Tcl_ObjCmdProc *nreProc in
 Called instead of \fIproc\fR when a trampoline is already in use.
 .AP Tcl_ObjCmdProc2 *nreProc2 in
