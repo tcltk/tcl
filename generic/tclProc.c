@@ -2228,7 +2228,7 @@ TclUpdateReturnInfo(
 Tcl_ObjCmdProc *
 TclGetObjInterpProc(void)
 {
-    return (Tcl_ObjCmdProc *) TclObjInterpProc;
+    return TclObjInterpProc;
 }
 
 /*
