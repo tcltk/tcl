@@ -575,9 +575,9 @@ ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@ @TOMMATH_DLL_FILE@ ${TCL
 		  || echo 'ignore zip-error by adjust sfx process (not executable?)'; \
 	fi
 
-${TCL_LIB_FILE}: ${TCL_OBJS}
+${TCL_LIB_FILE}: ${TCL_OBJS} tclWinPanic.$(OBJEXT) ${DDE_OBJS} ${REG_OBJS}
 	@$(RM) ${TCL_LIB_FILE}
-	@MAKE_LIB@ ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
+	@MAKE_LIB@ ${TCL_OBJS} tclWinPanic.$(OBJEXT) ${DDE_OBJS} ${REG_OBJS}
 	@POST_MAKE_LIB@
 
 ${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
