@@ -87,14 +87,14 @@ EXTERN void		TclExprFloatError(Tcl_Interp *interp, double value);
 /* Slot 21 is reserved */
 /* 22 */
 EXTERN int		TclFindElement(Tcl_Interp *interp,
-				const char *listStr, int listLength,
+				const char *listStr, Tcl_Size listLength,
 				const char **elementPtr,
 				const char **nextPtr, Tcl_Size *sizePtr,
 				int *bracePtr);
 /* 23 */
 EXTERN Proc *		TclFindProc(Interp *iPtr, const char *procName);
 /* 24 */
-EXTERN size_t		TclFormatInt(char *buffer, Tcl_WideInt n);
+EXTERN Tcl_Size		TclFormatInt(char *buffer, Tcl_WideInt n);
 /* 25 */
 EXTERN void		TclFreePackageInfo(Interp *iPtr);
 /* Slot 26 is reserved */
@@ -603,9 +603,9 @@ typedef struct TclIntStubs {
     void (*reserved19)(void);
     void (*reserved20)(void);
     void (*reserved21)(void);
-    int (*tclFindElement) (Tcl_Interp *interp, const char *listStr, int listLength, const char **elementPtr, const char **nextPtr, Tcl_Size *sizePtr, int *bracePtr); /* 22 */
+    int (*tclFindElement) (Tcl_Interp *interp, const char *listStr, Tcl_Size listLength, const char **elementPtr, const char **nextPtr, Tcl_Size *sizePtr, int *bracePtr); /* 22 */
     Proc * (*tclFindProc) (Interp *iPtr, const char *procName); /* 23 */
-    size_t (*tclFormatInt) (char *buffer, Tcl_WideInt n); /* 24 */
+    Tcl_Size (*tclFormatInt) (char *buffer, Tcl_WideInt n); /* 24 */
     void (*tclFreePackageInfo) (Interp *iPtr); /* 25 */
     void (*reserved26)(void);
     void (*reserved27)(void);

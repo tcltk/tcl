@@ -493,7 +493,7 @@ TclFindElement(
     const char *list,		/* Points to the first byte of a string
 				 * containing a Tcl list with zero or more
 				 * elements (possibly in braces). */
-    int listLength,		/* Number of bytes in the list's string. */
+    size_t listLength,		/* Number of bytes in the list's string. */
     const char **elementPtr,	/* Where to put address of first significant
 				 * character in first element of list. */
     const char **nextPtr,	/* Fill in with location of character just

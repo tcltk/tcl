@@ -62,7 +62,7 @@ declare 16 {
 }
 declare 22 {
     int TclFindElement(Tcl_Interp *interp, const char *listStr,
-	    int listLength, const char **elementPtr, const char **nextPtr,
+	    Tcl_Size listLength, const char **elementPtr, const char **nextPtr,
 	    Tcl_Size *sizePtr, int *bracePtr)
 }
 declare 23 {
@@ -70,7 +70,7 @@ declare 23 {
 }
 # Replaced with macro (see tclInt.h) in Tcl 8.5.0, restored in 8.5.10
 declare 24 {
-    size_t TclFormatInt(char *buffer, Tcl_WideInt n)
+    Tcl_Size TclFormatInt(char *buffer, Tcl_WideInt n)
 }
 declare 25 {
     void TclFreePackageInfo(Interp *iPtr)
