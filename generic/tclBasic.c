@@ -9184,11 +9184,11 @@ int wrapperNRObjProc(
     int objc,
     Tcl_Obj *const objv[])
 {
-	CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
-	clientData = info->clientData;
-	Tcl_ObjCmdProc2 *proc = info->proc;
-	ckfree(info);
-	return proc(clientData, interp, objc, objv);
+    CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
+    clientData = info->clientData;
+    Tcl_ObjCmdProc2 *proc = info->proc;
+    ckfree(info);
+    return proc(clientData, interp, objc, objv);
 }
 
 int
