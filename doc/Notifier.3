@@ -413,10 +413,7 @@ threads for those threads to be able to add events to its queue.)
 After adding an event to another thread's queue, you then typically
 need to call \fBTcl_ThreadAlert\fR to
 .QW "wake up"
-that thread's notifier to alert it to the new event. Alternatively,
-the queue positions \fBTCL_QUEUE_TAIL_ALERT_IF_EMPTY\fR and
-\fBTCL_QUEUE_HEAD_ALERT_IF_EMPTY\fR can be used which automatically
-call \fBTcl_ThreadAlert\fR if the thread's queue was empty.
+that thread's notifier to alert it to the new event.
 .PP
 \fBTcl_DeleteEvents\fR can be used to explicitly remove one or more
 events from the event queue.  \fBTcl_DeleteEvents\fR calls \fIproc\fR
