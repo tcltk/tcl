@@ -1162,8 +1162,7 @@ TCLSH		= $(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX:t=).exe
 TCLSH           = $(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
 
-
-!if "$(TCL_MAJOR_VERSION)" == "8"
+!if $(TCL_MAJOR_VERSION) == 8
 TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib
 !else
 TCLSTUBLIB	= $(_TCLDIR)\lib\tclstub.lib
@@ -1187,7 +1186,7 @@ TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX:t=).exe
 !if !exist($(TCLSH))
 TCLSH		= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX:t=).exe
 !endif
-!if "$(TCL_MAJOR_VERSION)" == "8"
+!if $(TCL_MAJOR_VERSION) == 8
 TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib
 !else
 TCLSTUBLIB	= $(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub.lib
@@ -1427,7 +1426,7 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_DO64BIT
 OPTDEFINES	= $(OPTDEFINES) /DNO_STRTOI64=1
 !endif
 
-!if "$(TCL_MAJOR_VERSION)" == "8"
+!if $(TCL_MAJOR_VERSION) == 8
 !if "$(_USE_64BIT_TIME_T)" == "1"
 OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T=1
 !endif
