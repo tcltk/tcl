@@ -50,7 +50,7 @@ extern "C" {
 #if !defined(TCL_MAJOR_VERSION)
 #   define TCL_MAJOR_VERSION   9
 #endif
-#if (TCL_MAJOR_VERSION == 9)
+#if TCL_MAJOR_VERSION == 9
 #   define TCL_MINOR_VERSION   0
 #   define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
 #   define TCL_RELEASE_SERIAL  4
@@ -673,15 +673,10 @@ typedef union Tcl_ObjInternalRep {	/* The internal representation: */
  * An object stores a value as either a string, some internal representation,
  * or both.
  */
-#if TCL_MAJOR_VERSION < 9
-#   define Tcl_Size int
-#elif defined(TCL_8_COMPAT)
-#   ifdef BUILD_tcl
-#	error "TCL_8_COMPAT not supported when building Tcl"
-#   endif
-#   define Tcl_Size ptrdiff_t
-#else
+#if TCL_MAJOR_VERSION > 8
 #   define Tcl_Size size_t
+#else
+#   define Tcl_Size int
 #endif
 
 
