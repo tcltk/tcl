@@ -42,22 +42,22 @@ declare 2 {
     TCL_NORETURN void Tcl_Panic(const char *format, ...)
 }
 declare 3 {
-    void *Tcl_Alloc(size_t size)
+    void *Tcl_Alloc(TCL_HASH_TYPE size)
 }
 declare 4 {
     void Tcl_Free(void *ptr)
 }
 declare 5 {
-    void *Tcl_Realloc(void *ptr, size_t size)
+    void *Tcl_Realloc(void *ptr, TCL_HASH_TYPE size)
 }
 declare 6 {
-    void *Tcl_DbCkalloc(size_t size, const char *file, int line)
+    void *Tcl_DbCkalloc(TCL_HASH_TYPE size, const char *file, int line)
 }
 declare 7 {
     void Tcl_DbCkfree(void *ptr, const char *file, int line)
 }
 declare 8 {
-    void *Tcl_DbCkrealloc(void *ptr, size_t size,
+    void *Tcl_DbCkrealloc(void *ptr, TCL_HASH_TYPE size,
 	    const char *file, int line)
 }
 
@@ -905,7 +905,7 @@ declare 243 {
 # Removed in 9.0, replaced by macro.
 #declare 247 {
 #    int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
-#	    Tcl_VarTraceProc *proc, ClientData clientData)
+#	    Tcl_VarTraceProc *proc, void *clientData)
 #}
 declare 248 {
     int Tcl_TraceVar2(Tcl_Interp *interp, const char *part1, const char *part2,
@@ -935,7 +935,7 @@ declare 254 {
 # Removed in 9.0, replaced by macro.
 #declare 255 {
 #    void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
-#	    Tcl_VarTraceProc *proc, ClientData clientData)
+#	    Tcl_VarTraceProc *proc, void *clientData)
 #}
 declare 256 {
     void Tcl_UntraceVar2(Tcl_Interp *interp, const char *part1,
@@ -960,8 +960,8 @@ declare 259 {
 #}
 # Removed in 9.0, replaced by macro.
 #declare 261 {
-#    ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
-#	    int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)
+#    void *Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
+#	    int flags, Tcl_VarTraceProc *procPtr, void *prevClientData)
 #}
 declare 262 {
     void *Tcl_VarTraceInfo2(Tcl_Interp *interp, const char *part1,
@@ -1580,16 +1580,16 @@ declare 427 {
 	    int flags, Tcl_CommandTraceProc *proc, void *clientData)
 }
 declare 428 {
-    void *Tcl_AttemptAlloc(size_t size)
+    void *Tcl_AttemptAlloc(TCL_HASH_TYPE size)
 }
 declare 429 {
-    void *Tcl_AttemptDbCkalloc(size_t size, const char *file, int line)
+    void *Tcl_AttemptDbCkalloc(TCL_HASH_TYPE size, const char *file, int line)
 }
 declare 430 {
-    void *Tcl_AttemptRealloc(void *ptr, size_t size)
+    void *Tcl_AttemptRealloc(void *ptr, TCL_HASH_TYPE size)
 }
 declare 431 {
-    void *Tcl_AttemptDbCkrealloc(void *ptr, size_t size,
+    void *Tcl_AttemptDbCkrealloc(void *ptr, TCL_HASH_TYPE size,
 	    const char *file, int line)
 }
 declare 432 {
@@ -2416,7 +2416,7 @@ declare 636 {
 }
 declare 637 {
     char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
-	    size_t numBytes)
+	    TCL_HASH_TYPE numBytes)
 }
 declare 638 {
     Tcl_ObjInternalRep *Tcl_FetchInternalRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)

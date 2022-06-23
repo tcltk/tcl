@@ -3346,10 +3346,10 @@ TclCompileFormatCmd(
  * 	Returns the non-negative integer index value into the table of
  * 	compiled locals corresponding to a local scalar variable name.
  * 	If the arguments passed in do not identify a local scalar variable
- * 	then return -1.
+ * 	then return TCL_INDEX_NONE.
  *
  * Side effects:
- *	May add an entery into the table of compiled locals.
+ *	May add an entry into the table of compiled locals.
  *
  *----------------------------------------------------------------------
  */

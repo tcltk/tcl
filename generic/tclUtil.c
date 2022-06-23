@@ -493,7 +493,7 @@ TclFindElement(
     const char *list,		/* Points to the first byte of a string
 				 * containing a Tcl list with zero or more
 				 * elements (possibly in braces). */
-    int listLength,		/* Number of bytes in the list's string. */
+    size_t listLength,		/* Number of bytes in the list's string. */
     const char **elementPtr,	/* Where to put address of first significant
 				 * character in first element of list. */
     const char **nextPtr,	/* Fill in with location of character just
@@ -550,7 +550,7 @@ FindElement(
 				 * containing a Tcl list or dictionary with
 				 * zero or more elements (possibly in
 				 * braces). */
-    size_t stringLength1,		/* Number of bytes in the string. */
+    size_t stringLength,		/* Number of bytes in the string. */
     const char *typeStr,	/* The name of the type of thing we are
 				 * parsing, for error messages. */
     const char *typeCode,	/* The type code for thing we are parsing, for
@@ -572,13 +572,12 @@ FindElement(
     const char *p = string;
     const char *elemStart;	/* Points to first byte of first element. */
     const char *limit;		/* Points just after list/dict's last byte. */
-    int openBraces = 0;		/* Brace nesting level during parse. */
+    size_t openBraces = 0;		/* Brace nesting level during parse. */
     int inQuotes = 0;
-    int size = 0;
+    size_t size = 0;
     size_t numChars;
     int literal = 1;
     const char *p2;
-    int stringLength = stringLength1;
 
     /*
      * Skim off leading white space and check for an opening brace or quote.
@@ -976,7 +975,7 @@ Tcl_ScanCountedElement(
 				 * Tcl_ConvertElement. */
 {
     char flags = CONVERT_ANY;
-    int numBytes = TclScanElement(src, length, &flags);
+    size_t numBytes = TclScanElement(src, length, &flags);
 
     *flagPtr = flags;
     return numBytes;
@@ -1020,7 +1019,7 @@ TclScanElement(
 				 * Tcl_ConvertElement. */
 {
     const char *p = src;
-    int nestingLevel = 0;	/* Brace nesting count */
+    size_t nestingLevel = 0;	/* Brace nesting count */
     int forbidNone = 0;		/* Do not permit CONVERT_NONE mode. Something
 				 * needs protection or escape. */
     int requireEscape = 0;	/* Force use of CONVERT_ESCAPE mode.  For some
@@ -1089,8 +1088,7 @@ TclScanElement(
 	    braceCount++;
 #endif /* COMPAT */
 	    extra++;				/* Escape '}' => '\}' */
-	    nestingLevel--;
-	    if (nestingLevel < 0) {
+	    if (nestingLevel-- < 1) {
 		/*
 		 * Unbalanced braces!  Cannot format with brace quoting.
 		 */
@@ -1171,7 +1169,7 @@ TclScanElement(
     }
 
   endOfString:
-    if (nestingLevel != 0) {
+    if (nestingLevel > 0) {
 	/*
 	 * Unbalanced braces!  Cannot format with brace quoting.
 	 */
