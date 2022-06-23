@@ -80,7 +80,7 @@ declare 12 {
 #	    Tcl_DString *headPtr, char *tail, Tcl_GlobTypeData *types)
 #}
 declare 14 {
-    int TclDumpMemoryInfo(ClientData clientData, int flags)
+    int TclDumpMemoryInfo(void *clientData, int flags)
 }
 # Removed in 8.1:
 #  declare 15 {
@@ -227,11 +227,11 @@ declare 51 {
 #	    int flags)
 #}
 declare 53 {
-    int TclInvokeObjectCommand(ClientData clientData, Tcl_Interp *interp,
+    int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
 	    int argc, const char **argv)
 }
 declare 54 {
-    int TclInvokeStringCommand(ClientData clientData, Tcl_Interp *interp,
+    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 55 {
@@ -267,7 +267,7 @@ declare 62 {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
 declare 63 {
-    int TclObjInterpProc(ClientData clientData, Tcl_Interp *interp,
+    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 64 {
@@ -357,7 +357,7 @@ declare 81 {
 #      void TclPlatformInit(Tcl_Interp *interp)
 #  }
 declare 88 {deprecated {}} {
-    char *TclPrecTraceProc(ClientData clientData, Tcl_Interp *interp,
+    char *TclPrecTraceProc(void *clientData, Tcl_Interp *interp,
 	    const char *name1, const char *name2, int flags)
 }
 declare 89 {
@@ -377,7 +377,7 @@ declare 92 {
 	    const char *procName)
 }
 declare 93 {
-    void TclProcDeleteProc(ClientData clientData)
+    void TclProcDeleteProc(void *clientData)
 }
 # Removed in 8.5:
 #declare 94 {
@@ -459,7 +459,7 @@ declare 112 {
 }
 declare 113 {
     Tcl_Namespace *TclCreateNamespace(Tcl_Interp *interp, const char *name,
-	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
+	    void *clientData, Tcl_NamespaceDeleteProc *deleteProc)
 }
 declare 114 {
     void TclDeleteNamespace(Tcl_Namespace *nsPtr)
@@ -565,7 +565,7 @@ declare 141 {
 }
 declare 142 {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    CompileHookProc *hookProc, ClientData clientData)
+	    CompileHookProc *hookProc, void *clientData)
 }
 declare 143 {
     int TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr,
@@ -642,7 +642,7 @@ declare 161 {
 	    Tcl_Obj *cmdObjPtr)
 }
 declare 162 {
-    void TclChannelEventScriptInvoker(ClientData clientData, int flags)
+    void TclChannelEventScriptInvoker(void *clientData, int flags)
 }
 
 # ALERT: The result of 'TclGetInstructionTable' is actually a
@@ -940,7 +940,7 @@ declare 237 {
 # NRE functions for "rogue" extensions to exploit NRE; they will need to
 # include NRE.h too.
 declare 238 {
-    int TclNRInterpProc(ClientData clientData, Tcl_Interp *interp,
+    int TclNRInterpProc(void *clientData, Tcl_Interp *interp,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 239 {
