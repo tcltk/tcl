@@ -578,14 +578,6 @@ typedef struct Tcl_RegExpInfo {
 } Tcl_RegExpInfo;
 
 /*
- * Picky compilers complain if this typdef doesn't appear before the struct's
- * reference in tclDecls.h.
- */
-
-typedef Tcl_StatBuf *Tcl_Stat_;
-typedef struct stat *Tcl_OldStat_;
-
-/*
  *----------------------------------------------------------------------------
  * When a TCL command returns, the interpreter contains a result from the
  * command. Programmers are strongly encouraged to use one of the functions
