@@ -40,22 +40,22 @@ declare 2 {
     TCL_NORETURN void Tcl_Panic(const char *format, ...)
 }
 declare 3 {
-    char *Tcl_Alloc(unsigned int size)
+    char *Tcl_Alloc(TCL_HASH_TYPE size)
 }
 declare 4 {
     void Tcl_Free(char *ptr)
 }
 declare 5 {
-    char *Tcl_Realloc(char *ptr, unsigned int size)
+    char *Tcl_Realloc(char *ptr, TCL_HASH_TYPE size)
 }
 declare 6 {
-    char *Tcl_DbCkalloc(unsigned int size, const char *file, int line)
+    char *Tcl_DbCkalloc(TCL_HASH_TYPE size, const char *file, int line)
 }
 declare 7 {
     void Tcl_DbCkfree(char *ptr, const char *file, int line)
 }
 declare 8 {
-    char *Tcl_DbCkrealloc(char *ptr, unsigned int size,
+    char *Tcl_DbCkrealloc(char *ptr, TCL_HASH_TYPE size,
 	    const char *file, int line)
 }
 
@@ -1521,16 +1521,16 @@ declare 427 {
 	    int flags, Tcl_CommandTraceProc *proc, void *clientData)
 }
 declare 428 {
-    char *Tcl_AttemptAlloc(unsigned int size)
+    char *Tcl_AttemptAlloc(TCL_HASH_TYPE size)
 }
 declare 429 {
-    char *Tcl_AttemptDbCkalloc(unsigned int size, const char *file, int line)
+    char *Tcl_AttemptDbCkalloc(TCL_HASH_TYPE size, const char *file, int line)
 }
 declare 430 {
-    char *Tcl_AttemptRealloc(char *ptr, unsigned int size)
+    char *Tcl_AttemptRealloc(char *ptr, TCL_HASH_TYPE size)
 }
 declare 431 {
-    char *Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size,
+    char *Tcl_AttemptDbCkrealloc(char *ptr, TCL_HASH_TYPE size,
 	    const char *file, int line)
 }
 declare 432 {
@@ -2356,7 +2356,7 @@ declare 636 {
 }
 declare 637 {
     char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
-	    unsigned int numBytes)
+	    TCL_HASH_TYPE numBytes)
 }
 declare 638 {
     Tcl_ObjInternalRep *Tcl_FetchInternalRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr)
