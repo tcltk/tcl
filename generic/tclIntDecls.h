@@ -87,7 +87,7 @@ EXTERN void		TclExprFloatError(Tcl_Interp *interp, double value);
 /* Slot 21 is reserved */
 /* 22 */
 EXTERN int		TclFindElement(Tcl_Interp *interp,
-				const char *listStr, int listLength,
+				const char *listStr, size_t listLength,
 				const char **elementPtr,
 				const char **nextPtr, size_t *sizePtr,
 				int *bracePtr);
@@ -607,7 +607,7 @@ typedef struct TclIntStubs {
     void (*reserved19)(void);
     void (*reserved20)(void);
     void (*reserved21)(void);
-    int (*tclFindElement) (Tcl_Interp *interp, const char *listStr, int listLength, const char **elementPtr, const char **nextPtr, size_t *sizePtr, int *bracePtr); /* 22 */
+    int (*tclFindElement) (Tcl_Interp *interp, const char *listStr, size_t listLength, const char **elementPtr, const char **nextPtr, size_t *sizePtr, int *bracePtr); /* 22 */
     Proc * (*tclFindProc) (Interp *iPtr, const char *procName); /* 23 */
     size_t (*tclFormatInt) (char *buffer, Tcl_WideInt n); /* 24 */
     void (*tclFreePackageInfo) (Interp *iPtr); /* 25 */

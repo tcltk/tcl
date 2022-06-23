@@ -465,14 +465,6 @@ typedef struct Tcl_RegExpInfo {
 } Tcl_RegExpInfo;
 
 /*
- * Picky compilers complain if this typdef doesn't appear before the struct's
- * reference in tclDecls.h.
- */
-
-typedef Tcl_StatBuf *Tcl_Stat_;
-typedef struct stat *Tcl_OldStat_;
-
-/*
  *----------------------------------------------------------------------------
  * When a TCL command returns, the interpreter contains a result from the
  * command. Programmers are strongly encouraged to use one of the functions
@@ -1130,7 +1122,7 @@ typedef struct Tcl_HashSearch {
 typedef struct {
     void *next;			/* Search position for underlying hash
 				 * table. */
-    size_t epoch;		/* Epoch marker for dictionary being searched,
+    TCL_HASH_TYPE epoch; 	/* Epoch marker for dictionary being searched,
 				 * or 0 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;

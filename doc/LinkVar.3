@@ -53,7 +53,7 @@ used.
 .sp
 .VS "TIP 312"
 In \fBTcl_LinkArray\fR, the additional linked types \fBTCL_LINK_CHARS\fR and
-\fBTCL_LINK_BYTES\fR may be used.
+\fBTCL_LINK_BINARY\fR may be used.
 .VE "TIP 312"
 .sp
 All the above for both functions may be
@@ -146,11 +146,11 @@ prefix) are accepted as if they are valid too.
 .RS
 .PP
 .VS "TIP 312"
-If using an array of these, consider using \fBTCL_LINK_BYTES\fR instead.
+If using an array of these, consider using \fBTCL_LINK_BINARY\fR instead.
 .VE "TIP 312"
 .RE
 .TP
-\fBTCL_LINK_BYTES\fR
+\fBTCL_LINK_BINARY\fR
 .VS "TIP 312"
 The C array is of type \fBunsigned char *\fR and is mapped into Tcl
 as a bytearray.

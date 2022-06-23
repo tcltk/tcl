@@ -903,11 +903,11 @@ Tcl_ListObjLength(
  *
  *	Replace values in a list.
  *
- *	If 'first' is zero or negative, it refers to the first element. If
+ *	If 'first' is zero or TCL_INDEX_NONE, it refers to the first element. If
  *	'first' outside the range of elements in the list, no elements are
  *	deleted.
  *
- *	If 'count' is zero or negative no elements are deleted, and any new
+ *	If 'count' is zero or TCL_INDEX_NONE no elements are deleted, and any new
  *	elements are inserted at the beginning of the list.
  *
  * Value
@@ -993,7 +993,7 @@ Tcl_ListObjReplace(
     }
     if (count == TCL_INDEX_NONE) {
 	count = 0;
-    } else if (first > INT_MAX - count /* Handle integer overflow */
+    } else if (count > LIST_MAX /* Handle integer overflow */
 	    || numElems < first+count) {
 
 	count = numElems - first;
