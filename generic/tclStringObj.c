@@ -238,7 +238,7 @@ GrowUnicodeBuffer(
  *
  * Side effects:
  *	The new object's internal string representation will be set to a copy
- *	of the length bytes starting at "bytes". If "length" is negative, use
+ *	of the length bytes starting at "bytes". If "length" is TCL_INDEX_NONE, use
  *	bytes up to the first NUL byte; i.e., assume "bytes" points to a
  *	C-style NUL-terminated string. The object's type is set to NULL. An
  *	extra NUL is added to the end of the new object's byte array.
@@ -254,7 +254,7 @@ Tcl_NewStringObj(
 				 * used to initialize the new object. */
     size_t length)			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
-				 * negative, use bytes up to the first NUL
+				 * TCL_INDEX_NONE, use bytes up to the first NUL
 				 * byte. */
 {
     return Tcl_DbNewStringObj(bytes, length, "unknown", 0);
@@ -299,7 +299,7 @@ Tcl_NewStringObj(
  *
  * Side effects:
  *	The new object's internal string representation will be set to a copy
- *	of the length bytes starting at "bytes". If "length" is negative, use
+ *	of the length bytes starting at "bytes". If "length" is TCL_INDEX_NONE, use
  *	bytes up to the first NUL byte; i.e., assume "bytes" points to a
  *	C-style NUL-terminated string. The object's type is set to NULL. An
  *	extra NUL is added to the end of the new object's byte array.
@@ -886,7 +886,7 @@ TclGetRange(
  *
  * Side effects:
  *	The object's string representation will be set to a copy of the
- *	"length" bytes starting at "bytes". If "length" is negative, use bytes
+ *	"length" bytes starting at "bytes". If "length" is TCL_INDEX_NONE, use bytes
  *	up to the first NUL byte; i.e., assume "bytes" points to a C-style
  *	NUL-terminated string. The object's old string and internal
  *	representations are freed and the object's type is set NULL.
