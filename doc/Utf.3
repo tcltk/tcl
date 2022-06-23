@@ -134,7 +134,7 @@ A null-terminated utf-16 string.
 A null-terminated utf-16 string.
 .AP size_t length in
 The length of the UTF-8 string in bytes (not UTF-8 characters).  If
-negative, all bytes up to the first null byte are used.
+TCL_INDEX_NONE, all bytes up to the first null byte are used.
 .AP size_t uniLength in
 The length of the Unicode string in characters.
 .AP "Tcl_DString" *dsPtr in/out
@@ -253,7 +253,7 @@ know if a full Unicode character has been seen.
 \fBTcl_NumUtfChars\fR corresponds to \fBstrlen\fR for UTF-8 strings.  It
 returns the number of Tcl_UniChars that are represented by the UTF-8 string
 \fIsrc\fR.  The length of the source string is \fIlength\fR bytes.  If the
-length is negative, all bytes up to the first null byte are used.
+length is TCL_INDEX_NONE, all bytes up to the first null byte are used.
 .PP
 \fBTcl_UtfFindFirst\fR corresponds to \fBstrchr\fR for UTF-8 strings.  It
 returns a pointer to the first occurrence of the Unicode character \fIch\fR
