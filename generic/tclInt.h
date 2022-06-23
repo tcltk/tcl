@@ -423,8 +423,9 @@ struct NamespacePathEntry {
  */
 
 #define NS_DYING	0x01
-#define NS_TEARDOWN	0x02
-#define NS_DEAD		0x04
+#define NS_DEAD		0x02
+#define NS_TEARDOWN	0x04
+#define NS_KILLED	0x04 /* Same as NS_TEARDOWN (Deprecated) */
 #define NS_SUPPRESS_COMPILATION	0x08
 
 /*
