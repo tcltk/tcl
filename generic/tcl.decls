@@ -903,7 +903,7 @@ declare 243 {
 # Removed in 9.0, replaced by macro.
 #declare 247 {
 #    int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
-#	    Tcl_VarTraceProc *proc, ClientData clientData)
+#	    Tcl_VarTraceProc *proc, void *clientData)
 #}
 declare 248 {
     int Tcl_TraceVar2(Tcl_Interp *interp, const char *part1, const char *part2,
@@ -933,7 +933,7 @@ declare 254 {
 # Removed in 9.0, replaced by macro.
 #declare 255 {
 #    void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
-#	    Tcl_VarTraceProc *proc, ClientData clientData)
+#	    Tcl_VarTraceProc *proc, void *clientData)
 #}
 declare 256 {
     void Tcl_UntraceVar2(Tcl_Interp *interp, const char *part1,
@@ -957,8 +957,8 @@ declare 260 {
 }
 # Removed in 9.0, replaced by macro.
 #declare 261 {
-#    ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
-#	    int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)
+#    void *Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
+#	    int flags, Tcl_VarTraceProc *procPtr, void *prevClientData)
 #}
 declare 262 {
     void *Tcl_VarTraceInfo2(Tcl_Interp *interp, const char *part1,
