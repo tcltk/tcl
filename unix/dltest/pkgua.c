@@ -127,7 +127,7 @@ PkguaEqObjCmd(
 {
     int result;
     const char *str1, *str2;
-    int len1, len2;
+    Tcl_Size len1, len2;
     (void)dummy;
 
     if (objc != 3) {
