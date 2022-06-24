@@ -1518,7 +1518,7 @@ typedef struct LiteralEntry {
 				 * NULL if end of chain. */
     Tcl_Obj *objPtr;		/* Points to Tcl object that holds the
 				 * literal's bytes and length. */
-    TCL_HASH_TYPE refCount; /* If in an interpreter's global literal
+    size_t refCount;		/* If in an interpreter's global literal
 				 * table, the number of ByteCode structures
 				 * that share the literal object; the literal
 				 * entry can be freed when refCount drops to
