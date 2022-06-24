@@ -1844,7 +1844,14 @@ typedef struct Interp {
 #if TCL_MAJOR_VERSION > 8
     void (*optimizer)(void *envPtr);
 #else
-    Tcl_HashTable unused2; /* No longer used */
+    union {
+	void (*optimizer)(void *envPtr);
+	Tcl_HashTable unused2;	/* No longer used (was mathFuncTable). The
+				 * unused space in interp was repurposed for
+				 * pluggable bytecode optimizers. The core
+				 * contains one optimizer, which can be
+				 * selectively overridden by extensions. */
+    } extra;
 #endif
     /*
      * Information related to procedures and variables. See tclProc.c and
@@ -2462,11 +2469,20 @@ typedef struct List {
  * WARNING: these macros eval their args more than once.
  */
 
+#if TCL_MAJOR_VERSION > 8
 #define TclGetBooleanFromObj(interp, objPtr, intPtr) \
     (((objPtr)->typePtr == &tclIntType \
 	    || (objPtr)->typePtr == &tclBooleanType) \
 	? (*(intPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
 	: Tcl_GetBooleanFromObj((interp), (objPtr), (intPtr)))
+#else
+#define TclGetBooleanFromObj(interp, objPtr, intPtr) \
+    (((objPtr)->typePtr == &tclIntType)			\
+	? (*(intPtr) = ((objPtr)->internalRep.wideValue!=0), TCL_OK)	\
+	: ((objPtr)->typePtr == &tclBooleanType)			\
+	? (*(intPtr) = ((objPtr)->internalRep.longValue!=0), TCL_OK)	\
+	: Tcl_GetBooleanFromObj((interp), (objPtr), (intPtr)))
+#endif
 
 #ifdef TCL_WIDE_INT_IS_LONG
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
@@ -2491,7 +2507,7 @@ typedef struct List {
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
     ((((objPtr)->typePtr == &tclIntType) && ((objPtr)->internalRep.wideValue >= 0) \
 	    && ((Tcl_WideUInt)(objPtr)->internalRep.wideValue <= (Tcl_WideUInt)(endValue + 1))) \
-	    ? ((*(idxPtr) = (Tcl_Size)(objPtr)->internalRep.wideValue), TCL_OK) \
+	    ? ((*(idxPtr) = (objPtr)->internalRep.wideValue), TCL_OK) \
 	    : Tcl_GetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 
 /*
@@ -2966,8 +2982,7 @@ MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
 			    Tcl_ObjCmdProc *proc, Tcl_ObjCmdProc *nreProc,
-			    void *clientData,
-			    Tcl_CmdDeleteProc *deleteProc);
+			    void *clientData, Tcl_CmdDeleteProc *deleteProc);
 MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    const char *encodingName);
 MODULE_SCOPE void	TclFSUnloadTempFile(Tcl_LoadHandle loadHandle);
@@ -4663,7 +4678,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  * of counting along a string of all one-byte characters.  The ANSI C
  * "prototype" for this macro is:
  *
- * MODULE_SCOPE void	TclNumUtfCharsM(size_t numChars, const char *bytes,
+ * MODULE_SCOPE void	TclNumUtfCharsM(int | size_t numChars, const char *bytes,
  *				size_t numBytes);
  *----------------------------------------------------------------
  */
@@ -4836,7 +4851,7 @@ MODULE_SCOPE Tcl_LibraryInitProc Procbodytest_SafeInit;
 	TclAllocObjStorage(objPtr);			\
 	(objPtr)->refCount = 0;				\
 	(objPtr)->bytes = NULL;				\
-	(objPtr)->internalRep.wideValue = ((_w) == TCL_INDEX_NONE) ? -1 : (Tcl_WideInt)(_w); \
+	(objPtr)->internalRep.wideValue = ((size_t)(_w) == (size_t)TCL_INDEX_NONE) ? -1 : (Tcl_WideInt)(_w); \
 	(objPtr)->typePtr = &tclIntType;		\
 	TCL_DTRACE_OBJ_CREATE(objPtr);			\
     } while (0)
