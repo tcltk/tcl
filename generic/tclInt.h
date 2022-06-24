@@ -936,7 +936,7 @@ typedef struct CompiledLocal {
 				 * Among others used to speed up var lookups. */
     Tcl_Size frameIndex;		/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
-#if TCL_UTF_MAX < 9
+#if TCL_MAJOR_VERSION < 9
     int flags;
 #endif
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
@@ -949,7 +949,7 @@ typedef struct CompiledLocal {
 				 * is marked by a unique tag during
 				 * compilation, and that same tag is used to
 				 * find the variable at runtime. */
-#if TCL_UTF_MAX > 8
+#if TCL_MAJOR_VERSION > 8
     int flags;			/* Flag bits for the local variable. Same as
 				 * the flags for the Var structure above,
 				 * although only VAR_ARGUMENT, VAR_TEMPORARY,
@@ -1880,11 +1880,6 @@ typedef struct Interp {
 				 * interpreter. */
     Namespace *lookupNsPtr;	/* Namespace to use ONLY on the next
 				 * TCL_EVAL_INVOKE call to Tcl_EvalObjv. */
-
-    /*
-     * Information used by Tcl_AppendResult to keep track of partial results.
-     * See Tcl_AppendResult code for details.
-     */
 
 #if TCL_MAJOR_VERSION < 9
     char *appendResultDontUse;
