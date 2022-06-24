@@ -932,7 +932,7 @@ typedef struct CompiledLocal {
 				 * Among others used to speed up var lookups. */
     size_t frameIndex;		/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
-#if TCL_UTF_MAX < 9
+#if TCL_MAJOR_VERSION < 9
     int flags;
 #endif
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
@@ -945,7 +945,7 @@ typedef struct CompiledLocal {
 				 * is marked by a unique tag during
 				 * compilation, and that same tag is used to
 				 * find the variable at runtime. */
-#if TCL_UTF_MAX > 8
+#if TCL_MAJOR_VERSION > 8
     int flags;			/* Flag bits for the local variable. Same as
 				 * the flags for the Var structure above,
 				 * although only VAR_ARGUMENT, VAR_TEMPORARY,
@@ -1866,6 +1866,12 @@ typedef struct Interp {
     Namespace *lookupNsPtr;	/* Namespace to use ONLY on the next
 				 * TCL_EVAL_INVOKE call to Tcl_EvalObjv. */
 
+#if TCL_MAJOR_VERSION < 9
+    char *appendResultDontUse;
+    int appendAvlDontUse;
+    int appendUsedDontUse;
+#endif
+
     /*
      * Information about packages. Used only in tclPkg.c.
      */
@@ -1888,6 +1894,9 @@ typedef struct Interp {
 				 * Normally zero, but may be set before
 				 * calling Tcl_Eval. See below for valid
 				 * values. */
+#if TCL_MAJOR_VERSION < 9
+    int unused1;		/* No longer used (was termOffset) */
+#endif
     LiteralTable literalTable;	/* Contains LiteralEntry's describing all Tcl
 				 * objects holding literals of scripts
 				 * compiled by the interpreter. Indexed by the
@@ -1925,6 +1934,9 @@ typedef struct Interp {
 				 * string. Returned by Tcl_ObjSetVar2 when
 				 * variable traces change a variable in a
 				 * gross way. */
+#if TCL_MAJOR_VERSION < 9
+    char resultSpaceDontUse[TCL_DSTRING_STATIC_SIZE+1];
+#endif
     Tcl_Obj *objResultPtr;	/* If the last command returned an object
 				 * result, this points to it. Should not be
 				 * accessed directly; see comment above. */
