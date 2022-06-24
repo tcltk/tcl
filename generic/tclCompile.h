@@ -417,7 +417,7 @@ typedef struct ByteCode {
 				 * procs are specific to an interpreter so the
 				 * code emitted will depend on the
 				 * interpreter. */
-    TCL_HASH_TYPE compileEpoch;	/* Value of iPtr->compileEpoch when this
+    int compileEpoch;		/* Value of iPtr->compileEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when, e.g., commands with compile
 				 * procs are redefined. */
@@ -425,11 +425,11 @@ typedef struct ByteCode {
 				 * compiled. If the code is executed if a
 				 * different namespace, it must be
 				 * recompiled. */
-    TCL_HASH_TYPE nsEpoch;	/* Value of nsPtr->resolverEpoch when this
+    int nsEpoch;		/* Value of nsPtr->resolverEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when new namespace resolution rules
 				 * are put into effect. */
-    TCL_HASH_TYPE refCount;	/* Reference count: set 1 when created plus 1
+    int refCount;		/* Reference count: set 1 when created plus 1
 				 * for each execution of the code currently
 				 * active. This structure can be freed when
 				 * refCount becomes zero. */
