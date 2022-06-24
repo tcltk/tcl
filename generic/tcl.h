@@ -47,7 +47,12 @@ extern "C" {
  * unix/tcl.spec	(1 LOC patch)
  */
 
+#if !defined(TCL_MAJOR_VERSION)
 #define TCL_MAJOR_VERSION   9
+#endif
+#if TCL_MAJOR_VERSION != 9
+#error "This header-file is for Tcl 9 only"
+#endif
 #define TCL_MINOR_VERSION   0
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
 #define TCL_RELEASE_SERIAL  4
