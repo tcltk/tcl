@@ -341,12 +341,12 @@ typedef struct ResolvedCmdName {
 				 * it's possible that the cmd's containing
 				 * namespace was deleted and a new one created
 				 * at the same address). */
-    unsigned int refNsCmdEpoch;	/* Value of the referencing namespace's
+    int refNsCmdEpoch;		/* Value of the referencing namespace's
 				 * cmdRefEpoch when the pointer was cached.
 				 * Before using the cached pointer, we check
 				 * if the namespace's epoch was incremented;
 				 * if so, this cached pointer is invalid. */
-    unsigned int cmdEpoch; /* Value of the command's cmdEpoch when this
+    int cmdEpoch;		/* Value of the command's cmdEpoch when this
 				 * pointer was cached. Before using the cached
 				 * pointer, we check if the cmd's epoch was
 				 * incremented; if so, the cmd was renamed,

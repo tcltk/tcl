@@ -369,7 +369,7 @@ TclOOInvokeContext(
      * Run the method implementation.
      */
 
-    if (mPtr->typePtr->version == TCL_OO_METHOD_VERSION_1) {
+    if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
 	return (mPtr->typePtr->callProc)(mPtr->clientData, interp,
 		(Tcl_ObjectContext) contextPtr, objc, objv);
     }

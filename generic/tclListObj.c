@@ -1022,7 +1022,7 @@ Tcl_ListObjReplace(
     }
     if (count < 0) {
 	count = 0;
-    } else if (first > INT_MAX - count /* Handle integer overflow */
+    } else if (count > LIST_MAX /* Handle integer overflow */
 	    || numElems < first+count) {
 
 	count = numElems - first;

@@ -203,7 +203,7 @@ Tcl_NewInstanceMethod2(
     void *clientData)		/* Some data associated with the particular
 				 * method to be created. */
 {
-    if (typePtr->version == TCL_OO_METHOD_VERSION_1) {
+    if (typePtr->version < TCL_OO_METHOD_VERSION_2) {
 	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_2", "Tcl_NewInstanceMethod2");
     }
     return Tcl_NewInstanceMethod(NULL, object, nameObj, flags,
@@ -293,7 +293,7 @@ Tcl_NewMethod2(
     void *clientData)		/* Some data associated with the particular
 				 * method to be created. */
 {
-    if (typePtr->version == TCL_OO_METHOD_VERSION_1) {
+    if (typePtr->version < TCL_OO_METHOD_VERSION_2) {
 	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_2", "Tcl_NewMethod2");
     }
     return Tcl_NewMethod(NULL, cls, nameObj, flags, (const Tcl_MethodType *)typePtr, clientData);
@@ -1739,8 +1739,8 @@ Tcl_MethodIsType2(
 {
     Method *mPtr = (Method *) method;
 
-    if (typePtr->version == TCL_OO_METHOD_VERSION_1) {
-	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_2", "Tcl_NewInstanceMethod2");
+    if (typePtr->version < TCL_OO_METHOD_VERSION_2) {
+	Tcl_Panic("%s: Wrong version in typePtr->version, should be TCL_OO_METHOD_VERSION_2", "Tcl_MethodIsType2");
     }
     if (mPtr->typePtr == (const Tcl_MethodType *)typePtr) {
 	if (clientDataPtr != NULL) {
