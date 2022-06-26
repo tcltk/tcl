@@ -877,6 +877,12 @@ TCL_THREADS = 0
 USE_THREAD_ALLOC= 0
 !endif
 
+!if [nmakehlp -f $(OPTS) "tcl8"]
+!message *** Build for Tcl8
+TCL_MAJOR_VERSION = 8
+!endif
+!endif
+
 !if $(TCL_MAJOR_VERSION) == 8
 !if [nmakehlp -f $(OPTS) "time64bit"]
 !message *** Force 64-bit time_t
@@ -1444,6 +1450,9 @@ COMPILERFLAGS  = /D_ATL_XP_TARGETING
 !endif
 !if "$(TCL_UTF_MAX)" == "3"
 OPTDEFINES	= $(OPTDEFINES) /DTCL_UTF_MAX=3
+!endif
+!if "$(TCL_MAJOR_VERSION)" == "8"
+OPTDEFINES	= $(OPTDEFINES) /DTCL_MAJOR_VERSION=8
 !endif
 
 # Like the TEA system only set this non empty for non-Tk extensions
