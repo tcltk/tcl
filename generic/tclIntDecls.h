@@ -1265,6 +1265,15 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclStaticLibrary)
 #endif /* defined(USE_TCL_STUBS) */
 
+#if (TCL_MAJOR_VERSION < 9) && defined(USE_TCL_STUBS)
+#undef TclpGetClicks
+#define TclpGetClicks() \
+		((unsigned long)tclIntStubsPtr->tclpGetClicks())
+#undef TclpGetSeconds
+#define TclpGetSeconds() \
+		((unsigned long)tclIntStubsPtr->tclpGetSeconds())
+#endif
+
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
