@@ -13,6 +13,11 @@
 #ifndef _TCLINTPLATDECLS
 #define _TCLINTPLATDECLS
 
+
+#if TCL_MAJOR_VERSION < 9
+#error "This header-file only works for Tcl 9"
+#endif
+
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
 #   define TCL_STORAGE_CLASS DLLEXPORT
