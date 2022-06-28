@@ -10,7 +10,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#define TCL_CONSOLE_DEBUG
 #ifdef TCL_CONSOLE_DEBUG
 #undef NDEBUG /* Enable asserts */
 #endif
@@ -55,7 +54,14 @@
 
 static int initialized = 0;
 
-#define CONSOLE_BUFFER_SIZE 8000 // TODO - must be at least 2 :-)
+#ifdef TCL_CONSOLE_DEBUG
+#ifndef CONSOLE_BUFFER_SIZE
+/*  Force tiny to stress synchronization. Must be at least sizeof(WCHAR) :-) */
+#define CONSOLE_BUFFER_SIZE 10
+#endif
+#else
+#define CONSOLE_BUFFER_SIZE 4000 /* In bytes */
+#endif
 
 /*
  * Ring buffer for storing data. Actual data is from bufPtr[start]:bufPtr[size-1]
@@ -227,9 +233,7 @@ static ConsoleHandleInfo *AllocateConsoleHandleInfo(HANDLE consoleHandle,
 static ConsoleHandleInfo *FindConsoleInfo(const ConsoleChannelInfo *);
 static DWORD WINAPI	ConsoleReaderThread(LPVOID arg);
 static DWORD WINAPI	ConsoleWriterThread(LPVOID arg);
-#ifdef OBSOLETE
-static int	WaitForRead(ConsoleChannelInfo *infoPtr, int blocking);
-#endif
+static void		NudgeWatchers(HANDLE consoleHandle);
 
 /*
  * Static data.
@@ -251,10 +255,6 @@ static Tcl_ThreadDataKey dataKey;
  * likely not only complicate implementation but be slower due to multiple
  * locks being held. Note console channels also differ from other Tcl
  * channel types in that the channel<->OS descriptor mapping is not one-to-one.
- *
- * The gConsoleLock locks around access to the initialized variable, and it
- * is used to protect background threads from being terminated while they
- * are using APIs that hold locks. TBD - is this still true?
  */
 SRWLOCK gConsoleLock;
 
@@ -374,7 +374,6 @@ RingBufferIn(
     )
 {
     RingSizeT freeSpace;
-    RingSizeT endSpace;
 
     RINGBUFFER_ASSERT(ringPtr);
 
@@ -387,23 +386,25 @@ RingBufferIn(
 	srcLen = freeSpace;
     }
 
-    /* Copy as much as possible to the tail */
     if (ringPtr->capacity - ringPtr->start > ringPtr->length) {
 	/* There is room at the back */
 	RingSizeT endSpaceStart = ringPtr->start + ringPtr->length;
-	endSpace = ringPtr->capacity - endSpaceStart;
-	if (endSpace > srcLen) {
-	    endSpace = srcLen;
+	RingSizeT endSpace      = ringPtr->capacity - endSpaceStart;
+	if (endSpace >= srcLen) {
+	    /* Everything fits at the back */
+	    memmove(endSpaceStart + ringPtr->bufPtr, srcPtr, srcLen);
 	}
-	memmove(endSpaceStart + ringPtr->bufPtr, srcPtr, endSpace);
+	else {
+	    /* srcLen > endSpace */
+	    memmove(endSpaceStart + ringPtr->bufPtr, srcPtr, endSpace);
+	    memmove(ringPtr->bufPtr, endSpace + srcPtr, srcLen - endSpace);
+	}
     }
     else {
-	endSpace = 0;
-    }
-
-    /* Wrap around any left over data. Have already copied endSpace bytes */
-    if (srcLen > endSpace) {
-	memmove(ringPtr->bufPtr, endSpace + srcPtr, srcLen - endSpace);
+	/* No room at the back. Existing data wrap to front. */
+	RingSizeT wrapLen =
+	    ringPtr->start + ringPtr->length - ringPtr->capacity;
+	memmove(wrapLen + ringPtr->bufPtr, srcPtr, srcLen);
     }
 
     ringPtr->length += srcLen;
@@ -716,6 +717,43 @@ ProcExitHandler(
 }
 
 /*
+ *------------------------------------------------------------------------
+ *
+ * NudgeWatchers --
+ *
+ *    Wakes up all threads which have file event watchers on the passed
+ *    console handle.
+ *
+ *    The function locks and releases gConsoleLock.
+ *    Caller must not be holding locks that will violate lock hierarchy.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    As above.
+ *------------------------------------------------------------------------
+ */
+void NudgeWatchers (HANDLE consoleHandle)
+{
+    ConsoleChannelInfo *chanInfoPtr;
+    AcquireSRWLockShared(&gConsoleLock); /* Shared-read lock */
+    for (chanInfoPtr = gWatchingChannelList; chanInfoPtr;
+	 chanInfoPtr = chanInfoPtr->nextWatchingChannelPtr) {
+	/*
+	 * Notify channels interested in our handle AND that have
+	 * a thread attached.
+	 * No lock needed for chanInfoPtr. See ConsoleChannelInfo.
+	 */
+	if (chanInfoPtr->handle == consoleHandle
+	    && chanInfoPtr->threadId != NULL) {
+	    Tcl_ThreadAlert(chanInfoPtr->threadId);
+	}
+    }
+    ReleaseSRWLockShared(&gConsoleLock);
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * ConsoleSetupProc --
@@ -760,10 +798,12 @@ ConsoleSetupProc(
 	if (handleInfoPtr != NULL) {
 	    AcquireSRWLockShared(&handleInfoPtr->lock);
 	    if ((chanInfoPtr->watchMask & TCL_READABLE)
-		&& RingBufferLength(&handleInfoPtr->buffer) > 0) {
+		&& (RingBufferLength(&handleInfoPtr->buffer) > 0
+		    || handleInfoPtr->lastError != ERROR_SUCCESS)) {
 		block = 0; /* Input data available */
 	    }
 	    else if (RingBufferFreeSpace(&handleInfoPtr->buffer) > 0) {
+		/* TCL_WRITABLE */
 		block = 0; /* Output space available */
 	    }
 	    ReleaseSRWLockShared(&handleInfoPtr->lock);
@@ -837,8 +877,9 @@ ConsoleCheckProc(
 	if (handleInfoPtr != NULL) {
 	    AcquireSRWLockShared(&handleInfoPtr->lock);
 	    if ((chanInfoPtr->watchMask & TCL_READABLE)
-		&& RingBufferLength(&handleInfoPtr->buffer) > 0) {
-		needEvent = 1; /* Input data available */
+		&& (RingBufferLength(&handleInfoPtr->buffer) > 0
+		    || handleInfoPtr->lastError != ERROR_SUCCESS)) {
+		needEvent = 1; /* Input data available or error/EOF */
 	    }
 	    else if (RingBufferFreeSpace(&handleInfoPtr->buffer) > 0) {
 		needEvent = 1; /* Output space available */
@@ -974,7 +1015,7 @@ ConsoleCloseProc(
 	 * Don't close the Win32 handle if the handle is a standard channel
 	 * during the thread exit process. Otherwise, one thread may kill the
 	 * stdio of another. TODO - an explicit close in script will still close
-	 * it.
+	 * it. Is that desired behavior?
 	 */
 	if (!TclInThreadExit()
 	    || ((GetStdHandle(STD_INPUT_HANDLE) != chanInfoPtr->handle)
@@ -1050,8 +1091,8 @@ ConsoleInputProc(
 	/*
 	 * No data available.
 	 *  - If an error was recorded, generate that and reset it.
-	 *  - If EOF, indicate as much. TODO - can console thread still be
-	 * running in that case?
+	 *  - If EOF, indicate as much. It is up to application to close
+	 *    the channel.
 	 *  - Otherwise, if non-blocking return EAGAIN or wait for more data.
 	 */
 	if (handleInfoPtr->lastError != 0) {
@@ -1374,112 +1415,6 @@ ConsoleGetHandleProc(
     return TCL_OK;
 }
 
-#ifdef OBSOLETE
-/*
- *----------------------------------------------------------------------
- *
- * WaitForRead --
- *
- *	Wait until some data is available, the console is at EOF or the reader
- *	thread is blocked waiting for data (if the channel is in non-blocking
- *	mode).
- *
- * Results:
- *	Returns 1 if console is readable. Returns 0 if there is no data on the
- *	console, but there is buffered data. Returns -1 if an error occurred.
- *	If an error occurred, the threads may not be synchronized.
- *
- * Side effects:
- *	Updates the shared state flags. If no error occurred, the reader
- *	thread is blocked waiting for a signal from the main thread.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-WaitForRead(
-    ConsoleChannelInfo *infoPtr,	/* Console state. */
-    int blocking)		/* Indicates whether call should be blocking
-				 * or not. */
-{
-    DWORD timeout, count;
-    HANDLE *handle = (HANDLE *)infoPtr->handle;
-    ConsoleThreadInfo *threadInfo = &infoPtr->reader;
-    INPUT_RECORD input;
-
-    while (1) {
-	/*
-	 * Synchronize with the reader thread.
-	 */
-
-	/* avoid blocking if pipe-thread exited */
-	timeout = (!blocking || !TclPipeThreadIsAlive(&threadInfo->TI)
-		|| TclInExit() || TclInThreadExit()) ? 0 : INFINITE;
-	if (WaitForSingleObject(threadInfo->readyEvent, timeout) == WAIT_TIMEOUT) {
-	    /*
-	     * The reader thread is blocked waiting for data and the channel
-	     * is in non-blocking mode.
-	     */
-
-	    errno = EWOULDBLOCK;
-	    return -1;
-	}
-
-	/*
-	 * At this point, the two threads are synchronized, so it is safe to
-	 * access shared state.
-	 */
-
-	/*
-	 * If the console has hit EOF, it is always readable.
-	 */
-
-	if (infoPtr->readFlags & CONSOLE_EOF) {
-	    return 1;
-	}
-
-	if (PeekConsoleInputW(handle, &input, 1, &count) == FALSE) {
-	    /*
-	     * Check to see if the peek failed because of EOF.
-	     */
-
-	    Tcl_WinConvertError(GetLastError());
-
-	    if (errno == EOF) {
-		infoPtr->readFlags |= CONSOLE_EOF;
-		return 1;
-	    }
-
-	    /*
-	     * Ignore errors if there is data in the buffer.
-	     */
-
-	    if (infoPtr->readFlags & CONSOLE_BUFFERED) {
-		return 0;
-	    } else {
-		return -1;
-	    }
-	}
-
-	/*
-	 * If there is data in the buffer, the console must be readable (since
-	 * it is a line-oriented device).
-	 */
-
-	if (infoPtr->readFlags & CONSOLE_BUFFERED) {
-	    return 1;
-	}
-
-	/*
-	 * There wasn't any data available, so reset the thread and try again.
-	 */
-
-	ResetEvent(threadInfo->readyEvent);
-	TclPipeThreadSignal(&threadInfo->TI);
-    }
-}
-#endif
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1526,48 +1461,74 @@ ConsoleReaderThread(
     while (1) {
 
 	if (handleInfoPtr->numRefs == 1) {
-	    /* Sole reference. That's this thread. Exit since no one clients */
+	    /*
+	     * Sole reference. That's this thread. Exit since no clients
+	     * and no way for a thread to attach to a console after process
+	     * start.
+	     */
 	    break;
 	}
 
+	/*
+	 * Cases:
+	 * (1) The shared input buffer is full. Have to wait for an interp
+	 *     thread to read from it and make room.
+	 * (2) The shared input buffer has room and the thread private buffer
+	 *     has data. Copy into the shared input buffer.
+	 * (3) The channel has previously seen an error. Treat as EOF. Note
+	 *     this check is after the above so any data already available
+	 *     is passed on.
+	 * (4) Neither buffer has data and no errors. Go get some from console.
+	 *
+	 * There is some duplication of code below but easier to think about
+	 * rather than combining cases.
+	 */
 	if (RingBufferFreeSpace(&handleInfoPtr->buffer) == 0) {
-	    /* No room in buffer. Awaken any reader channels */
+	    /* Case (1) No room in buffer.*/
+
+	    /* Awaken any reader channels - TODO - is this really needed? */
 	    WakeConditionVariable(&handleInfoPtr->interpThreadCV);
-		/* XXX - does not wake up fileevent channels! */
 
 	    /* Release lock and wait for room */
 	    success = SleepConditionVariableSRW(&handleInfoPtr->consoleThreadCV,
 						&handleInfoPtr->lock,
 						INFINITE,
 						0);
-	    /* Note: lock has been acquired again! */
+	    /* Note: lock has been reacquired */
 
 	    if (!success && GetLastError() != ERROR_TIMEOUT) {
 		/* TODO - what can be done? Should not happen */
 		/* For now keep going */
 	    }
-	    continue; /* Restart loop so we can check for exit conditions */
-	}
-
-	/*
-	 * The shared buffer now has room. If we had any leftover from last
-	 * read, store that.
-	 */
-	if (inputLen > 0) {
-	    RingSizeT nStored;
+	} else if (inputLen > 0 || handleInfoPtr->lastError != 0) {
+	    /* Cases (2) and (3) - require notifications to interpreters */
 	    HANDLE consoleHandle;
-	    ConsoleChannelInfo *chanInfoPtr;
+	    if (inputLen > 0) {
+		/*
+		 * Case (2). Private buffer has data. Copy it over.
+		 */
+		RingSizeT nStored;
 
-	    nStored = RingBufferIn(&handleInfoPtr->buffer,
-				   inputOffset + inputChars,
-				   inputLen - inputOffset,
-				   1);
-	    inputOffset += nStored;
-	    if (inputOffset == inputLen) {
-		/* Temp buffer now empty */
-		inputOffset = 0;
-		inputLen = 0;
+		assert((inputLen - inputOffset) > 0);
+
+		nStored = RingBufferIn(&handleInfoPtr->buffer,
+				       inputOffset + inputChars,
+				       inputLen - inputOffset,
+				       1);
+		inputOffset += nStored;
+		if (inputOffset == inputLen) {
+		    /* Temp buffer now empty */
+		    inputOffset = 0;
+		    inputLen = 0;
+		}
 	    }
+	    else {
+		/*
+		 * Case (3). On error, nothing but inform caller and wait
+		 * We do not want to exit until there are no client interps.
+		 */
+	    }
+
 	    /* Wake up any threads waiting synchronously. */
 	    WakeConditionVariable(&handleInfoPtr->interpThreadCV);
 
@@ -1578,38 +1539,33 @@ ConsoleReaderThread(
 	     * relock it.
 	     */
 	    consoleHandle = handleInfoPtr->console;
+	    /*
+	     * Wake up all channels registered for file events. Note in
+	     * order to follow the locking hierarchy, we cannot hold any locks
+	     * when calling NudgeWatchers.
+	     */
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
-	    AcquireSRWLockShared(&gConsoleLock); /* Shared-read lock */
-	    for (chanInfoPtr = gWatchingChannelList; chanInfoPtr;
-		 chanInfoPtr = chanInfoPtr->nextWatchingChannelPtr) {
-		/*
-		 * Notify channels interested in our handle AND that have
-		 * a thread attached.
-		 * No lock needed for chanInfoPtr. See ConsoleChannelInfo.
-		 */
-		if (chanInfoPtr->handle == consoleHandle
-		    && chanInfoPtr->threadId != NULL) {
-		    Tcl_ThreadAlert(chanInfoPtr->threadId);
-		}
-	    }
-	    ReleaseSRWLockShared(&gConsoleLock);
-	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
-	    continue; /* Restart loop */
-	}
+	    NudgeWatchers(consoleHandle);
 
-	/*
-	 * Need to go get more data from console. We only store the last
-	 * error. It is up to channel handlers to decide whether to close or
-	 * what to do.
-	 */
-	ReleaseSRWLockExclusive(&handleInfoPtr->lock);
-	handleInfoPtr->lastError =
-	    ReadConsoleChars(handleInfoPtr->console,
-			     (WCHAR *)inputChars,
-			     sizeof(inputChars) / sizeof(WCHAR),
-			     &inputLen);
-	inputLen *= sizeof(WCHAR);
-	AcquireSRWLockExclusive(&handleInfoPtr->lock);
+	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
+	}
+	else {
+	    /*
+	     * Case (4). Need to go get more data from console. We only
+	     * store the last error. It is up to channel handlers to decide
+	     * whether to close or what to do.
+	     */
+	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
+	    handleInfoPtr->lastError =
+		ReadConsoleChars(handleInfoPtr->console,
+				 (WCHAR *)inputChars,
+				 sizeof(inputChars) / sizeof(WCHAR),
+				 &inputLen);
+	    if (handleInfoPtr->lastError == 0) {
+		inputLen *= sizeof(WCHAR);
+	    }
+	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
+	}
     }
 
     /*
@@ -1617,6 +1573,8 @@ ConsoleReaderThread(
      * - remove the console from global list
      * - close the handle if still valid
      * - release the structure
+     * Note there is not need to check for any watchers because we only
+     * exit when there are no channels open to this console.
      */
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
     AcquireSRWLockExclusive(&gConsoleLock); /* Modifying - exclusive lock */
@@ -1632,14 +1590,15 @@ ConsoleReaderThread(
     /* No need for relocking - no other thread should have access to it now */
     RingBufferClear(&handleInfoPtr->buffer);
 
-    if (handleInfoPtr->console) {
+    if (handleInfoPtr->console
+	&& handleInfoPtr->lastError != ERROR_INVALID_HANDLE) {
 	SetConsoleMode(handleInfoPtr->console, handleInfoPtr->initMode);
+	/*
+	 * NOTE: we do not call CloseHandle(handleInfoPtr->console)
+	 * As per the GetStdHandle documentation, it need not be closed.
+	 * TODO - what about when application closes and re-opens? - Test
+	 */
     }
-    /*
-     * NOTE: we do not call CloseHandle(handleInfoPtr->console)
-     * As per the GetStdHandle documentation, it need not be closed.
-     * TODO - what about when application closes and re-opens? - Test
-     */
 
     ckfree(handleInfoPtr);
 
@@ -1669,8 +1628,13 @@ ConsoleWriterThread(LPVOID arg)
     ConsoleHandleInfo **iterator;
     ConsoleChannelInfo *chanInfoPtr = NULL;
     BOOL success;
-    char buffer[4000];
-    RingSizeT length;
+    RingSizeT numBytes;
+    /*
+     * This buffer size has no relation really with the size of the shared
+     * buffer. Could be bigger or smaller. Make larger as multiple threads
+     * could potentially be writing to it.
+     */
+    char buffer[2*CONSOLE_BUFFER_SIZE];
 
     /*
      * Keep looping until one of the following happens.
@@ -1698,9 +1662,9 @@ ConsoleWriterThread(LPVOID arg)
 	 * WCHAR's, i.e. even number of chars so do some length checks up
 	 * front.
 	 */
-	length = RingBufferLength(&handleInfoPtr->buffer);
-	length &= ~1; /* Copy integral number of WCHARs -> even number of bytes */
-	if (length == 0) {
+	numBytes = RingBufferLength(&handleInfoPtr->buffer);
+	numBytes &= ~1; /* Copy integral number of WCHARs -> even number of bytes */
+	if (numBytes == 0) {
 	    /* No data to write */
 	    if (handleInfoPtr->numRefs == 1) {
 		/*
@@ -1724,20 +1688,23 @@ ConsoleWriterThread(LPVOID arg)
 	}
 
 	/* We have data to write */
-	if (length > (sizeof(buffer) / sizeof(buffer[0]))) {
-	    length = sizeof(buffer);
+	if (numBytes > (sizeof(buffer) / sizeof(buffer[0]))) {
+	    numBytes = sizeof(buffer);
 	}
 	/* No need to check result, we already checked length bytes available */
-	RingBufferOut(&handleInfoPtr->buffer, buffer, length, 0);
+	RingBufferOut(&handleInfoPtr->buffer, buffer, numBytes, 0);
 
+	consoleHandle = handleInfoPtr->console;
 	WakeConditionVariable(&handleInfoPtr->interpThreadCV);
 	ReleaseSRWLockExclusive(&handleInfoPtr->lock);
 	offset = 0;
-	while (length > 0) {
-	    RingSizeT numWChars = length / sizeof(WCHAR);
+	while (numBytes > 0) {
+	    RingSizeT numWChars = numBytes / sizeof(WCHAR);
 	    DWORD status;
-	    status = WriteConsoleChars(
-		handleInfoPtr->console, (WCHAR *) (offset + buffer) , numWChars, &numWChars);
+	    status = WriteConsoleChars(handleInfoPtr->console,
+				       (WCHAR *)(offset + buffer),
+				       numWChars,
+				       &numWChars);
 	    if (status != 0) {
 		/* Only overwrite if no previous error */
 		if (handleInfoPtr->lastError == 0) {
@@ -1749,33 +1716,19 @@ ConsoleWriterThread(LPVOID arg)
 		 */
 		break;
 	    }
-	    length -= numWChars * sizeof(WCHAR);
+	    numBytes -= numWChars * sizeof(WCHAR);
 	    offset += numWChars * sizeof(WCHAR);
 	}
 
-	/*
-	 * Wake up all channels registered for file events. Note in
-	 * order to follow the locking hierarchy, we need to release
-	 * handleInfoPtr->lock before acquiring gConsoleLock and
-	 * relock it.
-	 */
 	/* Wake up any threads waiting synchronously. */
 	WakeConditionVariable(&handleInfoPtr->interpThreadCV);
-	AcquireSRWLockShared(&gConsoleLock); /* Shared-read lock */
-	consoleHandle = handleInfoPtr->console;
-	for (chanInfoPtr = gWatchingChannelList; chanInfoPtr;
-	     chanInfoPtr = chanInfoPtr->nextWatchingChannelPtr) {
-	    /*
-	     * Notify channels interested in our handle AND that have
-	     * a thread attached.
-	     * No lock needed for chanInfoPtr. See ConsoleChannelInfo.
-	     */
-	    if (chanInfoPtr->handle == consoleHandle
-		&& chanInfoPtr->threadId != NULL) {
-		Tcl_ThreadAlert(chanInfoPtr->threadId);
-	    }
-	}
-	ReleaseSRWLockShared(&gConsoleLock);
+	/*
+	 * Wake up all channels registered for file events. Note in
+	 * order to follow the locking hierarchy, we cannot hold any locks
+	 * when calling NudgeWatchers.
+	 */
+	NudgeWatchers(consoleHandle);
+
 	AcquireSRWLockExclusive(&handleInfoPtr->lock);
     }
 
