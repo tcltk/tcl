@@ -5115,9 +5115,7 @@ typedef struct NRE_callback {
 #endif
 
 #include "tclIntDecls.h"
-#if TCL_MAJOR_VERSION > 8
-#   include "tclIntPlatDecls.h"
-#endif
+#include "tclIntPlatDecls.h"
 
 #if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
 #define Tcl_AttemptAlloc        TclpAlloc
