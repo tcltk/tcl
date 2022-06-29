@@ -60,7 +60,7 @@ static int initialized = 0;
 #define CONSOLE_BUFFER_SIZE 10
 #endif
 #else
-#define CONSOLE_BUFFER_SIZE 4000 /* In bytes */
+#define CONSOLE_BUFFER_SIZE 8000 /* In bytes */
 #endif
 
 /*
@@ -969,9 +969,25 @@ ConsoleCloseProc(
     ConsoleHandleInfo *handleInfoPtr;
     int errorCode = 0;
     ConsoleChannelInfo **nextPtrPtr;
+    int closeHandle;
 
     if ((flags & (TCL_CLOSE_READ | TCL_CLOSE_WRITE)) != 0) {
 	return EINVAL;
+    }
+    /*
+     * Don't close the Win32 handle if the handle is a standard channel
+     * during the thread exit process. Otherwise, one thread may kill the
+     * stdio of another while exiting. Note an explicit close in script will
+     * still close the handle. That's historical behavior on all platforms.
+     */
+    if (!TclInThreadExit()
+	|| ((GetStdHandle(STD_INPUT_HANDLE) != chanInfoPtr->handle)
+	    && (GetStdHandle(STD_OUTPUT_HANDLE) != chanInfoPtr->handle)
+	    && (GetStdHandle(STD_ERROR_HANDLE) != chanInfoPtr->handle))) {
+	closeHandle = 1;
+    }
+    else {
+	closeHandle = 0;
     }
 
     AcquireSRWLockExclusive(&gConsoleLock);
@@ -994,11 +1010,15 @@ ConsoleCloseProc(
 	AcquireSRWLockShared(&handleInfoPtr->lock);
 
 	handleInfoPtr->numRefs -= 1; /* Remove reference from this channel */
+	handleInfoPtr->console = INVALID_HANDLE_VALUE;
 
 	/* Break the thread out of blocking console i/o */
 	CancelSynchronousIo(handleInfoPtr->consoleThread);
 
-	/* Wake up the console handling thread */
+	/*
+	 * Wake up the console handling thread. Note we do not explicitly
+	 * tell it handle is closed (below). It will find out on next access
+	 */
 	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
 
 	ReleaseSRWLockShared(&handleInfoPtr->lock);
@@ -1006,27 +1026,16 @@ ConsoleCloseProc(
 
     ReleaseSRWLockExclusive(&gConsoleLock);
 
-    chanInfoPtr->channel = NULL;
+    chanInfoPtr->channel     = NULL;
     chanInfoPtr->watchMask   = 0;
     chanInfoPtr->permissions = 0;
 
-    if (chanInfoPtr->handle) {
-	/*
-	 * Don't close the Win32 handle if the handle is a standard channel
-	 * during the thread exit process. Otherwise, one thread may kill the
-	 * stdio of another. TODO - an explicit close in script will still close
-	 * it. Is that desired behavior?
-	 */
-	if (!TclInThreadExit()
-	    || ((GetStdHandle(STD_INPUT_HANDLE) != chanInfoPtr->handle)
-		&& (GetStdHandle(STD_OUTPUT_HANDLE) != chanInfoPtr->handle)
-		&& (GetStdHandle(STD_ERROR_HANDLE) != chanInfoPtr->handle))) {
-	    if (CloseHandle(chanInfoPtr->handle) == FALSE) {
-		Tcl_WinConvertError(GetLastError());
-		errorCode = errno;
-	    }
+    if (closeHandle && chanInfoPtr->handle != INVALID_HANDLE_VALUE) {
+	if (CloseHandle(chanInfoPtr->handle) == FALSE) {
+	    Tcl_WinConvertError(GetLastError());
+	    errorCode = errno;
 	}
-	chanInfoPtr->handle = NULL;
+	chanInfoPtr->handle = INVALID_HANDLE_VALUE;
     }
 
     /*
@@ -1074,6 +1083,10 @@ ConsoleInputProc(
     ConsoleHandleInfo *handleInfoPtr;
     RingSizeT numRead;
 
+    if (chanInfoPtr->handle == INVALID_HANDLE_VALUE) {
+	return 0; /* EOF */
+    }
+
     *errorCode = 0;
 
     AcquireSRWLockShared(&gConsoleLock);
@@ -1086,8 +1099,15 @@ ConsoleInputProc(
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
     ReleaseSRWLockShared(&gConsoleLock); /* AFTER acquiring handleInfoPtr->lock */
 
-    numRead = RingBufferOut(&handleInfoPtr->buffer, bufPtr, bufSize, 1);
-    while (numRead == 0) {
+    while (1) {
+	numRead = RingBufferOut(&handleInfoPtr->buffer, bufPtr, bufSize, 1);
+	/*
+	 * Note: even if channel is closed or has an error, as long there is
+	 * buffered data, we will pass it up.
+	 */
+	if (numRead != 0) {
+	    break;
+	}
 	/*
 	 * No data available.
 	 *  - If an error was recorded, generate that and reset it.
@@ -1096,47 +1116,43 @@ ConsoleInputProc(
 	 *  - Otherwise, if non-blocking return EAGAIN or wait for more data.
 	 */
 	if (handleInfoPtr->lastError != 0) {
-	    Tcl_WinConvertError(handleInfoPtr->lastError);
-	    handleInfoPtr->lastError = 0;
-	    *errorCode = Tcl_GetErrno();
-	    numRead    = -1;
-	}
-	else if (handleInfoPtr->console == NULL) {
-	    /* EOF - break with numRead == 0 */
-	    break;
-	}
-	else {
-	    if (chanInfoPtr->flags & CONSOLE_ASYNC) {
-		*errorCode = EAGAIN;
-		numRead    = -1;
+	    if (handleInfoPtr->lastError == ERROR_INVALID_HANDLE) {
+		numRead = 0; /* Treat as EOF */
 	    }
 	    else {
-		/*
-		 * Release the lock and sleep. Note that because the channel
-		 * holds a reference count on handleInfoPtr, it will not
-		 * be deallocated while the lock is released.
-		 */
-		WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
-		if (SleepConditionVariableSRW(&handleInfoPtr->interpThreadCV,
-					      &handleInfoPtr->lock,
-					      INFINITE,
-					      0)) {
-		    /*
-		     * Lock is reacquired. However, in the meanwhile another
-		     * thread could have consumed data. So loop continues
-		     * with check of numRead value.
-		     */
-		    numRead = RingBufferOut(
-			&handleInfoPtr->buffer, bufPtr, bufSize, 1);
-		}
-		else {
-		    /* Report the error */
-		    Tcl_WinConvertError(GetLastError());
-		    *errorCode = Tcl_GetErrno();
-		    numRead    = -1;
-		}
+		Tcl_WinConvertError(handleInfoPtr->lastError);
+		handleInfoPtr->lastError = 0;
+		*errorCode = Tcl_GetErrno();
+		numRead = -1;
 	    }
+	    break;
 	}
+	if (handleInfoPtr->console == INVALID_HANDLE_VALUE) {
+	    /* EOF - break with numRead == 0 */
+	    chanInfoPtr->handle = INVALID_HANDLE_VALUE;
+	    break;
+	}
+	if (chanInfoPtr->flags & CONSOLE_ASYNC) {
+	    *errorCode = EAGAIN;
+	    numRead = -1;
+	    break;
+	}
+	/*
+	 * Release the lock and sleep. Note that because the channel
+	 * holds a reference count on handleInfoPtr, it will not
+	 * be deallocated while the lock is released.
+	 */
+	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+	if (!SleepConditionVariableSRW(&handleInfoPtr->interpThreadCV,
+				      &handleInfoPtr->lock,
+				      INFINITE,
+				      0)) {
+	    Tcl_WinConvertError(GetLastError());
+	    *errorCode = Tcl_GetErrno();
+	    numRead = -1;
+	    break;
+	}
+	/* Lock is reacquired, loop back to try again */
     }
 
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
@@ -1173,6 +1189,12 @@ ConsoleOutputProc(
 
     *errorCode = 0;
 
+    if (chanInfoPtr->handle == INVALID_HANDLE_VALUE) {
+	/* Some other thread would have *previously* closed the stdio handle */
+	*errorCode = EPIPE;
+	return -1;
+    }
+
     AcquireSRWLockShared(&gConsoleLock);
     handleInfoPtr = FindConsoleInfo(chanInfoPtr);
     if (handleInfoPtr == NULL) {
@@ -1184,52 +1206,50 @@ ConsoleOutputProc(
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
     ReleaseSRWLockShared(&gConsoleLock); /* AFTER acquiring handleInfoPtr->lock */
 
-    numWritten = RingBufferIn(&handleInfoPtr->buffer, buf, toWrite, 1);
-    while (numWritten < toWrite) {
+    /* Keep looping if until all written. Break out for async and errors */
+    numWritten = 0;
+    while (1) {
+	/* Check for error and close on every loop. */
 	if (handleInfoPtr->lastError != 0) {
 	    Tcl_WinConvertError(handleInfoPtr->lastError);
 	    *errorCode = Tcl_GetErrno();
 	    numWritten = -1;
 	    break;
 	}
-	if (handleInfoPtr->console == NULL) {
+	if (handleInfoPtr->console == INVALID_HANDLE_VALUE) {
 	    *errorCode = EPIPE;
+	    chanInfoPtr->handle = INVALID_HANDLE_VALUE;
 	    numWritten = -1;
 	    break;
 	}
-	if (chanInfoPtr->flags & CONSOLE_ASYNC) {
-	    /* Async, just accept whatever was written */
+
+	numWritten += RingBufferIn(
+	    &handleInfoPtr->buffer, numWritten + buf, toWrite - numWritten, 1);
+	if (numWritten == toWrite || chanInfoPtr->flags & CONSOLE_ASYNC) {
+	    /* All done or async, just accept whatever was written */
 	    break;
 	}
-	else {
-	    /*
-	     * Release the lock and sleep. Note that because the channel
-	     * holds a reference count on handleInfoPtr, it will not
-	     * be deallocated while the lock is released.
-	     */
-	    WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
-	    if (SleepConditionVariableSRW(&handleInfoPtr->interpThreadCV,
-					  &handleInfoPtr->lock,
-					  INFINITE,
-					  0)) {
-		/* Lock is reacquired. Continue loop */
-		numWritten += RingBufferIn(&handleInfoPtr->buffer,
-					   numWritten + buf,
-					   toWrite - numWritten,
-					   1);
-	    }
-	    else {
-		/* Report the error */
-		Tcl_WinConvertError(GetLastError());
-		*errorCode = Tcl_GetErrno();
-		numWritten = -1;
-		break;
-	    }
+	/*
+	 * Release the lock and sleep. Note that because the channel
+	 * holds a reference count on handleInfoPtr, it will not
+	 * be deallocated while the lock is released.
+	 */
+	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+	if (!SleepConditionVariableSRW(&handleInfoPtr->interpThreadCV,
+				       &handleInfoPtr->lock,
+				       INFINITE,
+				       0)) {
+	    /* Report the error */
+	    Tcl_WinConvertError(GetLastError());
+	    *errorCode = Tcl_GetErrno();
+	    numWritten = -1;
+	    break;
 	}
+	/* Lock is reacquired. Continue loop */
     }
 
-    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
     WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
     return numWritten;
 }
 
@@ -1317,7 +1337,6 @@ ConsoleEventProc(
     else {
 	assert(chanInfoPtr->channel == NULL);
 	freeChannel = 1;
-	ckfree(chanInfoPtr);
     }
     ReleaseSRWLockShared(&gConsoleLock);
 
@@ -1411,8 +1430,13 @@ ConsoleGetHandleProc(
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
 
-    *handlePtr = chanInfoPtr->handle;
-    return TCL_OK;
+    if (chanInfoPtr->handle == INVALID_HANDLE_VALUE) {
+	return TCL_ERROR;
+    }
+    else {
+	*handlePtr = chanInfoPtr->handle;
+	return TCL_OK;
+    }
 }
 
 /*
@@ -1555,16 +1579,22 @@ ConsoleReaderThread(
 	     * store the last error. It is up to channel handlers to decide
 	     * whether to close or what to do.
 	     */
+	    DWORD error;
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
-	    handleInfoPtr->lastError =
-		ReadConsoleChars(handleInfoPtr->console,
-				 (WCHAR *)inputChars,
-				 sizeof(inputChars) / sizeof(WCHAR),
-				 &inputLen);
-	    if (handleInfoPtr->lastError == 0) {
+	    error = ReadConsoleChars(handleInfoPtr->console,
+				     (WCHAR *)inputChars,
+				     sizeof(inputChars) / sizeof(WCHAR),
+				     &inputLen);
+	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
+	    if (error == 0) {
 		inputLen *= sizeof(WCHAR);
 	    }
-	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
+	    else {
+		handleInfoPtr->lastError = error;
+		if (handleInfoPtr->lastError == ERROR_INVALID_HANDLE) {
+		    handleInfoPtr->console = INVALID_HANDLE_VALUE;
+		}
+	    }
 	}
     }
 
@@ -1590,13 +1620,15 @@ ConsoleReaderThread(
     /* No need for relocking - no other thread should have access to it now */
     RingBufferClear(&handleInfoPtr->buffer);
 
-    if (handleInfoPtr->console
+    if (handleInfoPtr->console != INVALID_HANDLE_VALUE
 	&& handleInfoPtr->lastError != ERROR_INVALID_HANDLE) {
 	SetConsoleMode(handleInfoPtr->console, handleInfoPtr->initMode);
 	/*
-	 * NOTE: we do not call CloseHandle(handleInfoPtr->console)
+	 * NOTE: we do not call CloseHandle(handleInfoPtr->console) here.
 	 * As per the GetStdHandle documentation, it need not be closed.
-	 * TODO - what about when application closes and re-opens? - Test
+	 * Other components may be directly using it. Note however that
+	 * an explicit chan close script command does close the handle
+	 * for all threads.
 	 */
     }
 
@@ -1710,9 +1742,13 @@ ConsoleWriterThread(LPVOID arg)
 		if (handleInfoPtr->lastError == 0) {
 		    handleInfoPtr->lastError = status;
 		}
+		if (status == ERROR_INVALID_HANDLE) {
+		    handleInfoPtr->console = INVALID_HANDLE_VALUE;
+		}
 		/* Assume this write is done but keep looping in case
 		 * it is a transient error. Not sure just closing handle
-		 * and exiting thread is a good idea.
+		 * and exiting thread is a good idea until all references
+		 * from interp threads are gone.
 		 */
 		break;
 	    }
@@ -1735,8 +1771,12 @@ ConsoleWriterThread(LPVOID arg)
     /*
      * Exiting:
      * - remove the console from global list
-     * - close the handle if still valid
      * - release the structure
+     * NOTE: we do not call CloseHandle(handleInfoPtr->console) here.
+     * As per the GetStdHandle documentation, it need not be closed.
+     * Other components may be directly using it. Note however that
+     * an explicit chan close script command does close the handle
+     * for all threads.
      */
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
     AcquireSRWLockExclusive(&gConsoleLock); /* Modifying - exclusive lock */
@@ -1751,11 +1791,6 @@ ConsoleWriterThread(LPVOID arg)
 
     RingBufferClear(&handleInfoPtr->buffer);
 
-    /*
-     * NOTE: we do not call CloseHandle(handleInfoPtr->console)
-     * As per the GetStdHandle documentation, it need not be closed.
-     * TODO - what about when application closes and re-opens? - Test
-     */
 
     ckfree(handleInfoPtr);
 
@@ -1812,7 +1847,7 @@ AllocateConsoleHandleInfo(
     }
     handleInfoPtr->consoleThread = CreateThread(
 	NULL, /* default security descriptor */
-	8192, /* Stack size - will get rounded up to allocation granularity */
+	2*CONSOLE_BUFFER_SIZE, /* Stack size - gets rounded up to granularity */
 	permissions == TCL_READABLE ? ConsoleReaderThread : ConsoleWriterThread,
 	handleInfoPtr, /* Pass to thread */
 	0,             /* Flags - no special cases */
