@@ -105,7 +105,7 @@ static const Tcl_ObjType ensembleCmdType = {
  */
 
 typedef struct {
-    unsigned int epoch;         /* Used to confirm when the data in this
+    int epoch;                  /* Used to confirm when the data in this
                                  * really structure matches up with the
                                  * ensemble. */
     Command *token;             /* Reference to the command for which this

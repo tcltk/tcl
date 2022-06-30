@@ -556,12 +556,8 @@ TclGetByteArrayFromObj(
     baPtr = GET_BYTEARRAY(irPtr);
 
     if (numBytesPtr != NULL) {
-#if TCL_MAJOR_VERSION > 8
-	*numBytesPtr = baPtr->used;
-#else
-	/* TODO: What's going on here?  Document or eliminate. */
+	/* Make sure we return a value between 0 and UINT_MAX-1, or (size_t)-1 */
 	*numBytesPtr = ((size_t)(unsigned int)(baPtr->used + 1)) - 1;
-#endif
     }
     return baPtr->bytes;
 }

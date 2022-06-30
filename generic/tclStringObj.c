@@ -564,7 +564,7 @@ Tcl_NewUnicodeObj(
 
     String *stringPtr = (String *)ckalloc((offsetof(String, unicode)
 	    + sizeof(unsigned short)) + numChars * sizeof(unsigned short));
-    memcpy(stringPtr->unicode, unicode, numChars);
+    memcpy(stringPtr->unicode, unicode, numChars * sizeof(unsigned short));
     stringPtr->unicode[numChars] = 0;
 
     stringPtr->numChars = numChars;
