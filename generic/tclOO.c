@@ -136,7 +136,7 @@ static const Tcl_MethodType classConstructor = {
  * file).
  */
 
-static const char *initScript =
+static const char initScript[] =
 "package ifneeded TclOO " TCLOO_PATCHLEVEL " {# Already present, OK?};"
 "namespace eval ::oo { variable version " TCLOO_VERSION " };"
 "namespace eval ::oo { variable patchlevel " TCLOO_PATCHLEVEL " };";
@@ -276,7 +276,7 @@ TclOOInit(
     }
 
     return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
-	    (ClientData) &tclOOStubs);
+	    &tclOOStubs);
 }
 
 /*

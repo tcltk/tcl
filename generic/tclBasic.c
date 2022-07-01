@@ -4577,7 +4577,7 @@ TEOV_PushExceptionHandlers(
 	 */
 
 	TclNRAddCallback(interp, TEOV_Error, INT2PTR(objc),
-		(ClientData) objv, NULL, NULL);
+		objv, NULL, NULL);
     }
 
     if (iPtr->numLevels == 1) {
