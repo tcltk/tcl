@@ -137,7 +137,7 @@ static const Tcl_MethodType classConstructor = {
  * file).
  */
 
-static const char *initScript =
+static const char initScript[] =
 #ifndef TCL_NO_DEPRECATED
 "package ifneeded TclOO " TCLOO_PATCHLEVEL " {# Already present, OK?};"
 #endif
@@ -262,10 +262,10 @@ TclOOInit(
 
 #ifndef TCL_NO_DEPRECATED
     Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
-    	    (void *) &tclOOStubs);
+	    &tclOOStubs);
 #endif
     return Tcl_PkgProvideEx(interp, "tcl::oo", TCLOO_PATCHLEVEL,
-	    (void *) &tclOOStubs);
+	    &tclOOStubs);
 }
 
 /*
