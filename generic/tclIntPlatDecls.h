@@ -753,7 +753,24 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #undef TclpCreateTempFile_
 #undef TclUnixWaitForFile_
-#ifndef MAC_OSX_TCL /* not accessable on Win32/UNIX */
+#ifdef MAC_OSX_TCL /* not accessable on Win32/UNIX */
+MODULE_SCOPE int TclMacOSXGetFileAttribute(Tcl_Interp *interp,
+	int objIndex, Tcl_Obj *fileName,
+	Tcl_Obj **attributePtrPtr);
+/* 16 */
+MODULE_SCOPE int TclMacOSXSetFileAttribute(Tcl_Interp *interp,
+	int objIndex, Tcl_Obj *fileName,
+	Tcl_Obj *attributePtr);
+/* 17 */
+MODULE_SCOPE int TclMacOSXCopyFileAttributes(const char *src,
+	const char *dst,
+	const Tcl_StatBuf *statBufPtr);
+/* 18 */
+MODULE_SCOPE int TclMacOSXMatchType(Tcl_Interp *interp,
+	const char *pathName, const char *fileName,
+	Tcl_StatBuf *statBufPtr,
+	Tcl_GlobTypeData *types);
+#else
 #undef TclMacOSXGetFileAttribute /* 15 */
 #undef TclMacOSXSetFileAttribute /* 16 */
 #undef TclMacOSXCopyFileAttributes /* 17 */

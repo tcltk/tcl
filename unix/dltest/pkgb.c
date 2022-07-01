@@ -31,10 +31,6 @@
  *----------------------------------------------------------------------
  */
 
-#ifndef Tcl_GetErrorLine
-#   define Tcl_GetErrorLine(interp) ((interp)->errorLine)
-#endif
-
 static int
 Pkgb_SubObjCmd(
     void *dummy,		/* Not used. */
