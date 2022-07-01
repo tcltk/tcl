@@ -262,10 +262,10 @@ TclOOInit(
 
 #ifndef TCL_NO_DEPRECATED
     Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
-    	    (void *) &tclOOStubs);
+	    &tclOOStubs);
 #endif
     return Tcl_PkgProvideEx(interp, "tcl::oo", TCLOO_PATCHLEVEL,
-	    (void *) &tclOOStubs);
+	    &tclOOStubs);
 }
 
 /*
