@@ -64,8 +64,8 @@ static int initialized = 0;
 #endif
 
 /*
- * Ring buffer for storing data. Actual data is from bufPtr[start]:bufPtr[size-1]
- * and bufPtr[0]:bufPtr[length - (size-start)].
+ * Ring buffer for storing data. Actual data is from buf[start]:buf[size-1]
+ * and buf[0]:buf[length - (size-start)].
  */
 #if TCL_MAJOR_VERSION > 8
 typedef ptrdiff_t RingSizeT; /* Tcl9 TODO */
@@ -75,13 +75,12 @@ typedef int RingSizeT;
 #define RingSizeT_MAX INT_MAX
 #endif
 typedef struct RingBuffer {
-    char *bufPtr;	/* Pointer to buffer storage */
-    RingSizeT capacity;	/* Size of the buffer in RingBufferChar */
     RingSizeT start;	/* Start of the data within the buffer. */
     RingSizeT length;	/* Number of RingBufferChar*/
+    char buffer[CONSOLE_BUFFER_SIZE];	/* buffer storage */
 } RingBuffer;
 #define RingBufferLength(ringPtr_) ((ringPtr_)->length)
-#define RingBufferFreeSpace(ringPtr_) ((ringPtr_)->capacity - (ringPtr_)->length)
+#define RingBufferFreeSpace(ringPtr_) (CONSOLE_BUFFER_SIZE - (ringPtr_)->length)
 #define RINGBUFFER_ASSERT(ringPtr_) assert(RingBufferCheck(ringPtr_))
 
 /*
@@ -220,10 +219,8 @@ static DWORD	ReadConsoleChars(HANDLE hConsole, WCHAR *lpBuffer,
 static DWORD	WriteConsoleChars(HANDLE hConsole,
 		    const WCHAR *lpBuffer, RingSizeT nChars,
 		    RingSizeT *nCharsWritten);
-static void	RingBufferInit(RingBuffer *ringPtr, RingSizeT capacity);
+static void	RingBufferInit(RingBuffer *ringPtr);
 static void	RingBufferClear(RingBuffer *ringPtr);
-static char *	RingBufferSegment(const RingBuffer *ringPtr, RingSizeT *lenPtr);
-static int	RingBufferCheck(const RingBuffer *ringPtr);
 static RingSizeT	RingBufferIn(RingBuffer *ringPtr, const char *srcPtr,
 			    RingSizeT srcLen, int partialCopyOk);
 static RingSizeT	RingBufferOut(RingBuffer *ringPtr, char *dstPtr,
@@ -312,13 +309,8 @@ static const Tcl_ChannelType consoleChannelType = {
  *------------------------------------------------------------------------
  */
 static void
-RingBufferInit(RingBuffer *ringPtr, RingSizeT capacity)
+RingBufferInit(RingBuffer *ringPtr)
 {
-    if (capacity <= 0 || capacity > RingSizeT_MAX) {
-	Tcl_Panic("Internal error: invalid ring buffer capacity requested.");
-    }
-    ringPtr->bufPtr = (char *)ckalloc(capacity);
-    ringPtr->capacity = capacity;
     ringPtr->start    = 0;
     ringPtr->length   = 0;
 }
@@ -341,11 +333,6 @@ RingBufferInit(RingBuffer *ringPtr, RingSizeT capacity)
 static void
 RingBufferClear(RingBuffer *ringPtr)
 {
-    if (ringPtr->bufPtr) {
-	ckfree(ringPtr->bufPtr);
-	ringPtr->bufPtr = NULL;
-    }
-    ringPtr->capacity = 0;
     ringPtr->start    = 0;
     ringPtr->length   = 0;
 }
@@ -377,7 +364,7 @@ RingBufferIn(
 
     RINGBUFFER_ASSERT(ringPtr);
 
-    freeSpace = ringPtr->capacity - ringPtr->length;
+    freeSpace = CONSOLE_BUFFER_SIZE - ringPtr->length;
     if (freeSpace < srcLen) {
 	if (!partialCopyOk) {
 	    return 0;
@@ -386,25 +373,25 @@ RingBufferIn(
 	srcLen = freeSpace;
     }
 
-    if (ringPtr->capacity - ringPtr->start > ringPtr->length) {
+    if (CONSOLE_BUFFER_SIZE - ringPtr->start > ringPtr->length) {
 	/* There is room at the back */
 	RingSizeT endSpaceStart = ringPtr->start + ringPtr->length;
-	RingSizeT endSpace      = ringPtr->capacity - endSpaceStart;
+	RingSizeT endSpace      = CONSOLE_BUFFER_SIZE - endSpaceStart;
 	if (endSpace >= srcLen) {
 	    /* Everything fits at the back */
-	    memmove(endSpaceStart + ringPtr->bufPtr, srcPtr, srcLen);
+	    memmove(endSpaceStart + ringPtr->buffer, srcPtr, srcLen);
 	}
 	else {
 	    /* srcLen > endSpace */
-	    memmove(endSpaceStart + ringPtr->bufPtr, srcPtr, endSpace);
-	    memmove(ringPtr->bufPtr, endSpace + srcPtr, srcLen - endSpace);
+	    memmove(endSpaceStart + ringPtr->buffer, srcPtr, endSpace);
+	    memmove(ringPtr->buffer, endSpace + srcPtr, srcLen - endSpace);
 	}
     }
     else {
 	/* No room at the back. Existing data wrap to front. */
 	RingSizeT wrapLen =
-	    ringPtr->start + ringPtr->length - ringPtr->capacity;
-	memmove(wrapLen + ringPtr->bufPtr, srcPtr, srcLen);
+	    ringPtr->start + ringPtr->length - CONSOLE_BUFFER_SIZE;
+	memmove(wrapLen + ringPtr->buffer, srcPtr, srcLen);
     }
 
     ringPtr->length += srcLen;
@@ -447,17 +434,17 @@ RingBufferOut(RingBuffer *ringPtr,
 	dstCapacity = ringPtr->length;
     }
 
-    if (ringPtr->start <= (ringPtr->capacity - ringPtr->length)) {
+    if (ringPtr->start <= (CONSOLE_BUFFER_SIZE - ringPtr->length)) {
 	/* No content wrap around. So leadLen is entire content */
 	leadLen = ringPtr->length;
     }
     else {
 	/* Content wraps around so lead segment stretches to end of buffer */
-	leadLen = ringPtr->capacity - ringPtr->start;
+	leadLen = CONSOLE_BUFFER_SIZE - ringPtr->start;
     }
     if (leadLen >= dstCapacity) {
 	if (dstPtr) {
-	    memmove(dstPtr, ringPtr->start + ringPtr->bufPtr, dstCapacity);
+	    memmove(dstPtr, ringPtr->start + ringPtr->buffer, dstCapacity);
 	}
 	ringPtr->start += dstCapacity;
     }
@@ -465,16 +452,16 @@ RingBufferOut(RingBuffer *ringPtr,
 	RingSizeT wrapLen = dstCapacity - leadLen;
 	if (dstPtr) {
 	    memmove(dstPtr,
-		    ringPtr->start + ringPtr->bufPtr,
+		    ringPtr->start + ringPtr->buffer,
 		    leadLen);
 	    memmove(
-		leadLen + dstPtr, ringPtr->bufPtr, wrapLen);
+		leadLen + dstPtr, ringPtr->buffer, wrapLen);
 	}
 	ringPtr->start = wrapLen;
     }
 
     ringPtr->length -= dstCapacity;
-    if (ringPtr->start == ringPtr->capacity || ringPtr->length == 0) {
+    if (ringPtr->start == CONSOLE_BUFFER_SIZE || ringPtr->length == 0) {
 	ringPtr->start = 0;
     }
 
@@ -483,44 +470,6 @@ RingBufferOut(RingBuffer *ringPtr,
     return dstCapacity;
 }
 
-/*
- *------------------------------------------------------------------------
- *
- * RingBufferSegment --
- *
- *    Returns a pointer to the leading data segment in the ring buffer.
- *
- * Results:
- *    Pointer to start of segment.
- *
- * Side effects:
- *    None.
- *
- *------------------------------------------------------------------------
- */
- static char *
- RingBufferSegment(const RingBuffer *ringPtr, RingSizeT *lengthPtr)
-{
-    RINGBUFFER_ASSERT(ringPtr);
-    if (ringPtr->length <= (ringPtr->capacity - ringPtr->start)) {
-	/* No content wrap around. */
-	*lengthPtr = ringPtr->length;
-    }
-    else {
-	/* Content wraps around so lead segment stretches to end of buffer */
-	*lengthPtr = ringPtr->capacity - ringPtr->start;
-    }
-    return *lengthPtr == 0 ? NULL : ringPtr->start + ringPtr->bufPtr;
-}
-
-static int
-RingBufferCheck(const RingBuffer *ringPtr)
-{
-    return (ringPtr->bufPtr != NULL && ringPtr->capacity == CONSOLE_BUFFER_SIZE
-	    && ringPtr->start < ringPtr->capacity
-	    && ringPtr->length <= ringPtr->capacity);
-}
-
 /*
  *------------------------------------------------------------------------
  *
@@ -1100,7 +1049,7 @@ ConsoleInputProc(
     ReleaseSRWLockShared(&gConsoleLock); /* AFTER acquiring handleInfoPtr->lock */
 
     while (1) {
-	int freeSpace = RingBufferFreeSpace(&handleInfoPtr->buffer);
+	//int freeSpace = RingBufferFreeSpace(&handleInfoPtr->buffer);
 	numRead = RingBufferOut(&handleInfoPtr->buffer, bufPtr, bufSize, 1);
 	/*
 	 * Note: even if channel is closed or has an error, as long there is
@@ -1665,7 +1614,6 @@ ConsoleWriterThread(LPVOID arg)
 {
     ConsoleHandleInfo *handleInfoPtr = (ConsoleHandleInfo *) arg;
     ConsoleHandleInfo **iterator;
-    ConsoleChannelInfo *chanInfoPtr = NULL;
     BOOL success;
     RingSizeT numBytes;
     /*
@@ -1727,7 +1675,7 @@ ConsoleWriterThread(LPVOID arg)
 	}
 
 	/* We have data to write */
-	if (numBytes > (sizeof(buffer) / sizeof(buffer[0]))) {
+	if ((size_t)numBytes > (sizeof(buffer) / sizeof(buffer[0]))) {
 	    numBytes = sizeof(buffer);
 	}
 	/* No need to check result, we already checked length bytes available */
@@ -1841,7 +1789,7 @@ AllocateConsoleHandleInfo(
     InitializeSRWLock(&handleInfoPtr->lock);
     InitializeConditionVariable(&handleInfoPtr->consoleThreadCV);
     InitializeConditionVariable(&handleInfoPtr->interpThreadCV);
-    RingBufferInit(&handleInfoPtr->buffer, CONSOLE_BUFFER_SIZE);
+    RingBufferInit(&handleInfoPtr->buffer);
     handleInfoPtr->lastError = 0;
     handleInfoPtr->permissions = permissions;
     handleInfoPtr->numRefs = 1; /* See function header */
