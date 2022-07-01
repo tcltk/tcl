@@ -67,16 +67,9 @@ static int initialized = 0;
  * Ring buffer for storing data. Actual data is from buf[start]:buf[size-1]
  * and buf[0]:buf[length - (size-start)].
  */
-#if TCL_MAJOR_VERSION > 8
-typedef ptrdiff_t RingSizeT; /* Tcl9 TODO */
-#define RingSizeT_MAX PTRDIFF_MAX
-#else
-typedef int RingSizeT;
-#define RingSizeT_MAX INT_MAX
-#endif
 typedef struct RingBuffer {
-    RingSizeT start;	/* Start of the data within the buffer. */
-    RingSizeT length;	/* Number of RingBufferChar*/
+    int start;	/* Start of the data within the buffer. */
+    int length;	/* Number of RingBufferChar*/
     char buffer[CONSOLE_BUFFER_SIZE];	/* buffer storage */
 } RingBuffer;
 #define RingBufferLength(ringPtr_) ((ringPtr_)->length)
@@ -215,16 +208,16 @@ static void	ConsoleWatchProc(ClientData instanceData, int mask);
 static void	ProcExitHandler(ClientData clientData);
 static void	ConsoleThreadActionProc(ClientData instanceData, int action);
 static DWORD	ReadConsoleChars(HANDLE hConsole, WCHAR *lpBuffer,
-		    RingSizeT nChars, RingSizeT *nCharsReadPtr);
+		    int nChars, int *nCharsReadPtr);
 static DWORD	WriteConsoleChars(HANDLE hConsole,
-		    const WCHAR *lpBuffer, RingSizeT nChars,
-		    RingSizeT *nCharsWritten);
+		    const WCHAR *lpBuffer, int nChars,
+		    int *nCharsWritten);
 static void	RingBufferInit(RingBuffer *ringPtr);
 static void	RingBufferClear(RingBuffer *ringPtr);
-static RingSizeT	RingBufferIn(RingBuffer *ringPtr, const char *srcPtr,
-			    RingSizeT srcLen, int partialCopyOk);
-static RingSizeT	RingBufferOut(RingBuffer *ringPtr, char *dstPtr,
-			    RingSizeT dstCapacity, int partialCopyOk);
+static int	RingBufferIn(RingBuffer *ringPtr, const char *srcPtr,
+			    int srcLen, int partialCopyOk);
+static int	RingBufferOut(RingBuffer *ringPtr, char *dstPtr,
+			    int dstCapacity, int partialCopyOk);
 static ConsoleHandleInfo *AllocateConsoleHandleInfo(HANDLE consoleHandle,
 			    int permissions);
 static ConsoleHandleInfo *FindConsoleInfo(const ConsoleChannelInfo *);
@@ -352,15 +345,15 @@ RingBufferClear(RingBuffer *ringPtr)
  *
  *------------------------------------------------------------------------
  */
-static RingSizeT
+static int
 RingBufferIn(
     RingBuffer *ringPtr,
     const char *srcPtr, /* Source to be copied */
-    RingSizeT srcLen,	  /* Length of source */
+    int srcLen,	  /* Length of source */
     int partialCopyOk 		  /* If true, partial copy is permitted */
     )
 {
-    RingSizeT freeSpace;
+    int freeSpace;
 
     RINGBUFFER_ASSERT(ringPtr);
 
@@ -375,8 +368,8 @@ RingBufferIn(
 
     if (CONSOLE_BUFFER_SIZE - ringPtr->start > ringPtr->length) {
 	/* There is room at the back */
-	RingSizeT endSpaceStart = ringPtr->start + ringPtr->length;
-	RingSizeT endSpace      = CONSOLE_BUFFER_SIZE - endSpaceStart;
+	int endSpaceStart = ringPtr->start + ringPtr->length;
+	int endSpace      = CONSOLE_BUFFER_SIZE - endSpaceStart;
 	if (endSpace >= srcLen) {
 	    /* Everything fits at the back */
 	    memmove(endSpaceStart + ringPtr->buffer, srcPtr, srcLen);
@@ -389,7 +382,7 @@ RingBufferIn(
     }
     else {
 	/* No room at the back. Existing data wrap to front. */
-	RingSizeT wrapLen =
+	int wrapLen =
 	    ringPtr->start + ringPtr->length - CONSOLE_BUFFER_SIZE;
 	memmove(wrapLen + ringPtr->buffer, srcPtr, srcLen);
     }
@@ -417,13 +410,13 @@ RingBufferIn(
  *
  *------------------------------------------------------------------------
  */
-static RingSizeT
+static int
 RingBufferOut(RingBuffer *ringPtr,
 	      char *dstPtr,	      /* Buffer for output data. May be NULL */
-	      RingSizeT dstCapacity,  /* Size of buffer */
+	      int dstCapacity,  /* Size of buffer */
 	      int partialCopyOk)      /* If true, return what's available */
 {
-    RingSizeT leadLen;
+    int leadLen;
 
     RINGBUFFER_ASSERT(ringPtr);
 
@@ -449,7 +442,7 @@ RingBufferOut(RingBuffer *ringPtr,
 	ringPtr->start += dstCapacity;
     }
     else {
-	RingSizeT wrapLen = dstCapacity - leadLen;
+	int wrapLen = dstCapacity - leadLen;
 	if (dstPtr) {
 	    memmove(dstPtr,
 		    ringPtr->start + ringPtr->buffer,
@@ -491,8 +484,8 @@ static DWORD
 ReadConsoleChars(
     HANDLE hConsole,
     WCHAR *lpBuffer,
-    RingSizeT nChars,
-    RingSizeT *nCharsReadPtr)
+    int nChars,
+    int *nCharsReadPtr)
 {
     DWORD nRead;
     BOOL result;
@@ -552,8 +545,8 @@ static DWORD
 WriteConsoleChars(
     HANDLE hConsole,
     const WCHAR *lpBuffer,
-    RingSizeT nChars,
-    RingSizeT *nCharsWrittenPtr)
+    int nChars,
+    int *nCharsWrittenPtr)
 {
     DWORD nCharsWritten;
     BOOL result;
@@ -1030,7 +1023,7 @@ ConsoleInputProc(
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
     ConsoleHandleInfo *handleInfoPtr;
-    RingSizeT numRead;
+    int numRead;
 
     if (chanInfoPtr->handle == INVALID_HANDLE_VALUE) {
 	return 0; /* EOF */
@@ -1049,7 +1042,6 @@ ConsoleInputProc(
     ReleaseSRWLockShared(&gConsoleLock); /* AFTER acquiring handleInfoPtr->lock */
 
     while (1) {
-	//int freeSpace = RingBufferFreeSpace(&handleInfoPtr->buffer);
 	numRead = RingBufferOut(&handleInfoPtr->buffer, bufPtr, bufSize, 1);
 	/*
 	 * Note: even if channel is closed or has an error, as long there is
@@ -1137,7 +1129,7 @@ ConsoleOutputProc(
 {
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
     ConsoleHandleInfo *handleInfoPtr;
-    RingSizeT numWritten;
+    int numWritten;
 
     *errorCode = 0;
 
@@ -1416,8 +1408,8 @@ ConsoleReaderThread(
     ConsoleHandleInfo **iterator;
     BOOL success;
     char inputChars[200]; /* Temporary buffer */
-    RingSizeT inputLen = 0;
-    RingSizeT inputOffset = 0;
+    int inputLen = 0;
+    int inputOffset = 0;
 
     /*
      * Keep looping until one of the following happens.
@@ -1483,7 +1475,7 @@ ConsoleReaderThread(
 		/*
 		 * Case (2). Private buffer has data. Copy it over.
 		 */
-		RingSizeT nStored;
+		int nStored;
 
 		assert((inputLen - inputOffset) > 0);
 
@@ -1615,7 +1607,7 @@ ConsoleWriterThread(LPVOID arg)
     ConsoleHandleInfo *handleInfoPtr = (ConsoleHandleInfo *) arg;
     ConsoleHandleInfo **iterator;
     BOOL success;
-    RingSizeT numBytes;
+    int numBytes;
     /*
      * This buffer size has no relation really with the size of the shared
      * buffer. Could be bigger or smaller. Make larger as multiple threads
@@ -1686,7 +1678,7 @@ ConsoleWriterThread(LPVOID arg)
 	ReleaseSRWLockExclusive(&handleInfoPtr->lock);
 	offset = 0;
 	while (numBytes > 0) {
-	    RingSizeT numWChars = numBytes / sizeof(WCHAR);
+	    int numWChars = numBytes / sizeof(WCHAR);
 	    DWORD status;
 	    status = WriteConsoleChars(handleInfoPtr->console,
 				       (WCHAR *)(offset + buffer),
