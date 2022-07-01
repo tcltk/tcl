@@ -24,8 +24,8 @@
  * win/tclooConfig.sh
  */
 
-#define TCLOO_VERSION "1.2.0"
-#define TCLOO_PATCHLEVEL TCLOO_VERSION
+#define TCLOO_VERSION "1.3"
+#define TCLOO_PATCHLEVEL TCLOO_VERSION ".0"
 
 #include "tcl.h"
 
@@ -40,7 +40,7 @@ extern "C" {
 extern const char *TclOOInitializeStubs(
 	Tcl_Interp *, const char *version);
 #define Tcl_OOInitStubs(interp) \
-    TclOOInitializeStubs((interp), TCLOO_VERSION)
+    TclOOInitializeStubs((interp), TCLOO_PATCHLEVEL)
 #ifndef USE_TCL_STUBS
 #   define TclOOInitializeStubs(interp, version) (TCLOO_PATCHLEVEL)
 #endif
