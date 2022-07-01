@@ -14,6 +14,39 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::ConstraintInitializer twapi { expr {![catch {package require twapi}]} }
+
+# Prompt user for a yes/no response
+proc yesno {question {default "Y"}} {
+    set answer ""
+    # Make sure we are seen but catch because ui and console
+    # packages may not be available
+    catch {twapi::set_foreground_window [twapi::get_console_window]}
+    while {![string is boolean -strict $answer]} {
+        puts -nonewline stdout "$question Type Y/N followed by Enter \[$default\] : "
+        flush stdout
+        set answer [string trim [gets stdin]]
+        if {$answer eq ""} {
+            set answer $default
+        }
+    }
+    return [expr {!! $answer}]
+}
+
+proc prompt {prompt} {
+    set answer ""
+    # Make sure we are seen but catch because ui and console
+    # packages may not be available
+    catch {twapi::set_foreground_window [twapi::get_console_window]}
+    puts -nonewline stdout "$prompt"
+    return [gets stdin]
+}
+
+
+test winConsole-1.0 {Console blocking gets} -constraints {win interactive xx} -body {
+    set response [prompt "Type a line of text and press Return\n"]
+    yesno "Did you type \"$response\""
+} -result 1
 
 test winConsole-1.1 {Console file channel: non-blocking gets} {win interactive} {
     set oldmode [fconfigure stdin]
@@ -23,7 +56,7 @@ test winConsole-1.1 {Console file channel: non-blocking gets} {win interactive} 
     fileevent stdin readable {
 	if {[gets stdin line] >= 0} {
 	    set result $line
-	} else {
+	} elseif {[eof stdin]} {
 	    set result "gets failed"
 	}
     }
@@ -40,6 +73,9 @@ test winConsole-1.1 {Console file channel: non-blocking gets} {win interactive} 
     set result
 
 }  "abcdef"
+
+
+
 
 #cleanup
 

@@ -57,7 +57,7 @@ static int initialized = 0;
 #ifdef TCL_CONSOLE_DEBUG
 #ifndef CONSOLE_BUFFER_SIZE
 /*  Force tiny to stress synchronization. Must be at least sizeof(WCHAR) :-) */
-#define CONSOLE_BUFFER_SIZE 10
+#define CONSOLE_BUFFER_SIZE sizeof(WCHAR)
 #endif
 #else
 #define CONSOLE_BUFFER_SIZE 8000 /* In bytes */
@@ -1100,12 +1100,15 @@ ConsoleInputProc(
     ReleaseSRWLockShared(&gConsoleLock); /* AFTER acquiring handleInfoPtr->lock */
 
     while (1) {
+	int freeSpace = RingBufferFreeSpace(&handleInfoPtr->buffer);
 	numRead = RingBufferOut(&handleInfoPtr->buffer, bufPtr, bufSize, 1);
 	/*
 	 * Note: even if channel is closed or has an error, as long there is
 	 * buffered data, we will pass it up.
 	 */
 	if (numRead != 0) {
+	    /* If console thread was blocked, awaken it */
+	    WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
 	    break;
 	}
 	/*
@@ -1133,7 +1136,7 @@ ConsoleInputProc(
 	    break;
 	}
 	if (chanInfoPtr->flags & CONSOLE_ASYNC) {
-	    *errorCode = EAGAIN;
+	    *errorCode = EWOULDBLOCK;
 	    numRead = -1;
 	    break;
 	}
@@ -1142,7 +1145,7 @@ ConsoleInputProc(
 	 * holds a reference count on handleInfoPtr, it will not
 	 * be deallocated while the lock is released.
 	 */
-	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+	//WakeConditionVariable(&handleInfoPtr->consoleThreadCV); TODO - Needed?
 	if (!SleepConditionVariableSRW(&handleInfoPtr->interpThreadCV,
 				      &handleInfoPtr->lock,
 				      INFINITE,
@@ -1510,8 +1513,8 @@ ConsoleReaderThread(
 	if (RingBufferFreeSpace(&handleInfoPtr->buffer) == 0) {
 	    /* Case (1) No room in buffer.*/
 
-	    /* Awaken any reader channels - TODO - is this really needed? */
-	    WakeConditionVariable(&handleInfoPtr->interpThreadCV);
+	    /* Awaken any reader channels - TODO - is this needed? */
+	    // WakeConditionVariable(&handleInfoPtr->interpThreadCV);
 
 	    /* Release lock and wait for room */
 	    success = SleepConditionVariableSRW(&handleInfoPtr->consoleThreadCV,
@@ -1553,7 +1556,11 @@ ConsoleReaderThread(
 		 */
 	    }
 
-	    /* Wake up any threads waiting synchronously. */
+	    /*
+	     * Wake up any threads waiting synchronously. Really we only
+	     * to do this if buffer was previously empty, blocking readers
+	     * but whatever...don't further complicate things.
+	     */
 	    WakeConditionVariable(&handleInfoPtr->interpThreadCV);
 
 	    /*
