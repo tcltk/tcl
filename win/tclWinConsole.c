@@ -74,7 +74,6 @@ typedef struct RingBuffer {
 } RingBuffer;
 #define RingBufferLength(ringPtr_) ((ringPtr_)->length)
 #define RingBufferFreeSpace(ringPtr_) (CONSOLE_BUFFER_SIZE - (ringPtr_)->length)
-#define RINGBUFFER_ASSERT(ringPtr_) assert(RingBufferCheck(ringPtr_))
 
 /*
  * The Win32 console API does not support non-blocking I/O in any form. Thus
@@ -355,8 +354,6 @@ RingBufferIn(
 {
     int freeSpace;
 
-    RINGBUFFER_ASSERT(ringPtr);
-
     freeSpace = CONSOLE_BUFFER_SIZE - ringPtr->length;
     if (freeSpace < srcLen) {
 	if (!partialCopyOk) {
@@ -389,8 +386,6 @@ RingBufferIn(
 
     ringPtr->length += srcLen;
 
-    RINGBUFFER_ASSERT(ringPtr);
-
     return srcLen;
 }
 
@@ -417,8 +412,6 @@ RingBufferOut(RingBuffer *ringPtr,
 	      int partialCopyOk)      /* If true, return what's available */
 {
     int leadLen;
-
-    RINGBUFFER_ASSERT(ringPtr);
 
     if (dstCapacity > ringPtr->length) {
 	if (dstPtr && !partialCopyOk) {
@@ -457,8 +450,6 @@ RingBufferOut(RingBuffer *ringPtr,
     if (ringPtr->start == CONSOLE_BUFFER_SIZE || ringPtr->length == 0) {
 	ringPtr->start = 0;
     }
-
-    RINGBUFFER_ASSERT(ringPtr);
 
     return dstCapacity;
 }
