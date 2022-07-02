@@ -212,7 +212,6 @@ static DWORD	WriteConsoleChars(HANDLE hConsole,
 		    const WCHAR *lpBuffer, int nChars,
 		    int *nCharsWritten);
 static void	RingBufferInit(RingBuffer *ringPtr);
-static void	RingBufferClear(RingBuffer *ringPtr);
 static int	RingBufferIn(RingBuffer *ringPtr, const char *srcPtr,
 			    int srcLen, int partialCopyOk);
 static int	RingBufferOut(RingBuffer *ringPtr, char *dstPtr,
@@ -302,28 +301,6 @@ static const Tcl_ChannelType consoleChannelType = {
  */
 static void
 RingBufferInit(RingBuffer *ringPtr)
-{
-    ringPtr->start    = 0;
-    ringPtr->length   = 0;
-}
-
-/*
- *------------------------------------------------------------------------
- *
- * RingBufferClear
- *
- *    Clears the contents of a ring buffer.
- *
- * Results:
- *    None.
- *
- * Side effects:
- *    The allocated internal buffer is freed.
- *
- *------------------------------------------------------------------------
- */
-static void
-RingBufferClear(RingBuffer *ringPtr)
 {
     ringPtr->start    = 0;
     ringPtr->length   = 0;
@@ -1557,7 +1534,7 @@ ConsoleReaderThread(
     ReleaseSRWLockExclusive(&gConsoleLock);
 
     /* No need for relocking - no other thread should have access to it now */
-    RingBufferClear(&handleInfoPtr->buffer);
+    RingBufferInit(&handleInfoPtr->buffer);
 
     if (handleInfoPtr->console != INVALID_HANDLE_VALUE
 	&& handleInfoPtr->lastError != ERROR_INVALID_HANDLE) {
@@ -1727,7 +1704,7 @@ ConsoleWriterThread(LPVOID arg)
     }
     ReleaseSRWLockExclusive(&gConsoleLock);
 
-    RingBufferClear(&handleInfoPtr->buffer);
+    RingBufferInit(&handleInfoPtr->buffer);
 
 
     ckfree(handleInfoPtr);
@@ -1792,7 +1769,7 @@ AllocateConsoleHandleInfo(
 	NULL);         /* Don't care about thread id */
     if (handleInfoPtr->consoleThread == NULL) {
 	/* Note - SRWLock and condition variables do not need finalization */
-	RingBufferClear(&handleInfoPtr->buffer);
+	RingBufferInit(&handleInfoPtr->buffer);
 	ckfree(handleInfoPtr);
 	return NULL;
     }
