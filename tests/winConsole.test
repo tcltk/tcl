@@ -34,25 +34,24 @@ proc yesno {question {default "Y"}} {
 }
 
 proc prompt {prompt} {
-    set answer ""
-    # Make sure we are seen but catch because ui and console
+    # Make sure we are seen but catch because twapi ui and console
     # packages may not be available
     catch {twapi::set_foreground_window [twapi::get_console_window]}
     puts -nonewline stdout "$prompt"
-    return [gets stdin]
+    flush stdout
 }
 
+# Input tests
 
-test winConsole-1.0 {Console blocking gets} -constraints {win interactive xx} -body {
-    set response [prompt "Type a line of text and press Return\n"]
-    yesno "Did you type \"$response\""
-} -result 1
+test console-gets-1.0 {Console blocking gets} -constraints {win interactive} -body {
+    set response [prompt "Type \"xyz\" and hit Enter: "]
+    gets stdin
+} -result xyz
 
-test winConsole-1.1 {Console file channel: non-blocking gets} {win interactive} {
+test console-gets-1.1 {Console file channel: non-blocking gets} {win interactive} {
     set oldmode [fconfigure stdin]
 
-    puts stdout "Enter abcdef<return> now: " nonewline
-    flush stdout
+    set response [prompt "Type \"abc\" and hit Enter: "]
     fileevent stdin readable {
 	if {[gets stdin line] >= 0} {
 	    set result $line
@@ -72,9 +71,93 @@ test winConsole-1.1 {Console file channel: non-blocking gets} {win interactive} 
 
     set result
 
-}  "abcdef"
+} abc
 
+# Output tests
 
+test console-puts-1.0 {Console blocking puts stdout} -constraints {win interactive} -body {
+    puts stdout "123"
+    yesno "Did you see the string \"123\"?"
+} -result 1
+
+test console-puts-1.1 {Console blocking puts stderr} -constraints {win interactive} -body {
+    puts stderr "456"
+    yesno "Did you see the string \"456\"?"
+} -result 1
+
+# fconfigure tests
+
+## stdin
+
+test console-fconfigure-1.0 {
+    Console get stdin configuration
+} -constraints {win interactive} -body {
+    lsort [dict keys [fconfigure stdin]]
+} -result {-blocking -buffering -buffersize -encoding -eofchar -inputmode -translation}
+
+set testnum 0
+foreach {opt result} {
+    -blocking 1
+    -buffering line
+    -buffersize 4096
+    -encoding utf-16
+    -inputmode normal
+    -translation auto
+} {
+    test console-fconfigure-1.[incr testnum] "Console get stdin option $opt" \
+        -constraints {win interactive} -body {
+        fconfigure stdin $opt
+    } -result $result
+}
+test console-fconfigure-1.[incr testnum] {
+    Console get stdin option -eofchar
+} -constraints {win interactive} -body {
+    fconfigure stdin -eofchar
+} -result \x1a
+
+test console-fconfigure-1.[incr testnum] {
+    fconfigure -inputmode password
+} -constraints {win interactive} -body {
+    prompt "Type \"password\" and hit Enter. You should NOT see characters echoed"
+    fconfigure stdin -inputmode password
+    gets stdin password
+    set password_echoed [yesno "Were the characters echoed?"]
+    prompt "Type \"normal\" and hit Enter. You should see characters echoed"
+    fconfigure stdin -inputmode normal
+    gets stdin normal
+    set normal_echoed [yesno "Were the characters echoed?"]
+    list $password_echoed $password $normal_echoed $normal
+
+} -result [list 0 password 1 normal]
+
+## stdout/stderr
+foreach chan {stdout stderr} major {2 3} {
+    test console-fconfigure-$major.0 "Console get $chan configuration" -constraints {
+        win interactive
+    } -body {
+        lsort [dict keys [fconfigure $chan]]
+    } -result {-blocking -buffering -buffersize -encoding -eofchar -translation -winsize}
+    set testnum 0
+    foreach {opt result} {
+        -blocking 1
+        -buffersize 4096
+        -encoding utf-16
+        -translation crlf
+    } {
+        test console-fconfigure-$major.[incr testnum] "Console get $chan option $opt" \
+            -constraints {win interactive} -body {
+                fconfigure $chan $opt
+            } -result $result
+    }
+
+    test console-fconfigure-$major.[incr testnum] "Console get $chan option -winsize" -constraints {win interactive} -body {
+        fconfigure $chan -winsize
+    } -result {\d+ \d+} -match regexp
+
+    test console-fconfigure-$major.[incr testnum] "Console get $chan option -buffering" -constraints {win interactive} -body {
+        fconfigure $chan -buffering
+    } -result [expr {$chan eq "stdout" ? "line" : "none"}]
+}
 
 
 #cleanup

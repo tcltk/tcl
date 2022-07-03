@@ -54,15 +54,14 @@
 
 static int initialized = 0;
 
-#ifdef TCL_CONSOLE_DEBUG
-#ifndef CONSOLE_BUFFER_SIZE
 /*
- * Force tiny to stress synchronization. Must be at least 2*sizeof(WCHAR) :-)
- * to work around Tcl channel bug https://core.tcl-lang.org/tcl/tktview/b3977d199b08e3979a8da970553d5209b3042e9c
+ * Permit CONSOLE_BUFFER_SIZE to be defined on build command for stress test.
+ *
+ * In theory, at least sizeof(WCHAR) but note the Tcl channel bug
+ * https://core.tcl-lang.org/tcl/tktview/b3977d199b08e3979a8da970553d5209b3042e9c
+ * will cause failures in test suite if close to max input line in the suite.
  */
-#define CONSOLE_BUFFER_SIZE (2*sizeof(WCHAR))
-#endif
-#else
+#ifndef CONSOLE_BUFFER_SIZE
 #define CONSOLE_BUFFER_SIZE 8000 /* In bytes */
 #endif
 
@@ -1161,7 +1160,7 @@ ConsoleInputProc(
 	 * holds a reference count on handleInfoPtr, it will not
 	 * be deallocated while the lock is released.
 	 */
-	//WakeConditionVariable(&handleInfoPtr->consoleThreadCV); TODO - Needed?
+	// WakeConditionVariable(&handleInfoPtr->consoleThreadCV); // TODO - Needed?
 	if (!SleepConditionVariableSRW(&handleInfoPtr->interpThreadCV,
 				      &handleInfoPtr->lock,
 				      INFINITE,
@@ -2263,41 +2262,52 @@ ConsoleGetOptionProc(
 	    }
 	}
     }
-
-    /*
-     * Get option -winsize
-     * Option is readonly and returned by [fconfigure chan -winsize] but not
-     * returned by [fconfigure chan] without explicit option name.
-     */
-
-    if ((len > 1) && (strncmp(optionName, "-winsize", len) == 0)) {
-	CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
-
-	valid = 1;
-	if (!GetConsoleScreenBufferInfo(chanInfoPtr->handle, &consoleInfo)) {
-	    Tcl_WinConvertError(GetLastError());
-	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"couldn't read console size: %s",
-			Tcl_PosixError(interp)));
-	    }
-	    return TCL_ERROR;
+    else {
+	/*
+	 * Output channel. Get option -winsize
+	 * Option is readonly and returned by [fconfigure chan -winsize] but not
+	 * returned by [fconfigure chan] without explicit option name.
+	 */
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-winsize");
 	}
-	sprintf(buf, "%d",
-		consoleInfo.srWindow.Right - consoleInfo.srWindow.Left + 1);
-	Tcl_DStringAppendElement(dsPtr, buf);
-	sprintf(buf, "%d",
-		consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top + 1);
-	Tcl_DStringAppendElement(dsPtr, buf);
+
+	if (len == 0 || (len > 1 && strncmp(optionName, "-winsize", len) == 0)) {
+	    CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
+
+	    valid = 1;
+	    if (!GetConsoleScreenBufferInfo(chanInfoPtr->handle,
+					    &consoleInfo)) {
+		Tcl_WinConvertError(GetLastError());
+		if (interp != NULL) {
+		    Tcl_SetObjResult(
+			interp,
+			Tcl_ObjPrintf("couldn't read console size: %s",
+				      Tcl_PosixError(interp)));
+		}
+		return TCL_ERROR;
+	    }
+	    Tcl_DStringStartSublist(dsPtr);
+	    sprintf(buf,
+		    "%d",
+		    consoleInfo.srWindow.Right - consoleInfo.srWindow.Left + 1);
+	    Tcl_DStringAppendElement(dsPtr, buf);
+	    sprintf(buf,
+		    "%d",
+		    consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top + 1);
+	    Tcl_DStringAppendElement(dsPtr, buf);
+	    Tcl_DStringEndSublist(dsPtr);
+	}
     }
+
 
     if (valid) {
 	return TCL_OK;
     }
     if (chanInfoPtr->flags & CONSOLE_READ_OPS) {
-	return Tcl_BadChannelOption(interp, optionName, "inputmode winsize");
+	return Tcl_BadChannelOption(interp, optionName, "inputmode");
     } else {
-	return Tcl_BadChannelOption(interp, optionName, "");
+	return Tcl_BadChannelOption(interp, optionName, "winsize");
     }
 }
 
