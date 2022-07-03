@@ -56,8 +56,11 @@ static int initialized = 0;
 
 #ifdef TCL_CONSOLE_DEBUG
 #ifndef CONSOLE_BUFFER_SIZE
-/*  Force tiny to stress synchronization. Must be at least sizeof(WCHAR) :-) */
-#define CONSOLE_BUFFER_SIZE sizeof(WCHAR)
+/*
+ * Force tiny to stress synchronization. Must be at least 2*sizeof(WCHAR) :-)
+ * to work around Tcl channel bug https://core.tcl-lang.org/tcl/tktview/b3977d199b08e3979a8da970553d5209b3042e9c
+ */
+#define CONSOLE_BUFFER_SIZE (2*sizeof(WCHAR))
 #endif
 #else
 #define CONSOLE_BUFFER_SIZE 8000 /* In bytes */
@@ -139,8 +142,7 @@ typedef struct ConsoleHandleInfo {
  * from under the console thread. Access to individual fields does not need
  * to be controlled because
  *   - the console thread does not write to any fields
- *   - changes to the nextWatchingChannelPtr field and CONSOLE_EVENT_QUEUE
- *     bit flags are under the gConsoleLock lock
+ *   - changes to the nextWatchingChannelPtr field
  *   - changes to other fields do not matter because after being read for
  *     queueing events, they are verified again when the event is received
  *     in the interpreter thread (since they could have changed anyways while
@@ -797,14 +799,18 @@ ConsoleSetupProc(
 	handleInfoPtr = FindConsoleInfo(chanInfoPtr);
 	if (handleInfoPtr != NULL) {
 	    AcquireSRWLockShared(&handleInfoPtr->lock);
-	    if ((chanInfoPtr->watchMask & TCL_READABLE)
-		&& (RingBufferLength(&handleInfoPtr->buffer) > 0
-		    || handleInfoPtr->lastError != ERROR_SUCCESS)) {
-		block = 0; /* Input data available */
+	    /* Remember at most one of READABLE, WRITABLE set */
+	    if (chanInfoPtr->watchMask & TCL_READABLE) {
+		if (RingBufferLength(&handleInfoPtr->buffer) > 0
+		    || handleInfoPtr->lastError != ERROR_SUCCESS) {
+		    block = 0; /* Input data available */
+		}
 	    }
-	    else if (RingBufferFreeSpace(&handleInfoPtr->buffer) > 0) {
-		/* TCL_WRITABLE */
-		block = 0; /* Output space available */
+	    else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
+		if (RingBufferFreeSpace(&handleInfoPtr->buffer) > 0) {
+		    /* TCL_WRITABLE */
+		    block = 0; /* Output space available */
+		}
 	    }
 	    ReleaseSRWLockShared(&handleInfoPtr->lock);
 	}
@@ -876,13 +882,17 @@ ConsoleCheckProc(
 
 	if (handleInfoPtr != NULL) {
 	    AcquireSRWLockShared(&handleInfoPtr->lock);
-	    if ((chanInfoPtr->watchMask & TCL_READABLE)
-		&& (RingBufferLength(&handleInfoPtr->buffer) > 0
-		    || handleInfoPtr->lastError != ERROR_SUCCESS)) {
-		needEvent = 1; /* Input data available or error/EOF */
+	    /* Rememebr channel is read or write, never both */
+	    if (chanInfoPtr->watchMask & TCL_READABLE) {
+		if (RingBufferLength(&handleInfoPtr->buffer) > 0
+		    || handleInfoPtr->lastError != ERROR_SUCCESS) {
+		    needEvent = 1; /* Input data available or error/EOF */
+		}
 	    }
-	    else if (RingBufferFreeSpace(&handleInfoPtr->buffer) > 0) {
-		needEvent = 1; /* Output space available */
+	    else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
+		if (RingBufferFreeSpace(&handleInfoPtr->buffer) > 0) {
+		    needEvent = 1; /* Output space available */
+		}
 	    }
 	    ReleaseSRWLockShared(&handleInfoPtr->lock);
 	}
@@ -1108,7 +1118,9 @@ ConsoleInputProc(
 	 */
 	if (numRead != 0) {
 	    /* If console thread was blocked, awaken it */
-	    WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+	    if (freeSpace == 0) {
+		WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+	    }
 	    break;
 	}
 	/*
@@ -1209,10 +1221,10 @@ ConsoleOutputProc(
     AcquireSRWLockExclusive(&handleInfoPtr->lock);
     ReleaseSRWLockShared(&gConsoleLock); /* AFTER acquiring handleInfoPtr->lock */
 
-    /* Keep looping if until all written. Break out for async and errors */
+    /* Keep looping until all written. Break out for async and errors */
     numWritten = 0;
     while (1) {
-	/* Check for error and close on every loop. */
+	/* Check for error and closing on every loop. */
 	if (handleInfoPtr->lastError != 0) {
 	    Tcl_WinConvertError(handleInfoPtr->lastError);
 	    *errorCode = Tcl_GetErrno();
@@ -1286,6 +1298,7 @@ ConsoleEventProc(
     ConsoleEvent *consoleEvPtr = (ConsoleEvent *) evPtr;
     ConsoleChannelInfo *chanInfoPtr;
     int freeChannel;
+    int mask = 0;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return 0;
@@ -1298,6 +1311,12 @@ ConsoleEventProc(
      * happens in this function.
      */
 
+    /*
+     * Global lock used for chanInfoPtr. A read (shared) lock suffices
+     * because all access is within the channel owning thread with the
+     * exception of watchers which is a read-only access. See comments
+     * to ConsoleChannelInfo.
+     */
     AcquireSRWLockShared(&gConsoleLock);
     chanInfoPtr->flags &= ~CONSOLE_EVENT_QUEUED;
 
@@ -1308,7 +1327,6 @@ ConsoleEventProc(
     if (chanInfoPtr->channel && chanInfoPtr->threadId == Tcl_GetCurrentThread()
 	&& (chanInfoPtr->watchMask & (TCL_READABLE|TCL_WRITABLE))) {
 	ConsoleHandleInfo *handleInfoPtr;
-	int mask = 0;
 	handleInfoPtr = FindConsoleInfo(chanInfoPtr);
 	if (handleInfoPtr == NULL) {
 	    /* Console was closed. EOF->read event only (not write) */
@@ -1318,20 +1336,33 @@ ConsoleEventProc(
 	}
 	else {
 	    AcquireSRWLockShared(&handleInfoPtr->lock);
-	    if (chanInfoPtr->watchMask & TCL_READABLE
+	    /* Remember at most one of READABLE, WRITABLE set */
+	    if ((chanInfoPtr->watchMask & TCL_READABLE)
 		&& RingBufferLength(&handleInfoPtr->buffer)) {
 		mask = TCL_READABLE;
 	    }
-	    else if (RingBufferFreeSpace(&handleInfoPtr->buffer)) {
+	    else if ((chanInfoPtr->watchMask & TCL_WRITABLE)
+		     && RingBufferFreeSpace(&handleInfoPtr->buffer) > 0) {
 		/* Generate write event space available */
 		mask = TCL_WRITABLE;
 	    }
 	    ReleaseSRWLockShared(&handleInfoPtr->lock);
 	}
-	if (mask) {
-	    Tcl_NotifyChannel(chanInfoPtr->channel, mask);
-	}
     }
+
+    /*
+     * Tcl_NotifyChannel can recurse through the file event callback so need
+     * to release locks first. Our reference still holds so no danger of
+     * chanInfoPtr being deallocated if the callback closes the channel.
+     */
+    ReleaseSRWLockShared(&gConsoleLock);
+    if (mask) {
+	Tcl_NotifyChannel(chanInfoPtr->channel, mask);
+	/* Note: chanInfoPtr ref count may have changed */
+    }
+
+    /* No need to lock - see comments earlier */
+
     /* Remove the reference to the channel from event record */
     if (chanInfoPtr->numRefs > 1) {
 	chanInfoPtr->numRefs -= 1;
@@ -1341,7 +1372,6 @@ ConsoleEventProc(
 	assert(chanInfoPtr->channel == NULL);
 	freeChannel = 1;
     }
-    ReleaseSRWLockShared(&gConsoleLock);
 
     if (freeChannel)
 	ckfree(chanInfoPtr);
@@ -1665,7 +1695,6 @@ ConsoleWriterThread(LPVOID arg)
 {
     ConsoleHandleInfo *handleInfoPtr = (ConsoleHandleInfo *) arg;
     ConsoleHandleInfo **iterator;
-    ConsoleChannelInfo *chanInfoPtr = NULL;
     BOOL success;
     RingSizeT numBytes;
     /*
@@ -2029,7 +2058,7 @@ TclWinOpenConsoleChannel(
 	    chanInfoPtr, permissions);
 
     /*
-     * Files have default translation of AUTO and ^Z eof char, which means
+     * Consoles have default translation of auto and ^Z eof char, which means
      * that a ^Z will be accepted as EOF when reading.
      */
 
