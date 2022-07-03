@@ -225,7 +225,6 @@ static DWORD	WriteConsoleChars(HANDLE hConsole,
 static void	RingBufferInit(RingBuffer *ringPtr, RingSizeT capacity);
 static void	RingBufferClear(RingBuffer *ringPtr);
 static char *	RingBufferSegment(const RingBuffer *ringPtr, RingSizeT *lenPtr);
-static int	RingBufferCheck(const RingBuffer *ringPtr);
 static RingSizeT	RingBufferIn(RingBuffer *ringPtr, const char *srcPtr,
 			    RingSizeT srcLen, int partialCopyOk);
 static RingSizeT	RingBufferOut(RingBuffer *ringPtr, char *dstPtr,
@@ -236,6 +235,9 @@ static ConsoleHandleInfo *FindConsoleInfo(const ConsoleChannelInfo *);
 static DWORD WINAPI	ConsoleReaderThread(LPVOID arg);
 static DWORD WINAPI	ConsoleWriterThread(LPVOID arg);
 static void		NudgeWatchers(HANDLE consoleHandle);
+#ifndef NDEBUG
+static int	RingBufferCheck(const RingBuffer *ringPtr);
+#endif
 
 /*
  * Static data.
@@ -500,7 +502,7 @@ RingBufferOut(RingBuffer *ringPtr,
  *
  *------------------------------------------------------------------------
  */
- static char *
+ static inline char *
  RingBufferSegment(const RingBuffer *ringPtr, RingSizeT *lengthPtr)
 {
     RINGBUFFER_ASSERT(ringPtr);
@@ -515,6 +517,7 @@ RingBufferOut(RingBuffer *ringPtr,
     return *lengthPtr == 0 ? NULL : ringPtr->start + ringPtr->bufPtr;
 }
 
+#ifndef NDEBUG
 static int
 RingBufferCheck(const RingBuffer *ringPtr)
 {
@@ -522,7 +525,8 @@ RingBufferCheck(const RingBuffer *ringPtr)
 	    && ringPtr->start < ringPtr->capacity
 	    && ringPtr->length <= ringPtr->capacity);
 }
-
+#endif
+
 /*
  *------------------------------------------------------------------------
  *
@@ -1756,7 +1760,7 @@ ConsoleWriterThread(LPVOID arg)
 	}
 
 	/* We have data to write */
-	if (numBytes > (sizeof(buffer) / sizeof(buffer[0]))) {
+	if ((size_t)numBytes > (sizeof(buffer) / sizeof(buffer[0]))) {
 	    numBytes = sizeof(buffer);
 	}
 	/* No need to check result, we already checked length bytes available */
