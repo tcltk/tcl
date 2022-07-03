@@ -223,7 +223,6 @@ static DWORD	WriteConsoleChars(HANDLE hConsole,
 		    RingSizeT *nCharsWritten);
 static void	RingBufferInit(RingBuffer *ringPtr, RingSizeT capacity);
 static void	RingBufferClear(RingBuffer *ringPtr);
-static char *	RingBufferSegment(const RingBuffer *ringPtr, RingSizeT *lenPtr);
 static RingSizeT	RingBufferIn(RingBuffer *ringPtr, const char *srcPtr,
 			    RingSizeT srcLen, int partialCopyOk);
 static RingSizeT	RingBufferOut(RingBuffer *ringPtr, char *dstPtr,
@@ -484,36 +483,6 @@ RingBufferOut(RingBuffer *ringPtr,
     RINGBUFFER_ASSERT(ringPtr);
 
     return dstCapacity;
-}
-
-/*
- *------------------------------------------------------------------------
- *
- * RingBufferSegment --
- *
- *    Returns a pointer to the leading data segment in the ring buffer.
- *
- * Results:
- *    Pointer to start of segment.
- *
- * Side effects:
- *    None.
- *
- *------------------------------------------------------------------------
- */
- static inline char *
- RingBufferSegment(const RingBuffer *ringPtr, RingSizeT *lengthPtr)
-{
-    RINGBUFFER_ASSERT(ringPtr);
-    if (ringPtr->length <= (ringPtr->capacity - ringPtr->start)) {
-	/* No content wrap around. */
-	*lengthPtr = ringPtr->length;
-    }
-    else {
-	/* Content wraps around so lead segment stretches to end of buffer */
-	*lengthPtr = ringPtr->capacity - ringPtr->start;
-    }
-    return *lengthPtr == 0 ? NULL : ringPtr->start + ringPtr->bufPtr;
 }
 
 #ifndef NDEBUG
