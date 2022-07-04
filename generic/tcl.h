@@ -993,6 +993,13 @@ typedef struct Tcl_DString {
 #define TCL_INDEX_TEMP_TABLE	64
 
 /*
+ * Flags that may be passed to Tcl_UniCharToUtf.
+ * TCL_COMBINE Combine surrogates (default in Tcl 8.x)
+ */
+
+#define TCL_COMBINE		0
+
+/*
  *----------------------------------------------------------------------------
  * Flag values passed to Tcl_RecordAndEval, Tcl_EvalObj, Tcl_EvalObjv.
  * WARNING: these bit choices must not conflict with the bit choices for
