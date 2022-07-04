@@ -3837,13 +3837,13 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_UpVar(interp, frameName, varName, localName, flags) \
 	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
 #define Tcl_AddErrorInfo(interp, message) \
-	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, -1))
+	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, TCL_INDEX_NONE))
 #define Tcl_AddObjErrorInfo(interp, message, length) \
 	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
 #define Tcl_Eval(interp, objPtr) \
-	Tcl_EvalEx(interp, objPtr, -1, 0)
+	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, 0)
 #define Tcl_GlobalEval(interp, objPtr) \
-	Tcl_EvalEx(interp, objPtr, -1, TCL_EVAL_GLOBAL)
+	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
 #define Tcl_GetStringResult(interp) Tcl_GetString(Tcl_GetObjResult(interp))
 #define Tcl_SaveResult(interp, statePtr) \
 	do { \
@@ -3863,7 +3863,7 @@ extern const TclStubs *tclStubsPtr;
 	do { \
 	    const char *__result = result; \
 	    Tcl_FreeProc *__freeProc = freeProc; \
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, -1)); \
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, TCL_INDEX_NONE)); \
 	    if (__result != NULL && __freeProc != NULL && __freeProc != TCL_VOLATILE) { \
 		if (__freeProc == TCL_DYNAMIC) { \
 		    Tcl_Free((char *)__result); \

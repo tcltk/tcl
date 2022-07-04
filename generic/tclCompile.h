@@ -97,7 +97,7 @@ typedef struct {
     size_t numCodeBytes;		/* Number of bytes in the code range. */
     size_t breakOffset;		/* If LOOP_EXCEPTION_RANGE, the target PC
 				 * offset for a break command in the range. */
-    size_t continueOffset;		/* If LOOP_EXCEPTION_RANGE and not -1, the
+    size_t continueOffset;		/* If LOOP_EXCEPTION_RANGE and not TCL_INDEX_NONE, the
 				 * target PC offset for a continue command in
 				 * the code range. Otherwise, ignore this
 				 * range when processing a continue
@@ -297,9 +297,9 @@ typedef struct CompileEnv {
 				 * information provided by ObjInterpProc in
 				 * tclProc.c. */
     size_t numCommands;		/* Number of commands compiled. */
-    size_t exceptDepth;		/* Current exception range nesting level; -1
+    size_t exceptDepth;		/* Current exception range nesting level; TCL_INDEX_NONE
 				 * if not in any range currently. */
-    size_t maxExceptDepth;		/* Max nesting level of exception ranges; -1
+    size_t maxExceptDepth;		/* Max nesting level of exception ranges; TCL_INDEX_NONE
 				 * if no ranges have been compiled. */
     size_t maxStackDepth;		/* Maximum number of stack elements needed to
 				 * execute the code. Set by compilation
