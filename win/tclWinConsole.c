@@ -66,6 +66,9 @@
  * fashion. This is not good application design and hence no plan to address
  * this (not clear what should be done even in theory)
  *
+ * For output, we do not restrict all output to the console writer threads.
+ * See ConsoleOutputProc for the conditions.
+ *
  * Locks are never held when calling the ReadConsole/WriteConsole API's
  * since they may block.
  */
@@ -1233,31 +1236,71 @@ ConsoleOutputProc(
 	    break;
 	}
 
-	numWritten += RingBufferIn(
-	    &handleInfoPtr->buffer, numWritten + buf, toWrite - numWritten, 1);
-	if (numWritten == toWrite || chanInfoPtr->flags & CONSOLE_ASYNC) {
-	    /* All done or async, just accept whatever was written */
-	    break;
-	}
 	/*
-	 * Release the lock and sleep. Note that because the channel
-	 * holds a reference count on handleInfoPtr, it will not
-	 * be deallocated while the lock is released.
+	 * We can either write directly or through the console thread's
+	 * ring buffer. We have to do the latter when
+	 * (1) the operation is async since WriteConsoleChars is always blocking
+	 * (2) when there is already data in the ring buffer because we don't
+	 *     want to reorder output from within a thread
+	 * (3) when there are an odd number of bytes since WriteConsole
+	 *     takes whole WCHARs
+	 * (4) when the pointer is not aligned on WCHAR
+	 * The ring buffer deals with cases (3) and (4). It would be harder
+	 * to duplicate that here.
 	 */
-	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
-	if (!SleepConditionVariableSRW(&handleInfoPtr->interpThreadCV,
-				       &handleInfoPtr->lock,
-				       INFINITE,
-				       0)) {
-	    /* Report the error */
-	    Tcl_WinConvertError(GetLastError());
-	    *errorCode = Tcl_GetErrno();
-	    numWritten = -1;
-	    break;
+	if ((chanInfoPtr->flags & CONSOLE_ASYNC)              /* Case (1) */
+	    || RingBufferLength(&handleInfoPtr->buffer) != 0  /* Case (2) */
+	    || (toWrite & 1) != 0                             /* Case (3) */
+	    || (PTR2INT(buf) & 1) != 0                        /* Case (4) */
+	    ) {
+	    numWritten += RingBufferIn(&handleInfoPtr->buffer,
+				       numWritten + buf,
+				       toWrite - numWritten,
+				       1);
+	    if (numWritten == toWrite || chanInfoPtr->flags & CONSOLE_ASYNC) {
+		/* All done or async, just accept whatever was written */
+		break;
+	    }
+	    /*
+	     * Release the lock and sleep. Note that because the channel
+	     * holds a reference count on handleInfoPtr, it will not
+	     * be deallocated while the lock is released.
+	     */
+	    WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+	    if (!SleepConditionVariableSRW(&handleInfoPtr->interpThreadCV,
+					   &handleInfoPtr->lock,
+					   INFINITE,
+					   0)) {
+		/* Report the error */
+		Tcl_WinConvertError(GetLastError());
+		*errorCode = Tcl_GetErrno();
+		numWritten = -1;
+		break;
+	    }
 	}
+	else {
+	    /* Direct output */
+	    DWORD winStatus;
+	    HANDLE consoleHandle = handleInfoPtr->console;
+	    /* Unlock before blocking in WriteConsole */
+	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
+	    /* UNLOCKED so return, DON'T break out of loop as it will unlock again! */
+	    winStatus = WriteConsoleChars(consoleHandle,
+					  (WCHAR *)buf,
+					  toWrite / sizeof(WCHAR),
+					  &numWritten);
+	    if (winStatus == ERROR_SUCCESS) {
+		return numWritten * sizeof(WCHAR);
+	    }
+	    else {
+		Tcl_WinConvertError(winStatus);
+		*errorCode = Tcl_GetErrno();
+		return -1;
+	    }
+	}
+
 	/* Lock is reacquired. Continue loop */
     }
-
     WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
     return numWritten;
