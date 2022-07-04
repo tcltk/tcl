@@ -1509,14 +1509,8 @@ ConsoleReaderThread(
 
     /*
      * Keep looping until one of the following happens.
-     *
      * - there are no more channels listening on the console
      * - the console handle has been closed
-     *
-     * On each iteration,
-     * - if the channel buffer is full, wait for some channel reader to read
-     * - if there is data in our input buffer copy it to the channel buffer
-     * - get more data from the console
      */
 
     /* This thread is holding a reference so pointer is safe */
