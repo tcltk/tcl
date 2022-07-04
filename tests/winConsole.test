@@ -118,12 +118,12 @@ test console-fconfigure-1.[incr testnum] {
 test console-fconfigure-1.[incr testnum] {
     fconfigure -inputmode password
 } -constraints {win interactive} -body {
-    prompt "Type \"password\" and hit Enter. You should NOT see characters echoed"
+    prompt "Type \"password\" and hit Enter. You should NOT see characters echoed: "
     fconfigure stdin -inputmode password
     gets stdin password
-    set password_echoed [yesno "Were the characters echoed?"]
-    prompt "Type \"normal\" and hit Enter. You should see characters echoed"
     fconfigure stdin -inputmode normal
+    set password_echoed [yesno "\nWere the characters echoed?"]
+    prompt "Type \"normal\" and hit Enter. You should see characters echoed: "
     gets stdin normal
     set normal_echoed [yesno "Were the characters echoed?"]
     list $password_echoed $password $normal_echoed $normal

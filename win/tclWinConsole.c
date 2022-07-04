@@ -45,14 +45,32 @@
  * per thread queues which simplifies lock management particularly because
  * thread-console relation is not one-one and is likely more performant as
  * well with fewer locks needing to be obtained.
+ *
+ * Some additional design notes/reminders for the future:
+ *
+ * All input is done through the reader thread, even synchronous reads of
+ * stdin which in theory could be done directly by the interpreter threads.
+ * This is because I'm not entirely confident about multithreaded access to
+ * the ReadConsole API (probably ok since Microsoft does not warn against
+ * this) and also the API requires reading an even number of bytes (WCHAR)
+ * while the channel callback has no such restriction (in theory).
+ * Accounting for that in the callbacks is doable but slightly tricky  while
+ * straightforward in the reader thread because of its double buffering.
+ *
+ * The reader thread does not read ahead. That is, it will not post a read
+ * until some interpreter thread is actually requesting a read. This is
+ * because an interpreter may (for example) turn off echo for passwords and
+ * the read ahead would come in the way of that.
+ *
+ * If multiple threads are reading from stdin, the input is sprayed in random
+ * fashion. This is not good application design and hence no plan to address
+ * this (not clear what should be done even in theory)
+ *
+ * Locks are never held when calling the ReadConsole/WriteConsole API's
+ * since they may block.
  */
 
-/*
- * The following variable is used to tell whether this module has been
- * initialized.
- */
-
-static int initialized = 0;
+static int gInitialized = 0;
 
 /*
  * Permit CONSOLE_BUFFER_SIZE to be defined on build command for stress test.
@@ -127,6 +145,8 @@ typedef struct ConsoleHandleInfo {
     int numRefs;	  /* See comments above */
     int permissions;	  /* TCL_READABLE for input consoles, TCL_WRITABLE
 			   * for output. Only one or the other can be set. */
+    int flags;
+#define CONSOLE_DATA_AWAITED 0x0001 /* An interpreter is awaiting data */
 } ConsoleHandleInfo;
 
 /*
@@ -171,9 +191,9 @@ typedef struct ConsoleChannelInfo {
 				 * TCL_WRITABLE, or TCL_EXCEPTION: indicates
 				 * which events should be reported. */
     int flags;			/* State flags */
-#define CONSOLE_EVENT_QUEUED (1 << 0) /* Notification event already queued */
-#define CONSOLE_ASYNC        (1 << 1) /* Channel is non-blocking. */
-#define CONSOLE_READ_OPS     (1 << 2) /* Channel supports read-related ops. */
+#define CONSOLE_EVENT_QUEUED 0x0001 /* Notification event already queued */
+#define CONSOLE_ASYNC        0x0002 /* Channel is non-blocking. */
+#define CONSOLE_READ_OPS     0x0004 /* Channel supports read-related ops. */
 } ConsoleChannelInfo;
 
 /*
@@ -622,10 +642,10 @@ ConsoleInit(void)
      * is a speed enhancement.
      */
 
-    if (!initialized) {
+    if (!gInitialized) {
 	AcquireSRWLockExclusive(&gConsoleLock);
-	if (!initialized) {
-	    initialized = 1;
+	if (!gInitialized) {
+	    gInitialized = 1;
 	    Tcl_CreateExitHandler(ProcExitHandler, NULL);
 	}
 	ReleaseSRWLockExclusive(&gConsoleLock);
@@ -686,7 +706,7 @@ ProcExitHandler(
     TCL_UNUSED(ClientData))
 {
     AcquireSRWLockExclusive(&gConsoleLock);
-    initialized = 0;
+    gInitialized = 0;
     ReleaseSRWLockExclusive(&gConsoleLock);
 }
 
@@ -1090,15 +1110,13 @@ ConsoleInputProc(
 	 */
 	if (numRead != 0) {
 	    /* If console thread was blocked, awaken it */
-	    if (freeSpace == 0) {
-		WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
-	    }
+	    // XXX WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
 	    break;
 	}
 	/*
 	 * No data available.
 	 *  - If an error was recorded, generate that and reset it.
-	 *  - If EOF, indicate as much. It is up to application to close
+	 *  - If EOF, indicate as much. It is up to the application to close
 	 *    the channel.
 	 *  - Otherwise, if non-blocking return EAGAIN or wait for more data.
 	 */
@@ -1119,21 +1137,26 @@ ConsoleInputProc(
 	    chanInfoPtr->handle = INVALID_HANDLE_VALUE;
 	    break;
 	}
+	/* Request console reader thread for data */
+	handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
+	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+
+	/* For async, tell caller we are blocked */
 	if (chanInfoPtr->flags & CONSOLE_ASYNC) {
 	    *errorCode = EWOULDBLOCK;
 	    numRead = -1;
 	    break;
 	}
+
 	/*
 	 * Release the lock and sleep. Note that because the channel
 	 * holds a reference count on handleInfoPtr, it will not
 	 * be deallocated while the lock is released.
 	 */
-	// WakeConditionVariable(&handleInfoPtr->consoleThreadCV); // TODO - Needed?
 	if (!SleepConditionVariableSRW(&handleInfoPtr->interpThreadCV,
-				      &handleInfoPtr->lock,
-				      INFINITE,
-				      0)) {
+				       &handleInfoPtr->lock,
+				       INFINITE,
+				       0)) {
 	    Tcl_WinConvertError(GetLastError());
 	    *errorCode = Tcl_GetErrno();
 	    numRead = -1;
@@ -1370,9 +1393,9 @@ ConsoleEventProc(
 static void
 ConsoleWatchProc(
     ClientData instanceData,	/* Console state. */
-    int permissions)		/* What events to watch for, OR-ed combination
-				 * of TCL_READABLE, TCL_WRITABLE and
-				 * TCL_EXCEPTION. */
+    int newMask)		/* What events to watch for, one of
+				 * of TCL_READABLE, TCL_WRITABLE
+				 */
 {
     ConsoleChannelInfo **nextPtrPtr, *ptr;
     ConsoleChannelInfo *chanInfoPtr = (ConsoleChannelInfo *)instanceData;
@@ -1383,15 +1406,27 @@ ConsoleWatchProc(
      * need to update the watchMask and then force the notifier to poll once.
      */
 
-    chanInfoPtr->watchMask = permissions & chanInfoPtr->permissions;
+    chanInfoPtr->watchMask = newMask & chanInfoPtr->permissions;
     if (chanInfoPtr->watchMask) {
 	Tcl_Time blockTime = { 0, 0 };
 
 	if (!oldMask) {
-	    /* Add to list of watched channels */
 	    AcquireSRWLockExclusive(&gConsoleLock);
+	    /* Add to list of watched channels */
 	    chanInfoPtr->nextWatchingChannelPtr = gWatchingChannelList;
 	    gWatchingChannelList = chanInfoPtr;
+
+	    /*
+	     * For read channels, need to tell the console reader thread
+	     * that we are looking for data since it will not do reads until
+	     * it knows someone is awaiting.
+	     */
+	    ConsoleHandleInfo *handleInfoPtr;
+	    handleInfoPtr = FindConsoleInfo(chanInfoPtr);
+	    if (handleInfoPtr) {
+		handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
+		WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+	    }
 	    ReleaseSRWLockExclusive(&gConsoleLock);
 	}
 	Tcl_SetMaxBlockTime(&blockTime);
@@ -1475,7 +1510,7 @@ ConsoleReaderThread(
     /*
      * Keep looping until one of the following happens.
      *
-     * - there are not more channels listening on the console
+     * - there are no more channels listening on the console
      * - the console handle has been closed
      *
      * On each iteration,
@@ -1499,43 +1534,14 @@ ConsoleReaderThread(
 	}
 
 	/*
-	 * Cases:
-	 * (1) The shared input buffer is full. Have to wait for an interp
-	 *     thread to read from it and make room.
-	 * (2) The shared input buffer has room and the thread private buffer
-	 *     has data. Copy into the shared input buffer.
-	 * (3) The channel has previously seen an error. Treat as EOF. Note
-	 *     this check is after the above so any data already available
-	 *     is passed on.
-	 * (4) Neither buffer has data and no errors. Go get some from console.
-	 *
-	 * There is some duplication of code below but easier to think about
-	 * rather than combining cases.
+	 * Shared buffer has no data. If we have some in our private buffer
+	 * copy that. Else check if there has been an error. In both cases
+	 * notify the interp threads.
 	 */
-	if (RingBufferFreeSpace(&handleInfoPtr->buffer) == 0) {
-	    /* Case (1) No room in buffer.*/
-
-	    /* Awaken any reader channels - TODO - is this needed? */
-	    // WakeConditionVariable(&handleInfoPtr->interpThreadCV);
-
-	    /* Release lock and wait for room */
-	    success = SleepConditionVariableSRW(&handleInfoPtr->consoleThreadCV,
-						&handleInfoPtr->lock,
-						INFINITE,
-						0);
-	    /* Note: lock has been reacquired */
-
-	    if (!success && GetLastError() != ERROR_TIMEOUT) {
-		/* TODO - what can be done? Should not happen */
-		/* For now keep going */
-	    }
-	} else if (inputLen > 0 || handleInfoPtr->lastError != 0) {
-	    /* Cases (2) and (3) - require notifications to interpreters */
+	if (inputLen > 0 || handleInfoPtr->lastError != 0) {
 	    HANDLE consoleHandle;
 	    if (inputLen > 0) {
-		/*
-		 * Case (2). Private buffer has data. Copy it over.
-		 */
+		/* Private buffer has data. Copy it over. */
 		RingSizeT nStored;
 
 		assert((inputLen - inputOffset) > 0);
@@ -1553,43 +1559,54 @@ ConsoleReaderThread(
 	    }
 	    else {
 		/*
-		 * Case (3). On error, nothing but inform caller and wait
+		 * On error, nothing but inform caller and wait
 		 * We do not want to exit until there are no client interps.
 		 */
 	    }
 
 	    /*
-	     * Wake up any threads waiting synchronously. Really we only
-	     * to do this if buffer was previously empty, blocking readers
-	     * but whatever...don't further complicate things.
+	     * Wake up any threads waiting either synchronously or
+	     * asynchronously. Since we are providing data, turn off the
+	     * AWAITED flag. If the data provided is not sufficient the
+	     * clients will request again. Note we have to wake up ALL
+	     * awaiting threads, not just one, so they can all reissue
+	     * requests if needed. (In a properly designed app, at most one
+	     * thread should be reading standard input but...)
 	     */
-	    WakeConditionVariable(&handleInfoPtr->interpThreadCV);
-
+	    handleInfoPtr->flags &= ~CONSOLE_DATA_AWAITED;
+	    /* Wake synchronous channels */
+	    WakeAllConditionVariable(&handleInfoPtr->interpThreadCV);
 	    /*
-	     * Wake up all channels registered for file events. Note in
+	     * Wake up async channels registered for file events. Note in
 	     * order to follow the locking hierarchy, we need to release
-	     * handleInfoPtr->lock before acquiring gConsoleLock and
-	     * relock it.
+	     * handleInfoPtr->lock before calling NudgeWatchers.
 	     */
 	    consoleHandle = handleInfoPtr->console;
-	    /*
-	     * Wake up all channels registered for file events. Note in
-	     * order to follow the locking hierarchy, we cannot hold any locks
-	     * when calling NudgeWatchers.
-	     */
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
 	    NudgeWatchers(consoleHandle);
-
 	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
-	}
-	else {
+
 	    /*
-	     * Case (4). Need to go get more data from console. We only
-	     * store the last error. It is up to channel handlers to decide
-	     * whether to close or what to do.
+	     * Loop back to recheck for exit conditions changes while the
+	     * the lock was not held.
 	     */
+	    continue;
+	}
+
+	/*
+	 * Both shared buffer and private buffer are empty. Need to go get
+	 * data from console but do not want to read ahead because the
+	 * interp thread might change the read mode, e.g. turning off echo
+	 * for password input. So only do so if at least one interpreter has
+	 * requested data.
+	 */
+	if (handleInfoPtr->flags & CONSOLE_DATA_AWAITED) {
 	    DWORD error;
+	    /* Do not hold the lock while blocked in console */
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
+	    /*
+	     * Note - the temporary buffer serves two purposes. It
+	     */
 	    error = ReadConsoleChars(handleInfoPtr->console,
 				     (WCHAR *)inputChars,
 				     sizeof(inputChars) / sizeof(WCHAR),
@@ -1599,12 +1616,25 @@ ConsoleReaderThread(
 		inputLen *= sizeof(WCHAR);
 	    }
 	    else {
+		/*
+		 * We only store the last error. It is up to channel
+		 * handlers whether to close or not in case of errors.
+		 */
 		handleInfoPtr->lastError = error;
 		if (handleInfoPtr->lastError == ERROR_INVALID_HANDLE) {
 		    handleInfoPtr->console = INVALID_HANDLE_VALUE;
 		}
 	    }
 	}
+	else {
+	    /* Wait until an interp thread asks for data. */
+	    success = SleepConditionVariableSRW(&handleInfoPtr->consoleThreadCV,
+						&handleInfoPtr->lock,
+						INFINITE,
+						0);
+	}
+
+	/* Loop again to check for exit or wait for readers to wake us */
     }
 
     /*
