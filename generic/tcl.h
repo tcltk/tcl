@@ -879,6 +879,16 @@ typedef struct Tcl_DString {
 #define TCL_INDEX_TEMP_TABLE	64
 
 /*
+ * Flags that may be passed to Tcl_UniCharToUtf.
+ * TCL_COMBINE Combine surrogates
+ */
+
+#if TCL_MAJOR_VERSION > 8
+#    define TCL_COMBINE		0x1000000
+#else
+#    define TCL_COMBINE		0
+#endif
+/*
  *----------------------------------------------------------------------------
  * Flag values passed to Tcl_RecordAndEval, Tcl_EvalObj, Tcl_EvalObjv.
  * WARNING: these bit choices must not conflict with the bit choices for
@@ -1215,11 +1225,12 @@ struct Tcl_Event {
 };
 
 /*
- * Positions to pass to Tcl_QueueEvent:
+ * Positions to pass to Tcl_QueueEvent/Tcl_ThreadQueueEvent:
  */
 
 typedef enum {
-    TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK
+    TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
+	    TCL_QUEUE_ALERT_IF_EMPTY=4
 } Tcl_QueuePosition;
 
 /*

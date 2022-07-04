@@ -208,15 +208,23 @@ Invalid(
  *---------------------------------------------------------------------------
  */
 
+#undef Tcl_UniCharToUtf
 int
 Tcl_UniCharToUtf(
     int ch,			/* The Tcl_UniChar to be stored in the
-				 * buffer. */
+				 * buffer. Can be or'ed with flag TCL_COMBINE */
     char *buf)			/* Buffer in which the UTF-8 representation of
 				 * the Tcl_UniChar is stored. Buffer must be
 				 * large enough to hold the UTF-8 character
 				 * (at most 4 bytes). */
 {
+#if TCL_UTF_MAX > 3
+    int flags = ch;
+#endif
+
+    if (ch >= TCL_COMBINE) {
+	ch &= (TCL_COMBINE - 1);
+    }
     if ((unsigned)(ch - 1) < (UNICODE_SELF - 1)) {
 	buf[0] = (char) ch;
 	return 1;
@@ -228,7 +236,11 @@ Tcl_UniCharToUtf(
 	    return 2;
 	}
 	if (ch <= 0xFFFF) {
-	    if ((ch & 0xF800) == 0xD800) {
+	    if (
+#if TCL_UTF_MAX > 3
+		    (flags & TCL_COMBINE) &&
+#endif
+		    ((ch & 0xF800) == 0xD800)) {
 		if (ch & 0x0400) {
 		    /* Low surrogate */
 		    if (((buf[0] & 0xC0) == 0x80) && ((buf[1] & 0xCF) == 0)) {
@@ -377,7 +389,7 @@ Tcl_Char16ToUtfDString(
 	    /* Special case for handling high surrogates. */
 	    p += Tcl_UniCharToUtf(-1, p);
 	}
-	len = Tcl_UniCharToUtf(*w, p);
+	len = Tcl_UniCharToUtf(*w | TCL_COMBINE, p);
 	p += len;
 	if ((*w >= 0xD800) && (len < 3)) {
 	    len = 0; /* Indication that high surrogate was found */
@@ -1348,7 +1360,7 @@ Tcl_UtfToUpper(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if ((len < TclUtfCount(upChar)) || ((upChar & ~0x7FF) == 0xD800)) {
+	if (len < TclUtfCount(upChar)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1401,7 +1413,7 @@ Tcl_UtfToLower(
 	 * char to dst if its size is <= the original char.
 	 */
 
-	if ((len < TclUtfCount(lowChar)) || ((lowChar & ~0x7FF) == 0xD800)) {
+	if (len < TclUtfCount(lowChar)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1451,7 +1463,7 @@ Tcl_UtfToTitle(
 	len = TclUtfToUCS4(src, &ch);
 	titleChar = Tcl_UniCharToTitle(ch);
 
-	if ((len < TclUtfCount(titleChar)) || ((titleChar & ~0x7FF) == 0xD800)) {
+	if (len < TclUtfCount(titleChar)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {
@@ -1467,7 +1479,7 @@ Tcl_UtfToTitle(
 	    lowChar = Tcl_UniCharToLower(lowChar);
 	}
 
-	if ((len < TclUtfCount(lowChar)) || ((lowChar & ~0x7FF) == 0xD800)) {
+	if (len < TclUtfCount(lowChar)) {
 	    memmove(dst, src, len);
 	    dst += len;
 	} else {

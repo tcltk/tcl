@@ -1269,7 +1269,7 @@ test safe-11.7 {testing safe encoding} -setup {
     interp eval $i encoding convertfrom
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?encoding? data"}
+} -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?-failindex var? ?encoding? data"}
 test safe-11.7.1 {testing safe encoding} -setup {
     set i [safe::interpCreate]
 } -body {
@@ -1278,7 +1278,7 @@ test safe-11.7.1 {testing safe encoding} -setup {
 } -returnCodes ok -match glob -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
-} -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?encoding? data"
+} -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?-failindex var? ?encoding? data"
     while executing
 "encoding convertfrom"
     invoked from within
@@ -1291,7 +1291,7 @@ test safe-11.8 {testing safe encoding} -setup {
     interp eval $i encoding convertto
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -result {wrong # args: should be "encoding convertto ?-nocomplain? ?encoding? data"}
+} -result {wrong # args: should be "encoding convertto ?-nocomplain? ?-failindex var? ?encoding? data"}
 test safe-11.8.1 {testing safe encoding} -setup {
     set i [safe::interpCreate]
 } -body {
@@ -1300,7 +1300,7 @@ test safe-11.8.1 {testing safe encoding} -setup {
 } -returnCodes ok -match glob -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
-} -result {wrong # args: should be "encoding convertto ?-nocomplain? ?encoding? data"
+} -result {wrong # args: should be "encoding convertto ?-nocomplain? ?-failindex var? ?encoding? data"
     while executing
 "encoding convertto"
     invoked from within

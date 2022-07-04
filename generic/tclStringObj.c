@@ -70,9 +70,14 @@ static void		SetUnicodeObj(Tcl_Obj *objPtr,
 static size_t		UnicodeLength(const Tcl_UniChar *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 
+#if TCL_UTF_MAX > 3
+#define ISCONTINUATION(bytes) (\
+	((bytes)[0] & 0xC0) == 0x80)
+#else
 #define ISCONTINUATION(bytes) (\
 	((((bytes)[0] & 0xC0) == 0x80) || (((bytes)[0] == '\xED') \
 	&& (((bytes)[1] & 0xF0) == 0xB0) && (((bytes)[2] & 0xC0) == 0x80))))
+#endif
 
 
 /*
@@ -2124,10 +2129,12 @@ Tcl_AppendFormatToObj(
 		goto error;
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
+#if TCL_UTF_MAX < 4
 	    if ((code >= 0xD800) && (length < 3)) {
 		/* Special case for handling high surrogates. */
 		length += Tcl_UniCharToUtf(-1, buf + length);
 	    }
+#endif
 	    segment = Tcl_NewStringObj(buf, length);
 	    Tcl_IncrRefCount(segment);
 	    allocSegment = 1;
@@ -4182,14 +4189,6 @@ ExtendUnicodeRepWithString(
     dst = stringPtr->unicode + numOrigChars;
     if (numAppendChars-- > 0) {
 	bytes += TclUtfToUniChar(bytes, &unichar);
-#if TCL_UTF_MAX > 3
-	/* join upper/lower surrogate */
-	if (bytes && (stringPtr->unicode[numOrigChars - 1] | 0x3FF) == 0xDBFF && (unichar | 0x3FF) == 0xDFFF) {
-		stringPtr->numChars--;
-		unichar = ((stringPtr->unicode[numOrigChars - 1] & 0x3FF) << 10) + (unichar & 0x3FF) + 0x10000;
-		dst--;
-	}
-#endif
 	*dst++ = unichar;
 	while (numAppendChars-- > 0) {
 	    bytes += TclUtfToUniChar(bytes, &unichar);

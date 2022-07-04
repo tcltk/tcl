@@ -172,7 +172,7 @@ test cmdAH-4.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
 } -result {unknown or ambiguous subcommand "foo": must be convertfrom, convertto, dirs, names, or system}
 test cmdAH-4.3 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto
-} -result {wrong # args: should be "encoding convertto ?-nocomplain? ?encoding? data"}
+} -result {wrong # args: should be "encoding convertto ?-nocomplain? ?-failindex var? ?encoding? data"}
 test cmdAH-4.4 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto foo bar
 } -result {unknown encoding "foo"}
@@ -194,7 +194,7 @@ test cmdAH-4.6 {Tcl_EncodingObjCmd} -setup {
 } -result 8C
 test cmdAH-4.7 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertfrom
-} -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?encoding? data"}
+} -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?-failindex var? ?encoding? data"}
 test cmdAH-4.8 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertfrom foo bar
 } -result {unknown encoding "foo"}
@@ -228,6 +228,121 @@ test cmdAH-4.13 {Tcl_EncodingObjCmd} -setup {
 } -cleanup {
     encoding system $system
 } -result iso8859-1
+
+test cmdAH-4.14.1 {Syntax error, -nocomplain and -failindex, no encoding} -body {
+    encoding convertfrom -nocomplain -failindex 2 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?-failindex var? ?encoding? data"}
+test cmdAH-4.14.2 {Syntax error, -nocomplain and -failindex, no encoding} -body {
+    encoding convertto -nocomplain -failindex 2 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-nocomplain? ?-failindex var? ?encoding? data"}
+test cmdAH-4.15.1 {Syntax error, -failindex and -nocomplain, no encoding} -body {
+    encoding convertfrom -failindex 2 -nocomplain ABC
+} -returnCodes 1 -result {unknown encoding "-nocomplain"}
+test cmdAH-4.15.2 {Syntax error, -failindex and -nocomplain, no encoding} -body {
+    encoding convertto -failindex 2 -nocomplain ABC
+} -returnCodes 1 -result {unknown encoding "-nocomplain"}
+test cmdAH-4.16.1 {Syntax error, -nocomplain and -failindex, encoding} -body {
+    encoding convertfrom -nocomplain -failindex 2 utf-8 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?-failindex var? ?encoding? data"}
+test cmdAH-4.16.2 {Syntax error, -nocomplain and -failindex, encoding} -body {
+    encoding convertto -nocomplain -failindex 2 utf-8 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-nocomplain? ?-failindex var? ?encoding? data"}
+test cmdAH-4.17.1 {Syntax error, -failindex and -nocomplain, encoding} -body {
+    encoding convertfrom -failindex 2 -nocomplain utf-8 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?-failindex var? ?encoding? data"}
+test cmdAH-4.17.2 {Syntax error, -failindex and -nocomplain, encoding} -body {
+    encoding convertto -failindex 2 -nocomplain utf-8 ABC
+} -returnCodes 1 -result {wrong # args: should be "encoding convertto ?-nocomplain? ?-failindex var? ?encoding? data"}
+test cmdAH-4.18.1 {Syntax error, -failindex with no var, no encoding} -body {
+    encoding convertfrom -failindex ABC
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-nocomplain? ?-failindex var? ?encoding? data"}
+test cmdAH-4.18.2 {Syntax error, -failindex with no var, no encoding (byte compiled)} -setup {
+    proc encoding_test {} {
+        encoding convertfrom -failindex ABC
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertfrom ?-nocomplain? ?-failindex var? ?encoding? data"} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.18.3 {Syntax error, -failindex with no var, no encoding} -body {
+    encoding convertto -failindex ABC
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-nocomplain? ?-failindex var? ?encoding? data"}
+test cmdAH-4.18.4 {Syntax error, -failindex with no var, no encoding (byte compiled)} -setup {
+    proc encoding_test {} {
+        encoding convertto -failindex ABC
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 1 -result {wrong # args: should be "::tcl::encoding::convertto ?-nocomplain? ?-failindex var? ?encoding? data"} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.19.1 {convertrom -failindex with correct data} -body {
+    encoding convertfrom -failindex test ABC
+    set test
+} -returnCodes 0 -result -1
+test cmdAH-4.19.2 {convertrom -failindex with correct data (byt compiled)} -setup {
+    proc encoding_test {} {
+	encoding convertfrom -failindex test ABC
+	set test
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result -1 -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.19.3 {convertrom -failindex with correct data} -body {
+    encoding convertto -failindex test ABC
+    set test
+} -returnCodes 0 -result -1
+test cmdAH-4.19.4 {convertrom -failindex with correct data (byt compiled)} -setup {
+    proc encoding_test {} {
+	encoding convertto -failindex test ABC
+	set test
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result -1 -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.20.1 {convertrom -failindex with incomplete utf8} -body {
+    set x [encoding convertfrom -failindex i utf-8 A\xc3]
+    binary scan $x H* y
+    list $y $i
+} -returnCodes 0 -result {41c3 -1}
+test cmdAH-4.20.2 {convertrom -failindex with incomplete utf8 (byte compiled)} -setup {
+    proc encoding_test {} {
+	set x [encoding convertfrom -failindex i utf-8 A\xc3]
+	binary scan $x H* y
+	list $y $i
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result {41c3 -1} -cleanup {
+    rename encoding_test ""
+}
+test cmdAH-4.21.1 {convertto -failindex with wrong character} -body {
+    set x [encoding convertto -failindex i iso8859-1 A\u0141]
+    binary scan $x H* y
+    list $y $i
+} -returnCodes 0 -result {41 1}
+test cmdAH-4.21.2 {convertto -failindex with wrong character (byte compiled)} -setup {
+    proc encoding_test {} {
+    set x [encoding convertto -failindex i iso8859-1 A\u0141]
+	binary scan $x H* y
+	list $y $i
+    }
+} -body {
+    # Compile and execute
+    encoding_test
+} -returnCodes 0 -result {41 1} -cleanup {
+    rename encoding_test ""
+}
 
 test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
     file
