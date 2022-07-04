@@ -4018,6 +4018,14 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToUniChar Tcl_UtfToChar16
 #   undef Tcl_UniCharLen
 #   define Tcl_UniCharLen Tcl_Char16Len
+#   undef Tcl_UniCharToUtf
+#   if defined(USE_TCL_STUBS)
+#	define Tcl_UniCharToUtf(c, p) \
+		(tclStubsPtr->tcl_UniCharToUtf((c)|TCL_COMBINE, (p)))
+#   else
+#	define Tcl_UniCharToUtf(c, p) \
+		((Tcl_UniCharToUtf)((c)|TCL_COMBINE, (p)))
+#   endif
 #if !defined(BUILD_tcl)
 #   undef Tcl_NumUtfChars
 #   define Tcl_NumUtfChars TclNumUtfChars
