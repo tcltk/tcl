@@ -3730,7 +3730,8 @@ UpdateStringOfEndOffset(
     memcpy(buffer, "end", 4);
     if (objPtr->internalRep.longValue != 0) {
 	buffer[len++] = '-';
-	len += TclFormatInt(buffer+len, -(objPtr->internalRep.longValue));
+	len += TclFormatInt(buffer+len,
+		(long)(-(unsigned long)(objPtr->internalRep.longValue)));
     }
     objPtr->bytes = (char *)ckalloc(len+1);
     memcpy(objPtr->bytes, buffer, len+1);
@@ -3842,8 +3843,7 @@ SetEndOffsetFromAny(
 	}
 	if (bytes[3] == '-') {
 
-	    /* TODO: Review overflow concerns here! */
-	    offset = -offset;
+	    offset = (int)(-(unsigned int)offset);
 	}
     } else {
 	/*

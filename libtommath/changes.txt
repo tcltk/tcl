@@ -1,4 +1,4 @@
-XXX XXth, 2019
+Oct 22nd, 2019
 v1.2.0
        -- A huge refactoring of the library happened - renaming,
           deprecating and replacing existing functions by improved API's.
