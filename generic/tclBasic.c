@@ -2627,8 +2627,10 @@ Tcl_CreateCommand(
 typedef struct {
     void *clientData; /* Arbitrary value to pass to object function. */
     Tcl_ObjCmdProc *proc;
-    Tcl_ObjCmdProc *nreProc;
     Tcl_CmdDeleteProc *deleteProc;
+    Tcl_ObjCmdProc *nreProc;
+    void *clientData2; /* Arbitrary value to pass to object2 function. */
+    Tcl_ObjCmdProc2 *proc2;
 } CmdWrapperInfo;
 
 
@@ -2677,6 +2679,8 @@ Tcl_CreateObjCommand(
     info->proc = proc;
     info->deleteProc = deleteProc;
     info->clientData = clientData;
+    info->proc2 = cmdWrapperProc;
+    info->clientData2 = info;
 
     return Tcl_CreateObjCommand2(interp, cmdName,
 	    (proc ? cmdWrapperProc : NULL),
@@ -3414,16 +3418,18 @@ Tcl_GetCommandInfoFromToken(
     infoPtr->deleteProc = cmdPtr->deleteProc;
     infoPtr->deleteData = cmdPtr->deleteData;
     infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
-    infoPtr->objProc2 = cmdPtr->objProc2;
-    infoPtr->objClientData2 = cmdPtr->objClientData2;
     if (infoPtr->objProc2 == cmdWrapperProc) {
 	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->objClientData2;
 	infoPtr->objProc = info->proc;
 	infoPtr->objClientData = info->clientData;
+    infoPtr->objProc2 = info->proc2;
+    infoPtr->objClientData2 = info->clientData2;
 	infoPtr->isNativeObjectProc = 1;
     } else {
 	infoPtr->objProc = cmdWrapper2Proc;
 	infoPtr->objClientData = cmdPtr;
+    infoPtr->objProc2 = cmdPtr->objProc2;
+    infoPtr->objClientData2 = cmdPtr->objClientData2;
     }
     return 1;
 }
@@ -8470,6 +8476,8 @@ Tcl_NRCallObjProc(
     CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->clientData = clientData;
     info->proc = objProc;
+    info->proc2 = cmdWrapperProc;
+    info->clientData2 = info;
 
     TclNRAddCallback(interp, Dispatch, wrapperNRObjProc, info,
 	    INT2PTR(objc), objv);
@@ -8542,6 +8550,8 @@ Tcl_NRCreateCommand(
     info->nreProc = nreProc;
     info->deleteProc = deleteProc;
     info->clientData = clientData;
+    info->proc2 = cmdWrapperProc;
+    info->clientData2 = info;
     return Tcl_NRCreateCommand2(interp, cmdName,
 	    proc ? cmdWrapperProc : NULL,
 	    nreProc ? cmdWrapperNreProc : NULL, info,

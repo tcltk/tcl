@@ -97,7 +97,7 @@ typedef struct {
     size_t numCodeBytes;		/* Number of bytes in the code range. */
     size_t breakOffset;		/* If LOOP_EXCEPTION_RANGE, the target PC
 				 * offset for a break command in the range. */
-    size_t continueOffset;		/* If LOOP_EXCEPTION_RANGE and not -1, the
+    size_t continueOffset;		/* If LOOP_EXCEPTION_RANGE and not TCL_INDEX_NONE, the
 				 * target PC offset for a continue command in
 				 * the code range. Otherwise, ignore this
 				 * range when processing a continue
@@ -135,7 +135,7 @@ typedef struct ExceptionAux {
     size_t numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    size_t *breakTargets;	/* The offsets of the INST_JUMP4 instructions
+    TCL_HASH_TYPE *breakTargets;	/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [break]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -145,7 +145,7 @@ typedef struct ExceptionAux {
     size_t numContinueTargets;	/* The number of [continue]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
-    size_t *continueTargets; /* The offsets of the INST_JUMP4 instructions
+    TCL_HASH_TYPE *continueTargets; /* The offsets of the INST_JUMP4 instructions
 				 * issued by the [continue]s that we must
 				 * update. Note that resizing a jump (via
 				 * TclFixupForwardJump) can cause the contents
@@ -221,7 +221,7 @@ typedef void *(AuxDataDupProc)  (void *clientData);
 typedef void	   (AuxDataFreeProc) (void *clientData);
 typedef void	   (AuxDataPrintProc)(void *clientData,
 			    Tcl_Obj *appendObj, struct ByteCode *codePtr,
-			    size_t pcOffset);
+			    TCL_HASH_TYPE pcOffset);
 
 /*
  * We define a separate AuxDataType struct to hold type-related information
@@ -297,9 +297,9 @@ typedef struct CompileEnv {
 				 * information provided by ObjInterpProc in
 				 * tclProc.c. */
     size_t numCommands;		/* Number of commands compiled. */
-    size_t exceptDepth;		/* Current exception range nesting level; -1
+    size_t exceptDepth;		/* Current exception range nesting level; TCL_INDEX_NONE
 				 * if not in any range currently. */
-    size_t maxExceptDepth;		/* Max nesting level of exception ranges; -1
+    size_t maxExceptDepth;		/* Max nesting level of exception ranges; TCL_INDEX_NONE
 				 * if no ranges have been compiled. */
     size_t maxStackDepth;		/* Maximum number of stack elements needed to
 				 * execute the code. Set by compilation
@@ -427,7 +427,7 @@ typedef struct ByteCode {
 				 * procs are specific to an interpreter so the
 				 * code emitted will depend on the
 				 * interpreter. */
-    size_t compileEpoch;	/* Value of iPtr->compileEpoch when this
+    size_t compileEpoch;		/* Value of iPtr->compileEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when, e.g., commands with compile
 				 * procs are redefined. */
@@ -1112,7 +1112,7 @@ MODULE_SCOPE size_t	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, size_t size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, const char *bytes,
-			    size_t length, size_t hash, int *newPtr,
+			    size_t length, TCL_HASH_TYPE hash, int *newPtr,
 			    Namespace *nsPtr, int flags,
 			    LiteralEntry **globalPtrPtr);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
@@ -1126,7 +1126,7 @@ MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
-MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, size_t index);
+MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, TCL_HASH_TYPE index);
 MODULE_SCOPE size_t	TclFindCompiledLocal(const char *name, size_t nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
