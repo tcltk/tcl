@@ -4469,6 +4469,289 @@ Tcl_LsortObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_RangeObjCmd --
+ *
+ *	This procedure is invoked to process the "range" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_RangeObjCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])
+				/* The argument objects. */
+{
+    Tcl_WideInt elementCount, i, totalElems, status;
+    Tcl_Obj *const *argPtr;
+    Tcl_WideInt start, end, step;//, count;
+    Tcl_Obj *listPtr, **dataArray = NULL;
+    int argc, opmode, bymode;
+    double dstart, dend, dstep;
+    int really = 0;
+    static const char *const operations[] = {
+        "..", "to", "-count", "by", NULL
+    };
+    enum Range_Operators {
+        RANGE_DOTS, RANGE_TO, RANGE_COUNT, RANGE_BY
+    };
+    /*
+     * Check arguments for legality:
+     *		range from op to ?by step?
+     */
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "start op end ?by step?");
+	return TCL_ERROR;
+    }
+
+    argc = objc;
+    argPtr = objv;
+
+    /* Skip command name */
+    /* Process first argument */
+    argPtr++;
+    argc--;
+
+    /* From argument */
+    status = Tcl_GetWideIntFromObj(interp, *argPtr, &start);
+    if (status != TCL_OK) {
+	status = Tcl_GetDoubleFromObj(interp, *argPtr, &dstart);
+	if (status != TCL_OK) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	        "double conversion for Start value: \"%s\"\n",
+		Tcl_GetString(*argPtr)));
+	    return status;
+	}
+	really++;
+    }
+
+    /* Process ?Op? argument */
+    argPtr++;
+    argc--;
+    
+    /* Decode range (optional) OPeration argument */
+    if (argc &&
+	Tcl_GetIndexFromObj(interp, *argPtr, operations, "operations", 0, &opmode) == TCL_OK) {
+	switch (opmode) {
+	case RANGE_DOTS:
+	case RANGE_TO:
+	    opmode = RANGE_TO;
+	    break;
+	case RANGE_COUNT:
+	    break;
+	case RANGE_BY:
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	        "Invalid range operation, %s, must be one of \"%s\" or \"%s\".",
+		operations[opmode], operations[RANGE_DOTS], operations[RANGE_TO]));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "RANGE", "BADOPERATOR", NULL);
+	    return TCL_ERROR;
+	    break;
+	}
+	/* next argument */
+	argPtr++;
+	argc--;
+    } else {
+	/* Default when not specified */
+	opmode = RANGE_TO;
+    }
+
+    /* No more arguments, set the defaults */
+    if (argc==0) {
+	if (really) {
+	    dend = dstart;
+	    dstart = 0.0;
+	    dstep = 1.0;
+	} else {
+	    end = start - (start>0?1:-1);
+	    start = 0;
+	    step = 1;
+	}
+    }
+
+    /* Process To argument */
+    if (argc) {
+	if ((status = Tcl_GetWideIntFromObj(interp, *argPtr, &end)) != TCL_OK) {
+	    status = Tcl_GetDoubleFromObj(interp, *argPtr, &dend);
+	    if (status != TCL_OK) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	            "double conversion for End value: \"%s\"\n",
+		    Tcl_GetString(*argPtr)));
+		return status;
+	    }
+	    really++;
+	    if (really == 1) {
+		dstart = (double)start;
+	    }
+	} else if (really) {
+	    dend = (double)end;
+	}
+    
+	argPtr++;
+	argc--;
+    }
+
+    /* Process ?by? argument */
+    if (argc &&
+	(Tcl_GetIndexFromObj(interp, *argPtr, operations, "operations", 0, &bymode) == TCL_OK &&
+	 bymode == RANGE_BY)) {
+	argPtr++;
+	argc--;
+    }
+
+    /* Proess Step argument */
+    if (argc == 0) {
+	step = 1;
+	dstep = 1;
+    } else {
+	status = Tcl_GetWideIntFromObj(interp, *argPtr, &step);
+	if (status != TCL_OK) {
+	    status = Tcl_GetDoubleFromObj(interp, *argPtr, &dstep);
+	    if (status) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	            "double conversion for Step value: \"%s\"\n",
+		Tcl_GetString(*argPtr)));
+		return status;
+	    }
+	    if (really == 0) {
+		dstart = (double)start;
+		dend = (double)end;
+	    }
+	    really++;
+	} else if (really) {
+	    dstep = (double)step;
+	}
+	argPtr++;
+	argc--;
+    }
+
+    /* Calculate the number of elements in the return values */
+    
+    if (!really) { /* Integers */
+	if (step == 0
+	    || (opmode != RANGE_COUNT
+		&& ((step < 0 && start <= end) || (step > 0 && end < start)))) {
+	    step = -step;
+	}
+
+	if (opmode == RANGE_COUNT) {
+	    elementCount = end;
+	    end = start + (elementCount * step);
+	} else if (start <= end) {
+	    elementCount = (end-start+1)/step;
+	} else {
+	    elementCount = (start-end+1)/(-step);
+	}
+	if (elementCount < 0) {
+	    /* TODO:  implement correct error message */
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad count \"%lld\": must be integer >= 0", elementCount));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "RANGE", "NEGARG",
+		NULL);
+	    return TCL_ERROR;
+	}
+
+	/* Final sanity check. Do not exceed limits on max list length. */
+	
+	if (elementCount && objc > LIST_MAX/elementCount) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"max length of a Tcl list (%d elements) exceeded", LIST_MAX));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    return TCL_ERROR;
+	}
+	totalElems = elementCount;
+    } else {
+	if (dstep == 0.0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("Invalid step value"));
+	    return TCL_ERROR;
+	}
+	if ((opmode != RANGE_COUNT
+	     && ((dstep < 0.0 && dstart <= dend) || (dstep > 0.0 && dend < dstart)))) {
+	    // Align step direction with the start, end direction
+	    dstep = -dstep;
+	}
+
+	if (opmode == RANGE_COUNT) {
+	    elementCount = end;
+	    dend = dstart + (elementCount * dstep);
+	} else if (dstart <= dend) {
+	    elementCount = (Tcl_WideInt)(dend-dstart+dstep)/dstep;
+	} else {
+	    double absstep = dstep<0 ? -dstep : dstep;
+	    elementCount = (Tcl_WideInt)(dstart-dend+absstep)/absstep;
+	}
+	if (elementCount < 0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad count \"%lld\": must be integer >= 0", elementCount));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "RANGE", "NEGARG",
+		NULL);
+	    return TCL_ERROR;
+	}
+
+	/* Final sanity check. Do not exceed limits on max list length. */
+	
+	if (elementCount && objc > LIST_MAX/elementCount) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"max length of a Tcl list (%d elements) exceeded", LIST_MAX));
+	    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    return TCL_ERROR;
+	}
+	totalElems = elementCount;
+    }
+    
+    /*
+     * Get an empty list object that is allocated large enough to hold each
+     * init value elementCount times.
+     */
+
+    listPtr = Tcl_NewListObj(totalElems, NULL);
+    if (totalElems) {
+	List *listRepPtr = ListRepPtr(listPtr);
+
+	listRepPtr->elemCount = elementCount;
+	dataArray = &listRepPtr->elements;
+    }
+
+    /*
+     * Set the elements.
+     */
+
+    CLANG_ASSERT(dataArray || totalElems == 0 );
+    
+    if (!really) {
+	int k = 0;
+
+	for (i=0 ; i<elementCount ; i++) {
+            Tcl_Obj *elemPtr = Tcl_NewWideIntObj(start + (i*step));
+            Tcl_IncrRefCount(elemPtr);
+            dataArray[k++] = elemPtr;
+	}
+    } else {
+	int k = 0;
+
+	for (i=0 ; i<elementCount ; i++) {
+            Tcl_Obj *elemPtr = Tcl_NewDoubleObj(dstart + ((double)i)*dstep);
+            Tcl_IncrRefCount(elemPtr);
+            dataArray[k++] = elemPtr;
+	}
+    }
+
+    Tcl_SetObjResult(interp, listPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * MergeLists -
  *
  *	This procedure combines two sorted lists of SortElement structures
