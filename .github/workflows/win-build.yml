@@ -1,10 +1,12 @@
 name: Windows
 on: [push]
+permissions:
+  contents: read
 env:
   ERROR_ON_FAILURES: 1
 jobs:
   msvc:
-    runs-on: windows-latest
+    runs-on: windows-2022
     defaults:
       run:
         shell: powershell
@@ -13,15 +15,15 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "OPTS=utfmax"
+          - "OPTS=utf16"
           - "CHECKS=nodep"
           - "OPTS=static"
           - "OPTS=symbols"
-          - "OPTS=memdbg"
+          - "OPTS=symbols STATS=compdbg,memdbg"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Init MSVC
         uses: ilammy/msvc-dev-cmd@v1
       - name: Build ${{ matrix.cfgopt }}
@@ -43,7 +45,7 @@ jobs:
              throw "nmake exit code: $lastexitcode"
           }
   gcc:
-    runs-on: windows-latest
+    runs-on: windows-2022
     defaults:
       run:
         shell: msys2 {0}
@@ -52,11 +54,12 @@ jobs:
       matrix:
         cfgopt:
           - ""
-          - "CFLAGS=-DTCL_UTF_MAX=4"
+          - "CFLAGS=-DTCL_UTF_MAX=3"
           - "CFLAGS=-DTCL_NO_DEPRECATED=1"
           - "--disable-shared"
           - "--enable-symbols"
           - "--enable-symbols=mem"
+          - "--enable-symbols=all"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Install MSYS2
@@ -65,7 +68,7 @@ jobs:
           msystem: MINGW64
           install: git mingw-w64-x86_64-toolchain make
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h

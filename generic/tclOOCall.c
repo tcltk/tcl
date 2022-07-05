@@ -91,7 +91,7 @@ typedef struct {
 static void		AddClassFiltersToCallContext(Object *const oPtr,
 			    Class *clsPtr, struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters, int flags);
-static void		AddClassMethodNames(Class *clsPtr, const int flags,
+static void		AddClassMethodNames(Class *clsPtr, int flags,
 			    Tcl_HashTable *const namesPtr,
 			    Tcl_HashTable *const examinedClassesPtr);
 static inline void	AddDefinitionNamespaceToChain(Class *const definerCls,
@@ -671,7 +671,7 @@ CmpStr(
 static void
 AddClassMethodNames(
     Class *clsPtr,		/* Class to get method names from. */
-    const int flags,		/* Whether we are interested in just the
+    int flags,		/* Whether we are interested in just the
 				 * public method names. */
     Tcl_HashTable *const namesPtr,
 				/* Reference to the hash table to put the

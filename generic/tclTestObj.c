@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
-
+#undef BUILD_tcl
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
@@ -38,10 +38,10 @@
  * Forward declarations for functions defined later in this file:
  */
 
-static int		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr, int varIndex);
+static int		CheckIfVarUnset(Tcl_Interp *interp, Tcl_Obj **varPtr, size_t varIndex);
 static int		GetVariableIndex(Tcl_Interp *interp,
-			    const char *string, int *indexPtr);
-static void		SetVarToObj(Tcl_Obj **varPtr, int varIndex, Tcl_Obj *objPtr);
+			    Tcl_Obj *obj, size_t *indexPtr);
+static void		SetVarToObj(Tcl_Obj **varPtr, size_t varIndex, Tcl_Obj *objPtr);
 static Tcl_ObjCmdProc	TestbignumobjCmd;
 static Tcl_ObjCmdProc	TestbooleanobjCmd;
 static Tcl_ObjCmdProc	TestdoubleobjCmd;
@@ -160,7 +160,8 @@ TestbignumobjCmd(
 	BIGNUM_SET, BIGNUM_GET, BIGNUM_MULT10, BIGNUM_DIV10, BIGNUM_ISEVEN,
 	BIGNUM_RADIXSIZE
     };
-    int index, varIndex;
+    int index;
+    size_t varIndex;
     const char *string;
     mp_int bignumValue;
     Tcl_Obj **varPtr;
@@ -173,13 +174,12 @@ TestbignumobjCmd(
 	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    string = Tcl_GetString(objv[2]);
-    if (GetVariableIndex(interp, string, &varIndex) != TCL_OK) {
+    if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     varPtr = GetVarPtr(interp);
 
-    switch (index) {
+    switch ((enum options)index) {
     case BIGNUM_SET:
 	if (objc != 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "var value");
@@ -292,9 +292,9 @@ TestbignumobjCmd(
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], mp_iszero(&bignumValue));
+	    Tcl_SetWideIntObj(varPtr[varIndex], mp_iszero(&bignumValue));
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(mp_iszero(&bignumValue)));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(mp_iszero(&bignumValue)));
 	}
 	mp_clear(&bignumValue);
 	break;
@@ -315,9 +315,9 @@ TestbignumobjCmd(
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], index);
+	    Tcl_SetWideIntObj(varPtr[varIndex], index);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(index));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(index));
 	}
 	mp_clear(&bignumValue);
 	break;
@@ -352,8 +352,9 @@ TestbooleanobjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int varIndex, boolValue;
-    const char *index, *subCmd;
+    size_t varIndex;
+    int boolValue;
+    const char *subCmd;
     Tcl_Obj **varPtr;
 
     if (objc < 3) {
@@ -362,8 +363,7 @@ TestbooleanobjCmd(
 	return TCL_ERROR;
     }
 
-    index = Tcl_GetString(objv[2]);
-    if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+    if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -452,9 +452,9 @@ TestdoubleobjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int varIndex;
+    size_t varIndex;
     double doubleValue;
-    const char *index, *subCmd, *string;
+    const char *subCmd;
     Tcl_Obj **varPtr;
 
     if (objc < 3) {
@@ -465,8 +465,7 @@ TestdoubleobjCmd(
 
     varPtr = GetVarPtr(interp);
 
-    index = Tcl_GetString(objv[2]);
-    if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+    if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -475,8 +474,7 @@ TestdoubleobjCmd(
 	if (objc != 4) {
 	    goto wrongNumArgs;
 	}
-	string = Tcl_GetString(objv[3]);
-	if (Tcl_GetDouble(interp, string, &doubleValue) != TCL_OK) {
+	if (Tcl_GetDouble(interp, Tcl_GetString(objv[3]), &doubleValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -570,7 +568,8 @@ TestindexobjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int allowAbbrev, index, index2, setError, i, result;
+    int allowAbbrev, index, setError, i, result;
+    Tcl_WideInt index2;
     const char **argv;
     static const char *const tablePtr[] = {"a", "b", "check", NULL};
 
@@ -579,10 +578,9 @@ TestindexobjCmd(
      */
     struct IndexRep {
 	void *tablePtr;		/* Pointer to the table of strings. */
-	int offset;		/* Offset between table entries. */
-	int index;		/* Selected index into table. */
-    };
-    struct IndexRep *indexRep;
+	TCL_HASH_TYPE offset;		/* Offset between table entries. */
+	TCL_HASH_TYPE index;		/* Selected index into table. */
+    } *indexRep;
 
     if ((objc == 3) && (strcmp(Tcl_GetString(objv[1]),
 	    "check") == 0)) {
@@ -592,7 +590,7 @@ TestindexobjCmd(
 	 * lookups.
 	 */
 
-	if (Tcl_GetIntFromObj(interp, objv[2], &index2) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[2], &index2) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -602,7 +600,7 @@ TestindexobjCmd(
 	result = Tcl_GetIndexFromObj(NULL, objv[1],
 		tablePtr, "token", 0, &index);
 	if (result == TCL_OK) {
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
+	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), index);
 	}
 	return result;
     }
@@ -630,7 +628,7 @@ TestindexobjCmd(
 	    &index);
     ckfree(argv);
     if (result == TCL_OK) {
-	Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
+	Tcl_SetWideIntObj(Tcl_GetObjResult(interp), index);
     }
     return result;
 }
@@ -660,9 +658,12 @@ TestintobjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int intValue, varIndex, i;
+    size_t varIndex;
+#if (INT_MAX != LONG_MAX)   /* int is not the same size as long */
+    int i;
+#endif
     Tcl_WideInt wideValue;
-    const char *index, *subCmd, *string;
+    const char *subCmd;
     Tcl_Obj **varPtr;
 
     if (objc < 3) {
@@ -672,8 +673,7 @@ TestintobjCmd(
     }
 
     varPtr = GetVarPtr(interp);
-    index = Tcl_GetString(objv[2]);
-    if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+    if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -682,11 +682,9 @@ TestintobjCmd(
 	if (objc != 4) {
 	    goto wrongNumArgs;
 	}
-	string = Tcl_GetString(objv[3]);
-	if (Tcl_GetInt(interp, string, &i) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[3], &wideValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	intValue = i;
 
 	/*
 	 * If the object currently bound to the variable with index varIndex
@@ -697,38 +695,34 @@ TestintobjCmd(
 	 */
 
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], intValue);
+	    Tcl_SetWideIntObj(varPtr[varIndex], wideValue);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(intValue));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(wideValue));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else if (strcmp(subCmd, "set2") == 0) { /* doesn't set result */
 	if (objc != 4) {
 	    goto wrongNumArgs;
 	}
-	string = Tcl_GetString(objv[3]);
-	if (Tcl_GetInt(interp, string, &i) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[3], &wideValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	intValue = i;
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], intValue);
+	    Tcl_SetWideIntObj(varPtr[varIndex], wideValue);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(intValue));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(wideValue));
 	}
     } else if (strcmp(subCmd, "setint") == 0) {
 	if (objc != 4) {
 	    goto wrongNumArgs;
 	}
-	string = Tcl_GetString(objv[3]);
-	if (Tcl_GetInt(interp, string, &i) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[3], &wideValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	intValue = i;
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetWideIntObj(varPtr[varIndex], intValue);
+	    Tcl_SetWideIntObj(varPtr[varIndex], wideValue);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(intValue));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(wideValue));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else if (strcmp(subCmd, "setmax") == 0) {
@@ -768,8 +762,7 @@ TestintobjCmd(
 	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
 	    return TCL_ERROR;
 	}
-	string = Tcl_GetString(varPtr[varIndex]);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), string, -1);
+	Tcl_AppendToObj(Tcl_GetObjResult(interp), Tcl_GetString(varPtr[varIndex]), -1);
     } else if (strcmp(subCmd, "inttoobigtest") == 0) {
 	/*
 	 * If long ints have more bits than ints on this platform, verify that
@@ -803,14 +796,14 @@ TestintobjCmd(
 	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIntFromObj(interp, varPtr[varIndex],
-		&intValue) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, varPtr[varIndex],
+		&wideValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], intValue * 10);
+	    Tcl_SetWideIntObj(varPtr[varIndex], wideValue * 10);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(intValue * 10));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(wideValue * 10));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else if (strcmp(subCmd, "div10") == 0) {
@@ -820,14 +813,14 @@ TestintobjCmd(
 	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIntFromObj(interp, varPtr[varIndex],
-		&intValue) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, varPtr[varIndex],
+		&wideValue) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (!Tcl_IsShared(varPtr[varIndex])) {
-	    Tcl_SetIntObj(varPtr[varIndex], intValue / 10);
+	    Tcl_SetWideIntObj(varPtr[varIndex], wideValue / 10);
 	} else {
-	    SetVarToObj(varPtr, varIndex, Tcl_NewIntObj(intValue / 10));
+	    SetVarToObj(varPtr, varIndex, Tcl_NewWideIntObj(wideValue / 10));
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else {
@@ -874,13 +867,11 @@ TestlistobjCmd(
 	LISTOBJ_SET,
 	LISTOBJ_GET,
 	LISTOBJ_REPLACE
-    };
+    } cmdIndex;
 
-    const char* index;		/* Argument giving the variable number */
-    int varIndex;		/* Variable number converted to binary */
-    int cmdIndex;		/* Ordinal number of the subcommand */
-    int first;			/* First index in the list */
-    int count;			/* Count of elements in a list */
+    size_t varIndex;		/* Variable number converted to binary */
+    Tcl_WideInt first;			/* First index in the list */
+    Tcl_WideInt count;			/* Count of elements in a list */
     Tcl_Obj **varPtr;
 
     if (objc < 3) {
@@ -888,8 +879,7 @@ TestlistobjCmd(
 	return TCL_ERROR;
     }
     varPtr = GetVarPtr(interp);
-    index = Tcl_GetString(objv[2]);
-    if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+	if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "command",
@@ -923,8 +913,8 @@ TestlistobjCmd(
 			     "varIndex start count ?element...?");
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIntFromObj(interp, objv[3], &first) != TCL_OK
-	    || Tcl_GetIntFromObj(interp, objv[4], &count) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[3], &first) != TCL_OK
+	    || Tcl_GetWideIntFromObj(interp, objv[4], &count) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (Tcl_IsShared(varPtr[varIndex])) {
@@ -961,8 +951,9 @@ TestobjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int varIndex, destIndex, i;
-    const char *index, *subCmd, *string;
+    size_t varIndex, destIndex;
+    int i;
+    const char *subCmd;
     const Tcl_ObjType *targetType;
     Tcl_Obj **varPtr;
 
@@ -978,15 +969,13 @@ TestobjCmd(
 	if (objc != 4) {
 	    goto wrongNumArgs;
 	}
-	index = Tcl_GetString(objv[2]);
-	if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+	if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
 	    return TCL_ERROR;
 	}
-	string = Tcl_GetString(objv[3]);
-	if (GetVariableIndex(interp, string, &destIndex) != TCL_OK) {
+	if (GetVariableIndex(interp, objv[3], &destIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	SetVarToObj(varPtr, destIndex, varPtr[varIndex]);
@@ -996,29 +985,26 @@ TestobjCmd(
 	if (objc != 2) {
 	    goto wrongNumArgs;
 	}
-	elemObjPtr = Tcl_NewIntObj(123);
+	elemObjPtr = Tcl_NewWideIntObj(123);
 	listObjPtr = Tcl_NewListObj(1, &elemObjPtr);
 	/* Replace the single list element through itself, nonsense but legal. */
 	Tcl_ListObjReplace(interp, listObjPtr, 0, 1, 1, &elemObjPtr);
 	Tcl_SetObjResult(interp, listObjPtr);
 	return TCL_OK;
     } else if (strcmp(subCmd, "convert") == 0) {
-	const char *typeName;
 
 	if (objc != 4) {
 	    goto wrongNumArgs;
 	}
-	index = Tcl_GetString(objv[2]);
-	if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+	if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
 	    return TCL_ERROR;
 	}
-	typeName = Tcl_GetString(objv[3]);
-	if ((targetType = Tcl_GetObjType(typeName)) == NULL) {
+	if ((targetType = Tcl_GetObjType(Tcl_GetString(objv[3]))) == NULL) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "no type ", typeName, " found", NULL);
+		    "no type ", Tcl_GetString(objv[3]), " found", NULL);
 	    return TCL_ERROR;
 	}
 	if (Tcl_ConvertToType(interp, varPtr[varIndex], targetType)
@@ -1030,15 +1016,13 @@ TestobjCmd(
 	if (objc != 4) {
 	    goto wrongNumArgs;
 	}
-	index = Tcl_GetString(objv[2]);
-	if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+	if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
 	    return TCL_ERROR;
 	}
-	string = Tcl_GetString(objv[3]);
-	if (GetVariableIndex(interp, string, &destIndex) != TCL_OK) {
+	if (GetVariableIndex(interp, objv[3], &destIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	SetVarToObj(varPtr, destIndex, Tcl_DuplicateObj(varPtr[varIndex]));
@@ -1057,8 +1041,7 @@ TestobjCmd(
 	if (objc != 3) {
 	    goto wrongNumArgs;
 	}
-	index = Tcl_GetString(objv[2]);
-	if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+	if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
@@ -1070,8 +1053,7 @@ TestobjCmd(
 	if (objc != 3) {
 	    goto wrongNumArgs;
 	}
-	index = Tcl_GetString(objv[2]);
-	if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+	if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	SetVarToObj(varPtr, varIndex, Tcl_NewObj());
@@ -1091,8 +1073,9 @@ TestobjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("none", -1));
 	} else {
 	    typeName = objv[2]->typePtr->name;
+	    if (!strcmp(typeName, "utf32string")) typeName = "string";
 #ifndef TCL_WIDE_INT_IS_LONG
-	    if (!strcmp(typeName, "wideInt")) typeName = "int";
+	    else if (!strcmp(typeName, "wideInt")) typeName = "int";
 #endif
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
 	}
@@ -1100,8 +1083,7 @@ TestobjCmd(
 	if (objc != 3) {
 	    goto wrongNumArgs;
 	}
-	index = Tcl_GetString(objv[2]);
-	if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+	if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
@@ -1112,8 +1094,7 @@ TestobjCmd(
 	if (objc != 3) {
 	    goto wrongNumArgs;
 	}
-	index = Tcl_GetString(objv[2]);
-	if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+	if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (CheckIfVarUnset(interp, varPtr,varIndex)) {
@@ -1173,16 +1154,17 @@ TeststringobjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *unicode;
-    int varIndex, option, i, length;
-    int size;
+    unsigned short *unicode;
+    size_t varIndex;
+    int size, option, i;
+    Tcl_WideInt length;
 #define MAX_STRINGS 11
-    const char *index, *string, *strings[MAX_STRINGS+1];
+    const char *string, *strings[MAX_STRINGS+1];
     String *strPtr;
     Tcl_Obj **varPtr;
     static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
-	"set", "set2", "setlength", "maxchars", "appendself",
+	"set", "set2", "setlength", "maxchars", "range", "appendself",
 	"appendself2", NULL
     };
 
@@ -1193,8 +1175,7 @@ TeststringobjCmd(
     }
 
     varPtr = GetVarPtr(interp);
-    index = Tcl_GetString(objv[2]);
-    if (GetVariableIndex(interp, index, &varIndex) != TCL_OK) {
+    if (GetVariableIndex(interp, objv[2], &varIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1207,7 +1188,7 @@ TeststringobjCmd(
 	    if (objc != 5) {
 		goto wrongNumArgs;
 	    }
-	    if (Tcl_GetIntFromObj(interp, objv[4], &length) != TCL_OK) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[4], &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (varPtr[varIndex] == NULL) {
@@ -1222,8 +1203,7 @@ TeststringobjCmd(
 	    if (Tcl_IsShared(varPtr[varIndex])) {
 		SetVarToObj(varPtr, varIndex, Tcl_DuplicateObj(varPtr[varIndex]));
 	    }
-	    string = Tcl_GetString(objv[3]);
-	    Tcl_AppendToObj(varPtr[varIndex], string, length);
+	    Tcl_AppendToObj(varPtr[varIndex], Tcl_GetString(objv[3]), length);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 1:				/* appendstrings */
@@ -1270,14 +1250,13 @@ TeststringobjCmd(
 	    if (CheckIfVarUnset(interp, varPtr, varIndex)) {
 		return TCL_ERROR;
 	    }
-	    string = Tcl_GetString(varPtr[varIndex]);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp), string, -1);
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp), Tcl_GetString(varPtr[varIndex]), -1);
 	    break;
 	case 4:				/* length */
 	    if (objc != 3) {
 		goto wrongNumArgs;
 	    }
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), (varPtr[varIndex] != NULL)
+	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), (varPtr[varIndex] != NULL)
 		    ? varPtr[varIndex]->length : -1);
 	    break;
 	case 5:				/* length2 */
@@ -1285,14 +1264,18 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
-		Tcl_ConvertToType(NULL, varPtr[varIndex],
-			Tcl_GetObjType("string"));
-		strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
-		length = (int) strPtr->allocated;
+		const Tcl_ObjType *objType = Tcl_GetObjType("string");
+		if (objType != NULL) {
+		    Tcl_ConvertToType(NULL, varPtr[varIndex], objType);
+		    strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
+		    length = (int) strPtr->allocated;
+		} else {
+		    length = -1;
+		}
 	    } else {
 		length = -1;
 	    }
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), length);
+	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), length);
 	    break;
 	case 6:				/* set */
 	    if (objc != 4) {
@@ -1327,7 +1310,7 @@ TeststringobjCmd(
 	    if (objc != 4) {
 		goto wrongNumArgs;
 	    }
-	    if (Tcl_GetIntFromObj(interp, objv[3], &length) != TCL_OK) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[3], &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (varPtr[varIndex] != NULL) {
@@ -1339,16 +1322,32 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
-		Tcl_ConvertToType(NULL, varPtr[varIndex],
-			Tcl_GetObjType("string"));
-		strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
-		length = strPtr->maxChars;
+		const Tcl_ObjType *objType = Tcl_GetObjType("string");
+		if (objType != NULL) {
+		    Tcl_ConvertToType(NULL, varPtr[varIndex],objType);
+		    strPtr = (String *)varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
+		    length = strPtr->maxChars;
+		} else {
+		    length = -1;
+		}
 	    } else {
 		length = -1;
 	    }
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), length);
+	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), length);
 	    break;
-	case 10:			/* appendself */
+	case 10: {				/* range */
+	    int first, last;
+	    if (objc != 5) {
+		goto wrongNumArgs;
+	    }
+	    if ((Tcl_GetIntFromObj(interp, objv[3], &first) != TCL_OK)
+		    || (Tcl_GetIntFromObj(interp, objv[4], &last) != TCL_OK)) {
+		return TCL_ERROR;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_GetRange(varPtr[varIndex], first, last));
+	    break;
+	}
+	case 11:			/* appendself */
 	    if (objc != 4) {
 		goto wrongNumArgs;
 	    }
@@ -1367,19 +1366,19 @@ TeststringobjCmd(
 
 	    string = Tcl_GetStringFromObj(varPtr[varIndex], &size);
 
-	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[3], &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if ((i < 0) || (i > size)) {
+	    if ((length < 0) || (length > size)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"index value out of range", -1));
 		return TCL_ERROR;
 	    }
 
-	    Tcl_AppendToObj(varPtr[varIndex], string + i, size - i);
+	    Tcl_AppendToObj(varPtr[varIndex], string + length, size - length);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
-	case 11:			/* appendself2 */
+	case 12:			/* appendself2 */
 	    if (objc != 4) {
 		goto wrongNumArgs;
 	    }
@@ -1398,16 +1397,16 @@ TeststringobjCmd(
 
 	    unicode = Tcl_GetUnicodeFromObj(varPtr[varIndex], &size);
 
-	    if (Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK) {
+	    if (Tcl_GetWideIntFromObj(interp, objv[3], &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if ((i < 0) || (i > size)) {
+	    if ((length < 0) || (length > size)) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"index value out of range", -1));
 		return TCL_ERROR;
 	    }
 
-	    Tcl_AppendUnicodeToObj(varPtr[varIndex], unicode + i, size - i);
+	    Tcl_AppendUnicodeToObj(varPtr[varIndex], unicode + length, size - length);
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
     }
@@ -1437,7 +1436,7 @@ TeststringobjCmd(
 static void
 SetVarToObj(
     Tcl_Obj **varPtr,
-    int varIndex,		/* Designates the assignment variable. */
+    size_t varIndex,		/* Designates the assignment variable. */
     Tcl_Obj *objPtr)		/* Points to object to assign to var. */
 {
     if (varPtr[varIndex] != NULL) {
@@ -1468,14 +1467,14 @@ SetVarToObj(
 static int
 GetVariableIndex(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
-    const char *string,		/* String containing a variable index
+    Tcl_Obj *obj,		/* The variable index
 				 * specified as a nonnegative number less than
 				 * NUMBER_OF_OBJECT_VARS. */
-    int *indexPtr)		/* Place to store converted result. */
+    size_t *indexPtr)		/* Place to store converted result. */
 {
-    int index;
+    Tcl_WideInt index;
 
-    if (Tcl_GetInt(interp, string, &index) != TCL_OK) {
+    if (Tcl_GetWideIntFromObj(interp, obj, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (index < 0 || index >= NUMBER_OF_OBJECT_VARS) {
@@ -1510,12 +1509,12 @@ static int
 CheckIfVarUnset(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
     Tcl_Obj ** varPtr,
-    int varIndex)		/* Index of the test variable to check. */
+    size_t varIndex)		/* Index of the test variable to check. */
 {
     if (varPtr[varIndex] == NULL) {
 	char buf[32 + TCL_INTEGER_SPACE];
 
-	sprintf(buf, "variable %d is unset (NULL)", varIndex);
+	sprintf(buf, "variable %" TCL_Z_MODIFIER "u is unset (NULL)", varIndex);
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
 	return 1;

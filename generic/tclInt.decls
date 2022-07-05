@@ -80,7 +80,7 @@ declare 12 {
 #	    Tcl_DString *headPtr, char *tail, Tcl_GlobTypeData *types)
 #}
 declare 14 {
-    int TclDumpMemoryInfo(ClientData clientData, int flags)
+    int TclDumpMemoryInfo(void *clientData, int flags)
 }
 # Removed in 8.1:
 #  declare 15 {
@@ -150,7 +150,7 @@ declare 32 {
 }
 # Removed in 8.5:
 #declare 33 {
-#    TclCmdProcType TclGetInterpProc(void)
+#    Tcl_CmdProc *TclGetInterpProc(void)
 #}
 declare 34 {deprecated {Use Tcl_GetIntForIndex}} {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -175,7 +175,7 @@ declare 38 {
 	    const char **simpleNamePtr)
 }
 declare 39 {
-    TclObjCmdProcType TclGetObjInterpProc(void)
+    Tcl_ObjCmdProc *TclGetObjInterpProc(void)
 }
 declare 40 {
     int TclGetOpenMode(Tcl_Interp *interp, const char *str, int *seekFlagPtr)
@@ -227,11 +227,11 @@ declare 51 {
 #	    int flags)
 #}
 declare 53 {
-    int TclInvokeObjectCommand(ClientData clientData, Tcl_Interp *interp,
+    int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
 	    int argc, const char **argv)
 }
 declare 54 {
-    int TclInvokeStringCommand(ClientData clientData, Tcl_Interp *interp,
+    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 55 {
@@ -267,7 +267,7 @@ declare 62 {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
 declare 63 {
-    int TclObjInterpProc(ClientData clientData, Tcl_Interp *interp,
+    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 64 {
@@ -357,7 +357,7 @@ declare 81 {
 #      void TclPlatformInit(Tcl_Interp *interp)
 #  }
 declare 88 {deprecated {}} {
-    char *TclPrecTraceProc(ClientData clientData, Tcl_Interp *interp,
+    char *TclPrecTraceProc(void *clientData, Tcl_Interp *interp,
 	    const char *name1, const char *name2, int flags)
 }
 declare 89 {
@@ -377,7 +377,7 @@ declare 92 {
 	    const char *procName)
 }
 declare 93 {
-    void TclProcDeleteProc(ClientData clientData)
+    void TclProcDeleteProc(void *clientData)
 }
 # Removed in 8.5:
 #declare 94 {
@@ -459,7 +459,7 @@ declare 112 {
 }
 declare 113 {
     Tcl_Namespace *TclCreateNamespace(Tcl_Interp *interp, const char *name,
-	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
+	    void *clientData, Tcl_NamespaceDeleteProc *deleteProc)
 }
 declare 114 {
     void TclDeleteNamespace(Tcl_Namespace *nsPtr)
@@ -565,7 +565,7 @@ declare 141 {
 }
 declare 142 {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    CompileHookProc *hookProc, ClientData clientData)
+	    CompileHookProc *hookProc, void *clientData)
 }
 declare 143 {
     int TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr,
@@ -642,7 +642,7 @@ declare 161 {
 	    Tcl_Obj *cmdObjPtr)
 }
 declare 162 {
-    void TclChannelEventScriptInvoker(ClientData clientData, int flags)
+    void TclChannelEventScriptInvoker(void *clientData, int flags)
 }
 
 # ALERT: The result of 'TclGetInstructionTable' is actually a
@@ -904,7 +904,7 @@ declare 229 {
 declare 230 {
     Var *TclObjLookupVar(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    const char *part2, int flags, const char *msg,
-	    const int createPart1, const int createPart2, Var **arrayPtrPtr)
+	    int createPart1, int createPart2, Var **arrayPtrPtr)
 }
 declare 231 {
     int	TclGetNamespaceFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -940,7 +940,7 @@ declare 237 {
 # NRE functions for "rogue" extensions to exploit NRE; they will need to
 # include NRE.h too.
 declare 238 {
-    int TclNRInterpProc(ClientData clientData, Tcl_Interp *interp,
+    int TclNRInterpProc(void *clientData, Tcl_Interp *interp,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 239 {
@@ -1005,17 +1005,17 @@ declare 251 {
 declare 252 {
     Tcl_Obj *TclPtrGetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
-	    const int flags)
+	    int flags)
 }
 declare 253 {
     Tcl_Obj *TclPtrSetVar(Tcl_Interp *interp, Tcl_Var varPtr,
 	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
-	    Tcl_Obj *newValuePtr, const int flags)
+	    Tcl_Obj *newValuePtr, int flags)
 }
 declare 254 {
     Tcl_Obj *TclPtrIncrObjVar(Tcl_Interp *interp, Tcl_Var varPtr,
 	    Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
-	    Tcl_Obj *incrPtr, const int flags)
+	    Tcl_Obj *incrPtr, int flags)
 }
 declare 255 {
     int	TclPtrObjMakeUpvar(Tcl_Interp *interp, Tcl_Var otherPtr,
@@ -1023,7 +1023,7 @@ declare 255 {
 }
 declare 256 {
     int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
-	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, const int flags)
+	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags)
 }
 declare 257 {
     void TclStaticLibrary(Tcl_Interp *interp, const char *prefix,

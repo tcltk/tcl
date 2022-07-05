@@ -1090,8 +1090,8 @@ TclAssembleCode(
 
 #ifdef TCL_COMPILE_DEBUG
 	    if ((tclTraceCompile >= 2) && (envPtr->procPtr == NULL)) {
-		printf("  %4ld Assembling: ",
-			(long)(envPtr->codeNext - envPtr->codeStart));
+		printf("  %4" TCL_Z_MODIFIER "d Assembling: ",
+			(size_t)(envPtr->codeNext - envPtr->codeStart));
 		TclPrintSource(stdout, parsePtr->commandStart,
 			TclMin(instLen, 55));
 		printf("\n");
@@ -1985,7 +1985,7 @@ CreateMirrorJumpTable(
 				 * table. */
     int i;
 
-    if (Tcl_ListObjGetElements(interp, jumps, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, jumps, &objc, &objv) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (objc % 2 != 0) {

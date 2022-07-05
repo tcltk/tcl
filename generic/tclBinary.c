@@ -73,7 +73,7 @@ static void		UpdateStringOfByteArray(Tcl_Obj *listPtr);
 static void		DeleteScanNumberCache(Tcl_HashTable *numberCachePtr);
 static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
-			    unsigned length, int type);
+			    unsigned int length, int type);
 /* Binary ensemble commands */
 static Tcl_ObjCmdProc	BinaryFormatCmd;
 static Tcl_ObjCmdProc	BinaryScanCmd;
@@ -434,7 +434,7 @@ TclGetBytesFromObj(
 
 		irPtr = TclFetchInternalRep(objPtr, &tclByteArrayType);
 		baPtr = GET_BYTEARRAY(irPtr);
-		nonbyte = Tcl_UtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
+		nonbyte = TclUtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
 		TclUtfToUCS4(nonbyte, &ucs4);
 
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -473,7 +473,7 @@ Tcl_GetBytesFromObj(
 
 		irPtr = TclFetchInternalRep(objPtr, &tclByteArrayType);
 		baPtr = GET_BYTEARRAY(irPtr);
-		nonbyte = Tcl_UtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
+		nonbyte = TclUtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
 		TclUtfToUCS4(nonbyte, &ucs4);
 
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -556,12 +556,8 @@ TclGetByteArrayFromObj(
     baPtr = GET_BYTEARRAY(irPtr);
 
     if (numBytesPtr != NULL) {
-#if TCL_MAJOR_VERSION > 8
-	*numBytesPtr = baPtr->used;
-#else
-	/* TODO: What's going on here?  Document or eliminate. */
-	*numBytesPtr = ((size_t)(unsigned)(baPtr->used + 1)) - 1;
-#endif
+	/* Make sure we return a value between 0 and UINT_MAX-1, or (size_t)-1 */
+	*numBytesPtr = ((size_t)(unsigned int)(baPtr->used + 1)) - 1;
     }
     return baPtr->bytes;
 }
@@ -1129,7 +1125,7 @@ BinaryFormatCmd(
 		 * The macro evals its args more than once: avoid arg++
 		 */
 
-		if (TclListObjGetElements(interp, objv[arg], &listc,
+		if (TclListObjGetElementsM(interp, objv[arg], &listc,
 			&listv) != TCL_OK) {
 		    return TCL_ERROR;
 		}
@@ -1411,7 +1407,7 @@ BinaryFormatCmd(
 		listc = 1;
 		count = 1;
 	    } else {
-		TclListObjGetElements(interp, objv[arg], &listc, &listv);
+		TclListObjGetElementsM(interp, objv[arg], &listc, &listv);
 		if (count == BINARY_ALL) {
 		    count = listc;
 		}
@@ -1928,7 +1924,7 @@ GetFormatSpec(
 	(*formatPtr)++;
 	*countPtr = BINARY_ALL;
     } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
-	unsigned long int count;
+	unsigned long count;
 
 	errno = 0;
 	count = strtoul(*formatPtr, (char **) formatPtr, 10);
@@ -2383,12 +2379,12 @@ ScanNumber(
 	    value = (long) (buffer[0]
 		    + (buffer[1] << 8)
 		    + (buffer[2] << 16)
-		    + (((long)buffer[3]) << 24));
+		    + (((unsigned long)buffer[3]) << 24));
 	} else {
 	    value = (long) (buffer[3]
 		    + (buffer[2] << 8)
 		    + (buffer[1] << 16)
-		    + (((long) buffer[0]) << 24));
+		    + (((unsigned long) buffer[0]) << 24));
 	}
 
 	/*
@@ -2884,7 +2880,8 @@ BinaryEncodeUu(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
-    int offset, count, rawLength, n, i, j, bits, index;
+    int offset, count, rawLength, i, j, bits, index;
+    unsigned int n;
     int lineLength = 61;
     const unsigned char SingleNewline[] = { UCHAR('\n') };
     const unsigned char *wrapchar = SingleNewline;

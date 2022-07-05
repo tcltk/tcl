@@ -33,15 +33,15 @@
  * "memory tag" command is invoked, to hold the current tag.
  */
 
-typedef struct MemTag {
+typedef struct {
     size_t refCount;		/* Number of mem_headers referencing this
 				 * tag. */
-    char string[1];		/* Actual size of string will be as large as
+    char string[TCLFLEXARRAY];	/* Actual size of string will be as large as
 				 * needed for actual tag. This must be the
 				 * last field in the structure. */
 } MemTag;
 
-#define TAG_SIZE(bytesInString) ((offsetof(MemTag, string) + 1) + bytesInString)
+#define TAG_SIZE(bytesInString) ((offsetof(MemTag, string) + 1U) + (bytesInString))
 
 static MemTag *curTagPtr = NULL;/* Tag to use in all future mem_headers (set
 				 * by "memory tag" command). */
@@ -65,13 +65,13 @@ struct mem_header {
 				/* Aligns body on 8-byte boundary, plus
 				 * provides at least 8 additional guard bytes
 				 * to detect underruns. */
-    char body[1];		/* First byte of client's space. Actual size
+    char body[TCLFLEXARRAY];	/* First byte of client's space. Actual size
 				 * of this field will be larger than one. */
 };
 
 static struct mem_header *allocHead = NULL;  /* List of allocated structures */
 
-#define GUARD_VALUE  0141
+#define GUARD_VALUE  0x61
 
 /*
  * The following macro determines the amount of guard space *above* each chunk
@@ -89,14 +89,14 @@ static struct mem_header *allocHead = NULL;  /* List of allocated structures */
 #define BODY_OFFSET \
 	((size_t) (&((struct mem_header *) 0)->body))
 
-static unsigned int total_mallocs = 0;
-static unsigned int total_frees = 0;
+static size_t total_mallocs = 0;
+static size_t total_frees = 0;
 static size_t current_bytes_malloced = 0;
 static size_t maximum_bytes_malloced = 0;
-static unsigned int current_malloc_packets = 0;
-static unsigned int  maximum_malloc_packets = 0;
-static unsigned int break_on_malloc = 0;
-static unsigned int trace_on_at_malloc = 0;
+static size_t current_malloc_packets = 0;
+static size_t  maximum_malloc_packets = 0;
+static size_t break_on_malloc = 0;
+static size_t trace_on_at_malloc = 0;
 static int alloc_tracing = FALSE;
 static int init_malloced_bodies = TRUE;
 #ifdef MEM_VALIDATE
@@ -127,19 +127,6 @@ static char dumpFile[100];	/* Records where to dump memory allocation
 static Tcl_Mutex *ckallocMutexPtr;
 static int ckallocInit = 0;
 
-/*
- * Prototypes for procedures defined in this file:
- */
-
-static int		CheckmemCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		MemoryCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static void		ValidateMemory(struct mem_header *memHeaderP,
-			    const char *file, int line, int nukeGuards);
-
 /*
  *----------------------------------------------------------------------
  *
@@ -177,7 +164,7 @@ TclInitDbCkalloc(void)
 
 int
 TclDumpMemoryInfo(
-    ClientData clientData,
+    void *clientData,
     int flags)
 {
     char buf[1024];
@@ -186,11 +173,11 @@ TclDumpMemoryInfo(
         return 0;
     }
     sprintf(buf,
-	    "total mallocs             %10u\n"
-	    "total frees               %10u\n"
-	    "current packets allocated %10u\n"
+	    "total mallocs             %10" TCL_Z_MODIFIER "u\n"
+	    "total frees               %10" TCL_Z_MODIFIER "u\n"
+	    "current packets allocated %10" TCL_Z_MODIFIER "u\n"
 	    "current bytes allocated   %10" TCL_Z_MODIFIER "u\n"
-	    "maximum packets allocated %10u\n"
+	    "maximum packets allocated %10" TCL_Z_MODIFIER "u\n"
 	    "maximum bytes allocated   %10" TCL_Z_MODIFIER "u\n",
 	    total_mallocs,
 	    total_frees,
@@ -247,12 +234,12 @@ ValidateMemory(
 	    guard_failed = TRUE;
 	    fflush(stdout);
 	    byte &= 0xFF;
-	    fprintf(stderr, "low guard byte %d is 0x%x  \t%c\n", (int)idx, byte,
+	    fprintf(stderr, "low guard byte %" TCL_Z_MODIFIER "u is 0x%x  \t%c\n", idx, byte,
 		    (isprint(UCHAR(byte)) ? byte : ' ')); /* INTL: bytes */
 	}
     }
     if (guard_failed) {
-	TclDumpMemoryInfo((ClientData) stderr, 0);
+	TclDumpMemoryInfo(stderr, 0);
 	fprintf(stderr, "low guard failed at %p, %s %d\n",
 		memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
@@ -268,13 +255,13 @@ ValidateMemory(
 	    guard_failed = TRUE;
 	    fflush(stdout);
 	    byte &= 0xFF;
-	    fprintf(stderr, "hi guard byte %d is 0x%x  \t%c\n", (int)idx, byte,
+	    fprintf(stderr, "hi guard byte %" TCL_Z_MODIFIER "u is 0x%x  \t%c\n", idx, byte,
 		    (isprint(UCHAR(byte)) ? byte : ' ')); /* INTL: bytes */
 	}
     }
 
     if (guard_failed) {
-	TclDumpMemoryInfo((ClientData) stderr, 0);
+	TclDumpMemoryInfo(stderr, 0);
 	fprintf(stderr, "high guard failed at %p, %s %d\n",
 		memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
@@ -406,13 +393,13 @@ Tcl_DbCkalloc(
     }
 
     /* Don't let size argument to TclpAlloc overflow */
-    if (size <= UINT_MAX - HIGH_GUARD_SIZE -sizeof(struct mem_header)) {
+    if (size <= UINT_MAX - offsetof(struct mem_header, body) - 1U - HIGH_GUARD_SIZE) {
 	result = (struct mem_header *) TclpAlloc(size +
-		sizeof(struct mem_header) + HIGH_GUARD_SIZE);
+		offsetof(struct mem_header, body) + 1U + HIGH_GUARD_SIZE);
     }
     if (result == NULL) {
 	fflush(stdout);
-	TclDumpMemoryInfo((ClientData) stderr, 0);
+	TclDumpMemoryInfo(stderr, 0);
 	Tcl_Panic("unable to alloc %u bytes, %s line %d", size, file, line);
     }
 
@@ -424,7 +411,7 @@ Tcl_DbCkalloc(
 
     if (init_malloced_bodies) {
 	memset(result, GUARD_VALUE,
-		size + sizeof(struct mem_header) + HIGH_GUARD_SIZE);
+		offsetof(struct mem_header, body) + 1U + HIGH_GUARD_SIZE + size);
     } else {
 	memset(result->low_guard, GUARD_VALUE, LOW_GUARD_SIZE);
 	memset(result->body + size, GUARD_VALUE, HIGH_GUARD_SIZE);
@@ -451,7 +438,7 @@ Tcl_DbCkalloc(
     total_mallocs++;
     if (trace_on_at_malloc && (total_mallocs >= trace_on_at_malloc)) {
 	(void) fflush(stdout);
-	fprintf(stderr, "reached malloc trace enable point (%u)\n",
+	fprintf(stderr, "reached malloc trace enable point (%" TCL_Z_MODIFIER "u)\n",
 		total_mallocs);
 	fflush(stderr);
 	alloc_tracing = TRUE;
@@ -466,7 +453,7 @@ Tcl_DbCkalloc(
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
 	break_on_malloc = 0;
 	(void) fflush(stdout);
-	Tcl_Panic("reached malloc break limit (%u)", total_mallocs);
+	Tcl_Panic("reached malloc break limit (%" TCL_Z_MODIFIER "u)", total_mallocs);
     }
 
     current_malloc_packets++;
@@ -496,13 +483,13 @@ Tcl_AttemptDbCkalloc(
     }
 
     /* Don't let size argument to TclpAlloc overflow */
-    if (size <= UINT_MAX - HIGH_GUARD_SIZE - sizeof(struct mem_header)) {
+    if (size <= UINT_MAX - offsetof(struct mem_header, body) - 1U - HIGH_GUARD_SIZE) {
 	result = (struct mem_header *) TclpAlloc(size +
-		sizeof(struct mem_header) + HIGH_GUARD_SIZE);
+		offsetof(struct mem_header, body) + 1U + HIGH_GUARD_SIZE);
     }
     if (result == NULL) {
 	fflush(stdout);
-	TclDumpMemoryInfo((ClientData) stderr, 0);
+	TclDumpMemoryInfo(stderr, 0);
 	return NULL;
     }
 
@@ -513,7 +500,7 @@ Tcl_AttemptDbCkalloc(
      */
     if (init_malloced_bodies) {
 	memset(result, GUARD_VALUE,
-		size + sizeof(struct mem_header) + HIGH_GUARD_SIZE);
+		offsetof(struct mem_header, body) + 1U + HIGH_GUARD_SIZE + size);
     } else {
 	memset(result->low_guard, GUARD_VALUE, LOW_GUARD_SIZE);
 	memset(result->body + size, GUARD_VALUE, HIGH_GUARD_SIZE);
@@ -540,7 +527,7 @@ Tcl_AttemptDbCkalloc(
     total_mallocs++;
     if (trace_on_at_malloc && (total_mallocs >= trace_on_at_malloc)) {
 	(void) fflush(stdout);
-	fprintf(stderr, "reached malloc trace enable point (%d)\n",
+	fprintf(stderr, "reached malloc trace enable point (%" TCL_Z_MODIFIER "u)\n",
 		total_mallocs);
 	fflush(stderr);
 	alloc_tracing = TRUE;
@@ -555,7 +542,7 @@ Tcl_AttemptDbCkalloc(
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
 	break_on_malloc = 0;
 	(void) fflush(stdout);
-	Tcl_Panic("reached malloc break limit (%d)", total_mallocs);
+	Tcl_Panic("reached malloc break limit (%" TCL_Z_MODIFIER "u)", total_mallocs);
     }
 
     current_malloc_packets++;
@@ -692,7 +679,7 @@ Tcl_DbCkrealloc(
     if (copySize > memp->length) {
 	copySize = memp->length;
     }
-    newPtr = Tcl_DbCkalloc(size, file, line);
+    newPtr = (char *)Tcl_DbCkalloc(size, file, line);
     memcpy(newPtr, ptr, copySize);
     Tcl_DbCkfree(ptr, file, line);
     return newPtr;
@@ -723,7 +710,7 @@ Tcl_AttemptDbCkrealloc(
     if (copySize > memp->length) {
 	copySize = memp->length;
     }
-    newPtr = Tcl_AttemptDbCkalloc(size, file, line);
+    newPtr = (char *)Tcl_AttemptDbCkalloc(size, file, line);
     if (newPtr == NULL) {
 	return NULL;
     }
@@ -810,7 +797,7 @@ Tcl_AttemptRealloc(
  */
 static int
 MemoryCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
@@ -845,19 +832,19 @@ MemoryCmd(
 	return TCL_OK;
     }
     if (strcmp(TclGetString(objv[1]),"break_on_malloc") == 0) {
-	int value;
+	Tcl_WideInt value;
 	if (objc != 3) {
 	    goto argError;
 	}
-	if (Tcl_GetIntFromObj(interp, objv[2], &value) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[2], &value) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	break_on_malloc = (unsigned int) value;
+	break_on_malloc = value;
 	return TCL_OK;
     }
     if (strcmp(TclGetString(objv[1]),"info") == 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"%-25s %10u\n%-25s %10u\n%-25s %10u\n%-25s %10" TCL_Z_MODIFIER"u\n%-25s %10u\n%-25s %10" TCL_Z_MODIFIER "u\n",
+		"%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n%-25s %10" TCL_Z_MODIFIER "u\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
 		"current packets allocated", current_malloc_packets,
 		"current bytes allocated", current_bytes_malloced,
@@ -930,11 +917,11 @@ MemoryCmd(
     }
 
     if (strcmp(TclGetString(objv[1]),"trace_on_at_malloc") == 0) {
-	int value;
+	Tcl_WideInt value;
 	if (objc != 3) {
 	    goto argError;
 	}
-	if (Tcl_GetIntFromObj(interp, objv[2], &value) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[2], &value) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	trace_on_at_malloc = value;
@@ -980,13 +967,9 @@ MemoryCmd(
  *
  *----------------------------------------------------------------------
  */
-static int		CheckmemCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-
 static int
 CheckmemCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Obj values of arguments. */
@@ -1240,7 +1223,7 @@ Tcl_ValidateAllMemory(
 
 int
 TclDumpMemoryInfo(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     TCL_UNUSED(int) /*flags*/)
 {
     return 1;

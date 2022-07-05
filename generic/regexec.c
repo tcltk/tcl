@@ -116,7 +116,7 @@ struct vars {
 #define	ERR(e)	VERR(v, e)	/* record an error */
 #define	NOERR()	{if (ISERR()) return v->err;}	/* if error seen, return it */
 #define	OFF(p)	((p) - v->start)
-#define	LOFF(p)	((long)OFF(p))
+#define	LOFF(p)	((size_t)OFF(p))
 
 /*
  * forward declarations
@@ -145,7 +145,7 @@ static chr *shortest(struct vars *const, struct dfa *const, chr *const, chr *con
 static chr *lastCold(struct vars *const, struct dfa *const);
 static struct dfa *newDFA(struct vars *const, struct cnfa *const, struct colormap *const, struct smalldfa *);
 static void freeDFA(struct dfa *const);
-static unsigned hash(unsigned *const, const int);
+static unsigned hash(unsigned *const, int);
 static struct sset *initialize(struct vars *const, struct dfa *const, chr *const);
 static struct sset *miss(struct vars *const, struct dfa *const, struct sset *const, const pcolor, chr *const, chr *const);
 static int checkLAConstraint(struct vars *const, struct cnfa *const, chr *const, const pcolor);
@@ -330,7 +330,7 @@ simpleFind(
     s = newDFA(v, &v->g->search, cm, &v->dfa1);
     assert(!(ISERR() && s != NULL));
     NOERR();
-    MDEBUG(("\nsearch at %ld\n", LOFF(v->start)));
+    MDEBUG(("\nsearch at %" TCL_Z_MODIFIER "u\n", LOFF(v->start)));
     cold = NULL;
     close = shortest(v, s, v->start, v->start, v->stop, &cold, NULL);
     freeDFA(s);
@@ -358,12 +358,12 @@ simpleFind(
     assert(cold != NULL);
     open = cold;
     cold = NULL;
-    MDEBUG(("between %ld and %ld\n", LOFF(open), LOFF(close)));
+    MDEBUG(("between %" TCL_Z_MODIFIER "u and %" TCL_Z_MODIFIER "u\n", LOFF(open), LOFF(close)));
     d = newDFA(v, cnfa, cm, &v->dfa1);
     assert(!(ISERR() && d != NULL));
     NOERR();
     for (begin = open; begin <= close; begin++) {
-	MDEBUG(("\nfind trying at %ld\n", LOFF(begin)));
+	MDEBUG(("\nfind trying at %" TCL_Z_MODIFIER "u\n", LOFF(begin)));
 	if (shorter) {
 	    end = shortest(v, d, begin, begin, v->stop, NULL, &hitend);
 	} else {
@@ -474,7 +474,7 @@ complicatedFindLoop(
     cold = NULL;
     close = v->start;
     do {
-	MDEBUG(("\ncsearch at %ld\n", LOFF(close)));
+	MDEBUG(("\ncsearch at %" TCL_Z_MODIFIER "u\n", LOFF(close)));
 	close = shortest(v, s, close, close, v->stop, &cold, NULL);
 	if (close == NULL) {
 	    break;		/* NOTE BREAK */
@@ -482,9 +482,9 @@ complicatedFindLoop(
 	assert(cold != NULL);
 	open = cold;
 	cold = NULL;
-	MDEBUG(("cbetween %ld and %ld\n", LOFF(open), LOFF(close)));
+	MDEBUG(("cbetween %" TCL_Z_MODIFIER "u and %" TCL_Z_MODIFIER "u\n", LOFF(open), LOFF(close)));
 	for (begin = open; begin <= close; begin++) {
-	    MDEBUG(("\ncomplicatedFind trying at %ld\n", LOFF(begin)));
+	    MDEBUG(("\ncomplicatedFind trying at %" TCL_Z_MODIFIER "u\n", LOFF(begin)));
 	    estart = begin;
 	    estop = v->stop;
 	    for (;;) {
@@ -500,7 +500,7 @@ complicatedFindLoop(
 		    break;	/* NOTE BREAK OUT */
 		}
 
-		MDEBUG(("tentative end %ld\n", LOFF(end)));
+		MDEBUG(("tentative end %" TCL_Z_MODIFIER "u\n", LOFF(end)));
 		zapallsubs(v->pmatch, v->nmatch);
 		er = cdissect(v, v->g->tree, begin, end);
 		if (er == REG_OKAY) {
@@ -627,7 +627,7 @@ cdissect(
     int er;
 
     assert(t != NULL);
-    MDEBUG(("cdissect %ld-%ld %c\n", LOFF(begin), LOFF(end), t->op));
+    MDEBUG(("cdissect %" TCL_Z_MODIFIER "u-%" TCL_Z_MODIFIER "u %c\n", LOFF(begin), LOFF(end), t->op));
 
     switch (t->op) {
     case '=':			/* terminal node */
@@ -712,7 +712,7 @@ ccondissect(
     if (mid == NULL) {
 	return REG_NOMATCH;
     }
-    MDEBUG(("tentative midpoint %ld\n", LOFF(mid)));
+    MDEBUG(("tentative midpoint %" TCL_Z_MODIFIER "u\n", LOFF(mid)));
 
     /*
      * Iterate until satisfaction or failure.
@@ -763,7 +763,7 @@ ccondissect(
 	    MDEBUG(("%d failed midpoint\n", t->id));
 	    return REG_NOMATCH;
 	}
-	MDEBUG(("%d: new midpoint %ld\n", t->id, LOFF(mid)));
+	MDEBUG(("%d: new midpoint %" TCL_Z_MODIFIER "u\n", t->id, LOFF(mid)));
 	zaptreesubs(v, t->left);
 	zaptreesubs(v, t->right);
     }
@@ -803,7 +803,7 @@ crevcondissect(
     if (mid == NULL) {
 	return REG_NOMATCH;
     }
-    MDEBUG(("tentative midpoint %ld\n", LOFF(mid)));
+    MDEBUG(("tentative midpoint %" TCL_Z_MODIFIER "u\n", LOFF(mid)));
 
     /*
      * Iterate until satisfaction or failure.
@@ -854,7 +854,7 @@ crevcondissect(
 	    MDEBUG(("%d failed midpoint\n", t->id));
 	    return REG_NOMATCH;
 	}
-	MDEBUG(("%d: new midpoint %ld\n", t->id, LOFF(mid)));
+	MDEBUG(("%d: new midpoint %" TCL_Z_MODIFIER "u\n", t->id, LOFF(mid)));
 	zaptreesubs(v, t->left);
 	zaptreesubs(v, t->right);
     }
@@ -1062,7 +1062,7 @@ citerdissect(struct vars * v,
 	    k--;
 	    goto backtrack;
 	}
-	MDEBUG(("%d: working endpoint %d: %ld\n",
+	MDEBUG(("%d: working endpoint %d: %" TCL_Z_MODIFIER "u\n",
 		t->id, k, LOFF(endpts[k])));
 
 	/* k'th sub-match can no longer be considered verified */
@@ -1246,7 +1246,7 @@ creviterdissect(struct vars * v,
 	    k--;
 	    goto backtrack;
 	}
-	MDEBUG(("%d: working endpoint %d: %ld\n",
+	MDEBUG(("%d: working endpoint %d: %" TCL_Z_MODIFIER "u\n",
 		t->id, k, LOFF(endpts[k])));
 
 	/* k'th sub-match can no longer be considered verified */
