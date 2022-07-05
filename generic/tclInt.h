@@ -913,7 +913,9 @@ typedef struct VarInHash {
  *----------------------------------------------------------------
  */
 
-#if defined(__GNUC__) && (__GNUC__ > 2)
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+#   define TCLFLEXARRAY
+#elif defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCLFLEXARRAY 0
 #else
 #   define TCLFLEXARRAY 1
