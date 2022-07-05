@@ -1014,11 +1014,20 @@ ConsoleCloseProc(
 	 */
 	AcquireSRWLockShared(&handleInfoPtr->lock);
 
-	handleInfoPtr->numRefs -= 1; /* Remove reference from this channel */
-	handleInfoPtr->console = INVALID_HANDLE_VALUE;
+	if (closeHandle) {
+	    handleInfoPtr->console = INVALID_HANDLE_VALUE;
+	}
 
 	/* Break the thread out of blocking console i/o */
-	CancelSynchronousIo(handleInfoPtr->consoleThread);
+	handleInfoPtr->numRefs -= 1; /* Remove reference from this channel */
+	if (handleInfoPtr->numRefs == 1) {
+	    /*
+	     * Abort the i/o if no other threads are listening on it.
+	     * Note without this check, an input line will be skipped on
+	     * the cancel.
+	     */
+	    CancelSynchronousIo(handleInfoPtr->consoleThread);
+	}
 
 	/*
 	 * Wake up the console handling thread. Note we do not explicitly
@@ -1113,7 +1122,11 @@ ConsoleInputProc(
 	 */
 	if (numRead != 0) {
 	    /* If console thread was blocked, awaken it */
-	    // XXX WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+	    if (chanInfoPtr->flags & CONSOLE_ASYNC) {
+		/* Async channels always want read ahead */
+		handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
+		WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+	    }
 	    break;
 	}
 	/*
@@ -1166,6 +1179,11 @@ ConsoleInputProc(
 	    break;
 	}
 	/* Lock is reacquired, loop back to try again */
+    }
+    if (chanInfoPtr->flags & CONSOLE_ASYNC) {
+	/* Async channels always want read ahead */
+	handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
+	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
     }
 
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
@@ -2186,12 +2204,13 @@ ConsoleSetOptionProc(
 	    return TCL_ERROR;
 	}
 	if (Tcl_UtfNcasecmp(value, "NORMAL", vlen) == 0) {
-	    mode |= ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
+	    mode |=
+		ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
 	} else if (Tcl_UtfNcasecmp(value, "PASSWORD", vlen) == 0) {
-	    mode |= ENABLE_LINE_INPUT;
+	    mode |= ENABLE_LINE_INPUT|ENABLE_PROCESSED_INPUT;
 	    mode &= ~ENABLE_ECHO_INPUT;
 	} else if (Tcl_UtfNcasecmp(value, "RAW", vlen) == 0) {
-	    mode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+	    mode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT);
 	} else if (Tcl_UtfNcasecmp(value, "RESET", vlen) == 0) {
 	    /*
 	     * Reset to the initial mode, whatever that is.
