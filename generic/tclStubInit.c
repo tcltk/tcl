@@ -394,7 +394,7 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
 	    *ptr = (int)longValue;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "integer value too large to represent as non-long integer", -1));
+		    "integer value too large to represent", -1));
 	    result = TCL_ERROR;
 	}
     }
@@ -410,7 +410,7 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
 	    *ptr = (int)longValue;
 	} else {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "integer value too large to represent as non-long integer", -1));
+		    "integer value too large to represent", -1));
 	    result = TCL_ERROR;
 	}
     }
@@ -1649,7 +1649,22 @@ const TclStubs tclStubs = {
     0, /* 657 */
     0, /* 658 */
     0, /* 659 */
-    TclUnusedStubEntry, /* 660 */
+    0, /* 660 */
+    0, /* 661 */
+    0, /* 662 */
+    0, /* 663 */
+    0, /* 664 */
+    0, /* 665 */
+    0, /* 666 */
+    0, /* 667 */
+    0, /* 668 */
+    0, /* 669 */
+    0, /* 670 */
+    0, /* 671 */
+    0, /* 672 */
+    0, /* 673 */
+    0, /* 674 */
+    TclUnusedStubEntry, /* 675 */
 };
 
 /* !END!: Do not edit above this line. */

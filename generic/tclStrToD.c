@@ -542,8 +542,7 @@ TclParseNumber(
     int shift = 0;		/* Amount to shift when accumulating binary */
     int explicitOctal = 0;
 
-#define ALL_BITS	(~(Tcl_WideUInt)0)
-#define MOST_BITS	(ALL_BITS >> 1)
+#define MOST_BITS	(UWIDE_MAX >> 1)
 
     /*
      * Initialize bytes to start of the object's string rep if the caller
@@ -703,7 +702,7 @@ TclParseNumber(
 				&& (((size_t)shift >=
 					CHAR_BIT*sizeof(Tcl_WideUInt))
 				|| (octalSignificandWide >
-					(~(Tcl_WideUInt)0 >> shift)))) {
+					(UWIDE_MAX >> shift)))) {
 			    octalSignificandOverflow = 1;
 			    TclBNInitBignumFromWideUInt(&octalSignificandBig,
 				    octalSignificandWide);
@@ -829,7 +828,7 @@ TclParseNumber(
 
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
-			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
+			    significandWide > (UWIDE_MAX >> shift))) {
 			significandOverflow = 1;
 			TclBNInitBignumFromWideUInt(&significandBig,
 				significandWide);
@@ -881,7 +880,7 @@ TclParseNumber(
 
 		    if (significandWide != 0 &&
 			    ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideUInt) ||
-			    significandWide > (~(Tcl_WideUInt)0 >> shift))) {
+			    significandWide > (UWIDE_MAX >> shift))) {
 			significandOverflow = 1;
 			TclBNInitBignumFromWideUInt(&significandBig,
 				significandWide);
@@ -1312,7 +1311,7 @@ TclParseNumber(
 			objPtr->typePtr = &tclWideIntType;
 			if (signum) {
 			    objPtr->internalRep.wideValue =
-				    - (Tcl_WideInt) octalSignificandWide;
+				    (Tcl_WideInt) (-octalSignificandWide);
 			} else {
 			    objPtr->internalRep.wideValue =
 				    (Tcl_WideInt) octalSignificandWide;
@@ -1327,7 +1326,7 @@ TclParseNumber(
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
 			objPtr->internalRep.longValue =
-				- (long) octalSignificandWide;
+				(long) (-octalSignificandWide);
 		    } else {
 			objPtr->internalRep.longValue =
 				(long) octalSignificandWide;
@@ -1359,7 +1358,7 @@ TclParseNumber(
 			objPtr->typePtr = &tclWideIntType;
 			if (signum) {
 			    objPtr->internalRep.wideValue =
-				    - (Tcl_WideInt) significandWide;
+				    (Tcl_WideInt) (-significandWide);
 			} else {
 			    objPtr->internalRep.wideValue =
 				    (Tcl_WideInt) significandWide;
@@ -1374,7 +1373,7 @@ TclParseNumber(
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
 			objPtr->internalRep.longValue =
-				- (long) significandWide;
+				(long) (-significandWide);
 		    } else {
 			objPtr->internalRep.longValue =
 				(long) significandWide;
@@ -1545,7 +1544,7 @@ AccumulateDecimalDigit(
 	    *wideRepPtr = digit;
 	    return 0;
 	} else if (numZeros >= maxpow10_wide
-		|| w > ((~(Tcl_WideUInt)0)-digit)/pow10_wide[numZeros+1]) {
+		|| w > (UWIDE_MAX-digit)/pow10_wide[numZeros+1]) {
 	    /*
 	     * Wide multiplication will overflow.  Expand the number to a
 	     * bignum and fall through into the bignum case.

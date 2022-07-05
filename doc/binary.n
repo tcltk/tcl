@@ -87,6 +87,8 @@ RFC 2045 calls for base64 decoders to be non-strict.
 .
 The \fBhex\fR binary encoding converts each byte to a pair of hexadecimal
 digits that represent the byte value as a hexadecimal integer.
+When encoding, lower characters are used.
+When decoding, upper and lower characters are accepted.
 .RS
 .PP
 No options are supported during encoding. During decoding, the following

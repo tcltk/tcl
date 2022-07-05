@@ -71,9 +71,9 @@
 
 #define TM_YEAR_BASE	1900
 
-#define HOUR(x)		((int) (60 * x))
+#define HOUR(x)		((int) (60 * (x)))
 #define SECSPERDAY	(24L * 60L * 60L)
-#define IsLeapYear(x)	((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))
+#define IsLeapYear(x)	(((x) % 4 == 0) && ((x) % 100 != 0 || (x) % 400 == 0))
 
 #define yyIncrFlags(f)				\
     do {					\

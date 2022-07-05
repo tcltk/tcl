@@ -248,7 +248,7 @@ TclCompileStringCatCmd(
     folded = NULL;
     wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     for (i = 1; i < numWords; i++) {
-	obj = Tcl_NewObj();
+	TclNewObj(obj);
 	if (TclWordKnownAtCompileTime(wordTokenPtr, obj)) {
 	    if (folded) {
 		Tcl_AppendObjToObj(folded, obj);
@@ -482,7 +482,7 @@ TclCompileStringIsCmd(
     if (parsePtr->numWords < 3 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
     }
-    isClass = Tcl_NewObj();
+    TclNewObj(isClass);
     if (!TclWordKnownAtCompileTime(tokenPtr, isClass)) {
 	Tcl_DecrRefCount(isClass);
 	return TCL_ERROR;
@@ -878,12 +878,12 @@ TclCompileStringMapCmd(
     }
     mapTokenPtr = TokenAfter(parsePtr->tokenPtr);
     stringTokenPtr = TokenAfter(mapTokenPtr);
-    mapObj = Tcl_NewObj();
+    TclNewObj(mapObj);
     Tcl_IncrRefCount(mapObj);
     if (!TclWordKnownAtCompileTime(mapTokenPtr, mapObj)) {
 	Tcl_DecrRefCount(mapObj);
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    } else if (Tcl_ListObjGetElements(NULL, mapObj, &len, &objv) != TCL_OK) {
+    } else if (TclListObjGetElements(NULL, mapObj, &len, &objv) != TCL_OK) {
 	Tcl_DecrRefCount(mapObj);
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     } else if (len != 2) {
@@ -1418,7 +1418,7 @@ TclCompileSubstCmd(
     objv = TclStackAlloc(interp, /*numArgs*/ numOpts * sizeof(Tcl_Obj *));
 
     for (objc = 0; objc < /*numArgs*/ numOpts; objc++) {
-	objv[objc] = Tcl_NewObj();
+	TclNewObj(objv[objc]);
 	Tcl_IncrRefCount(objv[objc]);
 	if (!TclWordKnownAtCompileTime(wordTokenPtr, objv[objc])) {
 	    objc++;
@@ -2570,12 +2570,13 @@ DisassembleJumptableInfo(
     unsigned int pcOffset)
 {
     JumptableInfo *jtPtr = clientData;
-    Tcl_Obj *mapping = Tcl_NewObj();
+    Tcl_Obj *mapping;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     const char *keyPtr;
     int offset;
 
+    TclNewObj(mapping);
     hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
 	keyPtr = Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
@@ -2688,7 +2689,7 @@ TclCompileThrowCmd(
     CompileWord(envPtr, msgToken, interp, 2);
 
     codeIsList = codeKnown && (TCL_OK ==
-	    Tcl_ListObjLength(interp, objPtr, &len));
+	    TclListObjLength(interp, objPtr, &len));
     codeIsValid = codeIsList && (len != 0);
 
     if (codeIsValid) {
@@ -2822,7 +2823,7 @@ TclCompileTryCmd(
 		TclNewObj(tmpObj);
 		Tcl_IncrRefCount(tmpObj);
 		if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)
-			|| Tcl_ListObjLength(NULL, tmpObj, &objc) != TCL_OK
+			|| TclListObjLength(NULL, tmpObj, &objc) != TCL_OK
 			|| (objc == 0)) {
 		    TclDecrRefCount(tmpObj);
 		    goto failedToCompile;
@@ -2865,7 +2866,7 @@ TclCompileTryCmd(
 		TclDecrRefCount(tmpObj);
 		goto failedToCompile;
 	    }
-	    if (Tcl_ListObjGetElements(NULL, tmpObj, &objc, &objv) != TCL_OK
+	    if (TclListObjGetElements(NULL, tmpObj, &objc, &objv) != TCL_OK
 		    || (objc > 2)) {
 		TclDecrRefCount(tmpObj);
 		goto failedToCompile;
@@ -2930,6 +2931,9 @@ TclCompileTryCmd(
 	    goto failedToCompile;
 	}
 	finallyToken = TokenAfter(tokenPtr);
+	if (finallyToken->type != TCL_TOKEN_SIMPLE_WORD) {
+	    goto failedToCompile;
+	}
     } else {
 	goto failedToCompile;
     }
@@ -3076,7 +3080,7 @@ IssueTryClausesInstructions(
 	JUMP4(				JUMP_FALSE, notCodeJumpSource);
 	if (matchClauses[i]) {
 	    const char *p;
-	    Tcl_ListObjLength(NULL, matchClauses[i], &len);
+	    TclListObjLength(NULL, matchClauses[i], &len);
 
 	    /*
 	     * Match the errorcode according to try/trap rules.
@@ -3287,7 +3291,7 @@ IssueTryClausesFinallyInstructions(
 	OP(				EQ);
 	JUMP4(				JUMP_FALSE, notCodeJumpSource);
 	if (matchClauses[i]) {
-	    Tcl_ListObjLength(NULL, matchClauses[i], &len);
+	    TclListObjLength(NULL, matchClauses[i], &len);
 
 	    /*
 	     * Match the errorcode according to try/trap rules.
@@ -3587,8 +3591,9 @@ TclCompileUnsetCmd(
      */
 
     for (i=1,varTokenPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
-	Tcl_Obj *leadingWord = Tcl_NewObj();
+	Tcl_Obj *leadingWord;
 
+	TclNewObj(leadingWord);
 	varTokenPtr = TokenAfter(varTokenPtr);
 	if (!TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
 	    TclDecrRefCount(leadingWord);

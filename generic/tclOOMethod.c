@@ -339,7 +339,7 @@ TclOONewProcInstanceMethod(
     ProcedureMethod *pmPtr;
     Tcl_Method method;
 
-    if (Tcl_ListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
+    if (TclListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
 	return NULL;
     }
     pmPtr = ckalloc(sizeof(ProcedureMethod));
@@ -394,10 +394,10 @@ TclOONewProcMethod(
 
     if (argsObj == NULL) {
 	argsLen = -1;
-	argsObj = Tcl_NewObj();
+	TclNewObj(argsObj);
 	Tcl_IncrRefCount(argsObj);
 	procName = "<destructor>";
-    } else if (Tcl_ListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
+    } else if (TclListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
 	return NULL;
     } else {
 	procName = (nameObj==NULL ? "<constructor>" : TclGetString(nameObj));
@@ -1293,12 +1293,13 @@ CloneProcedureMethod(
      * Copy the argument list.
      */
 
-    argsObj = Tcl_NewObj();
+    TclNewObj(argsObj);
     for (localPtr=pmPtr->procPtr->firstLocalPtr; localPtr!=NULL;
 	    localPtr=localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)) {
-	    Tcl_Obj *argObj = Tcl_NewObj();
+	    Tcl_Obj *argObj;
 
+	    TclNewObj(argObj);
 	    Tcl_ListObjAppendElement(NULL, argObj,
 		    Tcl_NewStringObj(localPtr->name, -1));
 	    if (localPtr->defValuePtr != NULL) {
@@ -1366,7 +1367,7 @@ TclOONewForwardInstanceMethod(
     int prefixLen;
     ForwardMethod *fmPtr;
 
-    if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
+    if (TclListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
     }
     if (prefixLen < 1) {
@@ -1405,7 +1406,7 @@ TclOONewForwardMethod(
     int prefixLen;
     ForwardMethod *fmPtr;
 
-    if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
+    if (TclListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
     }
     if (prefixLen < 1) {
@@ -1453,7 +1454,7 @@ InvokeForwardMethod(
      * can ignore here.
      */
 
-    Tcl_ListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
+    TclListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
     Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
