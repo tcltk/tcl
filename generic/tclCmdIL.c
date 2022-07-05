@@ -4622,13 +4622,24 @@ Tcl_RangeObjCmd(
 		Tcl_GetString(*argPtr)));
 		return status;
 	    }
+	    if (dstep == 0.0) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("Step cannot be 0"));
+		return TCL_ERROR;
+	    }
 	    if (really == 0) {
 		dstart = (double)start;
 		dend = (double)end;
 	    }
 	    really++;
-	} else if (really) {
-	    dstep = (double)step;
+	} else {
+	    if (step == 0) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("Step cannot be 0"));
+		return TCL_ERROR;
+	    }
+	    if (really) {
+		// Some other arg is double, promote step to double
+		dstep = (double)step;
+	    }
 	}
 	argPtr++;
 	argc--;
@@ -4670,10 +4681,6 @@ Tcl_RangeObjCmd(
 	}
 	totalElems = elementCount;
     } else {
-	if (dstep == 0.0) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("Invalid step value"));
-	    return TCL_ERROR;
-	}
 	if ((opmode != RANGE_COUNT
 	     && ((dstep < 0.0 && dstart <= dend) || (dstep > 0.0 && dend < dstart)))) {
 	    // Align step direction with the start, end direction
