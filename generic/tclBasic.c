@@ -2563,7 +2563,7 @@ Tcl_CreateCommand(
     cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
-    cmdPtr->objProc2 = TclInvokeStringCommand2;
+    cmdPtr->objProc2 = TclInvokeStringCommand;
     cmdPtr->objClientData2 = cmdPtr;
     cmdPtr->proc = proc;
     cmdPtr->clientData = clientData;
@@ -2916,33 +2916,6 @@ TclCreateObjCommandInNs2(
 
 int
 TclInvokeStringCommand(
-    void *clientData,	/* Points to command's Command structure. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,		/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    Command *cmdPtr = (Command *)clientData;
-    int i, result;
-    const char **argv = (const char **)
-	    TclStackAlloc(interp, (objc + 1) * sizeof(char *));
-
-    for (i = 0; i < objc; i++) {
-	argv[i] = TclGetString(objv[i]);
-    }
-    argv[objc] = 0;
-
-    /*
-     * Invoke the command's string-based Tcl_CmdProc.
-     */
-
-    result = cmdPtr->proc(cmdPtr->clientData, interp, objc, argv);
-
-    TclStackFree(interp, (void *) argv);
-    return result;
-}
-
-int
-TclInvokeStringCommand2(
     void *clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     size_t objc,		/* Number of arguments. */
@@ -3319,7 +3292,7 @@ Tcl_SetCommandInfoFromToken(
     cmdPtr->proc = infoPtr->proc;
     cmdPtr->clientData = infoPtr->clientData;
     if (infoPtr->objProc2 == NULL) {
-	cmdPtr->objProc2 = TclInvokeStringCommand2;
+	cmdPtr->objProc2 = TclInvokeStringCommand;
 	cmdPtr->objClientData2 = cmdPtr;
 	cmdPtr->nreProc2 = NULL;
     } else {
@@ -3412,13 +3385,13 @@ Tcl_GetCommandInfoFromToken(
 
     cmdPtr = (Command *) cmd;
     infoPtr->isNativeObjectProc =
-	    (cmdPtr->objProc2 != TclInvokeStringCommand2) ? 2 : 0;
+	    (cmdPtr->objProc2 != TclInvokeStringCommand) ? 2 : 0;
     infoPtr->proc = cmdPtr->proc;
     infoPtr->clientData = cmdPtr->clientData;
     infoPtr->deleteProc = cmdPtr->deleteProc;
     infoPtr->deleteData = cmdPtr->deleteData;
     infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
-    if (infoPtr->objProc2 == cmdWrapperProc) {
+    if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
 	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->objClientData2;
 	infoPtr->objProc = info->proc;
 	infoPtr->objClientData = info->clientData;
