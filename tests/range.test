@@ -30,11 +30,13 @@ test range-1.2 {step magnitude} {
     -result {10 8 6 4 2}
 }
 
-test range-1.3 {step wrong sign} {
+test range-1.3 {synergy between int and double} {
     -body {
-	range 25. to 5. by 5 ;# ditto - maybe this is an error
+	set rl [range 25. to 5. by 5]
+	set il [range 25  to 5  by 5]
+	lmap r $rl i $il { if {$r ne "" && $i ne ""} {expr {int($r) == $i}} else {list $r $i} }
     }
-    -result {25.0 20.0 15.0 10.0 5.0}
+    -result {1 1 1 1 1}
 }
 
 test range-1.4 {integer decreasing} {
@@ -120,6 +122,13 @@ test range-1.15 {count with decreasing step} {
 	range 5 -count 5 by -2
     }
     -result {5 3 1 -1 -3}
+}
+
+test range-1.16 {large numbers} {
+    -body {
+	range [expr {int(1e6)}] [expr {int(2e6)}] [expr {int(1e5)}]
+    }
+    -result {1000000 1100000 1200000 1300000 1400000 1500000 1600000 1700000 1800000 1900000 2000000}
 }
 
 #
@@ -222,4 +231,74 @@ test range-2.15 {count with decreasing step} {
 	range 5 -count 5 -2
     }
     -result {5 3 1 -1 -3}
+}
+
+test range-2.16 {large numbers} {
+    -body {
+	range 1e6 2e6 1e5
+    }
+    -result {1000000.0 1100000.0 1200000.0 1300000.0 1400000.0 1500000.0 1600000.0 1700000.0 1800000.0 1900000.0 2000000.0}
+}
+
+test range-3.1 {experiement} {
+    -body {
+	set ans {}
+	foreach factor [range 2.0 10.0] {
+	    set start 1
+	    set end 10
+	    for {set step 1} {$step < 1e8} {} {
+		set l [range $start to $end by $step]
+		if {[llength $l] != ($step == 1 ? 10 : 11)} {
+		    lappend ans $factor $step [llength $l] $l
+		}
+		set step [expr {$step * $factor}]
+		set end [expr {$end * $factor}]
+	    }
+	}
+	if {$ans eq {}} {
+	    set ans OK
+	}
+	set ans
+    }
+    -result {OK}
+}
+
+test range-3.2 {error case} {
+    -body {
+	range foo
+    }
+    -returnCodes 1
+    -result {bad start value: "foo"}
+}
+
+test range-3.3 {error case} {
+    -body {
+	range 10 foo
+    }
+    -returnCodes 1
+    -result {bad end value: "foo"}
+}
+
+test range-3.4 {error case} {
+    -body {
+	range 25 or 6
+    }
+    -returnCodes 1
+    -result {bad range operation "or": must be .., to, or -count}
+}
+
+test range-3.5 {error case} {
+    -body {
+	range 25 by 6
+    }
+    -returnCodes 1
+    -result {bad range operation "by": must be .., to, or -count}
+}
+
+test range-3.6 {error case} {
+    -body {
+	range 1 7 or 3
+    }
+    -returnCodes 1
+    -result {bad step keyword "or": must be by}
 }
