@@ -4492,7 +4492,7 @@ Tcl_RangeObjCmd(
     Tcl_Obj *const objv[])
 				/* The argument objects. */
 {
-    Tcl_WideInt elementCount, i, totalElems;
+    Tcl_WideInt elementCount, i;
     Tcl_Obj *const *argPtr;
     Tcl_WideInt start, end, step;//, count;
     Tcl_Obj *listPtr, **dataArray = NULL;
@@ -4708,22 +4708,21 @@ Tcl_RangeObjCmd(
 
     /* Final sanity check. Do not exceed limits on max list length. */
 
-    if (elementCount && objc > LIST_MAX/elementCount) {
+    if (elementCount > LIST_MAX) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "max length of a Tcl list (%" TCL_Z_MODIFIER "u elements) exceeded", (size_t)LIST_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	status = TCL_ERROR;
 	goto done;
     }
-    totalElems = elementCount;
 
     /*
      * Get an empty list object that is allocated large enough to hold each
      * init value elementCount times.
      */
 
-    listPtr = Tcl_NewListObj(totalElems, NULL);
-    if (totalElems) {
+    listPtr = Tcl_NewListObj(elementCount, NULL);
+    if (elementCount) {
 	List *listRepPtr = ListRepPtr(listPtr);
 
 	listRepPtr->elemCount = elementCount;
@@ -4734,7 +4733,7 @@ Tcl_RangeObjCmd(
      * Set the elements.
      */
 
-    CLANG_ASSERT(dataArray || totalElems == 0 );
+    CLANG_ASSERT(dataArray || elementCount == 0 );
 
     if (!really) {
 	int k = 0;
