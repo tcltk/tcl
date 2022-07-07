@@ -4492,12 +4492,12 @@ Tcl_RangeObjCmd(
     Tcl_Obj *const objv[])
 				/* The argument objects. */
 {
-    Tcl_WideInt elementCount, i, totalElems, status;
+    Tcl_WideInt elementCount, i, totalElems;
     Tcl_Obj *const *argPtr;
     Tcl_WideInt start, end, step;//, count;
     Tcl_Obj *listPtr, **dataArray = NULL;
     Tcl_Obj *OPError = NULL, *BYError = NULL;
-    int argc, opmode, bymode;
+    int argc, status;
     double dstart, dend, dstep;
     int really = 0;
     static const char *const operations[] = {
@@ -4505,12 +4505,12 @@ Tcl_RangeObjCmd(
     };
     enum Range_Operators {
         RANGE_DOTS, RANGE_TO, RANGE_COUNT
-    };
+    } opmode;
     static const char *const step_keywords[] = {"by", NULL};
     enum Step_Operators {
 	STEP_BY
-    };
-    
+    } bymode;
+
     /*
      * Check arguments for legality:
      *		range from op to ?by step?
@@ -4531,9 +4531,9 @@ Tcl_RangeObjCmd(
     argc--;
 
     /* From argument */
-    status = Tcl_GetWideIntFromObj(interp, *argPtr, &start);
+    status = Tcl_GetWideIntFromObj(NULL, *argPtr, &start);
     if (status != TCL_OK) {
-	status = Tcl_GetDoubleFromObj(interp, *argPtr, &dstart);
+	status = Tcl_GetDoubleFromObj(NULL, *argPtr, &dstart);
 	if (status != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	        "bad start value: \"%s\"",
@@ -4546,7 +4546,7 @@ Tcl_RangeObjCmd(
     /* Process ?Op? argument */
     argPtr++;
     argc--;
-    
+
     /* Decode range (optional) OPeration argument */
     if (argc &&
 	Tcl_GetIndexFromObj(interp, *argPtr, operations, "range operation", 0, &opmode) == TCL_OK) {
@@ -4587,8 +4587,8 @@ Tcl_RangeObjCmd(
 
     /* Process To argument */
     if (argc) {
-	if ((status = Tcl_GetWideIntFromObj(interp, *argPtr, &end)) != TCL_OK) {
-	    status = Tcl_GetDoubleFromObj(interp, *argPtr, &dend);
+	if ((status = Tcl_GetWideIntFromObj(NULL, *argPtr, &end)) != TCL_OK) {
+	    status = Tcl_GetDoubleFromObj(NULL, *argPtr, &dend);
 	    if (status != TCL_OK) {
 		if (OPError) {
 		    Tcl_SetObjResult(interp, OPError);
@@ -4605,7 +4605,7 @@ Tcl_RangeObjCmd(
 	} else if (really) {
 	    dend = (double)end;
 	}
-    
+
 	argPtr++;
 	argc--;
     }
@@ -4627,10 +4627,10 @@ Tcl_RangeObjCmd(
 	step = 1;
 	dstep = 1;
     } else {
-	status = Tcl_GetWideIntFromObj(interp, *argPtr, &step);
+	status = Tcl_GetWideIntFromObj(NULL, *argPtr, &step);
 	if (status != TCL_OK) {
-	    status = Tcl_GetDoubleFromObj(interp, *argPtr, &dstep);
-	    if (status) {
+	    status = Tcl_GetDoubleFromObj(NULL, *argPtr, &dstep);
+	    if (status != TCL_OK) {
 		if (BYError) {
 		    Tcl_SetObjResult(interp, BYError);
 		} else {
@@ -4665,7 +4665,7 @@ Tcl_RangeObjCmd(
     }
 
     /* Calculate the number of elements in the return values */
-    
+
     if (!really) { /* Integers */
 	if (step == 0
 	    || (opmode != RANGE_COUNT
@@ -4700,23 +4700,23 @@ Tcl_RangeObjCmd(
     }
     if (elementCount < 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "bad count \"%lld\": must be a number >= 0", elementCount));
+	    "bad count \"%" TCL_LL_MODIFIER "d\": must be a number >= 0", elementCount));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "RANGE", "NEGARG", NULL);
 	status = TCL_ERROR;
 	goto done;
     }
 
     /* Final sanity check. Do not exceed limits on max list length. */
-	
+
     if (elementCount && objc > LIST_MAX/elementCount) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "max length of a Tcl list (%d elements) exceeded", LIST_MAX));
+	    "max length of a Tcl list (%" TCL_Z_MODIFIER "u elements) exceeded", (size_t)LIST_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	status = TCL_ERROR;
 	goto done;
     }
     totalElems = elementCount;
-    
+
     /*
      * Get an empty list object that is allocated large enough to hold each
      * init value elementCount times.
@@ -4735,7 +4735,7 @@ Tcl_RangeObjCmd(
      */
 
     CLANG_ASSERT(dataArray || totalElems == 0 );
-    
+
     if (!really) {
 	int k = 0;
 
@@ -4753,7 +4753,7 @@ Tcl_RangeObjCmd(
             dataArray[k++] = elemPtr;
 	}
     }
-    
+
     Tcl_SetObjResult(interp, listPtr);
     status = TCL_OK;
 

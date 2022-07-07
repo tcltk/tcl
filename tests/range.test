@@ -302,3 +302,11 @@ test range-3.6 {error case} {
     -returnCodes 1
     -result {bad step keyword "or": must be by}
 }
+
+# cleanup
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:
