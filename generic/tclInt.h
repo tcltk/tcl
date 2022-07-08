@@ -3020,8 +3020,9 @@ MODULE_SCOPE int	TclIsDigitProc(int byte);
 MODULE_SCOPE int	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(size_t elements, Tcl_Obj * const objv[],
 			    int forceRelative);
-MODULE_SCOPE Tcl_Obj *	TclResolveTildePaths(Tcl_Interp *interp,
+MODULE_SCOPE Tcl_Obj *	TclResolveTildePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathsObj);
+MODULE_SCOPE Tcl_Obj *	TclResolveTildePathList(Tcl_Obj *pathsObj);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,

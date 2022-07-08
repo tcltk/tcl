@@ -1228,34 +1228,6 @@ DoTildeSubst(
 /*
  *----------------------------------------------------------------------
  *
- * TclResolveTildePaths --
- *
- *	Given a Tcl_Obj that is a list of paths, returns a Tcl_Obj containing
- *	the paths with any ~-prefixed paths resolved. Returns NULL if
- *	none of the paths contained a ~-prefixed path, or passed in value
- *	was not a list, or if NULL was passed in.
- *
- *	~-prefixed paths that cannot be resolved are removed from the
- *	returned list.
- *
- * Results:
- *	Returns a Tcl_Obj with resolved paths or NULL.
- *
- *----------------------------------------------------------------------
- */
-Tcl_Obj *TclResolveTildePaths(
-    Tcl_Interp *interp,
-    Tcl_Obj *pathsObj)
-{
-    /* TODO */
-
-    return NULL;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GlobObjCmd --
  *
  *	This procedure is invoked to process the "glob" Tcl command. See the

@@ -865,15 +865,13 @@ TclpSetVariables(
 
 #ifndef TCL_TILDE_EXPAND
     {
-        Tcl_Obj *resolvedPaths =
-            TclResolveTildePaths(interp,
-                                 Tcl_GetVar2Ex(
-                                     interp,
-                                     "tcl_pkgPath",
-                                     NULL,
-                                     TCL_GLOBAL_ONLY));
-        if (resolvedPaths) {
-            Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, resolvedPaths, TCL_GLOBAL_ONLY);
+        Tcl_Obj *origPaths;
+        Tcl_Obj *resolvedPaths;
+        origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
+        resolvedPaths = TclResolveTildePathList(origPaths);
+        if (resolvedPaths != origPaths && resolvedPaths != NULL) {
+            Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL,
+		resolvedPaths, TCL_GLOBAL_ONLY);
         }
     }
 #endif
