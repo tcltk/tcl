@@ -699,7 +699,8 @@ TclPathPart(
 
 	splitPtr = Tcl_FSSplitPath(pathPtr, &splitElements);
 	Tcl_IncrRefCount(splitPtr);
-	if (splitElements == 1  &&  TclGetString(pathPtr)[0] == '~') {
+#ifdef TCL_TILDE_EXPAND
+        if (splitElements == 1  &&  TclGetString(pathPtr)[0] == '~') {
 	    Tcl_Obj *norm;
 
 	    TclDecrRefCount(splitPtr);
@@ -710,7 +711,8 @@ TclPathPart(
 	    splitPtr = Tcl_FSSplitPath(norm, &splitElements);
 	    Tcl_IncrRefCount(splitPtr);
 	}
-	if (portion == TCL_PATH_TAIL) {
+#endif /* TCL_TILDE_EXPAND */
+        if (portion == TCL_PATH_TAIL) {
 	    /*
 	     * Return the last component, unless it is the only component, and
 	     * it is the root of an absolute path.
@@ -1038,8 +1040,9 @@ TclJoinPath(
 	}
 	ptr = Tcl_GetStringFromObj(res, &length);
 
-	/*
-	 * Strip off any './' before a tilde, unless this is the beginning of
+#ifdef TCL_TILDE_EXPAND
+        /*
+         * Strip off any './' before a tilde, unless this is the beginning of
 	 * the path.
 	 */
 
@@ -1047,9 +1050,10 @@ TclJoinPath(
 		(strElt[1] == '/') && (strElt[2] == '~')) {
 	    strElt += 2;
 	}
+#endif /* TCL_TILDE_EXPAND */
 
-	/*
-	 * A NULL value for fsPtr at this stage basically means we're trying
+        /*
+         * A NULL value for fsPtr at this stage basically means we're trying
 	 * to join a relative path onto something which is also relative (or
 	 * empty). There's nothing particularly wrong with that.
 	 */
@@ -1246,6 +1250,7 @@ TclNewFSPathObj(
     const char *p;
     int state = 0, count = 0;
 
+#ifdef TCL_TILDE_EXPAND
     /* [Bug 2806250] - this is only a partial solution of the problem.
      * The PATHFLAGS != 0 representation assumes in many places that
      * the "tail" part stored in the normPathPtr field is itself a
@@ -1269,6 +1274,7 @@ TclNewFSPathObj(
 	Tcl_DecrRefCount(tail);
 	return pathPtr;
     }
+#endif /* TCL_TILDE_EXPAND */
 
     TclNewObj(pathPtr);
     fsPathPtr = (FsPath *)Tcl_Alloc(sizeof(FsPath));
@@ -2230,6 +2236,7 @@ SetFsPathFromAny(
      * Handle tilde substitutions, if needed.
      */
 
+#ifdef TCL_TILDE_EXPAND
     if (len && name[0] == '~') {
 	Tcl_DString temp;
 	size_t split;
@@ -2341,6 +2348,9 @@ SetFsPathFromAny(
     } else {
 	transPtr = TclJoinPath(1, &pathPtr, 1);
     }
+#else
+    transPtr = TclJoinPath(1, &pathPtr, 1);
+#endif /* TCL_TILDE_EXPAND */
 
     /*
      * Now we have a translated filename in 'transPtr'. This will have forward

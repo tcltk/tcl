@@ -365,6 +365,7 @@ TclSetEnv(
 
     Tcl_MutexUnlock(&envMutex);
 
+#ifdef TCL_TILDE_EXPAND
     if (!strcmp(name, "HOME")) {
 	/*
 	 * If the user's home directory has changed, we must invalidate the
@@ -373,6 +374,8 @@ TclSetEnv(
 
 	Tcl_FSMountsChanged(NULL);
     }
+#endif
+
 }
 
 /*

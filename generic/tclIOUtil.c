@@ -1215,7 +1215,7 @@ FsAddMountsToGlobResult(
  *	(4) The mapping from a string representation of a file to a full,
  *	normalized pathname changes. For example, if 'env(HOME)' is modified,
  *	then any pathname containing '~' maps to a different item, possibly in
- *	a different filesystem.
+ *	a different filesystem. (Only if TCL_TILDE_EXPAND is defined)
  *
  *	Tcl has no control over (2) and (3), so each registered filesystem must
  *	call Tcl_FSMountsChnaged in each of those circumstances.
@@ -3939,13 +3939,17 @@ Tcl_FSSplitPath(
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
 
-	    if (elementStart[0] == '~') {
+#ifdef TCL_TILDE_EXPAND
+            if (elementStart[0] == '~') {
 		TclNewLiteralStringObj(nextElt, "./");
 		Tcl_AppendToObj(nextElt, elementStart, length);
 	    } else {
 		nextElt = Tcl_NewStringObj(elementStart, length);
 	    }
-	    Tcl_ListObjAppendElement(NULL, result, nextElt);
+#else
+            nextElt = Tcl_NewStringObj(elementStart, length);
+#endif /* TCL_TILDE_EXPAND */
+            Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
 	if (*p++ == '\0') {
 	    break;

@@ -362,6 +362,7 @@ Tcl_GetPathType(
  *	file). The exported function Tcl_FSGetPathType should be used by
  *	extensions.
  *
+ *      If TCL_TILDE_EXPAND defined:
  *	Note that '~' paths are always considered TCL_PATH_ABSOLUTE, even
  *	though expanding the '~' could lead to any possible path type. This
  *	function should therefore be considered a low-level, string
@@ -389,8 +390,9 @@ TclpGetNativePathType(
     const char *path = TclGetString(pathPtr);
 
     if (path[0] == '~') {
-	/*
-	 * This case is common to all platforms. Paths that begin with ~ are
+#ifdef TCL_TILDE_EXPAND
+        /*
+         * This case is common to all platforms. Paths that begin with ~ are
 	 * absolute.
 	 */
 
@@ -401,6 +403,9 @@ TclpGetNativePathType(
 	    }
 	    *driveNameLengthPtr = end - path;
 	}
+#else
+        type = TCL_PATH_RELATIVE;
+#endif
     } else {
 	switch (tclPlatform) {
 	case TCL_PLATFORM_UNIX: {
@@ -697,13 +702,17 @@ SplitUnixPath(
 	length = path - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-	    if ((elementStart[0] == '~') && (elementStart != origPath)) {
+#ifdef TCL_TILDE_EXPAND
+            if ((elementStart[0] == '~') && (elementStart != origPath)) {
 		TclNewLiteralStringObj(nextElt, "./");
 		Tcl_AppendToObj(nextElt, elementStart, length);
 	    } else {
 		nextElt = Tcl_NewStringObj(elementStart, length);
 	    }
-	    Tcl_ListObjAppendElement(NULL, result, nextElt);
+#else
+            nextElt = Tcl_NewStringObj(elementStart, length);
+#endif
+            Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
 	if (*path++ == '\0') {
 	    break;
@@ -766,10 +775,13 @@ SplitWinPath(
 	length = p - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-	    if ((elementStart != path) && ((elementStart[0] == '~')
-		    || (isalpha(UCHAR(elementStart[0]))
-			&& elementStart[1] == ':'))) {
-		TclNewLiteralStringObj(nextElt, "./");
+	    if ((elementStart != path) &&
+                (
+#ifdef TCL_TILDE_EXPAND
+                    (elementStart[0] == '~') ||
+#endif
+                    (isalpha(UCHAR(elementStart[0])) && elementStart[1] == ':'))) {
+                TclNewLiteralStringObj(nextElt, "./");
 		Tcl_AppendToObj(nextElt, elementStart, length);
 	    } else {
 		nextElt = Tcl_NewStringObj(elementStart, length);
@@ -871,9 +883,15 @@ TclpNativeJoinPath(
     p = joining;
 
     if (length != 0) {
-	if ((p[0] == '.') && (p[1] == '/') && ((p[2] == '~')
-		|| (tclPlatform==TCL_PLATFORM_WINDOWS && isalpha(UCHAR(p[2]))
-		&& (p[3] == ':')))) {
+	if ((p[0] == '.') &&
+            (p[1] == '/') &&
+            (
+#ifdef TCL_TILDE_EXPAND
+                (p[2] == '~') ||
+#endif
+                (tclPlatform==TCL_PLATFORM_WINDOWS &&
+                 isalpha(UCHAR(p[2])) &&
+                 (p[3] == ':')))) {
 	    p += 2;
 	}
     }
@@ -1146,6 +1164,7 @@ TclGetExtension(
     return p;
 }
 
+#ifdef TCL_TILDE_EXPAND
 /*
  *----------------------------------------------------------------------
  *
@@ -1204,6 +1223,35 @@ DoTildeSubst(
     }
     return Tcl_DStringValue(resultPtr);
 }
+#endif /* TCL_TILDE_EXPAND */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclResolveTildePaths --
+ *
+ *	Given a Tcl_Obj that is a list of paths, returns a Tcl_Obj containing
+ *	the paths with any ~-prefixed paths resolved. Returns NULL if
+ *	none of the paths contained a ~-prefixed path, or passed in value
+ *	was not a list, or if NULL was passed in.
+ *
+ *	~-prefixed paths that cannot be resolved are removed from the
+ *	returned list.
+ *
+ * Results:
+ *	Returns a Tcl_Obj with resolved paths or NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *TclResolveTildePaths(
+    Tcl_Interp *interp,
+    Tcl_Obj *pathsObj)
+{
+    /* TODO */
+
+    return NULL;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1729,7 +1777,6 @@ TclGlob(
 				 * NULL. */
 {
     const char *separators;
-    const char *head;
     char *tail, *start;
     int result;
     Tcl_Obj *filenamesObj, *savedResultObj;
@@ -1745,7 +1792,6 @@ TclGlob(
     }
 
     if (pathPrefix == NULL) {
-	char c;
 	Tcl_DString buffer;
 	Tcl_DStringInit(&buffer);
 
@@ -1755,7 +1801,10 @@ TclGlob(
 	 * Perform tilde substitution, if needed.
 	 */
 
-	if (start[0] == '~') {
+#ifdef TCL_TILDE_EXPAND
+        if (start[0] == '~') {
+            const char *head;
+            char c;
 	    /*
 	     * Find the first path separator after the tilde.
 	     */
@@ -1794,6 +1843,9 @@ TclGlob(
 	} else {
 	    tail = pattern;
 	}
+#else
+        tail = pattern;
+#endif /* TCL_TILDE_EXPAND */
     } else {
 	Tcl_IncrRefCount(pathPrefix);
 	tail = pattern;
@@ -2351,14 +2403,16 @@ DoGlob(
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
 
-		if (pathPtr == NULL && TclGetString(subdirv[i])[0] == '~') {
+#ifdef TCL_TILDE_EXPAND
+                if (pathPtr == NULL && TclGetString(subdirv[i])[0] == '~') {
 		    TclListObjLengthM(NULL, matchesObj, &repair);
 		    copy = subdirv[i];
 		    subdirv[i] = Tcl_NewStringObj("./", 2);
 		    Tcl_AppendObjToObj(subdirv[i], copy);
 		    Tcl_IncrRefCount(subdirv[i]);
 		}
-		result = DoGlob(interp, matchesObj, separators, subdirv[i],
+#endif /* TCL_TILDE_EXPAND */
+                result = DoGlob(interp, matchesObj, separators, subdirv[i],
 			1, p+1, types);
 		if (copy) {
 		    size_t end;

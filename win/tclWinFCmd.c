@@ -1719,7 +1719,8 @@ ConvertFileNameFormat(
 	     * Deal with issues of tildes being absolute.
 	     */
 
-	    if (Tcl_DStringValue(&dsTemp)[0] == '~') {
+#ifdef TCL_TILDE_EXPAND
+            if (Tcl_DStringValue(&dsTemp)[0] == '~') {
 		TclNewLiteralStringObj(tempPath, "./");
 		Tcl_AppendToObj(tempPath, Tcl_DStringValue(&dsTemp),
 			Tcl_DStringLength(&dsTemp));
@@ -1727,7 +1728,10 @@ ConvertFileNameFormat(
 	    } else {
 		tempPath = TclDStringToObj(&dsTemp);
 	    }
-	    Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
+#else
+            tempPath = TclDStringToObj(&dsTemp);
+#endif /* TCL_TILDE_EXPAND */
+            Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
 	    FindClose(handle);
 	}
     }
