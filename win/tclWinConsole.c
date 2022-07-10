@@ -1107,7 +1107,6 @@ ConsoleInputProc(
     ReleaseSRWLockShared(&gConsoleLock); /* AFTER acquiring handleInfoPtr->lock */
 
     while (1) {
-	int freeSpace = RingBufferFreeSpace(&handleInfoPtr->buffer);
 	numRead = RingBufferOut(&handleInfoPtr->buffer, bufPtr, bufSize, 1);
 	/*
 	 * Note: even if channel is closed or has an error, as long there is
