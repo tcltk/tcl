@@ -27,7 +27,7 @@
  *   corresponding to stdin, stdout, stderr)
  *
  * - Consoles are created / inherited at process startup. There is currently
- *   no way in Tcl to programmatically create a console. Even if there were
+ *   no way in Tcl to programmatically create a console. Even if these were
  *   added the above Windows limitation would still apply.
  *
  * - Unlike files, sockets etc. where there is a one-to-one
@@ -37,8 +37,7 @@
  *
  * - Even with multiple threads, more than one file event handler is unlikely.
  *   It does not make sense for multiple threads to register handlers for
- *   stdin because the input would be randomly fragmented amongst the threads
- *   (not even on a per line basis).
+ *   stdin because the input would be randomly fragmented amongst the threads.
  *
  * Various design factors are driven by the above, e.g. use of lists instead
  * of hash tables (at most 3 console handles) and use of global instead of
@@ -48,14 +47,8 @@
  *
  * Some additional design notes/reminders for the future:
  *
- * All input is done through the reader thread, even synchronous reads of
- * stdin which in theory could be done directly by the interpreter threads.
- * This is because I'm not entirely confident about multithreaded access to
- * the ReadConsole API (probably ok since Microsoft does not warn against
- * this) and also the API requires reading an even number of bytes (WCHAR)
- * while the channel callback has no such restriction (in theory).
- * Accounting for that in the callbacks is doable but slightly tricky  while
- * straightforward in the reader thread because of its double buffering.
+ * Aligned, synchronous reads are done directly by interpreter thread.
+ * Unaligned or asynchronous reads are done through the reader thread.
  *
  * The reader thread does not read ahead. That is, it will not post a read
  * until some interpreter thread is actually requesting a read. This is
@@ -1153,9 +1146,6 @@ ConsoleInputProc(
 	    chanInfoPtr->handle = INVALID_HANDLE_VALUE;
 	    break;
 	}
-	/* Request console reader thread for data */
-	handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
-	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
 
 	/* For async, tell caller we are blocked */
 	if (chanInfoPtr->flags & CONSOLE_ASYNC) {
@@ -1165,10 +1155,51 @@ ConsoleInputProc(
 	}
 
 	/*
+	 * Blocking read. Just get data from directly from console. There
+	 * is a small complication in that we can only read even number
+	 * of bytes (wide-character API) and the destination buffer should be
+	 * WCHAR aligned. If either condition is not met, we defer to the
+	 * reader thread which handles these case rather than dealing with
+	 * them here (which is a little trickier than it might sound.)
+	 */
+	if ((1 & (ptrdiff_t)bufPtr) == 0 /* aligned buffer */
+	    && bufSize > 1         /* Not single byte read */
+	) {
+	    DWORD lastError;
+	    RingSizeT numChars;
+	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
+	    lastError = ReadConsoleChars(chanInfoPtr->handle,
+					 (WCHAR *)bufPtr,
+					 bufSize / sizeof(WCHAR),
+					 &numChars);
+	    /* NOTE lock released so DON'T break. Return instead */
+	    if (lastError != ERROR_SUCCESS) {
+		Tcl_WinConvertError(lastError);
+		*errorCode = Tcl_GetErrno();
+		return -1;
+	    }
+	    else if (numChars > 0) {
+		/* Successfully read something. */
+		return numChars * sizeof(WCHAR);
+	    }
+	    else {
+		/*
+		 * Ctrl-C/Ctrl-Brk interrupt. Loop around to retry.
+		 * We have to reacquire the lock. No worried about handleInfoPtr
+		 * having gone away since the channel holds a reference.
+		 */
+		AcquireSRWLockExclusive(&handleInfoPtr->lock);
+		continue;
+	    }
+	}
+	/*
+	 * Deferring blocking read to reader thread.
 	 * Release the lock and sleep. Note that because the channel
 	 * holds a reference count on handleInfoPtr, it will not
 	 * be deallocated while the lock is released.
 	 */
+	handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
+	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
 	if (!SleepConditionVariableSRW(&handleInfoPtr->interpThreadCV,
 				       &handleInfoPtr->lock,
 				       INFINITE,
@@ -1178,10 +1209,11 @@ ConsoleInputProc(
 	    numRead = -1;
 	    break;
 	}
+
 	/* Lock is reacquired, loop back to try again */
     }
+
     if (chanInfoPtr->flags & CONSOLE_ASYNC) {
-	/* Async channels always want read ahead */
 	handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
 	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
     }
@@ -1541,6 +1573,49 @@ ConsoleGetHandleProc(
 }
 
 /*
+ *------------------------------------------------------------------------
+ *
+ * ConsoleDataAvailable --
+ *
+ *    Checks if there is data in the console input queue.
+ *
+ * Results:
+ *    Returns 1 if the input queue has data, -1 on error else 0 if empty.
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+ static int
+ ConsoleDataAvailable (HANDLE consoleHandle)
+{
+    INPUT_RECORD input[5];
+    DWORD count;
+    DWORD i;
+
+    /*
+     * Need at least one keyboard event.
+     */
+    if (PeekConsoleInputW(
+	    consoleHandle, input, sizeof(input) / sizeof(input[0]), &count)
+	== FALSE) {
+	return -1;
+    }
+    for (i = 0; i < count; ++i) {
+	/*
+	 * Event must be a keydown because a trailing LF keyup event is always
+	 * present for line based input.
+	 */
+	if (input[i].EventType == KEY_EVENT
+	    && input[i].Event.KeyEvent.bKeyDown) {
+	    return 1;
+	}
+    }
+    return 0;
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * ConsoleReaderThread --
@@ -1563,7 +1638,6 @@ ConsoleReaderThread(
 {
     ConsoleHandleInfo *handleInfoPtr = (ConsoleHandleInfo *) arg;
     ConsoleHandleInfo **iterator;
-    BOOL success;
     char inputChars[200]; /* Temporary buffer */
     RingSizeT inputLen = 0;
     RingSizeT inputOffset = 0;
@@ -1655,7 +1729,8 @@ ConsoleReaderThread(
 	 * for password input. So only do so if at least one interpreter has
 	 * requested data.
 	 */
-	if (handleInfoPtr->flags & CONSOLE_DATA_AWAITED) {
+	if ((handleInfoPtr->flags & CONSOLE_DATA_AWAITED)
+	    && ConsoleDataAvailable(handleInfoPtr->console)) {
 	    DWORD error;
 	    /* Do not hold the lock while blocked in console */
 	    ReleaseSRWLockExclusive(&handleInfoPtr->lock);
@@ -1682,11 +1757,20 @@ ConsoleReaderThread(
 	    }
 	}
 	else {
-	    /* Wait until an interp thread asks for data. */
-	    success = SleepConditionVariableSRW(&handleInfoPtr->consoleThreadCV,
-						&handleInfoPtr->lock,
-						INFINITE,
-						0);
+	    /*
+	     * Either no one was asking for data, or no data was available.
+	     * In the former case, wait until someone wakes us asking for
+	     * data. In the latter case, there is no alternative but to
+	     * poll since ReadConsole does not support async operation.
+	     * So sleep for a short while and loop back to retry.
+	     */
+	    DWORD sleepTime;
+	    sleepTime =
+		handleInfoPtr->flags & CONSOLE_DATA_AWAITED ? 50 : INFINITE;
+	    SleepConditionVariableSRW(&handleInfoPtr->consoleThreadCV,
+				      &handleInfoPtr->lock,
+				      sleepTime,
+				      0);
 	}
 
 	/* Loop again to check for exit or wait for readers to wake us */
@@ -1883,7 +1967,6 @@ ConsoleWriterThread(LPVOID arg)
     ReleaseSRWLockExclusive(&gConsoleLock);
 
     RingBufferClear(&handleInfoPtr->buffer);
-
 
     ckfree(handleInfoPtr);
 

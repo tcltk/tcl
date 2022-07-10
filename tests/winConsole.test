@@ -45,13 +45,13 @@ proc prompt {prompt} {
 
 # Input tests
 
-test console-gets-1.0 {Console blocking gets} -constraints {win interactive} -body {
+test console-input-1.0 {Console blocking gets} -constraints {win interactive} -body {
     prompt "Type \"xyz\" and hit Enter: "
     gets stdin
 } -result xyz
 
-test console-gets-1.1 {Console file channel: non-blocking gets} -constraints {
-    win interactive tbd
+test console-input-1.1 {Console file channel: non-blocking gets} -constraints {
+    win interactive
 } -body {
     set oldmode [fconfigure stdin]
 
@@ -72,25 +72,23 @@ test console-gets-1.1 {Console file channel: non-blocking gets} -constraints {
     #cleanup the fileevent
     fileevent stdin readable {}
     fconfigure stdin {*}$oldmode
-    puts [fconfigure stdin]
     set result
 
 } -result abc
 
-test console-read-1.0 {Console blocking read} -constraints {win interactive} -setup {
+test console-input-2.0 {Console blocking read} -constraints {win interactive} -setup {
     set oldmode [fconfigure stdin]
     fconfigure stdin -inputmode raw
 } -cleanup {
     fconfigure stdin {*}$oldmode
 } -body {
-    puts [fconfigure stdin]
     prompt "Type the key \"a\". Do NOT hit Enter. You will NOT see characters echoed."
     set c [read stdin 1]
     puts ""
     set c
 } -result a
 
-test console-read-1.1 {Console file channel: non-blocking read} -constraints {
+test console-input-2.1 {Console file channel: non-blocking read} -constraints {
     win interactive
 } -setup {
     set oldmode [fconfigure stdin]
@@ -118,18 +116,18 @@ test console-read-1.1 {Console file channel: non-blocking read} -constraints {
     set result {}
     vwait result
     fileevent stdin readable {}
-    puts ""
     set result
 } -result abc
 
 # Output tests
 
-test console-puts-1.0 {Console blocking puts stdout} -constraints {win interactive} -body {
+test console-output-1.0 {Console blocking puts stdout} -constraints {win interactive} -body {
+    puts [fconfigure stdin]
     puts stdout "123"
     yesno "Did you see the string \"123\"?"
 } -result 1
 
-test console-puts-1.1 {Console non-blocking puts stdout} -constraints {
+test console-output-1.1 {Console non-blocking puts stdout} -constraints {
     win interactive
 } -setup {
     set oldmode [fconfigure stdout]
@@ -151,7 +149,7 @@ test console-puts-1.1 {Console non-blocking puts stdout} -constraints {
     yesno "Did you see 1, 2, 3 printed on consecutive lines?"
 } -result 1
 
-test console-puts-2.0 {Console blocking puts stderr} -constraints {win interactive} -body {
+test console-output-2.0 {Console blocking puts stderr} -constraints {win interactive} -body {
     puts stderr "456"
     yesno "Did you see the string \"456\"?"
 } -result 1
