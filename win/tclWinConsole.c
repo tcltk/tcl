@@ -97,7 +97,7 @@ typedef struct RingBuffer {
     RingSizeT length;	/* Number of RingBufferChar*/
 } RingBuffer;
 #define RingBufferLength(ringPtr_) ((ringPtr_)->length)
-#define RingBufferFreeSpace(ringPtr_) ((ringPtr_)->capacity - (ringPtr_)->length)
+#define RingBufferHasFreeSpace(ringPtr_) ((ringPtr_)->length < (ringPtr_)->capacity)
 #define RINGBUFFER_ASSERT(ringPtr_) assert(RingBufferCheck(ringPtr_))
 
 /*
@@ -795,7 +795,7 @@ ConsoleSetupProc(
 		}
 	    }
 	    else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
-		if (RingBufferFreeSpace(&handleInfoPtr->buffer) > 0) {
+		if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
 		    /* TCL_WRITABLE */
 		    block = 0; /* Output space available */
 		}
@@ -878,7 +878,7 @@ ConsoleCheckProc(
 		}
 	    }
 	    else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
-		if (RingBufferFreeSpace(&handleInfoPtr->buffer) > 0) {
+		if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
 		    needEvent = 1; /* Output space available */
 		}
 	    }
@@ -1429,7 +1429,7 @@ ConsoleEventProc(
 		mask = TCL_READABLE;
 	    }
 	    else if ((chanInfoPtr->watchMask & TCL_WRITABLE)
-		     && RingBufferFreeSpace(&handleInfoPtr->buffer) > 0) {
+		     && RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
 		/* Generate write event space available */
 		mask = TCL_WRITABLE;
 	    }
