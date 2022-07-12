@@ -4542,10 +4542,10 @@ Tcl_RangeObjCmd(
     double dstart, dend, dstep;
     int really = 0;
     static const char *const operations[] = {
-        "..", "to", "count", NULL
+	"..", "to", "count", "by", NULL
     };
     enum Range_Operators {
-        RANGE_DOTS, RANGE_TO, RANGE_COUNT
+	RANGE_DOTS, RANGE_TO, RANGE_COUNT, RANGE_BY
     } opmode;
     static const char *const step_keywords[] = {"by", NULL};
     enum Step_Operators {
@@ -4609,6 +4609,11 @@ Tcl_RangeObjCmd(
 	    break;
 	case RANGE_COUNT:
 	    break;
+	case RANGE_BY:
+	    // count mode with a step value
+	    end = start-1;
+	    start = 0;
+	    break;
 	}
 	/* next argument */
 	argPtr++;
@@ -4638,7 +4643,7 @@ Tcl_RangeObjCmd(
     }
 
     /* Process To argument */
-    if (argc) {
+    if (argc && (opmode == RANGE_TO || opmode == RANGE_COUNT)) {
 	if ((status = Tcl_GetWideIntFromObj(NULL, *argPtr, &end)) != TCL_OK) {
 	    status = Tcl_GetDoubleFromObj(NULL, *argPtr, &dend);
 	    if (status == TCL_OK) {
@@ -4685,8 +4690,13 @@ Tcl_RangeObjCmd(
 
     /* Proess Step argument */
     if (argc == 0) {
-	step = 1;
-	dstep = 1;
+	if (opmode == RANGE_COUNT) {
+	    step = 1;
+	    dstep = 1;
+	} else {
+	    step = start < end ? 1 : -1;
+	    dstep = dstart < dend ? 1.0 : -1.0;
+	}
     } else {
 	status = Tcl_GetWideIntFromObj(NULL, *argPtr, &step);
 	if (status != TCL_OK) {
@@ -4710,9 +4720,6 @@ Tcl_RangeObjCmd(
 		    }
 		    goto done;
 		}
-	    } else if (dstep == 0.0) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf("Step cannot be 0"));
-		goto done;
 	    }
 	    if (really == 0) {
 		dstart = (double)start;
@@ -4720,11 +4727,6 @@ Tcl_RangeObjCmd(
 	    }
 	    really++;
 	} else {
-	    if (step == 0) {
-		Tcl_SetObjResult(interp, Tcl_ObjPrintf("bad step value: 0"));
-		status = TCL_ERROR;
-		goto done;
-	    }
 	    if (really) {
 		// Some other arg is double, promote step to double
 		dstep = (double)step;
@@ -4740,32 +4742,36 @@ Tcl_RangeObjCmd(
 	if (step == 0
 	    || (opmode != RANGE_COUNT
 		&& ((step < 0 && start <= end) || (step > 0 && end < start)))) {
-	    step = -step;
+	    step = 0;
 	}
 
 	if (opmode == RANGE_COUNT) {
-	    elementCount = end;
+	    elementCount = step ? end : 0; // 0 step -> empty list
 	    end = start + (elementCount * step);
 	} else if (start <= end) {
-	    elementCount = (end-start+step)/step;
+	    elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
 	} else {
-	    elementCount = (start-end-step)/(-step);
+	    elementCount = step ? (start-end-step)/(-step) : 0; // 0 step -> empty list
 	}
     } else { // double
 	if ((opmode != RANGE_COUNT
 	     && ((dstep < 0.0 && dstart <= dend) || (dstep > 0.0 && dend < dstart)))) {
 	    // Align step direction with the start, end direction
-	    dstep = -dstep;
+	    dstep = 0;
 	}
 
 	if (opmode == RANGE_COUNT) {
-	    elementCount = end;
+	    elementCount = dstep != 0.0 ? end : 0; // 0 step -> empty list
 	    dend = dstart + (elementCount * dstep);
 	} else if (dstart <= dend) {
-	    elementCount = (Tcl_WideInt)floor((dend-dstart+dstep)/dstep);
+	    elementCount = (dstep != 0.0)
+		? (Tcl_WideInt)floor((dend-dstart+dstep)/dstep)
+		: 0;  // 0 step -> empty list
 	} else {
 	    double absdstep = dstep<0 ? -dstep : dstep;
-	    elementCount = (Tcl_WideInt)floor((dstart-dend-dstep)/absdstep);
+	    elementCount = (dstep != 0.0)
+		? (Tcl_WideInt)floor((dstart-dend-dstep)/absdstep)
+		: 0;  // 0 step -> empty list
 	}
     }
     if (elementCount < 0) {
@@ -4784,6 +4790,8 @@ Tcl_RangeObjCmd(
     }
     
     /*
+     * For list of double (real) values, create actual list.
+     *
      * Get an empty list object that is allocated large enough to hold each
      * init value elementCount times.
      */
