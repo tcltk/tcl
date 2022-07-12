@@ -68,6 +68,7 @@ static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		SetUnicodeObj(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
 static int		UnicodeLength(const Tcl_UniChar *unicode);
+static int		UTF16Length(const unsigned short *unicode);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 #if (TCL_UTF_MAX) > 3 && !defined(TCL_NO_DEPRECATED)
 static void		DupUTF16StringInternalRep(Tcl_Obj *objPtr,
@@ -562,6 +563,10 @@ Tcl_NewUnicodeObj(
     TclNewObj(objPtr);
     TclInvalidateStringRep(objPtr);
 
+    if (numChars < 0) {
+	numChars = UTF16Length(unicode);
+    }
+
     String *stringPtr = (String *)ckalloc((offsetof(String, unicode)
 	    + sizeof(unsigned short)) + numChars * sizeof(unsigned short));
     memcpy(stringPtr->unicode, unicode, numChars * sizeof(unsigned short));
@@ -984,7 +989,7 @@ TclGetUnicodeFromObj(
 {
     String *stringPtr;
 
-    SetStringFromAny(NULL, objPtr);
+    SetUTF16StringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
     if (lengthPtr != NULL) {
@@ -1451,14 +1456,7 @@ Tcl_SetUnicodeObj(
     String *stringPtr;
 
     if (numChars < 0) {
-        numChars = 0;
-
-        if (unicode) {
-    	while (numChars >= 0 && unicode[numChars] != 0) {
-    	    numChars++;
-    	}
-        }
-        stringCheckLimits(numChars);
+	numChars = UTF16Length(unicode);
     }
 
     /*
@@ -1480,6 +1478,21 @@ Tcl_SetUnicodeObj(
     stringPtr->allocated = numChars;
 }
 #endif
+
+static int
+UTF16Length(
+    const unsigned short *ucs2Ptr)
+{
+    int numChars = 0;
+
+    if (ucs2Ptr) {
+	while (numChars >= 0 && ucs2Ptr[numChars] != 0) {
+	    numChars++;
+	}
+    }
+    stringCheckLimits(numChars);
+    return numChars;
+}
 
 static int
 UnicodeLength(
