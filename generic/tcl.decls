@@ -2501,6 +2501,17 @@ declare 672 {
 declare 673 {
     int TclGetUniChar(Tcl_Obj *objPtr, int index)
 }
+declare 674 generic {
+    Tcl_Obj * Tcl_NewArithSeriesObj(Tcl_WideInt start,
+	    Tcl_WideInt end, Tcl_WideInt step)
+}
+declare 675 generic {
+    int Tcl_ArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr, Tcl_WideInt index,
+            Tcl_WideInt *element)
+}
+declare 676 generic {
+    Tcl_WideInt Tcl_ArithSeriesObjLength(Tcl_Obj *arithSeriesPtr)
+}
 
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

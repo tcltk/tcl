@@ -2480,6 +2480,26 @@ typedef struct List {
     (((listPtr)->typePtr == &tclListType) ? ListObjIsCanonical((listPtr)) : 0)
 
 /*
+ * The structure used for the AirthSeries internal representation.
+ * Note that the len can in theory be always computed by start,end,step
+ * but it's faster to cache it inside the internal representation.
+ */
+typedef struct ArithSeries {
+    Tcl_WideInt start;
+    Tcl_WideInt end;
+    Tcl_WideInt step;
+    Tcl_WideInt len;
+    Tcl_Obj *wideObjPtr; /* Used to speedup [foreach] reusing the same obj. */
+} ArithSeries;
+
+#define ArithSeriesRepPtr(arithSeriesObjPtr) \
+    (ArithSeries *) ((arithSeriesObjPtr)->internalRep.twoPtrValue.ptr1)
+
+#define ArithSeriesIndexM(arithSeriesRepPtr, index) \
+    (arithSeriesRepPtr)->start+((index)*arithSeriesRepPtr->step)
+
+
+/*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
  * TclNRLmapCmd and their compilations.
  */
@@ -2758,6 +2778,7 @@ MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
 MODULE_SCOPE const Tcl_ObjType tclListType;
+MODULE_SCOPE const Tcl_ObjType tclArithSeriesType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
@@ -2920,6 +2941,10 @@ MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
 			    CmdFrame **cfPtrPtr, int *wordPtr);
+MODULE_SCOPE Tcl_Obj *  TclArithSeriesObjCopy(Tcl_Interp *interp,
+			    Tcl_Obj *arithSeriesPtr);
+MODULE_SCOPE Tcl_Obj *  TclArithSeriesObjRange(Tcl_Obj *arithSeriesPtr,
+			    int fromIdx, int toIdx);
 MODULE_SCOPE int	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
 			    ClientData clientData, int *flagPtr, int value);
 MODULE_SCOPE void	TclAsyncMarkFromNotifier(void);

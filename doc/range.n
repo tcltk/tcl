@@ -1,0 +1,61 @@
+'\"
+'\" Copyright (c) 2022 Eric Taylor.  All rights reserved.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH range n 8.7 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+range \- Build a numeric sequence returned as a list
+.SH SYNOPSIS
+\fBrange \fIStart \fR?(\fB..\fR|\fBto\fR)? \fIEnd\fR ??\fBby\fR? \fIStep\fR?
+
+\fBrange \fIStart \fBcount\fR \fICount\fR ??\fBby? \fIStep\fR?
+
+\fBrange \fICount\fR
+.BE
+.SH DESCRIPTION
+.PP
+The \fBrange\fR command creates a sequence of numeric values using the given
+parameters \fIStart\fR, \fIEnd\fR, and \fIStep\fR. The \fIoperation\fR
+argument ".." or "to" defines an inclusive range. The "count" option is used
+to define a count of the number of elements in the list. The short form with a
+single count value will create a range from 0 to count-1.
+.SH EXAMPLES
+.CS
+\fBrange\fR 3 
+      \fI\(-> 0 1 2\fR
+\fBrange\fR 3 0]
+      \fI\(-> 3 2 1 0}\fR
+\fBrange\fR 10 .. 1 by 2
+      \fI\(-> 10 8 6 4 2\fR
+set l [\fBrange\fR 0 -5]
+      \fI\(-> 0 -1 -2 -3 -4 -5\fR
+\fRforeach i [\fBrange\fR [llength $l]] {
+    puts l($i)=[lindex $l $i]
+}
+      \fI\(-> l(0)=0
+        l(1)=-1
+        l(2)=-2
+        l(3)=-3
+        l(4)=-4
+        l(5)=-5
+      
+
+set sqrs [lmap i [\fBrange\fR 1 10] {expr $i*$i}]
+      \fI\(-> 1 4 9 16 25 36 49 64 81 100\fR
+
+.CE
+.SH "SEE ALSO"
+foreach(n), list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n), lsort(n)
+.SH KEYWORDS
+element, index, list
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

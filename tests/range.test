@@ -15,86 +15,55 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ## Arg errors
-test range-1.1 {error cases} {
-    -body {
-	range
-    }
-    -returnCodes 1
+test range-1.1 {error cases} -body {
+    range
+} \
+    -returnCodes 1 \
     -result {wrong # args: should be "range start op end ?by step?"}
-}
+
 
 test range-1.2 {step magnitude} {
-    -body {
-	range 10 .. 1 by 2 ;# or this could be an error - or not
-    }
-    -result {10 8 6 4 2}
-}
+    range 10 .. 1 by 2 ;# or this could be an error - or not
+} {10 8 6 4 2}
 
 test range-1.3 {synergy between int and double} {
-    -body {
-	set rl [range 25. to 5. by 5]
-	set il [range 25  to 5  by 5]
-	lmap r $rl i $il { if {$r ne "" && $i ne ""} {expr {int($r) == $i}} else {list $r $i} }
-    }
-    -result {1 1 1 1 1}
-}
+    set rl [range 25. to 5. by 5]
+    set il [range 25  to 5  by 5]
+    lmap r $rl i $il { if {$r ne "" && $i ne ""} {expr {int($r) == $i}} else {list $r $i} }
+} {1 1 1 1 1}
 
 test range-1.4 {integer decreasing} {
-    -body {
-	range 10 .. 1
-    }
-    -result {10 9 8 7 6 5 4 3 2 1}
-}
+    range 10 .. 1
+} {10 9 8 7 6 5 4 3 2 1}
 
 test range-1.5 {integer increasing} {
-    -body {
-	range 1 .. 10
-    }
-    -result {1 2 3 4 5 6 7 8 9 10}
-}
+    range 1 .. 10
+} {1 2 3 4 5 6 7 8 9 10}
 
 test range-1.6 {integer decreasing with step} {
-    -body {
-	range 10 .. 1 by -2
-    }
-    -result {10 8 6 4 2}
-}
+    range 10 .. 1 by -2
+} {10 8 6 4 2}
 
 test range-1.7 {real increasing range} {
-    -body {
-	range 5.0 to 15.
-    }
-    -result {5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0}
-}
+    range 5.0 to 15.
+} {5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0}
 
 test range-1.8 {real increasing range with step} {
-    -body {
-	range 5.0 to 25. by 5
-    }
-    -result {5.0 10.0 15.0 20.0 25.0}
-}
+    range 5.0 to 25. by 5
+} {5.0 10.0 15.0 20.0 25.0}
 
 test range-1.9 {real decreasing with step} {
-    -body {
-	range 25. to 5. by -5
-    }
-    -result {25.0 20.0 15.0 10.0 5.0}
-}
+    range 25. to 5. by -5
+} {25.0 20.0 15.0 10.0 5.0}
 
 # note, 10 cannot be in such a list, but allowed
 test range-1.10 {integer range with step} {
-    -body {
-	range 1 to 10 by 2
-    }
-    -result {1 3 5 7 9}
-}
+    range 1 to 10 by 2
+} {1 3 5 7 9}
 
 test range-1.11 {error case: increasing wrong step direction} {
-    -body {
-	range 1 to 10 by -2
-    }
-    -result {1 3 5 7 9}
-}
+    range 1 to 10 by -2
+} {1 3 5 7 9}
 
 test range-1.12 {decreasing range with step} {
     -body {
@@ -105,21 +74,21 @@ test range-1.12 {decreasing range with step} {
 
 test range-1.13 {count operation} {
     -body {
-	range 5 -count 5
+	range 5 count 5
     }
     -result {5 6 7 8 9}
 }
 
 test range-1.14 {count with step} {
     -body {
-	range 5 -count 5 by 2
+	range 5 count 5 by 2
     }
     -result {5 7 9 11 13}
 }
 
 test range-1.15 {count with decreasing step} {
     -body {
-	range 5 -count 5 by -2
+	range 5 count 5 by -2
     }
     -result {5 3 1 -1 -3}
 }
@@ -221,47 +190,39 @@ test range-2.13 {count only operation} {
 
 test range-2.14 {count with step} {
     -body {
-	range 5 -count 5 2
+	range 5 count 5 2
     }
     -result {5 7 9 11 13}
 }
 
 test range-2.15 {count with decreasing step} {
-    -body {
-	range 5 -count 5 -2
-    }
-    -result {5 3 1 -1 -3}
-}
+    range 5 count 5 -2
+} {5 3 1 -1 -3}
+
 
 test range-2.16 {large numbers} {
-    -body {
-	range 1e6 2e6 1e5
-    }
-    -result {1000000.0 1100000.0 1200000.0 1300000.0 1400000.0 1500000.0 1600000.0 1700000.0 1800000.0 1900000.0 2000000.0}
-}
+    range 1e6 2e6 1e5
+} {1000000.0 1100000.0 1200000.0 1300000.0 1400000.0 1500000.0 1600000.0 1700000.0 1800000.0 1900000.0 2000000.0}
 
 test range-3.1 {experiement} {
-    -body {
-	set ans {}
-	foreach factor [range 2.0 10.0] {
-	    set start 1
-	    set end 10
-	    for {set step 1} {$step < 1e8} {} {
-		set l [range $start to $end by $step]
-		if {[llength $l] != ($step == 1 ? 10 : 11)} {
-		    lappend ans $factor $step [llength $l] $l
-		}
-		set step [expr {$step * $factor}]
-		set end [expr {$end * $factor}]
+    set ans {}
+    foreach factor [range 2.0 10.0] {
+	set start 1
+	set end 10
+	for {set step 1} {$step < 1e8} {} {
+	    set l [range $start to $end by $step]
+	    if {[llength $l] != 10} {
+		lappend ans $factor $step [llength $l] $l
 	    }
+	    set step [expr {$step * $factor}]
+	    set end [expr {$end * $factor}]
 	}
-	if {$ans eq {}} {
-	    set ans OK
-	}
-	set ans
     }
-    -result {OK}
-}
+    if {$ans eq {}} {
+	set ans OK
+    }
+    set ans
+} {OK}
 
 test range-3.2 {error case} {
     -body {
@@ -284,7 +245,7 @@ test range-3.4 {error case} {
 	range 25 or 6
     }
     -returnCodes 1
-    -result {bad range operation "or": must be .., to, or -count}
+    -result {bad range operation "or": must be .., to, or count}
 }
 
 test range-3.5 {error case} {
@@ -292,7 +253,7 @@ test range-3.5 {error case} {
 	range 25 by 6
     }
     -returnCodes 1
-    -result {bad range operation "by": must be .., to, or -count}
+    -result {bad range operation "by": must be .., to, or count}
 }
 
 test range-3.6 {error case} {
@@ -302,6 +263,60 @@ test range-3.6 {error case} {
     -returnCodes 1
     -result {bad step keyword "or": must be by}
 }
+
+test range-3.7 {lmap} {
+    lmap x [range 5] { expr {$x * $x} }
+} {0 1 4 9 16}
+
+test range-3.8 {lrange} {
+    set r [lrange [range 1 100] 10 20]
+    lindex [tcl::unsupported::representation $r] 3
+} {arithseries}
+
+test range-3.9 {lassign} {
+    set r [range 15]
+    lassign $r a b
+    list [lindex [tcl::unsupported::representation $r] 3] $a $b
+} {arithseries 0 1}
+
+test range-3.10 {lsearch} {
+    set r [range 15 0]
+    set a [lsearch $r 9]
+    list [lindex [tcl::unsupported::representation $r] 3] $a
+} {arithseries 6}
+
+test range-3.11 {lreverse} {
+    set r [range 15 0]
+    set a [lreverse $r]
+    join [list \
+	      [lindex [tcl::unsupported::representation $r] 3] \
+	      $r \
+	      [lindex [tcl::unsupported::representation $a] 3] \
+	      $a] \n
+} {arithseries
+15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
+arithseries
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15}
+
+# Test lmap
+# Test "in" expression operator
+# Test llength
+# Test lindex
+# Test lrange (lrange of a [range] list produces another [range] list)
+# Test start,end,step expressions
+# Test lreverse
+# Test lsearch
+
+test range-4.1 {end expressions} {
+    set start 7
+    range $start $start+11
+} {7 8 9 10 11 12 13 14 15 16 17 18}
+
+test range-4.2 {start expressions} {
+    set base [clock seconds]
+    set tl [range $base-60 $base 10]
+    lmap t $tl {expr {$t - $base + 60}}
+} {0 10 20 30 40 50 60}
 
 # cleanup
 ::tcltest::cleanupTests

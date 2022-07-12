@@ -4859,6 +4859,21 @@ TEBCresume(
 	valuePtr = OBJ_UNDER_TOS;
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
+
+	/* special case for ArithSeries */
+	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
+	    ArithSeries *arithSeriesRepPtr =
+		(ArithSeries*) valuePtr->internalRep.twoPtrValue.ptr1;
+	    length = arithSeriesRepPtr->len;
+	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    objResultPtr = Tcl_NewWideIntObj(ArithSeriesIndexM(arithSeriesRepPtr, index));
+	    goto lindexDone;
+	}
+
 	/*
 	 * Extract the desired list element.
 	 */
@@ -4880,6 +4895,8 @@ TEBCresume(
 	}
 
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
+
+    lindexDone:
 	if (!objResultPtr) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -5100,7 +5117,11 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
+	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
+	    objResultPtr = TclArithSeriesObjRange(valuePtr, fromIdx, toIdx);
+	} else {
+	    objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
+	}
 
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
@@ -5120,7 +5141,7 @@ TEBCresume(
 	if (length > 0) {
 	    int i = 0;
 	    Tcl_Obj *o;
-
+	    int isArithSeries = TclHasInternalRep(value2Ptr,&tclArithSeriesType);
 	    /*
 	     * An empty list doesn't match anything.
 	     */
@@ -5135,6 +5156,9 @@ TEBCresume(
 		}
 		if (s1len == s2len) {
 		    match = (memcmp(s1, s2, s1len) == 0);
+		}
+		if (isArithSeries) {
+		    TclDecrRefCount(o);
 		}
 		i++;
 	    } while (i < length && match == 0);
