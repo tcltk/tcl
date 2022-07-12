@@ -236,13 +236,15 @@ exec(
     v->err = 0;
     assert(v->g->ntree >= 0);
     n = v->g->ntree;
-    if (n <= LOCALDFAS)
+    if (n <= LOCALDFAS) {
 	v->subdfas = subdfas;
-    else
+    } else {
 	v->subdfas = (struct dfa **) MALLOC(n * sizeof(struct dfa *));
+    }
     if (v->subdfas == NULL) {
-	if (v->pmatch != pmatch && v->pmatch != mat)
+	if (v->pmatch != pmatch && v->pmatch != mat) {
 	    FREE(v->pmatch);
+	}
 	FreeVars(v);
 	return REG_ESPACE;
     }
@@ -279,11 +281,13 @@ exec(
     }
     n = v->g->ntree;
     for (i = 0; i < n; i++) {
-	if (v->subdfas[i] != NULL)
+	if (v->subdfas[i] != NULL) {
 	    freeDFA(v->subdfas[i]);
+	}
     }
-    if (v->subdfas != subdfas)
+    if (v->subdfas != subdfas) {
 	FREE(v->subdfas);
+    }
     FreeVars(v);
     return st;
 }
@@ -299,8 +303,9 @@ getsubdfa(struct vars * v,
 {
     if (v->subdfas[t->id] == NULL) {
 	v->subdfas[t->id] = newDFA(v, &t->cnfa, &v->g->cmap, NULL);
-	if (ISERR())
+	if (ISERR()) {
 	    return NULL;
+	}
     }
     return v->subdfas[t->id];
 }
@@ -640,10 +645,11 @@ cdissect(
 	break;
     case '.':			/* concatenation */
 	assert(t->left != NULL && t->right != NULL);
-	if (t->left->flags & SHORTER) /* reverse scan */
+	if (t->left->flags & SHORTER) {/* reverse scan */
 	    er = crevcondissect(v, t, begin, end);
-	else
+	} else {
 	    er = ccondissect(v, t, begin, end);
+	}
 	break;
     case '|':			/* alternation */
 	assert(t->left != NULL);
@@ -651,10 +657,11 @@ cdissect(
 	break;
     case '*':			/* iteration */
 	assert(t->left != NULL);
-	if (t->left->flags & SHORTER) /* reverse scan */
+	if (t->left->flags & SHORTER) {/* reverse scan */
 	    er = creviterdissect(v, t, begin, end);
-	else
+	} else {
 	    er = citerdissect(v, t, begin, end);
+	}
 	break;
     case '(':			/* capturing */
 	assert(t->left != NULL && t->right == NULL);
@@ -920,17 +927,20 @@ cbrdissect(
 
     assert(end > begin);
     tlen = end - begin;
-    if (tlen % brlen != 0)
+    if (tlen % brlen != 0) {
 	return REG_NOMATCH;
+    }
     numreps = tlen / brlen;
-    if (numreps < (size_t)min || (numreps > (size_t)max && max != DUPINF))
+    if (numreps < (size_t)min || (numreps > (size_t)max && max != DUPINF)) {
 	return REG_NOMATCH;
+    }
 
     /* okay, compare the actual string contents */
     p = begin;
     while (numreps-- > 0) {
-	if ((*v->g->compare) (brstring, p, brlen) != 0)
+	if ((*v->g->compare) (brstring, p, brlen) != 0) {
 	    return REG_NOMATCH;
+	}
 	p += brlen;
     }
 
@@ -1007,8 +1017,9 @@ citerdissect(struct vars * v,
      */
     min_matches = t->min;
     if (min_matches <= 0) {
-	if (begin == end)
+	if (begin == end) {
 	    return REG_OKAY;
+	}
 	min_matches = 1;
     }
 
@@ -1022,8 +1033,9 @@ citerdissect(struct vars * v,
      * sub-match endpoints in endpts[1..max_matches].
      */
     max_matches = end - begin;
-    if (max_matches > (size_t)t->max && t->max != DUPINF)
+    if (max_matches > (size_t)t->max && t->max != DUPINF) {
 	max_matches = t->max;
+    }
     if (max_matches < (size_t)min_matches)
 	max_matches = min_matches;
     endpts = (chr **) MALLOC((max_matches + 1) * sizeof(chr *));
@@ -1066,8 +1078,9 @@ citerdissect(struct vars * v,
 		t->id, k, LOFF(endpts[k])));
 
 	/* k'th sub-match can no longer be considered verified */
-	if (nverified >= k)
+	if (nverified >= k) {
 	    nverified = k - 1;
+	}
 
 	if (endpts[k] != end) {
 	    /* haven't reached end yet, try another iteration if allowed */
@@ -1093,8 +1106,9 @@ citerdissect(struct vars * v,
 	 * number of matches, start the slow part: recurse to verify each
 	 * sub-match.  We always have k <= max_matches, needn't check that.
 	 */
-	if (k < min_matches)
+	if (k < min_matches) {
 	    goto backtrack;
+	}
 
 	MDEBUG(("%d: verifying %d..%d\n", t->id, nverified + 1, k));
 
@@ -1105,8 +1119,9 @@ citerdissect(struct vars * v,
 		nverified = i;
 		continue;
 	    }
-	    if (er == REG_NOMATCH)
+	    if (er == REG_NOMATCH) {
 		break;
+	    }
 	    /* oops, something failed */
 	    FREE(endpts);
 	    return er;
@@ -1180,8 +1195,9 @@ creviterdissect(struct vars * v,
      */
     min_matches = t->min;
     if (min_matches <= 0) {
-	if (begin == end)
+	if (begin == end) {
 	    return REG_OKAY;
+	}
 	min_matches = 1;
     }
 
@@ -1235,8 +1251,9 @@ creviterdissect(struct vars * v,
 	    limit++;
 
 	/* if this is the last allowed sub-match, it must reach to the end */
-	if ((size_t)k >= max_matches)
+	if ((size_t)k >= max_matches) {
 	    limit = end;
+	}
 
 	/* try to find an endpoint for the k'th sub-match */
 	endpts[k] = shortest(v, d, endpts[k - 1], limit, end,
@@ -1250,8 +1267,9 @@ creviterdissect(struct vars * v,
 		t->id, k, LOFF(endpts[k])));
 
 	/* k'th sub-match can no longer be considered verified */
-	if (nverified >= k)
+	if (nverified >= k) {
 	    nverified = k - 1;
+	}
 
 	if (endpts[k] != end) {
 	    /* haven't reached end yet, try another iteration if allowed */
@@ -1272,8 +1290,9 @@ creviterdissect(struct vars * v,
 	 * number of matches, start the slow part: recurse to verify each
 	 * sub-match.  We always have k <= max_matches, needn't check that.
 	 */
-	if (k < min_matches)
+	if (k < min_matches) {
 	    goto backtrack;
+	}
 
 	MDEBUG(("%d: verifying %d..%d\n", t->id, nverified + 1, k));
 
@@ -1284,8 +1303,9 @@ creviterdissect(struct vars * v,
 		nverified = i;
 		continue;
 	    }
-	    if (er == REG_NOMATCH)
+	    if (er == REG_NOMATCH) {
 		break;
+	    }
 	    /* oops, something failed */
 	    FREE(endpts);
 	    return er;

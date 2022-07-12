@@ -411,14 +411,12 @@ RingBufferIn(
 	if (endSpace >= srcLen) {
 	    /* Everything fits at the back */
 	    memmove(endSpaceStart + ringPtr->bufPtr, srcPtr, srcLen);
-	}
-	else {
+	} else {
 	    /* srcLen > endSpace */
 	    memmove(endSpaceStart + ringPtr->bufPtr, srcPtr, endSpace);
 	    memmove(ringPtr->bufPtr, endSpace + srcPtr, srcLen - endSpace);
 	}
-    }
-    else {
+    } else {
 	/* No room at the back. Existing data wrap to front. */
 	RingSizeT wrapLen =
 	    ringPtr->start + ringPtr->length - ringPtr->capacity;
@@ -468,8 +466,7 @@ RingBufferOut(RingBuffer *ringPtr,
     if (ringPtr->start <= (ringPtr->capacity - ringPtr->length)) {
 	/* No content wrap around. So leadLen is entire content */
 	leadLen = ringPtr->length;
-    }
-    else {
+    } else {
 	/* Content wraps around so lead segment stretches to end of buffer */
 	leadLen = ringPtr->capacity - ringPtr->start;
     }
@@ -478,8 +475,7 @@ RingBufferOut(RingBuffer *ringPtr,
 	    memmove(dstPtr, ringPtr->start + ringPtr->bufPtr, dstCapacity);
 	}
 	ringPtr->start += dstCapacity;
-    }
-    else {
+    } else {
 	RingSizeT wrapLen = dstCapacity - leadLen;
 	if (dstPtr) {
 	    memmove(dstPtr,
@@ -566,8 +562,7 @@ ReadConsoleChars(
 	}
 	*nCharsReadPtr = nRead;
 	return 0;
-    }
-    else
+    } else
 	return GetLastError();
 }
 
@@ -608,8 +603,7 @@ WriteConsoleChars(
 	}
 	*nCharsWrittenPtr = nCharsWritten;
 	return 0;
-    }
-    else {
+    } else {
 	return GetLastError();
     }
 }
@@ -793,8 +787,7 @@ ConsoleSetupProc(
 		    || handleInfoPtr->lastError != ERROR_SUCCESS) {
 		    block = 0; /* Input data available */
 		}
-	    }
-	    else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
+	    } else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
 		if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
 		    /* TCL_WRITABLE */
 		    block = 0; /* Output space available */
@@ -876,8 +869,7 @@ ConsoleCheckProc(
 		    || handleInfoPtr->lastError != ERROR_SUCCESS) {
 		    needEvent = 1; /* Input data available or error/EOF */
 		}
-	    }
-	    else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
+	    } else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
 		if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
 		    needEvent = 1; /* Output space available */
 		}
@@ -983,8 +975,7 @@ ConsoleCloseProc(
 	    && (GetStdHandle(STD_OUTPUT_HANDLE) != chanInfoPtr->handle)
 	    && (GetStdHandle(STD_ERROR_HANDLE) != chanInfoPtr->handle))) {
 	closeHandle = 1;
-    }
-    else {
+    } else {
 	closeHandle = 0;
     }
 
@@ -1053,8 +1044,7 @@ ConsoleCloseProc(
     if (chanInfoPtr->numRefs > 1) {
 	/* There may be references already on the event queue */
 	chanInfoPtr->numRefs -= 1;
-    }
-    else {
+    } else {
 	ckfree(chanInfoPtr);
     }
 
@@ -1131,8 +1121,7 @@ ConsoleInputProc(
 	if (handleInfoPtr->lastError != 0) {
 	    if (handleInfoPtr->lastError == ERROR_INVALID_HANDLE) {
 		numRead = 0; /* Treat as EOF */
-	    }
-	    else {
+	    } else {
 		Tcl_WinConvertError(handleInfoPtr->lastError);
 		handleInfoPtr->lastError = 0;
 		*errorCode = Tcl_GetErrno();
@@ -1176,12 +1165,10 @@ ConsoleInputProc(
 		Tcl_WinConvertError(lastError);
 		*errorCode = Tcl_GetErrno();
 		return -1;
-	    }
-	    else if (numChars > 0) {
+	    } else if (numChars > 0) {
 		/* Successfully read something. */
 		return numChars * sizeof(WCHAR);
-	    }
-	    else {
+	    } else {
 		/*
 		 * Ctrl-C/Ctrl-Brk interrupt. Loop around to retry.
 		 * We have to reacquire the lock. No worried about handleInfoPtr
@@ -1326,8 +1313,7 @@ ConsoleOutputProc(
 		numWritten = -1;
 		break;
 	    }
-	}
-	else {
+	} else {
 	    /* Direct output */
 	    DWORD winStatus;
 	    HANDLE consoleHandle = handleInfoPtr->console;
@@ -1340,8 +1326,7 @@ ConsoleOutputProc(
 					  &numWritten);
 	    if (winStatus == ERROR_SUCCESS) {
 		return numWritten * sizeof(WCHAR);
-	    }
-	    else {
+	    } else {
 		Tcl_WinConvertError(winStatus);
 		*errorCode = Tcl_GetErrno();
 		return -1;
@@ -1420,15 +1405,13 @@ ConsoleEventProc(
 	    if (chanInfoPtr->watchMask & TCL_READABLE) {
 		mask = TCL_READABLE;
 	    }
-	}
-	else {
+	} else {
 	    AcquireSRWLockShared(&handleInfoPtr->lock);
 	    /* Remember at most one of READABLE, WRITABLE set */
 	    if ((chanInfoPtr->watchMask & TCL_READABLE)
 		&& RingBufferLength(&handleInfoPtr->buffer)) {
 		mask = TCL_READABLE;
-	    }
-	    else if ((chanInfoPtr->watchMask & TCL_WRITABLE)
+	    } else if ((chanInfoPtr->watchMask & TCL_WRITABLE)
 		     && RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
 		/* Generate write event space available */
 		mask = TCL_WRITABLE;
@@ -1454,14 +1437,14 @@ ConsoleEventProc(
     if (chanInfoPtr->numRefs > 1) {
 	chanInfoPtr->numRefs -= 1;
 	freeChannel = 0;
-    }
-    else {
+    } else {
 	assert(chanInfoPtr->channel == NULL);
 	freeChannel = 1;
     }
 
-    if (freeChannel)
+    if (freeChannel) {
 	ckfree(chanInfoPtr);
+    }
 
     return 1;
 }
@@ -1564,8 +1547,7 @@ ConsoleGetHandleProc(
 
     if (chanInfoPtr->handle == INVALID_HANDLE_VALUE) {
 	return TCL_ERROR;
-    }
-    else {
+    } else {
 	*handlePtr = chanInfoPtr->handle;
 	return TCL_OK;
     }
@@ -1684,8 +1666,7 @@ ConsoleReaderThread(
 		    inputOffset = 0;
 		    inputLen = 0;
 		}
-	    }
-	    else {
+	    } else {
 		/*
 		 * On error, nothing but inform caller and wait
 		 * We do not want to exit until there are no client interps.
@@ -1743,8 +1724,7 @@ ConsoleReaderThread(
 	    AcquireSRWLockExclusive(&handleInfoPtr->lock);
 	    if (error == 0) {
 		inputLen *= sizeof(WCHAR);
-	    }
-	    else {
+	    } else {
 		/*
 		 * We only store the last error. It is up to channel
 		 * handlers whether to close or not in case of errors.
@@ -1754,8 +1734,7 @@ ConsoleReaderThread(
 		    handleInfoPtr->console = INVALID_HANDLE_VALUE;
 		}
 	    }
-	}
-	else {
+	} else {
 	    /*
 	     * Either no one was asking for data, or no data was available.
 	     * In the former case, wait until someone wakes us asking for
@@ -2140,8 +2119,7 @@ TclWinOpenConsoleChannel(
 	/* Why was priority being set on console input? Code smell */
 	SetThreadPriority(infoPtr->reader.thread, THREAD_PRIORITY_HIGHEST);
 #endif
-    }
-    else {
+    } else {
 	/* Already checked permissions is WRITABLE if not READABLE */
 	/* TODO - enable ansi escape processing? */
     }
@@ -2157,8 +2135,7 @@ TclWinOpenConsoleChannel(
     if (handleInfoPtr == NULL) {
 	/* Not found. Allocate one */
 	handleInfoPtr = AllocateConsoleHandleInfo(handle, permissions);
-    }
-    else {
+    } else {
 	/* Found. Its direction (read/write) better be the same */
 	if (handleInfoPtr->permissions != permissions) {
 	    handleInfoPtr = NULL;
@@ -2234,8 +2211,7 @@ ConsoleThreadActionProc(
     if (action == TCL_CHANNEL_THREAD_INSERT) {
 	ConsoleInit(); /* Needed to set up event source handlers for this thread */
 	chanInfoPtr->threadId = Tcl_GetCurrentThread();
-    }
-    else {
+    } else {
 	chanInfoPtr->threadId = NULL;
     }
 }
@@ -2398,8 +2374,7 @@ ConsoleGetOptionProc(
 		Tcl_DStringAppendElement(dsPtr, "raw");
 	    }
 	}
-    }
-    else {
+    } else {
 	/*
 	 * Output channel. Get option -winsize
 	 * Option is readonly and returned by [fconfigure chan -winsize] but not
