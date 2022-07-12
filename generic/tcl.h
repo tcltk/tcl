@@ -47,7 +47,12 @@ extern "C" {
  * unix/tcl.spec	(1 LOC patch)
  */
 
+#if !defined(TCL_MAJOR_VERSION)
 #define TCL_MAJOR_VERSION   9
+#endif
+#if TCL_MAJOR_VERSION != 9
+#error "This header-file is for Tcl 9 only"
+#endif
 #define TCL_MINOR_VERSION   0
 #define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
 #define TCL_RELEASE_SERIAL  4
@@ -272,8 +277,16 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 
-#if defined(_WIN32)
-    typedef struct __stat64 Tcl_StatBuf;
+#ifdef _WIN32
+#   if TCL_MAJOR_VERSION > 8
+	typedef struct __stat64 Tcl_StatBuf;
+#   elif defined(_WIN64) || defined(_USE_64BIT_TIME_T)
+	typedef struct __stat64 Tcl_StatBuf;
+#   elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
+	typedef struct _stati64	Tcl_StatBuf;
+#   else
+	typedef struct _stat32i64 Tcl_StatBuf;
+#   endif
 #elif defined(__CYGWIN__)
     typedef struct {
 	dev_t st_dev;
@@ -286,9 +299,16 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	dev_t st_rdev;
 	/* Here is a 4-byte gap */
 	long long st_size;
+#if TCL_MAJOR_VERSION > 8
 	struct {long long tv_sec;} st_atim;
 	struct {long long tv_sec;} st_mtim;
 	struct {long long tv_sec;} st_ctim;
+#else
+	struct {long tv_sec;} st_atim;
+	struct {long tv_sec;} st_mtim;
+	struct {long tv_sec;} st_ctim;
+	/* Here is a 4-byte gap */
+#endif
     } Tcl_StatBuf;
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;
@@ -428,6 +448,14 @@ typedef struct Tcl_RegExpInfo {
     size_t extendStart;		/* The offset at which a subsequent match
 				 * might begin. */
 } Tcl_RegExpInfo;
+
+/*
+ * Picky compilers complain if this typdef doesn't appear before the struct's
+ * reference in tclDecls.h.
+ */
+
+typedef Tcl_StatBuf *Tcl_Stat_;
+typedef struct stat *Tcl_OldStat_;
 
 /*
  *----------------------------------------------------------------------------
@@ -793,6 +821,16 @@ typedef struct Tcl_DString {
 #define TCL_INDEX_TEMP_TABLE	64
 
 /*
+ * Flags that may be passed to Tcl_UniCharToUtf.
+ * TCL_COMBINE Combine surrogates
+ */
+
+#if TCL_MAJOR_VERSION > 8
+#    define TCL_COMBINE		0x1000000
+#else
+#    define TCL_COMBINE		0
+#endif
+/*
  *----------------------------------------------------------------------------
  * Flag values passed to Tcl_RecordAndEval, Tcl_EvalObj, Tcl_EvalObjv.
  * WARNING: these bit choices must not conflict with the bit choices for
@@ -905,7 +943,11 @@ typedef struct Tcl_DString {
  */
 
 #ifndef TCL_HASH_TYPE
+#if TCL_MAJOR_VERSION > 8
 #  define TCL_HASH_TYPE size_t
+#else
+#  define TCL_HASH_TYPE unsigned
+#endif
 #endif
 
 typedef struct Tcl_HashKeyType Tcl_HashKeyType;
@@ -1022,10 +1064,15 @@ struct Tcl_HashTable {
 				 * table. */
     size_t rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
+#if TCL_MAJOR_VERSION > 8
     size_t mask;		/* Mask value used in hashing function. */
+#endif
     int downShift;		/* Shift count used in hashing function.
 				 * Designed to use high-order bits of
 				 * randomized keys. */
+#if TCL_MAJOR_VERSION < 9
+    int mask;		/* Mask value used in hashing function. */
+#endif
     int keyType;		/* Type of keys used in this table. It's
 				 * either TCL_CUSTOM_KEYS, TCL_STRING_KEYS,
 				 * TCL_ONE_WORD_KEYS, or an integer giving the
@@ -1087,7 +1134,7 @@ typedef struct Tcl_HashSearch {
 typedef struct {
     void *next;			/* Search position for underlying hash
 				 * table. */
-    size_t epoch;		/* Epoch marker for dictionary being searched,
+    TCL_HASH_TYPE epoch; 	/* Epoch marker for dictionary being searched,
 				 * or 0 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;
@@ -1120,11 +1167,12 @@ struct Tcl_Event {
 };
 
 /*
- * Positions to pass to Tcl_QueueEvent:
+ * Positions to pass to Tcl_QueueEvent/Tcl_ThreadQueueEvent:
  */
 
 typedef enum {
-    TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK
+    TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
+	    TCL_QUEUE_ALERT_IF_EMPTY=4
 } Tcl_QueuePosition;
 
 /*
@@ -1903,7 +1951,11 @@ typedef struct Tcl_EncodingType {
  */
 
 #ifndef TCL_UTF_MAX
+#if TCL_MAJOR_VERSION > 8
 #define TCL_UTF_MAX		4
+#else
+#define TCL_UTF_MAX		3
+#endif
 #endif
 
 /*
@@ -2107,7 +2159,11 @@ typedef int (Tcl_NRPostProc) (void *data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *))
+#if TCL_MAJOR_VERSION > 8
+#   define TCL_STUB_MAGIC		((int) 0xFCA3BACB + (int) sizeof(void *))
+#else
+#   define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
+#endif
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2190,7 +2246,7 @@ TCLAPI const char *TclZipfs_AppHook(int *argc, char ***argv);
     TCLAPI TCL_NORETURN void Tcl_MainExW(size_t argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
-#ifdef USE_TCL_STUBS
+#if defined(USE_TCL_STUBS) && (TCL_MAJOR_VERSION > 8)
 #define Tcl_SetPanicProc(panicProc) \
     TclInitStubTable(((const char *(*)(Tcl_PanicProc *))TclStubCall((void *)panicProc))(panicProc))
 #define Tcl_InitSubsystems() \

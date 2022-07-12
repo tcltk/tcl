@@ -95,8 +95,8 @@ TCL_DECLARE_MUTEX(listLock)
  * Declarations for routines used only in this file.
  */
 
-static void		QueueEvent(ThreadSpecificData *tsdPtr,
-			    Tcl_Event *evPtr, Tcl_QueuePosition position);
+static int		QueueEvent(ThreadSpecificData *tsdPtr,
+			    Tcl_Event *evPtr, int position);
 
 /*
  *----------------------------------------------------------------------
@@ -175,8 +175,7 @@ TclFinalizeNotifier(void)
     Tcl_Event *evPtr, *hold;
 
     if (!tsdPtr->initialized) {
-	return;			/* Notifier not initialized for the current
-				 * thread. */
+	return; /* Notifier not initialized for the current thread */
     }
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
@@ -310,7 +309,7 @@ Tcl_CreateEventSource(
 				 * checkProc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    EventSource *sourcePtr = (EventSource *) Tcl_Alloc(sizeof(EventSource));
+    EventSource *sourcePtr = (EventSource *)Tcl_Alloc(sizeof(EventSource));
 
     sourcePtr->setupProc = setupProc;
     sourcePtr->checkProc = checkProc;
@@ -392,8 +391,8 @@ Tcl_QueueEvent(
 				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
-				 * TCL_QUEUE_MARK. */
+    int position) /* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
+				 * possibly combined with TCL_QUEUE_ALERT_IF_EMPTY. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -424,8 +423,8 @@ Tcl_ThreadQueueEvent(
 				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
-				 * TCL_QUEUE_MARK. */
+    int position) /* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
+				 * possibly combined with TCL_QUEUE_ALERT_IF_EMPTY. */
 {
     ThreadSpecificData *tsdPtr;
 
@@ -444,7 +443,9 @@ Tcl_ThreadQueueEvent(
      */
 
     if (tsdPtr) {
-	QueueEvent(tsdPtr, evPtr, position);
+	if (QueueEvent(tsdPtr, evPtr, position)) {
+	    Tcl_AlertNotifier(tsdPtr->clientData);
+	}
     } else {
 	Tcl_Free(evPtr);
     }
@@ -464,7 +465,8 @@ Tcl_ThreadQueueEvent(
  *	last-in-first-out order.
  *
  * Results:
- *	None.
+ *	For TCL_QUEUE_ALERT_IF_EMPTY the empty state before the
+ *	operation is returned.
  *
  * Side effects:
  *	None.
@@ -472,7 +474,7 @@ Tcl_ThreadQueueEvent(
  *----------------------------------------------------------------------
  */
 
-static void
+static int
 QueueEvent(
     ThreadSpecificData *tsdPtr,	/* Handle to thread local data that indicates
 				 * which event queue to use. */
@@ -481,11 +483,14 @@ QueueEvent(
 				 * malloc (Tcl_Alloc), and it becomes the
 				 * property of the event queue. It will be
 				 * freed after the event has been handled. */
-    Tcl_QueuePosition position)	/* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD,
-				 * TCL_QUEUE_MARK. */
+    int position) /* One of TCL_QUEUE_TAIL, TCL_QUEUE_HEAD, TCL_QUEUE_MARK,
+				 * possibly combined with TCL_QUEUE_ALERT_IF_EMPTY */
 {
     Tcl_MutexLock(&(tsdPtr->queueMutex));
-    if (position == TCL_QUEUE_TAIL) {
+    if (tsdPtr->firstEventPtr != NULL) {
+	position &= ~TCL_QUEUE_ALERT_IF_EMPTY;
+    }
+    if ((position & 3) == TCL_QUEUE_TAIL) {
 	/*
 	 * Append the event on the end of the queue.
 	 */
@@ -497,7 +502,7 @@ QueueEvent(
 	    tsdPtr->lastEventPtr->nextPtr = evPtr;
 	}
 	tsdPtr->lastEventPtr = evPtr;
-    } else if (position == TCL_QUEUE_HEAD) {
+    } else if ((position & 3) == TCL_QUEUE_HEAD) {
 	/*
 	 * Push the event on the head of the queue.
 	 */
@@ -507,7 +512,7 @@ QueueEvent(
 	    tsdPtr->lastEventPtr = evPtr;
 	}
 	tsdPtr->firstEventPtr = evPtr;
-    } else if (position == TCL_QUEUE_MARK) {
+    } else if ((position & 3) == TCL_QUEUE_MARK) {
 	/*
 	 * Insert the event after the current marker event and advance the
 	 * marker to the new event.
@@ -526,6 +531,7 @@ QueueEvent(
 	}
     }
     Tcl_MutexUnlock(&(tsdPtr->queueMutex));
+    return position & TCL_QUEUE_ALERT_IF_EMPTY;
 }
 
 /*

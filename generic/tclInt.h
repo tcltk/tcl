@@ -312,7 +312,7 @@ typedef struct Namespace {
 				 * has already cached a Command* pointer; this
 				 * causes all its cached Command* pointers to
 				 * be invalidated. */
-    size_t resolverEpoch;	/* Incremented whenever (a) the name
+    size_t resolverEpoch;		/* Incremented whenever (a) the name
 				 * resolution rules change for this namespace
 				 * or (b) a newly added command shadows a
 				 * command that is compiled to bytecodes. This
@@ -407,8 +407,9 @@ struct NamespacePathEntry {
  */
 
 #define NS_DYING	0x01
-#define NS_TEARDOWN	0x02
-#define NS_DEAD		0x04
+#define NS_DEAD		0x02
+#define NS_TEARDOWN	0x04
+#define NS_KILLED	0x04 /* Same as NS_TEARDOWN (Deprecated) */
 #define NS_SUPPRESS_COMPILATION	0x08
 
 /*
@@ -438,7 +439,7 @@ typedef struct EnsembleConfig {
 				 * if the command has been deleted (or never
 				 * existed; the global namespace never has an
 				 * ensemble command.) */
-    size_t epoch;		/* The epoch at which this ensemble's table of
+    size_t epoch;			/* The epoch at which this ensemble's table of
 				 * exported commands is valid. */
     char **subcommandArrayPtr;	/* Array of ensemble subcommand names. At all
 				 * consistent points, this will have the same
@@ -551,7 +552,7 @@ typedef struct CommandTrace {
     struct CommandTrace *nextPtr;
 				/* Next in list of traces associated with a
 				 * particular command. */
-    size_t refCount;	/* Used to ensure this structure is not
+    size_t refCount;		/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -896,7 +897,9 @@ typedef struct VarInHash {
  *----------------------------------------------------------------
  */
 
-#if defined(__GNUC__) && (__GNUC__ > 2)
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+#   define TCLFLEXARRAY
+#elif defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCLFLEXARRAY 0
 #else
 #   define TCLFLEXARRAY 1
@@ -931,7 +934,7 @@ typedef struct CompiledLocal {
 				 * Among others used to speed up var lookups. */
     size_t frameIndex;		/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
-#if TCL_UTF_MAX < 9
+#if TCL_MAJOR_VERSION < 9
     int flags;
 #endif
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
@@ -944,7 +947,7 @@ typedef struct CompiledLocal {
 				 * is marked by a unique tag during
 				 * compilation, and that same tag is used to
 				 * find the variable at runtime. */
-#if TCL_UTF_MAX > 8
+#if TCL_MAJOR_VERSION > 8
     int flags;			/* Flag bits for the local variable. Same as
 				 * the flags for the Var structure above,
 				 * although only VAR_ARGUMENT, VAR_TEMPORARY,
@@ -1535,13 +1538,13 @@ typedef struct LiteralTable {
     LiteralEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables to avoid
 				 * mallocs and frees. */
-    size_t numBuckets;		/* Total number of buckets allocated at
+    TCL_HASH_TYPE numBuckets; /* Total number of buckets allocated at
 				 * **buckets. */
-    size_t numEntries;		/* Total number of entries present in
+    TCL_HASH_TYPE numEntries; /* Total number of entries present in
 				 * table. */
-    size_t rebuildSize;		/* Enlarge table when numEntries gets to be
+    TCL_HASH_TYPE rebuildSize; /* Enlarge table when numEntries gets to be
 				 * this large. */
-    size_t mask;		/* Mask value used in hashing function. */
+    TCL_HASH_TYPE mask;		/* Mask value used in hashing function. */
 } LiteralTable;
 
 /*
@@ -1865,6 +1868,12 @@ typedef struct Interp {
     Namespace *lookupNsPtr;	/* Namespace to use ONLY on the next
 				 * TCL_EVAL_INVOKE call to Tcl_EvalObjv. */
 
+#if TCL_MAJOR_VERSION < 9
+    char *appendResultDontUse;
+    int appendAvlDontUse;
+    int appendUsedDontUse;
+#endif
+
     /*
      * Information about packages. Used only in tclPkg.c.
      */
@@ -1887,12 +1896,15 @@ typedef struct Interp {
 				 * Normally zero, but may be set before
 				 * calling Tcl_Eval. See below for valid
 				 * values. */
+#if TCL_MAJOR_VERSION < 9
+    int unused1;		/* No longer used (was termOffset) */
+#endif
     LiteralTable literalTable;	/* Contains LiteralEntry's describing all Tcl
 				 * objects holding literals of scripts
 				 * compiled by the interpreter. Indexed by the
 				 * string representations of literals. Used to
 				 * avoid creating duplicate objects. */
-    size_t compileEpoch;	/* Holds the current "compilation epoch" for
+    size_t compileEpoch;		/* Holds the current "compilation epoch" for
 				 * this interpreter. This is incremented to
 				 * invalidate existing ByteCodes when, e.g., a
 				 * command with a compile procedure is
@@ -1924,6 +1936,9 @@ typedef struct Interp {
 				 * string. Returned by Tcl_ObjSetVar2 when
 				 * variable traces change a variable in a
 				 * gross way. */
+#if TCL_MAJOR_VERSION < 9
+    char resultSpaceDontUse[TCL_DSTRING_STATIC_SIZE+1];
+#endif
     Tcl_Obj *objResultPtr;	/* If the last command returned an object
 				 * result, this points to it. Should not be
 				 * accessed directly; see comment above. */
@@ -2576,7 +2591,7 @@ typedef Tcl_Channel (TclOpenFileChannelProc_)(Tcl_Interp *interp,
  *----------------------------------------------------------------
  */
 
-typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, size_t *lengthPtr,
+typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, TCL_HASH_TYPE *lengthPtr,
 	Tcl_Encoding *encodingPtr);
 
 /*
@@ -2588,9 +2603,9 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, size_t *lengthPtr,
  */
 
 typedef struct ProcessGlobalValue {
-    size_t epoch;		/* Epoch counter to detect changes in the
+    size_t epoch;			/* Epoch counter to detect changes in the
 				 * global value. */
-    size_t numBytes;		/* Length of the global string. */
+    TCL_HASH_TYPE numBytes;	/* Length of the global string. */
     char *value;		/* The global string value. */
     Tcl_Encoding encoding;	/* system encoding when global string was
 				 * initialized. */
@@ -2955,7 +2970,7 @@ MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue(ProcessGlobalValue *pgvPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
-			    size_t *sizePtr);
+			    TCL_HASH_TYPE *sizePtr);
 MODULE_SCOPE int	TclGetLoadedLibraries(Tcl_Interp *interp,
 				const char *targetName,
 				const char *packageName);
@@ -3070,7 +3085,7 @@ MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    size_t stackSize, int flags);
 MODULE_SCOPE size_t	TclpFindVariable(const char *name, size_t *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
-			    size_t *lengthPtr, Tcl_Encoding *encodingPtr);
+			    TCL_HASH_TYPE *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
 MODULE_SCOPE ClientData	TclpInitNotifier(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
@@ -4421,7 +4436,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(objPtr)->bytes	 = &tclEmptyString; \
 	(objPtr)->length = 0; \
     } else { \
-	(objPtr)->bytes = (char *)Tcl_Alloc((size_t)(len) + 1U); \
+	(objPtr)->bytes = (char *)Tcl_Alloc((len) + 1U); \
 	memcpy((objPtr)->bytes, (bytePtr) ? (bytePtr) : &tclEmptyString, (len)); \
 	(objPtr)->bytes[len] = '\0'; \
 	(objPtr)->length = (len); \

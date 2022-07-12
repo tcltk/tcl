@@ -559,8 +559,7 @@ TCLAPI int		Tcl_PutEnv(const char *assignment);
 /* 204 */
 TCLAPI const char *	Tcl_PosixError(Tcl_Interp *interp);
 /* 205 */
-TCLAPI void		Tcl_QueueEvent(Tcl_Event *evPtr,
-				Tcl_QueuePosition position);
+TCLAPI void		Tcl_QueueEvent(Tcl_Event *evPtr, int position);
 /* 206 */
 TCLAPI size_t		Tcl_Read(Tcl_Channel chan, char *bufPtr,
 				size_t toRead);
@@ -835,7 +834,7 @@ TCLAPI Tcl_Obj *	Tcl_SetVar2Ex(Tcl_Interp *interp, const char *part1,
 TCLAPI void		Tcl_ThreadAlert(Tcl_ThreadId threadId);
 /* 319 */
 TCLAPI void		Tcl_ThreadQueueEvent(Tcl_ThreadId threadId,
-				Tcl_Event *evPtr, Tcl_QueuePosition position);
+				Tcl_Event *evPtr, int position);
 /* 320 */
 TCLAPI int		Tcl_UniCharAtIndex(const char *src, size_t index);
 /* 321 */
@@ -2013,7 +2012,7 @@ typedef struct TclStubs {
     void (*tcl_PrintDouble) (Tcl_Interp *interp, double value, char *dst); /* 202 */
     int (*tcl_PutEnv) (const char *assignment); /* 203 */
     const char * (*tcl_PosixError) (Tcl_Interp *interp); /* 204 */
-    void (*tcl_QueueEvent) (Tcl_Event *evPtr, Tcl_QueuePosition position); /* 205 */
+    void (*tcl_QueueEvent) (Tcl_Event *evPtr, int position); /* 205 */
     size_t (*tcl_Read) (Tcl_Channel chan, char *bufPtr, size_t toRead); /* 206 */
     void (*tcl_ReapDetachedProcs) (void); /* 207 */
     int (*tcl_RecordAndEval) (Tcl_Interp *interp, const char *cmd, int flags); /* 208 */
@@ -2127,7 +2126,7 @@ typedef struct TclStubs {
     int (*tcl_SetSystemEncoding) (Tcl_Interp *interp, const char *name); /* 316 */
     Tcl_Obj * (*tcl_SetVar2Ex) (Tcl_Interp *interp, const char *part1, const char *part2, Tcl_Obj *newValuePtr, int flags); /* 317 */
     void (*tcl_ThreadAlert) (Tcl_ThreadId threadId); /* 318 */
-    void (*tcl_ThreadQueueEvent) (Tcl_ThreadId threadId, Tcl_Event *evPtr, Tcl_QueuePosition position); /* 319 */
+    void (*tcl_ThreadQueueEvent) (Tcl_ThreadId threadId, Tcl_Event *evPtr, int position); /* 319 */
     int (*tcl_UniCharAtIndex) (const char *src, size_t index); /* 320 */
     int (*tcl_UniCharToLower) (int ch); /* 321 */
     int (*tcl_UniCharToTitle) (int ch); /* 322 */
@@ -3826,13 +3825,13 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_UpVar(interp, frameName, varName, localName, flags) \
 	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
 #define Tcl_AddErrorInfo(interp, message) \
-	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, -1))
+	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, TCL_INDEX_NONE))
 #define Tcl_AddObjErrorInfo(interp, message, length) \
 	Tcl_AppendObjToErrorInfo(interp, Tcl_NewStringObj(message, length))
 #define Tcl_Eval(interp, objPtr) \
-	Tcl_EvalEx(interp, objPtr, -1, 0)
+	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, 0)
 #define Tcl_GlobalEval(interp, objPtr) \
-	Tcl_EvalEx(interp, objPtr, -1, TCL_EVAL_GLOBAL)
+	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
 #define Tcl_GetStringResult(interp) Tcl_GetString(Tcl_GetObjResult(interp))
 #define Tcl_SaveResult(interp, statePtr) \
 	do { \
@@ -3852,7 +3851,7 @@ extern const TclStubs *tclStubsPtr;
 	do { \
 	    const char *__result = result; \
 	    Tcl_FreeProc *__freeProc = freeProc; \
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, -1)); \
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(__result, TCL_INDEX_NONE)); \
 	    if (__result != NULL && __freeProc != NULL && __freeProc != TCL_VOLATILE) { \
 		if (__freeProc == TCL_DYNAMIC) { \
 		    Tcl_Free((char *)__result); \
@@ -4007,6 +4006,14 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_UtfToUniChar Tcl_UtfToChar16
 #   undef Tcl_UniCharLen
 #   define Tcl_UniCharLen Tcl_Char16Len
+#   undef Tcl_UniCharToUtf
+#   if defined(USE_TCL_STUBS)
+#	define Tcl_UniCharToUtf(c, p) \
+		(tclStubsPtr->tcl_UniCharToUtf((c)|TCL_COMBINE, (p)))
+#   else
+#	define Tcl_UniCharToUtf(c, p) \
+		((Tcl_UniCharToUtf)((c)|TCL_COMBINE, (p)))
+#   endif
 #if !defined(BUILD_tcl)
 #   undef Tcl_NumUtfChars
 #   define Tcl_NumUtfChars TclNumUtfChars
