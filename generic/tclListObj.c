@@ -2365,7 +2365,7 @@ Tcl_NewArithSeriesObj(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_
     arithSeriesRepPtr->len = length;
     arithSeriesRepPtr->wideObjPtr = Tcl_NewWideIntObj(0);
     Tcl_IncrRefCount(arithSeriesRepPtr->wideObjPtr);
-    arithSeriesPtr->internalRep.twoPtrValue.ptr1 = (VOID *) arithSeriesRepPtr;
+    arithSeriesPtr->internalRep.twoPtrValue.ptr1 = arithSeriesRepPtr;
     arithSeriesPtr->internalRep.twoPtrValue.ptr2 = NULL;
     arithSeriesPtr->typePtr = &tclArithSeriesType;
     if (length > 0)
@@ -2503,7 +2503,7 @@ DupArithSeriesInternalRep(srcPtr, copyPtr)
     copyArithSeriesRepPtr->wideObjPtr = Tcl_NewWideIntObj(0);
     Tcl_IncrRefCount(copyArithSeriesRepPtr->wideObjPtr);
 
-    copyPtr->internalRep.twoPtrValue.ptr1 = (VOID *) copyArithSeriesRepPtr;
+    copyPtr->internalRep.twoPtrValue.ptr1 = copyArithSeriesRepPtr;
     copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     copyPtr->typePtr = &tclArithSeriesType;
 }
@@ -2684,7 +2684,7 @@ TclArithSeriesObjRange(
     int toIdx)			/* Index of last element to include. */
 {
     ArithSeries *arithSeriesRepPtr;
-    Tcl_WideInt start, end, step, len;
+    Tcl_WideInt start = -1, end = -1, step, len;
     
     ArithSeriesGetInternalRep(arithSeriesPtr, arithSeriesRepPtr);
     

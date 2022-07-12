@@ -2503,7 +2503,7 @@ declare 673 {
 }
 declare 674 generic {
     Tcl_Obj * Tcl_NewArithSeriesObj(Tcl_WideInt start,
-	    Tcl_WideInt end, Tcl_WideInt step)
+	    Tcl_WideInt end, Tcl_WideInt step, Tcl_WideInt len)
 }
 declare 675 generic {
     int Tcl_ArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr, Tcl_WideInt index,

@@ -1976,13 +1976,14 @@ EXTERN Tcl_Obj *	TclGetRange(Tcl_Obj *objPtr, int first, int last);
 /* 673 */
 EXTERN int		TclGetUniChar(Tcl_Obj *objPtr, int index);
 /* 674 */
-EXTERN Tcl_Obj *	Tcl_NewArithSeriesObj (Tcl_WideInt start, Tcl_WideInt end, 
-				Tcl_WideInt step, Tcl_WideInt len);
+EXTERN Tcl_Obj *	Tcl_NewArithSeriesObj(Tcl_WideInt start,
+				Tcl_WideInt end, Tcl_WideInt step,
+				Tcl_WideInt len);
 /* 675 */
-EXTERN int		Tcl_ArithSeriesObjIndex (Tcl_Obj * arithSeriesPtr,
-				Tcl_WideInt index, Tcl_WideInt * element);
+EXTERN int		Tcl_ArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr,
+				Tcl_WideInt index, Tcl_WideInt *element);
 /* 676 */
-EXTERN Tcl_WideInt	Tcl_ArithSeriesObjLength (Tcl_Obj * arithSeriesPtr);
+EXTERN Tcl_WideInt	Tcl_ArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2692,9 +2693,9 @@ typedef struct TclStubs {
     const char * (*tclUtfAtIndex) (const char *src, int index); /* 671 */
     Tcl_Obj * (*tclGetRange) (Tcl_Obj *objPtr, int first, int last); /* 672 */
     int (*tclGetUniChar) (Tcl_Obj *objPtr, int index); /* 673 */
-    Tcl_Obj * (*tcl_NewArithSeriesObj) (Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step); /* 674 */
-    int (*tcl_ArithSeriesObjIndex) (Tcl_Obj * arithSeriesPtr, Tcl_WideInt index, Tcl_WideInt * element); /* 675 */
-    Tcl_WideInt (*tcl_ArithSeriesObjLength) (Tcl_Obj * arithSeriesPtr); /* 676 */
+    Tcl_Obj * (*tcl_NewArithSeriesObj) (Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_WideInt len); /* 674 */
+    int (*tcl_ArithSeriesObjIndex) (Tcl_Obj *arithSeriesPtr, Tcl_WideInt index, Tcl_WideInt *element); /* 675 */
+    Tcl_WideInt (*tcl_ArithSeriesObjLength) (Tcl_Obj *arithSeriesPtr); /* 676 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
