@@ -989,7 +989,11 @@ TclGetUnicodeFromObj(
 {
     String *stringPtr;
 
+#if TCL_UTF_MAX > 3
     SetUTF16StringFromAny(NULL, objPtr);
+#else
+    SetStringFromAny(NULL, objPtr);
+#endif
     stringPtr = GET_STRING(objPtr);
 
     if (lengthPtr != NULL) {
