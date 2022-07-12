@@ -2845,7 +2845,7 @@ TclStringCmp(
 
     if (checkEq && (s1len != s2len)) {
 	match = 1;		/* This will be reversed below. */
-    }  else {
+    } else {
 	/*
 	 * The comparison function should compare up to the minimum byte
 	 * length only.
