@@ -291,7 +291,7 @@ typedef struct Namespace {
 				 * frames for this namespace that are on the
 				 * Tcl call stack. The namespace won't be
 				 * freed until activationCount becomes zero. */
-    TCL_HASH_TYPE refCount;	/* Count of references by namespaceName
+    size_t refCount;		/* Count of references by namespaceName
 				 * objects. The namespace can't be freed until
 				 * refCount becomes zero. */
     Tcl_HashTable cmdTable;	/* Contains all the commands currently
@@ -309,12 +309,12 @@ typedef struct Namespace {
 				/* Set of "string match" style patterns that
 				 * specify which commands are exported.
 				 * No namespace qualifiers are allowed. */
-    TCL_HASH_TYPE cmdRefEpoch;	/* Incremented if a newly added command
+    size_t cmdRefEpoch;		/* Incremented if a newly added command
 				 * shadows a command for which this namespace
 				 * has already cached a Command* pointer; this
 				 * causes all its cached Command* pointers to
 				 * be invalidated. */
-    TCL_HASH_TYPE resolverEpoch;	/* Incremented whenever (a) the name
+    size_t resolverEpoch;		/* Incremented whenever (a) the name
 				 * resolution rules change for this namespace
 				 * or (b) a newly added command shadows a
 				 * command that is compiled to bytecodes. This
@@ -341,7 +341,7 @@ typedef struct Namespace {
 				 * LookupCompiledLocal to resolve variable
 				 * references within the namespace at compile
 				 * time. */
-    TCL_HASH_TYPE exportLookupEpoch;	/* Incremented whenever a command is added to
+    size_t exportLookupEpoch;	/* Incremented whenever a command is added to
 				 * a namespace, removed from a namespace or
 				 * the exports of a namespace are changed.
 				 * Allows TIP#112-driven command lists to be
@@ -441,7 +441,7 @@ typedef struct EnsembleConfig {
 				 * if the command has been deleted (or never
 				 * existed; the global namespace never has an
 				 * ensemble command.) */
-    TCL_HASH_TYPE epoch;		/* The epoch at which this ensemble's table of
+    size_t epoch;			/* The epoch at which this ensemble's table of
 				 * exported commands is valid. */
     char **subcommandArrayPtr;	/* Array of ensemble subcommand names. At all
 				 * consistent points, this will have the same
@@ -554,7 +554,7 @@ typedef struct CommandTrace {
     struct CommandTrace *nextPtr;
 				/* Next in list of traces associated with a
 				 * particular command. */
-    TCL_HASH_TYPE refCount; /* Used to ensure this structure is not
+    size_t refCount;		/* Used to ensure this structure is not
 				 * deleted too early. Keeps track of how many
 				 * pieces of code have a pointer to this
 				 * structure. */
@@ -627,7 +627,7 @@ typedef struct Var {
 
 typedef struct VarInHash {
     Var var;
-    TCL_HASH_TYPE refCount;	/* Counts number of active uses of this
+    size_t refCount;		/* Counts number of active uses of this
 				 * variable: 1 for the entry in the hash
 				 * table, 1 for each additional variable whose
 				 * linkPtr points here, 1 for each nested
@@ -899,7 +899,9 @@ typedef struct VarInHash {
  *----------------------------------------------------------------
  */
 
-#if defined(__GNUC__) && (__GNUC__ > 2)
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+#   define TCLFLEXARRAY
+#elif defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCLFLEXARRAY 0
 #else
 #   define TCLFLEXARRAY 1
@@ -934,7 +936,7 @@ typedef struct CompiledLocal {
 				 * Among others used to speed up var lookups. */
     size_t frameIndex;		/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
-#if TCL_UTF_MAX < 9
+#if TCL_MAJOR_VERSION < 9
     int flags;
 #endif
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
@@ -947,7 +949,7 @@ typedef struct CompiledLocal {
 				 * is marked by a unique tag during
 				 * compilation, and that same tag is used to
 				 * find the variable at runtime. */
-#if TCL_UTF_MAX > 8
+#if TCL_MAJOR_VERSION > 8
     int flags;			/* Flag bits for the local variable. Same as
 				 * the flags for the Var structure above,
 				 * although only VAR_ARGUMENT, VAR_TEMPORARY,
@@ -969,7 +971,7 @@ typedef struct CompiledLocal {
 typedef struct Proc {
     struct Interp *iPtr;	/* Interpreter for which this command is
 				 * defined. */
-    TCL_HASH_TYPE refCount;	/* Reference count: 1 if still present in
+    size_t refCount;		/* Reference count: 1 if still present in
 				 * command table plus 1 for each call to the
 				 * procedure that is currently active. This
 				 * structure can be freed when refCount
@@ -1086,7 +1088,7 @@ typedef struct AssocData {
  */
 
 typedef struct LocalCache {
-    TCL_HASH_TYPE refCount;
+    size_t refCount;
     size_t numVars;
     Tcl_Obj *varName0;
 } LocalCache;
@@ -1252,7 +1254,7 @@ typedef struct CmdFrame {
 typedef struct CFWord {
     CmdFrame *framePtr;		/* CmdFrame to access. */
     size_t word;			/* Index of the word in the command. */
-    TCL_HASH_TYPE refCount;	/* Number of times the word is on the
+    size_t refCount;		/* Number of times the word is on the
 				 * stack. */
 } CFWord;
 
@@ -1520,7 +1522,7 @@ typedef struct LiteralEntry {
 				 * NULL if end of chain. */
     Tcl_Obj *objPtr;		/* Points to Tcl object that holds the
 				 * literal's bytes and length. */
-    TCL_HASH_TYPE refCount; /* If in an interpreter's global literal
+    size_t refCount;		/* If in an interpreter's global literal
 				 * table, the number of ByteCode structures
 				 * that share the literal object; the literal
 				 * entry can be freed when refCount drops to
@@ -1662,12 +1664,12 @@ typedef struct Command {
 				 * recreated). */
     Namespace *nsPtr;		/* Points to the namespace containing this
 				 * command. */
-    TCL_HASH_TYPE refCount;	/* 1 if in command hashtable plus 1 for each
+    size_t refCount;		/* 1 if in command hashtable plus 1 for each
 				 * reference from a CmdName Tcl object
 				 * representing a command's name in a ByteCode
 				 * instruction sequence. This structure can be
 				 * freed when refCount becomes zero. */
-    TCL_HASH_TYPE cmdEpoch;	/* Incremented to invalidate any references
+    size_t cmdEpoch;		/* Incremented to invalidate any references
 				 * that point to this command when it is
 				 * renamed, deleted, hidden, or exposed. */
     CompileProc *compileProc;	/* Procedure called to compile command. NULL
@@ -1868,6 +1870,12 @@ typedef struct Interp {
     Namespace *lookupNsPtr;	/* Namespace to use ONLY on the next
 				 * TCL_EVAL_INVOKE call to Tcl_EvalObjv. */
 
+#if TCL_MAJOR_VERSION < 9
+    char *appendResultDontUse;
+    int appendAvlDontUse;
+    int appendUsedDontUse;
+#endif
+
     /*
      * Information about packages. Used only in tclPkg.c.
      */
@@ -1890,12 +1898,15 @@ typedef struct Interp {
 				 * Normally zero, but may be set before
 				 * calling Tcl_Eval. See below for valid
 				 * values. */
+#if TCL_MAJOR_VERSION < 9
+    int unused1;		/* No longer used (was termOffset) */
+#endif
     LiteralTable literalTable;	/* Contains LiteralEntry's describing all Tcl
 				 * objects holding literals of scripts
 				 * compiled by the interpreter. Indexed by the
 				 * string representations of literals. Used to
 				 * avoid creating duplicate objects. */
-    TCL_HASH_TYPE compileEpoch;	/* Holds the current "compilation epoch" for
+    size_t compileEpoch;		/* Holds the current "compilation epoch" for
 				 * this interpreter. This is incremented to
 				 * invalidate existing ByteCodes when, e.g., a
 				 * command with a compile procedure is
@@ -1927,6 +1938,9 @@ typedef struct Interp {
 				 * string. Returned by Tcl_ObjSetVar2 when
 				 * variable traces change a variable in a
 				 * gross way. */
+#if TCL_MAJOR_VERSION < 9
+    char resultSpaceDontUse[TCL_DSTRING_STATIC_SIZE+1];
+#endif
     Tcl_Obj *objResultPtr;	/* If the last command returned an object
 				 * result, this points to it. Should not be
 				 * accessed directly; see comment above. */
@@ -2377,7 +2391,7 @@ typedef enum TclEolTranslation {
  */
 
 typedef struct List {
-    TCL_HASH_TYPE refCount;
+    size_t refCount;
     size_t maxElemCount;		/* Total number of element array slots. */
     size_t elemCount;		/* Current number of list elements. */
     int canonicalFlag;		/* Set if the string representation was
@@ -2641,7 +2655,7 @@ typedef void (TclInitProcessGlobalValueProc)(char **valuePtr, TCL_HASH_TYPE *len
  */
 
 typedef struct ProcessGlobalValue {
-    TCL_HASH_TYPE epoch;		/* Epoch counter to detect changes in the
+    size_t epoch;			/* Epoch counter to detect changes in the
 				 * global value. */
     TCL_HASH_TYPE numBytes;	/* Length of the global string. */
     char *value;		/* The global string value. */

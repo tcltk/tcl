@@ -97,7 +97,7 @@ typedef struct {
     size_t numCodeBytes;		/* Number of bytes in the code range. */
     size_t breakOffset;		/* If LOOP_EXCEPTION_RANGE, the target PC
 				 * offset for a break command in the range. */
-    size_t continueOffset;		/* If LOOP_EXCEPTION_RANGE and not -1, the
+    size_t continueOffset;		/* If LOOP_EXCEPTION_RANGE and not TCL_INDEX_NONE, the
 				 * target PC offset for a continue command in
 				 * the code range. Otherwise, ignore this
 				 * range when processing a continue
@@ -284,9 +284,9 @@ typedef struct CompileEnv {
 				 * information provided by ObjInterpProc in
 				 * tclProc.c. */
     size_t numCommands;		/* Number of commands compiled. */
-    size_t exceptDepth;		/* Current exception range nesting level; -1
+    size_t exceptDepth;		/* Current exception range nesting level; TCL_INDEX_NONE
 				 * if not in any range currently. */
-    size_t maxExceptDepth;		/* Max nesting level of exception ranges; -1
+    size_t maxExceptDepth;		/* Max nesting level of exception ranges; TCL_INDEX_NONE
 				 * if no ranges have been compiled. */
     size_t maxStackDepth;		/* Maximum number of stack elements needed to
 				 * execute the code. Set by compilation
@@ -396,7 +396,7 @@ typedef struct ByteCode {
 				 * procs are specific to an interpreter so the
 				 * code emitted will depend on the
 				 * interpreter. */
-    TCL_HASH_TYPE compileEpoch;	/* Value of iPtr->compileEpoch when this
+    size_t compileEpoch;		/* Value of iPtr->compileEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when, e.g., commands with compile
 				 * procs are redefined. */
@@ -404,11 +404,11 @@ typedef struct ByteCode {
 				 * compiled. If the code is executed if a
 				 * different namespace, it must be
 				 * recompiled. */
-    TCL_HASH_TYPE nsEpoch;	/* Value of nsPtr->resolverEpoch when this
+    size_t nsEpoch;		/* Value of nsPtr->resolverEpoch when this
 				 * ByteCode was compiled. Used to invalidate
 				 * code when new namespace resolution rules
 				 * are put into effect. */
-    TCL_HASH_TYPE refCount;	/* Reference count: set 1 when created plus 1
+    size_t refCount;		/* Reference count: set 1 when created plus 1
 				 * for each execution of the code currently
 				 * active. This structure can be freed when
 				 * refCount becomes zero. */
