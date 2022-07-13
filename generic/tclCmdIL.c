@@ -2904,7 +2904,7 @@ Tcl_LrepeatObjCmd(
 	List *listRepPtr = ListRepPtr(listPtr);
 
 	listRepPtr->elemCount = elementCount*objc;
-	dataArray = &listRepPtr->elements;
+	dataArray = listRepPtr->elements;
     }
 
     /*
@@ -3091,7 +3091,7 @@ Tcl_LreverseObjCmd(
 	resultObj = Tcl_NewListObj(elemc, NULL);
 	listRepPtr = ListRepPtr(resultObj);
 	listRepPtr->elemCount = elemc;
-	dataArray = &listRepPtr->elements;
+	dataArray = listRepPtr->elements;
 
 	for (i=0,j=elemc-1 ; i<elemc ; i++,j--) {
 	    dataArray[j] = elemv[i];
@@ -4424,7 +4424,7 @@ Tcl_LsortObjCmd(
 
 	resultPtr = Tcl_NewListObj(sortInfo.numElements * groupSize, NULL);
 	listRepPtr = ListRepPtr(resultPtr);
-	newArray = &listRepPtr->elements;
+	newArray = listRepPtr->elements;
 	if (group) {
 	    for (i=0; elementPtr!=NULL ; elementPtr=elementPtr->nextPtr) {
 		idx = elementPtr->payload.index;
