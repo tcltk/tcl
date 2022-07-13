@@ -2476,7 +2476,7 @@ typedef struct ListStore {
     ListSizeT numAllocated; /* Total number of slots[] array slots. */
     int refCount;           /* Number of references to this instance */
     int flags;              /* LISTSTORE_* flags */
-    Tcl_Obj *slots[1];      /* Variable size array. Grown as needed */
+    Tcl_Obj *slots[TCLFLEXARRAY];      /* Variable size array. Grown as needed */
 } ListStore;
 
 #define LISTSTORE_CANONICAL 0x1 /* All Tcl_Obj's referencing this
@@ -2485,12 +2485,11 @@ typedef struct ListStore {
 
 /* Max number of elements that can be contained in a list */
 #define LIST_MAX                                               \
-    (1                                                         \
-     + (ListSizeT)(((size_t)ListSizeT_MAX - sizeof(ListStore)) \
+    ((ListSizeT)(((size_t)ListSizeT_MAX - offsetof(ListStore, slots)) \
 		   / sizeof(Tcl_Obj *)))
 /* Memory size needed for a ListStore to hold numSlots_ elements */
 #define LIST_SIZE(numSlots_) \
-	(unsigned)(sizeof(ListStore) + (((numSlots_) - 1) * sizeof(Tcl_Obj *)))
+	((int)(offsetof(ListStore, slots) + ((numSlots_) * sizeof(Tcl_Obj *))))
 
 /*
  * ListSpan --

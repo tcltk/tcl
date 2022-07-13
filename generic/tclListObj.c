@@ -544,7 +544,7 @@ ListLimitExceededError(Tcl_Interp *interp)
     if (interp != NULL) {
 	Tcl_SetObjResult(
 	    interp,
-	    Tcl_ObjPrintf("max length of a Tcl list (%" TCL_LL_MODIFIER "u) elements) exceeded",
+	    Tcl_ObjPrintf("max length of a Tcl list (%u) elements) exceeded",
 			  LIST_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
@@ -757,7 +757,7 @@ ListStoreNew(
      */
     if (objc > LIST_MAX) {
 	if (flags & LISTREP_PANIC_ON_FAIL) {
-	    Tcl_Panic("max length of a Tcl list (%" TCL_LL_MODIFIER "u elements) exceeded",
+	    Tcl_Panic("max length of a Tcl list (%u elements) exceeded",
 		    LIST_MAX);
 	}
 	return NULL;
