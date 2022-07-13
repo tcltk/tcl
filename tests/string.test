@@ -2638,7 +2638,7 @@ test string-32.17.$noComp {string is dict, valid dict packed in invalid dict} {
 };				# foreach noComp {0 1}
 
 test string-bug-b79df322a9 {Tcl_GetUnicode/Tcl_NewUnicodeObj api} -constraints {
-    testutf16string
+    testutf16string deprecated
 } -body {
     # This simple test suffices because the bug has nothing to do with
     # the actual encoding conversion. The test was added because these

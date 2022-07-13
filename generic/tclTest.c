@@ -5195,14 +5195,12 @@ TestbytestringObjCmd(
 
 static int
 Testutf16stringObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int n = 0;
-    const Tcl_UniChar *p;
-    (void)dummy;
+    const unsigned short *p;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string");

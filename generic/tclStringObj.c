@@ -68,7 +68,9 @@ static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		SetUnicodeObj(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
 static int		UnicodeLength(const Tcl_UniChar *unicode);
+#if !defined(TCL_NO_DEPRECATED)
 static int		UTF16Length(const unsigned short *unicode);
+#endif
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 #if (TCL_UTF_MAX) > 3 && !defined(TCL_NO_DEPRECATED)
 static void		DupUTF16StringInternalRep(Tcl_Obj *objPtr,
@@ -979,6 +981,7 @@ Tcl_GetUnicodeFromObj(
 }
 #endif
 
+#if !defined(TCL_NO_DEPRECATED)
 unsigned short *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the unicode string
@@ -1001,6 +1004,7 @@ TclGetUnicodeFromObj(
     }
     return stringPtr->unicode;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1481,7 +1485,6 @@ Tcl_SetUnicodeObj(
     TclInvalidateStringRep(objPtr);
     stringPtr->allocated = numChars;
 }
-#endif
 
 static int
 UTF16Length(
@@ -1497,6 +1500,7 @@ UTF16Length(
     stringCheckLimits(numChars);
     return numChars;
 }
+#endif
 
 static int
 UnicodeLength(
