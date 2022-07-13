@@ -68,6 +68,9 @@ static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		SetUnicodeObj(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
 static int		UnicodeLength(const Tcl_UniChar *unicode);
+#if !defined(TCL_NO_DEPRECATED)
+static int		UTF16Length(const unsigned short *unicode);
+#endif
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 #if (TCL_UTF_MAX) > 3 && !defined(TCL_NO_DEPRECATED)
 static void		DupUTF16StringInternalRep(Tcl_Obj *objPtr,
@@ -562,6 +565,10 @@ Tcl_NewUnicodeObj(
     TclNewObj(objPtr);
     TclInvalidateStringRep(objPtr);
 
+    if (numChars < 0) {
+	numChars = UTF16Length(unicode);
+    }
+
     String *stringPtr = (String *)ckalloc((offsetof(String, unicode)
 	    + sizeof(unsigned short)) + numChars * sizeof(unsigned short));
     memcpy(stringPtr->unicode, unicode, numChars * sizeof(unsigned short));
@@ -974,6 +981,7 @@ Tcl_GetUnicodeFromObj(
 }
 #endif
 
+#if !defined(TCL_NO_DEPRECATED)
 unsigned short *
 TclGetUnicodeFromObj(
     Tcl_Obj *objPtr,		/* The object to find the unicode string
@@ -984,7 +992,11 @@ TclGetUnicodeFromObj(
 {
     String *stringPtr;
 
+#if TCL_UTF_MAX > 3
+    SetUTF16StringFromAny(NULL, objPtr);
+#else
     SetStringFromAny(NULL, objPtr);
+#endif
     stringPtr = GET_STRING(objPtr);
 
     if (lengthPtr != NULL) {
@@ -992,6 +1004,7 @@ TclGetUnicodeFromObj(
     }
     return stringPtr->unicode;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1451,14 +1464,7 @@ Tcl_SetUnicodeObj(
     String *stringPtr;
 
     if (numChars < 0) {
-        numChars = 0;
-
-        if (unicode) {
-    	while (numChars >= 0 && unicode[numChars] != 0) {
-    	    numChars++;
-    	}
-        }
-        stringCheckLimits(numChars);
+	numChars = UTF16Length(unicode);
     }
 
     /*
@@ -1478,6 +1484,21 @@ Tcl_SetUnicodeObj(
 
     TclInvalidateStringRep(objPtr);
     stringPtr->allocated = numChars;
+}
+
+static int
+UTF16Length(
+    const unsigned short *ucs2Ptr)
+{
+    int numChars = 0;
+
+    if (ucs2Ptr) {
+	while (numChars >= 0 && ucs2Ptr[numChars] != 0) {
+	    numChars++;
+	}
+    }
+    stringCheckLimits(numChars);
+    return numChars;
 }
 #endif
 
