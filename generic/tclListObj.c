@@ -290,8 +290,7 @@ ListSpanDecrRefs(ListSpan *spanPtr)
 {
     if (spanPtr->refCount <= 1) {
 	ckfree(spanPtr);
-    }
-    else {
+    } else {
 	spanPtr->refCount -= 1;
     }
 }
@@ -590,8 +589,7 @@ ListRepUnsharedShiftDown(ListRep *repPtr, ListSizeT shiftCount)
     if (repPtr->spanPtr) {
 	repPtr->spanPtr->spanStart -= shiftCount;
 	LIST_ASSERT(repPtr->spanPtr->spanLength == storePtr->numUsed);
-    }
-    else {
+    } else {
 	/*
 	 * If there was no span, firstUsed must have been 0 (Invariant)
 	 * AND shiftCount must have been 0 (<= firstUsed on call)
@@ -644,8 +642,7 @@ ListRepUnsharedShiftUp(ListRep *repPtr, ListSizeT shiftCount)
     storePtr->firstUsed += shiftCount;
     if (repPtr->spanPtr) {
 	repPtr->spanPtr->spanStart += shiftCount;
-    }
-    else {
+    } else {
 	/* No span means entire original list is span */
 	/* Should have been zero before shift - Invariant TBD */
 	LIST_ASSERT(storePtr->firstUsed == shiftCount);
@@ -763,10 +760,11 @@ ListStoreNew(
 	return NULL;
     }
 
-    if (flags & LISTREP_SPACE_FLAGS)
+    if (flags & LISTREP_SPACE_FLAGS) {
 	capacity = ListStoreUpSize(objc);
-    else
+    } else {
 	capacity = objc;
+    }
 
     storePtr = (ListStore *)attemptckalloc(LIST_SIZE(capacity));
     if (storePtr == NULL && capacity != objc) {
@@ -786,23 +784,19 @@ ListStoreNew(
     storePtr->numAllocated = capacity;
     if (capacity == objc) {
 	storePtr->firstUsed = 0;
-    }
-    else {
+    } else {
 	ListSizeT extra = capacity - objc;
 	int spaceFlags = flags & LISTREP_SPACE_FLAGS;
 	if (spaceFlags == LISTREP_SPACE_ONLY_BACK) {
 	    storePtr->firstUsed = 0;
-	}
-	else if (spaceFlags == LISTREP_SPACE_FAVOR_FRONT) {
+	} else if (spaceFlags == LISTREP_SPACE_FAVOR_FRONT) {
 	    /* Leave more space in the front */
 	    storePtr->firstUsed =
 		extra - (extra / 4); /* NOT same as 3*extra/4 */
-	}
-	else if (spaceFlags == LISTREP_SPACE_FAVOR_BACK) {
+	} else if (spaceFlags == LISTREP_SPACE_FAVOR_BACK) {
 	    /* Leave more space in the back */
 	    storePtr->firstUsed = extra / 4;
-	}
-	else {
+	} else {
 	    /* Apportion equally */
 	    storePtr->firstUsed = extra / 2;
 	}
@@ -912,8 +906,7 @@ ListRepInit(
 	repPtr->storePtr = storePtr;
 	if (storePtr->firstUsed == 0) {
 	    repPtr->spanPtr = NULL;
-	}
-	else {
+	} else {
 	    repPtr->spanPtr =
 		ListSpanNew(storePtr->firstUsed, storePtr->numUsed);
 	}
@@ -963,10 +956,11 @@ ListRepInitAttempt(
     int result = ListRepInit(objc, objv, 0, repPtr);
 
     if (result != TCL_OK && interp != NULL) {
-	if (objc > LIST_MAX)
+	if (objc > LIST_MAX) {
 	    ListLimitExceededError(interp);
-	else
+	} else {
 	    MemoryAllocationError(interp, LIST_SIZE(objc));
+	}
     }
     return result;
 }
@@ -1337,8 +1331,7 @@ Tcl_SetListObj(
 	/* TODO - perhaps ask for extra space? */
 	ListRepInit(objc, objv, LISTREP_PANIC_ON_FAIL, &listRep);
 	ListObjReplaceRepAndInvalidate(objPtr, &listRep);
-    }
-    else {
+    } else {
 	TclFreeInternalRep(objPtr);
 	TclInvalidateStringRep(objPtr);
 	Tcl_InitStringRep(objPtr, NULL, 0);
@@ -1476,8 +1469,7 @@ ListRepRange(
 	    srcRepPtr->spanPtr->spanStart = spanStart;
 	    srcRepPtr->spanPtr->spanLength = rangeLen;
 	    *rangeRepPtr = *srcRepPtr;
-	}
-	else {
+	} else {
 	    /* Span not present or is shared - Allocate a new span */
 	    rangeRepPtr->storePtr = srcRepPtr->storePtr;
 	    rangeRepPtr->spanPtr = ListSpanNew(spanStart, rangeLen);
@@ -1491,8 +1483,7 @@ ListRepRange(
 	if (!preserveSrcRep) {
 	    ListRepFreeUnreferenced(rangeRepPtr);
 	}
-    }
-    else if (preserveSrcRep || ListRepIsShared(srcRepPtr)) {
+    } else if (preserveSrcRep || ListRepIsShared(srcRepPtr)) {
 	/* Option 2 - span or modification in place not allowed/desired */
 	ListRepElements(srcRepPtr, numSrcElems, srcElems);
 	/* TODO - allocate extra space? */
@@ -2047,8 +2038,7 @@ Tcl_ListObjReplace(
     }
     if (numToDelete < 0) {
 	numToDelete = 0;
-    }
-    else if (first > ListSizeT_MAX - numToDelete /* Handle integer overflow */
+    } else if (first > ListSizeT_MAX - numToDelete /* Handle integer overflow */
              || origListLen < first + numToDelete) {
 	numToDelete = origListLen - first;
     }
@@ -2089,8 +2079,7 @@ Tcl_ListObjReplace(
 	    ListRepRange(&listRep, numToDelete, origListLen-1, 0, &tailRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &tailRep);
 	    return TCL_OK;
-	}
-	else if ((first+numToDelete) >= origListLen) {
+	} else if ((first+numToDelete) >= origListLen) {
 	    /* Delete from tail, so return head */
 	    ListRep headRep;
 	    ListRepRange(&listRep, 0, first-1, 0, &headRep);
@@ -2137,14 +2126,14 @@ Tcl_ListObjReplace(
 		/* An unshared span record, re-use it */
 		listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
 		listRep.spanPtr->spanLength = newLen;
-	    }
-	    else {
+	    } else {
 		/* Need a new span record */
-		if (listRep.storePtr->firstUsed == 0)
+		if (listRep.storePtr->firstUsed == 0) {
 		    listRep.spanPtr = NULL;
-		else
+		} else {
 		    listRep.spanPtr =
 			ListSpanNew(listRep.storePtr->firstUsed, newLen);
+		}
 	    }
 	    ListObjReplaceRepAndInvalidate(listObj, &listRep);
 	    return TCL_OK;
@@ -2269,8 +2258,7 @@ Tcl_ListObjReplace(
 	/* Exact fit */
 	leadShift = 0;
 	tailShift = 0;
-    }
-    else if (lenChange < 0) {
+    } else if (lenChange < 0) {
 	/*
 	 * More deletions than insertions. The gap after deletions is large
 	 * enough for insertions. Move a segment depending on size.
@@ -2279,14 +2267,12 @@ Tcl_ListObjReplace(
 	    /* Tail segment smaller. Insert after lead, move tail down */
 	    leadShift = 0;
 	    tailShift = lenChange;
-	}
-	else {
+	} else {
 	    /* Lead segment smaller. Insert before tail, move lead up */
 	    leadShift = -lenChange;
 	    tailShift = 0;
 	}
-    }
-    else {
+    } else {
 	LIST_ASSERT(lenChange > 0); /* Reminder */
 
 	/*
@@ -2321,8 +2307,7 @@ Tcl_ListObjReplace(
 		}
 	    }
 	    LIST_ASSERT(leadShift >= 0 || leadSpace >= -leadShift);
-	}
-	else if (tailSpace >= lenChange) {
+	} else if (tailSpace >= lenChange) {
 	    /* Move only tail segment to the back to make more room. */
 	    leadShift = 0;
 	    tailShift = lenChange;
@@ -2338,8 +2323,7 @@ Tcl_ListObjReplace(
 		}
 	    }
 	    LIST_ASSERT(tailShift <= tailSpace);
-	}
-	else {
+	} else {
 	    /*
 	     * Both lead and tail need to be shifted to make room.
 	     * Divide remaining free space equally between front and back.
@@ -2414,13 +2398,11 @@ Tcl_ListObjReplace(
 	/* An unshared span record, re-use it, even if not required */
 	listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
 	listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
-    }
-    else {
+    } else {
 	/* Need a new span record */
 	if (listRep.storePtr->firstUsed == 0) {
 	    listRep.spanPtr = NULL;
-	}
-	else {
+	} else {
 	    listRep.spanPtr = ListSpanNew(listRep.storePtr->firstUsed,
 					  listRep.storePtr->numUsed);
 	}
@@ -2829,8 +2811,7 @@ TclLsetFlat(
 	    parentList = subListObj;
 	    if (index == elemCount) {
 		TclNewObj(subListObj);
-	    }
-	    else {
+	    } else {
 		subListObj = elemPtrs[index];
 	    }
 	    if (Tcl_IsShared(subListObj)) {
@@ -2848,8 +2829,7 @@ TclLsetFlat(
 
 	    if (index == elemCount) {
 		Tcl_ListObjAppendElement(NULL, parentList, subListObj);
-	    }
-	    else {
+	    } else {
 		TclListObjSetElement(NULL, parentList, index, subListObj);
 	    }
 	    if (Tcl_IsShared(subListObj)) {

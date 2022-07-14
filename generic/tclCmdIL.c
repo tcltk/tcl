@@ -3109,8 +3109,7 @@ Tcl_LreverseObjCmd(
 	}
 
 	Tcl_SetObjResult(interp, resultObj);
-    }
-    else {
+    } else {
 
 	/*
 	 * Not shared, so swap "in place". This relies on Tcl_LOGE above
@@ -4444,15 +4443,13 @@ Tcl_LsortObjCmd(
 		    }
 		}
 	    }
-	}
-	else if (indices) {
+	} else if (indices) {
 	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
 		TclNewIndexObj(objPtr, elementPtr->payload.index);
 		newArray[i++] = objPtr;
 		Tcl_IncrRefCount(objPtr);
 	    }
-	}
-	else {
+	} else {
 	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
 		objPtr = elementPtr->payload.objPtr;
 		newArray[i++] = objPtr;
