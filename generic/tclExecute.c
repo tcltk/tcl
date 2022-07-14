@@ -4920,6 +4920,26 @@ TEBCresume(
 	opnd = TclGetInt4AtPtr(pc+1);
 	TRACE(("\"%.30s\" %d => ", O2S(valuePtr), opnd));
 
+	/* special case for ArithSeries */
+	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
+	    ArithSeries *arithSeriesRepPtr =
+		(ArithSeries*) valuePtr->internalRep.twoPtrValue.ptr1;
+	    length = arithSeriesRepPtr->len;
+	    
+	    /* Decode end-offset index values. */
+
+	    index = TclIndexDecode(opnd, length);
+
+	    /* Compute value @ index */
+	    if (index >= 0 && index < length) {
+		objResultPtr = Tcl_NewWideIntObj(ArithSeriesIndexM(arithSeriesRepPtr, index));
+	    } else {
+		TclNewObj(objResultPtr);
+	    }
+	    pcAdjustment = 5;
+	    goto lindexFastPath2;
+	}
+
 	/*
 	 * Get the contents of the list, making sure that it really is a list
 	 * in the process.
@@ -4941,7 +4961,9 @@ TEBCresume(
 	} else {
 	    TclNewObj(objResultPtr);
 	}
-
+	
+    lindexFastPath2:
+	
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_F(pcAdjustment, 1, 1);
 

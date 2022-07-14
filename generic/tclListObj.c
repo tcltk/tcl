@@ -579,12 +579,13 @@ Tcl_ListObjGetElements(
 
     if (listRepPtr == NULL) {
 	int result, length;
-
-	(void) Tcl_GetStringFromObj(listPtr, &length);
-	if (length == 0) {
-	    *objcPtr = 0;
-	    *objvPtr = NULL;
-	    return TCL_OK;
+	if ( ! TclHasInternalRep(listPtr,&tclArithSeriesType)) {
+	    (void) Tcl_GetStringFromObj(listPtr, &length);
+	    if (length == 0) {
+		*objcPtr = 0;
+		*objvPtr = NULL;
+		return TCL_OK;
+	    }
 	}
 	result = SetListFromAny(interp, listPtr);
 	if (result != TCL_OK) {
