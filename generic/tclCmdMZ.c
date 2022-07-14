@@ -16,6 +16,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include <math.h>
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclRegexp.h"
