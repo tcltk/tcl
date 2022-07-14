@@ -2888,7 +2888,7 @@ Tcl_LrepeatObjCmd(
 
     if (elementCount && objc > LIST_MAX/elementCount) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"max length of a Tcl list (%d elements) exceeded", LIST_MAX));
+		"max length of a Tcl list (%" TCL_Z_MODIFIER "u elements) exceeded", LIST_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
 	return TCL_ERROR;
     }
@@ -2901,10 +2901,15 @@ Tcl_LrepeatObjCmd(
 
     listPtr = Tcl_NewListObj(totalElems, NULL);
     if (totalElems) {
-	List *listRepPtr = ListRepPtr(listPtr);
-
-	listRepPtr->elemCount = elementCount*objc;
-	dataArray = listRepPtr->elements;
+	ListRep listRep;
+	ListObjGetRep(listPtr, &listRep);
+	dataArray = ListRepElementsBase(&listRep);
+	listRep.storePtr->numUsed = totalElems;
+	if (listRep.spanPtr) {
+	    /* Future proofing in case Tcl_NewListObj returns a span */
+	    listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
+	    listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
+	}
     }
 
     /*
@@ -3084,14 +3089,21 @@ Tcl_LreverseObjCmd(
     }
 
     if (Tcl_IsShared(objv[1])
-	    || (ListRepPtr(objv[1])->refCount > 1)) {	/* Bug 1675044 */
+	|| ListObjRepIsShared(objv[1])) { /* Bug 1675044 */
 	Tcl_Obj *resultObj, **dataArray;
-	List *listRepPtr;
+	ListRep listRep;
 
 	resultObj = Tcl_NewListObj(elemc, NULL);
-	listRepPtr = ListRepPtr(resultObj);
-	listRepPtr->elemCount = elemc;
-	dataArray = listRepPtr->elements;
+
+	/* Modify the internal rep in-place */
+	ListObjGetRep(resultObj, &listRep);
+	listRep.storePtr->numUsed = elemc;
+	dataArray = ListRepElementsBase(&listRep);
+	if (listRep.spanPtr) {
+	    /* Future proofing */
+	    listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
+	    listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
+	}
 
 	for (i=0,j=elemc-1 ; i<elemc ; i++,j--) {
 	    dataArray[j] = elemv[i];
@@ -4419,12 +4431,12 @@ Tcl_LsortObjCmd(
      */
 
     if (sortInfo.resultCode == TCL_OK) {
-	List *listRepPtr;
+	ListRep listRep;
 	Tcl_Obj **newArray, *objPtr;
 
 	resultPtr = Tcl_NewListObj(sortInfo.numElements * groupSize, NULL);
-	listRepPtr = ListRepPtr(resultPtr);
-	newArray = listRepPtr->elements;
+	ListObjGetRep(resultPtr, &listRep);
+	newArray = ListRepElementsBase(&listRep);
 	if (group) {
 	    for (i=0; elementPtr!=NULL ; elementPtr=elementPtr->nextPtr) {
 		idx = elementPtr->payload.index;
@@ -4453,7 +4465,11 @@ Tcl_LsortObjCmd(
 		Tcl_IncrRefCount(objPtr);
 	    }
 	}
-	listRepPtr->elemCount = i;
+	listRep.storePtr->numUsed = i;
+	if (listRep.spanPtr) {
+	    listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
+	    listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
+	}
 	Tcl_SetObjResult(interp, resultPtr);
     }
 
