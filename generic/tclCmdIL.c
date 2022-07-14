@@ -4688,7 +4688,7 @@ Tcl_RangeObjCmd(
 	}
     }
 
-    /* Proess Step argument */
+    /* Process Step argument */
     if (argc == 0) {
 	if (opmode == RANGE_COUNT) {
 	    step = 1;
