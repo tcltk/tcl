@@ -2886,7 +2886,7 @@ Tcl_LrepeatObjCmd(
 
     /* Final sanity check. Do not exceed limits on max list length. */
 
-    if (elementCount && objc > LIST_MAX/elementCount) {
+    if (elementCount && (size_t)objc > LIST_MAX/elementCount) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"max length of a Tcl list (%" TCL_Z_MODIFIER "u elements) exceeded", LIST_MAX));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);

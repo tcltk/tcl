@@ -2381,18 +2381,18 @@ typedef enum TclEolTranslation {
 #define TCL_INVOKE_NO_TRACEBACK	(1<<2)
 
 /*
- * TclListSizeT is the type for holding list element counts. It's defined
+ * ListSizeT is the type for holding list element counts. It's defined
  * simplify sharing source between Tcl8 and Tcl9.
  */
 #if TCL_MAJOR_VERSION > 8
 
-typedef ptrdiff_t ListSizeT; /* TODO - may need to fix to match Tcl9's API */
+typedef size_t ListSizeT;
 
 /*
  * SSIZE_MAX, NOT SIZE_MAX as negative differences need to be expressed
  * between values of the ListSizeT type so limit the range to signed
  */
-#define ListSizeT_MAX PTRDIFF_MAX
+#define ListSizeT_MAX ((ListSizeT)PTRDIFF_MAX)
 
 #else
 
@@ -2441,11 +2441,11 @@ typedef struct ListStore {
 
 /* Max number of elements that can be contained in a list */
 #define LIST_MAX                                               \
-    ((ListSizeT)(((size_t)ListSizeT_MAX - offsetof(ListStore, slots)) \
-		   / sizeof(Tcl_Obj *)))
+    ((ListSizeT_MAX - offsetof(ListStore, slots)) \
+		   / sizeof(Tcl_Obj *))
 /* Memory size needed for a ListStore to hold numSlots_ elements */
 #define LIST_SIZE(numSlots_) \
-	((int)(offsetof(ListStore, slots) + ((numSlots_) * sizeof(Tcl_Obj *))))
+	(offsetof(ListStore, slots) + ((numSlots_) * sizeof(Tcl_Obj *)))
 
 /*
  * ListSpan --
