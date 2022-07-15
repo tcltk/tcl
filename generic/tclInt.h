@@ -2500,6 +2500,9 @@ typedef struct ListSpan {
     ListSizeT spanLength;   /* Number of elements in the span */
     int refCount;     /* Count of references to this span record */
 } ListSpan;
+#ifndef LIST_SPAN_THRESHOLD /* May be set on build line */
+#define LIST_SPAN_THRESHOLD 101
+#endif
 
 /*
  * ListRep --

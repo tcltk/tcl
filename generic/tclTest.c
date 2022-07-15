@@ -258,6 +258,7 @@ static Tcl_ObjCmdProc	TestgetvarfullnameCmd;
 static Tcl_CmdProc	TestinterpdeleteCmd;
 static Tcl_CmdProc	TestlinkCmd;
 static Tcl_ObjCmdProc	TestlinkarrayCmd;
+static Tcl_ObjCmdProc	TestlistrepCmd;
 static Tcl_ObjCmdProc	TestlocaleCmd;
 static Tcl_CmdProc	TestmainthreadCmd;
 static Tcl_CmdProc	TestsetmainloopCmd;
@@ -640,6 +641,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testlink", TestlinkCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlinkarray", TestlinkarrayCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testlistrep", TestlistrepCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, NULL, NULL);
@@ -3384,6 +3386,158 @@ TestlinkarrayCmd(
   wrongArgs:
     Tcl_WrongNumArgs(interp, 2, objv, "?-readonly? type size name ?address?");
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestlistrepCmd --
+ *
+ *      This function is invoked to generate a list object with a specific
+ *	internal representation.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestlistrepCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,         /* Current interpreter. */
+    int objc,                   /* Number of arguments. */
+    Tcl_Obj *const objv[])      /* Argument objects. */
+{
+    /* Subcommands supported by this command */
+    const char* subcommands[] = {
+	"new",
+	"describe",
+	"config",
+	"validate",
+	NULL
+    };
+    enum {
+	LISTREP_NEW,
+	LISTREP_DESCRIBE,
+	LISTREP_CONFIG,
+	LISTREP_VALIDATE
+    } cmdIndex;
+    Tcl_Obj *resultObj = NULL;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(
+	    interp, objv[1], subcommands, "command", 0, &cmdIndex)
+	!= TCL_OK) {
+	return TCL_ERROR;
+    }
+    switch (cmdIndex) {
+    case LISTREP_NEW:
+	if (objc < 3 || objc > 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "length ?leadSpace endSpace?");
+	    return TCL_ERROR;
+	} else {
+	    int length;
+	    int leadSpace = 0;
+	    int endSpace = 0;
+	    if (Tcl_GetIntFromObj(interp, objv[2], &length) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (objc > 3) {
+		if (Tcl_GetIntFromObj(interp, objv[3], &leadSpace) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (objc > 4) {
+		    if (Tcl_GetIntFromObj(interp, objv[4], &endSpace)
+			!= TCL_OK) {
+			return TCL_ERROR;
+		    }
+		}
+	    }
+	    resultObj = TclListTestObj(length, leadSpace, endSpace);
+	}
+	break;
+
+    case LISTREP_DESCRIBE:
+#define APPEND_FIELD(targetObj_, structPtr_, fld_)                        \
+    do {                                                                  \
+	Tcl_ListObjAppendElement(                                         \
+	    interp, (targetObj_), Tcl_NewStringObj(#fld_, -1));           \
+	Tcl_ListObjAppendElement(                                         \
+	    interp, (targetObj_), Tcl_NewWideIntObj((structPtr_)->fld_)); \
+    } while (0)
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "object");
+	    return TCL_ERROR;
+	} else {
+	    Tcl_Obj **objs;
+	    ListSizeT nobjs;
+	    ListRep listRep;
+	    Tcl_Obj *listRepObjs[4];
+
+	    /* Force list representation */
+	    if (Tcl_ListObjGetElements(interp, objv[2], &nobjs, &objs) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    ListObjGetRep(objv[2], &listRep);
+	    listRepObjs[0] = Tcl_NewStringObj("store", -1);
+	    listRepObjs[1] = Tcl_NewListObj(12, NULL);
+	    Tcl_ListObjAppendElement(
+		interp, listRepObjs[1], Tcl_NewStringObj("memoryAddress", -1));
+	    Tcl_ListObjAppendElement(
+		interp, listRepObjs[1], Tcl_ObjPrintf("%p", listRep.storePtr));
+	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, firstUsed);
+	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, numUsed);
+	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, numAllocated);
+	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, refCount);
+	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, flags);
+	    if (listRep.spanPtr) {
+		listRepObjs[2] = Tcl_NewStringObj("span", -1);
+		listRepObjs[3] = Tcl_NewListObj(8, NULL);
+		Tcl_ListObjAppendElement(interp,
+					 listRepObjs[3],
+					 Tcl_NewStringObj("memoryAddress", -1));
+		Tcl_ListObjAppendElement(
+		    interp, listRepObjs[3], Tcl_ObjPrintf("%p", listRep.spanPtr));
+		APPEND_FIELD(listRepObjs[3], listRep.spanPtr, spanStart);
+		APPEND_FIELD(
+		    listRepObjs[3], listRep.spanPtr, spanLength);
+		APPEND_FIELD(listRepObjs[3], listRep.spanPtr, refCount);
+	    }
+	    resultObj = Tcl_NewListObj(listRep.spanPtr ? 4 : 2, listRepObjs);
+	}
+#undef APPEND_FIELD
+	break;
+
+    case LISTREP_CONFIG:
+	if (objc != 2) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "object");
+	    return TCL_ERROR;
+	}
+	resultObj = Tcl_NewListObj(2, NULL);
+	Tcl_ListObjAppendElement(
+	    NULL, resultObj, Tcl_NewStringObj("LIST_SPAN_THRESHOLD", -1));
+	Tcl_ListObjAppendElement(
+	    NULL, resultObj, Tcl_NewWideIntObj(LIST_SPAN_THRESHOLD));
+	break;
+
+    case LISTREP_VALIDATE:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "object");
+	    return TCL_ERROR;
+	}
+	TclListObjValidate(interp, objv[2]); /* Panics if invalid */
+	resultObj = Tcl_NewObj();
+	break;
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
 }
 
 /*

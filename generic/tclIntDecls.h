@@ -658,6 +658,12 @@ EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj);
 /* 259 */
 EXTERN void		TclUnusedStubEntry(void);
+/* 260 */
+EXTERN Tcl_Obj *	TclListTestObj(int length, int leadingSpace,
+				int endSpace);
+/* 261 */
+EXTERN void		TclListObjValidate(Tcl_Interp *interp,
+				Tcl_Obj *listObj);
 
 typedef struct TclIntStubs {
     int magic;
@@ -923,6 +929,8 @@ typedef struct TclIntStubs {
     void (*tclStaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc); /* 257 */
     Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
     void (*tclUnusedStubEntry) (void); /* 259 */
+    Tcl_Obj * (*tclListTestObj) (int length, int leadingSpace, int endSpace); /* 260 */
+    void (*tclListObjValidate) (Tcl_Interp *interp, Tcl_Obj *listObj); /* 261 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1370,6 +1378,10 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
 #define TclUnusedStubEntry \
 	(tclIntStubsPtr->tclUnusedStubEntry) /* 259 */
+#define TclListTestObj \
+	(tclIntStubsPtr->tclListTestObj) /* 260 */
+#define TclListObjValidate \
+	(tclIntStubsPtr->tclListObjValidate) /* 261 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

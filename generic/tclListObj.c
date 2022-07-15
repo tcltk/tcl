@@ -71,10 +71,11 @@
  * If ENABLE_LIST_INVARIANTS is enabled (-DENABLE_LIST_INVARIANTS from the
  * command line), the entire list internal representation is checked for
  * inconsistencies. This has a non-trivial cost so has to be separately
- * enabled and not part of assertions checking.
+ * enabled and not part of assertions checking. However, the test suite does
+ * invoke ListRepValidate directly even without ENABLE_LIST_INVARIANTS.
  */
 #ifdef ENABLE_LIST_INVARIANTS
-#define LISTREP_CHECK(listRepPtr_) ListRepValidate(listRepPtr_)
+#define LISTREP_CHECK(listRepPtr_) ListRepValidate(listRepPtr_, __FILE__, __LINE__)
 #else
 #define LISTREP_CHECK(listRepPtr_) (void) 0
 #endif
@@ -114,33 +115,29 @@
 /*
  * Prototypes for non-inline static functions defined later in this file:
  */
-static int MemoryAllocationError(Tcl_Interp *, size_t size);
-static int ListLimitExceededError(Tcl_Interp *);
-static ListStore *
-ListStoreNew(ListSizeT objc, Tcl_Obj *const objv[], int flags);
-static int
-ListRepInit(ListSizeT objc, Tcl_Obj *const objv[], int flags, ListRep *);
-static int ListRepInitAttempt(Tcl_Interp *,
-			      ListSizeT objc,
-			      Tcl_Obj *const objv[],
-			      ListRep *);
-static void ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr, int flags);
-static void ListRepUnsharedFreeUnreferenced(const ListRep *repPtr);
-static int TclListObjGetRep(Tcl_Interp *, Tcl_Obj *listPtr, ListRep *repPtr);
-static void ListRepRange(ListRep *srcRepPtr,
-			 ListSizeT rangeStart,
-			 ListSizeT rangeEnd,
-			 int preserveSrcRep,
-			 ListRep *rangeRepPtr);
+static int	MemoryAllocationError(Tcl_Interp *, size_t size);
+static int	ListLimitExceededError(Tcl_Interp *);
+static ListStore *ListStoreNew(ListSizeT objc, Tcl_Obj *const objv[], int flags);
+static int	ListRepInit(ListSizeT objc, Tcl_Obj *const objv[], int flags, ListRep *);
+static int	ListRepInitAttempt(Tcl_Interp *,
+		    ListSizeT objc,
+		    Tcl_Obj *const objv[],
+		    ListRep *);
+static void	ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr, int flags);
+static void	ListRepUnsharedFreeUnreferenced(const ListRep *repPtr);
+static int	TclListObjGetRep(Tcl_Interp *, Tcl_Obj *listPtr, ListRep *repPtr);
+static void	ListRepRange(ListRep *srcRepPtr,
+		    ListSizeT rangeStart,
+		    ListSizeT rangeEnd,
+		    int preserveSrcRep,
+		    ListRep *rangeRepPtr);
 static ListStore *ListStoreReallocate(ListStore *storePtr, ListSizeT numSlots);
-#ifdef ENABLE_LIST_ASSERTS /* Else gcc complains about unused static */
-static void ListRepValidate(const ListRep *repPtr);
-#endif
-
-static void		DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
-static void		FreeListInternalRep(Tcl_Obj *listPtr);
-static int		SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static void		UpdateStringOfList(Tcl_Obj *listPtr);
+static void	ListRepValidate(const ListRep *repPtr, const char *file,
+		    int lineNum);
+static void	DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
+static void	FreeListInternalRep(Tcl_Obj *listPtr);
+static int	SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static void	UpdateStringOfList(Tcl_Obj *listPtr);
 
 /*
  * The structure below defines the list Tcl object type by means of functions
@@ -217,7 +214,7 @@ const Tcl_ObjType tclListType = {
 	TclInvalidateStringRep(objPtr_);                           \
 	ListObjStompRep(objPtr_, repPtr_);                         \
     } while (0)
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -245,7 +242,7 @@ ListSpanNew(
     spanPtr->spanLength = numSlots;
     return spanPtr;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -261,13 +258,12 @@ ListSpanNew(
  *
  *------------------------------------------------------------------------
  */
-
 static inline void
 ListSpanIncrRefs(ListSpan *spanPtr)
 {
     spanPtr->refCount += 1;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -284,7 +280,6 @@ ListSpanIncrRefs(ListSpan *spanPtr)
  *
  *------------------------------------------------------------------------
  */
-
 static inline void
 ListSpanDecrRefs(ListSpan *spanPtr)
 {
@@ -294,7 +289,7 @@ ListSpanDecrRefs(ListSpan *spanPtr)
 	spanPtr->refCount -= 1;
     }
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -315,7 +310,6 @@ ListSpanDecrRefs(ListSpan *spanPtr)
  *
  *------------------------------------------------------------------------
  */
-
 static inline int
 ListSpanMerited(
     ListSizeT length,                 /* Length of the proposed span */
@@ -330,20 +324,20 @@ ListSpanMerited(
        existing storage has a "large" ref count, then it might make sense
        to do even a small span.
      */
-#ifndef TCL_LIST_SPAN_MINSIZE /* May be set on build line */
-#define TCL_LIST_SPAN_MINSIZE 101
-#endif
 
-    if (length < TCL_LIST_SPAN_MINSIZE)
+    if (length < LIST_SPAN_THRESHOLD) {
 	return 0;/* No span for small lists */
-    if (length < (allocatedStorageLength/2 - allocatedStorageLength/8))
+    }
+    if (length < (allocatedStorageLength / 2 - allocatedStorageLength / 8)) {
 	return 0; /* No span if less than 3/8 of allocation */
-    if (length < usedStorageLength / 2)
+    }
+    if (length < usedStorageLength / 2) {
 	return 0; /* No span if less than half current storage */
+    }
 
     return 1;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -367,7 +361,7 @@ ListStoreUpSize(ListSizeT numSlotsRequested) {
     return numSlotsRequested < (LIST_MAX / 2) ? 2 * numSlotsRequested
 						 : LIST_MAX;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -394,7 +388,7 @@ ListRepFreeUnreferenced(const ListRep *repPtr)
 	ListRepUnsharedFreeUnreferenced(repPtr);
     }
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -426,7 +420,7 @@ ObjArrayIncrRefs(
 	++objv;
     }
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -458,7 +452,7 @@ ObjArrayDecrRefs(
 	++objv;
     }
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -489,7 +483,7 @@ ObjArrayCopy(
 	*to++ = *from++;
     }
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -521,7 +515,7 @@ MemoryAllocationError(
     }
     return TCL_ERROR;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -543,13 +537,12 @@ ListLimitExceededError(Tcl_Interp *interp)
     if (interp != NULL) {
 	Tcl_SetObjResult(
 	    interp,
-	    Tcl_ObjPrintf("max length of a Tcl list (%u) elements) exceeded",
-			  LIST_MAX));
+	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
     }
     return TCL_ERROR;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -651,69 +644,99 @@ ListRepUnsharedShiftUp(ListRep *repPtr, ListSizeT shiftCount)
 
     LISTREP_CHECK(repPtr);
 }
-
-#ifdef ENABLE_LIST_ASSERTS /* Else gcc complains about unused static */
+
 /*
  *------------------------------------------------------------------------
  *
  * ListRepValidate --
  *
- *    Checks all invariants for a ListRep.
+ *	Checks all invariants for a ListRep and panics on failure.
+ *	Note this is independent of NDEBUG, assert etc.
  *
  * Results:
  *    None.
  *
  * Side effects:
- *    Panics (assertion failure) if any invariant is not met.
+ *    Panics if any invariant is not met.
  *
  *------------------------------------------------------------------------
  */
 static void
-ListRepValidate(const ListRep *repPtr)
+ListRepValidate(const ListRep *repPtr, const char *file, int lineNum)
 {
     ListStore *storePtr = repPtr->storePtr;
+    const char *condition;
 
     (void)storePtr; /* To stop gcc from whining about unused vars */
 
-    /* Separate each condition so line number gives exact reason for failure */
-    LIST_ASSERT(storePtr != NULL);
-    LIST_ASSERT(storePtr->numAllocated >= 0);
-    LIST_ASSERT(storePtr->numAllocated <= LIST_MAX);
-    LIST_ASSERT(storePtr->firstUsed >= 0);
-    LIST_ASSERT(storePtr->firstUsed < storePtr->numAllocated);
-    LIST_ASSERT(storePtr->numUsed >= 0);
-    LIST_ASSERT(storePtr->numUsed <= storePtr->numAllocated);
-    LIST_ASSERT(storePtr->firstUsed
-		<= (storePtr->numAllocated - storePtr->numUsed));
+#define INVARIANT(cond_)        \
+    do {                        \
+	if (!(cond_)) {         \
+	    condition = #cond_; \
+	    goto failure;       \
+	}                       \
+    } while (0)
 
-#if 0 && defined(LIST_MEM_DEBUG)
-    /* Corresponding zeroing out not implemented yet */
-    for (i = 0; i < storePtr->firstUsed; ++i) {
-	LIST_ASSERT(storePtr->slots[i] == NULL);
-    }
-    for (i = storePtr->firstUsed + storePtr->numUsed;
-	 i < storePtr->numAllocated;
-	 ++i) {
-	LIST_ASSERT(storePtr->slots[i] == NULL);
-    }
-#endif
+    /* Separate each condition so line number gives exact reason for failure */
+    INVARIANT(storePtr != NULL);
+    INVARIANT(storePtr->numAllocated >= 0);
+    INVARIANT(storePtr->numAllocated <= LIST_MAX);
+    INVARIANT(storePtr->firstUsed >= 0);
+    INVARIANT(storePtr->firstUsed < storePtr->numAllocated);
+    INVARIANT(storePtr->numUsed >= 0);
+    INVARIANT(storePtr->numUsed <= storePtr->numAllocated);
+    INVARIANT(storePtr->firstUsed <= (storePtr->numAllocated - storePtr->numUsed));
 
     if (! ListRepIsShared(repPtr)) {
 	/*
 	 * If this is the only reference and there is no span, then store
 	 * occupancy must begin at 0
 	 */
-	LIST_ASSERT(repPtr->spanPtr || repPtr->storePtr->firstUsed == 0);
+	INVARIANT(repPtr->spanPtr || repPtr->storePtr->firstUsed == 0);
     }
 
-    LIST_ASSERT(ListRepStart(repPtr) >= storePtr->firstUsed);
-    LIST_ASSERT(ListRepLength(repPtr) <= storePtr->numUsed);
-    LIST_ASSERT(ListRepStart(repPtr)
-		<= (storePtr->firstUsed + storePtr->numUsed - ListRepLength(repPtr)));
+    INVARIANT(ListRepStart(repPtr) >= storePtr->firstUsed);
+    INVARIANT(ListRepLength(repPtr) <= storePtr->numUsed);
+    INVARIANT(ListRepStart(repPtr) <= (storePtr->firstUsed + storePtr->numUsed - ListRepLength(repPtr)));
 
+#undef INVARIANT
+
+    return;
+
+failure:
+    Tcl_Panic("List internal failure in %s line %d. Condition: %s",
+	      file,
+	      lineNum,
+	      condition);
 }
-#endif /* ENABLE_LIST_ASSERTS */
-
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclListObjValidate --
+ *
+ *    Wrapper around ListRepValidate. Primarily used from test suite.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    Will panic if internal structure is not consistent or if object
+ *    cannot be converted to a list object.
+ *
+ *------------------------------------------------------------------------
+ */
+void
+TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+{
+    ListRep listRep;
+    if (TclListObjGetRep(interp, listObj, &listRep) != TCL_OK) {
+	Tcl_Panic("Object passed to TclListObjValidate cannot be converted to "
+		  "a list object.");
+    }
+    ListRepValidate(&listRep, __FILE__, __LINE__);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -754,8 +777,7 @@ ListStoreNew(
      */
     if (objc > LIST_MAX) {
 	if (flags & LISTREP_PANIC_ON_FAIL) {
-	    Tcl_Panic("max length of a Tcl list (%u elements) exceeded",
-		    LIST_MAX);
+	    Tcl_Panic("max length of a Tcl list exceeded");
 	}
 	return NULL;
     }
@@ -811,7 +833,7 @@ ListStoreNew(
 
     return storePtr;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -851,7 +873,7 @@ ListStoreReallocate (ListStore *storePtr, ListSizeT numSlots)
     newStorePtr->numAllocated = newCapacity;
     return newStorePtr;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -920,7 +942,7 @@ ListRepInit(
     repPtr->spanPtr = NULL;
     return TCL_ERROR;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -964,7 +986,7 @@ ListRepInitAttempt(
     }
     return result;
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -995,7 +1017,7 @@ ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr, int flags)
     ListRepElements(fromRepPtr, numFrom, fromObjs);
     ListRepInit(numFrom, fromObjs, flags | LISTREP_PANIC_ON_FAIL, toRepPtr);
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -1016,7 +1038,6 @@ ListRepClone(ListRep *fromRepPtr, ListRep *toRepPtr, int flags)
  *
  *------------------------------------------------------------------------
  */
-
 static void ListRepUnsharedFreeUnreferenced(const ListRep *repPtr)
 {
     ListSizeT count;
@@ -1058,7 +1079,7 @@ static void ListRepUnsharedFreeUnreferenced(const ListRep *repPtr)
     LIST_ASSERT(ListRepLength(repPtr) == storePtr->numUsed);
     LISTREP_CHECK(repPtr);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1118,7 +1139,7 @@ Tcl_NewListObj(
     return listObj;
 }
 #endif /* if TCL_MEM_DEBUG */
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1186,7 +1207,7 @@ Tcl_DbNewListObj(
     return Tcl_NewListObj(objc, objv);
 }
 #endif /* TCL_MEM_DEBUG */
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -1240,7 +1261,7 @@ TclNewListObj2(
     storePtr->numUsed = objc;
     return listObj;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1287,7 +1308,7 @@ TclListObjGetRep(
     LISTREP_CHECK(repPtr);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1538,7 +1559,7 @@ ListRepRange(
     LISTREP_CHECK(rangeRepPtr);
     return;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1655,7 +1676,6 @@ Tcl_ListObjGetElements(
  *
  *----------------------------------------------------------------------
  */
-
 int
 Tcl_ListObjAppendList(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
@@ -1680,7 +1700,7 @@ Tcl_ListObjAppendList(
 
     return TclListObjAppendElements(interp, toObj, objc, objv);
 }
-
+
 /*
  *------------------------------------------------------------------------
  *
@@ -1821,7 +1841,7 @@ Tcl_ListObjAppendList(
     ListObjReplaceRepAndInvalidate(toObj, &listRep);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1848,7 +1868,6 @@ Tcl_ListObjAppendList(
  *
  *----------------------------------------------------------------------
  */
-
 int
 Tcl_ListObjAppendElement(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
@@ -1887,7 +1906,6 @@ Tcl_ListObjAppendElement(
  *
  *----------------------------------------------------------------------
  */
-
 int
 Tcl_ListObjIndex(
     Tcl_Interp *interp,  /* Used to report errors if not NULL. */
@@ -1962,7 +1980,7 @@ Tcl_ListObjLength(
     *lenPtr = ListRepLength(&listRep);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2018,6 +2036,7 @@ Tcl_ListObjReplace(
     ListSizeT leadShift;
     ListSizeT tailShift;
     Tcl_Obj **listObjs;
+    int favor;
 
     if (Tcl_IsShared(listObj)) {
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
@@ -2045,6 +2064,17 @@ Tcl_ListObjReplace(
 
     if (numToInsert > ListSizeT_MAX - (origListLen - numToDelete)) {
 	return ListLimitExceededError(interp);
+    }
+
+    if ((first+numToDelete) >= origListLen) {
+	/* Operating at back of list. Favor leaving space at back */
+	favor = LISTREP_SPACE_FAVOR_BACK;
+    } else if (first == 0) {
+	/* Operating on front of list. Favor leaving space in front */
+	favor = LISTREP_SPACE_FAVOR_FRONT;
+    } else {
+	/* Operating on middle of list. */
+	favor = LISTREP_SPACE_FAVOR_NONE;
     }
 
     /*
@@ -2108,7 +2138,7 @@ Tcl_ListObjReplace(
 	 * (ii) The list's span must be at head of the in-use slots in the store
 	 * (iii) There must be unused room at front of the store
 	 * NOTE THIS IS TRUE EVEN IF THE ListStore IS SHARED as it will not
-	 * affect the other Tcl_Obj's referencing this ListStore. See the TIP.
+	 * affect the other Tcl_Obj's referencing this ListStore.
 	 */
 	if (first == 0 &&                                            /* (i) */
 	    ListRepStart(&listRep) == listRep.storePtr->firstUsed && /* (ii) */
@@ -2187,7 +2217,7 @@ Tcl_ListObjReplace(
 	listObjs = &listRep.storePtr->slots[ListRepStart(&listRep)];
 	ListRepInit(origListLen + lenChange,
 		    NULL,
-		    LISTREP_PANIC_ON_FAIL | LISTREP_SPACE_FAVOR_NONE,
+		    LISTREP_PANIC_ON_FAIL | favor,
 		    &newRep);
 	toObjs = ListRepSlotPtr(&newRep, 0);
 	if (leadSegmentLen > 0) {
@@ -2412,7 +2442,6 @@ Tcl_ListObjReplace(
     ListObjReplaceRepAndInvalidate(listObj, &listRep);
     return TCL_OK;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -2438,7 +2467,6 @@ Tcl_ListObjReplace(
  *
  *----------------------------------------------------------------------
  */
-
 Tcl_Obj *
 TclLindexList(
     Tcl_Interp *interp,		/* Tcl interpreter. */
@@ -2518,7 +2546,6 @@ TclLindexList(
  *
  *----------------------------------------------------------------------
  */
-
 Tcl_Obj *
 TclLindexFlat(
     Tcl_Interp *interp,		/* Tcl interpreter. */
@@ -2607,7 +2634,6 @@ TclLindexFlat(
  *
  *----------------------------------------------------------------------
  */
-
 Tcl_Obj *
 TclLsetList(
     Tcl_Interp *interp,		/* Tcl interpreter. */
@@ -2691,7 +2717,6 @@ TclLsetList(
  *
  *----------------------------------------------------------------------
  */
-
 Tcl_Obj *
 TclLsetFlat(
     Tcl_Interp *interp,		/* Tcl interpreter. */
@@ -2950,7 +2975,6 @@ TclLsetFlat(
  *
  *----------------------------------------------------------------------
  */
-
 int
 TclListObjSetElement(
     Tcl_Interp *interp,		/* Tcl interpreter; used for error reporting
@@ -3030,7 +3054,6 @@ TclListObjSetElement(
  *
  *----------------------------------------------------------------------
  */
-
 static void
 FreeListInternalRep(
     Tcl_Obj *listObj)		/* List object with internal rep to free. */
@@ -3065,7 +3088,6 @@ FreeListInternalRep(
  *
  *----------------------------------------------------------------------
  */
-
 static void
 DupListInternalRep(
     Tcl_Obj *srcObj,		/* Object with internal rep to copy. */
@@ -3075,7 +3097,7 @@ DupListInternalRep(
     ListObjGetRep(srcObj, &listRep);
     ListObjOverwriteRep(copyObj, &listRep);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3094,7 +3116,6 @@ DupListInternalRep(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 SetListFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
@@ -3257,7 +3278,6 @@ fail:
  *
  *----------------------------------------------------------------------
  */
-
 static void
 UpdateStringOfList(
     Tcl_Obj *listObj)		/* List object with string rep to update. */
@@ -3344,6 +3364,61 @@ UpdateStringOfList(
     }
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclListTestObj --
+ *
+ *    Returns a list object with a specific internal rep and content.
+ *    Used specifically for testing so span can be controlled explicitly.
+ *
+ * Results:
+ *    Pointer to the Tcl_Obj containing the list.
+ *
+ * Side effects:
+ *    None.
+ *
+ *------------------------------------------------------------------------
+ */
+Tcl_Obj *
+TclListTestObj (int length, int leadingSpace, int endSpace)
+{
+    if (length < 0)
+	length = 0;
+    if (leadingSpace < 0)
+	leadingSpace = 0;
+    if (endSpace < 0)
+	endSpace = 0;
+
+    ListRep listRep;
+    ListSizeT capacity;
+    Tcl_Obj *listObj;
+
+    TclNewObj(listObj);
+
+    /* Only a test object so ignoring overflow checks */
+    capacity = length + leadingSpace + endSpace;
+    if (capacity == 0) {
+	return listObj;
+    }
+
+    ListRepInit(capacity, NULL, 0, &listRep);
+
+    ListStore *storePtr = listRep.storePtr;
+    int i;
+    for (i = 0; i < length; ++i) {
+	storePtr->slots[i + leadingSpace] = Tcl_NewIntObj(i);
+	Tcl_IncrRefCount(storePtr->slots[i + leadingSpace]);
+    }
+    storePtr->firstUsed = leadingSpace;
+    storePtr->numUsed = length;
+    if (leadingSpace != 0) {
+	listRep.spanPtr = ListSpanNew(leadingSpace, length);
+    }
+    ListObjReplaceRepAndInvalidate(listObj, &listRep);
+    return listObj;
+}
+
 /*
  * Local Variables:
  * mode: c
