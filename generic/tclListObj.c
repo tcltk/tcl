@@ -1858,6 +1858,7 @@ Tcl_ListObjAppendList(
     LIST_ASSERT(listRep.storePtr->numAllocated >= finalLen);
 
     if (toLen) {
+        /* T:listrep-2.2 */
 	ObjArrayCopy(ListRepSlotPtr(&listRep, 0), toLen, toObjv);
     }
     ObjArrayCopy(ListRepSlotPtr(&listRep, toLen), elemCount, elemObjv);
@@ -2254,20 +2255,24 @@ Tcl_ListObjReplace(
 		    &newRep);
 	toObjs = ListRepSlotPtr(&newRep, 0);
 	if (leadSegmentLen > 0) {
+            /* T:listrep-2.{2,3} */
 	    ObjArrayCopy(toObjs, leadSegmentLen, listObjs);
 	}
 	if (numToInsert > 0) {
+            /* T:listrep-2.{1,2,3} */
 	    ObjArrayCopy(&toObjs[leadSegmentLen],
 			 numToInsert,
 			 insertObjs);
 	}
 	if (tailSegmentLen > 0) {
+            /* T:listrep-2.{1,2,3} */
 	    ObjArrayCopy(&toObjs[leadSegmentLen + numToInsert],
 			 tailSegmentLen,
 			 &listObjs[leadSegmentLen+numToDelete]);
 	}
 	newRep.storePtr->numUsed = origListLen + lenChange;
 	if (newRep.spanPtr) {
+            /* T:listrep-2.{1,2,3} */
 	    newRep.spanPtr->spanLength = newRep.storePtr->numUsed;
 	}
 	LISTREP_CHECK(&newRep);

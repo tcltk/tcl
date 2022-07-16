@@ -1,0 +1,296 @@
+# This file contains tests that specifically exercise the internal representation
+# of a list.
+#
+# Copyright © 2022 Ashok P. Nadkarni
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+# Unlike the other files related to list commands which for the most part do
+# black box testing focusing on functionality, this file does more of white box
+# testing to exercise code paths that implement different list representations
+# (with spans, leading free space etc., shared/unshared etc.) In addition to
+# functional correctness, the tests also check for the expected internal
+# representation as that pertains to performance heuristics. Generally speaking,
+# combinations of the following need to be tested,
+# - free space in front, back, neither, both of list representation
+# - shared Tcl_Objs
+# - shared internal reps (independent of shared Tcl_Objs)
+# - byte-compiled vs non-compiled
+#
+# Being white box tests, they are sensitive to changes to further optimizations
+# and changes in heuristics. That cannot be helped.
+
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
+
+::tcltest::loadTestedCommands
+
+testConstraint testlistrep [llength [info commands testlistrep]]
+interp alias {} describe {} testlistrep describe
+
+proc irange {first last} {
+    set l {}
+    while {$first <= $last} {
+        lappend l $first
+        incr first
+    }
+    return $l
+}
+proc leadSpace {l} {
+    # Returns the leading space in a list store
+    return [dict get [describe $l] store firstUsed]
+}
+proc tailSpace {l} {
+    # Returns the trailing space in a list store
+    array set rep [describe $l]
+    dict with rep(store) {
+        return [expr {$numAllocated - ($firstUsed + $numUsed)}]
+    }
+}
+proc allocated {l} {
+    # Returns the allocated space in a list store
+    return [dict get [describe $l] store numAllocated]
+}
+proc repStoreRefCount {l} {
+    # Returns the ref count for the list store
+    return [dict get [describe $l] store refCount]
+}
+proc validate {l} {
+    # Panics if internal listrep structures are not valid
+    testlistrep validate $l
+}
+proc leadSpaceMore {l} {
+    expr {[leadSpace $l] >= 2*[tailSpace $l]}
+}
+proc tailSpaceMore {l} {
+    expr {[tailSpace $l] >= 2*[leadSpace $l]}
+}
+proc spaceEqual {l} {
+    # 1 if lead and tail space shared (diff of 1 at most)
+    set diff [expr {[leadSpace $l] - [tailSpace $l]}]
+    return [expr {$diff >= -1 && $diff <= 1}]
+}
+proc hasSpan {l args} {
+    # Returns 1 if list has a span. If args are specified, they are checked with
+    # span values (start and length)
+    array set rep [describe $l]
+    if {![info exists rep(span)]} {
+        return 0
+    }
+    if {[llength $args] == 0} {
+        return 1; # No need to check values
+    }
+    lassign $args start len
+    if {[dict get $rep(span) spanStart] == $start &&
+        [dict get $rep(span) spanLength] == $len} {
+        return 1
+    }
+    return 0
+}
+proc checkListrep {l listLen numAllocated leadSpace tailSpace {refCount 0}} {
+    # Checks if the internal representation of $l match
+    # passed arguments. Return "" if yes, else error messages.
+    array set rep [testlistrep describe $l]
+
+    set rep(leadSpace) [dict get $rep(store) firstUsed]
+    set rep(numAllocated) [dict get $rep(store) numAllocated]
+    set rep(tailSpace) [expr {
+                              $rep(numAllocated) - ($rep(leadSpace) + [dict get $rep(store) numUsed])
+                          }]
+    set rep(refCount) [dict get $rep(store) refCount]
+
+    if {[info exists rep(span)]} {
+        set rep(listLen) [dict get $rep(span) spanLength]
+    } else {
+        set rep(listLen) [dict get $rep(store) numUsed]
+    }
+
+    set errors [list]
+    foreach arg {listLen numAllocated leadSpace tailSpace} {
+        if {$rep($arg) != [set $arg]} {
+            lappend errors "$arg in list representation ($rep($arg)) is not expected value ([set $arg])."
+        }
+    }
+    # Check refCount only if caller has specified it as non-0
+    if {$refCount && $refCount != $rep(refCount)} {
+        lappend errors "refCount in list representation ($rep(refCount)) is not expected value ($refCount)."
+    }
+    return $errors
+}
+
+proc assertListrep {l listLen numAllocated leadSpace tailSpace {refCount 0}} {
+    # Like check_listrep but raises error
+    set errors [checkListrep $l $listLen $numAllocated $leadSpace $tailSpace $refCount]
+    if {[llength $errors]} {
+        error [join $errors \n]
+    }
+    return
+}
+
+# The default length should be large enough that doubling the allocation will
+# clearly distinguish free space allocation difference between front and back.
+# (difference in the two should at least be 2 else we cannot tell if front
+# or back was favored appropriately)
+proc freeSpaceNone {{len 8}} {return [testlistrep new $len 0 0]}
+proc freeSpaceLead {{len 8} {lead 3}} {return [testlistrep new $len $lead 0]}
+proc freeSpaceTail {{len 8} {tail 3}} {return [testlistrep new $len 0 $tail]}
+proc freeSpaceBoth {{len 8} {lead 3} {tail 3}} {
+    return [testlistrep new $len $lead $tail]
+}
+
+# Just ensure above stubs return what's expected
+if {[testConstraint testlistrep]} {
+    assertListrep [freeSpaceNone] 8 8 0 0 1
+    assertListrep [freeSpaceLead] 8 11 3 0 1
+    assertListrep [freeSpaceTail] 8 11 0 3 1
+    assertListrep [freeSpaceBoth] 8 14 3 3 1
+}
+
+# Define some variables for some indices because the Tcl compiler will do some
+# operations completely in byte code if indices are literals
+set zero 0
+set one 1
+set four 4
+set end end
+
+#
+# listrep-1.* tests all operate on unshared lists with no free space
+
+test listrep-1.1 {
+    Inserts in front of unshared list with no free space should reallocate with
+    equal free space at front and back
+} -constraints testlistrep -body {
+    set l [linsert [freeSpaceNone] $zero 99]
+    validate $l
+    list $l [spaceEqual $l]
+} -result [list {99 0 1 2 3 4 5 6 7} 1]
+
+test listrep-1.2 {
+    Inserts at back of unshared list with no free space should allocate all
+    space at back (essentially old lappend behavior)
+} -constraints testlistrep -body {
+    set l [linsert [freeSpaceNone] $end 99]
+    validate $l
+    list $l [leadSpace $l] [tailSpace $l]
+} -result [list {0 1 2 3 4 5 6 7 99} 0 9]
+
+test listrep-1.3 {
+    Inserts in middle of unshared list with no free space should reallocate with
+    equal free space at front and back
+} -constraints testlistrep -body {
+    set l [linsert [freeSpaceNone] $four 99]
+    validate $l
+    list $l [spaceEqual $l]
+} -result [list {0 1 2 3 99 4 5 6 7} 1]
+
+test listrep-1.4 {
+    Deletes from front of small unshared list with no free space should
+    just shift up leaving room at back
+} -constraints testlistrep -body {
+    set l [lreplace [freeSpaceNone] $zero $zero]
+    validate $l
+    list $l [leadSpace $l] [tailSpace $l]
+} -result [list {1 2 3 4 5 6 7} 0 1]
+
+test listrep-1.5 {
+    Deletes from front of large unshared list with no free space should
+    create a span
+} -constraints testlistrep -body {
+    set l [lreplace [freeSpaceNone 1000] $zero $one]
+    validate $l
+    list $l [leadSpace $l] [tailSpace $l] [hasSpan $l 2 998]
+} -result [list [irange 2 999] 2 0 1]
+
+test listrep-1.6 {
+    Deletes closer to front of large list should move (smaller) front segment
+} -constraints testlistrep -body {
+    set l [lreplace [freeSpaceNone 1000] $four $four]
+    validate $l
+    list $l [leadSpace $l] [tailSpace $l] [hasSpan $l 1 999]
+} -result [list [concat [irange 0 3] [irange 5 999]] 1 0 1]
+
+test listrep-1.7 {
+    Deletes closer to back of large list should move (smaller) back segment
+    and will not need a span
+} -constraints testlistrep -body {
+    set l [lreplace [freeSpaceNone 1000] end-$four end-$four]
+    validate $l
+    list $l [leadSpace $l] [tailSpace $l] [hasSpan $l]
+} -result [list [concat [irange 0 994] [irange 996 999]] 0 1 0]
+
+test listrep-1.8 {
+    Deletes at back of small unshared list should not need a span
+} -constraints testlistrep -body {
+    set l [lreplace [freeSpaceNone] end-$one end]
+    validate $l
+    list $l [leadSpace $l] [tailSpace $l] [hasSpan $l]
+} -result [list {0 1 2 3 4 5} 0 2 0]
+
+test listrep-1.9 {
+    Deletes at back of large unshared list should not need a span
+} -constraints testlistrep -body {
+    set l [lreplace [freeSpaceNone 1000] end-$four end]
+    validate $l
+    list $l [leadSpace $l] [tailSpace $l] [hasSpan $l]
+} -result [list [irange 0 994] 0 5 0]
+
+test listrep-1.10 {
+    lreplace no-op should force a canonical list representation
+} -body {
+    lreplace {    1 2   3 4   } $zero -1
+} -result {1 2 3 4}
+
+test listrep-1.11 {
+    Append elements to large unshared list using lreplace is optimized as lappend
+    so no free space in front
+} -body {
+    # Note $end, not end else byte code compiler short-cuts
+    set l [lreplace [freeSpaceNone 1000] $end+1 $end+1 99]
+    list $l [leadSpace $l] [expr {[tailSpace $l] > 0}] [hasSpan $l]
+} -result [list [linsert [irange 0 999] end+1 99] 0 1 0]
+
+#
+# listrep-2.* tests all operate on shared lists with no free space
+# The lrange construct on an variable's value will result in a listrep
+# that is shared (it's not enough that the Tcl_Obj is shared so just
+# assigning to another variable does not suffice)
+
+test listrep-2.1 {
+    Inserts in front of shared list with no free space should reallocate with
+    more leading space in front
+} -constraints testlistrep -body {
+    set a [freeSpaceNone]
+    set b [lrange $a 0 end]
+    set l [linsert $b $zero 99]
+    validate $l
+    list [repStoreRefCount $b] $l [leadSpaceMore $l] [repStoreRefCount $l]
+} -result [list 2 {99 0 1 2 3 4 5 6 7} 1 1]
+
+test listrep-2.2 {
+    Inserts at back of shared list with no free space should reallocate with
+    more leading space in back
+} -constraints testlistrep -body {
+    set a [freeSpaceNone]
+    set b [lrange $a 0 end]
+    set l [linsert $b $end 99]
+    validate $l
+    list [repStoreRefCount $b] $l [tailSpaceMore $l] [repStoreRefCount $l]
+} -result [list 2 {0 1 2 3 4 5 6 7 99} 1 1]
+
+test listrep-2.3 {
+    Inserts in middle of shared list with no free space should reallocate with
+    equal spacing
+} -constraints testlistrep -body {
+    set a [freeSpaceNone]
+    set b [lrange $a 0 end]
+    set l [linsert $b $four 99]
+    validate $l
+    list [repStoreRefCount $b] $l [spaceEqual $l] [repStoreRefCount $l]
+} -result [list 2 {0 1 2 3 99 4 5 6 7} 1 1]
+
+#
+::tcltest::cleanupTests
+return
