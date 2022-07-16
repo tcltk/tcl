@@ -1412,16 +1412,18 @@ TclListObjCopy(
  *	None.
  *
  * Side effects:
- *	The ListStore and ListSpan referenced by in the returned ListRep
- *	may or may not be the same as those passed in. For example, the
- *	ListStore may differ because the range is small enough that a new
- *	ListStore is more memory-optimal. The ListSpan may differ because
- *	it is NULL or shared. Regardless, reference counts on the returned
- *	values are not incremented. Generally, ListObjReplaceRepAndInvalidate may be
- *	used to store the new ListRep back into an object or a ListRepIncRefs
- *      followed by ListRepDecrRefs to free in case of errors.
- *      TODO WARNING:- this is not a very clean interface and easy for caller
- *      to get wrong. Better change it to pass in the source ListObj
+ *      The ListStore and ListSpan referenced by in the returned ListRep
+ *      may or may not be the same as those passed in. For example, the
+ *      ListStore may differ because the range is small enough that a new
+ *      ListStore is more memory-optimal. The ListSpan may differ because
+ *      it is NULL or shared. Regardless, reference counts on the returned
+ *      values are not incremented. Generally, ListObjReplaceRepAndInvalidate
+ *      may be used to store the new ListRep back into an object or a
+ *      ListRepIncrRefs followed by ListRepDecrRefs to free in case of errors.
+ *	Any other use should be carefully reconsidered.
+ *      TODO WARNING:- this is an awkward interface and easy for caller
+ *      to get wrong. Mostly due to refcount combinations. Perhaps passing
+ *      in the source listObj instead of source listRep might simplify.
  *
  *------------------------------------------------------------------------
  */
@@ -1438,13 +1440,14 @@ ListRepRange(
     Tcl_Obj **srcElems;
     ListSizeT numSrcElems = ListRepLength(srcRepPtr);
     ListSizeT rangeLen;
-    int doSpan;
+    ListSizeT numAfterRangeEnd;
 
     LISTREP_CHECK(srcRepPtr);
 
     /* Take the opportunity to garbage collect */
     /* TODO - we probably do not need the preserveSrcRep here unlike later */
     if (!preserveSrcRep) {
+        /* T:listrep-1.{4,5,8,9} */
 	ListRepFreeUnreferenced(srcRepPtr);
     }
 
@@ -1463,11 +1466,13 @@ ListRepRange(
     rangeLen = rangeEnd - rangeStart + 1;
 
     /*
-     * We can create a range one of three ways:
-     *  (1) Use a ListSpan referencing the current ListStore
-     *  (2) Creating a new ListStore
-     *  (3) Removing all elements outside the range in the current ListStore
-     * Option (3) may only be done if caller has not disallowed it AND
+     * We can create a range one of four ways:
+     *  (0) Range encapsulates entire list
+     *  (1) Special case: deleting in-place from end of an unshared object
+     *  (2) Use a ListSpan referencing the current ListStore
+     *  (3) Creating a new ListStore
+     *  (4) Removing all elements outside the range in the current ListStore
+     * Option (4) may only be done if caller has not disallowed it AND
      * the ListStore is not shared.
      *
      * The choice depends on heuristics related to speed and memory.
@@ -1477,12 +1482,32 @@ ListRepRange(
      * string-canonizing effect of [lrange 0 end] so the Tcl_Obj should not
      * be returned as is even if the range encompasses the whole list.
      */
-    doSpan = ListSpanMerited(rangeLen,
-			    srcRepPtr->storePtr->numUsed,
-			    srcRepPtr->storePtr->numAllocated);
-
-    if (doSpan) {
-	/* Option 1 - because span would be most efficient */
+    if (rangeStart == 0 && rangeEnd == (numSrcElems-1)) {
+	/* Option 0 - entire list. This may be used to canonicalize */
+	*rangeRepPtr = *srcRepPtr; /* Not ref counts not incremented */
+    } else if (rangeStart == 0 && (!preserveSrcRep)
+	       && (!ListRepIsShared(srcRepPtr) && srcRepPtr->spanPtr == NULL)) {
+	/* Option 1 - Special case unshared, exclude end elements, no span  */
+	LIST_ASSERT(srcRepPtr->storePtr->firstUsed == 0); /* If no span */
+	ListRepElements(srcRepPtr, numSrcElems, srcElems);
+	numAfterRangeEnd = numSrcElems - (rangeEnd + 1);
+	/* Assert: Because numSrcElems > rangeEnd earlier */
+	LIST_ASSERT(numAfterRangeEnd >= 0);
+	if (numAfterRangeEnd != 0) {
+            /* T:listrep-1.{8,9} */
+	    ObjArrayDecrRefs(srcElems, rangeEnd + 1, numAfterRangeEnd);
+	}
+	/* srcRepPtr->storePtr->firstUsed,numAllocated unchanged */
+	srcRepPtr->storePtr->numUsed = rangeLen;
+	srcRepPtr->storePtr->flags = 0;
+	rangeRepPtr->storePtr = srcRepPtr->storePtr; /* Note no incr ref */
+	rangeRepPtr->spanPtr = NULL;
+    } else if (ListSpanMerited(rangeLen,
+			       srcRepPtr->storePtr->numUsed,
+			       srcRepPtr->storePtr->numAllocated)) {
+	/*
+         * Option 2 - because span would be most efficient
+         */
 	ListSizeT spanStart = ListRepStart(srcRepPtr) + rangeStart;
 	if (!preserveSrcRep && srcRepPtr->spanPtr
 	    && srcRepPtr->spanPtr->refCount <= 1) {
@@ -1491,7 +1516,7 @@ ListRepRange(
 	    srcRepPtr->spanPtr->spanLength = rangeLen;
 	    *rangeRepPtr = *srcRepPtr;
 	} else {
-	    /* Span not present or is shared - Allocate a new span */
+	    /* Span not present or is shared. T:listrep-1.5 */
 	    rangeRepPtr->storePtr = srcRepPtr->storePtr;
 	    rangeRepPtr->spanPtr = ListSpanNew(spanStart, rangeLen);
 	}
@@ -1505,7 +1530,7 @@ ListRepRange(
 	    ListRepFreeUnreferenced(rangeRepPtr);
 	}
     } else if (preserveSrcRep || ListRepIsShared(srcRepPtr)) {
-	/* Option 2 - span or modification in place not allowed/desired */
+	/* Option 3 - span or modification in place not allowed/desired */
 	ListRepElements(srcRepPtr, numSrcElems, srcElems);
 	/* TODO - allocate extra space? */
 	ListRepInit(rangeLen,
@@ -1514,14 +1539,13 @@ ListRepRange(
 		    rangeRepPtr);
     } else {
 	/*
-	 * Option 3 - modify in place. Note that because of the invariant
+	 * Option 4 - modify in place. Note that because of the invariant
 	 * that spanless list stores must start at 0, we have to move
 	 * everything to the front.
 	 * TODO - perhaps if a span already exists, no need to move to front?
 	 * or maybe no need to move all the way to the front?
 	 * TODO - if range is small relative to allocation, allocate new?
 	 */
-	ListSizeT numAfterRangeEnd;
 
 	/* Asserts follow from call to ListRepFreeUnreferenced earlier */
 	LIST_ASSERT(!preserveSrcRep);
@@ -1533,12 +1557,13 @@ ListRepRange(
 
 	/* Free leading elements outside range */
 	if (rangeStart != 0) {
+            /* T:listrep-1.4 */
 	    ObjArrayDecrRefs(srcElems, 0, rangeStart);
 	}
 	/* Ditto for trailing */
 	numAfterRangeEnd = numSrcElems - (rangeEnd + 1);
-	LIST_ASSERT(numAfterRangeEnd
-		    >= 0); /* Because numSrcElems > rangeEnd earlier */
+	/* Assert: Because numSrcElems > rangeEnd earlier */
+	LIST_ASSERT(numAfterRangeEnd >= 0);
 	if (numAfterRangeEnd != 0) {
 	    ObjArrayDecrRefs(srcElems, rangeEnd + 1, numAfterRangeEnd);
 	}
@@ -1549,8 +1574,11 @@ ListRepRange(
 	srcRepPtr->storePtr->firstUsed = 0;
 	srcRepPtr->storePtr->numUsed = rangeLen;
 	srcRepPtr->storePtr->flags = 0;
-	rangeRepPtr->storePtr = srcRepPtr->storePtr; /* Note no incr ref */
-	rangeRepPtr->spanPtr = NULL;
+	if (srcRepPtr->spanPtr) {
+	    ListSpanDecrRefs(srcRepPtr->spanPtr);
+	    srcRepPtr->spanPtr = NULL;
+	}
+	*rangeRepPtr = *srcRepPtr; /* Note no ref count increments */
     }
 
     /* TODO - call freezombies here if !preserveSrcRep? */
@@ -1766,6 +1794,7 @@ Tcl_ListObjAppendList(
 	LIST_ASSERT(toLen == listRep.storePtr->numUsed);
 
 	if (finalLen > listRep.storePtr->numAllocated) {
+	    /* T:listrep-1.{2,11} */
 	    ListStore *newStorePtr;
 	    newStorePtr = ListStoreReallocate(listRep.storePtr, finalLen);
 	    if (newStorePtr == NULL) {
@@ -2100,17 +2129,20 @@ Tcl_ListObjReplace(
     if (numToInsert == 0) {
 	if (numToDelete == 0) {
 	    /* Should force canonical even for no-op */
+            /* T:listrep-1.10 */
 	    TclInvalidateStringRep(listObj);
 	    return TCL_OK;
 	}
 	if (first == 0) {
-	    /* Delete from front, so return tail */
+	    /* Delete from front, so return tail. */
+            /* T:listrep-1.{4,5} */
 	    ListRep tailRep;
 	    ListRepRange(&listRep, numToDelete, origListLen-1, 0, &tailRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &tailRep);
 	    return TCL_OK;
 	} else if ((first+numToDelete) >= origListLen) {
 	    /* Delete from tail, so return head */
+            /* T:listrep-1.{8,9} */
 	    ListRep headRep;
 	    ListRepRange(&listRep, 0, first-1, 0, &headRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &headRep);
@@ -2126,8 +2158,9 @@ Tcl_ListObjReplace(
      * Check Case (2) - pure inserts under certain conditions:
      */
     if (numToDelete == 0) {
-	/* Case (2a) - Append to list */
+	/* Case (2a) - Append to list. */
 	if (first == origListLen) {
+            /* T:listrep-1.11 */
 	    return TclListObjAppendElements(
 		interp, listObj, numToInsert, insertObjs);
 	}
@@ -2170,7 +2203,6 @@ Tcl_ListObjReplace(
 	}
     }
 
-
     /* Just for readability of the code */
     lenChange = numToInsert - numToDelete;
     leadSegmentLen = first;
@@ -2184,6 +2216,7 @@ Tcl_ListObjReplace(
      * ListObjReplaceAndInvalidate below.
      */
     if (numFreeSlots < lenChange && !ListRepIsShared(&listRep)) {
+	/* T:listrep-1.{1,3} */
 	ListStore *newStorePtr =
 	    ListStoreReallocate(listRep.storePtr, origListLen + lenChange);
 	if (newStorePtr == NULL) {
@@ -2264,13 +2297,14 @@ Tcl_ListObjReplace(
 
     /*
      * Free up elements to be deleted. Before that, increment the ref counts
-     * for objects to be inserted in case there is overlap. See bug3598580
-     * or test listobj-11.1
+     * for objects to be inserted in case there is overlap. T:listobj-11.1
      */
     if (numToInsert) {
+	/* T:listrep-1.{1,3} */
 	ObjArrayIncrRefs(insertObjs, 0, numToInsert);
     }
     if (numToDelete) {
+        /* T:listrep-1.{6,7} */
 	ObjArrayDecrRefs(listObjs, first, numToDelete);
     }
 
@@ -2295,10 +2329,12 @@ Tcl_ListObjReplace(
 	 */
 	if (leadSegmentLen > tailSegmentLen) {
 	    /* Tail segment smaller. Insert after lead, move tail down */
+            /* T:listrep-1.7 */
 	    leadShift = 0;
 	    tailShift = lenChange;
 	} else {
 	    /* Lead segment smaller. Insert before tail, move lead up */
+            /* T:listrep-1.6 */
 	    leadShift = -lenChange;
 	    tailShift = 0;
 	}
@@ -2347,6 +2383,7 @@ Tcl_ListObjReplace(
 	    if (finalFreeSpace > 1 && (leadSpace == 0 || leadSegmentLen == 0)) {
 		ListSizeT postShiftTailSpace = tailSpace - lenChange;
 		if (postShiftTailSpace > (finalFreeSpace/2)) {
+		    /* T:listrep-1.{1,3} */
 		    ListSizeT extraShift = postShiftTailSpace - (finalFreeSpace / 2);
 		    tailShift += extraShift;
 		    leadShift = extraShift; /* Move head to the back as well */
@@ -2390,12 +2427,14 @@ Tcl_ListObjReplace(
     if (leadShift > 0) {
 	/* Will happen when we have to make room at bottom */
 	if (tailShift != 0 && tailSegmentLen != 0) {
+            /* T:listrep-1.{1,3} */
 	    ListSizeT tailStart = leadSegmentLen + numToDelete;
 	    memmove(&listObjs[tailStart + tailShift],
 		    &listObjs[tailStart],
 		    tailSegmentLen * sizeof(Tcl_Obj *));
 	}
 	if (leadSegmentLen != 0) {
+            /* T:listrep-1.{3,6} */
 	    memmove(&listObjs[leadShift],
 		    &listObjs[0],
 		    leadSegmentLen * sizeof(Tcl_Obj *));
@@ -2407,6 +2446,7 @@ Tcl_ListObjReplace(
 		    leadSegmentLen * sizeof(Tcl_Obj *));
 	}
 	if (tailShift != 0 && tailSegmentLen != 0) {
+            /* T:listrep-1.7 */
 	    ListSizeT tailStart = leadSegmentLen + numToDelete;
 	    memmove(&listObjs[tailStart + tailShift],
 		    &listObjs[tailStart],
@@ -2415,6 +2455,7 @@ Tcl_ListObjReplace(
     }
     if (numToInsert) {
 	/* Do NOT use ObjArrayCopy here since we have already incr'ed ref counts */
+        /* T:listrep-1.{1,3} */
 	memmove(&listObjs[leadSegmentLen + leadShift],
 		insertObjs,
 		numToInsert * sizeof(Tcl_Obj *));
@@ -2431,8 +2472,10 @@ Tcl_ListObjReplace(
     } else {
 	/* Need a new span record */
 	if (listRep.storePtr->firstUsed == 0) {
+            /* T:listrep-1.7 */
 	    listRep.spanPtr = NULL;
 	} else {
+            /* T:listrep-1.{1,3,6} */
 	    listRep.spanPtr = ListSpanNew(listRep.storePtr->firstUsed,
 					  listRep.storePtr->numUsed);
 	}
