@@ -9,7 +9,7 @@
 #
 # ------------------------------------------------------------------------
 #
-# Copyright (c) 2014 Serg G. Brester (aka sebres)
+# Copyright © 2014 Serg G. Brester (aka sebres)
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file.
@@ -32,7 +32,7 @@ namespace path {::tclTestPerf}
 ## set testing defaults:
 set ::env(TCL_TZ) :CET
 
-# warm-up interpeter compiler env, clock platform-related features:
+# warm-up interpreter compiler env, clock platform-related features:
 
 ## warm-up test-related features (load clock.tcl, system zones, locales, etc.):
 clock scan "" -gmt 1

@@ -191,6 +191,7 @@ code with one of the values \fBTCL_OK\fR, \fBTCL_ERROR\fR,
 some other integer value originating in an extension.
 In addition, a result value or error message is left in \fIinterp\fR's
 result; it can be retrieved using \fBTcl_GetObjResult\fR.
+.SS "DEPRECATED FUNCTIONS"
 .PP
 \fBTcl_EvalTokens\fR differs from \fBTcl_EvalTokensStandard\fR only in
 the return convention used: it returns the result in a new Tcl_Obj.
@@ -302,7 +303,7 @@ The \fInumComponents\fR field is always 0.
 .TP
 \fBTCL_TOKEN_BS\fR
 .
-The token describes a backslash sequence such as \fB\en\fR or \fB\e0xa3\fR.
+The token describes a backslash sequence such as \fB\en\fR or \fB\e0xA3\fR.
 The \fInumComponents\fR field is always 0.
 .TP
 \fBTCL_TOKEN_COMMAND\fR
@@ -463,5 +464,12 @@ There are additional fields in the Tcl_Parse structure after the
 \fBTcl_ParseCommand\fR, \fBTcl_ParseExpr\fR, \fBTcl_ParseBraces\fR,
 \fBTcl_ParseQuotedString\fR, and \fBTcl_ParseVarName\fR; they should not be
 referenced by code outside of these procedures.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+The result of \fBTcl_EvalTokens\fR is an unshared value with a reference count
+of 1; the caller of that function should call \fBTcl_DecrRefCount\fR on the
+result value to dispose of it. (The equivalent with
+\fBTcl_EvalTokenStandard\fR is just the interpreter result, which can be
+retrieved with \fBTcl_GetObjResult\fR.)
 .SH KEYWORDS
 backslash substitution, braces, command, expression, parse, token, variable substitution

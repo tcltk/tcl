@@ -2,7 +2,7 @@
  * colorings of characters
  * This file is #included by regcomp.c.
  *
- * Copyright (c) 1998, 1999 Henry Spencer. All rights reserved.
+ * Copyright © 1998, 1999 Henry Spencer. All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -759,9 +759,9 @@ dumpcolors(
     struct colordesc *end;
     color co;
     chr c;
-    char *has;
+    const char *has;
 
-    fprintf(f, "max %ld\n", (long) cm->max);
+    fprintf(f, "max %" TCL_Z_MODIFIER "u\n", cm->max);
     if (NBYTS > 1) {
 	fillcheck(cm, cm->tree, 0, f);
     }

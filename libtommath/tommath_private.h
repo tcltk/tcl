@@ -4,7 +4,14 @@
 #ifndef TOMMATH_PRIV_H_
 #define TOMMATH_PRIV_H_
 
-#include <tommath.h>
+#ifdef MP_NO_STDINT
+#ifdef HAVE_STDINT_H
+#  include <stdint.h>
+#else
+#  include "../compat/stdint.h"
+#endif
+#endif
+#include "tclTomMath.h"
 #include "tommath_class.h"
 
 /*
@@ -149,6 +156,12 @@ extern void MP_FREE(void *mem, size_t size);
 #define MP__STRINGIZE(x) ""#x""
 #define MP_HAS(x)        (sizeof(MP_STRINGIZE(BN_##x##_C)) == 1u)
 
+/* TODO: Remove private_mp_word as soon as deprecated mp_word is removed from tommath. */
+#if !defined(MP_64BIT) || defined(__GNUC__)
+#undef mp_word
+typedef private_mp_word mp_word;
+#endif
+
 #define MP_MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MP_MAX(x, y) (((x) > (y)) ? (x) : (y))
 
@@ -163,6 +176,10 @@ extern void MP_FREE(void *mem, size_t size);
 #define MP_SIZEOF_BITS(type)    ((size_t)CHAR_BIT * sizeof(type))
 #define MP_MAXFAST              (int)(1uL << (MP_SIZEOF_BITS(mp_word) - (2u * (size_t)MP_DIGIT_BIT)))
 
+/* TODO: Remove PRIVATE_MP_WARRAY as soon as deprecated MP_WARRAY is removed from tommath.h */
+#undef MP_WARRAY
+#define MP_WARRAY PRIVATE_MP_WARRAY
+
 /* TODO: Remove PRIVATE_MP_PREC as soon as deprecated MP_PREC is removed from tommath.h */
 #ifdef PRIVATE_MP_PREC
 #   undef MP_PREC
@@ -170,13 +187,16 @@ extern void MP_FREE(void *mem, size_t size);
 #endif
 
 /* Minimum number of available digits in mp_int, MP_PREC >= MP_MIN_PREC */
-#define MP_MIN_PREC ((((int)MP_SIZEOF_BITS(Tcl_WideInt) + MP_DIGIT_BIT) - 1) / MP_DIGIT_BIT)
+#define MP_MIN_PREC ((((int)MP_SIZEOF_BITS(uintmax_t) + MP_DIGIT_BIT) - 1) / MP_DIGIT_BIT)
 
 MP_STATIC_ASSERT(prec_geq_min_prec, MP_PREC >= MP_MIN_PREC)
 
 /* random number source */
 extern MP_PRIVATE mp_err(*s_mp_rand_source)(void *out, size_t size);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* lowlevel functions, do not call! */
 MP_PRIVATE mp_bool s_mp_get_bit(const mp_int *a, unsigned int b);
 MP_PRIVATE mp_err s_mp_add(const mp_int *a, const mp_int *b, mp_int *c) MP_WUR;
@@ -204,17 +224,14 @@ MP_PRIVATE mp_err s_mp_prime_is_divisible(const mp_int *a, mp_bool *result);
 
 /* TODO: jenkins prng is not thread safe as of now */
 MP_PRIVATE mp_err s_mp_rand_jenkins(void *p, size_t n) MP_WUR;
-#ifndef MP_NO_STDINT
 MP_PRIVATE void s_mp_rand_jenkins_init(uint64_t seed);
-#endif
 
 extern MP_PRIVATE const char *const mp_s_rmap;
-extern MP_PRIVATE const unsigned char mp_s_rmap_reverse[];
+extern MP_PRIVATE const uint8_t mp_s_rmap_reverse[];
 extern MP_PRIVATE const size_t mp_s_rmap_reverse_sz;
 extern MP_PRIVATE const mp_digit *s_mp_prime_tab;
 
 /* deprecated functions */
-#if 0
 MP_DEPRECATED(s_mp_invmod_fast) mp_err fast_mp_invmod(const mp_int *a, const mp_int *b, mp_int *c);
 MP_DEPRECATED(s_mp_montgomery_reduce_fast) mp_err fast_mp_montgomery_reduce(mp_int *x, const mp_int *n,
       mp_digit rho);
@@ -234,6 +251,14 @@ MP_DEPRECATED(s_mp_karatsuba_sqr) mp_err mp_karatsuba_sqr(const mp_int *a, mp_in
 MP_DEPRECATED(s_mp_toom_mul) mp_err mp_toom_mul(const mp_int *a, const mp_int *b, mp_int *c);
 MP_DEPRECATED(s_mp_toom_sqr) mp_err mp_toom_sqr(const mp_int *a, mp_int *b);
 MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifndef TCL_WITH_EXTERNAL_TOMMATH
+#undef mp_sqr
+#define mp_sqr TclBN_mp_sqr
 #endif
 
 #define MP_GET_ENDIANNESS(x) \
@@ -295,8 +320,5 @@ MP_DEPRECATED(s_mp_reverse) void bn_reverse(unsigned char *s, int len);
         utype res = mag(a);                                   \
         return (a->sign == MP_NEG) ? (type)-res : (type)res;  \
     }
-
-#undef mp_isodd
-#define mp_isodd TclBN_mp_isodd
 
 #endif

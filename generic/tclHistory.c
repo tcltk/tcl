@@ -6,8 +6,8 @@
  *	commands ("events") before they are executed. Commands defined in
  *	history.tcl may be used to perform history substitutions.
  *
- * Copyright (c) 1990-1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1990-1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -130,14 +130,14 @@ Tcl_RecordAndEvalObj(
     int result, call = 1;
     Tcl_CmdInfo info;
     HistoryObjs *histObjsPtr =
-	    Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
+	    (HistoryObjs *)Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
 
     /*
      * Create the references to the [::history add] command if necessary.
      */
 
     if (histObjsPtr == NULL) {
-	histObjsPtr = ckalloc(sizeof(HistoryObjs));
+	histObjsPtr = (HistoryObjs *)ckalloc(sizeof(HistoryObjs));
 	TclNewLiteralStringObj(histObjsPtr->historyObj, "::history");
 	TclNewLiteralStringObj(histObjsPtr->addObj, "add");
 	Tcl_IncrRefCount(histObjsPtr->historyObj);
@@ -211,9 +211,9 @@ Tcl_RecordAndEvalObj(
 static void
 DeleteHistoryObjs(
     ClientData clientData,
-    Tcl_Interp *interp)
+    TCL_UNUSED(Tcl_Interp *))
 {
-    HistoryObjs *histObjsPtr = clientData;
+    HistoryObjs *histObjsPtr = (HistoryObjs *)clientData;
 
     TclDecrRefCount(histObjsPtr->historyObj);
     TclDecrRefCount(histObjsPtr->addObj);

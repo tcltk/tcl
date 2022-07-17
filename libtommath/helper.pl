@@ -51,7 +51,7 @@ sub check_source {
       push @{$troubles->{tab}},                $lineno if $l =~ /\t/ && basename($file) !~ /^makefile/i;
       push @{$troubles->{non_ascii_char}},     $lineno if $l =~ /[^[:ascii:]]/;
       push @{$troubles->{cpp_comment}},        $lineno if $file =~ /\.(c|h)$/ && ($l =~ /\s\/\// || $l =~ /\/\/\s/);
-      # we prefer using XMALLOC, XFREE, XREALLOC, XCALLOC ...
+      # we prefer using MP_MALLOC, MP_FREE, MP_REALLOC, MP_CALLOC ...
       push @{$troubles->{unwanted_malloc}},    $lineno if $file =~ /^[^\/]+\.c$/ && $l =~ /\bmalloc\s*\(/;
       push @{$troubles->{unwanted_realloc}},   $lineno if $file =~ /^[^\/]+\.c$/ && $l =~ /\brealloc\s*\(/;
       push @{$troubles->{unwanted_calloc}},    $lineno if $file =~ /^[^\/]+\.c$/ && $l =~ /\bcalloc\s*\(/;

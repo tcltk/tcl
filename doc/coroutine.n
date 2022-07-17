@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-coroutine, yield, yieldto \- Create and produce values from coroutines
+coroutine, yield, yieldto, coroinject, coroprobe \- Create and produce values from coroutines
 .SH SYNOPSIS
 .nf
 \fBcoroutine \fIname command\fR ?\fIarg...\fR?

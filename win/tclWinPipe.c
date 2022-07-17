@@ -4,7 +4,7 @@
  *	This file implements the Windows-specific exec pipeline functions, the
  *	"pipe" channel driver, and the "pid" Tcl command.
  *
- * Copyright (c) 1996-1997 by Sun Microsystems, Inc.
+ * Copyright © 1996-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -310,7 +310,7 @@ TclpFinalizePipes(void)
 
 void
 PipeSetupProc(
-    ClientData data,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
@@ -363,7 +363,7 @@ PipeSetupProc(
 
 static void
 PipeCheckProc(
-    ClientData data,		/* Not used. */
+    TCL_UNUSED(ClientData),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     PipeInfo *infoPtr;
@@ -402,7 +402,7 @@ PipeCheckProc(
 
 	if (needEvent) {
 	    infoPtr->flags |= PIPE_PENDING;
-	    evPtr = ckalloc(sizeof(PipeEvent));
+	    evPtr = (PipeEvent *)ckalloc(sizeof(PipeEvent));
 	    evPtr->header.proc = PipeEventProc;
 	    evPtr->infoPtr = infoPtr;
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
@@ -433,7 +433,7 @@ TclWinMakeFile(
 {
     WinFile *filePtr;
 
-    filePtr = ckalloc(sizeof(WinFile));
+    filePtr = (WinFile *)ckalloc(sizeof(WinFile));
     filePtr->type = WIN_FILE;
     filePtr->handle = handle;
 
@@ -549,7 +549,7 @@ TclpOpenFile(
 	accessMode = (GENERIC_READ | GENERIC_WRITE);
 	break;
     default:
-	TclWinConvertError(ERROR_INVALID_FUNCTION);
+	Tcl_WinConvertError(ERROR_INVALID_FUNCTION);
 	return NULL;
     }
 
@@ -610,10 +610,10 @@ TclpOpenFile(
 	DWORD err;
 
 	err = GetLastError();
-	if ((err & 0xffffL) == ERROR_OPEN_FAILED) {
+	if ((err & 0xFFFFL) == ERROR_OPEN_FAILED) {
 	    err = (mode & O_CREAT) ? ERROR_FILE_EXISTS : ERROR_FILE_NOT_FOUND;
 	}
-	TclWinConvertError(err);
+	Tcl_WinConvertError(err);
 	return NULL;
     }
 
@@ -719,7 +719,7 @@ TclpCreateTempFile(
 	Tcl_DStringFree(&dstring);
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     CloseHandle(handle);
     DeleteFileW(name);
     return NULL;
@@ -784,7 +784,7 @@ TclpCreatePipe(
 	return 1;
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     return 0;
 }
 
@@ -825,7 +825,7 @@ TclpCloseFile(
 		    && (GetStdHandle(STD_ERROR_HANDLE) != filePtr->handle))) {
 	    if (filePtr->handle != NULL &&
 		    CloseHandle(filePtr->handle) == FALSE) {
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		ckfree(filePtr);
 		return -1;
 	    }
@@ -1026,7 +1026,7 @@ TclpCreateProcess(
 		0, TRUE, DUPLICATE_SAME_ACCESS);
     }
     if (startInfo.hStdInput == INVALID_HANDLE_VALUE) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't duplicate input handle: %s",
 		Tcl_PosixError(interp)));
@@ -1055,7 +1055,7 @@ TclpCreateProcess(
 		&startInfo.hStdOutput, 0, TRUE, DUPLICATE_SAME_ACCESS);
     }
     if (startInfo.hStdOutput == INVALID_HANDLE_VALUE) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't duplicate output handle: %s",
 		Tcl_PosixError(interp)));
@@ -1075,7 +1075,7 @@ TclpCreateProcess(
 		0, TRUE, DUPLICATE_SAME_ACCESS);
     }
     if (startInfo.hStdError == INVALID_HANDLE_VALUE) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't duplicate error handle: %s",
 		Tcl_PosixError(interp)));
@@ -1137,7 +1137,7 @@ TclpCreateProcess(
     if (CreateProcessW(NULL, (WCHAR *) Tcl_DStringValue(&cmdLine),
 	    NULL, NULL, TRUE, (DWORD) createFlags, NULL, NULL, &startInfo,
 	    &procInfo) == 0) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("couldn't execute \"%s\": %s",
 		argv[0], Tcl_PosixError(interp)));
 	goto end;
@@ -1307,7 +1307,7 @@ ApplicationType(
 	 */
 
 	attr = GetFileAttributesW(nativeFullPath);
-	if ((attr == 0xffffffff) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
+	if ((attr == 0xFFFFFFFF) || (attr & FILE_ATTRIBUTE_DIRECTORY)) {
 	    continue;
 	}
 	Tcl_DStringInit(&ds);
@@ -1387,7 +1387,7 @@ ApplicationType(
     Tcl_DStringFree(&nameBuf);
 
     if (applType == APPL_NONE) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("couldn't execute \"%s\": %s",
 		originalName, Tcl_PosixError(interp)));
 	return APPL_NONE;
@@ -1763,7 +1763,7 @@ TclpCreateCommandChannel(
     Tcl_Pid *pidPtr)		/* An array of process identifiers. */
 {
     char channelName[16 + TCL_INTEGER_SPACE];
-    PipeInfo *infoPtr = ckalloc(sizeof(PipeInfo));
+    PipeInfo *infoPtr = (PipeInfo *)ckalloc(sizeof(PipeInfo));
 
     PipeInit();
 
@@ -1856,7 +1856,7 @@ Tcl_CreatePipe(
     Tcl_Interp *interp,		/* Errors returned in result.*/
     Tcl_Channel *rchan,		/* Where to return the read side. */
     Tcl_Channel *wchan,		/* Where to return the write side. */
-    int flags)			/* Reserved for future use. */
+    TCL_UNUSED(int) /*flags*/)	/* Reserved for future use. */
 {
     HANDLE readHandle, writeHandle;
     SECURITY_ATTRIBUTES sec;
@@ -1866,7 +1866,7 @@ Tcl_CreatePipe(
     sec.bInheritHandle = FALSE;
 
     if (!CreatePipe(&readHandle, &writeHandle, &sec, 0)) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"pipe creation failed: %s", Tcl_PosixError(interp)));
 	return TCL_ERROR;
@@ -1917,7 +1917,7 @@ TclGetAndDetachPids(
 	return;
     }
 
-    pipePtr = Tcl_GetChannelInstanceData(chan);
+    pipePtr = (PipeInfo *)Tcl_GetChannelInstanceData(chan);
     TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
 	Tcl_ListObjAppendElement(NULL, pidsObj,
@@ -2224,7 +2224,7 @@ PipeInputProc(
 	return bytesRead;
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     if (errno == EPIPE) {
 	infoPtr->readFlags |= PIPE_EOF;
 	return 0;
@@ -2283,7 +2283,7 @@ PipeOutputProc(
      */
 
     if (infoPtr->writeError) {
-	TclWinConvertError(infoPtr->writeError);
+	Tcl_WinConvertError(infoPtr->writeError);
 	infoPtr->writeError = 0;
 	goto error;
     }
@@ -2303,7 +2303,7 @@ PipeOutputProc(
 		ckfree(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc(toWrite);
+	    infoPtr->writeBuf = (char *)ckalloc(toWrite);
 	}
 	memcpy(infoPtr->writeBuf, buf, toWrite);
 	infoPtr->toWrite = toWrite;
@@ -2318,7 +2318,7 @@ PipeOutputProc(
 
 	if (WriteFile(filePtr->handle, (LPVOID) buf, (DWORD) toWrite,
 		&bytesWritten, (LPOVERLAPPED) NULL) == FALSE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    goto error;
 	}
     }
@@ -2711,7 +2711,7 @@ TclWinAddProcess(
     void *hProcess,		/* Handle to process */
     unsigned long id)		/* Global process identifier */
 {
-    ProcInfo *procPtr = ckalloc(sizeof(ProcInfo));
+    ProcInfo *procPtr = (ProcInfo*)ckalloc(sizeof(ProcInfo));
 
     PipeInit();
 
@@ -2740,10 +2740,9 @@ TclWinAddProcess(
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
 int
 Tcl_PidObjCmd(
-    ClientData dummy,		/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -2772,7 +2771,7 @@ Tcl_PidObjCmd(
 	}
 
 	pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
-	resultPtr = Tcl_NewObj();
+	TclNewObj(resultPtr);
 	for (i = 0; i < pipePtr->numPids; i++) {
 	    Tcl_ListObjAppendElement(/*interp*/ NULL, resultPtr,
 		    Tcl_NewWideIntObj((unsigned)
@@ -2812,7 +2811,7 @@ WaitForRead(
 				 * or not. */
 {
     DWORD timeout, count;
-    HANDLE *handle = ((WinFile *) infoPtr->readFile)->handle;
+    HANDLE *handle = (HANDLE *)((WinFile *) infoPtr->readFile)->handle;
 
     while (1) {
 	/*
@@ -2851,7 +2850,7 @@ WaitForRead(
 
 	if (PeekNamedPipe(handle, (LPVOID) NULL, (DWORD) 0,
 		(LPDWORD) NULL, &count, (LPDWORD) NULL) != TRUE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 
 	    /*
 	     * Check to see if the peek failed because of EOF.
@@ -3189,9 +3188,9 @@ PipeThreadActionProc(
 
 Tcl_Channel
 TclpOpenTemporaryFile(
-    Tcl_Obj *dirObj,
+    TCL_UNUSED(Tcl_Obj *) /*dirObj*/,
     Tcl_Obj *basenameObj,
-    Tcl_Obj *extensionObj,
+    TCL_UNUSED(Tcl_Obj *) /*extensionObj*/,
     Tcl_Obj *resultingNameObj)
 {
     WCHAR name[MAX_PATH];
@@ -3261,7 +3260,7 @@ TclpOpenTemporaryFile(
 	    TCL_READABLE|TCL_WRITABLE);
 
   gotError:
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     return NULL;
 }
 
@@ -3286,9 +3285,9 @@ TclPipeThreadCreateTI(
 {
     TclPipeThreadInfo *pipeTI;
 #ifndef _PTI_USE_CKALLOC
-    pipeTI = malloc(sizeof(TclPipeThreadInfo));
+    pipeTI = (TclPipeThreadInfo *)malloc(sizeof(TclPipeThreadInfo));
 #else
-    pipeTI = ckalloc(sizeof(TclPipeThreadInfo));
+    pipeTI = (TclPipeThreadInfo *)ckalloc(sizeof(TclPipeThreadInfo));
 #endif /* !_PTI_USE_CKALLOC */
     pipeTI->evControl = CreateEventW(NULL, FALSE, FALSE, NULL);
     pipeTI->state = PTI_STATE_IDLE;
@@ -3575,9 +3574,7 @@ TclPipeThreadStop(
 	     * Cancel all sync-IO of this thread (may be blocked there).
 	     */
 
-	    if (tclWinProcs.cancelSynchronousIo) {
-		tclWinProcs.cancelSynchronousIo(hThread);
-	    }
+	    CancelSynchronousIo(hThread);
 
 	    /*
 	     * Wait at most 20 milliseconds for the reader thread to close

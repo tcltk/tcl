@@ -322,11 +322,9 @@ The version number for the operating system running on this machine.
 On UNIX machines, this is the value returned by \fBuname -r\fR.
 .TP
 \fBpathSeparator\fR
-.VS 8.6
 '\" Defined by TIP #315
 The character that should be used to \fBsplit\fR PATH-like environment
 variables into their corresponding list of directory names.
-.VE 8.6
 .TP
 \fBplatform\fR
 .

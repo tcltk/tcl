@@ -5,8 +5,8 @@
  *	integers or floating-point numbers or booleans, doing syntax checking
  *	along the way.
  *
- * Copyright (c) 1990-1993 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 1990-1993 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -53,7 +53,7 @@ Tcl_GetInt(
     if (obj.refCount > 1) {
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
-    TclFreeIntRep(&obj);
+    TclFreeInternalRep(&obj);
     return code;
 }
 
@@ -97,7 +97,7 @@ Tcl_GetDouble(
     if (obj.refCount > 1) {
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
-    TclFreeIntRep(&obj);
+    TclFreeInternalRep(&obj);
     return code;
 }
 
@@ -110,7 +110,7 @@ Tcl_GetDouble(
  *	string.
  *
  * Results:
- *	The return value is normally TCL_OK; in this case *boolPtr will be set
+ *	The return value is normally TCL_OK; in this case *intPtr will be set
  *	to the 0/1 value equivalent to src. If src is improperly formed then
  *	TCL_ERROR is returned and an error message will be left in the
  *	interp's result.
@@ -126,7 +126,7 @@ Tcl_GetBoolean(
     Tcl_Interp *interp,		/* Interpreter used for error reporting. */
     const char *src,		/* String containing one of the boolean values
 				 * 1, 0, true, false, yes, no, on, off. */
-    int *boolPtr)		/* Place to store converted result, which will
+    int *intPtr)		/* Place to store converted result, which will
 				 * be 0 or 1. */
 {
     Tcl_Obj obj;
@@ -142,7 +142,7 @@ Tcl_GetBoolean(
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
     if (code == TCL_OK) {
-	TclGetBooleanFromObj(NULL, &obj, boolPtr);
+	TclGetBooleanFromObj(NULL, &obj, intPtr);
     }
     return code;
 }

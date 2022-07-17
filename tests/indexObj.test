@@ -2,21 +2,22 @@
 # tkIndexObj.c, which implement indexed table lookups.  The tests here are
 # organized in the standard fashion for Tcl tests.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testindexobj [llength [info commands testindexobj]]
+testConstraint testgetintforindex [llength [info commands testgetintforindex]]
 testConstraint testparseargs [llength [info commands testparseargs]]
 
 test indexObj-1.1 {exact match} testindexobj {
@@ -91,46 +92,58 @@ test indexObj-4.1 {free old internal representation} testindexobj {
 
 test indexObj-5.1 {Tcl_WrongNumArgs} testindexobj {
     testwrongnumargs 1 "?-switch?" mycmd
-} "wrong # args: should be \"mycmd ?-switch?\""
+} {wrong # args: should be "mycmd ?-switch?"}
 test indexObj-5.2 {Tcl_WrongNumArgs} testindexobj {
     testwrongnumargs 2 "bar" mycmd foo
-} "wrong # args: should be \"mycmd foo bar\""
+} {wrong # args: should be "mycmd foo bar"}
 test indexObj-5.3 {Tcl_WrongNumArgs} testindexobj {
     testwrongnumargs 0 "bar" mycmd foo
-} "wrong # args: should be \"bar\""
+} {wrong # args: should be "bar"}
 test indexObj-5.4 {Tcl_WrongNumArgs} testindexobj {
     testwrongnumargs 0 "" mycmd foo
-} "wrong # args: should be \"\""
+} {wrong # args: should be ""}
 test indexObj-5.5 {Tcl_WrongNumArgs} testindexobj {
     testwrongnumargs 1 "" mycmd foo
-} "wrong # args: should be \"mycmd\""
+} {wrong # args: should be "mycmd"}
 test indexObj-5.6 {Tcl_WrongNumArgs} testindexobj {
     testwrongnumargs 2 "" mycmd foo
-} "wrong # args: should be \"mycmd foo\""
+} {wrong # args: should be "mycmd foo"}
 # Contrast this with test proc-3.6; they have to be like this because
 # of [Bug 1066837] so Itcl won't break.
 test indexObj-5.7 {Tcl_WrongNumArgs} {testindexobj obsolete} {
     testwrongnumargs 2 "fee fi" "fo fum" foo bar
-} "wrong # args: should be \"fo fum foo fee fi\""
+} {wrong # args: should be "fo fum foo fee fi"}
 
 test indexObj-6.1 {Tcl_GetIndexFromObjStruct} testindexobj {
     set x a
     testgetindexfromobjstruct $x 0
-} "wrong # args: should be \"testgetindexfromobjstruct a 0\""
+} {wrong # args: should be "testgetindexfromobjstruct a 0"}
 test indexObj-6.2 {Tcl_GetIndexFromObjStruct} testindexobj {
     set x a
     testgetindexfromobjstruct $x 0
     testgetindexfromobjstruct $x 0
-} "wrong # args: should be \"testgetindexfromobjstruct a 0\""
+} {wrong # args: should be "testgetindexfromobjstruct a 0"}
 test indexObj-6.3 {Tcl_GetIndexFromObjStruct} testindexobj {
     set x c
     testgetindexfromobjstruct $x 1
-} "wrong # args: should be \"testgetindexfromobjstruct c 1\""
+} {wrong # args: should be "testgetindexfromobjstruct c 1"}
 test indexObj-6.4 {Tcl_GetIndexFromObjStruct} testindexobj {
     set x c
     testgetindexfromobjstruct $x 1
     testgetindexfromobjstruct $x 1
-} "wrong # args: should be \"testgetindexfromobjstruct c 1\""
+} {wrong # args: should be "testgetindexfromobjstruct c 1"}
+test indexObj-6.5 {Tcl_GetIndexFromObjStruct with TCL_EXACT flag} -constraints testindexobj -body {
+    set x e
+    testgetindexfromobjstruct $x 0 1
+} -returnCodes error -result {bad dummy "e": must be a, c, or ee}
+test indexObj-6.6 {Tcl_GetIndexFromObjStruct with NULL input} -constraints testindexobj -body {
+    set x ""
+    testgetindexfromobjstruct $x 0
+} -returnCodes error -result {ambiguous dummy "": must be a, c, or ee}
+test indexObj-6.7 {Tcl_GetIndexFromObjStruct} testindexobj {
+    set x ""
+    testgetindexfromobjstruct $x -1 32
+} "wrong # args: should be \"testgetindexfromobjstruct {} -1 32\""
 
 test indexObj-7.1 {Tcl_ParseArgsObjv} testparseargs {
     testparseargs
@@ -157,6 +170,52 @@ test indexObj-7.7 {Tcl_ParseArgsObjv memory management} testparseargs {
     testparseargs 1 2 3 4 5 6 7 8 9 0 -bool 1 2 3 4 5 6 7 8 9 0
 } {1 21 {testparseargs 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0}}
 
+test indexObj-8.1 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex 0 0
+} 0
+test indexObj-8.2 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex -1 0
+} -1
+test indexObj-8.3 {Tcl_GetIntForIndex integer} testgetintforindex {
+    testgetintforindex -2 0
+} -1
+test indexObj-8.4 {Tcl_GetIntForIndex INT_MAX} testgetintforindex {
+    testgetintforindex 2147483647 0
+} 2147483647
+test indexObj-8.5 {Tcl_GetIntForIndex INT_MAX+1} testgetintforindex {
+    testgetintforindex 2147483648 0
+} 2147483647
+test indexObj-8.6 {Tcl_GetIntForIndex end-1} testgetintforindex {
+    testgetintforindex end-1 2147483646
+} 2147483645
+test indexObj-8.7 {Tcl_GetIntForIndex end-1} testgetintforindex {
+    testgetintforindex end-1 2147483647
+} 2147483646
+test indexObj-8.8 {Tcl_GetIntForIndex end} testgetintforindex {
+    testgetintforindex end 2147483646
+} 2147483646
+test indexObj-8.9 {Tcl_GetIntForIndex end} testgetintforindex {
+    testgetintforindex end 2147483647
+} 2147483647
+test indexObj-8.10 {Tcl_GetIntForIndex end-1} testgetintforindex {
+    testgetintforindex end-1 -1
+} -2
+test indexObj-8.11 {Tcl_GetIntForIndex end-1} testgetintforindex {
+    testgetintforindex end-1 -2
+} -3
+test indexObj-8.12 {Tcl_GetIntForIndex end} testgetintforindex {
+    testgetintforindex end -1
+} -1
+test indexObj-8.13 {Tcl_GetIntForIndex end} testgetintforindex {
+    testgetintforindex end -2
+} -2
+test indexObj-8.14 {Tcl_GetIntForIndex end+1} testgetintforindex {
+    testgetintforindex end+1 -1
+} 0
+test indexObj-8.15 {Tcl_GetIntForIndex end+1} testgetintforindex {
+    testgetintforindex end+1 -2
+} -1
+
 # cleanup
 ::tcltest::cleanupTests
 return

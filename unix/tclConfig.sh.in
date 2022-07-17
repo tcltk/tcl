@@ -23,7 +23,8 @@ TCL_DEFS='@DEFS@'
 
 # TCL_DBGX used to be used to distinguish debug vs. non-debug builds.
 # This was a righteous pain so the core doesn't do that any more.
-TCL_DBGX=
+# DEPRECATED, will be removed in Tcl 9!
+TCL_DBGX=''
 
 # Default flags used in an optimized and debuggable build, respectively.
 TCL_CFLAGS_DEBUG='@CFLAGS_DEBUG@'

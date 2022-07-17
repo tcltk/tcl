@@ -14,7 +14,7 @@ mp_err mp_sqr(const mp_int *a, mp_int *b)
               (a->used >= MP_KARATSUBA_SQR_CUTOFF)) {
       err = s_mp_karatsuba_sqr(a, b);
    } else if (MP_HAS(S_MP_SQR_FAST) && /* can we use the fast comba multiplier? */
-              (((a->used * 2) + 1) < PRIVATE_MP_WARRAY) &&
+              (((a->used * 2) + 1) < MP_WARRAY) &&
               (a->used < (MP_MAXFAST / 2))) {
       err = s_mp_sqr_fast(a, b);
    } else if (MP_HAS(S_MP_SQR)) {

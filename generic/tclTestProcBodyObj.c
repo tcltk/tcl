@@ -5,7 +5,7 @@
  *	creation of Tcl procedures whose body argument is a Tcl_Obj of type
  *	"procbody" rather than a string.
  *
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright © 1998 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -20,7 +20,7 @@
  * name and version of this package
  */
 
-static const char packageName[] = "procbodytest";
+static const char packageName[] = "tcl::procbodytest";
 static const char packageVersion[] = "1.1";
 
 /*
@@ -45,9 +45,9 @@ typedef struct CmdTable {
  * Declarations for functions defined in this file.
  */
 
-static int	ProcBodyTestProcObjCmd(ClientData dummy,
+static int	ProcBodyTestProcObjCmd(void *dummy,
 			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int	ProcBodyTestCheckObjCmd(ClientData dummy,
+static int	ProcBodyTestCheckObjCmd(void *dummy,
 			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
@@ -75,7 +75,7 @@ static const CmdTable safeCommands[] = {
  *
  * Procbodytest_Init --
  *
- *	This function initializes the "procbodytest" package.
+ *	This function initializes the "tcl::procbodytest" package.
  *
  * Results:
  *	A standard Tcl result.
@@ -99,7 +99,7 @@ Procbodytest_Init(
  *
  * Procbodytest_SafeInit --
  *
- *	This function initializes the "procbodytest" package.
+ *	This function initializes the "tcl::procbodytest" package.
  *
  * Results:
  *	A standard Tcl result.
@@ -228,7 +228,7 @@ ProcBodyTestInitInternal(
 
 static int
 ProcBodyTestProcObjCmd(
-    ClientData dummy,		/* context; not used */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
@@ -315,7 +315,7 @@ ProcBodyTestProcObjCmd(
  *	procbodytest::check
  *
  *  Performs an internal check that the Tcl_PkgPresent() command returns
- *  the same version number as was registered when the procbodytest package
+ *  the same version number as was registered when the tcl::procbodytest package
  *  was provided.  Places a boolean in the interp result indicating the
  *  test outcome.
  *
@@ -327,7 +327,7 @@ ProcBodyTestProcObjCmd(
 
 static int
 ProcBodyTestCheckObjCmd(
-    ClientData dummy,		/* context; not used */
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
     int objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */

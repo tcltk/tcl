@@ -95,8 +95,9 @@ a b c d e f g h i
 .CE
 .VE TIP505
 .SH "SEE ALSO"
-list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n),
-lset(n), lrange(n), lremove(n), lsort(n),
+list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n),
+lreverse(n), lsearch(n), lset(n), lsort(n),
 string(n)
 .SH KEYWORDS
 element, list, replace

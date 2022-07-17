@@ -5,7 +5,7 @@
  *	the Windows "LoadLibrary" and "GetProcAddress" API for dynamic
  *	loading.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -20,7 +20,9 @@
  */
 
 static WCHAR *dllDirectoryName = NULL;
+#if TCL_THREADS
 static Tcl_Mutex dllDirectoryNameMutex;
+#endif
 
 /*
  * Static functions defined within this file.
@@ -61,7 +63,7 @@ TclpDlopen(
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
-    int flags)
+    TCL_UNUSED(int) /*flags*/)
 {
     HINSTANCE hInstance = NULL;
     const WCHAR *nativeName;
@@ -74,7 +76,7 @@ TclpDlopen(
      * relative path.
      */
 
-    nativeName = Tcl_FSGetNativePath(pathPtr);
+    nativeName = (const WCHAR *)Tcl_FSGetNativePath(pathPtr);
     if (nativeName != NULL) {
 	hInstance = LoadLibraryExW(nativeName, NULL,
 		LOAD_WITH_ALTERED_SEARCH_PATH);
@@ -112,10 +114,11 @@ TclpDlopen(
          * first error for reporting purposes.
          */
         if (firstError == ERROR_MOD_NOT_FOUND ||
-            firstError == ERROR_DLL_NOT_FOUND)
+            firstError == ERROR_DLL_NOT_FOUND) {
             lastError = GetLastError();
-        else
+        } else {
             lastError = firstError;
+        }
 
 	errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
 		Tcl_GetString(pathPtr));
@@ -159,7 +162,7 @@ TclpDlopen(
 		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", -1);
                 break;
             default:
-		TclWinConvertError(lastError);
+		Tcl_WinConvertError(lastError);
 		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), -1);
 	    }
 	    Tcl_SetObjResult(interp, errMsg);
@@ -171,7 +174,7 @@ TclpDlopen(
      * Succeded; package everything up for Tcl.
      */
 
-    handlePtr = ckalloc(sizeof(struct Tcl_LoadHandle_));
+    handlePtr = (Tcl_LoadHandle)ckalloc(sizeof(struct Tcl_LoadHandle_));
     handlePtr->clientData = (ClientData) hInstance;
     handlePtr->findSymbolProcPtr = &FindSymbol;
     handlePtr->unloadFileProcPtr = &UnloadFile;
@@ -203,14 +206,14 @@ FindSymbol(
     const char *symbol)
 {
     HINSTANCE hInstance = (HINSTANCE) loadHandle->clientData;
-    Tcl_PackageInitProc *proc = NULL;
+    void *proc = NULL;
 
     /*
      * For each symbol, check for both Symbol and _Symbol, since Borland
      * generates C symbols with a leading '_' by default.
      */
 
-    proc = (void *) GetProcAddress(hInstance, symbol);
+    proc = (void *)GetProcAddress(hInstance, symbol);
     if (proc == NULL) {
 	Tcl_DString ds;
 	const char *sym2;
@@ -218,7 +221,7 @@ FindSymbol(
 	Tcl_DStringInit(&ds);
 	TclDStringAppendLiteral(&ds, "_");
 	sym2 = Tcl_DStringAppend(&ds, symbol, -1);
-	proc = (Tcl_PackageInitProc *) GetProcAddress(hInstance, sym2);
+	proc = (void *)GetProcAddress(hInstance, sym2);
 	Tcl_DStringFree(&ds);
     }
     if (proc == NULL && interp != NULL) {
@@ -257,36 +260,6 @@ UnloadFile(
 
     FreeLibrary(hInstance);
     ckfree(loadHandle);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGuessPackageName --
- *
- *	If the "load" command is invoked without providing a package name,
- *	this function is invoked to try to figure it out.
- *
- * Results:
- *	Always returns 0 to indicate that we couldn't figure out a package
- *	name; generic code will then try to guess the package from the file
- *	name. A return value of 1 would have meant that we figured out the
- *	package name and put it in bufPtr.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGuessPackageName(
-    const char *fileName,	/* Name of file containing package (already
-				 * translated to local form if needed). */
-    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
-				 * name to this if possible. */
-{
-    return 0;
 }
 
 /*
@@ -409,7 +382,7 @@ InitDLLDirectoryName(void)
 	id *= 16777619;
     }
 
-    TclWinConvertError(lastError);
+    Tcl_WinConvertError(lastError);
     return TCL_ERROR;
 
     /*
@@ -417,7 +390,7 @@ InitDLLDirectoryName(void)
      */
 
   copyToGlobalBuffer:
-    dllDirectoryName = ckalloc((nameLen+1) * sizeof(WCHAR));
+    dllDirectoryName = (WCHAR *)ckalloc((nameLen+1) * sizeof(WCHAR));
     wcscpy(dllDirectoryName, name);
     return TCL_OK;
 }

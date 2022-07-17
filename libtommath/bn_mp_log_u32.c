@@ -6,7 +6,7 @@
 /* Compute log_{base}(a) */
 static mp_word s_pow(mp_word base, mp_word exponent)
 {
-   mp_word result = 1;
+   mp_word result = 1u;
    while (exponent != 0u) {
       if ((exponent & 1u) == 1u) {
          result *= base;
@@ -20,8 +20,8 @@ static mp_word s_pow(mp_word base, mp_word exponent)
 
 static mp_digit s_digit_ilogb(mp_digit base, mp_digit n)
 {
-   mp_word bracket_low = 1, bracket_mid, bracket_high, N;
-   mp_digit ret, high = 1uL, low = 0uL, mid;
+   mp_word bracket_low = 1u, bracket_mid, bracket_high, N;
+   mp_digit ret, high = 1u, low = 0uL, mid;
 
    if (n < base) {
       return 0uL;
@@ -40,7 +40,7 @@ static mp_digit s_digit_ilogb(mp_digit base, mp_digit n)
       bracket_high *= bracket_high;
    }
 
-   while (((mp_digit)(high - low)) > 1uL) {
+   while (((mp_digit)(high - low)) > 1u) {
       mid = (low + high) >> 1;
       bracket_mid = bracket_low * s_pow(base, (mp_word)(mid - low));
 
@@ -70,11 +70,11 @@ static mp_digit s_digit_ilogb(mp_digit base, mp_digit n)
          as is the output of mp_bitcount.
          With the same problem: max size is INT_MAX * MP_DIGIT not INT_MAX only!
 */
-mp_err mp_log_u32(const mp_int *a, unsigned int base, unsigned int *c)
+mp_err mp_log_u32(const mp_int *a, uint32_t base, uint32_t *c)
 {
    mp_err err;
    mp_ord cmp;
-   unsigned int high, low, mid;
+   uint32_t high, low, mid;
    mp_int bracket_low, bracket_high, bracket_mid, t, bi_base;
 
    err = MP_OKAY;
@@ -98,12 +98,12 @@ mp_err mp_log_u32(const mp_int *a, unsigned int base, unsigned int *c)
          base >>= 1;
       }
       bit_count = mp_count_bits(a) - 1;
-      *c = (unsigned int)(bit_count/y);
+      *c = (uint32_t)(bit_count/y);
       return MP_OKAY;
    }
 
    if (a->used == 1) {
-      *c = (unsigned int)s_digit_ilogb(base, a->dp[0]);
+      *c = (uint32_t)s_digit_ilogb(base, a->dp[0]);
       return err;
    }
 
@@ -146,7 +146,7 @@ mp_err mp_log_u32(const mp_int *a, unsigned int base, unsigned int *c)
    while ((high - low) > 1u) {
       mid = (high + low) >> 1;
 
-      if ((err = mp_expt_u32(&bi_base, mid - low, &t)) != MP_OKAY) {
+      if ((err = mp_expt_u32(&bi_base, (uint32_t)(mid - low), &t)) != MP_OKAY) {
          goto LBL_ERR;
       }
       if ((err = mp_mul(&bracket_low, &t, &bracket_mid)) != MP_OKAY) {

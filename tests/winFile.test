@@ -4,20 +4,19 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[catch {package require tcltest 2.0.2}]} {
-    puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
-    return
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
 }
-namespace import -force ::tcltest::*
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testvolumetype [llength [info commands testvolumetype]]
 testConstraint notNTFS 0
@@ -25,6 +24,7 @@ testConstraint notNTFS 0
 if {[testConstraint testvolumetype]} {
     testConstraint notNTFS [expr {[testvolumetype] eq "NTFS"}]
 }
+testConstraint notWine [expr {![info exists ::env(CI_USING_WINE)]}]
 
 test winFile-1.1 {TclpGetUserHome} -constraints {win} -body {
     glob ~nosuchuser
@@ -151,7 +151,7 @@ if {[testConstraint win]} {
 test winFile-4.0 {
     Enhanced NTFS user/group permissions: test no acccess
 } -constraints {
-    win notNTFS
+    win notNTFS notWine
 } -setup {
     set owner [getuser $fname]
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
@@ -166,7 +166,7 @@ test winFile-4.0 {
 test winFile-4.1 {
     Enhanced NTFS user/group permissions: test readable only
 } -constraints {
-    win notNTFS
+    win notNTFS notWine
 } -setup {
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
 } -body {
@@ -177,7 +177,7 @@ test winFile-4.1 {
 test winFile-4.2 {
     Enhanced NTFS user/group permissions: test writable only
 } -constraints {
-    win notNTFS
+    win notNTFS notWine
 } -setup {
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
 } -body {

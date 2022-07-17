@@ -4,16 +4,16 @@
 # commands. Sourcing this file into Tcl runs the tests and generates output
 # for errors. No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[catch {package require tcltest 2.1}]} {
-    puts stderr "Skipping tests in [info script]. tcltest 2.1 required."
-    return
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
 }
 
 namespace eval ::tcl::test::cmdMZ {
@@ -24,8 +24,6 @@ namespace eval ::tcl::test::cmdMZ {
     namespace import ::tcltest::temporaryDirectory
     namespace import ::tcltest::testConstraint
     namespace import ::tcltest::test
-
-    testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
 
     proc ListGlobMatch {expected actual} {
 	if {[llength $expected] != [llength $actual]} {
@@ -61,7 +59,7 @@ test cmdMZ-1.4 {Tcl_PwdObjCmd: failure} -setup {
     # This test fails on various unix platforms (eg Linux) where permissions
     # caching causes this to fail. The caching is strictly incorrect, but we
     # have no control over that.
-    file attr . -permissions 000
+    file attr . -permissions 0
     pwd
 } -returnCodes error -cleanup {
     cd $cwd
@@ -301,19 +299,19 @@ test cmdMZ-4.10 {Tcl_SplitObjCmd: basic split commands} {
 } {]\n}
 test cmdMZ-4.11 {Tcl_SplitObjCmd: basic split commands} {
     apply {{} {
-        set x ab\000c
+        set x ab\x00c
         set y [split $x {}]
 	binary scan $y c* z
         return $z
     }}
 } {97 32 98 32 0 32 99}
 test cmdMZ-4.12 {Tcl_SplitObjCmd: basic split commands} {
-    split "a0ab1b2bbb3\000c4" ab\000c
+    split "a0ab1b2bbb3\x00c4" ab\x00c
 } {{} 0 {} 1 2 {} {} 3 {} 4}
 test cmdMZ-4.13 {Tcl_SplitObjCmd: basic split commands} {
-    # if not UTF-8 aware, result is "a {} {} b qw\xe5 {} N wq"
-    split "a\u4e4eb qw\u5e4e\x4e wq" " \u4e4e"
-} "a b qw\u5e4eN wq"
+    # if not UTF-8 aware, result is "a {} {} b qwå {} N wq"
+    split "a乎b qw幎N wq" " 乎"
+} "a b qw幎N wq"
 
 # The tests for Tcl_StringObjCmd are in string.test
 # The tests for Tcl_SubstObjCmd are in subst.test
@@ -324,8 +322,12 @@ test cmdMZ-4.13 {Tcl_SplitObjCmd: basic split commands} {
 proc _nrt_sleep {msec} {
     set usec [expr {$msec * 1000}]
     set stime [clock microseconds]
-    while {abs([clock microseconds] - $stime) < $usec} {after 0}
+    while {abs([clock microseconds] - $stime) < $usec} {
+      # don't use after 0 unless it's NRT-capable, so yes - busy-wait (but it's more precise):
+      # after 0
+    }
 }
+_nrt_sleep 0; # warm up (clock, compile, etc)
 
 test cmdMZ-5.1 {Tcl_TimeObjCmd: basic format of command} -body {
     time
@@ -342,9 +344,13 @@ test cmdMZ-5.4 {Tcl_TimeObjCmd: nothing happens with negative iteration counts} 
 test cmdMZ-5.5 {Tcl_TimeObjCmd: result format} -body {
     time {format 1}
 } -match regexp -result {^\d+ microseconds per iteration}
-test cmdMZ-5.6 {Tcl_TimeObjCmd: slower commands take longer} knownMsvcBug {
-    expr {[lindex [time {_nrt_sleep 1}] 0] < [lindex [time {_nrt_sleep 20}] 0]}
-} 1
+test cmdMZ-5.6 {Tcl_TimeObjCmd: slower commands take longer} -body {
+    set m1 [lindex [time {_nrt_sleep 0.01}] 0]
+    set m2 [lindex [time {_nrt_sleep 10.0}] 0]
+    list \
+	[expr {$m1 < $m2}] \
+	$m1 $m2; # interesting only in error case.
+} -match glob -result [list 1 *]
 test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
     list [catch {time {error foo}} msg] $msg $::errorInfo
 } {1 foo {foo
@@ -395,20 +401,21 @@ test cmdMZ-6.5a {Tcl_TimeRateObjCmd: result format and one iteration} {
 test cmdMZ-6.5b {Tcl_TimeRateObjCmd: result format without iterations} {
     regexp {^0 \ws/# 0 # 0 #/sec 0 net-ms$} [timerate {} 0 0]
 } 1
-test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measument} knownMsvcBug {
-    set m1 [timerate {_nrt_sleep 0} 20]
-    set m2 [timerate {_nrt_sleep 0.2} 20]
-    list \
+test cmdMZ-6.6 {Tcl_TimeRateObjCmd: slower commands take longer, but it remains almost the same time of measument} -body {
+    set m1 [timerate {_nrt_sleep 0.01} 50]
+    set m2 [timerate {_nrt_sleep 1.00} 50]
+    list [list \
 	[expr {[lindex $m1 0] < [lindex $m2 0]}] \
 	[expr {[lindex $m1 0] < 100}] \
 	[expr {[lindex $m2 0] > 100}] \
-	[expr {[lindex $m1 2] > 1000}] \
-	[expr {[lindex $m2 2] < 1000}] \
-	[expr {[lindex $m1 4] > 50000}] \
-	[expr {[lindex $m2 4] < 50000}] \
-	[expr {[lindex $m1 6] > 10 && [lindex $m1 6] < 100}] \
-	[expr {[lindex $m2 6] > 10 && [lindex $m2 6] < 100}]
-} [lrepeat 9 1]
+	[expr {[lindex $m1 2] > 500}] \
+	[expr {[lindex $m2 2] < 500}] \
+	[expr {[lindex $m1 4] > 10000}] \
+	[expr {[lindex $m2 4] < 10000}] \
+	[expr {[lindex $m1 6] > 5 && [lindex $m1 6] < 100}] \
+	[expr {[lindex $m2 6] > 5 && [lindex $m2 6] < 100}] \
+    ] $m1 $m2; # interesting only in error case.
+} -match glob -result [list [lrepeat 9 1] *]
 test cmdMZ-6.7 {Tcl_TimeRateObjCmd: errors generate right trace} {
     list [catch {timerate {error foo} 1} msg] $msg $::errorInfo
 } {1 foo {foo
@@ -421,35 +428,38 @@ test cmdMZ-6.7.1 {Tcl_TimeRateObjCmd: return from timerate} {
     proc r1 {} {upvar x x; timerate {incr x; return "r1"; incr x} 1000 10}
     list [r1] $x
 } {r1 1}
-test cmdMZ-6.8 {Tcl_TimeRateObjCmd: allow (conditional) break from timerate} {
+test cmdMZ-6.8 {Tcl_TimeRateObjCmd: allow (conditional) break from timerate} -body {
     set m1 [timerate {break}]
-    list \
+    list [list \
 	[expr {[lindex $m1 0] < 1000}] \
 	[expr {[lindex $m1 2] == 1}] \
 	[expr {[lindex $m1 4] > 1000}] \
-	[expr {[lindex $m1 6] < 10}]
-} {1 1 1 1}
-test cmdMZ-6.8.1 {Tcl_TimeRateObjCmd: allow (conditional) continue in timerate} {
+	[expr {[lindex $m1 6] < 10}] \
+    ] $m1; # interesting only in error case.
+} -match glob -result [list {1 1 1 1} *]
+test cmdMZ-6.8.1 {Tcl_TimeRateObjCmd: allow (conditional) continue in timerate} -body {
     set m1 [timerate {continue; return -code error "unexpected"} 1000 10]
-    list \
+    list [list \
 	[expr {[lindex $m1 0] < 1000}] \
 	[expr {[lindex $m1 2] == 10}] \
 	[expr {[lindex $m1 4] > 1000}] \
-	[expr {[lindex $m1 6] < 100}]
-} {1 1 1 1}
+	[expr {[lindex $m1 6] < 100}] \
+    ] $m1; # interesting only in error case.
+} -match glob -result [list {1 1 1 1} *]
 test cmdMZ-6.9 {Tcl_TimeRateObjCmd: max count of iterations} {
     set m1 [timerate {} 1000 5];	# max-count wins
     set m2 [timerate {_nrt_sleep 20} 1 5];	# max-time wins
     list [lindex $m1 2] [lindex $m2 2]
 } {5 1}
-test cmdMZ-6.10 {Tcl_TimeRateObjCmd: huge overhead cause 0us result} {
+test cmdMZ-6.10 {Tcl_TimeRateObjCmd: huge overhead cause 0us result} -body {
     set m1 [timerate -overhead 1e6 {_nrt_sleep 10} 100 1]
-    list \
+    list [list \
 	[expr {[lindex $m1 0] == 0.0}] \
 	[expr {[lindex $m1 2] == 1}] \
 	[expr {[lindex $m1 4] == 1000000}] \
-	[expr {[lindex $m1 6] <= 0.001}]
-} {1 1 1 1}
+	[expr {[lindex $m1 6] <= 0.001}] \
+    ] $m1; # interesting only in error case.
+} -match glob -result [list {1 1 1 1} *]
 test cmdMZ-6.11 {Tcl_TimeRateObjCmd: done/continue optimization rollback} {
     set m1 {set m2 ok}
     if 1 $m1

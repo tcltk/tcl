@@ -36,13 +36,11 @@ int
 int
 \fBTcl_SetEnsembleMappingDict\fR(\fIinterp, token, dictObj\fR)
 .sp
-.VS 8.6
 int
 \fBTcl_GetEnsembleParameterList\fR(\fIinterp, token, listObjPtr\fR)
 .sp
 int
 \fBTcl_SetEnsembleParameterList\fR(\fIinterp, token, listObj\fR)
-.VE 8.6
 .sp
 int
 \fBTcl_GetEnsembleSubcommandList\fR(\fIinterp, token, listObjPtr\fR)
@@ -163,7 +161,6 @@ All command names in prefixes set via \fBTcl_SetEnsembleMappingDict\fR
 must be fully qualified.
 .TP
 \fBformal pre-subcommand parameter list\fR (read-write)
-.VS 8.6
 A list of formal parameter names (the names only being used when generating
 error messages) that come at invocation of the ensemble between the name of
 the ensemble and the subcommand argument. NULL (the default) is equivalent to
@@ -174,7 +171,6 @@ respectively. The result of both of those functions is a Tcl result code
 ensemble) and the
 dictionary obtained from \fBTcl_GetEnsembleParameterList\fR should always be
 treated as immutable even if it is unshared.
-.VE 8.6
 .TP
 \fBsubcommand list\fR (read-write)
 .
@@ -213,6 +209,27 @@ namespace whose list of exported commands is used if both the mapping
 dictionary and the subcommand list properties are NULL. May be read
 using \fBTcl_GetEnsembleNamespace\fR which returns a Tcl result code
 (\fBTCL_OK\fR, or \fBTCL_ERROR\fR if the token does not refer to an ensemble).
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+\fBTcl_FindEnsemble\fR does not modify the reference count of its
+\fIcmdNameObj\fR argument; it only reads. Note however that this function may
+set the interpreter result; if that is the only place that is holding a
+reference to the object, it will be deleted.
+.PP
+The ensemble property getters (\fBTcl_GetEnsembleMappingDict\fR,
+\fBTcl_GetEnsembleParameterList\fR, \fBTcl_GetEnsembleSubcommandList\fR, and
+\fBTcl_GetEnsembleUnknownHandler\fR) do not manipulate the reference count of
+the values they provide out; if those are non-NULL, they will have a reference
+count of at least 1.  Note that these functions may set the interpreter
+result.
+.PP
+The ensemble property setters (\fBTcl_SetEnsembleMappingDict\fR,
+\fBTcl_SetEnsembleParameterList\fR, \fBTcl_SetEnsembleSubcommandList\fR, and
+\fBTcl_SetEnsembleUnknownHandler\fR) will increment the reference count of the
+new value of the property they are given if they succeed (and decrement the
+reference count of the old value of the property, if relevant). If the
+property setters return \fBTCL_ERROR\fR, the reference count of the Tcl_Obj
+argument is left unchanged.
 .SH "SEE ALSO"
 namespace(n), Tcl_DeleteCommandFromToken(3)
 .SH KEYWORDS

@@ -12,7 +12,7 @@
  * which will find the root in log(N) time where
  * each step involves a fair bit.
  */
-mp_err mp_root_u32(const mp_int *a, unsigned int b, mp_int *c)
+mp_err mp_root_u32(const mp_int *a, uint32_t b, mp_int *c)
 {
    mp_int t1, t2, t3, a_;
    mp_ord cmp;
@@ -40,7 +40,7 @@ mp_err mp_root_u32(const mp_int *a, unsigned int b, mp_int *c)
      log_2(n) because the bit-length of the "n" is measured
      with an int and hence the root is always < 2 (two).
    */
-   if (b > (unsigned int)(INT_MAX/2)) {
+   if (b > (uint32_t)(INT_MAX/2)) {
       mp_set(c, 1uL);
       c->sign = a->sign;
       err = MP_OKAY;

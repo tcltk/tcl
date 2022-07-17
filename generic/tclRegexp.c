@@ -4,8 +4,8 @@
  *	This file contains the public interfaces to the Tcl regular expression
  *	mechanism.
  *
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1998 Sun Microsystems, Inc.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -26,7 +26,7 @@
  *	regex.h		regexec.c	regfree.c
  *	regfronts.c	regguts.h
  *
- * Copyright (c) 1998 Henry Spencer.  All rights reserved.
+ * Copyright © 1998 Henry Spencer.  All rights reserved.
  *
  * Development of this software was funded, in part, by Cray Research Inc.,
  * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
@@ -109,20 +109,20 @@ const Tcl_ObjType tclRegexpType = {
     SetRegexpFromAny			/* setFromAnyProc */
 };
 
-#define RegexpSetIntRep(objPtr, rePtr)					\
+#define RegexpSetInternalRep(objPtr, rePtr)					\
     do {								\
-	Tcl_ObjIntRep ir;						\
+	Tcl_ObjInternalRep ir;						\
 	(rePtr)->refCount++;						\
 	ir.twoPtrValue.ptr1 = (rePtr);					\
 	ir.twoPtrValue.ptr2 = NULL;					\
-	Tcl_StoreIntRep((objPtr), &tclRegexpType, &ir);			\
+	Tcl_StoreInternalRep((objPtr), &tclRegexpType, &ir);			\
     } while (0)
 
-#define RegexpGetIntRep(objPtr, rePtr)					\
+#define RegexpGetInternalRep(objPtr, rePtr)					\
     do {								\
-	const Tcl_ObjIntRep *irPtr;					\
-	irPtr = TclFetchIntRep((objPtr), &tclRegexpType);		\
-	(rePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+	const Tcl_ObjInternalRep *irPtr;					\
+	irPtr = TclFetchInternalRep((objPtr), &tclRegexpType);		\
+	(rePtr) = irPtr ? (TclRegexp *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
 
@@ -271,8 +271,8 @@ Tcl_RegExpRange(
 	} else {
 	    string = regexpPtr->string;
 	}
-	*startPtr = Tcl_UtfAtIndex(string, regexpPtr->matches[index].rm_so);
-	*endPtr = Tcl_UtfAtIndex(string, regexpPtr->matches[index].rm_eo);
+	*startPtr = TclUtfAtIndex(string, regexpPtr->matches[index].rm_so);
+	*endPtr = TclUtfAtIndex(string, regexpPtr->matches[index].rm_eo);
     }
 }
 
@@ -482,7 +482,7 @@ Tcl_RegExpExecObj(
     regexpPtr->string = NULL;
     regexpPtr->objPtr = textObj;
 
-    udata = Tcl_GetUnicodeFromObj(textObj, &length);
+    udata = TclGetUnicodeFromObj_(textObj, &length);
 
     if (offset > length) {
 	offset = length;
@@ -598,7 +598,7 @@ Tcl_GetRegExpFromObj(
     TclRegexp *regexpPtr;
     const char *pattern;
 
-    RegexpGetIntRep(objPtr, regexpPtr);
+    RegexpGetInternalRep(objPtr, regexpPtr);
 
     if ((regexpPtr == NULL) || (regexpPtr->flags != flags)) {
 	pattern = TclGetStringFromObj(objPtr, &length);
@@ -608,7 +608,7 @@ Tcl_GetRegExpFromObj(
 	    return NULL;
 	}
 
-	RegexpSetIntRep(objPtr, regexpPtr);
+	RegexpSetInternalRep(objPtr, regexpPtr);
     }
     return (Tcl_RegExp) regexpPtr;
 }
@@ -676,9 +676,9 @@ TclRegAbout(
      * well and Tcl has other limits that constrain things as well...
      */
 
-    resultObj = Tcl_NewObj();
-    Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewWideIntObj((Tcl_WideInt) regexpPtr->re.re_nsub));
+    TclNewObj(resultObj);
+    TclNewIndexObj(infoObj, regexpPtr->re.re_nsub);
+    Tcl_ListObjAppendElement(NULL, resultObj, infoObj);
 
     /*
      * Now append a list of all the bit-flags set for the RE.
@@ -757,7 +757,7 @@ FreeRegexpInternalRep(
 {
     TclRegexp *regexpRepPtr;
 
-    RegexpGetIntRep(objPtr, regexpRepPtr);
+    RegexpGetInternalRep(objPtr, regexpRepPtr);
 
     assert(regexpRepPtr != NULL);
 
@@ -794,11 +794,11 @@ DupRegexpInternalRep(
 {
     TclRegexp *regexpPtr;
 
-    RegexpGetIntRep(srcPtr, regexpPtr);
+    RegexpGetInternalRep(srcPtr, regexpPtr);
 
     assert(regexpPtr != NULL);
 
-    RegexpSetIntRep(copyPtr, regexpPtr);
+    RegexpSetInternalRep(copyPtr, regexpPtr);
 }
 
 /*
@@ -916,7 +916,7 @@ CompileRegexp(
      * This is a new expression, so compile it and add it to the cache.
      */
 
-    regexpPtr = ckalloc(sizeof(TclRegexp));
+    regexpPtr = (TclRegexp*)ckalloc(sizeof(TclRegexp));
     regexpPtr->objPtr = NULL;
     regexpPtr->string = NULL;
     regexpPtr->details.rm_extend.rm_so = -1;
@@ -971,7 +971,7 @@ CompileRegexp(
      */
 
     regexpPtr->matches =
-	    ckalloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
+	    (regmatch_t*)ckalloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
 
     /*
      * Initialize the refcount to one initially, since it is in the cache.
@@ -997,7 +997,7 @@ CompileRegexp(
 	tsdPtr->patLengths[i+1] = tsdPtr->patLengths[i];
 	tsdPtr->regexps[i+1] = tsdPtr->regexps[i];
     }
-    tsdPtr->patterns[0] = ckalloc(length + 1);
+    tsdPtr->patterns[0] = (char *)ckalloc(length + 1);
     memcpy(tsdPtr->patterns[0], string, length + 1);
     tsdPtr->patLengths[0] = length;
     tsdPtr->regexps[0] = regexpPtr;
@@ -1053,7 +1053,7 @@ FreeRegexp(
 
 static void
 FinalizeRegexp(
-    ClientData clientData)	/* Not used. */
+    TCL_UNUSED(ClientData))
 {
     int i;
     TclRegexp *regexpPtr;

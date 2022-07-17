@@ -12,12 +12,14 @@ mp_err mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
        digs = a->used + b->used + 1;
    mp_sign neg = (a->sign == b->sign) ? MP_ZPOS : MP_NEG;
 
-   if (MP_HAS(S_MP_BALANCE_MUL) &&
+   if (a == b) {
+       return mp_sqr(a,c);
+   } else if (MP_HAS(S_MP_BALANCE_MUL) &&
        /* Check sizes. The smaller one needs to be larger than the Karatsuba cut-off.
         * The bigger one needs to be at least about one MP_KARATSUBA_MUL_CUTOFF bigger
         * to make some sense, but it depends on architecture, OS, position of the
         * stars... so YMMV.
-        * Using it to cut the input into slices small enough for fast_s_mp_mul_digs
+        * Using it to cut the input into slices small enough for s_mp_mul_digs_fast
         * was actually slower on the author's machine, but YMMV.
         */
        (min_len >= MP_KARATSUBA_MUL_CUTOFF) &&
@@ -38,7 +40,7 @@ mp_err mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
                * have less than MP_WARRAY digits and the number of
                * digits won't affect carry propagation
                */
-              (digs < PRIVATE_MP_WARRAY) &&
+              (digs < MP_WARRAY) &&
               (min_len <= MP_MAXFAST)) {
       err = s_mp_mul_digs_fast(a, b, c, digs);
    } else if (MP_HAS(S_MP_MUL_DIGS)) {

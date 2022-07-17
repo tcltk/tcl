@@ -22,10 +22,8 @@ Tcl_Interp *
 int
 \fBTcl_InterpDeleted\fR(\fIinterp\fR)
 .sp
-.VS 8.6
 int
 \fBTcl_InterpActive\fR(\fIinterp\fR)
-.VE 8.6
 .SH ARGUMENTS
 .AS Tcl_Interp *interp
 .AP Tcl_Interp *interp in
@@ -70,14 +68,12 @@ deleted and when the whole interpreter is being deleted. In the former case
 the callback may recreate the data being deleted, but this would lead to an
 infinite loop if the interpreter were being deleted.
 .PP
-.VS 8.6
 \fBTcl_InterpActive\fR is useful for determining whether there is any
 execution of scripts ongoing in an interpreter, which is a useful piece of
 information when Tcl is embedded in a garbage-collected environment and it
 becomes necessary to determine whether the interpreter is a candidate for
 deletion. The function returns a true value if the interpreter has at least
 one active execution running inside it, and a false value otherwise.
-.VE 8.6
 .SH "INTERPRETERS AND MEMORY MANAGEMENT"
 .PP
 \fBTcl_DeleteInterp\fR can be called at any time on an interpreter that may
@@ -138,12 +134,10 @@ All uses of interpreters in Tcl and Tk have already been protected.
 Extension writers should ensure that their code also properly protects any
 additional interpreters used, as described above.
 .PP
-.VS 8.6
 Note that the protection mechanisms do not work well with conventional garbage
 collection systems. When in such a managed environment, \fBTcl_InterpActive\fR
 should be used to determine when an interpreter is a candidate for deletion
 due to inactivity.
-.VE 8.6
 .SH "SEE ALSO"
 Tcl_Preserve(3), Tcl_Release(3)
 .SH KEYWORDS

@@ -4,18 +4,20 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require tcltest
-namespace import ::tcltest::*
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.5
+    namespace import -force ::tcltest::*
+}
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testcmdtrace [llength [info commands testcmdtrace]]
 testConstraint testevalobjv [llength [info commands testevalobjv]]
@@ -2197,11 +2199,11 @@ foo {if {[catch {bar}]} {
 	}} 2 error leavestep
 foo foo 0 error leave}}
 
-test trace-28.4 {exec traces in slave with 'return -code error'} {
-    interp create slave
-    interp alias slave traceExecute {} traceExecute
+test trace-28.4 {exec traces in child with 'return -code error'} {
+    interp create child
+    interp alias child traceExecute {} traceExecute
     set info {}
-    set res [interp eval slave {
+    set res [interp eval child {
 	set info {}
 	set res {}
 
@@ -2229,7 +2231,7 @@ test trace-28.4 {exec traces in slave with 'return -code error'} {
 
 	list $res
     }]
-    interp delete slave
+    interp delete child
     lappend res [join $info \n]
 } {{error error} {foo foo enter
 foo {if {[catch {bar}]} {
@@ -2312,8 +2314,8 @@ test trace-28.10 {exec trace info nonsense} {
 } {1 {wrong # args: should be "trace remove execution name opList command"}}
 
 test trace-29.1 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
-    testcmdtrace tracetest {set stuff [expr 14 + 16]}
-} {{expr 14 + 16} {expr 14 + 16} {set stuff [expr 14 + 16]} {set stuff 30}}
+    testcmdtrace tracetest {set stuff [expr {14 + 16}]}
+} {{expr {14 + 16}} {expr {14 + 16}} {set stuff [expr {14 + 16}]} {set stuff 30}}
 test trace-29.2 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
     testcmdtrace tracetest {set stuff [info tclversion]}
 } [concat {{info tclversion} {info tclversion} ::tcl::info::tclversion {::tcl::info::tclversion} {set stuff [info tclversion]}} [list "set stuff [info tclversion]"]]

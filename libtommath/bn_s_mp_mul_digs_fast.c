@@ -23,7 +23,7 @@ mp_err s_mp_mul_digs_fast(const mp_int *a, const mp_int *b, mp_int *c, int digs)
 {
    int      olduse, pa, ix, iz;
    mp_err   err;
-   mp_digit W[PRIVATE_MP_WARRAY];
+   mp_digit W[MP_WARRAY];
    mp_word  _W;
 
    /* grow the destination as required */

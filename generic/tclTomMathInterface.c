@@ -6,14 +6,14 @@
  *	This file contains procedures that are used as a 'glue' layer between
  *	Tcl and libtommath.
  *
- * Copyright (c) 2005 by Kevin B. Kenny.  All rights reserved.
+ * Copyright © 2005 Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
 #include "tclInt.h"
-#include "tommath.h"
+#include "tclTomMath.h"
 
 MODULE_SCOPE const TclTomMathStubs tclTomMathStubs;
 
@@ -88,66 +88,6 @@ int
 TclBN_revision(void)
 {
     return TCLTOMMATH_REVISION;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclBNInitBignumFromWideInt --
- *
- *	Allocate and initialize a 'bignum' from a Tcl_WideInt
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The 'bignum' is constructed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclBNInitBignumFromWideInt(
-    mp_int *a,			/* Bignum to initialize */
-    Tcl_WideInt v)		/* Initial value */
-{
-	if (mp_init(a) != MP_OKAY) {
-	wipanic:
-	    Tcl_Panic("initialization failure in TclBNInitBignumFromWideInt");
-	}
-    if (v < 0) {
-	mp_set_ull(a, (Tcl_WideUInt)(-v));
-	if (mp_neg(a, a) != MP_OKAY) goto wipanic;
-    } else {
-	mp_set_ull(a, (Tcl_WideUInt)v);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclBNInitBignumFromWideUInt --
- *
- *	Allocate and initialize a 'bignum' from a Tcl_WideUInt
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The 'bignum' is constructed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclBNInitBignumFromWideUInt(
-    mp_int *a,			/* Bignum to initialize */
-    Tcl_WideUInt v)		/* Initial value */
-{
-	if (mp_init(a) != MP_OKAY) {
-	    Tcl_Panic("initialization failure in TclBNInitBignumFromWideUInt");
-	}
-	mp_set_ull(a, v);
 }
 
 /*

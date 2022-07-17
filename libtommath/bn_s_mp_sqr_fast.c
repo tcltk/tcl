@@ -16,7 +16,7 @@ After that loop you do the squares and add them in.
 mp_err s_mp_sqr_fast(const mp_int *a, mp_int *b)
 {
    int       olduse, pa, ix, iz;
-   mp_digit  W[PRIVATE_MP_WARRAY], *tmpx;
+   mp_digit  W[MP_WARRAY], *tmpx;
    mp_word   W1;
    mp_err    err;
 

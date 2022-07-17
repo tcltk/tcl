@@ -4,7 +4,7 @@
 /* SPDX-License-Identifier: Unlicense */
 
 /* calculate c = a**b  using a square-multiply algorithm */
-mp_err mp_expt_u32(const mp_int *a, unsigned int b, mp_int *c)
+mp_err mp_expt_u32(const mp_int *a, uint32_t b, mp_int *c)
 {
    mp_err err;
 

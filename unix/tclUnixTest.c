@@ -3,8 +3,8 @@
  *
  *	Contains platform specific test commands for the Unix platform.
  *
- * Copyright (c) 1996-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright © 1996-1997 Sun Microsystems, Inc.
+ * Copyright © 1998 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -129,7 +129,7 @@ TclplatformtestInit(
 
 static int
 TestfilehandlerCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -314,7 +314,7 @@ TestFileHandlerProc(
     int mask)			/* Indicates which events happened:
 				 * TCL_READABLE or TCL_WRITABLE. */
 {
-    Pipe *pipePtr = clientData;
+    Pipe *pipePtr = (Pipe *)clientData;
 
     if (mask & TCL_READABLE) {
 	pipePtr->readCount++;
@@ -343,7 +343,7 @@ TestFileHandlerProc(
 
 static int
 TestfilewaitCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -411,7 +411,7 @@ TestfilewaitCmd(
 
 static int
 TestfindexecutableCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -453,7 +453,7 @@ TestfindexecutableCmd(
 
 static int
 TestforkCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -499,7 +499,7 @@ TestforkCmd(
 
 static int
 TestalarmCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
@@ -528,6 +528,7 @@ TestalarmCmd(
     (void) alarm(sec);
     return TCL_OK;
 #else
+
     Tcl_AppendResult(interp,
 	    "warning: sigaction SA_RESTART not support on this platform",
 	    NULL);
@@ -553,7 +554,7 @@ TestalarmCmd(
 
 static void
 AlarmHandler(
-    int signum)
+    TCL_UNUSED(int) /*signum*/)
 {
     gotsig = "1";
 }
@@ -576,10 +577,10 @@ AlarmHandler(
 
 static int
 TestgotsigCmd(
-    ClientData clientData,	/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)		/* Argument strings. */
+    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(Tcl_Obj *const *))
 {
     Tcl_AppendResult(interp, gotsig, NULL);
     gotsig = "0";
@@ -607,7 +608,7 @@ TestgotsigCmd(
 
 static int
 TestchmodCmd(
-    ClientData dummy,			/* Not used. */
+    TCL_UNUSED(ClientData),
     Tcl_Interp *interp,			/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)		/* Argument strings. */

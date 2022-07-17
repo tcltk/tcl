@@ -1,4 +1,5 @@
 *.a
+*.bmp
 *.dll
 *.exe
 *.gif

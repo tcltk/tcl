@@ -2,20 +2,18 @@
 #
 # The httpd_ procedures implement a stub http server.
 #
-# Copyright (c) 1997-1998 Sun Microsystems, Inc.
-# Copyright (c) 1999-2000 Scriptics Corporation
+# Copyright © 1997-1998 Sun Microsystems, Inc.
+# Copyright © 1999-2000 Scriptics Corporation
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #set httpLog 1
 
-if {$::tcl_platform(os) eq "Darwin"} {
-    # Name resolution often a problem on OSX; not focus of HTTP package anyway
-    set HOST localhost
-} else {
-    set HOST [info hostname]
-}
+# Do not use [info hostname].
+# Name resolution is often a problem on OSX; not focus of HTTP package anyway.
+# Also a problem on other platforms for http-4.14 (test with bad port number).
+set HOST localhost
 
 proc httpd_init {{port 8015}} {
     set s [socket -server httpdAccept $port]

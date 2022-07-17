@@ -1,7 +1,7 @@
 '\"
 '\" Copyright (c) 1989-1993 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
-'\" Copyright (c) 2002 by Kevin B. Kenny <kennykb@acm.org>.  All rights reserved.
+'\" Copyright (c) 2002 Kevin B. Kenny <kennykb@acm.org>.  All rights reserved.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -99,11 +99,7 @@ the Tcl interpreter will invoke the command.  Any other return code
 is treated as if the command returned that status, and the command is
 \fInot\fR invoked.
 .PP
-The \fIobjProc\fR callback must not modify \fIobjv\fR in any way.  It
-is, however, permissible to change the command by calling
-\fBTcl_SetCommandTokenInfo\fR prior to returning.  Any such change
-takes effect immediately, and the command is invoked with the new
-information.
+The \fIobjProc\fR callback must not modify \fIobjv\fR in any way.
 .PP
 Tracing will only occur for commands at nesting level less than
 or equal to the \fIlevel\fR parameter (i.e. the \fIlevel\fR
@@ -187,5 +183,14 @@ There is no way to be notified when the trace created by
 \fBTcl_CreateTrace\fR is deleted.  There is no way for the \fIproc\fR
 associated with a call to \fBTcl_CreateTrace\fR to abort execution of
 \fIcommand\fR.
+.SH "REFERENCE COUNT MANAGEMENT"
+.PP
+When the \fIproc\fR passed to \fBTcl_CreateObjTrace\fR is called,
+the values in its \fIobjv\fR argument will have a reference count of
+at least 1, with that guaranteed reference being from the Tcl
+evaluation stack. You should not call \fBTcl_DecrRefCount\fR on any of
+those values unless you call \fBTcl_IncrRefCount\fR on them first.
+.SH "SEE ALSO"
+trace(n)
 .SH KEYWORDS
 command, create, delete, interpreter, trace

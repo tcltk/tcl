@@ -3,8 +3,8 @@
 /* LibTomMath, multiple-precision integer library -- Tom St Denis */
 /* SPDX-License-Identifier: Unlicense */
 
-/* this is a modified version of fast_s_mul_digs that only produces
- * output digits *above* digs.  See the comments for fast_s_mul_digs
+/* this is a modified version of s_mp_mul_digs_fast that only produces
+ * output digits *above* digs.  See the comments for s_mp_mul_digs_fast
  * to see how it works.
  *
  * This is used in the Barrett reduction since for one of the multiplications
@@ -16,7 +16,7 @@ mp_err s_mp_mul_high_digs_fast(const mp_int *a, const mp_int *b, mp_int *c, int 
 {
    int     olduse, pa, ix, iz;
    mp_err   err;
-   mp_digit W[PRIVATE_MP_WARRAY];
+   mp_digit W[MP_WARRAY];
    mp_word  _W;
 
    /* grow the destination as required */

@@ -3,7 +3,7 @@
  *
  *	Contains the Windows-specific command-line panic proc.
  *
- * Copyright (c) 2013 by Jan Nijtmans.
+ * Copyright © 2013 Jan Nijtmans.
  * All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of

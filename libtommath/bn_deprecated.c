@@ -158,14 +158,14 @@ mp_err mp_set_int(mp_int *a, unsigned long b)
 #ifdef BN_MP_SET_LONG_C
 mp_err mp_set_long(mp_int *a, unsigned long b)
 {
-   mp_set_ul(a, b);
+   mp_set_u64(a, b);
    return MP_OKAY;
 }
 #endif
 #ifdef BN_MP_SET_LONG_LONG_C
 mp_err mp_set_long_long(mp_int *a, unsigned long long b)
 {
-   mp_set_ull(a, b);
+   mp_set_u64(a, b);
    return MP_OKAY;
 }
 #endif
@@ -219,7 +219,7 @@ mp_err mp_n_root_ex(const mp_int *a, mp_digit b, mp_int *c, int fast)
    if (b > MP_MIN(MP_DIGIT_MAX, UINT32_MAX)) {
       return MP_VAL;
    }
-   return mp_root_u32(a, (unsigned int)b, c);
+   return mp_root_u32(a, (uint32_t)b, c);
 }
 #endif
 #ifdef BN_MP_N_ROOT_C
@@ -228,7 +228,7 @@ mp_err mp_n_root(const mp_int *a, mp_digit b, mp_int *c)
    if (b > MP_MIN(MP_DIGIT_MAX, UINT32_MAX)) {
       return MP_VAL;
    }
-   return mp_root_u32(a, (unsigned int)b, c);
+   return mp_root_u32(a, (uint32_t)b, c);
 }
 #endif
 #ifdef BN_MP_UNSIGNED_BIN_SIZE_C

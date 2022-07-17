@@ -46,7 +46,9 @@ Removing the same element indicated in two different ways:
 a b d e
 .CE
 .SH "SEE ALSO"
-list(n), lrange(n), lsearch(n), lsearch(n)
+list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+lmap(n), lpop(n), lrange(n), lrepeat(n), lreplace(n),
+lreverse(n), lsearch(n), lset(n), lsort(n)
 .SH KEYWORDS
 element, list, remove
 .\" Local variables:

@@ -4,7 +4,7 @@
  *	This file contains the generic portion of the command channel driver
  *	as well as various utility routines used in managing subprocesses.
  *
- * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright © 1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -188,7 +188,7 @@ Tcl_DetachPids(
 
     Tcl_MutexLock(&pipeMutex);
     for (i = 0; i < numPids; i++) {
-	detPtr = ckalloc(sizeof(Detached));
+	detPtr = (Detached *)ckalloc(sizeof(Detached));
 	detPtr->pid = pidPtr[i];
 	detPtr->nextPtr = detList;
 	detList = detPtr;
@@ -334,7 +334,7 @@ TclCleanupChildren(
 	    Tcl_Obj *objPtr;
 
 	    Tcl_Seek(errorChan, 0, SEEK_SET);
-	    objPtr = Tcl_NewObj();
+	    TclNewObj(objPtr);
 	    count = Tcl_ReadChars(errorChan, objPtr, -1, 0);
 	    if (count < 0) {
 		result = TCL_ERROR;
@@ -824,7 +824,7 @@ TclCreatePipeline(
      */
 
     Tcl_ReapDetachedProcs();
-    pidPtr = ckalloc(cmdCount * sizeof(Tcl_Pid));
+    pidPtr = (Tcl_Pid *)ckalloc(cmdCount * sizeof(Tcl_Pid));
 
     curInFile = inputFile;
 

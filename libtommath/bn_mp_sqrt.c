@@ -4,8 +4,9 @@
 /* SPDX-License-Identifier: Unlicense */
 
 #ifndef NO_FLOATING_POINT
+#include <float.h>
 #include <math.h>
-#if (DIGIT_BIT != 28) || (FLT_RADIX != 2) || (DBL_MANT_DIG != 53) || (DBL_MAX_EXP != 1024)
+#if (MP_DIGIT_BIT != 28) || (FLT_RADIX != 2) || (DBL_MANT_DIG != 53) || (DBL_MAX_EXP != 1024)
 #define NO_FLOATING_POINT
 #endif
 #endif
@@ -52,7 +53,7 @@ mp_err mp_sqrt(const mp_int *arg, mp_int *ret)
 
    d = 0.0;
    for (k = arg->used-1; k >= j; --k) {
-      d = ldexp(d, DIGIT_BIT) + (double)(arg->dp[k]);
+      d = ldexp(d, MP_DIGIT_BIT) + (double)(arg->dp[k]);
    }
 
    /*
@@ -64,18 +65,18 @@ mp_err mp_sqrt(const mp_int *arg, mp_int *ret)
 
    /* dig is the most significant mp_digit of the square root */
 
-   dig = (mp_digit) ldexp(d, -DIGIT_BIT);
+   dig = (mp_digit) ldexp(d, -MP_DIGIT_BIT);
 
    /*
     * If the most significant digit is nonzero, find the next digit down
-    * by subtracting DIGIT_BIT times thie most significant digit.
+    * by subtracting MP_DIGIT_BIT times thie most significant digit.
     * Subtract one from the result so that our initial estimate is always
     * low.
     */
 
    if (dig) {
       t1.used = i+2;
-      d -= ldexp((double) dig, DIGIT_BIT);
+      d -= ldexp((double) dig, MP_DIGIT_BIT);
       if (d >= 1.0) {
          t1.dp[i+1] = dig;
          t1.dp[i] = ((mp_digit) d) - 1;
