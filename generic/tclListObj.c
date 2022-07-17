@@ -1447,7 +1447,7 @@ ListRepRange(
     /* Take the opportunity to garbage collect */
     /* TODO - we probably do not need the preserveSrcRep here unlike later */
     if (!preserveSrcRep) {
-        /* T:listrep-1.{4,5,8,9} */
+        /* T:listrep-1.{4,5,8,9},2.{4,5,6,7} */
 	ListRepFreeUnreferenced(srcRepPtr);
     }
 
@@ -1505,9 +1505,7 @@ ListRepRange(
     } else if (ListSpanMerited(rangeLen,
 			       srcRepPtr->storePtr->numUsed,
 			       srcRepPtr->storePtr->numAllocated)) {
-	/*
-         * Option 2 - because span would be most efficient
-         */
+	/* Option 2 - because span would be most efficient */
 	ListSizeT spanStart = ListRepStart(srcRepPtr) + rangeStart;
 	if (!preserveSrcRep && srcRepPtr->spanPtr
 	    && srcRepPtr->spanPtr->refCount <= 1) {
@@ -1516,7 +1514,8 @@ ListRepRange(
 	    srcRepPtr->spanPtr->spanLength = rangeLen;
 	    *rangeRepPtr = *srcRepPtr;
 	} else {
-	    /* Span not present or is shared. T:listrep-1.5 */
+	    /* Span not present or is shared. */
+            /* T:listrep-1.5,2.{5,7} */
 	    rangeRepPtr->storePtr = srcRepPtr->storePtr;
 	    rangeRepPtr->spanPtr = ListSpanNew(spanStart, rangeLen);
 	}
@@ -1527,10 +1526,12 @@ ListRepRange(
          * is mandated.
          */
 	if (!preserveSrcRep) {
+            /* T:listrep-2.{5,7} */
 	    ListRepFreeUnreferenced(rangeRepPtr);
 	}
     } else if (preserveSrcRep || ListRepIsShared(srcRepPtr)) {
 	/* Option 3 - span or modification in place not allowed/desired */
+        /* T:listrep-2.{4,6} */
 	ListRepElements(srcRepPtr, numSrcElems, srcElems);
 	/* TODO - allocate extra space? */
 	ListRepInit(rangeLen,
@@ -1858,7 +1859,7 @@ Tcl_ListObjAppendList(
     LIST_ASSERT(listRep.storePtr->numAllocated >= finalLen);
 
     if (toLen) {
-        /* T:listrep-2.2 */
+        /* T:listrep-2.{2,9} */
 	ObjArrayCopy(ListRepSlotPtr(&listRep, 0), toLen, toObjv);
     }
     ObjArrayCopy(ListRepSlotPtr(&listRep, toLen), elemCount, elemObjv);
@@ -2129,21 +2130,24 @@ Tcl_ListObjReplace(
     /* Check Case (1) - Treat pure deletes from front or back as range ops */
     if (numToInsert == 0) {
 	if (numToDelete == 0) {
-	    /* Should force canonical even for no-op */
-            /* T:listrep-1.10 */
+	    /*
+             * Should force canonical even for no-op. Remember Tcl_Obj unshared
+             * so OK to invalidate string rep
+             */
+            /* T:listrep-1.10,2.8 */
 	    TclInvalidateStringRep(listObj);
 	    return TCL_OK;
 	}
 	if (first == 0) {
 	    /* Delete from front, so return tail. */
-            /* T:listrep-1.{4,5} */
+            /* T:listrep-1.{4,5},2.{4,5} */
 	    ListRep tailRep;
 	    ListRepRange(&listRep, numToDelete, origListLen-1, 0, &tailRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &tailRep);
 	    return TCL_OK;
 	} else if ((first+numToDelete) >= origListLen) {
 	    /* Delete from tail, so return head */
-            /* T:listrep-1.{8,9} */
+            /* T:listrep-1.{8,9},2.{6,7} */
 	    ListRep headRep;
 	    ListRepRange(&listRep, 0, first-1, 0, &headRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &headRep);
@@ -2161,7 +2165,7 @@ Tcl_ListObjReplace(
     if (numToDelete == 0) {
 	/* Case (2a) - Append to list. */
 	if (first == origListLen) {
-            /* T:listrep-1.11 */
+            /* T:listrep-1.11,2.9 */
 	    return TclListObjAppendElements(
 		interp, listObj, numToInsert, insertObjs);
 	}
@@ -2217,7 +2221,7 @@ Tcl_ListObjReplace(
      * ListObjReplaceAndInvalidate below.
      */
     if (numFreeSlots < lenChange && !ListRepIsShared(&listRep)) {
-	/* T:listrep-1.{1,3} */
+	/* T:listrep-1.{1,3,14,18} */
 	ListStore *newStorePtr =
 	    ListStoreReallocate(listRep.storePtr, origListLen + lenChange);
 	if (newStorePtr == NULL) {
@@ -2255,24 +2259,24 @@ Tcl_ListObjReplace(
 		    &newRep);
 	toObjs = ListRepSlotPtr(&newRep, 0);
 	if (leadSegmentLen > 0) {
-            /* T:listrep-2.{2,3} */
+            /* T:listrep-2.{2,3,13,14,15} */
 	    ObjArrayCopy(toObjs, leadSegmentLen, listObjs);
 	}
 	if (numToInsert > 0) {
-            /* T:listrep-2.{1,2,3} */
+            /* T:listrep-2.{1,2,3,10,11,12,13,14,15} */
 	    ObjArrayCopy(&toObjs[leadSegmentLen],
 			 numToInsert,
 			 insertObjs);
 	}
 	if (tailSegmentLen > 0) {
-            /* T:listrep-2.{1,2,3} */
+            /* T:listrep-2.{1,2,3,10,11,12,13,14,15} */
 	    ObjArrayCopy(&toObjs[leadSegmentLen + numToInsert],
 			 tailSegmentLen,
 			 &listObjs[leadSegmentLen+numToDelete]);
 	}
 	newRep.storePtr->numUsed = origListLen + lenChange;
 	if (newRep.spanPtr) {
-            /* T:listrep-2.{1,2,3} */
+            /* T:listrep-2.{1,2,3,10,11,12,13,14,15} */
 	    newRep.spanPtr->spanLength = newRep.storePtr->numUsed;
 	}
 	LISTREP_CHECK(&newRep);
@@ -2305,13 +2309,19 @@ Tcl_ListObjReplace(
      * for objects to be inserted in case there is overlap. T:listobj-11.1
      */
     if (numToInsert) {
-	/* T:listrep-1.{1,3} */
+	/* T:listrep-1.{1,3,12,13,14,15,16,17,18} */
 	ObjArrayIncrRefs(insertObjs, 0, numToInsert);
     }
     if (numToDelete) {
-        /* T:listrep-1.{6,7} */
+        /* T:listrep-1.{6,7,12,13,14,15,16,17,18} */
 	ObjArrayDecrRefs(listObjs, first, numToDelete);
     }
+
+    /*
+     * TODO - below the moves are optimized but this may result in needing a
+     * span allocation. Perhaps for small lists, it may be more efficient to
+     * just move everything up front and save on allocating a span.
+     */
 
     /*
      * Calculate shifts if necessary to accomodate insertions.
@@ -2324,7 +2334,7 @@ Tcl_ListObjReplace(
      */
 
     if (lenChange == 0) {
-	/* Exact fit */
+	/* T:listrep-1.{12,15}. Exact fit */
 	leadShift = 0;
 	tailShift = 0;
     } else if (lenChange < 0) {
@@ -2334,12 +2344,12 @@ Tcl_ListObjReplace(
 	 */
 	if (leadSegmentLen > tailSegmentLen) {
 	    /* Tail segment smaller. Insert after lead, move tail down */
-            /* T:listrep-1.7 */
+            /* T:listrep-1.{7,17} */
 	    leadShift = 0;
 	    tailShift = lenChange;
 	} else {
 	    /* Lead segment smaller. Insert before tail, move lead up */
-            /* T:listrep-1.6 */
+            /* T:listrep-1.{6,13,16} */
 	    leadShift = -lenChange;
 	    tailShift = 0;
 	}
@@ -2388,7 +2398,7 @@ Tcl_ListObjReplace(
 	    if (finalFreeSpace > 1 && (leadSpace == 0 || leadSegmentLen == 0)) {
 		ListSizeT postShiftTailSpace = tailSpace - lenChange;
 		if (postShiftTailSpace > (finalFreeSpace/2)) {
-		    /* T:listrep-1.{1,3} */
+		    /* T:listrep-1.{1,3,14,18} */
 		    ListSizeT extraShift = postShiftTailSpace - (finalFreeSpace / 2);
 		    tailShift += extraShift;
 		    leadShift = extraShift; /* Move head to the back as well */
@@ -2432,14 +2442,14 @@ Tcl_ListObjReplace(
     if (leadShift > 0) {
 	/* Will happen when we have to make room at bottom */
 	if (tailShift != 0 && tailSegmentLen != 0) {
-            /* T:listrep-1.{1,3} */
+            /* T:listrep-1.{1,3,14,18} */
 	    ListSizeT tailStart = leadSegmentLen + numToDelete;
 	    memmove(&listObjs[tailStart + tailShift],
 		    &listObjs[tailStart],
 		    tailSegmentLen * sizeof(Tcl_Obj *));
 	}
 	if (leadSegmentLen != 0) {
-            /* T:listrep-1.{3,6} */
+            /* T:listrep-1.{3,6,16,18} */
 	    memmove(&listObjs[leadShift],
 		    &listObjs[0],
 		    leadSegmentLen * sizeof(Tcl_Obj *));
@@ -2451,7 +2461,7 @@ Tcl_ListObjReplace(
 		    leadSegmentLen * sizeof(Tcl_Obj *));
 	}
 	if (tailShift != 0 && tailSegmentLen != 0) {
-            /* T:listrep-1.7 */
+            /* T:listrep-1.{7,17} */
 	    ListSizeT tailStart = leadSegmentLen + numToDelete;
 	    memmove(&listObjs[tailStart + tailShift],
 		    &listObjs[tailStart],
@@ -2460,7 +2470,7 @@ Tcl_ListObjReplace(
     }
     if (numToInsert) {
 	/* Do NOT use ObjArrayCopy here since we have already incr'ed ref counts */
-        /* T:listrep-1.{1,3} */
+        /* T:listrep-1.{1,3,12,13,14,15,16,17,18} */
 	memmove(&listObjs[leadSegmentLen + leadShift],
 		insertObjs,
 		numToInsert * sizeof(Tcl_Obj *));
@@ -2477,10 +2487,10 @@ Tcl_ListObjReplace(
     } else {
 	/* Need a new span record */
 	if (listRep.storePtr->firstUsed == 0) {
-            /* T:listrep-1.7 */
+            /* T:listrep-1.{7,12,15,17} */
 	    listRep.spanPtr = NULL;
 	} else {
-            /* T:listrep-1.{1,3,6} */
+            /* T:listrep-1.{1,3,13,14,16,18} */
 	    listRep.spanPtr = ListSpanNew(listRep.storePtr->firstUsed,
 					  listRep.storePtr->numUsed);
 	}
