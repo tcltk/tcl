@@ -680,7 +680,7 @@ test listrep-3.14 {
     list $l [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
 } -result [list {0 1 2 3 4 5 6 8 9 10 7} 1 10 1]
 
-# TBD - tests on spanned lists
+# TBD - tests on shared spanned lists
 # TBD - tests when tcl-obj is shared but listrep is not (lappend, lset etc.)
 # TBD - range and subrange tests
 #       - spanned and unspanned
