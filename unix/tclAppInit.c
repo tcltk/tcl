@@ -12,13 +12,15 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#if defined(BUILD_tcl) || defined(USE_TCL_STUBS)
-#error "Don't build with BUILD_tcl/USE_TCL_STUBS!"
-#endif
 #include "tcl.h"
-#if TCL_MAJOR_VERSION < 9 && TCL_MINOR_VERSION < 7
+#if TCL_MAJOR_VERSION < 9
+#  if defined(BUILD_tcl) || defined(USE_TCL_STUBS)
+#	error "Don't build with BUILD_tcl/USE_TCL_STUBS!"
+#  endif
+#  if TCL_MINOR_VERSION < 7
 #   define Tcl_LibraryInitProc Tcl_PackageInitProc
 #   define Tcl_StaticLibrary Tcl_StaticPackage
+#  endif
 #endif
 
 #ifdef TCL_TEST

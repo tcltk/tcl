@@ -14,21 +14,15 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#if defined(BUILD_tcl) || defined(USE_TCL_STUBS)
-#error "Don't build with BUILD_tcl/USE_TCL_STUBS!"
-#endif
 #include "tcl.h"
-#define WIN32_LEAN_AND_MEAN
-#define STRICT			/* See MSDN Article Q83456 */
-#include <windows.h>
-#undef STRICT
-#undef WIN32_LEAN_AND_MEAN
-#include <locale.h>
-#include <stdlib.h>
-#include <tchar.h>
-#if TCL_MAJOR_VERSION < 9 && TCL_MINOR_VERSION < 7
+#if TCL_MAJOR_VERSION < 9
+#  if defined(BUILD_tcl) || defined(USE_TCL_STUBS)
+#	error "Don't build with BUILD_tcl/USE_TCL_STUBS!"
+#  endif
+#  if TCL_MINOR_VERSION < 7
 #   define Tcl_LibraryInitProc Tcl_PackageInitProc
 #   define Tcl_StaticLibrary Tcl_StaticPackage
+#  endif
 #endif
 
 #ifdef TCL_TEST
@@ -42,6 +36,14 @@ extern Tcl_LibraryInitProc Dde_Init;
 extern Tcl_LibraryInitProc Dde_SafeInit;
 #endif
 
+#define WIN32_LEAN_AND_MEAN
+#define STRICT			/* See MSDN Article Q83456 */
+#include <windows.h>
+#undef STRICT
+#undef WIN32_LEAN_AND_MEAN
+#include <locale.h>
+#include <stdlib.h>
+#include <tchar.h>
 #if defined(__GNUC__) || defined(TCL_BROKEN_MAINARGS)
 int _CRT_glob = 0;
 #endif /* __GNUC__ || TCL_BROKEN_MAINARGS */
