@@ -4069,19 +4069,10 @@ extern const TclStubs *tclStubsPtr;
 
 #undef TclUnusedStubEntry
 #if defined(USE_TCL_STUBS)
-#   undef Tcl_CreateInterp
 #   undef Tcl_FindExecutable
-#   undef Tcl_GetStringResult
-#   undef Tcl_Init
 #   undef Tcl_SetPanicProc
 #   undef Tcl_SetExitProc
-#   undef Tcl_ObjSetVar2
 #   undef Tcl_StaticLibrary
-#   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
-#   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
-#   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
-#   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
-	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
 #endif
 
 #if defined(_WIN32) && defined(UNICODE)
