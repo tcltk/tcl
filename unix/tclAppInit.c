@@ -88,7 +88,7 @@ main(
     TclZipfs_AppHook(&argc, &argv);
 #endif
 
-    Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
+    Tcl_Main((size_t)argc, argv, TCL_LOCAL_APPINIT);
     return 0;			/* Needed only to prevent compiler warning. */
 }
 
@@ -157,11 +157,11 @@ Tcl_AppInit(
      */
 
 #ifdef DJGPP
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
-	    Tcl_NewStringObj("~/tclsh.rc", -1), TCL_GLOBAL_ONLY);
+    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", TCL_INDEX_NONE), NULL,
+	    Tcl_NewStringObj("~/tclsh.rc", TCL_INDEX_NONE), TCL_GLOBAL_ONLY);
 #else
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
-	    Tcl_NewStringObj("~/.tclshrc", -1), TCL_GLOBAL_ONLY);
+    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", TCL_INDEX_NONE), NULL,
+	    Tcl_NewStringObj("~/.tclshrc", TCL_INDEX_NONE), TCL_GLOBAL_ONLY);
 #endif
 
     return TCL_OK;
