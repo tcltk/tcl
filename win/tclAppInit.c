@@ -136,7 +136,7 @@ _tmain(
     TclZipfs_AppHook(&argc, &argv);
 #endif
 
-    Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
+    Tcl_Main((size_t)argc, argv, TCL_LOCAL_APPINIT);
     return 0;			/* Needed only to prevent compiler warning. */
 }
 
@@ -210,8 +210,8 @@ Tcl_AppInit(
      * user-specific startup file will be run under any conditions.
      */
 
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
-	    Tcl_NewStringObj("~/tclshrc.tcl", -1), TCL_GLOBAL_ONLY);
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", TCL_INDEX_NONE), NULL,
+	    Tcl_NewStringObj("~/tclshrc.tcl", TCL_INDEX_NONE), TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
 
