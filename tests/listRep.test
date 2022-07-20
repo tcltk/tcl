@@ -27,6 +27,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
+catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testlistrep [llength [info commands testlistrep]]
 interp alias {} describe {} testlistrep describe
