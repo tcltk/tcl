@@ -144,9 +144,8 @@ declare 32 {
     int Tcl_GetBooleanFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int *intPtr)
 }
-# Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 33 {
-    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *numBytesPtr)
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 34 {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -313,10 +312,10 @@ declare 79 {
 declare 80 {
     void Tcl_CancelIdleCall(Tcl_IdleProc *idleProc, void *clientData)
 }
-# Only available in Tcl 8.x, NULL in Tcl 9.0
-declare 81 {
-    int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
-}
+# Removed in 9.0:
+#declare 81 {
+#    int Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan)
+#}
 declare 82 {
     int Tcl_CommandComplete(const char *cmd)
 }
@@ -2481,7 +2480,6 @@ declare 651 {
 declare 652 {
     Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
 }
-# Only available in Tcl 8.x, NULL in Tcl 9.0
 declare 653 {
     unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, size_t *numBytesPtr)
 }

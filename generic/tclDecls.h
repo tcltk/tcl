@@ -135,7 +135,7 @@ EXTERN int		Tcl_GetBooleanFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, int *intPtr);
 /* 33 */
 EXTERN unsigned char *	TclGetByteArrayFromObj(Tcl_Obj *objPtr,
-				int *numBytesPtr);
+				int *lengthPtr);
 /* 34 */
 EXTERN int		Tcl_GetDouble(Tcl_Interp *interp, const char *src,
 				double *doublePtr);
@@ -244,8 +244,7 @@ EXTERN void		Tcl_CallWhenDeleted(Tcl_Interp *interp,
 /* 80 */
 EXTERN void		Tcl_CancelIdleCall(Tcl_IdleProc *idleProc,
 				void *clientData);
-/* 81 */
-EXTERN int		Tcl_Close(Tcl_Interp *interp, Tcl_Channel chan);
+/* Slot 81 is reserved */
 /* 82 */
 EXTERN int		Tcl_CommandComplete(const char *cmd);
 /* 83 */
@@ -1851,7 +1850,7 @@ typedef struct TclStubs {
     void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
     int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *intPtr); /* 31 */
     int (*tcl_GetBooleanFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *intPtr); /* 32 */
-    unsigned char * (*tclGetByteArrayFromObj) (Tcl_Obj *objPtr, int *numBytesPtr); /* 33 */
+    unsigned char * (*tclGetByteArrayFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 33 */
     int (*tcl_GetDouble) (Tcl_Interp *interp, const char *src, double *doublePtr); /* 34 */
     int (*tcl_GetDoubleFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, double *doublePtr); /* 35 */
     void (*reserved36)(void);
@@ -1899,7 +1898,7 @@ typedef struct TclStubs {
     int (*tcl_BadChannelOption) (Tcl_Interp *interp, const char *optionName, const char *optionList); /* 78 */
     void (*tcl_CallWhenDeleted) (Tcl_Interp *interp, Tcl_InterpDeleteProc *proc, void *clientData); /* 79 */
     void (*tcl_CancelIdleCall) (Tcl_IdleProc *idleProc, void *clientData); /* 80 */
-    int (*tcl_Close) (Tcl_Interp *interp, Tcl_Channel chan); /* 81 */
+    void (*reserved81)(void);
     int (*tcl_CommandComplete) (const char *cmd); /* 82 */
     char * (*tcl_Concat) (size_t argc, const char *const *argv); /* 83 */
     size_t (*tcl_ConvertElement) (const char *src, char *dst, int flags); /* 84 */
@@ -2655,8 +2654,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_CallWhenDeleted) /* 79 */
 #define Tcl_CancelIdleCall \
 	(tclStubsPtr->tcl_CancelIdleCall) /* 80 */
-#define Tcl_Close \
-	(tclStubsPtr->tcl_Close) /* 81 */
+/* Slot 81 is reserved */
 #define Tcl_CommandComplete \
 	(tclStubsPtr->tcl_CommandComplete) /* 82 */
 #define Tcl_Concat \
@@ -3938,7 +3936,6 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_GetIndexFromObjStruct
 #undef Tcl_GetStringFromObj
 #undef Tcl_GetUnicodeFromObj
-#undef TclGetByteArrayFromObj
 #undef Tcl_GetByteArrayFromObj
 #undef Tcl_GetBytesFromObj
 #if defined(USE_TCL_STUBS)
@@ -4161,7 +4158,6 @@ extern const TclStubs *tclStubsPtr;
 #   endif
 #endif
 
-#undef Tcl_Close
 #define Tcl_Close(interp, chan) Tcl_CloseEx(interp, chan, 0)
 
 #undef TclUtfCharComplete
