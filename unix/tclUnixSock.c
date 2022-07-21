@@ -870,7 +870,7 @@ TcpGetOptionProc(
             errno = err;
         }
         if (errno != 0) {
-	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(errno), -1);
+	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(errno), TCL_INDEX_NONE);
         }
 	return TCL_OK;
     }
@@ -878,7 +878,7 @@ TcpGetOptionProc(
     if ((len > 1) && (optionName[1] == 'c') &&
 	    (strncmp(optionName, "-connecting", len) == 0)) {
         Tcl_DStringAppend(dsPtr,
-                GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT) ? "1" : "0", -1);
+                GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT) ? "1" : "0", TCL_INDEX_NONE);
         return TCL_OK;
     }
 
@@ -1766,13 +1766,13 @@ Tcl_OpenTcpServerEx(
 	return statePtr->channel;
     }
     if (interp != NULL) {
-        Tcl_Obj *errorObj = Tcl_NewStringObj("couldn't open socket: ", -1);
+        Tcl_Obj *errorObj = Tcl_NewStringObj("couldn't open socket: ", TCL_INDEX_NONE);
 
 	if (errorMsg == NULL) {
             errno = my_errno;
-            Tcl_AppendToObj(errorObj, Tcl_PosixError(interp), -1);
+            Tcl_AppendToObj(errorObj, Tcl_PosixError(interp), TCL_INDEX_NONE);
         } else {
-	    Tcl_AppendToObj(errorObj, errorMsg, -1);
+	    Tcl_AppendToObj(errorObj, errorMsg, TCL_INDEX_NONE);
 	}
         Tcl_SetObjResult(interp, errorObj);
     }
