@@ -21,12 +21,12 @@ static inline Tcl_Obj *	NewNsObj(Tcl_Namespace *namespacePtr);
 static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
 			    EnsembleConfig *ensemblePtr, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
-static int		NsEnsembleImplementationCmdNR(ClientData clientData,
+static int		NsEnsembleImplementationCmdNR(void *clientData,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
 static int		NsEnsembleStringOrder(const void *strPtr1,
 			    const void *strPtr2);
-static void		DeleteEnsembleConfig(ClientData clientData);
+static void		DeleteEnsembleConfig(void *clientData);
 static void		MakeCachedEnsembleCommand(Tcl_Obj *objPtr,
 			    EnsembleConfig *ensemblePtr, Tcl_HashEntry *hPtr,
 			    Tcl_Obj *fix);
@@ -1682,7 +1682,7 @@ TclMakeEnsemble(
 
 int
 TclEnsembleImplementationCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1693,7 +1693,7 @@ TclEnsembleImplementationCmd(
 
 static int
 NsEnsembleImplementationCmdNR(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1988,7 +1988,7 @@ NsEnsembleImplementationCmdNR(
 
 int
 TclClearRootEnsemble(
-    TCL_UNUSED(ClientData *),
+    TCL_UNUSED(void **),
     Tcl_Interp *interp,
     int result)
 {
@@ -2094,7 +2094,7 @@ TclResetRewriteEnsemble(
 
 static int
 FreeER(
-    ClientData data[],
+    void *data[],
     TCL_UNUSED(Tcl_Interp *),
     int result)
 {
@@ -2491,7 +2491,7 @@ ClearTable(
 
 static void
 DeleteEnsembleConfig(
-    ClientData clientData)
+    void *clientData)
 {
     EnsembleConfig *ensemblePtr = (EnsembleConfig *)clientData;
     Namespace *nsPtr = ensemblePtr->nsPtr;
