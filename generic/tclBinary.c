@@ -649,7 +649,7 @@ SetByteArrayFromAny(
     TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
-    size_t length, bad;
+    int length, bad;
     const char *src, *srcEnd;
     unsigned char *dst;
     Tcl_UniChar ch = 0;
@@ -663,8 +663,8 @@ SetByteArrayFromAny(
 	return TCL_OK;
     }
 
-    src = TclGetString(objPtr);
-    length = bad = objPtr->length;
+    src = TclGetStringFromObj(objPtr, &length);
+    bad = length;
     srcEnd = src + length;
 
     /* Note the allocation is over-sized, possibly by a factor of four,
@@ -1001,7 +1001,7 @@ TclInitBinaryCmd(
 
 static int
 BinaryFormatCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1506,7 +1506,7 @@ BinaryFormatCmd(
 
 static int
 BinaryScanCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2583,7 +2583,7 @@ DeleteScanNumberCache(
 
 static int
 BinaryEncodeHex(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2627,7 +2627,7 @@ BinaryEncodeHex(
 
 static int
 BinaryDecodeHex(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2751,7 +2751,7 @@ BinaryDecodeHex(
 
 static int
 BinaryEncode64(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2873,7 +2873,7 @@ BinaryEncode64(
 
 static int
 BinaryEncodeUu(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3022,7 +3022,7 @@ BinaryEncodeUu(
 
 static int
 BinaryDecodeUu(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3195,7 +3195,7 @@ BinaryDecodeUu(
 
 static int
 BinaryDecode64(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
