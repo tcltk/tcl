@@ -3017,7 +3017,7 @@ TclRenameCommand(
     }
 
     cmdNsPtr = cmdPtr->nsPtr;
-    oldFullName = Tcl_NewObj();
+    TclNewObj(oldFullName);
     Tcl_IncrRefCount(oldFullName);
     Tcl_GetCommandFullName(interp, cmd, oldFullName);
 

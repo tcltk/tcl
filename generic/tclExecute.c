@@ -2750,7 +2750,7 @@ TEBCresume(
 	pc += 1;
 	/* yield next instruction */
 	TEBC_YIELD();
-	/* add TEBCresume for object at top of stack */
+	/* add TEBCResume for object at top of stack */
 	return TclNRExecuteByteCode(interp,
 		    TclCompileObj(interp, OBJ_AT_TOS, NULL, 0));
 
@@ -4452,7 +4452,7 @@ TEBCresume(
 
 	    TRACE_APPEND(("ERROR: \"%.30s\" not on reachable chain\n",
 		    O2S(valuePtr)));
-	    for (i=contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
+	    for (i = contextPtr->index ; i != TCL_INDEX_NONE ; i--) {
 		miPtr = contextPtr->callPtr->chain + i;
 		if (miPtr->isFilter
 			|| miPtr->mPtr->declaringClassPtr != classPtr) {
