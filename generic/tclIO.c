@@ -340,7 +340,8 @@ static const Tcl_ObjType chanObjType = {
       (((st)->csPtrW) && ((fl) & TCL_WRITABLE)))
 
 #define MAX_CHANNEL_BUFFER_SIZE (1024*1024)
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -510,7 +511,8 @@ ChanWrite(
     return chanPtr->typePtr->outputProc(chanPtr->instanceData, src, srcLen,
 	    errnoPtr);
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -538,7 +540,8 @@ TclInitIOSubsystem(void)
 
     (void) TCL_TSD_INIT(&dataKey);
 }
-
+
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -684,7 +687,8 @@ TclFinalizeIOSubsystem(void)
     TclpFinalizeSockets();
     TclpFinalizePipes();
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -725,7 +729,8 @@ Tcl_SetStdChannel(
 	break;
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -801,7 +806,8 @@ Tcl_GetStdChannel(
     }
     return channel;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -839,7 +845,8 @@ Tcl_CreateCloseHandler(
     cbPtr->nextPtr = statePtr->closeCbPtr;
     statePtr->closeCbPtr = cbPtr;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -884,7 +891,8 @@ Tcl_DeleteCloseHandler(
 	cbPrevPtr = cbPtr;
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -940,7 +948,8 @@ GetChannelTable(
     }
     return hTblPtr;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1030,7 +1039,8 @@ DeleteChannelTable(
     Tcl_DeleteHashTable(hTblPtr);
     ckfree(hTblPtr);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1086,7 +1096,8 @@ CheckForStdChannelsBeingClosed(
 	}
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1119,7 +1130,8 @@ Tcl_IsStandardChannel(
 	return 0;
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1176,7 +1188,8 @@ Tcl_RegisterChannel(
     }
     statePtr->refCount++;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1261,7 +1274,8 @@ Tcl_UnregisterChannel(
     }
     return TCL_OK;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1307,7 +1321,8 @@ Tcl_DetachChannel(
 
     return DetachChannel(interp, chan);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1380,7 +1395,8 @@ DetachChannel(
 
     return TCL_OK;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -1462,7 +1478,8 @@ Tcl_GetChannel(
 
     return (Tcl_Channel) chanPtr;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -1558,7 +1575,8 @@ TclGetChannelFromObj(
 
     return TCL_OK;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1766,7 +1784,8 @@ Tcl_CreateChannel(
     }
     return (Tcl_Channel) chanPtr;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1995,7 +2014,8 @@ ChannelFree(
     }
     chanPtr->typePtr = NULL;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2183,7 +2203,8 @@ Tcl_UnstackChannel(
 
     return TCL_OK;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2211,7 +2232,8 @@ Tcl_GetStackedChannel(
 
     return (Tcl_Channel) chanPtr->downChanPtr;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2239,7 +2261,8 @@ Tcl_GetTopChannel(
 
     return (Tcl_Channel) chanPtr->state->topChanPtr;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2265,7 +2288,8 @@ Tcl_GetChannelInstanceData(
 
     return chanPtr->instanceData;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2292,7 +2316,8 @@ Tcl_GetChannelThread(
 
     return chanPtr->state->managingThread;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2318,7 +2343,8 @@ Tcl_GetChannelType(
 
     return chanPtr->typePtr;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2346,7 +2372,8 @@ Tcl_GetChannelMode(
 
     return (statePtr->flags & (TCL_READABLE | TCL_WRITABLE));
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2373,7 +2400,8 @@ Tcl_GetChannelName(
 
     return statePtr->channelName;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2415,7 +2443,8 @@ Tcl_GetChannelHandle(
     }
     return result;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -2483,7 +2512,8 @@ IsShared(
 {
     return bufPtr->refCount > 1;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2572,7 +2602,8 @@ RecycleBuffer(
     bufPtr->nextAdded = BUFFER_PADDING;
     bufPtr->nextPtr = NULL;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2608,7 +2639,8 @@ DiscardOutputQueued(
 	RecycleBuffer(statePtr, bufPtr, 0);
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2642,7 +2674,8 @@ CheckForDeadChannel(
     }
     return 1;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2944,7 +2977,8 @@ FlushChannel(
     TclChannelRelease((Tcl_Channel)chanPtr);
     return errorCode;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3125,7 +3159,8 @@ CloseChannel(
 
     return errorCode;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3240,7 +3275,8 @@ Tcl_CutChannel(
     /* Channel is not managed by any thread */
     statePtr->managingThread = NULL;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3330,7 +3366,8 @@ Tcl_SpliceChannel(
 	ChanThreadAction(chanPtr, TCL_CHANNEL_THREAD_INSERT);
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3524,7 +3561,8 @@ Tcl_Close(
     }
     return TCL_OK;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3658,7 +3696,8 @@ Tcl_CloseEx(
 
     return TCL_OK;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3734,7 +3773,8 @@ CloseWrite(
 
     return TCL_OK;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3870,7 +3910,8 @@ CloseChannelPart(
     ResetFlag(statePtr, flags & (TCL_READABLE | TCL_WRITABLE));
     return TCL_OK;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3964,7 +4005,8 @@ Tcl_ClearChannelHandlers(
     }
     statePtr->scriptRecordPtr = NULL;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4018,7 +4060,8 @@ Tcl_Write(
     }
     return srcLen;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4075,7 +4118,8 @@ Tcl_WriteRaw(
 
     return written;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -4142,7 +4186,8 @@ Tcl_WriteChars(
     TclDecrRefCount(objPtr);
     return result;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -4196,7 +4241,8 @@ Tcl_WriteObj(
 	return WriteChars(chanPtr, src, srcLen);
     }
 }
-
+
+
 static void
 WillWrite(
     Channel *chanPtr)
@@ -4211,7 +4257,8 @@ WillWrite(
 	ChanSeek(chanPtr, -inputBuffered, SEEK_CUR, &ignore);
     }
 }
-
+
+
 static int
 WillRead(
     Channel *chanPtr)
@@ -4244,7 +4291,8 @@ WillRead(
     }
     return 0;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4444,7 +4492,8 @@ Write(
 
     return total;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -4483,7 +4532,8 @@ Tcl_Gets(
     TclDecrRefCount(objPtr);
     return charsStored;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -4694,7 +4744,6 @@ Tcl_GetsObj(
 	    eol = dst;
 	    skip = 1;
 	    if (GotFlag(statePtr, INPUT_SAW_CR)) {
-		ResetFlag(statePtr, INPUT_SAW_CR);
 		if ((eol < dstEnd) && (*eol == '\n')) {
 		    /*
 		     * Skip the raw bytes that make up the '\n'.
@@ -4744,8 +4793,10 @@ Tcl_GetsObj(
 			skip++;
 		    }
 		    eol--;
+		    ResetFlag(statePtr, INPUT_SAW_CR);
 		    goto gotEOL;
 		} else if (*eol == '\n') {
+		    ResetFlag(statePtr, INPUT_SAW_CR);
 		    goto gotEOL;
 		}
 	    }
@@ -4895,7 +4946,8 @@ Tcl_GetsObj(
     TclChannelRelease((Tcl_Channel)chanPtr);
     return copiedTotal;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -5169,7 +5221,8 @@ TclGetsObjBinary(
     TclChannelRelease((Tcl_Channel)chanPtr);
     return copiedTotal;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -5211,7 +5264,8 @@ GetBinaryEncoding()
     }
     return tsdPtr->binaryEncoding;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -5404,7 +5458,8 @@ FilterInputBytes(
     gsPtr->bufPtr = bufPtr;
     return 0;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -5489,7 +5544,8 @@ PeekAhead(
     gsPtr->bytesWrote = 0;
     gsPtr->charsWrote = 0;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -5552,7 +5608,8 @@ CommonGetsCleanup(
 	}
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5597,7 +5654,8 @@ Tcl_Read(
 
     return DoRead(chanPtr, dst, bytesToRead, 0);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5715,7 +5773,8 @@ Tcl_ReadRaw(
     }
     return copied;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -5970,7 +6029,8 @@ DoReadChars(
     TclChannelRelease((Tcl_Channel)chanPtr);
     return copied;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -6019,7 +6079,8 @@ ReadBytes(
     bufPtr->nextRemoved += toRead;
     return toRead;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -6422,7 +6483,8 @@ ReadChars(
 	return numChars;
     }
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -6598,7 +6660,8 @@ TranslateInputEOL(
 	ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR);
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6686,7 +6749,8 @@ Tcl_Ungets(
     UpdateInterest(chanPtr);
     return len;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6730,7 +6794,8 @@ Tcl_Flush(
 
     return TCL_OK;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -6777,7 +6842,8 @@ DiscardInputQueued(
 	statePtr->saveInBufPtr = NULL;
     }
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -6926,7 +6992,8 @@ GetInput(
     ReleaseChannelBuffer(bufPtr);
     return result;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7094,7 +7161,8 @@ Tcl_Seek(
 
     return curPos;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7183,7 +7251,8 @@ Tcl_Tell(
     }
     return curPos + outputBuffered;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -7224,7 +7293,8 @@ Tcl_TellOld(
 
     return (int) Tcl_WideAsLong(wResult);
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -7296,7 +7366,8 @@ Tcl_TruncateChannel(
     }
     return TCL_OK;
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -7384,7 +7455,8 @@ CheckChannelErrors(
 
     return 0;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7410,7 +7482,8 @@ Tcl_Eof(
 
     return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7436,7 +7509,8 @@ Tcl_InputBlocked(
 
     return GotFlag(statePtr, CHANNEL_BLOCKED) ? 1 : 0;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7480,7 +7554,8 @@ Tcl_InputBuffered(
 
     return bytesBuffered;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7522,7 +7597,8 @@ Tcl_OutputBuffered(
 
     return bytesBuffered;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7557,7 +7633,8 @@ Tcl_ChannelBuffered(
 
     return bytesBuffered;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7615,7 +7692,8 @@ Tcl_SetChannelBufferSize(
 	statePtr->inQueueTail = NULL;
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7642,7 +7720,8 @@ Tcl_GetChannelBufferSize(
 
     return statePtr->bufSize;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7713,7 +7792,8 @@ Tcl_BadChannelOption(
     Tcl_SetErrno(EINVAL);
     return TCL_ERROR;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7945,7 +8025,8 @@ Tcl_GetChannelOption(
 	return Tcl_BadChannelOption(interp, optionName, NULL);
     }
 }
-
+
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -8247,7 +8328,8 @@ Tcl_SetChannelOption(
 
     return TCL_OK;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8301,7 +8383,8 @@ CleanupChannelHandlers(
 	}
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8459,7 +8542,8 @@ done:
 
     tsdPtr->nestedHandlerPtr = nh.nestedHandlerPtr;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8560,7 +8644,8 @@ UpdateInterest(
     }
     ChanWatch(chanPtr, mask);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8605,7 +8690,8 @@ ChannelTimerProc(
 	UpdateInterest(chanPtr);
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8685,7 +8771,8 @@ Tcl_CreateChannelHandler(
 
     UpdateInterest(statePtr->topChanPtr);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8775,7 +8862,8 @@ Tcl_DeleteChannelHandler(
 
     UpdateInterest(statePtr->topChanPtr);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8826,7 +8914,8 @@ DeleteScriptRecord(
 	}
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8894,7 +8983,8 @@ CreateScriptRecord(
 		TclChannelEventScriptInvoker, esPtr);
     }
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -8962,7 +9052,8 @@ TclChannelEventScriptInvoker(
     TclChannelRelease((Tcl_Channel)chanPtr);
     Tcl_Release(interp);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9060,7 +9151,8 @@ Tcl_FileEventObjCmd(
 
     return TCL_OK;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9087,7 +9179,8 @@ ZeroTransferTimerProc(
      */
     CopyData((CopyState *)clientData, 0);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9240,7 +9333,8 @@ TclCopyChannel(
 
     return CopyData(csPtr, 0);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9791,7 +9885,8 @@ CopyData(
     }
     return result;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10037,7 +10132,8 @@ DoRead(
     TclChannelRelease((Tcl_Channel)chanPtr);
     return (int)(p - dst);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10063,7 +10159,8 @@ CopyEventProc(
 {
     (void) CopyData((CopyState *)clientData, mask);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10132,7 +10229,8 @@ StopCopy(
     outStatePtr->csPtrW = NULL;
     ckfree(csPtr);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10181,7 +10279,8 @@ StackSetBlockMode(
     }
     return 0;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10249,7 +10348,8 @@ SetBlockMode(
     }
     return TCL_OK;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10272,7 +10372,8 @@ Tcl_GetChannelNames(
 {
     return Tcl_GetChannelNamesEx(interp, NULL);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10358,7 +10459,8 @@ Tcl_GetChannelNamesEx(
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10408,7 +10510,8 @@ Tcl_IsChannelRegistered(
 
     return 1;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10434,7 +10537,8 @@ Tcl_IsChannelShared(
 
     return ((statePtr->refCount > 1) ? 1 : 0);
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10483,7 +10587,8 @@ Tcl_IsChannelExisting(
 
     return 0;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10506,7 +10611,8 @@ Tcl_ChannelName(
 {
     return chanTypePtr->typeName;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10538,7 +10644,8 @@ Tcl_ChannelVersion(
     }
     return chanTypePtr->version;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10568,7 +10675,8 @@ Tcl_ChannelBlockModeProc(
 
     return chanTypePtr->blockModeProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10592,7 +10700,8 @@ Tcl_ChannelCloseProc(
 {
     return chanTypePtr->closeProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10616,7 +10725,8 @@ Tcl_ChannelClose2Proc(
 {
     return chanTypePtr->close2Proc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10640,7 +10750,8 @@ Tcl_ChannelInputProc(
 {
     return chanTypePtr->inputProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10664,7 +10775,8 @@ Tcl_ChannelOutputProc(
 {
     return chanTypePtr->outputProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10688,7 +10800,8 @@ Tcl_ChannelSeekProc(
 {
     return chanTypePtr->seekProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10712,7 +10825,8 @@ Tcl_ChannelSetOptionProc(
 {
     return chanTypePtr->setOptionProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10736,7 +10850,8 @@ Tcl_ChannelGetOptionProc(
 {
     return chanTypePtr->getOptionProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10760,7 +10875,8 @@ Tcl_ChannelWatchProc(
 {
     return chanTypePtr->watchProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10784,7 +10900,8 @@ Tcl_ChannelGetHandleProc(
 {
     return chanTypePtr->getHandleProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10811,7 +10928,8 @@ Tcl_ChannelFlushProc(
     }
     return chanTypePtr->flushProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10838,7 +10956,8 @@ Tcl_ChannelHandlerProc(
     }
     return chanTypePtr->handlerProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10865,7 +10984,8 @@ Tcl_ChannelWideSeekProc(
     }
     return chanTypePtr->wideSeekProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10893,7 +11013,8 @@ Tcl_ChannelThreadActionProc(
     }
     return chanTypePtr->threadActionProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10929,7 +11050,8 @@ Tcl_SetChannelErrorInterp(
     }
     return;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -10965,7 +11087,8 @@ Tcl_SetChannelError(
     }
     return;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -11124,7 +11247,8 @@ FixLevelCode(
     ckfree(lvn);
     return msg;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -11152,7 +11276,8 @@ Tcl_GetChannelErrorInterp(
     *msg = iPtr->chanMsg;
     iPtr->chanMsg = NULL;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -11180,7 +11305,8 @@ Tcl_GetChannelError(
     *msg = statePtr->chanMsg;
     statePtr->chanMsg = NULL;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -11208,7 +11334,8 @@ Tcl_ChannelTruncateProc(
     }
     return chanTypePtr->truncateProc;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -11240,7 +11367,8 @@ DupChannelInternalRep(
     copyPtr->internalRep.twoPtrValue.ptr1 = resPtr;
     copyPtr->typePtr = srcPtr->typePtr;
 }
-
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -11270,7 +11398,8 @@ FreeChannelInternalRep(
     Tcl_Release(resPtr->statePtr);
     ckfree(resPtr);
 }
-
+
+
 #if 0
 /*
  * For future debugging work, a simple function to print the flags of a
@@ -11308,7 +11437,8 @@ DumpFlags(
     return 0;
 }
 #endif
-
+
+
 /*
  * Local Variables:
  * mode: c
