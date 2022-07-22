@@ -4825,7 +4825,7 @@ Tcl_GetsObj(
 		Tcl_SetObjLength(objPtr, oldLength);
 		CommonGetsCleanup(chanPtr);
 		copiedTotal = -1;
-		ResetFlag(statePtr, CHANNEL_BLOCKED);
+		ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR);
 		goto done;
 	    }
 	    goto gotEOL;
