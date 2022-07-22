@@ -3054,11 +3054,15 @@ test io-29.36.2 {gets on translation auto with "\r\n" in different buffers, bug 
 	} else {
 	    # we don't have a delay, so client would get the lines as single chunk
 	}
+	# we'll try with "\r" and without "\r" (to cover both branches, where "\r" and "eof" causes exit from [gets] by 3rd line)
 	puts -nonewline $so "\n3 line"
+	if {!($::cnt % 3)} {
+	    puts -nonewline $so "\r"
+	}
 	flush $so
 	close $so
     }
-    while {$::cnt < 4} { incr ::cnt
+    while {$::cnt < 6} { incr ::cnt
 	set c [socket 127.0.0.1 [lindex [fconfigure $s -sockname] 2]]
 	fconfigure $c -blocking 0 -buffering line -translation auto
 	fileevent $c readable [list apply {c {
@@ -3076,7 +3080,7 @@ test io-29.36.2 {gets on translation auto with "\r\n" in different buffers, bug 
     close $s
     if {$c ne {}} { close $c }
     unset -nocomplain ::done ::cli ::cnt s c
-} -result [lrepeat 4 {<1 line>} {<2 line>} {<3 line>}]
+} -result [lrepeat 6 {<1 line>} {<2 line>} {<3 line>}]
 
 # Test end of line translations. Procedures tested are Tcl_Write, Tcl_Read.
 
