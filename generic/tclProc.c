@@ -2457,6 +2457,14 @@ SetLambdaFromAny(
 
     argsPtr = objv[0];
     bodyPtr = objv[1];
+    /*
+     * Bugfix for testapplylambda. If we are constructing a new lambda,
+     * the body must be recompiled even if it is already a ByteCode object.
+     * Otherwise the procPtr->numCompiledLocals will not get updated causing
+     * a crash as local variable space is not allocated.
+     */
+    (void) TclGetString(bodyPtr); /* Ensure string representation exists */
+    TclFreeInternalRep(bodyPtr);
 
     /*
      * Create and initialize the Proc struct. The cmdPtr field is set to NULL
