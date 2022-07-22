@@ -3013,7 +3013,7 @@ test io-29.36.1 {gets on translation auto with "\r" in QA communication mode, po
     set result {}
 } -body {
     set port [gets $s]
-    foreach t {{cr lf} auto} {
+    foreach t {{cr lf} {auto lf}} {
 	set c [socket 127.0.0.1 $port]
 	fconfigure $c -buffering line -translation $t
 	lappend result $t
@@ -3033,7 +3033,7 @@ test io-29.36.1 {gets on translation auto with "\r" in QA communication mode, po
     close $s
     if {$c ne {}} { close $c }
     unset -nocomplain s c port t q
-} -result [list {cr lf} "really client?" yes auto "really client?" yes]
+} -result [list {cr lf} "really client?" yes {auto lf} "really client?" yes]
 test io-29.36.2 {gets on translation auto with "\r\n" in different buffers, bug [b3977d199b]} -constraints {
     socket tempNotMac fileevent
 } -setup {
