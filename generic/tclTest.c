@@ -222,6 +222,7 @@ static Tcl_ObjCmdProc	TestbytestringObjCmd;
 static Tcl_ObjCmdProc	TestsetbytearraylengthObjCmd;
 static Tcl_ObjCmdProc	TestpurebytesobjObjCmd;
 static Tcl_ObjCmdProc	TeststringbytesObjCmd;
+static Tcl_ObjCmdProc	Testutf16stringObjCmd;
 static Tcl_CmdProc	TestcmdinfoCmd;
 static Tcl_CmdProc	TestcmdtokenCmd;
 static Tcl_CmdProc	TestcmdtraceCmd;
@@ -560,6 +561,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testsetbytearraylength", TestsetbytearraylengthObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testutf16string", Testutf16stringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfilesystem", TestFilesystemObjCmd,
@@ -5170,6 +5172,43 @@ TestbytestringObjCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Testutf16stringObjCmd --
+ *
+ *	This specifically tests the Tcl_GetUnicode and Tcl_NewUnicodeObj
+ *	C functions which broke in Tcl 8.7 and were undetected by the
+ *      existing test suite. Bug [b79df322a9]
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+Testutf16stringObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    const unsigned short *p;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string");
+	return TCL_ERROR;
+    }
+
+    p = Tcl_GetUnicode(objv[1]);
+    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(p, -1));
     return TCL_OK;
 }
 
