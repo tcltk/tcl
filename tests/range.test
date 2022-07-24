@@ -163,7 +163,7 @@ test range-2.12 {decreasing range with step} arithSeriesDouble {
 } { 25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0}
 
 test range-2.13 {count only operation} {
-    range 5 
+    range 5
 } {0 1 2 3 4}
 
 test range-2.14 {count with step} {

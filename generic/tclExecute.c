@@ -4927,7 +4927,7 @@ TEBCresume(
 	    ArithSeries *arithSeriesRepPtr =
 		(ArithSeries*) valuePtr->internalRep.twoPtrValue.ptr1;
 	    length = arithSeriesRepPtr->len;
-	    
+
 	    /* Decode end-offset index values. */
 
 	    index = TclIndexDecode(opnd, length);
@@ -4963,9 +4963,9 @@ TEBCresume(
 	} else {
 	    TclNewObj(objResultPtr);
 	}
-	
+
     lindexFastPath2:
-	
+
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_F(pcAdjustment, 1, 1);
 

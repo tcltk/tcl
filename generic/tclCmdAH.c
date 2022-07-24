@@ -2979,7 +2979,7 @@ ForeachAssignments(
 		    valuePtr = Tcl_NewWideIntObj(value);
 		} else {
 		    valuePtr = statePtr->argvList[i][k];
-		}		    
+		}
 	    } else {
 		TclNewObj(valuePtr);	/* Empty string */
 	    }

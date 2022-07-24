@@ -128,7 +128,7 @@ Tcl_PwdObjCmd(
  * SequenceIdentifyArgument --
  *
  *  Given a Tcl_Obj, identify if it is a keyword or a number
- *  
+ *
  *  Return Value
  *    0 - failure, unexpected value
  *    1 - value is a number
@@ -150,7 +150,7 @@ SequenceIdentifyArgument(
     Tcl_WideInt number;
     SequenceOperators opmode;
     SequenceByMode bymode;
-    
+
     status = Tcl_GetWideIntFromObj(NULL, argPtr, &number);
     if (status != TCL_OK) {
 	/* Check for an index expression */
@@ -172,7 +172,7 @@ SequenceIdentifyArgument(
 	}
 	return NumericArg;
     }
-    
+
     status = Tcl_GetIndexFromObj(NULL, argPtr, seq_operations,
 				 "range operation", 0, &opmode);
     if (status == TCL_OK) {
@@ -181,7 +181,7 @@ SequenceIdentifyArgument(
 	}
 	return RangeKeywordArg;
     }
-    
+
     status = Tcl_GetIndexFromObj(NULL, argPtr, seq_step_keywords,
 				 "step keyword", 0, &bymode);
     if (status == TCL_OK) {
@@ -245,7 +245,7 @@ Tcl_RangeObjCmd(
     SequenceDecoded decoded;
     int i, arg_key = 0, value_i = 0;
 
-    /* 
+    /*
      * Create a decoding key by looping through the arguments and identify
      * what kind of argument each one is.  Encode each argument as a decimal
      * digit.
@@ -259,7 +259,7 @@ Tcl_RangeObjCmd(
 	 switch (decoded) {
 
 	 case NoneArg:
-	      /* 
+	      /*
 	       * Unrecognizable argument
 	       * Reproduce operation error message
 	       */
@@ -278,13 +278,13 @@ Tcl_RangeObjCmd(
 	      values[value_i] = keyword;
 	      value_i++;
 	      break;
-	      
+
 	 case ByKeywordArg:
 	      arg_key += ByKeywordArg;
 	      values[value_i] = keyword;
 	      value_i++;
 	      break;
-	      
+
 	 default:
 	      arg_key += 9; // Error state
 	      value_i++;
@@ -305,7 +305,7 @@ Tcl_RangeObjCmd(
 	 status = TCL_ERROR;
 	 goto done;
 	 break;
-	 
+
 /*    range n */
     case 1:
 	 start = 0;
@@ -339,7 +339,7 @@ Tcl_RangeObjCmd(
 	 }
 	 if (elementCount < 0) elementCount = 0;
 	 break;
-	 
+
 /*    range n 'to' n    */
 /*    range n 'count' n */
 /*    range n 'by' n    */
@@ -400,7 +400,7 @@ Tcl_RangeObjCmd(
 	      break;
 	 }
 	 break;
-	 
+
 /*    range n n 'by' n */
     case 1121:
 	 start = values[0];
@@ -424,7 +424,7 @@ Tcl_RangeObjCmd(
 	      elementCount = step ? (start-end-step)/(-step) : 0; // 0 step -> empty list
 	 }
 	 break;
-	 
+
 /*    range n 'to' n 'by' n    */
 /*    range n 'count' n 'by' n */
     case 12121:

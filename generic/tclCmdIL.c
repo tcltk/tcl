@@ -3072,7 +3072,7 @@ Tcl_LreverseObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "list");
 	return TCL_ERROR;
     }
-    
+
     /*
      *  Handle ArithSeries special case - don't shimmer a series into a list
      *  just to reverse it.

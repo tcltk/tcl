@@ -845,7 +845,7 @@ Tcl_ListObjIndex(
     List *listRepPtr;
 
     ListGetInternalRep(listPtr, listRepPtr);
-    
+
     if (listRepPtr == NULL && TclHasInternalRep(listPtr,&tclArithSeriesType)) {
 	Tcl_WideInt widint;
 	if (Tcl_ArithSeriesObjIndex(listPtr, index, &widint) == TCL_OK) {
@@ -853,7 +853,7 @@ Tcl_ListObjIndex(
 	    return TCL_OK;
 	}
     }
-	
+
     if (listRepPtr == NULL) {
 	int result;
 	int length;
@@ -920,7 +920,7 @@ Tcl_ListObjLength(
 	    *intPtr = Tcl_ArithSeriesObjLength(listPtr);
 	    return TCL_OK;
 	}
-	
+
 	(void) Tcl_GetStringFromObj(listPtr, &length);
 	if (length == 0) {
 	    *intPtr = 0;
@@ -2060,14 +2060,14 @@ SetListFromAny(
 	if (listRepPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	elemPtrs = &listRepPtr->elements;
+	elemPtrs = listRepPtr->elements;
 	for (j = 0; j < wideLen; j++) {
 	    elemPtrs[j] = Tcl_NewWideIntObj(
 		ArithSeriesIndexM(arithSeriesRepPtr, j)); //->start+(j*arithSeriesRepPtr->step));
 	    Tcl_IncrRefCount(elemPtrs[j]);/* Since list now holds ref to it. */
 	}
-        listRepPtr->elemCount    = wideLen;
-	
+	listRepPtr->elemCount    = wideLen;
+
     } else {
 	int estCount, length;
 	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
@@ -2260,7 +2260,7 @@ static void		UpdateStringOfArithSeries (Tcl_Obj *listPtr);
  *
  * The arithmetic series object is a special case of Tcl list representing
  * an interval of an arithmetic series in constant space.
- * 
+ *
  * The arithmetic series is internally represented with three integers,
  * *start*, *end*, and *step*, Where the length is calculated with
  * the following algorithm:
@@ -2464,7 +2464,7 @@ FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesPtr)
  * DupArithSeriesInternalRep --
  *
  *	Initialize the internal representation of a arithseries Tcl_Obj to a
- *	copy of the internal representation of an existing arithseries object. 
+ *	copy of the internal representation of an existing arithseries object.
  *
  * Results:
  *	None.
@@ -2507,7 +2507,7 @@ DupArithSeriesInternalRep(srcPtr, copyPtr)
  *
  *	Update the string representation for an arithseries object.
  *	Note: This procedure does not invalidate an existing old string rep
- *	so storage will be lost if this has not already been done. 
+ *	so storage will be lost if this has not already been done.
  *
  * Results:
  *	None.
@@ -2677,9 +2677,9 @@ TclArithSeriesObjRange(
 {
     ArithSeries *arithSeriesRepPtr;
     Tcl_WideInt start = -1, end = -1, step, len;
-    
+
     ArithSeriesGetInternalRep(arithSeriesPtr, arithSeriesRepPtr);
-    
+
     if (fromIdx < 0) {
 	fromIdx = 0;
     }

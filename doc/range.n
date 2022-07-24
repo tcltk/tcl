@@ -32,19 +32,19 @@ and use the numeric result, or error as with any invalid argument value.
 .SH EXAMPLES
 .CS
 .\"
- 
+
  range 3
  \(-> 0 1
- 
+
  range 3 0
  \(-> 3 2 1 0
- 
+
  range 10 .. 1 by 2
  \(-> 10 8 6 4 2
- 
+
  set l [range 0 -5]
  \(-> 0 -1 -2 -3 -4 -5
- 
+
  foreach i [range [llength $l]] {
    puts l($i)=[lindex $l $i]
  }
@@ -54,7 +54,7 @@ and use the numeric result, or error as with any invalid argument value.
     l(3)=-3
     l(4)=-4
     l(5)=-5
- 
+
  foreach i [range [llength $l]-1 0] {
     puts l($i)=[lindex $l $i]
  }
@@ -64,7 +64,7 @@ and use the numeric result, or error as with any invalid argument value.
     l(2)=-2
     l(1)=-1
     l(0)=0
- 
+
  set sqrs [lmap i [range 1 10] {expr $i*$i}]
  \(-> 1 4 9 16 25 36 49 64 81 100
 .\"
