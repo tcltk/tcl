@@ -30,7 +30,8 @@ if {"::tcltest" ni [namespace children]} {
 catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint testlistrep [llength [info commands testlistrep]]
-interp alias {} describe {} testlistrep describe
+
+proc describe {l args} {dict get [testlistrep describe $l] {*}$args}
 
 proc irange {first last} {
     set l {}
@@ -81,6 +82,9 @@ proc spaceEqual {l} {
     }
     set diff [expr {$leadSpace - $tailSpace}]
     return [expr {$diff >= -1 && $diff <= 1}]
+}
+proc sameStore {l1 l2} {
+    expr {[describe $l1 store memoryAddress] == [describe $l2 store memoryAddress]}
 }
 proc hasSpan {l args} {
     # Returns 1 if list has a span. If args are specified, they are checked with
@@ -149,6 +153,13 @@ proc freeSpaceTail {{len 8} {tail 3}} {return [testlistrep new $len 0 $tail]}
 proc freeSpaceBoth {{len 8} {lead 3} {tail 3}} {
     return [testlistrep new $len $lead $tail]
 }
+proc listWithZombies {{len 1000} {leadZombies 100} {tailZombies 100}} {
+    # Returns an unshared listrep with zombies in front and back
+
+    # DON'T COMBINE NEXT TWO STATEMENTS ELSE ZOMBIES ARE FREED
+    set l [freeSpaceNone [expr {$len+$leadZombies+$tailZombies}]]
+    return [lrange $l $leadZombies [expr {$leadZombies+$len-1}]]
+}
 
 # Just ensure above stubs return what's expected
 if {[testConstraint testlistrep]} {
@@ -156,6 +167,10 @@ if {[testConstraint testlistrep]} {
     assertListrep [freeSpaceLead] 8 11 3 0 1
     assertListrep [freeSpaceTail] 8 11 0 3 1
     assertListrep [freeSpaceBoth] 8 14 3 3 1
+    assertListrep [listWithZombies] 1000 1200 0 0 1
+    if {![hasSpan [listWithZombies]] || [dict get [testlistrep describe [listWithZombies]] span spanStart] == 0} {
+        error "listWithZombies span missing or span start is at 0."
+    }
 }
 
 # Define some variables for some indices because the Tcl compiler will do some
@@ -912,18 +927,201 @@ test listrep-3.41 {
     list $l [leadSpace $l] [tailSpace $l]
 } -result [list {0 8 9 10 11 12 2 3 4 5 6 7} 1 11]
 
-
-
-
 #
 # 4.* - tests on shared spanned lists
+
+test listrep-4.1 {
+    Inserts in front of shared spanned list with used elements in lead space
+    creates a new list rep without more lead space than tail space.
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set l [linsert $spanl $zero -1]
+    list $master $spanl $l [leadSpaceMore $l] [hasSpan $l] [repStoreRefCount $master] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 0 999] [irange 2 997] [list -1 {*}[irange 2 997]] 1 1 2 2 1]
+
+test listrep-4.2 {
+    Inserts in front of shared spanned list with orphaned leading elements
+    allocate a new list rep with more lead space than tail space.
+    TODO - ideally this should garbage collect the orphans and reuse the lead space
+    but that needs a "lprepend" command else the listrep operand is shared and hence
+    orphans cannot be freed
+} -constraints testlistrep -body {
+    set master [freeSpaceLead 1000 100]
+    set spanl [lrange $master $two $end-2]
+    unset master; # So elements at 0, 1 are not used
+    set l [linsert $spanl $zero -1]
+    list $spanl $l [sameStore $spanl $l] [leadSpaceMore $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [list -1 {*}[irange 2 997]] 0 1 1 1 1]
+
+test listrep-4.3 {
+    Inserts in front of shared spanned list where span is at front of used
+    space reuses the same list store.
+} -constraints testlistrep -body {
+    set master [freeSpaceLead 1000 100]
+    set spanl [lrange $master $zero $end-2]
+    set l [linsert $spanl $zero -1]
+    list $spanl $l [sameStore $spanl $l] [leadSpace $l] [tailSpace $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 0 997] [irange -1 997] 1 99 0 1 3 3]
+
+test listrep-4.4 {
+    Inserts in front of shared spanned list where span is at front of used
+    space allocates new listrep if lead space insufficient even if total free space
+    is sufficient. New listrep should have more lead space than tail space.
+} -constraints testlistrep -body {
+    set master [freeSpaceBoth 1000 2]
+    set spanl [lrange $master $zero $end-2]
+    set l [linsert $spanl $zero -3 -2 -1]
+    list $spanl $l [sameStore $spanl $l] [leadSpaceMore $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 0 997] [irange -3 997] 0 1 1 2 1]
+
+test listrep-4.5 {
+    Inserts in back of shared spanned list where span is at end of used space
+    still allocates a new listrep and trailing space is more than leading space
+} -constraints testlistrep -body {
+    set master [freeSpaceBoth 1000 2]
+    set spanl [lrange $master $two $end]
+    set l [linsert $spanl $end 1000]
+    list $spanl $l [sameStore $spanl $l] [tailSpaceMore $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 999] [irange 2 1000] 0 1 1 2 1]
+
+test listrep-4.6 {
+    Inserts in middle of shared spanned list allocates a new listrep with equal
+    lead and tail space
+} -constraints testlistrep -body {
+    set master [freeSpaceBoth 1000 2]
+    set spanl [lrange $master $two $end-2]
+    set i 200
+    set l [linsert $spanl $i 1000]
+    list $spanl $l [sameStore $spanl $l] [spaceEqual $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [concat [irange 2 201] 1000 [irange 202 997]] 0 1 1 2 1]
+
+test listrep-4.7 {
+    Deletes from front of shared spanned list do not create a new allocation
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set l [lreplace $spanl $zero $one]
+    list $spanl $l [sameStore $spanl $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [irange 4 997] 1 1 3 3]
+
+test listrep-4.8 {
+    Deletes from end of shared spanned list do not create a new allocation
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set l [lreplace $spanl $end-1 $end]
+    list $spanl $l [sameStore $spanl $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [irange 2 995] 1 1 3 3]
+
+test listrep-4.9 {
+    Deletes from middle of shared spanned list creates a new allocation with
+    equal free space at front and back
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set i 500
+    set l [lreplace $spanl $i $i]
+    list $spanl $l [sameStore $spanl $l] [hasSpan $l] [spaceEqual $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [concat [irange 2 501] [irange 503 997]] 0 1 1 2 1]
+
+test listrep-4.10 {
+    Replacements with same number of elements at front of shared spanned list
+    create a new allocation with more space in front
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set l [lreplace $spanl $zero $one -2 -1]
+    list $spanl $l [sameStore $spanl $l] [leadSpaceMore $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [concat {-2 -1} [irange 4 997]] 0 1 1 2 1]
+
+test listrep-4.11 {
+    Replacements with fewer elements at front of shared spanned list
+    create a new allocation with more space in front
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set l [lreplace $spanl $zero $one -1]
+    list $spanl $l [sameStore $spanl $l] [leadSpaceMore $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [concat {-1} [irange 4 997]] 0 1 1 2 1]
+
+test listrep-4.12 {
+    Replacements with more elements at front of shared spanned list
+    create a new allocation with more space in front
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set l [lreplace $spanl $zero $one -3 -2 -1]
+    list $spanl $l [sameStore $spanl $l] [leadSpaceMore $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [concat {-3 -2 -1} [irange 4 997]] 0 1 1 2 1]
+
+test listrep-4.13 {
+    Replacements with same number of elements at back of shared spanned list
+    create a new allocation with more space in back
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set l [lreplace $spanl $end-1 $end 1000 1001]
+    list $spanl $l [sameStore $spanl $l] [tailSpaceMore $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [concat [irange 2 995] {1000 1001}] 0 1 1 2 1]
+
+test listrep-4.14 {
+    Replacements with fewer elements at back of shared spanned list
+    create a new allocation with more space in back
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set l [lreplace $spanl $end-1 $end 1000]
+    list $spanl $l [sameStore $spanl $l] [tailSpaceMore $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [concat [irange 2 995] {1000}] 0 1 1 2 1]
+
+test listrep-4.15 {
+    Replacements with more elements at back of shared spanned list
+    create a new allocation with more space in back
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set l [lreplace $spanl $end-1 $end 1000 1001 1002]
+    list $spanl $l [sameStore $spanl $l] [tailSpaceMore $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [concat [irange 2 995] {1000 1001 1002}] 0 1 1 2 1]
+
+test listrep-4.16 {
+    Replacements with same number of elements in middle of shared spanned list
+    create a new allocation with equal lead and tail sapce
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set l [lreplace $spanl $one $two -2 -1]
+    list $spanl $l [sameStore $spanl $l] [spaceEqual $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [concat {2 -2 -1} [irange 5 997]] 0 1 1 2 1]
+
+test listrep-4.17 {
+    Replacements with fewer elements in middle of shared spanned list
+    create a new allocation with equal lead and tail sapce
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set l [lreplace $spanl $end-2 $end-1 1000]
+    list $spanl $l [sameStore $spanl $l] [spaceEqual $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [concat [irange 2 994] {1000 997}] 0 1 1 2 1]
+
+test listrep-4.18 {
+    Replacements with more elements in middle of shared spanned list
+    create a new allocation with equal lead and tail sapce
+} -constraints testlistrep -body {
+    set master [freeSpaceNone 1000]
+    set spanl [lrange $master $two $end-2]
+    set l [lreplace $spanl $end-2 $end-1 1000 1001 1002]
+    list $spanl $l [sameStore $spanl $l] [spaceEqual $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
+} -result [list [irange 2 997] [concat [irange 2 994] {1000 1001 1002 997}] 0 1 1 2 1]
 
 
 # TBD - tests when tcl-obj is shared but listrep is not (lappend, lset etc.)
 # TBD - range and subrange tests
 #       - spanned and unspanned
+# TBD - zombie tests
 #
-# Special case - nested lremove (does seem tested even in 8.6)
+# Special case - nested lremove (does not seem tested in 8.6)
 
 ::tcltest::cleanupTests
 return

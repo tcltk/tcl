@@ -1447,7 +1447,7 @@ ListRepRange(
     /* Take the opportunity to garbage collect */
     /* TODO - we probably do not need the preserveSrcRep here unlike later */
     if (!preserveSrcRep) {
-        /* T:listrep-1.{4,5,8,9},2.{4,5,6,7},3.{15,16,17,18} */
+        /* T:listrep-1.{4,5,8,9},2.{4,5,6,7},3.{15,16,17,18},4.{7,8} */
 	ListRepFreeUnreferenced(srcRepPtr);
     }
 
@@ -1516,7 +1516,7 @@ ListRepRange(
 	    *rangeRepPtr = *srcRepPtr;
 	} else {
 	    /* Span not present or is shared. */
-            /* T:listrep-1.5,2.{5,7} */
+            /* T:listrep-1.5,2.{5,7},4.{7,8} */
 	    rangeRepPtr->storePtr = srcRepPtr->storePtr;
 	    rangeRepPtr->spanPtr = ListSpanNew(spanStart, rangeLen);
 	}
@@ -1527,7 +1527,7 @@ ListRepRange(
          * is mandated.
          */
 	if (!preserveSrcRep) {
-            /* T:listrep-2.{5,7},3.{16,18} */
+            /* T:listrep-2.{5,7},3.{16,18},4.{7,8} */
 	    ListRepFreeUnreferenced(rangeRepPtr);
 	}
     } else if (preserveSrcRep || ListRepIsShared(srcRepPtr)) {
@@ -1868,12 +1868,13 @@ Tcl_ListObjAppendList(
     LIST_ASSERT(listRep.storePtr->numAllocated >= finalLen);
 
     if (toLen) {
-        /* T:listrep-2.{2,9} */
+        /* T:listrep-2.{2,9},4.5 */
 	ObjArrayCopy(ListRepSlotPtr(&listRep, 0), toLen, toObjv);
     }
     ObjArrayCopy(ListRepSlotPtr(&listRep, toLen), elemCount, elemObjv);
     listRep.storePtr->numUsed = finalLen;
     if (listRep.spanPtr) {
+        /* T:listrep-4.5 */
 	LIST_ASSERT(listRep.spanPtr->spanStart == listRep.storePtr->firstUsed);
 	listRep.spanPtr->spanLength = finalLen;
     }
@@ -2149,14 +2150,14 @@ Tcl_ListObjReplace(
 	}
 	if (first == 0) {
 	    /* Delete from front, so return tail. */
-            /* T:listrep-1.{4,5},2.{4,5},3.{15,16} */
+            /* T:listrep-1.{4,5},2.{4,5},3.{15,16},4.7 */
 	    ListRep tailRep;
 	    ListRepRange(&listRep, numToDelete, origListLen-1, 0, &tailRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &tailRep);
 	    return TCL_OK;
 	} else if ((first+numToDelete) >= origListLen) {
 	    /* Delete from tail, so return head */
-            /* T:listrep-1.{8,9},2.{6,7},3.{17,18} */
+            /* T:listrep-1.{8,9},2.{6,7},3.{17,18},4.8 */
 	    ListRep headRep;
 	    ListRepRange(&listRep, 0, first-1, 0, &headRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &headRep);
@@ -2209,6 +2210,7 @@ Tcl_ListObjReplace(
 		if (listRep.storePtr->firstUsed == 0) {
 		    listRep.spanPtr = NULL;
 		} else {
+                    /* T:listrep-4.3 */
 		    listRep.spanPtr =
 			ListSpanNew(listRep.storePtr->firstUsed, newLen);
 		}
@@ -2273,24 +2275,24 @@ Tcl_ListObjReplace(
 		    &newRep);
 	toObjs = ListRepSlotPtr(&newRep, 0);
 	if (leadSegmentLen > 0) {
-            /* T:listrep-2.{2,3,13,14,15,16,17,18} */
+            /* T:listrep-2.{2,3,13:18},4.{6,9,13:18} */
 	    ObjArrayCopy(toObjs, leadSegmentLen, listObjs);
 	}
 	if (numToInsert > 0) {
-            /* T:listrep-2.{1,2,3,10,11,12,13,14,15,16,17,18} */
+            /* T:listrep-2.{1,2,3,10:18},4.{1,2,4,6,10:18} */
 	    ObjArrayCopy(&toObjs[leadSegmentLen],
 			 numToInsert,
 			 insertObjs);
 	}
 	if (tailSegmentLen > 0) {
-            /* T:listrep-2.{1,2,3,10,11,12,13,14,15} */
+            /* T:listrep-2.{1,2,3,10:15},4.{1,2,4,6,9:12,16:18} */
 	    ObjArrayCopy(&toObjs[leadSegmentLen + numToInsert],
 			 tailSegmentLen,
 			 &listObjs[leadSegmentLen+numToDelete]);
 	}
 	newRep.storePtr->numUsed = origListLen + lenChange;
 	if (newRep.spanPtr) {
-            /* T:listrep-2.{1,2,3,10,11,12,13,14,15,16,17,18} */
+            /* T:listrep-2.{1,2,3,10:18},4.{1,2,4,6,9:18} */
 	    newRep.spanPtr->spanLength = newRep.storePtr->numUsed;
 	}
 	LISTREP_CHECK(&newRep);
