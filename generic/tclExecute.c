@@ -8669,7 +8669,7 @@ PrintByteCodeInfo(
 {
     Proc *procPtr = codePtr->procPtr;
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
-    int numAuxDataItems = codePtr->auxData?BA_AuxData_Size(codePtr->auxData):0;
+    size_t numAuxDataItems = codePtr->auxData?BA_AuxData_Size(codePtr->auxData):0;
 
     fprintf(stdout, "\nExecuting ByteCode 0x%p, refCt %" TCL_Z_MODIFIER "u, epoch %" TCL_Z_MODIFIER "u, interp 0x%p (epoch %" TCL_Z_MODIFIER "u)\n",
 	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr,

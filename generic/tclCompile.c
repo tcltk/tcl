@@ -1894,9 +1894,9 @@ CompileExpanded(
     int numWords,
     CompileEnv *envPtr)
 {
+    DefineLineInformation;
     int wordIdx = 0;
     int depth = TclGetStackDepth(envPtr);
-    DefineLineInformation;
 
     StartExpanding(envPtr);
     if (cmdObj) {
@@ -1955,10 +1955,10 @@ CompileCmdCompileProc(
     Command *cmdPtr,
     CompileEnv *envPtr)
 {
-    Tcl_Parse parse;
+    DefineLineInformation;
     int unwind = 0, incrOffset = -1;
     int depth = TclGetStackDepth(envPtr);
-    DefineLineInformation;
+    Tcl_Parse parse;
 
     parse.commandStart = tokenPtr->start;
     parse.commandSize = tokenPtr->size;
@@ -3717,7 +3717,7 @@ TclCreateAuxData(
     auxDataPtr = BA_AuxData_Append(envPtr->auxData);
     auxDataPtr->clientData = clientData;
     auxDataPtr->type = typePtr;
-    return (int) (BA_AuxData_Size(envPtr->auxData) - 1);
+    return BA_AuxData_Size(envPtr->auxData) - 1;
 }
 
 /*
