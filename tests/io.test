@@ -2989,6 +2989,99 @@ test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket tempNotM
     interp delete y
 } ""
 
+test io-29.36.1 {gets on translation auto with "\r" in QA communication mode, possible regression, bug [b3977d199b]} -constraints {
+    socket tempNotMac fileevent
+} -setup {
+    set s [open "|[list [interpreter] << {
+    proc accept {so args} {
+	fconfigure $so -translation binary
+	puts -nonewline $so "who are you?\r"; flush $so
+	set a [gets $so]
+	puts -nonewline $so "really $a?\r"; flush $so
+	set a [gets $so]
+	close $so
+	set ::done $a
+    }
+    set s [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    puts [lindex [fconfigure $s -sockname] 2]
+    foreach c {1 2} {
+	vwait ::done
+	puts $::done
+    }
+    }]" r]
+    set c {}
+    set result {}
+} -body {
+    set port [gets $s]
+    foreach t {{cr lf} {auto lf}} {
+	set c [socket 127.0.0.1 $port]
+	fconfigure $c -buffering line -translation $t
+	lappend result $t
+	while {1} {
+	    set q [gets $c]
+	    switch -- $q {
+		"who are you?"   {puts $c "client"}
+		"really client?" {puts $c "yes"; lappend result $q; break}
+		default {puts $c "wrong"; lappend result "unexpected input \"$q\""; break}
+	    }
+	}
+	lappend result [gets $s]
+	close $c; set c {}
+    }
+    set result
+} -cleanup {
+    close $s
+    if {$c ne {}} { close $c }
+    unset -nocomplain s c port t q
+} -result [list {cr lf} "really client?" yes {auto lf} "really client?" yes]
+test io-29.36.2 {gets on translation auto with "\r\n" in different buffers, bug [b3977d199b]} -constraints {
+    socket tempNotMac fileevent
+} -setup {
+    set s [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set c {}
+} -body {
+    set ::cnt 0
+    proc accept {so args} {
+	fconfigure $so -translation binary
+	puts -nonewline $so "1 line\r"
+	puts -nonewline $so "\n2 li"
+	flush $so
+	# now force separate packets
+	puts -nonewline $so "ne\r"
+	flush $so
+	if {$::cnt & 1} {
+	    vwait ::cli; # simulate short delay (so client can process events, just wait for it)
+	} else {
+	    # we don't have a delay, so client would get the lines as single chunk
+	}
+	# we'll try with "\r" and without "\r" (to cover both branches, where "\r" and "eof" causes exit from [gets] by 3rd line)
+	puts -nonewline $so "\n3 line"
+	if {!($::cnt % 3)} {
+	    puts -nonewline $so "\r"
+	}
+	flush $so
+	close $so
+    }
+    while {$::cnt < 6} { incr ::cnt
+	set c [socket 127.0.0.1 [lindex [fconfigure $s -sockname] 2]]
+	fconfigure $c -blocking 0 -buffering line -translation auto
+	fileevent $c readable [list apply {c {
+	    if {[gets $c line] >= 0} {
+		lappend ::cli <$line>
+	    } elseif {[eof $c]} {
+		set ::done 1
+	    }
+	}} $c]
+	vwait ::done
+	close $c; set c {}
+    }
+    set ::cli
+} -cleanup {
+    close $s
+    if {$c ne {}} { close $c }
+    unset -nocomplain ::done ::cli ::cnt s c
+} -result [lrepeat 6 {<1 line>} {<2 line>} {<3 line>}]
+
 # Test end of line translations. Procedures tested are Tcl_Write, Tcl_Read.
 
 test io-30.1 {Tcl_Write lf, Tcl_Read lf} {
