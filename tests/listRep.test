@@ -2306,17 +2306,75 @@ test listrep-4.18 {
 } -result [list [irange 2 997] [concat [irange 2 994] {1000 1001 1002 997}] 0 1 1 2 1]
 
 #
-# Tests when tcl-obj is shared but listrep is not (lappend, lset etc.)
+# Tests when tcl-obj is shared but listrep is not. This is to ensure that
+# checks for shared values check the Tcl_Obj reference counts in addition to
+# the list internal representation reference counts. Probably some or all
+# cases are already covered elsewhere but easier to just test than look.
+test listrep-5.1 {
+    Verify that operation on a shared Tcl_Obj with a single-ref, spanless
+    list representation only modifies the target object - lappend version
+} -constraints testlistrep -body {
+    set l [freeSpaceNone]
+    set l2 $l
+    set same [sameStore $l $l2]
+    lappend l 8
+    list $same $l $l2 [sameStore $l $l2]
+} -result [list 1 [irange 0 8] [irange 0 7] 0]
 
-# TBD - canonical output on shared and spanned lists (see 1.10)
-# TBD - range and subrange tests
-#       - spanned and unspanned
-# TBD - zombie tests
-#
-# Special cases
-# - nested lset (does not seem tested in 8.6)
-# - lremove with multiple indices
-# - nested lpop
+test listrep-5.1.1 {
+    Verify that operation on a shared Tcl_Obj with a single-ref, spanless
+    list representation only modifies the target object - lset version
+} -constraints testlistrep -body {
+    set l [freeSpaceNone]
+    set l2 $l
+    set same [sameStore $l $l2]
+    lset l $end+1 8
+    list $same $l $l2 [sameStore $l $l2]
+} -result [list 1 [irange 0 8] [irange 0 7] 0]
+
+test listrep-5.1.2 {
+    Verify that operation on a shared Tcl_Obj with a single-ref, spanless
+    list representation only modifies the target object - lpop version
+} -constraints testlistrep -body {
+    set l [freeSpaceNone]
+    set l2 $l
+    set same [sameStore $l $l2]
+    lpop l
+    list $same $l $l2 [sameStore $l $l2] [hasSpan $l]
+} -result [list 1 [irange 0 6] [irange 0 7] 0 0]
+
+test listrep-5.2 {
+    Verify that operation on a shared Tcl_Obj with a single-ref, spanned
+    list representation only modifies the target object - lappend version
+} -constraints testlistrep -body {
+    set l [freeSpaceBoth 1000 10 10]
+    set l2 $l
+    set same [sameStore $l $l2]
+    lappend l 1000
+    list $same $l $l2 [sameStore $l $l2] [hasSpan $l] [hasSpan $l2]
+} -result [list 1 [irange 0 1000] [irange 0 999] 0 1 1]
+
+test listrep-5.2.1 {
+    Verify that operation on a shared Tcl_Obj with a single-ref, spanned
+    list representation only modifies the target object - lset version
+} -constraints testlistrep -body {
+    set l [freeSpaceBoth 1000 10 10]
+    set l2 $l
+    set same [sameStore $l $l2]
+    lset l $end+1 1000
+    list $same $l $l2 [sameStore $l $l2] [hasSpan $l] [hasSpan $l2]
+} -result [list 1 [irange 0 1000] [irange 0 999] 0 1 1]
+
+test listrep-5.2.2 {
+    Verify that operation on a shared Tcl_Obj with a single-ref, spanned
+    list representation only modifies the target object - lpop version
+} -constraints testlistrep -body {
+    set l [freeSpaceNone 1000]
+    set l2 $l
+    set same [sameStore $l $l2]
+    lpop l
+    list $same $l $l2 [sameStore $l $l2] [hasSpan $l] [hasSpan $l2]
+} -result [list 1 [irange 0 998] [irange 0 999] 1 1 0]
 
 ::tcltest::cleanupTests
 return
