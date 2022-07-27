@@ -385,6 +385,7 @@ static inline void
 ListRepFreeUnreferenced(const ListRep *repPtr)
 {
     if (! ListRepIsShared(repPtr) && repPtr->spanPtr) {
+        /* T:listrep-1.5.1 */
 	ListRepUnsharedFreeUnreferenced(repPtr);
     }
 }
@@ -1047,6 +1048,7 @@ static void ListRepUnsharedFreeUnreferenced(const ListRep *repPtr)
     count = spanPtr->spanStart - storePtr->firstUsed;
     LIST_COUNT_ASSERT(count);
     if (count > 0) {
+        /* T:listrep-1.5.1 */
 	ObjArrayDecrRefs(storePtr->slots, storePtr->firstUsed, count);
 	storePtr->firstUsed = spanPtr->spanStart;
 	LIST_ASSERT(storePtr->numUsed >= count);
@@ -1436,7 +1438,7 @@ ListRepRange(
     /* Take the opportunity to garbage collect */
     /* TODO - we probably do not need the preserveSrcRep here unlike later */
     if (!preserveSrcRep) {
-        /* T:listrep-1.{4,5,8,9},2.{4,5,6,7},3.{15,16,17,18} */
+        /* T:listrep-1.{4,5,8,9},2.{4:7},3.{15:18},4.{7,8} */
 	ListRepFreeUnreferenced(srcRepPtr);
     }
 
@@ -1473,6 +1475,7 @@ ListRepRange(
      */
     if (rangeStart == 0 && rangeEnd == (numSrcElems-1)) {
 	/* Option 0 - entire list. This may be used to canonicalize */
+        /* T:listrep-1.10.1 */
 	*rangeRepPtr = *srcRepPtr; /* Not ref counts not incremented */
     } else if (rangeStart == 0 && (!preserveSrcRep)
 	       && (!ListRepIsShared(srcRepPtr) && srcRepPtr->spanPtr == NULL)) {
@@ -1505,7 +1508,7 @@ ListRepRange(
 	    *rangeRepPtr = *srcRepPtr;
 	} else {
 	    /* Span not present or is shared. */
-            /* T:listrep-1.5,2.{5,7} */
+            /* T:listrep-1.5,2.{5,7},4.{7,8} */
 	    rangeRepPtr->storePtr = srcRepPtr->storePtr;
 	    rangeRepPtr->spanPtr = ListSpanNew(spanStart, rangeLen);
 	}
@@ -1516,7 +1519,7 @@ ListRepRange(
          * is mandated.
          */
 	if (!preserveSrcRep) {
-            /* T:listrep-2.{5,7},3.{16,18} */
+            /* T:listrep-1.{5.1,5.2,5.4},2.{5,7},3.{16,18},4.{7,8} */
 	    ListRepFreeUnreferenced(rangeRepPtr);
 	}
     } else if (preserveSrcRep || ListRepIsShared(srcRepPtr)) {
@@ -1622,8 +1625,9 @@ TclListObjRange(
     ListRepRange(&listRep, rangeStart, rangeEnd, isShared, &resultRep);
 
     if (isShared) {
+        /* T:listrep-1.10.1 */
 	TclNewObj(listObj);
-    }
+    } /* T:listrep-1.{4.3,5.1,5.2} */
     ListObjReplaceRepAndInvalidate(listObj, &resultRep);
     return listObj;
 }
@@ -1857,12 +1861,13 @@ Tcl_ListObjAppendList(
     LIST_ASSERT(listRep.storePtr->numAllocated >= finalLen);
 
     if (toLen) {
-        /* T:listrep-2.{2,9} */
+        /* T:listrep-2.{2,9},4.5 */
 	ObjArrayCopy(ListRepSlotPtr(&listRep, 0), toLen, toObjv);
     }
     ObjArrayCopy(ListRepSlotPtr(&listRep, toLen), elemCount, elemObjv);
     listRep.storePtr->numUsed = finalLen;
     if (listRep.spanPtr) {
+        /* T:listrep-4.5 */
 	LIST_ASSERT(listRep.spanPtr->spanStart == listRep.storePtr->firstUsed);
 	listRep.spanPtr->spanLength = finalLen;
     }
@@ -2138,14 +2143,14 @@ Tcl_ListObjReplace(
 	}
 	if (first == 0) {
 	    /* Delete from front, so return tail. */
-            /* T:listrep-1.{4,5},2.{4,5},3.{15,16} */
+            /* T:listrep-1.{4,5},2.{4,5},3.{15,16},4.7 */
 	    ListRep tailRep;
 	    ListRepRange(&listRep, numToDelete, origListLen-1, 0, &tailRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &tailRep);
 	    return TCL_OK;
 	} else if ((first+numToDelete) >= origListLen) {
 	    /* Delete from tail, so return head */
-            /* T:listrep-1.{8,9},2.{6,7},3.{17,18} */
+            /* T:listrep-1.{8,9},2.{6,7},3.{17,18},4.8 */
 	    ListRep headRep;
 	    ListRepRange(&listRep, 0, first-1, 0, &headRep);
 	    ListObjReplaceRepAndInvalidate(listObj, &headRep);
@@ -2198,6 +2203,7 @@ Tcl_ListObjReplace(
 		if (listRep.storePtr->firstUsed == 0) {
 		    listRep.spanPtr = NULL;
 		} else {
+                    /* T:listrep-4.3 */
 		    listRep.spanPtr =
 			ListSpanNew(listRep.storePtr->firstUsed, newLen);
 		}
@@ -2262,24 +2268,24 @@ Tcl_ListObjReplace(
 		    &newRep);
 	toObjs = ListRepSlotPtr(&newRep, 0);
 	if (leadSegmentLen > 0) {
-            /* T:listrep-2.{2,3,13,14,15,16,17,18} */
+            /* T:listrep-2.{2,3,13:18},4.{6,9,13:18} */
 	    ObjArrayCopy(toObjs, leadSegmentLen, listObjs);
 	}
 	if (numToInsert > 0) {
-            /* T:listrep-2.{1,2,3,10,11,12,13,14,15,16,17,18} */
+            /* T:listrep-2.{1,2,3,10:18},4.{1,2,4,6,10:18} */
 	    ObjArrayCopy(&toObjs[leadSegmentLen],
 			 numToInsert,
 			 insertObjs);
 	}
 	if (tailSegmentLen > 0) {
-            /* T:listrep-2.{1,2,3,10,11,12,13,14,15} */
+            /* T:listrep-2.{1,2,3,10:15},4.{1,2,4,6,9:12,16:18} */
 	    ObjArrayCopy(&toObjs[leadSegmentLen + numToInsert],
 			 tailSegmentLen,
 			 &listObjs[leadSegmentLen+numToDelete]);
 	}
 	newRep.storePtr->numUsed = origListLen + lenChange;
 	if (newRep.spanPtr) {
-            /* T:listrep-2.{1,2,3,10,11,12,13,14,15,16,17,18} */
+            /* T:listrep-2.{1,2,3,10:18},4.{1,2,4,6,9:18} */
 	    newRep.spanPtr->spanLength = newRep.storePtr->numUsed;
 	}
 	LISTREP_CHECK(&newRep);
@@ -2498,7 +2504,7 @@ Tcl_ListObjReplace(
             /* T:listrep-1.{7,12,15,17,19,20} */
 	    listRep.spanPtr = NULL;
 	} else {
-            /* T:listrep-1.{1,3,13,14,16,18,21} */
+            /* T:listrep-1.{1,3,6.1,13,14,16,18,21} */
 	    listRep.spanPtr = ListSpanNew(listRep.storePtr->firstUsed,
 					  listRep.storePtr->numUsed);
 	}
@@ -2723,6 +2729,7 @@ TclLsetList(
 	&& TclGetIntForIndexM(NULL, indexArgObj, ListSizeT_MAX - 1, &index)
 	       == TCL_OK) {
 	/* indexArgPtr designates a single index. */
+        /* T:listrep-1.{2.1,12.1,15.1,19.1} */
 	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
     }
 
@@ -3005,10 +3012,13 @@ TclLsetFlat(
     len = -1;
     TclListObjLengthM(NULL, subListObj, &len);
     if (valueObj == NULL) {
+        /* T:listrep-1.{4.2,5.4,6.1,7.1,8.3} */
 	Tcl_ListObjReplace(NULL, subListObj, index, 1, 0, NULL);
     } else if (index == len) {
+        /* T:listrep-1.2.1 */
 	Tcl_ListObjAppendElement(NULL, subListObj, valueObj);
     } else {
+        /* T:listrep-1.{12.1,15.1,19.1} */
 	TclListObjSetElement(NULL, subListObj, index, valueObj);
 	TclInvalidateStringRep(subListObj);
     }
@@ -3084,7 +3094,7 @@ TclListObjSetElement(
 	/* TODO - leave extra space? */
 	ListRepClone(&listRep, &newInternalRep, LISTREP_PANIC_ON_FAIL);
 	listRep = newInternalRep;
-    }
+    } /* else T:listrep-1.{12.1,15.1,19.1} */
 
     /* Retrieve element array AFTER potential cloning above */
     ListRepElements(&listRep, elemCount, elemPtrs);
