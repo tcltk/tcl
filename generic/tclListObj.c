@@ -12,8 +12,11 @@
 #include "tclInt.h"
 #include <assert.h>
 
-/* TODO - memmove is fast. Measure at what size we should prefer memmove
-   (for unshared objects only) in lieu of range operations */
+/*
+ * TODO - memmove is fast. Measure at what size we should prefer memmove
+ * (for unshared objects only) in lieu of range operations. On the other
+ * hand, more cache dirtied?
+ */
 
 /*
  * Macros for validation and bug checking.
@@ -1451,7 +1454,7 @@ ListRepRange(
     if (!preserveSrcRep) {
         /* T:listrep-1.{4,5,8,9},2.{4:7},3.{15:18},4.{7,8} */
 	ListRepFreeUnreferenced(srcRepPtr);
-    }
+    } /* else T:listrep-2.{4.2,4.3,5.2,5.3,6.2,7.2,8.1} */
 
     if (rangeStart < 0) {
 	rangeStart = 0;
@@ -1486,7 +1489,7 @@ ListRepRange(
      */
     if (rangeStart == 0 && rangeEnd == (numSrcElems-1)) {
 	/* Option 0 - entire list. This may be used to canonicalize */
-        /* T:listrep-1.10.1 */
+        /* T:listrep-1.10.1,2.8.1 */
 	*rangeRepPtr = *srcRepPtr; /* Not ref counts not incremented */
     } else if (rangeStart == 0 && (!preserveSrcRep)
 	       && (!ListRepIsShared(srcRepPtr) && srcRepPtr->spanPtr == NULL)) {
@@ -1513,7 +1516,7 @@ ListRepRange(
 	if (!preserveSrcRep && srcRepPtr->spanPtr
 	    && srcRepPtr->spanPtr->refCount <= 1) {
 	    /* If span is not shared reuse it */
-            /* T:listrep-3.{16,18} */
+            /* T:listrep-2.7.3,3.{16,18} */
 	    srcRepPtr->spanPtr->spanStart = spanStart;
 	    srcRepPtr->spanPtr->spanLength = rangeLen;
 	    *rangeRepPtr = *srcRepPtr;
@@ -1636,7 +1639,7 @@ TclListObjRange(
     ListRepRange(&listRep, rangeStart, rangeEnd, isShared, &resultRep);
 
     if (isShared) {
-        /* T:listrep-1.10.1 */
+        /* T:listrep-1.10.1,2.{4.2,4.3,5.2,5.3,6.2,7.2,8.1} */
 	TclNewObj(listObj);
     } /* T:listrep-1.{4.3,5.1,5.2} */
     ListObjReplaceRepAndInvalidate(listObj, &resultRep);
@@ -1846,7 +1849,7 @@ Tcl_ListObjAppendList(
 	    LIST_ASSERT(listRep.spanPtr->spanStart
 			== listRep.storePtr->firstUsed);
 	    listRep.spanPtr->spanLength = finalLen;
-	}
+	} /* else T:listrep-3.6.3 */
 	LIST_ASSERT(ListRepStart(&listRep) == listRep.storePtr->firstUsed);
 	LIST_ASSERT(ListRepLength(&listRep) == finalLen);
 	LISTREP_CHECK(&listRep);
@@ -2179,7 +2182,7 @@ Tcl_ListObjReplace(
     if (numToDelete == 0) {
 	/* Case (2a) - Append to list. */
 	if (first == origListLen) {
-            /* T:listrep-1.11,2.9,3.{5,6} */
+            /* T:listrep-1.11,2.9,3.{5,6},2.2.1 */
 	    return TclListObjAppendElements(
 		interp, listObj, numToInsert, insertObjs);
 	}
@@ -2740,7 +2743,7 @@ TclLsetList(
 	&& TclGetIntForIndexM(NULL, indexArgObj, ListSizeT_MAX - 1, &index)
 	       == TCL_OK) {
 	/* indexArgPtr designates a single index. */
-        /* T:listrep-1.{2.1,12.1,15.1,19.1} */
+        /* T:listrep-1.{2.1,12.1,15.1,19.1},2.{2.3,9.3,10.1,13.1,16.1}, 3.{4,5,6}.3 */
 	return TclLsetFlat(interp, listObj, 1, &indexArgObj, valueObj);
     }
 
@@ -3023,13 +3026,13 @@ TclLsetFlat(
     len = -1;
     TclListObjLengthM(NULL, subListObj, &len);
     if (valueObj == NULL) {
-        /* T:listrep-1.{4.2,5.4,6.1,7.1,8.3} */
+        /* T:listrep-1.{4.2,5.4,6.1,7.1,8.3},2.{4,5}.4 */
 	Tcl_ListObjReplace(NULL, subListObj, index, 1, 0, NULL);
     } else if (index == len) {
-        /* T:listrep-1.2.1 */
+        /* T:listrep-1.2.1,2.{2.3,9.3},3.{4,5,6}.3 */
 	Tcl_ListObjAppendElement(NULL, subListObj, valueObj);
     } else {
-        /* T:listrep-1.{12.1,15.1,19.1} */
+        /* T:listrep-1.{12.1,15.1,19.1},2.{10,13,16}.1 */
 	TclListObjSetElement(NULL, subListObj, index, valueObj);
 	TclInvalidateStringRep(subListObj);
     }
@@ -3102,6 +3105,7 @@ TclListObjSetElement(
     /* Replace a shared internal rep with an unshared copy */
     if (listRep.storePtr->refCount > 1) {
 	ListRep newInternalRep;
+        /* T:listrep-2.{10,13,16}.1 */
 	/* TODO - leave extra space? */
 	ListRepClone(&listRep, &newInternalRep, LISTREP_PANIC_ON_FAIL);
 	listRep = newInternalRep;
