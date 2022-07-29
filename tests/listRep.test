@@ -83,8 +83,11 @@ proc spaceEqual {l} {
     set diff [expr {$leadSpace - $tailSpace}]
     return [expr {$diff >= -1 && $diff <= 1}]
 }
+proc storeAddress {l} {
+    return [describe $l store memoryAddress]
+}
 proc sameStore {l1 l2} {
-    expr {[describe $l1 store memoryAddress] == [describe $l2 store memoryAddress]}
+    expr {[storeAddress $l1] == [storeAddress $l2]}
 }
 proc hasSpan {l args} {
     # Returns 1 if list has a span. If args are specified, they are checked with
@@ -153,12 +156,12 @@ proc freeSpaceTail {{len 8} {tail 3}} {return [testlistrep new $len 0 $tail]}
 proc freeSpaceBoth {{len 8} {lead 3} {tail 3}} {
     return [testlistrep new $len $lead $tail]
 }
-proc listWithZombies {{len 1000} {leadZombies 100} {tailZombies 100}} {
-    # Returns an unshared listrep with zombies in front and back
+proc zombieSample {{len 1000} {leadzombies 100} {tailzombies 100}} {
+    # returns an unshared listrep with zombies in front and back
 
-    # DON'T COMBINE NEXT TWO STATEMENTS ELSE ZOMBIES ARE FREED
-    set l [freeSpaceNone [expr {$len+$leadZombies+$tailZombies}]]
-    return [lrange $l $leadZombies [expr {$leadZombies+$len-1}]]
+    # don't combine freespacenone and lrange else zombies are freed
+    set l [freeSpaceNone [expr {$len+$leadzombies+$tailzombies}]]
+    return [lrange $l $leadzombies [expr {$leadzombies+$len-1}]]
 }
 
 # Just ensure above stubs return what's expected
@@ -167,9 +170,9 @@ if {[testConstraint testlistrep]} {
     assertListrep [freeSpaceLead] 8 11 3 0 1
     assertListrep [freeSpaceTail] 8 11 0 3 1
     assertListrep [freeSpaceBoth] 8 14 3 3 1
-    assertListrep [listWithZombies] 1000 1200 0 0 1
-    if {![hasSpan [listWithZombies]] || [dict get [testlistrep describe [listWithZombies]] span spanStart] == 0} {
-        error "listWithZombies span missing or span start is at 0."
+    assertListrep [zombieSample] 1000 1200 0 0 1
+    if {![hasSpan [zombieSample]] || [dict get [testlistrep describe [zombieSample]] span spanStart] == 0} {
+        error "zombieSample span missing or span start is at 0."
     }
 }
 
@@ -188,6 +191,7 @@ set end end
 # 3.* - unshared internal rep, spanned
 # 4.* - shared internal rep, spanned
 # 5.* - shared Tcl_Obj
+# 6.* - lists with zombie Tcl_Obj's
 
 #
 # listrep-1.* tests all operate on unshared listreps with no free space
@@ -2305,8 +2309,8 @@ test listrep-4.18 {
     list $spanl $l [sameStore $spanl $l] [spaceEqual $l] [hasSpan $l] [repStoreRefCount $spanl] [repStoreRefCount $l]
 } -result [list [irange 2 997] [concat [irange 2 994] {1000 1001 1002 997}] 0 1 1 2 1]
 
-#
-# Tests when tcl-obj is shared but listrep is not. This is to ensure that
+# 5.* - tests on shared Tcl_Obj
+# Tests when Tcl_Obj is shared but listrep is not. This is to ensure that
 # checks for shared values check the Tcl_Obj reference counts in addition to
 # the list internal representation reference counts. Probably some or all
 # cases are already covered elsewhere but easier to just test than look.
@@ -2376,5 +2380,159 @@ test listrep-5.2.2 {
     list $same $l $l2 [sameStore $l $l2] [hasSpan $l] [hasSpan $l2]
 } -result [list 1 [irange 0 998] [irange 0 999] 1 1 0]
 
+#
+# 6.* - tests when lists contain zombies.
+# The list implementation does lazy freeing in some cases so the list store
+# contain Tcl_Obj's that are not actually referenced by any list (zombies).
+# These are to be freed next time the list store is modified by a list
+# operation as long as it is no longer shared.
+test listrep-6.1 {
+    Verify that zombies are freed up - linsert at front
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    # set l {} is for reference counts to drop to 1
+    set l [linsert $l[set l {}] $zero -1]
+    list $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list [list -1 {*}[irange 10 209]] 1 9 10 1]
+
+test listrep-6.1.1 {
+    Verify that zombies are freed up - linsert in middle
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    # set l {} is for reference counts to drop to 1
+    set l [linsert $l[set l {}] $one -1]
+    list $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list [list 10 -1 {*}[irange 11 209]] 1 9 10 1]
+
+test listrep-6.1.2 {
+    Verify that zombies are freed up - linsert at end
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    # set l {} is for reference counts to drop to 1
+    set l [linsert $l[set l {}] $end 210]
+    list $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list [irange 10 210] 1 10 9 1]
+
+test listrep-6.2 {
+    Verify that zombies are freed up - lrange version (whole)
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    # set l {} is for reference counts to drop to 1
+    set l [lrange $l[set l {}] $zero $end]
+    list $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list [irange 10 209] 1 10 10 1]
+
+test listrep-6.2.1 {
+    Verify that zombies are freed up - lrange version (subrange)
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    # set l {} is for reference counts to drop to 1
+    set l [lrange $l[set l {}] $one $end-1]
+    list $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list [irange 11 208] 1 11 11 1]
+
+test listrep-6.3 {
+    Verify that zombies are freed up - lassign version
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    # set l {} is for reference counts to drop to 1
+    set l [lassign $l[set l {}] e]
+    list $e $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list 10 [irange 11 209] 1 11 10 1]
+
+test listrep-6.4 {
+    Verify that zombies are freed up - lremove version (front)
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    # set l {} is for reference counts to drop to 1
+    set l [lremove $l[set l {}] $zero]
+    list $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list [irange 11 209] 1 11 10 1]
+
+test listrep-6.4.1 {
+    Verify that zombies are freed up - lremove version (back)
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    # set l {} is for reference counts to drop to 1
+    set l [lremove $l[set l {}] $end]
+    list $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list [irange 10 208] 1 10 11 1]
+
+test listrep-6.5 {
+    Verify that zombies are freed up - lreplace at front
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    # set l {} is for reference counts to drop to 1
+    set l [lreplace $l[set l {}] $zero $one -3 -2 -1]
+    list $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list [list -3 -2 -1 {*}[irange 12 209]] 1 9 10 1]
+
+test listrep-6.5.1 {
+    Verify that zombies are freed up - lreplace at back
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    # set l {} is for reference counts to drop to 1
+    set l [lreplace $l[set l {}] $end-1 $end -1 -2 -3]
+    list $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list [list {*}[irange 10 207] -1 -2 -3] 1 10 9 1]
+
+test listrep-6.6 {
+    Verify that zombies are freed up - lappend
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    lappend l 210
+    list $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list [irange 10 210] 1 10 9 1]
+
+test listrep-6.7 {
+    Verify that zombies are freed up - lpop version (front)
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    set e [lpop l $zero]
+    list $e $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list 10 [irange 11 209] 1 11 10 1]
+
+test listrep-6.7.1 {
+    Verify that zombies are freed up - lpop version (back)
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    set e [lpop l]
+    list $e $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list 209 [irange 10 208] 1 10 11 1]
+
+test listrep-6.8 {
+    Verify that zombies are freed up - lset version
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    lset l $zero -1
+    list $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list [list -1 {*}[irange 11 209]] 1 10 10 1]
+
+test listrep-6.8.1 {
+    Verify that zombies are freed up - lset version (back)
+} -constraints testlistrep -body {
+    set l [zombieSample 200 10 10]
+    set addr [storeAddress $l]
+    lset l $end+1 210
+    list $l [expr {$addr == [storeAddress $l]}] [leadSpace $l] [tailSpace $l] [repStoreRefCount $l]
+} -result [list [irange 10 210] 1 10 9 1]
+
+
+# All done
 ::tcltest::cleanupTests
+
 return
