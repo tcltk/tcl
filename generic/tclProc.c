@@ -2162,11 +2162,11 @@ TclProcCleanupProc(
 
     if (bodyPtr != NULL) {
 	/* procPtr is stored in body's ByteCode, so ensure to reset it. */
-	if (bodyPtr->typePtr == &tclByteCodeType) {
-	    ByteCode *codePtr = bodyPtr->internalRep.twoPtrValue.ptr1;
-	    if (codePtr->procPtr == procPtr) {
-		codePtr->procPtr = NULL;
-	    }
+	ByteCode *codePtr;
+	
+	ByteCodeGetInternalRep(bodyPtr, &tclByteCodeType, codePtr);
+	if (codePtr != NULL && codePtr->procPtr == procPtr) {
+	    codePtr->procPtr = NULL;
 	}
 	Tcl_DecrRefCount(bodyPtr);
     }

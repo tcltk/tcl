@@ -8145,10 +8145,10 @@ TestInterpResolverCmd(
  *------------------------------------------------------------------------
  */
 int TestApplyLambdaObjCmd (
-    ClientData notUsed,
+    TCL_UNUSED(void*),
     Tcl_Interp *interp,    /* Current interpreter. */
-    int objc,              /* Number of arguments. */
-    Tcl_Obj *const objv[]) /* Argument objects. */
+    TCL_UNUSED(int),       /* objc. */
+    TCL_UNUSED(Tcl_Obj *const *)) /* objv. */
 {
     Tcl_Obj *lambdaObjs[2];
     Tcl_Obj *evalObjs[2];
