@@ -1051,7 +1051,7 @@ static void ListRepUnsharedFreeUnreferenced(const ListRep *repPtr)
     count = spanPtr->spanStart - storePtr->firstUsed;
     LIST_COUNT_ASSERT(count);
     if (count > 0) {
-        /* T:listrep-1.5.1 */
+        /* T:listrep-1.5.1,6.{1:8} */
 	ObjArrayDecrRefs(storePtr->slots, storePtr->firstUsed, count);
 	storePtr->firstUsed = spanPtr->spanStart;
 	LIST_ASSERT(storePtr->numUsed >= count);
@@ -1063,6 +1063,7 @@ static void ListRepUnsharedFreeUnreferenced(const ListRep *repPtr)
 	  - (spanPtr->spanStart + spanPtr->spanLength);
     LIST_COUNT_ASSERT(count);
     if (count > 0) {
+        /* T:listrep-6.{1:8} */
 	ObjArrayDecrRefs(
 	    storePtr->slots, spanPtr->spanStart + spanPtr->spanLength, count);
 	LIST_ASSERT(storePtr->numUsed >= count);
@@ -3090,6 +3091,12 @@ TclListObjSetElement(
 	}
 	return TCL_ERROR;
     }
+
+    /*
+     * Note - garbage collect this only AFTER checking indices above.
+     * Do not want to modify listrep and then not store it back in listObj.
+     */
+    ListRepFreeUnreferenced(&listRep);
 
     /* Replace a shared internal rep with an unshared copy */
     if (listRep.storePtr->refCount > 1) {
