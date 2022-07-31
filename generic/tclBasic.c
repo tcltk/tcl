@@ -3016,7 +3016,7 @@ TclRenameCommand(
     }
 
     cmdNsPtr = cmdPtr->nsPtr;
-    oldFullName = Tcl_NewObj();
+    TclNewObj(oldFullName);
     Tcl_IncrRefCount(oldFullName);
     Tcl_GetCommandFullName(interp, cmd, oldFullName);
 
@@ -5025,7 +5025,7 @@ TclEvalEx(
 				 * TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
     int gotParse = 0;
-    size_t i, objectsUsed = 0;
+    TCL_HASH_TYPE i, objectsUsed = 0;
 				/* These variables keep track of how much
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed

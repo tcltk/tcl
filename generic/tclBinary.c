@@ -341,7 +341,7 @@ Tcl_SetByteArrayObj(
  *
  *	Attempt to extract the value from objPtr in the representation
  *	of a byte sequence. On success return the extracted byte sequence.
- *	On failures, return NULL and record error message and code in
+ *	On failure, return NULL and record error message and code in
  *	interp (if not NULL).
  *
  * Results:
@@ -872,8 +872,7 @@ BinaryFormatCmd(
 				 * cursor has visited.*/
     const char *errorString;
     const char *errorValue, *str;
-    size_t offset, size;
-    size_t length;
+    size_t offset, size, length;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg ...?");
@@ -1379,8 +1378,7 @@ BinaryScanCmd(
     unsigned char *buffer;	/* Start of result buffer. */
     const char *errorString;
     const char *str;
-    size_t offset, size, i;
-    size_t length = 0;
+    size_t offset, size, length = 0, i;
 
     Tcl_Obj *valuePtr, *elementPtr;
     Tcl_HashTable numberCacheHash;
@@ -1656,7 +1654,7 @@ BinaryScanCmd(
 	    if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    if ((count == BINARY_ALL) || (count > length - offset)) {
+	    if ((count == BINARY_ALL) || (count > (length - offset))) {
 		offset = length;
 	    } else {
 		offset += count;
