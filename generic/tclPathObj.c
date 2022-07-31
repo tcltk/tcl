@@ -25,7 +25,7 @@ static void		DupFsPathInternalRep(Tcl_Obj *srcPtr,
 static void		FreeFsPathInternalRep(Tcl_Obj *pathPtr);
 static void		UpdateStringOfFsPath(Tcl_Obj *pathPtr);
 static int		SetFsPathFromAny(Tcl_Interp *interp, Tcl_Obj *pathPtr);
-static size_t	FindSplitPos(const char *path, int separator);
+static size_t		FindSplitPos(const char *path, int separator);
 static int		IsSeparatorOrNull(int ch);
 static Tcl_Obj *	GetExtension(Tcl_Obj *pathPtr);
 static int		MakePathFromNormalized(Tcl_Interp *interp,
@@ -2571,12 +2571,72 @@ TclNativePathInFilesystem(
 /*
  *----------------------------------------------------------------------
  *
+ * TclGetHomeDir --
+ *
+ *      Returns the home directory of a user.  Note there is a difference
+ *	between not specifying a user and explicitly specifying the current
+ *	user. This mimics Tcl8's tilde expansion.
+ *
+ * Results:
+ *	Returns TCL_OK on success with home directory path in *dsPtr
+ *	and TCL_ERROR on failure with error message in interp if non-NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclGetHomeDir(
+    Tcl_Interp *interp, /* May be NULL. Only used for error messages */
+    const char *user,   /* User name. NULL -> current user */
+    Tcl_DString *dsPtr) /* Output. Is initialized by the function. Must be
+                           freed on success */
+{
+    const char *dir;
+    Tcl_DString nativeString;
+
+    Tcl_DStringInit(dsPtr);
+    Tcl_DStringInit(&nativeString);
+
+    if (user == NULL || user[0] == 0) {
+        /* No user name specified -> current user */
+
+	dir = TclGetEnv("HOME", &nativeString);
+	if (dir == NULL) {
+            if (interp) {
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(
+                                     "couldn't find HOME environment variable to"
+                                     " expand path", -1));
+                Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
+                                 "HOMELESS", NULL);
+            }
+            return TCL_ERROR;
+        }
+    } else {
+        /* User name specified - ~user */
+	dir = TclpGetUserHome(user, &nativeString);
+	if (dir == NULL) {
+	    if (interp != NULL) {
+                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                                     "user \"%s\" doesn't exist", user));
+                Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
+                                 NULL);
+            }
+            return TCL_ERROR;
+	}
+    }
+    Tcl_JoinPath(1, &dir, dsPtr);
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclResolveTildePath --
  *
- *	If the passed Tcl_Obj is begins with a tilde, does tilde resolution
+ *	If the passed path is begins with a tilde, does tilde resolution
  *	and returns a Tcl_Obj containing the resolved path. If the tilde
  *	component cannot be resolved, returns NULL. If the path does not
- *	begin with a tilde, returns unmodified.
+ *	begin with a tilde, returns as is.
  *
  *      The trailing components of the path are returned verbatim. No
  *	processing is done on them. Moreover, no assumptions should be
@@ -2585,9 +2645,11 @@ TclNativePathInFilesystem(
  *	used by caller if desired.
  *
  * Results:
- *	Returns a Tcl_Obj with resolved path and reference count 0, or the
- *	original Tcl_Obj if it does not begin with a tilde. Returns NULL
- *	if the path begins with a ~ that cannot be resolved.
+ *      Returns a Tcl_Obj with resolved path. This may be a new Tcl_Obj
+ *	with ref count 0 or that pathObj that was passed in without its
+ *	ref count modified.
+ *      Returns NULL if the path begins with a ~ that cannot be resolved
+ *	and stores an error message in interp if non-NULL.
  *
  *----------------------------------------------------------------------
  */
@@ -2596,59 +2658,30 @@ TclResolveTildePath(
     Tcl_Interp *interp, /* May be NULL. Only used for error messages */
     Tcl_Obj *pathObj)
 {
+    const char *path;
     size_t len;
     Tcl_Obj *resolvedObj;
-    const char *name;
     Tcl_DString dirString;
     size_t split;
-    char separator = '/';
 
-    /*
-     * Copied almost verbatim from the corresponding SetFsPathFromAny fragment
-     * in 8.7.
-     *
-     * First step is to translate the filename. This is similar to
-     * Tcl_TranslateFilename, but shouldn't convert everything to windows
-     * backslashes on that platform. The current implementation of this piece
-     * is a slightly optimised version of the various Tilde/Split/Join stuff
-     * to avoid multiple split/join operations.
-     *
-     * We remove any trailing directory separator.
-     *
-     * However, the split/join routines are quite complex, and one has to make
-     * sure not to break anything on Unix or Win (fCmd.test, fileName.test and
-     * cmdAH.test exercise most of the code).
-     */
-
-    name = Tcl_GetStringFromObj(pathObj, &len);
-    if (name[0] != '~') {
-        return pathObj; /* No tilde prefix, no need to resolve */
+    path = Tcl_GetStringFromObj(pathObj, &len);
+    if (path[0] != '~') {
+	return pathObj;
     }
 
     /*
      * We have multiple cases '~/foo/bar...', '~user/foo/bar...', etc.
-     * split becomes value 1 for '~/...' as well as for '~'.
+     * split becomes value 1 for '~/...' as well as for '~'. Note on
+     * Windows FindSplitPos will implicitly check for '\' as separator
+     * in addition to what is passed.
      */
-    split = FindSplitPos(name, separator);
+    split = FindSplitPos(path, '/');
 
     if (split == 1) {
         /* No user name specified -> current user */
-
-        const char *dir;
-        Tcl_DString dirString;
-
-        Tcl_DStringInit(&dirString);
-        dir = TclGetEnv("HOME", &dirString);
-        if (dir == NULL) {
-            if (interp) {
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                                     "couldn't find HOME environment variable to"
-                                     " expand path", -1));
-                Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
-                                 "HOMELESS", NULL);
-            }
-            return NULL;
-        }
+	if (TclGetHomeDir(interp, NULL, &dirString) != TCL_OK) {
+	    return NULL;
+	}
     } else {
         /* User name specified - ~user */
 
@@ -2656,28 +2689,20 @@ TclResolveTildePath(
         Tcl_DString userName;
 
         Tcl_DStringInit(&userName);
-        Tcl_DStringAppend(&userName, name+1, split-1);
+        Tcl_DStringAppend(&userName, path+1, split-1);
         expandedUser = Tcl_DStringValue(&userName);
 
-        Tcl_DStringInit(&dirString);
-        if (TclpGetUserHome(expandedUser, &dirString) == NULL) {
-            if (interp != NULL) {
-                Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                                     "user \"%s\" doesn't exist", expandedUser));
-                Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
-                                 NULL);
-            }
+	if (TclGetHomeDir(interp, expandedUser, &dirString) != TCL_OK) {
             Tcl_DStringFree(&userName);
-            Tcl_DStringFree(&dirString);
-            return NULL;
-        }
+	    return NULL;
+	}
         Tcl_DStringFree(&userName);
     }
     resolvedObj = TclDStringToObj(&dirString);
 
     if (split < len) {
         /* If any trailer, append it verbatim */
-        Tcl_AppendToObj(resolvedObj, split + name, len-split);
+        Tcl_AppendToObj(resolvedObj, split + path, len-split);
     }
 
     return resolvedObj;
@@ -2740,16 +2765,16 @@ TclResolveTildePathList(
 
     resolvedPaths = Tcl_NewListObj(objc, NULL);
     for (i = 0; i < objc; ++i) {
-        Tcl_Obj *resolvedPath;
-
+	Tcl_Obj *resolvedPath;
         path = Tcl_GetString(objv[i]);
-        if (path[0] == 0) {
-            continue; /* Skip empty strings */
-        }
-        resolvedPath = TclResolveTildePath(NULL, objv[i]);
-        if (resolvedPath) {
-            Tcl_ListObjAppendElement(NULL, resolvedPaths, resolvedPath);
-        }
+	if (path[0] == 0) {
+	    continue; /* Skip empty strings */
+	}
+	resolvedPath = TclResolveTildePath(NULL, objv[i]);
+	if (resolvedPath) {
+	    /* Paths that cannot be resolved are skipped */
+	    Tcl_ListObjAppendElement(NULL, resolvedPaths, resolvedPath);
+	}
     }
 
     return resolvedPaths;

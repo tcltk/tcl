@@ -1653,6 +1653,45 @@ TclFileTempDirCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclFileHomeCmd --
+ *
+ *	This function is invoked to process the "file home" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFileHomeCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *homeDirObj;
+    Tcl_DString dirString;
+
+    if (objc != 1 && objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?user?");
+	return TCL_ERROR;
+    }
+    if (TclGetHomeDir(interp, objc == 1 ? NULL : Tcl_GetString(objv[1]), &dirString) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    homeDirObj = TclDStringToObj(&dirString);
+    Tcl_SetObjResult(interp, homeDirObj);
+    return TCL_OK;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
