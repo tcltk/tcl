@@ -2631,6 +2631,32 @@ TclGetHomeDir(
 /*
  *----------------------------------------------------------------------
  *
+ * TclGetHomeDirObj --
+ *
+ *	Wrapper around TclGetHomeDir. See that function.
+ *
+ * Results:
+ *      Returns a Tcl_Obj containing the home directory of a user
+ *	or NULL on failure with error message in interp if non-NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *
+TclGetHomeDirObj(
+    Tcl_Interp *interp, /* May be NULL. Only used for error messages */
+    const char *user)   /* User name. NULL -> current user */
+{
+    Tcl_DString dirString;
+
+    if (TclGetHomeDir(interp, user, &dirString) != TCL_OK) {
+	return NULL;
+    }
+    return TclDStringToObj(&dirString);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclResolveTildePath --
  *
  *	If the passed path is begins with a tilde, does tilde resolution

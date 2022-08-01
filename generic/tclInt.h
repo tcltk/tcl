@@ -3023,6 +3023,7 @@ MODULE_SCOPE Tcl_Obj *	TclJoinPath(size_t elements, Tcl_Obj * const objv[],
 			    int forceRelative);
 MODULE_SCOPE int	TclGetHomeDir(Tcl_Interp *interp, const char *user,
 			    Tcl_DString *dsPtr);
+MODULE_SCOPE Tcl_Obj *	TclGetHomeDirObj(Tcl_Interp *interp, const char *user);
 MODULE_SCOPE Tcl_Obj *	TclResolveTildePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathObj);
 MODULE_SCOPE Tcl_Obj *	TclResolveTildePathList(Tcl_Obj *pathsObj);

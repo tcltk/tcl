@@ -1677,16 +1677,15 @@ TclFileHomeCmd(
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *homeDirObj;
-    Tcl_DString dirString;
 
     if (objc != 1 && objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?user?");
 	return TCL_ERROR;
     }
-    if (TclGetHomeDir(interp, objc == 1 ? NULL : Tcl_GetString(objv[1]), &dirString) != TCL_OK) {
+    homeDirObj = TclGetHomeDirObj(interp, objc == 1 ? NULL : Tcl_GetString(objv[1]));
+    if (homeDirObj == NULL) {
 	return TCL_ERROR;
     }
-    homeDirObj = TclDStringToObj(&dirString);
     Tcl_SetObjResult(interp, homeDirObj);
     return TCL_OK;
 }

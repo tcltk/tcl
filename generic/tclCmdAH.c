@@ -271,7 +271,10 @@ Tcl_CdObjCmd(
     if (objc == 2) {
 	dir = objv[1];
     } else {
-	TclNewLiteralStringObj(dir, "~");
+	dir = TclGetHomeDirObj(interp, NULL);
+	if (dir == NULL) {
+	    return TCL_ERROR;
+	}
 	Tcl_IncrRefCount(dir);
     }
     if (Tcl_FSConvertToPathType(interp, dir) != TCL_OK) {
