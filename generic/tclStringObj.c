@@ -1744,7 +1744,7 @@ Tcl_AppendUnicodeToObj(
 	return;
     }
 
-    SetStringFromAny(NULL, objPtr);
+    SetUTF16StringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
     stringPtr = stringAttemptRealloc(stringPtr, stringPtr->numChars + length);
     memcpy(&stringPtr->unicode[stringPtr->numChars], unicode, length);
