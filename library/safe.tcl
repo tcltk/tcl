@@ -733,11 +733,6 @@ proc ::safe::CheckFileName {child file} {
 # prevent discovery of what home directories exist.
 
 proc ::safe::AliasFileSubcommand {child subcommand name} {
-    # TODO - if TIP602 is accepted for Tcl9, this check could be removed.
-    # The check is required if TCL_TILDE_EXPAND is defined.
-    if {[string match ~* $name]} {
-	set name ./$name
-    }
     tailcall ::interp invokehidden $child tcl:file:$subcommand $name
 }
 

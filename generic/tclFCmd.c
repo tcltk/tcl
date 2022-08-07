@@ -882,17 +882,6 @@ FileBasename(
     Tcl_IncrRefCount(splitPtr);
 
     if (objc != 0) {
-#ifdef TCL_TILDE_EXPAND
-        if ((objc == 1) && (*TclGetString(pathPtr) == '~')) {
-	    Tcl_DecrRefCount(splitPtr);
-	    if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
-		return NULL;
-	    }
-	    splitPtr = Tcl_FSSplitPath(pathPtr, &objc);
-	    Tcl_IncrRefCount(splitPtr);
-	}
-#endif
-
         /*
          * Return the last component, unless it is the only component, and it
 	 * is the root of an absolute path.

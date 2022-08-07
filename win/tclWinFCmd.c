@@ -1715,22 +1715,7 @@ ConvertFileNameFormat(
 	    Tcl_WCharToUtfDString(nativeName, TCL_INDEX_NONE, &dsTemp);
 	    Tcl_DStringFree(&ds);
 
-	    /*
-	     * Deal with issues of tildes being absolute.
-	     */
-
-#ifdef TCL_TILDE_EXPAND
-            if (Tcl_DStringValue(&dsTemp)[0] == '~') {
-		TclNewLiteralStringObj(tempPath, "./");
-		Tcl_AppendToObj(tempPath, Tcl_DStringValue(&dsTemp),
-			Tcl_DStringLength(&dsTemp));
-		Tcl_DStringFree(&dsTemp);
-	    } else {
-		tempPath = TclDStringToObj(&dsTemp);
-	    }
-#else
             tempPath = TclDStringToObj(&dsTemp);
-#endif /* TCL_TILDE_EXPAND */
             Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
 	    FindClose(handle);
 	}

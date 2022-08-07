@@ -699,19 +699,7 @@ TclPathPart(
 
 	splitPtr = Tcl_FSSplitPath(pathPtr, &splitElements);
 	Tcl_IncrRefCount(splitPtr);
-#ifdef TCL_TILDE_EXPAND
-        if (splitElements == 1  &&  TclGetString(pathPtr)[0] == '~') {
-	    Tcl_Obj *norm;
 
-	    TclDecrRefCount(splitPtr);
-	    norm = Tcl_FSGetNormalizedPath(interp, pathPtr);
-	    if (norm == NULL) {
-		return NULL;
-	    }
-	    splitPtr = Tcl_FSSplitPath(norm, &splitElements);
-	    Tcl_IncrRefCount(splitPtr);
-	}
-#endif /* TCL_TILDE_EXPAND */
         if (portion == TCL_PATH_TAIL) {
 	    /*
 	     * Return the last component, unless it is the only component, and
@@ -1040,18 +1028,6 @@ TclJoinPath(
 	}
 	ptr = Tcl_GetStringFromObj(res, &length);
 
-#ifdef TCL_TILDE_EXPAND
-        /*
-         * Strip off any './' before a tilde, unless this is the beginning of
-	 * the path.
-	 */
-
-	if (length > 0 && strEltLen > 0 && (strElt[0] == '.') &&
-		(strElt[1] == '/') && (strElt[2] == '~')) {
-	    strElt += 2;
-	}
-#endif /* TCL_TILDE_EXPAND */
-
         /*
          * A NULL value for fsPtr at this stage basically means we're trying
 	 * to join a relative path onto something which is also relative (or
@@ -1250,8 +1226,10 @@ TclNewFSPathObj(
     const char *p;
     int state = 0, count = 0;
 
-#ifdef TCL_TILDE_EXPAND
-    /* [Bug 2806250] - this is only a partial solution of the problem.
+    /*
+     * This comment is kept from the days of tilde expansion because
+     * it is illustrative of a more general problem.
+     * [Bug 2806250] - this is only a partial solution of the problem.
      * The PATHFLAGS != 0 representation assumes in many places that
      * the "tail" part stored in the normPathPtr field is itself a
      * relative path.  Strings that begin with "~" are not relative paths,
@@ -1267,14 +1245,6 @@ TclNewFSPathObj(
      * that by mounting on path prefixes like foo:// which cannot be the
      * name of a file or directory read from a native [glob] operation.
      */
-    if (addStrRep[0] == '~') {
-	Tcl_Obj *tail = Tcl_NewStringObj(addStrRep, len);
-
-	pathPtr = AppendPath(dirPtr, tail);
-	Tcl_DecrRefCount(tail);
-	return pathPtr;
-    }
-#endif /* TCL_TILDE_EXPAND */
 
     TclNewObj(pathPtr);
     fsPathPtr = (FsPath *)Tcl_Alloc(sizeof(FsPath));
@@ -2231,126 +2201,7 @@ SetFsPathFromAny(
      */
 
     name = Tcl_GetStringFromObj(pathPtr, &len);
-
-    /*
-     * Handle tilde substitutions, if needed.
-     */
-
-#ifdef TCL_TILDE_EXPAND
-    if (len && name[0] == '~') {
-	Tcl_DString temp;
-	size_t split;
-	char separator = '/';
-
-	/*
-	 * We have multiple cases '~/foo/bar...', '~user/foo/bar...', etc.
-	 * split becomes value 1 for '~/...' as well as for '~'.
-	 */
-	split = FindSplitPos(name, separator);
-
-	/*
-	 * Do some tilde substitution.
-	 */
-
-	if (split == 1) {
-	    /*
-	     * We have just '~' (or '~/...')
-	     */
-
-	    const char *dir;
-	    Tcl_DString dirString;
-
-	    dir = TclGetEnv("HOME", &dirString);
-	    if (dir == NULL) {
-		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "couldn't find HOME environment variable to"
-			    " expand path", -1));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH",
-			    "HOMELESS", NULL);
-		}
-		return TCL_ERROR;
-	    }
-	    Tcl_DStringInit(&temp);
-	    Tcl_JoinPath(1, &dir, &temp);
-	    Tcl_DStringFree(&dirString);
-	} else {
-	    /*
-	     * There is a '~user'
-	     */
-
-	    const char *expandedUser;
-	    Tcl_DString userName;
-
-	    Tcl_DStringInit(&userName);
-	    Tcl_DStringAppend(&userName, name+1, split-1);
-	    expandedUser = Tcl_DStringValue(&userName);
-
-	    Tcl_DStringInit(&temp);
-	    if (TclpGetUserHome(expandedUser, &temp) == NULL) {
-		if (interp != NULL) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "user \"%s\" doesn't exist", expandedUser));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "PATH", "NOUSER",
-			    NULL);
-		}
-		Tcl_DStringFree(&userName);
-		Tcl_DStringFree(&temp);
-		return TCL_ERROR;
-	    }
-	    Tcl_DStringFree(&userName);
-	}
-
-	transPtr = TclDStringToObj(&temp);
-
-	if (split != len) {
-	    /*
-	     * Join up the tilde substitution with the rest.
-	     */
-
-	    if (name[split+1] == separator) {
-		/*
-		 * Somewhat tricky case like ~//foo/bar. Make use of
-		 * Split/Join machinery to get it right. Assumes all paths
-		 * beginning with ~ are part of the native filesystem.
-		 */
-
-		size_t objc;
-		Tcl_Obj **objv;
-		Tcl_Obj *parts = TclpNativeSplitPath(pathPtr, NULL);
-
-		TclListObjGetElementsM(NULL, parts, &objc, &objv);
-
-		/*
-		 * Skip '~'. It's replaced by its expansion.
-		 */
-
-		objc--; objv++;
-		while (objc--) {
-		    TclpNativeJoinPath(transPtr, TclGetString(*objv));
-		    objv++;
-		}
-		TclDecrRefCount(parts);
-	    } else {
-		Tcl_Obj *pair[2];
-
-		pair[0] = transPtr;
-		pair[1] = Tcl_NewStringObj(name+split+1, -1);
-		transPtr = TclJoinPath(2, pair, 1);
-		if (transPtr != pair[0]) {
-		    Tcl_DecrRefCount(pair[0]);
-		}
-		if (transPtr != pair[1]) {
-		    Tcl_DecrRefCount(pair[1]);
-		}
-	    }
-	}
-    } else {
-	transPtr = TclJoinPath(1, &pathPtr, 1);
-    }
-#else
     transPtr = TclJoinPath(1, &pathPtr, 1);
-#endif /* TCL_TILDE_EXPAND */
 
     /*
      * Now we have a translated filename in 'transPtr'. This will have forward
