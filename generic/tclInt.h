@@ -3711,6 +3711,9 @@ MODULE_SCOPE int	Tcl_LsetObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_LsortObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LsubstObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE Tcl_Command TclInitNamespaceCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	TclNamespaceEnsembleCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
