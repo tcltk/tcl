@@ -1534,12 +1534,15 @@ TclPushProcCallFrame(
 	 * is up-to-date), the namespace must match (so variable handling
 	 * is right) and the resolverEpoch must match (so that new shadowed
 	 * commands and/or resolver changes are considered).
+	 * Ensure the ByteCode's procPtr is the same (or it's precompiled).
 	 */
 
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
-		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)) {
+		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)
+		|| ((codePtr->procPtr != procPtr) && procPtr->bodyPtr->bytes)
+	) {
 	    goto doCompilation;
 	}
     } else {
@@ -1880,6 +1883,7 @@ TclProcCompileProc(
      * procPtr->numCompiledLocals if new local variables are found while
      * compiling.
      *
+     * Ensure the ByteCode's procPtr is the same (or it is pure precompiled).
      * Precompiled procedure bodies, however, are immutable and therefore they
      * are not recompiled, even if things have changed.
      */
@@ -1888,7 +1892,9 @@ TclProcCompileProc(
 	if (((Interp *) *codePtr->interpHandle == iPtr)
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == nsPtr)
-		&& (codePtr->nsEpoch == nsPtr->resolverEpoch)) {
+		&& (codePtr->nsEpoch == nsPtr->resolverEpoch)
+		&& ((codePtr->procPtr == procPtr) || !bodyPtr->bytes)
+	) {
 	    return TCL_OK;
 	}
 
@@ -2104,6 +2110,13 @@ TclProcCleanupProc(
     Interp *iPtr = procPtr->iPtr;
 
     if (bodyPtr != NULL) {
+	/* procPtr is stored in body's ByteCode, so ensure to reset it. */
+	ByteCode *codePtr;
+	
+	ByteCodeGetInternalRep(bodyPtr, &tclByteCodeType, codePtr);
+	if (codePtr != NULL && codePtr->procPtr == procPtr) {
+	    codePtr->procPtr = NULL;
+	}
 	Tcl_DecrRefCount(bodyPtr);
     }
     for (localPtr = procPtr->firstLocalPtr; localPtr != NULL; ) {
