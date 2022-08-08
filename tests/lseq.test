@@ -344,6 +344,21 @@ test lseq-3.25 {edge case} {
     llength [lseq 1 to 1 by 1]
 } {1}
 
+test lseq-3.26 {lsort shimmer} arithSeriesShimmer {
+    set r [lseq 15 0]
+    set rep-before [lindex [tcl::unsupported::representation $r] 3]
+    set lexical_sort [lsort $r]
+    set rep-after [lindex [tcl::unsupported::representation $r] 3]
+    list ${rep-before} $lexical_sort ${rep-after}
+} {arithseries {0 1 10 11 12 13 14 15 2 3 4 5 6 7 8 9} arithseries}
+
+test lseq-3.27 {lreplace shimmer} arithSeriesShimmer {
+    set r [lseq 15 0]
+    set rep-before [lindex [tcl::unsupported::representation $r] 3]
+    set lexical_sort [lreplace $r 3 5 A B C]
+    set rep-after [lindex [tcl::unsupported::representation $r] 3]
+    list ${rep-before} $lexical_sort ${rep-after}
+} {arithseries {15 14 13 A B C 9 8 7 6 5 4 3 2 1 0} arithseries}
 
 # Test lmap
 # Test "in" expression operator
@@ -352,6 +367,7 @@ test lseq-3.25 {edge case} {
 # Test lrange (lrange of a [lseq] list produces another [lseq] list)
 # Test start,end,step expressions
 # Test lreverse
+# Test lsort shimmer
 # Test lsearch
 # Test array for
 # Test join for shimmer.

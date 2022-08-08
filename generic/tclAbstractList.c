@@ -94,6 +94,7 @@ Tcl_NewAbstractListObj(Tcl_Interp *interp, const char* typeName, size_t required
     TclNewObj(objPtr);
     repSize = sizeof(AbstractList) + requiredSize;
     abstractListRepPtr = (AbstractList*)ckalloc(repSize);
+    abstractListRepPtr->version = TCL_ABSTRACTLIST_VERSION_1;
     abstractListRepPtr->repSize = repSize;
     abstractListRepPtr->typeName = typeName;;
     abstractListRepPtr->newObjProc = NULL;

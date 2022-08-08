@@ -5054,8 +5054,12 @@ Tcl_LsortObjCmd(
 	sortInfo.compareCmdPtr = newCommandPtr;
     }
 
-    sortInfo.resultCode = TclListObjGetElementsM(interp, listObj,
+    if (TclHasInternalRep(listObj,&tclAbstractListType)) {
+	sortInfo.resultCode = Tcl_AbstractListObjGetElements(interp, listObj, &length, &listObjPtrs);
+    } else {
+	sortInfo.resultCode = TclListObjGetElementsM(interp, listObj,
 	    &length, &listObjPtrs);
+    }
     if (sortInfo.resultCode != TCL_OK || length <= 0) {
 	goto done;
     }

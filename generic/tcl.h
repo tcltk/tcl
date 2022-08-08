@@ -736,6 +736,8 @@ typedef enum {
     TCL_ABSL_SLICE, TCL_ABSL_REVERSE
 } Tcl_AbstractListProcType;
 
+typedef struct Tcl_AbstractListVersion_ *Tcl_AbstractListVersion;
+
 
 #ifndef TCL_NO_DEPRECATED
 #   define Tcl_PackageInitProc Tcl_LibraryInitProc
@@ -826,7 +828,11 @@ typedef struct Tcl_Obj {
  *  List for AbstractList types.
  */
 
+#define TCL_ABSTRACTLIST_VERSION_1 ((Tcl_AbstractListVersion) 0x1)
+
 typedef struct AbstractList {
+    Tcl_AbstractListVersion version;/* Structure version */
+    
     size_t repSize;                 /* value size */
     const char *typeName;           /* Custom value reference */
     
