@@ -2501,7 +2501,24 @@ declare 672 {
 declare 673 {
     int TclGetUniChar(Tcl_Obj *objPtr, int index)
 }
-
+declare 674 {
+    Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr)
+}
+declare 675 {
+    Tcl_Obj *Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr, Tcl_WideInt index)
+}
+declare 676 {
+    Tcl_Obj *Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx)
+}
+declare 677 {
+    Tcl_Obj *Tcl_AbstractListObjReverse(Tcl_Obj *abstractListPtr)
+}
+declare 678 {
+    Tcl_Obj *Tcl_NewAbstractListObj(Tcl_Interp *interp, const char* typeName, size_t requiredSize)
+}
+declare 679 {
+    int Tcl_AbstractListSetProc(Tcl_Obj *objPtr, Tcl_AbstractListProcType ptype, void *proc)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 

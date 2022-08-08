@@ -19,6 +19,7 @@
 
 #include "tclInt.h"
 #include "tclRegexp.h"
+#include "tclAbstractList.h"
 #include <assert.h>
 
 /*
@@ -162,6 +163,40 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"vars",		   TclInfoVarsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
+
+/*
+ * Definitions for [lseq] command
+ */
+static const char *const seq_operations[] = {
+    "..", "to", "count", "by", NULL
+};
+typedef enum Sequence_Operators {
+    LSEQ_DOTS, LSEQ_TO, LSEQ_COUNT, LSEQ_BY
+} SequenceOperators;
+static const char *const seq_step_keywords[] = {"by", NULL};
+typedef enum Step_Operators {
+    STEP_BY = 4
+} SequenceByMode;
+typedef enum Sequence_Decoded {
+     NoneArg, NumericArg, LseqKeywordArg, ByKeywordArg
+} SequenceDecoded;
+
+/*
+ * The structure used for the AirthSeries internal representation.
+ * Note that the len can, in theory, always be computed by start,end,step
+ * but it's faster to cache it inside the internal representation.
+ */
+typedef struct ArithSeries {
+    const char *name;
+    Tcl_WideInt start;
+    Tcl_WideInt end;
+    Tcl_WideInt step;
+    Tcl_WideInt len;
+    
+} ArithSeries;
+
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -2182,7 +2217,7 @@ Tcl_JoinObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int length, listLen;
+    int length, listLen, isAbstractList = 0;
     Tcl_Obj *resObjPtr = NULL, *joinObjPtr, **elemPtrs;
 
     if ((objc < 2) || (objc > 3)) {
@@ -2195,7 +2230,13 @@ Tcl_JoinObjCmd(
      * pointer to its array of element pointers.
      */
 
-    if (TclListObjGetElementsM(interp, objv[1], &listLen,
+    if (TclHasInternalRep(objv[1],&tclAbstractListType)) {
+	listLen = Tcl_AbstractListObjLength(objv[1]);
+	isAbstractList = (listLen ? 1 : 0);
+	if (listLen > 1) {
+	    Tcl_AbstractListObjGetElements(interp, objv[1], &listLen, &elemPtrs);
+	}
+    } else if (TclListObjGetElementsM(interp, objv[1], &listLen,
 	    &elemPtrs) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2206,7 +2247,11 @@ Tcl_JoinObjCmd(
     }
     if (listLen == 1) {
 	/* One element; return it */
-	Tcl_SetObjResult(interp, elemPtrs[0]);
+	if (!isAbstractList) {
+	    Tcl_SetObjResult(interp, elemPtrs[0]);
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_AbstractListObjIndex(objv[1], 0));
+	}
 	return TCL_OK;
     }
 
@@ -2233,7 +2278,11 @@ Tcl_JoinObjCmd(
 		Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
 	    }
 	    Tcl_AppendObjToObj(resObjPtr, elemPtrs[i]);
+	    if (isAbstractList) { Tcl_DecrRefCount(elemPtrs[i]); }
 	}
+    }
+    if (isAbstractList && elemPtrs) {
+	ckfree(elemPtrs);
     }
     Tcl_DecrRefCount(joinObjPtr);
     if (resObjPtr) {
@@ -2689,7 +2738,12 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    Tcl_SetObjResult(interp, TclListObjRange(objv[1], first, last));
+    if (TclHasInternalRep(objv[1],&tclAbstractListType) &&
+	TclAbstractListHasProc(objv[1], TCL_ABSL_SLICE)) {
+	Tcl_SetObjResult(interp, Tcl_AbstractListObjRange(objv[1], first, last));
+    } else {
+	Tcl_SetObjResult(interp, TclListObjRange(objv[1], first, last));
+    }
     return TCL_OK;
 }
 
@@ -3073,6 +3127,23 @@ Tcl_LreverseObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "list");
 	return TCL_ERROR;
     }
+    /*
+     *  Handle ArithSeries special case - don't shimmer a series into a list
+     *  just to reverse it.
+     */
+    if (TclHasInternalRep(objv[1],&tclAbstractListType) &&
+	TclAbstractListHasProc(objv[1], TCL_ABSL_REVERSE)) {
+	Tcl_Obj *resultObj;
+
+	resultObj = Tcl_AbstractListObjReverse(objv[1]);
+
+	if (resultObj) {
+	    Tcl_SetObjResult(interp, resultObj);
+	    return TCL_OK;
+	}
+	
+    } /* end Abstract List */
+
     if (TclListObjGetElementsM(interp, objv[1], &elemc, &elemv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -3883,6 +3954,751 @@ Tcl_LsearchObjCmd(
 	TclStackFree(interp, sortInfo.indexv);
     }
     return result;
+}
+
+/*
+ * The structure below defines the arithmetic series Tcl Obj Type by means of
+ * procedures that can be invoked by generic object code.
+ *
+ * The arithmetic series object is a Tcl_AbstractList representing an interval
+ * of an arithmetic series in constant space.
+ *
+ * The arithmetic series is internally represented with three integers,
+ * *start*, *end*, and *step*, Where the length is calculated with
+ * the following algorithm:
+ *
+ * if RANGE == 0 THEN
+ *   ERROR
+ * if RANGE > 0
+ *   LEN is (((END-START)-1)/STEP) + 1
+ * else if RANGE < 0
+ *   LEN is (((END-START)-1)/STEP) - 1
+ *
+ * And where the list's I-th element is calculated
+ * as:
+ *
+ * LIST[i] = START+(STEP*i)
+ *
+ * Zero elements ranges, like in the case of START=10 END=10 STEP=1
+ * are valid and will be equivalent to the empty list.
+ */
+
+Tcl_Obj *Tcl_NewArithSeriesObj(int objc, Tcl_Obj *objv[]);
+Tcl_WideInt Tcl_ArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
+Tcl_Obj*Tcl_ArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr, Tcl_WideInt index);
+Tcl_Obj *TclArithSeriesObjRange(Tcl_Obj *arithSeriesPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx);
+Tcl_Obj *TclArithSeriesObjReverse(Tcl_Obj *arithSeriesObjPtr);
+
+#define ArithSeriesRepPtr(arithSeriesObjPtr)				\
+    (ArithSeries *) ((arithSeriesObjPtr)->internalRep.twoPtrValue.ptr2)
+
+#define ArithSeriesIndexM(arithSeriesRepPtr, index) \
+    (arithSeriesRepPtr)->start+((index)*arithSeriesRepPtr->step)
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Arithserieslen --
+ *
+ * 	Compute the length of the equivalent list where
+ * 	every element is generated starting from *start*,
+ * 	and adding *step* to generate every successive element
+ * 	that's < *end* for positive steps, or > *end* for negative
+ * 	steps.
+ *
+ * Results:
+ *
+ * 	The length of the list generated by the given range,
+ * 	that may be zero.
+ * 	The function returns -1 if the list is of length infiite.
+ *
+ * Side effects:
+ *
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_WideInt
+ArithSeriesLen(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step)
+{
+    Tcl_WideInt len;
+
+    if (step == 0) return 0;
+    len = (step ? (1 + (((end-start))/step)) : 0);
+    return (len < 0) ? -1 : len;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DupAbstractListInternalRep --
+ *
+ *	Initialize the internal representation of a AbstractList Tcl_Obj to a
+ *	copy of the internal representation of an existing arithseries object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	We set "copyPtr"s internal rep to a pointer to a
+ *	newly allocated AbstractList structure.
+ *----------------------------------------------------------------------
+ */
+
+static void
+DupArithSeriesRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
+{
+    ArithSeries *srcArithSeries = (ArithSeries*)Tcl_AbstractListGetTypeRep(srcPtr);
+    ArithSeries *copyArithSeries = (ArithSeries*)Tcl_AbstractListGetTypeRep(copyPtr);
+
+    copyArithSeries->name = "arithseries";
+    copyArithSeries->start = srcArithSeries->start;
+    copyArithSeries->end = srcArithSeries->end;
+    copyArithSeries->step = srcArithSeries->step;
+    copyArithSeries->len = srcArithSeries->len;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNewArithSeriesObj --
+ *
+ *	Creates a new ArithSeries object. The returned object has
+ *	refcount = 0.
+ *
+ * Results:
+ *
+ * 	A Tcl_Obj pointer to the created ArithSeries object.
+ * 	A NULL pointer of the range is invalid.
+ *
+ * Side Effects:
+ *
+ * 	None.
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclNewArithSeriesObj(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_WideInt len)
+{
+    Tcl_WideInt length = (len>=0 ? len : ArithSeriesLen(start, end, step));
+    Tcl_Obj *arithSeriesPtr;
+    ArithSeries *arithSeriesRepPtr;
+    static const char *arithSeriesName = "arithseries";
+    if (length == -1) return NULL; /* Invalid range error */
+    
+    arithSeriesPtr = Tcl_NewAbstractListObj(NULL, arithSeriesName, sizeof (ArithSeries));
+    arithSeriesRepPtr = (ArithSeries*)Tcl_AbstractListGetTypeRep(arithSeriesPtr);
+    arithSeriesRepPtr->start = start;
+    arithSeriesRepPtr->end = end;
+    arithSeriesRepPtr->step = step;
+    arithSeriesRepPtr->len = length;
+    Tcl_SetAbstractListNewProc(     arithSeriesPtr, Tcl_NewArithSeriesObj    );
+    Tcl_SetAbstractListLengthProc(  arithSeriesPtr, Tcl_ArithSeriesObjLength );
+    Tcl_SetAbstractListIndexProc(   arithSeriesPtr, Tcl_ArithSeriesObjIndex  );
+    Tcl_SetAbstractListSliceProc(   arithSeriesPtr, TclArithSeriesObjRange   );
+    Tcl_SetAbstractListReverseProc( arithSeriesPtr, TclArithSeriesObjReverse );
+    Tcl_SetAbstractListDupRepProc(  arithSeriesPtr, DupArithSeriesRep        );
+    
+    if (length > 0) {
+ 	Tcl_InvalidateStringRep(arithSeriesPtr);
+    } else {
+	Tcl_InitStringRep(arithSeriesPtr, NULL, 0);
+    }
+    return arithSeriesPtr;
+}
+
+Tcl_Obj *
+Tcl_NewArithSeriesObj(int objc, Tcl_Obj *objv[])
+{
+    Tcl_WideInt start, end, step, len;
+    
+    if (objc != 4) return NULL;
+    if (Tcl_GetWideIntFromObj(NULL, objv[0], &start) != TCL_OK) return NULL;
+    if (Tcl_GetWideIntFromObj(NULL, objv[1], &end)   != TCL_OK) return NULL;
+    if (Tcl_GetWideIntFromObj(NULL, objv[2], &step)  != TCL_OK) return NULL;
+    if (Tcl_GetWideIntFromObj(NULL, objv[3], &len)   != TCL_OK) return NULL;
+
+    return TclNewArithSeriesObj(start, end, step, len);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ArithSeriesObjIndex --
+ *
+ *	Returns the element with the specified index in the list
+ *	represented by the specified Arithmentic Sequence object.
+ *	If the index is out of range, TCL_ERROR is returned,
+ *	otherwise TCL_OK is returned and the integer value of the
+ *	element is stored in *element.
+ *
+ * Results:
+ *
+ * 	TCL_OK on succes, TCL_ERROR on index out of range.
+ *
+ * Side Effects:
+ *
+ * 	On success, the integer pointed by *element is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj*
+Tcl_ArithSeriesObjIndex(Tcl_Obj *arithSeriesObjPtr, Tcl_WideInt index)
+{
+    ArithSeries *arithSeriesRepPtr;
+    Tcl_WideInt element;
+    if (arithSeriesObjPtr->typePtr != &tclAbstractListType) {
+        Tcl_Panic("Tcl_ArithSeriesObjIndex called with a not ArithSeries Obj.");
+    }
+    arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesObjPtr);
+
+    if (index < 0 || index >= arithSeriesRepPtr->len)
+	return NULL;
+    
+    /* List[i] = Start + (Step * i) */
+    element = ArithSeriesIndexM(arithSeriesRepPtr, index);
+    
+    return Tcl_NewWideIntObj(element);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ArithSeriesObjLength
+ *
+ *	Returns the length of the arithmentic series.
+ *
+ * Results:
+ *
+ * 	The length of the series as Tcl_WideInt.
+ *
+ * Side Effects:
+ *
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_WideInt Tcl_ArithSeriesObjLength(Tcl_Obj *arithSeriesObjPtr)
+{
+    ArithSeries *arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesObjPtr);
+    return arithSeriesRepPtr->len;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArithSeriesObjRange --
+ *
+ *	Makes a slice of an ArithSeries value.
+ *      *arithSeriesPtr must be known to be a valid list.
+ *
+ * Results:
+ *	Returns a pointer to the sliced series.
+ *      This may be a new object or the same object if not shared.
+ *
+ * Side effects:
+ *	?The possible conversion of the object referenced by listPtr?
+ *	?to a list object.?
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclArithSeriesObjRange(
+    Tcl_Obj *arithSeriesObjPtr,	/* List object to take a range from. */
+    Tcl_WideInt fromIdx,	/* Index of first element to include. */
+    Tcl_WideInt toIdx)		/* Index of last element to include. */
+{
+    ArithSeries *arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesObjPtr);
+    Tcl_WideInt start = -1, end = -1, step, len;
+    Tcl_Obj *fromObj, *toObj;
+    
+    
+    arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesObjPtr);
+
+    if (fromIdx < 0) {
+	fromIdx = 0;
+    }
+    if (fromIdx > toIdx) {
+	Tcl_Obj *obj;
+	TclNewObj(obj);
+	return obj;
+    }
+
+    fromObj = Tcl_ArithSeriesObjIndex(arithSeriesObjPtr, fromIdx);
+    if (fromObj == NULL) return NULL;
+    toObj = Tcl_ArithSeriesObjIndex(arithSeriesObjPtr, toIdx);
+    if (toObj == NULL) return NULL;
+    Tcl_GetWideIntFromObj(NULL, fromObj, &start);
+    Tcl_GetWideIntFromObj(NULL, toObj, &end);
+    step = arithSeriesRepPtr->step;
+    len = ArithSeriesLen(start, end, step);
+
+    if (Tcl_IsShared(arithSeriesObjPtr) ||
+	    ((arithSeriesObjPtr->refCount > 1))) {
+	return TclNewArithSeriesObj(start, end, step, len);
+    }
+
+    /*
+     * In-place is possible.
+     */
+
+    /*
+     * Even if nothing below cause any changes, we still want the
+     * string-canonizing effect of [lrange 0 end].
+     */
+
+    TclInvalidateStringRep(arithSeriesObjPtr);
+
+    arithSeriesRepPtr->start = start;
+    arithSeriesRepPtr->end = end;
+    arithSeriesRepPtr->step = step;
+    arithSeriesRepPtr->len = len;
+
+    return arithSeriesObjPtr;
+}
+
+/*
+ *  Handle ArithSeries special case - don't shimmer a series into a list
+ *  just to reverse it.
+ */
+Tcl_Obj *
+TclArithSeriesObjReverse(
+    Tcl_Obj *arithSeriesObjPtr)	/* List object to take a range from. */
+{
+    ArithSeries *arithSeriesPtr = ArithSeriesRepPtr(arithSeriesObjPtr);
+    Tcl_Obj *resultObjPtr;
+    Tcl_WideInt rstart, rend, rstep, len;
+
+    len = arithSeriesPtr->len;
+    rend = arithSeriesPtr->start;
+    rstart = arithSeriesPtr->end;
+    rstep = -arithSeriesPtr->step;
+
+    if (Tcl_IsShared(arithSeriesObjPtr)) {
+	resultObjPtr = TclNewArithSeriesObj(rstart, rend, rstep, len);
+    } else {
+	arithSeriesPtr->start = rstart;
+	arithSeriesPtr->end = rend;
+	arithSeriesPtr->step = rstep;
+	TclInvalidateStringRep(arithSeriesObjPtr);
+	resultObjPtr = arithSeriesObjPtr;
+    }
+    return resultObjPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SequenceIdentifyArgument --
+ *
+ *  Given a Tcl_Obj, identify if it is a keyword or a number
+ *
+ *  Return Value
+ *    0 - failure, unexpected value
+ *    1 - value is a number
+ *    2 - value is an operand keyword
+ *    3 - value is a by keyword
+ *
+ *  The decoded value will be assigned to the appropriate
+ *  pointer, if supplied.
+ */
+
+static SequenceDecoded
+SequenceIdentifyArgument(
+     Tcl_Interp *interp,        /* for error reporting  */
+     Tcl_Obj *argPtr,           /* Argument to decode   */
+     Tcl_WideInt *intValuePtr,  /* Return numeric value */
+     int *keywordIndexPtr)      /* Return keyword enum  */
+{
+    int status;
+    Tcl_WideInt number;
+    SequenceOperators opmode;
+    SequenceByMode bymode;
+
+    status = Tcl_GetWideIntFromObj(NULL, argPtr, &number);
+    if (status != TCL_OK) {
+	/* Check for an index expression */
+	long value;
+	Tcl_InterpState savedstate;
+	savedstate = Tcl_SaveInterpState(interp, status);
+	if (Tcl_ExprLongObj(interp, argPtr, &value) != TCL_OK) {
+	    status = Tcl_RestoreInterpState(interp, savedstate);
+	} else {
+	    status = Tcl_RestoreInterpState(interp, savedstate);
+	    if (intValuePtr) {
+		*intValuePtr = value;
+	    }
+	    return NumericArg;
+	}
+    } else {
+	if (intValuePtr) {
+	    *intValuePtr = number;
+	}
+	return NumericArg;
+    }
+
+    status = Tcl_GetIndexFromObj(NULL, argPtr, seq_operations,
+				 "lseq operation", 0, &opmode);
+    if (status == TCL_OK) {
+	if (keywordIndexPtr) {
+	    *keywordIndexPtr = opmode;
+	}
+	return LseqKeywordArg;
+    }
+
+    status = Tcl_GetIndexFromObj(NULL, argPtr, seq_step_keywords,
+				 "step keyword", 0, &bymode);
+    if (status == TCL_OK) {
+	if (keywordIndexPtr) {
+	    *keywordIndexPtr = bymode;
+	}
+	return ByKeywordArg;
+    }
+    return NoneArg;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LseqObjCmd --
+ *
+ *	This procedure is invoked to process the "lseq" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Enumerated possible argument patterns:
+ *
+ * 1:
+ *    lseq n
+ * 2:
+ *    lseq n n
+ * 3:
+ *    lseq n n n
+ *    lseq n 'to' n
+ *    lseq n 'count' n
+ *    lseq n 'by' n
+ * 4:
+ *    lseq n 'to' n n
+ *    lseq n n 'by' n
+ *    lseq n 'count' n n
+ * 5:
+ *    lseq n 'to' n 'by' n
+ *    lseq n 'count' n 'by' n
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_LseqObjCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,	   /* Current interpreter. */
+    int objc,		   /* Number of arguments. */
+    Tcl_Obj *const objv[]) /* The argument objects. */
+{
+    Tcl_WideInt elementCount = -1;
+    Tcl_WideInt start = 0, end = 0, step = 0, number = 0;
+    Tcl_WideInt values[5];
+    int status, keyword;
+    Tcl_Obj *arithSeriesPtr;
+    SequenceOperators opmode;
+    SequenceDecoded decoded;
+    int i, arg_key = 0, value_i = 0;
+
+    /*
+     * Create a decoding key by looping through the arguments and identify
+     * what kind of argument each one is.  Encode each argument as a decimal
+     * digit.
+     */
+    if (objc > 6) {
+	 /* Too many arguments */
+	 arg_key=0;
+    } else for (i=1; i<objc; i++) {
+	 arg_key = (arg_key * 10);
+	 decoded = SequenceIdentifyArgument(interp, objv[i], &number, &keyword);
+	 switch (decoded) {
+
+	 case NoneArg:
+	      /*
+	       * Unrecognizable argument
+	       * Reproduce operation error message
+	       */
+	      status = Tcl_GetIndexFromObj(interp, objv[i], seq_operations,
+		           "operation", 0, &opmode);
+	      goto done;
+
+	 case NumericArg:
+	      arg_key += NumericArg;
+	      values[value_i] = number;
+	      value_i++;
+	      break;
+
+	 case LseqKeywordArg:
+	      arg_key += LseqKeywordArg;
+	      values[value_i] = keyword;
+	      value_i++;
+	      break;
+
+	 case ByKeywordArg:
+	      arg_key += ByKeywordArg;
+	      values[value_i] = keyword;
+	      value_i++;
+	      break;
+
+	 default:
+	      arg_key += 9; // Error state
+	      value_i++;
+	      break;
+	 }
+    }
+
+    /*
+     * The key encoding defines a valid set of arguments, or indicates an
+     * error condition; process the values accordningly.
+     */
+    switch (arg_key) {
+
+/*    No argument */
+    case 0:
+	 Tcl_WrongNumArgs(interp, 1, objv,
+	     "n ??op? n ??by? n??");
+	 status = TCL_ERROR;
+	 goto done;
+	 break;
+
+/*    lseq n */
+    case 1:
+	 start = 0;
+	 elementCount = (values[0] <= 0 ? 0 : values[0]);
+	 end = values[0]-1;
+	 step = 1;
+	 break;
+
+/*    lseq n n */
+    case 11:
+	 start = values[0];
+	 end = values[1];
+	 step = (start <= end) ? 1 : -1;
+	 if (start <= end) {
+	      elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
+	 } else {
+	      elementCount = step ? (start-end-step)/(-step) : 0; // 0 step -> empty list
+	 }
+	 if (elementCount < 0) elementCount = 0;
+	 break;
+
+/*    lseq n n n */
+    case 111:
+	 start = values[0];
+	 end = values[1];
+	 step = values[2];
+	 if (start <= end) {
+	      elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
+	 } else {
+	      elementCount = step ? (start-end-step)/(-step) : 0; // 0 step -> empty list
+	 }
+	 if (elementCount < 0) elementCount = 0;
+	 break;
+
+/*    lseq n 'to' n    */
+/*    lseq n 'count' n */
+/*    lseq n 'by' n    */
+    case 121:
+	 opmode = (SequenceOperators)values[1];
+	 switch (opmode) {
+	 case LSEQ_DOTS:
+	 case LSEQ_TO:
+	      start = values[0];
+	      end = values[2];
+	      step = (start <= end) ? 1 : -1;
+	      elementCount = step ? (start-end+step)/step : 0; // 0 step -> empty list
+	      break;
+	 case LSEQ_BY:
+	      start = 0;
+	      elementCount = values[0];
+	      step = values[2];
+	      end = start + (step * elementCount);
+	      elementCount = step ? (start-end+step)/step : 0; // 0 step -> empty list
+	      break;
+	 case LSEQ_COUNT:
+	      start = values[0];
+	      elementCount = (values[2] >= 0 ? values[2] : 0);
+	      step = 1;
+	      end = start + (step * elementCount);
+	      break;
+	 default:
+	      status = TCL_ERROR;
+	      goto done;
+	 }
+	 break;
+
+/*    lseq n 'to' n n    */
+/*    lseq n 'count' n n */
+    case 1211:
+	 opmode = (SequenceOperators)values[1];
+	 switch (opmode) {
+	 case LSEQ_DOTS:
+	 case LSEQ_TO:
+	      start = values[0];
+	      end = values[2];
+	      step = values[3];
+	      break;
+	 case LSEQ_COUNT:
+	      start = values[0];
+	      elementCount = (values[2] >= 0 ? values[2] : 0);
+	      step = values[3];
+	      if (step != 0) {
+		  end = start + (step * elementCount);
+	      } else {
+		  end = start;
+		  elementCount = 0; /* empty list when step 0 */
+	      }
+	      break;
+	 case LSEQ_BY:
+	      /* Error case */
+	      status = TCL_ERROR;
+	      goto done;
+	      break;
+	 default:
+	      status = TCL_ERROR;
+	      goto done;
+	      break;
+	 }
+	 break;
+
+/*    lseq n n 'by' n */
+    case 1121:
+	 start = values[0];
+	 end = values[1];
+	 opmode = (SequenceOperators)values[2];
+	 switch (opmode) {
+	 case LSEQ_BY:
+	      step = values[3];
+	      break;
+	 case LSEQ_DOTS:
+	 case LSEQ_TO:
+	 case LSEQ_COUNT:
+	 default:
+	      status = TCL_ERROR;
+	      goto done;
+	      break;
+	 }
+	 if (start <= end) {
+	      elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
+	 } else {
+	      elementCount = step ? (start-end-step)/(-step) : 0; // 0 step -> empty list
+	 }
+	 break;
+
+/*    lseq n 'to' n 'by' n    */
+/*    lseq n 'count' n 'by' n */
+    case 12121:
+	 start = values[0];
+	 opmode = (SequenceOperators)values[3];
+	 switch (opmode) {
+	 case LSEQ_BY:
+	      step = values[4];
+	      break;
+	 default:
+	      status = TCL_ERROR;
+	      goto done;
+	      break;
+	 }
+	 opmode = (SequenceOperators)values[1];
+	 switch (opmode) {
+	 case LSEQ_DOTS:
+	 case LSEQ_TO:
+	      start = values[0];
+	      end = values[2];
+	      if ((step == 0) ||                 // 0 step --> empty list
+		  (start < end && step < 0) ||   // step sign mismatch with end-start
+		  (start > end && step > 0)) {   //   --> empty list
+		  elementCount = 0;
+	      } else {
+		  elementCount = (end-start+step)/step; 
+	      }
+	      break;
+	 case LSEQ_COUNT:
+	      start = values[0];
+	      elementCount = (values[2] >= 0 ? values[2] : 0);
+	      if (step != 0) {
+		  end = start + (step * elementCount);
+	      } else {
+		  end = start;
+		  elementCount = 0; /* empty list when step is 0 */
+	      }
+	      break;
+	 default:
+	      status = TCL_ERROR;
+	      goto done;
+	      break;
+	 }
+	 break;
+
+/*    Error cases: incomplete arguments */
+    case 12:
+	 opmode = (SequenceOperators)(int)values[1]; 
+	 status = TCL_ERROR;
+	 goto KeywordError; 
+	 break;
+    case 112:
+	 opmode = (SequenceOperators)(int)values[2]; 
+	 status = TCL_ERROR;
+	 goto KeywordError; 
+	 break;
+    case 1212:
+	 opmode = (SequenceOperators)(int)values[3]; 
+	 status = TCL_ERROR;
+	 goto KeywordError; 
+	 break;
+    KeywordError:
+	 status = TCL_ERROR;
+	 switch (opmode) {
+	 case LSEQ_DOTS:
+	 case LSEQ_TO:
+	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		  "missing \"to\" value."));
+	      break;
+	 case LSEQ_COUNT:
+	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		  "missing \"count\" value."));
+	      break;
+	 case LSEQ_BY:
+	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		  "missing \"by\" value."));
+	      break;
+	 }
+	 status = TCL_ERROR;
+	 goto done;
+	 break;
+
+/*    All other argument errors */
+    default:
+	 Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
+	 status = TCL_ERROR;
+	 goto done;
+	 break;
+    }
+
+    /*
+     * Success!  Now lets create the series object.
+     */
+    arithSeriesPtr = TclNewArithSeriesObj(start, end, step, elementCount);
+    Tcl_SetObjResult(interp, arithSeriesPtr);
+    status = TCL_OK;
+
+ done:
+    return status;
 }
 
 /*

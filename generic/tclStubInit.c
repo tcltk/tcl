@@ -2036,6 +2036,12 @@ const TclStubs tclStubs = {
     TclUtfAtIndex, /* 671 */
     TclGetRange, /* 672 */
     TclGetUniChar, /* 673 */
+    Tcl_AbstractListObjLength, /* 674 */
+    Tcl_AbstractListObjIndex, /* 675 */
+    Tcl_AbstractListObjRange, /* 676 */
+    Tcl_AbstractListObjReverse, /* 677 */
+    Tcl_NewAbstractListObj, /* 678 */
+    Tcl_AbstractListSetProc, /* 679 */
 };
 
 /* !END!: Do not edit above this line. */

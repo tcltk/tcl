@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include "tclAbstractList.h"
 #include <assert.h>
 
 /*
@@ -1690,8 +1691,21 @@ Tcl_ListObjGetElements(
 {
     ListRep listRep;
 
-    if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK)
+    if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK) {
+	if (TclHasInternalRep(objPtr,&tclAbstractListType)) {
+	    // ? TODO: ?need error message here?
+	    return (Tcl_AbstractListObjGetElements(interp, objPtr, objcPtr, objvPtr));
+	} else {
+	    int length;
+	    (void) Tcl_GetStringFromObj(objPtr, &length);
+	    if (length == 0) {
+		*objcPtr = 0;
+		*objvPtr = NULL;
+		return TCL_OK;
+	    }
+	}
 	return TCL_ERROR;
+    }
     ListRepElements(&listRep, *objcPtr, *objvPtr);
     return TCL_OK;
 }
@@ -1965,6 +1979,14 @@ Tcl_ListObjIndex(
     Tcl_Obj **elemObjs;
     ListSizeT numElems;
 
+    
+    /* Handle AbstractList before attempting SetListFromAny */
+    if (!TclHasInternalRep(listObj, &tclListType) &&
+	TclHasInternalRep(listObj, &tclAbstractListType)) {
+	*objPtrPtr = Tcl_AbstractListObjIndex(listObj, index);
+	return TCL_OK;
+    }
+    
     /*
      * TODO
      * Unlike the original list code, this does not optimize for lindex'ing
@@ -2016,6 +2038,13 @@ Tcl_ListObjLength(
 {
     ListRep listRep;
 
+    /* Handle AbstractList before attempting SetListFromAny */
+    if (!TclHasInternalRep(listObj, &tclListType) &&
+	TclHasInternalRep(listObj, &tclAbstractListType)) {
+	*lenPtr = Tcl_AbstractListObjLength(listObj);
+	return TCL_OK;
+    }
+    
     /*
      * TODO
      * Unlike the original list code, this does not optimize for lindex'ing
@@ -3270,6 +3299,32 @@ SetListFromAny(
 	    Tcl_IncrRefCount(valuePtr);
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
+    } else if (TclHasInternalRep(objPtr,&tclAbstractListType)) {
+	ListSizeT elemCount, i;
+	
+	elemCount = Tcl_AbstractListObjLength(objPtr);
+	i = 0;
+	
+	if (ListRepInitAttempt(interp, elemCount, NULL, &listRep) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+
+	LIST_ASSERT(listRep.spanPtr == NULL); /* Guard against future changes */
+	LIST_ASSERT(listRep.storePtr->firstUsed == 0);
+
+	elemPtrs = listRep.storePtr->slots;
+
+	/* Each iteration, store a list element */
+	while (i < elemCount) {
+	    *elemPtrs = Tcl_AbstractListObjIndex(objPtr, i);
+	    Tcl_IncrRefCount(*elemPtrs++);/* Since list now holds ref to it. */
+	    i++;
+	}
+
+	LIST_ASSERT((elemPtrs - listRep.storePtr->slots) == elemCount);
+
+	listRep.storePtr->numUsed = elemCount;
+	
     } else {
 	ListSizeT estCount, length;
 	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);

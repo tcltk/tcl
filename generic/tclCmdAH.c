@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include "tclAbstractList.h"
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
@@ -2801,6 +2802,7 @@ EachloopCmd(
      */
 
     for (i=0 ; i<numLists ; i++) {
+	/* Variables */
 	statePtr->vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
 	if (statePtr->vCopyList[i] == NULL) {
 	    result = TCL_ERROR;
@@ -2819,14 +2821,26 @@ EachloopCmd(
 	    goto done;
 	}
 
-	statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
-	if (statePtr->aCopyList[i] == NULL) {
-	    result = TCL_ERROR;
-	    goto done;
+	/* Values */	
+	if (TclHasInternalRep(objv[2+i*2],&tclAbstractListType)) {
+	    /* Special case for Abstract List */
+	    statePtr->vCopyList[i] = TclAbstractListObjCopy(interp, objv[2+i*2]);
+	    if (statePtr->vCopyList[i] == NULL) {
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    /* Don't compute values here, wait until the last momement */
+	    statePtr->argcList[i] = Tcl_AbstractListObjLength(statePtr->vCopyList[i]);
+	} else {
+	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
+	    if (statePtr->aCopyList[i] == NULL) {
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    TclListObjGetElementsM(NULL, statePtr->aCopyList[i],
+		    &statePtr->argcList[i], &statePtr->argvList[i]);
 	}
-	TclListObjGetElementsM(NULL, statePtr->aCopyList[i],
-		&statePtr->argcList[i], &statePtr->argvList[i]);
-
+	/* account for variable <> value mismatch */
 	j = statePtr->argcList[i] / statePtr->varcList[i];
 	if ((statePtr->argcList[i] % statePtr->varcList[i]) != 0) {
 	    j++;
@@ -2948,11 +2962,18 @@ ForeachAssignments(
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
+	int isAbstractList = 
+	    TclHasInternalRep(statePtr->vCopyList[i],&tclAbstractListType);
+
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 
 	    if (k < statePtr->argcList[i]) {
-		valuePtr = statePtr->argvList[i][k];
+		if (isAbstractList) {
+		    valuePtr = Tcl_AbstractListObjIndex(statePtr->vCopyList[i], k);
+		} else {
+		    valuePtr = statePtr->argvList[i][k];
+		}
 	    } else {
 		TclNewObj(valuePtr);	/* Empty string */
 	    }

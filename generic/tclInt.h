@@ -2631,6 +2631,39 @@ typedef struct ListRep {
 #define TclListObjIsCanonical(listObj_) \
     (((listObj_)->typePtr == &tclListType) ? ListObjIsCanonical((listObj_)) : 0)
 
+
+#define AbstractListRepPtr(abstractListObjPtr) \
+    (AbstractList *) ((abstractListObjPtr)->internalRep.twoPtrValue.ptr1)
+
+static inline Tcl_WideInt
+AbstractListObjLength(Tcl_Obj* abstractListObjPtr)
+{
+    AbstractList *oaRepPtr =
+	(AbstractList *)abstractListObjPtr->internalRep.twoPtrValue.ptr1;
+    return oaRepPtr->lengthProc(abstractListObjPtr);
+}
+
+static inline int
+TclAbstractListHasProc(Tcl_Obj* abstractListObjPtr, Tcl_AbstractListProcType ptype)
+{
+    AbstractList* repPtr = AbstractListRepPtr(abstractListObjPtr);
+    switch (ptype) {
+    case TCL_ABSL_NEW:
+	return (repPtr->newObjProc != NULL);
+    case TCL_ABSL_DUPREP:
+	return (repPtr->dupRepProc != NULL);
+    case TCL_ABSL_LENGTH:
+	return (repPtr->lengthProc != NULL);
+    case TCL_ABSL_INDEX:
+	return (repPtr->indexProc != NULL);
+    case TCL_ABSL_SLICE:
+	return (repPtr->sliceProc != NULL);
+    case TCL_ABSL_REVERSE:
+	return (repPtr->reverseProc != NULL);
+    }
+    return 0;
+}
+
 /*
  * Modes for collecting (or not) in the implementations of TclNRForeachCmd,
  * TclNRLmapCmd and their compilations.
@@ -2911,6 +2944,7 @@ MODULE_SCOPE const Tcl_ObjType tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
 MODULE_SCOPE const Tcl_ObjType tclListType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
+MODULE_SCOPE const Tcl_ObjType tclAbstractListType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE const Tcl_ObjType tclStringType;
 MODULE_SCOPE const Tcl_ObjType tclUniCharStringType;
@@ -3053,6 +3087,8 @@ struct Tcl_LoadHandle_ {
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE Tcl_Obj *  TclAbstractListObjCopy(Tcl_Interp *interp,
+			    Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, int len);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -3705,6 +3741,9 @@ MODULE_SCOPE int	Tcl_LreverseObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_LsearchObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LseqObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LsetObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3729,6 +3768,9 @@ MODULE_SCOPE int	Tcl_PutsObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_PwdObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_RangeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_ReadObjCmd(ClientData clientData,

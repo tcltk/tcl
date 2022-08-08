@@ -298,7 +298,8 @@ TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o
 
-GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
+GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o \
+	tclAbstractList.o tclAlloc.o \
 	tclAssembly.o tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o \
 	tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
 	tclCompCmds.o tclCompCmdsGR.o tclCompCmdsSZ.o tclCompExpr.o \
@@ -380,6 +381,7 @@ TCL_DECLS = \
 
 GENERIC_HDRS = \
 	$(GENERIC_DIR)/tcl.h \
+	$(GENERIC_DIR)/tclAbstractList.h \
 	$(GENERIC_DIR)/tclDecls.h \
 	$(GENERIC_DIR)/tclInt.h \
 	$(GENERIC_DIR)/tclIntDecls.h \
@@ -400,6 +402,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/regexec.c \
 	$(GENERIC_DIR)/regfree.c \
 	$(GENERIC_DIR)/regerror.c \
+	$(GENERIC_DIR)/tclAbstractList.c \
 	$(GENERIC_DIR)/tclAlloc.c \
 	$(GENERIC_DIR)/tclAssembly.c \
 	$(GENERIC_DIR)/tclAsync.c \
@@ -1243,6 +1246,9 @@ regfree.o: $(REGHDRS) $(GENERIC_DIR)/regfree.c
 
 regerror.o: $(REGHDRS) $(GENERIC_DIR)/regerrs.h $(GENERIC_DIR)/regerror.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regerror.c
+
+tclAbstractList.o: $(GENERIC_DIR)/tclAbstractList.c $(COMPILEHDR)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAbstractList.c
 
 tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
 	$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c

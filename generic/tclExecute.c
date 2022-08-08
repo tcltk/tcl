@@ -4861,6 +4861,20 @@ TEBCresume(
 	valuePtr = OBJ_UNDER_TOS;
 	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
+	/* special case for AbstractList */
+	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
+	    AbstractList *abstractListRepPtr =
+		(AbstractList*) valuePtr->internalRep.twoPtrValue.ptr1;
+	    length = abstractListRepPtr->lengthProc(valuePtr);
+	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    objResultPtr = abstractListRepPtr->indexProc(valuePtr, index);
+	    goto lindexDone;
+	}
+
 	/*
 	 * Extract the desired list element.
 	 */
@@ -4882,6 +4896,8 @@ TEBCresume(
 	}
 
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
+	
+    lindexDone:
 	if (!objResultPtr) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -4910,6 +4926,27 @@ TEBCresume(
 	 * in the process.
 	 */
 
+	/* special case for AbstractList */
+	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
+	    AbstractList* abstractListRepPtr =
+		(AbstractList *) valuePtr->internalRep.twoPtrValue.ptr1;
+	    length = abstractListRepPtr->lengthProc(valuePtr);
+
+	    /* Decode end-offset index values. */
+
+	    index = TclIndexDecode(opnd, length);
+
+	    /* Compute value @ index */
+	    if (index >= 0 && index < length) {
+		objResultPtr = abstractListRepPtr->indexProc(valuePtr, index);
+	    } else {
+		TclNewObj(objResultPtr);
+	    }
+	    pcAdjustment = 5;
+	    goto lindexFastPath2;
+	}
+
+	/* List case */
 	if (TclListObjGetElementsM(interp, valuePtr, &objc, &objv) != TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -4926,7 +4963,9 @@ TEBCresume(
 	} else {
 	    TclNewObj(objResultPtr);
 	}
-
+	
+    lindexFastPath2:
+	
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_F(pcAdjustment, 1, 1);
 
@@ -5102,7 +5141,19 @@ TEBCresume(
 
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
-	objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
+	{
+	    AbstractList* abstractListRepPtr =
+		TclHasInternalRep(valuePtr,&tclAbstractListType)
+		? (AbstractList*)valuePtr->internalRep.twoPtrValue.ptr1
+		: NULL;
+
+	    if (abstractListRepPtr && TclAbstractListHasProc(valuePtr, TCL_ABSL_SLICE)) {
+		objResultPtr = abstractListRepPtr->sliceProc(valuePtr, fromIdx, toIdx);
+	    } else {
+		objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
+	    }
+	}
+
 
 	TRACE_APPEND(("\"%.30s\"", O2S(objResultPtr)));
 	NEXT_INST_F(9, 1, 1);
@@ -5122,6 +5173,7 @@ TEBCresume(
 	if (length > 0) {
 	    int i = 0;
 	    Tcl_Obj *o;
+	    int isAbstractList = TclHasInternalRep(value2Ptr,&tclAbstractListType);
 
 	    /*
 	     * An empty list doesn't match anything.
@@ -5137,6 +5189,9 @@ TEBCresume(
 		}
 		if (s1len == s2len) {
 		    match = (memcmp(s1, s2, s1len) == 0);
+		}
+		if (isAbstractList) {
+		    TclDecrRefCount(o);
 		}
 		i++;
 	    } while (i < length && match == 0);

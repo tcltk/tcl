@@ -1975,6 +1975,22 @@ EXTERN const char *	TclUtfAtIndex(const char *src, int index);
 EXTERN Tcl_Obj *	TclGetRange(Tcl_Obj *objPtr, int first, int last);
 /* 673 */
 EXTERN int		TclGetUniChar(Tcl_Obj *objPtr, int index);
+/* 674 */
+EXTERN Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr);
+/* 675 */
+EXTERN Tcl_Obj *	Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr,
+				Tcl_WideInt index);
+/* 676 */
+EXTERN Tcl_Obj *	Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr,
+				Tcl_WideInt fromIdx, Tcl_WideInt toIdx);
+/* 677 */
+EXTERN Tcl_Obj *	Tcl_AbstractListObjReverse(Tcl_Obj *abstractListPtr);
+/* 678 */
+EXTERN Tcl_Obj *	Tcl_NewAbstractListObj(Tcl_Interp *interp,
+				const char*typeName, size_t requiredSize);
+/* 679 */
+EXTERN int		Tcl_AbstractListSetProc(Tcl_Obj *objPtr,
+				Tcl_AbstractListProcType ptype, void *proc);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2684,6 +2700,12 @@ typedef struct TclStubs {
     const char * (*tclUtfAtIndex) (const char *src, int index); /* 671 */
     Tcl_Obj * (*tclGetRange) (Tcl_Obj *objPtr, int first, int last); /* 672 */
     int (*tclGetUniChar) (Tcl_Obj *objPtr, int index); /* 673 */
+    Tcl_WideInt (*tcl_AbstractListObjLength) (Tcl_Obj *abstractListPtr); /* 674 */
+    Tcl_Obj * (*tcl_AbstractListObjIndex) (Tcl_Obj *abstractListPtr, Tcl_WideInt index); /* 675 */
+    Tcl_Obj * (*tcl_AbstractListObjRange) (Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx); /* 676 */
+    Tcl_Obj * (*tcl_AbstractListObjReverse) (Tcl_Obj *abstractListPtr); /* 677 */
+    Tcl_Obj * (*tcl_NewAbstractListObj) (Tcl_Interp *interp, const char*typeName, size_t requiredSize); /* 678 */
+    int (*tcl_AbstractListSetProc) (Tcl_Obj *objPtr, Tcl_AbstractListProcType ptype, void *proc); /* 679 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4062,6 +4084,18 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tclGetRange) /* 672 */
 #define TclGetUniChar \
 	(tclStubsPtr->tclGetUniChar) /* 673 */
+#define Tcl_AbstractListObjLength \
+	(tclStubsPtr->tcl_AbstractListObjLength) /* 674 */
+#define Tcl_AbstractListObjIndex \
+	(tclStubsPtr->tcl_AbstractListObjIndex) /* 675 */
+#define Tcl_AbstractListObjRange \
+	(tclStubsPtr->tcl_AbstractListObjRange) /* 676 */
+#define Tcl_AbstractListObjReverse \
+	(tclStubsPtr->tcl_AbstractListObjReverse) /* 677 */
+#define Tcl_NewAbstractListObj \
+	(tclStubsPtr->tcl_NewAbstractListObj) /* 678 */
+#define Tcl_AbstractListSetProc \
+	(tclStubsPtr->tcl_AbstractListSetProc) /* 679 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
