@@ -865,7 +865,7 @@ static inline void* Tcl_AbstractListGetTypeRep(
 /* Enforce type checking on supplied function pointers while isolating
  * internal struct details */
 
-int Tcl_AbstractListSetProc(Tcl_Obj *objPtr, Tcl_AbstractListProcType ptype, void *proc);
+EXTERN int Tcl_AbstractListSetProc(Tcl_Obj *objPtr, Tcl_AbstractListProcType ptype, void *proc);
 
 static inline int Tcl_SetAbstractListNewProc(Tcl_Obj *objPtr, Tcl_ALNewObjProc *proc)
 {
