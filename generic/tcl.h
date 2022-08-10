@@ -835,6 +835,7 @@ typedef struct AbstractList {
     
     size_t repSize;                 /* value size */
     const char *typeName;           /* Custom value reference */
+    Tcl_Obj **elements;             /* Used only by Tcl_AbstractListGetElements */
     
     /* List emulation functions */
     Tcl_ALNewObjProc *newObjProc;   /* How to create a new Tcl_Obj of this

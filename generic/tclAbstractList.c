@@ -97,6 +97,7 @@ Tcl_NewAbstractListObj(Tcl_Interp *interp, const char* typeName, size_t required
     abstractListRepPtr->version = TCL_ABSTRACTLIST_VERSION_1;
     abstractListRepPtr->repSize = repSize;
     abstractListRepPtr->typeName = typeName;;
+    abstractListRepPtr->elements = NULL;
     abstractListRepPtr->newObjProc = NULL;
     abstractListRepPtr->dupRepProc = NULL;
     abstractListRepPtr->lengthProc = NULL;
@@ -167,6 +168,15 @@ FreeAbstractListInternalRep(Tcl_Obj *abstractListObjPtr)
 {
     AbstractList *abstractListRepPtr =
 	(AbstractList *) abstractListObjPtr->internalRep.twoPtrValue.ptr1;
+    if (abstractListRepPtr->elements) {
+	Tcl_WideInt i, llen = abstractListRepPtr->lengthProc(abstractListObjPtr);
+	for(i=0; i<llen; i++) {
+	    if (abstractListRepPtr->elements[i]) {
+		Tcl_DecrRefCount(abstractListRepPtr->elements[i]);
+	    }
+	}
+	ckfree((char*)abstractListRepPtr->elements);
+    }
     ckfree((char *) abstractListRepPtr);
     abstractListObjPtr->internalRep.twoPtrValue.ptr1 = NULL;
     abstractListObjPtr->internalRep.twoPtrValue.ptr2 = NULL;
@@ -485,19 +495,24 @@ Tcl_AbstractListObjGetElements(
 	int i, objc = abstractListRepPtr->lengthProc(objPtr);
 
 	if (objc > 0) {
-	    objv = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj*) * objc);
-	    if (objv == NULL) {
-		if (interp) {
-		    Tcl_SetObjResult(
-			interp,
-			Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
-		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	    if (abstractListRepPtr->elements) {
+		objv = abstractListRepPtr->elements;
+	    } else {
+		objv = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj*) * objc);
+		if (objv == NULL) {
+		    if (interp) {
+			Tcl_SetObjResult(
+			    interp,
+			    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
+			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+		    }
+		    return TCL_ERROR;
 		}
-		return TCL_ERROR;
-	    }
-	    for (i = 0; i < objc; i++) {
-		objv[i] = abstractListRepPtr->indexProc(objPtr, i);
-		objv[i]->refCount += 1;
+		abstractListRepPtr->elements = objv;
+		for (i = 0; i < objc; i++) {
+		    objv[i] = abstractListRepPtr->indexProc(objPtr, i);
+		    Tcl_IncrRefCount(objv[i]);
+		}
 	    }
 	} else {
 	    objv = NULL;

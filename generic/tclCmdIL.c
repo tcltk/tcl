@@ -2278,11 +2278,7 @@ Tcl_JoinObjCmd(
 		Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
 	    }
 	    Tcl_AppendObjToObj(resObjPtr, elemPtrs[i]);
-	    if (isAbstractList) { Tcl_DecrRefCount(elemPtrs[i]); }
 	}
-    }
-    if (isAbstractList && elemPtrs) {
-	ckfree(elemPtrs);
     }
     Tcl_DecrRefCount(joinObjPtr);
     if (resObjPtr) {
@@ -3919,8 +3915,8 @@ Tcl_LsearchObjCmd(
 	    }
 	    Tcl_SetObjResult(interp, itemPtr);
 	} else {
-		Tcl_Obj *elObj;
-		TclNewIndexObj(elObj, index);
+	    Tcl_Obj *elObj;
+	    TclNewIndexObj(elObj, index);
 	    Tcl_SetObjResult(interp, elObj);
 	}
     } else if (index < 0) {
