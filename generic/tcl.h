@@ -854,6 +854,11 @@ typedef struct AbstractList {
     
 } AbstractList;
 
+static inline AbstractList* Tcl_AbstractListRepPtr(Tcl_Obj *abstractListObjPtr)
+{
+    return (AbstractList *) ((abstractListObjPtr)->internalRep.twoPtrValue.ptr1);
+}
+
 static inline void* Tcl_AbstractListGetTypeRep(
     Tcl_Obj *objPtr)         /* Object of type AbstractList */
 {									

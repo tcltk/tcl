@@ -360,17 +360,11 @@ test lseq-3.27 {lreplace shimmer} arithSeriesShimmer {
     list ${rep-before} $lexical_sort ${rep-after}
 } {arithseries {15 14 13 A B C 9 8 7 6 5 4 3 2 1 0} arithseries}
 
-# Test lmap
-# Test "in" expression operator
-# Test llength
-# Test lindex
-# Test lrange (lrange of a [lseq] list produces another [lseq] list)
-# Test start,end,step expressions
-# Test lreverse
-# Test lsort shimmer
-# Test lsearch
-# Test array for
-# Test join for shimmer.
+test lseq-3.28 {lreverse bug in ArithSeries} {} {
+    set r [lseq -5 17 3]
+    set rr [lreverse $r]
+    list $r $rr [string equal $r [lreverse $rr]]
+} {{-5 -2 1 4 7 10 13 16} {16 13 10 7 4 1 -2 -5} 1}
 
 test lseq-4.1 {end expressions} {
     set start 7
@@ -382,7 +376,6 @@ test lseq-4.2 {start expressions} {
     set tl [lseq $base-60 $base 10]
     lmap t $tl {expr {$t - $base + 60}}
 } {0 10 20 30 40 50 60}
-
 
 
 # cleanup

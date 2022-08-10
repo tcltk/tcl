@@ -194,7 +194,7 @@ DupAbstractListInternalRep(srcPtr, copyPtr)
     Tcl_Obj *srcPtr;		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr;		/* Object with internal rep to set. */
 {
-    AbstractList *srcAbstractListRepPtr = AbstractListRepPtr(srcPtr);
+    AbstractList *srcAbstractListRepPtr = Tcl_AbstractListRepPtr(srcPtr);
     AbstractList *copyAbstractListRepPtr;
     size_t repSize;
     /*
@@ -219,8 +219,8 @@ DupAbstractListInternalRep(srcPtr, copyPtr)
 static void
 DupAbstractListRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
 {
-    AbstractList *srcAbstractListRepPtr = AbstractListRepPtr(srcPtr);
-    AbstractList *copyAbstractListRepPtr = AbstractListRepPtr(copyPtr);
+    AbstractList *srcAbstractListRepPtr = Tcl_AbstractListRepPtr(srcPtr);
+    AbstractList *copyAbstractListRepPtr = Tcl_AbstractListRepPtr(copyPtr);
     void *copyRepPtr = (void*)(((char*)copyAbstractListRepPtr) + offsetof(AbstractList,typeName));
     DupAbstractListInternalRep(srcPtr, copyPtr);
 

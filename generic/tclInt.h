@@ -2632,9 +2632,6 @@ typedef struct ListRep {
     (((listObj_)->typePtr == &tclListType) ? ListObjIsCanonical((listObj_)) : 0)
 
 
-#define AbstractListRepPtr(abstractListObjPtr) \
-    (AbstractList *) ((abstractListObjPtr)->internalRep.twoPtrValue.ptr1)
-
 static inline Tcl_WideInt
 AbstractListObjLength(Tcl_Obj* abstractListObjPtr)
 {
@@ -2646,7 +2643,7 @@ AbstractListObjLength(Tcl_Obj* abstractListObjPtr)
 static inline int
 TclAbstractListHasProc(Tcl_Obj* abstractListObjPtr, Tcl_AbstractListProcType ptype)
 {
-    AbstractList* repPtr = AbstractListRepPtr(abstractListObjPtr);
+    AbstractList* repPtr = Tcl_AbstractListRepPtr(abstractListObjPtr);
     switch (ptype) {
     case TCL_ABSL_NEW:
 	return (repPtr->newObjProc != NULL);

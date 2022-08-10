@@ -4275,8 +4275,8 @@ TclArithSeriesObjReverse(
     Tcl_WideInt rstart, rend, rstep, len;
 
     len = arithSeriesPtr->len;
-    rend = arithSeriesPtr->start;
-    rstart = arithSeriesPtr->end;
+    rend = ArithSeriesIndexM(arithSeriesPtr, 0);
+    rstart = ArithSeriesIndexM(arithSeriesPtr, len-1);
     rstep = -arithSeriesPtr->step;
 
     if (Tcl_IsShared(arithSeriesObjPtr)) {
