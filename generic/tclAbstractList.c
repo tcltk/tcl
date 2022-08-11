@@ -219,26 +219,13 @@ DupAbstractListInternalRep(srcPtr, copyPtr)
     copyAbstractListRepPtr->typeName = srcAbstractListRepPtr->typeName;
     copyPtr->typePtr = &tclAbstractListType;
 
+    copyAbstractListRepPtr->elements = NULL; /* Let new object repopulate it's elements on demand. */
+
     if (srcAbstractListRepPtr->dupRepProc) {
 	srcAbstractListRepPtr->dupRepProc(srcPtr, copyPtr);
     }
 
 }
-
-/*
-static void
-DupAbstractListRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
-{
-    AbstractList *srcAbstractListRepPtr = Tcl_AbstractListRepPtr(srcPtr);
-    AbstractList *copyAbstractListRepPtr = Tcl_AbstractListRepPtr(copyPtr);
-    void *copyRepPtr = (void*)(((char*)copyAbstractListRepPtr) + offsetof(AbstractList,typeName));
-    DupAbstractListInternalRep(srcPtr, copyPtr);
-
-    copyAbstractListRepPtr->repSize = srcAbstractListRepPtr->repSize;
-    srcAbstractListRepPtr->dupRepProc(srcPtr, copyPtr);
-    copyPtr->internalRep.twoPtrValue.ptr2 = copyRepPtr;
-}
-*/
 
 /*
  *----------------------------------------------------------------------
@@ -266,6 +253,8 @@ DupAbstractListRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
  *----------------------------------------------------------------------
  */
 
+/* works for arithseries, not for arbitary element values */
+#if 0 // begin depricated
 static void
 UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
 {
@@ -306,6 +295,75 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
     }
     if (length > 0) abstractListObjPtr->bytes[length-1] = '\0';
     abstractListObjPtr->length = length-1;
+}
+#endif // end depricated
+
+static void
+UpdateStringOfAbstractList(
+    Tcl_Obj *abstractListObjPtr) /* AbstractList object with string rep to update. */
+{
+#   define LOCAL_SIZE 64
+    char localFlags[LOCAL_SIZE], *flagPtr = NULL;
+    ListSizeT numElems, i, length, bytesNeeded = 0;
+    const char *elem, *start;
+    Tcl_Obj *elemObj;
+    char *dst;
+    AbstractList* abstractListRepPtr = AbstractListGetInternalRep(abstractListObjPtr);
+
+    numElems = abstractListRepPtr->lengthProc(abstractListObjPtr);
+    /* Handle empty list case first, so rest of the routine is simpler. */
+
+    if (numElems == 0) {
+	Tcl_InitStringRep(abstractListObjPtr, NULL, 0);
+	return;
+    }
+
+    /* Pass 1: estimate space, gather flags. */
+
+    if (numElems <= LOCAL_SIZE) {
+	flagPtr = localFlags;
+    } else {
+	/* We know numElems <= LIST_MAX, so this is safe. */
+	flagPtr = (char *)ckalloc(numElems);
+    }
+    for (i = 0; i < numElems; i++) {
+	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
+	elemObj = abstractListRepPtr->indexProc(abstractListObjPtr, i);
+	elem = TclGetStringFromObj(elemObj, &length);
+	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
+	if (bytesNeeded < 0) {
+	    /* TODO - what is the max #define for Tcl9? */
+	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+	}
+	Tcl_DecrRefCount(elemObj);
+    }
+    /* TODO - what is the max #define for Tcl9? */
+    if (bytesNeeded > INT_MAX - numElems + 1) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+    }
+    bytesNeeded += numElems - 1;
+
+    /*
+     * Pass 2: copy into string rep buffer.
+     */
+
+    start = dst = Tcl_InitStringRep(abstractListObjPtr, NULL, bytesNeeded);
+    TclOOM(dst, bytesNeeded);
+    for (i = 0; i < numElems; i++) {
+	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
+	elemObj = abstractListRepPtr->indexProc(abstractListObjPtr, i);
+	elem = TclGetStringFromObj(elemObj, &length);
+	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
+	*dst++ = ' ';
+	Tcl_DecrRefCount(elemObj);
+    }
+
+    /* Set the string length to what was actually written, the safe choice */
+    (void) Tcl_InitStringRep(abstractListObjPtr, NULL, dst - 1 - start);
+
+    if (flagPtr != localFlags) {
+	ckfree(flagPtr);
+    }
 }
 
 /*
@@ -496,8 +554,10 @@ Tcl_AbstractListObjGetElements(
 
 	if (objc > 0) {
 	    if (abstractListRepPtr->elements) {
+		/* If this exists, it has already been populated */
 		objv = abstractListRepPtr->elements;
 	    } else {
+		/* Construct the elements array */
 		objv = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj*) * objc);
 		if (objv == NULL) {
 		    if (interp) {
