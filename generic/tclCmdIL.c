@@ -95,6 +95,23 @@ typedef struct {
 #define SORTMODE_ASCII_NC	8
 
 /*
+ * Definitions for [lseq] command
+ */
+static const char *const seq_operations[] = {
+    "..", "to", "count", "by", NULL
+};
+typedef enum Sequence_Operators {
+    RANGE_DOTS, RANGE_TO, RANGE_COUNT, RANGE_BY
+} SequenceOperators;
+static const char *const seq_step_keywords[] = {"by", NULL};
+typedef enum Step_Operators {
+    STEP_BY = 4
+} SequenceByMode;
+typedef enum Sequence_Decoded {
+     NoneArg, NumericArg, RangeKeywordArg, ByKeywordArg
+} SequenceDecoded;
+
+/*
  * Forward declarations for procedures defined in this file:
  */
 
@@ -2182,7 +2199,7 @@ Tcl_JoinObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    int length, listLen;
+    int length, listLen, isArithSeries = 0;
     Tcl_Obj *resObjPtr = NULL, *joinObjPtr, **elemPtrs;
 
     if ((objc < 2) || (objc > 3)) {
@@ -2195,9 +2212,14 @@ Tcl_JoinObjCmd(
      * pointer to its array of element pointers.
      */
 
-    if (TclListObjGetElementsM(interp, objv[1], &listLen,
+    if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
+	isArithSeries = 1;
+	listLen = TclArithSeriesObjLength(objv[1]);
+    } else {
+	if (TclListObjGetElementsM(interp, objv[1], &listLen,
 	    &elemPtrs) != TCL_OK) {
-	return TCL_ERROR;
+	    return TCL_ERROR;
+	}
     }
 
     if (listLen == 0) {
@@ -2206,7 +2228,15 @@ Tcl_JoinObjCmd(
     }
     if (listLen == 1) {
 	/* One element; return it */
-	Tcl_SetObjResult(interp, elemPtrs[0]);
+	if (isArithSeries) {
+	    Tcl_WideInt value;
+	    if (TclArithSeriesObjIndex(objv[1], 0, &value) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(value));
+	} else {
+	    Tcl_SetObjResult(interp, elemPtrs[0]);
+	}
 	return TCL_OK;
     }
 
@@ -2220,19 +2250,40 @@ Tcl_JoinObjCmd(
 	int i;
 
 	TclNewObj(resObjPtr);
-	for (i = 0;  i < listLen;  i++) {
-	    if (i > 0) {
+	if (isArithSeries) {
+	    Tcl_WideInt value;
+	    for (i = 0;  i < listLen;  i++) {
+		if (i > 0) {
 
-		/*
-		 * NOTE: This code is relying on Tcl_AppendObjToObj() **NOT**
-		 * to shimmer joinObjPtr.  If it did, then the case where
-		 * objv[1] and objv[2] are the same value would not be safe.
-		 * Accessing elemPtrs would crash.
-		 */
+		    /*
+		     * NOTE: This code is relying on Tcl_AppendObjToObj() **NOT**
+		     * to shimmer joinObjPtr.  If it did, then the case where
+		     * objv[1] and objv[2] are the same value would not be safe.
+		     * Accessing elemPtrs would crash.
+		     */
 
-		Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
+		    Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
+		}
+		if (TclArithSeriesObjIndex(objv[1], i, &value) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		Tcl_AppendObjToObj(resObjPtr, Tcl_NewWideIntObj(value));
 	    }
-	    Tcl_AppendObjToObj(resObjPtr, elemPtrs[i]);
+	} else {
+	    for (i = 0;  i < listLen;  i++) {
+		if (i > 0) {
+
+		    /*
+		     * NOTE: This code is relying on Tcl_AppendObjToObj() **NOT**
+		     * to shimmer joinObjPtr.  If it did, then the case where
+		     * objv[1] and objv[2] are the same value would not be safe.
+		     * Accessing elemPtrs would crash.
+		     */
+
+		    Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
+		}
+		Tcl_AppendObjToObj(resObjPtr, elemPtrs[i]);
+	    }
 	}
     }
     Tcl_DecrRefCount(joinObjPtr);
@@ -3081,17 +3132,17 @@ Tcl_LreverseObjCmd(
 	ArithSeries *arithSeriesPtr = ArithSeriesRepPtr(objv[1]);
 	Tcl_WideInt rstart, rend, rstep, len;
 
-	len = Tcl_ArithSeriesObjLength(objv[1]);
-	if (Tcl_ArithSeriesObjIndex(objv[1], 0, &rend) != TCL_OK) {
+	len = TclArithSeriesObjLength(objv[1]);
+	if (TclArithSeriesObjIndex(objv[1], 0, &rend) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (Tcl_ArithSeriesObjIndex(objv[1], (len-1), &rstart) != TCL_OK) {
+	if (TclArithSeriesObjIndex(objv[1], (len-1), &rstart) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	rstep = -arithSeriesPtr->step;
 
 	if (Tcl_IsShared(objv[1])) {
-	    Tcl_Obj *resultObj = Tcl_NewArithSeriesObj(rstart, rend, rstep, len);
+	    Tcl_Obj *resultObj = TclNewArithSeriesObj(rstart, rend, rstep, len);
 	    Tcl_SetObjResult(interp, resultObj);
 	} else {
 
@@ -4002,6 +4053,401 @@ Tcl_LsetObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * SequenceIdentifyArgument --
+ *   (for [lseq] command)
+ *
+ *  Given a Tcl_Obj, identify if it is a keyword or a number
+ *
+ *  Return Value
+ *    0 - failure, unexpected value
+ *    1 - value is a number
+ *    2 - value is an operand keyword
+ *    3 - value is a by keyword
+ *
+ *  The decoded value will be assigned to the appropriate
+ *  pointer, if supplied.
+ */
+
+static SequenceDecoded
+SequenceIdentifyArgument(
+     Tcl_Interp *interp,        /* for error reporting  */
+     Tcl_Obj *argPtr,           /* Argument to decode   */
+     Tcl_WideInt *intValuePtr,  /* Return numeric value */
+     int *keywordIndexPtr)      /* Return keyword enum  */
+{
+    int status;
+    Tcl_WideInt number;
+    SequenceOperators opmode;
+    SequenceByMode bymode;
+
+    status = Tcl_GetWideIntFromObj(NULL, argPtr, &number);
+    if (status != TCL_OK) {
+	/* Check for an index expression */
+	long value;
+	Tcl_InterpState savedstate;
+	savedstate = Tcl_SaveInterpState(interp, status);
+	if (Tcl_ExprLongObj(interp, argPtr, &value) != TCL_OK) {
+	    status = Tcl_RestoreInterpState(interp, savedstate);
+	} else {
+	    status = Tcl_RestoreInterpState(interp, savedstate);
+	    if (intValuePtr) {
+		*intValuePtr = value;
+	    }
+	    return NumericArg;
+	}
+    } else {
+	if (intValuePtr) {
+	    *intValuePtr = number;
+	}
+	return NumericArg;
+    }
+
+    status = Tcl_GetIndexFromObj(NULL, argPtr, seq_operations,
+				 "range operation", 0, &opmode);
+    if (status == TCL_OK) {
+	if (keywordIndexPtr) {
+	    *keywordIndexPtr = opmode;
+	}
+	return RangeKeywordArg;
+    }
+
+    status = Tcl_GetIndexFromObj(NULL, argPtr, seq_step_keywords,
+				 "step keyword", 0, &bymode);
+    if (status == TCL_OK) {
+	if (keywordIndexPtr) {
+	    *keywordIndexPtr = bymode;
+	}
+	return ByKeywordArg;
+    }
+    return NoneArg;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LseqObjCmd --
+ *
+ *	This procedure is invoked to process the "range" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Enumerated possible argument patterns:
+ *
+ * 1:
+ *    range n
+ * 2:
+ *    range n n
+ * 3:
+ *    range n n n
+ *    range n 'to' n
+ *    range n 'count' n
+ *    range n 'by' n
+ * 4:
+ *    range n 'to' n n
+ *    range n n 'by' n
+ *    range n 'count' n n
+ * 5:
+ *    range n 'to' n 'by' n
+ *    range n 'count' n 'by' n
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_LseqObjCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,	   /* Current interpreter. */
+    int objc,		   /* Number of arguments. */
+    Tcl_Obj *const objv[]) /* The argument objects. */
+{
+    Tcl_WideInt elementCount = -1;
+    Tcl_WideInt start = 0, end = 0, step = 0, number = 0;
+    Tcl_WideInt values[5];
+    int status, keyword;
+    Tcl_Obj *arithSeriesPtr;
+    SequenceOperators opmode;
+    SequenceDecoded decoded;
+    int i, arg_key = 0, value_i = 0;
+
+    /*
+     * Create a decoding key by looping through the arguments and identify
+     * what kind of argument each one is.  Encode each argument as a decimal
+     * digit.
+     */
+    if (objc > 6) {
+	 /* Too many arguments */
+	 arg_key=0;
+    } else for (i=1; i<objc; i++) {
+	 arg_key = (arg_key * 10);
+	 decoded = SequenceIdentifyArgument(interp, objv[i], &number, &keyword);
+	 switch (decoded) {
+
+	 case NoneArg:
+	      /*
+	       * Unrecognizable argument
+	       * Reproduce operation error message
+	       */
+	      status = Tcl_GetIndexFromObj(interp, objv[i], seq_operations,
+		           "operation", 0, &opmode);
+	      goto done;
+
+	 case NumericArg:
+	      arg_key += NumericArg;
+	      values[value_i] = number;
+	      value_i++;
+	      break;
+
+	 case RangeKeywordArg:
+	      arg_key += RangeKeywordArg;
+	      values[value_i] = keyword;
+	      value_i++;
+	      break;
+
+	 case ByKeywordArg:
+	      arg_key += ByKeywordArg;
+	      values[value_i] = keyword;
+	      value_i++;
+	      break;
+
+	 default:
+	      arg_key += 9; // Error state
+	      value_i++;
+	      break;
+	 }
+    }
+
+    /*
+     * The key encoding defines a valid set of arguments, or indicates an
+     * error condition; process the values accordningly.
+     */
+    switch (arg_key) {
+
+/*    No argument */
+    case 0:
+	 Tcl_WrongNumArgs(interp, 1, objv,
+	     "n ??op? n ??by? n??");
+	 status = TCL_ERROR;
+	 goto done;
+	 break;
+
+/*    range n */
+    case 1:
+	 start = 0;
+	 elementCount = (values[0] <= 0 ? 0 : values[0]);
+	 end = values[0]-1;
+	 step = 1;
+	 break;
+
+/*    range n n */
+    case 11:
+	 start = values[0];
+	 end = values[1];
+	 step = (start <= end) ? 1 : -1;
+	 if (start <= end) {
+	      elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
+	 } else {
+	      elementCount = step ? (start-end-step)/(-step) : 0; // 0 step -> empty list
+	 }
+	 if (elementCount < 0) elementCount = 0;
+	 break;
+
+/*    range n n n */
+    case 111:
+	 start = values[0];
+	 end = values[1];
+	 step = values[2];
+	 if (start <= end) {
+	      elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
+	 } else {
+	      elementCount = step ? (start-end-step)/(-step) : 0; // 0 step -> empty list
+	 }
+	 if (elementCount < 0) elementCount = 0;
+	 break;
+
+/*    range n 'to' n    */
+/*    range n 'count' n */
+/*    range n 'by' n    */
+    case 121:
+	 opmode = (SequenceOperators)values[1];
+	 switch (opmode) {
+	 case RANGE_DOTS:
+	 case RANGE_TO:
+	      start = values[0];
+	      end = values[2];
+	      step = (start <= end) ? 1 : -1;
+	      elementCount = step ? (start-end+step)/step : 0; // 0 step -> empty list
+	      break;
+	 case RANGE_BY:
+	      start = 0;
+	      elementCount = values[0];
+	      step = values[2];
+	      end = start + (step * elementCount);
+	      elementCount = step ? (start-end+step)/step : 0; // 0 step -> empty list
+	      break;
+	 case RANGE_COUNT:
+	      start = values[0];
+	      elementCount = (values[2] >= 0 ? values[2] : 0);
+	      step = 1;
+	      end = start + (step * elementCount);
+	      break;
+	 default:
+	      status = TCL_ERROR;
+	      goto done;
+	 }
+	 break;
+
+/*    range n 'to' n n    */
+/*    range n 'count' n n */
+    case 1211:
+	 opmode = (SequenceOperators)values[1];
+	 switch (opmode) {
+	 case RANGE_DOTS:
+	 case RANGE_TO:
+	      start = values[0];
+	      end = values[2];
+	      step = values[3];
+	      break;
+	 case RANGE_COUNT:
+	      start = values[0];
+	      elementCount = (values[2] >= 0 ? values[2] : 0);
+	      step = values[3];
+	      end = start + (step * elementCount);
+	      break;
+	 case RANGE_BY:
+	      /* Error case */
+	      status = TCL_ERROR;
+	      goto done;
+	      break;
+	 default:
+	      status = TCL_ERROR;
+	      goto done;
+	      break;
+	 }
+	 break;
+
+/*    range n n 'by' n */
+    case 1121:
+	 start = values[0];
+	 end = values[1];
+	 opmode = (SequenceOperators)values[2];
+	 switch (opmode) {
+	 case RANGE_BY:
+	      step = values[3];
+	      break;
+	 case RANGE_DOTS:
+	 case RANGE_TO:
+	 case RANGE_COUNT:
+	 default:
+	      status = TCL_ERROR;
+	      goto done;
+	      break;
+	 }
+	 if (start <= end) {
+	      elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
+	 } else {
+	      elementCount = step ? (start-end-step)/(-step) : 0; // 0 step -> empty list
+	 }
+	 break;
+
+/*    range n 'to' n 'by' n    */
+/*    range n 'count' n 'by' n */
+    case 12121:
+	 start = values[0];
+	 opmode = (SequenceOperators)values[3];
+	 switch (opmode) {
+	 case RANGE_BY:
+	      step = values[4];
+	      break;
+	 default:
+	      status = TCL_ERROR;
+	      goto done;
+	      break;
+	 }
+	 opmode = (SequenceOperators)values[1];
+	 switch (opmode) {
+	 case RANGE_DOTS:
+	 case RANGE_TO:
+	     start = values[0];
+	     end = values[2];
+	     if ((step == 0) ||
+		 (start < end && step < 0) ||
+		 (start > end && step > 0)) {
+		 elementCount = 0;
+	     } else {
+		 elementCount = (end-start+step)/step;
+	     }
+	     break;
+	 case RANGE_COUNT:
+	      start = values[0];
+	      elementCount = (values[2] >= 0 ? values[2] : 0);
+	      if (step != 0) {
+		  end = start + (step * elementCount);
+	      } else {
+		  end = start;
+		  elementCount = 0; /* empty list when step is 0 */
+	      }
+	      break;
+	 default:
+	      status = TCL_ERROR;
+	      goto done;
+	      break;
+	 }
+	 break;
+
+/*    Error cases: incomplete arguments */
+    case 12:
+	 opmode = (SequenceOperators)values[1]; goto KeywordError; break;
+    case 112:
+	 opmode = (SequenceOperators)values[2]; goto KeywordError; break;
+    case 1212:
+	 opmode = (SequenceOperators)values[3]; goto KeywordError; break;
+    KeywordError:
+	 status = TCL_ERROR;
+	 switch (opmode) {
+	 case RANGE_DOTS:
+	 case RANGE_TO:
+	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		  "missing \"to\" value."));
+	      break;
+	 case RANGE_COUNT:
+	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		  "missing \"count\" value."));
+	      break;
+	 case RANGE_BY:
+	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		  "missing \"by\" value."));
+	      break;
+	 }
+	 status = TCL_ERROR;
+	 goto done;
+	 break;
+
+/*    All other argument errors */
+    default:
+	 Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
+	 goto done;
+	 break;
+    }
+
+    /*
+     * Success!  Now lets create the series object.
+     */
+    arithSeriesPtr = TclNewArithSeriesObj(start, end, step, elementCount);
+    Tcl_SetObjResult(interp, arithSeriesPtr);
+    status = TCL_OK;
+
+ done:
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_LsortObjCmd --
  *
  *	This procedure is invoked to process the "lsort" Tcl command. See the
@@ -4267,8 +4713,13 @@ Tcl_LsortObjCmd(
 	sortInfo.compareCmdPtr = newCommandPtr;
     }
 
-    sortInfo.resultCode = TclListObjGetElementsM(interp, listObj,
+    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+	sortInfo.resultCode = TclArithSeriesGetElements(interp,
+	    listObj, &length, &listObjPtrs);
+    } else {
+	sortInfo.resultCode = TclListObjGetElementsM(interp, listObj,
 	    &length, &listObjPtrs);
+    }
     if (sortInfo.resultCode != TCL_OK || length <= 0) {
 	goto done;
     }

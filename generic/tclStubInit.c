@@ -2034,9 +2034,6 @@ const TclStubs tclStubs = {
     TclUtfAtIndex, /* 671 */
     TclGetRange, /* 672 */
     TclGetUniChar, /* 673 */
-    Tcl_NewArithSeriesObj, /* 674 */
-    Tcl_ArithSeriesObjIndex, /* 675 */
-    Tcl_ArithSeriesObjLength, /* 676 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -2489,6 +2489,7 @@ typedef struct ArithSeries {
     Tcl_WideInt end;
     Tcl_WideInt step;
     Tcl_WideInt len;
+    Tcl_Obj **elements;
     Tcl_Obj *wideObjPtr; /* Used to speedup [foreach] reusing the same obj. */
 } ArithSeries;
 
@@ -2496,7 +2497,7 @@ typedef struct ArithSeries {
     (ArithSeries *) ((arithSeriesObjPtr)->internalRep.twoPtrValue.ptr1)
 
 #define ArithSeriesIndexM(arithSeriesRepPtr, index) \
-    (arithSeriesRepPtr)->start+((index)*arithSeriesRepPtr->step)
+    (arithSeriesRepPtr)->start+((index) * arithSeriesRepPtr->step)
 
 
 /*
@@ -2943,8 +2944,16 @@ MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
 			    CmdFrame **cfPtrPtr, int *wordPtr);
 MODULE_SCOPE Tcl_Obj *  TclArithSeriesObjCopy(Tcl_Interp *interp,
 			    Tcl_Obj *arithSeriesPtr);
+MODULE_SCOPE int        TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr,
+			    Tcl_WideInt index, Tcl_WideInt *element);
+MODULE_SCOPE Tcl_WideInt TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE Tcl_Obj *  TclArithSeriesObjRange(Tcl_Obj *arithSeriesPtr,
 			    int fromIdx, int toIdx);
+MODULE_SCOPE int        TclArithSeriesGetElements(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, int *objcPtr, Tcl_Obj ***objvPtr);
+MODULE_SCOPE Tcl_Obj *  TclNewArithSeriesObj(Tcl_WideInt start,
+				Tcl_WideInt end, Tcl_WideInt step,
+				Tcl_WideInt len);
 MODULE_SCOPE int	TclAsyncNotifier(int sigNumber, Tcl_ThreadId threadId,
 			    ClientData clientData, int *flagPtr, int value);
 MODULE_SCOPE void	TclAsyncMarkFromNotifier(void);
@@ -3575,6 +3584,9 @@ MODULE_SCOPE int	Tcl_LreverseObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_LsearchObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LseqObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LsetObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3599,9 +3611,6 @@ MODULE_SCOPE int	Tcl_PutsObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_PwdObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	Tcl_RangeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_ReadObjCmd(ClientData clientData,

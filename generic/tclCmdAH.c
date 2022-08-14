@@ -2830,7 +2830,7 @@ EachloopCmd(
 		goto done;
 	    }
 	    /* Don't compute values here, wait until the last momement */
-	    statePtr->argcList[i] = Tcl_ArithSeriesObjLength(statePtr->vCopyList[i]);
+	    statePtr->argcList[i] = TclArithSeriesObjLength(statePtr->vCopyList[i]);
 	} else {
 	    /* List values */
 	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
@@ -2969,7 +2969,7 @@ ForeachAssignments(
 	    if (k < statePtr->argcList[i]) {
 		if (isarithseries) {
 		    Tcl_WideInt value;
-		    if (Tcl_ArithSeriesObjIndex(statePtr->vCopyList[i], k, &value) != TCL_OK) {
+		    if (TclArithSeriesObjIndex(statePtr->vCopyList[i], k, &value) != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (setting %s loop variable \"%s\")",
 			(statePtr->resultList != NULL ? "lmap" : "foreach"),
