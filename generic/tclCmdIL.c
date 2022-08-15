@@ -192,7 +192,7 @@ typedef struct ArithSeries {
     Tcl_WideInt end;
     Tcl_WideInt step;
     Tcl_WideInt len;
-    
+
 } ArithSeries;
 
 
@@ -3137,7 +3137,7 @@ Tcl_LreverseObjCmd(
 	    Tcl_SetObjResult(interp, resultObj);
 	    return TCL_OK;
 	}
-	
+
     } /* end Abstract List */
 
     if (TclListObjGetElementsM(interp, objv[1], &elemc, &elemv) != TCL_OK) {
@@ -4083,7 +4083,7 @@ TclNewArithSeriesObj(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_W
     ArithSeries *arithSeriesRepPtr;
     static const char *arithSeriesName = "arithseries";
     if (length == -1) return NULL; /* Invalid range error */
-    
+
     arithSeriesPtr = Tcl_NewAbstractListObj(NULL, arithSeriesName, sizeof (ArithSeries));
     arithSeriesRepPtr = (ArithSeries*)Tcl_AbstractListGetTypeRep(arithSeriesPtr);
     arithSeriesRepPtr->start = start;
@@ -4096,7 +4096,7 @@ TclNewArithSeriesObj(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_W
     Tcl_SetAbstractListSliceProc(   arithSeriesPtr, TclArithSeriesObjRange   );
     Tcl_SetAbstractListReverseProc( arithSeriesPtr, TclArithSeriesObjReverse );
     Tcl_SetAbstractListDupRepProc(  arithSeriesPtr, DupArithSeriesRep        );
-    
+
     if (length > 0) {
  	Tcl_InvalidateStringRep(arithSeriesPtr);
     } else {
@@ -4109,7 +4109,7 @@ Tcl_Obj *
 Tcl_NewArithSeriesObj(int objc, Tcl_Obj *objv[])
 {
     Tcl_WideInt start, end, step, len;
-    
+
     if (objc != 4) return NULL;
     if (Tcl_GetWideIntFromObj(NULL, objv[0], &start) != TCL_OK) return NULL;
     if (Tcl_GetWideIntFromObj(NULL, objv[1], &end)   != TCL_OK) return NULL;
@@ -4154,10 +4154,10 @@ Tcl_ArithSeriesObjIndex(Tcl_Obj *arithSeriesObjPtr, Tcl_WideInt index)
 
     if (index < 0 || index >= arithSeriesRepPtr->len)
 	return NULL;
-    
+
     /* List[i] = Start + (Step * i) */
     element = ArithSeriesIndexM(arithSeriesRepPtr, index);
-    
+
     return Tcl_NewWideIntObj(element);
 }
 
@@ -4212,8 +4212,8 @@ TclArithSeriesObjRange(
     ArithSeries *arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesObjPtr);
     Tcl_WideInt start = -1, end = -1, step, len;
     Tcl_Obj *fromObj, *toObj;
-    
-    
+
+
     arithSeriesRepPtr = ArithSeriesRepPtr(arithSeriesObjPtr);
 
     if (fromIdx < 0) {
@@ -4230,9 +4230,12 @@ TclArithSeriesObjRange(
     toObj = Tcl_ArithSeriesObjIndex(arithSeriesObjPtr, toIdx);
     if (toObj == NULL) return NULL;
     Tcl_GetWideIntFromObj(NULL, fromObj, &start);
+    Tcl_DecrRefCount(fromObj);
     Tcl_GetWideIntFromObj(NULL, toObj, &end);
+    Tcl_DecrRefCount(toObj);
     step = arithSeriesRepPtr->step;
     len = ArithSeriesLen(start, end, step);
+
 
     if (Tcl_IsShared(arithSeriesObjPtr) ||
 	    ((arithSeriesObjPtr->refCount > 1))) {
@@ -4621,7 +4624,7 @@ Tcl_LseqObjCmd(
 		  (start > end && step > 0)) {   //   --> empty list
 		  elementCount = 0;
 	      } else {
-		  elementCount = (end-start+step)/step; 
+		  elementCount = (end-start+step)/step;
 	      }
 	      break;
 	 case LSEQ_COUNT:
@@ -4643,19 +4646,19 @@ Tcl_LseqObjCmd(
 
 /*    Error cases: incomplete arguments */
     case 12:
-	 opmode = (SequenceOperators)(int)values[1]; 
+	 opmode = (SequenceOperators)(int)values[1];
 	 status = TCL_ERROR;
-	 goto KeywordError; 
+	 goto KeywordError;
 	 break;
     case 112:
-	 opmode = (SequenceOperators)(int)values[2]; 
+	 opmode = (SequenceOperators)(int)values[2];
 	 status = TCL_ERROR;
-	 goto KeywordError; 
+	 goto KeywordError;
 	 break;
     case 1212:
-	 opmode = (SequenceOperators)(int)values[3]; 
+	 opmode = (SequenceOperators)(int)values[3];
 	 status = TCL_ERROR;
-	 goto KeywordError; 
+	 goto KeywordError;
 	 break;
     KeywordError:
 	 status = TCL_ERROR;
