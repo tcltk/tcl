@@ -62,7 +62,6 @@ const char tclDefaultTrimSet[] =
 	"\xE3\x80\x80" /* ideographic space (U+3000) */
 	"\xEF\xBB\xBF" /* zero width no-break space (U+feff) */
 ;
-
 
 /*
  *----------------------------------------------------------------------

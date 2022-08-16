@@ -3129,33 +3129,7 @@ Tcl_LreverseObjCmd(
      *  just to reverse it.
      */
     if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
-	ArithSeries *arithSeriesPtr = ArithSeriesRepPtr(objv[1]);
-	Tcl_WideInt rstart, rend, rstep, len;
-
-	len = TclArithSeriesObjLength(objv[1]);
-	if (TclArithSeriesObjIndex(objv[1], 0, &rend) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (TclArithSeriesObjIndex(objv[1], (len-1), &rstart) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	rstep = -arithSeriesPtr->step;
-
-	if (Tcl_IsShared(objv[1])) {
-	    Tcl_Obj *resultObj = TclNewArithSeriesObj(rstart, rend, rstep, len);
-	    Tcl_SetObjResult(interp, resultObj);
-	} else {
-
-	    /*
-	     * Not shared, so swap in place.
-	     */
-
-	    arithSeriesPtr->start = rstart;
-	    arithSeriesPtr->end = rend;
-	    arithSeriesPtr->step = rstep;
-	    TclInvalidateStringRep(objv[1]);
-	    Tcl_SetObjResult(interp, objv[1]);
-	}
+        Tcl_SetObjResult(interp, TclArithSeriesObjReverse(objv[1]));
 	return TCL_OK;
     } /* end ArithSeries */
 
@@ -4127,8 +4101,8 @@ SequenceIdentifyArgument(
  *
  * Tcl_LseqObjCmd --
  *
- *	This procedure is invoked to process the "range" Tcl command. See
- *	the user documentation for details on what it does.
+ *	This procedure is invoked to process the "lseq" Tcl command.
+ *	See the user documentation for details on what it does.
  *
  * Enumerated possible argument patterns:
  *
@@ -4347,10 +4321,13 @@ Tcl_LseqObjCmd(
 	      goto done;
 	      break;
 	 }
-	 if (start <= end) {
-	      elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
+	 if (step == 0) {
+	     // 0 step -> empty list
+	     elementCount = 0;
+	 } else if (start <= end) {
+	     elementCount = (end-start+step)/step;
 	 } else {
-	      elementCount = step ? (start-end-step)/(-step) : 0; // 0 step -> empty list
+	     elementCount = (start-end-step)/(-step);
 	 }
 	 break;
 

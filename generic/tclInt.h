@@ -2949,6 +2949,7 @@ MODULE_SCOPE int        TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr,
 MODULE_SCOPE Tcl_WideInt TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE Tcl_Obj *  TclArithSeriesObjRange(Tcl_Obj *arithSeriesPtr,
 			    int fromIdx, int toIdx);
+MODULE_SCOPE Tcl_Obj *  TclArithSeriesObjReverse(Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE int        TclArithSeriesGetElements(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int *objcPtr, Tcl_Obj ***objvPtr);
 MODULE_SCOPE Tcl_Obj *  TclNewArithSeriesObj(Tcl_WideInt start,

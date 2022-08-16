@@ -2554,7 +2554,7 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesPtr)
      * Pass 1: estimate space.
      */
     for (i = 0; i < arithSeriesRepPtr->len; i++) {
-	ele = arithSeriesRepPtr->start + (i*arithSeriesRepPtr->step);
+	ele = ArithSeriesIndexM(arithSeriesRepPtr, i);
     /*
      * Note that sprintf will generate a compiler warning under
      * Mingw claiming %I64 is an unknown format specifier.
@@ -2572,7 +2572,7 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesPtr)
 
     p = Tcl_InitStringRep(arithSeriesPtr, NULL, length);
     for (i = 0; i < arithSeriesRepPtr->len; i++) {
-	ele = arithSeriesRepPtr->start + (i*arithSeriesRepPtr->step);
+	ele = ArithSeriesIndexM(arithSeriesRepPtr, i);
 	sprintf(buffer, "%" TCL_LL_MODIFIER "d", ele);
 	slen = strlen(buffer);
 	strcpy(p, buffer);
@@ -2815,6 +2815,65 @@ TclArithSeriesGetElements(
 	return TCL_ERROR;
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArithSeriesObjReverse --
+ *
+ *	Reverse the order of the ArithSeries value.
+ *      *arithSeriesPtr must be known to be a valid list.
+ *
+ * Results:
+ *	Returns a pointer to the reordered series.
+ *      This may be a new object or the same object if not shared.
+ *
+ * Side effects:
+ *	?The possible conversion of the object referenced by listPtr?
+ *	?to a list object.?
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclArithSeriesObjReverse(
+    Tcl_Obj *arithSeriesPtr)	/* List object to reverse. */
+{
+    ArithSeries *arithSeriesRepPtr;
+    Tcl_WideInt start = -1, end = -1, step, len;
+
+    ArithSeriesGetInternalRep(arithSeriesPtr, arithSeriesRepPtr);
+
+    len = arithSeriesRepPtr->len;
+    TclArithSeriesObjIndex(arithSeriesPtr, (len-1), &start);
+    TclArithSeriesObjIndex(arithSeriesPtr, 0, &end);
+    step = -arithSeriesRepPtr->step;
+
+    if (Tcl_IsShared(arithSeriesPtr) ||
+	    ((arithSeriesPtr->refCount > 1))) {
+	return TclNewArithSeriesObj(start, end, step, len);
+    }
+
+    /*
+     * In-place is possible.
+     */
+
+    TclInvalidateStringRep(arithSeriesPtr);
+
+    arithSeriesRepPtr->start = start;
+    arithSeriesRepPtr->end = end;
+    arithSeriesRepPtr->step = step;
+    if (arithSeriesRepPtr->elements) {
+	Tcl_WideInt i;
+	for (i=0; i<len; i++) {
+	    Tcl_DecrRefCount(arithSeriesRepPtr->elements[i]);
+	}
+        ckfree((char*)arithSeriesRepPtr->elements);
+    }
+    arithSeriesRepPtr->elements = NULL;
+
+    return arithSeriesPtr;
 }
 
 
