@@ -2347,8 +2347,11 @@ TclNewArithSeriesObj(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step, Tcl_W
     Tcl_Obj *arithSeriesPtr;
     ArithSeries *arithSeriesRepPtr;
 
-    if (length == -1) return NULL; /* Invalid range error */
     TclNewObj(arithSeriesPtr);
+
+    if (length <= 0) {
+	return arithSeriesPtr;
+    }
 
     arithSeriesRepPtr = (ArithSeries*) ckalloc(sizeof (ArithSeries));
     arithSeriesRepPtr->start = start;

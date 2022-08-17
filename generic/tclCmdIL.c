@@ -4222,11 +4222,7 @@ Tcl_LseqObjCmd(
 	 start = values[0];
 	 end = values[1];
 	 step = (start <= end) ? 1 : -1;
-	 if (start <= end) {
-	      elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
-	 } else {
-	      elementCount = step ? (start-end-step)/(-step) : 0; // 0 step -> empty list
-	 }
+	 elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
 	 if (elementCount < 0) elementCount = 0;
 	 break;
 
@@ -4235,11 +4231,7 @@ Tcl_LseqObjCmd(
 	 start = values[0];
 	 end = values[1];
 	 step = values[2];
-	 if (start <= end) {
-	      elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
-	 } else {
-	      elementCount = step ? (start-end-step)/(-step) : 0; // 0 step -> empty list
-	 }
+	 elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
 	 if (elementCount < 0) elementCount = 0;
 	 break;
 
@@ -4261,7 +4253,6 @@ Tcl_LseqObjCmd(
 	      elementCount = values[0];
 	      step = values[2];
 	      end = start + (step * elementCount);
-	      elementCount = step ? (start-end+step)/step : 0; // 0 step -> empty list
 	      break;
 	 case RANGE_COUNT:
 	      start = values[0];
@@ -4285,6 +4276,7 @@ Tcl_LseqObjCmd(
 	      start = values[0];
 	      end = values[2];
 	      step = values[3];
+	      elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
 	      break;
 	 case RANGE_COUNT:
 	      start = values[0];
@@ -4321,14 +4313,7 @@ Tcl_LseqObjCmd(
 	      goto done;
 	      break;
 	 }
-	 if (step == 0) {
-	     // 0 step -> empty list
-	     elementCount = 0;
-	 } else if (start <= end) {
-	     elementCount = (end-start+step)/step;
-	 } else {
-	     elementCount = (start-end-step)/(-step);
-	 }
+	 elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
 	 break;
 
 /*    range n 'to' n 'by' n    */
@@ -4351,17 +4336,11 @@ Tcl_LseqObjCmd(
 	 case RANGE_TO:
 	     start = values[0];
 	     end = values[2];
-	     if ((step == 0) ||
-		 (start < end && step < 0) ||
-		 (start > end && step > 0)) {
-		 elementCount = 0;
-	     } else {
-		 elementCount = (end-start+step)/step;
-	     }
+	     elementCount = step ? (end-start+step)/step : 0; // 0 step -> empty list
 	     break;
 	 case RANGE_COUNT:
 	      start = values[0];
-	      elementCount = (values[2] >= 0 ? values[2] : 0);
+	      elementCount = values[2] >= 0 ? values[2] : 0;
 	      if (step != 0) {
 		  end = start + (step * elementCount);
 	      } else {

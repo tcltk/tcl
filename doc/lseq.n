@@ -34,12 +34,12 @@ and use the numeric result, or error as with any invalid argument value.
 .\"
 
  lseq 3
- \(-> 0 1
+ \(-> 0 1 2
 
  lseq 3 0
  \(-> 3 2 1 0
 
- lseq 10 .. 1 by 2
+ lseq 10 .. 1 by -2
  \(-> 10 8 6 4 2
 
  set l [lseq 0 -5]
