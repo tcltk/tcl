@@ -8183,7 +8183,7 @@ Tcl_SetChannelOption(
 	    statePtr->flags &= ~CHANNEL_TOLERANT_ENCODING;
 	}
 	return TCL_OK;
-    } else if (HaveOpt(1, "-translation")) {
+    } else if (HaveOpt(2, "-translation")) {
 	const char *readMode, *writeMode;
 
 	if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
