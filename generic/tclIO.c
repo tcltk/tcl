@@ -7905,7 +7905,20 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(1, "-translation")) {
+    if (len == 0 || HaveOpt(2, "-tolerantencoding")) {
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-tolerantencoding");
+	}
+	Tcl_DStringAppendElement(dsPtr,
+		(flags & CHANNEL_TOLERANT_ENCODING) ? "1" : "0");
+	if (len > 0) {
+	    return TCL_OK;
+	}
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
+    if (len == 0 || HaveOpt(2, "-translation")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-translation");
 	}
@@ -8157,6 +8170,18 @@ Tcl_SetChannelOption(
 	}
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
+	return TCL_OK;
+    } else if (HaveOpt(2, "-tolerantencoding")) {
+	int newMode;
+
+	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (newMode) {
+	    statePtr->flags |= CHANNEL_TOLERANT_ENCODING;
+	} else {
+	    statePtr->flags &= ~CHANNEL_TOLERANT_ENCODING;
+	}
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {
 	const char *readMode, *writeMode;
