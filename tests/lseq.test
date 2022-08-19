@@ -73,33 +73,21 @@ test lseq-1.12 {decreasing lseq with step} arithSeriesDouble {
     lseq 25. to -25. by -5
 } { 25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0}
 
-test lseq-1.13 {count operation} {
-    -body {
-	lseq 5 count 5
-    }
-    -result {5 6 7 8 9}
-}
+test lseq-1.13 {count operation} -body {
+    lseq 5 count 5
+} -result {5 6 7 8 9}
 
-test lseq-1.14 {count with step} {
-    -body {
-	lseq 5 count 5 by 2
-    }
-    -result {5 7 9 11 13}
-}
+test lseq-1.14 {count with step} -body {
+    lseq 5 count 5 by 2
+} -result {5 7 9 11 13}
 
-test lseq-1.15 {count with decreasing step} {
-    -body {
-	lseq 5 count 5 by -2
-    }
-    -result {5 3 1 -1 -3}
-}
+test lseq-1.15 {count with decreasing step} -body {
+    lseq 5 count 5 by -2
+} -result {5 3 1 -1 -3}
 
-test lseq-1.16 {large numbers} {
-    -body {
-	lseq [expr {int(1e6)}] [expr {int(2e6)}] [expr {int(1e5)}]
-    }
-    -result {1000000 1100000 1200000 1300000 1400000 1500000 1600000 1700000 1800000 1900000 2000000}
-}
+test lseq-1.16 {large numbers} -body {
+    lseq [expr {int(1e6)}] [expr {int(2e6)}] [expr {int(1e5)}]
+} -result {1000000 1100000 1200000 1300000 1400000 1500000 1600000 1700000 1800000 1900000 2000000}
 
 test lseq-1.17 {too many arguments} -body {
     lseq 12 to 24 by 2 with feeling
@@ -112,6 +100,18 @@ test lseq-1.18 {too many arguments extra valid keyword} -body {
 test lseq-1.19 {too many arguments extra numeric value} -body {
     lseq 12 to 24 by 2 7
 } -returnCodes 1 -result {wrong # args: should be "lseq n ??op? n ??by? n??"}
+
+test lseq-1.20 {bug: wrong length computed} {
+    lseq 1 to 10 -1
+} {}
+
+test lseq-1.21 {n n by n} {
+    lseq 66 84 by 3
+} {66 69 72 75 78 81 84}
+
+test lseq-1.22 {n n by -n} {
+    lseq 84 66 by -3
+} {84 81 78 75 72 69 66}
 
 #
 # Short-hand use cases
@@ -182,6 +182,17 @@ test lseq-2.17 {large numbers} arithSeriesDouble {
     lseq 1e6 2e6 1e5
 } {1000000.0 1100000.0 1200000.0 1300000.0 1400000.0 1500000.0 1600000.0 1700000.0 1800000.0 1900000.0 2000000.0}
 
+# Covered: {10 1 2 } {1 10 2} {1 10 -2} {1 1 1} {1 1 1} {-5 17 3}
+# Missing: {- - +} {- - -} {- + -} {+ - -} {- - +} {+ + -}
+test lseq-2.18 {signs} {
+    list [lseq -10 -1 2] \
+	[lseq -10 -1 -1] \
+	[lseq -10 1 -3] \
+	[lseq 10 -1 -4] \
+	[lseq -10 -1 3] \
+	[lseq 10 1 -5]
+
+} {{-10 -8 -6 -4 -2} {} {} {10 6 2} {-10 -7 -4 -1} {10 5}}
 
 test lseq-3.1 {experiement} {
     set ans {}
@@ -216,8 +227,9 @@ test lseq-3.4 {error case} -body {
 } -returnCodes 1 -result {bad operation "or": must be .., to, count, or by}
 
 test lseq-3.5 {simple count and step arguments} {
-    lseq 25 by 6
-} {0 6 12 18 24 30 36 42 48 54 60 66 72 78 84 90 96 102 108 114 120 126 132 138 144 150}
+    set s [lseq 25 by 6]
+    list $s length=[llength $s]
+} {{0 6 12 18 24 30 36 42 48 54 60 66 72 78 84 90 96 102 108 114 120 126 132 138 144} length=25}
 
 test lseq-3.6 {error case} -body {
     lseq 1 7 or 3
@@ -335,7 +347,7 @@ test lseq-3.22 {edge case} {
 test lseq-3.23 {edge case} {
     llength [lseq 1 1 1]
 } {1}
-    
+
 test lseq-3.24 {edge case} {
     llength [lseq 1 to 1 1]
 } {1}
@@ -366,6 +378,10 @@ test lseq-3.28 {lreverse bug in ArithSeries} {} {
     list $r $rr [string equal $r [lreverse $rr]]
 } {{-5 -2 1 4 7 10 13 16} {16 13 10 7 4 1 -2 -5} 1}
 
+test lseq-3.29 {edge case: negative count} {
+    lseq -15
+} {}
+
 test lseq-4.1 {end expressions} {
     set start 7
     lseq $start $start+11
@@ -377,11 +393,11 @@ test lseq-4.2 {start expressions} {
     lmap t $tl {expr {$t - $base + 60}}
 } {0 10 20 30 40 50 60}
 
-
 # cleanup
 ::tcltest::cleanupTests
 return
 
+#
 # Local Variables:
 # mode: tcl
 # End:

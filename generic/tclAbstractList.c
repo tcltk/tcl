@@ -1,7 +1,7 @@
 /*
  * tclAbstractList.h --
  *
- *	The AbstractList Obj Type -- a psuedo List 
+ *	The AbstractList Obj Type -- a psuedo List
  *
  * Copyright © 2022 by Brian Griffin. All rights reserved.
  *
@@ -29,7 +29,7 @@ static void		UpdateStringOfAbstractList (Tcl_Obj *listPtr);
  *
  * The abstract list object is a special case of Tcl list represented by a set
  * of functions.
- * 
+ *
  */
 
 const Tcl_ObjType tclAbstractListType = {
@@ -84,33 +84,18 @@ Tcl_AbstractListObjLength(Tcl_Obj *abstractListObjPtr)
  */
 
 Tcl_Obj*
-Tcl_NewAbstractListObj(Tcl_Interp *interp, const char* typeName, size_t requiredSize)
+Tcl_NewAbstractListObj(Tcl_Interp *interp, const Tcl_AbstractListType* vTablePtr)
 {
     Tcl_Obj *objPtr;
-    size_t repSize;
-    AbstractList *abstractListRepPtr;
     Tcl_ObjInternalRep itr;
     (void)interp;
     TclNewObj(objPtr);
-    repSize = sizeof(AbstractList) + requiredSize;
-    abstractListRepPtr = (AbstractList*)ckalloc(repSize);
-    abstractListRepPtr->version = TCL_ABSTRACTLIST_VERSION_1;
-    abstractListRepPtr->repSize = repSize;
-    abstractListRepPtr->typeName = typeName;;
-    abstractListRepPtr->elements = NULL;
-    abstractListRepPtr->newObjProc = NULL;
-    abstractListRepPtr->dupRepProc = NULL;
-    abstractListRepPtr->lengthProc = NULL;
-    abstractListRepPtr->indexProc = NULL;
-    abstractListRepPtr->sliceProc = NULL;
-    abstractListRepPtr->reverseProc = NULL;
-    itr.twoPtrValue.ptr1 = abstractListRepPtr;
-    itr.twoPtrValue.ptr2 = (((char*)abstractListRepPtr) + offsetof(AbstractList,abstractValue));
+    itr.twoPtrValue.ptr1 = (void*)vTablePtr; /* dispatch table for concrete type */
+    itr.twoPtrValue.ptr2 = NULL;
     Tcl_StoreInternalRep(objPtr, &tclAbstractListType, &itr);
     Tcl_InvalidateStringRep(objPtr);
     return objPtr;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -133,14 +118,22 @@ Tcl_NewAbstractListObj(Tcl_Interp *interp, const char* typeName, size_t required
 Tcl_Obj*
 Tcl_AbstractListObjIndex(Tcl_Obj *abstractListObjPtr, Tcl_WideInt index)
 {
-    AbstractList *abstractListRepPtr;
+    Tcl_AbstractListType *typePtr;
     Tcl_Obj *elementObjPtr;
-    if (abstractListObjPtr->typePtr != &tclAbstractListType) {
-        Tcl_Panic("Tcl_AbstractListObjIndex called without and AbstractList Obj.");
+
+    typePtr = Tcl_AbstractListGetType(abstractListObjPtr);
+    /*
+     * The general assumption is that the obj is assumed first to be a List,
+     * and only ends up here because it has been determinded to be an
+     * AbstractList.  If that's not the case, then a mistake has been made. To
+     * attempt to try a List call (e.g. shimmer) could potentially loop(?)
+     * So: if called from List code, then something has gone wrong; if called
+     * from user code, then user has made a mistake.
+     */
+    if (typePtr == NULL) {
+	Tcl_Panic("Tcl_AbstractListObjIndex called without and AbstractList Obj.");
     }
-    abstractListRepPtr = (AbstractList*)
-	    abstractListObjPtr->internalRep.twoPtrValue.ptr1;
-    elementObjPtr = abstractListRepPtr->indexProc(abstractListObjPtr, index);
+    elementObjPtr = typePtr->indexProc(abstractListObjPtr, index);
 
     return elementObjPtr;
 }
@@ -166,18 +159,12 @@ Tcl_AbstractListObjIndex(Tcl_Obj *abstractListObjPtr, Tcl_WideInt index)
 void
 FreeAbstractListInternalRep(Tcl_Obj *abstractListObjPtr)
 {
-    AbstractList *abstractListRepPtr =
-	(AbstractList *) abstractListObjPtr->internalRep.twoPtrValue.ptr1;
-    if (abstractListRepPtr->elements) {
-	Tcl_WideInt i, llen = abstractListRepPtr->lengthProc(abstractListObjPtr);
-	for(i=0; i<llen; i++) {
-	    if (abstractListRepPtr->elements[i]) {
-		Tcl_DecrRefCount(abstractListRepPtr->elements[i]);
-	    }
-	}
-	ckfree((char*)abstractListRepPtr->elements);
+    Tcl_AbstractListType *typePtr = Tcl_AbstractListGetType(abstractListObjPtr);
+
+    if (TclAbstractListHasProc(abstractListObjPtr, TCL_ABSL_FREEREP)) {
+        /* call the free callback for the concrete rep */
+        typePtr->freeRepProc(abstractListObjPtr);
     }
-    ckfree((char *) abstractListRepPtr);
     abstractListObjPtr->internalRep.twoPtrValue.ptr1 = NULL;
     abstractListObjPtr->internalRep.twoPtrValue.ptr2 = NULL;
 }
@@ -202,31 +189,28 @@ FreeAbstractListInternalRep(Tcl_Obj *abstractListObjPtr)
 static void
 DupAbstractListInternalRep(srcPtr, copyPtr)
     Tcl_Obj *srcPtr;		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr;		/* Object with internal rep to set. */
+    Tcl_Obj *copyPtr;		/* Object with internal rep to set.
+				 * Internal rep must be clear, it is stomped */
 {
-    AbstractList *srcAbstractListRepPtr = Tcl_AbstractListRepPtr(srcPtr);
-    AbstractList *copyAbstractListRepPtr;
-    size_t repSize;
-    /*
-     * Allocate a new ArithSeries structure. 
-     */
+    Tcl_AbstractListType *typePtr;
+    typePtr = AbstractListGetType(srcPtr);
+    copyPtr->internalRep.twoPtrValue.ptr1 = typePtr;
+    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
 
-    repSize = srcAbstractListRepPtr->repSize; // example: sizeof(AbstractList) + sizeof(ArithSeries)
-    copyAbstractListRepPtr = (AbstractList*) ckalloc(repSize);
-    *copyAbstractListRepPtr = *srcAbstractListRepPtr;
-    copyPtr->internalRep.twoPtrValue.ptr1 = copyAbstractListRepPtr;
-    copyPtr->internalRep.twoPtrValue.ptr2 = (((char*)copyAbstractListRepPtr) + offsetof(AbstractList,abstractValue));
-    copyAbstractListRepPtr->typeName = srcAbstractListRepPtr->typeName;
-    copyPtr->typePtr = &tclAbstractListType;
+    /* Now do concrete type dup. It is responsible for calling
+       Tcl_AbstractListSetConcreteRep to initialize ptr2 */
 
-    copyAbstractListRepPtr->elements = NULL; /* Let new object repopulate it's elements on demand. */
-
-    if (srcAbstractListRepPtr->dupRepProc) {
-	srcAbstractListRepPtr->dupRepProc(srcPtr, copyPtr);
+    if (typePtr->dupRepProc) {
+	typePtr->dupRepProc(srcPtr, copyPtr);
+    } else {
+	/* TODO - or set it to NULL instead? */
+	copyPtr->internalRep.twoPtrValue.ptr2 =
+	    srcPtr->internalRep.twoPtrValue.ptr2;
     }
 
+    copyPtr->typePtr = &tclAbstractListType;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -253,28 +237,36 @@ DupAbstractListInternalRep(srcPtr, copyPtr)
  *----------------------------------------------------------------------
  */
 
-/* works for arithseries, not for arbitary element values */
-#if 0 // begin depricated
 static void
 UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
 {
-    AbstractList *abstractListRepPtr =
-	    (AbstractList*) abstractListObjPtr->internalRep.twoPtrValue.ptr1;
+    Tcl_AbstractListType *typePtr;
     char *p, *str;
     Tcl_Obj *eleObj;
     Tcl_WideInt length = 0;
     int llen, slen, i;
 
+    typePtr = AbstractListGetType(abstractListObjPtr);
+
+    /*
+     * If concrete type has a better way to generate the string,
+     * let it do it.
+     */
+    if (TclAbstractListHasProc(abstractListObjPtr, TCL_ABSL_TOSTRING)) {
+	typePtr->toStringProc(abstractListObjPtr);
+	return;
+    }
+
     /*
      * Pass 1: estimate space.
      */
-    llen = abstractListRepPtr->lengthProc(abstractListObjPtr);
+    llen = typePtr->lengthProc(abstractListObjPtr);
     if (llen <= 0) {
 	Tcl_InitStringRep(abstractListObjPtr, NULL, 0);
 	return;
     }
     for (i = 0; i < llen; i++) {
-	eleObj = abstractListRepPtr->indexProc(abstractListObjPtr, i);
+	eleObj = typePtr->indexProc(abstractListObjPtr, i);
 	Tcl_GetStringFromObj(eleObj, &slen);
 	length += slen + 1; /* one more for the space char */
 	Tcl_DecrRefCount(eleObj);
@@ -286,7 +278,7 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
 
     p = Tcl_InitStringRep(abstractListObjPtr, NULL, length);
     for (i = 0; i < llen; i++) {
-	eleObj = abstractListRepPtr->indexProc(abstractListObjPtr, i);
+	eleObj = typePtr->indexProc(abstractListObjPtr, i);
 	str = Tcl_GetStringFromObj(eleObj, &slen);
 	strcpy(p, str);
 	p[slen] = ' ';
@@ -295,75 +287,6 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
     }
     if (length > 0) abstractListObjPtr->bytes[length-1] = '\0';
     abstractListObjPtr->length = length-1;
-}
-#endif // end depricated
-
-static void
-UpdateStringOfAbstractList(
-    Tcl_Obj *abstractListObjPtr) /* AbstractList object with string rep to update. */
-{
-#   define LOCAL_SIZE 64
-    char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    ListSizeT numElems, i, length, bytesNeeded = 0;
-    const char *elem, *start;
-    Tcl_Obj *elemObj;
-    char *dst;
-    AbstractList* abstractListRepPtr = AbstractListGetInternalRep(abstractListObjPtr);
-
-    numElems = abstractListRepPtr->lengthProc(abstractListObjPtr);
-    /* Handle empty list case first, so rest of the routine is simpler. */
-
-    if (numElems == 0) {
-	Tcl_InitStringRep(abstractListObjPtr, NULL, 0);
-	return;
-    }
-
-    /* Pass 1: estimate space, gather flags. */
-
-    if (numElems <= LOCAL_SIZE) {
-	flagPtr = localFlags;
-    } else {
-	/* We know numElems <= LIST_MAX, so this is safe. */
-	flagPtr = (char *)ckalloc(numElems);
-    }
-    for (i = 0; i < numElems; i++) {
-	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
-	elemObj = abstractListRepPtr->indexProc(abstractListObjPtr, i);
-	elem = TclGetStringFromObj(elemObj, &length);
-	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
-	if (bytesNeeded < 0) {
-	    /* TODO - what is the max #define for Tcl9? */
-	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	}
-	Tcl_DecrRefCount(elemObj);
-    }
-    /* TODO - what is the max #define for Tcl9? */
-    if (bytesNeeded > INT_MAX - numElems + 1) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-    }
-    bytesNeeded += numElems - 1;
-
-    /*
-     * Pass 2: copy into string rep buffer.
-     */
-
-    start = dst = Tcl_InitStringRep(abstractListObjPtr, NULL, bytesNeeded);
-    TclOOM(dst, bytesNeeded);
-    for (i = 0; i < numElems; i++) {
-	flagPtr[i] |= (i ? TCL_DONT_QUOTE_HASH : 0);
-	elemObj = abstractListRepPtr->indexProc(abstractListObjPtr, i);
-	elem = TclGetStringFromObj(elemObj, &length);
-	dst += TclConvertElement(elem, length, dst, flagPtr[i]);
-	*dst++ = ' ';
-	Tcl_DecrRefCount(elemObj);
-    }
-
-    /* Set the string length to what was actually written, the safe choice */
-    (void) Tcl_InitStringRep(abstractListObjPtr, NULL, dst - 1 - start);
-
-    if (flagPtr != localFlags) {
-	ckfree(flagPtr);
-    }
 }
 
 /*
@@ -395,6 +318,10 @@ SetAbstractListFromAny(interp, objPtr)
 {
     (void)interp;
     (void)objPtr;
+    /* TODO - at some future point, should just shimmer to a traditional
+     * Tcl list (but only when those are implemented under the AbstractList)
+     * interface.
+     */
     Tcl_Panic("SetAbstractListFromAny: should never be called");
     return TCL_ERROR;
 }
@@ -429,10 +356,8 @@ TclAbstractListObjCopy(
 				  * to be returned. */
 {
     Tcl_Obj *copyPtr;
-    AbstractList *abstractListRepPtr;
 
-    abstractListRepPtr = AbstractListGetInternalRep(abstractListObjPtr);
-    if (NULL == abstractListRepPtr) {
+    if (!TclHasInternalRep(abstractListObjPtr, &tclAbstractListType)) {
 	if (SetAbstractListFromAny(interp, abstractListObjPtr) != TCL_OK) {
 	    /* We know this is going to panic, but it's the message we want */
 	    return NULL;
@@ -471,9 +396,25 @@ Tcl_AbstractListObjRange(
     Tcl_WideInt fromIdx,	 /* Index of first element to include. */
     Tcl_WideInt toIdx)		 /* Index of last element to include. */
 {
-    AbstractList *abstractListRepPtr = 
-	AbstractListGetInternalRep(abstractListObjPtr);
-    return abstractListRepPtr->sliceProc(abstractListObjPtr, fromIdx, toIdx);
+    Tcl_AbstractListType *typePtr;
+    if (!TclHasInternalRep(abstractListObjPtr, &tclAbstractListType)) {
+	if (SetAbstractListFromAny(NULL, abstractListObjPtr) != TCL_OK) {
+	    /* We know this is going to panic, but it's the message we want */
+	    return NULL;
+	}
+    }
+    typePtr = Tcl_AbstractListGetType(abstractListObjPtr);
+    /*
+     * sliceProc can be NULL, then revert to List.  Note: [lrange]
+     * command also checks for NULL sliceProc, and won't call AbstractList
+     */
+    if (typePtr->sliceProc) {
+	return typePtr->sliceProc(abstractListObjPtr, fromIdx, toIdx);
+    } else {
+	/* TODO ?shimmer avoided? */
+	Tcl_Obj *newObj = TclListObjCopy(NULL, abstractListObjPtr);
+	return newObj ? TclListObjRange(newObj, (ListSizeT)fromIdx, (ListSizeT)toIdx) : NULL;
+    }
 }
 
 /*
@@ -500,9 +441,16 @@ Tcl_Obj *
 Tcl_AbstractListObjReverse(
     Tcl_Obj *abstractListObjPtr) /* List object to take a range from. */
 {
-    AbstractList *abstractListRepPtr = 
-	AbstractListGetInternalRep(abstractListObjPtr);
-    return abstractListRepPtr->reverseProc(abstractListObjPtr);
+    Tcl_AbstractListType *typePtr;
+    if (!TclHasInternalRep(abstractListObjPtr, &tclAbstractListType) ||
+	!TclAbstractListHasProc(abstractListObjPtr, TCL_ABSL_REVERSE)) {
+	if (SetAbstractListFromAny(NULL, abstractListObjPtr) != TCL_OK) {
+	    /* We know this is going to panic, but it's the message we want */
+	    return NULL;
+	}
+    }
+    typePtr = Tcl_AbstractListGetType(abstractListObjPtr);
+    return typePtr->reverseProc(abstractListObjPtr);
 }
 
 
@@ -547,38 +495,21 @@ Tcl_AbstractListObjGetElements(
 {
 
     if (TclHasInternalRep(objPtr,&tclAbstractListType)) {
-	AbstractList *abstractListRepPtr = 
-	    AbstractListGetInternalRep(objPtr);
-	Tcl_Obj **objv;
-	int i, objc = abstractListRepPtr->lengthProc(objPtr);
+	Tcl_AbstractListType *typePtr  = Tcl_AbstractListGetType(objPtr);
 
-	if (objc > 0) {
-	    if (abstractListRepPtr->elements) {
-		/* If this exists, it has already been populated */
-		objv = abstractListRepPtr->elements;
-	    } else {
-		/* Construct the elements array */
-		objv = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj*) * objc);
-		if (objv == NULL) {
-		    if (interp) {
-			Tcl_SetObjResult(
-			    interp,
-			    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
-			Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
-		    }
-		    return TCL_ERROR;
-		}
-		abstractListRepPtr->elements = objv;
-		for (i = 0; i < objc; i++) {
-		    objv[i] = abstractListRepPtr->indexProc(objPtr, i);
-		    Tcl_IncrRefCount(objv[i]);
-		}
-	    }
-	} else {
-	    objv = NULL;
-	}
-	*objvPtr = objv;
-	*objcPtr = objc;
+        if (TclAbstractListHasProc(objPtr, TCL_ABSL_GETELEMENTS)) {
+            int status = typePtr->getElementsProc(interp, objPtr, objcPtr, objvPtr);
+            /* TODO -- Add error message here, or propagate interp down */
+            return status;
+        } else {
+            if (interp) {
+                Tcl_SetObjResult(
+		    interp,
+                    Tcl_NewStringObj("GetElements not supported!", -1));
+		    Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+            }
+        }
+        return TCL_ERROR;
     } else {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(
@@ -591,44 +522,6 @@ Tcl_AbstractListObjGetElements(
     return TCL_OK;
 }
 
-int
-Tcl_AbstractListSetProc(
-    Tcl_Obj *objPtr,
-    Tcl_AbstractListProcType ptype,
-    void *proc)
-{
-    AbstractList* al_internalRep = AbstractListGetInternalRep(objPtr);
-
-    if (al_internalRep == NULL) {
-	return TCL_ERROR;
-    }
-
-    switch (ptype) {
-    case TCL_ABSL_NEW:
-	al_internalRep->newObjProc = (Tcl_ALNewObjProc *)proc;
-	break;
-    case TCL_ABSL_DUPREP:
-	al_internalRep->dupRepProc = (Tcl_ALDupRepProc *)proc;
-	break;
-    case TCL_ABSL_LENGTH:
-	al_internalRep->lengthProc = (Tcl_ALLengthProc *)proc;
-	break;
-    case TCL_ABSL_INDEX:
-	al_internalRep->indexProc = (Tcl_ALIndexProc *)proc;
-	break;
-    case TCL_ABSL_SLICE:
-	al_internalRep->sliceProc = (Tcl_ALSliceProc *)proc;
-	break;
-    case TCL_ABSL_REVERSE:
-	al_internalRep->reverseProc = (Tcl_ALReverseProc *)proc;
-	break;
-    default:
-	return TCL_ERROR;
-    }
-    return TCL_OK;
-}
-
-
 /*
  * Local Variables:
  * mode: c

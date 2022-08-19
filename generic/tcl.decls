@@ -2514,10 +2514,7 @@ declare 677 {
     Tcl_Obj *Tcl_AbstractListObjReverse(Tcl_Obj *abstractListPtr)
 }
 declare 678 {
-    Tcl_Obj *Tcl_NewAbstractListObj(Tcl_Interp *interp, const char* typeName, size_t requiredSize)
-}
-declare 679 {
-    int Tcl_AbstractListSetProc(Tcl_Obj *objPtr, Tcl_AbstractListProcType ptype, void *proc)
+    Tcl_Obj *Tcl_NewAbstractListObj(Tcl_Interp *interp, const Tcl_AbstractListType* vTablePtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

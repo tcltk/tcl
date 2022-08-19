@@ -4863,15 +4863,15 @@ TEBCresume(
 
 	/* special case for AbstractList */
 	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
-	    AbstractList *abstractListRepPtr =
-		(AbstractList*) valuePtr->internalRep.twoPtrValue.ptr1;
-	    length = abstractListRepPtr->lengthProc(valuePtr);
+	    Tcl_AbstractListType *typePtr;
+	    typePtr = Tcl_AbstractListGetType(valuePtr);
+	    length = typePtr->lengthProc(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    objResultPtr = abstractListRepPtr->indexProc(valuePtr, index);
+	    objResultPtr = typePtr->indexProc(valuePtr, index);
 	    goto lindexDone;
 	}
 
@@ -4896,7 +4896,7 @@ TEBCresume(
 	}
 
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
-	
+
     lindexDone:
 	if (!objResultPtr) {
 	    TRACE_ERROR(interp);
@@ -4928,9 +4928,9 @@ TEBCresume(
 
 	/* special case for AbstractList */
 	if (TclHasInternalRep(valuePtr,&tclAbstractListType)) {
-	    AbstractList* abstractListRepPtr =
-		(AbstractList *) valuePtr->internalRep.twoPtrValue.ptr1;
-	    length = abstractListRepPtr->lengthProc(valuePtr);
+	    Tcl_AbstractListType *typePtr;
+	    typePtr = Tcl_AbstractListGetType(valuePtr);
+	    length = typePtr->lengthProc(valuePtr);
 
 	    /* Decode end-offset index values. */
 
@@ -4938,7 +4938,7 @@ TEBCresume(
 
 	    /* Compute value @ index */
 	    if (index >= 0 && index < length) {
-		objResultPtr = abstractListRepPtr->indexProc(valuePtr, index);
+		objResultPtr = typePtr->indexProc(valuePtr, index);
 	    } else {
 		TclNewObj(objResultPtr);
 	    }
@@ -4963,9 +4963,9 @@ TEBCresume(
 	} else {
 	    TclNewObj(objResultPtr);
 	}
-	
+
     lindexFastPath2:
-	
+
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 	NEXT_INST_F(pcAdjustment, 1, 1);
 
@@ -5142,13 +5142,11 @@ TEBCresume(
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
 	{
-	    AbstractList* abstractListRepPtr =
-		TclHasInternalRep(valuePtr,&tclAbstractListType)
-		? (AbstractList*)valuePtr->internalRep.twoPtrValue.ptr1
-		: NULL;
+	    Tcl_AbstractListType *typePtr;
+	    typePtr = Tcl_AbstractListGetType(valuePtr);
 
-	    if (abstractListRepPtr && TclAbstractListHasProc(valuePtr, TCL_ABSL_SLICE)) {
-		objResultPtr = abstractListRepPtr->sliceProc(valuePtr, fromIdx, toIdx);
+	    if (typePtr && TclAbstractListHasProc(valuePtr, TCL_ABSL_SLICE)) {
+		objResultPtr = typePtr->sliceProc(valuePtr, fromIdx, toIdx);
 	    } else {
 		objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
 	    }

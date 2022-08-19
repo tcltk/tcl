@@ -725,15 +725,21 @@ typedef void (Tcl_MainLoopProc) (void);
 
 /* Abstract List functions */
 typedef struct Tcl_Obj* (Tcl_ALNewObjProc) (int objc, struct Tcl_Obj *objv[]);
-typedef            void (Tcl_ALDupRepProc) (struct Tcl_Obj *srcPtr, struct Tcl_Obj *copyPtr);
+typedef           void  (Tcl_ALDupRepProc) (struct Tcl_Obj *srcPtr, struct Tcl_Obj *copyPtr);
 typedef     Tcl_WideInt (Tcl_ALLengthProc) (struct Tcl_Obj *listPtr);
 typedef struct Tcl_Obj* (Tcl_ALIndexProc) (struct Tcl_Obj *listPtr, Tcl_WideInt index);
-typedef struct Tcl_Obj* (Tcl_ALSliceProc) (struct Tcl_Obj *listPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx);
+typedef struct Tcl_Obj* (Tcl_ALSliceProc) (struct Tcl_Obj *listPtr, Tcl_WideInt fromIdx,
+                                           Tcl_WideInt toIdx);
 typedef struct Tcl_Obj* (Tcl_ALReverseProc) (struct Tcl_Obj *listPtr);
+typedef            int  (Tcl_ALGetElements) (Tcl_Interp *interp, struct Tcl_Obj *listPtr,
+                                             int *objcptr, struct Tcl_Obj ***objvptr);
+typedef           void  (Tcl_ALFreeConcreteRep) (struct Tcl_Obj *listPtr);
+typedef           void  (Tcl_ALToStringRep) (struct Tcl_Obj *listPtr);
 
 typedef enum {
     TCL_ABSL_NEW, TCL_ABSL_DUPREP, TCL_ABSL_LENGTH, TCL_ABSL_INDEX,
-    TCL_ABSL_SLICE, TCL_ABSL_REVERSE
+    TCL_ABSL_SLICE, TCL_ABSL_REVERSE, TCL_ABSL_GETELEMENTS, TCL_ABSL_FREEREP,
+    TCL_ABSL_TOSTRING
 } Tcl_AbstractListProcType;
 
 typedef struct Tcl_AbstractListVersion_ *Tcl_AbstractListVersion;
@@ -830,80 +836,72 @@ typedef struct Tcl_Obj {
 
 #define TCL_ABSTRACTLIST_VERSION_1 ((Tcl_AbstractListVersion) 0x1)
 
-typedef struct AbstractList {
+/* Virtual function dispatch a la Tcl_ObjType but for AbstractList */
+typedef struct Tcl_AbstractListType {
     Tcl_AbstractListVersion version;/* Structure version */
-    
-    size_t repSize;                 /* value size */
     const char *typeName;           /* Custom value reference */
-    Tcl_Obj **elements;             /* Used only by Tcl_AbstractListGetElements */
-    
+
     /* List emulation functions */
-    Tcl_ALNewObjProc *newObjProc;   /* How to create a new Tcl_Obj of this
-				       custom type */
-    Tcl_ALDupRepProc *dupRepProc;   /* How to duplicate a internal rep of this
-				       custom type */
-    Tcl_ALLengthProc *lengthProc;   /* Return the [llength] of the
-				       AbstractList */
-    Tcl_ALIndexProc *indexProc;     /* Return a value (Tcl_Obj) for 
-				       [lindex $al $index] */
-    Tcl_ALSliceProc *sliceProc;     /* Return an AbstractList for 
-				       [lrange $al $start $end] */
-    Tcl_ALReverseProc *reverseProc; /* Return an AbstractList for 
-				       [lreverse $al] */
-    /* Must Be Last -- Don't Move! */
-    void* abstractValue;
-    
-} AbstractList;
+    Tcl_ALNewObjProc *newObjProc;       /* How to create a new Tcl_Obj of this
+                                        ** custom type */
+    Tcl_ALDupRepProc *dupRepProc;       /* How to duplicate a internal rep of this
+                                        ** custom type */
+    Tcl_ALLengthProc *lengthProc;       /* Return the [llength] of the
+                                        ** AbstractList */
+    Tcl_ALIndexProc *indexProc;         /* Return a value (Tcl_Obj) for
+                                        ** [lindex $al $index] */
+    Tcl_ALSliceProc *sliceProc;         /* Return an AbstractList for
+                                        ** [lrange $al $start $end] */
+    Tcl_ALReverseProc *reverseProc;     /* Return an AbstractList for
+                                        ** [lreverse $al] */
+    Tcl_ALGetElements *getElementsProc; /* Return an objv[] of all elements in
+                                        ** the list */
+    Tcl_ALFreeConcreteRep *freeRepProc; /* Free ConcreteRep internals if
+                                           necessary */
+    Tcl_ALToStringRep *toStringProc;    /* Optimized "to-string" conversion
+					 * for updating the string rep */
 
-static inline AbstractList* Tcl_AbstractListRepPtr(Tcl_Obj *abstractListObjPtr)
+} Tcl_AbstractListType;
+
+extern const Tcl_ObjType tclAbstractListType;
+
+/*
+ * Returns pointer to the concrete type or NULL if not AbstractList or
+ * not abstract list of the same type as concrete type
+ */
+static inline Tcl_AbstractListType *Tcl_AbstractListGetType(
+	Tcl_Obj *objPtr)
 {
-    return (AbstractList *) ((abstractListObjPtr)->internalRep.twoPtrValue.ptr1);
+    if (objPtr->typePtr != &tclAbstractListType) {
+	return NULL;
+    }
+    return (Tcl_AbstractListType *) objPtr->internalRep.twoPtrValue.ptr1;
 }
 
-static inline void* Tcl_AbstractListGetTypeRep(
+/* Returns the storage used by the concrete abstract list type */
+static inline void* Tcl_AbstractListGetConcreteRep(
     Tcl_Obj *objPtr)         /* Object of type AbstractList */
-{									
-    const Tcl_ObjInternalRep *irPtr;
-    irPtr = objPtr ? &((objPtr)->internalRep) : NULL;
-    return irPtr ? (void *)(irPtr->twoPtrValue.ptr2) : NULL;
-}
-
-/* Enforce type checking on supplied function pointers while isolating
- * internal struct details */
-
-EXTERN int Tcl_AbstractListSetProc(Tcl_Obj *objPtr, Tcl_AbstractListProcType ptype, void *proc);
-
-static inline int Tcl_SetAbstractListNewProc(Tcl_Obj *objPtr, Tcl_ALNewObjProc *proc)
 {
-    return Tcl_AbstractListSetProc(objPtr, TCL_ABSL_NEW, proc);
+    /* Public function, must check for NULL */
+    if (objPtr == NULL || objPtr->typePtr != &tclAbstractListType) {
+	return NULL;
+    }
+    return objPtr->internalRep.twoPtrValue.ptr2;
 }
 
-static inline int Tcl_SetAbstractListLengthProc(Tcl_Obj *objPtr, Tcl_ALLengthProc *proc)
+/*
+ * Sets the storage used by the concrete abstract list type
+ * Caller has to ensure type is AbstractList. Existing rep will be
+ * overwritten so caller has to free previous rep if necessary.
+ */
+static inline void Tcl_AbstractListSetConcreteRep(
+    Tcl_Obj *objPtr,    /* Object of type AbstractList */
+    void *repPtr)       /* New representation */
 {
-    return Tcl_AbstractListSetProc(objPtr, TCL_ABSL_LENGTH, proc);
+    /*  assert(objPtr->typePtr == &tclAbstractListType); */
+    objPtr->internalRep.twoPtrValue.ptr2 = repPtr;
 }
 
-static inline int Tcl_SetAbstractListSliceProc(Tcl_Obj *objPtr, Tcl_ALSliceProc *proc)
-{
-    return Tcl_AbstractListSetProc(objPtr, TCL_ABSL_SLICE, proc);
-}
-
-static inline int Tcl_SetAbstractListIndexProc(Tcl_Obj *objPtr, Tcl_ALIndexProc *proc)
-{
-    return Tcl_AbstractListSetProc(objPtr, TCL_ABSL_INDEX, proc);
-}
-
-static inline int Tcl_SetAbstractListReverseProc(Tcl_Obj *objPtr, Tcl_ALReverseProc *proc)
-{
-    return Tcl_AbstractListSetProc(objPtr, TCL_ABSL_REVERSE, proc);
-}
-
-static inline int Tcl_SetAbstractListDupRepProc(Tcl_Obj *objPtr, Tcl_ALDupRepProc *proc)
-{
-    return Tcl_AbstractListSetProc(objPtr, TCL_ABSL_DUPREP, proc);
-}
-
-
 /*
  *----------------------------------------------------------------------------
  * The following structure contains the state needed by Tcl_SaveResult. No-one

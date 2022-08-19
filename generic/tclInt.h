@@ -2632,31 +2632,40 @@ typedef struct ListRep {
     (((listObj_)->typePtr == &tclListType) ? ListObjIsCanonical((listObj_)) : 0)
 
 
+#define AbstractListGetType(abstractListObjPtr) \
+    (Tcl_AbstractListType *) ((abstractListObjPtr)->internalRep.twoPtrValue.ptr1)
+
 static inline Tcl_WideInt
 AbstractListObjLength(Tcl_Obj* abstractListObjPtr)
 {
-    AbstractList *oaRepPtr =
-	(AbstractList *)abstractListObjPtr->internalRep.twoPtrValue.ptr1;
-    return oaRepPtr->lengthProc(abstractListObjPtr);
+    Tcl_AbstractListType *typePtr =
+	(Tcl_AbstractListType *) abstractListObjPtr->internalRep.twoPtrValue.ptr1;
+    return typePtr->lengthProc(abstractListObjPtr);
 }
 
 static inline int
 TclAbstractListHasProc(Tcl_Obj* abstractListObjPtr, Tcl_AbstractListProcType ptype)
 {
-    AbstractList* repPtr = Tcl_AbstractListRepPtr(abstractListObjPtr);
+    Tcl_AbstractListType *typePtr = AbstractListGetType(abstractListObjPtr);
     switch (ptype) {
     case TCL_ABSL_NEW:
-	return (repPtr->newObjProc != NULL);
+	return (typePtr->newObjProc != NULL);
     case TCL_ABSL_DUPREP:
-	return (repPtr->dupRepProc != NULL);
+	return (typePtr->dupRepProc != NULL);
     case TCL_ABSL_LENGTH:
-	return (repPtr->lengthProc != NULL);
+	return (typePtr->lengthProc != NULL);
     case TCL_ABSL_INDEX:
-	return (repPtr->indexProc != NULL);
+	return (typePtr->indexProc != NULL);
     case TCL_ABSL_SLICE:
-	return (repPtr->sliceProc != NULL);
+	return (typePtr->sliceProc != NULL);
     case TCL_ABSL_REVERSE:
-	return (repPtr->reverseProc != NULL);
+	return (typePtr->reverseProc != NULL);
+    case TCL_ABSL_GETELEMENTS:
+        return (typePtr->getElementsProc != NULL);
+    case TCL_ABSL_FREEREP:
+	return (typePtr->freeRepProc != NULL);
+    case TCL_ABSL_TOSTRING:
+	return (typePtr->toStringProc != NULL);
     }
     return 0;
 }

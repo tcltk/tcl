@@ -1987,10 +1987,7 @@ EXTERN Tcl_Obj *	Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr,
 EXTERN Tcl_Obj *	Tcl_AbstractListObjReverse(Tcl_Obj *abstractListPtr);
 /* 678 */
 EXTERN Tcl_Obj *	Tcl_NewAbstractListObj(Tcl_Interp *interp,
-				const char*typeName, size_t requiredSize);
-/* 679 */
-EXTERN int		Tcl_AbstractListSetProc(Tcl_Obj *objPtr,
-				Tcl_AbstractListProcType ptype, void *proc);
+				const Tcl_AbstractListType*vTablePtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2704,8 +2701,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_AbstractListObjIndex) (Tcl_Obj *abstractListPtr, Tcl_WideInt index); /* 675 */
     Tcl_Obj * (*tcl_AbstractListObjRange) (Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx); /* 676 */
     Tcl_Obj * (*tcl_AbstractListObjReverse) (Tcl_Obj *abstractListPtr); /* 677 */
-    Tcl_Obj * (*tcl_NewAbstractListObj) (Tcl_Interp *interp, const char*typeName, size_t requiredSize); /* 678 */
-    int (*tcl_AbstractListSetProc) (Tcl_Obj *objPtr, Tcl_AbstractListProcType ptype, void *proc); /* 679 */
+    Tcl_Obj * (*tcl_NewAbstractListObj) (Tcl_Interp *interp, const Tcl_AbstractListType*vTablePtr); /* 678 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4094,8 +4090,6 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_AbstractListObjReverse) /* 677 */
 #define Tcl_NewAbstractListObj \
 	(tclStubsPtr->tcl_NewAbstractListObj) /* 678 */
-#define Tcl_AbstractListSetProc \
-	(tclStubsPtr->tcl_AbstractListSetProc) /* 679 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
