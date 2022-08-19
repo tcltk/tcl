@@ -336,6 +336,15 @@ test io-3.8 {WriteChars: reset sawLF after each buffer} {
     close $f
     lappend x [contents $path(test1)]
 } [list "abcdefg\nhijklmno" "abcdefg\nhijklmnopqrstuvwxyz"]
+test io-3.9 {Write: flush line-buffered channels when crlf is split over two buffers} -body {
+    # https://core.tcl-lang.org/tcllib/tktedit?name=c9d8a52fe
+    set f [open $path(test1) w]
+    fconfigure $f -buffering line -translation crlf -buffersize 8
+    puts $f "1234567"
+    string map {"\r" "<cr>" "\n" "<lf>"} [contents $path(test1)]
+} -cleanup {
+    close $f
+} -result "1234567<cr><lf>"
 
 test io-4.1 {TranslateOutputEOL: lf} {
     # search for \n
