@@ -2913,6 +2913,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclFileRenameCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileTempDirCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileTemporaryCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileHomeCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileTildeExpandCmd;
 MODULE_SCOPE void	TclCreateLateExitHandler(Tcl_ExitProc *proc,
 			    void *clientData);
 MODULE_SCOPE void	TclDeleteLateExitHandler(Tcl_ExitProc *proc,
@@ -3021,8 +3022,8 @@ MODULE_SCOPE int	TclIsDigitProc(int byte);
 MODULE_SCOPE int	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(size_t elements, Tcl_Obj * const objv[],
 			    int forceRelative);
-MODULE_SCOPE int	TclGetHomeDir(Tcl_Interp *interp, const char *user,
-			    Tcl_DString *dsPtr);
+MODULE_SCOPE int	MakeTildeRelativePath(Tcl_Interp *interp, const char *user,
+			    const char *subPath, Tcl_DString *dsPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetHomeDirObj(Tcl_Interp *interp, const char *user);
 MODULE_SCOPE Tcl_Obj *	TclResolveTildePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathObj);
