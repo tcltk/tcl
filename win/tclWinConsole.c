@@ -876,7 +876,8 @@ ConsoleCheckProc(
 	    }
 	    /*
 	     * TCL_READABLE watch means someone is looking out for data being
-	     * available, let reader thread know.
+	     * available, let reader thread know. Note channel need not be
+	     * ASYNC! (Bug [baa51423c2])
 	     */
 	    handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
 	    WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
