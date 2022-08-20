@@ -861,21 +861,25 @@ ConsoleCheckProc(
 	handleInfoPtr = FindConsoleInfo(chanInfoPtr);
 	/* Pointer is safe to access as we are holding gConsoleLock */
 
-	if (handleInfoPtr != NULL) {
-	    AcquireSRWLockShared(&handleInfoPtr->lock);
-	    /* Rememebr channel is read or write, never both */
-	    if (chanInfoPtr->watchMask & TCL_READABLE) {
-		if (RingBufferLength(&handleInfoPtr->buffer) > 0
-		    || handleInfoPtr->lastError != ERROR_SUCCESS) {
-		    needEvent = 1; /* Input data available or error/EOF */
-		}
-	    } else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
-		if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
-		    needEvent = 1; /* Output space available */
-		}
-	    }
-	    ReleaseSRWLockShared(&handleInfoPtr->lock);
+	if (handleInfoPtr == NULL) {
+	    continue;
 	}
+	
+	needEvent = 0;
+	AcquireSRWLockShared(&handleInfoPtr->lock);
+	/* Rememebr channel is read or write, never both */
+	if (chanInfoPtr->watchMask & TCL_READABLE) {
+	    if (RingBufferLength(&handleInfoPtr->buffer) > 0
+		|| handleInfoPtr->lastError != ERROR_SUCCESS
+	    ) {
+		needEvent = 1; /* Input data available or error/EOF */
+	    }
+	} else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
+	    if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
+		needEvent = 1; /* Output space available */
+	    }
+	}
+	ReleaseSRWLockShared(&handleInfoPtr->lock);
 
 	if (needEvent) {
 	    ConsoleEvent *evPtr = (ConsoleEvent *)ckalloc(sizeof(ConsoleEvent));
