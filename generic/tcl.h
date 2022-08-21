@@ -926,13 +926,8 @@ typedef struct Tcl_CmdInfo {
 				 * change a command's namespace; use
 				 * TclRenameCommand or Tcl_Eval (of 'rename')
 				 * to do that. */
-#if (TCL_MAJOR_VERSION > 8) || defined(TCL_NO_DEPRECATED)
-    Tcl_ObjCmdProc2 *objProc2;	/* Command's object-based function. */
-    void *objClientData2;	/* ClientData for object proc. */
-#else
-    void *reserved1;
-    void *reserved2;
-#endif
+    Tcl_ObjCmdProc2 *objProc2;	/* Not used in Tcl 8.7. */
+    void *objClientData2;	/* Not used in Tcl 8.7. */
 } Tcl_CmdInfo;
 
 /*
@@ -2391,7 +2386,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 #if defined(_WIN32)
     TCL_NORETURN void Tcl_ConsolePanic(const char *format, ...);
 #else
-#   define Tcl_ConsolePanic ((Tcl_PanicProc *)0)
+#   define Tcl_ConsolePanic ((Tcl_PanicProc *)NULL)
 #endif
 
 #ifdef USE_TCL_STUBS

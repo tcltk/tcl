@@ -913,7 +913,9 @@ typedef struct VarInHash {
  *----------------------------------------------------------------
  */
 
-#if defined(__GNUC__) && (__GNUC__ > 2)
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+#   define TCLFLEXARRAY
+#elif defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCLFLEXARRAY 0
 #else
 #   define TCLFLEXARRAY 1
@@ -2438,14 +2440,14 @@ typedef struct List {
 				 * derived from the list representation. May
 				 * be ignored if there is no string rep at
 				 * all.*/
-    Tcl_Obj *elements;		/* First list element; the struct is grown to
+    Tcl_Obj *elements[TCLFLEXARRAY];		/* First list element; the struct is grown to
 				 * accommodate all elements. */
 } List;
 
 #define LIST_MAX \
-	(1 + (int)(((size_t)UINT_MAX - sizeof(List))/sizeof(Tcl_Obj *)))
+	((int)(((size_t)UINT_MAX - offsetof(List, elements))/sizeof(Tcl_Obj *)))
 #define LIST_SIZE(numElems) \
-	(unsigned)(sizeof(List) + (((numElems) - 1) * sizeof(Tcl_Obj *)))
+	(TCL_HASH_TYPE)(offsetof(List, elements) + ((numElems) * sizeof(Tcl_Obj *)))
 
 /*
  * Macro used to get the elements of a list object.
@@ -2455,7 +2457,7 @@ typedef struct List {
     ((List *) (listPtr)->internalRep.twoPtrValue.ptr1)
 
 #define ListObjGetElements(listPtr, objc, objv) \
-    ((objv) = &(ListRepPtr(listPtr)->elements), \
+    ((objv) = ListRepPtr(listPtr)->elements, \
      (objc) = ListRepPtr(listPtr)->elemCount)
 
 #define ListObjLength(listPtr, len) \

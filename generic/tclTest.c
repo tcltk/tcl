@@ -222,6 +222,7 @@ static Tcl_ObjCmdProc2	TestbytestringObjCmd;
 static Tcl_ObjCmdProc2	TestsetbytearraylengthObjCmd;
 static Tcl_ObjCmdProc2	TestpurebytesobjObjCmd;
 static Tcl_ObjCmdProc2	TeststringbytesObjCmd;
+static Tcl_ObjCmdProc	Testutf16stringObjCmd;
 static Tcl_CmdProc	TestcmdinfoCmd;
 static Tcl_CmdProc	TestcmdtokenCmd;
 static Tcl_CmdProc	TestcmdtraceCmd;
@@ -341,6 +342,7 @@ static Tcl_ObjCmdProc2	TestInterpResolverCmd;
 #if defined(HAVE_CPUID) && !defined(MAC_OSX_TCL)
 static Tcl_ObjCmdProc2	TestcpuidCmd;
 #endif
+static Tcl_ObjCmdProc	TestApplyLambdaObjCmd;
 
 static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -560,6 +562,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand2(interp, "testsetbytearraylength", TestsetbytearraylengthObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testutf16string", Testutf16stringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testfilesystem", TestFilesystemObjCmd,
@@ -712,6 +715,8 @@ Tcltest_Init(
     Tcl_CreateObjCommand2(interp, "testgetencpath", TestgetencpathObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testsetencpath", TestsetencpathObjCmd,
+	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testapplylambda", TestApplyLambdaObjCmd,
 	    NULL, NULL);
 
     if (TclObjTest_Init(interp) != TCL_OK) {
@@ -1114,10 +1119,6 @@ TestcmdinfoCmd(
 	info.clientData = (void *) "new_command_data";
 	info.objProc = NULL;
 	info.objClientData = NULL;
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-	info.objProc2 = NULL;
-	info.objClientData2 = NULL;
-#endif
 	info.deleteProc = CmdDelProc2;
 	info.deleteData = (void *) "new_delete_data";
 	if (Tcl_SetCommandInfo(interp, argv[2], &info) == 0) {
@@ -5185,6 +5186,43 @@ TestbytestringObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * Testutf16stringObjCmd --
+ *
+ *	This specifically tests the Tcl_GetUnicode and Tcl_NewUnicodeObj
+ *	C functions which broke in Tcl 8.7 and were undetected by the
+ *      existing test suite. Bug [b79df322a9]
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+Testutf16stringObjCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    size_t objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    const unsigned short *p;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "string");
+	return TCL_ERROR;
+    }
+
+    p = Tcl_GetUnicode(objv[1]);
+    Tcl_SetObjResult(interp, Tcl_NewUnicodeObj(p, -1));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestsetCmd --
  *
  *	Implements the "testset{err,noerr}" cmds that are used when testing
@@ -8091,7 +8129,85 @@ TestInterpResolverCmd(
     }
     return TCL_OK;
 }
-
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TestApplyLambdaObjCmd --
+ *
+ *	Implements the Tcl command testapplylambda. This tests the apply
+ *	implementation handling of a lambda where the lambda has a list
+ *	internal representation where the second element's internal
+ *	representation is already a byte code object.
+ *
+ * Results:
+ *	TCL_OK    - Success. Caller should check result is 42
+ *	TCL_ERROR - Error.
+ *
+ * Side effects:
+ *	In the presence of the apply bug, may panic. Otherwise
+ *	Interpreter result holds result or error message.
+ *
+ *------------------------------------------------------------------------
+ */
+int TestApplyLambdaObjCmd (
+    TCL_UNUSED(void*),
+    Tcl_Interp *interp,    /* Current interpreter. */
+    TCL_UNUSED(int),       /* objc. */
+    TCL_UNUSED(Tcl_Obj *const *)) /* objv. */
+{
+    Tcl_Obj *lambdaObjs[2];
+    Tcl_Obj *evalObjs[2];
+    Tcl_Obj *lambdaObj;
+    int result;
+
+    /* Create a lambda {{} {set a 42}} */
+    lambdaObjs[0] = Tcl_NewObj(); /* No parameters */
+    lambdaObjs[1] = Tcl_NewStringObj("set a 42", -1); /* Body */
+    lambdaObj = Tcl_NewListObj(2, lambdaObjs);
+    Tcl_IncrRefCount(lambdaObj);
+
+    /* Create the command "apply {{} {set a 42}" */
+    evalObjs[0] = Tcl_NewStringObj("apply", -1);
+    Tcl_IncrRefCount(evalObjs[0]);
+    /*
+     * NOTE: IMPORTANT TO EXHIBIT THE BUG. We duplicate the lambda because
+     * it will get shimmered to a Lambda internal representation but we
+     * want to hold on to our list representation.
+     */
+    evalObjs[1] = Tcl_DuplicateObj(lambdaObj);
+    Tcl_IncrRefCount(evalObjs[1]);
+
+    /* Evaluate it */
+    result = Tcl_EvalObjv(interp, 2, evalObjs, TCL_EVAL_GLOBAL);
+    if (result != TCL_OK) {
+	Tcl_DecrRefCount(evalObjs[0]);
+	Tcl_DecrRefCount(evalObjs[1]);
+	return result;
+    }
+    /*
+     * So far so good. At this point,
+     * - evalObjs[1] has an internal representation of Lambda
+     * - lambdaObj[1] ({set a 42}) has been shimmered to
+     * an internal representation of ByteCode.
+     */
+    Tcl_DecrRefCount(evalObjs[1]); /* Don't need this anymore */
+    /*
+     * The bug trigger. Repeating the command but:
+     *  - we are calling apply with a lambda that is a list (as BEFORE),
+     *    BUT
+     *  - The body of the lambda (lambdaObjs[1]) ALREADY has internal
+     *    representation of ByteCode and thus will not be compiled again
+     */
+    evalObjs[1] = lambdaObj; /* lambdaObj already has a ref count so
+     				no need for IncrRef */
+    result = Tcl_EvalObjv(interp, 2, evalObjs, TCL_EVAL_GLOBAL);
+    Tcl_DecrRefCount(evalObjs[0]);
+    Tcl_DecrRefCount(lambdaObj);
+
+    return result;
+}
+
 /*
  * Local Variables:
  * mode: c
@@ -8101,3 +8217,4 @@ TestInterpResolverCmd(
  * indent-tabs-mode: nil
  * End:
  */
+

@@ -34,6 +34,7 @@ testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
 testConstraint utf16 [expr {[string length \U010000] == 2}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
+testConstraint testutf16string [llength [info commands testutf16string]]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -2635,6 +2636,17 @@ test string-32.17.$noComp {string is dict, valid dict packed in invalid dict} {
 } 0
 
 };				# foreach noComp {0 1}
+
+test string-bug-b79df322a9 {Tcl_GetUnicode/Tcl_NewUnicodeObj api} -constraints {
+    testutf16string deprecated
+} -body {
+    # This simple test suffices because the bug has nothing to do with
+    # the actual encoding conversion. The test was added because these
+    # functions are no longer called within the Tcl core and thus
+    # not tested by either `string`, not `encoding` tests.
+    testutf16string "abcde"
+} -result abcde
+
 
 # cleanup
 rename MemStress {}
