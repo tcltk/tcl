@@ -3377,8 +3377,14 @@ Tcl_SetCommandInfoFromToken(
 	}
 	cmdPtr->objClientData = infoPtr->objClientData;
     }
-    cmdPtr->deleteProc = infoPtr->deleteProc;
-    cmdPtr->deleteData = infoPtr->deleteData;
+    if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
+	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
+	info->deleteProc = infoPtr->deleteProc;
+	info->clientData = infoPtr->deleteData;
+    } else {
+	cmdPtr->deleteProc = infoPtr->deleteProc;
+	cmdPtr->deleteData = infoPtr->deleteData;
+    }
     return 1;
 }
 
@@ -3432,21 +3438,6 @@ Tcl_GetCommandInfo(
  *----------------------------------------------------------------------
  */
 
-#if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-static int cmdWrapper2Proc(void *clientData,
-    Tcl_Interp *interp,
-    size_t objc,
-    Tcl_Obj *const objv[])
-{
-    Command *cmdPtr = (Command *)clientData;
-    if (objc > INT_MAX) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?arg ...?");
-	return TCL_ERROR;
-    }
-    return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
-}
-#endif
-
 int
 Tcl_GetCommandInfoFromToken(
     Tcl_Command cmd,
@@ -3470,8 +3461,14 @@ Tcl_GetCommandInfoFromToken(
     infoPtr->objClientData = cmdPtr->objClientData;
     infoPtr->proc = cmdPtr->proc;
     infoPtr->clientData = cmdPtr->clientData;
-    infoPtr->deleteProc = cmdPtr->deleteProc;
-    infoPtr->deleteData = cmdPtr->deleteData;
+    if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
+	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
+	infoPtr->deleteProc = info->deleteProc;
+	infoPtr->deleteData = info->clientData;
+    } else {
+	infoPtr->deleteProc = cmdPtr->deleteProc;
+	infoPtr->deleteData = cmdPtr->deleteData;
+    }
     infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
     return 1;
 }

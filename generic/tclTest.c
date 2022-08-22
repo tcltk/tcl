@@ -222,7 +222,7 @@ static Tcl_ObjCmdProc2	TestbytestringObjCmd;
 static Tcl_ObjCmdProc2	TestsetbytearraylengthObjCmd;
 static Tcl_ObjCmdProc2	TestpurebytesobjObjCmd;
 static Tcl_ObjCmdProc2	TeststringbytesObjCmd;
-static Tcl_ObjCmdProc	Testutf16stringObjCmd;
+static Tcl_ObjCmdProc2	Testutf16stringObjCmd;
 static Tcl_CmdProc	TestcmdinfoCmd;
 static Tcl_CmdProc	TestcmdtokenCmd;
 static Tcl_CmdProc	TestcmdtraceCmd;
@@ -4039,7 +4039,7 @@ TestregexpObjCmd(
 	Tcl_Obj *newPtr, *varPtr, *valuePtr;
 
 	varPtr = objv[i];
-	ii = ((cflags&REG_EXPECT) && i == objc-1) ? -1 : i;
+	ii = ((cflags&REG_EXPECT) && i == objc-1) ? -1 : (int)i;
 	if (indices) {
 	    Tcl_Obj *objs[2];
 
