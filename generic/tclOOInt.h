@@ -235,14 +235,14 @@ typedef struct Object {
 				 * other spots). */
 #define FORCE_UNKNOWN 0x10000	/* States that we are *really* looking up the
 				 * unknown method handler at that point. */
-#define HAS_PRIVATE_METHODS 0x20000
-				/* Object/class has (or had) private methods,
-				 * and so shouldn't be cached so
-				 * aggressively. */
-#define DONT_DELETE 0x40000	/* Inhibit deletion of this object. Used
+#define DONT_DELETE 0x20000	/* Inhibit deletion of this object. Used
 				 * during fundamental object type mutation to
 				 * make sure that the object actually survives
 				 * to the end of the operation. */
+#define HAS_PRIVATE_METHODS 0x40000
+				/* Object/class has (or had) private methods,
+				 * and so shouldn't be cached so
+				 * aggressively. */
 
 /*
  * And the definition of a class. Note that every class also has an associated
@@ -492,6 +492,17 @@ MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE Class *	TclOOAllocClass(Tcl_Interp *interp,
 			    Object *useThisObj);
+MODULE_SCOPE int    TclMethodIsType(Tcl_Method method,
+                        const Tcl_MethodType *typePtr,
+                        void **clientDataPtr);
+MODULE_SCOPE Tcl_Method TclNewInstanceMethod(Tcl_Interp *interp,
+                        Tcl_Object object, Tcl_Obj *nameObj,
+                        int flags, const Tcl_MethodType *typePtr,
+                        void *clientData);
+MODULE_SCOPE Tcl_Method TclNewMethod(Tcl_Interp *interp, Tcl_Class cls,
+                        Tcl_Obj *nameObj, int flags,
+                        const Tcl_MethodType *typePtr,
+                        void *clientData);
 MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
 			    Tcl_Class cls, const char *nameStr,
 			    const char *nsNameStr, int objc,
