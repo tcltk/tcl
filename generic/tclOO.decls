@@ -149,7 +149,6 @@ declare 34 {
 	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType2 *typePtr,
 	    void *clientData)
 }
-
 
 ######################################################################
 # Private API, exposed to support advanced OO systems that plug in on top of

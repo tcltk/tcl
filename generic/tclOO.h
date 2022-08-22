@@ -24,8 +24,8 @@
  * win/tclooConfig.sh
  */
 
-#define TCLOO_VERSION "1.2.0"
-#define TCLOO_PATCHLEVEL TCLOO_VERSION
+#define TCLOO_VERSION "1.3"
+#define TCLOO_PATCHLEVEL TCLOO_VERSION ".0"
 
 #include "tcl.h"
 
@@ -40,7 +40,7 @@ extern "C" {
 extern const char *TclOOInitializeStubs(
 	Tcl_Interp *, const char *version);
 #define Tcl_OOInitStubs(interp) \
-    TclOOInitializeStubs((interp), TCLOO_VERSION)
+    TclOOInitializeStubs((interp), TCLOO_PATCHLEVEL)
 #ifndef USE_TCL_STUBS
 #   define TclOOInitializeStubs(interp, version) (TCLOO_PATCHLEVEL)
 #endif
@@ -79,7 +79,7 @@ typedef int (Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
 
 typedef struct {
     int version;		/* Structure version field. Always to be equal
-				 * to TCL_OO_METHOD_VERSION_CURRENT in
+				 * to TCL_OO_METHOD_VERSION_(1|CURRENT) in
 				 * declarations. */
     const char *name;		/* Name of this type of method, mostly for
 				 * debugging purposes. */
@@ -96,7 +96,7 @@ typedef struct {
 
 typedef struct {
     int version;		/* Structure version field. Always to be equal
-				 * to TCL_OO_METHOD_VERSION_CURRENT in
+				 * to TCL_OO_METHOD_VERSION_2 in
 				 * declarations. */
     const char *name;		/* Name of this type of method, mostly for
 				 * debugging purposes. */
