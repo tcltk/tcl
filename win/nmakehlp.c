@@ -718,11 +718,13 @@ static int LocateDependencyHelper(const char *dir, const char *keypath)
     int keylen, ret;
     WIN32_FIND_DATA finfo;
 
-    if (dir == NULL || keypath == NULL)
+    if (dir == NULL || keypath == NULL) {
 	return 2; /* Have no real error reporting mechanism into nmake */
+    }
     dirlen = strlen(dir);
-    if ((dirlen + 3) > sizeof(path))
+    if ((dirlen + 3) > sizeof(path)) {
 	return 2;
+    }
     strncpy(path, dir, dirlen);
     strncpy(path+dirlen, "\\*", 3);	/* Including terminating \0 */
     keylen = strlen(keypath);
@@ -788,8 +790,9 @@ static int LocateDependency(const char *keypath)
 
     for (i = 0; i < (sizeof(paths)/sizeof(paths[0])); ++i) {
 	ret = LocateDependencyHelper(paths[i], keypath);
-	if (ret == 0)
+	if (ret == 0) {
 	    return ret;
+	}
     }
     return ret;
 }

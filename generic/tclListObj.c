@@ -20,7 +20,7 @@
 
 static List *		AttemptNewList(Tcl_Interp *interp, size_t objc,
 			    Tcl_Obj *const objv[]);
-static List *		NewListIntRep(size_t objc, Tcl_Obj *const objv[], size_t p);
+static List *		NewListInternalRep(size_t objc, Tcl_Obj *const objv[], size_t p);
 static void		DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void		FreeListInternalRep(Tcl_Obj *listPtr);
 static int		SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -49,7 +49,7 @@ const Tcl_ObjType tclListType = {
 
 /* Macros to manipulate the List internal rep */
 
-#define ListSetIntRep(objPtr, listRepPtr)				\
+#define ListSetInternalRep(objPtr, listRepPtr)				\
     do {								\
 	Tcl_ObjInternalRep ir;						\
 	ir.twoPtrValue.ptr1 = (listRepPtr);				\
@@ -58,14 +58,14 @@ const Tcl_ObjType tclListType = {
 	Tcl_StoreInternalRep((objPtr), &tclListType, &ir);			\
     } while (0)
 
-#define ListGetIntRep(objPtr, listRepPtr)				\
+#define ListGetInternalRep(objPtr, listRepPtr)				\
     do {								\
 	const Tcl_ObjInternalRep *irPtr;					\
 	irPtr = TclFetchInternalRep((objPtr), &tclListType);		\
 	(listRepPtr) = irPtr ? (List *)irPtr->twoPtrValue.ptr1 : NULL;		\
     } while (0)
 
-#define ListResetIntRep(objPtr, listRepPtr) \
+#define ListResetInternalRep(objPtr, listRepPtr) \
     TclFetchInternalRep((objPtr), &tclListType)->twoPtrValue.ptr1 = (listRepPtr)
 
 #ifndef TCL_MIN_ELEMENT_GROWTH
@@ -75,7 +75,7 @@ const Tcl_ObjType tclListType = {
 /*
  *----------------------------------------------------------------------
  *
- * NewListIntRep --
+ * NewListInternalRep --
  *
  *	Creates a 'List' structure with space for 'objc' elements.  'objc' must
  *	be > 0.  If 'objv' is not NULL, The list is initialized with first
@@ -98,7 +98,7 @@ const Tcl_ObjType tclListType = {
  */
 
 static List *
-NewListIntRep(
+NewListInternalRep(
     size_t objc,
     Tcl_Obj *const objv[],
     size_t p)
@@ -123,7 +123,7 @@ NewListIntRep(
 	size_t i;
 
 	listRepPtr->elemCount = objc;
-	elemPtrs = &listRepPtr->elements;
+	elemPtrs = listRepPtr->elements;
 	for (i = 0;  i < objc;  i++) {
 	    elemPtrs[i] = objv[i];
 	    Tcl_IncrRefCount(elemPtrs[i]);
@@ -139,7 +139,7 @@ NewListIntRep(
  *
  *  AttemptNewList --
  *
- *	Like NewListIntRep, but additionally sets an error message on failure.
+ *	Like NewListInternalRep, but additionally sets an error message on failure.
  *
  *----------------------------------------------------------------------
  */
@@ -150,7 +150,7 @@ AttemptNewList(
     size_t objc,
     Tcl_Obj *const objv[])
 {
-    List *listRepPtr = NewListIntRep(objc, objv, 0);
+    List *listRepPtr = NewListInternalRep(objc, objv, 0);
 
     if (interp != NULL && listRepPtr == NULL) {
 	if (objc > LIST_MAX) {
@@ -221,14 +221,14 @@ Tcl_NewListObj(
      * Create the internal rep.
      */
 
-    listRepPtr = NewListIntRep(objc, objv, 1);
+    listRepPtr = NewListInternalRep(objc, objv, 1);
 
     /*
      * Now create the object.
      */
 
     TclInvalidateStringRep(listPtr);
-    ListSetIntRep(listPtr, listRepPtr);
+    ListSetInternalRep(listPtr, listRepPtr);
     return listPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -272,14 +272,14 @@ Tcl_DbNewListObj(
      * Create the internal rep.
      */
 
-    listRepPtr = NewListIntRep(objc, objv, 1);
+    listRepPtr = NewListInternalRep(objc, objv, 1);
 
     /*
      * Now create the object.
      */
 
     TclInvalidateStringRep(listPtr);
-    ListSetIntRep(listPtr, listRepPtr);
+    ListSetInternalRep(listPtr, listRepPtr);
 
     return listPtr;
 }
@@ -334,8 +334,8 @@ Tcl_SetListObj(
      */
 
     if (objc > 0) {
-	listRepPtr = NewListIntRep(objc, objv, 1);
-	ListSetIntRep(objPtr, listRepPtr);
+	listRepPtr = NewListInternalRep(objc, objv, 1);
+	ListSetInternalRep(objPtr, listRepPtr);
     } else {
 	Tcl_InitStringRep(objPtr, NULL, 0);
     }
@@ -373,7 +373,7 @@ TclListObjCopy(
     Tcl_Obj *copyPtr;
     List *listRepPtr;
 
-    ListGetIntRep(listPtr, listRepPtr);
+    ListGetInternalRep(listPtr, listRepPtr);
     if (NULL == listRepPtr) {
 	if (SetListFromAny(interp, listPtr) != TCL_OK) {
 	    return NULL;
@@ -412,8 +412,7 @@ TclListObjRange(
     size_t toIdx)			/* Index of last element to include. */
 {
     Tcl_Obj **elemPtrs;
-    size_t listLen;
-    size_t i, newLen;
+    size_t listLen, i, newLen;
     List *listRepPtr;
 
     TclListObjGetElementsM(NULL, listPtr, &listLen, &elemPtrs);
@@ -516,7 +515,7 @@ Tcl_ListObjGetElements(
 {
     List *listRepPtr;
 
-    ListGetIntRep(listPtr, listRepPtr);
+    ListGetInternalRep(listPtr, listRepPtr);
 
     if (listRepPtr == NULL) {
 	int result;
@@ -532,10 +531,10 @@ Tcl_ListObjGetElements(
 	if (result != TCL_OK) {
 	    return result;
 	}
-	ListGetIntRep(listPtr, listRepPtr);
+	ListGetInternalRep(listPtr, listRepPtr);
     }
     *objcPtr = listRepPtr->elemCount;
-    *objvPtr = &listRepPtr->elements;
+    *objvPtr = listRepPtr->elements;
     return TCL_OK;
 }
 
@@ -642,7 +641,7 @@ Tcl_ListObjAppendElement(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjAppendElement");
     }
 
-    ListGetIntRep(listPtr, listRepPtr);
+    ListGetInternalRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
 	int result;
 	size_t length;
@@ -656,7 +655,7 @@ Tcl_ListObjAppendElement(
 	if (result != TCL_OK) {
 	    return result;
 	}
-	ListGetIntRep(listPtr, listRepPtr);
+	ListGetInternalRep(listPtr, listRepPtr);
     }
 
     numElems = listRepPtr->elemCount;
@@ -701,7 +700,7 @@ Tcl_ListObjAppendElement(
 	}
     }
     if (isShared || needGrow) {
-	Tcl_Obj **dst, **src = &listRepPtr->elements;
+	Tcl_Obj **dst, **src = listRepPtr->elements;
 
 	/*
 	 * Either we have a shared internalrep and we must copy to write, or we
@@ -729,7 +728,7 @@ Tcl_ListObjAppendElement(
 	    return TCL_ERROR;
 	}
 
-	dst = &newPtr->elements;
+	dst = newPtr->elements;
 	newPtr->refCount++;
 	newPtr->canonicalFlag = listRepPtr->canonicalFlag;
 	newPtr->elemCount = listRepPtr->elemCount;
@@ -754,10 +753,10 @@ Tcl_ListObjAppendElement(
 	}
 	listRepPtr = newPtr;
     }
-    ListResetIntRep(listPtr, listRepPtr);
+    ListResetInternalRep(listPtr, listRepPtr);
     listRepPtr->refCount++;
     TclFreeInternalRep(listPtr);
-    ListSetIntRep(listPtr, listRepPtr);
+    ListSetInternalRep(listPtr, listRepPtr);
     listRepPtr->refCount--;
 
     /*
@@ -765,7 +764,7 @@ Tcl_ListObjAppendElement(
      * the ref count for the (now shared) objPtr.
      */
 
-    *(&listRepPtr->elements + listRepPtr->elemCount) = objPtr;
+    listRepPtr->elements[listRepPtr->elemCount] = objPtr;
     Tcl_IncrRefCount(objPtr);
     listRepPtr->elemCount++;
 
@@ -817,7 +816,7 @@ Tcl_ListObjIndex(
 {
     List *listRepPtr;
 
-    ListGetIntRep(listPtr, listRepPtr);
+    ListGetInternalRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
 	int result;
 	size_t length;
@@ -831,13 +830,13 @@ Tcl_ListObjIndex(
 	if (result != TCL_OK) {
 	    return result;
 	}
-	ListGetIntRep(listPtr, listRepPtr);
+	ListGetInternalRep(listPtr, listRepPtr);
     }
 
     if (index >= listRepPtr->elemCount) {
 	*objPtrPtr = NULL;
     } else {
-	*objPtrPtr = (&listRepPtr->elements)[index];
+	*objPtrPtr = listRepPtr->elements[index];
     }
 
     return TCL_OK;
@@ -871,11 +870,11 @@ int
 Tcl_ListObjLength(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *listPtr,	/* List object whose #elements to return. */
-    size_t *intPtr)	/* The resulting size_t is stored here. */
+    size_t *intPtr)	/* The resulting length is stored here. */
 {
     List *listRepPtr;
 
-    ListGetIntRep(listPtr, listRepPtr);
+    ListGetInternalRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
 	int result;
 	size_t length;
@@ -889,7 +888,7 @@ Tcl_ListObjLength(
 	if (result != TCL_OK) {
 	    return result;
 	}
-	ListGetIntRep(listPtr, listRepPtr);
+	ListGetInternalRep(listPtr, listRepPtr);
     }
 
     *intPtr = listRepPtr->elemCount;
@@ -954,7 +953,7 @@ Tcl_ListObjReplace(
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
     }
 
-    ListGetIntRep(listPtr, listRepPtr);
+    ListGetInternalRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
 	size_t length;
 
@@ -971,7 +970,7 @@ Tcl_ListObjReplace(
 		return result;
 	    }
 	}
-	ListGetIntRep(listPtr, listRepPtr);
+	ListGetInternalRep(listPtr, listRepPtr);
     }
 
     /*
@@ -982,7 +981,7 @@ Tcl_ListObjReplace(
      * Resist any temptation to optimize this case.
      */
 
-    elemPtrs = &listRepPtr->elements;
+    elemPtrs = listRepPtr->elements;
     numElems = listRepPtr->elemCount;
 
     if (first == TCL_INDEX_NONE) {
@@ -1027,8 +1026,8 @@ Tcl_ListObjReplace(
 	}
 	if (newPtr) {
 	    listRepPtr = newPtr;
-	    ListResetIntRep(listPtr, listRepPtr);
-	    elemPtrs = &listRepPtr->elements;
+	    ListResetInternalRep(listPtr, listRepPtr);
+	    elemPtrs = listRepPtr->elements;
 	    listRepPtr->maxElemCount = attempt;
 	    needGrow = numRequired > listRepPtr->maxElemCount;
 	}
@@ -1096,10 +1095,10 @@ Tcl_ListObjReplace(
 	    }
 	}
 
-	ListResetIntRep(listPtr, listRepPtr);
+	ListResetInternalRep(listPtr, listRepPtr);
 	listRepPtr->refCount++;
 
-	elemPtrs = &listRepPtr->elements;
+	elemPtrs = listRepPtr->elements;
 
 	if (isShared) {
 	    /*
@@ -1175,7 +1174,7 @@ Tcl_ListObjReplace(
 
     listRepPtr->refCount++;
     TclFreeInternalRep(listPtr);
-    ListSetIntRep(listPtr, listRepPtr);
+    ListSetInternalRep(listPtr, listRepPtr);
     listRepPtr->refCount--;
 
     TclInvalidateStringRep(listPtr);
@@ -1221,7 +1220,7 @@ TclLindexList(
      * shimmering; see TIP#22 and TIP#33 for the details.
      */
 
-    ListGetIntRep(argPtr, listRepPtr);
+    ListGetInternalRep(argPtr, listRepPtr);
     if ((listRepPtr == NULL)
 	    && TclGetIntForIndexM(NULL , argPtr, (size_t)WIDE_MAX - 1, &index) == TCL_OK) {
 	/*
@@ -1253,12 +1252,12 @@ TclLindexList(
 	return TclLindexFlat(interp, listPtr, 1, &argPtr);
     }
 
-    ListGetIntRep(indexListCopy, listRepPtr);
+    ListGetInternalRep(indexListCopy, listRepPtr);
 
     assert(listRepPtr != NULL);
 
     listPtr = TclLindexFlat(interp, listPtr, listRepPtr->elemCount,
-		&listRepPtr->elements);
+		listRepPtr->elements);
     Tcl_DecrRefCount(indexListCopy);
     return listPtr;
 }
@@ -1297,8 +1296,7 @@ TclLindexFlat(
     Tcl_IncrRefCount(listPtr);
 
     for (i=0 ; i<indexCount && listPtr ; i++) {
-	size_t index;
-	size_t listLen = 0;
+	size_t index, listLen = 0;
 	Tcl_Obj **elemPtrs = NULL, *sublistCopy;
 
 	/*
@@ -1391,7 +1389,7 @@ TclLsetList(
      * shimmering; see TIP #22 and #23 for details.
      */
 
-    ListGetIntRep(indexArgPtr, listRepPtr);
+    ListGetInternalRep(indexArgPtr, listRepPtr);
     if (listRepPtr == NULL
 	    && TclGetIntForIndexM(NULL, indexArgPtr, (size_t)WIDE_MAX - 1, &index) == TCL_OK) {
 	/*
@@ -1651,7 +1649,7 @@ TclLsetFlat(
 
 	    listRepPtr->refCount++;
 	    TclFreeInternalRep(objPtr);
-	    ListSetIntRep(objPtr, listRepPtr);
+	    ListSetInternalRep(objPtr, listRepPtr);
 	    listRepPtr->refCount--;
 
 	    TclInvalidateStringRep(objPtr);
@@ -1756,7 +1754,7 @@ TclListObjSetElement(
 	Tcl_Panic("%s called with shared object", "TclListObjSetElement");
     }
 
-    ListGetIntRep(listPtr, listRepPtr);
+    ListGetInternalRep(listPtr, listRepPtr);
     if (listRepPtr == NULL) {
 	int result;
 	size_t length;
@@ -1775,7 +1773,7 @@ TclListObjSetElement(
 	if (result != TCL_OK) {
 	    return result;
 	}
-	ListGetIntRep(listPtr, listRepPtr);
+	ListGetInternalRep(listPtr, listRepPtr);
     }
 
     elemCount = listRepPtr->elemCount;
@@ -1799,7 +1797,7 @@ TclListObjSetElement(
      */
 
     if (listRepPtr->refCount > 1) {
-	Tcl_Obj **dst, **src = &listRepPtr->elements;
+	Tcl_Obj **dst, **src = listRepPtr->elements;
 	List *newPtr = AttemptNewList(NULL, listRepPtr->maxElemCount, NULL);
 
 	if (newPtr == NULL) {
@@ -1812,7 +1810,7 @@ TclListObjSetElement(
 	newPtr->elemCount = elemCount;
 	newPtr->canonicalFlag = listRepPtr->canonicalFlag;
 
-	dst = &newPtr->elements;
+	dst = newPtr->elements;
 	while (elemCount--) {
 	    *dst = *src++;
 	    Tcl_IncrRefCount(*dst++);
@@ -1821,9 +1819,9 @@ TclListObjSetElement(
 	listRepPtr->refCount--;
 
 	listRepPtr = newPtr;
-	ListResetIntRep(listPtr, listRepPtr);
+	ListResetInternalRep(listPtr, listRepPtr);
     }
-    elemPtrs = &listRepPtr->elements;
+    elemPtrs = listRepPtr->elements;
 
     /*
      * Add a reference to the new list element.
@@ -1847,10 +1845,10 @@ TclListObjSetElement(
      * Invalidate outdated internalreps.
      */
 
-    ListGetIntRep(listPtr, listRepPtr);
+    ListGetInternalRep(listPtr, listRepPtr);
     listRepPtr->refCount++;
     TclFreeInternalRep(listPtr);
-    ListSetIntRep(listPtr, listRepPtr);
+    ListSetInternalRep(listPtr, listRepPtr);
     listRepPtr->refCount--;
 
     TclInvalidateStringRep(listPtr);
@@ -1880,11 +1878,11 @@ FreeListInternalRep(
 {
     List *listRepPtr;
 
-    ListGetIntRep(listPtr, listRepPtr);
+    ListGetInternalRep(listPtr, listRepPtr);
     assert(listRepPtr != NULL);
 
     if (listRepPtr->refCount-- <= 1) {
-	Tcl_Obj **elemPtrs = &listRepPtr->elements;
+	Tcl_Obj **elemPtrs = listRepPtr->elements;
 	int i, numElems = listRepPtr->elemCount;
 
 	for (i = 0;  i < numElems;  i++) {
@@ -1916,9 +1914,9 @@ DupListInternalRep(
 {
     List *listRepPtr;
 
-    ListGetIntRep(srcPtr, listRepPtr);
+    ListGetInternalRep(srcPtr, listRepPtr);
     assert(listRepPtr != NULL);
-    ListSetIntRep(copyPtr, listRepPtr);
+    ListSetInternalRep(copyPtr, listRepPtr);
 }
 
 /*
@@ -1986,7 +1984,7 @@ SetListFromAny(
 	 * Populate the list representation.
 	 */
 
-	elemPtrs = &listRepPtr->elements;
+	elemPtrs = listRepPtr->elements;
 	Tcl_DictObjFirst(NULL, objPtr, &search, &keyPtr, &valuePtr, &done);
 	while (!done) {
 	    *elemPtrs++ = keyPtr;
@@ -1996,8 +1994,7 @@ SetListFromAny(
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
     } else {
-	size_t estCount;
-	size_t length;
+	size_t estCount, length;
 	const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
 
 	/*
@@ -2012,7 +2009,7 @@ SetListFromAny(
 	if (listRepPtr == NULL) {
 	    return TCL_ERROR;
 	}
-	elemPtrs = &listRepPtr->elements;
+	elemPtrs = listRepPtr->elements;
 
 	/*
 	 * Each iteration, parse and store a list element.
@@ -2027,7 +2024,7 @@ SetListFromAny(
 	    if (TCL_OK != TclFindElement(interp, nextElem, limit - nextElem,
 		    &elemStart, &nextElem, &elemSize, &literal)) {
 	    fail:
-		while (--elemPtrs >= &listRepPtr->elements) {
+		while (--elemPtrs >= listRepPtr->elements) {
 		    Tcl_DecrRefCount(*elemPtrs);
 		}
 		Tcl_Free(listRepPtr);
@@ -2057,7 +2054,7 @@ SetListFromAny(
 	    Tcl_IncrRefCount(*elemPtrs++);/* Since list now holds ref to it. */
 	}
 
- 	listRepPtr->elemCount = elemPtrs - &listRepPtr->elements;
+ 	listRepPtr->elemCount = elemPtrs - listRepPtr->elements;
     }
 
     /*
@@ -2066,7 +2063,7 @@ SetListFromAny(
      * Tcl_GetStringFromObj, to use the old internalRep.
      */
 
-    ListSetIntRep(objPtr, listRepPtr);
+    ListSetInternalRep(objPtr, listRepPtr);
     return TCL_OK;
 }
 
@@ -2095,14 +2092,13 @@ UpdateStringOfList(
 {
 #   define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    size_t numElems, i;
-    size_t length, bytesNeeded = 0;
+    size_t numElems, i, length, bytesNeeded = 0;
     const char *elem, *start;
     char *dst;
     Tcl_Obj **elemPtrs;
     List *listRepPtr;
 
-    ListGetIntRep(listPtr, listRepPtr);
+    ListGetInternalRep(listPtr, listRepPtr);
 
     assert(listRepPtr != NULL);
 
@@ -2138,7 +2134,7 @@ UpdateStringOfList(
 
 	flagPtr = (char *)Tcl_Alloc(numElems);
     }
-    elemPtrs = &listRepPtr->elements;
+    elemPtrs = listRepPtr->elements;
     for (i = 0; i < numElems; i++) {
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 	elem = Tcl_GetStringFromObj(elemPtrs[i], &length);

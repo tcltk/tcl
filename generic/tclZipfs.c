@@ -410,7 +410,7 @@ static const Tcl_Filesystem zipfsFilesystem = {
 static Tcl_ChannelType ZipChannelType = {
     "zip",			/* Type name. */
     TCL_CHANNEL_VERSION_5,
-    TCL_CLOSE2PROC,		/* Close channel, clean instance data */
+    NULL,			/* Close channel, clean instance data */
     ZipChannelRead,		/* Handle read request */
     ZipChannelWrite,		/* Handle write request */
     NULL,			/* Move location of access point, NULL'able */

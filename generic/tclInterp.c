@@ -1847,7 +1847,7 @@ AliasNRCmd(
     listPtr = Tcl_NewListObj(cmdc, NULL);
     listRep = ListRepPtr(listPtr);
     listRep->elemCount = cmdc;
-    cmdv = &listRep->elements;
+    cmdv = listRep->elements;
 
     prefv = &aliasPtr->objPtr;
     memcpy(cmdv, prefv, (prefc * sizeof(Tcl_Obj *)));
