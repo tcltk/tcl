@@ -5130,7 +5130,10 @@ TestsetbytearraylengthObjCmd(
 	obj = objv[1];
     }
     if (NULL == Tcl_SetByteArrayLength(obj, n)) {
-	Tcl_SetResult(interp, "expected bytes", TCL_STATIC);
+	if (Tcl_IsShared(objv[1])) {
+	    Tcl_DecrRefCount(obj);
+	}
+	Tcl_AppendResult(interp, "expected bytes", NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, obj);
