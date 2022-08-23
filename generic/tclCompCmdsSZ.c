@@ -2435,7 +2435,7 @@ IssueSwitchJumpTable(
 		 * point to here.
 		 */
 
-		Tcl_SetHashValue(hPtr, CurrentOffset(envPtr) - jumpLocation);
+		Tcl_SetHashValue(hPtr, INT2PTR(CurrentOffset(envPtr) - jumpLocation));
 	    }
 	    Tcl_DStringFree(&buffer);
 	} else {
