@@ -2152,7 +2152,7 @@ static void traceWrapperDelProc(void *clientData)
     if (info->delProc) {
 	info->delProc(clientData);
     }
-    ckfree(info);
+    Tcl_Free(info);
 }
 
 Tcl_Trace
@@ -2165,7 +2165,7 @@ Tcl_CreateObjTrace2(
     Tcl_CmdObjTraceDeleteProc *delProc)
 				/* Function to call when trace is deleted */
 {
-    TraceWrapperInfo *info = (TraceWrapperInfo *)ckalloc(sizeof(TraceWrapperInfo));
+    TraceWrapperInfo *info = (TraceWrapperInfo *)Tcl_Alloc(sizeof(TraceWrapperInfo));
     info->proc = proc;
     info->delProc = delProc;
     info->clientData = clientData;

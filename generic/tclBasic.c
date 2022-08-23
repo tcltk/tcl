@@ -2652,7 +2652,7 @@ static void cmdWrapperDeleteProc(void *clientData) {
 
     clientData = info->clientData;
     Tcl_CmdDeleteProc *deleteProc = info->deleteProc;
-    ckfree(info);
+    Tcl_Free(info);
     if (deleteProc != NULL) {
 	deleteProc(clientData);
     }
@@ -2675,7 +2675,7 @@ Tcl_CreateObjCommand2(
 				 * this command is deleted. */
 )
 {
-    CmdWrapperInfo *info = (CmdWrapperInfo *)ckalloc(sizeof(CmdWrapperInfo));
+    CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->proc = proc;
     info->deleteProc = deleteProc;
     info->clientData = clientData;
@@ -8410,7 +8410,7 @@ int wrapperNRObjProc(
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
     clientData = info->clientData;
     Tcl_ObjCmdProc2 *proc = info->proc;
-    ckfree(info);
+    Tcl_Free(info);
     return proc(clientData, interp, objc, objv);
 }
 
@@ -8423,7 +8423,7 @@ Tcl_NRCallObjProc2(
     Tcl_Obj *const objv[])
 {
     NRE_callback *rootPtr = TOP_CB(interp);
-    CmdWrapperInfo *info = (CmdWrapperInfo *)ckalloc(sizeof(CmdWrapperInfo));
+    CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->clientData = clientData;
     info->proc = objProc;
 
@@ -8489,7 +8489,7 @@ Tcl_NRCreateCommand2(
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
 {
-    CmdWrapperInfo *info = (CmdWrapperInfo *)ckalloc(sizeof(CmdWrapperInfo));
+    CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->proc = proc;
     info->nreProc = nreProc;
     info->deleteProc = deleteProc;
