@@ -2968,15 +2968,13 @@ ForeachAssignments(
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
 		if (isarithseries) {
-		    Tcl_WideInt value;
-		    if (TclArithSeriesObjIndex(statePtr->vCopyList[i], k, &value) != TCL_OK) {
+		    if (TclArithSeriesObjIndex(statePtr->vCopyList[i], k, &valuePtr) != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (setting %s loop variable \"%s\")",
 			(statePtr->resultList != NULL ? "lmap" : "foreach"),
 			TclGetString(statePtr->varvList[i][v])));
 			return TCL_ERROR;
 		    }
-		    valuePtr = Tcl_NewWideIntObj(value);
 		} else {
 		    valuePtr = statePtr->argvList[i][k];
 		}
