@@ -663,10 +663,10 @@ EnvTraceProc(
 	Tcl_Obj *name;
 
 	name = Tcl_NewStringObj(name1, -1);
-        Tcl_IncrRefCount(name);
+	Tcl_IncrRefCount(name);
 	varPtr = TclObjLookupVarEx(interp, name, NULL, /*flags*/ 0,
 	  /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-        Tcl_DecrRefCount(name);
+	Tcl_DecrRefCount(name);
 	name2 = Tcl_GetString(VarHashGetKey(varPtr));
     }
 
