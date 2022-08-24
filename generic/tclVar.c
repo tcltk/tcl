@@ -998,6 +998,7 @@ TclLookupSimpleVar(
 	    if (tablePtr == NULL) {
 		tablePtr = (TclVarHashTable *)Tcl_Alloc(sizeof(TclVarHashTable));
 		TclInitVarHashTable(tablePtr, NULL);
+		tablePtr->arrayPtr = varPtr;
 		varFramePtr->varTablePtr = tablePtr;
 	    }
 	    varPtr = VarHashCreateVar(tablePtr, varNamePtr, &isNew);
@@ -1389,6 +1390,8 @@ TclPtrGetVarIdx(
 {
     Interp *iPtr = (Interp *) interp;
     const char *msg;
+
+    TclVarFindHiddenArray(varPtr, arrayPtr);
 
     /*
      * Invoke any read traces that have been set for the variable.
@@ -1952,6 +1955,8 @@ TclPtrSetVarIdx(
 	goto earlyError;
     }
 
+    TclVarFindHiddenArray(varPtr, arrayPtr);
+
     /*
      * Invoke any read traces that have been set for the variable if it is
      * requested. This was done for INST_LAPPEND_* but that was inconsistent
@@ -2453,6 +2458,8 @@ TclPtrUnsetVarIdx(
     if (TclIsVarInHash(varPtr)) {
 	VarHashRefCount(varPtr)++;
     }
+
+    TclVarFindHiddenArray(varPtr, arrayPtr);
 
     UnsetVarStruct(varPtr, arrayPtr, iPtr, part1Ptr, part2Ptr, flags, index);
 
@@ -6340,6 +6347,7 @@ TclInitVarHashTable(
     Tcl_InitCustomHashTable(&tablePtr->table,
 	    TCL_CUSTOM_TYPE_KEYS, &tclVarHashKeyType);
     tablePtr->nsPtr = nsPtr;
+    tablePtr->arrayPtr = NULL;
 }
 
 static Tcl_HashEntry *
@@ -6594,6 +6602,7 @@ TclInitArrayVar(
 
     arrayPtr->value.tablePtr = (TclVarHashTable *) tablePtr;
     TclInitVarHashTable(arrayPtr->value.tablePtr, TclGetVarNsPtr(arrayPtr));
+    arrayPtr->value.tablePtr->arrayPtr = arrayPtr;
 
     /*
      * Default value initialization.
