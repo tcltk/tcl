@@ -1703,6 +1703,14 @@ Tcl_CreateChannel(
     statePtr->outputEncodingFlags = TCL_ENCODING_START;
 
     /*
+     * Set encoding tolerant mode as default on 8.7.x and off on TCL9.x
+     */
+    
+    #if TCL_MAJOR_VERSION < 9
+    statePtr->flags |= CHANNEL_ENCODING_NOCOMPLAIN;
+    #endif
+
+    /*
      * Set the channel up initially in AUTO input translation mode to accept
      * "\n", "\r" and "\r\n". Output translation mode is set to a platform
      * specific default value. The eofChar is set to 0 for both input and
@@ -7910,7 +7918,7 @@ Tcl_GetChannelOption(
 	    Tcl_DStringAppendElement(dsPtr, "-tolerantencoding");
 	}
 	Tcl_DStringAppendElement(dsPtr,
-		(flags & CHANNEL_TOLERANT_ENCODING) ? "1" : "0");
+		(flags & CHANNEL_ENCODING_NOCOMPLAIN) ? "1" : "0");
 	if (len > 0) {
 	    return TCL_OK;
 	}
@@ -8178,9 +8186,9 @@ Tcl_SetChannelOption(
 	    return TCL_ERROR;
 	}
 	if (newMode) {
-	    statePtr->flags |= CHANNEL_TOLERANT_ENCODING;
+	    statePtr->flags |= CHANNEL_ENCODING_NOCOMPLAIN;
 	} else {
-	    statePtr->flags &= ~CHANNEL_TOLERANT_ENCODING;
+	    statePtr->flags &= ~CHANNEL_ENCODING_NOCOMPLAIN;
 	}
 	return TCL_OK;
     } else if (HaveOpt(2, "-translation")) {
