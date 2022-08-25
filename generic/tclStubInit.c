@@ -2034,6 +2034,12 @@ const TclStubs tclStubs = {
     TclUtfAtIndex, /* 671 */
     TclGetRange, /* 672 */
     TclGetUniChar, /* 673 */
+    0, /* 674 */
+    0, /* 675 */
+    Tcl_CreateObjCommand2, /* 676 */
+    Tcl_CreateObjTrace2, /* 677 */
+    Tcl_NRCreateCommand2, /* 678 */
+    Tcl_NRCallObjProc2, /* 679 */
 };
 
 /* !END!: Do not edit above this line. */
