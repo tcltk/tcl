@@ -3020,6 +3020,8 @@ MODULE_SCOPE int	TclInfoGlobalsCmd(void *dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclInfoLocalsCmd(void *dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+MODULE_SCOPE int	TclInfoUpvarCmd(void *dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclInfoVarsCmd(void *dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclInitAlloc(void);
