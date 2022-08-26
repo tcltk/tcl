@@ -1104,18 +1104,20 @@ TestcmdinfoCmd(
 	Tcl_AppendResult(interp, " ", info.namespacePtr->fullName, NULL);
 	if (info.isNativeObjectProc == 2) {
 	    Tcl_AppendResult(interp, " nativeObjectProc2", NULL);
-	} else if (info.isNativeObjectProc == 1) {
-	    Tcl_AppendResult(interp, " nativeObjectProc", NULL);
-	} else {
+	} else if (info.isNativeObjectProc == 0) {
 	    Tcl_AppendResult(interp, " stringProc", NULL);
+	} else {
+	    Tcl_AppendResult(interp, " nativeObjectProc", NULL);
 	}
     } else if (strcmp(argv[1], "modify") == 0) {
 	info.proc = CmdProc2;
 	info.clientData = (void *) "new_command_data";
 	info.objProc = NULL;
 	info.objClientData = NULL;
+#if TCL_MAJOR_VERSION > 8
 	info.objProc2 = NULL;
 	info.objClientData2 = NULL;
+#endif
 	info.deleteProc = CmdDelProc2;
 	info.deleteData = (void *) "new_delete_data";
 	if (Tcl_SetCommandInfo(interp, argv[2], &info) == 0) {

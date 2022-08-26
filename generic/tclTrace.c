@@ -1764,7 +1764,7 @@ TraceExecutionProc(
     const char *command,
     TCL_UNUSED(Tcl_Command),
     size_t objc,
-    struct Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[])
 {
     int call = 0;
     Interp *iPtr = (Interp *) interp;
@@ -2139,7 +2139,7 @@ static int traceWrapperProc(
     const char *command,
     Tcl_Command commandInfo,
     size_t objc,
-	struct Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[])
 {
     TraceWrapperInfo *info = (TraceWrapperInfo *)clientData;
     if (objc > INT_MAX) {

@@ -602,13 +602,13 @@ TclFinalizeEvaluation(void)
  */
 
 static int
-buildInfoObjCmd(
+buildInfoObjCmd2(
     void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    if (objc > 2) {
+    if (objc - 1 > 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?option?");
 	return TCL_ERROR;
     }
@@ -687,6 +687,15 @@ buildInfoObjCmd(
     return TCL_OK;
 }
 
+static int
+buildInfoObjCmd(
+    void *clientData,
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return buildInfoObjCmd2(clientData, interp, (size_t)objc, objv);
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -1228,9 +1237,13 @@ Tcl_CreateInterp(void)
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
     Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL, &tclStubs);
-    Tcl_CreateObjCommand(interp, "::tcl::build-info",
+    Tcl_CmdInfo info2;
+    Tcl_Command buildInfoCmd = Tcl_CreateObjCommand(interp, "::tcl::build-info",
 	    buildInfoObjCmd, (void *)version, NULL);
-
+    Tcl_GetCommandInfoFromToken(buildInfoCmd, &info2);
+    info2.objProc2 = buildInfoObjCmd2;
+    info2.objClientData2 = (void *)version;
+    Tcl_SetCommandInfoFromToken(buildInfoCmd, &info2);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
@@ -2625,19 +2638,18 @@ Tcl_CreateCommand(
  */
 
 typedef struct {
-    void *clientData; /* Arbitrary value to pass to object function. */
     Tcl_ObjCmdProc *proc;
+    void *clientData; /* Arbitrary value to pass to proc function. */
     Tcl_CmdDeleteProc *deleteProc;
+    void *deleteData; /* Arbitrary value to pass to deleteProc function. */
     Tcl_ObjCmdProc *nreProc;
-    void *clientData2; /* Arbitrary value to pass to object2 function. */
-    Tcl_ObjCmdProc2 *proc2;
 } CmdWrapperInfo;
 
 
 static int cmdWrapperProc(void *clientData,
 	Tcl_Interp *interp,
 	size_t objc,
-	struct Tcl_Obj * const *objv)
+	Tcl_Obj * const *objv)
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
     if (objc > INT_MAX) {
@@ -2650,7 +2662,7 @@ static int cmdWrapperProc(void *clientData,
 static void cmdWrapperDeleteProc(void *clientData) {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
 
-    clientData = info->clientData;
+    clientData = info->deleteData;
     Tcl_CmdDeleteProc *deleteProc = info->deleteProc;
     Tcl_Free(info);
     if (deleteProc != NULL) {
@@ -2677,10 +2689,9 @@ Tcl_CreateObjCommand(
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->proc = proc;
-    info->deleteProc = deleteProc;
     info->clientData = clientData;
-    info->proc2 = cmdWrapperProc;
-    info->clientData2 = info;
+    info->deleteProc = deleteProc;
+    info->deleteData = clientData;
 
     return Tcl_CreateObjCommand2(interp, cmdName,
 	    (proc ? cmdWrapperProc : NULL),
@@ -2981,6 +2992,9 @@ TclInvokeObjectCommand(
     Tcl_Obj **objv = (Tcl_Obj **)
 	    TclStackAlloc(interp, (argc * sizeof(Tcl_Obj *)));
 
+    if (argc < 0) {
+	argc = -1; /* Make sure any invalid argc is handled as TCL_INDEX_NONE */
+    }
     for (i = 0; i < argc; i++) {
 	length = strlen(argv[i]);
 	TclNewStringObj(objPtr, argv[i], length);
@@ -3273,6 +3287,28 @@ Tcl_SetCommandInfo(
  *----------------------------------------------------------------------
  */
 
+static int
+invokeObj2Command(
+    void *clientData,	/* Points to command's Command structure. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,		/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int result;
+    Command *cmdPtr = (Command *) clientData;
+
+    if (objc < 0) {
+	objc = -1;
+    }
+    if (cmdPtr->objProc2 != NULL) {
+	result = cmdPtr->objProc2(cmdPtr->objClientData2, interp, (size_t)objc, objv);
+    } else {
+	result = Tcl_NRCallObjProc2(interp, cmdPtr->nreProc2,
+		cmdPtr->objClientData2, (size_t)objc, objv);
+    }
+    return result;
+}
+
 int
 Tcl_SetCommandInfoFromToken(
     Tcl_Command cmd,
@@ -3302,8 +3338,25 @@ Tcl_SetCommandInfoFromToken(
 	}
 	cmdPtr->objClientData2 = infoPtr->objClientData2;
     }
-    cmdPtr->deleteProc = infoPtr->deleteProc;
-    cmdPtr->deleteData = infoPtr->deleteData;
+    if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
+	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
+	if (infoPtr->objProc == NULL) {
+	    info->proc = invokeObj2Command;
+	    info->clientData = cmdPtr;
+	   	info->nreProc = NULL;
+	} else {
+	    if (infoPtr->objProc != info->proc) {
+	   	info->nreProc = NULL;
+		info->proc = infoPtr->objProc;
+	    }
+	    info->clientData = infoPtr->objClientData;
+	}
+	info->deleteProc = infoPtr->deleteProc;
+	info->deleteData = infoPtr->deleteData;
+    } else {
+	cmdPtr->deleteProc = infoPtr->deleteProc;
+	cmdPtr->deleteData = infoPtr->deleteData;
+    }
     return 1;
 }
 
@@ -3388,22 +3441,22 @@ Tcl_GetCommandInfoFromToken(
 	    (cmdPtr->objProc2 != TclInvokeStringCommand) ? 2 : 0;
     infoPtr->proc = cmdPtr->proc;
     infoPtr->clientData = cmdPtr->clientData;
-    infoPtr->deleteProc = cmdPtr->deleteProc;
-    infoPtr->deleteData = cmdPtr->deleteData;
-    infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
-    if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
-	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->objClientData2;
-	infoPtr->objProc = info->proc;
-	infoPtr->objClientData = info->clientData;
-    infoPtr->objProc2 = info->proc2;
-    infoPtr->objClientData2 = info->clientData2;
-	infoPtr->isNativeObjectProc = 1;
-    } else {
-	infoPtr->objProc = cmdWrapper2Proc;
-	infoPtr->objClientData = cmdPtr;
     infoPtr->objProc2 = cmdPtr->objProc2;
     infoPtr->objClientData2 = cmdPtr->objClientData2;
+    if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
+	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
+	infoPtr->deleteProc = info->deleteProc;
+    infoPtr->deleteData = info->deleteData;
+	infoPtr->objProc = info->proc;
+	infoPtr->objClientData = info->clientData;
+	infoPtr->isNativeObjectProc = 1;
+    } else {
+	infoPtr->deleteProc = cmdPtr->deleteProc;
+	infoPtr->deleteData = cmdPtr->deleteData;
+	infoPtr->objProc = cmdWrapper2Proc;
+	infoPtr->objClientData = cmdPtr;
     }
+    infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
     return 1;
 }
 
@@ -8449,8 +8502,6 @@ Tcl_NRCallObjProc(
     CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->clientData = clientData;
     info->proc = objProc;
-    info->proc2 = cmdWrapperProc;
-    info->clientData2 = info;
 
     TclNRAddCallback(interp, Dispatch, wrapperNRObjProc, info,
 	    INT2PTR(objc), objv);
@@ -8489,7 +8540,7 @@ static int cmdWrapperNreProc(
     void *clientData,
     Tcl_Interp *interp,
     size_t objc,
-	struct Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[])
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
     if (objc > INT_MAX) {
@@ -8520,11 +8571,10 @@ Tcl_NRCreateCommand(
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->proc = proc;
+    info->clientData = clientData;
     info->nreProc = nreProc;
     info->deleteProc = deleteProc;
-    info->clientData = clientData;
-    info->proc2 = cmdWrapperProc;
-    info->clientData2 = info;
+    info->deleteData = clientData;
     return Tcl_NRCreateCommand2(interp, cmdName,
 	    proc ? cmdWrapperProc : NULL,
 	    nreProc ? cmdWrapperNreProc : NULL, info,

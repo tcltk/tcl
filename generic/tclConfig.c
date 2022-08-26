@@ -194,7 +194,7 @@ QueryConfigObjCmd(
     void *clientData,
     Tcl_Interp *interp,
     size_t objc,
-    struct Tcl_Obj *const *objv)
+    Tcl_Obj *const *objv)
 {
     QCCD *cdPtr = (QCCD *)clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
