@@ -1390,6 +1390,7 @@ TclPtrGetVarIdx(
 {
     Interp *iPtr = (Interp *) interp;
     const char *msg;
+    Var *initialArrayPtr = arrayPtr;
 
     TclVarFindHiddenArray(varPtr, arrayPtr);
 
@@ -1438,8 +1439,8 @@ TclPtrGetVarIdx(
     }
 
     if (flags & TCL_LEAVE_ERR_MSG) {
-	if (TclIsVarUndefined(varPtr) && arrayPtr
-		&& !TclIsVarUndefined(arrayPtr)) {
+	if (TclIsVarUndefined(varPtr) && initialArrayPtr
+		&& !TclIsVarUndefined(initialArrayPtr)) {
 	    msg = NOSUCHELEMENT;
 	} else if (TclIsVarArray(varPtr)) {
 	    msg = ISARRAY;
@@ -2447,6 +2448,7 @@ TclPtrUnsetVarIdx(
 {
     Interp *iPtr = (Interp *) interp;
     int result = (TclIsVarUndefined(varPtr)? TCL_ERROR : TCL_OK);
+    Var *initialArrayPtr = arrayPtr;
 
     /*
      * Keep the variable alive until we're done with it. We used to
@@ -2470,7 +2472,7 @@ TclPtrUnsetVarIdx(
     if (result != TCL_OK) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset",
-		    ((arrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT), index);
+              ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT), index);
 	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "VARNAME", NULL);
 	}
     }

@@ -816,8 +816,8 @@ typedef struct VarInHash {
 
 #define TclVarFindHiddenArray(varPtr,arrayPtr)				\
     do {								\
-        if (!arrayPtr && !TclIsVarUndefined(varPtr) &&			\
-              TclIsVarInHash(varPtr) && TclVarParentArray(varPtr)) {	\
+        if ((arrayPtr == NULL) && TclIsVarInHash(varPtr) &&		\
+              (TclVarParentArray(varPtr) != NULL)) {			\
             arrayPtr = TclVarParentArray(varPtr);			\
         }								\
     } while(0)
