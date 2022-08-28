@@ -20,6 +20,7 @@
 #include "tclInt.h"
 #include "tclRegexp.h"
 #include <math.h>
+#include "tclArithSeries.h"
 
 /*
  * During execution of the "lsort" command, structures of the following type
@@ -101,7 +102,7 @@ static const char *const seq_operations[] = {
     "..", "to", "count", "by", NULL
 };
 typedef enum Sequence_Operators {
-    RANGE_DOTS, RANGE_TO, RANGE_COUNT, RANGE_BY
+    LSEQ_DOTS, LSEQ_TO, LSEQ_COUNT, LSEQ_BY
 } SequenceOperators;
 static const char *const seq_step_keywords[] = {"by", NULL};
 typedef enum Step_Operators {
@@ -4131,21 +4132,21 @@ SequenceIdentifyArgument(
  * Enumerated possible argument patterns:
  *
  * 1:
- *    range n
+ *    lseq n
  * 2:
- *    range n n
+ *    lseq n n
  * 3:
- *    range n n n
- *    range n 'to' n
- *    range n 'count' n
- *    range n 'by' n
+ *    lseq n n n
+ *    lseq n 'to' n
+ *    lseq n 'count' n
+ *    lseq n 'by' n
  * 4:
- *    range n 'to' n n
- *    range n n 'by' n
- *    range n 'count' n n
+ *    lseq n 'to' n n
+ *    lseq n n 'by' n
+ *    lseq n 'count' n n
  * 5:
- *    range n 'to' n 'by' n
- *    range n 'count' n 'by' n
+ *    lseq n 'to' n 'by' n
+ *    lseq n 'count' n 'by' n
  *
  * Results:
  *	A standard Tcl object result.
@@ -4269,17 +4270,17 @@ Tcl_LseqObjCmd(
     case 121:
 	opmode = (SequenceOperators)values[1];
 	switch (opmode) {
-	case RANGE_DOTS:
-	case RANGE_TO:
+	case LSEQ_DOTS:
+	case LSEQ_TO:
 	    start = numValues[0];
 	    end = numValues[2];
 	    break;
-	case RANGE_BY:
+	case LSEQ_BY:
 	    start = zero;
 	    elementCount = numValues[0];
 	    step = numValues[2];
 	    break;
-	case RANGE_COUNT:
+	case LSEQ_COUNT:
 	    start = numValues[0];
 	    elementCount = numValues[2];
 	    step = one;
@@ -4295,18 +4296,18 @@ Tcl_LseqObjCmd(
     case 1211:
 	opmode = (SequenceOperators)values[1];
 	switch (opmode) {
-	case RANGE_DOTS:
-	case RANGE_TO:
+	case LSEQ_DOTS:
+	case LSEQ_TO:
 	    start = numValues[0];
 	    end = numValues[2];
 	    step = numValues[3];
 	    break;
-	case RANGE_COUNT:
+	case LSEQ_COUNT:
 	    start = numValues[0];
 	    elementCount = numValues[2];
 	    step = numValues[3];
 	    break;
-	case RANGE_BY:
+	case LSEQ_BY:
 	    /* Error case */
 	    status = TCL_ERROR;
 	    goto done;
@@ -4324,12 +4325,12 @@ Tcl_LseqObjCmd(
 	end = numValues[1];
 	opmode = (SequenceOperators)values[2];
 	switch (opmode) {
-	case RANGE_BY:
+	case LSEQ_BY:
 	    step = numValues[3];
 	    break;
-	case RANGE_DOTS:
-	case RANGE_TO:
-	case RANGE_COUNT:
+	case LSEQ_DOTS:
+	case LSEQ_TO:
+	case LSEQ_COUNT:
 	default:
 	    status = TCL_ERROR;
 	    goto done;
@@ -4343,7 +4344,7 @@ Tcl_LseqObjCmd(
 	start = numValues[0];
 	opmode = (SequenceOperators)values[3];
 	switch (opmode) {
-	case RANGE_BY:
+	case LSEQ_BY:
 	    step = numValues[4];
 	    break;
 	default:
@@ -4353,12 +4354,12 @@ Tcl_LseqObjCmd(
 	}
 	opmode = (SequenceOperators)values[1];
 	switch (opmode) {
-	case RANGE_DOTS:
-	case RANGE_TO:
+	case LSEQ_DOTS:
+	case LSEQ_TO:
 	    start = numValues[0];
 	    end = numValues[2];
 	    break;
-	case RANGE_COUNT:
+	case LSEQ_COUNT:
 	    start = numValues[0];
 	    elementCount = numValues[2];
 	    break;
@@ -4379,16 +4380,16 @@ Tcl_LseqObjCmd(
     KeywordError:
 	 status = TCL_ERROR;
 	 switch (opmode) {
-	 case RANGE_DOTS:
-	 case RANGE_TO:
+	 case LSEQ_DOTS:
+	 case LSEQ_TO:
 	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		  "missing \"to\" value."));
 	      break;
-	 case RANGE_COUNT:
+	 case LSEQ_COUNT:
 	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		  "missing \"count\" value."));
 	      break;
-	 case RANGE_BY:
+	 case LSEQ_BY:
 	      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		  "missing \"by\" value."));
 	      break;

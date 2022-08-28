@@ -15,6 +15,7 @@
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
+#include "tclArithSeries.h"
 
 /*
  * The state structure used by [foreach]. Note that the actual structure has

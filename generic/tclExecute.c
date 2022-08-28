@@ -19,6 +19,7 @@
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tclTomMath.h"
+#include "tclArithSeries.h"
 #include <math.h>
 #include <assert.h>
 
@@ -4868,15 +4869,17 @@ TEBCresume(
 
 	/* special case for ArithSeries */
 	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
-	    ArithSeries *arithSeriesRepPtr =
-		(ArithSeries*) valuePtr->internalRep.twoPtrValue.ptr1;
-	    length = arithSeriesRepPtr->len;
+	    length = TclArithSeriesObjLength(valuePtr);
 	    if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 		CACHE_STACK_INFO();
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    objResultPtr = Tcl_NewWideIntObj(ArithSeriesIndexM(arithSeriesRepPtr, index));
+	    if (TclArithSeriesObjIndex(valuePtr, index, &objResultPtr) != TCL_OK) {
+		CACHE_STACK_INFO();
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
 	    goto lindexDone;
 	}
 
@@ -4928,9 +4931,7 @@ TEBCresume(
 
 	/* special case for ArithSeries */
 	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
-	    ArithSeries *arithSeriesRepPtr =
-		(ArithSeries*) valuePtr->internalRep.twoPtrValue.ptr1;
-	    length = arithSeriesRepPtr->len;
+	    length = TclArithSeriesObjLength(valuePtr);
 
 	    /* Decode end-offset index values. */
 
@@ -4938,7 +4939,11 @@ TEBCresume(
 
 	    /* Compute value @ index */
 	    if (index >= 0 && index < length) {
-		objResultPtr = Tcl_NewWideIntObj(ArithSeriesIndexM(arithSeriesRepPtr, index));
+		if (TclArithSeriesObjIndex(valuePtr, index, &objResultPtr) != TCL_OK) {
+		    CACHE_STACK_INFO();
+		    TRACE_ERROR(interp);
+		    goto gotError;
+		}
 	    } else {
 		TclNewObj(objResultPtr);
 	    }
