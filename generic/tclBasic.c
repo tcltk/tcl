@@ -3449,7 +3449,9 @@ Tcl_GetCommandInfoFromToken(
     infoPtr->deleteData = info->deleteData;
 	infoPtr->objProc = info->proc;
 	infoPtr->objClientData = info->clientData;
-	infoPtr->isNativeObjectProc = 1;
+	if (cmdPtr->objProc2 == cmdWrapperProc) {
+	    infoPtr->isNativeObjectProc = 1;
+	}
     } else {
 	infoPtr->deleteProc = cmdPtr->deleteProc;
 	infoPtr->deleteData = cmdPtr->deleteData;
