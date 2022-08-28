@@ -69,12 +69,12 @@ Tcl_AbstractListObjLength(Tcl_Obj *abstractListObjPtr)
  *
  * Tcl_NewAbstractListObj()
  *
- *	Creates a new ArithSeries object. The returned object has
+ *	Creates a new AbstractList object. The returned object has
  *	refcount = 0.
  *
  * Results:
  *
- * 	A Tcl_Obj pointer to the created ArithSeries object.
+ * 	A Tcl_Obj pointer to the created AbstractList object.
  * 	A NULL pointer of the range is invalid.
  *
  * Side Effects:
@@ -175,7 +175,7 @@ FreeAbstractListInternalRep(Tcl_Obj *abstractListObjPtr)
  * DupAbstractListInternalRep --
  *
  *	Initialize the internal representation of a AbstractList Tcl_Obj to a
- *	copy of the internal representation of an existing arithseries object.
+ *	copy of the internal representation of an existing abstractlist object.
  *
  * Results:
  *	None.
@@ -294,9 +294,9 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
  *
  * SetAbstractListFromAny --
  *
- * 	The Arithmetic Series object is just an way to optimize
+ * 	The AbstractList object is just a way to optimize
  * 	Lists space complexity, so no one should try to convert
- * 	a string to an Arithmetic Series object.
+ * 	a string to an AbstractList object.
  *
  * 	This function is here just to populate the Type structure.
  *

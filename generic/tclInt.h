@@ -3094,7 +3094,7 @@ struct Tcl_LoadHandle_ {
  */
 
 MODULE_SCOPE Tcl_Obj *  TclAbstractListObjCopy(Tcl_Interp *interp,
-			    Tcl_Obj *arithSeriesPtr);
+			    Tcl_Obj *abstractListObjPtr);
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, int len);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.TH Tcl_AbstractListObj 3 8.7 Tcl "Tcl Library Procedures"
+.TH Tcl_AbstractListType 3 8.7 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
 .SH NAME
@@ -15,7 +15,13 @@ Tcl_AbstractListObjRange, Tcl_AbstractListObjReverse, Tcl_AbstractListSetProc \-
 \fB#include <tcl.h>\fR
 .sp
 Tcl_Obj *
-\fBTcl_NewAbstractListObj\fR(\fIinterp, typeName, requiredSize\fR)
+\fBTcl_NewAbstractListObj\fR(\fIinterp, abstractListType\fR)
+Tcl_AbstractListType *
+\fBTcl_AbstractListGetType\fR(\fIobjPtr\fR)
+void
+\fBTcl_AbstractListSetConcreteRep\fR(\fIobjPtr, repPtr\fR)
+void *
+\fBTcl_AbstractListGetConcreteRep\fR(\fIobjPtr\fR)
 Tcl_WideInt
 \fBTcl_AbstractListObjLength\fR(\fIobjPtr\fR)
 Tcl_Obj *
@@ -24,20 +30,6 @@ Tcl_Obj *
 \fBTcl_AbstractListObjRange\fR(\fIobjPtr, fromIdx, toIdx\fR)
 Tcl_Obj *
 \fBTcl_AbstractListObjReverse(\fIobjPtr\fR)
-void*
-\fBTcl_AbstractListGetTypeRep\fR(\fIobjPtr\fR)
-int
-\fBTcl_SetAbstractListNewProc\fR(\fITcl_Obj *objPtr, Tcl_ALNewObjProc *proc\fR)
-int
-\fBTcl_SetAbstractListLengthProc\fR(\fITcl_Obj *objPtr, Tcl_ALLengthProc *proc\fR)
-int
-\fBTcl_SetAbstractListSliceProc\fR(\fITcl_Obj *objPtr, Tcl_ALSliceProc *proc\fR)
-int
-\fBTcl_SetAbstractListIndexProc\fR(\fITcl_Obj *objPtr, Tcl_ALIndexProc *proc\fR)
-int
-\fBTcl_SetAbstractListReverseProc\fR(\fITcl_Obj *objPtr, Tcl_ALReverseProc *proc\fR)
-int
-\fBTcl_SetAbstractListDupRepProc\fR(\fITcl_Obj *objPtr, Tcl_ALDupRepProc *proc\fR)
 Tcl_Obj*
 (Tcl_ALNewObjProc) (int objc, Tcl_Obj *objv[])
 void
@@ -56,18 +48,13 @@ Tcl_Obj*
 If an error occurs while converting a value to be a list value,
 an error message is left in the interpreter's result value
 unless \fIinterp\fR is NULL.
-.AP "const char" *typeName in
-The type name of this custom abstract list type.  This name will
-appear in type related error messages, or reported by the
-[tcl::unsupported::representation] command.
-.AP size_t requiredSize in
-The amount of space required to store whatever information is needed
-to represent the value for this type.  For example, if a custom type
-uses a C struct to store the value details, then the required size
-would be \fBsizeof\fR(\fImyCustomStructType\fR).  The
-\fBTcl_NewAbstractListObj\fR call will provide the extra storage
-needed for the struct. Use the
-\fBTcl_AbstractListGetTypeRep\fR(\fIobjPtr\fR) function to obtain the
+.AP Tcl_AbstractListType *abstractListType in
+This structure defines the behavior for the \fBAbstractList\fR for a
+given concrete \fBAbstractList\fR type. The struct provides the name
+plus a number of functions that implement the various List operations
+on the AbstractType value.  \fBTcl_NewAbstractListObj\fR call will
+provide the extra storage needed for the struct. Use the
+\fBTcl_AbstractListGetConcreteRep\fR(\fIobjPtr\fR) function to obtain the
 address of this storeage.
 .AP Tcl_Obj *objPtr in/out
 A Tcl_Obj of type AbstractList. Use to read or modify the type or value content an AbstractList type.
@@ -115,17 +102,12 @@ on the index using an arithmetic expression: "value = start + (step *
 index)".
 .PP
 \fBTcl_NewAbstractListObj\fR is used to create an object with a custom
-List representation.  The \fIrequiredSize\fR argument is needed to add the
-callers storage space for this new value type.  For example,
-the example above needs to store 4 values: start, end, step, and
-length, therefore, the size needed is the sizeof() a struct containing
-those 4 values.  The \fBTcl_AbstractListGetTypeRep\fR call is then
-used to obtain the address for this space.
+List representation.   TODO: describe vtable type
 .PP
 .CS
 typedef struct ArithSeries {int start, int end, int step, int length} ArithSeries;
 \fBTcl_Obj\fR *objPtr = \fBTcl_NewAbstractListObj\fR(interp, "arithseries", sizeof(arithSeries));
-ArithSeries *repPtr = \fBTcl_AbstractListGetTypeRep\fR(objPtr);
+ArithSeries *repPtr = \fBTcl_AbstractListGetConcreteRep\fR(objPtr);
 repPtr->start = 0;
 repPtr->end = 10;
 repPtr->step = 1;
@@ -163,10 +145,10 @@ ArithSeriesObjIndex(Tcl_Obj *arithSeriesObjPtr, Tcl_WideInt index)
 
     if (index < 0 || index >= arithSeriesRepPtr->length)
 	return NULL;
-    
+
     /* List[i] = Start + (Step * i) */
     element = (arithSeriesRepPtr->start + (index) * arithSeriesRepPtr->step);
-    
+
     return Tcl_NewWideIntObj(element);
 }
 
