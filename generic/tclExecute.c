@@ -4584,10 +4584,10 @@ TEBCresume(
 		    TRACE_ERROR(interp);
 		    goto gotError;
 		}
-		return mPtr->typePtr->callProc(mPtr->clientData, interp,
+		return ((Tcl_MethodCallProc *)(void *)mPtr->typePtr->callProc)(mPtr->clientData, interp,
 			(Tcl_ObjectContext) contextPtr, opnd, objv);
 	    }
-	    return ((Tcl_MethodCallProc2 *)(void *)mPtr->typePtr->callProc)(mPtr->clientData, interp,
+	    return mPtr->typePtr->callProc(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, opnd, objv);
 	}
 

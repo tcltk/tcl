@@ -21,14 +21,14 @@ TCLAPI Tcl_Object	TclOOGetDefineCmdContext(Tcl_Interp *interp);
 TCLAPI Tcl_Method	TclOOMakeProcInstanceMethod(Tcl_Interp *interp,
 				Object *oPtr, int flags, Tcl_Obj *nameObj,
 				Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
-				const Tcl_MethodType *typePtr,
+				const Tcl_MethodType2 *typePtr,
 				void *clientData, Proc **procPtrPtr);
 /* 2 */
 TCLAPI Tcl_Method	TclOOMakeProcMethod(Tcl_Interp *interp,
 				Class *clsPtr, int flags, Tcl_Obj *nameObj,
 				const char *namePtr, Tcl_Obj *argsObj,
 				Tcl_Obj *bodyObj,
-				const Tcl_MethodType *typePtr,
+				const Tcl_MethodType2 *typePtr,
 				void *clientData, Proc **procPtrPtr);
 /* 3 */
 TCLAPI Method *		TclOONewProcInstanceMethod(Tcl_Interp *interp,
@@ -97,8 +97,8 @@ typedef struct TclOOIntStubs {
     void *hooks;
 
     Tcl_Object (*tclOOGetDefineCmdContext) (Tcl_Interp *interp); /* 0 */
-    Tcl_Method (*tclOOMakeProcInstanceMethod) (Tcl_Interp *interp, Object *oPtr, int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType *typePtr, void *clientData, Proc **procPtrPtr); /* 1 */
-    Tcl_Method (*tclOOMakeProcMethod) (Tcl_Interp *interp, Class *clsPtr, int flags, Tcl_Obj *nameObj, const char *namePtr, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType *typePtr, void *clientData, Proc **procPtrPtr); /* 2 */
+    Tcl_Method (*tclOOMakeProcInstanceMethod) (Tcl_Interp *interp, Object *oPtr, int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType2 *typePtr, void *clientData, Proc **procPtrPtr); /* 1 */
+    Tcl_Method (*tclOOMakeProcMethod) (Tcl_Interp *interp, Class *clsPtr, int flags, Tcl_Obj *nameObj, const char *namePtr, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType2 *typePtr, void *clientData, Proc **procPtrPtr); /* 2 */
     Method * (*tclOONewProcInstanceMethod) (Tcl_Interp *interp, Object *oPtr, int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, ProcedureMethod **pmPtrPtr); /* 3 */
     Method * (*tclOONewProcMethod) (Tcl_Interp *interp, Class *clsPtr, int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj, ProcedureMethod **pmPtrPtr); /* 4 */
     int (*tclOOObjectCmdCore) (Object *oPtr, Tcl_Interp *interp, size_t objc, Tcl_Obj *const *objv, int publicOnly, Class *startCls); /* 5 */
