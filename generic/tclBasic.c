@@ -2746,12 +2746,12 @@ Tcl_CreateObjCommand2(
 	tail = cmdName;
     }
 
-    return TclCreateObjCommandInNs2(interp, tail, (Tcl_Namespace *) nsPtr,
+    return TclCreateObjCommandInNs(interp, tail, (Tcl_Namespace *) nsPtr,
 	proc, clientData, deleteProc);
 }
 
 Tcl_Command
-TclCreateObjCommandInNs2(
+TclCreateObjCommandInNs(
     Tcl_Interp *interp,
     const char *cmdName,	/* Name of command, without any namespace
                                  * components. */
@@ -8622,7 +8622,7 @@ TclNRCreateCommandInNs(
     Tcl_CmdDeleteProc *deleteProc)
 {
     Command *cmdPtr = (Command *)
-            TclCreateObjCommandInNs2(interp, cmdName, nsPtr, proc, clientData,
+            TclCreateObjCommandInNs(interp, cmdName, nsPtr, proc, clientData,
                     deleteProc);
 
     cmdPtr->nreProc2 = nreProc;

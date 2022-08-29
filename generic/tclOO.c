@@ -728,7 +728,7 @@ AllocObject(
 	    nsPtr = nsPtr->parentPtr;
 	}
     }
-    oPtr->command = TclCreateObjCommandInNs2(interp, nameStr,
+    oPtr->command = TclCreateObjCommandInNs(interp, nameStr,
 	(Tcl_Namespace *)nsPtr, TclOOPublicObjectCmd, oPtr, NULL);
 
     /*

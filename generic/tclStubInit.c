@@ -650,6 +650,8 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
+    TclListTestObj, /* 260 */
+    TclListObjValidate, /* 261 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
