@@ -1039,6 +1039,17 @@ declare 258 {
 declare 259 {
     void TclUnusedStubEntry(void)
 }
+
+# TIP 625: for unit testing - create list objects with span
+declare 260 {
+    Tcl_Obj *TclListTestObj(int length, int leadingSpace, int endSpace)
+}
+
+# TIP 625: for unit testing - check list invariants
+declare 261 {
+    void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+}
+
 
 ##############################################################################
 
