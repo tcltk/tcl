@@ -55,6 +55,21 @@ static Tcl_DString delString;
 static Tcl_Interp *delInterp;
 
 /*
+ * One of the following structures exists for each command created by the
+ * "testcmdtoken" command.
+ */
+
+typedef struct TestCommandTokenRef {
+    int id;			/* Identifier for this reference. */
+    Tcl_Command token;		/* Tcl's token for the command. */
+    struct TestCommandTokenRef *nextPtr;
+				/* Next in list of references. */
+} TestCommandTokenRef;
+
+static TestCommandTokenRef *firstCommandTokenRef = NULL;
+static int nextCommandTokenRefId = 1;
+
+/*
  * One of the following structures exists for each asynchronous handler
  * created by the "testasync" command".
  */
@@ -1193,9 +1208,9 @@ TestcmdtokenCmd(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-    Tcl_Command token;
-    int *l;
+    TestCommandTokenRef *refPtr;
     char buf[30];
+    int id;
 
     if (argc != 3) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -1203,24 +1218,42 @@ TestcmdtokenCmd(
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "create") == 0) {
-	token = Tcl_CreateCommand(interp, argv[2], CmdProc1,
+	refPtr = (TestCommandTokenRef *)Tcl_Alloc(sizeof(TestCommandTokenRef));
+	refPtr->token = Tcl_CreateCommand(interp, argv[2], CmdProc1,
 		(void *) "original", NULL);
-	sprintf(buf, "%p", (void *)token);
+	refPtr->id = nextCommandTokenRefId;
+	nextCommandTokenRefId++;
+	refPtr->nextPtr = firstCommandTokenRef;
+	firstCommandTokenRef = refPtr;
+	sprintf(buf, "%d", refPtr->id);
 	Tcl_AppendResult(interp, buf, NULL);
     } else if (strcmp(argv[1], "name") == 0) {
 	Tcl_Obj *objPtr;
 
-	if (sscanf(argv[2], "%p", &l) != 1) {
+	if (sscanf(argv[2], "%d", &id) != 1) {
+	    Tcl_AppendResult(interp, "bad command token \"", argv[2],
+		    "\"", NULL);
+	    return TCL_ERROR;
+	}
+
+	for (refPtr = firstCommandTokenRef; refPtr != NULL;
+		refPtr = refPtr->nextPtr) {
+	    if (refPtr->id == id) {
+		break;
+	    }
+	}
+
+	if (refPtr == NULL) {
 	    Tcl_AppendResult(interp, "bad command token \"", argv[2],
 		    "\"", NULL);
 	    return TCL_ERROR;
 	}
 
 	objPtr = Tcl_NewObj();
-	Tcl_GetCommandFullName(interp, (Tcl_Command) l, objPtr);
+	Tcl_GetCommandFullName(interp, refPtr->token, objPtr);
 
 	Tcl_AppendElement(interp,
-		Tcl_GetCommandName(interp, (Tcl_Command) l));
+		Tcl_GetCommandName(interp, refPtr->token));
 	Tcl_AppendElement(interp, Tcl_GetString(objPtr));
 	Tcl_DecrRefCount(objPtr);
     } else {
@@ -5278,13 +5311,15 @@ TestsetbytearraylengthObjCmd(
     if (TCL_OK != Tcl_GetIntFromObj(interp, objv[2], &n)) {
 	return TCL_ERROR;
     }
-    if (Tcl_IsShared(objv[1])) {
-	obj = Tcl_DuplicateObj(objv[1]);
-    } else {
-	obj = objv[1];
+    obj = objv[1];
+    if (Tcl_IsShared(obj)) {
+	obj = Tcl_DuplicateObj(obj);
     }
-    if (NULL == Tcl_SetByteArrayLength(obj, n)) {
-	Tcl_SetResult(interp, "expected bytes", TCL_STATIC);
+    if (Tcl_SetByteArrayLength(obj, n) == NULL) {
+	if (obj != objv[1]) {
+	    Tcl_DecrRefCount(obj);
+	}
+	Tcl_AppendResult(interp, "expected bytes", NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, obj);
