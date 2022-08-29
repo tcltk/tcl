@@ -3374,7 +3374,7 @@ TEBCresume(
 	    varPtr->value.objPtr = objResultPtr = newValue;
 	    Tcl_IncrRefCount(newValue);
 	}
-	if (Tcl_ListObjReplace(interp, objResultPtr, len, 0, objc, objv)
+	if (TclListObjAppendElements(interp, objResultPtr, objc, objv)
 		!= TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -3432,7 +3432,7 @@ TEBCresume(
 		} else {
 		    valueToAssign = objResultPtr;
 		}
-		if (Tcl_ListObjReplace(interp, valueToAssign, len, 0,
+		if (TclListObjAppendElements(interp, valueToAssign,
 			objc, objv) != TCL_OK) {
 		    if (createdNewObj) {
 			TclDecrRefCount(valueToAssign);
