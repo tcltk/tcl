@@ -165,9 +165,7 @@ EXTERN Tcl_Obj *	TclNewProcBodyObj(Proc *procPtr);
 /* 62 */
 EXTERN int		TclObjCommandComplete(Tcl_Obj *cmdPtr);
 /* Slot 63 is reserved */
-/* 64 */
-EXTERN int		TclObjInvoke(Tcl_Interp *interp, size_t objc,
-				Tcl_Obj *const objv[], int flags);
+/* Slot 64 is reserved */
 /* Slot 65 is reserved */
 /* Slot 66 is reserved */
 /* Slot 67 is reserved */
@@ -644,7 +642,7 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclNewProcBodyObj) (Proc *procPtr); /* 61 */
     int (*tclObjCommandComplete) (Tcl_Obj *cmdPtr); /* 62 */
     void (*reserved63)(void);
-    int (*tclObjInvoke) (Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[], int flags); /* 64 */
+    void (*reserved64)(void);
     void (*reserved65)(void);
     void (*reserved66)(void);
     void (*reserved67)(void);
@@ -951,8 +949,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclObjCommandComplete \
 	(tclIntStubsPtr->tclObjCommandComplete) /* 62 */
 /* Slot 63 is reserved */
-#define TclObjInvoke \
-	(tclIntStubsPtr->tclObjInvoke) /* 64 */
+/* Slot 64 is reserved */
 /* Slot 65 is reserved */
 /* Slot 66 is reserved */
 /* Slot 67 is reserved */

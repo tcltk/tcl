@@ -141,12 +141,13 @@ declare 62 {
 # Removed in 9.0
 #declare 63 {
 #    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
-#	    size_t objc, Tcl_Obj *const objv[])
+#	    int objc, Tcl_Obj *const objv[])
 #}
-declare 64 {
-    int TclObjInvoke(Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[],
-	    int flags)
-}
+# Removed in 9.0
+#declare 64 {
+#    int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
+#	    int flags)
+#}
 declare 69 {
     void *TclpAlloc(size_t size)
 }

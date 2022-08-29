@@ -461,7 +461,7 @@ static const TclIntStubs tclIntStubs = {
     TclNewProcBodyObj, /* 61 */
     TclObjCommandComplete, /* 62 */
     0, /* 63 */
-    TclObjInvoke, /* 64 */
+    0, /* 64 */
     0, /* 65 */
     0, /* 66 */
     0, /* 67 */
