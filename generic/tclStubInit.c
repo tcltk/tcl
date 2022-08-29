@@ -561,7 +561,8 @@ TclIntStubs tclIntStubs = {
     TclStaticPackage, /* 257 */
     NULL, /* 258 */
     NULL, /* 259 */
-    TclUnusedStubEntry, /* 260 */
+    NULL, /* 260 */
+    TclUnusedStubEntry, /* 261 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {

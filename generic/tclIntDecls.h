@@ -1078,9 +1078,10 @@ EXTERN void		TclStaticPackage(Tcl_Interp *interp,
 #endif
 /* Slot 258 is reserved */
 /* Slot 259 is reserved */
+/* Slot 260 is reserved */
 #ifndef TclUnusedStubEntry_TCL_DECLARED
 #define TclUnusedStubEntry_TCL_DECLARED
-/* 260 */
+/* 261 */
 EXTERN void		TclUnusedStubEntry(void);
 #endif
 
@@ -1348,7 +1349,8 @@ typedef struct TclIntStubs {
     void (*tclStaticPackage) (Tcl_Interp *interp, CONST char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 257 */
     VOID *reserved258;
     VOID *reserved259;
-    void (*tclUnusedStubEntry) (void); /* 260 */
+    VOID *reserved260;
+    void (*tclUnusedStubEntry) (void); /* 261 */
 } TclIntStubs;
 
 extern TclIntStubs *tclIntStubsPtr;
@@ -2094,9 +2096,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #endif
 /* Slot 258 is reserved */
 /* Slot 259 is reserved */
+/* Slot 260 is reserved */
 #ifndef TclUnusedStubEntry
 #define TclUnusedStubEntry \
-	(tclIntStubsPtr->tclUnusedStubEntry) /* 260 */
+	(tclIntStubsPtr->tclUnusedStubEntry) /* 261 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
