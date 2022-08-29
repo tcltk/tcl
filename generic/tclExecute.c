@@ -1848,7 +1848,7 @@ ArgumentBCEnter(
     ByteCode *codePtr,
     TEBCdata *tdPtr,
     const unsigned char *pc,
-    int objc,
+    size_t objc,
     Tcl_Obj **objv)
 {
     int cmd;

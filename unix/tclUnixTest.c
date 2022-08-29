@@ -62,13 +62,13 @@ static const char *gotsig = "0";
  * Forward declarations of functions defined later in this file:
  */
 
-static Tcl_ObjCmdProc TestalarmCmd;
-static Tcl_ObjCmdProc TestchmodCmd;
-static Tcl_ObjCmdProc TestfilehandlerCmd;
-static Tcl_ObjCmdProc TestfilewaitCmd;
-static Tcl_ObjCmdProc TestfindexecutableCmd;
-static Tcl_ObjCmdProc TestforkCmd;
-static Tcl_ObjCmdProc TestgotsigCmd;
+static Tcl_ObjCmdProc2 TestalarmCmd;
+static Tcl_ObjCmdProc2 TestchmodCmd;
+static Tcl_ObjCmdProc2 TestfilehandlerCmd;
+static Tcl_ObjCmdProc2 TestfilewaitCmd;
+static Tcl_ObjCmdProc2 TestfindexecutableCmd;
+static Tcl_ObjCmdProc2 TestforkCmd;
+static Tcl_ObjCmdProc2 TestgotsigCmd;
 static Tcl_FileProc TestFileHandlerProc;
 static void AlarmHandler(int signum);
 
@@ -93,19 +93,19 @@ int
 TclplatformtestInit(
     Tcl_Interp *interp)		/* Interpreter to add commands to. */
 {
-    Tcl_CreateObjCommand(interp, "testchmod", TestchmodCmd,
+    Tcl_CreateObjCommand2(interp, "testchmod", TestchmodCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testfilehandler", TestfilehandlerCmd,
+    Tcl_CreateObjCommand2(interp, "testfilehandler", TestfilehandlerCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testfilewait", TestfilewaitCmd,
+    Tcl_CreateObjCommand2(interp, "testfilewait", TestfilewaitCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testfindexecutable", TestfindexecutableCmd,
+    Tcl_CreateObjCommand2(interp, "testfindexecutable", TestfindexecutableCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testfork", TestforkCmd,
+    Tcl_CreateObjCommand2(interp, "testfork", TestforkCmd,
         NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testalarm", TestalarmCmd,
+    Tcl_CreateObjCommand2(interp, "testalarm", TestalarmCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testgotsig", TestgotsigCmd,
+    Tcl_CreateObjCommand2(interp, "testgotsig", TestgotsigCmd,
 	    NULL, NULL);
     return TCL_OK;
 }
@@ -129,9 +129,9 @@ TclplatformtestInit(
 
 static int
 TestfilehandlerCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Pipe *pipePtr;
@@ -152,7 +152,7 @@ TestfilehandlerCmd(
 	initialized = 1;
     }
 
-    if (objc < 2) {
+    if (objc + 1 < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
         return TCL_ERROR;
     }
@@ -310,7 +310,7 @@ TestfilehandlerCmd(
 
 static void
 TestFileHandlerProc(
-    ClientData clientData,	/* Points to a Pipe structure. */
+    void *clientData,	/* Points to a Pipe structure. */
     int mask)			/* Indicates which events happened:
 				 * TCL_READABLE or TCL_WRITABLE. */
 {
@@ -343,15 +343,15 @@ TestFileHandlerProc(
 
 static int
 TestfilewaitCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     int mask, result, timeout;
     Tcl_Channel channel;
     int fd;
-    ClientData data;
+    void *data;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "file readable|writable|both timeout");
@@ -374,7 +374,7 @@ TestfilewaitCmd(
     }
     if (Tcl_GetChannelHandle(channel,
 	    (mask & TCL_READABLE) ? TCL_READABLE : TCL_WRITABLE,
-	    (ClientData*) &data) != TCL_OK) {
+	    (void **) &data) != TCL_OK) {
 	Tcl_AppendResult(interp, "couldn't get channel file", NULL);
 	return TCL_ERROR;
     }
@@ -411,9 +411,9 @@ TestfilewaitCmd(
 
 static int
 TestfindexecutableCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     Tcl_Obj *saveName;
@@ -453,9 +453,9 @@ TestfindexecutableCmd(
 
 static int
 TestforkCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
     pid_t pid;
@@ -499,9 +499,9 @@ TestforkCmd(
 
 static int
 TestalarmCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
 #ifdef SA_RESTART
@@ -577,9 +577,9 @@ AlarmHandler(
 
 static int
 TestgotsigCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) /*objc*/,
+    TCL_UNUSED(size_t) /*objc*/,
     TCL_UNUSED(Tcl_Obj *const *))
 {
     Tcl_AppendResult(interp, gotsig, NULL);
@@ -608,14 +608,15 @@ TestgotsigCmd(
 
 static int
 TestchmodCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)		/* Argument strings. */
 {
-    int i, mode;
+    size_t i;
+    int mode;
 
-    if (objc < 2) {
+    if (objc + 1 < 3) {
     Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
 	return TCL_ERROR;
     }
