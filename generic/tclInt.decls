@@ -91,9 +91,9 @@ declare 38 {
 	    Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr,
 	    const char **simpleNamePtr)
 }
-declare 39 {
-    Tcl_ObjCmdProc2 *TclGetObjInterpProc(void)
-}
+#declare 39 {
+#    Tcl_ObjCmdProc2 *TclGetObjInterpProc(void)
+#}
 declare 40 {
     int TclGetOpenMode(Tcl_Interp *interp, const char *str, int *seekFlagPtr)
 }
@@ -592,6 +592,9 @@ declare 260 {
 # TIP 625: for unit testing - check list invariants
 declare 261 {
     void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+}
+declare 262 {
+    Tcl_ObjCmdProc2 *TclGetObjInterpProc2(void)
 }
 
 

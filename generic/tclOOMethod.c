@@ -188,6 +188,7 @@ TclNewInstanceMethod(
     return (Tcl_Method) mPtr;
 }
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_Method
 Tcl_NewInstanceMethod(
     TCL_UNUSED(Tcl_Interp *),
@@ -210,6 +211,7 @@ Tcl_NewInstanceMethod(
     return TclNewInstanceMethod(NULL, object, nameObj, flags,
 	    (const Tcl_MethodType2 *)typePtr, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Method
 Tcl_NewInstanceMethod2(
@@ -302,6 +304,7 @@ TclNewMethod(
     return (Tcl_Method) mPtr;
 }
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_Method
 Tcl_NewMethod(
     TCL_UNUSED(Tcl_Interp *),
@@ -322,6 +325,7 @@ Tcl_NewMethod(
     }
     return TclNewMethod(NULL, cls, nameObj, flags, (const Tcl_MethodType2 *)typePtr, clientData);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Method
 Tcl_NewMethod2(
@@ -1761,6 +1765,7 @@ Tcl_MethodName(
     return ((Method *) method)->namePtr;
 }
 
+#ifndef TCL_NO_DEPRECATED
 int
 Tcl_MethodIsType(
     Tcl_Method method,
@@ -1780,6 +1785,7 @@ Tcl_MethodIsType(
     }
     return 0;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 int
 Tcl_MethodIsType2(

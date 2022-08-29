@@ -369,6 +369,7 @@ TclOOInvokeContext(
      * Run the method implementation.
      */
 
+#ifndef TCL_NO_DEPRECATED
     if (mPtr->typePtr->version == TCL_OO_METHOD_VERSION_1) {
 	if (objc > INT_MAX) {
 	    Tcl_WrongNumArgs(interp, 1, objv, "?args?");
@@ -377,6 +378,7 @@ TclOOInvokeContext(
 	return ((Tcl_MethodCallProc *)(void *)mPtr->typePtr->callProc)(mPtr->clientData, interp,
 		(Tcl_ObjectContext) contextPtr, objc, objv);
     }
+#endif /* TCL_NO_DEPRECATED */
     return mPtr->typePtr->callProc(mPtr->clientData, interp,
 	    (Tcl_ObjectContext) contextPtr, objc, objv);
 }

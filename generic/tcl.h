@@ -552,9 +552,11 @@ typedef int (Tcl_CmdProc) (void *clientData, Tcl_Interp *interp,
 typedef void (Tcl_CmdTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
 	void *cmdClientData, int argc, const char *argv[]);
+#ifndef TCL_NO_DEPRECATED
 typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
+#endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, size_t objc,
 	struct Tcl_Obj *const *objv);
@@ -578,8 +580,10 @@ typedef void (Tcl_IdleProc) (void *clientData);
 typedef void (Tcl_InterpDeleteProc) (void *clientData,
 	Tcl_Interp *interp);
 typedef void (Tcl_NamespaceDeleteProc) (void *clientData);
+#ifndef TCL_NO_DEPRECATED
 typedef int (Tcl_ObjCmdProc) (void *clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
+#endif /* TCL_NO_DEPRECATED */
 typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
 	size_t objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
@@ -779,8 +783,13 @@ typedef struct {
 				 * a call to Tcl_CreateObjCommand2; 0 otherwise.
 				 * Tcl_SetCmdInfo does not modify this
 				 * field. */
+#ifdef TCL_NO_DEPRECATED
+    void *objProcNotUsed;	/* Command's object-based function. */
+    void *objClientDataNotUsed;	/* ClientData for object proc. */
+#else
     Tcl_ObjCmdProc *objProc;	/* Command's object-based function. */
     void *objClientData;	/* ClientData for object proc. */
+#endif
     Tcl_CmdProc *proc;		/* Command's string-based function. */
     void *clientData;	/* ClientData for string proc. */
     Tcl_CmdDeleteProc *deleteProc;

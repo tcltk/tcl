@@ -687,6 +687,7 @@ buildInfoObjCmd2(
     return TCL_OK;
 }
 
+#ifndef TCL_NO_DEPRECATED
 static int
 buildInfoObjCmd(
     void *clientData,
@@ -696,6 +697,8 @@ buildInfoObjCmd(
 {
     return buildInfoObjCmd2(clientData, interp, (size_t)objc, objv);
 }
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1237,6 +1240,10 @@ Tcl_CreateInterp(void)
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
     Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL, &tclStubs);
+#ifdef TCL_NO_DEPRECATED
+    Tcl_CreateObjCommand2(interp, "::tcl::build-info",
+	    buildInfoObjCmd2, (void *)version, NULL);
+#else
     Tcl_CmdInfo info2;
     Tcl_Command buildInfoCmd = Tcl_CreateObjCommand(interp, "::tcl::build-info",
 	    buildInfoObjCmd, (void *)version, NULL);
@@ -1244,6 +1251,7 @@ Tcl_CreateInterp(void)
     info2.objProc2 = buildInfoObjCmd2;
     info2.objClientData2 = (void *)version;
     Tcl_SetCommandInfoFromToken(buildInfoCmd, &info2);
+#endif
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", Tcl_GetStringResult(interp));
@@ -2637,6 +2645,7 @@ Tcl_CreateCommand(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct {
     Tcl_ObjCmdProc *proc;
     void *clientData; /* Arbitrary value to pass to proc function. */
@@ -2697,6 +2706,7 @@ Tcl_CreateObjCommand(
 	    (proc ? cmdWrapperProc : NULL),
 	    info, cmdWrapperDeleteProc);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Command
 Tcl_CreateObjCommand2(
@@ -3287,6 +3297,7 @@ Tcl_SetCommandInfo(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static int
 invokeObj2Command(
     void *clientData,	/* Points to command's Command structure. */
@@ -3308,6 +3319,7 @@ invokeObj2Command(
     }
     return result;
 }
+#endif
 
 int
 Tcl_SetCommandInfoFromToken(
@@ -3338,6 +3350,7 @@ Tcl_SetCommandInfoFromToken(
 	}
 	cmdPtr->objClientData2 = infoPtr->objClientData2;
     }
+#ifndef TCL_NO_DEPRECATED
     if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
 	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
 	if (infoPtr->objProc == NULL) {
@@ -3353,7 +3366,9 @@ Tcl_SetCommandInfoFromToken(
 	}
 	info->deleteProc = infoPtr->deleteProc;
 	info->deleteData = infoPtr->deleteData;
-    } else {
+    } else
+#endif
+    {
 	cmdPtr->deleteProc = infoPtr->deleteProc;
 	cmdPtr->deleteData = infoPtr->deleteData;
     }
@@ -3410,6 +3425,7 @@ Tcl_GetCommandInfo(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static int cmdWrapper2Proc(void *clientData,
     Tcl_Interp *interp,
     int objc,
@@ -3418,6 +3434,7 @@ static int cmdWrapper2Proc(void *clientData,
     Command *cmdPtr = (Command *)clientData;
     return cmdPtr->objProc2(cmdPtr->objClientData2, interp, objc, objv);
 }
+#endif
 
 int
 Tcl_GetCommandInfoFromToken(
@@ -3443,6 +3460,7 @@ Tcl_GetCommandInfoFromToken(
     infoPtr->clientData = cmdPtr->clientData;
     infoPtr->objProc2 = cmdPtr->objProc2;
     infoPtr->objClientData2 = cmdPtr->objClientData2;
+#ifndef TCL_NO_DEPRECATED
     if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
 	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
 	infoPtr->deleteProc = info->deleteProc;
@@ -3452,11 +3470,15 @@ Tcl_GetCommandInfoFromToken(
 	if (cmdPtr->objProc2 == cmdWrapperProc) {
 	    infoPtr->isNativeObjectProc = 1;
 	}
-    } else {
+    } else
+#endif
+    {
 	infoPtr->deleteProc = cmdPtr->deleteProc;
 	infoPtr->deleteData = cmdPtr->deleteData;
+#ifndef TCL_NO_DEPRECATED
 	infoPtr->objProc = cmdWrapper2Proc;
 	infoPtr->objClientData = cmdPtr;
+#endif
     }
     infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
     return 1;
@@ -8475,6 +8497,7 @@ Tcl_NRCallObjProc2(
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
 }
 
+#ifndef TCL_NO_DEPRECATED
 int wrapperNRObjProc(
     void *clientData,
     Tcl_Interp *interp,
@@ -8509,6 +8532,7 @@ Tcl_NRCallObjProc(
 	    INT2PTR(objc), objv);
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -8538,6 +8562,7 @@ Tcl_NRCallObjProc(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static int cmdWrapperNreProc(
     void *clientData,
     Tcl_Interp *interp,
@@ -8582,6 +8607,7 @@ Tcl_NRCreateCommand(
 	    nreProc ? cmdWrapperNreProc : NULL, info,
 	    cmdWrapperDeleteProc);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 
 Tcl_Command

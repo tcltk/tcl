@@ -37,7 +37,7 @@ static const char checkCommand[] = "check";
 
 typedef struct {
     const char *cmdName;		/* command name */
-    Tcl_ObjCmdProc *proc;	/* command proc */
+    Tcl_ObjCmdProc2 *proc;	/* command proc */
     int exportIt;		/* if 1, export the command */
 } CmdTable;
 
@@ -46,9 +46,9 @@ typedef struct {
  */
 
 static int	ProcBodyTestProcObjCmd(void *dummy,
-			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+			Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]);
 static int	ProcBodyTestCheckObjCmd(void *dummy,
-			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+			Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[]);
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
 			const char *namesp, const CmdTable *cmdTablePtr);
@@ -154,7 +154,7 @@ RegisterCommand(
     }
 
     sprintf(buf, "%s::%s", namesp, cmdTablePtr->cmdName);
-    Tcl_CreateObjCommand(interp, buf, cmdTablePtr->proc, 0, 0);
+    Tcl_CreateObjCommand2(interp, buf, cmdTablePtr->proc, 0, 0);
     return TCL_OK;
 }
 
@@ -230,7 +230,7 @@ static int
 ProcBodyTestProcObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
-    int objc,			/* argument count */
+    size_t objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
 {
     const char *fullName;
@@ -329,7 +329,7 @@ static int
 ProcBodyTestCheckObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* the current interpreter */
-    int objc,			/* argument count */
+    size_t objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
 {
     const char *version;

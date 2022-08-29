@@ -2578,7 +2578,7 @@ declare 678 {
 	    Tcl_CmdDeleteProc *deleteProc)
 }
 declare 679 {
-    int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc,
+    int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2,
 	    void *clientData, size_t objc, Tcl_Obj *const objv[])
 }
 

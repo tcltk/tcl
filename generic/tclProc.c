@@ -1579,7 +1579,7 @@ TclPushProcCallFrame(
 /*
  *----------------------------------------------------------------------
  *
- * TclObjInterpProc --
+ * TclObjInterpProc/TclObjInterpProc2 --
  *
  *	When a Tcl procedure gets invoked during bytecode evaluation, this
  *	object-based routine gets invoked to interpret the procedure.
@@ -1592,6 +1592,25 @@ TclPushProcCallFrame(
  *
  *----------------------------------------------------------------------
  */
+
+#ifndef TCL_NO_DEPRECATED
+static int
+ObjInterpProc(
+    ClientData clientData,	/* Record describing procedure to be
+				 * interpreted. */
+    Tcl_Interp *interp,/* Interpreter in which procedure was
+				 * invoked. */
+    int objc,			/* Count of number of arguments to this
+				 * procedure. */
+    Tcl_Obj *const objv[])	/* Argument value objects. */
+{
+    /*
+     * Not used much in the core; external interface for iTcl
+     */
+
+    return Tcl_NRCallObjProc2(interp, TclNRInterpProc, clientData, objc, objv);
+}
+#endif
 
 int
 TclObjInterpProc(
@@ -2237,8 +2256,16 @@ TclUpdateReturnInfo(
  *----------------------------------------------------------------------
  */
 
-Tcl_ObjCmdProc2 *
+#ifndef TCL_NO_DEPRECATED
+Tcl_ObjCmdProc *
 TclGetObjInterpProc(void)
+{
+    return ObjInterpProc;
+}
+#endif /* TCL_NO_DEPRECATED */
+
+Tcl_ObjCmdProc2 *
+TclGetObjInterpProc2(void)
 {
     return TclObjInterpProc;
 }

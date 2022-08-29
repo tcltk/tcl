@@ -2126,6 +2126,7 @@ TraceVarProc(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct {
 	Tcl_CmdObjTraceProc *proc;
     Tcl_CmdObjTraceDeleteProc *delProc;
@@ -2176,6 +2177,7 @@ Tcl_CreateObjTrace(
 	    (proc ? traceWrapperProc : NULL),
 	    info, traceWrapperDelProc);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 Tcl_Trace
 Tcl_CreateObjTrace2(

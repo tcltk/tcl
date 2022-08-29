@@ -120,8 +120,7 @@ EXTERN int		TclGetNamespaceForQualName(Tcl_Interp *interp,
 				Namespace **altNsPtrPtr,
 				Namespace **actualCxtPtrPtr,
 				const char **simpleNamePtr);
-/* 39 */
-EXTERN Tcl_ObjCmdProc2 * TclGetObjInterpProc(void);
+/* Slot 39 is reserved */
 /* 40 */
 EXTERN int		TclGetOpenMode(Tcl_Interp *interp, const char *str,
 				int *seekFlagPtr);
@@ -576,12 +575,15 @@ EXTERN void		TclStaticLibrary(Tcl_Interp *interp,
 /* 258 */
 EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj);
+/* Slot 259 is reserved */
 /* 260 */
 EXTERN Tcl_Obj *	TclListTestObj(int length, int leadingSpace,
 				int endSpace);
 /* 261 */
 EXTERN void		TclListObjValidate(Tcl_Interp *interp,
 				Tcl_Obj *listObj);
+/* 262 */
+EXTERN Tcl_ObjCmdProc2 * TclGetObjInterpProc2(void);
 
 typedef struct TclIntStubs {
     int magic;
@@ -626,7 +628,7 @@ typedef struct TclIntStubs {
     void (*reserved36)(void);
     void (*reserved37)(void);
     int (*tclGetNamespaceForQualName) (Tcl_Interp *interp, const char *qualName, Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr, Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr, const char **simpleNamePtr); /* 38 */
-    Tcl_ObjCmdProc2 * (*tclGetObjInterpProc) (void); /* 39 */
+    void (*reserved39)(void);
     int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *seekFlagPtr); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) (Tcl_Command command); /* 41 */
     const char * (*tclpGetUserHome) (const char *name, Tcl_DString *bufferPtr); /* 42 */
@@ -846,8 +848,10 @@ typedef struct TclIntStubs {
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 256 */
     void (*tclStaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc); /* 257 */
     Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
+    void (*reserved259)(void);
     Tcl_Obj * (*tclListTestObj) (int length, int leadingSpace, int endSpace); /* 260 */
     void (*tclListObjValidate) (Tcl_Interp *interp, Tcl_Obj *listObj); /* 261 */
+    Tcl_ObjCmdProc2 * (*tclGetObjInterpProc2) (void); /* 262 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -919,8 +923,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 37 is reserved */
 #define TclGetNamespaceForQualName \
 	(tclIntStubsPtr->tclGetNamespaceForQualName) /* 38 */
-#define TclGetObjInterpProc \
-	(tclIntStubsPtr->tclGetObjInterpProc) /* 39 */
+/* Slot 39 is reserved */
 #define TclGetOpenMode \
 	(tclIntStubsPtr->tclGetOpenMode) /* 40 */
 #define TclGetOriginalCommand \
@@ -1262,10 +1265,13 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclStaticLibrary) /* 257 */
 #define TclpCreateTemporaryDirectory \
 	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
+/* Slot 259 is reserved */
 #define TclListTestObj \
 	(tclIntStubsPtr->tclListTestObj) /* 260 */
 #define TclListObjValidate \
 	(tclIntStubsPtr->tclListObjValidate) /* 261 */
+#define TclGetObjInterpProc2 \
+	(tclIntStubsPtr->tclGetObjInterpProc2) /* 262 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

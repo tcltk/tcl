@@ -78,6 +78,12 @@
 #undef Tcl_GetByteArrayFromObj
 #define Tcl_GetByteArrayFromObj 0
 
+#ifdef TCL_NO_DEPRECATED
+#   define Tcl_CreateObjCommand 0
+#   define Tcl_CreateObjTrace 0
+#   define Tcl_NRCallObjProc 0
+#   define Tcl_NRCreateCommand 0
+#endif
 
 #if TCL_UTF_MAX < 4
 static void uniCodePanic() {
@@ -430,7 +436,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 36 */
     0, /* 37 */
     TclGetNamespaceForQualName, /* 38 */
-    TclGetObjInterpProc, /* 39 */
+    0, /* 39 */
     TclGetOpenMode, /* 40 */
     TclGetOriginalCommand, /* 41 */
     TclpGetUserHome, /* 42 */
@@ -650,8 +656,10 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
+    0, /* 259 */
     TclListTestObj, /* 260 */
     TclListObjValidate, /* 261 */
+    TclGetObjInterpProc2, /* 262 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

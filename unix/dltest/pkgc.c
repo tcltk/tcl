@@ -35,7 +35,7 @@ static int
 Pkgc_SubObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int first, second;
@@ -74,7 +74,7 @@ static int
 Pkgc_UnsafeObjCmd(
     void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     (void)dummy;
@@ -116,8 +116,8 @@ Pkgc_Init(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkgc_sub", Pkgc_SubObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "pkgc_unsafe", Pkgc_UnsafeObjCmd, NULL,
+    Tcl_CreateObjCommand2(interp, "pkgc_sub", Pkgc_SubObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "pkgc_unsafe", Pkgc_UnsafeObjCmd, NULL,
 	    NULL);
     return TCL_OK;
 }
@@ -153,6 +153,6 @@ Pkgc_SafeInit(
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateObjCommand(interp, "pkgc_sub", Pkgc_SubObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "pkgc_sub", Pkgc_SubObjCmd, NULL, NULL);
     return TCL_OK;
 }
