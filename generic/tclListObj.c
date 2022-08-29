@@ -919,14 +919,6 @@ ListRepInit(
 {
     ListStore *storePtr;
 
-    /*
-     * The whole list implementation has an implicit assumption that lenths
-     * and indices used a signed integer type. Tcl9 API's currently use
-     * unsigned types. This assert is to remind that need to review code
-     * when adapting for Tcl9.
-     */
-    LIST_ASSERT(((ListSizeT)-1) < 0);
-
     storePtr = ListStoreNew(objc, objv, flags);
     if (storePtr) {
 	repPtr->storePtr = storePtr;
@@ -2078,12 +2070,12 @@ Tcl_ListObjReplace(
 {
     ListRep listRep;
     ListSizeT origListLen;
-    ListSizeT lenChange;
-    ListSizeT leadSegmentLen;
-    ListSizeT tailSegmentLen;
+    int lenChange;
+    int leadSegmentLen;
+    int tailSegmentLen;
     ListSizeT numFreeSlots;
-    ListSizeT leadShift;
-    ListSizeT tailShift;
+    int leadShift;
+    int tailShift;
     Tcl_Obj **listObjs;
     int favor;
 
@@ -2386,9 +2378,9 @@ Tcl_ListObjReplace(
 	 * or need to shift both. In the former case, favor shifting the
 	 * smaller segment.
 	 */
-	ListSizeT leadSpace = ListRepNumFreeHead(&listRep);
-	ListSizeT tailSpace = ListRepNumFreeTail(&listRep);
-	ListSizeT finalFreeSpace = leadSpace + tailSpace - lenChange;
+	int leadSpace = ListRepNumFreeHead(&listRep);
+	int tailSpace = ListRepNumFreeTail(&listRep);
+	int finalFreeSpace = leadSpace + tailSpace - lenChange;
 
 	LIST_ASSERT((leadSpace + tailSpace) >= lenChange);
 	if (leadSpace >= lenChange
@@ -2405,7 +2397,7 @@ Tcl_ListObjReplace(
 	     * insertions.
 	     */
 	    if (finalFreeSpace > 1 && (tailSpace == 0 || tailSegmentLen == 0)) {
-		ListSizeT postShiftLeadSpace = leadSpace - lenChange;
+		int postShiftLeadSpace = leadSpace - lenChange;
 		if (postShiftLeadSpace > (finalFreeSpace/2)) {
 		    ListSizeT extraShift = postShiftLeadSpace - (finalFreeSpace / 2);
 		    leadShift -= extraShift;
@@ -2422,7 +2414,7 @@ Tcl_ListObjReplace(
 	     * See comments above. This is analogous.
 	     */
 	    if (finalFreeSpace > 1 && (leadSpace == 0 || leadSegmentLen == 0)) {
-		ListSizeT postShiftTailSpace = tailSpace - lenChange;
+		int postShiftTailSpace = tailSpace - lenChange;
 		if (postShiftTailSpace > (finalFreeSpace/2)) {
 		    /* T:listrep-1.{1,3,14,18,21},3.{2,3,26,27} */
 		    ListSizeT extraShift = postShiftTailSpace - (finalFreeSpace / 2);
@@ -3431,11 +3423,9 @@ UpdateStringOfList(
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
 	if (bytesNeeded < 0) {
-	    /* TODO - what is the max #define for Tcl9? */
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
     }
-    /* TODO - what is the max #define for Tcl9? */
     if (bytesNeeded > INT_MAX - numElems + 1) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
