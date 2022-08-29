@@ -678,6 +678,9 @@ typedef void (Tcl_CmdTraceProc) (ClientData clientData, Tcl_Interp *interp,
 typedef int (Tcl_CmdObjTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
+typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
+	int level, const char *command, Tcl_Command commandInfo, size_t objc,
+	struct Tcl_Obj *const objv[]);
 typedef void (Tcl_CmdObjTraceDeleteProc) (ClientData clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
@@ -702,6 +705,8 @@ typedef int (Tcl_MathProc) (ClientData clientData, Tcl_Interp *interp,
 typedef void (Tcl_NamespaceDeleteProc) (ClientData clientData);
 typedef int (Tcl_ObjCmdProc) (ClientData clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
+typedef int (Tcl_ObjCmdProc2) (void *clientData, Tcl_Interp *interp,
+	size_t objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_LibraryInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_LibraryUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
@@ -921,6 +926,8 @@ typedef struct Tcl_CmdInfo {
 				 * change a command's namespace; use
 				 * TclRenameCommand or Tcl_Eval (of 'rename')
 				 * to do that. */
+    Tcl_ObjCmdProc2 *objProc2;	/* Not used in Tcl 8.7. */
+    void *objClientData2;	/* Not used in Tcl 8.7. */
 } Tcl_CmdInfo;
 
 /*

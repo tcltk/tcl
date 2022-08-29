@@ -2358,22 +2358,34 @@ typedef struct Interp {
 #endif
 
 /*
- * This macro is used to determine the offset needed to safely allocate any
+ * TCL_ALIGN is used to determine the offset needed to safely allocate any
  * data structure in memory. Given a starting offset or size, it "rounds up"
- * or "aligns" the offset to the next 8-byte boundary so that any data
- * structure can be placed at the resulting offset without fear of an
- * alignment error.
+ * or "aligns" the offset to the next aligned (typically 8-byte) boundary so
+ * that any data structure can be placed at the resulting offset without fear
+ * of an alignment error. Note this is clamped to a minimum of 8 for API
+ * compatibility.
  *
  * WARNING!! DO NOT USE THIS MACRO TO ALIGN POINTERS: it will produce the
- * wrong result on platforms that allocate addresses that are divisible by 4
- * or 2. Only use it for offsets or sizes.
+ * wrong result on platforms that allocate addresses that are divisible by a
+ * non-trivial factor of this alignment. Only use it for offsets or sizes.
  *
  * This macro is only used by tclCompile.c in the core (Bug 926445). It
  * however not be made file static, as extensions that touch bytecodes
  * (notably tbcload) require it.
  */
 
-#define TCL_ALIGN(x) (((int)(x) + 7) & ~7)
+struct TclMaxAlignment {
+    char unalign[8];
+    union {
+	long long maxAlignLongLong;
+	double maxAlignDouble;
+	void *maxAlignPointer;
+    } aligned;
+};
+#define TCL_ALIGN_BYTES \
+	offsetof(struct TclMaxAlignment, aligned)
+#define TCL_ALIGN(x) \
+	(((x) + (TCL_ALIGN_BYTES - 1)) & ~(TCL_ALIGN_BYTES - 1))
 
 /*
  * A common panic alert when memory allocation fails.
