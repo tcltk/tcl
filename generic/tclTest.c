@@ -55,6 +55,21 @@ static Tcl_DString delString;
 static Tcl_Interp *delInterp;
 
 /*
+ * One of the following structures exists for each command created by the
+ * "testcmdtoken" command.
+ */
+
+typedef struct TestCommandTokenRef {
+    int id;			/* Identifier for this reference. */
+    Tcl_Command token;		/* Tcl's token for the command. */
+    struct TestCommandTokenRef *nextPtr;
+				/* Next in list of references. */
+} TestCommandTokenRef;
+
+static TestCommandTokenRef *firstCommandTokenRef = NULL;
+static int nextCommandTokenRefId = 1;
+
+/*
  * One of the following structures exists for each asynchronous handler
  * created by the "testasync" command".
  */
@@ -251,6 +266,7 @@ static Tcl_ObjCmdProc	TestgetvarfullnameCmd;
 static Tcl_CmdProc	TestinterpdeleteCmd;
 static Tcl_CmdProc	TestlinkCmd;
 static Tcl_ObjCmdProc	TestlinkarrayCmd;
+static Tcl_ObjCmdProc	TestlistrepCmd;
 static Tcl_ObjCmdProc	TestlocaleCmd;
 static Tcl_CmdProc	TestmainthreadCmd;
 static Tcl_CmdProc	TestsetmainloopCmd;
@@ -635,6 +651,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testlink", TestlinkCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlinkarray", TestlinkarrayCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testlistrep", TestlistrepCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, NULL, NULL);
@@ -1191,9 +1208,9 @@ TestcmdtokenCmd(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-    Tcl_Command token;
-    int *l;
+    TestCommandTokenRef *refPtr;
     char buf[30];
+    int id;
 
     if (argc != 3) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -1201,24 +1218,42 @@ TestcmdtokenCmd(
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "create") == 0) {
-	token = Tcl_CreateCommand(interp, argv[2], CmdProc1,
+	refPtr = (TestCommandTokenRef *)Tcl_Alloc(sizeof(TestCommandTokenRef));
+	refPtr->token = Tcl_CreateCommand(interp, argv[2], CmdProc1,
 		(void *) "original", NULL);
-	sprintf(buf, "%p", (void *)token);
+	refPtr->id = nextCommandTokenRefId;
+	nextCommandTokenRefId++;
+	refPtr->nextPtr = firstCommandTokenRef;
+	firstCommandTokenRef = refPtr;
+	sprintf(buf, "%d", refPtr->id);
 	Tcl_AppendResult(interp, buf, NULL);
     } else if (strcmp(argv[1], "name") == 0) {
 	Tcl_Obj *objPtr;
 
-	if (sscanf(argv[2], "%p", &l) != 1) {
+	if (sscanf(argv[2], "%d", &id) != 1) {
+	    Tcl_AppendResult(interp, "bad command token \"", argv[2],
+		    "\"", NULL);
+	    return TCL_ERROR;
+	}
+
+	for (refPtr = firstCommandTokenRef; refPtr != NULL;
+		refPtr = refPtr->nextPtr) {
+	    if (refPtr->id == id) {
+		break;
+	    }
+	}
+
+	if (refPtr == NULL) {
 	    Tcl_AppendResult(interp, "bad command token \"", argv[2],
 		    "\"", NULL);
 	    return TCL_ERROR;
 	}
 
 	objPtr = Tcl_NewObj();
-	Tcl_GetCommandFullName(interp, (Tcl_Command) l, objPtr);
+	Tcl_GetCommandFullName(interp, refPtr->token, objPtr);
 
 	Tcl_AppendElement(interp,
-		Tcl_GetCommandName(interp, (Tcl_Command) l));
+		Tcl_GetCommandName(interp, refPtr->token));
 	Tcl_AppendElement(interp, Tcl_GetString(objPtr));
 	Tcl_DecrRefCount(objPtr);
     } else {
@@ -3387,6 +3422,158 @@ TestlinkarrayCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TestlistrepCmd --
+ *
+ *      This function is invoked to generate a list object with a specific
+ *	internal representation.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestlistrepCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,         /* Current interpreter. */
+    int objc,                   /* Number of arguments. */
+    Tcl_Obj *const objv[])      /* Argument objects. */
+{
+    /* Subcommands supported by this command */
+    const char* subcommands[] = {
+	"new",
+	"describe",
+	"config",
+	"validate",
+	NULL
+    };
+    enum {
+	LISTREP_NEW,
+	LISTREP_DESCRIBE,
+	LISTREP_CONFIG,
+	LISTREP_VALIDATE
+    } cmdIndex;
+    Tcl_Obj *resultObj = NULL;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(
+	    interp, objv[1], subcommands, "command", 0, &cmdIndex)
+	!= TCL_OK) {
+	return TCL_ERROR;
+    }
+    switch (cmdIndex) {
+    case LISTREP_NEW:
+	if (objc < 3 || objc > 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "length ?leadSpace endSpace?");
+	    return TCL_ERROR;
+	} else {
+	    int length;
+	    int leadSpace = 0;
+	    int endSpace = 0;
+	    if (Tcl_GetIntFromObj(interp, objv[2], &length) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (objc > 3) {
+		if (Tcl_GetIntFromObj(interp, objv[3], &leadSpace) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (objc > 4) {
+		    if (Tcl_GetIntFromObj(interp, objv[4], &endSpace)
+			!= TCL_OK) {
+			return TCL_ERROR;
+		    }
+		}
+	    }
+	    resultObj = TclListTestObj(length, leadSpace, endSpace);
+	}
+	break;
+
+    case LISTREP_DESCRIBE:
+#define APPEND_FIELD(targetObj_, structPtr_, fld_)                        \
+    do {                                                                  \
+	Tcl_ListObjAppendElement(                                         \
+	    interp, (targetObj_), Tcl_NewStringObj(#fld_, -1));           \
+	Tcl_ListObjAppendElement(                                         \
+	    interp, (targetObj_), Tcl_NewWideIntObj((structPtr_)->fld_)); \
+    } while (0)
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "object");
+	    return TCL_ERROR;
+	} else {
+	    Tcl_Obj **objs;
+	    ListSizeT nobjs;
+	    ListRep listRep;
+	    Tcl_Obj *listRepObjs[4];
+
+	    /* Force list representation */
+	    if (Tcl_ListObjGetElements(interp, objv[2], &nobjs, &objs) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    ListObjGetRep(objv[2], &listRep);
+	    listRepObjs[0] = Tcl_NewStringObj("store", -1);
+	    listRepObjs[1] = Tcl_NewListObj(12, NULL);
+	    Tcl_ListObjAppendElement(
+		interp, listRepObjs[1], Tcl_NewStringObj("memoryAddress", -1));
+	    Tcl_ListObjAppendElement(
+		interp, listRepObjs[1], Tcl_ObjPrintf("%p", listRep.storePtr));
+	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, firstUsed);
+	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, numUsed);
+	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, numAllocated);
+	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, refCount);
+	    APPEND_FIELD(listRepObjs[1], listRep.storePtr, flags);
+	    if (listRep.spanPtr) {
+		listRepObjs[2] = Tcl_NewStringObj("span", -1);
+		listRepObjs[3] = Tcl_NewListObj(8, NULL);
+		Tcl_ListObjAppendElement(interp,
+					 listRepObjs[3],
+					 Tcl_NewStringObj("memoryAddress", -1));
+		Tcl_ListObjAppendElement(
+		    interp, listRepObjs[3], Tcl_ObjPrintf("%p", listRep.spanPtr));
+		APPEND_FIELD(listRepObjs[3], listRep.spanPtr, spanStart);
+		APPEND_FIELD(
+		    listRepObjs[3], listRep.spanPtr, spanLength);
+		APPEND_FIELD(listRepObjs[3], listRep.spanPtr, refCount);
+	    }
+	    resultObj = Tcl_NewListObj(listRep.spanPtr ? 4 : 2, listRepObjs);
+	}
+#undef APPEND_FIELD
+	break;
+
+    case LISTREP_CONFIG:
+	if (objc != 2) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "object");
+	    return TCL_ERROR;
+	}
+	resultObj = Tcl_NewListObj(2, NULL);
+	Tcl_ListObjAppendElement(
+	    NULL, resultObj, Tcl_NewStringObj("LIST_SPAN_THRESHOLD", -1));
+	Tcl_ListObjAppendElement(
+	    NULL, resultObj, Tcl_NewWideIntObj(LIST_SPAN_THRESHOLD));
+	break;
+
+    case LISTREP_VALIDATE:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "object");
+	    return TCL_ERROR;
+	}
+	TclListObjValidate(interp, objv[2]); /* Panics if invalid */
+	resultObj = Tcl_NewObj();
+	break;
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestlocaleCmd --
  *
  *	This procedure implements the "testlocale" command.  It is used
@@ -5124,13 +5311,15 @@ TestsetbytearraylengthObjCmd(
     if (TCL_OK != Tcl_GetIntFromObj(interp, objv[2], &n)) {
 	return TCL_ERROR;
     }
-    if (Tcl_IsShared(objv[1])) {
-	obj = Tcl_DuplicateObj(objv[1]);
-    } else {
-	obj = objv[1];
+    obj = objv[1];
+    if (Tcl_IsShared(obj)) {
+	obj = Tcl_DuplicateObj(obj);
     }
-    if (NULL == Tcl_SetByteArrayLength(obj, n)) {
-	Tcl_SetResult(interp, "expected bytes", TCL_STATIC);
+    if (Tcl_SetByteArrayLength(obj, n) == NULL) {
+	if (obj != objv[1]) {
+	    Tcl_DecrRefCount(obj);
+	}
+	Tcl_AppendResult(interp, "expected bytes", NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, obj);

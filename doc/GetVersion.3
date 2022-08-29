@@ -15,14 +15,13 @@ Tcl_GetVersion \- get the version of the library at runtime
 .sp
 \fBTcl_GetVersion\fR(\fImajor, minor, patchLevel, type\fR)
 .SH ARGUMENTS
-.AS Tcl_ReleaseType *patchLevel out
 .AP int *major out
 Major version number of the Tcl library.
 .AP int *minor out
 Minor version number of the Tcl library.
 .AP int *patchLevel out
 The patch level of the Tcl library (or alpha or beta number).
-.AP Tcl_ReleaseType *type out
+.AP int *type out
 The type of release, also indicates the type of patch level. Can be
 one of \fBTCL_ALPHA_RELEASE\fR, \fBTCL_BETA_RELEASE\fR, or
 \fBTCL_FINAL_RELEASE\fR.

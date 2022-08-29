@@ -8,13 +8,16 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_CreateObjCommand, Tcl_DeleteCommand, Tcl_DeleteCommandFromToken, Tcl_GetCommandInfo, Tcl_GetCommandInfoFromToken, Tcl_SetCommandInfo, Tcl_SetCommandInfoFromToken, Tcl_GetCommandName, Tcl_GetCommandFullName, Tcl_GetCommandFromObj \- implement new commands in C
+Tcl_CreateObjCommand, Tcl_CreateObjCommand2, Tcl_DeleteCommand, Tcl_DeleteCommandFromToken, Tcl_GetCommandInfo, Tcl_GetCommandInfoFromToken, Tcl_SetCommandInfo, Tcl_SetCommandInfoFromToken, Tcl_GetCommandName, Tcl_GetCommandFullName, Tcl_GetCommandFromObj \- implement new commands in C
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
 Tcl_Command
 \fBTcl_CreateObjCommand\fR(\fIinterp, cmdName, proc, clientData, deleteProc\fR)
+.sp
+Tcl_Command
+\fBTcl_CreateObjCommand2\fR(\fIinterp, cmdName, proc2, clientData, deleteProc\fR)
 .sp
 int
 \fBTcl_DeleteCommand\fR(\fIinterp, cmdName\fR)
@@ -51,6 +54,9 @@ Interpreter in which to create a new command or that contains a command.
 Name of command.
 .AP Tcl_ObjCmdProc *proc in
 Implementation of the new command: \fIproc\fR will be called whenever
+\fIcmdName\fR is invoked as a command.
+.AP Tcl_ObjCmdProc2 *proc2 in
+Implementation of the new command: \fIproc2\fR will be called whenever
 \fIcmdName\fR is invoked as a command.
 .AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR and \fIdeleteProc\fR.
@@ -174,6 +180,17 @@ typedef void \fBTcl_CmdDeleteProc\fR(
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
 argument passed to \fBTcl_CreateObjCommand\fR.
 .PP
+\fBTcl_CreateObjCommand2\fR does the same as \fBTcl_CreateObjCommand\fR,
+except its \fIproc2\fR argument is of type \fBTcl_ObjCmdProc2\fR.
+.PP
+.CS
+typedef int \fBTcl_ObjCmdProc2\fR(
+        void *\fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        size_t \fIobjc\fR,
+        Tcl_Obj *const \fIobjv\fR[]);
+.CE
+.PP
 \fBTcl_DeleteCommand\fR deletes a command from a command interpreter.
 Once the call completes, attempts to invoke \fIcmdName\fR in
 \fIinterp\fR will result in errors.
@@ -216,15 +233,20 @@ typedef struct Tcl_CmdInfo {
     Tcl_CmdDeleteProc *\fIdeleteProc\fR;
     void *\fIdeleteData\fR;
     Tcl_Namespace *\fInamespacePtr\fR;
+    Tcl_ObjCmdProc2 *\fIobjProc2\fR;
+    void *\fIobjClientData2\fR;
 } \fBTcl_CmdInfo\fR;
 .CE
 .PP
-The \fIisNativeObjectProc\fR field has the value 1
-if \fBTcl_CreateObjCommand\fR was called to register the command;
-it is 0 if only \fBTcl_CreateCommand\fR was called.
+The \fIisNativeObjectProc\fR field has the value 2 if
+\fBTcl_CreateObjCommand2\fR was called to register the command;
+it has the value 1 if \fBTcl_CreateObjCommand\fR was called to
+register the command; it is 0 if only \fBTcl_CreateCommand\fR was called.
 It allows a program to determine whether it is faster to
-call \fIobjProc\fR or \fIproc\fR:
-\fIobjProc\fR is normally faster
+call \fIobjProc2\fR, \fIobjProc\fR or \fIproc\fR:
+\fIobjProc2\fR/\fIobjProc\fR is normally faster
+if \fIisNativeObjectProc\fR has the value 2;
+\fIobjProc\fR/\fIobjProc\fR is normally faster
 if \fIisNativeObjectProc\fR has the value 1.
 The fields \fIobjProc\fR and \fIobjClientData\fR
 have the same meaning as the \fIproc\fR and \fIclientData\fR
