@@ -3005,6 +3005,9 @@ struct Tcl_LoadHandle_ {
 
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, size_t len);
+MODULE_SCOPE int	TclObjInterpProc(void *clientData,
+				Tcl_Interp *interp, size_t objc,
+				Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
 MODULE_SCOPE void	TclAdvanceContinuations(size_t *line, int **next,

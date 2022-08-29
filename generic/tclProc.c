@@ -47,6 +47,8 @@ static void		MakeProcError(Tcl_Interp *interp,
 static void		MakeLambdaError(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static Tcl_ObjCmdProc2 NRInterpProc;
+
 
 static Tcl_NRPostProc ApplyNR2;
 static Tcl_NRPostProc InterpProcNR2;
@@ -205,7 +207,7 @@ Tcl_ProcObjCmd(
     }
 
     cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
-	TclObjInterpProc, TclNRInterpProc, procPtr, TclProcDeleteProc);
+	TclObjInterpProc, NRInterpProc, procPtr, TclProcDeleteProc);
 
     /*
      * Now initialize the new procedure's cmdPtr field. This will be used
@@ -1608,7 +1610,7 @@ ObjInterpProc(
      * Not used much in the core; external interface for iTcl
      */
 
-    return Tcl_NRCallObjProc2(interp, TclNRInterpProc, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, NRInterpProc, clientData, objc, objv);
 }
 #endif
 
@@ -1626,11 +1628,11 @@ TclObjInterpProc(
      * Not used much in the core; external interface for iTcl
      */
 
-    return Tcl_NRCallObjProc2(interp, TclNRInterpProc, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, NRInterpProc, clientData, objc, objv);
 }
 
 int
-TclNRInterpProc(
+NRInterpProc(
     ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was

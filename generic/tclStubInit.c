@@ -436,7 +436,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 36 */
     0, /* 37 */
     TclGetNamespaceForQualName, /* 38 */
-    0, /* 39 */
+    TclGetObjInterpProc2, /* 39 */
     TclGetOpenMode, /* 40 */
     TclGetOriginalCommand, /* 41 */
     TclpGetUserHome, /* 42 */
@@ -451,7 +451,7 @@ static const TclIntStubs tclIntStubs = {
     TclInterpInit, /* 51 */
     0, /* 52 */
     TclInvokeObjectCommand, /* 53 */
-    TclInvokeStringCommand, /* 54 */
+    0, /* 54 */
     TclIsProc, /* 55 */
     0, /* 56 */
     0, /* 57 */
@@ -460,7 +460,7 @@ static const TclIntStubs tclIntStubs = {
     TclNeedSpace, /* 60 */
     TclNewProcBodyObj, /* 61 */
     TclObjCommandComplete, /* 62 */
-    TclObjInterpProc, /* 63 */
+    0, /* 63 */
     TclObjInvoke, /* 64 */
     0, /* 65 */
     0, /* 66 */
@@ -635,7 +635,7 @@ static const TclIntStubs tclIntStubs = {
     TclInitVarHashTable, /* 235 */
     0, /* 236 */
     TclResetCancellation, /* 237 */
-    TclNRInterpProc, /* 238 */
+    0, /* 238 */
     TclNRInterpProcCore, /* 239 */
     TclNRRunCallbacks, /* 240 */
     TclNREvalObjEx, /* 241 */
@@ -659,7 +659,6 @@ static const TclIntStubs tclIntStubs = {
     0, /* 259 */
     TclListTestObj, /* 260 */
     TclListObjValidate, /* 261 */
-    TclGetObjInterpProc2, /* 262 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

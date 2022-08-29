@@ -84,12 +84,14 @@ typedef struct TestAsyncHandler {
 } TestAsyncHandler;
 
 #if TCL_MAJOR_VERSION < 9 || !defined(TCL_NO_DEPRECATED)
-#define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
-#define Tcl_ObjCmdProc2 Tcl_ObjCmdProc2
-#define Tcl_CreateObjTrace2 Tcl_CreateObjTrace
-#define TclSizeT int
+#   undef Tcl_CreateObjCommand2
+#   define Tcl_CreateObjCommand2 Tcl_CreateObjCommand
+#   define Tcl_ObjCmdProc2 Tcl_ObjCmdProc
+#   undef Tcl_CreateObjTrace2
+#   define Tcl_CreateObjTrace2 Tcl_CreateObjTrace
+#   define TclSizeT int
 #else
-#define TclSizeT size_t
+#   define TclSizeT size_t
 #endif
 
 /*
@@ -564,7 +566,7 @@ Tcltest_Init(
     }
 
     if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
-#if TCL_MAJOR_VERSION > 8
+#if TCL_MAJOR_VERSION > 8 && defined(TCL_NO_DEPRECATED)
 	Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
 			info.objProc2, (void *)version, NULL);
 #else
@@ -825,7 +827,7 @@ Tcltest_SafeInit(
 	return TCL_ERROR;
     }
     if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
-#if TCL_MAJOR_VERSION > 8
+#if TCL_MAJOR_VERSION > 8 && defined(TCL_NO_DEPRECATED)
 	Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
 		info.objProc2, (void *)version, NULL);
 #else
@@ -6561,7 +6563,7 @@ TestWrongNumArgsObjCmd(
 	msg = NULL;
     }
 
-    if ((size_t)i + 3 > objc) {
+    if ((TclSizeT)i + 3 > objc) {
 	/*
 	 * Asked for more arguments than were given.
 	 */

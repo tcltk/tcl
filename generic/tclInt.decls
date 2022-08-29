@@ -91,9 +91,9 @@ declare 38 {
 	    Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr,
 	    const char **simpleNamePtr)
 }
-#declare 39 {
-#    Tcl_ObjCmdProc2 *TclGetObjInterpProc(void)
-#}
+declare 39 {
+    Tcl_ObjCmdProc2 *TclGetObjInterpProc2(void)
+}
 declare 40 {
     int TclGetOpenMode(Tcl_Interp *interp, const char *str, int *seekFlagPtr)
 }
@@ -116,10 +116,11 @@ declare 53 {
     int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
 	    int argc, const char **argv)
 }
-declare 54 {
-    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
-	    size_t objc, Tcl_Obj *const objv[])
-}
+# Removed in 9.0
+#declare 54 {
+#    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
+#	    int objc, Tcl_Obj *const objv[])
+#}
 declare 55 {
     Proc *TclIsProc(Command *cmdPtr)
 }
@@ -137,10 +138,11 @@ declare 61 {
 declare 62 {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
-declare 63 {
-    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
-	    size_t objc, Tcl_Obj *const objv[])
-}
+# Removed in 9.0
+#declare 63 {
+#    int TclObjInterpProc(void *clientData, Tcl_Interp *interp,
+#	    size_t objc, Tcl_Obj *const objv[])
+#}
 declare 64 {
     int TclObjInvoke(Tcl_Interp *interp, size_t objc, Tcl_Obj *const objv[],
 	    int flags)
@@ -486,10 +488,11 @@ declare 237 {
 
 # NRE functions for "rogue" extensions to exploit NRE; they will need to
 # include NRE.h too.
-declare 238 {
-    int TclNRInterpProc(void *clientData, Tcl_Interp *interp,
-	    size_t objc, Tcl_Obj *const objv[])
-}
+# Removed in 9.0
+#declare 238 {
+#    int TclNRInterpProc(void *clientData, Tcl_Interp *interp,
+#	    size_t objc, Tcl_Obj *const objv[])
+#}
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
 			    size_t skip, ProcErrorProc *errorProc)
@@ -592,9 +595,6 @@ declare 260 {
 # TIP 625: for unit testing - check list invariants
 declare 261 {
     void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
-}
-declare 262 {
-    Tcl_ObjCmdProc2 *TclGetObjInterpProc2(void)
 }
 
 
