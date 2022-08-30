@@ -169,11 +169,11 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
 typedef struct TEBCdata {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
-    ptrdiff_t *catchTop;	/* These fields are used on return TO this */
+    Tcl_Obj **catchTop;		/* These fields are used on return TO this */
     Tcl_Obj *auxObjList;	/* this level: they record the state when a */
     CmdFrame cmdFrame;		/* new codePtr was received for NR */
                                 /* execution. */
-    void *stack[1];		/* Start of the actual combined catch and obj
+    Tcl_Obj *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
 				 * necessary */
 } TEBCdata;
@@ -1935,8 +1935,8 @@ ArgumentBCEnter(
  *----------------------------------------------------------------------
  */
 #define	bcFramePtr	(&TD->cmdFrame)
-#define	initCatchTop	((ptrdiff_t *) (TD->stack-1))
-#define	initTosPtr	((Tcl_Obj **) (initCatchTop+codePtr->maxExceptDepth))
+#define	initCatchTop	(TD->stack-1)
+#define	initTosPtr	(initCatchTop+codePtr->maxExceptDepth)
 #define esPtr		(iPtr->execEnvPtr->execStackPtr)
 
 int
@@ -3516,7 +3516,7 @@ TEBCresume(
 	    varPtr->value.objPtr = objResultPtr = newValue;
 	    Tcl_IncrRefCount(newValue);
 	}
-	if (Tcl_ListObjReplace(interp, objResultPtr, len, 0, objc, objv)
+	if (TclListObjAppendElements(interp, objResultPtr, objc, objv)
 		!= TCL_OK) {
 	    TRACE_ERROR(interp);
 	    goto gotError;
@@ -3574,7 +3574,7 @@ TEBCresume(
 		} else {
 		    valueToAssign = objResultPtr;
 		}
-		if (Tcl_ListObjReplace(interp, valueToAssign, len, 0,
+		if (TclListObjAppendElements(interp, valueToAssign,
 			objc, objv) != TCL_OK) {
 		    if (createdNewObj) {
 			TclDecrRefCount(valueToAssign);
@@ -4789,7 +4789,11 @@ TEBCresume(
 	    Method *const mPtr =
 		    contextPtr->callPtr->chain[newDepth].mPtr;
 
-	    return mPtr->typePtr->callProc(mPtr->clientData, interp,
+	    if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
+		return mPtr->typePtr->callProc(mPtr->clientData, interp,
+			(Tcl_ObjectContext) contextPtr, opnd, objv);
+	    }
+	    return ((Tcl_MethodCallProc2 *)(void *)(mPtr->typePtr->callProc))(mPtr->clientData, interp,
 		    (Tcl_ObjectContext) contextPtr, opnd, objv);
 	}
 
@@ -6801,7 +6805,7 @@ TEBCresume(
 	 * stack.
 	 */
 
-	*(++catchTop) = CURR_DEPTH;
+	*(++catchTop) = INT2PTR(CURR_DEPTH);
 	TRACE(("%u => catchTop=%d, stackTop=%d\n",
 		TclGetUInt4AtPtr(pc+1), (int) (catchTop - initCatchTop - 1),
 		(int) CURR_DEPTH));
@@ -7713,8 +7717,8 @@ TEBCresume(
 
 	while (auxObjList) {
 	    if ((catchTop != initCatchTop)
-		    && (*catchTop > (ptrdiff_t)
-			auxObjList->internalRep.twoPtrValue.ptr2)) {
+		    && (PTR2INT(*catchTop) >
+			PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2))) {
 		break;
 	    }
 	    POP_TAUX_OBJ();
@@ -7789,7 +7793,7 @@ TEBCresume(
 	 */
 
     processCatch:
-	while (CURR_DEPTH > *catchTop) {
+	while (CURR_DEPTH > PTR2INT(*catchTop)) {
 	    valuePtr = POP_OBJECT();
 	    TclDecrRefCount(valuePtr);
 	}
@@ -7798,7 +7802,7 @@ TEBCresume(
 	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
 		    "unwound to %ld, new pc %u\n",
 		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
-		    (long)*catchTop, (unsigned) rangePtr->catchOffset);
+		    (long)PTR2INT(*catchTop), (unsigned) rangePtr->catchOffset);
 	}
 #endif
 	pc = (codePtr->codeStart + rangePtr->catchOffset);
@@ -9076,7 +9080,7 @@ PrintByteCodeInfo(
 #ifdef TCL_COMPILE_STATS
     fprintf(stdout, "  Code %lu = header %lu+inst %d+litObj %lu+exc %lu+aux %lu+cmdMap %d\n",
 	    (unsigned long) codePtr->structureSize,
-	    (unsigned long) (sizeof(ByteCode)-sizeof(size_t)-sizeof(Tcl_Time)),
+	    (unsigned long) offsetof(ByteCode, localCachePtr),
 	    codePtr->numCodeBytes,
 	    (unsigned long) (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
 	    (unsigned long) (codePtr->numExceptRanges*sizeof(ExceptionRange)),
@@ -9719,7 +9723,7 @@ EvalStatsCmd(
     numCurrentByteCodes =
 	    statsPtr->numCompilations - statsPtr->numByteCodesFreed;
     currentHeaderBytes = numCurrentByteCodes
-	    * (sizeof(ByteCode) - sizeof(size_t) - sizeof(Tcl_Time));
+	    * offsetof(ByteCode, localCachePtr);
     literalMgmtBytes = sizeof(LiteralTable)
 	    + (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *))
 	    + (iPtr->literalTable.numEntries * sizeof(LiteralEntry));
