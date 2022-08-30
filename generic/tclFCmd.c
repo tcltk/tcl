@@ -1688,6 +1688,44 @@ TclFileHomeCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclFileTildeExpandCmd --
+ *
+ *	This function is invoked to process the "file tildeexpand" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFileTildeExpandCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *expandedPathObj;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "path");
+	return TCL_ERROR;
+    }
+    expandedPathObj = TclResolveTildePath(interp, objv[1]);
+    if (expandedPathObj == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, expandedPathObj);
+    return TCL_OK;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

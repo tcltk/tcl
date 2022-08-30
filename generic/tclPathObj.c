@@ -2561,11 +2561,17 @@ TclNativePathInFilesystem(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetHomeDir --
+ * MakeTildeRelativePath --
  *
- *      Returns the home directory of a user.  Note there is a difference
- *	between not specifying a user and explicitly specifying the current
- *	user. This mimics Tcl8's tilde expansion.
+ *      Returns a path relative to the home directory of a user.
+ *      Note there is a difference between not specifying a user and
+ *	explicitly specifying the current user. This mimics Tcl8's tilde
+ *	expansion.
+ *
+ *	The subPath argument is joined to the expanded home directory
+ *	as in Tcl_JoinPath. This means if it is not relative, it will
+ *	returned as the result with the home directory only checked
+ *	for user name validity.
  *
  * Results:
  *	Returns TCL_OK on success with home directory path in *dsPtr
@@ -2574,22 +2580,23 @@ TclNativePathInFilesystem(
  *----------------------------------------------------------------------
  */
 int
-TclGetHomeDir(
-    Tcl_Interp *interp, /* May be NULL. Only used for error messages */
-    const char *user,   /* User name. NULL -> current user */
-    Tcl_DString *dsPtr) /* Output. Is initialized by the function. Must be
+MakeTildeRelativePath(
+    Tcl_Interp *interp,  /* May be NULL. Only used for error messages */
+    const char *user,    /* User name. NULL -> current user */
+    const char *subPath, /* Rest of path. May be NULL */
+    Tcl_DString *dsPtr)  /* Output. Is initialized by the function. Must be
                            freed on success */
 {
     const char *dir;
-    Tcl_DString nativeString;
+    Tcl_DString dirString;
 
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringInit(&nativeString);
+    Tcl_DStringInit(&dirString);
 
     if (user == NULL || user[0] == 0) {
         /* No user name specified -> current user */
 
-	dir = TclGetEnv("HOME", &nativeString);
+	dir = TclGetEnv("HOME", &dirString);
 	if (dir == NULL) {
             if (interp) {
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -2602,7 +2609,7 @@ TclGetHomeDir(
         }
     } else {
         /* User name specified - ~user */
-	dir = TclpGetUserHome(user, &nativeString);
+	dir = TclpGetUserHome(user, &dirString);
 	if (dir == NULL) {
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2613,7 +2620,16 @@ TclGetHomeDir(
             return TCL_ERROR;
 	}
     }
-    Tcl_JoinPath(1, &dir, dsPtr);
+    if (subPath) {
+	const char *parts[2];
+	parts[0] = dir;
+	parts[1] = subPath;
+	Tcl_JoinPath(2, parts, dsPtr);
+    } else {
+	Tcl_JoinPath(1, &dir, dsPtr);
+    }
+
+    Tcl_DStringFree(&dirString);
 
     return TCL_OK;
 }
@@ -2623,7 +2639,7 @@ TclGetHomeDir(
  *
  * TclGetHomeDirObj --
  *
- *	Wrapper around TclGetHomeDir. See that function.
+ *	Wrapper around MakeTildeRelativePath. See that function.
  *
  * Results:
  *      Returns a Tcl_Obj containing the home directory of a user
@@ -2638,7 +2654,7 @@ TclGetHomeDirObj(
 {
     Tcl_DString dirString;
 
-    if (TclGetHomeDir(interp, user, &dirString) != TCL_OK) {
+    if (MakeTildeRelativePath(interp, user, NULL, &dirString) != TCL_OK) {
 	return NULL;
     }
     return TclDStringToObj(&dirString);
@@ -2653,12 +2669,6 @@ TclGetHomeDirObj(
  *	and returns a Tcl_Obj containing the resolved path. If the tilde
  *	component cannot be resolved, returns NULL. If the path does not
  *	begin with a tilde, returns as is.
- *
- *      The trailing components of the path are returned verbatim. No
- *	processing is done on them. Moreover, no assumptions should be
- *	made about the separators in the returned path. They may be /
- *	or native. Appropriate path manipulations functions should be
- *	used by caller if desired.
  *
  * Results:
  *      Returns a Tcl_Obj with resolved path. This may be a new Tcl_Obj
@@ -2676,9 +2686,8 @@ TclResolveTildePath(
 {
     const char *path;
     int len;
-    Tcl_Obj *resolvedObj;
-    Tcl_DString dirString;
     int split;
+    Tcl_DString resolvedPath;
 
     path = Tcl_GetStringFromObj(pathObj, &len);
     if (path[0] != '~') {
@@ -2695,12 +2704,13 @@ TclResolveTildePath(
 
     if (split == 1) {
         /* No user name specified -> current user */
-	if (TclGetHomeDir(interp, NULL, &dirString) != TCL_OK) {
+	if (MakeTildeRelativePath(
+		interp, NULL, path[1] ? 2 + path : NULL, &resolvedPath)
+	    != TCL_OK) {
 	    return NULL;
 	}
     } else {
         /* User name specified - ~user */
-
         const char *expandedUser;
         Tcl_DString userName;
 
@@ -2708,20 +2718,18 @@ TclResolveTildePath(
         Tcl_DStringAppend(&userName, path+1, split-1);
         expandedUser = Tcl_DStringValue(&userName);
 
-	if (TclGetHomeDir(interp, expandedUser, &dirString) != TCL_OK) {
-            Tcl_DStringFree(&userName);
+	/* path[split] is / or \0 */
+	if (MakeTildeRelativePath(interp,
+				  expandedUser,
+				  path[split] ? &path[split+1] : NULL,
+				  &resolvedPath)
+	    != TCL_OK) {
+	    Tcl_DStringFree(&userName);
 	    return NULL;
 	}
-        Tcl_DStringFree(&userName);
+	Tcl_DStringFree(&userName);
     }
-    resolvedObj = TclDStringToObj(&dirString);
-
-    if (split < len) {
-        /* If any trailer, append it verbatim */
-        Tcl_AppendToObj(resolvedObj, split + path, len-split);
-    }
-
-    return resolvedObj;
+    return TclDStringToObj(&resolvedPath);
 }
 
 /*
