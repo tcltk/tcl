@@ -2267,7 +2267,7 @@ TclGetObjInterpProc(void)
 #endif /* TCL_NO_DEPRECATED */
 
 Tcl_ObjCmdProc2 *
-TclGetObjInterpProc2(void)
+TclGetObjInterpProc(void)
 {
     return TclObjInterpProc;
 }
