@@ -6805,7 +6805,7 @@ TEBCresume(
 	 * stack.
 	 */
 
-	*(++catchTop) = INT2PTR(CURR_DEPTH);
+	*(++catchTop) = (Tcl_Obj *)INT2PTR(CURR_DEPTH);
 	TRACE(("%u => catchTop=%d, stackTop=%d\n",
 		TclGetUInt4AtPtr(pc+1), (int) (catchTop - initCatchTop - 1),
 		(int) CURR_DEPTH));
