@@ -170,11 +170,11 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
 typedef struct TEBCdata {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
-    ptrdiff_t *catchTop;	/* These fields are used on return TO this */
+    Tcl_Obj **catchTop;		/* These fields are used on return TO this */
     Tcl_Obj *auxObjList;	/* this level: they record the state when a */
     CmdFrame cmdFrame;		/* new codePtr was received for NR */
                                 /* execution. */
-    void *stack[1];		/* Start of the actual combined catch and obj
+    Tcl_Obj *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
 				 * necessary */
 } TEBCdata;
@@ -1936,8 +1936,8 @@ ArgumentBCEnter(
  *----------------------------------------------------------------------
  */
 #define	bcFramePtr	(&TD->cmdFrame)
-#define	initCatchTop	((ptrdiff_t *) (TD->stack-1))
-#define	initTosPtr	((Tcl_Obj **) (initCatchTop+codePtr->maxExceptDepth))
+#define	initCatchTop	(TD->stack-1)
+#define	initTosPtr	(initCatchTop+codePtr->maxExceptDepth)
 #define esPtr		(iPtr->execEnvPtr->execStackPtr)
 
 int
@@ -6856,7 +6856,7 @@ TEBCresume(
 	 * stack.
 	 */
 
-	*(++catchTop) = CURR_DEPTH;
+	*(++catchTop) = (Tcl_Obj *)INT2PTR(CURR_DEPTH);
 	TRACE(("%u => catchTop=%d, stackTop=%d\n",
 		TclGetUInt4AtPtr(pc+1), (int) (catchTop - initCatchTop - 1),
 		(int) CURR_DEPTH));
@@ -7768,8 +7768,8 @@ TEBCresume(
 
 	while (auxObjList) {
 	    if ((catchTop != initCatchTop)
-		    && (*catchTop > (ptrdiff_t)
-			auxObjList->internalRep.twoPtrValue.ptr2)) {
+		    && (PTR2INT(*catchTop) >
+			PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2))) {
 		break;
 	    }
 	    POP_TAUX_OBJ();
@@ -7844,7 +7844,7 @@ TEBCresume(
 	 */
 
     processCatch:
-	while (CURR_DEPTH > *catchTop) {
+	while (CURR_DEPTH > PTR2INT(*catchTop)) {
 	    valuePtr = POP_OBJECT();
 	    TclDecrRefCount(valuePtr);
 	}
@@ -7853,7 +7853,7 @@ TEBCresume(
 	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
 		    "unwound to %ld, new pc %u\n",
 		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
-		    (long)*catchTop, (unsigned) rangePtr->catchOffset);
+		    (long)PTR2INT(*catchTop), (unsigned) rangePtr->catchOffset);
 	}
 #endif
 	pc = (codePtr->codeStart + rangePtr->catchOffset);
