@@ -16,7 +16,6 @@ jobs:
         cfgopt:
           - ""
           - "OPTS=utf16"
-          - "CHECKS=nodep"
           - "OPTS=static"
           - "OPTS=symbols"
           - "OPTS=symbols STATS=compdbg,memdbg"
