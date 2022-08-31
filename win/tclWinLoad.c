@@ -5,7 +5,7 @@
  *	the Windows "LoadLibrary" and "GetProcAddress" API for dynamic
  *	loading.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -159,7 +159,7 @@ TclpDlopen(
 		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", -1);
                 break;
             default:
-		TclWinConvertError(lastError);
+		Tcl_WinConvertError(lastError);
 		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), -1);
 	    }
 	    Tcl_SetObjResult(interp, errMsg);
@@ -379,7 +379,7 @@ InitDLLDirectoryName(void)
 	id *= 16777619;
     }
 
-    TclWinConvertError(lastError);
+    Tcl_WinConvertError(lastError);
     return TCL_ERROR;
 
     /*

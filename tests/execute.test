@@ -20,7 +20,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 ::tcltest::loadTestedCommands
-catch [list package require -exact Tcltest [info patchlevel]]
+catch [list package require -exact tcl::test [info patchlevel]]
 
 catch {namespace delete {*}[namespace children :: test_ns_*]}
 catch {rename foo ""}
@@ -985,7 +985,7 @@ test execute-8.6 {Compile epoch bump in global level (bug [fa6bf38d07])} -setup 
     interp create child
     child eval {
 	package require tcltest 2.5
-	catch [list package require -exact Tcltest [info patchlevel]]
+	catch [list package require -exact tcl::test [info patchlevel]]
 	::tcltest::loadTestedCommands
 	if {[namespace which -command testbumpinterpepoch] eq ""} {
 	  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
@@ -1018,7 +1018,7 @@ test execute-8.7 {Compile epoch bump in global level (bug [fa6bf38d07]), excepti
     interp create child
     child eval {
 	package require tcltest 2.5
-	catch [list package require -exact Tcltest [info patchlevel]]
+	catch [list package require -exact tcl::test [info patchlevel]]
 	::tcltest::loadTestedCommands
 	if {[namespace which -command testbumpinterpepoch] eq ""} {
 	  proc testbumpinterpepoch {} { rename ::set ::dummy; rename ::dummy ::set }
@@ -1066,7 +1066,7 @@ test execute-9.1 {Interp result resetting [Bug 1522803]} {
 } SUCCESS
 
 test execute-10.1 {TclExecuteByteCode, INST_CONCAT1, bytearrays} {
-    apply {s {binary scan $s c x; list $x [scan $s$s %c%c]}} \u0130
+    apply {s {binary scan $s c x; list $x [scan $s$s %c%c]}} İ
 } {48 {304 304}}
 test execute-10.2 {Bug 2802881} -setup {
     interp create child

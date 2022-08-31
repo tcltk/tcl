@@ -7,9 +7,9 @@
  *	is the primary author.  Other signifiant contributors are Karl
  *	Lehenbauer, Mark Diekhans and Peter da Silva.
  *
- * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 2001-2004 Vincent Darley.
+ * Copyright © 1991-1994 The Regents of the University of California.
+ * Copyright © 1994-1997 Sun Microsystems, Inc.
+ * Copyright © 2001-2004 Vincent Darley.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1756,7 +1756,7 @@ Tcl_FSEvalFileEx(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
+	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -1893,7 +1893,7 @@ TclNREvalFile(
      */
 
     if (Tcl_ReadChars(chan, objPtr, -1,
-	    memcmp(string, "\xef\xbb\xbf", 3)) == TCL_IO_FAILURE) {
+	    memcmp(string, "\xEF\xBB\xBF", 3)) == TCL_IO_FAILURE) {
 	Tcl_Close(interp, chan);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't read file \"%s\": %s",
@@ -3009,7 +3009,7 @@ Tcl_FSLoadFile(
     const char *sym1, const char *sym2,
 				/* Names of two functions to find in the
 				 * dynamic shared object. */
-    Tcl_PackageInitProc **proc1Ptr, Tcl_PackageInitProc **proc2Ptr,
+    Tcl_LibraryInitProc **proc1Ptr, Tcl_LibraryInitProc **proc2Ptr,
 				/* Places to store pointers to the functions
 				 * named by sym1 and sym2. */
     Tcl_LoadHandle *handlePtr,	/* A place to store the token for the loaded
@@ -3027,8 +3027,8 @@ Tcl_FSLoadFile(
 
     res = Tcl_LoadFile(interp, pathPtr, symbols, 0, procPtrs, handlePtr);
     if (res == TCL_OK) {
-	*proc1Ptr = (Tcl_PackageInitProc *) procPtrs[0];
-	*proc2Ptr = (Tcl_PackageInitProc *) procPtrs[1];
+	*proc1Ptr = (Tcl_LibraryInitProc *) procPtrs[0];
+	*proc2Ptr = (Tcl_LibraryInitProc *) procPtrs[1];
     } else {
 	*proc1Ptr = *proc2Ptr = NULL;
     }
@@ -3077,6 +3077,13 @@ Tcl_FSLoadFile(
  *
  */
 
+#ifdef _WIN32
+#define getenv(x) _wgetenv(L##x)
+#define atoi(x) _wtoi(x)
+#else
+#define WCHAR char
+#endif
+
 static int
 skipUnlink(
     Tcl_Obj *shlibFile)
@@ -3098,7 +3105,7 @@ skipUnlink(
     (void)shlibFile;
     return 1;
 #else
-    char *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
+    WCHAR *skipstr = getenv("TCL_TEMPLOAD_NO_UNLINK");
 
     if (skipstr && (skipstr[0] != '\0')) {
 	return atoi(skipstr);

@@ -860,8 +860,8 @@ declare 243 {
     void Tcl_SplitPath(const char *path, int *argcPtr, const char ***argvPtr)
 }
 declare 244 {nostub {Don't use this function in a stub-enabled extension}} {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 declare 245 {deprecated {No longer in use, changed to macro}} {
     int Tcl_StringMatch(const char *str, const char *pattern)
@@ -1163,7 +1163,7 @@ declare 325 {
     const char *Tcl_UtfAtIndex(const char *src, int index)
 }
 declare 326 {
-    int Tcl_UtfCharComplete(const char *src, int length)
+    int TclUtfCharComplete(const char *src, int length)
 }
 declare 327 {
     int Tcl_UtfBackslash(const char *src, int *readPtr, char *dst)
@@ -1175,10 +1175,10 @@ declare 329 {
     const char *Tcl_UtfFindLast(const char *src, int ch)
 }
 declare 330 {
-    const char *Tcl_UtfNext(const char *src)
+    const char *TclUtfNext(const char *src)
 }
 declare 331 {
-    const char *Tcl_UtfPrev(const char *src, const char *start)
+    const char *TclUtfPrev(const char *src, const char *start)
 }
 declare 332 {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding,
@@ -1581,8 +1581,8 @@ declare 443 {
 }
 declare 444 {
     int	Tcl_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *sym1,
-	    const char *sym2, Tcl_PackageInitProc **proc1Ptr,
-	    Tcl_PackageInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
+	    const char *sym2, Tcl_LibraryInitProc **proc1Ptr,
+	    Tcl_LibraryInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
 	    Tcl_FSUnloadFileProc **unloadProcPtr)
 }
 declare 445 {
@@ -1751,10 +1751,10 @@ declare 490 {
     Tcl_StatBuf *Tcl_AllocStatBuf(void)
 }
 declare 491 {
-    Tcl_WideInt Tcl_Seek(Tcl_Channel chan, Tcl_WideInt offset, int mode)
+    long long Tcl_Seek(Tcl_Channel chan, long long offset, int mode)
 }
 declare 492 {
-    Tcl_WideInt Tcl_Tell(Tcl_Channel chan)
+    long long Tcl_Tell(Tcl_Channel chan)
 }
 
 # TIP#91 (back-compat enhancements for channels) dkf
@@ -2026,7 +2026,7 @@ declare 559 {
 
 # TIP #208 ('chan' command) jeffh
 declare 560 {
-    int Tcl_TruncateChannel(Tcl_Channel chan, Tcl_WideInt length)
+    int Tcl_TruncateChannel(Tcl_Channel chan, long long length)
 }
 declare 561 {
     Tcl_DriverTruncateProc *Tcl_ChannelTruncateProc(
@@ -2177,19 +2177,19 @@ declare 595 {
     int Tcl_GetDeviceTypeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 596 {
-    Tcl_WideInt Tcl_GetAccessTimeFromStat(const Tcl_StatBuf *statPtr)
+    long long Tcl_GetAccessTimeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 597 {
-    Tcl_WideInt Tcl_GetModificationTimeFromStat(const Tcl_StatBuf *statPtr)
+    long long Tcl_GetModificationTimeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 598 {
-    Tcl_WideInt Tcl_GetChangeTimeFromStat(const Tcl_StatBuf *statPtr)
+    long long Tcl_GetChangeTimeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 599 {
-    Tcl_WideUInt Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr)
+    unsigned long long Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 600 {
-    Tcl_WideUInt Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr)
+    unsigned long long Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr)
 }
 declare 601 {
     unsigned Tcl_GetBlockSizeFromStat(const Tcl_StatBuf *statPtr)
@@ -2402,6 +2402,28 @@ declare 648 {
 	    int length, Tcl_DString *dsPtr)
 }
 
+# TIP #481
+declare 651 {
+    char *TclGetStringFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 652 {
+    Tcl_UniChar *TclGetUnicodeFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+declare 653 {
+    unsigned char *TclGetByteArrayFromObj(Tcl_Obj *objPtr, size_t *lengthPtr)
+}
+
+# TIP #575
+declare 654 {
+    int Tcl_UtfCharComplete(const char *src, int length)
+}
+declare 655 {
+    const char *Tcl_UtfNext(const char *src)
+}
+declare 656 {
+    const char *Tcl_UtfPrev(const char *src, const char *start)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
@@ -2426,6 +2448,9 @@ declare 0 win {
 declare 1 win {
     char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
 }
+declare 3 win {
+    void Tcl_WinConvertError(unsigned errCode)
+}
 
 ################################
 # Mac OS X specific functions
@@ -2440,6 +2465,9 @@ declare 1 macosx {
 	    const char *bundleName, const char *bundleVersion,
 	    int hasResourceFile, int maxPathLen, char *libraryPath)
 }
+declare 2 macosx {
+    void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+}
 
 ##############################################################################
 
@@ -2453,8 +2481,8 @@ export {
     Tcl_Interp *interp)
 }
 export {
-    void Tcl_StaticPackage(Tcl_Interp *interp, const char *pkgName,
-	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
+    void Tcl_StaticLibrary(Tcl_Interp *interp, const char *prefix,
+	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
 }
 export {
     void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
@@ -2482,6 +2510,9 @@ export {
 }
 export {
     void Tcl_InitSubsystems(void)
+}
+export {
+    int TclZipfs_AppHook(int *argc, char ***argv)
 }
 
 # Local Variables:

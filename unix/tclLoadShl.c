@@ -5,7 +5,7 @@
  *	the "shl_load" and "shl_findsym" library procedures for dynamic
  *	loading (e.g. for HP machines).
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -128,7 +128,7 @@ FindSymbol(
     const char *symbol)
 {
     Tcl_DString newName;
-    Tcl_PackageInitProc *proc = NULL;
+    Tcl_LibraryInitProc *proc = NULL;
     shl_t handle = (shl_t) loadHandle->clientData;
 
     /*

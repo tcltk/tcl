@@ -3,7 +3,7 @@
  *
  *	This file contains the initializers for the Tcl stub vectors.
  *
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright © 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -65,15 +65,22 @@
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
 #undef TclWinNToHS
-#undef TclStaticPackage
+#undef TclStaticLibrary
 #undef Tcl_BackgroundError
 #undef TclGuessPackageName
 #undef TclGetLoadedPackages
-#define TclStaticPackage Tcl_StaticPackage
+#define TclStaticLibrary Tcl_StaticLibrary
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
 #undef Tcl_MacOSXOpenBundleResources
+#undef TclWinConvertWSAError
+#undef TclWinConvertError
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define TclWinConvertWSAError (void (*)(DWORD))(void *)Tcl_WinConvertError
+#define TclWinConvertError (void (*)(DWORD))(void *)Tcl_WinConvertError
+#endif
+
 
 #if TCL_UTF_MAX > 3
 static void uniCodePanic(void) {
@@ -89,6 +96,32 @@ static void uniCodePanic(void) {
 #   define Tcl_UniCharLen (int(*)(const Tcl_UniChar *))(void *)uniCodePanic
 #   define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar *, const Tcl_UniChar *, unsigned long))(void *)uniCodePanic
 #endif
+
+#define TclUtfCharComplete UtfCharComplete
+#define TclUtfNext UtfNext
+#define TclUtfPrev UtfPrev
+
+static int TclUtfCharComplete(const char *src, int length) {
+    if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
+	return length < 3;
+    }
+    return Tcl_UtfCharComplete(src, length);
+}
+
+static const char *TclUtfNext(const char *src) {
+    if ((unsigned)((unsigned char)*(src) - 0xF0) < 5) {
+	return src + 1;
+    }
+    return Tcl_UtfNext(src);
+}
+
+static const char *TclUtfPrev(const char *src, const char *start) {
+    if ((src >= start + 3) && ((src[-1] & 0xC0) == 0x80)
+	    && ((src[-2] & 0xC0) == 0x80) && ((src[-3] & 0xC0) == 0x80)) {
+	return src - 3;
+    }
+    return Tcl_UtfPrev(src, start);
+}
 
 #define TclBN_mp_add mp_add
 #define TclBN_mp_and mp_and
@@ -138,10 +171,11 @@ static void uniCodePanic(void) {
 #define TclBN_mp_to_radix mp_to_radix
 #define TclBN_mp_to_ubin mp_to_ubin
 #define TclBN_mp_ubin_size mp_ubin_size
+#define TclBN_mp_unpack mp_unpack
 #define TclBN_mp_xor mp_xor
 #define TclBN_mp_zero mp_zero
 #define TclBN_s_mp_add s_mp_add
-#define TclBN_s_mp_balance_mul mp_balance_mul
+#define TclBN_s_mp_balance_mul s_mp_balance_mul
 #define TclBN_mp_karatsuba_mul s_mp_karatsuba_mul
 #define TclBN_mp_karatsuba_sqr s_mp_karatsuba_sqr
 #define TclBN_s_mp_mul_digs s_mp_mul_digs
@@ -206,7 +240,7 @@ mp_err	TclBN_mp_div_ld(const mp_int *a, uint64_t b, mp_int *c, uint64_t *d) {
    if ((b | (mp_digit)-1) != (mp_digit)-1) {
       return MP_VAL;
    }
-   result = mp_div_d(a, b, c, (d ? &d2 : NULL));
+   result = mp_div_d(a, (mp_digit)b, c, (d ? &d2 : NULL));
    if (d) {
       *d = d2;
    }
@@ -282,7 +316,7 @@ static int TclGetLoadedPackages(
 				 * otherwise, just return info about this
 				 * interpreter. */
 {
-    return TclGetLoadedPackagesEx(interp, targetName, NULL);
+    return TclGetLoadedLibraries(interp, targetName, NULL);
 }
 
 mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
@@ -396,7 +430,9 @@ TclWinGetPlatformId(void)
 
 #define TclpCreateTempFile_ TclpCreateTempFile
 #define TclUnixWaitForFile_ TclUnixWaitForFile
-#ifndef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
+#ifdef MAC_OSX_TCL /* On UNIX, fill with other stub entries */
+#define TclMacOSXNotifierAddRunLoopMode Tcl_MacOSXNotifierAddRunLoopMode
+#else
 #define TclMacOSXGetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj **))(void *)TclpCreateProcess
 #define TclMacOSXSetFileAttribute (int (*)(Tcl_Interp *, int, Tcl_Obj *, Tcl_Obj *))(void *)isatty
 #define TclMacOSXCopyFileAttributes (int (*)(const char *, const char *, const Tcl_StatBuf *))(void *)TclUnixCopyFile
@@ -599,8 +635,6 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define Tcl_Eval 0
 #   undef Tcl_GlobalEval
 #   define Tcl_GlobalEval 0
-#   undef Tcl_GetStringResult
-#   define Tcl_GetStringResult 0
 #   undef Tcl_SaveResult
 #   define Tcl_SaveResult 0
 #   undef Tcl_RestoreResult
@@ -1003,7 +1037,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrIncrObjVar, /* 254 */
     TclPtrObjMakeUpvar, /* 255 */
     TclPtrUnsetVar, /* 256 */
-    TclStaticPackage, /* 257 */
+    TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
     TclGetBytesFromObj, /* 259 */
     TclUnusedStubEntry, /* 260 */
@@ -1119,10 +1153,13 @@ static const TclPlatStubs tclPlatStubs = {
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
+    0, /* 2 */
+    Tcl_WinConvertError, /* 3 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
+    Tcl_MacOSXNotifierAddRunLoopMode, /* 2 */
 #endif /* MACOSX */
 };
 
@@ -1200,7 +1237,7 @@ const TclTomMathStubs tclTomMathStubs = {
     TclBN_mp_set_u64, /* 68 */
     TclBN_mp_get_mag_u64, /* 69 */
     TclBN_mp_set_i64, /* 70 */
-    0, /* 71 */
+    TclBN_mp_unpack, /* 71 */
     0, /* 72 */
     TclBN_mp_tc_and, /* 73 */
     TclBN_mp_tc_or, /* 74 */
@@ -1489,7 +1526,7 @@ const TclStubs tclStubs = {
     Tcl_SourceRCFile, /* 241 */
     Tcl_SplitList, /* 242 */
     Tcl_SplitPath, /* 243 */
-    Tcl_StaticPackage, /* 244 */
+    Tcl_StaticLibrary, /* 244 */
     Tcl_StringMatch, /* 245 */
     Tcl_TellOld, /* 246 */
     Tcl_TraceVar, /* 247 */
@@ -1571,12 +1608,12 @@ const TclStubs tclStubs = {
     Tcl_UniCharToUpper, /* 323 */
     Tcl_UniCharToUtf, /* 324 */
     Tcl_UtfAtIndex, /* 325 */
-    Tcl_UtfCharComplete, /* 326 */
+    TclUtfCharComplete, /* 326 */
     Tcl_UtfBackslash, /* 327 */
     Tcl_UtfFindFirst, /* 328 */
     Tcl_UtfFindLast, /* 329 */
-    Tcl_UtfNext, /* 330 */
-    Tcl_UtfPrev, /* 331 */
+    TclUtfNext, /* 330 */
+    TclUtfPrev, /* 331 */
     Tcl_UtfToExternal, /* 332 */
     Tcl_UtfToExternalDString, /* 333 */
     Tcl_UtfToLower, /* 334 */
@@ -1894,6 +1931,14 @@ const TclStubs tclStubs = {
     Tcl_UtfToUniChar, /* 646 */
     Tcl_UniCharToUtfDString, /* 647 */
     Tcl_UtfToUniCharDString, /* 648 */
+    0, /* 649 */
+    0, /* 650 */
+    TclGetStringFromObj, /* 651 */
+    TclGetUnicodeFromObj, /* 652 */
+    TclGetByteArrayFromObj, /* 653 */
+    Tcl_UtfCharComplete, /* 654 */
+    Tcl_UtfNext, /* 655 */
+    Tcl_UtfPrev, /* 656 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -26,7 +26,7 @@
  *
  *	John Robert LoVerso <loverso@freebsd.osf.org>
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright © 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -89,7 +89,7 @@ TclpDlopen(
      */
 
     native = Tcl_FSGetNativePath(pathPtr);
-    lm = (Tcl_PackageInitProc *) load(native, LDR_NOFLAGS);
+    lm = (Tcl_LibraryInitProc *) load(native, LDR_NOFLAGS);
 
     if (lm == LDR_NULL_MODULE) {
 	/*
@@ -101,7 +101,7 @@ TclpDlopen(
 	Tcl_DString ds;
 
 	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
-	lm = (Tcl_PackageInitProc *) load(native, LDR_NOFLAGS);
+	lm = (Tcl_LibraryInitProc *) load(native, LDR_NOFLAGS);
 	Tcl_DStringFree(&ds);
     }
 

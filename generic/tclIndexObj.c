@@ -5,9 +5,9 @@
  *	to lookup a keyword in a table of valid values and cache the index of
  *	the matching entry. Also provides table-based argv/argc processing.
  *
- * Copyright (c) 1990-1994 The Regents of the University of California.
- * Copyright (c) 1997 Sun Microsystems, Inc.
- * Copyright (c) 2006 Sam Bromley.
+ * Copyright © 1990-1994 The Regents of the University of California.
+ * Copyright © 1997 Sun Microsystems, Inc.
+ * Copyright © 2006 Sam Bromley.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -785,7 +785,7 @@ PrefixLongestObjCmd(
 		     * Adjust in case we stopped in the middle of a UTF char.
 		     */
 
-		    resultLength = TclUtfPrev(&resultString[i+1],
+		    resultLength = Tcl_UtfPrev(&resultString[i+1],
 			    resultString) - resultString;
 		    break;
 		}
@@ -1332,7 +1332,6 @@ PrintUsage(
     int width, numSpaces;
 #define NUM_SPACES 20
     static const char spaces[] = "                    ";
-    char tmp[TCL_DOUBLE_SPACE];
     Tcl_Obj *msg;
 
     /*
@@ -1382,7 +1381,6 @@ PrintUsage(
 	case TCL_ARGV_FLOAT:
 	    Tcl_AppendPrintfToObj(msg, "\n\t\tDefault value: %g",
 		    *((double *) infoPtr->dstPtr));
-	    sprintf(tmp, "%g", *((double *) infoPtr->dstPtr));
 	    break;
 	case TCL_ARGV_STRING: {
 	    char *string = *((char **) infoPtr->dstPtr);
