@@ -45,7 +45,6 @@ extern "C" {
  * macosx/Tcl-Common.xcconfig (not patchlevel) 1 LOC
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(1 LOC patch)
- * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  */
 
 #define TCL_MAJOR_VERSION   8
@@ -361,7 +360,7 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(_MSC_VER) || defined(_WIN32)
+#   if defined(_WIN32) && (!defined(__USE_MINGW_ANSI_STDIO) || !__USE_MINGW_ANSI_STDIO)
 #      define TCL_WIDE_INT_TYPE __int64
 #      define TCL_LL_MODIFIER	"I64"
 #      if defined(_WIN64)
@@ -973,11 +972,14 @@ typedef struct Tcl_DString {
 #define TCL_DONT_QUOTE_HASH	8
 
 /*
- * Flag that may be passed to Tcl_GetIndexFromObj to force it to disallow
- * abbreviated strings.
+ * Flags that may be passed to Tcl_GetIndexFromObj.
+ * TCL_EXACT disallows abbreviated strings.
+ * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
+ *      a table that will not live long enough to make it worthwhile.
  */
 
-#define TCL_EXACT	1
+#define TCL_EXACT		1
+#define TCL_INDEX_TEMP_TABLE	2
 
 /*
  *----------------------------------------------------------------------------
@@ -2476,7 +2478,7 @@ EXTERN int		TclZipfs_AppHook(int *argc, char ***argv);
 #   define Tcl_DecrRefCount(objPtr) \
 	do { \
 	    Tcl_Obj *_objPtr = (objPtr); \
-	    if ((_objPtr)->refCount-- <= 1) { \
+	    if (_objPtr->refCount-- <= 1) { \
 		TclFreeObj(_objPtr); \
 	    } \
 	} while(0)

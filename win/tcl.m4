@@ -661,7 +661,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	SHLIB_LD='${CC} -shared'
 	SHLIB_LD_LIBS='${LIBS}'
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
-	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
+	    -Wl,--out-implib,\$(patsubst %.dll,lib%.dll.a,\[$]@)"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
 	DLLSUFFIX=".dll"
@@ -673,7 +673,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wextra -Wwrite-strings -Wpointer-arith"
+	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 
@@ -1085,8 +1085,7 @@ AC_DEFUN([SC_TCL_CFG_ENCODING], [
     if test x"${with_tcencoding}" != x ; then
 	AC_DEFINE_UNQUOTED(TCL_CFGVAL_ENCODING,"${with_tcencoding}")
     else
-	# Default encoding on windows is not "iso8859-1"
-	AC_DEFINE(TCL_CFGVAL_ENCODING,"cp1252")
+	AC_DEFINE(TCL_CFGVAL_ENCODING,"utf-8")
     fi
 ])
 

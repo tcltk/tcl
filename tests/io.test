@@ -6,15 +6,15 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1991-1994 The Regents of the University of California.
-# Copyright (c) 1994-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1991-1994 The Regents of the University of California.
+# Copyright © 1994-1997 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
 }
 
 namespace eval ::tcl::test::io {
@@ -43,7 +43,11 @@ testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
 testConstraint testobj		[llength [info commands testobj]]
 testConstraint testservicemode  [llength [info commands testservicemode]]
-testConstraint knownMsvcBug [expr {![info exists ::env(TRAVIS_OS_NAME)] || ![string match windows $::env(TRAVIS_OS_NAME)]}]
+# Some things fail under Windows in Continuous Integration systems for subtle
+# reasons such as CI often running with elevated privileges in a container.
+testConstraint notWinCI [expr {
+    $::tcl_platform(platform) ne "windows" || ![info exists ::env(CI)]}]
+testConstraint notOSX [expr {$::tcl_platform(os) ne "Darwin"}]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -2229,7 +2233,7 @@ test io-27.5 {FlushChannel, implicit flush when buffer fills and on close} \
 set path(pipe)   [makeFile {} pipe]
 set path(output) [makeFile {} output]
 test io-27.6 {FlushChannel, async flushing, async close} \
-	{stdio asyncPipeClose knownMsvcBug} {
+	{stdio asyncPipeClose notWinCI} {
     # This test may fail on old Unix systems (seen on IRIX64 6.5) with
     # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
@@ -2833,7 +2837,7 @@ test io-29.31 {Tcl_WriteChars, background flush} stdio {
     set result
 } ok
 test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
-	{stdio asyncPipeClose knownMsvcBug} {
+	{stdio asyncPipeClose notWinCI} {
     # This test may fail on old Unix systems (seen on IRIX64 6.5) with
     # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
@@ -6087,7 +6091,7 @@ test io-45.3 {DeleteFileEvent, cleanup on close} {fileevent} {
 
 # Execute these tests only if the "testfevent" command is present.
 
-test io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileevent} {
+test io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileevent notOSX} {
     testfevent create
     set script "set f \[[list open $path(foo) r]]\n"
     append script {
@@ -6895,7 +6899,7 @@ test io-50.4 {testing handler deletion vs reentrant calls} -constraints {testcha
 } -cleanup {
     close $f
 } -result {{delrecursive calling recursive} {delrecursive deleting recursive}}
-test io-50.5 {testing handler deletion vs reentrant calls} -constraints {testchannelevent testservicemode} -setup {
+test io-50.5 {testing handler deletion vs reentrant calls} -constraints {testchannelevent testservicemode notOSX} -setup {
     file delete $path(test1)
 } -body {
     set f [open $path(test1) w]
@@ -7577,7 +7581,7 @@ test io-53.5 {CopyData: error during fcopy} {socket fcopy} {
     close $listen	;# This means the socket open never really succeeds
     fcopy $in $out -command [namespace code FcopyTestDone]
     variable fcopyTestDone
-    if ![info exists fcopyTestDone] {
+    if {![info exists fcopyTestDone]} {
 	vwait [namespace which -variable fcopyTestDone]		;# The error occurs here in the b.g.
     }
     close $in
@@ -7596,7 +7600,7 @@ test io-53.6 {CopyData: error during fcopy} {stdio fcopy} {
     set out [open $path(test1) w]
     fcopy $in $out -command [namespace code FcopyTestDone]
     variable fcopyTestDone
-    if ![info exists fcopyTestDone] {
+    if {![info exists fcopyTestDone]} {
 	vwait [namespace which -variable fcopyTestDone]
     }
     catch {close $in}
@@ -7643,7 +7647,7 @@ test io-53.7 {CopyData: Flooding fcopy from pipe} {stdio fcopy} {
     set out [open $path(test1) w]
     doFcopy $in $out
     variable fcopyTestDone
-    if ![info exists fcopyTestDone] {
+    if {![info exists fcopyTestDone]} {
 	vwait [namespace which -variable fcopyTestDone]
     }
     catch {close $in}
@@ -8131,7 +8135,7 @@ test io-53.17 {[7c187a3773] MBWrite: proper inQueueTail handling} -setup {
     removeFile out
 } -result {line 100 line}
 
-test io-54.1 {Recursive channel events} {socket fileevent knownMsvcBug} {
+test io-54.1 {Recursive channel events} {socket fileevent notWinCI} {
     # This test checks to see if file events are delivered during recursive
     # event loops when there is buffered data on the channel.
 
@@ -8758,16 +8762,16 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     set fn [makeFile {} io-74.1]
     set rfd [open $fn r]
     testobj freeallvars
-    interp create slave
+    interp create child
 } -constraints testobj -body {
     teststringobj set 1 [string range $rfd 0 end]
     read [teststringobj get 1]
     testobj duplicate 1 2
-    interp transfer {} $rfd slave
+    interp transfer {} $rfd child
     catch {read [teststringobj get 1]}
     read [teststringobj get 2]
 } -cleanup {
-    interp delete slave
+    interp delete child
     testobj freeallvars
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}

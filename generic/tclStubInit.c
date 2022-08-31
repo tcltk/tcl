@@ -67,6 +67,8 @@
 #undef TclWinNToHS
 #undef TclStaticPackage
 #undef Tcl_BackgroundError
+#undef TclGuessPackageName
+#undef TclGetLoadedPackages
 #define TclStaticPackage Tcl_StaticPackage
 #undef Tcl_UniCharToUtfDString
 #undef Tcl_UtfToUniCharDString
@@ -261,7 +263,27 @@ mp_err	TclBN_mp_mul_d(const mp_int *a, unsigned int b, mp_int *c) {
 #   define Tcl_ChannelCloseProc 0
 #   define Tcl_Close 0
 #   define Tcl_MacOSXOpenBundleResources 0
+#   define TclGuessPackageName 0
+#   define TclGetLoadedPackages 0
 #else
+
+#define TclGuessPackageName guessPackageName
+static int TclGuessPackageName(
+    TCL_UNUSED(const char *),
+    TCL_UNUSED(Tcl_DString *)) {
+    return 0;
+}
+#define TclGetLoadedPackages getLoadedPackages
+static int TclGetLoadedPackages(
+    Tcl_Interp *interp,		/* Interpreter in which to return information
+				 * or error message. */
+    const char *targetName)	/* Name of target interpreter or NULL. If
+				 * NULL, return info about all interps;
+				 * otherwise, just return info about this
+				 * interpreter. */
+{
+    return TclGetLoadedPackagesEx(interp, targetName, NULL);
+}
 
 mp_err TclBN_mp_div_3(const mp_int *a, mp_int *c, unsigned int *d) {
     mp_digit d2;
@@ -450,7 +472,7 @@ void *TclWinGetTclInstance()
 int
 TclpGetPid(Tcl_Pid pid)
 {
-    return (int) (size_t) pid;
+    return (int)(size_t)pid;
 }
 
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
@@ -1312,7 +1334,7 @@ const TclStubs tclStubs = {
     Tcl_CreateInterp, /* 94 */
     Tcl_CreateMathFunc, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
-    Tcl_CreateSlave, /* 97 */
+    Tcl_CreateChild, /* 97 */
     Tcl_CreateTimerHandler, /* 98 */
     Tcl_CreateTrace, /* 99 */
     Tcl_DeleteAssocData, /* 100 */
@@ -1379,7 +1401,7 @@ const TclStubs tclStubs = {
     Tcl_GetErrno, /* 161 */
     Tcl_GetHostName, /* 162 */
     Tcl_GetInterpPath, /* 163 */
-    Tcl_GetMaster, /* 164 */
+    Tcl_GetParent, /* 164 */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
 #if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
@@ -1395,7 +1417,7 @@ const TclStubs tclStubs = {
     Tcl_Gets, /* 169 */
     Tcl_GetsObj, /* 170 */
     Tcl_GetServiceMode, /* 171 */
-    Tcl_GetSlave, /* 172 */
+    Tcl_GetChild, /* 172 */
     Tcl_GetStdChannel, /* 173 */
     Tcl_GetStringResult, /* 174 */
     Tcl_GetVar, /* 175 */

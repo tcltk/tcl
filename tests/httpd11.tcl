@@ -237,7 +237,7 @@ proc Accept {chan addr port} {
 }
 
 proc Control {chan} {
-    if {[gets $chan line] != -1} {
+    if {[gets $chan line] >= 0} {
         if {[string trim $line] eq "quit"} {
             set ::forever 1
         }

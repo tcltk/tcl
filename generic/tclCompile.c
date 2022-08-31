@@ -848,7 +848,7 @@ TclSetByteCodeFromAny(
      * faster code in some cases, and more compact code in more.
      */
 
-    if (Tcl_GetMaster(interp) == NULL &&
+    if (Tcl_GetParent(interp) == NULL &&
 	    !Tcl_LimitTypeEnabled(interp, TCL_LIMIT_COMMANDS|TCL_LIMIT_TIME)
 	    && IsCompactibleCompileEnv(&compEnv)) {
 	TclFreeCompileEnv(&compEnv);
@@ -1746,7 +1746,7 @@ TclWordKnownAtCompileTime(
     }
     tokenPtr++;
     if (valuePtr != NULL) {
-	tempPtr = Tcl_NewObj();
+	TclNewObj(tempPtr);
 	Tcl_IncrRefCount(tempPtr);
     }
     while (numComponents--) {
@@ -1834,7 +1834,7 @@ CompileCmdLiteral(
     bytes = TclGetStringFromObj(cmdObj, &numBytes);
     cmdLitIdx = TclRegisterLiteral(envPtr, bytes, numBytes, extraLiteralFlags);
 
-    if (cmdPtr) {
+    if (cmdPtr && TclRoutineHasName(cmdPtr)) {
 	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
     }
     TclEmitPush(cmdLitIdx, envPtr);
@@ -2035,7 +2035,7 @@ CompileCommandTokens(
     Interp *iPtr = (Interp *) interp;
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
-    Tcl_Obj *cmdObj = Tcl_NewObj();
+    Tcl_Obj *cmdObj;
     Command *cmdPtr = NULL;
     int code = TCL_ERROR;
     int cmdKnown, expand = -1;
@@ -2050,6 +2050,7 @@ CompileCommandTokens(
 
     /* Pre-Compile */
 
+    TclNewObj(cmdObj);
     envPtr->numCommands++;
     EnterCmdStartData(envPtr, cmdIdx,
 	    parsePtr->commandStart - envPtr->source, startCodeOffset);

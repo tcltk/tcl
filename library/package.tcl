@@ -3,8 +3,8 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994-1998 Sun Microsystems, Inc.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994-1998 Sun Microsystems, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -237,7 +237,7 @@ proc pkg_mkIndex {args} {
 	$c eval [list set ::tcl::file $file]
 	$c eval [list set ::tcl::direct $direct]
 
-	# Download needed procedures into the slave because we've just deleted
+	# Download needed procedures into the child because we've just deleted
 	# the unknown procedure.  This doesn't handle procedures with default
 	# arguments.
 
@@ -409,6 +409,7 @@ proc pkg_mkIndex {args} {
     }
 
     set f [open [file join $dir pkgIndex.tcl] w]
+    fconfigure $f -translation lf
     puts $f $index
     close $f
 }

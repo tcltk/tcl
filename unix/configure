@@ -1429,8 +1429,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-encoding         encoding for configuration values (default:
-                          iso8859-1)
+  --with-encoding         encoding for configuration values (default: utf-8)
   --with-system-libtommath
                           use external libtommath (default: true if available,
                           false otherwise)
@@ -3982,7 +3981,7 @@ _ACEOF
 
     else
 
-$as_echo "#define TCL_CFGVAL_ENCODING \"iso8859-1\"" >>confdefs.h
+$as_echo "#define TCL_CFGVAL_ENCODING \"utf-8\"" >>confdefs.h
 
     fi
 
@@ -5036,7 +5035,7 @@ fi
     if test "$GCC" = yes; then :
 
 	CFLAGS_OPTIMIZE=-O2
-	CFLAGS_WARNING="-Wall -Wextra -Wwrite-strings -Wpointer-arith"
+	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith"
 	case "${CC}" in
 	    *++|*++-*)
 		;;
@@ -5310,7 +5309,7 @@ fi
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	CYGWIN_*)
+	CYGWIN_*|MINGW32_*|MSYS_*)
 	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
@@ -6559,7 +6558,7 @@ fi
 	case $system in
 	    AIX-*) ;;
 	    BSD/OS*) ;;
-	    CYGWIN_*) ;;
+	    CYGWIN_*|MINGW32_*|MSYS_*) ;;
 	    HP_UX*) ;;
 	    Darwin-*) ;;
 	    IRIX*) ;;
@@ -8639,7 +8638,7 @@ else
 int
 main ()
 {
-struct tm tm; tm.tm_gmtoff;
+struct tm tm; (void)tm.tm_gmtoff;
   ;
   return 0;
 }

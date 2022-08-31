@@ -966,7 +966,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     CFLAGS_DEBUG=-g
     AS_IF([test "$GCC" = yes], [
 	CFLAGS_OPTIMIZE=-O2
-	CFLAGS_WARNING="-Wall -Wextra -Wwrite-strings -Wpointer-arith"
+	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith"
 	case "${CC}" in
 	    *++|*++-*)
 		;;
@@ -1083,7 +1083,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	CYGWIN_*)
+	CYGWIN_*|MINGW32_*|MSYS_*)
 	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
@@ -1783,7 +1783,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 	case $system in
 	    AIX-*) ;;
 	    BSD/OS*) ;;
-	    CYGWIN_*) ;;
+	    CYGWIN_*|MINGW32_*|MSYS_*) ;;
 	    HP_UX*) ;;
 	    Darwin-*) ;;
 	    IRIX*) ;;
@@ -2132,7 +2132,7 @@ AC_DEFUN([SC_TIME_HANDLER], [
     fi
 
     AC_CACHE_CHECK([tm_gmtoff in struct tm], tcl_cv_member_tm_gmtoff, [
-	AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_gmtoff;],
+	AC_TRY_COMPILE([#include <time.h>], [struct tm tm; (void)tm.tm_gmtoff;],
 	    tcl_cv_member_tm_gmtoff=yes, tcl_cv_member_tm_gmtoff=no)])
     if test $tcl_cv_member_tm_gmtoff = yes ; then
 	AC_DEFINE(HAVE_TM_GMTOFF, 1, [Should we use the tm_gmtoff field of struct tm?])
@@ -2445,14 +2445,14 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 AC_DEFUN([SC_TCL_CFG_ENCODING], [
     AC_ARG_WITH(encoding,
 	AC_HELP_STRING([--with-encoding],
-	    [encoding for configuration values (default: iso8859-1)]),
+	    [encoding for configuration values (default: utf-8)]),
 	with_tcencoding=${withval})
 
     if test x"${with_tcencoding}" != x ; then
 	AC_DEFINE_UNQUOTED(TCL_CFGVAL_ENCODING,"${with_tcencoding}",
 	    [What encoding should be used for embedded configuration info?])
     else
-	AC_DEFINE(TCL_CFGVAL_ENCODING,"iso8859-1",
+	AC_DEFINE(TCL_CFGVAL_ENCODING,"utf-8",
 	    [What encoding should be used for embedded configuration info?])
     fi
 ])

@@ -205,7 +205,7 @@ TclThread_Init(
 
 static int
 ThreadObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -413,7 +413,7 @@ ThreadObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 		Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT)));
 	return TCL_OK;
     }
@@ -1105,7 +1105,7 @@ ThreadFreeProc(
 static int
 ThreadDeleteEvent(
     Tcl_Event *eventPtr,	/* Really ThreadEvent */
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     if (eventPtr->proc == ThreadEventProc) {
 	ckfree(((ThreadEvent *) eventPtr)->script);

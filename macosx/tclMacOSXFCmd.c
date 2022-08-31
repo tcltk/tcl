@@ -192,11 +192,11 @@ TclMacOSXGetFileAttribute(
 		OSSwapBigToHostInt32(finder->type));
 	break;
     case MACOSX_HIDDEN_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewWideIntObj(
+	TclNewIntObj(*attributePtrPtr,
 		(finder->fdFlags & kFinfoIsInvisible) != 0);
 	break;
     case MACOSX_RSRCLENGTH_ATTRIBUTE:
-	*attributePtrPtr = Tcl_NewWideIntObj(*rsrcForkSize);
+	TclNewIntObj(*attributePtrPtr, *rsrcForkSize);
 	break;
     }
     return TCL_OK;

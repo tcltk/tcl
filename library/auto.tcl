@@ -3,8 +3,8 @@
 # utility procs formerly in init.tcl dealing with auto execution of commands
 # and can be auto loaded themselves.
 #
-# Copyright (c) 1991-1993 The Regents of the University of California.
-# Copyright (c) 1994-1998 Sun Microsystems, Inc.
+# Copyright © 1991-1993 The Regents of the University of California.
+# Copyright © 1994-1998 Sun Microsystems, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -265,6 +265,7 @@ proc auto_mkindex {dir args} {
     auto_mkindex_parser::cleanup
 
     set fid [open "tclIndex" w]
+    fconfigure $fid -translation lf
     puts -nonewline $fid $index
     close $fid
     cd $oldDir
@@ -291,6 +292,7 @@ proc auto_mkindex_old {dir args} {
 	set f ""
 	set error [catch {
 	    set f [open $file]
+	    fconfigure $f -eofchar \032
 	    while {[gets $f line] >= 0} {
 		if {[regexp {^proc[ 	]+([^ 	]*)} $line match procName]} {
 		    set procName [lindex [auto_qualify $procName "::"] 0]
@@ -309,6 +311,7 @@ proc auto_mkindex_old {dir args} {
     set f ""
     set error [catch {
 	set f [open tclIndex w]
+	fconfigure $f -translation lf
 	puts -nonewline $f $index
 	close $f
 	cd $oldDir
@@ -401,6 +404,7 @@ proc auto_mkindex_parser::mkindex {file} {
     set scriptFile $file
 
     set fid [open $file]
+    fconfigure $fid -eofchar \032
     set contents [read $fid]
     close $fid
 

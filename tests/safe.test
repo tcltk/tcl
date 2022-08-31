@@ -12,22 +12,20 @@
 #   - Tests 5.* test the example packages themselves before they
 #     are used to test Safe Base interpreters.
 # - Alternative tests using stock packages of Tcl 8.7 are in file
-#   safe-stock87.test.
+#   safe-stock.test.
 #
-# Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright © 1995-1996 Sun Microsystems, Inc.
+# Copyright © 1998-1999 Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.5-
-
 if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
+    package require tcltest 2.5
     namespace import -force ::tcltest::*
 }
 
-foreach i [interp slaves] {
+foreach i [interp children] {
     interp delete $i
 }
 
@@ -36,9 +34,9 @@ set ::auto_path [info library]
 set TestsDir [file normalize [file dirname [info script]]]
 set PathMapp [list $tcl_library TCLLIB $TestsDir TESTSDIR]
 
-proc getAutoPath {slave} {
-    set ap1 [lrange [lindex [safe::interpConfigure $slave -autoPath] 1] 0 end]
-    set ap2 [::safe::DetokPath $slave [interp eval $slave set ::auto_path]]
+proc getAutoPath {child} {
+    set ap1 [lrange [lindex [safe::interpConfigure $child -autoPath] 1] 0 end]
+    set ap2 [::safe::DetokPath $child [interp eval $child set ::auto_path]]
     list $ap1 -- $ap2
 }
 proc mapList {map listIn} {
@@ -70,8 +68,8 @@ testConstraint AutoSyncDefined 1
 
 test safe-1.1 {safe::interpConfigure syntax} -returnCodes error -body {
     safe::interpConfigure
-} -result {no value given for parameter "slave" (use -help for full usage) :
-    slave name () name of the slave}
+} -result {no value given for parameter "child" (use -help for full usage) :
+    child name () name of the child}
 test safe-1.2 {safe::interpCreate syntax, Sync Mode on} -returnCodes error -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
@@ -90,8 +88,8 @@ test safe-1.2 {safe::interpCreate syntax, Sync Mode on} -returnCodes error -setu
     Var/FlagName  Type     Value   Help
     ------------  ----     -----   ----
     (-help                         gives this help)
-    ?slave?       name     ()      name of the slave (optional)
-    -accessPath   list     ()      access path for the slave
+    ?child?       name     ()      name of the child (optional)
+    -accessPath   list     ()      access path for the child
     -noStatics    boolflag (false) prevent loading of statically linked pkgs
     -statics      boolean  (true)  loading of statically linked pkgs
     -nestedLoadOk boolflag (false) allow nested loading
@@ -115,18 +113,18 @@ test safe-1.2.1 {safe::interpCreate syntax, Sync Mode off} -returnCodes error -c
     Var/FlagName  Type     Value   Help
     ------------  ----     -----   ----
     (-help                         gives this help)
-    ?slave?       name     ()      name of the slave (optional)
-    -accessPath   list     ()      access path for the slave
+    ?child?       name     ()      name of the child (optional)
+    -accessPath   list     ()      access path for the child
     -noStatics    boolflag (false) prevent loading of statically linked pkgs
     -statics      boolean  (true)  loading of statically linked pkgs
     -nestedLoadOk boolflag (false) allow nested loading
     -nested       boolean  (false) nested loading
     -deleteHook   script   ()      delete hook
-    -autoPath     list     ()      ::auto_path for the slave}
+    -autoPath     list     ()      ::auto_path for the child}
 test safe-1.3 {safe::interpInit syntax} -returnCodes error -body {
     safe::interpInit -noStatics
 } -result {bad value "-noStatics" for parameter
-    slave name () name of the slave}
+    child name () name of the child}
 
 ###  2. Aliases in a new "interp create" interpreter.
 
@@ -225,10 +223,10 @@ test safe-4.6 {safe::interpDelete, indirectly} -setup {
 } -result ""
 
 ###  5. Test the example files before using them to test safe interpreters.
-###     The old test "safe-5.1" has been moved to "safe-stock86-9.8".
+###     The old test "safe-5.1" has been moved to "safe-stock-9.8".
 ###     A replacement test using example files is "safe-9.8".
 
-test safe-5.1 {example tclIndex commands, test in master interpreter} -setup {
+test safe-5.1 {example tclIndex commands, test in parent interpreter} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $TestsDir auto0 auto1] [file join $TestsDir auto0 auto2]
 } -body {
@@ -242,7 +240,7 @@ test safe-5.1 {example tclIndex commands, test in master interpreter} -setup {
     set ::auto_path $tmpAutoPath
     auto_reset
 } -match glob -result {0 ok1 0 ok2}
-test safe-5.2 {example tclIndex commands, negative test in master interpreter} -setup {
+test safe-5.2 {example tclIndex commands, negative test in parent interpreter} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $TestsDir auto0]
 } -body {
@@ -256,7 +254,7 @@ test safe-5.2 {example tclIndex commands, negative test in master interpreter} -
     set ::auto_path $tmpAutoPath
     auto_reset
 } -match glob -result {1 {invalid command name "report1"} 1 {invalid command name "report2"}}
-test safe-5.3 {example pkgIndex.tcl packages, test in master interpreter, child directories} -setup {
+test safe-5.3 {example pkgIndex.tcl packages, test in parent interpreter, child directories} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $TestsDir auto0]
 } -body {
@@ -273,7 +271,7 @@ test safe-5.3 {example pkgIndex.tcl packages, test in master interpreter, child 
     catch {rename HeresPackage1 {}}
     catch {rename HeresPackage2 {}}
 } -match glob -result {0 1.2.3 0 2.3.4 0 OK1 0 OK2}
-test safe-5.4 {example pkgIndex.tcl packages, test in master interpreter, main directories} -setup {
+test safe-5.4 {example pkgIndex.tcl packages, test in parent interpreter, main directories} -setup {
     set tmpAutoPath $::auto_path
     lappend ::auto_path [file join $TestsDir auto0 auto1] \
                         [file join $TestsDir auto0 auto2]
@@ -291,7 +289,7 @@ test safe-5.4 {example pkgIndex.tcl packages, test in master interpreter, main d
     catch {rename HeresPackage1 {}}
     catch {rename HeresPackage2 {}}
 } -match glob -result {0 1.2.3 0 2.3.4 0 OK1 0 OK2}
-test safe-5.5 {example modules packages, test in master interpreter, replace path} -setup {
+test safe-5.5 {example modules packages, test in parent interpreter, replace path} -setup {
     set oldTm [tcl::tm::path list]
     foreach path $oldTm {
         tcl::tm::path remove $path
@@ -317,7 +315,7 @@ test safe-5.5 {example modules packages, test in master interpreter, replace pat
     catch {namespace delete ::test0}
     catch {namespace delete ::mod1}
 } -match glob -result {0 0.5 0 1.0 0 2.0 -- res0 res1 res2}
-test safe-5.6 {example modules packages, test in master interpreter, append to path} -setup {
+test safe-5.6 {example modules packages, test in parent interpreter, append to path} -setup {
     tcl::tm::path add [file join $TestsDir auto0 modules]
 } -body {
     # Try to load the modules and run a command from each one.
@@ -385,7 +383,7 @@ test safe-7.1 {positive non-module package require, Sync Mode on} -setup {
 } -body {
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
-    #  package require in a slave works like in the master)
+    #  package require in a child works like in the parent)
     set v [interp eval $i {package require SafeTestPackage1}]
     # no error shall occur:
     interp eval $i {HeresPackage1}
@@ -408,9 +406,9 @@ test safe-7.2 {negative non-module package require with specific path and interp
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p* (not p1 if master has a module path)
+    # should add as p* (not p1 if parent has a module path)
     set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
-    # should add as p* (not p2 if master has a module path)
+    # should add as p* (not p2 if parent has a module path)
     set token3 [safe::interpAddToAccessPath $i [file join $TestsDir auto0]]
     set confA [safe::interpConfigure $i]
     set mappA [mapList $PathMapp [dict get $confA -accessPath]]
@@ -426,7 +424,7 @@ test safe-7.2 {negative non-module package require with specific path and interp
         1 {can't find package SafeTestPackage1} --\
         {TCLLIB */dummy/unixlike/test/path TESTSDIR/auto0} -- {}}
 test safe-7.3 {check that safe subinterpreters work} {
-    set g [interp slaves]
+    set g [interp children]
     if {$g ne {}} {
         append g { -- residue of an earlier test}
     }
@@ -441,7 +439,7 @@ test safe-7.3 {check that safe subinterpreters work} {
 } {{} {} ok {} 0 {}}
 test safe-7.3.1 {check that safe subinterpreters work with namespace names} -setup {
 } -body {
-    set g [interp slaves]
+    set g [interp children]
     if {$g ne {}} {
         append g { -- residue of an earlier test}
     }
@@ -468,7 +466,7 @@ test safe-7.4 {positive non-module package require with specific path and interp
     set i [safe::interpCreate -nostat -nested 1 -accessPath [list [info library]]]
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p* (not p1 if master has a module path)
+    # should add as p* (not p1 if parent has a module path)
     set token2 [safe::interpAddToAccessPath $i [file join $TestsDir auto0 auto1]]
     set confA [safe::interpConfigure $i]
     set mappA [mapList $PathMapp [dict get $confA -accessPath]]
@@ -547,7 +545,7 @@ test safe-8.3 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result {1 {permission denied} {{ERROR for slave a : ".": is a directory}}}
+} -result {1 {permission denied} {{ERROR for child a : ".": is a directory}}}
 test safe-8.4 {safe source control on file} -setup {
     set i "a"
     catch {safe::interpDelete $i}
@@ -563,7 +561,7 @@ test safe-8.4 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result {1 {permission denied} {{ERROR for slave a : "/abc/def": not in access_path}}}
+} -result {1 {permission denied} {{ERROR for child a : "/abc/def": not in access_path}}}
 test safe-8.5 {safe source control on file} -setup {
     set i "a"
     catch {safe::interpDelete $i}
@@ -583,7 +581,7 @@ test safe-8.5 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] blah]:no such file or directory"]]
+} -result [list 1 {no such file or directory} [list "ERROR for child a : [file join [info library] blah]:no such file or directory"]]
 test safe-8.6 {safe source control on file} -setup {
     set i "a"
     catch {safe::interpDelete $i}
@@ -601,7 +599,7 @@ test safe-8.6 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] blah.tcl]:no such file or directory"]]
+} -result [list 1 {no such file or directory} [list "ERROR for child a : [file join [info library] blah.tcl]:no such file or directory"]]
 test safe-8.7 {safe source control on file} -setup {
     set i "a"
     catch {safe::interpDelete $i}
@@ -621,7 +619,7 @@ test safe-8.7 {safe source control on file} -setup {
     safe::interpDelete $i
     rename safe-test-log {}
     unset i log
-} -result [list 1 {no such file or directory} [list "ERROR for slave a : [file join [info library] xxxxxxxxxxx.tcl]:no such file or directory"]]
+} -result [list 1 {no such file or directory} [list "ERROR for child a : [file join [info library] xxxxxxxxxxx.tcl]:no such file or directory"]]
 test safe-8.8 {safe source forbids -rsrc} emptyTest {
     # Disabled this test.  It was only useful for long unsupported
     # Mac OS 9 systems. [Bug 860a9f1945]
@@ -702,7 +700,7 @@ test safe-9.2 {safe interps' error in deleteHook} -setup {
     catch {rename testDelHook {}}
     rename safe-test-log {}
     unset i log res
-} -result {{} {arg1 arg2 a} {{NOTICE for slave a : About to delete} {ERROR for slave a : Delete hook error (being catched)} {NOTICE for slave a : Deleted}}}
+} -result {{} {arg1 arg2 a} {{NOTICE for child a : About to delete} {ERROR for child a : Delete hook error (being catched)} {NOTICE for child a : Deleted}}}
 test safe-9.3 {dual specification of statics} -returnCodes error -body {
     safe::interpCreate -stat true -nostat
 } -result {conflicting values given for -statics and -noStatics}
@@ -1069,8 +1067,8 @@ test safe-9.20 {check module loading, Sync Mode on} -setup {
         0 0.5 0 1.0 0 2.0 --\
         {TCLLIB TESTSDIR/auto0/modules TESTSDIR/auto0/modules/mod1\
          TESTSDIR/auto0/modules/mod2} -- res0 res1 res2}
-# - The command safe::InterpSetConfig adds the master's [tcl::tm::list] in
-#   tokenized form to the slave's access path, and then adds all the
+# - The command safe::InterpSetConfig adds the parent's [tcl::tm::list] in
+#   tokenized form to the child's access path, and then adds all the
 #   descendants, discovered recursively by using glob.
 # - The order of the directories in the list returned by glob is system-dependent,
 #   and therefore this is true also for (a) the order of token assignment to
@@ -1720,7 +1718,7 @@ rename buildEnvironment2 {}
 
 ### 14. Sanity checks on paths - module path, access path, auto_path.
 
-test safe-14.1 {Check that module path is the same as in the master interpreter [Bug 2964715]} -setup {
+test safe-14.1 {Check that module path is the same as in the parent interpreter [Bug 2964715]} -setup {
     set i [safe::interpCreate]
 } -body {
     set tm {}
@@ -1731,7 +1729,7 @@ test safe-14.1 {Check that module path is the same as in the master interpreter 
 } -cleanup {
     safe::interpDelete $i
 } -result [::tcl::tm::path list]
-test safe-14.2 {Check that first element of slave auto_path (and access path) is Tcl Library, Sync Mode on} -setup {
+test safe-14.2 {Check that first element of child auto_path (and access path) is Tcl Library, Sync Mode on} -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setSyncMode]
@@ -1757,7 +1755,7 @@ test safe-14.2 {Check that first element of slave auto_path (and access path) is
         safe::setSyncMode $SyncVal_TMP
     }
 } -result [list [info library] [info library]]
-test safe-14.2.1 {Check that first element of slave auto_path (and access path) is Tcl Library, Sync Mode off} -constraints AutoSyncDefined -setup {
+test safe-14.2.1 {Check that first element of child auto_path (and access path) is Tcl Library, Sync Mode off} -constraints AutoSyncDefined -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setSyncMode]
@@ -1786,7 +1784,7 @@ test safe-14.2.1 {Check that first element of slave auto_path (and access path) 
         safe::setSyncMode $SyncVal_TMP
     }
 } -result [list [info library] [info library] [info library]]
-test safe-14.3 {Check that first element of slave auto_path (and access path) is Tcl Library, even if not true for master, Sync Mode on} -setup {
+test safe-14.3 {Check that first element of child auto_path (and access path) is Tcl Library, even if not true for parent, Sync Mode on} -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setSyncMode]
@@ -1797,7 +1795,7 @@ test safe-14.3 {Check that first element of slave auto_path (and access path) is
     set lib2        [file dirname $lib1]
     set ::auto_TMP  $::auto_path
     set ::auto_path [list $lib2 $lib1]
-    # Unexpected order, should be reversed in the slave
+    # Unexpected order, should be reversed in the child
 
     set i [safe::interpCreate]
 } -body {
@@ -1814,7 +1812,7 @@ test safe-14.3 {Check that first element of slave auto_path (and access path) is
         safe::setSyncMode $SyncVal_TMP
     }
 } -result [list [info library] [info library]]
-test safe-14.3.1 {Check that first element of slave auto_path (and access path) is Tcl Library, even if not true for master, Sync Mode off} -constraints AutoSyncDefined -setup {
+test safe-14.3.1 {Check that first element of child auto_path (and access path) is Tcl Library, even if not true for parent, Sync Mode off} -constraints AutoSyncDefined -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setSyncMode]
@@ -1827,7 +1825,7 @@ test safe-14.3.1 {Check that first element of slave auto_path (and access path) 
     set lib2        [file dirname $lib1]
     set ::auto_TMP  $::auto_path
     set ::auto_path [list $lib2 $lib1]
-    # Unexpected order, should be reversed in the slave
+    # Unexpected order, should be reversed in the child
 
     set i [safe::interpCreate]
 } -body {
@@ -1996,7 +1994,7 @@ test safe-17.1 {cf. safe-7.1 - positive non-module package require, Sync Mode of
         error {This test is meaningful only if the command ::safe::setSyncMode is defined}
     }
     # Without AutoPathSync, we need a more complete auto_path,
-    # because the slave will use the same value.
+    # because the child will use the same value.
     set lib1        [info library]
     set lib2        [file join $TestsDir auto0]
     set ::auto_TMP  $::auto_path
@@ -2007,7 +2005,7 @@ test safe-17.1 {cf. safe-7.1 - positive non-module package require, Sync Mode of
 } -body {
     # no error shall occur:
     # (because the default access_path shall include 1st level sub dirs so
-    #  package require in a slave works like in the master)
+    #  package require in a child works like in the parent)
     set v [interp eval $i {package require SafeTestPackage1}]
     # no error shall occur:
     interp eval $i HeresPackage1
@@ -2034,9 +2032,9 @@ test safe-17.2 {cf. safe-7.2 - negative non-module package require with specific
     interp eval $i {set ::auto_path [list {$p(:0:)}]}
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
-    # should add as p* (not p1 if master has a module path)
+    # should add as p* (not p1 if parent has a module path)
     set token2 [safe::interpAddToAccessPath $i "/dummy/unixlike/test/path"]
-    # should add as p* (not p2 if master has a module path)
+    # should add as p* (not p2 if parent has a module path)
     set token3 [safe::interpAddToAccessPath $i [file join $TestsDir auto0]]
     # an error shall occur (SafeTestPackage1 is not in auto0 but a subdirectory)
     list $auto1 $token1 $token2 $token3 \
@@ -2054,7 +2052,7 @@ test safe-17.2 {cf. safe-7.2 - negative non-module package require with specific
                             $TestsDir/auto0]}\
         -statics 0 -nested 1 -deleteHook {} -autoPath {}} {}"
 # (not a counterpart of safe-7.3)
-test safe-17.3 {Check that default auto_path is the same as in the master interpreter, Sync Mode off} -constraints AutoSyncDefined -setup {
+test safe-17.3 {Check that default auto_path is the same as in the parent interpreter, Sync Mode off} -constraints AutoSyncDefined -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setSyncMode]
@@ -2097,10 +2095,10 @@ test safe-17.4 {cf. safe-7.4 - positive non-module package require with specific
     # should not add anything (p0)
     set token1 [safe::interpAddToAccessPath $i [info library]]
 
-    # should add as p* (not p1 if master has a module path)
+    # should add as p* (not p1 if parent has a module path)
     set token2 [safe::interpAddToAccessPath $i [file join $TestsDir auto0]]
 
-    # should add as p* (not p2 if master has a module path)
+    # should add as p* (not p2 if parent has a module path)
     set token3 [safe::interpAddToAccessPath $i [file join $TestsDir auto0 auto1]]
 
     # should not have been changed by Safe Base:
@@ -2149,7 +2147,7 @@ test safe-17.5 {cf. safe-7.5 - positive and negative module package require, inc
     }
 } -result {1 {can't find package test1} 0}
 
-### 18. Test tokenization of directories available to a slave.
+### 18. Test tokenization of directories available to a child.
 
 test safe-18.1 {Check that each directory of the default auto_path is a valid token, Sync Mode on} -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
@@ -2611,7 +2609,7 @@ test safe-19.14 {when interpConfigure changes the access path, ::auto_path uses 
         error {This test is meaningful only if the command ::safe::setSyncMode is defined}
     }
 } -body {
-    # Test that although -autoPath is unchanged, the slave's ::auto_path changes to
+    # Test that although -autoPath is unchanged, the child's ::auto_path changes to
     # reflect the changes in token mappings.
     set i [safe::interpCreate -accessPath [list $tcl_library \
                                             [file join $TestsDir auto0] \
@@ -2675,9 +2673,9 @@ test safe-19.15 {when interpConfigure changes the access path, ::auto_path uses 
         error {This test is meaningful only if the command ::safe::setSyncMode is defined}
     }
 } -body {
-    # Test that although -autoPath is unchanged, the slave's ::auto_path changes to
+    # Test that although -autoPath is unchanged, the child's ::auto_path changes to
     # reflect the changes in token mappings; and that it is based on the -autoPath
-    # value, not the previously restricted slave ::auto_path.
+    # value, not the previously restricted child ::auto_path.
     set i [safe::interpCreate -accessPath [list $tcl_library \
                                             [file join $TestsDir auto0]] \
                               -autoPath [list $tcl_library \
@@ -2741,7 +2739,7 @@ test safe-19.16 {default value for -accessPath and -autoPath on creation; -autoP
     set i [safe::interpCreate]
     set ::auto_path $tmpAutoPath
 } -body {
-    # Test that the -autoPath acquires and keeps the master's value unless otherwise specified.
+    # Test that the -autoPath acquires and keeps the parent's value unless otherwise specified.
 
     # Inspect.
     set confA [safe::interpConfigure $i]
@@ -3124,7 +3122,7 @@ test safe-19.24 {interpConfigure change the access path; check module loading, S
 
 set ::auto_path [list $tcl_library [file dirname $tcl_library] [file join $TestsDir auto0]]
 
-test safe-20.1 "create -accessPath NULL -autoPath NULL -> master's ::auto_path" -constraints AutoSyncDefined -setup {
+test safe-20.1 "create -accessPath NULL -autoPath NULL -> parent's ::auto_path" -constraints AutoSyncDefined -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setSyncMode]
@@ -3141,7 +3139,7 @@ test safe-20.1 "create -accessPath NULL -autoPath NULL -> master's ::auto_path" 
         safe::setSyncMode $SyncVal_TMP
     }
 } -result [list $::auto_path -- $::auto_path]
-test safe-20.2 "create -accessPath {} -autoPath NULL -> master's ::auto_path" -constraints AutoSyncDefined -setup {
+test safe-20.2 "create -accessPath {} -autoPath NULL -> parent's ::auto_path" -constraints AutoSyncDefined -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setSyncMode]
@@ -3349,7 +3347,7 @@ test safe-21.1 "interpConfigure -accessPath NULL -autoPath NULL -> no change" -c
         safe::setSyncMode $SyncVal_TMP
     }
 } -result [list [lrange $::auto_path 0 0] -- [lrange $::auto_path 0 0]]
-test safe-21.2 "interpConfigure -accessPath {} -autoPath NULL -> master's ::auto_path" -constraints AutoSyncDefined -setup {
+test safe-21.2 "interpConfigure -accessPath {} -autoPath NULL -> parent's ::auto_path" -constraints AutoSyncDefined -setup {
     set SyncExists [expr {[info commands ::safe::setSyncMode] ne {}}]
     if {$SyncExists} {
         set SyncVal_TMP [safe::setSyncMode]

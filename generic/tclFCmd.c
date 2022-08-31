@@ -904,7 +904,7 @@ FileBasename(
 	}
     }
     if (resultPtr == NULL) {
-	resultPtr = Tcl_NewObj();
+	TclNewObj(resultPtr);
     }
     Tcl_IncrRefCount(resultPtr);
     Tcl_DecrRefCount(splitPtr);
@@ -1085,7 +1085,7 @@ TclFileAttrsCmd(
 	}
 
 	if (Tcl_GetIndexFromObj(interp, objv[0], attributeStrings,
-		"option", INDEX_TEMP_TABLE, &index) != TCL_OK) {
+		"option", TCL_INDEX_TEMP_TABLE, &index) != TCL_OK) {
 	    goto end;
 	}
 	if (Tcl_FSFileAttrsGet(interp, index, filePtr,
@@ -1110,7 +1110,7 @@ TclFileAttrsCmd(
 
 	for (i = 0; i < objc ; i += 2) {
 	    if (Tcl_GetIndexFromObj(interp, objv[i], attributeStrings,
-		    "option", INDEX_TEMP_TABLE, &index) != TCL_OK) {
+		    "option", TCL_INDEX_TEMP_TABLE, &index) != TCL_OK) {
 		goto end;
 	    }
 	    if (i + 1 == objc) {

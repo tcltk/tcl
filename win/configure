@@ -3749,8 +3749,7 @@ fi
 _ACEOF
 
     else
-	# Default encoding on windows is not "iso8859-1"
-	$as_echo "#define TCL_CFGVAL_ENCODING \"cp1252\"" >>confdefs.h
+	$as_echo "#define TCL_CFGVAL_ENCODING \"utf-8\"" >>confdefs.h
 
     fi
 
@@ -4204,7 +4203,7 @@ $as_echo "using shared flags" >&6; }
 	SHLIB_LD='${CC} -shared'
 	SHLIB_LD_LIBS='${LIBS}'
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \$@ ${extra_ldflags} \
-	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\$@)"
+	    -Wl,--out-implib,\$(patsubst %.dll,lib%.dll.a,\$@)"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
 	DLLSUFFIX=".dll"
@@ -4216,7 +4215,7 @@ $as_echo "using shared flags" >&6; }
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wextra -Wwrite-strings -Wpointer-arith"
+	CFLAGS_WARNING="-Wall -Wextra -Wshadow -Wundef -Wwrite-strings -Wpointer-arith"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 
@@ -5296,7 +5295,11 @@ eval "TCL_STUB_LIB_SPEC=\"-L${libdir} ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_BUILD_STUB_LIB_PATH=\"`$CYGPATH $(pwd)`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
 
-eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
+if test ${SHARED_BUILD} = 0 ; then
+ eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
+else
+ eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${DLLSUFFIX}.a\""
+fi
 eval "TCL_BUILD_LIB_SPEC=\"-L`$CYGPATH $(pwd)` -ltcl${VER}${FLAGSUFFIX}\""
 eval "TCL_LIB_SPEC=\"-L${libdir} -ltcl${VER}${FLAGSUFFIX}\""
 
@@ -5442,7 +5445,7 @@ TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 
 
 
 
-ac_config_files="$ac_config_files Makefile tclConfig.sh tcl.hpj tclsh.exe.manifest"
+ac_config_files="$ac_config_files Makefile tclConfig.sh tclsh.exe.manifest"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -6151,7 +6154,6 @@ do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "tclConfig.sh") CONFIG_FILES="$CONFIG_FILES tclConfig.sh" ;;
-    "tcl.hpj") CONFIG_FILES="$CONFIG_FILES tcl.hpj" ;;
     "tclsh.exe.manifest") CONFIG_FILES="$CONFIG_FILES tclsh.exe.manifest" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

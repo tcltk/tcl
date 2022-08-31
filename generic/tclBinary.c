@@ -274,7 +274,7 @@ typedef struct ByteArray {
 				 * array. */
     unsigned int allocated;	/* The amount of space actually allocated
 				 * minus 1 byte. */
-    unsigned char bytes[1];	/* The array of bytes. The actual size of this
+    unsigned char bytes[TCLFLEXARRAY];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
 				 * above. */
 } ByteArray;
@@ -1163,7 +1163,7 @@ BinaryFormatCmd(
      * bytes and filling with nulls.
      */
 
-    resultPtr = Tcl_NewObj();
+    TclNewObj(resultPtr);
     buffer = Tcl_SetByteArrayLength(resultPtr, length);
     memset(buffer, 0, length);
 
@@ -1518,7 +1518,8 @@ BinaryScanCmd(
 	}
 	switch (cmd) {
 	case 'a':
-	case 'A': {
+	case 'A':
+	case 'C': {
 	    unsigned char *src;
 
 	    if (arg >= objc) {
@@ -1540,10 +1541,18 @@ BinaryScanCmd(
 	    size = count;
 
 	    /*
-	     * Trim trailing nulls and spaces, if necessary.
+	     * Apply C string semantics or trim trailing
+	     * nulls and spaces, if necessary.
 	     */
 
-	    if (cmd == 'A') {
+	    if (cmd == 'C') {
+		for (i = 0; i < size; i++) {
+		    if (src[i] == '\0') {
+			size = i;
+			break;
+		    }
+		}
+	    } else if (cmd == 'A') {
 		while (size > 0) {
 		    if (src[size - 1] != '\0' && src[size - 1] != ' ') {
 			break;
@@ -1595,7 +1604,7 @@ BinaryScanCmd(
 		}
 	    }
 	    src = buffer + offset;
-	    valuePtr = Tcl_NewObj();
+	    TclNewObj(valuePtr);
 	    Tcl_SetObjLength(valuePtr, count);
 	    dest = TclGetString(valuePtr);
 
@@ -1650,7 +1659,7 @@ BinaryScanCmd(
 		}
 	    }
 	    src = buffer + offset;
-	    valuePtr = Tcl_NewObj();
+	    TclNewObj(valuePtr);
 	    Tcl_SetObjLength(valuePtr, count);
 	    dest = TclGetString(valuePtr);
 
@@ -1734,7 +1743,7 @@ BinaryScanCmd(
 		if ((length - offset) < (count * size)) {
 		    goto done;
 		}
-		valuePtr = Tcl_NewObj();
+		TclNewObj(valuePtr);
 		src = buffer + offset;
 		for (i = 0; i < count; i++) {
 		    elementPtr = ScanNumber(src, cmd, flags, &numberCachePtr);
@@ -2376,8 +2385,9 @@ ScanNumber(
 		return (Tcl_Obj *)Tcl_GetHashValue(hPtr);
 	    }
 	    if (tablePtr->numEntries <= BINARY_SCAN_MAX_CACHE) {
-		Tcl_Obj *objPtr = Tcl_NewWideIntObj(value);
+		Tcl_Obj *objPtr;
 
+		TclNewIntObj(objPtr, value);
 		Tcl_IncrRefCount(objPtr);
 		Tcl_SetHashValue(hPtr, objPtr);
 		return objPtr;
@@ -2761,7 +2771,7 @@ BinaryEncode64(
 	maxlen = 0;
     }
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
     if (count > 0) {
 	unsigned char *cursor = NULL;
@@ -2913,7 +2923,7 @@ BinaryEncodeUu(
      * enough".
      */
 
-    resultObj = Tcl_NewObj();
+    TclNewObj(resultObj);
     offset = 0;
     data = Tcl_GetByteArrayFromObj(objv[objc - 1], &count);
     rawLength = (lineLength - 1) * 3 / 4;

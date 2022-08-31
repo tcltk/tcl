@@ -415,9 +415,6 @@ _INSTALLDIR=$(_INSTALLDIR)\lib
 # NATIVE_ARCH - set to IX86 or AMD64 for the host machine
 # MACHINE - same as $(ARCH) - legacy
 # _VC_MANIFEST_EMBED_{DLL,EXE} - commands for embedding a manifest if needed
-# CFG_ENCODING - set to an character encoding.
-#   TBD - this is passed to compiler as TCL_CFGVAL_ENCODING but can't
-#   see where it is used
 
 cc32		= $(CC)   # built-in default.
 link32		= link
@@ -503,10 +500,6 @@ _VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -ou
 _VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
 !endif
 
-!ifndef CFG_ENCODING
-CFG_ENCODING	= \"cp1252\"
-!endif
-
 ################################################################
 # 4. Build the nmakehlp program
 # This is a helper app we need to overcome nmake's limiting
@@ -514,7 +507,7 @@ CFG_ENCODING	= \"cp1252\"
 # information about supported compiler options etc.
 #
 # Tcl itself will always use the nmakehlp.c program which is
-# in its own source. This is the "master" copy and kept updated.
+# in its own source. It will be kept updated there.
 #
 # Extensions built against an installed Tcl will use the installed
 # copy of Tcl's nmakehlp.c if there is one and their own version
@@ -1292,7 +1285,7 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\..\include
 # baselibs - minimum Windows libraries required. Parent makefile can
 #    define PRJ_LIBS before including rules.rc if additional libs are needed
 
-OPTDEFINES	= /DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) /DSTDC_HEADERS
+OPTDEFINES	= /DSTDC_HEADERS
 !if $(VCVERSION) >= 1600
 OPTDEFINES	= $(OPTDEFINES) /DHAVE_STDINT_H=1
 !else
@@ -1669,7 +1662,7 @@ default-shell: default-setup $(PROJECT)
 !ifdef RCFILE
 
 # Note: don't use $** in below rule because there may be other dependencies
-# and only the "master" rc must be passed to the resource compiler
+# and only the "main" rc must be passed to the resource compiler
 $(TMP_DIR)\$(PROJECT).res: $(RCDIR)\$(PROJECT).rc
 	$(RESCMD) $(RCDIR)\$(PROJECT).rc
 
@@ -1723,7 +1716,7 @@ DISABLE_IMPLICIT_RULES = 0
 
 !if !$(DISABLE_IMPLICIT_RULES)
 # Implicit rule definitions - only for building library objects. For stubs and
-# main application, the master makefile should define explicit rules.
+# main application, the makefile should define explicit rules.
 
 {$(ROOT)}.c{$(TMP_DIR)}.obj::
 	$(CCPKGCMD) @<<

@@ -10,7 +10,7 @@ exec tclsh "$0" ${1+"$@"}
 #
 #----------------------------------------------------------------------
 #
-# Copyright (c) 2018 by Sean Woods.  All rights reserved.
+# Copyright (c) 2018 Sean Woods.  All rights reserved.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #----------------------------------------------------------------------
