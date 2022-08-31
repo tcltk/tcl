@@ -4414,6 +4414,7 @@ Tcl_LseqObjCmd(
 /*    All other argument errors */
     default:
 	 Tcl_WrongNumArgs(interp, 1, objv, "n ??op? n ??by? n??");
+	 status = TCL_ERROR;
 	 goto done;
 	 break;
     }
