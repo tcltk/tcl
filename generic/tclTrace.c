@@ -2634,6 +2634,7 @@ TclCallVarTraces(
     Tcl_InterpState state = NULL;
     Tcl_HashEntry *hPtr;
     int traceflags = flags & VAR_ALL_TRACES;
+    const char *element;
 
     /*
      * If there are already similar trace functions active for the variable,
@@ -2683,6 +2684,20 @@ TclCallVarTraces(
 		break;
 	    }
 	}
+    }
+
+    /* Keep the original pointer for possible use in an error message */
+    element = part2;
+    if (part2 == NULL) {
+        if (TclIsVarArrayElement(varPtr)) {
+            Tcl_Obj *keyObj = VarHashGetKey(varPtr);
+            part2 = Tcl_GetString(keyObj);
+        }
+    } else if ((flags & VAR_TRACED_UNSET) && !(flags & VAR_ARRAY_ELEMENT)) {
+        /* On unset traces, part2 has already been set by the caller, and
+         * the VAR_ARRAY_ELEMENT flag indicates whether the accessed
+         * variable actually has a second part, or is a scalar */
+        element = NULL;
     }
 
     /*
@@ -2805,13 +2820,13 @@ TclCallVarTraces(
 
 	    Tcl_AppendObjToErrorInfo((Tcl_Interp *)iPtr, Tcl_ObjPrintf(
 		    "\n    (%s trace on \"%s%s%s%s\")", type, part1,
-		    (part2 ? "(" : ""), (part2 ? part2 : ""),
-		    (part2 ? ")" : "") ));
+		    (element ? "(" : ""), (element ? element : ""),
+		    (element ? ")" : "") ));
 	    if (disposeFlags & TCL_TRACE_RESULT_OBJECT) {
-		TclVarErrMsg((Tcl_Interp *) iPtr, part1, part2, verb,
+		TclVarErrMsg((Tcl_Interp *) iPtr, part1, element, verb,
 			TclGetString((Tcl_Obj *) result));
 	    } else {
-		TclVarErrMsg((Tcl_Interp *) iPtr, part1, part2, verb, result);
+		TclVarErrMsg((Tcl_Interp *) iPtr, part1, element, verb, result);
 	    }
 	    iPtr->flags &= ~(ERR_ALREADY_LOGGED);
 	    Tcl_DiscardInterpState(state);

@@ -60,10 +60,6 @@ static struct {
 
 #define tNTL sizeof(techar)
 
-/* Copied from tclVar.c - should possibly be moved to tclInt.h */
-#define VarHashGetKey(varPtr) \
-    (((VarInHash *)(varPtr))->entry.key.objPtr)
-
 /*
  * Declarations for local functions defined in this file:
  */
@@ -648,26 +644,11 @@ EnvTraceProc(
     }
 
     /*
-     * When an env array element is accessed via an upvar reference, there
-     * are two possibilities:
-     * 1. The upvar references the complete array. In this case name1 may be
-     *    something else than "env", but that doesn't affect anything. name2
-     *    will still be the correct name for the enviroment variable to use.
-     * 2. The upvar references a single element of the array. In this case
-     *    name2 will be NULL and name1 is the name of the alias. This alias
-     *    must be resolved to the actual key of the array element.
+     * If name2 is NULL, then return and do nothing.
      */
 
     if (name2 == NULL) {
-	Var *varPtr, *arrayPtr;
-	Tcl_Obj *name;
-
-	name = Tcl_NewStringObj(name1, -1);
-	Tcl_IncrRefCount(name);
-	varPtr = TclObjLookupVarEx(interp, name, NULL, /*flags*/ 0,
-	  /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
-	Tcl_DecrRefCount(name);
-	name2 = Tcl_GetString(VarHashGetKey(varPtr));
+	return NULL;
     }
 
     /*

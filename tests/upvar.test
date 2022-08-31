@@ -221,7 +221,7 @@ test upvar-5.4 {read trace on upvar array element} -body {
     set x ---
     p1 foo bar
     set x
-} -result {{x1 {} read} x1}
+} -result {{x1 c read} x1}
 test upvar-5.5 {write trace on upvar array element} -body {
     proc p1 {a b} {
 	array set foo {c 22 d 33}
@@ -236,7 +236,7 @@ test upvar-5.5 {write trace on upvar array element} -body {
     set x ---
     p1 foo bar
     set x
-} -result {{x1 {} write} x1}
+} -result {{x1 c write} x1}
 test upvar-5.6 {unset trace on upvar array element} -body {
     proc p1 {a b} {
 	array set foo {c 22 d 33}
@@ -251,7 +251,7 @@ test upvar-5.6 {unset trace on upvar array element} -body {
     set x ---
     p1 foo bar
     set x
-} -result {{x1 {} unset} x1}
+} -result {{x1 c unset} x1}
 test upvar-5.7 {trace on non-existent upvar array element} -body {
     proc p1 {a b} {
 	array set foo {}
@@ -267,7 +267,7 @@ test upvar-5.7 {trace on non-existent upvar array element} -body {
     set x ---
     lappend x [p1 foo bar]
     set x
-} -result {{x1 {} write} x1 {hi there}}
+} -result {{x1 hi write} x1 {hi there}}
 
 test upvar-6.1 {retargeting an upvar} {
     proc p1 {} {

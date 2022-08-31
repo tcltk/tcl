@@ -108,9 +108,6 @@ VarHashNextVar(
     return VarHashGetValue(hPtr);
 }
 
-#define VarHashGetKey(varPtr) \
-    (((VarInHash *)(varPtr))->entry.key.objPtr)
-
 #define VarHashDeleteTable(tablePtr) \
     Tcl_DeleteHashTable(&(tablePtr)->table)
 
@@ -2580,9 +2577,23 @@ UnsetVarStruct(
 
 	if ((dummyVar.flags & VAR_TRACED_UNSET)
 		|| (arrayPtr && (arrayPtr->flags & VAR_TRACED_UNSET))) {
+
+            /*
+             * Pass the array element name to TclObjCallVarTraces(), because
+             * it cannot be determined from dummyVar. Alternatively, indicate
+             * via flags whether the variable involved in the code that caused
+             * the trace to be triggered was an array element, for the correct
+             * formatting of error messages.
+             */
+            if (part2Ptr) {
+                flags |= VAR_ARRAY_ELEMENT;
+            } else if (TclIsVarArrayElement(varPtr)) {
+                part2Ptr = VarHashGetKey(varPtr);
+            }
+
 	    dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	    TclObjCallVarTraces(iPtr, arrayPtr, &dummyVar, part1Ptr, part2Ptr,
-		    (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
+              (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
 			    | TCL_TRACE_UNSETS,
 		    /* leaveErrMsg */ 0, index);
 

@@ -872,6 +872,9 @@ typedef struct VarInHash {
 #define VarHashRefCount(varPtr) \
     ((VarInHash *) (varPtr))->refCount
 
+#define VarHashGetKey(varPtr) \
+    (((VarInHash *)(varPtr))->entry.key.objPtr)
+
 /*
  * Macros for direct variable access by TEBC.
  */
