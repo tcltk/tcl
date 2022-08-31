@@ -2258,14 +2258,6 @@ TclUpdateReturnInfo(
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_DEPRECATED
-Tcl_ObjCmdProc *
-TclGetObjInterpProc(void)
-{
-    return ObjInterpProc;
-}
-#endif /* TCL_NO_DEPRECATED */
-
 Tcl_ObjCmdProc2 *
 TclGetObjInterpProc(void)
 {
