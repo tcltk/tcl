@@ -133,9 +133,9 @@ static int		FileSeekProc(void *instanceData, long offset,
 			    int mode, int *errorCode);
 #endif
 static int		FileTruncateProc(void *instanceData,
-			    Tcl_WideInt length);
-static Tcl_WideInt	FileWideSeekProc(void *instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCode);
+			    long long length);
+static long long	FileWideSeekProc(void *instanceData,
+			    long long offset, int mode, int *errorCode);
 static void		FileWatchProc(void *instanceData, int mask);
 #ifdef SUPPORTS_TTY
 static int		TtyCloseProc(void *instanceData,
@@ -282,12 +282,15 @@ FileInputProc(
      * nonblocking, the read will never block.
      */
 
-    bytesRead = read(fsPtr->fd, buf, (size_t) toRead);
-    if (bytesRead >= 0) {
-	return bytesRead;
+    do {
+	bytesRead = read(fsPtr->fd, buf, (size_t) toRead);
+    } while ((bytesRead < 0) && (errno == EINTR));
+
+    if (bytesRead < 0) {
+	*errorCodePtr = errno;
+	return -1;
     }
-    *errorCodePtr = errno;
-    return -1;
+    return bytesRead;
 }
 
 /*
@@ -456,7 +459,7 @@ FileSeekProc(
     int *errorCodePtr)		/* To store error code. */
 {
     FileState *fsPtr = (FileState *)instanceData;
-    Tcl_WideInt oldLoc, newLoc;
+    long long oldLoc, newLoc;
 
     /*
      * Save our current place in case we need to roll-back the seek.
@@ -509,16 +512,16 @@ FileSeekProc(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 FileWideSeekProc(
     void *instanceData,	/* File state. */
-    Tcl_WideInt offset,		/* Offset to seek to. */
+    long long offset,		/* Offset to seek to. */
     int mode,			/* Relative to where should we seek? Can be
 				 * one of SEEK_START, SEEK_CUR or SEEK_END. */
     int *errorCodePtr)		/* To store error code. */
 {
     FileState *fsPtr = (FileState *)instanceData;
-    Tcl_WideInt newLoc;
+    long long newLoc;
 
     newLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
 
@@ -1857,12 +1860,11 @@ TclpGetDefaultStdChannel(
      * Some #def's to make the code a little clearer!
      */
 
-#define ZERO_OFFSET	((Tcl_SeekOffset) 0)
 #define ERROR_OFFSET	((Tcl_SeekOffset) -1)
 
     switch (type) {
     case TCL_STDIN:
-	if ((TclOSseek(0, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+	if ((TclOSseek(0, 0, SEEK_CUR) == ERROR_OFFSET)
 		&& (errno == EBADF)) {
 	    return NULL;
 	}
@@ -1871,7 +1873,7 @@ TclpGetDefaultStdChannel(
 	bufMode = "line";
 	break;
     case TCL_STDOUT:
-	if ((TclOSseek(1, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+	if ((TclOSseek(1, 0, SEEK_CUR) == ERROR_OFFSET)
 		&& (errno == EBADF)) {
 	    return NULL;
 	}
@@ -1880,7 +1882,7 @@ TclpGetDefaultStdChannel(
 	bufMode = "line";
 	break;
     case TCL_STDERR:
-	if ((TclOSseek(2, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+	if ((TclOSseek(2, 0, SEEK_CUR) == ERROR_OFFSET)
 		&& (errno == EBADF)) {
 	    return NULL;
 	}
@@ -1893,7 +1895,6 @@ TclpGetDefaultStdChannel(
 	break;
     }
 
-#undef ZERO_OFFSET
 #undef ERROR_OFFSET
 
     channel = Tcl_MakeFileChannel(INT2PTR(fd), mode);
@@ -2037,7 +2038,7 @@ Tcl_GetOpenFile(
 static int
 FileTruncateProc(
     void *instanceData,
-    Tcl_WideInt length)
+    long long length)
 {
     FileState *fsPtr = (FileState *)instanceData;
     int result;

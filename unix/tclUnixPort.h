@@ -95,6 +95,8 @@ extern "C" {
 #   define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 0x00000004
 #   define HANDLE void *
 #   define HINSTANCE void *
+#   define HMODULE void *
+#   define MAX_PATH 260
 #   define SOCKET unsigned int
 #   define WSAEWOULDBLOCK 10035
     typedef unsigned short WCHAR;
@@ -118,15 +120,18 @@ extern "C" {
 #pragma clang diagnostic pop
 #endif
 #   define timezone _timezone
+    extern int TclOSfstat(int fd, void *statBuf);
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
 #ifdef __cplusplus
 }
 #endif
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
+#   define TclOSfstat(fd, buf) fstat64(fd, (struct stat64 *)buf)
 #   define TclOSstat(name, buf) stat64(name, (struct stat64 *)buf)
 #   define TclOSlstat(name,buf) lstat64(name, (struct stat64 *)buf)
 #else
+#   define TclOSfstat(fd, buf) fstat(fd, (struct stat *)buf)
 #   define TclOSstat(name, buf) stat(name, (struct stat *)buf)
 #   define TclOSlstat(name, buf) lstat(name, (struct stat *)buf)
 #endif
@@ -142,16 +147,10 @@ extern "C" {
 #   include <sys/select.h>
 #endif
 #include <sys/stat.h>
-#ifdef TIME_WITH_SYS_TIME
-#   include <sys/time.h>
-#   include <time.h>
-#else
 #ifdef HAVE_SYS_TIME_H
 #   include <sys/time.h>
-#else
-#   include <time.h>
 #endif
-#endif
+#include <time.h>
 #ifndef NO_SYS_WAIT_H
 #   include <sys/wait.h>
 #endif

@@ -549,7 +549,7 @@ TclpOpenFile(
 	accessMode = (GENERIC_READ | GENERIC_WRITE);
 	break;
     default:
-	TclWinConvertError(ERROR_INVALID_FUNCTION);
+	Tcl_WinConvertError(ERROR_INVALID_FUNCTION);
 	return NULL;
     }
 
@@ -613,7 +613,7 @@ TclpOpenFile(
 	if ((err & 0xFFFFL) == ERROR_OPEN_FAILED) {
 	    err = (mode & O_CREAT) ? ERROR_FILE_EXISTS : ERROR_FILE_NOT_FOUND;
 	}
-	TclWinConvertError(err);
+	Tcl_WinConvertError(err);
 	return NULL;
     }
 
@@ -679,7 +679,7 @@ TclpCreateTempFile(
 	 * Convert the contents from UTF to native encoding
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
+	native = Tcl_UtfToExternalDString(NULL, contents, TCL_INDEX_NONE, &dstring);
 
 	toCopy = Tcl_DStringLength(&dstring);
 	for (p = native; toCopy > 0; p++, toCopy--) {
@@ -719,7 +719,7 @@ TclpCreateTempFile(
 	Tcl_DStringFree(&dstring);
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     CloseHandle(handle);
     DeleteFileW(name);
     return NULL;
@@ -784,7 +784,7 @@ TclpCreatePipe(
 	return 1;
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     return 0;
 }
 
@@ -825,7 +825,7 @@ TclpCloseFile(
 		    && (GetStdHandle(STD_ERROR_HANDLE) != filePtr->handle))) {
 	    if (filePtr->handle != NULL &&
 		    CloseHandle(filePtr->handle) == FALSE) {
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		ckfree(filePtr);
 		return -1;
 	    }
@@ -1026,7 +1026,7 @@ TclpCreateProcess(
 		0, TRUE, DUPLICATE_SAME_ACCESS);
     }
     if (startInfo.hStdInput == INVALID_HANDLE_VALUE) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't duplicate input handle: %s",
 		Tcl_PosixError(interp)));
@@ -1055,7 +1055,7 @@ TclpCreateProcess(
 		&startInfo.hStdOutput, 0, TRUE, DUPLICATE_SAME_ACCESS);
     }
     if (startInfo.hStdOutput == INVALID_HANDLE_VALUE) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't duplicate output handle: %s",
 		Tcl_PosixError(interp)));
@@ -1075,7 +1075,7 @@ TclpCreateProcess(
 		0, TRUE, DUPLICATE_SAME_ACCESS);
     }
     if (startInfo.hStdError == INVALID_HANDLE_VALUE) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"couldn't duplicate error handle: %s",
 		Tcl_PosixError(interp)));
@@ -1137,7 +1137,7 @@ TclpCreateProcess(
     if (CreateProcessW(NULL, (WCHAR *) Tcl_DStringValue(&cmdLine),
 	    NULL, NULL, TRUE, (DWORD) createFlags, NULL, NULL, &startInfo,
 	    &procInfo) == 0) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("couldn't execute \"%s\": %s",
 		argv[0], Tcl_PosixError(interp)));
 	goto end;
@@ -1285,12 +1285,12 @@ ApplicationType(
 
     applType = APPL_NONE;
     Tcl_DStringInit(&nameBuf);
-    Tcl_DStringAppend(&nameBuf, originalName, -1);
+    Tcl_DStringAppend(&nameBuf, originalName, TCL_INDEX_NONE);
     nameLen = Tcl_DStringLength(&nameBuf);
 
     for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
 	Tcl_DStringSetLength(&nameBuf, nameLen);
-	Tcl_DStringAppend(&nameBuf, extensions[i], -1);
+	Tcl_DStringAppend(&nameBuf, extensions[i], TCL_INDEX_NONE);
 	Tcl_DStringInit(&ds);
 	nativeName = Tcl_UtfToWCharDString(Tcl_DStringValue(&nameBuf),
 		Tcl_DStringLength(&nameBuf), &ds);
@@ -1311,7 +1311,7 @@ ApplicationType(
 	    continue;
 	}
 	Tcl_DStringInit(&ds);
-	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, -1, &ds));
+	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, TCL_INDEX_NONE, &ds));
 	Tcl_DStringFree(&ds);
 
 	ext = strrchr(fullName, '.');
@@ -1387,7 +1387,7 @@ ApplicationType(
     Tcl_DStringFree(&nameBuf);
 
     if (applType == APPL_NONE) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("couldn't execute \"%s\": %s",
 		originalName, Tcl_PosixError(interp)));
 	return APPL_NONE;
@@ -1403,7 +1403,7 @@ ApplicationType(
 
 	GetShortPathNameW(nativeFullPath, nativeFullPath, MAX_PATH);
 	Tcl_DStringInit(&ds);
-	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, -1, &ds));
+	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, TCL_INDEX_NONE, &ds));
 	Tcl_DStringFree(&ds);
     }
     return applType;
@@ -1628,7 +1628,7 @@ BuildCommandLine(
 	     * Nothing to escape.
 	     */
 
-	    Tcl_DStringAppend(&ds, arg, -1);
+	    Tcl_DStringAppend(&ds, arg, TCL_INDEX_NONE);
 	} else {
 	    start = arg;
 	    for (special = arg; *special != '\0'; ) {
@@ -1866,7 +1866,7 @@ Tcl_CreatePipe(
     sec.bInheritHandle = FALSE;
 
     if (!CreatePipe(&readHandle, &writeHandle, &sec, 0)) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"pipe creation failed: %s", Tcl_PosixError(interp)));
 	return TCL_ERROR;
@@ -2224,7 +2224,7 @@ PipeInputProc(
 	return bytesRead;
     }
 
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     if (errno == EPIPE) {
 	infoPtr->readFlags |= PIPE_EOF;
 	return 0;
@@ -2283,7 +2283,7 @@ PipeOutputProc(
      */
 
     if (infoPtr->writeError) {
-	TclWinConvertError(infoPtr->writeError);
+	Tcl_WinConvertError(infoPtr->writeError);
 	infoPtr->writeError = 0;
 	goto error;
     }
@@ -2318,7 +2318,7 @@ PipeOutputProc(
 
 	if (WriteFile(filePtr->handle, (LPVOID) buf, (DWORD) toWrite,
 		&bytesWritten, (LPOVERLAPPED) NULL) == FALSE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    goto error;
 	}
     }
@@ -2850,7 +2850,7 @@ WaitForRead(
 
 	if (PeekNamedPipe(handle, (LPVOID) NULL, (DWORD) 0,
 		(LPDWORD) NULL, &count, (LPDWORD) NULL) != TRUE) {
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 
 	    /*
 	     * Check to see if the peek failed because of EOF.
@@ -3260,7 +3260,7 @@ TclpOpenTemporaryFile(
 	    TCL_READABLE|TCL_WRITABLE);
 
   gotError:
-    TclWinConvertError(GetLastError());
+    Tcl_WinConvertError(GetLastError());
     return NULL;
 }
 
@@ -3574,9 +3574,7 @@ TclPipeThreadStop(
 	     * Cancel all sync-IO of this thread (may be blocked there).
 	     */
 
-	    if (tclWinProcs.cancelSynchronousIo) {
-		tclWinProcs.cancelSynchronousIo(hThread);
-	    }
+	    CancelSynchronousIo(hThread);
 
 	    /*
 	     * Wait at most 20 milliseconds for the reader thread to close

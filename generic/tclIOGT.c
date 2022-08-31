@@ -41,8 +41,8 @@ static void		TransformWatchProc(ClientData instanceData, int mask);
 static int		TransformGetFileHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
 static int		TransformNotifyProc(ClientData instanceData, int mask);
-static Tcl_WideInt	TransformWideSeekProc(ClientData instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCodePtr);
+static long long	TransformWideSeekProc(ClientData instanceData,
+			    long long offset, int mode, int *errorCodePtr);
 
 /*
  * Forward declarations of internal procedures. Secondly the procedures for
@@ -108,7 +108,7 @@ typedef struct ResultBuffer ResultBuffer;
 static inline void	ResultClear(ResultBuffer *r);
 static inline void	ResultInit(ResultBuffer *r);
 static inline int	ResultEmpty(ResultBuffer *r);
-static inline int	ResultCopy(ResultBuffer *r, unsigned char *buf,
+static inline size_t	ResultCopy(ResultBuffer *r, unsigned char *buf,
 			    size_t toRead);
 static inline void	ResultAdd(ResultBuffer *r, unsigned char *buf,
 			    size_t toWrite);
@@ -274,7 +274,7 @@ TclChannelTransform(
 	return TCL_ERROR;
     }
 
-    if (TCL_OK != Tcl_ListObjLength(interp, cmdObjPtr, &objc)) {
+    if (TCL_OK != TclListObjLengthM(interp, cmdObjPtr, &objc)) {
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj("-command value is not a list", -1));
 	return TCL_ERROR;
@@ -907,10 +907,10 @@ TransformSeekProc(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static long long
 TransformWideSeekProc(
     ClientData instanceData,	/* The channel to manipulate. */
-    Tcl_WideInt offset,		/* Size of movement. */
+    long long offset,		/* Size of movement. */
     int mode,			/* How to move. */
     int *errorCodePtr)		/* Location of error flag. */
 {
@@ -922,7 +922,7 @@ TransformWideSeekProc(
 #endif
     Tcl_DriverWideSeekProc *parentWideSeekProc =
 	    Tcl_ChannelWideSeekProc(parentType);
-    ClientData parentData = Tcl_GetChannelInstanceData(parent);
+    void *parentData = Tcl_GetChannelInstanceData(parent);
 
     if ((offset == 0) && (mode == SEEK_CUR)) {
 	/*
@@ -1368,13 +1368,13 @@ ResultEmpty(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline size_t
 ResultCopy(
     ResultBuffer *r,		/* The buffer to read from. */
     unsigned char *buf,		/* The buffer to copy into. */
     size_t toRead)		/* Number of requested bytes. */
 {
-    if (r->used == 0) {
+    if (ResultEmpty(r)) {
 	/*
 	 * Nothing to copy in the case of an empty buffer.
 	 */
@@ -1431,7 +1431,7 @@ ResultAdd(
     unsigned char *buf,		/* The buffer to read from. */
     size_t toWrite)		/* The number of bytes in 'buf'. */
 {
-    if (r->used + toWrite > r->allocated) {
+    if ((r->used + toWrite + 1) > r->allocated) {
 	/*
 	 * Extension of the internal buffer is required.
 	 */

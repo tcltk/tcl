@@ -517,7 +517,7 @@ TclpNativeSplitPath(
      */
 
     if (lenPtr != NULL) {
-	Tcl_ListObjLength(NULL, resultPtr, lenPtr);
+	TclListObjLengthM(NULL, resultPtr, lenPtr);
     }
     return resultPtr;
 }
@@ -547,6 +547,7 @@ TclpNativeSplitPath(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SplitPath
 void
 Tcl_SplitPath(
     const char *path,		/* Pointer to string containing a path. */
@@ -1332,7 +1333,7 @@ Tcl_GlobObjCmd(
 		return TCL_ERROR;
 	    }
 	    typePtr = objv[i+1];
-	    if (Tcl_ListObjLength(interp, typePtr, &length) != TCL_OK) {
+	    if (TclListObjLengthM(interp, typePtr, &length) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    i++;
@@ -1454,7 +1455,7 @@ Tcl_GlobObjCmd(
 	 * platform.
 	 */
 
-	Tcl_ListObjLength(interp, typePtr, &length);
+	TclListObjLengthM(interp, typePtr, &length);
 	if (length <= 0) {
 	    goto skipTypes;
 	}
@@ -1524,7 +1525,7 @@ Tcl_GlobObjCmd(
 	    } else {
 		Tcl_Obj *item;
 
-		if ((Tcl_ListObjLength(NULL, look, &len) == TCL_OK)
+		if ((TclListObjLengthM(NULL, look, &len) == TCL_OK)
 			&& (len == 3)) {
 		    Tcl_ListObjIndex(interp, look, 0, &item);
 		    if (!strcmp("macintosh", Tcl_GetString(item))) {
@@ -1631,7 +1632,7 @@ Tcl_GlobObjCmd(
     }
 
     if ((globFlags & TCL_GLOBMODE_NO_COMPLAIN) == 0) {
-	if (Tcl_ListObjLength(interp, Tcl_GetObjResult(interp),
+	if (TclListObjLengthM(interp, Tcl_GetObjResult(interp),
 		&length) != TCL_OK) {
 	    /*
 	     * This should never happen. Maybe we should be more dramatic.
@@ -2014,7 +2015,7 @@ TclGlob(
 	    }
 	}
 
-	Tcl_ListObjGetElements(NULL, filenamesObj, &objc, &objv);
+	TclListObjGetElementsM(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
 	    int len;
 	    const char *oldStr = TclGetStringFromObj(objv[i], &len);
@@ -2343,13 +2344,13 @@ DoGlob(
 	    int subdirc, i, repair = -1;
 	    Tcl_Obj **subdirv;
 
-	    result = Tcl_ListObjGetElements(interp, subdirsPtr,
+	    result = TclListObjGetElementsM(interp, subdirsPtr,
 		    &subdirc, &subdirv);
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
 
 		if (pathPtr == NULL && Tcl_GetString(subdirv[i])[0] == '~') {
-		    Tcl_ListObjLength(NULL, matchesObj, &repair);
+		    TclListObjLengthM(NULL, matchesObj, &repair);
 		    copy = subdirv[i];
 		    subdirv[i] = Tcl_NewStringObj("./", 2);
 		    Tcl_AppendObjToObj(subdirv[i], copy);
@@ -2362,7 +2363,7 @@ DoGlob(
 
 		    Tcl_DecrRefCount(subdirv[i]);
 		    subdirv[i] = copy;
-		    Tcl_ListObjLength(NULL, matchesObj, &end);
+		    TclListObjLengthM(NULL, matchesObj, &end);
 		    while (repair < end) {
 			const char *bytes;
 			int numBytes;
@@ -2600,44 +2601,44 @@ Tcl_GetDeviceTypeFromStat(
     return (int) statPtr->st_rdev;
 }
 
-Tcl_WideInt
+long long
 Tcl_GetAccessTimeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideInt) statPtr->st_atime;
+    return (long long) statPtr->st_atime;
 }
 
-Tcl_WideInt
+long long
 Tcl_GetModificationTimeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideInt) statPtr->st_mtime;
+    return (long long) statPtr->st_mtime;
 }
 
-Tcl_WideInt
+long long
 Tcl_GetChangeTimeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideInt) statPtr->st_ctime;
+    return (long long) statPtr->st_ctime;
 }
 
-Tcl_WideUInt
+unsigned long long
 Tcl_GetSizeFromStat(
     const Tcl_StatBuf *statPtr)
 {
-    return (Tcl_WideUInt) statPtr->st_size;
+    return (unsigned long long) statPtr->st_size;
 }
 
-Tcl_WideUInt
+unsigned long long
 Tcl_GetBlocksFromStat(
     const Tcl_StatBuf *statPtr)
 {
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-    return (Tcl_WideUInt) statPtr->st_blocks;
+    return (unsigned long long) statPtr->st_blocks;
 #else
     unsigned blksize = Tcl_GetBlockSizeFromStat(statPtr);
 
-    return ((Tcl_WideUInt) statPtr->st_size + blksize - 1) / blksize;
+    return ((unsigned long long) statPtr->st_size + blksize - 1) / blksize;
 #endif
 }
 

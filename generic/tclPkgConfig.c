@@ -2,7 +2,7 @@
  * tclPkgConfig.c --
  *
  *	This file contains the configuration information to embed into the tcl
- *	binary library.
+ *	library.
  *
  * Copyright © 2002 Andreas Kupries <andreas_kupries@users.sourceforge.net>
  *
@@ -93,6 +93,7 @@
 #endif
 
 static Tcl_Config const cfg[] = {
+#if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
     {"debug",			CFG_DEBUG},
     {"threaded",		CFG_THREADED},
     {"profiled",		CFG_PROFILED},
@@ -101,6 +102,7 @@ static Tcl_Config const cfg[] = {
     {"mem_debug",		CFG_MEMDEBUG},
     {"compile_debug",		CFG_COMPILE_DEBUG},
     {"compile_stats",		CFG_COMPILE_STATS},
+#endif
 
     /* Runtime paths to various stuff */
 
@@ -109,8 +111,9 @@ static Tcl_Config const cfg[] = {
     {"scriptdir,runtime",	CFG_RUNTIME_SCRDIR},
     {"includedir,runtime",	CFG_RUNTIME_INCDIR},
     {"docdir,runtime",		CFG_RUNTIME_DOCDIR},
+#if !defined(STATIC_BUILD)
     {"dllfile,runtime",		CFG_RUNTIME_DLLFILE},
-    {"zipfile,runtime",		CFG_RUNTIME_ZIPFILE},
+#endif
 
     /* Installation paths to various stuff */
 

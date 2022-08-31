@@ -3,7 +3,7 @@
 #	This script generates embeddable C source (in a .h file) from a .tcl
 #	script.
 #
-# Copyright (c) 2018 Donal K. Fellows
+# Copyright © 2018 Donal K. Fellows
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.

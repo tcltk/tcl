@@ -1154,7 +1154,7 @@ Tcl_ZlibStreamSetCompressionDictionary(
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
 
     if (compressionDictionaryObj && (NULL == TclGetBytesFromObj(NULL,
-	    compressionDictionaryObj, NULL))) {
+	    compressionDictionaryObj, (int *)NULL))) {
 	/* Missing or invalid compression dictionary */
 	compressionDictionaryObj = NULL;
     }
@@ -1370,7 +1370,7 @@ Tcl_ZlibStreamGet(
 		Tcl_DecrRefCount(zshPtr->currentInput);
 		zshPtr->currentInput = NULL;
 	    }
-	    Tcl_ListObjLength(NULL, zshPtr->inData, &listLen);
+	    TclListObjLengthM(NULL, zshPtr->inData, &listLen);
 	    if (listLen > 0) {
 		/*
 		 * There is more input available, get it from the list and
@@ -1419,7 +1419,7 @@ Tcl_ZlibStreamGet(
 		e = inflate(&zshPtr->stream, zshPtr->flush);
 	    }
 	};
-	Tcl_ListObjLength(NULL, zshPtr->inData, &listLen);
+	TclListObjLengthM(NULL, zshPtr->inData, &listLen);
 
 	while ((zshPtr->stream.avail_out > 0)
 		&& (e == Z_OK || e == Z_BUF_ERROR) && (listLen > 0)) {
@@ -1499,7 +1499,7 @@ Tcl_ZlibStreamGet(
 	    inflateEnd(&zshPtr->stream);
 	}
     } else {
-	Tcl_ListObjLength(NULL, zshPtr->outData, &listLen);
+	TclListObjLengthM(NULL, zshPtr->outData, &listLen);
 	if (count == -1) {
 	    count = 0;
 	    for (i=0; i<listLen; i++) {
@@ -1521,7 +1521,7 @@ Tcl_ZlibStreamGet(
 	dataPtr += existing;
 
 	while ((count > dataPos) &&
-		(Tcl_ListObjLength(NULL, zshPtr->outData, &listLen) == TCL_OK)
+		(TclListObjLengthM(NULL, zshPtr->outData, &listLen) == TCL_OK)
 		&& (listLen > 0)) {
 	    /*
 	     * Get the next chunk off our list of chunks and grab the data out
@@ -3709,7 +3709,7 @@ ZlibStackChannelTransform(
     if (compDictObj != NULL) {
 	cd->compDictObj = Tcl_DuplicateObj(compDictObj);
 	Tcl_IncrRefCount(cd->compDictObj);
-	Tcl_GetByteArrayFromObj(cd->compDictObj, NULL);
+	TclGetByteArrayFromObj(cd->compDictObj, NULL);
     }
 
     if (format == TCL_ZLIB_FORMAT_RAW) {
@@ -3957,7 +3957,7 @@ TclZlibInit(
      * Formally provide the package as a Tcl built-in.
      */
 
-#ifndef TCL_NO_DEPRECATED
+#if !defined(TCL_NO_DEPRECATED) && (TCL_MAJOR_VERSION < 9)
     Tcl_PkgProvide(interp, "zlib", TCL_ZLIB_VERSION);
 #endif
     return Tcl_PkgProvide(interp, "tcl::zlib", TCL_ZLIB_VERSION);
@@ -4072,18 +4072,18 @@ Tcl_ZlibInflate(
 
 unsigned int
 Tcl_ZlibCRC32(
-    unsigned int crc,
-    const char *buf,
-    int len)
+    TCL_UNUSED(unsigned int),
+    TCL_UNUSED(const unsigned char *),
+    TCL_UNUSED(int))
 {
     return 0;
 }
 
 unsigned int
 Tcl_ZlibAdler32(
-    unsigned int adler,
-    const char *buf,
-    int len)
+    TCL_UNUSED(unsigned int),
+    TCL_UNUSED(const unsigned char *),
+    TCL_UNUSED(int))
 {
     return 0;
 }

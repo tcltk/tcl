@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include <assert.h>
 
 /*
  * A pointer to a string that holds an initialization script that if non-NULL
@@ -281,7 +282,7 @@ static Tcl_ObjCmdProc	NRChildCmd;
 /*
  *----------------------------------------------------------------------
  *
- * TclSetPreInitScript --
+ * Tcl_SetPreInitScript --
  *
  *	This routine is used to change the value of the internal variable,
  *	tclPreInitScript.
@@ -296,12 +297,12 @@ static Tcl_ObjCmdProc	NRChildCmd;
  */
 
 const char *
-TclSetPreInitScript(
+Tcl_SetPreInitScript(
     const char *string)		/* Pointer to a script. */
 {
     const char *prevString = tclPreInitScript;
     tclPreInitScript = string;
-    return(prevString);
+    return prevString;
 }
 
 /*
@@ -1822,7 +1823,7 @@ AliasNRCmd(
     int prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *listPtr;
-    List *listRep;
+    ListRep listRep;
     int flags = TCL_EVAL_INVOKE;
 
     /*
@@ -1834,10 +1835,15 @@ AliasNRCmd(
     prefv = &aliasPtr->objPtr;
     cmdc = prefc + objc - 1;
 
+    /* TODO - encapsulate this into tclListObj.c */
     listPtr = Tcl_NewListObj(cmdc, NULL);
-    listRep = ListRepPtr(listPtr);
-    listRep->elemCount = cmdc;
-    cmdv = &listRep->elements;
+    ListObjGetRep(listPtr, &listRep);
+    cmdv = ListRepElementsBase(&listRep);
+    listRep.storePtr->numUsed = cmdc;
+    if (listRep.spanPtr) {
+	listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
+	listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
+    }
 
     prefv = &aliasPtr->objPtr;
     memcpy(cmdv, prefv, prefc * sizeof(Tcl_Obj *));
@@ -2315,7 +2321,7 @@ GetInterp(
     Tcl_Interp *searchInterp;	/* Interim storage for interp. to find. */
     InterpInfo *parentInfoPtr;
 
-    if (TclListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
 
@@ -2371,7 +2377,7 @@ ChildBgerror(
     if (objc) {
 	int length;
 
-	if (TCL_ERROR == TclListObjLength(NULL, objv[0], &length)
+	if (TCL_ERROR == TclListObjLengthM(NULL, objv[0], &length)
 		|| (length < 1)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cmdPrefix must be list of length >= 1", -1));
@@ -2418,7 +2424,7 @@ ChildCreate(
     int isNew, objc;
     Tcl_Obj **objv;
 
-    if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
     if (objc < 2) {
@@ -4785,7 +4791,7 @@ ChildTimeLimitCmd(
 	Tcl_Obj *milliObj = NULL, *secObj = NULL;
 	int gran = 0;
 	Tcl_Time limitMoment;
-	int tmp;
+	Tcl_WideInt tmp;
 
 	Tcl_LimitGetTime(childInterp, &limitMoment);
 	for (i=consumedObjc ; i<objc ; i+=2) {
@@ -4817,17 +4823,17 @@ ChildTimeLimitCmd(
 		if (milliLen == 0) {
 		    break;
 		}
-		if (TclGetIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
+		if (TclGetWideIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		if (tmp < 0) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "milliseconds must be at least 0", -1));
+		if (tmp < 0 || tmp > LONG_MAX) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "milliseconds must be between 0 and %ld", LONG_MAX));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
 		}
-		limitMoment.usec = ((long) tmp)*1000;
+		limitMoment.usec = ((long)tmp)*1000;
 		break;
 	    case OPT_SEC:
 		secObj = objv[i+1];
@@ -4835,17 +4841,17 @@ ChildTimeLimitCmd(
 		if (secLen == 0) {
 		    break;
 		}
-		if (TclGetIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
+		if (TclGetWideIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		if (tmp < 0) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "seconds must be at least 0", -1));
+		if (tmp < 0 || tmp > LONG_MAX) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "seconds must be between 0 and %ld", LONG_MAX));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
 		}
-		limitMoment.sec = tmp;
+		limitMoment.sec = (long)tmp;
 		break;
 	    }
 	}

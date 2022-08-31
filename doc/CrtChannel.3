@@ -600,9 +600,9 @@ in preference to the \fIseekProc\fR, but both must be defined if the
 following prototype:
 .PP
 .CS
-typedef Tcl_WideInt \fBTcl_DriverWideSeekProc\fR(
+typedef long long \fBTcl_DriverWideSeekProc\fR(
         ClientData \fIinstanceData\fR,
-        Tcl_WideInt \fIoffset\fR,
+        long long \fIoffset\fR,
         int \fIseekMode\fR,
         int *\fIerrorCodePtr\fR);
 .CE
@@ -824,7 +824,7 @@ length. It can be NULL.
 .CS
 typedef int \fBTcl_DriverTruncateProc\fR(
         ClientData \fIinstanceData\fR,
-        Tcl_WideInt \fIlength\fR);
+        long long \fIlength\fR);
 .CE
 .PP
 \fIInstanceData\fR is the same as the value passed to

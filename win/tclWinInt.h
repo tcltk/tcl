@@ -32,16 +32,6 @@ typedef struct TCLEXCEPTION_REGISTRATION {
 #endif
 
 /*
- * Windows version dependend functions
- */
-typedef struct TclWinProcs {
-    BOOL (WINAPI *cancelSynchronousIo)(HANDLE);
-    BOOLEAN (WINAPI *createSymbolicLink)(LPCWSTR, LPCWSTR, DWORD);
-} TclWinProcs;
-
-MODULE_SCOPE TclWinProcs tclWinProcs;
-
-/*
  * Declarations of functions that are not accessible by way of the
  * stubs table.
  */
@@ -86,7 +76,7 @@ typedef struct TclPipeThreadInfo {
 				 * to do read/write operation. Additionally
 				 * used as signal to stop (state set to -1) */
     volatile LONG state;	/* Indicates current state of the thread */
-    ClientData clientData;	/* Referenced data of the main thread */
+    void *clientData;	/* Referenced data of the main thread */
     HANDLE evWakeUp;		/* Optional wake-up event worker set by shutdown */
 } TclPipeThreadInfo;
 
@@ -113,7 +103,7 @@ typedef struct TclPipeThreadInfo {
 
 MODULE_SCOPE
 TclPipeThreadInfo *	TclPipeThreadCreateTI(TclPipeThreadInfo **pipeTIPtr,
-			    ClientData clientData, HANDLE wakeEvent);
+			    void *clientData, HANDLE wakeEvent);
 MODULE_SCOPE int	TclPipeThreadWaitForSignal(TclPipeThreadInfo **pipeTIPtr);
 
 static inline void
