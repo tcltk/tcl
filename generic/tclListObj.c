@@ -1488,7 +1488,6 @@ ListRepRange(
 	ListRepElements(srcRepPtr, numSrcElems, srcElems);
 	numAfterRangeEnd = numSrcElems - (rangeEnd + 1);
 	/* Assert: Because numSrcElems > rangeEnd earlier */
-	LIST_ASSERT(numAfterRangeEnd >= 0);
 	if (numAfterRangeEnd != 0) {
             /* T:listrep-1.{8,9} */
 	    ObjArrayDecrRefs(srcElems, rangeEnd + 1, numAfterRangeEnd);
@@ -1561,7 +1560,6 @@ ListRepRange(
 	/* Ditto for trailing */
 	numAfterRangeEnd = numSrcElems - (rangeEnd + 1);
 	/* Assert: Because numSrcElems > rangeEnd earlier */
-	LIST_ASSERT(numAfterRangeEnd >= 0);
 	if (numAfterRangeEnd != 0) {
             /* T:listrep-3.17 */
 	    ObjArrayDecrRefs(srcElems, rangeEnd + 1, numAfterRangeEnd);
