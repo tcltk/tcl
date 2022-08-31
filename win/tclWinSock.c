@@ -377,7 +377,7 @@ InitializeHostName(
 	 * Convert string from native to UTF then change to lowercase.
 	 */
 
-	Tcl_UtfToLower(Tcl_WCharToUtfDString(wbuf, -1, &ds));
+	Tcl_UtfToLower(Tcl_WCharToUtfDString(wbuf, TCL_INDEX_NONE, &ds));
 
     } else {
 	if (TclpHasSockets(NULL) == TCL_OK) {
@@ -392,7 +392,7 @@ InitializeHostName(
 	    Tcl_DStringSetLength(&inDs, 256);
 	    if (gethostname(Tcl_DStringValue(&inDs),
 		    Tcl_DStringLength(&inDs)) == 0) {
-		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs), -1,
+		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs), TCL_INDEX_NONE,
 			&ds);
 	    }
 	    Tcl_DStringFree(&inDs);

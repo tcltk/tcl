@@ -19,6 +19,7 @@ if {"::tcltest" ni [namespace children]} {
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact tcl::test [info patchlevel]]
+package require tcltests
 
 # Helper commands to test various optimizations, code paths, and special cases.
 proc makeByteArray {s} {binary format a* $s}
@@ -33,6 +34,7 @@ testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
 testConstraint utf16 [expr {[string length \U010000] == 2}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
+testConstraint testutf16string [llength [info commands testutf16string]]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -72,9 +74,9 @@ if {$noComp} {
 }
 
 
-test string-1.1.$noComp {error conditions} {
+test string-1.1.$noComp {error conditions} -body {
     list [catch {run {string gorp a b}} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -match glob -result {1 {unknown or ambiguous subcommand "gorp": must be *cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2.$noComp {error conditions} {
     list [catch {run {string}} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -365,7 +367,6 @@ test string-3.42.$noComp {string equal, binary neq inequal length} {
     run {string equal [binary format a20a 0 1] [binary format a100a 0 0]}
 } 0
 
-
 test string-4.1.$noComp {string first, not enough args} {
     list [catch {run {string first a}} msg] $msg
 } {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
@@ -421,25 +422,25 @@ test string-4.16.$noComp {string first, normal string vs pure unicode string} -b
     # Representation checks are canaries
     run {list [representationpoke $s] [representationpoke $m] \
 	[string first $m $s]}
-} -result {{string 1} {string 0} 2}
+} -match glob -result {{*string 1} {*string 0} 2}
 test string-4.17.$noComp {string first, corner case} -body {
     run {string first a aaa 4294967295}
-} -result {-1}
+} -result -1
 test string-4.18.$noComp {string first, corner case} -body {
     run {string first a aaa -1}
-} -result {0}
+} -result 0
 test string-4.19.$noComp {string first, corner case} -body {
     run {string first a aaa end-5}
-} -result {0}
+} -result 0
 test string-4.20.$noComp {string last, corner case} -body {
     run {string last a aaa 4294967295}
-} -result {2}
+} -result 2
 test string-4.21.$noComp {string last, corner case} -body {
     run {string last a aaa -1}
-} -result {-1}
+} -result -1
 test string-4.22.$noComp {string last, corner case} {
     run {string last a aaa end-5}
-} {-1}
+} -1
 
 test string-5.1.$noComp {string index} {
     list [catch {run {string index}} msg] $msg
@@ -509,6 +510,9 @@ test string-5.20.$noComp {string index, bytearray object out of bounds} -body {
 test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints utf16 -body {
     run {list [string index a\U100000b 1] [string index a\U100000b 2] [string index a\U100000b 3]}
 } -result [list \U100000 {} b]
+test string-5.22.$noComp {string index} -constraints testbytestring -body {
+    run {list [scan [string index [testbytestring \xFF] 0] %c var] $var}
+} -result {1 255}
 
 
 test string-6.1.$noComp {string is, not enough args} {
@@ -525,10 +529,10 @@ test string-6.4.$noComp {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5.$noComp {string is, class check} {
     list [catch {run {string is bogus str}} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, unicode, wideinteger, wordchar, or xdigit}}
 test string-6.6.$noComp {string is, ambiguous class} {
     list [catch {run {string is al str}} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, dict, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, unicode, wideinteger, wordchar, or xdigit}}
 test string-6.7.$noComp {string is alpha, all ok} {
     run {string is alpha -strict -failindex var abc}
 } 1
@@ -961,6 +965,34 @@ test string-6.130.1.$noComp {string is entier, false on bad octal} {
 test string-6.131.$noComp {string is entier, false on bad hex} {
     list [run {string is entier -fail var 0X12345611234123456123456562345612345612345612345612345612345612345612345612345612345345XYZ}] $var
 } {0 88}
+test string-6.132.$noComp {string is unicode} {
+    run {string is unicode \U10FFFD\uD7FF\uE000\uFDCF\uFDF0}
+} 1
+test string-6.133.$noComp {string is unicode, upper surrogate} {
+    run {string is unicode \uD800}
+} 0
+test string-6.134.$noComp {string is unicode, lower surrogate} {
+    run {string is unicode \uDFFF}
+} 0
+test string-6.135.$noComp {string is unicode, noncharacter} {
+    run {string is unicode \uFFFE}
+} 0
+test string-6.136.$noComp {string is unicode, noncharacter} {
+    run {string is unicode \uFFFF}
+} 0
+test string-6.137.$noComp {string is unicode, noncharacter} {
+    run {string is unicode \uFDD0}
+} 0
+test string-6.138.$noComp {string is unicode, noncharacter} {
+    run {string is unicode \uFDEF}
+} 0
+test string-6.139.$noComp {string is integer, bug [76ad7aeba3]} {
+    run {string is integer 18446744073709551615}
+} 1
+test string-6.140.$noComp {string is integer, bug [76ad7aeba3]} {
+    run {string is integer -18446744073709551615}
+} 1
+
 
 test string-7.1.$noComp {string last, not enough args} {
     list [catch {run {string last a}} msg] $msg
@@ -1013,16 +1045,16 @@ test string-7.16.$noComp {string last, start index} {
     run {string last Üa ÜadÜad end-1}
 } 3
 
-test string-8.1.$noComp {string bytelength} {
+test string-8.1.$noComp {string bytelength} deprecated {
     list [catch {run {string bytelength}} msg] $msg
 } {1 {wrong # args: should be "string bytelength string"}}
-test string-8.2.$noComp {string bytelength} {
+test string-8.2.$noComp {string bytelength} deprecated {
     list [catch {run {string bytelength a b}} msg] $msg
 } {1 {wrong # args: should be "string bytelength string"}}
-test string-8.3.$noComp {string bytelength} {
+test string-8.3.$noComp {string bytelength} deprecated {
     run {string bytelength "\xC7"}
 } 2
-test string-8.4.$noComp {string bytelength} {
+test string-8.4.$noComp {string bytelength} deprecated {
     run {string b ""}
 } 0
 
@@ -1059,13 +1091,13 @@ test string-10.3.$noComp {string map, too many args} {
 } {1 {wrong # args: should be "string map ?-nocase? charMap string"}}
 test string-10.4.$noComp {string map} {
     run {string map {a b} abba}
-} {bbbb}
+} bbbb
 test string-10.5.$noComp {string map} {
     run {string map {a b} a}
-} {b}
+} b
 test string-10.6.$noComp {string map -nocase} {
     run {string map -nocase {a b} Abba}
-} {bbbb}
+} bbbb
 test string-10.7.$noComp {string map} {
     run {string map {abc 321 ab * a A} aabcabaababcab}
 } {A321*A*321*}
@@ -1080,7 +1112,7 @@ test string-10.10.$noComp {string map} {
 } {1 {char map list unbalanced}}
 test string-10.11.$noComp {string map, nulls} {
     run {string map {\x00 NULL blah \x00nix} {qwerty}}
-} {qwerty}
+} qwerty
 test string-10.12.$noComp {string map, unicode} {
     run {string map [list ü ue UE Ü] "aüueUE\x00EU"}
 } aueueÜ\x00EU
@@ -1092,13 +1124,13 @@ test string-10.14.$noComp {string map, -nocase null arguments} {
 } foo
 test string-10.15.$noComp {string map, one pair case} {
     run {string map -nocase {abc 32} aAbCaBaAbAbcAb}
-} {a32aBaAb32Ab}
+} a32aBaAb32Ab
 test string-10.16.$noComp {string map, one pair case} {
     run {string map -nocase {ab 4321} aAbCaBaAbAbcAb}
-} {a4321C4321a43214321c4321}
+} a4321C4321a43214321c4321
 test string-10.17.$noComp {string map, one pair case} {
     run {string map {Ab 4321} aAbCaBaAbAbcAb}
-} {a4321CaBa43214321c4321}
+} a4321CaBa43214321c4321
 test string-10.18.$noComp {string map, empty argument} {
     run {string map -nocase {{} abc} foo}
 } foo
@@ -1570,22 +1602,22 @@ test string-14.5.$noComp {string replace} {
 } {abp}
 test string-14.6.$noComp {string replace} -body {
     run {string replace abcdefghijklmnop 7 1000}
-} -result {abcdefg}
+} -result abcdefg
 test string-14.7.$noComp {string replace} {
     run {string replace abcdefghijklmnop 10 end}
-} {abcdefghij}
+} abcdefghij
 test string-14.8.$noComp {string replace} {
     run {string replace abcdefghijklmnop 10 9}
-} {abcdefghijklmnop}
+} abcdefghijklmnop
 test string-14.9.$noComp {string replace} {
     run {string replace abcdefghijklmnop -3 2}
-} {defghijklmnop}
+} defghijklmnop
 test string-14.10.$noComp {string replace} {
     run {string replace abcdefghijklmnop -3 -2}
-} {abcdefghijklmnop}
+} abcdefghijklmnop
 test string-14.11.$noComp {string replace} -body {
     run {string replace abcdefghijklmnop 1000 1010}
-} -result {abcdefghijklmnop}
+} -result abcdefghijklmnop
 test string-14.12.$noComp {string replace} {
     run {string replace abcdefghijklmnop -100 end}
 } {}
@@ -1817,9 +1849,9 @@ test string-19.3.$noComp {string trimleft, unicode default} {
 test string-20.1.$noComp {string trimright errors} {
     list [catch {run {string trimright}} msg] $msg
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
-test string-20.2.$noComp {string trimright errors} {
+test string-20.2.$noComp {string trimright errors} -body {
     list [catch {run {string trimg a}} msg] $msg
-} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -match glob -result {1 {unknown or ambiguous subcommand "trimg": must be *cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3.$noComp {string trimright} {
     run {string trimright "    XYZ      "}
 } {    XYZ}
@@ -1832,7 +1864,7 @@ test string-20.5.$noComp {string trimright} {
 test string-20.6.$noComp {string trimright, unicode default} {
     run {string trimright ABC\u1361\x85\x00\xA0\u1680\u180E\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u2028\u2029\u202F\u205F\u3000}
 } ABC\u1361
-test string-20.7.$noComp {string trim on not valid utf-8 sequence (consider NTS as continuation char), bug [c61818e4c9]} {testbytestring} {
+test string-20.7.$noComp {string trim on not valid utf-8 sequence (consider NTS as continuation char), bug [c61818e4c9]} testbytestring {
     set result {}
     set a [testbytestring \xC0\x80\xA0]
     set b foo$a
@@ -1845,7 +1877,7 @@ test string-20.7.$noComp {string trim on not valid utf-8 sequence (consider NTS 
     lappend result [string map $m [run {string trim $b fox}]]
     lappend result [string map $m [run {string trim $b fo\x00}]]
 } [list {*}[lrepeat 3 fooUV] {*}[lrepeat 2 UV V]]
-test string-20.8.$noComp {[c61818e4c9] [string trimright] fails when UtfPrev is ok} {testbytestring} {
+test string-20.8.$noComp {[c61818e4c9] [string trimright] fails when UtfPrev is ok} testbytestring {
     set result {}
     set a [testbytestring \xE8\xA0]
     set b foo$a
@@ -1939,7 +1971,7 @@ test string-21.25.$noComp {string trimright, unicode} {
 
 test string-22.1.$noComp {string wordstart} -body {
     list [catch {run {string word a}} msg] $msg
-} -result {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} -match glob -result {1 {unknown or ambiguous subcommand "word": must be *cat, compare, equal, first, index, insert, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2.$noComp {string wordstart} -body {
     list [catch {run {string wordstart a}} msg] $msg
 } -result {1 {wrong # args: should be "string wordstart string index"}}
@@ -2604,6 +2636,17 @@ test string-32.17.$noComp {string is dict, valid dict packed in invalid dict} {
 } 0
 
 };				# foreach noComp {0 1}
+
+test string-bug-b79df322a9 {Tcl_GetUnicode/Tcl_NewUnicodeObj api} -constraints {
+    testutf16string deprecated
+} -body {
+    # This simple test suffices because the bug has nothing to do with
+    # the actual encoding conversion. The test was added because these
+    # functions are no longer called within the Tcl core and thus
+    # not tested by either `string`, not `encoding` tests.
+    testutf16string "abcde"
+} -result abcde
+
 
 # cleanup
 rename MemStress {}

@@ -1065,7 +1065,7 @@ Tcl_FSMatchInDirectory(
 	     * resultPtr and tmpResultPtr are guaranteed to be distinct.
 	     */
 
-	    ret = Tcl_ListObjGetElements(interp, tmpResultPtr,
+	    ret = TclListObjGetElementsM(interp, tmpResultPtr,
 		    &resLength, &elemsPtr);
 	    for (i=0 ; ret==TCL_OK && i<resLength ; i++) {
 		ret = Tcl_ListObjAppendElement(interp, resultPtr,
@@ -1113,10 +1113,10 @@ FsAddMountsToGlobResult(
 	return;
     }
 
-    if (Tcl_ListObjLength(NULL, mounts, &mLength) != TCL_OK || mLength == 0) {
+    if (TclListObjLengthM(NULL, mounts, &mLength) != TCL_OK || mLength == 0) {
 	goto endOfMounts;
     }
-    if (Tcl_ListObjLength(NULL, resultPtr, &gLength) != TCL_OK) {
+    if (TclListObjLengthM(NULL, resultPtr, &gLength) != TCL_OK) {
 	goto endOfMounts;
     }
     for (i=0 ; i<mLength ; i++) {
@@ -2476,7 +2476,7 @@ TclFSFileAttrIndex(
 	int i, objc;
 	Tcl_Obj **objv;
 
-	if (Tcl_ListObjGetElements(NULL, listObj, &objc, &objv) != TCL_OK) {
+	if (TclListObjGetElementsM(NULL, listObj, &objc, &objv) != TCL_OK) {
 	    TclDecrRefCount(listObj);
 	    return TCL_ERROR;
 	}
@@ -2646,8 +2646,9 @@ Tcl_FSGetCwd(
 		norm = TclFSNormalizeAbsolutePath(interp,retVal);
 		if (norm != NULL) {
 		    /*
-		     * Assign to global storage the pathname of the current directory
-		     * and copy it into thread-local storage as well.
+		     * Assign to global storage the pathname of the current
+		     * directory and copy it into thread-local storage as
+		     * well.
 		     *
 		     * At system startup multiple threads could in principle
 		     * call this function simultaneously, which is a little
@@ -3789,10 +3790,12 @@ Tcl_FSListVolumes(void)
 
 	    if (thisFsVolumes != NULL) {
 		Tcl_ListObjAppendList(NULL, resultPtr, thisFsVolumes);
-		/* The refCount of each list returned by a `listVolumesProc` is
-		 * already incremented.  Do not hang onto the list, though.  It
-		 * belongs to the filesystem.  Add its contents to * the result
-		 * we are building, and then decrement the refCount.  */
+		/*
+		 * The refCount of each list returned by a `listVolumesProc`
+		 * is already incremented.  Do not hang onto the list, though.
+		 * It belongs to the filesystem.  Add its contents to the
+		 * result we are building, and then decrement the refCount.
+		 */
 		Tcl_DecrRefCount(thisFsVolumes);
 	    }
 	}
@@ -3868,6 +3871,7 @@ FsListMounts(
  *---------------------------------------------------------------------------
  */
 
+#undef Tcl_FSSplitPath
 Tcl_Obj *
 Tcl_FSSplitPath(
     Tcl_Obj *pathPtr,		/* The pathname to split. */
@@ -3946,7 +3950,7 @@ Tcl_FSSplitPath(
     }
 
     if (lenPtr != NULL) {
-	TclListObjLength(NULL, result, lenPtr);
+	TclListObjLengthM(NULL, result, lenPtr);
     }
     return result;
 }
@@ -4069,7 +4073,7 @@ TclFSNonnativePathType(
 	    Tcl_Obj *thisFsVolumes = fsRecPtr->fsPtr->listVolumesProc();
 
 	    if (thisFsVolumes != NULL) {
-		if (Tcl_ListObjLength(NULL, thisFsVolumes, &numVolumes)
+		if (TclListObjLengthM(NULL, thisFsVolumes, &numVolumes)
 			!= TCL_OK) {
 		    /*
 		     * This is VERY bad; the listVolumesProc didn't return a
@@ -4365,15 +4369,14 @@ Tcl_FSCreateDirectory(
 
 int
 Tcl_FSCopyDirectory(
-    Tcl_Obj *srcPathPtr,	/*
-				 * The pathname of the directory to be copied.
-				 */
+    Tcl_Obj *srcPathPtr,	/* The pathname of the directory to be
+				 * copied. */
     Tcl_Obj *destPathPtr,	/* The pathname of the target directory. */
     Tcl_Obj **errorPtr)		/* If not NULL, and there is an error, a place
-				 *  to store a pointer to a new object, with
-				 *  its refCount already incremented, and
-				 *  containing the pathname name of file
-				 *  causing the error. */
+				 * to store a pointer to a new object, with
+				 * its refCount already incremented, and
+				 * containing the pathname name of file
+				 * causing the error. */
 {
     int retVal = -1;
     const Tcl_Filesystem *fsPtr, *fsPtr2;

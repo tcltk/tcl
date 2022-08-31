@@ -86,7 +86,7 @@ TclpDlopen(
 
 	Tcl_DString ds;
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
 	handle = shl_load(native, BIND_DEFERRED|BIND_VERBOSE|DYNAMIC_PATH, 0L);
 	Tcl_DStringFree(&ds);
     }
@@ -140,7 +140,7 @@ FindSymbol(
 	    (void *) &proc) != 0) {
 	Tcl_DStringInit(&newName);
 	TclDStringAppendLiteral(&newName, "_");
-	Tcl_DStringAppend(&newName, symbol, -1);
+	Tcl_DStringAppend(&newName, symbol, TCL_INDEX_NONE);
 	if (shl_findsym(&handle, Tcl_DStringValue(&newName),
 		(short) TYPE_PROCEDURE, (void *) &proc) != 0) {
 	    proc = NULL;

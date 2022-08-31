@@ -65,12 +65,12 @@ typedef struct Method {
  * tuned in their behaviour.
  */
 
-typedef int (TclOO_PreCallProc)(ClientData clientData, Tcl_Interp *interp,
+typedef int (TclOO_PreCallProc)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext context, Tcl_CallFrame *framePtr, int *isFinished);
-typedef int (TclOO_PostCallProc)(ClientData clientData, Tcl_Interp *interp,
+typedef int (TclOO_PostCallProc)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext context, Tcl_Namespace *namespacePtr, int result);
-typedef void (TclOO_PmCDDeleteProc)(ClientData clientData);
-typedef ClientData (TclOO_PmCDCloneProc)(ClientData clientData);
+typedef void (TclOO_PmCDDeleteProc)(void *clientData);
+typedef void *(TclOO_PmCDCloneProc)(void *clientData);
 
 /*
  * Procedure-like methods have the following extra information.
@@ -235,14 +235,14 @@ typedef struct Object {
 				 * other spots). */
 #define FORCE_UNKNOWN 0x10000	/* States that we are *really* looking up the
 				 * unknown method handler at that point. */
-#define HAS_PRIVATE_METHODS 0x20000
-				/* Object/class has (or had) private methods,
-				 * and so shouldn't be cached so
-				 * aggressively. */
-#define DONT_DELETE 0x40000	/* Inhibit deletion of this object. Used
+#define DONT_DELETE 0x20000	/* Inhibit deletion of this object. Used
 				 * during fundamental object type mutation to
 				 * make sure that the object actually survives
 				 * to the end of the operation. */
+#define HAS_PRIVATE_METHODS 0x40000
+				/* Object/class has (or had) private methods,
+				 * and so shouldn't be cached so
+				 * aggressively. */
 
 /*
  * And the definition of a class. Note that every class also has an associated
@@ -447,98 +447,40 @@ typedef struct {
  */
 
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
-MODULE_SCOPE int	TclOODefineObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOOObjDefObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineConstructorObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineDefnNsObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineDeleteMethodObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineDestructorObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineExportObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineForwardObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineMethodObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineRenameMethodObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineUnexportObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineClassObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineSelfObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefineObjSelfObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOODefinePrivateObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOOUnknownDefinition(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOOCopyObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOONextObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOONextToObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOOSelfObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOObjDefObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineConstructorObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineDefnNsObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineDeleteMethodObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineDestructorObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineExportObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineForwardObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineMethodObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineRenameMethodObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineUnexportObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineClassObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineSelfObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefineObjSelfObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOODefinePrivateObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOUnknownDefinition;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOCopyObjectCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOONextObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOONextToObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc	TclOOSelfObjCmd;
 
 /*
  * Method implementations (in tclOOBasic.c).
  */
 
-MODULE_SCOPE int	TclOO_Class_Constructor(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Class_Create(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Class_CreateNs(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Class_New(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Object_Destroy(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Object_Eval(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Object_LinkVar(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Object_Unknown(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
-MODULE_SCOPE int	TclOO_Object_VarName(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_ObjectContext context,
-			    int objc, Tcl_Obj *const *objv);
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_Constructor;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_Create;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_CreateNs;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Class_New;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Destroy;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Eval;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_LinkVar;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_Unknown;
+MODULE_SCOPE Tcl_MethodCallProc	TclOO_Object_VarName;
 
 /*
  * Private definitions, some of which perhaps ought to be exposed properly or
@@ -550,6 +492,17 @@ MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
 MODULE_SCOPE Class *	TclOOAllocClass(Tcl_Interp *interp,
 			    Object *useThisObj);
+MODULE_SCOPE int    TclMethodIsType(Tcl_Method method,
+                        const Tcl_MethodType *typePtr,
+                        void **clientDataPtr);
+MODULE_SCOPE Tcl_Method TclNewInstanceMethod(Tcl_Interp *interp,
+                        Tcl_Object object, Tcl_Obj *nameObj,
+                        int flags, const Tcl_MethodType *typePtr,
+                        void *clientData);
+MODULE_SCOPE Tcl_Method TclNewMethod(Tcl_Interp *interp, Tcl_Class cls,
+                        Tcl_Obj *nameObj, int flags,
+                        const Tcl_MethodType *typePtr,
+                        void *clientData);
 MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
 			    Tcl_Class cls, const char *nameStr,
 			    const char *nsNameStr, int objc,
@@ -587,7 +540,7 @@ MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr,
 			    const char ***stringsPtr);
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
-MODULE_SCOPE int	TclOOInvokeContext(ClientData clientData,
+MODULE_SCOPE int	TclOOInvokeContext(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
@@ -631,7 +584,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 #define FOREACH(var,ary) \
     for(i=0 ; i<(ary).num; i++) if ((ary).list[i] == NULL) { \
 	continue; \
-    } else if (var = (ary).list[i], 1)
+    } else if ((var) = (ary).list[i], 1)
 
 /*
  * A variation where the array is an array of structs. There's no issue with

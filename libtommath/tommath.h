@@ -38,14 +38,14 @@ extern "C" {
 #endif
 
 /* detect 64-bit mode if possible */
-#if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64) || \
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64) || defined(_M_ARM64) || \
     defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || \
     defined(__s390x__) || defined(__arch64__) || defined(__aarch64__) || \
     defined(__sparcv9) || defined(__sparc_v9__) || defined(__sparc64__) || \
     defined(__ia64) || defined(__ia64__) || defined(__itanium__) || defined(_M_IA64) || \
     defined(__LP64__) || defined(_LP64) || defined(__64BIT__)
 #   if !(defined(MP_64BIT) || defined(MP_32BIT) || defined(MP_16BIT) || defined(MP_8BIT))
-#      if defined(__GNUC__) && !defined(__hppa)
+#      if defined(__GNUC__) && defined(__SIZEOF_INT128__) && !defined(__hppa)
 /* we support 128bit integers only via: __attribute__((mode(TI))) */
 #         define MP_64BIT
 #      else
@@ -237,13 +237,22 @@ TOOM_SQR_CUTOFF;
 
 #if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 405)
 #  define MP_DEPRECATED(x) __attribute__((deprecated("replaced by " #x)))
+#elif defined(_MSC_VER) && _MSC_VER >= 1500
+#  define MP_DEPRECATED(x) __declspec(deprecated("replaced by " #x))
+#else
+#  define MP_DEPRECATED(x)
+#endif
+
+#ifndef MP_NO_DEPRECATED_PRAGMA
+#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 301)
 #  define PRIVATE_MP_DEPRECATED_PRAGMA(s) _Pragma(#s)
 #  define MP_DEPRECATED_PRAGMA(s) PRIVATE_MP_DEPRECATED_PRAGMA(GCC warning s)
 #elif defined(_MSC_VER) && _MSC_VER >= 1500
-#  define MP_DEPRECATED(x) __declspec(deprecated("replaced by " #x))
 #  define MP_DEPRECATED_PRAGMA(s) __pragma(message(s))
-#else
-#  define MP_DEPRECATED(s)
+#endif
+#endif
+
+#ifndef MP_DEPRECATED_PRAGMA
 #  define MP_DEPRECATED_PRAGMA(s)
 #endif
 

@@ -176,7 +176,7 @@ NATIVE_TCLSH		= @TCLSH_PROG@
 
 STLIB_LD		= @STLIB_LD@
 SHLIB_LD		= @SHLIB_LD@
-SHLIB_CFLAGS		= @SHLIB_CFLAGS@ -DBUILD_tcl
+SHLIB_CFLAGS		= @SHLIB_CFLAGS@
 SHLIB_LD_LIBS		= @SHLIB_LD_LIBS@
 SHLIB_LD_FLAGS		= @SHLIB_LD_FLAGS@
 TCL_SHLIB_LD_EXTRAS	= @TCL_SHLIB_LD_EXTRAS@
@@ -209,7 +209,7 @@ TCL_LIB_FLAG		= @TCL_LIB_FLAG@
 #TCL_LIB_FLAG		= -ltcl
 
 # support for embedded libraries on Darwin / Mac OS X
-DYLIB_INSTALL_DIR	= ${LIB_RUNTIME_DIR}
+DYLIB_INSTALL_DIR	= $(libdir)
 
 #--------------------------------------------------------------------------
 # The information below is modified by the configure script when Makefile is
@@ -268,6 +268,7 @@ TRACE_OPTS		=
 VALGRIND		= valgrind
 VALGRINDARGS		= --tool=memcheck --num-callers=24 \
 	--leak-resolution=high --leak-check=yes --show-reachable=yes -v \
+	--keep-debuginfo=yes \
 	--suppressions=$(TOOL_DIR)/valgrind_suppress
 
 #--------------------------------------------------------------------------
@@ -277,12 +278,12 @@ VALGRINDARGS		= --tool=memcheck --num-callers=24 \
 
 STUB_CC_SWITCHES = -I"${BUILD_DIR}" -I${UNIX_DIR} -I${GENERIC_DIR} -I${TOMMATH_DIR} \
 	${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
-	${AC_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} \
-	@EXTRA_CC_SWITCHES@
+	${AC_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@ \
+	${NO_DEPRECATED_FLAGS} -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
 
-CC_SWITCHES = $(STUB_CC_SWITCHES) ${NO_DEPRECATED_FLAGS} -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
+CC_SWITCHES = $(STUB_CC_SWITCHES) -DBUILD_tcl
 
-APP_CC_SWITCHES = $(CC_SWITCHES) @EXTRA_APP_CC_SWITCHES@
+APP_CC_SWITCHES = $(STUB_CC_SWITCHES) @EXTRA_APP_CC_SWITCHES@
 
 LIBS		= @TCL_LIBS@
 
@@ -902,18 +903,13 @@ test-tcl: ${TCLTEST_EXE}
 	$(SHELL_ENV) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
 gdb-test: ${TCLTEST_EXE}
-	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > gdb.run
-	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
-	@echo "set args $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1" >> gdb.run
-	$(GDB) ./${TCLTEST_EXE} --command=gdb.run
-	@rm gdb.run
+	$(SHELL_ENV) $(GDB) --args ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl \
+		$(TESTFLAGS) -singleproc 1
 
 lldb-test: ${TCLTEST_EXE}
-	@echo "settings set target.env-vars @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > lldb.run
-	@echo "settings set target.env-vars TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> lldb.run
-	$(LLDB) --source lldb.run ./${TCLTEST_EXE} -- $(TOP_DIR)/tests/all.tcl \
+	$(SHELL_ENV) $(LLDB) -- ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl \
 		$(TESTFLAGS) -singleproc 1
-	@rm lldb.run
+
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: ${TCLTEST_EXE}
@@ -1016,8 +1012,9 @@ install-libraries: libraries
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
 	    fi; \
-	done
-	@for i in opt0.4 cookiejar0.2 encoding; do \
+	    done;
+	@for i in opt0.4 cookiejar0.2 encoding; \
+	    do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -1030,35 +1027,34 @@ install-libraries: libraries
 		echo "Making directory $(MODULE_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(MODULE_INSTALL_DIR)/$$i"; \
 	    fi; \
-	done
+	    done;
 	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/"
 	@for i in $(TOP_DIR)/library/*.tcl $(TOP_DIR)/library/tclIndex \
 		$(UNIX_DIR)/tclAppInit.c @LDAIX_SRC@ @DTRACE_SRC@ ; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"; \
-	done
+	done;
 	@echo "Installing package cookiejar 0.2 files to $(SCRIPT_INSTALL_DIR)/cookiejar0.2/"
-	@for i in $(TOP_DIR)/library/cookiejar/*.tcl; do \
+	@for i in $(TOP_DIR)/library/cookiejar/*.tcl \
+	          $(TOP_DIR)/library/cookiejar/*.gz; \
+	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
-	done
-	@for i in $(TOP_DIR)/library/cookiejar/*.gz; do \
-	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
-	done
-	@echo "Installing package http 2.10.0a1 as a Tcl Module"
+	    done
+	@echo "Installing package http 2.10a4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
-		"$(MODULE_INSTALL_DIR)/8.6/http-2.10.0a1.tm"
-	@echo "Installing package opt 0.4.7"
+		"$(MODULE_INSTALL_DIR)/8.6/http-2.10a4.tm"
+	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/"
 	@for i in $(TOP_DIR)/library/opt/*.tcl; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	done
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
 		"$(MODULE_INSTALL_DIR)/8.7/msgcat-1.7.1.tm"
-	@echo "Installing package tcltest 2.5.4 as a Tcl Module"
+	@echo "Installing package tcltest 2.5.5 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.4.tm"
-	@echo "Installing package platform 1.0.17 as a Tcl Module"
+		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.5.tm"
+	@echo "Installing package platform 1.0.18 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
-		"$(MODULE_INSTALL_DIR)/8.4/platform-1.0.17.tm"
+		"$(MODULE_INSTALL_DIR)/8.4/platform-1.0.18.tm"
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl \
 		"$(MODULE_INSTALL_DIR)/8.4/platform/shell-1.1.4.tm"
@@ -1317,7 +1313,7 @@ tclEnsemble.o: $(GENERIC_DIR)/tclEnsemble.c $(COMPILEHDR)
 tclEnv.o: $(GENERIC_DIR)/tclEnv.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEnv.c
 
-tclEvent.o: $(GENERIC_DIR)/tclEvent.c
+tclEvent.o: $(GENERIC_DIR)/tclEvent.c tclUuid.h
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEvent.c
 
 tclExecute.o: $(GENERIC_DIR)/tclExecute.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR)
@@ -1524,13 +1520,13 @@ tclZlib.o: $(GENERIC_DIR)/tclZlib.c
 	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
 
 tclZipfs.o: $(GENERIC_DIR)/tclZipfs.c
-	$(CC) -c $(CC_SWITCHES) \
+	$(CC) -c $(CC_SWITCHES) -D_GNU_SOURCE \
 		-DCFG_RUNTIME_DLLFILE="\"$(TCL_LIB_FILE)\"" \
 		-DCFG_RUNTIME_LIBDIR="\"$(libdir)\"" \
 		-I$(ZLIB_DIR) -I$(ZLIB_DIR)/contrib/minizip \
 		$(GENERIC_DIR)/tclZipfs.c
 
-tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
+tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS) tclUuid.h
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
 
 tclTestObj.o: $(GENERIC_DIR)/tclTestObj.c $(MATHHDRS)
@@ -2231,9 +2227,17 @@ $(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
 $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
 	cd $(MAC_OSX_DIR); autoheader; touch $@
 
+tclUuid.h: $(TOP_DIR)/manifest.uuid
+	echo "#define TCL_VERSION_UUID \\" >$@
+	cat $(TOP_DIR)/manifest.uuid >>$@
+	echo "" >>$@
+
 $(TOP_DIR)/manifest.uuid:
-	printf "git." >$(TOP_DIR)/manifest.uuid
-	git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid
+	printf "git-" >$(TOP_DIR)/manifest.uuid
+	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || \
+	    (printf "svn-r" >$(TOP_DIR)/manifest.uuid ; \
+	    svn info --show-item last-changed-revision >>$(TOP_DIR)/manifest.uuid) || \
+	    printf "unknown" >$(TOP_DIR)/manifest.uuid)
 
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in genstubs \
 		$(MAC_OSX_DIR)/configure $(TOP_DIR)/manifest.uuid dist-packages ${NATIVE_TCLSH}
@@ -2268,7 +2272,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	    mkdir $(DISTDIR)/library/$$i;\
 	    cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
 	done
-	cp -p $(TOP_DIR)/library/cookiejar/*.txt.gz $(DISTDIR)/library/cookiejar
+	cp -p $(TOP_DIR)/library/cookiejar/*.dat.gz $(DISTDIR)/library/cookiejar
 	@mkdir $(DISTDIR)/library/encoding
 	cp -p $(TOP_DIR)/library/encoding/*.enc $(DISTDIR)/library/encoding
 	@mkdir $(DISTDIR)/library/msgs
@@ -2288,11 +2292,16 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	@( cd $(COMPAT_DIR)/zlib; find . -type f -print ) \
 	    | ( cd $(COMPAT_DIR)/zlib ; xargs tar cf - ) \
 	    | ( cd $(DISTDIR)/compat/zlib ; tar xfp - )
+	@mkdir $(DISTDIR)/libtommath
+	@echo cp -r $(TOP_DIR)/libtommath $(DISTDIR)/libtommath
+	@( cd $(TOP_DIR)/libtommath; find . -type f -print ) \
+	    | ( cd $(TOP_DIR)/libtommath ; xargs tar cf - ) \
+	    | ( cd $(DISTDIR)/libtommath ; tar xfp - )
 	@mkdir $(DISTDIR)/tests
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tests
 	cp -p $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \
 		$(TOP_DIR)/tests/httpd $(TOP_DIR)/tests/*.tcl \
-		$(DISTDIR)/tests
+		$(TOP_DIR)/tests/auto-files.zip $(DISTDIR)/tests
 	@mkdir $(DISTDIR)/tests/auto0
 	for i in auto1 auto2 ; \
 	    do \
@@ -2311,8 +2320,10 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	cp -p $(TOP_DIR)/win/configure.ac $(TOP_DIR)/win/configure \
 		$(TOP_DIR)/win/tclConfig.sh.in $(TOP_DIR)/win/tclooConfig.sh \
 		$(TOP_DIR)/win/tcl.m4 $(TOP_DIR)/win/aclocal.m4 \
-		$(TOP_DIR)/win/tclsh.exe.manifest.in \
-		$(DISTDIR)/win
+		$(TOP_DIR)/win/tclsh.exe.manifest.in $(TOP_DIR)/win/tclUuid.h.in \
+		$(TOP_DIR)/win/gitmanifest.in $(TOP_DIR)/win/svnmanifest.in \
+		$(TOP_DIR)/win/x86_64-w64-mingw32-nmakehlp.exe $(DISTDIR)/win
+	chmod 775 $(DISTDIR)/win/x86_64-w64-mingw32-nmakehlp.exe
 	cp -p $(TOP_DIR)/win/*.[ch] $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
@@ -2326,10 +2337,6 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(MAC_OSX_DIR)/*.ac $(MAC_OSX_DIR)/*.xcconfig \
 		$(MAC_OSX_DIR)/configure $(DISTDIR)/macosx
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/macosx
-	@mkdir $(DISTDIR)/macosx/Tcl.xcode
-	cp -p $(MAC_OSX_DIR)/Tcl.xcode/project.pbxproj \
-		$(MAC_OSX_DIR)/Tcl.xcode/default.pbxuser \
-		$(DISTDIR)/macosx/Tcl.xcode
 	@mkdir $(DISTDIR)/macosx/Tcl.xcodeproj
 	cp -p $(MAC_OSX_DIR)/Tcl.xcodeproj/project.pbxproj \
 		$(MAC_OSX_DIR)/Tcl.xcodeproj/default.pbxuser \
@@ -2341,8 +2348,6 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	cp -p $(TOOL_DIR)/README $(TOOL_DIR)/*.c $(TOOL_DIR)/*.svg \
 		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/*.bmp \
 		$(TOOL_DIR)/valgrind_suppress $(DISTDIR)/tools
-	@mkdir $(DISTDIR)/libtommath
-	cp -p $(TOMMATH_SRCS) $(TOMMATH_DIR)/*.h $(DISTDIR)/libtommath
 	@mkdir $(DISTDIR)/pkgs
 	cp -p $(TOP_DIR)/pkgs/README $(DISTDIR)/pkgs
 	cp -p $(TOP_DIR)/pkgs/package.list.txt $(DISTDIR)/pkgs
@@ -2389,7 +2394,8 @@ html-tk: ${NATIVE_TCLSH}
 
 BUILD_HTML = \
 	@${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
-		--tcl --useversion=$(MAJOR_VERSION).$(MINOR_VERSION) --htmldir="$(HTML_INSTALL_DIR)" \
+		--useversion=$(MAJOR_VERSION).$(MINOR_VERSION) \
+		--htmldir="$(HTML_INSTALL_DIR)" \
 		--srcdir=$(TOP_DIR) $(BUILD_HTML_FLAGS)
 
 #--------------------------------------------------------------------------
