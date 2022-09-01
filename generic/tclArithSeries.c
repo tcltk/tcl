@@ -500,9 +500,9 @@ FreeArithSeriesInternalRep(Tcl_Obj *arithSeriesPtr)
  */
 
 static void
-DupArithSeriesInternalRep(srcPtr, copyPtr)
-    Tcl_Obj *srcPtr;		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr;		/* Object with internal rep to set. */
+DupArithSeriesInternalRep(
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
     ArithSeries *srcArithSeriesRepPtr =
 	    (ArithSeries *) srcPtr->internalRep.twoPtrValue.ptr1;
@@ -609,12 +609,10 @@ UpdateStringOfArithSeries(Tcl_Obj *arithSeriesPtr)
  */
 
 static int
-SetArithSeriesFromAny(interp, objPtr)
-    Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr;		/* The object to convert. */
+SetArithSeriesFromAny(
+    TCL_UNUSED(Tcl_Interp *),		/* Used for error reporting if not NULL. */
+    TCL_UNUSED(Tcl_Obj *))		/* The object to convert. */
 {
-    (void)interp;
-    (void)objPtr;
     Tcl_Panic("SetArithSeriesFromAny: should never be called");
     return TCL_ERROR;
 }
