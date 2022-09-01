@@ -249,27 +249,6 @@ ListSpanNew(
 /*
  *------------------------------------------------------------------------
  *
- * ListSpanIncrRefs --
- *
- *   Increments the reference count on the spanPtr
- *
- * Results:
- *   None.
- *
- * Side effects:
- *   The obvious.
- *
- *------------------------------------------------------------------------
- */
-static inline void
-ListSpanIncrRefs(ListSpan *spanPtr)
-{
-    spanPtr->refCount += 1;
-}
-
-/*
- *------------------------------------------------------------------------
- *
  * ListSpanDecrRefs --
  *
  *   Decrements the reference count on a span, freeing the memory if
@@ -620,6 +599,7 @@ ListRepUnsharedShiftDown(ListRep *repPtr, ListSizeT shiftCount)
  *
  *------------------------------------------------------------------------
  */
+#if 0
 static inline void
 ListRepUnsharedShiftUp(ListRep *repPtr, ListSizeT shiftCount)
 {
@@ -648,6 +628,7 @@ ListRepUnsharedShiftUp(ListRep *repPtr, ListSizeT shiftCount)
 
     LISTREP_CHECK(repPtr);
 }
+#endif
 
 /*
  *------------------------------------------------------------------------
