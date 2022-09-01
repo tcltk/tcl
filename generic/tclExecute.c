@@ -425,7 +425,7 @@ VarHashCreateVar(
 
 #define OBJ_AT_DEPTH(n)	*(tosPtr-(n))
 
-#define CURR_DEPTH	((ptrdiff_t) (tosPtr - initTosPtr))
+#define CURR_DEPTH	((size_t)(tosPtr - initTosPtr))
 
 #define STACK_BASE(esPtr) ((esPtr)->stackWords - 1)
 
@@ -438,9 +438,9 @@ VarHashCreateVar(
 #ifdef TCL_COMPILE_DEBUG
 #   define TRACE(a) \
     while (traceInstructions) {					\
-	fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels,	\
-		(int) CURR_DEPTH,				\
-		(unsigned) (pc - codePtr->codeStart),		\
+	fprintf(stdout, "%2d: %2" TCL_Z_MODIFIER "u (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
+		CURR_DEPTH,				\
+		(size_t)(pc - codePtr->codeStart),		\
 		GetOpcodeName(pc));				\
 	printf a;						\
 	break;							\
@@ -454,9 +454,9 @@ VarHashCreateVar(
     TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 #   define TRACE_WITH_OBJ(a, objPtr) \
     while (traceInstructions) {					\
-	fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels,	\
-		(int) CURR_DEPTH,				\
-		(unsigned) (pc - codePtr->codeStart),		\
+	fprintf(stdout, "%2d: %2" TCL_Z_MODIFIER "u (%" TCL_Z_MODIFIER "u) %s ", iPtr->numLevels,	\
+		CURR_DEPTH,				\
+		(size_t)(pc - codePtr->codeStart),		\
 		GetOpcodeName(pc));				\
 	printf a;						\
 	TclPrintObject(stdout, objPtr, 30);			\
@@ -679,7 +679,7 @@ static const char *	GetOpcodeName(const unsigned char *pc);
 static void		PrintByteCodeInfo(ByteCode *codePtr);
 static const char *	StringForResultCode(int result);
 static void		ValidatePcAndStackTop(ByteCode *codePtr,
-			    const unsigned char *pc, int stackTop,
+			    const unsigned char *pc, size_t stackTop,
 			    int checkStack);
 #endif /* TCL_COMPILE_DEBUG */
 static ByteCode *	CompileExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -2008,7 +2008,7 @@ TclNRExecuteByteCode(
      */
 
     TclNRAddCallback(interp, TEBCresume, TD, /* pc */ NULL,
-	    /* cleanup */ INT2PTR(0), INT2PTR(iPtr->evalFlags));
+	    /* cleanup */ NULL, INT2PTR(iPtr->evalFlags));
 
     /*
      * Reset discard result flag - because it is applicable for this call only,
@@ -2124,7 +2124,7 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
     if (!pc && (tclTraceExec >= 2)) {
 	PrintByteCodeInfo(codePtr);
-	fprintf(stdout, "  Starting stack top=%d\n", (int) CURR_DEPTH);
+	fprintf(stdout, "  Starting stack top=%" TCL_Z_MODIFIER "u\n", CURR_DEPTH);
 	fflush(stdout);
     }
 #endif
@@ -2328,7 +2328,7 @@ TEBCresume(
 
     CHECK_STACK();
     if (traceInstructions) {
-	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
+	fprintf(stdout, "%2d: %2" TCL_Z_MODIFIER "u ", iPtr->numLevels, CURR_DEPTH);
 	TclPrintInstruction(codePtr, pc);
 	fflush(stdout);
     }
@@ -2695,10 +2695,10 @@ TEBCresume(
 	 */
 
 	TclNewObj(objPtr);
-	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(CURR_DEPTH);
+	objPtr->internalRep.twoPtrValue.ptr2 = UINT2PTR(CURR_DEPTH);
 	objPtr->length = 0;
 	PUSH_TAUX_OBJ(objPtr);
-	TRACE(("=> mark depth as %d\n", (int) CURR_DEPTH));
+	TRACE(("=> mark depth as %" TCL_Z_MODIFIER "u\n", CURR_DEPTH));
 	NEXT_INST_F(1, 0, 0);
     break;
 
@@ -2710,7 +2710,7 @@ TEBCresume(
 	 */
 
 	CLANG_ASSERT(auxObjList);
-	objc = CURR_DEPTH - PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2);
+	objc = CURR_DEPTH - PTR2UINT(auxObjList->internalRep.twoPtrValue.ptr2);
 	POP_TAUX_OBJ();
 #ifdef TCL_COMPILE_DEBUG
 	/* Ugly abuse! */
@@ -2721,7 +2721,8 @@ TEBCresume(
 
     case INST_EXPAND_STKTOP: {
 	int i;
-	ptrdiff_t moved;
+	TEBCdata *newTD;
+	ptrdiff_t oldCatchTopOff, oldTosPtrOff;
 
 	/*
 	 * Make sure that the element at stackTop is a list; if not, just
@@ -2750,19 +2751,21 @@ TEBCresume(
 		    + codePtr->maxStackDepth /* Beyond the original max */
 		    - CURR_DEPTH;	/* Relative to where we are */
 	    DECACHE_STACK_INFO();
-	    moved = GrowEvaluationStack(iPtr->execEnvPtr, length, 1)
-		    - (Tcl_Obj **) TD;
-	    if (moved) {
+	    oldCatchTopOff = catchTop - initCatchTop;
+	    oldTosPtrOff = tosPtr - initTosPtr;
+	    newTD = (TEBCdata *)
+		    GrowEvaluationStack(iPtr->execEnvPtr, length, 1);
+	    if (newTD != TD) {
 		/*
 		 * Change the global data to point to the new stack: move the
 		 * TEBCdataPtr TD, recompute the position of every other
 		 * stack-allocated parameter, update the stack pointers.
 		 */
 
-		TD = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
+		TD = newTD;
 
-		catchTop += moved;
-		tosPtr += moved;
+		catchTop = initCatchTop + oldCatchTopOff;
+		tosPtr = initTosPtr + oldTosPtrOff;
 	    }
 	}
 
@@ -2814,7 +2817,7 @@ TEBCresume(
 
     case INST_INVOKE_EXPANDED:
 	CLANG_ASSERT(auxObjList);
-	objc = CURR_DEPTH - PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2);
+	objc = CURR_DEPTH - PTR2UINT(auxObjList->internalRep.twoPtrValue.ptr2);
 	POP_TAUX_OBJ();
 	if (objc) {
 	    pcAdjustment = 1;
@@ -6049,7 +6052,7 @@ TEBCresume(
 		     * Handle shifts within the native long range.
 		     */
 
-		    if (((size_t) shift < CHAR_BIT*sizeof(long))
+		    if (((size_t)shift < CHAR_BIT*sizeof(long))
 			    && !((w1>0 ? w1 : ~w1) &
 				-(1UL<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
 			wResult = (Tcl_WideUInt)w1 << shift;
@@ -6856,10 +6859,10 @@ TEBCresume(
 	 * stack.
 	 */
 
-	*(++catchTop) = (Tcl_Obj *)INT2PTR(CURR_DEPTH);
-	TRACE(("%u => catchTop=%d, stackTop=%d\n",
-		TclGetUInt4AtPtr(pc+1), (int) (catchTop - initCatchTop - 1),
-		(int) CURR_DEPTH));
+	*(++catchTop) = (Tcl_Obj *)UINT2PTR(CURR_DEPTH);
+	TRACE(("%u => catchTop=%" TCL_Z_MODIFIER "u, stackTop=%" TCL_Z_MODIFIER "u\n",
+		TclGetUInt4AtPtr(pc+1), (size_t)(catchTop - initCatchTop - 1),
+		CURR_DEPTH));
 	NEXT_INST_F(5, 0, 0);
     break;
 
@@ -6869,7 +6872,7 @@ TEBCresume(
 	Tcl_ResetResult(interp);
 	CACHE_STACK_INFO();
 	result = TCL_OK;
-	TRACE(("=> catchTop=%d\n", (int) (catchTop - initCatchTop - 1)));
+	TRACE(("=> catchTop=%" TCL_Z_MODIFIER "u\n", (size_t)(catchTop - initCatchTop - 1)));
 	NEXT_INST_F(1, 0, 0);
     break;
 
@@ -7768,8 +7771,8 @@ TEBCresume(
 
 	while (auxObjList) {
 	    if ((catchTop != initCatchTop)
-		    && (PTR2INT(*catchTop) >
-			PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2))) {
+		    && (PTR2UINT(*catchTop) >
+			PTR2UINT(auxObjList->internalRep.twoPtrValue.ptr2))) {
 		break;
 	    }
 	    POP_TAUX_OBJ();
@@ -7844,16 +7847,16 @@ TEBCresume(
 	 */
 
     processCatch:
-	while (CURR_DEPTH > PTR2INT(*catchTop)) {
+	while (CURR_DEPTH > PTR2UINT(*catchTop)) {
 	    valuePtr = POP_OBJECT();
 	    TclDecrRefCount(valuePtr);
 	}
 #ifdef TCL_COMPILE_DEBUG
 	if (traceInstructions) {
-	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
-		    "unwound to %ld, new pc %u\n",
-		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
-		    (long)PTR2INT(*catchTop), (unsigned) rangePtr->catchOffset);
+	    fprintf(stdout, "  ... found catch at %d, catchTop=%" TCL_Z_MODIFIER "u, "
+		    "unwound to %" TCL_Z_MODIFIER "u, new pc %" TCL_Z_MODIFIER "u\n",
+		    rangePtr->codeOffset, (size_t)(catchTop - initCatchTop - 1),
+		    PTR2UINT(*catchTop), (size_t)rangePtr->catchOffset);
 	}
 #endif
 	pc = (codePtr->codeStart + rangePtr->catchOffset);
@@ -7889,10 +7892,10 @@ TEBCresume(
 
 	if (tosPtr < initTosPtr) {
 	    fprintf(stderr,
-		    "\nTclNRExecuteByteCode: abnormal return at pc %u: "
-		    "stack top %d < entry stack top %d\n",
-		    (unsigned)(pc - codePtr->codeStart),
-		    (unsigned) CURR_DEPTH, (unsigned) 0);
+		    "\nTclNRExecuteByteCode: abnormal return at pc %" TCL_Z_MODIFIER "u: "
+		    "stack top %" TCL_Z_MODIFIER "u < entry stack top %d\n",
+		    (size_t)(pc - codePtr->codeStart),
+		    CURR_DEPTH, 0);
 	    Tcl_Panic("TclNRExecuteByteCode execution failure: end stack top < start stack top");
 	}
 	CLANG_ASSERT(bcFramePtr);
@@ -9173,21 +9176,21 @@ ValidatePcAndStackTop(
 				 * stdout. */
     const unsigned char *pc,	/* Points to first byte of a bytecode
 				 * instruction. The program counter. */
-    int stackTop,		/* Current stack top. Must be between
+    size_t stackTop,		/* Current stack top. Must be between
 				 * stackLowerBound and stackUpperBound
 				 * (inclusive). */
     int checkStack)		/* 0 if the stack depth check should be
 				 * skipped. */
 {
-    int stackUpperBound = codePtr->maxStackDepth;
+    size_t stackUpperBound = codePtr->maxStackDepth;
 				/* Greatest legal value for stackTop. */
-    size_t relativePc = (size_t) (pc - codePtr->codeStart);
-    size_t codeStart = (size_t) codePtr->codeStart;
+    size_t relativePc = (size_t)(pc - codePtr->codeStart);
+    size_t codeStart = (size_t)codePtr->codeStart;
     size_t codeEnd = (size_t)
 	    (codePtr->codeStart + codePtr->numCodeBytes);
     unsigned char opCode = *pc;
 
-    if (((size_t) pc < codeStart) || ((size_t) pc > codeEnd)) {
+    if ((PTR2UINT(pc) < codeStart) || (PTR2UINT(pc) > codeEnd)) {
 	fprintf(stderr, "\nBad instruction pc 0x%p in TclNRExecuteByteCode\n",
 		pc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad pc");
@@ -9198,11 +9201,11 @@ ValidatePcAndStackTop(
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad opcode");
     }
     if (checkStack &&
-	    ((stackTop < 0) || (stackTop > stackUpperBound))) {
+	    (stackTop > stackUpperBound)) {
 	int numChars;
 	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL, NULL);
 
-	fprintf(stderr, "\nBad stack top %d at pc %" TCL_Z_MODIFIER "u in TclNRExecuteByteCode (min 0, max %i)",
+	fprintf(stderr, "\nBad stack top %" TCL_Z_MODIFIER "u at pc %" TCL_Z_MODIFIER "u in TclNRExecuteByteCode (min 0, max %" TCL_Z_MODIFIER "u)",
 		stackTop, relativePc, stackUpperBound);
 	if (cmd != NULL) {
 	    Tcl_Obj *message;
