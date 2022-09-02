@@ -260,7 +260,7 @@ test httpold-4.12 {httpEvent} -body {
     set tout {}
     update
     set x {}
-    set token [http_get $url -query delay=500 -timeout 1 -command {lappend x fail}]
+    set token [http_get $url?delay=500 -timeout 1 -command {lappend x fail}]
     set i 0; while {$x eq {} && [incr i] < 50} {
 	set tout [after 20 {set x progress}]
 	vwait x

@@ -69,7 +69,7 @@ proc httpdRead { sock } {
 	    httpd_log $sock Error "bad first line:$line"
 	    httpdSockDone $sock
 	}
-	if {[regexp {[\?&]delay=([^&]+)} val]} {
+	if {[regexp {(?:^|[\?&])delay=([^&]+)} $data(query) {} val]} {
 	    fileevent $sock readable {}
 	    after $val [list fileevent $sock readable [list httpdRead $sock]]
 	}
