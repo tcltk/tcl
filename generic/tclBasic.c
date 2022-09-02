@@ -2648,7 +2648,7 @@ static int cmdWrapperProc(void *clientData,
     if (objc < 0) {
 	objc = -1;
     }
-    return info->proc(info->clientData, interp, objc, objv);
+    return info->proc(info->clientData, interp, (size_t)objc, objv);
 }
 
 static void cmdWrapperDeleteProc(void *clientData) {
@@ -8427,6 +8427,11 @@ Tcl_NRCallObjProc2(
     size_t objc,
     Tcl_Obj *const objv[])
 {
+    if (objc > INT_MAX) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
+	return TCL_ERROR;
+    }
+
     NRE_callback *rootPtr = TOP_CB(interp);
     CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->clientData = clientData;
@@ -8472,7 +8477,10 @@ static int cmdWrapperNreProc(
     Tcl_Obj *const objv[])
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
-    return info->nreProc(info->clientData, interp, objc, objv);
+    if (objc < 0) {
+	objc = -1;
+    }
+    return info->nreProc(info->clientData, interp, (size_t)objc, objv);
 }
 
 Tcl_Command
