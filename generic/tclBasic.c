@@ -2654,11 +2654,14 @@ typedef struct {
 
 
 static int cmdWrapperProc(void *clientData,
-	Tcl_Interp *interp,
-	int objc,
+    Tcl_Interp *interp,
+    int objc,
     Tcl_Obj * const *objv)
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
+    if (objc < 0) {
+	objc = -1;
+    }
     return info->proc(info->clientData, interp, objc, objv);
 }
 
