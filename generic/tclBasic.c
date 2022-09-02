@@ -9192,6 +9192,11 @@ Tcl_NRCallObjProc2(
     size_t objc,
     Tcl_Obj *const objv[])
 {
+    if (objc > INT_MAX) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
+	return TCL_ERROR;
+    }
+
     NRE_callback *rootPtr = TOP_CB(interp);
     CmdWrapperInfo *info = (CmdWrapperInfo *)ckalloc(sizeof(CmdWrapperInfo));
     info->clientData = clientData;
@@ -9237,6 +9242,9 @@ static int cmdWrapperNreProc(
     Tcl_Obj *const objv[])
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
+    if (objc < 0) {
+	objc = -1;
+    }
     return info->nreProc(info->clientData, interp, objc, objv);
 }
 
