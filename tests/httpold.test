@@ -256,7 +256,7 @@ test httpold-4.11 {httpEvent} {
     http_reset $token
     http_status $token
 } {reset}
-test httpold-4.12 {httpEvent} {
+test httpold-4.12 {httpEvent See [2641672]} knownBug {
     update
     set x {}
     after 500 {lappend x ok}
