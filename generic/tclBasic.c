@@ -3340,10 +3340,10 @@ Tcl_SetCommandInfoFromToken(
 	if (infoPtr->objProc2 == NULL) {
 	    info->proc = invokeObj2Command;
 	    info->clientData = cmdPtr;
-	   	info->nreProc = NULL;
+	    info->nreProc = NULL;
 	} else {
 	    if (infoPtr->objProc2 != info->proc) {
-	   	info->nreProc = NULL;
+		info->nreProc = NULL;
 		info->proc = infoPtr->objProc2;
 	    }
 	    info->clientData = infoPtr->objClientData2;
@@ -3430,7 +3430,7 @@ Tcl_GetCommandInfoFromToken(
     /*
      * Set isNativeObjectProc 1 if objProc was registered by a call to
      * Tcl_CreateObjCommand. Set isNativeObjectProc 2 if objProc was
-     * registered by a call to Tcl_CreateObjCommand. Otherwise set it to 0.
+     * registered by a call to Tcl_CreateObjCommand2. Otherwise set it to 0.
      */
 
     cmdPtr = (Command *) cmd;
