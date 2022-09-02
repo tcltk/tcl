@@ -2631,26 +2631,30 @@ Tcl_CreateCommand(
  */
 
 typedef struct {
-    void *clientData; /* Arbitrary value to pass to object function. */
     Tcl_ObjCmdProc2 *proc;
-    Tcl_ObjCmdProc2 *nreProc;
+    void *clientData; /* Arbitrary value to pass to proc function. */
     Tcl_CmdDeleteProc *deleteProc;
+    void *deleteData; /* Arbitrary value to pass to deleteProc function. */
+    Tcl_ObjCmdProc2 *nreProc;
 } CmdWrapperInfo;
 
 
 static int cmdWrapperProc(void *clientData,
-	Tcl_Interp *interp,
-	int objc,
+    Tcl_Interp *interp,
+    int objc,
     Tcl_Obj * const *objv)
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
+    if (objc < 0) {
+	objc = -1;
+    }
     return info->proc(info->clientData, interp, objc, objv);
 }
 
 static void cmdWrapperDeleteProc(void *clientData) {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
 
-    clientData = info->clientData;
+    clientData = info->deleteData;
     Tcl_CmdDeleteProc *deleteProc = info->deleteProc;
     Tcl_Free(info);
     if (deleteProc != NULL) {
@@ -2677,8 +2681,9 @@ Tcl_CreateObjCommand2(
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->proc = proc;
-    info->deleteProc = deleteProc;
     info->clientData = clientData;
+    info->deleteProc = deleteProc;
+    info->deleteData = clientData;
 
     return Tcl_CreateObjCommand(interp, cmdName,
 	    (proc ? cmdWrapperProc : NULL),
@@ -3297,7 +3302,7 @@ Tcl_SetCommandInfoFromToken(
     if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
 	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
 	info->deleteProc = infoPtr->deleteProc;
-	info->clientData = infoPtr->deleteData;
+	info->deleteData = infoPtr->deleteData;
     } else {
 	cmdPtr->deleteProc = infoPtr->deleteProc;
 	cmdPtr->deleteData = infoPtr->deleteData;
@@ -3381,7 +3386,7 @@ Tcl_GetCommandInfoFromToken(
     if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
 	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
 	infoPtr->deleteProc = info->deleteProc;
-	infoPtr->deleteData = info->clientData;
+	infoPtr->deleteData = info->deleteData;
     } else {
 	infoPtr->deleteProc = cmdPtr->deleteProc;
 	infoPtr->deleteData = cmdPtr->deleteData;
@@ -8491,9 +8496,10 @@ Tcl_NRCreateCommand2(
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->proc = proc;
+    info->clientData = clientData;
     info->nreProc = nreProc;
     info->deleteProc = deleteProc;
-    info->clientData = clientData;
+    info->deleteData = clientData;
     return Tcl_NRCreateCommand(interp, cmdName,
 	    (proc ? cmdWrapperProc : NULL),
 	    (nreProc ? cmdWrapperNreProc : NULL),
