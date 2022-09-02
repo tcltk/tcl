@@ -293,7 +293,7 @@ static Tcl_CmdProc	TestsetplatformCmd;
 static Tcl_CmdProc	TeststaticlibraryCmd;
 static Tcl_CmdProc	TesttranslatefilenameCmd;
 static Tcl_CmdProc	TestupvarCmd;
-static Tcl_ObjCmdProc	TestWrongNumArgsObjCmd;
+static Tcl_ObjCmdProc2	TestWrongNumArgsObjCmd;
 static Tcl_ObjCmdProc	TestGetIndexFromObjStructObjCmd;
 static Tcl_CmdProc	TestChannelCmd;
 static Tcl_CmdProc	TestChannelEventCmd;
@@ -555,6 +555,12 @@ Tcltest_Init(
     }
 
     if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
+#if TCL_MAJOR_VERSION > 8
+	if (info.isNativeObjectProc == 2) {
+	    Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
+		    info.objProc2, (void *)version, NULL);
+    } else
+#endif
 	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
 		info.objProc, (void *)version, NULL);
     }
@@ -573,7 +579,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testsetbytearraylength", TestsetbytearraylengthObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "teststringbytes", TeststringbytesObjCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
+    Tcl_CreateObjCommand2(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfilesystem", TestFilesystemObjCmd,
 	    NULL, NULL);
@@ -811,6 +817,12 @@ Tcltest_SafeInit(
 	return TCL_ERROR;
     }
     if (Tcl_GetCommandInfo(interp, "::tcl::build-info", &info)) {
+#if TCL_MAJOR_VERSION > 8
+	if (info.isNativeObjectProc == 2) {
+	    Tcl_CreateObjCommand2(interp, "::tcl::test::build-info",
+		    info.objProc2, (void *)version, NULL);
+    } else
+#endif
 	Tcl_CreateObjCommand(interp, "::tcl::test::build-info",
 		info.objProc, (void *)version, NULL);
     }
@@ -6508,22 +6520,18 @@ static int
 TestWrongNumArgsObjCmd(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i, length;
+    Tcl_WideInt i;
+    size_t length;
     const char *msg;
 
-    if (objc < 3) {
-	/*
-	 * Don't use Tcl_WrongNumArgs here, as that is the function
-	 * we want to test!
-	 */
-	Tcl_AppendResult(interp, "insufficient arguments", NULL);
-	return TCL_ERROR;
+    if (objc + 1 < 4) {
+	goto insufArgs;
     }
 
-    if (Tcl_GetIntFromObj(interp, objv[1], &i) != TCL_OK) {
+    if (Tcl_GetWideIntFromObj(interp, objv[1], &i) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -6532,15 +6540,16 @@ TestWrongNumArgsObjCmd(
 	msg = NULL;
     }
 
-    if (i > objc - 3) {
+    if (i < 0 || (Tcl_WideUInt)i + 3 > (Tcl_WideUInt)objc) {
 	/*
 	 * Asked for more arguments than were given.
 	 */
+    insufArgs:
 	Tcl_AppendResult(interp, "insufficient arguments", NULL);
 	return TCL_ERROR;
     }
 
-    Tcl_WrongNumArgs(interp, i, &(objv[3]), msg);
+    Tcl_WrongNumArgs(interp, (size_t)i, &(objv[3]), msg);
     return TCL_OK;
 }
 
