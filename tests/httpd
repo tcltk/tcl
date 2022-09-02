@@ -45,7 +45,7 @@ proc httpdAccept {newsock ipaddr port} {
     fconfigure $newsock -blocking 0 -translation {auto crlf}
     httpd_log $newsock Connect $ipaddr $port
     set data(ipaddr) $ipaddr
-    after 50 [list fileevent $newsock readable [list httpdRead $newsock]]
+    fileevent $newsock readable [list httpdRead $newsock]
 }
 
 # read data from a client request
@@ -68,6 +68,10 @@ proc httpdRead { sock } {
 	    httpdError $sock 400
 	    httpd_log $sock Error "bad first line:$line"
 	    httpdSockDone $sock
+	}
+	if {[regexp {[\?&]delay=([^&]+)} val]} {
+	    fileevent $sock readable {}
+	    after $val [list fileevent $sock readable [list httpdRead $sock]]
 	}
 	return
     } elseif {$data(state) == "mime"} {
