@@ -1245,11 +1245,11 @@ Tcl_CreateInterp(void)
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
     Tcl_PkgProvideEx(interp, "tcl", TCL_PATCH_LEVEL, &tclStubs);
     Tcl_CmdInfo info2;
-    Tcl_Command buildInfoCmd = Tcl_CreateObjCommand2(interp, "::tcl::build-info",
-	    buildInfoObjCmd2, (void *)version, NULL);
+    Tcl_Command buildInfoCmd = Tcl_CreateObjCommand(interp, "::tcl::build-info",
+	    buildInfoObjCmd, (void *)version, NULL);
     Tcl_GetCommandInfoFromToken(buildInfoCmd, &info2);
-    info2.objProc = buildInfoObjCmd;
-    info2.objClientData = (void *)version;
+    info2.objProc2 = buildInfoObjCmd2;
+    info2.objClientData2 = (void *)version;
     Tcl_SetCommandInfoFromToken(buildInfoCmd, &info2);
 
     if (TclTommath_Init(interp) != TCL_OK) {
@@ -3306,6 +3306,15 @@ invokeObj2Command(
     return result;
 }
 
+static int cmdWrapper2Proc(void *clientData,
+    Tcl_Interp *interp,
+    size_t objc,
+    Tcl_Obj *const objv[])
+{
+    Command *cmdPtr = (Command *)clientData;
+    return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+}
+
 int
 Tcl_SetCommandInfoFromToken(
     Tcl_Command cmd,
@@ -3351,8 +3360,19 @@ Tcl_SetCommandInfoFromToken(
 	info->deleteProc = infoPtr->deleteProc;
 	info->deleteData = infoPtr->deleteData;
     } else {
-	cmdPtr->deleteProc = infoPtr->deleteProc;
-	cmdPtr->deleteData = infoPtr->deleteData;
+	if ((infoPtr->objProc2 != NULL) && (infoPtr->objProc2 != cmdWrapper2Proc)) {
+	    CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
+	    info->proc = infoPtr->objProc2;
+	    info->clientData = infoPtr->objClientData2;
+	    info->nreProc = NULL;
+	    info->deleteProc = infoPtr->deleteProc;
+	    info->deleteData = infoPtr->deleteData;
+	    cmdPtr->deleteProc = cmdWrapperDeleteProc;
+	    cmdPtr->deleteData = info;
+	} else {
+	    cmdPtr->deleteProc = infoPtr->deleteProc;
+	    cmdPtr->deleteData = infoPtr->deleteData;
+	}
     }
     return 1;
 }
@@ -3406,15 +3426,6 @@ Tcl_GetCommandInfo(
  *
  *----------------------------------------------------------------------
  */
-
-static int cmdWrapper2Proc(void *clientData,
-    Tcl_Interp *interp,
-    size_t objc,
-    Tcl_Obj *const objv[])
-{
-    Command *cmdPtr = (Command *)clientData;
-    return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
-}
 
 int
 Tcl_GetCommandInfoFromToken(
