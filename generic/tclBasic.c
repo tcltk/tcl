@@ -8480,7 +8480,10 @@ int wrapperNRObjProc(
     clientData = info->clientData;
     Tcl_ObjCmdProc2 *proc = info->proc;
     Tcl_Free(info);
-    return proc(clientData, interp, objc, objv);
+    if (objc < 0) {
+	objc = -1;
+    }
+    return proc(clientData, interp, (size_t)objc, objv);
 }
 
 int
@@ -8536,7 +8539,10 @@ static int cmdWrapperNreProc(
     Tcl_Obj *const objv[])
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
-    return info->nreProc(info->clientData, interp, objc, objv);
+    if (objc < 0) {
+	objc = -1;
+    }
+    return info->nreProc(info->clientData, interp, (size_t)objc, objv);
 }
 
 Tcl_Command
