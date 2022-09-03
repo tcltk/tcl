@@ -566,7 +566,7 @@ TcpBlockModeProc(
  *
  * Side effects:
  *	Processes socket events off the system queue.
- *	May process asynchroneous connect.
+ *	May process asynchronous connect.
  *
  *----------------------------------------------------------------------
  */
@@ -1706,7 +1706,7 @@ TcpConnect(
 		continue;
 	    }
 	    /*
-	     * For asynchroneous connect set the socket in nonblocking mode
+	     * For asynchronous connect set the socket in nonblocking mode
 	     * and activate connect notification
 	     */
 	    if (async_connect) {
@@ -1794,7 +1794,7 @@ TcpConnect(
 
 	    /*
 	     * Clear the tsd socket list pointer if we did not wait for
-	     * the FD_CONNECT asynchroneously
+	     * the FD_CONNECT asynchronously
 	     */
 	    tsdPtr->pendingTcpState = NULL;
 
