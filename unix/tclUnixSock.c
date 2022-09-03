@@ -9,6 +9,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include <netinet/tcp.h>
 #include "tclInt.h"
 
 /*
@@ -146,6 +147,9 @@ static int		TcpInputProc(void *instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		TcpOutputProc(void *instanceData,
 			    const char *buf, int toWrite, int *errorCode);
+static int		TcpSetOptionProc(void *instanceData,
+			    Tcl_Interp *interp, const char *optionName,
+			    const char *value);
 static void		TcpThreadActionProc(void *instanceData, int action);
 static void		TcpWatchProc(void *instanceData, int mask);
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
@@ -167,7 +171,7 @@ static const Tcl_ChannelType tcpChannelType = {
     TcpInputProc,		/* Input proc. */
     TcpOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
-    NULL,			/* Set option proc. */
+    TcpSetOptionProc,		/* Set option proc. */
     TcpGetOptionProc,		/* Get option proc. */
     TcpWatchProc,		/* Initialize notifier. */
     TcpGetHandleProc,		/* Get OS handles out of channel. */
@@ -434,7 +438,7 @@ TcpBlockModeProc(
  *
  * Side effects:
  *	Processes socket events off the system queue. May process
- *	asynchroneous connects.
+ *	asynchronous connects.
  *
  *----------------------------------------------------------------------
  */
@@ -815,6 +819,88 @@ TcpHostPortList(
 /*
  *----------------------------------------------------------------------
  *
+ * TcpSetOptionProc --
+ *
+ *	Sets TCP channel specific options.
+ *
+ * Results:
+ *	None, unless an error happens.
+ *
+ * Side effects:
+ *	Changes attributes of the socket at the system level.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TcpSetOptionProc(
+    void *instanceData,		/* Socket state. */
+    Tcl_Interp *interp,		/* For error reporting - can be NULL. */
+    const char *optionName,	/* Name of the option to set. */
+    const char *value)		/* New value for option. */
+{
+    TcpState *statePtr = (TcpState *)instanceData;
+    size_t len = 0;
+
+    if (optionName != NULL) {
+	len = strlen(optionName);
+    }
+
+    if ((len > 1) && (optionName[1] == 'k') &&
+	    (strncmp(optionName, "-keepalive", len) == 0)) {
+	int val = 0, ret;
+
+	if (Tcl_GetBoolean(interp, value, &val) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+#if defined(SO_KEEPALIVE)
+	ret = setsockopt(statePtr->fds.fd, SOL_SOCKET, SO_KEEPALIVE,
+		(const char *) &val, sizeof(int));
+#else
+	ret = -1;
+	Tcl_SetErrno(ENOTSUP);
+#endif
+	if (ret < 0) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't set socket option: %s",
+			Tcl_PosixError(interp)));
+	    }
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
+    }
+    if ((len > 1) && (optionName[1] == 'n') &&
+	    (strncmp(optionName, "-nagle", len) == 0)) {
+	int val = 0, ret;
+
+	if (Tcl_GetBoolean(interp, value, &val) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	val = !val;	/* Nagle ain't nodelay */
+#if defined(SOL_TCP) && defined(TCP_NODELAY)
+	ret = setsockopt(statePtr->fds.fd, SOL_TCP, TCP_NODELAY,
+		(const char *) &val, sizeof(int));
+#else
+	ret = -1;
+	Tcl_SetErrno(ENOTSUP);
+#endif
+	if (ret < 0) {
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't set socket option: %s",
+			Tcl_PosixError(interp)));
+	    }
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
+    }
+    return Tcl_BadChannelOption(interp, optionName, "keepalive nagle");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TcpGetOptionProc --
  *
  *	Computes an option value for a TCP socket based channel, or a list of
@@ -835,7 +921,7 @@ TcpHostPortList(
 
 static int
 TcpGetOptionProc(
-    void *instanceData,	/* Socket state. */
+    void *instanceData,		/* Socket state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Name of the option to retrieve the value
 				 * for, or NULL to get all options and their
@@ -846,8 +932,6 @@ TcpGetOptionProc(
     TcpState *statePtr = (TcpState *)instanceData;
     size_t len = 0;
 
-    WaitForConnect(statePtr, NULL);
-
     if (optionName != NULL) {
 	len = strlen(optionName);
     }
@@ -856,6 +940,7 @@ TcpGetOptionProc(
 	    (strncmp(optionName, "-error", len) == 0)) {
 	socklen_t optlen = sizeof(int);
 
+	WaitForConnect(statePtr, NULL);
         if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
             /*
              * Suppress errors as long as we are not done.
@@ -880,6 +965,7 @@ TcpGetOptionProc(
 
     if ((len > 1) && (optionName[1] == 'c') &&
 	    (strncmp(optionName, "-connecting", len) == 0)) {
+	WaitForConnect(statePtr, NULL);
         Tcl_DStringAppend(dsPtr,
                 GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT) ? "1" : "0", TCL_INDEX_NONE);
         return TCL_OK;
@@ -890,6 +976,7 @@ TcpGetOptionProc(
         address peername;
         socklen_t size = sizeof(peername);
 
+	WaitForConnect(statePtr, NULL);
 	if (GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT)) {
 	    /*
 	     * In async connect output an empty string
@@ -941,6 +1028,7 @@ TcpGetOptionProc(
         socklen_t size;
 	int found = 0;
 
+	WaitForConnect(statePtr, NULL);
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-sockname");
 	    Tcl_DStringStartSublist(dsPtr);
@@ -974,9 +1062,46 @@ TcpGetOptionProc(
 	}
     }
 
+    if ((len == 0) || ((len > 1) && (optionName[1] == 'k') &&
+	    (strncmp(optionName, "-keepalive", len) == 0))) {
+        socklen_t size;
+	int opt = 0;
+
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-keepalive");
+	}
+#if defined(SO_KEEPALIVE)
+	getsockopt(statePtr->fds.fd, SOL_SOCKET, SO_KEEPALIVE,
+		(char *) &opt, &size);
+#endif
+	Tcl_DStringAppendElement(dsPtr, opt ? "1" : "0");
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
+
+    if ((len == 0) || ((len > 1) && (optionName[1] == 'n') &&
+	    (strncmp(optionName, "-nagle", len) == 0))) {
+        socklen_t size;
+	int opt = 0;
+
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-nagle");
+	}
+#if defined(SOL_TCP) && defined(TCP_NODELAY)
+	getsockopt(statePtr->fds.fd, SOL_TCP, TCP_NODELAY,
+		(char *) &opt, &size);
+#endif
+	opt = !opt;	/* Nagle ain't nodelay */
+	Tcl_DStringAppendElement(dsPtr, opt ? "1" : "0");
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
+
     if (len > 0) {
 	return Tcl_BadChannelOption(interp, optionName,
-                "connecting peername sockname");
+                "connecting keepalive nagle peername sockname");
     }
 
     return TCL_OK;
@@ -1351,7 +1476,7 @@ TcpConnect(
         }
 
         /*
-         * We need to forward the writable event that brought us here, bcasue
+         * We need to forward the writable event that brought us here, because
          * upon reading of getsockopt(SO_ERROR), at least some OSes clear the
          * writable state from the socket, and so a subsequent select() on
          * behalf of a script level [fileevent] would not fire. It doesn't
