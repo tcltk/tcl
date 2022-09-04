@@ -273,7 +273,11 @@ typedef struct Namespace {
 				 * strings; values have type (Namespace *). If
 				 * NULL, there are no children. */
 #endif
+#if TCL_MAJOR_VERSION > 8
     size_t nsId;		/* Unique id for the namespace. */
+#else
+    unsigned long nsId;
+#endif
     Tcl_Interp *interp;	/* The interpreter containing this
 				 * namespace. */
     int flags;			/* OR-ed combination of the namespace status
@@ -1839,7 +1843,18 @@ typedef struct Interp {
     void *interpInfo;	/* Information used by tclInterp.c to keep
 				 * track of parent/child interps on a
 				 * per-interp basis. */
+#if TCL_MAJOR_VERSION > 8
     void (*optimizer)(void *envPtr);
+#else
+    union {
+	void (*optimizer)(void *envPtr);
+	Tcl_HashTable unused2;	/* No longer used (was mathFuncTable). The
+				 * unused space in interp was repurposed for
+				 * pluggable bytecode optimizers. The core
+				 * contains one optimizer, which can be
+				 * selectively overridden by extensions. */
+    } extra;
+#endif
     /*
      * Information related to procedures and variables. See tclProc.c and
      * tclVar.c for usage.
@@ -2442,7 +2457,7 @@ typedef struct ListStore {
     ListSizeT firstUsed;    /* Index of first slot in use within slots[] */
     ListSizeT numUsed;      /* Number of slots in use (starting firstUsed) */
     ListSizeT numAllocated; /* Total number of slots[] array slots. */
-    int refCount;           /* Number of references to this instance */
+    size_t refCount;           /* Number of references to this instance */
     int flags;              /* LISTSTORE_* flags */
     Tcl_Obj *slots[TCLFLEXARRAY];      /* Variable size array. Grown as needed */
 } ListStore;
@@ -2466,7 +2481,7 @@ typedef struct ListStore {
 typedef struct ListSpan {
     ListSizeT spanStart;    /* Starting index of the span */
     ListSizeT spanLength;   /* Number of elements in the span */
-    int refCount;     /* Count of references to this span record */
+    size_t refCount;     /* Count of references to this span record */
 } ListSpan;
 #ifndef LIST_SPAN_THRESHOLD /* May be set on build line */
 #define LIST_SPAN_THRESHOLD 101
@@ -3119,8 +3134,7 @@ MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 MODULE_SCOPE Tcl_Command TclNRCreateCommandInNs(Tcl_Interp *interp,
 			    const char *cmdName, Tcl_Namespace *nsPtr,
 			    Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc,
-			    void *clientData,
-			    Tcl_CmdDeleteProc *deleteProc);
+			    void *clientData, Tcl_CmdDeleteProc *deleteProc);
 MODULE_SCOPE int	TclNREvalFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    const char *encodingName);
 MODULE_SCOPE void	TclFSUnloadTempFile(Tcl_LoadHandle loadHandle);
@@ -3272,7 +3286,7 @@ MODULE_SCOPE size_t	TclpFindVariable(const char *name, size_t *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    TCL_HASH_TYPE *lengthPtr, Tcl_Encoding *encodingPtr);
 MODULE_SCOPE void	TclpInitLock(void);
-MODULE_SCOPE ClientData	TclpInitNotifier(void);
+MODULE_SCOPE void *TclpInitNotifier(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
 MODULE_SCOPE void	TclpInitUnlock(void);
 MODULE_SCOPE Tcl_Obj *	TclpObjListVolumes(void);
@@ -3291,7 +3305,7 @@ MODULE_SCOPE int	TclCrossFilesystemCopy(Tcl_Interp *interp,
 MODULE_SCOPE int	TclpMatchInDirectory(Tcl_Interp *interp,
 			    Tcl_Obj *resultPtr, Tcl_Obj *pathPtr,
 			    const char *pattern, Tcl_GlobTypeData *types);
-MODULE_SCOPE void	*TclpGetNativeCwd(void *clientData);
+MODULE_SCOPE void *TclpGetNativeCwd(void *clientData);
 MODULE_SCOPE Tcl_FSDupInternalRepProc TclNativeDupInternalRep;
 MODULE_SCOPE Tcl_Obj *	TclpObjLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
 			    int linkType);
@@ -4812,8 +4826,8 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 	    : Tcl_UtfToUniChar(str, chPtr))
 #else
 #define TclUtfToUniChar(str, chPtr) \
-	((((unsigned char) *(str)) < 0x80) ?		\
-	    ((*(chPtr) = (unsigned char) *(str)), 1)	\
+	(((UCHAR(*(str))) < 0x80) ?		\
+	    ((*(chPtr) = UCHAR(*(str))), 1)	\
 	    : Tcl_UtfToChar16(str, chPtr))
 #endif
 
@@ -4824,7 +4838,7 @@ MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
  * of counting along a string of all one-byte characters.  The ANSI C
  * "prototype" for this macro is:
  *
- * MODULE_SCOPE void	TclNumUtfCharsM(size_t numChars, const char *bytes,
+ * MODULE_SCOPE void	TclNumUtfCharsM(int | size_t numChars, const char *bytes,
  *				size_t numBytes);
  *----------------------------------------------------------------
  */

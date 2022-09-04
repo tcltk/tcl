@@ -2666,7 +2666,7 @@ static int cmdWrapperProc(void *clientData,
 	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
 	return TCL_ERROR;
     }
-    return info->proc(info->clientData, interp, objc, objv);
+    return info->proc(info->clientData, interp, (int)objc, objv);
 }
 
 static void cmdWrapperDeleteProc(void *clientData) {
@@ -3320,6 +3320,18 @@ invokeObj2Command(
     }
     return result;
 }
+
+static int cmdWrapper2Proc(void *clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Command *cmdPtr = (Command *)clientData;
+    if (objc < 0) {
+	objc = -1;
+    }
+    return cmdPtr->objProc2(cmdPtr->objClientData2, interp, (size_t)objc, objv);
+}
 #endif
 
 int
@@ -3370,8 +3382,22 @@ Tcl_SetCommandInfoFromToken(
     } else
 #endif
     {
-	cmdPtr->deleteProc = infoPtr->deleteProc;
-	cmdPtr->deleteData = infoPtr->deleteData;
+#ifndef TCL_NO_DEPRECATED
+	if ((infoPtr->objProc != NULL) && (infoPtr->objProc != cmdWrapper2Proc)) {
+	    CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
+	    info->proc = infoPtr->objProc;
+	    info->clientData = infoPtr->objClientData;
+	    info->nreProc = NULL;
+	    info->deleteProc = infoPtr->deleteProc;
+	    info->deleteData = infoPtr->deleteData;
+	    cmdPtr->deleteProc = cmdWrapperDeleteProc;
+	    cmdPtr->deleteData = info;
+	} else
+#endif
+	{
+	    cmdPtr->deleteProc = infoPtr->deleteProc;
+	    cmdPtr->deleteData = infoPtr->deleteData;
+	}
     }
     return 1;
 }
@@ -3426,17 +3452,6 @@ Tcl_GetCommandInfo(
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_DEPRECATED
-static int cmdWrapper2Proc(void *clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Command *cmdPtr = (Command *)clientData;
-    return cmdPtr->objProc2(cmdPtr->objClientData2, interp, objc, objv);
-}
-#endif
-
 int
 Tcl_GetCommandInfoFromToken(
     Tcl_Command cmd,
@@ -3451,16 +3466,16 @@ Tcl_GetCommandInfoFromToken(
     /*
      * Set isNativeObjectProc 1 if objProc was registered by a call to
      * Tcl_CreateObjCommand. Set isNativeObjectProc 2 if objProc was
-     * registered by a call to Tcl_CreateObjCommand. Otherwise set it to 0.
+     * registered by a call to Tcl_CreateObjCommand2. Otherwise set it to 0.
      */
 
     cmdPtr = (Command *) cmd;
     infoPtr->isNativeObjectProc =
 	    (cmdPtr->objProc2 != InvokeStringCommand) ? 2 : 0;
-    infoPtr->proc = cmdPtr->proc;
-    infoPtr->clientData = cmdPtr->clientData;
     infoPtr->objProc2 = cmdPtr->objProc2;
     infoPtr->objClientData2 = cmdPtr->objClientData2;
+    infoPtr->proc = cmdPtr->proc;
+    infoPtr->clientData = cmdPtr->clientData;
 #ifndef TCL_NO_DEPRECATED
     if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
 	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
@@ -8509,11 +8524,7 @@ int wrapperNRObjProc(
     clientData = info->clientData;
     Tcl_ObjCmdProc *proc = info->proc;
     Tcl_Free(info);
-    if (objc > INT_MAX) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
-	return TCL_ERROR;
-    }
-    return proc(clientData, interp, objc, objv);
+    return proc(clientData, interp, (int)objc, objv);
 }
 
 int
@@ -8524,6 +8535,11 @@ Tcl_NRCallObjProc(
     size_t objc,
     Tcl_Obj *const objv[])
 {
+    if (objc > INT_MAX) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
+	return TCL_ERROR;
+    }
+
     NRE_callback *rootPtr = TOP_CB(interp);
     CmdWrapperInfo *info = (CmdWrapperInfo *)Tcl_Alloc(sizeof(CmdWrapperInfo));
     info->clientData = clientData;
@@ -8571,10 +8587,6 @@ static int cmdWrapperNreProc(
     Tcl_Obj *const objv[])
 {
     CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
-    if (objc > INT_MAX) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
-	return TCL_ERROR;
-    }
     return info->nreProc(info->clientData, interp, objc, objv);
 }
 
@@ -8604,9 +8616,9 @@ Tcl_NRCreateCommand(
     info->deleteProc = deleteProc;
     info->deleteData = clientData;
     return Tcl_NRCreateCommand2(interp, cmdName,
-	    proc ? cmdWrapperProc : NULL,
-	    nreProc ? cmdWrapperNreProc : NULL, info,
-	    cmdWrapperDeleteProc);
+	    (proc ? cmdWrapperProc : NULL),
+	    (nreProc ? cmdWrapperNreProc : NULL),
+	    info, cmdWrapperDeleteProc);
 }
 #endif /* TCL_NO_DEPRECATED */
 
