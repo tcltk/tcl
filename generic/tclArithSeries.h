@@ -11,7 +11,7 @@
  */
 
 /*
- * The structure used for the AirthSeries internal representation.
+ * The structure used for the ArithSeries internal representation.
  * Note that the len can in theory be always computed by start,end,step
  * but it's faster to cache it inside the internal representation.
  */
