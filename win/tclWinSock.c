@@ -588,8 +588,8 @@ TcpBlockModeProc(
  * 	an error.
  *
  * Side effects:
- *	Processes socket events off the system queue. May process
- *	asynchroneous connect.
+ *	Processes socket events off the system queue.
+ *	May process asynchronous connect.
  *
  *----------------------------------------------------------------------
  */
@@ -1810,7 +1810,7 @@ TcpConnect(
 	    }
 
 	    /*
-	     * For asynchroneous connect set the socket in nonblocking mode
+	     * For asynchronous connect set the socket in nonblocking mode
 	     * and activate connect notification
 	     */
 
@@ -1925,7 +1925,7 @@ TcpConnect(
 
 	    /*
 	     * Clear the tsd socket list pointer if we did not wait for
-	     * the FD_CONNECT asynchroneously
+	     * the FD_CONNECT asynchronously
 	     */
 
 	    tsdPtr->pendingTcpState = NULL;

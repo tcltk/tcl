@@ -434,7 +434,7 @@ TcpBlockModeProc(
  *
  * Side effects:
  *	Processes socket events off the system queue. May process
- *	asynchroneous connects.
+ *	asynchronous connects.
  *
  *----------------------------------------------------------------------
  */
@@ -1351,7 +1351,7 @@ TcpConnect(
         }
 
         /*
-         * We need to forward the writable event that brought us here, bcasue
+         * We need to forward the writable event that brought us here, because
          * upon reading of getsockopt(SO_ERROR), at least some OSes clear the
          * writable state from the socket, and so a subsequent select() on
          * behalf of a script level [fileevent] would not fire. It doesn't
