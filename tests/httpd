@@ -64,14 +64,14 @@ proc httpdRead { sock } {
 		-> data(proto) data(url) data(query) data(httpversion)]} {
 	    set data(state) mime
 	    httpd_log $sock Query $line
+	    if {[regexp {(?:^|[\?&])delay=([^&]+)} $data(query) {} val]} {
+		fileevent $sock readable {}
+		after $val [list fileevent $sock readable [list httpdRead $sock]]
+	    }
 	} else {
 	    httpdError $sock 400
 	    httpd_log $sock Error "bad first line:$line"
 	    httpdSockDone $sock
-	}
-	if {[regexp {(?:^|[\?&])delay=([^&]+)} $data(query) {} val]} {
-	    fileevent $sock readable {}
-	    after $val [list fileevent $sock readable [list httpdRead $sock]]
 	}
 	return
     } elseif {$data(state) == "mime"} {
