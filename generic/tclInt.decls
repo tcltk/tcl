@@ -1025,6 +1025,7 @@ declare 256 {
     int	TclPtrUnsetVar(Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr,
 	    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags)
 }
+
 declare 257 {
     void TclStaticLibrary(Tcl_Interp *interp, const char *prefix,
 	    Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc)
@@ -1036,8 +1037,14 @@ declare 258 {
 	    Tcl_Obj *basenameObj)
 }
 
-declare 259 {
-    void TclUnusedStubEntry(void)
+# TIP 625: for unit testing - create list objects with span
+declare 260 {
+    Tcl_Obj *TclListTestObj(int length, int leadingSpace, int endSpace)
+}
+
+# TIP 625: for unit testing - check list invariants
+declare 261 {
+    void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
 }
 
 ##############################################################################
