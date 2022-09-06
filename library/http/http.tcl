@@ -267,8 +267,8 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 	set state(error) [list $errormsg $errorInfo $errorCode]
 	set state(status) "error"
     }
-    if {[info commands ${token}EventCoroutine] ne {}} {
-	rename ${token}EventCoroutine {}
+    if {[info commands ${token}--EventCoroutine] ne {}} {
+	rename ${token}--EventCoroutine {}
     }
 
     # Is this an upgrade request/response?
@@ -387,9 +387,6 @@ proc http::KeepSocket {token} {
 	    # queued, arrange to read it.
 	    set token3 [lindex $socketRdQueue($connId) 0]
 	    set socketRdQueue($connId) [lrange $socketRdQueue($connId) 1 end]
-	    variable $token3
-	    upvar 0 $token3 state3
-	    set tk2 [namespace tail $token3]
 
 	    #Log pipelined, GRANT read access to $token3 in KeepSocket
 	    set socketRdState($connId) $token3
@@ -428,8 +425,7 @@ proc http::KeepSocket {token} {
 	    #   first item in the write queue, a non-pipelined request that is
 	    #   waiting for the read queue to empty.  That has now happened: so
 	    #   give that request read and write access.
-	    variable $token3
-	    set conn [set ${token3}(tmpConnArgs)]
+	    set conn [set ${token3}(connArgs)]
 	    #Log nonpipeline, GRANT r/w access to $token3 in KeepSocket
 	    set socketRdState($connId) $token3
 	    set socketWrState($connId) $token3
@@ -473,8 +469,7 @@ proc http::KeepSocket {token} {
 	    # Code:
 	    # - The code is the same as the code below for the nonpipelined
 	    #   case with a queued request.
-	    variable $token3
-	    set conn [set ${token3}(tmpConnArgs)]
+	    set conn [set ${token3}(connArgs)]
 	    #Log nonpipeline, GRANT r/w access to $token3 in KeepSocket
 	    set socketRdState($connId) $token3
 	    set socketWrState($connId) $token3
@@ -495,8 +490,7 @@ proc http::KeepSocket {token} {
 	    # If the next request is pipelined, it receives premature read
 	    # access to the socket. This is not a problem.
 	    set token3 [lindex $socketWrQueue($connId) 0]
-	    variable $token3
-	    set conn [set ${token3}(tmpConnArgs)]
+	    set conn [set ${token3}(connArgs)]
 	    #Log nonpipeline, GRANT r/w access to $token3 in KeepSocket
 	    set socketRdState($connId) $token3
 	    set socketWrState($connId) $token3
@@ -967,6 +961,9 @@ proc http::geturl {url args} {
     if {![catch {$http(-proxyfilter) $host} proxy]} {
 	set phost [lindex $proxy 0]
 	set pport [lindex $proxy 1]
+    } else {
+	set phost {}
+	set pport {}
     }
 
     # OK, now reassemble into a full URL
@@ -1235,10 +1232,11 @@ proc http::geturl {url args} {
     if {![info exists phost]} {
 	set phost ""
     }
+    set state(connArgs) [list $proto $phost $srvurl]
     if {$reusing} {
 	# For use by http::ReplayIfDead if the persistent connection has died.
 	# Also used by NextPipelinedWrite.
-	set state(tmpConnArgs) [list $proto $phost $srvurl]
+	set state(tmpConnArgs) $state(connArgs)
     }
 
     # The element socketWrState($connId) has a value which is either the name of
@@ -1735,11 +1733,11 @@ proc http::ReceiveResponse {token} {
 		     -buffersize $state(-blocksize)
     Log ^D$tk begin receiving response - token $token
 
-    coroutine ${token}EventCoroutine http::Event $sock $token
+    coroutine ${token}--EventCoroutine http::Event $sock $token
     if {[info exists state(-handler)] || [info exists state(-progress)]} {
         fileevent $sock readable [list http::EventGateway $sock $token]
     } else {
-        fileevent $sock readable ${token}EventCoroutine
+        fileevent $sock readable ${token}--EventCoroutine
     }
     return
 }
@@ -1763,8 +1761,8 @@ proc http::EventGateway {sock token} {
     variable $token
     upvar 0 $token state
     fileevent $sock readable {}
-    catch {${token}EventCoroutine} res opts
-    if {[info commands ${token}EventCoroutine] ne {}} {
+    catch {${token}--EventCoroutine} res opts
+    if {[info commands ${token}--EventCoroutine] ne {}} {
         # The coroutine can be deleted by completion (a non-yield return), by
         # http::Finish (when there is a premature end to the transaction), by
         # http::reset or http::cleanup, or if the caller set option -channel
@@ -1832,7 +1830,7 @@ proc http::NextPipelinedWrite {token} {
     } {
 	# - The usual case for a pipelined connection, ready for a new request.
 	#Log pipelined, GRANT write access to $token2 in NextPipelinedWrite
-	set conn [set ${token2}(tmpConnArgs)]
+	set conn [set ${token2}(connArgs)]
 	set socketWrState($connId) $token2
 	set socketWrQueue($connId) [lrange $socketWrQueue($connId) 1 end]
 	# Connect does its own fconfigure.
@@ -1857,9 +1855,7 @@ proc http::NextPipelinedWrite {token} {
 	# The case in which the next request will be non-pipelined, and the read
 	# and write queues is ready: which is the condition for a non-pipelined
 	# write.
-	variable $token3
-	upvar 0 $token3 state3
-	set conn [set ${token3}(tmpConnArgs)]
+	set conn [set ${token3}(connArgs)]
 	#Log nonpipeline, GRANT r/w access to $token3 in NextPipelinedWrite
 	set socketRdState($connId) $token3
 	set socketWrState($connId) $token3
@@ -1981,7 +1977,7 @@ proc http::CancelWritePipeline {name1 connId op} {
 # Side Effects:
 #	Use the same token, but try to open a new socket.
 
-proc http::ReplayIfDead {tokenArg doing} {
+proc http::ReplayIfDead {token doing} {
     variable socketMapping
     variable socketRdState
     variable socketWrState
@@ -1990,10 +1986,10 @@ proc http::ReplayIfDead {tokenArg doing} {
     variable socketClosing
     variable socketPlayCmd
 
-    variable $tokenArg
-    upvar 0 $tokenArg stateArg
+    variable $token
+    upvar 0 $token state
 
-    Log running http::ReplayIfDead for $tokenArg $doing
+    Log running http::ReplayIfDead for $token $doing
 
     # 1. Merge the tokens for transactions in flight, the read (response) queue,
     #    and the write (request) queue.
@@ -2002,85 +1998,85 @@ proc http::ReplayIfDead {tokenArg doing} {
     set InFlightW {}
 
     # Obtain the tokens for transactions in flight.
-    if {$stateArg(-pipeline)} {
+    if {$state(-pipeline)} {
 	# Two transactions may be in flight.  The "read" transaction was first.
 	# It is unlikely that the server would close the socket if a response
 	# was pending; however, an earlier request (as well as the present
 	# request) may have been sent and ignored if the socket was half-closed
 	# by the server.
 
-	if {    [info exists socketRdState($stateArg(socketinfo))]
-	     && ($socketRdState($stateArg(socketinfo)) ne "Rready")
+	if {    [info exists socketRdState($state(socketinfo))]
+	     && ($socketRdState($state(socketinfo)) ne "Rready")
 	} {
-	    lappend InFlightR $socketRdState($stateArg(socketinfo))
+	    lappend InFlightR $socketRdState($state(socketinfo))
 	} elseif {($doing eq "read")} {
-	    lappend InFlightR $tokenArg
+	    lappend InFlightR $token
 	}
 
-	if {    [info exists socketWrState($stateArg(socketinfo))]
-	     && $socketWrState($stateArg(socketinfo)) ni {Wready peNding}
+	if {    [info exists socketWrState($state(socketinfo))]
+	     && $socketWrState($state(socketinfo)) ni {Wready peNding}
 	} {
-	    lappend InFlightW $socketWrState($stateArg(socketinfo))
+	    lappend InFlightW $socketWrState($state(socketinfo))
 	} elseif {($doing eq "write")} {
-	    lappend InFlightW $tokenArg
+	    lappend InFlightW $token
 	}
 
-	# Report any inconsistency of $tokenArg with socket*state.
+	# Report any inconsistency of $token with socket*state.
 	if {    ($doing eq "read")
-	     && [info exists socketRdState($stateArg(socketinfo))]
-	     && ($tokenArg ne $socketRdState($stateArg(socketinfo)))
+	     && [info exists socketRdState($state(socketinfo))]
+	     && ($token ne $socketRdState($state(socketinfo)))
 	} {
-	    Log WARNING - ReplayIfDead pipelined tokenArg $tokenArg $doing \
-		    ne socketRdState($stateArg(socketinfo)) \
-		      $socketRdState($stateArg(socketinfo))
+	    Log WARNING - ReplayIfDead pipelined token $token $doing \
+		    ne socketRdState($state(socketinfo)) \
+		      $socketRdState($state(socketinfo))
 
 	} elseif {
 		($doing eq "write")
-	     && [info exists socketWrState($stateArg(socketinfo))]
-	     && ($tokenArg ne $socketWrState($stateArg(socketinfo)))
+	     && [info exists socketWrState($state(socketinfo))]
+	     && ($token ne $socketWrState($state(socketinfo)))
 	} {
-	    Log WARNING - ReplayIfDead pipelined tokenArg $tokenArg $doing \
-		    ne socketWrState($stateArg(socketinfo)) \
-		      $socketWrState($stateArg(socketinfo))
+	    Log WARNING - ReplayIfDead pipelined token $token $doing \
+		    ne socketWrState($state(socketinfo)) \
+		      $socketWrState($state(socketinfo))
 	}
     } else {
 	# One transaction should be in flight.
 	# socketRdState, socketWrQueue are used.
 	# socketRdQueue should be empty.
 
-	# Report any inconsistency of $tokenArg with socket*state.
-	if {$tokenArg ne $socketRdState($stateArg(socketinfo))} {
-	    Log WARNING - ReplayIfDead nonpipeline tokenArg $tokenArg $doing \
-		    ne socketRdState($stateArg(socketinfo)) \
-		      $socketRdState($stateArg(socketinfo))
+	# Report any inconsistency of $token with socket*state.
+	if {$token ne $socketRdState($state(socketinfo))} {
+	    Log WARNING - ReplayIfDead nonpipeline token $token $doing \
+		    ne socketRdState($state(socketinfo)) \
+		      $socketRdState($state(socketinfo))
 	}
 
 	# Report the inconsistency that socketRdQueue is non-empty.
-	if {    [info exists socketRdQueue($stateArg(socketinfo))]
-	     && ($socketRdQueue($stateArg(socketinfo)) ne {})
+	if {    [info exists socketRdQueue($state(socketinfo))]
+	     && ($socketRdQueue($state(socketinfo)) ne {})
 	} {
-	    Log WARNING - ReplayIfDead nonpipeline tokenArg $tokenArg $doing \
-		    has read queue socketRdQueue($stateArg(socketinfo)) \
-		    $socketRdQueue($stateArg(socketinfo)) ne {}
+	    Log WARNING - ReplayIfDead nonpipeline token $token $doing \
+		    has read queue socketRdQueue($state(socketinfo)) \
+		    $socketRdQueue($state(socketinfo)) ne {}
 	}
 
-	lappend InFlightW $socketRdState($stateArg(socketinfo))
-	set socketRdQueue($stateArg(socketinfo)) {}
+	lappend InFlightW $socketRdState($state(socketinfo))
+	set socketRdQueue($state(socketinfo)) {}
     }
 
     set newQueue {}
     lappend newQueue {*}$InFlightR
-    lappend newQueue {*}$socketRdQueue($stateArg(socketinfo))
+    lappend newQueue {*}$socketRdQueue($state(socketinfo))
     lappend newQueue {*}$InFlightW
-    lappend newQueue {*}$socketWrQueue($stateArg(socketinfo))
+    lappend newQueue {*}$socketWrQueue($state(socketinfo))
 
 
-    # 2. Tidy up tokenArg.  This is a cut-down form of Finish/CloseSocket.
+    # 2. Tidy up token.  This is a cut-down form of Finish/CloseSocket.
     #    Do not change state(status).
-    #    No need to after cancel stateArg(after) - either this is done in
+    #    No need to after cancel state(after) - either this is done in
     #    ReplayCore/ReInit, or Finish is called.
 
-    catch {close $stateArg(sock)}
+    catch {close $state(sock)}
 
     # 2a. Tidy the tokens in the queues - this is done in ReplayCore/ReInit.
     # - Transactions, if any, that are awaiting responses cannot be completed.
@@ -2407,8 +2403,8 @@ proc http::error {token} {
 proc http::cleanup {token} {
     variable $token
     upvar 0 $token state
-    if {[info commands ${token}EventCoroutine] ne {}} {
-	rename ${token}EventCoroutine {}
+    if {[info commands ${token}--EventCoroutine] ne {}} {
+	rename ${token}--EventCoroutine {}
     }
     if {[info exists state(after)]} {
 	after cancel $state(after)
@@ -2572,7 +2568,7 @@ proc http::Write {token} {
 # http::Event
 #
 #	Handle input on the socket. This command is the core of
-#	the coroutine commands ${token}EventCoroutine that are
+#	the coroutine commands ${token}--EventCoroutine that are
 #	bound to "fileevent $sock readable" and process input.
 #
 # Arguments
@@ -2823,7 +2819,7 @@ proc http::Event {sock token} {
 		    if {![info exists state(-handler)]} {
 			# Initiate a sequence of background fcopies.
 			fileevent $sock readable {}
-			rename ${token}EventCoroutine {}
+			rename ${token}--EventCoroutine {}
 			CopyStart $sock $token
 			return
 		    }
