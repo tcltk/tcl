@@ -173,6 +173,19 @@ retrying the POST.  The value \fBtrue\fR should be used only under certain
 conditions. See the \fBPERSISTENT SOCKETS\fR section for details. The
 default is 0.
 .TP
+\fB\-threadlevel\fR \fIlevel\fR
+.
+Specifies whether and how to use the \fBThread\fR package.  Possible values of \fIlevel\fR are 0, 1 or 2.
+.RS
+.PP
+.DS
+0 - (the default) do not use Thread
+1 - use Thread if it is available, do not use it if it is unavailable
+2 - use Thread if it is available, raise an error if it is unavailable
+.DE
+The Tcl \fBsocket -async\fR command can block in adverse cases (e.g. a slow DNS lookup).  Using the Thread package works around this problem, for both HTTP and HTTPS transactions.  Values of \fIlevel\fR other than 0 are available only to the main interpreter in each thread.  See section \fBTHREADS\fR for more information.
+.RE
+.TP
 \fB\-urlencoding\fR \fIencoding\fR
 .
 The \fIencoding\fR used for creating the x-url-encoded URLs with
@@ -985,6 +998,20 @@ the server response code is a 307 redirect, and the response header
 \fBLocation\fR specifies the target URL.  The browser must call \fBhttp::geturl\fR
 again in order to fetch this URL.
 See https://w3c.github.io/webappsec-upgrade-insecure-requests/
+.PP
+.SH THREADS
+.PP
+.SS "PURPOSE"
+.PP
+Command \fB::http::geturl\fR uses the Tcl \fB::socket\fR command with the \-async option to connect to a remote server, but the return from this command can be delayed in adverse cases (e.g. a slow DNS lookup), preventing the event loop from processing other events.  This delay is avoided if the \fB::socket\fR command is evaluated in another thread.  The Thread package is not part of Tcl but is provided in "Batteries Included" distributions.  Instead of the \fB::socket\fR command, the http package uses \fB::http::socket\fR which makes connections in the manner specified by the value of \-threadlevel and the availability of package Thread.
+.PP
+.SS "WITH TLS (HTTPS)"
+.PP
+The same \-threadlevel configuration applies to both HTTP and HTTPS connections. HTTPS is enabled by using the \fBhttp::register\fR command, typically by specifying the \fB::tls::socket\fR command of the tls package to handle TLS cryptography.  The \fB::tls::socket\fR command connects to the remote server by using the command specified by the value of variable \fI::tls::socketCmd\fR, and this value defaults to "::socket".  If http::geturl finds that \fI::tls::socketCmd\fR has this value, it replaces it with the value "::http::socket".  If \fI::tls::socketCmd\fR has a value other than "::socket", i.e. if the script or the Tcl installation has replaced the value "::socket" with the name of a different command, then http does not change the value.  The script or installation that modified \fI::tls::socketCmd\fR is responsible for integrating \fR::http::socket\fR into its own replacement command.
+.PP
+.SS "WITH A CHILD INTERPRETER"
+.PP
+The peer thread can transfer the socket only to the main interpreter of the script's thread.  Therefore the thread-based \fB::http::socket\fR works with non-zero \-threadlevel values only if the script runs in the main interpreter.  A child interpreter must use \-threadlevel 0 unless the parent interpreter has provided alternative facilities.  The main parent interpreter may grant full \-threadlevel facilities to a child interpreter, for example by aliasing, to \fB::http::socket\fR in the child, a command that runs \fBhttp::socket\fR in the parent, and then transfers the socket to the child.
 .PP
 .SH EXAMPLE
 .PP

@@ -27,6 +27,7 @@ namespace eval http {
 	    -proxyport {}
 	    -proxyfilter http::ProxyRequired
 	    -repost 0
+	    -threadlevel 0
 	    -urlencoding utf-8
 	    -zip 1
 	}
@@ -113,7 +114,7 @@ namespace eval http {
 
     variable urlTypes
     if {![info exists urlTypes]} {
-	set urlTypes(http) [list 80 ::socket]
+	set urlTypes(http) [list 80 ::http::socket]
     }
 
     variable encodings [string tolower [encoding names]]
@@ -148,6 +149,7 @@ namespace eval http {
     }
 
     variable TmpSockCounter 0
+    variable ThreadCounter  0
 
     namespace export geturl config reset wait formatQuery quoteString
     namespace export register unregister registerError
@@ -240,6 +242,9 @@ proc http::config {args} {
 	    if {![regexp -- $pat $flag]} {
 		return -code error "Unknown option $flag, must be: $usage"
 	    }
+	    if {($flag eq {-threadlevel}) && ($value ni {0 1 2})} {
+		return -code error {Option -threadlevel must be 0, 1 or 2}
+	    }
 	    set http($flag) $value
 	}
 	return
@@ -312,6 +317,14 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
             # When opening the socket and calling http::reset
             # immediately, the socket may not yet exist.
             # Test http-4.11 may come here.
+	}
+	if {$state(tid) ne {}} {
+            # When opening the socket in a thread, and calling http::reset
+            # immediately, the thread may still exist.
+            # Test http-4.11 may come here.
+	    thread::release $state(tid)
+	    set state(tid) {}
+	} else {
 	}
     } elseif {$upgradeResponse} {
 	# Special handling for an upgrade request/response.
@@ -762,6 +775,24 @@ proc http::reset {token {why reset}} {
 #	array that the caller should unset to garbage collect the state.
 
 proc http::geturl {url args} {
+    variable urlTypes
+
+    # The value is set in the namespace header of this file.  If the file has
+    # not been modified the value is "::http::socket".
+    set socketCmd [lindex $urlTypes(http) 1]
+
+    # - If ::tls::socketCmd has its default value "::socket", change it to the
+    #   new value $socketCmd.
+    # - If the old value is different, then it has been modified either by the
+    #   script or by the Tcl installation, and replaced by a new command.  The
+    #   script or installation that modified ::tls::socketCmd is also
+    #   responsible for integrating ::http::socket into its own "new" command,
+    #   if it wishes to do so.
+    
+    if {[info exists ::tls::socketCmd] && ($::tls::socketCmd eq {::socket})} {
+        set ::tls::socketCmd $socketCmd
+    }
+
     set token [CreateToken $url {*}$args]
     variable $token
     upvar 0 $token state
@@ -810,6 +841,7 @@ proc http::geturl {url args} {
 # The return value is the variable name of the token.
 #
 # Other effects:
+# - Sets ::http::http(usingThread) if not already done
 # - Sets ::http::http(uid) if not already done
 # - Increments ::http::http(uid)
 # - May increment ::http::TmpSockCounter
@@ -834,6 +866,9 @@ proc http::CreateToken {url args} {
     # Initialize the state variable, an array. We'll return the name of this
     # array as the token for the transaction.
 
+    if {![info exists http(usingThread)]} {
+	set http(usingThread) 0
+    }
     if {![info exists http(uid)]} {
 	set http(uid) 0
     }
@@ -871,6 +906,7 @@ proc http::CreateToken {url args} {
 	status		""
 	http		""
 	connection	keep-alive
+	tid             {}
     }
     set state(-keepalive) $defaultKeepalive
     set state(-strict) $strict
@@ -1086,7 +1122,7 @@ proc http::CreateToken {url args} {
 	append url : $port
     }
     append url $srvurl
-    # Don't append the fragment!
+    # Don't append the fragment! RFC 7230 Sec 5.1
     set state(url) $url
 
     # Proxy connections aren't shared among different hosts.
@@ -1213,8 +1249,9 @@ proc http::CreateToken {url args} {
 		lappend socketWrQueue($state(socketinfo)) $token
 		##Log socketPlayCmd($state(socketinfo)) is $socketPlayCmd($state(socketinfo))
 		##Log socketWrQueue($state(socketinfo)) is $socketWrQueue($state(socketinfo))
-	    } elseif {   [catch {fconfigure $socketMapping($state(socketinfo))}]
-	              && (![SockIsPlaHolder $socketMapping($state(socketinfo))])
+	    } elseif {
+		   [catch {fconfigure $socketMapping($state(socketinfo))}]
+		&& (![SockIsPlaceHolder $socketMapping($state(socketinfo))])
 	    } {
 		###Log "Socket $socketMapping($state(socketinfo)) for $state(socketinfo)"
 		# FIXME Is it still possible for this code to be executed? If
@@ -1237,7 +1274,7 @@ proc http::CreateToken {url args} {
 		# - The socket may not yet exist, and be defined with a placeholder.
 		set reusing 1
 		set sock $socketMapping($state(socketinfo))
-		if {[SockIsPlaHolder $sock]} {
+		if {[SockIsPlaceHolder $sock]} {
 		    set state(ReusingPlaceholder) 1
 		    lappend socketPhQueue($sock) $token
 		} else {
@@ -1272,7 +1309,7 @@ proc http::CreateToken {url args} {
 
 
 # ------------------------------------------------------------------------------
-#  Proc ::http::SockIsPlaHolder
+#  Proc ::http::SockIsPlaceHolder
 # ------------------------------------------------------------------------------
 # Command to return 0 if the argument is a genuine socket handle, or 1 if is a
 # placeholder value generated by geturl or ReplayCore before the real socket is
@@ -1284,7 +1321,7 @@ proc http::CreateToken {url args} {
 # Return Value: 0 or 1
 # ------------------------------------------------------------------------------
 
-proc http::SockIsPlaHolder {sock} {
+proc http::SockIsPlaceHolder {sock} {
     expr {[string range $sock 0 16] eq {HTTP_PLACEHOLDER_}}
 }
 
@@ -4176,6 +4213,255 @@ proc http::make-transformation-chunked {chan command} {
     coroutine [namespace current]::dechunk$chan ::http::ReceiveChunked $chan $command
     chan event $chan readable [namespace current]::dechunk$chan
     return
+}
+
+
+# ------------------------------------------------------------------------------
+#  Proc http::socket
+# ------------------------------------------------------------------------------
+# This command is a drop-in replacement for ::socket.
+# Arguments and return value as for ::socket.
+#
+# Notes.
+# - http::socket is specified in place of ::socket by the definition of urlTypes
+#   in the namespace header of this file (http.tcl).
+# - The command makes a simple call to ::socket unless the user has called
+#   http::config to change the value of -threadlevel from the default value 0.
+# - For -threadlevel 1 or 2, if the Thread package is available, the command
+#   waits in the event loop while the socket is opened in another thread.  This
+#   is a workaround for bug [824251] - it prevents http::geturl from blocking
+#   the event loop if the DNS lookup or server connection is slow.
+# - FIXME Use a thread pool if connections are very frequent.
+# - FIXME The peer thread can transfer the socket only to the main interpreter
+#   in the present thread.  Therefore this code works only if this script runs
+#   in the main interpreter.  In a child interpreter, the parent must alias a
+#   command to ::http::socket in the child, run http::socket in the parent,
+#   and then transfer the socket to the child.
+# - The http::socket command is simple, and can easily be replaced with an
+#   alternative command that uses a different technique to open a socket while
+#   entering the event loop.
+# ------------------------------------------------------------------------------
+
+proc http::socket {args} {
+    variable ThreadVar
+    variable ThreadCounter
+    variable http
+
+    LoadThreadIfNeeded
+
+    set targ [lsearch -exact $args -token]
+    if {$targ != -1} {
+        set token [lindex $args $targ+1]
+        set args [lreplace $args $targ $targ+1]
+        upvar 0 $token state
+    }
+
+    if {!$http(usingThread)} {
+        # Use plain "::socket".  This is the default.
+        return [eval ::socket $args]
+    }
+
+    set defcmd ::socket
+    set sockargs $args
+    set script "
+        [list proc ::SockInThread {caller defcmd sockargs} [info body http::SockInThread]]
+        [list ::SockInThread [thread::id] $defcmd $sockargs]
+    "
+
+    set state(tid) [thread::create]
+    set varName ::http::ThreadVar([incr ThreadCounter])
+    thread::send -async $state(tid) $script $varName
+    Log >T Thread Start Wait $args -- coro [info coroutine] $varName
+    if {[info coroutine] ne {}} {
+        # All callers in the http package are coroutines launched by
+        # the event loop.
+        # The cwait command requires a coroutine because it yields
+        # to the caller; $varName is traced and the coroutine resumes
+        # when the variable is written.
+        cwait $varName
+    } else {
+        return -code error {code must run in a coroutine}
+        # For testing with a non-coroutine caller outside the http package.
+        # vwait $varName
+    }
+    Log >U Thread End Wait $args -- coro [info coroutine] $varName [set $varName]
+    thread::release $state(tid)
+    set state(tid) {}
+    lassign [set $varName] catchCode errdict sock
+    unset $varName
+    dict set errdict -code $catchCode
+    return -options $errdict $sock
+}
+
+# The commands below are dependencies of http::socket and
+# are not used elsewhere.
+
+# ------------------------------------------------------------------------------
+#  Proc http::LoadThreadIfNeeded
+# ------------------------------------------------------------------------------
+# Command to load the Thread package if it is needed.  If it is needed and not
+# loadable, the outcome depends on $http(-threadlevel):
+# value 0 => Thread package not required, no problem
+# value 1 => operate as if -threadlevel 0
+# value 2 => error return
+#
+# Arguments: none
+# Return Value: none
+# ------------------------------------------------------------------------------
+
+proc http::LoadThreadIfNeeded {} {
+    variable http
+    if {$http(usingThread) || ($http(-threadlevel) == 0)} {
+        return
+    }
+    if {[catch {package require Thread}]} {
+        if {$http(-threadlevel) == 2} {
+            set msg {[http::config -threadlevel] has value 2,\
+                     but the Thread package is not available}
+            return -code error $msg
+        }
+        return
+    }
+    set http(usingThread) 1
+    return
+}
+
+
+# ------------------------------------------------------------------------------
+#  Proc http::SockInThread
+# ------------------------------------------------------------------------------
+# Command http::socket is a ::socket replacement.  It defines and runs this
+# command, http::SockInThread, in a peer thread.
+#
+# Arguments:
+# caller
+# defcmd
+# sockargs
+#
+# Return value: list of values that describe the outcome.  The return is
+# intended to be a normal (non-error) return in all cases.
+# ------------------------------------------------------------------------------
+
+proc http::SockInThread {caller defcmd sockargs} {
+    package require Thread
+    
+    set catchCode [catch {eval $defcmd $sockargs} sock errdict]
+    if {$catchCode == 0} {
+        set catchCode [catch {thread::transfer $caller $sock; set sock} sock errdict]
+    }
+    return [list $catchCode $errdict $sock]
+}
+
+
+# ------------------------------------------------------------------------------
+#  Proc ::http::cwaiter::cwait
+# ------------------------------------------------------------------------------
+# Command to substitute for vwait, without the ordering issues.
+# A command that uses cwait must be a coroutine that is launched by an event,
+# e.g. fileevent or after idle, and has no calling code to be resumed upon
+# "yield".  It cannot return a value.
+#
+# Arguments:
+# varName      - fully-qualified name of the variable that the calling script
+#                will write to resume the coroutine.  Any scalar variable or
+#                array element is permitted.
+# coroName     - (optional) name of the coroutine to be called when varName is
+#                written - defaults to this coroutine
+# timeout      - (optional) timeout value in ms
+# timeoutValue - (optional) value to assign to varName if there is a timeout
+#
+# Return Value: none
+# ------------------------------------------------------------------------------
+
+namespace eval ::http::cwaiter {
+    namespace export cwait
+    variable log   {}
+    variable logOn 0
+}
+
+proc ::http::cwaiter::cwait {
+    varName {coroName {}} {timeout {}} {timeoutValue {}}
+} {
+    set thisCoro [info coroutine]
+    if {$thisCoro eq {}} {
+        return -code error {cwait cannot be called outside a coroutine}
+    }
+    if {$coroName eq {}} {
+        set coroName $thisCoro
+    }
+    if {[string range $varName 0 1] ne {::}} {
+        return -code error {argument varName must be fully qualified}
+    }
+    if {$timeout eq {}} {
+        set toe {}
+    } elseif {[string is integer -strict $timeout] && ($timeout > 0)} {
+        set toe [after $timeout [list set $varName $timeoutValue]]
+    } else {
+        return -code error {if timeout is supplied it must be a positive integer}
+    }
+
+    set cmd [list ::http::cwaiter::CwaitHelper $varName $coroName $toe]
+    trace add variable $varName write $cmd
+    CoLog "Yield $varName $coroName"
+    yield
+    CoLog "Resume $varName $coroName"
+    return
+}
+
+
+# ------------------------------------------------------------------------------
+#  Proc ::http::cwaiter::CwaitHelper
+# ------------------------------------------------------------------------------
+# Helper command called by the trace set by cwait.
+# - Ignores the arguments added by trace.
+# - A simple call to $coroName works, and in error cases gives a suitable stack
+#   trace, but because it is inside a trace the headline error message is
+#   something like {can't set "::Result(6)": error}, not the actual
+#   error.  So let the trace command return.
+# - Remove the trace immediately.  We don't want multiple calls.
+# ------------------------------------------------------------------------------
+
+proc ::http::cwaiter::CwaitHelper {varName coroName toe args} {
+    CoLog "got $varName for $coroName"
+    set cmd [list ::http::cwaiter::CwaitHelper $varName $coroName $toe]
+    trace remove variable $varName write $cmd
+    after cancel $toe
+
+    after 0 $coroName
+    return
+}
+
+
+# ------------------------------------------------------------------------------
+#  Proc ::http::cwaiter::LogInit
+# ------------------------------------------------------------------------------
+# Call this command to initiate debug logging and clear the log.
+# ------------------------------------------------------------------------------
+
+proc ::http::cwaiter::LogInit {} {
+    variable log
+    variable logOn
+    set log {}
+    set logOn 1
+    return
+}
+
+proc ::http::cwaiter::LogRead {} {
+    variable log
+    return $log
+}
+
+proc ::http::cwaiter::CoLog {msg} {
+    variable log
+    variable logOn
+    if {$logOn} {
+        append log $msg \n
+    }
+    return
+}
+
+namespace eval ::http {
+    namespace import ::http::cwaiter::*
 }
 
 # Local variables:
