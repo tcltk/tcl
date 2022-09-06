@@ -224,6 +224,9 @@ proc http::config {args} {
 	    return -code error "Unknown option $flag, must be: $usage"
 	}
 	return $http($flag)
+    } elseif {[llength $args] % 2} {
+	return -code error "If more than one argument is supplied, the\
+		number of arguments must be even"
     } else {
 	foreach {flag value} $args {
 	    if {![regexp -- $pat $flag]} {
@@ -273,10 +276,15 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 
     # Is this an upgrade request/response?
     set upgradeResponse \
-	[expr {    [info exists state(upgradeRequest)] && $state(upgradeRequest)
-		&& [info exists state(http)] && [ncode $token] eq {101}
-		&& [info exists state(connection)] && "upgrade" in $state(connection)
-		&& [info exists state(upgrade)] && "" ne $state(upgrade)}]
+	[expr {    [info exists state(upgradeRequest)]
+		&& $state(upgradeRequest)
+		&& [info exists state(http)]
+		&& ([ncode $token] eq {101})
+		&& [info exists state(connection)]
+		&& ("upgrade" in $state(connection))
+		&& [info exists state(upgrade)]
+		&& ("" ne $state(upgrade))
+	}]
 
     if {  ($state(status) eq "timeout")
        || ($state(status) eq "error")
@@ -328,6 +336,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
 	 && ($socketMapping($connId) eq $sock)
     } {
 	http::CloseQueuedQueries $connId $token
+	# This calls Unset.  Other cases do not need the call.
     }
     return
 }
@@ -579,16 +588,19 @@ proc http::CloseSocket {s {token {}}} {
 	Log "Closing connection $connId (sock $socketMapping($connId))"
 	if {[catch {close $socketMapping($connId)} err]} {
 	    Log "Error closing connection: $err"
+	} else {
 	}
 	if {$token eq {}} {
 	    # Cases with a non-empty token are handled by Finish, so the tokens
 	    # are finished in connection order.
 	    http::CloseQueuedQueries $connId
+	} else {
 	}
     } else {
 	Log "Closing socket $s (no connection info)"
 	if {[catch {close $s} err]} {
 	    Log "Error closing socket: $err"
+	} else {
 	}
     }
     return
@@ -611,6 +623,7 @@ proc http::CloseQueuedQueries {connId {token {}}} {
     variable socketClosing
     variable socketPlayCmd
 
+    ##Log CloseQueuedQueries $connId
     if {![info exists socketMapping($connId)]} {
 	# Command has already been called.
 	# Don't come here again - especially recursively.
@@ -645,7 +658,7 @@ proc http::CloseQueuedQueries {connId {token {}}} {
 
     if {$unfinished ne {}} {
 	Log ^R$tk Any unfinished transactions (excluding $token) failed \
-		- token $token
+		- token $token - unfinished $unfinished
 	{*}$unfinished
     }
     return
@@ -796,8 +809,8 @@ proc http::geturl {url args} {
 	    }
 	    if {($flag eq "-headers") && ([llength $value] % 2 != 0)} {
 		unset $token
-		return -code error \
-		    "Bad value for $flag ($value), number of list elements must be even"
+		return -code error "Bad value for $flag ($value), number\
+			of list elements must be even"
 	    }
 	    set state($flag) $value
 	} else {
@@ -1084,14 +1097,17 @@ proc http::geturl {url args} {
 		# causes a call to Finish.
 		set reusing 1
 		set sock $socketMapping($state(socketinfo))
-		Log "reusing socket $sock for $state(socketinfo) - token $token"
+		Log "reusing closing socket $sock for $state(socketinfo) - token $token"
 
 		set alreadyQueued 1
 		lassign $socketPlayCmd($state(socketinfo)) com0 com1 com2 com3
 		lappend com3 $token
 		set socketPlayCmd($state(socketinfo)) [list $com0 $com1 $com2 $com3]
 		lappend socketWrQueue($state(socketinfo)) $token
+		##Log socketPlayCmd($state(socketinfo)) is $socketPlayCmd($state(socketinfo))
+		##Log socketWrQueue($state(socketinfo)) is $socketWrQueue($state(socketinfo))
 	    } elseif {[catch {fconfigure $socketMapping($state(socketinfo))}]} {
+		###Log "Socket $socketMapping($state(socketinfo)) for $state(socketinfo)"
 		# FIXME Is it still possible for this code to be executed? If
 		#       so, this could be another place to call TestForReplay,
 		#       rather than discarding the queued transactions.
@@ -1105,14 +1121,13 @@ proc http::geturl {url args} {
 		Unset $state(socketinfo)
 	    } else {
 		# Use the persistent socket.
-		# The socket may not be ready to write: an earlier request might
-		# still be still writing (in the pipelined case) or
-		# writing/reading (in the nonpipeline case). This possibility
-		# is handled by socketWrQueue later in this command.
+		# - The socket may not be ready to write: an earlier request might
+		#   still be still writing (in the pipelined case) or
+		#   writing/reading (in the nonpipeline case). This possibility
+		#   is handled by socketWrQueue later in this command.
 		set reusing 1
 		set sock $socketMapping($state(socketinfo))
-		Log "reusing socket $sock for $state(socketinfo) - token $token"
-
+		Log "reusing open socket $sock for $state(socketinfo) - token $token"
 	    }
 	    # Do not automatically close the connection socket.
 	    set state(connection) keep-alive
@@ -1315,7 +1330,17 @@ proc http::geturl {url args} {
 		[list http::Connect $token $proto $phost $srvurl]
     }
 
-    # Wait for the connection to complete.
+    # --------------------------------------------------------------------------
+    # Synchronous Call to http::geturl
+    # --------------------------------------------------------------------------
+    # - If the call to http::geturl is asynchronous, it is now complete (apart
+    #   from delivering the return value).
+    # - If the call to http::geturl is synchronous, the command must now wait
+    #   for the HTTP transaction to be completed.  The call to http::wait uses
+    #   vwait, which may be inappropriate if the caller makes other HTTP
+    #   requests in the background.
+    # --------------------------------------------------------------------------
+
     if {![info exists state(-command)]} {
 	# geturl does EVERYTHING asynchronously, so if the user
 	# calls it synchronously, we just do a wait here.
@@ -2077,6 +2102,7 @@ proc http::ReplayIfDead {token doing} {
     #    ReplayCore/ReInit, or Finish is called.
 
     catch {close $state(sock)}
+    Unset $state(socketinfo)
 
     # 2a. Tidy the tokens in the queues - this is done in ReplayCore/ReInit.
     # - Transactions, if any, that are awaiting responses cannot be completed.
@@ -2119,7 +2145,7 @@ proc http::ReplayIfClose {Wstate Rqueue Wqueue} {
     if {$Wstate ni {Wready peNding}} {
 	lappend InFlightW $Wstate
     }
-
+    ##Log $Rqueue -- $InFlightW -- $Wqueue
     set newQueue {}
     lappend newQueue {*}$Rqueue
     lappend newQueue {*}$InFlightW
@@ -2318,7 +2344,7 @@ proc http::ReplayCore {newQueue} {
 	} else {
 	    set ${tok}(reusing) 1
 	    set ${tok}(sock) NONE
-	    Finish $token {cannot send this request again}
+	    Finish $tok {cannot send this request again}
 	}
     }
 
@@ -2745,7 +2771,8 @@ proc http::Event {sock token} {
 				{ReplayIfClose Wready {} {}}
 		    }
 
-		    # Do not allow further connections on this socket.
+		    # Do not allow further connections on this socket (but
+		    # geturl can add new requests to the replay).
 		    set socketClosing($state(socketinfo)) 1
 		}
 
@@ -3318,7 +3345,7 @@ proc http::BlockingGets {sock} {
 #	This closes the connection upon error
 
 proc http::CopyStart {sock token {initial 1}} {
-    upvar #0 $token state
+    upvar 0 $token state
     if {[info exists state(transfer)] && $state(transfer) eq "chunked"} {
 	foreach coding [ContentEncoding $token] {
 	    lappend state(zlib) [zlib stream $coding]
