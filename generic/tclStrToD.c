@@ -49,44 +49,43 @@
  * file exists only on Linux; it is missing on Cygwin and MinGW. Most gcc-isms
  * and ix86-isms are factored out here.
  */
-
-#if defined(__GNUC__)
+# if defined(__GNUC__)
 typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
 
-#define _FPU_GETCW(cw)	__asm__ __volatile__ ("fnstcw %0" : "=m" (*&cw))
-#define _FPU_SETCW(cw)	__asm__ __volatile__ ("fldcw %0" : : "m" (*&cw))
-#   define FPU_IEEE_ROUNDING	0x027F
-#   define ADJUST_FPU_CONTROL_WORD
-#define TCL_IEEE_DOUBLE_ROUNDING \
+#  define _FPU_GETCW(cw)	__asm__ __volatile__ ("fnstcw %0" : "=m" (*&cw))
+#  define _FPU_SETCW(cw)	__asm__ __volatile__ ("fldcw %0" : : "m" (*&cw))
+#  define FPU_IEEE_ROUNDING	0x027F
+#  define ADJUST_FPU_CONTROL_WORD
+#  define TCL_IEEE_DOUBLE_ROUNDING_DECL \
     fpu_control_t roundTo53Bits = FPU_IEEE_ROUNDING;	\
-    fpu_control_t oldRoundingMode;			\
+    fpu_control_t oldRoundingMode;
+#  define TCL_IEEE_DOUBLE_ROUNDING \
     _FPU_GETCW(oldRoundingMode);			\
     _FPU_SETCW(roundTo53Bits)
-#define TCL_DEFAULT_DOUBLE_ROUNDING \
+#  define TCL_DEFAULT_DOUBLE_ROUNDING \
     _FPU_SETCW(oldRoundingMode)
 
 /*
  * Sun ProC needs sunmath for rounding control on x86 like gcc above.
  */
-#elif defined(__sun)
-#include <sunmath.h>
-#define TCL_IEEE_DOUBLE_ROUNDING \
+# elif defined(__sun)
+#  include <sunmath.h>
+#  define TCL_IEEE_DOUBLE_ROUNDING_DECL
+#  define TCL_IEEE_DOUBLE_ROUNDING \
     ieee_flags("set","precision","double",NULL)
-#define TCL_DEFAULT_DOUBLE_ROUNDING \
+#  define TCL_DEFAULT_DOUBLE_ROUNDING \
     ieee_flags("clear","precision",NULL,NULL)
 
+# endif
+#endif
 /*
  * Other platforms are assumed to always operate in full IEEE mode, so we make
  * the macros to go in and out of that mode do nothing.
  */
-
-#else /* !__GNUC__ && !__sun */
-#define TCL_IEEE_DOUBLE_ROUNDING	((void) 0)
-#define TCL_DEFAULT_DOUBLE_ROUNDING	((void) 0)
-#endif
-#else /* !__i386 */
-#define TCL_IEEE_DOUBLE_ROUNDING	((void) 0)
-#define TCL_DEFAULT_DOUBLE_ROUNDING	((void) 0)
+#ifndef TCL_IEEE_DOUBLE_ROUNDING /* !__i386 || (!__GNUC__ && !__sun) */
+#  define TCL_IEEE_DOUBLE_ROUNDING_DECL
+#  define TCL_IEEE_DOUBLE_ROUNDING	((void) 0)
+#  define TCL_DEFAULT_DOUBLE_ROUNDING	((void) 0)
 #endif
 
 /*
@@ -541,8 +540,7 @@ TclParseNumber(
     int under = 0;              /* Flag trailing '_' as error if true once
 				 * number is accepted. */
 
-#define ALL_BITS	UWIDE_MAX
-#define MOST_BITS	(ALL_BITS >> 1)
+#define MOST_BITS	(UWIDE_MAX >> 1)
 
     /*
      * Initialize bytes to start of the object's string rep if the caller
@@ -551,14 +549,14 @@ TclParseNumber(
 
     if (bytes == NULL) {
 	if (interp == NULL && endPtrPtr == NULL) {
-	    if (TclHasIntRep(objPtr, &tclDictType)) {
+	    if (TclHasInternalRep(objPtr, &tclDictType)) {
 		/* A dict can never be a (single) number */
 		return TCL_ERROR;
 	    }
-	    if (TclHasIntRep(objPtr, &tclListType)) {
+	    if (TclHasInternalRep(objPtr, &tclListType)) {
 		int length;
 		/* A list can only be a (single) number if its length == 1 */
-		TclListObjLength(NULL, objPtr, &length);
+		TclListObjLengthM(NULL, objPtr, &length);
 		if (length != 1) {
 		    return TCL_ERROR;
 		}
@@ -719,9 +717,9 @@ TclParseNumber(
 
 		    if (!octalSignificandOverflow) {
 			/*
-			 * Shifting by more bits than are in the value being
-			 * shifted is at least de facto nonportable. Check for
-			 * too large shifts first.
+			 * Shifting by as many or more bits than are in the
+			 * value being shifted is undefined behavior. Check
+			 * for too large shifts first.
 			 */
 
 			if ((octalSignificandWide != 0)
@@ -735,8 +733,17 @@ TclParseNumber(
 			}
 		    }
 		    if (!octalSignificandOverflow) {
-			octalSignificandWide =
-				(octalSignificandWide << shift) + (c - '0');
+			/*
+			 * When the significand is 0, it is possible for the
+			 * amount to be shifted to equal or exceed the width
+			 * of the significand. Do not shift when the
+			 * significand is 0 to avoid undefined behavior.
+			 */
+
+			if (octalSignificandWide != 0) {
+			    octalSignificandWide <<= shift;
+			}
+			octalSignificandWide += c - '0';
 		    } else {
 			if (err == MP_OKAY) {
 			    err = mp_mul_2d(&octalSignificandBig, shift,
@@ -861,9 +868,9 @@ TclParseNumber(
 		shift = 4 * (numTrailZeros + 1);
 		if (!significandOverflow) {
 		    /*
-		     * Shifting by more bits than are in the value being
-		     * shifted is at least de facto nonportable. Check for too
-		     * large shifts first.
+		     * Shifting by as many or more bits than are in the
+		     * value being shifted is undefined behavior. Check
+		     * for too large shifts first.
 		     */
 
 		    if (significandWide != 0 &&
@@ -875,7 +882,17 @@ TclParseNumber(
 		    }
 		}
 		if (!significandOverflow) {
-		    significandWide = (significandWide << shift) + d;
+		    /*
+		     * When the significand is 0, it is possible for the
+		     * amount to be shifted to equal or exceed the width
+		     * of the significand. Do not shift when the
+		     * significand is 0 to avoid undefined behavior.
+		     */
+
+		    if (significandWide != 0) {
+			significandWide <<= shift;
+		    }
+		    significandWide += d;
 		} else if (err == MP_OKAY) {
 		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		    if (err == MP_OKAY) {
@@ -894,7 +911,7 @@ TclParseNumber(
 	    acceptState = state;
 	    acceptPoint = p;
 	    acceptLen = len;
-		/* FALLTHRU */
+	    /* FALLTHRU */
 	case ZERO_B:
 	zerob:
 	    if (c == '0') {
@@ -915,9 +932,9 @@ TclParseNumber(
 		shift = numTrailZeros + 1;
 		if (!significandOverflow) {
 		    /*
-		     * Shifting by more bits than are in the value being
-		     * shifted is at least de facto nonportable. Check for too
-		     * large shifts first.
+		     * Shifting by as many or more bits than are in the
+		     * value being shifted is undefined behavior. Check
+		     * for too large shifts first.
 		     */
 
 		    if (significandWide != 0 &&
@@ -929,7 +946,17 @@ TclParseNumber(
 		    }
 		}
 		if (!significandOverflow) {
-		    significandWide = (significandWide << shift) + 1;
+		    /*
+		     * When the significand is 0, it is possible for the
+		     * amount to be shifted to equal or exceed the width
+		     * of the significand. Do not shift when the
+		     * significand is 0 to avoid undefined behavior.
+		     */
+
+		    if (significandWide != 0) {
+			significandWide <<= shift;
+		    }
+		    significandWide += 1;
 		} else if (err == MP_OKAY) {
 		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		    if (err == MP_OKAY) {
@@ -1243,7 +1270,6 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    goto endgame;
-
 	}
 	p++;
 	len--;
@@ -1293,7 +1319,7 @@ TclParseNumber(
      */
 
     if (status == TCL_OK && objPtr != NULL) {
-	TclFreeIntRep(objPtr);
+	TclFreeInternalRep(objPtr);
 	switch (acceptState) {
 	case SIGNUM:
 	case BAD_OCTAL:
@@ -1328,7 +1354,15 @@ TclParseNumber(
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
-		    significandWide <<= shift;
+		    /*
+		     * When the significand is 0, it is possible for the
+		     * amount to be shifted to equal or exceed the width
+		     * of the significand. Do not shift when the
+		     * significand is 0 to avoid undefined behavior.
+		     */
+		    if (significandWide != 0) {
+			significandWide <<= shift;
+		    }
 		} else if (err == MP_OKAY) {
 		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		}
@@ -1352,7 +1386,15 @@ TclParseNumber(
 	    }
 	    if (shift) {
 		if (!significandOverflow) {
-		    significandWide <<= shift;
+		    /*
+		     * When the significand is 0, it is possible for the
+		     * amount to be shifted to equal or exceed the width
+		     * of the significand. Do not shift when the
+		     * significand is 0 to avoid undefined behavior.
+		     */
+		    if (significandWide != 0) {
+			significandWide <<= shift;
+		    }
 		} else if (err == MP_OKAY) {
 		    err = mp_mul_2d(&significandBig, shift, &significandBig);
 		}
@@ -1377,7 +1419,15 @@ TclParseNumber(
 	    }
 	    if (shift) {
 		if (!octalSignificandOverflow) {
-		    octalSignificandWide <<= shift;
+		    /*
+		     * When the significand is 0, it is possible for the
+		     * amount to be shifted to equal or exceed the width
+		     * of the significand. Do not shift when the
+		     * significand is 0 to avoid undefined behavior.
+		     */
+		    if (octalSignificandWide != 0) {
+			octalSignificandWide <<= shift;
+		    }
 		} else if (err == MP_OKAY) {
 		    err = mp_mul_2d(&octalSignificandBig, shift,
 			    &octalSignificandBig);
@@ -1392,10 +1442,10 @@ TclParseNumber(
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
-				- (Tcl_WideInt) octalSignificandWide;
+				(Tcl_WideInt)(-octalSignificandWide);
 		    } else {
 			objPtr->internalRep.wideValue =
-				(Tcl_WideInt) octalSignificandWide;
+				(Tcl_WideInt)octalSignificandWide;
 		    }
 		}
 	    }
@@ -1403,7 +1453,7 @@ TclParseNumber(
 		if (signum) {
 		    err = mp_neg(&octalSignificandBig, &octalSignificandBig);
 		}
-		TclSetBignumIntRep(objPtr, &octalSignificandBig);
+		TclSetBignumInternalRep(objPtr, &octalSignificandBig);
 	    }
 	    if (err != MP_OKAY) {
 		return TCL_ERROR;
@@ -1428,10 +1478,10 @@ TclParseNumber(
 		    objPtr->typePtr = &tclIntType;
 		    if (signum) {
 			objPtr->internalRep.wideValue =
-				- (Tcl_WideInt) significandWide;
+				(Tcl_WideInt)(-significandWide);
 		    } else {
 			objPtr->internalRep.wideValue =
-				(Tcl_WideInt) significandWide;
+				(Tcl_WideInt)significandWide;
 		    }
 		}
 	    }
@@ -1439,7 +1489,7 @@ TclParseNumber(
 		if (signum) {
 		    err = mp_neg(&significandBig, &significandBig);
 		}
-		TclSetBignumIntRep(objPtr, &significandBig);
+		TclSetBignumInternalRep(objPtr, &significandBig);
 	    }
 	    if (err != MP_OKAY) {
 		return TCL_ERROR;
@@ -1692,7 +1742,8 @@ MakeLowPrecisionDouble(
     int numSigDigs,		/* Number of digits in the significand */
     long exponent)		/* Power of ten */
 {
-    double retval;		/* Value of the number. */
+    TCL_IEEE_DOUBLE_ROUNDING_DECL
+
     mp_int significandBig;	/* Significand expressed as a bignum. */
 
     /*
@@ -1700,18 +1751,25 @@ MakeLowPrecisionDouble(
      * This causes the result of double-precision calculations to be rounded
      * twice: once to the precision of double-extended and then again to the
      * precision of double. Double-rounding introduces gratuitous errors of 1
-     * ulp, so we need to change rounding mode to 53-bits.
+     * ulp, so we need to change rounding mode to 53-bits. We also make
+     * 'retval' volatile, so that it doesn't get promoted to a register.
      */
-
-    TCL_IEEE_DOUBLE_ROUNDING;
+    volatile double retval;		/* Value of the number. */
 
     /*
-     * Test for the easy cases.
+     * Test for zero significand, which requires explicit construction
+     * of -0.0. (Unary minus returns a positive zero.)
      */
-
     if (significand == 0) {
 	return copysign(0.0, -signum);
     }
+
+    /*
+     * Set the FP control word for 53 bits, WARNING: It must be reset
+     * before returning.
+     */
+    TCL_IEEE_DOUBLE_ROUNDING;
+
     if (numSigDigs <= QUICK_MAX) {
 	if (exponent >= 0) {
 	    if (exponent <= mmaxpow) {
@@ -1811,7 +1869,8 @@ MakeHighPrecisionDouble(
     int numSigDigs,		/* Number of significant digits */
     long exponent)		/* Power of 10 by which to multiply */
 {
-    double retval;
+    TCL_IEEE_DOUBLE_ROUNDING_DECL
+
     int machexp = 0;		/* Machine exponent of a power of 10. */
 
     /*
@@ -1819,19 +1878,30 @@ MakeHighPrecisionDouble(
      * This causes the result of double-precision calculations to be rounded
      * twice: once to the precision of double-extended and then again to the
      * precision of double. Double-rounding introduces gratuitous errors of 1
-     * ulp, so we need to change rounding mode to 53-bits.
+     * ulp, so we need to change rounding mode to 53-bits. We also make
+     * 'retval' volatile to make sure that it doesn't get promoted to a
+     * register.
      */
-
-    TCL_IEEE_DOUBLE_ROUNDING;
+    volatile double retval;
 
     /*
-     * Quick checks for zero, and over/underflow. Be careful to avoid
-     * integer overflow when calculating with 'exponent'.
+     * A zero significand requires explicit construction of -0.0.
+     * (Unary minus returns positive zero.)
      */
-
     if (mp_iszero(significand)) {
 	return copysign(0.0, -signum);
     }
+
+    /*
+     * Set the 53-bit rounding mode. WARNING: It must be reset before
+     * returning.
+     */
+    TCL_IEEE_DOUBLE_ROUNDING;
+
+    /*
+     * Make quick checks for over/underflow. Be careful to avoid
+     * integer overflow when calculating with 'exponent'.
+     */
     if (exponent >= 0 && exponent-1 > maxDigits-numSigDigs) {
 	retval = HUGE_VAL;
 	goto returnValue;
@@ -2133,7 +2203,7 @@ RefineApproximation(
      */
     if (roundToEven) {
 	rteSignificand = frexp(approxResult, &rteExponent);
-	rteSigWide = (Tcl_WideInt) ldexp(rteSignificand, FP_PRECISION);
+	rteSigWide = (Tcl_WideInt)ldexp(rteSignificand, FP_PRECISION);
 	if ((rteSigWide & 1) == 0) {
 	    mp_clear(&twoMd);
 	    mp_clear(&twoMv);
@@ -3796,15 +3866,13 @@ ShouldBankerRoundUp(
     int r = mp_cmp_mag(twor, S);
 
     switch (r) {
-    case MP_LT:
-	return 0;
     case MP_EQ:
 	return isodd;
     case MP_GT:
 	return 1;
+    default:
+	return 0;
     }
-    Tcl_Panic("in ShouldBankerRoundUp, trichotomy fails!");
-    return 0;
 }
 
 /*
@@ -3842,15 +3910,13 @@ ShouldBankerRoundUpToNext(
     r = mp_cmp_mag(&temp, S);
     mp_clear(&temp);
     switch(r) {
-    case MP_LT:
-	return 0;
     case MP_EQ:
 	return isodd;
     case MP_GT:
 	return 1;
+    default:
+	return 0;
     }
-    Tcl_Panic("in ShouldBankerRoundUpToNext, trichotomy fails!");
-    return 0;
 }
 
 /*
@@ -4781,7 +4847,7 @@ Tcl_InitBignumFromDouble(
      * Infinite values can't convert to bignum.
      */
 
-    if (TclIsInfinite(d)) {
+    if (isinf(d)) {
 	if (interp != NULL) {
 	    const char *s = "integer value too large to represent";
 

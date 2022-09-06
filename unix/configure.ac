@@ -26,7 +26,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=8.7
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=7
-TCL_PATCH_LEVEL="a4"
+TCL_PATCH_LEVEL="a6"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -318,6 +318,13 @@ if test $tcl_ok = no; then
     AC_DEFINE(NO_FD_SET, 1, [Do we have fd_set?])
 fi
 
+AC_CACHE_CHECK([for pselect], tcl_cv_func_pselect, [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[void *func = pselect;]])],[tcl_cv_func_pselect=yes],[tcl_cv_func_pselect=no])])
+tcl_ok=$tcl_cv_func_pselect
+if test $tcl_ok = yes; then
+    AC_DEFINE(HAVE_PSELECT, 1, [Should we use pselect()?])
+fi
+
 #------------------------------------------------------------------------
 #	Options for the notifier. Checks for epoll(7) on Linux, and
 #	kqueue(2) on {DragonFly,Free,Net,Open}BSD
@@ -553,18 +560,6 @@ SC_ENABLE_LANGINFO
 #--------------------------------------------------------------------
 
 AC_CHECK_FUNCS(cfmakeraw chflags mkstemps)
-
-#--------------------------------------------------------------------
-# Check for support of isnan() function or macro
-#--------------------------------------------------------------------
-
-AC_CACHE_CHECK([isnan], tcl_cv_isnan, [
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <math.h>]], [[
-isnan(0.0);			/* Generates an error if isnan is missing */
-]])],[tcl_cv_isnan=yes],[tcl_cv_isnan=no])])
-if test $tcl_cv_isnan = no; then
-    AC_DEFINE(NO_ISNAN, 1, [Do we have a usable 'isnan'?])
-fi
 
 #--------------------------------------------------------------------
 # Darwin specific API checks and defines
@@ -807,7 +802,6 @@ if test "`uname -s`" = "Darwin" ; then
     echo "$LDFLAGS " | grep -q -- '-prebind ' && TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -seg1addr 0xA000000'
     TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -sectcreate __TEXT __info_plist Tcl-Info.plist'
     EXTRA_TCLSH_LIBS='-sectcreate __TEXT __info_plist Tclsh-Info.plist'
-    EXTRA_APP_CC_SWITCHES='-mdynamic-no-pic'
     AC_CONFIG_FILES([Tcl-Info.plist:../macosx/Tcl-Info.plist.in Tclsh-Info.plist:../macosx/Tclsh-Info.plist.in])
     TCL_YEAR="`date +%Y`"
 fi

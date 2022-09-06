@@ -91,7 +91,7 @@ typedef struct {
 static void		AddClassFiltersToCallContext(Object *const oPtr,
 			    Class *clsPtr, struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters, int flags);
-static void		AddClassMethodNames(Class *clsPtr, const int flags,
+static void		AddClassMethodNames(Class *clsPtr, int flags,
 			    Tcl_HashTable *const namesPtr,
 			    Tcl_HashTable *const examinedClassesPtr);
 static inline void	AddDefinitionNamespaceToChain(Class *const definerCls,
@@ -247,12 +247,12 @@ StashCallChain(
     Tcl_Obj *objPtr,
     CallChain *callPtr)
 {
-    Tcl_ObjIntRep ir;
+    Tcl_ObjInternalRep ir;
 
     callPtr->refCount++;
     TclGetString(objPtr);
     ir.twoPtrValue.ptr1 = callPtr;
-    Tcl_StoreIntRep(objPtr, &methodNameType, &ir);
+    Tcl_StoreInternalRep(objPtr, &methodNameType, &ir);
 }
 
 void
@@ -280,7 +280,7 @@ DupMethodNameRep(
     Tcl_Obj *dstPtr)
 {
     StashCallChain(dstPtr,
-	    (CallChain *)TclFetchIntRep(srcPtr, &methodNameType)->twoPtrValue.ptr1);
+	    (CallChain *)TclFetchInternalRep(srcPtr, &methodNameType)->twoPtrValue.ptr1);
 }
 
 static void
@@ -288,7 +288,7 @@ FreeMethodNameRep(
     Tcl_Obj *objPtr)
 {
     TclOODeleteChain(
-	    (CallChain *)TclFetchIntRep(objPtr, &methodNameType)->twoPtrValue.ptr1);
+	    (CallChain *)TclFetchInternalRep(objPtr, &methodNameType)->twoPtrValue.ptr1);
 }
 
 /*
@@ -369,7 +369,11 @@ TclOOInvokeContext(
      * Run the method implementation.
      */
 
-    return mPtr->typePtr->callProc(mPtr->clientData, interp,
+    if (mPtr->typePtr->version < TCL_OO_METHOD_VERSION_2) {
+	return (mPtr->typePtr->callProc)(mPtr->clientData, interp,
+		(Tcl_ObjectContext) contextPtr, objc, objv);
+    }
+    return ((Tcl_MethodCallProc2 *)(void *)(mPtr->typePtr->callProc))(mPtr->clientData, interp,
 	    (Tcl_ObjectContext) contextPtr, objc, objv);
 }
 
@@ -671,7 +675,7 @@ CmpStr(
 static void
 AddClassMethodNames(
     Class *clsPtr,		/* Class to get method names from. */
-    const int flags,		/* Whether we are interested in just the
+    int flags,		/* Whether we are interested in just the
 				 * public method names. */
     Tcl_HashTable *const namesPtr,
 				/* Reference to the hash table to put the
@@ -1189,16 +1193,16 @@ TclOOGetCallContext(
 	 * the object, and in the class).
 	 */
 
-	const Tcl_ObjIntRep *irPtr;
+	const Tcl_ObjInternalRep *irPtr;
 	const int reuseMask = (WANT_PUBLIC(flags) ? ~0 : ~PUBLIC_METHOD);
 
-	if ((irPtr = TclFetchIntRep(cacheInThisObj, &methodNameType))) {
+	if ((irPtr = TclFetchInternalRep(cacheInThisObj, &methodNameType))) {
 	    callPtr = (CallChain *)irPtr->twoPtrValue.ptr1;
 	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
 		goto returnContext;
 	    }
-	    Tcl_StoreIntRep(cacheInThisObj, &methodNameType, NULL);
+	    Tcl_StoreInternalRep(cacheInThisObj, &methodNameType, NULL);
 	}
 
 	if (oPtr->flags & USE_CLASS_CACHE) {

@@ -209,7 +209,7 @@ WinLink(
 	 * Invalid file.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
 
@@ -233,7 +233,7 @@ WinLink(
 	 * Invalid file.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
 
@@ -247,7 +247,7 @@ WinLink(
 	 * The target doesn't exist.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
     } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 	/*
 	 * It is a file.
@@ -262,7 +262,7 @@ WinLink(
 		return 0;
 	    }
 
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	} else if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    if (CreateSymbolicLinkW(linkSourcePath, linkTargetPath,
 		    0x2 /* SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */)) {
@@ -272,7 +272,7 @@ WinLink(
 
 		return 0;
 	    } else {
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 	    }
 	} else {
 	    Tcl_SetErrno(ENODEV);
@@ -327,7 +327,7 @@ WinReadLink(
 	 * Invalid file.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return NULL;
     }
 
@@ -341,7 +341,7 @@ WinReadLink(
 	 * The source doesn't exist.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return NULL;
 
     } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
@@ -502,7 +502,7 @@ TclWinSymLinkDelete(
 	     * Error setting junction.
 	     */
 
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    CloseHandle(hFile);
 	} else {
 	    CloseHandle(hFile);
@@ -695,7 +695,7 @@ NativeReadReparse(
 	 * Error creating directory.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
 
@@ -709,7 +709,7 @@ NativeReadReparse(
 	 * Error setting junction.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	CloseHandle(hFile);
 	return -1;
     }
@@ -751,7 +751,7 @@ NativeWriteReparse(
 	 * Error creating directory.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
     hFile = CreateFileW(linkDirPath, GENERIC_WRITE, 0, NULL,
@@ -762,7 +762,7 @@ NativeWriteReparse(
 	 * Error creating directory.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
 
@@ -777,7 +777,7 @@ NativeWriteReparse(
 	 * Error setting junction.
 	 */
 
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	CloseHandle(hFile);
 	RemoveDirectoryW(linkDirPath);
 	return -1;
@@ -885,10 +885,10 @@ TclpFindExecutable(
 	Tcl_SetPanicProc(tclWinDebugPanic);
     }
 
-    GetModuleFileNameW(NULL, wName, MAX_PATH);
+    GetModuleFileNameW(NULL, wName, sizeof(wName)/sizeof(WCHAR));
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
-    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, -1), NULL);
+    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, TCL_INDEX_NONE), NULL);
 }
 
 /*
@@ -1024,7 +1024,7 @@ TclpMatchInDirectory(
 	     * pattern.
 	     */
 
-	    dirName = Tcl_DStringAppend(&dsOrig, pattern, -1);
+	    dirName = Tcl_DStringAppend(&dsOrig, pattern, TCL_INDEX_NONE);
 	} else {
 	    dirName = TclDStringAppendLiteral(&dsOrig, "*.*");
 	}
@@ -1057,7 +1057,7 @@ TclpMatchInDirectory(
 		return TCL_OK;
 	    }
 
-	    TclWinConvertError(err);
+	    Tcl_WinConvertError(err);
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"couldn't read directory \"%s\": %s",
@@ -1103,7 +1103,7 @@ TclpMatchInDirectory(
 	    native = data.cFileName;
 	    attr = data.dwFileAttributes;
 	    Tcl_DStringInit(&ds);
-	    utfname = Tcl_WCharToUtfDString(native, -1, &ds);
+	    utfname = Tcl_WCharToUtfDString(native, TCL_INDEX_NONE, &ds);
 
 	    if (!matchSpecialDots) {
 		/*
@@ -1606,7 +1606,7 @@ NativeAccess(
 
 	DWORD lasterror = GetLastError();
 	if (lasterror != ERROR_SHARING_VIOLATION) {
-	    TclWinConvertError(lasterror);
+	    Tcl_WinConvertError(lasterror);
 	    return -1;
 	}
     }
@@ -1732,7 +1732,7 @@ NativeAccess(
 	     * to EACCES - just what we want!
 	     */
 
-	    TclWinConvertError((DWORD) error);
+	    Tcl_WinConvertError((DWORD) error);
 	    return -1;
 	}
 
@@ -1837,7 +1837,7 @@ NativeAccess(
 	     */
 
 	accessError:
-	    TclWinConvertError(GetLastError());
+	    Tcl_WinConvertError(GetLastError());
 	    if (sdPtr != NULL) {
 		HeapFree(GetProcessHeap(), 0, sdPtr);
 	    }
@@ -1894,7 +1894,6 @@ NativeIsExec(
     if ((_wcsicmp(path, L"exe") == 0)
 	    || (_wcsicmp(path, L"com") == 0)
 	    || (_wcsicmp(path, L"cmd") == 0)
-	    || (_wcsicmp(path, L"cmd") == 0)
 	    || (_wcsicmp(path, L"bat") == 0)) {
 	return 1;
     }
@@ -1932,7 +1931,7 @@ TclpObjChdir(
     result = SetCurrentDirectoryW(nativePath);
 
     if (result == 0) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return -1;
     }
     return 0;
@@ -1971,7 +1970,7 @@ TclpGetCwd(
     WCHAR *native;
 
     if (GetCurrentDirectoryW(MAX_PATH, buffer) == 0) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "error getting working directory name: %s",
@@ -1990,7 +1989,7 @@ TclpGetCwd(
 	native += 2;
     }
     Tcl_DStringInit(bufferPtr);
-    Tcl_WCharToUtfDString(native, -1, bufferPtr);
+    Tcl_WCharToUtfDString(native, TCL_INDEX_NONE, bufferPtr);
 
     /*
      * Convert to forward slashes for easier use in scripts.
@@ -2136,12 +2135,12 @@ NativeStat(
 	    DWORD lasterror = GetLastError();
 
 	    if (lasterror != ERROR_SHARING_VIOLATION) {
-		TclWinConvertError(lasterror);
+		Tcl_WinConvertError(lasterror);
 		return -1;
 		}
 	    hFind = FindFirstFileW(nativePath, &ffd);
 	    if (hFind == INVALID_HANDLE_VALUE) {
-		TclWinConvertError(GetLastError());
+		Tcl_WinConvertError(GetLastError());
 		return -1;
 	    }
 	    memcpy(&data, &ffd, sizeof(data));
@@ -2199,7 +2198,7 @@ NativeDev(
 
     GetFullPathNameW(nativePath, MAX_PATH, nativeFullPath, &nativePart);
     Tcl_DStringInit(&ds);
-    fullPath = Tcl_WCharToUtfDString(nativeFullPath, -1, &ds);
+    fullPath = Tcl_WCharToUtfDString(nativeFullPath, TCL_INDEX_NONE, &ds);
 
     if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
 	const char *p;
@@ -2370,7 +2369,7 @@ TclpGetNativeCwd(
     WCHAR buffer[MAX_PATH];
 
     if (GetCurrentDirectoryW(MAX_PATH, buffer) == 0) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return NULL;
     }
 
@@ -2502,7 +2501,7 @@ TclpFilesystemPathType(
 	Tcl_DString ds;
 
 	Tcl_DStringInit(&ds);
-	Tcl_WCharToUtfDString(volType, -1, &ds);
+	Tcl_WCharToUtfDString(volType, TCL_INDEX_NONE, &ds);
 	return TclDStringToObj(&ds);
     }
 #undef VOL_BUF_SIZE
@@ -2650,7 +2649,7 @@ TclpObjNormalizePath(
 		     */
 
 		    nextCheckpoint = 0;
-		    Tcl_AppendToObj(to, currentPathEndPosition, -1);
+		    Tcl_AppendToObj(to, currentPathEndPosition, TCL_INDEX_NONE);
 
 		    /*
 		     * Convert link to forward slashes.
@@ -2826,7 +2825,7 @@ TclpObjNormalizePath(
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
-	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, -1);
+	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, TCL_INDEX_NONE);
 	    path = TclGetStringFromObj(tmpPathPtr, &len);
 	    Tcl_SetStringObj(pathPtr, path, len);
 	    Tcl_DecrRefCount(tmpPathPtr);
@@ -2899,7 +2898,7 @@ TclWinVolumeRelativeNormalize(
 	const char *drive = Tcl_GetString(useThisCwd);
 
 	absolutePath = Tcl_NewStringObj(drive,2);
-	Tcl_AppendToObj(absolutePath, path, -1);
+	Tcl_AppendToObj(absolutePath, path, TCL_INDEX_NONE);
 	Tcl_IncrRefCount(absolutePath);
 
 	/*
@@ -2952,7 +2951,7 @@ TclWinVolumeRelativeNormalize(
 	    Tcl_AppendToObj(absolutePath, "/", 1);
 	}
 	Tcl_IncrRefCount(absolutePath);
-	Tcl_AppendToObj(absolutePath, path+2, -1);
+	Tcl_AppendToObj(absolutePath, path+2, TCL_INDEX_NONE);
     }
     *useThisCwdPtr = useThisCwd;
     return absolutePath;
@@ -2989,7 +2988,7 @@ TclpNativeToNormalized(
     char *copy, *p;
 
     Tcl_DStringInit(&ds);
-    Tcl_WCharToUtfDString((const WCHAR *) clientData, -1, &ds);
+    Tcl_WCharToUtfDString((const WCHAR *) clientData, TCL_INDEX_NONE, &ds);
     copy = Tcl_DStringValue(&ds);
     len = Tcl_DStringLength(&ds);
 
@@ -3141,7 +3140,7 @@ TclNativeCreateNativeRep(
      * If there is no "\\?\" prefix but there is a drive or UNC path prefix
      * and the path is larger than MAX_PATH chars, no Win32 API function can
      * handle that unless it is prefixed with the extended path prefix. See:
-     * <http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath>
+     * <https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maxpath>
      */
 
     if (((str[0] >= 'A' && str[0] <= 'Z') || (str[0] >= 'a' && str[0] <= 'z'))
@@ -3271,7 +3270,7 @@ TclpUtime(
 
     if (fileHandle == INVALID_HANDLE_VALUE ||
 	    !SetFileTime(fileHandle, NULL, &lastAccessTime, &lastModTime)) {
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	res = -1;
     }
     if (fileHandle != INVALID_HANDLE_VALUE) {

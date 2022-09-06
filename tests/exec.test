@@ -169,19 +169,19 @@ test exec-2.6 {redirecting input from immediate source, with UTF} -setup {
     encoding system iso8859-1
     proc quotenonascii s {
 	regsub -all {\[|\\|\]} $s {\\&} s
-	regsub -all "\[\u007f-\uffff\]" $s \
-	    {[apply {c {format {\u%04x} [scan $c %c]}} &]} s
+	regsub -all "\[\x7F-\xFF\]" $s \
+	    {[apply {c {format {\x%02X} [scan $c %c]}} &]} s
 	return [subst -novariables $s]
     }
 } -constraints {exec} -body {
-    # If this fails, it may give back: "\uC3\uA9\uC3\uA0\uC3\uBC\uC3\uB1"
+    # If this fails, it may give back: "\xC3\xA9\xC3\xA0\xC3\xBC\xC3\xB1"
     # If it does, this means that the UTF -> external conversion did not occur
     # before writing out the temp file.
-    quotenonascii [exec [interpreter] $path(cat) << "\uE9\uE0\uFC\uF1"]
+    quotenonascii [exec [interpreter] $path(cat) << "\xE9\xE0\xFC\xF1"]
 } -cleanup {
     encoding system $sysenc
     rename quotenonascii {}
-} -result {\u00e9\u00e0\u00fc\u00f1}
+} -result {\xE9\xE0\xFC\xF1}
 
 # I/O redirection: output to file.
 

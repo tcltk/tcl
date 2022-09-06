@@ -208,7 +208,7 @@ TestvolumetypeCmd(
     if (found == 0) {
 	Tcl_AppendResult(interp, "could not get volume type for \"",
 		(path?path:""), "\"", NULL);
-	TclWinConvertError(GetLastError());
+	Tcl_WinConvertError(GetLastError());
 	return TCL_ERROR;
     }
     Tcl_AppendResult(interp, volType, NULL);
@@ -322,18 +322,14 @@ TestSizeCmd(
     if (objc != 2) {
 	goto syntax;
     }
-    if (strcmp(Tcl_GetString(objv[1]), "time_t") == 0) {
-	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sizeof(time_t)));
-	return TCL_OK;
-    }
     if (strcmp(Tcl_GetString(objv[1]), "st_mtime") == 0) {
-        Tcl_StatBuf *statPtr;
-        Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sizeof(statPtr->st_mtime)));
-        return TCL_OK;
+	Tcl_StatBuf *statPtr;
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(sizeof(statPtr->st_mtime)));
+	return TCL_OK;
     }
 
 syntax:
-    Tcl_WrongNumArgs(interp, 1, objv, "time_t|st_mtime");
+    Tcl_WrongNumArgs(interp, 1, objv, "st_mtime");
     return TCL_ERROR;
 }
 

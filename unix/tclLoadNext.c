@@ -83,7 +83,7 @@ TclpDlopen(
 
 	Tcl_DString ds;
 
-	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, fileName, TCL_INDEX_NONE, &ds);
 	files = {native,NULL};
 	result = rld_load(errorStream, &header, files, NULL);
 	Tcl_DStringFree(&ds);
@@ -133,7 +133,7 @@ FindSymbol(
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
-    Tcl_PackageInitProc *proc = NULL;
+    Tcl_LibraryInitProc *proc = NULL;
 
     if (symbol) {
 	char sym[strlen(symbol) + 2];

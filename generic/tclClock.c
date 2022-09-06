@@ -452,7 +452,7 @@ ClockGetdatefieldsObjCmd(
      * that it isn't.
      */
 
-    if (TclHasIntRep(objv[1], &tclBignumType)) {
+    if (TclHasInternalRep(objv[1], &tclBignumType)) {
 	Tcl_SetObjResult(interp, lit[LIT_INTEGER_VALUE_TOO_LARGE]);
 	return TCL_ERROR;
     }
@@ -754,7 +754,7 @@ ConvertLocalToUTC(
      * Unpack the tz data.
      */
 
-    if (TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, tzdata, &rowc, &rowv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -819,7 +819,7 @@ ConvertLocalToUTCUsingTable(
     while (!found) {
 	row = LookupLastTransition(interp, fields->seconds, rowc, rowv);
 	if ((row == NULL)
-		|| TclListObjGetElements(interp, row, &cellc,
+		|| TclListObjGetElementsM(interp, row, &cellc,
 		    &cellv) != TCL_OK
 		|| TclGetIntFromObj(interp, cellv[1],
 		    &fields->tzOffset) != TCL_OK) {
@@ -957,7 +957,7 @@ ConvertUTCToLocal(
      * Unpack the tz data.
      */
 
-    if (TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, tzdata, &rowc, &rowv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1009,7 +1009,7 @@ ConvertUTCToLocalUsingTable(
 
     row = LookupLastTransition(interp, fields->seconds, rowc, rowv);
     if (row == NULL ||
-	    TclListObjGetElements(interp, row, &cellc, &cellv) != TCL_OK ||
+	    TclListObjGetElementsM(interp, row, &cellc, &cellv) != TCL_OK ||
 	    TclGetIntFromObj(interp, cellv[1], &fields->tzOffset) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1520,9 +1520,9 @@ GetJulianDayFromEraYearMonthDay(
      * Have to make sure quotient is truncated towards 0 when negative.
      * See above bug for details. The casts are necessary.
      */
-    if (ym1 >= 0)
+    if (ym1 >= 0) {
 	ym1o4 = ym1 / 4;
-    else {
+    } else {
 	ym1o4 = - (int) (((unsigned int) -ym1) / 4);
     }
 #endif
@@ -1650,19 +1650,37 @@ ClockGetenvObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+#ifdef _WIN32
+    const WCHAR *varName;
+    const WCHAR *varValue;
+    Tcl_DString ds;
+#else
     const char *varName;
     const char *varValue;
+#endif
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
+#ifdef _WIN32
+    Tcl_DStringInit(&ds);
+    varName = Tcl_UtfToWCharDString(TclGetString(objv[1]), -1, &ds);
+    varValue = _wgetenv(varName);
+    if (varValue == NULL) {
+	Tcl_DStringFree(&ds);
+    } else {
+	Tcl_DStringSetLength(&ds, 0);
+	Tcl_WCharToUtfDString(varValue, -1, &ds);
+	Tcl_DStringResult(interp, &ds);
+    }
+#else
     varName = TclGetString(objv[1]);
     varValue = getenv(varName);
-    if (varValue == NULL) {
-	varValue = "";
+    if (varValue != NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
+#endif
     return TCL_OK;
 }
 
@@ -2021,26 +2039,52 @@ ClockSecondsObjCmd(
  *----------------------------------------------------------------------
  */
 
+#ifdef _WIN32
+#define getenv(x) _wgetenv(L##x)
+#else
+#define WCHAR char
+#define wcslen strlen
+#define wcscmp strcmp
+#define wcscpy strcpy
+#endif
+
 static void
 TzsetIfNecessary(void)
 {
-    static char* tzWas = (char *)INT2PTR(-1);	/* Previous value of TZ, protected by
-				 * clockMutex. */
-    const char *tzIsNow;	/* Current value of TZ */
+    static WCHAR* tzWas = (WCHAR *)INT2PTR(-1);	 /* Previous value of TZ, protected by
+					  * clockMutex. */
+    static long	 tzLastRefresh = 0;	 /* Used for latency before next refresh */
+    static size_t tzEnvEpoch = 0;        /* Last env epoch, for faster signaling,
+					    that TZ changed via TCL */
+    const WCHAR *tzIsNow;		 /* Current value of TZ */
+
+    /*
+     * Prevent performance regression on some platforms by resolving of system time zone:
+     * small latency for check whether environment was changed (once per second)
+     * no latency if environment was changed with tcl-env (compare both epoch values)
+     */
+    Tcl_Time now;
+    Tcl_GetTime(&now);
+    if (now.sec == tzLastRefresh && tzEnvEpoch == TclEnvEpoch) {
+	return;
+    }
+
+    tzEnvEpoch = TclEnvEpoch;
+    tzLastRefresh = now.sec;
 
     Tcl_MutexLock(&clockMutex);
     tzIsNow = getenv("TZ");
-    if (tzIsNow != NULL && (tzWas == NULL || tzWas == INT2PTR(-1)
-	    || strcmp(tzIsNow, tzWas) != 0)) {
+    if (tzIsNow != NULL && (tzWas == NULL || tzWas == (WCHAR *)INT2PTR(-1)
+	    || wcscmp(tzIsNow, tzWas) != 0)) {
 	tzset();
-	if (tzWas != NULL && tzWas != INT2PTR(-1)) {
+	if (tzWas != NULL && tzWas != (WCHAR *)INT2PTR(-1)) {
 	    ckfree(tzWas);
 	}
-	tzWas = (char *)ckalloc(strlen(tzIsNow) + 1);
-	strcpy(tzWas, tzIsNow);
+	tzWas = (WCHAR *)ckalloc(sizeof(WCHAR) * (wcslen(tzIsNow) + 1));
+	wcscpy(tzWas, tzIsNow);
     } else if (tzIsNow == NULL && tzWas != NULL) {
 	tzset();
-	if (tzWas != INT2PTR(-1)) ckfree(tzWas);
+	if (tzWas != (WCHAR *)INT2PTR(-1)) ckfree(tzWas);
 	tzWas = NULL;
     }
     Tcl_MutexUnlock(&clockMutex);

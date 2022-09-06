@@ -34,7 +34,7 @@ typedef struct {
     Tcl_UniChar end;
 } Range;
 
-typedef struct CharSet {
+typedef struct {
     int exclude;		/* 1 if this is an exclusion set. */
     int nchars;
     Tcl_UniChar *chars;
@@ -916,7 +916,6 @@ Tcl_ScanObjCmd(
 	    }
 	    if (flags & SCAN_LONGER) {
 		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
-		    wideValue = INT64_MAX;
 		    if (TclGetString(objPtr)[0] == '-') {
 			wideValue = INT64_MIN;
 		    }
@@ -925,6 +924,8 @@ Tcl_ScanObjCmd(
 			wideValue = INT64_MAX;
 		    } else if (wideValue < INT64_MIN) {
 			wideValue = INT64_MIN;
+		    } else {
+			wideValue = WIDE_MAX;
 		    }
 		}
 		if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
@@ -1023,8 +1024,8 @@ Tcl_ScanObjCmd(
 		double dvalue;
 		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
 #ifdef ACCEPT_NAN
-		    const Tcl_ObjIntRep *irPtr
-			    = TclFetchIntRep(objPtr, &tclDoubleType);
+		    const Tcl_ObjInternalRep *irPtr
+			    = TclFetchInternalRep(objPtr, &tclDoubleType);
 		    if (irPtr) {
 			dvalue = irPtr->doubleValue;
 		    } else
@@ -1095,7 +1096,7 @@ Tcl_ScanObjCmd(
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
-		TclNewIntObj(objPtr, TCL_INDEX_NONE);
+		TclNewIndexObj(objPtr, TCL_INDEX_NONE);
 	    } else {
 		if (objPtr) {
 		    Tcl_SetListObj(objPtr, 0, NULL);

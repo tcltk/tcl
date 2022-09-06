@@ -507,12 +507,12 @@ TclWinCPUID(
 {
     int status = TCL_ERROR;
 
-#if defined(HAVE_INTRIN_H) && defined(_WIN64)
+#if defined(HAVE_INTRIN_H) && defined(_WIN64) && defined(HAVE_CPUID)
 
     __cpuid((int *)regsPtr, index);
     status = TCL_OK;
 
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && defined(HAVE_CPUID)
 #   if defined(_WIN64)
     /*
      * Execute the CPUID instruction with the given index, and store results
@@ -628,7 +628,7 @@ TclWinCPUID(
     status = registration.status;
 
 #   endif /* !_WIN64 */
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && defined(HAVE_CPUID)
 #   if defined(_WIN64)
 
     __cpuid(regsPtr, index);
@@ -683,6 +683,8 @@ TclWinCPUID(
 
 #   endif
 #else
+    (void)index;
+    (void)regsPtr;
     /*
      * Don't know how to do assembly code for this compiler and/or
      * architecture.

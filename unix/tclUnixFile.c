@@ -41,11 +41,11 @@ TclpFindExecutable(
 {
     Tcl_Encoding encoding;
     int length;
-    wchar_t buf[PATH_MAX];
+    wchar_t buf[PATH_MAX] = L"";
     char name[PATH_MAX * 3 + 1];
 
     GetModuleFileNameW(NULL, buf, PATH_MAX);
-    cygwin_conv_path(3, buf, name, PATH_MAX);
+    cygwin_conv_path(3, buf, name, sizeof(name));
     length = strlen(name);
     if ((length > 4) && !strcasecmp(name + length - 4, ".exe")) {
 	/* Strip '.exe' part. */
@@ -119,7 +119,7 @@ TclpFindExecutable(
 		TclDStringAppendLiteral(&buffer, "/");
 	    }
 	}
-	name = Tcl_DStringAppend(&buffer, argv0, -1);
+	name = Tcl_DStringAppend(&buffer, argv0, TCL_INDEX_NONE);
 
 	/*
 	 * INTL: The following calls to access() and stat() should not be
@@ -155,9 +155,9 @@ TclpFindExecutable(
 #endif
     {
 	encoding = Tcl_GetEncoding(NULL, NULL);
-	Tcl_ExternalToUtfDString(encoding, name, -1, &utfName);
+	Tcl_ExternalToUtfDString(encoding, name, TCL_INDEX_NONE, &utfName);
 	TclSetObjNameOfExecutable(
-		Tcl_NewStringObj(Tcl_DStringValue(&utfName), -1), encoding);
+		Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
 	Tcl_DStringFree(&utfName);
 	goto done;
     }
@@ -178,7 +178,7 @@ TclpFindExecutable(
     }
 
     Tcl_DStringInit(&nameString);
-    Tcl_DStringAppend(&nameString, name, -1);
+    Tcl_DStringAppend(&nameString, name, TCL_INDEX_NONE);
 
     Tcl_DStringFree(&buffer);
     Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&cwd),
@@ -191,10 +191,10 @@ TclpFindExecutable(
     Tcl_DStringFree(&nameString);
 
     encoding = Tcl_GetEncoding(NULL, NULL);
-    Tcl_ExternalToUtfDString(encoding, Tcl_DStringValue(&buffer), -1,
+    Tcl_ExternalToUtfDString(encoding, Tcl_DStringValue(&buffer), TCL_INDEX_NONE,
 	    &utfName);
     TclSetObjNameOfExecutable(
-	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), -1), encoding);
+	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), TCL_INDEX_NONE), encoding);
     Tcl_DStringFree(&utfName);
 
   done:
@@ -307,7 +307,7 @@ TclpMatchInDirectory(
 	 * Now open the directory for reading and iterate over the contents.
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, dirName, -1, &ds);
+	native = Tcl_UtfToExternalDString(NULL, dirName, TCL_INDEX_NONE, &ds);
 
 	if ((TclOSstat(native, &statBuf) != 0)		/* INTL: Native. */
 		|| !S_ISDIR(statBuf.st_mode)) {
@@ -371,14 +371,14 @@ TclpMatchInDirectory(
 	     * and pattern. If so, add the file to the result.
 	     */
 
-	    utfname = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, -1,
+	    utfname = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, TCL_INDEX_NONE,
 		    &utfDs);
 	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
 		int typeOk = 1;
 
 		if (types != NULL) {
 		    Tcl_DStringSetLength(&ds, nativeDirLen);
-		    native = Tcl_DStringAppend(&ds, entryPtr->d_name, -1);
+		    native = Tcl_DStringAppend(&ds, entryPtr->d_name, TCL_INDEX_NONE);
 		    matchResult = NativeMatchType(interp, native,
 			    entryPtr->d_name, types);
 		    typeOk = (matchResult == 1);
@@ -598,7 +598,7 @@ TclpGetUserHome(
 {
     struct passwd *pwPtr;
     Tcl_DString ds;
-    const char *native = Tcl_UtfToExternalDString(NULL, name, -1, &ds);
+    const char *native = Tcl_UtfToExternalDString(NULL, name, TCL_INDEX_NONE, &ds);
 
     pwPtr = TclpGetPwNam(native);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
@@ -606,7 +606,7 @@ TclpGetUserHome(
     if (pwPtr == NULL) {
 	return NULL;
     }
-    Tcl_ExternalToUtfDString(NULL, pwPtr->pw_dir, -1, bufferPtr);
+    Tcl_ExternalToUtfDString(NULL, pwPtr->pw_dir, TCL_INDEX_NONE, bufferPtr);
     return Tcl_DStringValue(bufferPtr);
 }
 
@@ -785,7 +785,7 @@ TclpGetCwd(
 	}
 	return NULL;
     }
-    return Tcl_ExternalToUtfDString(NULL, buffer, -1, bufferPtr);
+    return Tcl_ExternalToUtfDString(NULL, buffer, TCL_INDEX_NONE, bufferPtr);
 }
 
 /*
@@ -820,7 +820,7 @@ TclpReadlink(
     const char *native;
     Tcl_DString ds;
 
-    native = Tcl_UtfToExternalDString(NULL, path, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, path, TCL_INDEX_NONE, &ds);
     length = readlink(native, link, sizeof(link));	/* INTL: Native. */
     Tcl_DStringFree(&ds);
 
@@ -1061,7 +1061,7 @@ TclpNativeToNormalized(
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDString(NULL, (const char *) clientData, -1, &ds);
+    Tcl_ExternalToUtfDString(NULL, (const char *) clientData, TCL_INDEX_NONE, &ds);
     return TclDStringToObj(&ds);
 }
 
@@ -1196,6 +1196,29 @@ TclpUtime(
 }
 
 #ifdef __CYGWIN__
+
+int
+TclOSfstat(
+    int fd,
+    void *cygstat)
+{
+    struct stat buf;
+    Tcl_StatBuf *statBuf = (Tcl_StatBuf *)cygstat;
+    int result = fstat(fd, &buf);
+
+    statBuf->st_mode = buf.st_mode;
+    statBuf->st_ino = buf.st_ino;
+    statBuf->st_dev = buf.st_dev;
+    statBuf->st_rdev = buf.st_rdev;
+    statBuf->st_nlink = buf.st_nlink;
+    statBuf->st_uid = buf.st_uid;
+    statBuf->st_gid = buf.st_gid;
+    statBuf->st_size = buf.st_size;
+    statBuf->st_atime = buf.st_atime;
+    statBuf->st_mtime = buf.st_mtime;
+    statBuf->st_ctime = buf.st_ctime;
+    return result;
+}
 
 int
 TclOSstat(

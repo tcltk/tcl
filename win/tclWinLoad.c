@@ -20,7 +20,9 @@
  */
 
 static WCHAR *dllDirectoryName = NULL;
+#if TCL_THREADS
 static Tcl_Mutex dllDirectoryNameMutex;
+#endif
 
 /*
  * Static functions defined within this file.
@@ -112,10 +114,11 @@ TclpDlopen(
          * first error for reporting purposes.
          */
         if (firstError == ERROR_MOD_NOT_FOUND ||
-            firstError == ERROR_DLL_NOT_FOUND)
+            firstError == ERROR_DLL_NOT_FOUND) {
             lastError = GetLastError();
-        else
+        } else {
             lastError = firstError;
+        }
 
 	errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
 		Tcl_GetString(pathPtr));
@@ -159,7 +162,7 @@ TclpDlopen(
 		Tcl_AppendToObj(errMsg, "Bad exe format. Possibly a 32/64-bit mismatch.", -1);
                 break;
             default:
-		TclWinConvertError(lastError);
+		Tcl_WinConvertError(lastError);
 		Tcl_AppendToObj(errMsg, Tcl_PosixError(interp), -1);
 	    }
 	    Tcl_SetObjResult(interp, errMsg);
@@ -217,7 +220,7 @@ FindSymbol(
 
 	Tcl_DStringInit(&ds);
 	TclDStringAppendLiteral(&ds, "_");
-	sym2 = Tcl_DStringAppend(&ds, symbol, -1);
+	sym2 = Tcl_DStringAppend(&ds, symbol, TCL_INDEX_NONE);
 	proc = (void *)GetProcAddress(hInstance, sym2);
 	Tcl_DStringFree(&ds);
     }
@@ -379,7 +382,7 @@ InitDLLDirectoryName(void)
 	id *= 16777619;
     }
 
-    TclWinConvertError(lastError);
+    Tcl_WinConvertError(lastError);
     return TCL_ERROR;
 
     /*

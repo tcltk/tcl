@@ -2109,7 +2109,7 @@ ParseLexeme(
 	     * Example: Inf + luence + () becomes a valid function call.
 	     * [Bug 3401704]
 	     */
-	    if (TclHasIntRep(literal, &tclDoubleType)) {
+	    if (TclHasInternalRep(literal, &tclDoubleType)) {
 		const char *p = start;
 
 		while (p < end) {
@@ -2145,7 +2145,7 @@ ParseLexeme(
      */
 
     if (!TclIsBareword(*start) || *start == '_') {
-	if (TclUCS4Complete(start, numBytes)) {
+	if (Tcl_UtfCharComplete(start, numBytes)) {
 	    scanned = TclUtfToUCS4(start, &ch);
 	} else {
 	    char utfBytes[8];
@@ -2223,8 +2223,8 @@ TclCompileExpr(
 	TclAdvanceLines(&envPtr->line, script,
 		script + TclParseAllWhiteSpace(script, numBytes));
 
-	TclListObjGetElements(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
-	TclListObjGetElements(NULL, funcList, &objc, &funcObjv);
+	TclListObjGetElementsM(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
+	TclListObjGetElementsM(NULL, funcList, &objc, &funcObjv);
 	CompileExprTree(interp, opTree, 0, &litObjv, funcObjv,
 		parsePtr->tokenPtr, envPtr, optimize);
     } else {
@@ -2520,7 +2520,7 @@ CompileExprTree(
 		     * However, the design of the "global" and "local"
 		     * LiteralTable does not permit the value of lePtr->objPtr
 		     * to change. So rather than replace lePtr->objPtr, we do
-		     * surgery to transfer our desired intrep into it.
+		     * surgery to transfer our desired internalrep into it.
 		     */
 
 		    objPtr->typePtr = literal->typePtr;
@@ -2533,9 +2533,9 @@ CompileExprTree(
 		 * When optimize==0, we know the expression is a one-off and
 		 * there's nothing to be gained from sharing literals when
 		 * they won't live long, and the copies we have already have
-		 * an appropriate intrep. In this case, skip literal
+		 * an appropriate internalrep. In this case, skip literal
 		 * registration that would enable sharing, and use the routine
-		 * that preserves intreps.
+		 * that preserves internalreps.
 		 */
 
 		TclEmitPush(TclAddLiteralObj(envPtr, literal, NULL), envPtr);
@@ -2572,7 +2572,7 @@ CompileExprTree(
 			if ((tableValue->typePtr == NULL) &&
 				(objPtr->typePtr != NULL)) {
 			    /*
-			     * Same intrep surgery as for OT_LITERAL.
+			     * Same internalrep surgery as for OT_LITERAL.
 			     */
 
 			    tableValue->typePtr = objPtr->typePtr;

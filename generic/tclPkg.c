@@ -1359,7 +1359,7 @@ TclNRPackageObjCmd(
 	    objvListPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_IncrRefCount(objvListPtr);
 	    Tcl_ListObjAppendElement(interp, objvListPtr, ov);
-	    Tcl_ListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
+	    TclListObjGetElementsM(interp, objvListPtr, &newobjc, &newObjvPtr);
 
 	    Tcl_NRAddCallback(interp,
 		    TclNRPackageObjCmdCleanup, objv[3], objvListPtr, NULL,NULL);
@@ -1386,7 +1386,7 @@ TclNRPackageObjCmd(
 		Tcl_ListObjAppendElement(interp, objvListPtr,
 			Tcl_DuplicateObj(newobjv[i]));
 	    }
-	    Tcl_ListObjGetElements(interp, objvListPtr, &newobjc, &newObjvPtr);
+	    TclListObjGetElementsM(interp, objvListPtr, &newobjc, &newObjvPtr);
 	    Tcl_NRAddCallback(interp,
 		    TclNRPackageObjCmdCleanup, objv[2], objvListPtr, NULL,NULL);
 	    Tcl_NRAddCallback(interp,
@@ -1696,7 +1696,7 @@ CheckVersionAndConvert(
 
     *ip++ = *p;
 
-    for (prevChar = *p, p++; *p != 0; p++) {
+    for (prevChar = *p, p++; (*p != 0) && (*p != '+'); p++) {
 	if (!isdigit(UCHAR(*p)) &&			/* INTL: digit */
 		((*p!='.' && *p!='a' && *p!='b') ||
 		((hasunstable && (*p=='a' || *p=='b')) ||
@@ -2000,10 +2000,10 @@ CheckRequirement(
 
     char *dash = NULL, *buf;
 
-    dash = (char *)strchr(string, '-');
+    dash = strchr(string, '+') ? NULL : (char *)strchr(string, '-');
     if (dash == NULL) {
 	/*
-	 * No dash found, has to be a simple version.
+	 * '+' found or no dash found: has to be a simple version.
 	 */
 
 	return CheckVersionAndConvert(interp, string, NULL, NULL);

@@ -301,7 +301,7 @@ TclCompileArraySetCmd(
     TclNewObj(literalObj);
     isDataLiteral = TclWordKnownAtCompileTime(dataTokenPtr, literalObj);
     isDataValid = (isDataLiteral
-	    && Tcl_ListObjLength(NULL, literalObj, &len) == TCL_OK);
+	    && TclListObjLengthM(NULL, literalObj, &len) == TCL_OK);
     isDataEven = (isDataValid && (len & 1) == 0);
 
     /*
@@ -892,7 +892,7 @@ TclCompileConcatCmd(
 	const char *bytes;
 	int len;
 
-	Tcl_ListObjGetElements(NULL, listObj, &len, &objs);
+	TclListObjGetElementsM(NULL, listObj, &len, &objs);
 	objPtr = Tcl_ConcatObj(len, objs);
 	Tcl_DecrRefCount(listObj);
 	bytes = TclGetStringFromObj(objPtr, &len);
@@ -2641,8 +2641,8 @@ TclCompileLmapCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
-				 * compiled. */
+    Command *cmdPtr,		/* Points to the definition of the command
+				 *  being compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     return CompileEachloopCmd(interp, parsePtr, cmdPtr, envPtr,
@@ -2703,7 +2703,7 @@ CompileEachloopCmd(
     }
 
     /*
-     * Bail out if the body requires substitutions in order to insure correct
+     * Bail out if the body requires substitutions in order to ensure correct
      * behaviour. [Bug 219166]
      */
 
@@ -2750,7 +2750,7 @@ CompileEachloopCmd(
 	 */
 
 	if (!TclWordKnownAtCompileTime(tokenPtr, varListObj) ||
-		TCL_OK != Tcl_ListObjLength(NULL, varListObj, &numVars) ||
+		TCL_OK != TclListObjLengthM(NULL, varListObj, &numVars) ||
 		numVars == 0) {
 	    code = TCL_ERROR;
 	    goto done;

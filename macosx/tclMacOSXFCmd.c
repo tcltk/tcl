@@ -344,8 +344,8 @@ TclMacOSXSetFileAttribute(
 	     */
 
 	    Tcl_DStringInit(&ds);
-	    Tcl_DStringAppend(&ds, native, -1);
-	    Tcl_DStringAppend(&ds, _PATH_RSRCFORKSPEC, -1);
+	    Tcl_DStringAppend(&ds, native, TCL_INDEX_NONE);
+	    Tcl_DStringAppend(&ds, _PATH_RSRCFORKSPEC, TCL_INDEX_NONE);
 
 	    result = truncate(Tcl_DStringValue(&ds), 0);
 	    if (result != 0) {
@@ -459,11 +459,11 @@ TclMacOSXCopyFileAttributes(
 	 */
 
 	Tcl_DStringInit(&srcBuf);
-	Tcl_DStringAppend(&srcBuf, src, -1);
-	Tcl_DStringAppend(&srcBuf, _PATH_RSRCFORKSPEC, -1);
+	Tcl_DStringAppend(&srcBuf, src, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&srcBuf, _PATH_RSRCFORKSPEC, TCL_INDEX_NONE);
 	Tcl_DStringInit(&dstBuf);
-	Tcl_DStringAppend(&dstBuf, dst, -1);
-	Tcl_DStringAppend(&dstBuf, _PATH_RSRCFORKSPEC, -1);
+	Tcl_DStringAppend(&dstBuf, dst, TCL_INDEX_NONE);
+	Tcl_DStringAppend(&dstBuf, _PATH_RSRCFORKSPEC, TCL_INDEX_NONE);
 
 	/*
 	 * Do the copy.
@@ -577,7 +577,7 @@ GetOSTypeFromObj(
 {
     int result = TCL_OK;
 
-    if (!TclHasIntRep(objPtr, &tclOSTypeType)) {
+    if (!TclHasInternalRep(objPtr, &tclOSTypeType)) {
 	result = SetOSTypeFromAny(interp, objPtr);
     }
     *osTypePtr = (OSType) objPtr->internalRep.wideValue;
@@ -659,7 +659,7 @@ SetOSTypeFromAny(
 		 (OSType) bytes[1] << 16 |
 		 (OSType) bytes[2] <<  8 |
 		 (OSType) bytes[3];
-	TclFreeIntRep(objPtr);
+	TclFreeInternalRep(objPtr);
 	objPtr->internalRep.wideValue = (Tcl_WideInt) osType;
 	objPtr->typePtr = &tclOSTypeType;
     }

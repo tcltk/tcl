@@ -18,7 +18,7 @@ void
 void
 \fBTcl_PanicVA\fR(\fIformat\fR, \fIargList\fR)
 .sp
-void
+const char *
 \fBTcl_SetPanicProc\fR(\fIpanicProc\fR)
 .sp
 void
@@ -81,6 +81,9 @@ After \fBTcl_SetPanicProc\fR returns, any future calls to
 making calls into the Tcl library, or into other libraries that may
 call the Tcl library, since the original call to \fBTcl_Panic\fR
 indicates the Tcl library is not in a state of reliable operation.
+.PP
+The result of \fBTcl_SetPanicProc\fR is the full Tcl version (e.g.,
+\fB8.7.0+abcdef...abcdef.gcc-1002.utf16\fR).
 .PP
 The typical use of \fBTcl_SetPanicProc\fR arranges for the error message
 to be displayed or reported in a manner more suitable for the

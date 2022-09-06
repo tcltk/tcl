@@ -505,19 +505,19 @@ TclCompileStringIsCmd(
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     static const char *const isClasses[] = {
 	"alnum",	"alpha",	"ascii",	"control",
-	"boolean",	"dict", "digit",	"double",	"entier",
-	"false",	"graph",	"integer",	"list",
-	"lower",	"print",	"punct",	"space",
-	"true",		"upper",	"wideinteger",	"wordchar",
-	"xdigit",	NULL
+	"boolean",	"dict",		"digit",	"double",
+	"entier",	"false",	"graph",	"integer",
+	"list",		"lower",	"print",	"punct",
+	"space",	"true",		"upper",	"unicode",
+	"wideinteger", "wordchar",	"xdigit",	NULL
     };
     enum isClassesEnum {
 	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
-	STR_IS_BOOL,	STR_IS_DICT, STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_ENTIER,
-	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,	STR_IS_LIST,
-	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,	STR_IS_SPACE,
-	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_WIDE,	STR_IS_WORD,
-	STR_IS_XDIGIT
+	STR_IS_BOOL,	STR_IS_DICT,	STR_IS_DIGIT,	STR_IS_DOUBLE,
+	STR_IS_ENTIER,	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,
+	STR_IS_LIST,	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,
+	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_UNICODE,
+	STR_IS_WIDE,	STR_IS_WORD,	STR_IS_XDIGIT
     };
     int t, range, allowEmpty = 0, end;
     InstStringClassType strClassType;
@@ -608,6 +608,9 @@ TclCompileStringIsCmd(
 	goto compileStrClass;
     case STR_IS_UPPER:
 	strClassType = STR_CLASS_UPPER;
+	goto compileStrClass;
+    case STR_IS_UNICODE:
+	strClassType = STR_CLASS_UNICODE;
 	goto compileStrClass;
     case STR_IS_WORD:
 	strClassType = STR_CLASS_WORD;
@@ -887,7 +890,7 @@ TclCompileStringLenCmd(
 	 */
 
 	char buf[TCL_INTEGER_SPACE];
-	int len = Tcl_GetCharLength(objPtr);
+	int len = TclGetCharLength(objPtr);
 
 	len = sprintf(buf, "%d", len);
 	PushLiteral(envPtr, buf, len);
@@ -935,7 +938,7 @@ TclCompileStringMapCmd(
     if (!TclWordKnownAtCompileTime(mapTokenPtr, mapObj)) {
 	Tcl_DecrRefCount(mapObj);
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    } else if (Tcl_ListObjGetElements(NULL, mapObj, &len, &objv) != TCL_OK) {
+    } else if (TclListObjGetElementsM(NULL, mapObj, &len, &objv) != TCL_OK) {
 	Tcl_DecrRefCount(mapObj);
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     } else if (len != 2) {
@@ -1415,6 +1418,7 @@ StringClassDesc const tclStringClassTable[] = {
     {"upper",	Tcl_UniCharIsUpper},
     {"word",	Tcl_UniCharIsWordChar},
     {"xdigit",	UniCharIsHexDigit},
+    {"unicode",	Tcl_UniCharIsUnicode},
     {"",	NULL}
 };
 
@@ -2423,7 +2427,7 @@ IssueSwitchJumpTable(
 		 * point to here.
 		 */
 
-		Tcl_SetHashValue(hPtr, CurrentOffset(envPtr) - jumpLocation);
+		Tcl_SetHashValue(hPtr, INT2PTR(CurrentOffset(envPtr) - jumpLocation));
 	    }
 	    Tcl_DStringFree(&buffer);
 	} else {
@@ -2727,7 +2731,7 @@ TclCompileThrowCmd(
     CompileWord(envPtr, msgToken, interp, 2);
 
     codeIsList = codeKnown && (TCL_OK ==
-	    Tcl_ListObjLength(interp, objPtr, &len));
+	    TclListObjLengthM(interp, objPtr, &len));
     codeIsValid = codeIsList && (len != 0);
 
     if (codeIsValid) {
@@ -2860,7 +2864,7 @@ TclCompileTryCmd(
 		TclNewObj(tmpObj);
 		Tcl_IncrRefCount(tmpObj);
 		if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)
-			|| Tcl_ListObjLength(NULL, tmpObj, &objc) != TCL_OK
+			|| TclListObjLengthM(NULL, tmpObj, &objc) != TCL_OK
 			|| (objc == 0)) {
 		    TclDecrRefCount(tmpObj);
 		    goto failedToCompile;
@@ -2903,7 +2907,7 @@ TclCompileTryCmd(
 		TclDecrRefCount(tmpObj);
 		goto failedToCompile;
 	    }
-	    if (Tcl_ListObjGetElements(NULL, tmpObj, &objc, &objv) != TCL_OK
+	    if (TclListObjGetElementsM(NULL, tmpObj, &objc, &objv) != TCL_OK
 		    || (objc > 2)) {
 		TclDecrRefCount(tmpObj);
 		goto failedToCompile;
@@ -2968,6 +2972,9 @@ TclCompileTryCmd(
 	    goto failedToCompile;
 	}
 	finallyToken = TokenAfter(tokenPtr);
+	if (finallyToken->type != TCL_TOKEN_SIMPLE_WORD) {
+	    goto failedToCompile;
+	}
     } else {
 	goto failedToCompile;
     }
@@ -3114,7 +3121,7 @@ IssueTryClausesInstructions(
 	JUMP4(				JUMP_FALSE, notCodeJumpSource);
 	if (matchClauses[i]) {
 	    const char *p;
-	    Tcl_ListObjLength(NULL, matchClauses[i], &len);
+	    TclListObjLengthM(NULL, matchClauses[i], &len);
 
 	    /*
 	     * Match the errorcode according to try/trap rules.
@@ -3325,7 +3332,7 @@ IssueTryClausesFinallyInstructions(
 	OP(				EQ);
 	JUMP4(				JUMP_FALSE, notCodeJumpSource);
 	if (matchClauses[i]) {
-	    Tcl_ListObjLength(NULL, matchClauses[i], &len);
+	    TclListObjLengthM(NULL, matchClauses[i], &len);
 
 	    /*
 	     * Match the errorcode according to try/trap rules.
