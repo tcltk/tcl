@@ -101,6 +101,7 @@ namespace eval http {
 	array set socketWrQueue {}
 	array set socketClosing {}
 	array set socketPlayCmd {}
+	return
     }
     init
 
@@ -230,6 +231,7 @@ proc http::config {args} {
 	    }
 	    set http($flag) $value
 	}
+	return
     }
 }
 
@@ -327,6 +329,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     } {
 	http::CloseQueuedQueries $connId $token
     }
+    return
 }
 
 # http::KeepSocket -
@@ -512,6 +515,7 @@ proc http::KeepSocket {token} {
 	# There is no socketMapping($state(socketinfo)), so it does not matter
 	# that CloseQueuedQueries is not called.
     }
+    return
 }
 
 # http::CheckEof -
@@ -537,6 +541,7 @@ proc http::CheckEof {sock} {
 	# will then be error-handled.
 	CloseSocket $sock
     }
+    return
 }
 
 # http::CloseSocket -
@@ -592,6 +597,7 @@ proc http::CloseSocket {s {token {}}} {
 	    Log "Error closing socket: $err"
 	}
     }
+    return
 }
 
 # http::CloseQueuedQueries
@@ -648,6 +654,7 @@ proc http::CloseQueuedQueries {connId {token {}}} {
 		- token $token
 	{*}$unfinished
     }
+    return
 }
 
 # http::Unset
@@ -673,6 +680,7 @@ proc http::Unset {connId} {
     unset -nocomplain socketWrQueue($connId)
     unset -nocomplain socketClosing($connId)
     unset -nocomplain socketPlayCmd($connId)
+    return
 }
 
 # http::reset --
@@ -698,6 +706,7 @@ proc http::reset {token {why reset}} {
 	unset state
 	eval ::error $errorlist
     }
+    return
 }
 
 # http::geturl --
@@ -1601,6 +1610,7 @@ proc http::Connected {token proto phost srvurl} {
 	    Finish $token $err
 	}
     }
+    return
 }
 
 # http::registerError
@@ -1706,6 +1716,7 @@ proc http::DoneRequest {token} {
 	# In the nonpipeline case, connection for reading always occurs.
 	ReceiveResponse $token
     }
+    return
 }
 
 # http::ReceiveResponse
@@ -1880,6 +1891,7 @@ proc http::NextPipelinedWrite {token} {
 	#Log re-use nonpipeline, GRANT delayed write access to $token in NextP..
 	set socketWrState($connId) peNding
     }
+    return
 }
 
 # http::CancelReadPipeline
@@ -1912,6 +1924,7 @@ proc http::CancelReadPipeline {name1 connId op} {
 	}
 	set socketRdQueue($connId) {}
     }
+    return
 }
 
 # http::CancelWritePipeline
@@ -1945,6 +1958,7 @@ proc http::CancelWritePipeline {name1 connId op} {
 	}
 	set socketWrQueue($connId) {}
     }
+    return
 }
 
 # http::ReplayIfDead --
@@ -2078,6 +2092,7 @@ proc http::ReplayIfDead {tokenArg doing} {
     #   to new values in ReplayCore.
 
     ReplayCore $newQueue
+    return
 }
 
 # http::ReplayIfClose --
@@ -2117,6 +2132,7 @@ proc http::ReplayIfClose {Wstate Rqueue Wqueue} {
     # 2. Cleanup - none needed, done by the caller.
 
     ReplayCore $newQueue
+    return
 }
 
 # http::ReInit --
@@ -2323,6 +2339,7 @@ proc http::ReplayCore {newQueue} {
     # Connect does its own fconfigure.
     fileevent $sock writable [list http::Connect $token {*}$tmpConnArgs]
     #Log ---- $sock << conn to $token for HTTP request (e)
+    return
 }
 
 # Data access functions:
@@ -2374,7 +2391,7 @@ proc http::error {token} {
     if {[info exists state(error)]} {
 	return $state(error)
     }
-    return ""
+    return
 }
 
 # http::cleanup
@@ -2400,6 +2417,7 @@ proc http::cleanup {token} {
     if {[info exists state]} {
 	unset state
     }
+    return
 }
 
 # http::Connect
@@ -2443,6 +2461,7 @@ proc http::Connect {token proto phost srvurl} {
 	fileevent $state(sock) writable {}
 	::http::Connected $token $proto $phost $srvurl
     }
+    return
 }
 
 # http::Write
@@ -2547,6 +2566,7 @@ proc http::Write {token} {
 	eval $state(-queryprogress) \
 	    [list $token $state(querylength) $state(queryoffset)]
     }
+    return
 }
 
 # http::Event
@@ -3059,6 +3079,7 @@ proc http::Event {sock token} {
 	    return
 	}
     }
+    return
 }
 
 # http::TestForReplay
@@ -3324,6 +3345,7 @@ proc http::CopyStart {sock token {initial 1}} {
 	    Finish $token $err
 	}
     }
+    return
 }
 
 proc http::CopyChunk {token chunk} {
@@ -3353,6 +3375,7 @@ proc http::CopyChunk {token chunk} {
 	}
 	Eot $token ;# FIX ME: pipelining.
     }
+    return
 }
 
 # http::CopyDone
@@ -3383,6 +3406,7 @@ proc http::CopyDone {token count {error {}}} {
     } else {
 	CopyStart $sock $token 0
     }
+    return
 }
 
 # http::Eot
@@ -3452,6 +3476,7 @@ proc http::Eot {token {reason {}}} {
 	}
     }
     Finish $token $reason
+    return
 }
 
 # http::wait --
@@ -3550,6 +3575,8 @@ proc http::ProxyRequired {host} {
 	    set http(-proxyport) 8080
 	}
 	return [list $http(-proxyhost) $http(-proxyport)]
+    } else {
+	return
     }
 }
 
@@ -3698,6 +3725,7 @@ proc http::GetFieldValue {headers fieldName} {
 proc http::make-transformation-chunked {chan command} {
     coroutine [namespace current]::dechunk$chan ::http::ReceiveChunked $chan $command
     chan event $chan readable [namespace current]::dechunk$chan
+    return
 }
 
 # Local variables:
