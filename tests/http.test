@@ -611,17 +611,19 @@ test http-4.14 {http::Event} -body {
 } -cleanup {
     catch {http::cleanup $token}
 } -result {connect failed connection refused}
+
 # Bogus host
 test http-4.15 {http::Event} -body {
     # This test may fail if you use a proxy server. That is to be
     # expected and is not a problem with Tcl.
     set token [http::geturl //not_a_host.tcl.tk -timeout 3000 -command \#]
     http::wait $token
-    http::status $token
+    set result "[http::status $token] -- [lindex [http::error $token] 0]"
     # error codes vary among platforms.
 } -cleanup {
     catch {http::cleanup $token}
-} -returnCodes 1 -match glob -result "couldn't open socket*"
+} -match glob -result "error -- couldn't open socket*"
+
 test http-4.16 {Leak with Close vs Keepalive (bug [6ca52aec14]} -setup {
     proc list-difference {l1 l2} {
 	lmap item $l2 {if {$item in $l1} continue; set item}
