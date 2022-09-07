@@ -53,8 +53,6 @@ typedef struct TcpFdList {
 
 struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this file. */
-    int testFlags;              /* bit field for tests. Is set by testsocket
-                                 * test procedure */
     TcpFdList fds;		/* The file descriptors of the sockets. */
     int flags;			/* ORed combination of the bitfields defined
 				 * below. */
@@ -80,6 +78,8 @@ struct TcpState {
                                  * an async socket is not yet connected. */
     int connectError;           /* Cache SO_ERROR of async socket. */
     int cachedBlocking;         /* Cache blocking mode of async socket. */
+    int testFlags;              /* bit field for tests. Is set by testsocket
+                                 * test procedure */
 };
 
 /*
@@ -877,8 +877,8 @@ TcpGetOptionProc(
 
     if ((len > 1) && (optionName[1] == 'c') &&
 	    (strncmp(optionName, "-connecting", len) == 0)) {
-        Tcl_DStringAppend(dsPtr,
-                GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT) ? "1" : "0", TCL_INDEX_NONE);
+	Tcl_DStringAppend(dsPtr,
+		GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT) ? "1" : "0", TCL_INDEX_NONE);
         return TCL_OK;
     }
 
