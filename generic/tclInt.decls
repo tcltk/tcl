@@ -582,9 +582,20 @@ declare 258 {
     Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 	    Tcl_Obj *basenameObj)
 }
-declare 261 {
+declare 259 {
     int	TclMSB(size_t n)
 }
+
+# TIP 625: for unit testing - create list objects with span
+declare 260 {
+    Tcl_Obj *TclListTestObj(int length, int leadingSpace, int endSpace)
+}
+
+# TIP 625: for unit testing - check list invariants
+declare 261 {
+    void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
+}
+
 
 ##############################################################################
 

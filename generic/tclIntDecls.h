@@ -576,10 +576,14 @@ EXTERN void		TclStaticLibrary(Tcl_Interp *interp,
 /* 258 */
 EXTERN Tcl_Obj *	TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj);
-/* Slot 259 is reserved */
-/* Slot 260 is reserved */
-/* 261 */
+/* 259 */
 EXTERN int		TclMSB(size_t n);
+/* 260 */
+EXTERN Tcl_Obj *	TclListTestObj(int length, int leadingSpace,
+				int endSpace);
+/* 261 */
+EXTERN void		TclListObjValidate(Tcl_Interp *interp,
+				Tcl_Obj *listObj);
 
 typedef struct TclIntStubs {
     int magic;
@@ -844,9 +848,9 @@ typedef struct TclIntStubs {
     int (*tclPtrUnsetVar) (Tcl_Interp *interp, Tcl_Var varPtr, Tcl_Var arrayPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags); /* 256 */
     void (*tclStaticLibrary) (Tcl_Interp *interp, const char *prefix, Tcl_LibraryInitProc *initProc, Tcl_LibraryInitProc *safeInitProc); /* 257 */
     Tcl_Obj * (*tclpCreateTemporaryDirectory) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj); /* 258 */
-    void (*reserved259)(void);
-    void (*reserved260)(void);
-    int (*tclMSB) (size_t n); /* 261 */
+    int (*tclMSB) (size_t n); /* 259 */
+    Tcl_Obj * (*tclListTestObj) (int length, int leadingSpace, int endSpace); /* 260 */
+    void (*tclListObjValidate) (Tcl_Interp *interp, Tcl_Obj *listObj); /* 261 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1261,10 +1265,12 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclStaticLibrary) /* 257 */
 #define TclpCreateTemporaryDirectory \
 	(tclIntStubsPtr->tclpCreateTemporaryDirectory) /* 258 */
-/* Slot 259 is reserved */
-/* Slot 260 is reserved */
 #define TclMSB \
-	(tclIntStubsPtr->tclMSB) /* 261 */
+	(tclIntStubsPtr->tclMSB) /* 259 */
+#define TclListTestObj \
+	(tclIntStubsPtr->tclListTestObj) /* 260 */
+#define TclListObjValidate \
+	(tclIntStubsPtr->tclListObjValidate) /* 261 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

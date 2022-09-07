@@ -2112,7 +2112,7 @@ TclProcCleanupProc(
     if (bodyPtr != NULL) {
 	/* procPtr is stored in body's ByteCode, so ensure to reset it. */
 	ByteCode *codePtr;
-	
+
 	ByteCodeGetInternalRep(bodyPtr, &tclByteCodeType, codePtr);
 	if (codePtr != NULL && codePtr->procPtr == procPtr) {
 	    codePtr->procPtr = NULL;

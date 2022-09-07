@@ -513,7 +513,14 @@ TclpSetVariables(
 	    Tcl_SetVar2(interp, "env", "HOME", Tcl_DStringValue(&ds),
 		    TCL_GLOBAL_ONLY);
 	} else {
-	    Tcl_SetVar2(interp, "env", "HOME", "c:\\", TCL_GLOBAL_ONLY);
+            /* None of HOME, HOMEDRIVE, HOMEPATH exists. Try USERPROFILE */
+            ptr = Tcl_GetVar2(interp, "env", "USERPROFILE", TCL_GLOBAL_ONLY);
+            if (ptr != NULL && ptr[0]) {
+                Tcl_SetVar2(interp, "env", "HOME", ptr, TCL_GLOBAL_ONLY);
+            } else {
+                /* Last resort */
+                Tcl_SetVar2(interp, "env", "HOME", "c:\\", TCL_GLOBAL_ONLY);
+            }
 	}
     }
 
