@@ -2501,19 +2501,42 @@ declare 672 {
 declare 673 {
     int TclGetUniChar(Tcl_Obj *objPtr, int index)
 }
-declare 674 {
-    Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr)
-}
-declare 675 {
-    Tcl_Obj *Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr, Tcl_WideInt index)
-}
+
 declare 676 {
-    Tcl_Obj *Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx)
+    Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
+	    const char *cmdName,
+	    Tcl_ObjCmdProc2 *proc2, void *clientData,
+	    Tcl_CmdDeleteProc *deleteProc)
 }
 declare 677 {
-    Tcl_Obj *Tcl_AbstractListObjReverse(Tcl_Obj *abstractListPtr)
+    Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, int level, int flags,
+	    Tcl_CmdObjTraceProc2 *objProc2, void *clientData,
+	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
 declare 678 {
+    Tcl_Command Tcl_NRCreateCommand2(Tcl_Interp *interp,
+	    const char *cmdName, Tcl_ObjCmdProc2 *proc,
+	    Tcl_ObjCmdProc2 *nreProc2, void *clientData,
+	    Tcl_CmdDeleteProc *deleteProc)
+}
+declare 679 {
+    int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2,
+	    void *clientData, size_t objc, Tcl_Obj *const objv[])
+}
+
+declare 680 {
+    Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr)
+}
+declare 681 {
+    Tcl_Obj *Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr, Tcl_WideInt index)
+}
+declare 682 {
+    Tcl_Obj *Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx)
+}
+declare 683 {
+    Tcl_Obj *Tcl_AbstractListObjReverse(Tcl_Obj *abstractListPtr)
+}
+declare 683 {
     Tcl_Obj *Tcl_NewAbstractListObj(Tcl_Interp *interp, const Tcl_AbstractListType* vTablePtr)
 }
 

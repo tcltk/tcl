@@ -1118,7 +1118,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
-    TclUnusedStubEntry, /* 259 */
+    0, /* 259 */
     TclListTestObj, /* 260 */
     TclListObjValidate, /* 261 */
 };
@@ -2036,11 +2036,16 @@ const TclStubs tclStubs = {
     TclUtfAtIndex, /* 671 */
     TclGetRange, /* 672 */
     TclGetUniChar, /* 673 */
-    Tcl_AbstractListObjLength, /* 674 */
-    Tcl_AbstractListObjIndex, /* 675 */
-    Tcl_AbstractListObjRange, /* 676 */
-    Tcl_AbstractListObjReverse, /* 677 */
-    Tcl_NewAbstractListObj, /* 678 */
+    0, /* 674 */
+    0, /* 675 */
+    Tcl_CreateObjCommand2, /* 676 */
+    Tcl_CreateObjTrace2, /* 677 */
+    Tcl_NRCreateCommand2, /* 678 */
+    Tcl_NRCallObjProc2, /* 679 */
+    Tcl_AbstractListObjLength, /* 680 */
+    Tcl_AbstractListObjIndex, /* 681 */
+    Tcl_AbstractListObjRange, /* 682 */
+    Tcl_NewAbstractListObj, /* 683 */
 };
 
 /* !END!: Do not edit above this line. */
