@@ -2524,6 +2524,11 @@ declare 679 {
 	    void *clientData, size_t objc, Tcl_Obj *const objv[])
 }
 
+# TIP #220.
+declare 680 {
+    int Tcl_RemoveChannelMode(Tcl_Interp *interp, Tcl_Channel chan, int mode)
+}
+
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
 ##############################################################################
