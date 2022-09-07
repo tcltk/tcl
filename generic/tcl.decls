@@ -756,7 +756,7 @@ declare 204 {
     const char *Tcl_PosixError(Tcl_Interp *interp)
 }
 declare 205 {
-    void Tcl_QueueEvent(Tcl_Event *evPtr, int flags)
+    void Tcl_QueueEvent(Tcl_Event *evPtr, int position)
 }
 declare 206 {
     Tcl_Size Tcl_Read(Tcl_Channel chan, char *bufPtr, Tcl_Size toRead)
@@ -1189,7 +1189,7 @@ declare 318 {
 }
 declare 319 {
     void Tcl_ThreadQueueEvent(Tcl_ThreadId threadId, Tcl_Event *evPtr,
-	    int flags)
+	    int position)
 }
 declare 320 {
     int Tcl_UniCharAtIndex(const char *src, Tcl_Size index)
@@ -2560,6 +2560,27 @@ declare 673 {
     int Tcl_GetUniChar(Tcl_Obj *objPtr, Tcl_Size index)
 }
 
+declare 676 {
+    Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
+	    const char *cmdName,
+	    Tcl_ObjCmdProc2 *proc2, void *clientData,
+	    Tcl_CmdDeleteProc *deleteProc)
+}
+declare 677 {
+    Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, int level, int flags,
+	    Tcl_CmdObjTraceProc2 *objProc2, void *clientData,
+	    Tcl_CmdObjTraceDeleteProc *delProc)
+}
+declare 678 {
+    Tcl_Command Tcl_NRCreateCommand2(Tcl_Interp *interp,
+	    const char *cmdName, Tcl_ObjCmdProc2 *proc,
+	    Tcl_ObjCmdProc2 *nreProc2, void *clientData,
+	    Tcl_CmdDeleteProc *deleteProc)
+}
+declare 679 {
+    int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2,
+	    void *clientData, size_t objc, Tcl_Obj *const objv[])
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 

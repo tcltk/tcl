@@ -114,10 +114,11 @@ TclpDlopen(
          * first error for reporting purposes.
          */
         if (firstError == ERROR_MOD_NOT_FOUND ||
-            firstError == ERROR_DLL_NOT_FOUND)
+            firstError == ERROR_DLL_NOT_FOUND) {
             lastError = GetLastError();
-        else
+        } else {
             lastError = firstError;
+        }
 
 	errMsg = Tcl_ObjPrintf("couldn't load library \"%s\": ",
 		TclGetString(pathPtr));
@@ -219,7 +220,7 @@ FindSymbol(
 
 	Tcl_DStringInit(&ds);
 	TclDStringAppendLiteral(&ds, "_");
-	sym2 = Tcl_DStringAppend(&ds, symbol, -1);
+	sym2 = Tcl_DStringAppend(&ds, symbol, TCL_INDEX_NONE);
 	proc = (void *)GetProcAddress(hInstance, sym2);
 	Tcl_DStringFree(&ds);
     }
