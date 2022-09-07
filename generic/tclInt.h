@@ -2450,7 +2450,7 @@ typedef struct ListStore {
     Tcl_Size firstUsed;    /* Index of first slot in use within slots[] */
     Tcl_Size numUsed;      /* Number of slots in use (starting firstUsed) */
     Tcl_Size numAllocated; /* Total number of slots[] array slots. */
-    Tcl_Size refCount;           /* Number of references to this instance */
+    size_t refCount;           /* Number of references to this instance */
     int flags;              /* LISTSTORE_* flags */
     Tcl_Obj *slots[TCLFLEXARRAY];      /* Variable size array. Grown as needed */
 } ListStore;
@@ -2474,7 +2474,7 @@ typedef struct ListStore {
 typedef struct ListSpan {
     Tcl_Size spanStart;    /* Starting index of the span */
     Tcl_Size spanLength;   /* Number of elements in the span */
-    Tcl_Size refCount;     /* Count of references to this span record */
+    size_t refCount;     /* Count of references to this span record */
 } ListSpan;
 #ifndef LIST_SPAN_THRESHOLD /* May be set on build line */
 #define LIST_SPAN_THRESHOLD 101
