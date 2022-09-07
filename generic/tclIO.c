@@ -3569,7 +3569,7 @@ Tcl_Close(
 	result = flushcode;
     }
     if ((result != 0) && (result != TCL_ERROR) && (interp != NULL)
-	    && 0 == Tcl_GetCharLength(Tcl_GetObjResult(interp))) {
+	    && 0 == TclGetCharLength(Tcl_GetObjResult(interp))) {
 	Tcl_SetErrno(result);
 	Tcl_SetObjResult(interp,
 		Tcl_NewStringObj(Tcl_PosixError(interp), -1));
@@ -4488,8 +4488,8 @@ Write(
 	    }
 	}
     }
-    if ((flushed < total) && (GotFlag(statePtr, CHANNEL_UNBUFFERED) ||
-	    (needNlFlush && GotFlag(statePtr, CHANNEL_LINEBUFFERED)))) {
+    if (((flushed < total) && GotFlag(statePtr, CHANNEL_UNBUFFERED)) ||
+	    (needNlFlush && GotFlag(statePtr, CHANNEL_LINEBUFFERED))) {
 	if (FlushChannel(NULL, chanPtr, 0) != 0) {
 	    return -1;
 	}
@@ -4749,7 +4749,6 @@ Tcl_GetsObj(
 	    eol = dst;
 	    skip = 1;
 	    if (GotFlag(statePtr, INPUT_SAW_CR)) {
-		ResetFlag(statePtr, INPUT_SAW_CR);
 		if ((eol < dstEnd) && (*eol == '\n')) {
 		    /*
 		     * Skip the raw bytes that make up the '\n'.
@@ -4799,8 +4798,10 @@ Tcl_GetsObj(
 			skip++;
 		    }
 		    eol--;
+		    ResetFlag(statePtr, INPUT_SAW_CR);
 		    goto gotEOL;
 		} else if (*eol == '\n') {
+		    ResetFlag(statePtr, INPUT_SAW_CR);
 		    goto gotEOL;
 		}
 	    }
@@ -4829,7 +4830,7 @@ Tcl_GetsObj(
 		Tcl_SetObjLength(objPtr, oldLength);
 		CommonGetsCleanup(chanPtr);
 		copiedTotal = -1;
-		ResetFlag(statePtr, CHANNEL_BLOCKED);
+		ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR);
 		goto done;
 	    }
 	    goto gotEOL;
@@ -6388,7 +6389,7 @@ ReadChars(
 	     * bytes demanded by the Tcl_ExternalToUtf() call!
 	     */
 
-	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead) - dst + (TCL_UTF_MAX - 1);
+	    dstLimit = TclUtfAtIndex(dst, charsToRead) - dst + (TCL_UTF_MAX - 1);
 	    statePtr->flags = savedFlags;
 	    statePtr->inputEncodingFlags = savedIEFlags;
 	    statePtr->inputEncodingState = savedState;
@@ -11079,7 +11080,7 @@ FixLevelCode(
      * information. Hence an error means that we've got serious breakage.
      */
 
-    res = TclListObjGetElements(NULL, msg, &lc, &lv);
+    res = TclListObjGetElementsM(NULL, msg, &lc, &lv);
     if (res != TCL_OK) {
 	Tcl_Panic("Tcl_SetChannelError: bad syntax of message");
     }

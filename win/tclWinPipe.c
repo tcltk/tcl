@@ -679,7 +679,7 @@ TclpCreateTempFile(
 	 * Convert the contents from UTF to native encoding
 	 */
 
-	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
+	native = Tcl_UtfToExternalDString(NULL, contents, TCL_INDEX_NONE, &dstring);
 
 	toCopy = Tcl_DStringLength(&dstring);
 	for (p = native; toCopy > 0; p++, toCopy--) {
@@ -1285,12 +1285,12 @@ ApplicationType(
 
     applType = APPL_NONE;
     Tcl_DStringInit(&nameBuf);
-    Tcl_DStringAppend(&nameBuf, originalName, -1);
+    Tcl_DStringAppend(&nameBuf, originalName, TCL_INDEX_NONE);
     nameLen = Tcl_DStringLength(&nameBuf);
 
     for (i = 0; i < (int) (sizeof(extensions) / sizeof(extensions[0])); i++) {
 	Tcl_DStringSetLength(&nameBuf, nameLen);
-	Tcl_DStringAppend(&nameBuf, extensions[i], -1);
+	Tcl_DStringAppend(&nameBuf, extensions[i], TCL_INDEX_NONE);
 	Tcl_DStringInit(&ds);
 	nativeName = Tcl_UtfToWCharDString(Tcl_DStringValue(&nameBuf),
 		Tcl_DStringLength(&nameBuf), &ds);
@@ -1311,7 +1311,7 @@ ApplicationType(
 	    continue;
 	}
 	Tcl_DStringInit(&ds);
-	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, -1, &ds));
+	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, TCL_INDEX_NONE, &ds));
 	Tcl_DStringFree(&ds);
 
 	ext = strrchr(fullName, '.');
@@ -1403,7 +1403,7 @@ ApplicationType(
 
 	GetShortPathNameW(nativeFullPath, nativeFullPath, MAX_PATH);
 	Tcl_DStringInit(&ds);
-	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, -1, &ds));
+	strcpy(fullName, Tcl_WCharToUtfDString(nativeFullPath, TCL_INDEX_NONE, &ds));
 	Tcl_DStringFree(&ds);
     }
     return applType;
@@ -1628,7 +1628,7 @@ BuildCommandLine(
 	     * Nothing to escape.
 	     */
 
-	    Tcl_DStringAppend(&ds, arg, -1);
+	    Tcl_DStringAppend(&ds, arg, TCL_INDEX_NONE);
 	} else {
 	    start = arg;
 	    for (special = arg; *special != '\0'; ) {

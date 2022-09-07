@@ -432,7 +432,7 @@ TraceExecutionObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -602,7 +602,7 @@ TraceExecutionObjCmd(
 		TclNewLiteralStringObj(opObj, "leavestep");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
-	    TclListObjLength(NULL, elemObjPtr, &numOps);
+	    TclListObjLengthM(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
 		Tcl_DecrRefCount(elemObjPtr);
 		continue;
@@ -673,7 +673,7 @@ TraceCommandObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -797,7 +797,7 @@ TraceCommandObjCmd(
 		TclNewLiteralStringObj(opObj, "delete");
 		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
-	    TclListObjLength(NULL, elemObjPtr, &numOps);
+	    TclListObjLengthM(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
 		Tcl_DecrRefCount(elemObjPtr);
 		continue;
@@ -872,7 +872,7 @@ TraceVariableObjCmd(
 	 * pointer to its array of element pointers.
 	 */
 
-	result = TclListObjGetElements(interp, objv[4], &listLen, &elemPtrs);
+	result = TclListObjGetElementsM(interp, objv[4], &listLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -1759,7 +1759,7 @@ TraceExecutionProc(
     const char *command,
     TCL_UNUSED(Tcl_Command),
     int objc,
-    struct Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[])
 {
     int call = 0;
     Interp *iPtr = (Interp *) interp;
@@ -2099,10 +2099,6 @@ TraceVarProc(
  *	'objc' and 'objv' parameters give the parameter vector that will be
  *	passed to the command procedure. Proc does not return a value.
  *
- *	It is permissible for 'proc' to call Tcl_SetCommandTokenInfo to change
- *	the command procedure or client data for the command being evaluated,
- *	and these changes will take effect with the current evaluation.
- *
  *	The 'level' argument specifies the maximum nesting level of calls to
  *	be traced. If the execution depth of the interpreter exceeds 'level',
  *	the trace callback is not executed.
@@ -2124,6 +2120,54 @@ TraceVarProc(
  *
  *----------------------------------------------------------------------
  */
+
+typedef struct {
+    Tcl_CmdObjTraceProc2 *proc;
+    Tcl_CmdObjTraceDeleteProc *delProc;
+    void *clientData;
+} TraceWrapperInfo;
+
+static int traceWrapperProc(
+    void *clientData,
+    Tcl_Interp *interp,
+	int level,
+    const char *command,
+    Tcl_Command commandInfo,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    TraceWrapperInfo *info = (TraceWrapperInfo *)clientData;
+    return info->proc(info->clientData, interp, level, command, commandInfo, objc, objv);
+}
+
+static void traceWrapperDelProc(void *clientData)
+{
+    TraceWrapperInfo *info = (TraceWrapperInfo *)clientData;
+    clientData = info->clientData;
+    if (info->delProc) {
+	info->delProc(clientData);
+    }
+    ckfree(info);
+}
+
+Tcl_Trace
+Tcl_CreateObjTrace2(
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int level,			/* Maximum nesting level */
+    int flags,			/* Flags, see above */
+    Tcl_CmdObjTraceProc2 *proc,	/* Trace callback */
+    void *clientData,	/* Client data for the callback */
+    Tcl_CmdObjTraceDeleteProc *delProc)
+				/* Function to call when trace is deleted */
+{
+    TraceWrapperInfo *info = (TraceWrapperInfo *)ckalloc(sizeof(TraceWrapperInfo));
+    info->proc = proc;
+    info->delProc = delProc;
+    info->clientData = clientData;
+    return Tcl_CreateObjTrace(interp, level, flags,
+	    (proc ? traceWrapperProc : NULL),
+	    info, traceWrapperDelProc);
+}
 
 Tcl_Trace
 Tcl_CreateObjTrace(

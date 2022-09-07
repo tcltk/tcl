@@ -188,7 +188,7 @@ Tcl_CaseObjCmd(
     if (caseObjc == 1) {
 	Tcl_Obj **newObjv;
 
-	TclListObjGetElements(interp, caseObjv[0], &caseObjc, &newObjv);
+	TclListObjGetElementsM(interp, caseObjv[0], &caseObjc, &newObjv);
 	caseObjv = newObjv;
     }
 
@@ -556,36 +556,57 @@ EncodingConvertfromObjCmd(
     int flags = TCL_ENCODING_NOCOMPLAIN;
 #endif
     int result;
+    Tcl_Obj *failVarObj = NULL;
+    /*
+     * Decode parameters:
+     * Possible combinations:
+     * 1) data						-> objc = 2
+     * 2) encoding data					-> objc = 3
+     * 3) -nocomplain data				-> objc = 3
+     * 4) -nocomplain encoding data			-> objc = 4
+     * 5) -failindex val data				-> objc = 4
+     * 6) -failindex val encoding data			-> objc = 5
+     */
 
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if ((unsigned)(objc - 2) < 3) {
+    } else if (objc > 2 && objc < 6) {
+	int objcUnprocessed = objc;
 	data = objv[objc - 1];
 	bytesPtr = Tcl_GetString(objv[1]);
 	if (bytesPtr[0] == '-' && bytesPtr[1] == 'n'
 		&& !strncmp(bytesPtr, "-nocomplain", strlen(bytesPtr))) {
 	    flags = TCL_ENCODING_NOCOMPLAIN;
-	} else if (objc < 4) {
-	    if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
-		return TCL_ERROR;
+	    objcUnprocessed--;
+	} else if (bytesPtr[0] == '-' && bytesPtr[1] == 'f'
+		&& !strncmp(bytesPtr, "-failindex", strlen(bytesPtr))) {
+	    /* at least two additional arguments needed */
+	    if (objc < 4) {
+		goto encConvFromError;
 	    }
-	    goto encConvFromOK;
-	} else {
-	    goto encConvFromError;
+	    failVarObj = objv[2];
+	    flags = TCL_ENCODING_STOPONERROR;
+	    objcUnprocessed -= 2;
 	}
-	if (objc < 4) {
-	    encoding = Tcl_GetEncoding(interp, NULL);
-	} else if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
-	    return TCL_ERROR;
+	switch (objcUnprocessed) {
+	    case 3:
+		if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		break;
+	    case 2:
+		encoding = Tcl_GetEncoding(interp, NULL);
+		break;
+	    default:
+		goto encConvFromError;
 	}
     } else {
     encConvFromError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 
-encConvFromOK:
     /*
      * Convert the string into a byte array in 'ds'
      */
@@ -601,14 +622,24 @@ encConvFromOK:
     result = Tcl_ExternalToUtfDStringEx(encoding, bytesPtr, length,
 	    flags, &ds);
     if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != TCL_INDEX_NONE)) {
-	char buf[TCL_INTEGER_SPACE];
-	sprintf(buf, "%u", result);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte sequence starting at index %"
-		"u: '\\x%X'", result, UCHAR(bytesPtr[result])));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-		buf, NULL);
-	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
+	if (failVarObj != NULL) {
+	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	} else {
+	    char buf[TCL_INTEGER_SPACE];
+	    sprintf(buf, "%u", result);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected byte sequence starting at index %"
+		    "u: '\\x%X'", result, UCHAR(bytesPtr[result])));
+	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
+		    buf, NULL);
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+    } else if (failVarObj != NULL) {
+	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIntObj(-1), TCL_LEAVE_ERR_MSG) == NULL) {
+	    return TCL_ERROR;
+	}
     }
 
     /*
@@ -659,36 +690,58 @@ EncodingConverttoObjCmd(
 #else
     int flags = TCL_ENCODING_NOCOMPLAIN;
 #endif
+    Tcl_Obj *failVarObj = NULL;
+
+    /*
+     * Decode parameters:
+     * Possible combinations:
+     * 1) data						-> objc = 2
+     * 2) encoding data					-> objc = 3
+     * 3) -nocomplain data				-> objc = 3
+     * 4) -nocomplain encoding data			-> objc = 4
+     * 5) -failindex val data				-> objc = 4
+     * 6) -failindex val encoding data			-> objc = 5
+     */
 
     if (objc == 2) {
 	encoding = Tcl_GetEncoding(interp, NULL);
 	data = objv[1];
-    } else if ((unsigned)(objc - 2) < 3) {
+    } else if (objc > 2 && objc < 6) {
+	int objcUnprocessed = objc;
 	data = objv[objc - 1];
 	stringPtr = Tcl_GetString(objv[1]);
 	if (stringPtr[0] == '-' && stringPtr[1] == 'n'
 		&& !strncmp(stringPtr, "-nocomplain", strlen(stringPtr))) {
 	    flags = TCL_ENCODING_NOCOMPLAIN;
-	} else if (objc < 4) {
-	    if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
-		return TCL_ERROR;
+	    objcUnprocessed--;
+	} else if (stringPtr[0] == '-' && stringPtr[1] == 'f'
+		&& !strncmp(stringPtr, "-failindex", strlen(stringPtr))) {
+	    /* at least two additional arguments needed */
+	    if (objc < 4) {
+		goto encConvToError;
 	    }
-	    goto encConvToOK;
-	} else {
-	    goto encConvToError;
+	    failVarObj = objv[2];
+	    flags = TCL_ENCODING_STOPONERROR;
+	    objcUnprocessed -= 2;
 	}
-	if (objc < 4) {
-	    encoding = Tcl_GetEncoding(interp, NULL);
-	} else if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
-	    return TCL_ERROR;
+	switch (objcUnprocessed) {
+	    case 3:
+		if (Tcl_GetEncodingFromObj(interp, objv[objc - 2], &encoding) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		break;
+	    case 2:
+		encoding = Tcl_GetEncoding(interp, NULL);
+		break;
+	    default:
+		goto encConvToError;
 	}
     } else {
     encConvToError:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?encoding? data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-nocomplain? ?-failindex var? ?encoding? data");
 	return TCL_ERROR;
     }
 
-encConvToOK:
     /*
      * Convert the string to a byte array in 'ds'
      */
@@ -697,17 +750,28 @@ encConvToOK:
     result = Tcl_UtfToExternalDStringEx(encoding, stringPtr, length,
 	    flags, &ds);
     if (!(flags & TCL_ENCODING_NOCOMPLAIN) && (result != TCL_INDEX_NONE)) {
-	int pos = Tcl_NumUtfChars(stringPtr, result);
-	int ucs4;
-	char buf[TCL_INTEGER_SPACE];
-	TclUtfToUCS4(&stringPtr[result], &ucs4);
-	sprintf(buf, "%u", result);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected character at index %"
-		"u: 'U+%06X'", pos, ucs4));
-	Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
-		buf, NULL);
-	Tcl_DStringFree(&ds);
-	return TCL_ERROR;
+	if (failVarObj != NULL) {
+	    /* I hope, wide int will cover size_t data type */
+	    if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewWideIntObj(result), TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	} else {
+	    size_t pos = Tcl_NumUtfChars(stringPtr, result);
+	    int ucs4;
+	    char buf[TCL_INTEGER_SPACE];
+	    TclUtfToUCS4(&stringPtr[result], &ucs4);
+	    sprintf(buf, "%u", result);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("unexpected character at index %"
+		    TCL_Z_MODIFIER "u: 'U+%06X'", pos, ucs4));
+	    Tcl_SetErrorCode(interp, "TCL", "ENCODING", "ILLEGALSEQUENCE",
+		    buf, NULL);
+	    Tcl_DStringFree(&ds);
+	    return TCL_ERROR;
+	}
+    } else if (failVarObj != NULL) {
+	if (Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIntObj(-1), TCL_LEAVE_ERR_MSG) == NULL) {
+	    return TCL_ERROR;
+	}
     }
     Tcl_SetObjResult(interp,
 		     Tcl_NewByteArrayObj((unsigned char*) Tcl_DStringValue(&ds),
@@ -2047,7 +2111,7 @@ PathSplitCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
 	return TCL_ERROR;
     }
-    res = Tcl_FSSplitPath(objv[1], NULL);
+    res = Tcl_FSSplitPath(objv[1], (int *)NULL);
     if (res == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"could not read \"%s\": no such file or directory",
@@ -2335,13 +2399,13 @@ StoreStatData(
      */
 
     STORE_ARY("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
-    STORE_ARY("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
+    STORE_ARY("ino",	Tcl_NewWideIntObj(statPtr->st_ino));
     STORE_ARY("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
     STORE_ARY("uid",	Tcl_NewWideIntObj((long)statPtr->st_uid));
     STORE_ARY("gid",	Tcl_NewWideIntObj((long)statPtr->st_gid));
-    STORE_ARY("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
+    STORE_ARY("size",	Tcl_NewWideIntObj(statPtr->st_size));
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-    STORE_ARY("blocks",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
+    STORE_ARY("blocks",	Tcl_NewWideIntObj(statPtr->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     STORE_ARY("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
@@ -2742,7 +2806,7 @@ EachloopCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjGetElements(NULL, statePtr->vCopyList[i],
+	TclListObjGetElementsM(NULL, statePtr->vCopyList[i],
 		&statePtr->varcList[i], &statePtr->varvList[i]);
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2760,7 +2824,7 @@ EachloopCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjGetElements(NULL, statePtr->aCopyList[i],
+	TclListObjGetElementsM(NULL, statePtr->aCopyList[i],
 		&statePtr->argcList[i], &statePtr->argvList[i]);
 
 	j = statePtr->argcList[i] / statePtr->varcList[i];

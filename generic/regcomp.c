@@ -2146,7 +2146,7 @@ stdump(
 	fprintf(f, "}");
     }
     if (nfapresent) {
-	fprintf(f, " %ld-%ld", (long)t->begin->no, (long)t->end->no);
+	fprintf(f, " %d-%d", t->begin->no, t->end->no);
     }
     if (t->left != NULL) {
 	fprintf(f, " L:%s", stid(t->left, idbuf, sizeof(idbuf)));

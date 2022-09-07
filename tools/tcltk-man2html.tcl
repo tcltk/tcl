@@ -43,7 +43,7 @@ proc getversion {tclh {name {}}} {
 	# highlighting straight in some editors
 	if {[regexp -lineanchor \
 	    [string map [list @name@ $name] \
-		{^#define\s+@name@_VERSION\s+\"([^.])+\.([^.\"]+)}] \
+		{^#\s*define\s+@name@_VERSION\s+\"([^.])+\.([^.\"]+)}] \
 	    $data -> major minor]} {
 		return [list $major $minor]
 	}

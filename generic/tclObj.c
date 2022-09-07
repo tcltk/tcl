@@ -341,12 +341,12 @@ typedef struct ResolvedCmdName {
 				 * it's possible that the cmd's containing
 				 * namespace was deleted and a new one created
 				 * at the same address). */
-    unsigned int refNsCmdEpoch;	/* Value of the referencing namespace's
+    int refNsCmdEpoch;		/* Value of the referencing namespace's
 				 * cmdRefEpoch when the pointer was cached.
 				 * Before using the cached pointer, we check
 				 * if the namespace's epoch was incremented;
 				 * if so, this cached pointer is invalid. */
-    unsigned int cmdEpoch; /* Value of the command's cmdEpoch when this
+    int cmdEpoch;		/* Value of the command's cmdEpoch when this
 				 * pointer was cached. Before using the cached
 				 * pointer, we check if the cmd's epoch was
 				 * incremented; if so, the cmd was renamed,
@@ -387,7 +387,9 @@ TclInitObjSubsystem(void)
 
     Tcl_RegisterObjType(&tclByteArrayType);
     Tcl_RegisterObjType(&tclDoubleType);
+#if (TCL_UTF_MAX < 4) || !defined(TCL_NO_DEPRECATED)
     Tcl_RegisterObjType(&tclStringType);
+#endif
     Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclDictType);
     Tcl_RegisterObjType(&tclByteCodeType);
@@ -875,7 +877,7 @@ Tcl_AppendAllObjTypes(
      * Get the test for a valid list out of the way first.
      */
 
-    if (TclListObjLength(interp, objPtr, &numElems) != TCL_OK) {
+    if (TclListObjLengthM(interp, objPtr, &numElems) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2710,7 +2712,7 @@ Tcl_Obj *
 Tcl_NewIntObj(
     int intValue)	/* Int used to initialize the new object. */
 {
-    return Tcl_DbNewWideIntObj((long)intValue, "unknown", 0);
+    return Tcl_DbNewWideIntObj(intValue, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
@@ -2802,7 +2804,7 @@ Tcl_GetIntFromObj(
     if ((ULONG_MAX > UINT_MAX) && ((l > UINT_MAX) || (l < INT_MIN))) {
 	if (interp != NULL) {
 	    const char *s =
-		    "integer value too large to represent as non-long integer";
+		    "integer value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}

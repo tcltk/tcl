@@ -484,7 +484,7 @@ TclCreateProc(
      * in the Proc.
      */
 
-    result = TclListObjGetElements(interp , argsPtr ,&numArgs ,&argArray);
+    result = TclListObjGetElementsM(interp , argsPtr ,&numArgs ,&argArray);
     if (result != TCL_OK) {
 	goto procError;
     }
@@ -514,7 +514,7 @@ TclCreateProc(
 	 * Now divide the specifier up into name and default.
 	 */
 
-	result = TclListObjGetElements(interp, argArray[i], &fieldCount,
+	result = TclListObjGetElementsM(interp, argArray[i], &fieldCount,
 		&fieldValues);
 	if (result != TCL_OK) {
 	    goto procError;
@@ -529,7 +529,7 @@ TclCreateProc(
 		    "FORMALARGUMENTFORMAT", NULL);
 	    goto procError;
 	}
-	if ((fieldCount == 0) || (Tcl_GetCharLength(fieldValues[0]) == 0)) {
+	if ((fieldCount == 0) || (TclGetCharLength(fieldValues[0]) == 0)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument with no name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "PROC",
@@ -920,7 +920,7 @@ TclNRUplevelObjCmd(
 	return TCL_ERROR;
     } else if (!TclHasStringRep(objv[1]) && objc == 2) {
 	int status ,llength;
-	status = TclListObjLength(interp, objv[1], &llength);
+	status = TclListObjLengthM(interp, objv[1], &llength);
 	if (status == TCL_OK && llength > 1) {
 	    /* the first argument can't interpreted as a level. Avoid
 	     * generating a string representation of the script. */
@@ -1587,12 +1587,15 @@ TclPushProcCallFrame(
 	 * is up-to-date), the namespace must match (so variable handling
 	 * is right) and the resolverEpoch must match (so that new shadowed
 	 * commands and/or resolver changes are considered).
+	 * Ensure the ByteCode's procPtr is the same (or it's precompiled).
 	 */
 
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
-		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)) {
+		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)
+		|| ((codePtr->procPtr != procPtr) && procPtr->bodyPtr->bytes)
+	) {
 	    goto doCompilation;
 	}
     } else {
@@ -1932,6 +1935,7 @@ TclProcCompileProc(
      * procPtr->numCompiledLocals if new local variables are found while
      * compiling.
      *
+     * Ensure the ByteCode's procPtr is the same (or it is pure precompiled).
      * Precompiled procedure bodies, however, are immutable and therefore they
      * are not recompiled, even if things have changed.
      */
@@ -1940,7 +1944,9 @@ TclProcCompileProc(
 	if (((Interp *) *codePtr->interpHandle == iPtr)
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == nsPtr)
-		&& (codePtr->nsEpoch == nsPtr->resolverEpoch)) {
+		&& (codePtr->nsEpoch == nsPtr->resolverEpoch)
+		&& ((codePtr->procPtr == procPtr) || !bodyPtr->bytes)
+	) {
 	    return TCL_OK;
 	}
 
@@ -2155,6 +2161,13 @@ TclProcCleanupProc(
     Interp *iPtr = procPtr->iPtr;
 
     if (bodyPtr != NULL) {
+	/* procPtr is stored in body's ByteCode, so ensure to reset it. */
+	ByteCode *codePtr;
+
+	ByteCodeGetInternalRep(bodyPtr, &tclByteCodeType, codePtr);
+	if (codePtr != NULL && codePtr->procPtr == procPtr) {
+	    codePtr->procPtr = NULL;
+	}
 	Tcl_DecrRefCount(bodyPtr);
     }
     for (localPtr = procPtr->firstLocalPtr; localPtr != NULL; ) {
@@ -2274,10 +2287,10 @@ TclUpdateReturnInfo(
  *----------------------------------------------------------------------
  */
 
-TclObjCmdProcType
+Tcl_ObjCmdProc *
 TclGetObjInterpProc(void)
 {
-    return (TclObjCmdProcType) TclObjInterpProc;
+    return TclObjInterpProc;
 }
 
 /*
@@ -2446,7 +2459,7 @@ SetLambdaFromAny(
      * length is not 2, then it cannot be converted to lambdaType.
      */
 
-    result = TclListObjGetElements(NULL, objPtr, &objc, &objv);
+    result = TclListObjGetElementsM(NULL, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"can't interpret \"%s\" as a lambda expression",

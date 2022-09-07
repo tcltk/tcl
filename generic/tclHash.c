@@ -685,21 +685,16 @@ AllocArrayEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)			/* Key to store in the hash table entry. */
 {
-    int *array = (int *) keyPtr;
-    int *iPtr1, *iPtr2;
     Tcl_HashEntry *hPtr;
-    int count = tablePtr->keyType;
-    TCL_HASH_TYPE size = sizeof(Tcl_HashEntry) + (count*sizeof(int)) - sizeof(hPtr->key);
+    TCL_HASH_TYPE count = tablePtr->keyType * sizeof(int);
+    TCL_HASH_TYPE size = offsetof(Tcl_HashEntry, key) + count;
 
     if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
     }
     hPtr = (Tcl_HashEntry *)ckalloc(size);
 
-    for (iPtr1 = array, iPtr2 = hPtr->key.words;
-	    count > 0; count--, iPtr1++, iPtr2++) {
-	*iPtr2 = *iPtr1;
-    }
+    memcpy(hPtr->key.string, keyPtr, count);
     Tcl_SetHashValue(hPtr, NULL);
 
     return hPtr;
@@ -727,20 +722,9 @@ CompareArrayKeys(
     void *keyPtr,			/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
-    const int *iPtr1 = (const int *)keyPtr;
-    const int *iPtr2 = hPtr->key.words;
-    Tcl_HashTable *tablePtr = hPtr->tablePtr;
-    int count;
+    size_t count = hPtr->tablePtr->keyType * sizeof(int);
 
-    for (count = tablePtr->keyType; ; count--, iPtr1++, iPtr2++) {
-	if (count == 0) {
-	    return 1;
-	}
-	if (*iPtr1 != *iPtr2) {
-	    break;
-	}
-    }
-    return 0;
+    return !memcmp(keyPtr, hPtr->key.string, count);
 }
 
 /*
@@ -807,7 +791,7 @@ AllocStringEntry(
 	allocsize = sizeof(hPtr->key);
     }
     hPtr = (Tcl_HashEntry *)ckalloc(offsetof(Tcl_HashEntry, key) + allocsize);
-    memset(hPtr, 0, sizeof(Tcl_HashEntry) + allocsize - sizeof(hPtr->key));
+    memset(hPtr, 0, offsetof(Tcl_HashEntry, key) + allocsize);
     memcpy(hPtr->key.string, string, size);
     Tcl_SetHashValue(hPtr, NULL);
     return hPtr;
