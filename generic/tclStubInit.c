@@ -749,7 +749,8 @@ static const TclIntStubs tclIntStubs = {
     TclStaticPackage, /* 257 */
     0, /* 258 */
     0, /* 259 */
-    TclUnusedStubEntry, /* 260 */
+    0, /* 260 */
+    TclUnusedStubEntry, /* 261 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

@@ -1044,7 +1044,7 @@ declare 257 {
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
 
-declare 260 {
+declare 261 {
     void TclUnusedStubEntry(void)
 }
 
