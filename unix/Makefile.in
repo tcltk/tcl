@@ -176,7 +176,7 @@ NATIVE_TCLSH		= @TCLSH_PROG@
 
 STLIB_LD		= @STLIB_LD@
 SHLIB_LD		= @SHLIB_LD@
-SHLIB_CFLAGS		= @SHLIB_CFLAGS@ -DBUILD_tcl
+SHLIB_CFLAGS		= @SHLIB_CFLAGS@
 SHLIB_LD_LIBS		= @SHLIB_LD_LIBS@
 SHLIB_LD_FLAGS		= @SHLIB_LD_FLAGS@
 TCL_SHLIB_LD_EXTRAS	= @TCL_SHLIB_LD_EXTRAS@
@@ -278,12 +278,12 @@ VALGRINDARGS		= --tool=memcheck --num-callers=24 \
 
 STUB_CC_SWITCHES = -I"${BUILD_DIR}" -I${UNIX_DIR} -I${GENERIC_DIR} -I${TOMMATH_DIR} \
 	${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
-	${AC_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} \
-	@EXTRA_CC_SWITCHES@
+	${AC_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@ \
+	${NO_DEPRECATED_FLAGS} -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
 
-CC_SWITCHES = $(STUB_CC_SWITCHES) ${NO_DEPRECATED_FLAGS} -DMP_FIXED_CUTOFFS -DMP_NO_STDINT
+CC_SWITCHES = $(STUB_CC_SWITCHES) -DBUILD_tcl
 
-APP_CC_SWITCHES = $(CC_SWITCHES) @EXTRA_APP_CC_SWITCHES@
+APP_CC_SWITCHES = $(STUB_CC_SWITCHES) @EXTRA_APP_CC_SWITCHES@
 
 LIBS		= @TCL_LIBS@
 
@@ -1039,9 +1039,9 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
 	    done
-	@echo "Installing package http 2.10a2 as a Tcl Module"
+	@echo "Installing package http 2.10a4 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
-		"$(MODULE_INSTALL_DIR)/8.6/http-2.10a2.tm"
+		"$(MODULE_INSTALL_DIR)/8.6/http-2.10a4.tm"
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/"
 	@for i in $(TOP_DIR)/library/opt/*.tcl; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
@@ -1049,9 +1049,9 @@ install-libraries: libraries
 	@echo "Installing package msgcat 1.7.1 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl \
 		"$(MODULE_INSTALL_DIR)/8.7/msgcat-1.7.1.tm"
-	@echo "Installing package tcltest 2.5.4 as a Tcl Module"
+	@echo "Installing package tcltest 2.5.5 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl \
-		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.4.tm"
+		"$(MODULE_INSTALL_DIR)/8.5/tcltest-2.5.5.tm"
 	@echo "Installing package platform 1.0.18 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl \
 		"$(MODULE_INSTALL_DIR)/8.4/platform-1.0.18.tm"
@@ -2337,10 +2337,6 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(MAC_OSX_DIR)/*.ac $(MAC_OSX_DIR)/*.xcconfig \
 		$(MAC_OSX_DIR)/configure $(DISTDIR)/macosx
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/macosx
-	@mkdir $(DISTDIR)/macosx/Tcl.xcode
-	cp -p $(MAC_OSX_DIR)/Tcl.xcode/project.pbxproj \
-		$(MAC_OSX_DIR)/Tcl.xcode/default.pbxuser \
-		$(DISTDIR)/macosx/Tcl.xcode
 	@mkdir $(DISTDIR)/macosx/Tcl.xcodeproj
 	cp -p $(MAC_OSX_DIR)/Tcl.xcodeproj/project.pbxproj \
 		$(MAC_OSX_DIR)/Tcl.xcodeproj/default.pbxuser \

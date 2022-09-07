@@ -95,7 +95,7 @@ typedef struct Link {
  * Forward references to functions defined later in this file:
  */
 
-static char *		LinkTraceProc(ClientData clientData,Tcl_Interp *interp,
+static char *		LinkTraceProc(void *clientData,Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
 static Tcl_Obj *	ObjValue(Link *linkPtr);
 static void		LinkFree(Link *linkPtr);
@@ -527,7 +527,7 @@ GetUWide(
     Tcl_WideUInt *uwidePtr)
 {
     Tcl_WideInt *widePtr = (Tcl_WideInt *) uwidePtr;
-    ClientData clientData;
+    void *clientData;
     int type, intValue;
 
     if (TclGetNumberFromObj(NULL, objPtr, &clientData, &type) == TCL_OK) {
@@ -633,14 +633,15 @@ SetInvalidRealFromAny(
 {
     const char *str;
     const char *endPtr;
+    int length;
 
-    str = TclGetString(objPtr);
-    if ((objPtr->length == 1) && (str[0] == '.')) {
+    str = TclGetStringFromObj(objPtr, &length);
+    if ((length == 1) && (str[0] == '.')) {
 	objPtr->typePtr = &invalidRealType;
 	objPtr->internalRep.doubleValue = 0.0;
 	return TCL_OK;
     }
-    if (TclParseNumber(NULL, objPtr, NULL, str, objPtr->length, &endPtr,
+    if (TclParseNumber(NULL, objPtr, NULL, str, length, &endPtr,
 	    TCL_PARSE_DECIMAL_ONLY) == TCL_OK) {
 	/*
 	 * If number is followed by [eE][+-]?, then it is an invalid
@@ -678,13 +679,14 @@ GetInvalidIntFromObj(
     Tcl_Obj *objPtr,
     int *intPtr)
 {
-    const char *str = TclGetString(objPtr);
+    int length;
+    const char *str = TclGetStringFromObj(objPtr, &length);
 
-    if ((objPtr->length == 0) || ((objPtr->length == 2) && (str[0] == '0')
+    if ((length == 0) || ((length == 2) && (str[0] == '0')
 	    && strchr("xXbBoOdD", str[1]))) {
 	*intPtr = 0;
 	return TCL_OK;
-    } else if ((objPtr->length == 1) && strchr("+-", str[0])) {
+    } else if ((length == 1) && strchr("+-", str[0])) {
 	*intPtr = (str[0] == '+');
 	return TCL_OK;
     }
@@ -743,7 +745,7 @@ GetInvalidDoubleFromObj(
 
 static char *
 LinkTraceProc(
-    ClientData clientData,	/* Contains information about the link. */
+    void *clientData,	/* Contains information about the link. */
     Tcl_Interp *interp,		/* Interpreter containing Tcl variable. */
     TCL_UNUSED(const char *) /*name1*/,
     TCL_UNUSED(const char *) /*name2*/,
@@ -896,8 +898,8 @@ LinkTraceProc(
 
     switch (linkPtr->type) {
     case TCL_LINK_STRING:
-	value = TclGetString(valueObj);
-	valueLength = valueObj->length + 1;
+	value = TclGetStringFromObj(valueObj, &valueLength);
+	valueLength++;		/* include end of string char */
 	pp = (char **) linkPtr->addr;
 
 	*pp = (char *)ckrealloc(*pp, valueLength);
@@ -905,7 +907,7 @@ LinkTraceProc(
 	return NULL;
 
     case TCL_LINK_CHARS:
-	value = (char *) Tcl_GetStringFromObj(valueObj, &valueLength);
+	value = (char *) TclGetStringFromObj(valueObj, &valueLength);
 	valueLength++;		/* include end of string char */
 	if (valueLength > linkPtr->bytes) {
 	    return (char *) "wrong size of char* value";
@@ -947,7 +949,7 @@ LinkTraceProc(
      */
 
     if (linkPtr->flags & LINK_ALLOC_LAST) {
-	if (TclListObjGetElements(NULL, (valueObj), &objc, &objv) == TCL_ERROR
+	if (TclListObjGetElementsM(NULL, (valueObj), &objc, &objv) == TCL_ERROR
 		|| objc != linkPtr->numElems) {
 	    return (char *) "wrong dimension";
 	}

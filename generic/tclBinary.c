@@ -434,7 +434,7 @@ TclGetBytesFromObj(
 
 		irPtr = TclFetchInternalRep(objPtr, &tclByteArrayType);
 		baPtr = GET_BYTEARRAY(irPtr);
-		nonbyte = Tcl_UtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
+		nonbyte = TclUtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
 		TclUtfToUCS4(nonbyte, &ucs4);
 
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -473,7 +473,7 @@ Tcl_GetBytesFromObj(
 
 		irPtr = TclFetchInternalRep(objPtr, &tclByteArrayType);
 		baPtr = GET_BYTEARRAY(irPtr);
-		nonbyte = Tcl_UtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
+		nonbyte = TclUtfAtIndex(Tcl_GetString(objPtr), baPtr->bad);
 		TclUtfToUCS4(nonbyte, &ucs4);
 
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -556,12 +556,8 @@ TclGetByteArrayFromObj(
     baPtr = GET_BYTEARRAY(irPtr);
 
     if (numBytesPtr != NULL) {
-#if TCL_MAJOR_VERSION > 8
-	*numBytesPtr = baPtr->used;
-#else
-	/* TODO: What's going on here?  Document or eliminate. */
+	/* Make sure we return a value between 0 and UINT_MAX-1, or (size_t)-1 */
 	*numBytesPtr = ((size_t)(unsigned int)(baPtr->used + 1)) - 1;
-#endif
     }
     return baPtr->bytes;
 }
@@ -653,7 +649,7 @@ SetByteArrayFromAny(
     TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
-    size_t length, bad;
+    int length, bad;
     const char *src, *srcEnd;
     unsigned char *dst;
     Tcl_UniChar ch = 0;
@@ -667,8 +663,8 @@ SetByteArrayFromAny(
 	return TCL_OK;
     }
 
-    src = TclGetString(objPtr);
-    length = bad = objPtr->length;
+    src = TclGetStringFromObj(objPtr, &length);
+    bad = length;
     srcEnd = src + length;
 
     /* Note the allocation is over-sized, possibly by a factor of four,
@@ -1005,7 +1001,7 @@ TclInitBinaryCmd(
 
 static int
 BinaryFormatCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1129,7 +1125,7 @@ BinaryFormatCmd(
 		 * The macro evals its args more than once: avoid arg++
 		 */
 
-		if (TclListObjGetElements(interp, objv[arg], &listc,
+		if (TclListObjGetElementsM(interp, objv[arg], &listc,
 			&listv) != TCL_OK) {
 		    return TCL_ERROR;
 		}
@@ -1411,7 +1407,7 @@ BinaryFormatCmd(
 		listc = 1;
 		count = 1;
 	    } else {
-		TclListObjGetElements(interp, objv[arg], &listc, &listv);
+		TclListObjGetElementsM(interp, objv[arg], &listc, &listv);
 		if (count == BINARY_ALL) {
 		    count = listc;
 		}
@@ -1510,7 +1506,7 @@ BinaryFormatCmd(
 
 static int
 BinaryScanCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2587,7 +2583,7 @@ DeleteScanNumberCache(
 
 static int
 BinaryEncodeHex(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2631,7 +2627,7 @@ BinaryEncodeHex(
 
 static int
 BinaryDecodeHex(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2755,7 +2751,7 @@ BinaryDecodeHex(
 
 static int
 BinaryEncode64(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2877,7 +2873,7 @@ BinaryEncode64(
 
 static int
 BinaryEncodeUu(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3026,7 +3022,7 @@ BinaryEncodeUu(
 
 static int
 BinaryDecodeUu(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -3199,7 +3195,7 @@ BinaryDecodeUu(
 
 static int
 BinaryDecode64(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
