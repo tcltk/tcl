@@ -187,9 +187,9 @@ FreeAbstractListInternalRep(Tcl_Obj *abstractListObjPtr)
  */
 
 static void
-DupAbstractListInternalRep(srcPtr, copyPtr)
-    Tcl_Obj *srcPtr;		/* Object with internal rep to copy. */
-    Tcl_Obj *copyPtr;		/* Object with internal rep to set.
+DupAbstractListInternalRep(
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set.
 				 * Internal rep must be clear, it is stomped */
 {
     Tcl_AbstractListType *typePtr;
@@ -312,9 +312,9 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
  */
 
 static int
-SetAbstractListFromAny(interp, objPtr)
-    Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr;		/* The object to convert. */
+SetAbstractListFromAny(
+    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr)		/* The object to convert. */
 {
     (void)interp;
     (void)objPtr;

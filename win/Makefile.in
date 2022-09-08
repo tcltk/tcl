@@ -277,6 +277,8 @@ GENERIC_OBJS = \
 	regexec.$(OBJEXT) \
 	regfree.$(OBJEXT) \
 	regerror.$(OBJEXT) \
+	tclAbstractList.$(OBJEXT) \
+	tclArithSeries.$(OBJEXT) \
 	tclAlloc.$(OBJEXT) \
 	tclAssembly.$(OBJEXT) \
 	tclAsync.$(OBJEXT) \

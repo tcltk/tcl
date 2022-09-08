@@ -4082,7 +4082,7 @@ Tcl_LseqObjCmd(
     Tcl_WideInt values[5];
     Tcl_Obj *numValues[5];
     Tcl_Obj *numberObj;
-    int status, keyword, useDoubles = 0;
+    int status = TCL_ERROR, keyword, useDoubles = 0;
     Tcl_Obj *arithSeriesPtr;
     SequenceOperators opmode;
     SequenceDecoded decoded;
@@ -4152,7 +4152,6 @@ Tcl_LseqObjCmd(
     case 0:
 	 Tcl_WrongNumArgs(interp, 1, objv,
 	     "n ??op? n ??by? n??");
-	 status = TCL_ERROR;
 	 goto done;
 	 break;
 
@@ -4199,7 +4198,6 @@ Tcl_LseqObjCmd(
 	    step = one;
 	    break;
 	default:
-	    status = TCL_ERROR;
 	    goto done;
 	}
 	break;
@@ -4222,11 +4220,9 @@ Tcl_LseqObjCmd(
 	    break;
 	case LSEQ_BY:
 	    /* Error case */
-	    status = TCL_ERROR;
 	    goto done;
 	    break;
 	default:
-	    status = TCL_ERROR;
 	    goto done;
 	    break;
 	}
@@ -4245,7 +4241,6 @@ Tcl_LseqObjCmd(
 	case LSEQ_TO:
 	case LSEQ_COUNT:
 	default:
-	    status = TCL_ERROR;
 	    goto done;
 	    break;
 	}
@@ -4261,7 +4256,6 @@ Tcl_LseqObjCmd(
 	    step = numValues[4];
 	    break;
 	default:
-	    status = TCL_ERROR;
 	    goto done;
 	    break;
 	}
@@ -4277,7 +4271,6 @@ Tcl_LseqObjCmd(
 	    elementCount = numValues[2];
 	    break;
 	default:
-	    status = TCL_ERROR;
 	    goto done;
 	    break;
 	}
@@ -4291,7 +4284,6 @@ Tcl_LseqObjCmd(
     case 1212:
 	 opmode = (SequenceOperators)values[3]; goto KeywordError; break;
     KeywordError:
-	 status = TCL_ERROR;
 	 switch (opmode) {
 	 case LSEQ_DOTS:
 	 case LSEQ_TO:
@@ -4307,7 +4299,6 @@ Tcl_LseqObjCmd(
 		  "missing \"by\" value."));
 	      break;
 	 }
-	 status = TCL_ERROR;
 	 goto done;
 	 break;
 
