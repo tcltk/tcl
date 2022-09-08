@@ -118,9 +118,9 @@ typedef struct TcpFdList {
 
 struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this socket. */
-    struct TcpFdList *sockets;	/* Windows SOCKET handle. */
     int flags;			/* Bit field comprised of the flags described
 				 * below. */
+    struct TcpFdList *sockets;	/* Windows SOCKET handle. */
     int watchEvents;		/* OR'ed combination of FD_READ, FD_WRITE,
 				 * FD_CLOSE, FD_ACCEPT and FD_CONNECT that
 				 * indicate which events are interesting. */
@@ -158,8 +158,6 @@ struct TcpState {
 				 * Access must be protected by semaphore */
     struct TcpState *nextPtr;	/* The next socket on the per-thread socket
 				 * list. */
-    int testFlags;              /* bit field for tests. Is set by testsocket
-                                 * test procedure */
 };
 
 /*
@@ -179,12 +177,7 @@ struct TcpState {
 					 * still pending */
 #define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
 
-/*
- * These bits may be ORed together into the "testFlags" field of a TcpState
- * structure.
- */
-
-#define TCP_ASYNC_TEST_MODE	(1<<0)	/* Async testing activated.  Do not
+#define TCP_ASYNC_TEST_MODE	(1<<8)	/* Async testing activated.  Do not
 					 * automatically continue connection
 					 * process */
 
@@ -623,7 +616,7 @@ WaitForConnect(
      * - Call by the event queue (errorCodePtr == NULL)
      */
 
-    if (GOT_BITS(statePtr->testFlags, TCP_ASYNC_TEST_MODE)
+    if (GOT_BITS(statePtr->flags, TCP_ASYNC_TEST_MODE)
 	    && errorCodePtr != NULL
             && GOT_BITS(statePtr->flags, TCP_NONBLOCKING)) {
 	*errorCodePtr = EWOULDBLOCK;
@@ -1310,7 +1303,7 @@ TcpGetOptionProc(
      * below.
      */
 
-    if (!GOT_BITS(statePtr->testFlags, TCP_ASYNC_TEST_MODE)) {
+    if (!GOT_BITS(statePtr->flags, TCP_ASYNC_TEST_MODE)) {
 	WaitForConnect(statePtr, NULL);
     }
 
