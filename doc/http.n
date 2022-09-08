@@ -36,6 +36,8 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 .sp
 \fB::http::ncode \fItoken\fR
 .sp
+\fB::http::reason \fIcode\fR
+.sp
 \fB::http::meta \fItoken\fR
 .sp
 \fB::http::data \fItoken\fR
@@ -492,13 +494,52 @@ the state array.
 .TP
 \fB::http::code\fR \fItoken\fR
 .
-This is a convenience procedure that returns the \fBhttp\fR element of the
-state array.
+This command returns the "status line" of the server response (which is stored
+as element \fBhttp\fR of the state array).
+The "status line" is the first line of a HTTP server response, and has three
+elements separated by spaces: the HTTP version, a three-digit numerical
+"status code", and a "reason phrase".  Only the reason phrase may contain
+spaces.  Examples:
+.PP
+.DS
+.RS
+HTTP/1.1 200 OK
+HTTP/1.0 404 Not Found
+.RE
+.DE
+.PP
+.RS
+The "reason phrase" for a given status code may vary from server to server,
+and can be changed without affecting the HTTP protocol.  The recommended
+values (RFC 7231 and IANA assignments) for each code are provided by the
+command \fB::http::reason\fR.
+.RE
 .TP
 \fB::http::ncode\fR \fItoken\fR
 .
-This is a convenience procedure that returns just the numeric return
-code (200, 404, etc.) from the \fBhttp\fR element of the state array.
+This command returns the "status code" (200, 404, etc.) of the server response.
+The full status line can be obtained with command \fB::http::code\fR.
+.TP
+\fB::http::reason\fR \fIcode\fR
+.
+This command returns the IANA recommended "reason phrase" for a particular
+"status code" returned by a HTTP server.  The argument \fIcode\fR is a valid
+status code, and therefore is an integer in the range 100 to 599 inclusive.
+For numbers in this range with no assigned meaning, the command returns the
+value "Unassigned".  Several status codes are used only in response to the
+methods defined by HTTP extensions such as WebDAV, and not in response to a
+HEAD, GET, or POST request method.
+.PP
+.RS
+The "reason phrase" returned by a HTTP server may differ from the recommended
+value, without affecting the HTTP protocol.  The value returned by
+\fB::http::geturl\fR can be obtained by calling either command
+\fB::http::code\fR (which returns the full status line) or command
+\fB::http::ncode\fR (for the status code only).
+.PP
+A registry of valid status codes is maintained at
+https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+.RE
 .TP
 \fB::http::size\fR \fItoken\fR
 .
