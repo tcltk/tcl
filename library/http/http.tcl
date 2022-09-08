@@ -461,7 +461,7 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     if {[info exists state(-command)] && (!$skipCB)
 	    && (![info exists state(done-command-cb)])} {
 	set state(done-command-cb) yes
-	if {[catch {eval $state(-command) {$token}} err] && $errormsg eq ""} {
+	if {[catch {namespace eval :: $state(-command) $token} err] && $errormsg eq ""} {
 	    set state(error) [list $err $errorInfo $errorCode]
 	    set state(status) error
 	}
@@ -1642,7 +1642,7 @@ proc http::OpenSocket {token DoLater} {
 	set pre [clock milliseconds]
 	##Log pre socket opened, - token $token
 	##Log $state(openCmd) - token $token
-	if {[catch {eval $state(openCmd)} sock errdict]} {
+	if {[catch {namespace eval :: $state(openCmd)} sock errdict]} {
 	    # ERROR CASE
 	    # Something went wrong while trying to establish the connection.
 	    # Tidy up after events and such, but DON'T call the command
@@ -3159,7 +3159,7 @@ proc http::Write {token} {
     # Callback to the client after we've completely handled everything.
 
     if {[string length $state(-queryprogress)]} {
-	eval $state(-queryprogress) \
+	namespace eval :: $state(-queryprogress) \
 	    [list $token $state(querylength) $state(queryoffset)]
     }
     return
@@ -3493,7 +3493,7 @@ proc http::Event {sock token} {
 	    ##Log body - token $token
 	    if {[catch {
 		if {[info exists state(-handler)]} {
-		    set n [eval $state(-handler) [list $sock $token]]
+		    set n [namespace eval :: $state(-handler) [list $sock $token]]
 		    ##Log handler $n - token $token
 		    # N.B. the protocol has been set to 1.0 because the -handler
 		    # logic is not expected to handle chunked encoding.
@@ -3658,7 +3658,7 @@ proc http::Event {sock token} {
 		return
 	    } else {
 		if {[info exists state(-progress)]} {
-		    eval $state(-progress) \
+		    namespace eval :: $state(-progress) \
 			[list $token $state(totalsize) $state(currentsize)]
 		}
 	    }
@@ -3977,7 +3977,7 @@ proc http::CopyChunk {token chunk} {
 	}
 	puts -nonewline $state(-channel) $chunk
 	if {[info exists state(-progress)]} {
-	    eval [linsert $state(-progress) end \
+	    namespace eval :: [linsert $state(-progress) end \
 		      $token $state(totalsize) $state(currentsize)]
 	}
     } else {
@@ -4013,7 +4013,7 @@ proc http::CopyDone {token count {error {}}} {
     set sock $state(sock)
     incr state(currentsize) $count
     if {[info exists state(-progress)]} {
-	eval $state(-progress) \
+	namespace eval :: $state(-progress) \
 	    [list $token $state(totalsize) $state(currentsize)]
     }
     # At this point the token may have been reset.
