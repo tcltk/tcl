@@ -575,7 +575,7 @@ TclCreateProc(
 	     * (its value was kept the same as pre VarReform to simplify
 	     * tbcload's processing of older byetcodes).
 	     *
-	     * The only other flag vlaue that is important to retrieve from
+	     * The only other flag value that is important to retrieve from
 	     * precompiled procs is VAR_TEMPORARY (also unchanged). It is
 	     * needed later when retrieving the variable names.
 	     */
