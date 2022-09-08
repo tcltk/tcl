@@ -291,6 +291,11 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     if {[info commands ${token}--SocketCoroutine] ne {}} {
 	rename ${token}--SocketCoroutine {}
     }
+    if {[info exists state(socketcoro)]} {
+        Log $token Cancel socket after-idle event (Finish)
+        after cancel $state(socketcoro)
+        unset state(socketcoro)
+    }
 
     # Is this an upgrade request/response?
     set upgradeResponse \
@@ -691,6 +696,7 @@ proc http::CloseQueuedQueries {connId {token {}}} {
 	# - Also clear the queues to prevent calls to Finish that would set the
 	#   state for the requests that will be retried to "finished with error
 	#   status".
+	# - At this stage socketPhQueue is empty.
 	set unfinished $socketPlayCmd($connId)
 	set socketRdQueue($connId) {}
 	set socketWrQueue($connId) {}
@@ -704,6 +710,7 @@ proc http::CloseQueuedQueries {connId {token {}}} {
 	Log ^R$tk Any unfinished transactions (excluding $token) failed \
 		- token $token - unfinished $unfinished
 	{*}$unfinished
+	# Calls ReplayIfClose.
     }
     return
 }
@@ -1394,7 +1401,8 @@ proc http::AsyncTransaction {token} {
     }
 
     if {$state(ReusingPlaceholder)} {
-        # - This request is scheduled to re-use a persistent connection;
+        # - This request was added to the socketPhQueue of a persistent
+        #   connection.
         # - But the connection has not yet been created and is a placeholder;
         # - And the placeholder was created by an earlier request.
         # - When that earlier request calls OpenSocket, its placeholder is
@@ -1402,13 +1410,18 @@ proc http::AsyncTransaction {token} {
         #   OpenSocket for any subsequent requests that have
         #   $state(ReusingPlaceholder).
         Log >J$tk after idle coro NO - ReusingPlaceholder
+    } elseif {$state(alreadyQueued)} {
+        # - This request was added to the socketWrQueue and socketPlayCmd
+        #   of a persistent connection that will close at the end of its current
+        #   read operation.
+        Log >J$tk after idle coro NO - alreadyQueued
     } else {
         Log >J$tk after idle coro YES
-        # Called if (not reusing) || (socket is not a placeholder).
         set CoroName ${token}--SocketCoroutine
         set cancel [after idle [list coroutine $CoroName ::http::OpenSocket \
                 $token $DoLater]]
         dict set socketCoEvent($state(socketinfo)) $token $cancel
+        set state(socketcoro) $cancel
     }
 
     return
@@ -1523,6 +1536,7 @@ proc http::OpenSocket {token DoLater} {
     set sockOld $state(sock)
 
     dict unset socketCoEvent($state(socketinfo)) $token
+    unset -nocomplain state(socketcoro)
 
     set reusing $state(reusing)
 
@@ -1626,10 +1640,9 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
     variable socketPlayCmd
     variable socketCoEvent
 
-    ##Log "  ConfigureNewSocket" $token $sockOld $sock ...
-
     set reusing $state(reusing)
     set sock $state(sock)
+    ##Log "  ConfigureNewSocket" $token $sockOld ... -- $sock
 
     if {(!$reusing) && ($sock ne $sockOld)} {
         # Replace the placeholder value sockOld with sock.
@@ -1672,6 +1685,7 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
          && ($sock ne $sockOld)
          && [info exists socketPhQueue($sockOld)]
     } {
+        ##Log "  ConfigureNewSocket" $token scheduled, now do $socketPhQueue($sockOld)
         foreach tok $socketPhQueue($sockOld) {
 	    # 1. Amend the token's (sock).
 	    ##Log set ${tok}(sock) $sock
@@ -1685,6 +1699,7 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
 	}
 	set socketPhQueue($sockOld) {}
     }
+    ##Log "  ConfigureNewSocket" $token DONE
 
     return
 }
@@ -2704,6 +2719,11 @@ proc http::ReInit {token} {
 	after cancel $state(after)
 	unset state(after)
     }
+    if {[info exists state(socketcoro)]} {
+        Log $token Cancel socket after-idle event (ReInit)
+        after cancel $state(socketcoro)
+        unset state(socketcoro)
+    }
 
     # Don't alter state(status) - this would trigger http::wait if it is in use.
     set tmpState    $state(tmpState)
@@ -2886,6 +2906,11 @@ proc http::cleanup {token} {
 	after cancel $state(after)
 	unset state(after)
     }
+    if {[info exists state(socketcoro)]} {
+        Log $token Cancel socket after-idle event (cleanup)
+        after cancel $state(socketcoro)
+        unset state(socketcoro)
+    }
     if {[info exists state]} {
 	unset state
     }
@@ -2907,11 +2932,20 @@ proc http::Connect {token proto phost srvurl} {
     variable $token
     upvar 0 $token state
     set tk [namespace tail $token]
-    set err "due to unexpected EOF"
-    if {
-	[eof $state(sock)] ||
-	[set err [fconfigure $state(sock) -error]] ne ""
-    } {
+
+    if {[catch {eof $state(sock)} tmp] || $tmp} {
+        set err "due to unexpected EOF"
+    } elseif {[set err [fconfigure $state(sock) -error]] ne ""} {
+        # set err is done in test
+    } else {
+        # All OK
+	set state(state) connecting
+	fileevent $state(sock) writable {}
+	::http::Connected $token $proto $phost $srvurl
+	return
+    }
+
+    # Error cases.
 	Log "WARNING - if testing, pay special attention to this\
 		case (GJ) which is seldom executed - token $token"
 	if {[info exists state(reusing)] && $state(reusing)} {
@@ -2928,11 +2962,6 @@ proc http::Connect {token proto phost srvurl} {
 	    # be discarded.
 	}
 	Finish $token "connect failed $err"
-    } else {
-	set state(state) connecting
-	fileevent $state(sock) writable {}
-	::http::Connected $token $proto $phost $srvurl
-    }
     return
 }
 
@@ -3077,7 +3106,7 @@ proc http::Event {sock token} {
 
 	if {![info exists state]} {
 	    Log "Event $sock with invalid token '$token' - remote close?"
-	    if {![eof $sock]} {
+	    if {!([catch {eof $sock} tmp] || $tmp)} {
 		if {[set d [read $sock]] ne ""} {
 		    Log "WARNING: additional data left on closed socket\
 			    - token $token"
@@ -3122,7 +3151,7 @@ proc http::Event {sock token} {
 	    } elseif {$nsl >= 0} {
 		##Log - connecting 1 - token $token
 		set state(state) "header"
-	    } elseif {    [eof $sock]
+	    } elseif {    ([catch {eof $sock} tmp] || $tmp)
 		       && [info exists state(reusing)]
 		       && $state(reusing)
 	    } {
@@ -3190,13 +3219,16 @@ proc http::Event {sock token} {
 		    # response.
 		    ##Log WARNING - socket will close after response for $token
 		    # Prepare data for a call to ReplayIfClose.
-
+		    Log $token socket will close after this transaction
 		    # 1. Cancel socket-assignment coro events that have not yet
 		    # launched, and add the tokens to the write queue.
 		    if {[info exists socketCoEvent($state(socketinfo))]} {
 			foreach {tok can} $socketCoEvent($state(socketinfo)) {
 			    lappend socketWrQueue($state(socketinfo)) $tok
+			    unset -nocomplain ${tok}(socketcoro)
 			    after cancel $can
+			    Log $tok Cancel socket after-idle event (Event)
+			    Log Move $tok from socketCoEvent to socketWrQueue and cancel its after idle coro
 			}
 			set socketCoEvent($state(socketinfo)) {}
 		    }
@@ -3228,8 +3260,9 @@ proc http::Event {sock token} {
 				after cancel [set ${tokenVal}(after)]
 				unset ${tokenVal}(after)
 			    }
+			    # Tokens in the read queue have no (socketcoro) to
+			    # cancel.
 			}
-
 		    } else {
 			set socketPlayCmd($state(socketinfo)) \
 				{ReplayIfClose Wready {} {}}
@@ -3540,7 +3573,8 @@ proc http::Event {sock token} {
 
 	# catch as an Eot above may have closed the socket already
 	# $state(state) may be connecting, header, body, or complete
-	if {![set cc [catch {eof $sock} eof]] && $eof} {
+	if {(![catch {eof $sock} eof]) && $eof} {
+	    # [eof sock] succeeded and the result was 1
 	    ##Log eof - token $token
 	    if {[info exists $token]} {
 		set state(connection) close
@@ -3562,8 +3596,9 @@ proc http::Event {sock token} {
 		Log ^X$tk end of response (token error) - token $token
 		CloseSocket $sock
 	    }
-	} elseif {$cc} {
-	    return
+	} else {
+	    # EITHER [eof sock] failed - presumed done by Eot
+	    # OR     [eof sock] succeeded and the result was 0
 	}
     }
     return
@@ -3736,7 +3771,8 @@ proc http::ParseCookie {token value} {
 # http::getTextLine --
 #
 #	Get one line with the stream in crlf mode.
-#	Used if Transfer-Encoding is chunked.
+#	Used if Transfer-Encoding is chunked, to read the line that
+#	reports the size of the following chunk.
 #	Empty line is not distinguished from eof.  The caller must
 #	be able to handle this.
 #
@@ -3759,6 +3795,8 @@ proc http::getTextLine {sock} {
 #
 #	Replacement for a blocking read.
 #	The caller must be a coroutine.
+#	Used when we expect to read a chunked-encoding
+#	chunk of known size.
 
 proc http::BlockingRead {sock size} {
     if {$size < 1} {
@@ -3768,7 +3806,7 @@ proc http::BlockingRead {sock size} {
     while 1 {
 	set need [expr {$size - [string length $result]}]
 	set block [read $sock $need]
-	set eof [eof $sock]
+	set eof [expr {[catch {eof $sock} tmp] || $tmp}]
 	append result $block
 	if {[string length $result] >= $size || $eof} {
 	    return $result
@@ -3788,7 +3826,7 @@ proc http::BlockingRead {sock size} {
 proc http::BlockingGets {sock} {
     while 1 {
 	set count [gets $sock line]
-	set eof [eof $sock]
+	set eof [expr {[catch {eof $sock} tmp] || $tmp}]
 	if {$count >= 0 || $eof} {
 	    return $line
 	} else {
