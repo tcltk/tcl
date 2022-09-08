@@ -97,8 +97,7 @@ typedef struct TcpState TcpState;
 
 struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this socket. */
-    int testFlags;              /* bit field for tests. Is set by testsocket
-                                 * test procedure */
+    int flags;			/* ORed combination of various bitfields. */
 };
 
 TCL_DECLARE_MUTEX(asyncTestMutex)
@@ -6443,6 +6442,10 @@ TestChannelEventCmd(
  *----------------------------------------------------------------------
  */
 
+#define TCP_ASYNC_TEST_MODE	(1<<8)	/* Async testing activated.  Do not
+					 * automatically continue connection
+					 * process. */
+
 static int
 TestSocketCmd(
     TCL_UNUSED(void *),
@@ -6464,6 +6467,7 @@ TestSocketCmd(
     if ((cmdName[0] == 't') && (strncmp(cmdName, "testflags", len) == 0)) {
         Tcl_Channel hChannel;
         int modePtr;
+        int testMode;
         TcpState *statePtr;
         /* Set test value in the socket driver
          */
@@ -6485,7 +6489,14 @@ TestSocketCmd(
                     NULL);
             return TCL_ERROR;
         }
-        statePtr->testFlags = atoi(argv[3]);
+        if (Tcl_GetBoolean(interp, argv[3], &testMode) != TCL_OK) {
+            return TCL_ERROR;
+        }
+        if (testMode) {
+            statePtr->flags |= TCP_ASYNC_TEST_MODE;
+        } else {
+            statePtr->flags &= ~TCP_ASYNC_TEST_MODE;
+        }
         return TCL_OK;
     }
 

@@ -53,9 +53,9 @@ typedef struct TcpFdList {
 
 struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this file. */
-    TcpFdList fds;		/* The file descriptors of the sockets. */
     int flags;			/* ORed combination of the bitfields defined
 				 * below. */
+    TcpFdList fds;		/* The file descriptors of the sockets. */
     int interest;		/* Event types of interest */
 
     /*
@@ -78,8 +78,6 @@ struct TcpState {
                                  * an async socket is not yet connected. */
     int connectError;           /* Cache SO_ERROR of async socket. */
     int cachedBlocking;         /* Cache blocking mode of async socket. */
-    int testFlags;              /* bit field for tests. Is set by testsocket
-                                 * test procedure */
 };
 
 /*
@@ -95,12 +93,7 @@ struct TcpState {
 					 * still pending */
 #define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
 
-/*
- * These bits may be ORed together into the "testFlags" field of a TcpState
- * structure.
- */
-
-#define TCP_ASYNC_TEST_MODE	(1<<0)	/* Async testing activated.  Do not
+#define TCP_ASYNC_TEST_MODE	(1<<8)	/* Async testing activated.  Do not
 					 * automatically continue connection
 					 * process. */
 
@@ -471,7 +464,7 @@ WaitForConnect(
      *   (errorCodePtr != NULL && !GOT_BITS(flags, TCP_NONBLOCKING))
      */
 
-    if (GOT_BITS(statePtr->testFlags, TCP_ASYNC_TEST_MODE)
+    if (GOT_BITS(statePtr->flags, TCP_ASYNC_TEST_MODE)
             && !(errorCodePtr != NULL
                     && !GOT_BITS(statePtr->flags, TCP_NONBLOCKING))) {
 	*errorCodePtr = EWOULDBLOCK;
