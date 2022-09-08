@@ -180,8 +180,8 @@ typedef void \fBTcl_CmdDeleteProc\fR(
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
 argument passed to \fBTcl_CreateObjCommand\fR.
 .PP
-\fBTcl_CreateObjCommand2\fR does the same as \fBTcl_CreateObjCommand2\fR,
-except its \fIproc2\fR argument is of type \fBTcl_ObjCmdProc2\fR(.
+\fBTcl_CreateObjCommand2\fR does the same as \fBTcl_CreateObjCommand\fR,
+except its \fIproc2\fR argument is of type \fBTcl_ObjCmdProc2\fR.
 .PP
 .CS
 typedef int \fBTcl_ObjCmdProc2\fR(
@@ -238,16 +238,19 @@ typedef struct Tcl_CmdInfo {
 } \fBTcl_CmdInfo\fR;
 .CE
 .PP
-The \fIisNativeObjectProc\fR field has the value 1
-if \fBTcl_CreateObjCommand\fR was called to register the command;
-it is 2 if \fBTcl_CreateObjCommand2\fR was called to register
-the command; it is 0 if only \fBTcl_CreateCommand\fR was called.
+The \fIisNativeObjectProc\fR field has the value 2 if
+\fBTcl_CreateObjCommand2\fR was called to register the command;
+it has the value 1 if \fBTcl_CreateObjCommand\fR was called to
+register the command; it is 0 if only \fBTcl_CreateCommand\fR was called.
 It allows a program to determine whether it is faster to
-call \fIobjProc\fR or \fIproc\fR: \fIobjProc\fR/\fIobjProc2\fR
-is normally faster if \fIisNativeObjectProc\fR has the value 1 or 2.
-The fields \fIobjProc\fR/\fIobjProc2\fR and
-\fIobjClientData\fR/\fIobjClientData2\fR have the same meaning as the
-\fIproc\fR and \fIclientData\fR arguments to \fBTcl_CreateObjCommand\fR;
+call \fIobjProc2\fR, \fIobjProc\fR or \fIproc\fR:
+\fIobjProc2\fR/\fIobjProc\fR is normally faster
+if \fIisNativeObjectProc\fR has the value 2;
+\fIobjProc\fR/\fIobjProc\fR is normally faster
+if \fIisNativeObjectProc\fR has the value 1.
+The fields \fIobjProc\fR and \fIobjClientData\fR
+have the same meaning as the \fIproc\fR and \fIclientData\fR
+arguments to \fBTcl_CreateObjCommand\fR;
 they hold information about the value-based command procedure
 that the Tcl interpreter calls to implement the command.
 The fields \fIproc\fR and \fIclientData\fR
