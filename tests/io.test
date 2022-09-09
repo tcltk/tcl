@@ -8952,6 +8952,39 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
 
+# Note: the following tests are in preparation for TCL 9.0, where those should
+# result in an error result
+test io-75.1 {multibyte encoding error read results in raw bytes} -setup {
+	set fn [makeFile {} io-75.1]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+	puts -nonewline $f "A\xC0\x40"
+	flush $f
+	seek $f 0
+	fconfigure $f -encoding utf-8 -buffering none
+} -body {
+	read $f
+} -cleanup {
+	close $f
+	removeFile io-75.1
+} -returnCodes ok -result "A\xC0\x40"
+# for TCL 9.0, the result is error
+
+test io-75.2 {unrepresentable character write passes and is replaced by ?} -setup {
+	set fn [makeFile {} io-75.2]
+    set f [open $fn w+]
+    fconfigure $f -encoding iso8859-1
+} -body {
+	# the following command gets in result error in TCL 9.0
+	puts -nonewline $f "A\u2022"
+	flush $f
+	seek $f 0
+	read $f
+} -cleanup {
+	close $f
+	removeFile io-75.2
+} -returnCodes ok -result "A?"
+
 # ### ### ### ######### ######### #########
 
 # cleanup
