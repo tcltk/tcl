@@ -3009,11 +3009,13 @@ InvokeObjectCommand(
     Command *cmdPtr = ( Command *) clientData;
     Tcl_Obj *objPtr;
     int i, length, result;
-    Tcl_Obj **objv = (Tcl_Obj **)
-	    TclStackAlloc(interp, (argc * sizeof(Tcl_Obj *)));
+    Tcl_Obj **objv;
 
     if (argc < 0) {
 	argc = -1; /* Make sure any invalid argc is handled as TCL_INDEX_NONE */
+	objv = NULL;
+    } else {
+	objv = (Tcl_Obj **) TclStackAlloc(interp, (argc * sizeof(Tcl_Obj *)));
     }
     for (i = 0; i < argc; i++) {
 	length = strlen(argv[i]);
@@ -3042,7 +3044,9 @@ InvokeObjectCommand(
 	objPtr = objv[i];
 	Tcl_DecrRefCount(objPtr);
     }
-    TclStackFree(interp, objv);
+    if (objv != NULL) {
+	TclStackFree(interp, objv);
+    }
     return result;
 }
 
