@@ -148,6 +148,7 @@ static const Tcl_ObjType lambdaType = {
  *----------------------------------------------------------------------
  */
 
+#undef TclObjInterpProc
 int
 Tcl_ProcObjCmd(
     TCL_UNUSED(void *),
@@ -1594,6 +1595,7 @@ TclPushProcCallFrame(
  *----------------------------------------------------------------------
  */
 
+#undef TclObjInterpProc
 int
 TclObjInterpProc(
     ClientData clientData,	/* Record describing procedure to be

@@ -69,7 +69,7 @@ declare 12 {
 declare 13 {
     Tcl_Object Tcl_NewObjectInstance(Tcl_Interp *interp, Tcl_Class cls,
 	    const char *nameStr, const char *nsNameStr, size_t objc,
-	    Tcl_Obj *const *objv, int skip)
+	    Tcl_Obj *const *objv, size_t skip)
 }
 declare 14 {
     int Tcl_ObjectDeleted(Tcl_Object object)
@@ -105,7 +105,7 @@ declare 22 {
 declare 23 {
     int Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
 	    Tcl_ObjectContext context, size_t objc, Tcl_Obj *const *objv,
-	    int skip)
+	    size_t skip)
 }
 declare 24 {
     Tcl_ObjectMapMethodNameProc *Tcl_ObjectGetMethodNameMapper(
