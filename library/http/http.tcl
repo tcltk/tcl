@@ -3237,11 +3237,14 @@ proc http::Event {sock token} {
 		if {[set d [read $sock]] ne ""} {
 		    Log "WARNING: additional data left on closed socket\
 			    - token $token"
+		} else {
 		}
+	    } else {
 	    }
 	    Log ^X$tk end of response (token error) - token $token
 	    CloseSocket $sock
 	    return
+	} else {
 	}
 	if {$state(state) eq "connecting"} {
 	    ##Log - connecting - token $token
@@ -3252,6 +3255,7 @@ proc http::Event {sock token} {
 	    } {
 		set state(after) [after $state(-timeout) \
 			[list http::reset $token timeout]]
+	    } else {
 	    }
 
 	    if {[catch {gets $sock state(http)} nsl]} {
@@ -3263,8 +3267,8 @@ proc http::Event {sock token} {
 
 		    if {[TestForReplay $token read $nsl c]} {
 			return
+		    } else {
 		    }
-
 		    # else:
 		    # This is NOT a persistent socket that has been closed since
 		    # its last use.
@@ -3288,6 +3292,7 @@ proc http::Event {sock token} {
 
 		if {[TestForReplay $token read {} d]} {
 		    return
+		} else {
 		}
 
 		# else:
@@ -3295,6 +3300,7 @@ proc http::Event {sock token} {
 		# last use.
 		# If any other requests are in flight or pipelined/queued, they
 		# will be discarded.
+	    } else {
 	    }
 	} elseif {$state(state) eq "header"} {
 	    if {[catch {gets $sock line} nhl]} {
@@ -3313,6 +3319,7 @@ proc http::Event {sock token} {
 		    set state(state) "connecting"
 		    continue
 		    # This was a "return" in the pre-coroutine code.
+		} else {
 		}
 
 		if {    ([info exists state(connection)])
@@ -3328,6 +3335,7 @@ proc http::Event {sock token} {
 		    # Previous value is $token. It cannot be "pending".
 		    set socketWrState($state(socketinfo)) Wready
 		    http::NextPipelinedWrite $token
+		} else {
 		}
 
 		# Once a "close" has been signaled, the client MUST NOT send any
@@ -3358,6 +3366,7 @@ proc http::Event {sock token} {
 			    Log Move $tok from socketCoEvent to socketWrQueue and cancel its after idle coro
 			}
 			set socketCoEvent($state(socketinfo)) {}
+		    } else {
 		    }
 
 		    if {    ($socketRdQueue($state(socketinfo)) ne {})
@@ -3386,6 +3395,7 @@ proc http::Event {sock token} {
 			    if {[info exists ${tokenVal}(after)]} {
 				after cancel [set ${tokenVal}(after)]
 				unset ${tokenVal}(after)
+			    } else {
 			    }
 			    # Tokens in the read queue have no (socketcoro) to
 			    # cancel.
@@ -3398,6 +3408,7 @@ proc http::Event {sock token} {
 		    # Do not allow further connections on this socket (but
 		    # geturl can add new requests to the replay).
 		    set socketClosing($state(socketinfo)) 1
+		} else {
 		}
 
 		set state(state) body
@@ -3413,6 +3424,7 @@ proc http::Event {sock token} {
 		    && ("keep-alive" ni $state(connection))
 		} {
 		    lappend state(connection) "keep-alive"
+		} else {
 		}
 
 		# If doing a HEAD, then we won't get any body
@@ -3421,6 +3433,7 @@ proc http::Event {sock token} {
 		    set state(state) complete
 		    Eot $token
 		    return
+		} else {
 		}
 
 		# - For non-chunked transfer we may have no body - in this case
@@ -3451,6 +3464,7 @@ proc http::Event {sock token} {
 		    set state(state) complete
 		    Eot $token
 		    return
+		} else {
 		}
 
 		# We have to use binary translation to count bytes properly.
@@ -3462,10 +3476,12 @@ proc http::Event {sock token} {
 		} {
 		    # Turn off conversions for non-text data.
 		    set state(binary) 1
+		} else {
 		}
 		if {[info exists state(-channel)]} {
 		    if {$state(binary) || [llength [ContentEncoding $token]]} {
 			fconfigure $state(-channel) -translation binary
+		    } else {
 		    }
 		    if {![info exists state(-handler)]} {
 			# Initiate a sequence of background fcopies.
@@ -3473,7 +3489,9 @@ proc http::Event {sock token} {
 			rename ${token}--EventCoroutine {}
 			CopyStart $sock $token
 			return
+		    } else {
 		    }
+		} else {
 		}
 	    } elseif {$nhl > 0} {
 		# Process header lines.
@@ -3517,11 +3535,14 @@ proc http::Event {sock token} {
 			set-cookie {
 			    if {$http(-cookiejar) ne ""} {
 				ParseCookie $token [string trim $value]
+			    } else {
 			    }
 			}
 		    }
 		    lappend state(meta) $key [string trim $value]
+		} else {
 		}
+	    } else {
 	    }
 	} else {
 	    # Now reading body
@@ -3537,6 +3558,7 @@ proc http::Event {sock token} {
 			# We know the transfer is complete only when the server
 			# closes the connection - i.e. eof is not an error.
 			set state(state) complete
+		    } else {
 		    }
 		    if {![string is integer -strict $n]} {
 			if 1 {
@@ -3566,6 +3588,7 @@ proc http::Event {sock token} {
 			    set n 0
 			    set state(state) complete
 			}
+		    } else {
 		    }
 		} elseif {[info exists state(transfer_final)]} {
 		    # This code forgives EOF in place of the final CRLF.
@@ -3605,6 +3628,7 @@ proc http::Event {sock token} {
 				incr state(log_size) [string length $chunk]
 				##Log chunk $n cumul $state(log_size) -\
 					token $token
+			    } else {
 			    }
 			    if {$size != [string length $chunk]} {
 				Log "WARNING: mis-sized chunk:\
@@ -3617,6 +3641,7 @@ proc http::Event {sock token} {
 				set msg {error in chunked encoding - fetch\
 					terminated}
 				Eot $token $msg
+			    } else {
 			    }
 			    # CRLF that follows chunk.
 			    # If eof, this is handled at the end of this proc.
@@ -3664,6 +3689,7 @@ proc http::Event {sock token} {
 			append state(body) $block
 			##Log non-chunk [string length $state(body)] -\
 				token $token
+		    } else {
 		    }
 		}
 		# This calculation uses n from the -handler, chunked, or
@@ -3675,6 +3701,7 @@ proc http::Event {sock token} {
 			set t $state(totalsize)
 			##Log another $n currentsize $c totalsize $t -\
 				token $token
+		    } else {
 		    }
 		    # If Content-Length - check for end of data.
 		    if {
@@ -3685,7 +3712,9 @@ proc http::Event {sock token} {
 				token $token
 			set state(state) complete
 			Eot $token
+		    } else {
 		    }
+		} else {
 		}
 	    } err]} {
 		Log ^X$tk end of response (error ${err}) - token $token
@@ -3695,6 +3724,7 @@ proc http::Event {sock token} {
 		if {[info exists state(-progress)]} {
 		    namespace eval :: $state(-progress) \
 			[list $token $state(totalsize) $state(currentsize)]
+		} else {
 		}
 	    }
 	}
