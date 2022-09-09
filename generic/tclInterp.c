@@ -12,6 +12,7 @@
  */
 
 #include "tclInt.h"
+#include <assert.h>
 
 /*
  * A pointer to a string that holds an initialization script that if non-NULL
@@ -1822,7 +1823,7 @@ AliasNRCmd(
     int prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *listPtr;
-    List *listRep;
+    ListRep listRep;
     int flags = TCL_EVAL_INVOKE;
 
     /*
@@ -1834,10 +1835,15 @@ AliasNRCmd(
     prefv = &aliasPtr->objPtr;
     cmdc = prefc + objc - 1;
 
+    /* TODO - encapsulate this into tclListObj.c */
     listPtr = Tcl_NewListObj(cmdc, NULL);
-    listRep = ListRepPtr(listPtr);
-    listRep->elemCount = cmdc;
-    cmdv = listRep->elements;
+    ListObjGetRep(listPtr, &listRep);
+    cmdv = ListRepElementsBase(&listRep);
+    listRep.storePtr->numUsed = cmdc;
+    if (listRep.spanPtr) {
+	listRep.spanPtr->spanStart = listRep.storePtr->firstUsed;
+	listRep.spanPtr->spanLength = listRep.storePtr->numUsed;
+    }
 
     prefv = &aliasPtr->objPtr;
     memcpy(cmdv, prefv, prefc * sizeof(Tcl_Obj *));

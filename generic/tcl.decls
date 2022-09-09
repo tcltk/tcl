@@ -2502,6 +2502,27 @@ declare 673 {
     int TclGetUniChar(Tcl_Obj *objPtr, int index)
 }
 
+declare 676 {
+    Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
+	    const char *cmdName,
+	    Tcl_ObjCmdProc2 *proc2, void *clientData,
+	    Tcl_CmdDeleteProc *deleteProc)
+}
+declare 677 {
+    Tcl_Trace Tcl_CreateObjTrace2(Tcl_Interp *interp, int level, int flags,
+	    Tcl_CmdObjTraceProc2 *objProc2, void *clientData,
+	    Tcl_CmdObjTraceDeleteProc *delProc)
+}
+declare 678 {
+    Tcl_Command Tcl_NRCreateCommand2(Tcl_Interp *interp,
+	    const char *cmdName, Tcl_ObjCmdProc2 *proc,
+	    Tcl_ObjCmdProc2 *nreProc2, void *clientData,
+	    Tcl_CmdDeleteProc *deleteProc)
+}
+declare 679 {
+    int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2,
+	    void *clientData, size_t objc, Tcl_Obj *const objv[])
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 

@@ -24,8 +24,8 @@
  * win/tclooConfig.sh
  */
 
-#define TCLOO_VERSION "1.2.0"
-#define TCLOO_PATCHLEVEL TCLOO_VERSION
+#define TCLOO_VERSION "1.3"
+#define TCLOO_PATCHLEVEL TCLOO_VERSION ".0"
 
 #include "tcl.h"
 
@@ -40,7 +40,7 @@ extern "C" {
 extern const char *TclOOInitializeStubs(
 	Tcl_Interp *, const char *version);
 #define Tcl_OOInitStubs(interp) \
-    TclOOInitializeStubs((interp), TCLOO_VERSION)
+    TclOOInitializeStubs((interp), TCLOO_PATCHLEVEL)
 #ifndef USE_TCL_STUBS
 #   define TclOOInitializeStubs(interp, version) (TCLOO_PATCHLEVEL)
 #endif
@@ -62,6 +62,8 @@ typedef struct Tcl_ObjectContext_ *Tcl_ObjectContext;
 
 typedef int (Tcl_MethodCallProc)(void *clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext objectContext, int objc, Tcl_Obj *const *objv);
+typedef int (Tcl_MethodCallProc2)(void *clientData, Tcl_Interp *interp,
+	Tcl_ObjectContext objectContext, size_t objc, Tcl_Obj *const *objv);
 typedef void (Tcl_MethodDeleteProc)(void *clientData);
 typedef int (Tcl_CloneProc)(Tcl_Interp *interp, void *oldClientData,
 	void **newClientData);
@@ -77,7 +79,7 @@ typedef int (Tcl_ObjectMapMethodNameProc)(Tcl_Interp *interp,
 
 typedef struct {
     int version;		/* Structure version field. Always to be equal
-				 * to TCL_OO_METHOD_VERSION_CURRENT in
+				 * to TCL_OO_METHOD_VERSION_(1|CURRENT) in
 				 * declarations. */
     const char *name;		/* Name of this type of method, mostly for
 				 * debugging purposes. */
@@ -92,12 +94,31 @@ typedef struct {
 				 * be copied directly. */
 } Tcl_MethodType;
 
+typedef struct {
+    int version;		/* Structure version field. Always to be equal
+				 * to TCL_OO_METHOD_VERSION_2 in
+				 * declarations. */
+    const char *name;		/* Name of this type of method, mostly for
+				 * debugging purposes. */
+    Tcl_MethodCallProc2 *callProc;
+				/* How to invoke this method. */
+    Tcl_MethodDeleteProc *deleteProc;
+				/* How to delete this method's type-specific
+				 * data, or NULL if the type-specific data
+				 * does not need deleting. */
+    Tcl_CloneProc *cloneProc;	/* How to copy this method's type-specific
+				 * data, or NULL if the type-specific data can
+				 * be copied directly. */
+} Tcl_MethodType2;
+
 /*
  * The correct value for the version field of the Tcl_MethodType structure.
  * This allows new versions of the structure to be introduced without breaking
  * binary compatibility.
  */
 
+#define TCL_OO_METHOD_VERSION_1 1
+#define TCL_OO_METHOD_VERSION_2 2
 #define TCL_OO_METHOD_VERSION_CURRENT 1
 
 /*

@@ -10,7 +10,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_CreateTrace, Tcl_CreateObjTrace, Tcl_DeleteTrace \- arrange for command execution to be traced
+Tcl_CreateTrace, Tcl_CreateObjTrace, Tcl_CreateObjTrace2, Tcl_DeleteTrace \- arrange for command execution to be traced
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -20,6 +20,9 @@ Tcl_Trace
 .sp
 Tcl_Trace
 \fBTcl_CreateObjTrace\fR(\fIinterp, level, flags, objProc, clientData, deleteProc\fR)
+.sp
+Tcl_Trace
+\fBTcl_CreateObjTrace2\fR(\fIinterp, level, flags, objProc2, clientData, deleteProc\fR)
 .sp
 \fBTcl_DeleteTrace\fR(\fIinterp, trace\fR)
 .SH ARGUMENTS
@@ -38,11 +41,14 @@ Flags governing the trace execution.  See below for details.
 .AP Tcl_CmdObjTraceProc *objProc in
 Procedure to call for each command that is executed.  See below for
 details of the calling sequence.
+.AP Tcl_CmdObjTraceProc2 *objProc2 in
+Procedure to call for each command that is executed.  See below for
+details of the calling sequence.
 .AP Tcl_CmdTraceProc *proc in
 Procedure to call for each command that is executed.  See below for
 details on the calling sequence.
 .AP ClientData clientData in
-Arbitrary one-word value to pass to \fIobjProc\fR or \fIproc\fR.
+Arbitrary one-word value to pass to \fIobjProc\fR, \fIobjProc2\fR or \fIproc\fR.
 .AP Tcl_CmdObjTraceDeleteProc *deleteProc in
 Procedure to call when the trace is deleted.  See below for details of
 the calling sequence.  A NULL pointer is permissible and results in no

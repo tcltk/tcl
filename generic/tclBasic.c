@@ -780,6 +780,7 @@ Tcl_CreateInterp(void)
 	Tcl_MutexUnlock(&cancelLock);
     }
 
+#undef TclObjInterpProc
     if (commandTypeInit == 0) {
         TclRegisterCommandTypeName(TclObjInterpProc, "proc");
         TclRegisterCommandTypeName(TclEnsembleImplementationCmd, "ensemble");
@@ -2689,6 +2690,66 @@ Tcl_CreateCommand(
  *----------------------------------------------------------------------
  */
 
+typedef struct {
+    Tcl_ObjCmdProc2 *proc;
+    void *clientData; /* Arbitrary value to pass to proc function. */
+    Tcl_CmdDeleteProc *deleteProc;
+    void *deleteData; /* Arbitrary value to pass to deleteProc function. */
+    Tcl_ObjCmdProc2 *nreProc;
+} CmdWrapperInfo;
+
+
+static int cmdWrapperProc(void *clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj * const *objv)
+{
+    CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
+    if (objc < 0) {
+	objc = -1;
+    }
+    return info->proc(info->clientData, interp, objc, objv);
+}
+
+static void cmdWrapperDeleteProc(void *clientData) {
+    CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
+
+    clientData = info->deleteData;
+    Tcl_CmdDeleteProc *deleteProc = info->deleteProc;
+    ckfree(info);
+    if (deleteProc != NULL) {
+	deleteProc(clientData);
+    }
+}
+
+Tcl_Command
+Tcl_CreateObjCommand2(
+    Tcl_Interp *interp,		/* Token for command interpreter (returned by
+				 * previous call to Tcl_CreateInterp). */
+    const char *cmdName,	/* Name of command. If it contains namespace
+				 * qualifiers, the new command is put in the
+				 * specified namespace; otherwise it is put in
+				 * the global namespace. */
+    Tcl_ObjCmdProc2 *proc,	/* Object-based function to associate with
+				 * name. */
+    void *clientData,	/* Arbitrary value to pass to object
+				 * function. */
+    Tcl_CmdDeleteProc *deleteProc
+				/* If not NULL, gives a function to call when
+				 * this command is deleted. */
+)
+{
+    CmdWrapperInfo *info = (CmdWrapperInfo *)ckalloc(sizeof(CmdWrapperInfo));
+    info->proc = proc;
+    info->clientData = clientData;
+    info->deleteProc = deleteProc;
+    info->deleteData = clientData;
+
+    return Tcl_CreateObjCommand(interp, cmdName,
+	    (proc ? cmdWrapperProc : NULL),
+	    info, cmdWrapperDeleteProc);
+}
+
 Tcl_Command
 Tcl_CreateObjCommand(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
@@ -3322,8 +3383,14 @@ Tcl_SetCommandInfoFromToken(
 	}
 	cmdPtr->objClientData = infoPtr->objClientData;
     }
-    cmdPtr->deleteProc = infoPtr->deleteProc;
-    cmdPtr->deleteData = infoPtr->deleteData;
+    if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
+	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
+	info->deleteProc = infoPtr->deleteProc;
+	info->deleteData = infoPtr->deleteData;
+    } else {
+	cmdPtr->deleteProc = infoPtr->deleteProc;
+	cmdPtr->deleteData = infoPtr->deleteData;
+    }
     return 1;
 }
 
@@ -3400,10 +3467,15 @@ Tcl_GetCommandInfoFromToken(
     infoPtr->objClientData = cmdPtr->objClientData;
     infoPtr->proc = cmdPtr->proc;
     infoPtr->clientData = cmdPtr->clientData;
-    infoPtr->deleteProc = cmdPtr->deleteProc;
-    infoPtr->deleteData = cmdPtr->deleteData;
+    if (cmdPtr->deleteProc == cmdWrapperDeleteProc) {
+	CmdWrapperInfo *info = (CmdWrapperInfo *)cmdPtr->deleteData;
+	infoPtr->deleteProc = info->deleteProc;
+	infoPtr->deleteData = info->deleteData;
+    } else {
+	infoPtr->deleteProc = cmdPtr->deleteProc;
+	infoPtr->deleteData = cmdPtr->deleteData;
+    }
     infoPtr->namespacePtr = (Tcl_Namespace *) cmdPtr->nsPtr;
-
     return 1;
 }
 
@@ -9100,6 +9172,42 @@ Tcl_NRCallObjProc(
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
 }
 
+int wrapperNRObjProc(
+    void *clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
+    clientData = info->clientData;
+    Tcl_ObjCmdProc2 *proc = info->proc;
+    ckfree(info);
+    return proc(clientData, interp, objc, objv);
+}
+
+int
+Tcl_NRCallObjProc2(
+    Tcl_Interp *interp,
+    Tcl_ObjCmdProc2 *objProc,
+    void *clientData,
+    size_t objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc > INT_MAX) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?args?");
+	return TCL_ERROR;
+    }
+
+    NRE_callback *rootPtr = TOP_CB(interp);
+    CmdWrapperInfo *info = (CmdWrapperInfo *)ckalloc(sizeof(CmdWrapperInfo));
+    info->clientData = clientData;
+    info->proc = objProc;
+
+    TclNRAddCallback(interp, Dispatch, wrapperNRObjProc, info,
+	    INT2PTR(objc), objv);
+    return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -9127,6 +9235,50 @@ Tcl_NRCallObjProc(
  *
  *----------------------------------------------------------------------
  */
+
+static int cmdWrapperNreProc(
+    void *clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    CmdWrapperInfo *info = (CmdWrapperInfo *)clientData;
+    if (objc < 0) {
+	objc = -1;
+    }
+    return info->nreProc(info->clientData, interp, objc, objv);
+}
+
+Tcl_Command
+Tcl_NRCreateCommand2(
+    Tcl_Interp *interp,		/* Token for command interpreter (returned by
+				 * previous call to Tcl_CreateInterp). */
+    const char *cmdName,	/* Name of command. If it contains namespace
+				 * qualifiers, the new command is put in the
+				 * specified namespace; otherwise it is put in
+				 * the global namespace. */
+    Tcl_ObjCmdProc2 *proc,	/* Object-based function to associate with
+				 * name, provides direct access for direct
+				 * calls. */
+    Tcl_ObjCmdProc2 *nreProc,	/* Object-based function to associate with
+				 * name, provides NR implementation */
+    void *clientData,	/* Arbitrary value to pass to object
+				 * function. */
+    Tcl_CmdDeleteProc *deleteProc)
+				/* If not NULL, gives a function to call when
+				 * this command is deleted. */
+{
+    CmdWrapperInfo *info = (CmdWrapperInfo *)ckalloc(sizeof(CmdWrapperInfo));
+    info->proc = proc;
+    info->clientData = clientData;
+    info->nreProc = nreProc;
+    info->deleteProc = deleteProc;
+    info->deleteData = clientData;
+    return Tcl_NRCreateCommand(interp, cmdName,
+	    (proc ? cmdWrapperProc : NULL),
+	    (nreProc ? cmdWrapperNreProc : NULL),
+	    info, cmdWrapperDeleteProc);
+}
 
 Tcl_Command
 Tcl_NRCreateCommand(

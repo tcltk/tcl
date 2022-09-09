@@ -19,8 +19,8 @@
 #include <ctype.h>
 
 /*
- * A general note on the design: The console channel driver differs from most
- * other drivers in the following respects:
+ * A general note on the design: The console channel driver differs from
+ * most other drivers in the following respects:
  *
  * - There can be at most 3 console handles at any time since Windows does
  *   support allocation of more than one console (with three handles
@@ -35,9 +35,10 @@
  *   std* channels are shared amongst threads which means there can be
  *   multiple Tcl channels corresponding to a single console handle.
  *
- * - Even with multiple threads, more than one file event handler is unlikely.
- *   It does not make sense for multiple threads to register handlers for
- *   stdin because the input would be randomly fragmented amongst the threads.
+ * - Even with multiple threads, more than one file event handler is
+ * unlikely. It does not make sense for multiple threads to register
+ * handlers for stdin because the input would be randomly fragmented amongst
+ * the threads.
  *
  * Various design factors are driven by the above, e.g. use of lists instead
  * of hash tables (at most 3 console handles) and use of global instead of
@@ -55,9 +56,9 @@
  * because an interpreter may (for example) turn off echo for passwords and
  * the read ahead would come in the way of that.
  *
- * If multiple threads are reading from stdin, the input is sprayed in random
- * fashion. This is not good application design and hence no plan to address
- * this (not clear what should be done even in theory)
+ * If multiple threads are reading from stdin, the input is sprayed in
+ * random fashion. This is not good application design and hence no plan to
+ * address this (not clear what should be done even in theory)
  *
  * For output, we do not restrict all output to the console writer threads.
  * See ConsoleOutputProc for the conditions.
@@ -152,7 +153,7 @@ typedef struct ConsoleHandleInfo {
  * only from the thread owning channel EXCEPT when a console traverses it
  * looking for a channel that is watching for events on the console. Even
  * in that case, no locking is required because that access is only under
- * the consoleLock lock which prevents the channel from being removed from
+ * the gConsoleLock lock which prevents the channel from being removed from
  * the gWatchingChannelList which in turn means it will not be deallocated
  * from under the console thread. Access to individual fields does not need
  * to be controlled because
@@ -861,21 +862,33 @@ ConsoleCheckProc(
 	handleInfoPtr = FindConsoleInfo(chanInfoPtr);
 	/* Pointer is safe to access as we are holding gConsoleLock */
 
-	if (handleInfoPtr != NULL) {
-	    AcquireSRWLockShared(&handleInfoPtr->lock);
-	    /* Rememebr channel is read or write, never both */
-	    if (chanInfoPtr->watchMask & TCL_READABLE) {
-		if (RingBufferLength(&handleInfoPtr->buffer) > 0
-		    || handleInfoPtr->lastError != ERROR_SUCCESS) {
-		    needEvent = 1; /* Input data available or error/EOF */
-		}
-	    } else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
-		if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
-		    needEvent = 1; /* Output space available */
-		}
-	    }
-	    ReleaseSRWLockShared(&handleInfoPtr->lock);
+	if (handleInfoPtr == NULL) {
+	    /* Stale event */
+	    continue;
 	}
+
+	needEvent = 0;
+	AcquireSRWLockShared(&handleInfoPtr->lock);
+	/* Rememeber channel is read or write, never both */
+	if (chanInfoPtr->watchMask & TCL_READABLE) {
+	    if (RingBufferLength(&handleInfoPtr->buffer) > 0
+		|| handleInfoPtr->lastError != ERROR_SUCCESS) {
+		needEvent = 1; /* Input data available or error/EOF */
+	    }
+	    /*
+	     * TCL_READABLE watch means someone is looking out for data being
+	     * available, let reader thread know. Note channel need not be
+	     * ASYNC! (Bug [baa51423c2])
+	     */
+	    handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
+	    WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+	}
+	else if (chanInfoPtr->watchMask & TCL_WRITABLE) {
+	    if (RingBufferHasFreeSpace(&handleInfoPtr->buffer)) {
+		needEvent = 1; /* Output space available */
+	    }
+	}
+	ReleaseSRWLockShared(&handleInfoPtr->lock);
 
 	if (needEvent) {
 	    ConsoleEvent *evPtr = (ConsoleEvent *)ckalloc(sizeof(ConsoleEvent));
@@ -1103,12 +1116,6 @@ ConsoleInputProc(
 	 * buffered data, we will pass it up.
 	 */
 	if (numRead != 0) {
-	    /* If console thread was blocked, awaken it */
-	    if (chanInfoPtr->flags & CONSOLE_ASYNC) {
-		/* Async channels always want read ahead */
-		handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
-		WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
-	    }
 	    break;
 	}
 	/*
@@ -1199,7 +1206,9 @@ ConsoleInputProc(
 	/* Lock is reacquired, loop back to try again */
     }
 
-    if (chanInfoPtr->flags & CONSOLE_ASYNC) {
+    /* We read data. Ask for more if either async or watching for reads */
+    if ((chanInfoPtr->flags & CONSOLE_ASYNC)
+	|| (chanInfoPtr->watchMask & TCL_READABLE)) {
 	handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
 	WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
     }
@@ -1333,7 +1342,7 @@ ConsoleOutputProc(
 	    }
 	}
 
-	/* Lock is reacquired. Continue loop */
+	/* Lock must have been reacquired before continuing loop */
     }
     WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
     ReleaseSRWLockExclusive(&handleInfoPtr->lock);
@@ -1499,8 +1508,10 @@ ConsoleWatchProc(
 	    ConsoleHandleInfo *handleInfoPtr;
 	    handleInfoPtr = FindConsoleInfo(chanInfoPtr);
 	    if (handleInfoPtr) {
+		AcquireSRWLockExclusive(&handleInfoPtr->lock);
 		handleInfoPtr->flags |= CONSOLE_DATA_AWAITED;
 		WakeConditionVariable(&handleInfoPtr->consoleThreadCV);
+		ReleaseSRWLockExclusive(&handleInfoPtr->lock);
 	    }
 	    ReleaseSRWLockExclusive(&gConsoleLock);
 	}
@@ -1508,6 +1519,7 @@ ConsoleWatchProc(
     } else if (oldMask) {
 	/* Remove from list of watched channels */
 
+	AcquireSRWLockExclusive(&gConsoleLock);
 	for (nextPtrPtr = &gWatchingChannelList, ptr = *nextPtrPtr;
 		ptr != NULL;
 		nextPtrPtr = &ptr->nextWatchingChannelPtr, ptr = *nextPtrPtr) {
@@ -1516,6 +1528,7 @@ ConsoleWatchProc(
 		break;
 	    }
 	}
+	ReleaseSRWLockExclusive(&gConsoleLock);
     }
 }
 
@@ -1571,7 +1584,7 @@ ConsoleGetHandleProc(
  static int
  ConsoleDataAvailable (HANDLE consoleHandle)
 {
-    INPUT_RECORD input[5];
+    INPUT_RECORD input[10];
     DWORD count;
     DWORD i;
 
@@ -1583,11 +1596,17 @@ ConsoleGetHandleProc(
 	== FALSE) {
 	return -1;
     }
+    /*
+     * Even if windows size and mouse events are disabled, can still have
+     * events other than keyboard, like focus events. Look for at least one
+     * keydown event because a trailing LF keyup is always present from the
+     * last input. However, if our buffer is full, assume there is a key
+     * down somewhere in the unread buffer. I suppose we could expand the
+     * buffer but not worth...
+     */
+    if (count == (sizeof(input)/sizeof(input[0])))
+	return 1;
     for (i = 0; i < count; ++i) {
-	/*
-	 * Event must be a keydown because a trailing LF keyup event is always
-	 * present for line based input.
-	 */
 	if (input[i].EventType == KEY_EVENT
 	    && input[i].Event.KeyEvent.bKeyDown) {
 	    return 1;
@@ -1984,6 +2003,7 @@ AllocateConsoleHandleInfo(
 
 
     handleInfoPtr = (ConsoleHandleInfo *)ckalloc(sizeof(*handleInfoPtr));
+    memset(handleInfoPtr, 0, sizeof(*handleInfoPtr));
     handleInfoPtr->console = consoleHandle;
     InitializeSRWLock(&handleInfoPtr->lock);
     InitializeConditionVariable(&handleInfoPtr->consoleThreadCV);

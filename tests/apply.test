@@ -261,7 +261,7 @@ test apply-9.1 {leaking internal rep} -setup {
 	lindex $lines 3 3
     }
     set lam [list {} {set a 1}]
-} -constraints memory -body {
+} -constraints {memory} -body {
     set end [getbytes]
     for {set i 0} {$i < 5} {incr i} {
 	::apply [lrange $lam 0 end]

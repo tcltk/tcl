@@ -52,13 +52,21 @@ test console-input-1.0 {Console blocking gets} -constraints {win interactive} -b
 
 test console-input-1.1 {Console file channel: non-blocking gets} -constraints {
     win interactive
+} -setup {
+    unset -nocomplain result
+    unset -nocomplain result2
 } -body {
     set oldmode [fconfigure stdin]
 
     prompt "Type \"abc\" and hit Enter: "
     fileevent stdin readable {
 	if {[gets stdin line] >= 0} {
-	    set result $line
+	    lappend result2 $line
+            if {[llength $result2] > 1} {
+                set result $result2
+            } else {
+                prompt "Type \"def\" and hit Enter: "
+            }
 	} elseif {[eof stdin]} {
 	    set result "gets failed"
 	}
@@ -66,7 +74,6 @@ test console-input-1.1 {Console file channel: non-blocking gets} -constraints {
 
     fconfigure stdin -blocking 0 -buffering line
 
-    set result {}
     vwait result
 
     #cleanup the fileevent
@@ -74,7 +81,35 @@ test console-input-1.1 {Console file channel: non-blocking gets} -constraints {
     fconfigure stdin {*}$oldmode
     set result
 
-} -result abc
+} -result {abc def}
+
+test console-input-1.1.1 {Bug baa51423c28a: Console file channel: fileevent with blocking gets} -constraints {
+    win interactive
+} -setup {
+    unset -nocomplain result
+    unset -nocomplain result2
+} -body {
+    prompt "Type \"abc\" and hit Enter: "
+    fileevent stdin readable {
+	if {[gets stdin line] >= 0} {
+	    lappend result2 $line
+            if {[llength $result2] > 1} {
+                set result $result2
+            } else {
+                prompt "Type \"def\" and hit Enter: "
+            }
+	} elseif {[eof stdin]} {
+	    set result "gets failed"
+	}
+    }
+
+    vwait result
+
+    #cleanup the fileevent
+    fileevent stdin readable {}
+    set result
+
+} -result {abc def}
 
 test console-input-2.0 {Console blocking read} -constraints {win interactive} -setup {
     set oldmode [fconfigure stdin]
@@ -94,6 +129,7 @@ test console-input-2.1 {Console file channel: non-blocking read} -constraints {
     set oldmode [fconfigure stdin]
 } -cleanup {
     fconfigure stdin {*}$oldmode
+    puts ""; # Because CRLF also would not have been echoed
 } -body {
     set input ""
     fconfigure stdin -blocking 0 -buffering line -inputmode raw
@@ -262,10 +298,10 @@ test console-fconfigure-set-1.1 {
     fconfigure stdin -inputmode normal
     lappend result [yesno "\nWere the characters echoed?"]
 
-    prompt "\nType the keys \"c\", Ctrl-H, \"d\" and hit Enter. You should see characters echoed: "
+    prompt "Type the keys \"c\", Ctrl-H, \"d\" and hit Enter. You should see characters echoed: "
     lappend result [gets stdin]
     lappend result [fconfigure stdin -inputmode]
-    lappend result [yesno "\nWere the characters echoed (c replaced by d)?"]
+    lappend result [yesno "Were the characters echoed (c replaced by d)?"]
 
     set result
 } -result [list a\x08b raw 0 d normal 1]
