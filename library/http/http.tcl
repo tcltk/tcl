@@ -1001,7 +1001,7 @@ proc http::CreateToken {url args} {
 	totalsize	0
 	querylength	0
 	queryoffset	0
-	type		text/html
+	type		application/octet-stream
 	body		{}
 	status		""
 	http		""
