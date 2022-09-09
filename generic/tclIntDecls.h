@@ -121,7 +121,7 @@ EXTERN int		TclGetNamespaceForQualName(Tcl_Interp *interp,
 				Namespace **actualCxtPtrPtr,
 				const char **simpleNamePtr);
 /* 39 */
-EXTERN Tcl_ObjCmdProc2 * TclGetObjInterpProc(void);
+EXTERN Tcl_ObjCmdProc2 * TclGetObjInterpProc2(void);
 /* 40 */
 EXTERN int		TclGetOpenMode(Tcl_Interp *interp, const char *str,
 				int *seekFlagPtr);
@@ -617,7 +617,7 @@ typedef struct TclIntStubs {
     void (*reserved36)(void);
     void (*reserved37)(void);
     int (*tclGetNamespaceForQualName) (Tcl_Interp *interp, const char *qualName, Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr, Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr, const char **simpleNamePtr); /* 38 */
-    Tcl_ObjCmdProc2 * (*tclGetObjInterpProc) (void); /* 39 */
+    Tcl_ObjCmdProc2 * (*tclGetObjInterpProc2) (void); /* 39 */
     int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *seekFlagPtr); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) (Tcl_Command command); /* 41 */
     const char * (*tclpGetUserHome) (const char *name, Tcl_DString *bufferPtr); /* 42 */
@@ -911,8 +911,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 37 is reserved */
 #define TclGetNamespaceForQualName \
 	(tclIntStubsPtr->tclGetNamespaceForQualName) /* 38 */
-#define TclGetObjInterpProc \
-	(tclIntStubsPtr->tclGetObjInterpProc) /* 39 */
+#define TclGetObjInterpProc2 \
+	(tclIntStubsPtr->tclGetObjInterpProc2) /* 39 */
 #define TclGetOpenMode \
 	(tclIntStubsPtr->tclGetOpenMode) /* 40 */
 #define TclGetOriginalCommand \

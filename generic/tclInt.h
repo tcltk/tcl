@@ -1014,7 +1014,7 @@ typedef void (ProcErrorProc)(Tcl_Interp *interp, Tcl_Obj *procNameObj);
 typedef struct Trace {
     int level;			/* Only trace commands at nesting level less
 				 * than or equal to this. */
-    Tcl_CmdObjTraceProc2 *proc;	/* Procedure to call to trace command. */
+    Tcl_CmdObjTraceProc2 *proc2;	/* Procedure to call to trace command. */
     void *clientData;	/* Arbitrary value to pass to proc. */
     struct Trace *nextPtr;	/* Next in list of traces for this interp. */
     int flags;			/* Flags governing the trace - see
@@ -1597,9 +1597,9 @@ typedef struct ByteCodeStats {
 
 typedef struct {
     const char *name;		/* The name of the subcommand. */
-    Tcl_ObjCmdProc2 *proc;	/* The implementation of the subcommand. */
+    Tcl_ObjCmdProc2 *proc2;	/* The implementation of the subcommand. */
     CompileProc *compileProc;	/* The compiler for the subcommand. */
-    Tcl_ObjCmdProc2 *nreProc;	/* NRE implementation of this command. */
+    Tcl_ObjCmdProc2 *nreProc2;	/* NRE implementation of this command. */
     void *clientData;	/* Any clientData to give the command. */
     int unsafe;			/* Whether this command is to be hidden by
 				 * default in a safe interpreter. */
@@ -1676,8 +1676,8 @@ typedef struct Command {
 				 * renamed, deleted, hidden, or exposed. */
     CompileProc *compileProc;	/* Procedure called to compile command. NULL
 				 * if no compile proc exists for command. */
-    Tcl_ObjCmdProc2 *objProc2;	/* Object-based command procedure. */
-    void *objClientData2;	/* Arbitrary value passed to object proc. */
+    Tcl_ObjCmdProc *objProc;	/* Object-based command procedure. */
+    void *objClientData;	/* Arbitrary value passed to object proc. */
     Tcl_CmdProc *proc;		/* String-based command procedure. */
     void *clientData;	/* Arbitrary value passed to string proc. */
     Tcl_CmdDeleteProc *deleteProc;
@@ -1696,6 +1696,8 @@ typedef struct Command {
     CommandTrace *tracePtr;	/* First in list of all traces set for this
 				 * command. */
     Tcl_ObjCmdProc2 *nreProc2;	/* NRE implementation of this command. */
+    Tcl_ObjCmdProc2 *objProc2;	/* Object-based command procedure. */
+    void *objClientData2;	/* Arbitrary value passed to object proc. */
 } Command;
 
 /*
@@ -3233,9 +3235,10 @@ MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
 			    const char *reason, int index);
-MODULE_SCOPE int	TclObjInterpProc(void *clientData,
+MODULE_SCOPE int	TclObjInterpProc2(void *clientData,
 				Tcl_Interp *interp, size_t objc,
 				Tcl_Obj *const objv[]);
+#define TclObjInterpProc2 TclGetObjInterpProc2()
 MODULE_SCOPE int		TclObjInvoke(Tcl_Interp *interp, size_t objc,
 				Tcl_Obj *const objv[], int flags);
 MODULE_SCOPE int	TclObjInvokeNamespace(Tcl_Interp *interp,

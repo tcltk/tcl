@@ -1616,7 +1616,7 @@ TclMakeEnsemble(
 	    Tcl_AppendToObj(toObj, map[i].name, -1);
 	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
 
-	    if (map[i].proc || map[i].nreProc) {
+	    if (map[i].proc2 || map[i].nreProc2) {
 		/*
 		 * If the command is unsafe, hide it when we're in a safe
 		 * interpreter. The code to do this is really hokey! It also
@@ -1627,8 +1627,8 @@ TclMakeEnsemble(
 
 		if (map[i].unsafe && Tcl_IsSafe(interp)) {
 		    cmdPtr = (Command *)
-			    Tcl_NRCreateCommand2(interp, "___tmp", map[i].proc,
-			    map[i].nreProc, map[i].clientData, NULL);
+			    Tcl_NRCreateCommand2(interp, "___tmp", map[i].proc2,
+			    map[i].nreProc2, map[i].clientData, NULL);
 		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
 		    if (Tcl_HideCommand(interp, "___tmp",
 			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
@@ -1641,7 +1641,7 @@ TclMakeEnsemble(
 
 		    cmdPtr = (Command *)
 			    Tcl_NRCreateCommand2(interp, TclGetString(toObj),
-			    map[i].proc, map[i].nreProc, map[i].clientData,
+			    map[i].proc2, map[i].nreProc2, map[i].clientData,
 			    NULL);
 		}
 		cmdPtr->compileProc = map[i].compileProc;

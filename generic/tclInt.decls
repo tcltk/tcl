@@ -92,7 +92,7 @@ declare 38 {
 	    const char **simpleNamePtr)
 }
 declare 39 {
-    Tcl_ObjCmdProc2 *TclGetObjInterpProc(void)
+    Tcl_ObjCmdProc2 *TclGetObjInterpProc2(void)
 }
 declare 40 {
     int TclGetOpenMode(Tcl_Interp *interp, const char *str, int *seekFlagPtr)

@@ -1608,13 +1608,13 @@ TclCheckInterpTraces(
 		 */
 
 		if (tracePtr->flags & traceFlags) {
-		    if (tracePtr->proc == TraceExecutionProc) {
+		    if (tracePtr->proc2 == TraceExecutionProc) {
 			TraceCommandInfo *tcmdPtr = (TraceCommandInfo *)tracePtr->clientData;
 
 			tcmdPtr->curFlags = traceFlags;
 			tcmdPtr->curCode = code;
 		    }
-		    traceCode = tracePtr->proc(tracePtr->clientData, interp,
+		    traceCode = tracePtr->proc2(tracePtr->clientData, interp,
 			    curLevel, command, (Tcl_Command) cmdPtr, objc,
 			    objv);
 		}
@@ -1696,7 +1696,7 @@ CallTraceFunction(
      * Call the trace function then free allocated storage.
      */
 
-    traceCode = tracePtr->proc(tracePtr->clientData, (Tcl_Interp *) iPtr,
+    traceCode = tracePtr->proc2(tracePtr->clientData, (Tcl_Interp *) iPtr,
 	    iPtr->numLevels, commandCopy, (Tcl_Command) cmdPtr, objc, objv);
 
     TclStackFree(interp, commandCopy);
@@ -2184,7 +2184,7 @@ Tcl_CreateObjTrace2(
     Tcl_Interp *interp,		/* Tcl interpreter */
     int level,			/* Maximum nesting level */
     int flags,			/* Flags, see above */
-    Tcl_CmdObjTraceProc2 *proc,	/* Trace callback */
+    Tcl_CmdObjTraceProc2 *proc2,	/* Trace callback */
     void *clientData,	/* Client data for the callback */
     Tcl_CmdObjTraceDeleteProc *delProc)
 				/* Function to call when trace is deleted */
@@ -2216,7 +2216,7 @@ Tcl_CreateObjTrace2(
 
     tracePtr = (Trace *)Tcl_Alloc(sizeof(Trace));
     tracePtr->level = level;
-    tracePtr->proc = proc;
+    tracePtr->proc2 = proc2;
     tracePtr->clientData = clientData;
     tracePtr->delProc = delProc;
     tracePtr->nextPtr = iPtr->tracePtr;

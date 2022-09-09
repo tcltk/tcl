@@ -1670,7 +1670,7 @@ Tcl_NewObjectInstance(
     size_t objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    int skip)			/* Number of arguments to _not_ pass to the
+    size_t skip)			/* Number of arguments to _not_ pass to the
 				 * constructor. */
 {
     Class *classPtr = (Class *) cls;
@@ -1738,7 +1738,7 @@ TclNRNewObjectInstance(
     size_t objc,			/* Number of arguments. Negative value means
 				 * do not call constructor. */
     Tcl_Obj *const *objv,	/* Argument list. */
-    int skip,			/* Number of arguments to _not_ pass to the
+    size_t skip,			/* Number of arguments to _not_ pass to the
 				 * constructor. */
     Tcl_Object *objectPtr)	/* Place to write the object reference upon
 				 * successful allocation. */
@@ -1754,7 +1754,7 @@ TclNRNewObjectInstance(
     }
 
     /*
-     * Run constructors, except when objc < 0 (a special flag case used for
+     * Run constructors, except when objc == TCL_INDEX_NONE (a special flag case used for
      * object cloning only). If there aren't any constructors, we do nothing.
      */
 
@@ -2648,7 +2648,7 @@ TclOOObjectCmdCore(
      * processing.
      */
 
-    if (objc < 2) {
+    if (objc + 1 < 3) {
 	flags |= FORCE_UNKNOWN;
 	methodNamePtr = NULL;
 	goto noMapping;
@@ -2801,7 +2801,7 @@ Tcl_ObjectContextInvokeNext(
     Tcl_ObjectContext context,
     size_t objc,
     Tcl_Obj *const *objv,
-    int skip)
+    size_t skip)
 {
     CallContext *contextPtr = (CallContext *) context;
     size_t savedIndex = contextPtr->index;

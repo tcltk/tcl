@@ -150,6 +150,7 @@ static const Tcl_ObjType lambdaType = {
  *----------------------------------------------------------------------
  */
 
+#undef TclObjInterpProc2
 int
 Tcl_ProcObjCmd(
     TCL_UNUSED(void *),
@@ -207,7 +208,7 @@ Tcl_ProcObjCmd(
     }
 
     cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
-	TclObjInterpProc, NRInterpProc, procPtr, TclProcDeleteProc);
+	TclObjInterpProc2, NRInterpProc, procPtr, TclProcDeleteProc);
 
     /*
      * Now initialize the new procedure's cmdPtr field. This will be used
@@ -1581,7 +1582,7 @@ TclPushProcCallFrame(
 /*
  *----------------------------------------------------------------------
  *
- * TclObjInterpProc/TclObjInterpProc2 --
+ * TclObjInterpProc2/NRInterpProc --
  *
  *	When a Tcl procedure gets invoked during bytecode evaluation, this
  *	object-based routine gets invoked to interpret the procedure.
@@ -1595,27 +1596,9 @@ TclPushProcCallFrame(
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_DEPRECATED
-static int
-ObjInterpProc(
-    ClientData clientData,	/* Record describing procedure to be
-				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
-				 * invoked. */
-    int objc,			/* Count of number of arguments to this
-				 * procedure. */
-    Tcl_Obj *const objv[])	/* Argument value objects. */
-{
-    /*
-     * Not used much in the core; external interface for iTcl
-     */
-
-    return Tcl_NRCallObjProc2(interp, NRInterpProc, clientData, objc, objv);
-}
-#endif
-
+#undef TclObjInterpProc2
 int
-TclObjInterpProc(
+TclObjInterpProc2(
     ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was
@@ -2040,7 +2023,7 @@ TclProcCompileProc(
  *
  * MakeProcError --
  *
- *	Function called by TclObjInterpProc to create the stack information
+ *	Function called by TclObjInterpProc2 to create the stack information
  *	upon an error from a procedure.
  *
  * Results:
@@ -2242,15 +2225,15 @@ TclUpdateReturnInfo(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetObjInterpProc --
+ * TclGetObjInterpProc2 --
  *
- *	Returns a pointer to the TclObjInterpProc function; this is different
- *	from the value obtained from the TclObjInterpProc reference on systems
+ *	Returns a pointer to the TclObjInterpProc2 function; this is different
+ *	from the value obtained from the TclObjInterpProc2 reference on systems
  *	like Windows where import and export versions of a function exported
  *	by a DLL exist.
  *
  * Results:
- *	Returns the internal address of the TclObjInterpProc function.
+ *	Returns the internal address of the TclObjInterpProc2 function.
  *
  * Side effects:
  *	None.
@@ -2259,9 +2242,9 @@ TclUpdateReturnInfo(
  */
 
 Tcl_ObjCmdProc2 *
-TclGetObjInterpProc(void)
+TclGetObjInterpProc2(void)
 {
-    return TclObjInterpProc;
+    return TclObjInterpProc2;
 }
 
 /*
@@ -2665,7 +2648,7 @@ TclNRApplyObjCmd(
 
     /*
      * Push a call frame for the lambda namespace.
-     * Note that TclObjInterpProc() will pop it.
+     * Note that TclObjInterpProc2() will pop it.
      */
 
     result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
@@ -2719,7 +2702,7 @@ ApplyNR2(
  *
  * MakeLambdaError --
  *
- *	Function called by TclObjInterpProc to create the stack information
+ *	Function called by TclObjInterpProc2 to create the stack information
  *	upon an error from a lambda term.
  *
  * Results:
