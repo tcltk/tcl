@@ -179,7 +179,6 @@ static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRCommand;
 static Tcl_CmdProc InvokeObjectCommand;
-static Tcl_ObjCmdProc InvokeObject2Command;
 
 
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
@@ -1054,8 +1053,6 @@ Tcl_CreateInterp(void)
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
 	    cmdPtr->proc = InvokeObjectCommand;
 	    cmdPtr->clientData = cmdPtr;
-	    cmdPtr->objProc = InvokeObject2Command;
-	    cmdPtr->objClientData = cmdPtr;
 	    cmdPtr->objProc2 = cmdInfoPtr->objProc;
 	    cmdPtr->objClientData2 = NULL;
 	    cmdPtr->deleteProc = NULL;
@@ -2590,8 +2587,6 @@ Tcl_CreateCommand(
     cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
-    cmdPtr->objProc = NULL;
-    cmdPtr->objClientData = NULL;
     cmdPtr->objProc2 = InvokeStringCommand;
     cmdPtr->objClientData2 = cmdPtr;
     cmdPtr->proc = proc;
@@ -2882,8 +2877,6 @@ TclCreateObjCommandInNs(
     cmdPtr->refCount = 1;
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
-    cmdPtr->objProc = InvokeObject2Command;
-    cmdPtr->objClientData = cmdPtr;
     cmdPtr->objProc2 = proc;
     cmdPtr->objClientData2 = clientData;
     cmdPtr->proc = InvokeObjectCommand;
@@ -3050,33 +3043,6 @@ InvokeObjectCommand(
     return result;
 }
 
-int
-InvokeObject2Command(
-    void *clientData,	/* Points to command's Command structure. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const *objv)	/* Argument strings. */
-{
-    int result;
-    Command *cmdPtr = ( Command *) clientData;
-
-    if (objc < 0) {
-	objc = -1; /* Make sure any invalid argc is handled as TCL_INDEX_NONE */
-    }
-
-    /*
-     * Invoke the command's object-based Tcl_ObjCmdProc2.
-     */
-
-    if (cmdPtr->objProc2 != NULL) {
-	result = cmdPtr->objProc2(cmdPtr->objClientData2, interp, (size_t)objc, objv);
-    } else {
-	result = Tcl_NRCallObjProc2(interp, cmdPtr->nreProc2,
-		cmdPtr->objClientData2, (size_t)objc, objv);
-    }
-    return result;
-}
-
 /*
  *----------------------------------------------------------------------
  *
