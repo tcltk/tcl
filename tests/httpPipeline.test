@@ -13,7 +13,31 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-package require http 2.9
+package require http 2.10
+
+# ------------------------------------------------------------------------------
+# (0) Socket Creation in Thread, which triples the number of tests.
+# ------------------------------------------------------------------------------
+
+if {![info exists ThreadLevel]} {
+    if {[catch {package require Thread}] == 0} {
+        set ValueRange {0 1 2}
+    } else {
+        set ValueRange {0 1}
+    }
+
+    # For each value of ThreadLevel, source this file recursively in the
+    # same interpreter.
+    foreach ThreadLevel $ValueRange {
+        source [info script]
+    }
+    catch {unset ThreadLevel}
+    catch {unset ValueRange}
+    return
+}
+
+catch {puts "==== Test with ThreadLevel $ThreadLevel ===="}
+http::config -threadlevel $ThreadLevel
 
 set sourcedir [file normalize [file dirname [info script]]]
 source [file join $sourcedir httpTest.tcl]
