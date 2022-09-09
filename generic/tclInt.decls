@@ -112,11 +112,11 @@ declare 46 {
 declare 51 {
     int TclInterpInit(Tcl_Interp *interp)
 }
-declare 53 {
-    int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
-	    int argc, const char **argv)
-}
 # Removed in 9.0
+#declare 53 {
+#    int TclInvokeObjectCommand(void *clientData, Tcl_Interp *interp,
+#	    int argc, const char **argv)
+#}
 #declare 54 {
 #    int TclInvokeStringCommand(void *clientData, Tcl_Interp *interp,
 #	    int objc, Tcl_Obj *const objv[])
