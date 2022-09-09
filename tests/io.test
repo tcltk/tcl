@@ -8952,6 +8952,32 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
 
+test io-75.1 {multibyte encoding error read results in raw bytes} -setup {
+	set fn [makeFile {} io-75.1]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+	puts -nonewline $f "A\xC0\x40"
+	flush $f
+	seek $f 0
+	fconfigure $f -encoding utf-8 -buffering none
+} -constraints knownBug -body {
+	read $f
+} -cleanup {
+	close $f
+	removeFile io-75.1
+} -returnCodes error
+
+test io-75.2 {unrepresentable character write passes and is replaced by ?} -setup {
+	set fn [makeFile {} io-75.2]
+    set f [open $fn w+]
+    fconfigure $f -encoding iso8859-1
+} -constraints knownBug -body {
+	puts -nonewline $f "A\u2022"
+} -cleanup {
+	close $f
+	removeFile io-75.2
+} -returnCodes error
+
 # ### ### ### ######### ######### #########
 
 # cleanup
