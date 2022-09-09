@@ -2962,11 +2962,45 @@ proc http::size {token} {
     upvar 0 $token state
     return $state(currentsize)
 }
-proc http::meta {token} {
+proc http::meta {token args} {
+    set lenny  [llength $args]
+    if {$lenny > 1} {
+        return -code error {usage: ::http::meta token ?headerName?}
+    } else {
+        return [Meta $token {*}$args]
+    }
+}
+proc http::metaValue {token header} {
+    Meta $token $header VALUE
+}
+proc http::Meta {token args} {
     variable $token
     upvar 0 $token state
-    return $state(meta)
+
+    set header [string tolower [lindex $args 0]]
+    set how    [string tolower [lindex $args 1]]
+    set lenny  [llength $args]
+    if {$lenny == 0} {
+        return $state(meta)
+    } elseif {($lenny > 2) || (($lenny == 2) && ($how ne {value}))} {
+        return -code error {usage: ::http::Meta token ?headerName ?VALUE??}
+    } else {
+        set result {}
+        set combined {}
+        foreach {key value} $state(meta) {
+            if {$key eq $header} {
+                lappend result $key $value
+                append combined $value {, }
+            }
+        }
+        if {$lenny == 1} {
+            return $result
+        } else {
+            return [string range $combined 0 end-2]
+        }
+    }
 }
+
 proc http::error {token} {
     variable $token
     upvar 0 $token state
@@ -3445,7 +3479,8 @@ proc http::Event {sock token} {
 		# Process header lines.
 		##Log header - token $token - $line
 		if {[regexp -nocase {^([^:]+):(.+)$} $line x key value]} {
-		    switch -- [string tolower $key] {
+		    set key [string tolower $key]
+		    switch -- $key {
 			content-type {
 			    set state(type) [string trim [string tolower $value]]
 			    # Grab the optional charset information.

@@ -51,15 +51,11 @@ proc halt_httpd {} {
 }
 
 proc meta {tok {key ""}} {
-    set meta [http::meta $tok]
-    if {$key ne ""} {
-        if {[dict exists $meta $key]} {
-            return [dict get $meta $key]
-        } else {
-            return ""
-        }
+    if {$key eq ""} {
+        return [http::meta $tok]
+    } else {
+        return [http::metaValue $tok $key]
     }
-    return $meta
 }
 
 proc state {tok {key ""}} {
@@ -128,11 +124,12 @@ test http11-1.1 "normal,gzip,non-chunked" -setup {
                  -timeout 10000 -headers {accept-encoding gzip}]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok content-encoding] [meta $tok transfer-encoding]
+        [meta $tok content-encoding] [meta $tok transfer-encoding] \
+        [http::meta $tok content-encoding] [http::meta $tok transfer-encoding]
 } -cleanup {
     http::cleanup $tok
     halt_httpd
-} -result {ok {HTTP/1.1 200 OK} ok gzip {}}
+} -result {ok {HTTP/1.1 200 OK} ok gzip {} {content-encoding gzip} {}}
 
 test http11-1.2 "normal,deflated,non-chunked" -setup {
     variable httpd [create_httpd]
@@ -193,11 +190,12 @@ test http11-1.6 "normal, specify 1.1 " -setup {
                  -protocol 1.1 -timeout 10000]
     http::wait $tok
     list [http::status $tok] [http::code $tok] [check_crc $tok] \
-        [meta $tok connection] [meta $tok transfer-encoding]
+        [meta $tok connection] [meta $tok transfer-encoding] \
+        [http::meta $tok connection] [http::meta $tok transfer-encoding]
 } -cleanup {
     http::cleanup $tok
     halt_httpd
-} -result {ok {HTTP/1.1 200 OK} ok close chunked}
+} -result {ok {HTTP/1.1 200 OK} ok close chunked {connection close} {transfer-encoding chunked}}
 
 test http11-1.7 "normal, 1.1 and keepalive " -setup {
     variable httpd [create_httpd]
