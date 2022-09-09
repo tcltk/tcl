@@ -774,6 +774,7 @@ Tcl_CreateInterp(void)
 	Tcl_MutexUnlock(&cancelLock);
     }
 
+#undef TclObjInterpProc
     if (commandTypeInit == 0) {
         TclRegisterCommandTypeName(TclObjInterpProc, "proc");
         TclRegisterCommandTypeName(TclEnsembleImplementationCmd, "ensemble");
