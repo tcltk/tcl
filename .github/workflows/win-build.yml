@@ -14,12 +14,7 @@ jobs:
     strategy:
       matrix:
         cfgopt:
-          - ""
-          - "OPTS=utf16"
           - "CHECKS=nodep"
-          - "OPTS=static"
-          - "OPTS=symbols"
-          - "OPTS=symbols STATS=compdbg,memdbg"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
@@ -53,13 +48,7 @@ jobs:
     strategy:
       matrix:
         cfgopt:
-          - ""
-          - "CFLAGS=-DTCL_UTF_MAX=3"
           - "CFLAGS=-DTCL_NO_DEPRECATED=1"
-          - "--disable-shared"
-          - "--enable-symbols"
-          - "--enable-symbols=mem"
-          - "--enable-symbols=all"
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Install MSYS2
