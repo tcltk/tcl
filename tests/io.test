@@ -8952,12 +8952,14 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
 
-# Note: the following tests are in preparation for TCL 9.0, where those should
-# result in an error result
+# Note: the following tests 75.1 to 75.3 are in preparation for TCL 9.0, where
+# those should result in an error result
 test io-75.1 {multibyte encoding error read results in raw bytes} -setup {
 	set fn [makeFile {} io-75.1]
     set f [open $fn w+]
     fconfigure $f -encoding binary
+	# In UTF-8, a byte 0xCx starts a multibyte sequence and must be followed
+	# by a byte > 0x7F. This is violated to get an invalid sequence.
 	puts -nonewline $f "A\xC0\x40"
 	flush $f
 	seek $f 0
@@ -8985,8 +8987,27 @@ test io-75.2 {unrepresentable character write passes and is replaced by ?} -setu
 	removeFile io-75.2
 } -returnCodes ok -result "A?"
 
-test io-75.3 {check if -tolerantencoding option is saved} -setup {
+# Incomplete sequence test.
+# This error may IMHO only be detected with the close.
+# But the read already returns the incomplete sequence.
+test io-75.3 {incomplete multibyte encoding read is ignored} -setup {
 	set fn [makeFile {} io-75.3]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+	puts -nonewline $f "A\xC0"
+	flush $f
+	seek $f 0
+	fconfigure $f -encoding utf-8 -buffering none
+} -body {
+	set d [read $f]
+	close $f
+	set d
+} -cleanup {
+	removeFile io-75.3
+} -returnCodes ok -result "A\xC0"
+
+test io-75.4 {check if -tolerantencoding option is saved} -setup {
+	set fn [makeFile {} io-75.4]
     set f [open $fn w]
 } -body {
 	# the following command gets in result error in TCL 9.0
@@ -8996,9 +9017,8 @@ test io-75.3 {check if -tolerantencoding option is saved} -setup {
 	lappend res [fconfigure $f -tolerantencoding]
 } -cleanup {
 	close $f
-	removeFile io-75.3
+	removeFile io-75.4
 } -returnCodes ok -result "0 1"
-
 
 # ### ### ### ######### ######### #########
 
