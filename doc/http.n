@@ -273,6 +273,19 @@ not call the \fBbgerror\fR handler.  See the \fBERRORS\fR section for
 details.
 .RE
 .TP
+\fB\-guesstype\fR \fIboolean\fR
+.
+Attempt to guess the Content-Type and character set when a misconfigured
+server provides no information.  The default value is \fIfalse\fR (do
+nothing).  If boolean \fItrue\fR then, if the server does not send a
+"Content-Type" header, or if it sends the value "application/octet-stream",
+\fBhttp::geturl\fR will attempt to guess appropriate values.  This is not
+intended to become a general-purpose tool, and currently it is limited to
+detecting XML documents that begin with an XML declaration.  In this case
+the Content-Type is changed to "application/xml", and the character set to
+the one specified by the "encoding" tag of the XML line, or to utf-8 if no
+encoding is specified.
+.TP
 \fB\-handler\fR \fIcallback\fR
 .
 Invoke \fIcallback\fR whenever HTTP data is available; if present, nothing

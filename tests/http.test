@@ -145,7 +145,7 @@ test http-2.8 {http::CharsetToEncoding} {
 
 test http-3.1 {http::geturl} -returnCodes error -body {
     http::geturl -bogus flag
-} -result {Unknown option flag, can be: -binary, -blocksize, -channel, -command, -handler, -headers, -keepalive, -method, -myaddr, -progress, -protocol, -query, -queryblocksize, -querychannel, -queryprogress, -strict, -timeout, -type, -validate}
+} -result {Unknown option flag, can be: -binary, -blocksize, -channel, -command, -guesstype, -handler, -headers, -keepalive, -method, -myaddr, -progress, -protocol, -query, -queryblocksize, -querychannel, -queryprogress, -strict, -timeout, -type, -validate}
 
 test http-3.2 {http::geturl} -returnCodes error -body {
     http::geturl http:junk

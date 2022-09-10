@@ -992,6 +992,7 @@ proc http::CreateToken {url args} {
 	-type		application/x-www-form-urlencoded
 	-queryprogress	{}
 	-protocol	1.1
+	-guesstype      0
 	binary		0
 	state		created
 	meta		{}
@@ -1014,6 +1015,7 @@ proc http::CreateToken {url args} {
     array set type {
 	-binary		boolean
 	-blocksize	integer
+	-guesstype      boolean
 	-queryblocksize integer
 	-strict		boolean
 	-timeout	integer
@@ -1022,7 +1024,7 @@ proc http::CreateToken {url args} {
     }
     set state(charset)	$defaultCharset
     set options {
-	-binary -blocksize -channel -command -handler -headers -keepalive
+	-binary -blocksize -channel -command -guesstype -handler -headers -keepalive
 	-method -myaddr -progress -protocol -query -queryblocksize
 	-querychannel -queryprogress -strict -timeout -type -validate
     }
@@ -4157,10 +4159,90 @@ proc http::Eot {token {reason {}}} {
 	    # Translate text line endings.
 	    set state(body) [string map {\r\n \n \r \n} $state(body)]
 	}
+	if {[info exists state(-guesstype)] && $state(-guesstype)} {
+	    GuessType $token
+	}
     }
     Finish $token $reason
     return
 }
+
+
+# ------------------------------------------------------------------------------
+#  Proc http::GuessType
+# ------------------------------------------------------------------------------
+# Command to attempt limited analysis of a resource with undetermined
+# Content-Type, i.e. "application/octet-stream".  This value can be set for two
+# reasons:
+# (a) by the server, in a Content-Type header
+# (b) by http::geturl, as the default value if the server does not supply a
+#     Content-Type header.
+#
+# This command converts a resource if:
+# (1) it has type application/octet-stream
+# (2) it begins with an XML declaration "<?xml name="value" ... >?"
+# (3) one tag is named "encoding" and has a recognised value; or no "encoding"
+#     tag exists (defaulting to utf-8)
+#
+# RFC 9110 Sec. 8.3 states:
+# "If a Content-Type header field is not present, the recipient MAY either
+# assume a media type of "application/octet-stream" ([RFC2046], Section 4.5.1)
+# or examine the data to determine its type."
+#
+# The RFC goes on to describe the pitfalls of "MIME sniffing", including
+# possible security risks.
+#
+# Arguments:
+# token       - connection token
+#
+# Return Value: (boolean) true iff a change has been made
+# ------------------------------------------------------------------------------
+
+proc http::GuessType {token} {
+    variable $token
+    upvar 0 $token state
+
+    if {$state(type) ne {application/octet-stream}} {
+        return 0
+    }
+
+    set body $state(body)
+    # e.g. {<?xml version="1.0" encoding="utf-8"?> ...}
+
+    if {![regexp -nocase -- {^<[?]xml[[:space:]][^>?]*[?]>} $body match]} {
+        return 0
+    }
+    # e.g. {<?xml version="1.0" encoding="utf-8"?>}
+
+    set contents [regsub -- {[[:space:]]+} $match { }]
+    set contents [string range [string tolower $contents] 6 end-2]
+    # e.g. {version="1.0" encoding="utf-8"}
+    # without excess whitespace or upper-case letters
+
+    if {![regexp -- {^([^=" ]+="[^"]+" )+$} "$contents "]} {
+        return 0
+    }
+    # The application/xml default encoding:
+    set res utf-8
+
+    set tagList [regexp -all -inline -- {[^=" ]+="[^"]+"} $contents]
+    foreach tag $tagList {
+        regexp -- {([^=" ]+)="([^"]+)"} $tag -> name value
+        if {$name eq {encoding}} {
+            set res $value
+        }
+    }
+    set enc [CharsetToEncoding $res]
+    if {$enc eq "binary"} {
+        return 0
+    }
+    set state(body) [encoding convertfrom $enc $state(body)]
+    set state(body) [string map {\r\n \n \r \n} $state(body)]
+    set state(type) application/xml
+    set state(charset) $res
+    return 1
+}
+
 
 # http::wait --
 #
