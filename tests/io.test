@@ -8977,14 +8977,14 @@ test io-75.2 {unrepresentable character write passes and is replaced by ?} -setu
     set f [open $fn w+]
     fconfigure $f -encoding iso8859-1
 } -body {
-    puts -nonewline $f "A\u2022"
+    catch {puts -nonewline $f "A\u2022"} msg
     flush $f
     seek $f 0
-    read $f
+    list [read $f] $msg
 } -cleanup {
     close $f
-    removeFile io-75.2
-} -returnCodes ok -result "A"
+    removeFile io-75.5
+} -match glob -result [list {A} {error writing "*": illegal byte sequence}]
 
 # Incomplete sequence test.
 # This error may IMHO only be detected with the close.
