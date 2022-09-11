@@ -8977,8 +8977,6 @@ test io-75.5 {unrepresentable character write passes and is replaced by ?} -setu
     set fn [makeFile {} io-75.5]
     set f [open $fn w+]
     fconfigure $f -encoding iso8859-1
-} -constraints knownBug -body {
-    puts -nonewline $f "A\u2022"
 } -body {
     catch {puts -nonewline $f "A\u2022"} msg
     flush $f
