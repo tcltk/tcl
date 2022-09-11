@@ -2128,7 +2128,7 @@ proc http::Connected {token proto phost srvurl} {
 	     && (![info exists state(-handler)])
 	     && $http(-zip)
 	} {
-	    puts $sock "Accept-Encoding: gzip,deflate,compress"
+	    puts $sock "Accept-Encoding: gzip,deflate"
 	}
 	if {$isQueryChannel && ($state(querylength) == 0)} {
 	    # Try to determine size of data in channel. If we cannot seek, the
@@ -4010,13 +4010,25 @@ proc http::CopyStart {sock token {initial 1}} {
     upvar 0 $token state
     if {[info exists state(transfer)] && $state(transfer) eq "chunked"} {
 	foreach coding [ContentEncoding $token] {
-	    lappend state(zlib) [zlib stream $coding]
+	    if {$coding eq {deflateX}} {
+		# Use the standards-compliant choice.
+		set coding2 decompress
+	    } else {
+		set coding2 $coding
+	    }
+	    lappend state(zlib) [zlib stream $coding2]
 	}
 	make-transformation-chunked $sock [namespace code [list CopyChunk $token]]
     } else {
 	if {$initial} {
 	    foreach coding [ContentEncoding $token] {
-		zlib push $coding $sock
+		if {$coding eq {deflateX}} {
+		    # Use the standards-compliant choice.
+		    set coding2 decompress
+		} else {
+		    set coding2 $coding
+		}
+		zlib push $coding2 $sock
 	    }
 	}
 	if {[catch {
@@ -4137,7 +4149,20 @@ proc http::Eot {token {reason {}}} {
     if {[string length $state(body)] > 0} {
 	if {[catch {
 	    foreach coding [ContentEncoding $token] {
-		set state(body) [zlib $coding $state(body)]
+		if {$coding eq {deflateX}} {
+		    # First try the standards-compliant choice.
+		    set coding2 decompress
+		    if {[catch {zlib $coding2 $state(body)} result]} {
+			# If that fails, try the MS non-compliant choice.
+			set coding2 inflate
+			set state(body) [zlib $coding2 $state(body)]
+		    } else {
+			# error {failed at standards-compliant deflate}
+			set state(body) $result
+		    }
+		} else {
+		    set state(body) [zlib $coding $state(body)]
+		}
 	    }
 	} err]} {
 	    Log "error doing decompression for token $token: $err"
@@ -4387,16 +4412,41 @@ proc http::CharsetToEncoding {charset} {
     }
 }
 
+
+# ------------------------------------------------------------------------------
+#  Proc http::ContentEncoding
+# ------------------------------------------------------------------------------
 # Return the list of content-encoding transformations we need to do in order.
+#
+    # --------------------------------------------------------------------------
+    # Options for Accept-Encoding, Content-Encoding: the switch command
+    # --------------------------------------------------------------------------
+    # The symbol deflateX allows http to attempt both versions of "deflate",
+    # unless there is a -channel - for a -channel, only "decompress" is tried.
+    # Alternative/extra lines for switch:
+    # The standards-compliant version of "deflate" can be chosen with:
+    #		deflate { lappend r decompress }
+    # The Microsoft non-compliant version of "deflate" can be chosen with:
+    #		deflate { lappend r inflate }
+    # The previously used implementation of "compress", which appears to be
+    # incorrect and is rarely used by web servers, can be chosen with:
+    #		compress - x-compress { lappend r decompress }
+    # --------------------------------------------------------------------------
+#
+# Arguments:
+# token  - Connection token.
+#
+# Return Value: list
+# ------------------------------------------------------------------------------
+
 proc http::ContentEncoding {token} {
     upvar 0 $token state
     set r {}
     if {[info exists state(coding)]} {
 	foreach coding [split $state(coding) ,] {
 	    switch -exact -- $coding {
-		deflate { lappend r inflate }
+		deflate { lappend r deflateX }
 		gzip - x-gzip { lappend r gunzip }
-		compress - x-compress { lappend r decompress }
 		identity {}
 		br {
 		    return -code error\

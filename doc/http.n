@@ -210,7 +210,7 @@ numbers of \fBhttp\fR and \fBTcl\fR.
 \fB\-zip\fR \fIboolean\fR
 .
 If the value is boolean \fBtrue\fR, then by default requests will send a header
-.QW "\fBAccept-Encoding: gzip,deflate,compress\fR" .
+.QW "\fBAccept-Encoding: gzip,deflate\fR" .
 If the value is boolean \fBfalse\fR, then by default this header will not be
 sent.  In either case the default can be overridden for an individual request by
 supplying a custom \fBAccept-Encoding\fR header in the \fB\-headers\fR option
@@ -236,7 +236,7 @@ that is invoked when the HTTP transaction completes.
 .
 Specifies whether to force interpreting the URL data as binary.  Normally
 this is auto-detected (anything not beginning with a \fBtext\fR content
-type or whose content encoding is \fBgzip\fR or \fBcompress\fR is
+type or whose content encoding is \fBgzip\fR or \fBdeflate\fR is
 considered binary data).
 .TP
 \fB\-blocksize\fR \fIsize\fR
@@ -314,7 +314,7 @@ The \fBhttp::geturl\fR code for the \fB\-handler\fR option is not compatible
 with either compression or chunked transfer-encoding.  If \fB\-handler\fR is
 specified, then to work around these issues \fBhttp::geturl\fR will reduce the
 HTTP protocol to 1.0, and override the \fB\-zip\fR option (i.e. it will not
-send the header "\fBAccept-Encoding: gzip,deflate,compress\fR").
+send the header "\fBAccept-Encoding: gzip,deflate\fR").
 .PP
 If options \fB\-handler\fR and \fB\-channel\fR are used together, the handler
 is responsible for copying the data from the HTTP socket to the specified
