@@ -2129,6 +2129,9 @@ proc http::Connected {token proto phost srvurl} {
 	     && $http(-zip)
 	} {
 	    puts $sock "Accept-Encoding: gzip,deflate"
+	} elseif {!$accept_encoding_seen} {
+	    puts $sock "Accept-Encoding: identity"
+	} else {
 	}
 	if {$isQueryChannel && ($state(querylength) == 0)} {
 	    # Try to determine size of data in channel. If we cannot seek, the
@@ -4064,7 +4067,12 @@ proc http::CopyChunk {token chunk} {
 	if {[info exists state(zlib)]} {
 	    set excess ""
 	    foreach stream $state(zlib) {
-		catch {set excess [$stream add -finalize $excess]}
+		catch {
+		    $stream put -finalize $excess
+		    set excess ""
+		    set overflood ""
+		    while {[set overflood [$stream get]] ne ""} { append excess $overflood }
+		}
 	    }
 	    puts -nonewline $state(-channel) $excess
 	    foreach stream $state(zlib) { $stream close }

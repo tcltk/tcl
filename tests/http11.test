@@ -84,6 +84,8 @@ proc check_crc {tok args} {
 
 makeFile "<html><head><title>test</title></head><body><p>this is a test</p>\n[string repeat {<p>This is a tcl test file.</p>} 4192]\n</body></html>" testdoc.html
 
+makeFile "<html><head><title>test</title></head><body><p>this is a test</p>\n[string repeat {<p>This is a tcl test file.</p>} 5000]\n</body></html>" largedoc.html
+
 if {![info exists ThreadLevel]} {
     if {[catch {package require Thread}] == 0} {
         set ValueRange {0 1 2}
@@ -371,15 +373,40 @@ test http11-2.1 "-channel, encoding gzip" -setup {
     http::wait $tok
     seek $chan 0
     set data [read $chan]
+    set diff [expr {[file size testdoc.html] - [file size testfile.tmp]}]
     list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
         [meta $tok connection] [meta $tok content-encoding]\
-        [meta $tok transfer-encoding]
+        [meta $tok transfer-encoding] -- $diff bytes lost
 } -cleanup {
     http::cleanup $tok
     close $chan
     removeFile testfile.tmp
     halt_httpd
-} -result {ok {HTTP/1.1 200 OK} ok close gzip chunked}
+} -result {ok {HTTP/1.1 200 OK} ok close gzip chunked -- 0 bytes lost}
+
+# Cf. Bug [3610253] "CopyChunk does not drain decompressor(s)"
+# This test failed before the bugfix.
+# The pass/fail depended on file size.
+test http11-2.1.1 "-channel, encoding gzip" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+    set fileName largedoc.html
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/$fileName \
+                 -timeout 5000 -channel $chan -headers {accept-encoding gzip}]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    set diff [expr {[file size $fileName] - [file size testfile.tmp]}]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding] -- $diff bytes lost
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok close gzip chunked -- 0 bytes lost}
 
 test http11-2.2 "-channel, encoding deflate" -setup {
     variable httpd [create_httpd]
@@ -1033,6 +1060,7 @@ foreach p {create_httpd httpd_read halt_httpd meta check_crc} {
     if {[llength [info proc $p]]} {rename $p {}}
 }
 removeFile testdoc.html
+removeFile largedoc.html
 unset -nocomplain httpd_port httpd p
 
 ::tcltest::cleanupTests

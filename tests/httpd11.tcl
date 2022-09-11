@@ -46,7 +46,7 @@ proc get-chunks {data {compression gzip}} {
     }
 
     set data ""
-    set chunker [make-chunk-generator $data 512]
+    set chunker [make-chunk-generator $data 671]
     while {[string length [set chunk [$chunker]]]} {
         append data $chunk
     }
@@ -60,7 +60,7 @@ proc blow-chunks {data {ochan stdout} {compression gzip}} {
         compress { set data [zlib compress $data] }
     }
 
-    set chunker [make-chunk-generator $data 512]
+    set chunker [make-chunk-generator $data 671]
     while {[string length [set chunk [$chunker]]]} {
         puts -nonewline $ochan $chunk
     }
