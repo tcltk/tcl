@@ -1703,14 +1703,6 @@ Tcl_CreateChannel(
     statePtr->outputEncodingFlags = TCL_ENCODING_START;
 
     /*
-     * Set encoding tolerant mode as default on 8.7.x and off on TCL9.x
-     */
-    
-    #if TCL_MAJOR_VERSION < 9
-    statePtr->flags |= CHANNEL_ENCODING_NOCOMPLAIN;
-    #endif
-
-    /*
      * Set the channel up initially in AUTO input translation mode to accept
      * "\n", "\r" and "\r\n". Output translation mode is set to a platform
      * specific default value. The eofChar is set to 0 for both input and
@@ -7913,20 +7905,16 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(2, "-strictencoding")) {
+    if (len == 0 || HaveOpt(1, "-strictencoding")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-strictencoding");
 	}
-	Tcl_DStringAppendElement(dsPtr,
-		(flags & CHANNEL_ENCODING_NOCOMPLAIN) ? "0" : "1");
-	if (len > 0) {
-	    return TCL_OK;
-	}
+	Tcl_DStringAppendElement(dsPtr,"0");
 	if (len > 0) {
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(2, "-translation")) {
+    if (len == 0 || HaveOpt(1, "-translation")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-translation");
 	}
@@ -8179,19 +8167,22 @@ Tcl_SetChannelOption(
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	return TCL_OK;
-    } else if (HaveOpt(2, "-strictencoding")) {
+    } else if (HaveOpt(1, "-strictencoding")) {
 	int newMode;
 
 	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
 	if (newMode) {
-	    statePtr->flags &= ~CHANNEL_ENCODING_NOCOMPLAIN;
-	} else {
-	    statePtr->flags |= CHANNEL_ENCODING_NOCOMPLAIN;
+	    if (interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"bad value for -strictencoding: only false allowed",
+			-1));
+	    }
+	    return TCL_ERROR;
 	}
 	return TCL_OK;
-    } else if (HaveOpt(2, "-translation")) {
+    } else if (HaveOpt(1, "-translation")) {
 	const char *readMode, *writeMode;
 
 	if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
