@@ -1095,7 +1095,7 @@ InitCallChain(
  *	location being reusable is:
  *	- Refers to the same object (same creation epoch), and
  *	- Still across the same class structure (same global epoch), and
- *	- Still across the same object strucutre (same local epoch), and
+ *	- Still across the same object structure (same local epoch), and
  *	- No public/private/filter magic leakage (same flags, modulo the fact
  *	  that a public chain will satisfy a non-public call).
  *

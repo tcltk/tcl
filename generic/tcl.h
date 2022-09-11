@@ -522,7 +522,7 @@ typedef int (Tcl_CmdObjTraceProc) (void *clientData, Tcl_Interp *interp,
 	struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, size_t objc,
-	struct Tcl_Obj *const objv[]);
+	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (void *clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
@@ -740,9 +740,9 @@ typedef struct Tcl_CallFrame {
 
 typedef struct Tcl_CmdInfo {
     int isNativeObjectProc;	/* 1 if objProc was registered by a call to
-				 * Tcl_CreateObjCommand; 0 otherwise.
-				 * Tcl_SetCmdInfo does not modify this
-				 * field. */
+				 * Tcl_CreateObjCommand; 2 if objProc was registered by
+				 * a call to Tcl_CreateObjCommand2; 0 otherwise.
+				 * Tcl_SetCmdInfo does not modify this field. */
     Tcl_ObjCmdProc *objProc;	/* Command's object-based function. */
     void *objClientData;	/* ClientData for object proc. */
     Tcl_CmdProc *proc;		/* Command's string-based function. */
@@ -757,8 +757,8 @@ typedef struct Tcl_CmdInfo {
 				 * change a command's namespace; use
 				 * TclRenameCommand or Tcl_Eval (of 'rename')
 				 * to do that. */
-    Tcl_ObjCmdProc2 *objProc2;	/* Not used in Tcl 8.7. */
-    void *objClientData2;	/* Not used in Tcl 8.7. */
+    Tcl_ObjCmdProc2 *objProc2;	/* Command's object2-based function. */
+    void *objClientData2;	/* ClientData for object2 proc. */
 } Tcl_CmdInfo;
 
 /*
