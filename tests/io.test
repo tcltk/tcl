@@ -9006,20 +9006,6 @@ test io-75.3 {incomplete multibyte encoding read is ignored} -setup {
 	removeFile io-75.3
 } -returnCodes ok -result "A\xC0"
 
-test io-75.4 {check if -tolerantencoding option is saved} -setup {
-	set fn [makeFile {} io-75.4]
-    set f [open $fn w]
-} -body {
-	# the following command gets in result error in TCL 9.0
-    fconfigure $f -encoding iso8859-1 -tolerantencoding 0
-	lappend res [fconfigure $f -tolerantencoding]
-    fconfigure $f -encoding iso8859-1 -tolerantencoding 1
-	lappend res [fconfigure $f -tolerantencoding]
-} -cleanup {
-	close $f
-	removeFile io-75.4
-} -returnCodes ok -result "0 1"
-
 # ### ### ### ######### ######### #########
 
 # cleanup
