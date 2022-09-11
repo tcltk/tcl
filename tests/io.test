@@ -8977,7 +8977,7 @@ test io-75.5 {unrepresentable character write passes and is replaced by ?} -setu
     set fn [makeFile {} io-75.5]
     set f [open $fn w+]
     fconfigure $f -encoding iso8859-1
-} -constraints knownBug -body {
+} -body {
     puts -nonewline $f "A\u2022"
 } -body {
     puts -nonewline $f "A\u2022"
@@ -8987,7 +8987,7 @@ test io-75.5 {unrepresentable character write passes and is replaced by ?} -setu
 } -cleanup {
     close $f
     removeFile io-75.5
-} -returnCodes error
+} -returnCodes error -match glob -result {error writing "*": illegal byte sequence}
 
 # Incomplete sequence test.
 # This error may IMHO only be detected with the close.

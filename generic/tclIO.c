@@ -4356,6 +4356,19 @@ Write(
 
 	statePtr->outputEncodingFlags &= ~TCL_ENCODING_START;
 
+	/*
+	 * See io-75.2, TCL bug 6978c01b65.
+	 * Check, if an encoding error occured and should be reported to the
+	 * script level.
+	 * This happens, if a written character may not be represented by the
+	 * current output encoding and strict encoding is active.hao_	
+	 */
+	
+	if (result == TCL_CONVERT_UNKNOWN) {
+	    Tcl_SetErrno(EILSEQ);
+	    return -1;
+	}
+	
 	if ((result != TCL_OK) && (srcRead + dstWrote == 0)) {
 	    /*
 	     * We're reading from invalid/incomplete UTF-8.
