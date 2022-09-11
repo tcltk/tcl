@@ -8954,7 +8954,7 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
 
 # Note: the following tests 75.1 to 75.3 are in preparation for TCL 9.0, where
 # those should result in an error result
-test io-75.1 {multibyte encoding error read results in raw bytes} -setup {
+test io-75.1 {multibyte encoding error read results in raw bytes} -constraints deprecated -setup {
 	set fn [makeFile {} io-75.1]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -8972,7 +8972,7 @@ test io-75.1 {multibyte encoding error read results in raw bytes} -setup {
 } -returnCodes ok -result "A\xC0\x40"
 # for TCL 9.0, the result is error
 
-test io-75.2 {unrepresentable character write passes and is replaced by ?} -setup {
+test io-75.2 {unrepresentable character write passes and is replaced by ?} -constraints deprecated -setup {
 	set fn [makeFile {} io-75.2]
     set f [open $fn w+]
     fconfigure $f -encoding iso8859-1
