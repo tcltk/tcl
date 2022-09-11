@@ -8952,6 +8952,7 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
 
+
 test io-75.1 {multibyte encoding error read results in raw bytes (-strictencoding 0)} -setup {
 	set fn [makeFile {} io-75.1]
     set f [open $fn w+]
@@ -8963,14 +8964,14 @@ test io-75.1 {multibyte encoding error read results in raw bytes (-strictencodin
 	seek $f 0
 	fconfigure $f -encoding utf-8 -strictencoding 0 -buffering none
 } -body {
-	read $f
+	set d [read $f]
+	expr {$d eq "A\xC0\x40"}
 } -cleanup {
 	close $f
 	removeFile io-75.1
-} -returnCodes ok -result "A\xC0\x40"
-# for TCL 9.0, the result is error
+} -returnCodes ok -result 1
 
-test io-75.2 {unrepresentable character write passes and is replaced by ? (-strictencoding 0)} -constraints deprecated -setup {
+test io-75.2 {unrepresentable character write passes and is replaced by ? (-strictencoding 0)} -setup {
 	set fn [makeFile {} io-75.2]
     set f [open $fn w+]
     fconfigure $f -encoding iso8859-1 -strictencoding 0
@@ -9025,7 +9026,7 @@ test io-75.5 {unrepresentable character write passes and is replaced by ? (-stri
 	set fn [makeFile {} io-75.5]
     set f [open $fn w+]
     fconfigure $f -encoding iso8859-1
-} -constraints knownBug -body {
+} -body {
 	puts -nonewline $f "A\u2022"
 } -cleanup {
 	close $f
@@ -9043,26 +9044,13 @@ test io-75.6 {incomplete multibyte encoding read is ignored (-strictencoding 1)}
 	flush $f
 	seek $f 0
 	fconfigure $f -encoding utf-8 -buffering none
-} -constraints knownBug -body {
+} -body {
 	set d [read $f]
 	close $f
 	set d
 } -cleanup {
 	removeFile io-75.5
 } -returnCodes error
-
-test io-75.7 {check if -tolerantencoding option is saved} -setup {
-	set fn [makeFile {} io-75.7]
-    set f [open $fn w]
-} -body {
-    fconfigure $f -encoding iso8859-1 -strictencoding 0
-	lappend res [fconfigure $f -strictencoding]
-    fconfigure $f -encoding iso8859-1 -strictencoding 1
-	lappend res [fconfigure $f -strictencoding]
-} -cleanup {
-	close $f
-	removeFile io-75.7
-} -returnCodes ok -result "0 1"
 
 # ### ### ### ######### ######### #########
 
