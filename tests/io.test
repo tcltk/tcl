@@ -9014,7 +9014,7 @@ test io-75.4 {multibyte encoding error read results in raw bytes (-strictencodin
 	flush $f
 	seek $f 0
 	fconfigure $f -encoding utf-8 -buffering none
-} -constraints knownBug -body {
+} -body {
 	read $f
 } -cleanup {
 	close $f
