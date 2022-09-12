@@ -795,7 +795,7 @@ proc http::geturl {url args} {
     #   script or installation that modified ::tls::socketCmd is also
     #   responsible for integrating ::http::socket into its own "new" command,
     #   if it wishes to do so.
-    
+
     if {[info exists ::tls::socketCmd] && ($::tls::socketCmd eq {::socket})} {
         set ::tls::socketCmd $socketCmd
     }
@@ -1606,7 +1606,7 @@ proc http::OpenSocket {token DoLater} {
 #     socket with the real socket, not only in $token but in all other requests
 #     that use the same placeholder.
 # (2) It calls ScheduleRequest to schedule each request that uses the socket.
-# 
+#
 #
 # Value of sockOld/sockNew can be "sock" (genuine socket) or "ph" (placeholder).
 # sockNew is ${token}(sock)
@@ -1666,7 +1666,7 @@ proc http::ConfigureNewSocket {token sockOld DoLater} {
         #
         # FIXME If Finish is placeholder-aware, these traces can be set earlier,
         # in PreparePersistentConnection.
-    
+
         if {[dict get $DoLater -traceread]} {
 	    set varName ::http::socketRdState($state(socketinfo))
 	    trace add variable $varName unset ::http::CancelReadPipeline
@@ -4382,7 +4382,7 @@ proc http::LoadThreadIfNeeded {} {
 
 proc http::SockInThread {caller defcmd sockargs} {
     package require Thread
-    
+
     set catchCode [catch {eval $defcmd $sockargs} sock errdict]
     if {$catchCode == 0} {
         set catchCode [catch {thread::transfer $caller $sock; set sock} sock errdict]

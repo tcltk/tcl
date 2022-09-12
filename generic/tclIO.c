@@ -4638,6 +4638,16 @@ Tcl_GetsObj(
     }
 
     /*
+     * Transfer encoding strict option to the encoding flags
+     */
+
+    if (statePtr->flags & CHANNEL_ENCODING_NOCOMPLAIN) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
+    } else {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_NOCOMPLAIN;
+    }
+
+    /*
      * Object used by FilterInputBytes to keep track of how much data has been
      * consumed from the channel buffers.
      */
@@ -5394,6 +5404,17 @@ FilterInputBytes(
 	*gsPtr->dstPtr = dst;
     }
     gsPtr->state = statePtr->inputEncodingState;
+
+    /*
+     * Transfer encoding strict option to the encoding flags
+     */
+
+    if (statePtr->flags & CHANNEL_ENCODING_NOCOMPLAIN) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
+    } else {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_NOCOMPLAIN;
+    }
+
     result = Tcl_ExternalToUtf(NULL, gsPtr->encoding, raw, rawLen,
 	    statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE,
 	    &statePtr->inputEncodingState, dst, spaceLeft, &gsPtr->rawRead,
@@ -6165,6 +6186,16 @@ ReadChars(
 	dstLimit = size - numBytes;
     } else {
 	dst = TclGetString(objPtr) + numBytes;
+    }
+
+    /*
+     * Transfer encoding strict option to the encoding flags
+     */
+
+    if (statePtr->flags & CHANNEL_ENCODING_NOCOMPLAIN) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
+    } else {
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_NOCOMPLAIN;
     }
 
     /*
