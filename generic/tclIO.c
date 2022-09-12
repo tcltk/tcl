@@ -4308,6 +4308,16 @@ Write(
     }
 
     /*
+     * Transfer encoding strict option to the encoding flags
+     */
+
+    if (statePtr->flags & CHANNEL_ENCODING_NOCOMPLAIN) {
+	statePtr->outputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
+    } else {
+	statePtr->outputEncodingFlags &= ~TCL_ENCODING_NOCOMPLAIN;
+    }
+
+    /*
      * Write the terminated escape sequence even if srcLen is 0.
      */
 
@@ -4346,16 +4356,6 @@ Write(
 	dst = InsertPoint(bufPtr);
 	dstLen = SpaceLeft(bufPtr);
 	
-	/*
-	 * Transfer encoding strict option to the encoding flags
-	 */
-	
-	if (statePtr->flags & CHANNEL_ENCODING_NOCOMPLAIN) {
-	    statePtr->outputEncodingFlags |= TCL_ENCODING_NOCOMPLAIN;
-	} else {
-	    statePtr->outputEncodingFlags &= ~TCL_ENCODING_NOCOMPLAIN;
-	}
-
 	result = Tcl_UtfToExternal(NULL, encoding, src, srcLimit,
 		statePtr->outputEncodingFlags,
 		&statePtr->outputEncodingState, dst,

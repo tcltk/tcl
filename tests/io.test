@@ -8964,11 +8964,12 @@ test io-75.1 {multibyte encoding error read results in raw bytes (-strictencodin
 	fconfigure $f -encoding utf-8 -strictencoding 0 -buffering none
 } -body {
 	set d [read $f]
-	expr {$d eq "A\xC0\x40"}
+	binary scan $d H* hd
+	set hd
 } -cleanup {
 	close $f
 	removeFile io-75.1
-} -returnCodes ok -result 1
+} -returnCodes ok -result "41C040"
 
 test io-75.2 {unrepresentable character write passes and is replaced by ? (-strictencoding 0)} -setup {
 	set fn [makeFile {} io-75.2]
@@ -8999,10 +9000,11 @@ test io-75.3 {incomplete multibyte encoding read is ignored} -setup {
 } -body {
 	set d [read $f]
 	close $f
-	set d
+	binary scan $d H* hd
+	set hd
 } -cleanup {
 	removeFile io-75.3
-} -returnCodes ok -result "A\xC0"
+} -returnCodes ok -result "41C0"
 
 test io-75.4 {multibyte encoding error read results in raw bytes (-strictencoding 1} -setup {
 	set fn [makeFile {} io-75.4]
