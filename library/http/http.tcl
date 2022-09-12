@@ -2966,7 +2966,7 @@ proc http::ReplayCore {newQueue} {
 # Code - the HTTP transaction code, e.g., 200
 # Size - the size of the URL data
 
-proc http::data {token} {
+proc http::responseBody {token} {
     variable $token
     upvar 0 $token state
     return $state(body)
@@ -2979,12 +2979,17 @@ proc http::status {token} {
     upvar 0 $token state
     return $state(status)
 }
-proc http::code {token} {
+proc http::responseLine {token} {
     variable $token
     upvar 0 $token state
     return $state(http)
 }
-proc http::ncode {token} {
+proc http::requestLine {token} {
+    variable $token
+    upvar 0 $token state
+    return $state(requestLine)
+}
+proc http::responseCode {token} {
     variable $token
     upvar 0 $token state
     if {[regexp {[0-9]{3}} $state(http) numeric_code]} {
@@ -2998,32 +3003,51 @@ proc http::size {token} {
     upvar 0 $token state
     return $state(currentsize)
 }
-proc http::meta {token args} {
+proc http::requestHeaders {token args} {
     set lenny  [llength $args]
     if {$lenny > 1} {
-        return -code error {usage: ::http::meta token ?headerName?}
+        return -code error {usage: ::http::requestHeaders token ?headerName?}
     } else {
-        return [Meta $token {*}$args]
+        return [Meta $token request {*}$args]
     }
 }
-proc http::metaValue {token header} {
-    Meta $token $header VALUE
+proc http::responseHeaders {token args} {
+    set lenny  [llength $args]
+    if {$lenny > 1} {
+        return -code error {usage: ::http::responseHeaders token ?headerName?}
+    } else {
+        return [Meta $token response {*}$args]
+    }
 }
-proc http::Meta {token args} {
+proc http::requestHeaderValue {token header} {
+    Meta $token request $header VALUE
+}
+proc http::responseHeaderValue {token header} {
+    Meta $token response $header VALUE
+}
+proc http::Meta {token who args} {
     variable $token
     upvar 0 $token state
+
+    if {$who eq {request}} {
+        set whom requestHeaders
+    } elseif {$who eq {response}} {
+        set whom meta
+    } else {
+        return -code error {usage: ::http::Meta token request|response ?headerName ?VALUE??}
+    }
 
     set header [string tolower [lindex $args 0]]
     set how    [string tolower [lindex $args 1]]
     set lenny  [llength $args]
     if {$lenny == 0} {
-        return $state(meta)
+        return $state($whom)
     } elseif {($lenny > 2) || (($lenny == 2) && ($how ne {value}))} {
-        return -code error {usage: ::http::Meta token ?headerName ?VALUE??}
+        return -code error {usage: ::http::Meta token request|response ?headerName ?VALUE??}
     } else {
         set result {}
         set combined {}
-        foreach {key value} $state(meta) {
+        foreach {key value} $state($whom) {
             if {$key eq $header} {
                 lappend result $key $value
                 append combined $value {, }
@@ -4582,6 +4606,11 @@ proc http::make-transformation-chunked {chan command} {
     return
 }
 
+interp alias {} http::data {} http::responseBody
+interp alias {} http::code {} http::responseLine
+interp alias {} http::meta {} http::responseHeaders
+interp alias {} http::metaValue {} http::responseHeaderValue
+interp alias {} http::ncode {} http::responseCode
 
 # ------------------------------------------------------------------------------
 #  Proc http::socket

@@ -32,17 +32,23 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 .sp
 \fB::http::size \fItoken\fR
 .sp
-\fB::http::code \fItoken\fR
+\fB::http::responseLine\fR \fItoken\fR
 .sp
-\fB::http::ncode \fItoken\fR
+\fB::http::responseCode\fR \fItoken\fR
 .sp
 \fB::http::reason \fIcode\fR
 .sp
-\fB::http::meta \fItoken\fR ?\fIheaderName\fR?
+\fB::http::requestLine\fR \fItoken\fR
 .sp
-\fB::http::metaValue\fR \fItoken\fR \fIheaderName\fR
+\fB::http::requestHeaders\fR \fItoken\fR ?\fIheaderName\fR?
 .sp
-\fB::http::data \fItoken\fR
+\fB::http::requestHeaderValue\fR \fItoken\fR \fIheaderName\fR
+.sp
+\fB::http::responseHeaders\fR \fItoken\fR ?\fIheaderName\fR?
+.sp
+\fB::http::responseHeaderValue\fR \fItoken\fR \fIheaderName\fR
+.sp
+\fB::http::responseBody\fR \fItoken\fR
 .sp
 \fB::http::error \fItoken\fR
 .sp
@@ -53,6 +59,16 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 \fB::http::registerError \fIport\fR ?\fImessage\fR?
 .sp
 \fB::http::unregister \fIproto\fR
+.sp
+\fB::http::code \fItoken\fR
+.sp
+\fB::http::data \fItoken\fR
+.sp
+\fB::http::meta \fItoken\fR ?\fIheaderName\fR?
+.sp
+\fB::http::metaValue\fR \fItoken\fR \fIheaderName\fR
+.sp
+\fB::http::ncode \fItoken\fR
 .SH "EXPORTED COMMANDS"
 .PP
 Namespace \fBhttp\fR exports the commands \fBconfig\fR, \fBformatQuery\fR,
@@ -493,10 +509,18 @@ because in this case the \fB::http::geturl\fR call does not return
 until the HTTP transaction is complete, and thus there is nothing to
 wait for.
 .TP
-\fB::http::data\fR \fItoken\fR
+\fB::http::responseBody\fR \fItoken\fR
 .
-This is a convenience procedure that returns the \fBbody\fR element
-(i.e., the URL data) of the state array.
+This command returns the entity sent by the HTTP server (unless
+\fI-channel\fR was used, in which case the entity was delivered to the
+channel, and the command returns the empty string).
+.RS
+.PP
+Other terms for
+"entity", with varying precision, include "representation of resource",
+"resource", "response body after decoding", "payload",
+"message body after decoding", "content", and "file".
+.RE
 .TP
 \fB::http::error\fR \fItoken\fR
 .
@@ -508,7 +532,7 @@ of the state array.
 This is a convenience procedure that returns the \fBstatus\fR element of
 the state array.
 .TP
-\fB::http::code\fR \fItoken\fR
+\fB::http::responseLine\fR \fItoken\fR
 .
 This command returns the "status line" of the server response (which is stored
 as element \fBhttp\fR of the state array).
@@ -523,18 +547,27 @@ HTTP/1.1 200 OK
 HTTP/1.0 404 Not Found
 .RE
 .DE
-.PP
 .RS
-The "reason phrase" for a given status code may vary from server to server,
+The "status code" is a three-digit number in the range 100 to 599.
+A value of 200 is the normal return from a GET request, and its matching
+"reason phrase" is "OK".  Codes beginning with 4 or 5 indicate errors.
+Codes beginning with 3 are redirection errors.  In this case the
+\fBLocation\fR response header specifies a new URL that contains the
+requested information.
+.PP
+The "reason phrase" is a textual description of the "status code": it may
+vary from server to server,
 and can be changed without affecting the HTTP protocol.  The recommended
 values (RFC 7231 and IANA assignments) for each code are provided by the
 command \fB::http::reason\fR.
 .RE
 .TP
-\fB::http::ncode\fR \fItoken\fR
+\fB::http::responseCode\fR \fItoken\fR
 .
-This command returns the "status code" (200, 404, etc.) of the server response.
-The full status line can be obtained with command \fB::http::code\fR.
+This command returns the "status code" (200, 404, etc.) of the server
+"status line".  If a three-digit code cannot be found, the full status
+line is returned.  See command \fB::http::code\fR for more information
+on the "status line".
 .TP
 \fB::http::reason\fR \fIcode\fR
 .
@@ -563,7 +596,44 @@ This is a convenience procedure that returns the \fBcurrentsize\fR
 element of the state array, which represents the number of bytes
 received from the URL in the \fB::http::geturl\fR call.
 .TP
-\fB::http::meta\fR \fItoken\fR ?\fIheaderName\fR?
+\fB::http::requestLine\fR \fItoken\fR
+.
+This command returns the "request line" sent to the server.
+The "request line" is the first line of a HTTP client request, and has three
+elements separated by spaces: the HTTP method, the URL relative to the server,
+and the HTTP version. Examples:
+.PP
+.DS
+.RS
+GET / HTTP/1.1
+GET /introduction.html?subject=plumbing HTTP/1.1
+POST /forms/order.html HTTP/1.1
+.RE
+.DE
+.TP
+\fB::http::requestHeaders\fR \fItoken\fR ?\fIheaderName\fR?
+.
+This command returns a list of the HTTP request header names and values, in the
+order that they were sent to the server: a Tcl list of the form
+?name value ...?  Header names are case-insensitive and are converted to lower
+case.  The return value is not a \fBdict\fR because some header names may occur
+more than once.  If one argument is supplied, all request headers
+are returned: the value is that of the \fBrequestHeaders\fR element
+of the state array (described below).  If two arguments are supplied, the
+second provides the value of a header name.  Only headers with the requested
+name (converted to lower case) are returned.  If no such headers are found,
+an empty list is returned.
+.TP
+\fB::http::requestHeaderValue\fR \fItoken\fR \fIheaderName\fR
+.
+This command returns the value of the HTTP request header named
+\fIheaderName\fR.  Header names are case-insensitive and are converted to
+lower case.  If no such header exists, the return value is the empty string.
+If there are multiple headers named \fIheaderName\fR, the result is obtained
+by joining the individual values with the string ", " (comma and space),
+preserving their order.
+.TP
+\fB::http::responseHeaders\fR \fItoken\fR ?\fIheaderName\fR?
 .
 This command returns a list of HTTP response header names and values, in the
 order that they were received from the server: a Tcl list of the form
@@ -576,7 +646,7 @@ second provides the value of a header name.  Only headers with the requested
 name (converted to lower case) are returned.  If no such headers are found,
 an empty list is returned.
 .TP
-\fB::http::metaValue\fR \fItoken\fR \fIheaderName\fR
+\fB::http::responseHeaderValue\fR \fItoken\fR \fIheaderName\fR
 .
 This command returns the value of the HTTP response header named
 \fIheaderName\fR.  Header names are case-insensitive and are converted to
@@ -587,7 +657,7 @@ preserving their order.  Multiple headers with the same name may be processed
 in this manner, except \fIset-cookie\fR which does not conform to the
 comma-separated-list syntax and cannot be combined into a single value.
 Each \fIset-cookie\fR header must be treated individually, e.g. by processing
-the return value of \fB::http::meta\fR \fIset-cookie\fR.
+the return value of \fB::http::responseHeaders\fR \fItoken\fR \fIset-cookie\fR.
 .TP
 \fB::http::cleanup\fR \fItoken\fR
 .
@@ -635,6 +705,26 @@ registered via \fB::http::register\fR, returning a two-item list of
 the default port and handler command that was previously installed
 (via \fB::http::register\fR) if there was such a handler, and an error if
 there was no such handler.
+.TP
+\fB::http::code\fR \fItoken\fR
+.
+An alternative name for the command \fB::http::responseLine\fR
+.TP
+\fB::http::data\fR \fItoken\fR
+.
+An alternative name for the command \fB::http::responseBody\fR.
+.TP
+\fB::http::meta\fR \fItoken\fR ?\fIheaderName\fR?
+.
+An alternative name for the command \fB::http::responseHeaders\fR
+.TP
+\fB::http::metaValue\fR \fItoken\fR \fIheaderName\fR
+.
+An alternative name for the command \fB::http::responseHeaderValue\fR
+.TP
+\fB::http::ncode\fR \fItoken\fR
+.
+An alternative name for the command \fB::http::responseCode\fR
 .SH ERRORS
 The \fB::http::geturl\fR procedure will raise errors in the following cases:
 invalid command line options,
