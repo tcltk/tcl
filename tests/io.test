@@ -13,12 +13,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.5
-}
-
 namespace eval ::tcl::test::io {
-    namespace import ::tcltest::*
+
+    if {"::tcltest" ni [namespace children]} {
+	package require tcltest 2.5
+	namespace import -force ::tcltest::*
+    }
 
     variable umaskValue
     variable path
@@ -8970,7 +8970,7 @@ test io-75.1 {multibyte encoding error read results in raw bytes} -constraints d
 } -cleanup {
     close $f
     removeFile io-75.1
-} -returnCodes ok -result "A\xC0\x40"
+} -result "A\xC0\x40"
 
 test io-75.2 {unrepresentable character write passes and is replaced by ?} -constraints deprecated -setup {
     set fn [makeFile {} io-75.2]
@@ -8984,7 +8984,7 @@ test io-75.2 {unrepresentable character write passes and is replaced by ?} -cons
 } -cleanup {
     close $f
     removeFile io-75.2
-} -returnCodes ok -result "A?"
+} -result "A?"
 
 # Incomplete sequence test.
 # This error may IMHO only be detected with the close.
@@ -9003,7 +9003,7 @@ test io-75.3 {incomplete multibyte encoding read is ignored} -setup {
     set d
 } -cleanup {
     removeFile io-75.3
-} -returnCodes ok -result "A\xC0"
+} -result "A\xC0"
 
 # ### ### ### ######### ######### #########
 
