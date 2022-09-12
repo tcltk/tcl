@@ -2288,7 +2288,7 @@ BinaryProc(
  */
 
 #if TCL_MAJOR_VERSION > 8 || defined(TCL_NO_DEPRECATED)
-#   define STOPONERROR !(flags & TCL_ENCODING_NOCOMPLAIN)
+#   define STOPONERROR (!(flags & TCL_ENCODING_NOCOMPLAIN) || (flags & TCL_ENCODING_STOPONERROR))
 #else
 #   define STOPONERROR (flags & TCL_ENCODING_STOPONERROR)
 #endif
@@ -2359,10 +2359,14 @@ UtfToUtfProc(
 
 	    *dst++ = *src++;
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
-		&& (UCHAR(src[1]) == 0x80) && !(flags & TCL_ENCODING_MODIFIED)) {
+		&& (UCHAR(src[1]) == 0x80) && (!(flags & TCL_ENCODING_MODIFIED) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
 	    /*
 	     * Convert 0xC080 to real nulls when we are in output mode.
 	     */
+		if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+		result = TCL_CONVERT_UNKNOWN;
+		break;
+		}
 
 	    *dst++ = 0;
 	    src += 2;
