@@ -8952,7 +8952,6 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
 
-
 test io-75.1 {multibyte encoding error read results in raw bytes (-strictencoding 0)} -setup {
 	set fn [makeFile {} io-75.1]
     set f [open $fn w+]
@@ -9027,11 +9026,14 @@ test io-75.5 {unrepresentable character write passes and is replaced by ? (-stri
     set f [open $fn w+]
     fconfigure $f -encoding iso8859-1
 } -body {
-	puts -nonewline $f "A\u2022"
+    catch {puts -nonewline $f "A\u2022"} msg
+    flush $f
+    seek $f 0
+    list [read $f] $msg
 } -cleanup {
 	close $f
 	removeFile io-75.5
-} -returnCodes error
+} -match glob -result [list {A} {error writing "*": illegal byte sequence}]
 
 # Incomplete sequence test.
 # This error may IMHO only be detected with the close.
@@ -9040,16 +9042,16 @@ test io-75.6 {incomplete multibyte encoding read is ignored (-strictencoding 1)}
 	set fn [makeFile {} io-75.6]
 	set f [open $fn w+]
 	fconfigure $f -encoding binary
-	puts -nonewline $f "A\xC0"
-	flush $f
-	seek $f 0
-	fconfigure $f -encoding utf-8 -buffering none
+    puts -nonewline $f "A\xC0"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none
 } -body {
-	set d [read $f]
-	close $f
-	set d
+    set d [read $f]
+    close $f
+    set d
 } -cleanup {
-	removeFile io-75.5
+    removeFile io-75.6
 } -returnCodes error
 
 # ### ### ### ######### ######### #########
