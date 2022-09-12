@@ -1008,6 +1008,8 @@ proc http::CreateToken {url args} {
 	http		""
 	connection	keep-alive
 	tid             {}
+	requestHeaders  {}
+	requestLine     {}
     }
     set state(-keepalive) $defaultKeepalive
     set state(-strict) $strict
@@ -1096,6 +1098,9 @@ proc http::CreateToken {url args} {
     # Note that the RE actually combines the user and password parts, as
     # recommended in RFC 3986. Indeed, that RFC states that putting passwords
     # in URLs is a Really Bad Idea, something with which I would agree utterly.
+    # RFC 9110 Sec 4.2.4 goes further than this, and deprecates the format
+    # "user:password@".  It is retained here for backward compatibility,
+    # but its use is not recommended.
     #
     # From a validation perspective, we need to ensure that the parts of the
     # URL that are going to the server are correctly encoded.  This is only
@@ -1975,6 +1980,30 @@ proc http::ScheduleRequest {token} {
 }
 
 
+# ------------------------------------------------------------------------------
+#  Proc http::SendHeader
+# ------------------------------------------------------------------------------
+# Command to send a request header, and keep a copy in state(requestHeaders)
+# for debugging purposes.
+#
+# Arguments:
+# token       - connection token (name of an array)
+# key         - header name
+# value       - header value
+#
+# Return Value: none
+# ------------------------------------------------------------------------------
+
+proc http::SendHeader {token key value} {
+    variable $token
+    upvar 0 $token state
+    set tk [namespace tail $token]
+    set sock $state(sock)
+    lappend state(requestHeaders) [string tolower $key] $value
+    puts $sock "$key: $value"
+    return
+}
+
 # http::Connected --
 #
 #	Callback used when the connection to the HTTP server is actually
@@ -2059,29 +2088,31 @@ proc http::Connected {token proto phost srvurl} {
 
     if {[catch {
 	set state(method) $how
-	puts $sock "$how $srvurl HTTP/$state(-protocol)"
+	set state(requestHeaders) {}
+	set state(requestLine) "$how $srvurl HTTP/$state(-protocol)"
+	puts $sock $state(requestLine)
 	set hostValue [GetFieldValue $state(-headers) Host]
 	if {$hostValue ne {}} {
 	    # Allow Host spoofing. [Bug 928154]
 	    regexp {^[^:]+} $hostValue state(host)
-	    puts $sock "Host: $hostValue"
+	    SendHeader $token Host $hostValue
 	} elseif {$port == $defport} {
 	    # Don't add port in this case, to handle broken servers. [Bug
 	    # #504508]
 	    set state(host) $host
-	    puts $sock "Host: $host"
+	    SendHeader $token Host $host
 	} else {
 	    set state(host) $host
-	    puts $sock "Host: $host:$port"
+	    SendHeader $token Host "$host:$port"
 	}
-	puts $sock "User-Agent: $http(-useragent)"
+	SendHeader $token User-Agent $http(-useragent)
 	if {($state(-protocol) > 1.0) && $state(-keepalive)} {
 	    # Send this header, because a 1.1 server is not compelled to treat
 	    # this as the default.
-	    puts $sock "Connection: keep-alive"
+	    SendHeader $token Connection keep-alive
 	}
 	if {($state(-protocol) > 1.0) && !$state(-keepalive)} {
-	    puts $sock "Connection: close" ;# RFC2616 sec 8.1.2.1
+	    SendHeader $token Connection close ;# RFC2616 sec 8.1.2.1
 	}
 	if {($state(-protocol) < 1.1)} {
 	    # RFC7230 A.1
@@ -2090,7 +2121,7 @@ proc http::Connected {token proto phost srvurl} {
 	    # Don't leave this to chance.
 	    # For HTTP/1.0 we have already "set state(connection) close"
 	    # and "state(-keepalive) 0".
-	    puts $sock "Connection: close"
+	    SendHeader $token Connection close
 	}
 	# RFC7230 A.1 - "clients are encouraged not to send the
 	# Proxy-Connection header field in any requests"
@@ -2116,21 +2147,21 @@ proc http::Connected {token proto phost srvurl} {
 		set state(querylength) $value
 	    }
 	    if {[string length $key]} {
-		puts $sock "$key: $value"
+		SendHeader $token $key $value
 	    }
 	}
 	# Allow overriding the Accept header on a per-connection basis. Useful
 	# for working with REST services. [Bug c11a51c482]
 	if {!$accept_types_seen} {
-	    puts $sock "Accept: $state(accept-types)"
+	    SendHeader $token Accept $state(accept-types)
 	}
 	if {    (!$accept_encoding_seen)
 	     && (![info exists state(-handler)])
 	     && $http(-zip)
 	} {
-	    puts $sock "Accept-Encoding: gzip,deflate"
+	    SendHeader $token Accept-Encoding gzip,deflate
 	} elseif {!$accept_encoding_seen} {
-	    puts $sock "Accept-Encoding: identity"
+	    SendHeader $token Accept-Encoding identity
 	} else {
 	}
 	if {$isQueryChannel && ($state(querylength) == 0)} {
@@ -2156,7 +2187,7 @@ proc http::Connected {token proto phost srvurl} {
 		set separator "; "
 	    }
 	    if {$cookies ne ""} {
-		puts $sock "Cookie: $cookies"
+		SendHeader $token Cookie $cookies
 	    }
 	}
 
@@ -2180,10 +2211,10 @@ proc http::Connected {token proto phost srvurl} {
 	if {$isQuery || $isQueryChannel} {
 	    # POST method.
 	    if {!$content_type_seen} {
-		puts $sock "Content-Type: $state(-type)"
+		SendHeader $token Content-Type $state(-type)
 	    }
 	    if {!$contDone} {
-		puts $sock "Content-Length: $state(querylength)"
+		SendHeader $token Content-Length $state(querylength)
 	    }
 	    puts $sock ""
 	    flush $sock
