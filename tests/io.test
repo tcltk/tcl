@@ -8952,7 +8952,7 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
 
-# The following tests 75.1 to 75.3 exercice strict or tolerant channel
+# The following tests 75.1 to 75.5 exercise strict or tolerant channel
 # encoding.
 # TCL 8.7 only offers tolerant channel encoding, what is tested here.
 test io-75.1 {multibyte encoding error read results in raw bytes} -constraints deprecated -setup {
@@ -8966,11 +8966,13 @@ test io-75.1 {multibyte encoding error read results in raw bytes} -constraints d
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none
 } -body {
-    read $f
+    set d [read $f]
+    binary scan $d H* hd
+    set hd
 } -cleanup {
     close $f
     removeFile io-75.1
-} -result "A\xC0\x40"
+} -result "41c040"
 
 test io-75.2 {unrepresentable character write passes and is replaced by ?} -constraints deprecated -setup {
     set fn [makeFile {} io-75.2]
@@ -9000,10 +9002,51 @@ test io-75.3 {incomplete multibyte encoding read is ignored} -setup {
 } -body {
     set d [read $f]
     close $f
-    set d
+    binary scan $d H* hd
+    set hd
 } -cleanup {
     removeFile io-75.3
-} -result "A\xC0"
+} -result "41c0"
+
+# As utf-8 has a special treatment in multi-byte decoding, also test another
+# one.
+test io-75.4 {shiftjis encoding error read results in raw bytes} -setup {
+    set fn [makeFile {} io-75.4]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # In shiftjis, \x81 starts a two-byte sequence.
+    # But 2nd byte \xFF is not allowed
+    puts -nonewline $f "A\x81\xFFA"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf
+} -body {
+    set d [read $f]
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    close $f
+    removeFile io-75.4
+} -result "4181ff41"
+
+test io-75.5 {incomplete shiftjis encoding read is ignored} -setup {
+    set fn [makeFile {} io-75.5]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 announces a two byte sequence.
+    puts -nonewline $f "A\x81"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf
+} -body {
+    set d [read $f]
+    close $f
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    removeFile io-75.5
+} -result "4181"
+
 
 # ### ### ### ######### ######### #########
 
