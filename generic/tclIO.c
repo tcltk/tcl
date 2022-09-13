@@ -4278,6 +4278,7 @@ Write(
     char *nextNewLine = NULL;
     int endEncoding, saved = 0, total = 0, flushed = 0, needNlFlush = 0;
     char safe[BUFFER_PADDING];
+    int encodingError = 0;
 
     if (srcLen) {
         WillWrite(chanPtr);
@@ -4294,7 +4295,7 @@ Write(
 	nextNewLine = (char *)memchr(src, '\n', srcLen);
     }
 
-    while (srcLen + saved + endEncoding > 0) {
+    while (srcLen + saved + endEncoding > 0 && !encodingError) {
 	ChannelBuffer *bufPtr;
 	char *dst;
 	int result, srcRead, dstLen, dstWrote, srcLimit = srcLen;
@@ -4335,16 +4336,8 @@ Write(
 	statePtr->outputEncodingFlags &= ~TCL_ENCODING_START;
 
 	if ((result != TCL_OK) && (srcRead + dstWrote == 0)) {
-	    /*
-	     * We're reading from invalid/incomplete UTF-8.
-	     */
-
-	    ReleaseChannelBuffer(bufPtr);
-	    if (total == 0) {
-		Tcl_SetErrno(EINVAL);
-		return -1;
-	    }
-	    break;
+	    encodingError = 1;
+	    result = TCL_OK;
 	}
 
 	bufPtr->nextAdded += dstWrote;
@@ -4442,6 +4435,10 @@ Write(
 	}
     }
 
+    if (encodingError) {
+	Tcl_SetErrno(EINVAL);
+	return -1;
+    }
     return total;
 }
 
