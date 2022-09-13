@@ -4301,6 +4301,7 @@ Write(
     char *nextNewLine = NULL;
     int endEncoding, saved = 0, total = 0, flushed = 0, needNlFlush = 0;
     char safe[BUFFER_PADDING];
+    int encodingError = 0;
 
     if (srcLen) {
         WillWrite(chanPtr);
@@ -4317,7 +4318,7 @@ Write(
 	nextNewLine = (char *)memchr(src, '\n', srcLen);
     }
 
-    while (srcLen + saved + endEncoding > 0) {
+    while (srcLen + saved + endEncoding > 0 && !encodingError) {
 	ChannelBuffer *bufPtr;
 	char *dst;
 	int result, srcRead, dstLen, dstWrote, srcLimit = srcLen;
@@ -4361,24 +4362,21 @@ Write(
 	 * Check, if an encoding error occured and should be reported to the
 	 * script level.
 	 * This happens, if a written character may not be represented by the
-	 * current output encoding and strict encoding is active.hao_	
+	 * current output encoding and strict encoding is active.
 	 */
-	
+
 	if (result == TCL_CONVERT_UNKNOWN) {
-	    Tcl_SetErrno(EILSEQ);
-	    return -1;
+	    encodingError = 1;
+	    result = TCL_OK;
 	}
-	
+
 	if ((result != TCL_OK) && (srcRead + dstWrote == 0)) {
 	    /*
 	     * We're reading from invalid/incomplete UTF-8.
 	     */
 
-	    if (total == 0) {
-		Tcl_SetErrno(EILSEQ);
-		return -1;
-	    }
-	    break;
+	    encodingError = 1;
+	    result = TCL_OK;
 	}
 
 	bufPtr->nextAdded += dstWrote;
@@ -4476,6 +4474,10 @@ Write(
 
     UpdateInterest(chanPtr);
 
+    if (encodingError) {
+	Tcl_SetErrno(EILSEQ);
+	return -1;
+    }
     return total;
 }
 
