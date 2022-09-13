@@ -4409,11 +4409,8 @@ Write(
 	     * We're reading from invalid/incomplete UTF-8.
 	     */
 
-	    if (total == 0) {
-		Tcl_SetErrno(EILSEQ);
-		return -1;
-	    }
-	    break;
+	    encodingError = 1;
+	    result = TCL_OK;
 	}
 
 	bufPtr->nextAdded += dstWrote;
