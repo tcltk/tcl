@@ -781,8 +781,7 @@ typedef struct {
     int isNativeObjectProc;	/* 1 if objProc was registered by a call to
 				 * Tcl_CreateObjCommand; 2 if objProc was registered by
 				 * a call to Tcl_CreateObjCommand2; 0 otherwise.
-				 * Tcl_SetCmdInfo does not modify this
-				 * field. */
+				 * Tcl_SetCmdInfo does not modify this field. */
 #ifdef TCL_NO_DEPRECATED
     void *objProcNotUsed;	/* Command's object-based function. */
     void *objClientDataNotUsed;	/* ClientData for object proc. */
