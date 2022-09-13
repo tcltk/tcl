@@ -217,13 +217,22 @@ namespace eval http {
         511 {Network Authentication Required}
     }]
 
-    namespace export geturl config reset wait formatQuery quoteString
+    namespace export geturl config reset wait formatQuery postError quoteString
     namespace export register unregister registerError
-    # - Useful, but not exported: data, size, status, code, cleanup, error,
-    #   meta, ncode, mapReply, init.  Comments suggest that "init" can be used
-    #   for re-initialisation, although the command is undocumented.
-    # - Not exported, probably should be upper-case initial letter as part
-    #   of the internals: getTextLine, make-transformation-chunked.
+    namespace export requestLine requestHeaders requestHeaderValue
+    namespace export responseLine responseHeaders responseHeaderValue
+    namespace export responseCode responseBody responseInfo reasonPhrase
+    # - Legacy aliases, were never exported:
+    #     data, code, mapReply, meta, ncode
+    # - Callable from outside (e.g. from TLS) by fully-qualified name, but
+    #   not exported:
+    #     socket
+    # - Useful, but never exported (and likely to have naming collisions):
+    #     size, status, cleanup, error, init
+    #   Comments suggest that "init" can be used for re-initialisation,
+    #   although the command is undocumented.
+    # - Never exported, renamed from lower-case names:
+    #   GetTextLine, MakeTransformationChunked.
 }
 
 # http::Log --
@@ -318,7 +327,7 @@ proc http::config {args} {
 }
 
 # ------------------------------------------------------------------------------
-#  Proc http::reason
+#  Proc http::reasonPhrase
 # ------------------------------------------------------------------------------
 # Command to return the IANA-recommended "reason phrase" for a HTTP Status Code.
 # Information obtained from:
@@ -330,7 +339,7 @@ proc http::config {args} {
 # Return Value: the reason phrase
 # ------------------------------------------------------------------------------
 
-proc http::reason {code} {
+proc http::reasonPhrase {code} {
     variable reasonDict
     if {![regexp -- {^[1-5][0-9][0-9]$} $code]} {
         set msg {argument must be a three-digit integer from 100 to 599}
@@ -1006,10 +1015,14 @@ proc http::CreateToken {url args} {
 	body		{}
 	status		""
 	http		""
+	httpResponse    {}
+	ncode           {}
+	reason          {}
 	connection	keep-alive
 	tid             {}
 	requestHeaders  {}
 	requestLine     {}
+	transfer        {}
     }
     set state(-keepalive) $defaultKeepalive
     set state(-strict) $strict
@@ -2441,7 +2454,7 @@ proc http::EventGateway {sock token} {
         # http::reset or http::cleanup, or if the caller set option -channel
         # but not option -handler: in the last case reading from the socket is
         # now managed by commands ::http::Copy*, http::ReceiveChunked, and
-        # http::make-transformation-chunked.
+        # http::MakeTransformationChunked.
         #
         # Catch in case the coroutine has closed the socket.
         catch {fileevent $sock readable [list http::EventGateway $sock $token]}
@@ -3061,11 +3074,74 @@ proc http::Meta {token who args} {
     }
 }
 
+
+# ------------------------------------------------------------------------------
+#  Proc http::responseInfo
+# ------------------------------------------------------------------------------
+# Command to return a dictionary of the most useful metadata of a HTTP
+# response.
+#
+# Arguments:
+# token       - connection token (name of an array)
+#
+# Return Value: a dict
+# ------------------------------------------------------------------------------
+
+proc http::responseInfo {token} {
+    variable $token
+    upvar 0 $token state
+    set result {}
+    foreach key {
+        stage
+        status
+        ncode
+        reason
+        type
+        binary
+        redirection
+        charset
+        coding
+        httpRequest
+        httpResponse
+        url
+        connRequest
+        connResponse
+        connection
+        transfer
+        querylength
+        queryoffset
+        totalsize
+        currentsize
+    } {
+        if {$key eq {stage}} {
+            dict set result $key $state(state)
+        } elseif {$key eq {redirection}} {
+            dict set result $key [responseHeaderValue $token Location]
+        } elseif {$key eq {httpRequest}} {
+            dict set result $key $state(-protocol)
+        } elseif {$key eq {connRequest}} {
+            dict set result $key [requestHeaderValue $token connection]
+        } elseif {$key eq {connResponse}} {
+            dict set result $key [responseHeaderValue $token connection]
+        } else {
+            dict set result $key $state($key)
+        }
+    }
+    return $result
+}
 proc http::error {token} {
     variable $token
     upvar 0 $token state
     if {[info exists state(error)]} {
 	return $state(error)
+    }
+    return
+}
+proc http::postError {token} {
+    variable $token
+    upvar 0 $token state
+    if {[info exists state(posterror)]} {
+	return $state(posterror)
     }
     return
 }
@@ -3382,6 +3458,19 @@ proc http::Event {sock token} {
 		} else {
 		}
 
+		# We have $state(http) so let's split it into its components.
+		if {[regexp {^HTTP/(\S+) ([0-9]{3}) (.*)$} $state(http) \
+			-> httpResponse ncode reason]
+		} {
+		    set state(httpResponse) $httpResponse
+		    set state(ncode)  $ncode
+		    set state(reason) $reason
+		} else {
+		    set state(httpResponse) $state(http)
+		    set state(ncode)  $state(http)
+		    set state(reason) $state(http)
+		}
+
 		if {    ([info exists state(connection)])
 		     && ([info exists socketMapping($state(socketinfo))])
 		     && ("keep-alive" in $state(connection))
@@ -3514,7 +3603,7 @@ proc http::Event {sock token} {
 			    && ("close" in $state(connection))
 			  )
 			)
-		     && (![info exists state(transfer)])
+		     && ($state(transfer) eq {})
 		     && ($state(totalsize) == 0)
 		} {
 		    set msg {body size is 0 and no events likely - complete}
@@ -3585,6 +3674,13 @@ proc http::Event {sock token} {
 			connection {
 			    # RFC 7230 Section 6.1 states that a comma-separated
 			    # list is an acceptable value.
+			    if {![info exists state(connectionResponse)]} {
+				# This is the first "Connection" response header.
+				# Scrub the earlier value set by iniitialisation.
+				set state(connectionResponse) {}
+				set state(connection) {}
+			    }
+			    set state(connOrig[incr ::countConn]) [string trim $value]
 			    foreach el [SplitCommaSeparatedFieldValue $value] {
 				lappend state(connection) [string tolower $el]
 			    }
@@ -3652,7 +3748,7 @@ proc http::Event {sock token} {
 		    }
 		} elseif {[info exists state(transfer_final)]} {
 		    # This code forgives EOF in place of the final CRLF.
-		    set line [getTextLine $sock]
+		    set line [GetTextLine $sock]
 		    set n [string length $line]
 		    set state(state) complete
 		    if {$n > 0} {
@@ -3675,7 +3771,7 @@ proc http::Event {sock token} {
 		} {
 		    ##Log chunked - token $token
 		    set size 0
-		    set hexLenChunk [getTextLine $sock]
+		    set hexLenChunk [GetTextLine $sock]
 		    #set ntl [string length $hexLenChunk]
 		    if {[string trim $hexLenChunk] ne ""} {
 			scan $hexLenChunk %x size
@@ -3705,7 +3801,7 @@ proc http::Event {sock token} {
 			    }
 			    # CRLF that follows chunk.
 			    # If eof, this is handled at the end of this proc.
-			    getTextLine $sock
+			    GetTextLine $sock
 			} else {
 			    set n 0
 			    set state(transfer_final) {}
@@ -3986,7 +4082,7 @@ proc http::ParseCookie {token value} {
     {*}$http(-cookiejar) storeCookie $realopts
 }
 
-# http::getTextLine --
+# http::GetTextLine --
 #
 #	Get one line with the stream in crlf mode.
 #	Used if Transfer-Encoding is chunked, to read the line that
@@ -4000,7 +4096,7 @@ proc http::ParseCookie {token value} {
 # Results:
 #	The line of text, without trailing newline
 
-proc http::getTextLine {sock} {
+proc http::GetTextLine {sock} {
     set tr [fconfigure $sock -translation]
     lassign $tr trRead trWrite
     fconfigure $sock -translation [list crlf $trWrite]
@@ -4076,7 +4172,7 @@ proc http::CopyStart {sock token {initial 1}} {
 	    }
 	    lappend state(zlib) [zlib stream $coding2]
 	}
-	make-transformation-chunked $sock [namespace code [list CopyChunk $token]]
+	MakeTransformationChunked $sock [namespace code [list CopyChunk $token]]
     } else {
 	if {$initial} {
 	    foreach coding [ContentEncoding $token] {
@@ -4376,7 +4472,7 @@ proc http::formatQuery {args} {
     set result ""
     set sep ""
     foreach i $args {
-	append result $sep [mapReply $i]
+	append result $sep [quoteString $i]
 	if {$sep eq "="} {
 	    set sep &
 	} else {
@@ -4386,7 +4482,7 @@ proc http::formatQuery {args} {
     return $result
 }
 
-# http::mapReply --
+# http::quoteString --
 #
 #	Do x-www-urlencoded character mapping
 #
@@ -4396,7 +4492,7 @@ proc http::formatQuery {args} {
 # Results:
 #       The encoded string
 
-proc http::mapReply {string} {
+proc http::quoteString {string} {
     variable http
     variable formMap
 
@@ -4407,7 +4503,6 @@ proc http::mapReply {string} {
     set string [encoding convertto $http(-urlencoding) $string]
     return [string map $formMap $string]
 }
-interp alias {} http::quoteString {} http::mapReply
 
 # http::ProxyRequired --
 #	Default proxy filter.
@@ -4600,7 +4695,7 @@ proc http::GetFieldValue {headers fieldName} {
     return $r
 }
 
-proc http::make-transformation-chunked {chan command} {
+proc http::MakeTransformationChunked {chan command} {
     coroutine [namespace current]::dechunk$chan ::http::ReceiveChunked $chan $command
     chan event $chan readable [namespace current]::dechunk$chan
     return
@@ -4608,6 +4703,7 @@ proc http::make-transformation-chunked {chan command} {
 
 interp alias {} http::data {} http::responseBody
 interp alias {} http::code {} http::responseLine
+interp alias {} http::mapReply {} http::quoteString
 interp alias {} http::meta {} http::responseHeaders
 interp alias {} http::metaValue {} http::responseHeaderValue
 interp alias {} http::ncode {} http::responseCode
@@ -4660,7 +4756,7 @@ proc http::socket {args} {
     set defcmd ::socket
     set sockargs $args
     set script "
-        [list proc ::SockInThread {caller defcmd sockargs} [info body http::SockInThread]]
+        [list proc ::SockInThread {caller defcmd sockargs} [info body ::http::SockInThread]]
         [list ::SockInThread [thread::id] $defcmd $sockargs]
     "
 
@@ -4750,7 +4846,7 @@ proc http::SockInThread {caller defcmd sockargs} {
 
 
 # ------------------------------------------------------------------------------
-#  Proc ::http::cwaiter::cwait
+#  Proc http::cwaiter::cwait
 # ------------------------------------------------------------------------------
 # Command to substitute for vwait, without the ordering issues.
 # A command that uses cwait must be a coroutine that is launched by an event,
@@ -4769,13 +4865,13 @@ proc http::SockInThread {caller defcmd sockargs} {
 # Return Value: none
 # ------------------------------------------------------------------------------
 
-namespace eval ::http::cwaiter {
+namespace eval http::cwaiter {
     namespace export cwait
     variable log   {}
     variable logOn 0
 }
 
-proc ::http::cwaiter::cwait {
+proc http::cwaiter::cwait {
     varName {coroName {}} {timeout {}} {timeoutValue {}}
 } {
     set thisCoro [info coroutine]
@@ -4806,7 +4902,7 @@ proc ::http::cwaiter::cwait {
 
 
 # ------------------------------------------------------------------------------
-#  Proc ::http::cwaiter::CwaitHelper
+#  Proc http::cwaiter::CwaitHelper
 # ------------------------------------------------------------------------------
 # Helper command called by the trace set by cwait.
 # - Ignores the arguments added by trace.
@@ -4817,7 +4913,7 @@ proc ::http::cwaiter::cwait {
 # - Remove the trace immediately.  We don't want multiple calls.
 # ------------------------------------------------------------------------------
 
-proc ::http::cwaiter::CwaitHelper {varName coroName toe args} {
+proc http::cwaiter::CwaitHelper {varName coroName toe args} {
     CoLog "got $varName for $coroName"
     set cmd [list ::http::cwaiter::CwaitHelper $varName $coroName $toe]
     trace remove variable $varName write $cmd
@@ -4829,12 +4925,12 @@ proc ::http::cwaiter::CwaitHelper {varName coroName toe args} {
 
 
 # ------------------------------------------------------------------------------
-#  Proc ::http::cwaiter::LogInit
+#  Proc http::cwaiter::LogInit
 # ------------------------------------------------------------------------------
 # Call this command to initiate debug logging and clear the log.
 # ------------------------------------------------------------------------------
 
-proc ::http::cwaiter::LogInit {} {
+proc http::cwaiter::LogInit {} {
     variable log
     variable logOn
     set log {}
@@ -4842,12 +4938,12 @@ proc ::http::cwaiter::LogInit {} {
     return
 }
 
-proc ::http::cwaiter::LogRead {} {
+proc http::cwaiter::LogRead {} {
     variable log
     return $log
 }
 
-proc ::http::cwaiter::CoLog {msg} {
+proc http::cwaiter::CoLog {msg} {
     variable log
     variable logOn
     if {$logOn} {
@@ -4856,7 +4952,7 @@ proc ::http::cwaiter::CoLog {msg} {
     return
 }
 
-namespace eval ::http {
+namespace eval http {
     namespace import ::http::cwaiter::*
 }
 
