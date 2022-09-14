@@ -5965,7 +5965,7 @@ test io-40.17 {tilde substitution in open} {
     set x [list [catch {open ~/foo} msg] $msg]
     set ::env(HOME) $home
     set x
-} {1 {couldn't find HOME environment variable to expand path}}
+} {1 {couldn't open "~/foo": no such file or directory}}
 
 test io-41.1 {Tcl_FileeventCmd: errors} {fileevent} {
     list [catch {fileevent foo} msg] $msg
