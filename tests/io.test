@@ -8967,7 +8967,7 @@ test io-75.6 {multibyte encoding error read results in raw bytes} -setup {
     flush $f
     seek $f 0
     fconfigure $f -encoding utf-8 -buffering none
-} -body {
+} -constraints knownBug -body {
     set d [read $f]
     binary scan $d H* hd
     set hd
@@ -9026,7 +9026,7 @@ test io-75.9 {shiftjis encoding error read results in raw bytes} -setup {
     flush $f
     seek $f 0
     fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf
-} -body {
+} -constraints knownBug -body {
     set d [read $f]
     binary scan $d H* hd
     set hd
