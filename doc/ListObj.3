@@ -59,7 +59,7 @@ points to the Tcl value that will be appended to \fIlistPtr\fR.
 For \fBTcl_SetListObj\fR,
 this points to the Tcl value that will be converted to a list value
 containing the \fIobjc\fR elements of the array referenced by \fIobjv\fR.
-.AP size_t | int *objcPtr in
+.AP "size_t \&| int" *objcPtr in
 Points to location where \fBTcl_ListObjGetElements\fR
 stores the number of element values in \fIlistPtr\fR.
 .AP Tcl_Obj ***objvPtr out
@@ -76,7 +76,7 @@ An array of pointers to values.
 \fBTcl_NewListObj\fR will insert these values into a new list value
 and \fBTcl_ListObjReplace\fR will insert them into an existing \fIlistPtr\fR.
 Each value will become a separate list element.
-.AP size_t | int *lengthPtr out
+.AP "size_t \&| int" *lengthPtr out
 Points to location where \fBTcl_ListObjLength\fR
 stores the length of the list.
 .AP size_t index in
