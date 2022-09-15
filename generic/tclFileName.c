@@ -26,8 +26,6 @@ TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
  * Prototypes for local procedures defined in this file:
  */
 
-static const char *	DoTildeSubst(Tcl_Interp *interp,
-			    const char *user, Tcl_DString *resultPtr);
 static const char *	ExtractWinRoot(const char *path,
 			    Tcl_DString *resultPtr, int offset,
 			    Tcl_PathType *typePtr);
@@ -371,12 +369,6 @@ Tcl_GetPathType(
  *	file). The exported function Tcl_FSGetPathType should be used by
  *	extensions.
  *
- *	Note that '~' paths are always considered TCL_PATH_ABSOLUTE, even
- *	though expanding the '~' could lead to any possible path type. This
- *	function should therefore be considered a low-level, string
- *	manipulation function only -- it doesn't actually do any expansion in
- *	making its determination.
- *
  * Results:
  *	Returns one of TCL_PATH_ABSOLUTE, TCL_PATH_RELATIVE, or
  *	TCL_PATH_VOLUME_RELATIVE.
@@ -397,81 +389,66 @@ TclpGetNativePathType(
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
     const char *path = TclGetString(pathPtr);
 
-    if (path[0] == '~') {
-	/*
-	 * This case is common to all platforms. Paths that begin with ~ are
-	 * absolute.
-	 */
+    switch (tclPlatform) {
+    case TCL_PLATFORM_UNIX: {
+        const char *origPath = path;
 
-	if (driveNameLengthPtr != NULL) {
-	    const char *end = path + 1;
-	    while ((*end != '\0') && (*end != '/')) {
-		end++;
-	    }
-	    *driveNameLengthPtr = end - path;
-	}
-    } else {
-	switch (tclPlatform) {
-	case TCL_PLATFORM_UNIX: {
-	    const char *origPath = path;
+        /*
+         * Paths that begin with / are absolute.
+         */
 
-	    /*
-	     * Paths that begin with / are absolute.
-	     */
-
-	    if (path[0] == '/') {
-		++path;
+        if (path[0] == '/') {
+            ++path;
 #if defined(__CYGWIN__) || defined(__QNX__)
-		/*
-		 * Check for "//" network path prefix
-		 */
-		if ((*path == '/') && path[1] && (path[1] != '/')) {
-		    path += 2;
-		    while (*path && *path != '/') {
-			++path;
-		    }
+            /*
+             * Check for "//" network path prefix
+             */
+            if ((*path == '/') && path[1] && (path[1] != '/')) {
+                path += 2;
+                while (*path && *path != '/') {
+                    ++path;
+                }
 #if defined(__CYGWIN__)
-		    /* UNC paths need to be followed by a share name */
-		    if (*path++ && (*path && *path != '/')) {
-			++path;
-			while (*path && *path != '/') {
-			    ++path;
-			}
-		    } else {
-			path = origPath + 1;
-		    }
+                /* UNC paths need to be followed by a share name */
+                if (*path++ && (*path && *path != '/')) {
+                    ++path;
+                    while (*path && *path != '/') {
+                        ++path;
+                    }
+                } else {
+                    path = origPath + 1;
+                }
 #endif
-		}
+            }
 #endif
-		if (driveNameLengthPtr != NULL) {
-		    /*
-		     * We need this addition in case the QNX or Cygwin code was used.
-		     */
+            if (driveNameLengthPtr != NULL) {
+                /*
+                 * We need this addition in case the QNX or Cygwin code was used.
+                 */
 
-		    *driveNameLengthPtr = (path - origPath);
-		}
-	    } else {
-		type = TCL_PATH_RELATIVE;
-	    }
-	    break;
-	}
-	case TCL_PLATFORM_WINDOWS: {
-	    Tcl_DString ds;
-	    const char *rootEnd;
+                *driveNameLengthPtr = (path - origPath);
+            }
+        } else {
+            type = TCL_PATH_RELATIVE;
+        }
+        break;
+    }
+    case TCL_PLATFORM_WINDOWS: {
+        Tcl_DString ds;
+        const char *rootEnd;
 
-	    Tcl_DStringInit(&ds);
-	    rootEnd = ExtractWinRoot(path, &ds, 0, &type);
-	    if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
-		*driveNameLengthPtr = rootEnd - path;
-		if (driveNameRef != NULL) {
-		    *driveNameRef = TclDStringToObj(&ds);
-		    Tcl_IncrRefCount(*driveNameRef);
-		}
-	    }
-	    Tcl_DStringFree(&ds);
-	    break;
-	}
-	}
+        Tcl_DStringInit(&ds);
+        rootEnd = ExtractWinRoot(path, &ds, 0, &type);
+        if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
+            *driveNameLengthPtr = rootEnd - path;
+            if (driveNameRef != NULL) {
+                *driveNameRef = TclDStringToObj(&ds);
+                Tcl_IncrRefCount(*driveNameRef);
+            }
+        }
+        Tcl_DStringFree(&ds);
+        break;
+    }
     }
     return type;
 }
@@ -706,13 +683,8 @@ SplitUnixPath(
 	length = path - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-	    if ((elementStart[0] == '~') && (elementStart != origPath)) {
-		TclNewLiteralStringObj(nextElt, "./");
-		Tcl_AppendToObj(nextElt, elementStart, length);
-	    } else {
-		nextElt = Tcl_NewStringObj(elementStart, length);
-	    }
-	    Tcl_ListObjAppendElement(NULL, result, nextElt);
+            nextElt = Tcl_NewStringObj(elementStart, length);
+            Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
 	if (*path++ == '\0') {
 	    break;
@@ -775,10 +747,10 @@ SplitWinPath(
 	length = p - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-	    if ((elementStart != path) && ((elementStart[0] == '~')
-		    || (isalpha(UCHAR(elementStart[0]))
-			&& elementStart[1] == ':'))) {
-		TclNewLiteralStringObj(nextElt, "./");
+            if ((elementStart != path) &&
+                isalpha(UCHAR(elementStart[0])) &&
+                (elementStart[1] == ':')) {
+                TclNewLiteralStringObj(nextElt, "./");
 		Tcl_AppendToObj(nextElt, elementStart, length);
 	    } else {
 		nextElt = Tcl_NewStringObj(elementStart, length);
@@ -880,10 +852,12 @@ TclpNativeJoinPath(
     p = joining;
 
     if (length != 0) {
-	if ((p[0] == '.') && (p[1] == '/') && ((p[2] == '~')
-		|| (tclPlatform==TCL_PLATFORM_WINDOWS && isalpha(UCHAR(p[2]))
-		&& (p[3] == ':')))) {
-	    p += 2;
+	if ((p[0] == '.') &&
+            (p[1] == '/') &&
+            (tclPlatform==TCL_PLATFORM_WINDOWS) &&
+            isalpha(UCHAR(p[2])) &&
+            (p[3] == ':')) {
+            p += 2;
 	}
     }
     if (*p == '\0') {
@@ -1153,65 +1127,6 @@ TclGetExtension(
      */
 
     return p;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DoTildeSubst --
- *
- *	Given a string following a tilde, this routine returns the
- *	corresponding home directory.
- *
- * Results:
- *	The result is a pointer to a static string containing the home
- *	directory in native format. If there was an error in processing the
- *	substitution, then an error message is left in the interp's result and
- *	the return value is NULL. On success, the results are appended to
- *	resultPtr, and the contents of resultPtr are returned.
- *
- * Side effects:
- *	Information may be left in resultPtr.
- *
- *----------------------------------------------------------------------
- */
-
-static const char *
-DoTildeSubst(
-    Tcl_Interp *interp,		/* Interpreter in which to store error message
-				 * (if necessary). */
-    const char *user,		/* Name of user whose home directory should be
-				 * substituted, or "" for current user. */
-    Tcl_DString *resultPtr)	/* Initialized DString filled with name after
-				 * tilde substitution. */
-{
-    const char *dir;
-
-    if (*user == '\0') {
-	Tcl_DString dirString;
-
-	dir = TclGetEnv("HOME", &dirString);
-	if (dir == NULL) {
-	    if (interp) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"couldn't find HOME environment "
-			"variable to expand path", -1));
-		Tcl_SetErrorCode(interp, "TCL", "FILENAME", "NO_HOME", NULL);
-	    }
-	    return NULL;
-	}
-	Tcl_JoinPath(1, &dir, resultPtr);
-	Tcl_DStringFree(&dirString);
-    } else if (TclpGetUserHome(user, resultPtr) == NULL) {
-	if (interp) {
-	    Tcl_ResetResult(interp);
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "user \"%s\" doesn't exist", user));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "USER", user, NULL);
-	}
-	return NULL;
-    }
-    return Tcl_DStringValue(resultPtr);
 }
 
 /*
@@ -1706,8 +1621,7 @@ TclGlob(
 				 * NULL. */
 {
     const char *separators;
-    const char *head;
-    char *tail, *start;
+    char *tail;
     int result;
     Tcl_Obj *filenamesObj, *savedResultObj;
 
@@ -1721,60 +1635,10 @@ TclGlob(
 	break;
     }
 
-    if (pathPrefix == NULL) {
-	char c;
-	Tcl_DString buffer;
-	Tcl_DStringInit(&buffer);
-
-	start = pattern;
-
-	/*
-	 * Perform tilde substitution, if needed.
-	 */
-
-	if (start[0] == '~') {
-	    /*
-	     * Find the first path separator after the tilde.
-	     */
-
-	    for (tail = start; *tail != '\0'; tail++) {
-		if (*tail == '\\') {
-		    if (strchr(separators, tail[1]) != NULL) {
-			break;
-		    }
-		} else if (strchr(separators, *tail) != NULL) {
-		    break;
-		}
-	    }
-
-	    /*
-	     * Determine the home directory for the specified user.
-	     */
-
-	    c = *tail;
-	    *tail = '\0';
-	    head = DoTildeSubst(interp, start+1, &buffer);
-	    *tail = c;
-	    if (head == NULL) {
-		return TCL_ERROR;
-	    }
-	    if (head != Tcl_DStringValue(&buffer)) {
-		Tcl_DStringAppend(&buffer, head, -1);
-	    }
-	    pathPrefix = TclDStringToObj(&buffer);
-	    Tcl_IncrRefCount(pathPrefix);
-	    globFlags |= TCL_GLOBMODE_DIR;
-	    if (c != '\0') {
-		tail++;
-	    }
-	    Tcl_DStringFree(&buffer);
-	} else {
-	    tail = pattern;
-	}
-    } else {
+    if (pathPrefix != NULL) {
 	Tcl_IncrRefCount(pathPrefix);
-	tail = pattern;
     }
+    tail = pattern;
 
     /*
      * Handling empty path prefixes with glob patterns like 'C:' or
@@ -2328,14 +2192,7 @@ DoGlob(
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
 
-		if (pathPtr == NULL && TclGetString(subdirv[i])[0] == '~') {
-		    TclListObjLengthM(NULL, matchesObj, &repair);
-		    copy = subdirv[i];
-		    subdirv[i] = Tcl_NewStringObj("./", 2);
-		    Tcl_AppendObjToObj(subdirv[i], copy);
-		    Tcl_IncrRefCount(subdirv[i]);
-		}
-		result = DoGlob(interp, matchesObj, separators, subdirv[i],
+                result = DoGlob(interp, matchesObj, separators, subdirv[i],
 			1, p+1, types);
 		if (copy) {
 		    size_t end;
