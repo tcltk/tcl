@@ -26,8 +26,6 @@ TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
  * Prototypes for local procedures defined in this file:
  */
 
-static const char *	DoTildeSubst(Tcl_Interp *interp,
-			    const char *user, Tcl_DString *resultPtr);
 static const char *	ExtractWinRoot(const char *path,
 			    Tcl_DString *resultPtr, int offset,
 			    Tcl_PathType *typePtr);

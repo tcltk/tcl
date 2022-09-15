@@ -871,7 +871,7 @@ FileForceOption(
 
 static Tcl_Obj *
 FileBasename(
-    Tcl_Interp *interp,		/* Interp, for error return. */
+    TCL_UNUSED(Tcl_Interp *),	/* Interp, for error return. */
     Tcl_Obj *pathPtr)		/* Path whose basename to extract. */
 {
     size_t objc;

@@ -540,7 +540,7 @@ TclFSGetPathType(
 
 Tcl_Obj *
 TclPathPart(
-    Tcl_Interp *interp,		/* Used for error reporting */
+    TCL_UNUSED(Tcl_Interp *),	/* Used for error reporting */
     Tcl_Obj *pathPtr,		/* Path to take dirname of */
     Tcl_PathPart portion)	/* Requested portion of name */
 {
@@ -2174,13 +2174,12 @@ Tcl_FSEqualPaths(
 
 static int
 SetFsPathFromAny(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
+    TCL_UNUSED(Tcl_Interp *),	/* Used for error reporting if not NULL. */
     Tcl_Obj *pathPtr)		/* The object to convert. */
 {
     size_t len;
     FsPath *fsPathPtr;
     Tcl_Obj *transPtr;
-    const char *name;
 
     if (TclHasInternalRep(pathPtr, &fsPathType)) {
 	return TCL_OK;
@@ -2200,7 +2199,7 @@ SetFsPathFromAny(
      * cmdAH.test exercise most of the code).
      */
 
-    name = Tcl_GetStringFromObj(pathPtr, &len);
+    Tcl_GetStringFromObj(pathPtr, &len); /* TODO: Is this needed? */
     transPtr = TclJoinPath(1, &pathPtr, 1);
 
     /*
