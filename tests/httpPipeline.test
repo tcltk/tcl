@@ -674,7 +674,7 @@ proc RunTest {header footer delay te} {
 # If still obscure, uncomment #Log and ##Log lines in the http package.
 # ------------------------------------------------------------------------------
 
-setHttpTestOptions -verbose 2
+setHttpTestOptions -verbose 0
 
 # ------------------------------------------------------------------------------
 # (4) Define the base URLs used for testing.  Each must have a query string.
@@ -699,9 +699,9 @@ setHttpTestOptions -verbose 2
 namespace eval ::httpTestScript {
     variable URL
     array set URL {
-        a  http://test-tcl-http.kerlin.org.minerva/index.html?page=privacy
-        b  http://test-tcl-http.kerlin.org.minerva/index.html?page=conditions
-        c  http://test-tcl-http.kerlin.org.minerva/index.html?page=welcome
+        a  http://test-tcl-http.kerlin.org/index.html?page=privacy
+        b  http://test-tcl-http.kerlin.org/index.html?page=conditions
+        c  http://test-tcl-http.kerlin.org/index.html?page=welcome
     }
 }
 
