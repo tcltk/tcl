@@ -2159,10 +2159,6 @@ Tcl_FSEqualPaths(
  *	Attempt to convert the internal representation of pathPtr to
  *	fsPathType.
  *
- *	A tilde ("~") character at the beginnig of the filename indicates the
- *	current user's home directory, and "~<user>" indicates a particular
- *	user's directory.
- *
  * Results:
  *	Standard Tcl error code.
  *
