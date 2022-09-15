@@ -29,7 +29,7 @@ Tcl channel such as returned by \fBTcl_CreateChannel\fR.
 Conditions under which \fIproc\fR should be called: OR-ed combination of
 \fBTCL_READABLE\fR, \fBTCL_WRITABLE\fR and \fBTCL_EXCEPTION\fR. Specify
 a zero value to temporarily disable an existing handler.
-.AP Tcl_FileProc *proc in
+.AP Tcl_ChannelProc *proc in
 Procedure to invoke whenever the channel indicated by \fIchannel\fR meets
 the conditions specified by \fImask\fR.
 .AP void *clientData in

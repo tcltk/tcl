@@ -338,7 +338,10 @@ proc ::tcl::tm::Defaults {} {
         ] {
 	    if {![info exists env($ev)]} continue
 	    foreach p [split $env($ev) $sep] {
-		path add $p
+                # Paths relative to unresolvable home dirs are ignored
+                if {![catch {file tildeexpand $p} expanded_path]} {
+                    path add $expanded_path
+                }
 	    }
 	}
     }
