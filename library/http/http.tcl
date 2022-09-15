@@ -1016,8 +1016,8 @@ proc http::CreateToken {url args} {
 	status		""
 	http		""
 	httpResponse    {}
-	ncode           {}
-	reason          {}
+	responseCode    {}
+	reasonPhrase    {}
 	connection	keep-alive
 	tid             {}
 	requestHeaders  {}
@@ -1651,37 +1651,18 @@ proc http::OpenSocket {token DoLater} {
     dict unset socketCoEvent($state(socketinfo)) $token
     unset -nocomplain state(socketcoro)
 
-    set reusing $state(reusing)
+    if {[catch {
+        if {$state(reusing)} {
+	    # If ($state(reusing)) is true, then we do not need to create a new
+	    # socket, even if $sockOld is only a placeholder for a socket.
+            set sock $sockOld
+        } else {
+	    # set sock in the [catch] below.
+	    set pre [clock milliseconds]
+	    ##Log pre socket opened, - token $token
+	    ##Log $state(openCmd) - token $token
+	    set sock [namespace eval :: $state(openCmd)]
 
-    if {$reusing} {
-	# If ($reusing) is true, then we do not need to create a new socket,
-	# even if $sockOld is only a placeholder for a socket.
-        set sock $sockOld
-    } else {
-	# set sock in the [catch] below.
-	set pre [clock milliseconds]
-	##Log pre socket opened, - token $token
-	##Log $state(openCmd) - token $token
-	if {[catch {namespace eval :: $state(openCmd)} sock errdict]} {
-	    # ERROR CASE
-	    # Something went wrong while trying to establish the connection.
-	    # Tidy up after events and such, but DON'T call the command
-	    # callback (if available).
-	    # - When this was inline code in http::geturl, it threw an exception
-	    #   from here instead.
-	    # - Now that this code is called from geturl as an idletask and not
-	    #   as inline code, it is inappropriate to run cleanup or throw an
-	    #   exception.  Instead do a normal return, and let Finish report
-	    #   the error using token/state and the -command callback.
-	    #   Finish also undoes PreparePersistentConnection.
-
-	    set state(sock) NONE
-	    set ::errorInfo [dict get $errdict -errorinfo]
-	    set ::errorCode [dict get $errdict -errorcode]
-	    Finish $token $sock
-	    # cleanup $token
-	    return
-	} else {
 	    # Normal return from $state(openCmd) always returns a valid socket.
 	    # Initialisation of a new socket.
 	    ##Log post socket opened, - token $token
@@ -1694,15 +1675,16 @@ proc http::OpenSocket {token DoLater} {
 	    fconfigure $sock -translation {auto crlf} \
 			     -buffersize $state(-blocksize)
 	    ##Log socket opened, DONE fconfigure - token $token
-	}
+        }
+
+        Log "Using $sock for $state(socketinfo) - token $token" \
+	    [expr {$state(-keepalive)?"keepalive":""}]
+
+        # Code above has set state(sock) $sock
+        ConfigureNewSocket $token $sockOld $DoLater
+    } result errdict]} {
+        Finish $token $result
     }
-
-    Log "Using $sock for $state(socketinfo) - token $token" \
-	[expr {$state(-keepalive)?"keepalive":""}]
-
-    # Code above has set state(sock) $sock
-    ConfigureNewSocket $token $sockOld $DoLater
-
     ##Log Leaving http::OpenSocket coroutine [info coroutine] - token $token
     return
 }
@@ -3084,47 +3066,62 @@ proc http::Meta {token who args} {
 # Arguments:
 # token       - connection token (name of an array)
 #
-# Return Value: a dict
+# Return Value: a dict. See man page http(n) for a description of each item.
 # ------------------------------------------------------------------------------
 
 proc http::responseInfo {token} {
     variable $token
     upvar 0 $token state
     set result {}
-    foreach key {
-        stage
-        status
-        ncode
-        reason
-        type
-        binary
-        redirection
-        charset
-        coding
-        httpRequest
-        httpResponse
-        url
-        connRequest
-        connResponse
-        connection
-        transfer
-        querylength
-        queryoffset
-        totalsize
-        currentsize
+    foreach {key origin name} {
+        stage                 STATE  state
+        status                STATE  status
+        responseCode          STATE  responseCode
+        reasonPhrase          STATE  reasonPhrase
+        contentType           STATE  type
+        binary                STATE  binary
+        redirection           RESP   location
+        upgrade               STATE  upgrade
+        error                 ERROR  -
+        postError             STATE  posterror
+        method                STATE  method
+        charset               STATE  charset
+        compression           STATE  coding
+        httpRequest           STATE  -protocol
+        httpResponse          STATE  httpResponse
+        url                   STATE  url
+        connectionRequest     REQ    connection
+        connectionResponse    RESP   connection
+        connectionActual      STATE  connection
+        transferEncoding      STATE  transfer
+        totalPost             STATE  querylength
+        currentPost           STATE  queryoffset
+        totalSize             STATE  totalsize
+        currentSize           STATE  currentsize
     } {
-        if {$key eq {stage}} {
-            dict set result $key $state(state)
-        } elseif {$key eq {redirection}} {
-            dict set result $key [responseHeaderValue $token Location]
-        } elseif {$key eq {httpRequest}} {
-            dict set result $key $state(-protocol)
-        } elseif {$key eq {connRequest}} {
-            dict set result $key [requestHeaderValue $token connection]
-        } elseif {$key eq {connResponse}} {
-            dict set result $key [responseHeaderValue $token connection]
+        if {$origin eq {STATE}} {
+            if {[info exists state($name)]} {
+                dict set result $key $state($name)
+            } else {
+                # Should never come here
+                dict set result $key {}
+            }
+        } elseif {$origin eq {REQ}} {
+            dict set result $key [requestHeaderValue $token $name]
+        } elseif {$origin eq {RESP}} {
+            dict set result $key [responseHeaderValue $token $name]
+        } elseif {$origin eq {ERROR}} {
+            # Don't flood the dict with data.  The command ::http::error is
+            # available.
+            if {[info exists state(error)]} {
+                set msg [lindex $state(error) 0]
+            } else {
+                set msg {}
+            }
+            dict set result $key $msg
         } else {
-            dict set result $key $state($key)
+            # Should never come here
+            dict set result $key {}
         }
     }
     return $result
@@ -3140,8 +3137,8 @@ proc http::error {token} {
 proc http::postError {token} {
     variable $token
     upvar 0 $token state
-    if {[info exists state(posterror)]} {
-	return $state(posterror)
+    if {[info exists state(postErrorFull)]} {
+	return $state(postErrorFull)
     }
     return
 }
@@ -3309,11 +3306,13 @@ proc http::Write {token} {
 		set done 1
 	    }
 	}
-    } err]} {
+    } err opts]} {
 	# Do not call Finish here, but instead let the read half of the socket
 	# process whatever server reply there is to get.
-
 	set state(posterror) $err
+	set info [dict get $opts -errorinfo]
+	set code [dict get $opts -code]
+	set state(postErrorFull) [list $err $info $code]
 	set done 1
     }
 
@@ -3460,15 +3459,15 @@ proc http::Event {sock token} {
 
 		# We have $state(http) so let's split it into its components.
 		if {[regexp {^HTTP/(\S+) ([0-9]{3}) (.*)$} $state(http) \
-			-> httpResponse ncode reason]
+			-> httpResponse responseCode reasonPhrase]
 		} {
 		    set state(httpResponse) $httpResponse
-		    set state(ncode)  $ncode
-		    set state(reason) $reason
+		    set state(responseCode) $responseCode
+		    set state(reasonPhrase) $reasonPhrase
 		} else {
 		    set state(httpResponse) $state(http)
-		    set state(ncode)  $state(http)
-		    set state(reason) $state(http)
+		    set state(responseCode) $state(http)
+		    set state(reasonPhrase) $state(http)
 		}
 
 		if {    ([info exists state(connection)])
@@ -3674,13 +3673,12 @@ proc http::Event {sock token} {
 			connection {
 			    # RFC 7230 Section 6.1 states that a comma-separated
 			    # list is an acceptable value.
-			    if {![info exists state(connectionResponse)]} {
+			    if {![info exists state(connectionRespFlag)]} {
 				# This is the first "Connection" response header.
 				# Scrub the earlier value set by iniitialisation.
-				set state(connectionResponse) {}
+				set state(connectionRespFlag) {}
 				set state(connection) {}
 			    }
-			    set state(connOrig[incr ::countConn]) [string trim $value]
 			    foreach el [SplitCommaSeparatedFieldValue $value] {
 				lappend state(connection) [string tolower $el]
 			    }
@@ -4423,6 +4421,7 @@ proc http::GuessType {token} {
     set state(body) [encoding convertfrom $enc $state(body)]
     set state(body) [string map {\r\n \n \r \n} $state(body)]
     set state(type) application/xml
+    set state(binary) 0
     set state(charset) $res
     return 1
 }
@@ -4732,6 +4731,10 @@ interp alias {} http::ncode {} http::responseCode
 # - The http::socket command is simple, and can easily be replaced with an
 #   alternative command that uses a different technique to open a socket while
 #   entering the event loop.
+# - Unexpected behaviour by thread::send -async (Thread 2.8.6).
+#   An error in thread::send -async causes return of just the error message
+#   (not the expected 3 elements), and raises a bgerror in the main thread.
+#   Hence wrap the command with catch as a precaution.
 # ------------------------------------------------------------------------------
 
 proc http::socket {args} {
@@ -4756,8 +4759,11 @@ proc http::socket {args} {
     set defcmd ::socket
     set sockargs $args
     set script "
-        [list proc ::SockInThread {caller defcmd sockargs} [info body ::http::SockInThread]]
-        [list ::SockInThread [thread::id] $defcmd $sockargs]
+        set code \[catch {
+            [list proc ::SockInThread {caller defcmd sockargs} [info body ::http::SockInThread]]
+            [list ::SockInThread [thread::id] $defcmd $sockargs]
+        } result opts\]
+        list \$code \$opts \$result
     "
 
     set state(tid) [thread::create]
@@ -4779,10 +4785,26 @@ proc http::socket {args} {
     Log >U Thread End Wait $args -- coro [info coroutine] $varName [set $varName]
     thread::release $state(tid)
     set state(tid) {}
-    lassign [set $varName] catchCode errdict sock
+    set result [set $varName]
     unset $varName
-    dict set errdict -code $catchCode
-    return -options $errdict $sock
+    if {(![string is list $result]) || ([llength $result] != 3)} {
+        return -code error "result from peer thread is not a list of\
+                length 3: it is \n$result"
+    }
+    lassign $result threadCode threadDict threadResult
+    if {($threadCode != 0)} {
+        # This is an error in thread::send.  Return the lot.
+        return -options $threadDict -code error $threadResult
+    }
+
+    # Now the results of the catch in the peer thread.
+    lassign $threadResult catchCode errdict sock
+
+    if {($catchCode == 0) && ($sock ni [chan names])} {
+        return -code error {Transfer of socket from peer thread failed.\
+		Check that this script is not running in a child interpreter.}
+    }
+    return -options $errdict -code $catchCode $sock
 }
 
 # The commands below are dependencies of http::socket and
