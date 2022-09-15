@@ -1418,6 +1418,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 #undef TclGuessPackageName
 #undef TclUnusedStubEntry
 #undef TclSetPreInitScript
+#undef TclObjInterpProc
+#define TclObjInterpProc TclGetObjInterpProc()
 #ifndef TCL_NO_DEPRECATED
 #   define TclSetPreInitScript Tcl_SetPreInitScript
 #   define TclGuessPackageName(fileName, pkgName) ((void)fileName,(void)pkgName,0)
