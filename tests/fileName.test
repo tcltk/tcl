@@ -717,9 +717,9 @@ test filename-11.5 {Tcl_GlobCmd} -body {
     # Should not error out because of ~
     catch {glob -nocomplain * ~xyqrszzz}
 } -result 0
-test filename-11.6 {Tcl_GlobCmd} -returnCodes error -body {
+test filename-11.6 {Tcl_GlobCmd} -body {
     glob ~xyqrszzz
-} -result {no files matched glob pattern "~xyqrszzz"}
+} -result {}
 test filename-11.7 {Tcl_GlobCmd} -body {
     glob -- -nocomplain
 } -result {}
@@ -729,7 +729,7 @@ test filename-11.8 {Tcl_GlobCmd} -body {
 test filename-11.9 {Tcl_GlobCmd} -constraints {testsetplatform} -body {
     testsetplatform unix
     glob ~\\xyqrszzz/bar
-} -returnCodes error -result {no files matched glob pattern "~\xyqrszzz/bar"}
+} -result {}
 test filename-11.10 {Tcl_GlobCmd} -constraints {testsetplatform} -body {
     testsetplatform unix
     glob -nocomplain ~\\xyqrszzz/bar
@@ -737,22 +737,22 @@ test filename-11.10 {Tcl_GlobCmd} -constraints {testsetplatform} -body {
 test filename-11.11 {Tcl_GlobCmd} -constraints {testsetplatform} -body {
     testsetplatform unix
     glob ~xyqrszzz\\/\\bar
-} -returnCodes error -result {no files matched glob pattern "~xyqrszzz\/\bar"}
+} -result {}
 test filename-11.12 {Tcl_GlobCmd} -constraints {testsetplatform} -setup {
     testsetplatform unix
     set home $env(HOME)
 } -body {
     unset env(HOME)
     glob ~/*
-} -returnCodes error -cleanup {
+} -cleanup {
     set env(HOME) $home
-} -result {no files matched glob pattern "~/*"}
+} -result {}
 if {[testConstraint testsetplatform]} {
     testsetplatform $platform
 }
 test filename-11.13 {Tcl_GlobCmd} -body {
     file join [lindex [glob ~] 0]
-} -returnCodes error -result {no files matched glob pattern "~"}
+} -result {}
 set oldpwd [pwd]
 set oldhome $env(HOME)
 catch {cd [makeDirectory tcl[pid]]}
@@ -772,10 +772,10 @@ touch globTest/.1
 touch globTest/x,z1.c
 test filename-11.14 {Tcl_GlobCmd} -body {
     glob ~/globTest
-} -returnCodes error -result {no files matched glob pattern "~/globTest"}
+} -result {}
 test filename-11.15 {Tcl_GlobCmd} -body {
     glob ~\\/globTest
-} -returnCodes error -result {no files matched glob pattern "~\/globTest"}
+} -result {}
 test filename-11.16 {Tcl_GlobCmd} {
     glob globTest
 } {globTest}
@@ -1368,7 +1368,7 @@ test filename-15.5 {unix specific globbing} {unix nonPortable} {
 # supported, the test was meaningless
 test filename-15.7 {glob tilde} -body {
     glob ~
-} -returnCodes error -result {no files matched glob pattern "~"}
+} -result {}
 test filename-15.8 {win and unix specific globbing} -constraints {unixOrWin} -setup {
     global env
     set temp $env(HOME)
@@ -1379,7 +1379,7 @@ test filename-15.8 {win and unix specific globbing} -constraints {unixOrWin} -se
 } -cleanup {
     set env(HOME) $temp
     catch {file delete -force $env(HOME)/globTest/anyname}
-} -returnCodes error -result {no files matched glob pattern "~"}
+} -result {}
 
 # The following tests are only valid for Windows systems.
 set oldDir [pwd]
