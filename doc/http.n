@@ -423,7 +423,7 @@ multiple interfaces are available.
 .TP
 \fB\-progress\fR \fIcallback\fR
 .
-If the \fB\-progress\fR option is present, 
+If the \fB\-progress\fR option is present,
 then the \fIcallback\fR is made after each transfer of data from the URL.
 The value of \fIcallback\fR is expanded, an additional three arguments are
 added, and the resulting command is evaluated.
@@ -493,7 +493,7 @@ unable to determine the size, it returns an error.
 .TP
 \fB\-queryprogress\fR \fIcallback\fR
 .
-If the \fB\-queryprogress\fR option is present, 
+If the \fB\-queryprogress\fR option is present,
 then the \fIcallback\fR is made after each transfer of data to the URL
 in a POST request (i.e. a call to \fB::http::geturl\fR with
 option \fB\-query\fR or \fB\-querychannel\fR) and acts exactly like
@@ -1593,7 +1593,7 @@ for integrating \fR::http::socket\fR into its own replacement command.
 .PP
 .SS "WITH A CHILD INTERPRETER"
 .PP
-The peer thread can transfer the socket only to the main interpreter of the 
+The peer thread can transfer the socket only to the main interpreter of the
 script's thread.  Therefore the thread-based \fB::http::socket\fR works with
 non-zero \fI\-threadlevel\fR values only if the script runs in the main
 interpreter.  A child interpreter must use \fI\-threadlevel 0\fR unless the
