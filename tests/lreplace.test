@@ -236,272 +236,272 @@ apply {{} {
     }
 }}
 
-# Essentially same tests as above but for lsubst
-test lsubst-1.1 {lsubst command} {
+# Essentially same tests as above but for ledit
+test ledit-1.1 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l 0 0 a] $l
+    list [ledit l 0 0 a] $l
 } {{a 2 3 4 5} {a 2 3 4 5}}
-test lsubst-1.2 {lsubst command} {
+test ledit-1.2 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l 1 1 a] $l
+    list [ledit l 1 1 a] $l
 } {{1 a 3 4 5} {1 a 3 4 5}}
-test lsubst-1.3 {lsubst command} {
+test ledit-1.3 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l 2 2 a] $l
+    list [ledit l 2 2 a] $l
 } {{1 2 a 4 5} {1 2 a 4 5}}
-test lsubst-1.4 {lsubst command} {
+test ledit-1.4 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l 3 3 a] $l
+    list [ledit l 3 3 a] $l
 } {{1 2 3 a 5} {1 2 3 a 5}}
-test lsubst-1.5 {lsubst command} {
+test ledit-1.5 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l 4 4 a] $l
+    list [ledit l 4 4 a] $l
 } {{1 2 3 4 a} {1 2 3 4 a}}
-test lsubst-1.6 {lsubst command} {
+test ledit-1.6 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l 4 5 a] $l
+    list [ledit l 4 5 a] $l
 } {{1 2 3 4 a} {1 2 3 4 a}}
-test lsubst-1.7 {lsubst command} {
+test ledit-1.7 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l -1 -1 a] $l
+    list [ledit l -1 -1 a] $l
 } {{a 1 2 3 4 5} {a 1 2 3 4 5}}
-test lsubst-1.8 {lsubst command} {
+test ledit-1.8 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l 2 end a b c d] $l
+    list [ledit l 2 end a b c d] $l
 } {{1 2 a b c d} {1 2 a b c d}}
-test lsubst-1.9 {lsubst command} {
+test ledit-1.9 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l 0 3] $l
+    list [ledit l 0 3] $l
 } {5 5}
-test lsubst-1.10 {lsubst command} {
+test ledit-1.10 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l 0 4] $l
+    list [ledit l 0 4] $l
 } {{} {}}
-test lsubst-1.11 {lsubst command} {
+test ledit-1.11 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l 0 1] $l
+    list [ledit l 0 1] $l
 } {{3 4 5} {3 4 5}}
-test lsubst-1.12 {lsubst command} {
+test ledit-1.12 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l 2 3] $l
+    list [ledit l 2 3] $l
 } {{1 2 5} {1 2 5}}
-test lsubst-1.13 {lsubst command} {
+test ledit-1.13 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l 3 end] $l
+    list [ledit l 3 end] $l
 } {{1 2 3} {1 2 3}}
-test lsubst-1.14 {lsubst command} {
+test ledit-1.14 {ledit command} {
     set l {1 2 3 4 5}
-    list [lsubst l -1 4 a b c] $l
+    list [ledit l -1 4 a b c] $l
 } {{a b c} {a b c}}
-test lsubst-1.15 {lsubst command} {
+test ledit-1.15 {ledit command} {
     set l {a b "c c" d e f}
-    list [lsubst l 3 3] $l
+    list [ledit l 3 3] $l
 } {{a b {c c} e f} {a b {c c} e f}}
-test lsubst-1.16 {lsubst command} {
+test ledit-1.16 {ledit command} {
     set l { 1 2 3 4 5}
-    list [lsubst l 0 0 a] $l
+    list [ledit l 0 0 a] $l
 } {{a 2 3 4 5} {a 2 3 4 5}}
-test lsubst-1.17 {lsubst command} {
+test ledit-1.17 {ledit command} {
     set l {1 2 3 4 "5 6"}
-    list [lsubst l 4 4 a] $l
+    list [ledit l 4 4 a] $l
 } {{1 2 3 4 a} {1 2 3 4 a}}
-test lsubst-1.18 {lsubst command} {
+test ledit-1.18 {ledit command} {
     set l {1 2 3 4 {5 6}}
-    list [lsubst l 4 4 a] $l
+    list [ledit l 4 4 a] $l
 } {{1 2 3 4 a} {1 2 3 4 a}}
-test lsubst-1.19 {lsubst command} {
+test ledit-1.19 {ledit command} {
     set l {1 2 3 4}
-    list [lsubst l 2 end x y z] $l
+    list [ledit l 2 end x y z] $l
 } {{1 2 x y z} {1 2 x y z}}
-test lsubst-1.20 {lsubst command} {
+test ledit-1.20 {ledit command} {
     set l {1 2 3 4}
-    list [lsubst l end end a] $l
+    list [ledit l end end a] $l
 } {{1 2 3 a} {1 2 3 a}}
-test lsubst-1.21 {lsubst command} {
+test ledit-1.21 {ledit command} {
     set l {1 2 3 4}
-    list [lsubst l end 3 a] $l
+    list [ledit l end 3 a] $l
 } {{1 2 3 a} {1 2 3 a}}
-test lsubst-1.22 {lsubst command} {
+test ledit-1.22 {ledit command} {
     set l {1 2 3 4}
-    list [lsubst l end end] $l
+    list [ledit l end end] $l
 } {{1 2 3} {1 2 3}}
-test lsubst-1.23 {lsubst command} {
+test ledit-1.23 {ledit command} {
     set l {1 2 3 4}
-    list [lsubst l 2 -1 xy] $l
+    list [ledit l 2 -1 xy] $l
 } {{1 2 xy 3 4} {1 2 xy 3 4}}
-test lsubst-1.24 {lsubst command} {
+test ledit-1.24 {ledit command} {
     set l {1 2 3 4}
-    list [lsubst l end -1 z] $l
+    list [ledit l end -1 z] $l
 } {{1 2 3 z 4} {1 2 3 z 4}}
-test lsubst-1.25 {lsubst command} {
+test ledit-1.25 {ledit command} {
     set l {\}\     hello}
-    concat \"[lsubst l end end]\" $l
+    concat \"[ledit l end end]\" $l
 } {"\}\ " \}\ }
-test lsubst-1.26 {lsubst command} {
+test ledit-1.26 {ledit command} {
     catch {unset foo}
     set foo {a b}
-    list [lsubst foo end end] $foo \
-        [lsubst foo end end] $foo \
-        [lsubst foo end end] $foo
+    list [ledit foo end end] $foo \
+        [ledit foo end end] $foo \
+        [ledit foo end end] $foo
 } {a a {} {} {} {}}
-test lsubst-1.27 {lsubset command} -body {
+test ledit-1.27 {lsubset command} -body {
     set l x
-    list [lsubst l 1 1] $l
+    list [ledit l 1 1] $l
 } -result {x x}
-test lsubst-1.28 {lsubst command} -body {
+test ledit-1.28 {ledit command} -body {
     set l x
-    list [lsubst l 1 1 y] $l
+    list [ledit l 1 1 y] $l
 } -result {{x y} {x y}}
-test lsubst-1.29 {lsubst command} -body {
+test ledit-1.29 {ledit command} -body {
     set l x
-    lsubst l 1 1 [error foo]
+    ledit l 1 1 [error foo]
 } -returnCodes 1 -result {foo}
-test lsubst-1.30 {lsubst command} -body {
+test ledit-1.30 {ledit command} -body {
     set l {not {}alist}
-    lsubst l 0 0 [error foo]
+    ledit l 0 0 [error foo]
 } -returnCodes 1 -result {foo}
-test lsubst-1.31 {lsubst command} -body {
+test ledit-1.31 {ledit command} -body {
     unset -nocomplain arr
     set arr(x) {a b}
-    list [lsubst arr(x) 0 0 c] $arr(x)
+    list [ledit arr(x) 0 0 c] $arr(x)
 } -result {{c b} {c b}}
 
-test lsubst-2.1 {lsubst errors} -body {
-    list [catch lsubst msg] $msg
-} -result {1 {wrong # args: should be "lsubst listVar first last ?element ...?"}}
-test lsubst-2.2 {lsubst errors} -body {
+test ledit-2.1 {ledit errors} -body {
+    list [catch ledit msg] $msg
+} -result {1 {wrong # args: should be "ledit listVar first last ?element ...?"}}
+test ledit-2.2 {ledit errors} -body {
     unset -nocomplain x
-    list [catch {lsubst l b} msg] $msg
-} -result {1 {wrong # args: should be "lsubst listVar first last ?element ...?"}}
-test lsubst-2.3 {lsubst errors} -body {
+    list [catch {ledit l b} msg] $msg
+} -result {1 {wrong # args: should be "ledit listVar first last ?element ...?"}}
+test ledit-2.3 {ledit errors} -body {
     set x {}
-    list [catch {lsubst x a 10} msg] $msg
+    list [catch {ledit x a 10} msg] $msg
 } -result {1 {bad index "a": must be integer?[+-]integer? or end?[+-]integer?}}
-test lsubst-2.4 {lsubst errors} -body {
+test ledit-2.4 {ledit errors} -body {
     set l {}
-    list [catch {lsubst l 10 x} msg] $msg
+    list [catch {ledit l 10 x} msg] $msg
 } -result {1 {bad index "x": must be integer?[+-]integer? or end?[+-]integer?}}
-test lsubst-2.5 {lsubst errors} -body {
+test ledit-2.5 {ledit errors} -body {
     set l {}
-    list [catch {lsubst l 10 1x} msg] $msg
+    list [catch {ledit l 10 1x} msg] $msg
 } -result {1 {bad index "1x": must be integer?[+-]integer? or end?[+-]integer?}}
-test lsubst-2.6 {lsubst errors} -body {
+test ledit-2.6 {ledit errors} -body {
     set l x
-    list [catch {lsubst l 3 2} msg] $msg
+    list [catch {ledit l 3 2} msg] $msg
 } -result {0 x}
-test lsubst-2.7 {lsubst errors} -body {
+test ledit-2.7 {ledit errors} -body {
     set l x
-    list [catch {lsubst l 2 2} msg] $msg
+    list [catch {ledit l 2 2} msg] $msg
 } -result {0 x}
-test lsubst-2.8 {lsubst errors} -body {
+test ledit-2.8 {ledit errors} -body {
     unset -nocomplain l
-    lsubst l 0 0 x
+    ledit l 0 0 x
 } -returnCodes error -result {can't read "l": no such variable}
-test lsubst-2.9 {lsubst errors} -body {
+test ledit-2.9 {ledit errors} -body {
     unset -nocomplain arr
-    lsubst arr(x) 0 0 x
+    ledit arr(x) 0 0 x
 } -returnCodes error -result {can't read "arr(x)": no such variable}
-test lsubst-2.10 {lsubst errors} -body {
+test ledit-2.10 {ledit errors} -body {
     unset -nocomplain arr
     set arr(y) y
-    lsubst arr(x) 0 0 x
+    ledit arr(x) 0 0 x
 } -returnCodes error -result {can't read "arr(x)": no such element in array}
 
-test lsubst-3.1 {lsubst won't modify shared argument objects} {
+test ledit-3.1 {ledit won't modify shared argument objects} {
     proc p {} {
         set l "a b c"
-        lsubst l 1 1 "x y"
+        ledit l 1 1 "x y"
         # The literal in locals table should be unmodified
         return [list "a b c" $l]
     }
     p
 } {{a b c} {a {x y} c}}
 
-# Following bugs were in lreplace. Make sure lsubst does not have them
-test lsubst-4.1 {Bug ccc2c2cc98: lreplace edge case} {
+# Following bugs were in lreplace. Make sure ledit does not have them
+test ledit-4.1 {Bug ccc2c2cc98: lreplace edge case} {
     set l {}
-    list [lsubst l 1 1] $l
+    list [ledit l 1 1] $l
 } {{} {}}
-test lsubst-4.2 {Bug ccc2c2cc98: lreplace edge case} {
+test ledit-4.2 {Bug ccc2c2cc98: lreplace edge case} {
     set l { }
-    list [lsubst l 1 1] $l
+    list [ledit l 1 1] $l
 } {{} {}}
-test lsubst-4.3 {lreplace edge case} {
+test ledit-4.3 {lreplace edge case} {
     set l {1 2 3}
-    lsubst l 2 0
+    ledit l 2 0
 } {1 2 3}
-test lsubst-4.4 {lsubst edge case} {
+test ledit-4.4 {ledit edge case} {
     set l {1 2 3 4 5}
-    list [lsubst l 3 1] $l
+    list [ledit l 3 1] $l
 } {{1 2 3 4 5} {1 2 3 4 5}}
 test lreplace-4.5 {lreplace edge case} {
     lreplace {1 2 3 4 5} 3 0 _
 } {1 2 3 _ 4 5}
-test lsubst-4.6 {lsubst end-x: bug a4cb3f06c4} {
+test ledit-4.6 {ledit end-x: bug a4cb3f06c4} {
     set l {0 1 2 3 4}
-    list [lsubst l 0 end-2] $l
+    list [ledit l 0 end-2] $l
 } {{3 4} {3 4}}
-test lsubst-4.6.1 {lsubst end-x: bug a4cb3f06c4} {
+test ledit-4.6.1 {ledit end-x: bug a4cb3f06c4} {
     set l {0 1 2 3 4}
-    list [lsubst l 0 end-2 a b c] $l
+    list [ledit l 0 end-2 a b c] $l
 } {{a b c 3 4} {a b c 3 4}}
-test lsubst-4.7 {lsubst with two end-indexes: increasing} {
+test ledit-4.7 {ledit with two end-indexes: increasing} {
     set l {0 1 2 3 4}
-    list [lsubst l end-2 end-1] $l
+    list [ledit l end-2 end-1] $l
 } {{0 1 4} {0 1 4}}
-test lsubst-4.7.1 {lsubst with two end-indexes: increasing} {
+test ledit-4.7.1 {ledit with two end-indexes: increasing} {
     set l {0 1 2 3 4}
-    list [lsubst l end-2 end-1 a b c] $l
+    list [ledit l end-2 end-1 a b c] $l
 } {{0 1 a b c 4} {0 1 a b c 4}}
-test lsubst-4.8 {lsubst with two end-indexes: equal} {
+test ledit-4.8 {ledit with two end-indexes: equal} {
     set l {0 1 2 3 4}
-    list [lsubst l end-2 end-2] $l
+    list [ledit l end-2 end-2] $l
 } {{0 1 3 4} {0 1 3 4}}
-test lsubst-4.8.1 {lsubst with two end-indexes: equal} {
+test ledit-4.8.1 {ledit with two end-indexes: equal} {
     set l {0 1 2 3 4}
-    list [lsubst l end-2 end-2 a b c] $l
+    list [ledit l end-2 end-2 a b c] $l
 } {{0 1 a b c 3 4} {0 1 a b c 3 4}}
-test lsubst-4.9 {lsubst with two end-indexes: decreasing} {
+test ledit-4.9 {ledit with two end-indexes: decreasing} {
     set l {0 1 2 3 4}
-    list [lsubst l end-2 end-3] $l
+    list [ledit l end-2 end-3] $l
 } {{0 1 2 3 4} {0 1 2 3 4}}
-test lsubst-4.9.1 {lsubst with two end-indexes: decreasing} {
+test ledit-4.9.1 {ledit with two end-indexes: decreasing} {
     set l {0 1 2 3 4}
-    list [lsubst l end-2 end-3 a b c] $l
+    list [ledit l end-2 end-3 a b c] $l
 } {{0 1 a b c 2 3 4} {0 1 a b c 2 3 4}}
-test lsubst-4.10 {lsubst with two equal indexes} {
+test ledit-4.10 {ledit with two equal indexes} {
     set l {0 1 2 3 4}
-    list [lsubst l 2 2] $l
+    list [ledit l 2 2] $l
 } {{0 1 3 4} {0 1 3 4}}
-test lsubst-4.10.1 {lsubst with two equal indexes} {
+test ledit-4.10.1 {ledit with two equal indexes} {
     set l {0 1 2 3 4}
-    list [lsubst l 2 2 a b c] $l
+    list [ledit l 2 2 a b c] $l
 } {{0 1 a b c 3 4} {0 1 a b c 3 4}}
-test lsubst-4.11 {lsubst end index first} {
+test ledit-4.11 {ledit end index first} {
     set l {0 1 2 3 4}
-    list [lsubst l end-2 1 a b c] $l
+    list [ledit l end-2 1 a b c] $l
 } {{0 1 a b c 2 3 4} {0 1 a b c 2 3 4}}
-test lsubst-4.12 {lsubst end index first} {
+test ledit-4.12 {ledit end index first} {
     set l {0 1 2 3 4}
-    list [lsubst l end-2 2 a b c] $l
+    list [ledit l end-2 2 a b c] $l
 } {{0 1 a b c 3 4} {0 1 a b c 3 4}}
-test lsubst-4.13 {lsubst empty list} {
+test ledit-4.13 {ledit empty list} {
     set l {}
-    list [lsubst l 1 1 1] $l
+    list [ledit l 1 1 1] $l
 } {1 1}
-test lsubst-4.14 {lsubst empty list} {
+test ledit-4.14 {ledit empty list} {
     set l {}
-    list [lsubst l 2 2 2] $l
+    list [ledit l 2 2 2] $l
 } {2 2}
 
-test lsubst-5.1 {compiled lreplace: Bug 47ac84309b} {
+test ledit-5.1 {compiled lreplace: Bug 47ac84309b} {
     apply {x {
-	lsubst x end 0
+	ledit x end 0
     }} {a b c}
 } {a b c}
-test lsubst-5.2 {compiled lreplace: Bug 47ac84309b} {
+test ledit-5.2 {compiled lreplace: Bug 47ac84309b} {
     apply {x {
-	lsubst x end 0 A
+	ledit x end 0 A
     }} {a b c}
 } {a b A c}
 
@@ -520,10 +520,10 @@ apply {{} {
 	    foreach b $idxs {
 		foreach i $ins {
 		    set expected [list [catch {$lreplace $ls $a $b {*}$i} m] $m]
-		    set tester [list lsubst ls $a $b {*}$i]
+		    set tester [list ledit ls $a $b {*}$i]
 		    set script [list catch $tester m]
 		    set script "list \[$script\] \$m"
-		    test lsubst-6.[incr n] {lsubst battery} -body \
+		    test ledit-6.[incr n] {ledit battery} -body \
 			[list apply [list {ls} $script] $ls] -result $expected
 		}
 	    }

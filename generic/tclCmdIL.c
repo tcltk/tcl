@@ -4486,9 +4486,9 @@ Tcl_LsortObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_LsubstObjCmd --
+ * Tcl_LeditObjCmd --
  *
- *	This procedure is invoked to process the "lsubst" Tcl command. See the
+ *	This procedure is invoked to process the "ledit" Tcl command. See the
  *	user documentation for details on what it does.
  *
  * Results:
@@ -4501,7 +4501,7 @@ Tcl_LsortObjCmd(
  */
 
 int
-Tcl_LsubstObjCmd(
+Tcl_LeditObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -4529,7 +4529,7 @@ Tcl_LsubstObjCmd(
 
     /*
      * TODO - refactor the index extraction into a common function shared
-     * by Tcl_{Lrange,Lreplace,Lsubst}ObjCmd
+     * by Tcl_{Lrange,Lreplace,Ledit}ObjCmd
      */
 
     result = TclListObjLengthM(interp, listPtr, &listLen);
