@@ -21,6 +21,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint testchmod       [llength [info commands testchmod]]
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testvolumetype  [llength [info commands testvolumetype]]
+testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint time64bit [expr {
     $::tcl_platform(pointerSize) >= 8 ||
     [llength [info command testsize]] && [testsize st_mtime] >= 8
@@ -349,6 +350,25 @@ test cmdAH-4.21.2 {convertto -failindex with wrong character (byte compiled)} -s
 } -returnCodes 0 -result {41 1} -cleanup {
     rename encoding_test ""
 }
+test cmdAH-4.22 {convertfrom -strict} -body {
+    encoding convertfrom -strict utf-8 A\x00B
+} -result A\x00B
+
+test cmdAH-4.23 {convertfrom -strict} -body {
+    encoding convertfrom -strict utf-8 A\xC0\x80B
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\xC0'}
+
+test cmdAH-4.24 {convertto -strict} -body {
+    encoding convertto -strict utf-8 A\x00B
+} -result A\x00B
+
+test cmdAH-4.25 {convertfrom -strict} -constraints knownBug -body {
+    encoding convertfrom -strict utf-8 A\x80B
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\x80'}
+
+test cmdAH-4.26 {convertto -strict} -constraints {testbytestring knownBug} -body {
+    encoding convertto -strict utf-8 A[testbytestring \x80]B
+} -returnCodes error -result {unexpected byte sequence starting at index 1: '\x80'}
 
 test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
     file

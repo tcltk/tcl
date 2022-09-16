@@ -2361,13 +2361,16 @@ UtfToUtfProc(
 	} else if ((UCHAR(*src) == 0xC0) && (src + 1 < srcEnd)
 		&& (UCHAR(src[1]) == 0x80) && (!(flags & TCL_ENCODING_MODIFIED) || ((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT))) {
 	    /*
-	     * Convert 0xC080 to real nulls when we are in output mode.
+	     * If in input mode, and -strict is specified: This is an error.
 	     */
-		if (((flags & TCL_ENCODING_STRICT) == TCL_ENCODING_STRICT)) {
+	    if (flags & TCL_ENCODING_MODIFIED) {
 		result = TCL_CONVERT_UNKNOWN;
 		break;
-		}
+	    }
 
+	    /*
+	     * Convert 0xC080 to real nulls when we are in output mode, with or without '-strict'.
+	     */
 	    *dst++ = 0;
 	    src += 2;
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
