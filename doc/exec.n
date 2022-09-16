@@ -198,7 +198,7 @@ the commands in the pipeline will go to the application's
 standard error file unless redirected.
 .PP
 The first word in each command is taken as the command name;
-tilde-substitution is performed on it, and if the result contains
+if the result contains
 no slashes then the directories
 in the PATH environment variable are searched for
 an executable by the given name.
