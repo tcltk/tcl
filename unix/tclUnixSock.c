@@ -53,11 +53,9 @@ typedef struct TcpFdList {
 
 struct TcpState {
     Tcl_Channel channel;	/* Channel associated with this file. */
-    int testFlags;              /* bit field for tests. Is set by testsocket
-                                 * test procedure */
-    TcpFdList fds;		/* The file descriptors of the sockets. */
     int flags;			/* ORed combination of the bitfields defined
 				 * below. */
+    TcpFdList fds;		/* The file descriptors of the sockets. */
     int interest;		/* Event types of interest */
 
     /*
@@ -95,12 +93,7 @@ struct TcpState {
 					 * still pending */
 #define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
 
-/*
- * These bits may be ORed together into the "testFlags" field of a TcpState
- * structure.
- */
-
-#define TCP_ASYNC_TEST_MODE	(1<<0)	/* Async testing activated.  Do not
+#define TCP_ASYNC_TEST_MODE	(1<<8)	/* Async testing activated.  Do not
 					 * automatically continue connection
 					 * process. */
 
@@ -434,7 +427,7 @@ TcpBlockModeProc(
  *
  * Side effects:
  *	Processes socket events off the system queue. May process
- *	asynchroneous connects.
+ *	asynchronous connects.
  *
  *----------------------------------------------------------------------
  */
@@ -471,7 +464,7 @@ WaitForConnect(
      *   (errorCodePtr != NULL && !GOT_BITS(flags, TCP_NONBLOCKING))
      */
 
-    if (GOT_BITS(statePtr->testFlags, TCP_ASYNC_TEST_MODE)
+    if (GOT_BITS(statePtr->flags, TCP_ASYNC_TEST_MODE)
             && !(errorCodePtr != NULL
                     && !GOT_BITS(statePtr->flags, TCP_NONBLOCKING))) {
 	*errorCodePtr = EWOULDBLOCK;
@@ -880,8 +873,8 @@ TcpGetOptionProc(
 
     if ((len > 1) && (optionName[1] == 'c') &&
 	    (strncmp(optionName, "-connecting", len) == 0)) {
-        Tcl_DStringAppend(dsPtr,
-                GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT) ? "1" : "0", TCL_INDEX_NONE);
+	Tcl_DStringAppend(dsPtr,
+		GOT_BITS(statePtr->flags, TCP_ASYNC_CONNECT) ? "1" : "0", TCL_INDEX_NONE);
         return TCL_OK;
     }
 
@@ -1351,7 +1344,7 @@ TcpConnect(
         }
 
         /*
-         * We need to forward the writable event that brought us here, bcasue
+         * We need to forward the writable event that brought us here, because
          * upon reading of getsockopt(SO_ERROR), at least some OSes clear the
          * writable state from the socket, and so a subsequent select() on
          * behalf of a script level [fileevent] would not fire. It doesn't

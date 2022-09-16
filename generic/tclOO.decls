@@ -135,6 +135,20 @@ declare 30 {
 declare 31 {
     Tcl_Obj *Tcl_GetObjectClassName(Tcl_Interp *interp, Tcl_Object object)
 }
+declare 32 {
+    int Tcl_MethodIsType2(Tcl_Method method, const Tcl_MethodType2 *typePtr,
+	    void **clientDataPtr)
+}
+declare 33 {
+    Tcl_Method Tcl_NewInstanceMethod2(Tcl_Interp *interp, Tcl_Object object,
+	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType2 *typePtr,
+	    void *clientData)
+}
+declare 34 {
+    Tcl_Method Tcl_NewMethod2(Tcl_Interp *interp, Tcl_Class cls,
+	    Tcl_Obj *nameObj, int flags, const Tcl_MethodType2 *typePtr,
+	    void *clientData)
+}
 
 ######################################################################
 # Private API, exposed to support advanced OO systems that plug in on top of
