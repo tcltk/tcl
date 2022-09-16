@@ -144,7 +144,7 @@ test http-2.8 {http::CharsetToEncoding} {
 
 test http-3.1 {http::geturl} -returnCodes error -body {
     http::geturl -bogus flag
-} -result {Unknown option flag, can be: -binary, -blocksize, -channel, -command, -handler, -headers, -keepalive, -method, -myaddr, -progress, -protocol, -query, -queryblocksize, -querychannel, -queryprogress, -strict, -timeout, -type, -validate}
+} -result {Unknown option flag, can be: -binary, -blocksize, -channel, -command, -guesstype, -handler, -headers, -keepalive, -method, -myaddr, -progress, -protocol, -query, -queryblocksize, -querychannel, -queryprogress, -strict, -timeout, -type, -validate}
 
 test http-3.2 {http::geturl} -returnCodes error -body {
     http::geturl http:junk
@@ -389,7 +389,7 @@ test http-3.25 {http::meta} -setup {
 } -cleanup {
     http::cleanup $token
     unset -nocomplain m token
-} -result {Content-Length Content-Type Date}
+} -result {content-length content-type date}
 test http-3.26 {http::meta} -setup {
     unset -nocomplain m token
 } -body {
@@ -399,7 +399,7 @@ test http-3.26 {http::meta} -setup {
 } -cleanup {
     http::cleanup $token
     unset -nocomplain m token
-} -result {Content-Length Content-Type Date X-Check}
+} -result {content-length content-type date x-check}
 test http-3.27 {http::geturl: -headers override -type} -body {
     set token [http::geturl $url/headers -type "text/plain" -query dummy \
 	    -headers [list "Content-Type" "text/plain;charset=utf-8"]]
@@ -484,7 +484,7 @@ test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]
     upvar #0 $token data
     array set meta $data(meta)
-    expr {($data(totalsize) == $meta(Content-Length))}
+    expr {($data(totalsize) == $meta(content-length))}
 } -cleanup {
     http::cleanup $token
 } -result 1
@@ -492,7 +492,7 @@ test http-4.2 {http::Event} -body {
     set token [http::geturl $url]
     upvar #0 $token data
     array set meta $data(meta)
-    string compare $data(type) [string trim $meta(Content-Type)]
+    string compare $data(type) [string trim $meta(content-type)]
 } -cleanup {
     http::cleanup $token
 } -result 0

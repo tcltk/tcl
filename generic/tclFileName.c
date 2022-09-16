@@ -671,8 +671,7 @@ SplitUnixPath(
     }
 
     /*
-     * Split on slashes. Embedded elements that start with tilde will be
-     * prefixed with "./" so they are not affected by tilde substitution.
+     * Split on slashes.
      */
 
     for (;;) {
@@ -734,9 +733,7 @@ SplitWinPath(
     Tcl_DStringFree(&buf);
 
     /*
-     * Split on slashes. Embedded elements that start with tilde or a drive
-     * letter will be prefixed with "./" so they are not affected by tilde
-     * substitution.
+     * Split on slashes.
      */
 
     do {
@@ -845,7 +842,7 @@ TclpNativeJoinPath(
     start = Tcl_GetStringFromObj(prefix, &length);
 
     /*
-     * Remove the ./ from tilde prefixed elements, and drive-letter prefixed
+     * Remove the ./ from drive-letter prefixed
      * elements on Windows, unless it is the first component.
      */
 
@@ -1008,19 +1005,15 @@ Tcl_JoinPath(
  * Tcl_TranslateFileName --
  *
  *	Converts a file name into a form usable by the native system
- *	interfaces. If the name starts with a tilde, it will produce a name
- *	where the tilde and following characters have been replaced by the
- *	home directory location for the named user.
+ *	interfaces.
  *
  * Results:
- *	The return value is a pointer to a string containing the name after
- *	tilde substitution. If there was no tilde substitution, the return
- *	value is a pointer to a copy of the original string. If there was an
+ *	The return value is a pointer to a string containing the name.
+ *      This may either be the name pointer passed in or space allocated in
+ *      bufferPtr. In all cases, if the return value is not NULL, the caller
+ *	must call Tcl_DStringFree() to free the space. If there was an
  *	error in processing the name, then an error message is left in the
  *	interp's result (if interp was not NULL) and the return value is NULL.
- *	Space for the return value is allocated in bufferPtr; the caller must
- *	call Tcl_DStringFree() to free the space if the return value was not
- *	NULL.
  *
  * Side effects:
  *	None.
@@ -1037,7 +1030,7 @@ Tcl_TranslateFileName(
 				 * "~<user>" (to indicate any user's home
 				 * directory). */
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
-				 * name after tilde substitution. */
+				 * name. */
 {
     Tcl_Obj *path = Tcl_NewStringObj(name, -1);
     Tcl_Obj *transPtr;
@@ -1584,8 +1577,7 @@ Tcl_GlobObjCmd(
  *
  * TclGlob --
  *
- *	Sets the separator string based on the platform, performs tilde
- *	substitution, and calls DoGlob.
+ *	Sets the separator string based on the platform	and calls DoGlob.
  *
  *	The interpreter's result, on entry to this function, must be a valid
  *	Tcl list (e.g. it could be empty), since we will lappend any new
