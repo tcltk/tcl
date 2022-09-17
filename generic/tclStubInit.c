@@ -83,6 +83,7 @@
 #undef Tcl_UtfAtIndex
 #undef Tcl_GetRange
 #undef Tcl_GetUniChar
+#undef TclObjInterpProc
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define TclWinConvertWSAError (void (*)(DWORD))(void *)Tcl_WinConvertError
