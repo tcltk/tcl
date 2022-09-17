@@ -1174,7 +1174,7 @@ test safe-10.1.1 {testing statics loading} -constraints tcl::test -setup {
 } -body {
     catch {interp eval $i {load {} Safepfx1}} m o
     dict get $o -errorinfo
-} -returnCodes ok -cleanup {
+} -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {load of library for prefix Safepfx1 failed: can't use library in a safe interpreter: no Safepfx1_SafeInit procedure
@@ -1205,7 +1205,7 @@ test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints t
     set i [safe::interpCreate -nestedloadok]
     catch {interp eval $i {interp create x; load {} Safepfx1 x}} m o
     dict get $o -errorinfo
-} -returnCodes ok -cleanup {
+} -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {load of library for prefix Safepfx1 failed: can't use library in a safe interpreter: no Safepfx1_SafeInit procedure
@@ -1275,7 +1275,7 @@ test safe-11.7.1 {testing safe encoding} -setup {
 } -body {
     catch {interp eval $i encoding convertfrom} m o
     dict get $o -errorinfo
-} -returnCodes ok -match glob -cleanup {
+} -match glob -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?-failindex var? ?encoding? data"
@@ -1297,7 +1297,7 @@ test safe-11.8.1 {testing safe encoding} -setup {
 } -body {
     catch {interp eval $i encoding convertto} m o
     dict get $o -errorinfo
-} -returnCodes ok -match glob -cleanup {
+} -match glob -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {wrong # args: should be "encoding convertto ?-nocomplain? ?-failindex var? ?encoding? data"
@@ -1621,7 +1621,7 @@ test safe-16.5 {Bug 3529949: defang ~ in paths used by AliasGlob (1)} -setup {
     safe::interpDelete $i
     set env(HOME) $savedHOME
     unset savedHOME
-} -result {~}
+} -result {$p(:0:)/~}
 test safe-16.6 {Bug 3529949: defang ~ in paths used by AliasGlob (2)} -setup {
     set savedHOME $env(HOME)
     set env(HOME) /foo/bar
@@ -1635,7 +1635,7 @@ test safe-16.6 {Bug 3529949: defang ~ in paths used by AliasGlob (2)} -setup {
     safe::interpDelete $i
     set env(HOME) $savedHOME
     unset savedHOME
-} -result {~}
+} -result {$p(:0:)/foo/bar/~}
 test safe-16.7 {Bug 3529949: defang ~user in paths used by AliasGlob (1)} -setup {
     set i [safe::interpCreate]
     set user $tcl_platform(user)
@@ -1644,7 +1644,7 @@ test safe-16.7 {Bug 3529949: defang ~user in paths used by AliasGlob (1)} -setup
 } -cleanup {
     safe::interpDelete $i
     unset user
-} -result {~USER}
+} -result {$p(:0:)/~USER}
 test safe-16.8 {Bug 3529949: defang ~user in paths used by AliasGlob (2)} -setup {
     set i [safe::interpCreate]
     set user $tcl_platform(user)
@@ -1653,7 +1653,7 @@ test safe-16.8 {Bug 3529949: defang ~user in paths used by AliasGlob (2)} -setup
 } -cleanup {
     safe::interpDelete $i
     unset user
-} -result {~USER}
+} -result {$p(:0:)/foo/bar/~USER}
 
 # cleanup
 set ::auto_path $SaveAutoPath

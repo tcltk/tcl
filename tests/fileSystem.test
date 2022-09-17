@@ -267,15 +267,14 @@ file delete -force [file join dir.dir dirinside.link]
 removeFile [file join dir.dir inside.file]
 removeDirectory [file join dir.dir dirinside.dir]
 removeDirectory dir.dir
-test filesystem-1.30 {normalisation of nonexistent user} -body {
+test filesystem-1.30 {
+    normalisation of nonexistent user - verify no tilde expansion
+} -body {
     file normalize ~noonewiththisname
-} -returnCodes error -result {user "noonewiththisname" doesn't exist}
+} -result [file join [pwd] ~noonewiththisname]
 test filesystem-1.30.1 {normalisation of existing user} -body {
-    catch {file normalize ~$::tcl_platform(user)}
-} -result {0}
-test filesystem-1.30.2 {normalisation of nonexistent user specified as user@domain} -body {
-    file normalize ~nonexistentuser@nonexistentdomain
-} -returnCodes error -result {user "nonexistentuser@nonexistentdomain" doesn't exist}
+    file normalize ~$::tcl_platform(user)
+} -result [file join [pwd] ~$::tcl_platform(user)]
 test filesystem-1.31 {link normalisation: link near filesystem root} {testsetplatform} {
     testsetplatform unix
     file normalize /foo/../bar
@@ -473,7 +472,10 @@ test filesystem-4.3 {testfilesystem} -constraints testfilesystem -body {
     return $filesystemReport
 } -match glob -result {*{matchindirectory *}*}
 
-test filesystem-5.1 {cache and ~} -constraints testfilesystem -setup {
+# This test is meaningless if there is no tilde expansion
+test filesystem-5.1 {cache and ~} -constraints {
+    testfilesystem tildeexpansion
+} -setup {
     set orig $::env(HOME)
 } -body {
     set ::env(HOME) /foo/bar/blah
@@ -939,7 +941,7 @@ test filesystem-9.7 {path objects and glob and file tail and tilde} -setup {
     cd [tcltest::temporaryDirectory]
     file delete -force tilde
     cd $origdir
-} -result {0 1 {user "testNotExist" doesn't exist} ~testNotExist 0 1 {user "testNotExist" doesn't exist} 1 {user "testNotExist" doesn't exist}}
+} -result {1 0 ~testNotExist ~testNotExist 1 0 ~testNotExist 0 ~testNotExist}
 test filesystem-9.8 {path objects and glob and file tail and tilde} -setup {
     set res {}
     set origdir [pwd]
@@ -957,7 +959,7 @@ test filesystem-9.8 {path objects and glob and file tail and tilde} -setup {
     cd [tcltest::temporaryDirectory]
     file delete -force tilde
     cd $origdir
-} -result {~testNotExist ~testNotExist 1 {user "testNotExist" doesn't exist} 1 {user "testNotExist" doesn't exist}}
+} -result {~testNotExist ~testNotExist 0 ~testNotExist 0 ~testNotExist}
 test filesystem-9.9 {path objects and glob and file tail and tilde} -setup {
     set res {}
     set origdir [pwd]
@@ -975,7 +977,7 @@ test filesystem-9.9 {path objects and glob and file tail and tilde} -setup {
     cd [tcltest::temporaryDirectory]
     file delete -force tilde
     cd $origdir
-} -result {0 0 0 0 1}
+} -result {0 1 0 1 1}
 
 # ----------------------------------------------------------------------
 
