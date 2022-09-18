@@ -3233,9 +3233,13 @@ MODULE_SCOPE int	TclNamespaceDeleted(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, const char *operation,
 			    const char *reason, int index);
+MODULE_SCOPE int	TclObjInterpProc(void *clientData,
+				Tcl_Interp *interp, int objc,
+				Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclObjInterpProc2(void *clientData,
 				Tcl_Interp *interp, size_t objc,
 				Tcl_Obj *const objv[]);
+#define TclObjInterpProc TclGetObjInterpProc()
 #define TclObjInterpProc2 TclGetObjInterpProc2()
 MODULE_SCOPE int		TclObjInvoke(Tcl_Interp *interp, size_t objc,
 				Tcl_Obj *const objv[], int flags);

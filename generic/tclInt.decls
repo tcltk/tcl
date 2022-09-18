@@ -92,7 +92,7 @@ declare 38 {
 	    const char **simpleNamePtr)
 }
 declare 39 {
-    Tcl_ObjCmdProc2 *TclGetObjInterpProc2(void)
+    Tcl_ObjCmdProc *TclGetObjInterpProc(void)
 }
 declare 40 {
     int TclGetOpenMode(Tcl_Interp *interp, const char *str, int *seekFlagPtr)
@@ -102,6 +102,9 @@ declare 41 {
 }
 declare 42 {
     const char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
+}
+declare 43 {
+    Tcl_ObjCmdProc2 *TclGetObjInterpProc2(void)
 }
 declare 45 {
     int TclHideUnsafeCommands(Tcl_Interp *interp)

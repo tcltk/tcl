@@ -34,20 +34,21 @@ typedef struct {
 static void		DupLambdaInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static void		FreeLambdaInternalRep(Tcl_Obj *objPtr);
-static int		InitArgsAndLocals(Tcl_Interp *interp, int skip);
+static int		InitArgsAndLocals(Tcl_Interp *interp, size_t skip);
 static void		InitResolvedLocals(Tcl_Interp *interp,
 			    ByteCode *codePtr, Var *defPtr,
 			    Namespace *nsPtr);
 static void		InitLocalCache(Proc *procPtr);
 static void		ProcBodyDup(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		ProcBodyFree(Tcl_Obj *objPtr);
-static int		ProcWrongNumArgs(Tcl_Interp *interp, int skip);
+static int		ProcWrongNumArgs(Tcl_Interp *interp, size_t skip);
 static void		MakeProcError(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static void		MakeLambdaError(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static Tcl_ObjCmdProc2 NRInterpProc;
+static Tcl_ObjCmdProc NRInterpProc;
+static Tcl_ObjCmdProc2 NRInterpProc2;
 
 
 static Tcl_NRPostProc ApplyNR2;
@@ -208,7 +209,7 @@ Tcl_ProcObjCmd(
     }
 
     cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
-	TclObjInterpProc2, NRInterpProc, procPtr, TclProcDeleteProc);
+	TclObjInterpProc2, NRInterpProc2, procPtr, TclProcDeleteProc);
 
     /*
      * Now initialize the new procedure's cmdPtr field. This will be used
@@ -1063,7 +1064,7 @@ TclIsProc(
 static int
 ProcWrongNumArgs(
     Tcl_Interp *interp,
-    int skip)
+    size_t skip)
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     Proc *procPtr = framePtr->procPtr;
@@ -1341,7 +1342,7 @@ static int
 InitArgsAndLocals(
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
-    int skip)			/* Number of initial arguments to be skipped,
+    size_t skip1)			/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
@@ -1350,6 +1351,7 @@ InitArgsAndLocals(
     Var *varPtr, *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
+    int skip = skip1;
 
     ByteCodeGetInternalRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
@@ -1582,7 +1584,7 @@ TclPushProcCallFrame(
 /*
  *----------------------------------------------------------------------
  *
- * TclObjInterpProc2/NRInterpProc --
+ * TclObjInterpProc2/NRInterpProc2 --
  *
  *	When a Tcl procedure gets invoked during bytecode evaluation, this
  *	object-based routine gets invoked to interpret the procedure.
@@ -1596,7 +1598,6 @@ TclPushProcCallFrame(
  *----------------------------------------------------------------------
  */
 
-#undef TclObjInterpProc2
 int
 TclObjInterpProc2(
     ClientData clientData,	/* Record describing procedure to be
@@ -1611,11 +1612,11 @@ TclObjInterpProc2(
      * Not used much in the core; external interface for iTcl
      */
 
-    return Tcl_NRCallObjProc2(interp, NRInterpProc, clientData, objc, objv);
+    return Tcl_NRCallObjProc2(interp, NRInterpProc2, clientData, objc, objv);
 }
 
 int
-NRInterpProc(
+NRInterpProc2(
     ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
     Tcl_Interp *interp,/* Interpreter in which procedure was
@@ -1633,6 +1634,43 @@ NRInterpProc(
     return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
 }
 
+#undef TclObjInterpProc
+int
+TclObjInterpProc(
+    void *clientData,	/* Record describing procedure to be
+				 * interpreted. */
+    Tcl_Interp *interp,/* Interpreter in which procedure was
+				 * invoked. */
+    int objc,			/* Count of number of arguments to this
+				 * procedure. */
+    Tcl_Obj *const objv[])	/* Argument value objects. */
+{
+    /*
+     * Not used much in the core; external interface for iTcl
+     */
+
+    return Tcl_NRCallObjProc(interp, NRInterpProc, clientData, objc, objv);
+}
+
+int
+NRInterpProc(
+    ClientData clientData,	/* Record describing procedure to be
+				 * interpreted. */
+    Tcl_Interp *interp,/* Interpreter in which procedure was
+				 * invoked. */
+    int objc,			/* Count of number of arguments to this
+				 * procedure. */
+    Tcl_Obj *const objv[])	/* Argument value objects. */
+{
+    int result = TclPushProcCallFrame(clientData, interp, objc, objv,
+	    /*isLambda*/ 0);
+
+    if (result != TCL_OK) {
+	return TCL_ERROR;
+    }
+    return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1656,7 +1694,7 @@ TclNRInterpProcCore(
     Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
     Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
-    size_t skip1,			/* Number of initial arguments to be skipped,
+    size_t skip,			/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
     ProcErrorProc *errorProc)	/* How to convert results from the script into
 				 * results of the overall procedure. */
@@ -1666,7 +1704,6 @@ TclNRInterpProcCore(
     int result;
     CallFrame *freePtr;
     ByteCode *codePtr;
-    int skip = skip1;
 
     result = InitArgsAndLocals(interp, skip);
     if (result != TCL_OK) {
@@ -2247,6 +2284,12 @@ TclGetObjInterpProc2(void)
     return TclObjInterpProc2;
 }
 
+Tcl_ObjCmdProc *
+TclGetObjInterpProc(void)
+{
+    return TclObjInterpProc;
+}
+
 /*
  *----------------------------------------------------------------------
  *

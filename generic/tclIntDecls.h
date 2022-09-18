@@ -121,7 +121,7 @@ EXTERN int		TclGetNamespaceForQualName(Tcl_Interp *interp,
 				Namespace **actualCxtPtrPtr,
 				const char **simpleNamePtr);
 /* 39 */
-EXTERN Tcl_ObjCmdProc2 * TclGetObjInterpProc2(void);
+EXTERN Tcl_ObjCmdProc *	 TclGetObjInterpProc(void);
 /* 40 */
 EXTERN int		TclGetOpenMode(Tcl_Interp *interp, const char *str,
 				int *seekFlagPtr);
@@ -130,7 +130,8 @@ EXTERN Tcl_Command	TclGetOriginalCommand(Tcl_Command command);
 /* 42 */
 EXTERN const char *	TclpGetUserHome(const char *name,
 				Tcl_DString *bufferPtr);
-/* Slot 43 is reserved */
+/* 43 */
+EXTERN Tcl_ObjCmdProc2 * TclGetObjInterpProc2(void);
 /* Slot 44 is reserved */
 /* 45 */
 EXTERN int		TclHideUnsafeCommands(Tcl_Interp *interp);
@@ -614,11 +615,11 @@ typedef struct TclIntStubs {
     void (*reserved36)(void);
     void (*reserved37)(void);
     int (*tclGetNamespaceForQualName) (Tcl_Interp *interp, const char *qualName, Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr, Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr, const char **simpleNamePtr); /* 38 */
-    Tcl_ObjCmdProc2 * (*tclGetObjInterpProc2) (void); /* 39 */
+    Tcl_ObjCmdProc * (*tclGetObjInterpProc) (void); /* 39 */
     int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *seekFlagPtr); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) (Tcl_Command command); /* 41 */
     const char * (*tclpGetUserHome) (const char *name, Tcl_DString *bufferPtr); /* 42 */
-    void (*reserved43)(void);
+    Tcl_ObjCmdProc2 * (*tclGetObjInterpProc2) (void); /* 43 */
     void (*reserved44)(void);
     int (*tclHideUnsafeCommands) (Tcl_Interp *interp); /* 45 */
     int (*tclInExit) (void); /* 46 */
@@ -908,15 +909,16 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 37 is reserved */
 #define TclGetNamespaceForQualName \
 	(tclIntStubsPtr->tclGetNamespaceForQualName) /* 38 */
-#define TclGetObjInterpProc2 \
-	(tclIntStubsPtr->tclGetObjInterpProc2) /* 39 */
+#define TclGetObjInterpProc \
+	(tclIntStubsPtr->tclGetObjInterpProc) /* 39 */
 #define TclGetOpenMode \
 	(tclIntStubsPtr->tclGetOpenMode) /* 40 */
 #define TclGetOriginalCommand \
 	(tclIntStubsPtr->tclGetOriginalCommand) /* 41 */
 #define TclpGetUserHome \
 	(tclIntStubsPtr->tclpGetUserHome) /* 42 */
-/* Slot 43 is reserved */
+#define TclGetObjInterpProc2 \
+	(tclIntStubsPtr->tclGetObjInterpProc2) /* 43 */
 /* Slot 44 is reserved */
 #define TclHideUnsafeCommands \
 	(tclIntStubsPtr->tclHideUnsafeCommands) /* 45 */
