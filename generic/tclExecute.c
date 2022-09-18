@@ -502,7 +502,7 @@ VarHashCreateVar(
 
 /*
  * Macro used in this file to save a function call for common uses of
- * TclGetNumberFromObj(). The ANSI C "prototype" is:
+ * Tcl_GetNumberFromObj(). The ANSI C "prototype" is:
  *
  * MODULE_SCOPE int GetNumberFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  *			void **ptrPtr, int *tPtr);
@@ -521,7 +521,7 @@ VarHashCreateVar(
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
     (((objPtr)->bytes != NULL) && ((objPtr)->length == 0))		\
 	? TCL_ERROR :			\
-    TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
+    Tcl_GetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 
 /*
  * Macro used to make the check for type overflow more mnemonic. This works by

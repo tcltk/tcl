@@ -1996,6 +1996,14 @@ EXTERN Tcl_Command	Tcl_NRCreateCommand2(Tcl_Interp *interp,
 EXTERN int		Tcl_NRCallObjProc2(Tcl_Interp *interp,
 				Tcl_ObjCmdProc2 *objProc2, void *clientData,
 				size_t objc, Tcl_Obj *const objv[]);
+/* 680 */
+EXTERN int		Tcl_GetNumberFromObj(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, void **clientDataPtr,
+				int *typePtr);
+/* 681 */
+EXTERN int		Tcl_GetNumber(Tcl_Interp *interp, const char *bytes,
+				size_t numBytes, void **clientDataPtr,
+				int *typePtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2711,6 +2719,8 @@ typedef struct TclStubs {
     Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
     Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 678 */
     int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 679 */
+    int (*tcl_GetNumberFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, void **clientDataPtr, int *typePtr); /* 680 */
+    int (*tcl_GetNumber) (Tcl_Interp *interp, const char *bytes, size_t numBytes, void **clientDataPtr, int *typePtr); /* 681 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4099,6 +4109,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_NRCreateCommand2) /* 678 */
 #define Tcl_NRCallObjProc2 \
 	(tclStubsPtr->tcl_NRCallObjProc2) /* 679 */
+#define Tcl_GetNumberFromObj \
+	(tclStubsPtr->tcl_GetNumberFromObj) /* 680 */
+#define Tcl_GetNumber \
+	(tclStubsPtr->tcl_GetNumber) /* 681 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
