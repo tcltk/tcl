@@ -74,7 +74,7 @@ declare 16 {
     mp_err MP_WUR TclBN_mp_div_2d(const mp_int *a, int b, mp_int *q, mp_int *r)
 }
 # Removed in 9.0
-#declare 17 {deprecated {is private function in libtommath}} {
+#declare 17 {
 #    mp_err TclBN_mp_div_3(const mp_int *a, mp_int *q, mp_digit *r)
 #}
 declare 18 {
@@ -141,7 +141,7 @@ declare 38 {
     mp_err MP_WUR TclBN_mp_shrink(mp_int *a)
 }
 # Removed in 9.0
-#declare 39 {deprecated {macro calling mp_set_u64}} {
+#declare 39 {
 #    void TclBN_mp_set(mp_int *a, unsigned int b)
 #}
 # Removed in 9.0
@@ -180,18 +180,18 @@ declare 49 {
     void TclBN_mp_zero(mp_int *a)
 }
 # Removed in 9.0
-#declare 61 {deprecated {macro calling mp_init_u64}} {
+#declare 61 {
 #    mp_err TclBN_mp_init_ul(mp_int *a, unsigned long i)
 #}
 # Removed in 9.0
-#declare 62 {deprecated {macro calling mp_set_u64}} {
+#declare 62 {
 #    void TclBN_mp_set_ul(mp_int *a, unsigned long i)
 #}
 declare 63 {
     int MP_WUR TclBN_mp_cnt_lsb(const mp_int *a)
 }
 # Removed in 9.0
-#declare 64 {deprecated {macro calling mp_init_i64}} {
+#declare 64 {
 #    int TclBN_mp_init_l(mp_int *bignum, long initVal)
 #}
 declare 65 {

@@ -37,6 +37,11 @@ declare 6 {
 declare 7 {
     size_t TclCopyAndCollapse(size_t count, const char *src, char *dst)
 }
+# Removed in 9.0:
+#declare 8 {
+#    int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
+#	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
+#}
 # TclCreatePipeline unofficially exported for use by BLT.
 declare 9 {
     size_t TclCreatePipeline(Tcl_Interp *interp, size_t argc, const char **argv,
@@ -85,6 +90,14 @@ declare 32 {
     int TclGetFrame(Tcl_Interp *interp, const char *str,
 	    CallFrame **framePtrPtr)
 }
+# Removed in 9.0:
+#declare 34 {
+#    int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
+#	    int endValue, int *indexPtr)
+#}
+#declare 37 {
+#    int TclGetLoadedPackages(Tcl_Interp *interp, const char *targetName)
+#}
 declare 38 {
     int TclGetNamespaceForQualName(Tcl_Interp *interp, const char *qualName,
 	    Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr,
@@ -103,12 +116,24 @@ declare 41 {
 declare 42 {
     const char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
+declare 43 {
+    Tcl_ObjCmdProc2 *TclGetObjInterpProc2(void)
+}
+# Removed in 9.0:
+#declare 44 {
+#    int TclGuessPackageName(const char *fileName, Tcl_DString *bufPtr)
+#}
 declare 45 {
     int TclHideUnsafeCommands(Tcl_Interp *interp)
 }
 declare 46 {
     int TclInExit(void)
 }
+# Removed in 9.0:
+#declare 50 {
+#    void TclInitCompiledLocals(Tcl_Interp *interp, CallFrame *framePtr,
+#	    Namespace *nsPtr)
+#}
 declare 51 {
     int TclInterpInit(Tcl_Interp *interp)
 }
@@ -157,9 +182,18 @@ declare 75 {
 declare 76 {
     unsigned long long TclpGetSeconds(void)
 }
+# Removed in 9.0:
+#declare 77 {
+#    void TclpGetTime(Tcl_Time *time)
+#}
 declare 81 {
     void *TclpRealloc(void *ptr, size_t size)
 }
+# Removed in 9.0:
+#declare 88 {
+#    char *TclPrecTraceProc(void *clientData, Tcl_Interp *interp,
+#	    const char *name1, const char *name2, int flags)
+#}
 declare 89 {
     int TclPreventAliasLoop(Tcl_Interp *interp, Tcl_Interp *cmdInterp,
 	    Tcl_Command cmd)
@@ -196,6 +230,10 @@ declare 103 {
     int TclSockGetPort(Tcl_Interp *interp, const char *str, const char *proto,
 	    int *portPtr)
 }
+# Removed in 9.0:
+#declare 104 {
+#    int TclSockMinimumBuffersOld(int sock, int size)
+#}
 declare 108 {
     void TclTeardownNamespace(Namespace *nsPtr)
 }
@@ -205,10 +243,6 @@ declare 109 {
 declare 110 {
     int TclSockMinimumBuffers(void *sock, size_t size)
 }
-# Removed in 8.1:
-#  declare 110 {
-#      char *TclWordEnd(char *start, char *lastChar, int nested, int *semiPtr)
-#  }
 
 # Procedures used in conjunction with Tcl namespaces. They are
 # defined here instead of in tcl.decls since they are not stable yet.
@@ -218,6 +252,30 @@ declare 111 {
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc,
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
+# Removed in 9.0:
+#declare 112 {
+#    int TclAppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    Tcl_Obj *objPtr)
+#}
+#declare 113 {
+#    Tcl_Namespace *TclCreateNamespace(Tcl_Interp *interp, const char *name,
+#	    void *clientData, Tcl_NamespaceDeleteProc *deleteProc)
+#}
+#declare 114 {
+#    void TclDeleteNamespace(Tcl_Namespace *nsPtr)
+#}
+#declare 115 {
+#    int TclExport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    const char *pattern, int resetListFirst)
+#}
+#declare 116 {
+#    Tcl_Command TclFindCommand(Tcl_Interp *interp, const char *name,
+#	    Tcl_Namespace *contextNsPtr, int flags)
+#}
+#declare 117 {
+#    Tcl_Namespace *TclFindNamespace(Tcl_Interp *interp, const char *name,
+#	    Tcl_Namespace *contextNsPtr, int flags)
+#}
 declare 118 {
     int Tcl_GetInterpResolvers(Tcl_Interp *interp, const char *name,
 	    Tcl_ResolverInfo *resInfo)
@@ -230,10 +288,33 @@ declare 120 {
     Tcl_Var Tcl_FindNamespaceVar(Tcl_Interp *interp, const char *name,
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
+# Removed in 9.0:
+#declare 121 {
+#    int TclForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    const char *pattern)
+#}
+#declare 122 {
+#    Tcl_Command TclGetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+#}
+#declare 123 {
+#    void TclGetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
+#	    Tcl_Obj *objPtr)
+#}
+#declare 124 {
+#    Tcl_Namespace *TclGetCurrentNamespace_(Tcl_Interp *interp)
+#}
+#declare 125 {
+#    Tcl_Namespace *TclGetGlobalNamespace_(Tcl_Interp *interp)
+#}
 declare 126 {
     void Tcl_GetVariableFullName(Tcl_Interp *interp, Tcl_Var variable,
 	    Tcl_Obj *objPtr)
 }
+# Removed in 9.0:
+#declare 127 {
+#    int TclImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    const char *pattern, int allowOverwrite)
+#}
 declare 128 {
     void Tcl_PopCallFrame(Tcl_Interp *interp)
 }
@@ -252,6 +333,10 @@ declare 131 {
 declare 132 {
     int TclpHasSockets(Tcl_Interp *interp)
 }
+# Removed in 9.0:
+#declare 133 {
+#    struct tm *TclpGetDate(const time_t *time, int useGMT)
+#}
 declare 138 {
     const char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
 }
@@ -306,6 +391,14 @@ declare 156 {
 declare 157 {
     Var *TclVarTraceExists(Tcl_Interp *interp, const char *varName)
 }
+# Removed in 9.0:
+#declare 158 {
+#    void TclSetStartupScriptFileName(const char *filename)
+#}
+#declare 159 {
+#    const char *TclGetStartupScriptFileName(void)
+#}
+
 declare 161 {
     int TclChannelTransform(Tcl_Interp *interp, Tcl_Channel chan,
 	    Tcl_Obj *cmdObjPtr)
@@ -342,6 +435,13 @@ declare 166 {
 	    size_t index, Tcl_Obj *valuePtr)
 }
 
+# Removed in 9.0:
+#declare 167 {
+#    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
+#}
+#declare 168 {
+#    Tcl_Obj *TclGetStartupScriptPath(void)
+#}
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
 declare 169 {
     int TclpUtfNcmp2(const char *s1, const char *s2, size_t n)
@@ -374,6 +474,22 @@ declare 177 {
     void TclVarErrMsg(Tcl_Interp *interp, const char *part1, const char *part2,
 	    const char *operation, const char *reason)
 }
+# Removed in 9.0:
+#declare 178 {
+#    void TclSetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
+#}
+#declare 179 {
+#    Tcl_Obj *TclGetStartupScript(const char **encodingNamePtr)
+#}
+#declare 182 {
+#     struct tm *TclpLocaltime(const time_t *clock)
+#}
+#declare 183 {
+#     struct tm *TclpGmtime(const time_t *clock)
+#}
+
+# For the new "Thread Storage" subsystem.
+
 declare 198 {
     int TclObjGetFrame(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    CallFrame **framePtrPtr)
@@ -478,6 +594,10 @@ declare 234 {
 declare 235 {
     void TclInitVarHashTable(TclVarHashTable *tablePtr, Namespace *nsPtr)
 }
+# Removed in 9.0:
+#declare 236 {
+#    void TclBackgroundException(Tcl_Interp *interp, int code)
+#}
 
 # TIP #285: Script cancellation support.
 declare 237 {
@@ -583,7 +703,6 @@ declare 258 {
 	    Tcl_Obj *basenameObj)
 }
 
-
 # TIP 625: for unit testing - create list objects with span
 declare 260 {
     Tcl_Obj *TclListTestObj(int length, int leadingSpace, int endSpace)
@@ -593,7 +712,6 @@ declare 260 {
 declare 261 {
     void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
 }
-
 
 ##############################################################################
 
