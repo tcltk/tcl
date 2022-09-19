@@ -1520,7 +1520,7 @@ Tcl_VwaitObjCmd(
 	OPT_ALL, OPT_EXTD, OPT_NO_FEVTS, OPT_NO_IEVTS,
 	OPT_NO_TEVTS, OPT_NO_WEVTS, OPT_READABLE,
 	OPT_TIMEOUT, OPT_VARIABLE, OPT_WRITABLE, OPT_LAST
-    };
+    } index;
 
     if ((objc == 2) && (strcmp(Tcl_GetString(objv[1]), "--") != 0)) {
 	/*
@@ -1536,7 +1536,6 @@ Tcl_VwaitObjCmd(
 
     for (i = 1; i < objc; i++) {
 	const char *name;
-	int index;
 
 	name = TclGetString(objv[i]);
 	if (name[0] != '-') {
@@ -1547,7 +1546,7 @@ Tcl_VwaitObjCmd(
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	switch ((enum options) index) {
+	switch (index) {
 	case OPT_ALL:
 	    any = 0;
 	    break;
