@@ -7928,15 +7928,12 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if (len == 0 || HaveOpt(1, "-strictencoding")) {
+    if (len == 0 || HaveOpt(1, "-nocomplainencoding")) {
 	if (len == 0) {
-	    Tcl_DStringAppendElement(dsPtr, "-strictencoding");
+	    Tcl_DStringAppendElement(dsPtr, "-nocomplainencoding");
 	}
 	Tcl_DStringAppendElement(dsPtr,
-		(flags & CHANNEL_ENCODING_NOCOMPLAIN) ? "0" : "1");
-	if (len > 0) {
-	    return TCL_OK;
-	}
+		(flags & CHANNEL_ENCODING_NOCOMPLAIN) ? "1" : "0");
 	if (len > 0) {
 	    return TCL_OK;
 	}
@@ -8204,16 +8201,16 @@ Tcl_SetChannelOption(
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	return TCL_OK;
-    } else if (HaveOpt(1, "-strictencoding")) {
+    } else if (HaveOpt(1, "-nocomplainencoding")) {
 	int newMode;
 
 	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
 	if (newMode) {
-	    statePtr->flags &= ~CHANNEL_ENCODING_NOCOMPLAIN;
-	} else {
 	    statePtr->flags |= CHANNEL_ENCODING_NOCOMPLAIN;
+	} else {
+	    statePtr->flags &= ~CHANNEL_ENCODING_NOCOMPLAIN;
 	}
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {

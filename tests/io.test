@@ -8952,7 +8952,7 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
 
-test io-75.1 {multibyte encoding error read results in raw bytes (-strictencoding 0)} -setup {
+test io-75.1 {multibyte encoding error read results in raw bytes (-nocomplainencoding 1)} -setup {
     set fn [makeFile {} io-75.1]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -8961,7 +8961,7 @@ test io-75.1 {multibyte encoding error read results in raw bytes (-strictencodin
     puts -nonewline $f "A\xC0\x40"
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -strictencoding 0 -buffering none
+    fconfigure $f -encoding utf-8 -nocomplainencoding 1 -buffering none
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -8971,10 +8971,10 @@ test io-75.1 {multibyte encoding error read results in raw bytes (-strictencodin
     removeFile io-75.1
 } -result "41c040"
 
-test io-75.2 {unrepresentable character write passes and is replaced by ? (-strictencoding 0)} -setup {
+test io-75.2 {unrepresentable character write passes and is replaced by ? (-nocomplainencoding 1)} -setup {
     set fn [makeFile {} io-75.2]
     set f [open $fn w+]
-    fconfigure $f -encoding iso8859-1 -strictencoding 0
+    fconfigure $f -encoding iso8859-1 -nocomplainencoding 1
 } -body {
     puts -nonewline $f "A\u2022"
     flush $f
@@ -8988,14 +8988,14 @@ test io-75.2 {unrepresentable character write passes and is replaced by ? (-stri
 # Incomplete sequence test.
 # This error may IMHO only be detected with the close.
 # But the read already returns the incomplete sequence.
-test io-75.3 {incomplete multibyte encoding read is ignored (-strictencoding 0)} -setup {
+test io-75.3 {incomplete multibyte encoding read is ignored (-nocomplainencoding 1)} -setup {
     set fn [makeFile {} io-75.3]
     set f [open $fn w+]
     fconfigure $f -encoding binary
     puts -nonewline $f "A\xC0"
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -strictencoding 0
+    fconfigure $f -encoding utf-8 -buffering none -nocomplainencoding 1
 } -body {
     set d [read $f]
     close $f
@@ -9007,7 +9007,7 @@ test io-75.3 {incomplete multibyte encoding read is ignored (-strictencoding 0)}
 
 # As utf-8 has a special treatment in multi-byte decoding, also test another
 # one.
-test io-75.4 {shiftjis encoding error read results in raw bytes (-strictencoding 0)} -setup {
+test io-75.4 {shiftjis encoding error read results in raw bytes (-nocomplainencoding 1)} -setup {
     set fn [makeFile {} io-75.4]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9016,7 +9016,7 @@ test io-75.4 {shiftjis encoding error read results in raw bytes (-strictencoding
     puts -nonewline $f "A\x81\xFFA"
     flush $f
     seek $f 0
-    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -strictencoding 0
+    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf -nocomplainencoding 1
 } -body {
     set d [read $f]
     binary scan $d H* hd
@@ -9026,7 +9026,7 @@ test io-75.4 {shiftjis encoding error read results in raw bytes (-strictencoding
     removeFile io-75.4
 } -result "4181ff41"
 
-test io-75.5 {incomplete shiftjis encoding read is ignored (-strictencoding 0)} -setup {
+test io-75.5 {incomplete shiftjis encoding read is ignored (-nocomplainencoding 1)} -setup {
     set fn [makeFile {} io-75.5]
     set f [open $fn w+]
     fconfigure $f -encoding binary
@@ -9034,7 +9034,7 @@ test io-75.5 {incomplete shiftjis encoding read is ignored (-strictencoding 0)} 
     puts -nonewline $f "A\x81"
     flush $f
     seek $f 0
-    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -strictencoding 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf -nocomplainencoding 1
 } -body {
     set d [read $f]
     close $f
