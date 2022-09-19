@@ -83,6 +83,7 @@
 #   define Tcl_CreateObjTrace 0
 #   define Tcl_NRCallObjProc 0
 #   define Tcl_NRCreateCommand 0
+#   define TclGetObjInterpProc 0
 #endif
 
 #if TCL_UTF_MAX < 4

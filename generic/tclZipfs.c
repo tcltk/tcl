@@ -5746,6 +5746,7 @@ ZipfsExitHandler(
 
 static void
 ZipfsFinalize(void) {
+    Tcl_FSUnregister(&zipfsFilesystem);
     Tcl_DeleteHashTable(&ZipFS.fileHash);
     Tcl_Free(ZipFS.fallbackEntryEncoding);
     ZipFS.initialized = -1;

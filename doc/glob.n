@@ -185,16 +185,6 @@ command if you want the list sorted).
 Second, \fBglob\fR only returns the names of files that actually
 exist; in csh no check for existence is made unless a pattern
 contains a ?, *, or [] construct.
-.LP
-When the \fBglob\fR command returns relative paths whose filenames
-start with a tilde
-.QW ~
-(for example through \fBglob *\fR or \fBglob \-tails\fR, the returned
-list will not quote the tilde with
-.QW ./ .
-This means care must be taken if those names are later to
-be used with \fBfile join\fR, to avoid them being interpreted as
-absolute paths pointing to a given user's home directory.
 .SH "WINDOWS PORTABILITY ISSUES"
 .PP
 For Windows UNC names, the servername and sharename components of the path

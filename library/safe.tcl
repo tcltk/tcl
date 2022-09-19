@@ -733,9 +733,6 @@ proc ::safe::CheckFileName {child file} {
 # prevent discovery of what home directories exist.
 
 proc ::safe::AliasFileSubcommand {child subcommand name} {
-    if {[string match ~* $name]} {
-	set name ./$name
-    }
     tailcall ::interp invokehidden $child tcl:file:$subcommand $name
 }
 

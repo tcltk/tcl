@@ -271,7 +271,10 @@ Tcl_CdObjCmd(
     if (objc == 2) {
 	dir = objv[1];
     } else {
-	TclNewLiteralStringObj(dir, "~");
+	dir = TclGetHomeDirObj(interp, NULL);
+	if (dir == NULL) {
+	    return TCL_ERROR;
+	}
 	Tcl_IncrRefCount(dir);
     }
     if (Tcl_FSConvertToPathType(interp, dir) != TCL_OK) {
@@ -1042,6 +1045,7 @@ TclInitFileCmd(
 	{"executable",	FileAttrIsExecutableCmd, TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"exists",	FileAttrIsExistingCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"extension",	PathExtensionCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
+	{"home",	TclFileHomeCmd,		TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{"isdirectory",	FileAttrIsDirectoryCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"isfile",	FileAttrIsFileCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"join",	PathJoinCmd,		TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
@@ -1065,6 +1069,7 @@ TclInitFileCmd(
 	{"tail",	PathTailCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"tempdir",	TclFileTempDirCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 1},
 	{"tempfile",	TclFileTemporaryCmd,	TclCompileBasic0To2ArgCmd, NULL, NULL, 1},
+	{"tildeexpand",	TclFileTildeExpandCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"type",	FileAttrTypeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},
 	{"volumes",	FilesystemVolumesCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 1},
 	{"writable",	FileAttrIsWritableCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 1},

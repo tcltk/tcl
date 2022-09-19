@@ -47,7 +47,6 @@ static void		MakeProcError(Tcl_Interp *interp,
 static void		MakeLambdaError(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static Tcl_ObjCmdProc NRInterpProc;
 static Tcl_ObjCmdProc2 NRInterpProc2;
 
 
@@ -1435,7 +1434,7 @@ InitArgsAndLocals(
 
     varPtr->flags = 0;
     if (defPtr && defPtr->flags & VAR_IS_ARGS) {
-	Tcl_Obj *listPtr = Tcl_NewListObj(argCt-i, argObjs+i);
+	Tcl_Obj *listPtr = Tcl_NewListObj((argCt>i)? argCt-i : 0, argObjs+i);
 
 	varPtr->value.objPtr = listPtr;
 	Tcl_IncrRefCount(listPtr);	/* Local var is a reference. */
@@ -1634,25 +1633,8 @@ NRInterpProc2(
     return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
 }
 
-#undef TclObjInterpProc
-int
-TclObjInterpProc(
-    void *clientData,	/* Record describing procedure to be
-				 * interpreted. */
-    Tcl_Interp *interp,/* Interpreter in which procedure was
-				 * invoked. */
-    int objc,			/* Count of number of arguments to this
-				 * procedure. */
-    Tcl_Obj *const objv[])	/* Argument value objects. */
-{
-    /*
-     * Not used much in the core; external interface for iTcl
-     */
-
-    return Tcl_NRCallObjProc(interp, NRInterpProc, clientData, objc, objv);
-}
-
-int
+#ifndef TCL_NO_DEPRECATED
+static int
 NRInterpProc(
     ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
@@ -1670,6 +1652,26 @@ NRInterpProc(
     }
     return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
 }
+
+#undef TclObjInterpProc
+int
+TclObjInterpProc(
+    void *clientData,	/* Record describing procedure to be
+				 * interpreted. */
+    Tcl_Interp *interp,/* Interpreter in which procedure was
+				 * invoked. */
+    int objc,			/* Count of number of arguments to this
+				 * procedure. */
+    Tcl_Obj *const objv[])	/* Argument value objects. */
+{
+    /*
+     * Not used much in the core; external interface for iTcl
+     */
+
+    return Tcl_NRCallObjProc(interp, NRInterpProc, clientData, objc, objv);
+}
+#endif /* TCL_NO_DEPRECATED */
+
 
 /*
  *----------------------------------------------------------------------
@@ -2284,11 +2286,13 @@ TclGetObjInterpProc2(void)
     return TclObjInterpProc2;
 }
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_ObjCmdProc *
 TclGetObjInterpProc(void)
 {
     return TclObjInterpProc;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

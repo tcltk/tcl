@@ -863,6 +863,18 @@ TclpSetVariables(
 	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath, TCL_GLOBAL_ONLY);
     }
 
+    {
+        /* Some platforms build configure scripts expect ~ expansion so do that */
+        Tcl_Obj *origPaths;
+        Tcl_Obj *resolvedPaths;
+        origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
+        resolvedPaths = TclResolveTildePathList(origPaths);
+        if (resolvedPaths != origPaths && resolvedPaths != NULL) {
+            Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL,
+		resolvedPaths, TCL_GLOBAL_ONLY);
+        }
+    }
+
 #ifdef DJGPP
     Tcl_SetVar2(interp, "tcl_platform", "platform", "dos", TCL_GLOBAL_ONLY);
 #else
