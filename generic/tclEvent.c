@@ -1858,7 +1858,7 @@ Tcl_VwaitObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(diff));
 	}
     } else {
-	Tcl_RestoreInterpState(interp, saved);
+	result = Tcl_RestoreInterpState(interp, saved);
     }
     if (vwaitItems != localItems) {
 	ckfree(vwaitItems);
