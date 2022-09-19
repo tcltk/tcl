@@ -1505,7 +1505,7 @@ Tcl_VwaitObjCmd(
 {
     int i, done = 0, timedOut = 0, foundEvent, any = 1, timeout = 0;
     int numItems = 0, extended = 0, result, mode, mask = TCL_ALL_EVENTS;
-    Tcl_SavedResult savedResult;
+    Tcl_InterpState saved = NULL;
     Tcl_TimerToken timer = NULL;
     Tcl_Time before, after;
     Tcl_Channel chan;
@@ -1802,7 +1802,7 @@ Tcl_VwaitObjCmd(
 	Tcl_DeleteTimerHandler(timer);
     }
     if (result != TCL_OK) {
-	Tcl_SaveResult(interp, &savedResult);
+	saved = Tcl_SaveInterpState(interp, result);
     }
     for (i = 0; i < numItems; i++) {
 	if (vwaitItems[i].mask & TCL_READABLE) {
@@ -1858,7 +1858,7 @@ Tcl_VwaitObjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(diff));
 	}
     } else {
-	Tcl_RestoreResult(interp, &savedResult);
+	Tcl_RestoreInterpState(interp, saved);
     }
     if (vwaitItems != localItems) {
 	ckfree(vwaitItems);
