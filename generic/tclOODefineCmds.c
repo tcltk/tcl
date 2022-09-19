@@ -3131,10 +3131,10 @@ InstallReadableProps(
 	if (objc == 0) {
 	    ckfree(props->readable.list);
 	} else if (i) {
-	    props->readable.list = ckrealloc(props->readable.list,
+	    props->readable.list = (Tcl_Obj **)ckrealloc(props->readable.list,
 		    sizeof(Tcl_Obj *) * objc);
 	} else {
-	    props->readable.list = ckalloc(sizeof(Tcl_Obj *) * objc);
+	    props->readable.list = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj *) * objc);
 	}
     }
     props->readable.num = 0;
@@ -3155,7 +3155,7 @@ InstallReadableProps(
 	 */
 
 	if (n != objc) {
-	    props->readable.list = ckrealloc(props->readable.list,
+	    props->readable.list = (Tcl_Obj **)ckrealloc(props->readable.list,
 		    sizeof(Tcl_Obj *) * n);
 	}
 	Tcl_DeleteHashTable(&uniqueTable);
@@ -3164,7 +3164,7 @@ InstallReadableProps(
 
 static int
 ClassRPropsGet(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -3198,7 +3198,7 @@ ClassRPropsGet(
 
 static int
 ClassRPropsSet(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -3234,7 +3234,7 @@ ClassRPropsSet(
 
 static int
 ObjRPropsGet(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -3263,7 +3263,7 @@ ObjRPropsGet(
 
 static int
 ObjRPropsSet(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -3327,10 +3327,10 @@ InstallWritableProps(
 	if (objc == 0) {
 	    ckfree(props->writable.list);
 	} else if (i) {
-	    props->writable.list = ckrealloc(props->writable.list,
+	    props->writable.list = (Tcl_Obj **)ckrealloc(props->writable.list,
 		    sizeof(Tcl_Obj *) * objc);
 	} else {
-	    props->writable.list = ckalloc(sizeof(Tcl_Obj *) * objc);
+	    props->writable.list = (Tcl_Obj **)ckalloc(sizeof(Tcl_Obj *) * objc);
 	}
     }
     props->writable.num = 0;
@@ -3351,7 +3351,7 @@ InstallWritableProps(
 	 */
 
 	if (n != objc) {
-	    props->writable.list = ckrealloc(props->writable.list,
+	    props->writable.list = (Tcl_Obj **)ckrealloc(props->writable.list,
 		    sizeof(Tcl_Obj *) * n);
 	}
 	Tcl_DeleteHashTable(&uniqueTable);
@@ -3360,7 +3360,7 @@ InstallWritableProps(
 
 static int
 ClassWPropsGet(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -3394,7 +3394,7 @@ ClassWPropsGet(
 
 static int
 ClassWPropsSet(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -3430,7 +3430,7 @@ ClassWPropsSet(
 
 static int
 ObjWPropsGet(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,
@@ -3459,7 +3459,7 @@ ObjWPropsGet(
 
 static int
 ObjWPropsSet(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     Tcl_ObjectContext context,
     int objc,

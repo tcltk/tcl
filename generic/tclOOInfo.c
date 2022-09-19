@@ -1739,7 +1739,7 @@ static const char *const propOptNames[] = {
 
 static int
 InfoClassPropCmd(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1802,7 +1802,7 @@ InfoClassPropCmd(
 
 static int
 InfoObjectPropCmd(
-    ClientData clientData,
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
