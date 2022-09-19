@@ -2630,6 +2630,27 @@ TclLindexFlat(
 {
     ListSizeT i;
 
+    /* Handle ArithSeries as special case */
+    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+	ListSizeT index, listLen = TclArithSeriesObjLength(listObj);
+	Tcl_Obj *elemObj = NULL;
+	for (i=0 ; i<indexCount && listObj ; i++) {
+	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
+				   &index) == TCL_OK) {
+	    }
+	    if (i==0) {
+		TclArithSeriesObjIndex(listObj, index, &elemObj);
+		Tcl_IncrRefCount(elemObj);
+	    } else if (index > 0) {
+		Tcl_DecrRefCount(elemObj);
+		TclNewObj(elemObj);
+		Tcl_IncrRefCount(elemObj);
+		break;
+	    }
+	}
+	return elemObj;
+    }
+
     Tcl_IncrRefCount(listObj);
 
     for (i=0 ; i<indexCount && listObj ; i++) {
