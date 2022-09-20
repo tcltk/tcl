@@ -306,7 +306,7 @@ FreeMethodNameRep(
 
 int
 TclOOInvokeContext(
-    ClientData clientData,	/* The method call context. */
+    void *clientData,	/* The method call context. */
     Tcl_Interp *interp,		/* Interpreter for error reporting, and many
 				 * other sorts of context handling (e.g.,
 				 * commands, variables) depending on method
@@ -379,7 +379,7 @@ TclOOInvokeContext(
 
 static int
 SetFilterFlags(
-    ClientData data[],
+    void *data[],
     TCL_UNUSED(Tcl_Interp *),
     int result)
 {
@@ -391,7 +391,7 @@ SetFilterFlags(
 
 static int
 ResetFilterFlags(
-    ClientData data[],
+    void *data[],
     TCL_UNUSED(Tcl_Interp *),
     int result)
 {
@@ -403,7 +403,7 @@ ResetFilterFlags(
 
 static int
 FinalizeMethodRefs(
-    ClientData data[],
+    void *data[],
     TCL_UNUSED(Tcl_Interp *),
     int result)
 {
@@ -1094,7 +1094,7 @@ InitCallChain(
  *	location being reusable is:
  *	- Refers to the same object (same creation epoch), and
  *	- Still across the same class structure (same global epoch), and
- *	- Still across the same object strucutre (same local epoch), and
+ *	- Still across the same object structure (same local epoch), and
  *	- No public/private/filter magic leakage (same flags, modulo the fact
  *	  that a public chain will satisfy a non-public call).
  *
@@ -1153,7 +1153,8 @@ TclOOGetCallContext(
     CallContext *contextPtr;
     CallChain *callPtr;
     struct ChainBuilder cb;
-    int i, count, doFilters, donePrivate = 0;
+    int i, count;
+    int doFilters, donePrivate = 0;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
 
@@ -1546,7 +1547,8 @@ AddClassFiltersToCallContext(
     int flags)			/* Whether we've gone along a mixin link
 				 * yet. */
 {
-    int i, clearedFlags =
+    int i;
+    int clearedFlags =
 	    flags & ~(TRAVERSED_MIXIN|OBJECT_MIXIN|BUILDING_MIXINS);
     Class *superPtr, *mixinPtr;
     Tcl_Obj *filterObj;

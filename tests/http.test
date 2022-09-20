@@ -17,20 +17,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 package require tcltests
 
-if {[catch {package require http 2} version]} {
-    if {[info exists http2]} {
-	catch {puts "Cannot load http 2.* package"}
-	return
-    } else {
-	catch {puts "Running http 2.* tests in child interp"}
-	set interp [interp create http2]
-	$interp eval [list set http2 "running"]
-	$interp eval [list set argv $argv]
-	$interp eval [list source [info script]]
-	interp delete $interp
-	return
-    }
-}
+package require http 2.10
 
 proc bgerror {args} {
     global errorInfo
@@ -78,11 +65,31 @@ if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
 	return
     }
 }
+
+if {![info exists ThreadLevel]} {
+    if {[catch {package require Thread}] == 0} {
+        set ValueRange {0 1 2}
+    } else {
+        set ValueRange {0 1}
+    }
+
+    # For each value of ThreadLevel, source this file recursively in the
+    # same interpreter.
+    foreach ThreadLevel $ValueRange {
+        source [info script]
+    }
+    catch {unset ThreadLevel}
+    catch {unset ValueRange}
+    return
+}
+
+catch {puts "==== Test with ThreadLevel $ThreadLevel ===="}
+http::config -threadlevel $ThreadLevel
 
 test http-1.1 {http::config} {
     http::config -useragent UserAgent
     http::config
-} [list -accept */* -cookiejar {} -pipeline 1 -postfresh 0 -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -repost 0 -urlencoding utf-8 -useragent UserAgent -zip 1]
+} [list -accept */* -cookiejar {} -pipeline 1 -postfresh 0 -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -repost 0 -threadlevel $ThreadLevel -urlencoding utf-8 -useragent UserAgent -zip 1]
 test http-1.2 {http::config} {
     http::config -proxyfilter
 } http::ProxyRequired
@@ -97,10 +104,10 @@ test http-1.4 {http::config} {
     set x [http::config]
     http::config {*}$savedconf
     set x
-} {-accept */* -cookiejar {} -pipeline 1 -postfresh 0 -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -repost 0 -urlencoding iso8859-1 -useragent {Tcl Test Suite} -zip 1}
+} [list -accept */* -cookiejar {} -pipeline 1 -postfresh 0 -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -repost 0 -threadlevel $ThreadLevel -urlencoding iso8859-1 -useragent {Tcl Test Suite} -zip 1]
 test http-1.5 {http::config} -returnCodes error -body {
     http::config -proxyhost {} -junk 8080
-} -result {Unknown option -junk, must be: -accept, -cookiejar, -pipeline, -postfresh, -proxyfilter, -proxyhost, -proxyport, -repost, -urlencoding, -useragent, -zip}
+} -result {Unknown option -junk, must be: -accept, -cookiejar, -pipeline, -postfresh, -proxyfilter, -proxyhost, -proxyport, -repost, -threadlevel, -urlencoding, -useragent, -zip}
 test http-1.6 {http::config} -setup {
     set oldenc [http::config -urlencoding]
 } -body {
@@ -138,10 +145,12 @@ test http-2.8 {http::CharsetToEncoding} {
 
 test http-3.1 {http::geturl} -returnCodes error -body {
     http::geturl -bogus flag
-} -result {Unknown option flag, can be: -binary, -blocksize, -channel, -command, -handler, -headers, -keepalive, -method, -myaddr, -progress, -protocol, -query, -queryblocksize, -querychannel, -queryprogress, -strict, -timeout, -type, -validate}
+} -result {Unknown option flag, can be: -binary, -blocksize, -channel, -command, -guesstype, -handler, -headers, -keepalive, -method, -myaddr, -progress, -protocol, -query, -queryblocksize, -querychannel, -queryprogress, -strict, -timeout, -type, -validate}
+
 test http-3.2 {http::geturl} -returnCodes error -body {
     http::geturl http:junk
 } -result {Unsupported URL: http:junk}
+
 set url //${::HOST}:$port
 set badurl //${::HOST}:[expr {$port+1}]
 test http-3.3 {http::geturl} -body {
@@ -153,6 +162,7 @@ test http-3.3 {http::geturl} -body {
 <h1>Hello, World!</h1>
 <h2>GET /</h2>
 </body></html>"
+
 set tail /a/b/c
 set url //${::HOST}:$port/a/b/c
 set fullurl HTTP://user:pass@${::HOST}:$port/a/b/c
@@ -162,6 +172,7 @@ set posturl //${::HOST}:$port/post
 set badposturl //${::HOST}:$port/droppost
 set authorityurl //${::HOST}:$port
 set ipv6url http://\[::1\]:$port/
+
 test http-3.4 {http::geturl} -body {
     set token [http::geturl $url]
     http::data $token
@@ -379,7 +390,7 @@ test http-3.25 {http::meta} -setup {
 } -cleanup {
     http::cleanup $token
     unset -nocomplain m token
-} -result {Content-Length Content-Type Date}
+} -result {content-length content-type date}
 test http-3.26 {http::meta} -setup {
     unset -nocomplain m token
 } -body {
@@ -389,7 +400,7 @@ test http-3.26 {http::meta} -setup {
 } -cleanup {
     http::cleanup $token
     unset -nocomplain m token
-} -result {Content-Length Content-Type Date X-Check}
+} -result {content-length content-type date x-check}
 test http-3.27 {http::geturl: -headers override -type} -body {
     set token [http::geturl $url/headers -type "text/plain" -query dummy \
 	    -headers [list "Content-Type" "text/plain;charset=utf-8"]]
@@ -474,7 +485,7 @@ test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]
     upvar #0 $token data
     array set meta $data(meta)
-    expr {($data(totalsize) == $meta(Content-Length))}
+    expr {($data(totalsize) == $meta(content-length))}
 } -cleanup {
     http::cleanup $token
 } -result 1
@@ -482,7 +493,7 @@ test http-4.2 {http::Event} -body {
     set token [http::geturl $url]
     upvar #0 $token data
     array set meta $data(meta)
-    string compare $data(type) [string trim $meta(Content-Type)]
+    string compare $data(type) [string trim $meta(content-type)]
 } -cleanup {
     http::cleanup $token
 } -result 0
@@ -572,6 +583,7 @@ test http-4.10 {http::Event} -body {
 } -cleanup {
     http::cleanup $token
 } -result {111}
+
 # Timeout cases
 #	Short timeout to working server (the test server). This lets us try a
 #	reset during the connection.
@@ -582,6 +594,7 @@ test http-4.11 {http::Event} -body {
 } -cleanup {
     http::cleanup $token
 } -result {reset}
+
 #	Longer timeout with reset.
 test http-4.12 {http::Event} -body {
     set token [http::geturl $url/?timeout=10 -keepalive 0 -command \#]
@@ -590,6 +603,7 @@ test http-4.12 {http::Event} -body {
 } -cleanup {
     http::cleanup $token
 } -result {reset}
+
 #	Medium timeout to working server that waits even longer. The timeout
 #	hits while waiting for a reply.
 test http-4.13 {http::Event} -body {
@@ -599,6 +613,7 @@ test http-4.13 {http::Event} -body {
 } -cleanup {
     http::cleanup $token
 } -result {timeout}
+
 #	Longer timeout to good host, bad port, gets an error after the
 #	connection "completes" but the socket is bad.
 test http-4.14 {http::Event} -body {
@@ -611,17 +626,19 @@ test http-4.14 {http::Event} -body {
 } -cleanup {
     catch {http::cleanup $token}
 } -result {connect failed connection refused}
+
 # Bogus host
 test http-4.15 {http::Event} -body {
     # This test may fail if you use a proxy server. That is to be
     # expected and is not a problem with Tcl.
     set token [http::geturl //not_a_host.tcl.tk -timeout 3000 -command \#]
     http::wait $token
-    http::status $token
+    set result "[http::status $token] -- [lindex [http::error $token] 0]"
     # error codes vary among platforms.
 } -cleanup {
     catch {http::cleanup $token}
-} -returnCodes 1 -match glob -result "couldn't open socket*"
+} -match glob -result "error -- couldn't open socket*"
+
 test http-4.16 {Leak with Close vs Keepalive (bug [6ca52aec14]} -setup {
     proc list-difference {l1 l2} {
 	lmap item $l2 {if {$item in $l1} continue; set item}

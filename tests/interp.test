@@ -1640,7 +1640,7 @@ test interp-20.50.1 {Bug 2486550} -setup {
 } -cleanup {
     unset -nocomplain m 0
     interp delete child
-} -returnCodes ok -result {wrong # args: should be "coroutine name cmd ?arg ...?"
+} -result {wrong # args: should be "coroutine name cmd ?arg ...?"
     while executing
 "coroutine"
     invoked from within

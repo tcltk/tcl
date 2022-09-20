@@ -903,7 +903,7 @@ namespace eval perf::list {
 
                         comment Insertions same as deletions from shared list
                         perf measure [lreplace_describe shared $len $first $last 2] {
-                            lreplace $L $first $last X Y 
+                            lreplace $L $first $last X Y
                         } [list len $len first $first last $last]
 
                         comment Insertions fewer than deletions from shared list
@@ -947,7 +947,7 @@ namespace eval perf::list {
 
                         comment Insertions same as deletions from shared-span list
                         perf measure [lreplace_describe shared-span $len $first $last 2] {
-                            lreplace $Lspan $first $last X Y 
+                            lreplace $Lspan $first $last X Y
                         } [list len $len first $first last $last]
 
                         comment Insertions fewer than deletions from shared-span list

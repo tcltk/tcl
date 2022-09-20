@@ -1376,7 +1376,7 @@ test safe-10.1.1 {testing statics loading} -constraints tcl::test -setup {
 } -body {
     catch {interp eval $i {load {} Safepfx1}} m o
     dict get $o -errorinfo
-} -returnCodes ok -cleanup {
+} -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {load of library for prefix Safepfx1 failed: can't use library in a safe interpreter: no Safepfx1_SafeInit procedure
@@ -1407,7 +1407,7 @@ test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints t
     set i [safe::interpCreate -nestedloadok]
     catch {interp eval $i {interp create x; load {} Safepfx1 x}} m o
     dict get $o -errorinfo
-} -returnCodes ok -cleanup {
+} -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {load of library for prefix Safepfx1 failed: can't use library in a safe interpreter: no Safepfx1_SafeInit procedure
@@ -1479,7 +1479,7 @@ test safe-11.7.1 {testing safe encoding} -setup {
 } -body {
     catch {interp eval $i encoding convertfrom} m o
     dict get $o -errorinfo
-} -returnCodes ok -match glob -cleanup {
+} -match glob -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {wrong # args: should be "encoding convertfrom ?-nocomplain? ?-failindex var? ?encoding? data"
@@ -1501,7 +1501,7 @@ test safe-11.8.1 {testing safe encoding} -setup {
 } -body {
     catch {interp eval $i encoding convertto} m o
     dict get $o -errorinfo
-} -returnCodes ok -match glob -cleanup {
+} -match glob -cleanup {
     unset -nocomplain m o
     safe::interpDelete $i
 } -result {wrong # args: should be "encoding convertto ?-nocomplain? ?-failindex var? ?encoding? data"
