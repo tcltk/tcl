@@ -3930,8 +3930,12 @@ TclNRSwitchObjCmd(
 	    if (matchVarObj != NULL) {
 		Tcl_Obj *substringObj;
 
-		substringObj = Tcl_GetRange(stringObj,
-			info.matches[j].start, info.matches[j].end-1);
+		if (info.matches[j].end > 0) {
+		    substringObj = Tcl_GetRange(stringObj,
+			    info.matches[j].start, info.matches[j].end-1);
+		} else {
+		    TclNewObj(substringObj);
+		}
 
 		/*
 		 * Never fails; the object is always clean at this point.
