@@ -33,6 +33,7 @@
  *			meaning in ParseTokens: backslash, dollar sign, or
  *			open bracket.
  * TYPE_QUOTE -		Character is a double quote.
+ * TYPE_OPEN_PAREN -	Character is a left parenthesis.
  * TYPE_CLOSE_PAREN -	Character is a right parenthesis.
  * TYPE_CLOSE_BRACK -	Character is a right square bracket.
  * TYPE_BRACE -		Character is a curly brace (either left or right).
