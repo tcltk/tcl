@@ -996,7 +996,7 @@ const TclStubs tclStubs = {
     Tcl_LinkVar, /* 187 */
     0, /* 188 */
     Tcl_MakeFileChannel, /* 189 */
-    Tcl_MakeSafe, /* 190 */
+    0, /* 190 */
     Tcl_MakeTcpClientChannel, /* 191 */
     Tcl_Merge, /* 192 */
     Tcl_NextHashEntry, /* 193 */

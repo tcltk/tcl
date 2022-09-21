@@ -516,8 +516,7 @@ TCLAPI int		Tcl_LinkVar(Tcl_Interp *interp, const char *varName,
 /* Slot 188 is reserved */
 /* 189 */
 TCLAPI Tcl_Channel	Tcl_MakeFileChannel(void *handle, int mode);
-/* 190 */
-TCLAPI int		Tcl_MakeSafe(Tcl_Interp *interp);
+/* Slot 190 is reserved */
 /* 191 */
 TCLAPI Tcl_Channel	Tcl_MakeTcpClientChannel(void *tcpSocket);
 /* 192 */
@@ -2018,7 +2017,7 @@ typedef struct TclStubs {
     int (*tcl_LinkVar) (Tcl_Interp *interp, const char *varName, void *addr, int type); /* 187 */
     void (*reserved188)(void);
     Tcl_Channel (*tcl_MakeFileChannel) (void *handle, int mode); /* 189 */
-    int (*tcl_MakeSafe) (Tcl_Interp *interp); /* 190 */
+    void (*reserved190)(void);
     Tcl_Channel (*tcl_MakeTcpClientChannel) (void *tcpSocket); /* 191 */
     char * (*tcl_Merge) (size_t argc, const char *const *argv); /* 192 */
     Tcl_HashEntry * (*tcl_NextHashEntry) (Tcl_HashSearch *searchPtr); /* 193 */
@@ -2879,8 +2878,7 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 188 is reserved */
 #define Tcl_MakeFileChannel \
 	(tclStubsPtr->tcl_MakeFileChannel) /* 189 */
-#define Tcl_MakeSafe \
-	(tclStubsPtr->tcl_MakeSafe) /* 190 */
+/* Slot 190 is reserved */
 #define Tcl_MakeTcpClientChannel \
 	(tclStubsPtr->tcl_MakeTcpClientChannel) /* 191 */
 #define Tcl_Merge \

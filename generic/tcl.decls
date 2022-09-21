@@ -704,9 +704,10 @@ declare 187 {
 declare 189 {
     Tcl_Channel Tcl_MakeFileChannel(void *handle, int mode)
 }
-declare 190 {
-    int Tcl_MakeSafe(Tcl_Interp *interp)
-}
+# Removed in 9.0
+#declare 190 {
+#    int Tcl_MakeSafe(Tcl_Interp *interp)
+#}
 declare 191 {
     Tcl_Channel Tcl_MakeTcpClientChannel(void *tcpSocket)
 }
