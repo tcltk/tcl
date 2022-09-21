@@ -3882,18 +3882,14 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GetStringResult(interp) Tcl_GetString(Tcl_GetObjResult(interp))
 #define Tcl_SaveResult(interp, statePtr) \
 	do { \
-	    *(statePtr) = Tcl_GetObjResult(interp); \
-	    Tcl_IncrRefCount(*(statePtr)); \
-	    Tcl_SetObjResult(interp, Tcl_NewObj()); \
+	    *(statePtr) = Tcl_SaveInterpState(interp, TCL_ERROR); \
 	} while(0)
 #define Tcl_RestoreResult(interp, statePtr) \
 	do { \
-	    Tcl_ResetResult(interp); \
-   	    Tcl_SetObjResult(interp, *(statePtr)); \
-   	    Tcl_DecrRefCount(*(statePtr)); \
+   	    Tcl_RestoreInterpState(interp, *(statePtr)); \
 	} while(0)
 #define Tcl_DiscardResult(statePtr) \
-	Tcl_DecrRefCount(*(statePtr))
+	Tcl_DiscardInterpState(*(statePtr))
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
 	    const char *__result = result; \

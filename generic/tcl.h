@@ -676,7 +676,7 @@ typedef struct Tcl_Obj {
  * is typically allocated on the stack.
  */
 
-typedef Tcl_Obj *Tcl_SavedResult;
+typedef Tcl_InterpState Tcl_SavedResult;
 
 /*
  *----------------------------------------------------------------------------
