@@ -793,6 +793,7 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclBN_s_mp_sqr 0
 #   undef TclBN_s_mp_sub
 #   define TclBN_s_mp_sub 0
+#   define Tcl_MakeSafe 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
@@ -814,6 +815,7 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclGetCommandFullName Tcl_GetCommandFullName
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
+#   define Tcl_MakeSafe TclMakeSafe
 
 static int
 seekOld(
