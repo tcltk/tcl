@@ -85,7 +85,7 @@ already exist.
 The number of elements in the \fIobjv\fR array.
 .AP "Tcl_Obj *const" *objv in
 The arguments to the command to create the instance of the class.
-.AP int skip in
+.AP size_t skip in
 The number of arguments at the start of the argument array, \fIobjv\fR, that
 are not arguments to any constructors. This allows the generation of correct
 error messages even when complicated calling patterns are used (e.g., via the

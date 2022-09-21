@@ -67,6 +67,7 @@
 #undef Tcl_UtfToUniCharDString
 #undef Tcl_UtfToUniChar
 #undef Tcl_UniCharLen
+#undef TclObjInterpProc
 #if !defined(_WIN32) && !defined(__CYGWIN__)
 #undef Tcl_WinConvertError
 #define Tcl_WinConvertError 0
@@ -434,7 +435,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetOpenMode, /* 40 */
     TclGetOriginalCommand, /* 41 */
     TclpGetUserHome, /* 42 */
-    0, /* 43 */
+    TclGetObjInterpProc2, /* 43 */
     0, /* 44 */
     TclHideUnsafeCommands, /* 45 */
     TclInExit, /* 46 */
@@ -650,6 +651,7 @@ static const TclIntStubs tclIntStubs = {
     TclPtrUnsetVar, /* 256 */
     TclStaticLibrary, /* 257 */
     TclpCreateTemporaryDirectory, /* 258 */
+    0, /* 259 */
     TclListTestObj, /* 260 */
     TclListObjValidate, /* 261 */
 };
@@ -984,7 +986,7 @@ const TclStubs tclStubs = {
     Tcl_LinkVar, /* 187 */
     0, /* 188 */
     Tcl_MakeFileChannel, /* 189 */
-    Tcl_MakeSafe, /* 190 */
+    0, /* 190 */
     Tcl_MakeTcpClientChannel, /* 191 */
     Tcl_Merge, /* 192 */
     Tcl_NextHashEntry, /* 193 */

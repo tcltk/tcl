@@ -505,8 +505,8 @@ MODULE_SCOPE Tcl_Method TclNewMethod(Tcl_Interp *interp, Tcl_Class cls,
                         void *clientData);
 MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
 			    Tcl_Class cls, const char *nameStr,
-			    const char *nsNameStr, int objc,
-			    Tcl_Obj *const *objv, int skip,
+			    const char *nsNameStr, size_t objc,
+			    Tcl_Obj *const *objv, size_t skip,
 			    Tcl_Object *objectPtr);
 MODULE_SCOPE Object *	TclNewObjectInstanceCommon(Tcl_Interp *interp,
 			    Class *classPtr,

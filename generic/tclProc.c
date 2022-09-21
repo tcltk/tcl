@@ -148,6 +148,7 @@ static const Tcl_ObjType lambdaType = {
  *----------------------------------------------------------------------
  */
 
+#undef TclObjInterpProc
 int
 Tcl_ProcObjCmd(
     TCL_UNUSED(void *),
@@ -1430,7 +1431,7 @@ InitArgsAndLocals(
 
     varPtr->flags = 0;
     if (defPtr && defPtr->flags & VAR_IS_ARGS) {
-	Tcl_Obj *listPtr = Tcl_NewListObj(argCt-i, argObjs+i);
+	Tcl_Obj *listPtr = Tcl_NewListObj((argCt>i)? argCt-i : 0, argObjs+i);
 
 	varPtr->value.objPtr = listPtr;
 	Tcl_IncrRefCount(listPtr);	/* Local var is a reference. */
@@ -1594,6 +1595,7 @@ TclPushProcCallFrame(
  *----------------------------------------------------------------------
  */
 
+#undef TclObjInterpProc
 int
 TclObjInterpProc(
     ClientData clientData,	/* Record describing procedure to be
@@ -1629,6 +1631,43 @@ TclNRInterpProc(
     }
     return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
 }
+
+static int
+NRInterpProc2(
+    ClientData clientData,	/* Record describing procedure to be
+				 * interpreted. */
+    Tcl_Interp *interp,/* Interpreter in which procedure was
+				 * invoked. */
+    size_t objc,			/* Count of number of arguments to this
+				 * procedure. */
+    Tcl_Obj *const objv[])	/* Argument value objects. */
+{
+    int result = TclPushProcCallFrame(clientData, interp, objc, objv,
+	    /*isLambda*/ 0);
+
+    if (result != TCL_OK) {
+	return TCL_ERROR;
+    }
+    return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
+}
+
+static int
+ObjInterpProc2(
+    ClientData clientData,	/* Record describing procedure to be
+				 * interpreted. */
+    Tcl_Interp *interp,/* Interpreter in which procedure was
+				 * invoked. */
+    size_t objc,			/* Count of number of arguments to this
+				 * procedure. */
+    Tcl_Obj *const objv[])	/* Argument value objects. */
+{
+    /*
+     * Not used much in the core; external interface for iTcl
+     */
+
+    return Tcl_NRCallObjProc2(interp, NRInterpProc2, clientData, objc, objv);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -2222,15 +2261,16 @@ TclUpdateReturnInfo(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetObjInterpProc --
+ * TclGetObjInterpProc/TclGetObjInterpProc2 --
  *
- *	Returns a pointer to the TclObjInterpProc function; this is different
- *	from the value obtained from the TclObjInterpProc reference on systems
- *	like Windows where import and export versions of a function exported
- *	by a DLL exist.
+ *	Returns a pointer to the TclObjInterpProc/ObjInterpProc2 functions;
+ *	this is different from the value obtained from the TclObjInterpProc
+ *	reference on systems like Windows where import and export versions
+ *	of a function exported by a DLL exist.
  *
  * Results:
- *	Returns the internal address of the TclObjInterpProc function.
+ *	Returns the internal address of the TclObjInterpProc/ObjInterpProc2
+ *	functions.
  *
  * Side effects:
  *	None.
@@ -2242,6 +2282,12 @@ Tcl_ObjCmdProc *
 TclGetObjInterpProc(void)
 {
     return TclObjInterpProc;
+}
+
+Tcl_ObjCmdProc2 *
+TclGetObjInterpProc2(void)
+{
+    return ObjInterpProc2;
 }
 
 /*
