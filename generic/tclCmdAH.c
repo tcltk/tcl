@@ -15,6 +15,7 @@
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
+#include "tclArithSeries.h"
 
 /*
  * The state structure used by [foreach]. Note that the actual structure has
@@ -2657,32 +2658,47 @@ EachloopCmd(
      */
 
     for (i=0 ; i<numLists ; i++) {
+	/* List */
+	/* Variables */
 	statePtr->vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
 	if (statePtr->vCopyList[i] == NULL) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
 	TclListObjGetElementsM(NULL, statePtr->vCopyList[i],
-		&statePtr->varcList[i], &statePtr->varvList[i]);
+	    &statePtr->varcList[i], &statePtr->varvList[i]);
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s varlist is empty",
-		    (statePtr->resultList != NULL ? "lmap" : "foreach")));
+		"%s varlist is empty",
+		(statePtr->resultList != NULL ? "lmap" : "foreach")));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-		    (statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
-		    "NEEDVARS", NULL);
+		(statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
+		"NEEDVARS", NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}
 
-	statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
-	if (statePtr->aCopyList[i] == NULL) {
-	    result = TCL_ERROR;
-	    goto done;
-	}
-	TclListObjGetElementsM(NULL, statePtr->aCopyList[i],
+	/* Values */
+	if (TclHasInternalRep(objv[2+i*2],&tclArithSeriesType)) {
+	    /* Special case for Arith Series */
+	    statePtr->vCopyList[i] = TclArithSeriesObjCopy(interp, objv[2+i*2]);
+	    if (statePtr->vCopyList[i] == NULL) {
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    /* Don't compute values here, wait until the last momement */
+	    statePtr->argcList[i] = TclArithSeriesObjLength(statePtr->vCopyList[i]);
+	} else {
+	    /* List values */
+	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
+	    if (statePtr->aCopyList[i] == NULL) {
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    TclListObjGetElementsM(NULL, statePtr->aCopyList[i],
 		&statePtr->argcList[i], &statePtr->argvList[i]);
-
+	}
+	/* account for variable <> value mismatch */
 	j = statePtr->argcList[i] / statePtr->varcList[i];
 	if ((statePtr->argcList[i] % statePtr->varcList[i]) != 0) {
 	    j++;
@@ -2805,11 +2821,21 @@ ForeachAssignments(
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
+	int isarithseries = TclHasInternalRep(statePtr->vCopyList[i],&tclArithSeriesType);
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
-
 	    if (k < statePtr->argcList[i]) {
-		valuePtr = statePtr->argvList[i][k];
+		if (isarithseries) {
+		    if (TclArithSeriesObjIndex(statePtr->vCopyList[i], k, &valuePtr) != TCL_OK) {
+			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+			"\n    (setting %s loop variable \"%s\")",
+			(statePtr->resultList != NULL ? "lmap" : "foreach"),
+			TclGetString(statePtr->varvList[i][v])));
+			return TCL_ERROR;
+		    }
+		} else {
+		    valuePtr = statePtr->argvList[i][k];
+		}
 	    } else {
 		TclNewObj(valuePtr);	/* Empty string */
 	    }
