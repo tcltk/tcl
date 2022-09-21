@@ -300,9 +300,10 @@ DisassembleByteCodeObj(
 
 #ifdef TCL_COMPILE_STATS
     Tcl_AppendPrintfToObj(bufferObj,
-	    "  Code %" TCL_Z_MODIFIER "u = header %" TCL_Z_MODIFIER "u+inst %" TCL_Z_MODIFIER "u+litObj %" TCL_Z_MODIFIER "u+exc %" TCL_Z_MODIFIER "u+aux %" TCL_Z_MODIFIER "u+cmdMap %" TCL_Z_MODIFIER "u\n",
+	    "  Code %" TCL_Z_MODIFIER "u = header %" TCL_Z_MODIFIER "u+inst %" TCL_Z_MODIFIER "u+litObj %"
+	    TCL_Z_MODIFIER "u+exc %" TCL_Z_MODIFIER "u+aux %" TCL_Z_MODIFIER "u+cmdMap %" TCL_Z_MODIFIER "u\n",
 	    codePtr->structureSize,
-	    sizeof(ByteCode) - sizeof(size_t) - sizeof(Tcl_Time),
+	    offsetof(ByteCode, localCachePtr),
 	    codePtr->numCodeBytes,
 	    codePtr->numLitObjects * sizeof(Tcl_Obj *),
 	    codePtr->numExceptRanges*sizeof(ExceptionRange),

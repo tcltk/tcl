@@ -871,7 +871,7 @@ FileForceOption(
 
 static Tcl_Obj *
 FileBasename(
-    Tcl_Interp *interp,		/* Interp, for error return. */
+    TCL_UNUSED(Tcl_Interp *),	/* Interp, for error return. */
     Tcl_Obj *pathPtr)		/* Path whose basename to extract. */
 {
     size_t objc;
@@ -882,17 +882,8 @@ FileBasename(
     Tcl_IncrRefCount(splitPtr);
 
     if (objc != 0) {
-	if ((objc == 1) && (*TclGetString(pathPtr) == '~')) {
-	    Tcl_DecrRefCount(splitPtr);
-	    if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
-		return NULL;
-	    }
-	    splitPtr = Tcl_FSSplitPath(pathPtr, &objc);
-	    Tcl_IncrRefCount(splitPtr);
-	}
-
-	/*
-	 * Return the last component, unless it is the only component, and it
+        /*
+         * Return the last component, unless it is the only component, and it
 	 * is the root of an absolute path.
 	 */
 
@@ -1647,6 +1638,82 @@ TclFileTempDirCmd(
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, dirNameObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFileHomeCmd --
+ *
+ *	This function is invoked to process the "file home" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFileHomeCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *homeDirObj;
+
+    if (objc != 1 && objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?user?");
+	return TCL_ERROR;
+    }
+    homeDirObj = TclGetHomeDirObj(interp, objc == 1 ? NULL : Tcl_GetString(objv[1]));
+    if (homeDirObj == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, homeDirObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFileTildeExpandCmd --
+ *
+ *	This function is invoked to process the "file tildeexpand" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFileTildeExpandCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *expandedPathObj;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "path");
+	return TCL_ERROR;
+    }
+    expandedPathObj = TclResolveTildePath(interp, objv[1]);
+    if (expandedPathObj == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, expandedPathObj);
     return TCL_OK;
 }
 

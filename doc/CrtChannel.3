@@ -530,9 +530,9 @@ operations will be applied. \fIWideSeekProc\fR must match the following
 prototype:
 .PP
 .CS
-typedef Tcl_WideInt \fBTcl_DriverWideSeekProc\fR(
+typedef long long \fBTcl_DriverWideSeekProc\fR(
         void *\fIinstanceData\fR,
-        Tcl_WideInt \fIoffset\fR,
+        long long \fIoffset\fR,
         int \fIseekMode\fR,
         int *\fIerrorCodePtr\fR);
 .CE

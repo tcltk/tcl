@@ -61,7 +61,7 @@ namespace eval ::tcl::test::io {
     set umaskValue 0
     testConstraint umask [expr {![catch {set umaskValue [scan [exec /bin/sh -c umask] %o]}]}]
 
-    testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~]}]
+    testConstraint makeFileInHome [expr {![file exists $::env(HOME)/_test_] && [file writable $::env(HOME)]}]
 
     # set up a long data file for some of the following tests
 
@@ -5488,21 +5488,16 @@ test chan-io-40.15 {POSIX open access modes: RDWR} {
     chan close $f
     lappend x [viewFile test3]
 } {zzy abzzy}
-test chan-io-40.16 {tilde substitution in open} -constraints makeFileInHome -setup {
-    makeFile {Some text} _test_ ~
+test chan-io-40.16 {verify no tilde substitution in open} -setup {
+    set curdir [pwd]
+    cd [temporaryDirectory]
 } -body {
-    file exists [file join $::env(HOME) _test_]
+    close [open ~ w]
+    list [file isfile ~]
 } -cleanup {
-    removeFile _test_ ~
+    file delete ./~ ;# ./ because don't want to delete home in case of bugs!
+    cd $curdir
 } -result 1
-test chan-io-40.17 {tilde substitution in open} -setup {
-    set home $::env(HOME)
-} -body {
-    unset ::env(HOME)
-    open ~/foo
-} -returnCodes error -cleanup {
-    set ::env(HOME) $home
-} -result {couldn't find HOME environment variable to expand path}
 
 test chan-io-41.1 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
     chan event foo
