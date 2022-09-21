@@ -2413,7 +2413,7 @@ typedef enum TclEolTranslation {
  */
 #if TCL_MAJOR_VERSION > 8
 
-typedef ssize_t ListSizeT;
+typedef size_t ListSizeT;
 
 /*
  * SSIZE_MAX, NOT SIZE_MAX as negative differences need to be expressed
@@ -3216,13 +3216,13 @@ MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, size_t line, int n,
 			    int *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
-MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, ssize_t fromIdx,
-			    ssize_t toIdx);
+MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, ListSizeT fromIdx,
+			    ListSizeT toIdx);
 MODULE_SCOPE int	TclListObjAppendElements(Tcl_Interp *interp,
-			    Tcl_Obj *toObj, ssize_t elemCount,
+			    Tcl_Obj *toObj, ListSizeT elemCount,
 			    Tcl_Obj *const elemObjv[]);
-MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, size_t fromIdx,
-			    size_t toIdx);
+MODULE_SCOPE Tcl_Obj *	TclListObjRange(Tcl_Obj *listPtr, ListSizeT fromIdx,
+			    ListSizeT toIdx);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,

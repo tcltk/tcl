@@ -812,7 +812,7 @@ Tcl_UtfCharComplete(
 size_t
 Tcl_NumUtfChars(
     const char *src,	/* The UTF-8 string to measure. */
-    ssize_t length)	/* The length of the string in bytes, or
+    size_t length)	/* The length of the string in bytes, or
 			 * TCL_INDEX_NONE for strlen(src). */
 {
     Tcl_UniChar ch = 0;
@@ -1232,7 +1232,7 @@ Tcl_UniCharAtIndex(
 const char *
 Tcl_UtfAtIndex(
     const char *src,		/* The UTF-8 string. */
-    ssize_t index)		/* The position of the desired character. */
+    size_t index)		/* The position of the desired character. */
 {
     int ch = 0;
 

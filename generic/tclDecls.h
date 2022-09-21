@@ -830,7 +830,7 @@ EXTERN void		Tcl_ConditionNotify(Tcl_Condition *condPtr);
 EXTERN void		Tcl_ConditionWait(Tcl_Condition *condPtr,
 				Tcl_Mutex *mutexPtr, const Tcl_Time *timePtr);
 /* 312 */
-EXTERN size_t		TclNumUtfChars(const char *src, ssize_t length);
+EXTERN size_t		TclNumUtfChars(const char *src, size_t length);
 /* 313 */
 EXTERN ssize_t		Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
 				ssize_t charsToRead, int appendFlag);
@@ -859,7 +859,7 @@ EXTERN int		Tcl_UniCharToUpper(int ch);
 /* 324 */
 EXTERN int		Tcl_UniCharToUtf(int ch, char *buf);
 /* 325 */
-EXTERN const char *	TclUtfAtIndex(const char *src, ssize_t index);
+EXTERN const char *	TclUtfAtIndex(const char *src, size_t index);
 /* 326 */
 EXTERN int		TclUtfCharComplete(const char *src, size_t length);
 /* 327 */

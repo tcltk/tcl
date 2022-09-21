@@ -382,7 +382,7 @@ Tcl_DumpActiveMemory(
 
 void *
 Tcl_DbCkalloc(
-    size_t size,
+    TCL_HASH_TYPE size,
     const char *file,
     int line)
 {

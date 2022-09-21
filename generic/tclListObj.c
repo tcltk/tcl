@@ -48,13 +48,13 @@
 #define LIST_INDEX_ASSERT(idxarg_)                                 \
     do {                                                           \
 	ListSizeT idx_ = (idxarg_); /* To guard against ++ etc. */ \
-	LIST_ASSERT(idx_ != TCL_INDEX_NONE && idx_ < LIST_MAX);                 \
+	LIST_ASSERT(idx_ != (size_t)TCL_INDEX_NONE && idx_ < (size_t)LIST_MAX);                 \
     } while (0)
 /* Ditto for counts except upper limit is different */
 #define LIST_COUNT_ASSERT(countarg_)                                   \
     do {                                                               \
 	ListSizeT count_ = (countarg_); /* To guard against ++ etc. */ \
-	LIST_ASSERT(count_ != TCL_INDEX_NONE && count_ <= LIST_MAX);                \
+	LIST_ASSERT(count_ != (size_t)TCL_INDEX_NONE && count_ <= (size_t)LIST_MAX);                \
     } while (0)
 
 #else
@@ -1427,10 +1427,10 @@ ListRepRange(
 	ListRepFreeUnreferenced(srcRepPtr);
     } /* else T:listrep-2.{4.2,4.3,5.2,5.3,6.2,7.2,8.1} */
 
-    if (rangeStart == TCL_INDEX_NONE) {
+    if (rangeStart == (size_t)TCL_INDEX_NONE) {
 	rangeStart = 0;
     }
-    if ((rangeEnd != TCL_INDEX_NONE) && (rangeEnd >= numSrcElems)) {
+    if ((rangeEnd != (size_t)TCL_INDEX_NONE) && (rangeEnd >= numSrcElems)) {
 	rangeEnd = numSrcElems - 1;
     }
     if (rangeStart + 1 > rangeEnd + 1) {
@@ -2066,13 +2066,13 @@ Tcl_ListObjReplace(
 
     /* Make limits sane */
     origListLen = ListRepLength(&listRep);
-    if (first == TCL_INDEX_NONE) {
+    if (first == (size_t)TCL_INDEX_NONE) {
 	first = 0;
     }
     if (first > origListLen) {
 	first = origListLen;	/* So we'll insert after last element. */
     }
-    if (numToDelete == TCL_INDEX_NONE) {
+    if (numToDelete == (size_t)TCL_INDEX_NONE) {
 	numToDelete = 0;
     } else if (first > ListSizeT_MAX - numToDelete /* Handle integer overflow */
              || origListLen < first + numToDelete) {

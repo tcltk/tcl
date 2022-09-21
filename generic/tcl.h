@@ -986,9 +986,9 @@ typedef struct Tcl_DString {
 
 #ifndef TCL_HASH_TYPE
 #if TCL_MAJOR_VERSION > 8
-#  define TCL_HASH_TYPE ssize_t
+#  define TCL_HASH_TYPE size_t
 #else
-#  define TCL_HASH_TYPE signed
+#  define TCL_HASH_TYPE unsigned
 #endif
 #endif
 
