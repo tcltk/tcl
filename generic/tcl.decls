@@ -680,7 +680,7 @@ declare 187 {
 declare 189 {
     Tcl_Channel Tcl_MakeFileChannel(void *handle, int mode)
 }
-declare 190 {
+declare 190 {deprecated {}} {
     int Tcl_MakeSafe(Tcl_Interp *interp)
 }
 declare 191 {

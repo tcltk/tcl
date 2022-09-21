@@ -12,6 +12,8 @@
 vwait \- Process events until a variable is written
 .SH SYNOPSIS
 \fBvwait\fR \fIvarName\fR
+.PP
+\fBvwait\fR ?\Ioptions\fR? ?\fIvarName ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -24,8 +26,75 @@ command will return as soon as the event handler that modified
 a variable name with respect to the global namespace, but can refer to any
 namespace's variables if the fully-qualified name is given.
 .PP
+In the second more complex command form \fIoptions\fR allow for finer
+control of the wait operation and to deal with multiple event sources.
+\fIOptions\fR can be made up of
+.TP
+\fB\-\-\fR
+.
+Marks the end of options. All following arguments are handled as
+variable names.
+.TP
+\fB\-all\fR
+.
+All conditions for the wait operation must be met to complete the
+wait operation. Otherwise (the default) the first event completes
+the wait.
+.TP
+\fB\-extended\fR
+.
+An extended result in list form is returned, see below for explanation.
+.TP
+\fB\-nofileevents\fR
+.
+File events are not handled in the wait operation.
+.TP
+\fB\-noidleevents\fR
+.
+Idle handlers are not invoked during the wait operation.
+.TP
+\fB\-notimerevents\fR
+.
+Timer handlers are not serviced during the wait operation.
+.TP
+\fB\-nowindowevents\fR
+.
+Events of the windowing system are not handled during the wait operation.
+.TP
+\fB\-readable\fR \fIchannel\fR
+.
+\fIChannel\fR must name a Tcl channel open for reading. If \fIchannel\fR
+is or becomes readable the wait operation completes.
+.TP
+\fB\-timeout\fR milliseconds\fR
+.
+The wait operation is constrained to \fImilliseconds\fR.
+.TP
+\fB\-variable\fR \fIvarName\fR
+.
+\fIVarName\fR must be the name of a global variable. Writing or
+unsetting this variable completes the wait operation.
+.TP
+\fB\-writable\fR \fIchannel\fR
+.
+\fIChannel\fR must name a Tcl channel open for writing. If \fIchannel\fR
+is or becomes writable the wait operation completes.
+.PP
+The result returned by \fBvwait\fR is for the simple form an empty
+string. If the \fI\-timeout\fR option is specified, the result is the
+number of milliseconds remaining when the wait condition has been
+met, or -1 if the wait operation timed out.
+.PP
+If the \fI\-extended\fR option is specified, the result is made up
+of a Tcl list with an even number of elements. Odd elements
+take the values \fBreadable\fR, \fBtimeleft\fR, \fBvariable\fR,
+and \fBwritable\fR. Even elements are the corresponding variable
+and channel names or the remaining number of milliseconds.
+The list is ordered by the occurrences of the event(s) with the
+exception of \fBtimeleft\fR which always comes last.
+.PP
 In some cases the \fBvwait\fR command may not return immediately
-after \fIvarName\fR is set.  This happens if the event handler
+after \fIvarName\fR et.al. is set. This happens if the event handler
 that sets \fIvarName\fR does not complete immediately.  For example,
 if an event handler sets \fIvarName\fR and then itself calls
 \fBvwait\fR to wait for a different variable, then it may not return
