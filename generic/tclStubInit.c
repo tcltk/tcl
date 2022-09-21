@@ -435,7 +435,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetOpenMode, /* 40 */
     TclGetOriginalCommand, /* 41 */
     TclpGetUserHome, /* 42 */
-    0, /* 43 */
+    TclGetObjInterpProc2, /* 43 */
     0, /* 44 */
     TclHideUnsafeCommands, /* 45 */
     TclInExit, /* 46 */
