@@ -326,7 +326,7 @@ Tcl_PushCallFrame(
     framePtr->callerPtr = iPtr->framePtr;
     framePtr->callerVarPtr = iPtr->varFramePtr;
     if (iPtr->varFramePtr != NULL) {
-	framePtr->level = (iPtr->varFramePtr->level + 1);
+	framePtr->level = iPtr->varFramePtr->level + 1U;
     } else {
 	framePtr->level = 0;
     }
@@ -394,7 +394,7 @@ Tcl_PopCallFrame(
 	Tcl_Free(framePtr->varTablePtr);
 	framePtr->varTablePtr = NULL;
     }
-    if (framePtr->numCompiledLocals > 0) {
+    if (framePtr->numCompiledLocals + 1 > 1) {
 	TclDeleteCompiledLocalVars(iPtr, framePtr);
 	if (framePtr->localCachePtr->refCount-- <= 1) {
 	    TclFreeLocalCache(interp, framePtr->localCachePtr);
@@ -4036,8 +4036,8 @@ NamespacePathCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Namespace *nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-    size_t i;
-    int nsObjc, result = TCL_ERROR;
+    size_t nsObjc, i;
+    int result = TCL_ERROR;
     Tcl_Obj **nsObjv;
     Tcl_Namespace **namespaceList = NULL;
 
@@ -4068,14 +4068,14 @@ NamespacePathCmd(
      * There is a path given, so parse it into an array of namespace pointers.
      */
 
-    if (TclListObjGetElements(interp, objv[1], &nsObjc, &nsObjv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, objv[1], &nsObjc, &nsObjv) != TCL_OK) {
 	goto badNamespace;
     }
     if (nsObjc != 0) {
 	namespaceList = (Tcl_Namespace **)TclStackAlloc(interp,
 		sizeof(Tcl_Namespace *) * nsObjc);
 
-	for (i=0 ; i<(size_t)nsObjc ; i++) {
+	for (i = 0; i < nsObjc; i++) {
 	    if (TclGetNamespaceFromObj(interp, nsObjv[i],
 		    &namespaceList[i]) != TCL_OK) {
 		goto badNamespace;
@@ -4428,7 +4428,7 @@ Tcl_SetNamespaceUnknownHandler(
     Tcl_Namespace *nsPtr,	/* Namespace which is being updated. */
     Tcl_Obj *handlerPtr)	/* The new handler, or NULL to reset. */
 {
-    int lstlen = 0;
+    size_t lstlen = 0;
     Namespace *currNsPtr = (Namespace *) nsPtr;
 
     /*
@@ -4436,7 +4436,7 @@ Tcl_SetNamespaceUnknownHandler(
      */
 
     if (handlerPtr != NULL) {
-	if (TclListObjLength(interp, handlerPtr, &lstlen) != TCL_OK) {
+	if (TclListObjLengthM(interp, handlerPtr, &lstlen) != TCL_OK) {
 	    /*
 	     * Not a list.
 	     */
@@ -4977,7 +4977,7 @@ TclLogCommandInfo(
 	    return;
 	} else {
 	    Tcl_HashEntry *hPtr
-		    = Tcl_FindHashEntry(&iPtr->varTraces, (char *) varPtr);
+		    = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
 	    VarTrace *tracePtr = (VarTrace *)Tcl_GetHashValue(hPtr);
 
 	    if (tracePtr->traceProc != EstablishErrorInfoTraces) {
@@ -5010,10 +5010,10 @@ TclLogCommandInfo(
 	iPtr->errorStack = newObj;
     }
     if (iPtr->resetErrorStack) {
-	int len;
+	size_t len;
 
 	iPtr->resetErrorStack = 0;
-	TclListObjLength(interp, iPtr->errorStack, &len);
+	TclListObjLengthM(interp, iPtr->errorStack, &len);
 
 	/*
 	 * Reset while keeping the list internalrep as much as possible.
@@ -5048,7 +5048,7 @@ TclLogCommandInfo(
 
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewWideIntObj(
-		iPtr->framePtr->level - iPtr->varFramePtr->level));
+		(int)(iPtr->framePtr->level - iPtr->varFramePtr->level)));
     } else if (iPtr->framePtr != iPtr->rootFramePtr) {
 	/*
 	 * normal case, [lappend errorstack CALL [info level 0]]
@@ -5095,10 +5095,10 @@ TclErrorStackResetIf(
 	iPtr->errorStack = newObj;
     }
     if (iPtr->resetErrorStack) {
-	int len;
+	size_t len;
 
 	iPtr->resetErrorStack = 0;
-	TclListObjLength(interp, iPtr->errorStack, &len);
+	TclListObjLengthM(interp, iPtr->errorStack, &len);
 
 	/*
 	 * Reset while keeping the list internalrep as much as possible.

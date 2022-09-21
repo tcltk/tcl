@@ -280,7 +280,7 @@ Tcl_SourceRCFile(
 
 TCL_NORETURN void
 Tcl_MainEx(
-    int argc,			/* Number of arguments. */
+    size_t argc,			/* Number of arguments. */
     TCHAR **argv,		/* Array of argument strings. */
     Tcl_AppInitProc *appInitProc,
 				/* Application-specific initialization
@@ -288,7 +288,7 @@ Tcl_MainEx(
 				 * but before starting to execute commands. */
     Tcl_Interp *interp)
 {
-    int i=0;			/* argv[i] index */
+    size_t i=0;			/* argv[i] index */
     Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
     const char *encodingName = NULL;
     int code, exitCode = 0;
@@ -297,7 +297,7 @@ Tcl_MainEx(
     InteractiveState is;
 
     TclpSetInitialEncodings();
-    if (0 < argc) {
+    if (argc + 1 > 1) {
 	--argc;			/* consume argv[0] */
 	++i;
     }
@@ -326,7 +326,7 @@ Tcl_MainEx(
 	 */
 
 	/* mind argc is being adjusted as we proceed */
-	if ((argc >= 3) && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
+	if ((argc >= 3) && argv[1] && argv[2] && argv[3] && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
 		&& ('-' != argv[3][0])) {
 	    Tcl_Obj *value = NewNativeObj(argv[2]);
 	    Tcl_SetStartupScript(NewNativeObj(argv[3]),
@@ -334,7 +334,7 @@ Tcl_MainEx(
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    i += 3;
-	} else if ((argc >= 1) && ('-' != argv[1][0])) {
+	} else if ((argc >= 1) && argv[1] && ('-' != argv[1][0])) {
 	    Tcl_SetStartupScript(NewNativeObj(argv[1]), NULL);
 	    argc--;
 	    i++;
@@ -342,17 +342,19 @@ Tcl_MainEx(
     }
 
     path = Tcl_GetStartupScript(&encodingName);
-    if (path == NULL) {
+    if (path != NULL) {
+	appName = path;
+    } else if (argv[0]) {
 	appName = NewNativeObj(argv[0]);
     } else {
-	appName = path;
+    	appName = Tcl_NewStringObj("tclsh", -1);
     }
     Tcl_SetVar2Ex(interp, "argv0", NULL, appName, TCL_GLOBAL_ONLY);
 
     Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewWideIntObj(argc), TCL_GLOBAL_ONLY);
 
     argvPtr = Tcl_NewListObj(0, NULL);
-    while (argc--) {
+    while (argc-- && argv[i]) {
 	Tcl_ListObjAppendElement(NULL, argvPtr, NewNativeObj(argv[i++]));
     }
     Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);

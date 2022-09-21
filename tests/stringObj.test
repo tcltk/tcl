@@ -23,7 +23,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 testConstraint testobj [llength [info commands testobj]]
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testdstring [llength [info commands testdstring]]
-testConstraint fullutf [expr {[string length \U010000] == 1}]
+testConstraint utf32 [expr {[string length \U010000] == 1}]
 
 test stringObj-1.1 {string type registration} testobj {
     set t [testobj types]
@@ -454,22 +454,71 @@ test stringObj-15.4 {Tcl_Append*ToObj: self appends} testobj {
     teststringobj set 1 foo
     teststringobj appendself 1 3
 } foo
-test stringObj-15.5 {Tcl_Append*ToObj: self appends} {testobj fullutf} {
+test stringObj-15.5 {Tcl_Append*ToObj: self appends} {testobj utf32} {
     teststringobj set 1 foo
     teststringobj appendself2 1 0
 } foofoo
-test stringObj-15.6 {Tcl_Append*ToObj: self appends} {testobj fullutf} {
+test stringObj-15.6 {Tcl_Append*ToObj: self appends} {testobj utf32} {
     teststringobj set 1 foo
     teststringobj appendself2 1 1
 } foooo
-test stringObj-15.7 {Tcl_Append*ToObj: self appends} {testobj fullutf} {
+test stringObj-15.7 {Tcl_Append*ToObj: self appends} {testobj utf32} {
     teststringobj set 1 foo
     teststringobj appendself2 1 2
 } fooo
-test stringObj-15.8 {Tcl_Append*ToObj: self appends} {testobj fullutf} {
+test stringObj-15.8 {Tcl_Append*ToObj: self appends} {testobj utf32} {
     teststringobj set 1 foo
     teststringobj appendself2 1 3
 } foo
+
+test stringObj-16.0 {Tcl_GetRange: normal case} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 1 3
+} bcd
+test stringObj-16.1 {Tcl_GetRange: first > end} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 10 5
+} {}
+test stringObj-16.2 {Tcl_GetRange: last > end} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 3 13
+} de
+test stringObj-16.3 {Tcl_GetRange: first = TCL_INDEX_NONE} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 -1 3
+} abcd
+test stringObj-16.4 {Tcl_GetRange: last = TCL_INDEX_NONE} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 1 -1
+} bcde
+test stringObj-16.5 {Tcl_GetRange: first = last = TCL_INDEX_NONE} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 -1 -1
+} abcde
+test stringObj-16.6 {Tcl_GetRange: first = UINT_MAX-1} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 0xFFFFFFFE 3
+} {}
+test stringObj-16.7 {Tcl_GetRange: first = SIZE_MAX-1} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 -2 3
+} {}
+test stringObj-16.8 {Tcl_GetRange: last = UINT_MAX-1} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 1 0xFFFFFFFE
+} bcde
+test stringObj-16.9 {Tcl_GetRange: last = SIZE_MAX-1} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 1 -2
+} bcde
+test stringObj-16.10 {Tcl_GetRange: first = last = UINT_MAX-1} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 0xFFFFFFFE 0xFFFFFFFE
+} {}
+test stringObj-16.11 {Tcl_GetRange: first = last = SIZE_MAX-1} testobj {
+    teststringobj set 1 abcde
+    teststringobj range 1 -2 -2
+} {}
 
 if {[testConstraint testobj]} {
     testobj freeallvars

@@ -1,5 +1,7 @@
 name: Windows
 on: [push]
+permissions:
+  contents: read
 env:
   ERROR_ON_FAILURES: 1
 jobs:
@@ -21,7 +23,7 @@ jobs:
     # Using powershell means we need to explicitly stop on failure
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Init MSVC
         uses: ilammy/msvc-dev-cmd@v1
       - name: Build ${{ matrix.cfgopt }}
@@ -66,7 +68,7 @@ jobs:
           msystem: MINGW64
           install: git mingw-w64-x86_64-toolchain make
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h

@@ -99,15 +99,15 @@ static ProcessGlobalValue executableName = {
  */
 
 static void		ClearHash(Tcl_HashTable *tablePtr);
-static void		FreeProcessGlobalValue(ClientData clientData);
-static void		FreeThreadHash(ClientData clientData);
+static void		FreeProcessGlobalValue(void *clientData);
+static void		FreeThreadHash(void *clientData);
 static int		GetEndOffsetFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    size_t endValue, Tcl_WideInt *indexPtr);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		GetWideForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    size_t endValue, Tcl_WideInt *widePtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
-			    int stringLength, const char *typeStr,
+			    size_t stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
 			    const char **nextPtr, size_t *sizePtr,
 			    int *literalPtr);
@@ -493,7 +493,7 @@ TclFindElement(
     const char *list,		/* Points to the first byte of a string
 				 * containing a Tcl list with zero or more
 				 * elements (possibly in braces). */
-    int listLength,		/* Number of bytes in the list's string. */
+    size_t listLength,		/* Number of bytes in the list's string. */
     const char **elementPtr,	/* Where to put address of first significant
 				 * character in first element of list. */
     const char **nextPtr,	/* Fill in with location of character just
@@ -521,7 +521,7 @@ TclFindDictElement(
 				 * containing a Tcl dictionary with zero or
 				 * more keys and values (possibly in
 				 * braces). */
-    int dictLength,		/* Number of bytes in the dict's string. */
+    size_t dictLength,		/* Number of bytes in the dict's string. */
     const char **elementPtr,	/* Where to put address of first significant
 				 * character in the first element (i.e., key
 				 * or value) of dict. */
@@ -550,7 +550,7 @@ FindElement(
 				 * containing a Tcl list or dictionary with
 				 * zero or more elements (possibly in
 				 * braces). */
-    int stringLength,		/* Number of bytes in the string. */
+    size_t stringLength,		/* Number of bytes in the string. */
     const char *typeStr,	/* The name of the type of thing we are
 				 * parsing, for error messages. */
     const char *typeCode,	/* The type code for thing we are parsing, for
@@ -572,9 +572,9 @@ FindElement(
     const char *p = string;
     const char *elemStart;	/* Points to first byte of first element. */
     const char *limit;		/* Points just after list/dict's last byte. */
-    int openBraces = 0;		/* Brace nesting level during parse. */
+    size_t openBraces = 0;		/* Brace nesting level during parse. */
     int inQuotes = 0;
-    int size = 0;
+    size_t size = 0;
     size_t numChars;
     int literal = 1;
     const char *p2;
@@ -844,20 +844,21 @@ TclCopyAndCollapse(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SplitList
 int
 Tcl_SplitList(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, no error message is left. */
     const char *list,		/* Pointer to string with list structure. */
-    int *argcPtr,		/* Pointer to location to fill in with the
+    size_t *argcPtr,		/* Pointer to location to fill in with the
 				 * number of elements in the list. */
     const char ***argvPtr)	/* Pointer to place to store pointer to array
 				 * of pointers to list elements. */
 {
     const char **argv, *end, *element;
     char *p;
-    int length, size, i, result;
-    size_t elSize;
+    int result;
+    size_t length, size, i, elSize;
 
     /*
      * Allocate enough space to work in. A (const char *) for each (possible)
@@ -974,7 +975,7 @@ Tcl_ScanCountedElement(
 				 * Tcl_ConvertElement. */
 {
     char flags = CONVERT_ANY;
-    int numBytes = TclScanElement(src, length, &flags);
+    size_t numBytes = TclScanElement(src, length, &flags);
 
     *flagPtr = flags;
     return numBytes;
@@ -1018,7 +1019,7 @@ TclScanElement(
 				 * Tcl_ConvertElement. */
 {
     const char *p = src;
-    int nestingLevel = 0;	/* Brace nesting count */
+    size_t nestingLevel = 0;	/* Brace nesting count */
     int forbidNone = 0;		/* Do not permit CONVERT_NONE mode. Something
 				 * needs protection or escape. */
     int requireEscape = 0;	/* Force use of CONVERT_ESCAPE mode.  For some
@@ -1087,8 +1088,7 @@ TclScanElement(
 	    braceCount++;
 #endif /* COMPAT */
 	    extra++;				/* Escape '}' => '\}' */
-	    nestingLevel--;
-	    if (nestingLevel < 0) {
+	    if (nestingLevel-- < 1) {
 		/*
 		 * Unbalanced braces!  Cannot format with brace quoting.
 		 */
@@ -1169,7 +1169,7 @@ TclScanElement(
     }
 
   endOfString:
-    if (nestingLevel != 0) {
+    if (nestingLevel > 0) {
 	/*
 	 * Unbalanced braces!  Cannot format with brace quoting.
 	 */
@@ -1558,13 +1558,12 @@ TclConvertElement(
 
 char *
 Tcl_Merge(
-    int argc,			/* How many strings to merge. */
+    size_t argc,			/* How many strings to merge. */
     const char *const *argv)	/* Array of string values. */
 {
 #define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    int i;
-    size_t bytesNeeded = 0;
+    size_t i, bytesNeeded = 0;
     char *result, *dst;
 
     /*
@@ -1847,11 +1846,10 @@ TclTrim(
 
 char *
 Tcl_Concat(
-    int argc,			/* Number of strings to concatenate. */
+    size_t argc,			/* Number of strings to concatenate. */
     const char *const *argv)	/* Array of strings to concatenate. */
 {
-    int i;
-    size_t needSpace = 0, bytesNeeded = 0;
+    size_t i, needSpace = 0, bytesNeeded = 0;
     char *result, *p;
 
     /*
@@ -1937,11 +1935,11 @@ Tcl_Concat(
 
 Tcl_Obj *
 Tcl_ConcatObj(
-    int objc,			/* Number of objects to concatenate. */
+    size_t objc,			/* Number of objects to concatenate. */
     Tcl_Obj *const objv[])	/* Array of objects to concatenate. */
 {
-    int i, needSpace = 0;
-    size_t bytesNeeded = 0, elemLength;
+    int needSpace = 0;
+    size_t i, bytesNeeded = 0, elemLength;
     const char *element;
     Tcl_Obj *objPtr, *resPtr;
 
@@ -3337,7 +3335,7 @@ GetWideForIndex(
                                  * representing an index. */
 {
     int numType;
-    ClientData cd;
+    void *cd;
     int code = TclGetNumberFromObj(NULL, objPtr, &cd, &numType);
 
     if (code == TCL_OK) {
@@ -3456,7 +3454,7 @@ GetEndOffsetFromObj(
 {
     Tcl_ObjInternalRep *irPtr;
     Tcl_WideInt offset = -1;	/* Offset in the "end-offset" expression - 1 */
-    ClientData cd;
+    void *cd;
 
     while ((irPtr = TclFetchInternalRep(objPtr, &endOffsetType)) == NULL) {
 	Tcl_ObjInternalRep ir;
@@ -3466,7 +3464,8 @@ GetEndOffsetFromObj(
 	if (*bytes != 'e') {
 	    int numType;
 	    const char *opPtr;
-	    int len, t1 = 0, t2 = 0;
+	    int t1 = 0, t2 = 0;
+	    size_t len;
 
 	    /* Value doesn't start with "e" */
 
@@ -3486,7 +3485,7 @@ GetEndOffsetFromObj(
 	    if ((TclMaxListLength(bytes, -1, NULL) > 1)
 
 		    /* If it's possible, do the full list parse. */
-	            && (TCL_OK == TclListObjLength(NULL, objPtr, &len))
+	            && (TCL_OK == TclListObjLengthM(NULL, objPtr, &len))
 	            && (len > 1)) {
 	        goto parseError;
 	    }
@@ -3879,7 +3878,7 @@ GetThreadHash(
 
 static void
 FreeThreadHash(
-    ClientData clientData)
+    void *clientData)
 {
     Tcl_HashTable *tablePtr = (Tcl_HashTable *)clientData;
 
@@ -3901,7 +3900,7 @@ FreeThreadHash(
 
 static void
 FreeProcessGlobalValue(
-    ClientData clientData)
+    void *clientData)
 {
     ProcessGlobalValue *pgvPtr = (ProcessGlobalValue *)clientData;
 

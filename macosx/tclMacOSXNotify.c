@@ -311,7 +311,7 @@ typedef struct FileHandler {
 				 * for this file. */
     Tcl_FileProc *proc;		/* Function to call, in the style of
 				 * Tcl_CreateFileHandler. */
-    ClientData clientData;	/* Argument to pass to proc. */
+    void *clientData;	/* Argument to pass to proc. */
     struct FileHandler *nextPtr;/* Next in list of all files we care about. */
 } FileHandler;
 
@@ -505,7 +505,7 @@ static CFStringRef tclEventsOnlyRunLoopMode = NULL;
  */
 
 static void		StartNotifierThread(void);
-static TCL_NORETURN void NotifierThreadProc(ClientData clientData);
+static TCL_NORETURN void NotifierThreadProc(void *clientData);
 static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 static void		TimerWakeUp(CFRunLoopTimerRef timer, void *info);
 static void		QueueFileEvents(void *info);
@@ -612,7 +612,7 @@ LookUpFileHandler(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpInitNotifier(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -868,7 +868,7 @@ StartNotifierThread(void)
 
 void
 TclpFinalizeNotifier(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -970,7 +970,7 @@ TclpFinalizeNotifier(
 
 void
 TclpAlertNotifier(
-    ClientData clientData)
+    void *clientData)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
@@ -1047,7 +1047,7 @@ TclpSetTimer(
 static void
 TimerWakeUp(
     TCL_UNUSED(CFRunLoopTimerRef),
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
 }
 
@@ -1114,7 +1114,7 @@ TclpCreateFileHandler(
 				 * called. */
     Tcl_FileProc *proc,		/* Function to call for each selected
 				 * event. */
-    ClientData clientData)	/* Arbitrary data to pass to proc. */
+    void *clientData)	/* Arbitrary data to pass to proc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr = LookUpFileHandler(tsdPtr, fd, NULL);
@@ -1334,7 +1334,7 @@ FileHandlerEventProc(
  *----------------------------------------------------------------------
  */
 
-ClientData
+void *
 TclpNotifierData(void)
 {
     return NULL;
@@ -1908,7 +1908,7 @@ int
 TclAsyncNotifier(
     int sigNumber,		/* Signal number. */
     TCL_UNUSED(Tcl_ThreadId),	/* Target thread. */
-    TCL_UNUSED(ClientData),	/* Notifier data. */
+    TCL_UNUSED(void *),	/* Notifier data. */
     int *flagPtr,		/* Flag to mark. */
     int value)			/* Value of mark. */
 {
@@ -1967,7 +1967,7 @@ TclAsyncNotifier(
 
 static TCL_NORETURN void
 NotifierThreadProc(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr;
     fd_set readableMask, writableMask, exceptionalMask;

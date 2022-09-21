@@ -368,9 +368,9 @@ int
 Tcl_SetEncodingSearchPath(
     Tcl_Obj *searchPath)
 {
-    int dummy;
+    size_t dummy;
 
-    if (TCL_ERROR == TclListObjLength(NULL, searchPath, &dummy)) {
+    if (TCL_ERROR == TclListObjLengthM(NULL, searchPath, &dummy)) {
 	return TCL_ERROR;
     }
     TclSetProcessGlobalValue(&encodingSearchPath, searchPath, NULL);
@@ -415,9 +415,9 @@ void
 TclSetLibraryPath(
     Tcl_Obj *path)
 {
-    int dummy;
+    size_t dummy;
 
-    if (TCL_ERROR == TclListObjLength(NULL, path, &dummy)) {
+    if (TCL_ERROR == TclListObjLengthM(NULL, path, &dummy)) {
 	return;
     }
     TclSetProcessGlobalValue(&libraryPath, path, NULL);
@@ -451,22 +451,22 @@ TclSetLibraryPath(
 static void
 FillEncodingFileMap(void)
 {
-    int i, numDirs = 0;
+    size_t i, numDirs = 0;
     Tcl_Obj *map, *searchPath;
 
     searchPath = Tcl_GetEncodingSearchPath();
     Tcl_IncrRefCount(searchPath);
-    TclListObjLength(NULL, searchPath, &numDirs);
+    TclListObjLengthM(NULL, searchPath, &numDirs);
     map = Tcl_NewDictObj();
     Tcl_IncrRefCount(map);
 
-    for (i = numDirs-1; i >= 0; i--) {
+    for (i = numDirs-1; i != TCL_INDEX_NONE; i--) {
 	/*
 	 * Iterate backwards through the search path so as we overwrite
 	 * entries found, we favor files earlier on the search path.
 	 */
 
-	int j, numFiles;
+	size_t j, numFiles;
 	Tcl_Obj *directory, *matchFileList;
 	Tcl_Obj **filev;
 	Tcl_GlobTypeData readableFiles = {
@@ -480,7 +480,7 @@ FillEncodingFileMap(void)
 	Tcl_FSMatchInDirectory(NULL, matchFileList, directory, "*.enc",
 		&readableFiles);
 
-	TclListObjGetElements(NULL, matchFileList, &numFiles, &filev);
+	TclListObjGetElementsM(NULL, matchFileList, &numFiles, &filev);
 	for (j=0; j<numFiles; j++) {
 	    Tcl_Obj *encodingName, *fileObj;
 
@@ -1553,9 +1553,9 @@ OpenEncodingFileChannel(
     Tcl_Obj *map = TclGetProcessGlobalValue(&encodingFileMap);
     Tcl_Obj **dir, *path, *directory = NULL;
     Tcl_Channel chan = NULL;
-    int i, numDirs;
+    size_t i, numDirs;
 
-    TclListObjGetElements(NULL, searchPath, &numDirs, &dir);
+    TclListObjGetElementsM(NULL, searchPath, &numDirs, &dir);
     Tcl_IncrRefCount(nameObj);
     Tcl_AppendToObj(fileNameObj, ".enc", -1);
     Tcl_IncrRefCount(fileNameObj);
@@ -2054,7 +2054,7 @@ LoadEscapeEncoding(
     Tcl_DStringInit(&escapeData);
 
     while (1) {
-	int argc;
+	size_t argc;
 	const char **argv;
 	char *line;
 	Tcl_DString lineString;
@@ -2316,7 +2316,6 @@ UtfToUtfProc(
 	    }
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
-	    int low;
 	    const char *saveSrc = src;
 	    size_t len = TclUtfToUCS4(src, &ch);
 	    if ((len < 2) && (ch != 0) && !(flags & TCL_ENCODING_NOCOMPLAIN)
@@ -2334,13 +2333,20 @@ UtfToUtfProc(
 		    *dst++ = (char) (((ch >> 10) & 0x3F) | 0x80);
 		    ch = (ch & 0x0CFF) | 0xDC00;
 		}
-		goto cesu8;
+#if TCL_UTF_MAX < 4
+	    cesu8:
+#endif
+		*dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
+		*dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
+		*dst++ = (char) ((ch | 0x80) & 0xBF);
+		continue;
+#if TCL_UTF_MAX < 4
 	    } else if ((ch | 0x7FF) == 0xDFFF) {
 		/*
 		 * A surrogate character is detected, handle especially.
 		 */
 
-		low = ch;
+		int low = ch;
 		len = (src <= srcEnd-3) ? TclUtfToUCS4(src, &low) : 0;
 
 		if (((low & ~0x3FF) != 0xDC00) || (ch & 0x400)) {
@@ -2350,15 +2356,12 @@ UtfToUtfProc(
 			src = saveSrc;
 			break;
 		    }
-		cesu8:
-		    *dst++ = (char) (((ch >> 12) | 0xE0) & 0xEF);
-		    *dst++ = (char) (((ch >> 6) | 0x80) & 0xBF);
-		    *dst++ = (char) ((ch | 0x80) & 0xBF);
-		    continue;
+		    goto cesu8;
 		}
 		src += len;
 		dst += Tcl_UniCharToUtf(ch, dst);
 		ch = low;
+#endif
 	    } else if (!Tcl_UniCharIsUnicode(ch)) {
 		if (!(flags & TCL_ENCODING_NOCOMPLAIN)) {
 		    result = TCL_CONVERT_UNKNOWN;
@@ -2667,7 +2670,7 @@ Utf16ToUtfProc(
 	if (ch && ch < 0x80) {
 	    *dst++ = (ch & 0xFF);
 	} else {
-	    dst += Tcl_UniCharToUtf(ch, dst);
+	    dst += Tcl_UniCharToUtf(ch | TCL_COMBINE, dst);
 	}
 	src += sizeof(unsigned short);
     }
@@ -3930,7 +3933,7 @@ InitializeEncodingSearchPath(
     Tcl_Encoding *encodingPtr)
 {
     const char *bytes;
-    int i, numDirs;
+    size_t i, numDirs;
     size_t numBytes;
     Tcl_Obj *libPathObj, *encodingObj, *searchPathObj;
 
@@ -3940,7 +3943,7 @@ InitializeEncodingSearchPath(
     Tcl_IncrRefCount(searchPathObj);
     libPathObj = TclGetLibraryPath();
     Tcl_IncrRefCount(libPathObj);
-    TclListObjLength(NULL, libPathObj, &numDirs);
+    TclListObjLengthM(NULL, libPathObj, &numDirs);
 
     for (i = 0; i < numDirs; i++) {
 	Tcl_Obj *directoryObj, *pathObj;

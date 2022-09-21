@@ -8,13 +8,16 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_CreateObjCommand, Tcl_DeleteCommand, Tcl_DeleteCommandFromToken, Tcl_GetCommandInfo, Tcl_GetCommandInfoFromToken, Tcl_SetCommandInfo, Tcl_SetCommandInfoFromToken, Tcl_GetCommandName, Tcl_GetCommandFullName, Tcl_GetCommandFromObj, Tcl_RegisterCommandTypeName, Tcl_GetCommandTypeName \- implement new commands in C
+Tcl_CreateObjCommand, Tcl_CreateObjCommand2, Tcl_DeleteCommand, Tcl_DeleteCommandFromToken, Tcl_GetCommandInfo, Tcl_GetCommandInfoFromToken, Tcl_SetCommandInfo, Tcl_SetCommandInfoFromToken, Tcl_GetCommandName, Tcl_GetCommandFullName, Tcl_GetCommandFromObj \- implement new commands in C
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
 Tcl_Command
 \fBTcl_CreateObjCommand\fR(\fIinterp, cmdName, proc, clientData, deleteProc\fR)
+.sp
+Tcl_Command
+\fBTcl_CreateObjCommand2\fR(\fIinterp, cmdName, proc2, clientData, deleteProc\fR)
 .sp
 int
 \fBTcl_DeleteCommand\fR(\fIinterp, cmdName\fR)
@@ -43,13 +46,6 @@ void
 Tcl_Command
 \fBTcl_GetCommandFromObj\fR(\fIinterp, objPtr\fR)
 .sp
-.VS "info cmdtype feature"
-void
-\fBTcl_RegisterCommandTypeName\fR(\fIproc, typeName\fR)
-.sp
-const char *
-\fBTcl_GetCommandTypeName\fR(\fItoken\fR)
-.VE "info cmdtype feature"
 .SH ARGUMENTS
 .AS Tcl_CmdDeleteProc *deleteProc in/out
 .AP Tcl_Interp *interp in
@@ -58,6 +54,9 @@ Interpreter in which to create a new command or that contains a command.
 Name of command.
 .AP Tcl_ObjCmdProc *proc in
 Implementation of the new command: \fIproc\fR will be called whenever
+\fIcmdName\fR is invoked as a command.
+.AP Tcl_ObjCmdProc2 *proc2 in
+Implementation of the new command: \fIproc2\fR will be called whenever
 \fIcmdName\fR is invoked as a command.
 .AP void *clientData in
 Arbitrary one-word value to pass to \fIproc\fR and \fIdeleteProc\fR.
@@ -181,6 +180,17 @@ typedef void \fBTcl_CmdDeleteProc\fR(
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
 argument passed to \fBTcl_CreateObjCommand\fR.
 .PP
+\fBTcl_CreateObjCommand2\fR does the same as \fBTcl_CreateObjCommand\fR,
+except its \fIproc2\fR argument is of type \fBTcl_ObjCmdProc2\fR.
+.PP
+.CS
+typedef int \fBTcl_ObjCmdProc2\fR(
+        void *\fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        size_t \fIobjc\fR,
+        Tcl_Obj *const \fIobjv\fR[]);
+.CE
+.PP
 \fBTcl_DeleteCommand\fR deletes a command from a command interpreter.
 Once the call completes, attempts to invoke \fIcmdName\fR in
 \fIinterp\fR will result in errors.
@@ -223,15 +233,20 @@ typedef struct Tcl_CmdInfo {
     Tcl_CmdDeleteProc *\fIdeleteProc\fR;
     void *\fIdeleteData\fR;
     Tcl_Namespace *\fInamespacePtr\fR;
+    Tcl_ObjCmdProc2 *\fIobjProc2\fR;
+    void *\fIobjClientData2\fR;
 } \fBTcl_CmdInfo\fR;
 .CE
 .PP
-The \fIisNativeObjectProc\fR field has the value 1
-if \fBTcl_CreateObjCommand\fR was called to register the command;
-it is 0 if only \fBTcl_CreateCommand\fR was called.
+The \fIisNativeObjectProc\fR field has the value 2 if
+\fBTcl_CreateObjCommand2\fR was called to register the command;
+it has the value 1 if \fBTcl_CreateObjCommand\fR was called to
+register the command; it is 0 if only \fBTcl_CreateCommand\fR was called.
 It allows a program to determine whether it is faster to
-call \fIobjProc\fR or \fIproc\fR:
-\fIobjProc\fR is normally faster
+call \fIobjProc2\fR, \fIobjProc\fR or \fIproc\fR:
+\fIobjProc2\fR/\fIobjProc\fR is normally faster
+if \fIisNativeObjectProc\fR has the value 2;
+\fIobjProc\fR/\fIobjProc\fR is normally faster
 if \fIisNativeObjectProc\fR has the value 1.
 The fields \fIobjProc\fR and \fIobjClientData\fR
 have the same meaning as the \fIproc\fR and \fIclientData\fR
@@ -308,21 +323,6 @@ specified by the name in a \fBTcl_Obj\fR.
 The command name is resolved relative to the current namespace.
 Returns NULL if the command is not found.
 .PP
-.VS "info cmdtype feature"
-\fBTcl_RegisterCommandTypeName\fR is used to associate a name (the
-\fItypeName\fR argument) with a particular implementation function so that it
-can then be looked up with \fBTcl_GetCommandTypeName\fR, which in turn is
-called with a command token that information is wanted for and which returns
-the name of the type that was registered for the implementation function used
-for that command. (The lookup functionality is surfaced virtually directly in Tcl via
-\fBinfo cmdtype\fR.) If there is no function registered for a particular
-function, the result will be the string literal
-.QW \fBnative\fR .
-The registration of a name can be undone by registering a mapping to NULL
-instead. The result from \fBTcl_GetCommandTypeName\fR will be exactly that
-string which was registered, and not a copy; use of a compile-time constant
-string is \fIstrongly recommended\fR.
-.VE "info cmdtype feature"
 .SH "REFERENCE COUNT MANAGEMENT"
 .PP
 When the \fIproc\fR passed to \fBTcl_CreateObjCommand\fR is called,

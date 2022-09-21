@@ -95,7 +95,7 @@ typedef struct {
  * Forward references to functions defined later in this file:
  */
 
-static char *		LinkTraceProc(ClientData clientData,Tcl_Interp *interp,
+static char *		LinkTraceProc(void *clientData,Tcl_Interp *interp,
 			    const char *name1, const char *name2, int flags);
 static Tcl_Obj *	ObjValue(Link *linkPtr);
 static void		LinkFree(Link *linkPtr);
@@ -527,7 +527,7 @@ GetUWide(
     Tcl_WideUInt *uwidePtr)
 {
     Tcl_WideInt *widePtr = (Tcl_WideInt *) uwidePtr;
-    ClientData clientData;
+    void *clientData;
     int type, intValue;
 
     if (TclGetNumberFromObj(NULL, objPtr, &clientData, &type) == TCL_OK) {
@@ -631,8 +631,9 @@ SetInvalidRealFromAny(
     TCL_UNUSED(Tcl_Interp *),
     Tcl_Obj *objPtr)
 {
+    const char *str;
+    const char *endPtr;
     size_t length;
-    const char *str, *endPtr;
 
     str = Tcl_GetStringFromObj(objPtr, &length);
     if ((length == 1) && (str[0] == '.')) {
@@ -643,8 +644,8 @@ SetInvalidRealFromAny(
     if (TclParseNumber(NULL, objPtr, NULL, str, length, &endPtr,
 	    TCL_PARSE_DECIMAL_ONLY) == TCL_OK) {
 	/*
-	 * If number is followed by [eE][+-]?, then it is an invalid double,
-	 * but it could be the start of a valid double.
+	 * If number is followed by [eE][+-]?, then it is an invalid
+	 * double, but it could be the start of a valid double.
 	 */
 
 	if (*endPtr == 'e' || *endPtr == 'E') {
@@ -667,10 +668,10 @@ SetInvalidRealFromAny(
 }
 
 /*
- * This function checks for integer representations, which are valid when
- * linking with C variables, but which are invalid in other contexts in Tcl.
- * Handled are "+", "-", "", "0x", "0b", "0d" and "0o" (upper- and
- * lower-case).  See bug [39f6304c2e].
+ * This function checks for integer representations, which are valid
+ * when linking with C variables, but which are invalid in other
+ * contexts in Tcl. Handled are "+", "-", "", "0x", "0b", "0d" and "0o"
+ * (upperand lowercase). See bug [39f6304c2e].
  */
 
 static int
@@ -681,8 +682,8 @@ GetInvalidIntFromObj(
     size_t length;
     const char *str = Tcl_GetStringFromObj(objPtr, &length);
 
-    if ((length == 0) ||
-	    ((length == 2) && (str[0] == '0') && strchr("xXbBoOdD", str[1]))) {
+    if ((length == 0) || ((length == 2) && (str[0] == '0')
+	    && strchr("xXbBoOdD", str[1]))) {
 	*intPtr = 0;
 	return TCL_OK;
     } else if ((length == 1) && strchr("+-", str[0])) {
@@ -693,10 +694,10 @@ GetInvalidIntFromObj(
 }
 
 /*
- * This function checks for double representations, which are valid when
- * linking with C variables, but which are invalid in other contexts in Tcl.
- * Handled are "+", "-", "", ".", "0x", "0b" and "0o" (upper- and lower-case)
- * and sequences like "1e-". See bug [39f6304c2e].
+ * This function checks for double representations, which are valid
+ * when linking with C variables, but which are invalid in other
+ * contexts in Tcl. Handled are "+", "-", "", ".", "0x", "0b" and "0o"
+ * (upper- and lowercase) and sequences like "1e-". See bug [39f6304c2e].
  */
 
 static int
@@ -744,7 +745,7 @@ GetInvalidDoubleFromObj(
 
 static char *
 LinkTraceProc(
-    ClientData clientData,	/* Contains information about the link. */
+    void *clientData,	/* Contains information about the link. */
     Tcl_Interp *interp,		/* Interpreter containing Tcl variable. */
     TCL_UNUSED(const char *) /*name1*/,
     TCL_UNUSED(const char *) /*name2*/,
@@ -763,9 +764,8 @@ LinkTraceProc(
     Tcl_WideInt valueWide;
     Tcl_WideUInt valueUWide;
     double valueDouble;
-    int objc;
+    size_t objc, i;
     Tcl_Obj **objv;
-    int i;
 
     /*
      * If the variable is being unset, then just re-create it (with a trace)
@@ -947,8 +947,8 @@ LinkTraceProc(
      */
 
     if (linkPtr->flags & LINK_ALLOC_LAST) {
-	if (TclListObjGetElements(NULL, (valueObj), &objc, &objv) == TCL_ERROR
-		|| (size_t)objc != linkPtr->numElems) {
+	if (TclListObjGetElementsM(NULL, (valueObj), &objc, &objv) == TCL_ERROR
+		|| objc != linkPtr->numElems) {
 	    return (char *) "wrong dimension";
 	}
     }
@@ -956,7 +956,7 @@ LinkTraceProc(
     switch (linkPtr->type) {
     case TCL_LINK_INT:
 	if (linkPtr->flags & LINK_ALLOC_LAST) {
-	    for (i=0; i < objc; i++) {
+	    for (i = 0; i < objc; i++) {
 		int *varPtr = &linkPtr->lastValue.iPtr[i];
 
 		if (GetInt(objv[i], varPtr)) {

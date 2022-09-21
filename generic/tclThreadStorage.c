@@ -48,7 +48,7 @@ static struct {
  */
 
 typedef struct {
-    ClientData *tablePtr;	/* The table of Tcl TSDs. */
+    void **tablePtr;	/* The table of Tcl TSDs. */
     sig_atomic_t allocated;	/* The size of the table in the current
 				 * thread. */
 } TSDTable;
@@ -190,7 +190,7 @@ TclThreadStorageKeyGet(
     Tcl_ThreadDataKey *dataKeyPtr)
 {
     TSDTable *tsdTablePtr = (TSDTable *)TclpThreadGetGlobalTSD(tsdGlobal.key);
-    ClientData resultPtr = NULL;
+    void *resultPtr = NULL;
     TSDUnion *keyPtr = (TSDUnion *) dataKeyPtr;
     sig_atomic_t offset = keyPtr->offset;
 

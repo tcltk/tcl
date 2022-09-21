@@ -309,7 +309,7 @@ DoRenameFile(
 	if (srcAttr & FILE_ATTRIBUTE_DIRECTORY) {
 	    WCHAR *nativeSrcRest, *nativeDstRest;
 	    const char **srcArgv, **dstArgv;
-	    int size, srcArgc, dstArgc;
+	    size_t size, srcArgc, dstArgc;
 	    WCHAR nativeSrcPath[MAX_PATH];
 	    WCHAR nativeDstPath[MAX_PATH];
 	    Tcl_DString srcString, dstString;
@@ -330,8 +330,8 @@ DoRenameFile(
 
 	    Tcl_DStringInit(&srcString);
 	    Tcl_DStringInit(&dstString);
-	    src = Tcl_WCharToUtfDString(nativeSrcPath, -1, &srcString);
-	    dst = Tcl_WCharToUtfDString(nativeDstPath, -1, &dstString);
+	    src = Tcl_WCharToUtfDString(nativeSrcPath, TCL_INDEX_NONE, &srcString);
+	    dst = Tcl_WCharToUtfDString(nativeDstPath, TCL_INDEX_NONE, &dstString);
 
 	    /*
 	     * Check whether the destination path is actually inside the
@@ -929,7 +929,7 @@ TclpObjCopyDirectory(
 	} else if (!strcmp(Tcl_DStringValue(&ds), TclGetString(normDestPtr))) {
 	    *errorPtr = destPathPtr;
 	} else {
-	    *errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	    *errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
 	}
 	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);
@@ -1117,7 +1117,7 @@ DoRemoveJustDirectory(
 	char *p;
 
 	Tcl_DStringInit(errorPtr);
-	p = Tcl_WCharToUtfDString(nativePath, -1, errorPtr);
+	p = Tcl_WCharToUtfDString(nativePath, TCL_INDEX_NONE, errorPtr);
 	for (; *p; ++p) {
 	    if (*p == '\\') *p = '/';
 	}
@@ -1332,7 +1332,7 @@ TraverseWinTree(
 	Tcl_WinConvertError(GetLastError());
 	if (errorPtr != NULL) {
 	    Tcl_DStringInit(errorPtr);
-	    Tcl_WCharToUtfDString(nativeErrfile, -1, errorPtr);
+	    Tcl_WCharToUtfDString(nativeErrfile, TCL_INDEX_NONE, errorPtr);
 	}
 	result = TCL_ERROR;
     }
@@ -1398,7 +1398,7 @@ TraversalCopy(
 
     if (errorPtr != NULL) {
 	Tcl_DStringInit(errorPtr);
-	Tcl_WCharToUtfDString(nativeDst, -1, errorPtr);
+	Tcl_WCharToUtfDString(nativeDst, TCL_INDEX_NONE, errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1454,7 +1454,7 @@ TraversalDelete(
 
     if (errorPtr != NULL) {
 	Tcl_DStringInit(errorPtr);
-	Tcl_WCharToUtfDString(nativeSrc, -1, errorPtr);
+	Tcl_WCharToUtfDString(nativeSrc, TCL_INDEX_NONE, errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1595,7 +1595,7 @@ ConvertFileNameFormat(
     int longShort,		/* 0 to short name, 1 to long name. */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
-    int pathc, i;
+    size_t pathc, i;
     Tcl_Obj *splitPath;
     size_t length;
 
@@ -1712,22 +1712,11 @@ ConvertFileNameFormat(
 	     */
 
 	    Tcl_DStringInit(&dsTemp);
-	    Tcl_WCharToUtfDString(nativeName, -1, &dsTemp);
+	    Tcl_WCharToUtfDString(nativeName, TCL_INDEX_NONE, &dsTemp);
 	    Tcl_DStringFree(&ds);
 
-	    /*
-	     * Deal with issues of tildes being absolute.
-	     */
-
-	    if (Tcl_DStringValue(&dsTemp)[0] == '~') {
-		TclNewLiteralStringObj(tempPath, "./");
-		Tcl_AppendToObj(tempPath, Tcl_DStringValue(&dsTemp),
-			Tcl_DStringLength(&dsTemp));
-		Tcl_DStringFree(&dsTemp);
-	    } else {
-		tempPath = TclDStringToObj(&dsTemp);
-	    }
-	    Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
+            tempPath = TclDStringToObj(&dsTemp);
+            Tcl_ListObjReplace(NULL, splitPath, i, 1, 1, &tempPath);
 	    FindClose(handle);
 	}
     }
@@ -1952,14 +1941,14 @@ TclpObjListVolumes(void)
 	    buf[0] = (char) ('a' + i);
 	    if (GetVolumeInformationA(buf, NULL, 0, NULL, NULL, NULL, NULL, 0)
 		    || (GetLastError() == ERROR_NOT_READY)) {
-		elemPtr = Tcl_NewStringObj(buf, -1);
+		elemPtr = Tcl_NewStringObj(buf, TCL_INDEX_NONE);
 		Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);
 	    }
 	}
     } else {
 	for (p = buf; *p != '\0'; p += 4) {
 	    p[2] = '/';
-	    elemPtr = Tcl_NewStringObj(p, -1);
+	    elemPtr = Tcl_NewStringObj(p, TCL_INDEX_NONE);
 	    Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);
 	}
     }
@@ -2078,7 +2067,7 @@ TclpCreateTemporaryDirectory(
      */
 
     Tcl_DStringInit(&name);
-    Tcl_WCharToUtfDString((LPCWSTR) Tcl_DStringValue(&base), -1, &name);
+    Tcl_WCharToUtfDString((LPCWSTR) Tcl_DStringValue(&base), TCL_INDEX_NONE, &name);
     Tcl_DStringFree(&base);
     return TclDStringToObj(&name);
 }

@@ -211,7 +211,7 @@ InitTimer(void)
 
 static void
 TimerExitProc(
-    TCL_UNUSED(ClientData))
+    TCL_UNUSED(void *))
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
@@ -398,7 +398,7 @@ Tcl_DeleteTimerHandler(
 
 static void
 TimerSetupProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     Tcl_Time blockTime;
@@ -456,7 +456,7 @@ TimerSetupProc(
 
 static void
 TimerCheckProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     int flags)			/* Event flags as passed to Tcl_DoOneEvent. */
 {
     Tcl_Event *timerEvPtr;
@@ -778,7 +778,7 @@ TclServiceIdle(void)
 
 int
 Tcl_AfterObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

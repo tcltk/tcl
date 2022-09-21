@@ -62,7 +62,7 @@ declare 16 {
 }
 declare 22 {
     int TclFindElement(Tcl_Interp *interp, const char *listStr,
-	    int listLength, const char **elementPtr, const char **nextPtr,
+	    size_t listLength, const char **elementPtr, const char **nextPtr,
 	    size_t *sizePtr, int *bracePtr)
 }
 declare 23 {
@@ -92,7 +92,7 @@ declare 38 {
 	    const char **simpleNamePtr)
 }
 declare 39 {
-    TclObjCmdProcType TclGetObjInterpProc(void)
+    Tcl_ObjCmdProc *TclGetObjInterpProc(void)
 }
 declare 40 {
     int TclGetOpenMode(Tcl_Interp *interp, const char *str, int *seekFlagPtr)
@@ -264,7 +264,7 @@ declare 142 {
 	    CompileHookProc *hookProc, void *clientData)
 }
 declare 143 {
-    int TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr,
+    size_t TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr,
 	    LiteralEntry **litPtrPtr)
 }
 declare 144 {
@@ -339,7 +339,7 @@ declare 165 {
 # New function due to TIP #33
 declare 166 {
     int TclListObjSetElement(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    int index, Tcl_Obj *valuePtr)
+	    size_t index, Tcl_Obj *valuePtr)
 }
 
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
@@ -543,7 +543,7 @@ declare 250 {
 
 # Allow extensions for optimization
 declare 251 {
-    int TclRegisterLiteral(void *envPtr,
+    size_t TclRegisterLiteral(void *envPtr,
 	    const char *bytes, size_t length, int flags)
 }
 
@@ -581,6 +581,17 @@ declare 257 {
 declare 258 {
     Tcl_Obj *TclpCreateTemporaryDirectory(Tcl_Obj *dirObj,
 	    Tcl_Obj *basenameObj)
+}
+
+
+# TIP 625: for unit testing - create list objects with span
+declare 260 {
+    Tcl_Obj *TclListTestObj(int length, int leadingSpace, int endSpace)
+}
+
+# TIP 625: for unit testing - check list invariants
+declare 261 {
+    void TclListObjValidate(Tcl_Interp *interp, Tcl_Obj *listObj)
 }
 
 

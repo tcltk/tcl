@@ -1,5 +1,7 @@
 name: macOS
 on: [push]
+permissions:
+  contents: read
 jobs:
   xcode:
     runs-on: macos-11
@@ -9,7 +11,7 @@ jobs:
         working-directory: macosx
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h
@@ -39,7 +41,7 @@ jobs:
         working-directory: unix
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Prepare
         run: |
           touch tclStubInit.c tclOOStubInit.c tclOOScript.h

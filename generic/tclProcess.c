@@ -402,7 +402,7 @@ BuildProcessStatusObj(
 
 static int
 ProcessListObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -453,7 +453,7 @@ ProcessListObjCmd(
 
 static int
 ProcessStatusObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -463,10 +463,9 @@ ProcessStatusObjCmd(
     Tcl_HashEntry *entry;
     Tcl_HashSearch search;
     ProcessInfo *info;
-    int numPids;
+    size_t i, numPids;
     Tcl_Obj **pidObjs;
     int result;
-    int i;
     int pid;
     Tcl_Obj *const *savedobjv = objv;
     static const char *const switches[] = {
@@ -533,7 +532,7 @@ ProcessStatusObjCmd(
 	 * Only return statuses of provided processes.
 	 */
 
-	result = TclListObjGetElements(interp, objv[1], &numPids, &pidObjs);
+	result = TclListObjGetElementsM(interp, objv[1], &numPids, &pidObjs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -601,7 +600,7 @@ ProcessStatusObjCmd(
 
 static int
 ProcessPurgeObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -609,11 +608,9 @@ ProcessPurgeObjCmd(
     Tcl_HashEntry *entry;
     Tcl_HashSearch search;
     ProcessInfo *info;
-    int numPids;
+    size_t i, numPids;
     Tcl_Obj **pidObjs;
-    int result;
-    int i;
-    int pid;
+    int result, pid;
 
     if (objc != 1 && objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pids?");
@@ -648,7 +645,7 @@ ProcessPurgeObjCmd(
 	 * Purge only provided processes.
 	 */
 
-	result = TclListObjGetElements(interp, objv[1], &numPids, &pidObjs);
+	result = TclListObjGetElementsM(interp, objv[1], &numPids, &pidObjs);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -701,7 +698,7 @@ ProcessPurgeObjCmd(
 
 static int
 ProcessAutopurgeObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

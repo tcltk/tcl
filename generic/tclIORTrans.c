@@ -511,7 +511,7 @@ TclChanPushObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Obj *rtId;		/* Handle of the new transform (channel) */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    int listc;			/* Result of 'initialize', and of */
+    size_t listc;			/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -599,7 +599,7 @@ TclChanPushObjCmd(
      *   through the mask. Compare open mode against optional r/w.
      */
 
-    if (TclListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElementsM(NULL, resObj, &listc, &listv) != TCL_OK) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "chan handler \"%s initialize\" returned non-list: %s",
                 TclGetString(cmdObj), TclGetString(resObj)));
@@ -820,10 +820,10 @@ UnmarshallErrorResult(
     Tcl_Interp *interp,
     Tcl_Obj *msgObj)
 {
-    int lc;
+    size_t lc;
     Tcl_Obj **lv;
     int explicitResult;
-    int numOptions;
+    size_t numOptions;
 
     /*
      * Process the caught message.
@@ -835,7 +835,7 @@ UnmarshallErrorResult(
      * information; if we panic here, something has gone badly wrong already.
      */
 
-    if (TclListObjGetElements(interp, msgObj, &lc, &lv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, msgObj, &lc, &lv) != TCL_OK) {
 	Tcl_Panic("TclChanCaughtErrorBypass: Bad syntax of caught result");
     }
     if (interp == NULL) {
@@ -1719,9 +1719,8 @@ NewReflectedTransform(
     Tcl_Channel parentChan)
 {
     ReflectedTransform *rtPtr;
-    int listc;
+    size_t i, listc;
     Tcl_Obj **listv;
-    int i;
 
     rtPtr = (ReflectedTransform *)Tcl_Alloc(sizeof(ReflectedTransform));
 
@@ -1757,7 +1756,7 @@ NewReflectedTransform(
 
     /* ASSERT: cmdpfxObj is a Tcl List */
 
-    TclListObjGetElements(interp, cmdpfxObj, &listc, &listv);
+    TclListObjGetElementsM(interp, cmdpfxObj, &listc, &listv);
 
     /*
      * See [==] as well.
@@ -2415,8 +2414,8 @@ ForwardOpToOwnerThread(
      * Queue the event and poke the other thread's notifier.
      */
 
-    Tcl_ThreadQueueEvent(dst, (Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
-    Tcl_ThreadAlert(dst);
+    Tcl_ThreadQueueEvent(dst, (Tcl_Event *) evPtr,
+	    TCL_QUEUE_TAIL|TCL_QUEUE_ALERT_IF_EMPTY);
 
     /*
      * (*) Block until the other thread has either processed the transfer or

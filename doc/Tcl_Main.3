@@ -29,7 +29,7 @@ Tcl_Obj *
 \fBTcl_SetMainLoop\fR(\fImainLoopProc\fR)
 .SH ARGUMENTS
 .AS Tcl_MainLoopProc *mainLoopProc
-.AP int argc in
+.AP size_t argc in
 Number of elements in \fIargv\fR.
 .AP char *argv[] in
 Array of strings containing command-line arguments. On Windows, when
@@ -85,8 +85,10 @@ that does nothing but invoke \fBTcl_Main\fR.
 .PP
 \fBTcl_Main\fR is not provided by the public interface of Tcl's
 stub library.  Programs that call \fBTcl_Main\fR must be linked
-against the standard Tcl library.  Extensions (stub-enabled or
-not) are not intended to call \fBTcl_Main\fR.
+against the standard Tcl library.  If the standard Tcl library is
+a dll (so, not a static .lib/.a) , then the program must be linked
+against the stub library as well. Extensions
+(stub-enabled or not) are not intended to call \fBTcl_Main\fR.
 .PP
 \fBTcl_Main\fR is not thread-safe.  It should only be called by
 a single main thread of a multi-threaded application.  This

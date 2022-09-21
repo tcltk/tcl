@@ -32,8 +32,10 @@ proc makeShared {s} {uplevel 1 [list lappend copy $s]; return $s}
 testConstraint testobj [expr {[info commands testobj] ne {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] ne {}}]
 testConstraint testevalex [expr {[info commands testevalex] ne {}}]
-testConstraint fullutf [expr {[string length \U010000] == 1}]
+testConstraint utf32 [expr {[string length \U010000] == 1}]
 testConstraint testbytestring   [llength [info commands testbytestring]]
+testConstraint utf32 [expr {[testConstraint fullutf]
+		&& [string length [format %c 0x10000]] == 1}]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -366,7 +368,6 @@ test string-3.42.$noComp {string equal, binary neq inequal length} {
     run {string equal [binary format a20a 0 1] [binary format a100a 0 0]}
 } 0
 
-
 test string-4.1.$noComp {string first, not enough args} {
     list [catch {run {string first a}} msg] $msg
 } {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
@@ -425,22 +426,22 @@ test string-4.16.$noComp {string first, normal string vs pure unicode string} -b
 } -result {{string 1} {string 0} 2}
 test string-4.17.$noComp {string first, corner case} -body {
     run {string first a aaa 4294967295}
-} -result {-1}
+} -result -1
 test string-4.18.$noComp {string first, corner case} -body {
     run {string first a aaa -1}
-} -result {0}
+} -result 0
 test string-4.19.$noComp {string first, corner case} -body {
     run {string first a aaa end-5}
-} -result {0}
+} -result 0
 test string-4.20.$noComp {string last, corner case} -body {
     run {string last a aaa 4294967295}
-} -result {2}
+} -result 2
 test string-4.21.$noComp {string last, corner case} -body {
     run {string last a aaa -1}
-} -result {-1}
+} -result -1
 test string-4.22.$noComp {string last, corner case} {
     run {string last a aaa end-5}
-} {-1}
+} -1
 
 test string-5.1.$noComp {string index} {
     list [catch {run {string index}} msg] $msg
@@ -501,13 +502,13 @@ test string-5.17.$noComp {string index, bad integer} -body {
 test string-5.18.$noComp {string index, bad integer} -body {
     list [catch {run {string index "abc" end-0o0289}} msg] $msg
 } -match glob -result {1 {*}}
-test string-5.19.$noComp {string index, bytearray object out of bounds} -body {
+test string-5.19.$noComp {string index, bytearray object out of bounds} {
     run {string index [binary format I* {0x50515253 0x52}] -1}
-} -result {}
+} {}
 test string-5.20.$noComp {string index, bytearray object out of bounds} -body {
     run {string index [binary format I* {0x50515253 0x52}] 20}
 } -result {}
-test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints fullutf -body {
+test string-5.21.$noComp {string index, surrogates, bug [11ae2be95dac9417]} -constraints utf32 -body {
     run {list [string index a\U100000b 1] [string index a\U100000b 2] [string index a\U100000b 3]}
 } -result [list \U100000 b {}]
 test string-5.22.$noComp {string index} -constraints testbytestring -body {
@@ -986,6 +987,12 @@ test string-6.137.$noComp {string is unicode, noncharacter} {
 test string-6.138.$noComp {string is unicode, noncharacter} {
     run {string is unicode \uFDEF}
 } 0
+test string-6.139.$noComp {string is integer, bug [76ad7aeba3]} {
+    run {string is integer 18446744073709551615}
+} 1
+test string-6.140.$noComp {string is integer, bug [76ad7aeba3]} {
+    run {string is integer -18446744073709551615}
+} 1
 
 
 test string-7.1.$noComp {string last, not enough args} {
@@ -1072,13 +1079,13 @@ test string-10.3.$noComp {string map, too many args} {
 } {1 {wrong # args: should be "string map ?-nocase? charMap string"}}
 test string-10.4.$noComp {string map} {
     run {string map {a b} abba}
-} {bbbb}
+} bbbb
 test string-10.5.$noComp {string map} {
     run {string map {a b} a}
-} {b}
+} b
 test string-10.6.$noComp {string map -nocase} {
     run {string map -nocase {a b} Abba}
-} {bbbb}
+} bbbb
 test string-10.7.$noComp {string map} {
     run {string map {abc 321 ab * a A} aabcabaababcab}
 } {A321*A*321*}
@@ -1093,7 +1100,7 @@ test string-10.10.$noComp {string map} {
 } {1 {char map list unbalanced}}
 test string-10.11.$noComp {string map, nulls} {
     run {string map {\x00 NULL blah \x00nix} {qwerty}}
-} {qwerty}
+} qwerty
 test string-10.12.$noComp {string map, unicode} {
     run {string map [list ü ue UE Ü] "aüueUE\x00EU"}
 } aueueÜ\x00EU
@@ -1105,13 +1112,13 @@ test string-10.14.$noComp {string map, -nocase null arguments} {
 } foo
 test string-10.15.$noComp {string map, one pair case} {
     run {string map -nocase {abc 32} aAbCaBaAbAbcAb}
-} {a32aBaAb32Ab}
+} a32aBaAb32Ab
 test string-10.16.$noComp {string map, one pair case} {
     run {string map -nocase {ab 4321} aAbCaBaAbAbcAb}
-} {a4321C4321a43214321c4321}
+} a4321C4321a43214321c4321
 test string-10.17.$noComp {string map, one pair case} {
     run {string map {Ab 4321} aAbCaBaAbAbcAb}
-} {a4321CaBa43214321c4321}
+} a4321CaBa43214321c4321
 test string-10.18.$noComp {string map, empty argument} {
     run {string map -nocase {{} abc} foo}
 } foo
@@ -1505,7 +1512,7 @@ test string-12.22.$noComp {string range, shimmering binary/index} {
     binary scan $s a* x
     run {string range $s $s end}
 } 000000001
-test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} fullutf {
+test string-12.23.$noComp {string range, surrogates, bug [11ae2be95dac9417]} utf32 {
     run {list [string range a\U100000b 1 1] [string range a\U100000b 2 2] [string range a\U100000b 3 3]}
 } [list \U100000 b {}]
 test string-12.24.$noComp {bignum index arithmetic} -setup {
@@ -1583,22 +1590,22 @@ test string-14.5.$noComp {string replace} {
 } {abp}
 test string-14.6.$noComp {string replace} -body {
     run {string replace abcdefghijklmnop 7 1000}
-} -result {abcdefg}
+} -result abcdefg
 test string-14.7.$noComp {string replace} {
     run {string replace abcdefghijklmnop 10 end}
-} {abcdefghij}
+} abcdefghij
 test string-14.8.$noComp {string replace} {
     run {string replace abcdefghijklmnop 10 9}
-} {abcdefghijklmnop}
+} abcdefghijklmnop
 test string-14.9.$noComp {string replace} {
     run {string replace abcdefghijklmnop -3 2}
-} {defghijklmnop}
+} defghijklmnop
 test string-14.10.$noComp {string replace} {
     run {string replace abcdefghijklmnop -3 -2}
-} {abcdefghijklmnop}
+} abcdefghijklmnop
 test string-14.11.$noComp {string replace} -body {
     run {string replace abcdefghijklmnop 1000 1010}
-} -result {abcdefghijklmnop}
+} -result abcdefghijklmnop
 test string-14.12.$noComp {string replace} {
     run {string replace abcdefghijklmnop -100 end}
 } {}
@@ -1775,7 +1782,7 @@ test string-17.7.$noComp {string totitle, unicode} {
 test string-17.8.$noComp {string totitle, compiled} {
     lindex [run {string totitle [list aa bb [list cc]]}] 0
 } Aa
-test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} fullutf {
+test string-17.9.$noComp {string totitle, surrogates, bug [11ae2be95dac9417]} utf32 {
     run {list [string totitle a\U118c0c 1 1] [string totitle a\U118c0c 2 2] \
 	[string totitle a\U118c0c 3 3]}
 } [list a\U118a0c a\U118c0C a\U118c0c]
@@ -1845,7 +1852,7 @@ test string-20.5.$noComp {string trimright} {
 test string-20.6.$noComp {string trimright, unicode default} {
     run {string trimright ABC\u1361\x85\x00\xA0\u1680\u180E\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u2028\u2029\u202F\u205F\u3000}
 } ABC\u1361
-test string-20.7.$noComp {string trim on not valid utf-8 sequence (consider NTS as continuation char), bug [c61818e4c9]} {testbytestring} {
+test string-20.7.$noComp {string trim on not valid utf-8 sequence (consider NTS as continuation char), bug [c61818e4c9]} testbytestring {
     set result {}
     set a [testbytestring \xC0\x80\xA0]
     set b foo$a
@@ -1858,7 +1865,7 @@ test string-20.7.$noComp {string trim on not valid utf-8 sequence (consider NTS 
     lappend result [string map $m [run {string trim $b fox}]]
     lappend result [string map $m [run {string trim $b fo\x00}]]
 } [list {*}[lrepeat 3 fooUV] {*}[lrepeat 2 UV V]]
-test string-20.8.$noComp {[c61818e4c9] [string trimright] fails when UtfPrev is ok} {testbytestring} {
+test string-20.8.$noComp {[c61818e4c9] [string trimright] fails when UtfPrev is ok} testbytestring {
     set result {}
     set a [testbytestring \xE8\xA0]
     set b foo$a
@@ -1919,7 +1926,7 @@ test string-21.14.$noComp {string wordend, unicode} -body {
 test string-21.15.$noComp {string wordend, unicode} -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 0}
 } -result 2
-test string-21.16.$noComp {string wordend, unicode} -constraints fullutf -body {
+test string-21.16.$noComp {string wordend, unicode} -constraints utf32 -body {
     run {string wordend "\U1D7CA\U1D7CA abc" 10}
 } -result 6
 test string-21.17.$noComp {string trim, unicode} {
@@ -1941,13 +1948,13 @@ test string-21.22.$noComp {string trimright, unicode} {
     run {string trimright "\uF602Hello world!\uF602" \uD83D\uDE02}
 } "\uF602Hello world!\uF602"
 test string-21.23.$noComp {string trim, unicode} {
-    run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+    run {string trim "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D}
 } "\uD83D\uDE02Hello world!\uD83D\uDE02"
 test string-21.24.$noComp {string trimleft, unicode} {
     run {string trimleft "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
 } "\uD83D\uDE02Hello world!\uD83D\uDE02"
 test string-21.25.$noComp {string trimright, unicode} {
-    run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D\uDE02}
+    run {string trimright "\uD83D\uDE02Hello world!\uD83D\uDE02" \uD93D}
 } "\uD83D\uDE02Hello world!\uD83D\uDE02"
 
 test string-22.1.$noComp {string wordstart} -body {
@@ -1997,7 +2004,7 @@ test string-22.14.$noComp {string wordstart, invalid UTF-8} -constraints testbyt
 test string-22.15.$noComp {string wordstart, unicode} -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 0}
 } -result 0
-test string-22.16.$noComp {string wordstart, unicode} -constraints fullutf -body {
+test string-22.16.$noComp {string wordstart, unicode} -constraints utf32 -body {
     run {string wordstart "\U1D7CA\U1D7CA abc" 10}
 } -result 3
 
@@ -2111,24 +2118,24 @@ test string-24.15.$noComp {string reverse command - pure bytearray} {
     binary scan [run {tcl::string::reverse [binary format H* 010203]}] H* x
     set x
 } 030201
-test string-24.16.$noComp {string reverse command - surrogates} {
+test string-24.16.$noComp {string reverse command - surrogates} utf32 {
     run {string reverse \u0444bulb\uD83D\uDE02}
-} \uD83D\uDE02blub\u0444
-test string-24.17.$noComp {string reverse command - surrogates} {
+} \uDE02\uD83Dblub\u0444
+test string-24.17.$noComp {string reverse command - surrogates} utf32 {
     run {string reverse \uD83D\uDE02hello\uD83D\uDE02}
-} \uD83D\uDE02olleh\uD83D\uDE02
-test string-24.18.$noComp {string reverse command - surrogates} {
+} \uDE02\uD83Dolleh\uDE02\uD83D
+test string-24.18.$noComp {string reverse command - surrogates} utf32 {
     set s \u0444bulb\uD83D\uDE02
     # shim shimmery ...
     string index $s 0
     run {string reverse $s}
-} \uD83D\uDE02blub\u0444
-test string-24.19.$noComp {string reverse command - surrogates} {
+} \uDE02\uD83Dblub\u0444
+test string-24.19.$noComp {string reverse command - surrogates} utf32 {
     set s \uD83D\uDE02hello\uD83D\uDE02
     # shim shimmery ...
     string index $s 0
     run {string reverse $s}
-} \uD83D\uDE02olleh\uD83D\uDE02
+} \uDE02\uD83Dolleh\uDE02\uD83D
 
 test string-25.1.$noComp {string is list} {
     run {string is list {a b c}}

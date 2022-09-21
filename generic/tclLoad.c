@@ -310,7 +310,7 @@ Tcl_LoadObjCmd(
 	    Tcl_DStringAppend(&pfx, prefix, -1);
 	} else {
 	    Tcl_Obj *splitPtr, *pkgGuessPtr;
-	    int pElements;
+	    size_t pElements;
 	    const char *pkgGuess;
 
 	    /*
@@ -1194,7 +1194,7 @@ TclGetLoadedLibraries(
 
 static void
 LoadCleanupProc(
-    TCL_UNUSED(ClientData),	/* Pointer to first InterpLibrary structure
+    TCL_UNUSED(void *),	/* Pointer to first InterpLibrary structure
 				 * for interp. */
     Tcl_Interp *interp)
 {

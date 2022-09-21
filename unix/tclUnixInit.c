@@ -369,13 +369,13 @@ TclpInitPlatform(void)
      * Make sure, that the standard FDs exist. [Bug 772288]
      */
 
-    if (TclOSseek(0, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(0, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_RDONLY);
     }
-    if (TclOSseek(1, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(1, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_WRONLY);
     }
-    if (TclOSseek(2, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+    if (TclOSseek(2, 0, SEEK_CUR) == -1 && errno == EBADF) {
 	open("/dev/null", O_WRONLY);
     }
 
@@ -473,12 +473,12 @@ TclpInitLibraryPath(
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
-    Tcl_ExternalToUtfDStringEx(NULL, str, -1, TCL_ENCODING_NOCOMPLAIN, &buffer);
+    Tcl_ExternalToUtfDStringEx(NULL, str, TCL_INDEX_NONE, TCL_ENCODING_NOCOMPLAIN, &buffer);
     str = Tcl_DStringValue(&buffer);
 
     if ((str != NULL) && (str[0] != '\0')) {
 	Tcl_DString ds;
-	int pathc;
+	size_t pathc;
 	const char **pathv;
 	char installLib[LIBRARY_SIZE];
 
@@ -496,7 +496,7 @@ TclpInitLibraryPath(
 	 * If TCL_LIBRARY is set, search there.
 	 */
 
-	Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(str, -1));
+	Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(str, TCL_INDEX_NONE));
 
 	Tcl_SplitPath(str, &pathc, &pathv);
 	if ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc-1]) != 0)) {
@@ -537,7 +537,7 @@ TclpInitLibraryPath(
 	    str = defaultLibraryDir;
 	}
 	if (str[0] != '\0') {
-	    objPtr = Tcl_NewStringObj(str, -1);
+	    objPtr = Tcl_NewStringObj(str, TCL_INDEX_NONE);
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	}
     }
@@ -634,13 +634,13 @@ Tcl_GetEncodingNameFromEnvironment(
 	 */
 
 	Tcl_DStringInit(&ds);
-	encoding = Tcl_DStringAppend(&ds, nl_langinfo(CODESET), -1);
+	encoding = Tcl_DStringAppend(&ds, nl_langinfo(CODESET), TCL_INDEX_NONE);
 	Tcl_UtfToLower(Tcl_DStringValue(&ds));
 	knownEncoding = SearchKnownEncodings(encoding);
 	if (knownEncoding != NULL) {
-	    Tcl_DStringAppend(bufPtr, knownEncoding, -1);
+	    Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
 	} else if (NULL != Tcl_GetEncoding(NULL, encoding)) {
-	    Tcl_DStringAppend(bufPtr, encoding, -1);
+	    Tcl_DStringAppend(bufPtr, encoding, TCL_INDEX_NONE);
 	}
 	Tcl_DStringFree(&ds);
 	if (Tcl_DStringLength(bufPtr)) {
@@ -672,14 +672,14 @@ Tcl_GetEncodingNameFromEnvironment(
 
 	Tcl_DStringInit(&ds);
 	p = encoding;
-	encoding = Tcl_DStringAppend(&ds, p, -1);
+	encoding = Tcl_DStringAppend(&ds, p, TCL_INDEX_NONE);
 	Tcl_UtfToLower(Tcl_DStringValue(&ds));
 
 	knownEncoding = SearchKnownEncodings(encoding);
 	if (knownEncoding != NULL) {
-	    Tcl_DStringAppend(bufPtr, knownEncoding, -1);
+	    Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
 	} else if (NULL != Tcl_GetEncoding(NULL, encoding)) {
-	    Tcl_DStringAppend(bufPtr, encoding, -1);
+	    Tcl_DStringAppend(bufPtr, encoding, TCL_INDEX_NONE);
 	}
 	if (Tcl_DStringLength(bufPtr)) {
 	    Tcl_DStringFree(&ds);
@@ -700,9 +700,9 @@ Tcl_GetEncodingNameFromEnvironment(
 	if (*p != '\0') {
 	    knownEncoding = SearchKnownEncodings(p);
 	    if (knownEncoding != NULL) {
-		Tcl_DStringAppend(bufPtr, knownEncoding, -1);
+		Tcl_DStringAppend(bufPtr, knownEncoding, TCL_INDEX_NONE);
 	    } else if (NULL != Tcl_GetEncoding(NULL, p)) {
-		Tcl_DStringAppend(bufPtr, p, -1);
+		Tcl_DStringAppend(bufPtr, p, TCL_INDEX_NONE);
 	    }
 	}
 	Tcl_DStringFree(&ds);
@@ -710,7 +710,7 @@ Tcl_GetEncodingNameFromEnvironment(
 	    return Tcl_DStringValue(bufPtr);
 	}
     }
-    return Tcl_DStringAppend(bufPtr, TCL_DEFAULT_ENCODING, -1);
+    return Tcl_DStringAppend(bufPtr, TCL_DEFAULT_ENCODING, TCL_INDEX_NONE);
 }
 
 /*
@@ -863,6 +863,18 @@ TclpSetVariables(
 	Tcl_SetVar2(interp, "tcl_pkgPath", NULL, pkgPath, TCL_GLOBAL_ONLY);
     }
 
+    {
+        /* Some platforms build configure scripts expect ~ expansion so do that */
+        Tcl_Obj *origPaths;
+        Tcl_Obj *resolvedPaths;
+        origPaths = Tcl_GetVar2Ex(interp, "tcl_pkgPath", NULL, TCL_GLOBAL_ONLY);
+        resolvedPaths = TclResolveTildePathList(origPaths);
+        if (resolvedPaths != origPaths && resolvedPaths != NULL) {
+            Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL,
+		resolvedPaths, TCL_GLOBAL_ONLY);
+        }
+    }
+
 #ifdef DJGPP
     Tcl_SetVar2(interp, "tcl_platform", "platform", "dos", TCL_GLOBAL_ONLY);
 #else
@@ -900,7 +912,7 @@ TclpSetVariables(
 
 	unameOK = 1;
 
-	native = Tcl_ExternalToUtfDString(NULL, name.sysname, -1, &ds);
+	native = Tcl_ExternalToUtfDString(NULL, name.sysname, TCL_INDEX_NONE, &ds);
 	Tcl_SetVar2(interp, "tcl_platform", "os", native, TCL_GLOBAL_ONLY);
 	Tcl_DStringFree(&ds);
 
@@ -963,7 +975,7 @@ TclpSetVariables(
 	    user = "";
 	    Tcl_DStringInit(&ds);	/* ensure cleanliness */
 	} else {
-	    user = Tcl_ExternalToUtfDString(NULL, pwEnt->pw_name, -1, &ds);
+	    user = Tcl_ExternalToUtfDString(NULL, pwEnt->pw_name, TCL_INDEX_NONE, &ds);
 	}
 
 	Tcl_SetVar2(interp, "tcl_platform", "user", user, TCL_GLOBAL_ONLY);
@@ -1012,7 +1024,7 @@ TclpFindVariable(
 
     Tcl_DStringInit(&envString);
     for (i = 0, env = environ[i]; env != NULL; i++, env = environ[i]) {
-	p1 = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
+	p1 = Tcl_ExternalToUtfDString(NULL, env, TCL_INDEX_NONE, &envString);
 	p2 = name;
 
 	for (; *p2 == *p1; p1++, p2++) {

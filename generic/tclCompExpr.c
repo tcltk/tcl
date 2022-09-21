@@ -1806,7 +1806,7 @@ ConvertTreeToTokens(
 		 */
 
 		subExprTokenPtr->numComponents =
-			(parsePtr->numTokens - subExprTokenIdx) - 1;
+			((int)parsePtr->numTokens - subExprTokenIdx) - 1;
 
 		/*
 		 * Finally, as we return up the tree to our parent, pop the
@@ -2218,7 +2218,7 @@ TclCompileExpr(
 	 * Valid parse; compile the tree.
 	 */
 
-	int objc;
+	size_t objc;
 	Tcl_Obj *const *litObjv;
 	Tcl_Obj **funcObjv;
 
@@ -2226,8 +2226,8 @@ TclCompileExpr(
 	TclAdvanceLines(&envPtr->line, script,
 		script + TclParseAllWhiteSpace(script, numBytes));
 
-	TclListObjGetElements(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
-	TclListObjGetElements(NULL, funcList, &objc, &funcObjv);
+	TclListObjGetElementsM(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
+	TclListObjGetElementsM(NULL, funcList, &objc, &funcObjv);
 	CompileExprTree(interp, opTree, 0, &litObjv, funcObjv,
 		parsePtr->tokenPtr, envPtr, optimize);
     } else {

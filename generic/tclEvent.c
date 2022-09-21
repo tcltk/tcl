@@ -207,7 +207,8 @@ HandleBgErrors(
     Tcl_Preserve(assocPtr);
     Tcl_Preserve(interp);
     while (assocPtr->firstBgPtr != NULL) {
-	int code, prefixObjc;
+	int code;
+	size_t prefixObjc;
 	Tcl_Obj **prefixObjv, **tempObjv;
 
 	/*
@@ -219,7 +220,7 @@ HandleBgErrors(
 
 	errPtr = assocPtr->firstBgPtr;
 
-	TclListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
+	TclListObjGetElementsM(NULL, copyObj, &prefixObjc, &prefixObjv);
 	tempObjv = (Tcl_Obj**)Tcl_Alloc((prefixObjc+2) * sizeof(Tcl_Obj *));
 	memcpy(tempObjv, prefixObjv, prefixObjc*sizeof(Tcl_Obj *));
 	tempObjv[prefixObjc] = errPtr->errorMsg;

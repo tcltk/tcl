@@ -136,7 +136,7 @@ means the output handle is wanted.
 .AP void **handlePtr out
 Points to the location where the desired OS-specific handle should be
 stored.
-.AP int size in
+.AP size_t size in
 The size, in bytes, of buffers to allocate in this channel.
 .AP int mask in
 An OR-ed combination of \fBTCL_READABLE\fR, \fBTCL_WRITABLE\fR
@@ -530,9 +530,9 @@ operations will be applied. \fIWideSeekProc\fR must match the following
 prototype:
 .PP
 .CS
-typedef Tcl_WideInt \fBTcl_DriverWideSeekProc\fR(
+typedef long long \fBTcl_DriverWideSeekProc\fR(
         void *\fIinstanceData\fR,
-        Tcl_WideInt \fIoffset\fR,
+        long long \fIoffset\fR,
         int \fIseekMode\fR,
         int *\fIerrorCodePtr\fR);
 .CE

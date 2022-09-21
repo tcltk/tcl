@@ -693,7 +693,7 @@ LINKERFLAGS     = $(LINKERFLAGS) -ltcg
 !if [echo REM = This file is generated from rules.vc > versions.vc]
 !endif
 !if [echo TCL_MAJOR_VERSION = \>> versions.vc] \
-   && [nmakehlp -V "$(_TCL_H)" TCL_MAJOR_VERSION >> versions.vc]
+   && [nmakehlp -V "$(_TCL_H)" "define TCL_MAJOR_VERSION" >> versions.vc]
 !endif
 !if [echo TCL_MINOR_VERSION = \>> versions.vc] \
    && [nmakehlp -V "$(_TCL_H)" TCL_MINOR_VERSION >> versions.vc]
@@ -1418,7 +1418,7 @@ OPTDEFINES	= $(OPTDEFINES) /DTCL_CFG_DO64BIT
 OPTDEFINES	= $(OPTDEFINES) /DNO_STRTOI64=1
 !endif
 
-!if "$(TCL_MAJOR_VERSION)" == "8"
+!if $(TCL_MAJOR_VERSION) == 8
 !if "$(_USE_64BIT_TIME_T)" == "1"
 OPTDEFINES	= $(OPTDEFINES) /D_USE_64BIT_TIME_T=1
 !endif
@@ -1470,8 +1470,8 @@ cdebug = $(cdebug) -Zi
 
 !endif # $(DEBUG)
 
-# cwarn includes default warning levels, also C4146 is useless.
-cwarn = $(WARNINGS) -wd4146
+# cwarn includes default warning levels, also C4090 (buggy) and C4146 is useless.
+cwarn = $(WARNINGS) -wd4090 -wd4146
 
 !if "$(MACHINE)" == "AMD64" || "$(MACHINE)" == "ARM64"
 # Disable pointer<->int warnings related to cast between different sizes

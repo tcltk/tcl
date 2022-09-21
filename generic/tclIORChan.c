@@ -513,7 +513,7 @@ TclChanCreateObjCmd(
     Tcl_Obj *cmdNameObj;	/* Command name */
     Tcl_Channel chan;		/* Token for the new channel */
     Tcl_Obj *modeObj;		/* mode in obj form for method call */
-    int listc;			/* Result of 'initialize', and of */
+    size_t listc;			/* Result of 'initialize', and of */
     Tcl_Obj **listv;		/* its sublist in the 2nd element */
     int methIndex;		/* Encoded method name */
     int result;			/* Result code for 'initialize' */
@@ -609,7 +609,7 @@ TclChanCreateObjCmd(
      *   Compare open mode against optional r/w.
      */
 
-    if (TclListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElementsM(NULL, resObj, &listc, &listv) != TCL_OK) {
         Tcl_SetObjResult(interp, Tcl_ObjPrintf(
                 "chan handler \"%s initialize\" returned non-list: %s",
                 TclGetString(cmdObj), TclGetString(resObj)));
@@ -984,8 +984,8 @@ TclChanPostEventObjCmd(
          * XXX Actually, in that case the channel should be dead also !
          */
 
-        Tcl_ThreadQueueEvent(rcPtr->owner, (Tcl_Event *) ev, TCL_QUEUE_TAIL);
-        Tcl_ThreadAlert(rcPtr->owner);
+        Tcl_ThreadQueueEvent(rcPtr->owner, (Tcl_Event *) ev,
+		TCL_QUEUE_TAIL|TCL_QUEUE_ALERT_IF_EMPTY);
     }
 #endif
 
@@ -1047,10 +1047,10 @@ UnmarshallErrorResult(
     Tcl_Interp *interp,
     Tcl_Obj *msgObj)
 {
-    int lc;
+    size_t lc;
     Tcl_Obj **lv;
     int explicitResult;
-    int numOptions;
+    size_t numOptions;
 
     /*
      * Process the caught message.
@@ -1062,7 +1062,7 @@ UnmarshallErrorResult(
      * information; if we panic here, something has gone badly wrong already.
      */
 
-    if (TclListObjGetElements(interp, msgObj, &lc, &lv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, msgObj, &lc, &lv) != TCL_OK) {
 	Tcl_Panic("TclChanCaughtErrorBypass: Bad syntax of caught result");
     }
     if (interp == NULL) {
@@ -1912,7 +1912,8 @@ ReflectGetOption(
     ReflectedChannel *rcPtr = (ReflectedChannel *)clientData;
     Tcl_Obj *optionObj;
     Tcl_Obj *resObj;		/* Result data for 'configure' */
-    int listc, result = TCL_OK;
+    size_t listc;
+    int result = TCL_OK;
     Tcl_Obj **listv;
     MethodName method;
 
@@ -1993,7 +1994,7 @@ ReflectGetOption(
      * result is a valid list. Nor that the list has an even number elements.
      */
 
-    if (TclListObjGetElements(interp, resObj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, resObj, &listc, &listv) != TCL_OK) {
         goto error;
     }
 
@@ -2005,7 +2006,7 @@ ReflectGetOption(
 	Tcl_ResetResult(interp);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"Expected list with even number of "
-		"elements, got %d element%s instead", listc,
+		"elements, got %" TCL_Z_MODIFIER "u element%s instead", listc,
 		(listc == 1 ? "" : "s")));
         goto error;
     } else {
@@ -2134,12 +2135,12 @@ EncodeEventMask(
     int *mask)
 {
     int events;			/* Mask of events to post */
-    int listc;			/* #elements in eventspec list */
+    size_t listc;			/* #elements in eventspec list */
     Tcl_Obj **listv;		/* Elements of eventspec list */
     int evIndex;		/* Id of event for an element of the eventspec
 				 * list. */
 
-    if (TclListObjGetElements(interp, obj, &listc, &listv) != TCL_OK) {
+    if (TclListObjGetElementsM(interp, obj, &listc, &listv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2971,8 +2972,8 @@ ForwardOpToHandlerThread(
      * Queue the event and poke the other thread's notifier.
      */
 
-    Tcl_ThreadQueueEvent(dst, (Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
-    Tcl_ThreadAlert(dst);
+    Tcl_ThreadQueueEvent(dst, (Tcl_Event *) evPtr,
+	    TCL_QUEUE_TAIL|TCL_QUEUE_ALERT_IF_EMPTY);
 
     /*
      * (*) Block until the handler thread has either processed the transfer or
@@ -3304,10 +3305,10 @@ ForwardProc(
 	     * NOTE (4) as well.
 	     */
 
-	    int listc;
+	    size_t listc;
 	    Tcl_Obj **listv;
 
-	    if (TclListObjGetElements(interp, resObj, &listc,
+	    if (TclListObjGetElementsM(interp, resObj, &listc,
                     &listv) != TCL_OK) {
 		Tcl_DecrRefCount(resObj);
 		resObj = MarshallError(interp);
@@ -3319,7 +3320,7 @@ ForwardProc(
 
 		char *buf = (char *)Tcl_Alloc(200);
 		sprintf(buf,
-			"{Expected list with even number of elements, got %d %s instead}",
+			"{Expected list with even number of elements, got %" TCL_Z_MODIFIER "u %s instead}",
 			listc, (listc == 1 ? "element" : "elements"));
 
 		ForwardSetDynamicError(paramPtr, buf);

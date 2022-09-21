@@ -78,11 +78,11 @@ test utf-1.11 {Tcl_UniCharToUtf: 3 byte sequence, low surrogate} testbytestring 
 test utf-1.12 {Tcl_UniCharToUtf: 4 byte sequence, high/low surrogate} {pairsTo4bytes testbytestring} {
     expr {"\uD842\uDC42" eq [testbytestring \xF0\xA0\xA1\x82]}
 } 1
-test utf-1.13.0 {Tcl_UniCharToUtf: Invalid surrogate} {Uesc ucs2} {
+test utf-1.13.0 {Tcl_UniCharToUtf: Invalid surrogate} Uesc {
     expr {"\UD842" eq "\uD842"}
 } 1
 test utf-1.13.1 {Tcl_UniCharToUtf: Invalid surrogate} {fullutf testbytestring} {
-    expr {"\UD842" eq [testbytestring \xEF\xBF\xBD]}
+    expr {"\UD842" eq [testbytestring \xED\xA1\x82]}
 } 1
 test utf-1.14 {Tcl_UniCharToUtf: surrogate pairs from concat} {
     set lo \uDE02
@@ -1114,7 +1114,7 @@ test utf-11.6 {Tcl_UtfToUpper beyond U+FFFF} fullutf {
 test utf-11.7 {Tcl_UtfToUpper beyond U+FFFF} fullutf {
     string toupper 𐐨
 } 𐐀
-test utf-11.8 {Tcl_UtfToUpper low/high surrogate)} {
+test utf-11.8 {Tcl_UtfToUpper low/high surrogate)} utf32 {
     string toupper \uDC24\uD824
 } \uDC24\uD824
 
@@ -1133,7 +1133,7 @@ test utf-12.4 {Tcl_UtfToLower} {
 test utf-12.5 {Tcl_UtfToLower Georgian (new in Unicode 11)} {
     string tolower აᲐ
 } აა
-test utf-12.6 {Tcl_UtfToLower low/high surrogate)} {
+test utf-12.6 {Tcl_UtfToLower low/high surrogate)} utf32 {
     string tolower \uDC24\uD824
 } \uDC24\uD824
 test utf-12.7 {Tcl_UtfToLower beyond U+FFFF} fullutf {
@@ -1161,7 +1161,7 @@ test utf-13.5 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
 test utf-13.6 {Tcl_UtfToTitle Georgian (new in Unicode 11)} {
     string totitle Აა
 } Აა
-test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} {
+test utf-13.7 {Tcl_UtfToTitle low/high surrogate)} utf32 {
     string totitle \uDC24\uD824
 } \uDC24\uD824
 test utf-13.8 {Tcl_UtfToTitle beyond U+FFFF} fullutf {

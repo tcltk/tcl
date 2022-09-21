@@ -13,9 +13,14 @@
  */
 
 #include "tcl.h"
-#if TCL_MAJOR_VERSION < 9 && TCL_MINOR_VERSION < 7
+#if TCL_MAJOR_VERSION < 9
+#  if defined(USE_TCL_STUBS)
+#	error "Don't build with USE_TCL_STUBS!"
+#  endif
+#  if TCL_MINOR_VERSION < 7
 #   define Tcl_LibraryInitProc Tcl_PackageInitProc
 #   define Tcl_StaticLibrary Tcl_StaticPackage
+#  endif
 #endif
 
 #ifdef TCL_TEST
@@ -86,7 +91,7 @@ main(
     TclZipfs_AppHook(&argc, &argv);
 #endif
 
-    Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
+    Tcl_Main((size_t)argc, argv, TCL_LOCAL_APPINIT);
     return 0;			/* Needed only to prevent compiler warning. */
 }
 
@@ -113,7 +118,7 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if ((Tcl_Init)(interp) == TCL_ERROR) {
+    if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -155,11 +160,11 @@ Tcl_AppInit(
      */
 
 #ifdef DJGPP
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
-	    Tcl_NewStringObj("~/tclsh.rc", -1), TCL_GLOBAL_ONLY);
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", TCL_INDEX_NONE), NULL,
+	    Tcl_NewStringObj("~/tclsh.rc", TCL_INDEX_NONE), TCL_GLOBAL_ONLY);
 #else
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
-	    Tcl_NewStringObj("~/.tclshrc", -1), TCL_GLOBAL_ONLY);
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", TCL_INDEX_NONE), NULL,
+	    Tcl_NewStringObj("~/.tclshrc", TCL_INDEX_NONE), TCL_GLOBAL_ONLY);
 #endif
 
     return TCL_OK;

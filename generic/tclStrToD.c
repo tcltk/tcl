@@ -49,44 +49,43 @@
  * file exists only on Linux; it is missing on Cygwin and MinGW. Most gcc-isms
  * and ix86-isms are factored out here.
  */
-
-#if defined(__GNUC__)
+# if defined(__GNUC__)
 typedef unsigned int	fpu_control_t __attribute__ ((__mode__ (__HI__)));
 
-#define _FPU_GETCW(cw)	__asm__ __volatile__ ("fnstcw %0" : "=m" (*&cw))
-#define _FPU_SETCW(cw)	__asm__ __volatile__ ("fldcw %0" : : "m" (*&cw))
-#   define FPU_IEEE_ROUNDING	0x027F
-#   define ADJUST_FPU_CONTROL_WORD
-#define TCL_IEEE_DOUBLE_ROUNDING \
+#  define _FPU_GETCW(cw)	__asm__ __volatile__ ("fnstcw %0" : "=m" (*&cw))
+#  define _FPU_SETCW(cw)	__asm__ __volatile__ ("fldcw %0" : : "m" (*&cw))
+#  define FPU_IEEE_ROUNDING	0x027F
+#  define ADJUST_FPU_CONTROL_WORD
+#  define TCL_IEEE_DOUBLE_ROUNDING_DECL \
     fpu_control_t roundTo53Bits = FPU_IEEE_ROUNDING;	\
-    fpu_control_t oldRoundingMode;			\
+    fpu_control_t oldRoundingMode;
+#  define TCL_IEEE_DOUBLE_ROUNDING \
     _FPU_GETCW(oldRoundingMode);			\
     _FPU_SETCW(roundTo53Bits)
-#define TCL_DEFAULT_DOUBLE_ROUNDING \
+#  define TCL_DEFAULT_DOUBLE_ROUNDING \
     _FPU_SETCW(oldRoundingMode)
 
 /*
  * Sun ProC needs sunmath for rounding control on x86 like gcc above.
  */
-#elif defined(__sun)
-#include <sunmath.h>
-#define TCL_IEEE_DOUBLE_ROUNDING \
+# elif defined(__sun)
+#  include <sunmath.h>
+#  define TCL_IEEE_DOUBLE_ROUNDING_DECL
+#  define TCL_IEEE_DOUBLE_ROUNDING \
     ieee_flags("set","precision","double",NULL)
-#define TCL_DEFAULT_DOUBLE_ROUNDING \
+#  define TCL_DEFAULT_DOUBLE_ROUNDING \
     ieee_flags("clear","precision",NULL,NULL)
 
+# endif
+#endif
 /*
  * Other platforms are assumed to always operate in full IEEE mode, so we make
  * the macros to go in and out of that mode do nothing.
  */
-
-#else /* !__GNUC__ && !__sun */
-#define TCL_IEEE_DOUBLE_ROUNDING	((void) 0)
-#define TCL_DEFAULT_DOUBLE_ROUNDING	((void) 0)
-#endif
-#else /* !__i386 */
-#define TCL_IEEE_DOUBLE_ROUNDING	((void) 0)
-#define TCL_DEFAULT_DOUBLE_ROUNDING	((void) 0)
+#ifndef TCL_IEEE_DOUBLE_ROUNDING /* !__i386 || (!__GNUC__ && !__sun) */
+#  define TCL_IEEE_DOUBLE_ROUNDING_DECL
+#  define TCL_IEEE_DOUBLE_ROUNDING	((void) 0)
+#  define TCL_DEFAULT_DOUBLE_ROUNDING	((void) 0)
 #endif
 
 /*
@@ -386,9 +385,9 @@ static Tcl_WideUInt	Nokia770Twiddle(Tcl_WideUInt w);
  *	the first byte to be scanned. If bytes is NULL, then objPtr must be
  *	non-NULL, and the string representation of objPtr will be scanned
  *	(generated first, if necessary). The numBytes argument determines the
- *	number of bytes to be scanned. If numBytes is negative, the first NUL
- *	byte encountered will terminate the scan. If numBytes is non-negative,
- *	then no more than numBytes bytes will be scanned.
+ *	number of bytes to be scanned. If numBytes is TCL_INDEX_NONE, the first NUL
+ *	byte encountered will terminate the scan. Otherwise,
+ *	no more than numBytes bytes will be scanned.
  *
  *	The argument flags is an input that controls the numeric formats
  *	recognized by the parser. The flag bits are:
@@ -556,9 +555,9 @@ TclParseNumber(
 		return TCL_ERROR;
 	    }
 	    if (TclHasInternalRep(objPtr, &tclListType)) {
-		int length;
+		size_t length;
 		/* A list can only be a (single) number if its length == 1 */
-		TclListObjLength(NULL, objPtr, &length);
+		TclListObjLengthM(NULL, objPtr, &length);
 		if (length != 1) {
 		    return TCL_ERROR;
 		}
@@ -1210,7 +1209,6 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	    goto endgame;
-
 	}
 	p++;
 	len--;
@@ -1679,7 +1677,8 @@ MakeLowPrecisionDouble(
     int numSigDigs,		/* Number of digits in the significand */
     long exponent)		/* Power of ten */
 {
-    double retval;		/* Value of the number. */
+    TCL_IEEE_DOUBLE_ROUNDING_DECL
+
     mp_int significandBig;	/* Significand expressed as a bignum. */
 
     /*
@@ -1687,18 +1686,25 @@ MakeLowPrecisionDouble(
      * This causes the result of double-precision calculations to be rounded
      * twice: once to the precision of double-extended and then again to the
      * precision of double. Double-rounding introduces gratuitous errors of 1
-     * ulp, so we need to change rounding mode to 53-bits.
+     * ulp, so we need to change rounding mode to 53-bits. We also make
+     * 'retval' volatile, so that it doesn't get promoted to a register.
      */
-
-    TCL_IEEE_DOUBLE_ROUNDING;
+    volatile double retval;		/* Value of the number. */
 
     /*
-     * Test for the easy cases.
+     * Test for zero significand, which requires explicit construction
+     * of -0.0. (Unary minus returns a positive zero.)
      */
-
     if (significand == 0) {
 	return copysign(0.0, -signum);
     }
+
+    /*
+     * Set the FP control word for 53 bits, WARNING: It must be reset
+     * before returning.
+     */
+    TCL_IEEE_DOUBLE_ROUNDING;
+
     if (numSigDigs <= QUICK_MAX) {
 	if (exponent >= 0) {
 	    if (exponent <= mmaxpow) {
@@ -1798,7 +1804,8 @@ MakeHighPrecisionDouble(
     int numSigDigs,		/* Number of significant digits */
     long exponent)		/* Power of 10 by which to multiply */
 {
-    double retval;
+    TCL_IEEE_DOUBLE_ROUNDING_DECL
+
     int machexp = 0;		/* Machine exponent of a power of 10. */
 
     /*
@@ -1806,19 +1813,30 @@ MakeHighPrecisionDouble(
      * This causes the result of double-precision calculations to be rounded
      * twice: once to the precision of double-extended and then again to the
      * precision of double. Double-rounding introduces gratuitous errors of 1
-     * ulp, so we need to change rounding mode to 53-bits.
+     * ulp, so we need to change rounding mode to 53-bits. We also make
+     * 'retval' volatile to make sure that it doesn't get promoted to a
+     * register.
      */
-
-    TCL_IEEE_DOUBLE_ROUNDING;
+    volatile double retval;
 
     /*
-     * Quick checks for zero, and over/underflow. Be careful to avoid
-     * integer overflow when calculating with 'exponent'.
+     * A zero significand requires explicit construction of -0.0.
+     * (Unary minus returns positive zero.)
      */
-
     if (mp_iszero(significand)) {
 	return copysign(0.0, -signum);
     }
+
+    /*
+     * Set the 53-bit rounding mode. WARNING: It must be reset before
+     * returning.
+     */
+    TCL_IEEE_DOUBLE_ROUNDING;
+
+    /*
+     * Make quick checks for over/underflow. Be careful to avoid
+     * integer overflow when calculating with 'exponent'.
+     */
     if (exponent >= 0 && exponent-1 > maxDigits-numSigDigs) {
 	retval = HUGE_VAL;
 	goto returnValue;

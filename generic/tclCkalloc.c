@@ -128,19 +128,6 @@ static Tcl_Mutex *ckallocMutexPtr;
 static int ckallocInit = 0;
 
 /*
- * Prototypes for procedures defined in this file:
- */
-
-static int		CheckmemCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		MemoryCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static void		ValidateMemory(struct mem_header *memHeaderP,
-			    const char *file, int line, int nukeGuards);
-
-/*
  *----------------------------------------------------------------------
  *
  * TclInitDbCkalloc --
@@ -980,10 +967,6 @@ MemoryCmd(
  *
  *----------------------------------------------------------------------
  */
-static int		CheckmemCmd(void *clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-
 static int
 CheckmemCmd(
     TCL_UNUSED(void *),

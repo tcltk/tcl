@@ -1327,8 +1327,8 @@ Tcl_ZlibStreamGet(
 				 * may get less! */
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *) zshandle;
-    int e, i, listLen;
-    size_t itemLen = 0, dataPos = 0;
+    int e;
+    size_t listLen, i, itemLen = 0, dataPos = 0;
     Tcl_Obj *itemObj;
     unsigned char *dataPtr, *itemPtr;
     size_t existing = 0;
@@ -1373,7 +1373,7 @@ Tcl_ZlibStreamGet(
 		Tcl_DecrRefCount(zshPtr->currentInput);
 		zshPtr->currentInput = NULL;
 	    }
-	    TclListObjLength(NULL, zshPtr->inData, &listLen);
+	    TclListObjLengthM(NULL, zshPtr->inData, &listLen);
 	    if (listLen > 0) {
 		/*
 		 * There is more input available, get it from the list and
@@ -1422,7 +1422,7 @@ Tcl_ZlibStreamGet(
 		e = inflate(&zshPtr->stream, zshPtr->flush);
 	    }
 	};
-	TclListObjLength(NULL, zshPtr->inData, &listLen);
+	TclListObjLengthM(NULL, zshPtr->inData, &listLen);
 
 	while ((zshPtr->stream.avail_out > 0)
 		&& (e == Z_OK || e == Z_BUF_ERROR) && (listLen > 0)) {
@@ -1502,7 +1502,7 @@ Tcl_ZlibStreamGet(
 	    inflateEnd(&zshPtr->stream);
 	}
     } else {
-	TclListObjLength(NULL, zshPtr->outData, &listLen);
+	TclListObjLengthM(NULL, zshPtr->outData, &listLen);
 	if (count == TCL_INDEX_NONE) {
 	    count = 0;
 	    for (i=0; i<listLen; i++) {
@@ -1524,7 +1524,7 @@ Tcl_ZlibStreamGet(
 	dataPtr += existing;
 
 	while ((count > dataPos) &&
-		(TclListObjLength(NULL, zshPtr->outData, &listLen) == TCL_OK)
+		(TclListObjLengthM(NULL, zshPtr->outData, &listLen) == TCL_OK)
 		&& (listLen > 0)) {
 	    /*
 	     * Get the next chunk off our list of chunks and grab the data out
@@ -2409,7 +2409,8 @@ ZlibPushSubcmd(
     const char *const *pushOptions = pushDecompressOptions;
     enum pushOptionsEnum {poDictionary, poHeader, poLevel, poLimit} option;
     Tcl_Obj *headerObj = NULL, *compDictObj = NULL;
-    int limit = DEFAULT_BUFFER_SIZE, dummy;
+    int limit = DEFAULT_BUFFER_SIZE;
+    size_t dummy;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "mode channel ?options...?");

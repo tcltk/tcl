@@ -15,17 +15,14 @@
  */
 
 #include "tcl.h"
-#define WIN32_LEAN_AND_MEAN
-#define STRICT			/* See MSDN Article Q83456 */
-#include <windows.h>
-#undef STRICT
-#undef WIN32_LEAN_AND_MEAN
-#include <locale.h>
-#include <stdlib.h>
-#include <tchar.h>
-#if TCL_MAJOR_VERSION < 9 && TCL_MINOR_VERSION < 7
+#if TCL_MAJOR_VERSION < 9
+#  if defined(USE_TCL_STUBS)
+#	error "Don't build with USE_TCL_STUBS!"
+#  endif
+#  if TCL_MINOR_VERSION < 7
 #   define Tcl_LibraryInitProc Tcl_PackageInitProc
 #   define Tcl_StaticLibrary Tcl_StaticPackage
+#  endif
 #endif
 
 #ifdef TCL_TEST
@@ -39,6 +36,14 @@ extern Tcl_LibraryInitProc Dde_Init;
 extern Tcl_LibraryInitProc Dde_SafeInit;
 #endif
 
+#define WIN32_LEAN_AND_MEAN
+#define STRICT			/* See MSDN Article Q83456 */
+#include <windows.h>
+#undef STRICT
+#undef WIN32_LEAN_AND_MEAN
+#include <locale.h>
+#include <stdlib.h>
+#include <tchar.h>
 #if defined(__GNUC__) || defined(TCL_BROKEN_MAINARGS)
 int _CRT_glob = 0;
 #endif /* __GNUC__ || TCL_BROKEN_MAINARGS */
@@ -136,7 +141,7 @@ _tmain(
     TclZipfs_AppHook(&argc, &argv);
 #endif
 
-    Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
+    Tcl_Main((size_t)argc, argv, TCL_LOCAL_APPINIT);
     return 0;			/* Needed only to prevent compiler warning. */
 }
 
@@ -163,7 +168,7 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if ((Tcl_Init)(interp) == TCL_ERROR) {
+    if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -210,8 +215,8 @@ Tcl_AppInit(
      * user-specific startup file will be run under any conditions.
      */
 
-    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
-	    Tcl_NewStringObj("~/tclshrc.tcl", -1), TCL_GLOBAL_ONLY);
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", TCL_INDEX_NONE), NULL,
+	    Tcl_NewStringObj("~/tclshrc.tcl", TCL_INDEX_NONE), TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
 

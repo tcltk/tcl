@@ -15,15 +15,6 @@
 #include "tcl.h"
 
 /*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    Pkgd_SubObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-static int    Pkgd_UnsafeObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-
-/*
  *----------------------------------------------------------------------
  *
  * Pkgd_SubObjCmd --
@@ -42,7 +33,7 @@ static int    Pkgd_UnsafeObjCmd(ClientData clientData,
 
 static int
 Pkgd_SubObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -81,7 +72,7 @@ Pkgd_SubObjCmd(
 
 static int
 Pkgd_UnsafeObjCmd(
-    ClientData dummy,		/* Not used. */
+    void *dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

@@ -365,15 +365,6 @@ TclSetEnv(
     }
 
     Tcl_MutexUnlock(&envMutex);
-
-    if (!strcmp(name, "HOME")) {
-	/*
-	 * If the user's home directory has changed, we must invalidate the
-	 * filesystem cache, because '~' expansions will now be incorrect.
-	 */
-
-	Tcl_FSMountsChanged(NULL);
-    }
 }
 
 /*
@@ -628,7 +619,7 @@ TclGetEnv(
 
 static char *
 EnvTraceProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Interpreter whose "env" variable is being
 				 * modified. */
     const char *name1,		/* Better be "env". */

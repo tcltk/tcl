@@ -877,8 +877,7 @@ ThreadSend(
 
     threadEventPtr->event.proc = ThreadEventProc;
     Tcl_ThreadQueueEvent(threadId, (Tcl_Event *) threadEventPtr,
-	    TCL_QUEUE_TAIL);
-    Tcl_ThreadAlert(threadId);
+	    TCL_QUEUE_TAIL|TCL_QUEUE_ALERT_IF_EMPTY);
 
     if (!wait) {
 	Tcl_MutexUnlock(&threadMutex);

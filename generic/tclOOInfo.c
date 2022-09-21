@@ -194,7 +194,7 @@ InfoObjectClassCmd(
 	return TCL_OK;
     } else {
 	Class *mixinPtr, *o2clsPtr;
-	int i;
+	size_t i;
 
 	o2clsPtr = GetClassFromObj(interp, objv[2]);
 	if (o2clsPtr == NULL) {
@@ -252,7 +252,7 @@ InfoObjectDefnCmd(
     if (!oPtr->methodsPtr) {
 	goto unknownMethod;
     }
-    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) objv[2]);
+    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[2]);
     if (hPtr == NULL) {
     unknownMethod:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -307,7 +307,7 @@ InfoObjectFiltersCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int i;
+    size_t i;
     Tcl_Obj *filterObj, *resultObj;
     Object *oPtr;
 
@@ -363,7 +363,7 @@ InfoObjectForwardCmd(
     if (!oPtr->methodsPtr) {
 	goto unknownMethod;
     }
-    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) objv[2]);
+    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[2]);
     if (hPtr == NULL) {
     unknownMethod:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -410,7 +410,8 @@ InfoObjectIsACmd(
 	IsClass, IsMetaclass, IsMixin, IsObject, IsType
     } idx;
     Object *oPtr, *o2Ptr;
-    int i, result = 0;
+    int result = 0;
+    size_t i;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "category objName ?arg ...?");
@@ -659,7 +660,7 @@ InfoObjectMethodTypeCmd(
     if (!oPtr->methodsPtr) {
 	goto unknownMethod;
     }
-    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) objv[2]);
+    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, objv[2]);
     if (hPtr == NULL) {
     unknownMethod:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -702,7 +703,7 @@ InfoObjectMixinsCmd(
     Class *mixinPtr;
     Object *oPtr;
     Tcl_Obj *resultObj;
-    int i;
+    size_t i;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName");
@@ -809,7 +810,8 @@ InfoObjectVariablesCmd(
 {
     Object *oPtr;
     Tcl_Obj *resultObj;
-    int i, isPrivate = 0;
+    size_t i;
+    int isPrivate = 0;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-private?");
@@ -997,7 +999,7 @@ InfoClassDefnCmd(
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[2]);
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, objv[2]);
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unknown method \"%s\"", TclGetString(objv[2])));
@@ -1145,7 +1147,7 @@ InfoClassFiltersCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int i;
+    size_t i;
     Tcl_Obj *filterObj, *resultObj;
     Class *clsPtr;
 
@@ -1195,7 +1197,7 @@ InfoClassForwardCmd(
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[2]);
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, objv[2]);
     if (hPtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unknown method \"%s\"", TclGetString(objv[2])));
@@ -1236,7 +1238,7 @@ InfoClassInstancesCmd(
 {
     Object *oPtr;
     Class *clsPtr;
-    int i;
+    size_t i;
     const char *pattern = NULL;
     Tcl_Obj *resultObj;
 
@@ -1359,7 +1361,7 @@ InfoClassMethodsCmd(
     TclNewObj(resultObj);
     if (recurse) {
 	const char **names;
-	int i, numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
+	size_t i, numNames = TclOOGetSortedClassMethodList(clsPtr, flag, &names);
 
 	for (i=0 ; i<numNames ; i++) {
 	    Tcl_ListObjAppendElement(NULL, resultObj,
@@ -1411,7 +1413,7 @@ InfoClassMethodTypeCmd(
 	return TCL_ERROR;
     }
 
-    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, (char *) objv[2]);
+    hPtr = Tcl_FindHashEntry(&clsPtr->classMethods, objv[2]);
     if (hPtr == NULL) {
     unknownMethod:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1452,7 +1454,7 @@ InfoClassMixinsCmd(
 {
     Class *clsPtr, *mixinPtr;
     Tcl_Obj *resultObj;
-    int i;
+    size_t i;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className");
@@ -1494,7 +1496,7 @@ InfoClassSubsCmd(
 {
     Class *clsPtr, *subclassPtr;
     Tcl_Obj *resultObj;
-    int i;
+    size_t i;
     const char *pattern = NULL;
 
     if (objc != 2 && objc != 3) {
@@ -1549,7 +1551,7 @@ InfoClassSupersCmd(
 {
     Class *clsPtr, *superPtr;
     Tcl_Obj *resultObj;
-    int i;
+    size_t i;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className");
@@ -1588,7 +1590,8 @@ InfoClassVariablesCmd(
 {
     Class *clsPtr;
     Tcl_Obj *resultObj;
-    int i, isPrivate = 0;
+    size_t i;
+    int isPrivate = 0;
 
     if (objc != 2 && objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "className ?-private?");

@@ -54,7 +54,7 @@ For \fBTcl_AddObjErrorInfo\fR,
 this points to the first byte of an array of \fIlength\fR bytes
 containing a string to append to the \fB\-errorinfo\fR return option.
 This byte array may contain embedded null bytes
-unless \fIlength\fR is negative.
+unless \fIlength\fR is TCL_INDEX_NONE.
 .AP Tcl_Obj *objPtr in
 A message to be appended to the \fB\-errorinfo\fR return option
 in the form of a Tcl_Obj value.
@@ -76,8 +76,8 @@ The line number of a script where an error occurred.
 Pointer to first character in script containing command (must be <= command)
 .AP "const char" *command in
 Pointer to first character in command that generated the error
-.AP int commandLength in
-Number of bytes in command; -1 means use all bytes up to first null byte
+.AP size_t commandLength in
+Number of bytes in command; TCL_INDEX_NONE means use all bytes up to first null byte
 .BE
 .SH DESCRIPTION
 .PP
@@ -227,7 +227,7 @@ embedded null bytes.  This is essentially never a good idea.
 If the \fImessage\fR needs to contain the null character \fBU+0000\fR,
 Tcl's usual internal encoding rules should be used to avoid
 the need for a null byte.  If the \fBTcl_AddObjErrorInfo\fR
-interface is used at all, it should be with a negative \fIlength\fR value.
+interface is used at all, it should be with a TCL_INDEX_NONE \fIlength\fR value.
 .PP
 The procedure \fBTcl_SetObjErrorCode\fR is used to set the
 \fB\-errorcode\fR return option to the list value \fIerrorObjPtr\fR

@@ -47,7 +47,7 @@ longest(
     color co;
     struct sset *css, *ss;
     chr *post;
-    int i;
+    size_t i;
     struct colormap *cm = d->cm;
 
     /*
@@ -292,7 +292,7 @@ lastCold(
 {
     struct sset *ss;
     chr *nopr = d->lastnopr;
-    int i;
+    size_t i;
 
     if (nopr == NULL) {
 	nopr = v->start;
@@ -319,7 +319,7 @@ newDFA(
 {
     struct dfa *d;
     size_t nss = cnfa->nstates * 2;
-    int wordsper = (cnfa->nstates + UBITS - 1) / UBITS;
+    size_t wordsper = (cnfa->nstates + UBITS - 1) / UBITS;
     struct smalldfa *smallwas = sml;
 
     assert(cnfa != NULL && cnfa->nstates != 0);
@@ -442,7 +442,7 @@ initialize(
     chr *const start)
 {
     struct sset *ss;
-    int i;
+    size_t i;
 
     /*
      * Is previous one still there?
@@ -492,7 +492,8 @@ miss(
     unsigned h;
     struct carc *ca;
     struct sset *p;
-    int i, isPost, noProgress, gotState, doLAConstraints, sawLAConstraints;
+    size_t i;
+    int isPost, noProgress, gotState, doLAConstraints, sawLAConstraints;
 
     /*
      * For convenience, we can be called even if it might not be a miss.
@@ -526,7 +527,7 @@ miss(
 		    if (!(cnfa->stflags[ca->to] & CNFA_NOPROGRESS)) {
 			noProgress = 0;
 		    }
-		    FDEBUG(("%d -> %d\n", i, ca->to));
+		    FDEBUG(("%" TCL_Z_MODIFIER "u -> %" TCL_Z_MODIFIER "u\n", i, ca->to));
 		}
 	    }
 	}
@@ -556,7 +557,7 @@ miss(
 		    if (!(cnfa->stflags[ca->to] & CNFA_NOPROGRESS)) {
 			noProgress = 0;
 		    }
-		    FDEBUG(("%d :> %d\n", i, ca->to));
+		    FDEBUG(("%" TCL_Z_MODIFIER "u :> %" TCL_Z_MODIFIER"u\n", i, ca->to));
 		}
 	    }
 	}
@@ -615,7 +616,7 @@ checkLAConstraint(
     chr *const cp,
     const pcolor co)		/* "color" of the lookahead constraint */
 {
-    int n;
+    size_t n;
     struct subre *sub;
     struct dfa *d;
     struct smalldfa sd;
@@ -623,7 +624,7 @@ checkLAConstraint(
 
     n = co - pcnfa->ncolors;
     assert(n < v->g->nlacons && v->g->lacons != NULL);
-    FDEBUG(("=== testing lacon %d\n", n));
+    FDEBUG(("=== testing lacon %" TCL_Z_MODIFIER "u\n", n));
     sub = &v->g->lacons[n];
     d = newDFA(v, &sub->cnfa, &v->g->cmap, &sd);
     if (d == NULL) {
@@ -632,7 +633,7 @@ checkLAConstraint(
     }
     end = longest(v, d, cp, v->stop, NULL);
     freeDFA(d);
-    FDEBUG(("=== lacon %d match %d\n", n, (end != NULL)));
+    FDEBUG(("=== lacon %" TCL_Z_MODIFIER "u match %d\n", n, (end != NULL)));
     return (sub->subno) ? (end != NULL) : (end == NULL);
 }
 
@@ -738,21 +739,21 @@ pickNextSS(
      */
 
     if (d->nssused < d->nssets) {
-	i = d->nssused;
+	size_t j = d->nssused;
 	d->nssused++;
-	ss = &d->ssets[i];
-	FDEBUG(("new c%d\n", i));
+	ss = &d->ssets[j];
+	FDEBUG(("new c%" TCL_Z_MODIFIER "u\n", j));
 
 	/*
 	 * Set up innards.
 	 */
 
-	ss->states = &d->statesarea[i * d->wordsper];
+	ss->states = &d->statesarea[j * d->wordsper];
 	ss->flags = 0;
 	ss->ins.ss = NULL;
 	ss->ins.co = WHITE;	/* give it some value */
-	ss->outs = &d->outsarea[i * d->ncolors];
-	ss->inchain = &d->incarea[i * d->ncolors];
+	ss->outs = &d->outsarea[j * d->ncolors];
+	ss->inchain = &d->incarea[j * d->ncolors];
 	for (i = 0; i < d->ncolors; i++) {
 	    ss->outs[i] = NULL;
 	    ss->inchain[i].ss = NULL;
@@ -764,7 +765,7 @@ pickNextSS(
      * Look for oldest, or old enough anyway.
      */
 
-    if (cp - start > d->nssets*2/3) {	/* oldest 33% are expendable */
+    if ((size_t)(cp - start) > d->nssets*2/3) {	/* oldest 33% are expendable */
 	ancient = cp - d->nssets*2/3;
     } else {
 	ancient = start;
@@ -773,7 +774,7 @@ pickNextSS(
 	if ((ss->lastseen == NULL || ss->lastseen < ancient)
 		&& !(ss->flags&LOCKED)) {
 	    d->search = ss + 1;
-	    FDEBUG(("replacing c%d\n", (int) (ss - d->ssets)));
+	    FDEBUG(("replacing c%" TCL_Z_MODIFIER "u\n", (size_t)(ss - d->ssets)));
 	    return ss;
 	}
     }
@@ -781,7 +782,7 @@ pickNextSS(
 	if ((ss->lastseen == NULL || ss->lastseen < ancient)
 		&& !(ss->flags&LOCKED)) {
 	    d->search = ss + 1;
-	    FDEBUG(("replacing c%d\n", (int) (ss - d->ssets)));
+	    FDEBUG(("replacing c%" TCL_Z_MODIFIER "u\n", (size_t)(ss - d->ssets)));
 	    return ss;
 	}
     }

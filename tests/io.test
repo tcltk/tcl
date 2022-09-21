@@ -336,6 +336,15 @@ test io-3.8 {WriteChars: reset sawLF after each buffer} {
     close $f
     lappend x [contents $path(test1)]
 } [list "abcdefg\nhijklmno" "abcdefg\nhijklmnopqrstuvwxyz"]
+test io-3.9 {Write: flush line-buffered channels when crlf is split over two buffers} -body {
+    # https://core.tcl-lang.org/tcllib/tktedit?name=c9d8a52fe
+    set f [open $path(test1) w]
+    fconfigure $f -buffering line -translation crlf -buffersize 8
+    puts $f "1234567"
+    string map {"\r" "<cr>" "\n" "<lf>"} [contents $path(test1)]
+} -cleanup {
+    close $f
+} -result "1234567<cr><lf>"
 
 test io-4.1 {TranslateOutputEOL: lf} {
     # search for \n
@@ -3066,6 +3075,99 @@ test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket tempNotM
     interp delete x
     interp delete y
 } ""
+
+test io-29.36.1 {gets on translation auto with "\r" in QA communication mode, possible regression, bug [b3977d199b]} -constraints {
+    socket tempNotMac fileevent
+} -setup {
+    set s [open "|[list [interpreter] << {
+    proc accept {so args} {
+	fconfigure $so -translation binary
+	puts -nonewline $so "who are you?\r"; flush $so
+	set a [gets $so]
+	puts -nonewline $so "really $a?\r"; flush $so
+	set a [gets $so]
+	close $so
+	set ::done $a
+    }
+    set s [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    puts [lindex [fconfigure $s -sockname] 2]
+    foreach c {1 2} {
+	vwait ::done
+	puts $::done
+    }
+    }]" r]
+    set c {}
+    set result {}
+} -body {
+    set port [gets $s]
+    foreach t {{cr lf} {auto lf}} {
+	set c [socket 127.0.0.1 $port]
+	fconfigure $c -buffering line -translation $t
+	lappend result $t
+	while {1} {
+	    set q [gets $c]
+	    switch -- $q {
+		"who are you?"   {puts $c "client"}
+		"really client?" {puts $c "yes"; lappend result $q; break}
+		default {puts $c "wrong"; lappend result "unexpected input \"$q\""; break}
+	    }
+	}
+	lappend result [gets $s]
+	close $c; set c {}
+    }
+    set result
+} -cleanup {
+    close $s
+    if {$c ne {}} { close $c }
+    unset -nocomplain s c port t q
+} -result [list {cr lf} "really client?" yes {auto lf} "really client?" yes]
+test io-29.36.2 {gets on translation auto with "\r\n" in different buffers, bug [b3977d199b]} -constraints {
+    socket tempNotMac fileevent
+} -setup {
+    set s [socket -server [namespace code accept] -myaddr 127.0.0.1 0]
+    set c {}
+} -body {
+    set ::cnt 0
+    proc accept {so args} {
+	fconfigure $so -translation binary
+	puts -nonewline $so "1 line\r"
+	puts -nonewline $so "\n2 li"
+	flush $so
+	# now force separate packets
+	puts -nonewline $so "ne\r"
+	flush $so
+	if {$::cnt & 1} {
+	    vwait ::cli; # simulate short delay (so client can process events, just wait for it)
+	} else {
+	    # we don't have a delay, so client would get the lines as single chunk
+	}
+	# we'll try with "\r" and without "\r" (to cover both branches, where "\r" and "eof" causes exit from [gets] by 3rd line)
+	puts -nonewline $so "\n3 line"
+	if {!($::cnt % 3)} {
+	    puts -nonewline $so "\r"
+	}
+	flush $so
+	close $so
+    }
+    while {$::cnt < 6} { incr ::cnt
+	set c [socket 127.0.0.1 [lindex [fconfigure $s -sockname] 2]]
+	fconfigure $c -blocking 0 -buffering line -translation auto
+	fileevent $c readable [list apply {c {
+	    if {[gets $c line] >= 0} {
+		lappend ::cli <$line>
+	    } elseif {[eof $c]} {
+		set ::done 1
+	    }
+	}} $c]
+	vwait ::done
+	close $c; set c {}
+    }
+    set ::cli
+} -cleanup {
+    close $s
+    if {$c ne {}} { close $c }
+    unset -nocomplain ::done ::cli ::cnt s c
+} -result [lrepeat 6 {<1 line>} {<2 line>} {<3 line>}]
 
 # Test end of line translations. Procedures tested are Tcl_Write, Tcl_Read.
 
@@ -5863,7 +5965,7 @@ test io-40.17 {tilde substitution in open} {
     set x [list [catch {open ~/foo} msg] $msg]
     set ::env(HOME) $home
     set x
-} {1 {couldn't find HOME environment variable to expand path}}
+} {1 {couldn't open "~/foo": no such file or directory}}
 
 test io-41.1 {Tcl_FileeventCmd: errors} {fileevent} {
     list [catch {fileevent foo} msg] $msg
@@ -8464,7 +8566,7 @@ test io-60.1 {writing illegal utf sequences} {fileevent testbytestring} {
     set out [open $path(script) w]
     puts $out "catch {load $::tcltestlib Tcltest}"
     puts $out {
-	puts [testbytestring \xE2]
+	puts ABC[testbytestring \xE2]
 	exit 1
     }
     proc readit {pipe} {
@@ -8488,7 +8590,7 @@ test io-60.1 {writing illegal utf sequences} {fileevent testbytestring} {
     # cut of the remainder of the error stack, especially the filename
     set result [lreplace $result 3 3 [lindex [split [lindex $result 3] \n] 0]]
     list $x $result
-} {1 {gets {} catch {error writing "stdout": illegal byte sequence}}}
+} {1 {gets ABC catch {error writing "stdout": illegal byte sequence}}}
 
 test io-61.1 {Reset eof state after changing the eof char} -setup {
     set datafile [makeFile {} eofchar]
@@ -8849,6 +8951,109 @@ test io-74.1 {[104f2885bb] improper cache validity check} -setup {
     testobj freeallvars
     removeFile io-74.1
 } -returnCodes error -match glob -result {can not find channel named "*"}
+
+# The following tests 75.1 to 75.5 exercise strict or tolerant channel
+# encoding.
+# They are left as a place-holder here. If TIP633 is voted, they will
+# come back.
+# Exercise strct channel encoding
+test io-75.6 {multibyte encoding error read results in raw bytes} -setup {
+    set fn [makeFile {} io-75.6]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # In UTF-8, a byte 0xCx starts a multibyte sequence and must be followed
+    # by a byte > 0x7F. This is violated to get an invalid sequence.
+    puts -nonewline $f "A\xC0\x40"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none
+} -constraints knownBug -body {
+    set d [read $f]
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    close $f
+    removeFile io-75.6
+} -result "41"
+# The current result cuts at the invalid sequence. IMHO, there should be an
+# error thrown or the whole sequence should be returned as byte (compat mode).
+
+test io-75.7 {unrepresentable character write passes and is replaced by ?} -setup {
+    set fn [makeFile {} io-75.7]
+    set f [open $fn w+]
+    fconfigure $f -encoding iso8859-1
+} -body {
+    catch {puts -nonewline $f "A\u2022"} msg
+    flush $f
+    seek $f 0
+    list [read $f] $msg
+} -cleanup {
+    close $f
+    removeFile io-75.7
+} -match glob -result [list {A} {error writing "*": illegal byte sequence}]
+
+# Incomplete sequence test.
+# This error may IMHO only be detected with the close.
+# But the read already returns the incomplete sequence.
+test io-75.8 {incomplete multibyte encoding read is ignored} -setup {
+    set fn [makeFile {} io-75.8]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    puts -nonewline $f "A\xC0"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none
+} -body {
+    set d [read $f]
+    close $f
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    removeFile io-75.8
+} -result "41c0"
+# The current result returns the orphan byte as byte.
+# This may be expected due to special utf-8 handling.
+
+# As utf-8 has a special treatment in multi-byte decoding, also test another
+# one.
+test io-75.9 {shiftjis encoding error read results in raw bytes} -setup {
+    set fn [makeFile {} io-75.9]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # In shiftjis, \x81 starts a two-byte sequence.
+    # But 2nd byte \xFF is not allowed
+    puts -nonewline $f "A\x81\xFFA"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding shiftjis -buffering none -eofchar "" -translation lf
+} -constraints knownBug -body {
+    set d [read $f]
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    close $f
+    removeFile io-75.9
+} -result "41"
+# The current result cuts at the invalid sequence. IMHO, there should be an
+# error thrown or the whole sequence should be returned as byte (compat mode).
+
+test io-75.10 {incomplete shiftjis encoding read is ignored} -setup {
+    set fn [makeFile {} io-75.10]
+    set f [open $fn w+]
+    fconfigure $f -encoding binary
+    # \x81 announces a two byte sequence.
+    puts -nonewline $f "A\x81"
+    flush $f
+    seek $f 0
+    fconfigure $f -encoding utf-8 -buffering none -eofchar "" -translation lf
+} -body {
+    set d [read $f]
+    close $f
+    binary scan $d H* hd
+    set hd
+} -cleanup {
+    removeFile io-75.10
+} -result "4181"
 
 # ### ### ### ######### ######### #########
 

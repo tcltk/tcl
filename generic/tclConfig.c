@@ -191,16 +191,15 @@ Tcl_RegisterConfig(
 
 static int
 QueryConfigObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,
     int objc,
-    struct Tcl_Obj *const *objv)
+    Tcl_Obj *const *objv)
 {
     QCCD *cdPtr = (QCCD *)clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
-    size_t n = 0;
-    int m;
+    size_t m, n = 0;
     static const char *const subcmdStrings[] = {
 	"get", "list", NULL
     };
@@ -322,7 +321,7 @@ QueryConfigObjCmd(
 
 static void
 QueryConfigDelete(
-    ClientData clientData)
+    void *clientData)
 {
     QCCD *cdPtr = (QCCD *)clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
@@ -389,7 +388,7 @@ GetConfigDict(
 
 static void
 ConfigDictDeleteProc(
-    ClientData clientData,	/* Pointer to Tcl_Obj. */
+    void *clientData,	/* Pointer to Tcl_Obj. */
     TCL_UNUSED(Tcl_Interp *))
 {
     Tcl_DecrRefCount((Tcl_Obj *)clientData);

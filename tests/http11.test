@@ -12,7 +12,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-package require http 2.9
+package require http 2.10
 
 # start the server
 variable httpd_output
@@ -87,6 +87,26 @@ proc check_crc {tok args} {
 }
 
 makeFile "<html><head><title>test</title></head><body><p>this is a test</p>\n[string repeat {<p>This is a tcl test file.</p>} 4192]\n</body></html>" testdoc.html
+
+if {![info exists ThreadLevel]} {
+    if {[catch {package require Thread}] == 0} {
+        set ValueRange {0 1 2}
+    } else {
+        set ValueRange {0 1}
+    }
+
+    # For each value of ThreadLevel, source this file recursively in the
+    # same interpreter.
+    foreach ThreadLevel $ValueRange {
+        source [info script]
+    }
+    catch {unset ThreadLevel}
+    catch {unset ValueRange}
+    return
+}
+
+catch {puts "==== Test with ThreadLevel $ThreadLevel ===="}
+http::config -threadlevel $ThreadLevel
 
 # -------------------------------------------------------------------------
 

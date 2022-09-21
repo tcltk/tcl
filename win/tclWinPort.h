@@ -458,6 +458,7 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif /* _MSC_VER || __MSVCRT__ */
 
 #if defined(_MSC_VER)
+#   pragma warning(disable:4090) /* see: https://developercommunity.visualstudio.com/t/c-compiler-incorrect-propagation-of-const-qualifie/390711 */
 #   pragma warning(disable:4146)
 #   pragma warning(disable:4244)
 #if !defined(_WIN64)

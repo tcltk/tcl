@@ -141,7 +141,7 @@ TclpOpenFile(
     const char *native;
     Tcl_DString ds;
 
-    native = Tcl_UtfToExternalDString(NULL, fname, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, fname, TCL_INDEX_NONE, &ds);
     fd = TclOSopen(native, mode, 0666);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
     if (fd != -1) {
@@ -153,7 +153,7 @@ TclpOpenFile(
 	 */
 
 	if ((mode & O_WRONLY) && !(mode & O_APPEND)) {
-	    TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_END);
+	    TclOSseek(fd, 0, SEEK_END);
 	}
 
 	/*
@@ -198,14 +198,14 @@ TclpCreateTempFile(
 	Tcl_DString dstring;
 	char *native;
 
-	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
+	native = Tcl_UtfToExternalDString(NULL, contents, TCL_INDEX_NONE, &dstring);
 	if (write(fd, native, Tcl_DStringLength(&dstring)) == -1) {
 	    close(fd);
 	    Tcl_DStringFree(&dstring);
 	    return NULL;
 	}
 	Tcl_DStringFree(&dstring);
-	TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_SET);
+	TclOSseek(fd, 0, SEEK_SET);
     }
     return MakeFile(fd);
 }
@@ -381,7 +381,7 @@ TclpCreateProcess(
 				 * occurred when creating the child process.
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
-    size_t argc1,			/* Number of arguments in following array. */
+    size_t argc,			/* Number of arguments in following array. */
     const char **argv,		/* Array of argument strings in UTF-8.
 				 * argv[0] contains the name of the executable
 				 * translated using Tcl_TranslateFileName
@@ -410,8 +410,8 @@ TclpCreateProcess(
     char errSpace[200 + TCL_INTEGER_SPACE];
     Tcl_DString *dsArray;
     char **newArgv;
-    int pid, i;
-    int argc = argc1;
+    int pid;
+    size_t i;
 
     errPipeIn = NULL;
     errPipeOut = NULL;
@@ -437,7 +437,7 @@ TclpCreateProcess(
     newArgv = (char **)TclStackAlloc(interp, (argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
-	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
+	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], TCL_INDEX_NONE, &dsArray[i]);
     }
 
 #ifdef USE_VFORK
@@ -1251,7 +1251,7 @@ Tcl_WaitPid(
 
 int
 Tcl_PidObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */

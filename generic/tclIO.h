@@ -37,11 +37,11 @@
 
 typedef struct ChannelBuffer {
     size_t refCount;		/* Current uses count */
-    int nextAdded;		/* The next position into which a character
+    size_t nextAdded;		/* The next position into which a character
 				 * will be put in the buffer. */
-    int nextRemoved;		/* Position of next byte to be removed from
+    size_t nextRemoved;		/* Position of next byte to be removed from
 				 * the buffer. */
-    int bufLength;		/* How big is the buffer? */
+    size_t bufLength;		/* How big is the buffer? */
     struct ChannelBuffer *nextPtr;
     				/* Next buffer in chain. */
     char buf[TCLFLEXARRAY];		/* Placeholder for real buffer. The real
@@ -186,7 +186,7 @@ typedef struct ChannelState {
     EventScriptRecord *scriptRecordPtr;
 				/* Chain of all scripts registered for event
 				 * handlers ("fileevent") on this channel. */
-    int bufSize;		/* What size buffers to allocate? */
+    size_t bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
     struct CopyState *csPtrR;	/* State of background copy for which channel
 				 * is input, or NULL. */

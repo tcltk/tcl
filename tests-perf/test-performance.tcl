@@ -16,7 +16,7 @@
 #
 
 namespace eval ::tclTestPerf {
-# warm-up interpeter compiler env, calibrate timerate measurement functionality:
+# warm-up interpreter compiler env, calibrate timerate measurement functionality:
 
 # if no timerate here - import from unsupported:
 if {[namespace which -command timerate] eq {}} {

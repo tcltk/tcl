@@ -112,7 +112,8 @@ GetIndexFromObjList(
     int *indexPtr)		/* Place to store resulting integer index. */
 {
 
-    int objc, result, t;
+    size_t objc, t;
+    int result;
     Tcl_Obj **objv;
     const char **tablePtr;
 
@@ -121,7 +122,7 @@ GetIndexFromObjList(
      * of the code there. This is a bit ineffiecient but simpler.
      */
 
-    result = TclListObjGetElements(interp, tableObjPtr, &objc, &objv);
+    result = TclListObjGetElementsM(interp, tableObjPtr, &objc, &objv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -363,7 +364,7 @@ Tcl_GetIndexFromObjStruct(
 }
 /* #define again, needed below */
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
-	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<8), (indexPtr)))
+	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
 
 /*
  *----------------------------------------------------------------------
@@ -508,8 +509,8 @@ PrefixMatchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int flags = 0, result, dummy;
-    int dummyLength, i, errorLength;
+    int flags = 0, result, dummy, i;
+    size_t dummyLength, errorLength;
     Tcl_Obj *errorPtr = NULL;
     const char *message = "option";
     Tcl_Obj *tablePtr, *objPtr, *resultPtr;
@@ -552,7 +553,7 @@ PrefixMatchObjCmd(
 		return TCL_ERROR;
 	    }
 	    i++;
-	    result = TclListObjLength(interp, objv[i], &errorLength);
+	    result = TclListObjLengthM(interp, objv[i], &errorLength);
 	    if (result != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -576,7 +577,7 @@ PrefixMatchObjCmd(
      * error case regardless of level.
      */
 
-    result = TclListObjLength(interp, tablePtr, &dummyLength);
+    result = TclListObjLengthM(interp, tablePtr, &dummyLength);
     if (result != TCL_OK) {
 	return result;
     }
@@ -632,8 +633,8 @@ PrefixAllObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int tableObjc, result, t;
-    size_t length, elemLength;
+    int result;
+    size_t length, elemLength, tableObjc, t;
     const char *string, *elemString;
     Tcl_Obj **tableObjv, *resultPtr;
 
@@ -642,7 +643,7 @@ PrefixAllObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
+    result = TclListObjGetElementsM(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -690,8 +691,8 @@ PrefixLongestObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int tableObjc, result, t;
-    size_t i, length, elemLength, resultLength;
+    int result;
+    size_t i, length, elemLength, resultLength, tableObjc, t;
     const char *string, *elemString, *resultString;
     Tcl_Obj **tableObjv;
 
@@ -700,7 +701,7 @@ PrefixLongestObjCmd(
 	return TCL_ERROR;
     }
 
-    result = TclListObjGetElements(interp, objv[1], &tableObjc, &tableObjv);
+    result = TclListObjGetElementsM(interp, objv[1], &tableObjc, &tableObjv);
     if (result != TCL_OK) {
 	return result;
     }
@@ -806,7 +807,7 @@ PrefixLongestObjCmd(
 void
 Tcl_WrongNumArgs(
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments to print from objv. */
+    size_t objc,			/* Number of arguments to print from objv. */
     Tcl_Obj *const objv[],	/* Initial argument objects, which should be
 				 * included in the error message. */
     const char *message)	/* Error message to print after the leading
@@ -814,8 +815,7 @@ Tcl_WrongNumArgs(
 				 * NULL. */
 {
     Tcl_Obj *objPtr;
-    int i;
-    size_t len, elemLen;
+    size_t i, len, elemLen;
     char flags;
     Interp *iPtr = (Interp *)interp;
     const char *elementStr;
@@ -835,8 +835,8 @@ Tcl_WrongNumArgs(
      */
 
     if (iPtr->ensembleRewrite.sourceObjs != NULL) {
-	int toSkip = iPtr->ensembleRewrite.numInsertedObjs;
-	int toPrint = iPtr->ensembleRewrite.numRemovedObjs;
+	size_t toSkip = iPtr->ensembleRewrite.numInsertedObjs;
+	size_t toPrint = iPtr->ensembleRewrite.numRemovedObjs;
 	Tcl_Obj *const *origObjv = TclEnsembleGetRewriteValues(interp);
 
 	/*
@@ -894,7 +894,7 @@ Tcl_WrongNumArgs(
 	     * moderately complex condition here).
 	     */
 
-	    if (i<toPrint-1 || objc!=0 || message!=NULL) {
+	    if (i+1<toPrint || objc!=0 || message!=NULL) {
 		Tcl_AppendStringsToObj(objPtr, " ", NULL);
 	    }
 	}
@@ -944,7 +944,7 @@ Tcl_WrongNumArgs(
 	 * (either another element from objv, or the message string).
 	 */
 
-	if (i<objc-1 || message!=NULL) {
+	if (i + 1 < objc || message!=NULL) {
 	    Tcl_AppendStringsToObj(objPtr, " ", NULL);
 	}
     }
@@ -986,12 +986,13 @@ Tcl_WrongNumArgs(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_ParseArgsObjv
 int
 Tcl_ParseArgsObjv(
     Tcl_Interp *interp,		/* Place to store error message. */
     const Tcl_ArgvInfo *argTable,
 				/* Array of option descriptions. */
-    int *objcPtr,		/* Number of arguments in objv. Modified to
+    size_t *objcPtr,		/* Number of arguments in objv. Modified to
 				 * hold # args left in objv at end. */
     Tcl_Obj *const *objv,	/* Array of arguments to be parsed. */
     Tcl_Obj ***remObjv)		/* Pointer to array of arguments that were not
@@ -1001,7 +1002,7 @@ Tcl_ParseArgsObjv(
     Tcl_Obj **leftovers;	/* Array to write back to remObjv on
 				 * successful exit. Will include the name of
 				 * the command. */
-    int nrem;			/* Size of leftovers.*/
+    size_t nrem;			/* Size of leftovers.*/
     const Tcl_ArgvInfo *infoPtr;
 				/* Pointer to the current entry in the table
 				 * of argument descriptions. */
@@ -1013,12 +1014,12 @@ Tcl_ParseArgsObjv(
 				 * quick check for matching; use 2nd char.
 				 * because first char. will almost always be
 				 * '-'). */
-    int srcIndex;		/* Location from which to read next argument
+    size_t srcIndex;		/* Location from which to read next argument
 				 * from objv. */
-    int dstIndex;		/* Used to keep track of current arguments
+    size_t dstIndex;		/* Used to keep track of current arguments
 				 * being processed, primarily for error
 				 * reporting. */
-    int objc;			/* # arguments in objv still to process. */
+    size_t objc;			/* # arguments in objv still to process. */
     size_t length;			/* Number of characters in current argument */
 
     if (remObjv != NULL) {
@@ -1056,7 +1057,7 @@ Tcl_ParseArgsObjv(
 	}
 
 	/*
-	 * Loop throught the argument descriptors searching for one with the
+	 * Loop through the argument descriptors searching for one with the
 	 * matching key string. If found, leave a pointer to it in matchPtr.
 	 */
 
@@ -1172,14 +1173,22 @@ Tcl_ParseArgsObjv(
 	    break;
 	}
 	case TCL_ARGV_GENFUNC: {
+	    int i = (int)objc;
+
+	    if (objc > INT_MAX) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"too many (%" TCL_Z_MODIFIER "u) arguments for TCL_ARGV_GENFUNC", objc));
+		goto error;
+	    }
 	    Tcl_ArgvGenFuncProc *handlerProc = (Tcl_ArgvGenFuncProc *)
 		    infoPtr->srcPtr;
 
-	    objc = handlerProc(infoPtr->clientData, interp, objc,
+	    i = handlerProc(infoPtr->clientData, interp, i,
 		    &objv[srcIndex], infoPtr->dstPtr);
-	    if (objc < 0) {
+	    if (i < 0) {
 		goto error;
 	    }
+	    objc = i;
 	    break;
 	}
 	case TCL_ARGV_HELP:
