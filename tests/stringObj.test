@@ -495,27 +495,32 @@ test stringObj-16.5 {Tcl_GetRange: first = last = TCL_INDEX_NONE} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 -1 -1
 } abcde
-test stringObj-16.6 {Tcl_GetRange: first = UINT_MAX-1} testobj {
+test stringObj-16.6 {Tcl_GetRange: old anomaly} testobj {
+    # Older implementations could return "cde"
+    teststringobj set 1 abcde
+    teststringobj range 1 2 0
+} {}
+test stringObj-16.7 {Tcl_GetRange: first = UINT_MAX-1} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 0xFFFFFFFE 3
 } {}
-test stringObj-16.7 {Tcl_GetRange: first = SIZE_MAX-1} testobj {
+test stringObj-16.8 {Tcl_GetRange: first = SIZE_MAX-1} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 -2 3
 } {}
-test stringObj-16.8 {Tcl_GetRange: last = UINT_MAX-1} testobj {
+test stringObj-16.9 {Tcl_GetRange: last = UINT_MAX-1} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 1 0xFFFFFFFE
 } bcde
-test stringObj-16.9 {Tcl_GetRange: last = SIZE_MAX-1} testobj {
+test stringObj-16.10 {Tcl_GetRange: last = SIZE_MAX-1} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 1 -2
 } bcde
-test stringObj-16.10 {Tcl_GetRange: first = last = UINT_MAX-1} testobj {
+test stringObj-16.11 {Tcl_GetRange: first = last = UINT_MAX-1} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 0xFFFFFFFE 0xFFFFFFFE
 } {}
-test stringObj-16.11 {Tcl_GetRange: first = last = SIZE_MAX-1} testobj {
+test stringObj-16.12 {Tcl_GetRange: first = last = SIZE_MAX-1} testobj {
     teststringobj set 1 abcde
     teststringobj range 1 -2 -2
 } {}
