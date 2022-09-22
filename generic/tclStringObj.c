@@ -731,7 +731,9 @@ Tcl_GetUnicodeFromObj(
  *
  *	Create a Tcl Object that contains the chars between first and last of
  *	the object indicated by "objPtr". If the object is not already a
- *	String object, convert it to one.
+ *	String object, convert it to one.  If first is TCL_INDEX_NONE, the
+ *	returned string start at the beginning of objPtr.  If last is
+ *	TCL_INDEX_NONE, the returned string ends at the end of objPtr.
  *
  * Results:
  *	Returns a new Tcl Object of the String type.
