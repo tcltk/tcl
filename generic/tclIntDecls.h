@@ -143,7 +143,7 @@ EXTERN int		TclGetNamespaceForQualName(Tcl_Interp *interp,
 				Namespace **actualCxtPtrPtr,
 				const char **simpleNamePtr);
 /* 39 */
-EXTERN TclObjCmdProcType TclGetObjInterpProc(void);
+EXTERN Tcl_ObjCmdProc *	 TclGetObjInterpProc(void);
 /* 40 */
 EXTERN int		TclGetOpenMode(Tcl_Interp *interp, const char *str,
 				int *seekFlagPtr);
@@ -692,7 +692,7 @@ typedef struct TclIntStubs {
     void (*reserved36)(void);
     int (*tclGetLoadedPackages) (Tcl_Interp *interp, const char *targetName); /* 37 */
     int (*tclGetNamespaceForQualName) (Tcl_Interp *interp, const char *qualName, Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr, Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr, const char **simpleNamePtr); /* 38 */
-    TclObjCmdProcType (*tclGetObjInterpProc) (void); /* 39 */
+    Tcl_ObjCmdProc * (*tclGetObjInterpProc) (void); /* 39 */
     int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *seekFlagPtr); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) (Tcl_Command command); /* 41 */
     CONST86 char * (*tclpGetUserHome) (const char *name, Tcl_DString *bufferPtr); /* 42 */
@@ -1377,6 +1377,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 #undef TclSetStartupScriptPath
 #undef TclBackgroundException
 #undef TclUnusedStubEntry
+#undef TclObjInterpProc
+#define TclObjInterpProc TclGetObjInterpProc()
 
 #if defined(USE_TCL_STUBS) && defined(TCL_NO_DEPRECATED)
 #   undef Tcl_SetStartupScript
