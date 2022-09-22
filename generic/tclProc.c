@@ -114,7 +114,7 @@ const Tcl_ObjType tclLambdaType = {
  *----------------------------------------------------------------------
  */
 
-	/* ARGSUSED */
+#undef TclObjInterpProc
 int
 Tcl_ProcObjCmd(
     ClientData dummy,		/* Not used. */
@@ -1633,7 +1633,6 @@ TclPushProcCallFrame(
  *----------------------------------------------------------------------
  */
 
-#undef TclObjInterpProc
 int
 TclObjInterpProc(
     ClientData clientData,	/* Record describing procedure to be
