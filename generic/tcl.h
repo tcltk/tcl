@@ -354,7 +354,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 /*
  *----------------------------------------------------------------------------
  * Data structures defined opaquely in this module. The definitions below just
- * provide dummy types. 
+ * provide dummy types.
  */
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
