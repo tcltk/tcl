@@ -55,13 +55,6 @@
 #endif
 
 /*
- * Support for control over sockets' KEEPALIVE and NODELAY behavior is
- * currently disabled.
- */
-
-#undef TCL_FEATURE_KEEPALIVE_NAGLE
-
-/*
  * Helper macros to make parts of this file clearer. The macros do exactly
  * what they say on the tin. :-) They also only ever refer to their arguments
  * once, and so can be used without regard to side effects.
@@ -1178,14 +1171,15 @@ TcpSetOptionProc(
     void *instanceData,	/* Socket state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     const char *optionName,	/* Name of the option to set. */
-    TCL_UNUSED(const char *) /*value*/)		/* New value for option. */
+    const char *value)		/* New value for option. */
 {
-#ifdef TCL_FEATURE_KEEPALIVE_NAGLE
-    TcpState *statePtr = instanceData;
+    TcpState *statePtr = (TcpState *)instanceData;
     SOCKET sock;
-#else
-    (void)instanceData;
-#endif /*TCL_FEATURE_KEEPALIVE_NAGLE*/
+    size_t len = 0;
+
+    if (optionName != NULL) {
+	len = strlen(optionName);
+    }
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -1201,20 +1195,17 @@ TcpSetOptionProc(
 	return TCL_ERROR;
     }
 
-#ifdef TCL_FEATURE_KEEPALIVE_NAGLE
-#error "TCL_FEATURE_KEEPALIVE_NAGLE not reviewed for whether to treat statePtr->sockets as single fd or list"
     sock = statePtr->sockets->fd;
 
-    if (!strcasecmp(optionName, "-keepalive")) {
-	BOOL val = FALSE;
+    if ((len > 1) && (optionName[1] == 'k') &&
+	    (strncmp(optionName, "-keepalive", len) == 0)) {
+	BOOL val;
 	int boolVar, rtn;
 
 	if (Tcl_GetBoolean(interp, value, &boolVar) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (boolVar) {
-	    val = TRUE;
-	}
+	val = boolVar ? TRUE : FALSE;
 	rtn = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
 		(const char *) &val, sizeof(BOOL));
 	if (rtn != 0) {
@@ -1227,16 +1218,16 @@ TcpSetOptionProc(
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
-    } else if (!strcasecmp(optionName, "-nagle")) {
-	BOOL val = FALSE;
+    }
+    if ((len > 1) && (optionName[1] == 'n') &&
+	(strncmp(optionName, "-nagle", len) == 0)) {
+	BOOL val;
 	int boolVar, rtn;
 
 	if (Tcl_GetBoolean(interp, value, &boolVar) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (!boolVar) {
-	    val = TRUE;
-	}
+	val = boolVar ? FALSE : TRUE;
 	rtn = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
 		(const char *) &val, sizeof(BOOL));
 	if (rtn != 0) {
@@ -1250,11 +1241,7 @@ TcpSetOptionProc(
 	}
 	return TCL_OK;
     }
-
     return Tcl_BadChannelOption(interp, optionName, "keepalive nagle");
-#else
-    return Tcl_BadChannelOption(interp, optionName, "");
-#endif /*TCL_FEATURE_KEEPALIVE_NAGLE*/
 }
 
 /*
@@ -1528,54 +1515,43 @@ TcpGetOptionProc(
 	}
     }
 
-#ifdef TCL_FEATURE_KEEPALIVE_NAGLE
-    if (len == 0 || !strncmp(optionName, "-keepalive", len)) {
+    if ((len == 0) || ((len > 1) && (optionName[1] == 'k') &&
+	    (strncmp(optionName, "-keepalive", len) == 0))) {
 	int optlen;
 	BOOL opt = FALSE;
 
 	if (len == 0) {
+	    sock = statePtr->sockets->fd;
 	    Tcl_DStringAppendElement(dsPtr, "-keepalive");
 	}
 	optlen = sizeof(BOOL);
 	getsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&opt, &optlen);
-	if (opt) {
-	    Tcl_DStringAppendElement(dsPtr, "1");
-	} else {
-	    Tcl_DStringAppendElement(dsPtr, "0");
-	}
+	Tcl_DStringAppendElement(dsPtr, opt ? "1" : "0");
 	if (len > 0) {
 	    return TCL_OK;
 	}
     }
 
-    if (len == 0 || !strncmp(optionName, "-nagle", len)) {
+    if ((len == 0) || ((len > 1) && (optionName[1] == 'n') &&
+	    (strncmp(optionName, "-nagle", len) == 0))) {
 	int optlen;
 	BOOL opt = FALSE;
 
 	if (len == 0) {
+	    sock = statePtr->sockets->fd;
 	    Tcl_DStringAppendElement(dsPtr, "-nagle");
 	}
 	optlen = sizeof(BOOL);
 	getsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&opt, &optlen);
-	if (opt) {
-	    Tcl_DStringAppendElement(dsPtr, "0");
-	} else {
-	    Tcl_DStringAppendElement(dsPtr, "1");
-	}
+	Tcl_DStringAppendElement(dsPtr, opt ? "0" : "1");
 	if (len > 0) {
 	    return TCL_OK;
 	}
     }
-#endif /*TCL_FEATURE_KEEPALIVE_NAGLE*/
 
     if (len > 0) {
-#ifdef TCL_FEATURE_KEEPALIVE_NAGLE
 	return Tcl_BadChannelOption(interp, optionName,
-		"connecting peername sockname keepalive nagle");
-#else
-	return Tcl_BadChannelOption(interp, optionName,
-                "connecting peername sockname");
-#endif /*TCL_FEATURE_KEEPALIVE_NAGLE*/
+		"connecting keepalive nagle peername sockname");
     }
 
     return TCL_OK;
@@ -1664,8 +1640,6 @@ TcpGetHandleProc(
     *handlePtr = INT2PTR(statePtr->sockets->fd);
     return TCL_OK;
 }
-
-
 
 /*
  *----------------------------------------------------------------------

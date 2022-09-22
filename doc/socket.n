@@ -162,7 +162,8 @@ described below.
 .SH "CONFIGURATION OPTIONS"
 .PP
 The \fBchan configure\fR command can be used to query several readonly
-configuration options for socket channels:
+configuration options for socket channels or in some cases to set
+alternative properties on socket channels:
 .TP
 \fB\-error\fR
 .
@@ -204,6 +205,18 @@ list is identical to the address, its first element.
 \fB\-connecting\fR
 .
 This option is not supported by server sockets. For client sockets, this option returns 1 if an asyncroneous connect is still in progress, 0 otherwise.
+.TP
+\fB\-keepalive\fR
+.
+This options sets or queries the TCP keepalive option on the socket as 1 if
+keepalive is turned on, 0 otherwise.
+.TP
+\fB\-nagle\fR
+.
+This options sets or queries the TCP nodelay option (aka the Nagle algorithm)
+When 1 the Nagle algorithm is turned on, 0 otherwise. Caution: the logic is
+reversed here, i.e. when the option is 0, the underlying system call asserts
+the TCP_NODELAY setting.
 .PP
 .SH "EXAMPLES"
 .PP
