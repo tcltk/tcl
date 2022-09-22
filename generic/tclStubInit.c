@@ -54,6 +54,7 @@
 #undef TclBN_mp_tc_and
 #undef TclBN_mp_tc_or
 #undef TclBN_mp_tc_xor
+#undef TclObjInterpProc
 #define TclBN_mp_tc_and TclBN_mp_and
 #define TclBN_mp_tc_or TclBN_mp_or
 #define TclBN_mp_tc_xor TclBN_mp_xor
@@ -225,7 +226,7 @@ void *TclWinGetTclInstance()
 int
 TclpGetPid(Tcl_Pid pid)
 {
-    return (int) (size_t) pid;
+    return (int)(size_t)pid;
 }
 
 static void
@@ -1665,7 +1666,13 @@ const TclStubs tclStubs = {
     0, /* 672 */
     0, /* 673 */
     0, /* 674 */
-    TclUnusedStubEntry, /* 675 */
+    0, /* 675 */
+    0, /* 676 */
+    0, /* 677 */
+    0, /* 678 */
+    0, /* 679 */
+    0, /* 680 */
+    TclUnusedStubEntry, /* 681 */
 };
 
 /* !END!: Do not edit above this line. */
