@@ -230,7 +230,7 @@ test iocmd-8.4 {fconfigure command} -setup {
     fconfigure $f1 froboz
 } -returnCodes error -cleanup {
     close $f1
-} -result [expectedOpts "froboz" {}]
+} -result [expectedOpts "froboz" -stat]
 test iocmd-8.5 {fconfigure command} -returnCodes error -body {
     fconfigure stdin -buffering froboz
 } -result {bad value for -buffering: must be one of full, line, or none}
@@ -582,7 +582,28 @@ test ioCmd-13.11 {open ... a+ must not use O_APPEND: Bug 1773127} -setup {
 } -cleanup {
     removeFile $f
 } -result 341234x6
-
+test ioCmd-13.12 {open file produces something that has fconfigure -stat} -setup {
+    set f [makeFile {} iocmd13_12]
+    set result {}
+} -body {
+    set fd [open $f wb]
+    set result [dict get [fconfigure $fd -stat] type]
+    fconfigure $fd -buffering none
+    puts -nonewline $fd abc
+    # Three ways of getting the size; all should agree!
+    lappend result [tell $fd] [file size $f] \
+	[dict get [fconfigure $fd -stat] size]
+    puts -nonewline $fd def
+    lappend result [tell $fd] [file size $f] \
+	[dict get [fconfigure $fd -stat] size]
+    puts -nonewline $fd ghi
+    lappend result [tell $fd] [file size $f] \
+	[dict get [fconfigure $fd -stat] size]
+    close $fd
+    return $result
+} -cleanup {
+    removeFile $f
+} -result {file 3 3 3 6 6 6 9 9 9}
 
 test iocmd-14.1 {file id parsing errors} {
     list [catch {eof gorp} msg] $msg $::errorCode
