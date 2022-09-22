@@ -4342,6 +4342,14 @@ Write(
     }
 
     /*
+     * Transfer encoding strict option to the encoding flags
+     */
+
+    if (statePtr->flags & CHANNEL_ENCODING_STRICT) {
+	statePtr->outputEncodingFlags |= TCL_ENCODING_STRICT;
+    }
+
+    /*
      * Write the terminated escape sequence even if srcLen is 0.
      */
 
@@ -4654,6 +4662,14 @@ Tcl_GetsObj(
 
     if (encoding == NULL) {
 	encoding = GetBinaryEncoding();
+    }
+
+    /*
+     * Transfer encoding strict option to the encoding flags
+     */
+
+    if (statePtr->flags & CHANNEL_ENCODING_STRICT) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
     }
 
     /*
@@ -5412,6 +5428,15 @@ FilterInputBytes(
 	*gsPtr->dstPtr = dst;
     }
     gsPtr->state = statePtr->inputEncodingState;
+
+    /*
+     * Transfer encoding strict option to the encoding flags
+     */
+
+    if (statePtr->flags & CHANNEL_ENCODING_STRICT) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
+    }
+
     result = Tcl_ExternalToUtf(NULL, gsPtr->encoding, raw, rawLen,
 	    statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE,
 	    &statePtr->inputEncodingState, dst, spaceLeft, &gsPtr->rawRead,
@@ -6182,6 +6207,14 @@ ReadChars(
 	dstLimit = size - numBytes;
     } else {
 	dst = TclGetString(objPtr) + numBytes;
+    }
+
+    /*
+     * Transfer encoding strict option to the encoding flags
+     */
+
+    if (statePtr->flags & CHANNEL_ENCODING_STRICT) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_STRICT;
     }
 
     /*
@@ -7920,6 +7953,16 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
+    if (len == 0 || HaveOpt(1, "-strictencoding")) {
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-strictencoding");
+	}
+	Tcl_DStringAppendElement(dsPtr,
+		(flags & CHANNEL_ENCODING_STRICT) ? "1" : "0");
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
     if (len == 0 || HaveOpt(1, "-translation")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-translation");
@@ -8172,6 +8215,16 @@ Tcl_SetChannelOption(
 	}
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
+	return TCL_OK;
+    } else if (HaveOpt(1, "-strictencoding")) {
+	int newMode;
+
+	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (newMode) {
+	    statePtr->flags |= CHANNEL_ENCODING_STRICT;
+	}
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {
 	const char *readMode, *writeMode;
