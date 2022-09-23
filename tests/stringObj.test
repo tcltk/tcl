@@ -497,7 +497,7 @@ test stringObj-16.5 {Tcl_GetRange: fist = last = -1} {testobj deprecated} {
     teststringobj set 1 abcde
     teststringobj range 1 -1 -1
 } abcde
-test stringObj-16.6 {Tcl_GetRange: old anomaly} testobj {
+test stringObj-16.6 {Tcl_GetRange: old anomaly} {testobj deprecated} {
     # Older implementations could return "cde"
     teststringobj set 1 abcde
     teststringobj range 1 2 0
