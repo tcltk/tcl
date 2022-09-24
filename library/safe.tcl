@@ -524,8 +524,6 @@ proc ::safe::InterpInit {
     ::interp alias $child ::tcl::info::nameofexecutable {} \
 	::safe::AliasExeName $child
 
-    # The allowed child variables already have been set by Tcl_MakeSafe(3)
-
     # Source init.tcl and tm.tcl into the child, to get auto_load and
     # other procedures defined:
 

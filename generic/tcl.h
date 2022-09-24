@@ -354,24 +354,8 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 /*
  *----------------------------------------------------------------------------
  * Data structures defined opaquely in this module. The definitions below just
- * provide dummy types. A few fields are made visible in Tcl_Interp
- * structures, namely those used for returning a string result from commands.
- * Direct access to the result field is discouraged in Tcl 8.0. The
- * interpreter result is either an object or a string, and the two values are
- * kept consistent unless some C code sets interp->result directly.
- * Programmers should use either the function Tcl_GetObjResult() or
- * Tcl_GetStringResult() to read the interpreter's result. See the SetResult
- * man page for details.
- *
- * Note: any change to the Tcl_Interp definition below must be mirrored in the
- * "real" definition in tclInt.h.
- *
- * Note: Tcl_ObjCmdProc functions do not directly set result and freeProc.
- * Instead, they set a Tcl_Obj member in the "real" structure that can be
- * accessed with Tcl_GetObjResult() and Tcl_SetObjResult().
+ * provide dummy types.
  */
-
-typedef struct Tcl_Interp Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
@@ -382,6 +366,7 @@ typedef struct Tcl_Dict_ *Tcl_Dict;
 typedef struct Tcl_EncodingState_ *Tcl_EncodingState;
 typedef struct Tcl_Encoding_ *Tcl_Encoding;
 typedef struct Tcl_Event Tcl_Event;
+typedef struct Tcl_Interp Tcl_Interp;
 typedef struct Tcl_InterpState_ *Tcl_InterpState;
 typedef struct Tcl_LoadHandle_ *Tcl_LoadHandle;
 typedef struct Tcl_Mutex_ *Tcl_Mutex;
