@@ -1194,10 +1194,10 @@ test cmdAH-22.3 {Tcl_FileObjCmd: isfile} {file isfile $dirfile} 0
 catch {file link -symbolic $linkfile $gorpfile}
 test cmdAH-23.1 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a
-} -result {wrong # args: should be "file lstat name varName"}
+} -result {could not read "a": no such file or directory}
 test cmdAH-23.2 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a b c
-} -result {wrong # args: should be "file lstat name varName"}
+} -result {wrong # args: should be "file lstat name ?varName?"}
 test cmdAH-23.3 {Tcl_FileObjCmd: lstat} -setup {
     unset -nocomplain stat
 } -constraints {unix nonPortable} -body {
@@ -1527,14 +1527,14 @@ catch {file attributes $gorpfile -permissions 0o765}
 
 # stat
 test cmdAH-28.1 {Tcl_FileObjCmd: stat} -returnCodes error -body {
-    file stat _bogus_
-} -result {wrong # args: should be "file stat name varName"}
+    file stat
+} -result {wrong # args: should be "file stat name ?varName?"}
 test cmdAH-28.2 {Tcl_FileObjCmd: stat} -returnCodes error -body {
     file stat _bogus_ a b
-} -result {wrong # args: should be "file stat name varName"}
+} -result {wrong # args: should be "file stat name ?varName?"}
 test cmdAH-28.3 {Tcl_FileObjCmd: stat} -setup {
     unset -nocomplain stat
-    set stat(blocks) [set stat(blksize) {}]
+    array set stat {blocks {} blksize {}}
 } -body {
     file stat $gorpfile stat
     unset stat(blocks) stat(blksize); # Ignore these fields; not always set
@@ -1627,6 +1627,16 @@ test cmdAH-28.13.1 {Tcl_FileObjCmd: stat (built-in Windows names)} -constraints 
     }
     set res
 } -result {0 0 -1 0 0 8630 0 0 0 characterSpecial 0}
+test cmdAH-28.14 {Tcl_FileObjCmd: stat} -setup {
+    unset -nocomplain stat
+} -body {
+    file stat $gorpfile stat
+    expr {
+		[lsort -stride 2 [array get stat]]
+		eq
+		[lsort -stride 2 [file stat $gorpfile]]
+	}
+} -result {1}
 unset -nocomplain stat
 
 # type
