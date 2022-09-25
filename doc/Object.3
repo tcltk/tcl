@@ -220,10 +220,7 @@ the value.
 The same value holding the same string value
 can have several different internal representations
 at different times.
-Extension writers can also force a value to be converted from one type
-to another using the \fBTcl_ConvertToType\fR procedure.
-Only programmers that create new value types need to be concerned
-about how this is done.
+[...]
 A procedure defined as part of the value type's implementation
 creates a new internal representation for a value
 and changes its \fItypePtr\fR.
@@ -351,7 +348,7 @@ incrementing the integer in its internal representation.
 If it is shared, it needs to duplicate the value
 in order to avoid accidentally changing values in other data structures.
 .SH "SEE ALSO"
-Tcl_ConvertToType(3), Tcl_GetIntFromObj(3), Tcl_ListObjAppendElement(3), Tcl_ListObjIndex(3), Tcl_ListObjReplace(3), Tcl_RegisterObjType(3)
+Tcl_GetIntFromObj(3), Tcl_ListObjAppendElement(3), Tcl_ListObjIndex(3), Tcl_ListObjReplace(3), Tcl_RegisterObjType(3)
 .SH KEYWORDS
 internal representation, value, value creation, value type,
 reference counting, string representation, type conversion
