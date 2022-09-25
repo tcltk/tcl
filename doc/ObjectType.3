@@ -72,8 +72,8 @@ The return value is \fBTCL_OK\fR unless there was an error
 converting \fIobjPtr\fR to a list value;
 in that case \fBTCL_ERROR\fR is returned.
 .PP
-\fBTcl_ConvertToType\fR converts a value from one type to another
-if possible.
+\fBTcl_ConvertToType\fR use is contraindicated. It was originally
+designed to convert a value from one type to another if possible.
 It creates a new internal representation for \fIobjPtr\fR
 appropriate for the target type \fItypePtr\fR
 and sets its \fItypePtr\fR member as determined by calling the
