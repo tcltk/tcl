@@ -600,7 +600,8 @@ EXTERN int		Tcl_LinkVar(Tcl_Interp *interp, const char *varName,
 /* 189 */
 EXTERN Tcl_Channel	Tcl_MakeFileChannel(void *handle, int mode);
 /* 190 */
-EXTERN int		Tcl_MakeSafe(Tcl_Interp *interp);
+TCL_DEPRECATED("")
+int			Tcl_MakeSafe(Tcl_Interp *interp);
 /* 191 */
 EXTERN Tcl_Channel	Tcl_MakeTcpClientChannel(void *tcpSocket);
 /* 192 */
@@ -2000,6 +2001,11 @@ EXTERN Tcl_Command	Tcl_NRCreateCommand2(Tcl_Interp *interp,
 EXTERN int		Tcl_NRCallObjProc2(Tcl_Interp *interp,
 				Tcl_ObjCmdProc2 *objProc2, void *clientData,
 				size_t objc, Tcl_Obj *const objv[]);
+/* Slot 680 is reserved */
+/* Slot 681 is reserved */
+/* 682 */
+EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
+				Tcl_Channel chan, int mode);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2225,7 +2231,7 @@ typedef struct TclStubs {
     int (*tcl_LinkVar) (Tcl_Interp *interp, const char *varName, void *addr, int type); /* 187 */
     void (*reserved188)(void);
     Tcl_Channel (*tcl_MakeFileChannel) (void *handle, int mode); /* 189 */
-    int (*tcl_MakeSafe) (Tcl_Interp *interp); /* 190 */
+    TCL_DEPRECATED_API("") int (*tcl_MakeSafe) (Tcl_Interp *interp); /* 190 */
     Tcl_Channel (*tcl_MakeTcpClientChannel) (void *tcpSocket); /* 191 */
     char * (*tcl_Merge) (int argc, const char *const *argv); /* 192 */
     Tcl_HashEntry * (*tcl_NextHashEntry) (Tcl_HashSearch *searchPtr); /* 193 */
@@ -2715,6 +2721,9 @@ typedef struct TclStubs {
     Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
     Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 678 */
     int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 679 */
+    void (*reserved680)(void);
+    void (*reserved681)(void);
+    int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4105,6 +4114,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_NRCreateCommand2) /* 678 */
 #define Tcl_NRCallObjProc2 \
 	(tclStubsPtr->tcl_NRCallObjProc2) /* 679 */
+/* Slot 680 is reserved */
+/* Slot 681 is reserved */
+#define Tcl_RemoveChannelMode \
+	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
