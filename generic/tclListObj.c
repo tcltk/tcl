@@ -9,8 +9,9 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclInt.h"
 #include <assert.h>
+#include "tclInt.h"
+#include "tclArithSeries.h"
 
 /*
  * TODO - memmove is fast. Measure at what size we should prefer memmove
@@ -1658,6 +1659,10 @@ Tcl_ListObjGetElements(
 {
     ListRep listRep;
 
+    if (TclHasInternalRep(objPtr,&tclArithSeriesType)) {
+	return TclArithSeriesGetElements(interp, objPtr, objcPtr, objvPtr);
+    }
+
     if (TclListObjGetRep(interp, objPtr, &listRep) != TCL_OK)
 	return TCL_ERROR;
     ListRepElements(&listRep, *objcPtr, *objvPtr);
@@ -1933,6 +1938,10 @@ Tcl_ListObjIndex(
     Tcl_Obj **elemObjs;
     Tcl_Size numElems;
 
+    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+	return TclArithSeriesObjIndex(listObj, index, objPtrPtr);
+    }
+
     /*
      * TODO
      * Unlike the original list code, this does not optimize for lindex'ing
@@ -1963,7 +1972,7 @@ Tcl_ListObjIndex(
  *	convert it to one.
  *
  * Results:
- *	The return value is normally TCL_OK; in this case *intPtr will be set
+ *	The return value is normally TCL_OK; in this case *lenPtr will be set
  *	to the integer count of list elements. If listPtr does not refer to a
  *	list object and the object can not be converted to one, TCL_ERROR is
  *	returned and an error message will be left in the interpreter's result
@@ -1983,6 +1992,11 @@ Tcl_ListObjLength(
     Tcl_Size *lenPtr)	/* The resulting int is stored here. */
 {
     ListRep listRep;
+
+    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+	*lenPtr = TclArithSeriesObjLength(listObj);
+	return TCL_OK;
+    }
 
     /*
      * TODO
@@ -2611,6 +2625,27 @@ TclLindexFlat(
 {
     Tcl_Size i;
 
+    /* Handle ArithSeries as special case */
+    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+	ListSizeT index, listLen = TclArithSeriesObjLength(listObj);
+	Tcl_Obj *elemObj = NULL;
+	for (i=0 ; i<indexCount && listObj ; i++) {
+	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
+				   &index) == TCL_OK) {
+	    }
+	    if (i==0) {
+		TclArithSeriesObjIndex(listObj, index, &elemObj);
+		Tcl_IncrRefCount(elemObj);
+	    } else if (index > 0) {
+		Tcl_DecrRefCount(elemObj);
+		TclNewObj(elemObj);
+		Tcl_IncrRefCount(elemObj);
+		break;
+	    }
+	}
+	return elemObj;
+    }
+
     Tcl_IncrRefCount(listObj);
 
     for (i=0 ; i<indexCount && listObj ; i++) {
@@ -3238,6 +3273,34 @@ SetListFromAny(
 	    Tcl_IncrRefCount(valuePtr);
 	    Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	}
+    } else if (TclHasInternalRep(objPtr,&tclArithSeriesType)) {
+	/*
+	 * Convertion from Arithmetic Series is a special case
+	 * because it can be done an order of magnitude faster
+	 * and may occur frequently.
+	 */
+        ListSizeT j, size = TclArithSeriesObjLength(objPtr);
+
+	/* TODO - leave space in front and/or back? */
+	if (ListRepInitAttempt(
+		interp, size > 0 ? size : 1, NULL, &listRep)
+	    != TCL_OK) {
+	    return TCL_ERROR;
+	}
+
+	LIST_ASSERT(listRep.spanPtr == NULL); /* Guard against future changes */
+	LIST_ASSERT(listRep.storePtr->firstUsed == 0);
+	LIST_ASSERT((listRep.storePtr->flags & LISTSTORE_CANONICAL) == 0);
+
+	listRep.storePtr->numUsed = size;
+	elemPtrs = listRep.storePtr->slots;
+	for (j = 0; j < size; j++) {
+	    if (TclArithSeriesObjIndex(objPtr, j, &elemPtrs[j]) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    Tcl_IncrRefCount(elemPtrs[j]);/* Since list now holds ref to it. */
+	}
+
     } else {
 	Tcl_Size estCount, length;
 	const char *limit, *nextElem = Tcl_GetStringFromObj(objPtr, &length);
@@ -3424,6 +3487,7 @@ UpdateStringOfList(
 	Tcl_Free(flagPtr);
     }
 }
+
 
 /*
  *------------------------------------------------------------------------

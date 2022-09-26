@@ -531,8 +531,7 @@ EXTERN int		Tcl_LinkVar(Tcl_Interp *interp, const char *varName,
 /* Slot 188 is reserved */
 /* 189 */
 EXTERN Tcl_Channel	Tcl_MakeFileChannel(void *handle, int mode);
-/* 190 */
-EXTERN int		Tcl_MakeSafe(Tcl_Interp *interp);
+/* Slot 190 is reserved */
 /* 191 */
 EXTERN Tcl_Channel	Tcl_MakeTcpClientChannel(void *tcpSocket);
 /* 192 */
@@ -1834,6 +1833,11 @@ EXTERN Tcl_Command	Tcl_NRCreateCommand2(Tcl_Interp *interp,
 EXTERN int		Tcl_NRCallObjProc2(Tcl_Interp *interp,
 				Tcl_ObjCmdProc2 *objProc2, void *clientData,
 				size_t objc, Tcl_Obj *const objv[]);
+/* Slot 680 is reserved */
+/* Slot 681 is reserved */
+/* 682 */
+EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
+				Tcl_Channel chan, int mode);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2035,7 +2039,7 @@ typedef struct TclStubs {
     int (*tcl_LinkVar) (Tcl_Interp *interp, const char *varName, void *addr, int type); /* 187 */
     void (*reserved188)(void);
     Tcl_Channel (*tcl_MakeFileChannel) (void *handle, int mode); /* 189 */
-    int (*tcl_MakeSafe) (Tcl_Interp *interp); /* 190 */
+    void (*reserved190)(void);
     Tcl_Channel (*tcl_MakeTcpClientChannel) (void *tcpSocket); /* 191 */
     char * (*tcl_Merge) (Tcl_Size argc, const char *const *argv); /* 192 */
     Tcl_HashEntry * (*tcl_NextHashEntry) (Tcl_HashSearch *searchPtr); /* 193 */
@@ -2525,6 +2529,9 @@ typedef struct TclStubs {
     Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
     Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 678 */
     int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 679 */
+    void (*reserved680)(void);
+    void (*reserved681)(void);
+    int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -2896,8 +2903,7 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 188 is reserved */
 #define Tcl_MakeFileChannel \
 	(tclStubsPtr->tcl_MakeFileChannel) /* 189 */
-#define Tcl_MakeSafe \
-	(tclStubsPtr->tcl_MakeSafe) /* 190 */
+/* Slot 190 is reserved */
 #define Tcl_MakeTcpClientChannel \
 	(tclStubsPtr->tcl_MakeTcpClientChannel) /* 191 */
 #define Tcl_Merge \
@@ -3836,6 +3842,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_NRCreateCommand2) /* 678 */
 #define Tcl_NRCallObjProc2 \
 	(tclStubsPtr->tcl_NRCallObjProc2) /* 679 */
+/* Slot 680 is reserved */
+/* Slot 681 is reserved */
+#define Tcl_RemoveChannelMode \
+	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3888,20 +3898,28 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
 #define Tcl_GetStringResult(interp) Tcl_GetString(Tcl_GetObjResult(interp))
+inline TCL_DEPRECATED_API("Use Tcl_SaveInterpState") void Tcl_SaveResult_(void) {}
 #define Tcl_SaveResult(interp, statePtr) \
 	do { \
+	    Tcl_SaveResult_(); \
 	    *(statePtr) = Tcl_GetObjResult(interp); \
 	    Tcl_IncrRefCount(*(statePtr)); \
 	    Tcl_SetObjResult(interp, Tcl_NewObj()); \
 	} while(0)
+inline TCL_DEPRECATED_API("Use Tcl_RestoreInterpState") void Tcl_RestoreResult_(void) {}
 #define Tcl_RestoreResult(interp, statePtr) \
 	do { \
+	    Tcl_RestoreResult_(); \
 	    Tcl_ResetResult(interp); \
    	    Tcl_SetObjResult(interp, *(statePtr)); \
    	    Tcl_DecrRefCount(*(statePtr)); \
 	} while(0)
+inline TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void Tcl_DiscardResult_(void) {}
 #define Tcl_DiscardResult(statePtr) \
-	Tcl_DecrRefCount(*(statePtr))
+	do { \
+	    Tcl_DiscardResult_(); \
+	    Tcl_DecrRefCount(*(statePtr)); \
+	} while(0)
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
 	    const char *__result = result; \

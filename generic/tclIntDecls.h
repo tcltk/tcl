@@ -130,7 +130,8 @@ EXTERN Tcl_Command	TclGetOriginalCommand(Tcl_Command command);
 /* 42 */
 EXTERN const char *	TclpGetUserHome(const char *name,
 				Tcl_DString *bufferPtr);
-/* Slot 43 is reserved */
+/* 43 */
+EXTERN Tcl_ObjCmdProc2 * TclGetObjInterpProc2(void);
 /* Slot 44 is reserved */
 /* 45 */
 EXTERN int		TclHideUnsafeCommands(Tcl_Interp *interp);
@@ -631,7 +632,7 @@ typedef struct TclIntStubs {
     int (*tclGetOpenMode) (Tcl_Interp *interp, const char *str, int *seekFlagPtr); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) (Tcl_Command command); /* 41 */
     const char * (*tclpGetUserHome) (const char *name, Tcl_DString *bufferPtr); /* 42 */
-    void (*reserved43)(void);
+    Tcl_ObjCmdProc2 * (*tclGetObjInterpProc2) (void); /* 43 */
     void (*reserved44)(void);
     int (*tclHideUnsafeCommands) (Tcl_Interp *interp); /* 45 */
     int (*tclInExit) (void); /* 46 */
@@ -929,7 +930,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclGetOriginalCommand) /* 41 */
 #define TclpGetUserHome \
 	(tclIntStubsPtr->tclpGetUserHome) /* 42 */
-/* Slot 43 is reserved */
+#define TclGetObjInterpProc2 \
+	(tclIntStubsPtr->tclGetObjInterpProc2) /* 43 */
 /* Slot 44 is reserved */
 #define TclHideUnsafeCommands \
 	(tclIntStubsPtr->tclHideUnsafeCommands) /* 45 */
@@ -1291,6 +1293,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 
 #undef TclObjInterpProc
 #define TclObjInterpProc TclGetObjInterpProc()
+#define TclObjInterpProc2 TclGetObjInterpProc2()
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
