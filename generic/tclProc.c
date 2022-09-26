@@ -485,7 +485,7 @@ TclCreateProc(
      * in the Proc.
      */
 
-    result = TclListObjGetElementsM(interp , argsPtr ,&numArgs ,&argArray);
+    result = TclListObjGetElementsM(interp, argsPtr, &numArgs, &argArray);
     if (result != TCL_OK) {
 	goto procError;
     }
@@ -576,7 +576,7 @@ TclCreateProc(
 	     * (its value was kept the same as pre VarReform to simplify
 	     * tbcload's processing of older byetcodes).
 	     *
-	     * The only other flag vlaue that is important to retrieve from
+	     * The only other flag value that is important to retrieve from
 	     * precompiled procs is VAR_TEMPORARY (also unchanged). It is
 	     * needed later when retrieving the variable names.
 	     */
@@ -1089,7 +1089,7 @@ ProcWrongNumArgs(
     Tcl_IncrRefCount(desiredObjs[0]);
 
     if (localCt > 0) {
-	Var *defPtr = (Var *) (&framePtr->localCachePtr->varName0 + localCt);
+	Var *defPtr = (Var *)(&framePtr->localCachePtr->varName0 + localCt);
 
 	for (i=1 ; i<=numArgs ; i++, defPtr++) {
 	    Tcl_Obj *argObj;
@@ -1646,7 +1646,6 @@ TclPushProcCallFrame(
  *----------------------------------------------------------------------
  */
 
-#undef TclObjInterpProc
 int
 TclObjInterpProc(
     ClientData clientData,	/* Record describing procedure to be

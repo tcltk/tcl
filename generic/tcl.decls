@@ -680,7 +680,7 @@ declare 187 {
 declare 189 {
     Tcl_Channel Tcl_MakeFileChannel(void *handle, int mode)
 }
-declare 190 {
+declare 190 {deprecated {}} {
     int Tcl_MakeSafe(Tcl_Interp *interp)
 }
 declare 191 {
@@ -1043,7 +1043,7 @@ declare 288 {
 declare 289 {
     void Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc, void *clientData)
 }
-declare 290 {
+declare 290 {deprecated {Use Tcl_DiscardInterpState}} {
     void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
 }
 declare 291 {
@@ -1126,10 +1126,10 @@ declare 313 {
     int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
 	    int charsToRead, int appendFlag)
 }
-declare 314 {
+declare 314 {deprecated {Use Tcl_RestoreInterpState}} {
     void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 }
-declare 315 {
+declare 315 {deprecated {Use Tcl_SaveInterpState}} {
     void Tcl_SaveResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 }
 declare 316 {
@@ -2502,6 +2502,8 @@ declare 673 {
     int TclGetUniChar(Tcl_Obj *objPtr, int index)
 }
 
+# slot 674 and 675 are reserved for TIP #618
+
 declare 676 {
     Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
 	    const char *cmdName,
@@ -2522,6 +2524,13 @@ declare 678 {
 declare 679 {
     int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2,
 	    void *clientData, size_t objc, Tcl_Obj *const objv[])
+}
+
+# slot 680 and 681 are reserved for TIP #638
+
+# TIP #220.
+declare 682 {
+    int Tcl_RemoveChannelMode(Tcl_Interp *interp, Tcl_Channel chan, int mode)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
