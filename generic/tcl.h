@@ -354,7 +354,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 /*
  *----------------------------------------------------------------------------
  * Data structures defined opaquely in this module. The definitions below just
- * provide dummy types. 
+ * provide dummy types.
  */
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
@@ -670,14 +670,6 @@ typedef struct Tcl_Obj {
 } Tcl_Obj;
 
 
-/*
- *----------------------------------------------------------------------------
- * The following type contains the state needed by Tcl_SaveResult. It
- * is typically allocated on the stack.
- */
-
-typedef Tcl_InterpState Tcl_SavedResult;
-
 /*
  *----------------------------------------------------------------------------
  * The following definitions support Tcl's namespace facility. Note: the first

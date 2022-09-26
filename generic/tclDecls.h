@@ -1827,6 +1827,11 @@ EXTERN Tcl_Command	Tcl_NRCreateCommand2(Tcl_Interp *interp,
 EXTERN int		Tcl_NRCallObjProc2(Tcl_Interp *interp,
 				Tcl_ObjCmdProc2 *objProc2, void *clientData,
 				size_t objc, Tcl_Obj *const objv[]);
+/* Slot 680 is reserved */
+/* Slot 681 is reserved */
+/* 682 */
+EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
+				Tcl_Channel chan, int mode);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2518,6 +2523,9 @@ typedef struct TclStubs {
     Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
     Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 678 */
     int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 679 */
+    void (*reserved680)(void);
+    void (*reserved681)(void);
+    int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3828,6 +3836,10 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_NRCreateCommand2) /* 678 */
 #define Tcl_NRCallObjProc2 \
 	(tclStubsPtr->tcl_NRCallObjProc2) /* 679 */
+/* Slot 680 is reserved */
+/* Slot 681 is reserved */
+#define Tcl_RemoveChannelMode \
+	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3880,16 +3892,6 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
 #define Tcl_GetStringResult(interp) Tcl_GetString(Tcl_GetObjResult(interp))
-#define Tcl_SaveResult(interp, statePtr) \
-	do { \
-	    *(statePtr) = Tcl_SaveInterpState(interp, TCL_ERROR); \
-	} while(0)
-#define Tcl_RestoreResult(interp, statePtr) \
-	do { \
-   	    Tcl_RestoreInterpState(interp, *(statePtr)); \
-	} while(0)
-#define Tcl_DiscardResult(statePtr) \
-	Tcl_DiscardInterpState(*(statePtr))
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
 	    const char *__result = result; \
