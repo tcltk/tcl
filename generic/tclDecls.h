@@ -900,7 +900,8 @@ EXTERN void		Tcl_CreateThreadExitHandler(Tcl_ExitProc *proc,
 EXTERN void		Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc,
 				void *clientData);
 /* 290 */
-EXTERN void		Tcl_DiscardResult(Tcl_SavedResult *statePtr);
+TCL_DEPRECATED("Use Tcl_DiscardInterpState")
+void			Tcl_DiscardResult(Tcl_SavedResult *statePtr);
 /* 291 */
 EXTERN int		Tcl_EvalEx(Tcl_Interp *interp, const char *script,
 				int numBytes, int flags);
@@ -965,10 +966,12 @@ EXTERN int		Tcl_NumUtfChars(const char *src, int length);
 EXTERN int		Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
 				int charsToRead, int appendFlag);
 /* 314 */
-EXTERN void		Tcl_RestoreResult(Tcl_Interp *interp,
+TCL_DEPRECATED("Use Tcl_RestoreInterpState")
+void			Tcl_RestoreResult(Tcl_Interp *interp,
 				Tcl_SavedResult *statePtr);
 /* 315 */
-EXTERN void		Tcl_SaveResult(Tcl_Interp *interp,
+TCL_DEPRECATED("Use Tcl_SaveInterpState")
+void			Tcl_SaveResult(Tcl_Interp *interp,
 				Tcl_SavedResult *statePtr);
 /* 316 */
 EXTERN int		Tcl_SetSystemEncoding(Tcl_Interp *interp,
@@ -2327,7 +2330,7 @@ typedef struct TclStubs {
     Tcl_Encoding (*tcl_CreateEncoding) (const Tcl_EncodingType *typePtr); /* 287 */
     void (*tcl_CreateThreadExitHandler) (Tcl_ExitProc *proc, void *clientData); /* 288 */
     void (*tcl_DeleteThreadExitHandler) (Tcl_ExitProc *proc, void *clientData); /* 289 */
-    void (*tcl_DiscardResult) (Tcl_SavedResult *statePtr); /* 290 */
+    TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void (*tcl_DiscardResult) (Tcl_SavedResult *statePtr); /* 290 */
     int (*tcl_EvalEx) (Tcl_Interp *interp, const char *script, int numBytes, int flags); /* 291 */
     int (*tcl_EvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 292 */
     int (*tcl_EvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 293 */
@@ -2351,8 +2354,8 @@ typedef struct TclStubs {
     void (*tcl_ConditionWait) (Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr, const Tcl_Time *timePtr); /* 311 */
     int (*tcl_NumUtfChars) (const char *src, int length); /* 312 */
     int (*tcl_ReadChars) (Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead, int appendFlag); /* 313 */
-    void (*tcl_RestoreResult) (Tcl_Interp *interp, Tcl_SavedResult *statePtr); /* 314 */
-    void (*tcl_SaveResult) (Tcl_Interp *interp, Tcl_SavedResult *statePtr); /* 315 */
+    TCL_DEPRECATED_API("Use Tcl_RestoreInterpState") void (*tcl_RestoreResult) (Tcl_Interp *interp, Tcl_SavedResult *statePtr); /* 314 */
+    TCL_DEPRECATED_API("Use Tcl_SaveInterpState") void (*tcl_SaveResult) (Tcl_Interp *interp, Tcl_SavedResult *statePtr); /* 315 */
     int (*tcl_SetSystemEncoding) (Tcl_Interp *interp, const char *name); /* 316 */
     Tcl_Obj * (*tcl_SetVar2Ex) (Tcl_Interp *interp, const char *part1, const char *part2, Tcl_Obj *newValuePtr, int flags); /* 317 */
     void (*tcl_ThreadAlert) (Tcl_ThreadId threadId); /* 318 */
@@ -4228,22 +4231,30 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
 #undef Tcl_SaveResult
+inline TCL_DEPRECATED_API("Use Tcl_SaveInterpState") void Tcl_SaveResult_(void) {}
 #define Tcl_SaveResult(interp, statePtr) \
 	do { \
+	    Tcl_SaveResult_(); \
 	    (statePtr)->objResultPtr = Tcl_GetObjResult(interp); \
 	    Tcl_IncrRefCount((statePtr)->objResultPtr); \
 	    Tcl_SetObjResult(interp, Tcl_NewObj()); \
 	} while(0)
 #undef Tcl_RestoreResult
+inline TCL_DEPRECATED_API("Use Tcl_RestoreInterpState") void Tcl_RestoreResult_(void) {}
 #define Tcl_RestoreResult(interp, statePtr) \
 	do { \
+	    Tcl_RestoreResult_(); \
 	    Tcl_ResetResult(interp); \
    	    Tcl_SetObjResult(interp, (statePtr)->objResultPtr); \
    	    Tcl_DecrRefCount((statePtr)->objResultPtr); \
 	} while(0)
 #undef Tcl_DiscardResult
+inline TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void Tcl_DiscardResult_(void) {}
 #define Tcl_DiscardResult(statePtr) \
-	Tcl_DecrRefCount((statePtr)->objResultPtr)
+	do { \
+	    Tcl_DiscardResult_(); \
+	    Tcl_DecrRefCount((statePtr)->objResultPtr); \
+	} while(0)
 #undef Tcl_SetResult
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
