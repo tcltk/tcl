@@ -15,6 +15,7 @@
 #ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
+#include "tclArithSeries.h"
 
 /*
  * The state structure used by [foreach]. Note that the actual structure has
@@ -1265,14 +1266,18 @@ FileAttrLinkStatCmd(
 {
     Tcl_StatBuf buf;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "name varName");
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name ?varName?");
 	return TCL_ERROR;
     }
     if (GetStatBuf(interp, objv[1], Tcl_FSLstat, &buf) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return StoreStatData(interp, objv[2], &buf);
+    if (objc == 2) {
+	return StoreStatData(interp, NULL, &buf);
+    } else {
+	return StoreStatData(interp, objv[2], &buf);
+    }
 }
 
 /*
@@ -1301,14 +1306,18 @@ FileAttrStatCmd(
 {
     Tcl_StatBuf buf;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "name varName");
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name ?varName?");
 	return TCL_ERROR;
     }
     if (GetStatBuf(interp, objv[1], Tcl_FSStat, &buf) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return StoreStatData(interp, objv[2], &buf);
+    if (objc == 2) {
+	return StoreStatData(interp, NULL, &buf);
+    } else {
+	return StoreStatData(interp, objv[2], &buf);
+    }
 }
 
 /*
@@ -2208,7 +2217,7 @@ GetStatBuf(
  *
  *	This is a utility procedure that breaks out the fields of a "stat"
  *	structure and stores them in textual form into the elements of an
- *	associative array.
+ *	associative array (if given) or returns a dictionary.
  *
  * Results:
  *	Returns a standard Tcl return value. If an error occurs then a message
@@ -2228,8 +2237,39 @@ StoreStatData(
     Tcl_StatBuf *statPtr)	/* Pointer to buffer containing stat data to
 				 * store in varName. */
 {
-    Tcl_Obj *field, *value;
+    Tcl_Obj *field, *value, *result;
     unsigned short mode;
+
+    if (varName == NULL) {
+        result = Tcl_NewObj();
+        Tcl_IncrRefCount(result);
+#define DOBJPUT(key, objValue)                  \
+        Tcl_DictObjPut(NULL, result,            \
+            Tcl_NewStringObj((key), -1),        \
+            (objValue));
+        DOBJPUT("dev",	Tcl_NewWideIntObj((long)statPtr->st_dev));
+        DOBJPUT("ino",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
+        DOBJPUT("nlink",	Tcl_NewWideIntObj((long)statPtr->st_nlink));
+        DOBJPUT("uid",	Tcl_NewWideIntObj((long)statPtr->st_uid));
+        DOBJPUT("gid",	Tcl_NewWideIntObj((long)statPtr->st_gid));
+        DOBJPUT("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
+        DOBJPUT("blocks",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+        DOBJPUT("blksize", Tcl_NewWideIntObj((long)statPtr->st_blksize));
+#endif
+        DOBJPUT("atime",	Tcl_NewWideIntObj(Tcl_GetAccessTimeFromStat(statPtr)));
+        DOBJPUT("mtime",	Tcl_NewWideIntObj(Tcl_GetModificationTimeFromStat(statPtr)));
+        DOBJPUT("ctime",	Tcl_NewWideIntObj(Tcl_GetChangeTimeFromStat(statPtr)));
+        mode = (unsigned short) statPtr->st_mode;
+        DOBJPUT("mode",	Tcl_NewWideIntObj(mode));
+        DOBJPUT("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
+#undef DOBJPUT
+        Tcl_SetObjResult(interp, result);
+        Tcl_DecrRefCount(result);
+        return TCL_OK;
+    }
 
     /*
      * Assume Tcl_ObjSetVar2() does not keep a copy of the field name!
@@ -2657,32 +2697,47 @@ EachloopCmd(
      */
 
     for (i=0 ; i<numLists ; i++) {
+	/* List */
+	/* Variables */
 	statePtr->vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
 	if (statePtr->vCopyList[i] == NULL) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
 	TclListObjGetElementsM(NULL, statePtr->vCopyList[i],
-		&statePtr->varcList[i], &statePtr->varvList[i]);
+	    &statePtr->varcList[i], &statePtr->varvList[i]);
 	if (statePtr->varcList[i] < 1) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "%s varlist is empty",
-		    (statePtr->resultList != NULL ? "lmap" : "foreach")));
+		"%s varlist is empty",
+		(statePtr->resultList != NULL ? "lmap" : "foreach")));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION",
-		    (statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
-		    "NEEDVARS", NULL);
+		(statePtr->resultList != NULL ? "LMAP" : "FOREACH"),
+		"NEEDVARS", NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}
 
-	statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
-	if (statePtr->aCopyList[i] == NULL) {
-	    result = TCL_ERROR;
-	    goto done;
-	}
-	TclListObjGetElementsM(NULL, statePtr->aCopyList[i],
+	/* Values */
+	if (TclHasInternalRep(objv[2+i*2],&tclArithSeriesType)) {
+	    /* Special case for Arith Series */
+	    statePtr->vCopyList[i] = TclArithSeriesObjCopy(interp, objv[2+i*2]);
+	    if (statePtr->vCopyList[i] == NULL) {
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    /* Don't compute values here, wait until the last momement */
+	    statePtr->argcList[i] = TclArithSeriesObjLength(statePtr->vCopyList[i]);
+	} else {
+	    /* List values */
+	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
+	    if (statePtr->aCopyList[i] == NULL) {
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    TclListObjGetElementsM(NULL, statePtr->aCopyList[i],
 		&statePtr->argcList[i], &statePtr->argvList[i]);
-
+	}
+	/* account for variable <> value mismatch */
 	j = statePtr->argcList[i] / statePtr->varcList[i];
 	if ((statePtr->argcList[i] % statePtr->varcList[i]) != 0) {
 	    j++;
@@ -2805,11 +2860,21 @@ ForeachAssignments(
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
+	int isarithseries = TclHasInternalRep(statePtr->vCopyList[i],&tclArithSeriesType);
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
-
 	    if (k < statePtr->argcList[i]) {
-		valuePtr = statePtr->argvList[i][k];
+		if (isarithseries) {
+		    if (TclArithSeriesObjIndex(statePtr->vCopyList[i], k, &valuePtr) != TCL_OK) {
+			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+			"\n    (setting %s loop variable \"%s\")",
+			(statePtr->resultList != NULL ? "lmap" : "foreach"),
+			TclGetString(statePtr->varvList[i][v])));
+			return TCL_ERROR;
+		    }
+		} else {
+		    valuePtr = statePtr->argvList[i][k];
+		}
 	    } else {
 		TclNewObj(valuePtr);	/* Empty string */
 	    }
