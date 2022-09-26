@@ -269,14 +269,14 @@ symbolic and hard links (the latter for files only). Windows
 supports symbolic directory links and hard file links on NTFS drives.
 .RE
 .TP
-\fBfile lstat \fIname varName\fR
+\fBfile lstat \fIname ?varName?\fR
 .
 Same as \fBstat\fR option (see below) except uses the \fIlstat\fR
 kernel call instead of \fIstat\fR.  This means that if \fIname\fR
-refers to a symbolic link the information returned in \fIvarName\fR
-is for the link rather than the file it refers to.  On systems that
-do not support symbolic links this option behaves exactly the same
-as the \fBstat\fR option.
+refers to a symbolic link the information returned is for the link
+rather than the file it refers to.  On systems that do not support
+symbolic links this option behaves exactly the same as the
+\fBstat\fR option.
 .TP
 \fBfile mkdir\fR ?\fIdir\fR ...?
 .
@@ -411,19 +411,20 @@ that use the third component do not attempt to perform tilde
 substitution.
 .RE
 .TP
-\fBfile stat \fIname varName\fR
+\fBfile stat \fIname ?varName?\fR
 .
-Invokes the \fBstat\fR kernel call on \fIname\fR, and uses the variable
-given by \fIvarName\fR to hold information returned from the kernel call.
-\fIVarName\fR is treated as an array variable, and the following elements
-of that variable are set: \fBatime\fR, \fBctime\fR, \fBdev\fR, \fBgid\fR,
-\fBino\fR, \fBmode\fR, \fBmtime\fR, \fBnlink\fR, \fBsize\fR, \fBtype\fR,
-\fBuid\fR.  Each element except \fBtype\fR is a decimal string with the
-value of the corresponding field from the \fBstat\fR return structure;
-see the manual entry for \fBstat\fR for details on the meanings of the
-values.  The \fBtype\fR element gives the type of the file in the same
-form returned by the command \fBfile type\fR.  This command returns an
-empty string.
+Invokes the \fBstat\fR kernel call on \fIname\fR, and returns a
+dictionary with the information returned from the kernel call. If
+\fIvarName\fR is given, it uses the variable to hold the information.
+\fIVarName\fR is treated as an array variable, and in such case the
+command returns the empty string. The following elements are set:
+\fBatime\fR, \fBctime\fR, \fBdev\fR, \fBgid\fR, \fBino\fR, \fBmode\fR,
+\fBmtime\fR, \fBnlink\fR, \fBsize\fR, \fBtype\fR, \fBuid\fR.  Each element
+except \fBtype\fR is a decimal string with the value of the corresponding
+field from the \fBstat\fR return structure; see the manual entry for
+\fBstat\fR for details on the meanings of the values.  The \fBtype\fR
+element gives the type of the file in the same form returned by the
+command \fBfile type\fR.
 .TP
 \fBfile system \fIname\fR
 .

@@ -176,6 +176,15 @@ typedef struct TestChannel {
 
 static TestChannel *firstDetached;
 
+#ifdef __GNUC__
+/*
+ * The rest of this file shouldn't warn about deprecated functions; they're
+ * there because we intend them to be so and know that this file is OK to
+ * touch those fields.
+ */
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 /*
  * Forward declarations for procedures defined later in this file:
  */
@@ -6039,6 +6048,45 @@ TestChannelCmd(
 	    Tcl_AppendElement(interp, "");
 	}
 	return TCL_OK;
+    }
+
+    if ((cmdName[0] == 'm') && (strncmp(cmdName, "maxmode", len) == 0)) {
+	if (argc != 3) {
+	    Tcl_AppendResult(interp, "channel name required", NULL);
+	    return TCL_ERROR;
+	}
+
+	if (statePtr->maxPerms & TCL_READABLE) {
+	    Tcl_AppendElement(interp, "read");
+	} else {
+	    Tcl_AppendElement(interp, "");
+	}
+	if (statePtr->maxPerms & TCL_WRITABLE) {
+	    Tcl_AppendElement(interp, "write");
+	} else {
+	    Tcl_AppendElement(interp, "");
+	}
+	return TCL_OK;
+    }
+
+    if ((cmdName[0] == 'm') && (strncmp(cmdName, "mremove-rd", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+
+	return Tcl_RemoveChannelMode(interp, chan, TCL_READABLE);
+    }
+
+    if ((cmdName[0] == 'm') && (strncmp(cmdName, "mremove-wr", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+
+	return Tcl_RemoveChannelMode(interp, chan, TCL_WRITABLE);
     }
 
     if ((cmdName[0] == 'm') && (strncmp(cmdName, "mthread", len) == 0)) {

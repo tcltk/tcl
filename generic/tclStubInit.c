@@ -2045,6 +2045,9 @@ const TclStubs tclStubs = {
     Tcl_CreateObjTrace2, /* 677 */
     Tcl_NRCreateCommand2, /* 678 */
     Tcl_NRCallObjProc2, /* 679 */
+    0, /* 680 */
+    0, /* 681 */
+    Tcl_RemoveChannelMode, /* 682 */
 };
 
 /* !END!: Do not edit above this line. */

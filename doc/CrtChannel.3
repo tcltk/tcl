@@ -35,6 +35,11 @@ Tcl_ThreadId
 int
 \fBTcl_GetChannelMode\fR(\fIchannel\fR)
 .sp
+.VS 8.7
+int
+\fBTcl_RemoveChannelMode\fR(\fIinterp, channel, mode\fR)
+.VE 8.7
+.sp
 int
 \fBTcl_GetChannelBufferSize\fR(\fIchannel\fR)
 .sp
@@ -242,6 +247,16 @@ events to the correct event queue even for a multi-threaded core.
 \fBTcl_GetChannelMode\fR returns an OR-ed combination of \fBTCL_READABLE\fR
 and \fBTCL_WRITABLE\fR, indicating whether the channel is open for input
 and output.
+.PP
+.VS 8.7
+.PP
+\fBTcl_RemoveChannelMode\fR removes an access privilege from the
+channel, either \fBTCL_READABLE\fR or \fBTCL_WRITABLE\fR, and returns
+a regular Tcl result code, \fBTCL_OK\fR, or \fBTCL_ERROR\fR. The
+function throws an error if either an invalid mode is specified or the
+result of the removal would be an inaccessible channel. In that case
+an error message is left in the interp argument, if not NULL.
+.VE 8.7
 .PP
 \fBTcl_GetChannelBufferSize\fR returns the size, in bytes, of buffers
 allocated to store input or output in \fIchannel\fR. If the value was not set
