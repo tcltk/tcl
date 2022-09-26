@@ -2502,6 +2502,8 @@ declare 673 {
     int TclGetUniChar(Tcl_Obj *objPtr, int index)
 }
 
+# slot 674 and 675 are reserved for TIP #618
+
 declare 676 {
     Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
 	    const char *cmdName,
@@ -2523,6 +2525,8 @@ declare 679 {
     int Tcl_NRCallObjProc2(Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2,
 	    void *clientData, size_t objc, Tcl_Obj *const objv[])
 }
+
+# TIP #638.
 declare 680 {
     int Tcl_GetNumberFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    void **clientDataPtr, int *typePtr)
@@ -2530,6 +2534,11 @@ declare 680 {
 declare 681 {
     int Tcl_GetNumber(Tcl_Interp *interp, const char *bytes, size_t numBytes,
 	    void **clientDataPtr, int *typePtr)
+}
+
+# TIP #220.
+declare 682 {
+    int Tcl_RemoveChannelMode(Tcl_Interp *interp, Tcl_Channel chan, int mode)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

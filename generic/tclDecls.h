@@ -2005,6 +2005,9 @@ EXTERN int		Tcl_GetNumberFromObj(Tcl_Interp *interp,
 EXTERN int		Tcl_GetNumber(Tcl_Interp *interp, const char *bytes,
 				size_t numBytes, void **clientDataPtr,
 				int *typePtr);
+/* 682 */
+EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
+				Tcl_Channel chan, int mode);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2722,6 +2725,7 @@ typedef struct TclStubs {
     int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 679 */
     int (*tcl_GetNumberFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, void **clientDataPtr, int *typePtr); /* 680 */
     int (*tcl_GetNumber) (Tcl_Interp *interp, const char *bytes, size_t numBytes, void **clientDataPtr, int *typePtr); /* 681 */
+    int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4114,6 +4118,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetNumberFromObj) /* 680 */
 #define Tcl_GetNumber \
 	(tclStubsPtr->tcl_GetNumber) /* 681 */
+#define Tcl_RemoveChannelMode \
+	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
