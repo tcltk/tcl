@@ -208,15 +208,13 @@ This option is not supported by server sockets. For client sockets, this option 
 .TP
 \fB\-keepalive\fR
 .
-This options sets or queries the TCP keepalive option on the socket as 1 if
+This option sets or queries the TCP keepalive option on the socket as 1 if
 keepalive is turned on, 0 otherwise.
 .TP
-\fB\-nagle\fR
+\fB\-nodelay\fR
 .
-This options sets or queries the TCP nodelay option (aka the Nagle algorithm)
-When 1 the Nagle algorithm is turned on, 0 otherwise. Caution: the logic is
-reversed here, i.e. when the option is 0, the underlying system call asserts
-the TCP_NODELAY setting.
+This option sets or queries the TCP nodelay option on the socket as 1 if
+nodelay is turned on, 0 otherwise.
 .PP
 .SH "EXAMPLES"
 .PP

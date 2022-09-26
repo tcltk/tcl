@@ -306,7 +306,7 @@ test iocmd-8.15 {fconfigure command / tcp channel} -constraints {socket unixOrWi
     close $srv
     unset cli srv port
     rename iocmdSRV {}
-} -returnCodes error -result [expectedOpts "-blah" {-connecting -keepalive -nagle -peername -sockname}]
+} -returnCodes error -result [expectedOpts "-blah" {-connecting -keepalive -nodelay -peername -sockname}]
 test iocmd-8.16 {fconfigure command / tcp channel} -constraints socket -setup {
     set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]

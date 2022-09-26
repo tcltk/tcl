@@ -1220,14 +1220,14 @@ TcpSetOptionProc(
 	return TCL_OK;
     }
     if ((len > 1) && (optionName[1] == 'n') &&
-	(strncmp(optionName, "-nagle", len) == 0)) {
+	(strncmp(optionName, "-nodelay", len) == 0)) {
 	BOOL val;
 	int boolVar, rtn;
 
 	if (Tcl_GetBoolean(interp, value, &boolVar) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	val = boolVar ? FALSE : TRUE;
+	val = boolVar ? TRUE : FALSE;
 	rtn = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
 		(const char *) &val, sizeof(BOOL));
 	if (rtn != 0) {
@@ -1241,7 +1241,7 @@ TcpSetOptionProc(
 	}
 	return TCL_OK;
     }
-    return Tcl_BadChannelOption(interp, optionName, "keepalive nagle");
+    return Tcl_BadChannelOption(interp, optionName, "keepalive nodelay");
 }
 
 /*
@@ -1533,17 +1533,17 @@ TcpGetOptionProc(
     }
 
     if ((len == 0) || ((len > 1) && (optionName[1] == 'n') &&
-	    (strncmp(optionName, "-nagle", len) == 0))) {
+	    (strncmp(optionName, "-nodelay", len) == 0))) {
 	int optlen;
 	BOOL opt = FALSE;
 
 	if (len == 0) {
 	    sock = statePtr->sockets->fd;
-	    Tcl_DStringAppendElement(dsPtr, "-nagle");
+	    Tcl_DStringAppendElement(dsPtr, "-nodelay");
 	}
 	optlen = sizeof(BOOL);
 	getsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&opt, &optlen);
-	Tcl_DStringAppendElement(dsPtr, opt ? "0" : "1");
+	Tcl_DStringAppendElement(dsPtr, opt ? "1" : "0");
 	if (len > 0) {
 	    return TCL_OK;
 	}
@@ -1551,7 +1551,7 @@ TcpGetOptionProc(
 
     if (len > 0) {
 	return Tcl_BadChannelOption(interp, optionName,
-		"connecting keepalive nagle peername sockname");
+		"connecting keepalive nodelay peername sockname");
     }
 
     return TCL_OK;
