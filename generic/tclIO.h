@@ -216,6 +216,8 @@ typedef struct ChannelState {
 				 * companion to 'unreportedError'. */
     size_t epoch;		/* Used to test validity of stored channelname
 				 * lookup results. */
+    int maxPerms;		/* TIP #220: Max access privileges
+				 * the channel was created with. */
 } ChannelState;
 
 /*
