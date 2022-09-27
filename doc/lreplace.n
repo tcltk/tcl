@@ -97,7 +97,7 @@ a b c d e f g h i
 .SH "SEE ALSO"
 list(n), lappend(n), lassign(n), ledit(n), lindex(n), linsert(n), llength(n),
 lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n),
-lreverse(n), lsearch(n), lset(n), lsort(n),
+lreverse(n), lsearch(n), lseq(n), lset(n), lsort(n),
 string(n)
 .SH KEYWORDS
 element, list, replace

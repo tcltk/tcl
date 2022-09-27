@@ -117,7 +117,7 @@ set idx 3
 .SH "SEE ALSO"
 list(n), lappend(n), lassign(n), ledit(n), linsert(n), llength(n),
 lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
-lreverse(n), lsearch(n), lset(n), lsort(n),
+lreverse(n), lsearch(n), lseq(n), lset(n), lsort(n),
 string(n)
 .SH KEYWORDS
 element, index, list

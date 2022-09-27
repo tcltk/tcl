@@ -266,7 +266,7 @@ More complex sorting using a comparison function:
 .SH "SEE ALSO"
 list(n), lappend(n), lassign(n), ledit(n), lindex(n), linsert(n), llength(n),
 lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
-lreverse(n), lsearch(n), lset(n)
+lreverse(n), lsearch(n), lseq(n), lset(n)
 .SH KEYWORDS
 element, list, order, sort
 '\" Local Variables:

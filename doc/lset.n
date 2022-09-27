@@ -138,7 +138,7 @@ The indicated return value also becomes the new value of \fIx\fR.
 .SH "SEE ALSO"
 list(n), lappend(n), lassign(n), ledit(n), lindex(n), linsert(n), llength(n),
 lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
-lreverse(n), lsearch(n), lsort(n)
+lreverse(n), lsearch(n), lseq(n), lsort(n)
 string(n)
 .SH KEYWORDS
 element, index, list, replace, set

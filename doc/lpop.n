@@ -88,7 +88,7 @@ The indicated value becomes the new value of \fIx\fR.
 .SH "SEE ALSO"
 list(n), lappend(n), lassign(n), ledit(n), lindex(n), linsert(n), llength(n),
 lmap(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
-lreverse(n), lsearch(n), lset(n), lsort(n),
+lreverse(n), lsearch(n), lseq(n), lset(n), lsort(n),
 string(n)
 .SH KEYWORDS
 element, index, list, remove, pop, stack, queue

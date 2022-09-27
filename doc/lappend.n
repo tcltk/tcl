@@ -51,7 +51,7 @@ Using \fBlappend\fR to build up a list of numbers.
 .SH "SEE ALSO"
 list(n), lassign(n), ledit(n), lindex(n), linsert(n), llength(n),
 lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
-lreverse(n), lsearch(n), lset(n), lsort(n)
+lreverse(n), lsearch(n), lseq(n), lset(n), lsort(n)
 .SH KEYWORDS
 append, element, list, variable
 .\" Local variables:

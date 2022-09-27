@@ -593,14 +593,14 @@ built-in commands:
 \fBinfo\fR	\fBinterp\fR	\fBjoin\fR	\fBlappend\fR
 \fBlassign\fR	\fBledit\fR	\fBlindex\fR	\fBlinsert\fR
 \fBlist\fR	\fBllength\fR	\fBlrange\fR	\fBlrepeat\fR
-\fBlreplace\fR	\fBlsearch\fR	\fBlset\fR	\fBlsort\fR
-\fBnamespace\fR	\fBpackage\fR	\fBpid\fR	\fBproc\fR
-\fBputs\fR	\fBread\fR	\fBregexp\fR	\fBregsub\fR
-\fBrename\fR	\fBreturn\fR	\fBscan\fR	\fBseek\fR
-\fBset\fR	\fBsplit\fR	\fBstring\fR	\fBsubst\fR
-\fBswitch\fR	\fBtell\fR	\fBtime\fR	\fBtrace\fR
-\fBunset\fR	\fBupdate\fR	\fBuplevel\fR	\fBupvar\fR
-\fBvariable\fR	\fBvwait\fR	\fBwhile\fR
+\fBlreplace\fR	\fBlsearch\fR	\fBlseq\fR      \fBlset\fR
+\fBlsort\fR     \fBnamespace\fR	\fBpackage\fR	\fBpid\fR
+\fBproc\fR      \fBputs\fR	\fBread\fR	\fBregexp\fR
+\fBregsub\fR	\fBrename\fR	\fBreturn\fR	\fBscan\fR
+\fBseek\fR	\fBset\fR	\fBsplit\fR	\fBstring\fR
+\fBsubst\fR	\fBswitch\fR	\fBtell\fR	\fBtime\fR
+\fBtrace\fR	\fBunset\fR	\fBupdate\fR	\fBuplevel\fR
+\fBupvar\fR	\fBvariable\fR	\fBvwait\fR	\fBwhile\fR
 .DE
 The following commands are hidden by \fBinterp create\fR when it
 creates a safe interpreter:

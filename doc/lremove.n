@@ -48,7 +48,7 @@ a b d e
 .SH "SEE ALSO"
 list(n), lappend(n), lassign(n), ledit(n), lindex(n), linsert(n), llength(n),
 lmap(n), lpop(n), lrange(n), lrepeat(n), lreplace(n),
-lreverse(n), lsearch(n), lset(n), lsort(n)
+lreverse(n), lsearch(n), lseq(n), lset(n), lsort(n)
 .SH KEYWORDS
 element, list, remove
 .\" Local variables:
