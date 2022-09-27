@@ -229,9 +229,9 @@ The same thing for a flattened list:
 .CE
 .SH "SEE ALSO"
 foreach(n),
-list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+list(n), lappend(n), lassign(n), ledit(n), lindex(n), linsert(n), llength(n),
 lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
-lreverse(n), lset(n), lsort(n),
+lreverse(n), lseq(n), lset(n), lsort(n),
 string(n)
 .SH KEYWORDS
 binary search, linear search,
