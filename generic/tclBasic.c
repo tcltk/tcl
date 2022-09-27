@@ -322,6 +322,7 @@ static const CmdInfo builtInCmds[] = {
     {"lreplace",	Tcl_LreplaceObjCmd,	TclCompileLreplaceCmd,	NULL,	CMD_IS_SAFE},
     {"lreverse",	Tcl_LreverseObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"lsearch",		Tcl_LsearchObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"lseq",            Tcl_LseqObjCmd,         NULL,                   NULL,   CMD_IS_SAFE},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"ledit",		Tcl_LeditObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
