@@ -181,6 +181,15 @@ typedef struct TestChannel {
 
 static TestChannel *firstDetached;
 
+#ifdef __GNUC__
+/*
+ * The rest of this file shouldn't warn about deprecated functions; they're
+ * there because we intend them to be so and know that this file is OK to
+ * touch those fields.
+ */
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 /*
  * Forward declarations for procedures defined later in this file:
  */
