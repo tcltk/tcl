@@ -4231,7 +4231,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
 #undef Tcl_SaveResult
-inline TCL_DEPRECATED_API("Use Tcl_SaveInterpState") void Tcl_SaveResult_(void) {}
+MODULE_SCOPE TCL_DEPRECATED_API("Use Tcl_SaveInterpState") void Tcl_SaveResult_(void) {}
 #define Tcl_SaveResult(interp, statePtr) \
 	do { \
 	    Tcl_SaveResult_(); \
@@ -4240,7 +4240,7 @@ inline TCL_DEPRECATED_API("Use Tcl_SaveInterpState") void Tcl_SaveResult_(void) 
 	    Tcl_SetObjResult(interp, Tcl_NewObj()); \
 	} while(0)
 #undef Tcl_RestoreResult
-inline TCL_DEPRECATED_API("Use Tcl_RestoreInterpState") void Tcl_RestoreResult_(void) {}
+MODULE_SCOPE TCL_DEPRECATED_API("Use Tcl_RestoreInterpState") void Tcl_RestoreResult_(void) {}
 #define Tcl_RestoreResult(interp, statePtr) \
 	do { \
 	    Tcl_RestoreResult_(); \
@@ -4249,7 +4249,7 @@ inline TCL_DEPRECATED_API("Use Tcl_RestoreInterpState") void Tcl_RestoreResult_(
    	    Tcl_DecrRefCount((statePtr)->objResultPtr); \
 	} while(0)
 #undef Tcl_DiscardResult
-inline TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void Tcl_DiscardResult_(void) {}
+MODULE_SCOPE TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void Tcl_DiscardResult_(void) {}
 #define Tcl_DiscardResult(statePtr) \
 	do { \
 	    Tcl_DiscardResult_(); \
