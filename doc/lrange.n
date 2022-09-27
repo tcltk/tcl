@@ -71,7 +71,7 @@ elements to
 {elements to}
 .CE
 .SH "SEE ALSO"
-list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+list(n), lappend(n), lassign(n), ledit(n), lindex(n), linsert(n), llength(n),
 lmap(n), lpop(n), lremove(n), lrepeat(n), lreplace(n),
 lreverse(n), lsearch(n), lset(n), lsort(n),
 string(n)
