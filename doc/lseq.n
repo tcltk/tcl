@@ -81,8 +81,8 @@ must be numeric; a non-numeric string will result in an error.
 .\"
 .CE
 .SH "SEE ALSO"
-foreach(n), list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
-lmap(n), lpop(n), lrange(n), lremove(n), lreplace(n),
+foreach(n), list(n), lappend(n), lassign(n), ledit(n), lindex(n), linsert(n),
+llength(n), lmap(n), lpop(n), lrange(n), lremove(n), lreplace(n),
 lreverse(n), lsearch(n), lset(n), lsort(n)
 .SH KEYWORDS
 element, index, list
