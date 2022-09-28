@@ -474,7 +474,7 @@ test lseq-4.3 {TIP examples} knownBug {
 
 #
 # Ticket 9933cc4d88697f05976accebd31c1e3ba6efe9c6 - lseq corner case
-test lseq-4.4 {lseq corner case} -constraints knownBug -body {
+test lseq-4.4 {lseq corner case} -body {
     set tcmd {
 	set res {}
 	set s [catch {lindex [lseq 10 100] 0} e]
@@ -489,7 +489,8 @@ test lseq-4.4 {lseq corner case} -constraints knownBug -body {
 	lappend res $s $e
     }
     eval $tcmd
-} -result {0 10 1 {max length of a Tcl list exceeded} 1 {max length of a Tcl list exceeded} 0 10 0 2147483638}
+} -result {0 10 0 10 0 9223372036854774991 0 10 0 2147483638}
+# {0 10 1 {max length of a Tcl list exceeded} 1 {max length of a Tcl list exceeded} 0 10 0 2147483638}
 
 
 # cleanup
