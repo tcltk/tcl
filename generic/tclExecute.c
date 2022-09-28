@@ -5154,7 +5154,11 @@ TEBCresume(
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
 	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
-	    objResultPtr = TclArithSeriesObjRange(valuePtr, fromIdx, toIdx);
+	    objResultPtr = TclArithSeriesObjRange(interp, valuePtr, fromIdx, toIdx);
+	    if (objResultPtr == NULL) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
 	} else {
 	    objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
 	}
