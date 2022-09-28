@@ -106,8 +106,10 @@ ArithSeriesLen(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step)
 {
     Tcl_WideInt len;
 
-    if (step == 0) return 0;
-    len = (step ? (1 + (((end-start))/step)) : 0);
+    if (step == 0) {
+	return 0;
+    }
+    len = 1 + ((end-start)/step);
     return (len < 0) ? -1 : len;
 }
 
@@ -233,7 +235,7 @@ assignNumber(int useDoubles, Tcl_WideInt *intNumberPtr, double *dblNumberPtr, Tc
     } *number;
     int tcl_number_type;
 
-    if (TclGetNumberFromObj(NULL, numberObj, (ClientData*)&number, &tcl_number_type) != TCL_OK) {
+    if (TclGetNumberFromObj(NULL, numberObj, (void **)&number, &tcl_number_type) != TCL_OK) {
 	return;
     }
     if (useDoubles) {
@@ -818,7 +820,7 @@ TclArithSeriesGetElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *objPtr,		/* AbstractList object for which an element
 				 * array is to be returned. */
-    size_t *objcPtr,		/* Where to store the count of objects
+    ListSizeT *objcPtr,		/* Where to store the count of objects
 				 * referenced by objv. */
     Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
 				 * pointers to the list's objects. */
