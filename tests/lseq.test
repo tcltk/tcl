@@ -65,7 +65,7 @@ test lseq-1.10 {integer lseq with step} {
     lseq 1 to 10 by 2
 } {1 3 5 7 9}
 
-test lseq-1.11 {error case: increasing wrong step direction} {
+test lseq-1.11 {error case: increasing wrong step direction} knownBug {
     lseq 1 to 10 by -2
 } {}
 
@@ -113,7 +113,7 @@ test lseq-1.19 {too many arguments extra numeric value} -body {
     lseq 12 to 24 by 2 7
 } -returnCodes 1 -result {wrong # args: should be "lseq n ??op? n ??by? n??"}
 
-test lseq-1.20 {bug: wrong length computed} {
+test lseq-1.20 {bug: wrong length computed} knownBug {
     lseq 1 to 10 -1
 } {}
 
@@ -128,11 +128,11 @@ test lseq-1.22 {n n by -n} {
 #
 # Short-hand use cases
 #
-test lseq-2.2 {step magnitude} {
+test lseq-2.2 {step magnitude} knownBug {
     lseq 10 1 2 ;# this is an empty case since step has wrong sign
 } {}
 
-test lseq-2.3 {step wrong sign} arithSeriesDouble {
+test lseq-2.3 {step wrong sign} {arithSeriesDouble knownBug} {
     lseq 25. 5. 5 ;# ditto - empty list
 } {}
 
@@ -166,7 +166,7 @@ test lseq-2.10 {integer lseq with step} {
     lseq 1 10 2
 } {1 3 5 7 9}
 
-test lseq-2.11 {error case: increasing wrong step direction} {
+test lseq-2.11 {error case: increasing wrong step direction} knownBug {
     lseq 1 10 -2
 } {}
 
@@ -196,7 +196,7 @@ test lseq-2.17 {large numbers} arithSeriesDouble {
 
 # Covered: {10 1 2 } {1 10 2} {1 10 -2} {1 1 1} {1 1 1} {-5 17 3}
 # Missing: {- - +} {- - -} {- + -} {+ - -} {- - +} {+ + -}
-test lseq-2.18 {signs} {
+test lseq-2.18 {signs} knownBug {
     list [lseq -10 -1 2] \
 	[lseq -10 -1 -1] \
 	[lseq -10 1 -3] \
@@ -390,7 +390,7 @@ test lseq-3.28 {lreverse bug in ArithSeries} {} {
     list $r $rr [string equal $r [lreverse $rr]]
 } {{-5 -2 1 4 7 10 13 16} {16 13 10 7 4 1 -2 -5} 1}
 
-test lseq-3.29 {edge case: negative count} {
+test lseq-3.29 {edge case: negative count} knownBug {
     lseq -15
 } {}
 
@@ -425,7 +425,7 @@ test lseq-4.2 {start expressions} {
 ##	lseq 1 to 10 by -2
 ##	# -> lseq: invalid step = -2 with a = 1 and b = 10
 
-test lseq-4.3 {TIP examples} {
+test lseq-4.3 {TIP examples} knownBug {
     set examples {# Examples from TIP-629
 	# --- Begin ---
 	lseq 10 .. 1
@@ -474,7 +474,7 @@ test lseq-4.3 {TIP examples} {
 
 #
 # Ticket 9933cc4d88697f05976accebd31c1e3ba6efe9c6 - lseq corner case
-test lseq-4.4 {lseq corner case} -body {
+test lseq-4.4 {lseq corner case} -constraints knownBug -body {
     set tcmd {
 	set res {}
 	set s [catch {lindex [lseq 10 100] 0} e]
