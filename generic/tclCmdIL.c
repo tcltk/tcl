@@ -4077,12 +4077,9 @@ SequenceIdentifyArgument(
     int status;
     SequenceOperators opmode;
     SequenceByMode bymode;
-    union {
-	Tcl_WideInt i;
-	double d;
-    } nvalue;
+    void *clientData;
 
-    status = Tcl_GetNumberFromObj(NULL, argPtr, (ClientData*)&nvalue, keywordIndexPtr);
+    status = Tcl_GetNumberFromObj(NULL, argPtr, &clientData, keywordIndexPtr);
     if (status == TCL_OK) {
 	if (numValuePtr) {
 	    *numValuePtr = argPtr;
