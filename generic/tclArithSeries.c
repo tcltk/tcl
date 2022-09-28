@@ -270,8 +270,16 @@ assignNumber(int useDoubles, Tcl_WideInt *intNumberPtr, double *dblNumberPtr, Tc
  * 	None.
  *----------------------------------------------------------------------
  */
-Tcl_Obj *
-TclNewArithSeriesObj(int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj, Tcl_Obj *stepObj, Tcl_Obj *lenObj)
+int
+TclNewArithSeriesObj(
+    Tcl_Interp *interp,       /* For error reporting */
+    Tcl_Obj **arithSeriesObj, /* return value */
+    int useDoubles,           /* Flag indicates values start,
+			      ** end, step, are treated as doubles */
+    Tcl_Obj *startObj,        /* Starting value */
+    Tcl_Obj *endObj,          /* Ending limit */
+    Tcl_Obj *stepObj,         /* increment value */
+    Tcl_Obj *lenObj)          /* Number of elements */
 {
     double dstart, dend, dstep;
     Tcl_WideInt start, end, step, len;
@@ -290,7 +298,8 @@ TclNewArithSeriesObj(int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj, Tcl_Obj
 	    dstep = step;
 	}
 	if (dstep == 0) {
-	    return Tcl_NewObj();
+	    *arithSeriesObj = Tcl_NewObj();
+	    return TCL_OK;
 	}
     }
     if (endObj) {
@@ -330,11 +339,20 @@ TclNewArithSeriesObj(int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj, Tcl_Obj
 	}
     }
 
-    if (useDoubles) {
-	return TclNewArithSeriesDbl(dstart, dend, dstep, len);
-    } else {
-	return TclNewArithSeriesInt(start, end, step, len);
+    if (len > ListSizeT_MAX) {
+	Tcl_SetObjResult(
+	    interp,
+	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	return TCL_ERROR;
     }
+
+    if (arithSeriesObj) {
+	*arithSeriesObj = (useDoubles)
+	    ? TclNewArithSeriesDbl(dstart, dend, dstep, len)
+	    : TclNewArithSeriesInt(start, end, step, len);
+    }
+    return TCL_OK;
 }
 
 /*
@@ -684,6 +702,7 @@ TclArithSeriesObjCopy(
 
 Tcl_Obj *
 TclArithSeriesObjRange(
+    Tcl_Interp *interp,         /* For error message(s) */
     Tcl_Obj *arithSeriesPtr,	/* List object to take a range from. */
     int fromIdx,		/* Index of first element to include. */
     int toIdx)			/* Index of last element to include. */
@@ -711,8 +730,12 @@ TclArithSeriesObjRange(
 
     if (Tcl_IsShared(arithSeriesPtr) ||
 	    ((arithSeriesPtr->refCount > 1))) {
-	Tcl_Obj *newSlicePtr = TclNewArithSeriesObj(arithSeriesRepPtr->isDouble,
-	           startObj, endObj, stepObj, NULL);
+	Tcl_Obj *newSlicePtr;
+	if (TclNewArithSeriesObj(interp, &newSlicePtr,
+	        arithSeriesRepPtr->isDouble, startObj, endObj,
+		stepObj, NULL) != TCL_OK) {
+	    newSlicePtr = NULL;
+	}
 	Tcl_DecrRefCount(startObj);
 	Tcl_DecrRefCount(endObj);
 	Tcl_DecrRefCount(stepObj);
@@ -875,6 +898,7 @@ TclArithSeriesGetElements(
 
 Tcl_Obj *
 TclArithSeriesObjReverse(
+    Tcl_Interp *interp,         /* For error message(s) */
     Tcl_Obj *arithSeriesPtr)	/* List object to reverse. */
 {
     ArithSeries *arithSeriesRepPtr;
@@ -910,8 +934,10 @@ TclArithSeriesObjReverse(
     if (Tcl_IsShared(arithSeriesPtr) ||
 	    ((arithSeriesPtr->refCount > 1))) {
 	Tcl_Obj *lenObj = Tcl_NewWideIntObj(len);
-	resultObj = TclNewArithSeriesObj(isDouble,
-		        startObj, endObj, stepObj, lenObj);
+	if (TclNewArithSeriesObj(interp, &resultObj,
+		 isDouble, startObj, endObj, stepObj, lenObj) != TCL_OK) {
+	    resultObj = NULL;
+	}
 	Tcl_DecrRefCount(lenObj);
     } else {
 

@@ -2724,7 +2724,6 @@ Tcl_LrangeObjCmd(
 {
     int result;
     size_t listLen, first, last;
-
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
 	return TCL_ERROR;
@@ -2748,7 +2747,13 @@ Tcl_LrangeObjCmd(
     }
 
     if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
-	Tcl_SetObjResult(interp, TclArithSeriesObjRange(objv[1], first, last));
+	Tcl_Obj *rangeObj;
+	rangeObj = TclArithSeriesObjRange(interp, objv[1], first, last);
+	if (rangeObj) {
+	    Tcl_SetObjResult(interp, rangeObj);
+	} else {
+	    return TCL_ERROR;
+	}
     } else {
 	Tcl_SetObjResult(interp, TclListObjRange(objv[1], first, last));
     }
@@ -3141,8 +3146,13 @@ Tcl_LreverseObjCmd(
      *  just to reverse it.
      */
     if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
-        Tcl_SetObjResult(interp, TclArithSeriesObjReverse(objv[1]));
-	return TCL_OK;
+	Tcl_Obj *resObj = TclArithSeriesObjReverse(interp, objv[1]);
+	if (resObj) {
+	    Tcl_SetObjResult(interp, resObj);
+	    return TCL_OK;
+	} else {
+	    return TCL_ERROR;
+	}
     } /* end ArithSeries */
 
     /* True List */
@@ -4430,10 +4440,12 @@ Tcl_LseqObjCmd(
     /*
      * Success!  Now lets create the series object.
      */
-    arithSeriesPtr = TclNewArithSeriesObj(useDoubles, start, end, step, elementCount);
+    status = TclNewArithSeriesObj(interp, &arithSeriesPtr,
+		  useDoubles, start, end, step, elementCount);
 
-    Tcl_SetObjResult(interp, arithSeriesPtr);
-    status = TCL_OK;
+    if (status == TCL_OK) {
+	Tcl_SetObjResult(interp, arithSeriesPtr);
+    }
 
  done:
     // Free number arguments.
