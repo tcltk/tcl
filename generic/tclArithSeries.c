@@ -229,26 +229,24 @@ TclNewArithSeriesDbl(double start, double end, double step, Tcl_WideInt len)
 static void
 assignNumber(int useDoubles, Tcl_WideInt *intNumberPtr, double *dblNumberPtr, Tcl_Obj *numberObj)
 {
-    union {
-	double d;
-	Tcl_WideInt i;
-    } *number;
+    void *clientData;
     int tcl_number_type;
 
-    if (TclGetNumberFromObj(NULL, numberObj, (void **)&number, &tcl_number_type) != TCL_OK) {
+    if (TclGetNumberFromObj(NULL, numberObj, &clientData, &tcl_number_type) != TCL_OK
+	    || tcl_number_type == TCL_NUMBER_BIG) {
 	return;
     }
     if (useDoubles) {
-	if (tcl_number_type == TCL_NUMBER_DOUBLE) {
-	    *dblNumberPtr = number->d;
+	if (tcl_number_type != TCL_NUMBER_INT) {
+	    *dblNumberPtr = *(double *)clientData;
 	} else {
-	    *dblNumberPtr = (double)number->i;
+	    *dblNumberPtr = (double)*(Tcl_WideInt *)clientData;
 	}
     } else {
 	if (tcl_number_type == TCL_NUMBER_INT) {
-	    *intNumberPtr = number->i;
+	    *intNumberPtr = *(Tcl_WideInt *)clientData;
 	} else {
-	    *intNumberPtr = (Tcl_WideInt)number->d;
+	    *intNumberPtr = (Tcl_WideInt)*(double *)clientData;
 	}
     }
 }
