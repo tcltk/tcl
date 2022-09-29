@@ -57,7 +57,7 @@ header file, \fBtcl.h\fR, and is equivalent to the C standard type
 \fBlong long\fR on most platforms. The \fBmp_int\fR type is declared in the
 header file \fBtclTomMath.h\fR, and implemented by the LibTomMath
 multiple-precision integer library, included with Tcl.
-
+.PP
 The routines \fBTcl_GetNumber\fR and \fBTcl_GetNumberFromObj\fR perform
 the same function.  They differ only in how the arguments present the Tcl
 value to be examined.  \fBTcl_GetNumber\fR accepts a counted string
@@ -65,22 +65,57 @@ value in the arguments \fIbytes\fR and \fInumBytes\fR (or a
 \fBNUL\fR-terminated string value when \fInumBytes\fR is
 \fBTCL_INDEX_NONE\fR).  \fBTcl_GetNumberFromObj\fR accepts the Tcl value
 in \fIobjPtr\fR.
-
+.PP
 Both routines examine the Tcl value and determine whether Tcl recognizes
 it as a number.  If not, both routines return \fBTCL_ERROR\fR and (when
 \fIinterp\fR is not NULL) record an error message and error code
 in \fIinterp\fR.
-
-If the examined value is recognized as a number, both routines return
+.PP
+If Tcl does recognize the examined value as a number, both routines return
 \fBTCL_OK\fR, and use the pointer arguments \fIclientDataPtr\fR
 and \fItypePtr\fR (which may not be NULL) to report information the
 caller can use to retrieve the numeric representation.  Both routines
 write to *\fIclientDataPtr\fR a pointer to the internal storage location
-where Tcl holds the converted numeric value.  When that internal storage
-is of type \fBdouble\fR
-
-
-
+where Tcl holds the converted numeric value.  
+.PP
+When the converted numeric value is stored as a \fBdouble\fR,
+a call to math library routine \fBisnan\fR determines whether that
+value is not a number (NaN).  If so, both \fBTcl_GetNumber\fR and
+\fBTcl_GetNumberFromObj\fR write the value \fBTCL_NUMBER_NAN\fR
+to *\fItypePtr\fR. If not, both routines write the value
+\fBTCL_NUMBER_DOUBLE\fR to *\fItypePtr\fR.  These routines report
+different type values in these cases because \fBTcl_GetDoubleFromObj\fR
+raises an error on NaN values.  For both reported type values,
+the storage pointer may be cast to type \fBconst double *\fR and
+the \fBdouble\fR numeric value may be read through it.
+.PP
+When the converted numeric value is stored as a \fBTcl_WideInt\fR,
+both \fBTcl_GetNumber\fR and \fBTcl_GetNumberFromObj\fR write the
+value \fBTCL_NUMBER_INT\fR to *\fItypePtr\fR. 
+The storage pointer may be cast to type \fBconst Tcl_WideInt *\fR and
+the \fBTcl_WideInt\fR numeric value may be read through it.
+.PP
+When the converted numeric value is stored as an \fBmp_int\fR,
+both \fBTcl_GetNumber\fR and \fBTcl_GetNumberFromObj\fR write the
+value \fBTCL_NUMBER_BIG\fR to *\fItypePtr\fR. 
+The storage pointer may be cast to type \fBconst mp_int *\fR and
+the \fBmp_int\fR numeric value may be read through it.
+.PP
+Future releases of Tcl might expand or revise the recognition of
+values as numbers.  If additional storage representations are
+adopted, these routines will add new values to be written to
+*\fItypePtr\fR to identify them.  Callers should consider how
+they should react to unknown values written to *\fItypePtr\fR.
+.PP
+When callers of these routines read numeric values through the
+reported storage pointer, they are accessing memory that belongs
+to the Tcl library.  The Tcl library has the power to overwrite
+or free this memory.  The storage pointer reported by a call to
+\fBTcl_GetNumber\fR or \fBTcl_GetNumberFromObj\fR should not be
+used after the same thread has possibly returned control to the
+Tcl library.  If longer term access to the numeric value is needed,
+it should be copied into memory controlled by the caller.  Callers
+must not attempt to write through or free the storage pointer.
 .SH "SEE ALSO"
 Tcl_GetDouble, Tcl_GetDoubleFromObj, Tcl_GetWideIntFromObj
 .SH KEYWORDS
