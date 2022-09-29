@@ -74,10 +74,10 @@ in \fIinterp\fR.
 If the examined value is recognized as a number, both routines return
 \fBTCL_OK\fR, and use the pointer arguments \fIclientDataPtr\fR
 and \fItypePtr\fR (which may not be NULL) to report information the
-caller can use to retrieve the numeric representation.  In all cases,
-both routines write to *\fIclientDataPtr\fR a pointer to the internal
-storage location where Tcl holds the numeric value.  When that
-internal storage is of type \fBdouble\fR
+caller can use to retrieve the numeric representation.  Both routines
+write to *\fIclientDataPtr\fR a pointer to the internal storage location
+where Tcl holds the converted numeric value.  When that internal storage
+is of type \fBdouble\fR
 
 
 
