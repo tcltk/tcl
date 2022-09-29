@@ -489,8 +489,18 @@ test lseq-4.4 {lseq corner case} -body {
 	lappend res $s $e
     }
     eval $tcmd
+} -cleanup {
+    unset res
 } -result {0 10 0 10 0 9223372036854774991 0 10 0 2147483638}
-# {0 10 1 {max length of a Tcl list exceeded} 1 {max length of a Tcl list exceeded} 0 10 0 2147483638}
+
+# Ticket 99e834bf33 - lseq, lindex end off by one
+
+test lseq-4.5 {lindex off by one} -body {
+    lappend res [eval {lindex [lseq 1 4] end}]
+    lappend res [eval {lindex [lseq 1 4] end-1}]
+} -cleanup {
+    unset res
+} -result {4 3}
 
 
 # cleanup
