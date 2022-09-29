@@ -40,9 +40,10 @@ MODULE_SCOPE int	TclArithSeriesObjStep(Tcl_Obj *arithSeriesPtr,
 MODULE_SCOPE int	TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr,
 			    Tcl_WideInt index, Tcl_Obj **elementObj);
 MODULE_SCOPE Tcl_WideInt TclArithSeriesObjLength(Tcl_Obj *arithSeriesPtr);
-MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjRange(Tcl_Obj *arithSeriesPtr,
-			    int fromIdx, int toIdx);
-MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjReverse(Tcl_Obj *arithSeriesPtr);
+MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjRange(Tcl_Interp *interp,
+			    Tcl_Obj *arithSeriesPtr, int fromIdx, int toIdx);
+MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjReverse(Tcl_Interp *interp,
+			    Tcl_Obj *arithSeriesPtr);
 MODULE_SCOPE int	TclArithSeriesGetElements(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, size_t *objcPtr, Tcl_Obj ***objvPtr);
 MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesInt(Tcl_WideInt start,
@@ -50,5 +51,7 @@ MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesInt(Tcl_WideInt start,
 			    Tcl_WideInt len);
 MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesDbl(double start, double end,
 			    double step, Tcl_WideInt len);
-MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesObj(int useDoubles, Tcl_Obj *startObj,
-			    Tcl_Obj *endObj, Tcl_Obj *stepObj, Tcl_Obj *lenObj);
+MODULE_SCOPE int 	TclNewArithSeriesObj(Tcl_Interp *interp,
+			    Tcl_Obj **arithSeriesObj, int useDoubles,
+			    Tcl_Obj *startObj, Tcl_Obj *endObj,
+			    Tcl_Obj *stepObj, Tcl_Obj *lenObj);

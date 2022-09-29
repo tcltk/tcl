@@ -25,9 +25,9 @@ input list, \fIlist\fR, except with the elements in the reverse order.
       \fI\(-> f e {c d} b a\fR
 .CE
 .SH "SEE ALSO"
-list(n), lappend(n), lassign(n), lindex(n), linsert(n), llength(n),
+list(n), lappend(n), lassign(n), ledit(n), lindex(n), linsert(n), llength(n),
 lmap(n), lpop(n), lrange(n), lremove(n), lrepeat(n), lreplace(n),
-lsearch(n), lset(n), lsort(n)
+lsearch(n), lseq(n), lset(n), lsort(n)
 .SH KEYWORDS
 element, list, reverse
 '\" Local Variables:
