@@ -4938,7 +4938,7 @@ TEBCresume(
 
 	    /* Decode end-offset index values. */
 
-	    index = TclIndexDecode(opnd, length);
+	    index = TclIndexDecode(opnd, length-1);
 
 	    /* Compute value @ index */
 	    if (index >= 0 && index < length) {
