@@ -2961,6 +2961,7 @@ MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
 MODULE_SCOPE const Tcl_ObjType tclDoubleType;
 MODULE_SCOPE const Tcl_ObjType tclIntType;
 MODULE_SCOPE const Tcl_ObjType tclListType;
+MODULE_SCOPE const Tcl_ObjType tclArithSeriesType;
 MODULE_SCOPE const Tcl_ObjType tclDictType;
 MODULE_SCOPE const Tcl_ObjType tclAbstractListType;
 MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
@@ -3182,6 +3183,8 @@ MODULE_SCOPE Tcl_ObjCmdProc TclFileReadLinkCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileRenameCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileTempDirCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileTemporaryCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileHomeCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclFileTildeExpandCmd;
 MODULE_SCOPE void	TclCreateLateExitHandler(Tcl_ExitProc *proc,
 			    void *clientData);
 MODULE_SCOPE void	TclDeleteLateExitHandler(Tcl_ExitProc *proc,
@@ -3289,6 +3292,12 @@ MODULE_SCOPE int	TclIsDigitProc(int byte);
 MODULE_SCOPE int	TclIsBareword(int byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[],
 			    int forceRelative);
+MODULE_SCOPE int	MakeTildeRelativePath(Tcl_Interp *interp, const char *user,
+			    const char *subPath, Tcl_DString *dsPtr);
+MODULE_SCOPE Tcl_Obj *	TclGetHomeDirObj(Tcl_Interp *interp, const char *user);
+MODULE_SCOPE Tcl_Obj *	TclResolveTildePath(Tcl_Interp *interp,
+                                            Tcl_Obj *pathObj);
+MODULE_SCOPE Tcl_Obj *	TclResolveTildePathList(Tcl_Obj *pathsObj);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
@@ -3311,6 +3320,8 @@ MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
 			    const EnsembleImplMap map[]);
+MODULE_SCOPE int TclMakeSafe(Tcl_Interp *interp);
+
 MODULE_SCOPE int	TclMaxListLength(const char *bytes, int numBytes,
 			    const char **endPtr);
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
@@ -3718,6 +3729,9 @@ MODULE_SCOPE int	Tcl_LappendObjCmd(void *clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LassignObjCmd(void *clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LeditObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LindexObjCmd(void *clientData,

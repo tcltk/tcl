@@ -600,7 +600,8 @@ EXTERN int		Tcl_LinkVar(Tcl_Interp *interp, const char *varName,
 /* 189 */
 EXTERN Tcl_Channel	Tcl_MakeFileChannel(void *handle, int mode);
 /* 190 */
-EXTERN int		Tcl_MakeSafe(Tcl_Interp *interp);
+TCL_DEPRECATED("")
+int			Tcl_MakeSafe(Tcl_Interp *interp);
 /* 191 */
 EXTERN Tcl_Channel	Tcl_MakeTcpClientChannel(void *tcpSocket);
 /* 192 */
@@ -899,7 +900,8 @@ EXTERN void		Tcl_CreateThreadExitHandler(Tcl_ExitProc *proc,
 EXTERN void		Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc,
 				void *clientData);
 /* 290 */
-EXTERN void		Tcl_DiscardResult(Tcl_SavedResult *statePtr);
+TCL_DEPRECATED("Use Tcl_DiscardInterpState")
+void			Tcl_DiscardResult(Tcl_SavedResult *statePtr);
 /* 291 */
 EXTERN int		Tcl_EvalEx(Tcl_Interp *interp, const char *script,
 				int numBytes, int flags);
@@ -964,10 +966,12 @@ EXTERN int		Tcl_NumUtfChars(const char *src, int length);
 EXTERN int		Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
 				int charsToRead, int appendFlag);
 /* 314 */
-EXTERN void		Tcl_RestoreResult(Tcl_Interp *interp,
+TCL_DEPRECATED("Use Tcl_RestoreInterpState")
+void			Tcl_RestoreResult(Tcl_Interp *interp,
 				Tcl_SavedResult *statePtr);
 /* 315 */
-EXTERN void		Tcl_SaveResult(Tcl_Interp *interp,
+TCL_DEPRECATED("Use Tcl_SaveInterpState")
+void			Tcl_SaveResult(Tcl_Interp *interp,
 				Tcl_SavedResult *statePtr);
 /* 316 */
 EXTERN int		Tcl_SetSystemEncoding(Tcl_Interp *interp,
@@ -1996,15 +2000,22 @@ EXTERN Tcl_Command	Tcl_NRCreateCommand2(Tcl_Interp *interp,
 EXTERN int		Tcl_NRCallObjProc2(Tcl_Interp *interp,
 				Tcl_ObjCmdProc2 *objProc2, void *clientData,
 				size_t objc, Tcl_Obj *const objv[]);
-/* 680 */
+/* Slot 680 is reserved */
+/* Slot 681 is reserved */
+/* 682 */
+EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
+				Tcl_Channel chan, int mode);
+/* 683 */
 EXTERN Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr);
-/* 681 */
+/* 684 */
 EXTERN Tcl_Obj *	Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr,
 				Tcl_WideInt index);
-/* 682 */
+/* 685 */
 EXTERN Tcl_Obj *	Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr,
 				Tcl_WideInt fromIdx, Tcl_WideInt toIdx);
-/* 683 */
+/* 686 */
+EXTERN Tcl_Obj *	Tcl_AbstractListObjReverse(Tcl_Obj *abstractListPtr);
+/* 687 */
 EXTERN Tcl_Obj *	Tcl_NewAbstractListObj(Tcl_Interp *interp,
 				const Tcl_AbstractListType*vTablePtr);
 
@@ -2232,7 +2243,7 @@ typedef struct TclStubs {
     int (*tcl_LinkVar) (Tcl_Interp *interp, const char *varName, void *addr, int type); /* 187 */
     void (*reserved188)(void);
     Tcl_Channel (*tcl_MakeFileChannel) (void *handle, int mode); /* 189 */
-    int (*tcl_MakeSafe) (Tcl_Interp *interp); /* 190 */
+    TCL_DEPRECATED_API("") int (*tcl_MakeSafe) (Tcl_Interp *interp); /* 190 */
     Tcl_Channel (*tcl_MakeTcpClientChannel) (void *tcpSocket); /* 191 */
     char * (*tcl_Merge) (int argc, const char *const *argv); /* 192 */
     Tcl_HashEntry * (*tcl_NextHashEntry) (Tcl_HashSearch *searchPtr); /* 193 */
@@ -2332,7 +2343,7 @@ typedef struct TclStubs {
     Tcl_Encoding (*tcl_CreateEncoding) (const Tcl_EncodingType *typePtr); /* 287 */
     void (*tcl_CreateThreadExitHandler) (Tcl_ExitProc *proc, void *clientData); /* 288 */
     void (*tcl_DeleteThreadExitHandler) (Tcl_ExitProc *proc, void *clientData); /* 289 */
-    void (*tcl_DiscardResult) (Tcl_SavedResult *statePtr); /* 290 */
+    TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void (*tcl_DiscardResult) (Tcl_SavedResult *statePtr); /* 290 */
     int (*tcl_EvalEx) (Tcl_Interp *interp, const char *script, int numBytes, int flags); /* 291 */
     int (*tcl_EvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 292 */
     int (*tcl_EvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 293 */
@@ -2356,8 +2367,8 @@ typedef struct TclStubs {
     void (*tcl_ConditionWait) (Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr, const Tcl_Time *timePtr); /* 311 */
     int (*tcl_NumUtfChars) (const char *src, int length); /* 312 */
     int (*tcl_ReadChars) (Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead, int appendFlag); /* 313 */
-    void (*tcl_RestoreResult) (Tcl_Interp *interp, Tcl_SavedResult *statePtr); /* 314 */
-    void (*tcl_SaveResult) (Tcl_Interp *interp, Tcl_SavedResult *statePtr); /* 315 */
+    TCL_DEPRECATED_API("Use Tcl_RestoreInterpState") void (*tcl_RestoreResult) (Tcl_Interp *interp, Tcl_SavedResult *statePtr); /* 314 */
+    TCL_DEPRECATED_API("Use Tcl_SaveInterpState") void (*tcl_SaveResult) (Tcl_Interp *interp, Tcl_SavedResult *statePtr); /* 315 */
     int (*tcl_SetSystemEncoding) (Tcl_Interp *interp, const char *name); /* 316 */
     Tcl_Obj * (*tcl_SetVar2Ex) (Tcl_Interp *interp, const char *part1, const char *part2, Tcl_Obj *newValuePtr, int flags); /* 317 */
     void (*tcl_ThreadAlert) (Tcl_ThreadId threadId); /* 318 */
@@ -2722,10 +2733,14 @@ typedef struct TclStubs {
     Tcl_Trace (*tcl_CreateObjTrace2) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc2 *objProc2, void *clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 677 */
     Tcl_Command (*tcl_NRCreateCommand2) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc2 *proc, Tcl_ObjCmdProc2 *nreProc2, void *clientData, Tcl_CmdDeleteProc *deleteProc); /* 678 */
     int (*tcl_NRCallObjProc2) (Tcl_Interp *interp, Tcl_ObjCmdProc2 *objProc2, void *clientData, size_t objc, Tcl_Obj *const objv[]); /* 679 */
-    Tcl_WideInt (*tcl_AbstractListObjLength) (Tcl_Obj *abstractListPtr); /* 680 */
-    Tcl_Obj * (*tcl_AbstractListObjIndex) (Tcl_Obj *abstractListPtr, Tcl_WideInt index); /* 681 */
-    Tcl_Obj * (*tcl_AbstractListObjRange) (Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx); /* 682 */
-    Tcl_Obj * (*tcl_NewAbstractListObj) (Tcl_Interp *interp, const Tcl_AbstractListType*vTablePtr); /* 683 */
+    void (*reserved680)(void);
+    void (*reserved681)(void);
+    int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
+    Tcl_WideInt (*tcl_AbstractListObjLength) (Tcl_Obj *abstractListPtr); /* 683 */
+    Tcl_Obj * (*tcl_AbstractListObjIndex) (Tcl_Obj *abstractListPtr, Tcl_WideInt index); /* 684 */
+    Tcl_Obj * (*tcl_AbstractListObjRange) (Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx); /* 685 */
+    Tcl_Obj * (*tcl_AbstractListObjReverse) (Tcl_Obj *abstractListPtr); /* 686 */
+    Tcl_Obj * (*tcl_NewAbstractListObj) (Tcl_Interp *interp, const Tcl_AbstractListType*vTablePtr); /* 687 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -4114,14 +4129,20 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_NRCreateCommand2) /* 678 */
 #define Tcl_NRCallObjProc2 \
 	(tclStubsPtr->tcl_NRCallObjProc2) /* 679 */
+/* Slot 680 is reserved */
+/* Slot 681 is reserved */
+#define Tcl_RemoveChannelMode \
+	(tclStubsPtr->tcl_RemoveChannelMode) /* 682 */
 #define Tcl_AbstractListObjLength \
-	(tclStubsPtr->tcl_AbstractListObjLength) /* 680 */
+	(tclStubsPtr->tcl_AbstractListObjLength) /* 683 */
 #define Tcl_AbstractListObjIndex \
-	(tclStubsPtr->tcl_AbstractListObjIndex) /* 681 */
+	(tclStubsPtr->tcl_AbstractListObjIndex) /* 684 */
 #define Tcl_AbstractListObjRange \
-	(tclStubsPtr->tcl_AbstractListObjRange) /* 682 */
+	(tclStubsPtr->tcl_AbstractListObjRange) /* 685 */
+#define Tcl_AbstractListObjReverse \
+	(tclStubsPtr->tcl_AbstractListObjReverse) /* 686 */
 #define Tcl_NewAbstractListObj \
-	(tclStubsPtr->tcl_NewAbstractListObj) /* 683 */
+	(tclStubsPtr->tcl_NewAbstractListObj) /* 687 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -4238,22 +4259,30 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
 #undef Tcl_SaveResult
+static TCL_DEPRECATED_API("Use Tcl_SaveInterpState") void Tcl_SaveResult_(void) {}
 #define Tcl_SaveResult(interp, statePtr) \
 	do { \
+	    Tcl_SaveResult_(); \
 	    (statePtr)->objResultPtr = Tcl_GetObjResult(interp); \
 	    Tcl_IncrRefCount((statePtr)->objResultPtr); \
 	    Tcl_SetObjResult(interp, Tcl_NewObj()); \
 	} while(0)
 #undef Tcl_RestoreResult
+static TCL_DEPRECATED_API("Use Tcl_RestoreInterpState") void Tcl_RestoreResult_(void) {}
 #define Tcl_RestoreResult(interp, statePtr) \
 	do { \
+	    Tcl_RestoreResult_(); \
 	    Tcl_ResetResult(interp); \
    	    Tcl_SetObjResult(interp, (statePtr)->objResultPtr); \
    	    Tcl_DecrRefCount((statePtr)->objResultPtr); \
 	} while(0)
 #undef Tcl_DiscardResult
+static TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void Tcl_DiscardResult_(void) {}
 #define Tcl_DiscardResult(statePtr) \
-	Tcl_DecrRefCount((statePtr)->objResultPtr)
+	do { \
+	    Tcl_DiscardResult_(); \
+	    Tcl_DecrRefCount((statePtr)->objResultPtr); \
+	} while(0)
 #undef Tcl_SetResult
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \

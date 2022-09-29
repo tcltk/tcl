@@ -9,9 +9,9 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclInt.h"
 #include "tclAbstractList.h"
 #include <assert.h>
+#include "tclInt.h"
 
 /*
  * TODO - memmove is fast. Measure at what size we should prefer memmove
@@ -1952,14 +1952,13 @@ Tcl_ListObjIndex(
     Tcl_Obj **elemObjs;
     ListSizeT numElems;
 
-    
     /* Handle AbstractList before attempting SetListFromAny */
     if (!TclHasInternalRep(listObj, &tclListType) &&
 	TclHasInternalRep(listObj, &tclAbstractListType)) {
 	*objPtrPtr = Tcl_AbstractListObjIndex(listObj, index);
 	return TCL_OK;
     }
-    
+
     /*
      * TODO
      * Unlike the original list code, this does not optimize for lindex'ing
@@ -1990,7 +1989,7 @@ Tcl_ListObjIndex(
  *	convert it to one.
  *
  * Results:
- *	The return value is normally TCL_OK; in this case *intPtr will be set
+ *	The return value is normally TCL_OK; in this case *lenPtr will be set
  *	to the integer count of list elements. If listPtr does not refer to a
  *	list object and the object can not be converted to one, TCL_ERROR is
  *	returned and an error message will be left in the interpreter's result
@@ -2017,7 +2016,7 @@ Tcl_ListObjLength(
 	*lenPtr = Tcl_AbstractListObjLength(listObj);
 	return TCL_OK;
     }
-    
+
     /*
      * TODO
      * Unlike the original list code, this does not optimize for lindex'ing
@@ -2644,6 +2643,30 @@ TclLindexFlat(
 				 * represent the indices in the list. */
 {
     ListSizeT i;
+
+    /* Handle AbstractList as special case */
+    if (TclHasInternalRep(listObj,&tclAbstractListType)) {
+	Tcl_WideInt listLen = Tcl_AbstractListObjLength(listObj);
+	ListSizeT index;
+	Tcl_Obj *elemObj = NULL;
+	for (i=0 ; i<indexCount && listObj ; i++) {
+	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
+				   &index) == TCL_OK) {
+	    }
+	    if (i==0) {
+		elemObj = Tcl_AbstractListObjIndex(listObj, index);
+		Tcl_IncrRefCount(elemObj);
+	    } else if (index > 0) {
+		// TODO: support nested lists
+		// For now, only support 1 index, which is all an ArithSeries has
+		Tcl_DecrRefCount(elemObj);
+		TclNewObj(elemObj);
+		Tcl_IncrRefCount(elemObj);
+		break;
+	    }
+	}
+	return elemObj;
+    }
 
     Tcl_IncrRefCount(listObj);
 
@@ -3274,10 +3297,10 @@ SetListFromAny(
 	}
     } else if (TclHasInternalRep(objPtr,&tclAbstractListType)) {
 	ListSizeT elemCount, i;
-	
+
 	elemCount = Tcl_AbstractListObjLength(objPtr);
 	i = 0;
-	
+
 	if (ListRepInitAttempt(interp, elemCount, NULL, &listRep) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3297,7 +3320,7 @@ SetListFromAny(
 	LIST_ASSERT((elemPtrs - listRep.storePtr->slots) == elemCount);
 
 	listRep.storePtr->numUsed = elemCount;
-	
+
     } else {
 	ListSizeT estCount, length;
 	const char *limit, *nextElem = TclGetStringFromObj(objPtr, &length);
@@ -3487,6 +3510,7 @@ UpdateStringOfList(
 	ckfree(flagPtr);
     }
 }
+
 
 /*
  *------------------------------------------------------------------------

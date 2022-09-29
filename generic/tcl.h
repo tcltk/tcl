@@ -680,7 +680,7 @@ typedef int (Tcl_CmdObjTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	struct Tcl_Obj *const *objv);
 typedef int (Tcl_CmdObjTraceProc2) (void *clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, size_t objc,
-	struct Tcl_Obj *const objv[]);
+	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (ClientData clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
@@ -1006,17 +1006,17 @@ typedef struct Tcl_CallFrame {
 
 typedef struct Tcl_CmdInfo {
     int isNativeObjectProc;	/* 1 if objProc was registered by a call to
-				 * Tcl_CreateObjCommand; 0 otherwise.
-				 * Tcl_SetCmdInfo does not modify this
-				 * field. */
+				 * Tcl_CreateObjCommand; 2 if objProc was registered by
+				 * a call to Tcl_CreateObjCommand2; 0 otherwise.
+				 * Tcl_SetCmdInfo does not modify this field. */
     Tcl_ObjCmdProc *objProc;	/* Command's object-based function. */
-    ClientData objClientData;	/* ClientData for object proc. */
+    void *objClientData;	/* ClientData for object proc. */
     Tcl_CmdProc *proc;		/* Command's string-based function. */
-    ClientData clientData;	/* ClientData for string proc. */
+    void *clientData;	/* ClientData for string proc. */
     Tcl_CmdDeleteProc *deleteProc;
 				/* Function to call when command is
 				 * deleted. */
-    ClientData deleteData;	/* Value to pass to deleteProc (usually the
+    void *deleteData;	/* Value to pass to deleteProc (usually the
 				 * same as clientData). */
     Tcl_Namespace *namespacePtr;/* Points to the namespace that contains this
 				 * command. Note that Tcl_SetCmdInfo will not

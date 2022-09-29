@@ -19,6 +19,8 @@
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tclTomMath.h"
+//#include "tclArithSeries.h"
+#include "tclAbstractList.h"
 #include <math.h>
 #include <assert.h>
 

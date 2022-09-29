@@ -83,6 +83,7 @@
 #undef Tcl_UtfAtIndex
 #undef Tcl_GetRange
 #undef Tcl_GetUniChar
+#undef TclObjInterpProc
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define TclWinConvertWSAError (void (*)(DWORD))(void *)Tcl_WinConvertError
@@ -792,6 +793,7 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclBN_s_mp_sqr 0
 #   undef TclBN_s_mp_sub
 #   define TclBN_s_mp_sub 0
+#   define Tcl_MakeSafe 0
 #else /* TCL_NO_DEPRECATED */
 #   define Tcl_SeekOld seekOld
 #   define Tcl_TellOld tellOld
@@ -813,6 +815,7 @@ static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
 #   define TclGetCommandFullName Tcl_GetCommandFullName
 #   define TclpLocaltime_unix TclpLocaltime
 #   define TclpGmtime_unix TclpGmtime
+#   define Tcl_MakeSafe TclMakeSafe
 
 static int
 seekOld(
@@ -902,7 +905,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetOpenMode, /* 40 */
     TclGetOriginalCommand, /* 41 */
     TclpGetUserHome, /* 42 */
-    0, /* 43 */
+    TclGetObjInterpProc2, /* 43 */
     TclGuessPackageName, /* 44 */
     TclHideUnsafeCommands, /* 45 */
     TclInExit, /* 46 */
@@ -2042,10 +2045,14 @@ const TclStubs tclStubs = {
     Tcl_CreateObjTrace2, /* 677 */
     Tcl_NRCreateCommand2, /* 678 */
     Tcl_NRCallObjProc2, /* 679 */
-    Tcl_AbstractListObjLength, /* 680 */
-    Tcl_AbstractListObjIndex, /* 681 */
-    Tcl_AbstractListObjRange, /* 682 */
-    Tcl_NewAbstractListObj, /* 683 */
+    0, /* 680 */
+    0, /* 681 */
+    Tcl_RemoveChannelMode, /* 682 */
+    Tcl_AbstractListObjLength, /* 683 */
+    Tcl_AbstractListObjIndex, /* 684 */
+    Tcl_AbstractListObjRange, /* 685 */
+    Tcl_AbstractListObjReverse, /* 686 */
+    Tcl_NewAbstractListObj, /* 687 */
 };
 
 /* !END!: Do not edit above this line. */
