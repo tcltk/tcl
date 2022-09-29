@@ -5000,7 +5000,7 @@ int
 Tcl_LeditObjCmd(
     TCL_UNUSED(ClientData),
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     Tcl_Obj *listPtr;		/* Pointer to the list being altered. */
@@ -5012,7 +5012,7 @@ Tcl_LeditObjCmd(
     size_t listLen;
     size_t numToDelete;
 
-    if (objc < 4) {
+    if (objc + 1 < 5) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"listVar first last ?element ...?");
 	return TCL_ERROR;
