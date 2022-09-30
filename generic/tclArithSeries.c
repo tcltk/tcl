@@ -307,12 +307,9 @@ TclNewArithSeriesObj(
 	assignNumber(useDoubles, &end, &dend, endObj);
     }
     if (lenObj) {
-	int tcl_number_type;
-	Tcl_WideInt *valuePtr;
-	if (TclGetNumberFromObj(interp, lenObj, (ClientData*)&valuePtr, &tcl_number_type) != TCL_OK) {
+	if (TCL_OK != Tcl_GetWideIntFromObj(interp, lenObj, &len)) {
 	    return TCL_ERROR;
 	}
-	len = *valuePtr;
     }
 
     if (startObj && endObj) {
