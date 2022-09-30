@@ -2641,7 +2641,6 @@ TclLindexFlat(
 	    }
 	    if (i==0) {
 		TclArithSeriesObjIndex(listObj, index, &elemObj);
-		Tcl_IncrRefCount(elemObj);
 	    } else if (index > 0) {
 		Tcl_DecrRefCount(elemObj);
 		TclNewObj(elemObj);
@@ -3304,7 +3303,6 @@ SetListFromAny(
 	    if (TclArithSeriesObjIndex(objPtr, j, &elemPtrs[j]) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_IncrRefCount(elemPtrs[j]);/* Since list now holds ref to it. */
 	}
 
     } else {
