@@ -240,7 +240,6 @@ COREOBJS = \
 	$(TMP_DIR)\tclAbstractList.obj \
 	$(TMP_DIR)\tclArithSeries.obj \
 	$(TMP_DIR)\tclAlloc.obj \
-	$(TMP_DIR)\tclArithSeries.obj \
 	$(TMP_DIR)\tclAssembly.obj \
 	$(TMP_DIR)\tclAsync.obj \
 	$(TMP_DIR)\tclBasic.obj \
