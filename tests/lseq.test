@@ -223,6 +223,8 @@ test lseq-3.1 {experiement} {
     if {$ans eq {}} {
 	set ans OK
     }
+    unset factor
+    unset l
     set ans
 } {OK}
 
@@ -376,13 +378,18 @@ test lseq-3.26 {lsort shimmer} arithSeriesShimmer {
     list ${rep-before} $lexical_sort ${rep-after}
 } {arithseries {0 1 10 11 12 13 14 15 2 3 4 5 6 7 8 9} arithseries}
 
-test lseq-3.27 {lreplace shimmer} arithSeriesShimmer {
+test lseq-3.27 {lreplace shimmer} -constraints arithSeriesShimmer -body {
     set r [lseq 15 0]
     set rep-before [lindex [tcl::unsupported::representation $r] 3]
     set lexical_sort [lreplace $r 3 5 A B C]
     set rep-after [lindex [tcl::unsupported::representation $r] 3]
     list ${rep-before} $lexical_sort ${rep-after}
-} {arithseries {15 14 13 A B C 9 8 7 6 5 4 3 2 1 0} arithseries}
+} -cleanup {
+    unset r
+    unset rep-before
+    unset lexical_sort
+    unset rep-after
+} -result {arithseries {15 14 13 A B C 9 8 7 6 5 4 3 2 1 0} arithseries}
 
 test lseq-3.28 {lreverse bug in ArithSeries} {} {
     set r [lseq -5 17 3]
@@ -502,9 +509,15 @@ test lseq-4.5 {lindex off by one} -body {
     unset res
 } -result {4 3}
 
+# Panic when using variable value?
+test lseq-4.6 {panic using variable index} {
+    set i 0
+    lindex [lseq 10] $i
+} {0}
 
 # cleanup
 ::tcltest::cleanupTests
+
 return
 
 # Local Variables:

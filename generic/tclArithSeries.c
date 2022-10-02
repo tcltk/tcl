@@ -917,8 +917,11 @@ TclArithSeriesObjReverse(
     len = arithSeriesRepPtr->len;
 
     TclArithSeriesObjIndex(arithSeriesPtr, (len-1), &startObj);
+    Tcl_IncrRefCount(startObj);
     TclArithSeriesObjIndex(arithSeriesPtr, 0, &endObj);
+    Tcl_IncrRefCount(endObj);
     TclArithSeriesObjStep(arithSeriesPtr, &stepObj);
+    Tcl_IncrRefCount(stepObj);
 
     if (isDouble) {
 	Tcl_GetDoubleFromObj(NULL, startObj, &dstart);
