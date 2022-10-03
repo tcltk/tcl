@@ -307,12 +307,9 @@ TclNewArithSeriesObj(
 	assignNumber(useDoubles, &end, &dend, endObj);
     }
     if (lenObj) {
-	int tcl_number_type;
-	Tcl_WideInt *valuePtr;
-	if (TclGetNumberFromObj(interp, lenObj, (ClientData*)&valuePtr, &tcl_number_type) != TCL_OK) {
+	if (TCL_OK != Tcl_GetWideIntFromObj(interp, lenObj, &len)) {
 	    return TCL_ERROR;
 	}
-	len = *valuePtr;
     }
 
     if (startObj && endObj) {
@@ -920,8 +917,11 @@ TclArithSeriesObjReverse(
     len = arithSeriesRepPtr->len;
 
     TclArithSeriesObjIndex(arithSeriesPtr, (len-1), &startObj);
+    Tcl_IncrRefCount(startObj);
     TclArithSeriesObjIndex(arithSeriesPtr, 0, &endObj);
+    Tcl_IncrRefCount(endObj);
     TclArithSeriesObjStep(arithSeriesPtr, &stepObj);
+    Tcl_IncrRefCount(stepObj);
 
     if (isDouble) {
 	Tcl_GetDoubleFromObj(NULL, startObj, &dstart);
