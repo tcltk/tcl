@@ -106,8 +106,10 @@ ArithSeriesLen(Tcl_WideInt start, Tcl_WideInt end, Tcl_WideInt step)
 {
     Tcl_WideInt len;
 
-    if (step == 0) return 0;
-    len = (step ? (1 + (((end-start))/step)) : 0);
+    if (step == 0) {
+	return 0;
+    }
+    len = 1 + ((end-start)/step);
     return (len < 0) ? -1 : len;
 }
 
@@ -227,26 +229,24 @@ TclNewArithSeriesDbl(double start, double end, double step, Tcl_WideInt len)
 static void
 assignNumber(int useDoubles, Tcl_WideInt *intNumberPtr, double *dblNumberPtr, Tcl_Obj *numberObj)
 {
-    union {
-	double d;
-	Tcl_WideInt i;
-    } *number;
+    void *clientData;
     int tcl_number_type;
 
-    if (TclGetNumberFromObj(NULL, numberObj, (ClientData*)&number, &tcl_number_type) != TCL_OK) {
+    if (TclGetNumberFromObj(NULL, numberObj, &clientData, &tcl_number_type) != TCL_OK
+	    || tcl_number_type == TCL_NUMBER_BIG) {
 	return;
     }
     if (useDoubles) {
-	if (tcl_number_type == TCL_NUMBER_DOUBLE) {
-	    *dblNumberPtr = number->d;
+	if (tcl_number_type != TCL_NUMBER_INT) {
+	    *dblNumberPtr = *(double *)clientData;
 	} else {
-	    *dblNumberPtr = (double)number->i;
+	    *dblNumberPtr = (double)*(Tcl_WideInt *)clientData;
 	}
     } else {
 	if (tcl_number_type == TCL_NUMBER_INT) {
-	    *intNumberPtr = number->i;
+	    *intNumberPtr = *(Tcl_WideInt *)clientData;
 	} else {
-	    *intNumberPtr = (Tcl_WideInt)number->d;
+	    *intNumberPtr = (Tcl_WideInt)*(double *)clientData;
 	}
     }
 }
@@ -270,8 +270,16 @@ assignNumber(int useDoubles, Tcl_WideInt *intNumberPtr, double *dblNumberPtr, Tc
  * 	None.
  *----------------------------------------------------------------------
  */
-Tcl_Obj *
-TclNewArithSeriesObj(int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj, Tcl_Obj *stepObj, Tcl_Obj *lenObj)
+int
+TclNewArithSeriesObj(
+    Tcl_Interp *interp,       /* For error reporting */
+    Tcl_Obj **arithSeriesObj, /* return value */
+    int useDoubles,           /* Flag indicates values start,
+			      ** end, step, are treated as doubles */
+    Tcl_Obj *startObj,        /* Starting value */
+    Tcl_Obj *endObj,          /* Ending limit */
+    Tcl_Obj *stepObj,         /* increment value */
+    Tcl_Obj *lenObj)          /* Number of elements */
 {
     double dstart, dend, dstep;
     Tcl_WideInt start, end, step, len;
@@ -290,7 +298,8 @@ TclNewArithSeriesObj(int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj, Tcl_Obj
 	    dstep = step;
 	}
 	if (dstep == 0) {
-	    return Tcl_NewObj();
+	    *arithSeriesObj = Tcl_NewObj();
+	    return TCL_OK;
 	}
     }
     if (endObj) {
@@ -330,11 +339,20 @@ TclNewArithSeriesObj(int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj, Tcl_Obj
 	}
     }
 
-    if (useDoubles) {
-	return TclNewArithSeriesDbl(dstart, dend, dstep, len);
-    } else {
-	return TclNewArithSeriesInt(start, end, step, len);
+    if (len > ListSizeT_MAX) {
+	Tcl_SetObjResult(
+	    interp,
+	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
+	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	return TCL_ERROR;
     }
+
+    if (arithSeriesObj) {
+	*arithSeriesObj = (useDoubles)
+	    ? TclNewArithSeriesDbl(dstart, dend, dstep, len)
+	    : TclNewArithSeriesInt(start, end, step, len);
+    }
+    return TCL_OK;
 }
 
 /*
@@ -374,6 +392,7 @@ TclArithSeriesObjStep(
     } else {
 	*stepObj = Tcl_NewWideIntObj(arithSeriesRepPtr->step);
     }
+    Tcl_IncrRefCount(*stepObj);
     return TCL_OK;
 }
 
@@ -418,6 +437,7 @@ TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr, Tcl_WideInt index, Tcl_Obj **ele
     } else {
 	*elementObj = Tcl_NewWideIntObj(ArithSeriesIndexM(arithSeriesRepPtr, index));
     }
+    Tcl_IncrRefCount(*elementObj);
     return TCL_OK;
 }
 
@@ -684,6 +704,7 @@ TclArithSeriesObjCopy(
 
 Tcl_Obj *
 TclArithSeriesObjRange(
+    Tcl_Interp *interp,         /* For error message(s) */
     Tcl_Obj *arithSeriesPtr,	/* List object to take a range from. */
     int fromIdx,		/* Index of first element to include. */
     int toIdx)			/* Index of last element to include. */
@@ -703,16 +724,17 @@ TclArithSeriesObjRange(
     }
 
     TclArithSeriesObjIndex(arithSeriesPtr, fromIdx, &startObj);
-    Tcl_IncrRefCount(startObj);
     TclArithSeriesObjIndex(arithSeriesPtr, toIdx, &endObj);
-    Tcl_IncrRefCount(endObj);
     TclArithSeriesObjStep(arithSeriesPtr, &stepObj);
-    Tcl_IncrRefCount(stepObj);
 
     if (Tcl_IsShared(arithSeriesPtr) ||
 	    ((arithSeriesPtr->refCount > 1))) {
-	Tcl_Obj *newSlicePtr = TclNewArithSeriesObj(arithSeriesRepPtr->isDouble,
-	           startObj, endObj, stepObj, NULL);
+	Tcl_Obj *newSlicePtr;
+	if (TclNewArithSeriesObj(interp, &newSlicePtr,
+	        arithSeriesRepPtr->isDouble, startObj, endObj,
+		stepObj, NULL) != TCL_OK) {
+	    newSlicePtr = NULL;
+	}
 	Tcl_DecrRefCount(startObj);
 	Tcl_DecrRefCount(endObj);
 	Tcl_DecrRefCount(stepObj);
@@ -795,7 +817,7 @@ TclArithSeriesGetElements(
     Tcl_Interp *interp,		/* Used to report errors if not NULL. */
     Tcl_Obj *objPtr,		/* AbstractList object for which an element
 				 * array is to be returned. */
-    int *objcPtr,		/* Where to store the count of objects
+    ListSizeT *objcPtr,		/* Where to store the count of objects
 				 * referenced by objv. */
     Tcl_Obj ***objvPtr)		/* Where to store the pointer to an array of
 				 * pointers to the list's objects. */
@@ -834,7 +856,6 @@ TclArithSeriesGetElements(
 			}
 			return TCL_ERROR;
 		    }
-		    Tcl_IncrRefCount(objv[i]);
 		}
 	    }
 	} else {
@@ -875,6 +896,7 @@ TclArithSeriesGetElements(
 
 Tcl_Obj *
 TclArithSeriesObjReverse(
+    Tcl_Interp *interp,         /* For error message(s) */
     Tcl_Obj *arithSeriesPtr)	/* List object to reverse. */
 {
     ArithSeries *arithSeriesRepPtr;
@@ -910,8 +932,10 @@ TclArithSeriesObjReverse(
     if (Tcl_IsShared(arithSeriesPtr) ||
 	    ((arithSeriesPtr->refCount > 1))) {
 	Tcl_Obj *lenObj = Tcl_NewWideIntObj(len);
-	resultObj = TclNewArithSeriesObj(isDouble,
-		        startObj, endObj, stepObj, lenObj);
+	if (TclNewArithSeriesObj(interp, &resultObj,
+		 isDouble, startObj, endObj, stepObj, lenObj) != TCL_OK) {
+	    resultObj = NULL;
+	}
 	Tcl_DecrRefCount(lenObj);
     } else {
 

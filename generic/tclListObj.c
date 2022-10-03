@@ -2632,7 +2632,8 @@ TclLindexFlat(
 
     /* Handle ArithSeries as special case */
     if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
-	ListSizeT index, listLen = TclArithSeriesObjLength(listObj);
+	Tcl_WideInt listLen = TclArithSeriesObjLength(listObj);
+	ListSizeT index;
 	Tcl_Obj *elemObj = NULL;
 	for (i=0 ; i<indexCount && listObj ; i++) {
 	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
@@ -2640,7 +2641,6 @@ TclLindexFlat(
 	    }
 	    if (i==0) {
 		TclArithSeriesObjIndex(listObj, index, &elemObj);
-		Tcl_IncrRefCount(elemObj);
 	    } else if (index > 0) {
 		Tcl_DecrRefCount(elemObj);
 		TclNewObj(elemObj);
@@ -3303,7 +3303,6 @@ SetListFromAny(
 	    if (TclArithSeriesObjIndex(objPtr, j, &elemPtrs[j]) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_IncrRefCount(elemPtrs[j]);/* Since list now holds ref to it. */
 	}
 
     } else {
