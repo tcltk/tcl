@@ -392,6 +392,7 @@ TclArithSeriesObjStep(
     } else {
 	*stepObj = Tcl_NewWideIntObj(arithSeriesRepPtr->step);
     }
+    Tcl_IncrRefCount(*stepObj);
     return TCL_OK;
 }
 
@@ -436,6 +437,7 @@ TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr, Tcl_WideInt index, Tcl_Obj **ele
     } else {
 	*elementObj = Tcl_NewWideIntObj(ArithSeriesIndexM(arithSeriesRepPtr, index));
     }
+    Tcl_IncrRefCount(*elementObj);
     return TCL_OK;
 }
 
@@ -722,11 +724,8 @@ TclArithSeriesObjRange(
     }
 
     TclArithSeriesObjIndex(arithSeriesPtr, fromIdx, &startObj);
-    Tcl_IncrRefCount(startObj);
     TclArithSeriesObjIndex(arithSeriesPtr, toIdx, &endObj);
-    Tcl_IncrRefCount(endObj);
     TclArithSeriesObjStep(arithSeriesPtr, &stepObj);
-    Tcl_IncrRefCount(stepObj);
 
     if (Tcl_IsShared(arithSeriesPtr) ||
 	    ((arithSeriesPtr->refCount > 1))) {
@@ -857,7 +856,6 @@ TclArithSeriesGetElements(
 			}
 			return TCL_ERROR;
 		    }
-		    Tcl_IncrRefCount(objv[i]);
 		}
 	    }
 	} else {

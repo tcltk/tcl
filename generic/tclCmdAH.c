@@ -3027,6 +3027,13 @@ ForeachAssignments(
 	    varValuePtr = Tcl_ObjSetVar2(interp, statePtr->varvList[i][v],
 		    NULL, valuePtr, TCL_LEAVE_ERR_MSG);
 
+	    if (isarithseries) {
+		/* arith values have implicit reference
+		** Make sure value is cleaned up when var goes away
+		*/
+		Tcl_DecrRefCount(valuePtr);
+	    }
+
 	    if (varValuePtr == NULL) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (setting %s loop variable \"%s\")",
