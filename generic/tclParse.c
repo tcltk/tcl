@@ -33,6 +33,7 @@
  *			meaning in ParseTokens: backslash, dollar sign, or
  *			open bracket.
  * TYPE_QUOTE -		Character is a double quote.
+ * TYPE_OPEN_PAREN -	Character is a left parenthesis.
  * TYPE_CLOSE_PAREN -	Character is a right parenthesis.
  * TYPE_CLOSE_BRACK -	Character is a right square bracket.
  * TYPE_BRACE -		Character is a curly brace (either left or right).
@@ -54,7 +55,7 @@ const char tclCharTypeTable[] = {
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_SPACE,       TYPE_NORMAL,      TYPE_QUOTE,       TYPE_NORMAL,
     TYPE_SUBS,        TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
-    TYPE_NORMAL,      TYPE_CLOSE_PAREN, TYPE_NORMAL,      TYPE_NORMAL,
+    TYPE_OPEN_PAREN,  TYPE_CLOSE_PAREN, TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
@@ -1398,15 +1399,28 @@ Tcl_ParseVarName(
      */
 
     if (*src == '{') {
+	char ch; int braceCount = 0;
 	src++;
 	numBytes--;
 	tokenPtr->type = TCL_TOKEN_TEXT;
 	tokenPtr->start = src;
 	tokenPtr->numComponents = 0;
 
-	while (numBytes && (*src != '}')) {
+	ch = *src;
+	while (numBytes && (braceCount>0 || ch != '}')) {
+	    switch (ch) {
+	    case '{': braceCount++; break;
+	    case '}': braceCount--; break;
+	    case '\\':
+		/* if 2 or more left, consume 2, else consume
+		   just the \ and let it run into the end */
+		if (numBytes > 1) {
+		   src++; numBytes--;
+		}
+	    }
 	    numBytes--;
 	    src++;
+	    ch= *src;
 	}
 	if (numBytes == 0) {
 	    if (parsePtr->interp != NULL) {
@@ -1462,11 +1476,11 @@ Tcl_ParseVarName(
 	     * any number of substitutions.
 	     */
 
-	    if (TCL_OK != ParseTokens(src+1, numBytes-1, TYPE_CLOSE_PAREN,
+	    if (TCL_OK != ParseTokens(src+1, numBytes-1, TYPE_BAD_ARRAY_INDEX,
 		    TCL_SUBST_ALL, parsePtr)) {
 		goto error;
 	    }
-	    if ((parsePtr->term == src+numBytes) || (*parsePtr->term != ')')){
+	    if ((parsePtr->term == src+numBytes)){
 		if (parsePtr->interp != NULL) {
 		    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
 			    "missing )", -1));
@@ -1474,6 +1488,14 @@ Tcl_ParseVarName(
 		parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
 		parsePtr->term = src;
 		parsePtr->incomplete = 1;
+		goto error;
+	    } else if ((*parsePtr->term != ')')){
+		if (parsePtr->interp != NULL) {
+		    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
+			    "invalid character in array index", -1));
+		}
+		parsePtr->errorType = TCL_PARSE_SYNTAX;
+		parsePtr->term = src;
 		goto error;
 	    }
 	    src = parsePtr->term + 1;
