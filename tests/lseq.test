@@ -16,7 +16,7 @@ if {"::tcltest" ni [namespace children]} {
 
 testConstraint arithSeriesDouble 1
 testConstraint arithSeriesShimmer 1
-testConstraint arithSeriesShimmerOk 0
+testConstraint arithSeriesShimmerOk 1
 
 ## Arg errors
 test lseq-1.1 {error cases} -body {
