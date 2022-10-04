@@ -601,8 +601,8 @@ test parse-12.6 {Tcl_ParseVarName procedure, braced variable name} testparser {
     testparser {${..[]b}cd} 0
 } {- {${..[]b}cd} 1 word {${..[]b}cd} 3 variable {${..[]b}} 1 text {..[]b} 0 text cd 0 {}}
 test parse-12.7 {Tcl_ParseVarName procedure, braced variable name} testparser {
-    testparser "\$\{\{\} " 0
-} {- \$\{\{\}\  1 word \$\{\{\} 2 variable \$\{\{\} 1 text \{ 0 {}}
+    testparser "\$\{\{\\\\\}\} " 0
+} {- {${{\\}} } 1 word {${{\\}}} 2 variable {${{\\}}} 1 text {{\\}} 0 {}}
 test parse-12.8 {Tcl_ParseVarName procedure, missing close brace} testparser {
     list [catch {testparser "$\{abc" 0} msg] $msg $::errorInfo
 } {1 {missing close-brace for variable name} missing\ close-brace\ for\ variable\ name\n\ \ \ \ (remainder\ of\ script:\ \"\{abc\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"\$\\\{abc\"\ 0\"}
@@ -797,7 +797,7 @@ test parse-15.16 {CommandComplete procedure} {
 } 1
 test parse-15.17 {CommandComplete procedure} {
     info complete {a b "c $dd("}
-} 0
+} 1
 test parse-15.18 {CommandComplete procedure} {
     info complete {a b "c \"}
 } 0

@@ -18,7 +18,7 @@ ledit \- Replace elements of a list stored in variable
 The command fetches the list value in variable \fIlistVar\fR and replaces the
 elements in the range given by indices \fIfirst\fR to \fIlast\fR (inclusive)
 with the \fIvalue\fR arguments. The resulting list is then stored back in
-\fIlistVar\fR and returned as the result of the command. 
+\fIlistVar\fR and returned as the result of the command.
 .PP
 Arguments \fIfirst\fR and \fIlast\fR are index values specifying the first and
 last elements of the range to replace. They are interpreted
