@@ -2866,13 +2866,13 @@ EachloopCmd(
 	/* Values */
 	if (TclHasInternalRep(objv[2+i*2],&tclArithSeriesType)) {
 	    /* Special case for Arith Series */
-	    statePtr->vCopyList[i] = TclArithSeriesObjCopy(interp, objv[2+i*2]);
-	    if (statePtr->vCopyList[i] == NULL) {
+	    statePtr->aCopyList[i] = TclArithSeriesObjCopy(interp, objv[2+i*2]);
+	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;
 	    }
 	    /* Don't compute values here, wait until the last momement */
-	    statePtr->argcList[i] = TclArithSeriesObjLength(statePtr->vCopyList[i]);
+	    statePtr->argcList[i] = TclArithSeriesObjLength(statePtr->aCopyList[i]);
 	} else {
 	    /* List values */
 	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
@@ -3005,12 +3005,12 @@ ForeachAssignments(
     Tcl_Obj *valuePtr, *varValuePtr;
 
     for (i=0 ; i<statePtr->numLists ; i++) {
-	int isarithseries = TclHasInternalRep(statePtr->vCopyList[i],&tclArithSeriesType);
+	int isarithseries = TclHasInternalRep(statePtr->aCopyList[i],&tclArithSeriesType);
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
 		if (isarithseries) {
-		    if (TclArithSeriesObjIndex(statePtr->vCopyList[i], k, &valuePtr) != TCL_OK) {
+		    if (TclArithSeriesObjIndex(statePtr->aCopyList[i], k, &valuePtr) != TCL_OK) {
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (setting %s loop variable \"%s\")",
 			(statePtr->resultList != NULL ? "lmap" : "foreach"),
@@ -3026,13 +3026,6 @@ ForeachAssignments(
 
 	    varValuePtr = Tcl_ObjSetVar2(interp, statePtr->varvList[i][v],
 		    NULL, valuePtr, TCL_LEAVE_ERR_MSG);
-
-	    if (isarithseries) {
-		/* arith values have implicit reference
-		** Make sure value is cleaned up when var goes away
-		*/
-		Tcl_DecrRefCount(valuePtr);
-	    }
 
 	    if (varValuePtr == NULL) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(

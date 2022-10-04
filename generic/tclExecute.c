@@ -4883,6 +4883,7 @@ TEBCresume(
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
+	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
 	}
 
@@ -5187,7 +5188,11 @@ TEBCresume(
 	     */
 
 	    do {
-		Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
+		if (isArithSeries) {
+		    TclArithSeriesObjIndex(value2Ptr, i, &o);
+		} else {
+		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
+		}
 		if (o != NULL) {
 		    s2 = TclGetStringFromObj(o, &s2len);
 		} else {
