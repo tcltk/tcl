@@ -1206,14 +1206,11 @@ TcpSetOptionProc(
     sock = statePtr->sockets->fd;
 
     if (!strcasecmp(optionName, "-keepalive")) {
-	BOOL val = FALSE;
-	int boolVar, rtn;
+	BOOL val;
+	int rtn;
 
-	if (Tcl_GetBoolean(interp, value, &boolVar) != TCL_OK) {
+	if (Tcl_GetBoolean(interp, value, &val) != TCL_OK) {
 	    return TCL_ERROR;
-	}
-	if (boolVar) {
-	    val = TRUE;
 	}
 	rtn = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
 		(const char *) &val, sizeof(BOOL));
@@ -1228,14 +1225,11 @@ TcpSetOptionProc(
 	}
 	return TCL_OK;
     } else if (!strcasecmp(optionName, "-nagle")) {
-	BOOL val = FALSE;
-	int boolVar, rtn;
+	BOOL val;
+	int rtn;
 
-	if (Tcl_GetBoolean(interp, value, &boolVar) != TCL_OK) {
+	if (Tcl_GetBoolean(interp, value, &val) != TCL_OK) {
 	    return TCL_ERROR;
-	}
-	if (!boolVar) {
-	    val = TRUE;
 	}
 	rtn = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
 		(const char *) &val, sizeof(BOOL));

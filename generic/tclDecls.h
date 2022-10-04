@@ -4344,6 +4344,8 @@ static TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void Tcl_DiscardResult_(
 	Tcl_GetUnicodeFromObj(objPtr, (int *)NULL)
 #undef Tcl_GetBytesFromObj
 #undef Tcl_GetIndexFromObjStruct
+#undef Tcl_GetBooleanFromObj
+#undef Tcl_GetBoolean
 #ifdef TCL_NO_DEPRECATED
 #undef Tcl_GetStringFromObj
 #undef Tcl_GetUnicodeFromObj
@@ -4354,6 +4356,12 @@ static TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void Tcl_DiscardResult_(
 	(sizeof(*(sizePtr)) <= sizeof(int) ? tclStubsPtr->tclGetBytesFromObj(interp, objPtr, (int *)(sizePtr)) : tclStubsPtr->tcl_GetBytesFromObj(interp, objPtr, (size_t *)(sizePtr)))
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	(tclStubsPtr->tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
+	(sizeof(*(boolPtr)) == sizeof(int) ? tclStubsPtr->tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : \
+	((sizeof(*(boolPtr)) == sizeof(char)) ? Tcl_GetBoolFromObj(interp, objPtr, 0, (char *)(boolPtr)) : (Tcl_Panic("Wrong bool var for %s", "Tcl_GetBooleanFromObj"), TCL_ERROR)))
+#define Tcl_GetBoolean(interp, src, boolPtr) \
+	(sizeof(*(boolPtr)) == sizeof(int) ? tclStubsPtr->tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
+	((sizeof(*(boolPtr)) == sizeof(char)) ? Tcl_GetBool(interp, src, 0, (char *)(boolPtr)) : (Tcl_Panic("Wrong bool var for %s", "Tcl_GetBoolean"), TCL_ERROR)))
 #ifdef TCL_NO_DEPRECATED
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? tclStubsPtr->tcl_GetStringFromObj(objPtr, (int *)(sizePtr)) : tclStubsPtr->tclGetStringFromObj(objPtr, (size_t *)(sizePtr)))
@@ -4367,6 +4375,12 @@ static TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void Tcl_DiscardResult_(
 	(sizeof(*(sizePtr)) <= sizeof(int) ? (TclGetBytesFromObj)(interp, objPtr, (int *)(sizePtr)) : (Tcl_GetBytesFromObj)(interp, objPtr, (size_t *)(sizePtr)))
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
 	((Tcl_GetIndexFromObjStruct)((interp), (objPtr), (tablePtr), (offset), (msg), (flags)|(int)(sizeof(*(indexPtr))<<1), (indexPtr)))
+#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
+	(sizeof(*(boolPtr)) == sizeof(int) ? Tcl_GetBooleanFromObj(interp, objPtr, (int *)(boolPtr)) : \
+	((sizeof(*(boolPtr)) == sizeof(char)) ? Tcl_GetBoolFromObj(interp, objPtr, 0, (char *)(boolPtr)) : (Tcl_Panic("Wrong bool var for %s", "Tcl_GetBooleanFromObj"), TCL_ERROR)))
+#define Tcl_GetBoolean(interp, src, boolPtr) \
+	(sizeof(*(boolPtr)) == sizeof(int) ? Tcl_GetBoolean(interp, src, (int *)(boolPtr)) : \
+	((sizeof(*(boolPtr)) == sizeof(char)) ? Tcl_GetBool(interp, src, 0, (char *)(boolPtr)) : (Tcl_Panic("Wrong bool var for %s", "Tcl_GetBoolean"), TCL_ERROR)))
 #ifdef TCL_NO_DEPRECATED
 #define Tcl_GetStringFromObj(objPtr, sizePtr) \
 	(sizeof(*(sizePtr)) <= sizeof(int) ? (Tcl_GetStringFromObj)(objPtr, (int *)(sizePtr)) : (TclGetStringFromObj)(objPtr, (size_t *)(sizePtr)))
