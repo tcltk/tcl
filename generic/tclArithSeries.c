@@ -306,7 +306,9 @@ TclNewArithSeriesObj(
 	assignNumber(useDoubles, &end, &dend, endObj);
     }
     if (lenObj) {
-	Tcl_GetWideIntFromObj(NULL, lenObj, &len);
+	if (TCL_OK != Tcl_GetWideIntFromObj(interp, lenObj, &len)) {
+	    return TCL_ERROR;
+	}
     }
 
     if (startObj && endObj) {
@@ -339,7 +341,7 @@ TclNewArithSeriesObj(
 	}
     }
 
-    if (len > ListSizeT_MAX) {
+    if (TCL_MAJOR_VERSION < 9 && len > ListSizeT_MAX) {
 	Tcl_SetObjResult(
 	    interp,
 	    Tcl_NewStringObj("max length of a Tcl list exceeded", -1));
