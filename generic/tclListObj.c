@@ -1369,6 +1369,9 @@ TclListObjCopy(
     Tcl_Obj *copyObj;
 
     if (!TclHasInternalRep(listObj, &tclListType)) {
+	if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+	    return TclArithSeriesObjCopy(interp, listObj);
+	}
 	if (SetListFromAny(interp, listObj) != TCL_OK) {
 	    return NULL;
 	}
@@ -1942,10 +1945,6 @@ Tcl_ListObjIndex(
 {
     Tcl_Obj **elemObjs;
     ListSizeT numElems;
-
-    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
-	return TclArithSeriesObjIndex(listObj, index, objPtrPtr);
-    }
 
     /*
      * TODO
@@ -2642,6 +2641,7 @@ TclLindexFlat(
 	    if (i==0) {
 		TclArithSeriesObjIndex(listObj, index, &elemObj);
 	    } else if (index > 0) {
+		/* ArithSeries cannot be a list of lists */
 		Tcl_DecrRefCount(elemObj);
 		TclNewObj(elemObj);
 		Tcl_IncrRefCount(elemObj);
