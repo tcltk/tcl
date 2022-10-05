@@ -47,7 +47,8 @@ absolute, and file names may contain any character other than slash.
 The file names \fB\&.\fR and \fB\&..\fR are special and refer to the
 current directory and the parent of the current directory respectively.
 Multiple adjacent slash characters are interpreted as a single
-separator.  Any number of trailing slash characters at the end of a
+separator, except for the first double slash \fB//\fR in absolute paths.
+Any number of trailing slash characters at the end of a
 path are simply ignored, so the paths \fBfoo\fR, \fBfoo/\fR and
 \fBfoo//\fR are all identical, and in particular \fBfoo/\fR does not
 necessarily mean a directory is being referred.

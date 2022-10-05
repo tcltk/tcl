@@ -446,19 +446,19 @@ test cmdAH-8.13 {Tcl_FileObjCmd: dirname} testsetplatform {
 test cmdAH-8.14 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname //foo
-} /
+} //foo
 test cmdAH-8.15 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname //foo/bar
-} /foo
+} //foo
 test cmdAH-8.16 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname {//foo\/bar/baz}
-} {/foo\/bar}
+} {//foo\/bar}
 test cmdAH-8.17 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname {//foo\/bar/baz/blat}
-} {/foo\/bar/baz}
+} {//foo\/bar/baz}
 test cmdAH-8.18 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname /foo//
@@ -584,7 +584,7 @@ test cmdAH-9.13 {Tcl_FileObjCmd: tail} testsetplatform {
 test cmdAH-9.14 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail //foo
-} foo
+} {}
 test cmdAH-9.15 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail //foo/bar

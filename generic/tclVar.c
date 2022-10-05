@@ -108,9 +108,6 @@ VarHashNextVar(
     return VarHashGetValue(hPtr);
 }
 
-#define VarHashGetKey(varPtr) \
-    (((VarInHash *)(varPtr))->entry.key.objPtr)
-
 #define VarHashDeleteTable(tablePtr) \
     Tcl_DeleteHashTable(&(tablePtr)->table)
 
@@ -998,6 +995,7 @@ TclLookupSimpleVar(
 	    if (tablePtr == NULL) {
 		tablePtr = (TclVarHashTable *)Tcl_Alloc(sizeof(TclVarHashTable));
 		TclInitVarHashTable(tablePtr, NULL);
+		tablePtr->arrayPtr = varPtr;
 		varFramePtr->varTablePtr = tablePtr;
 	    }
 	    varPtr = VarHashCreateVar(tablePtr, varNamePtr, &isNew);
@@ -1389,6 +1387,9 @@ TclPtrGetVarIdx(
 {
     Interp *iPtr = (Interp *) interp;
     const char *msg;
+    Var *initialArrayPtr = arrayPtr;
+
+    TclVarFindHiddenArray(varPtr, arrayPtr);
 
     /*
      * Invoke any read traces that have been set for the variable.
@@ -1435,8 +1436,8 @@ TclPtrGetVarIdx(
     }
 
     if (flags & TCL_LEAVE_ERR_MSG) {
-	if (TclIsVarUndefined(varPtr) && arrayPtr
-		&& !TclIsVarUndefined(arrayPtr)) {
+	if (TclIsVarUndefined(varPtr) && initialArrayPtr
+		&& !TclIsVarUndefined(initialArrayPtr)) {
 	    msg = NOSUCHELEMENT;
 	} else if (TclIsVarArray(varPtr)) {
 	    msg = ISARRAY;
@@ -1952,6 +1953,8 @@ TclPtrSetVarIdx(
 	goto earlyError;
     }
 
+    TclVarFindHiddenArray(varPtr, arrayPtr);
+
     /*
      * Invoke any read traces that have been set for the variable if it is
      * requested. This was done for INST_LAPPEND_* but that was inconsistent
@@ -2442,6 +2445,7 @@ TclPtrUnsetVarIdx(
 {
     Interp *iPtr = (Interp *) interp;
     int result = (TclIsVarUndefined(varPtr)? TCL_ERROR : TCL_OK);
+    Var *initialArrayPtr = arrayPtr;
 
     /*
      * Keep the variable alive until we're done with it. We used to
@@ -2454,6 +2458,8 @@ TclPtrUnsetVarIdx(
 	VarHashRefCount(varPtr)++;
     }
 
+    TclVarFindHiddenArray(varPtr, arrayPtr);
+
     UnsetVarStruct(varPtr, arrayPtr, iPtr, part1Ptr, part2Ptr, flags, index);
 
     /*
@@ -2463,7 +2469,7 @@ TclPtrUnsetVarIdx(
     if (result != TCL_OK) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset",
-		    ((arrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT), index);
+              ((initialArrayPtr == NULL) ? NOSUCHVAR : NOSUCHELEMENT), index);
 	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "VARNAME", NULL);
 	}
     }
@@ -2571,9 +2577,23 @@ UnsetVarStruct(
 
 	if ((dummyVar.flags & VAR_TRACED_UNSET)
 		|| (arrayPtr && (arrayPtr->flags & VAR_TRACED_UNSET))) {
+
+            /*
+             * Pass the array element name to TclObjCallVarTraces(), because
+             * it cannot be determined from dummyVar. Alternatively, indicate
+             * via flags whether the variable involved in the code that caused
+             * the trace to be triggered was an array element, for the correct
+             * formatting of error messages.
+             */
+            if (part2Ptr) {
+                flags |= VAR_ARRAY_ELEMENT;
+            } else if (TclIsVarArrayElement(varPtr)) {
+                part2Ptr = VarHashGetKey(varPtr);
+            }
+
 	    dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	    TclObjCallVarTraces(iPtr, arrayPtr, &dummyVar, part1Ptr, part2Ptr,
-		    (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
+              (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|VAR_ARRAY_ELEMENT))
 			    | TCL_TRACE_UNSETS,
 		    /* leaveErrMsg */ 0, index);
 
@@ -6340,6 +6360,7 @@ TclInitVarHashTable(
     Tcl_InitCustomHashTable(&tablePtr->table,
 	    TCL_CUSTOM_TYPE_KEYS, &tclVarHashKeyType);
     tablePtr->nsPtr = nsPtr;
+    tablePtr->arrayPtr = NULL;
 }
 
 static Tcl_HashEntry *
@@ -6594,6 +6615,7 @@ TclInitArrayVar(
 
     arrayPtr->value.tablePtr = (TclVarHashTable *) tablePtr;
     TclInitVarHashTable(arrayPtr->value.tablePtr, TclGetVarNsPtr(arrayPtr));
+    arrayPtr->value.tablePtr->arrayPtr = arrayPtr;
 
     /*
      * Default value initialization.
