@@ -215,15 +215,16 @@ typedef struct Tcl_Ensemble Tcl_Ensemble;
 typedef struct NamespacePathEntry NamespacePathEntry;
 
 /*
- * Special hashtable for variables: this is just a Tcl_HashTable with an nsPtr
- * field added at the end: in this way variables can find their namespace
- * without having to copy a pointer in their struct: they can access it via
- * their hPtr->tablePtr.
+ * Special hashtable for variables: this is just a Tcl_HashTable with nsPtr
+ * and arrayPtr fields added at the end: in this way variables can find their
+ * namespace and possibly containing array without having to copy a pointer in
+ * their struct: they can access them via their hPtr->tablePtr.
  */
 
 typedef struct TclVarHashTable {
     Tcl_HashTable table;
     struct Namespace *nsPtr;
+    struct Var *arrayPtr;
 } TclVarHashTable;
 
 /*
@@ -817,6 +818,14 @@ typedef struct VarInHash {
  * MODULE_SCOPE int	TclIsVarResolved(Var *varPtr);
  */
 
+#define TclVarFindHiddenArray(varPtr,arrayPtr)				\
+    do {								\
+        if ((arrayPtr == NULL) && TclIsVarInHash(varPtr) &&		\
+              (TclVarParentArray(varPtr) != NULL)) {			\
+            arrayPtr = TclVarParentArray(varPtr);			\
+        }								\
+    } while(0)
+
 #define TclIsVarScalar(varPtr) \
     !((varPtr)->flags & (VAR_ARRAY|VAR_LINK))
 
@@ -861,26 +870,38 @@ typedef struct VarInHash {
 	? ((TclVarHashTable *) ((((VarInHash *) (varPtr))->entry.tablePtr)))->nsPtr \
 	: NULL)
 
+#define TclVarParentArray(varPtr)					\
+    ((TclVarHashTable *) ((VarInHash *) (varPtr))->entry.tablePtr)->arrayPtr
+
 #define VarHashRefCount(varPtr) \
     ((VarInHash *) (varPtr))->refCount
+
+#define VarHashGetKey(varPtr) \
+    (((VarInHash *)(varPtr))->entry.key.objPtr)
 
 /*
  * Macros for direct variable access by TEBC.
  */
 
-#define TclIsVarDirectReadable(varPtr) \
-    (   !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_READ)) \
-    &&  (varPtr)->value.objPtr)
+#define TclIsVarTricky(varPtr,trickyFlags)				\
+    (   ((varPtr)->flags & (VAR_ARRAY|VAR_LINK|trickyFlags))		\
+          || (TclIsVarInHash(varPtr)					\
+                && (TclVarParentArray(varPtr) != NULL)			\
+                && (TclVarParentArray(varPtr)->flags & (trickyFlags))))
+
+#define TclIsVarDirectReadable(varPtr)					\
+    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ))			\
+          && (varPtr)->value.objPtr)
 
 #define TclIsVarDirectWritable(varPtr) \
-    !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_WRITE|VAR_DEAD_HASH))
+    (!TclIsVarTricky(varPtr,VAR_TRACED_WRITE|VAR_DEAD_HASH))
 
 #define TclIsVarDirectUnsettable(varPtr) \
-    !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH))
+    (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_UNSET|VAR_DEAD_HASH))
 
 #define TclIsVarDirectModifyable(varPtr) \
-    (   !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_READ|VAR_TRACED_WRITE)) \
-    &&  (varPtr)->value.objPtr)
+    (   (!TclIsVarTricky(varPtr,VAR_TRACED_READ|VAR_TRACED_WRITE))	\
+          &&  (varPtr)->value.objPtr)
 
 #define TclIsVarDirectReadable2(varPtr, arrayPtr) \
     (TclIsVarDirectReadable(varPtr) &&\

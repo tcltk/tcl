@@ -399,7 +399,6 @@ TclpGetNativePathType(
 
         if (path[0] == '/') {
             ++path;
-#if defined(__CYGWIN__) || defined(__QNX__)
             /*
              * Check for "//" network path prefix
              */
@@ -408,22 +407,10 @@ TclpGetNativePathType(
                 while (*path && *path != '/') {
                     ++path;
                 }
-#if defined(__CYGWIN__)
-                /* UNC paths need to be followed by a share name */
-                if (*path++ && (*path && *path != '/')) {
-                    ++path;
-                    while (*path && *path != '/') {
-                        ++path;
-                    }
-                } else {
-                    path = origPath + 1;
-                }
-#endif
             }
-#endif
             if (driveNameLengthPtr != NULL) {
                 /*
-                 * We need this addition in case the QNX or Cygwin code was used.
+                 * We need this addition in case the "//" code was used.
                  */
 
                 *driveNameLengthPtr = (path - origPath);
@@ -641,7 +628,6 @@ SplitUnixPath(
     if (*path == '/') {
 	Tcl_Obj *rootElt;
 	++path;
-#if defined(__CYGWIN__) || defined(__QNX__)
 	/*
 	 * Check for "//" network path prefix
 	 */
@@ -650,19 +636,7 @@ SplitUnixPath(
 	    while (*path && *path != '/') {
 		++path;
 	    }
-#if defined(__CYGWIN__)
-	    /* UNC paths need to be followed by a share name */
-	    if (*path++ && (*path && *path != '/')) {
-		++path;
-		while (*path && *path != '/') {
-		    ++path;
-		}
-	    } else {
-		path = origPath + 1;
-	    }
-#endif
 	}
-#endif
 	rootElt = Tcl_NewStringObj(origPath, path - origPath);
 	Tcl_ListObjAppendElement(NULL, result, rootElt);
 	while (*path == '/') {
@@ -744,10 +718,10 @@ SplitWinPath(
 	length = p - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-            if ((elementStart != path) &&
-                isalpha(UCHAR(elementStart[0])) &&
-                (elementStart[1] == ':')) {
-                TclNewLiteralStringObj(nextElt, "./");
+	    if ((elementStart != path) &&
+		    isalpha(UCHAR(elementStart[0])) &&
+		    (elementStart[1] == ':')) {
+		TclNewLiteralStringObj(nextElt, "./");
 		Tcl_AppendToObj(nextElt, elementStart, length);
 	    } else {
 		nextElt = Tcl_NewStringObj(elementStart, length);
@@ -849,12 +823,10 @@ TclpNativeJoinPath(
     p = joining;
 
     if (length != 0) {
-	if ((p[0] == '.') &&
-            (p[1] == '/') &&
-            (tclPlatform==TCL_PLATFORM_WINDOWS) &&
-            isalpha(UCHAR(p[2])) &&
-            (p[3] == ':')) {
-            p += 2;
+	if ((p[0] == '.') && (p[1] == '/') &&
+	    (tclPlatform==TCL_PLATFORM_WINDOWS) && isalpha(UCHAR(p[2]))
+	    && (p[3] == ':')) {
+	    p += 2;
 	}
     }
     if (*p == '\0') {
@@ -2184,7 +2156,7 @@ DoGlob(
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
 
-                result = DoGlob(interp, matchesObj, separators, subdirv[i],
+		result = DoGlob(interp, matchesObj, separators, subdirv[i],
 			1, p+1, types);
 		if (copy) {
 		    size_t end;

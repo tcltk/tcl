@@ -229,18 +229,18 @@ When the trace triggers, three arguments are appended to
 \fIcommandPrefix name1 name2 op\fR
 .CE
 .PP
-\fIName1\fR and \fIname2\fR give the name(s) for the variable
-being accessed:  if the variable is a scalar then \fIname1\fR
-gives the variable's name and \fIname2\fR is an empty string;
-if the variable is an array element then \fIname1\fR gives the
-name of the array and name2 gives the index into the array;
-if an entire array is being deleted and the trace was registered
+\fIName1\fR gives the name for the variable being accessed.
+This is not necessarily the same as the name used in the
+\fBtrace variable\fR command:  the \fBupvar\fR command allows a
+procedure to reference a variable under a different name.
+If the trace was originally set on an array or array element,
+\fIname2\fR provides which index into the array was affected.
+This information is present even when \fIname1\fR refers to a
+scalar, which may happen if the \fBupvar\fR command was used to
+create a reference to a single array element.
+If an entire array is being deleted and the trace was registered
 on the overall array, rather than a single element, then \fIname1\fR
 gives the array name and \fIname2\fR is an empty string.
-\fIName1\fR and \fIname2\fR are not necessarily the same as the
-name used in the \fBtrace variable\fR command:  the \fBupvar\fR
-command allows a procedure to reference a variable under a
-different name.
 \fIOp\fR indicates what operation is being performed on the
 variable, and is one of \fBread\fR, \fBwrite\fR, or \fBunset\fR as
 defined above.
