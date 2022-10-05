@@ -624,6 +624,27 @@ ErrorInfoRead(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_NamespaceGetName --
+ *
+ *	Retrieves the name of the given namespace.
+ *
+ *  Results:
+ *	Returns a char * pointer to the name of the namespace.
+ *
+ *  Side effects:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+
+char *
+Tcl_NamespaceGetName(Tcl_Namespace *nsPtr)
+{
+    return nsPtr->name;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_CreateNamespace --
  *
  *	Creates a new namespace with the given name. If there is no active

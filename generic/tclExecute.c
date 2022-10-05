@@ -4674,6 +4674,7 @@ TEBCresume(
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
+	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
 	}
 
@@ -4729,7 +4730,7 @@ TEBCresume(
 
 	    /* Decode end-offset index values. */
 
-	    index = TclIndexDecode(opnd, length);
+	    index = TclIndexDecode(opnd, length-1);
 
 	    /* Compute value @ index */
 	    if (index < length) {
@@ -4945,7 +4946,11 @@ TEBCresume(
 	fromIdx = TclIndexDecode(fromIdx, objc - 1);
 
 	if (TclHasInternalRep(valuePtr,&tclArithSeriesType)) {
-	    objResultPtr = TclArithSeriesObjRange(valuePtr, fromIdx, toIdx);
+	    objResultPtr = TclArithSeriesObjRange(interp, valuePtr, fromIdx, toIdx);
+	    if (objResultPtr == NULL) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
 	} else {
 	    objResultPtr = TclListObjRange(valuePtr, fromIdx, toIdx);
 	}
@@ -4974,7 +4979,11 @@ TEBCresume(
 	     */
 
 	    do {
-		Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
+		if (isArithSeries) {
+		    TclArithSeriesObjIndex(value2Ptr, i, &o);
+		} else {
+		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
+		}
 		if (o != NULL) {
 		    s2 = Tcl_GetStringFromObj(o, &s2len);
 		} else {
