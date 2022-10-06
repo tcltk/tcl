@@ -129,7 +129,7 @@ typedef struct Dict {
 				 * the dictionary. Used for doing traversal of
 				 * the entries in the order that they are
 				 * created. */
-    size_t epoch;		/* Epoch counter */
+    TCL_HASH_TYPE epoch; 	/* Epoch counter */
     size_t refCount;		/* Reference counter (see above) */
     Tcl_Obj *chain;		/* Linked list used for invalidating the
 				 * string representations of updated nested
@@ -488,7 +488,8 @@ UpdateStringOfDict(
     Dict *dict;
     ChainEntry *cPtr;
     Tcl_Obj *keyPtr, *valuePtr;
-    size_t i, length, bytesNeeded = 0;
+    size_t i, length;
+    TCL_HASH_TYPE bytesNeeded = 0;
     const char *elem;
     char *dst;
 

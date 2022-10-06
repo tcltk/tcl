@@ -1011,7 +1011,7 @@ Tcl_ScanCountedElement(
  *----------------------------------------------------------------------
  */
 
-size_t
+TCL_HASH_TYPE
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
     size_t length,		/* Number of bytes in src, or -1. */
@@ -1027,7 +1027,7 @@ TclScanElement(
     int extra = 0;		/* Count of number of extra bytes needed for
 				 * formatted element, assuming we use escape
 				 * sequences in formatting. */
-    size_t bytesNeeded;		/* Buffer length computed to complete the
+    TCL_HASH_TYPE bytesNeeded;		/* Buffer length computed to complete the
 				 * element formatting in the selected mode. */
 #if COMPAT
     int preferEscape = 0;	/* Use preferences to track whether to use */
