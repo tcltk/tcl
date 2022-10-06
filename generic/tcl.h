@@ -817,6 +817,7 @@ typedef struct Tcl_Obj {
  * typically allocated on the stack.
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct Tcl_SavedResult {
     char *result;
     Tcl_FreeProc *freeProc;
@@ -826,6 +827,7 @@ typedef struct Tcl_SavedResult {
     int appendUsed;
     char resultSpace[200+1];
 } Tcl_SavedResult;
+#endif
 
 /*
  *----------------------------------------------------------------------------
