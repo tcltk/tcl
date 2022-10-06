@@ -135,13 +135,6 @@ typedef struct {
 } TclEncoding;
 
 /*
- * The counter below is used to determine if the TestsaveresultFree routine
- * was called for a result.
- */
-
-static int freeCount;
-
-/*
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
  */
 
@@ -169,15 +162,6 @@ typedef struct TestChannel {
 } TestChannel;
 
 static TestChannel *firstDetached;
-
-#ifdef __GNUC__
-/*
- * The rest of this file shouldn't warn about deprecated functions; they're
- * there because we intend them to be so and know that this file is OK to
- * touch those fields.
- */
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
 
 /*
  * Forward declarations for procedures defined later in this file:
@@ -290,8 +274,6 @@ static Tcl_ObjCmdProc	TestregexpObjCmd;
 static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
 			    size_t length, int *cflagsPtr, int *eflagsPtr);
-static Tcl_ObjCmdProc	TestsaveresultCmd;
-static void		TestsaveresultFree(void *blockPtr);
 static Tcl_CmdProc	TestsetassocdataCmd;
 static Tcl_CmdProc	TestsetCmd;
 static Tcl_CmdProc	Testset2Cmd;
@@ -683,8 +665,6 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testregexp", TestregexpObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
-	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testservicemode", TestServiceModeCmd,
 	    NULL, NULL);
@@ -5466,133 +5446,6 @@ Testset2Cmd(
 		argv[0], " varName elemName ?newValue?\"", NULL);
 	return TCL_ERROR;
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestsaveresultCmd --
- *
- *	Implements the "testsaveresult" cmd that is used when testing the
- *	Tcl_SaveResult, Tcl_RestoreResult, and Tcl_DiscardResult interfaces.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestsaveresultCmd(
-    TCL_UNUSED(void *),
-    Tcl_Interp *interp,/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* The argument objects. */
-{
-    int discard, result;
-    Tcl_SavedResult state;
-    Tcl_Obj *objPtr;
-    static const char *const optionStrings[] = {
-	"append", "dynamic", "free", "object", "small", NULL
-    };
-    enum options {
-	RESULT_APPEND, RESULT_DYNAMIC, RESULT_FREE, RESULT_OBJECT, RESULT_SMALL
-    } index;
-
-    /*
-     * Parse arguments
-     */
-
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "type script discard");
-	return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
-	    &index) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (Tcl_GetBooleanFromObj(interp, objv[3], &discard) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    freeCount = 0;
-    objPtr = NULL;
-    switch (index) {
-    case RESULT_SMALL:
-	Tcl_AppendResult(interp, "small result", NULL);
-	break;
-    case RESULT_APPEND:
-	Tcl_AppendResult(interp, "append result", NULL);
-	break;
-    case RESULT_FREE: {
-	char *buf = (char *)Tcl_Alloc(200);
-
-	strcpy(buf, "free result");
-	Tcl_SetResult(interp, buf, TCL_DYNAMIC);
-	break;
-    }
-    case RESULT_DYNAMIC:
-	Tcl_SetResult(interp, (char *)"dynamic result", TestsaveresultFree);
-	break;
-    case RESULT_OBJECT:
-	objPtr = Tcl_NewStringObj("object result", TCL_INDEX_NONE);
-	Tcl_SetObjResult(interp, objPtr);
-	break;
-    }
-
-    Tcl_SaveResult(interp, &state);
-
-    if (index == RESULT_OBJECT) {
-	result = Tcl_EvalObjEx(interp, objv[2], 0);
-    } else {
-	result = Tcl_EvalEx(interp, Tcl_GetString(objv[2]), TCL_INDEX_NONE, 0);
-    }
-
-    if (discard) {
-	Tcl_DiscardResult(&state);
-    } else {
-	Tcl_RestoreResult(interp, &state);
-	result = TCL_OK;
-    }
-
-    switch (index) {
-    case RESULT_DYNAMIC:
-	Tcl_AppendElement(interp, freeCount ? "freed" : "leak");
-	break;
-    case RESULT_OBJECT:
-	Tcl_AppendElement(interp, Tcl_GetObjResult(interp) == objPtr
-		? "same" : "different");
-	break;
-    default:
-	break;
-    }
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestsaveresultFree --
- *
- *	Special purpose freeProc used by TestsaveresultCmd.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Increments the freeCount.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-TestsaveresultFree(
-    TCL_UNUSED(void *))
-{
-    freeCount++;
 }
 
 /*

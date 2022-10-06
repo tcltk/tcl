@@ -672,14 +672,6 @@ typedef struct Tcl_Obj {
 
 /*
  *----------------------------------------------------------------------------
- * The following type contains the state needed by Tcl_SaveResult. It
- * is typically allocated on the stack.
- */
-
-typedef Tcl_Obj *Tcl_SavedResult;
-
-/*
- *----------------------------------------------------------------------------
  * The following definitions support Tcl's namespace facility. Note: the first
  * five fields must match exactly the fields in a Namespace structure (see
  * tclInt.h).

@@ -3892,20 +3892,6 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
 #define Tcl_GetStringResult(interp) Tcl_GetString(Tcl_GetObjResult(interp))
-#define Tcl_SaveResult(interp, statePtr) \
-	do { \
-	    *(statePtr) = Tcl_GetObjResult(interp); \
-	    Tcl_IncrRefCount(*(statePtr)); \
-	    Tcl_SetObjResult(interp, Tcl_NewObj()); \
-	} while(0)
-#define Tcl_RestoreResult(interp, statePtr) \
-	do { \
-	    Tcl_ResetResult(interp); \
-   	    Tcl_SetObjResult(interp, *(statePtr)); \
-   	    Tcl_DecrRefCount(*(statePtr)); \
-	} while(0)
-#define Tcl_DiscardResult(statePtr) \
-	Tcl_DecrRefCount(*(statePtr))
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
 	    const char *__result = result; \
