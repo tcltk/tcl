@@ -672,14 +672,6 @@ typedef struct Tcl_Obj {
 
 /*
  *----------------------------------------------------------------------------
- * The following type contains the state needed by Tcl_SaveResult. It
- * is typically allocated on the stack.
- */
-
-typedef Tcl_Obj *Tcl_SavedResult;
-
-/*
- *----------------------------------------------------------------------------
  * The following definitions support Tcl's namespace facility. Note: the first
  * five fields must match exactly the fields in a Namespace structure (see
  * tclInt.h).
@@ -837,14 +829,14 @@ typedef struct Tcl_DString {
 /*
  * Flags that may be passed to Tcl_GetIndexFromObj.
  * TCL_EXACT disallows abbreviated strings.
- * TCL_INDEX_NULL_OK allows the empty string or NULL to return TCL_OK.
+ * TCL_NULL_OK allows the empty string or NULL to return TCL_OK.
  *      The returned value will be -1;
  * TCL_INDEX_TEMP_TABLE disallows caching of lookups. A possible use case is
  *      a table that will not live long enough to make it worthwhile.
  */
 
 #define TCL_EXACT		1
-#define TCL_INDEX_NULL_OK	32
+#define TCL_NULL_OK		32
 #define TCL_INDEX_TEMP_TABLE	64
 
 /*

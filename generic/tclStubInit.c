@@ -1470,8 +1470,8 @@ const TclStubs tclStubs = {
     Tcl_UtfAtIndex, /* 671 */
     Tcl_GetRange, /* 672 */
     Tcl_GetUniChar, /* 673 */
-    0, /* 674 */
-    0, /* 675 */
+    Tcl_GetBool, /* 674 */
+    Tcl_GetBoolFromObj, /* 675 */
     Tcl_CreateObjCommand2, /* 676 */
     Tcl_CreateObjTrace2, /* 677 */
     Tcl_NRCreateCommand2, /* 678 */

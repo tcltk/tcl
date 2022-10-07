@@ -2270,7 +2270,6 @@ Tcl_JoinObjCmd(
 		    return TCL_ERROR;
 		}
 		Tcl_AppendObjToObj(resObjPtr, valueObj);
-		Tcl_DecrRefCount(valueObj);
 	    }
 	} else {
 	    for (i = 0;  i < listLen;  i++) {
@@ -2724,7 +2723,6 @@ Tcl_LrangeObjCmd(
 {
     int result;
     size_t listLen, first, last;
-
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
 	return TCL_ERROR;
@@ -2748,7 +2746,13 @@ Tcl_LrangeObjCmd(
     }
 
     if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
-	Tcl_SetObjResult(interp, TclArithSeriesObjRange(objv[1], first, last));
+	Tcl_Obj *rangeObj;
+	rangeObj = TclArithSeriesObjRange(interp, objv[1], first, last);
+	if (rangeObj) {
+	    Tcl_SetObjResult(interp, rangeObj);
+	} else {
+	    return TCL_ERROR;
+	}
     } else {
 	Tcl_SetObjResult(interp, TclListObjRange(objv[1], first, last));
     }
@@ -3141,8 +3145,13 @@ Tcl_LreverseObjCmd(
      *  just to reverse it.
      */
     if (TclHasInternalRep(objv[1],&tclArithSeriesType)) {
-        Tcl_SetObjResult(interp, TclArithSeriesObjReverse(objv[1]));
-	return TCL_OK;
+	Tcl_Obj *resObj = TclArithSeriesObjReverse(interp, objv[1]);
+	if (resObj) {
+	    Tcl_SetObjResult(interp, resObj);
+	    return TCL_OK;
+	} else {
+	    return TCL_ERROR;
+	}
     } /* end ArithSeries */
 
     /* True List */
@@ -4075,12 +4084,9 @@ SequenceIdentifyArgument(
     int status;
     SequenceOperators opmode;
     SequenceByMode bymode;
-    union {
-	Tcl_WideInt i;
-	double d;
-    } nvalue;
+    void *clientData;
 
-    status = TclGetNumberFromObj(NULL, argPtr, (ClientData*)&nvalue, keywordIndexPtr);
+    status = TclGetNumberFromObj(NULL, argPtr, &clientData, keywordIndexPtr);
     if (status == TCL_OK) {
 	if (numValuePtr) {
 	    *numValuePtr = argPtr;
@@ -4430,10 +4436,12 @@ Tcl_LseqObjCmd(
     /*
      * Success!  Now lets create the series object.
      */
-    arithSeriesPtr = TclNewArithSeriesObj(useDoubles, start, end, step, elementCount);
+    status = TclNewArithSeriesObj(interp, &arithSeriesPtr,
+		  useDoubles, start, end, step, elementCount);
 
-    Tcl_SetObjResult(interp, arithSeriesPtr);
-    status = TCL_OK;
+    if (status == TCL_OK) {
+	Tcl_SetObjResult(interp, arithSeriesPtr);
+    }
 
  done:
     // Free number arguments.
@@ -4967,6 +4975,124 @@ Tcl_LsortObjCmd(
 	}
     }
     return sortInfo.resultCode;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LeditObjCmd --
+ *
+ *	This procedure is invoked to process the "ledit" Tcl command. See the
+ *	user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_LeditObjCmd(
+    TCL_UNUSED(ClientData),
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument values. */
+{
+    Tcl_Obj *listPtr;		/* Pointer to the list being altered. */
+    Tcl_Obj *finalValuePtr;	/* Value finally assigned to the variable. */
+    int createdNewObj;
+    int result;
+    size_t first;
+    size_t last;
+    size_t listLen;
+    size_t numToDelete;
+
+    if (objc < 4) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"listVar first last ?element ...?");
+	return TCL_ERROR;
+    }
+
+    listPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG);
+    if (listPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * TODO - refactor the index extraction into a common function shared
+     * by Tcl_{Lrange,Lreplace,Ledit}ObjCmd
+     */
+
+    result = TclListObjLengthM(interp, listPtr, &listLen);
+    if (result != TCL_OK) {
+	return result;
+    }
+
+    result = TclGetIntForIndexM(interp, objv[2], /*end*/ listLen-1, &first);
+    if (result != TCL_OK) {
+	return result;
+    }
+
+    result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
+    if (result != TCL_OK) {
+	return result;
+    }
+
+    if (first == TCL_INDEX_NONE) {
+	first = 0;
+    } else if (first > listLen) {
+	first = listLen;
+    }
+
+    /* The +1 in comparisons are necessitated by indices being unsigned */
+    if ((last + 1) > listLen) {
+	last = listLen - 1;
+    }
+    if ((first + 1) <= (last + 1)) {
+	numToDelete = last - first + 1;
+    } else {
+	numToDelete = 0;
+    }
+
+    if (Tcl_IsShared(listPtr)) {
+	listPtr = TclListObjCopy(NULL, listPtr);
+	createdNewObj = 1;
+    } else {
+	createdNewObj = 0;
+    }
+
+    result =
+	Tcl_ListObjReplace(interp, listPtr, first, numToDelete, objc - 4, objv + 4);
+    if (result != TCL_OK) {
+	if (createdNewObj) {
+	    Tcl_DecrRefCount(listPtr);
+	}
+	return result;
+    }
+
+    /*
+     * Tcl_ObjSetVar2 may return a value different from listPtr in the
+     * presence of traces etc.. Note that finalValuePtr will always have a
+     * reference count of at least 1 corresponding to the reference from the
+     * var. If it is same as listPtr, then ref count will be at least 2
+     * since we are incr'ing the latter below (safer when calling
+     * Tcl_ObjSetVar2 which can release it in some cases). Note that we
+     * leave the incrref of listPtr this late because we want to pass it as
+     * unshared to Tcl_ListObjReplace above if possible.
+     */
+    Tcl_IncrRefCount(listPtr);
+    finalValuePtr =
+	Tcl_ObjSetVar2(interp, objv[1], NULL, listPtr, TCL_LEAVE_ERR_MSG);
+    Tcl_DecrRefCount(listPtr); /* safe irrespective of createdNewObj */
+    if (finalValuePtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp, finalValuePtr);
+    return TCL_OK;
 }
 
 /*
