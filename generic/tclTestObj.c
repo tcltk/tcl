@@ -848,7 +848,7 @@ TestintobjCmd(
  *      level tests do not suffice as Tcl list commands do not execute
  *      the same exact code path as the exported C API.
  *
- *      Note these new commands are only useful when Tcl is compiled with 
+ *      Note these new commands are only useful when Tcl is compiled with
  *      TCL_MEM_DEBUG defined.
  *
  *	indexmemcheck - loops calling Tcl_ListObjIndex on each element. This
@@ -887,7 +887,7 @@ TestlistobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects */
 {
     /* Subcommands supported by this command */
-    const char* subcommands[] = {
+    const char* const subcommands[] = {
 	"set",
 	"get",
 	"replace",
@@ -907,12 +907,7 @@ TestlistobjCmd(
     Tcl_WideInt first;			/* First index in the list */
     Tcl_WideInt count;			/* Count of elements in a list */
     Tcl_Obj **varPtr;
-    int i;
-#if TCL_VERSION_MAJOR < 9
-    int len;
-#else
-    size_t len;
-#endif
+    int i, len;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option arg ?arg...?");
@@ -982,10 +977,9 @@ TestlistobjCmd(
 		return TCL_ERROR;
 	    }
 	    if (objP->refCount <= 0) {
-		Tcl_SetResult(
-		    interp,
-		    "Tcl_ListObjIndex returned object with ref count <= 0",
-		    TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"Tcl_ListObjIndex returned object with ref count <= 0",
+			TCL_INDEX_NONE));
 		/* Keep looping since we are also looping for leaks */
 	    }
 	}
@@ -1006,10 +1000,9 @@ TestlistobjCmd(
 	    }
 	    for (i = 0; i < len; ++i) {
 		if (elems[i]->refCount <= 0) {
-		    Tcl_SetResult(
-			interp,
-			"Tcl_ListObjGetElements element has ref count <= 0",
-			TCL_STATIC);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "Tcl_ListObjGetElements element has ref count <= 0",
+			    TCL_INDEX_NONE));
 		    break;
 		}
 	    }
@@ -1232,6 +1225,8 @@ TestobjCmd(
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
 		    varPtr[varIndex]->typePtr->name, -1);
 	}
+	break;
+    default:
 	break;
     }
 

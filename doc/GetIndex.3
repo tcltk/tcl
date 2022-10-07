@@ -54,7 +54,7 @@ Null-terminated string describing what is being looked up, such as
 .AP int flags in
 OR-ed combination of bits providing additional information for
 operation.  The only bits that are currently defined are \fBTCL_EXACT\fR
-, \fBTCL_INDEX_TEMP_TABLE\fR, and \fBTCL_INDEX_NULL_OK\fR.
+, \fBTCL_INDEX_TEMP_TABLE\fR, and \fBTCL_NULL_OK\fR.
 .AP enum|char|short|int|long *indexPtr out
 If not (int *)NULL, the index of the string in \fItablePtr\fR that
 matches the value of \fIobjPtr\fR is returned here. The variable can
@@ -93,7 +93,7 @@ operation.  Note: \fBTcl_GetIndexFromObj\fR assumes that the entries
 in \fItablePtr\fR are static: they must not change between
 invocations.  This caching mechanism can be disallowed by specifying
 the \fBTCL_INDEX_TEMP_TABLE\fR flag.
-If the \fBTCL_INDEX_NULL_OK\fR flag was specified, objPtr is allowed
+If the \fBTCL_NULL_OK\fR flag was specified, objPtr is allowed
 to be NULL or the empty string. The resulting index is -1.
 Otherwise, if the value of \fIobjPtr\fR is the empty string,
 \fBTcl_GetIndexFromObj\fR will treat it as a non-matching value
