@@ -1369,6 +1369,9 @@ TclListObjCopy(
     Tcl_Obj *copyObj;
 
     if (!TclHasInternalRep(listObj, &tclListType)) {
+	if (TclHasInternalRep(listObj,&tclAbstractListType)) {
+	    return TclAbstractListObjCopy(interp, listObj);
+	}
 	if (SetListFromAny(interp, listObj) != TCL_OK) {
 	    return NULL;
 	}
@@ -1951,13 +1954,6 @@ Tcl_ListObjIndex(
 {
     Tcl_Obj **elemObjs;
     ListSizeT numElems;
-
-    /* Handle AbstractList before attempting SetListFromAny */
-    if (!TclHasInternalRep(listObj, &tclListType) &&
-	TclHasInternalRep(listObj, &tclAbstractListType)) {
-	*objPtrPtr = Tcl_AbstractListObjIndex(listObj, index);
-	return TCL_OK;
-    }
 
     /*
      * TODO
@@ -2654,8 +2650,7 @@ TclLindexFlat(
 				   &index) == TCL_OK) {
 	    }
 	    if (i==0) {
-		elemObj = Tcl_AbstractListObjIndex(listObj, index);
-		Tcl_IncrRefCount(elemObj);
+		Tcl_AbstractListObjIndex(listObj, index, &elemObj);
 	    } else if (index > 0) {
 		// TODO: support nested lists
 		// For now, only support 1 index, which is all an ArithSeries has
@@ -3299,7 +3294,6 @@ SetListFromAny(
 	ListSizeT elemCount, i;
 
 	elemCount = Tcl_AbstractListObjLength(objPtr);
-	i = 0;
 
 	if (ListRepInitAttempt(interp, elemCount, NULL, &listRep) != TCL_OK) {
 	    return TCL_ERROR;
@@ -3311,10 +3305,11 @@ SetListFromAny(
 	elemPtrs = listRep.storePtr->slots;
 
 	/* Each iteration, store a list element */
-	while (i < elemCount) {
-	    *elemPtrs = Tcl_AbstractListObjIndex(objPtr, i);
+        for (i = 0; i < elemCount; i++) {
+	    if (Tcl_AbstractListObjIndex(objPtr, i, elemPtrs) != TCL_OK) {
+                return TCL_ERROR;
+            }
 	    Tcl_IncrRefCount(*elemPtrs++);/* Since list now holds ref to it. */
-	    i++;
 	}
 
 	LIST_ASSERT((elemPtrs - listRep.storePtr->slots) == elemCount);
@@ -3433,7 +3428,8 @@ UpdateStringOfList(
 {
 #   define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    ListSizeT numElems, i, length, bytesNeeded = 0;
+    ListSizeT numElems, i, length;
+    TCL_HASH_TYPE bytesNeeded = 0;
     const char *elem, *start;
     char *dst;
     Tcl_Obj **elemPtrs;
@@ -3481,11 +3477,11 @@ UpdateStringOfList(
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
-	if (bytesNeeded < 0) {
+	if (bytesNeeded > INT_MAX) {
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
     }
-    if (bytesNeeded > INT_MAX - numElems + 1) {
+    if (bytesNeeded + numElems > INT_MAX + 1U) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
     bytesNeeded += numElems - 1;

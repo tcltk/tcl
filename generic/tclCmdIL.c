@@ -2236,7 +2236,11 @@ Tcl_JoinObjCmd(
 	if (!isAbstractList) {
 	    Tcl_SetObjResult(interp, elemPtrs[0]);
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_AbstractListObjIndex(objv[1], 0));
+            Tcl_Obj *elemObj;
+            if (Tcl_AbstractListObjIndex(objv[1], 0, &elemObj) != TCL_OK) {
+                return TCL_ERROR;
+            }
+	    Tcl_SetObjResult(interp, elemObj);
 	}
 	return TCL_OK;
     }
@@ -4311,10 +4315,10 @@ Tcl_LseqObjCmd(
     /*
      * Success!  Now lets create the series object.
      */
-    arithSeriesPtr = TclNewArithSeriesObj(useDoubles, start, end, step, elementCount);
-
-    Tcl_SetObjResult(interp, arithSeriesPtr);
-    status = TCL_OK;
+    status = TclNewArithSeriesObj(interp, &arithSeriesPtr, useDoubles, start, end, step, elementCount);
+    if (status == TCL_OK) {
+        Tcl_SetObjResult(interp, arithSeriesPtr);
+    }
 
  done:
     // Free number arguments.

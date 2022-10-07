@@ -4880,7 +4880,8 @@ TEBCresume(
 		TRACE_ERROR(interp);
 		goto gotError;
 	    }
-	    objResultPtr = typePtr->indexProc(valuePtr, index);
+	    typePtr->indexProc(valuePtr, index, &objResultPtr);
+	    Tcl_IncrRefCount(objResultPtr); // reference held here
 	    goto lindexDone;
 	}
 
@@ -4943,11 +4944,11 @@ TEBCresume(
 
 	    /* Decode end-offset index values. */
 
-	    index = TclIndexDecode(opnd, length);
+	    index = TclIndexDecode(opnd, length-1);
 
 	    /* Compute value @ index */
 	    if (index >= 0 && index < length) {
-		objResultPtr = typePtr->indexProc(valuePtr, index);
+		typePtr->indexProc(valuePtr, index, &objResultPtr);
 	    } else {
 		TclNewObj(objResultPtr);
 	    }
@@ -5187,7 +5188,11 @@ TEBCresume(
 	     */
 
 	    do {
-		Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
+		if (isAbstractList) {
+		    Tcl_AbstractListObjIndex(value2Ptr, i, &o);
+		} else {
+		    Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
+		}
 		if (o != NULL) {
 		    s2 = TclGetStringFromObj(o, &s2len);
 		} else {

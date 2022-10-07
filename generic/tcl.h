@@ -732,7 +732,7 @@ typedef void (Tcl_MainLoopProc) (void);
 typedef struct Tcl_Obj* (Tcl_ALNewObjProc) (int objc, struct Tcl_Obj *objv[]);
 typedef           void  (Tcl_ALDupRepProc) (struct Tcl_Obj *srcPtr, struct Tcl_Obj *copyPtr);
 typedef     Tcl_WideInt (Tcl_ALLengthProc) (struct Tcl_Obj *listPtr);
-typedef struct Tcl_Obj* (Tcl_ALIndexProc) (struct Tcl_Obj *listPtr, Tcl_WideInt index);
+typedef             int (Tcl_ALIndexProc) (struct Tcl_Obj *listPtr, Tcl_WideInt index, struct Tcl_Obj** elemObj);
 typedef struct Tcl_Obj* (Tcl_ALSliceProc) (struct Tcl_Obj *listPtr, Tcl_WideInt fromIdx,
                                            Tcl_WideInt toIdx);
 typedef struct Tcl_Obj* (Tcl_ALReverseProc) (struct Tcl_Obj *listPtr);
@@ -844,28 +844,27 @@ typedef struct Tcl_Obj {
 /* Virtual function dispatch a la Tcl_ObjType but for AbstractList */
 typedef struct Tcl_AbstractListType {
     Tcl_AbstractListVersion version;/* Structure version */
-    const char *typeName;           /* Custom value reference */
+    const char *typeName;	    /* Custom value reference */
 
     /* List emulation functions */
-    Tcl_ALNewObjProc *newObjProc;       /* How to create a new Tcl_Obj of this
-                                        ** custom type */
-    Tcl_ALDupRepProc *dupRepProc;       /* How to duplicate a internal rep of this
-                                        ** custom type */
-    Tcl_ALLengthProc *lengthProc;       /* Return the [llength] of the
-                                        ** AbstractList */
-    Tcl_ALIndexProc *indexProc;         /* Return a value (Tcl_Obj) for
-                                        ** [lindex $al $index] */
-    Tcl_ALSliceProc *sliceProc;         /* Return an AbstractList for
-                                        ** [lrange $al $start $end] */
-    Tcl_ALReverseProc *reverseProc;     /* Return an AbstractList for
-                                        ** [lreverse $al] */
+    Tcl_ALNewObjProc *newObjProc;	/* How to create a new Tcl_Obj of this
+					** custom type */
+    Tcl_ALDupRepProc *dupRepProc;	/* How to duplicate a internal rep of this
+					** custom type */
+    Tcl_ALLengthProc *lengthProc;	/* Return the [llength] of the
+					** AbstractList */
+    Tcl_ALIndexProc *indexProc;		/* Return a value (Tcl_Obj) for
+					** [lindex $al $index] */
+    Tcl_ALSliceProc *sliceProc;		/* Return an AbstractList for
+					** [lrange $al $start $end] */
+    Tcl_ALReverseProc *reverseProc;	/* Return an AbstractList for
+					** [lreverse $al] */
     Tcl_ALGetElements *getElementsProc; /* Return an objv[] of all elements in
-                                        ** the list */
+					** the list */
     Tcl_ALFreeConcreteRep *freeRepProc; /* Free ConcreteRep internals if
-                                           necessary */
-    Tcl_ALToStringRep *toStringProc;    /* Optimized "to-string" conversion
-					 * for updating the string rep */
-
+                                        ** necessary */
+    Tcl_ALToStringRep *toStringProc;	/* Optimized "to-string" conversion
+                                        ** for updating the string rep */
 } Tcl_AbstractListType;
 
 extern const Tcl_ObjType tclAbstractListType;
@@ -914,6 +913,7 @@ static inline void Tcl_AbstractListSetConcreteRep(
  * typically allocated on the stack.
  */
 
+#ifndef TCL_NO_DEPRECATED
 typedef struct Tcl_SavedResult {
     char *result;
     Tcl_FreeProc *freeProc;
@@ -923,6 +923,7 @@ typedef struct Tcl_SavedResult {
     int appendUsed;
     char resultSpace[200+1];
 } Tcl_SavedResult;
+#endif
 
 /*
  *----------------------------------------------------------------------------

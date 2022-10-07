@@ -47,9 +47,9 @@ typedef struct ArithSeriesDbl {
 
 MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjCopy(Tcl_Interp *interp,
 			    Tcl_Obj *arithSeriesPtr);
-MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjStep(Tcl_Obj *arithSeriesPtr);
-MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr,
-			    Tcl_WideInt index);
+MODULE_SCOPE int	TclArithSeriesObjStep(Tcl_Obj *arithSeriesPtr, Tcl_Obj **stepObj);
+MODULE_SCOPE int	TclArithSeriesObjIndex(Tcl_Obj *arithSeriesPtr,
+                            Tcl_WideInt index, Tcl_Obj **elemObj);
 MODULE_SCOPE Tcl_WideInt TclArithSeriesObjLength(Tcl_Obj *arithSeriesObj);
 MODULE_SCOPE Tcl_Obj *	TclArithSeriesObjRange(Tcl_Obj *arithSeriesPtr,
 			    Tcl_WideInt fromIdx, Tcl_WideInt toIdx);
@@ -61,8 +61,9 @@ MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesInt(Tcl_WideInt start,
 			    Tcl_WideInt len);
 MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesDbl(double start, double end,
 			    double step, Tcl_WideInt len);
-MODULE_SCOPE Tcl_Obj *	TclNewArithSeriesObj(int useDoubles, Tcl_Obj *startObj,
-			    Tcl_Obj *endObj, Tcl_Obj *stepObj, Tcl_Obj *lenObj);
+MODULE_SCOPE int	TclNewArithSeriesObj(Tcl_Interp *interp, Tcl_Obj **arithSeriesPtr,
+                            int useDoubles, Tcl_Obj *startObj, Tcl_Obj *endObj,
+                            Tcl_Obj *stepObj, Tcl_Obj *lenObj);
 
 MODULE_SCOPE Tcl_Obj *  Tcl_NewArithSeriesObj(int objc, Tcl_Obj *objv[]);
 

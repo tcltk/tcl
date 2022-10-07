@@ -2538,7 +2538,7 @@ declare 683 {
     Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr)
 }
 declare 684 {
-    Tcl_Obj *Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr, Tcl_WideInt index)
+    int Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr)
 }
 declare 685 {
     Tcl_Obj *Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx)

@@ -2867,13 +2867,13 @@ EachloopCmd(
 	/* Values */
 	if (TclHasInternalRep(objv[2+i*2],&tclAbstractListType)) {
 	    /* Special case for Abstract List */
-	    statePtr->vCopyList[i] = TclAbstractListObjCopy(interp, objv[2+i*2]);
-	    if (statePtr->vCopyList[i] == NULL) {
+	    statePtr->aCopyList[i] = TclAbstractListObjCopy(interp, objv[2+i*2]);
+	    if (statePtr->aCopyList[i] == NULL) {
 		result = TCL_ERROR;
 		goto done;
 	    }
 	    /* Don't compute values here, wait until the last momement */
-	    statePtr->argcList[i] = Tcl_AbstractListObjLength(statePtr->vCopyList[i]);
+	    statePtr->argcList[i] = Tcl_AbstractListObjLength(statePtr->aCopyList[i]);
 	} else {
 	    statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
 	    if (statePtr->aCopyList[i] == NULL) {
@@ -3006,13 +3006,20 @@ ForeachAssignments(
 
     for (i=0 ; i<statePtr->numLists ; i++) {
 	int isAbstractList =
-	    TclHasInternalRep(statePtr->vCopyList[i],&tclAbstractListType);
+	    TclHasInternalRep(statePtr->aCopyList[i],&tclAbstractListType);
 
 	for (v=0 ; v<statePtr->varcList[i] ; v++) {
 	    k = statePtr->index[i]++;
 	    if (k < statePtr->argcList[i]) {
 		if (isAbstractList) {
-		    valuePtr = Tcl_AbstractListObjIndex(statePtr->vCopyList[i], k);
+		    if (Tcl_AbstractListObjIndex(statePtr->aCopyList[i], k, &valuePtr)
+                        != TCL_OK) {
+			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+			    "\n    (setting %s loop variable \"%s\")",
+			    (statePtr->resultList != NULL ? "lmap" : "foreach"),
+			    TclGetString(statePtr->varvList[i][v])));
+			return TCL_ERROR;
+		    }
 		} else {
 		    valuePtr = statePtr->argvList[i][k];
 		}

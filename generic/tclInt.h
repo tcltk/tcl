@@ -3428,7 +3428,7 @@ MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
 			    int reStrLen, Tcl_DString *dsPtr, int *flagsPtr,
 			    int *quantifiersFoundPtr);
-MODULE_SCOPE int	TclScanElement(const char *string, int length,
+MODULE_SCOPE TCL_HASH_TYPE TclScanElement(const char *string, int length,
 			    char *flagPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);

@@ -14,6 +14,10 @@
 
 #include <stddef.h> /* for size_t */
 
+#ifdef TCL_NO_DEPRECATED
+#   define Tcl_SavedResult void
+#endif /* TCL_NO_DEPRECATED */
+
 #undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
 #   define TCL_STORAGE_CLASS DLLEXPORT
@@ -2008,8 +2012,8 @@ EXTERN int		Tcl_RemoveChannelMode(Tcl_Interp *interp,
 /* 683 */
 EXTERN Tcl_WideInt	Tcl_AbstractListObjLength(Tcl_Obj *abstractListPtr);
 /* 684 */
-EXTERN Tcl_Obj *	Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr,
-				Tcl_WideInt index);
+EXTERN int		Tcl_AbstractListObjIndex(Tcl_Obj *abstractListPtr,
+				Tcl_WideInt index, Tcl_Obj **elemObjPtr);
 /* 685 */
 EXTERN Tcl_Obj *	Tcl_AbstractListObjRange(Tcl_Obj *abstractListPtr,
 				Tcl_WideInt fromIdx, Tcl_WideInt toIdx);
@@ -2737,7 +2741,7 @@ typedef struct TclStubs {
     void (*reserved681)(void);
     int (*tcl_RemoveChannelMode) (Tcl_Interp *interp, Tcl_Channel chan, int mode); /* 682 */
     Tcl_WideInt (*tcl_AbstractListObjLength) (Tcl_Obj *abstractListPtr); /* 683 */
-    Tcl_Obj * (*tcl_AbstractListObjIndex) (Tcl_Obj *abstractListPtr, Tcl_WideInt index); /* 684 */
+    int (*tcl_AbstractListObjIndex) (Tcl_Obj *abstractListPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr); /* 684 */
     Tcl_Obj * (*tcl_AbstractListObjRange) (Tcl_Obj *abstractListPtr, Tcl_WideInt fromIdx, Tcl_WideInt toIdx); /* 685 */
     Tcl_Obj * (*tcl_AbstractListObjReverse) (Tcl_Obj *abstractListPtr); /* 686 */
     Tcl_Obj * (*tcl_NewAbstractListObj) (Tcl_Interp *interp, const Tcl_AbstractListType*vTablePtr); /* 687 */
@@ -4259,30 +4263,8 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_GlobalEval(interp, objPtr) \
 	Tcl_EvalEx(interp, objPtr, TCL_INDEX_NONE, TCL_EVAL_GLOBAL)
 #undef Tcl_SaveResult
-static TCL_DEPRECATED_API("Use Tcl_SaveInterpState") void Tcl_SaveResult_(void) {}
-#define Tcl_SaveResult(interp, statePtr) \
-	do { \
-	    Tcl_SaveResult_(); \
-	    (statePtr)->objResultPtr = Tcl_GetObjResult(interp); \
-	    Tcl_IncrRefCount((statePtr)->objResultPtr); \
-	    Tcl_SetObjResult(interp, Tcl_NewObj()); \
-	} while(0)
 #undef Tcl_RestoreResult
-static TCL_DEPRECATED_API("Use Tcl_RestoreInterpState") void Tcl_RestoreResult_(void) {}
-#define Tcl_RestoreResult(interp, statePtr) \
-	do { \
-	    Tcl_RestoreResult_(); \
-	    Tcl_ResetResult(interp); \
-   	    Tcl_SetObjResult(interp, (statePtr)->objResultPtr); \
-   	    Tcl_DecrRefCount((statePtr)->objResultPtr); \
-	} while(0)
 #undef Tcl_DiscardResult
-static TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void Tcl_DiscardResult_(void) {}
-#define Tcl_DiscardResult(statePtr) \
-	do { \
-	    Tcl_DiscardResult_(); \
-	    Tcl_DecrRefCount((statePtr)->objResultPtr); \
-	} while(0)
 #undef Tcl_SetResult
 #define Tcl_SetResult(interp, result, freeProc) \
 	do { \
@@ -4520,6 +4502,9 @@ static TCL_DEPRECATED_API("Use Tcl_DiscardInterpState") void Tcl_DiscardResult_(
  * Deprecated Tcl procedures:
  */
 
+#ifdef TCL_NO_DEPRECATED
+#   undef Tcl_SavedResult
+#endif /* TCL_NO_DEPRECATED */
 #undef Tcl_EvalObj
 #define Tcl_EvalObj(interp, objPtr) \
     Tcl_EvalObjEx(interp, objPtr, 0)

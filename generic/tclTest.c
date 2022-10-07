@@ -145,7 +145,9 @@ typedef struct {
  * was called for a result.
  */
 
+#ifndef TCL_NO_DEPRECATED
 static int freeCount;
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
@@ -297,8 +299,10 @@ static Tcl_ObjCmdProc	TestregexpObjCmd;
 static Tcl_ObjCmdProc	TestreturnObjCmd;
 static void		TestregexpXflags(const char *string,
 			    int length, int *cflagsPtr, int *eflagsPtr);
+#ifndef TCL_NO_DEPRECATED
 static Tcl_ObjCmdProc	TestsaveresultCmd;
 static void		TestsaveresultFree(char *blockPtr);
+#endif /* TCL_NO_DEPRECATED */
 static Tcl_CmdProc	TestsetassocdataCmd;
 static Tcl_CmdProc	TestsetCmd;
 static Tcl_CmdProc	Testset2Cmd;
@@ -690,8 +694,10 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
 	    NULL, NULL);
+#ifndef TCL_NO_DEPRECATED
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
 	    NULL, NULL);
+#endif
     Tcl_CreateCommand(interp, "testservicemode", TestServiceModeCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetassocdata", TestsetassocdataCmd,
@@ -5522,6 +5528,7 @@ Testset2Cmd(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 static int
 TestsaveresultCmd(
     TCL_UNUSED(void *),
@@ -5635,6 +5642,7 @@ TestsaveresultFree(
 {
     freeCount++;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

@@ -115,11 +115,10 @@ Tcl_NewAbstractListObj(Tcl_Interp *interp, const Tcl_AbstractListType* vTablePtr
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj*
-Tcl_AbstractListObjIndex(Tcl_Obj *abstractListObjPtr, Tcl_WideInt index)
+int
+Tcl_AbstractListObjIndex(Tcl_Obj *abstractListObjPtr, Tcl_WideInt index, Tcl_Obj **elemObjPtr)
 {
     Tcl_AbstractListType *typePtr;
-    Tcl_Obj *elementObjPtr;
 
     typePtr = Tcl_AbstractListGetType(abstractListObjPtr);
     /*
@@ -133,9 +132,7 @@ Tcl_AbstractListObjIndex(Tcl_Obj *abstractListObjPtr, Tcl_WideInt index)
     if (typePtr == NULL) {
 	Tcl_Panic("Tcl_AbstractListObjIndex called without and AbstractList Obj.");
     }
-    elementObjPtr = typePtr->indexProc(abstractListObjPtr, index);
-
-    return elementObjPtr;
+    return typePtr->indexProc(abstractListObjPtr, index, elemObjPtr);
 }
 
 /*
@@ -266,7 +263,7 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
 	return;
     }
     for (i = 0; i < llen; i++) {
-	eleObj = typePtr->indexProc(abstractListObjPtr, i);
+	typePtr->indexProc(abstractListObjPtr, i, &eleObj);
 	Tcl_GetStringFromObj(eleObj, &slen);
 	length += slen + 1; /* one more for the space char */
 	Tcl_DecrRefCount(eleObj);
@@ -278,7 +275,7 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
 
     p = Tcl_InitStringRep(abstractListObjPtr, NULL, length);
     for (i = 0; i < llen; i++) {
-	eleObj = typePtr->indexProc(abstractListObjPtr, i);
+	typePtr->indexProc(abstractListObjPtr, i, &eleObj);
 	str = Tcl_GetStringFromObj(eleObj, &slen);
 	strcpy(p, str);
 	p[slen] = ' ';
