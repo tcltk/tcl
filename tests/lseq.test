@@ -16,7 +16,7 @@ if {"::tcltest" ni [namespace children]} {
 
 testConstraint arithSeriesDouble 1
 testConstraint arithSeriesShimmer 1
-testConstraint arithSeriesShimmerOk 0
+testConstraint arithSeriesShimmerOk 1
 
 ## Arg errors
 test lseq-1.1 {error cases} -body {
@@ -223,6 +223,8 @@ test lseq-3.1 {experiement} {
     if {$ans eq {}} {
 	set ans OK
     }
+    unset factor
+    unset l
     set ans
 } {OK}
 
@@ -376,13 +378,18 @@ test lseq-3.26 {lsort shimmer} arithSeriesShimmer {
     list ${rep-before} $lexical_sort ${rep-after}
 } {arithseries {0 1 10 11 12 13 14 15 2 3 4 5 6 7 8 9} arithseries}
 
-test lseq-3.27 {lreplace shimmer} arithSeriesShimmer {
+test lseq-3.27 {lreplace shimmer} -constraints arithSeriesShimmer -body {
     set r [lseq 15 0]
     set rep-before [lindex [tcl::unsupported::representation $r] 3]
     set lexical_sort [lreplace $r 3 5 A B C]
     set rep-after [lindex [tcl::unsupported::representation $r] 3]
     list ${rep-before} $lexical_sort ${rep-after}
-} {arithseries {15 14 13 A B C 9 8 7 6 5 4 3 2 1 0} arithseries}
+} -cleanup {
+    unset r
+    unset rep-before
+    unset lexical_sort
+    unset rep-after
+} -result {arithseries {15 14 13 A B C 9 8 7 6 5 4 3 2 1 0} arithseries}
 
 test lseq-3.28 {lreverse bug in ArithSeries} {} {
     set r [lseq -5 17 3]
@@ -472,9 +479,41 @@ test lseq-4.3 {TIP examples} {
     set res
 } {{10 9 8 7 6 5 4 3 2 1} {1 2 3 4 5 6 7 8 9 10} {} {10 8 6 4 2} {5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0} {5.0 10.0 15.0 20.0 25.0} {} {25.0 20.0 15.0 10.0 5.0} {1 3 5 7 9} {25.0 20.0 15.0 10.0 5.0 0.0 -5.0 -10.0 -15.0 -20.0 -25.0} 5 5 5}
 
+#
+# Ticket 9933cc4d88697f05976accebd31c1e3ba6efe9c6 - lseq corner case
+test lseq-4.4 {lseq corner case} -body {
+    set tcmd {
+	set res {}
+	set s [catch {lindex [lseq 10 100] 0} e]
+	lappend res $s $e
+	set s [catch {lindex [lseq 10 9223372036854775000] 0} e]
+	lappend res $s $e
+	set s [catch {llength [lseq 10 9223372036854775000]} e]
+	lappend res $s $e
+	set s [catch {lindex [lseq 10 2147483647] 0} e]
+	lappend res $s $e
+	set s [catch {llength [lseq 10 2147483647]} e]
+	lappend res $s $e
+    }
+    eval $tcmd
+} -cleanup {
+    unset res
+} -result {0 10 1 {max length of a Tcl list exceeded} 1 {max length of a Tcl list exceeded} 0 10 0 2147483638}
+
+
+# Ticket 99e834bf33 - lseq, lindex end off by one
+
+test lseq-4.5 {lindex off by one} -body {
+    lappend res [eval {lindex [lseq 1 4] end}]
+    lappend res [eval {lindex [lseq 1 4] end-1}]
+} -cleanup {
+    unset res
+} -result {4 3}
+
 
 # cleanup
 ::tcltest::cleanupTests
+
 return
 
 # Local Variables:

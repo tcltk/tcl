@@ -1043,7 +1043,7 @@ declare 288 {
 declare 289 {
     void Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc, void *clientData)
 }
-declare 290 {
+declare 290 {deprecated {Use Tcl_DiscardInterpState}} {
     void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
 }
 declare 291 {
@@ -1126,10 +1126,10 @@ declare 313 {
     int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
 	    int charsToRead, int appendFlag)
 }
-declare 314 {
+declare 314 {deprecated {Use Tcl_RestoreInterpState}} {
     void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 }
-declare 315 {
+declare 315 {deprecated {Use Tcl_SaveInterpState}} {
     void Tcl_SaveResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 }
 declare 316 {
@@ -2502,8 +2502,14 @@ declare 673 {
     int TclGetUniChar(Tcl_Obj *objPtr, int index)
 }
 
-# slot 674 and 675 are reserved for TIP #618
-
+declare 674 {
+    int Tcl_GetBool(Tcl_Interp *interp, const char *src, int flags,
+	    char *charPtr)
+}
+declare 675 {
+    int Tcl_GetBoolFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int flags, char *charPtr)
+}
 declare 676 {
     Tcl_Command Tcl_CreateObjCommand2(Tcl_Interp *interp,
 	    const char *cmdName,

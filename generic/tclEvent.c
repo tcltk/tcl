@@ -1511,12 +1511,12 @@ Tcl_VwaitObjCmd(
     Tcl_Channel chan;
     Tcl_WideInt diff = -1;
     VwaitItem localItems[32], *vwaitItems = localItems;
-    static const char *const options[] = {
+    static const char *const vWaitOptionStrings[] = {
 	"-all",	"-extended", "-nofileevents", "-noidleevents",
 	"-notimerevents", "-nowindowevents", "-readable",
 	"-timeout", "-variable", "-writable", "--", NULL
     };
-    enum options {
+    enum vWaitOptions {
 	OPT_ALL, OPT_EXTD, OPT_NO_FEVTS, OPT_NO_IEVTS,
 	OPT_NO_TEVTS, OPT_NO_WEVTS, OPT_READABLE,
 	OPT_TIMEOUT, OPT_VARIABLE, OPT_WRITABLE, OPT_LAST
@@ -1541,7 +1541,7 @@ Tcl_VwaitObjCmd(
 	if (name[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
+	if (Tcl_GetIndexFromObj(interp, objv[i], vWaitOptionStrings, "option", 0,
 		&index) != TCL_OK) {
 	    result = TCL_ERROR;
 	    goto done;
@@ -1570,7 +1570,7 @@ Tcl_VwaitObjCmd(
 	needArg:
 		Tcl_ResetResult(interp);
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"argument required for \"%s\"", options[index]));
+			"argument required for \"%s\"", vWaitOptionStrings[index]));
 		Tcl_SetErrorCode(interp, "TCL", "EVENT", "ARGUMENT", NULL);
 		result = TCL_ERROR;
 		goto done;
