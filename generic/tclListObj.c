@@ -1369,6 +1369,9 @@ TclListObjCopy(
     Tcl_Obj *copyObj;
 
     if (!TclHasInternalRep(listObj, &tclListType)) {
+	if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
+	    return TclArithSeriesObjCopy(interp, listObj);
+	}
 	if (SetListFromAny(interp, listObj) != TCL_OK) {
 	    return NULL;
 	}
@@ -1942,10 +1945,6 @@ Tcl_ListObjIndex(
 {
     Tcl_Obj **elemObjs;
     ListSizeT numElems;
-
-    if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
-	return TclArithSeriesObjIndex(listObj, index, objPtrPtr);
-    }
 
     /*
      * TODO
@@ -2632,7 +2631,8 @@ TclLindexFlat(
 
     /* Handle ArithSeries as special case */
     if (TclHasInternalRep(listObj,&tclArithSeriesType)) {
-	ListSizeT index, listLen = TclArithSeriesObjLength(listObj);
+	Tcl_WideInt listLen = TclArithSeriesObjLength(listObj);
+	ListSizeT index;
 	Tcl_Obj *elemObj = NULL;
 	for (i=0 ; i<indexCount && listObj ; i++) {
 	    if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
@@ -2640,8 +2640,8 @@ TclLindexFlat(
 	    }
 	    if (i==0) {
 		TclArithSeriesObjIndex(listObj, index, &elemObj);
-		Tcl_IncrRefCount(elemObj);
 	    } else if (index > 0) {
+		/* ArithSeries cannot be a list of lists */
 		Tcl_DecrRefCount(elemObj);
 		TclNewObj(elemObj);
 		Tcl_IncrRefCount(elemObj);
@@ -3303,7 +3303,6 @@ SetListFromAny(
 	    if (TclArithSeriesObjIndex(objPtr, j, &elemPtrs[j]) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_IncrRefCount(elemPtrs[j]);/* Since list now holds ref to it. */
 	}
 
     } else {
@@ -3418,7 +3417,8 @@ UpdateStringOfList(
 {
 #   define LOCAL_SIZE 64
     char localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    ListSizeT numElems, i, length, bytesNeeded = 0;
+    ListSizeT numElems, i, length;
+    TCL_HASH_TYPE bytesNeeded = 0;
     const char *elem, *start;
     char *dst;
     Tcl_Obj **elemPtrs;
@@ -3466,11 +3466,11 @@ UpdateStringOfList(
 	flagPtr[i] = (i ? TCL_DONT_QUOTE_HASH : 0);
 	elem = TclGetStringFromObj(elemPtrs[i], &length);
 	bytesNeeded += TclScanElement(elem, length, flagPtr+i);
-	if (bytesNeeded < 0) {
+	if (bytesNeeded > INT_MAX) {
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
     }
-    if (bytesNeeded > INT_MAX - numElems + 1) {
+    if (bytesNeeded + numElems > INT_MAX + 1U) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
     bytesNeeded += numElems - 1;

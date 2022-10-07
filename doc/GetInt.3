@@ -22,6 +22,9 @@ int
 .sp
 int
 \fBTcl_GetBoolean\fR(\fIinterp, src, intPtr\fR)
+.sp
+int
+\fBTcl_GetBool\fR(\fIinterp, src, flags, charPtr\fR)
 .SH ARGUMENTS
 .AS Tcl_Interp *doublePtr out
 .AP Tcl_Interp *interp in
@@ -33,6 +36,12 @@ Points to place to store integer value converted from \fIsrc\fR.
 .AP double *doublePtr out
 Points to place to store double-precision floating-point
 value converted from \fIsrc\fR.
+.AP char *charPtr out
+Points to place to store boolean value (0 or 1) value converted from \fIsrc\fR.
+.AP int flags in
+0 or TCL_NULL_OK. If TCL_NULL_OK
+is used, then the empty string or NULL will result in \fBTcl_GetBool\fR
+return TCL_OK, the *charPtr filled with the value \fB'\exFF'\fR;
 .BE
 
 .SH DESCRIPTION
@@ -97,6 +106,10 @@ If \fIsrc\fR is any of \fB1\fR, \fBtrue\fR, \fByes\fR, or \fBon\fR,
 then 1 is stored at \fI*intPtr\fR.
 Any of these values may be abbreviated, and upper-case spellings
 are also acceptable.
+.PP
+\fBTcl_GetBool\fR functions almost the same as \fBTcl_GetBoolean\fR,
+but it has an additional parameter \fBflags\fR, which can be used
+to specify whether the empty string or NULL is accepted as valid.
 
 .SH KEYWORDS
 boolean, conversion, double, floating-point, integer

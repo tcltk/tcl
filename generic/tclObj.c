@@ -97,7 +97,7 @@ typedef struct {
 
 static Tcl_ThreadDataKey dataKey;
 
-static void             TclThreadFinalizeContLines(ClientData clientData);
+static void             TclThreadFinalizeContLines(void *clientData);
 static ThreadSpecificData *TclGetContLineTable(void);
 
 /*
@@ -2141,7 +2141,7 @@ Tcl_SetBooleanObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetBooleanFromObj --
+ * Tcl_GetBoolFromObj, Tcl_GetBooleanFromObj --
  *
  *	Attempt to return a boolean from the Tcl object "objPtr". This
  *	includes conversion from any of Tcl's numeric types.
@@ -2157,20 +2157,36 @@ Tcl_SetBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetBoolFromObj
 int
-Tcl_GetBooleanFromObj(
+Tcl_GetBoolFromObj(
     Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,	/* The object from which to get boolean. */
-    int *intPtr)	/* Place to store resulting boolean. */
+    int flags,
+    char *charPtr)	/* Place to store resulting boolean. */
 {
+    int result;
+
+    if ((flags & TCL_NULL_OK) && (objPtr == NULL || Tcl_GetString(objPtr)[0] == '\0')) {
+	result = -1;
+	goto boolEnd;
+    } else if (objPtr == NULL) {
+	if (interp) {
+	    TclNewObj(objPtr);
+	    TclParseNumber(interp, objPtr, (flags & TCL_NULL_OK)
+		    ? "boolean value or \"\"" : "boolean value", NULL, -1, NULL, 0);
+	    Tcl_DecrRefCount(objPtr);
+	}
+	return TCL_ERROR;
+    }
     do {
 	if (objPtr->typePtr == &tclIntType) {
-	    *intPtr = (objPtr->internalRep.wideValue != 0);
-	    return TCL_OK;
+	    result = (objPtr->internalRep.wideValue != 0);
+	    goto boolEnd;
 	}
 	if (objPtr->typePtr == &tclBooleanType) {
-	    *intPtr = objPtr->internalRep.longValue != 0;
-	    return TCL_OK;
+	    result = objPtr->internalRep.longValue != 0;
+	    goto boolEnd;
 	}
 	if (objPtr->typePtr == &tclDoubleType) {
 	    /*
@@ -2186,18 +2202,43 @@ Tcl_GetBooleanFromObj(
 	    if (Tcl_GetDoubleFromObj(interp, objPtr, &d) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    *intPtr = (d != 0.0);
-	    return TCL_OK;
+	    result = (d != 0.0);
+	    goto boolEnd;
 	}
 	if (objPtr->typePtr == &tclBignumType) {
-	    *intPtr = 1;
+	    result = 1;
+	boolEnd:
+	    if (charPtr != NULL) {
+		flags &= (TCL_NULL_OK-2);
+		if (flags) {
+		    if (flags == (int)sizeof(int)) {
+			*(int *)charPtr = result;
+			return TCL_OK;
+		    } else if (flags == (int)sizeof(short)) {
+			*(short *)charPtr = result;
+			return TCL_OK;
+		    }
+		}
+		*charPtr = result;
+	    }
 	    return TCL_OK;
 	}
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
-	    TclParseNumber(interp, objPtr, "boolean value", NULL,-1,NULL,0)));
+	    TclParseNumber(interp, objPtr, (flags & TCL_NULL_OK)
+		    ? "boolean value or \"\"" : "boolean value", NULL,-1,NULL,0)));
     return TCL_ERROR;
 }
 
+#undef Tcl_GetBooleanFromObj
+int
+Tcl_GetBooleanFromObj(
+    Tcl_Interp *interp,         /* Used for error reporting if not NULL. */
+    Tcl_Obj *objPtr,	/* The object from which to get boolean. */
+    int *intPtr)	/* Place to store resulting boolean. */
+{
+    return Tcl_GetBoolFromObj(interp, objPtr, (TCL_NULL_OK-2)&(int)sizeof(int), (char *)(void *)intPtr);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3877,7 +3918,7 @@ int
 TclGetNumberFromObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
-    ClientData *clientDataPtr,
+    void **clientDataPtr,
     int *typePtr)
 {
     do {
