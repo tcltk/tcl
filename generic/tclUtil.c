@@ -1577,7 +1577,10 @@ Tcl_Merge(
      * simpler.
      */
 
-    if (argc == 0) {
+    if (argc <= 0) {
+	if (argc < 0) {
+	    Tcl_Panic("Tcl_Merge called with negative argc (%d)", argc);
+	}
 	result = (char *)ckalloc(1);
 	result[0] = '\0';
 	return result;
