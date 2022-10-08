@@ -279,7 +279,6 @@ UpdateStringOfAbstractList(Tcl_Obj *abstractListObjPtr)
 	strcpy(p, str);
 	p[slen] = ' ';
 	p += slen+1;
-	Tcl_DecrRefCount(eleObj);
     }
     if (length > 0) abstractListObjPtr->bytes[length-1] = '\0';
     abstractListObjPtr->length = length-1;
