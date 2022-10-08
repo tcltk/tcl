@@ -38,7 +38,7 @@ typedef struct {
 				 * is used to determine the source string
 				 * length when the srcLen argument is
 				 * negative. This number can be 1, 2, or 4. */
-    ClientData clientData;	/* Arbitrary value associated with encoding
+    void *clientData;	/* Arbitrary value associated with encoding
 				 * type. Passed to conversion functions. */
     LengthProc *lengthProc;	/* Function to compute length of
 				 * null-terminated strings in this encoding.
@@ -2229,7 +2229,7 @@ LoadEscapeEncoding(
 
 static int
 BinaryProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     const char *src,		/* Source string (unknown encoding). */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2295,7 +2295,7 @@ BinaryProc(
 
 static int
 UtfToUtfProc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_MODIFIED */
+    void *clientData,	/* additional flags, e.g. TCL_ENCODING_MODIFIED */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2475,7 +2475,7 @@ UtfToUtfProc(
 
 static int
 Utf32ToUtfProc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in Unicode. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2571,7 +2571,7 @@ Utf32ToUtfProc(
 
 static int
 UtfToUtf32Proc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2668,7 +2668,7 @@ UtfToUtf32Proc(
 
 static int
 Utf16ToUtfProc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in Unicode. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2774,7 +2774,7 @@ Utf16ToUtfProc(
 
 static int
 UtfToUtf16Proc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2880,7 +2880,7 @@ UtfToUtf16Proc(
 
 static int
 UtfToUcs2Proc(
-    ClientData clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
+    void *clientData,	/* additional flags, e.g. TCL_ENCODING_LE */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -2985,7 +2985,7 @@ UtfToUcs2Proc(
 
 static int
 TableToUtfProc(
-    ClientData clientData,	/* TableEncodingData that specifies
+    void *clientData,	/* TableEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in specified encoding. */
     int srcLen,			/* Source string length in bytes. */
@@ -3094,7 +3094,7 @@ TableToUtfProc(
 
 static int
 TableFromUtfProc(
-    ClientData clientData,	/* TableEncodingData that specifies
+    void *clientData,	/* TableEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
@@ -3212,7 +3212,7 @@ TableFromUtfProc(
 
 static int
 Iso88591ToUtfProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     const char *src,		/* Source string in specified encoding. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -3292,7 +3292,7 @@ Iso88591ToUtfProc(
 
 static int
 Iso88591FromUtfProc(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
     int flags,			/* Conversion control flags. */
@@ -3400,7 +3400,7 @@ Iso88591FromUtfProc(
 
 static void
 TableFreeProc(
-    ClientData clientData)	/* TableEncodingData that specifies
+    void *clientData)	/* TableEncodingData that specifies
 				 * encoding. */
 {
     TableEncodingData *dataPtr = (TableEncodingData *)clientData;
@@ -3435,7 +3435,7 @@ TableFreeProc(
 
 static int
 EscapeToUtfProc(
-    ClientData clientData,	/* EscapeEncodingData that specifies
+    void *clientData,	/* EscapeEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in specified encoding. */
     int srcLen,			/* Source string length in bytes. */
@@ -3649,7 +3649,7 @@ EscapeToUtfProc(
 
 static int
 EscapeFromUtfProc(
-    ClientData clientData,	/* EscapeEncodingData that specifies
+    void *clientData,	/* EscapeEncodingData that specifies
 				 * encoding. */
     const char *src,		/* Source string in UTF-8. */
     int srcLen,			/* Source string length in bytes. */
@@ -3861,7 +3861,7 @@ EscapeFromUtfProc(
 
 static void
 EscapeFreeProc(
-    ClientData clientData)	/* EscapeEncodingData that specifies
+    void *clientData)	/* EscapeEncodingData that specifies
 				 * encoding. */
 {
     EscapeEncodingData *dataPtr = (EscapeEncodingData *)clientData;

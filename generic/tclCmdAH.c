@@ -120,7 +120,7 @@ static Tcl_ObjCmdProc PathTypeCmd;
 
 int
 Tcl_BreakObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -152,7 +152,7 @@ Tcl_BreakObjCmd(
 #if !defined(TCL_NO_DEPRECATED) && TCL_MAJOR_VERSION < 9
 int
 Tcl_CaseObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -287,7 +287,7 @@ Tcl_CaseObjCmd(
 
 int
 Tcl_CatchObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -297,7 +297,7 @@ Tcl_CatchObjCmd(
 
 int
 TclNRCatchObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -331,7 +331,7 @@ TclNRCatchObjCmd(
 
 static int
 CatchObjCmdCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -392,7 +392,7 @@ CatchObjCmdCallback(
 
 int
 Tcl_CdObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -447,7 +447,7 @@ Tcl_CdObjCmd(
 
 int
 Tcl_ConcatObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -481,7 +481,7 @@ Tcl_ConcatObjCmd(
 
 int
 Tcl_ContinueObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -541,7 +541,7 @@ TclInitEncodingCmd(
 
 int
 EncodingConvertfromObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -681,7 +681,7 @@ EncodingConvertfromObjCmd(
 
 int
 EncodingConverttoObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -816,7 +816,7 @@ EncodingConverttoObjCmd(
 
 int
 EncodingDirsObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -860,7 +860,7 @@ EncodingDirsObjCmd(
 
 int
 EncodingNamesObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp* interp,	    /* Tcl interpreter */
     int objc,		    /* Number of command line args */
     Tcl_Obj* const objv[])  /* Vector of command line args */
@@ -891,7 +891,7 @@ EncodingNamesObjCmd(
 
 int
 EncodingSystemObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp* interp,     /* Tcl interpreter */
     int objc,		    /* Number of command line args */
     Tcl_Obj* const objv[])  /* Vector of command line args */
@@ -928,7 +928,7 @@ EncodingSystemObjCmd(
 
 int
 Tcl_ErrorObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -977,7 +977,7 @@ Tcl_ErrorObjCmd(
 
 static int
 EvalCmdErrMsg(
-    TCL_UNUSED(ClientData *),
+    TCL_UNUSED(void **),
     Tcl_Interp *interp,
     int result)
 {
@@ -990,7 +990,7 @@ EvalCmdErrMsg(
 
 int
 Tcl_EvalObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1000,7 +1000,7 @@ Tcl_EvalObjCmd(
 
 int
 TclNREvalObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1059,7 +1059,7 @@ TclNREvalObjCmd(
 
 int
 Tcl_ExitObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1106,7 +1106,7 @@ Tcl_ExitObjCmd(
 
 int
 Tcl_ExprObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1116,7 +1116,7 @@ Tcl_ExprObjCmd(
 
 int
 TclNRExprObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1143,7 +1143,7 @@ TclNRExprObjCmd(
 
 static int
 ExprCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -1254,7 +1254,7 @@ TclInitFileCmd(
 
 static int
 FileAttrAccessTimeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1336,7 +1336,7 @@ FileAttrAccessTimeCmd(
 
 static int
 FileAttrModifyTimeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1415,7 +1415,7 @@ FileAttrModifyTimeCmd(
 
 static int
 FileAttrLinkStatCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1455,7 +1455,7 @@ FileAttrLinkStatCmd(
 
 static int
 FileAttrStatCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1495,7 +1495,7 @@ FileAttrStatCmd(
 
 static int
 FileAttrTypeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1533,7 +1533,7 @@ FileAttrTypeCmd(
 
 static int
 FileAttrSizeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1570,7 +1570,7 @@ FileAttrSizeCmd(
 
 static int
 FileAttrIsDirectoryCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1608,7 +1608,7 @@ FileAttrIsDirectoryCmd(
 
 static int
 FileAttrIsExecutableCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1639,7 +1639,7 @@ FileAttrIsExecutableCmd(
 
 static int
 FileAttrIsExistingCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1670,7 +1670,7 @@ FileAttrIsExistingCmd(
 
 static int
 FileAttrIsFileCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1708,7 +1708,7 @@ FileAttrIsFileCmd(
 
 static int
 FileAttrIsOwnedCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1755,7 +1755,7 @@ FileAttrIsOwnedCmd(
 
 static int
 FileAttrIsReadableCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1786,7 +1786,7 @@ FileAttrIsReadableCmd(
 
 static int
 FileAttrIsWritableCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1817,7 +1817,7 @@ FileAttrIsWritableCmd(
 
 static int
 PathDirNameCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1856,7 +1856,7 @@ PathDirNameCmd(
 
 static int
 PathExtensionCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1895,7 +1895,7 @@ PathExtensionCmd(
 
 static int
 PathRootNameCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1934,7 +1934,7 @@ PathRootNameCmd(
 
 static int
 PathTailCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -1973,7 +1973,7 @@ PathTailCmd(
 
 static int
 PathFilesystemCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2014,7 +2014,7 @@ PathFilesystemCmd(
 
 static int
 PathJoinCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2046,7 +2046,7 @@ PathJoinCmd(
 
 static int
 PathNativeNameCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2083,7 +2083,7 @@ PathNativeNameCmd(
 
 static int
 PathNormalizeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2121,7 +2121,7 @@ PathNormalizeCmd(
 
 static int
 PathSplitCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2164,7 +2164,7 @@ PathSplitCmd(
 
 static int
 PathTypeCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2212,7 +2212,7 @@ PathTypeCmd(
 
 static int
 FilesystemSeparatorCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2267,7 +2267,7 @@ FilesystemSeparatorCmd(
 
 static int
 FilesystemVolumesCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2558,7 +2558,7 @@ GetTypeFromMode(
 
 int
 Tcl_ForObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2568,7 +2568,7 @@ Tcl_ForObjCmd(
 
 int
 TclNRForObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2599,7 +2599,7 @@ TclNRForObjCmd(
 
 static int
 ForSetupCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -2618,7 +2618,7 @@ ForSetupCallback(
 
 int
 TclNRForIterCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -2653,7 +2653,7 @@ TclNRForIterCallback(
 
 static int
 ForCondCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -2691,7 +2691,7 @@ ForCondCallback(
 
 static int
 ForNextCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -2716,7 +2716,7 @@ ForNextCallback(
 
 static int
 ForPostNextCallback(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -2752,7 +2752,7 @@ ForPostNextCallback(
 
 int
 Tcl_ForeachObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2762,7 +2762,7 @@ Tcl_ForeachObjCmd(
 
 int
 TclNRForeachCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2772,7 +2772,7 @@ TclNRForeachCmd(
 
 int
 Tcl_LmapObjCmd(
-    ClientData clientData,
+    void *clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -2782,7 +2782,7 @@ Tcl_LmapObjCmd(
 
 int
 TclNRLmapCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2936,7 +2936,7 @@ EachloopCmd(
 
 static int
 ForeachLoopStep(
-    ClientData data[],
+    void *data[],
     Tcl_Interp *interp,
     int result)
 {
@@ -3094,7 +3094,7 @@ ForeachCleanup(
 
 int
 Tcl_FormatObjCmd(
-    TCL_UNUSED(ClientData),
+    TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
